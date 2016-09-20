@@ -1,114 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:38452 "EHLO
-        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752293AbcITBKK (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:14252 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751888AbcITCts (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Sep 2016 21:10:10 -0400
-Date: Mon, 19 Sep 2016 21:10:08 -0400
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Alex Elsayed <eternaleye@gmail.com>,
+        Mon, 19 Sep 2016 22:49:48 -0400
+Subject: Re: Post ext3 conversion problems
+To: Sean Greenslade <sean@seangreenslade.com>
+References: <20160916192459.GA13514@coach.home>
+ <CAJCQCtQutt6r2Jovr0jEbTk4W6HUaQpbGiipen97TH1C+k055g@mail.gmail.com>
+ <17ca9019-836b-f4f1-f84c-f8c1edcd9925@cn.fujitsu.com>
+ <20160919041247.GA32208@coach.home>
+ <ae8fd0d5-0d38-aa8e-0114-36ef62b1a783@cn.fujitsu.com>
+ <20160919151341.GA1431@coach.home>
+CC: Chris Murphy <lists@colorremedies.com>, David Sterba <dsterba@suse.cz>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: [RFC] Preliminary BTRFS Encryption
-Message-ID: <20160920011008.GL21290@hungrycats.org>
-References: <1473773990-3071-1-git-send-email-anand.jain@oracle.com>
- <20160916011213.GV22388@dastard>
- <nrg4mh$bkn$1@blaine.gmane.org>
- <20160917043829.GC21290@hungrycats.org>
- <nrioas$da6$1@blaine.gmane.org>
- <20160919180805.GG21290@hungrycats.org>
- <nrpg62$g72$2@blaine.gmane.org>
- <CAJCQCtR=6_cLa_f2BdcfhkfWGB_4kHSG-JfFh4w+40R7zOMtWQ@mail.gmail.com>
- <20160919223119.GK21290@hungrycats.org>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <5f07d365-1eec-7f90-7969-af761834ee48@cn.fujitsu.com>
+Date: Tue, 20 Sep 2016 10:49:42 +0800
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="+svXpSx+RSEd8UhP"
-In-Reply-To: <20160919223119.GK21290@hungrycats.org>
+In-Reply-To: <20160919151341.GA1431@coach.home>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---+svXpSx+RSEd8UhP
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
 
-On Mon, Sep 19, 2016 at 06:31:22PM -0400, Zygo Blaxell wrote:
-> On Mon, Sep 19, 2016 at 04:25:55PM -0600, Chris Murphy wrote:
-> > >> Files are modified by creating new extents (using parameters inherit=
-ed
-> > >> from the inode to fill in the extent attributes) and updating the in=
-ode
-> > >> to refer to the new extent instead of the old one at the modified
-> > >> offset. Cloned extents are references to existing extents associated
-> > >> with a different inode or at a different place within the same inode=
- (if
-> > >> the extent is not compatible with the destination inode, clone fails
-> > >> with an error).  A snapshot is an efficient way to clone an entire
-> > >> subvol tree at once, including all inodes and attributes.
-> > >
-> > > There is the caveat of chattr +C, which would need hard-disabled for
-> > > extent-level encryption (vs block level).
-> >=20
-> > What about raid56 partial stripe writes? Aren't these effectively nocow?
->=20
-> Those are a straight-up bug that should be fixed.  They are mixing commit=
-ted
-> data with uncommitted data from two different transactions, and the stripe
-> temporarily contains garbage.  Combine that with unclean shutdown in degr=
-aded
-> mode and the data is gone.
+At 09/19/2016 11:13 PM, Sean Greenslade wrote:
+> On Mon, Sep 19, 2016 at 02:30:28PM +0800, Qu Wenruo wrote:
+>> All chunks are completed convert to DUP, no small chunk, all to its maximum
+>> chunk size.
+>> So from chunk level, nothing related to convert yet.
+>>
+>> But for extent tree, I found several extents are heavily referred to.
+>> Like extent 158173081600 or 183996522496.
+>>
+>> If you're not using off-band dedupe, then it's quite possible that's the
+>> remaining structure of convert.
+>
+> I never ran any sort of dedup on this partition.
+>
+>> Not pretty sure if it's related to the bug, but did you do the
+>> balance/defrag operation just after removing ext_save subvolume?
+>
+> That's quite possible. I did it in a live boot, so I don't have the bash
+> history to check. I checked it just now using "btrfs subvol list -d",
+> and there's nothing listed. I ran a full balance after that, but the
+> problem remains. So whatever the problem is, it can survive a full
+> balance after the ext_save subvol is completely deleted.
+>
+> --Sean
+>
+>
+OK, I see the problem now.
 
-A slightly more detailed answer:
+The new convert is designed to create minimal number of extents, so it 
+result the following file extents layout:
 
-nocow and raid56 partial stripe writes are different because nocow writes
-won't corrupt unrelated extents, while raid56 partial stripe writes will.
-They are entirely different classes of problem.
+Ext2_save/image
+         |
+/-------------------------------\
+|           Extent A             |
+|<---Old Ext3 Used space  ------>|<--- Free space--->|
+       \---/\---/\---/
+         |    |    |
+        F1    F2   F3
 
-Even in non-degraded mode, an interrupted write to a modified stripe
-is not recoverable from parity until after the parity is reconstructed
-(e.g. by scrub or a later write to the stripe in non-degraded mode).
+This causes a large extent A, refered by ext2_save/image, and files like 
+F1/2/3 just refer to part of the large extent A.
 
-If one of the disks is significantly slower or has deeper queues than
-the others, this could affect many extents, as btrfs could submit a
-lot of writes to each disk and then wait for all the disks to finish
-asynchronously, leaving a large time window for interruption.
+After removing the whole ext2_save subvolume, Extent A is still there, 
+since F1/2/3 are still referring it.
 
-If a disk fails after an unclean shutdown but before a scrub is complete,
-data in all of the uncorrected stripes will be lost.  If the array enters
-or is already in degraded mode during a write when an unclean shutdown
-occurs, data will be lost immediately.
-
-Users who don't scrub immediately after unclean shutdowns are sitting on
-a ticking time bomb of corruption that explodes when a disk fails.
-
-If this happens to data extents, only file data is lost.  If it happens
-to metadata extents, the filesystem is severely damaged or destroyed
-(more likely destroyed as the roots of the metadata trees are usually
-the most recently written blocks).
-
-mdadm avoids this by scrubbing immediately after an unclean shutdown
-to minimize the vulnerable window (or using the new stripe journalling
-feature), but it fails (causing severe filesystem damage) when there
-are crashes in degraded mode.  ZFS avoids this using a combination of
-dynamic stripe width to avoid failed devices and the ZIL journal.
-
-The best thing to do is rework the raid56 layer (and probably some
-higher layers in btrfs) until there are no further references to
-raid56_rmw_stripe or async_rmw_stripe, then remove those functions and
-never put them back.
+|<---Old Ext3 Used space  ------>|<--- Free space--->|
+|           Extent A             |
+       \---/\---/\---/
+         |    |    |
+        F1    F2   F3
 
 
---+svXpSx+RSEd8UhP
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+In that case, not balance but defrag is responsible to "split" the large 
+extent and free the unused space.
 
-iEYEARECAAYFAlfgjHAACgkQgfmLGlazG5z0cQCfQL5ZtbiUBTFLcMrZtYO/pyaz
-WbMAoL+60rlL4RDuGB2lADroB4IK0fiQ
-=z7Ax
------END PGP SIGNATURE-----
+However btrfs defrag doesn't work for case like subvolume or reflink for 
+a long time, which leaves the extent layout unchanged.
+And balance doesn't handle it, as balance just relocated the large 
+extent A and modify all referencers' pointer.
 
---+svXpSx+RSEd8UhP--
+Sigh, I just forgot the fact that defrag doesn't work for a long time 
+when designing the new convert.
+
+So, we still need a working kernel defrag to make the fs to  be a 
+"native" btrfs.
+
+
+However, such layout is completely valid for btrfs, one can generate it 
+quite easily which following script:
+----
+xfs_io -f -c "pwrite 0 16M" $mnt/orig
+for i in $(seq 0 15); do
+	xfs_io -f -c "reflink $mnt/orig ${i}M 0 1M" $mnt/file${i}
+done
+----
+
+So there is still something wrong in your backtrace so that we need to 
+dig further.
+
+Any idea of your load pattern to trigger the bug?
+
+Thanks,
+Qu
+
+

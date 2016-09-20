@@ -1,16 +1,13 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from zaphod.cobb.me.uk ([213.138.97.131]:49887 "EHLO
-        zaphod.cobb.me.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753699AbcITU7w (ORCPT
+Received: from mail-wm0-f45.google.com ([74.125.82.45]:38092 "EHLO
+        mail-wm0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753596AbcITVFe (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Sep 2016 16:59:52 -0400
-Received: from black.home.cobb.me.uk (unknown [192.168.0.205])
-        by zaphod.cobb.me.uk (Postfix) with ESMTP id 64E4C9B8D7
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Sep 2016 21:59:48 +0100 (BST)
-Received: from [192.168.0.211] (novatech.home.cobb.me.uk [192.168.0.211])
-        by black.home.cobb.me.uk (Postfix) with ESMTPS id 419885FB9F
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Sep 2016 21:59:48 +0100 (BST)
+        Tue, 20 Sep 2016 17:05:34 -0400
+Received: by mail-wm0-f45.google.com with SMTP id l132so56724763wmf.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Sep 2016 14:05:33 -0700 (PDT)
 Subject: Re: multi-device btrfs with single data mode and disk failure
+To: Chris Murphy <lists@colorremedies.com>
 References: <1634818f-ff1d-722c-6d73-747ed7203a13@gmail.com>
  <CAJCQCtQHBkx8kjcAdSbmgYcHCo_w3VPj8jvgby3cE-S6rLAPdw@mail.gmail.com>
  <ecac8c64-8ed4-7c8d-29ad-5b3687981a33@gmail.com>
@@ -23,34 +20,104 @@ References: <1634818f-ff1d-722c-6d73-747ed7203a13@gmail.com>
  <64102181-e02d-69a8-ead7-a27acadbe6a8@gmail.com>
  <CAJCQCtQT=j+P=Dy=VtNOBGkpwenK0AngB2k5xk40BE=hZnEfjA@mail.gmail.com>
  <df35fe50-8195-b2b9-e6d9-687b0c883a28@gmail.com>
+ <CAJCQCtTNiJ=E--v5gb5reyzTBqVeZx70-gUfj67EN+BjmcOTmw@mail.gmail.com>
+ <4e7ec5eb-7fb6-2d19-f29d-82461e2d0bd2@gmail.com>
+ <CAJCQCtQ=sjj9jWHQ+9Xm1FSmVtMVgNbqGC6Mc7r6ZuBZpJ8U1g@mail.gmail.com>
+ <0b29471c-363a-1e2f-d352-1d422c07df64@gmail.com>
 Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Graham Cobb <g.btrfs@cobb.uk.net>
-Message-ID: <13e4ed6d-1ee7-4b3e-bbbc-6425cb908746@cobb.uk.net>
-Date: Tue, 20 Sep 2016 21:59:48 +0100
+From: Alexandre Poux <pums974@gmail.com>
+Message-ID: <c05574ee-7d47-dea6-af71-b60d14aeb129@gmail.com>
+Date: Tue, 20 Sep 2016 23:05:29 +0200
 MIME-Version: 1.0
-In-Reply-To: <df35fe50-8195-b2b9-e6d9-687b0c883a28@gmail.com>
+In-Reply-To: <0b29471c-363a-1e2f-d352-1d422c07df64@gmail.com>
 Content-Type: text/plain; charset=utf-8
-To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 20/09/16 19:53, Alexandre Poux wrote:
-> As for moving data to an another volume, since it's only data and
-> nothing fancy (no subvolume or anything), a simple rsync would do the trick.
-> My problem in this case is that I don't have enough available space
-> elsewhere to move my data.
-> That's why I'm trying this hard to recover the partition...
 
-I am sure you have already thought about this, but... it might be
-easier, and even maybe faster, to backup the data to a cloud server,
-then recreate and download again.
 
-Backblaze B2 is very cheap for upload and storage (don't know about
-download charges, though).  And rclone works well to handle rsync-style
-copies (although you might want to use tar or dar if you need to
-preserve file attributes).
+Le 20/09/2016 à 22:18, Alexandre Poux a écrit :
+>
+> Le 20/09/2016 à 21:46, Chris Murphy a écrit :
+>> On Tue, Sep 20, 2016 at 1:31 PM, Alexandre Poux <pums974@gmail.com> wrote:
+>>> Le 20/09/2016 à 21:11, Chris Murphy a écrit :
+>>>> And no backup? Umm, I'd resolve that sooner than anything else.
+>>> Yeah you are absolutely right, this was a temporary solution which came
+>>> to be not that temporary.
+>>> And I regret it already...
+>> Well on the bright side, if this were LVM or mdadm linear/concat
+>> array, the whole thing would be toast because any other file system
+>> would have lost too much fs metadata on the missing device.
+>>
+>>>>  It
+>>>> should be true that it'll tolerate a read only mount indefinitely, but
+>>>> read write? Not sure. This sort of edge case isn't well tested at all
+>>>> seeing as it required changing the kernel to reduce safe guards. So
+>>>> all bets are off the whole thing could become unmountable, not even
+>>>> read only, and then it's a scraping job.
+>>> I'm not that crazy, I tried the patch inside a virtual machine on
+>>> virtual drives...
+>>> And since it's only virtual, it may not work on the real partition...
+>> Are you sure the virtual setup lacked a CHUNK_ITEM on the missing
+>> device? That might be what pinned it in that case.
+> In fact in my virtual setup there was more chunk missing (1 metadata 1
+> System and 1 Data).
+> I will try to do a setup closer to my real one.
+Good news, I made a test were in my virtual setup, I was missing no
+chunk at all
+And in this case, It has no problem to remove it !
+What I did is
+- make an array with 6 disks (data single, metadata raid1)
+- dd if=/dev/zero of=/mnt/somefile bs=64M count=16 # make a 1G file
+- use btrfs-debug-tree to identify which device was not used
+- shutdown the vm, remove this virtual device, and restart the vm
+- mount the array in degraded but with read write thanks to the patched
+kernel
+- btrfs remove missing
+- and voilà !
+I will try with something else than /dev/null, but this is very encouraging
+Do you think that my test is too trivial ?
+Should I try something else before trying on the real partition with the
+overlay ?
 
-And if that works, rclone + B2 might make a reasonable offsite backup
-solution for the future!
+>> You could try some sort of overlay for your remaining drives.
+>> Something like this:
+>> https://raid.wiki.kernel.org/index.php/Recovering_a_failed_software_RAID#Making_the_harddisks_read-only_using_an_overlay_file
+>>
+>> Make sure you understand the gotcha about cloning which applies here:
+>> https://btrfs.wiki.kernel.org/index.php/Gotchas
+>>
+>> I think it's safe to use blockdev --setro on every real device  you're
+>> trying to protect from changes. And when mounting you'll at least need
+>> to use device= mount option to explicitly mount each of the overlay
+>> devices. Based on the wiki, I'm wincing, I don't really know for sure
+>> if device mount option is enough to compel Btrfs to only use those
+>> devices and not go off the rails and still use one of the real
+>> devices, but at least if they're setro it won't matter (the mount will
+>> just fail somehow due to write failures).
+>>
+>> So now you can try removing the missing device... and see what
+>> happens. You could inspect the overlay files and see what changes were
+>> made.
+> Wow that looks like nice.
+> So, if it work, and if we find a way to fix the filesystem inside the vm,
+> I can use this over the real partion to check if it works before trying
+> the fix for real.
+> Nice idea.
+>>>> What do you get for btrfs-debug-tree -t 3 <dev>
+>>>>
+>>>> That should show the chunk tree, and what I'm wondering if if the
+>>>> chunk tree has any references to chunks on the missing device. Even if
+>>>> there are no extents on that device, if there are chunks, that might
+>>>> be one of the safeguards.
+>>>>
+>>> You'll find it attached.
+>>> The missing device is the devid 8 (since it's the only one missing in
+>>> btrfs fi show)
+>>> I found it only once line 63
+>> Yeah bummer. Not used for system, data, or metadata chunks at all.
+>>
+>>
+>
 
-Graham
+

@@ -1,107 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:39420 "EHLO
-        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-OK)
-        by vger.kernel.org with ESMTP id S933054AbcIUNCL (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:51594 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753341AbcIUNuQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Sep 2016 09:02:11 -0400
-Date: Wed, 21 Sep 2016 09:02:09 -0400
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: Paul Jones <paul@pauljones.id.au>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs rare silent data corruption with kernel data leak
-Message-ID: <20160921130209.GO21290@hungrycats.org>
-References: <20160921045556.GN21290@hungrycats.org>
- <ME1PR01MB13788B5A79BF88786A1D571D9EF60@ME1PR01MB1378.ausprd01.prod.outlook.com>
+        Wed, 21 Sep 2016 09:50:16 -0400
+Subject: Re: Experimental btrfs encryption
+To: Chris Mason <clm@fb.com>
+References: <20160919151518.i2aon4axmfzt54rn@thunk.org>
+ <nrpjhc$g72$3@blaine.gmane.org> <a8dc3c28-5629-d870-f202-de35d2f941f1@fb.com>
+ <20160920025041.mzeljxxzclikktxn@thunk.org>
+ <12484cc6-b5ca-e507-157e-5eb48d9a4edf@fb.com>
+Cc: "Theodore Ts'o" <tytso@mit.edu>, Alex Elsayed <eternaleye@gmail.com>,
+        linux-btrfs@vger.kernel.org
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <eaca18c1-9022-9705-a8e5-1ccac9b39c22@oracle.com>
+Date: Wed, 21 Sep 2016 21:52:04 +0800
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="tqN4RWvJTb9VNux/"
-In-Reply-To: <ME1PR01MB13788B5A79BF88786A1D571D9EF60@ME1PR01MB1378.ausprd01.prod.outlook.com>
+In-Reply-To: <12484cc6-b5ca-e507-157e-5eb48d9a4edf@fb.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---tqN4RWvJTb9VNux/
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
 
-On Wed, Sep 21, 2016 at 11:14:35AM +0000, Paul Jones wrote:
-> > -----Original Message-----
-> > From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-
-> > owner@vger.kernel.org] On Behalf Of Zygo Blaxell
-> > Sent: Wednesday, 21 September 2016 2:56 PM
-> > To: linux-btrfs@vger.kernel.org
-> > Subject: btrfs rare silent data corruption with kernel data leak
-> >=20
-> > Summary:
-> >=20
-> > There seem to be two btrfs bugs here: one loses data on writes, and the
-> > other leaks data from the kernel to replace it on reads.  It all happen=
-s after
-> > checksums are verified, so the corruption is entirely silent--no EIO er=
-rors,
-> > kernel messages, or device event statistics.
-> >=20
-> > Compressed extents are corrupted with kernel data leak.  Uncompressed
-> > extents may not be corrupted, or may be corrupted by deterministically
-> > replacing data bytes with zero, or may not be corrupted.  No preconditi=
-ons
-> > for corruption are known.  Less than one file per hundred thousand seem=
-s to
-> > be affected.  Only specific parts of any file can be affected.
-> > Kernels v4.0..v4.5.7 tested, all have the issue.
->=20
-> Funny you should bring this up - I think I just suffered from this, or so=
-mething similar.
-[...snip...]
-> [ 1311.456545] BTRFS warning (device sda1): csum failed ino 44628192 off =
-3222405120 csum 2566472073 expected csum 3548745998
-> [ 1311.456551] BTRFS warning (device sda1): csum failed ino 44628192 off =
-3222470656 csum 2566472073 expected csum 2988893031
->=20
-> I'm seeing a lot of checksum 2566472073 - Is that the checksum of blank s=
-pace I wonder?
+> So there's a matrix of possible configurations.  If you're doing a
+> reflink between subvolumes and you're doing a subvolume granular
+> encryption and you don't have keys to the source subvolume, the reflink
+> shouldn't be allowed.
 
-The issue I found occurs after successful checksum validation, and
-can affect only the first 4096 bytes of a file.  It produces no kernel
-messages and no checksum failures.  If you run 'filefrag -v' on the file,
-the corrupted extent *must* have the 'inline' flag; otherwise, it's a
-different problem.
+  Right, this is working.
 
-You have csum failures, and the affected offsets are way beyond 4096.
+> If you do have keys, any new writes are happening
+> into a different inode, and will be encrypted with a different key.
 
-Holes are not checksummed in general because they are gaps in the
-file offset address space.  Metadata records that describe holes are
-checksummed, but when those checksums fail the kernel messages look
-different.
+  As of now it returns -EXDEV. But I should change this.
 
-I don't recognize the symptoms you are having.  After eliminating
-hardware problems and making sure your kernel is up to date, I'd try
-changing mount options...
+> If you're doing a file level encryption and you do have access to the
+> source file, the destination file is a new inode.  Thanks to COW any
+> changes are going to go into new extents and will end up with different
+> keys/nonces.
 
-> Here are the details of the filesystem concerned:
-[...]
-> /dev/sda1 on / type btrfs (rw,noatime,ssd,discard,noacl,space_cache=3Dv2,=
-subvolid=3D5,subvol=3D/)
-> (compress was enabled previously)
+> Either way, we degrade down into extent based encryption.  I'd take that
+> hit to maintain sane semantics in the face of snapshots and reflinks.
+> The btrfs extent structures on disk already have an encryption type field.
 
-=2E..discard and space_cache=3Dv2 in particular.  Free space tree is a new
-feature, and discard has had a few bug fixes over the years.  Both are
-non-default options.
+  Agreed. About keys.. a file might need N number of keys (N = number of
+  extents) to open.
 
-Speaking of mount options, 'max_inline=3D0' may prevent the issue I found.
+Thanks, Anand
 
 
---tqN4RWvJTb9VNux/
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iEYEARECAAYFAlfihNEACgkQgfmLGlazG5wr8gCgmhIvid5oWMtxmOmZ4Jbe3DYG
-lRsAn1UU55TP6XZM/1vFf7gRJRqyE8io
-=RdxB
------END PGP SIGNATURE-----
-
---tqN4RWvJTb9VNux/--
+>>
+>> So in any case, assuming you're using block encryption (which is what
+>> fscrypt uses) there really isn't a problem with nonce reuse, although
+>> in some cases if you really do want to reflink a file and have it be
+>> protected by different user keys, this would have to force copy of the
+>> duplicated blocks at that point.  But arguably, that is a feature, not
+>> a bug.  If the two users are mutually suspicious, you don't _want_ to
+>> leak information about who much of a particular file had been changed
+>> by a particular user.  So you would want to break the reflink and have
+>> separate copies for both users anyway.
+>>
+>>
+>> One final thought --- something which is really going to be a factor
+>> in many use cases is going to be hardware accelerated encryption.  For
+>> example, Qualcomm is already shipping an SOC where the encryption can
+>> be done in the data path between the CPU and the eMMC storage device.
+>> If you want to support certain applications that try to read megabytes
+>> and megabytes of data before painting a single pixel, in-line hardware
+>> crypto at line speeds is going to be critical if you don't want to
+>> sacrifice performance, and keep users from being cranky because it
+>> took extra seconds before they could start reading their news feed (or
+>> saving bird eggs from voracious porcine predators, or whatever).
+>>
+>> This may very well be an issue in the future not just for mobile
+>> devices, but I could imagine this potentially being an issue for other
+>> form factors as well.  Yes, Skylake can encrypt multiple bytes per
+>> clock cycle using the miracles of hardware acceleration and
+>> pipelining.  But in-line encryption will still have the advantage of
+>> avoiding the memory bandwidth costs.  So while it is fun to talk about
+>> exotic encryption modes, it would be wise to have file system
+>> encryption architectures to have modes which are compatible with
+>> hardware in-line encryption schemes.
+>>
+>
+> Strongly agree here.  This is the whole reason btrfs used crc32c, but
+> times 100 (or maybe 1000).  I love that  Kent and others are
+> experimenting in bcachefs and elsewhere.  Btrfs can always bring in new
+> schemes that work well once the framework is in place, but its not an
+> area where I have enough expertise to get exotic on the first try.
+>
+> -chris
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

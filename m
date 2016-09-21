@@ -1,38 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40408 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:56791 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1756828AbcIVOoJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Sep 2016 10:44:09 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 1EEABAAEF
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Sep 2016 14:44:08 +0000 (UTC)
-Date: Thu, 22 Sep 2016 16:42:07 +0200
-From: David Sterba <dsterba@suse.cz>
-To: jeffm@suse.com
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: ensure that file descriptor used with subvol
- ioctls is a dir
-Message-ID: <20160922144207.GN16983@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1474461089-1526-1-git-send-email-jeffm@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1474461089-1526-1-git-send-email-jeffm@suse.com>
+        id S1752263AbcIUMbe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Sep 2016 08:31:34 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id D2443AC29
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Sep 2016 12:31:31 +0000 (UTC)
+From: jeffm@suse.com
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: ensure that file descriptor used with subvol ioctls is a dir
+Date: Wed, 21 Sep 2016 08:31:29 -0400
+Message-Id: <1474461089-1526-1-git-send-email-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 21, 2016 at 08:31:29AM -0400, jeffm@suse.com wrote:
-> From: Jeff Mahoney <jeffm@suse.com>
-> 
-> If the subvol/snapshot create/destroy ioctls are passed a regular file
-> with execute permissions set, we'll eventually Oops while trying to do
-> inode->i_op->lookup via lookup_one_len.
-> 
-> This patch ensures that the file descriptor refers to a directory.
-> 
-> Fixes: cb8e70901d (Btrfs: Fix subvolume creation locking rules)
-> Fixes: 76dda93c6a (Btrfs: add snapshot/subvolume destroy ioctl)
-> Cc: <stable@vger.kernel.org> #v2.6.29+
-> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+From: Jeff Mahoney <jeffm@suse.com>
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+If the subvol/snapshot create/destroy ioctls are passed a regular file
+with execute permissions set, we'll eventually Oops while trying to do
+inode->i_op->lookup via lookup_one_len.
+
+This patch ensures that the file descriptor refers to a directory.
+
+Fixes: cb8e70901d (Btrfs: Fix subvolume creation locking rules)
+Fixes: 76dda93c6a (Btrfs: add snapshot/subvolume destroy ioctl)
+Cc: <stable@vger.kernel.org> #v2.6.29+
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ fs/btrfs/ioctl.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index b2a2da5..7fd939b 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1634,6 +1634,9 @@ static noinline int btrfs_ioctl_snap_create_transid(struct file *file,
+ 	int namelen;
+ 	int ret = 0;
+ 
++	if (!S_ISDIR(file_inode(file)->i_mode))
++		return -ENOTDIR;
++
+ 	ret = mnt_want_write_file(file);
+ 	if (ret)
+ 		goto out;
+@@ -1691,6 +1694,9 @@ static noinline int btrfs_ioctl_snap_create(struct file *file,
+ 	struct btrfs_ioctl_vol_args *vol_args;
+ 	int ret;
+ 
++	if (!S_ISDIR(file_inode(file)->i_mode))
++		return -ENOTDIR;
++
+ 	vol_args = memdup_user(arg, sizeof(*vol_args));
+ 	if (IS_ERR(vol_args))
+ 		return PTR_ERR(vol_args);
+@@ -1714,6 +1720,9 @@ static noinline int btrfs_ioctl_snap_create_v2(struct file *file,
+ 	bool readonly = false;
+ 	struct btrfs_qgroup_inherit *inherit = NULL;
+ 
++	if (!S_ISDIR(file_inode(file)->i_mode))
++		return -ENOTDIR;
++
+ 	vol_args = memdup_user(arg, sizeof(*vol_args));
+ 	if (IS_ERR(vol_args))
+ 		return PTR_ERR(vol_args);
+@@ -2357,6 +2366,9 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
+ 	int ret;
+ 	int err = 0;
+ 
++	if (!S_ISDIR(dir->i_mode))
++		return -ENOTDIR;
++
+ 	vol_args = memdup_user(arg, sizeof(*vol_args));
+ 	if (IS_ERR(vol_args))
+ 		return PTR_ERR(vol_args);
+-- 
+2.7.1
+

@@ -1,269 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45378 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:49669 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752187AbcITOFK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Sep 2016 10:05:10 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id E45FAADB1
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Sep 2016 14:05:06 +0000 (UTC)
-From: jeffm@suse.com
+        id S1755814AbcIUQRk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Sep 2016 12:17:40 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id C3D76AAD1
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Sep 2016 16:17:38 +0000 (UTC)
+Subject: [PATCH] btrfs: btrfs_debug should consume fs_info when DEBUG is not
+ defined
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>, Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH 5/5] btrfs: convert send's verbose_printk to btrfs_debug
-Date: Tue, 20 Sep 2016 10:05:03 -0400
-Message-Id: <1474380303-25995-6-git-send-email-jeffm@suse.com>
-In-Reply-To: <1474380303-25995-1-git-send-email-jeffm@suse.com>
 References: <1474380303-25995-1-git-send-email-jeffm@suse.com>
+Cc: David Sterba <dsterba@suse.com>
+From: Jeff Mahoney <jeffm@suse.com>
+Message-ID: <44bec1b2-b961-ff13-374d-57b7adf5e3fd@suse.com>
+Date: Wed, 21 Sep 2016 12:17:37 -0400
+MIME-Version: 1.0
+In-Reply-To: <1474380303-25995-1-git-send-email-jeffm@suse.com>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Jeff Mahoney <jeffm@suse.com>
+We can hit unused variable warnings when btrfs_debug and friends are
+just aliases for no_printk.  This is due to the fs_info not getting
+consumed by the function call, which can happen if convenenience
+variables are used.  This patch adds a new btrfs_no_printk static inline
+that consumes the convenience variable and does nothing else.  It
+silences the unused variable warning and has no impact on the generated
+code:
 
-This was basically an open-coded, less flexible dynamic printk.  We can
-just use btrfs_debug instead.
+$ size fs/btrfs/extent_io.o*
+   text	   data	    bss	    dec	    hex	filename
+  44072	    152	     32	  44256	   ace0	fs/btrfs/extent_io.o.btrfs_no_printk
+  44072	    152	     32	  44256	   ace0	fs/btrfs/extent_io.o.no_printk
 
+Fixes: 27a0dd61a5 (Btrfs: make btrfs_debug match pr_debug handling related to DEBUG)
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ fs/btrfs/ctree.h | 14 ++++++++++----
+ 1 file changed, 10 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index ee10345..96bc99d 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -36,10 +36,6 @@
- #include "transaction.h"
- #include "compression.h"
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index b967af5..e51ee72 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3241,6 +3241,12 @@ int btrfs_sync_fs(struct super_block *sb, int wait);
+ #ifdef CONFIG_PRINTK
+ __printf(2, 3)
+ void btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...);
++__printf(2, 3)
++static inline int btrfs_no_printk(const struct btrfs_fs_info *fs_info,
++				   const char *fmt, ...)
++{
++	return 0;
++}
+ #else
+ static inline __printf(2, 3)
+ void btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...)
+@@ -3355,13 +3361,13 @@ do {									\
+ 	btrfs_printk_ratelimited(fs_info, KERN_DEBUG fmt, ##args)
+ #else
+ #define btrfs_debug(fs_info, fmt, args...) \
+-	no_printk(KERN_DEBUG fmt, ##args)
++	btrfs_no_printk(fs_info, KERN_DEBUG fmt, ##args)
+ #define btrfs_debug_in_rcu(fs_info, fmt, args...) \
+-	no_printk(KERN_DEBUG fmt, ##args)
++	btrfs_no_printk(fs_info, KERN_DEBUG fmt, ##args)
+ #define btrfs_debug_rl_in_rcu(fs_info, fmt, args...) \
+-	no_printk(KERN_DEBUG fmt, ##args)
++	btrfs_no_printk(fs_info, KERN_DEBUG fmt, ##args)
+ #define btrfs_debug_rl(fs_info, fmt, args...) \
+-	no_printk(KERN_DEBUG fmt, ##args)
++	btrfs_no_printk(fs_info, KERN_DEBUG fmt, ##args)
+ #endif
  
--static int g_verbose = 0;
--
--#define verbose_printk(...) if (g_verbose) printk(__VA_ARGS__)
--
- /*
-  * A fs_path is a helper to dynamically build path names with unknown size.
-  * It reallocates the internal buffer on demand.
-@@ -727,9 +723,10 @@ static int send_cmd(struct send_ctx *sctx)
- static int send_rename(struct send_ctx *sctx,
- 		     struct fs_path *from, struct fs_path *to)
- {
-+	struct btrfs_fs_info *fs_info = sctx->send_root->fs_info;
- 	int ret;
- 
--verbose_printk("btrfs: send_rename %s -> %s\n", from->start, to->start);
-+	btrfs_debug(fs_info, "send_rename %s -> %s", from->start, to->start);
- 
- 	ret = begin_cmd(sctx, BTRFS_SEND_C_RENAME);
- 	if (ret < 0)
-@@ -751,9 +748,10 @@ out:
- static int send_link(struct send_ctx *sctx,
- 		     struct fs_path *path, struct fs_path *lnk)
- {
-+	struct btrfs_fs_info *fs_info = sctx->send_root->fs_info;
- 	int ret;
- 
--verbose_printk("btrfs: send_link %s -> %s\n", path->start, lnk->start);
-+	btrfs_debug(fs_info, "send_link %s -> %s", path->start, lnk->start);
- 
- 	ret = begin_cmd(sctx, BTRFS_SEND_C_LINK);
- 	if (ret < 0)
-@@ -774,9 +772,10 @@ out:
-  */
- static int send_unlink(struct send_ctx *sctx, struct fs_path *path)
- {
-+	struct btrfs_fs_info *fs_info = sctx->send_root->fs_info;
- 	int ret;
- 
--verbose_printk("btrfs: send_unlink %s\n", path->start);
-+	btrfs_debug(fs_info, "send_unlink %s", path->start);
- 
- 	ret = begin_cmd(sctx, BTRFS_SEND_C_UNLINK);
- 	if (ret < 0)
-@@ -796,9 +795,10 @@ out:
-  */
- static int send_rmdir(struct send_ctx *sctx, struct fs_path *path)
- {
-+	struct btrfs_fs_info *fs_info = sctx->send_root->fs_info;
- 	int ret;
- 
--verbose_printk("btrfs: send_rmdir %s\n", path->start);
-+	btrfs_debug(fs_info, "send_rmdir %s", path->start);
- 
- 	ret = begin_cmd(sctx, BTRFS_SEND_C_RMDIR);
- 	if (ret < 0)
-@@ -1313,6 +1313,7 @@ static int find_extent_clone(struct send_ctx *sctx,
- 			     u64 ino_size,
- 			     struct clone_root **found)
- {
-+	struct btrfs_fs_info *fs_info = sctx->send_root->fs_info;
- 	int ret;
- 	int extent_type;
- 	u64 logical;
-@@ -1371,10 +1372,10 @@ static int find_extent_clone(struct send_ctx *sctx,
- 	}
- 	logical = disk_byte + btrfs_file_extent_offset(eb, fi);
- 
--	down_read(&sctx->send_root->fs_info->commit_root_sem);
--	ret = extent_from_logical(sctx->send_root->fs_info, disk_byte, tmp_path,
-+	down_read(&fs_info->commit_root_sem);
-+	ret = extent_from_logical(fs_info, disk_byte, tmp_path,
- 				  &found_key, &flags);
--	up_read(&sctx->send_root->fs_info->commit_root_sem);
-+	up_read(&fs_info->commit_root_sem);
- 	btrfs_release_path(tmp_path);
- 
- 	if (ret < 0)
-@@ -1429,7 +1430,7 @@ static int find_extent_clone(struct send_ctx *sctx,
- 		extent_item_pos = logical - found_key.objectid;
- 	else
- 		extent_item_pos = 0;
--	ret = iterate_extent_inodes(sctx->send_root->fs_info,
-+	ret = iterate_extent_inodes(fs_info,
- 					found_key.objectid, extent_item_pos, 1,
- 					__iterate_backrefs, backref_ctx);
- 
-@@ -1439,17 +1440,18 @@ static int find_extent_clone(struct send_ctx *sctx,
- 	if (!backref_ctx->found_itself) {
- 		/* found a bug in backref code? */
- 		ret = -EIO;
--		btrfs_err(sctx->send_root->fs_info,
-+		btrfs_err(fs_info,
- 			  "did not find backref in send_root. inode=%llu, offset=%llu, disk_byte=%llu found extent=%llu",
--				ino, data_offset, disk_byte, found_key.objectid);
-+			  ino, data_offset, disk_byte, found_key.objectid);
- 		goto out;
- 	}
- 
--verbose_printk(KERN_DEBUG "btrfs: find_extent_clone: data_offset=%llu, ino=%llu, num_bytes=%llu, logical=%llu\n",
--		data_offset, ino, num_bytes, logical);
-+	btrfs_debug(fs_info,
-+		    "find_extent_clone: data_offset=%llu, ino=%llu, num_bytes=%llu, logical=%llu",
-+		    data_offset, ino, num_bytes, logical);
- 
- 	if (!backref_ctx->found)
--		verbose_printk("btrfs:    no clones found\n");
-+		btrfs_debug(fs_info, "no clones found");
- 
- 	cur_clone_root = NULL;
- 	for (i = 0; i < sctx->clone_roots_cnt; i++) {
-@@ -2420,10 +2422,11 @@ out:
- 
- static int send_truncate(struct send_ctx *sctx, u64 ino, u64 gen, u64 size)
- {
-+	struct btrfs_fs_info *fs_info = sctx->send_root->fs_info;
- 	int ret = 0;
- 	struct fs_path *p;
- 
--verbose_printk("btrfs: send_truncate %llu size=%llu\n", ino, size);
-+	btrfs_debug(fs_info, "send_truncate %llu size=%llu", ino, size);
- 
- 	p = fs_path_alloc();
- 	if (!p)
-@@ -2449,10 +2452,11 @@ out:
- 
- static int send_chmod(struct send_ctx *sctx, u64 ino, u64 gen, u64 mode)
- {
-+	struct btrfs_fs_info *fs_info = sctx->send_root->fs_info;
- 	int ret = 0;
- 	struct fs_path *p;
- 
--verbose_printk("btrfs: send_chmod %llu mode=%llu\n", ino, mode);
-+	btrfs_debug(fs_info, "send_chmod %llu mode=%llu", ino, mode);
- 
- 	p = fs_path_alloc();
- 	if (!p)
-@@ -2478,10 +2482,12 @@ out:
- 
- static int send_chown(struct send_ctx *sctx, u64 ino, u64 gen, u64 uid, u64 gid)
- {
-+	struct btrfs_fs_info *fs_info = sctx->send_root->fs_info;
- 	int ret = 0;
- 	struct fs_path *p;
- 
--verbose_printk("btrfs: send_chown %llu uid=%llu, gid=%llu\n", ino, uid, gid);
-+	btrfs_debug(fs_info, "send_chown %llu uid=%llu, gid=%llu",
-+		    ino, uid, gid);
- 
- 	p = fs_path_alloc();
- 	if (!p)
-@@ -2508,6 +2514,7 @@ out:
- 
- static int send_utimes(struct send_ctx *sctx, u64 ino, u64 gen)
- {
-+	struct btrfs_fs_info *fs_info = sctx->send_root->fs_info;
- 	int ret = 0;
- 	struct fs_path *p = NULL;
- 	struct btrfs_inode_item *ii;
-@@ -2516,7 +2523,7 @@ static int send_utimes(struct send_ctx *sctx, u64 ino, u64 gen)
- 	struct btrfs_key key;
- 	int slot;
- 
--verbose_printk("btrfs: send_utimes %llu\n", ino);
-+	btrfs_debug(fs_info, "send_utimes %llu", ino);
- 
- 	p = fs_path_alloc();
- 	if (!p)
-@@ -2570,6 +2577,7 @@ out:
-  */
- static int send_create_inode(struct send_ctx *sctx, u64 ino)
- {
-+	struct btrfs_fs_info *fs_info = sctx->send_root->fs_info;
- 	int ret = 0;
- 	struct fs_path *p;
- 	int cmd;
-@@ -2577,7 +2585,7 @@ static int send_create_inode(struct send_ctx *sctx, u64 ino)
- 	u64 mode;
- 	u64 rdev;
- 
--verbose_printk("btrfs: send_create_inode %llu\n", ino);
-+	btrfs_debug(fs_info, "send_create_inode %llu", ino);
- 
- 	p = fs_path_alloc();
- 	if (!p)
-@@ -3635,6 +3643,7 @@ out:
-  */
- static int process_recorded_refs(struct send_ctx *sctx, int *pending_move)
- {
-+	struct btrfs_fs_info *fs_info = sctx->send_root->fs_info;
- 	int ret = 0;
- 	struct recorded_ref *cur;
- 	struct recorded_ref *cur2;
-@@ -3647,7 +3656,7 @@ static int process_recorded_refs(struct send_ctx *sctx, int *pending_move)
- 	u64 last_dir_ino_rm = 0;
- 	bool can_rename = true;
- 
--verbose_printk("btrfs: process_recorded_refs %llu\n", sctx->cur_ino);
-+	btrfs_debug(fs_info, "process_recorded_refs %llu", sctx->cur_ino);
- 
- 	/*
- 	 * This should never happen as the root dir always has the same ref
-@@ -4661,6 +4670,7 @@ out:
-  */
- static int send_write(struct send_ctx *sctx, u64 offset, u32 len)
- {
-+	struct btrfs_fs_info *fs_info = sctx->send_root->fs_info;
- 	int ret = 0;
- 	struct fs_path *p;
- 	ssize_t num_read = 0;
-@@ -4669,7 +4679,7 @@ static int send_write(struct send_ctx *sctx, u64 offset, u32 len)
- 	if (!p)
- 		return -ENOMEM;
- 
--verbose_printk("btrfs: send_write offset=%llu, len=%d\n", offset, len);
-+	btrfs_debug(fs_info, "send_write offset=%llu, len=%d", offset, len);
- 
- 	num_read = fill_read_buf(sctx, offset, len);
- 	if (num_read <= 0) {
-@@ -4711,9 +4721,10 @@ static int send_clone(struct send_ctx *sctx,
- 	struct fs_path *p;
- 	u64 gen;
- 
--verbose_printk("btrfs: send_clone offset=%llu, len=%d, clone_root=%llu, clone_inode=%llu, clone_offset=%llu\n",
--		offset, len, clone_root->root->objectid, clone_root->ino,
--		clone_root->offset);
-+	btrfs_debug(sctx->send_root->fs_info,
-+		    "send_clone offset=%llu, len=%d, clone_root=%llu, clone_inode=%llu, clone_offset=%llu",
-+		    offset, len, clone_root->root->objectid, clone_root->ino,
-+		    clone_root->offset);
- 
- 	p = fs_path_alloc();
- 	if (!p)
+ #define btrfs_printk_in_rcu(fs_info, fmt, args...)	\
 -- 
 2.7.1
+
 

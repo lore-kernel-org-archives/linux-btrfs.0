@@ -1,69 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f50.google.com ([209.85.218.50]:35359 "EHLO
-        mail-oi0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752595AbcIUBAo (ORCPT
+Received: from mail-oi0-f49.google.com ([209.85.218.49]:33432 "EHLO
+        mail-oi0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753832AbcIUCvj (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Sep 2016 21:00:44 -0400
-Received: by mail-oi0-f50.google.com with SMTP id w11so42921271oia.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Sep 2016 18:00:43 -0700 (PDT)
+        Tue, 20 Sep 2016 22:51:39 -0400
+Received: by mail-oi0-f49.google.com with SMTP id r126so45087652oib.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Sep 2016 19:51:39 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAB1rxdbJX7rgv-NrHyGD7wMMcFf1EDR_aJ8yaTs7r=O-iXTo7w@mail.gmail.com>
-References: <CAB1rxdbJX7rgv-NrHyGD7wMMcFf1EDR_aJ8yaTs7r=O-iXTo7w@mail.gmail.com>
+In-Reply-To: <566e9000fe30d5b8e0d7e73ebe1d44a0@admin.virtall.com>
+References: <566e9000fe30d5b8e0d7e73ebe1d44a0@admin.virtall.com>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Tue, 20 Sep 2016 19:00:42 -0600
-Message-ID: <CAJCQCtSz15HC99QetsSzJRtbLgZU+iohej9Mf6qE4q39MmZfKA@mail.gmail.com>
-Subject: Re: Can't mount btrfs raid1
-To: Mirak M <mirak63@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Tue, 20 Sep 2016 20:51:38 -0600
+Message-ID: <CAJCQCtQ+uaMCCW81+ePF6scGsTu+MEu1arCQ0wTJhwS8EN8S=A@mail.gmail.com>
+Subject: Re: how to understand "btrfs fi show" output? "No space left" issues
+To: Tomasz Chmielewski <mangoo@wpkg.org>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 20, 2016 at 5:16 PM, Mirak M <mirak63@gmail.com> wrote:
-> Hello,
+On Tue, Sep 20, 2016 at 12:47 AM, Tomasz Chmielewski <mangoo@wpkg.org> wrote:
+> How to understand the following "btrfs fi show" output?
 >
-> I have a failure when mounting btrfs.
+> # btrfs fi show /var/lib/lxd
+> Label: 'btrfs'  uuid: f5f30428-ec5b-4497-82de-6e20065e6f61
+>         Total devices 2 FS bytes used 136.18GiB
+>         devid    1 size 423.13GiB used 423.13GiB path /dev/sda3
+>         devid    2 size 423.13GiB used 423.13GiB path /dev/sdb3
 >
->> mount -oro,recovery /dev/sda2 sda2_btrfs
->> mount: /dev/sda2: can't read superblock
-
-What do you get for 'btrfs super-recover -v <dev>' and 'btrfs check <dev>'
-
-For this purpose any 4.4+ version is probably OK, except 4.7 and 4.7.1
-which might spit out some bogus items (it's just noise it won't hurt
-anything as long as you don't use --repair).
-
-
+> Why is it "size 423.13GiB used 423.13GiB"? Is it full?
 >
-> The kernel log is here http://pastebin.com/tHihHT92 and at the bottom
-> of the email
+> I had "No space left" on this filesystem just yesterday (running kernel
+> 4.7.4). This is btrfs RAID-1 on SSD disks. This filesystem is used for 20-30
+> LXD containers with different roles (mongo, mysql, postgres databases,
+> webservers etc.), around 150 read-only snapshots, btrfs compression is
+> disabled.
 >
-> I must admit I did the error of running btrfs check --repair at some
-> point, not knowing this was not a good idea.
 >
-> I run ubuntu 16.04 with kernel 4.4.0-36-generic .
+> Both "btrfs fi df" and "df -h" show plenty of space:
+>
+> # btrfs fi df /var/lib/lxd
+> Data, RAID1: total=417.12GiB, used=131.33GiB
+> System, RAID1: total=8.00MiB, used=80.00KiB
+> Metadata, RAID1: total=6.00GiB, used=4.86GiB
+> GlobalReserve, single: total=512.00MiB, used=0.00B
+>
+>
+> # df -h
+> Filesystem      Size  Used Avail Use% Mounted on
+> /dev/sda3       424G  137G  286G  33% /var/lib/lxd
 
-OK what version of btrrfs-progs? What was the output from btrfs check?
+I'm coming into this late and realize most questions have been
+answered. But I take the position this is a bug, clearly there's
+enough space when df reports only 33% used, and therefore it's
+important to gather information about the file system in its current
+state so the devs can make decisions. Manually running balance is the
+correct work around, but it's bad Ux and should not be necessary (even
+though it's known to sometimes be necessary).
 
+Anyway, in this case there is room in all chunks and GlobalReserve
+used is 0.00B. Metadata has a bit over a gigabyte of unused space in
+its allocated block groups. So at the moment I'm thinking it's a bug.
+The two things that'd be useful if you can reproduce this problem at
+some point, by NOT trying to prevent it again, are:
 
-> [ 1692.712574] BTRFS critical (device sda2): corrupt leaf, bad key
-> order: block=1957998690304,root=1, slot=29
-> [ 1692.712819] BTRFS critical (device sda2): corrupt leaf, bad key
-> order: block=1957998690304,root=1, slot=29
+grep . -IR /sys/fs/btrfs/<fsuuid>/allocation/
 
-List archives suggest this might be due to bad RAM. I also see there
-are some bugs that can cause it, but I'm not finding any post kernel
-4.4 patches for this (there are a metric f tonne of changes since
-4.4). I would suggest kernel 4.4.21 if you need to stick with a long
-term kernel, I have no idea what 4.4.0-36 translates into.
+<fsuuid> pick the UUID for the affected fs volume.
 
+btrfs-debugfs found in btrfs-progs upstream as a python program but
+typically not packaged by distros
+https://github.com/kdave/btrfs-progs/blob/master/btrfs-debugfs
 
-> [ 1692.713963] BTRFS: error (device sda2) in btrfs_replay_log:2401:
-> errno=-5 IO failure (Failed to recover log tree)
+Takes the form:
 
-This is kinda curious, was there a crash or power failure?
+sudo ./btrfs-debugfs -b <mountpoint>
 
+It'll show you the percent each block group is actually being used so
+you can have a good idea what -dusage value to use (in your case) to
+free up space. That should help, but ultimately it's a work around,
+not a real fix. There shouldn't be enospc anyway.
 
+So if it happens again, first capture the above two bits of
+information, and then if  you feel like testing kernel 4.8rc7 do that.
+It has a massive pile of enoscp related rework and I bet Josef would
+like to know if the problem reproduces with that kernel. As in, just
+change kernels, don't try to fix it with balance first.
 
 
 -- 

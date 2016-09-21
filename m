@@ -1,98 +1,132 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f169.google.com ([209.85.223.169]:36013 "EHLO
-        mail-io0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752603AbcIULO3 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Sep 2016 07:14:29 -0400
-Received: by mail-io0-f169.google.com with SMTP id m79so49007224ioo.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Sep 2016 04:14:28 -0700 (PDT)
-Subject: Re: multi-device btrfs with single data mode and disk failure
-To: Chris Murphy <lists@colorremedies.com>
-References: <1634818f-ff1d-722c-6d73-747ed7203a13@gmail.com>
- <CAJCQCtQHBkx8kjcAdSbmgYcHCo_w3VPj8jvgby3cE-S6rLAPdw@mail.gmail.com>
- <ecac8c64-8ed4-7c8d-29ad-5b3687981a33@gmail.com>
- <CAJCQCtSupa8LT+RK3=w3t7+T_nDcgUzzjSdfEi16DpiQxbm0hQ@mail.gmail.com>
- <760be1b7-79b2-a25d-7c60-04ceac1b6e40@gmail.com>
- <CAJCQCtR2t+3w6ovo88L0_2GqnVWveK5DNJ-vWdw18y+Sng4chQ@mail.gmail.com>
- <3460a1ac-7e66-cf6f-b229-06a0825401a5@gmail.com>
- <b880821f-bfb5-5265-53a4-213b22487ddb@gmail.com>
- <CAJCQCtRYpvnGurLSbxu2N0ELuvVKrM5w=jBkAneecaEog213dQ@mail.gmail.com>
- <64102181-e02d-69a8-ead7-a27acadbe6a8@gmail.com>
- <CAJCQCtQT=j+P=Dy=VtNOBGkpwenK0AngB2k5xk40BE=hZnEfjA@mail.gmail.com>
- <df35fe50-8195-b2b9-e6d9-687b0c883a28@gmail.com>
- <689d4d03-a122-502d-fda0-8b055ee4a182@gmail.com>
- <CAJCQCtQbF2NZVenPjikTQ7qWRjphj79ia-bLH0q7EFzkD=sGjw@mail.gmail.com>
-Cc: Alexandre Poux <pums974@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <1ad34ecb-5977-4ba2-f764-15b2e611ce59@gmail.com>
-Date: Wed, 21 Sep 2016 07:07:45 -0400
+Received: from mail-me1aus01on0078.outbound.protection.outlook.com ([104.47.116.78]:31712
+        "EHLO AUS01-ME1-obe.outbound.protection.outlook.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1755755AbcIUL24 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Sep 2016 07:28:56 -0400
+From: Paul Jones <paul@pauljones.id.au>
+To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: RE: btrfs rare silent data corruption with kernel data leak
+Date: Wed, 21 Sep 2016 11:14:35 +0000
+Message-ID: <ME1PR01MB13788B5A79BF88786A1D571D9EF60@ME1PR01MB1378.ausprd01.prod.outlook.com>
+References: <20160921045556.GN21290@hungrycats.org>
+In-Reply-To: <20160921045556.GN21290@hungrycats.org>
+Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtQbF2NZVenPjikTQ7qWRjphj79ia-bLH0q7EFzkD=sGjw@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-09-20 15:55, Chris Murphy wrote:
-> On Tue, Sep 20, 2016 at 1:43 PM, Austin S. Hemmelgarn
-> <ahferroin7@gmail.com> wrote:
->
->>> First off, as Chris said, if you can read the data and don't already have a
->> backup, that should be your first priority.  This really is an edge case
->> that's not well tested, and the kernel technically doesn't officially
->> support it.
->>
->> Now, beyond that and his suggestions, there's another option, but it's
->> risky, so I wouldn't even think about trying it without a backup (unless of
->> course you can trivially regenerate the data).  Multiple devices support and
->> online resizing allows for a rather neat trick to regenerate a filesystem in
->> place.  The process is pretty simple:
->> 1. Shrink the existing filesystem down to the minimum size possible.
->> 2. Create a new partition in the free space, and format it as a temporary
->> BTRFS filesystem.  Ideally, this FS should be mixed mode, and ideally single
->> profile.  If you don't have much free space, you can use a flash drive to
->> start this temporary filesystem instead.
->> 3. Start copying files from the old filesystem to the temporary one.
->> 4. Once the new filesystem is about 95% full, stop copying, shrink the old
->> filesystem again, create a new partition, and add that partition to the
->> temporary filesystem.
->> 5. Repeat steps 3-4 until you have everything off of the old filesystem.
->> 6. Re-format the remaining portion of the old filesystem using the
->> parameters you want for the replacement filesystem.
->> 7. Start copying files from the temporary filesystem to the new filesystem.
->> 8. As you empty out each temporary partition, remove it from the temporary
->> filesystem, delete the partition, and expand the new filesystem.
->>
->> This takes a while, and is only safe if you have reliable hardware, but I've
->> done it before and it works reliably as long as you don't have many big
->> files on the old filesystem (things can get complicated if you do). The
->> other negative aspect is that if you aren't careful, it's possible to get
->> stuck half-way, but in such a case, adding a flash drive to the temporary
->> filesystem can usually give you enough extra space to get things unstuck.
->
-> Yes I thought of this also.
->
-> Gotcha is that he'll need to apply the patch that allows degraded rw
-> mounts with a device missing on the actual computer with these drives.
-> He tested that patch in a VM with virtual devices.
->
-> What might be easier is just 'btrfs dev rm /dev/sda6' because that one
-> has the least amount of data on it:
->
-> devid   12 size 728.32GiB used 312.03GiB path /dev/sda6
->
-> which should fit on all remaining devices. But, does Btrfs get pissed
-> at some point that there's this missing device it might want to write
-> to? I have no idea to what degree this patched kernel permits a lot of
-> degraded writing.
->
-> The other quandary is the file system will do online shrink, but the
-> kernel can sometimes get pissy about partition map changes on devices
-> with active volumes, even when using partprobe to update the kernel's
-> idea of the partition map.
->
-Excellent point that I forgot to mention.  In my experience, the trick 
-is to unmount filesystems from every partition that changed before 
-running partprobe, and things usually work (I say usually because if 
-your root filesystem is on the device you're re-partitioning, the kernel 
-gets a whole lot pickier about changes).
+> -----Original Message-----
+> From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-
+> owner@vger.kernel.org] On Behalf Of Zygo Blaxell
+> Sent: Wednesday, 21 September 2016 2:56 PM
+> To: linux-btrfs@vger.kernel.org
+> Subject: btrfs rare silent data corruption with kernel data leak
+> 
+> Summary:
+> 
+> There seem to be two btrfs bugs here: one loses data on writes, and the
+> other leaks data from the kernel to replace it on reads.  It all happens after
+> checksums are verified, so the corruption is entirely silent--no EIO errors,
+> kernel messages, or device event statistics.
+> 
+> Compressed extents are corrupted with kernel data leak.  Uncompressed
+> extents may not be corrupted, or may be corrupted by deterministically
+> replacing data bytes with zero, or may not be corrupted.  No preconditions
+> for corruption are known.  Less than one file per hundred thousand seems to
+> be affected.  Only specific parts of any file can be affected.
+> Kernels v4.0..v4.5.7 tested, all have the issue.
+
+Funny you should bring this up - I think I just suffered from this, or something similar.
+
+I have a mysql database of around 20 GiB which is under relatively heavy workload for weeks at a time. 
+I just remembered today that I still had my root partition using compression from when disk space was an issue about 4 months ago. I removed the compress mount option, upgraded the kernel (from 4.7.2 to 4.7.4) and rebooted. Mysql came up properly on reboot.
+I stopped mysql, ran "btrfs filesystem defragment -v -r -c none /var/lib/mysql" to remove the compression and it finished reporting 1 error, but without any actual error messages.
+However Mysql now wouldn't come back up. Remembering what I read earlier today I thought "oh no...." and checked dmesg:
+
+[  539.166231] BTRFS warning (device sda1): csum failed ino 42906332 off 81920 csum 2566472073 expected csum 1967602629
+[  539.166856] BTRFS warning (device sda1): csum failed ino 42906332 off 81920 csum 2566472073 expected csum 1967602629
+[  539.166865] BTRFS warning (device sda1): csum failed ino 42906332 off 94208 csum 2566472073 expected csum 1625955513
+[  539.166908] BTRFS warning (device sda1): csum failed ino 42906332 off 94208 csum 2566472073 expected csum 1625955513
+[  539.167553] BTRFS warning (device sda1): csum failed ino 42906332 off 0 csum 2566472073 expected csum 3995365962
+[  539.168234] BTRFS warning (device sda1): csum failed ino 42906332 off 0 csum 2566472073 expected csum 3995365962
+[  539.168239] BTRFS warning (device sda1): csum failed ino 42906332 off 4096 csum 2566472073 expected csum 3937913037
+[  539.168282] BTRFS warning (device sda1): csum failed ino 42906332 off 4096 csum 2566472073 expected csum 3937913037
+[  539.168286] BTRFS warning (device sda1): csum failed ino 42906332 off 8192 csum 2566472073 expected csum 1100728286
+[  539.168328] BTRFS warning (device sda1): csum failed ino 42906332 off 8192 csum 2566472073 expected csum 1100728286
+[  612.832463] __readpage_endio_check: 2 callbacks suppressed
+[  612.832466] BTRFS warning (device sda1): csum failed ino 42906332 off 81920 csum 2566472073 expected csum 1967602629
+[  612.833160] BTRFS warning (device sda1): csum failed ino 42906332 off 81920 csum 2566472073 expected csum 1967602629
+[  612.833167] BTRFS warning (device sda1): csum failed ino 42906332 off 94208 csum 2566472073 expected csum 1625955513
+[  612.833202] BTRFS warning (device sda1): csum failed ino 42906332 off 94208 csum 2566472073 expected csum 1625955513
+[  612.833863] BTRFS warning (device sda1): csum failed ino 42906332 off 0 csum 2566472073 expected csum 3995365962
+[  612.834549] BTRFS warning (device sda1): csum failed ino 42906332 off 0 csum 2566472073 expected csum 3995365962
+[  612.834555] BTRFS warning (device sda1): csum failed ino 42906332 off 4096 csum 2566472073 expected csum 3937913037
+[  612.834602] BTRFS warning (device sda1): csum failed ino 42906332 off 4096 csum 2566472073 expected csum 3937913037
+[  612.834608] BTRFS warning (device sda1): csum failed ino 42906332 off 8192 csum 2566472073 expected csum 1100728286
+[  612.834652] BTRFS warning (device sda1): csum failed ino 42906332 off 8192 csum 2566472073 expected csum 1100728286
+
+Using debug tree I found inode 42906332 was the file ibdata1
+
+I tried to copy the mysql directory elsewhere, but that caused io failures in a few files so I just removed the whole lot and restored from last nights backup.
+These are the errors I got before I cancelled the copy:
+
+[ 1284.349881] __readpage_endio_check: 2 callbacks suppressed
+[ 1284.349885] BTRFS warning (device sda1): csum failed ino 42906332 off 0 csum 2566472073 expected csum 3995365962
+[ 1284.349901] BTRFS warning (device sda1): csum failed ino 42906332 off 65536 csum 2566472073 expected csum 3704130384
+[ 1284.349906] BTRFS warning (device sda1): csum failed ino 42906332 off 126976 csum 2566472073 expected csum 254392532
+[ 1284.349911] BTRFS warning (device sda1): csum failed ino 42906332 off 8192 csum 2566472073 expected csum 1100728286
+[ 1284.349913] BTRFS warning (device sda1): csum failed ino 42906332 off 77824 csum 2566472073 expected csum 716549262
+[ 1284.349923] BTRFS warning (device sda1): csum failed ino 42906332 off 131072 csum 2566472073 expected csum 788300917
+[ 1284.349925] BTRFS warning (device sda1): csum failed ino 42906332 off 12288 csum 2566472073 expected csum 3265258934
+[ 1284.349926] BTRFS warning (device sda1): csum failed ino 42906332 off 81920 csum 2566472073 expected csum 1967602629
+[ 1284.349930] BTRFS warning (device sda1): csum failed ino 42906332 off 192512 csum 2566472073 expected csum 2025572636
+[ 1284.349934] BTRFS warning (device sda1): csum failed ino 42906332 off 258048 csum 2566472073 expected csum 3392889013
+[ 1298.892667] BTRFS info (device sda1): csum failed ino 44628191 extent 228384051200 csum 2566472073 wanted 847116788 mirror 0
+[ 1298.892727] BTRFS info (device sda1): csum failed ino 44628191 extent 228384051200 csum 2566472073 wanted 847116788 mirror 2
+[ 1298.892732] BTRFS info (device sda1): csum failed ino 44628191 extent 228384051200 csum 2566472073 wanted 847116788 mirror 2
+[ 1298.892751] BTRFS info (device sda1): csum failed ino 44628191 extent 228384051200 csum 2566472073 wanted 847116788 mirror 2
+[ 1298.892786] BTRFS info (device sda1): csum failed ino 44628191 extent 228383002624 csum 2566472073 wanted 847116788 mirror 1
+[ 1298.892792] BTRFS info (device sda1): csum failed ino 44628191 extent 228383002624 csum 2566472073 wanted 847116788 mirror 1
+[ 1298.892805] BTRFS info (device sda1): csum failed ino 44628191 extent 228383002624 csum 2566472073 wanted 847116788 mirror 1
+[ 1298.892849] BTRFS info (device sda1): csum failed ino 44628191 extent 228384051200 csum 2566472073 wanted 847116788 mirror 0
+[ 1298.892896] BTRFS info (device sda1): csum failed ino 44628191 extent 228383002624 csum 2566472073 wanted 847116788 mirror 1
+[ 1311.456422] __readpage_endio_check: 4430 callbacks suppressed
+[ 1311.456425] BTRFS warning (device sda1): csum failed ino 44628192 off 3221225472 csum 2566472073 expected csum 3669189289
+[ 1311.456442] BTRFS warning (device sda1): csum failed ino 44628192 off 3221229568 csum 2566472073 expected csum 317582346
+[ 1311.456451] BTRFS warning (device sda1): csum failed ino 44628192 off 3221233664 csum 2566472073 expected csum 1636016048
+[ 1311.456459] BTRFS warning (device sda1): csum failed ino 44628192 off 3221237760 csum 2566472073 expected csum 95857614
+[ 1311.456467] BTRFS warning (device sda1): csum failed ino 44628192 off 3221241856 csum 2566472073 expected csum 2014942236
+[ 1311.456482] BTRFS warning (device sda1): csum failed ino 44628192 off 3221254144 csum 2566472073 expected csum 1884694409
+[ 1311.456540] BTRFS warning (device sda1): csum failed ino 44628192 off 3222274048 csum 2566472073 expected csum 2741402016
+[ 1311.456542] BTRFS warning (device sda1): csum failed ino 44628192 off 3222339584 csum 2566472073 expected csum 3503993973
+[ 1311.456545] BTRFS warning (device sda1): csum failed ino 44628192 off 3222405120 csum 2566472073 expected csum 3548745998
+[ 1311.456551] BTRFS warning (device sda1): csum failed ino 44628192 off 3222470656 csum 2566472073 expected csum 2988893031
+
+I'm seeing a lot of checksum 2566472073 - Is that the checksum of blank space I wonder?
+
+Here are the details of the filesystem concerned:
+
+vm-server mysql # btrfs fi show /
+Label: 'Root'  uuid: 58d27dbd-7c1e-4ef7-8d43-e93df1537b08
+        Total devices 2 FS bytes used 103.21GiB
+        devid   13 size 471.93GiB used 245.03GiB path /dev/sda1
+        devid   14 size 471.93GiB used 245.03GiB path /dev/sdb1
+
+vm-server mysql # btrfs fi df /
+Data, RAID1: total=242.00GiB, used=102.42GiB
+System, RAID1: total=32.00MiB, used=64.00KiB
+Metadata, RAID1: total=3.00GiB, used=811.02MiB
+GlobalReserve, single: total=272.00MiB, used=0.00B
+
+/dev/sda1 on / type btrfs (rw,noatime,ssd,discard,noacl,space_cache=v2,subvolid=5,subvol=/)
+(compress was enabled previously)
+
+
+Regards,
+Paul
+
+
+
+

@@ -1,83 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:42287 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:36126 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1752852AbcIUHIp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Sep 2016 03:08:45 -0400
+        id S1752139AbcIUHGW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Sep 2016 03:06:22 -0400
 From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: jbacik@fb.com, dsterba@suse.cz
-Subject: [PATCH 1/2] btrfs: try to satisfy metadata requests when every flush_space() returns
-Date: Wed, 21 Sep 2016 14:59:32 +0800
-Message-Id: <1474441173-31049-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
+Subject: [PATCH 2/2] btrfs: try to write enough delalloc bytes when reclaiming metadata space
+Date: Wed, 21 Sep 2016 14:59:33 +0800
+Message-Id: <1474441173-31049-2-git-send-email-wangxg.fnst@cn.fujitsu.com>
+In-Reply-To: <1474441173-31049-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
+References: <1474441173-31049-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In flush_space()->shrink_delalloc(), if can_overcommit() returns true,
-though no bytes added to space_info, we still may satisfy some requests.
+Indeed as long as we have delalloc bytes and if we fail to reclaim
+requested metadata space, we should write these delalloc bytes and
+have one more try, this can fix some false enospc errors in some
+extreme cases.
 
 Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/extent-tree.c | 39 +++++++++++++++++++++++++++++++++++++++
- 1 file changed, 39 insertions(+)
+ fs/btrfs/extent-tree.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 38c2df8..fdfc97f 100644
+index fdfc97f..46c2a37 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -4960,6 +4960,43 @@ static void wake_all_tickets(struct list_head *head)
- }
+@@ -4794,6 +4794,15 @@ static int may_commit_transaction(struct btrfs_root *root,
+ {
+ 	struct btrfs_block_rsv *delayed_rsv = &root->fs_info->delayed_block_rsv;
+ 	struct btrfs_trans_handle *trans;
++	struct btrfs_fs_info *fs_info = root->fs_info;
++
++	/*
++	 * shrink_delalloc() may not write enough delalloc bytes, so here we
++	 * have a last try. Please don't remove these, because these can fix
++	 * some false enospc error in some extreme cases.
++	 */
++	btrfs_start_delalloc_roots(fs_info, 0, -1);
++	btrfs_wait_ordered_roots(fs_info, -1, 0, (u64)-1);
  
- /*
-+ * This function must be protected by btrfs_space_info's lock.
-+ */
-+static void try_to_wake_tickets(struct btrfs_root *root,
-+				struct btrfs_space_info *space_info)
-+{
-+	struct reserve_ticket *ticket;
-+	struct list_head *head = &space_info->priority_tickets;
-+	enum btrfs_reserve_flush_enum flush = BTRFS_RESERVE_NO_FLUSH;
-+	u64 used;
-+
-+again:
-+	while (!list_empty(head)) {
-+		ticket = list_first_entry(head, struct reserve_ticket,
-+					  list);
-+		used = space_info->bytes_used +
-+			space_info->bytes_reserved + space_info->bytes_pinned +
-+			space_info->bytes_readonly + space_info->bytes_may_use;
-+
-+		if (used + ticket->bytes <= space_info->total_bytes ||
-+		    can_overcommit(root, space_info, ticket->bytes, flush)) {
-+			space_info->bytes_may_use += ticket->bytes;
-+			list_del_init(&ticket->list);
-+			ticket->bytes = 0;
-+			space_info->tickets_id++;
-+			wake_up(&ticket->wait);
-+		} else
-+			return;
-+	}
-+
-+	if (head == &space_info->priority_tickets) {
-+		head = &space_info->tickets;
-+		flush = BTRFS_RESERVE_FLUSH_ALL;
-+		goto again;
-+	}
-+}
-+
-+/*
-  * This is for normal flushers, we can wait all goddamned day if we want to.  We
-  * will loop and continuously try to flush as long as we are making progress.
-  * We count progress as clearing off tickets each time we have to loop.
-@@ -4995,6 +5032,8 @@ static void btrfs_async_reclaim_metadata_space(struct work_struct *work)
- 		ret = flush_space(fs_info->fs_root, space_info, to_reclaim,
- 			    to_reclaim, flush_state);
- 		spin_lock(&space_info->lock);
-+		if (!ret)
-+			try_to_wake_tickets(fs_info->fs_root, space_info);
- 		if (list_empty(&space_info->tickets)) {
- 			space_info->flush = 0;
- 			spin_unlock(&space_info->lock);
+ 	trans = (struct btrfs_trans_handle *)current->journal_info;
+ 	if (trans)
 -- 
 2.7.4
 

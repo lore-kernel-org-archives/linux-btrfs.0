@@ -1,61 +1,141 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f51.google.com ([209.85.218.51]:34905 "EHLO
-        mail-oi0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755699AbcIUPuA (ORCPT
+Received: from mail-oi0-f48.google.com ([209.85.218.48]:35204 "EHLO
+        mail-oi0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750846AbcIUTFu (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Sep 2016 11:50:00 -0400
-Received: by mail-oi0-f51.google.com with SMTP id w11so64800808oia.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Sep 2016 08:50:00 -0700 (PDT)
+        Wed, 21 Sep 2016 15:05:50 -0400
+Received: by mail-oi0-f48.google.com with SMTP id w11so71574026oia.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Sep 2016 12:05:50 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <8AC4324B47948D40A1031D5AB7D077820141E7CF70@mailstore.skyward.com>
-References: <8AC4324B47948D40A1031D5AB7D077820141E77717@mailstore.skyward.com>
- <CAJCQCtSxcVuE_ZFNvHR=4gF5hDaYTYoav_yV_wEbdjeEfrpOTw@mail.gmail.com> <8AC4324B47948D40A1031D5AB7D077820141E7CF70@mailstore.skyward.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Wed, 21 Sep 2016 09:49:58 -0600
-Message-ID: <CAJCQCtSNT9t7dfw8MW_Bqfq4iATrF6TvVOxNMudW4h-8kBbpJw@mail.gmail.com>
-Subject: Re: Filesystem will remount read-only
-To: Jeffrey Michels <jeffreym@skyward.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+In-Reply-To: <CAB1rxdYdOZvgymnpzkURVxP7J2UQ=W4ANZpte+r8Z=9XAOuBQw@mail.gmail.com>
+References: <CAB1rxdbJX7rgv-NrHyGD7wMMcFf1EDR_aJ8yaTs7r=O-iXTo7w@mail.gmail.com>
+ <CAJCQCtSz15HC99QetsSzJRtbLgZU+iohej9Mf6qE4q39MmZfKA@mail.gmail.com> <CAB1rxdYdOZvgymnpzkURVxP7J2UQ=W4ANZpte+r8Z=9XAOuBQw@mail.gmail.com>
+From: Mirak M <mirak63@gmail.com>
+Date: Wed, 21 Sep 2016 21:05:49 +0200
+Message-ID: <CAB1rxdYJN8pANZkbjPZsrXO+FdhWg2nxdhtqkxBpASGg8jibTQ@mail.gmail.com>
+Subject: Fwd: Can't mount btrfs raid1
+To: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 21, 2016 at 9:24 AM, Jeffrey Michels <jeffreym@skyward.com> wrote:
-> Hello,
+2016-09-21 3:00 GMT+02:00 Chris Murphy <lists@colorremedies.com>:
+> On Tue, Sep 20, 2016 at 5:16 PM, Mirak M <mirak63@gmail.com> wrote:
+>> Hello,
+>>
+>> I have a failure when mounting btrfs.
+>>
+>>> mount -oro,recovery /dev/sda2 sda2_btrfs
+>>> mount: /dev/sda2: can't read superblock
 >
-> I've booted into the latest nightly build of Fedora and run btrfs rescue super-recover -v and also btrfs check.
->
-> Super-recover reports that "All supers are valid, no need to recover."  Btrfs check displays the same errors as before:
->
-> Parent trasid verified failed on xxxx wanted xxxx found xxxxx
-> Ignoring transid failure
-> Leaf parent key incorrect xxxxxxx
-> Bad block xxxxxxxxxxx
-> Errors found in extend allocation tree or chunk allocation.
->
-> The check eventually fails with Segmentation fault (core dumped.)
->
-> Attempting to mount with -o recovery results in the error "Can't read superblock."  I am able to mount the filesystem read-only however attempting to copy all of the data off has been unsuccessful.  It appears to hit a bad area and just hangs.
->
-> Is there anything else I can try?
+> What do you get for 'btrfs super-recover -v <dev>' and 'btrfs check <dev>'
 
-Kinda weird that the supers are all valid with one tool but then the
-kernel says it can't read the superblock?
+I get this :
+###################################################
+All Devices:
+    Device: id = 1, name = /dev/sdc2
+    Device: id = 2, name = /dev/sda2
 
-Try btrfs-image -c9 -t4 and optionally with -s, and if the resulting
-file isn't too big put it somewhere and I can try to iterate some
-options on the file. You could do the same thing by imaging it,
-restoring the image to an LVM LV of the same size or bigger, and then
-see if there's a combination of
-btrfs check --repair;
-btrfs check --repair --init-extent-tree
-btrfs rescue chunk-recover
-btrfs rescue zero-log
+Before Recovering:
+    [All good supers]:
+        device name = /dev/sdc2
+        superblock bytenr = 65536
 
-That or some other order of things might fix it, and the only way to
-know is to try it. And unfortunately each thing can make changes that
-can cause the next thing to fail. Hence doing this on an image.
+        device name = /dev/sdc2
+        superblock bytenr = 67108864
 
--- 
-Chris Murphy
+        device name = /dev/sdc2
+        superblock bytenr = 274877906944
+
+        device name = /dev/sda2
+        superblock bytenr = 65536
+
+        device name = /dev/sda2
+        superblock bytenr = 67108864
+
+        device name = /dev/sda2
+        superblock bytenr = 274877906944
+
+    [All bad supers]:
+
+All supers are valid, no need to recover
+###################################################
+
+###################################################
+root@vdr-box:/mnt# btrfs check  /dev/sda2
+Checking filesystem on /dev/sda2
+UUID: 64543f0e-ebb5-4384-8119-f5b6d52dea6e
+checking extents
+bad key ordering 29 30
+bad block 1957998690304
+Errors found in extent allocation tree or chunk allocation
+checking free space cache
+There is no free space entry for 1959033618432-859521990656
+There is no free space entry for 1959033618432-1959071318016
+cache appears valid but isnt 1957997576192
+found 54593218 bytes used err is -22
+total csum bytes: 0
+total tree bytes: 1146880
+total fs tree bytes: 0
+total extent tree bytes: 212992
+btree space waste bytes: 212465
+file data blocks allocated: 453378048
+ referenced 453378048
+###################################################
+
+>
+> For this purpose any 4.4+ version is probably OK, except 4.7 and 4.7.1
+> which might spit out some bogus items (it's just noise it won't hurt
+> anything as long as you don't use --repair).
+>
+>
+>>
+>> The kernel log is here http://pastebin.com/tHihHT92 and at the bottom
+>> of the email
+>>
+>> I must admit I did the error of running btrfs check --repair at some
+>> point, not knowing this was not a good idea.
+>>
+>> I run ubuntu 16.04 with kernel 4.4.0-36-generic .
+>
+> OK what version of btrrfs-progs? What was the output from btrfs check?
+
+btrfs-progs v4.4
+Output is above,
+
+
+>
+>
+>> [ 1692.712574] BTRFS critical (device sda2): corrupt leaf, bad key
+>> order: block=1957998690304,root=1, slot=29
+>> [ 1692.712819] BTRFS critical (device sda2): corrupt leaf, bad key
+>> order: block=1957998690304,root=1, slot=29
+>
+> List archives suggest this might be due to bad RAM. I also see there
+> are some bugs that can cause it, but I'm not finding any post kernel
+> 4.4 patches for this (there are a metric f tonne of changes since
+> 4.4). I would suggest kernel 4.4.21 if you need to stick with a long
+> term kernel, I have no idea what 4.4.0-36 translates into.
+
+My computer freezing a lot recently, but I though it was related to a
+X server problem with the radeon gpu.
+
+
+>
+>
+>> [ 1692.713963] BTRFS: error (device sda2) in btrfs_replay_log:2401:
+>> errno=-5 IO failure (Failed to recover log tree)
+>
+> This is kinda curious, was there a crash or power failure?
+
+Yes many since I upgraded to xenial and btrfs, about at the same time.
+only /home is on btrfs raid 1 on harddrive. The system / is on
+LVM+ext4 on a SSD.
+
+
+>
+>
+>
+>
+> --
+> Chris Murphy

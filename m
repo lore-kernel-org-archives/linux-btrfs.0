@@ -1,64 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:48663 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1756299AbcIVOkS (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Sep 2016 10:40:18 -0400
-Subject: Re: BTRFS constantly reports "No space left on device" even with a
- huge unallocated space
-To: Ronan Arraes Jardim Chagas <ronisbr@gmail.com>,
-        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
-        "Jeff Mahoney" <jeffm@suse.com>, Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        Chris Murphy <lists@colorremedies.com>
-References: <1471023419.16857.9.camel@gmail.com>
- <1472747695.3137.7.camel@gmail.com>
- <b0ec9154-16a5-5293-952a-0d5a988488e8@gmail.com>
- <ab83503e-58c5-e1b4-b1ba-1e1ea8313607@suse.com>
- <b9bd0a3d-0ae0-a30c-c14d-c85434134890@gmail.com>
- <CAJCQCtT1RptgW-_esKmm2_5eRTxd10wHNxwgNWHSD86LZJ7edQ@mail.gmail.com>
- <d1319d2e-3016-7eef-5f3f-87677600e13c@suse.com>
- <1472827395.3713.6.camel@gmail.com>
- <9dee919a-0e81-5ba7-ddc6-7dcdb3a6b873@suse.com>
- <1472829630.3713.8.camel@gmail.com>
- <506f2875-8cea-2d99-3664-52ee546adcfd@suse.com>
- <1472844353.3083.1.camel@gmail.com>
- <356a9e31-047e-d4c9-00ba-d01b6e92b266@cn.fujitsu.com>
- <1473359094.7190.1.camel@gmail.com>
- <86f87e36-db70-2ad1-cc20-3537dc7e529e@suse.com>
- <14f71ffe-4cc7-bad1-fde1-42d5e5f90d1d@suse.com>
- <08737c8d-9f1b-5f18-61a0-d3bb501eb950@fb.com>
- <9221d4d9-d114-4ffb-d2f8-6dc2d1cdb79c@suse.com>
- <57DF4E44.2040506@cn.fujitsu.com> <1474550402.3206.4.camel@gmail.com>
- <6ae8684e-a671-1f8d-9ad3-1299b442bd3c@gmail.com>
- <1474552982.3206.12.camel@gmail.com>
-CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Josef Bacik <jbacik@fb.com>
-Message-ID: <ea4797a6-87af-1b52-ccf0-4139186491b0@fb.com>
-Date: Thu, 22 Sep 2016 10:39:53 -0400
+Received: from mx2.suse.de ([195.135.220.15]:50986 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1756399AbcIVQZr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 22 Sep 2016 12:25:47 -0400
+Date: Thu, 22 Sep 2016 18:23:45 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Holger =?iso-8859-1?Q?Hoffst=E4tte?=
+        <holger@applied-asynchrony.com>
+Cc: Rich Freeman <r-btrfs@gw.thefreemanclan.net>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: unable to handle kernel paging request - btrfs
+Message-ID: <20160922162345.GT16983@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <CAGfcS_m0KvAjmWpnGC7agLYBKROqjPoSCVrziaEJXzW1Dyw5iQ@mail.gmail.com>
+ <57E3D23C.3050905@applied-asynchrony.com>
 MIME-Version: 1.0
-In-Reply-To: <1474552982.3206.12.camel@gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <57E3D23C.3050905@applied-asynchrony.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/22/2016 10:03 AM, Ronan Arraes Jardim Chagas wrote:
-> Em qui, 2016-09-22 Ã s 09:41 -0400, Austin S. Hemmelgarn escreveu:
->> Most likely the kernel upgrade fixed things.  It's possible that the
->> large allocation is impacting something and making it work, but I
->> don't
->> think that that is very likely.
->
-> The patches related to btrfs I could find in kernel 4.7.2 and 4.7.3
-> changelog are:
->
-> commit 8d32aaa89067225d4202a362dc201280e2514952
-> Author: Chris Mason <clm@fb.com>
-> Date:   Tue Jul 19 05:52:36 2016 -0700
->
->     Btrfs: fix delalloc accounting after copy_from_user faults
+On Thu, Sep 22, 2016 at 02:44:44PM +0200, Holger Hoffstätte wrote:
+> On 09/22/16 14:18, Rich Freeman wrote:
+> > I have been getting panics consistently after doing a btrfs replace
+> > operation on a raid1 and rebooting.  I linked a photo of the panic; I
+> > haven't been able to get a text capture of it.
+> > 
+> > https://ibin.co/2vx0HhDeViu3.jpg
+> > 
+> > I'm getting this error on the latest 4.4, 4.1, and even on an old
+> > 3.18.26 kernel I had lying around.
+> 
+> What happens when you try to boot e.g. SystemRescueCD?
+> If it is what I think it is (see below) then that should start bombing
+> as well.
+> 
+> > I'm able to boot into single-user mode and if I don't start any
+> > processes the system seems fairly stable.  I am also able to start a
+> > btrfs balance and run that for several hours without issue.  If I
+> > start launching services the system will tend to panic, though how
+> > many processes I can launch will vary.  I don't think that it is a
+> > particular file being accessed that is triggering the issue since the
+> > point where it fails varies.  I suspect it may be load-related.
+> 
+> If the SystemRescue method does not work then you have either
+> an overheating/dying CPU or - more likely - bad memory.
 
-This is what fixed it.  I thought it was in 4.7 which is why I started paying 
-attention, but I guess I was wrong.  Glad your problem is resolved.  Thanks,
+Maybe a bad memory, I'd suspect other layers than the filesystem. The
+faulty address is 0xfff...ffd8 which is -40 == -ELOOP. This error code
+is not used in btrfs. It looks like an error code ended up returned as a
+pointer so any access to it explodes. The last line in the list is
 
-Josef
+"Fixing recursive fault but reboot is needed"
+
+so it's recursive or looping somewhere deep in the memory management.

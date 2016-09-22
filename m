@@ -1,16 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:41258 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751750AbcIVGSO (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Sep 2016 02:18:14 -0400
-Date: Wed, 21 Sep 2016 23:18:06 -0700
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
+Received: from mx1.redhat.com ([209.132.183.28]:44228 "EHLO mx1.redhat.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1756475AbcIVHO2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 22 Sep 2016 03:14:28 -0400
+Date: Thu, 22 Sep 2016 15:14:20 +0800
+From: Eryu Guan <eguan@redhat.com>
 To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH v2] generic: check whether we can truncate heavily
  reflinked file
-Message-ID: <20160922061806.GC3059@birch.djwong.org>
+Message-ID: <20160922071420.GR27776@eguan.usersys.redhat.com>
 References: <20160922021308.4594-1-wangxg.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
@@ -118,18 +117,35 @@ On Thu, Sep 22, 2016 at 10:13:08AM +0800, Wang Xiaoguang wrote:
 > +	i=$((i + 1))
 > +done
 
-So, uh... I ran this test on XFS, during which I observed that this loop
-was only eating space at a rate of about 3KB/s.  The created FS is 18MB and
-12 of that is used by the dummy files, so that means it'll take about an
-hour to run?
+As Darrick said, this still needs too long time to finish on XFS, it
+took me almost 30 minutes.
 
-(I guess you didn't put it in the 'quick' group, good.)
+You don't have to loop until the reflinked file consumes all free space,
+you can do a fixed number of reflinks then use dd or xfs_io to occupy
+the rest of free space. e.g. I ran 16384 reflinks and this could still
+reproduce the btrfs bug and test finished in 57s for XFS on my test vm.
 
-The file got to be about 16GB in length before I got impatient and killed it.
-Is this expected for this test?
+# create dummy file, which is used to occupy some fs space first.
+_pwrite_byte 0xcdcdcdcd 0 $((1 * 1024 * 1024)) $dummyfile2 > /dev/null
+_pwrite_byte 0xcdcdcdcd 0 $blocksize  $testfile > /dev/null
 
---D
+echo "Silence is golden"
+i=0
+while [ $i -lt 16384 ]; do
+	_reflink_range $testfile 0 $testfile $(($i * $blocksize)) $blocksize >/dev/null 2>&1
+	i=$((i + 1))
+done
 
+# consume all remaining free space
+dd if=/dev/zero of=$SCRATCH_MNT/space >/dev/null 2>&1
+sync
+
+# them rm dummfile2 and do truncate here
+
+Thanks,
+Eryu
+
+> +
 > +# fs is almost full now and fs internal operations may need some free space,
 > +# for example, in btrfs, transaction will need to reserve space first, so here
 > +# free 1MB space.

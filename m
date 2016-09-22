@@ -1,55 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail02.iobjects.de ([188.40.134.68]:46112 "EHLO
-        mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755988AbcIVMor (ORCPT
+Received: from mail-qt0-f178.google.com ([209.85.216.178]:32925 "EHLO
+        mail-qt0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933685AbcIVNUO (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Sep 2016 08:44:47 -0400
-Subject: Re: unable to handle kernel paging request - btrfs
-To: Rich Freeman <r-btrfs@gw.thefreemanclan.net>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <CAGfcS_m0KvAjmWpnGC7agLYBKROqjPoSCVrziaEJXzW1Dyw5iQ@mail.gmail.com>
-From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>
-Message-ID: <57E3D23C.3050905@applied-asynchrony.com>
-Date: Thu, 22 Sep 2016 14:44:44 +0200
-MIME-Version: 1.0
-In-Reply-To: <CAGfcS_m0KvAjmWpnGC7agLYBKROqjPoSCVrziaEJXzW1Dyw5iQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+        Thu, 22 Sep 2016 09:20:14 -0400
+Received: by mail-qt0-f178.google.com with SMTP id 11so37489162qtc.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Sep 2016 06:20:13 -0700 (PDT)
+Message-ID: <1474550402.3206.4.camel@gmail.com>
+Subject: Re: BTRFS constantly reports "No space left on device" even with a
+ huge unallocated space
+From: Ronan Arraes Jardim Chagas <ronisbr@gmail.com>
+To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>, Jeff Mahoney <jeffm@suse.com>,
+        Josef Bacik <jbacik@fb.com>, Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        Chris Murphy <lists@colorremedies.com>,
+        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Thu, 22 Sep 2016 10:20:02 -0300
+In-Reply-To: <57DF4E44.2040506@cn.fujitsu.com>
+References: <1471023419.16857.9.camel@gmail.com>
+         <CAJCQCtTBfhXOLg3URfreG29NVfujPjEc0O_cnDFCzDQm0iRtaA@mail.gmail.com>
+         <1472734635.3137.4.camel@gmail.com>
+         <0778dff0-cb43-d279-adb2-0e314b61110d@gmail.com>
+         <1472747695.3137.7.camel@gmail.com>
+         <b0ec9154-16a5-5293-952a-0d5a988488e8@gmail.com>
+         <ab83503e-58c5-e1b4-b1ba-1e1ea8313607@suse.com>
+         <b9bd0a3d-0ae0-a30c-c14d-c85434134890@gmail.com>
+         <CAJCQCtT1RptgW-_esKmm2_5eRTxd10wHNxwgNWHSD86LZJ7edQ@mail.gmail.com>
+         <d1319d2e-3016-7eef-5f3f-87677600e13c@suse.com>
+         <1472827395.3713.6.camel@gmail.com>
+         <9dee919a-0e81-5ba7-ddc6-7dcdb3a6b873@suse.com>
+         <1472829630.3713.8.camel@gmail.com>
+         <506f2875-8cea-2d99-3664-52ee546adcfd@suse.com>
+         <1472844353.3083.1.camel@gmail.com>
+         <356a9e31-047e-d4c9-00ba-d01b6e92b266@cn.fujitsu.com>
+         <1473359094.7190.1.camel@gmail.com>
+         <86f87e36-db70-2ad1-cc20-3537dc7e529e@suse.com>
+         <14f71ffe-4cc7-bad1-fde1-42d5e5f90d1d@suse.com>
+         <08737c8d-9f1b-5f18-61a0-d3bb501eb950@fb.com>
+         <9221d4d9-d114-4ffb-d2f8-6dc2d1cdb79c@suse.com>
+         <57DF4E44.2040506@cn.fujitsu.com>
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/22/16 14:18, Rich Freeman wrote:
-> I have been getting panics consistently after doing a btrfs replace
-> operation on a raid1 and rebooting.  I linked a photo of the panic; I
-> haven't been able to get a text capture of it.
-> 
-> https://ibin.co/2vx0HhDeViu3.jpg
-> 
-> I'm getting this error on the latest 4.4, 4.1, and even on an old
-> 3.18.26 kernel I had lying around.
+Guys,
 
-What happens when you try to boot e.g. SystemRescueCD?
-If it is what I think it is (see below) then that should start bombing
-as well.
+Something very strange happened. I have not seen the problem since
+Monday, which is pretty much the first time ever I work more than 3
+days without seeing it.
 
-> I'm able to boot into single-user mode and if I don't start any
-> processes the system seems fairly stable.  I am also able to start a
-> btrfs balance and run that for several hours without issue.  If I
-> start launching services the system will tend to panic, though how
-> many processes I can launch will vary.  I don't think that it is a
-> particular file being accessed that is triggering the issue since the
-> point where it fails varies.  I suspect it may be load-related.
+Ok, it can be a coincidence. Notice that I did not change anything
+related to my work behavior. However, I did do two things:
 
-If the SystemRescue method does not work then you have either
-an overheating/dying CPU or - more likely - bad memory.
+_ Update the kernel to 4.7.2; and
+_ Created 50 dummy files with 3.0 GiB each.
 
-Another - probably unlikely, but not impossible - option would be to
-delete the swap file, if you have one. I've seen some super-strange
-things with corrupt or incorrectly created swap *even if it isn't
-heavily used*, right after boot. E.g. if your swapfile was fallocated
-instead of dd'ed and lives on ext4 or XFS, you *must* use the -z option
-to pre-touch all extents.
+Can anyone, please, tell me if these things seems to be correlated?
 
-Or maybe it's the ghost of ZFS, if that's patched in as well.. :-)
-
--h
-
+Best regards,
+Ronan Arraes

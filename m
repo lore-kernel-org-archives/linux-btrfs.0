@@ -1,27 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:35286 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:28452 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752875AbcIVHzE (ORCPT
+        with ESMTP id S1754122AbcIVH43 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Sep 2016 03:55:04 -0400
+        Thu, 22 Sep 2016 03:56:29 -0400
 Subject: Re: [PATCH v2] generic: check whether we can truncate heavily
  reflinked file
-To: "Darrick J. Wong" <darrick.wong@oracle.com>
+To: Eryu Guan <eguan@redhat.com>
 References: <20160922021308.4594-1-wangxg.fnst@cn.fujitsu.com>
- <20160922061806.GC3059@birch.djwong.org>
+ <20160922071420.GR27776@eguan.usersys.redhat.com>
 CC: <fstests@vger.kernel.org>, <linux-btrfs@vger.kernel.org>
 From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Message-ID: <57E38D0C.6010302@cn.fujitsu.com>
-Date: Thu, 22 Sep 2016 15:49:32 +0800
+Message-ID: <57E38D6D.90007@cn.fujitsu.com>
+Date: Thu, 22 Sep 2016 15:51:09 +0800
 MIME-Version: 1.0
-In-Reply-To: <20160922061806.GC3059@birch.djwong.org>
+In-Reply-To: <20160922071420.GR27776@eguan.usersys.redhat.com>
 Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 hi,
 
-On 09/22/2016 02:18 PM, Darrick J. Wong wrote:
+On 09/22/2016 03:14 PM, Eryu Guan wrote:
 > On Thu, Sep 22, 2016 at 10:13:08AM +0800, Wang Xiaoguang wrote:
 >> In btrfs, there is a bug about btrfs' truncate codes, it'll leak
 >> some fs space as the truncate operation proceeds. If this truncate
@@ -121,25 +121,39 @@ On 09/22/2016 02:18 PM, Darrick J. Wong wrote:
 >> +	fi
 >> +	i=$((i + 1))
 >> +done
-> So, uh... I ran this test on XFS, during which I observed that this loop
-> was only eating space at a rate of about 3KB/s.  The created FS is 18MB and
-> 12 of that is used by the dummy files, so that means it'll take about an
-> hour to run?
+> As Darrick said, this still needs too long time to finish on XFS, it
+> took me almost 30 minutes.
 >
-> (I guess you didn't put it in the 'quick' group, good.)
+> You don't have to loop until the reflinked file consumes all free space,
+> you can do a fixed number of reflinks then use dd or xfs_io to occupy
+> the rest of free space. e.g. I ran 16384 reflinks and this could still
+> reproduce the btrfs bug and test finished in 57s for XFS on my test vm.
 >
-> The file got to be about 16GB in length before I got impatient and killed it.
-> Is this expected for this test?
-Sorry, I didn't run this test in xfs, I had thought it would take 
-several minutes
-for xfs. I'll update new version patch according to Eryu's suggestions.
+> # create dummy file, which is used to occupy some fs space first.
+> _pwrite_byte 0xcdcdcdcd 0 $((1 * 1024 * 1024)) $dummyfile2 > /dev/null
+> _pwrite_byte 0xcdcdcdcd 0 $blocksize  $testfile > /dev/null
+>
+> echo "Silence is golden"
+> i=0
+> while [ $i -lt 16384 ]; do
+> 	_reflink_range $testfile 0 $testfile $(($i * $blocksize)) $blocksize >/dev/null 2>&1
+> 	i=$((i + 1))
+> done
+>
+> # consume all remaining free space
+> dd if=/dev/zero of=$SCRATCH_MNT/space >/dev/null 2>&1
+> sync
+>
+> # them rm dummfile2 and do truncate here
+Really thanks for you good suggestions.
 
 Regards,
 Xiaoguang Wang
-
 >
-> --D
+> Thanks,
+> Eryu
 >
+>> +
 >> +# fs is almost full now and fs internal operations may need some free space,
 >> +# for example, in btrfs, transaction will need to reserve space first, so here
 >> +# free 1MB space.

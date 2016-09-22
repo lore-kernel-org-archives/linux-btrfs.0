@@ -1,211 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:40532 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1754049AbcITU6e (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Sep 2016 16:58:34 -0400
-From: Josef Bacik <jbacik@fb.com>
-To: <linux-btrfs@vger.kernel.org>, <linux-fsdevel@vger.kernel.org>,
-        <kernel-team@fb.com>, <jack@suse.com>, <viro@zeniv.linux.org.uk>,
-        <dchinner@redhat.com>, <hch@lst.de>, <linux-mm@kvack.org>,
-        <hannes@cmpxchg.org>
-Subject: [PATCH 3/4] writeback: convert WB_WRITTEN/WB_DIRITED counters to bytes
-Date: Tue, 20 Sep 2016 16:57:47 -0400
-Message-ID: <1474405068-27841-4-git-send-email-jbacik@fb.com>
-In-Reply-To: <1474405068-27841-1-git-send-email-jbacik@fb.com>
+Received: from mx2.suse.de ([195.135.220.15]:43100 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1755705AbcIVLSE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 22 Sep 2016 07:18:04 -0400
+Date: Thu, 22 Sep 2016 13:18:01 +0200
+From: Jan Kara <jack@suse.cz>
+To: Josef Bacik <jbacik@fb.com>
+Cc: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        kernel-team@fb.com, jack@suse.com, viro@zeniv.linux.org.uk,
+        dchinner@redhat.com, hch@lst.de, linux-mm@kvack.org,
+        hannes@cmpxchg.org
+Subject: Re: [PATCH 2/4] writeback: allow for dirty metadata accounting
+Message-ID: <20160922111801.GK2834@quack2.suse.cz>
 References: <1474405068-27841-1-git-send-email-jbacik@fb.com>
+ <1474405068-27841-3-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1474405068-27841-3-git-send-email-jbacik@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-These are counters that constantly go up in order to do bandwidth calculations.
-It isn't important what the units are in, as long as they are consistent between
-the two of them, so convert them to count bytes written/dirtied, and allow the
-metadata accounting stuff to change the counters as well.
+On Tue 20-09-16 16:57:46, Josef Bacik wrote:
+> Btrfs has no bounds except memory on the amount of dirty memory that we have in
+> use for metadata.  Historically we have used a special inode so we could take
+> advantage of the balance_dirty_pages throttling that comes with using pagecache.
+> However as we'd like to support different blocksizes it would be nice to not
+> have to rely on pagecache, but still get the balance_dirty_pages throttling
+> without having to do it ourselves.
+> 
+> So introduce *METADATA_DIRTY_BYTES and *METADATA_WRITEBACK_BYTES.  These are
+> zone and bdi_writeback counters to keep track of how many bytes we have in
+> flight for METADATA.  We need to count in bytes as blocksizes could be
+> percentages of pagesize.  We simply convert the bytes to number of pages where
+> it is needed for the throttling.
+> 
+> Signed-off-by: Josef Bacik <jbacik@fb.com>
+> ---
+>  arch/tile/mm/pgtable.c           |   3 +-
+>  drivers/base/node.c              |   6 ++
+>  fs/fs-writeback.c                |   2 +
+>  fs/proc/meminfo.c                |   5 ++
+>  include/linux/backing-dev-defs.h |   2 +
+>  include/linux/mm.h               |   9 +++
+>  include/linux/mmzone.h           |   2 +
+>  include/trace/events/writeback.h |  13 +++-
+>  mm/backing-dev.c                 |   5 ++
+>  mm/page-writeback.c              | 157 +++++++++++++++++++++++++++++++++++----
+>  mm/page_alloc.c                  |  16 +++-
+>  mm/vmscan.c                      |   4 +-
+>  12 files changed, 200 insertions(+), 24 deletions(-)
+> 
+> diff --git a/arch/tile/mm/pgtable.c b/arch/tile/mm/pgtable.c
+> index 7cc6ee7..9543468 100644
+> --- a/arch/tile/mm/pgtable.c
+> +++ b/arch/tile/mm/pgtable.c
+> @@ -44,12 +44,13 @@ void show_mem(unsigned int filter)
+>  {
+>  	struct zone *zone;
+>  
+> -	pr_err("Active:%lu inactive:%lu dirty:%lu writeback:%lu unstable:%lu free:%lu\n slab:%lu mapped:%lu pagetables:%lu bounce:%lu pagecache:%lu swap:%lu\n",
+> +	pr_err("Active:%lu inactive:%lu dirty:%lu metadata_dirty:%lu writeback:%lu unstable:%lu free:%lu\n slab:%lu mapped:%lu pagetables:%lu bounce:%lu pagecache:%lu swap:%lu\n",
+>  	       (global_node_page_state(NR_ACTIVE_ANON) +
+>  		global_node_page_state(NR_ACTIVE_FILE)),
+>  	       (global_node_page_state(NR_INACTIVE_ANON) +
+>  		global_node_page_state(NR_INACTIVE_FILE)),
+>  	       global_node_page_state(NR_FILE_DIRTY),
+> +	       global_node_page_state(NR_METADATA_DIRTY),
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
----
- fs/fuse/file.c                   |  4 ++--
- include/linux/backing-dev-defs.h |  4 ++--
- include/linux/backing-dev.h      |  2 +-
- mm/backing-dev.c                 |  8 ++++----
- mm/page-writeback.c              | 26 ++++++++++++++++----------
- 5 files changed, 25 insertions(+), 19 deletions(-)
+Leftover from previous version? Ah, it is tile architecture so I see how it
+could have passed testing ;)
 
-diff --git a/fs/fuse/file.c b/fs/fuse/file.c
-index f394aff..3f5991e 100644
---- a/fs/fuse/file.c
-+++ b/fs/fuse/file.c
-@@ -1466,7 +1466,7 @@ static void fuse_writepage_finish(struct fuse_conn *fc, struct fuse_req *req)
- 	for (i = 0; i < req->num_pages; i++) {
- 		dec_wb_stat(&bdi->wb, WB_WRITEBACK);
- 		dec_node_page_state(req->pages[i], NR_WRITEBACK_TEMP);
--		wb_writeout_inc(&bdi->wb);
-+		wb_writeout_inc(&bdi->wb, PAGE_SIZE);
- 	}
- 	wake_up(&fi->page_waitq);
- }
-@@ -1770,7 +1770,7 @@ static bool fuse_writepage_in_flight(struct fuse_req *new_req,
- 
- 		dec_wb_stat(&bdi->wb, WB_WRITEBACK);
- 		dec_node_page_state(page, NR_WRITEBACK_TEMP);
--		wb_writeout_inc(&bdi->wb);
-+		wb_writeout_inc(&bdi->wb, PAGE_SIZE);
- 		fuse_writepage_free(fc, new_req);
- 		fuse_request_free(new_req);
- 		goto out;
-diff --git a/include/linux/backing-dev-defs.h b/include/linux/backing-dev-defs.h
-index 1a7c3c1..cef0f24 100644
---- a/include/linux/backing-dev-defs.h
-+++ b/include/linux/backing-dev-defs.h
-@@ -36,8 +36,8 @@ enum wb_stat_item {
- 	WB_WRITEBACK,
- 	WB_METADATA_DIRTY_BYTES,
- 	WB_METADATA_WRITEBACK_BYTES,
--	WB_DIRTIED,
--	WB_WRITTEN,
-+	WB_DIRTIED_BYTES,
-+	WB_WRITTEN_BYTES,
- 	NR_WB_STAT_ITEMS
- };
- 
-diff --git a/include/linux/backing-dev.h b/include/linux/backing-dev.h
-index 089acf6..742238a 100644
---- a/include/linux/backing-dev.h
-+++ b/include/linux/backing-dev.h
-@@ -113,7 +113,7 @@ static inline s64 wb_stat_sum(struct bdi_writeback *wb, enum wb_stat_item item)
- 	return sum;
- }
- 
--extern void wb_writeout_inc(struct bdi_writeback *wb);
-+extern void wb_writeout_inc(struct bdi_writeback *wb, long bytes);
- 
- /*
-  * maximal error of a stat counter.
-diff --git a/mm/backing-dev.c b/mm/backing-dev.c
-index d76f432..f0695b0 100644
---- a/mm/backing-dev.c
-+++ b/mm/backing-dev.c
-@@ -77,8 +77,8 @@ static int bdi_debug_stats_show(struct seq_file *m, void *v)
- 		   "BdiDirtyThresh:     %10lu kB\n"
- 		   "DirtyThresh:        %10lu kB\n"
- 		   "BackgroundThresh:   %10lu kB\n"
--		   "BdiDirtied:         %10lu kB\n"
--		   "BdiWritten:         %10lu kB\n"
-+		   "BdiDirtiedBytes:    %10lu kB\n"
-+		   "BdiWrittenBytes:    %10lu kB\n"
- 		   "BdiMetadataDirty:   %10lu kB\n"
- 		   "BdiMetaWriteback:	%10lu kB\n"
- 		   "BdiWriteBandwidth:  %10lu kBps\n"
-@@ -93,8 +93,8 @@ static int bdi_debug_stats_show(struct seq_file *m, void *v)
- 		   K(wb_thresh),
- 		   K(dirty_thresh),
- 		   K(background_thresh),
--		   (unsigned long) K(wb_stat(wb, WB_DIRTIED)),
--		   (unsigned long) K(wb_stat(wb, WB_WRITTEN)),
-+		   (unsigned long) BtoK(wb_stat(wb, WB_DIRTIED_BYTES)),
-+		   (unsigned long) BtoK(wb_stat(wb, WB_WRITTEN_BYTES)),
- 		   (unsigned long) BtoK(wb_stat(wb, WB_METADATA_DIRTY_BYTES)),
- 		   (unsigned long) BtoK(wb_stat(wb, WB_METADATA_WRITEBACK_BYTES)),
- 		   (unsigned long) K(wb->write_bandwidth),
-diff --git a/mm/page-writeback.c b/mm/page-writeback.c
-index 423d2f5..6d08673 100644
---- a/mm/page-writeback.c
-+++ b/mm/page-writeback.c
-@@ -624,11 +624,11 @@ static void wb_domain_writeout_inc(struct wb_domain *dom,
-  * Increment @wb's writeout completion count and the global writeout
-  * completion count. Called from test_clear_page_writeback().
-  */
--static inline void __wb_writeout_inc(struct bdi_writeback *wb)
-+static inline void __wb_writeout_inc(struct bdi_writeback *wb, long bytes)
- {
- 	struct wb_domain *cgdom;
- 
--	__inc_wb_stat(wb, WB_WRITTEN);
-+	__add_wb_stat(wb, WB_WRITTEN_BYTES, bytes);
- 	wb_domain_writeout_inc(&global_wb_domain, &wb->completions,
- 			       wb->bdi->max_prop_frac);
- 
-@@ -638,12 +638,12 @@ static inline void __wb_writeout_inc(struct bdi_writeback *wb)
- 				       wb->bdi->max_prop_frac);
- }
- 
--void wb_writeout_inc(struct bdi_writeback *wb)
-+void wb_writeout_inc(struct bdi_writeback *wb, long bytes)
- {
- 	unsigned long flags;
- 
- 	local_irq_save(flags);
--	__wb_writeout_inc(wb);
-+	__wb_writeout_inc(wb, bytes);
- 	local_irq_restore(flags);
- }
- EXPORT_SYMBOL_GPL(wb_writeout_inc);
-@@ -1390,8 +1390,8 @@ static void __wb_update_bandwidth(struct dirty_throttle_control *gdtc,
- 	if (elapsed < BANDWIDTH_INTERVAL)
- 		return;
- 
--	dirtied = percpu_counter_read(&wb->stat[WB_DIRTIED]);
--	written = percpu_counter_read(&wb->stat[WB_WRITTEN]);
-+	dirtied = percpu_counter_read(&wb->stat[WB_DIRTIED_BYTES]);
-+	written = percpu_counter_read(&wb->stat[WB_WRITTEN_BYTES]);
- 
- 	/*
- 	 * Skip quiet periods when disk bandwidth is under-utilized.
-@@ -2497,7 +2497,7 @@ void account_page_dirtied(struct page *page, struct address_space *mapping)
- 		__inc_zone_page_state(page, NR_ZONE_WRITE_PENDING);
- 		__inc_node_page_state(page, NR_DIRTIED);
- 		__inc_wb_stat(wb, WB_RECLAIMABLE);
--		__inc_wb_stat(wb, WB_DIRTIED);
-+		__add_wb_stat(wb, WB_DIRTIED_BYTES, PAGE_SIZE);
- 		task_io_account_write(PAGE_SIZE);
- 		current->nr_dirtied++;
- 		this_cpu_inc(bdp_ratelimits);
-@@ -2523,6 +2523,7 @@ void account_metadata_dirtied(struct page *page, struct backing_dev_info *bdi,
- 	__mod_node_page_state(page_pgdat(page), NR_METADATA_DIRTY_BYTES,
- 			      bytes);
- 	__add_wb_stat(&bdi->wb, WB_METADATA_DIRTY_BYTES, bytes);
-+	__add_wb_stat(&bdi->wb, WB_DIRTIED_BYTES, bytes);
- 	current->nr_dirtied++;
- 	task_io_account_write(bytes);
- 	this_cpu_inc(bdp_ratelimits);
-@@ -2593,6 +2594,7 @@ void account_metadata_end_writeback(struct page *page,
- 	__add_wb_stat(&bdi->wb, WB_METADATA_WRITEBACK_BYTES, -bytes);
- 	__mod_node_page_state(page_pgdat(page), NR_METADATA_WRITEBACK_BYTES,
- 					 -bytes);
-+	__add_wb_stat(&bdi->wb, WB_WRITTEN_BYTES, bytes);
- 	local_irq_restore(flags);
- }
- EXPORT_SYMBOL(account_metadata_end_writeback);
-@@ -2672,12 +2674,16 @@ void account_page_redirty(struct page *page)
- 	if (mapping && mapping_cap_account_dirty(mapping)) {
- 		struct inode *inode = mapping->host;
- 		struct bdi_writeback *wb;
-+		unsigned long flags;
- 		bool locked;
- 
- 		wb = unlocked_inode_to_wb_begin(inode, &locked);
- 		current->nr_dirtied--;
--		dec_node_page_state(page, NR_DIRTIED);
--		dec_wb_stat(wb, WB_DIRTIED);
-+
-+		local_irq_save(flags);
-+		__dec_node_page_state(page, NR_DIRTIED);
-+		__add_wb_stat(wb, WB_DIRTIED_BYTES, -PAGE_SIZE);
-+		local_irq_restore(flags);
- 		unlocked_inode_to_wb_end(inode, locked);
- 	}
- }
-@@ -2897,7 +2903,7 @@ int test_clear_page_writeback(struct page *page)
- 				struct bdi_writeback *wb = inode_to_wb(inode);
- 
- 				__dec_wb_stat(wb, WB_WRITEBACK);
--				__wb_writeout_inc(wb);
-+				__wb_writeout_inc(wb, PAGE_SIZE);
- 			}
- 		}
- 
+> @@ -506,6 +530,10 @@ bool node_dirty_ok(struct pglist_data *pgdat)
+>  	nr_pages += node_page_state(pgdat, NR_FILE_DIRTY);
+>  	nr_pages += node_page_state(pgdat, NR_UNSTABLE_NFS);
+>  	nr_pages += node_page_state(pgdat, NR_WRITEBACK);
+> +	nr_pages += (node_page_state(pgdat, NR_METADATA_DIRTY_BYTES) >>
+> +		     PAGE_SHIFT);
+> +	nr_pages += (node_page_state(pgdat, NR_METADATA_WRITEBACK_BYTES) >>
+> +		     PAGE_SHIFT);
+>  
+>  	return nr_pages <= limit;
+>  }
+
+I still don't think this is correct. It currently achieves the same
+behavior as before the patch but once you start accounting something else
+than pagecache pages into these counters, things will go wrong. This
+function is used to control distribution of pagecache pages among NUMA
+nodes and as such it should IMHO only account for pagecache pages...
+
+> @@ -3714,7 +3714,9 @@ static unsigned long node_pagecache_reclaimable(struct pglist_data *pgdat)
+>  
+>  	/* If we can't clean pages, remove dirty pages from consideration */
+>  	if (!(node_reclaim_mode & RECLAIM_WRITE))
+> -		delta += node_page_state(pgdat, NR_FILE_DIRTY);
+> +		delta += node_page_state(pgdat, NR_FILE_DIRTY) +
+> +			(node_page_state(pgdat, NR_METADATA_DIRTY_BYTES) >>
+> +			 PAGE_SHIFT);
+>  
+>  	/* Watch for any possible underflows due to delta */
+>  	if (unlikely(delta > nr_pagecache_reclaimable))
+
+The same comment as above applies here.
+
+								Honza
+
 -- 
-2.7.4
-
+Jan Kara <jack@suse.com>
+SUSE Labs, CR

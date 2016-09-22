@@ -1,61 +1,147 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail06.adl6.internode.on.net ([150.101.137.145]:16928 "EHLO
-        ipmail06.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1750934AbcILXSa (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Sep 2016 19:18:30 -0400
-Date: Tue, 13 Sep 2016 09:18:26 +1000
-From: Dave Chinner <david@fromorbit.com>
+Received: from gum.cmpxchg.org ([85.214.110.215]:55622 "EHLO gum.cmpxchg.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1757204AbcIVTsi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 22 Sep 2016 15:48:38 -0400
+Date: Thu, 22 Sep 2016 15:48:29 -0400
+From: Johannes Weiner <hannes@cmpxchg.org>
 To: Josef Bacik <jbacik@fb.com>
-Cc: Jan Kara <jack@suse.cz>, linux-btrfs@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org, kernel-team@fb.com, jack@suse.com,
-        viro@zeniv.linux.org.uk, dchinner@redhat.com, hch@lst.de,
-        linux-mm@kvack.org
-Subject: Re: [PATCH 2/3] writeback: allow for dirty metadata accounting
-Message-ID: <20160912231826.GK22388@dastard>
-References: <1471887302-12730-1-git-send-email-jbacik@fb.com>
- <1471887302-12730-3-git-send-email-jbacik@fb.com>
- <20160909081743.GC22777@quack2.suse.cz>
- <bd00ed53-00c8-49d2-13b2-5f7dfa607185@fb.com>
+Cc: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        kernel-team@fb.com, jack@suse.com, viro@zeniv.linux.org.uk,
+        dchinner@redhat.com, hch@lst.de, linux-mm@kvack.org
+Subject: Re: [PATCH 2/4] writeback: allow for dirty metadata accounting
+Message-ID: <20160922194829.GB6054@cmpxchg.org>
+References: <1474405068-27841-1-git-send-email-jbacik@fb.com>
+ <1474405068-27841-3-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <bd00ed53-00c8-49d2-13b2-5f7dfa607185@fb.com>
+In-Reply-To: <1474405068-27841-3-git-send-email-jbacik@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 12, 2016 at 10:56:04AM -0400, Josef Bacik wrote:
-> I think that looping through all the sb's in the system would be
-> kinda shitty for this tho, we want the "get number of dirty pages"
-> part to be relatively fast.  What if I do something like the
-> shrinker_control only for dirty objects. So the fs registers some
-> dirty_objects_control, we call into each of those and get the counts
-> from that.  Does that sound less crappy?  Thanks,
+Hi Josef,
 
-Hmmm - just an off-the-wall thought on this....
+as we talked off line, I think the idea of maintaining a byte counter
+and rounding in balance_dirty_pages() is the best way to do this. And
+Jan spotted all the actual bugs, so I only have a few nitpicks :)
 
-If you're going to do that, then why wouldn't you simply use a
-"shrinker" to do the metadata writeback rather than having a hook to
-count dirty objects to pass to some other writeback code that calls
-a hook to write the metadata?
+On Tue, Sep 20, 2016 at 04:57:46PM -0400, Josef Bacik wrote:
+> @@ -44,12 +44,13 @@ void show_mem(unsigned int filter)
+>  {
+>  	struct zone *zone;
+>  
+> -	pr_err("Active:%lu inactive:%lu dirty:%lu writeback:%lu unstable:%lu free:%lu\n slab:%lu mapped:%lu pagetables:%lu bounce:%lu pagecache:%lu swap:%lu\n",
+> +	pr_err("Active:%lu inactive:%lu dirty:%lu metadata_dirty:%lu writeback:%lu unstable:%lu free:%lu\n slab:%lu mapped:%lu pagetables:%lu bounce:%lu pagecache:%lu swap:%lu\n",
+>  	       (global_node_page_state(NR_ACTIVE_ANON) +
+>  		global_node_page_state(NR_ACTIVE_FILE)),
+>  	       (global_node_page_state(NR_INACTIVE_ANON) +
+>  		global_node_page_state(NR_INACTIVE_FILE)),
+>  	       global_node_page_state(NR_FILE_DIRTY),
+> +	       global_node_page_state(NR_METADATA_DIRTY),
+>  	       global_node_page_state(NR_WRITEBACK),
 
-That way filesystems can also implement dirty accounting and
-"writers" for each cache of objects they currently implement
-shrinkers for. i.e. just expanding shrinkers to be able to "count
-dirty objects" and "write dirty objects" so that we can tell
-filesystems to write back all their different metadata caches
-proportionally to the size of the page cache and it's dirty state.
-The existing file data and inode writeback could then just be new
-generic "superblock shrinker" operations, and the fs could have it's
-own private metadata writeback similar to the private sb shrinker
-callout we currently have...
+Print NR_METADATA_WRITEBACK here as well?
 
-And, in doing so, we might be able to completely hide memcg from the
-writeback implementations similar to the way memcg is completely
-hidden from the shrinker reclaim implementations...
+> @@ -51,6 +51,8 @@ static DEVICE_ATTR(cpumap,  S_IRUGO, node_read_cpumask, NULL);
+>  static DEVICE_ATTR(cpulist, S_IRUGO, node_read_cpulist, NULL);
+>  
+>  #define K(x) ((x) << (PAGE_SHIFT - 10))
+> +#define BtoK(x) ((x) >> 10)
+> +
+>  static ssize_t node_read_meminfo(struct device *dev,
+>  			struct device_attribute *attr, char *buf)
+>  {
+> @@ -99,7 +101,9 @@ static ssize_t node_read_meminfo(struct device *dev,
+>  #endif
+>  	n += sprintf(buf + n,
+>  		       "Node %d Dirty:          %8lu kB\n"
+> +		       "Node %d MetadataDirty:	%8lu kB\n"
+>  		       "Node %d Writeback:      %8lu kB\n"
+> +		       "Node %d MetaWriteback:  %8lu kB\n"
 
-Cheers,
+Between the enums and stat printing, the naming is kind of all over
+the place. How about NR_META_DIRTY_BYTES and NR_META_WRITEBACK_BYTES
+as a separate group than the existing dirty & writeback stats?
 
-Dave.
--- 
-Dave Chinner
-david@fromorbit.com
+ 	n += sprintf(buf + n,
+ 		       "Node %d Dirty:          %8lu kB\n"
+ 		       "Node %d Writeback:      %8lu kB\n"
++		       "Node %d MetaDirty:	%8lu kB\n"
++		       "Node %d MetaWriteback:  %8lu kB\n"
+
+>  		       "Node %d FilePages:      %8lu kB\n"
+>  		       "Node %d Mapped:         %8lu kB\n"
+>  		       "Node %d AnonPages:      %8lu kB\n"
+> @@ -119,7 +123,9 @@ static ssize_t node_read_meminfo(struct device *dev,
+>  #endif
+>  			,
+>  		       nid, K(node_page_state(pgdat, NR_FILE_DIRTY)),
+> +		       nid, BtoK(node_page_state(pgdat, NR_METADATA_DIRTY_BYTES)),
+>  		       nid, K(node_page_state(pgdat, NR_WRITEBACK)),
+> +		       nid, BtoK(node_page_state(pgdat, NR_METADATA_WRITEBACK_BYTES)),
+>  		       nid, K(node_page_state(pgdat, NR_FILE_PAGES)),
+>  		       nid, K(node_page_state(pgdat, NR_FILE_MAPPED)),
+>  		       nid, K(node_page_state(pgdat, NR_ANON_MAPPED)),
+> diff --git a/fs/fs-writeback.c b/fs/fs-writeback.c
+> index 56c8fda..aafdb11 100644
+> --- a/fs/fs-writeback.c
+> +++ b/fs/fs-writeback.c
+> @@ -1801,6 +1801,7 @@ static struct wb_writeback_work *get_next_work_item(struct bdi_writeback *wb)
+>  	return work;
+>  }
+>  
+> +#define BtoP(x) ((x) >> PAGE_SHIFT)
+
+Might be more readable inline:
+
+> @@ -1809,6 +1810,7 @@ static unsigned long get_nr_dirty_pages(void)
+>  {
+>  	return global_node_page_state(NR_FILE_DIRTY) +
+>  		global_node_page_state(NR_UNSTABLE_NFS) +
+> +		BtoP(global_node_page_state(NR_METADATA_DIRTY_BYTES)) +
+
+		global_node_page_state(NR_META_DIRTY_BYTES) / PAGE_SIZE +
+
+>  		get_nr_dirty_inodes();
+>  }
+
+> @@ -80,7 +81,9 @@ static int meminfo_proc_show(struct seq_file *m, void *v)
+>  		"SwapTotal:      %8lu kB\n"
+>  		"SwapFree:       %8lu kB\n"
+>  		"Dirty:          %8lu kB\n"
+> +		"MetadataDirty:  %8lu kB\n"
+>  		"Writeback:      %8lu kB\n"
+> +		"MetaWriteback:  %8lu kB\n"
+
+ 		"Dirty:          %8lu kB\n"
+ 		"Writeback:      %8lu kB\n"
++		"MetaDirty:      %8lu kB\n"
++		"MetaWriteback:  %8lu kB\n"
+
+
+>  		"AnonPages:      %8lu kB\n"
+>  		"Mapped:         %8lu kB\n"
+>  		"Shmem:          %8lu kB\n"
+> @@ -139,7 +142,9 @@ static int meminfo_proc_show(struct seq_file *m, void *v)
+>  		K(i.totalswap),
+>  		K(i.freeswap),
+>  		K(global_node_page_state(NR_FILE_DIRTY)),
+> +		BtoK(global_node_page_state(NR_METADATA_DIRTY_BYTES)),
+>  		K(global_node_page_state(NR_WRITEBACK)),
+> +		BtoK(global_node_page_state(NR_META_WRITEBACK_BYTES)),
+
+		K(global_node_page_state(NR_META_WRITEBACK_BYTES / PAGE_SIZE)),
+
+and drop BtoK?
+
+> @@ -34,6 +34,8 @@ typedef int (congested_fn)(void *, int);
+>  enum wb_stat_item {
+>  	WB_RECLAIMABLE,
+>  	WB_WRITEBACK,
+> +	WB_METADATA_DIRTY_BYTES,
+> +	WB_METADATA_WRITEBACK_BYTES,
+
+	WB_META_DIRTY_BYTES,
+	WB_META_WRITEBACK_BYTES,
+
+etc.

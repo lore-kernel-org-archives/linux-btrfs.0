@@ -1,104 +1,138 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:57338 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S936599AbcIVRmI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Sep 2016 13:42:08 -0400
-Subject: Re: unable to handle kernel paging request - btrfs
-To: Rich Freeman <r-btrfs@gw.thefreemanclan.net>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <CAGfcS_m0KvAjmWpnGC7agLYBKROqjPoSCVrziaEJXzW1Dyw5iQ@mail.gmail.com>
-From: Jeff Mahoney <jeffm@suse.com>
-Message-ID: <94e50637-9f66-19c7-35e4-e6b2c8bf919c@suse.com>
-Date: Thu, 22 Sep 2016 13:41:59 -0400
-MIME-Version: 1.0
-In-Reply-To: <CAGfcS_m0KvAjmWpnGC7agLYBKROqjPoSCVrziaEJXzW1Dyw5iQ@mail.gmail.com>
+Received: from [195.159.176.226] ([195.159.176.226]:37446 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1034493AbcIVRum (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 22 Sep 2016 13:50:42 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1bn88Y-0001Qk-1q
+        for linux-btrfs@vger.kernel.org; Thu, 22 Sep 2016 19:50:18 +0200
+To: linux-btrfs@vger.kernel.org
+From: Kai Krakow <hurikhan77@gmail.com>
+Subject: Re: btrfs rare silent data corruption with kernel data leak
+Date: Thu, 22 Sep 2016 19:49:58 +0200
+Message-ID: <20160922194958.19a1cdd6@jupiter.sol.kaishome.de>
+References: <20160921045556.GN21290@hungrycats.org>
+        <ME1PR01MB13788B5A79BF88786A1D571D9EF60@ME1PR01MB1378.ausprd01.prod.outlook.com>
+        <20160921130209.GO21290@hungrycats.org>
+Mime-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="TdwOPSt9UgkofE5P1tP4TasBa0sXwnvkV"
+ boundary="Sig_/SSUY68rLl8FfSUvfIV2/SX9"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---TdwOPSt9UgkofE5P1tP4TasBa0sXwnvkV
-Content-Type: multipart/mixed; boundary="baScQoJxegcWjMA3RPj09j5jG9evQNjCD";
- protected-headers="v1"
-From: Jeff Mahoney <jeffm@suse.com>
-To: Rich Freeman <r-btrfs@thefreemanclan.net>,
- Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-ID: <94e50637-9f66-19c7-35e4-e6b2c8bf919c@suse.com>
-Subject: Re: unable to handle kernel paging request - btrfs
-References: <CAGfcS_m0KvAjmWpnGC7agLYBKROqjPoSCVrziaEJXzW1Dyw5iQ@mail.gmail.com>
-In-Reply-To: <CAGfcS_m0KvAjmWpnGC7agLYBKROqjPoSCVrziaEJXzW1Dyw5iQ@mail.gmail.com>
-
---baScQoJxegcWjMA3RPj09j5jG9evQNjCD
-Content-Type: text/plain; charset=utf-8
+--Sig_/SSUY68rLl8FfSUvfIV2/SX9
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: quoted-printable
 
-On 9/22/16 8:18 AM, Rich Freeman wrote:
-> I have been getting panics consistently after doing a btrfs replace
-> operation on a raid1 and rebooting.  I linked a photo of the panic; I
-> haven't been able to get a text capture of it.
->=20
-> https://ibin.co/2vx0HhDeViu3.jpg
->=20
-> I'm getting this error on the latest 4.4, 4.1, and even on an old
-> 3.18.26 kernel I had lying around.
->=20
-> I tried the remove root_log_ctx from ctx list before btrfs_sync_log
-> returns patch on 4.1 and that did not solve my problem either.
->=20
-> I'm able to boot into single-user mode and if I don't start any
-> processes the system seems fairly stable.  I am also able to start a
-> btrfs balance and run that for several hours without issue.  If I
-> start launching services the system will tend to panic, though how
-> many processes I can launch will vary.  I don't think that it is a
-> particular file being accessed that is triggering the issue since the
-> point where it fails varies.  I suspect it may be load-related.
->=20
-> Mounting with compress=3Dno doesn't seem to help either.  Granted, I se=
-e
-> lzo_decompress in the backtrace and that is probably a read operation.
->=20
-> Any suggestions?  Google hasn't been helpful on this one...
+Am Wed, 21 Sep 2016 09:02:09 -0400
+schrieb Zygo Blaxell <ce3g8jdj@umail.furryterror.org>:
 
-Can you boot with panic_on_oops=3D1, reproduce it, and capture that Oops?=
+> On Wed, Sep 21, 2016 at 11:14:35AM +0000, Paul Jones wrote:
+> > > -----Original Message-----
+> > > From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-
+> > > owner@vger.kernel.org] On Behalf Of Zygo Blaxell
+> > > Sent: Wednesday, 21 September 2016 2:56 PM
+> > > To: linux-btrfs@vger.kernel.org
+> > > Subject: btrfs rare silent data corruption with kernel data leak
+> > >=20
+> > > Summary:
+> > >=20
+> > > There seem to be two btrfs bugs here: one loses data on writes,
+> > > and the other leaks data from the kernel to replace it on reads.
+> > > It all happens after checksums are verified, so the corruption is
+> > > entirely silent--no EIO errors, kernel messages, or device event
+> > > statistics.
+> > >=20
+> > > Compressed extents are corrupted with kernel data leak.
+> > > Uncompressed extents may not be corrupted, or may be corrupted by
+> > > deterministically replacing data bytes with zero, or may not be
+> > > corrupted.  No preconditions for corruption are known.  Less than
+> > > one file per hundred thousand seems to be affected.  Only
+> > > specific parts of any file can be affected. Kernels v4.0..v4.5.7
+> > > tested, all have the issue. =20
+> >=20
+> > Funny you should bring this up - I think I just suffered from this,
+> > or something similar. =20
+> [...snip...]
+> > [ 1311.456545] BTRFS warning (device sda1): csum failed ino
+> > 44628192 off 3222405120 csum 2566472073 expected csum 3548745998
+> > [ 1311.456551] BTRFS warning (device sda1): csum failed ino
+> > 44628192 off 3222470656 csum 2566472073 expected csum 2988893031
+> >=20
+> > I'm seeing a lot of checksum 2566472073 - Is that the checksum of
+> > blank space I wonder? =20
+>=20
+> The issue I found occurs after successful checksum validation, and
+> can affect only the first 4096 bytes of a file.  It produces no kernel
+> messages and no checksum failures.  If you run 'filefrag -v' on the
+> file, the corrupted extent *must* have the 'inline' flag; otherwise,
+> it's a different problem.
+>=20
+> You have csum failures, and the affected offsets are way beyond 4096.
+>=20
+> Holes are not checksummed in general because they are gaps in the
+> file offset address space.  Metadata records that describe holes are
+> checksummed, but when those checksums fail the kernel messages look
+> different.
+>=20
+> I don't recognize the symptoms you are having.  After eliminating
+> hardware problems and making sure your kernel is up to date, I'd try
+> changing mount options...
+>=20
+> > Here are the details of the filesystem concerned: =20
+> [...]
+> > /dev/sda1 on / type btrfs
+> > (rw,noatime,ssd,discard,noacl,space_cache=3Dv2,subvolid=3D5,subvol=3D/)
+> > (compress was enabled previously) =20
+>=20
+> ...discard and space_cache=3Dv2 in particular.  Free space tree is a new
+> feature, and discard has had a few bug fixes over the years.  Both are
+> non-default options.
+>=20
+> Speaking of mount options, 'max_inline=3D0' may prevent the issue I
+> found.
 
-The trace in your photo is a secondary Oops (tainted D), which means
-that something else went wrong before that and now the system is
-tripping over it.  Secondary Oopses don't really help the debugging
-process because the system was already in a broken, undefined, state.
+This sounds a lot like problems I've seen with my virtualbox images.
+They just accumulate csum errors over time, especially after
+defragmenting. No matter if discard was enabled or not.
 
--Jeff
+The only common option is compression, I'm using compress=3Dlzo.
+
+I made the files nocow which of course disables compression and
+probably results in not triggering autodefrag. Of course this also
+disables checksums so you won't see data corruption as a direct error
+in the FS. But the vm images are running fine so far without any
+problems. Data integrity and data safety looks healthy.
+
+You probably want to nonow mysql anyways. I think mysql data files have
+their own checksumming, copy on write, and transactions. There's really
+no point in doing it twice.
+
+So it seems that btrfs either can damage files on defragmentation or
+that compression has a bug with files that are heavily modified inline
+(thus breaking the file into a lot of extents) - which probably has bad
+effects on compressed extents, too.
 
 --=20
-Jeff Mahoney
-SUSE Labs
+Regards,
+Kai
 
+Replies to list-only preferred.
 
---baScQoJxegcWjMA3RPj09j5jG9evQNjCD--
-
---TdwOPSt9UgkofE5P1tP4TasBa0sXwnvkV
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+--Sig_/SSUY68rLl8FfSUvfIV2/SX9
+Content-Type: application/pgp-signature
+Content-Description: Digitale Signatur von OpenPGP
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
-Comment: GPGTools - http://gpgtools.org
+Version: GnuPG v2
 
-iQIcBAEBAgAGBQJX5BfrAAoJEB57S2MheeWyKn4QAIAmJ+GcmvM6urN7gnyBXe8r
-jBPITAo3Oe+lMQlRpwO9oV3RqS0/LaXzjmfHX0gnf7s9SC0EJJy+BNQee8WMt/el
-+xMzbvpvJzFuiXjxp9VQA1zYcNheCUEVg86f8mlPGR2gPB6/4fgiFyXEUyomxWY1
-5BMbgMQ95nv4lWhtKyInXIHmePgD5jRPtPmAMYxJJpPeeRVwGO2lwnn/o1nfaHFZ
-YUvEVRqksrhdULSUgs8VjKQtJENvxeUpf+oDBLIknTy9Jccl0WR74Asp04WzKfdm
-f0soNMg43rXhIK9a3kkqItUNaB7Kg2KdD3puZnUhtiSlSTltrevdr/Ddtn0bp5OI
-GBNsGvesxiAKK5N95zNGKXFgV6iS1UgQY79gNRi20eNvqnfxYn2dPUBqdvF+usDA
-rCnAftT+W5t04sRSMjL5FP2q8V5KD0h0iWiVx0HQsG9bBkbKEvhEwN6XYs/lyLUy
-xKQWbO3MPpIOSJWuPQLcSxDanWda+B9enAvm+8StgFDdJz5ddjL3K1nM8GVpy3pt
-JpbP9VHG+3jP0e3kkbwoGXxb8ZHBDDSQnywO3cMLOIQvJk9TLDZoAIaZZdv925Kv
-DimVp4Kr1WaFgYTo9WE9AumHsygPIo05gNy9Sef0geSio3l1qxZ+Vkj3vU4V+USP
-fuoYseqUgy6EGH9cGRIy
-=2uuk
+iEYEARECAAYFAlfkGccACgkQ+D7cQ/kIzAWWjACeNpn3+GBKjiWq9ehPuMuixxfT
+bXQAn2m+ogvv4cQYqX8OBT4I63o+KRzm
+=9x0t
 -----END PGP SIGNATURE-----
 
---TdwOPSt9UgkofE5P1tP4TasBa0sXwnvkV--
+--Sig_/SSUY68rLl8FfSUvfIV2/SX9--
+
+

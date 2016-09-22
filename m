@@ -1,80 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39328 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:39417 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S966435AbcIVTLm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Sep 2016 15:11:42 -0400
+        id S966073AbcIVTLz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 22 Sep 2016 15:11:55 -0400
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id F0E70ABAE
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Sep 2016 19:11:40 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 005F3ABCA
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Sep 2016 19:11:54 +0000 (UTC)
 From: Goldwyn Rodrigues <rgoldwyn@suse.de>
 To: linux-btrfs@vger.kernel.org
 Cc: Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH] parent_start initialization cleanup
-Date: Thu, 22 Sep 2016 14:11:34 -0500
-Message-Id: <1474571494-5321-1-git-send-email-rgoldwyn@suse.de>
+Subject: [PATCH] Do not reassign count in btrfs_run_delayed_refs
+Date: Thu, 22 Sep 2016 14:11:47 -0500
+Message-Id: <1474571507-5375-1-git-send-email-rgoldwyn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-Code cleanup. parent_start is initialized multiple times when it is
-not necessary to do so.
+Code cleanup. count is already (unsgined long)-1. That is the reason
+run_all was set. Do not reassign it (unsigned long)-1.
 
 Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 ---
- fs/btrfs/ctree.c | 18 +++---------------
- 1 file changed, 3 insertions(+), 15 deletions(-)
+ fs/btrfs/extent-tree.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index d1c56c9..734e817 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -1102,7 +1102,7 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
- 	int level, ret;
- 	int last_ref = 0;
- 	int unlock_orig = 0;
--	u64 parent_start;
-+	u64 parent_start = 0;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 38c2df8..23b3b9f 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2971,7 +2971,6 @@ again:
+ 			spin_unlock(&delayed_refs->lock);
+ 			goto out;
+ 		}
+-		count = (unsigned long)-1;
  
- 	if (*cow_ret == buf)
- 		unlock_orig = 1;
-@@ -1121,13 +1121,8 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
- 	else
- 		btrfs_node_key(buf, &disk_key, 0);
- 
--	if (root->root_key.objectid == BTRFS_TREE_RELOC_OBJECTID) {
--		if (parent)
--			parent_start = parent->start;
--		else
--			parent_start = 0;
--	} else
--		parent_start = 0;
-+	if ((root->root_key.objectid == BTRFS_TREE_RELOC_OBJECTID) && parent)
-+		parent_start = parent->start;
- 
- 	cow = btrfs_alloc_tree_block(trans, root, parent_start,
- 			root->root_key.objectid, &disk_key, level,
-@@ -1170,8 +1165,6 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
- 		if (root->root_key.objectid == BTRFS_TREE_RELOC_OBJECTID ||
- 		    btrfs_header_backref_rev(buf) < BTRFS_MIXED_BACKREF_REV)
- 			parent_start = buf->start;
--		else
--			parent_start = 0;
- 
- 		extent_buffer_get(cow);
- 		tree_mod_log_set_root_pointer(root, cow, 1);
-@@ -1182,11 +1175,6 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
- 		free_extent_buffer(buf);
- 		add_root_to_dirty_list(root);
- 	} else {
--		if (root->root_key.objectid == BTRFS_TREE_RELOC_OBJECTID)
--			parent_start = parent->start;
--		else
--			parent_start = 0;
--
- 		WARN_ON(trans->transid != btrfs_header_generation(parent));
- 		tree_mod_log_insert_key(root->fs_info, parent, parent_slot,
- 					MOD_LOG_KEY_REPLACE, GFP_NOFS);
+ 		while (node) {
+ 			head = rb_entry(node, struct btrfs_delayed_ref_head,
 -- 
 2.6.6
 

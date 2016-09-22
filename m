@@ -1,141 +1,143 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f48.google.com ([209.85.218.48]:35204 "EHLO
-        mail-oi0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750846AbcIUTFu (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:20569 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S933513AbcIVCJB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Sep 2016 15:05:50 -0400
-Received: by mail-oi0-f48.google.com with SMTP id w11so71574026oia.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Sep 2016 12:05:50 -0700 (PDT)
+        Wed, 21 Sep 2016 22:09:01 -0400
+Subject: Re: [BUG] Btrfs scrub sometime recalculate wrong parity in raid5
+To: Chris Murphy <lists@colorremedies.com>
+References: <8695beeb-f991-28c4-cf6b-8c92339e468f@inwind.it>
+ <09b358f4-4564-e885-411a-27020a496755@cn.fujitsu.com>
+ <20160921073502.GB357701@mother.pipebreaker.pl>
+ <4a021bc5-8695-1f8e-ec97-6414b91796a6@cn.fujitsu.com>
+ <CAJCQCtS+g_FQpMUh+c+ccK4XAu72O4FQXtnXjOHL32t-M2VcVA@mail.gmail.com>
+CC: Tomasz Torcz <tomek@pipebreaker.pl>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <ac57e4db-dc9f-938f-9711-0c6d44d66d67@cn.fujitsu.com>
+Date: Thu, 22 Sep 2016 10:08:01 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAB1rxdYdOZvgymnpzkURVxP7J2UQ=W4ANZpte+r8Z=9XAOuBQw@mail.gmail.com>
-References: <CAB1rxdbJX7rgv-NrHyGD7wMMcFf1EDR_aJ8yaTs7r=O-iXTo7w@mail.gmail.com>
- <CAJCQCtSz15HC99QetsSzJRtbLgZU+iohej9Mf6qE4q39MmZfKA@mail.gmail.com> <CAB1rxdYdOZvgymnpzkURVxP7J2UQ=W4ANZpte+r8Z=9XAOuBQw@mail.gmail.com>
-From: Mirak M <mirak63@gmail.com>
-Date: Wed, 21 Sep 2016 21:05:49 +0200
-Message-ID: <CAB1rxdYJN8pANZkbjPZsrXO+FdhWg2nxdhtqkxBpASGg8jibTQ@mail.gmail.com>
-Subject: Fwd: Can't mount btrfs raid1
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <CAJCQCtS+g_FQpMUh+c+ccK4XAu72O4FQXtnXjOHL32t-M2VcVA@mail.gmail.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2016-09-21 3:00 GMT+02:00 Chris Murphy <lists@colorremedies.com>:
-> On Tue, Sep 20, 2016 at 5:16 PM, Mirak M <mirak63@gmail.com> wrote:
->> Hello,
+
+
+At 09/21/2016 11:13 PM, Chris Murphy wrote:
+> On Wed, Sep 21, 2016 at 3:15 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
 >>
->> I have a failure when mounting btrfs.
 >>
->>> mount -oro,recovery /dev/sda2 sda2_btrfs
->>> mount: /dev/sda2: can't read superblock
->
-> What do you get for 'btrfs super-recover -v <dev>' and 'btrfs check <dev>'
-
-I get this :
-###################################################
-All Devices:
-    Device: id = 1, name = /dev/sdc2
-    Device: id = 2, name = /dev/sda2
-
-Before Recovering:
-    [All good supers]:
-        device name = /dev/sdc2
-        superblock bytenr = 65536
-
-        device name = /dev/sdc2
-        superblock bytenr = 67108864
-
-        device name = /dev/sdc2
-        superblock bytenr = 274877906944
-
-        device name = /dev/sda2
-        superblock bytenr = 65536
-
-        device name = /dev/sda2
-        superblock bytenr = 67108864
-
-        device name = /dev/sda2
-        superblock bytenr = 274877906944
-
-    [All bad supers]:
-
-All supers are valid, no need to recover
-###################################################
-
-###################################################
-root@vdr-box:/mnt# btrfs check  /dev/sda2
-Checking filesystem on /dev/sda2
-UUID: 64543f0e-ebb5-4384-8119-f5b6d52dea6e
-checking extents
-bad key ordering 29 30
-bad block 1957998690304
-Errors found in extent allocation tree or chunk allocation
-checking free space cache
-There is no free space entry for 1959033618432-859521990656
-There is no free space entry for 1959033618432-1959071318016
-cache appears valid but isnt 1957997576192
-found 54593218 bytes used err is -22
-total csum bytes: 0
-total tree bytes: 1146880
-total fs tree bytes: 0
-total extent tree bytes: 212992
-btree space waste bytes: 212465
-file data blocks allocated: 453378048
- referenced 453378048
-###################################################
-
->
-> For this purpose any 4.4+ version is probably OK, except 4.7 and 4.7.1
-> which might spit out some bogus items (it's just noise it won't hurt
-> anything as long as you don't use --repair).
->
->
+>> At 09/21/2016 03:35 PM, Tomasz Torcz wrote:
+>>>
+>>> On Wed, Sep 21, 2016 at 03:28:25PM +0800, Qu Wenruo wrote:
+>>>>
+>>>> Hi,
+>>>>
+>>>> For this well-known bug, is there any one fixing it?
+>>>>
+>>>> It can't be more frustrating finding some one has already worked on it
+>>>> after
+>>>> spending days digging.
+>>>>
+>>>> BTW, since kernel scrub is somewhat scrap for raid5/6, I'd like to
+>>>> implement
+>>>> btrfsck scrub support, at least we can use btrfsck to fix bad stripes
+>>>> before
+>>>> kernel fix.
+>>>
+>>>
+>>>   Why wouldn't you fix in-kernel code?  Why implement duplicate
+>>> functionality
+>>> when you can fix the root cause?
+>>>
+>> We'll fix in-kernel code.
 >>
->> The kernel log is here http://pastebin.com/tHihHT92 and at the bottom
->> of the email
+>> Fsck one is not duplicate, we need a better standard thing to compare with
+>> kernel behavior.
 >>
->> I must admit I did the error of running btrfs check --repair at some
->> point, not knowing this was not a good idea.
->>
->> I run ubuntu 16.04 with kernel 4.4.0-36-generic .
+>> Just like qgroup fix in btrfsck, if kernel can't handle something well, we
+>> do need to fix kernel, but a good off-line fixer won't hurt.
+>> (Btrfs-progs is much easier to implement, and get fast review/merge cycle,
+>> and it can help us to find better solution before screwing kernel up again)
 >
-> OK what version of btrrfs-progs? What was the output from btrfs check?
+> I understand some things should go in fsck for comparison. But in this
+> case I don't see how it can help. Parity is not checksummed. The only
+> way to know if it's wrong is to read all of the data strips, compute
+> parity, and compare in-memory parity from current read to on-disk
+> parity.
 
-btrfs-progs v4.4
-Output is above,
+That's what we plan to do.
+And I don't see the necessary to csum the parity.
+Why csum a csum again?
+
+> It takes a long time, and at least scrub is online, where
+> btrfsck scrub is not.
+
+At least btrfsck scrub will work and easier to implement, while kernel 
+scrub doesn't.
+
+The more important thing is, we can forget all about the complicated 
+concurrency of online scrub, focusing on the implementation itself at 
+user-space.
+Which is easier to implement and easier to maintain.
+
+> There is already an offline scrub in btrfs
+> check which doesn't repair, but also I don't know if it checks parity.
+>
+>        --check-data-csum
+>            verify checksums of data blocks
+
+Just as you expected, it doesn't check parity.
+Even for RAID1/DUP, it won't check the backup if it succeeded reading 
+the first stripe.
+
+Current implement doesn't really care if it's the data or the copy 
+corrupted, any data can be read out, then there is no problem.
+The same thing applies to tree blocks.
+
+So the ability to check every stripe/copy is still quite needed for that 
+option.
+
+And that's what I'm planning to enhance, make --check-data-csum to 
+kernel scrub equivalent.
+
+>
+>            This expects that the filesystem is otherwise OK, so this
+> is basically and
+>            offline scrub but does not repair data from spare coipes.
+
+Repair can be implemented, but maybe just rewrite the same data into the 
+same place.
+If that's a bad block, then it can't repair further more unless we can 
+relocate extent to other place.
+
+>
+> Is it possible to put parities into their own tree? They'd be
+> checksummed there.
+
+Personally speaking, this is quite a bad idea to me.
+I prefer to separate different logical layers into their own codes.
+Not mixing them together.
+
+Block level things to block level(RAID/Chunk), logical thing to logical 
+level(tree blocks).
+
+Current btrfs csum design is already much much better than pure RAID.
+Just think of RAID1, while one copy is corrupted, then which copy is 
+correct then?
+
+Thanks,
+Qu
+
+> Somehow I think the long term approach is that
+> partial stripe writes, which apparently are overwrites and not CoW,
+> need to go away. In particular I wonder what the metadata raid56 write
+> pattern is, if this usually means a lot of full stripe CoW writes, or
+> if there are many small metadata RMW changes that makes them partial
+> stripe writes and not CoW and thus not safe.
+>
+>
+>
 
 
->
->
->> [ 1692.712574] BTRFS critical (device sda2): corrupt leaf, bad key
->> order: block=1957998690304,root=1, slot=29
->> [ 1692.712819] BTRFS critical (device sda2): corrupt leaf, bad key
->> order: block=1957998690304,root=1, slot=29
->
-> List archives suggest this might be due to bad RAM. I also see there
-> are some bugs that can cause it, but I'm not finding any post kernel
-> 4.4 patches for this (there are a metric f tonne of changes since
-> 4.4). I would suggest kernel 4.4.21 if you need to stick with a long
-> term kernel, I have no idea what 4.4.0-36 translates into.
-
-My computer freezing a lot recently, but I though it was related to a
-X server problem with the radeon gpu.
-
-
->
->
->> [ 1692.713963] BTRFS: error (device sda2) in btrfs_replay_log:2401:
->> errno=-5 IO failure (Failed to recover log tree)
->
-> This is kinda curious, was there a crash or power failure?
-
-Yes many since I upgraded to xenial and btrfs, about at the same time.
-only /home is on btrfs raid 1 on harddrive. The system / is on
-LVM+ext4 on a SSD.
-
-
->
->
->
->
-> --
-> Chris Murphy

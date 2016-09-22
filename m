@@ -1,50 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:36126 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:60251 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1752139AbcIUHGW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Sep 2016 03:06:22 -0400
+        id S1753183AbcIVJbB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 22 Sep 2016 05:31:01 -0400
 From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: jbacik@fb.com, dsterba@suse.cz
-Subject: [PATCH 2/2] btrfs: try to write enough delalloc bytes when reclaiming metadata space
-Date: Wed, 21 Sep 2016 14:59:33 +0800
-Message-Id: <1474441173-31049-2-git-send-email-wangxg.fnst@cn.fujitsu.com>
-In-Reply-To: <1474441173-31049-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
-References: <1474441173-31049-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
+Subject: [RFC 3/3] btrfs: make shrink_delalloc() try harder to reclaim metadata space
+Date: Thu, 22 Sep 2016 17:25:19 +0800
+Message-Id: <1474536319-22659-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
+In-Reply-To: <1474441173-31049-2-git-send-email-wangxg.fnst@cn.fujitsu.com>
+References: <1474441173-31049-2-git-send-email-wangxg.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Indeed as long as we have delalloc bytes and if we fail to reclaim
-requested metadata space, we should write these delalloc bytes and
-have one more try, this can fix some false enospc errors in some
-extreme cases.
+Since commit b02441999efcc6152b87cd58e7970bb7843f76cf, we don't wait all
+ordered extents, but I run into some enospc errors when doing large file
+create and delete test, it's because shrink_delalloc() does not write
+enough delalloc bytes and wait them finished:
+    From: Miao Xie <miaox@cn.fujitsu.com>
+    Date: Mon, 4 Nov 2013 23:13:25 +0800
+    Subject: [PATCH] Btrfs: don't wait for the completion of all the ordered extents
+
+    It is very likely that there are lots of ordered extents in the filesytem,
+    if we wait for the completion of all of them when we want to reclaim some
+    space for the metadata space reservation, we would be blocked for a long
+    time. The performance would drop down suddenly for a long time.
+
+But since Josef introduced "Btrfs: introduce ticketed enospc infrastructure",
+shrink_delalloc() starts to be run asynchronously, then If we want to reclaim
+metadata space, we can try harder, after all, false enospc error is not
+acceptable.
 
 Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/extent-tree.c | 9 +++++++++
- 1 file changed, 9 insertions(+)
+ fs/btrfs/extent-tree.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index fdfc97f..46c2a37 100644
+index 46c2a37..f7c420b 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -4794,6 +4794,15 @@ static int may_commit_transaction(struct btrfs_root *root,
- {
- 	struct btrfs_block_rsv *delayed_rsv = &root->fs_info->delayed_block_rsv;
- 	struct btrfs_trans_handle *trans;
-+	struct btrfs_fs_info *fs_info = root->fs_info;
-+
-+	/*
-+	 * shrink_delalloc() may not write enough delalloc bytes, so here we
-+	 * have a last try. Please don't remove these, because these can fix
-+	 * some false enospc error in some extreme cases.
-+	 */
-+	btrfs_start_delalloc_roots(fs_info, 0, -1);
-+	btrfs_wait_ordered_roots(fs_info, -1, 0, (u64)-1);
+@@ -4721,7 +4721,7 @@ static void shrink_delalloc(struct btrfs_root *root, u64 to_reclaim, u64 orig,
+ 		if (trans)
+ 			return;
+ 		if (wait_ordered)
+-			btrfs_wait_ordered_roots(root->fs_info, items,
++			btrfs_wait_ordered_roots(root->fs_info, -1,
+ 						 0, (u64)-1);
+ 		return;
+ 	}
+@@ -4775,6 +4775,14 @@ skip_async:
+ 		}
+ 		delalloc_bytes = percpu_counter_sum_positive(
+ 						&root->fs_info->delalloc_bytes);
++		if (loops == 2) {
++			/*
++			 * Try to write all current delalloc bytes and wait all
++			 * ordered extents to have a last try.
++			 */
++			to_reclaim = delalloc_bytes;
++			items = -1;
++		}
+ 	}
+ }
  
- 	trans = (struct btrfs_trans_handle *)current->journal_info;
- 	if (trans)
 -- 
 2.7.4
 

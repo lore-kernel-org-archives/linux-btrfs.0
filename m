@@ -1,84 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54976 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933064AbcIUMJn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Sep 2016 08:09:43 -0400
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com
-Subject: Btrfs progs release 4.7.3
-Date: Wed, 21 Sep 2016 14:07:42 +0200
-Message-Id: <1474459662-22006-1-git-send-email-dsterba@suse.com>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:37371 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S933890AbcIVNfM (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 22 Sep 2016 09:35:12 -0400
+Subject: Re: [PATCH 2/4] writeback: allow for dirty metadata accounting
+To: Jan Kara <jack@suse.cz>
+References: <1474405068-27841-1-git-send-email-jbacik@fb.com>
+ <1474405068-27841-3-git-send-email-jbacik@fb.com>
+ <20160922111801.GK2834@quack2.suse.cz>
+CC: <linux-btrfs@vger.kernel.org>, <linux-fsdevel@vger.kernel.org>,
+        <kernel-team@fb.com>, <jack@suse.com>, <viro@zeniv.linux.org.uk>,
+        <dchinner@redhat.com>, <hch@lst.de>, <linux-mm@kvack.org>,
+        <hannes@cmpxchg.org>
+From: Josef Bacik <jbacik@fb.com>
+Message-ID: <81d2d2e2-6a90-6727-cdb2-8ffcadf93833@fb.com>
+Date: Thu, 22 Sep 2016 09:34:40 -0400
+MIME-Version: 1.0
+In-Reply-To: <20160922111801.GK2834@quack2.suse.cz>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On 09/22/2016 07:18 AM, Jan Kara wrote:
+> On Tue 20-09-16 16:57:46, Josef Bacik wrote:
+>> Btrfs has no bounds except memory on the amount of dirty memory that we have in
+>> use for metadata.  Historically we have used a special inode so we could take
+>> advantage of the balance_dirty_pages throttling that comes with using pagecache.
+>> However as we'd like to support different blocksizes it would be nice to not
+>> have to rely on pagecache, but still get the balance_dirty_pages throttling
+>> without having to do it ourselves.
+>>
+>> So introduce *METADATA_DIRTY_BYTES and *METADATA_WRITEBACK_BYTES.  These are
+>> zone and bdi_writeback counters to keep track of how many bytes we have in
+>> flight for METADATA.  We need to count in bytes as blocksizes could be
+>> percentages of pagesize.  We simply convert the bytes to number of pages where
+>> it is needed for the throttling.
+>>
+>> Signed-off-by: Josef Bacik <jbacik@fb.com>
+>> ---
+>>  arch/tile/mm/pgtable.c           |   3 +-
+>>  drivers/base/node.c              |   6 ++
+>>  fs/fs-writeback.c                |   2 +
+>>  fs/proc/meminfo.c                |   5 ++
+>>  include/linux/backing-dev-defs.h |   2 +
+>>  include/linux/mm.h               |   9 +++
+>>  include/linux/mmzone.h           |   2 +
+>>  include/trace/events/writeback.h |  13 +++-
+>>  mm/backing-dev.c                 |   5 ++
+>>  mm/page-writeback.c              | 157 +++++++++++++++++++++++++++++++++++----
+>>  mm/page_alloc.c                  |  16 +++-
+>>  mm/vmscan.c                      |   4 +-
+>>  12 files changed, 200 insertions(+), 24 deletions(-)
+>>
+>> diff --git a/arch/tile/mm/pgtable.c b/arch/tile/mm/pgtable.c
+>> index 7cc6ee7..9543468 100644
+>> --- a/arch/tile/mm/pgtable.c
+>> +++ b/arch/tile/mm/pgtable.c
+>> @@ -44,12 +44,13 @@ void show_mem(unsigned int filter)
+>>  {
+>>  	struct zone *zone;
+>>
+>> -	pr_err("Active:%lu inactive:%lu dirty:%lu writeback:%lu unstable:%lu free:%lu\n slab:%lu mapped:%lu pagetables:%lu bounce:%lu pagecache:%lu swap:%lu\n",
+>> +	pr_err("Active:%lu inactive:%lu dirty:%lu metadata_dirty:%lu writeback:%lu unstable:%lu free:%lu\n slab:%lu mapped:%lu pagetables:%lu bounce:%lu pagecache:%lu swap:%lu\n",
+>>  	       (global_node_page_state(NR_ACTIVE_ANON) +
+>>  		global_node_page_state(NR_ACTIVE_FILE)),
+>>  	       (global_node_page_state(NR_INACTIVE_ANON) +
+>>  		global_node_page_state(NR_INACTIVE_FILE)),
+>>  	       global_node_page_state(NR_FILE_DIRTY),
+>> +	       global_node_page_state(NR_METADATA_DIRTY),
+>
+> Leftover from previous version? Ah, it is tile architecture so I see how it
+> could have passed testing ;)
+>
 
-btrfs-progs 4.7.3 have been released, bugfix release. There are some minor
-fixes, notably the free-space-tree compat status was wrong, see [1] for more.
-Some fuzzer bugs have been fixed, but there are still several open.
+Ah now I understand the kbuild error I got, oops ;)
 
-Changes:
-  * fixed free space tree compat status
-  * check: low-mem mode: handle partially dropped snapshots
-  * dump-super: consolidate options for superblock copy
-  * tree-stats: check mount status
-  * subvol delete: handle verbosity option
-  * defrag: print correct error string
-  * mkfs: fix reading rotational status
-  * other:
-    * UBSAN build option
-    * documentation updates
-    * enhanced tests: convert, fuzzed images, more tools to run on fuzzed
-      images
+>> @@ -506,6 +530,10 @@ bool node_dirty_ok(struct pglist_data *pgdat)
+>>  	nr_pages += node_page_state(pgdat, NR_FILE_DIRTY);
+>>  	nr_pages += node_page_state(pgdat, NR_UNSTABLE_NFS);
+>>  	nr_pages += node_page_state(pgdat, NR_WRITEBACK);
+>> +	nr_pages += (node_page_state(pgdat, NR_METADATA_DIRTY_BYTES) >>
+>> +		     PAGE_SHIFT);
+>> +	nr_pages += (node_page_state(pgdat, NR_METADATA_WRITEBACK_BYTES) >>
+>> +		     PAGE_SHIFT);
+>>
+>>  	return nr_pages <= limit;
+>>  }
+>
+> I still don't think this is correct. It currently achieves the same
+> behavior as before the patch but once you start accounting something else
+> than pagecache pages into these counters, things will go wrong. This
+> function is used to control distribution of pagecache pages among NUMA
+> nodes and as such it should IMHO only account for pagecache pages...
+>
+>> @@ -3714,7 +3714,9 @@ static unsigned long node_pagecache_reclaimable(struct pglist_data *pgdat)
+>>
+>>  	/* If we can't clean pages, remove dirty pages from consideration */
+>>  	if (!(node_reclaim_mode & RECLAIM_WRITE))
+>> -		delta += node_page_state(pgdat, NR_FILE_DIRTY);
+>> +		delta += node_page_state(pgdat, NR_FILE_DIRTY) +
+>> +			(node_page_state(pgdat, NR_METADATA_DIRTY_BYTES) >>
+>> +			 PAGE_SHIFT);
+>>
+>>  	/* Watch for any possible underflows due to delta */
+>>  	if (unlikely(delta > nr_pagecache_reclaimable))
+>
+> The same comment as above applies here.
+>
 
-[1] https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg57738.html
+Ok that sounds reasonable, I'll make this change.  Thanks,
 
-Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
-
-Shortlog:
-
-David Sterba (18):
-      btrfs-progs: dump-super: changes in options to specify superblocks
-      btrfs-progs: build: add UBSAN to debugging features
-      btrfs-progs: docs: update flushoncommit default value
-      btrfs-progs: tree-stats: check and report mount status
-      btrfs-progs: tests: add fuzzed image for a bad backref
-      btrfs-progs: tests: rename test 001 to mention check
-      btrfs-progs: tests: add fuzz test to try btrfs-image on all images
-      btrfs-progs: tests: run check with various options on the fuzzed images
-      btrfs-progs: remove stray newline from message in check_super
-      btrfs-progs: tests: add fuzzed images for bad block group offset
-      btrfs-progs: better error report in btrfs_scan_fs_devices
-      btrfs-progs: reorganize extent_buffer and fix alignment of data
-      btrfs-progs: subvol create: remove v from getopt
-      btrfs-progs: defrag: set errno correctly in the callback
-      btrfs-progs: mkfs: fix reading rotational status value
-      btrfs-progs: mkfs: use preallocated buffers for config uuids
-      btrfs-progs: update CHANGES for 4.7.3
-      Btrfs progs v4.7.3
-
-Jeff Mahoney (1):
-      btrfs-progs: avoid looping forever when a bad blockgroup key is found
-
-Lakshmipathi.G (1):
-      btrfs-progs: tests: post btrfs-convert verify permissions and ACLs
-
-Omar Sandoval (1):
-      Revert "btrfs-progs: fix compat_ro mask for free space tree"
-
-Qu Wenruo (2):
-      btrfs-progs: mkfs: Warn user for minimal RAID5/6 devices setup
-      btrfs-progs: docs: Add warning for build RAID btrfs on partions from the same device
-
-Vincent Batts (1):
-      btrfs-progs: subvol delete: add missing verbose option
-
-Wang Xiaoguang (2):
-      btrfs-progs: check: make low memory mode support partially dropped snapshots
-      btrfs-progs: tests: add 021-partially-dropped-snapshot-case
-
-adduxa (1):
-      btrfs-progs: docs: fix typos in btrfs-subvolume
+Josef
 

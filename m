@@ -1,88 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:31503 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1756232AbcIOASE (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Sep 2016 20:18:04 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:39328 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S966435AbcIVTLm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 22 Sep 2016 15:11:42 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id F0E70ABAE
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Sep 2016 19:11:40 +0000 (UTC)
+From: Goldwyn Rodrigues <rgoldwyn@suse.de>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] Btrfs: improve check_node to avoid reading corrupted nodes
-Date: Wed, 14 Sep 2016 17:23:24 -0700
-Message-Id: <1473899004-29697-1-git-send-email-bo.li.liu@oracle.com>
+Cc: Goldwyn Rodrigues <rgoldwyn@suse.com>
+Subject: [PATCH] parent_start initialization cleanup
+Date: Thu, 22 Sep 2016 14:11:34 -0500
+Message-Id: <1474571494-5321-1-git-send-email-rgoldwyn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We need to check items in a node to make sure that we're reading
-a valid one, otherwise we could get various crashes while processing
-delayed_refs.
+From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Code cleanup. parent_start is initialized multiple times when it is
+not necessary to do so.
+
+Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 ---
- fs/btrfs/disk-io.c | 32 ++++++++++++++++++++++++++++----
- 1 file changed, 28 insertions(+), 4 deletions(-)
+ fs/btrfs/ctree.c | 18 +++---------------
+ 1 file changed, 3 insertions(+), 15 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index b401e6d..1059e5d 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -547,9 +547,10 @@ static int check_tree_block_fsid(struct btrfs_fs_info *fs_info,
- }
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index d1c56c9..734e817 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -1102,7 +1102,7 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
+ 	int level, ret;
+ 	int last_ref = 0;
+ 	int unlock_orig = 0;
+-	u64 parent_start;
++	u64 parent_start = 0;
  
- #define CORRUPT(reason, eb, root, slot)				\
--	btrfs_crit(root->fs_info, "corrupt leaf, %s: block=%llu,"	\
--		   "root=%llu, slot=%d", reason,			\
--	       btrfs_header_bytenr(eb),	root->objectid, slot)
-+	btrfs_crit(root->fs_info, "corrupt %s, %s: block=%llu,"	\
-+		   " root=%llu, slot=%d",			\
-+		   btrfs_header_level(eb) == 0 ? "leaf" : "node",\
-+		   reason, btrfs_header_bytenr(eb), root->objectid, slot)
+ 	if (*cow_ret == buf)
+ 		unlock_orig = 1;
+@@ -1121,13 +1121,8 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
+ 	else
+ 		btrfs_node_key(buf, &disk_key, 0);
  
- static noinline int check_leaf(struct btrfs_root *root,
- 			       struct extent_buffer *leaf)
-@@ -640,6 +641,10 @@ static noinline int check_leaf(struct btrfs_root *root,
- static int check_node(struct btrfs_root *root, struct extent_buffer *node)
- {
- 	unsigned long nr = btrfs_header_nritems(node);
-+	struct btrfs_key key, next_key;
-+	int slot;
-+	u64 bytenr;
-+	int ret = 0;
+-	if (root->root_key.objectid == BTRFS_TREE_RELOC_OBJECTID) {
+-		if (parent)
+-			parent_start = parent->start;
+-		else
+-			parent_start = 0;
+-	} else
+-		parent_start = 0;
++	if ((root->root_key.objectid == BTRFS_TREE_RELOC_OBJECTID) && parent)
++		parent_start = parent->start;
  
- 	if (nr == 0 || nr > BTRFS_NODEPTRS_PER_BLOCK(root)) {
- 		btrfs_crit(root->fs_info,
-@@ -647,7 +652,26 @@ static int check_node(struct btrfs_root *root, struct extent_buffer *node)
- 			   node->start, root->objectid, nr);
- 		return -EIO;
- 	}
--	return 0;
-+
-+	for (slot = 0; slot < nr - 1; slot++) {
-+		bytenr = btrfs_node_blockptr(node, slot);
-+		btrfs_node_key_to_cpu(node, &key, slot);
-+		btrfs_node_key_to_cpu(node, &next_key, slot + 1);
-+
-+		if (!bytenr) {
-+			CORRUPT("invalid item slot", node, root, slot);
-+			ret = -EIO;
-+			goto out;
-+		}
-+
-+		if (btrfs_comp_cpu_keys(&key, &next_key) >= 0) {
-+			CORRUPT("bad key order", node, root, slot);
-+			ret = -EIO;
-+			goto out;
-+		}
-+	}
-+out:
-+	return ret;
- }
+ 	cow = btrfs_alloc_tree_block(trans, root, parent_start,
+ 			root->root_key.objectid, &disk_key, level,
+@@ -1170,8 +1165,6 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
+ 		if (root->root_key.objectid == BTRFS_TREE_RELOC_OBJECTID ||
+ 		    btrfs_header_backref_rev(buf) < BTRFS_MIXED_BACKREF_REV)
+ 			parent_start = buf->start;
+-		else
+-			parent_start = 0;
  
- static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
+ 		extent_buffer_get(cow);
+ 		tree_mod_log_set_root_pointer(root, cow, 1);
+@@ -1182,11 +1175,6 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
+ 		free_extent_buffer(buf);
+ 		add_root_to_dirty_list(root);
+ 	} else {
+-		if (root->root_key.objectid == BTRFS_TREE_RELOC_OBJECTID)
+-			parent_start = parent->start;
+-		else
+-			parent_start = 0;
+-
+ 		WARN_ON(trans->transid != btrfs_header_generation(parent));
+ 		tree_mod_log_insert_key(root->fs_info, parent, parent_slot,
+ 					MOD_LOG_KEY_REPLACE, GFP_NOFS);
 -- 
-2.5.5
+2.6.6
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-

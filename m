@@ -1,70 +1,127 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.kundenserver.de ([212.227.17.10]:56586 "EHLO
-        mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1030326AbcIWQFy (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:40676 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752839AbcIWUj3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 23 Sep 2016 12:05:54 -0400
-From: Arnd Bergmann <arnd@arndb.de>
-To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>
-Cc: Arnd Bergmann <arnd@arndb.de>, Jeff Mahoney <jeffm@suse.com>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>, Filipe Manana <fdmanana@suse.com>,
-        Omar Sandoval <osandov@fb.com>, Anand Jain <anand.jain@oracle.com>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: [PATCH] btrfs: fix btrfs_no_printk stub helper
-Date: Fri, 23 Sep 2016 18:05:21 +0200
-Message-Id: <20160923160532.3619432-1-arnd@arndb.de>
+        Fri, 23 Sep 2016 16:39:29 -0400
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>, Chris Mason <clm@fb.com>
+Subject: [PATCH] Btrfs: memset to avoid stale content in btree leaf
+Date: Fri, 23 Sep 2016 13:44:44 -0700
+Message-Id: <1474663484-23245-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The addition of btrfs_no_printk() caused a build failure when
-CONFIG_PRINTK is disabled:
+This is an additional patch to
+"Btrfs: memset to avoid stale content in btree node block".
 
-fs/btrfs/send.c: In function 'send_rename':
-fs/btrfs/ctree.h:3367:2: error: implicit declaration of function 'btrfs_no_printk' [-Werror=implicit-function-declaration]
+This uses memset to initialize the unused space in a leaf to avoid
+potential stale content, which may be incurred by pushing items
+between sibling leaves.
 
-This moves the helper outside of that #ifdef so it is always
-defined, and changes the existing #ifdef to refer to that
-helper as well for consistency.
-
-Fixes: 47c57058ff2c ("btrfs: btrfs_debug should consume fs_info when DEBUG is not defined")
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/ctree.h | 17 +++++++----------
- 1 file changed, 7 insertions(+), 10 deletions(-)
+Tested with fstests '-g quick': no related panic or warning.
 
+ fs/btrfs/ctree.c     | 14 --------------
+ fs/btrfs/ctree.h     | 15 +++++++++++++++
+ fs/btrfs/extent_io.c | 18 +++++++++++++-----
+ 3 files changed, 28 insertions(+), 19 deletions(-)
+
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index d1c56c9..f138cf7 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -1729,20 +1729,6 @@ int btrfs_realloc_node(struct btrfs_trans_handle *trans,
+ 	return err;
+ }
+ 
+-/*
+- * The leaf data grows from end-to-front in the node.
+- * this returns the address of the start of the last item,
+- * which is the stop of the leaf data stack
+- */
+-static inline unsigned int leaf_data_end(struct btrfs_root *root,
+-					 struct extent_buffer *leaf)
+-{
+-	u32 nr = btrfs_header_nritems(leaf);
+-	if (nr == 0)
+-		return BTRFS_LEAF_DATA_SIZE(root);
+-	return btrfs_item_offset_nr(leaf, nr - 1);
+-}
+-
+ 
+ /*
+  * search for key in the extent_buffer.  The items start at offset p,
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index e5621268c9fe..63bf4cc34626 100644
+index 33fe035..67d71c0 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -3241,20 +3241,17 @@ int btrfs_parse_options(struct btrfs_root *root, char *options,
- 			unsigned long new_flags);
- int btrfs_sync_fs(struct super_block *sb, int wait);
+@@ -2293,6 +2293,21 @@ static inline unsigned long btrfs_leaf_data(struct extent_buffer *l)
+ 	return offsetof(struct btrfs_leaf, items);
+ }
  
-+static inline __printf(2, 3)
-+void btrfs_no_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...)
++/*
++ * The leaf data grows from end-to-front in the node.
++ * this returns the address of the start of the last item,
++ * which is the stop of the leaf data stack
++ */
++static inline unsigned int leaf_data_end(struct btrfs_root *root,
++					 struct extent_buffer *leaf)
 +{
++	u32 nr = btrfs_header_nritems(leaf);
++
++	if (nr == 0)
++		return BTRFS_LEAF_DATA_SIZE(root);
++	return btrfs_item_offset_nr(leaf, nr - 1);
 +}
 +
- #ifdef CONFIG_PRINTK
- __printf(2, 3)
- void btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...);
--__printf(2, 3)
--static inline int btrfs_no_printk(const struct btrfs_fs_info *fs_info,
--				   const char *fmt, ...)
--{
--	return 0;
--}
- #else
--static inline __printf(2, 3)
--void btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...)
--{
--}
-+#define btrfs_printk(fs_info, fmt, args...) \
-+	btrfs_no_printk(fs_info, fmt, ##args)
- #endif
+ /* struct btrfs_file_extent_item */
+ BTRFS_SETGET_FUNCS(file_extent_type, struct btrfs_file_extent_item, type, 8);
+ BTRFS_SETGET_STACK_FUNCS(stack_file_extent_disk_bytenr,
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 176f883..04a8e2a 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3721,8 +3721,10 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
+ 	struct block_device *bdev = fs_info->fs_devices->latest_bdev;
+ 	struct extent_io_tree *tree = &BTRFS_I(fs_info->btree_inode)->io_tree;
+ 	u64 offset = eb->start;
++	u32 nritems;
+ 	unsigned long i, num_pages;
+ 	unsigned long bio_flags = 0;
++	unsigned long start, end;
+ 	int write_flags = (epd->sync_io ? WRITE_SYNC : 0) | REQ_META;
+ 	int ret = 0;
  
- #define btrfs_emerg(fs_info, fmt, args...) \
+@@ -3732,15 +3734,21 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
+ 	if (btrfs_header_owner(eb) == BTRFS_TREE_LOG_OBJECTID)
+ 		bio_flags = EXTENT_BIO_TREE_LOG;
+ 
+-	/* set btree node beyond nritems with 0 to avoid stale content */
++	/* set btree blocks beyond nritems with 0 to avoid stale content. */
++	nritems = btrfs_header_nritems(eb);
+ 	if (btrfs_header_level(eb) > 0) {
+-		u32 nritems;
+-		unsigned long end;
+-
+-		nritems = btrfs_header_nritems(eb);
+ 		end = btrfs_node_key_ptr_offset(nritems);
+ 
+ 		memset_extent_buffer(eb, 0, end, eb->len - end);
++	} else {
++		/*
++		 * leaf:
++		 * header 0 1 2 .. N ... data_N .. data_2 data_1 data_0
++		 */
++		start = btrfs_item_nr_offset(nritems);
++		end = btrfs_leaf_data(eb) +
++		      leaf_data_end(fs_info->tree_root, eb);
++		memset_extent_buffer(eb, 0, start, end - start);
+ 	}
+ 
+ 	for (i = 0; i < num_pages; i++) {
 -- 
-2.9.0
+2.5.5
 

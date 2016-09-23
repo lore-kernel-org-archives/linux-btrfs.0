@@ -1,18 +1,20 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f41.google.com ([209.85.220.41]:35839 "EHLO
-        mail-pa0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S964944AbcIWAYc (ORCPT
+Received: from mail-pa0-f46.google.com ([209.85.220.46]:34302 "EHLO
+        mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S964947AbcIWAYc (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Thu, 22 Sep 2016 20:24:32 -0400
-Received: by mail-pa0-f41.google.com with SMTP id oz2so34097095pac.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Sep 2016 17:24:31 -0700 (PDT)
+Received: by mail-pa0-f46.google.com with SMTP id wk8so34098370pab.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Sep 2016 17:24:32 -0700 (PDT)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
 Cc: kernel-team@fb.com, Chandan Rajendra <chandan@linux.vnet.ibm.com>,
         Anatoly Pugachev <matorola@gmail.com>
-Subject: [PATCH v2 1/6] Btrfs: fix free space tree bitmaps on big-endian systems
-Date: Thu, 22 Sep 2016 17:24:20 -0700
-Message-Id: <218563982dbe4387c60909eeb0add6914a20f813.1474580472.git.osandov@fb.com>
+Subject: [PATCH v2 2/6] Btrfs: fix mount -o clear_cache,space_cache=v2
+Date: Thu, 22 Sep 2016 17:24:21 -0700
+Message-Id: <016aef0e9b3421cc2d2cce0914a746a14eb7af45.1474580472.git.osandov@fb.com>
+In-Reply-To: <218563982dbe4387c60909eeb0add6914a20f813.1474580472.git.osandov@fb.com>
+References: <218563982dbe4387c60909eeb0add6914a20f813.1474580472.git.osandov@fb.com>
 In-Reply-To: <cover.1474580472.git.osandov@fb.com>
 References: <cover.1474580472.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -20,253 +22,61 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Omar Sandoval <osandov@fb.com>
 
-In convert_free_space_to_{bitmaps,extents}(), we buffer the free space
-bitmaps in memory and copy them directly to/from the extent buffers with
-{read,write}_extent_buffer(). The extent buffer bitmap helpers use byte
-granularity, which is equivalent to a little-endian bitmap. This means
-that on big-endian systems, the in-memory bitmaps will be written to
-disk byte-swapped. To fix this, use byte-granularity for the bitmaps in
-memory.
+We moved the code for creating the free space tree the first time that
+it's enabled, but didn't move the clearing code along with it. This
+breaks my (undocumented) intention that `mount -o
+clear_cache,space_cache=v2` would clear the free space tree and then
+recreate it.
 
-Fixes: a5ed91828518 ("Btrfs: implement the free space B-tree")
+Fixes: 511711af91f2 ("btrfs: don't run delayed references while we are creating the free space tree")
 Cc: stable@vger.kernel.org # 4.5+
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- fs/btrfs/extent_io.c       | 64 +++++++++++++++++++++++++++++++++-------------
- fs/btrfs/extent_io.h       | 22 ++++++++++++++++
- fs/btrfs/free-space-tree.c | 17 ++++++------
- 3 files changed, 76 insertions(+), 27 deletions(-)
+ fs/btrfs/disk-io.c | 24 ++++++++++++------------
+ 1 file changed, 12 insertions(+), 12 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 44fe66b..c3ec30d 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -5524,17 +5524,45 @@ void copy_extent_buffer(struct extent_buffer *dst, struct extent_buffer *src,
- 	}
- }
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 54bc8c7..c0bfc6c 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3129,6 +3129,18 @@ retry_root_backup:
+ 	if (sb->s_flags & MS_RDONLY)
+ 		return 0;
  
--/*
-- * The extent buffer bitmap operations are done with byte granularity because
-- * bitmap items are not guaranteed to be aligned to a word and therefore a
-- * single word in a bitmap may straddle two pages in the extent buffer.
-- */
--#define BIT_BYTE(nr) ((nr) / BITS_PER_BYTE)
--#define BYTE_MASK ((1 << BITS_PER_BYTE) - 1)
--#define BITMAP_FIRST_BYTE_MASK(start) \
--	((BYTE_MASK << ((start) & (BITS_PER_BYTE - 1))) & BYTE_MASK)
--#define BITMAP_LAST_BYTE_MASK(nbits) \
--	(BYTE_MASK >> (-(nbits) & (BITS_PER_BYTE - 1)))
-+void le_bitmap_set(u8 *map, unsigned int start, int len)
-+{
-+	u8 *p = map + BIT_BYTE(start);
-+	const unsigned int size = start + len;
-+	int bits_to_set = BITS_PER_BYTE - (start % BITS_PER_BYTE);
-+	u8 mask_to_set = BITMAP_FIRST_BYTE_MASK(start);
-+
-+	while (len - bits_to_set >= 0) {
-+		*p |= mask_to_set;
-+		len -= bits_to_set;
-+		bits_to_set = BITS_PER_BYTE;
-+		mask_to_set = ~(u8)0;
-+		p++;
++	if (btrfs_test_opt(fs_info, CLEAR_CACHE) &&
++	    btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE)) {
++		btrfs_info(fs_info, "clearing free space tree");
++		ret = btrfs_clear_free_space_tree(fs_info);
++		if (ret) {
++			btrfs_warn(fs_info,
++				   "failed to clear free space tree: %d", ret);
++			close_ctree(tree_root);
++			return ret;
++		}
 +	}
-+	if (len) {
-+		mask_to_set &= BITMAP_LAST_BYTE_MASK(size);
-+		*p |= mask_to_set;
-+	}
-+}
 +
-+void le_bitmap_clear(u8 *map, unsigned int start, int len)
-+{
-+	u8 *p = map + BIT_BYTE(start);
-+	const unsigned int size = start + len;
-+	int bits_to_clear = BITS_PER_BYTE - (start % BITS_PER_BYTE);
-+	u8 mask_to_clear = BITMAP_FIRST_BYTE_MASK(start);
-+
-+	while (len - bits_to_clear >= 0) {
-+		*p &= ~mask_to_clear;
-+		len -= bits_to_clear;
-+		bits_to_clear = BITS_PER_BYTE;
-+		mask_to_clear = ~(u8)0;
-+		p++;
-+	}
-+	if (len) {
-+		mask_to_clear &= BITMAP_LAST_BYTE_MASK(size);
-+		*p &= ~mask_to_clear;
-+	}
-+}
+ 	if (btrfs_test_opt(tree_root->fs_info, FREE_SPACE_TREE) &&
+ 	    !btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE)) {
+ 		btrfs_info(fs_info, "creating free space tree");
+@@ -3166,18 +3178,6 @@ retry_root_backup:
  
- /*
-  * eb_bitmap_offset() - calculate the page and offset of the byte containing the
-@@ -5578,7 +5606,7 @@ static inline void eb_bitmap_offset(struct extent_buffer *eb,
- int extent_buffer_test_bit(struct extent_buffer *eb, unsigned long start,
- 			   unsigned long nr)
- {
--	char *kaddr;
-+	u8 *kaddr;
- 	struct page *page;
- 	unsigned long i;
- 	size_t offset;
-@@ -5600,13 +5628,13 @@ int extent_buffer_test_bit(struct extent_buffer *eb, unsigned long start,
- void extent_buffer_bitmap_set(struct extent_buffer *eb, unsigned long start,
- 			      unsigned long pos, unsigned long len)
- {
--	char *kaddr;
-+	u8 *kaddr;
- 	struct page *page;
- 	unsigned long i;
- 	size_t offset;
- 	const unsigned int size = pos + len;
- 	int bits_to_set = BITS_PER_BYTE - (pos % BITS_PER_BYTE);
--	unsigned int mask_to_set = BITMAP_FIRST_BYTE_MASK(pos);
-+	u8 mask_to_set = BITMAP_FIRST_BYTE_MASK(pos);
+ 	btrfs_qgroup_rescan_resume(fs_info);
  
- 	eb_bitmap_offset(eb, start, pos, &i, &offset);
- 	page = eb->pages[i];
-@@ -5617,7 +5645,7 @@ void extent_buffer_bitmap_set(struct extent_buffer *eb, unsigned long start,
- 		kaddr[offset] |= mask_to_set;
- 		len -= bits_to_set;
- 		bits_to_set = BITS_PER_BYTE;
--		mask_to_set = ~0U;
-+		mask_to_set = ~(u8)0;
- 		if (++offset >= PAGE_SIZE && len > 0) {
- 			offset = 0;
- 			page = eb->pages[++i];
-@@ -5642,13 +5670,13 @@ void extent_buffer_bitmap_set(struct extent_buffer *eb, unsigned long start,
- void extent_buffer_bitmap_clear(struct extent_buffer *eb, unsigned long start,
- 				unsigned long pos, unsigned long len)
- {
--	char *kaddr;
-+	u8 *kaddr;
- 	struct page *page;
- 	unsigned long i;
- 	size_t offset;
- 	const unsigned int size = pos + len;
- 	int bits_to_clear = BITS_PER_BYTE - (pos % BITS_PER_BYTE);
--	unsigned int mask_to_clear = BITMAP_FIRST_BYTE_MASK(pos);
-+	u8 mask_to_clear = BITMAP_FIRST_BYTE_MASK(pos);
- 
- 	eb_bitmap_offset(eb, start, pos, &i, &offset);
- 	page = eb->pages[i];
-@@ -5659,7 +5687,7 @@ void extent_buffer_bitmap_clear(struct extent_buffer *eb, unsigned long start,
- 		kaddr[offset] &= ~mask_to_clear;
- 		len -= bits_to_clear;
- 		bits_to_clear = BITS_PER_BYTE;
--		mask_to_clear = ~0U;
-+		mask_to_clear = ~(u8)0;
- 		if (++offset >= PAGE_SIZE && len > 0) {
- 			offset = 0;
- 			page = eb->pages[++i];
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 28cd88f..1cf4e42 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -59,6 +59,28 @@
-  */
- #define EXTENT_PAGE_PRIVATE 1
- 
-+/*
-+ * The extent buffer bitmap operations are done with byte granularity instead of
-+ * word granularity for two reasons:
-+ * 1. The bitmaps must be little-endian on disk.
-+ * 2. Bitmap items are not guaranteed to be aligned to a word and therefore a
-+ *    single word in a bitmap may straddle two pages in the extent buffer.
-+ */
-+#define BIT_BYTE(nr) ((nr) / BITS_PER_BYTE)
-+#define BYTE_MASK ((1 << BITS_PER_BYTE) - 1)
-+#define BITMAP_FIRST_BYTE_MASK(start) \
-+	((BYTE_MASK << ((start) & (BITS_PER_BYTE - 1))) & BYTE_MASK)
-+#define BITMAP_LAST_BYTE_MASK(nbits) \
-+	(BYTE_MASK >> (-(nbits) & (BITS_PER_BYTE - 1)))
-+
-+static inline int le_test_bit(int nr, const u8 *addr)
-+{
-+	return 1U & (addr[BIT_BYTE(nr)] >> (nr & (BITS_PER_BYTE-1)));
-+}
-+
-+extern void le_bitmap_set(u8 *map, unsigned int start, int len);
-+extern void le_bitmap_clear(u8 *map, unsigned int start, int len);
-+
- struct extent_state;
- struct btrfs_root;
- struct btrfs_io_bio;
-diff --git a/fs/btrfs/free-space-tree.c b/fs/btrfs/free-space-tree.c
-index 87e7e3d..8fd85bf 100644
---- a/fs/btrfs/free-space-tree.c
-+++ b/fs/btrfs/free-space-tree.c
-@@ -151,7 +151,7 @@ static inline u32 free_space_bitmap_size(u64 size, u32 sectorsize)
- 	return DIV_ROUND_UP((u32)div_u64(size, sectorsize), BITS_PER_BYTE);
- }
- 
--static unsigned long *alloc_bitmap(u32 bitmap_size)
-+static u8 *alloc_bitmap(u32 bitmap_size)
- {
- 	void *mem;
- 
-@@ -180,8 +180,7 @@ int convert_free_space_to_bitmaps(struct btrfs_trans_handle *trans,
- 	struct btrfs_free_space_info *info;
- 	struct btrfs_key key, found_key;
- 	struct extent_buffer *leaf;
--	unsigned long *bitmap;
--	char *bitmap_cursor;
-+	u8 *bitmap, *bitmap_cursor;
- 	u64 start, end;
- 	u64 bitmap_range, i;
- 	u32 bitmap_size, flags, expected_extent_count;
-@@ -231,7 +230,7 @@ int convert_free_space_to_bitmaps(struct btrfs_trans_handle *trans,
- 						block_group->sectorsize);
- 				last = div_u64(found_key.objectid + found_key.offset - start,
- 					       block_group->sectorsize);
--				bitmap_set(bitmap, first, last - first);
-+				le_bitmap_set(bitmap, first, last - first);
- 
- 				extent_count++;
- 				nr++;
-@@ -269,7 +268,7 @@ int convert_free_space_to_bitmaps(struct btrfs_trans_handle *trans,
- 		goto out;
- 	}
- 
--	bitmap_cursor = (char *)bitmap;
-+	bitmap_cursor = bitmap;
- 	bitmap_range = block_group->sectorsize * BTRFS_FREE_SPACE_BITMAP_BITS;
- 	i = start;
- 	while (i < end) {
-@@ -318,7 +317,7 @@ int convert_free_space_to_extents(struct btrfs_trans_handle *trans,
- 	struct btrfs_free_space_info *info;
- 	struct btrfs_key key, found_key;
- 	struct extent_buffer *leaf;
--	unsigned long *bitmap;
-+	u8 *bitmap;
- 	u64 start, end;
- 	/* Initialize to silence GCC. */
- 	u64 extent_start = 0;
-@@ -362,7 +361,7 @@ int convert_free_space_to_extents(struct btrfs_trans_handle *trans,
- 				break;
- 			} else if (found_key.type == BTRFS_FREE_SPACE_BITMAP_KEY) {
- 				unsigned long ptr;
--				char *bitmap_cursor;
-+				u8 *bitmap_cursor;
- 				u32 bitmap_pos, data_size;
- 
- 				ASSERT(found_key.objectid >= start);
-@@ -372,7 +371,7 @@ int convert_free_space_to_extents(struct btrfs_trans_handle *trans,
- 				bitmap_pos = div_u64(found_key.objectid - start,
- 						     block_group->sectorsize *
- 						     BITS_PER_BYTE);
--				bitmap_cursor = ((char *)bitmap) + bitmap_pos;
-+				bitmap_cursor = bitmap + bitmap_pos;
- 				data_size = free_space_bitmap_size(found_key.offset,
- 								   block_group->sectorsize);
- 
-@@ -409,7 +408,7 @@ int convert_free_space_to_extents(struct btrfs_trans_handle *trans,
- 	offset = start;
- 	bitnr = 0;
- 	while (offset < end) {
--		bit = !!test_bit(bitnr, bitmap);
-+		bit = !!le_test_bit(bitnr, bitmap);
- 		if (prev_bit == 0 && bit == 1) {
- 			extent_start = offset;
- 		} else if (prev_bit == 1 && bit == 0) {
+-	if (btrfs_test_opt(tree_root->fs_info, CLEAR_CACHE) &&
+-	    btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE)) {
+-		btrfs_info(fs_info, "clearing free space tree");
+-		ret = btrfs_clear_free_space_tree(fs_info);
+-		if (ret) {
+-			btrfs_warn(fs_info,
+-				"failed to clear free space tree: %d", ret);
+-			close_ctree(tree_root);
+-			return ret;
+-		}
+-	}
+-
+ 	if (!fs_info->uuid_root) {
+ 		btrfs_info(fs_info, "creating UUID tree");
+ 		ret = btrfs_create_uuid_tree(fs_info);
 -- 
 2.10.0
 

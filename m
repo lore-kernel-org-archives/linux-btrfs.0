@@ -1,15 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:38771 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:48935 "EHLO
         userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753970AbcINQWf (ORCPT
+        with ESMTP id S1753106AbcIWU7u (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Sep 2016 12:22:35 -0400
+        Fri, 23 Sep 2016 16:59:50 -0400
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] Btrfs: kill BUG_ON in do_relocation
-Date: Wed, 14 Sep 2016 09:27:47 -0700
-Message-Id: <1473870467-18721-1-git-send-email-bo.li.liu@oracle.com>
+Cc: David Sterba <dsterba@suse.cz>, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>
+Subject: [PATCH v2] Btrfs: kill BUG_ON in do_relocation
+Date: Fri, 23 Sep 2016 14:05:04 -0700
+Message-Id: <1474664704-2612-1-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1473870467-18721-1-git-send-email-bo.li.liu@oracle.com>
+References: <1473870467-18721-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -36,16 +39,38 @@ do_relocation
 After btrfs_cow_block, P has the new bytenr of A, but with the
 same @key, we get the same path again, and get panic by BUG_ON.
 
+Note that this is only happening in a corrupted fs, for a
+regular fs in which we have correct @nritems so that we won't
+read stale content in any case.
+
+Reviewed-by: Josef Bacik <jbacik@fb.com>
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/relocation.c | 9 ++++++++-
- 1 file changed, 8 insertions(+), 1 deletion(-)
+v2: - use new internal error EFSCORRUPTED as "Filesystem is corrupted",
+      suggested by David Sterba.
 
+ fs/btrfs/ctree.h      | 2 ++
+ fs/btrfs/relocation.c | 9 ++++++++-
+ 2 files changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 67d71c0..8b23410 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -127,6 +127,8 @@ static inline unsigned long btrfs_chunk_item_size(int num_stripes)
+ #define BTRFS_OLD_BACKREF_REV		0
+ #define BTRFS_MIXED_BACKREF_REV		1
+ 
++#define EFSCORRUPTED			EUCLEAN /* Filesystem is corrupted */
++
+ /*
+  * every tree block (leaf or node) starts with this header.
+  */
 diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 680e234..bce8fea 100644
+index c0c13dc..6f8b952 100644
 --- a/fs/btrfs/relocation.c
 +++ b/fs/btrfs/relocation.c
-@@ -2723,7 +2723,14 @@ static int do_relocation(struct btrfs_trans_handle *trans,
+@@ -2712,7 +2712,14 @@ static int do_relocation(struct btrfs_trans_handle *trans,
  
  		bytenr = btrfs_node_blockptr(upper->eb, slot);
  		if (lowest) {
@@ -55,7 +80,7 @@ index 680e234..bce8fea 100644
 +		"lowest leaf/node mismatch: bytenr %llu node->bytenr %llu slot %d upper %llu",
 +					  bytenr, node->bytenr, slot,
 +					  upper->eb->start);
-+				err = -EEXIST;
++				err = -EFSCORRUPTED;
 +				goto next;
 +			}
  		} else {
@@ -64,7 +89,3 @@ index 680e234..bce8fea 100644
 -- 
 2.5.5
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-

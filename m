@@ -1,91 +1,40 @@
-Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:48935 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753106AbcIWU7u (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 23 Sep 2016 16:59:50 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Subject: [PATCH] btrfs: remove useless comments
+From: Xiaoguang Wang <wangxg.fnst@cn.fujitsu.com>
+Message-Id: <20160923043850.17844-1-wangxg.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>
-Subject: [PATCH v2] Btrfs: kill BUG_ON in do_relocation
-Date: Fri, 23 Sep 2016 14:05:04 -0700
-Message-Id: <1474664704-2612-1-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1473870467-18721-1-git-send-email-bo.li.liu@oracle.com>
-References: <1473870467-18721-1-git-send-email-bo.li.liu@oracle.com>
-Sender: linux-btrfs-owner@vger.kernel.org
+Date: Fri, 23 Sep 2016 12:38:50 +0800
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While updating btree, we try to push items between sibling
-nodes/leaves in order to keep height as low as possible.
-But we don't memset the original places with zero when
-pushing items so that we could end up leaving stale content
-in nodes/leaves.  One may read the above stale content by
-increasing btree blocks' @nritems.
+Fixes: ("btrfs: update btrfs_space_info's bytes_may_use timely")
 
-One case I've come across is that in fs tree, a leaf has two
-parent nodes, hence running balance ends up with processing
-this leaf with two parent nodes, but it can only reach the
-valid parent node through btrfs_search_slot, so it'd be like,
-
-do_relocation
-    for P in all parent nodes of block A:
-        if !P->eb:
-            btrfs_search_slot(key);   --> get path from P to A.
-        if lowest:
-            BUG_ON(A->bytenr != bytenr of A recorded in P);
-        btrfs_cow_block(P, A);   --> change A's bytenr in P.
-
-After btrfs_cow_block, P has the new bytenr of A, but with the
-same @key, we get the same path again, and get panic by BUG_ON.
-
-Note that this is only happening in a corrupted fs, for a
-regular fs in which we have correct @nritems so that we won't
-read stale content in any case.
-
-Reviewed-by: Josef Bacik <jbacik@fb.com>
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 ---
-v2: - use new internal error EFSCORRUPTED as "Filesystem is corrupted",
-      suggested by David Sterba.
+ fs/btrfs/extent-tree.c | 13 +++----------
+ 1 file changed, 3 insertions(+), 10 deletions(-)
 
- fs/btrfs/ctree.h      | 2 ++
- fs/btrfs/relocation.c | 9 ++++++++-
- 2 files changed, 10 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 67d71c0..8b23410 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -127,6 +127,8 @@ static inline unsigned long btrfs_chunk_item_size(int num_stripes)
- #define BTRFS_OLD_BACKREF_REV		0
- #define BTRFS_MIXED_BACKREF_REV		1
- 
-+#define EFSCORRUPTED			EUCLEAN /* Filesystem is corrupted */
-+
- /*
-  * every tree block (leaf or node) starts with this header.
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 38c2df8..9fbcfaa 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -6499,16 +6499,9 @@ void btrfs_wait_block_group_reservations(struct btrfs_block_group_cache *bg)
+  * @num_bytes:	The number of bytes in question
+  * @delalloc:   The blocks are allocated for the delalloc write
+  *
+- * This is called by the allocator when it reserves space. Metadata
+- * reservations should be called with RESERVE_ALLOC so we do the proper
+- * ENOSPC accounting.  For data we handle the reservation through clearing the
+- * delalloc bits in the io_tree.  We have to do this since we could end up
+- * allocating less disk space for the amount of data we have reserved in the
+- * case of compression.
+- *
+- * If this is a reservation and the block group has become read only we cannot
+- * make the reservation and return -EAGAIN, otherwise this function always
+- * succeeds.
++ * This is called by the allocator when it reserves space. If this is a
++ * reservation and the block group has become read only we cannot make the
++ * reservation and return -EAGAIN, otherwise this function always succeeds.
   */
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index c0c13dc..6f8b952 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -2712,7 +2712,14 @@ static int do_relocation(struct btrfs_trans_handle *trans,
- 
- 		bytenr = btrfs_node_blockptr(upper->eb, slot);
- 		if (lowest) {
--			BUG_ON(bytenr != node->bytenr);
-+			if (bytenr != node->bytenr) {
-+				btrfs_err(root->fs_info,
-+		"lowest leaf/node mismatch: bytenr %llu node->bytenr %llu slot %d upper %llu",
-+					  bytenr, node->bytenr, slot,
-+					  upper->eb->start);
-+				err = -EFSCORRUPTED;
-+				goto next;
-+			}
- 		} else {
- 			if (node->eb->start == bytenr)
- 				goto next;
--- 
-2.5.5
-
+ static int btrfs_add_reserved_bytes(struct btrfs_block_group_cache *cache,
+ 				    u64 ram_bytes, u64 num_bytes, int delalloc)

@@ -1,42 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40554 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:37686 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752016AbcIVOpW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Sep 2016 10:45:22 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 6A26CAB9F
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Sep 2016 14:45:21 +0000 (UTC)
-Date: Thu, 22 Sep 2016 16:43:21 +0200
+        id S964828AbcIWMjG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 23 Sep 2016 08:39:06 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 17870AC71
+        for <linux-btrfs@vger.kernel.org>; Fri, 23 Sep 2016 12:39:05 +0000 (UTC)
+Date: Fri, 23 Sep 2016 14:37:03 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Jeff Mahoney <jeffm@suse.com>
+To: jeffm@suse.com
 Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
-Subject: Re: [PATCH] btrfs: btrfs_debug should consume fs_info when DEBUG is
- not defined
-Message-ID: <20160922144321.GO16983@twin.jikos.cz>
+Subject: Re: [PATCH 4/5] btrfs: convert pr_* to btrfs_* where possible
+Message-ID: <20160923123703.GX16983@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <1474380303-25995-1-git-send-email-jeffm@suse.com>
- <44bec1b2-b961-ff13-374d-57b7adf5e3fd@suse.com>
+ <1474380303-25995-5-git-send-email-jeffm@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <44bec1b2-b961-ff13-374d-57b7adf5e3fd@suse.com>
+In-Reply-To: <1474380303-25995-5-git-send-email-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 21, 2016 at 12:17:37PM -0400, Jeff Mahoney wrote:
-> We can hit unused variable warnings when btrfs_debug and friends are
-> just aliases for no_printk.  This is due to the fs_info not getting
-> consumed by the function call, which can happen if convenenience
-> variables are used.  This patch adds a new btrfs_no_printk static inline
-> that consumes the convenience variable and does nothing else.  It
-> silences the unused variable warning and has no impact on the generated
-> code:
+On Tue, Sep 20, 2016 at 10:05:02AM -0400, jeffm@suse.com wrote:
+> From: Jeff Mahoney <jeffm@suse.com>
 > 
-> $ size fs/btrfs/extent_io.o*
->    text	   data	    bss	    dec	    hex	filename
->   44072	    152	     32	  44256	   ace0	fs/btrfs/extent_io.o.btrfs_no_printk
->   44072	    152	     32	  44256	   ace0	fs/btrfs/extent_io.o.no_printk
+> For many printks, we want to know which file system issued the message.
 > 
-> Fixes: 27a0dd61a5 (Btrfs: make btrfs_debug match pr_debug handling related to DEBUG)
+> This patch converts most pr_* calls to use the btrfs_* versions instead.
+> In some cases, this means adding plumbing to allow call sites access to
+> an fs_info pointer.
+> 
+> fs/btrfs/check-integrity.c is left alone for another day.
+> 
 > Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 
-Looks good, aded to the queue.
+I've spotted some extra newline in one of the messages so I went through
+the patch again and did some whitespace changes (shifting the strings
+left where it exceeded 80 cols, though it hasn't helped too much).
+
+Reviewed-by: David Sterba <dsterba@suse.com>
+
+Otherwise I like this series, we'll get almost all messges prefixed.

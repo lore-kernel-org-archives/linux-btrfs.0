@@ -1,55 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:48826 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1035207AbcIWOpL (ORCPT
+Received: from mail-pa0-f45.google.com ([209.85.220.45]:33722 "EHLO
+        mail-pa0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1761108AbcIWQwD (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 23 Sep 2016 10:45:11 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1bnRip-0005jT-Dt
-        for linux-btrfs@vger.kernel.org; Fri, 23 Sep 2016 16:45:03 +0200
-To: linux-btrfs@vger.kernel.org
-From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
-        <holger@applied-asynchrony.com>
-Subject: Re: [PATCH v2 3/6] Btrfs: catch invalid free space trees
-Date: Fri, 23 Sep 2016 14:40:13 +0000 (UTC)
-Message-ID: <pan$5a8e4$74da6751$781c9840$92689a17@applied-asynchrony.com>
-References: <218563982dbe4387c60909eeb0add6914a20f813.1474580472.git.osandov@fb.com>
-        <1381db7b5de30b8ea0d2e87aff26bfdb83b030e7.1474580472.git.osandov@fb.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+        Fri, 23 Sep 2016 12:52:03 -0400
+Received: by mail-pa0-f45.google.com with SMTP id hm5so41904345pac.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 23 Sep 2016 09:52:02 -0700 (PDT)
+Date: Fri, 23 Sep 2016 09:52:01 -0700
+From: Omar Sandoval <osandov@osandov.com>
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org, kernel-team@fb.com,
+        Chandan Rajendra <chandan@linux.vnet.ibm.com>,
+        Anatoly Pugachev <matorola@gmail.com>
+Subject: Re: [PATCH v2 6/6] Btrfs: use less memory for delalloc sanity tests
+Message-ID: <20160923165201.GA28767@vader>
+References: <cover.1474580472.git.osandov@fb.com>
+ <c75f5b086bbf8ee43b2bb18e74aebcaeb81fa77a.1474580472.git.osandov@fb.com>
+ <20160923092727.GU16983@twin.jikos.cz>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160923092727.GU16983@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 22 Sep 2016 17:24:22 -0700, Omar Sandoval wrote:
-
-> From: Omar Sandoval <osandov@fb.com>
+On Fri, Sep 23, 2016 at 11:27:27AM +0200, David Sterba wrote:
+> On Thu, Sep 22, 2016 at 05:24:25PM -0700, Omar Sandoval wrote:
+> > From: Omar Sandoval <osandov@fb.com>
+> > 
+> > test_find_delalloc() allocates 256 MB worth of pages. That's all of the
+> > RAM that my MIPS emulator has, so it ends up panicking after it OOM
+> > kills everything. We don't actually need to use that much for this test.
 > 
-> There are two separate issues that can lead to corrupted free space
-> trees.
+> I'm not sure we should limit it that way as more bytes can give it more
+> stress. Can we do it somehow dynamically ? Like start with 256M and fall
+> back to the numbers you've used.
 > 
-> 1. The free space tree bitmaps had an endianness issue on big-endian
->    systems which is fixed by an earlier patch in this series.
-> 2. btrfs-progs before v4.7.3 modified filesystems without updating the
->    free space tree.
-> 
-> To catch both of these issues at once, we need to force the free space
-> tree to be rebuilt. To do so, add a FREE_SPACE_TREE_VALID compat_ro bit.
-> If the bit isn't set, we know that it was either produced by a broken
-> big-endian kernel or may have been corrupted by btrfs-progs.
-> 
-> This also provides us with a way to add rudimentary read-write support
-> for the free space tree to btrfs-progs: it can just clear this bit and
-> have the kernel rebuild the free space tree.
-> 
-> Cc: stable@vger.kernel.org # 4.5+
-> Signed-off-by: Omar Sandoval <osandov@fb.com>
+> Or maybe start from the low bound and allocate until it fails with first
+> ENOMEM.
 
-Tested-by: Holger Hoffstätte <holger@applied-asynchrony.com>
+I figured out how to get qemu to do highmem on MIPS, so we can drop this
+patch. It's reasonable to assume that the sanity tests are running on a
+machine with a decent amount of memory.
 
-Initial mount with this successfully detected the absent _VALID bit;
-fst was rebuilt, subsequent mounts are good without rebuild. \o/
-
-Thanks!
-Holger
-
+-- 
+Omar

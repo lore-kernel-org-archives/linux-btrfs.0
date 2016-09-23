@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f49.google.com ([209.85.220.49]:34304 "EHLO
-        mail-pa0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S964996AbcIWAYd (ORCPT
+Received: from mail-pa0-f45.google.com ([209.85.220.45]:34306 "EHLO
+        mail-pa0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S964944AbcIWAYe (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Sep 2016 20:24:33 -0400
-Received: by mail-pa0-f49.google.com with SMTP id wk8so34098491pab.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Sep 2016 17:24:33 -0700 (PDT)
+        Thu, 22 Sep 2016 20:24:34 -0400
+Received: by mail-pa0-f45.google.com with SMTP id wk8so34098588pab.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Sep 2016 17:24:34 -0700 (PDT)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
 Cc: kernel-team@fb.com, Chandan Rajendra <chandan@linux.vnet.ibm.com>,
         Anatoly Pugachev <matorola@gmail.com>
-Subject: [PATCH v2 3/6] Btrfs: catch invalid free space trees
-Date: Thu, 22 Sep 2016 17:24:22 -0700
-Message-Id: <1381db7b5de30b8ea0d2e87aff26bfdb83b030e7.1474580472.git.osandov@fb.com>
+Subject: [PATCH v2 4/6] Btrfs: fix extent buffer bitmap tests on big-endian systems
+Date: Thu, 22 Sep 2016 17:24:23 -0700
+Message-Id: <a8759775abad1638cb71486dfe60972283365409.1474580472.git.osandov@fb.com>
 In-Reply-To: <218563982dbe4387c60909eeb0add6914a20f813.1474580472.git.osandov@fb.com>
 References: <218563982dbe4387c60909eeb0add6914a20f813.1474580472.git.osandov@fb.com>
 In-Reply-To: <cover.1474580472.git.osandov@fb.com>
@@ -22,114 +22,174 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Omar Sandoval <osandov@fb.com>
 
-There are two separate issues that can lead to corrupted free space
-trees.
+The in-memory bitmap code manipulates words and is therefore sensitive
+to endianness, while the extent buffer bitmap code addresses bytes and
+is byte-order agnostic. Because the byte addressing of the extent buffer
+bitmaps is equivalent to a little-endian in-memory bitmap, the extent
+buffer bitmap tests fail on big-endian systems.
 
-1. The free space tree bitmaps had an endianness issue on big-endian
-   systems which is fixed by an earlier patch in this series.
-2. btrfs-progs before v4.7.3 modified filesystems without updating the
-   free space tree.
+34b3e6c92af1 ("Btrfs: self-tests: Fix extent buffer bitmap test fail on
+BE system") worked around another endianness bug in the tests but missed
+this one because ed9e4afdb055 ("Btrfs: self-tests: Execute page
+straddling test only when nodesize < PAGE_SIZE") disables this part of
+the test on ppc64. That change lost the original meaning of the test,
+however. We really want to test that an equivalent series of operations
+using the in-memory bitmap API and the extent buffer bitmap API produces
+equivalent results.
 
-To catch both of these issues at once, we need to force the free space
-tree to be rebuilt. To do so, add a FREE_SPACE_TREE_VALID compat_ro bit.
-If the bit isn't set, we know that it was either produced by a broken
-big-endian kernel or may have been corrupted by btrfs-progs.
+To fix this, don't use memcmp_extent_buffer() or write_extent_buffer();
+do everything bit-by-bit.
 
-This also provides us with a way to add rudimentary read-write support
-for the free space tree to btrfs-progs: it can just clear this bit and
-have the kernel rebuild the free space tree.
-
-Cc: stable@vger.kernel.org # 4.5+
+Reported-by: Anatoly Pugachev <matorola@gmail.com>
+Tested-by: Anatoly Pugachev <matorola@gmail.com>
+Tested-by: Feifei Xu <xufeifei@linux.vnet.ibm.com>
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- fs/btrfs/ctree.h           |  3 ++-
- fs/btrfs/disk-io.c         |  9 +++++++++
- fs/btrfs/free-space-tree.c |  2 ++
- include/uapi/linux/btrfs.h | 10 +++++++++-
- 4 files changed, 22 insertions(+), 2 deletions(-)
+ fs/btrfs/tests/extent-io-tests.c | 87 +++++++++++++++++++++++-----------------
+ 1 file changed, 51 insertions(+), 36 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 33fe035..791e47c 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -251,7 +251,8 @@ struct btrfs_super_block {
- #define BTRFS_FEATURE_COMPAT_SAFE_CLEAR		0ULL
+diff --git a/fs/btrfs/tests/extent-io-tests.c b/fs/btrfs/tests/extent-io-tests.c
+index d19ab03..caad80b 100644
+--- a/fs/btrfs/tests/extent-io-tests.c
++++ b/fs/btrfs/tests/extent-io-tests.c
+@@ -273,20 +273,37 @@ out:
+ 	return ret;
+ }
  
- #define BTRFS_FEATURE_COMPAT_RO_SUPP			\
--	(BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE)
-+	(BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE |	\
-+	 BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE_VALID)
- 
- #define BTRFS_FEATURE_COMPAT_RO_SAFE_SET	0ULL
- #define BTRFS_FEATURE_COMPAT_RO_SAFE_CLEAR	0ULL
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index c0bfc6c..3dede6d 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2566,6 +2566,7 @@ int open_ctree(struct super_block *sb,
- 	int num_backups_tried = 0;
- 	int backup_index = 0;
- 	int max_active;
-+	int clear_free_space_tree = 0;
- 
- 	tree_root = fs_info->tree_root = btrfs_alloc_root(fs_info, GFP_KERNEL);
- 	chunk_root = fs_info->chunk_root = btrfs_alloc_root(fs_info, GFP_KERNEL);
-@@ -3131,6 +3132,14 @@ retry_root_backup:
- 
- 	if (btrfs_test_opt(fs_info, CLEAR_CACHE) &&
- 	    btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE)) {
-+		clear_free_space_tree = 1;
-+	} else if (btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE) &&
-+		   !btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE_VALID)) {
-+		btrfs_warn(fs_info, "free space tree is invalid");
-+		clear_free_space_tree = 1;
-+	}
+-/**
+- * test_bit_in_byte - Determine whether a bit is set in a byte
+- * @nr: bit number to test
+- * @addr: Address to start counting from
+- */
+-static inline int test_bit_in_byte(int nr, const u8 *addr)
++static int check_eb_bitmap(unsigned long *bitmap, struct extent_buffer *eb,
++			   unsigned long len)
+ {
+-	return 1UL & (addr[nr / BITS_PER_BYTE] >> (nr & (BITS_PER_BYTE - 1)));
++	unsigned long i;
 +
-+	if (clear_free_space_tree) {
- 		btrfs_info(fs_info, "clearing free space tree");
- 		ret = btrfs_clear_free_space_tree(fs_info);
- 		if (ret) {
-diff --git a/fs/btrfs/free-space-tree.c b/fs/btrfs/free-space-tree.c
-index 8fd85bf..ea605ff 100644
---- a/fs/btrfs/free-space-tree.c
-+++ b/fs/btrfs/free-space-tree.c
-@@ -1182,6 +1182,7 @@ int btrfs_create_free_space_tree(struct btrfs_fs_info *fs_info)
++	for (i = 0; i < len * BITS_PER_BYTE; i++) {
++		int bit, bit1;
++
++		bit = !!test_bit(i, bitmap);
++		bit1 = !!extent_buffer_test_bit(eb, 0, i);
++		if (bit1 != bit) {
++			test_msg("Bits do not match\n");
++			return -EINVAL;
++		}
++
++		bit1 = !!extent_buffer_test_bit(eb, i / BITS_PER_BYTE,
++						i % BITS_PER_BYTE);
++		if (bit1 != bit) {
++			test_msg("Offset bits do not match\n");
++			return -EINVAL;
++		}
++	}
++	return 0;
+ }
+ 
+ static int __test_eb_bitmaps(unsigned long *bitmap, struct extent_buffer *eb,
+ 			     unsigned long len)
+ {
+-	unsigned long i, x;
++	unsigned long i, j;
++	u32 x;
++	int ret;
+ 
+ 	memset(bitmap, 0, len);
+ 	memset_extent_buffer(eb, 0, 0, len);
+@@ -297,16 +314,18 @@ static int __test_eb_bitmaps(unsigned long *bitmap, struct extent_buffer *eb,
+ 
+ 	bitmap_set(bitmap, 0, len * BITS_PER_BYTE);
+ 	extent_buffer_bitmap_set(eb, 0, 0, len * BITS_PER_BYTE);
+-	if (memcmp_extent_buffer(eb, bitmap, 0, len) != 0) {
++	ret = check_eb_bitmap(bitmap, eb, len);
++	if (ret) {
+ 		test_msg("Setting all bits failed\n");
+-		return -EINVAL;
++		return ret;
  	}
  
- 	btrfs_set_fs_compat_ro(fs_info, FREE_SPACE_TREE);
-+	btrfs_set_fs_compat_ro(fs_info, FREE_SPACE_TREE_VALID);
- 	fs_info->creating_free_space_tree = 0;
+ 	bitmap_clear(bitmap, 0, len * BITS_PER_BYTE);
+ 	extent_buffer_bitmap_clear(eb, 0, 0, len * BITS_PER_BYTE);
+-	if (memcmp_extent_buffer(eb, bitmap, 0, len) != 0) {
++	ret = check_eb_bitmap(bitmap, eb, len);
++	if (ret) {
+ 		test_msg("Clearing all bits failed\n");
+-		return -EINVAL;
++		return ret;
+ 	}
  
- 	ret = btrfs_commit_transaction(trans, tree_root);
-@@ -1250,6 +1251,7 @@ int btrfs_clear_free_space_tree(struct btrfs_fs_info *fs_info)
- 		return PTR_ERR(trans);
+ 	/* Straddling pages test */
+@@ -316,9 +335,10 @@ static int __test_eb_bitmaps(unsigned long *bitmap, struct extent_buffer *eb,
+ 			sizeof(long) * BITS_PER_BYTE);
+ 		extent_buffer_bitmap_set(eb, PAGE_SIZE - sizeof(long) / 2, 0,
+ 					sizeof(long) * BITS_PER_BYTE);
+-		if (memcmp_extent_buffer(eb, bitmap, 0, len) != 0) {
++		ret = check_eb_bitmap(bitmap, eb, len);
++		if (ret) {
+ 			test_msg("Setting straddling pages failed\n");
+-			return -EINVAL;
++			return ret;
+ 		}
  
- 	btrfs_clear_fs_compat_ro(fs_info, FREE_SPACE_TREE);
-+	btrfs_clear_fs_compat_ro(fs_info, FREE_SPACE_TREE_VALID);
- 	fs_info->free_space_root = NULL;
+ 		bitmap_set(bitmap, 0, len * BITS_PER_BYTE);
+@@ -328,9 +348,10 @@ static int __test_eb_bitmaps(unsigned long *bitmap, struct extent_buffer *eb,
+ 		extent_buffer_bitmap_set(eb, 0, 0, len * BITS_PER_BYTE);
+ 		extent_buffer_bitmap_clear(eb, PAGE_SIZE - sizeof(long) / 2, 0,
+ 					sizeof(long) * BITS_PER_BYTE);
+-		if (memcmp_extent_buffer(eb, bitmap, 0, len) != 0) {
++		ret = check_eb_bitmap(bitmap, eb, len);
++		if (ret) {
+ 			test_msg("Clearing straddling pages failed\n");
+-			return -EINVAL;
++			return ret;
+ 		}
+ 	}
  
- 	ret = clear_free_space_tree(trans, free_space_root);
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index ac5eacd..549ecf4 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -239,7 +239,15 @@ struct btrfs_ioctl_fs_info_args {
-  * Used by:
-  * struct btrfs_ioctl_feature_flags
-  */
--#define BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE	(1ULL << 0)
-+#define BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE		(1ULL << 0)
-+/*
-+ * Older kernels on big-endian systems produced broken free space tree bitmaps,
-+ * and btrfs-progs also used to corrupt the free space tree. If this bit is
-+ * clear, then the free space tree cannot be trusted. btrfs-progs can also
-+ * intentionally clear this bit to ask the kernel to rebuild the free space
-+ * tree.
-+ */
-+#define BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE_VALID	(1ULL << 1)
+@@ -339,28 +360,22 @@ static int __test_eb_bitmaps(unsigned long *bitmap, struct extent_buffer *eb,
+ 	 * something repetitive that could miss some hypothetical off-by-n bug.
+ 	 */
+ 	x = 0;
+-	for (i = 0; i < len / sizeof(long); i++) {
+-		x = (0x19660dULL * (u64)x + 0x3c6ef35fULL) & 0xffffffffUL;
+-		bitmap[i] = x;
+-	}
+-	write_extent_buffer(eb, bitmap, 0, len);
+-
+-	for (i = 0; i < len * BITS_PER_BYTE; i++) {
+-		int bit, bit1;
+-
+-		bit = !!test_bit_in_byte(i, (u8 *)bitmap);
+-		bit1 = !!extent_buffer_test_bit(eb, 0, i);
+-		if (bit1 != bit) {
+-			test_msg("Testing bit pattern failed\n");
+-			return -EINVAL;
++	bitmap_clear(bitmap, 0, len * BITS_PER_BYTE);
++	extent_buffer_bitmap_clear(eb, 0, 0, len * BITS_PER_BYTE);
++	for (i = 0; i < len * BITS_PER_BYTE / 32; i++) {
++		x = (0x19660dULL * (u64)x + 0x3c6ef35fULL) & 0xffffffffU;
++		for (j = 0; j < 32; j++) {
++			if (x & (1U << j)) {
++				bitmap_set(bitmap, i * 32 + j, 1);
++				extent_buffer_bitmap_set(eb, 0, i * 32 + j, 1);
++			}
+ 		}
++	}
  
- #define BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF	(1ULL << 0)
- #define BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL	(1ULL << 1)
+-		bit1 = !!extent_buffer_test_bit(eb, i / BITS_PER_BYTE,
+-						i % BITS_PER_BYTE);
+-		if (bit1 != bit) {
+-			test_msg("Testing bit pattern with offset failed\n");
+-			return -EINVAL;
+-		}
++	ret = check_eb_bitmap(bitmap, eb, len);
++	if (ret) {
++		test_msg("Random bit pattern failed\n");
++		return ret;
+ 	}
+ 
+ 	return 0;
 -- 
 2.10.0
 

@@ -1,64 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f44.google.com ([209.85.220.44]:33683 "EHLO
-        mail-pa0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933536AbcIWAWp (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Sep 2016 20:22:45 -0400
-Received: by mail-pa0-f44.google.com with SMTP id hm5so34132809pac.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Sep 2016 17:22:45 -0700 (PDT)
-From: Omar Sandoval <osandov@osandov.com>
-To: linux-btrfs@vger.kernel.org
-Cc: kernel-team@fb.com, Chandan Rajendra <chandan@linux.vnet.ibm.com>,
+Received: from mx2.suse.de ([195.135.220.15]:38890 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1755313AbcIWJ3b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 23 Sep 2016 05:29:31 -0400
+Date: Fri, 23 Sep 2016 11:27:27 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Omar Sandoval <osandov@osandov.com>
+Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com,
+        Chandan Rajendra <chandan@linux.vnet.ibm.com>,
         Anatoly Pugachev <matorola@gmail.com>
-Subject: [PATCH v2 0/6] Btrfs: free space tree and sanity test fixes
-Date: Thu, 22 Sep 2016 17:22:31 -0700
-Message-Id: <cover.1474580472.git.osandov@fb.com>
+Subject: Re: [PATCH v2 6/6] Btrfs: use less memory for delalloc sanity tests
+Message-ID: <20160923092727.GU16983@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <cover.1474580472.git.osandov@fb.com>
+ <c75f5b086bbf8ee43b2bb18e74aebcaeb81fa77a.1474580472.git.osandov@fb.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <c75f5b086bbf8ee43b2bb18e74aebcaeb81fa77a.1474580472.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Omar Sandoval <osandov@fb.com>
+On Thu, Sep 22, 2016 at 05:24:25PM -0700, Omar Sandoval wrote:
+> From: Omar Sandoval <osandov@fb.com>
+> 
+> test_find_delalloc() allocates 256 MB worth of pages. That's all of the
+> RAM that my MIPS emulator has, so it ends up panicking after it OOM
+> kills everything. We don't actually need to use that much for this test.
 
-This is v2 of my earlier series "Btrfs: fix free space tree
-bitmaps+tests on big-endian systems" [1]. Patches 1, 4, and 5 are the
-same as patches 1, 2, and 3 from the original series. I've added patch 2
-to fix another bug I noticed (an xfstest went out earlier). Patch 3 is
-the result of the earlier discussion here [2]. Finally, patch 6 was
-necessary to get the sanity tests to run on my MIPS emulator.
+I'm not sure we should limit it that way as more bytes can give it more
+stress. Can we do it somehow dynamically ? Like start with 256M and fall
+back to the numbers you've used.
 
-This series applies to v4.8-rc7. The sanity tests pass on both x86-64
-and MIPS, and there are no xfstests regressions. Chandan and Anatoly,
-could you test these out as well?
-
-I'm working on the btrfs-progs follow up, but these patches are safe
-without that -- the new FREE_SPACE_TREE_VALID bit will stop all versions
-of btrfs-progs from mounting read-write.
-
-Thanks!
-
-1: http://marc.info/?l=linux-btrfs&m=146853909905570&w=2
-2: http://marc.info/?l=linux-btrfs&m=147448992301110&w=2
-
-Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-Cc: Anatoly Pugachev <matorola@gmail.com>
-
-Omar Sandoval (6):
-  Btrfs: fix free space tree bitmaps on big-endian systems
-  Btrfs: fix mount -o clear_cache,space_cache=v2
-  Btrfs: catch invalid free space trees
-  Btrfs: fix extent buffer bitmap tests on big-endian systems
-  Btrfs: expand free space tree sanity tests to catch endianness bug
-  Btrfs: use less memory for delalloc sanity tests
-
- fs/btrfs/ctree.h                       |   3 +-
- fs/btrfs/disk-io.c                     |  33 ++++---
- fs/btrfs/extent_io.c                   |  64 +++++++++----
- fs/btrfs/extent_io.h                   |  22 +++++
- fs/btrfs/free-space-tree.c             |  19 ++--
- fs/btrfs/tests/extent-io-tests.c       |  95 +++++++++++--------
- fs/btrfs/tests/free-space-tree-tests.c | 164 +++++++++++++++++++--------------
- include/uapi/linux/btrfs.h             |  10 +-
- 8 files changed, 261 insertions(+), 149 deletions(-)
-
--- 
-2.10.0
-
+Or maybe start from the low bound and allocate until it fails with first
+ENOMEM.

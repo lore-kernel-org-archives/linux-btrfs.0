@@ -1,113 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56093 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:43114 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1755175AbcIWLZe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 23 Sep 2016 07:25:34 -0400
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: bo.li.liu@oracle.com, jbacik@fb.com, David Sterba <dsterba@suse.com>
-Subject: [PATCH v2] Btrfs: don't BUG() during drop snapshot
-Date: Fri, 23 Sep 2016 13:23:28 +0200
-Message-Id: <1474629808-30823-1-git-send-email-dsterba@suse.com>
-In-Reply-To: <1474556904-22495-1-git-send-email-dsterba@suse.com>
-References: <1474556904-22495-1-git-send-email-dsterba@suse.com>
+        id S965586AbcIWNY4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 23 Sep 2016 09:24:56 -0400
+Date: Fri, 23 Sep 2016 15:22:52 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, hawken@thehawken.org
+Subject: Re: [PATCH 1/2] btrfs-progs: Return more meaningful value for
+ btrfs_read_dev_super
+Message-ID: <20160923132252.GY16983@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20160920021902.818-1-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160920021902.818-1-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Josef Bacik <jbacik@fb.com>
+On Tue, Sep 20, 2016 at 10:19:01AM +0800, Qu Wenruo wrote:
+> btrfs_read_dev_super() only returns 0 or -1, which doesn't really help,
+> caller won't know if it's caused by bad superblock or superblock out of
+> range.
+> 
+> Change it to return -ENOENT for superblock which is out of range, and
+> return -EIO for bad superblocks.
+> 
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+>  disk-io.c | 9 +++++----
+>  1 file changed, 5 insertions(+), 4 deletions(-)
+> 
+> diff --git a/disk-io.c b/disk-io.c
+> index 854c285..26852ee 100644
+> --- a/disk-io.c
+> +++ b/disk-io.c
+> @@ -1590,14 +1590,15 @@ int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 sb_bytenr,
+>  
+>  	if (sb_bytenr != BTRFS_SUPER_INFO_OFFSET) {
+>  		ret = pread64(fd, buf, BTRFS_SUPER_INFO_SIZE, sb_bytenr);
 
-Really there's lots of things that can go wrong here, kill all the
-BUG_ON()'s and replace the logic ones with ASSERT()'s and return EIO
-instead.
+pread64 sets errno, should be returned
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
-[ switched to btrfs_err, errors go to common label ]
-Signed-off-by: David Sterba <dsterba@suse.com>
----
+> +		/* Special return value for out of dev/file range */
+>  		if (ret < BTRFS_SUPER_INFO_SIZE)
+> -			return -1;
+> +			return -ENOENT;
+>  
+>  		if (btrfs_super_bytenr(buf) != sb_bytenr)
+> -			return -1;
+> +			return -EIO;
+>  
+>  		if (check_super(buf, sbflags))
+> -			return -1;
+> +			return -EIO;
 
-- added missing return to one branch
-- merge common exit code to a label, minor reordering
-
- fs/btrfs/extent-tree.c | 38 +++++++++++++++++++++++++++-----------
- 1 file changed, 27 insertions(+), 11 deletions(-)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index b6e8b58f05e4..7a0b09fb18e2 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -8922,15 +8922,13 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
- 	ret = btrfs_lookup_extent_info(trans, root, bytenr, level - 1, 1,
- 				       &wc->refs[level - 1],
- 				       &wc->flags[level - 1]);
--	if (ret < 0) {
--		btrfs_tree_unlock(next);
--		free_extent_buffer(next);
--		return ret;
--	}
-+	if (ret < 0)
-+		goto out_unlock;
- 
- 	if (unlikely(wc->refs[level - 1] == 0)) {
- 		btrfs_err(root->fs_info, "Missing references.");
--		BUG();
-+		ret = -EIO;
-+		goto out_unlock;
- 	}
- 	*lookup_info = 0;
- 
-@@ -8982,7 +8980,12 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
- 	}
- 
- 	level--;
--	BUG_ON(level != btrfs_header_level(next));
-+	ASSERT(level == btrfs_header_level(next));
-+	if (level != btrfs_header_level(next)) {
-+		btrfs_err(root->fs_info, "mismatched level");
-+		ret = -EIO;
-+		goto out_unlock;
-+	}
- 	path->nodes[level] = next;
- 	path->slots[level] = 0;
- 	path->locks[level] = BTRFS_WRITE_LOCK_BLOCKING;
-@@ -8997,8 +9000,15 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
- 		if (wc->flags[level] & BTRFS_BLOCK_FLAG_FULL_BACKREF) {
- 			parent = path->nodes[level]->start;
- 		} else {
--			BUG_ON(root->root_key.objectid !=
-+			ASSERT(root->root_key.objectid ==
- 			       btrfs_header_owner(path->nodes[level]));
-+			if (root->root_key.objectid !=
-+			    btrfs_header_owner(path->nodes[level])) {
-+				btrfs_err(root->fs_info,
-+						"mismatched block owner");
-+				ret = -EIO;
-+				goto out_unlock;
-+			}
- 			parent = 0;
- 		}
- 
-@@ -9013,12 +9023,18 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
- 		}
- 		ret = btrfs_free_extent(trans, root, bytenr, blocksize, parent,
- 				root->root_key.objectid, level - 1, 0);
--		BUG_ON(ret); /* -ENOMEM */
-+		if (ret)
-+			goto out_unlock;
- 	}
-+
-+	*lookup_info = 1;
-+	ret = 1;
-+
-+out_unlock:
- 	btrfs_tree_unlock(next);
- 	free_extent_buffer(next);
--	*lookup_info = 1;
--	return 1;
-+
-+	return ret;
- }
- 
- /*
--- 
-2.7.1
-
+and we should return what check_super returns, though it's -EIO in most
+cases.

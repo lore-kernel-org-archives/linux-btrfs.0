@@ -1,83 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:34078 "EHLO
-        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754918AbcIXMn1 (ORCPT
+Received: from mail-oi0-f41.google.com ([209.85.218.41]:36038 "EHLO
+        mail-oi0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751004AbcIXPOY (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 24 Sep 2016 08:43:27 -0400
-Date: Sat, 24 Sep 2016 12:43:23 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Roman Mamedov <rm@romanrm.net>
-Cc: Alexander Tomokhov <alexoundos@ya.ru>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Does data checksumming remain for files with No_COW file
- attribute?
-Message-ID: <20160924124323.GS7138@carfax.org.uk>
-References: <767591474719974@web21o.yandex.ru>
- <20160924174012.51d44caa@natsu>
+        Sat, 24 Sep 2016 11:14:24 -0400
+Received: by mail-oi0-f41.google.com with SMTP id t83so165473586oie.3
+        for <linux-btrfs@vger.kernel.org>; Sat, 24 Sep 2016 08:14:24 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="1WN/MJ7JJGqVzwIW"
-In-Reply-To: <20160924174012.51d44caa@natsu>
+In-Reply-To: <20160923180939.GB27026@localhost.localdomain>
+References: <CAAwVk4k91Q91jTJoGHPNSjtDruGQ4qHSa-srB2xRWMvmQ=bTBQ@mail.gmail.com>
+ <20160923180939.GB27026@localhost.localdomain>
+From: Mark Gavalda <markgavalda@kinsta.com>
+Date: Sat, 24 Sep 2016 17:14:22 +0200
+Message-ID: <CAAwVk4kUkmZPM2X9AamFBgA+XH=ErUJTmLvCkii3nccgG9kLYw@mail.gmail.com>
+Subject: Re: kernel BUG at /build/linux-a2WvEb/linux-4.4.0/fs/btrfs/inode.c:3258
+To: bo.li.liu@oracle.com
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Thanks for the info. So this actually happened with the latest
+official Ubuntu 16.04 kernel, 4.4.0-38-generic x86_64. I looked up the
+commit you mentioned and it seems like it was included in 2015 so
+should definitely be in the 4.4.0-38, which corresponds to the 4.4.19
+mainline kernel afaik.
 
---1WN/MJ7JJGqVzwIW
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Mark
 
-On Sat, Sep 24, 2016 at 05:40:12PM +0500, Roman Mamedov wrote:
-> On Sat, 24 Sep 2016 15:26:14 +0300
-> Alexander Tomokhov <alexoundos@ya.ru> wrote:
-> 
-> > does setting No_COW on a file (chattr +C) imply disabling data checksumming on it?
-> 
-> Yes. IIRC the reasoning was that it's more difficult to track checksums of
-> data which is being overwritten in-place (as opposed to CoW).
-
-   It's because you can't update the data and the checksum atomically
--- at some point in the writing process, they must be inconsistent.
-This is considered a Bad Thing.
-
-   Hugo.
-
-> > may it disable checksumming only for newly written extents and keep for reading existing ones?
-> 
-> You can't apply chattr +C to any files of non-zero length, so by definition
-> there won't be any pre-existing checksummed extents in that file.
-> 
-> -- 
-> With respect,
-> Roman
-
-
-
--- 
-Hugo Mills             | Comic Sans goes into a bar, and the barman says, "We
-hugo@... carfax.org.uk | don't serve your type here."
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
-
---1WN/MJ7JJGqVzwIW
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJX5nTrAAoJEFheFHXiqx3kXQMQAI9yAXSDLtDccg+W6ofyHWys
-dCB6BT/93IpnzaNk8G+Hcx8UaI7KOj9sdwXksuyKwLng8nNbIzztLv3Nt6yCw1Co
-0vqQ5+90euF7c39iXtxpGFGccj7YIOf+JR2DDM6gqGsYBD6lCPLZWW76/uW56Opy
-M/0WYeGs6s9xT3/DV2h79waQ47aZbufrfp/MPGe4vaiP2qsSSdyFSdqOLO/XdUhR
-C9r/zgfikwH+FO0Tv6qi5VWFkgyZva0RAw7D4P2U5BBwclko6OeNOUPO0PMqve65
-BP1EMKFa56mmq+fG0G2VHuCv8FO0as6ZLr0r03CJyU7CP9EQVnFbUWR2BRPGTjBl
-iAkijWUC5p3wQvNd3jziJvvYUrPLXwZQHA/B4b4yQBAGjPcsWhWznJsVkUoqR5qU
-qGwm4E0q47mh4ASVd/OYanKuUglET3J+D5ql5slWsrn5zuKun3e6FXEA5r/XP3Al
-zqSsMhSAWUOqYxWNN6EAsGquFnh0qutm2ySeCpEFlEL29J4ydSXjh35KTlHniOgB
-kICJwaedY19HedaargpQ9WSiHBhhuBvcjHiPjIY7zCIuNh4BzUbBi0naVG9xQtG/
-GO6mOqzIkcZyb89g7bH5gyzPp8Ea0X4QK7ZQTmDUBHeiaWtBk7PuC2zs5jH15ql6
-SREeYOMaSaOT1T3uGXkb
-=OXNP
------END PGP SIGNATURE-----
-
---1WN/MJ7JJGqVzwIW--
+On Fri, Sep 23, 2016 at 8:09 PM, Liu Bo <bo.li.liu@oracle.com> wrote:
+> Hi,
+>
+> On Wed, Sep 21, 2016 at 11:53:50AM +0200, Mark Gavalda wrote:
+>> Hi,
+>> Just bumped into this, let me know if you need more info:
+>>
+>> [160997.651655] ------------[ cut here ]------------
+>> [160997.656497] kernel BUG at
+>> /build/linux-a2WvEb/linux-4.4.0/fs/btrfs/inode.c:3258!
+>> [160997.664083] invalid opcode: 0000 [#1] SMP
+>> [160997.668604] Modules linked in: ufs msdos xfs xt_recent xt_nat
+>> xt_multiport ip6t_REJECT nf_reject_ipv6 xt_hl ip6t_rt
+>> nf_conntrack_ipv6 nf_defrag_ipv6 ipt_REJECT nf_reject_ipv4 xt_limit
+>> xt_addrtype xt_conntrack binfmt_misc veth xt_CHECKSUM iptable_mangle
+>> xt_tcpudp ipt_MASQUERADE nf_nat_masquerade_ipv4 xt_comment iptable_nat
+>> nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack
+>> bridge stp llc ip6table_filter ip6_tables iptable_filter ip_tables
+>> x_tables ppdev parport_pc parport pvpanic serio_raw ib_iser rdma_cm
+>> iw_cm ib_cm ib_sa ib_mad ib_core ib_addr iscsi_tcp libiscsi_tcp
+>> libiscsi scsi_transport_iscsi autofs4 btrfs raid10 raid456
+>> async_raid6_recov async_memcpy async_pq async_xor async_tx xor
+>> raid6_pq libcrc32c raid1 raid0 multipath linear crct10dif_pclmul
+>> crc32_pclmul aesni_intel aes_x86_64
+>> [160997.748543]  lrw gf128mul glue_helper ablk_helper cryptd psmouse virtio_scsi
+>> [160997.755223] CPU: 7 PID: 395996 Comm: fail2ban-server Not tainted
+>> 4.4.0-36-generic #55-Ubuntu
+>> [160997.763848] Hardware name: Google Google Compute Engine/Google
+>> Compute Engine, BIOS Google 01/01/2011
+>> [160997.773273] task: ffff880d4f73ee00 ti: ffff880417b0c000 task.ti:
+>> ffff880417b0c000
+>> [160997.780946] RIP: 0010:[<ffffffffc0186b4d>]  [<ffffffffc0186b4d>]
+>> btrfs_orphan_add+0x10d/0x1e0 [btrfs]
+>> [160997.790504] RSP: 0018:ffff880417b0fe08  EFLAGS: 00010286
+>> [160997.796010] RAX: 00000000ffffffe4 RBX: ffff88025bd43000 RCX:
+>> 00000000ffffffe4
+>> [160997.803332] RDX: 0000000000000001 RSI: 0000000000040000 RDI:
+>> ffff880dfeba0200
+>> [160997.810653] RBP: ffff880417b0fe38 R08: 0000000000000000 R09:
+>> 0000000000000001
+>> [160997.817975] R10: ffffea0015749880 R11: 0000000000000000 R12:
+>> ffff880771fe9150
+>> [160997.825313] R13: ffff88025bd433f8 R14: ffff8807b42ff720 R15:
+>> 0000000000000001
+>> [160997.832637] FS:  00007f20bf3ad700(0000) GS:ffff880e073c0000(0000)
+>> knlGS:0000000000000000
+>> [160997.840915] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+>> [160997.846847] CR2: 00007fff016e8de8 CR3: 0000000cfaec1000 CR4:
+>> 00000000001406e0
+>> [160997.854173] Stack:
+>> [160997.856391]  ffff880700000001 0000000000000000 ffff8807b42ff720
+>> ffff88025bd43000
+>> [160997.864475]  ffff880771fe9150 ffff88070d5ea4d8 ffff880417b0fe70
+>> ffffffffc018afb4
+>> [160997.872607]  ffff880d89a0c900 ffff88070d5ea4d8 ffff880771fe9150
+>> ffff880417b0fee0
+>> [160997.880666] Call Trace:
+>> [160997.883339]  [<ffffffffc018afb4>] btrfs_unlink+0xa4/0xb0 [btrfs]
+>> [160997.889544]  [<ffffffff8121a151>] vfs_unlink+0xf1/0x1a0
+>> [160997.894960]  [<ffffffff8138d1eb>] ? apparmor_path_unlink+0x1b/0x20
+>> [160997.901339]  [<ffffffff8121d749>] do_unlinkat+0x279/0x2d0
+>> [160997.906928]  [<ffffffff8121e206>] SyS_unlink+0x16/0x20
+>> [160997.912263]  [<ffffffff8182dfb2>] entry_SYSCALL_64_fastpath+0x16/0x71
+>> [160997.918891] Code: 41 5e 41 5f 5d c3 31 d2 eb 84 45 31 ff eb 92 49
+>> 8b 54 24 40 eb b7 4c 89 e6 4c 89 f7 89 55 d0 e8 0a fe fd ff 85 c0 8b
+>> 55 d0 74 85 <0f> 0b be 07 00 00 00 48 89 df e8 84 fa fd ff 48 85 c0 0f
+>> 84 b0
+>> [160997.945676] RIP  [<ffffffffc0186b4d>] btrfs_orphan_add+0x10d/0x1e0 [btrfs]
+>> [160997.952947]  RSP <ffff880417b0fe08>
+>> [160997.957719] ---[ end trace 1aeb484018da7058 ]---
+>
+> We've cleaned up all unnecessary BUG_ONs in btrfs_orphan_add, so can you try out
+> a newer one to see if the problem still exists, please?
+>
+> Thanks,
+>
+> -liubo

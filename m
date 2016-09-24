@@ -1,176 +1,137 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f52.google.com ([209.85.218.52]:34333 "EHLO
-        mail-oi0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S934181AbcIWVHw (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:38508 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1753144AbcIXC2M (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 23 Sep 2016 17:07:52 -0400
-Received: by mail-oi0-f52.google.com with SMTP id a62so148788361oib.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 23 Sep 2016 14:07:51 -0700 (PDT)
+        Fri, 23 Sep 2016 22:28:12 -0400
+Date: Fri, 23 Sep 2016 22:28:10 -0400
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: Chris Mason <clm@fb.com>
+Cc: Paul Jones <paul@pauljones.id.au>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs rare silent data corruption with kernel data leak
+Message-ID: <20160924022810.GP21290@hungrycats.org>
+References: <20160921045556.GN21290@hungrycats.org>
+ <ME1PR01MB13788B5A79BF88786A1D571D9EF60@ME1PR01MB1378.ausprd01.prod.outlook.com>
+ <c47741e6-76d4-0900-e126-2be4862233db@fb.com>
 MIME-Version: 1.0
-In-Reply-To: <CAB1rxdZhkV0Y-sDN4vUm9P4HeeeWU6Lrumr-iRhEYyz_TvCCDQ@mail.gmail.com>
-References: <CAB1rxdbJX7rgv-NrHyGD7wMMcFf1EDR_aJ8yaTs7r=O-iXTo7w@mail.gmail.com>
- <CAJCQCtSz15HC99QetsSzJRtbLgZU+iohej9Mf6qE4q39MmZfKA@mail.gmail.com>
- <CAB1rxdYdOZvgymnpzkURVxP7J2UQ=W4ANZpte+r8Z=9XAOuBQw@mail.gmail.com>
- <CAJCQCtSEVaxj9bwKyb57tM3eZ946oHOUZX7AHQV_5aXWfjZ2gw@mail.gmail.com>
- <CAB1rxdYVCgnneJuCTe308RVOppvy5cMYzPtG-YnL7UEDdJYGtw@mail.gmail.com>
- <CAJCQCtTwUdiFacTSKJgGKvefj1Q66SGJt7U5yKNGFZpmmaOPWA@mail.gmail.com>
- <CAB1rxdashbKv_fZZ1Hrhb8aoaFFGq35OOVM85Q-AzDCLZ13x9g@mail.gmail.com> <CAB1rxdZhkV0Y-sDN4vUm9P4HeeeWU6Lrumr-iRhEYyz_TvCCDQ@mail.gmail.com>
-From: Mirak M <mirak63@gmail.com>
-Date: Fri, 23 Sep 2016 23:07:50 +0200
-Message-ID: <CAB1rxdYdiOLFFF7HBoK8A5fA59QgRk18XuKFsLWkwqNF6DhHeQ@mail.gmail.com>
-Subject: Re: Can't mount btrfs raid1
-To: Chris Murphy <lists@colorremedies.com>, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="s2lX4GznBIrto1wi"
+In-Reply-To: <c47741e6-76d4-0900-e126-2be4862233db@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-And the btrfs-debug-tree
-https://drive.google.com/open?id=0B4abov8sCq9OcHQ3eGN4WmtxZ2M
 
-2016-09-23 22:11 GMT+02:00 Mirak M <mirak63@gmail.com>:
-> Hi,
->
-> This the 2T img of the partition.
->
-> https://drive.google.com/file/d/0B4abov8sCq9OUWdvRkpUYUt4TU0/view?usp=drivesdk
->
->>
->> Le 23 sept. 2016 00:05, "Chris Murphy" <lists@colorremedies.com> a écrit :
->>>
->>> On Thu, Sep 22, 2016 at 3:55 PM, Mirak M <mirak63@gmail.com> wrote:
->>> > Hi,
->>> >
->>> > Same error when mouting with this fedora iso, with mount, mount -o
->>> > recovery and mount -o ro,recovery
->>> >
->>> > #############################################################################
->>> > [  682.954511] BTRFS info (device sdc2): disk space caching is enabled
->>> > [  682.954518] BTRFS info (device sdc2): has skinny extents
->>> > [  691.321125] BTRFS critical (device sdc2): corrupt leaf, bad key
->>> > order: block=1957998690304,root=1, slot=29
->>> > [  691.321156] ------------[ cut here ]------------
->>> > [  691.321203] WARNING: CPU: 3 PID: 3502 at
->>> > fs/btrfs/extent-tree.c:6957 __btrfs_free_extent.isra.68+0x79c/0xca0
->>> > [btrfs]
->>> > [  691.321204] BTRFS: Transaction aborted (error -5)
->>> > [  691.321206] Modules linked in: fuse nf_conntrack_netbios_ns
->>> > nf_conntrack_broadcast ip6t_rpfilter ip6t_REJECT nf_reject_ipv6
->>> > xt_conntrack ip_set nfnetlink ebtable_nat ebtable_broute bridge
->>> > ip6table_raw ip6table_nat nf_conntrack_ipv6 nf_defrag_ipv6 nf_nat_ipv6
->>> > ip6table_security ip6table_mangle iptable_raw iptable_nat
->>> > nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack
->>> > iptable_security iptable_mangle ebtable_filter ebtables
->>> > ip6table_filter ip6_tables ir_lirc_codec snd_hda_codec_realtek
->>> > lirc_dev snd_hda_codec_generic rc_rc6_mce snd_hda_codec_hdmi coretemp
->>> > mceusb snd_hda_intel rc_core i2c_algo_bit kvm_intel snd_hda_codec ttm
->>> > ppdev joydev kvm snd_hda_core drm_kms_helper snd_hwdep irqbypass drm
->>> > snd_seq snd_seq_device snd_pcm snd_timer snd soundcore parport_pc
->>> > shpchp wmi parport video nv_tco
->>> > [  691.321276]  acpi_cpufreq i2c_nforce2 tpm_tis tpm_tis_core tpm nfsd
->>> > auth_rpcgss nfs_acl lockd grace nls_utf8 isofs squashfs btrfs
->>> > ata_generic pata_acpi xor raid6_pq serio_raw 8021q garp stp llc mrp
->>> > firewire_ohci forcedeth firewire_core pata_jmicron crc_itu_t fjes
->>> > hid_logitech_hidpp hid_logitech ff_memless hid_logitech_dj sunrpc
->>> > scsi_transport_iscsi loop
->>> > [  691.321310] CPU: 3 PID: 3502 Comm: mount Not tainted
->>> > 4.8.0-0.rc7.git1.1.fc26.x86_64 #1
->>> > [  691.321311] Hardware name: Gigabyte Technology Co., Ltd.
->>> > GA-E7AUM-DS2H/GA-E7AUM-DS2H, BIOS F2 12/17/2008
->>> > [  691.321314]  0000000000000286 000000002c34a0c3 ffffa37a76593688
->>> > ffffffff8f466ff3
->>> > [  691.321318]  ffffa37a765936d8 0000000000000000 ffffa37a765936c8
->>> > ffffffff8f0ae7ab
->>> > [  691.321322]  00001b2d00000246 000001c81f860000 00000000fffffffb
->>> > ffffa379a9209000
->>> > [  691.321326] Call Trace:
->>> > [  691.321331]  [<ffffffff8f466ff3>] dump_stack+0x86/0xc3
->>> > [  691.321333]  [<ffffffff8f0ae7ab>] __warn+0xcb/0xf0
->>> > [  691.321335]  [<ffffffff8f0ae82f>] warn_slowpath_fmt+0x5f/0x80
->>> > [  691.321351]  [<ffffffffc052da4c>]
->>> > __btrfs_free_extent.isra.68+0x79c/0xca0 [btrfs]
->>> > [  691.321366]  [<ffffffffc0532245>] ?
->>> > __btrfs_run_delayed_refs+0x195/0x1780 [btrfs]
->>> > [  691.321383]  [<ffffffffc0532d12>]
->>> > __btrfs_run_delayed_refs+0xc62/0x1780 [btrfs]
->>> > [  691.321399]  [<ffffffffc05369b1>] btrfs_run_delayed_refs+0xa1/0x2d0 [btrfs]
->>> > [  691.321417]  [<ffffffffc054ebb2>] btrfs_commit_transaction+0x52/0xb40 [btrfs]
->>> > [  691.321420]  [<ffffffff8f12e495>] ? rcu_read_lock_sched_held+0x45/0x80
->>> > [  691.321423]  [<ffffffff8f271d19>] ? kmem_cache_free+0x2f9/0x340
->>> > [  691.321442]  [<ffffffffc059ce18>] btrfs_recover_log_trees+0x3e8/0x480 [btrfs]
->>> > [  691.321462]  [<ffffffffc0598390>] ? replay_one_extent+0x710/0x710 [btrfs]
->>> > [  691.321480]  [<ffffffffc054bc9f>] open_ctree+0x237f/0x2660 [btrfs]
->>> > [  691.321494]  [<ffffffffc051b9d3>] btrfs_mount+0xda3/0xef0 [btrfs]
->>> > [  691.321498]  [<ffffffff8f2a7828>] mount_fs+0x38/0x160
->>> > [  691.321500]  [<ffffffff8f2c96be>] ? alloc_vfsmnt+0x19e/0x230
->>> > [  691.321502]  [<ffffffff8f2c9c4b>] vfs_kern_mount+0x6b/0x150
->>> > [  691.321516]  [<ffffffffc051add3>] btrfs_mount+0x1a3/0xef0 [btrfs]
->>> > [  691.321520]  [<ffffffff8f10b8d1>] ? lockdep_init_map+0x61/0x210
->>> > [  691.321522]  [<ffffffff8f2a7828>] mount_fs+0x38/0x160
->>> > [  691.321523]  [<ffffffff8f2c96be>] ? alloc_vfsmnt+0x19e/0x230
->>> > [  691.321525]  [<ffffffff8f2c9c4b>] vfs_kern_mount+0x6b/0x150
->>> > [  691.321527]  [<ffffffff8f2ccb3d>] do_mount+0x1dd/0xcf0
->>> > [  691.321529]  [<ffffffff8f29e1a3>] ? __check_object_size+0xd3/0x214
->>> > [  691.321531]  [<ffffffff8f2224a0>] ? memdup_user+0x60/0x90
->>> > [  691.321534]  [<ffffffff8f2cd963>] SyS_mount+0x83/0xd0
->>> > [  691.321537]  [<ffffffff8f8f78fc>] entry_SYSCALL_64_fastpath+0x1f/0xbd
->>> > [  691.321539] ---[ end trace 8e57b3f7e61b4de9 ]---
->>> > [  691.321740] BTRFS: error (device sdc2) in __btrfs_free_extent:6957:
->>> > errno=-5 IO failure
->>> > [  691.321752] BTRFS: error (device sdc2) in
->>> > btrfs_run_delayed_refs:2960: errno=-5 IO failure
->>> > [  691.324478] BTRFS: error (device sdc2) in btrfs_replay_log:2470:
->>> > errno=-5 IO failure (Failed to recover log tree)
->>> > [  691.326725] pending csums is 4096
->>> > [  691.327863] BTRFS error (device sdc2): cleaner transaction attach
->>> > returned -30
->>> > [  691.407116] BTRFS: open_ctree failed
->>> > [  691.408577] mount (3502) used greatest stack depth: 9880 bytes left
->>> >
->>> > ############################################################################################
->>> >
->>> > btrfs check --repair crashes :
->>> >
->>> > [root@new-host mnt]# btrfs check --repair /dev/sda2
->>> > enabling repair mode
->>> > repair mode will force to clear out log tree, Are you sure? [y/N]: y
->>> > Unable to find block group for 0
->>> > extent-tree.c:289: find_search_start: Assertion `1` failed.
->>> > btrfs(+0x514da)[0x555c5edee4da]
->>> > btrfs(btrfs_reserve_extent+0xa3f)[0x555c5edf34cf]
->>> > btrfs(btrfs_alloc_free_block+0x5f)[0x555c5edf359f]
->>> > btrfs(__btrfs_cow_block+0xc4)[0x555c5ede43d4]
->>> > btrfs(btrfs_cow_block+0x35)[0x555c5ede49d5]
->>> > btrfs(+0x4cf26)[0x555c5ede9f26]
->>> > btrfs(btrfs_commit_transaction+0x95)[0x555c5edebd65]
->>> > btrfs(cmd_check+0x843)[0x555c5edd1723]
->>> > btrfs(main+0x7b)[0x555c5edad03b]
->>> > /lib64/libc.so.6(__libc_start_main+0xf1)[0x7ff7aae8e421]
->>> > btrfs(_start+0x2a)[0x555c5edad14a]
->>> >
->>> > ############################################################################################
->>>
->>>
->>> OK at this point what I'd do is see if you can btrfs-image -c9 -t4 and
->>> optionally -s and try to make an image of it. And also
->>> 'btrfs-debug-tree <dev> > btrfsdebugtree.log' and then compress it.
->>> Stick those somewhere like dropbox or google drive, get a public URL
->>> for them, and include the URLs in a bugzilla.kernel.org bug report
->>> with this post's kernel call trace and btrfs check output, and then
->>> also the configuration information for the volume (metadata raid1,
->>> data raid1 or whatever it is); the 'btrfs rescue super-recover -v'
->>> output is maybe useful info also.
->>>
->>> I notice this kernel's call trace doesn't include a complaint about
->>> the superblock though, even though it doesn't help it continue.
->>>
->>> Next is restore if you don't have current backups.
->>> https://btrfs.wiki.kernel.org/index.php/Restore
->>>
->>> And then the task is narrowing down whether this is hardware related,
->>> and if so what, but as far as salvaging this fs at the moment I'm out
->>> of ideas.
->>>
->>>
->>>
->>> --
->>> Chris Murphy
+--s2lX4GznBIrto1wi
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+On Thu, Sep 22, 2016 at 04:42:06PM -0400, Chris Mason wrote:
+> On 09/21/2016 07:14 AM, Paul Jones wrote:
+> >>-----Original Message-----
+> >>From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-
+> >>owner@vger.kernel.org] On Behalf Of Zygo Blaxell
+> >>Sent: Wednesday, 21 September 2016 2:56 PM
+> >>To: linux-btrfs@vger.kernel.org
+> >>Subject: btrfs rare silent data corruption with kernel data leak
+> >>
+> >>Summary:
+> >>
+> >>There seem to be two btrfs bugs here: one loses data on writes, and the
+> >>other leaks data from the kernel to replace it on reads.  It all happen=
+s after
+> >>checksums are verified, so the corruption is entirely silent--no EIO er=
+rors,
+> >>kernel messages, or device event statistics.
+> >>
+> >>Compressed extents are corrupted with kernel data leak.  Uncompressed
+> >>extents may not be corrupted, or may be corrupted by deterministically
+> >>replacing data bytes with zero, or may not be corrupted.  No preconditi=
+ons
+> >>for corruption are known.  Less than one file per hundred thousand seem=
+s to
+> >>be affected.  Only specific parts of any file can be affected.
+> >>Kernels v4.0..v4.5.7 tested, all have the issue.
+>=20
+> Zygo, could you please bounce me your original email?  Somehow exchange a=
+te
+> it.
+
+Resent (also archived at http://www.spinics.net/lists/linux-btrfs/msg59102.=
+html).
+
+> If you're seeing this databases that use fsync, it could be related to the
+> fsync fix I put into the last RC.  On my boxes it caused crashes, but mem=
+ory
+> corruptions aren't impossible.
+
+Did you mean cbd60aa7cd "Btrfs: remove root_log_ctx from ctx list before
+btrfs_sync_log returns"?  If so, I can cherry-pick that onto a previously
+tested kernel and see what happens.
+
+> Any chance you can do a controlled experiment to rule out compression?
+
+It took two weeks of mining to find one extent with compression.
+I've never seen one that wasn't compressed, which (I'm assuming) means
+they're even harder to find if they exist at all.
+
+> -chris
+
+TBH I'm more concerned about the logic here, which came up the last time
+inline extents at the beginning of multi-extent files caused problems:
+
+btrfs_get_extent(...) {
+
+	existing =3D search_extent_mapping(em_tree, start, len);
+	/*
+	 * existing will always be non-NULL, since there must be
+	 * extent causing the -EEXIST.
+	 */
+	if (existing->start =3D=3D em->start &&
+	    extent_map_end(existing) =3D=3D extent_map_end(em) &&
+	    em->block_start =3D=3D existing->block_start) {
+		/*
+		 * these two extents are the same, it happens
+		 * with inlines especially
+		 */
+		free_extent_map(em);
+		em =3D existing;
+		err =3D 0;
+
+	} else if (start >=3D extent_map_end(existing) ||
+	    start <=3D existing->start) {
+		/*
+		 * The existing extent map is the one nearest to
+		 * the [start, start + len) range which overlaps
+		 */
+		err =3D merge_extent_mapping(em_tree, existing,
+					   em, start);
+		free_extent_map(existing);
+		if (err) {  =20
+			free_extent_map(em);
+			em =3D NULL;
+		}
+	} else {
+		free_extent_map(em);
+		em =3D existing;
+		err =3D 0;
+	}
+
+What is extent_map_end for an inline extent?  Could we end up in the
+wrong branch of the if statement?  Is this code relevant at all?
+
+
+--s2lX4GznBIrto1wi
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iEYEARECAAYFAlfl5LoACgkQgfmLGlazG5wO/QCfSO+oh5+XrcEbvzxJA9z2nzPn
+wsAAoMxj9wocGsvlxphtGmZIYptFiNWR
+=CZo4
+-----END PGP SIGNATURE-----
+
+--s2lX4GznBIrto1wi--

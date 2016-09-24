@@ -1,107 +1,178 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f41.google.com ([209.85.218.41]:36038 "EHLO
-        mail-oi0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751004AbcIXPOY (ORCPT
+Received: from mailgw-01.dd24.net ([193.46.215.41]:33352 "EHLO
+        mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932768AbcIXSJd (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 24 Sep 2016 11:14:24 -0400
-Received: by mail-oi0-f41.google.com with SMTP id t83so165473586oie.3
-        for <linux-btrfs@vger.kernel.org>; Sat, 24 Sep 2016 08:14:24 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20160923180939.GB27026@localhost.localdomain>
-References: <CAAwVk4k91Q91jTJoGHPNSjtDruGQ4qHSa-srB2xRWMvmQ=bTBQ@mail.gmail.com>
- <20160923180939.GB27026@localhost.localdomain>
-From: Mark Gavalda <markgavalda@kinsta.com>
-Date: Sat, 24 Sep 2016 17:14:22 +0200
-Message-ID: <CAAwVk4kUkmZPM2X9AamFBgA+XH=ErUJTmLvCkii3nccgG9kLYw@mail.gmail.com>
-Subject: Re: kernel BUG at /build/linux-a2WvEb/linux-4.4.0/fs/btrfs/inode.c:3258
-To: bo.li.liu@oracle.com
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+        Sat, 24 Sep 2016 14:09:33 -0400
+Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.26])
+        by mailgw-01.dd24.net (Postfix) with ESMTP id 9FC665FE51
+        for <linux-btrfs@vger.kernel.org>; Sat, 24 Sep 2016 18:09:30 +0000 (UTC)
+Received: from mailgw-01.dd24.net ([192.168.1.35])
+        by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10235)
+        with ESMTP id AME7IpOlvAz0 for <linux-btrfs@vger.kernel.org>;
+        Sat, 24 Sep 2016 18:09:28 +0000 (UTC)
+Received: from [192.168.177.212] (51.red-81-38-116.dynamicip.rima-tde.net [81.38.116.51])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by mailgw-01.dd24.net (Postfix) with ESMTPSA
+        for <linux-btrfs@vger.kernel.org>; Sat, 24 Sep 2016 18:09:27 +0000 (UTC)
+Message-ID: <1474740566.7196.4.camel@scientia.net>
+Subject: Re: Does data checksumming remain for files with No_COW file
+ attribute?
+From: Christoph Anton Mitterer <calestyo@scientia.net>
+To: linux-btrfs@vger.kernel.org
+Date: Sat, 24 Sep 2016 20:09:26 +0200
+In-Reply-To: <20160924174012.51d44caa@natsu>
+References: <767591474719974@web21o.yandex.ru>
+         <20160924174012.51d44caa@natsu>
+Content-Type: multipart/signed; micalg="sha-512";
+        protocol="application/x-pkcs7-signature";
+        boundary="=-sIVMJHg49QFs7E7Z/o0d"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for the info. So this actually happened with the latest
-official Ubuntu 16.04 kernel, 4.4.0-38-generic x86_64. I looked up the
-commit you mentioned and it seems like it was included in 2015 so
-should definitely be in the 4.4.0-38, which corresponds to the 4.4.19
-mainline kernel afaik.
 
-Mark
+--=-sIVMJHg49QFs7E7Z/o0d
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On Fri, Sep 23, 2016 at 8:09 PM, Liu Bo <bo.li.liu@oracle.com> wrote:
-> Hi,
->
-> On Wed, Sep 21, 2016 at 11:53:50AM +0200, Mark Gavalda wrote:
->> Hi,
->> Just bumped into this, let me know if you need more info:
->>
->> [160997.651655] ------------[ cut here ]------------
->> [160997.656497] kernel BUG at
->> /build/linux-a2WvEb/linux-4.4.0/fs/btrfs/inode.c:3258!
->> [160997.664083] invalid opcode: 0000 [#1] SMP
->> [160997.668604] Modules linked in: ufs msdos xfs xt_recent xt_nat
->> xt_multiport ip6t_REJECT nf_reject_ipv6 xt_hl ip6t_rt
->> nf_conntrack_ipv6 nf_defrag_ipv6 ipt_REJECT nf_reject_ipv4 xt_limit
->> xt_addrtype xt_conntrack binfmt_misc veth xt_CHECKSUM iptable_mangle
->> xt_tcpudp ipt_MASQUERADE nf_nat_masquerade_ipv4 xt_comment iptable_nat
->> nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack
->> bridge stp llc ip6table_filter ip6_tables iptable_filter ip_tables
->> x_tables ppdev parport_pc parport pvpanic serio_raw ib_iser rdma_cm
->> iw_cm ib_cm ib_sa ib_mad ib_core ib_addr iscsi_tcp libiscsi_tcp
->> libiscsi scsi_transport_iscsi autofs4 btrfs raid10 raid456
->> async_raid6_recov async_memcpy async_pq async_xor async_tx xor
->> raid6_pq libcrc32c raid1 raid0 multipath linear crct10dif_pclmul
->> crc32_pclmul aesni_intel aes_x86_64
->> [160997.748543]  lrw gf128mul glue_helper ablk_helper cryptd psmouse virtio_scsi
->> [160997.755223] CPU: 7 PID: 395996 Comm: fail2ban-server Not tainted
->> 4.4.0-36-generic #55-Ubuntu
->> [160997.763848] Hardware name: Google Google Compute Engine/Google
->> Compute Engine, BIOS Google 01/01/2011
->> [160997.773273] task: ffff880d4f73ee00 ti: ffff880417b0c000 task.ti:
->> ffff880417b0c000
->> [160997.780946] RIP: 0010:[<ffffffffc0186b4d>]  [<ffffffffc0186b4d>]
->> btrfs_orphan_add+0x10d/0x1e0 [btrfs]
->> [160997.790504] RSP: 0018:ffff880417b0fe08  EFLAGS: 00010286
->> [160997.796010] RAX: 00000000ffffffe4 RBX: ffff88025bd43000 RCX:
->> 00000000ffffffe4
->> [160997.803332] RDX: 0000000000000001 RSI: 0000000000040000 RDI:
->> ffff880dfeba0200
->> [160997.810653] RBP: ffff880417b0fe38 R08: 0000000000000000 R09:
->> 0000000000000001
->> [160997.817975] R10: ffffea0015749880 R11: 0000000000000000 R12:
->> ffff880771fe9150
->> [160997.825313] R13: ffff88025bd433f8 R14: ffff8807b42ff720 R15:
->> 0000000000000001
->> [160997.832637] FS:  00007f20bf3ad700(0000) GS:ffff880e073c0000(0000)
->> knlGS:0000000000000000
->> [160997.840915] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
->> [160997.846847] CR2: 00007fff016e8de8 CR3: 0000000cfaec1000 CR4:
->> 00000000001406e0
->> [160997.854173] Stack:
->> [160997.856391]  ffff880700000001 0000000000000000 ffff8807b42ff720
->> ffff88025bd43000
->> [160997.864475]  ffff880771fe9150 ffff88070d5ea4d8 ffff880417b0fe70
->> ffffffffc018afb4
->> [160997.872607]  ffff880d89a0c900 ffff88070d5ea4d8 ffff880771fe9150
->> ffff880417b0fee0
->> [160997.880666] Call Trace:
->> [160997.883339]  [<ffffffffc018afb4>] btrfs_unlink+0xa4/0xb0 [btrfs]
->> [160997.889544]  [<ffffffff8121a151>] vfs_unlink+0xf1/0x1a0
->> [160997.894960]  [<ffffffff8138d1eb>] ? apparmor_path_unlink+0x1b/0x20
->> [160997.901339]  [<ffffffff8121d749>] do_unlinkat+0x279/0x2d0
->> [160997.906928]  [<ffffffff8121e206>] SyS_unlink+0x16/0x20
->> [160997.912263]  [<ffffffff8182dfb2>] entry_SYSCALL_64_fastpath+0x16/0x71
->> [160997.918891] Code: 41 5e 41 5f 5d c3 31 d2 eb 84 45 31 ff eb 92 49
->> 8b 54 24 40 eb b7 4c 89 e6 4c 89 f7 89 55 d0 e8 0a fe fd ff 85 c0 8b
->> 55 d0 74 85 <0f> 0b be 07 00 00 00 48 89 df e8 84 fa fd ff 48 85 c0 0f
->> 84 b0
->> [160997.945676] RIP  [<ffffffffc0186b4d>] btrfs_orphan_add+0x10d/0x1e0 [btrfs]
->> [160997.952947]  RSP <ffff880417b0fe08>
->> [160997.957719] ---[ end trace 1aeb484018da7058 ]---
->
-> We've cleaned up all unnecessary BUG_ONs in btrfs_orphan_add, so can you try out
-> a newer one to see if the problem still exists, please?
->
-> Thanks,
->
-> -liubo
+On Sat, 2016-09-24 at 17:40 +0500, Roman Mamedov wrote:
+> Yes. IIRC the reasoning was that it's more difficult to track
+> checksums of
+> data which is being overwritten in-place (as opposed to CoW).
+AFAIU it wouldn't be more difficult, since the meta-data itself is
+still subject to CoW...
+
+There's just no guarantee in the case of a crash, that checksum and
+data match (which is IMO however a small price to pay - especially as
+the data is in that case and without CoW anyway not guaranteed to be
+valid - compared to all sorts of other silent corruptions against which
+checksums protect... not to talk about the ability to actually repair
+files in case of RAID inconsistencies.
+
+
+> You can't apply chattr +C to any files of non-zero length, so by
+> definition
+> there won't be any pre-existing checksummed extents in that file.
+
+Speaking of which,... can't one modify chattr properly so that it gives
+an error message and $? !=3D 0 in that case?
+
+
+Cheers,
+Chris.
+--=-sIVMJHg49QFs7E7Z/o0d
+Content-Type: application/x-pkcs7-signature; name="smime.p7s"
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Transfer-Encoding: base64
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEmow
+ggXiMIIDyqADAgECAhBctkhuRwyYxn/2gNtkSuKNMA0GCSqGSIb3DQEBCwUAMH0xCzAJBgNVBAYT
+AklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0
+aWZpY2F0ZSBTaWduaW5nMSkwJwYDVQQDEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
+eTAeFw0xNTEyMTYwMTAwMDVaFw0zMDEyMTYwMTAwMDVaMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQK
+Ew1TdGFydENvbSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
+eTEjMCEGA1UEAxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0EwggEiMA0GCSqGSIb3DQEBAQUA
+A4IBDwAwggEKAoIBAQDuD1CMlQkjhKz1UGqP1jeiTiH9MgllRz6vOPrVG/eE0H/J4QQLV/PeL8RT
+4xc44bEzsoJu0IhwnEchb+TxE/qw88w7hxODuw3N8Faxix6a1jp83+RWvZHZf78+O+3GYBpekZfT
+Oe9A/FoTXbcgwZfLTMQodn+ckNnX31M/1M2f2/7VA7QBlvihontyHQOlIlryQXnGI0UMCD21oopK
+tW48ckv0wUVg8irBKGMeD65gTON/Fsw/ZBbBqadoD1jt85FIM1ql24WUBEBwO1d0ykCKOIbgcqes
+3fbcjQpruUNMBbIu1MMIRMqwjx/M7IvSKcS7VYRWl0/K2byzWvBAHh/1AgMBAAGjggFkMIIBYDAO
+BgNVHQ8BAf8EBAMCAQYwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMBIGA1UdEwEB/wQI
+MAYBAf8CAQAwMgYDVR0fBCswKTAnoCWgI4YhaHR0cDovL2NybC5zdGFydHNzbC5jb20vc2ZzY2Eu
+Y3JsMGYGCCsGAQUFBwEBBFowWDAkBggrBgEFBQcwAYYYaHR0cDovL29jc3Auc3RhcnRzc2wuY29t
+MDAGCCsGAQUFBzAChiRodHRwOi8vYWlhLnN0YXJ0c3NsLmNvbS9jZXJ0cy9jYS5jcnQwHQYDVR0O
+BBYEFJmXqxg1OotZRUOYsnJxyPT7Cc8WMB8GA1UdIwQYMBaAFE4L7xqkQFulF2mHMMo0aEPQQa7y
+MD8GA1UdIAQ4MDYwNAYEVR0gADAsMCoGCCsGAQUFBwIBFh5odHRwOi8vd3d3LnN0YXJ0c3NsLmNv
+bS9wb2xpY3kwDQYJKoZIhvcNAQELBQADggIBAJlBQQTO9iT1TjA0eEO7V/1AbBvMAfibjAgofxmJ
+01jBmHKg0pbTjWInTTYoxb3LBgz3mfjvvS1PjnIfb29MyVm0G/PSHjgq7Ews1dEJMPC9XTuxPf2c
++MWLkynBlotW542JprW+iTWfZafyUtzIKW1hk0YASJ8zSSj8D++9yR+0UhkbvlECJkdi1+et0EaI
+7HIX6ccj1rfcFFflWX/fPT64dn9jpg9s0nuJug4WsVkEK236WndZoMHrZmgF7CIyZ3T0muqYwkAS
+DDcRt9A21o/Mc+D8Q6GVmKRGB3gEKvOtsioHZEqJv6CdAm3a6gloo5pX3RL1eCzc8Lzfs4T0ISZj
+r8xNMbTGlsuHaFH+stDewKsfnpo4N64OtAGrzmVfFFsMIRENRHsVlSEe/6LVpBpjn00+7bqEN3qe
+qSxIOraYJ12mJ08G4YnP2U1fadHIaS50O5ZXqAivoBl9pi/6CBNc5wIMlkXMyFZ0sLsI+9ErFDu9
+OJhX7iWCo69X0ydlzXj08+2K1PKyr+g6/vTPHur63JotNrhyoWEJyWEjBLA4QmJXfGpB5u+bCwNf
+sFpcYAlkiFt1Rs2vemgSBy3q4DHDbPKvr1YImZNRSHP+TX9NP94JRkmqcyD/qaN7u2JV1pRAlwG0
+npyrn6ZQM1QHV+iFbwQ4VqLMWk//QVo/rZy1MIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwcz1F+2kRA
+DzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjEp
+MCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMTGlN0YXJ0
+Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIzNlowejEL
+MAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAfBgNVBAMM
+GENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50
+aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqeP2vwE3Cp
+YosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjrFe0zmZWZ
+0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ0+c1NYFQ
+T6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJnmiiId9e
+0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7r2NVLkpo
+Gbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA0BtydQC0
+mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS7XEGOuCU
+09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6a1rkhJl7
+1rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8bxPJiX2/
+VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/MAsGA1Ud
+DwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAdBgNVHQ4E
+FgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI9PsJzxYw
+bwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5jb20wOQYI
+KwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQyLmNydDA4
+BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50Mi5jcmww
+IAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6Ly93d3cu
+c3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcBAgQwLDAq
+BggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3DQEBCwUA
+A4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7SG3MQkyO
+kvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndjZIHMfSkn
+hdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9RS51K1gt
+H4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11Yeq6UTW/
+JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwc
+z1F+2kRADzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20g
+THRkLjEpMCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMT
+GlN0YXJ0Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIz
+NlowejELMAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAf
+BgNVBAMMGENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9A
+c2NpZW50aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqe
+P2vwE3CpYosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjr
+Fe0zmZWZ0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ
+0+c1NYFQT6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJ
+nmiiId9e0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7
+r2NVLkpoGbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA
+0BtydQC0mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS
+7XEGOuCU09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6
+a1rkhJl71rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8
+bxPJiX2/VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/
+MAsGA1UdDwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAd
+BgNVHQ4EFgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI
+9PsJzxYwbwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5j
+b20wOQYIKwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQy
+LmNydDA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50
+Mi5jcmwwIAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6
+Ly93d3cuc3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcB
+AgQwLDAqBggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3
+DQEBCwUAA4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7
+SG3MQkyOkvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndj
+ZIHMfSknhdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9
+RS51K1gtH4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11
+Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
+MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
+cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
+QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
+SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTYwOTI0MTgwOTI2WjBPBgkqhkiG9w0BCQQxQgRAzgW5
+3MYsP5lBRby8edZnPxPauDytBU11+TuJdnlFVi3JMF9fAkMF/XB3YCOWvQBFPFoDB/E5RFGRQyQm
+vJOhtDCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
+bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
+AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
+DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
+VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
+Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAO8TD
+8ozaCBEuBk5KWL3ikqQa6/bBDI6kbQ0AVVXCbDRK/MBsAN7kddtyK56ts72FwmAzOr0mFKmWIXF7
+sd1cA8JsJZ5XcXi86EJtTCmCSLAzC2XUDTk5/+8Las9DUNH6EpT9AC7w/j3bRqOmZtbA3VYWyBWU
+ZPIRHEYjbZvMzxHnyK7TOXlIcxv/jD76D3LRAZ4dnbc9AACgJiA+5CTW8ULlyBRtFbP6oLzFDOPr
+B6usUvY80lSitXEKG1dub8KI8qzj/CKtreDxJBWTm+lPHNH2Kn1gRaQCiusu1haj2mQwYcHpC5KT
+jDQZ7FEKjp/tOE48/ZIIFC5A/IAfWn1dt0ktVeOZ2cvdxEE7siAFg0qLtlehVZu7NuOd5E+F+oO7
+57Js7/TZISdHToH9vykNXcJOQd3KGE4X9XcScO3qOMVMZGitOUguFsCI6PDxeb1lhqmHDWXAqt5r
+Rx8TdbiuGvJ5GDe+uhu3FApmEMaxRTx8+UBNifNflIN98Gh7d0eCV74kfQb7VG9/WBVKn1VHaBZ4
+CiMZnNElHSewcrbTifubzzW7EZ8YSLwnPONjJVO+soqrouFLMSRGo+KRtqIDeQZmK7viwI4QNKfV
+MWE7df5baxm3r8JBakYLyQyfEuoQd3v0JNMxPFiE+PHHrdabOT4gNQpJzMZY7yDhlnY85HIAAAAA
+AAA=
+
+
+--=-sIVMJHg49QFs7E7Z/o0d--
+

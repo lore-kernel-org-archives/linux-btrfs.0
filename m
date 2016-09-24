@@ -1,68 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:33352 "EHLO
+Received: from mailgw-01.dd24.net ([193.46.215.41]:33382 "EHLO
         mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932768AbcIXSJd (ORCPT
+        with ESMTP id S934852AbcIXSLh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 24 Sep 2016 14:09:33 -0400
+        Sat, 24 Sep 2016 14:11:37 -0400
 Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.26])
-        by mailgw-01.dd24.net (Postfix) with ESMTP id 9FC665FE51
-        for <linux-btrfs@vger.kernel.org>; Sat, 24 Sep 2016 18:09:30 +0000 (UTC)
+        by mailgw-01.dd24.net (Postfix) with ESMTP id 327E65FE43
+        for <linux-btrfs@vger.kernel.org>; Sat, 24 Sep 2016 18:11:35 +0000 (UTC)
 Received: from mailgw-01.dd24.net ([192.168.1.35])
         by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10235)
-        with ESMTP id AME7IpOlvAz0 for <linux-btrfs@vger.kernel.org>;
-        Sat, 24 Sep 2016 18:09:28 +0000 (UTC)
+        with ESMTP id nl_swSrk7269 for <linux-btrfs@vger.kernel.org>;
+        Sat, 24 Sep 2016 18:11:33 +0000 (UTC)
 Received: from [192.168.177.212] (51.red-81-38-116.dynamicip.rima-tde.net [81.38.116.51])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
         by mailgw-01.dd24.net (Postfix) with ESMTPSA
-        for <linux-btrfs@vger.kernel.org>; Sat, 24 Sep 2016 18:09:27 +0000 (UTC)
-Message-ID: <1474740566.7196.4.camel@scientia.net>
+        for <linux-btrfs@vger.kernel.org>; Sat, 24 Sep 2016 18:11:32 +0000 (UTC)
+Message-ID: <1474740691.7196.6.camel@scientia.net>
 Subject: Re: Does data checksumming remain for files with No_COW file
  attribute?
 From: Christoph Anton Mitterer <calestyo@scientia.net>
 To: linux-btrfs@vger.kernel.org
-Date: Sat, 24 Sep 2016 20:09:26 +0200
-In-Reply-To: <20160924174012.51d44caa@natsu>
+Date: Sat, 24 Sep 2016 20:11:31 +0200
+In-Reply-To: <20160924124323.GS7138@carfax.org.uk>
 References: <767591474719974@web21o.yandex.ru>
-         <20160924174012.51d44caa@natsu>
+         <20160924174012.51d44caa@natsu> <20160924124323.GS7138@carfax.org.uk>
 Content-Type: multipart/signed; micalg="sha-512";
         protocol="application/x-pkcs7-signature";
-        boundary="=-sIVMJHg49QFs7E7Z/o0d"
+        boundary="=-1NgtqONr3CBuwFasKHCw"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-sIVMJHg49QFs7E7Z/o0d
+--=-1NgtqONr3CBuwFasKHCw
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Sat, 2016-09-24 at 17:40 +0500, Roman Mamedov wrote:
-> Yes. IIRC the reasoning was that it's more difficult to track
-> checksums of
-> data which is being overwritten in-place (as opposed to CoW).
-AFAIU it wouldn't be more difficult, since the meta-data itself is
-still subject to CoW...
+On Sat, 2016-09-24 at 12:43 +0000, Hugo Mills wrote:
+> =C2=A0 =C2=A0It's because you can't update the data and the checksum atom=
+ically
+> -- at some point in the writing process, they must be inconsistent.
+> This is considered a Bad Thing.
 
-There's just no guarantee in the case of a crash, that checksum and
-data match (which is IMO however a small price to pay - especially as
-the data is in that case and without CoW anyway not guaranteed to be
-valid - compared to all sorts of other silent corruptions against which
-checksums protect... not to talk about the ability to actually repair
-files in case of RAID inconsistencies.
+It's not worse at all than simply not cheksuming... in both cases you
+have no guarantee whether the data is bogus or not, but in with csums,
+you can at least tell - only at the little cost, of false positives
+when the data was fully and correctly written, but the csums not.
 
 
-> You can't apply chattr +C to any files of non-zero length, so by
-> definition
-> there won't be any pre-existing checksummed extents in that file.
-
-Speaking of which,... can't one modify chattr properly so that it gives
-an error message and $? !=3D 0 in that case?
-
-
-Cheers,
-Chris.
---=-sIVMJHg49QFs7E7Z/o0d
+Cheers.
+--=-1NgtqONr3CBuwFasKHCw
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -154,25 +142,25 @@ Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
 MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
 cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
 QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
-SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTYwOTI0MTgwOTI2WjBPBgkqhkiG9w0BCQQxQgRAzgW5
-3MYsP5lBRby8edZnPxPauDytBU11+TuJdnlFVi3JMF9fAkMF/XB3YCOWvQBFPFoDB/E5RFGRQyQm
-vJOhtDCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
+SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTYwOTI0MTgxMTMxWjBPBgkqhkiG9w0BCQQxQgRAK3TU
+gtKywDtMk5ljt9FDaXkxadKKsZeOH34PNmdxgPQ46QH6/t5BXQSlJFHlYwOOf0Xt0LjyRgNtO8jD
+g3YbRTCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
 bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
 AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
 DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
 VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
-Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAO8TD
-8ozaCBEuBk5KWL3ikqQa6/bBDI6kbQ0AVVXCbDRK/MBsAN7kddtyK56ts72FwmAzOr0mFKmWIXF7
-sd1cA8JsJZ5XcXi86EJtTCmCSLAzC2XUDTk5/+8Las9DUNH6EpT9AC7w/j3bRqOmZtbA3VYWyBWU
-ZPIRHEYjbZvMzxHnyK7TOXlIcxv/jD76D3LRAZ4dnbc9AACgJiA+5CTW8ULlyBRtFbP6oLzFDOPr
-B6usUvY80lSitXEKG1dub8KI8qzj/CKtreDxJBWTm+lPHNH2Kn1gRaQCiusu1haj2mQwYcHpC5KT
-jDQZ7FEKjp/tOE48/ZIIFC5A/IAfWn1dt0ktVeOZ2cvdxEE7siAFg0qLtlehVZu7NuOd5E+F+oO7
-57Js7/TZISdHToH9vykNXcJOQd3KGE4X9XcScO3qOMVMZGitOUguFsCI6PDxeb1lhqmHDWXAqt5r
-Rx8TdbiuGvJ5GDe+uhu3FApmEMaxRTx8+UBNifNflIN98Gh7d0eCV74kfQb7VG9/WBVKn1VHaBZ4
-CiMZnNElHSewcrbTifubzzW7EZ8YSLwnPONjJVO+soqrouFLMSRGo+KRtqIDeQZmK7viwI4QNKfV
-MWE7df5baxm3r8JBakYLyQyfEuoQd3v0JNMxPFiE+PHHrdabOT4gNQpJzMZY7yDhlnY85HIAAAAA
+Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAFOth
+XSd4/Uv+08sGiEs7PXYZnwMq0LIpG0fbL30Dl8jC0KddwFN7sZbnXq/x32bUPrPbg1/52eOIcEA/
+LHDLtBI1czxn9LrlqdBzGQIi/AIriMVVG7ddK5FigZuksWucUUf/XEux+Z89sUmbdAd+WFGgIaut
+kTd42zOPzNA2Hgpnbj10D5E6m6jfdtH4ZhKYy0inrlijpCC7ZaFnhCyBQmCGKPBtcAJ2FqBxW4kN
+vVtldCwpMf+rg4Zd6wXjf2iETC8jh4MJocqpqbi7cJcAnSvscwERXBBxgAzkzOGn8+9zFCZk/F6B
+PFP/58f9aG2NRsdoTfsudjXNXFRZuqSzVkdXp+Mqr6dRYlT5rm8mRNGYifXFpu7AyalAg41gAS+B
+4mlgEQVMHyCytqBLiBiHIUbkN014g5WCE8ukfl7XEPcmu38QcpztKpVy9EUEbFnVMw5Ieo1mbgs1
+ESexIaIhQg5NalXG0/0Imhk2xk7CtuuUkzmWglAy9df++DScSYD2gO+Y6dS7O1IfA/MDrjhpx7uj
+WpmC4ZSdOIPWRVQ/DlXc/pR8TgU8Lrzz1K5mFtYkslKys3dpJBp1fD8jV6IbNLbE7NazHfggHKK5
+JlfE8G5vAuQp9XfMjB5MrtHB+xQjeybDQH5zfqNPLDX5Ok/zzkzafhUYuzjUhybYP6lC+NoAAAAA
 AAA=
 
 
---=-sIVMJHg49QFs7E7Z/o0d--
+--=-1NgtqONr3CBuwFasKHCw--
 

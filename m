@@ -1,39 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f173.google.com ([209.85.220.173]:35471 "EHLO
-        mail-qk0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S935055AbcIZAmy (ORCPT
+Received: from email.routify.me ([162.208.10.182]:47991 "EHLO
+        cartman.routify.me" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S941229AbcIZCQN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 25 Sep 2016 20:42:54 -0400
-Received: by mail-qk0-f173.google.com with SMTP id t7so150499324qkh.2
-        for <linux-btrfs@vger.kernel.org>; Sun, 25 Sep 2016 17:42:54 -0700 (PDT)
+        Sun, 25 Sep 2016 22:16:13 -0400
+Date: Sun, 25 Sep 2016 22:16:09 -0400
+From: Sean Greenslade <sean@seangreenslade.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Chris Murphy <lists@colorremedies.com>, David Sterba <dsterba@suse.cz>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Post ext3 conversion problems
+Message-ID: <20160926021609.GA11493@coach.home>
+References: <20160916192459.GA13514@coach.home>
+ <CAJCQCtQutt6r2Jovr0jEbTk4W6HUaQpbGiipen97TH1C+k055g@mail.gmail.com>
+ <17ca9019-836b-f4f1-f84c-f8c1edcd9925@cn.fujitsu.com>
+ <20160919041247.GA32208@coach.home>
+ <ae8fd0d5-0d38-aa8e-0114-36ef62b1a783@cn.fujitsu.com>
+ <20160919151341.GA1431@coach.home>
+ <5f07d365-1eec-7f90-7969-af761834ee48@cn.fujitsu.com>
+ <20160920033933.GA13425@coach.home>
+ <fbfb851d-34a7-62df-d24e-0fd5b3a2e5e4@cn.fujitsu.com>
+ <20160920205121.GA23668@coach.home>
 MIME-Version: 1.0
-In-Reply-To: <df57cbab-f316-c6a1-fccc-0a1c1e6dc276@suse.com>
-References: <CAGfcS_m0KvAjmWpnGC7agLYBKROqjPoSCVrziaEJXzW1Dyw5iQ@mail.gmail.com>
- <pan$afe1d$3cd285bd$f0b68da9$67150f63@cox.net> <CAGfcS_n+pMq0thNEM9b2ZA78xEpXTFJXjwTHRyvquLS8dR_yng@mail.gmail.com>
- <964e335c-76d1-f7c0-4e66-c2cabe7b9249@suse.com> <CAGfcS_=hK1EpuBwJt1nost7=A3mgmyf3Cth0Bn10UQTtNs=fuw@mail.gmail.com>
- <df57cbab-f316-c6a1-fccc-0a1c1e6dc276@suse.com>
-From: Rich Freeman <r-btrfs@gw.thefreemanclan.net>
-Date: Sun, 25 Sep 2016 19:42:52 -0500
-Message-ID: <CAGfcS_mhq6meu-d7BxwxaMLQBhm=STPG31OzVTf-ZaKb6a3KNw@mail.gmail.com>
-Subject: Re: unable to handle kernel paging request - btrfs
-To: Jeff Mahoney <jeffm@suse.com>
-Cc: Duncan <1i5t5.duncan@cox.net>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160920205121.GA23668@coach.home>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Sep 25, 2016 at 7:39 PM, Jeff Mahoney <jeffm@suse.com> wrote:
->
-> I'm not sure about other distros, but at least with SLES/openSUSE you
-> can configure kdump to /just/ dump the dmesg.
->
+On Tue, Sep 20, 2016 at 04:51:21PM -0400, Sean Greenslade wrote:
+> On Tue, Sep 20, 2016 at 01:02:38PM +0800, Qu Wenruo wrote:
+> > > Glad to hear you've found the core of the issue.
+> > > 
+> > > At this point, I can trigger it immediately. As soon as I log in and run
+> > > dmenu, it will attempt to rebuild its cache file (small text file that's
+> > > just a list of all executables in the PATH). Once that write happens,
+> > > the bug triggers and the fs goes read only.
+> > 
+> > Rewrite? Or write into new inode?
+> > 
+> > And is the same inode always causing the problem?
+> 
+> It's not always the same. It seems like whatever triggers a write first
+> is what kills it. I went to test it, and this time it triggered on my
+> .bash_history file. I have bash set up with "history -a", so presumably
+> that was an append, not an overwrite.
+> 
+> To cut down on the number of variables, I booted my system with the
+> "rescue" systemd target, then su'd to my user. Simply running a few
+> commands (with the history -a writes that bash triggered) was enough to
+> trigger the bug. This is on 4.8.0-rc6, with the following compile time
+> options enabled:
+> 
+> CONFIG_BTRFS_FS_RUN_SANITY_TESTS=y
+> CONFIG_BTRFS_DEBUG=y
+> CONFIG_BTRFS_ASSERT=y
+> 
+> If I run the stock Arch kernel (4.7.2 at the moment), the issue still
+> appears, but it takes longer. My most reliable trigger is Firefox, whose
+> constant DB writes will trigger it within minutes.
 
-Well, on Gentoo I wrote the official docs on how it works, quite some
-time ago...  :)  It is purely manual, so you can of course capture
-whatever you want.  Just have it reboot to a shell and then save what
-you need to.  An automated cross-distro core capture tool would
-probably be useful.  I wonder if there is a generic one floating
-around somewhere.
+Is there anything I can do to help this along? I can build experimental
+patches, set up long running scripts, run tests, whatever is necessary.
 
---
-RIch
+Thanks,
+
+--Sean

@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:53513 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:52033 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1751375AbcIZEwt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Sep 2016 00:52:49 -0400
+        id S1751375AbcIZEyb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Sep 2016 00:54:31 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH v2] btrfs-progs: Return more meaningful value for btrfs_read_deve_super
-Date: Mon, 26 Sep 2016 12:52:33 +0800
-Message-Id: <20160926045233.13664-1-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v3] btrfs-progs: Return more meaningful value for btrfs_read_deve_super
+Date: Mon, 26 Sep 2016 12:54:26 +0800
+Message-Id: <20160926045426.14340-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -27,12 +27,14 @@ Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 changelog:
 v2:
   Use better return values from pread64() and check_super().
+v3:
+  Fix wrong comment
 ---
  disk-io.c | 14 ++++++++++----
  1 file changed, 10 insertions(+), 4 deletions(-)
 
 diff --git a/disk-io.c b/disk-io.c
-index 854c285..4c5be08 100644
+index 854c285..2052bb3 100644
 --- a/disk-io.c
 +++ b/disk-io.c
 @@ -1590,14 +1590,20 @@ int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 sb_bytenr,
@@ -43,7 +45,7 @@ index 854c285..4c5be08 100644
 +		if (ret < 0)
 +			return -errno;
 +
-+		/* Not large enough sb, return EOF instead of normal -EIO */
++		/* Not large enough sb, return -ENOENT instead of normal -EIO */
  		if (ret < BTRFS_SUPER_INFO_SIZE)
 -			return -1;
 +			return -ENOENT;

@@ -1,78 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.virtall.com ([178.63.195.102]:54235 "EHLO mail.virtall.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751493AbcIZKei (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Sep 2016 06:34:38 -0400
-Received: from localhost (localhost [127.0.0.1])
-        by mailext.virtall.com (Postfix) with ESMTP id 2CB652C40E0
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Sep 2016 12:34:34 +0200 (CEST)
-Received: from mailext.virtall.com ([127.0.0.1])
-        by localhost (web1.virtall.com [127.0.0.1]) (amavisd-new, port 10024)
-        with ESMTP id EGsUybvCAgkh for <linux-btrfs@vger.kernel.org>;
-        Mon, 26 Sep 2016 12:34:32 +0200 (CEST)
-Received: from admin.virtall.com (localhost [127.0.0.1])
-        by mailext.virtall.com (Postfix) with ESMTP
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Sep 2016 12:34:32 +0200 (CEST)
+Received: from mail-it0-f54.google.com ([209.85.214.54]:38722 "EHLO
+        mail-it0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S966089AbcIZLLm (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Sep 2016 07:11:42 -0400
+Received: by mail-it0-f54.google.com with SMTP id n143so71357356ita.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Sep 2016 04:11:42 -0700 (PDT)
+Received: from [191.9.206.254] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
+        by smtp.gmail.com with ESMTPSA id f131sm3666098itc.8.2016.09.26.04.11.39
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Mon, 26 Sep 2016 04:11:40 -0700 (PDT)
+Subject: Re: Does data checksumming remain for files with No_COW file
+ attribute?
+To: linux-btrfs@vger.kernel.org
+References: <767591474719974@web21o.yandex.ru> <20160924174012.51d44caa@natsu>
+ <20160924124323.GS7138@carfax.org.uk> <1474740691.7196.6.camel@scientia.net>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <dadc90ae-7e18-a430-013c-f31a82b94b53@gmail.com>
+Date: Mon, 26 Sep 2016 07:11:29 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII;
- format=flowed
-Date: Mon, 26 Sep 2016 19:34:32 +0900
-From: Tomasz Chmielewski <tch@virtall.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: btrfs on md RAID-5 /etc/fstab mounting: open_ctree failed
-Message-ID: <a890370e2811c5fe4d1aac187c0c8210@admin.virtall.com>
+In-Reply-To: <1474740691.7196.6.camel@scientia.net>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-My btrfs on md RAID-5 mounts in an odd way and fails to mount via 
-/etc/fstab (kernel is 4.8-rc8).
-
-This is /etc/fstab entry for btrfs:
-
-/dev/md2 /data btrfs noatime,compress-force=zlib,device=/dev/md2 0 0
-
-
-Following a system restart, it didn't mount with these in dmesg:
-
-[   11.099524] Btrfs loaded, crc32c=crc32c-intel
-[   11.100125] BTRFS: device label data devid 1 transid 118760 /dev/md2
-[   11.187585] BTRFS info (device md2): force zlib compression
-[   11.187587] BTRFS info (device md2): disk space caching is enabled
-[   11.187588] BTRFS info (device md2): has skinny extents
-[  106.215206] BTRFS: open_ctree failed
-
-
-
-Then, it mounted fine after I did "mount -a":
-
-[  243.131317] BTRFS info (device md2): force zlib compression
-[  243.131320] BTRFS info (device md2): disk space caching is enabled
-[  243.131322] BTRFS info (device md2): has skinny extents
-
-
-It's the same after each reboot.
-
-Is it expected? How do I make it "automount" via /etc/fstab?
-
-
-# btrfs fi show /data
-Label: 'data'  uuid: fddbd057-4fa6-4b2e-a9ca-993829bab4b9
-         Total devices 1 FS bytes used 11.69TiB
-         devid    1 size 16.30TiB used 11.88TiB path /dev/md2
-
-# btrfs fi df /data
-Data, single: total=11.79TiB, used=11.64TiB
-System, DUP: total=8.00MiB, used=1.27MiB
-Metadata, DUP: total=48.00GiB, used=45.88GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
-
-
-In /proc/mdstat:
-
-md2 : active raid5 sdc3[2] sdd3[4] sda3[0] sdb3[1]
-       17500952064 blocks super 1.2 level 5, 512k chunk, algorithm 2 
-[4/4] [UUUU]
-
-
-Tomasz Chmielewski
-https://lxadm.com
+On 2016-09-24 14:11, Christoph Anton Mitterer wrote:
+> On Sat, 2016-09-24 at 12:43 +0000, Hugo Mills wrote:
+>>    It's because you can't update the data and the checksum atomically
+>> -- at some point in the writing process, they must be inconsistent.
+>> This is considered a Bad Thing.
+>
+> It's not worse at all than simply not cheksuming... in both cases you
+> have no guarantee whether the data is bogus or not, but in with csums,
+> you can at least tell - only at the little cost, of false positives
+> when the data was fully and correctly written, but the csums not.
+Except that without checksums, you don't lose all the data in that block 
+when torn write happens, with checksums without COW, you do.  Also, 
+IIUC, due to how BTRFS implements checksums, you have a bad block for 
+the entire duration of the write, because the stored checksum is for the 
+old block, not the current one.  Whether or not that matters is of 
+course usage dependent, but it's still worth noting.  Personally, I'd 
+rather be able to read the file and see that it's corrupted instead of 
+getting -EIO trying to do so (I also would rather we had something other 
+than -EIO to return when checksum verification fails, but that's a 
+separate issue).

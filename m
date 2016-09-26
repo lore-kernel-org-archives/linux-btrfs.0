@@ -1,168 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f179.google.com ([209.85.192.179]:34564 "EHLO
-        mail-pf0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1161042AbcIZR4g (ORCPT
+Received: from mail-pf0-f170.google.com ([209.85.192.170]:33727 "EHLO
+        mail-pf0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752733AbcIZXNb (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Sep 2016 13:56:36 -0400
-Received: by mail-pf0-f179.google.com with SMTP id l25so19978426pfb.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Sep 2016 10:56:36 -0700 (PDT)
-Date: Mon, 26 Sep 2016 10:56:33 -0700
+        Mon, 26 Sep 2016 19:13:31 -0400
+Received: by mail-pf0-f170.google.com with SMTP id 21so70407358pfy.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Sep 2016 16:13:31 -0700 (PDT)
+Date: Mon, 26 Sep 2016 16:13:29 -0700
 From: Omar Sandoval <osandov@osandov.com>
-To: dsterba@suse.cz, Anatoly Pugachev <matorola@gmail.com>,
-        linux-btrfs@vger.kernel.org, kernel-team@fb.com,
-        Chandan Rajendra <chandan@linux.vnet.ibm.com>, bo.li.liu@oracle.com
-Subject: Re: [PATCH v2 0/6] Btrfs: free space tree and sanity test fixes
-Message-ID: <20160926175633.GE31938@vader.DHCP.thefacebook.com>
+To: linux-btrfs@vger.kernel.org
+Cc: kernel-team@fb.com, Chandan Rajendra <chandan@linux.vnet.ibm.com>,
+        Anatoly Pugachev <matorola@gmail.com>
+Subject: Re: [PATCH v2 3/6] Btrfs: catch invalid free space trees
+Message-ID: <20160926231329.GA23991@vader.DHCP.thefacebook.com>
 References: <cover.1474580472.git.osandov@fb.com>
- <20160925075524.GA3870@yogzotot>
- <20160926175000.GF16983@twin.jikos.cz>
+ <1381db7b5de30b8ea0d2e87aff26bfdb83b030e7.1474580472.git.osandov@fb.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160926175000.GF16983@twin.jikos.cz>
+In-Reply-To: <1381db7b5de30b8ea0d2e87aff26bfdb83b030e7.1474580472.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 26, 2016 at 07:50:00PM +0200, David Sterba wrote:
-> On Sun, Sep 25, 2016 at 10:55:24AM +0300, Anatoly Pugachev wrote:
-> > applied patch to git kernel (v4.8-rc7-172-gbd5dbcb) cleanly. Did not used
-> > btrfs-progs.git, but debian shipped 4.7.3-1 .
-> > 
-> > (re)booted to a newly patched kernel and used xfstests.git (v1.1.0-1328-g06d4001):
-> > 
-> > # mount tmpfs -t tmpfs -o size=26g /ramdisk
-> > # cd /ramdisk
-> > # fallocate -l 10g testvol1
-> > # for i in 1 2 3 4; do fallocate -l 4g scratch${i}; done
-> > # for i in *; do losetup -f $i; done
-> > # losetup
-> > NAME       SIZELIMIT OFFSET AUTOCLEAR RO BACK-FILE         DIO
-> > /dev/loop0         0      0         0  0 /ramdisk/scratch1   0
-> > /dev/loop1         0      0         0  0 /ramdisk/scratch2   0
-> > /dev/loop2         0      0         0  0 /ramdisk/scratch3   0
-> > /dev/loop3         0      0         0  0 /ramdisk/scratch4   0
-> > /dev/loop4         0      0         0  0 /ramdisk/testvol1   0
-> > 
-> > mator@ttip:~/xfstests-dev$ cat local.config
-> > export TEST_DEV=/dev/loop4
-> > export TEST_DIR=/testvol
-> > export SCRATCH_DEV_POOL="/dev/loop0 /dev/loop1 /dev/loop2 /dev/loop3"
-> > export SCRATCH_MNT=/mnt/scratch
-> > 
-> > root@ttip:/home/mator/xfstests-dev# mkfs.btrfs /dev/loop4
-> > btrfs-progs v4.7.3
-> > See http://btrfs.wiki.kernel.org for more information.
-> > 
-> > Performing full device TRIM (10.00GiB) ...
-> > Label:              (null)
-> > UUID:
-> > Node size:          16384
-> > Sector size:        8192
-> > Filesystem size:    10.00GiB
-> > Block group profiles:
-> >   Data:             single            8.00MiB
-> >   Metadata:         DUP               1.00GiB
-> >   System:           DUP               8.00MiB
-> > SSD detected:       no
-> > Incompat features:  extref, skinny-metadata
-> > Number of devices:  1
-> > Devices:
-> >    ID        SIZE  PATH
-> >     1    10.00GiB  /dev/loop4
-> > 
-> > root@ttip:/home/mator/xfstests-dev# ./check 'btrfs/*'
-> > FSTYP         -- btrfs
-> > PLATFORM      -- Linux/sparc64 ttip 4.8.0-rc7+
-> > MKFS_OPTIONS  -- /dev/loop0
-> > MOUNT_OPTIONS -- /dev/loop0 /mnt/scratch
-> > 
-> > _check_btrfs_filesystem: filesystem on /dev/loop4 is inconsistent (see /home/mator/xfstests-dev/results//check.full)
-> > btrfs/001
-> > 
-> > 
-> > (on another screen/tmux window shell)
-> > 
-> > $ pstree -A | grep check 
-> >         |-sshd-+-sshd---sshd---bash---sudo---bash---check---001---mount
-> > 
-> > $ ps ax | grep mount
-> >  76344 pts/0    D+     0:00 /bin/mount -t btrfs /dev/loop4 /testvol
-> > 
-> > $ cat /home/mator/xfstests-dev/results//check.full
-> > _check_btrfs_filesystem: filesystem on /dev/loop4 is inconsistent
-> > *** fsck.btrfs output ***
-> > ERROR: cannot open device '/dev/loop4': Device or resource busy
-> > Couldn't open file system
-> > *** end fsck.btrfs output
-> > *** mount output ***
-> > sysfs on /sys type sysfs (rw,relatime)
-> > proc on /proc type proc (rw,relatime)
-> > udev on /dev type devtmpfs (rw,nosuid,relatime,size=16479064k,nr_inodes=2059883,mode=755)
-> > devpts on /dev/pts type devpts (rw,relatime,gid=5,mode=620,ptmxmode=000)
-> > tmpfs on /run type tmpfs (rw,nosuid,noexec,relatime,size=3314128k,mode=755)
-> > /dev/vdiska2 on / type ext4 (rw,relatime,errors=remount-ro,data=ordered)
-> > securityfs on /sys/kernel/security type securityfs (rw,nosuid,nodev,noexec,relatime)
-> > tmpfs on /dev/shm type tmpfs (rw)
-> > tmpfs on /run/lock type tmpfs (rw,nosuid,nodev,noexec,relatime,size=5120k)
-> > tmpfs on /sys/fs/cgroup type tmpfs (ro,nosuid,nodev,noexec,mode=755)
-> > cgroup on /sys/fs/cgroup/systemd type cgroup (rw,nosuid,nodev,noexec,relatime,xattr,release_agent=/lib/systemd/systemd-cgroups-agent,name=systemd)
-> > cgroup on /sys/fs/cgroup/cpu,cpuacct type cgroup (rw,nosuid,nodev,noexec,relatime,cpu,cpuacct)
-> > cgroup on /sys/fs/cgroup/cpuset type cgroup (rw,nosuid,nodev,noexec,relatime,cpuset)
-> > cgroup on /sys/fs/cgroup/blkio type cgroup (rw,nosuid,nodev,noexec,relatime,blkio)
-> > cgroup on /sys/fs/cgroup/net_cls,net_prio type cgroup (rw,nosuid,nodev,noexec,relatime,net_cls,net_prio)
-> > cgroup on /sys/fs/cgroup/perf_event type cgroup (rw,nosuid,nodev,noexec,relatime,perf_event)
-> > cgroup on /sys/fs/cgroup/pids type cgroup (rw,nosuid,nodev,noexec,relatime,pids)
-> > cgroup on /sys/fs/cgroup/memory type cgroup (rw,nosuid,nodev,noexec,relatime,memory)
-> > cgroup on /sys/fs/cgroup/devices type cgroup (rw,nosuid,nodev,noexec,relatime,devices)
-> > cgroup on /sys/fs/cgroup/freezer type cgroup (rw,nosuid,nodev,noexec,relatime,freezer)
-> > systemd-1 on /proc/sys/fs/binfmt_misc type autofs (rw,relatime,fd=29,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=23073)
-> > mqueue on /dev/mqueue type mqueue (rw,relatime)
-> > debugfs on /sys/kernel/debug type debugfs (rw,relatime)
-> > hugetlbfs on /dev/hugepages type hugetlbfs (rw,relatime)
-> > /dev/vdiska1 on /boot type ext3 (rw,relatime,data=ordered)
-> > /dev/vdiskb1 on /home type xfs (rw,relatime,attr2,inode64,noquota)
-> > binfmt_misc on /proc/sys/fs/binfmt_misc type binfmt_misc (rw,relatime)
-> > tmpfs on /run/user/1000 type tmpfs (rw,nosuid,nodev,relatime,size=3314120k,mode=700,uid=1000,gid=1000)
-> > tmpfs on /ramdisk type tmpfs (rw,relatime,size=27262976k)
-> > /dev/loop0 on /mnt/scratch type btrfs (rw,relatime,space_cache,subvolid=5,subvol=/)
-> > *** end mount output
-> > 
-> > in kernel logs and on console:
-> > 
-> > [3184224.438566] BTRFS: device fsid b54ec0aa-4187-419d-9de1-5ef284cd3b32 devid 1 transid 5 /dev/loop4
-> > [3184239.417845] BTRFS info (device loop4): disk space caching is enabled
-> > [3184239.417865] BTRFS info (device loop4): has skinny extents
-> > [3184239.417872] BTRFS info (device loop4): flagging fs with big metadata feature
-> > [3184239.421147] BTRFS info (device loop4): creating UUID tree
-> > [3184240.026601] BTRFS: device fsid 5383d227-9ea2-4514-8857-641c6e2e2063 devid 1 transid 5 /dev/loop0
-> > [3184240.131927] BTRFS info (device loop0): disk space caching is enabled
-> > [3184240.131956] BTRFS info (device loop0): has skinny extents
-> > [3184240.131971] BTRFS info (device loop0): flagging fs with big metadata feature
-> > [3184240.135182] BTRFS info (device loop0): creating UUID tree
-> > [3184240.252534] BTRFS critical (device loop4): corrupt leaf, non-root leaf's nritems is 0: block=29556736,root=1, slot=0
+On Thu, Sep 22, 2016 at 05:24:22PM -0700, Omar Sandoval wrote:
+> From: Omar Sandoval <osandov@fb.com>
 > 
-> The error does not seem to be related to the free space bitmap issues
-> (at least I don't see a connection). The message is from
+> There are two separate issues that can lead to corrupted free space
+> trees.
 > 
->   1ba98d086fe3a14d6a31f2f66dbab70c45d00f63
->   "Btrfs: detect corruption when non-root leaf has zero item"
+> 1. The free space tree bitmaps had an endianness issue on big-endian
+>    systems which is fixed by an earlier patch in this series.
+> 2. btrfs-progs before v4.7.3 modified filesystems without updating the
+>    free space tree.
 > 
-> called from btrfs_mark_buffer_dirty with integrity checker on.
-> Confirmed from the log:
+> To catch both of these issues at once, we need to force the free space
+> tree to be rebuilt. To do so, add a FREE_SPACE_TREE_VALID compat_ro bit.
+> If the bit isn't set, we know that it was either produced by a broken
+> big-endian kernel or may have been corrupted by btrfs-progs.
 > 
-> > [3102837.870398] Btrfs loaded, crc32c=crc32c-sparc64, debug=on, assert=on, integrity-checker=on
-> ...
+> This also provides us with a way to add rudimentary read-write support
+> for the free space tree to btrfs-progs: it can just clear this bit and
+> have the kernel rebuild the free space tree.
 > 
-> This is fixed by patch
+> Cc: stable@vger.kernel.org # 4.5+
+> Signed-off-by: Omar Sandoval <osandov@fb.com>
+> ---
+>  fs/btrfs/ctree.h           |  3 ++-
+>  fs/btrfs/disk-io.c         |  9 +++++++++
+>  fs/btrfs/free-space-tree.c |  2 ++
+>  include/uapi/linux/btrfs.h | 10 +++++++++-
+>  4 files changed, 22 insertions(+), 2 deletions(-)
 > 
->   "Btrfs: remove unnecessary btrfs_mark_buffer_dirty in split_leaf"
-> 
-> that's in the 4.9 queue.
 
-Ah, awesome, good to know.
+[snip]
 
-> Other than that, the self-tests seem to pass,
-> thanks for the test. Would be good if you can test with the mentioned
-> patch included or without integrity checker. Thanks for testing.
+> diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+> index ac5eacd..549ecf4 100644
+> --- a/include/uapi/linux/btrfs.h
+> +++ b/include/uapi/linux/btrfs.h
+> @@ -239,7 +239,15 @@ struct btrfs_ioctl_fs_info_args {
+>   * Used by:
+>   * struct btrfs_ioctl_feature_flags
+>   */
+> -#define BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE	(1ULL << 0)
+> +#define BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE		(1ULL << 0)
+> +/*
+> + * Older kernels on big-endian systems produced broken free space tree bitmaps,
+> + * and btrfs-progs also used to corrupt the free space tree. If this bit is
+> + * clear, then the free space tree cannot be trusted. btrfs-progs can also
+> + * intentionally clear this bit to ask the kernel to rebuild the free space
+> + * tree.
+> + */
+
+Hm, I think I changed my mind about allowing btrfs-progs to clear the
+bit intentionally. This creates a problem where we have a valid free
+space tree, modify it with btrfs-progs and clear the bit, and then mount
+it on an older kernel that doesn't check for the valid bit. If we really
+wanted to, we could add yet another bit, say, FREE_SPACE_TREE_INVALID,
+which prevents old kernels from mounting it, but I don't want to add
+more hacks just because write support hasn't been implemented in progs
+yet. That doesn't change this patch at all except for the comment here.
+Should I resend it or can this be fixed on applying?
+
+> +#define BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE_VALID	(1ULL << 1)
+>  
+>  #define BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF	(1ULL << 0)
+>  #define BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL	(1ULL << 1)
+> -- 
+> 2.10.0
+> 
 
 -- 
 Omar

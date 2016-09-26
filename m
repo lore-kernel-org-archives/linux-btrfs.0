@@ -1,67 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from email.routify.me ([162.208.10.182]:47991 "EHLO
-        cartman.routify.me" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S941229AbcIZCQN (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:53493 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S941236AbcIZCVz (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 25 Sep 2016 22:16:13 -0400
-Date: Sun, 25 Sep 2016 22:16:09 -0400
-From: Sean Greenslade <sean@seangreenslade.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: Chris Murphy <lists@colorremedies.com>, David Sterba <dsterba@suse.cz>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Post ext3 conversion problems
-Message-ID: <20160926021609.GA11493@coach.home>
-References: <20160916192459.GA13514@coach.home>
- <CAJCQCtQutt6r2Jovr0jEbTk4W6HUaQpbGiipen97TH1C+k055g@mail.gmail.com>
- <17ca9019-836b-f4f1-f84c-f8c1edcd9925@cn.fujitsu.com>
- <20160919041247.GA32208@coach.home>
- <ae8fd0d5-0d38-aa8e-0114-36ef62b1a783@cn.fujitsu.com>
- <20160919151341.GA1431@coach.home>
- <5f07d365-1eec-7f90-7969-af761834ee48@cn.fujitsu.com>
- <20160920033933.GA13425@coach.home>
- <fbfb851d-34a7-62df-d24e-0fd5b3a2e5e4@cn.fujitsu.com>
- <20160920205121.GA23668@coach.home>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160920205121.GA23668@coach.home>
+        Sun, 25 Sep 2016 22:21:55 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1boLY0-0005Yt-Tg
+        for linux-btrfs@vger.kernel.org; Mon, 26 Sep 2016 04:21:36 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: unable to handle kernel paging request - btrfs
+Date: Mon, 26 Sep 2016 02:21:22 +0000 (UTC)
+Message-ID: <pan$b52da$3be1bbf5$8f186275$d22036bc@cox.net>
+References: <CAGfcS_m0KvAjmWpnGC7agLYBKROqjPoSCVrziaEJXzW1Dyw5iQ@mail.gmail.com>
+        <pan$afe1d$3cd285bd$f0b68da9$67150f63@cox.net>
+        <CAGfcS_n+pMq0thNEM9b2ZA78xEpXTFJXjwTHRyvquLS8dR_yng@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 20, 2016 at 04:51:21PM -0400, Sean Greenslade wrote:
-> On Tue, Sep 20, 2016 at 01:02:38PM +0800, Qu Wenruo wrote:
-> > > Glad to hear you've found the core of the issue.
-> > > 
-> > > At this point, I can trigger it immediately. As soon as I log in and run
-> > > dmenu, it will attempt to rebuild its cache file (small text file that's
-> > > just a list of all executables in the PATH). Once that write happens,
-> > > the bug triggers and the fs goes read only.
-> > 
-> > Rewrite? Or write into new inode?
-> > 
-> > And is the same inode always causing the problem?
-> 
-> It's not always the same. It seems like whatever triggers a write first
-> is what kills it. I went to test it, and this time it triggered on my
-> .bash_history file. I have bash set up with "history -a", so presumably
-> that was an append, not an overwrite.
-> 
-> To cut down on the number of variables, I booted my system with the
-> "rescue" systemd target, then su'd to my user. Simply running a few
-> commands (with the history -a writes that bash triggered) was enough to
-> trigger the bug. This is on 4.8.0-rc6, with the following compile time
-> options enabled:
-> 
-> CONFIG_BTRFS_FS_RUN_SANITY_TESTS=y
-> CONFIG_BTRFS_DEBUG=y
-> CONFIG_BTRFS_ASSERT=y
-> 
-> If I run the stock Arch kernel (4.7.2 at the moment), the issue still
-> appears, but it takes longer. My most reliable trigger is Firefox, whose
-> constant DB writes will trigger it within minutes.
+Rich Freeman posted on Sun, 25 Sep 2016 09:55:42 -0400 as excerpted:
 
-Is there anything I can do to help this along? I can build experimental
-patches, set up long running scripts, run tests, whatever is necessary.
+> On Fri, Sep 23, 2016 at 12:58 AM, Duncan <1i5t5.duncan@cox.net> wrote:
+>>
+>> Btrfs raid1 you say, and you have existing compressed files it's trying
+>> to read in the backtrace?
+>>
+>> Sounds like the issues I see sometimes and have posted about where
+>> after a crash that resulted in one device of my raid1 pair getting
+>> behind the other, the kernel will crash if it sees too many
+>> csum-errors, even tho it's /supposed/ to check the other copy and read
+>> from it if valid (which it is as a btrfs scrub resolves the issue).
+>>
+>> When booted to rescue/single-user mode, can you run a scrub?
+> 
+> After a few reboots trying to capture the initial panic message (even
+> when I set panic_on_oops=1 I was getting multiple ones with only the
+> tainted one staying on screen), the system managed to stay up.  I
+> completed a scrub and it found no errors.
 
-Thanks,
+Well, so much for that theory.  If it found and fixed errors you'd likely 
+be seeing the same problem I see sometimes, but if it didn't find any to 
+fix... unlikely.
 
---Sean
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

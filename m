@@ -1,36 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f180.google.com ([209.85.220.180]:36014 "EHLO
-        mail-qk0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1756039AbcIZUPO (ORCPT
+Received: from tartarus.angband.pl ([89.206.35.136]:34014 "EHLO
+        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S941227AbcIZUle (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Sep 2016 16:15:14 -0400
-Received: by mail-qk0-f180.google.com with SMTP id z190so180268977qkc.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Sep 2016 13:15:13 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CA+Fk0XLfXVaMVTKyovwedBAAAMhpoiuF2b1yuAPbxsOQrkR3=A@mail.gmail.com>
-References: <CA+Fk0XLfXVaMVTKyovwedBAAAMhpoiuF2b1yuAPbxsOQrkR3=A@mail.gmail.com>
-From: Ruben Salzgeber <ruben.salzgeber@gmail.com>
-Date: Mon, 26 Sep 2016 22:15:11 +0200
-Message-ID: <CA+Fk0XKZbf1wamCuT7AZPNVOTmapyr-e9ACnjJ0kqzav561ysA@mail.gmail.com>
-Subject: Fwd: OS X Time Machine and BTRFS
+        Mon, 26 Sep 2016 16:41:34 -0400
+Received: from kilobyte by tartarus.angband.pl with local (Exim 4.84_2)
+        (envelope-from <kilobyte@angband.pl>)
+        id 1bociQ-0005sH-14
+        for linux-btrfs@vger.kernel.org; Mon, 26 Sep 2016 22:41:30 +0200
+Date: Mon, 26 Sep 2016 22:41:29 +0200
+From: Adam Borowski <kilobyte@angband.pl>
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: Does data checksumming remain for files with No_COW file
+ attribute?
+Message-ID: <20160926204129.GA19378@angband.pl>
+References: <767591474719974@web21o.yandex.ru>
+ <20160924123749.GR7138@carfax.org.uk>
+ <1498471474759532@web22g.yandex.ru>
+ <20160924235014.GA2247@angband.pl>
+ <pan$9d4de$8d8969eb$2fd5352c$14a0ea2c@cox.net>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <pan$9d4de$8d8969eb$2fd5352c$14a0ea2c@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi everyone
+On Sun, Sep 25, 2016 at 05:44:30AM +0000, Duncan wrote:
+> Adam Borowski posted on Sun, 25 Sep 2016 01:50:14 +0200 as excerpted:
+> > Actually, it disables pretty much all btrfs features except for... CoW.
+> > 
+> > You lose:
+> > * checksums
+> > * compression
+> > * safety against power loss (torn writes, etc)
+> > * transactions (not that anyone uses them...)
+> > * etc
+> 
+> > But, CoW is still there.
+> 
+> That's because snapshots depend on COW.  If you don't snapshot the file 
+> (or otherwise create additional reflinks to it, using cp --reflink=always, 
+> for instance), it'll be NOCOW.  But because snapshots (and other forms of 
+> multiple reflink) depend on COW, taking a snapshot (or otherwise multi-
+> reflinking) and then writing to one copy forces what has been referred to 
+> on this list as COW1, a single COW to break the multi-reflink.
+> 
+> However, COW1 doesn't change the NOCOW attribute, and further writes to 
+> the same block of the NOCOW file will overwrite the now-current block, 
+> instead of COWING it... until the next snapshot (or another multi-reflink 
+> operation) locks it too in place, of course, after which another COW1 
+> will be required.
 
-I'm reaching out to you because I experience unusually slow read and
-write speeds on my Arch Linux server in combination with OS X time
-machine. My setup is consists of an Core i3 6300, 16GB Ram, 128GB SSD
-for the OS and a 8 drive RAID5 BTRFS volume as archive. The latest
-version of Avahi, Netatalk and BTRFS-Progs are installed. On a wired
-connection I reach 120MB/s for normal filetransfers from OS X to the
-Server. When using Time Machine I measure peak network trafic around
-1-2MB/s and long durations of almost no trafic. Could this be in any
-relation to BTRFS? Is there a special configuration necessary for
-folders containing the Time Machine sparsebundle file?
+There is no CoW unless you have more than one ref to the extent, as there is
+no copying involved (other than when you write less than a whole block[1],
+but that's the case for any filesystem).  Depending on FS_NOCOW_FL, you
+either overwrite in place or write elsewhere then switch refs, but at no
+point there is more than one live version.  You could call the latter "move
+on write", perhaps.  On the other hand, with >1 reference, there's always
+CoW.
 
-Hope hear from you, kind regards
-
-Ruben
+[1]. The exact definition of "block" here varies.
+-- 
+An imaginary friend squared is a real enemy.

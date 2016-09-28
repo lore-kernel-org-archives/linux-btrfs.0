@@ -1,93 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f170.google.com ([209.85.192.170]:33727 "EHLO
-        mail-pf0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752733AbcIZXNb (ORCPT
+Received: from mx0b-001b2d01.pphosted.com ([148.163.158.5]:42568 "EHLO
+        mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S932124AbcI1ND2 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Sep 2016 19:13:31 -0400
-Received: by mail-pf0-f170.google.com with SMTP id 21so70407358pfy.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Sep 2016 16:13:31 -0700 (PDT)
-Date: Mon, 26 Sep 2016 16:13:29 -0700
-From: Omar Sandoval <osandov@osandov.com>
-To: linux-btrfs@vger.kernel.org
-Cc: kernel-team@fb.com, Chandan Rajendra <chandan@linux.vnet.ibm.com>,
+        Wed, 28 Sep 2016 09:03:28 -0400
+Received: from pps.filterd (m0098419.ppops.net [127.0.0.1])
+        by mx0b-001b2d01.pphosted.com (8.16.0.17/8.16.0.17) with SMTP id u8SD35Or114242
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Sep 2016 09:03:28 -0400
+Received: from e23smtp07.au.ibm.com (e23smtp07.au.ibm.com [202.81.31.140])
+        by mx0b-001b2d01.pphosted.com with ESMTP id 25r7khkas3-1
+        (version=TLSv1.2 cipher=AES256-SHA bits=256 verify=NOT)
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Sep 2016 09:03:27 -0400
+Received: from localhost
+        by e23smtp07.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+        for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+        Wed, 28 Sep 2016 23:03:24 +1000
+Received: from d23relay10.au.ibm.com (d23relay10.au.ibm.com [9.190.26.77])
+        by d23dlp02.au.ibm.com (Postfix) with ESMTP id 42A6A2BB0059
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Sep 2016 23:03:22 +1000 (EST)
+Received: from d23av03.au.ibm.com (d23av03.au.ibm.com [9.190.234.97])
+        by d23relay10.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id u8SD3MGv3473806
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Sep 2016 23:03:22 +1000
+Received: from d23av03.au.ibm.com (localhost [127.0.0.1])
+        by d23av03.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id u8SD3LkW023408
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Sep 2016 23:03:22 +1000
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: Omar Sandoval <osandov@osandov.com>
+Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com,
         Anatoly Pugachev <matorola@gmail.com>
-Subject: Re: [PATCH v2 3/6] Btrfs: catch invalid free space trees
-Message-ID: <20160926231329.GA23991@vader.DHCP.thefacebook.com>
+Subject: Re: [PATCH v2 0/6] Btrfs: free space tree and sanity test fixes
+Date: Wed, 28 Sep 2016 18:33:16 +0530
+In-Reply-To: <cover.1474580472.git.osandov@fb.com>
 References: <cover.1474580472.git.osandov@fb.com>
- <1381db7b5de30b8ea0d2e87aff26bfdb83b030e7.1474580472.git.osandov@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1381db7b5de30b8ea0d2e87aff26bfdb83b030e7.1474580472.git.osandov@fb.com>
+Content-Type: text/plain; charset="us-ascii"
+Message-Id: <2118496.9cv27FvD1a@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Sep 22, 2016 at 05:24:22PM -0700, Omar Sandoval wrote:
+On Thursday, September 22, 2016 05:22:31 PM Omar Sandoval wrote:
 > From: Omar Sandoval <osandov@fb.com>
 > 
-> There are two separate issues that can lead to corrupted free space
-> trees.
+> This is v2 of my earlier series "Btrfs: fix free space tree
+> bitmaps+tests on big-endian systems" [1]. Patches 1, 4, and 5 are the
+> same as patches 1, 2, and 3 from the original series. I've added patch 2
+> to fix another bug I noticed (an xfstest went out earlier). Patch 3 is
+> the result of the earlier discussion here [2]. Finally, patch 6 was
+> necessary to get the sanity tests to run on my MIPS emulator.
 > 
-> 1. The free space tree bitmaps had an endianness issue on big-endian
->    systems which is fixed by an earlier patch in this series.
-> 2. btrfs-progs before v4.7.3 modified filesystems without updating the
->    free space tree.
-> 
-> To catch both of these issues at once, we need to force the free space
-> tree to be rebuilt. To do so, add a FREE_SPACE_TREE_VALID compat_ro bit.
-> If the bit isn't set, we know that it was either produced by a broken
-> big-endian kernel or may have been corrupted by btrfs-progs.
-> 
-> This also provides us with a way to add rudimentary read-write support
-> for the free space tree to btrfs-progs: it can just clear this bit and
-> have the kernel rebuild the free space tree.
-> 
-> Cc: stable@vger.kernel.org # 4.5+
-> Signed-off-by: Omar Sandoval <osandov@fb.com>
-> ---
->  fs/btrfs/ctree.h           |  3 ++-
->  fs/btrfs/disk-io.c         |  9 +++++++++
->  fs/btrfs/free-space-tree.c |  2 ++
->  include/uapi/linux/btrfs.h | 10 +++++++++-
->  4 files changed, 22 insertions(+), 2 deletions(-)
-> 
+> This series applies to v4.8-rc7. The sanity tests pass on both x86-64
+> and MIPS, and there are no xfstests regressions. Chandan and Anatoly,
+> could you test these out as well?
 
-[snip]
+Hello Omar,
 
-> diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-> index ac5eacd..549ecf4 100644
-> --- a/include/uapi/linux/btrfs.h
-> +++ b/include/uapi/linux/btrfs.h
-> @@ -239,7 +239,15 @@ struct btrfs_ioctl_fs_info_args {
->   * Used by:
->   * struct btrfs_ioctl_feature_flags
->   */
-> -#define BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE	(1ULL << 0)
-> +#define BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE		(1ULL << 0)
-> +/*
-> + * Older kernels on big-endian systems produced broken free space tree bitmaps,
-> + * and btrfs-progs also used to corrupt the free space tree. If this bit is
-> + * clear, then the free space tree cannot be trusted. btrfs-progs can also
-> + * intentionally clear this bit to ask the kernel to rebuild the free space
-> + * tree.
-> + */
+I have executed xfstests on a big endian ppc64 guest with 'MOUNT_OPTIONS="-o
+space_cache=v2"' config option. I have also executed generic/127 on a
+filesystem created using "fragment-free-space-tree.py" that you had provided
+sometime ago. I did not notice any regressions during the test runs.
 
-Hm, I think I changed my mind about allowing btrfs-progs to clear the
-bit intentionally. This creates a problem where we have a valid free
-space tree, modify it with btrfs-progs and clear the bit, and then mount
-it on an older kernel that doesn't check for the valid bit. If we really
-wanted to, we could add yet another bit, say, FREE_SPACE_TREE_INVALID,
-which prevents old kernels from mounting it, but I don't want to add
-more hacks just because write support hasn't been implemented in progs
-yet. That doesn't change this patch at all except for the comment here.
-Should I resend it or can this be fixed on applying?
+Tested-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 
-> +#define BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE_VALID	(1ULL << 1)
->  
->  #define BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF	(1ULL << 0)
->  #define BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL	(1ULL << 1)
-> -- 
-> 2.10.0
+> 
+> I'm working on the btrfs-progs follow up, but these patches are safe
+> without that -- the new FREE_SPACE_TREE_VALID bit will stop all versions
+> of btrfs-progs from mounting read-write.
+> 
+> Thanks!
+> 
+> 1: http://marc.info/?l=linux-btrfs&m=146853909905570&w=2
+> 2: http://marc.info/?l=linux-btrfs&m=147448992301110&w=2
+> 
+> Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+> Cc: Anatoly Pugachev <matorola@gmail.com>
+> 
+> Omar Sandoval (6):
+>   Btrfs: fix free space tree bitmaps on big-endian systems
+>   Btrfs: fix mount -o clear_cache,space_cache=v2
+>   Btrfs: catch invalid free space trees
+>   Btrfs: fix extent buffer bitmap tests on big-endian systems
+>   Btrfs: expand free space tree sanity tests to catch endianness bug
+>   Btrfs: use less memory for delalloc sanity tests
+> 
+>  fs/btrfs/ctree.h                       |   3 +-
+>  fs/btrfs/disk-io.c                     |  33 ++++---
+>  fs/btrfs/extent_io.c                   |  64 +++++++++----
+>  fs/btrfs/extent_io.h                   |  22 +++++
+>  fs/btrfs/free-space-tree.c             |  19 ++--
+>  fs/btrfs/tests/extent-io-tests.c       |  95 +++++++++++--------
+>  fs/btrfs/tests/free-space-tree-tests.c | 164 +++++++++++++++++++--------------
+>  include/uapi/linux/btrfs.h             |  10 +-
+>  8 files changed, 261 insertions(+), 149 deletions(-)
+> 
 > 
 
 -- 
-Omar
+chandan
+

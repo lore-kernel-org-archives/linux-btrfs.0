@@ -1,301 +1,359 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:4952 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1753598AbcI3BLd (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Sep 2016 21:11:33 -0400
-Subject: Re: [RFC][PATCH] btrfs-progs: move sources shared with kernel to own
- directory
-To: David Sterba <dsterba@suse.com>, <linux-btrfs@vger.kernel.org>
-References: <1475167106-18054-1-git-send-email-dsterba@suse.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <a0920b31-3dad-5253-7d6f-938bb7bedb0b@cn.fujitsu.com>
-Date: Fri, 30 Sep 2016 09:11:30 +0800
+Received: from mga07.intel.com ([134.134.136.100]:26844 "EHLO mga07.intel.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754436AbcI1XbC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Sep 2016 19:31:02 -0400
+Date: Thu, 29 Sep 2016 07:30:34 +0800
+From: kbuild test robot <fengguang.wu@intel.com>
+To: Josef Bacik <jbacik@fb.com>
+Cc: kbuild-all@01.org, linux-btrfs@vger.kernel.org
+Subject: [josef-btrfs:master 4/17] arch/tile/mm/pgtable.c:47:2: error:
+ implicit declaration of function 'glboal_node_page_state'
+Message-ID: <201609290719.4ddPlJFk%fengguang.wu@intel.com>
 MIME-Version: 1.0
-In-Reply-To: <1475167106-18054-1-git-send-email-dsterba@suse.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: multipart/mixed; boundary="3V7upXqbjpZ4EhLz"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
+--3V7upXqbjpZ4EhLz
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-At 09/30/2016 12:38 AM, David Sterba wrote:
-> Hi,
->
-> I've started to reorganize the souces in progs so we can split the files and
-> group them. At the moment there's the kernel library (crc, list, radix, ...) as
-> the files are almost exactly the same as provided by kernel.
->
-> This patch moves btrfs-specific sources to own directory. As this is a bigger
-> change I could use some feedback if there are better alternatives (*). The
-> makefile is still global, object files are put next to the sources.
+tree:   https://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git master
+head:   7a27194d3aaad0547b4f3fccdaab7dc01e03f6de
+commit: 1277e49c31f1694ba0d9f9b3871144832c66ac0a [4/17] writeback: allow for dirty metadata accounting
+config: tile-tilegx_defconfig (attached as .config)
+compiler: tilegx-linux-gcc (GCC) 4.6.2
+reproduce:
+        wget https://git.kernel.org/cgit/linux/kernel/git/wfg/lkp-tests.git/plain/sbin/make.cross -O ~/bin/make.cross
+        chmod +x ~/bin/make.cross
+        git checkout 1277e49c31f1694ba0d9f9b3871144832c66ac0a
+        # save the attached .config to linux build tree
+        make.cross ARCH=tile 
 
-+1 for global makefile. We don't need to bother several makefile, that's 
-nice.
+All error/warnings (new ones prefixed by >>):
 
->
-> To current state and plans to continue the split:
->
-> - kernel-lib/     - as described in the first paragraph
+   arch/tile/mm/pgtable.c: In function 'show_mem':
+>> arch/tile/mm/pgtable.c:47:2: error: implicit declaration of function 'glboal_node_page_state'
+>> arch/tile/mm/pgtable.c:47:2: warning: format '%lu' expects argument of type 'long unsigned int', but argument 7 has type 'int'
+   cc1: some warnings being treated as errors
 
-Already using devel branch. Seems good to me.
+vim +/glboal_node_page_state +47 arch/tile/mm/pgtable.c
 
-> - kernel-shared/  - dtto, second
-> - cmds/           - (planned) cmds-*.[ch]
+    41	 * of processors and often four NUMA zones each with high and lowmem.
+    42	 */
+    43	void show_mem(unsigned int filter)
+    44	{
+    45		struct zone *zone;
+    46	
+  > 47		pr_err("Active:%lu inactive:%lu dirty:%lu metadata_dirty:%lu writeback:%lu metadata_writeback:%lu unstable:%lu free:%lu\n slab:%lu mapped:%lu pagetables:%lu bounce:%lu pagecache:%lu swap:%lu\n",
+    48		       (global_node_page_state(NR_ACTIVE_ANON) +
+    49			global_node_page_state(NR_ACTIVE_FILE)),
+    50		       (global_node_page_state(NR_INACTIVE_ANON) +
 
-Sounds good, so we can skip the "cmds-" prefix then.
+---
+0-DAY kernel test infrastructure                Open Source Technology Center
+https://lists.01.org/pipermail/kbuild-all                   Intel Corporation
 
-> - convert/        - move as-is, split later, eg. per filsystem
-> - image/          - move as-is, split if needed
-> - check/          - split from cmds-check
+--3V7upXqbjpZ4EhLz
+Content-Type: application/gzip
+Content-Disposition: attachment; filename=".config.gz"
+Content-Transfer-Encoding: base64
 
-Pretty cool.
-I'm also moving some code into its own dir doing the user-space scrub work.
-(While I'm creating a new dir called fsck/ and put my scrub code into 
-it, rename it to check/ won't be a problem though)
+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
 
-While I'm not sure what is going to be in kernel-shared/ dir.
-
-Uapi headers? or things like disk-io.c volumes.c?
-
-For uapi headers, then kernel-shared/ may contain few files.
-For disk-io.c/volumes.c, they are not shared with kernel anymore.
-
-Thanks,
-Qu
-
->
-> There will be space for code shared potentially by any of the above, that
-> should remain in the toplevel directory, we'll see later how to organize.  The
-> remaining standalone tools shall remain in the toplevel directory.
->
-> The target for kernel-shared split is 4.9, 4.8 will have the kernel-lib split.
->
-> Preview can be found in my devel git repos in branch preview/move-shared .
->
-> Thanks for feedback.
->
-> (*) no automake please
->
-> ------>8---8<------
-> From: David Sterba <dsterba@suse.com>
->
-> All files that share content and purpose with the corresponding file in
-> the kernel are moved to a separate directory. There's only some overlap,
-> can't be 100% match but many functions are shared. A diff between the
-> files can reveal changes that should be applied to the other codebase.
->
-> Signed-off-by: David Sterba <dsterba@suse.com>
-> ---
->  Makefile.in                                            | 18 +++++++++++-------
->  backref.c => kernel-shared/backref.c                   |  0
->  backref.h => kernel-shared/backref.h                   |  0
->  ctree.c => kernel-shared/ctree.c                       |  0
->  ctree.h => kernel-shared/ctree.h                       |  0
->  dir-item.c => kernel-shared/dir-item.c                 |  0
->  disk-io.c => kernel-shared/disk-io.c                   |  0
->  disk-io.h => kernel-shared/disk-io.h                   |  0
->  extent-tree.c => kernel-shared/extent-tree.c           |  0
->  extent_io.c => kernel-shared/extent_io.c               |  0
->  extent_io.h => kernel-shared/extent_io.h               |  0
->  file-item.c => kernel-shared/file-item.c               |  0
->  file.c => kernel-shared/file.c                         |  0
->  free-space-cache.c => kernel-shared/free-space-cache.c |  0
->  free-space-cache.h => kernel-shared/free-space-cache.h |  0
->  free-space-tree.c => kernel-shared/free-space-tree.c   |  0
->  free-space-tree.h => kernel-shared/free-space-tree.h   |  0
->  inode-item.c => kernel-shared/inode-item.c             |  0
->  inode-map.c => kernel-shared/inode-map.c               |  0
->  inode.c => kernel-shared/inode.c                       |  0
->  print-tree.c => kernel-shared/print-tree.c             |  0
->  print-tree.h => kernel-shared/print-tree.h             |  0
->  root-tree.c => kernel-shared/root-tree.c               |  0
->  ulist.c => kernel-shared/ulist.c                       |  0
->  ulist.h => kernel-shared/ulist.h                       |  0
->  volumes.c => kernel-shared/volumes.c                   |  0
->  volumes.h => kernel-shared/volumes.h                   |  0
->  27 files changed, 11 insertions(+), 7 deletions(-)
->  rename backref.c => kernel-shared/backref.c (100%)
->  rename backref.h => kernel-shared/backref.h (100%)
->  rename ctree.c => kernel-shared/ctree.c (100%)
->  rename ctree.h => kernel-shared/ctree.h (100%)
->  rename dir-item.c => kernel-shared/dir-item.c (100%)
->  rename disk-io.c => kernel-shared/disk-io.c (100%)
->  rename disk-io.h => kernel-shared/disk-io.h (100%)
->  rename extent-tree.c => kernel-shared/extent-tree.c (100%)
->  rename extent_io.c => kernel-shared/extent_io.c (100%)
->  rename extent_io.h => kernel-shared/extent_io.h (100%)
->  rename file-item.c => kernel-shared/file-item.c (100%)
->  rename file.c => kernel-shared/file.c (100%)
->  rename free-space-cache.c => kernel-shared/free-space-cache.c (100%)
->  rename free-space-cache.h => kernel-shared/free-space-cache.h (100%)
->  rename free-space-tree.c => kernel-shared/free-space-tree.c (100%)
->  rename free-space-tree.h => kernel-shared/free-space-tree.h (100%)
->  rename inode-item.c => kernel-shared/inode-item.c (100%)
->  rename inode-map.c => kernel-shared/inode-map.c (100%)
->  rename inode.c => kernel-shared/inode.c (100%)
->  rename print-tree.c => kernel-shared/print-tree.c (100%)
->  rename print-tree.h => kernel-shared/print-tree.h (100%)
->  rename root-tree.c => kernel-shared/root-tree.c (100%)
->  rename ulist.c => kernel-shared/ulist.c (100%)
->  rename ulist.h => kernel-shared/ulist.h (100%)
->  rename volumes.c => kernel-shared/volumes.c (100%)
->  rename volumes.h => kernel-shared/volumes.h (100%)
->
-> diff --git a/Makefile.in b/Makefile.in
-> index 20b740a0babd..2a08978f8b85 100644
-> --- a/Makefile.in
-> +++ b/Makefile.in
-> @@ -62,6 +62,7 @@ CFLAGS = @CFLAGS@ \
->  	 -fPIC \
->  	 -I$(TOPDIR) \
->  	 -I$(TOPDIR)/kernel-lib \
-> +	 -I$(TOPDIR)/kernel-shared \
->  	 $(EXTRAWARN_CFLAGS) \
->  	 $(DEBUG_CFLAGS_INTERNAL) \
->  	 $(EXTRA_CFLAGS)
-> @@ -87,12 +88,14 @@ CHECKER_FLAGS := -include $(check_defs) -D__CHECKER__ \
->  	-D__CHECK_ENDIAN__ -Wbitwise -Wuninitialized -Wshadow -Wundef \
->  	-U_FORTIFY_SOURCE
->
-> -objects = ctree.o disk-io.o kernel-lib/radix-tree.o extent-tree.o print-tree.o \
-> -	  root-tree.o dir-item.o file-item.o inode-item.o inode-map.o \
-> -	  extent-cache.o extent_io.o volumes.o utils.o repair.o \
-> -	  qgroup.o raid6.o free-space-cache.o kernel-lib/list_sort.o props.o \
-> -	  ulist.o qgroup-verify.o backref.o string-table.o task-utils.o \
-> -	  inode.o file.o find-root.o free-space-tree.o help.o
-> +objects = kernel-shared/ctree.o kernel-shared/disk-io.o kernel-lib/radix-tree.o \
-> +	  kernel-shared/extent-tree.o kernel-shared/print-tree.o \
-> +	  kernel-shared/root-tree.o kernel-shared/dir-item.o \
-> +	  kernel-shared/file-item.o kernel-shared/inode-item.o kernel-shared/inode-map.o \
-> +	  extent-cache.o kernel-shared/extent_io.o kernel-shared/volumes.o utils.o repair.o \
-> +	  qgroup.o raid6.o kernel-shared/free-space-cache.o kernel-lib/list_sort.o props.o \
-> +	  kernel-shared/ulist.o qgroup-verify.o kernel-shared/backref.o string-table.o task-utils.o \
-> +	  kernel-shared/inode.o kernel-shared/file.o find-root.o kernel-shared/free-space-tree.o help.o
->  cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
->  	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
->  	       cmds-quota.o cmds-qgroup.o cmds-replace.o cmds-check.o \
-> @@ -105,7 +108,7 @@ libbtrfs_objects = send-stream.o send-utils.o kernel-lib/rbtree.o btrfs-list.o \
->  libbtrfs_headers = send-stream.h send-utils.h send.h kernel-lib/rbtree.h btrfs-list.h \
->  	       kernel-lib/crc32c.h kernel-lib/list.h kerncompat.h \
->  	       kernel-lib/radix-tree.h extent-cache.h \
-> -	       extent_io.h ioctl.h ctree.h btrfsck.h version.h
-> +	       kernel-shared/extent_io.h ioctl.h kernel-shared/ctree.h btrfsck.h version.h
->  TESTS = fsck-tests.sh convert-tests.sh
->
->  udev_rules = 64-btrfs-dm.rules
-> @@ -426,6 +429,7 @@ clean: $(CLEANDIRS)
->  	@echo "Cleaning"
->  	$(Q)$(RM) -f $(progs) cscope.out *.o *.o.d \
->  		kernel-lib/*.o kernel-lib/*.o.d \
-> +		kernel-shared/*.o kernel-shared/*.o.d \
->  	      dir-test ioctl-test quick-test send-test library-test library-test-static \
->  	      btrfs.static mkfs.btrfs.static \
->  	      $(check_defs) \
-> diff --git a/backref.c b/kernel-shared/backref.c
-> similarity index 100%
-> rename from backref.c
-> rename to kernel-shared/backref.c
-> diff --git a/backref.h b/kernel-shared/backref.h
-> similarity index 100%
-> rename from backref.h
-> rename to kernel-shared/backref.h
-> diff --git a/ctree.c b/kernel-shared/ctree.c
-> similarity index 100%
-> rename from ctree.c
-> rename to kernel-shared/ctree.c
-> diff --git a/ctree.h b/kernel-shared/ctree.h
-> similarity index 100%
-> rename from ctree.h
-> rename to kernel-shared/ctree.h
-> diff --git a/dir-item.c b/kernel-shared/dir-item.c
-> similarity index 100%
-> rename from dir-item.c
-> rename to kernel-shared/dir-item.c
-> diff --git a/disk-io.c b/kernel-shared/disk-io.c
-> similarity index 100%
-> rename from disk-io.c
-> rename to kernel-shared/disk-io.c
-> diff --git a/disk-io.h b/kernel-shared/disk-io.h
-> similarity index 100%
-> rename from disk-io.h
-> rename to kernel-shared/disk-io.h
-> diff --git a/extent-tree.c b/kernel-shared/extent-tree.c
-> similarity index 100%
-> rename from extent-tree.c
-> rename to kernel-shared/extent-tree.c
-> diff --git a/extent_io.c b/kernel-shared/extent_io.c
-> similarity index 100%
-> rename from extent_io.c
-> rename to kernel-shared/extent_io.c
-> diff --git a/extent_io.h b/kernel-shared/extent_io.h
-> similarity index 100%
-> rename from extent_io.h
-> rename to kernel-shared/extent_io.h
-> diff --git a/file-item.c b/kernel-shared/file-item.c
-> similarity index 100%
-> rename from file-item.c
-> rename to kernel-shared/file-item.c
-> diff --git a/file.c b/kernel-shared/file.c
-> similarity index 100%
-> rename from file.c
-> rename to kernel-shared/file.c
-> diff --git a/free-space-cache.c b/kernel-shared/free-space-cache.c
-> similarity index 100%
-> rename from free-space-cache.c
-> rename to kernel-shared/free-space-cache.c
-> diff --git a/free-space-cache.h b/kernel-shared/free-space-cache.h
-> similarity index 100%
-> rename from free-space-cache.h
-> rename to kernel-shared/free-space-cache.h
-> diff --git a/free-space-tree.c b/kernel-shared/free-space-tree.c
-> similarity index 100%
-> rename from free-space-tree.c
-> rename to kernel-shared/free-space-tree.c
-> diff --git a/free-space-tree.h b/kernel-shared/free-space-tree.h
-> similarity index 100%
-> rename from free-space-tree.h
-> rename to kernel-shared/free-space-tree.h
-> diff --git a/inode-item.c b/kernel-shared/inode-item.c
-> similarity index 100%
-> rename from inode-item.c
-> rename to kernel-shared/inode-item.c
-> diff --git a/inode-map.c b/kernel-shared/inode-map.c
-> similarity index 100%
-> rename from inode-map.c
-> rename to kernel-shared/inode-map.c
-> diff --git a/inode.c b/kernel-shared/inode.c
-> similarity index 100%
-> rename from inode.c
-> rename to kernel-shared/inode.c
-> diff --git a/print-tree.c b/kernel-shared/print-tree.c
-> similarity index 100%
-> rename from print-tree.c
-> rename to kernel-shared/print-tree.c
-> diff --git a/print-tree.h b/kernel-shared/print-tree.h
-> similarity index 100%
-> rename from print-tree.h
-> rename to kernel-shared/print-tree.h
-> diff --git a/root-tree.c b/kernel-shared/root-tree.c
-> similarity index 100%
-> rename from root-tree.c
-> rename to kernel-shared/root-tree.c
-> diff --git a/ulist.c b/kernel-shared/ulist.c
-> similarity index 100%
-> rename from ulist.c
-> rename to kernel-shared/ulist.c
-> diff --git a/ulist.h b/kernel-shared/ulist.h
-> similarity index 100%
-> rename from ulist.h
-> rename to kernel-shared/ulist.h
-> diff --git a/volumes.c b/kernel-shared/volumes.c
-> similarity index 100%
-> rename from volumes.c
-> rename to kernel-shared/volumes.c
-> diff --git a/volumes.h b/kernel-shared/volumes.h
-> similarity index 100%
-> rename from volumes.h
-> rename to kernel-shared/volumes.h
->
-
-
+--3V7upXqbjpZ4EhLz--

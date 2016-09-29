@@ -1,60 +1,145 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:19605 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1753421AbcILHGf (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Sep 2016 03:06:35 -0400
-Subject: Re: [PATCH 1/3] btrfs-progs: check: remove unused found_key variable
- in walk_down_tree()
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-References: <20160825052101.25864-1-wangxg.fnst@cn.fujitsu.com>
- <20160829162217.GW16983@twin.jikos.cz>
-From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Message-ID: <57D652DB.6060507@cn.fujitsu.com>
-Date: Mon, 12 Sep 2016 15:01:47 +0800
+Received: from mx2.suse.de ([195.135.220.15]:58397 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750946AbcI2Lgt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 29 Sep 2016 07:36:49 -0400
+From: David Sterba <dsterba@suse.com>
+To: clm@fb.com
+Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
+Subject: [PULL] Btrfs, for 4.9, part 1
+Date: Thu, 29 Sep 2016 13:36:46 +0200
+Message-Id: <cover.1475148294.git.dsterba@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <20160829162217.GW16983@twin.jikos.cz>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi,
 
-On 08/30/2016 12:22 AM, David Sterba wrote:
-> On Thu, Aug 25, 2016 at 01:20:59PM +0800, Wang Xiaoguang wrote:
->> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
->> ---
->>   cmds-check.c | 5 -----
->>   1 file changed, 5 deletions(-)
->>
->> diff --git a/cmds-check.c b/cmds-check.c
->> index 0ddfd24..1cd0421 100644
->> --- a/cmds-check.c
->> +++ b/cmds-check.c
->> @@ -3737,7 +3737,6 @@ static int check_fs_root(struct btrfs_root *root,
->>   		path.slots[level] = 0;
->>   	} else {
->>   		struct btrfs_key key;
->> -		struct btrfs_disk_key found_key;
->>   
->>   		btrfs_disk_key_to_cpu(&key, &root_item->drop_progress);
->>   		level = root_item->drop_level;
->> @@ -3745,10 +3744,6 @@ static int check_fs_root(struct btrfs_root *root,
->>   		wret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
->>   		if (wret < 0)
->>   			goto skip_walking;
->> -		btrfs_node_key(path.nodes[level], &found_key,
->> -				path.slots[level]);
->> -		WARN_ON(memcmp(&found_key, &root_item->drop_progress,
->> -					sizeof(found_key)));
-> It's not unused, the WARN_ON is an if in disguise, ane memcmp does the
-> check, am I missing something here?
-No, you're right.
-I mistakenly took the memcmp() as memcpy(), sorry.
+I'm sending the first batch for 4.9, mostly fixes, stability improvements and
+cleanups. There might be a second pull if the patches get reviewed, anything
+space handling related or qgroups.
+Please pull, thanks.
 
-Regards,
-Xiaoguang Wang
->
+----------------------------------------------------------------
+The following changes since commit 08895a8b6b06ed2323cd97a36ee40a116b3db8ed:
 
+  Linux 4.8-rc8 (2016-09-25 18:47:13 -0700)
 
+are available in the git repository at:
 
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git misc-4.9
+
+for you to fetch changes up to 196e02490c934398f894e5cb0ee1ac8ad13ca576:
+
+  Btrfs: remove unnecessary btrfs_mark_buffer_dirty in split_leaf (2016-09-26 19:50:44 +0200)
+
+----------------------------------------------------------------
+Anand Jain (1):
+      btrfs: fix a possible umount deadlock
+
+Arnd Bergmann (1):
+      btrfs: fix btrfs_no_printk stub helper
+
+David Sterba (1):
+      btrfs: create example debugfs file only in debugging build
+
+Eric Sandeen (1):
+      btrfs: fix perms on demonstration debugfs interface
+
+Goldwyn Rodrigues (3):
+      btrfs: Do not reassign count in btrfs_run_delayed_refs
+      btrfs: Remove already completed TODO comment
+      btrfs: parent_start initialization cleanup
+
+Jeff Mahoney (7):
+      btrfs: add dynamic debug support
+      btrfs: clean the old superblocks before freeing the device
+      btrfs: unsplit printed strings
+      btrfs: convert printk(KERN_* to use pr_* calls
+      btrfs: convert pr_* to btrfs_* where possible
+      btrfs: convert send's verbose_printk to btrfs_debug
+      btrfs: btrfs_debug should consume fs_info when DEBUG is not defined
+
+Josef Bacik (5):
+      Btrfs: add a flags field to btrfs_fs_info
+      Btrfs: kill the start argument to read_extent_buffer_pages
+      Btrfs: kill BUG_ON()'s in btrfs_mark_extent_written
+      Btrfs: don't leak reloc root nodes on error
+      Btrfs: don't BUG() during drop snapshot
+
+Liu Bo (13):
+      Btrfs: fix memory leak of block group cache
+      Btrfs: remove BUG() in raid56
+      Btrfs: fix memory leak in reading btree blocks
+      Btrfs: bail out if block group has different mixed flag
+      Btrfs: return gracefully from balance if fs tree is corrupted
+      Btrfs: memset to avoid stale content in btree node block
+      Btrfs: remove BUG_ON in start_transaction
+      Btrfs: add error handling for extent buffer in print tree
+      Btrfs: improve check_node to avoid reading corrupted nodes
+      Btrfs: kill BUG_ON in run_delayed_tree_ref
+      Btrfs: fix memory leak in do_walk_down
+      Btrfs: memset to avoid stale content in btree leaf
+      Btrfs: remove unnecessary btrfs_mark_buffer_dirty in split_leaf
+
+Lu Fengqi (1):
+      btrfs: fix check_shared for fiemap ioctl
+
+Luis Henriques (2):
+      btrfs: Fix warning "variable ‘blocksize’ set but not used"
+      btrfs: Fix warning "variable ‘gen’ set but not used"
+
+Masahiro Yamada (1):
+      btrfs: squash lines for simple wrapper functions
+
+Naohiro Aota (1):
+      btrfs: let btrfs_delete_unused_bgs() to clean relocated bgs
+
+Qu Wenruo (1):
+      btrfs: extend btrfs_set_extent_delalloc and its friends to support in-band dedupe and subpage size patchset
+
+ fs/btrfs/backref.c            | 409 ++++++++++++++++++++++++++++++++++++++----
+ fs/btrfs/btrfs_inode.h        |  11 --
+ fs/btrfs/check-integrity.c    | 342 +++++++++++------------------------
+ fs/btrfs/compression.c        |   6 +-
+ fs/btrfs/ctree.c              |  56 ++----
+ fs/btrfs/ctree.h              | 116 ++++++++----
+ fs/btrfs/delayed-inode.c      |  25 ++-
+ fs/btrfs/delayed-ref.c        |  15 +-
+ fs/btrfs/dev-replace.c        |  21 ++-
+ fs/btrfs/dir-item.c           |   7 +-
+ fs/btrfs/disk-io.c            | 237 ++++++++++++++++--------
+ fs/btrfs/disk-io.h            |   2 +
+ fs/btrfs/extent-tree.c        | 200 ++++++++++++---------
+ fs/btrfs/extent_io.c          | 170 +++++++++++-------
+ fs/btrfs/extent_io.h          |   4 +-
+ fs/btrfs/file.c               |  43 ++++-
+ fs/btrfs/free-space-cache.c   |  21 ++-
+ fs/btrfs/free-space-cache.h   |   6 +-
+ fs/btrfs/free-space-tree.c    |  20 ++-
+ fs/btrfs/inode-map.c          |  31 ++--
+ fs/btrfs/inode.c              |  70 +++++---
+ fs/btrfs/ioctl.c              |  14 +-
+ fs/btrfs/lzo.c                |   6 +-
+ fs/btrfs/ordered-data.c       |   4 +-
+ fs/btrfs/print-tree.c         |  93 +++++-----
+ fs/btrfs/qgroup.c             |  77 ++++----
+ fs/btrfs/raid56.c             |   5 +-
+ fs/btrfs/reada.c              |  32 ++--
+ fs/btrfs/relocation.c         |  47 +++--
+ fs/btrfs/root-tree.c          |  18 +-
+ fs/btrfs/scrub.c              |  58 +++---
+ fs/btrfs/send.c               |  79 ++++----
+ fs/btrfs/super.c              |  62 ++++---
+ fs/btrfs/sysfs.c              |  19 +-
+ fs/btrfs/tests/inode-tests.c  |  12 +-
+ fs/btrfs/tests/qgroup-tests.c |   2 +-
+ fs/btrfs/transaction.c        |  49 +++--
+ fs/btrfs/transaction.h        |   1 +
+ fs/btrfs/tree-log.c           |  12 +-
+ fs/btrfs/uuid-tree.c          |  27 +--
+ fs/btrfs/volumes.c            | 221 ++++++++++++-----------
+ fs/btrfs/volumes.h            |   2 +-
+ fs/btrfs/zlib.c               |   8 +-
+ 43 files changed, 1574 insertions(+), 1086 deletions(-)

@@ -1,12 +1,12 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp2.provo.novell.com ([137.65.250.81]:39362 "EHLO
-        smtp2.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1756059AbcI1CTh (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Tue, 27 Sep 2016 22:19:37 -0400
+Received: from cn.fujitsu.com ([59.151.112.132]:10525 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S932432AbcI2I52 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 29 Sep 2016 04:57:28 -0400
 Subject: Re: [PATCH] qgroup: Prevent qgroup->reserved from going subzero
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, Goldwyn Rodrigues <rgoldwyn@suse.de>,
-        linux-btrfs@vger.kernel.org
+To: Goldwyn Rodrigues <rgoldwyn@suse.com>,
+        Goldwyn Rodrigues <rgoldwyn@suse.de>, <linux-btrfs@vger.kernel.org>
 References: <1474570050-4715-1-git-send-email-rgoldwyn@suse.de>
  <a5707357-38d1-f2c3-41cf-b9d76bd992a3@cn.fujitsu.com>
  <628e1dcd-ddc3-3f37-8a47-c01c912db970@suse.com>
@@ -15,29 +15,105 @@ References: <1474570050-4715-1-git-send-email-rgoldwyn@suse.de>
  <1274b3b2-d196-ee9e-2261-d2f5cb906477@cn.fujitsu.com>
  <2a9a3890-3f32-f175-b4aa-becf7caabb7f@suse.de>
  <cb81e839-1040-0942-3206-fa6acd9ee547@cn.fujitsu.com>
-From: Goldwyn Rodrigues <rgoldwyn@suse.com>
-Message-ID: <3ef8e20a-d671-7691-d964-014f35299703@suse.com>
-Date: Tue, 27 Sep 2016 21:19:34 -0500
+ <3ef8e20a-d671-7691-d964-014f35299703@suse.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <1d2ddf05-81d7-4be9-fe32-909ef121f3db@cn.fujitsu.com>
+Date: Thu, 29 Sep 2016 16:57:16 +0800
 MIME-Version: 1.0
-In-Reply-To: <cb81e839-1040-0942-3206-fa6acd9ee547@cn.fujitsu.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <3ef8e20a-d671-7691-d964-014f35299703@suse.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Thanks for your test script.
+
+I succeeded in pinning down the problem.
+
+The problem is, btrfs is invalidate pages that belongs to ordered 
+extent(goes through writeback)
+
+The ftrace(with more tracepoints to trace qgroup->reserved change) shows:
+------
+btrfs_qgroup_release_data: root=257, ino=257, start=0, len=4096, 
+reserved=4096, op=free
+qgroup_update_reserve: qgid = 257, cur_reserved = 16171008, diff = -4096
+btrfs_qgroup_release_data: root=257, ino=257, start=4096, len=4096, 
+reserved=4096, op=free
+qgroup_update_reserve: qgid = 257, cur_reserved = 16166912, diff = -4096
+btrfs_qgroup_release_data: root=257, ino=257, start=8192, len=4096, 
+reserved=4096, op=free
+qgroup_update_reserve: qgid = 257, cur_reserved = 16162816, diff = -4096
+btrfs_qgroup_release_data: root=257, ino=257, start=12288, len=4096, 
+reserved=4096, op=free
+qgroup_update_reserve: qgid = 257, cur_reserved = 16158720, diff = -4096
+btrfs_qgroup_release_data: root=257, ino=257, start=16384, len=4096, 
+reserved=4096, op=free
+qgroup_update_reserve: qgid = 257, cur_reserved = 16154624, diff = -4096
 
 
-On 09/27/2016 08:44 PM, Qu Wenruo wrote:
+^^^^^ Btrfs invalidates 5 pages of ino 257 qg 257, range 0 ~ 20K.
 
-<snipped>
+btrfs_qgroup_release_data: root=257, ino=257, start=0, len=5242880, 
+reserved=5222400, op=release
 
-> Finally reproduced it.
-> 
-> Although in a low chance, about 1/10.
-> 
-> Under most case, the final remove gets executed without error.
+^^^^^ Here ordered_io finishes, write the whole 5M data, while 
+QGROUP_RESERVED only returned 5M - 20K.
+------
 
-Change 50m to 500m while setting the qgroup limit, the probability will
-increase.
+The problem is at btrfs_add_delayed_data_ref(), we use the assumption 
+that, qgroup reserved space is the same as extent size(5M)
+But in fact, btrfs_qgroup_release_data() only release (5M - 20K).
+Leaking the 20K.
 
--- 
-Goldwyn
+Calltrace:
+btrfs_finish_ordered_io()
+|- inserted_reserved_file_extent()
+    |- btrfs_alloc_reserved_file_extent()
+    |  ^^ Here we tell delayed_ref to free 5M later
+    |- btrfs_qgroup_release_data()
+       ^^ We only released (5M - 20K), as the first 5 pages
+          are freed by btrfs_invalidatepage()
+
+If btrfs is designed to freeing pages which belongs to ordered_extent, 
+then it totally breaks the qgroup assumption.
+
+Then we have several ways to fix it:
+1) Fix race between ordered extent(writeback) with invalidatepage()
+    Make btrfs_invalidatepage() skips pages that are already in
+    ordered_extent, then we're OK.
+
+    This is much like your original fix, but I'm not sure if DIRTY page
+    flag is bond to ordered_extent.
+    And more comment will help.
+
+2) Make btrfs_qgroup_release_data() return accurate num bytes
+    And then pass it to delayed_ref head.
+
+    This is quite anti-intuition. If we're adding a new extent, how
+    could it happen that some pages are already invalidated?
+
+
+Anyway, awesome work, exposed a quite strange race and makes us re-think 
+the base of qgroup reserve space framework.
+
+Thanks,
+Qu
+
+At 09/28/2016 10:19 AM, Goldwyn Rodrigues wrote:
+>
+>
+> On 09/27/2016 08:44 PM, Qu Wenruo wrote:
+>
+> <snipped>
+>
+>> Finally reproduced it.
+>>
+>> Although in a low chance, about 1/10.
+>>
+>> Under most case, the final remove gets executed without error.
+>
+> Change 50m to 500m while setting the qgroup limit, the probability will
+> increase.
+>
+
+

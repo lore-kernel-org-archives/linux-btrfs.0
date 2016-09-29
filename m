@@ -1,37 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail02.iobjects.de ([188.40.134.68]:46166 "EHLO
-        mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752032AbcI1Tpk (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Sep 2016 15:45:40 -0400
-Subject: Re: 4.8rc8 & OOM panic
-To: E V <eliventer@gmail.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <CAJtFHUTUvJpMSzBXy+Ub+_iPRPocWXHfubA=5p4TyQqCj-29AQ@mail.gmail.com>
-From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>
-Message-ID: <57EC1DE1.90608@applied-asynchrony.com>
-Date: Wed, 28 Sep 2016 21:45:37 +0200
+Received: from mx2.suse.de ([195.135.220.15]:47019 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S934253AbcI2RTC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 29 Sep 2016 13:19:02 -0400
+Date: Thu, 29 Sep 2016 19:19:00 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, Mark Fasheh <mfasheh@suse.de>
+Subject: Re: [PATCH] btrfs-progs: qgroup: Fix regression leads to corrupted
+ qgroup status
+Message-ID: <20160929171859.GE5531@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20160907025419.23284-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <CAJtFHUTUvJpMSzBXy+Ub+_iPRPocWXHfubA=5p4TyQqCj-29AQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160907025419.23284-1-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/28/16 20:46, E V wrote:
-> I just booted my backup box with 4.8rc8 and started an rsync onto
-> btrfs and it panic'd with OOM a couple hours later. I thought the OOM
-> problems from 4.7 we're supposed to be fixed in 4.8, or did I get that
-> wrong? No users or anything else on the system.
+On Wed, Sep 07, 2016 at 10:54:19AM +0800, Qu Wenruo wrote:
+> Commit 93dabf211d74daf6e3de642bdd887a90a00f7b49
+> Author: Mark Fasheh <mfasheh@suse.de>
+> Date:   Fri Jun 17 13:37:48 2016 -0700
+> 
+>     btrfs-progs: check: verify qgroups above level 0
+> 
+> This commit introduced a new regression which corrupts
+> read_qgroup_status, since it iterate leaf with manually specified slot,
+> not correct path->slot[0].
+> 
+> This leads to wrong slot[0] and read_qgroup_status() will read out wrong
+> flags, leading to regression.
+> 
+> Fix read_qgroup_status() by using eb and slot instread of wrong path
+> strucutre.
+> 
+> Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+> Cc: Mark Fasheh <mfasheh@suse.de>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-Keep in mind that those problems are generic, other filesystems also
-suffer: http://www.spinics.net/lists/linux-mm/msg114123.html
-
-I don't see any recent compaction-related patches in Linus' tree at
-https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/log/mm/
-
-..so it seems they have not been merged yet.
-
-So unless they get merged in the last minute it looks like 4.8 will
-be DOA.
-
--h
-
+I'm adding this patch to devel.  Do you have a test for the regression please?

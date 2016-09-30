@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:11661 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:19547 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S934082AbcI3BVj (ORCPT
+        with ESMTP id S1750856AbcI3CSs (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Sep 2016 21:21:39 -0400
+        Thu, 29 Sep 2016 22:18:48 -0400
 Subject: Re: [PATCH] qgroup: Prevent qgroup->reserved from going subzero
 To: Goldwyn Rodrigues <rgoldwyn@suse.de>,
         Goldwyn Rodrigues <rgoldwyn@suse.com>, <linux-btrfs@vger.kernel.org>
@@ -19,14 +19,24 @@ References: <1474570050-4715-1-git-send-email-rgoldwyn@suse.de>
  <1d2ddf05-81d7-4be9-fe32-909ef121f3db@cn.fujitsu.com>
  <16c4c9a0-a698-91ab-2136-4731fea1850d@suse.de>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <52f72b9a-6878-e045-71f3-d0476f3a5ce3@cn.fujitsu.com>
-Date: Fri, 30 Sep 2016 09:21:33 +0800
+Message-ID: <232dee19-bf1d-4cf1-68a0-6c12981cb6b9@cn.fujitsu.com>
+Date: Fri, 30 Sep 2016 10:18:42 +0800
 MIME-Version: 1.0
 In-Reply-To: <16c4c9a0-a698-91ab-2136-4731fea1850d@suse.de>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Your original fix is good.
+
+Feel free to my tag after enriching the comment in btrfs_invalidatepage().
+
+Reviewed-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+
+Thanks again for your founding and sorry for the extra time reviewing.
+
+Thanks
+Qu
 
 
 At 09/29/2016 07:13 PM, Goldwyn Rodrigues wrote:
@@ -67,11 +77,6 @@ At 09/29/2016 07:13 PM, Goldwyn Rodrigues wrote:
 >
 > This is a little confusing. There is no qgroup_update_reserve() function
 > in the source. Where did you add this?
-
-Sorry, I just submitted them few minutes ago.
-
-Have CCed you.
-
 >
 >>
 >>
@@ -118,15 +123,6 @@ Have CCed you.
 >
 > So, what you mean is that fix is correct, I just need to reword the
 > patch header.
-
-Not patch header, but comment before PageDirty() check.
-
-I'm still digging the code to see if page DIRTY check is safe and if 
-there is more elegant fix.
-
-Thanks,
-Qu
-
 >
 >>
 >> 2) Make btrfs_qgroup_release_data() return accurate num bytes

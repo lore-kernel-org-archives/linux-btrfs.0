@@ -1,136 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f41.google.com ([74.125.82.41]:38907 "EHLO
-        mail-wm0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750873AbcI3Xqx (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 30 Sep 2016 19:46:53 -0400
-Received: by mail-wm0-f41.google.com with SMTP id p138so51234418wmb.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 30 Sep 2016 16:46:52 -0700 (PDT)
-Subject: Re: multi-device btrfs with single data mode and disk failure
-To: Chris Murphy <lists@colorremedies.com>
-References: <1634818f-ff1d-722c-6d73-747ed7203a13@gmail.com>
- <ecac8c64-8ed4-7c8d-29ad-5b3687981a33@gmail.com>
- <CAJCQCtSupa8LT+RK3=w3t7+T_nDcgUzzjSdfEi16DpiQxbm0hQ@mail.gmail.com>
- <760be1b7-79b2-a25d-7c60-04ceac1b6e40@gmail.com>
- <CAJCQCtR2t+3w6ovo88L0_2GqnVWveK5DNJ-vWdw18y+Sng4chQ@mail.gmail.com>
- <3460a1ac-7e66-cf6f-b229-06a0825401a5@gmail.com>
- <b880821f-bfb5-5265-53a4-213b22487ddb@gmail.com>
- <CAJCQCtRYpvnGurLSbxu2N0ELuvVKrM5w=jBkAneecaEog213dQ@mail.gmail.com>
- <64102181-e02d-69a8-ead7-a27acadbe6a8@gmail.com>
- <CAJCQCtQT=j+P=Dy=VtNOBGkpwenK0AngB2k5xk40BE=hZnEfjA@mail.gmail.com>
- <df35fe50-8195-b2b9-e6d9-687b0c883a28@gmail.com>
- <CAJCQCtTNiJ=E--v5gb5reyzTBqVeZx70-gUfj67EN+BjmcOTmw@mail.gmail.com>
- <4e7ec5eb-7fb6-2d19-f29d-82461e2d0bd2@gmail.com>
- <CAJCQCtQ=sjj9jWHQ+9Xm1FSmVtMVgNbqGC6Mc7r6ZuBZpJ8U1g@mail.gmail.com>
- <0b29471c-363a-1e2f-d352-1d422c07df64@gmail.com>
- <CAJCQCtQrKVsBTU=B+5qMbvCdzTZfaY_z3uqU_LHumisQ4Ex5kg@mail.gmail.com>
- <e3955660-bf6b-096c-5249-bbe67be255bd@gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:48399 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751076AbcJAAi0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 30 Sep 2016 20:38:26 -0400
+Subject: Re: unable to handle kernel paging request - btrfs
+To: Rich Freeman <r-btrfs@gw.thefreemanclan.net>
+References: <CAGfcS_m0KvAjmWpnGC7agLYBKROqjPoSCVrziaEJXzW1Dyw5iQ@mail.gmail.com>
+ <94e50637-9f66-19c7-35e4-e6b2c8bf919c@suse.com>
+ <CAGfcS_mLABcdd_3n=0cV8nx1DXoLBDFC6SbmMou_ZXWjw0BqRA@mail.gmail.com>
+ <a8dac132-78b3-4276-2ed3-d30a74b0d31b@suse.com>
+ <CAGfcS_=2x-CqGwXXeWejiUoDTgy9HxAtPdy2Nur2CAMYT3d26A@mail.gmail.com>
 Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Alexandre Poux <pums974@gmail.com>
-Message-ID: <0a5e6528-f929-729b-a608-a46dc6f8a6a3@gmail.com>
-Date: Sat, 1 Oct 2016 01:46:49 +0200
+From: Jeff Mahoney <jeffm@suse.com>
+Message-ID: <6bf85d64-2792-85db-0169-c6288e95a775@suse.com>
+Date: Fri, 30 Sep 2016 20:38:14 -0400
 MIME-Version: 1.0
-In-Reply-To: <e3955660-bf6b-096c-5249-bbe67be255bd@gmail.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CAGfcS_=2x-CqGwXXeWejiUoDTgy9HxAtPdy2Nur2CAMYT3d26A@mail.gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="pkwXJglNW1w5kVEalNoqEU4llM2jacjXM"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello again,
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--pkwXJglNW1w5kVEalNoqEU4llM2jacjXM
+Content-Type: multipart/mixed; boundary="08s9HrchnWSh4cffGAmFMdEe3jRxaHxsA";
+ protected-headers="v1"
+From: Jeff Mahoney <jeffm@suse.com>
+To: Rich Freeman <r-btrfs@thefreemanclan.net>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-ID: <6bf85d64-2792-85db-0169-c6288e95a775@suse.com>
+Subject: Re: unable to handle kernel paging request - btrfs
+References: <CAGfcS_m0KvAjmWpnGC7agLYBKROqjPoSCVrziaEJXzW1Dyw5iQ@mail.gmail.com>
+ <94e50637-9f66-19c7-35e4-e6b2c8bf919c@suse.com>
+ <CAGfcS_mLABcdd_3n=0cV8nx1DXoLBDFC6SbmMou_ZXWjw0BqRA@mail.gmail.com>
+ <a8dac132-78b3-4276-2ed3-d30a74b0d31b@suse.com>
+ <CAGfcS_=2x-CqGwXXeWejiUoDTgy9HxAtPdy2Nur2CAMYT3d26A@mail.gmail.com>
+In-Reply-To: <CAGfcS_=2x-CqGwXXeWejiUoDTgy9HxAtPdy2Nur2CAMYT3d26A@mail.gmail.com>
 
-Just a quick question.
+--08s9HrchnWSh4cffGAmFMdEe3jRxaHxsA
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 
-I did a full scrub and got no error at all
-
-And a full check that gave me this :
-
-#> btrfs check --check-data-csum -p /dev/sde6
-
-Checking filesystem on /dev/sde6
-UUID: 62db560b-a040-4c64-b613-6e7db033dc4d
-checking extents [o]
-checking free space cache [o]
-checking fs roots [.]
-checking csums
-checking root refs
-checking quota groups
-Counts for qgroup id: 0/5 are different
-our:        referenced 7239132803072 referenced compressed 7239132803072
-disk:        referenced 7238982733824 referenced compressed 7238982733824
-diff:        referenced 150069248 referenced compressed 150069248
-our:        exclusive 7239132803072 exclusive compressed 7239132803072
-disk:        exclusive 7238982733824 exclusive compressed 7238982733824
-diff:        exclusive 150069248 exclusive compressed 150069248
-found 7323422314496 bytes used err is 0
-total csum bytes: 7020314688
-total tree bytes: 11797741568
-total fs tree bytes: 2904932352
-total extent tree bytes: 656654336
-btree space waste bytes: 1560529439
-file data blocks allocated: 297363385454592
- referenced 6628544720896
-
-I'm guessing that's not important, but I found nothing about this
-so I don't really know what's about.
-
-Can just confirm that everything seems OK ?
-
-Do you think of an another test I should do before starting to use my
-array again ?
-
-Le 29/09/2016 à 14:55, Alexandre Poux a écrit :
-> Hi,
->
-> I finally did it : patched the kernel and removed the device.
-> As expected he did not scream since there was nothing at all on the device.
-> Now I'm checking that everything is fine:
-> scrub (in read only)
-> check (in read only)
-> but I think that everything will be OK
-> If not, I will rebuild the array from scratch (I did managed to save my
-> data)
->
-> Thank you both for your guidance.
-> I think that a warning should be put in the wiki in order for other user
-> to not do the same mistake I did :
-> never ever use the single mode
->
-> I will try to do it soon
->
-> Again thank you
->
-> Le 20/09/2016 à 23:15, Chris Murphy a écrit :
->> On Tue, Sep 20, 2016 at 2:18 PM, Alexandre Poux <pums974@gmail.com> wrote:
->>> Le 20/09/2016 à 21:46, Chris Murphy a écrit :
->>>> On Tue, Sep 20, 2016 at 1:31 PM, Alexandre Poux <pums974@gmail.com> wrote:
->>>>> Le 20/09/2016 à 21:11, Chris Murphy a écrit :
->>>>>> And no backup? Umm, I'd resolve that sooner than anything else.
->>>>> Yeah you are absolutely right, this was a temporary solution which came
->>>>> to be not that temporary.
->>>>> And I regret it already...
->>>> Well on the bright side, if this were LVM or mdadm linear/concat
->>>> array, the whole thing would be toast because any other file system
->>>> would have lost too much fs metadata on the missing device.
->>>>
->>>>>>  It
->>>>>> should be true that it'll tolerate a read only mount indefinitely, but
->>>>>> read write? Not sure. This sort of edge case isn't well tested at all
->>>>>> seeing as it required changing the kernel to reduce safe guards. So
->>>>>> all bets are off the whole thing could become unmountable, not even
->>>>>> read only, and then it's a scraping job.
->>>>> I'm not that crazy, I tried the patch inside a virtual machine on
->>>>> virtual drives...
->>>>> And since it's only virtual, it may not work on the real partition...
->>>> Are you sure the virtual setup lacked a CHUNK_ITEM on the missing
->>>> device? That might be what pinned it in that case.
->>> In fact in my virtual setup there was more chunk missing (1 metadata 1
->>> System and 1 Data).
->>> I will try to do a setup closer to my real one.
->> Probably the reason why that missing device has no used chunks is
->> because it's so small. Btrfs allocates block groups to devices with
->> the most unallocated space first. Only once the unallocated space is
->> even (approximately) on all devices would it allocate a block group to
->> the small device.
+On 9/30/16 5:07 PM, Rich Freeman wrote:
+> On Fri, Sep 30, 2016 at 4:55 PM, Jeff Mahoney <jeffm@suse.com> wrote:
+>> This looks like a use-after-free on one of the pages used for
+>> compression.  Can you post the output of objdump -Dr
+>> /lib/modules/$(uname -r)/kernel/fs/btrfs/btrfs.ko somewhere?
 >>
->>
->
+>=20
+> Sure:
+> https://drive.google.com/open?id=3D0BwUDImviY_gcR3JfT0Z1cUlRVEk
+>=20
+> I was impressed by just how large it was.
+>=20
+> I take it you're going to try to use the offsets in the oops to figure
+> out where it went wrong?  I really need to get kernel core dumping
+> working on this box...
 
+Yep.  What I think is happening is that we have workspace getting freed
+while it's in use.  The faulting address is in vmalloc space and it's
+also the first argument to memcpy, which makes it the destination.  In
+lzo_decompress_biovec, that means it's the workspace->cbuf.  Beyond that
+I'll have to dig a bit more.
+
+It's the same fault that your first photo showed as a secondary Oops,
+but that's not always the case.
+
+
+--=20
+Jeff Mahoney
+SUSE Labs
+
+
+--08s9HrchnWSh4cffGAmFMdEe3jRxaHxsA--
+
+--pkwXJglNW1w5kVEalNoqEU4llM2jacjXM
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
+Comment: GPGTools - http://gpgtools.org
+
+iQIcBAEBAgAGBQJX7wV8AAoJEB57S2MheeWyW8oQAIqULU1LV9mWvUXpzWVnIaW2
+b6FdI306+qJ8KtqNU9vWsWAosrJNrNRiqRZrAQvWVRyKgtIs/CbeyWQXVvECbUpS
+kcFmCw3Ww/0mnYA9qsgbhvCpbrNC2kQ4EgJ0MEUVpPzN63DI12cnrM7yA8iceqle
+1Oi6Thn5h8IxTsUF3eHxmxEQjD2yUhluyVpTu9FTVcvY/sOqOpiHU5ZaNKTiRlmG
+BywMvKUTtkfMxL7z/qm1xSyRscQHoqkXu3Kf7aM3RytaGtOXiQgu03fHW50tS3Xr
+CfVoutrLnsf7RRLRTVWb58G8dtWwJXrdIB84NJ2x65PtvihX0tHssSIMcvDmw/Zz
+6LuAn1WMipn6jIoi4hp2v0NM+GWmieXDvhxgUr1bQIBxt1Ief+qH/VBIAZR7ws3t
+6GkKtfHl6w27Z3eq1PXX+NaPAmagYUw2FcOhfAj2NVAk5amGW1g4jYJejZPxiWrm
+duIikO2jgVz1Q3GSbTLGg3prtcG5KFG0wgrPimaWLp0La7u1VBSkzUvOBaQhSFvs
+I/xQW85glFCIwlouB8kDqCV8sfudESZWd4/dr6SPMBfRjxfofjj6vqhHUDKeksCW
+Tkyb+PTKKV38aVpxoqzg0qzFKz1pvzFtQV285qG/0n2xxq68FeBTgiqR+aJUeFiD
+HH0bmMfrTpHtMIQMvJSQ
+=r1vk
+-----END PGP SIGNATURE-----
+
+--pkwXJglNW1w5kVEalNoqEU4llM2jacjXM--

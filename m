@@ -1,86 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:32528 "EHLO song.cn.fujitsu.com"
-        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S964983AbcJFIrd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 6 Oct 2016 04:47:33 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH] btrfs-progs: Fix warning_trace compile error if backtrace is disabled
-Date: Thu,  6 Oct 2016 16:47:19 +0800
-Message-Id: <20161006084719.9540-1-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
+Received: from mail-pa0-f65.google.com ([209.85.220.65]:32965 "EHLO
+        mail-pa0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750820AbcJARXw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Oct 2016 13:23:52 -0400
+From: Deepa Dinamani <deepa.kernel@gmail.com>
+To: linux-kernel@vger.kernel.org
+Cc: arnd@arndb.de, y2038@lists.linaro.org, Chris Mason <clm@fb.com>,
+        David Sterba <dsterba@suse.com>, Josef Bacik <jbacik@fb.com>,
+        linux-btrfs@vger.kernel.org
+Subject: [PATCH] fs: btrfs: Use ktime_get_real_ts for root ctime
+Date: Sat,  1 Oct 2016 10:23:34 -0700
+Message-Id: <1475342614-18439-1-git-send-email-deepa.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we disable backtrace, btrfs-progs can't be compiled since we don't
-have warning_trace defined.
+btrfs_root_item maintains the ctime for root updates.
+This is not part of vfs_inode.
 
-Fix by move it out of #ifndef BTRFS_DISABLE_BACKTRACE block.
+Since current_time() uses struct inode* as an argument
+as Linus suggested, this cannot be used to update root
+times unless, we modify the signature to use inode.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Since btrfs uses nanosecond time granularity, it can also
+use ktime_get_real_ts directly to obtain timestamp for
+the root. It is necessary to use the timespec time api
+here because the same btrfs_set_stack_timespec_*() apis
+are used for vfs inode times as well. These can be
+transitioned to using timespec64 when btrfs internally
+changes to use timespec64 as well.
+
+Signed-off-by: Deepa Dinamani <deepa.kernel@gmail.com>
+Cc: Chris Mason <clm@fb.com>
+Cc: David Sterba <dsterba@suse.com>
+Cc: Josef Bacik <jbacik@fb.com>
+Cc: linux-btrfs@vger.kernel.org
 ---
- kerncompat.h | 38 ++++++++++++++++++++------------------
- 1 file changed, 20 insertions(+), 18 deletions(-)
+Changes from previous version:
+* Separated from the current_time() api series.
+* Moved ktime_get_real_ts() outside of spin lock.
 
-diff --git a/kerncompat.h b/kerncompat.h
-index ea04ef3..fba0bc1 100644
---- a/kerncompat.h
-+++ b/kerncompat.h
-@@ -72,6 +72,26 @@
- #define ___token_glue(a,b,c)	a ## b ## c
- #define BUILD_ASSERT(x)		extern int __token_glue(compile_time_assert_,__LINE__,__COUNTER__)[1-2*!(x)] __attribute__((unused))
+fs/btrfs/root-tree.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
+index 0912960..17e5a5f 100644
+--- a/fs/btrfs/root-tree.c
++++ b/fs/btrfs/root-tree.c
+@@ -505,8 +505,9 @@ void btrfs_update_root_times(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *root)
+ {
+ 	struct btrfs_root_item *item = &root->root_item;
+-	struct timespec ct = current_fs_time(root->fs_info->sb);
++	struct timespec ct;
  
-+static inline void warning_trace(const char *assertion, const char *filename,
-+			      const char *func, unsigned line, int val,
-+			      int trace)
-+{
-+	if (val)
-+		return;
-+	if (assertion)
-+		fprintf(stderr,
-+			"%s:%d: %s: Warning: assertion `%s` failed, value %d\n",
-+			filename, line, func, assertion, val);
-+	else
-+		fprintf(stderr,
-+			"%s:%d: %s: Warning: assertion failed, value %d.\n",
-+			filename, line, func, val);
-+#ifndef BTRFS_DISABLE_BACKTRACE
-+	if (trace)
-+		print_trace();
-+#endif
-+}
-+
- #ifndef BTRFS_DISABLE_BACKTRACE
- #define MAX_BACKTRACE	16
- static inline void print_trace(void)
-@@ -99,24 +119,6 @@ static inline void assert_trace(const char *assertion, const char *filename,
- 	exit(1);
- }
- 
--static inline void warning_trace(const char *assertion, const char *filename,
--			      const char *func, unsigned line, int val,
--			      int trace)
--{
--	if (val)
--		return;
--	if (assertion)
--		fprintf(stderr,
--			"%s:%d: %s: Warning: assertion `%s` failed, value %d\n",
--			filename, line, func, assertion, val);
--	else
--		fprintf(stderr,
--			"%s:%d: %s: Warning: assertion failed, value %d.\n",
--			filename, line, func, val);
--	if (trace)
--		print_trace();
--}
--
- #define BUG() assert_trace(NULL, __FILE__, __func__, __LINE__, 0)
- #else
- #define BUG() assert(0)
++	ktime_get_real_ts(&ct);
+ 	spin_lock(&root->root_item_lock);
+ 	btrfs_set_root_ctransid(item, trans->transid);
+ 	btrfs_set_stack_timespec_sec(&item->ctime, ct.tv_sec);
 -- 
-2.10.0
-
-
+2.7.4
 

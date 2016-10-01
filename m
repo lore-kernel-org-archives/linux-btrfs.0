@@ -1,183 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from synology.com ([59.124.61.242]:45624 "EHLO synology.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754039AbcJMLE7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Oct 2016 07:04:59 -0400
-From: robbieko <robbieko@synology.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Robbie Ko <robbieko@synology.com>
-Subject: [PATCH 4/4] btrfs: add test for an incremental send add gen check in will_overwrite_ref
-Date: Thu, 13 Oct 2016 19:04:13 +0800
-Message-Id: <1476356653-22839-5-git-send-email-robbieko@synology.com>
-In-Reply-To: <1476356653-22839-1-git-send-email-robbieko@synology.com>
-References: <1476356653-22839-1-git-send-email-robbieko@synology.com>
+Received: from mail-wm0-f67.google.com ([74.125.82.67]:34275 "EHLO
+        mail-wm0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751463AbcJAJ0h (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Oct 2016 05:26:37 -0400
+MIME-Version: 1.0
+In-Reply-To: <20160929142945.GC5531@suse.cz>
+References: <cover.1474580472.git.osandov@fb.com> <20160925075524.GA3870@yogzotot>
+ <20160926175000.GF16983@twin.jikos.cz> <20160929122148.GA22109@yogzotot>
+ <57ED0EAA.7070206@applied-asynchrony.com> <CADxRZqwp4DPy8xcz7W=NOvvx0QnZ1jCvWRSMo1OMrxhiDrSorA@mail.gmail.com>
+ <20160929142945.GC5531@suse.cz>
+From: Anatoly Pugachev <matorola@gmail.com>
+Date: Sat, 1 Oct 2016 12:26:35 +0300
+Message-ID: <CADxRZqwZ6ymxL4x9455HFH95px=bjuqKKfBrO9BO7y1VBkvrYw@mail.gmail.com>
+Subject: Re: [PATCH v2 0/6] Btrfs: free space tree and sanity test fixes
+To: dsterba@suse.cz, Anatoly Pugachev <matorola@gmail.com>,
+        =?UTF-8?Q?Holger_Hoffst=C3=A4tte?= <holger@applied-asynchrony.com>,
+        Omar Sandoval <osandov@osandov.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>, kernel-team@fb.com,
+        Chandan Rajendra <chandan@linux.vnet.ibm.com>, bo.li.liu@oracle.com,
+        fstests@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Robbie Ko <robbieko@synology.com>
+On Thu, Sep 29, 2016 at 5:29 PM, David Sterba <dsterba@suse.cz> wrote:
+> On Thu, Sep 29, 2016 at 04:02:35PM +0300, Anatoly Pugachev wrote:
+>> > Try to add https://patchwork.kernel.org/patch/9332707/ aka
+>> > "Btrfs: improve check_node to avoid reading corrupted nodes" which should return
+>> > -EIO and prevent the BUG().
+>>
+>> Guys,
+>>
+>> I was wrong with "Btrfs: remove unnecessary btrfs_mark_buffer_dirty in
+>> split_leaf" , because I've used patch from email
+>> https://marc.info/?l=linux-btrfs&m=147319873029152&w=2 which patches
+>> fs/btrfs/ctree.c , but forgot to apply kdave git kernel commit
+>> 1ba98d086fe3a14d6a31f2f66dbab70c45d00f63 "Btrfs: detect corruption
+>> when non-root leaf has zero item"
+>>
+>> :-/
+>>
+>> Should I remake all the tests?
+>
+> It would be much appreciated, as we probably won't get any other sparc64
+> testing. Thanks.
 
-There a some case for overwrite ref,
-because when new gen is waiting, and old name conflict,
-but old name has been deleted.
+David,
 
-This test exercises scenarios used to fail in btrfs and are fixed by
-the following patches for the linux kernel:
+just tried to apply 1ba98d086fe3a14d6a31f2f66dbab70c45d00f63 "Btrfs:
+detect corruption when non-root leaf has zero item"
+from your btrfs development kernel tree, and patch command said that
+it already applied...
 
-"Btrfs: incremental send, add gen check if has waiting_dir_move in the will_overwrite_ref"
+mator@ttip:~/linux-2.6$ git remote -v
+origin  git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux-2.6.git
+(fetch)
+origin  git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux-2.6.git
+(push)
+mator@ttip:~/linux-2.6$ git show -s --oneline
+1ba98d086fe3a14d6a31f2f66dbab70c45d00f63
+1ba98d0 Btrfs: detect corruption when non-root leaf has zero item
 
-Signed-off-by: Robbie Ko <robbieko@synology.com>
----
- tests/btrfs/134     | 121 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/134.out |   2 +
- tests/btrfs/group   |   1 +
- 3 files changed, 124 insertions(+)
- create mode 100755 tests/btrfs/134
- create mode 100644 tests/btrfs/134.out
+So my tests was correct and included all the needed patches?!
 
-diff --git a/tests/btrfs/134 b/tests/btrfs/134
-new file mode 100755
-index 0000000..0bde622
---- /dev/null
-+++ b/tests/btrfs/134
-@@ -0,0 +1,121 @@
-+#! /bin/bash
-+# FS QA Test No. btrfs/134
-+#
-+# Test that an incremental send operation,
-+# when new gen is waiting, and old name conflict,
-+# but old name has been deleted.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (C) 2016 SUSE Linux Products GmbH. All Rights Reserved.
-+# Author: Filipe Manana <fdmanana@suse.com>
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	cd /
-+	rm -fr $send_files_dir
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_test
-+_require_scratch
-+_require_fssum
-+
-+send_files_dir=$TEST_DIR/btrfs-test-$seq
-+
-+rm -f $seqres.full
-+rm -fr $send_files_dir
-+mkdir $send_files_dir
-+
-+_scratch_mkfs >>$seqres.full 2>&1
-+_scratch_mount
-+
-+mkdir $SCRATCH_MNT/d1
-+mkdir $SCRATCH_MNT/d4
-+mkdir $SCRATCH_MNT/d3
-+
-+# Filesystem looks like:
-+#
-+# .                                                             (ino 256)
-+# |--- d1                                                       (ino 257)
-+# |--- d4                                                       (ino 258)
-+# |--- d3                                                       (ino 259)
-+#
-+_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap1
-+
-+_run_btrfs_util_prog send $SCRATCH_MNT/mysnap1 -f $send_files_dir/1.snap
-+
-+_scratch_unmount
-+_scratch_mkfs >>$seqres.full 2>&1
-+_scratch_mount
-+mkdir $SCRATCH_MNT/d1
-+mkdir $SCRATCH_MNT/d2
-+mkdir $SCRATCH_MNT/d3
-+mkdir $SCRATCH_MNT/d4
-+mv $SCRATCH_MNT/d1 $SCRATCH_MNT/d3/d1
-+mv $SCRATCH_MNT/d3 $SCRATCH_MNT/d4/d3
-+mv $SCRATCH_MNT/d2 $SCRATCH_MNT/d1
-+
-+# Filesystem now looks like:
-+#
-+# .                                                             (ino 256)
-+# |--- d1                                                       (ino 258)
-+# |--- d4                                                       (ino 260)
-+# |    |--- d3/                                                 (ino 259)
-+# |    |    |--- d1/                                            (ino 257)
-+#
-+_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap2
-+
-+_run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/1.snap
-+rm $send_files_dir/1.snap
-+
-+run_check $FSSUM_PROG -A -f -w $send_files_dir/1.fssum $SCRATCH_MNT/mysnap1
-+run_check $FSSUM_PROG -A -f -w $send_files_dir/2.fssum $SCRATCH_MNT/mysnap2
-+
-+_run_btrfs_util_prog send $SCRATCH_MNT/mysnap1 -f $send_files_dir/1.snap
-+_run_btrfs_util_prog send -p $SCRATCH_MNT/mysnap1 $SCRATCH_MNT/mysnap2 \
-+	-f $send_files_dir/2.snap
-+
-+# Now recreate the filesystem by receiving both send streams and verify we get
-+# the same content that the original filesystem had.
-+_scratch_unmount
-+_scratch_mkfs >>$seqres.full 2>&1
-+_scratch_mount
-+
-+_run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/1.snap
-+run_check $FSSUM_PROG -r $send_files_dir/1.fssum $SCRATCH_MNT/mysnap1
-+_run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/2.snap
-+run_check $FSSUM_PROG -r $send_files_dir/2.fssum $SCRATCH_MNT/mysnap2
-+
-+echo "Silence is golden"
-+status=0
-+exit
-diff --git a/tests/btrfs/134.out b/tests/btrfs/134.out
-new file mode 100644
-index 0000000..829c30e
---- /dev/null
-+++ b/tests/btrfs/134.out
-@@ -0,0 +1,2 @@
-+QA output created by 134
-+Silence is golden
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 779caec..831283e 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -136,3 +136,4 @@
- 131 auto quick send
- 132 auto quick send
- 133 auto quick send
-+134 auto quick send
--- 
-1.9.1
+Sorry for the mess. :-/
 
+I'm going to check patch suggested by Holger Hoffstätte ,
+https://patchwork.kernel.org/patch/9332707/ ...

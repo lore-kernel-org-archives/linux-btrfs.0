@@ -1,56 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47740 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751260AbcJCQc4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 3 Oct 2016 12:32:56 -0400
-Date: Mon, 3 Oct 2016 18:32:53 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [RFC][PATCH] btrfs-progs: move sources shared with kernel to own
- directory
-Message-ID: <20161003163253.GD6576@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <1475167106-18054-1-git-send-email-dsterba@suse.com>
- <a0920b31-3dad-5253-7d6f-938bb7bedb0b@cn.fujitsu.com>
+Received: from mail-vk0-f47.google.com ([209.85.213.47]:36398 "EHLO
+        mail-vk0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752013AbcJAUVP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Oct 2016 16:21:15 -0400
+Received: by mail-vk0-f47.google.com with SMTP id y190so100085962vkd.3
+        for <linux-btrfs@vger.kernel.org>; Sat, 01 Oct 2016 13:21:14 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <a0920b31-3dad-5253-7d6f-938bb7bedb0b@cn.fujitsu.com>
+In-Reply-To: <20160729175310.GA22477@localhost.localdomain>
+References: <1469670123-19839-1-git-send-email-bo.li.liu@oracle.com>
+ <pan$5450c$1d8fe409$834c6bbc$1311860c@applied-asynchrony.com>
+ <20160728184914.GA29799@localhost.localdomain> <20160729170150.GE30795@twin.jikos.cz>
+ <20160729175310.GA22477@localhost.localdomain>
+From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+Date: Sat, 1 Oct 2016 23:13:36 +0300
+Message-ID: <CAOcd+r3YBut48a52_9=9zEg7T+Wwdq=V_gGWaXXN6s9-=j8FGg@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: deal with unexpected return value in flush_space
+To: David Sterba <dsterba@suse.cz>,
+        =?UTF-8?Q?Holger_Hoffst=C3=A4tte?= <holger@applied-asynchrony.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, Liu Bo <bo.li.liu@oracle.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 30, 2016 at 09:11:30AM +0800, Qu Wenruo wrote:
-> > - cmds/           - (planned) cmds-*.[ch]
-> 
-> Sounds good, so we can skip the "cmds-" prefix then.
+David, Holger,
 
-Yes. We have to start somewhere, file renaming is left for later.
+Thank you for picking up that old patch of mine.
 
-> 
-> > - convert/        - move as-is, split later, eg. per filsystem
-> > - image/          - move as-is, split if needed
-> > - check/          - split from cmds-check
-> 
-> Pretty cool.
-> I'm also moving some code into its own dir doing the user-space scrub work.
-> (While I'm creating a new dir called fsck/ and put my scrub code into 
-> it, rename it to check/ won't be a problem though)
-> 
-> While I'm not sure what is going to be in kernel-shared/ dir.
-> 
-> Uapi headers? or things like disk-io.c volumes.c?
+Alex.
 
-Headers and the files you mentioned. See the branch for complete list.
-The headers could be further separated, public and private.
 
-> For uapi headers, then kernel-shared/ may contain few files.
-> For disk-io.c/volumes.c, they are not shared with kernel anymore.
-
-Partial sharing should be enough. See changelong:
-
-> > All files that share content and purpose with the corresponding file in
-> > the kernel are moved to a separate directory. There's only some overlap,
-> > can't be 100% match but many functions are shared. A diff between the
-> > files can reveal changes that should be applied to the other codebase.
-
-.
+On Fri, Jul 29, 2016 at 8:53 PM, Liu Bo <bo.li.liu@oracle.com> wrote:
+> On Fri, Jul 29, 2016 at 07:01:50PM +0200, David Sterba wrote:
+>> On Thu, Jul 28, 2016 at 11:49:14AM -0700, Liu Bo wrote:
+>> > > For reviewers - this came up before here:
+>> > > https://patchwork.kernel.org/patch/7778651/
+>
+> David, this patch made a mistake in commit log.
+>
+>> > >
+>> > > Same fix basically.
+>> >
+>> > Aha, I've given it my Reviewed-by.
+>> >
+>> > Taking either one works for me, I can make the clarifying comment into a
+>> > seperate patch if we need to.
+>>
+>> I'll pick the first patch and please send the separate comment update.
+>> Thanks.
+>
+> Sure.
+>
+> Thanks,
+>
+> -liubo
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

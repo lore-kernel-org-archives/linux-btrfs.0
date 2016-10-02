@@ -1,177 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-001b2d01.pphosted.com ([148.163.156.1]:39488 "EHLO
-        mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751802AbcJBNZ7 (ORCPT
+Received: from mx0b-001b2d01.pphosted.com ([148.163.158.5]:53124 "EHLO
+        mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1751802AbcJBN0K (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 2 Oct 2016 09:25:59 -0400
-Received: from pps.filterd (m0098393.ppops.net [127.0.0.1])
-        by mx0a-001b2d01.pphosted.com (8.16.0.17/8.16.0.17) with SMTP id u92DNPeD053308
-        for <linux-btrfs@vger.kernel.org>; Sun, 2 Oct 2016 09:25:59 -0400
-Received: from e37.co.us.ibm.com (e37.co.us.ibm.com [32.97.110.158])
-        by mx0a-001b2d01.pphosted.com with ESMTP id 25txvnxe1k-1
+        Sun, 2 Oct 2016 09:26:10 -0400
+Received: from pps.filterd (m0098414.ppops.net [127.0.0.1])
+        by mx0b-001b2d01.pphosted.com (8.16.0.17/8.16.0.17) with SMTP id u92DNCV9060670
+        for <linux-btrfs@vger.kernel.org>; Sun, 2 Oct 2016 09:26:10 -0400
+Received: from e33.co.us.ibm.com (e33.co.us.ibm.com [32.97.110.151])
+        by mx0b-001b2d01.pphosted.com with ESMTP id 25t99m4q7q-1
         (version=TLSv1.2 cipher=AES256-SHA bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Sun, 02 Oct 2016 09:25:58 -0400
+        for <linux-btrfs@vger.kernel.org>; Sun, 02 Oct 2016 09:26:09 -0400
 Received: from localhost
-        by e37.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+        by e33.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
         for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-        Sun, 2 Oct 2016 07:25:58 -0600
+        Sun, 2 Oct 2016 07:26:09 -0600
 From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: clm@fb.com, jbacik@fb.com, dsterba@suse.com
 Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, linux-btrfs@vger.kernel.org
-Subject: [PATCH V21 13/19] Btrfs: subpage-blocksize: btrfs_punch_hole: Fix uptodate blocks check
-Date: Sun,  2 Oct 2016 18:54:22 +0530
+Subject: [PATCH V21 16/19] Btrfs: subpage-blocksize: btrfs_clone: Flush dirty blocks of a page that do not map the clone range
+Date: Sun,  2 Oct 2016 18:54:25 +0530
 In-Reply-To: <1475414668-25954-1-git-send-email-chandan@linux.vnet.ibm.com>
 References: <1475414668-25954-1-git-send-email-chandan@linux.vnet.ibm.com>
-Message-Id: <1475414668-25954-14-git-send-email-chandan@linux.vnet.ibm.com>
+Message-Id: <1475414668-25954-17-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In case of subpage-blocksize, the file blocks to be punched may map only
-part of a page. For file blocks inside such pages, we need to check for
-the presence of BLK_STATE_UPTODATE flag.
+After cloning the required extents, we truncate all the pages that map
+the file range being cloned. In subpage-blocksize scenario, we could
+have dirty blocks before and/or after the clone range in the
+leading/trailing pages. Truncating these pages would lead to data
+loss. Hence this commit forces such dirty blocks to be flushed to disk
+before performing the clone operation.
 
 Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 ---
- fs/btrfs/file.c | 89 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 88 insertions(+), 1 deletion(-)
+ fs/btrfs/ioctl.c | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 54602e6..6490e56 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2350,6 +2350,8 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 	struct btrfs_path *path;
- 	struct btrfs_block_rsv *rsv;
- 	struct btrfs_trans_handle *trans;
-+	struct address_space *mapping = inode->i_mapping;
-+	pgoff_t start_index, end_index;
- 	u64 lockstart;
- 	u64 lockend;
- 	u64 tail_start;
-@@ -2362,6 +2364,7 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 	int err = 0;
- 	unsigned int rsv_count;
- 	bool same_block;
-+	bool same_page;
- 	bool no_holes = btrfs_fs_incompat(root->fs_info, NO_HOLES);
- 	u64 ino_size;
- 	bool truncated_block = false;
-@@ -2458,11 +2461,45 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 		goto out_only_mutex;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index cf13029..0fdc0a0 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -3914,6 +3914,7 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
+ 	int ret;
+ 	u64 len = olen;
+ 	u64 bs = root->fs_info->sb->s_blocksize;
++	u64 dest_end;
+ 	int same_inode = src == inode;
+ 
+ 	/*
+@@ -3974,6 +3975,21 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
+ 			goto out_unlock;
  	}
  
-+	start_index = lockstart >> PAGE_SHIFT;
-+	end_index = lockend >> PAGE_SHIFT;
++	if ((round_down(destoff, PAGE_SIZE) < inode->i_size) &&
++		!IS_ALIGNED(destoff, PAGE_SIZE)) {
++		ret = filemap_write_and_wait_range(inode->i_mapping,
++					round_down(destoff, PAGE_SIZE),
++					destoff - 1);
++	}
 +
-+	same_page = lockstart >> PAGE_SHIFT
-+		== lockend >> PAGE_SHIFT;
++	dest_end = destoff + len - 1;
++	if ((dest_end < inode->i_size) &&
++		!IS_ALIGNED(dest_end + 1, PAGE_SIZE)) {
++		ret = filemap_write_and_wait_range(inode->i_mapping,
++					dest_end + 1,
++					round_up(dest_end, PAGE_SIZE));
++	}
 +
- 	while (1) {
- 		struct btrfs_ordered_extent *ordered;
-+		struct page *start_page = NULL;
-+		struct page *end_page = NULL;
-+		u64 nr_pages;
-+		int start_page_blks_uptodate;
-+		int end_page_blks_uptodate;
- 
- 		truncate_pagecache_range(inode, lockstart, lockend);
- 
-+		if (lockstart & (PAGE_SIZE - 1)) {
-+			start_page = find_or_create_page(mapping, start_index,
-+							GFP_NOFS);
-+			if (!start_page) {
-+				inode_unlock(inode);
-+				return -ENOMEM;
-+			}
-+		}
-+
-+		if (!same_page && ((lockend + 1) & (PAGE_SIZE - 1))) {
-+			end_page = find_or_create_page(mapping, end_index,
-+						GFP_NOFS);
-+			if (!end_page) {
-+				if (start_page) {
-+					unlock_page(start_page);
-+					put_page(start_page);
-+				}
-+				inode_unlock(inode);
-+				return -ENOMEM;
-+			}
-+		}
-+
-+
- 		lock_extent_bits(&BTRFS_I(inode)->io_tree, lockstart, lockend,
- 				 &cached_state);
- 		ordered = btrfs_lookup_first_ordered_extent(inode, lockend);
-@@ -2472,18 +2509,68 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 		 * and nobody raced in and read a page in this range, if we did
- 		 * we need to try again.
- 		 */
-+		nr_pages = round_up(lockend, PAGE_SIZE)
-+			- round_down(lockstart, PAGE_SIZE);
-+		nr_pages >>= PAGE_SHIFT;
-+
-+		start_page_blks_uptodate = 0;
-+		end_page_blks_uptodate = 0;
-+		if (root->sectorsize < PAGE_SIZE) {
-+			u64 page_end;
-+
-+			page_end = round_down(lockstart, PAGE_SIZE)
-+				+ PAGE_SIZE - 1;
-+			page_end = min(page_end, lockend);
-+			if (start_page
-+				&& PagePrivate(start_page)
-+				&& test_page_blks_state(start_page, 1 << BLK_STATE_UPTODATE,
-+							lockstart, page_end, 0))
-+				start_page_blks_uptodate = 1;
-+			if (end_page
-+				&& PagePrivate(end_page)
-+				&& test_page_blks_state(end_page, 1 << BLK_STATE_UPTODATE,
-+							page_offset(end_page), lockend, 0))
-+				end_page_blks_uptodate = 1;
-+		} else {
-+			if (start_page && PagePrivate(start_page)
-+				&& PageUptodate(start_page))
-+				start_page_blks_uptodate = 1;
-+			if (end_page && PagePrivate(end_page)
-+				&& PageUptodate(end_page))
-+				end_page_blks_uptodate = 1;
-+		}
-+
- 		if ((!ordered ||
- 		    (ordered->file_offset + ordered->len <= lockstart ||
- 		     ordered->file_offset > lockend)) &&
--		     !btrfs_page_exists_in_range(inode, lockstart, lockend)) {
-+		     (!start_page_blks_uptodate && !end_page_blks_uptodate &&
-+			!(nr_pages > 2 && btrfs_page_exists_in_range(inode,
-+					 round_up(lockstart, PAGE_SIZE),
-+					 round_down(lockend, PAGE_SIZE) - 1)))) {
- 			if (ordered)
- 				btrfs_put_ordered_extent(ordered);
-+			if (end_page) {
-+				unlock_page(end_page);
-+				put_page(end_page);
-+			}
-+			if (start_page) {
-+				unlock_page(start_page);
-+				put_page(start_page);
-+			}
- 			break;
- 		}
- 		if (ordered)
- 			btrfs_put_ordered_extent(ordered);
- 		unlock_extent_cached(&BTRFS_I(inode)->io_tree, lockstart,
- 				     lockend, &cached_state, GFP_NOFS);
-+		if (end_page) {
-+			unlock_page(end_page);
-+			put_page(end_page);
-+		}
-+		if (start_page) {
-+			unlock_page(start_page);
-+			put_page(start_page);
-+		}
- 		ret = btrfs_wait_ordered_range(inode, lockstart,
- 					       lockend - lockstart + 1);
- 		if (ret) {
+ 	if (destoff > inode->i_size) {
+ 		ret = btrfs_cont_expand(inode, inode->i_size, destoff);
+ 		if (ret)
 -- 
 2.5.5
 

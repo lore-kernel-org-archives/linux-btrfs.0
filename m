@@ -1,61 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f42.google.com ([74.125.82.42]:38539 "EHLO
-        mail-wm0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751198AbcJBUqW (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Oct 2016 16:46:22 -0400
-Received: by mail-wm0-f42.google.com with SMTP id p138so117066692wmb.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 02 Oct 2016 13:46:21 -0700 (PDT)
+Received: from mail-wm0-f43.google.com ([74.125.82.43]:36603 "EHLO
+        mail-wm0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750822AbcJBWFv (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Oct 2016 18:05:51 -0400
+Received: by mail-wm0-f43.google.com with SMTP id k125so117091426wma.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 02 Oct 2016 15:05:50 -0700 (PDT)
 Received: from localhost (host86-130-216-236.range86-130.btcentralplus.com. [86.130.216.236])
-        by smtp.gmail.com with ESMTPSA id r142sm10974692wme.10.2016.10.02.13.46.19
+        by smtp.gmail.com with ESMTPSA id l3sm31221414wjp.17.2016.10.02.15.05.48
         for <linux-btrfs@vger.kernel.org>
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Sun, 02 Oct 2016 13:46:19 -0700 (PDT)
-Date: Sun, 2 Oct 2016 21:46:18 +0100
+        Sun, 02 Oct 2016 15:05:49 -0700 (PDT)
+Date: Sun, 2 Oct 2016 23:05:48 +0100
 From: Leonidas Spyropoulos <artafinde@gmail.com>
 To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Subject: Re: Unable to open ctree
-Message-ID: <20161002204618.j2heaouubb7pday6@tiamat>
+Message-ID: <20161002220548.skncaa6iipyvwscs@tiamat>
 References: <20161002181754.wxved3j66dzrvfoc@tiamat>
  <CAJCQCtTr3tG_8YSB_8gfBkpy558HKC+cz394B0wH2Je3v9kZmQ@mail.gmail.com>
  <20161003012225.089c4d38@natsu>
+ <CAJCQCtRw+TMEDx9aPROdKSgbNDDw1PwkS2r8u-Lg_jyetv6wtQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20161003012225.089c4d38@natsu>
+In-Reply-To: <CAJCQCtRw+TMEDx9aPROdKSgbNDDw1PwkS2r8u-Lg_jyetv6wtQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Roman,
+Hello,
 
+After the command to rebuild the extent tree
+# btrfs check --init-extent-tree --repair /dev/sda3
 
-On 03/10/16, Roman Mamedov wrote:
-> On Sun, 2 Oct 2016 13:29:56 -0600
-> Chris Murphy <lists@colorremedies.com> wrote:
-> 
-> > Well short of a bug, the problem aren't the checksums. The problem is
-> > the metadata is wrong, so if you recalculate checksums you're likely
-> > end up with an even more corrupted file system because it'll start out
-> > trusting bad metadata.
-> 
-> It appears that metadata got created with profile "single", because the device
-> is SSD. If this was DUP metadata, this entire problem wouldn't happen.
-> It is a terrible idea to downgrade metadata to single on detecting SSDs at
-> mkfs. The original rationale was that "SSDs will deduplicate it anyways", but
-> there are many ways things can corrupt way before reaching the SSD (from the
-> point of view of which it will look like the computer sent two different
-> metadata blocks, if one got corrupted in flight), and secondly, the ability of
-> SSDs to perfectly deduplicate small 4K sized pieces of data at hundreds of
-> megabytes in read/write speeds is VASTLY overestimated here.
+I was able to mount and run successfully a scrub (not sure if it would
+detect something though).
 
-I agree that the wear in SSDs due to metadata dublications is
-overestimated and since my partition appears to be screwed I will make
-sure next time to force it to have another copy there.
+Next was reboot and try to boot which was successful as well.
 
-My progress from the repairs which both failed are: https://ptpb.pw/CtbC
+I'll keep an eye on the dmesh log next days but seems it's ok.
 
-Next step is initialize the extent tree
-btrfs check --init-extent-tree --repair /dev/sda3
+Thanks for suggestions all,
 
-Thanks,
+Regards,
 
 -- 
 Leonidas Spyropoulos

@@ -1,50 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:58928 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1752894AbcJKPVP (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Oct 2016 11:21:15 -0400
-Subject: Re: btrfs bio linked list corruption.
-To: Dave Jones <davej@codemonkey.org.uk>, Al Viro <viro@ZenIV.linux.org.uk>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
-        <linux-btrfs@vger.kernel.org>,
-        Linux Kernel <linux-kernel@vger.kernel.org>
-References: <20161011144507.okg6baqvodn2m2lh@codemonkey.org.uk>
- <20161011151139.GD19539@ZenIV.linux.org.uk>
- <20161011151904.qimdy3rra63fri7n@codemonkey.org.uk>
-From: Chris Mason <clm@fb.com>
-Message-ID: <f8198dfa-defe-e7b2-afb4-3de8478cb743@fb.com>
-Date: Tue, 11 Oct 2016 11:20:41 -0400
+Received: from mx2.suse.de ([195.135.220.15]:47210 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752729AbcJCQUk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 3 Oct 2016 12:20:40 -0400
+Date: Mon, 3 Oct 2016 18:20:37 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Jeff Mahoney <jeffm@suse.com>
+Cc: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v3] btrfs: fix a possible umount deadlock
+Message-ID: <20161003162037.GB6576@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <20160909083104.10383-1-anand.jain@oracle.com>
+ <20160922045613.25861-1-anand.jain@oracle.com>
+ <b16b4d32-9990-25d3-2973-f2bae1e6fba5@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <20161011151904.qimdy3rra63fri7n@codemonkey.org.uk>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <b16b4d32-9990-25d3-2973-f2bae1e6fba5@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Thu, Sep 22, 2016 at 12:24:07PM -0400, Jeff Mahoney wrote:
+> This isn't necessarily a comment on this code in particular, but what's
+> the reason for using call_rcu to defer the freeing instead of
+> synchronize_rcu and freeing the device directly via __free_device (if it
+> accepted a btrfs_device)?  It's a pattern that's used throughout
+> volumes.c and it's old[1].  I'm not sure if it was intentional to defer
+> freeing since that was actually a functional change from the code it
+> replaced.
 
-
-On 10/11/2016 11:19 AM, Dave Jones wrote:
-> On Tue, Oct 11, 2016 at 04:11:39PM +0100, Al Viro wrote:
->  > On Tue, Oct 11, 2016 at 10:45:08AM -0400, Dave Jones wrote:
->  > > This is from Linus' current tree, with Al's iovec fixups on top.
->  >
->  > Those iovec fixups are in the current tree...
->
-> ah yeah, git quietly dropped my local copy when I rebased so I didn't notice.
->
->  > TBH, I don't see anything
->  > in splice-related stuff that could come anywhere near that (short of
->  > some general memory corruption having random effects of that sort).
->  >
->  > Could you try to bisect that sucker, or is it too hard to reproduce?
->
-> Only hit it the once overnight so far. Will see if I can find a better way to
-> reproduce today.
-
-This call trace is reading metadata so we can finish the truncate.  I'd 
-say adding more memory pressure would make it happen more often.
-
-I'll try to trigger.
-
--chris
-
+It could be unintentional, the patch was supposed to relax the read-only
+side, ie. use RCU instead of mutex. Deferred freeing does not seem to be
+necessary. The device locking code needs cleanup/refactoring.

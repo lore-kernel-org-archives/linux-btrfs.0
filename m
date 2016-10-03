@@ -1,51 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f43.google.com ([74.125.82.43]:36603 "EHLO
-        mail-wm0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750822AbcJBWFv (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Oct 2016 18:05:51 -0400
-Received: by mail-wm0-f43.google.com with SMTP id k125so117091426wma.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 02 Oct 2016 15:05:50 -0700 (PDT)
-Received: from localhost (host86-130-216-236.range86-130.btcentralplus.com. [86.130.216.236])
-        by smtp.gmail.com with ESMTPSA id l3sm31221414wjp.17.2016.10.02.15.05.48
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Sun, 02 Oct 2016 15:05:49 -0700 (PDT)
-Date: Sun, 2 Oct 2016 23:05:48 +0100
-From: Leonidas Spyropoulos <artafinde@gmail.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Unable to open ctree
-Message-ID: <20161002220548.skncaa6iipyvwscs@tiamat>
-References: <20161002181754.wxved3j66dzrvfoc@tiamat>
- <CAJCQCtTr3tG_8YSB_8gfBkpy558HKC+cz394B0wH2Je3v9kZmQ@mail.gmail.com>
- <20161003012225.089c4d38@natsu>
- <CAJCQCtRw+TMEDx9aPROdKSgbNDDw1PwkS2r8u-Lg_jyetv6wtQ@mail.gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:47499 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751201AbcJCQ1v (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 3 Oct 2016 12:27:51 -0400
+Date: Mon, 3 Oct 2016 18:27:49 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Holger =?iso-8859-1?Q?Hoffst=E4tte?=
+        <holger@applied-asynchrony.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Commit 'synchronize incompat feature bits with sysfs files'
+ still missing in for-next?
+Message-ID: <20161003162749.GC6576@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <57D7E442.2010400@applied-asynchrony.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAJCQCtRw+TMEDx9aPROdKSgbNDDw1PwkS2r8u-Lg_jyetv6wtQ@mail.gmail.com>
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <57D7E442.2010400@applied-asynchrony.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On Tue, Sep 13, 2016 at 01:34:26PM +0200, Holger Hoffstätte wrote:
+> 
+> I've noticed that the 4.5-rc commit 14e46e04:
+> 'btrfs: synchronize incompat feature bits with sysfs files' [1]
+> was reverted later in [2], but despite fixes to protect sysfs
+> with locks & exorcise GFP_NOFS in favor of GFP_KERNEL it was
+> never reinstated - neither for 4.5-final, nor later..and it's
+> been quite a while since then. Is this still valid?
+> 
+> I ask because I've just noticed I've had this in my tree since
+> forever, but have never encountered a problem during balance -
+> probably because of all the other fixes.
 
-After the command to rebuild the extent tree
-# btrfs check --init-extent-tree --repair /dev/sda3
-
-I was able to mount and run successfully a scrub (not sure if it would
-detect something though).
-
-Next was reboot and try to boot which was successful as well.
-
-I'll keep an eye on the dmesh log next days but seems it's ok.
-
-Thanks for suggestions all,
-
-Regards,
-
--- 
-Leonidas Spyropoulos
-
-A: Because it messes up the order in which people normally read text.
-Q: Why is it such a bad thing?
-A: Top-posting.
-Q: What is the most annoying thing on usenet and in e-mail?
-
+I spent sime time trying to fix it but got lost in sysfs. Supposedly,
+the attribute group functions should provide all what's needed, ie.
+define a set of attributes, visibility callback. Calling an update will,
+in theory and my expectations, refresh the values and files. It does
+not. IIRC it was never meant to work like that, so it would have to be
+worked around or new sysfs helpers adde or I don't know what else.
+Working with sysfs code is sometimes painful, but I'm about to return to
+adding the free-space-tree bits someday.

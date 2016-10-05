@@ -1,217 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:55403 "EHLO song.cn.fujitsu.com"
-        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1757828AbcJRBb4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Oct 2016 21:31:56 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:40461 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752915AbcJEMXN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 5 Oct 2016 08:23:13 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 5829DAD13
+        for <linux-btrfs@vger.kernel.org>; Wed,  5 Oct 2016 12:23:12 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: rgoldwyn@suse.com, rgoldwyn@suse.de
-Subject: [PATCH 4/4] btrfs: qgroup: Fix qgroup data leaking by using subtree tracing
-Date: Tue, 18 Oct 2016 09:31:29 +0800
-Message-Id: <20161018013129.23331-5-quwenruo@cn.fujitsu.com>
-In-Reply-To: <20161018013129.23331-1-quwenruo@cn.fujitsu.com>
-References: <20161018013129.23331-1-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH] btrfs: remove unused headers, statfs.h
+Date: Wed,  5 Oct 2016 14:23:05 +0200
+Message-Id: <20161005122306.3530-2-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit 62b99540a1d91e464 (btrfs: relocation: Fix leaking qgroups numbers
-on data extents) only fixes the problem partly.
-
-The previous fix is to trace all new data extents at transaction commit
-time when balance finishes.
-
-However balance is not done in a large transaction, every path
-replacement can happen in its own transaction.
-This makes the fix useless if transaction commits during relocation.
-
-For example:
-relocate_block_group()
-|-merge_reloc_roots()
-|  |- merge_reloc_root()
-|     |- btrfs_start_transaction()         <- Trans X
-|     |- replace_path()                    <- Cause leak
-|     |- btrfs_end_transaction_throttle()  <- Trans X commits here
-|     |                                       Leak not fixed
-|     |
-|     |- btrfs_start_transaction()         <- Trans Y
-|     |- replace_path()                    <- Cause leak
-|     |- btrfs_end_transaction_throttle()  <- Trans Y ends
-|                                             but not committed
-|-btrfs_join_transaction()                 <- Still trans Y
-|-qgroup_fix()                             <- Only fixes data leak
-|                                             in trans Y
-|-btrfs_commit_transaction()               <- Trans Y commits
-
-In that case, qgroup fixup can only fix data leak in trans Y, data leak
-in trans X is out of fix.
-
-So the correct fix should happens in the same transaction of
-replace_path().
-
-This patch fixes it by tracing both subtrees of tree block swap, so it
-can fix the problem and ensure all leaking and fix are in the same
-transaction, so no leak again.
-
-Reported-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/relocation.c | 119 ++++++++++----------------------------------------
- 1 file changed, 23 insertions(+), 96 deletions(-)
+ fs/btrfs/file.c  | 1 -
+ fs/btrfs/inode.c | 1 -
+ fs/btrfs/ioctl.c | 1 -
+ 3 files changed, 3 deletions(-)
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 33cde30..540f225 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -1901,6 +1901,29 @@ again:
- 		BUG_ON(ret);
- 
- 		/*
-+		 * Info qgroup to trace both subtrees.
-+		 *
-+		 * We must trace both trees.
-+		 * 1) Tree reloc subtree
-+		 *    If not traced, we will leak data numbers
-+		 * 2) Fs subtree
-+		 *    If not traced, we will double count old data
-+		 *    and tree block numbers, if current trans doesn't free
-+		 *    data reloc tree inode.
-+		 */
-+		ret = btrfs_qgroup_trace_subtree(trans, src, parent,
-+				btrfs_header_generation(parent),
-+				btrfs_header_level(parent));
-+		if (ret < 0)
-+			break;
-+		ret = btrfs_qgroup_trace_subtree(trans, dest,
-+				path->nodes[level],
-+				btrfs_header_generation(path->nodes[level]),
-+				btrfs_header_level(path->nodes[level]));
-+		if (ret < 0)
-+			break;
-+
-+		/*
- 		 * swap blocks in fs tree and reloc tree.
- 		 */
- 		btrfs_set_node_blockptr(parent, slot, new_bytenr);
-@@ -3942,90 +3965,6 @@ int prepare_to_relocate(struct reloc_control *rc)
- 	return 0;
- }
- 
--/*
-- * Qgroup fixer for data chunk relocation.
-- * The data relocation is done in the following steps
-- * 1) Copy data extents into data reloc tree
-- * 2) Create tree reloc tree(special snapshot) for related subvolumes
-- * 3) Modify file extents in tree reloc tree
-- * 4) Merge tree reloc tree with original fs tree, by swapping tree blocks
-- *
-- * The problem is, data and tree reloc tree are not accounted to qgroup,
-- * and 4) will only info qgroup to track tree blocks change, not file extents
-- * in the tree blocks.
-- *
-- * The good news is, related data extents are all in data reloc tree, so we
-- * only need to info qgroup to track all file extents in data reloc tree
-- * before commit trans.
-- */
--static int qgroup_fix_relocated_data_extents(struct btrfs_trans_handle *trans,
--					     struct reloc_control *rc)
--{
--	struct btrfs_fs_info *fs_info = rc->extent_root->fs_info;
--	struct inode *inode = rc->data_inode;
--	struct btrfs_root *data_reloc_root = BTRFS_I(inode)->root;
--	struct btrfs_path *path;
--	struct btrfs_key key;
--	int ret = 0;
--
--	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags))
--		return 0;
--
--	/*
--	 * Only for stage where we update data pointers the qgroup fix is
--	 * valid.
--	 * For MOVING_DATA stage, we will miss the timing of swapping tree
--	 * blocks, and won't fix it.
--	 */
--	if (!(rc->stage == UPDATE_DATA_PTRS && rc->extents_found))
--		return 0;
--
--	path = btrfs_alloc_path();
--	if (!path)
--		return -ENOMEM;
--	key.objectid = btrfs_ino(inode);
--	key.type = BTRFS_EXTENT_DATA_KEY;
--	key.offset = 0;
--
--	ret = btrfs_search_slot(NULL, data_reloc_root, &key, path, 0, 0);
--	if (ret < 0)
--		goto out;
--
--	lock_extent(&BTRFS_I(inode)->io_tree, 0, (u64)-1);
--	while (1) {
--		struct btrfs_file_extent_item *fi;
--
--		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
--		if (key.objectid > btrfs_ino(inode))
--			break;
--		if (key.type != BTRFS_EXTENT_DATA_KEY)
--			goto next;
--		fi = btrfs_item_ptr(path->nodes[0], path->slots[0],
--				    struct btrfs_file_extent_item);
--		if (btrfs_file_extent_type(path->nodes[0], fi) !=
--				BTRFS_FILE_EXTENT_REG)
--			goto next;
--		ret = btrfs_qgroup_trace_extent(trans, fs_info,
--			btrfs_file_extent_disk_bytenr(path->nodes[0], fi),
--			btrfs_file_extent_disk_num_bytes(path->nodes[0], fi),
--			GFP_NOFS);
--		if (ret < 0)
--			break;
--next:
--		ret = btrfs_next_item(data_reloc_root, path);
--		if (ret < 0)
--			break;
--		if (ret > 0) {
--			ret = 0;
--			break;
--		}
--	}
--	unlock_extent(&BTRFS_I(inode)->io_tree, 0 , (u64)-1);
--out:
--	btrfs_free_path(path);
--	return ret;
--}
--
- static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
- {
- 	struct rb_root blocks = RB_ROOT;
-@@ -4216,13 +4155,6 @@ restart:
- 		err = PTR_ERR(trans);
- 		goto out_free;
- 	}
--	ret = qgroup_fix_relocated_data_extents(trans, rc);
--	if (ret < 0) {
--		btrfs_abort_transaction(trans, ret);
--		if (!err)
--			err = ret;
--		goto out_free;
--	}
- 	btrfs_commit_transaction(trans, rc->extent_root);
- out_free:
- 	btrfs_free_block_rsv(rc->extent_root, rc->block_rsv);
-@@ -4591,11 +4523,6 @@ int btrfs_recover_relocation(struct btrfs_root *root)
- 		err = PTR_ERR(trans);
- 		goto out_free;
- 	}
--	err = qgroup_fix_relocated_data_extents(trans, rc);
--	if (err < 0) {
--		btrfs_abort_transaction(trans, err);
--		goto out_free;
--	}
- 	err = btrfs_commit_transaction(trans, rc->extent_root);
- out_free:
- 	kfree(rc);
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index fea31a4a6e36..887ed6ac016e 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -27,7 +27,6 @@
+ #include <linux/falloc.h>
+ #include <linux/swap.h>
+ #include <linux/writeback.h>
+-#include <linux/statfs.h>
+ #include <linux/compat.h>
+ #include <linux/slab.h>
+ #include <linux/btrfs.h>
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index e6811c42e41e..3241dfd14db3 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -30,7 +30,6 @@
+ #include <linux/mpage.h>
+ #include <linux/swap.h>
+ #include <linux/writeback.h>
+-#include <linux/statfs.h>
+ #include <linux/compat.h>
+ #include <linux/bit_spinlock.h>
+ #include <linux/xattr.h>
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 7fd939bfbd99..a6959c7d9807 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -33,7 +33,6 @@
+ #include <linux/namei.h>
+ #include <linux/swap.h>
+ #include <linux/writeback.h>
+-#include <linux/statfs.h>
+ #include <linux/compat.h>
+ #include <linux/bit_spinlock.h>
+ #include <linux/security.h>
 -- 
 2.10.0
-
-
 

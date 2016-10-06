@@ -1,81 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44302 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44309 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752199AbcJFNlq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 6 Oct 2016 09:41:46 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 4A082ADB2
-        for <linux-btrfs@vger.kernel.org>; Thu,  6 Oct 2016 13:41:45 +0000 (UTC)
+        id S1753055AbcJFNls (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 6 Oct 2016 09:41:48 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id AE357ADC2
+        for <linux-btrfs@vger.kernel.org>; Thu,  6 Oct 2016 13:41:46 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 1/4] btrfs-progs: ioctl: pack structures
-Date: Thu,  6 Oct 2016 15:41:38 +0200
-Message-Id: <20161006134141.837-2-dsterba@suse.com>
+Subject: [PATCH 2/4] btrfs-progs: ioctl: add 32bit compat for SET_RECEIVED_SUBVOL
+Date: Thu,  6 Oct 2016 15:41:39 +0200
+Message-Id: <20161006134141.837-3-dsterba@suse.com>
 In-Reply-To: <20161006134141.837-1-dsterba@suse.com>
 References: <20161006134141.837-1-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add the packed attribute to several structures so we avoid any
-accidental size changes due to compiler-dependent padding.
+The ioctl value of SET_RECEIVED_SUBVOL will be different on 32bit
+userspace and 64bit kernel. This is transparently handled on the kernel
+side. We now define the same structure so we can verify the ioctl value.
 
-Expected alignment is 8 bytes, padded where needed.
+The defined structure and ioctl should not be used. It is exists only
+for testing purposes, documenting the mess and as a warning for the
+future.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- ioctl.h | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+ ioctl.h | 38 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 38 insertions(+)
 
 diff --git a/ioctl.h b/ioctl.h
-index a7235c00c1a0..d0c06657f0c0 100644
+index d0c06657f0c0..6baa51ab1724 100644
 --- a/ioctl.h
 +++ b/ioctl.h
-@@ -149,7 +149,7 @@ struct btrfs_ioctl_scrub_args {
- 	struct btrfs_scrub_progress progress;	/* out */
- 	/* pad to 1k */
- 	__u64 unused[(1024-32-sizeof(struct btrfs_scrub_progress))/8];
--};
-+} __attribute__((packed));
- BUILD_ASSERT(sizeof(struct btrfs_ioctl_scrub_args) == 1024);
+@@ -570,6 +570,38 @@ struct btrfs_ioctl_received_subvol_args {
+ BUILD_ASSERT(sizeof(struct btrfs_ioctl_received_subvol_args) == 200);
  
- #define BTRFS_IOCTL_DEV_REPLACE_CONT_READING_FROM_SRCDEV_MODE_ALWAYS	0
-@@ -160,7 +160,7 @@ struct btrfs_ioctl_dev_replace_start_params {
- 						 * above */
- 	__u8 srcdev_name[BTRFS_DEVICE_PATH_NAME_MAX + 1];	/* in */
- 	__u8 tgtdev_name[BTRFS_DEVICE_PATH_NAME_MAX + 1];	/* in */
--};
-+} __attribute__((packed, aligned (8)));
- BUILD_ASSERT(sizeof(struct btrfs_ioctl_dev_replace_start_params) == 2072);
- 
- #define BTRFS_IOCTL_DEV_REPLACE_STATE_NEVER_STARTED	0
-@@ -175,7 +175,7 @@ struct btrfs_ioctl_dev_replace_status_params {
- 	__u64 time_stopped;	/* out, seconds since 1-Jan-1970 */
- 	__u64 num_write_errors;	/* out */
- 	__u64 num_uncorrectable_read_errors;	/* out */
--};
-+} __attribute__((packed));
- BUILD_ASSERT(sizeof(struct btrfs_ioctl_dev_replace_status_params) == 48);
- 
- #define BTRFS_IOCTL_DEV_REPLACE_CMD_START			0
-@@ -556,7 +556,7 @@ BUILD_ASSERT(sizeof(struct btrfs_ioctl_qgroup_create_args) == 16);
- struct btrfs_ioctl_timespec {
- 	__u64 sec;
- 	__u32 nsec;
--};
-+} __attribute__((packed, aligned (8)));
- 
- struct btrfs_ioctl_received_subvol_args {
- 	char	uuid[BTRFS_UUID_SIZE];	/* in */
-@@ -601,7 +601,7 @@ struct btrfs_ioctl_send_args {
- 	__u64 parent_root;		/* in */
- 	__u64 flags;			/* in */
- 	__u64 reserved[4];		/* in */
--};
-+} __attribute__((packed));
  /*
-  * Size of structure depends on pointer width, was not caught.  Kernel handles
-  * pointer width differences transparently
++ * If we have a 32-bit userspace and 64-bit kernel, then the UAPI
++ * structures are incorrect, as the timespec structure from userspace
++ * is 4 bytes too small. We define these alternatives here for backward
++ * compatibility, the kernel understands both values.
++ */
++
++/*
++ * Structure size is different on 32bit and 64bit, has some padding if the
++ * structure is embedded. Packing makes sure the size is same on both, but will
++ * be misaligned on 64bit.
++ *
++ * NOTE: do not use in your code, this is for testing only
++ */
++struct btrfs_ioctl_timespec_32 {
++	__u64 sec;
++	__u32 nsec;
++} __attribute__ ((__packed__));
++
++struct btrfs_ioctl_received_subvol_args_32 {
++	char	uuid[BTRFS_UUID_SIZE];	/* in */
++	__u64	stransid;		/* in */
++	__u64	rtransid;		/* out */
++	struct btrfs_ioctl_timespec_32 stime; /* in */
++	struct btrfs_ioctl_timespec_32 rtime; /* out */
++	__u64	flags;			/* in */
++	__u64	reserved[16];		/* in */
++} __attribute__ ((__packed__));
++BUILD_ASSERT(sizeof(struct btrfs_ioctl_received_subvol_args_32) == 192);
++
++#define BTRFS_IOC_SET_RECEIVED_SUBVOL_32_COMPAT_DEFINED 1
++
++/*
+  * Caller doesn't want file data in the send stream, even if the
+  * search of clone sources doesn't find an extent. UPDATE_EXTENT
+  * commands will be sent instead of WRITE commands.
+@@ -723,6 +755,12 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
+ 					struct btrfs_ioctl_logical_ino_args)
+ #define BTRFS_IOC_SET_RECEIVED_SUBVOL _IOWR(BTRFS_IOCTL_MAGIC, 37, \
+ 				struct btrfs_ioctl_received_subvol_args)
++
++#ifdef BTRFS_IOC_SET_RECEIVED_SUBVOL_32_COMPAT_DEFINED
++#define BTRFS_IOC_SET_RECEIVED_SUBVOL_32 _IOWR(BTRFS_IOCTL_MAGIC, 37, \
++				struct btrfs_ioctl_received_subvol_args_32)
++#endif
++
+ #define BTRFS_IOC_SEND _IOW(BTRFS_IOCTL_MAGIC, 38, struct btrfs_ioctl_send_args)
+ #define BTRFS_IOC_DEVICES_READY _IOR(BTRFS_IOCTL_MAGIC, 39, \
+ 				     struct btrfs_ioctl_vol_args)
 -- 
 2.10.0
 

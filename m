@@ -1,71 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:14381 "EHLO song.cn.fujitsu.com"
-        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1753111AbcJKCpG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 Oct 2016 22:45:06 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH v2 4/4] btrfs-progs: convert-test: Add test case for common inode flags
-Date: Tue, 11 Oct 2016 10:44:46 +0800
-Message-Id: <20161011024446.16546-5-quwenruo@cn.fujitsu.com>
-In-Reply-To: <20161011024446.16546-1-quwenruo@cn.fujitsu.com>
-References: <20161011024446.16546-1-quwenruo@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:60267 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S942147AbcJFQAw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 6 Oct 2016 12:00:52 -0400
+Date: Thu, 6 Oct 2016 18:00:45 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: image: fix compiler warning
+Message-ID: <20161006160045.GK6576@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <201610050807.AA00000@WIN-5MHF4RKU941.jp.fujitsu.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <201610050807.AA00000@WIN-5MHF4RKU941.jp.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add a new test case to check if btrfs-convert copies common inode flags
-like append(a), immutable(i).
+On Wed, Oct 05, 2016 at 05:07:48PM +0900, Tsutomu Itoh wrote:
+> In v4.8-rc1, gcc 5.3.1 gives following warning. Fixed it.
+> 
+>     [CC]     btrfs-image.o
+> btrfs-image.c: In function 'flush_pending':
+> btrfs-image.c:708:17: warning: 'start' may be used uninitialized in this function [-Wmaybe-uninitialized]
+>   header->bytenr = cpu_to_le64(start);
+>                  ^
+> btrfs-image.c:927:6: note: 'start' was declared here
+>   u64 start;
+>       ^
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- tests/convert-tests/009-common-inode-flags/test.sh | 34 ++++++++++++++++++++++
- 1 file changed, 34 insertions(+)
- create mode 100755 tests/convert-tests/009-common-inode-flags/test.sh
-
-diff --git a/tests/convert-tests/009-common-inode-flags/test.sh b/tests/convert-tests/009-common-inode-flags/test.sh
-new file mode 100755
-index 0000000..8bbac22
---- /dev/null
-+++ b/tests/convert-tests/009-common-inode-flags/test.sh
-@@ -0,0 +1,34 @@
-+#!/bin/bash
-+# Check if btrfs-convert can copy common inode flags like SYNC/IMMUTABLE
-+
-+source $TOP/tests/common
-+source $TOP/tests/common.convert
-+
-+setup_root_helper
-+prepare_test_dev 512M
-+check_prereq btrfs-convert
-+
-+fail=0
-+default_mke2fs="mke2fs -t ext4 -b 4096"
-+convert_test_preamble '' 'common inode flags test' 16k "$default_mke2fs"
-+convert_test_prep_fs $default_mke2fs
-+
-+# create file with specific flags
-+$SUDO_HELPER run_check touch $TEST_MNT/flag_test
-+$SUDO_HELPER run_check chattr +aSidA $TEST_MNT/flag_test
-+
-+run_check_umount_test_dev
-+convert_test_do_convert
-+run_check_mount_test_dev
-+
-+# Above flags should be copied to btrfs flags, and lsattr should get them
-+run_check_stdout lsattr $TEST_MNT/flag_test | cut -f1 -d\  > tmp_output
-+grep -e "S" -e "i" -e "a" -e "d" -e "A" -q tmp_output
-+if [ $? -ne 0 ]; then
-+	rm tmp_output
-+	_fail "no common inode flags are copied after convert"
-+fi
-+rm tmp_output
-+
-+run_check_umount_test_dev
-+convert_test_post_rollback
--- 
-2.10.0
-
-
-
+So the patch makes the compiler warning go away, but is the code
+correct? AFAICS, the warning points to the case where flush_pending is
+called with done=1 (from create_metadump) and there's zero
+md->pending_size . Are you sure this is an expected state and that the
+function can proceed with state = 0 ?

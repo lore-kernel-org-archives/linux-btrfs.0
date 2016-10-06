@@ -1,120 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from startkeylogger.hungrycats.org ([207.192.69.118]:39197 "EHLO
-        neville.hungrycats.org" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751972AbcJLCeW (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Oct 2016 22:34:22 -0400
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Received: from cn.fujitsu.com ([222.73.24.84]:8370 "EHLO song.cn.fujitsu.com"
+        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+        id S1752044AbcJFIEE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 6 Oct 2016 04:04:04 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Subject: [PATCH] btrfs: fix silent data corruption while reading compressed inline extents
-Date: Tue, 11 Oct 2016 22:28:48 -0400
-Message-Id: <1476239328-24649-1-git-send-email-ce3g8jdj@umail.furryterror.org>
+Cc: rgoldwyn@suse.de, rgoldwyn@suse.com
+Subject: [PATCH] btrfs: relocation: Fix NULL pointer access and leaking  qgroups in btrfs_recover_relocation
+Date: Thu,  6 Oct 2016 16:03:37 +0800
+Message-Id: <20161006080337.31691-1-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-rsync -S causes a large number of small writes separated by small seeks
-to form sparse holes in files that contain runs of zero bytes.  Rarely,
-this can lead btrfs to write a file with a compressed inline extent
-followed by other data, like this:
+We fixed balance qgroup leaking by introducing
+qgroup_fix_relocated_data_extents(), but it only covers normal balance
+routine well.
 
-Filesystem type is: 9123683e
-File size of /try/./30/share/locale/nl/LC_MESSAGES/tar.mo is 61906 (16 blocks of 4096 bytes)
- ext:     logical_offset:        physical_offset: length:   expected: flags:
-   0:        0..    4095:          0..      4095:   4096:             encoded,not_aligned,inline
-   1:        1..      15:     331372..    331386:     15:          1: last,encoded,eof
-/try/./30/share/locale/nl/LC_MESSAGES/tar.mo: 2 extents found
+For case btrfs_recover_relocation() routine, since rc->stage or
+rc->data_inode are not initialized, we either skip
+qgroup_fix_relocated_data_extents() or just cause NULL pointer access.
 
-The inline extent size is less than the page size, so the ram_bytes field
-in the extent is smaller than 4096.  The difference between ram_bytes and
-the end of the first page of the file forms a small hole.  Like any other
-hole, the correct value of each byte within the hole is zero.
+Since we skip qgroup_fix_relocated_data_extents() in
+btrfs_recover_relocation(), we will still leak qgroup numbers for that
+routine.
 
-When the inline extent is not compressed, btrfs_get_extent copies the
-inline extent data and then memsets the remainder of the page to zero.
-There is no corruption in this case.
+In the fix, we won't use data_inode any longer, as at the timing of the
+qgroup fix, noone will modify data_reloc tree any longer, so path
+locking should be good enough.
 
-When the inline extent is compressed, uncompress_inline uses the
-ram_bytes field from the extent ref as the size of the uncompressed data.
-ram_bytes is smaller than the page size, so the remainder of the page
-(i.e. the bytes in the small hole) is uninitialized memory.  Each time the
-extent is read into the page cache, userspace may see different contents.
+And add check against rc->merge_reloc_tree, so we can detect if we are
+in btrfs_recover_relocation() routine and continue qgroup fix.
 
-Fix this by zeroing out the difference between the size of the
-uncompressed inline extent and PAGE_CACHE_SIZE in uncompress_inline.
-
-Only bytes within the hole are affected, so affected files can be read
-correctly with a fixed kernel.  The corruption happens after IO and
-checksum validation, so the corruption is never reported in dmesg or
-counted in dev stats.
-
-The bug is at least as old as 3.5.7 (the oldest kernel I can conveniently
-test), and possibly much older.
-
-The code may not be correct if the extent is larger than a page, so add
-a WARN_ON for that case.
-
-To reproduce the bug, run this on a 3072M kvm VM:
-
-	#!/bin/sh
-	# Use your favorite block device here
-	blk=/dev/vdc
-
-	# Create test filesystem and mount point
-	mkdir -p /try
-	mkfs.btrfs -dsingle -mdup -O ^extref,^skinny-metadata,^no-holes -f "$blk" || exit 1
-	mount -ocompress-force,flushoncommit,max_inline=8192,noatime "$blk" /try || exit 1
-
-	# Create a few inline extents in larger files.
-	# Multiple processes seem to be necessary.
-	y=/usr; for x in $(seq 10 19); do rsync -axHSWI "$y/." "$x"; y="$x"; done &
-	y=/usr; for x in $(seq 20 29); do rsync -axHSWI "$y/." "$x"; y="$x"; done &
-	y=/usr; for x in $(seq 30 39); do rsync -axHSWI "$y/." "$x"; y="$x"; done &
-	y=/usr; for x in $(seq 40 49); do rsync -axHSWI "$y/." "$x"; y="$x"; done &
-	wait
-
-	# Make a list of the files with inline extents
-	touch /try/list
-	find -type f -size +4097c -exec sh -c 'for x; do if filefrag -v "$x" | sed -n "4p" | grep -q "inline"; then echo "$x" >> list; fi; done' -- {} +
-
-	# Check the inline extents to see if they change as they are read multiple times
-        while read -r x; do
-                sum="$(sha1sum "$x")"
-                for y in $(seq 0 99); do
-                        sysctl vm.drop_caches=1
-                        sum2="$(sha1sum "$x")"
-                        if [ "$sum" != "$sum2" ]; then
-                                echo "Inconsistent reads from '$x'"
-                                exit 1
-                        fi
-                done
-        done < list
-
-The reproducer may need to run up to 20 times before it finds a
-corruption.
-
-Signed-off-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Reported-by: Goldwyn Rodrigues <rgoldwyn@suse.de>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/inode.c | 6 ++++++
- 1 file changed, 6 insertions(+)
+ fs/btrfs/relocation.c | 21 +++++++++++++--------
+ 1 file changed, 13 insertions(+), 8 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index e6811c4..34f9c80 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6791,6 +6791,12 @@ static noinline int uncompress_inline(struct btrfs_path *path,
- 	max_size = min_t(unsigned long, PAGE_SIZE, max_size);
- 	ret = btrfs_decompress(compress_type, tmp, page,
- 			       extent_offset, inline_size, max_size);
-+	WARN_ON(max_size > PAGE_SIZE);
-+	if (max_size < PAGE_SIZE) {
-+		char *map = kmap(page);
-+		memset(map + max_size, 0, PAGE_SIZE - max_size);
-+		kunmap(page);
-+	}
- 	kfree(tmp);
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index c0c13dc..f250187 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -3946,8 +3946,7 @@ static int qgroup_fix_relocated_data_extents(struct btrfs_trans_handle *trans,
+ 					     struct reloc_control *rc)
+ {
+ 	struct btrfs_fs_info *fs_info = rc->extent_root->fs_info;
+-	struct inode *inode = rc->data_inode;
+-	struct btrfs_root *data_reloc_root = BTRFS_I(inode)->root;
++	struct btrfs_root *data_reloc_root;
+ 	struct btrfs_path *path;
+ 	struct btrfs_key key;
+ 	int ret = 0;
+@@ -3956,18 +3955,28 @@ static int qgroup_fix_relocated_data_extents(struct btrfs_trans_handle *trans,
+ 		return 0;
+ 
+ 	/*
++	 * For normal balance routine, merge_reloc_tree flag is always cleared
++	 * before commit trans.
++	 * For recover relocation routine, merge_reloc_tree is always 1, we need
++	 * to continue anyway.
++	 *
+ 	 * Only for stage where we update data pointers the qgroup fix is
+ 	 * valid.
+ 	 * For MOVING_DATA stage, we will miss the timing of swapping tree
+ 	 * blocks, and won't fix it.
+ 	 */
+-	if (!(rc->stage == UPDATE_DATA_PTRS && rc->extents_found))
++	if (!(rc->stage == UPDATE_DATA_PTRS && rc->extents_found) &&
++	    rc->merge_reloc_tree == 0)
+ 		return 0;
+ 
++	data_reloc_root = read_fs_root(fs_info, BTRFS_DATA_RELOC_TREE_OBJECTID);
++	if (IS_ERR(data_reloc_root))
++		return PTR_ERR(data_reloc_root);
++
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+ 		return -ENOMEM;
+-	key.objectid = btrfs_ino(inode);
++	key.objectid = BTRFS_FIRST_FREE_OBJECTID + 1;
+ 	key.type = BTRFS_EXTENT_DATA_KEY;
+ 	key.offset = 0;
+ 
+@@ -3975,13 +3984,10 @@ static int qgroup_fix_relocated_data_extents(struct btrfs_trans_handle *trans,
+ 	if (ret < 0)
+ 		goto out;
+ 
+-	lock_extent(&BTRFS_I(inode)->io_tree, 0, (u64)-1);
+ 	while (1) {
+ 		struct btrfs_file_extent_item *fi;
+ 
+ 		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
+-		if (key.objectid > btrfs_ino(inode))
+-			break;
+ 		if (key.type != BTRFS_EXTENT_DATA_KEY)
+ 			goto next;
+ 		fi = btrfs_item_ptr(path->nodes[0], path->slots[0],
+@@ -4004,7 +4010,6 @@ next:
+ 			break;
+ 		}
+ 	}
+-	unlock_extent(&BTRFS_I(inode)->io_tree, 0 , (u64)-1);
+ out:
+ 	btrfs_free_path(path);
  	return ret;
- }
 -- 
-2.1.4
+2.10.0
+
+
 

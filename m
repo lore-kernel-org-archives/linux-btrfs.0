@@ -1,42 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:57004 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S942032AbcJFPeD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 6 Oct 2016 11:34:03 -0400
-Date: Thu, 6 Oct 2016 17:34:00 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH] btrfs-progs: Fix warning_trace compile error if
- backtrace is disabled
-Message-ID: <20161006153400.GI6576@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20161006084719.9540-1-quwenruo@cn.fujitsu.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:32528 "EHLO song.cn.fujitsu.com"
+        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+        id S964983AbcJFIrd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 6 Oct 2016 04:47:33 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH] btrfs-progs: Fix warning_trace compile error if backtrace is disabled
+Date: Thu,  6 Oct 2016 16:47:19 +0800
+Message-Id: <20161006084719.9540-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <20161006084719.9540-1-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 06, 2016 at 04:47:19PM +0800, Qu Wenruo wrote:
-> If we disable backtrace, btrfs-progs can't be compiled since we don't
-> have warning_trace defined.
-> 
-> Fix by move it out of #ifndef BTRFS_DISABLE_BACKTRACE block.
+If we disable backtrace, btrfs-progs can't be compiled since we don't
+have warning_trace defined.
 
-But now this breaks with backtrace, eg:
+Fix by move it out of #ifndef BTRFS_DISABLE_BACKTRACE block.
 
-kerncompat.h: In function ‘warning_trace’:
-kerncompat.h:91:3: warning: implicit declaration of function ‘print_trace’ [-Wimplicit-function-declaration]
-   print_trace();
-   ^~~~~~~~~~~
-kerncompat.h: At top level:
-kerncompat.h:97:20: warning: conflicting types for ‘print_trace’
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ kerncompat.h | 38 ++++++++++++++++++++------------------
+ 1 file changed, 20 insertions(+), 18 deletions(-)
+
+diff --git a/kerncompat.h b/kerncompat.h
+index ea04ef3..fba0bc1 100644
+--- a/kerncompat.h
++++ b/kerncompat.h
+@@ -72,6 +72,26 @@
+ #define ___token_glue(a,b,c)	a ## b ## c
+ #define BUILD_ASSERT(x)		extern int __token_glue(compile_time_assert_,__LINE__,__COUNTER__)[1-2*!(x)] __attribute__((unused))
+ 
++static inline void warning_trace(const char *assertion, const char *filename,
++			      const char *func, unsigned line, int val,
++			      int trace)
++{
++	if (val)
++		return;
++	if (assertion)
++		fprintf(stderr,
++			"%s:%d: %s: Warning: assertion `%s` failed, value %d\n",
++			filename, line, func, assertion, val);
++	else
++		fprintf(stderr,
++			"%s:%d: %s: Warning: assertion failed, value %d.\n",
++			filename, line, func, val);
++#ifndef BTRFS_DISABLE_BACKTRACE
++	if (trace)
++		print_trace();
++#endif
++}
++
+ #ifndef BTRFS_DISABLE_BACKTRACE
+ #define MAX_BACKTRACE	16
  static inline void print_trace(void)
-                    ^~~~~~~~~~~
-kerncompat.h:97:20: error: static declaration of ‘print_trace’ follows non-static declaration
-kerncompat.h:91:3: note: previous implicit declaration of ‘print_trace’ was here
-   print_trace();
+@@ -99,24 +119,6 @@ static inline void assert_trace(const char *assertion, const char *filename,
+ 	exit(1);
+ }
+ 
+-static inline void warning_trace(const char *assertion, const char *filename,
+-			      const char *func, unsigned line, int val,
+-			      int trace)
+-{
+-	if (val)
+-		return;
+-	if (assertion)
+-		fprintf(stderr,
+-			"%s:%d: %s: Warning: assertion `%s` failed, value %d\n",
+-			filename, line, func, assertion, val);
+-	else
+-		fprintf(stderr,
+-			"%s:%d: %s: Warning: assertion failed, value %d.\n",
+-			filename, line, func, val);
+-	if (trace)
+-		print_trace();
+-}
+-
+ #define BUG() assert_trace(NULL, __FILE__, __func__, __LINE__, 0)
+ #else
+ #define BUG() assert(0)
+-- 
+2.10.0
 
-I've fixed it and will add a script to cycle through common build
-configuration so we can automate that a bit.
+
+

@@ -1,257 +1,1217 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:22071 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1751311AbcJFC51 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 5 Oct 2016 22:57:27 -0400
+        id S1751311AbcJFC5b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 5 Oct 2016 22:57:31 -0400
 From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: jbacik@fb.com, dsterba@suse.com, s.priebe@profihost.ag
-Subject: [PATCH 1/2] btrfs: improve inode's outstanding_extents computation
-Date: Thu,  6 Oct 2016 10:51:38 +0800
-Message-Id: <20161006025139.22776-1-wangxg.fnst@cn.fujitsu.com>
+Subject: [PATCH 2/2] btrfs: fix false enospc for compression
+Date: Thu,  6 Oct 2016 10:51:39 +0800
+Message-Id: <20161006025139.22776-2-wangxg.fnst@cn.fujitsu.com>
+In-Reply-To: <20161006025139.22776-1-wangxg.fnst@cn.fujitsu.com>
+References: <20161006025139.22776-1-wangxg.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This issue was revealed by modifying BTRFS_MAX_EXTENT_SIZE(128MB) to 64KB,
-When modifying BTRFS_MAX_EXTENT_SIZE(128MB) to 64KB, fsstress test often
-gets these warnings from btrfs_destroy_inode():
-	WARN_ON(BTRFS_I(inode)->outstanding_extents);
-	WARN_ON(BTRFS_I(inode)->reserved_extents);
+When testing btrfs compression, sometimes we got ENOSPC error, though fs
+still has much free space, xfstests generic/171, generic/172, generic/173,
+generic/174, generic/175 can reveal this bug in my test environment when
+compression is enabled.
 
-Simple test program below can reproduce this issue steadily.
-Note: you need to modify BTRFS_MAX_EXTENT_SIZE to 64KB to have test,
-otherwise there won't be such WARNING.
-	#include <string.h>
-	#include <unistd.h>
-	#include <sys/types.h>
-	#include <sys/stat.h>
-	#include <fcntl.h>
+After some debuging work, we found that it's btrfs_delalloc_reserve_metadata()
+which sometimes tries to reserve plenty of metadata space, even for very small
+data range. In btrfs_delalloc_reserve_metadata(), the number of metadata bytes
+we try to reserve is calculated by the difference between outstanding_extents
+and reserved_extents. Please see below case for how ENOSPC occurs:
 
-	int main(void)
-	{
-		int fd;
-		char buf[68 *1024];
+  1, Buffered write 128MB data in unit of 128KB, so finially we'll have inode
+outstanding extents be 1, and reserved_extents be 1024. Note it's
+btrfs_merge_extent_hook() that merges these 128KB units into one big
+outstanding extent, but do not change reserved_extents.
 
-		memset(buf, 0, 68 * 1024);
-		fd = open("testfile", O_CREAT | O_EXCL | O_RDWR);
-		pwrite(fd, buf, 68 * 1024, 64 * 1024);
-		return;
-	}
+  2, When writing dirty pages, for compression, cow_file_range_async() will
+split above big extent in unit of 128KB(compression extent size is 128KB).
+When first split opeartion finishes, we'll have 2 outstanding extents and 1024
+reserved extents, and just right now the currently generated ordered extent is
+dispatched to run and complete, then btrfs_delalloc_release_metadata()(see
+btrfs_finish_ordered_io()) will be called to release metadata, after that we
+will have 1 outstanding extents and 1 reserved extents(also see logic in
+drop_outstanding_extent()). Later cow_file_range_async() continues to handles
+left data range[128KB, 128MB), and if no other ordered extent was dispatched
+to run, there will be 1023 outstanding extents and 1 reserved extent.
 
-When BTRFS_MAX_EXTENT_SIZE is 64KB, and buffered data range is:
-64KB						128K		132KB
-|-----------------------------------------------|---------------|
-                         64 + 4KB
+  3, Now if another bufferd write for this file enters, then
+btrfs_delalloc_reserve_metadata() will at least try to reserve metadata
+for 1023 outstanding extents' metadata, for 16KB node size, it'll be 1023*16384*2*8,
+about 255MB, for 64K node size, it'll be 1023*65536*8*2, about 1GB metadata, so
+obviously it's not sane and can easily result in enospc error.
 
-1) for above data range, btrfs_delalloc_reserve_metadata() will reserve
-metadata and set BTRFS_I(inode)->outstanding_extents to 2.
-(68KB + 64KB - 1) / 64KB == 2
+The root cause is that for compression, its max extent size will no longer be
+BTRFS_MAX_EXTENT_SIZE(128MB), it'll be 128KB, so current metadata reservation
+method in btrfs is not appropriate or correct, here we introduce:
+	enum btrfs_metadata_reserve_type {
+        	BTRFS_RESERVE_NORMAL,
+        	BTRFS_RESERVE_COMPRESS,
+	};
+and expand btrfs_delalloc_reserve_metadata() and btrfs_delalloc_reserve_space()
+by adding a new enum btrfs_metadata_reserve_type argument. When a data range will
+go through compression, we use BTRFS_RESERVE_COMPRESS to reserve metatata.
+Meanwhile we introduce EXTENT_COMPRESS flag to mark a data range that will go
+through compression path.
 
-Outstanding_extents: 2
-
-2) then btrfs_dirty_page() will be called to dirty pages and set
-EXTENT_DELALLOC flag. In this case, btrfs_set_bit_hook() will be called
-twice.
-The 1st set_bit_hook() call will set DEALLOC flag for the first 64K.
-64KB						128KB
-|-----------------------------------------------|
-	64KB DELALLOC
-Outstanding_extents: 2
-
-Set_bit_hooks() uses FIRST_DELALLOC flag to avoid re-increase
-outstanding_extents counter.
-So for 1st set_bit_hooks() call, it won't modify outstanding_extents,
-it's still 2.
-
-Then FIRST_DELALLOC flag is *CLEARED*.
-
-3) 2nd btrfs_set_bit_hook() call.
-Because FIRST_DELALLOC have been cleared by previous set_bit_hook(),
-btrfs_set_bit_hook() will increase BTRFS_I(inode)->outstanding_extents by
-one, so now BTRFS_I(inode)->outstanding_extents is 3.
-64KB                                            128KB            132KB
-|-----------------------------------------------|----------------|
-	64K DELALLOC				   4K DELALLOC
-Outstanding_extents: 3
-
-But the correct outstanding_extents number should be 2, not 3.
-The 2nd btrfs_set_bit_hook() call just screwed up this, and leads to the
-WARN_ON().
-
-Normally, we can solve it by only increasing outstanding_extents in
-set_bit_hook().
-But the problem is for delalloc_reserve/release_metadata(), we only have
-a 'length' parameter, and calculate in-accurate outstanding_extents.
-If we only rely on set_bit_hook() release_metadata() will crew things up
-as it will decrease inaccurate number.
-
-So the fix we use is:
-1) Increase *INACCURATE* outstanding_extents at delalloc_reserve_meta
-   Just as a place holder.
-2) Increase *accurate* outstanding_extents at set_bit_hooks()
-   This is the real increaser.
-3) Decrease *INACCURATE* outstanding_extents before returning
-   This makes outstanding_extents to correct value.
-
-For 128M BTRFS_MAX_EXTENT_SIZE, due to limitation of
-__btrfs_buffered_write(), each iteration will only handle about 2MB
-data.
-So btrfs_dirty_pages() won't need to handle cases cross 2 extents.
+With this patch, we can fix these false enospc error for compression.
 
 Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/ctree.h |  2 ++
- fs/btrfs/inode.c | 65 ++++++++++++++++++++++++++++++++++++++++++++++++++------
- fs/btrfs/ioctl.c |  6 ++----
- 3 files changed, 62 insertions(+), 11 deletions(-)
+ fs/btrfs/ctree.h             |  31 ++++++--
+ fs/btrfs/extent-tree.c       |  55 +++++++++----
+ fs/btrfs/extent_io.c         |  59 +++++++++++++-
+ fs/btrfs/extent_io.h         |   2 +
+ fs/btrfs/file.c              |  26 +++++--
+ fs/btrfs/free-space-cache.c  |   6 +-
+ fs/btrfs/inode-map.c         |   5 +-
+ fs/btrfs/inode.c             | 181 ++++++++++++++++++++++++++++++++-----------
+ fs/btrfs/ioctl.c             |  12 ++-
+ fs/btrfs/relocation.c        |  14 +++-
+ fs/btrfs/tests/inode-tests.c |  15 ++--
+ 11 files changed, 309 insertions(+), 97 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 33fe035..16885f6 100644
+index 16885f6..fa6a19a 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -3119,6 +3119,8 @@ int btrfs_start_delalloc_roots(struct btrfs_fs_info *fs_info, int delay_iput,
+@@ -97,6 +97,19 @@ static const int btrfs_csum_sizes[] = { 4 };
+ 
+ #define BTRFS_DIRTY_METADATA_THRESH	SZ_32M
+ 
++/*
++ * for compression, max file extent size would be limited to 128K, so when
++ * reserving metadata for such delalloc writes, pass BTRFS_RESERVE_COMPRESS to
++ * btrfs_delalloc_reserve_metadata() or btrfs_delalloc_reserve_space() to
++ * calculate metadata, for none-compression, use BTRFS_RESERVE_NORMAL.
++ */
++enum btrfs_metadata_reserve_type {
++	BTRFS_RESERVE_NORMAL,
++	BTRFS_RESERVE_COMPRESS,
++};
++int inode_need_compress(struct inode *inode);
++u64 btrfs_max_extent_size(enum btrfs_metadata_reserve_type reserve_type);
++
+ #define BTRFS_MAX_EXTENT_SIZE SZ_128M
+ 
+ struct btrfs_mapping_tree {
+@@ -2677,10 +2690,14 @@ int btrfs_subvolume_reserve_metadata(struct btrfs_root *root,
+ void btrfs_subvolume_release_metadata(struct btrfs_root *root,
+ 				      struct btrfs_block_rsv *rsv,
+ 				      u64 qgroup_reserved);
+-int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes);
+-void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes);
+-int btrfs_delalloc_reserve_space(struct inode *inode, u64 start, u64 len);
+-void btrfs_delalloc_release_space(struct inode *inode, u64 start, u64 len);
++int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes,
++		enum btrfs_metadata_reserve_type reserve_type);
++void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes,
++		enum btrfs_metadata_reserve_type reserve_type);
++int btrfs_delalloc_reserve_space(struct inode *inode, u64 start, u64 len,
++		enum btrfs_metadata_reserve_type reserve_type);
++void btrfs_delalloc_release_space(struct inode *inode, u64 start, u64 len,
++		enum btrfs_metadata_reserve_type reserve_type);
+ void btrfs_init_block_rsv(struct btrfs_block_rsv *rsv, unsigned short type);
+ struct btrfs_block_rsv *btrfs_alloc_block_rsv(struct btrfs_root *root,
+ 					      unsigned short type);
+@@ -3118,9 +3135,9 @@ int btrfs_start_delalloc_inodes(struct btrfs_root *root, int delay_iput);
+ int btrfs_start_delalloc_roots(struct btrfs_fs_info *fs_info, int delay_iput,
  			       int nr);
  int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
- 			      struct extent_state **cached_state);
-+int btrfs_set_extent_defrag(struct inode *inode, u64 start, u64 end,
-+			    struct extent_state **cached_state);
+-			      struct extent_state **cached_state);
++			      struct extent_state **cached_state, int flag);
+ int btrfs_set_extent_defrag(struct inode *inode, u64 start, u64 end,
+-			    struct extent_state **cached_state);
++			    struct extent_state **cached_state, int flag);
  int btrfs_create_subvol_root(struct btrfs_trans_handle *trans,
  			     struct btrfs_root *new_root,
  			     struct btrfs_root *parent_root,
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index e6811c4..a7193b1 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1590,6 +1590,9 @@ static void btrfs_split_extent_hook(struct inode *inode,
- 	if (!(orig->state & EXTENT_DELALLOC))
- 		return;
+@@ -3213,7 +3230,7 @@ int btrfs_release_file(struct inode *inode, struct file *file);
+ int btrfs_dirty_pages(struct btrfs_root *root, struct inode *inode,
+ 		      struct page **pages, size_t num_pages,
+ 		      loff_t pos, size_t write_bytes,
+-		      struct extent_state **cached);
++		      struct extent_state **cached, int flag);
+ int btrfs_fdatawrite_range(struct inode *inode, loff_t start, loff_t end);
+ ssize_t btrfs_copy_file_range(struct file *file_in, loff_t pos_in,
+ 			      struct file *file_out, loff_t pos_out,
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 665da8f..9cfd1d0 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -5836,15 +5836,16 @@ void btrfs_subvolume_release_metadata(struct btrfs_root *root,
+  * reserved extents that need to be freed.  This must be called with
+  * BTRFS_I(inode)->lock held.
+  */
+-static unsigned drop_outstanding_extent(struct inode *inode, u64 num_bytes)
++static unsigned drop_outstanding_extent(struct inode *inode, u64 num_bytes,
++			enum btrfs_metadata_reserve_type reserve_type)
+ {
+ 	unsigned drop_inode_space = 0;
+ 	unsigned dropped_extents = 0;
+ 	unsigned num_extents = 0;
++	u64 max_extent_size = btrfs_max_extent_size(reserve_type);
  
-+	if (btrfs_is_free_space_inode(inode))
+-	num_extents = (unsigned)div64_u64(num_bytes +
+-					  BTRFS_MAX_EXTENT_SIZE - 1,
+-					  BTRFS_MAX_EXTENT_SIZE);
++	num_extents = (unsigned)div64_u64(num_bytes + max_extent_size - 1,
++					  max_extent_size);
+ 	ASSERT(num_extents);
+ 	ASSERT(BTRFS_I(inode)->outstanding_extents >= num_extents);
+ 	BTRFS_I(inode)->outstanding_extents -= num_extents;
+@@ -5914,7 +5915,21 @@ static u64 calc_csum_metadata_size(struct inode *inode, u64 num_bytes,
+ 	return btrfs_calc_trans_metadata_size(root, old_csums - num_csums);
+ }
+ 
+-int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
++u64 btrfs_max_extent_size(enum btrfs_metadata_reserve_type reserve_type)
++{
++	if (reserve_type == BTRFS_RESERVE_COMPRESS)
++		return SZ_128K;
++
++	return BTRFS_MAX_EXTENT_SIZE;
++}
++
++/*
++ * @reserve_type: normally reserve_type should be BTRFS_RESERVE_NORMAL, but for
++ * compression path, its max extent size is limited to 128KB, not 128MB, when
++ * reserving metadata, we should set reserve_type to BTRFS_RESERVE_COMPRESS.
++ */
++int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes,
++		enum btrfs_metadata_reserve_type reserve_type)
+ {
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct btrfs_block_rsv *block_rsv = &root->fs_info->delalloc_block_rsv;
+@@ -5927,6 +5942,7 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+ 	u64 to_free = 0;
+ 	unsigned dropped;
+ 	bool release_extra = false;
++	u64 max_extent_size = btrfs_max_extent_size(reserve_type);
+ 
+ 	/* If we are a free space inode we need to not flush since we will be in
+ 	 * the middle of a transaction commit.  We also don't need the delalloc
+@@ -5953,9 +5969,8 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+ 	num_bytes = ALIGN(num_bytes, root->sectorsize);
+ 
+ 	spin_lock(&BTRFS_I(inode)->lock);
+-	nr_extents = (unsigned)div64_u64(num_bytes +
+-					 BTRFS_MAX_EXTENT_SIZE - 1,
+-					 BTRFS_MAX_EXTENT_SIZE);
++	nr_extents = (unsigned)div64_u64(num_bytes + max_extent_size - 1,
++					 max_extent_size);
+ 	BTRFS_I(inode)->outstanding_extents += nr_extents;
+ 
+ 	nr_extents = 0;
+@@ -6006,7 +6021,7 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+ 
+ out_fail:
+ 	spin_lock(&BTRFS_I(inode)->lock);
+-	dropped = drop_outstanding_extent(inode, num_bytes);
++	dropped = drop_outstanding_extent(inode, num_bytes, reserve_type);
+ 	/*
+ 	 * If the inodes csum_bytes is the same as the original
+ 	 * csum_bytes then we know we haven't raced with any free()ers
+@@ -6072,12 +6087,15 @@ out_fail:
+  * btrfs_delalloc_release_metadata - release a metadata reservation for an inode
+  * @inode: the inode to release the reservation for
+  * @num_bytes: the number of bytes we're releasing
++ * @reserve_type: this value must be same to the value passing to
++ * btrfs_delalloc_reserve_metadata().
+  *
+  * This will release the metadata reservation for an inode.  This can be called
+  * once we complete IO for a given set of bytes to release their metadata
+  * reservations.
+  */
+-void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes)
++void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes,
++		enum btrfs_metadata_reserve_type reserve_type)
+ {
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	u64 to_free = 0;
+@@ -6085,7 +6103,7 @@ void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes)
+ 
+ 	num_bytes = ALIGN(num_bytes, root->sectorsize);
+ 	spin_lock(&BTRFS_I(inode)->lock);
+-	dropped = drop_outstanding_extent(inode, num_bytes);
++	dropped = drop_outstanding_extent(inode, num_bytes, reserve_type);
+ 
+ 	if (num_bytes)
+ 		to_free = calc_csum_metadata_size(inode, num_bytes, 0);
+@@ -6109,6 +6127,9 @@ void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes)
+  * @inode: inode we're writing to
+  * @start: start range we are writing to
+  * @len: how long the range we are writing to
++ * @reserve_type: normally reserve_type should be BTRFS_RESERVE_NORMAL, but for
++ * compression path, its max extent size is limited to 128KB, not 128MB, when
++ * reserving metadata, we should set reserve_type to BTRFS_RESERVE_COMPRESS.
+  *
+  * TODO: This function will finally replace old btrfs_delalloc_reserve_space()
+  *
+@@ -6128,14 +6149,15 @@ void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes)
+  * Return 0 for success
+  * Return <0 for error(-ENOSPC or -EQUOT)
+  */
+-int btrfs_delalloc_reserve_space(struct inode *inode, u64 start, u64 len)
++int btrfs_delalloc_reserve_space(struct inode *inode, u64 start, u64 len,
++		enum btrfs_metadata_reserve_type reserve_type)
+ {
+ 	int ret;
+ 
+ 	ret = btrfs_check_data_free_space(inode, start, len);
+ 	if (ret < 0)
+ 		return ret;
+-	ret = btrfs_delalloc_reserve_metadata(inode, len);
++	ret = btrfs_delalloc_reserve_metadata(inode, len, reserve_type);
+ 	if (ret < 0)
+ 		btrfs_free_reserved_data_space(inode, start, len);
+ 	return ret;
+@@ -6146,6 +6168,8 @@ int btrfs_delalloc_reserve_space(struct inode *inode, u64 start, u64 len)
+  * @inode: inode we're releasing space for
+  * @start: start position of the space already reserved
+  * @len: the len of the space already reserved
++ * @reserve_type: this value must be same to the value passing to
++ * btrfs_delalloc_reserve_space().
+  *
+  * This must be matched with a call to btrfs_delalloc_reserve_space.  This is
+  * called in the case that we don't need the metadata AND data reservations
+@@ -6156,9 +6180,10 @@ int btrfs_delalloc_reserve_space(struct inode *inode, u64 start, u64 len)
+  * list if there are no delalloc bytes left.
+  * Also it will handle the qgroup reserved space.
+  */
+-void btrfs_delalloc_release_space(struct inode *inode, u64 start, u64 len)
++void btrfs_delalloc_release_space(struct inode *inode, u64 start, u64 len,
++		enum btrfs_metadata_reserve_type reserve_type)
+ {
+-	btrfs_delalloc_release_metadata(inode, len);
++	btrfs_delalloc_release_metadata(inode, len, reserve_type);
+ 	btrfs_free_reserved_data_space(inode, start, len);
+ }
+ 
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 44fe66b..884da9e 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -605,7 +605,7 @@ static int __clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ 	btrfs_debug_check_extent_io_range(tree, start, end);
+ 
+ 	if (bits & EXTENT_DELALLOC)
+-		bits |= EXTENT_NORESERVE;
++		bits |= EXTENT_NORESERVE | EXTENT_COMPRESS;
+ 
+ 	if (delete)
+ 		bits |= ~EXTENT_CTLBITS;
+@@ -744,6 +744,58 @@ out:
+ 
+ }
+ 
++static void adjust_one_outstanding_extent(struct inode *inode, u64 len)
++{
++	unsigned old_extents, new_extents;
++
++	old_extents = div64_u64(len + SZ_128K - 1, SZ_128K);
++	new_extents = div64_u64(len + BTRFS_MAX_EXTENT_SIZE - 1,
++				BTRFS_MAX_EXTENT_SIZE);
++	if (old_extents <= new_extents)
 +		return;
 +
- 	size = orig->end - orig->start + 1;
- 	if (size > BTRFS_MAX_EXTENT_SIZE) {
- 		u64 num_extents;
-@@ -1632,6 +1635,9 @@ static void btrfs_merge_extent_hook(struct inode *inode,
- 	if (!(other->state & EXTENT_DELALLOC))
++	spin_lock(&BTRFS_I(inode)->lock);
++	BTRFS_I(inode)->outstanding_extents -= old_extents - new_extents;
++	spin_unlock(&BTRFS_I(inode)->lock);
++}
++
++/*
++ * For a extent with EXTENT_COMPRESS flag, if later it does not go through
++ * compress path, we need to adjust the number of outstanding_extents.
++ * It's because for extent with EXTENT_COMPRESS flag, its number of outstanding
++ * extents is calculated by 128KB, so here we need to adjust it.
++ */
++void adjust_outstanding_extents(struct inode *inode,
++				u64 start, u64 end)
++{
++	struct rb_node *node;
++	struct extent_state *state;
++	struct extent_io_tree *tree = &BTRFS_I(inode)->io_tree;
++
++	spin_lock(&tree->lock);
++	node = tree_search(tree, start);
++	if (!node)
++		goto out;
++
++	while (1) {
++		state = rb_entry(node, struct extent_state, rb_node);
++		if (state->start > end)
++			goto out;
++		/*
++		 * The whole range is locked, so we can safely clear
++		 * EXTENT_COMPRESS flag.
++		 */
++		state->state &= ~EXTENT_COMPRESS;
++		adjust_one_outstanding_extent(inode,
++				state->end - state->start + 1);
++		node = rb_next(node);
++		if (!node)
++			break;
++	}
++out:
++	spin_unlock(&tree->lock);
++}
++
+ static void wait_on_state(struct extent_io_tree *tree,
+ 			  struct extent_state *state)
+ 		__releases(tree->lock)
+@@ -1506,6 +1558,7 @@ static noinline u64 find_delalloc_range(struct extent_io_tree *tree,
+ 	u64 cur_start = *start;
+ 	u64 found = 0;
+ 	u64 total_bytes = 0;
++	unsigned pre_state;
+ 
+ 	spin_lock(&tree->lock);
+ 
+@@ -1523,7 +1576,8 @@ static noinline u64 find_delalloc_range(struct extent_io_tree *tree,
+ 	while (1) {
+ 		state = rb_entry(node, struct extent_state, rb_node);
+ 		if (found && (state->start != cur_start ||
+-			      (state->state & EXTENT_BOUNDARY))) {
++			      (state->state & EXTENT_BOUNDARY) ||
++			      (state->state ^ pre_state) & EXTENT_COMPRESS)) {
+ 			goto out;
+ 		}
+ 		if (!(state->state & EXTENT_DELALLOC)) {
+@@ -1539,6 +1593,7 @@ static noinline u64 find_delalloc_range(struct extent_io_tree *tree,
+ 		found++;
+ 		*end = state->end;
+ 		cur_start = state->end + 1;
++		pre_state = state->state;
+ 		node = rb_next(node);
+ 		total_bytes += state->end - state->start + 1;
+ 		if (total_bytes >= max_bytes)
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index 28cd88f..2940d41 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -21,6 +21,7 @@
+ #define EXTENT_NORESERVE	(1U << 15)
+ #define EXTENT_QGROUP_RESERVED	(1U << 16)
+ #define EXTENT_CLEAR_DATA_RESV	(1U << 17)
++#define	EXTENT_COMPRESS		(1U << 18)
+ #define EXTENT_IOBITS		(EXTENT_LOCKED | EXTENT_WRITEBACK)
+ #define EXTENT_CTLBITS		(EXTENT_DO_ACCOUNTING | EXTENT_FIRST_DELALLOC)
+ 
+@@ -225,6 +226,7 @@ int clear_record_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+ int clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ 		     unsigned bits, int wake, int delete,
+ 		     struct extent_state **cached, gfp_t mask);
++void adjust_outstanding_extents(struct inode *inode, u64 start, u64 end);
+ 
+ static inline int unlock_extent(struct extent_io_tree *tree, u64 start, u64 end)
+ {
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index fea31a4..ab387d4 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -484,11 +484,13 @@ static void btrfs_drop_pages(struct page **pages, size_t num_pages)
+  *
+  * this also makes the decision about creating an inline extent vs
+  * doing real data extents, marking pages dirty and delalloc as required.
++ *
++ * if flag is 1, mark a data range that will go through compress path.
+  */
+ int btrfs_dirty_pages(struct btrfs_root *root, struct inode *inode,
+ 			     struct page **pages, size_t num_pages,
+ 			     loff_t pos, size_t write_bytes,
+-			     struct extent_state **cached)
++			     struct extent_state **cached, int flag)
+ {
+ 	int err = 0;
+ 	int i;
+@@ -503,7 +505,7 @@ int btrfs_dirty_pages(struct btrfs_root *root, struct inode *inode,
+ 
+ 	end_of_last_block = start_pos + num_bytes - 1;
+ 	err = btrfs_set_extent_delalloc(inode, start_pos, end_of_last_block,
+-					cached);
++					cached, flag);
+ 	if (err)
+ 		return err;
+ 
+@@ -1496,6 +1498,7 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+ 	bool only_release_metadata = false;
+ 	bool force_page_uptodate = false;
+ 	bool need_unlock;
++	enum btrfs_metadata_reserve_type reserve_type = BTRFS_RESERVE_NORMAL;
+ 
+ 	nrptrs = min(DIV_ROUND_UP(iov_iter_count(i), PAGE_SIZE),
+ 			PAGE_SIZE / (sizeof(struct page *)));
+@@ -1505,6 +1508,9 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+ 	if (!pages)
+ 		return -ENOMEM;
+ 
++	if (inode_need_compress(inode))
++		reserve_type = BTRFS_RESERVE_COMPRESS;
++
+ 	while (iov_iter_count(i) > 0) {
+ 		size_t offset = pos & (PAGE_SIZE - 1);
+ 		size_t sector_offset;
+@@ -1558,7 +1564,8 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+ 			}
+ 		}
+ 
+-		ret = btrfs_delalloc_reserve_metadata(inode, reserve_bytes);
++		ret = btrfs_delalloc_reserve_metadata(inode, reserve_bytes,
++						      reserve_type);
+ 		if (ret) {
+ 			if (!only_release_metadata)
+ 				btrfs_free_reserved_data_space(inode, pos,
+@@ -1641,14 +1648,16 @@ again:
+ 			}
+ 			if (only_release_metadata) {
+ 				btrfs_delalloc_release_metadata(inode,
+-								release_bytes);
++								release_bytes,
++								reserve_type);
+ 			} else {
+ 				u64 __pos;
+ 
+ 				__pos = round_down(pos, root->sectorsize) +
+ 					(dirty_pages << PAGE_SHIFT);
+ 				btrfs_delalloc_release_space(inode, __pos,
+-							     release_bytes);
++							     release_bytes,
++							     reserve_type);
+ 			}
+ 		}
+ 
+@@ -1658,7 +1667,7 @@ again:
+ 		if (copied > 0)
+ 			ret = btrfs_dirty_pages(root, inode, pages,
+ 						dirty_pages, pos, copied,
+-						NULL);
++						NULL, reserve_type);
+ 		if (need_unlock)
+ 			unlock_extent_cached(&BTRFS_I(inode)->io_tree,
+ 					     lockstart, lockend, &cached_state,
+@@ -1699,11 +1708,12 @@ again:
+ 	if (release_bytes) {
+ 		if (only_release_metadata) {
+ 			btrfs_end_write_no_snapshoting(root);
+-			btrfs_delalloc_release_metadata(inode, release_bytes);
++			btrfs_delalloc_release_metadata(inode, release_bytes,
++							reserve_type);
+ 		} else {
+ 			btrfs_delalloc_release_space(inode,
+ 						round_down(pos, root->sectorsize),
+-						release_bytes);
++						release_bytes, reserve_type);
+ 		}
+ 	}
+ 
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index d571bd2..620c853 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -1296,7 +1296,7 @@ static int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
+ 
+ 	/* Everything is written out, now we dirty the pages in the file. */
+ 	ret = btrfs_dirty_pages(root, inode, io_ctl->pages, io_ctl->num_pages,
+-				0, i_size_read(inode), &cached_state);
++				0, i_size_read(inode), &cached_state, 0);
+ 	if (ret)
+ 		goto out_nospc;
+ 
+@@ -3513,6 +3513,7 @@ int btrfs_write_out_ino_cache(struct btrfs_root *root,
+ 	int ret;
+ 	struct btrfs_io_ctl io_ctl;
+ 	bool release_metadata = true;
++	enum btrfs_metadata_reserve_type reserve_type = BTRFS_RESERVE_NORMAL;
+ 
+ 	if (!btrfs_test_opt(root->fs_info, INODE_MAP_CACHE))
+ 		return 0;
+@@ -3533,7 +3534,8 @@ int btrfs_write_out_ino_cache(struct btrfs_root *root,
+ 
+ 	if (ret) {
+ 		if (release_metadata)
+-			btrfs_delalloc_release_metadata(inode, inode->i_size);
++			btrfs_delalloc_release_metadata(inode, inode->i_size,
++							reserve_type);
+ #ifdef DEBUG
+ 		btrfs_err(root->fs_info,
+ 			"failed to write free ino cache for root %llu",
+diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
+index 359ee86..eb21f67 100644
+--- a/fs/btrfs/inode-map.c
++++ b/fs/btrfs/inode-map.c
+@@ -401,6 +401,7 @@ int btrfs_save_ino_cache(struct btrfs_root *root,
+ 	int ret;
+ 	int prealloc;
+ 	bool retry = false;
++	enum btrfs_metadata_reserve_type reserve_type = BTRFS_RESERVE_NORMAL;
+ 
+ 	/* only fs tree and subvol/snap needs ino cache */
+ 	if (root->root_key.objectid != BTRFS_FS_TREE_OBJECTID &&
+@@ -488,14 +489,14 @@ again:
+ 	/* Just to make sure we have enough space */
+ 	prealloc += 8 * PAGE_SIZE;
+ 
+-	ret = btrfs_delalloc_reserve_space(inode, 0, prealloc);
++	ret = btrfs_delalloc_reserve_space(inode, 0, prealloc, reserve_type);
+ 	if (ret)
+ 		goto out_put;
+ 
+ 	ret = btrfs_prealloc_file_range_trans(inode, trans, 0, 0, prealloc,
+ 					      prealloc, prealloc, &alloc_hint);
+ 	if (ret) {
+-		btrfs_delalloc_release_metadata(inode, prealloc);
++		btrfs_delalloc_release_metadata(inode, prealloc, reserve_type);
+ 		goto out_put;
+ 	}
+ 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index a7193b1..ea15520 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -315,7 +315,7 @@ static noinline int cow_file_range_inline(struct btrfs_root *root,
+ 	}
+ 
+ 	set_bit(BTRFS_INODE_NEEDS_FULL_SYNC, &BTRFS_I(inode)->runtime_flags);
+-	btrfs_delalloc_release_metadata(inode, end + 1 - start);
++	btrfs_delalloc_release_metadata(inode, end + 1 - start, 0);
+ 	btrfs_drop_extent_cache(inode, start, aligned_end - 1, 0);
+ out:
+ 	/*
+@@ -371,7 +371,7 @@ static noinline int add_async_extent(struct async_cow *cow,
+ 	return 0;
+ }
+ 
+-static inline int inode_need_compress(struct inode *inode)
++int inode_need_compress(struct inode *inode)
+ {
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 
+@@ -709,6 +709,16 @@ retry:
+ 					 async_extent->start +
+ 					 async_extent->ram_size - 1);
+ 
++			/*
++			 * We use 128KB as max extent size to calculate number
++			 * of outstanding extents for this extent before, now
++			 * it'll go throuth uncompressed IO, we need to use
++			 * 128MB as max extent size to re-calculate number of
++			 * outstanding extents for this extent.
++			 */
++			adjust_outstanding_extents(inode, async_extent->start,
++						   async_extent->start +
++						   async_extent->ram_size - 1);
+ 			/* allocate blocks */
+ 			ret = cow_file_range(inode, async_cow->locked_page,
+ 					     async_extent->start,
+@@ -1562,14 +1572,24 @@ static int run_delalloc_range(struct inode *inode, struct page *locked_page,
+ {
+ 	int ret;
+ 	int force_cow = need_force_cow(inode, start, end);
++	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
++	int need_compress;
+ 
++	need_compress = test_range_bit(io_tree, start, end,
++				       EXTENT_COMPRESS, 1, NULL);
+ 	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW && !force_cow) {
++		if (need_compress)
++			adjust_outstanding_extents(inode, start, end);
++
+ 		ret = run_delalloc_nocow(inode, locked_page, start, end,
+ 					 page_started, 1, nr_written);
+ 	} else if (BTRFS_I(inode)->flags & BTRFS_INODE_PREALLOC && !force_cow) {
++		if (need_compress)
++			adjust_outstanding_extents(inode, start, end);
++
+ 		ret = run_delalloc_nocow(inode, locked_page, start, end,
+ 					 page_started, 0, nr_written);
+-	} else if (!inode_need_compress(inode)) {
++	} else if (!need_compress) {
+ 		ret = cow_file_range(inode, locked_page, start, end, end,
+ 				      page_started, nr_written, 1, NULL);
+ 	} else {
+@@ -1585,6 +1605,7 @@ static void btrfs_split_extent_hook(struct inode *inode,
+ 				    struct extent_state *orig, u64 split)
+ {
+ 	u64 size;
++	u64 max_extent_size = BTRFS_MAX_EXTENT_SIZE;
+ 
+ 	/* not delalloc, ignore it */
+ 	if (!(orig->state & EXTENT_DELALLOC))
+@@ -1593,8 +1614,11 @@ static void btrfs_split_extent_hook(struct inode *inode,
+ 	if (btrfs_is_free_space_inode(inode))
  		return;
  
-+	if (btrfs_is_free_space_inode(inode))
-+		return;
++	if (orig->state & EXTENT_COMPRESS)
++		max_extent_size = SZ_128K;
++
+ 	size = orig->end - orig->start + 1;
+-	if (size > BTRFS_MAX_EXTENT_SIZE) {
++	if (size > max_extent_size) {
+ 		u64 num_extents;
+ 		u64 new_size;
+ 
+@@ -1603,13 +1627,13 @@ static void btrfs_split_extent_hook(struct inode *inode,
+ 		 * applies here, just in reverse.
+ 		 */
+ 		new_size = orig->end - split + 1;
+-		num_extents = div64_u64(new_size + BTRFS_MAX_EXTENT_SIZE - 1,
+-					BTRFS_MAX_EXTENT_SIZE);
++		num_extents = div64_u64(new_size + max_extent_size - 1,
++					max_extent_size);
+ 		new_size = split - orig->start;
+-		num_extents += div64_u64(new_size + BTRFS_MAX_EXTENT_SIZE - 1,
+-					BTRFS_MAX_EXTENT_SIZE);
+-		if (div64_u64(size + BTRFS_MAX_EXTENT_SIZE - 1,
+-			      BTRFS_MAX_EXTENT_SIZE) >= num_extents)
++		num_extents += div64_u64(new_size + max_extent_size - 1,
++					 max_extent_size);
++		if (div64_u64(size + max_extent_size - 1,
++			      max_extent_size) >= num_extents)
+ 			return;
+ 	}
+ 
+@@ -1630,6 +1654,7 @@ static void btrfs_merge_extent_hook(struct inode *inode,
+ {
+ 	u64 new_size, old_size;
+ 	u64 num_extents;
++	u64 max_extent_size = BTRFS_MAX_EXTENT_SIZE;
+ 
+ 	/* not delalloc, ignore it */
+ 	if (!(other->state & EXTENT_DELALLOC))
+@@ -1638,13 +1663,16 @@ static void btrfs_merge_extent_hook(struct inode *inode,
+ 	if (btrfs_is_free_space_inode(inode))
+ 		return;
+ 
++	if (other->state & EXTENT_COMPRESS)
++		max_extent_size = SZ_128K;
 +
  	if (new->start > other->start)
  		new_size = new->end - other->start + 1;
  	else
-@@ -1727,7 +1733,6 @@ static void btrfs_del_delalloc_inode(struct btrfs_root *root,
- static void btrfs_set_bit_hook(struct inode *inode,
- 			       struct extent_state *state, unsigned *bits)
- {
--
- 	if ((*bits & EXTENT_DEFRAG) && !(*bits & EXTENT_DELALLOC))
- 		WARN_ON(1);
- 	/*
-@@ -1738,13 +1743,16 @@ static void btrfs_set_bit_hook(struct inode *inode,
+ 		new_size = other->end - new->start + 1;
+ 
+ 	/* we're not bigger than the max, unreserve the space and go */
+-	if (new_size <= BTRFS_MAX_EXTENT_SIZE) {
++	if (new_size <= max_extent_size) {
+ 		spin_lock(&BTRFS_I(inode)->lock);
+ 		BTRFS_I(inode)->outstanding_extents--;
+ 		spin_unlock(&BTRFS_I(inode)->lock);
+@@ -1670,14 +1698,14 @@ static void btrfs_merge_extent_hook(struct inode *inode,
+ 	 * this case.
+ 	 */
+ 	old_size = other->end - other->start + 1;
+-	num_extents = div64_u64(old_size + BTRFS_MAX_EXTENT_SIZE - 1,
+-				BTRFS_MAX_EXTENT_SIZE);
++	num_extents = div64_u64(old_size + max_extent_size - 1,
++				max_extent_size);
+ 	old_size = new->end - new->start + 1;
+-	num_extents += div64_u64(old_size + BTRFS_MAX_EXTENT_SIZE - 1,
+-				 BTRFS_MAX_EXTENT_SIZE);
++	num_extents += div64_u64(old_size + max_extent_size - 1,
++				 max_extent_size);
+ 
+-	if (div64_u64(new_size + BTRFS_MAX_EXTENT_SIZE - 1,
+-		      BTRFS_MAX_EXTENT_SIZE) >= num_extents)
++	if (div64_u64(new_size + max_extent_size - 1,
++		      max_extent_size) >= num_extents)
+ 		return;
+ 
+ 	spin_lock(&BTRFS_I(inode)->lock);
+@@ -1743,10 +1771,15 @@ static void btrfs_set_bit_hook(struct inode *inode,
  	if (!(state->state & EXTENT_DELALLOC) && (*bits & EXTENT_DELALLOC)) {
  		struct btrfs_root *root = BTRFS_I(inode)->root;
  		u64 len = state->end + 1 - state->start;
-+		u64 num_extents = div64_u64(len + BTRFS_MAX_EXTENT_SIZE - 1,
-+					    BTRFS_MAX_EXTENT_SIZE);
+-		u64 num_extents = div64_u64(len + BTRFS_MAX_EXTENT_SIZE - 1,
+-					    BTRFS_MAX_EXTENT_SIZE);
++		u64 max_extent_size = BTRFS_MAX_EXTENT_SIZE;
++		u64 num_extents;
  		bool do_list = !btrfs_is_free_space_inode(inode);
  
--		if (*bits & EXTENT_FIRST_DELALLOC) {
-+		if (*bits & EXTENT_FIRST_DELALLOC)
- 			*bits &= ~EXTENT_FIRST_DELALLOC;
--		} else {
++		if (*bits & EXTENT_COMPRESS)
++			max_extent_size = SZ_128K;
++		num_extents = div64_u64(len + max_extent_size - 1,
++					max_extent_size);
 +
-+		if (do_list) {
- 			spin_lock(&BTRFS_I(inode)->lock);
--			BTRFS_I(inode)->outstanding_extents++;
-+			BTRFS_I(inode)->outstanding_extents += num_extents;
- 			spin_unlock(&BTRFS_I(inode)->lock);
- 		}
+ 		if (*bits & EXTENT_FIRST_DELALLOC)
+ 			*bits &= ~EXTENT_FIRST_DELALLOC;
  
-@@ -1792,7 +1800,7 @@ static void btrfs_clear_bit_hook(struct inode *inode,
+@@ -1781,8 +1814,9 @@ static void btrfs_clear_bit_hook(struct inode *inode,
+ 				 unsigned *bits)
+ {
+ 	u64 len = state->end + 1 - state->start;
+-	u64 num_extents = div64_u64(len + BTRFS_MAX_EXTENT_SIZE -1,
+-				    BTRFS_MAX_EXTENT_SIZE);
++	u64 max_extent_size = BTRFS_MAX_EXTENT_SIZE;
++	u64 num_extents;
++	enum btrfs_metadata_reserve_type reserve_type = BTRFS_RESERVE_NORMAL;
  
+ 	spin_lock(&BTRFS_I(inode)->lock);
+ 	if ((state->state & EXTENT_DEFRAG) && (*bits & EXTENT_DEFRAG))
+@@ -1798,6 +1832,14 @@ static void btrfs_clear_bit_hook(struct inode *inode,
+ 		struct btrfs_root *root = BTRFS_I(inode)->root;
+ 		bool do_list = !btrfs_is_free_space_inode(inode);
+ 
++		if (state->state & EXTENT_COMPRESS) {
++			max_extent_size = SZ_128K;
++			reserve_type = BTRFS_RESERVE_COMPRESS;
++		}
++
++		num_extents = div64_u64(len + max_extent_size - 1,
++					max_extent_size);
++
  		if (*bits & EXTENT_FIRST_DELALLOC) {
  			*bits &= ~EXTENT_FIRST_DELALLOC;
--		} else if (!(*bits & EXTENT_DO_ACCOUNTING)) {
-+		} else if (!(*bits & EXTENT_DO_ACCOUNTING) && do_list) {
- 			spin_lock(&BTRFS_I(inode)->lock);
- 			BTRFS_I(inode)->outstanding_extents -= num_extents;
- 			spin_unlock(&BTRFS_I(inode)->lock);
-@@ -1990,9 +1998,52 @@ static noinline int add_pending_csums(struct btrfs_trans_handle *trans,
- int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
- 			      struct extent_state **cached_state)
- {
-+	int ret;
-+	u64 num_extents = div64_u64(end - start + BTRFS_MAX_EXTENT_SIZE,
-+				    BTRFS_MAX_EXTENT_SIZE);
-+
-+	WARN_ON((end & (PAGE_SIZE - 1)) == 0);
-+	ret = set_extent_delalloc(&BTRFS_I(inode)->io_tree, start, end,
-+				  cached_state);
-+
-+	/*
-+	 * btrfs_delalloc_reserve_metadata() will first add number of
-+	 * outstanding extents according to data length, which is inaccurate
-+	 * for case like dirtying already dirty pages.
-+	 * so here we will decrease such inaccurate numbers, to make
-+	 * outstanding_extents only rely on the correct values added by
-+	 * set_bit_hook()
-+	 *
-+	 * Also, we skipped the metadata space reserve for space cache inodes,
-+	 * so don't modify the outstanding_extents value.
-+	 */
-+	if (ret == 0 && !btrfs_is_free_space_inode(inode)) {
-+		spin_lock(&BTRFS_I(inode)->lock);
-+		BTRFS_I(inode)->outstanding_extents -= num_extents;
-+		spin_unlock(&BTRFS_I(inode)->lock);
-+	}
-+
-+	return ret;
-+}
-+
-+int btrfs_set_extent_defrag(struct inode *inode, u64 start, u64 end,
-+			    struct extent_state **cached_state)
-+{
-+	int ret;
-+	u64 num_extents = div64_u64(end - start + BTRFS_MAX_EXTENT_SIZE,
-+				    BTRFS_MAX_EXTENT_SIZE);
-+
- 	WARN_ON((end & (PAGE_SIZE - 1)) == 0);
--	return set_extent_delalloc(&BTRFS_I(inode)->io_tree, start, end,
--				   cached_state);
-+	ret = set_extent_defrag(&BTRFS_I(inode)->io_tree, start, end,
-+				cached_state);
-+
-+	if (ret == 0 && !btrfs_is_free_space_inode(inode)) {
-+		spin_lock(&BTRFS_I(inode)->lock);
-+		BTRFS_I(inode)->outstanding_extents -= num_extents;
-+		spin_unlock(&BTRFS_I(inode)->lock);
-+	}
-+
-+	return ret;
+ 		} else if (!(*bits & EXTENT_DO_ACCOUNTING) && do_list) {
+@@ -1813,7 +1855,8 @@ static void btrfs_clear_bit_hook(struct inode *inode,
+ 		 */
+ 		if (*bits & EXTENT_DO_ACCOUNTING &&
+ 		    root != root->fs_info->tree_root)
+-			btrfs_delalloc_release_metadata(inode, len);
++			btrfs_delalloc_release_metadata(inode, len,
++							reserve_type);
+ 
+ 		/* For sanity tests. */
+ 		if (btrfs_is_testing(root->fs_info))
+@@ -1996,15 +2039,28 @@ static noinline int add_pending_csums(struct btrfs_trans_handle *trans,
  }
  
- /* see btrfs_writepage_start_hook for details on why this is required */
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 7fd939b..6a19bea 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1235,10 +1235,8 @@ again:
- 				(page_cnt - i_done) << PAGE_SHIFT);
+ int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
+-			      struct extent_state **cached_state)
++			      struct extent_state **cached_state, int flag)
+ {
+ 	int ret;
+-	u64 num_extents = div64_u64(end - start + BTRFS_MAX_EXTENT_SIZE,
+-				    BTRFS_MAX_EXTENT_SIZE);
++	unsigned bits;
++	u64 max_extent_size = BTRFS_MAX_EXTENT_SIZE;
++	u64 num_extents;
++
++	if (flag == 1)
++		max_extent_size = SZ_128K;
++
++	num_extents = div64_u64(end - start + max_extent_size,
++				    max_extent_size);
++
++	/* compression path */
++	if (flag == 1)
++		bits = EXTENT_DELALLOC | EXTENT_COMPRESS | EXTENT_UPTODATE;
++	else
++		bits = EXTENT_DELALLOC | EXTENT_UPTODATE;
+ 
+ 	WARN_ON((end & (PAGE_SIZE - 1)) == 0);
+-	ret = set_extent_delalloc(&BTRFS_I(inode)->io_tree, start, end,
+-				  cached_state);
++	ret = set_extent_bit(&BTRFS_I(inode)->io_tree, start, end,
++			     bits, NULL, cached_state, GFP_NOFS);
+ 
+ 	/*
+ 	 * btrfs_delalloc_reserve_metadata() will first add number of
+@@ -2027,16 +2083,28 @@ int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
+ }
+ 
+ int btrfs_set_extent_defrag(struct inode *inode, u64 start, u64 end,
+-			    struct extent_state **cached_state)
++			    struct extent_state **cached_state, int flag)
+ {
+ 	int ret;
+-	u64 num_extents = div64_u64(end - start + BTRFS_MAX_EXTENT_SIZE,
+-				    BTRFS_MAX_EXTENT_SIZE);
++	u64 max_extent_size = BTRFS_MAX_EXTENT_SIZE;
++	u64 num_extents;
++	unsigned bits;
++
++	if (flag == 1)
++		max_extent_size = SZ_128K;
++
++	num_extents = div64_u64(end - start + max_extent_size,
++			    max_extent_size);
+ 
+ 	WARN_ON((end & (PAGE_SIZE - 1)) == 0);
+-	ret = set_extent_defrag(&BTRFS_I(inode)->io_tree, start, end,
+-				cached_state);
++	if (flag == 1)
++		bits = EXTENT_DELALLOC | EXTENT_UPTODATE | EXTENT_DEFRAG |
++				EXTENT_COMPRESS;
++	else
++		bits = EXTENT_DELALLOC | EXTENT_UPTODATE | EXTENT_DEFRAG;
+ 
++	ret = set_extent_bit(&BTRFS_I(inode)->io_tree, start, end,
++			     bits, NULL, cached_state, GFP_NOFS);
+ 	if (ret == 0 && !btrfs_is_free_space_inode(inode)) {
+ 		spin_lock(&BTRFS_I(inode)->lock);
+ 		BTRFS_I(inode)->outstanding_extents -= num_extents;
+@@ -2062,6 +2130,7 @@ static void btrfs_writepage_fixup_worker(struct btrfs_work *work)
+ 	u64 page_start;
+ 	u64 page_end;
+ 	int ret;
++	enum btrfs_metadata_reserve_type reserve_type = BTRFS_RESERVE_NORMAL;
+ 
+ 	fixup = container_of(work, struct btrfs_writepage_fixup, work);
+ 	page = fixup->page;
+@@ -2094,8 +2163,10 @@ again:
+ 		goto again;
  	}
  
--
--	set_extent_defrag(&BTRFS_I(inode)->io_tree, page_start, page_end - 1,
--			  &cached_state);
--
-+	btrfs_set_extent_defrag(inode, page_start,
-+				page_end - 1, &cached_state);
++	if (inode_need_compress(inode))
++		reserve_type = BTRFS_RESERVE_COMPRESS;
+ 	ret = btrfs_delalloc_reserve_space(inode, page_start,
+-					   PAGE_SIZE);
++					   PAGE_SIZE, reserve_type);
+ 	if (ret) {
+ 		mapping_set_error(page->mapping, ret);
+ 		end_extent_writepage(page, ret, page_start, page_end);
+@@ -2103,7 +2174,8 @@ again:
+ 		goto out;
+ 	 }
+ 
+-	btrfs_set_extent_delalloc(inode, page_start, page_end, &cached_state);
++	btrfs_set_extent_delalloc(inode, page_start, page_end, &cached_state,
++				  reserve_type);
+ 	ClearPageChecked(page);
+ 	set_page_dirty(page);
+ out:
+@@ -2913,6 +2985,7 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
+ 	u64 logical_len = ordered_extent->len;
+ 	bool nolock;
+ 	bool truncated = false;
++	enum btrfs_metadata_reserve_type reserve_type = BTRFS_RESERVE_NORMAL;
+ 
+ 	nolock = btrfs_is_free_space_inode(inode);
+ 
+@@ -2990,8 +3063,11 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
+ 
+ 	trans->block_rsv = &root->fs_info->delalloc_block_rsv;
+ 
+-	if (test_bit(BTRFS_ORDERED_COMPRESSED, &ordered_extent->flags))
++	if (test_bit(BTRFS_ORDERED_COMPRESSED, &ordered_extent->flags)) {
+ 		compress_type = ordered_extent->compress_type;
++		reserve_type = BTRFS_RESERVE_COMPRESS;
++	}
++
+ 	if (test_bit(BTRFS_ORDERED_PREALLOC, &ordered_extent->flags)) {
+ 		BUG_ON(compress_type);
+ 		ret = btrfs_mark_extent_written(trans, inode,
+@@ -3036,7 +3112,8 @@ out_unlock:
+ 			     ordered_extent->len - 1, &cached_state, GFP_NOFS);
+ out:
+ 	if (root != root->fs_info->tree_root)
+-		btrfs_delalloc_release_metadata(inode, ordered_extent->len);
++		btrfs_delalloc_release_metadata(inode, ordered_extent->len,
++						reserve_type);
+ 	if (trans)
+ 		btrfs_end_transaction(trans, root);
+ 
+@@ -4750,13 +4827,17 @@ int btrfs_truncate_block(struct inode *inode, loff_t from, loff_t len,
+ 	int ret = 0;
+ 	u64 block_start;
+ 	u64 block_end;
++	enum btrfs_metadata_reserve_type reserve_type = BTRFS_RESERVE_NORMAL;
++
++	if (inode_need_compress(inode))
++		reserve_type = BTRFS_RESERVE_COMPRESS;
+ 
+ 	if ((offset & (blocksize - 1)) == 0 &&
+ 	    (!len || ((len & (blocksize - 1)) == 0)))
+ 		goto out;
+ 
+ 	ret = btrfs_delalloc_reserve_space(inode,
+-			round_down(from, blocksize), blocksize);
++			round_down(from, blocksize), blocksize, reserve_type);
+ 	if (ret)
+ 		goto out;
+ 
+@@ -4765,7 +4846,7 @@ again:
+ 	if (!page) {
+ 		btrfs_delalloc_release_space(inode,
+ 				round_down(from, blocksize),
+-				blocksize);
++				blocksize, reserve_type);
+ 		ret = -ENOMEM;
+ 		goto out;
+ 	}
+@@ -4808,7 +4889,7 @@ again:
+ 			  0, 0, &cached_state, GFP_NOFS);
+ 
+ 	ret = btrfs_set_extent_delalloc(inode, block_start, block_end,
+-					&cached_state);
++					&cached_state, reserve_type);
+ 	if (ret) {
+ 		unlock_extent_cached(io_tree, block_start, block_end,
+ 				     &cached_state, GFP_NOFS);
+@@ -4836,7 +4917,7 @@ again:
+ out_unlock:
+ 	if (ret)
+ 		btrfs_delalloc_release_space(inode, block_start,
+-					     blocksize);
++					     blocksize, reserve_type);
+ 	unlock_page(page);
+ 	put_page(page);
+ out:
+@@ -8728,7 +8809,8 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
+ 			inode_unlock(inode);
+ 			relock = true;
+ 		}
+-		ret = btrfs_delalloc_reserve_space(inode, offset, count);
++		ret = btrfs_delalloc_reserve_space(inode, offset, count,
++						   BTRFS_RESERVE_NORMAL);
+ 		if (ret)
+ 			goto out;
+ 		dio_data.outstanding_extents = div64_u64(count +
+@@ -8760,7 +8842,7 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
+ 		if (ret < 0 && ret != -EIOCBQUEUED) {
+ 			if (dio_data.reserve)
+ 				btrfs_delalloc_release_space(inode, offset,
+-							     dio_data.reserve);
++				     dio_data.reserve, BTRFS_RESERVE_NORMAL);
+ 			/*
+ 			 * On error we might have left some ordered extents
+ 			 * without submitting corresponding bios for them, so
+@@ -8776,7 +8858,7 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
+ 					0);
+ 		} else if (ret >= 0 && (size_t)ret < count)
+ 			btrfs_delalloc_release_space(inode, offset,
+-						     count - (size_t)ret);
++				     count - (size_t)ret, BTRFS_RESERVE_NORMAL);
+ 	}
+ out:
+ 	if (wakeup)
+@@ -9019,6 +9101,7 @@ int btrfs_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
+ 	u64 page_start;
+ 	u64 page_end;
+ 	u64 end;
++	enum btrfs_metadata_reserve_type reserve_type = BTRFS_RESERVE_NORMAL;
+ 
+ 	reserved_space = PAGE_SIZE;
+ 
+@@ -9027,6 +9110,8 @@ int btrfs_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
+ 	page_end = page_start + PAGE_SIZE - 1;
+ 	end = page_end;
+ 
++	if (inode_need_compress(inode))
++		reserve_type = BTRFS_RESERVE_COMPRESS;
+ 	/*
+ 	 * Reserving delalloc space after obtaining the page lock can lead to
+ 	 * deadlock. For example, if a dirty page is locked by this function
+@@ -9036,7 +9121,7 @@ int btrfs_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
+ 	 * being processed by btrfs_page_mkwrite() function.
+ 	 */
+ 	ret = btrfs_delalloc_reserve_space(inode, page_start,
+-					   reserved_space);
++					   reserved_space, reserve_type);
+ 	if (!ret) {
+ 		ret = file_update_time(vma->vm_file);
+ 		reserved = 1;
+@@ -9088,7 +9173,8 @@ again:
+ 			BTRFS_I(inode)->outstanding_extents++;
+ 			spin_unlock(&BTRFS_I(inode)->lock);
+ 			btrfs_delalloc_release_space(inode, page_start,
+-						PAGE_SIZE - reserved_space);
++						PAGE_SIZE - reserved_space,
++						reserve_type);
+ 		}
+ 	}
+ 
+@@ -9105,7 +9191,7 @@ again:
+ 			  0, 0, &cached_state, GFP_NOFS);
+ 
+ 	ret = btrfs_set_extent_delalloc(inode, page_start, end,
+-					&cached_state);
++					&cached_state, reserve_type);
+ 	if (ret) {
+ 		unlock_extent_cached(io_tree, page_start, page_end,
+ 				     &cached_state, GFP_NOFS);
+@@ -9143,7 +9229,8 @@ out_unlock:
+ 	}
+ 	unlock_page(page);
+ out:
+-	btrfs_delalloc_release_space(inode, page_start, reserved_space);
++	btrfs_delalloc_release_space(inode, page_start, reserved_space,
++				     reserve_type);
+ out_noreserve:
+ 	sb_end_pagefault(inode->i_sb);
+ 	return ret;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 6a19bea..81912e7 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1132,6 +1132,7 @@ static int cluster_pages_for_defrag(struct inode *inode,
+ 	struct extent_state *cached_state = NULL;
+ 	struct extent_io_tree *tree;
+ 	gfp_t mask = btrfs_alloc_write_mask(inode->i_mapping);
++	enum btrfs_metadata_reserve_type reserve_type = BTRFS_RESERVE_NORMAL;
+ 
+ 	file_end = (isize - 1) >> PAGE_SHIFT;
+ 	if (!isize || start_index > file_end)
+@@ -1139,9 +1140,11 @@ static int cluster_pages_for_defrag(struct inode *inode,
+ 
+ 	page_cnt = min_t(u64, (u64)num_pages, (u64)file_end - start_index + 1);
+ 
++	if (inode_need_compress(inode))
++		reserve_type = BTRFS_RESERVE_COMPRESS;
+ 	ret = btrfs_delalloc_reserve_space(inode,
+ 			start_index << PAGE_SHIFT,
+-			page_cnt << PAGE_SHIFT);
++			page_cnt << PAGE_SHIFT, reserve_type);
+ 	if (ret)
+ 		return ret;
+ 	i_done = 0;
+@@ -1232,11 +1235,12 @@ again:
+ 		spin_unlock(&BTRFS_I(inode)->lock);
+ 		btrfs_delalloc_release_space(inode,
+ 				start_index << PAGE_SHIFT,
+-				(page_cnt - i_done) << PAGE_SHIFT);
++				(page_cnt - i_done) << PAGE_SHIFT,
++				reserve_type);
+ 	}
+ 
+ 	btrfs_set_extent_defrag(inode, page_start,
+-				page_end - 1, &cached_state);
++				page_end - 1, &cached_state, reserve_type);
  	unlock_extent_cached(&BTRFS_I(inode)->io_tree,
  			     page_start, page_end - 1, &cached_state,
  			     GFP_NOFS);
+@@ -1257,7 +1261,7 @@ out:
+ 	}
+ 	btrfs_delalloc_release_space(inode,
+ 			start_index << PAGE_SHIFT,
+-			page_cnt << PAGE_SHIFT);
++			page_cnt << PAGE_SHIFT, reserve_type);
+ 	return ret;
+ 
+ }
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index c0c13dc..5c1f1cb 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -3128,10 +3128,14 @@ static int relocate_file_extent_cluster(struct inode *inode,
+ 	gfp_t mask = btrfs_alloc_write_mask(inode->i_mapping);
+ 	int nr = 0;
+ 	int ret = 0;
++	enum btrfs_metadata_reserve_type reserve_type = BTRFS_RESERVE_NORMAL;
+ 
+ 	if (!cluster->nr)
+ 		return 0;
+ 
++	if (inode_need_compress(inode))
++		reserve_type = BTRFS_RESERVE_COMPRESS;
++
+ 	ra = kzalloc(sizeof(*ra), GFP_NOFS);
+ 	if (!ra)
+ 		return -ENOMEM;
+@@ -3150,7 +3154,8 @@ static int relocate_file_extent_cluster(struct inode *inode,
+ 	index = (cluster->start - offset) >> PAGE_SHIFT;
+ 	last_index = (cluster->end - offset) >> PAGE_SHIFT;
+ 	while (index <= last_index) {
+-		ret = btrfs_delalloc_reserve_metadata(inode, PAGE_SIZE);
++		ret = btrfs_delalloc_reserve_metadata(inode, PAGE_SIZE,
++						      reserve_type);
+ 		if (ret)
+ 			goto out;
+ 
+@@ -3163,7 +3168,7 @@ static int relocate_file_extent_cluster(struct inode *inode,
+ 						   mask);
+ 			if (!page) {
+ 				btrfs_delalloc_release_metadata(inode,
+-							PAGE_SIZE);
++						PAGE_SIZE, reserve_type);
+ 				ret = -ENOMEM;
+ 				goto out;
+ 			}
+@@ -3182,7 +3187,7 @@ static int relocate_file_extent_cluster(struct inode *inode,
+ 				unlock_page(page);
+ 				put_page(page);
+ 				btrfs_delalloc_release_metadata(inode,
+-							PAGE_SIZE);
++						PAGE_SIZE, reserve_type);
+ 				ret = -EIO;
+ 				goto out;
+ 			}
+@@ -3203,7 +3208,8 @@ static int relocate_file_extent_cluster(struct inode *inode,
+ 			nr++;
+ 		}
+ 
+-		btrfs_set_extent_delalloc(inode, page_start, page_end, NULL);
++		btrfs_set_extent_delalloc(inode, page_start, page_end, NULL,
++					  reserve_type);
+ 		set_page_dirty(page);
+ 
+ 		unlock_extent(&BTRFS_I(inode)->io_tree,
+diff --git a/fs/btrfs/tests/inode-tests.c b/fs/btrfs/tests/inode-tests.c
+index 9f72aed..9a1a01d 100644
+--- a/fs/btrfs/tests/inode-tests.c
++++ b/fs/btrfs/tests/inode-tests.c
+@@ -943,6 +943,7 @@ static int test_extent_accounting(u32 sectorsize, u32 nodesize)
+ 	struct inode *inode = NULL;
+ 	struct btrfs_root *root = NULL;
+ 	int ret = -ENOMEM;
++	enum btrfs_metadata_reserve_type reserve_type = BTRFS_RESERVE_NORMAL;
+ 
+ 	inode = btrfs_new_test_inode();
+ 	if (!inode) {
+@@ -968,7 +969,7 @@ static int test_extent_accounting(u32 sectorsize, u32 nodesize)
+ 	/* [BTRFS_MAX_EXTENT_SIZE] */
+ 	BTRFS_I(inode)->outstanding_extents++;
+ 	ret = btrfs_set_extent_delalloc(inode, 0, BTRFS_MAX_EXTENT_SIZE - 1,
+-					NULL);
++					NULL, reserve_type);
+ 	if (ret) {
+ 		test_msg("btrfs_set_extent_delalloc returned %d\n", ret);
+ 		goto out;
+@@ -984,7 +985,7 @@ static int test_extent_accounting(u32 sectorsize, u32 nodesize)
+ 	BTRFS_I(inode)->outstanding_extents++;
+ 	ret = btrfs_set_extent_delalloc(inode, BTRFS_MAX_EXTENT_SIZE,
+ 					BTRFS_MAX_EXTENT_SIZE + sectorsize - 1,
+-					NULL);
++					NULL, reserve_type);
+ 	if (ret) {
+ 		test_msg("btrfs_set_extent_delalloc returned %d\n", ret);
+ 		goto out;
+@@ -1019,7 +1020,7 @@ static int test_extent_accounting(u32 sectorsize, u32 nodesize)
+ 	ret = btrfs_set_extent_delalloc(inode, BTRFS_MAX_EXTENT_SIZE >> 1,
+ 					(BTRFS_MAX_EXTENT_SIZE >> 1)
+ 					+ sectorsize - 1,
+-					NULL);
++					NULL, reserve_type);
+ 	if (ret) {
+ 		test_msg("btrfs_set_extent_delalloc returned %d\n", ret);
+ 		goto out;
+@@ -1042,7 +1043,7 @@ static int test_extent_accounting(u32 sectorsize, u32 nodesize)
+ 	ret = btrfs_set_extent_delalloc(inode,
+ 			BTRFS_MAX_EXTENT_SIZE + 2 * sectorsize,
+ 			(BTRFS_MAX_EXTENT_SIZE << 1) + 3 * sectorsize - 1,
+-			NULL);
++			NULL, reserve_type);
+ 	if (ret) {
+ 		test_msg("btrfs_set_extent_delalloc returned %d\n", ret);
+ 		goto out;
+@@ -1060,7 +1061,8 @@ static int test_extent_accounting(u32 sectorsize, u32 nodesize)
+ 	BTRFS_I(inode)->outstanding_extents++;
+ 	ret = btrfs_set_extent_delalloc(inode,
+ 			BTRFS_MAX_EXTENT_SIZE + sectorsize,
+-			BTRFS_MAX_EXTENT_SIZE + 2 * sectorsize - 1, NULL);
++			BTRFS_MAX_EXTENT_SIZE + 2 * sectorsize - 1,
++			NULL, reserve_type);
+ 	if (ret) {
+ 		test_msg("btrfs_set_extent_delalloc returned %d\n", ret);
+ 		goto out;
+@@ -1097,7 +1099,8 @@ static int test_extent_accounting(u32 sectorsize, u32 nodesize)
+ 	BTRFS_I(inode)->outstanding_extents++;
+ 	ret = btrfs_set_extent_delalloc(inode,
+ 			BTRFS_MAX_EXTENT_SIZE + sectorsize,
+-			BTRFS_MAX_EXTENT_SIZE + 2 * sectorsize - 1, NULL);
++			BTRFS_MAX_EXTENT_SIZE + 2 * sectorsize - 1,
++			NULL, reserve_type);
+ 	if (ret) {
+ 		test_msg("btrfs_set_extent_delalloc returned %d\n", ret);
+ 		goto out;
 -- 
 2.9.0
 

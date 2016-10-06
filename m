@@ -1,52 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:40796 "EHLO mx1.redhat.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S934254AbcJMRhR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Oct 2016 13:37:17 -0400
-Received: from int-mx10.intmail.prod.int.phx2.redhat.com (int-mx10.intmail.prod.int.phx2.redhat.com [10.5.11.23])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by mx1.redhat.com (Postfix) with ESMTPS id 4522980086
-        for <linux-btrfs@vger.kernel.org>; Thu, 13 Oct 2016 17:36:15 +0000 (UTC)
-Received: from [IPv6:::1] (ovpn03.gateway.prod.ext.phx2.redhat.com [10.5.9.3])
-        by int-mx10.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id u9DHaC09023909
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-        for <linux-btrfs@vger.kernel.org>; Thu, 13 Oct 2016 13:36:14 -0400
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-From: Eric Sandeen <sandeen@redhat.com>
-Subject: [PATCH] btrfs-progs: fix build for programs including ioctl.h
-Message-ID: <343f2d64-948b-9653-18eb-76ae2e852b88@redhat.com>
-Date: Thu, 13 Oct 2016 12:36:12 -0500
+Received: from cn.fujitsu.com ([222.73.24.84]:56888 "EHLO song.cn.fujitsu.com"
+        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+        id S966728AbcJFJNq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 6 Oct 2016 05:13:46 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH] btrfs-progs: Fix stack overflow for checking qgroup on tree reloc tree
+Date: Thu,  6 Oct 2016 17:13:32 +0800
+Message-Id: <20161006091332.12836-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This was reported when docker failed to build against
-btrfs-progs v4.8.1.
+For tree reloc tree whose level is >= 2, the root node's parent will
+point to itself.
+In this case it will make btrfsck overflow its stack and cause segfault.
 
-It includes ioctl.h which now calls BUILD_ASSERT(), which
-is defined in kerncompat.h, which was not included in the
-ioctl.h header file.
+While for tree reloc tree, it doesn't affect qgroup and kernel can
+handle it well.
 
-Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+So add tree reloc tree check for qgroup-verify.c and fix the bug.
+
+Test case will follow soon after I make a minimal image for it.
+Current xz ziped image is still over 10M for a 512M fs.
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
+ qgroup-verify.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-diff --git a/ioctl.h b/ioctl.h
-index a7235c0..abea7ed 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -26,6 +26,12 @@ extern "C" {
- #include <asm/types.h>
- #include <linux/ioctl.h>
+diff --git a/qgroup-verify.c b/qgroup-verify.c
+index df0e547..9a56f59 100644
+--- a/qgroup-verify.c
++++ b/qgroup-verify.c
+@@ -369,6 +369,11 @@ static int find_parent_roots(struct ulist *roots, u64 parent)
+ 				if (ret < 0)
+ 					goto out;
+ 			}
++		} else if (ref->parent == ref->bytenr) {
++			/*
++			 * Special loop case for tree reloc tree
++			 */
++			ref->root = BTRFS_TREE_RELOC_OBJECTID;
+ 		} else {
+ 			ret = find_parent_roots(roots, ref->parent);
+ 			if (ret < 0)
+@@ -578,6 +583,8 @@ static u64 resolve_one_root(u64 bytenr)
  
-+#if BTRFS_FLAT_INCLUDES
-+#include "kerncompat.h"
-+#else
-+#include <btrfs/kerncompat.h>
-+#endif /* BTRFS_FLAT_INCLUDES */
-+
- #ifndef __user
- #define __user
- #endif
+ 	if (ref->root)
+ 		return ref->root;
++	if (ref->parent == bytenr)
++		return BTRFS_TREE_RELOC_OBJECTID;
+ 	return resolve_one_root(ref->parent);
+ }
+ 
+@@ -748,6 +755,9 @@ static int add_refs_for_implied(struct btrfs_fs_info *info, u64 bytenr,
+ 	struct btrfs_root *root;
+ 	struct btrfs_key key;
+ 
++	/* Tree reloc tree doesn't contribute qgroup, skip it */
++	if (root_id == BTRFS_TREE_RELOC_OBJECTID)
++		return 0;
+ 	key.objectid = root_id;
+ 	key.type = BTRFS_ROOT_ITEM_KEY;
+ 	key.offset = (u64)-1;
+-- 
+2.10.0
+
+
 

@@ -1,42 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:57526 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750799AbcJJJxn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 Oct 2016 05:53:43 -0400
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: jmaggard10@gmail.com, clm@fb.com
-Subject: Btrfs progs pre-release 4.8.1-rc2
-Date: Mon, 10 Oct 2016 10:38:02 +0200
-Message-Id: <20161010083802.9420-1-dsterba@suse.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:12086 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751027AbcJFINF (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Oct 2016 04:13:05 -0400
+To: <fstests@vger.kernel.org>, btrfs <linux-btrfs@vger.kernel.org>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Subject: Is is possible to submit binary image as fstest test case?
+Message-ID: <53250876-4992-971e-ed37-054f03ef555f@cn.fujitsu.com>
+Date: Thu, 6 Oct 2016 16:12:56 +0800
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi,
 
-another pre-release. The problem with ioctl on 32bit ARM that Justin reported
-shows we have to be more careful with the changes to ioctl structures. The
-build size checks are now optional (make D=bcheck to enable) and the patches to
-add packing, alignment or alternate structures are left out.
+Just as the title says, for some case(OK, btrfs again) we need to catch 
+a file system in special timing.
 
-ETA for 4.8.1 is tomorrow.
+In this specific case, we need to grab a btrfs image undergoing 
+balancing, just before the balance finished.
 
-Changes since 4.8:
-- 32bit build works
-- build without backtrace support fixed
+Although we can use flakey to drop all write, we still don't have method 
+to catch the timing of the that transaction.
 
-Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
 
-Shortlog:
+On the other hand, we can tweak our local kernel, adding 
+msleep()/message and dump the disk during the sleep.
+And the image I dumped can easily trigger btrfs kernel and user-space bug.
 
-David Sterba (6):
-      btrfs-progs: build: add explicit option separator to rm commands
-      btrfs-progs: tests: add script to help build coverage
-      btrfs-progs: fix printf format of sizeof on 32bit build
-      btrfs-progs: ioctl: make build-time structure size checks optional
-      btrfs-progs: update CHANGES for v4.8.1
-      Btrfs progs v4.8.1-rc2
+So I'm wondering if I can just upload a zipped raw image as part of the 
+test case?
 
-Qu Wenruo (1):
-      btrfs-progs: Fix warning_trace compile error if backtrace is disabled
+Thanks,
+Qu
+
+

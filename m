@@ -1,17 +1,12 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-me1aus01on0045.outbound.protection.outlook.com ([104.47.116.45]:30214
-        "EHLO AUS01-ME1-obe.outbound.protection.outlook.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1756245AbcJGHsz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 7 Oct 2016 03:48:55 -0400
-From: Paul Jones <paul@pauljones.id.au>
-To: Paul Jones <paul@pauljones.id.au>,
-        Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
-        Stefan Priebe - Profihost AG <s.priebe@profihost.ag>,
+Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:16523 "EHLO
+        cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1755692AbcJGH7j (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 7 Oct 2016 03:59:39 -0400
+Subject: Re: BTRFS: space_info 4 has 18446742286429913088 free, is not full
+To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: RE: BTRFS: space_info 4 has 18446742286429913088 free, is not full
-Date: Fri, 7 Oct 2016 07:48:52 +0000
-Message-ID: <SY3PR01MB1386C35F0C3A4BF5257E9D779EC60@SY3PR01MB1386.ausprd01.prod.outlook.com>
 References: <1c94f3b1-b238-6668-7976-c0594f170dfe@profihost.ag>
  <57EBAAF5.10509@cn.fujitsu.com>
  <4f91af54-78ae-5c08-3daa-8a0c16210e5f@profihost.ag>
@@ -24,56 +19,224 @@ References: <1c94f3b1-b238-6668-7976-c0594f170dfe@profihost.ag>
  <57F5BF26.9090409@cn.fujitsu.com>
  <23f37454-e24e-5e50-b5dc-99d16c324686@profihost.ag>
  <57F74BF3.9070802@cn.fujitsu.com>
- <SY3PR01MB138623B6515A3973ABEDF9B69EC60@SY3PR01MB1386.ausprd01.prod.outlook.com>
-In-Reply-To: <SY3PR01MB138623B6515A3973ABEDF9B69EC60@SY3PR01MB1386.ausprd01.prod.outlook.com>
-Content-Type: text/plain; charset="utf-8"
+From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
+Message-ID: <33eda65e-2da1-b595-5148-786dbc0f0f00@profihost.ag>
+Date: Fri, 7 Oct 2016 09:59:32 +0200
 MIME-Version: 1.0
+In-Reply-To: <57F74BF3.9070802@cn.fujitsu.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> -----Original Message-----
-> From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-
-> owner@vger.kernel.org] On Behalf Of Paul Jones
-> Sent: Friday, 7 October 2016 6:48 PM
-> To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>; Stefan Priebe -
-> Profihost AG <s.priebe@profihost.ag>; linux-btrfs@vger.kernel.org
-> Subject: RE: BTRFS: space_info 4 has 18446742286429913088 free, is not full
+Am 07.10.2016 um 09:17 schrieb Wang Xiaoguang:
+> Hi,
+> 
+> On 10/07/2016 03:03 PM, Stefan Priebe - Profihost AG wrote:
+>> Dear Wang,
+>>
+>> can't use v4.8.0 as i always get OOMs and total machine crashes.
+>>
+>> Complete traces with your patch and some more btrfs patches applied (in
+>> the hope in fixes the OOM but it did not):
+>> http://pastebin.com/raw/6vmRSDm1
+> I didn't see any such OOMs...
+> Can you try holger's tree with my patches.
+
+Dear wang already tried that. Doesn't help. It also happens only on two
+out of three servers.  It starts killing low men processes after time.
+But I've no idea where all those memory is consumed. (Have 64gb)
+
+Greets,
+Stefan
+
+
+> Regards,
+> Xiaoguang Wang
+>>
+>> Greets,
+>> Stefan
+>> Am 06.10.2016 um 05:04 schrieb Wang Xiaoguang:
+>>> Hi,
+>>>
+>>> On 09/29/2016 03:27 PM, Stefan Priebe - Profihost AG wrote:
+>>>> Am 29.09.2016 um 09:13 schrieb Wang Xiaoguang:
+>>>>>>> I found that compress sometime report ENOSPC error even in 4.8-rc8,
+>>>>>>> currently
+>>>>>> I cannot confirm that as i do not have anough space to test this
+>>>>>> without
+>>>>>> compression ;-( But yes i've compression enabled.
+>>>>> I might not get you, my poor english :)
+>>>>> You mean that you only get ENOSPC error when compression is enabled?
+>>>>>
+>>>>> And when compression is not enabled, you do not get ENOSPC error?
+>>>> I can't tell you. I cannot test with compression not enabled. I do not
+>>>> have anough free space on this disk.
+>>> I had just sent two patches to fix false enospc error for compression,
+>>> please have a try, they fix false enospc error in my test environment.
+>>>          btrfs: fix false enospc for compression
+>>>          btrfs: improve inode's outstanding_extents computation
+>>>
+>>> I apply these two patchs in linux upstream tree, the latest commit
+>>> is 41844e36206be90cd4d962ea49b0abc3612a99d0.
+>>>
+>>> Regards,
+>>> Xiaoguang Wang
+>>>
+>>>>>>> I'm trying to fix it.
+>>>>>> That sounds good but do you also get the
+>>>>>> BTRFS: space_info 4 has 18446742286429913088 free, is not full
+>>>>>>
+>>>>>> kernel messages on umount? if not you might have found another
+>>>>>> problem.
+>>>>> Yes, I seem similar messages, you can paste you whole dmesg info here.
+>>>> ------------[ cut here ]------------
+>>>> WARNING: CPU: 2 PID: 5187 at fs/btrfs/extent-tree.c:5790
+>>>> btrfs_free_block_groups+0x346/0x430 [btrfs]()
+>>>> Modules linked in: netconsole xt_multiport iptable_filter ip_tables
+>>>> x_tables 8021q garp bonding x86_pkg_temp_thermal coretemp kvm_intel kvm
+>>>> irqbypass sb_edac crc32_pclmul edac_core i2c_i801 i40e(O) vxlan
+>>>> ip6_udp_tunnel udp_tunnel shpchp ipmi_si ipmi_msghandler button loop
+>>>> btrfs dm_mod raid10 raid0 multipath linear raid456 async_raid6_recov
+>>>> async_memcpy async_pq async_xor async_tx xor raid6_pq igb i2c_algo_bit
+>>>> i2c_core usbhid raid1 md_mod xhci_pci sg ehci_pci xhci_hcd ehci_hcd
+>>>> sd_mod ahci usbcore ptp libahci usb_common pps_core aacraid
+>>>> CPU: 2 PID: 5187 Comm: umount Tainted: G O 4.4.22+63-ph #1
+>>>> Hardware name: Supermicro Super Server/X10SRi-F, BIOS 2.0 12/17/2015
+>>>> 0000000000000000 ffff880fda777d00 ffffffff813b69c3 0000000000000000
+>>>> ffffffffc067a099 ffff880fda777d38 ffffffff810821c6 0000000000000000
+>>>> ffff880074bf0a00 ffff88103c10c088 ffff88103c10c000 ffff88103c10c098
+>>>> Call Trace:
+>>>> [<ffffffff813b69c3>] dump_stack+0x63/0x90
+>>>> [<ffffffff810821c6>] warn_slowpath_common+0x86/0xc0
+>>>> [<ffffffff810822ba>] warn_slowpath_null+0x1a/0x20
+>>>> [<ffffffffc05de9a6>] btrfs_free_block_groups+0x346/0x430 [btrfs]
+>>>> [<ffffffffc05f0bad>] close_ctree+0x15d/0x330 [btrfs]
+>>>> [<ffffffffc05bf409>] btrfs_put_super+0x19/0x20 [btrfs]
+>>>> [<ffffffff811c85af>] generic_shutdown_super+0x6f/0x100
+>>>> [<ffffffff811c8652>] kill_anon_super+0x12/0x20
+>>>> [<ffffffffc05c0376>] btrfs_kill_super+0x16/0xa0 [btrfs]
+>>>> [<ffffffff811c7ff3>] deactivate_locked_super+0x43/0x70
+>>>> [<ffffffff811c807c>] deactivate_super+0x5c/0x60
+>>>> [<ffffffff811e3b5f>] cleanup_mnt+0x3f/0x90
+>>>> [<ffffffff811e3bf2>] __cleanup_mnt+0x12/0x20
+>>>> [<ffffffff8109dad1>] task_work_run+0x81/0xa0
+>>>> [<ffffffff810021c0>] exit_to_usermode_loop+0xb0/0xc0
+>>>> [<ffffffff81002b44>] syscall_return_slowpath+0xd4/0x130
+>>>> [<ffffffff8169dc0c>] int_ret_from_sys_call+0x25/0x8f
+>>>> ---[ end trace cee6ace13018e13e ]---
+>>>> ------------[ cut here ]------------
+>>>> WARNING: CPU: 2 PID: 5187 at fs/btrfs/extent-tree.c:5791
+>>>> btrfs_free_block_groups+0x365/0x430 [btrfs]()
+>>>> Modules linked in: netconsole xt_multiport iptable_filter ip_tables
+>>>> x_tables 8021q garp bonding x86_pkg_temp_thermal coretemp kvm_intel kvm
+>>>> irqbypass sb_edac crc32_pclmul edac_core i2c_i801 i40e(O) vxlan
+>>>> ip6_udp_tunnel udp_tunnel shpchp ipmi_si ipmi_msghandler button loop
+>>>> btrfs dm_mod raid10 raid0 multipath linear raid456 async_raid6_recov
+>>>> async_memcpy async_pq async_xor async_tx xor raid6_pq igb i2c_algo_bit
+>>>> i2c_core usbhid raid1 md_mod xhci_pci sg ehci_pci xhci_hcd ehci_hcd
+>>>> sd_mod ahci usbcore ptp libahci usb_common pps_core aacraid
+>>>> CPU: 2 PID: 5187 Comm: umount Tainted: G W O 4.4.22+63-ph #1
+>>>> Hardware name: Supermicro Super Server/X10SRi-F, BIOS 2.0 12/17/2015
+>>>> 0000000000000000 ffff880fda777d00 ffffffff813b69c3 0000000000000000
+>>>> ffffffffc067a099 ffff880fda777d38 ffffffff810821c6 0000000000000000
+>>>> ffff880074bf0a00 ffff88103c10c088 ffff88103c10c000 ffff88103c10c098
+>>>> Call Trace:
+>>>> [<ffffffff813b69c3>] dump_stack+0x63/0x90
+>>>> [<ffffffff810821c6>] warn_slowpath_common+0x86/0xc0
+>>>> [<ffffffff810822ba>] warn_slowpath_null+0x1a/0x20
+>>>> [<ffffffffc05de9c5>] btrfs_free_block_groups+0x365/0x430 [btrfs]
+>>>> [<ffffffffc05f0bad>] close_ctree+0x15d/0x330 [btrfs]
+>>>> [<ffffffffc05bf409>] btrfs_put_super+0x19/0x20 [btrfs]
+>>>> [<ffffffff811c85af>] generic_shutdown_super+0x6f/0x100
+>>>> [<ffffffff811c8652>] kill_anon_super+0x12/0x20
+>>>> [<ffffffffc05c0376>] btrfs_kill_super+0x16/0xa0 [btrfs]
+>>>> [<ffffffff811c7ff3>] deactivate_locked_super+0x43/0x70
+>>>> [<ffffffff811c807c>] deactivate_super+0x5c/0x60
+>>>> [<ffffffff811e3b5f>] cleanup_mnt+0x3f/0x90
+>>>> [<ffffffff811e3bf2>] __cleanup_mnt+0x12/0x20
+>>>> [<ffffffff8109dad1>] task_work_run+0x81/0xa0
+>>>> [<ffffffff810021c0>] exit_to_usermode_loop+0xb0/0xc0
+>>>> [<ffffffff81002b44>] syscall_return_slowpath+0xd4/0x130
+>>>> [<ffffffff8169dc0c>] int_ret_from_sys_call+0x25/0x8f
+>>>> ---[ end trace cee6ace13018e13f ]---
+>>>> ------------[ cut here ]------------
+>>>> WARNING: CPU: 2 PID: 5187 at fs/btrfs/extent-tree.c:10151
+>>>> btrfs_free_block_groups+0x291/0x430 [btrfs]()
+>>>> Modules linked in: netconsole xt_multiport iptable_filter ip_tables
+>>>> x_tables 8021q garp bonding x86_pkg_temp_thermal coretemp kvm_intel kvm
+>>>> irqbypass sb_edac crc32_pclmul edac_core i2c_i801 i40e(O) vxlan
+>>>> ip6_udp_tunnel udp_tunnel shpchp ipmi_si ipmi_msghandler button loop
+>>>> btrfs dm_mod raid10 raid0 multipath linear raid456 async_raid6_recov
+>>>> async_memcpy async_pq async_xor async_tx xor raid6_pq igb i2c_algo_bit
+>>>> i2c_core usbhid raid1 md_mod xhci_pci sg ehci_pci xhci_hcd ehci_hcd
+>>>> sd_mod ahci usbcore ptp libahci usb_common pps_core aacraid
+>>>> CPU: 2 PID: 5187 Comm: umount Tainted: G W O 4.4.22+63-ph #1
+>>>> Hardware name: Supermicro Super Server/X10SRi-F, BIOS 2.0 12/17/2015
+>>>> 0000000000000000 ffff880fda777d00 ffffffff813b69c3 0000000000000000
+>>>> ffffffffc067a099 ffff880fda777d38 ffffffff810821c6 ffff880074bf0000
+>>>> ffff880074bf0088 ffff880074bf0df8 ffff88103c10c000 0000000000000000
+>>>> Call Trace:
+>>>> [<ffffffff813b69c3>] dump_stack+0x63/0x90
+>>>> [<ffffffff810821c6>] warn_slowpath_common+0x86/0xc0
+>>>> [<ffffffff810822ba>] warn_slowpath_null+0x1a/0x20
+>>>> [<ffffffffc05de8f1>] btrfs_free_block_groups+0x291/0x430 [btrfs]
+>>>> [<ffffffffc05f0bad>] close_ctree+0x15d/0x330 [btrfs]
+>>>> [<ffffffffc05bf409>] btrfs_put_super+0x19/0x20 [btrfs]
+>>>> [<ffffffff811c85af>] generic_shutdown_super+0x6f/0x100
+>>>> [<ffffffff811c8652>] kill_anon_super+0x12/0x20
+>>>> [<ffffffffc05c0376>] btrfs_kill_super+0x16/0xa0 [btrfs]
+>>>> [<ffffffff811c7ff3>] deactivate_locked_super+0x43/0x70
+>>>> [<ffffffff811c807c>] deactivate_super+0x5c/0x60
+>>>> [<ffffffff811e3b5f>] cleanup_mnt+0x3f/0x90
+>>>> [<ffffffff811e3bf2>] __cleanup_mnt+0x12/0x20
+>>>> [<ffffffff8109dad1>] task_work_run+0x81/0xa0
+>>>> [<ffffffff810021c0>] exit_to_usermode_loop+0xb0/0xc0
+>>>> [<ffffffff81002b44>] syscall_return_slowpath+0xd4/0x130
+>>>> [<ffffffff8169dc0c>] int_ret_from_sys_call+0x25/0x8f
+>>>> ---[ end trace cee6ace13018e140 ]---
+>>>> BTRFS: space_info 4 has 18446742182612910080 free, is not full
+>>>> BTRFS: space_info total=82678120448, used=64784695296, pinned=0,
+>>>> reserved=0, may_use=1908990066688, readonly=0
+>>>>
+>>>> Greets,
+>>>> Stefan
+>>>>
+>>>>> Regards,
+>>>>> Xiaoguang Wang
+>>>>>
+>>>>>> Stefan
+>>>>>>
+>>>>>>> Regards,
+>>>>>>> Xiaoguang Wang
+>>>>>>>
+>>>>>>>> I tried hard to reproduce it but i can't get it to reproduce with a
+>>>>>>>> test
+>>>>>>>> script. Any ideas?
+>>>>>>>>
+>>>>>>>> Stefan
+>>>>>>>>
+>>>>>>>>> Reagrds,
+>>>>>>>>> Xiaoguang Wang
+>>>>>>>>>
+>>>>>>>>>> Greets,
+>>>>>>>>>> Stefan
+>>>>>>>>>>
+>>>>>>>>>>> Regards,
+>>>>>>>>>>> Xiaoguang Wang
+>>>>>>>>>>>> Greets,
+>>>>>>>>>>>> Stefan
+>>>>>>>>>>>> -- 
+>>>>>>>>>>>> To unsubscribe from this list: send the line "unsubscribe
+>>>>>>>>>>>> linux-btrfs" in
+>>>>>>>>>>>> the body of a message to majordomo@vger.kernel.org
+>>>>>>>>>>>> More majordomo info at
+>>>>>>>>>>>> http://vger.kernel.org/majordomo-info.html
+>>>>>>>>>>>>
+>>>>>>>>>>>>
+>>>>>
+>>>
+>>>
+>>
 > 
 > 
-> > -----Original Message-----
-> > From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-
-> > owner@vger.kernel.org] On Behalf Of Wang Xiaoguang
-> > Sent: Friday, 7 October 2016 6:17 PM
-> > To: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>; linux-
-> > btrfs@vger.kernel.org
-> > Subject: Re: BTRFS: space_info 4 has 18446742286429913088 free, is not
-> > full
-> >
-> > Hi,
-> >
-> > On 10/07/2016 03:03 PM, Stefan Priebe - Profihost AG wrote:
-> > > Dear Wang,
-> > >
-> > > can't use v4.8.0 as i always get OOMs and total machine crashes.
-> > >
-> > > Complete traces with your patch and some more btrfs patches applied
-> > > (in the hope in fixes the OOM but it did not):
-> > > http://pastebin.com/raw/6vmRSDm1
-> > I didn't see any such OOMs...
-> > Can you try holger's tree with my patches.
-> >
-> > Regards,
-> > Xiaoguang Wang
-> > >
 > 
-> 
-> 4.8.5 has fixed all the OOM problems for me, so try that one.
-
-Sorry, just realised I meant 4.7.5!
-
-Paul.
-
-
-
-
-ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm

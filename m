@@ -1,82 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:20471 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1754749AbcJGGdx (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Oct 2016 02:33:53 -0400
-Subject: Re: [RFC 3/3] btrfs: make shrink_delalloc() try harder to reclaim
- metadata space
-To: <linux-btrfs@vger.kernel.org>
-References: <1474441173-31049-2-git-send-email-wangxg.fnst@cn.fujitsu.com>
- <1474536319-22659-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
-CC: <jbacik@fb.com>, <dsterba@suse.cz>
-From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Message-ID: <57F7406D.6080805@cn.fujitsu.com>
-Date: Fri, 7 Oct 2016 14:27:57 +0800
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:57786 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1751264AbcJGNRX (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 7 Oct 2016 09:17:23 -0400
+Subject: Re: [PATCH 1/2] btrfs: try to satisfy metadata requests when every
+ flush_space() returns
+To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
+References: <1474441173-31049-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
+CC: <dsterba@suse.cz>
+From: Josef Bacik <jbacik@fb.com>
+Message-ID: <64702aa8-206f-d167-a4c7-0303864a1e23@fb.com>
+Date: Fri, 7 Oct 2016 09:16:55 -0400
 MIME-Version: 1.0
-In-Reply-To: <1474536319-22659-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
+In-Reply-To: <1474441173-31049-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
 Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
-
-Any comments about these 3 patches, thanks.
-
-Regards,
-Xiaoguang Wang
-
-On 09/22/2016 05:25 PM, Wang Xiaoguang wrote:
-> Since commit b02441999efcc6152b87cd58e7970bb7843f76cf, we don't wait all
-> ordered extents, but I run into some enospc errors when doing large file
-> create and delete test, it's because shrink_delalloc() does not write
-> enough delalloc bytes and wait them finished:
->      From: Miao Xie <miaox@cn.fujitsu.com>
->      Date: Mon, 4 Nov 2013 23:13:25 +0800
->      Subject: [PATCH] Btrfs: don't wait for the completion of all the ordered extents
->
->      It is very likely that there are lots of ordered extents in the filesytem,
->      if we wait for the completion of all of them when we want to reclaim some
->      space for the metadata space reservation, we would be blocked for a long
->      time. The performance would drop down suddenly for a long time.
->
-> But since Josef introduced "Btrfs: introduce ticketed enospc infrastructure",
-> shrink_delalloc() starts to be run asynchronously, then If we want to reclaim
-> metadata space, we can try harder, after all, false enospc error is not
-> acceptable.
+On 09/21/2016 02:59 AM, Wang Xiaoguang wrote:
+> In flush_space()->shrink_delalloc(), if can_overcommit() returns true,
+> though no bytes added to space_info, we still may satisfy some requests.
 >
 > Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 > ---
->   fs/btrfs/extent-tree.c | 10 +++++++++-
->   1 file changed, 9 insertions(+), 1 deletion(-)
+>  fs/btrfs/extent-tree.c | 39 +++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 39 insertions(+)
 >
 > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 46c2a37..f7c420b 100644
+> index 38c2df8..fdfc97f 100644
 > --- a/fs/btrfs/extent-tree.c
 > +++ b/fs/btrfs/extent-tree.c
-> @@ -4721,7 +4721,7 @@ static void shrink_delalloc(struct btrfs_root *root, u64 to_reclaim, u64 orig,
->   		if (trans)
->   			return;
->   		if (wait_ordered)
-> -			btrfs_wait_ordered_roots(root->fs_info, items,
-> +			btrfs_wait_ordered_roots(root->fs_info, -1,
->   						 0, (u64)-1);
->   		return;
->   	}
-> @@ -4775,6 +4775,14 @@ skip_async:
->   		}
->   		delalloc_bytes = percpu_counter_sum_positive(
->   						&root->fs_info->delalloc_bytes);
-> +		if (loops == 2) {
-> +			/*
-> +			 * Try to write all current delalloc bytes and wait all
-> +			 * ordered extents to have a last try.
-> +			 */
-> +			to_reclaim = delalloc_bytes;
-> +			items = -1;
-> +		}
->   	}
->   }
->   
+> @@ -4960,6 +4960,43 @@ static void wake_all_tickets(struct list_head *head)
+>  }
+>
+>  /*
+> + * This function must be protected by btrfs_space_info's lock.
+> + */
+> +static void try_to_wake_tickets(struct btrfs_root *root,
+> +				struct btrfs_space_info *space_info)
+> +{
+> +	struct reserve_ticket *ticket;
+> +	struct list_head *head = &space_info->priority_tickets;
+> +	enum btrfs_reserve_flush_enum flush = BTRFS_RESERVE_NO_FLUSH;
+> +	u64 used;
+> +
+> +again:
+> +	while (!list_empty(head)) {
+> +		ticket = list_first_entry(head, struct reserve_ticket,
+> +					  list);
+> +		used = space_info->bytes_used +
+> +			space_info->bytes_reserved + space_info->bytes_pinned +
+> +			space_info->bytes_readonly + space_info->bytes_may_use;
+> +
+> +		if (used + ticket->bytes <= space_info->total_bytes ||
+> +		    can_overcommit(root, space_info, ticket->bytes, flush)) {
+> +			space_info->bytes_may_use += ticket->bytes;
+> +			list_del_init(&ticket->list);
+> +			ticket->bytes = 0;
+> +			space_info->tickets_id++;
+> +			wake_up(&ticket->wait);
+> +		} else
+> +			return;
+> +	}
+> +
+> +	if (head == &space_info->priority_tickets) {
+> +		head = &space_info->tickets;
+> +		flush = BTRFS_RESERVE_FLUSH_ALL;
+> +		goto again;
+> +	}
+> +}
+> +
+> +/*
+>   * This is for normal flushers, we can wait all goddamned day if we want to.  We
+>   * will loop and continuously try to flush as long as we are making progress.
+>   * We count progress as clearing off tickets each time we have to loop.
+> @@ -4995,6 +5032,8 @@ static void btrfs_async_reclaim_metadata_space(struct work_struct *work)
+>  		ret = flush_space(fs_info->fs_root, space_info, to_reclaim,
+>  			    to_reclaim, flush_state);
+>  		spin_lock(&space_info->lock);
+> +		if (!ret)
+> +			try_to_wake_tickets(fs_info->fs_root, space_info);
+>  		if (list_empty(&space_info->tickets)) {
+>  			space_info->flush = 0;
+>  			spin_unlock(&space_info->lock);
+>
 
+So first off I have no problems with this patch, it seems reasonable to me.
 
+However I'm curious to see where it helped.  The only time can_overcommit() 
+would suddenly start returning true where it wouldn't have before without 
+actually adding space to the space_info would be when we've dropped an empty 
+block group (or added a new drive) and suddenly fs_info->free_chunk_space is 
+larger than it was.  Is that what you were observing?  Thanks,
 
+Josef

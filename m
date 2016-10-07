@@ -1,57 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail02.iobjects.de ([188.40.134.68]:57806 "EHLO
-        mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752786AbcJGJdg (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Oct 2016 05:33:36 -0400
-Subject: Re: BTRFS: space_info 4 has 18446742286429913088 free, is not full
-To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
-        Stefan Priebe - Profihost AG <s.priebe@profihost.ag>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <1c94f3b1-b238-6668-7976-c0594f170dfe@profihost.ag>
- <57EBAAF5.10509@cn.fujitsu.com>
- <4f91af54-78ae-5c08-3daa-8a0c16210e5f@profihost.ag>
- <57EBB329.9060009@cn.fujitsu.com>
- <3e429001-020a-748b-c0c5-85b4091599a1@profihost.ag>
- <57ECBAE7.5030807@cn.fujitsu.com>
- <0e556b63-7c85-1e97-00b0-91bfca44e82c@profihost.ag>
- <57ECBF0D.3050609@cn.fujitsu.com>
- <85f85ca6-95c0-1394-9b09-93dcc00c2319@profihost.ag>
- <57F5BF26.9090409@cn.fujitsu.com>
- <23f37454-e24e-5e50-b5dc-99d16c324686@profihost.ag>
- <57F74BF3.9070802@cn.fujitsu.com>
-From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>
-Message-ID: <57F76BED.5050004@applied-asynchrony.com>
-Date: Fri, 7 Oct 2016 11:33:33 +0200
+Received: from mail-qt0-f181.google.com ([209.85.216.181]:33439 "EHLO
+        mail-qt0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753525AbcJGOAb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Oct 2016 10:00:31 -0400
+Received: by mail-qt0-f181.google.com with SMTP id s49so21635971qta.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 07 Oct 2016 07:00:30 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <57F74BF3.9070802@cn.fujitsu.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <6bf85d64-2792-85db-0169-c6288e95a775@suse.com>
+References: <CAGfcS_m0KvAjmWpnGC7agLYBKROqjPoSCVrziaEJXzW1Dyw5iQ@mail.gmail.com>
+ <94e50637-9f66-19c7-35e4-e6b2c8bf919c@suse.com> <CAGfcS_mLABcdd_3n=0cV8nx1DXoLBDFC6SbmMou_ZXWjw0BqRA@mail.gmail.com>
+ <a8dac132-78b3-4276-2ed3-d30a74b0d31b@suse.com> <CAGfcS_=2x-CqGwXXeWejiUoDTgy9HxAtPdy2Nur2CAMYT3d26A@mail.gmail.com>
+ <6bf85d64-2792-85db-0169-c6288e95a775@suse.com>
+From: Rich Freeman <r-btrfs@gw.thefreemanclan.net>
+Date: Fri, 7 Oct 2016 10:00:29 -0400
+Message-ID: <CAGfcS_nKwJB+v+5+TB1GU+ywxYh9dBD6vCUXbMnAyU4JwvdiRg@mail.gmail.com>
+Subject: Re: unable to handle kernel paging request - btrfs
+To: Jeff Mahoney <jeffm@suse.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/07/16 09:17, Wang Xiaoguang wrote:
-> Hi,
-> 
-> On 10/07/2016 03:03 PM, Stefan Priebe - Profihost AG wrote:
->> Dear Wang,
+On Fri, Sep 30, 2016 at 8:38 PM, Jeff Mahoney <jeffm@suse.com> wrote:
+> On 9/30/16 5:07 PM, Rich Freeman wrote:
+>> On Fri, Sep 30, 2016 at 4:55 PM, Jeff Mahoney <jeffm@suse.com> wrote:
+>>> This looks like a use-after-free on one of the pages used for
+>>> compression.  Can you post the output of objdump -Dr
+>>> /lib/modules/$(uname -r)/kernel/fs/btrfs/btrfs.ko somewhere?
+>>>
 >>
->> can't use v4.8.0 as i always get OOMs and total machine crashes.
+>> Sure:
+>> https://drive.google.com/open?id=0BwUDImviY_gcR3JfT0Z1cUlRVEk
 >>
->> Complete traces with your patch and some more btrfs patches applied (in
->> the hope in fixes the OOM but it did not):
->> http://pastebin.com/raw/6vmRSDm1
-> I didn't see any such OOMs...
-> Can you try holger's tree with my patches.
+>> I was impressed by just how large it was.
+>>
+>> I take it you're going to try to use the offsets in the oops to figure
+>> out where it went wrong?  I really need to get kernel core dumping
+>> working on this box...
+>
+> Yep.  What I think is happening is that we have workspace getting freed
+> while it's in use.  The faulting address is in vmalloc space and it's
+> also the first argument to memcpy, which makes it the destination.  In
+> lzo_decompress_biovec, that means it's the workspace->cbuf.  Beyond that
+> I'll have to dig a bit more.
+>
 
-They don't really apply to either 4.4.x (because it has diverged too
-much by now) or 4.8.x because of the initial dedupe support which came
-in as part of 4.9rc1 - there are way too many conflicts all over the
-place and merging them manually took way too much time.
-It would be useful if you could rebase your patches to for-next.
+I'll confess to not being much of a kernel hacker, but could this
+error also be caused by a buffer overrun?  If working_bytes or
+in_page_bytes_left are larger than the size of the buffer then the
+memcpy would overrun the length of the buffer.  I don't know if that
+generates a different error than the one reported.
 
-Stefan, have you tried setting THP to 'madvise' or 'never'?
-Try 'echo madvise > /sys/kernel/mm/transparent_hugepage/enabled'
-or boot with transparent_hugepage=madvise (or never) kernel flag.
-I have no idea if it will help, but it's worth a try.
+What guarantee do we have that working_bytes is less than the size of
+workspace->cbuf?  I'm just throwing stuff out there because as far as
+I can tell the code never frees workspace (I'm guessing kunmap at the
+very end might take care of it).
 
--h
-
+--
+Rich

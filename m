@@ -1,195 +1,223 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:21582 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751027AbcJGCdH (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Oct 2016 22:33:07 -0400
-Subject: Re: [PATCH] btrfs: relocation: Fix NULL pointer access and leaking
- qgroups in btrfs_recover_relocation
-To: Goldwyn Rodrigues <rgoldwyn@suse.de>, <linux-btrfs@vger.kernel.org>
-References: <20161006080337.31691-1-quwenruo@cn.fujitsu.com>
- <4bdf1336-dc97-4dcb-1095-a2545419e95a@suse.de>
-CC: <rgoldwyn@suse.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <82aef874-2fc1-15fc-8e50-04c087051489@cn.fujitsu.com>
-Date: Fri, 7 Oct 2016 10:32:56 +0800
+Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:54730 "EHLO
+        cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1754208AbcJGHDU (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 7 Oct 2016 03:03:20 -0400
+Subject: Re: BTRFS: space_info 4 has 18446742286429913088 free, is not full
+To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <1c94f3b1-b238-6668-7976-c0594f170dfe@profihost.ag>
+ <57EBAAF5.10509@cn.fujitsu.com>
+ <4f91af54-78ae-5c08-3daa-8a0c16210e5f@profihost.ag>
+ <57EBB329.9060009@cn.fujitsu.com>
+ <3e429001-020a-748b-c0c5-85b4091599a1@profihost.ag>
+ <57ECBAE7.5030807@cn.fujitsu.com>
+ <0e556b63-7c85-1e97-00b0-91bfca44e82c@profihost.ag>
+ <57ECBF0D.3050609@cn.fujitsu.com>
+ <85f85ca6-95c0-1394-9b09-93dcc00c2319@profihost.ag>
+ <57F5BF26.9090409@cn.fujitsu.com>
+From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
+Message-ID: <23f37454-e24e-5e50-b5dc-99d16c324686@profihost.ag>
+Date: Fri, 7 Oct 2016 09:03:12 +0200
 MIME-Version: 1.0
-In-Reply-To: <4bdf1336-dc97-4dcb-1095-a2545419e95a@suse.de>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <57F5BF26.9090409@cn.fujitsu.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Dear Wang,
 
+can't use v4.8.0 as i always get OOMs and total machine crashes.
 
-At 10/07/2016 02:00 AM, Goldwyn Rodrigues wrote:
-> Hi Qu,
->
-> On 10/06/2016 03:03 AM, Qu Wenruo wrote:
->> We fixed balance qgroup leaking by introducing
->> qgroup_fix_relocated_data_extents(), but it only covers normal balance
->> routine well.
->>
->> For case btrfs_recover_relocation() routine, since rc->stage or
->> rc->data_inode are not initialized, we either skip
->> qgroup_fix_relocated_data_extents() or just cause NULL pointer access.
->>
->> Since we skip qgroup_fix_relocated_data_extents() in
->> btrfs_recover_relocation(), we will still leak qgroup numbers for that
->> routine.
->>
->> In the fix, we won't use data_inode any longer, as at the timing of the
->> qgroup fix, noone will modify data_reloc tree any longer, so path
->> locking should be good enough.
->>
->> And add check against rc->merge_reloc_tree, so we can detect if we are
->> in btrfs_recover_relocation() routine and continue qgroup fix.
->
-> While testing this patch, I realized the original problem of qgroup
-> values being incorrect after a balance, has returned... or probably was
-> not solved completely. I tried it with the shell script sent sometime
-> back. The script fails when I checkout fix df2c95f33e0a2 as well.
->
-> I remember it did not appear when I tested it last, so it is possible
-> that some other change has affected this.
->
-> Would recommend to hold off this until the balance issue is not
-> completely fixed.
->
-> For reference, the test script is:
->
-> #!/bin/bash -x
->
-> MNT="/mnt"
-> DEV="/dev/vdb"
->
-> mkfs.btrfs -f $DEV
-> mount -t btrfs $DEV $MNT
->
-> mkdir $MNT/snaps
-> echo "populate $MNT with some data"
-> #cp -a /usr/share/fonts $MNT/
-> cp -a /usr/ $MNT/ &
-> for i in `seq -w 0 8`; do
->         S="$MNT/snaps/snap$i"
->         echo "create and populate $S"
->         btrfs su snap $MNT $S;
->         cp -a /boot $S;
-> done;
->
-> #let the cp from above finish
-> wait
->
-> btrfs fi sync $MNT
->
-> btrfs quota enable $MNT
-> btrfs quota rescan -w $MNT
-> btrfs qg show $MNT
->
-> umount $MNT
->
-> mount -t btrfs $DEV $MNT
->
->
-> time btrfs balance start --full-balance $MNT
->
-> umount $MNT
->
-> btrfsck $DEV
->
->
+Complete traces with your patch and some more btrfs patches applied (in
+the hope in fixes the OOM but it did not):
+http://pastebin.com/raw/6vmRSDm1
 
-Thanks for the report.
-
-Yes, the script can reproduce the problem, almost 100% possibility.
-
-But it also takes a long time to run.(Partly because of the slow 
-find_parent_nodes function call).
-
-I tried to simplify it by using inline extent to bumping the tree level 
-and use small file extents to reduce IO.
-But no good reproducer yet.
-
-Did you remember which kernel version you tested the original fix?
-Maybe it could provide some clue.
-
-Thanks,
-Qu
-
->
+Greets,
+Stefan
+Am 06.10.2016 um 05:04 schrieb Wang Xiaoguang:
+> Hi,
+> 
+> On 09/29/2016 03:27 PM, Stefan Priebe - Profihost AG wrote:
+>> Am 29.09.2016 um 09:13 schrieb Wang Xiaoguang:
+>>>>> I found that compress sometime report ENOSPC error even in 4.8-rc8,
+>>>>> currently
+>>>> I cannot confirm that as i do not have anough space to test this
+>>>> without
+>>>> compression ;-( But yes i've compression enabled.
+>>> I might not get you, my poor english :)
+>>> You mean that you only get ENOSPC error when compression is enabled?
+>>>
+>>> And when compression is not enabled, you do not get ENOSPC error?
+>> I can't tell you. I cannot test with compression not enabled. I do not
+>> have anough free space on this disk.
+> I had just sent two patches to fix false enospc error for compression,
+> please have a try, they fix false enospc error in my test environment.
+>         btrfs: fix false enospc for compression
+>         btrfs: improve inode's outstanding_extents computation
+> 
+> I apply these two patchs in linux upstream tree, the latest commit
+> is 41844e36206be90cd4d962ea49b0abc3612a99d0.
+> 
+> Regards,
+> Xiaoguang Wang
+> 
 >>
->> Reported-by: Goldwyn Rodrigues <rgoldwyn@suse.de>
->> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
->> ---
->>  fs/btrfs/relocation.c | 21 +++++++++++++--------
->>  1 file changed, 13 insertions(+), 8 deletions(-)
+>>>>> I'm trying to fix it.
+>>>> That sounds good but do you also get the
+>>>> BTRFS: space_info 4 has 18446742286429913088 free, is not full
+>>>>
+>>>> kernel messages on umount? if not you might have found another problem.
+>>> Yes, I seem similar messages, you can paste you whole dmesg info here.
+>> ------------[ cut here ]------------
+>> WARNING: CPU: 2 PID: 5187 at fs/btrfs/extent-tree.c:5790
+>> btrfs_free_block_groups+0x346/0x430 [btrfs]()
+>> Modules linked in: netconsole xt_multiport iptable_filter ip_tables
+>> x_tables 8021q garp bonding x86_pkg_temp_thermal coretemp kvm_intel kvm
+>> irqbypass sb_edac crc32_pclmul edac_core i2c_i801 i40e(O) vxlan
+>> ip6_udp_tunnel udp_tunnel shpchp ipmi_si ipmi_msghandler button loop
+>> btrfs dm_mod raid10 raid0 multipath linear raid456 async_raid6_recov
+>> async_memcpy async_pq async_xor async_tx xor raid6_pq igb i2c_algo_bit
+>> i2c_core usbhid raid1 md_mod xhci_pci sg ehci_pci xhci_hcd ehci_hcd
+>> sd_mod ahci usbcore ptp libahci usb_common pps_core aacraid
+>> CPU: 2 PID: 5187 Comm: umount Tainted: G O 4.4.22+63-ph #1
+>> Hardware name: Supermicro Super Server/X10SRi-F, BIOS 2.0 12/17/2015
+>> 0000000000000000 ffff880fda777d00 ffffffff813b69c3 0000000000000000
+>> ffffffffc067a099 ffff880fda777d38 ffffffff810821c6 0000000000000000
+>> ffff880074bf0a00 ffff88103c10c088 ffff88103c10c000 ffff88103c10c098
+>> Call Trace:
+>> [<ffffffff813b69c3>] dump_stack+0x63/0x90
+>> [<ffffffff810821c6>] warn_slowpath_common+0x86/0xc0
+>> [<ffffffff810822ba>] warn_slowpath_null+0x1a/0x20
+>> [<ffffffffc05de9a6>] btrfs_free_block_groups+0x346/0x430 [btrfs]
+>> [<ffffffffc05f0bad>] close_ctree+0x15d/0x330 [btrfs]
+>> [<ffffffffc05bf409>] btrfs_put_super+0x19/0x20 [btrfs]
+>> [<ffffffff811c85af>] generic_shutdown_super+0x6f/0x100
+>> [<ffffffff811c8652>] kill_anon_super+0x12/0x20
+>> [<ffffffffc05c0376>] btrfs_kill_super+0x16/0xa0 [btrfs]
+>> [<ffffffff811c7ff3>] deactivate_locked_super+0x43/0x70
+>> [<ffffffff811c807c>] deactivate_super+0x5c/0x60
+>> [<ffffffff811e3b5f>] cleanup_mnt+0x3f/0x90
+>> [<ffffffff811e3bf2>] __cleanup_mnt+0x12/0x20
+>> [<ffffffff8109dad1>] task_work_run+0x81/0xa0
+>> [<ffffffff810021c0>] exit_to_usermode_loop+0xb0/0xc0
+>> [<ffffffff81002b44>] syscall_return_slowpath+0xd4/0x130
+>> [<ffffffff8169dc0c>] int_ret_from_sys_call+0x25/0x8f
+>> ---[ end trace cee6ace13018e13e ]---
+>> ------------[ cut here ]------------
+>> WARNING: CPU: 2 PID: 5187 at fs/btrfs/extent-tree.c:5791
+>> btrfs_free_block_groups+0x365/0x430 [btrfs]()
+>> Modules linked in: netconsole xt_multiport iptable_filter ip_tables
+>> x_tables 8021q garp bonding x86_pkg_temp_thermal coretemp kvm_intel kvm
+>> irqbypass sb_edac crc32_pclmul edac_core i2c_i801 i40e(O) vxlan
+>> ip6_udp_tunnel udp_tunnel shpchp ipmi_si ipmi_msghandler button loop
+>> btrfs dm_mod raid10 raid0 multipath linear raid456 async_raid6_recov
+>> async_memcpy async_pq async_xor async_tx xor raid6_pq igb i2c_algo_bit
+>> i2c_core usbhid raid1 md_mod xhci_pci sg ehci_pci xhci_hcd ehci_hcd
+>> sd_mod ahci usbcore ptp libahci usb_common pps_core aacraid
+>> CPU: 2 PID: 5187 Comm: umount Tainted: G W O 4.4.22+63-ph #1
+>> Hardware name: Supermicro Super Server/X10SRi-F, BIOS 2.0 12/17/2015
+>> 0000000000000000 ffff880fda777d00 ffffffff813b69c3 0000000000000000
+>> ffffffffc067a099 ffff880fda777d38 ffffffff810821c6 0000000000000000
+>> ffff880074bf0a00 ffff88103c10c088 ffff88103c10c000 ffff88103c10c098
+>> Call Trace:
+>> [<ffffffff813b69c3>] dump_stack+0x63/0x90
+>> [<ffffffff810821c6>] warn_slowpath_common+0x86/0xc0
+>> [<ffffffff810822ba>] warn_slowpath_null+0x1a/0x20
+>> [<ffffffffc05de9c5>] btrfs_free_block_groups+0x365/0x430 [btrfs]
+>> [<ffffffffc05f0bad>] close_ctree+0x15d/0x330 [btrfs]
+>> [<ffffffffc05bf409>] btrfs_put_super+0x19/0x20 [btrfs]
+>> [<ffffffff811c85af>] generic_shutdown_super+0x6f/0x100
+>> [<ffffffff811c8652>] kill_anon_super+0x12/0x20
+>> [<ffffffffc05c0376>] btrfs_kill_super+0x16/0xa0 [btrfs]
+>> [<ffffffff811c7ff3>] deactivate_locked_super+0x43/0x70
+>> [<ffffffff811c807c>] deactivate_super+0x5c/0x60
+>> [<ffffffff811e3b5f>] cleanup_mnt+0x3f/0x90
+>> [<ffffffff811e3bf2>] __cleanup_mnt+0x12/0x20
+>> [<ffffffff8109dad1>] task_work_run+0x81/0xa0
+>> [<ffffffff810021c0>] exit_to_usermode_loop+0xb0/0xc0
+>> [<ffffffff81002b44>] syscall_return_slowpath+0xd4/0x130
+>> [<ffffffff8169dc0c>] int_ret_from_sys_call+0x25/0x8f
+>> ---[ end trace cee6ace13018e13f ]---
+>> ------------[ cut here ]------------
+>> WARNING: CPU: 2 PID: 5187 at fs/btrfs/extent-tree.c:10151
+>> btrfs_free_block_groups+0x291/0x430 [btrfs]()
+>> Modules linked in: netconsole xt_multiport iptable_filter ip_tables
+>> x_tables 8021q garp bonding x86_pkg_temp_thermal coretemp kvm_intel kvm
+>> irqbypass sb_edac crc32_pclmul edac_core i2c_i801 i40e(O) vxlan
+>> ip6_udp_tunnel udp_tunnel shpchp ipmi_si ipmi_msghandler button loop
+>> btrfs dm_mod raid10 raid0 multipath linear raid456 async_raid6_recov
+>> async_memcpy async_pq async_xor async_tx xor raid6_pq igb i2c_algo_bit
+>> i2c_core usbhid raid1 md_mod xhci_pci sg ehci_pci xhci_hcd ehci_hcd
+>> sd_mod ahci usbcore ptp libahci usb_common pps_core aacraid
+>> CPU: 2 PID: 5187 Comm: umount Tainted: G W O 4.4.22+63-ph #1
+>> Hardware name: Supermicro Super Server/X10SRi-F, BIOS 2.0 12/17/2015
+>> 0000000000000000 ffff880fda777d00 ffffffff813b69c3 0000000000000000
+>> ffffffffc067a099 ffff880fda777d38 ffffffff810821c6 ffff880074bf0000
+>> ffff880074bf0088 ffff880074bf0df8 ffff88103c10c000 0000000000000000
+>> Call Trace:
+>> [<ffffffff813b69c3>] dump_stack+0x63/0x90
+>> [<ffffffff810821c6>] warn_slowpath_common+0x86/0xc0
+>> [<ffffffff810822ba>] warn_slowpath_null+0x1a/0x20
+>> [<ffffffffc05de8f1>] btrfs_free_block_groups+0x291/0x430 [btrfs]
+>> [<ffffffffc05f0bad>] close_ctree+0x15d/0x330 [btrfs]
+>> [<ffffffffc05bf409>] btrfs_put_super+0x19/0x20 [btrfs]
+>> [<ffffffff811c85af>] generic_shutdown_super+0x6f/0x100
+>> [<ffffffff811c8652>] kill_anon_super+0x12/0x20
+>> [<ffffffffc05c0376>] btrfs_kill_super+0x16/0xa0 [btrfs]
+>> [<ffffffff811c7ff3>] deactivate_locked_super+0x43/0x70
+>> [<ffffffff811c807c>] deactivate_super+0x5c/0x60
+>> [<ffffffff811e3b5f>] cleanup_mnt+0x3f/0x90
+>> [<ffffffff811e3bf2>] __cleanup_mnt+0x12/0x20
+>> [<ffffffff8109dad1>] task_work_run+0x81/0xa0
+>> [<ffffffff810021c0>] exit_to_usermode_loop+0xb0/0xc0
+>> [<ffffffff81002b44>] syscall_return_slowpath+0xd4/0x130
+>> [<ffffffff8169dc0c>] int_ret_from_sys_call+0x25/0x8f
+>> ---[ end trace cee6ace13018e140 ]---
+>> BTRFS: space_info 4 has 18446742182612910080 free, is not full
+>> BTRFS: space_info total=82678120448, used=64784695296, pinned=0,
+>> reserved=0, may_use=1908990066688, readonly=0
 >>
->> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
->> index c0c13dc..f250187 100644
->> --- a/fs/btrfs/relocation.c
->> +++ b/fs/btrfs/relocation.c
->> @@ -3946,8 +3946,7 @@ static int qgroup_fix_relocated_data_extents(struct btrfs_trans_handle *trans,
->>  					     struct reloc_control *rc)
->>  {
->>  	struct btrfs_fs_info *fs_info = rc->extent_root->fs_info;
->> -	struct inode *inode = rc->data_inode;
->> -	struct btrfs_root *data_reloc_root = BTRFS_I(inode)->root;
->> +	struct btrfs_root *data_reloc_root;
->>  	struct btrfs_path *path;
->>  	struct btrfs_key key;
->>  	int ret = 0;
->> @@ -3956,18 +3955,28 @@ static int qgroup_fix_relocated_data_extents(struct btrfs_trans_handle *trans,
->>  		return 0;
+>> Greets,
+>> Stefan
 >>
->>  	/*
->> +	 * For normal balance routine, merge_reloc_tree flag is always cleared
->> +	 * before commit trans.
->> +	 * For recover relocation routine, merge_reloc_tree is always 1, we need
->> +	 * to continue anyway.
->> +	 *
->>  	 * Only for stage where we update data pointers the qgroup fix is
->>  	 * valid.
->>  	 * For MOVING_DATA stage, we will miss the timing of swapping tree
->>  	 * blocks, and won't fix it.
->>  	 */
->> -	if (!(rc->stage == UPDATE_DATA_PTRS && rc->extents_found))
->> +	if (!(rc->stage == UPDATE_DATA_PTRS && rc->extents_found) &&
->> +	    rc->merge_reloc_tree == 0)
->>  		return 0;
+>>> Regards,
+>>> Xiaoguang Wang
+>>>
+>>>> Stefan
+>>>>
+>>>>> Regards,
+>>>>> Xiaoguang Wang
+>>>>>
+>>>>>> I tried hard to reproduce it but i can't get it to reproduce with a
+>>>>>> test
+>>>>>> script. Any ideas?
+>>>>>>
+>>>>>> Stefan
+>>>>>>
+>>>>>>> Reagrds,
+>>>>>>> Xiaoguang Wang
+>>>>>>>
+>>>>>>>> Greets,
+>>>>>>>> Stefan
+>>>>>>>>
+>>>>>>>>> Regards,
+>>>>>>>>> Xiaoguang Wang
+>>>>>>>>>> Greets,
+>>>>>>>>>> Stefan
+>>>>>>>>>> -- 
+>>>>>>>>>> To unsubscribe from this list: send the line "unsubscribe
+>>>>>>>>>> linux-btrfs" in
+>>>>>>>>>> the body of a message to majordomo@vger.kernel.org
+>>>>>>>>>> More majordomo info at 
+>>>>>>>>>> http://vger.kernel.org/majordomo-info.html
+>>>>>>>>>>
+>>>>>>>>>>
+>>>>>
+>>>
+>>>
 >>
->> +	data_reloc_root = read_fs_root(fs_info, BTRFS_DATA_RELOC_TREE_OBJECTID);
->> +	if (IS_ERR(data_reloc_root))
->> +		return PTR_ERR(data_reloc_root);
->> +
->>  	path = btrfs_alloc_path();
->>  	if (!path)
->>  		return -ENOMEM;
->> -	key.objectid = btrfs_ino(inode);
->> +	key.objectid = BTRFS_FIRST_FREE_OBJECTID + 1;
->>  	key.type = BTRFS_EXTENT_DATA_KEY;
->>  	key.offset = 0;
->>
->> @@ -3975,13 +3984,10 @@ static int qgroup_fix_relocated_data_extents(struct btrfs_trans_handle *trans,
->>  	if (ret < 0)
->>  		goto out;
->>
->> -	lock_extent(&BTRFS_I(inode)->io_tree, 0, (u64)-1);
->>  	while (1) {
->>  		struct btrfs_file_extent_item *fi;
->>
->>  		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
->> -		if (key.objectid > btrfs_ino(inode))
->> -			break;
->>  		if (key.type != BTRFS_EXTENT_DATA_KEY)
->>  			goto next;
->>  		fi = btrfs_item_ptr(path->nodes[0], path->slots[0],
->> @@ -4004,7 +4010,6 @@ next:
->>  			break;
->>  		}
->>  	}
->> -	unlock_extent(&BTRFS_I(inode)->io_tree, 0 , (u64)-1);
->>  out:
->>  	btrfs_free_path(path);
->>  	return ret;
->>
->
-
-
+> 
+> 
+> 

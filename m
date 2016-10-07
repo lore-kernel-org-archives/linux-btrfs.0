@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:62700 "EHLO
+Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:65359 "EHLO
         cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1756304AbcJGIFK (ORCPT
+        by vger.kernel.org with ESMTP id S1756195AbcJGIGX (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 7 Oct 2016 04:05:10 -0400
+        Fri, 7 Oct 2016 04:06:23 -0400
 Subject: Re: BTRFS: space_info 4 has 18446742286429913088 free, is not full
 To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
@@ -20,23 +20,22 @@ References: <1c94f3b1-b238-6668-7976-c0594f170dfe@profihost.ag>
  <23f37454-e24e-5e50-b5dc-99d16c324686@profihost.ag>
  <57F74BF3.9070802@cn.fujitsu.com>
 From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
-Message-ID: <75691250-7c13-f165-4bc6-3c084ad22ad6@profihost.ag>
-Date: Fri, 7 Oct 2016 10:05:02 +0200
+Message-ID: <fd198a26-2330-3965-94c4-cca0d08a55d8@profihost.ag>
+Date: Fri, 7 Oct 2016 10:06:19 +0200
 MIME-Version: 1.0
 In-Reply-To: <57F74BF3.9070802@cn.fujitsu.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-this is what atop shows at mem usage 5 minutes before the crash:
+and it shows:
 
-MEM | tot    62.8G  | free  198.2M  | cache  56.8G  | buff    1.4M |
-slab    3.5G |  shmem   1.1M |  vmbal   0.0M |  hptot   0.0M |
+PAG | scan 33829e5  | steal 1968e3  | stall      0  |              |
+          |               |  swin  257071 |  swout 346960 |
 
-SWP | tot     3.7G  | free    3.2G  |               |              |
-          |               |  vmcom   2.8G |  vmlim  35.1G |
+but the highest user space prog uses only 190MB.
 
-Greets,
+greets,
 Stefan
 
 Am 07.10.2016 um 09:17 schrieb Wang Xiaoguang:

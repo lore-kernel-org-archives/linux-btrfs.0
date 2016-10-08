@@ -1,222 +1,141 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:25425 "EHLO
-        cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S932167AbcJHGFT (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:47684 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-OK)
+        by vger.kernel.org with ESMTP id S934983AbcJHGKK (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 8 Oct 2016 02:05:19 -0400
-Subject: Re: BTRFS: space_info 4 has 18446742286429913088 free, is not full
-To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <1c94f3b1-b238-6668-7976-c0594f170dfe@profihost.ag>
- <57EBAAF5.10509@cn.fujitsu.com>
- <4f91af54-78ae-5c08-3daa-8a0c16210e5f@profihost.ag>
- <57EBB329.9060009@cn.fujitsu.com>
- <3e429001-020a-748b-c0c5-85b4091599a1@profihost.ag>
- <57ECBAE7.5030807@cn.fujitsu.com>
- <0e556b63-7c85-1e97-00b0-91bfca44e82c@profihost.ag>
- <57ECBF0D.3050609@cn.fujitsu.com>
- <85f85ca6-95c0-1394-9b09-93dcc00c2319@profihost.ag>
- <57F5BF26.9090409@cn.fujitsu.com>
-From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
-Message-ID: <5021fd81-5ecc-ee17-14a0-e92e2e5334ec@profihost.ag>
-Date: Sat, 8 Oct 2016 08:05:13 +0200
+        Sat, 8 Oct 2016 02:10:10 -0400
+Date: Sat, 8 Oct 2016 02:10:08 -0400
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: linux-btrfs@vger.kernel.org
+Cc: Chris Mason <clm@fb.com>
+Subject: Re: btrfs rare silent data corruption with kernel data leak (updated
+ with some bisection results)
+Message-ID: <20161008061008.GT21290@hungrycats.org>
+References: <20160921045556.GN21290@hungrycats.org>
 MIME-Version: 1.0
-In-Reply-To: <57F5BF26.9090409@cn.fujitsu.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="mgIE+9cwyCTt+85Z"
+In-Reply-To: <20160921045556.GN21290@hungrycats.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Wang,
 
-currently on the system where it's working fine - no ENOSPC error. But
-it will take a week to be sure they don't come back.
+--mgIE+9cwyCTt+85Z
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Thanks!
+(continuing from https://www.spinics.net/lists/linux-btrfs/msg59251.html)
 
-Greets,
-Stefan
-Am 06.10.2016 um 05:04 schrieb Wang Xiaoguang:
-> Hi,
-> 
-> On 09/29/2016 03:27 PM, Stefan Priebe - Profihost AG wrote:
->> Am 29.09.2016 um 09:13 schrieb Wang Xiaoguang:
->>>>> I found that compress sometime report ENOSPC error even in 4.8-rc8,
->>>>> currently
->>>> I cannot confirm that as i do not have anough space to test this
->>>> without
->>>> compression ;-( But yes i've compression enabled.
->>> I might not get you, my poor english :)
->>> You mean that you only get ENOSPC error when compression is enabled?
->>>
->>> And when compression is not enabled, you do not get ENOSPC error?
->> I can't tell you. I cannot test with compression not enabled. I do not
->> have anough free space on this disk.
-> I had just sent two patches to fix false enospc error for compression,
-> please have a try, they fix false enospc error in my test environment.
->         btrfs: fix false enospc for compression
->         btrfs: improve inode's outstanding_extents computation
-> 
-> I apply these two patchs in linux upstream tree, the latest commit
-> is 41844e36206be90cd4d962ea49b0abc3612a99d0.
-> 
-> Regards,
-> Xiaoguang Wang
-> 
->>
->>>>> I'm trying to fix it.
->>>> That sounds good but do you also get the
->>>> BTRFS: space_info 4 has 18446742286429913088 free, is not full
->>>>
->>>> kernel messages on umount? if not you might have found another problem.
->>> Yes, I seem similar messages, you can paste you whole dmesg info here.
->> ------------[ cut here ]------------
->> WARNING: CPU: 2 PID: 5187 at fs/btrfs/extent-tree.c:5790
->> btrfs_free_block_groups+0x346/0x430 [btrfs]()
->> Modules linked in: netconsole xt_multiport iptable_filter ip_tables
->> x_tables 8021q garp bonding x86_pkg_temp_thermal coretemp kvm_intel kvm
->> irqbypass sb_edac crc32_pclmul edac_core i2c_i801 i40e(O) vxlan
->> ip6_udp_tunnel udp_tunnel shpchp ipmi_si ipmi_msghandler button loop
->> btrfs dm_mod raid10 raid0 multipath linear raid456 async_raid6_recov
->> async_memcpy async_pq async_xor async_tx xor raid6_pq igb i2c_algo_bit
->> i2c_core usbhid raid1 md_mod xhci_pci sg ehci_pci xhci_hcd ehci_hcd
->> sd_mod ahci usbcore ptp libahci usb_common pps_core aacraid
->> CPU: 2 PID: 5187 Comm: umount Tainted: G O 4.4.22+63-ph #1
->> Hardware name: Supermicro Super Server/X10SRi-F, BIOS 2.0 12/17/2015
->> 0000000000000000 ffff880fda777d00 ffffffff813b69c3 0000000000000000
->> ffffffffc067a099 ffff880fda777d38 ffffffff810821c6 0000000000000000
->> ffff880074bf0a00 ffff88103c10c088 ffff88103c10c000 ffff88103c10c098
->> Call Trace:
->> [<ffffffff813b69c3>] dump_stack+0x63/0x90
->> [<ffffffff810821c6>] warn_slowpath_common+0x86/0xc0
->> [<ffffffff810822ba>] warn_slowpath_null+0x1a/0x20
->> [<ffffffffc05de9a6>] btrfs_free_block_groups+0x346/0x430 [btrfs]
->> [<ffffffffc05f0bad>] close_ctree+0x15d/0x330 [btrfs]
->> [<ffffffffc05bf409>] btrfs_put_super+0x19/0x20 [btrfs]
->> [<ffffffff811c85af>] generic_shutdown_super+0x6f/0x100
->> [<ffffffff811c8652>] kill_anon_super+0x12/0x20
->> [<ffffffffc05c0376>] btrfs_kill_super+0x16/0xa0 [btrfs]
->> [<ffffffff811c7ff3>] deactivate_locked_super+0x43/0x70
->> [<ffffffff811c807c>] deactivate_super+0x5c/0x60
->> [<ffffffff811e3b5f>] cleanup_mnt+0x3f/0x90
->> [<ffffffff811e3bf2>] __cleanup_mnt+0x12/0x20
->> [<ffffffff8109dad1>] task_work_run+0x81/0xa0
->> [<ffffffff810021c0>] exit_to_usermode_loop+0xb0/0xc0
->> [<ffffffff81002b44>] syscall_return_slowpath+0xd4/0x130
->> [<ffffffff8169dc0c>] int_ret_from_sys_call+0x25/0x8f
->> ---[ end trace cee6ace13018e13e ]---
->> ------------[ cut here ]------------
->> WARNING: CPU: 2 PID: 5187 at fs/btrfs/extent-tree.c:5791
->> btrfs_free_block_groups+0x365/0x430 [btrfs]()
->> Modules linked in: netconsole xt_multiport iptable_filter ip_tables
->> x_tables 8021q garp bonding x86_pkg_temp_thermal coretemp kvm_intel kvm
->> irqbypass sb_edac crc32_pclmul edac_core i2c_i801 i40e(O) vxlan
->> ip6_udp_tunnel udp_tunnel shpchp ipmi_si ipmi_msghandler button loop
->> btrfs dm_mod raid10 raid0 multipath linear raid456 async_raid6_recov
->> async_memcpy async_pq async_xor async_tx xor raid6_pq igb i2c_algo_bit
->> i2c_core usbhid raid1 md_mod xhci_pci sg ehci_pci xhci_hcd ehci_hcd
->> sd_mod ahci usbcore ptp libahci usb_common pps_core aacraid
->> CPU: 2 PID: 5187 Comm: umount Tainted: G W O 4.4.22+63-ph #1
->> Hardware name: Supermicro Super Server/X10SRi-F, BIOS 2.0 12/17/2015
->> 0000000000000000 ffff880fda777d00 ffffffff813b69c3 0000000000000000
->> ffffffffc067a099 ffff880fda777d38 ffffffff810821c6 0000000000000000
->> ffff880074bf0a00 ffff88103c10c088 ffff88103c10c000 ffff88103c10c098
->> Call Trace:
->> [<ffffffff813b69c3>] dump_stack+0x63/0x90
->> [<ffffffff810821c6>] warn_slowpath_common+0x86/0xc0
->> [<ffffffff810822ba>] warn_slowpath_null+0x1a/0x20
->> [<ffffffffc05de9c5>] btrfs_free_block_groups+0x365/0x430 [btrfs]
->> [<ffffffffc05f0bad>] close_ctree+0x15d/0x330 [btrfs]
->> [<ffffffffc05bf409>] btrfs_put_super+0x19/0x20 [btrfs]
->> [<ffffffff811c85af>] generic_shutdown_super+0x6f/0x100
->> [<ffffffff811c8652>] kill_anon_super+0x12/0x20
->> [<ffffffffc05c0376>] btrfs_kill_super+0x16/0xa0 [btrfs]
->> [<ffffffff811c7ff3>] deactivate_locked_super+0x43/0x70
->> [<ffffffff811c807c>] deactivate_super+0x5c/0x60
->> [<ffffffff811e3b5f>] cleanup_mnt+0x3f/0x90
->> [<ffffffff811e3bf2>] __cleanup_mnt+0x12/0x20
->> [<ffffffff8109dad1>] task_work_run+0x81/0xa0
->> [<ffffffff810021c0>] exit_to_usermode_loop+0xb0/0xc0
->> [<ffffffff81002b44>] syscall_return_slowpath+0xd4/0x130
->> [<ffffffff8169dc0c>] int_ret_from_sys_call+0x25/0x8f
->> ---[ end trace cee6ace13018e13f ]---
->> ------------[ cut here ]------------
->> WARNING: CPU: 2 PID: 5187 at fs/btrfs/extent-tree.c:10151
->> btrfs_free_block_groups+0x291/0x430 [btrfs]()
->> Modules linked in: netconsole xt_multiport iptable_filter ip_tables
->> x_tables 8021q garp bonding x86_pkg_temp_thermal coretemp kvm_intel kvm
->> irqbypass sb_edac crc32_pclmul edac_core i2c_i801 i40e(O) vxlan
->> ip6_udp_tunnel udp_tunnel shpchp ipmi_si ipmi_msghandler button loop
->> btrfs dm_mod raid10 raid0 multipath linear raid456 async_raid6_recov
->> async_memcpy async_pq async_xor async_tx xor raid6_pq igb i2c_algo_bit
->> i2c_core usbhid raid1 md_mod xhci_pci sg ehci_pci xhci_hcd ehci_hcd
->> sd_mod ahci usbcore ptp libahci usb_common pps_core aacraid
->> CPU: 2 PID: 5187 Comm: umount Tainted: G W O 4.4.22+63-ph #1
->> Hardware name: Supermicro Super Server/X10SRi-F, BIOS 2.0 12/17/2015
->> 0000000000000000 ffff880fda777d00 ffffffff813b69c3 0000000000000000
->> ffffffffc067a099 ffff880fda777d38 ffffffff810821c6 ffff880074bf0000
->> ffff880074bf0088 ffff880074bf0df8 ffff88103c10c000 0000000000000000
->> Call Trace:
->> [<ffffffff813b69c3>] dump_stack+0x63/0x90
->> [<ffffffff810821c6>] warn_slowpath_common+0x86/0xc0
->> [<ffffffff810822ba>] warn_slowpath_null+0x1a/0x20
->> [<ffffffffc05de8f1>] btrfs_free_block_groups+0x291/0x430 [btrfs]
->> [<ffffffffc05f0bad>] close_ctree+0x15d/0x330 [btrfs]
->> [<ffffffffc05bf409>] btrfs_put_super+0x19/0x20 [btrfs]
->> [<ffffffff811c85af>] generic_shutdown_super+0x6f/0x100
->> [<ffffffff811c8652>] kill_anon_super+0x12/0x20
->> [<ffffffffc05c0376>] btrfs_kill_super+0x16/0xa0 [btrfs]
->> [<ffffffff811c7ff3>] deactivate_locked_super+0x43/0x70
->> [<ffffffff811c807c>] deactivate_super+0x5c/0x60
->> [<ffffffff811e3b5f>] cleanup_mnt+0x3f/0x90
->> [<ffffffff811e3bf2>] __cleanup_mnt+0x12/0x20
->> [<ffffffff8109dad1>] task_work_run+0x81/0xa0
->> [<ffffffff810021c0>] exit_to_usermode_loop+0xb0/0xc0
->> [<ffffffff81002b44>] syscall_return_slowpath+0xd4/0x130
->> [<ffffffff8169dc0c>] int_ret_from_sys_call+0x25/0x8f
->> ---[ end trace cee6ace13018e140 ]---
->> BTRFS: space_info 4 has 18446742182612910080 free, is not full
->> BTRFS: space_info total=82678120448, used=64784695296, pinned=0,
->> reserved=0, may_use=1908990066688, readonly=0
->>
->> Greets,
->> Stefan
->>
->>> Regards,
->>> Xiaoguang Wang
->>>
->>>> Stefan
->>>>
->>>>> Regards,
->>>>> Xiaoguang Wang
->>>>>
->>>>>> I tried hard to reproduce it but i can't get it to reproduce with a
->>>>>> test
->>>>>> script. Any ideas?
->>>>>>
->>>>>> Stefan
->>>>>>
->>>>>>> Reagrds,
->>>>>>> Xiaoguang Wang
->>>>>>>
->>>>>>>> Greets,
->>>>>>>> Stefan
->>>>>>>>
->>>>>>>>> Regards,
->>>>>>>>> Xiaoguang Wang
->>>>>>>>>> Greets,
->>>>>>>>>> Stefan
->>>>>>>>>> -- 
->>>>>>>>>> To unsubscribe from this list: send the line "unsubscribe
->>>>>>>>>> linux-btrfs" in
->>>>>>>>>> the body of a message to majordomo@vger.kernel.org
->>>>>>>>>> More majordomo info at 
->>>>>>>>>> http://vger.kernel.org/majordomo-info.html
->>>>>>>>>>
->>>>>>>>>>
->>>>>
->>>
->>>
->>
-> 
-> 
-> 
+I'm still poking at this bug, and found out some more about it.
+Recall that this bug seems to have two parts which together cause data
+corruption:
+
+The "write half" of the bug writes a questionable extent structure in
+the filesystem once every few hundred thousand files (a compressed inline
+extent followed by other non-inline extents when a write occurs at
+the beginning of a file, followed by a seek past the end of the first
+page of the file, followed by another write).
+
+The "read half" of the bug reads this structure inconsistently (data
+between the inline extent and the following extent is random garbage,
+different each time the file is read).
+
+After having no success attacking the read half of the bug with a patch,
+I tried to bisect to see where the bug was introduced.
+
+The "write half" of the bug seems to appear first somewhere between v3.8
+and v3.9.  I have not been able to reproduce it with v3.8.13, v3.7.10, or
+v3.6.11.  I can reproduce it in v3.9.11, v3.12.64, and v3.18.13..v4.7.5.
+
+The "read half" of the bug is more interesting.  All kernels I've tested
+that have the write half of the bug have the read half as well, but
+versions 3.6..3.9 have many more instances of a separate non-repeatable
+read corruption (one that does not require the "write half" bug to occur).
+These additional bugs were not anticipated by my bisection test case,
+so my bisect went in the wrong direction and I didn't cover the right
+kernels to understand where these bugs were introduced (yet).
+
+The good news is that whatever went wrong around 3.6..3.9 seems to have
+been fixed by v3.12--that kernel has the same behavior as v4.7.5 for
+data corruption on reads.
+
+
+This is my current repro script.  Run it in a shell loop until corruption
+occurs, e.g. "while repro; do date; done".  Adjust the "result" function
+to taste (e.g. write it to a file, use your own email address, etc).
+
+#!/bin/sh
+set -x
+
+result () {
+	echo "$@" "$(cat /proc/version)" | mail -s "$(echo "$@" | head -1) $(uname -r)" results@localhost
+}
+
+umount /try
+mkdir -p /try
+for blk in /dev/vdc /dev/sdc; do
+	< "$blk" || continue
+	mkfs.btrfs -dsingle -mdup -O ^extref,^skinny-metadata,^no-holes -f "$blk" || exit 1
+	mount -ocompress-force,flushoncommit,max_inline=4096,noatime "$blk" /try || exit 1
+	cd /try || exit 1
+	break
+done
+
+# Must be on btrfs
+btrfs sub list . || exit 1
+
+y=/usr; for x in $(seq 0 9); do rsync -axHSWI "$y/." "$x"; y="$x"; done &
+y=/usr; for x in $(seq 10 19); do rsync -axHSWI "$y/." "$x"; y="$x"; done &
+y=/usr; for x in $(seq 20 29); do rsync -axHSWI "$y/." "$x"; y="$x"; done &
+y=/usr; for x in $(seq 30 39); do rsync -axHSWI "$y/." "$x"; y="$x"; done &
+
+wait
+
+touch list
+
+find -type f -size +4097c -exec sh -c 'for x; do if filefrag -v "$x" | sed -n "4p" | grep -q "inline"; then echo "$x" >> list; fi; done' -- {} +
+
+if [ -s list ]; then
+	while read -r x; do
+		ls -l "$x"
+		filefrag -v "$x"
+		sum="$(sha1sum "$x")"
+		for y in $(seq 0 99); do
+			sysctl vm.drop_caches=1
+			sum2="$(sha1sum "$x")"
+			if [ "$sum" != "$sum2" ]; then
+				result "$x sum1 $sum sum2 $sum2"
+				exit 1
+			fi
+		done
+	done < list
+	result "No inconsistent reads, $(wc -l < list) inlines"
+else
+	result "No inline extents"
+fi
+
+for x in *9/.; do
+	if ! diff -r /usr/. "$x"; then
+		result "Differences found in $x"
+		# We are looking for corrupted inline extents.
+		# Other corruption is interesting but it's not our bug.
+		exit 0
+	fi
+done
+
+result "No corruption found"
+exit 0
+
+--mgIE+9cwyCTt+85Z
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iEYEARECAAYFAlf4jcAACgkQgfmLGlazG5zsvgCfQmthQVvJIFNNn/KWAgBDD1rt
+f2EAnjuzMb1LgN3ID+quF1+JFJcJ0M3J
+=Mnhr
+-----END PGP SIGNATURE-----
+
+--mgIE+9cwyCTt+85Z--

@@ -1,125 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39902 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751294AbcJGPO5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 7 Oct 2016 11:14:57 -0400
-Subject: Re: [PATCH] btrfs: relocation: Fix NULL pointer access and leaking
- qgroups in btrfs_recover_relocation
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, Goldwyn Rodrigues <rgoldwyn@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20161006080337.31691-1-quwenruo@cn.fujitsu.com>
- <4bdf1336-dc97-4dcb-1095-a2545419e95a@suse.de>
- <82aef874-2fc1-15fc-8e50-04c087051489@cn.fujitsu.com>
-From: Goldwyn Rodrigues <rgoldwyn@suse.de>
-Message-ID: <87fed166-76a0-1e1c-c305-2251fcd2a37d@suse.de>
-Date: Fri, 7 Oct 2016 10:14:52 -0500
+Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:42606 "EHLO
+        cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1752357AbcJHF4b (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 8 Oct 2016 01:56:31 -0400
+Subject: Re: BTRFS: space_info 4 has 18446742286429913088 free, is not full
+To: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>,
+        Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <1c94f3b1-b238-6668-7976-c0594f170dfe@profihost.ag>
+ <57EBAAF5.10509@cn.fujitsu.com>
+ <4f91af54-78ae-5c08-3daa-8a0c16210e5f@profihost.ag>
+ <57EBB329.9060009@cn.fujitsu.com>
+ <3e429001-020a-748b-c0c5-85b4091599a1@profihost.ag>
+ <57ECBAE7.5030807@cn.fujitsu.com>
+ <0e556b63-7c85-1e97-00b0-91bfca44e82c@profihost.ag>
+ <57ECBF0D.3050609@cn.fujitsu.com>
+ <85f85ca6-95c0-1394-9b09-93dcc00c2319@profihost.ag>
+ <57F5BF26.9090409@cn.fujitsu.com>
+ <23f37454-e24e-5e50-b5dc-99d16c324686@profihost.ag>
+ <57F74BF3.9070802@cn.fujitsu.com> <57F76BED.5050004@applied-asynchrony.com>
+From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
+Message-ID: <2f80252a-3019-6a6a-5d9e-400161bddc72@profihost.ag>
+Date: Sat, 8 Oct 2016 07:56:26 +0200
 MIME-Version: 1.0
-In-Reply-To: <82aef874-2fc1-15fc-8e50-04c087051489@cn.fujitsu.com>
+In-Reply-To: <57F76BED.5050004@applied-asynchrony.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi Holger,
 
+Am 07.10.2016 um 11:33 schrieb Holger Hoffstätte:
+> On 10/07/16 09:17, Wang Xiaoguang wrote:
+>> Hi,
+>>
+>> On 10/07/2016 03:03 PM, Stefan Priebe - Profihost AG wrote:
+>>> Dear Wang,
+>>>
+>>> can't use v4.8.0 as i always get OOMs and total machine crashes.
+>>>
+>>> Complete traces with your patch and some more btrfs patches applied (in
+>>> the hope in fixes the OOM but it did not):
+>>> http://pastebin.com/raw/6vmRSDm1
+>> I didn't see any such OOMs...
+>> Can you try holger's tree with my patches.
+> 
+> They don't really apply to either 4.4.x (because it has diverged too
+> much by now) or 4.8.x because of the initial dedupe support which came
+> in as part of 4.9rc1 - there are way too many conflicts all over the
+> place and merging them manually took way too much time.
+> It would be useful if you could rebase your patches to for-next.
+> 
+> Stefan, have you tried setting THP to 'madvise' or 'never'?
+> Try 'echo madvise > /sys/kernel/mm/transparent_hugepage/enabled'
+> or boot with transparent_hugepage=madvise (or never) kernel flag.
+> I have no idea if it will help, but it's worth a try.
 
-On 10/06/2016 09:32 PM, Qu Wenruo wrote:
-> 
-> 
-> At 10/07/2016 02:00 AM, Goldwyn Rodrigues wrote:
->> Hi Qu,
->>
->> On 10/06/2016 03:03 AM, Qu Wenruo wrote:
->>> We fixed balance qgroup leaking by introducing
->>> qgroup_fix_relocated_data_extents(), but it only covers normal balance
->>> routine well.
->>>
->>> For case btrfs_recover_relocation() routine, since rc->stage or
->>> rc->data_inode are not initialized, we either skip
->>> qgroup_fix_relocated_data_extents() or just cause NULL pointer access.
->>>
->>> Since we skip qgroup_fix_relocated_data_extents() in
->>> btrfs_recover_relocation(), we will still leak qgroup numbers for that
->>> routine.
->>>
->>> In the fix, we won't use data_inode any longer, as at the timing of the
->>> qgroup fix, noone will modify data_reloc tree any longer, so path
->>> locking should be good enough.
->>>
->>> And add check against rc->merge_reloc_tree, so we can detect if we are
->>> in btrfs_recover_relocation() routine and continue qgroup fix.
->>
->> While testing this patch, I realized the original problem of qgroup
->> values being incorrect after a balance, has returned... or probably was
->> not solved completely. I tried it with the shell script sent sometime
->> back. The script fails when I checkout fix df2c95f33e0a2 as well.
->>
->> I remember it did not appear when I tested it last, so it is possible
->> that some other change has affected this.
->>
->> Would recommend to hold off this until the balance issue is not
->> completely fixed.
->>
->> For reference, the test script is:
->>
->> #!/bin/bash -x
->>
->> MNT="/mnt"
->> DEV="/dev/vdb"
->>
->> mkfs.btrfs -f $DEV
->> mount -t btrfs $DEV $MNT
->>
->> mkdir $MNT/snaps
->> echo "populate $MNT with some data"
->> #cp -a /usr/share/fonts $MNT/
->> cp -a /usr/ $MNT/ &
->> for i in `seq -w 0 8`; do
->>         S="$MNT/snaps/snap$i"
->>         echo "create and populate $S"
->>         btrfs su snap $MNT $S;
->>         cp -a /boot $S;
->> done;
->>
->> #let the cp from above finish
->> wait
->>
->> btrfs fi sync $MNT
->>
->> btrfs quota enable $MNT
->> btrfs quota rescan -w $MNT
->> btrfs qg show $MNT
->>
->> umount $MNT
->>
->> mount -t btrfs $DEV $MNT
->>
->>
->> time btrfs balance start --full-balance $MNT
->>
->> umount $MNT
->>
->> btrfsck $DEV
->>
->>
-> 
-> Thanks for the report.
-> 
-> Yes, the script can reproduce the problem, almost 100% possibility.
-> 
-> But it also takes a long time to run.(Partly because of the slow
-> find_parent_nodes function call).
-> 
-> I tried to simplify it by using inline extent to bumping the tree level
-> and use small file extents to reduce IO.
-> But no good reproducer yet.
-> 
-> Did you remember which kernel version you tested the original fix?
-> Maybe it could provide some clue.
-> 
+It's already set to never. The hosts are currently still up and running
+but only if i run
+echo 3 >/proc/sys/vm/drop_caches
 
-They work for 4.7.0 for sure. I know they work for a couple of 4.8-rc
-versions as well. I haven't got down to bisecting them as yet, but now
-it seems that another patch is affecting these.
+every 30 minutes. It seems the kernel fails to reclaim the cache itself
+if user space needs memory.
 
--- 
--- 
-Goldwyn
+Greets,
+Stefan
+
+> 
+> -h
+> 

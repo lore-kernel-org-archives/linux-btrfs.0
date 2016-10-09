@@ -1,31 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtpq5.tb.mail.iss.as9143.net ([212.54.42.168]:56431 "EHLO
-        smtpq5.tb.mail.iss.as9143.net" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1752047AbcJJMFZ (ORCPT
+Received: from smtpq6.tb.mail.iss.as9143.net ([212.54.42.169]:60266 "EHLO
+        smtpq6.tb.mail.iss.as9143.net" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751677AbcJIPuX (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 Oct 2016 08:05:25 -0400
+        Sun, 9 Oct 2016 11:50:23 -0400
 Received: from [212.54.42.118] (helo=lsmtp4.tb.mail.iss.as9143.net)
-        by smtpq5.tb.mail.iss.as9143.net with esmtp (Exim 4.82)
+        by smtpq6.tb.mail.iss.as9143.net with esmtp (Exim 4.82)
         (envelope-from <laks@webminal.org>)
-        id 1btZKc-0004Cv-QX
-        for linux-btrfs@vger.kernel.org; Mon, 10 Oct 2016 14:05:22 +0200
+        id 1btFiQ-0003jG-VR
+        for linux-btrfs@vger.kernel.org; Sun, 09 Oct 2016 17:08:38 +0200
 Received: from 31-151-236-204.dynamic.upc.nl ([31.151.236.204] helo=webminal.org)
         by lsmtp4.tb.mail.iss.as9143.net with esmtp (Exim 4.82)
         (envelope-from <laks@webminal.org>)
-        id 1btZKS-00086q-N1
-        for linux-btrfs@vger.kernel.org; Mon, 10 Oct 2016 14:05:22 +0200
+        id 1btFiG-0008Aa-Ra
+        for linux-btrfs@vger.kernel.org; Sun, 09 Oct 2016 17:08:38 +0200
 Received: from localhost.localdomain (fedori [127.0.0.1])
-        by webminal.org (8.14.4/8.14.4) with ESMTP id u9AC56tO001526
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Oct 2016 14:05:16 +0200
+        by webminal.org (8.14.4/8.14.4) with ESMTP id u99F8MPQ002120
+        for <linux-btrfs@vger.kernel.org>; Sun, 9 Oct 2016 17:08:32 +0200
 Received: (from laks@localhost)
-        by localhost.localdomain (8.14.4/8.14.4/Submit) id u9AC4tcq001199
-        for linux-btrfs@vger.kernel.org; Mon, 10 Oct 2016 14:04:55 +0200
-Date: Mon, 10 Oct 2016 14:04:55 +0200
+        by localhost.localdomain (8.14.4/8.14.4/Submit) id u99F8C3j001826
+        for linux-btrfs@vger.kernel.org; Sun, 9 Oct 2016 17:08:12 +0200
+Date: Sun, 9 Oct 2016 17:08:12 +0200
 From: "Lakshmipathi.G" <Lakshmipathi.G@giis.co.in>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH]btrfs-progs: btrfs-debugfs: cleanup unused variables reported
- by pylint
-Message-ID: <20161010120455.GA32406@fedori>
+Subject: [PATCH]btrfs-progs: Add fast,slow symlinks,fifo types to convert test
+Message-ID: <20161009150811.GA32553@fedori>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -33,48 +32,54 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Signed-off-by: Lakshmipathi.G <Lakshmipathi.G@giis.co.in>
 ---
- btrfs-debugfs | 7 +++----
- 1 file changed, 3 insertions(+), 4 deletions(-)
+ tests/common.convert | 20 +++++++++++++++++---
+ 1 file changed, 17 insertions(+), 3 deletions(-)
 
-diff --git a/btrfs-debugfs b/btrfs-debugfs
-index 0a654a6..dfb8853 100755
---- a/btrfs-debugfs
-+++ b/btrfs-debugfs
-@@ -4,7 +4,7 @@
- # LGPLv2 license
- # Copyright Facebook 2014
+diff --git a/tests/common.convert b/tests/common.convert
+index 1e00d38..5083e65 100644
+--- a/tests/common.convert
++++ b/tests/common.convert
+@@ -25,10 +25,10 @@ generate_dataset() {
+ 			done
+ 			;;
  
--import sys,os,struct,fcntl,ctypes,stat,argparse
-+import sys, os, fcntl, ctypes, stat, argparse
+-		symlink)
++		fast_symlink)
+ 			for num in $(seq 1 $DATASET_SIZE); do
+ 				run_check $SUDO_HELPER touch $dirpath/$dataset_type.$num
+-				run_check $SUDO_HELPER ln -s $dirpath/$dataset_type.$num $dirpath/slink.$num
++				run_check $SUDO_HELPER cd $dirpath && ln -s $dataset_type.$num $dirpath/slink.$num && cd /
+ 			done
+ 			;;
  
- # helpers for max ints
- maxu64 = (1L << 64) - 1
-@@ -233,7 +233,6 @@ def print_file_extents(filename):
-     s.args.min_objectid = st.st_ino
-     s.args.max_objectid = st.st_ino
+@@ -71,12 +71,26 @@ generate_dataset() {
+ 				run_check $SUDO_HELPER setfattr -n user.foo -v bar$num $dirpath/$dataset_type.$num
+ 			done
+ 			;;
++
++		fifo)
++			for num in $(seq 1 $DATASET_SIZE); do
++				run_check $SUDO_HELPER mkfifo $dirpath/$dataset_type.$num
++			done
++			;;
++
++		slow_symlink)
++			long_filename=`date +%s | sha256sum | cut -f1 -d'-'`
++			run_check $SUDO_HELPER touch $dirpath/$long_filename
++			for num in $(seq 1 $DATASET_SIZE); do
++				run_check $SUDO_HELPER ln -s $dirpath/$long_filename $dirpath/slow_slink.$num
++			done
++			;;
+ 	esac
+ }
  
--    size = st.st_size
+ populate_fs() {
  
-     while True:
-         try:
-@@ -314,7 +313,7 @@ def print_block_groups(mountpoint):
- 
-     try:
-         fd = os.open(mountpoint, os.O_RDONLY)
--        st = os.fstat(fd)
-+        os.fstat(fd)
-     except Exception, e:
-         sys.stderr.write("Failed to open %s (%s)\n" % (mountpoint, e))
-         return -1
-@@ -336,7 +335,7 @@ def print_block_groups(mountpoint):
-         h = ctypes.addressof(header)
-         p_left = args_buffer_size
- 
--        for x in xrange(0, s.args.nr_items):
-+        for _ in xrange(0, s.args.nr_items):
-             # for each itme, copy the header from the buffer into
-             # our header struct
-             ctypes.memmove(h, p, header_size)
+-        for dataset_type in 'small' 'hardlink' 'symlink' 'brokenlink' 'perm' 'sparse' 'acls'; do
++        for dataset_type in 'small' 'hardlink' 'fast_symlink' 'brokenlink' 'perm' 'sparse' 'acls' 'fifo' 'slow_symlink'; do
+ 		generate_dataset "$dataset_type"
+ 	done
+ }
 -- 
 1.9.3
 

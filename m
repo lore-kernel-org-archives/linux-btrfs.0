@@ -1,35 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f53.google.com ([74.125.82.53]:35238 "EHLO
-        mail-wm0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S943188AbcJ0O6P (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Oct 2016 10:58:15 -0400
-Received: by mail-wm0-f53.google.com with SMTP id e69so40207541wmg.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 27 Oct 2016 07:58:14 -0700 (PDT)
-Date: Thu, 27 Oct 2016 08:54:32 +0100
-From: Domagoj =?utf-8?B?VHLFoWFu?= <domagoj.trsan@gmail.com>
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org, clm@fb.com, jbacik@fb.com,
-        dsterba@suse.com
-Subject: Re: [PATCH v2] btrfs: change btrfs_csum_final result param type to u8
-Message-ID: <20161027075432.irj5okbpgxg6znas@nemesis>
-References: <20161021114702.29425-1-domagoj.trsan@gmail.com>
- <20161024170550.GF22935@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20161024170550.GF22935@twin.jikos.cz>
+Received: from mx2.suse.de ([195.135.220.15]:57526 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750799AbcJJJxn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 10 Oct 2016 05:53:43 -0400
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: jmaggard10@gmail.com, clm@fb.com
+Subject: Btrfs progs pre-release 4.8.1-rc2
+Date: Mon, 10 Oct 2016 10:38:02 +0200
+Message-Id: <20161010083802.9420-1-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-10-24 19:05 +0200, David Sterba wrote:
-> 
-> Ok that's better, just the signed-off-by line is missing. I would add it
-> myself on behalf of contributors I know, but as a matter of practice,
-> fix it please and resend the patch.  Using the "git commit -s" adds the
-> line for you.
->
+Hi,
 
-I added singed-off-by and resent the patch
+another pre-release. The problem with ioctl on 32bit ARM that Justin reported
+shows we have to be more careful with the changes to ioctl structures. The
+build size checks are now optional (make D=bcheck to enable) and the patches to
+add packing, alignment or alternate structures are left out.
 
--- 
-(\/)(;,,;)(\/)
+ETA for 4.8.1 is tomorrow.
 
+Changes since 4.8:
+- 32bit build works
+- build without backtrace support fixed
+
+Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
+Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
+
+Shortlog:
+
+David Sterba (6):
+      btrfs-progs: build: add explicit option separator to rm commands
+      btrfs-progs: tests: add script to help build coverage
+      btrfs-progs: fix printf format of sizeof on 32bit build
+      btrfs-progs: ioctl: make build-time structure size checks optional
+      btrfs-progs: update CHANGES for v4.8.1
+      Btrfs progs v4.8.1-rc2
+
+Qu Wenruo (1):
+      btrfs-progs: Fix warning_trace compile error if backtrace is disabled

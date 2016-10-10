@@ -1,44 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f193.google.com ([209.85.192.193]:35643 "EHLO
-        mail-pf0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750964AbcJEND3 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Oct 2016 09:03:29 -0400
-Received: by mail-pf0-f193.google.com with SMTP id t25so6297894pfg.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 05 Oct 2016 06:03:29 -0700 (PDT)
-From: Prasanth K S R <kosigiprasanth@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Prasanth K S R <prasanth.ksr@dell.com>, dsterba@suse.com
-Subject: [PATCH] Btrfs-progs: subvol_uuid_search: Return error code on memory allocation failure
-Date: Wed,  5 Oct 2016 18:33:12 +0530
-Message-Id: <1475672592-3963-1-git-send-email-kosigiprasanth@gmail.com>
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:57495 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751522AbcJJVQ2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 10 Oct 2016 17:16:28 -0400
+Subject: Re: [PATCH] btrfs: let btrfs_delete_unused_bgs() to clean relocated
+ bgs
+To: Naohiro Aota <naohiro.aota@hgst.com>, <linux-btrfs@vger.kernel.org>
+References: <1472802392-10851-1-git-send-email-naohiro.aota@hgst.com>
+CC: Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        <linux-kernel@vger.kernel.org>
+From: Chris Mason <clm@fb.com>
+Message-ID: <7ac97eed-6bc1-3b23-38cf-89c5eda49f23@fb.com>
+Date: Mon, 10 Oct 2016 17:04:03 -0400
+MIME-Version: 1.0
+In-Reply-To: <1472802392-10851-1-git-send-email-naohiro.aota@hgst.com>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Prasanth K S R <prasanth.ksr@dell.com>
+On 09/02/2016 03:46 AM, Naohiro Aota wrote:
+> Currently, btrfs_relocate_chunk() is removing relocated BG by itself. But
+> the work can be done by btrfs_delete_unused_bgs() (and it's better since it
+> trim the BG). Let's dedupe the code.
+>
+> While btrfs_delete_unused_bgs() is already hitting the relocated BG, it
+> skip the BG since the BG has "ro" flag set (to keep balancing BG intact).
+> On the other hand, btrfs cannot drop "ro" flag here to prevent additional
+> writes. So this patch make use of "removed" flag.
+> btrfs_delete_unused_bgs() now detect the flag to distinguish whether a
+> read-only BG is relocating or not.
+>
+> Signed-off-by: Naohiro Aota <naohiro.aota@hgst.com>
 
-This commit fixes coverity defect CID 1328695.
+This runs into trouble with btrfs_rm_device(), I've been triggering 
+crashes with btrfs/101 here.
 
-Signed-off-by: Prasanth K S R <prasanth.ksr@dell.com>
----
- send-utils.c | 5 +++++
- 1 file changed, 5 insertions(+)
+The problem is that by the time we get around to running 
+btrfs_delete_unused_bgs(), btrfs_rm_device() has long since free'd the 
+device.
 
-diff --git a/send-utils.c b/send-utils.c
-index a85fa08..6f80b6f 100644
---- a/send-utils.c
-+++ b/send-utils.c
-@@ -486,6 +486,11 @@ struct subvol_info *subvol_uuid_search(struct subvol_uuid_search *s,
- 		info->path = strdup(path);
- 	} else {
- 		info->path = malloc(PATH_MAX);
-+		if (!info->path) {
-+			fprintf(stderr, "Memory allocation failed\n");
-+			ret = -ENOMEM;
-+			goto out;
-+		}
- 		ret = btrfs_subvolid_resolve(s->mnt_fd, info->path,
- 					     PATH_MAX, root_id);
- 	}
--- 
-2.7.4
+I thought about calling btrfs_delete_unused_bgs() directly from 
+btrfs_rm_device(), but it might bail out without returning an error for 
+a number of reasons.
 
+For now, I've reverted this patch from the pull, but we can bring it 
+back once the device removal path is covered.
+
+-chris

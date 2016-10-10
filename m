@@ -1,51 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from synology.com ([59.124.61.242]:46598 "EHLO synology.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S934855AbcJGCHK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 6 Oct 2016 22:07:10 -0400
-From: robbieko <robbieko@synology.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Robbie Ko <robbieko@synology.com>
-Subject: [PATCH] Btrfs: fix leak subvol subv_writers conter
-Date: Fri,  7 Oct 2016 10:01:29 +0800
-Message-Id: <1475805689-9989-1-git-send-email-robbieko@synology.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:30569 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751586AbcJJKwJ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 10 Oct 2016 06:52:09 -0400
+Subject: Re: [PATCH] btrfs-progs: btrfstune: Register new UUIDs after uuid
+ change
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+References: <20161010092101.469-1-quwenruo@cn.fujitsu.com>
+Cc: dsterba@suse.cz
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <d74cdd9e-ad05-3d33-111e-92308c7b9775@oracle.com>
+Date: Mon, 10 Oct 2016 18:54:08 +0800
+MIME-Version: 1.0
+In-Reply-To: <20161010092101.469-1-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Robbie Ko <robbieko@synology.com>
 
-In run_delalloc_nocow, maybe not release subv_writers conter,
-will lead to create snapshot hang.
 
-Signed-off-by: Robbie Ko <robbieko@synology.com>
----
- fs/btrfs/inode.c | 10 ++++++++--
- 1 file changed, 8 insertions(+), 2 deletions(-)
+On 10/10/16 17:21, Qu Wenruo wrote:
+> For multi-device btrfs, after UUID change we should info kernel, or new
+> fs can't be mounted due to false alert on missing devices.
+>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+>  btrfstune.c | 9 +++++++++
+>  1 file changed, 9 insertions(+)
+>
+> diff --git a/btrfstune.c b/btrfstune.c
+> index 15dde90..23d06ce 100644
+> --- a/btrfstune.c
+> +++ b/btrfstune.c
+> @@ -369,6 +369,15 @@ static int change_uuid(struct btrfs_fs_info *fs_info, const char *new_fsid_str)
+>  	fs_info->new_fsid = NULL;
+>  	fs_info->new_chunk_tree_uuid = NULL;
+>  	printf("Fsid change finished\n");
+> +
+> +	/*
+> +	 * Register new devices, or multi-volume btrfs can't be mounted until
+> +	 * device scan happens.
+> +	 * Ignore any error, as such register is optional.
+> +	 */
+> +	printf("Register new UUIDs(error can be ignored)\n");
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index e6811c4..9722554 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1386,11 +1386,17 @@ next_slot:
- 			 * this ensure that csum for a given extent are
- 			 * either valid or do not exist.
- 			 */
--			if (csum_exist_in_range(root, disk_bytenr, num_bytes))
-+			if (csum_exist_in_range(root, disk_bytenr, num_bytes)) {
-+				if (!nolock)
-+					btrfs_end_write_no_snapshoting(root);
- 				goto out_check;
-+			}
- 			if (!btrfs_inc_nocow_writers(root->fs_info,
--						     disk_bytenr))
-+						     disk_bytenr)) {
-+				if (!nolock)
-+					btrfs_end_write_no_snapshoting(root);
- 				goto out_check;
-+			}
- 			nocow = 1;
- 		} else if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
- 			extent_end = found_key.offset +
--- 
-1.9.1
+  Whats the error in particular in this context. ?
 
+> +	btrfs_register_all_devices();
+
+  That means after a reboot -> change uuid it will register the devices 
+though the devices weren't registered to the kernel before.
+
+  Its fair enough just remind user to run dev scan so that kernel can 
+see them.
+
+Thanks, Anand
+
+
+> +
+>  out:
+>  	return ret;
+>  }
+>

@@ -1,85 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtpq6.tb.mail.iss.as9143.net ([212.54.42.169]:60266 "EHLO
-        smtpq6.tb.mail.iss.as9143.net" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751677AbcJIPuX (ORCPT
+Received: from zeniv.linux.org.uk ([195.92.253.2]:49960 "EHLO
+        ZenIV.linux.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752292AbcJJPzJ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 9 Oct 2016 11:50:23 -0400
-Received: from [212.54.42.118] (helo=lsmtp4.tb.mail.iss.as9143.net)
-        by smtpq6.tb.mail.iss.as9143.net with esmtp (Exim 4.82)
-        (envelope-from <laks@webminal.org>)
-        id 1btFiQ-0003jG-VR
-        for linux-btrfs@vger.kernel.org; Sun, 09 Oct 2016 17:08:38 +0200
-Received: from 31-151-236-204.dynamic.upc.nl ([31.151.236.204] helo=webminal.org)
-        by lsmtp4.tb.mail.iss.as9143.net with esmtp (Exim 4.82)
-        (envelope-from <laks@webminal.org>)
-        id 1btFiG-0008Aa-Ra
-        for linux-btrfs@vger.kernel.org; Sun, 09 Oct 2016 17:08:38 +0200
-Received: from localhost.localdomain (fedori [127.0.0.1])
-        by webminal.org (8.14.4/8.14.4) with ESMTP id u99F8MPQ002120
-        for <linux-btrfs@vger.kernel.org>; Sun, 9 Oct 2016 17:08:32 +0200
-Received: (from laks@localhost)
-        by localhost.localdomain (8.14.4/8.14.4/Submit) id u99F8C3j001826
-        for linux-btrfs@vger.kernel.org; Sun, 9 Oct 2016 17:08:12 +0200
-Date: Sun, 9 Oct 2016 17:08:12 +0200
-From: "Lakshmipathi.G" <Lakshmipathi.G@giis.co.in>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH]btrfs-progs: Add fast,slow symlinks,fifo types to convert test
-Message-ID: <20161009150811.GA32553@fedori>
+        Mon, 10 Oct 2016 11:55:09 -0400
+Date: Mon, 10 Oct 2016 16:55:03 +0100
+From: Al Viro <viro@ZenIV.linux.org.uk>
+To: Dave Jones <davej@codemonkey.org.uk>, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org,
+        Linux Kernel <linux-kernel@vger.kernel.org>
+Subject: Re: btrfs_direct_IO oops
+Message-ID: <20161010155503.GZ19539@ZenIV.linux.org.uk>
+References: <20161008180806.fmpwtw4vcc7lzd36@codemonkey.org.uk>
+ <20161008182903.GU19539@ZenIV.linux.org.uk>
+ <20161008232008.nouzkd54kiquvpir@codemonkey.org.uk>
+ <20161009151106.damzuhyjpdzq4x2w@codemonkey.org.uk>
+ <20161010034356.GY19539@ZenIV.linux.org.uk>
+ <20161010131122.cjmoof6yblwl7tak@codemonkey.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20161010131122.cjmoof6yblwl7tak@codemonkey.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Lakshmipathi.G <Lakshmipathi.G@giis.co.in>
----
- tests/common.convert | 20 +++++++++++++++++---
- 1 file changed, 17 insertions(+), 3 deletions(-)
+On Mon, Oct 10, 2016 at 09:11:22AM -0400, Dave Jones wrote:
 
-diff --git a/tests/common.convert b/tests/common.convert
-index 1e00d38..5083e65 100644
---- a/tests/common.convert
-+++ b/tests/common.convert
-@@ -25,10 +25,10 @@ generate_dataset() {
- 			done
- 			;;
- 
--		symlink)
-+		fast_symlink)
- 			for num in $(seq 1 $DATASET_SIZE); do
- 				run_check $SUDO_HELPER touch $dirpath/$dataset_type.$num
--				run_check $SUDO_HELPER ln -s $dirpath/$dataset_type.$num $dirpath/slink.$num
-+				run_check $SUDO_HELPER cd $dirpath && ln -s $dataset_type.$num $dirpath/slink.$num && cd /
- 			done
- 			;;
- 
-@@ -71,12 +71,26 @@ generate_dataset() {
- 				run_check $SUDO_HELPER setfattr -n user.foo -v bar$num $dirpath/$dataset_type.$num
- 			done
- 			;;
-+
-+		fifo)
-+			for num in $(seq 1 $DATASET_SIZE); do
-+				run_check $SUDO_HELPER mkfifo $dirpath/$dataset_type.$num
-+			done
-+			;;
-+
-+		slow_symlink)
-+			long_filename=`date +%s | sha256sum | cut -f1 -d'-'`
-+			run_check $SUDO_HELPER touch $dirpath/$long_filename
-+			for num in $(seq 1 $DATASET_SIZE); do
-+				run_check $SUDO_HELPER ln -s $dirpath/$long_filename $dirpath/slow_slink.$num
-+			done
-+			;;
- 	esac
- }
- 
- populate_fs() {
- 
--        for dataset_type in 'small' 'hardlink' 'symlink' 'brokenlink' 'perm' 'sparse' 'acls'; do
-+        for dataset_type in 'small' 'hardlink' 'fast_symlink' 'brokenlink' 'perm' 'sparse' 'acls' 'fifo' 'slow_symlink'; do
- 		generate_dataset "$dataset_type"
- 	done
- }
--- 
-1.9.3
+> My compiler choked on that, but I fixed it up. The printk didn't
+> trigger though..
+> 
+> idx = 0, offset = 0
+> curbuf = 0, nrbufs = 1, buffers = 16
+> [ffffffffb9a21100 ffffea00126019c0 0 4096]
+> [          (null) ffffea0013746440 0 0]
+> [          (null) ffffea00132956c0 0 0]
+> [          (null) ffffea0013295700 0 0]
+> [          (null) ffffea0013295740 0 0]
+> [          (null) ffffea0013295780 0 0]
+> [          (null) ffffea00132957c0 0 0]
+> [          (null) ffffea0013595c00 0 0]
+> [          (null) ffffea0012b1b6c0 0 0]
+> [          (null)           (null) 0 0]
+> [          (null)           (null) 0 0]
+> [          (null)           (null) 0 0]
+> [          (null)           (null) 0 0]
+> [          (null)           (null) 0 0]
+> [          (null)           (null) 0 0]
+> [          (null)           (null) 0 0]
+> ------------[ cut here ]------------
+> WARNING: CPU: 1 PID: 13581 at lib/iov_iter.c:327 sanity+0x102/0x150
+> CPU: 1 PID: 13581 Comm: trinity-c17 Not tainted 4.8.0-think+ #9 
+>  ffffc90000963ae8
+>  ffffffffb93e22d1
+>  0000000000000000
+>  0000000000000000
+> 
+>  ffffffffb9c1e1cb
+>  ffffffffb93fa5b2
+>  ffffc90000963b28
+>  ffffffffb908b010
+> 
+>  00000147d43c0e7f
+>  ffffffffb9c1e1cb
+>  0000000000000147
+>  0000000000000010
 
+What are these from?  Confused...
+
+> Call Trace:
+
+[via splice_direct_to_actor()]
+
+Hmmm...  I think I see it.  Could you try the following (on top of debugging
+in lib/iov_iter.c) and see if anything triggers?
+
+diff --git a/fs/xfs/xfs_file.c b/fs/xfs/xfs_file.c
+index bfc2aa7..b63d8c5 100644
+--- a/fs/xfs/xfs_file.c
++++ b/fs/xfs/xfs_file.c
+@@ -319,7 +319,7 @@ xfs_file_dio_aio_read(
+ 	data = *to;
+ 	ret = __blockdev_direct_IO(iocb, inode, target->bt_bdev, &data,
+ 			xfs_get_blocks_direct, NULL, NULL, 0);
+-	if (ret > 0) {
++	if (ret >= 0) {
+ 		iocb->ki_pos += ret;
+ 		iov_iter_advance(to, ret);
+ 	}
+diff --git a/mm/filemap.c b/mm/filemap.c
+index 68f1813..88e5ddd 100644
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -1935,7 +1935,7 @@ generic_file_read_iter(struct kiocb *iocb, struct iov_iter *iter)
+ 		file_accessed(file);
+ 
+ 		retval = mapping->a_ops->direct_IO(iocb, &data);
+-		if (retval > 0) {
++		if (retval >= 0) {
+ 			iocb->ki_pos += retval;
+ 			iov_iter_advance(iter, retval);
+ 		}

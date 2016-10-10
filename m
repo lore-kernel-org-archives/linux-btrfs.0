@@ -1,67 +1,152 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f46.google.com ([209.85.218.46]:33760 "EHLO
-        mail-oi0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751498AbcJJVFt (ORCPT
+Received: from aserp1050.oracle.com ([141.146.126.70]:34215 "EHLO
+        aserp1050.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751522AbcJJVFt (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Mon, 10 Oct 2016 17:05:49 -0400
-Received: by mail-oi0-f46.google.com with SMTP id y2so2100122oie.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Oct 2016 14:05:13 -0700 (PDT)
+Received: from aserp1040.oracle.com (aserp1040.oracle.com [141.146.126.69])
+        by aserp1050.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id u9AL5QSS001364
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Oct 2016 21:05:26 GMT
+Date: Mon, 10 Oct 2016 14:03:46 -0700
+From: Liu Bo <bo.li.liu@oracle.com>
+To: aron@aron.ws
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: corrupt leaf, slot offset bad
+Message-ID: <20161010210346.GA8381@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <57e7870b981160be5fabc63c4967e90f@aron.ws>
 MIME-Version: 1.0
-In-Reply-To: <20161010234227.69746d3f@natsu>
-References: <CAG6KGPS8Gvy2zGCe22mMmk4uXrqVyRP8FHayhe0ph-8vC+kA4A@mail.gmail.com>
- <CAG6KGPSeR1zAuU0Xo9DrEpd-0QC9agB7p7z+Lb69hxS233_Cvg@mail.gmail.com> <20161010234227.69746d3f@natsu>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Mon, 10 Oct 2016 15:05:12 -0600
-Message-ID: <CAJCQCtQh2C95=ug3x7wT98CA-fRAVXxd5Ghz4suYkENFCf8jQg@mail.gmail.com>
-Subject: Re: csum failed during copy/compare
-To: Roman Mamedov <rm@romanrm.net>
-Cc: Martin Dev <mrturtledev@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <57e7870b981160be5fabc63c4967e90f@aron.ws>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 10, 2016 at 12:42 PM, Roman Mamedov <rm@romanrm.net> wrote:
-> On Mon, 10 Oct 2016 10:44:39 +0100
-> Martin Dev <mrturtledev@gmail.com> wrote:
->
->> I work for system verification of SSDs and we've recently come up
->> against an issue with BTRFS on Ubuntu 16.04
->
->> This seems to be a recent change
->
-> ...well, a change in what?
->
-> If you really didn't change anything on your machines and the used process,
-> there is no reason for anything to start breaking, other than obvious hardware
-> issues from age/etc (likely not what's happening here).
->
-> So you most likely did change something yourself, and perhaps the change was
-> upgrading OS version, kernel version(!!!), or versions of software in general.
->
-> As such, the first suggestion would be go through the recent software updates
-> history, maybe even restore an OS image you used three months ago (if
-> available) and confirm that the problem doesn't occur there. After that it's a
-> process called bisecting, there are tools for that, but likely you don't even
-> need those yet, just carefully note when you got which upgrades, paying
-> highest attention to the kernel version, and note at which point the
-> corruptions start to occur.
+On Mon, Oct 10, 2016 at 08:57:19PM +0200, aron@aron.ws wrote:
+> Hi all,
+> 
+> I've been using btrfs for a few months now, without any problems. During
+> work, I've noticed segfaults, when accessing my root directory. As my home
+> directory contents was readable, I've decided to reboot. That was the worst
+> decision, as now I can't copy my data off the SSD. It seems like a memory
+> isse. I have backups, but its ~2 weeks old. What I did is a dd dump
+> immediately. Have latest kernel and latest progs built from source now, but
+> :S ...
+> 
+> This is what I've got:
+> 
+> When mounting:
+> 
+> BTRFS critical (device: sdb2): corrupt leaf, slot offset bad:
+> block=610107392,root=1, slot=108
 
+This indicates that leaf 610107392 is corrupted somehow because its slot
+108's 'start offset in leaf' and slot 109's 'end offset in leaf' doesn't
+match with each other, the cause is not shown though.
 
-There  have been various trim bugs, in Btrfs but also in the block
-layer. And I don't remember all the different versions involved.  I'd
-like to think 4.4.24 should behave the same as 4.8.1, so I would
-retest with those two, using something without ubuntu specific
-backports (i.e. something as close to the kernel.org trees of those
-versions as possible). I have no idea what Ubuntu generic 4.4.0-21
-translates into. Because of the 0, it makes me think it's literally
-4.4.0 with 21 sets of various backports, from some unknown time frame
-without going and looking it up. If that's really 4.4.21, then it's
-weirdly named, I don't know why any distro would do that.
+> 
+> find-root prints nothing to the stdout ofter 2 hours.
+> 
+> running btrfs inspect-internal dump-tree -b 610107392 /dev/sdb2
 
-In any case I would compare 4.8.1 and 4.4.24 because those two should
-work and if not it's a bug that needs to get fixed. Independently,
-check the SSD firmware. There have been bugs there also.
+> 
+> leaf 610107392 items 188 free space 1690 generation 90792 owner 5
 
--- 
-Chris Murphy
+owner 5 means that it's not a tree root leaf, it's a fs tree leaf.
+
+> fs uuid 2cc75a87-b22b-448e-80d4-383a9f42deed
+> chunk uuid a5b09a2a-da3d-4049-91ba-4fe66932907b
+> 	item 0 key (256 INODE_ITEM 0) itemoff 16123 itemsize 160
+> 		inode generation 3 transid 90769 size 144 nbytes 16384
+> 		block group 0 mode 40755 links 1 uid 0 gid 0
+> 		rdev 0 flags 0x0(none)
+> 	item 1 key (256 INODE_REF 256) itemoff 16111 itemsize 12
+> 		inode ref index 0 namelen 2 name: ..
+> 	item 2 key (256 DIR_ITEM 145260132) itemoff 16078 itemsize 33
+> 		location key (265 INODE_ITEM 0) type DIR
+> 		namelen 3 datalen 0 name: dev
+> 	item 3 key (256 DIR_ITEM 217684952) itemoff 16045 itemsize 33
+> 		location key (266 INODE_ITEM 0) type DIR
+> 		namelen 3 datalen 0 name: run
+> 	item 4 key (256 DIR_ITEM 308198373) itemoff 16011 itemsize 34
+> 		location key (257 INODE_ITEM 0) type DIR
+> 
+> ...
+
+Maybe we can check the content of item 108 and item 109 in this output from
+'dump-tree'?
+
+Thanks,
+
+-liubo
+
+> 	item 111 key (261 DIR_ITEM 81211850) itemoff 11344 itemsize 131133
+> 		location key (893669 INODE_ITEM 0) type FILE
+> 		namelen 31 datalen 0 name: babl-0.1.16-1-x86_64.pkg.tar.xz
+> 		location key (388547 INODE_ITEM 0) type FILE
+> 		namelen 32 datalen 0 name: intltool-0.51.0-1-any.pkg.tar.xz
+> ...
+> 		namelen 30 datalen 0 name: glibc-2.24-2-x86_64.pkg.tar.xz
+> 		location key (893658 INODE_ITEM 0) type FILE
+> 		namelen 36 datalen 0 name: procps-ng-3.3.12-1-x86_64.pkg.tar.xz
+> 		location key (EXTENT_TREE UNKNOWN.3 36094832640) type 12
+> 		namelen 0 datalen 0 name:
+> 		location key (291 UNKNOWN.0 0) type 0
+> 		namelen 0 datalen 0 name:
+> 		location key (18556457741975552 UNKNOWN.0 0) type 0
+> 		namelen 0 datalen 7134 name:
+> 		data
+> 		location key (0 UNKNOWN.0 0) type 0
+> 		namelen 0 datalen 0 name:
+> 		location key (0 UNKNOWN.0 0) type 0
+> 		namelen 0 datalen 0 name:
+> 		location key (0 UNKNOWN.0 0) type 0
+> 		namelen 0 datalen 0 name:
+> 		location key (0 UNKNOWN.0 0) type 0
+> 		namelen 0 datalen 0 name:
+> 		location key (0 UNKNOWN.0 0) type 0
+> 		namelen 0 datalen 0 name:
+> 		location key (0 UNKNOWN.0 0) type 0
+> 		namelen 0 datalen 0 name:
+> 		location key (0 UNKNOWN.0 0) type 0
+> 		namelen 0 datalen 0 name:
+> 		location key (0 UNKNOWN.0 0) type 0
+> 		namelen 0 datalen 0 name:
+> 		location key (0 UNKNOWN.0 0) type 0
+> 		namelen 0 datalen 0 name:
+> 
+> ....
+> 
+> segfault
+> 
+> 
+> running restore:
+> 
+> incorrect offsets 11532 11548
+> Error searching -1
+> 
+> Tried every rescue, check commands, in different variations ... nothing. It
+> seems that the root leaf (?) has some garbage, tried using the corrupt-block
+> utility, to mark the item dirty got the same error: incorrect offsets.
+> 
+> The only thing I've managed is to restore a part of the /etc directory,
+> with: btrfs restore -i -f 610123776 -vvvv -d /dev/sdb2 /mnt/restore
+> 
+> I'm still trying to learn how the data is structured now, but my problem is
+> that I can't figure out how to calculate the leaf positions, using the
+> dump-tree output ...
+> 
+> I need some kind tool/script that can recursively rescue the structure from
+> a defined leaf. (can this be done?)
+> 
+> Any help would be appreciated! :)
+> 
+> Thanks!
+> 
+> Yours,
+> Aron
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

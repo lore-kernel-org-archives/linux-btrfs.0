@@ -1,222 +1,219 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:38404 "EHLO
-        cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751725AbcJJUHI (ORCPT
+Received: from mail-oi0-f44.google.com ([209.85.218.44]:34263 "EHLO
+        mail-oi0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751522AbcJJVAF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 Oct 2016 16:07:08 -0400
-Subject: Re: BTRFS: space_info 4 has 18446742286429913088 free, is not full
-To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <1c94f3b1-b238-6668-7976-c0594f170dfe@profihost.ag>
- <57EBAAF5.10509@cn.fujitsu.com>
- <4f91af54-78ae-5c08-3daa-8a0c16210e5f@profihost.ag>
- <57EBB329.9060009@cn.fujitsu.com>
- <3e429001-020a-748b-c0c5-85b4091599a1@profihost.ag>
- <57ECBAE7.5030807@cn.fujitsu.com>
- <0e556b63-7c85-1e97-00b0-91bfca44e82c@profihost.ag>
- <57ECBF0D.3050609@cn.fujitsu.com>
- <85f85ca6-95c0-1394-9b09-93dcc00c2319@profihost.ag>
- <57F5BF26.9090409@cn.fujitsu.com>
-From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
-Message-ID: <c3318651-b339-032a-8471-40bd97398a27@profihost.ag>
-Date: Mon, 10 Oct 2016 22:06:55 +0200
+        Mon, 10 Oct 2016 17:00:05 -0400
+Received: by mail-oi0-f44.google.com with SMTP id t73so1859099oie.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Oct 2016 13:59:12 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <57F5BF26.9090409@cn.fujitsu.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <5cde01d2230f$fa1e3150$ee5a93f0$@com>
+References: <5cde01d2230f$fa1e3150$ee5a93f0$@com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Mon, 10 Oct 2016 14:59:11 -0600
+Message-ID: <CAJCQCtQ0SCZi36RG32NiHVYJRz8gHCtfhWYEqM93y2twX4C4JA@mail.gmail.com>
+Subject: Re: raid6 file system in a bad state
+To: "Jason D. Michaelson" <jasondmichaelson@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dear Wang,
+On Mon, Oct 10, 2016 at 10:04 AM, Jason D. Michaelson
+<jasondmichaelson@gmail.com> wrote:
 
-Am 06.10.2016 um 05:04 schrieb Wang Xiaoguang:
-> Hi,
-> 
-> On 09/29/2016 03:27 PM, Stefan Priebe - Profihost AG wrote:
->> Am 29.09.2016 um 09:13 schrieb Wang Xiaoguang:
->>>>> I found that compress sometime report ENOSPC error even in 4.8-rc8,
->>>>> currently
->>>> I cannot confirm that as i do not have anough space to test this
->>>> without
->>>> compression ;-( But yes i've compression enabled.
->>> I might not get you, my poor english :)
->>> You mean that you only get ENOSPC error when compression is enabled?
->>>
->>> And when compression is not enabled, you do not get ENOSPC error?
->> I can't tell you. I cannot test with compression not enabled. I do not
->> have anough free space on this disk.
-> I had just sent two patches to fix false enospc error for compression,
-> please have a try, they fix false enospc error in my test environment.
->         btrfs: fix false enospc for compression
->         btrfs: improve inode's outstanding_extents computation
-> 
-> I apply these two patchs in linux upstream tree, the latest commit
-> is 41844e36206be90cd4d962ea49b0abc3612a99d0.
+> One of the disks had a write problem, unbeknownst to me, which caused the
+> entire pool and its subvolumes to remount read only.
 
-no space errors since 5 days! that's currently amazing. I Hope it stays
-this and your patches get into 4.9.
+Can you be more specific about the write problem? What are the
+messages from the logs about these write problems and is that problem
+now fixed?
 
-Greets,
-Stefan
 
-> 
-> Regards,
-> Xiaoguang Wang
-> 
->>
->>>>> I'm trying to fix it.
->>>> That sounds good but do you also get the
->>>> BTRFS: space_info 4 has 18446742286429913088 free, is not full
->>>>
->>>> kernel messages on umount? if not you might have found another problem.
->>> Yes, I seem similar messages, you can paste you whole dmesg info here.
->> ------------[ cut here ]------------
->> WARNING: CPU: 2 PID: 5187 at fs/btrfs/extent-tree.c:5790
->> btrfs_free_block_groups+0x346/0x430 [btrfs]()
->> Modules linked in: netconsole xt_multiport iptable_filter ip_tables
->> x_tables 8021q garp bonding x86_pkg_temp_thermal coretemp kvm_intel kvm
->> irqbypass sb_edac crc32_pclmul edac_core i2c_i801 i40e(O) vxlan
->> ip6_udp_tunnel udp_tunnel shpchp ipmi_si ipmi_msghandler button loop
->> btrfs dm_mod raid10 raid0 multipath linear raid456 async_raid6_recov
->> async_memcpy async_pq async_xor async_tx xor raid6_pq igb i2c_algo_bit
->> i2c_core usbhid raid1 md_mod xhci_pci sg ehci_pci xhci_hcd ehci_hcd
->> sd_mod ahci usbcore ptp libahci usb_common pps_core aacraid
->> CPU: 2 PID: 5187 Comm: umount Tainted: G O 4.4.22+63-ph #1
->> Hardware name: Supermicro Super Server/X10SRi-F, BIOS 2.0 12/17/2015
->> 0000000000000000 ffff880fda777d00 ffffffff813b69c3 0000000000000000
->> ffffffffc067a099 ffff880fda777d38 ffffffff810821c6 0000000000000000
->> ffff880074bf0a00 ffff88103c10c088 ffff88103c10c000 ffff88103c10c098
->> Call Trace:
->> [<ffffffff813b69c3>] dump_stack+0x63/0x90
->> [<ffffffff810821c6>] warn_slowpath_common+0x86/0xc0
->> [<ffffffff810822ba>] warn_slowpath_null+0x1a/0x20
->> [<ffffffffc05de9a6>] btrfs_free_block_groups+0x346/0x430 [btrfs]
->> [<ffffffffc05f0bad>] close_ctree+0x15d/0x330 [btrfs]
->> [<ffffffffc05bf409>] btrfs_put_super+0x19/0x20 [btrfs]
->> [<ffffffff811c85af>] generic_shutdown_super+0x6f/0x100
->> [<ffffffff811c8652>] kill_anon_super+0x12/0x20
->> [<ffffffffc05c0376>] btrfs_kill_super+0x16/0xa0 [btrfs]
->> [<ffffffff811c7ff3>] deactivate_locked_super+0x43/0x70
->> [<ffffffff811c807c>] deactivate_super+0x5c/0x60
->> [<ffffffff811e3b5f>] cleanup_mnt+0x3f/0x90
->> [<ffffffff811e3bf2>] __cleanup_mnt+0x12/0x20
->> [<ffffffff8109dad1>] task_work_run+0x81/0xa0
->> [<ffffffff810021c0>] exit_to_usermode_loop+0xb0/0xc0
->> [<ffffffff81002b44>] syscall_return_slowpath+0xd4/0x130
->> [<ffffffff8169dc0c>] int_ret_from_sys_call+0x25/0x8f
->> ---[ end trace cee6ace13018e13e ]---
->> ------------[ cut here ]------------
->> WARNING: CPU: 2 PID: 5187 at fs/btrfs/extent-tree.c:5791
->> btrfs_free_block_groups+0x365/0x430 [btrfs]()
->> Modules linked in: netconsole xt_multiport iptable_filter ip_tables
->> x_tables 8021q garp bonding x86_pkg_temp_thermal coretemp kvm_intel kvm
->> irqbypass sb_edac crc32_pclmul edac_core i2c_i801 i40e(O) vxlan
->> ip6_udp_tunnel udp_tunnel shpchp ipmi_si ipmi_msghandler button loop
->> btrfs dm_mod raid10 raid0 multipath linear raid456 async_raid6_recov
->> async_memcpy async_pq async_xor async_tx xor raid6_pq igb i2c_algo_bit
->> i2c_core usbhid raid1 md_mod xhci_pci sg ehci_pci xhci_hcd ehci_hcd
->> sd_mod ahci usbcore ptp libahci usb_common pps_core aacraid
->> CPU: 2 PID: 5187 Comm: umount Tainted: G W O 4.4.22+63-ph #1
->> Hardware name: Supermicro Super Server/X10SRi-F, BIOS 2.0 12/17/2015
->> 0000000000000000 ffff880fda777d00 ffffffff813b69c3 0000000000000000
->> ffffffffc067a099 ffff880fda777d38 ffffffff810821c6 0000000000000000
->> ffff880074bf0a00 ffff88103c10c088 ffff88103c10c000 ffff88103c10c098
->> Call Trace:
->> [<ffffffff813b69c3>] dump_stack+0x63/0x90
->> [<ffffffff810821c6>] warn_slowpath_common+0x86/0xc0
->> [<ffffffff810822ba>] warn_slowpath_null+0x1a/0x20
->> [<ffffffffc05de9c5>] btrfs_free_block_groups+0x365/0x430 [btrfs]
->> [<ffffffffc05f0bad>] close_ctree+0x15d/0x330 [btrfs]
->> [<ffffffffc05bf409>] btrfs_put_super+0x19/0x20 [btrfs]
->> [<ffffffff811c85af>] generic_shutdown_super+0x6f/0x100
->> [<ffffffff811c8652>] kill_anon_super+0x12/0x20
->> [<ffffffffc05c0376>] btrfs_kill_super+0x16/0xa0 [btrfs]
->> [<ffffffff811c7ff3>] deactivate_locked_super+0x43/0x70
->> [<ffffffff811c807c>] deactivate_super+0x5c/0x60
->> [<ffffffff811e3b5f>] cleanup_mnt+0x3f/0x90
->> [<ffffffff811e3bf2>] __cleanup_mnt+0x12/0x20
->> [<ffffffff8109dad1>] task_work_run+0x81/0xa0
->> [<ffffffff810021c0>] exit_to_usermode_loop+0xb0/0xc0
->> [<ffffffff81002b44>] syscall_return_slowpath+0xd4/0x130
->> [<ffffffff8169dc0c>] int_ret_from_sys_call+0x25/0x8f
->> ---[ end trace cee6ace13018e13f ]---
->> ------------[ cut here ]------------
->> WARNING: CPU: 2 PID: 5187 at fs/btrfs/extent-tree.c:10151
->> btrfs_free_block_groups+0x291/0x430 [btrfs]()
->> Modules linked in: netconsole xt_multiport iptable_filter ip_tables
->> x_tables 8021q garp bonding x86_pkg_temp_thermal coretemp kvm_intel kvm
->> irqbypass sb_edac crc32_pclmul edac_core i2c_i801 i40e(O) vxlan
->> ip6_udp_tunnel udp_tunnel shpchp ipmi_si ipmi_msghandler button loop
->> btrfs dm_mod raid10 raid0 multipath linear raid456 async_raid6_recov
->> async_memcpy async_pq async_xor async_tx xor raid6_pq igb i2c_algo_bit
->> i2c_core usbhid raid1 md_mod xhci_pci sg ehci_pci xhci_hcd ehci_hcd
->> sd_mod ahci usbcore ptp libahci usb_common pps_core aacraid
->> CPU: 2 PID: 5187 Comm: umount Tainted: G W O 4.4.22+63-ph #1
->> Hardware name: Supermicro Super Server/X10SRi-F, BIOS 2.0 12/17/2015
->> 0000000000000000 ffff880fda777d00 ffffffff813b69c3 0000000000000000
->> ffffffffc067a099 ffff880fda777d38 ffffffff810821c6 ffff880074bf0000
->> ffff880074bf0088 ffff880074bf0df8 ffff88103c10c000 0000000000000000
->> Call Trace:
->> [<ffffffff813b69c3>] dump_stack+0x63/0x90
->> [<ffffffff810821c6>] warn_slowpath_common+0x86/0xc0
->> [<ffffffff810822ba>] warn_slowpath_null+0x1a/0x20
->> [<ffffffffc05de8f1>] btrfs_free_block_groups+0x291/0x430 [btrfs]
->> [<ffffffffc05f0bad>] close_ctree+0x15d/0x330 [btrfs]
->> [<ffffffffc05bf409>] btrfs_put_super+0x19/0x20 [btrfs]
->> [<ffffffff811c85af>] generic_shutdown_super+0x6f/0x100
->> [<ffffffff811c8652>] kill_anon_super+0x12/0x20
->> [<ffffffffc05c0376>] btrfs_kill_super+0x16/0xa0 [btrfs]
->> [<ffffffff811c7ff3>] deactivate_locked_super+0x43/0x70
->> [<ffffffff811c807c>] deactivate_super+0x5c/0x60
->> [<ffffffff811e3b5f>] cleanup_mnt+0x3f/0x90
->> [<ffffffff811e3bf2>] __cleanup_mnt+0x12/0x20
->> [<ffffffff8109dad1>] task_work_run+0x81/0xa0
->> [<ffffffff810021c0>] exit_to_usermode_loop+0xb0/0xc0
->> [<ffffffff81002b44>] syscall_return_slowpath+0xd4/0x130
->> [<ffffffff8169dc0c>] int_ret_from_sys_call+0x25/0x8f
->> ---[ end trace cee6ace13018e140 ]---
->> BTRFS: space_info 4 has 18446742182612910080 free, is not full
->> BTRFS: space_info total=82678120448, used=64784695296, pinned=0,
->> reserved=0, may_use=1908990066688, readonly=0
->>
->> Greets,
->> Stefan
->>
->>> Regards,
->>> Xiaoguang Wang
->>>
->>>> Stefan
->>>>
->>>>> Regards,
->>>>> Xiaoguang Wang
->>>>>
->>>>>> I tried hard to reproduce it but i can't get it to reproduce with a
->>>>>> test
->>>>>> script. Any ideas?
->>>>>>
->>>>>> Stefan
->>>>>>
->>>>>>> Reagrds,
->>>>>>> Xiaoguang Wang
->>>>>>>
->>>>>>>> Greets,
->>>>>>>> Stefan
->>>>>>>>
->>>>>>>>> Regards,
->>>>>>>>> Xiaoguang Wang
->>>>>>>>>> Greets,
->>>>>>>>>> Stefan
->>>>>>>>>> -- 
->>>>>>>>>> To unsubscribe from this list: send the line "unsubscribe
->>>>>>>>>> linux-btrfs" in
->>>>>>>>>> the body of a message to majordomo@vger.kernel.org
->>>>>>>>>> More majordomo info at 
->>>>>>>>>> http://vger.kernel.org/majordomo-info.html
->>>>>>>>>>
->>>>>>>>>>
->>>>>
->>>
->>>
->>
-> 
-> 
-> 
+
+
+>
+> When this problem occurred I was on debian jessie kernel 3.16.something.
+> Following list advice I upgraded to the latest in jessie-backports, 4.7.5.
+> My git clone of btrfs-progs is at commit
+> 81f4d96f3d6368dc4e5edf7e3cb9d19bb4d00c4f
+>
+> Not knowing the cause of the problem, I unmounted and attempted to remount,
+> which failed, with the following coming from dmesg:
+>
+> [308063.610960] BTRFS info (device sda): allowing degraded mounts
+> [308063.610972] BTRFS info (device sda): disk space caching is enabled
+> [308063.723461] BTRFS error (device sda): parent transid verify failed on
+> 5752357961728 wanted 161562 found 159746
+> [308063.815224] BTRFS info (device sda): bdev /dev/sdh errs: wr 261, rd 1,
+> flush 87, corrupt 0, gen 0
+> [308063.849613] BTRFS error (device sda): parent transid verify failed on
+> 5752642420736 wanted 161562 found 159786
+> [308063.881024] BTRFS error (device sda): parent transid verify failed on
+> 5752472338432 wanted 161562 found 159751
+> [308063.940225] BTRFS error (device sda): parent transid verify failed on
+> 5752478842880 wanted 161562 found 159752
+> [308063.979517] BTRFS error (device sda): parent transid verify failed on
+> 5752543526912 wanted 161562 found 159764
+> [308064.012479] BTRFS error (device sda): parent transid verify failed on
+> 5752513036288 wanted 161562 found 159764
+> [308064.049169] BTRFS error (device sda): parent transid verify failed on
+> 5752642617344 wanted 161562 found 159786
+> [308064.080507] BTRFS error (device sda): parent transid verify failed on
+> 5752642650112 wanted 161562 found 159786
+> [308064.138951] BTRFS error (device sda): parent transid verify failed on
+> 5752610603008 wanted 161562 found 159783
+> [308064.164326] BTRFS error (device sda): bad tree block start
+> 5918360357649457268 5752610603008
+> [308064.173752] BTRFS error (device sda): bad tree block start
+> 5567295971165396096 5752610603008
+> [308064.182026] BTRFS error (device sda): failed to read block groups: -5
+> [308064.234174] BTRFS: open_ctree failed
+
+Sometimes it will be more tolerant with mount -o degraded,ro.
+
+
+
+> /dev/sdh is the disc that had the write error
+>
+
+
+> [232578.796809] mpt2sas_cm0: log_info(0x31080000): originator(PL),
+> code(0x08), sub_code(0x0000)
+> [232578.796838] sd 0:0:8:0: [sdh] tag#4 CDB: Read(16) 88 00 00 00 00 00 34
+> 55 61 f0 00 00 00 40 00 00
+> [232578.796845] mpt2sas_cm0:    sas_address(0x50030480002e5946), phy(6)
+> [232578.796850] mpt2sas_cm0:
+> enclosure_logical_id(0x50030442523a2033),slot(2)
+> [232578.796856] mpt2sas_cm0:    handle(0x0012), ioc_status(success)(0x0000),
+> smid(36)
+> [232578.796860] mpt2sas_cm0:    request_len(32768), underflow(32768),
+> resid(0)
+> [232578.796864] mpt2sas_cm0:    tag(0), transfer_count(32768),
+> sc->result(0x00000000)
+> [232578.796869] mpt2sas_cm0:    scsi_status(check condition)(0x02),
+> scsi_state(autosense valid )(0x01)
+> [232578.796874] mpt2sas_cm0:    [sense_key,asc,ascq]: [0x03,0x11,0x00],
+> count(18)
+> [232578.797129] sd 0:0:8:0: [sdh] tag#4 FAILED Result: hostbyte=DID_OK
+> driverbyte=DRIVER_SENSE
+> [232578.797138] sd 0:0:8:0: [sdh] tag#4 Sense Key : Medium Error [current]
+> [232578.797146] sd 0:0:8:0: [sdh] tag#4 Add. Sense: Unrecovered read error
+> [232578.797154] sd 0:0:8:0: [sdh] tag#4 CDB: Read(16) 88 00 00 00 00 00 34
+> 55 61 f0 00 00 00 40 00 00
+> [232578.797160] blk_update_request: critical medium error, dev sdh, sector
+> 878010888
+
+Each one of these complains about a read error and a different LBA is reported.
+
+These should get fixed automatically by Btrfs since kernel 3.19. The
+problem is that you were using 3.16 so they were left to accumulate.
+3.16 kernel needed a full balance to fix these.
+
+
+
+
+> [232581.663794] mpt2sas_cm0: log_info(0x31080000): originator(PL),
+> code(0x08), sub_code(0x0000)
+> [232581.663823] sd 0:0:8:0: [sdh] tag#1 CDB: Read(16) 88 00 00 00 00 00 34
+> 55 62 30 00 00 00 80 00 00
+> [232581.663830] mpt2sas_cm0:    sas_address(0x50030480002e5946), phy(6)
+> [232581.663835] mpt2sas_cm0:
+> enclosure_logical_id(0x50030442523a2033),slot(2)
+> [232581.663841] mpt2sas_cm0:    handle(0x0012), ioc_status(success)(0x0000),
+> smid(62)
+> [232581.663845] mpt2sas_cm0:    request_len(65536), underflow(65536),
+> resid(65536)
+> [232581.663849] mpt2sas_cm0:    tag(0), transfer_count(0),
+> sc->result(0x00000000)
+> [232581.663854] mpt2sas_cm0:    scsi_status(check condition)(0x02),
+> scsi_state(autosense valid )(0x01)
+> [232581.663859] mpt2sas_cm0:    [sense_key,asc,ascq]: [0x03,0x11,0x00],
+> count(18)
+> [232581.663918] sd 0:0:8:0: [sdh] tag#1 FAILED Result: hostbyte=DID_OK
+> driverbyte=DRIVER_SENSE
+> [232581.663937] sd 0:0:8:0: [sdh] tag#1 Sense Key : Medium Error [current]
+> [232581.663951] sd 0:0:8:0: [sdh] tag#1 Add. Sense: Unrecovered read error
+> [232581.663960] sd 0:0:8:0: [sdh] tag#1 CDB: Read(16) 88 00 00 00 00 00 34
+> 55 62 30 00 00 00 80 00 00
+> [232581.663967] blk_update_request: critical medium error, dev sdh, sector
+> 878010928
+> [232584.622191] sd 0:0:8:0: [sdh] tag#0 CDB: Read(16) 88 00 00 00 00 00 34
+> 55 62 08 00 00 00 08 00 00
+> [232584.622207] mpt2sas_cm0:    sas_address(0x50030480002e5946), phy(6)
+> [232584.622213] mpt2sas_cm0:
+> enclosure_logical_id(0x50030442523a2033),slot(2)
+> [232584.622219] mpt2sas_cm0:    handle(0x0012), ioc_status(success)(0x0000),
+> smid(55)
+> [232584.622224] mpt2sas_cm0:    request_len(4096), underflow(4096),
+> resid(4096)
+> [232584.622228] mpt2sas_cm0:    tag(0), transfer_count(0),
+> sc->result(0x00000000)
+> [232584.622233] mpt2sas_cm0:    scsi_status(check condition)(0x02),
+> scsi_state(autosense valid )(0x01)
+> [232584.622237] mpt2sas_cm0:    [sense_key,asc,ascq]: [0x03,0x11,0x00],
+> count(18)
+> [232584.622272] sd 0:0:8:0: [sdh] tag#0 FAILED Result: hostbyte=DID_OK
+> driverbyte=DRIVER_SENSE
+> [232584.622282] sd 0:0:8:0: [sdh] tag#0 Sense Key : Medium Error [current]
+> [232584.622295] sd 0:0:8:0: [sdh] tag#0 Add. Sense: Unrecovered read error
+> [232584.622304] sd 0:0:8:0: [sdh] tag#0 CDB: Read(16) 88 00 00 00 00 00 34
+> 55 62 08 00 00 00 08 00 00
+> [232584.622311] blk_update_request: critical medium error, dev sdh, sector
+> 878010888
+> [232584.630625] Buffer I/O error on dev sdh, logical block 109751361, async
+> page read
+>
+>
+> rather than moving on but that's neither here nor there, since the disc
+> really can't be trusted as it is.
+
+You don't have to, that's Btrfs problem. What's confusing to me is
+that interspersed with these read errors, there are no Btrfs messages.
+I'm expecting Btrfs to do something about the read error if those
+sectors are in a Btrfs volume. Either Btrfs should say whether it's
+fixing the problem, in either case. But I see nothing.
+
+
+
+
+
+
+>
+> btrfs check produces this output:
+>
+> root@castor:~/btrfs-progs# ./btrfs check --readonly /dev/sda
+> parent transid verify failed on 5752357961728 wanted 161562 found 159746
+> parent transid verify failed on 5752357961728 wanted 161562 found 159746
+> checksum verify failed on 5752357961728 found B5CA97C0 wanted 51292A76
+> checksum verify failed on 5752357961728 found 8582246F wanted B53BE280
+> checksum verify failed on 5752357961728 found 8582246F wanted B53BE280
+> bytenr mismatch, want=5752357961728, have=56504706479104
+> Couldn't setup extent tree
+> ERROR: cannot open file system
+
+Seems like there should be more to the story than just one bad drive
+or it'd be possible to mount minus the bad drive. Maybe sdh is
+spitting out spurious data. Have you tried physically removing
+/dev/sdh and then doing a degraded mount?
+
+An entire syslog, journalctl, or dmesg might be helpful rather than excerpts.
+
+
+
+> Like I said, the vast majority of what's on this disc is either BluRay ISOs
+> that I can re-rip, stuff I don't care about recovering, or stuff that I can
+> always re-mirror if I have to. Given that I'm well versed in C programming,
+> I'd much rather devote my time to working with the code to resolve whatever
+> problem may be happening here than re-acquiring or re-ripping what's on that
+> pool.
+>
+> Since it took somewhere near an hour and a half to get to that SIGBUS in
+> gdb, I've left my session open for anyone who may have ideas to chime in.
+> Just let me know what information you need!
+
+That part I can't help out with.
+
+
+-- 
+Chris Murphy

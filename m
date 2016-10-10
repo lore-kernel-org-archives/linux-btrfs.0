@@ -1,55 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym01.jp.fujitsu.com ([211.128.242.40]:50988 "EHLO
-        mgwym01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753070AbcJEITk (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Oct 2016 04:19:40 -0400
-Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
-        by yt-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 70283AC0132
-        for <linux-btrfs@vger.kernel.org>; Wed,  5 Oct 2016 17:08:18 +0900 (JST)
-Received: from WIN-5MHF4RKU941.jp.fujitsu.com (unknown [10.124.102.163])
-        by m3051.s.css.fujitsu.com (Postfix) with SMTP id 50AB42C3
-        for <linux-btrfs@vger.kernel.org>; Wed,  5 Oct 2016 17:08:18 +0900 (JST)
-Message-Id: <201610050807.AA00000@WIN-5MHF4RKU941.jp.fujitsu.com>
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Date: Wed, 05 Oct 2016 17:07:48 +0900
+Received: from cn.fujitsu.com ([222.73.24.84]:64820 "EHLO song.cn.fujitsu.com"
+        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+        id S1751939AbcJJDLm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 9 Oct 2016 23:11:42 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: image: fix compiler warning
+Cc: dsterba@suse.cz, lakshmipathi.g@gmail.com
+Subject: [PATCH 0/4] Btrfs-convert: Add support to copy common inode flags
+Date: Mon, 10 Oct 2016 11:11:17 +0800
+Message-Id: <20161010031121.5017-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In v4.8-rc1, gcc 5.3.1 gives following warning. Fixed it.
+Branch can be fetched from:
+https://github.com/adam900710/btrfs-progs/tree/convert_inode_flags
 
-    [CC]     btrfs-image.o
-btrfs-image.c: In function 'flush_pending':
-btrfs-image.c:708:17: warning: 'start' may be used uninitialized in this function [-Wmaybe-uninitialized]
-  header->bytenr = cpu_to_le64(start);
-                 ^
-btrfs-image.c:927:6: note: 'start' was declared here
-  u64 start;
-      ^
+Thanks for the report from Lakshmipathi.G, we exposed a bug that
+btrfs-convert never copies common inode flags like SYNC/IMMUTABLE/APPEND.
 
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
----
- btrfs-image.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+The root cause is quite awkward, we didn't even have these flags defined
+in ctree.h.
 
-diff --git a/btrfs-image.c b/btrfs-image.c
-index 0d410f8..47f36b9 100644
---- a/btrfs-image.c
-+++ b/btrfs-image.c
-@@ -924,7 +924,7 @@ static int flush_pending(struct metadump_struct *md, int done)
- 	struct async_work *async = NULL;
- 	struct extent_buffer *eb;
- 	u64 blocksize = md->root->nodesize;
--	u64 start;
-+	u64 start = 0;
- 	u64 size;
- 	size_t offset;
- 	int ret = 0;
+This patchset will copy related flags to btrfs-progs header and make
+btrfs-convert to copy these flags.(Only some ext2 flags are support)
+And enhance btrfs-debug-tree to handle these flags.
+
+Finally, adds test case to prevent such problem happens again.
+
+Qu Wenruo (4):
+  btrfs-progs: Copy btrfs inode flags from kernel header
+  btrfs-progs: Make btrfs-debug-tree print all readable strings for
+    inode flags
+  btrfs-progs: convert: Convert ext inode flags to btrfs inode flags
+  btrfs-progs: convert-test: Add test case for common inode flags
+
+ btrfs-convert.c                                    | 25 ++++++++++++
+ ctree.h                                            |  9 +++++
+ print-tree.c                                       | 46 ++++++++++++----------
+ tests/convert-tests/009-common-inode-flags/test.sh | 34 ++++++++++++++++
+ 4 files changed, 94 insertions(+), 20 deletions(-)
+ create mode 100755 tests/convert-tests/009-common-inode-flags/test.sh
+
 -- 
-2.9.3
+2.10.0
 
-----
-Tsutomu Itoh  t-itoh@jp.fujitsu.com
+
+

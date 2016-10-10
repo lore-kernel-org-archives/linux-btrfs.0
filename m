@@ -1,128 +1,222 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from alpha.solidcluster.net ([195.228.155.188]:59630 "EHLO
-        beta.reon.hu" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751100AbcJJTU6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 Oct 2016 15:20:58 -0400
-Received: from localhost ([127.0.0.1] helo=mail.reondigital.hu)
-        by beta.reon.hu with esmtp (Exim 4.87)
-        (envelope-from <aron@aron.ws>)
-        id 1btflH-0007eX-52
-        for linux-btrfs@vger.kernel.org; Mon, 10 Oct 2016 20:57:19 +0200
+Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:38404 "EHLO
+        cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751725AbcJJUHI (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 10 Oct 2016 16:07:08 -0400
+Subject: Re: BTRFS: space_info 4 has 18446742286429913088 free, is not full
+To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <1c94f3b1-b238-6668-7976-c0594f170dfe@profihost.ag>
+ <57EBAAF5.10509@cn.fujitsu.com>
+ <4f91af54-78ae-5c08-3daa-8a0c16210e5f@profihost.ag>
+ <57EBB329.9060009@cn.fujitsu.com>
+ <3e429001-020a-748b-c0c5-85b4091599a1@profihost.ag>
+ <57ECBAE7.5030807@cn.fujitsu.com>
+ <0e556b63-7c85-1e97-00b0-91bfca44e82c@profihost.ag>
+ <57ECBF0D.3050609@cn.fujitsu.com>
+ <85f85ca6-95c0-1394-9b09-93dcc00c2319@profihost.ag>
+ <57F5BF26.9090409@cn.fujitsu.com>
+From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
+Message-ID: <c3318651-b339-032a-8471-40bd97398a27@profihost.ag>
+Date: Mon, 10 Oct 2016 22:06:55 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8;
- format=flowed
-Date: Mon, 10 Oct 2016 20:57:19 +0200
-From: aron@aron.ws
-To: <linux-btrfs@vger.kernel.org>
-Subject: corrupt leaf, slot offset bad
-Message-ID: <57e7870b981160be5fabc63c4967e90f@aron.ws>
+In-Reply-To: <57F5BF26.9090409@cn.fujitsu.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+Dear Wang,
 
-I've been using btrfs for a few months now, without any problems. 
-During work, I've noticed segfaults, when accessing my root directory. 
-As my home directory contents was readable, I've decided to reboot. That 
-was the worst decision, as now I can't copy my data off the SSD. It 
-seems like a memory isse. I have backups, but its ~2 weeks old. What I 
-did is a dd dump immediately. Have latest kernel and latest progs built 
-from source now, but :S ...
+Am 06.10.2016 um 05:04 schrieb Wang Xiaoguang:
+> Hi,
+> 
+> On 09/29/2016 03:27 PM, Stefan Priebe - Profihost AG wrote:
+>> Am 29.09.2016 um 09:13 schrieb Wang Xiaoguang:
+>>>>> I found that compress sometime report ENOSPC error even in 4.8-rc8,
+>>>>> currently
+>>>> I cannot confirm that as i do not have anough space to test this
+>>>> without
+>>>> compression ;-( But yes i've compression enabled.
+>>> I might not get you, my poor english :)
+>>> You mean that you only get ENOSPC error when compression is enabled?
+>>>
+>>> And when compression is not enabled, you do not get ENOSPC error?
+>> I can't tell you. I cannot test with compression not enabled. I do not
+>> have anough free space on this disk.
+> I had just sent two patches to fix false enospc error for compression,
+> please have a try, they fix false enospc error in my test environment.
+>         btrfs: fix false enospc for compression
+>         btrfs: improve inode's outstanding_extents computation
+> 
+> I apply these two patchs in linux upstream tree, the latest commit
+> is 41844e36206be90cd4d962ea49b0abc3612a99d0.
 
-This is what I've got:
+no space errors since 5 days! that's currently amazing. I Hope it stays
+this and your patches get into 4.9.
 
-When mounting:
+Greets,
+Stefan
 
-BTRFS critical (device: sdb2): corrupt leaf, slot offset bad: 
-block=610107392,root=1, slot=108
-
-find-root prints nothing to the stdout ofter 2 hours.
-
-running btrfs inspect-internal dump-tree -b 610107392 /dev/sdb2
-
-leaf 610107392 items 188 free space 1690 generation 90792 owner 5
-fs uuid 2cc75a87-b22b-448e-80d4-383a9f42deed
-chunk uuid a5b09a2a-da3d-4049-91ba-4fe66932907b
-	item 0 key (256 INODE_ITEM 0) itemoff 16123 itemsize 160
-		inode generation 3 transid 90769 size 144 nbytes 16384
-		block group 0 mode 40755 links 1 uid 0 gid 0
-		rdev 0 flags 0x0(none)
-	item 1 key (256 INODE_REF 256) itemoff 16111 itemsize 12
-		inode ref index 0 namelen 2 name: ..
-	item 2 key (256 DIR_ITEM 145260132) itemoff 16078 itemsize 33
-		location key (265 INODE_ITEM 0) type DIR
-		namelen 3 datalen 0 name: dev
-	item 3 key (256 DIR_ITEM 217684952) itemoff 16045 itemsize 33
-		location key (266 INODE_ITEM 0) type DIR
-		namelen 3 datalen 0 name: run
-	item 4 key (256 DIR_ITEM 308198373) itemoff 16011 itemsize 34
-		location key (257 INODE_ITEM 0) type DIR
-
-...
-	item 111 key (261 DIR_ITEM 81211850) itemoff 11344 itemsize 131133
-		location key (893669 INODE_ITEM 0) type FILE
-		namelen 31 datalen 0 name: babl-0.1.16-1-x86_64.pkg.tar.xz
-		location key (388547 INODE_ITEM 0) type FILE
-		namelen 32 datalen 0 name: intltool-0.51.0-1-any.pkg.tar.xz
-...
-		namelen 30 datalen 0 name: glibc-2.24-2-x86_64.pkg.tar.xz
-		location key (893658 INODE_ITEM 0) type FILE
-		namelen 36 datalen 0 name: procps-ng-3.3.12-1-x86_64.pkg.tar.xz
-		location key (EXTENT_TREE UNKNOWN.3 36094832640) type 12
-		namelen 0 datalen 0 name:
-		location key (291 UNKNOWN.0 0) type 0
-		namelen 0 datalen 0 name:
-		location key (18556457741975552 UNKNOWN.0 0) type 0
-		namelen 0 datalen 7134 name:
-		data
-		location key (0 UNKNOWN.0 0) type 0
-		namelen 0 datalen 0 name:
-		location key (0 UNKNOWN.0 0) type 0
-		namelen 0 datalen 0 name:
-		location key (0 UNKNOWN.0 0) type 0
-		namelen 0 datalen 0 name:
-		location key (0 UNKNOWN.0 0) type 0
-		namelen 0 datalen 0 name:
-		location key (0 UNKNOWN.0 0) type 0
-		namelen 0 datalen 0 name:
-		location key (0 UNKNOWN.0 0) type 0
-		namelen 0 datalen 0 name:
-		location key (0 UNKNOWN.0 0) type 0
-		namelen 0 datalen 0 name:
-		location key (0 UNKNOWN.0 0) type 0
-		namelen 0 datalen 0 name:
-		location key (0 UNKNOWN.0 0) type 0
-		namelen 0 datalen 0 name:
-
-....
-
-segfault
-
-
-running restore:
-
-incorrect offsets 11532 11548
-Error searching -1
-
-Tried every rescue, check commands, in different variations ... 
-nothing. It seems that the root leaf (?) has some garbage, tried using 
-the corrupt-block utility, to mark the item dirty got the same error: 
-incorrect offsets.
-
-The only thing I've managed is to restore a part of the /etc directory, 
-with: btrfs restore -i -f 610123776 -vvvv -d /dev/sdb2 /mnt/restore
-
-I'm still trying to learn how the data is structured now, but my 
-problem is that I can't figure out how to calculate the leaf positions, 
-using the dump-tree output ...
-
-I need some kind tool/script that can recursively rescue the structure 
-from a defined leaf. (can this be done?)
-
-Any help would be appreciated! :)
-
-Thanks!
-
-Yours,
-Aron
-
+> 
+> Regards,
+> Xiaoguang Wang
+> 
+>>
+>>>>> I'm trying to fix it.
+>>>> That sounds good but do you also get the
+>>>> BTRFS: space_info 4 has 18446742286429913088 free, is not full
+>>>>
+>>>> kernel messages on umount? if not you might have found another problem.
+>>> Yes, I seem similar messages, you can paste you whole dmesg info here.
+>> ------------[ cut here ]------------
+>> WARNING: CPU: 2 PID: 5187 at fs/btrfs/extent-tree.c:5790
+>> btrfs_free_block_groups+0x346/0x430 [btrfs]()
+>> Modules linked in: netconsole xt_multiport iptable_filter ip_tables
+>> x_tables 8021q garp bonding x86_pkg_temp_thermal coretemp kvm_intel kvm
+>> irqbypass sb_edac crc32_pclmul edac_core i2c_i801 i40e(O) vxlan
+>> ip6_udp_tunnel udp_tunnel shpchp ipmi_si ipmi_msghandler button loop
+>> btrfs dm_mod raid10 raid0 multipath linear raid456 async_raid6_recov
+>> async_memcpy async_pq async_xor async_tx xor raid6_pq igb i2c_algo_bit
+>> i2c_core usbhid raid1 md_mod xhci_pci sg ehci_pci xhci_hcd ehci_hcd
+>> sd_mod ahci usbcore ptp libahci usb_common pps_core aacraid
+>> CPU: 2 PID: 5187 Comm: umount Tainted: G O 4.4.22+63-ph #1
+>> Hardware name: Supermicro Super Server/X10SRi-F, BIOS 2.0 12/17/2015
+>> 0000000000000000 ffff880fda777d00 ffffffff813b69c3 0000000000000000
+>> ffffffffc067a099 ffff880fda777d38 ffffffff810821c6 0000000000000000
+>> ffff880074bf0a00 ffff88103c10c088 ffff88103c10c000 ffff88103c10c098
+>> Call Trace:
+>> [<ffffffff813b69c3>] dump_stack+0x63/0x90
+>> [<ffffffff810821c6>] warn_slowpath_common+0x86/0xc0
+>> [<ffffffff810822ba>] warn_slowpath_null+0x1a/0x20
+>> [<ffffffffc05de9a6>] btrfs_free_block_groups+0x346/0x430 [btrfs]
+>> [<ffffffffc05f0bad>] close_ctree+0x15d/0x330 [btrfs]
+>> [<ffffffffc05bf409>] btrfs_put_super+0x19/0x20 [btrfs]
+>> [<ffffffff811c85af>] generic_shutdown_super+0x6f/0x100
+>> [<ffffffff811c8652>] kill_anon_super+0x12/0x20
+>> [<ffffffffc05c0376>] btrfs_kill_super+0x16/0xa0 [btrfs]
+>> [<ffffffff811c7ff3>] deactivate_locked_super+0x43/0x70
+>> [<ffffffff811c807c>] deactivate_super+0x5c/0x60
+>> [<ffffffff811e3b5f>] cleanup_mnt+0x3f/0x90
+>> [<ffffffff811e3bf2>] __cleanup_mnt+0x12/0x20
+>> [<ffffffff8109dad1>] task_work_run+0x81/0xa0
+>> [<ffffffff810021c0>] exit_to_usermode_loop+0xb0/0xc0
+>> [<ffffffff81002b44>] syscall_return_slowpath+0xd4/0x130
+>> [<ffffffff8169dc0c>] int_ret_from_sys_call+0x25/0x8f
+>> ---[ end trace cee6ace13018e13e ]---
+>> ------------[ cut here ]------------
+>> WARNING: CPU: 2 PID: 5187 at fs/btrfs/extent-tree.c:5791
+>> btrfs_free_block_groups+0x365/0x430 [btrfs]()
+>> Modules linked in: netconsole xt_multiport iptable_filter ip_tables
+>> x_tables 8021q garp bonding x86_pkg_temp_thermal coretemp kvm_intel kvm
+>> irqbypass sb_edac crc32_pclmul edac_core i2c_i801 i40e(O) vxlan
+>> ip6_udp_tunnel udp_tunnel shpchp ipmi_si ipmi_msghandler button loop
+>> btrfs dm_mod raid10 raid0 multipath linear raid456 async_raid6_recov
+>> async_memcpy async_pq async_xor async_tx xor raid6_pq igb i2c_algo_bit
+>> i2c_core usbhid raid1 md_mod xhci_pci sg ehci_pci xhci_hcd ehci_hcd
+>> sd_mod ahci usbcore ptp libahci usb_common pps_core aacraid
+>> CPU: 2 PID: 5187 Comm: umount Tainted: G W O 4.4.22+63-ph #1
+>> Hardware name: Supermicro Super Server/X10SRi-F, BIOS 2.0 12/17/2015
+>> 0000000000000000 ffff880fda777d00 ffffffff813b69c3 0000000000000000
+>> ffffffffc067a099 ffff880fda777d38 ffffffff810821c6 0000000000000000
+>> ffff880074bf0a00 ffff88103c10c088 ffff88103c10c000 ffff88103c10c098
+>> Call Trace:
+>> [<ffffffff813b69c3>] dump_stack+0x63/0x90
+>> [<ffffffff810821c6>] warn_slowpath_common+0x86/0xc0
+>> [<ffffffff810822ba>] warn_slowpath_null+0x1a/0x20
+>> [<ffffffffc05de9c5>] btrfs_free_block_groups+0x365/0x430 [btrfs]
+>> [<ffffffffc05f0bad>] close_ctree+0x15d/0x330 [btrfs]
+>> [<ffffffffc05bf409>] btrfs_put_super+0x19/0x20 [btrfs]
+>> [<ffffffff811c85af>] generic_shutdown_super+0x6f/0x100
+>> [<ffffffff811c8652>] kill_anon_super+0x12/0x20
+>> [<ffffffffc05c0376>] btrfs_kill_super+0x16/0xa0 [btrfs]
+>> [<ffffffff811c7ff3>] deactivate_locked_super+0x43/0x70
+>> [<ffffffff811c807c>] deactivate_super+0x5c/0x60
+>> [<ffffffff811e3b5f>] cleanup_mnt+0x3f/0x90
+>> [<ffffffff811e3bf2>] __cleanup_mnt+0x12/0x20
+>> [<ffffffff8109dad1>] task_work_run+0x81/0xa0
+>> [<ffffffff810021c0>] exit_to_usermode_loop+0xb0/0xc0
+>> [<ffffffff81002b44>] syscall_return_slowpath+0xd4/0x130
+>> [<ffffffff8169dc0c>] int_ret_from_sys_call+0x25/0x8f
+>> ---[ end trace cee6ace13018e13f ]---
+>> ------------[ cut here ]------------
+>> WARNING: CPU: 2 PID: 5187 at fs/btrfs/extent-tree.c:10151
+>> btrfs_free_block_groups+0x291/0x430 [btrfs]()
+>> Modules linked in: netconsole xt_multiport iptable_filter ip_tables
+>> x_tables 8021q garp bonding x86_pkg_temp_thermal coretemp kvm_intel kvm
+>> irqbypass sb_edac crc32_pclmul edac_core i2c_i801 i40e(O) vxlan
+>> ip6_udp_tunnel udp_tunnel shpchp ipmi_si ipmi_msghandler button loop
+>> btrfs dm_mod raid10 raid0 multipath linear raid456 async_raid6_recov
+>> async_memcpy async_pq async_xor async_tx xor raid6_pq igb i2c_algo_bit
+>> i2c_core usbhid raid1 md_mod xhci_pci sg ehci_pci xhci_hcd ehci_hcd
+>> sd_mod ahci usbcore ptp libahci usb_common pps_core aacraid
+>> CPU: 2 PID: 5187 Comm: umount Tainted: G W O 4.4.22+63-ph #1
+>> Hardware name: Supermicro Super Server/X10SRi-F, BIOS 2.0 12/17/2015
+>> 0000000000000000 ffff880fda777d00 ffffffff813b69c3 0000000000000000
+>> ffffffffc067a099 ffff880fda777d38 ffffffff810821c6 ffff880074bf0000
+>> ffff880074bf0088 ffff880074bf0df8 ffff88103c10c000 0000000000000000
+>> Call Trace:
+>> [<ffffffff813b69c3>] dump_stack+0x63/0x90
+>> [<ffffffff810821c6>] warn_slowpath_common+0x86/0xc0
+>> [<ffffffff810822ba>] warn_slowpath_null+0x1a/0x20
+>> [<ffffffffc05de8f1>] btrfs_free_block_groups+0x291/0x430 [btrfs]
+>> [<ffffffffc05f0bad>] close_ctree+0x15d/0x330 [btrfs]
+>> [<ffffffffc05bf409>] btrfs_put_super+0x19/0x20 [btrfs]
+>> [<ffffffff811c85af>] generic_shutdown_super+0x6f/0x100
+>> [<ffffffff811c8652>] kill_anon_super+0x12/0x20
+>> [<ffffffffc05c0376>] btrfs_kill_super+0x16/0xa0 [btrfs]
+>> [<ffffffff811c7ff3>] deactivate_locked_super+0x43/0x70
+>> [<ffffffff811c807c>] deactivate_super+0x5c/0x60
+>> [<ffffffff811e3b5f>] cleanup_mnt+0x3f/0x90
+>> [<ffffffff811e3bf2>] __cleanup_mnt+0x12/0x20
+>> [<ffffffff8109dad1>] task_work_run+0x81/0xa0
+>> [<ffffffff810021c0>] exit_to_usermode_loop+0xb0/0xc0
+>> [<ffffffff81002b44>] syscall_return_slowpath+0xd4/0x130
+>> [<ffffffff8169dc0c>] int_ret_from_sys_call+0x25/0x8f
+>> ---[ end trace cee6ace13018e140 ]---
+>> BTRFS: space_info 4 has 18446742182612910080 free, is not full
+>> BTRFS: space_info total=82678120448, used=64784695296, pinned=0,
+>> reserved=0, may_use=1908990066688, readonly=0
+>>
+>> Greets,
+>> Stefan
+>>
+>>> Regards,
+>>> Xiaoguang Wang
+>>>
+>>>> Stefan
+>>>>
+>>>>> Regards,
+>>>>> Xiaoguang Wang
+>>>>>
+>>>>>> I tried hard to reproduce it but i can't get it to reproduce with a
+>>>>>> test
+>>>>>> script. Any ideas?
+>>>>>>
+>>>>>> Stefan
+>>>>>>
+>>>>>>> Reagrds,
+>>>>>>> Xiaoguang Wang
+>>>>>>>
+>>>>>>>> Greets,
+>>>>>>>> Stefan
+>>>>>>>>
+>>>>>>>>> Regards,
+>>>>>>>>> Xiaoguang Wang
+>>>>>>>>>> Greets,
+>>>>>>>>>> Stefan
+>>>>>>>>>> -- 
+>>>>>>>>>> To unsubscribe from this list: send the line "unsubscribe
+>>>>>>>>>> linux-btrfs" in
+>>>>>>>>>> the body of a message to majordomo@vger.kernel.org
+>>>>>>>>>> More majordomo info at 
+>>>>>>>>>> http://vger.kernel.org/majordomo-info.html
+>>>>>>>>>>
+>>>>>>>>>>
+>>>>>
+>>>
+>>>
+>>
+> 
+> 
+> 

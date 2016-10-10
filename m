@@ -1,48 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:64820 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:4152 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1751368AbcJJDLl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 9 Oct 2016 23:11:41 -0400
+        id S1751982AbcJJDLm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 9 Oct 2016 23:11:42 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, lakshmipathi.g@gmail.com
-Subject: [PATCH 1/4] btrfs-progs: Copy btrfs inode flags from kernel header
-Date: Mon, 10 Oct 2016 11:11:18 +0800
-Message-Id: <20161010031121.5017-2-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 2/4] btrfs-progs: Make btrfs-debug-tree print all readable strings for inode flags
+Date: Mon, 10 Oct 2016 11:11:19 +0800
+Message-Id: <20161010031121.5017-3-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20161010031121.5017-1-quwenruo@cn.fujitsu.com>
 References: <20161010031121.5017-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs-progs header lacks quite a lot inode flags.
-Copy them from kernel for later use.
+Before this patch, only 3 inode flags have readable string: NODATACOW,
+NODATASUM, READONLY.
+
+This patch will output all readable strings for remaining inode flags,
+making debug-tree tool more handy.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- ctree.h | 9 +++++++++
- 1 file changed, 9 insertions(+)
+ print-tree.c | 46 ++++++++++++++++++++++++++--------------------
+ 1 file changed, 26 insertions(+), 20 deletions(-)
 
-diff --git a/ctree.h b/ctree.h
-index e0dd2e4..c76b1f1 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -1246,6 +1246,15 @@ struct btrfs_root {
- #define BTRFS_INODE_NODATASUM		(1 << 0)
- #define BTRFS_INODE_NODATACOW		(1 << 1)
- #define BTRFS_INODE_READONLY		(1 << 2)
-+#define BTRFS_INODE_NOCOMPRESS		(1 << 3)
-+#define BTRFS_INODE_PREALLOC		(1 << 4)
-+#define BTRFS_INODE_SYNC		(1 << 5)
-+#define BTRFS_INODE_IMMUTABLE		(1 << 6)
-+#define BTRFS_INODE_APPEND		(1 << 7)
-+#define BTRFS_INODE_NODUMP		(1 << 8)
-+#define BTRFS_INODE_NOATIME		(1 << 9)
-+#define BTRFS_INODE_DIRSYNC		(1 << 10)
-+#define BTRFS_INODE_COMPRESS		(1 << 11)
+diff --git a/print-tree.c b/print-tree.c
+index 4444a14..f015646 100644
+--- a/print-tree.c
++++ b/print-tree.c
+@@ -851,29 +851,35 @@ static void print_uuid_item(struct extent_buffer *l, unsigned long offset,
+ 	}
+ }
  
- #define read_eb_member(eb, ptr, type, member, result) (			\
- 	read_extent_buffer(eb, (char *)(result),			\
+-/* Caller should ensure sizeof(*ret) >= 29 "NODATASUM|NODATACOW|READONLY" */
++#define copy_one_inode_flag(flags, name, empty, dst) ({			\
++	if (flags & BTRFS_INODE_##name) {				\
++		if (!empty)						\
++			strcat(dst, "|");				\
++		strcat(dst, #name);					\
++		empty = 0;						\
++	}								\
++})
++
++/*
++ * Caller should ensure sizeof(*ret) >= 102: all charactors plus '|' of
++ * BTRFS_INODE_* flags
++ */
+ static void inode_flags_to_str(u64 flags, char *ret)
+ {
+ 	int empty = 1;
+ 
+-	if (flags & BTRFS_INODE_NODATASUM) {
+-		empty = 0;
+-		strcpy(ret, "NODATASUM");
+-	}
+-	if (flags & BTRFS_INODE_NODATACOW) {
+-		if (!empty) {
+-			empty = 0;
+-			strcat(ret, "|");
+-		}
+-		strcat(ret, "NODATACOW");
+-	}
+-	if (flags & BTRFS_INODE_READONLY) {
+-		if (!empty) {
+-			empty = 0;
+-			strcat(ret, "|");
+-		}
+-		strcat(ret, "READONLY");
+-	}
++	copy_one_inode_flag(flags, NODATASUM, empty, ret);
++	copy_one_inode_flag(flags, NODATACOW, empty, ret);
++	copy_one_inode_flag(flags, READONLY, empty, ret);
++	copy_one_inode_flag(flags, NOCOMPRESS, empty, ret);
++	copy_one_inode_flag(flags, PREALLOC, empty, ret);
++	copy_one_inode_flag(flags, SYNC, empty, ret);
++	copy_one_inode_flag(flags, IMMUTABLE, empty, ret);
++	copy_one_inode_flag(flags, APPEND, empty, ret);
++	copy_one_inode_flag(flags, NODUMP, empty, ret);
++	copy_one_inode_flag(flags, NOATIME, empty, ret);
++	copy_one_inode_flag(flags, DIRSYNC, empty, ret);
++	copy_one_inode_flag(flags, COMPRESS, empty, ret);
+ 	if (empty)
+ 		strcat(ret, "none");
+ }
+@@ -902,7 +908,7 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ 	u32 nr = btrfs_header_nritems(l);
+ 	u64 objectid;
+ 	u32 type;
+-	char flags_str[32];
++	char flags_str[128];
+ 
+ 	printf("leaf %llu items %d free space %d generation %llu owner %llu\n",
+ 		(unsigned long long)btrfs_header_bytenr(l), nr,
 -- 
 2.10.0
 

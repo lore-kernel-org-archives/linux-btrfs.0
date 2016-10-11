@@ -1,113 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-001b2d01.pphosted.com ([148.163.158.5]:50922 "EHLO
-        mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1752111AbcJBN0V (ORCPT
+Received: from mail-qt0-f176.google.com ([209.85.216.176]:36841 "EHLO
+        mail-qt0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752355AbcJKMOl (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 2 Oct 2016 09:26:21 -0400
-Received: from pps.filterd (m0098417.ppops.net [127.0.0.1])
-        by mx0a-001b2d01.pphosted.com (8.16.0.17/8.16.0.17) with SMTP id u92DNE8P039367
-        for <linux-btrfs@vger.kernel.org>; Sun, 2 Oct 2016 09:26:20 -0400
-Received: from e36.co.us.ibm.com (e36.co.us.ibm.com [32.97.110.154])
-        by mx0a-001b2d01.pphosted.com with ESMTP id 25t915w34b-1
-        (version=TLSv1.2 cipher=AES256-SHA bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Sun, 02 Oct 2016 09:26:20 -0400
-Received: from localhost
-        by e36.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-        for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-        Sun, 2 Oct 2016 07:26:19 -0600
-From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-To: clm@fb.com, jbacik@fb.com, dsterba@suse.com
-Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, linux-btrfs@vger.kernel.org
-Subject: [PATCH V21 19/19] Btrfs: subpage-blocksize: Disable compression
-Date: Sun,  2 Oct 2016 18:54:28 +0530
-In-Reply-To: <1475414668-25954-1-git-send-email-chandan@linux.vnet.ibm.com>
-References: <1475414668-25954-1-git-send-email-chandan@linux.vnet.ibm.com>
-Message-Id: <1475414668-25954-20-git-send-email-chandan@linux.vnet.ibm.com>
+        Tue, 11 Oct 2016 08:14:41 -0400
+Received: by mail-qt0-f176.google.com with SMTP id m5so10970431qtb.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Oct 2016 05:14:32 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <CAJF-kYk_a6hwgbQRw+9yBb54hXxC49LAZVs25FnoHm+zosFMww@mail.gmail.com>
+References: <CAJF-kYmnBt6yRLJ+R3HdJ03oqp_ptwXpat40vXoD_b=MUvJZUw@mail.gmail.com>
+ <20160909140059.GT16983@twin.jikos.cz> <CAJF-kYnXjz_dg2eev3WUqg3=XTBX=W8e2qnLQKtpnC6cCHvR+Q@mail.gmail.com>
+ <CAJF-kYkG77sAQ4VOqX+Fovu+fO6WKVMZmUA8WG+uMU5EM2ZwUg@mail.gmail.com> <CAJF-kYk_a6hwgbQRw+9yBb54hXxC49LAZVs25FnoHm+zosFMww@mail.gmail.com>
+From: Lukas Lueg <lukas.lueg@gmail.com>
+Date: Tue, 11 Oct 2016 14:07:48 +0200
+Message-ID: <CAJF-kYnH+cORfSLGx1Wb6S4iPDjnJxYOwm2trC_FbOK8t7bPVQ@mail.gmail.com>
+Subject: Fwd: State of the fuzzer
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The subpage-blocksize patchset does not yet support compression. Hence,
-the kernel might crash when executing compression code in
-subpage-blocksize scenario. This commit disables enabling compression
-feature during 'mount' and also when the  user invokes
-'chattr +c <filename>' command.
+Hi,
 
-Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
----
- fs/btrfs/ioctl.c |  8 +++++++-
- fs/btrfs/super.c | 19 +++++++++++++++++++
- 2 files changed, 26 insertions(+), 1 deletion(-)
+I've now shut down all fuzzer nodes since they only cost money and
+there is no progress on most of the aforementioned bugs.
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 0fdc0a0..862d97b 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -322,6 +322,11 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- 	} else if (flags & FS_COMPR_FL) {
- 		const char *comp;
- 
-+		if (root->sectorsize < PAGE_SIZE) {
-+			ret = -EINVAL;
-+			goto out_drop;
-+		}
-+
- 		ip->flags |= BTRFS_INODE_COMPRESS;
- 		ip->flags &= ~BTRFS_INODE_NOCOMPRESS;
- 
-@@ -1342,7 +1347,8 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
- 		return -EINVAL;
- 
- 	if (range->flags & BTRFS_DEFRAG_RANGE_COMPRESS) {
--		if (range->compress_type > BTRFS_COMPRESS_TYPES)
-+		if ((range->compress_type > BTRFS_COMPRESS_TYPES)
-+			|| (root->sectorsize < PAGE_SIZE))
- 			return -EINVAL;
- 		if (range->compress_type)
- 			compress_type = range->compress_type;
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 73a1d8d..3a2e9d7 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -392,6 +392,17 @@ static const match_table_t tokens = {
- 	{Opt_err, NULL},
- };
- 
-+static int can_enable_compression(struct btrfs_fs_info *fs_info)
-+{
-+	if (btrfs_super_sectorsize(fs_info->super_copy) < PAGE_SIZE) {
-+		btrfs_err(fs_info,
-+			"Compression is not supported for subpage-blocksize");
-+		return 0;
-+	}
-+
-+	return 1;
-+}
-+
- /*
-  * Regular mount options parser.  Everything that is needed only when
-  * reading in a new superblock is parsed here.
-@@ -502,6 +513,10 @@ int btrfs_parse_options(struct btrfs_root *root, char *options,
- 			if (token == Opt_compress ||
- 			    token == Opt_compress_force ||
- 			    strcmp(args[0].from, "zlib") == 0) {
-+				if (!can_enable_compression(info)) {
-+					ret = -EINVAL;
-+					goto out;
-+				}
- 				compress_type = "zlib";
- 				info->compress_type = BTRFS_COMPRESS_ZLIB;
- 				btrfs_set_opt(info->mount_opt, COMPRESS);
-@@ -509,6 +524,10 @@ int btrfs_parse_options(struct btrfs_root *root, char *options,
- 				btrfs_clear_opt(info->mount_opt, NODATASUM);
- 				no_compress = 0;
- 			} else if (strcmp(args[0].from, "lzo") == 0) {
-+				if (!can_enable_compression(info)) {
-+					ret = -EINVAL;
-+					goto out;
-+				}
- 				compress_type = "lzo";
- 				info->compress_type = BTRFS_COMPRESS_LZO;
- 				btrfs_set_opt(info->mount_opt, COMPRESS);
--- 
-2.5.5
+Best regards
+Lukas
 
+---------- Forwarded message ----------
+From: Lukas Lueg <lukas.lueg@gmail.com>
+Date: 2016-09-26 11:39 GMT+02:00
+Subject: Re: State of the fuzzer
+To: linux-btrfs@vger.kernel.org
+
+
+Hi David,
+
+do we have any chance of engagement on those 23 bugs which came out of
+the last fuzzing round? The nodes have been basically idle for a week,
+spewing duplicates and variants of what's already known...
+
+Best regards
+Lukas
+
+2016-09-20 13:33 GMT+02:00 Lukas Lueg <lukas.lueg@gmail.com>:
+> There are now 21 bugs open on bko, most of them crashes and some
+> undefined behavior. The nodes are now mostly running idle as no new
+> paths are discovered (after around one billion images tested in the
+> current run).
+>
+> My thoughts are to wait until the current bugs have been fixed, then
+> restart the whole process from HEAD (together with the corpus of
+> ~2.000 seed images discovered by now) and catch new bugs and aborts()
+> - we need to get rid of the reachable ones so code coverage can
+> improve. After those, I'll change the process to run btrfsck --repair,
+> which is slower but has a lot of yet uncovered code.
+>
+> DigitalOcean has provided some funding for this undertaking so we are
+> good on CPU power. Kudos to them.
+>
+> 2016-09-13 22:28 GMT+02:00 Lukas Lueg <lukas.lueg@gmail.com>:
+>> I've booted another instance with btrfs-progs checked out to 2b7c507
+>> and collected some bugs which remained from the run before the current
+>> one. The current run discovered what qgroups are just three days ago
+>> and will spend some time on that. I've also added UBSAN- and
+>> MSAN-logging to my setup and there were three bugs found so far (one
+>> is already fixed). I will boot a third instance to run lowmem-mode
+>> exclusively in the next few days.
+>>
+>> There are 11 bugs open at the moment, all have a reproducing image
+>> attached to them. The whole list is at
+>>
+>> https://bugzilla.kernel.org/buglist.cgi?bug_status=NEW&bug_status=ASSIGNED&bug_status=REOPENED&component=btrfs&email1=lukas.lueg%40gmail.com&emailreporter1=1&emailtype1=exact&list_id=858441&query_format=advanced
+>>
+>>
+>> 2016-09-09 16:00 GMT+02:00 David Sterba <dsterba@suse.cz>:
+>>> On Tue, Sep 06, 2016 at 10:32:28PM +0200, Lukas Lueg wrote:
+>>>> I'm currently fuzzing rev 2076992 and things start to slowly, slowly
+>>>> quiet down. We will probably run out of steam at the end of the week
+>>>> when a total of (roughly) half a billion BTRFS-images have passed by.
+>>>> I will switch revisions to current HEAD and restart the whole process
+>>>> then. A few things:
+>>>>
+>>>> * There are a couple of crashes (mostly segfaults) I have not reported
+>>>> yet. I'll report them if they show up again with the latest revision.
+>>>
+>>> Ok.
+>>>
+>>>> * The coverage-analysis shows assertion failures which are currently
+>>>> silenced. An assertion failure is technically a worse disaster
+>>>> successfully prevented, it still constitutes unexpected/unusable
+>>>> behaviour, though. Do you want assertions to be enabled and images
+>>>> triggering those assertions reported? This is basically the same
+>>>> conundrum as with BUG_ON and abort().
+>>>
+>>> Yes please. I'd like to turn most bugons/assertions into a normal
+>>> failure report if it would make sense.
+>>>
+>>>> * A few endless loops entered into by btrfsck are currently
+>>>> unmitigated (see bugs 155621, 155571, 155551 and 155151). It would be
+>>>> nice if those had been taken care of by next week if possible.
+>>>
+>>> Two of them are fixed, the other two need more work, updating all
+>>> callers of read_node_slot and the callchain. So you may still see that
+>>> kind of looping in more images. I don't have an ETA for the fix, I won't
+>>> be available during the next week.
+>>>
+>>> At the moment, the initial sanity checks should catch most of the
+>>> corrupted values, so I'm expecting that you'll see different classes of
+>>> problems in the next rounds.
+>>>
+>>> The testsuite now contains all images that you reported and we have a
+>>> fix in git. There are more utilities run on the images, there may be
+>>> more problems for us to fix.

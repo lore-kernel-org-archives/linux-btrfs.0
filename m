@@ -1,48 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:51915 "EHLO song.cn.fujitsu.com"
-        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1751015AbcJJJVJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 Oct 2016 05:21:09 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Received: from synology.com ([59.124.61.242]:57403 "EHLO synology.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752113AbcJKJCP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 11 Oct 2016 05:02:15 -0400
+From: robbieko <robbieko@synology.com>
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH] btrfs-progs: btrfstune: Register new UUIDs after uuid change
-Date: Mon, 10 Oct 2016 17:21:01 +0800
-Message-Id: <20161010092101.469-1-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
+Cc: Robbie Ko <robbieko@synology.com>
+Subject: [PATCH] Btrfs: fix -EINVEL in tree log recovering
+Date: Tue, 11 Oct 2016 17:01:14 +0800
+Message-Id: <1476176474-15900-1-git-send-email-robbieko@synology.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For multi-device btrfs, after UUID change we should info kernel, or new
-fs can't be mounted due to false alert on missing devices.
+From: Robbie Ko <robbieko@synology.com>
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+when tree log recovery, space_cache rebuild or dirty maybe save the cache.
+and then replay extent with disk_bytenr and disk_num_bytes,
+but disk_bytenr and disk_num_bytes maybe had been use for free space inode,
+will lead to -EINVEL.
+
+BTRFS: error in btrfs_replay_log:2446: errno=-22 unknown (Failed to recover log tree)
+
+therefore, we not save cache when tree log recovering.
+
+Signed-off-by: Robbie Ko <robbieko@synology.com>
 ---
- btrfstune.c | 9 +++++++++
- 1 file changed, 9 insertions(+)
+ fs/btrfs/extent-tree.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/btrfstune.c b/btrfstune.c
-index 15dde90..23d06ce 100644
---- a/btrfstune.c
-+++ b/btrfstune.c
-@@ -369,6 +369,15 @@ static int change_uuid(struct btrfs_fs_info *fs_info, const char *new_fsid_str)
- 	fs_info->new_fsid = NULL;
- 	fs_info->new_chunk_tree_uuid = NULL;
- 	printf("Fsid change finished\n");
-+
-+	/*
-+	 * Register new devices, or multi-volume btrfs can't be mounted until
-+	 * device scan happens.
-+	 * Ignore any error, as such register is optional.
-+	 */
-+	printf("Register new UUIDs(error can be ignored)\n");
-+	btrfs_register_all_devices();
-+
- out:
- 	return ret;
- }
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 665da8f..38b932c 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3434,6 +3434,7 @@ again:
+ 
+ 	spin_lock(&block_group->lock);
+ 	if (block_group->cached != BTRFS_CACHE_FINISHED ||
++		block_group->fs_info->log_root_recovering ||
+ 	    !btrfs_test_opt(root->fs_info, SPACE_CACHE)) {
+ 		/*
+ 		 * don't bother trying to write stuff out _if_
 -- 
-2.10.0
-
-
+1.9.1
 

@@ -1,39 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mc6.unige.ch ([129.194.9.219]:51927 "EHLO unige.ch"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1753133AbcJKQCV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Oct 2016 12:02:21 -0400
-Received: from wuniex13-2.unige.ch ([10.13.16.5] helo=wuniex13-2.isis.unige.ch)
-        by unige.ch stage1 with esmtps
-        (Exim MailCleaner)
-        id 1btylC-0009wR-S9
-        for <linux-btrfs@vger.kernel.org>
-        from <Philip.Moetteli@unige.ch>; Tue, 11 Oct 2016 17:14:30 +0200
-From: Philip Louis Moetteli <Philip.Moetteli@unige.ch>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: RAID system with adaption to changed number of disks
-Date: Tue, 11 Oct 2016 15:14:30 +0000
-Message-ID: <D379E551-1272-4548-9601-0CE4C1A8C012@unige.ch>
-Content-Type: text/plain; charset="utf-8"
+Received: from mail-oi0-f50.google.com ([209.85.218.50]:33804 "EHLO
+        mail-oi0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752742AbcJKQHK (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 11 Oct 2016 12:07:10 -0400
+Received: by mail-oi0-f50.google.com with SMTP id t73so29116420oie.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Oct 2016 09:06:55 -0700 (PDT)
 MIME-Version: 1.0
+In-Reply-To: <5e8501d223d7$715a9bb0$540fd310$@com>
+References: <5cde01d2230f$fa1e3150$ee5a93f0$@com> <CAJCQCtQ0SCZi36RG32NiHVYJRz8gHCtfhWYEqM93y2twX4C4JA@mail.gmail.com>
+ <5ce201d22364$96702780$c3507680$@com> <CAJCQCtR_zOd=1hVrKAD_kKfE_EKZQ2omfWQV556Rg=OSbvEd0w@mail.gmail.com>
+ <5e8501d223d7$715a9bb0$540fd310$@com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Tue, 11 Oct 2016 10:06:53 -0600
+Message-ID: <CAJCQCtQ12AZQ9x2ddSSceGHpWYvB7sSVE0qty+=Ln9oibmiHRw@mail.gmail.com>
+Subject: Re: raid6 file system in a bad state
+To: "Jason D. Michaelson" <jasondmichaelson@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On Tue, Oct 11, 2016 at 9:52 AM, Jason D. Michaelson
+<jasondmichaelson@gmail.com> wrote:
+
+>> btrfs rescue super-recover -v <dev>
+>
+> root@castor:~/logs# btrfs rescue super-recover -v /dev/sda
+> All Devices:
+>         Device: id = 2, name = /dev/sdh
+>         Device: id = 3, name = /dev/sdd
+>         Device: id = 5, name = /dev/sdf
+>         Device: id = 6, name = /dev/sde
+>         Device: id = 4, name = /dev/sdg
+>         Device: id = 1, name = /dev/sda
+>
+> Before Recovering:
+>         [All good supers]:
+>                 device name = /dev/sdd
+>                 superblock bytenr = 65536
+>
+>                 device name = /dev/sdd
+>                 superblock bytenr = 67108864
+>
+>                 device name = /dev/sdd
+>                 superblock bytenr = 274877906944
+>
+>                 device name = /dev/sdf
+>                 superblock bytenr = 65536
+>
+>                 device name = /dev/sdf
+>                 superblock bytenr = 67108864
+>
+>                 device name = /dev/sdf
+>                 superblock bytenr = 274877906944
+>
+>                 device name = /dev/sde
+>                 superblock bytenr = 65536
+>
+>                 device name = /dev/sde
+>                 superblock bytenr = 67108864
+>
+>                 device name = /dev/sde
+>                 superblock bytenr = 274877906944
+>
+>                 device name = /dev/sdg
+>                 superblock bytenr = 65536
+>
+>                 device name = /dev/sdg
+>                 superblock bytenr = 67108864
+>
+>                 device name = /dev/sdg
+>                 superblock bytenr = 274877906944
+>
+>                 device name = /dev/sda
+>                 superblock bytenr = 65536
+>
+>                 device name = /dev/sda
+>                 superblock bytenr = 67108864
+>
+>                 device name = /dev/sda
+>                 superblock bytenr = 274877906944
+>
+>         [All bad supers]:
+>                 device name = /dev/sdh
+>                 superblock bytenr = 65536
+>
+>                 device name = /dev/sdh
+>                 superblock bytenr = 67108864
+>
+>                 device name = /dev/sdh
+>                 superblock bytenr = 274877906944
+>
+>
+> Make sure this is a btrfs disk otherwise the tool will destroy other fs, Are you sure? [y/N]: n
+> Aborted to recover bad superblocks
+>
+> I aborted this waiting for instructions on whether to proceed from the list.
 
 
-I have to build a RAID 6 with the following 3 requirements:
+Bad superblocks can't be a good thing and would only cause confusion.
+I'd think that a known bad superblock would be ignored at mount time
+and even by btrfs-find-root, or maybe even replaced like any other
+kind of known bad metadata where good copies are available.
 
-	â€¢ Use different kinds of disks with different sizes.
-	â€¢ When a disk fails and there's enough space, the RAID should be able to reconstruct itself out of the degraded state. Meaning, if I have e. g. a RAID with 8 disks and 1 fails, I should be able to chose to transform this in a non-degraded (!) RAID with 7 disks.
-	â€¢ Also the other way round: If I add a disk of what size ever, it should redistribute the data, so that it becomes a RAID with 9 disks.
-
-I donâ€™t care, if I have to do it manually.
-I donâ€™t care so much about speed either.
-
-Is BTrFS capable of doing that?
+btrfs-show-super -f /dev/sda
+btrfs-show-super -f /dev/sdh
 
 
-Thanks a lot for your help!
+Find out what the difference is between good and bad supers.
 
-ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm
+
+-- 
+Chris Murphy

@@ -1,40 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40466 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754553AbcJEMXP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 5 Oct 2016 08:23:15 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 0F6C2ACF7
-        for <linux-btrfs@vger.kernel.org>; Wed,  5 Oct 2016 12:23:14 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs: remove stale comment from btrfs_statfs
-Date: Wed,  5 Oct 2016 14:23:06 +0200
-Message-Id: <20161005122306.3530-3-dsterba@suse.com>
+Received: from mail-oi0-f65.google.com ([209.85.218.65]:33815 "EHLO
+        mail-oi0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753211AbcJKPtm (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 11 Oct 2016 11:49:42 -0400
+Received: by mail-oi0-f65.google.com with SMTP id p136so1569018oic.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Oct 2016 08:49:14 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <20161011064742.17364-1-wangxg.fnst@cn.fujitsu.com>
+References: <20161011064742.17364-1-wangxg.fnst@cn.fujitsu.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Tue, 11 Oct 2016 09:49:13 -0600
+Message-ID: <CAJCQCtRQpDiHh4bnm5H0dVkCt+JNLYBu23O_Z6ddpo550e2ngw@mail.gmail.com>
+Subject: Re: [RFC] btrfs: make max inline data can be equal to sectorsize
+To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/super.c | 4 ----
- 1 file changed, 4 deletions(-)
+On Tue, Oct 11, 2016 at 12:47 AM, Wang Xiaoguang
+<wangxg.fnst@cn.fujitsu.com> wrote:
+> If we use mount option "-o max_inline=sectorsize", say 4096, indeed
+> even for a fresh fs, say nodesize is 16k, we can not make the first
+> 4k data completely inline, I found this conditon causing this issue:
+>   !compressed_size && (actual_end & (root->sectorsize - 1)) == 0
+>
+> If it retuns true, we'll not make data inline. For 4k sectorsize,
+> 0~4094 dara range, we can make it inline, but 0~4095, it can not.
+> I don't think this limition is useful, so here remove it which will
+> make max inline data can be equal to sectorsize.
+>
+> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+> ---
+>  fs/btrfs/inode.c | 2 --
+>  1 file changed, 2 deletions(-)
+>
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index ea15520..c0db393 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -267,8 +267,6 @@ static noinline int cow_file_range_inline(struct btrfs_root *root,
+>         if (start > 0 ||
+>             actual_end > root->sectorsize ||
+>             data_len > BTRFS_MAX_INLINE_DATA_SIZE(root) ||
+> -           (!compressed_size &&
+> -           (actual_end & (root->sectorsize - 1)) == 0) ||
+>             end + 1 < isize ||
+>             data_len > root->fs_info->max_inline) {
+>                 return 1;
+> --
+> 2.9.0
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 4071fe2bd098..2b852ca4fea5 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -2076,10 +2076,6 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
- 	u64 thresh = 0;
- 	int mixed = 0;
- 
--	/*
--	 * holding chunk_mutex to avoid allocating new chunks, holding
--	 * device_list_mutex to avoid the device being removed
--	 */
- 	rcu_read_lock();
- 	list_for_each_entry_rcu(found, head, list) {
- 		if (found->flags & BTRFS_BLOCK_GROUP_DATA) {
+
+Before making any further changes to inline data, does it make sense
+to find the source of corruption Zygo has been experiencing? That's in
+the "btrfs rare silent data corruption with kernel data leak" thread.
+
+
 -- 
-2.10.0
-
+Chris Murphy

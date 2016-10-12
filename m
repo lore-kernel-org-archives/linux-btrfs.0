@@ -1,20 +1,20 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f67.google.com ([209.85.214.67]:35390 "EHLO
+Received: from mail-it0-f67.google.com ([209.85.214.67]:35478 "EHLO
         mail-it0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932408AbcJLJPy (ORCPT
+        with ESMTP id S1753341AbcJLKBL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Oct 2016 05:15:54 -0400
-Received: by mail-it0-f67.google.com with SMTP id l13so3583748itl.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Oct 2016 02:15:26 -0700 (PDT)
+        Wed, 12 Oct 2016 06:01:11 -0400
+Received: by mail-it0-f67.google.com with SMTP id l13so3647285itl.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Oct 2016 03:01:11 -0700 (PDT)
 MIME-Version: 1.0
 Reply-To: fdmanana@gmail.com
-In-Reply-To: <1476259970-1866-6-git-send-email-robbieko@synology.com>
-References: <1476259970-1866-1-git-send-email-robbieko@synology.com> <1476259970-1866-6-git-send-email-robbieko@synology.com>
+In-Reply-To: <1476259970-1866-3-git-send-email-robbieko@synology.com>
+References: <1476259970-1866-1-git-send-email-robbieko@synology.com> <1476259970-1866-3-git-send-email-robbieko@synology.com>
 From: Filipe Manana <fdmanana@gmail.com>
-Date: Wed, 12 Oct 2016 10:15:25 +0100
-Message-ID: <CAL3q7H643Lv+udiRfsoYKYhR+pUd+PJrbgZgP0-Q43HU5nKy8g@mail.gmail.com>
-Subject: Re: [PATCH 5/5] Btrfs: incremental send, add gen check if has
- waiting_dir_move in the will_overwrite_ref
+Date: Wed, 12 Oct 2016 10:11:08 +0100
+Message-ID: <CAL3q7H7X1PBwsG4KiSaAdSBAb-j0BmR=d+9uLns2quft1cK1Bw@mail.gmail.com>
+Subject: Re: [PATCH 2/5] Btrfs: incremental send, add gen for
+ is_waiting_for_rm when some corner case
 To: robbieko <robbieko@synology.com>
 Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
@@ -24,62 +24,97 @@ List-ID: <linux-btrfs.vger.kernel.org>
 On Wed, Oct 12, 2016 at 9:12 AM, robbieko <robbieko@synology.com> wrote:
 > From: Robbie Ko <robbieko@synology.com>
 >
-> There a some case similar as before.
+> There a one case for old_gen waiting_for_rm,
+> but new_gen use get_cur_path with the same inode.
+>
+> Example:
+>     Parent snapshot:
+>     |---- dir258/ (ino 258, dir)
+>         |--- dir257/ (ino 257, dir)
+>     |---- dir259/ (ino 259, dir)
+>
+>     Send snapshot:
+>     |---- file258 (ino 258, file)
+>     |---- new_dir259/ (ino 259, dir)
+>         |--- dir257/ (ino 257, dir)
+>
+> utimes
+> mkdir o259-21-0
+> rename dir258 -> o258-15-0
+> utimes
+> mkfile o258-21-0
+> rename o258-21-0 -> file258
+> utimes
+> truncate o258-21-0 size=0
+> ERROR: truncate o258-21-0 failed: No such file or directory
+>
+> dir258 will be delete, but dir257 is waiting for move,
+> so dir258 is waiting for rm, and then file258 be create,
+> and rename it, and then need to truncate it, so use get_cur_path
+> to get path, but is_waiting_for_rm olny check ino, dosen't check gen,
+> match dir258 is waiting for rm, so get error path o258-21-0.
+>
+> therefore, add gen check in is_waiting_for_rm.
 
-As before what?
-Each change log should be complete and the reader is not supposed to
-guess what's the previous patch or commit this is referring to.
-Imagine yourself or someone else reading the change log some time
-after this is committed to a git tree. How does he/she figures out
-what is "before", what commit or patch is it?
+Same comments as for patch 1.
 
-> add check generation if has waiting_dir_move in the will_overwrite_ref
-
-Please add some explanation of what problem is being fixed and how.
-This change log has absolutely no value.
-
-Also, can you please start sending xfstests too?
+Can you please start sending xfstests too?
 Last batch of send fixes you've sent, I've asked you to do them, but
 you totally ignored it and later on I had to do them myself and
 rewrite all change logs (and remove some unnecessary code).
 
 Thanks.
-
 >
 > Signed-off-by: Robbie Ko <robbieko@synology.com>
 > ---
->  fs/btrfs/send.c | 7 ++++++-
->  1 file changed, 6 insertions(+), 1 deletion(-)
+>  fs/btrfs/send.c | 10 +++++-----
+>  1 file changed, 5 insertions(+), 5 deletions(-)
 >
 > diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-> index e090db2..92b7518 100644
+> index 1862f8a..95d3718 100644
 > --- a/fs/btrfs/send.c
 > +++ b/fs/btrfs/send.c
-> @@ -1858,6 +1858,7 @@ static int will_overwrite_ref(struct send_ctx *sctx, u64 dir, u64 dir_gen,
->         u64 gen;
->         u64 other_inode = 0;
->         u8 other_type = 0;
-> +       struct waiting_dir_move *dm = NULL;
+> @@ -311,7 +311,7 @@ static int is_waiting_for_move(struct send_ctx *sctx, u64 ino);
+>  static struct waiting_dir_move *
+>  get_waiting_dir_move(struct send_ctx *sctx, u64 ino);
 >
->         if (!sctx->parent_root)
->                 goto out;
-> @@ -1899,11 +1900,15 @@ static int will_overwrite_ref(struct send_ctx *sctx, u64 dir, u64 dir_gen,
->          * overwrite anything at this point in time.
->          */
->         if (other_inode > sctx->send_progress ||
-> -           is_waiting_for_move(sctx, other_inode)) {
-> +               ((dm = get_waiting_dir_move(sctx, other_inode)) != NULL)) {
->                 ret = get_inode_info(sctx->parent_root, other_inode, NULL,
->                                 who_gen, NULL, NULL, NULL, NULL);
->                 if (ret < 0)
->                         goto out;
-> +               if (dm && dm->gen != *who_gen) {
-> +                       ret = 0;
-> +                       goto out;
-> +               }
+> -static int is_waiting_for_rm(struct send_ctx *sctx, u64 dir_ino);
+> +static int is_waiting_for_rm(struct send_ctx *sctx, u64 dir_ino, u64 dir_gen);
 >
->                 ret = 1;
->                 *who_ino = other_inode;
+>  static int need_send_hole(struct send_ctx *sctx)
+>  {
+> @@ -2293,7 +2293,7 @@ static int get_cur_path(struct send_ctx *sctx, u64 ino, u64 gen,
+>
+>                 fs_path_reset(name);
+>
+> -               if (is_waiting_for_rm(sctx, ino)) {
+> +               if (is_waiting_for_rm(sctx, ino, gen)) {
+>                         ret = gen_unique_name(sctx, ino, gen, name);
+>                         if (ret < 0)
+>                                 goto out;
+> @@ -2900,11 +2900,11 @@ get_orphan_dir_info(struct send_ctx *sctx, u64 dir_ino)
+>         return NULL;
+>  }
+>
+> -static int is_waiting_for_rm(struct send_ctx *sctx, u64 dir_ino)
+> +static int is_waiting_for_rm(struct send_ctx *sctx, u64 dir_ino, u64 dir_gen)
+>  {
+>         struct orphan_dir_info *odi = get_orphan_dir_info(sctx, dir_ino);
+>
+> -       return odi != NULL;
+> +       return (odi != NULL && odi->gen == dir_gen);
+>  }
+>
+>  static void free_orphan_dir_info(struct send_ctx *sctx,
+> @@ -3167,7 +3167,7 @@ static int path_loop(struct send_ctx *sctx, struct fs_path *name,
+>         while (ino != BTRFS_FIRST_FREE_OBJECTID) {
+>                 fs_path_reset(name);
+>
+> -               if (is_waiting_for_rm(sctx, ino))
+> +               if (is_waiting_for_rm(sctx, ino, gen))
+>                         break;
+>                 if (is_waiting_for_move(sctx, ino)) {
+>                         if (*ancestor_ino == 0)
 > --
 > 1.9.1
 >

@@ -1,19 +1,20 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f194.google.com ([209.85.223.194]:34009 "EHLO
-        mail-io0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932491AbcJLJJ6 (ORCPT
+Received: from mail-it0-f67.google.com ([209.85.214.67]:35390 "EHLO
+        mail-it0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932408AbcJLJPy (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Oct 2016 05:09:58 -0400
-Received: by mail-io0-f194.google.com with SMTP id i202so2665089ioi.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Oct 2016 02:09:57 -0700 (PDT)
+        Wed, 12 Oct 2016 05:15:54 -0400
+Received: by mail-it0-f67.google.com with SMTP id l13so3583748itl.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Oct 2016 02:15:26 -0700 (PDT)
 MIME-Version: 1.0
 Reply-To: fdmanana@gmail.com
-In-Reply-To: <1476259970-1866-2-git-send-email-robbieko@synology.com>
-References: <1476259970-1866-1-git-send-email-robbieko@synology.com> <1476259970-1866-2-git-send-email-robbieko@synology.com>
+In-Reply-To: <1476259970-1866-6-git-send-email-robbieko@synology.com>
+References: <1476259970-1866-1-git-send-email-robbieko@synology.com> <1476259970-1866-6-git-send-email-robbieko@synology.com>
 From: Filipe Manana <fdmanana@gmail.com>
-Date: Wed, 12 Oct 2016 10:09:55 +0100
-Message-ID: <CAL3q7H5Mo=tw-exEa7Fpzu=sMYSFJH6=sdJT7MVZJYWk4LuxWw@mail.gmail.com>
-Subject: Re: [PATCH 1/5] Btrfs: incremental send, fix don't skip root inode in overwrite_ref
+Date: Wed, 12 Oct 2016 10:15:25 +0100
+Message-ID: <CAL3q7H643Lv+udiRfsoYKYhR+pUd+PJrbgZgP0-Q43HU5nKy8g@mail.gmail.com>
+Subject: Re: [PATCH 5/5] Btrfs: incremental send, add gen check if has
+ waiting_dir_move in the will_overwrite_ref
 To: robbieko <robbieko@synology.com>
 Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
@@ -23,32 +24,19 @@ List-ID: <linux-btrfs.vger.kernel.org>
 On Wed, Oct 12, 2016 at 9:12 AM, robbieko <robbieko@synology.com> wrote:
 > From: Robbie Ko <robbieko@synology.com>
 >
-> When root dir item change, don't skip will_overwrite_ref,
-> because root inode always exist.
+> There a some case similar as before.
 
-What do you mean by root dir item change? You mean indoe 256 changed,
-how did it change (and how can it change)?
+As before what?
+Each change log should be complete and the reader is not supposed to
+guess what's the previous patch or commit this is referring to.
+Imagine yourself or someone else reading the change log some time
+after this is committed to a git tree. How does he/she figures out
+what is "before", what commit or patch is it?
 
->
-> Example:
-> Parent snapshot:
-> |---- a1/ (ino 257, dir)
-> |---- a2/ (ino 258, dir)
->
-> Send snapshot:
-> |---- a2 (ino 257, file)
->
-> ERROR: rename o257-29-0 -> a2 failed: Is a directory
->
-> when process 257, first rmdir (ino 257,dir), and then mkfile o257-29-0,
-> and rename o257-29-0 -> a2, but now parent snapshot had a2(ino 258,dir),
-> we don't ignore it.
->
-> therefore is_inode_existent always return 1,
-> and will_overwrite_ref don't check gen for root inode.
+> add check generation if has waiting_dir_move in the will_overwrite_ref
 
-Please refer to change logs of past send fixes to have an idea on how
-to describe and explain the problem (and fix).
+Please add some explanation of what problem is being fixed and how.
+This change log has absolutely no value.
 
 Also, can you please start sending xfstests too?
 Last batch of send fixes you've sent, I've asked you to do them, but
@@ -60,33 +48,38 @@ Thanks.
 >
 > Signed-off-by: Robbie Ko <robbieko@synology.com>
 > ---
->  fs/btrfs/send.c | 6 +++++-
->  1 file changed, 5 insertions(+), 1 deletion(-)
+>  fs/btrfs/send.c | 7 ++++++-
+>  1 file changed, 6 insertions(+), 1 deletion(-)
 >
 > diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-> index a87675f..1862f8a 100644
+> index e090db2..92b7518 100644
 > --- a/fs/btrfs/send.c
 > +++ b/fs/btrfs/send.c
-> @@ -1681,6 +1681,10 @@ static int is_inode_existent(struct send_ctx *sctx, u64 ino, u64 gen)
->  {
->         int ret;
+> @@ -1858,6 +1858,7 @@ static int will_overwrite_ref(struct send_ctx *sctx, u64 dir, u64 dir_gen,
+>         u64 gen;
+>         u64 other_inode = 0;
+>         u8 other_type = 0;
+> +       struct waiting_dir_move *dm = NULL;
 >
-> +       if (ino == BTRFS_FIRST_FREE_OBJECTID) {
-> +               return 1;
-> +       }
-> +
->         ret = get_cur_inode_state(sctx, ino, gen);
->         if (ret < 0)
+>         if (!sctx->parent_root)
 >                 goto out;
-> @@ -1866,7 +1870,7 @@ static int will_overwrite_ref(struct send_ctx *sctx, u64 dir, u64 dir_gen,
->          * not deleted and then re-created, if it was then we have no overwrite
->          * and we can just unlink this entry.
+> @@ -1899,11 +1900,15 @@ static int will_overwrite_ref(struct send_ctx *sctx, u64 dir, u64 dir_gen,
+>          * overwrite anything at this point in time.
 >          */
-> -       if (sctx->parent_root) {
-> +       if (sctx->parent_root && dir != BTRFS_FIRST_FREE_OBJECTID) {
->                 ret = get_inode_info(sctx->parent_root, dir, NULL, &gen, NULL,
->                                      NULL, NULL, NULL);
->                 if (ret < 0 && ret != -ENOENT)
+>         if (other_inode > sctx->send_progress ||
+> -           is_waiting_for_move(sctx, other_inode)) {
+> +               ((dm = get_waiting_dir_move(sctx, other_inode)) != NULL)) {
+>                 ret = get_inode_info(sctx->parent_root, other_inode, NULL,
+>                                 who_gen, NULL, NULL, NULL, NULL);
+>                 if (ret < 0)
+>                         goto out;
+> +               if (dm && dm->gen != *who_gen) {
+> +                       ret = 0;
+> +                       goto out;
+> +               }
+>
+>                 ret = 1;
+>                 *who_ino = other_inode;
 > --
 > 1.9.1
 >

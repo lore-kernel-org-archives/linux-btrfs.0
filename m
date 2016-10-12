@@ -1,109 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:60264 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1754650AbcJMFqX (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Oct 2016 01:46:23 -0400
-Subject: Re: [PATCH 1/2] btrfs: introduce priority based delalloc shrink
- mechanism
-To: Josef Bacik <jbacik@fb.com>, <linux-btrfs@vger.kernel.org>
-References: <1476263029-11879-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
- <ac29d0ae-d497-9c8b-d6c4-186cce27f336@fb.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:20144 "EHLO song.cn.fujitsu.com"
+        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+        id S932105AbcJLJKW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Oct 2016 05:10:22 -0400
 From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Message-ID: <57FF1E50.7000706@cn.fujitsu.com>
-Date: Thu, 13 Oct 2016 13:40:32 +0800
+To: linux-btrfs@vger.kernel.org
+Cc: jbacik@fb.com
+Subject: [PATCH 2/2] btrfs: try to satisfy metadata requests if wen can overcommit
+Date: Wed, 12 Oct 2016 17:03:49 +0800
+Message-Id: <1476263029-11879-2-git-send-email-wangxg.fnst@cn.fujitsu.com>
+In-Reply-To: <1476263029-11879-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
+References: <1476263029-11879-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <ac29d0ae-d497-9c8b-d6c4-186cce27f336@fb.com>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-hi,
+In shrink_delalloc(), if can_overcommit() returns true, shrink_delalloc()
+will give up shrinking delalloc bytes, in this case we should check whether
+some tickcts' requests can overcommit, if some can, we can satisfy them
+timely and directly.
 
-On 10/13/2016 01:20 AM, Josef Bacik wrote:
-> On 10/12/2016 05:03 AM, Wang Xiaoguang wrote:
->> Since commit b02441999efcc6152b87cd58e7970bb7843f76cf, we don't wait all
->> ordered extents, but I run into some enospc errors when doing large file
->> create and delete tests, it's because shrink_delalloc() does not write
->> enough delalloc bytes and wait them finished:
->>     From: Miao Xie <miaox@cn.fujitsu.com>
->>     Date: Mon, 4 Nov 2013 23:13:25 +0800
->>     Subject: [PATCH] Btrfs: don't wait for the completion of all the 
->> ordered extents
->>
->>     It is very likely that there are lots of ordered extents in the 
->> filesytem,
->>     if we wait for the completion of all of them when we want to 
->> reclaim some
->>     space for the metadata space reservation, we would be blocked for 
->> a long
->>     time. The performance would drop down suddenly for a long time.
->>
->> Here we introduce a simple reclaim_priority variable, the higher the
->> value, the higher the priority, 0 is the minimum priority. The core
->> idea is:
->>         if (reclaim_priority >= 3)
->>                 to_reclaim = 
->> percpu_counter_sum_positive(&root->fs_info->delalloc_bytes);
->>         else
->>                 to_reclaim = orig * (2 << (reclaim_priority + 1));
->> As the priority increases, we try wo write more delalloc bytes, here 
->> orig
->> is the number of metadata we want to reserve. Meanwhile if
->> "reclaim_priority >= 3" returns true, we'll also wait all current 
->> ordered
->> extents to finish.
->
-> Ok this is closer to what I want but not quite there.  I want to get 
-> rid of the magic numbers, so we start with
->
-> #define BTRFS_DEFAULT_FLUSH_PRIORITY 3
->
-> and once priority == 0 we know it's time to flush and wait for all the 
-> things. Then we use the priority as a multiplier, with DEFAULT being 
-> no multiplier, so it would look something like this
->
-> if (reclaim_priority)
->     to_reclaim = orig * (2 << BTRFS_DEFAULT_FLUSH_PRIORITY - priority);
-> else
->     to_reclaim = delalloc_bytes;
-> ....
-> if (reclaim_priority)
->     items_to_wait = calc_reclaim_items_nr(root, to_reclaim);
-> else
->     items_to_wait = -1;
->
->
-> and then instead of
->
-> if (reclaim_priority > 3) {
->     wake_all_tickets(&space_info->tickets);
-> ...
->
-> we can change the while loop to be
->
-> while ((flush_state <= COMMIT_TRANS) || (--reclaim_priority >= 0));
->
-> and move the wake_all_tickets() to outside the loop, and add a
->
-> if (flush_state > COMMIT_TRANS)
->     flush_state = FLUSH_DELAYED_ITEMS_NR;
->
-> to the start of the do loop.  Does that make sense?  Thanks,
-Yes, thanks for your kindly help.
-For "wake_all_tickets()", I think we still need to put it in the while loop,
-If we move it outside, we need to relock btrfs_space_info's lock, but
-here there maybe some race window, some new tickets maybe added in,
-we should not wake up them directly and should also do some flush work
-for them.
+Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+---
+ fs/btrfs/extent-tree.c | 43 +++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 43 insertions(+)
 
-Regards,
-Xiaoguang Wang
-
->
-> Josef
->
->
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 661f039..c2e6871 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4971,6 +4971,47 @@ static void wake_all_tickets(struct list_head *head)
+ }
+ 
+ /*
++ * This function must be protected by btrfs_space_info's lock.
++ * In shrink_delalloc(), if can_overcommit() returns true, shrink_delalloc()
++ * will not shrink delalloc bytes any more, in this case we should check
++ * whether some tickcts' requests can overcommit, if some can, we can satisfy
++ * them timely and directly.
++ */
++static void try_to_wake_tickets(struct btrfs_root *root,
++				struct btrfs_space_info *space_info)
++{
++	struct reserve_ticket *ticket;
++	struct list_head *head = &space_info->priority_tickets;
++	enum btrfs_reserve_flush_enum flush = BTRFS_RESERVE_NO_FLUSH;
++	u64 used;
++
++again:
++	while (!list_empty(head)) {
++		ticket = list_first_entry(head, struct reserve_ticket,
++					  list);
++		used = space_info->bytes_used +
++			space_info->bytes_reserved + space_info->bytes_pinned +
++			space_info->bytes_readonly + space_info->bytes_may_use;
++
++		if (used + ticket->bytes <= space_info->total_bytes ||
++		    can_overcommit(root, space_info, ticket->bytes, flush)) {
++			space_info->bytes_may_use += ticket->bytes;
++			list_del_init(&ticket->list);
++			ticket->bytes = 0;
++			space_info->tickets_id++;
++			wake_up(&ticket->wait);
++		} else
++			return;
++	}
++
++	if (head == &space_info->priority_tickets) {
++		head = &space_info->tickets;
++		flush = BTRFS_RESERVE_FLUSH_ALL;
++		goto again;
++	}
++}
++
++/*
+  * This is for normal flushers, we can wait all goddamned day if we want to.  We
+  * will loop and continuously try to flush as long as we are making progress.
+  * We count progress as clearing off tickets each time we have to loop.
+@@ -5006,6 +5047,8 @@ static void btrfs_async_reclaim_metadata_space(struct work_struct *work)
+ 		ret = flush_space(fs_info->fs_root, space_info, to_reclaim,
+ 				  flush_state, reclaim_priority);
+ 		spin_lock(&space_info->lock);
++		if (!ret)
++			try_to_wake_tickets(fs_info->fs_root, space_info);
+ 		if (list_empty(&space_info->tickets)) {
+ 			space_info->flush = 0;
+ 			spin_unlock(&space_info->lock);
+-- 
+2.7.4
 
 
 

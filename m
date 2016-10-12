@@ -1,33 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40035 "EHLO mx2.suse.de"
+Received: from synology.com ([59.124.61.242]:51736 "EHLO synology.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933505AbcJLNek (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Oct 2016 09:34:40 -0400
-From: David Sterba <dsterba@suse.com>
+        id S1753632AbcJLINT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Oct 2016 04:13:19 -0400
+From: robbieko <robbieko@synology.com>
 To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com
-Subject: Btrfs progs release 4.8.1
-Date: Wed, 12 Oct 2016 15:34:32 +0200
-Message-Id: <20161012133432.28679-1-dsterba@suse.com>
+Cc: Robbie Ko <robbieko@synology.com>
+Subject: [PATCH 0/5] Btrfs: incremental send, fix serval case for root and gen
+Date: Wed, 12 Oct 2016 16:12:45 +0800
+Message-Id: <1476259970-1866-1-git-send-email-robbieko@synology.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+From: Robbie Ko <robbieko@synology.com>
 
-btrfs-progs 4.8.1 have been released, with a short delay than estimated. This
-is a bugfix release, namely the build has been fixed (32bit and no-backtrace).
+Patch for fix btrfs incremental send. 
+These patches base on v4.8.0-rc8
 
-Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
+Robbie Ko (5):
+  Btrfs: incremental send, fix don't skip root inode in overwrite_ref
+  Btrfs: incremental send, add gen for is_waiting_for_rm when some
+    corner case
+  Btrfs: incremental send, add gen in waiting_dir_move for some corner
+    case
+  Btrfs: incremental send, add gen check in did_overwrite_ref
+  Btrfs: incremental send, add gen check if has waiting_dir_move in the
+    will_overwrite_ref
 
-Shortlog:
+ fs/btrfs/send.c | 50 ++++++++++++++++++++++++++++++++++++++++----------
+ 1 file changed, 40 insertions(+), 10 deletions(-)
 
-David Sterba (5):
-      btrfs-progs: build: add explicit option separator to rm commands
-      btrfs-progs: tests: add script to help build coverage
-      btrfs-progs: fix printf format of sizeof on 32bit build
-      btrfs-progs: ioctl: make build-time structure size checks optional
-      btrfs-progs: update CHANGES for v4.8.1
+-- 
+1.9.1
 
-Qu Wenruo (1):
-      btrfs-progs: Fix warning_trace compile error if backtrace is disabled

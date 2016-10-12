@@ -1,103 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53478 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:54107 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932125AbcJLQkM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Oct 2016 12:40:12 -0400
+        id S1753714AbcJLQr0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Oct 2016 12:47:26 -0400
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 51C79AAD1
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Oct 2016 16:40:10 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs: kill unused writepage_io_hook callback
-Date: Wed, 12 Oct 2016 18:40:09 +0200
-Message-Id: <20161012164009.22940-1-dsterba@suse.com>
+        by mx2.suse.de (Postfix) with ESMTP id 88667ABF4
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Oct 2016 16:45:51 +0000 (UTC)
+Date: Wed, 12 Oct 2016 18:45:51 +0200
+From: David Sterba <dsterba@suse.cz>
+To: David Sterba <DSterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: kill unused writepage_io_hook callback
+Message-ID: <20161012164551.GU11398@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <20161012164009.22940-1-dsterba@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20161012164009.22940-1-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It seems to be long time unused, since 2008 and
-6885f308b5570 ("Btrfs: Misc 2.6.25 updates").
+On Wed, Oct 12, 2016 at 06:40:09PM +0200, David Sterba wrote:
+> It seems to be long time unused, since 2008 and
+> 6885f308b5570 ("Btrfs: Misc 2.6.25 updates").
+> 
+> Propagating the removal touches some code but has no functional effect.
+> 
+> Signed-off-by: David Sterba <dsterba@suse.com>
 
-Propagating the removal touches some code but has no functional effect.
-
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/extent_io.c | 39 ++++++++++++++++-----------------------
- fs/btrfs/extent_io.h |  1 -
- 2 files changed, 16 insertions(+), 24 deletions(-)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index d247fc0eea19..d22b0777c7e0 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3368,6 +3368,8 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
- 
- 	while (cur <= end) {
- 		u64 em_end;
-+		unsigned long max_nr;
-+
- 		if (cur >= i_size) {
- 			if (tree->ops && tree->ops->writepage_end_io_hook)
- 				tree->ops->writepage_end_io_hook(page, cur,
-@@ -3423,32 +3425,23 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
- 			continue;
- 		}
- 
--		if (tree->ops && tree->ops->writepage_io_hook) {
--			ret = tree->ops->writepage_io_hook(page, cur,
--						cur + iosize - 1);
--		} else {
--			ret = 0;
-+		max_nr = (i_size >> PAGE_SHIFT) + 1;
-+
-+		set_range_writeback(tree, cur, cur + iosize - 1);
-+		if (!PageWriteback(page)) {
-+			btrfs_err(BTRFS_I(inode)->root->fs_info,
-+				   "page %lu not writeback, cur %llu end %llu",
-+			       page->index, cur, end);
- 		}
--		if (ret) {
--			SetPageError(page);
--		} else {
--			unsigned long max_nr = (i_size >> PAGE_SHIFT) + 1;
- 
--			set_range_writeback(tree, cur, cur + iosize - 1);
--			if (!PageWriteback(page)) {
--				btrfs_err(BTRFS_I(inode)->root->fs_info,
--					   "page %lu not writeback, cur %llu end %llu",
--				       page->index, cur, end);
--			}
-+		ret = submit_extent_page(write_flags, tree, wbc, page,
-+					 sector, iosize, pg_offset,
-+					 bdev, &epd->bio, max_nr,
-+					 end_bio_extent_writepage,
-+					 0, 0, 0, false);
-+		if (ret)
-+			SetPageError(page);
- 
--			ret = submit_extent_page(write_flags, tree, wbc, page,
--						 sector, iosize, pg_offset,
--						 bdev, &epd->bio, max_nr,
--						 end_bio_extent_writepage,
--						 0, 0, 0, false);
--			if (ret)
--				SetPageError(page);
--		}
- 		cur = cur + iosize;
- 		pg_offset += iosize;
- 		nr++;
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index b5e0ade90e88..981f402bf754 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -71,7 +71,6 @@ struct extent_io_ops {
- 			     u64 start, u64 end, int *page_started,
- 			     unsigned long *nr_written);
- 	int (*writepage_start_hook)(struct page *page, u64 start, u64 end);
--	int (*writepage_io_hook)(struct page *page, u64 start, u64 end);
- 	extent_submit_bio_hook_t *submit_bio_hook;
- 	int (*merge_bio_hook)(int rw, struct page *page, unsigned long offset,
- 			      size_t size, struct bio *bio,
--- 
-2.10.0
-
+Please ignore, sent a long time ago already.

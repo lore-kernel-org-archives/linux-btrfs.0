@@ -1,33 +1,103 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47210 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:53478 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752729AbcJCQUk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 3 Oct 2016 12:20:40 -0400
-Date: Mon, 3 Oct 2016 18:20:37 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Jeff Mahoney <jeffm@suse.com>
-Cc: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3] btrfs: fix a possible umount deadlock
-Message-ID: <20161003162037.GB6576@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <20160909083104.10383-1-anand.jain@oracle.com>
- <20160922045613.25861-1-anand.jain@oracle.com>
- <b16b4d32-9990-25d3-2973-f2bae1e6fba5@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <b16b4d32-9990-25d3-2973-f2bae1e6fba5@suse.com>
+        id S932125AbcJLQkM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Oct 2016 12:40:12 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 51C79AAD1
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Oct 2016 16:40:10 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH] btrfs: kill unused writepage_io_hook callback
+Date: Wed, 12 Oct 2016 18:40:09 +0200
+Message-Id: <20161012164009.22940-1-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Sep 22, 2016 at 12:24:07PM -0400, Jeff Mahoney wrote:
-> This isn't necessarily a comment on this code in particular, but what's
-> the reason for using call_rcu to defer the freeing instead of
-> synchronize_rcu and freeing the device directly via __free_device (if it
-> accepted a btrfs_device)?  It's a pattern that's used throughout
-> volumes.c and it's old[1].  I'm not sure if it was intentional to defer
-> freeing since that was actually a functional change from the code it
-> replaced.
+It seems to be long time unused, since 2008 and
+6885f308b5570 ("Btrfs: Misc 2.6.25 updates").
 
-It could be unintentional, the patch was supposed to relax the read-only
-side, ie. use RCU instead of mutex. Deferred freeing does not seem to be
-necessary. The device locking code needs cleanup/refactoring.
+Propagating the removal touches some code but has no functional effect.
+
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/extent_io.c | 39 ++++++++++++++++-----------------------
+ fs/btrfs/extent_io.h |  1 -
+ 2 files changed, 16 insertions(+), 24 deletions(-)
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index d247fc0eea19..d22b0777c7e0 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3368,6 +3368,8 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
+ 
+ 	while (cur <= end) {
+ 		u64 em_end;
++		unsigned long max_nr;
++
+ 		if (cur >= i_size) {
+ 			if (tree->ops && tree->ops->writepage_end_io_hook)
+ 				tree->ops->writepage_end_io_hook(page, cur,
+@@ -3423,32 +3425,23 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
+ 			continue;
+ 		}
+ 
+-		if (tree->ops && tree->ops->writepage_io_hook) {
+-			ret = tree->ops->writepage_io_hook(page, cur,
+-						cur + iosize - 1);
+-		} else {
+-			ret = 0;
++		max_nr = (i_size >> PAGE_SHIFT) + 1;
++
++		set_range_writeback(tree, cur, cur + iosize - 1);
++		if (!PageWriteback(page)) {
++			btrfs_err(BTRFS_I(inode)->root->fs_info,
++				   "page %lu not writeback, cur %llu end %llu",
++			       page->index, cur, end);
+ 		}
+-		if (ret) {
+-			SetPageError(page);
+-		} else {
+-			unsigned long max_nr = (i_size >> PAGE_SHIFT) + 1;
+ 
+-			set_range_writeback(tree, cur, cur + iosize - 1);
+-			if (!PageWriteback(page)) {
+-				btrfs_err(BTRFS_I(inode)->root->fs_info,
+-					   "page %lu not writeback, cur %llu end %llu",
+-				       page->index, cur, end);
+-			}
++		ret = submit_extent_page(write_flags, tree, wbc, page,
++					 sector, iosize, pg_offset,
++					 bdev, &epd->bio, max_nr,
++					 end_bio_extent_writepage,
++					 0, 0, 0, false);
++		if (ret)
++			SetPageError(page);
+ 
+-			ret = submit_extent_page(write_flags, tree, wbc, page,
+-						 sector, iosize, pg_offset,
+-						 bdev, &epd->bio, max_nr,
+-						 end_bio_extent_writepage,
+-						 0, 0, 0, false);
+-			if (ret)
+-				SetPageError(page);
+-		}
+ 		cur = cur + iosize;
+ 		pg_offset += iosize;
+ 		nr++;
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index b5e0ade90e88..981f402bf754 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -71,7 +71,6 @@ struct extent_io_ops {
+ 			     u64 start, u64 end, int *page_started,
+ 			     unsigned long *nr_written);
+ 	int (*writepage_start_hook)(struct page *page, u64 start, u64 end);
+-	int (*writepage_io_hook)(struct page *page, u64 start, u64 end);
+ 	extent_submit_bio_hook_t *submit_bio_hook;
+ 	int (*merge_bio_hook)(int rw, struct page *page, unsigned long offset,
+ 			      size_t size, struct bio *bio,
+-- 
+2.10.0
+

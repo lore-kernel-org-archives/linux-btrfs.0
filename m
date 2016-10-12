@@ -1,57 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:41902 "EHLO
-        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751496AbcJPGSk (ORCPT
+Received: from mail-ua0-f172.google.com ([209.85.217.172]:33779 "EHLO
+        mail-ua0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754985AbcJLN6q (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 16 Oct 2016 02:18:40 -0400
-Date: Sat, 15 Oct 2016 23:18:37 -0700
-From: Christoph Hellwig <hch@infradead.org>
-To: "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc: david@fromorbit.com, eguan@redhat.com, linux-xfs@vger.kernel.org,
-        fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/3] misc: fix fallocate commands that need the unshare
- switch
-Message-ID: <20161016061837.GA12614@infradead.org>
-References: <147646876990.19627.5046740854955682441.stgit@birch.djwong.org>
- <147646878237.19627.11366131824882808123.stgit@birch.djwong.org>
- <20161015170303.GB11829@infradead.org>
+        Wed, 12 Oct 2016 09:58:46 -0400
+Received: by mail-ua0-f172.google.com with SMTP id p25so6371112uaa.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Oct 2016 06:58:41 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20161015170303.GB11829@infradead.org>
+From: Abhay Sachan <lkp.abhay@gmail.com>
+Date: Wed, 12 Oct 2016 19:28:20 +0530
+Message-ID: <CAKHchJzbo7=fZrtbOwaMdMNiYMSdUuiys3iHTpyxTP92SAY1TQ@mail.gmail.com>
+Subject: Btrfs progs build fails for 4.8
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Oct 15, 2016 at 10:03:03AM -0700, Christoph Hellwig wrote:
-> The poster child would be btrfs, and I would have added some output
-> here if btrfs support in xfstests wasn't completely broken at this
-> point.
-> 
-> Well, added Ccs and some output anyway in this case..
+Hi,
+I tried building latest btrfs progs on CentOS 6, "./configure" failed
+with the error:
 
-Turns out the btrfs failure was my stupidity, sorry.
+checking for FIEMAP_EXTENT_SHARED defined in linux/fiemap.h... no
+configure: error: no definition of FIEMAP_EXTENT_SHARED found
 
-I can reproduce the issue I was going to originally show (which was
-actually pointed out by Eric for a different fallocate flag check
-I wanted to add), here is the diff of the output files when running
-generic/156 on btrfs with your patch:
+Any ideas what am I lacking in the system?
 
---- tests/generic/156.out	2016-03-29 13:59:30.411720622 +0000
-+++ /root/xfstests/results//generic/156.out.bad	2016-10-16 06:15:27.118776421 +0000
-@@ -2,8 +2,13 @@
- Create the original file blocks
- Create the reflink copies
- funshare part of a file
-+fallocate: Operation not supported
- funshare some of the copies
-+fallocate: Operation not supported
-+fallocate: Operation not supported
- funshare the rest of the files
-+fallocate: Operation not supported
-+fallocate: Operation not supported
- Rewrite the original file
- free blocks after reflinking is in range
- free blocks after nocow'ing some copies is in range
-
-So what we really need an enhanced falloc tester that checks that
-the tested subcommand is actually implemented on the given file system.
-(And we already need something like that for -k on NFS)
+Regards,
+Abhay

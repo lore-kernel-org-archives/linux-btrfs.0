@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from synology.com ([59.124.61.242]:52715 "EHLO synology.com"
+Received: from synology.com ([59.124.61.242]:52716 "EHLO synology.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754363AbcJLINr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Oct 2016 04:13:47 -0400
+        id S1754591AbcJLINm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Oct 2016 04:13:42 -0400
 From: robbieko <robbieko@synology.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Robbie Ko <robbieko@synology.com>
-Subject: [PATCH 2/5] Btrfs: incremental send, add gen for is_waiting_for_rm when some corner case
-Date: Wed, 12 Oct 2016 16:12:47 +0800
-Message-Id: <1476259970-1866-3-git-send-email-robbieko@synology.com>
+Subject: [PATCH 3/5] Btrfs: incremental send, add gen in waiting_dir_move for some corner case
+Date: Wed, 12 Oct 2016 16:12:48 +0800
+Message-Id: <1476259970-1866-4-git-send-email-robbieko@synology.com>
 In-Reply-To: <1476259970-1866-1-git-send-email-robbieko@synology.com>
 References: <1476259970-1866-1-git-send-email-robbieko@synology.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -16,88 +16,76 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Robbie Ko <robbieko@synology.com>
 
-There a one case for old_gen waiting_for_rm,
-but new_gen use get_cur_path with the same inode.
-
-Example:
-    Parent snapshot:
-    |---- dir258/ (ino 258, dir)
-        |--- dir257/ (ino 257, dir)
-    |---- dir259/ (ino 259, dir)
-
-    Send snapshot:
-    |---- file258 (ino 258, file)
-    |---- new_dir259/ (ino 259, dir)
-        |--- dir257/ (ino 257, dir)
-
-utimes
-mkdir o259-21-0
-rename dir258 -> o258-15-0
-utimes
-mkfile o258-21-0
-rename o258-21-0 -> file258
-utimes
-truncate o258-21-0 size=0
-ERROR: truncate o258-21-0 failed: No such file or directory
-
-dir258 will be delete, but dir257 is waiting for move,
-so dir258 is waiting for rm, and then file258 be create,
-and rename it, and then need to truncate it, so use get_cur_path
-to get path, but is_waiting_for_rm olny check ino, dosen't check gen,
-match dir258 is waiting for rm, so get error path o258-21-0.
-
-therefore, add gen check in is_waiting_for_rm.
+There a some case similar as before.
+add compare generation with dir items,
+and waiting_dir_move in the can_rmdir.
 
 Signed-off-by: Robbie Ko <robbieko@synology.com>
 ---
- fs/btrfs/send.c | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+ fs/btrfs/send.c | 14 +++++++++++---
+ 1 file changed, 11 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 1862f8a..95d3718 100644
+index 95d3718..d908624 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -311,7 +311,7 @@ static int is_waiting_for_move(struct send_ctx *sctx, u64 ino);
- static struct waiting_dir_move *
- get_waiting_dir_move(struct send_ctx *sctx, u64 ino);
+@@ -237,6 +237,7 @@ struct pending_dir_move {
+ struct waiting_dir_move {
+ 	struct rb_node node;
+ 	u64 ino;
++	u64 gen;
+ 	/*
+ 	 * There might be some directory that could not be removed because it
+ 	 * was waiting for this directory inode to be moved first. Therefore
+@@ -2931,6 +2932,7 @@ static int can_rmdir(struct send_ctx *sctx, u64 dir, u64 dir_gen,
+ 	struct btrfs_key found_key;
+ 	struct btrfs_key loc;
+ 	struct btrfs_dir_item *di;
++	u64 gen;
  
--static int is_waiting_for_rm(struct send_ctx *sctx, u64 dir_ino);
-+static int is_waiting_for_rm(struct send_ctx *sctx, u64 dir_ino, u64 dir_gen);
+ 	/*
+ 	 * Don't try to rmdir the top/root subvolume dir.
+@@ -2970,8 +2972,13 @@ static int can_rmdir(struct send_ctx *sctx, u64 dir, u64 dir_gen,
+ 				struct btrfs_dir_item);
+ 		btrfs_dir_item_key_to_cpu(path->nodes[0], di, &loc);
  
- static int need_send_hole(struct send_ctx *sctx)
- {
-@@ -2293,7 +2293,7 @@ static int get_cur_path(struct send_ctx *sctx, u64 ino, u64 gen,
++		ret = get_inode_info(root, loc.objectid, NULL, &gen, NULL,
++				     NULL, NULL, NULL);
++		if (ret < 0)
++			goto out;
++
+ 		dm = get_waiting_dir_move(sctx, loc.objectid);
+-		if (dm) {
++		if (dm && dm->gen == gen) {
+ 			struct orphan_dir_info *odi;
  
- 		fs_path_reset(name);
- 
--		if (is_waiting_for_rm(sctx, ino)) {
-+		if (is_waiting_for_rm(sctx, ino, gen)) {
- 			ret = gen_unique_name(sctx, ino, gen, name);
- 			if (ret < 0)
- 				goto out;
-@@ -2900,11 +2900,11 @@ get_orphan_dir_info(struct send_ctx *sctx, u64 dir_ino)
- 	return NULL;
+ 			odi = add_orphan_dir_info(sctx, dir);
+@@ -3011,7 +3018,7 @@ static int is_waiting_for_move(struct send_ctx *sctx, u64 ino)
+ 	return entry != NULL;
  }
  
--static int is_waiting_for_rm(struct send_ctx *sctx, u64 dir_ino)
-+static int is_waiting_for_rm(struct send_ctx *sctx, u64 dir_ino, u64 dir_gen)
+-static int add_waiting_dir_move(struct send_ctx *sctx, u64 ino, bool orphanized)
++static int add_waiting_dir_move(struct send_ctx *sctx, u64 ino, u64 gen, bool orphanized)
  {
- 	struct orphan_dir_info *odi = get_orphan_dir_info(sctx, dir_ino);
+ 	struct rb_node **p = &sctx->waiting_dir_moves.rb_node;
+ 	struct rb_node *parent = NULL;
+@@ -3021,6 +3028,7 @@ static int add_waiting_dir_move(struct send_ctx *sctx, u64 ino, bool orphanized)
+ 	if (!dm)
+ 		return -ENOMEM;
+ 	dm->ino = ino;
++	dm->gen = gen;
+ 	dm->rmdir_ino = 0;
+ 	dm->orphanized = orphanized;
  
--	return odi != NULL;
-+	return (odi != NULL && odi->gen == dir_gen);
- }
+@@ -3118,7 +3126,7 @@ static int add_pending_dir_move(struct send_ctx *sctx,
+ 			goto out;
+ 	}
  
- static void free_orphan_dir_info(struct send_ctx *sctx,
-@@ -3167,7 +3167,7 @@ static int path_loop(struct send_ctx *sctx, struct fs_path *name,
- 	while (ino != BTRFS_FIRST_FREE_OBJECTID) {
- 		fs_path_reset(name);
+-	ret = add_waiting_dir_move(sctx, pm->ino, is_orphan);
++	ret = add_waiting_dir_move(sctx, pm->ino, pm->gen, is_orphan);
+ 	if (ret)
+ 		goto out;
  
--		if (is_waiting_for_rm(sctx, ino))
-+		if (is_waiting_for_rm(sctx, ino, gen))
- 			break;
- 		if (is_waiting_for_move(sctx, ino)) {
- 			if (*ancestor_ino == 0)
 -- 
 1.9.1
 

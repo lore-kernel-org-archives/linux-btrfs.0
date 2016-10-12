@@ -1,139 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:21232 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752512AbcJLBcY (ORCPT
+Received: from mail-yw0-f180.google.com ([209.85.161.180]:35552 "EHLO
+        mail-yw0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752512AbcJLBeH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Oct 2016 21:32:24 -0400
-Subject: Re: RAID system with adaption to changed number of disks
-To: Chris Murphy <lists@colorremedies.com>, Hugo Mills <hugo@carfax.org.uk>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Austin Hemmelgarn <ahferroin7@gmail.com>
-References: <D379E551-1272-4548-9601-0CE4C1A8C012@unige.ch>
- <20161011160601.GI7683@carfax.org.uk>
- <CAJCQCtSY2Y5AsW2FC5FGP3x3Vaz6Y10=EbAE-0FKFQAqg0oGkg@mail.gmail.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <3da9a459-c63b-570c-5b42-c7186b3a74fd@cn.fujitsu.com>
-Date: Wed, 12 Oct 2016 09:32:17 +0800
+        Tue, 11 Oct 2016 21:34:07 -0400
+Received: by mail-yw0-f180.google.com with SMTP id t193so24737855ywc.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Oct 2016 18:33:07 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtSY2Y5AsW2FC5FGP3x3Vaz6Y10=EbAE-0FKFQAqg0oGkg@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <D379E551-1272-4548-9601-0CE4C1A8C012@unige.ch>
+References: <D379E551-1272-4548-9601-0CE4C1A8C012@unige.ch>
+From: Dan Mons <dmons@cuttingedge.com.au>
+Date: Wed, 12 Oct 2016 11:33:06 +1000
+Message-ID: <CACa6TydFOQJgF_6=Uyhddyw_aqDJZZrWHLkiuqX=sigg481+iA@mail.gmail.com>
+Subject: Re: RAID system with adaption to changed number of disks
+To: Philip Louis Moetteli <Philip.Moetteli@unige.ch>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Ignoring the RAID56 bugs for a moment, if you have mismatched drives,
+BtrFS RAID1 is a pretty good way of utilising available space and
+having redundancy.
+
+My home array is BtrFS with a hobbled together collection of disks
+ranging from 500GB to 3TB (and 5 of them, so it's not an even number).
+I have a grand total of 8TB of linear space, and with BtrFS RAID1 I
+can use exactly 50% of this (4TB) even with the weird combination of
+disks.  That's something other RAID1 implementations can't do (they're
+limited to the size of the smallest disk of any pair, and need an even
+number of disks all up), and I get free compression and snapshotting,
+so yay for that.
+
+As drives die of natural old age, I replace them ad-hoc with bigger
+drives (whatever is the sane price-point at the time).  A replace
+followed by a rebalance later, and I'm back to using all available
+space (which grows every time I throw a bigger drive in the mix),
+which again is incredibly handy when you're a home user looking for
+sane long-term storage that doesn't require complete rebuilds of your
+array.
+
+-Dan
+
+----------------
+Dan Mons - VFX Sysadmin
+Cutting Edge
+http://cuttingedge.com.au
 
 
-At 10/12/2016 07:58 AM, Chris Murphy wrote:
-> https://btrfs.wiki.kernel.org/index.php/Status
-> Scrub + RAID56 Unstable will verify but not repair
+On 12 October 2016 at 01:14, Philip Louis Moetteli
+<Philip.Moetteli@unige.ch> wrote:
+> Hello,
 >
-> This doesn't seem quite accurate. It does repair the vast majority of
-> the time. On scrub though, there's maybe a 1 in 3 or 1 in 4 chance bad
-> data strip results in a.) fixed up data strip from parity b.) wrong
-> recomputation of replacement parity c.) good parity is overwritten
-> with bad, silently, d.) if parity reconstruction is needed in the
-> future e.g. device or sector failure, it results in EIO, a kind of
-> data loss.
 >
-> Bad bug. For sure.
+> I have to build a RAID 6 with the following 3 requirements:
 >
-> But consider the identical scenario with md or LVM raid5, or any
-> conventional hardware raid5. A scrub check simply reports a mismatch.
-> It's unknown whether data or parity is bad, so the bad data strip is
-> propagated upward to user space without error. On a scrub repair, the
-> data strip is assumed to be good, and good parity is overwritten with
-> bad.
-
-Totally true.
-
-Original RAID5/6 design is only to handle missing device, not rotted bits.
-
+>         • Use different kinds of disks with different sizes.
+>         • When a disk fails and there's enough space, the RAID should be able to reconstruct itself out of the degraded state. Meaning, if I have e. g. a RAID with 8 disks and 1 fails, I should be able to chose to transform this in a non-degraded (!) RAID with 7 disks.
+>         • Also the other way round: If I add a disk of what size ever, it should redistribute the data, so that it becomes a RAID with 9 disks.
 >
-> So while I agree in total that Btrfs raid56 isn't mature or tested
-> enough to consider it production ready, I think that's because of the
-> UNKNOWN causes for problems we've seen with raid56. Not the parity
-> scrub bug which - yeah NOT good, not least of which is the data
-> integrity guarantees Btrfs is purported to make are substantially
-> negated by this bug. I think the bark is worse than the bite. It is
-> not the bark we'd like Btrfs to have though, for sure.
+> I don’t care, if I have to do it manually.
+> I don’t care so much about speed either.
 >
-
-Current btrfs RAID5/6 scrub problem is, we don't take full usage of tree 
-and data checksum.
-
-In ideal situation, btrfs should detect which stripe is corrupted, and 
-only try to recover data/parity if recovered data checksum matches.
-
-For example, for a very traditional RAID5 layout like the following:
-
-   Disk 1    |   Disk 2    |  Disk 3     |
------------------------------------------
-   Data 1    |   Data 2    |  Parity     |
-
-Scrub should check data stripe 1 and 2, against their checksum first
-
-[All data extents has csum]
-1) All csum matches
-    Good, then check parity.
-    1.1) Parity matches
-         Nothing wrong at all
-
-    1.1) Parity mismatch
-         Just recalculate parity. Corruption may happen in unused data
-         space or in parity. Either way recalculate parity is good
-         enough.
-
-2) One data stripe csum mismatches(missing), parity mismatches too
-    We only know one data stripe mismatch, not sure if parity is OK.
-    Try to recover that data stripe from parity, and recheck csum.
-
-    2.1) Recovered data stripe matches csum
-         That data stripe is corrupted and parity is OK
-         Recoverable.
-
-    2.2) Recovered data stripe mismatch csum
-         Both that data stripe and parity is corrupted.
-
-3) Two data stripes csum mismatch, no matter parity matches or not
-    At least 2 stripes are screwed up. no fix anyway.
-
-[Some data extents has no csum(nodatasum)]
-4) Existing(or no csum at all) csum matches, parity matches
-    Good, nothing to worry about
-
-5) Exist csum mismatch for one data stripe, parity mismatch
-    Like 2), try to recover that data stripe, and re-check csum.
-
-    5.1) recovered data stripes matches csum
-         At least we can recover the data covered by csum.
-         Corrupted no-csum data is not our concern.
-
-    5.2) recovered data stripes mismatches csum
-         Screwed up
-
-6) No csum at all, parity mismatch
-    We are screwed up, just like traditional RAID5.
-
-And I'm coding for the above cases in btrfs-progs to implement an 
-off-line scrub tool.
-
-Currently it looks good, and can already handle case from 1) to 3).
-And I tend to ignore any full stripe who lacks checksum and parity 
-mismatches.
-
-But as you can see, there are so many things(csum exists,matches pairty 
-matches, missing devices) involved in btrfs RAID5(RAID6 will be more 
-complex), it's already much complex than traditional RAID5/6 or current 
-scrub implementation.
-
-
-So what current kernel scub lacks is:
-1) Detection of good/bad stripes
-2) Recheck of recovery attempts
-
-But that's all traditional RAID5/6 lacks unless there is some hidden 
-checksum like btrfs they can use.
-
-Thanks,
-Qu
-
-
+> Is BTrFS capable of doing that?
+>
+>
+> Thanks a lot for your help!
+>

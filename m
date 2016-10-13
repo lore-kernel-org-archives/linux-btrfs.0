@@ -1,211 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:23176 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933941AbcJRAfv (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Oct 2016 20:35:51 -0400
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id u9I0ZoVn019464
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Oct 2016 00:35:50 GMT
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id u9I0Zojx011389
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Oct 2016 00:35:50 GMT
-Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id u9I0Zodv010073
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Oct 2016 00:35:50 GMT
-From: Divya Indi <divya.indi@oracle.com>
+Received: from synology.com ([59.124.61.242]:48532 "EHLO synology.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754324AbcJML1X (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 13 Oct 2016 07:27:23 -0400
+From: ethanwu <ethanwu@synology.com>
 To: linux-btrfs@vger.kernel.org
-Cc: ashish.samant@oracle.com, bo.li.liu@oracle.com
-Subject: [PATCH 3/3] btrfs-progs: Add command to check if balance op is req
-Date: Mon, 17 Oct 2016 17:35:15 -0700
-Message-Id: <1476750915-3105-4-git-send-email-divya.indi@oracle.com>
-In-Reply-To: <1476750915-3105-3-git-send-email-divya.indi@oracle.com>
-References: <1476750915-3105-1-git-send-email-divya.indi@oracle.com>
- <1476750915-3105-2-git-send-email-divya.indi@oracle.com>
- <1476750915-3105-3-git-send-email-divya.indi@oracle.com>
+Cc: ethanwu <ethanwu@synology.com>
+Subject: [PATCH 1/2] btrfs-progs: check: skip keys prior to drop key in deleted subvolume correctly
+Date: Thu, 13 Oct 2016 19:09:48 +0800
+Message-Id: <1476356989-23131-2-git-send-email-ethanwu@synology.com>
+In-Reply-To: <1476356989-23131-1-git-send-email-ethanwu@synology.com>
+References: <1476356989-23131-1-git-send-email-ethanwu@synology.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add new subcommand to btrfs inspect-internal
+In processing deleted subvolume, we would skip keys based on subvolume
+drop key. The condition only checks the keys at same level. This is not
+correct. Consider the following situation of one deleted subvolume.
 
-btrfs inspect-internal balance_check <path>
-Checks whether 'btrfs balance' can help creating more space (Only
-considers data block groups).
+This is a node of subvolume root:
+node 13459456000 level 3 items 9 free 484 generation 12281 owner 869
+	key (256 INODE_ITEM 0) block 29986832384 (1830251) gen 12999
+	key (5828 DIR_ITEM 819422210) block 30048043008 (1833987) gen 12995
+	key (17069 INODE_REF 16812) block 30057644032 (1834573) gen 12996
+	key (28250 DIR_ITEM 3506778047) block 30063820800 (1834950) gen 12996
+	key (39436 INODE_REF 39387) block 30077894656 (1835809) gen 12997
+	key (50746 XATTR_ITEM 3572018377) block 29961109504 (1828681) gen 12998
+	key (61962 DIR_ITEM 1803896258) block 29960192000 (1828625) gen 12998
+	key (73287 INODE_ITEM 0) block 29988372480 (1830345) gen 12999
+	key (84574 XATTR_ITEM 819422210) block 29986570240 (1830235) gen 12999
 
-Signed-off-by: Divya Indi <divya.indi@oracle.com>
-Reviewed-by: Ashish Samant <ashish.samant@oracle.com>
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+Suppose the drop key is (5828 DIR_ITEM 0) and drop level is 1.
+btrfs check will iterate all nodes pointed by node 13459456000.
+Now consider the node 29986832384 whose first key is (256 INODE_ITEM 0):
+Since the last key of this node is prior to drop key, the node is freed if
+no other snapshots point to it. Although the node is freed, node 29986832384
+is still pointed by node 13459456000(not cowed) in subvolume deleted case.
+There's a chance that node 29986832384 could be reused.
+In the origin logic to check whether to skip the node or not,
+it only checks the key at the same level. Therefore, in this case,
+node(block) 29986832384, which has level 2, won't be skipped and will be
+added to list to be processed. Later when reading the node 29986832384,
+btrfs-check finds out that transid mismatches because node 29986832384 is
+already reused.
+The following error would happen:
+parent transid verify failed on 29986832384 wanted 12999 found XXXXX
+
+Fix this by skipping the drop key correctly. Here's the logic:
+
+We refer to this_node and this_key as the node and the key we are processing
+right now. next_key is the key next to this_key. In the above example, if
+this_key is (61962 DIR_ITEM 1803896258), next_key is (73287 INODE_ITEM 0).
+
+If the level of this_key is:
+1. the same with drop_level of drop_key, simply compare the keys (the original
+   logic).
+
+2. less than the drop key, and value of this_key
+2.1. this_key >= drop_key: this node needs to be processed.
+2.2. this_key < drop_key:
+    The first key of its ancestor node at drop_level meets the condition:
+    ancestor_key <= this_key < drop_key which.
+    According to condition 1, it will be skipped, so this should not happen.
+
+3. greater than the drop key, and the value of this_key
+3.1 this_key >= drop_key:
+    All keys of descendants node pointed by this_key >= this_key >= drop_key.
+    This node needs to be processed
+3.2 this_key < drop_key:
+    If this_key is not the last key in this node, check the next_key.
+    If next_key <= drop_key, then this_key < next_key <= drop_key,
+    we know the node containing this_key is already freed, so skip this_node.
+    Otherwise, this_key < drop_key < next_key, we know that the drop_key at
+    drop_level must be this_key's descendant, so this node needs to be
+    processed.
+
+By combinging the above conditions altogether, we only needs to skip
+condition 1 and condition 3.2.
+condition 3.1 implies next_key > this_key >= drop_key -> next_key > drop_key,
+so we get the result conditions.
+
+Signed-off-by: ethanwu <ethanwu@synology.com>
 ---
- cmds-inspect.c |  147 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 147 insertions(+), 0 deletions(-)
+ cmds-check.c | 14 +++++++++++---
+ 1 file changed, 11 insertions(+), 3 deletions(-)
 
-diff --git a/cmds-inspect.c b/cmds-inspect.c
-index 0e2f15a..5baaa49 100644
---- a/cmds-inspect.c
-+++ b/cmds-inspect.c
-@@ -267,6 +267,151 @@ static const char * const cmd_inspect_inode_resolve_usage[] = {
- 	NULL
- };
- 
-+static const char * const cmd_inspect_balance_check_usage[] = {
-+	"btrfs inspect-internal balance_check <path>",
-+	"To check whether 'btrfs balance' can help creating more space",
-+	"",
-+	"",
-+	NULL
-+};
+diff --git a/cmds-check.c b/cmds-check.c
+index 670ccd1..bf6398d 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -6459,9 +6459,17 @@ static int run_next_block(struct btrfs_root *root,
+ 			size = root->nodesize;
+ 			btrfs_node_key_to_cpu(buf, &key, i);
+ 			if (ri != NULL) {
+-				if ((level == ri->drop_level)
+-				    && is_dropped_key(&key, &ri->drop_key)) {
+-					continue;
++				if (ri->drop_level) {
++					if (level == ri->drop_level) {
++						if (is_dropped_key(&key, &ri->drop_key))
++							continue;
++					} else if (level > ri->drop_level && i+1 < nritems) {
++						struct btrfs_key next_key;
 +
-+static int cmd_inspect_balance_check(int argc, char **argv)
-+{
-+	struct btrfs_ioctl_search_args args;
-+	struct btrfs_ioctl_search_args bg_args;
-+	struct btrfs_ioctl_search_key *sk;
-+	struct btrfs_ioctl_search_key *bg_sk;
-+	struct btrfs_ioctl_search_header *header;
-+	struct btrfs_ioctl_search_header *bg_header;
-+	struct btrfs_block_group_item *bg;
-+	struct btrfs_chunk *chunk;
-+	unsigned long off = 0;
-+	unsigned long bg_off = 0;
-+	DIR *dirstream = NULL;
-+	int fd;
-+	int i;
-+	u64 total_free = 0;
-+	u64 min_used = (u64)-1;
-+	u64 free_of_min_used = 0;
-+	u64 bg_of_min_used = 0;
-+	u64 flags;
-+	u64 used;
-+	int ret = 0;
-+	int nr_data_bgs = 0;
-+
-+	if (check_argc_exact(argc, 2))
-+		usage(cmd_inspect_balance_check_usage);
-+
-+	fd = btrfs_open_dir(argv[optind], &dirstream, 1);
-+	if (fd < 0)
-+		return 1;
-+
-+	memset(&args, 0, sizeof(args));
-+	sk = &args.key;
-+	sk->min_offset = sk->min_transid = 0;
-+	sk->max_offset = sk->max_transid = (u64)-1;
-+
-+	printf("%20s%20s%20s\n", "Start", "Len", "Used");
-+	while (1) {
-+		ret = get_chunks(fd, &args);
-+		if (ret < 0)
-+			goto out;
-+
-+		/*
-+		 * it should not happen.
-+		 */
-+		if (sk->nr_items == 0)
-+			break;
-+
-+		off = 0;
-+		memset(&bg_args, 0, sizeof(bg_args));
-+		bg_sk = &bg_args.key;
-+
-+		/* For every chunk, look up 1 exact match for block group in
-+		 * the extent tree. */
-+		bg_sk->tree_id = BTRFS_EXTENT_TREE_OBJECTID;
-+		bg_sk->min_type = BTRFS_BLOCK_GROUP_ITEM_KEY;
-+		bg_sk->max_type = BTRFS_BLOCK_GROUP_ITEM_KEY;
-+		bg_sk->min_transid =  0;
-+		bg_sk->max_transid = (u64)-1;
-+
-+		for (i = 0; i < sk->nr_items; i++) {
-+			header = (struct btrfs_ioctl_search_header *)(args.buf
-+								      + off);
-+			off += sizeof(*header);
-+			if (header->type == BTRFS_CHUNK_ITEM_KEY) {
-+				chunk = (struct btrfs_chunk *)
-+					(args.buf + off);
-+				ret = get_bg_info(fd, &bg_args, header->offset,
-+						  chunk->length);
-+				if (ret < 0)
-+					goto out;
-+
-+				/*
-+				 * it should not happen.
-+				 */
-+				if (bg_sk->nr_items == 0)
-+					continue;
-+
-+				bg_off = 0;
-+				bg_header = (struct btrfs_ioctl_search_header *)
-+					    (bg_args.buf + bg_off);
-+				bg_off += sizeof(*bg_header);
-+				bg = (struct btrfs_block_group_item *)
-+				     (bg_args.buf + bg_off);
-+
-+				flags = btrfs_block_group_flags(bg);
-+				if (flags & BTRFS_BLOCK_GROUP_DATA) {
-+					used = btrfs_block_group_used(bg);
-+					nr_data_bgs++;
-+					printf("%20llu%20s%20s\n",
-+						bg_header->objectid,
-+						pretty_size(bg_header->offset),
-+						pretty_size(used));
-+					total_free += bg_header->offset - used;
-+					if (min_used >= used) {
-+						min_used = used;
-+						free_of_min_used =
-+							bg_header->offset - used;
-+						bg_of_min_used =
-+							bg_header->objectid;
++						btrfs_node_key_to_cpu(buf, &next_key, i+1);
++						if (0 >= btrfs_comp_cpu_keys(&next_key, &ri->drop_key))
++							continue;
 +					}
-+				}
-+			}
-+
-+			off += header->len;
-+			sk->min_offset = header->offset + header->len;
-+		}
-+		sk->nr_items = 4096;
-+
-+	}
-+
-+	if (nr_data_bgs <= 1) {
-+		printf("Data block groups in fs = %d, no need to do balance.\n",
-+				nr_data_bgs);
-+		ret = 1;
-+		goto out;
-+	}
-+
-+	printf("Total data bgs: %d\nTotal free space: %s\n"
-+	       "For min used bg %llu used = %s free = %s\n",
-+		nr_data_bgs, pretty_size(total_free), bg_of_min_used,
-+		pretty_size(min_used), pretty_size(free_of_min_used));
-+
-+	if (total_free - free_of_min_used > min_used) {
-+		printf("run 'btrfs balance start -dvrange=%llu..%llu <mountpoint>'\n",
-+				bg_of_min_used, bg_of_min_used + 1);
-+		ret = 0;
-+	} else {
-+		printf("Please don't balance data block groups, no free space\n");
-+		ret = 1;
-+	}
-+
-+out:
-+	close_file_or_dir(fd, dirstream);
-+	return ret;
-+}
-+
- static int cmd_inspect_inode_resolve(int argc, char **argv)
- {
- 	int fd;
-@@ -816,6 +961,8 @@ const struct cmd_group inspect_cmd_group = {
- 			cmd_inspect_min_dev_size_usage, NULL, 0 },
- 		{ "bg_analysis", cmd_inspect_bg_analysis,
- 			cmd_inspect_bg_analysis_usage, NULL, 0 },
-+		{ "balance_check", cmd_inspect_balance_check,
-+			cmd_inspect_balance_check_usage, NULL, 0 },
- 		{ "dump-tree", cmd_inspect_dump_tree,
- 				cmd_inspect_dump_tree_usage, NULL, 0 },
- 		{ "dump-super", cmd_inspect_dump_super,
+ 				}
+ 			}
+ 
 -- 
-1.7.1
+1.9.1
 

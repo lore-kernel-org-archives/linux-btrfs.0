@@ -1,322 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:16152 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1752782AbcJMJXS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Oct 2016 05:23:18 -0400
+        id S1752746AbcJMJWs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 13 Oct 2016 05:22:48 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH 1/2] btrfs-progs: fsck: Add support to clear v1 free space cache.
-Date: Thu, 13 Oct 2016 17:22:26 +0800
-Message-Id: <20161013092227.19761-1-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 2/2] btrfs-progs: fsck-tests: Check if clear space cache works
+Date: Thu, 13 Oct 2016 17:22:27 +0800
+Message-Id: <20161013092227.19761-2-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20161013092227.19761-1-quwenruo@cn.fujitsu.com>
+References: <20161013092227.19761-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Kernel clear_cache mount option will only rebuilt free space cache if
-used space of that chunk has changed.
+Add test case to check the basic function of --clear-space-cache.
 
-So it won't ensure any corrupted free space cache get cleared.
-
-So add a new option "--clear-space-cache v1|v2" to btrfsck, to
-completely wipe out free space cache.
-So kernel won't complain again.
-
-Reported-by: Ivan P <chrnosphered@gmail.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- Documentation/btrfs-check.asciidoc |   9 +++
- cmds-check.c                       |  63 ++++++++++++++++++-
- free-space-cache.c                 | 124 +++++++++++++++++++++++++++++++++++++
- free-space-cache.h                 |   2 +
- 4 files changed, 197 insertions(+), 1 deletion(-)
+ tests/fsck-tests/024-clear-space-cache/test.sh | 55 ++++++++++++++++++++++++++
+ 1 file changed, 55 insertions(+)
+ create mode 100755 tests/fsck-tests/024-clear-space-cache/test.sh
 
-diff --git a/Documentation/btrfs-check.asciidoc b/Documentation/btrfs-check.asciidoc
-index a32e1c7..ef1e464 100644
---- a/Documentation/btrfs-check.asciidoc
-+++ b/Documentation/btrfs-check.asciidoc
-@@ -78,6 +78,15 @@ respective superblock offset is within the device size
- This can be used to use a different starting point if some of the primary
- superblock is damaged.
- 
-+--clear-space-cache v1|v2::
-+completely wipe out all free space cache.
-+Only v1(file based) free space cache is supported yet.
-++
-+NOTE: Kernel mount option 'clear_cache' is only designed to rebuild free space cache
-+which is modified during the lifetime of that mount option.
-+It doesn't rebuild all free space cache, nor clear them out.
+diff --git a/tests/fsck-tests/024-clear-space-cache/test.sh b/tests/fsck-tests/024-clear-space-cache/test.sh
+new file mode 100755
+index 0000000..ce4fbae
+--- /dev/null
++++ b/tests/fsck-tests/024-clear-space-cache/test.sh
+@@ -0,0 +1,55 @@
++#!/bin/bash
++# confirm fsck clear space cache works fine.
 +
++source $TOP/tests/common
 +
- DANGEROUS OPTIONS
- -----------------
- 
-diff --git a/cmds-check.c b/cmds-check.c
-index 670ccd1..f62fc62 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -11206,6 +11206,36 @@ out:
- 	return bad_roots;
- }
- 
-+static int clear_free_space_cache(struct btrfs_fs_info *fs_info)
-+{
-+	struct btrfs_trans_handle *trans;
-+	struct btrfs_block_group_cache *bg_cache;
-+	u64 current = 0;
-+	int ret = 0;
++check_prereq btrfs
++check_prereq mkfs.btrfs
 +
-+	/* Clear all free space cache inodes and its extent data */
-+	while (1) {
-+		bg_cache = btrfs_lookup_first_block_group(fs_info, current);
-+		if (!bg_cache)
-+			break;
-+		ret = btrfs_clear_free_space_cache(fs_info, bg_cache);
-+		if (ret < 0)
-+			return ret;
-+		current = bg_cache->key.objectid + bg_cache->key.offset;
-+	}
++setup_root_helper
++prepare_test_dev 1G
 +
-+	/* Don't forget to set cache_generation to -1 */
-+	trans = btrfs_start_transaction(fs_info->tree_root, 0);
-+	if (IS_ERR(trans)) {
-+		error("failed to update super block cache generation");
-+		return PTR_ERR(trans);
-+	}
-+	btrfs_set_super_cache_generation(fs_info->super_copy, (u64)-1);
-+	btrfs_commit_transaction(trans, fs_info->tree_root);
++tmp=$(mktemp)
++run_check $SUDO_HELPER $TOP/mkfs.btrfs -f $TEST_DEV
++run_check_mount_test_dev
 +
-+	return ret;
-+}
++# Create files that takes at least 3 data chunks, while 
++# can still be removed to create free space inside one chunk.
 +
- const char * const cmd_check_usage[] = {
- 	"btrfs check [options] <device>",
- 	"Check structural integrity of a filesystem (unmounted).",
-@@ -11233,6 +11263,9 @@ const char * const cmd_check_usage[] = {
- 	"-r|--tree-root <bytenr>     use the given bytenr for the tree root",
- 	"--chunk-root <bytenr>       use the given bytenr for the chunk tree root",
- 	"-p|--progress               indicate progress",
-+	"--clear-space-cache v1|v2   clear space cache for v1(file based) or ",
-+	"                            v2(tree based).",
-+	"                            Only support v1 yet",
- 	NULL
- };
- 
-@@ -11250,6 +11283,7 @@ int cmd_check(int argc, char **argv)
- 	u64 num;
- 	int init_csum_tree = 0;
- 	int readonly = 0;
-+	int clear_space_cache = 0;
- 	int qgroup_report = 0;
- 	int qgroups_repaired = 0;
- 	unsigned ctree_flags = OPEN_CTREE_EXCLUSIVE;
-@@ -11259,7 +11293,7 @@ int cmd_check(int argc, char **argv)
- 		enum { GETOPT_VAL_REPAIR = 257, GETOPT_VAL_INIT_CSUM,
- 			GETOPT_VAL_INIT_EXTENT, GETOPT_VAL_CHECK_CSUM,
- 			GETOPT_VAL_READONLY, GETOPT_VAL_CHUNK_TREE,
--			GETOPT_VAL_MODE };
-+			GETOPT_VAL_MODE, GETOPT_VAL_CLEAR_SPACE_CACHE };
- 		static const struct option long_options[] = {
- 			{ "super", required_argument, NULL, 's' },
- 			{ "repair", no_argument, NULL, GETOPT_VAL_REPAIR },
-@@ -11279,6 +11313,8 @@ int cmd_check(int argc, char **argv)
- 			{ "progress", no_argument, NULL, 'p' },
- 			{ "mode", required_argument, NULL,
- 				GETOPT_VAL_MODE },
-+			{ "clear-space-cache", required_argument, NULL,
-+				GETOPT_VAL_CLEAR_SPACE_CACHE},
- 			{ NULL, 0, NULL, 0}
- 		};
- 
-@@ -11350,6 +11386,14 @@ int cmd_check(int argc, char **argv)
- 					exit(1);
- 				}
- 				break;
-+			case GETOPT_VAL_CLEAR_SPACE_CACHE:
-+				if (strcmp(optarg, "v1")) {
-+					error("only support to clear 'v1' space cache");
-+					exit(1);
-+				}
-+				clear_space_cache = 1;
-+				ctree_flags |= OPEN_CTREE_WRITES;
-+				break;
- 		}
- 	}
- 
-@@ -11401,6 +11445,23 @@ int cmd_check(int argc, char **argv)
- 
- 	global_info = info;
- 	root = info->fs_root;
-+	if (clear_space_cache) {
-+		if (btrfs_fs_compat_ro(info,
-+				BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE)) {
-+			error("doesn't support free space cache v2(tree based) yet");
-+			ret = 1;
-+			goto close_out;
-+		}
-+		printf("Clearing free space cache\n");
-+		ret = clear_free_space_cache(info);
-+		if (ret) {
-+			error("failed to clear free space cache");
-+			ret = 1;
-+		} else {
-+			printf("Free space cache cleared\n");
-+		}
-+		goto close_out;
-+	}
- 
- 	/*
- 	 * repair mode will force us to commit transaction which
-diff --git a/free-space-cache.c b/free-space-cache.c
-index 1919d90..88a1013 100644
---- a/free-space-cache.c
-+++ b/free-space-cache.c
-@@ -25,6 +25,7 @@
- #include "crc32c.h"
- #include "bitops.h"
- #include "internal.h"
-+#include "utils.h"
- 
- /*
-  * Kernel always uses PAGE_CACHE_SIZE for sectorsize, but we don't have
-@@ -877,3 +878,126 @@ next:
- 		prev = e;
- 	}
- }
++for i in $(seq 0 6); do
++	run_check $SUDO_HELPER dd if=/dev/zero of=$TEST_MNT/file_${i} bs=1M \
++		count=64 > /dev/null 2>&1
++done
++sync
 +
-+int btrfs_clear_free_space_cache(struct btrfs_fs_info *fs_info,
-+				 struct btrfs_block_group_cache *bg)
-+{
-+	struct btrfs_trans_handle *trans;
-+	struct btrfs_root *tree_root = fs_info->tree_root;
-+	struct btrfs_path path;
-+	struct btrfs_key key;
-+	struct btrfs_disk_key location;
-+	struct btrfs_free_space_header *sc_header;
-+	struct extent_buffer *node;
-+	u64 ino;
-+	int slot;
-+	int ret;
++# Remove file 1 3 5 to create holes
++for i in $(seq 1 2 6); do
++	run_check $SUDO_HELPER rm $TEST_MNT/file_${i}
++done
 +
-+	trans = btrfs_start_transaction(tree_root, 1);
-+	if (IS_ERR(trans))
-+		return PTR_ERR(trans);
++sync
 +
-+	btrfs_init_path(&path);
++run_check_umount_test_dev
 +
-+	key.objectid = BTRFS_FREE_SPACE_OBJECTID;
-+	key.type = 0;
-+	key.offset = bg->key.objectid;
++# Clear space cache and re-check fs
++run_check $TOP/btrfs check --clear-space-cache v1 $TEST_DEV
++run_check $TOP/btrfs check $TEST_DEV
 +
-+	ret = btrfs_search_slot(trans, tree_root, &key, &path, -1, 1);
-+	if (ret > 0) {
-+		ret = 0;
-+		goto out;
-+	}
-+	if (ret < 0)
-+		goto out;
++# Manually recheck space cache and super space cache generation
++run_check_stdout $TOP/btrfs inspect-internal dump-tree -t root $TEST_DEV \
++	> $tmp
++grep -q FREE_SPACE $tmp
++if [ $? -eq 0 ]; then
++	rm $tmp
++	_fail "clear space cache doesn't clear all space cache"
++fi
 +
-+	node = path.nodes[0];
-+	slot = path.slots[0];
-+	sc_header = btrfs_item_ptr(node, slot, struct btrfs_free_space_header);
-+	btrfs_free_space_key(node, sc_header, &location);
-+	ino = location.objectid;
++run_check_stdout $TOP/btrfs inspect-internal dump-super $TEST_DEV |\
++       	grep cache_generation > $tmp
 +
-+	/* Delete the free space header, as we have the ino to continue */
-+	ret = btrfs_del_item(trans, tree_root, &path);
-+	if (ret < 0) {
-+		error("failed to remove free space header for block group %llu",
-+		      bg->key.objectid);
-+		goto out;
-+	}
-+	btrfs_release_path(&path);
-+
-+	/* Iterate from the end of the free space cache inode */
-+	key.objectid = ino;
-+	key.type = BTRFS_EXTENT_DATA_KEY;
-+	key.offset = (u64)-1;
-+	ret = btrfs_search_slot(trans, tree_root, &key, &path, -1, 1);
-+	if (ret < 0) {
-+		error("failed to locate free space cache extent for block group %llu",
-+		      bg->key.objectid);
-+		goto out;
-+	}
-+	while (1) {
-+		struct btrfs_file_extent_item *fi;
-+		u64 disk_bytenr;
-+		u64 disk_num_bytes;
-+
-+
-+		ret = btrfs_previous_item(tree_root, &path, ino,
-+					  BTRFS_EXTENT_DATA_KEY);
-+		if (ret > 0) {
-+			ret = 0;
-+			break;
-+		}
-+		if (ret < 0) {
-+			error("failed to locate free space cache extent for block group %llu",
-+			      bg->key.objectid);
-+			goto out;
-+		}
-+		node = path.nodes[0];
-+		slot = path.slots[0];
-+		btrfs_item_key_to_cpu(node, &key, slot);
-+		fi = btrfs_item_ptr(node, slot, struct btrfs_file_extent_item);
-+		disk_bytenr = btrfs_file_extent_disk_bytenr(node, fi);
-+		disk_num_bytes = btrfs_file_extent_disk_num_bytes(node, fi);
-+
-+		ret = btrfs_free_extent(trans, tree_root, disk_bytenr,
-+					disk_num_bytes, 0, tree_root->objectid,
-+					ino, key.offset);
-+		if (ret < 0) {
-+			error("failed to remove backref for disk bytenr %llu",
-+			      disk_bytenr);
-+			goto out;
-+		}
-+		ret = btrfs_del_item(trans, tree_root, &path);
-+		if (ret < 0) {
-+			error("failed to remove free space extent data for ino %llu offset %llu",
-+			      ino, key.offset);
-+			goto out;
-+		}
-+	}
-+	btrfs_release_path(&path);
-+
-+	/* Now delete free space cache inode item */
-+	key.objectid = ino;
-+	key.type = BTRFS_INODE_ITEM_KEY;
-+	key.offset = 0;
-+
-+	ret = btrfs_search_slot(trans, tree_root, &key, &path, -1, 1);
-+	if (ret > 0)
-+		warning("free space inode %llu not found, ignore", ino);
-+	if (ret < 0) {
-+		error("failed to locate free space cache inode %llu for block group %llu",
-+		      ino, bg->key.objectid);
-+		goto out;
-+	}
-+	ret = btrfs_del_item(trans, tree_root, &path);
-+	if (ret < 0) {
-+		error("failed to delete free space cache inode %llu for block group %llu",
-+		      ino, bg->key.objectid);
-+	}
-+out:
-+	btrfs_release_path(&path);
-+	if (!ret)
-+		btrfs_commit_transaction(trans, tree_root);
-+	return ret;
-+}
-diff --git a/free-space-cache.h b/free-space-cache.h
-index 9214077..707fb6d 100644
---- a/free-space-cache.h
-+++ b/free-space-cache.h
-@@ -59,4 +59,6 @@ void unlink_free_space(struct btrfs_free_space_ctl *ctl,
- 		       struct btrfs_free_space *info);
- int btrfs_add_free_space(struct btrfs_free_space_ctl *ctl, u64 offset,
- 			 u64 bytes);
-+int btrfs_clear_free_space_cache(struct btrfs_fs_info *fs_info,
-+				 struct btrfs_block_group_cache *bg);
- #endif
++grep -q 18446744073709551615 $tmp
++if [ $? -ne 0 ]; then
++	rm $tmp
++	_fail "clear space cache doesn't set cache_generation correctly"
++fi
++rm $tmp
 -- 
 2.10.0
 

@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from synology.com ([59.124.61.242]:45424 "EHLO synology.com"
+Received: from synology.com ([59.124.61.242]:45423 "EHLO synology.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754031AbcJMLE7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1754029AbcJMLE7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Thu, 13 Oct 2016 07:04:59 -0400
 From: robbieko <robbieko@synology.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Robbie Ko <robbieko@synology.com>
-Subject: [PATCH 1/4] btrfs: add test for an incremental send don't skip overwrite ref for inode 256
-Date: Thu, 13 Oct 2016 19:04:10 +0800
-Message-Id: <1476356653-22839-2-git-send-email-robbieko@synology.com>
+Subject: [PATCH 2/4] btrfs: add test for an incremental send add gen for is_waiting_for_rm when some corner case
+Date: Thu, 13 Oct 2016 19:04:11 +0800
+Message-Id: <1476356653-22839-3-git-send-email-robbieko@synology.com>
 In-Reply-To: <1476356653-22839-1-git-send-email-robbieko@synology.com>
 References: <1476356653-22839-1-git-send-email-robbieko@synology.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -16,34 +16,35 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Robbie Ko <robbieko@synology.com>
 
-Test that an incremental send operation does not skip overwrite ref
-for inode 256, it's always exist.
+There a one case for old_gen waiting_for_rm,
+but new_gen use get_cur_path with the same inode.
 
 This test exercises scenarios used to fail in btrfs and are fixed by
 the following patches for the linux kernel:
 
-"Btrfs: incremental send, fix don't skip inode 256 in overwrite_ref"
+"Btrfs: incremental send, add gen for is_waiting_for_rm when some corner case"
+"Btrfs: incremental send, add gen for send_utimes in apply_dir_move"
 
 Signed-off-by: Robbie Ko <robbieko@synology.com>
 ---
- tests/btrfs/131     | 110 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/131.out |   2 +
+ tests/btrfs/132     | 116 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/132.out |   2 +
  tests/btrfs/group   |   1 +
- 3 files changed, 113 insertions(+)
- create mode 100755 tests/btrfs/131
- create mode 100644 tests/btrfs/131.out
+ 3 files changed, 119 insertions(+)
+ create mode 100755 tests/btrfs/132
+ create mode 100644 tests/btrfs/132.out
 
-diff --git a/tests/btrfs/131 b/tests/btrfs/131
+diff --git a/tests/btrfs/132 b/tests/btrfs/132
 new file mode 100755
-index 0000000..2359841
+index 0000000..1ecd3b5
 --- /dev/null
-+++ b/tests/btrfs/131
-@@ -0,0 +1,110 @@
++++ b/tests/btrfs/132
+@@ -0,0 +1,116 @@
 +#! /bin/bash
-+# FS QA Test No. btrfs/131
++# FS QA Test No. btrfs/132
 +#
-+# Test that an incremental send operation does not skip inode 256 check
-+# overwrite ref, because inode 256 always exist.
++# Test that an incremental send operation,
++# add gen for is_waiting_for_rm when some corner case.
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (C) 2016 SUSE Linux Products GmbH. All Rights Reserved.
@@ -99,37 +100,43 @@ index 0000000..2359841
 +_scratch_mkfs >>$seqres.full 2>&1
 +_scratch_mount
 +
-+mkdir $SCRATCH_MNT/a1
-+mkdir $SCRATCH_MNT/a2
++mkdir $SCRATCH_MNT/dir257
++mkdir $SCRATCH_MNT/dir258
++mkdir $SCRATCH_MNT/dir259
++mv $SCRATCH_MNT/dir257 $SCRATCH_MNT/dir258/dir257
 +
 +# Filesystem looks like:
 +#
 +# .                                                             (ino 256)
-+# |--- a1/                                                      (ino 257)
++# |--- dir258/                                                  (ino 258)
++# |    |--- dir257/                                             (ino 257)
 +# |
-+# |--- a2/                                                      (ino 258)
++# |--- dir259/                                                  (ino 259)
 +#
 +_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap1
 +
-+_run_btrfs_util_prog send $SCRATCH_MNT/mysnap1 -f $send_files_dir/1.snap
-+
++mv $SCRATCH_MNT/dir258/dir257 $SCRATCH_MNT/dir257
++rmdir $SCRATCH_MNT/dir258
++rmdir $SCRATCH_MNT/dir259
 +_scratch_unmount
-+_scratch_mkfs >>$seqres.full 2>&1
 +_scratch_mount
-+touch $SCRATCH_MNT/a2
++touch $SCRATCH_MNT/file258
++mkdir $SCRATCH_MNT/new_dir259
++mv $SCRATCH_MNT/dir257 $SCRATCH_MNT/new_dir259/dir257
 +
 +# Filesystem now looks like:
 +#
 +# .                                                             (ino 256)
-+# |--- a2                                                       (ino 257)
++# |--- file258                                                  (ino 258)
++# |
++# |--- new_dir259/                                              (ino 259)
++# |    |--- dir257/                                             (ino 257)
 +#
 +_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap2
 +
-+_run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/1.snap
-+rm $send_files_dir/1.snap
-+
 +run_check $FSSUM_PROG -A -f -w $send_files_dir/1.fssum $SCRATCH_MNT/mysnap1
-+run_check $FSSUM_PROG -A -f -w $send_files_dir/2.fssum $SCRATCH_MNT/mysnap2
++run_check $FSSUM_PROG -A -f -w $send_files_dir/2.fssum \
++        -x $SCRATCH_MNT/mysnap2/mysnap1 $SCRATCH_MNT/mysnap2
 +
 +_run_btrfs_util_prog send $SCRATCH_MNT/mysnap1 -f $send_files_dir/1.snap
 +_run_btrfs_util_prog send -p $SCRATCH_MNT/mysnap1 $SCRATCH_MNT/mysnap2 \
@@ -149,23 +156,23 @@ index 0000000..2359841
 +echo "Silence is golden"
 +status=0
 +exit
-diff --git a/tests/btrfs/131.out b/tests/btrfs/131.out
+diff --git a/tests/btrfs/132.out b/tests/btrfs/132.out
 new file mode 100644
-index 0000000..d118ca9
+index 0000000..b096312
 --- /dev/null
-+++ b/tests/btrfs/131.out
++++ b/tests/btrfs/132.out
 @@ -0,0 +1,2 @@
-+QA output created by 131
++QA output created by 132
 +Silence is golden
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index f3a7a4f..a7a070a 100644
+index a7a070a..1b12382 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -133,3 +133,4 @@
- 128 auto quick send
+@@ -134,3 +134,4 @@
  129 auto quick send
  130 auto clone send
-+131 auto quick send
+ 131 auto quick send
++132 auto quick send
 -- 
 1.9.1
 

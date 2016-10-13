@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from synology.com ([59.124.61.242]:45625 "EHLO synology.com"
+Received: from synology.com ([59.124.61.242]:45624 "EHLO synology.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754040AbcJMLE7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1754039AbcJMLE7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Thu, 13 Oct 2016 07:04:59 -0400
 From: robbieko <robbieko@synology.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Robbie Ko <robbieko@synology.com>
-Subject: [PATCH 3/4] btrfs: add test for an incremental send add gen check in did_overwrite_ref
-Date: Thu, 13 Oct 2016 19:04:12 +0800
-Message-Id: <1476356653-22839-4-git-send-email-robbieko@synology.com>
+Subject: [PATCH 4/4] btrfs: add test for an incremental send add gen check in will_overwrite_ref
+Date: Thu, 13 Oct 2016 19:04:13 +0800
+Message-Id: <1476356653-22839-5-git-send-email-robbieko@synology.com>
 In-Reply-To: <1476356653-22839-1-git-send-email-robbieko@synology.com>
 References: <1476356653-22839-1-git-send-email-robbieko@synology.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -16,35 +16,36 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Robbie Ko <robbieko@synology.com>
 
-There a some case, the old gen directory can not have new
-data to write, can not cause overwitre ref, except inode 256.
+There a some case for overwrite ref,
+because when new gen is waiting, and old name conflict,
+but old name has been deleted.
 
 This test exercises scenarios used to fail in btrfs and are fixed by
 the following patches for the linux kernel:
 
-"Btrfs: incremental send, add gen check in did_overwrite_ref"
+"Btrfs: incremental send, add gen check if has waiting_dir_move in the will_overwrite_ref"
 
 Signed-off-by: Robbie Ko <robbieko@synology.com>
 ---
- tests/btrfs/133     | 120 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/133.out |   2 +
+ tests/btrfs/134     | 121 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/134.out |   2 +
  tests/btrfs/group   |   1 +
- 3 files changed, 123 insertions(+)
- create mode 100755 tests/btrfs/133
- create mode 100644 tests/btrfs/133.out
+ 3 files changed, 124 insertions(+)
+ create mode 100755 tests/btrfs/134
+ create mode 100644 tests/btrfs/134.out
 
-diff --git a/tests/btrfs/133 b/tests/btrfs/133
+diff --git a/tests/btrfs/134 b/tests/btrfs/134
 new file mode 100755
-index 0000000..e292c00
+index 0000000..0bde622
 --- /dev/null
-+++ b/tests/btrfs/133
-@@ -0,0 +1,120 @@
++++ b/tests/btrfs/134
+@@ -0,0 +1,121 @@
 +#! /bin/bash
-+# FS QA Test No. btrfs/133
++# FS QA Test No. btrfs/134
 +#
 +# Test that an incremental send operation,
-+# the old gen directory can not have new
-+# data to write, can not cause overwitre ref, except inode 256.
++# when new gen is waiting, and old name conflict,
++# but old name has been deleted.
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (C) 2016 SUSE Linux Products GmbH. All Rights Reserved.
@@ -100,18 +101,16 @@ index 0000000..e292c00
 +_scratch_mkfs >>$seqres.full 2>&1
 +_scratch_mount
 +
-+touch $SCRATCH_MNT/f
 +mkdir $SCRATCH_MNT/d1
-+mkdir $SCRATCH_MNT/d259_old
-+mv $SCRATCH_MNT/d1 $SCRATCH_MNT/d259_old/d1
++mkdir $SCRATCH_MNT/d4
++mkdir $SCRATCH_MNT/d3
 +
 +# Filesystem looks like:
 +#
 +# .                                                             (ino 256)
-+# |--- f                                                        (ino 257)
-+# |
-+# |--- d259_old/                                                (ino 259)
-+# |    |--- d1/                                                 (ino 258)
++# |--- d1                                                       (ino 257)
++# |--- d4                                                       (ino 258)
++# |--- d3                                                       (ino 259)
 +#
 +_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap1
 +
@@ -121,17 +120,20 @@ index 0000000..e292c00
 +_scratch_mkfs >>$seqres.full 2>&1
 +_scratch_mount
 +mkdir $SCRATCH_MNT/d1
-+mkdir $SCRATCH_MNT/dir258
-+mkdir $SCRATCH_MNT/dir259
-+mv $SCRATCH_MNT/d1 $SCRATCH_MNT/dir259/d1
++mkdir $SCRATCH_MNT/d2
++mkdir $SCRATCH_MNT/d3
++mkdir $SCRATCH_MNT/d4
++mv $SCRATCH_MNT/d1 $SCRATCH_MNT/d3/d1
++mv $SCRATCH_MNT/d3 $SCRATCH_MNT/d4/d3
++mv $SCRATCH_MNT/d2 $SCRATCH_MNT/d1
 +
 +# Filesystem now looks like:
 +#
 +# .                                                             (ino 256)
-+# |--- dir258                                                   (ino 258)
-+# |
-+# |--- dir259/                                                  (ino 259)
-+# |    |--- d1/                                                 (ino 257)
++# |--- d1                                                       (ino 258)
++# |--- d4                                                       (ino 260)
++# |    |--- d3/                                                 (ino 259)
++# |    |    |--- d1/                                            (ino 257)
 +#
 +_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap2
 +
@@ -159,23 +161,23 @@ index 0000000..e292c00
 +echo "Silence is golden"
 +status=0
 +exit
-diff --git a/tests/btrfs/133.out b/tests/btrfs/133.out
+diff --git a/tests/btrfs/134.out b/tests/btrfs/134.out
 new file mode 100644
-index 0000000..e914d62
+index 0000000..829c30e
 --- /dev/null
-+++ b/tests/btrfs/133.out
++++ b/tests/btrfs/134.out
 @@ -0,0 +1,2 @@
-+QA output created by 133
++QA output created by 134
 +Silence is golden
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 1b12382..779caec 100644
+index 779caec..831283e 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -135,3 +135,4 @@
- 130 auto clone send
+@@ -136,3 +136,4 @@
  131 auto quick send
  132 auto quick send
-+133 auto quick send
+ 133 auto quick send
++134 auto quick send
 -- 
 1.9.1
 

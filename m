@@ -1,116 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f176.google.com ([209.85.216.176]:36841 "EHLO
-        mail-qt0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752355AbcJKMOl (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:40558 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751195AbcJMHdC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Oct 2016 08:14:41 -0400
-Received: by mail-qt0-f176.google.com with SMTP id m5so10970431qtb.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Oct 2016 05:14:32 -0700 (PDT)
+        Thu, 13 Oct 2016 03:33:02 -0400
+Subject: Re: [PATCH v2 2/3] btrfs-progs: receive: Introduce option to exam and
+ dump send stream
+To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
+References: <20160907002935.8539-1-quwenruo@cn.fujitsu.com>
+ <20160907002935.8539-3-quwenruo@cn.fujitsu.com>
+ <20160908094228.GK16983@twin.jikos.cz> <20160908095613.GL16983@twin.jikos.cz>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <9e6d85ed-e9b7-0a7c-44d0-83f66f369692@cn.fujitsu.com>
+Date: Thu, 13 Oct 2016 15:32:53 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAJF-kYk_a6hwgbQRw+9yBb54hXxC49LAZVs25FnoHm+zosFMww@mail.gmail.com>
-References: <CAJF-kYmnBt6yRLJ+R3HdJ03oqp_ptwXpat40vXoD_b=MUvJZUw@mail.gmail.com>
- <20160909140059.GT16983@twin.jikos.cz> <CAJF-kYnXjz_dg2eev3WUqg3=XTBX=W8e2qnLQKtpnC6cCHvR+Q@mail.gmail.com>
- <CAJF-kYkG77sAQ4VOqX+Fovu+fO6WKVMZmUA8WG+uMU5EM2ZwUg@mail.gmail.com> <CAJF-kYk_a6hwgbQRw+9yBb54hXxC49LAZVs25FnoHm+zosFMww@mail.gmail.com>
-From: Lukas Lueg <lukas.lueg@gmail.com>
-Date: Tue, 11 Oct 2016 14:07:48 +0200
-Message-ID: <CAJF-kYnH+cORfSLGx1Wb6S4iPDjnJxYOwm2trC_FbOK8t7bPVQ@mail.gmail.com>
-Subject: Fwd: State of the fuzzer
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <20160908095613.GL16983@twin.jikos.cz>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
-
-I've now shut down all fuzzer nodes since they only cost money and
-there is no progress on most of the aforementioned bugs.
-
-Best regards
-Lukas
-
----------- Forwarded message ----------
-From: Lukas Lueg <lukas.lueg@gmail.com>
-Date: 2016-09-26 11:39 GMT+02:00
-Subject: Re: State of the fuzzer
-To: linux-btrfs@vger.kernel.org
-
-
 Hi David,
 
-do we have any chance of engagement on those 23 bugs which came out of
-the last fuzzing round? The nodes have been basically idle for a week,
-spewing duplicates and variants of what's already known...
+Any updates?
 
-Best regards
-Lukas
+If you're busy on these fix, I could fix these problem and send a new 
+version.
 
-2016-09-20 13:33 GMT+02:00 Lukas Lueg <lukas.lueg@gmail.com>:
-> There are now 21 bugs open on bko, most of them crashes and some
-> undefined behavior. The nodes are now mostly running idle as no new
-> paths are discovered (after around one billion images tested in the
-> current run).
+Thanks,
+Qu
+
+At 09/08/2016 05:56 PM, David Sterba wrote:
+> On Thu, Sep 08, 2016 at 11:42:29AM +0200, David Sterba wrote:
+>> On Wed, Sep 07, 2016 at 08:29:34AM +0800, Qu Wenruo wrote:
+>>> @@ -1265,19 +1274,37 @@ int cmd_receive(int argc, char **argv)
+>>>  		}
+>>>  	}
+>>>
+>>> -	ret = do_receive(&r, tomnt, realmnt, receive_fd, max_errors);
+>>> +	if (dump) {
+>>> +		struct btrfs_dump_send_args dump_args;
+>>> +
+>>> +		dump_args.root_path = malloc(PATH_MAX);
+>>> +		dump_args.root_path[0] = '.';
+>>> +		dump_args.root_path[1] = '\0';
+>>> +		dump_args.full_subvol_path = malloc(PATH_MAX);
+>>
+>> Please always check malloc return values. I'm fixing this for now.
 >
-> My thoughts are to wait until the current bugs have been fixed, then
-> restart the whole process from HEAD (together with the corpus of
-> ~2.000 seed images discovered by now) and catch new bugs and aborts()
-> - we need to get rid of the reachable ones so code coverage can
-> improve. After those, I'll change the process to run btrfsck --repair,
-> which is slower but has a lot of yet uncovered code.
+> Uh and the buffers are not freed either. Anyway, I'm switching it to an
+> array, there's no reason to allocate the memory dynamically.
 >
-> DigitalOcean has provided some funding for this undertaking so we are
-> good on CPU power. Kudos to them.
 >
-> 2016-09-13 22:28 GMT+02:00 Lukas Lueg <lukas.lueg@gmail.com>:
->> I've booted another instance with btrfs-progs checked out to 2b7c507
->> and collected some bugs which remained from the run before the current
->> one. The current run discovered what qgroups are just three days ago
->> and will spend some time on that. I've also added UBSAN- and
->> MSAN-logging to my setup and there were three bugs found so far (one
->> is already fixed). I will boot a third instance to run lowmem-mode
->> exclusively in the next few days.
->>
->> There are 11 bugs open at the moment, all have a reproducing image
->> attached to them. The whole list is at
->>
->> https://bugzilla.kernel.org/buglist.cgi?bug_status=NEW&bug_status=ASSIGNED&bug_status=REOPENED&component=btrfs&email1=lukas.lueg%40gmail.com&emailreporter1=1&emailtype1=exact&list_id=858441&query_format=advanced
->>
->>
->> 2016-09-09 16:00 GMT+02:00 David Sterba <dsterba@suse.cz>:
->>> On Tue, Sep 06, 2016 at 10:32:28PM +0200, Lukas Lueg wrote:
->>>> I'm currently fuzzing rev 2076992 and things start to slowly, slowly
->>>> quiet down. We will probably run out of steam at the end of the week
->>>> when a total of (roughly) half a billion BTRFS-images have passed by.
->>>> I will switch revisions to current HEAD and restart the whole process
->>>> then. A few things:
->>>>
->>>> * There are a couple of crashes (mostly segfaults) I have not reported
->>>> yet. I'll report them if they show up again with the latest revision.
->>>
->>> Ok.
->>>
->>>> * The coverage-analysis shows assertion failures which are currently
->>>> silenced. An assertion failure is technically a worse disaster
->>>> successfully prevented, it still constitutes unexpected/unusable
->>>> behaviour, though. Do you want assertions to be enabled and images
->>>> triggering those assertions reported? This is basically the same
->>>> conundrum as with BUG_ON and abort().
->>>
->>> Yes please. I'd like to turn most bugons/assertions into a normal
->>> failure report if it would make sense.
->>>
->>>> * A few endless loops entered into by btrfsck are currently
->>>> unmitigated (see bugs 155621, 155571, 155551 and 155151). It would be
->>>> nice if those had been taken care of by next week if possible.
->>>
->>> Two of them are fixed, the other two need more work, updating all
->>> callers of read_node_slot and the callchain. So you may still see that
->>> kind of looping in more images. I don't have an ETA for the fix, I won't
->>> be available during the next week.
->>>
->>> At the moment, the initial sanity checks should catch most of the
->>> corrupted values, so I'm expecting that you'll see different classes of
->>> problems in the next rounds.
->>>
->>> The testsuite now contains all images that you reported and we have a
->>> fix in git. There are more utilities run on the images, there may be
->>> more problems for us to fix.
+
+

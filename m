@@ -1,277 +1,165 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:36617 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751969AbcJMAro (ORCPT
+Received: from ijp134o.incoming.jp ([157.7.129.17]:43208 "EHLO
+        ijp134o.incoming.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933430AbcJMBiX (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Oct 2016 20:47:44 -0400
-Subject: Re: RAID system with adaption to changed number of disks
-To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-References: <D379E551-1272-4548-9601-0CE4C1A8C012@unige.ch>
- <20161011160601.GI7683@carfax.org.uk>
- <CAJCQCtSY2Y5AsW2FC5FGP3x3Vaz6Y10=EbAE-0FKFQAqg0oGkg@mail.gmail.com>
- <3da9a459-c63b-570c-5b42-c7186b3a74fd@cn.fujitsu.com>
- <20161012043718.GW21290@hungrycats.org>
- <37578baa-556b-d3f7-45bd-10843124dea1@cn.fujitsu.com>
- <20161012171936.GD26140@hungrycats.org>
-CC: Chris Murphy <lists@colorremedies.com>, Hugo Mills <hugo@carfax.org.uk>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Austin Hemmelgarn <ahferroin7@gmail.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <16a02312-a74c-6e2d-08ae-7fa479823341@cn.fujitsu.com>
-Date: Thu, 13 Oct 2016 08:35:02 +0800
+        Wed, 12 Oct 2016 21:38:23 -0400
+Received: from localhost (localhost [127.0.0.1])
+        by ijp134o.incoming.jp (Postfix) with ESMTP id 7E523A0535
+        for <linux-btrfs@vger.kernel.org>; Thu, 13 Oct 2016 10:28:19 +0900 (JST)
+Received: from ijp134o.incoming.jp ([127.0.0.1])
+        by localhost (ijp134o.incoming.jp [127.0.0.1]) (amavisd-new, port 10024)
+        with ESMTP id YsCs8AuQmpHH for <linux-btrfs@vger.kernel.org>;
+        Thu, 13 Oct 2016 10:28:19 +0900 (JST)
+Received: from [172.16.215.137] (tokyo7d-173.digitalswift.net [210.175.55.173])
+        by ijp134o.incoming.jp (Postfix) with ESMTPSA id 65109A052A
+        for <linux-btrfs@vger.kernel.org>; Thu, 13 Oct 2016 10:28:19 +0900 (JST)
+Date: Thu, 13 Oct 2016 10:28:19 +0900
+From: Hiroshi Honda <xero@incoming.jp>
+To: Btrfs List <linux-btrfs@vger.kernel.org>
+Subject: Unable to rescue RAID5
+Message-Id: <20161013102819.214E.13A92CCA@incoming.jp>
 MIME-Version: 1.0
-In-Reply-To: <20161012171936.GD26140@hungrycats.org>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I am using Btrfs RAID5 with 10x4T disks.
+Around 2 weeks ago, one disk of it was taking long time when read and write.
+So, I tried replace the disk with new disk by replace command ( btrfs replace ... ).
+But, it failed. So, I added new disk into the array by add command and then deleted the bad disk by delete command.
+But, this deletion failed with error message as well. So, I deleted new disk from the array at the moment to return to first situation.
+But, system is showing some error message with number and the number is counting up.
+So, I rebooted the OS. Because, I felt this situation is something bad.
+After that, I can not mount the array...
+I copied those disk image by dd and then removed real disks from the system and mounted those image files by losetup.
+
+I would appreciate it if you could help this.
+
+# uname -a
+Linux L176 4.7.4-1-ARCH #1 SMP PREEMPT Thu Sep 15 15:24:29 CEST 2016 x86_64 GNU/Linux
+
+# ./btrfs version
+btrfs-progs v4.8.1
+
+# ./btrfs fi show
+Label: 'space1'  uuid: b27e1505-4203-464b-a9d5-96881ca550e0
+        Total devices 10 FS bytes used 14.47TiB
+        devid    1 size 3.64TiB used 1.61TiB path /dev/loop8
+        devid    2 size 3.64TiB used 1.61TiB path /dev/loop6
+        devid    3 size 3.64TiB used 1.61TiB path /dev/loop4
+        devid    4 size 3.64TiB used 1.61TiB path /dev/loop7
+        devid    5 size 3.64TiB used 1.61TiB path /dev/loop9
+        devid    6 size 3.64TiB used 1.61TiB path /dev/loop0
+        devid    7 size 3.64TiB used 1.61TiB path /dev/loop5
+        devid    8 size 3.64TiB used 1.61TiB path /dev/loop2
+        devid    9 size 3.64TiB used 1.61TiB path /dev/loop3
+        devid   10 size 3.64TiB used 1.61TiB path /dev/loop1
 
 
-At 10/13/2016 01:19 AM, Zygo Blaxell wrote:
-> On Wed, Oct 12, 2016 at 01:48:58PM +0800, Qu Wenruo wrote:
->>> btrfs also doesn't avoid the raid5 write hole properly.  After a crash,
->>> a btrfs filesystem (like mdadm raid[56]) _must_ be scrubbed (resynced)
->>> to reconstruct any parity that was damaged by an incomplete data stripe
->>> update.
->>> As long as all disks are working, the parity can be reconstructed
->> >from the data disks.  If a disk fails prior to the completion of the
->>> scrub, any data stripes that were written during previous crashes may
->>> be destroyed.  And all that assumes the scrub bugs are fixed first.
->>
->> This is true.
->> I didn't take this into account.
->>
->> But this is not a *single* problem, but 2 problems.
->> 1) Power loss
->> 2) Device crash
->>
->> Before making things complex, why not focusing on single problem.
->
-> Solve one problem at a time--but don't lose sight of the whole list of
-> problems either, especially when they are interdependent.
->
->> Not to mention the possibility is much smaller than single problem.
->
-> Having field experience with both problems, I disagree with that.
-> The power loss/system crash problem is much more common than the device
-> failure/scrub problems.  More data is lost when a disk fails, but the
-> amount of data lost in a power failure isn't zero.  Before I gave up
-> on btrfs raid5, it worked out to about equal amounts of admin time
-> recovering from the two different failure modes.
->
->>> If writes occur after a disk fails, they all temporarily corrupt small
->>> amounts of data in the filesystem.  btrfs cannot tolerate any metadata
->>> corruption (it relies on redundant metadata to self-repair), so when a
->>> write to metadata is interrupted, the filesystem is instantly doomed
->>> (damaged beyond the current tools' ability to repair and mount
->>> read-write).
->>
->> That's why we used higher duplication level for metadata by default.
->> And considering metadata size, it's much acceptable to use RAID1 for
->> metadata other than RADI5/6.
->
-> Data RAID5 metadata RAID1 makes a limited amount of sense.  Small amounts
-> of data are still lost on power failures due to RMW on the data stripes.
-> It just doesn't break the entire filesystem because the metadata is
-> on RAID1 and RAID1 doesn't use RMW.
->
-> Data RAID6 does not make sense, unless we also have a way to have RAID1
-> make more than one mirror copy.  With one mirror copy an array is not
-> able to tolerate two disk failures, so the Q stripe for RAID6 is wasted
-> CPU and space.
->
->>> Currently the upper layers of the filesystem assume that once data
->>> blocks are written to disk, they are stable.  This is not true in raid5/6
->>> because the parity and data blocks within each stripe cannot be updated
->>> atomically.
->>
->> True, but if we ignore parity, we'd find that, RAID5 is just RAID0.
->
-> Degraded RAID5 is not RAID0.  RAID5 has strict constraints that RAID0
-> does not.  The way a RAID5 implementation behaves in degraded mode is
-> the thing that usually matters after a disk fails.
->
->> COW ensures (cowed) data and metadata are all safe and checksum will ensure
->> they are OK, so even for RAID0, it's not a problem for case like power loss.
->
-> This is not true.  btrfs does not use stripes correctly to get CoW to
-> work on RAID5/6.  This is why power failures result in small amounts of
-> data loss, if not filesystem-destroying disaster.
+# mount -t btrfs -o ro,degraded,recovery /dev/loop3 /root/oo/
+mount: wrong fs type, bad option, bad superblock on /dev/loop3,
+       missing codepage or helper program, or other error
 
-See my below comments.
+       In some cases useful info is found in syslog - try
+       dmesg | tail or so.
 
-And, I already said, forget parity.
-In that case, RAID5 without parity is just RAID0 with device rotation.
-
->
-> For CoW to work you have to make sure that you never modify a RAID stripe
-> that already contains committed data.  Let's consider a 5-disk array
-> and look at what we get when we try to reconstruct disk 2:
->
-> 	Disk1  Disk2  Disk3  Disk4  Disk5
-> 	Data1  Data2  Parity Data3  Data4
->
-> Suppose one transaction writes Data1-Data4 and Parity.  This is OK
-> because no metadata reference would point to this stripe before it
-> was committed to disk.  Here's some data as an example:
->
-> 	Disk1  Disk2  Disk3  Disk4  Disk5  Reconstructed Disk2
-> 	1111   2222   ffff   4444   8888   2222
-
-Why do the d*mn reconstruction without checking csum?
-
-My strategy is clear enough.
-Never trust parity unless all data and reconstructed data matches csum.
-
-Csum is more precious than the unreliable parity.
-
-So, please forget csum first, just consider it as RAID0, and add parity 
-back when all csum matches with each other.
-
->
-> (to keep things simpler I'm just using Parity = Data1 ^ Data2 ^ Data4 ^
-> Data5 here)
->
-> Later, a transaction deletes Data3 and Data 4.  Still OK, because
-> we didn't modify any data in the stripe, so we may still be able to
-> reconstruct the data from missing disks.  The checksums for Data4 and
-> Data5 are missing, so if there is any bitrot we lose the whole stripe
-> (we can't tell whether the data is wrong or parity, we can't ignore the
-> rotted data because it's included in the parity, and we didn't update
-> the parity because deleting an extent doesn't modify its data stripe).
->
-> 	Disk1  Disk2  Disk3  Disk4  Disk5  Reconstructed Disk2
-> 	1111   2222   ffff   4444   8888   2222
-
-So data stripes are 1111, 2222, 4444, 8888.
-If trans committed, then csum and extents of 4444,8888 is also deleted.
-If trans not committed, 4444,8888 csum and extents exists.
+"-o ro,degraded", "-o ro,recovery" and "-o ro" are same result..
 
 
-Any way, if we check data stripes against their csum, they should match.
+# ./btrfs restore /dev/loop3 /root/oo/
+checksum verify failed on 16091506147328 found 1E4E4207 wanted 00000000
+checksum verify failed on 16091506147328 found 1E4E4207 wanted 00000000
+checksum verify failed on 16091506147328 found 58D16B1B wanted 64109AAB
+checksum verify failed on 16091506147328 found 58D16B1B wanted 64109AAB
+bytenr mismatch, want=16091506147328, have=3144945314663302585
+ERROR: cannot read chunk root
+Could not open root, trying backup super
+warning, device 10 is missing
+warning, device 8 is missing
+warning, device 7 is missing
+warning, device 6 is missing
+warning, device 5 is missing
+warning, device 4 is missing
+warning, device 3 is missing
+warning, device 2 is missing
+warning, device 1 is missing
+warning, device 2 is missing
+warning, device 3 is missing
+warning, device 4 is missing
+warning, device 5 is missing
+warning, device 6 is missing
+warning, device 7 is missing
+warning, device 8 is missing
+warning, device 10 is missing
+warning, device 1 is missing
+checksum verify failed on 16091506147328 found 1E4E4207 wanted 00000000
+checksum verify failed on 16091506147328 found 1E4E4207 wanted 00000000
+checksum verify failed on 16091506147328 found 1E4E4207 wanted 00000000
+bytenr mismatch, want=16091506147328, have=0
+ERROR: cannot read chunk root
+Could not open root, trying backup super
+warning, device 10 is missing
+warning, device 8 is missing
+warning, device 7 is missing
+warning, device 6 is missing
+warning, device 5 is missing
+warning, device 4 is missing
+warning, device 3 is missing
+warning, device 2 is missing
+warning, device 1 is missing
+warning, device 2 is missing
+warning, device 3 is missing
+warning, device 4 is missing
+warning, device 5 is missing
+warning, device 6 is missing
+warning, device 7 is missing
+warning, device 8 is missing
+warning, device 10 is missing
+warning, device 1 is missing
+checksum verify failed on 16091506147328 found 1E4E4207 wanted 00000000
+checksum verify failed on 16091506147328 found 1E4E4207 wanted 00000000
+checksum verify failed on 16091506147328 found 1E4E4207 wanted 00000000
+bytenr mismatch, want=16091506147328, have=0
+ERROR: cannot read chunk root
+Could not open root, trying backup super
 
-Either way, we know all data stripes matches their csum, that's enough.
-No matter parity matches or not, it's just rubbish.
-Re-calculate it using scrub.
 
->
-> Now a third transaction allocates Data3 and Data 4.  Bad.  First, Disk4
-> is written and existing data is temporarily corrupted:
->
-> 	Disk1  Disk2  Disk3  Disk4  Disk5  Reconstructed Disk2
-> 	1111   2222   ffff   1234   8888   7452
-
-Forget the d*mn parity please.
-
-If trans not committed, 1234 doesn't have csum nor extent.
-If trans committed, 1234 has csum nor extent.
-
-8888 has no extents nor csum, csum check will just skip it.
-
-Either way, they match csum thanks for COW.
-Parity is rubbish again.
+# ./btrfs-image /dev/loop3 diskid9.img
+checksum verify failed on 16091506147328 found 1E4E4207 wanted 00000000
+checksum verify failed on 16091506147328 found 1E4E4207 wanted 00000000
+checksum verify failed on 16091506147328 found 58D16B1B wanted 64109AAB
+checksum verify failed on 16091506147328 found 58D16B1B wanted 64109AAB
+bytenr mismatch, want=16091506147328, have=3144945314663302585
+ERROR: cannot read chunk root
+ERROR: open ctree failed
+ERROR: create failed: Success
 
 
-I think you should get my point now.
+# ./btrfs check --readonly /dev/loop3
+checksum verify failed on 16091506147328 found 1E4E4207 wanted 00000000
+checksum verify failed on 16091506147328 found 1E4E4207 wanted 00000000
+checksum verify failed on 16091506147328 found 58D16B1B wanted 64109AAB
+checksum verify failed on 16091506147328 found 58D16B1B wanted 64109AAB
+bytenr mismatch, want=16091506147328, have=3144945314663302585
+ERROR: cannot read chunk root
+ERROR: cannot open file system
 
-Parity is just rubbish, until csum mismatch with data.
+# ./btrfs-show-super -f -a /dev/loop[0-9]
+http://xero.incoming.jp/btrfshelp/showsuper.txt
+(148kB)
 
-Thanks,
-Qu
->
-> then Disk5 is written, and the data is still corrupted:
->
-> 	Disk1  Disk2  Disk3  Disk4  Disk5  Reconstructed Disk2
-> 	1111   2222   ffff   1234   5678   aaa2
->
-> then parity is written, and the data isn't corrupted any more:
->
-> 	Disk1  Disk2  Disk3  Disk4  Disk5  Reconstructed Disk2
-> 	1111   2222   777f   1234   5678   2222
->
-> If we are interrupted at any point after writing Data4 and before writing
-> Parity (even if these writes are arranged in any order), previously
-> committed data is corrupted.  If the drives have deep queues we could have
-> multiple RAID stripes corrupted at once.  csum verification will not help
-> us because there are no csums for Disk4 and Disk5 yet--regardless of what
-> else happens, the csum tree is not committed until after we wrote Parity.
->
-> This is not CoW at all.  It's not a rare event because the btrfs allocator
-> intentionally tries to maintain locality, and therefore prefers to reuse
-> partially-filled RAID stripes instead of spreading allocations out over
-> empty stripes.  The location of damaged data changes rapidly over time,
-> but _something_ is damaged much of the time.
->
-> It's a filesystem-eating disaster if the stripe contains metadata and
-> Disk2 fails.
->
->> So we should follow csum first and then parity.
->>
->> If we following this principle, RAID5 should be a raid0 with a little higher
->> possibility to recover some cases, like missing one device.
->
-> That is much less than what most users expect from the name "raid5", and
-> much less than what should be possible from a CoW filesystem as well.
->
->> So, I'd like to fix RAID5 scrub to make it at least better than RAID0, not
->> worse than RAID0.
->
-> Do please continue fixing scrub!  I meant to point out only that there
-> are several other problems to fix before we can consider using btrfs
-> raid5 and especially raid6 for the purposes that users expect.
->
->>> btrfs doesn't avoid writing new data in the same RAID stripe
->>> as old data (it provides a rmw function for raid56, which is simply a bug
->>> in a CoW filesystem), so previously committed data can be lost.  If the
->>> previously committed data is part of the metadata tree, the filesystem
->>> is doomed; for ordinary data blocks there are just a few dozen to a few
->>> thousand corrupted files for the admin to clean up after each crash.
->>
->> In fact, the _concept_ to solve such RMW behavior is quite simple:
->>
->> Make sector size equal to stripe length. (Or vice versa if you like)
->>
->> Although the implementation will be more complex, people like Chandan are
->> already working on sub page size sector size support.
->
-> So...metadata blocks would be 256K on the 5-disk RAID5 example above,
-> and any file smaller than 256K would be stored inline?  Ouch.  That would
-> also imply the compressed extent size limit (currently 128K) has to become
-> much larger.
->
-> I had been thinking that we could inject "plug" extents to fill up
-> RAID5 stripes.  This lets us keep the 4K block size for allocations,
-> but at commit (or delalloc) time we would fill up any gaps in new RAID
-> stripes to prevent them from being modified.  As the real data is deleted
-> from the RAID stripes, it would be replaced by "plug" extents to keep any
-> new data from being allocated in the stripe.  When the stripe consists
-> entirely of "plug" extents, the plug extent would be deleted, allowing
-> the stripe to be allocated again.  The "plug" data would be zero for
-> the purposes of parity reconstruction, regardless of what's on the disk.
-> Balance would just throw the plug extents away (no need to relocate them).
->
-> For nodatacow files, btrfs would need to ensure that a nodatacow extent
-> never appears in the same RAID stripe as a CoW extent.  nodatacow files
-> would use RMW writes and not preserve data integrity in the case of any
-> failure.
->
-> I'm not sure how to fit prealloc extents into this idea, since there would
-> be no way to safely write to them in sub-stripe-sized units.
->
->> I think the sector size larger than page size is already on the TODO list
->> and when it's done, we can do real COW RAID5/6 then.
->>
->> Thanks,
->> Qu
->>
->>>
->>> It might be possible to hack up the allocator to pack writes into empty
->>> stripes to avoid the write hole, but every time I think about this it
->>> looks insanely hard to do (or insanely wasteful of space) for data
->>> stripes.
->>>
->>
->>
->>
+# ./btrfs rescue super-recover -v /dev/loop3
+http://xero.incoming.jp/btrfshelp/rescue_super-recover.txt
+(3kB)
 
+"./btrfs rescue super-recover" says /dev/loop3 is bad.
+But, I suppose /dev/loop3 is sole correct disk. Because the generation is old than another.
+I guess perhaps this bad disk was rejected when I did "btrfs delete..." command.
+That's why this disk's generation is being stop.
+If so, If I could use this information, I wonder rescue files from the array??
+But I have no idea about the method...
+
+Thank you
+Hiroshi Honda
 

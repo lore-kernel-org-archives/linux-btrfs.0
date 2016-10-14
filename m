@@ -1,50 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f170.google.com ([209.85.223.170]:35219 "EHLO
-        mail-io0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752013AbcJNMtH (ORCPT
+Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:28440 "EHLO
+        cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S932779AbcJNNUD (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Oct 2016 08:49:07 -0400
-Received: by mail-io0-f170.google.com with SMTP id i202so119063680ioi.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Oct 2016 05:48:35 -0700 (PDT)
+        Fri, 14 Oct 2016 09:20:03 -0400
 Subject: Re: btrfs and numa - needing drop_caches to keep speed up
-To: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>,
+To: Julian Taylor <jtaylor.debian@googlemail.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 References: <818cbe6c-fe7a-7542-3bc8-76b205c9b80b@profihost.ag>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <56016a39-5ebf-5f3f-f07d-b4557a131568@gmail.com>
-Date: Fri, 14 Oct 2016 08:48:30 -0400
+ <a358938d-aef4-f2c7-942b-6cee3d1d774e@googlemail.com>
+From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
+Message-ID: <7b334ad0-0842-73ee-bc3e-adc6be41c839@profihost.ag>
+Date: Fri, 14 Oct 2016 15:19:58 +0200
 MIME-Version: 1.0
-In-Reply-To: <818cbe6c-fe7a-7542-3bc8-76b205c9b80b@profihost.ag>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <a358938d-aef4-f2c7-942b-6cee3d1d774e@googlemail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-10-14 02:28, Stefan Priebe - Profihost AG wrote:
-> Hello list,
->
-> while running the same workload on two machines (single xeon and a dual
-> xeon) both with 64GB RAM.
->
-> I need to run echo 3 >/proc/sys/vm/drop_caches every 15-30 minutes to
-> keep the speed as good as on the non numa system. I'm not sure whether
-> this is related to numa.
->
-> Is there any sysctl parameter to tune?
->
-> Tested with vanilla v4.8.1
-This may sound odd, but does echoing 1 or 2 to /proc/sys/vm/drop_caches 
-help at all, or is it just 3?   The value itself is actually a bit-field 
-with just two bits defined.  1 just drops the page-cache, while 2 just 
-drops freeable SLAB objects, and 3 drops both.  The thing is, both have 
-an impact when dealing with filesystems (page-cache contains cached file 
-contents, while freeable SLAB objects includes cached dentries and 
-inodes), so knowing whether one or the other or only both is what's 
-helping things can help diagnose this further.
+Dear julian,
 
-Regardless of that, you might try adjusting vm.vfs_cache_pressure. 
-Increasing that will make the page-cache reclaim more aggressive, while 
-decreasing it will make it less aggressive.  It defaults to 100, and I 
-wouldn't suggest setting it below 50 or above about 150.  Keep in mind 
-that increasing that will mean you're likely to put more load on the 
-storage devices.
+Am 14.10.2016 um 14:26 schrieb Julian Taylor:
+> On 10/14/2016 08:28 AM, Stefan Priebe - Profihost AG wrote:
+>> Hello list,
+>>
+>> while running the same workload on two machines (single xeon and a dual
+>> xeon) both with 64GB RAM.
+>>
+>> I need to run echo 3 >/proc/sys/vm/drop_caches every 15-30 minutes to
+>> keep the speed as good as on the non numa system. I'm not sure whether
+>> this is related to numa.
+>>
+>> Is there any sysctl parameter to tune?
+>>
+>> Tested with vanilla v4.8.1
+>>
+>> Greets,
+>> Stefan
+> 
+> hi,
+> why do you think this is related to btrfs?
 
+was just an idea as i couldn't find any other difference between those
+systems.
+
+> This is easy to diagnose but recording some kernel stacks during the >
+problem with perf.
+
+you just mean perf top? Does it also show locking problems? As i see not
+much CPU usage in that case.
+
+> The only known issue that has this type of workaround that I know of are
+> transparent huge pages.
+
+I already disabled thp by:
+echo never > /sys/kernel/mm/transparent_hugepage/enabled
+
+cat /proc/meminfo says:
+HugePages_Total:       0
+HugePages_Free:        0
+HugePages_Rsvd:        0
+HugePages_Surp:        0
+
+
+
+Greets,
+Stefan
+
+> 
+> cheers,
+> Julian

@@ -1,112 +1,120 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail02.iobjects.de ([188.40.134.68]:50830 "EHLO
-        mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752730AbcJNN7K (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:47756 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1753369AbcJNTzr (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Oct 2016 09:59:10 -0400
-Subject: Re: [PATCH 2/2] btrfs: fix false enospc for compression
-To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-References: <20161006025139.22776-1-wangxg.fnst@cn.fujitsu.com>
- <20161006025139.22776-2-wangxg.fnst@cn.fujitsu.com>
-Cc: jbacik@fb.com, dsterba@suse.com
-From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>
-Message-ID: <5800E4AB.2010701@applied-asynchrony.com>
-Date: Fri, 14 Oct 2016 15:59:07 +0200
+        Fri, 14 Oct 2016 15:55:47 -0400
+Date: Fri, 14 Oct 2016 15:55:45 -0400
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, Hugo Mills <hugo@carfax.org.uk>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Austin Hemmelgarn <ahferroin7@gmail.com>
+Subject: Re: RAID system with adaption to changed number of disks
+Message-ID: <20161014195544.GZ21290@hungrycats.org>
+References: <20161011160601.GI7683@carfax.org.uk>
+ <CAJCQCtSY2Y5AsW2FC5FGP3x3Vaz6Y10=EbAE-0FKFQAqg0oGkg@mail.gmail.com>
+ <3da9a459-c63b-570c-5b42-c7186b3a74fd@cn.fujitsu.com>
+ <20161012043718.GW21290@hungrycats.org>
+ <37578baa-556b-d3f7-45bd-10843124dea1@cn.fujitsu.com>
+ <20161012171936.GD26140@hungrycats.org>
+ <16a02312-a74c-6e2d-08ae-7fa479823341@cn.fujitsu.com>
+ <20161013210346.GY21290@hungrycats.org>
+ <d1646e74-004d-737f-671a-4ca30f518819@cn.fujitsu.com>
+ <CAJCQCtRxN+5+8Kfr8TM8+gVx62CUQ+Vhkiz7auWJa_tYKZVsXA@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <20161006025139.22776-2-wangxg.fnst@cn.fujitsu.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="7ohyzAr2DuZRs7WU"
+In-Reply-To: <CAJCQCtRxN+5+8Kfr8TM8+gVx62CUQ+Vhkiz7auWJa_tYKZVsXA@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/06/16 04:51, Wang Xiaoguang wrote:
-> When testing btrfs compression, sometimes we got ENOSPC error, though fs
-> still has much free space, xfstests generic/171, generic/172, generic/173,
-> generic/174, generic/175 can reveal this bug in my test environment when
-> compression is enabled.
-> 
-> After some debuging work, we found that it's btrfs_delalloc_reserve_metadata()
-> which sometimes tries to reserve plenty of metadata space, even for very small
-> data range. In btrfs_delalloc_reserve_metadata(), the number of metadata bytes
-> we try to reserve is calculated by the difference between outstanding_extents
-> and reserved_extents. Please see below case for how ENOSPC occurs:
-> 
->   1, Buffered write 128MB data in unit of 128KB, so finially we'll have inode
-> outstanding extents be 1, and reserved_extents be 1024. Note it's
-> btrfs_merge_extent_hook() that merges these 128KB units into one big
-> outstanding extent, but do not change reserved_extents.
-> 
->   2, When writing dirty pages, for compression, cow_file_range_async() will
-> split above big extent in unit of 128KB(compression extent size is 128KB).
-> When first split opeartion finishes, we'll have 2 outstanding extents and 1024
-> reserved extents, and just right now the currently generated ordered extent is
-> dispatched to run and complete, then btrfs_delalloc_release_metadata()(see
-> btrfs_finish_ordered_io()) will be called to release metadata, after that we
-> will have 1 outstanding extents and 1 reserved extents(also see logic in
-> drop_outstanding_extent()). Later cow_file_range_async() continues to handles
-> left data range[128KB, 128MB), and if no other ordered extent was dispatched
-> to run, there will be 1023 outstanding extents and 1 reserved extent.
-> 
->   3, Now if another bufferd write for this file enters, then
-> btrfs_delalloc_reserve_metadata() will at least try to reserve metadata
-> for 1023 outstanding extents' metadata, for 16KB node size, it'll be 1023*16384*2*8,
-> about 255MB, for 64K node size, it'll be 1023*65536*8*2, about 1GB metadata, so
-> obviously it's not sane and can easily result in enospc error.
-> 
-> The root cause is that for compression, its max extent size will no longer be
-> BTRFS_MAX_EXTENT_SIZE(128MB), it'll be 128KB, so current metadata reservation
-> method in btrfs is not appropriate or correct, here we introduce:
-> 	enum btrfs_metadata_reserve_type {
->         	BTRFS_RESERVE_NORMAL,
->         	BTRFS_RESERVE_COMPRESS,
-> 	};
-> and expand btrfs_delalloc_reserve_metadata() and btrfs_delalloc_reserve_space()
-> by adding a new enum btrfs_metadata_reserve_type argument. When a data range will
-> go through compression, we use BTRFS_RESERVE_COMPRESS to reserve metatata.
-> Meanwhile we introduce EXTENT_COMPRESS flag to mark a data range that will go
-> through compression path.
-> 
-> With this patch, we can fix these false enospc error for compression.
-> 
-> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
-I took some time again to get this into my tree on top of what's in
-btrfs-4.9rc1 and managed to merge it after all.
+--7ohyzAr2DuZRs7WU
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Both this and patch #1 seem to work fine, and they don't seem to cause any
-regressions; ran a couple of both full and incremental rsync backups with
->100GB on a new and now compressed subvolume without problem. Also Stefan
-just reported that his ENOSPC seems to be gone as well, so it seems to be
-good. \o/
+On Fri, Oct 14, 2016 at 01:16:05AM -0600, Chris Murphy wrote:
+> OK so we know for raid5 data block groups there can be RMW. And
+> because of that, any interruption results in the write hole. On Btrfs
+> thought, the write hole is on disk only. If there's a lost strip
+> (failed drive or UNC read), reconstruction from wrong parity results
+> in a checksum error and EIO. That's good.
+>=20
+> However, what happens in the metadata case? If metadata is raid5, and
+> there's a crash or power failure during metadata RMW, same problem,
+> wrong parity, bad reconstruction, csum mismatch, and EIO. So what's
+> the effect of EIO when reading metadata?=20
 
-So for both this and patch #1 have a careful:
+The effect is you can't access the page or anything referenced by
+the page.  If the page happens to be a root or interior node of
+something important, large parts of the filesystem are inaccessible,
+or the filesystem is not mountable at all.  RAID device management and
+balance operations don't work because they abort as soon as they find
+the first unreadable metadata page.
 
-Tested-by: Holger Hoffstätte <holger@applied-asynchrony.com>
+In theory it's still possible to rebuild parts of the filesystem offline
+using backrefs or brute-force search.  Using an old root might work too,
+but in bad cases the newest viable root could be thousands of generations
+old (i.e. it's more likely that no viable root exists at all).
 
-Also a comment about something I found while resolving conflicts caused
-by the preliminary dedupe suppoort:
+> And how common is RMW for metadata operations?
 
-[..]
->  int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
-> -			      struct extent_state **cached_state);
-> +			      struct extent_state **cached_state, int flag);
->  int btrfs_set_extent_defrag(struct inode *inode, u64 start, u64 end,
-> -			    struct extent_state **cached_state);
-> +			    struct extent_state **cached_state, int flag);
-[..]
->  int btrfs_dirty_pages(struct btrfs_root *root, struct inode *inode,
->  		      struct page **pages, size_t num_pages,
->  		      loff_t pos, size_t write_bytes,
-> -		      struct extent_state **cached);
-> +		      struct extent_state **cached, int flag);
+RMW in metadata is the norm.  It happens on nearly all commits--the only
+exception seems to be when both ends of a commit write happen to land
+on stripe boundaries accidentally, which is less than 1% of the time on
+3 disks.
 
-Instead of adding "int flag" why not use the already defined
-btrfs_metadata_reserve_type enum? I know it's just an int at the end of
-the day, but the dedupe support already added another "int dedupe" argument
-and it's probably easy to cause confusion. 
-Maybe later it would be beneficial to consolidate the flags into a consistent
-set of enum values to prevent more "int flag" inflation and better declare the
-intent of the extent state change. Not sure if that makes sense.
+> I wonder where all of these damn strange cases where people can't do
+> anything at all with a normally degraded raid5 - one device failed,
+> and no other failures, but they can't mount due to a bunch of csum
+> errors.
 
-thanks,
-Holger
+I'm *astonished* to hear about real-world successes with raid5 metadata.
+The total-loss failure reports are the result I expect.
 
+The current btrfs raid5 implementation is a thin layer of bugs on top
+of code that is still missing critical pieces.  There is no mechanism to
+prevent RMW-related failures combined with zero tolerance for RMW-related
+failures in metadata, so I expect a btrfs filesystem using raid5 metadata
+to be extremely fragile.  Failure is not likely--it's *inevitable*.
+
+The non-RMW-aware allocator almost maximizes the risk of RMW data loss.
+Every transaction commit contains multiple tree root pages, which
+are the most critical metadata that could be lost due to RMW failure.
+There is a window at least a few milliseconds wide, and potentially
+several seconds wide, where some data on disk is in an unrecoverable
+state due to RMW.  This happens twice a minute with the default commit
+interval and 99% of commits are affected.  That's a million opportunities
+per machine-year to lose metadata.  If a crash lands on one of those,
+boom, no more filesystem.
+
+I expect one random crash (i.e. a crash that is not strongly correlated
+to RMW activity) out of 30-2000 (depending on filesystem size, workload,
+rotation speed, btrfs mount parameters) will destroy a filesystem under
+typical conditions.  Real world crashes tend not to be random (i.e. they
+are strongly correlated to RMW activity), so filesystem loss will be
+much more frequent in practice.
+
+
+>=20
+> Chris Murphy
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+--7ohyzAr2DuZRs7WU
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iEYEARECAAYFAlgBOEAACgkQgfmLGlazG5zwsgCeOgnxh/GIeRvi4lL6FQXD0r/w
+t8wAnigzBScN7A99RJuiXOfOe3qzVHel
+=Eig1
+-----END PGP SIGNATURE-----
+
+--7ohyzAr2DuZRs7WU--

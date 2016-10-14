@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:52558 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:39258 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752730AbcJNRA6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Oct 2016 13:00:58 -0400
-Subject: Re: Btrfs progs build fails for 4.8
+        id S932618AbcJNRDu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 14 Oct 2016 13:03:50 -0400
+Subject: [PATCH] btrfs-progs: define FIEMAP_EXTENT_SHARED locally if needed
 To: dsterba@suse.cz, Qu Wenruo <quwenruo@cn.fujitsu.com>,
         Qu Wenruo <quwenruo.btrfs@gmx.com>, Abhay Sachan <lkp.abhay@gmail.com>,
         linux-btrfs@vger.kernel.org
@@ -12,88 +12,59 @@ References: <CAKHchJzbo7=fZrtbOwaMdMNiYMSdUuiys3iHTpyxTP92SAY1TQ@mail.gmail.com>
  <20161012172657.GV11398@twin.jikos.cz>
  <eabfbf45-6cca-043d-b60b-34bede02dfc7@cn.fujitsu.com>
  <20161014154942.GB11398@twin.jikos.cz>
+ <3caf7539-5eae-d085-1fc6-b48ce0ae99a2@redhat.com>
 From: Eric Sandeen <sandeen@redhat.com>
-Message-ID: <3caf7539-5eae-d085-1fc6-b48ce0ae99a2@redhat.com>
-Date: Fri, 14 Oct 2016 12:00:56 -0500
+Message-ID: <c9a18735-4127-2ab4-e93e-a32c50c49392@redhat.com>
+Date: Fri, 14 Oct 2016 12:03:48 -0500
 MIME-Version: 1.0
-In-Reply-To: <20161014154942.GB11398@twin.jikos.cz>
+In-Reply-To: <3caf7539-5eae-d085-1fc6-b48ce0ae99a2@redhat.com>
 Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/14/16 10:49 AM, David Sterba wrote:
-> On Thu, Oct 13, 2016 at 03:25:57PM +0800, Qu Wenruo wrote:
->> At 10/13/2016 01:26 AM, David Sterba wrote:
->>> On Wed, Oct 12, 2016 at 10:01:27PM +0800, Qu Wenruo wrote:
->>>>
->>>>
->>>> On 10/12/2016 09:58 PM, Abhay Sachan wrote:
->>>>> Hi,
->>>>> I tried building latest btrfs progs on CentOS 6, "./configure" failed
->>>>> with the error:
->>>>>
->>>>> checking for FIEMAP_EXTENT_SHARED defined in linux/fiemap.h... no
->>>>> configure: error: no definition of FIEMAP_EXTENT_SHARED found
->>>>>
->>>>> Any ideas what am I lacking in the system?
->>>>
->>>> Your kernel is too old and its header doesn't support
->>>> FIEMAP_EXTENT_SHARED flag for fiemap ioctl.
->>>
->>> As this is not the first time, I wonder if we could provide a defintion
->>> of the macro in progs, regardless of the installed headers. Note that
->>> this does not mean the running kernel is old. Previously the user said
->>> he was running a 4.4 kernel [1] (or it could be any other kernel
->>> version). For that combination of headers and running kernel, I think
->>> it's ok to add a fallback definition.
->>
->> Yes, fallback definition is good for case like running kernel supports 
->> SHARED_EXTENT flag, but not kernel header.
->>
->> But I'm a little concerned about such fallback definition will lead to 
->> corrupted result for "fi du".
-> 
-> Well, not corrupted bug wrong. The shared data will be reported as
-> exclusive.
-> 
->>>> And since that flag is very important for tools like "btrfs filesystem
->>>> du", for old kernel doesn't support EXTENT_SHARED flag, we have no
->>>> choice but abort configuration.
->>>
->>> The check was added to configure so it's caught earlier than during
->>> build. The 'fi du' command is useful, but not IMO critical to stop the
->>> build.
->>
->> What about just disabling subcommands using SHARED_EXTENT flag?
->> Like "fi du".
-> 
-> This would need to be checked at runtime, based only on kernel version.
-> I think we can do that, print a warning in 'fi du' but otherwise let it
-> continue.
+As it stands today, btrfs-progs won't build if the installed
+kernel headers don't define FIEMAP_EXTENT_SHARED.
 
-Checking kernel version is pretty unreliable - distro kernels that backport
-will quite possibly fail the version test.  Sure, it's possible to patch
-the check back out of userspace in the distro, but one must first know that
-such things exist, and look out for them...
+But that doesn't tell us anything about the capabilities of
+the /running/ kernel - so just define it locally if not found
+in the fiemap header, and allow the build to proceed.
 
-Maybe warn on kernel version < 2.6.33 /and/ no shared extents found.
+If run against an old kernel, worst case scenario is that
+no shared extents will be reported via the du command.
 
-Or, why not just:
+Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+---
 
-1) #ifndef FIEMAP_EXTENT_SHARED / #define FIEMAP_EXTENT_SHARED 0x00002000 / #endif
-2) carry on as usual.
+you can take it or leave it, but I had this locally 
+anyway, so if it's helpful here you go :)
 
-Worst case is that you don't get shared accounting on very old kernels.
-
-And FIEMAP_EXTENT_SHARED has been around since 2.6.33 so it's not going
-to bite too many people, right?
-
-(If you really wanted to, you could export has_fiemap_shared in the btrfs
-features sysfs file, and runtime could see if shared extents are
-detectable and if not, print a warning or something ... but given that
-this would be a new feature much newer than the fiemap flag I'm not
-sure that would do much good.)
-
--Eric
+diff --git a/cmds-fi-du.c b/cmds-fi-du.c
+index a5b66e6..fa8f421 100644
+--- a/cmds-fi-du.c
++++ b/cmds-fi-du.c
+@@ -29,6 +29,11 @@
+ #include <linux/fs.h>
+ #include <linux/fiemap.h>
  
++/* Appeared upstream in 2.6.33 */
++#ifndef FIEMAP_EXTENT_SHARED
++#define FIEMAP_EXTENT_SHARED 0x00002000
++#endif
++
+ #include "utils.h"
+ #include "commands.h"
+ #include "kerncompat.h"
+diff --git a/configure.ac b/configure.ac
+index 8fd8f42..9b87b24 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -144,8 +144,6 @@ if test "$DISABLE_BTRFSCONVERT" = 0 && test "x$convertfs" = "x"; then
+ 	AC_MSG_ERROR([no filesystems for convert, use --disable-convert instead])
+ fi
+ 
+-AX_CHECK_DEFINE([linux/fiemap.h], [FIEMAP_EXTENT_SHARED], [],
+-		[AC_MSG_ERROR([no definition of FIEMAP_EXTENT_SHARED found])])
+ 
+ dnl Define <NAME>_LIBS= and <NAME>_CFLAGS= by pkg-config
+ dnl
 

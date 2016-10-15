@@ -1,56 +1,173 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:48180 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S934776AbcJQPdw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Oct 2016 11:33:52 -0400
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com, Filipe Manana <fdmanana@suse.com>
-Subject: [GIT PULL] Send fix for 4.9
-Date: Fri, 14 Oct 2016 22:54:08 +0100
-Message-Id: <1476482048-3659-1-git-send-email-fdmanana@kernel.org>
+Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:45136 "EHLO
+        cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1752916AbcJOUtv (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 15 Oct 2016 16:49:51 -0400
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
+Subject: speed up cp --reflink=always
+Message-ID: <6e902770-05f3-2562-eeb3-dd9ef53b9406@profihost.ag>
+Date: Sat, 15 Oct 2016 22:49:46 +0200
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+Hello,
 
-Hi Chris, please pull the following send fix for the 4.9 kernel.
+cp --reflink=always takes sometimes very long. (i.e. 25-35 minutes)
 
-Doing snapshots while balance is ongoing can result in file extent items whose
-only difference between snapshots is their bytenr, which got replaced by the
-relocation process, and the inode item does not get changed between the parent
-and send snapshots (since nothing changed except the location of extent).
-Prior to the 4.8 kernel, send would consider this a bug and we would hit a
-BUG_ON(), but on 4.8 due to another change this made only send fail with -EIO
-and log an error message, since the same can happen due to rare errors that can
-occur when attempting to update an inode item after successfully updating its
-extents.
-This has been observed with some frequency on openSUSE and SLE boxes where
-balance is triggered periodically by a cron job, snapshotting is triggered
-before package installations/updates and snapper calls for incremental send
-operations in no data mode.
+An example:
 
-Thanks.
+source file:
+# ls -la vm-279-disk-1.img
+-rw-r--r-- 1 root root 204010946560 Oct 14 12:15 vm-279-disk-1.img
 
-The following changes since commit 19c4d2f994788a954af1aa7e53b0fdb46fd7925a:
+target file after around 10 minutes:
+# ls -la vm-279-disk-1.img.tmp
+-rw-r--r-- 1 root root 65022328832 Oct 15 22:13 vm-279-disk-1.img.tmp
 
-  Revert "btrfs: let btrfs_delete_unused_bgs() to clean relocated bgs" (2016-10-10 13:43:31 -0700)
+I/O Waits are at around 6% but disk usage is at around 100%.
 
-are available in the git repository at:
+The process using most of the disk I/O is a kworker process. A function
+trace of this kworker for 30s is already 44MB - no idea where to upload.
+This volume uses space_cache=v2.
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/fdmanana/linux.git for-chris-4.9
+While digging through it i see a lot of this calls:
 
-for you to fetch changes up to d5e84fd8d0634d056248b67463b42f6c85896a19:
+   kworker/u65:4-20679 [007] .... 46021.641882: btrfs_set_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641882: btrfs_get_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641882: btrfs_set_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641882: btrfs_get_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641882: btrfs_set_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641882: btrfs_get_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641882: btrfs_set_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641882: btrfs_get_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641883: btrfs_set_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641883: btrfs_get_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641883: btrfs_set_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641883: btrfs_get_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641883: btrfs_set_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641883: btrfs_get_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641883: btrfs_set_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641883: btrfs_get_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641883: btrfs_set_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641883: btrfs_get_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641883: btrfs_set_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641884: btrfs_get_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641884: btrfs_set_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641884: btrfs_get_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641884: btrfs_set_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641884: btrfs_get_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641884: btrfs_set_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641884: btrfs_get_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641884: btrfs_set_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641884: btrfs_get_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641884: btrfs_set_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641884: btrfs_get_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641885: btrfs_set_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641885: btrfs_get_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641885: btrfs_set_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641885: btrfs_get_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641885: btrfs_set_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641885: btrfs_get_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641886: btrfs_set_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641886: btrfs_get_token_32
+<-btrfs_del_items
+   kworker/u65:4-20679 [007] .... 46021.641886: btrfs_set_token_32
+<-btrfs_del_items
 
-  Btrfs: fix incremental send failure caused by balance (2016-10-12 10:41:01 +0100)
+Sorting the calls shows:
+   4892 _raw_spin_lock <-free_extent_buffer
+   4894 release_extent_buffer <-free_extent_buffer
+   6803 map_private_extent_buffer <-generic_bin_search.constprop.36
+   6839 __set_page_dirty_nobuffers <-btree_set_page_dirty
+   6840 btree_set_page_dirty <-set_page_dirty
+   6840 mem_cgroup_begin_page_stat <-__set_page_dirty_nobuffers
+   6840 page_mapping <-set_page_dirty
+   6840 set_page_dirty <-set_extent_buffer_dirty
+   6841 mem_cgroup_end_page_stat <-__set_page_dirty_nobuffers
+   7521 btrfs_clear_lock_blocking_rw <-btrfs_clear_path_blocking
+   7967 btrfs_get_token_64 <-read_block_for_search.isra.33
+   8018 btrfs_set_token_32 <-btrfs_del_items
+   8235 btrfs_get_token_32 <-btrfs_del_items
+   8813 btrfs_set_lock_blocking_rw <-btrfs_set_path_blocking
+   9235 map_private_extent_buffer <-btrfs_get_token_32
+  11824 btrfs_set_token_32 <-btrfs_extend_item
+  12090 map_private_extent_buffer <-btrfs_get_token_64
+  12367 mark_page_accessed <-mark_extent_buffer_accessed
+  12621 btrfs_get_token_32 <-btrfs_extend_item
+  16267 btrfs_set_token_32 <-setup_items_for_insert
+  16423 btrfs_get_token_32 <-setup_items_for_insert
+  28542 btrfs_comp_cpu_keys <-generic_bin_search.constprop.36
 
-----------------------------------------------------------------
-Filipe Manana (1):
-      Btrfs: fix incremental send failure caused by balance
+CPU usage is at around 10%.
 
- fs/btrfs/send.c | 58 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 58 insertions(+)
+perf top looks like this:
+   7,55%  [kernel]               [k] __find_stripe
+   2,47%  [kernel]               [k] read_extent_buffer
+   2,46%  [kernel]               [k] analyse_stripe
+   1,96%  [kernel]               [k] _raw_spin_lock
+   1,79%  [kernel]               [k] btrfs_get_token_32
+   1,65%  [kernel]               [k] __radix_tree_lookup
+   1,61%  [kernel]               [k] btrfs_set_lock_blocking_rw
+   1,53%  [kernel]               [k] map_private_extent_buffer
+   1,36%  [kernel]               [k] generic_bin_search.constprop.36
+   1,33%  [kernel]               [k] ops_run_io
+   1,26%  [kernel]               [k] move_freepages
+   1,22%  [kernel]               [k] memcpy_erms
+   1,20%  [kernel]               [k] rb_next
+   1,12%  [kernel]               [k] bio_init
+   1,07%  [kernel]               [k] btrfs_clear_lock_blocking_rw
+   1,05%  [kernel]               [k] __memmove
+   1,00%  [kernel]               [k] _raw_spin_lock_irqsave
+   0,94%  [kernel]               [k] btrfs_set_token_32
+   0,89%  [kernel]               [k] menu_select
+   0,83%  [kernel]               [k] btrfs_get_token_64
+   0,82%  [kernel]               [k] __lookup_extent_mapping
+   0,77%  [kernel]               [k] handle_stripe
+   0,77%  [kernel]               [k] native_queued_spin_lock_slowpath
+   0,75%  [kernel]               [k] raid5_compute_blocknr
+   0,64%  [kernel]               [k] btrfs_search_slot
+   0,63%  [kernel]               [k] btrfs_comp_cpu_keys
 
--- 
-2.7.0.rc3
-
+Greets,
+Stefan

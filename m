@@ -1,67 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from syrinx.knorrie.org ([82.94.188.77]:42218 "EHLO
-        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751392AbcJOSld (ORCPT
+Received: from ijp134o.incoming.jp ([157.7.129.17]:35002 "EHLO
+        ijp134o.incoming.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754290AbcJPCeT (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 15 Oct 2016 14:41:33 -0400
-Subject: Re: Rust library for BTRFS
-To: James Pharaoh <james@pharaoh.uk>, linux-btrfs@vger.kernel.org
-References: <2636de69-cd94-1700-f589-9f0c981bbac2@pharaoh.uk>
-From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Message-ID: <1c974452-3523-d91e-1149-a55986276c7f@mendix.com>
-Date: Sat, 15 Oct 2016 20:41:27 +0200
+        Sat, 15 Oct 2016 22:34:19 -0400
+Date: Sun, 16 Oct 2016 11:34:18 +0900
+From: Hiroshi Honda <xero@incoming.jp>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Subject: Re: Unable to rescue RAID5
+Cc: linux-btrfs@vger.kernel.org
+In-Reply-To: <0b965ca4-014b-33f2-295b-a02feb0d7ccb@gmail.com>
+References: <20161014191141.2154.13A92CCA@incoming.jp> <0b965ca4-014b-33f2-295b-a02feb0d7ccb@gmail.com>
+Message-Id: <20161016113357.2159.13A92CCA@incoming.jp>
 MIME-Version: 1.0
-In-Reply-To: <2636de69-cd94-1700-f589-9f0c981bbac2@pharaoh.uk>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/15/2016 04:31 PM, James Pharaoh wrote:
-> 
-> I have created a BTRFS library for Rust - very incomplete so far, but
-> possibly of interest to someone.
 
-Nice work, I'm doing the same for python. Just picked up working on it
-again, after summer: https://github.com/knorrie/python-btrfs
+> You should probably look at `btrfs restore`.  I'm not sure how well it works with the raid56 code, and
+> you'll need somewhere to put the data being restored, but that's probably your best option.
 
-> https://gitlab.wellbehavedsoftware.com/well-behaved-software/rust-btrfs
-> 
-> I've basically reimplemented what I find in other tools because, as far
-> as I can tell, there is no C library for BTRFS at this point.
+I tried it already. and then it was "cannot read chunk root".
+Please take see 1st article of this thread.
+http://www.spinics.net/lists/linux-btrfs/msg59683.html
+And I specified -i option for ignore errors, but same result.
 
-For code operating on an online filesystem, using the IOCTLs, you don't
-really need a lot from btrfs-progs. You need to known about some structs
-and throw them back and forth to the kernel. And not being afraid of
-doing some reverse engineering helps. :o)
+1st super mirror(67108864) and 2nd super mirror(274877906944) said all
+devices are missing like below. But there are all devices...
+> warning, device 10 is missing
+> warning, device 8 is missing
+> warning, device 7 is missing
+> warning, device 6 is missing
+> warning, device 5 is missing
+> warning, device 4 is missing
+> warning, device 3 is missing
+> warning, device 2 is missing
+> warning, device 1 is missing
+> warning, device 2 is missing
+> warning, device 3 is missing
+> warning, device 4 is missing
+> warning, device 5 is missing
+> warning, device 6 is missing
+> warning, device 7 is missing
+> warning, device 8 is missing
+> warning, device 10 is missing
+> warning, device 1 is missing
 
-The btrfs-progs programs operate in two ways:
-1. Using the IOCTLs, implementing a command/args input model and
-converting the output back to text on the console.
-2. Also directly doing low-level plumbing, reading and writing inside
-unmounted btrfs filesystems. For this, there's a copy of a bunch of code
-from the kernel, to be able to read/write a filesystem that is not
-mounted from the running program, in a similar way that kernel does when
-it's live. If you don't plan to write your own btrfs check --repair,
-this is also not what you need to import as a library.
+How can I avoid those missing error?
+Can I restore files if I could avoid those missing errors?
+Do I need change source code or Is there btrfs command or the option?
 
-This might be interesting:
-https://patchwork.kernel.org/patch/9356749/
+Thank you
+Hiroshi Honda
 
-But, I'm not the C expert here, this is what I know.
-
-> The currently supported functions are:
-> 
-> - Deduplication
-> - File system info
-> - Space info
-
-Is there a specific use case you're building this for?
-
-My primary trigger to start on it is best described as: "Tired of
-parsing the output of btrfs <foo> <bar>? Try this!"
-
-Also, if you're using IRC, #btrfs on freenode is a good place to hang out.
-
-Have fun,
--- 
-Hans van Kranenburg

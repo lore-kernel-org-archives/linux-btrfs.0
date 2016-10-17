@@ -1,170 +1,322 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:55698 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:57276 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S932329AbcJQB2V (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 16 Oct 2016 21:28:21 -0400
+        id S932305AbcJQB2U (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 16 Oct 2016 21:28:20 -0400
 Received: from adam-work.localdomain (unknown [10.167.226.34])
-        by cn.fujitsu.com (Postfix) with ESMTP id 2830541B4BC0
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Oct 2016 09:27:53 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id B5CB24010D1A
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Oct 2016 09:27:46 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [RFC PATCH v0.8 14/14] btrfs-progs: fsck: Introduce offline scrub function
-Date: Mon, 17 Oct 2016 09:27:43 +0800
-Message-Id: <20161017012743.9692-15-quwenruo@cn.fujitsu.com>
+Subject: [RFC PATCH v0.8 01/14] btrfs-progs: Introduce new btrfs_map_block function which returns more unified result.
+Date: Mon, 17 Oct 2016 09:27:30 +0800
+Message-Id: <20161017012743.9692-2-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20161017012743.9692-1-quwenruo@cn.fujitsu.com>
 References: <20161017012743.9692-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Now, btrfs check has a kernel scrub equivalent.
+Introduce a new function, __btrfs_map_block_v2().
 
-And even more, it's has stronger csum check against reconstructed data
-and existing data stripes.
-It will avoid any possible silent data corruption in kernel scrub.
+Unlike old btrfs_map_block(), which needs different parameter to handle
+different RAID profile, this new function uses unified btrfs_map_block
+structure to handle all RAID profile in a more meaningful method:
 
-Now it only supports to do read-only check, but is already able to
-provide info on the recoverability.
+Return physical address along with logical address for each stripe.
+
+For RAID1/Single/DUP (none-stripped):
+result would be like:
+Map block: Logical 128M, Len 10M, Type RAID1, Stripe len 0, Nr_stripes 2
+Stripe 0: Logical 128M, Physical X, Len: 10M Dev dev1
+Stripe 1: Logical 128M, Physical Y, Len: 10M Dev dev2
+
+Result will be as long as possible, since it's not stripped at all.
+
+For RAID0/10 (stripped without parity):
+Result will be aligned to full stripe size:
+Map block: Logical 64K, Len 128K, Type RAID10, Stripe len 64K, Nr_stripes 4
+Stripe 0: Logical 64K, Physical X, Len 64K Dev dev1
+Stripe 1: Logical 64K, Physical Y, Len 64K Dev dev2
+Stripe 2: Logical 128K, Physical Z, Len 64K Dev dev3
+Stripe 3: Logical 128K, Physical W, Len 64K Dev dev4
+
+For RAID5/6 (stripped with parity and dev-rotation)
+Result will be aligned to full stripe size:
+Map block: Logical 64K, Len 128K, Type RAID6, Stripe len 64K, Nr_stripes 4
+Stripe 0: Logical 64K, Physical X, Len 64K Dev dev1
+Stripe 1: Logical 128K, Physical Y, Len 64K Dev dev2
+Stripe 2: Logical RAID5_P, Physical Z, Len 64K Dev dev3
+Stripe 3: Logical RAID6_Q, Physical W, Len 64K Dev dev4
+
+The new unified layout should be very flex and can even handle things
+like N-way RAID1 (which old mirror_num basic one can't handle well).
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- Documentation/btrfs-check.asciidoc |  8 ++++++++
- check/check.h                      |  2 ++
- check/scrub.c                      | 36 ++++++++++++++++++++++++++++++++++++
- cmds-check.c                       | 12 +++++++++++-
- 4 files changed, 57 insertions(+), 1 deletion(-)
+ volumes.c | 181 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ volumes.h |  49 +++++++++++++++++
+ 2 files changed, 230 insertions(+)
 
-diff --git a/Documentation/btrfs-check.asciidoc b/Documentation/btrfs-check.asciidoc
-index a32e1c7..98681ff 100644
---- a/Documentation/btrfs-check.asciidoc
-+++ b/Documentation/btrfs-check.asciidoc
-@@ -78,6 +78,14 @@ respective superblock offset is within the device size
- This can be used to use a different starting point if some of the primary
- superblock is damaged.
- 
-+--scrub::
-+kernel scrub equivalent.
-++
-+Off-line scrub has better reconstruction check than kernel. Won't cause
-+possible silent data corruption for RAID5
-++
-+NOTE: Support for RAID6 recover is not fully implemented yet.
-+
- DANGEROUS OPTIONS
- -----------------
- 
-diff --git a/check/check.h b/check/check.h
-index 61d1cac..7c14716 100644
---- a/check/check.h
-+++ b/check/check.h
-@@ -19,3 +19,5 @@
- /* check/csum.c */
- int btrfs_read_one_data_csum(struct btrfs_fs_info *fs_info, u64 bytenr,
- 			     void *csum_ret);
-+/* check/scrub.c */
-+int scrub_btrfs(struct btrfs_fs_info *fs_info);
-diff --git a/check/scrub.c b/check/scrub.c
-index 94f8744..3327791 100644
---- a/check/scrub.c
-+++ b/check/scrub.c
-@@ -774,3 +774,39 @@ out:
- 	btrfs_free_path(path);
- 	return ret;
+diff --git a/volumes.c b/volumes.c
+index a7abd92..94f3e42 100644
+--- a/volumes.c
++++ b/volumes.c
+@@ -1542,6 +1542,187 @@ out:
+ 	return 0;
  }
-+
-+int scrub_btrfs(struct btrfs_fs_info *fs_info)
+ 
++static inline struct btrfs_map_block *alloc_map_block(int num_stripes)
 +{
-+	struct btrfs_block_group_cache *bg_cache;
-+	struct btrfs_scrub_progress scrub_ctx = {0};
-+	int ret = 0;
++	struct btrfs_map_block *ret;
++	int size;
 +
-+	bg_cache = btrfs_lookup_first_block_group(fs_info, 0);
-+	if (!bg_cache) {
-+		error("no block group is found");
-+		return -ENOENT;
-+	}
-+
-+	while (1) {
-+		ret = scrub_one_block_group(fs_info, &scrub_ctx, bg_cache);
-+		if (ret < 0 && ret != -EIO)
-+			break;
-+
-+		bg_cache = btrfs_lookup_first_block_group(fs_info,
-+				bg_cache->key.objectid + bg_cache->key.offset);
-+		if (!bg_cache)
-+			break;
-+	}
-+
-+	printf("Scrub result:\n");
-+	printf("Tree bytes scrubbed: %llu\n", scrub_ctx.tree_bytes_scrubbed);
-+	printf("Data bytes scrubbed: %llu\n", scrub_ctx.data_bytes_scrubbed);
-+	printf("Read error: %llu\n", scrub_ctx.read_errors);
-+	printf("Verify error: %llu\n", scrub_ctx.verify_errors);
-+	if (scrub_ctx.csum_errors || scrub_ctx.read_errors ||
-+	    scrub_ctx.uncorrectable_errors || scrub_ctx.verify_errors)
-+		ret = 1;
-+	else
-+		ret = 0;
++	size = sizeof(struct btrfs_map_stripe) * num_stripes +
++		sizeof(struct btrfs_map_block);
++	ret = malloc(size);
++	if (!ret)
++		return NULL;
++	memset(ret, 0, size);
 +	return ret;
 +}
-diff --git a/cmds-check.c b/cmds-check.c
-index 670ccd1..a081e82 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -41,6 +41,7 @@
- #include "rbtree-utils.h"
- #include "backref.h"
- #include "ulist.h"
-+#include "check.h"
- 
- enum task_position {
- 	TASK_EXTENTS,
-@@ -11252,6 +11253,7 @@ int cmd_check(int argc, char **argv)
- 	int readonly = 0;
- 	int qgroup_report = 0;
- 	int qgroups_repaired = 0;
-+	int scrub = 0;
- 	unsigned ctree_flags = OPEN_CTREE_EXCLUSIVE;
- 
- 	while(1) {
-@@ -11259,7 +11261,7 @@ int cmd_check(int argc, char **argv)
- 		enum { GETOPT_VAL_REPAIR = 257, GETOPT_VAL_INIT_CSUM,
- 			GETOPT_VAL_INIT_EXTENT, GETOPT_VAL_CHECK_CSUM,
- 			GETOPT_VAL_READONLY, GETOPT_VAL_CHUNK_TREE,
--			GETOPT_VAL_MODE };
-+			GETOPT_VAL_MODE, GETOPT_VAL_SCRUB };
- 		static const struct option long_options[] = {
- 			{ "super", required_argument, NULL, 's' },
- 			{ "repair", no_argument, NULL, GETOPT_VAL_REPAIR },
-@@ -11279,6 +11281,7 @@ int cmd_check(int argc, char **argv)
- 			{ "progress", no_argument, NULL, 'p' },
- 			{ "mode", required_argument, NULL,
- 				GETOPT_VAL_MODE },
-+			{ "scrub", no_argument, NULL, GETOPT_VAL_SCRUB },
- 			{ NULL, 0, NULL, 0}
- 		};
- 
-@@ -11350,6 +11353,9 @@ int cmd_check(int argc, char **argv)
- 					exit(1);
- 				}
- 				break;
-+			case GETOPT_VAL_SCRUB:
-+				scrub = 1;
-+				break;
- 		}
- 	}
- 
-@@ -11402,6 +11408,10 @@ int cmd_check(int argc, char **argv)
- 	global_info = info;
- 	root = info->fs_root;
- 
-+	if (scrub) {
-+		ret = scrub_btrfs(info);
-+		goto err_out;
++
++static int fill_full_map_block(struct map_lookup *map, u64 start, u64 length,
++			       struct btrfs_map_block *map_block)
++{
++	u64 profile = map->type & BTRFS_BLOCK_GROUP_PROFILE_MASK;
++	u64 bg_start = map->ce.start;
++	u64 bg_end = bg_start + map->ce.size;
++	u64 bg_offset = start - bg_start; /* offset inside the block group */
++	u64 fstripe_logical = 0;	/* Full stripe start logical bytenr */
++	u64 fstripe_size = 0;		/* Full stripe logical size */
++	u64 fstripe_phy_off = 0;	/* Full stripe offset in each dev */
++	u32 stripe_len = map->stripe_len;
++	int sub_stripes = map->sub_stripes;
++	int data_stripes = nr_data_stripes(map);
++	int dev_rotation;
++	int i;
++
++	map_block->num_stripes = map->num_stripes;
++	map_block->type = profile;
++
++	/*
++	 * Common full stripe data for stripe based profiles
++	 */
++	if (profile & (BTRFS_BLOCK_GROUP_RAID0 | BTRFS_BLOCK_GROUP_RAID10 |
++		       BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6)) {
++		fstripe_size = stripe_len * data_stripes;
++		if (sub_stripes)
++			fstripe_size /= sub_stripes;
++		fstripe_logical = round_down(bg_offset, fstripe_size) +
++				    bg_start;
++		fstripe_phy_off = bg_offset / fstripe_size * stripe_len;
 +	}
- 	/*
- 	 * repair mode will force us to commit transaction which
- 	 * will make us fail to load log tree when mounting.
++
++	switch (profile) {
++	case BTRFS_BLOCK_GROUP_DUP:
++	case BTRFS_BLOCK_GROUP_RAID1:
++	case 0: /* SINGLE */
++		/*
++		 * None-stripe mode,(Single, DUP and RAID1)
++		 * Just use offset to fill map_block
++		 */
++		map_block->stripe_len = 0;
++		map_block->start = start;
++		map_block->length = min(bg_end, start + length) - start;
++		for (i = 0; i < map->num_stripes; i++) {
++			struct btrfs_map_stripe *stripe;
++
++			stripe = &map_block->stripes[i];
++
++			stripe->dev = map->stripes[i].dev;
++			stripe->logical = start;
++			stripe->physical = map->stripes[i].physical + bg_offset;
++			stripe->length = map_block->length;
++		}
++		break;
++	case BTRFS_BLOCK_GROUP_RAID10:
++	case BTRFS_BLOCK_GROUP_RAID0:
++		/*
++		 * Stripe modes without parity(0 and 10)
++		 * Return the whole full stripe
++		 */
++
++		map_block->start = fstripe_logical;
++		map_block->length = fstripe_size;
++		map_block->stripe_len = map->stripe_len;
++		for (i = 0; i < map->num_stripes; i++) {
++			struct btrfs_map_stripe *stripe;
++			u64 cur_offset;
++
++			/* Handle RAID10 sub stripes */
++			if (sub_stripes)
++				cur_offset = i / sub_stripes * stripe_len;
++			else
++				cur_offset = stripe_len * i;
++			stripe = &map_block->stripes[i];
++
++			stripe->dev = map->stripes[i].dev;
++			stripe->logical = fstripe_logical + cur_offset;
++			stripe->length = stripe_len;
++			stripe->physical = map->stripes[i].physical +
++					   fstripe_phy_off;
++		}
++		break;
++	case BTRFS_BLOCK_GROUP_RAID5:
++	case BTRFS_BLOCK_GROUP_RAID6:
++		/*
++		 * Stripe modes with parity and device rotation(5 and 6)
++		 *
++		 * Return the whole full stripe
++		 */
++
++		dev_rotation = (bg_offset / fstripe_size) % map->num_stripes;
++
++		map_block->start = fstripe_logical;
++		map_block->length = fstripe_size;
++		map_block->stripe_len = map->stripe_len;
++		for (i = 0; i < map->num_stripes; i++) {
++			struct btrfs_map_stripe *stripe;
++			int dest_index;
++			u64 cur_offset = stripe_len * i;
++
++			stripe = &map_block->stripes[i];
++
++			dest_index = (i + dev_rotation) % map->num_stripes;
++			stripe->dev = map->stripes[dest_index].dev;
++			stripe->length = stripe_len;
++			stripe->physical = map->stripes[dest_index].physical +
++					   fstripe_phy_off;
++			if (i < data_stripes) {
++				/* data stripe */
++				stripe->logical = fstripe_logical +
++						  cur_offset;
++			} else if (i == data_stripes) {
++				/* P */
++				stripe->logical = BTRFS_RAID5_P_STRIPE;
++			} else {
++				/* Q */
++				stripe->logical = BTRFS_RAID6_Q_STRIPE;
++			}
++		}
++		break;
++	default:
++		return -EINVAL;
++	}
++	return 0;
++}
++
++int __btrfs_map_block_v2(struct btrfs_fs_info *fs_info, int rw, u64 logical,
++			 u64 length, struct btrfs_map_block **map_ret)
++{
++	struct cache_extent *ce;
++	struct map_lookup *map;
++	struct btrfs_map_block *map_block;
++	int ret;
++
++	/* Eearly parameter check */
++	if (!length || !map_ret) {
++		error("wrong parameter for %s", __func__);
++		return -EINVAL;
++	}
++
++	ce = search_cache_extent(&fs_info->mapping_tree.cache_tree, logical);
++	if (!ce)
++		return -ENOENT;
++	if (ce->start > logical)
++		return -ENOENT;
++
++	map = container_of(ce, struct map_lookup, ce);
++	/*
++	 * Allocate a full map_block anyway
++	 *
++	 * For write, we need the full map_block anyway.
++	 * For read, it will be striped to the needed stripe before returning.
++	 */
++	map_block = alloc_map_block(map->num_stripes);
++	if (!map_block)
++		return -ENOMEM;
++	ret = fill_full_map_block(map, logical, length, map_block);
++	if (ret < 0) {
++		free(map_block);
++		return ret;
++	}
++	/* TODO: Remove unrelated map_stripes for READ operation */
++
++	*map_ret = map_block;
++	return 0;
++}
++
+ struct btrfs_device *btrfs_find_device(struct btrfs_root *root, u64 devid,
+ 				       u8 *uuid, u8 *fsid)
+ {
+diff --git a/volumes.h b/volumes.h
+index d7b7d3c..82b8757 100644
+--- a/volumes.h
++++ b/volumes.h
+@@ -108,6 +108,51 @@ struct map_lookup {
+ 	struct btrfs_bio_stripe stripes[];
+ };
+ 
++struct btrfs_map_stripe {
++	struct btrfs_device *dev;
++
++	/*
++	 * Logical address of the stripe start.
++	 * Caller should check if this logical is the desired map start.
++	 * It's possible that the logical is smaller or larger than desired
++	 * map range.
++	 *
++	 * For P/Q stipre, it will be BTRFS_RAID5_P_STRIPE
++	 * and BTRFS_RAID6_Q_STRIPE.
++	 */
++	u64 logical;
++
++	u64 physical;
++
++	/* The length of the stripe */
++	u64 length;
++};
++
++struct btrfs_map_block {
++	/*
++	 * The logical start of the whole map block.
++	 * For RAID5/6 it will be the bytenr of the full stripe start,
++	 * so it's possible that @start is smaller than desired map range
++	 * start.
++	 */
++	u64 start;
++
++	/*
++	 * The logical length of the map block.
++	 * For RAID5/6 it will be total data stripe size
++	 */
++	u64 length;
++
++	/* Block group type */
++	u64 type;
++
++	/* Stripe length, for non-stripped mode, it will be 0 */
++	u32 stripe_len;
++
++	int num_stripes;
++	struct btrfs_map_stripe stripes[];
++};
++
+ #define btrfs_multi_bio_size(n) (sizeof(struct btrfs_multi_bio) + \
+ 			    (sizeof(struct btrfs_bio_stripe) * (n)))
+ #define btrfs_map_lookup_size(n) (sizeof(struct map_lookup) + \
+@@ -170,6 +215,10 @@ int btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
+ 		    u64 logical, u64 *length,
+ 		    struct btrfs_multi_bio **multi_ret, int mirror_num,
+ 		    u64 **raid_map_ret);
++
++/* TODO: Use this map_block_v2 to replace __btrfs_map_block() */
++int __btrfs_map_block_v2(struct btrfs_fs_info *fs_info, int rw, u64 logical,
++			 u64 length, struct btrfs_map_block **map_ret);
+ int btrfs_next_bg(struct btrfs_mapping_tree *map_tree, u64 *logical,
+ 		     u64 *size, u64 type);
+ static inline int btrfs_next_bg_metadata(struct btrfs_mapping_tree *map_tree,
 -- 
 2.10.0
 

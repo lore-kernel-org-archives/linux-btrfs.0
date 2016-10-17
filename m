@@ -1,135 +1,111 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:3381 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:55698 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1751716AbcJQB2E (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 16 Oct 2016 21:28:04 -0400
+        id S1756892AbcJQB2L (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 16 Oct 2016 21:28:11 -0400
 Received: from adam-work.localdomain (unknown [10.167.226.34])
-        by cn.fujitsu.com (Postfix) with ESMTP id 1CA4F41B4BC3
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Oct 2016 09:27:46 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id 7732241B4BC5
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Oct 2016 09:27:49 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [RFC PATCH v0.8 00/14] Offline scrub support, and hint to solve kernel scrub data silent corruption
-Date: Mon, 17 Oct 2016 09:27:29 +0800
-Message-Id: <20161017012743.9692-1-quwenruo@cn.fujitsu.com>
+Subject: [RFC PATCH v0.8 07/14] btrfs-progs: check/scrub: Introduce function to scrub one extent
+Date: Mon, 17 Oct 2016 09:27:36 +0800
+Message-Id: <20161017012743.9692-8-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20161017012743.9692-1-quwenruo@cn.fujitsu.com>
+References: <20161017012743.9692-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-***Just RFC patch for early evaluation, please don't merge it***
+Introduce a new function, scrub_one_extent(), as a wrapper to check one
+extent.
 
-For any one who wants to try it, it can be get from my repo:
-https://github.com/adam900710/btrfs-progs/tree/fsck_scrub
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ check/scrub.c | 73 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 73 insertions(+)
 
-Currently, I only tested it on SINGLE/DUP/RAID1/RAID5 filesystems, with
-mirror or parity or data corrupted.
-The tool are all able to detect them and give recoverbility report.
-
-Several reports on kernel scrub screwing up good data stripes are in ML
-for sometime.
-
-The reason seems to be lack of csum check before and after reconstruction, and
-unfinished parity write seems also involved.
-
-To get a comparable tool for kernel scrub, we need a user-space tool to
-act as benchmark to compare their different behaviors.
-
-So here is the RFC patch set for user-space scrub.
-
-Which can do:
-
-1) All mirror/backup check for non-parity based stripe
-   Which means for RAID1/DUP/RAID10, we can really check all mirrors
-   other than the 1st good mirror.
-
-   Current "--check-data-csum" option will be finally replace by scrub.
-   As it doesn't really check all mirrors, if it hits a good copy, then
-   resting copies will just be ignored.
-
-2) Comprehensive RAID5 full stripe check
-   It will check csum before reconstruction using parity.
-   And if too many data stripes has csum mismatch, no need to
-   reconstruct anyway.
-
-   And after reconstruction, it will also check the csum of recovered
-   data against csum, to ensure we didn't recover wrong result.
-
-   For all csum match case, will re-calculate parity and compare it with
-   ondisk parity, to detect parity error.
-
-In fact, it can already expose one new btrfs kernel bug.
-For example, after screwing up a data stripe, kernel did repairs using
-parity, but recovered full stripe has wrong parity.
-Need to scrub again to fix it.
-
-And this patchset also introduced new map_block() function, which is
-more flex than current btrfs_map_block(), and has a unified interface
-for all profiles.
-Check the 1st and 2nd patch for details.
-
-They are already used in RAID5/6 scrub, but can also be used for other
-profiles too.
-
-Since it's just an evaluation patchset, it still has a long to-do list:
-
-1) Repair support
-   In fact, current tool can already report recoverability, repair is
-   not hard to implement.
-
-2) RAID6 support
-   The mathematics behind RAID6 recover is more complex than RAID5.
-   Need some more code to make it possible to recover data stripes,
-   other than just calculating Q and P.
-
-3) Test cases
-   Need to make the infrastructure able to handle multi-device first.
-
-4) Cleaner code and refined logical
-   Need a better shared logical for all profiles to do scrub, and use
-   new map_block_v2() to replace these old codes.
-
-5) Make btrfsck able to handle RAID5 with missing device
-   Now it doesn't even open RAID5 btrfs with missing device, even thouth
-   scrub should be able to handle it.
-
-Qu Wenruo (14):
-  btrfs-progs: Introduce new btrfs_map_block function which returns more
-    unified result.
-  btrfs-progs: Allow __btrfs_map_block_v2 to remove unrelated stripes
-  btrfs-progs: check/csum: Introduce function to read out one data csum
-  btrfs-progs: check/scrub: Introduce structures to support fsck scrub
-  btrfs-progs: check/scrub: Introduce function to scrub mirror based
-    tree block
-  btrfs-progs: check/scrub: Introduce function to scrub mirror based
-    data blocks
-  btrfs-progs: check/scrub: Introduce function to scrub one extent
-  btrfs-progs: check/scrub: Introduce function to scrub one data stripe
-  btrfs-progs: check/scrub: Introduce function to verify parities
-  btrfs-progs: extent-tree: Introduce function to check if there is any
-    extent in given range.
-  btrfs-progs: check/scrub: Introduce function to recover data parity
-  btrfs-progs: check/scrub: Introduce a function to scrub one full
-    stripe
-  btrfs-progs: check/scrub: Introduce function to check a whole block
-    group
-  btrfs-progs: fsck: Introduce offline scrub function
-
- Documentation/btrfs-check.asciidoc |   8 +
- Makefile.in                        |   6 +-
- check/check.h                      |  23 ++
- check/csum.c                       |  96 +++++
- check/scrub.c                      | 812 +++++++++++++++++++++++++++++++++++++
- cmds-check.c                       |  12 +-
- ctree.h                            |   2 +
- disk-io.c                          |   4 +-
- disk-io.h                          |   2 +
- extent-tree.c                      |  52 +++
- volumes.c                          | 282 +++++++++++++
- volumes.h                          |  49 +++
- 12 files changed, 1343 insertions(+), 5 deletions(-)
- create mode 100644 check/check.h
- create mode 100644 check/csum.c
- create mode 100644 check/scrub.c
-
+diff --git a/check/scrub.c b/check/scrub.c
+index 5cd8bc4..cdba469 100644
+--- a/check/scrub.c
++++ b/check/scrub.c
+@@ -224,3 +224,76 @@ out:
+ 		return -EIO;
+ 	return ret;
+ }
++
++/*
++ * Check all copies of range @start, @len.
++ * Caller must ensure the range is covered by th EXTENT_ITEM/METADATA_ITEM
++ * specified by path.
++ * If @report is set, it will report if the range is recoverable or totally
++ * corrupted if it has corrupted mirror.
++ *
++ * Return 0 if the range is all OK or recoverable.
++ * Return <0 if the range can't be recoverable.
++ */
++static int scrub_one_extent(struct btrfs_fs_info *fs_info,
++			    struct btrfs_scrub_progress *scrub_ctx,
++			    struct btrfs_path *path, u64 start, u64 len,
++			    int report)
++{
++	struct btrfs_key key;
++	struct btrfs_extent_item *ei;
++	struct extent_buffer *leaf = path->nodes[0];
++	int slot = path->slots[0];
++	int num_copies;
++	int corrupted = 0;
++	u64 extent_start;
++	u64 extent_len;
++	int metadata = 0;
++	int i;
++	int ret;
++
++	btrfs_item_key_to_cpu(leaf, &key, slot);
++	if (key.type != BTRFS_METADATA_ITEM_KEY &&
++	    key.type != BTRFS_EXTENT_ITEM_KEY)
++		goto invalid_arg;
++
++	extent_start = key.objectid;
++	if (key.type == BTRFS_METADATA_ITEM_KEY) {
++		extent_len = fs_info->tree_root->nodesize;
++		metadata = 1;
++	} else {
++		extent_len = key.offset;
++		ei = btrfs_item_ptr(leaf, slot, struct btrfs_extent_item);
++		if (btrfs_extent_flags(leaf, ei) & BTRFS_EXTENT_FLAG_TREE_BLOCK)
++			metadata = 1;
++	}
++	if (start >= extent_start + extent_len ||
++	    start + len <= extent_start)
++		goto invalid_arg;
++	num_copies = btrfs_num_copies(&fs_info->mapping_tree, start, len);
++	for (i = 1; i <= num_copies; i++) {
++		if (metadata)
++			ret = scrub_tree_mirror(fs_info, scrub_ctx,
++					NULL, extent_start, i);
++		else
++			ret = scrub_data_mirror(fs_info, scrub_ctx, NULL,
++						start, len, i);
++		if (ret < 0)
++			corrupted++;
++	}
++
++	if (report) {
++		if (corrupted && corrupted < num_copies)
++			printf("bytenr %llu len %llu has corrupted mirror, but is recoverable\n",
++				start, len);
++		else if (corrupted >= num_copies)
++			error("bytenr %llu len %llu has corrupted mirror, can't be recovered",
++				start, len);
++	}
++	if (corrupted < num_copies)
++		return 0;
++	return -EIO;
++invalid_arg:
++	error("invalid parameter for %s", __func__);
++	return -EINVAL;
++}
 -- 
 2.10.0
 

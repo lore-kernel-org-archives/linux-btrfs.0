@@ -1,149 +1,171 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:57276 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:55698 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S932240AbcJQB2R (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 16 Oct 2016 21:28:17 -0400
+        id S932287AbcJQB2T (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 16 Oct 2016 21:28:19 -0400
 Received: from adam-work.localdomain (unknown [10.167.226.34])
-        by cn.fujitsu.com (Postfix) with ESMTP id C0FD241B4BC6
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Oct 2016 09:27:49 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id 53BE940142D3
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Oct 2016 09:27:47 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [RFC PATCH v0.8 08/14] btrfs-progs: check/scrub: Introduce function to scrub one data stripe
-Date: Mon, 17 Oct 2016 09:27:37 +0800
-Message-Id: <20161017012743.9692-9-quwenruo@cn.fujitsu.com>
+Subject: [RFC PATCH v0.8 02/14] btrfs-progs: Allow __btrfs_map_block_v2 to remove unrelated stripes
+Date: Mon, 17 Oct 2016 09:27:31 +0800
+Message-Id: <20161017012743.9692-3-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20161017012743.9692-1-quwenruo@cn.fujitsu.com>
 References: <20161017012743.9692-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce new function, scrub_one_data_stripe(), to check all data and
-tree blocks inside the data stripe.
+For READ, caller normally hopes to get what they request, other than
+full stripe map.
+
+In this case, we should remove unrelated stripe map, just like the
+following case:
+               32K               96K
+               |<-request range->|
+         0              64k           128K
+RAID0:   |    Data 1    |   Data 2    |
+              disk1         disk2
+Before this patch, we return the full stripe:
+Stripe 0: Logical 0, Physical X, Len 64K, Dev disk1
+Stripe 1: Logical 64k, Physical Y, Len 64K, Dev disk2
+
+After this patch, we limit the stripe result to the request range:
+Stripe 0: Logical 32K, Physical X+32K, Len 32K, Dev disk1
+Stripe 1: Logical 64k, Physical Y, Len 32K, Dev disk2
+
+And if it's a RAID5/6 stripe, we just handle it like RAID0, ignoring
+parities.
+
+This should make caller easier to use.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- check/scrub.c | 111 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 111 insertions(+)
+ volumes.c | 103 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 102 insertions(+), 1 deletion(-)
 
-diff --git a/check/scrub.c b/check/scrub.c
-index cdba469..f29effa 100644
---- a/check/scrub.c
-+++ b/check/scrub.c
-@@ -297,3 +297,114 @@ invalid_arg:
- 	error("invalid parameter for %s", __func__);
- 	return -EINVAL;
+diff --git a/volumes.c b/volumes.c
+index 94f3e42..ba16d19 100644
+--- a/volumes.c
++++ b/volumes.c
+@@ -1682,6 +1682,107 @@ static int fill_full_map_block(struct map_lookup *map, u64 start, u64 length,
+ 	return 0;
  }
-+
-+static int scrub_one_data_stripe(struct btrfs_fs_info *fs_info,
-+				 struct btrfs_scrub_progress *scrub_ctx,
-+				 struct scrub_stripe *stripe, u32 stripe_len)
+ 
++static void del_one_stripe(struct btrfs_map_block *map_block, int i)
 +{
-+	struct btrfs_path *path;
-+	struct btrfs_root *extent_root = fs_info->extent_root;
-+	struct btrfs_key key;
-+	u64 extent_start;
-+	u64 extent_len;
-+	u64 orig_csum_discards;
-+	int ret;
++	int cur_nr = map_block->num_stripes;
++	int size_left = (cur_nr - 1 - i) * sizeof(struct btrfs_map_stripe);
 +
-+	if (!is_data_stripe(stripe))
-+		return -EINVAL;
++	memmove(&map_block->stripes[i], &map_block->stripes[i + 1], size_left);
++	map_block->num_stripes--;
++}
 +
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
++static void remove_unrelated_stripes(struct map_lookup *map,
++				     int rw, u64 start, u64 length,
++				     struct btrfs_map_block *map_block)
++{
++	int i = 0;
++	/*
++	 * RAID5/6 write must use full stripe.
++	 * No need to do anything.
++	 */
++	if (map->type & (BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6) &&
++	    rw == WRITE)
++		return;
 +
-+	key.objectid = stripe->logical + stripe_len;
-+	key.offset = 0;
-+	key.type = 0;
++	/*
++	 * For RAID0/1/10/DUP, whatever read/write, we can remove unrelated
++	 * stripes without causing anything wrong.
++	 * RAID5/6 READ is just like RAID0, we don't care parity unless we need
++	 * to recovery.
++	 * For recovery, rw should be set to WRITE.
++	 */
++	while (i < map_block->num_stripes) {
++		struct btrfs_map_stripe *stripe;
++		u64 orig_logical; /* Original stripe logical start */
++		u64 orig_end; /* Original stripe logical end */
 +
-+	ret = btrfs_search_slot(NULL, extent_root, &key, path, 0, 0);
-+	if (ret < 0)
-+		goto out;
-+	while (1) {
-+		struct btrfs_extent_item *ei;
-+		struct extent_buffer *eb;
-+		char *data;
-+		int slot;
-+		int metadata = 0;
-+		u64 check_start;
-+		u64 check_len;
++		stripe = &map_block->stripes[i];
 +
-+		ret = btrfs_previous_extent_item(extent_root, path, 0);
-+		if (ret > 0) {
-+			ret = 0;
-+			goto out;
-+		}
-+		if (ret < 0)
-+			goto out;
-+		eb = path->nodes[0];
-+		slot = path->slots[0];
-+		btrfs_item_key_to_cpu(eb, &key, slot);
-+		extent_start = key.objectid;
-+		ei = btrfs_item_ptr(eb, slot, struct btrfs_extent_item);
-+
-+		/* tree block scrub */
-+		if (key.type == BTRFS_METADATA_ITEM_KEY ||
-+		    btrfs_extent_flags(eb, ei) & BTRFS_EXTENT_FLAG_TREE_BLOCK) {
-+			extent_len = extent_root->nodesize;
-+			metadata = 1;
-+		} else {
-+			extent_len = key.offset;
-+			metadata = 0;
-+		}
-+
-+		/* Current extent is out of our range, loop comes to end */
-+		if (extent_start + extent_len <= stripe->logical)
-+			break;
-+
-+		if (metadata) {
-+			/*
-+			 * Check crossing stripe first, which can't be scrubbed
-+			 */
-+			if (check_crossing_stripes(extent_start,
-+					extent_root->nodesize)) {
-+				error("tree block at %llu is crossing stripe boundary, unable to scrub",
-+					extent_start);
-+				ret = -EIO;
-+				goto out;
-+			}
-+			data = stripe->data + extent_start - stripe->logical;
-+			ret = scrub_tree_mirror(fs_info, scrub_ctx,
-+						data, extent_start, 0);
-+			/* Any csum/verify error means the stripe is screwed */
-+			if (ret < 0) {
-+				stripe->csum_mismatch = 1;
-+				ret = -EIO;
-+				goto out;
-+			}
-+			ret = 0;
++		/*
++		 * For READ, we don't really care parity
++		 */
++		if (stripe->logical == BTRFS_RAID5_P_STRIPE ||
++		    stripe->logical == BTRFS_RAID6_Q_STRIPE) {
++			del_one_stripe(map_block, i);
 +			continue;
 +		}
-+		/* Restrict the extent range to fit stripe range */
-+		check_start = max(extent_start, stripe->logical);
-+		check_len = min(extent_start + extent_len, stripe->logical +
-+				stripe_len) - check_start;
-+
-+		/* Record original csum_discards to detect missing csum case */
-+		orig_csum_discards = scrub_ctx->csum_discards;
-+
-+		data = stripe->data + check_start - stripe->logical;
-+		ret = scrub_data_mirror(fs_info, scrub_ctx, data, check_start,
-+					check_len, 0);
-+		/* Csum mismatch, no need to continue anyway*/
-+		if (ret < 0) {
-+			stripe->csum_mismatch = 1;
-+			goto out;
++		/* Completely unrelated stripe */
++		if (stripe->logical >= start + length ||
++		    stripe->logical + stripe->length <= start) {
++			del_one_stripe(map_block, i);
++			continue;
 +		}
-+		/* Check if there is any missing csum for data */
-+		if (scrub_ctx->csum_discards != orig_csum_discards)
-+			stripe->csum_missing = 1;
-+		ret = 0;
++		/* Covered stripe, modify its logical and physical */
++		orig_logical = stripe->logical;
++		orig_end = stripe->logical + stripe->length;
++		if (start + length <= orig_end) {
++			/*
++			 * |<--range-->|
++			 *   |  stripe   |
++			 * Or
++			 *     |<range>|
++			 *   |  stripe   |
++			 */
++			stripe->logical = max(orig_logical, start);
++			stripe->length = start + length;
++			stripe->physical += stripe->logical - orig_logical;
++		} else if (start >= orig_logical) {
++			/*
++			 *     |<-range--->|
++			 * |  stripe     |
++			 * Or
++			 *     |<range>|
++			 * |  stripe     |
++			 */
++			stripe->logical = start;
++			stripe->length = min(orig_end, start + length);
++			stripe->physical += stripe->logical - orig_logical;
++		}
++		/*
++		 * Remaining case:
++		 * |<----range----->|
++		 *   | stripe |
++		 * No need to do any modification
++		 */
++		i++;
 +	}
-+out:
-+	btrfs_free_path(path);
-+	return ret;
++
++	/* Recaculate map_block size */
++	map_block->start = 0;
++	map_block->length = 0;
++	for (i = 0; i < map_block->num_stripes; i++) {
++		struct btrfs_map_stripe *stripe;
++
++		stripe = &map_block->stripes[i];
++		if (stripe->logical > map_block->start)
++			map_block->start = stripe->logical;
++		if (stripe->logical + stripe->length >
++		    map_block->start + map_block->length)
++			map_block->length = stripe->logical + stripe->length -
++					    map_block->start;
++	}
 +}
++
+ int __btrfs_map_block_v2(struct btrfs_fs_info *fs_info, int rw, u64 logical,
+ 			 u64 length, struct btrfs_map_block **map_ret)
+ {
+@@ -1717,7 +1818,7 @@ int __btrfs_map_block_v2(struct btrfs_fs_info *fs_info, int rw, u64 logical,
+ 		free(map_block);
+ 		return ret;
+ 	}
+-	/* TODO: Remove unrelated map_stripes for READ operation */
++	remove_unrelated_stripes(map, rw, logical, length, map_block);
+ 
+ 	*map_ret = map_block;
+ 	return 0;
 -- 
 2.10.0
 

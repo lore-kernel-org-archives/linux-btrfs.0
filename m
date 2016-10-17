@@ -1,36 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f175.google.com ([209.85.223.175]:35025 "EHLO
-        mail-io0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754835AbcJQRXj (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:42652 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+        by vger.kernel.org with ESMTP id S933931AbcJQRlF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Oct 2016 13:23:39 -0400
-Received: by mail-io0-f175.google.com with SMTP id f5so12603766ioj.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Oct 2016 10:23:39 -0700 (PDT)
+        Mon, 17 Oct 2016 13:41:05 -0400
+Date: Mon, 17 Oct 2016 13:41:03 -0400
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: Stefan Malte Schumacher <stefan.m.schumacher@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: Monitoring Btrfs
-To: Stefan Malte Schumacher <stefan.m.schumacher@gmail.com>,
-        linux-btrfs@vger.kernel.org
+Message-ID: <20161017174103.GC21290@hungrycats.org>
 References: <CAA3ktqmhhasyk8L+W3jz9ifYw7UMoL4ueg1HQp7Co3L39xYe9Q@mail.gmail.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <05b79b4d-3f8d-7b78-d386-495b1dab1e70@gmail.com>
-Date: Mon, 17 Oct 2016 13:23:32 -0400
 MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="wl4gXchqb9PBRcq/"
 In-Reply-To: <CAA3ktqmhhasyk8L+W3jz9ifYw7UMoL4ueg1HQp7Co3L39xYe9Q@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-10-17 12:44, Stefan Malte Schumacher wrote:
+
+--wl4gXchqb9PBRcq/
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+On Mon, Oct 17, 2016 at 06:44:14PM +0200, Stefan Malte Schumacher wrote:
 > Hello
->
+>=20
 > I would like to monitor my btrfs-filesystem for missing drives. On
 > Debian mdadm uses a script in /etc/cron.daily, which calls mdadm and
 > sends an email if anything is wrong with the array. I would like to do
 > the same with btrfs. In my first attempt I grepped and cut the
 > information from "btrfs fi show" and let the script send an email if
 > the number of devices was not equal to the preselected number.
->
+>=20
 > Then I saw this:
->
+>=20
 > ubuntu@ubuntu:~$ sudo btrfs filesystem show
 > Label: none  uuid: 67b4821f-16e0-436d-b521-e4ab2c7d3ab7
 >     Total devices 6 FS bytes used 5.47TiB
@@ -40,35 +45,55 @@ On 2016-10-17 12:44, Stefan Malte Schumacher wrote:
 >     devid    4 size 1.82TiB used 1.72TiB path /dev/sdd1
 >     devid    5 size 2.73TiB used 2.62TiB path /dev/sde1
 >     *** Some devices missing
->
-> on this page: https://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Devices
+>=20
+> on this page: https://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Mu=
+ltiple_Devices
 > The number of devices is still at 6, despite the fact that one of the
-> drives is missing, which means that my first idea doesnt work.
-This is actually correct behavior, the filesystem reports that it should 
-have 6 devices, which is how it knows a device is missing.
+> drives is missing, which means that my first idea doesnt work.=20
+
+Using fi show for this isn't a good idea.  By the time btrfs fi show
+tells you something is different from the norm, you've probably already
+crashed at least once and are now mounting with the 'degraded' option.
+
 > I have
 > two questions:
 > 1) Has anybody already written a script like this? After all, there is
 > no need to reinvent the wheel a second time.
-Not that I know of, but I may be wrong.
 > 2) What should I best grep for? In this case I would just go for the
 > "missing". Does this cover all possible outputs of btrfs fi show in
 > case of a damaged array? What other outputs do I need to consider for
 > my script.
-That should catch any case of a failed device.  It will not catch things 
-like devices being out of sync or at-rest data corruption.  In general, 
-you should be running scrub regularly to check for those conditions (and 
-fix them if they have happened).
 
-FWIW, what I watch is the filesystem flags (it will go read-only if it 
-becomes degraded), and the filesystem size (which will change in most 
-cases as disks are added or removed).  I also have regular SMART status 
-checks on the disks themselves too though, so even aside from BTRFS, 
-I'll know if a disk has failed (or thinks it's failed) pretty quickly.
+I monitor the device error counters, i.e. the output of
 
-Also, you may want to look into something like Monit 
-(https://mmonit.com/monit/) to handle the monitoring.  It lets you 
-define all your monitoring requirements in a single file (or multiple if 
-you prefer), and provides the infrastructure to handle e-mail 
-notifications (including the ability to cache messages when the upstream 
-mail server is down).
+	for fs in /fs1 /fs2 /fs3... ; do
+		btrfs dev stat "$fs" | grep -v " 0$"
+	done
+
+and send an email when it isn't empty.
+
+When there are errors I investigate in more detail (is it a failing disk?
+failed disk?  bad cables?  bad RAM?  One-off UNC sector that can be
+ignored?), fix any problems (i.e. replace hardware, run scrub), and
+reset the counters to zero with 'btrfs dev stat -z'.
+
+> Yours sincerely
+> Stefan
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+--wl4gXchqb9PBRcq/
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iEYEARECAAYFAlgFDS8ACgkQgfmLGlazG5zkdQCfYy+IcezPwRoKA25O8J+Y+Jqh
+mIwAnjzmjmkPXwsSGgRwHfL/hDY+O/WS
+=Qr/N
+-----END PGP SIGNATURE-----
+
+--wl4gXchqb9PBRcq/--

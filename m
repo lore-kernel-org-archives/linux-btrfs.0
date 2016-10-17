@@ -1,110 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:55698 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:57276 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1756892AbcJQB2L (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 16 Oct 2016 21:28:11 -0400
+        id S1756893AbcJQB2N (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 16 Oct 2016 21:28:13 -0400
 Received: from adam-work.localdomain (unknown [10.167.226.34])
-        by cn.fujitsu.com (Postfix) with ESMTP id 7732241B4BC5
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Oct 2016 09:27:49 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id DAFD741B4BC8
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Oct 2016 09:27:50 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [RFC PATCH v0.8 07/14] btrfs-progs: check/scrub: Introduce function to scrub one extent
-Date: Mon, 17 Oct 2016 09:27:36 +0800
-Message-Id: <20161017012743.9692-8-quwenruo@cn.fujitsu.com>
+Subject: [RFC PATCH v0.8 10/14] btrfs-progs: extent-tree: Introduce function to check if there is any extent in given range.
+Date: Mon, 17 Oct 2016 09:27:39 +0800
+Message-Id: <20161017012743.9692-11-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20161017012743.9692-1-quwenruo@cn.fujitsu.com>
 References: <20161017012743.9692-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce a new function, scrub_one_extent(), as a wrapper to check one
-extent.
+Will be used for later scrub usage.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- check/scrub.c | 73 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 73 insertions(+)
+ ctree.h       |  2 ++
+ extent-tree.c | 52 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 54 insertions(+)
 
-diff --git a/check/scrub.c b/check/scrub.c
-index 5cd8bc4..cdba469 100644
---- a/check/scrub.c
-+++ b/check/scrub.c
-@@ -224,3 +224,76 @@ out:
- 		return -EIO;
- 	return ret;
+diff --git a/ctree.h b/ctree.h
+index c76b1f1..d22e520 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -2372,6 +2372,8 @@ int exclude_super_stripes(struct btrfs_root *root,
+ u64 add_new_free_space(struct btrfs_block_group_cache *block_group,
+ 		       struct btrfs_fs_info *info, u64 start, u64 end);
+ u64 hash_extent_data_ref(u64 root_objectid, u64 owner, u64 offset);
++int btrfs_check_extent_exists(struct btrfs_fs_info *fs_info, u64 start,
++			      u64 len);
+ 
+ /* ctree.c */
+ int btrfs_comp_cpu_keys(struct btrfs_key *k1, struct btrfs_key *k2);
+diff --git a/extent-tree.c b/extent-tree.c
+index f6d0a7c..88b91df 100644
+--- a/extent-tree.c
++++ b/extent-tree.c
+@@ -4244,3 +4244,55 @@ u64 add_new_free_space(struct btrfs_block_group_cache *block_group,
+ 
+ 	return total_added;
  }
 +
-+/*
-+ * Check all copies of range @start, @len.
-+ * Caller must ensure the range is covered by th EXTENT_ITEM/METADATA_ITEM
-+ * specified by path.
-+ * If @report is set, it will report if the range is recoverable or totally
-+ * corrupted if it has corrupted mirror.
-+ *
-+ * Return 0 if the range is all OK or recoverable.
-+ * Return <0 if the range can't be recoverable.
-+ */
-+static int scrub_one_extent(struct btrfs_fs_info *fs_info,
-+			    struct btrfs_scrub_progress *scrub_ctx,
-+			    struct btrfs_path *path, u64 start, u64 len,
-+			    int report)
++int btrfs_check_extent_exists(struct btrfs_fs_info *fs_info, u64 start,
++			      u64 len)
 +{
++	struct btrfs_path *path;
 +	struct btrfs_key key;
-+	struct btrfs_extent_item *ei;
-+	struct extent_buffer *leaf = path->nodes[0];
-+	int slot = path->slots[0];
-+	int num_copies;
-+	int corrupted = 0;
 +	u64 extent_start;
 +	u64 extent_len;
-+	int metadata = 0;
-+	int i;
 +	int ret;
 +
-+	btrfs_item_key_to_cpu(leaf, &key, slot);
-+	if (key.type != BTRFS_METADATA_ITEM_KEY &&
-+	    key.type != BTRFS_EXTENT_ITEM_KEY)
-+		goto invalid_arg;
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
 +
++	key.objectid = start + len;
++	key.type = 0;
++	key.offset = 0;
++
++	ret = btrfs_search_slot(NULL, fs_info->extent_root, &key, path, 0, 0);
++	if (ret < 0)
++		goto out;
++	/*
++	 * Now we're pointing at slot whose key.object >= end, skip to previous
++	 * extent.
++	 */
++	ret = btrfs_previous_extent_item(fs_info->extent_root, path, 0);
++	if (ret < 0)
++		goto out;
++	if (ret > 0) {
++		ret = 0;
++		goto out;
++	}
++	btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
 +	extent_start = key.objectid;
-+	if (key.type == BTRFS_METADATA_ITEM_KEY) {
-+		extent_len = fs_info->tree_root->nodesize;
-+		metadata = 1;
-+	} else {
++	if (key.type == BTRFS_METADATA_ITEM_KEY)
++		extent_len = fs_info->extent_root->nodesize;
++	else
 +		extent_len = key.offset;
-+		ei = btrfs_item_ptr(leaf, slot, struct btrfs_extent_item);
-+		if (btrfs_extent_flags(leaf, ei) & BTRFS_EXTENT_FLAG_TREE_BLOCK)
-+			metadata = 1;
-+	}
-+	if (start >= extent_start + extent_len ||
-+	    start + len <= extent_start)
-+		goto invalid_arg;
-+	num_copies = btrfs_num_copies(&fs_info->mapping_tree, start, len);
-+	for (i = 1; i <= num_copies; i++) {
-+		if (metadata)
-+			ret = scrub_tree_mirror(fs_info, scrub_ctx,
-+					NULL, extent_start, i);
-+		else
-+			ret = scrub_data_mirror(fs_info, scrub_ctx, NULL,
-+						start, len, i);
-+		if (ret < 0)
-+			corrupted++;
-+	}
 +
-+	if (report) {
-+		if (corrupted && corrupted < num_copies)
-+			printf("bytenr %llu len %llu has corrupted mirror, but is recoverable\n",
-+				start, len);
-+		else if (corrupted >= num_copies)
-+			error("bytenr %llu len %llu has corrupted mirror, can't be recovered",
-+				start, len);
-+	}
-+	if (corrupted < num_copies)
-+		return 0;
-+	return -EIO;
-+invalid_arg:
-+	error("invalid parameter for %s", __func__);
-+	return -EINVAL;
++	/*
++	 * search_slot() and previous_extent_item() has ensured that our
++	 * extent_start < start + len, we only need to care extent end.
++	 */
++	if (extent_start + extent_len <= start)
++		ret = 0;
++	else
++		ret = 1;
++
++out:
++	btrfs_free_path(path);
++	return ret;
 +}
 -- 
 2.10.0

@@ -1,48 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [123.57.207.116] ([123.57.207.116]:58726 "EHLO enight.me"
-        rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S932163AbcJQCgM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 16 Oct 2016 22:36:12 -0400
-From: Junjie Mao <junjie.mao@enight.me>
-To: Chris Mason <clm@fb.com>
-Cc: Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Junjie Mao <junjie.mao@enight.me>
-Subject: [PATCH] btrfs: assign error values to the correct bio structs
-Date: Mon, 17 Oct 2016 09:20:25 +0800
-Message-Id: <1476667225-7833-1-git-send-email-junjie.mao@enight.me>
+Received: from mx2.suse.de ([195.135.220.15]:46103 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S934704AbcJQOGN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 17 Oct 2016 10:06:13 -0400
+Date: Mon, 17 Oct 2016 16:06:10 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Junjie Mao <junjie.mao@enight.me>
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] btrfs: assign error values to the correct bio structs
+Message-ID: <20161017140610.GK11398@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1476667225-7833-1-git-send-email-junjie.mao@enight.me>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1476667225-7833-1-git-send-email-junjie.mao@enight.me>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Fixes: 4246a0b63bd8 ("block: add a bi_error field to struct bio")
+On Mon, Oct 17, 2016 at 09:20:25AM +0800, Junjie Mao wrote:
+> Fixes: 4246a0b63bd8 ("block: add a bi_error field to struct bio")
+> 
+> Signed-off-by: Junjie Mao <junjie.mao@enight.me>
 
-Signed-off-by: Junjie Mao <junjie.mao@enight.me>
----
- fs/btrfs/compression.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index ccc70d96958d..d4d8b7e36b2f 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -698,7 +698,7 @@ int btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
- 
- 			ret = btrfs_map_bio(root, comp_bio, mirror_num, 0);
- 			if (ret) {
--				bio->bi_error = ret;
-+				comp_bio->bi_error = ret;
- 				bio_endio(comp_bio);
- 			}
- 
-@@ -728,7 +728,7 @@ int btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
- 
- 	ret = btrfs_map_bio(root, comp_bio, mirror_num, 0);
- 	if (ret) {
--		bio->bi_error = ret;
-+		comp_bio->bi_error = ret;
- 		bio_endio(comp_bio);
- 	}
- 
--- 
-1.9.3
-
+Ack, but please resend it with CC: stable@vger.kernel.org # 4.3+

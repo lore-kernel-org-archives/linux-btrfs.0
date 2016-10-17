@@ -1,171 +1,128 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:55698 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:3381 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S932287AbcJQB2T (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 16 Oct 2016 21:28:19 -0400
+        id S932111AbcJQB2V (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 16 Oct 2016 21:28:21 -0400
 Received: from adam-work.localdomain (unknown [10.167.226.34])
-        by cn.fujitsu.com (Postfix) with ESMTP id 53BE940142D3
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Oct 2016 09:27:47 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id B69D641B4BD3
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Oct 2016 09:27:52 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [RFC PATCH v0.8 02/14] btrfs-progs: Allow __btrfs_map_block_v2 to remove unrelated stripes
-Date: Mon, 17 Oct 2016 09:27:31 +0800
-Message-Id: <20161017012743.9692-3-quwenruo@cn.fujitsu.com>
+Subject: [RFC PATCH v0.8 13/14] btrfs-progs: check/scrub: Introduce function to check a whole block group
+Date: Mon, 17 Oct 2016 09:27:42 +0800
+Message-Id: <20161017012743.9692-14-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20161017012743.9692-1-quwenruo@cn.fujitsu.com>
 References: <20161017012743.9692-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For READ, caller normally hopes to get what they request, other than
-full stripe map.
+Introduce new function, scrub_one_block_group(), to scrub a block group.
 
-In this case, we should remove unrelated stripe map, just like the
-following case:
-               32K               96K
-               |<-request range->|
-         0              64k           128K
-RAID0:   |    Data 1    |   Data 2    |
-              disk1         disk2
-Before this patch, we return the full stripe:
-Stripe 0: Logical 0, Physical X, Len 64K, Dev disk1
-Stripe 1: Logical 64k, Physical Y, Len 64K, Dev disk2
+For Single/DUP/RAID0/RAID1/RAID10, we use old mirror number based
+map_block, and check extent by extent.
 
-After this patch, we limit the stripe result to the request range:
-Stripe 0: Logical 32K, Physical X+32K, Len 32K, Dev disk1
-Stripe 1: Logical 64k, Physical Y, Len 32K, Dev disk2
-
-And if it's a RAID5/6 stripe, we just handle it like RAID0, ignoring
-parities.
-
-This should make caller easier to use.
+For parity based profile (RAID5/6), we use new map_block_v2() and check
+full stripe by full stripe.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- volumes.c | 103 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 102 insertions(+), 1 deletion(-)
+ check/scrub.c | 85 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 85 insertions(+)
 
-diff --git a/volumes.c b/volumes.c
-index 94f3e42..ba16d19 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -1682,6 +1682,107 @@ static int fill_full_map_block(struct map_lookup *map, u64 start, u64 length,
- 	return 0;
+diff --git a/check/scrub.c b/check/scrub.c
+index 1c8e440..94f8744 100644
+--- a/check/scrub.c
++++ b/check/scrub.c
+@@ -689,3 +689,88 @@ out:
+ 	free(map_block);
+ 	return ret;
  }
- 
-+static void del_one_stripe(struct btrfs_map_block *map_block, int i)
++
++static int scrub_one_block_group(struct btrfs_fs_info *fs_info,
++				 struct btrfs_scrub_progress *scrub_ctx,
++				 struct btrfs_block_group_cache *bg_cache)
 +{
-+	int cur_nr = map_block->num_stripes;
-+	int size_left = (cur_nr - 1 - i) * sizeof(struct btrfs_map_stripe);
++	struct btrfs_root *extent_root = fs_info->extent_root;
++	struct btrfs_path *path;
++	struct btrfs_key key;
++	u64 bg_start = bg_cache->key.objectid;
++	u64 bg_len = bg_cache->key.offset;
++	u64 cur;
++	u64 next;
++	int ret;
 +
-+	memmove(&map_block->stripes[i], &map_block->stripes[i + 1], size_left);
-+	map_block->num_stripes--;
-+}
++	if (bg_cache->flags &
++	    (BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6)) {
++		/* RAID5/6 check full stripe by full stripe */
++		cur = bg_cache->key.objectid;
 +
-+static void remove_unrelated_stripes(struct map_lookup *map,
-+				     int rw, u64 start, u64 length,
-+				     struct btrfs_map_block *map_block)
-+{
-+	int i = 0;
-+	/*
-+	 * RAID5/6 write must use full stripe.
-+	 * No need to do anything.
-+	 */
-+	if (map->type & (BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6) &&
-+	    rw == WRITE)
-+		return;
-+
-+	/*
-+	 * For RAID0/1/10/DUP, whatever read/write, we can remove unrelated
-+	 * stripes without causing anything wrong.
-+	 * RAID5/6 READ is just like RAID0, we don't care parity unless we need
-+	 * to recovery.
-+	 * For recovery, rw should be set to WRITE.
-+	 */
-+	while (i < map_block->num_stripes) {
-+		struct btrfs_map_stripe *stripe;
-+		u64 orig_logical; /* Original stripe logical start */
-+		u64 orig_end; /* Original stripe logical end */
-+
-+		stripe = &map_block->stripes[i];
-+
-+		/*
-+		 * For READ, we don't really care parity
-+		 */
-+		if (stripe->logical == BTRFS_RAID5_P_STRIPE ||
-+		    stripe->logical == BTRFS_RAID6_Q_STRIPE) {
-+			del_one_stripe(map_block, i);
-+			continue;
++		while (cur < bg_start + bg_len) {
++			ret = scrub_one_full_stripe(fs_info, scrub_ctx, cur,
++						    &next);
++			/* Ignore any non-fatal error */
++			if (ret < 0 && ret != -EIO) {
++				error("fatal error happens checking one full stripe at bytenr: %llu: %s",
++					cur, strerror(-ret));
++				return ret;
++			}
++			cur = next;
 +		}
-+		/* Completely unrelated stripe */
-+		if (stripe->logical >= start + length ||
-+		    stripe->logical + stripe->length <= start) {
-+			del_one_stripe(map_block, i);
-+			continue;
-+		}
-+		/* Covered stripe, modify its logical and physical */
-+		orig_logical = stripe->logical;
-+		orig_end = stripe->logical + stripe->length;
-+		if (start + length <= orig_end) {
-+			/*
-+			 * |<--range-->|
-+			 *   |  stripe   |
-+			 * Or
-+			 *     |<range>|
-+			 *   |  stripe   |
-+			 */
-+			stripe->logical = max(orig_logical, start);
-+			stripe->length = start + length;
-+			stripe->physical += stripe->logical - orig_logical;
-+		} else if (start >= orig_logical) {
-+			/*
-+			 *     |<-range--->|
-+			 * |  stripe     |
-+			 * Or
-+			 *     |<range>|
-+			 * |  stripe     |
-+			 */
-+			stripe->logical = start;
-+			stripe->length = min(orig_end, start + length);
-+			stripe->physical += stripe->logical - orig_logical;
-+		}
-+		/*
-+		 * Remaining case:
-+		 * |<----range----->|
-+		 *   | stripe |
-+		 * No need to do any modification
-+		 */
-+		i++;
++		/* Ignore any -EIO error, such error will be reported at last */
++		return 0;
 +	}
++	/* None parity based profile, check extent by extent */
++	key.objectid = bg_start;
++	key.type = 0;
++	key.offset = 0;
 +
-+	/* Recaculate map_block size */
-+	map_block->start = 0;
-+	map_block->length = 0;
-+	for (i = 0; i < map_block->num_stripes; i++) {
-+		struct btrfs_map_stripe *stripe;
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++	ret = btrfs_search_slot(NULL, extent_root, &key, path, 0, 0);
++	if (ret < 0)
++		goto out;
++	while (1) {
++		struct extent_buffer *eb = path->nodes[0];
++		int slot = path->slots[0];
++		u64 extent_start;
++		u64 extent_len;
 +
-+		stripe = &map_block->stripes[i];
-+		if (stripe->logical > map_block->start)
-+			map_block->start = stripe->logical;
-+		if (stripe->logical + stripe->length >
-+		    map_block->start + map_block->length)
-+			map_block->length = stripe->logical + stripe->length -
-+					    map_block->start;
++		btrfs_item_key_to_cpu(eb, &key, slot);
++		if (key.objectid >= bg_start + bg_len)
++			break;
++		if (key.type != BTRFS_EXTENT_ITEM_KEY &&
++		    key.type != BTRFS_METADATA_ITEM_KEY)
++			goto next;
++
++		extent_start = key.objectid;
++		if (key.type == BTRFS_METADATA_ITEM_KEY)
++			extent_len = extent_root->nodesize;
++		else
++			extent_len = key.offset;
++
++		ret = scrub_one_extent(fs_info, scrub_ctx, path, extent_start,
++					extent_len, 1);
++		if (ret < 0 && ret != -EIO) {
++			error("fatal error checking extent bytenr %llu len %llu: %s",
++				extent_start, extent_len, strerror(-ret));
++			goto out;
++		}
++		ret = 0;
++next:
++		ret = btrfs_next_extent_item(extent_root, path, bg_start +
++					     bg_len);
++		if (ret < 0)
++			goto out;
++		if (ret > 0) {
++			ret = 0;
++			break;
++		}
 +	}
++out:
++	btrfs_free_path(path);
++	return ret;
 +}
-+
- int __btrfs_map_block_v2(struct btrfs_fs_info *fs_info, int rw, u64 logical,
- 			 u64 length, struct btrfs_map_block **map_ret)
- {
-@@ -1717,7 +1818,7 @@ int __btrfs_map_block_v2(struct btrfs_fs_info *fs_info, int rw, u64 logical,
- 		free(map_block);
- 		return ret;
- 	}
--	/* TODO: Remove unrelated map_stripes for READ operation */
-+	remove_unrelated_stripes(map, rw, logical, length, map_block);
- 
- 	*map_ret = map_block;
- 	return 0;
 -- 
 2.10.0
 

@@ -1,99 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:42652 "EHLO
-        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-        by vger.kernel.org with ESMTP id S933931AbcJQRlF (ORCPT
+Received: from syrinx.knorrie.org ([82.94.188.77]:57120 "EHLO
+        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932209AbcJQRlr (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Oct 2016 13:41:05 -0400
-Date: Mon, 17 Oct 2016 13:41:03 -0400
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: Stefan Malte Schumacher <stefan.m.schumacher@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Monitoring Btrfs
-Message-ID: <20161017174103.GC21290@hungrycats.org>
-References: <CAA3ktqmhhasyk8L+W3jz9ifYw7UMoL4ueg1HQp7Co3L39xYe9Q@mail.gmail.com>
+        Mon, 17 Oct 2016 13:41:47 -0400
+Subject: Re: What are "parent" and "parent_uuid" in "btrfs sub list"?
+To: Andrei Borzenkov <arvidjaar@gmail.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <e39fb389-7ce1-2913-941b-aefa05a26fd1@gmail.com>
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Message-ID: <bd57de97-1611-0628-10f0-9d6f358aacce@mendix.com>
+Date: Mon, 17 Oct 2016 19:41:42 +0200
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="wl4gXchqb9PBRcq/"
-In-Reply-To: <CAA3ktqmhhasyk8L+W3jz9ifYw7UMoL4ueg1HQp7Co3L39xYe9Q@mail.gmail.com>
+In-Reply-To: <e39fb389-7ce1-2913-941b-aefa05a26fd1@gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 10/17/2016 06:53 PM, Andrei Borzenkov wrote:
+> I try to understand how to build a tree of snapshots (i.e. - which
+> subvolume was used to snapshot/clone other subvolume). What is the
+> correct way to determine it? In particular, "btrfs sub list -p" always
+> prints something for "parent snapshot", while btrfs sub list -q" only
+> prints parent_uuid for actual snapshots (i.e. for subvolumes I know are
+> snapshots). Are "parent" and "parent_uuid" related to each other? Of
+> not, what do they mean?
 
---wl4gXchqb9PBRcq/
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+It's confusing because there are two different things, which both are
+called a parent.
 
-On Mon, Oct 17, 2016 at 06:44:14PM +0200, Stefan Malte Schumacher wrote:
-> Hello
->=20
-> I would like to monitor my btrfs-filesystem for missing drives. On
-> Debian mdadm uses a script in /etc/cron.daily, which calls mdadm and
-> sends an email if anything is wrong with the array. I would like to do
-> the same with btrfs. In my first attempt I grepped and cut the
-> information from "btrfs fi show" and let the script send an email if
-> the number of devices was not equal to the preselected number.
->=20
-> Then I saw this:
->=20
-> ubuntu@ubuntu:~$ sudo btrfs filesystem show
-> Label: none  uuid: 67b4821f-16e0-436d-b521-e4ab2c7d3ab7
->     Total devices 6 FS bytes used 5.47TiB
->     devid    1 size 1.81TiB used 1.71TiB path /dev/sda3
->     devid    2 size 1.81TiB used 1.71TiB path /dev/sdb3
->     devid    3 size 1.82TiB used 1.72TiB path /dev/sdc1
->     devid    4 size 1.82TiB used 1.72TiB path /dev/sdd1
->     devid    5 size 2.73TiB used 2.62TiB path /dev/sde1
->     *** Some devices missing
->=20
-> on this page: https://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Mu=
-ltiple_Devices
-> The number of devices is still at 6, despite the fact that one of the
-> drives is missing, which means that my first idea doesnt work.=20
+* parent is the subvolume another subvolume is placed in
+* parent_uuid is the uuid of a subvolume that this is a snapshot from
 
-Using fi show for this isn't a good idea.  By the time btrfs fi show
-tells you something is different from the norm, you've probably already
-crashed at least once and are now mounting with the 'degraded' option.
+So:
 
-> I have
-> two questions:
-> 1) Has anybody already written a script like this? After all, there is
-> no need to reinvent the wheel a second time.
-> 2) What should I best grep for? In this case I would just go for the
-> "missing". Does this cover all possible outputs of btrfs fi show in
-> case of a damaged array? What other outputs do I need to consider for
-> my script.
+-# btrfs sub create foo
+Create subvolume './foo'
+-# btrfs sub list -p -q .
+ID 3486 gen 3368 parent 5 top level 5 parent_uuid - path foo
 
-I monitor the device error counters, i.e. the output of
+foo has parent 5, because I created it at the top of the filesystem, and
+the top level subvolume (the fs itself) has id 5
 
-	for fs in /fs1 /fs2 /fs3... ; do
-		btrfs dev stat "$fs" | grep -v " 0$"
-	done
+-# btrfs sub create bar
+Create subvolume './bar'
+-# btrfs sub list -p -q .
+ID 3486 gen 3368 parent 5 top level 5 parent_uuid - path foo
+ID 3487 gen 3369 parent 5 top level 5 parent_uuid - path bar
 
-and send an email when it isn't empty.
+now I have a second one...
 
-When there are errors I investigate in more detail (is it a failing disk?
-failed disk?  bad cables?  bad RAM?  One-off UNC sector that can be
-ignored?), fix any problems (i.e. replace hardware, run scrub), and
-reset the counters to zero with 'btrfs dev stat -z'.
+-# mv foo bar/
+-# btrfs sub list -p -q .
+ID 3486 gen 3368 parent 3487 top level 3487 parent_uuid - path bar/foo
+ID 3487 gen 3369 parent 5 top level 5 parent_uuid - path bar
 
-> Yours sincerely
-> Stefan
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+if I move the foo subvolume *into* the bar subvolume, it gets the bar as
+parent
 
---wl4gXchqb9PBRcq/
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+-# btrfs sub snap -r bar bar-snap
+Create a readonly snapshot of 'bar' in './bar-snap'
+-# btrfs sub list -p -q .
+ID 3486 gen 3368 parent 3487 top level 3487 parent_uuid - path bar/foo
+ID 3487 gen 3370 parent 5 top level 5 parent_uuid - path bar
+ID 3488 gen 3370 parent 5 top level 5 parent_uuid
+8de7ab74-4654-e542-a29b-169848ee73b3 path bar-snap
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+and there's the parent_uuid...
 
-iEYEARECAAYFAlgFDS8ACgkQgfmLGlazG5zkdQCfYy+IcezPwRoKA25O8J+Y+Jqh
-mIwAnjzmjmkPXwsSGgRwHfL/hDY+O/WS
-=Qr/N
------END PGP SIGNATURE-----
-
---wl4gXchqb9PBRcq/--
+-- 
+Hans van Kranenburg

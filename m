@@ -1,37 +1,128 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx3.wp.pl ([212.77.101.10]:35661 "EHLO mx3.wp.pl"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S934292AbcJQXuC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Oct 2016 19:50:02 -0400
-Received: from out.poczta.wp.pl ([212.77.101.240])
-          (envelope-sender <komukadze@wp.pl>)
-          by smtp.wp.pl (WP-SMTPD) with SMTP
-          for <linux-btrfs@vger.kernel.org>; 18 Oct 2016 01:43:20 +0200
-Date: Tue, 18 Oct 2016 01:43:20 +0200
-From: "Komu Kadze" <komukadze@wp.pl>
-To: linux-btrfs@vger.kernel.org
-Subject: Recovering from disk failure (RAID5)
-Message-ID: <5805621878adb6.84965706@wp.pl>
+Received: from cn.fujitsu.com ([59.151.112.132]:40893 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S933222AbcJRBe7 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 17 Oct 2016 21:34:59 -0400
+Subject: Re: [PATCH 1/3] btrfs-progs: Generic functions to retrieve chunks and
+ their bg info
+To: Divya Indi <divya.indi@oracle.com>, <linux-btrfs@vger.kernel.org>
+References: <1476750915-3105-1-git-send-email-divya.indi@oracle.com>
+ <1476750915-3105-2-git-send-email-divya.indi@oracle.com>
+CC: <ashish.samant@oracle.com>, <bo.li.liu@oracle.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <013540c9-61a0-e0f1-f763-29cc2ce703a6@cn.fujitsu.com>
+Date: Tue, 18 Oct 2016 09:34:45 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+In-Reply-To: <1476750915-3105-2-git-send-email-divya.indi@oracle.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
 
-I have a BTRFS setup with 8 HDD stripped with RAID5. I know it&#x2019;s mark as experimental, as it has problem with power failures. I decided to give it a shot. Last night one of the disks in the array failed, the OS decided to remount the FS into read-only mode. The data was still accessible. I started backing things up, but few hours later I started getting I/O errors.
 
-Currently I&#x2019;m stuck at this: http://pastebin.com/n9cGVqJB
+At 10/18/2016 08:35 AM, Divya Indi wrote:
+> An efficient alternative to retrieving block groups:
+> get_chunks(): Walk the chunk tree to retrieve the chunks.
+> get_bg_info(): For each retrieved chunk, lookup an exact match of block
+> group in the extent tree.
+>
+> Signed-off-by: Divya Indi <divya.indi@oracle.com>
+> Reviewed-by: Ashish Samant <ashish.samant@oracle.com>
+> Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+>  cmds-inspect.c |   66 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  1 files changed, 66 insertions(+), 0 deletions(-)
+>
+> diff --git a/cmds-inspect.c b/cmds-inspect.c
+> index 4b7cea0..f435ea9 100644
+> --- a/cmds-inspect.c
+> +++ b/cmds-inspect.c
+> @@ -81,6 +81,72 @@ out:
+>  	return !!ret;
+>  }
+>
+> +static void bg_flags_to_str(u64 flags, char *ret)
+> +{
+> +	int empty = 1;
+> +
+> +	if (flags & BTRFS_BLOCK_GROUP_DATA) {
+> +		empty = 0;
+> +		strcpy(ret, "DATA");
+> +	}
+> +	if (flags & BTRFS_BLOCK_GROUP_METADATA) {
+> +		if (!empty)
+> +			strcat(ret, "|");
+> +		strcat(ret, "METADATA");
+> +	}
+> +	if (flags & BTRFS_BLOCK_GROUP_SYSTEM) {
+> +		if (!empty)
+> +			strcat(ret, "|");
+> +		strcat(ret, "SYSTEM");
+> +	}
+> +}
 
-With  dmesg giving me this: http://pastebin.com/F5626BAc while trying to mount the FS (even with &#x2013;o degraded)
+Check print-tree.c, it has the same function.
+Just export it.
 
-Kernel version: 4.4.0-42-generic
-Btrfs progs version: v4.7.2
-Btrfs fi show: http://pastebin.com/X7Hpw2tb
-btrfs fi df: currently the file system is not mountable
+And it's stronger than your version, which can also output profiles.
 
---
-Komu
+> +
+> +/* Walking through the chunk tree to retrieve chunks. */
+> +
+> +static int get_chunks(int fd, struct btrfs_ioctl_search_args *chunk_args)
+> +{
+> +	struct btrfs_ioctl_search_key *sk;
+> +	int ret;
+> +	int e;
+> +
+> +	sk = &chunk_args->key;
+> +
+> +	sk->tree_id = BTRFS_CHUNK_TREE_OBJECTID;
+> +	sk->min_objectid = sk->max_objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
+> +	sk->max_type = sk->min_type = BTRFS_CHUNK_ITEM_KEY;
+> +	sk->nr_items = 4096;
+> +
+> +	ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, chunk_args);
+> +	e = errno;
+> +	if (ret < 0) {
+> +		fprintf(stderr, "ret %d error '%s'\n", ret,
+> +				strerror(e));
 
+Use error() function.
+
+> +	}
+> +	return ret;
+> +}
+> +
+> +/* Given the objectid, find the block group item in the extent tree */
+> +static int get_bg_info(int fd, struct btrfs_ioctl_search_args *bg_args,
+> +		       u64 objectid, unsigned long length)
+> +{
+> +	struct btrfs_ioctl_search_key *bg_sk;
+> +	int ret;
+> +	int e;
+> +
+> +	bg_sk = &bg_args->key;
+> +
+> +	bg_sk->min_objectid = bg_sk->max_objectid = objectid;
+> +	bg_sk->nr_items = 1;
+> +	bg_sk->min_offset = bg_sk->max_offset = length;
+> +
+> +	ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, bg_args);
+> +	e = errno;
+> +	if (ret < 0) {
+> +		fprintf(stderr, "ret %d error '%s'\n", ret,
+> +				strerror(e));
+
+Same problem here.
+
+> +	}
+> +	return ret;
+> +}
+>  static const char * const cmd_inspect_inode_resolve_usage[] = {
+>  	"btrfs inspect-internal inode-resolve [-v] <inode> <path>",
+>  	"Get file system paths for the given inode",
+>
 
 

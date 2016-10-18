@@ -1,35 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:35130 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754832AbcJRDU4 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Oct 2016 23:20:56 -0400
-Subject: Re: Monitoring Btrfs
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Stefan Malte Schumacher <stefan.m.schumacher@gmail.com>,
-        linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
-References: <CAA3ktqmhhasyk8L+W3jz9ifYw7UMoL4ueg1HQp7Co3L39xYe9Q@mail.gmail.com>
- <05b79b4d-3f8d-7b78-d386-495b1dab1e70@gmail.com>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <c40e1675-f002-b2e4-b252-c5e17200f72a@oracle.com>
-Date: Tue, 18 Oct 2016 11:23:12 +0800
+Received: from len.romanrm.net ([195.154.117.182]:49206 "EHLO len.romanrm.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1755187AbcJRFYa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 18 Oct 2016 01:24:30 -0400
+Date: Tue, 18 Oct 2016 10:24:24 +0500
+From: Roman Mamedov <rm@romanrm.net>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Divya Indi <divya.indi@oracle.com>, <linux-btrfs@vger.kernel.org>,
+        <ashish.samant@oracle.com>, <bo.li.liu@oracle.com>
+Subject: Re: [PATCH 2/3] btrfs-progs: Add a command to show bg info
+Message-ID: <20161018102424.59fb14e4@natsu>
+In-Reply-To: <d9e5bee8-d865-840d-11e4-74f98c34282e@cn.fujitsu.com>
+References: <1476750915-3105-1-git-send-email-divya.indi@oracle.com>
+ <1476750915-3105-2-git-send-email-divya.indi@oracle.com>
+ <1476750915-3105-3-git-send-email-divya.indi@oracle.com>
+ <d9e5bee8-d865-840d-11e4-74f98c34282e@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <05b79b4d-3f8d-7b78-d386-495b1dab1e70@gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Tue, 18 Oct 2016 09:39:32 +0800
+Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
 
+> >  static const char * const cmd_inspect_inode_resolve_usage[] = {
+> >  	"btrfs inspect-internal inode-resolve [-v] <inode> <path>",
+> >  	"Get file system paths for the given inode",
+> > @@ -702,6 +814,8 @@ const struct cmd_group inspect_cmd_group = {
+> >  			0 },
+> >  		{ "min-dev-size", cmd_inspect_min_dev_size,
+> >  			cmd_inspect_min_dev_size_usage, NULL, 0 },
+> > +		{ "bg_analysis", cmd_inspect_bg_analysis,
+> > +			cmd_inspect_bg_analysis_usage, NULL, 0 },
+> 
+> Just naming preference, IMHO show-block-groups or dump-block-groups 
+> seems better for me.
 
->> I would like to monitor my btrfs-filesystem for missing drives.
+And in any case please don't mix separation by "-" and "_" in the same command
+string. In btrfs tool the convention is to separate words in subcommand names
+using "-".
 
-> This is actually correct behavior, the filesystem reports that it should
-> have 6 devices, which is how it knows a device is missing.
-
-  Missing - means missing at the time of mount. So how are you planning 
-to monitor a disk which is failed while in production ?
-
-
-Good luck
-
-Anand
+-- 
+With respect,
+Roman

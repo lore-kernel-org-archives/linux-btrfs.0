@@ -1,537 +1,215 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:55403 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1758644AbcJRBcH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Oct 2016 21:32:07 -0400
+        id S1757828AbcJRBb4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 17 Oct 2016 21:31:56 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: rgoldwyn@suse.com, rgoldwyn@suse.de
-Subject: [PATCH 3/4] btrfs: Expoert and move leaf/subtree qgroup helpers to qgroup.c
-Date: Tue, 18 Oct 2016 09:31:28 +0800
-Message-Id: <20161018013129.23331-4-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 4/4] btrfs: qgroup: Fix qgroup data leaking by using subtree tracing
+Date: Tue, 18 Oct 2016 09:31:29 +0800
+Message-Id: <20161018013129.23331-5-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20161018013129.23331-1-quwenruo@cn.fujitsu.com>
 References: <20161018013129.23331-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Move account_shared_subtree() to qgroup.c and rename it to
-btrfs_qgroup_trace_subtree().
+Commit 62b99540a1d91e464 (btrfs: relocation: Fix leaking qgroups numbers
+on data extents) only fixes the problem partly.
 
-Do the same thing for account_leaf_items() and rename it to
-btrfs_qgroup_trace_leaf_items().
+The previous fix is to trace all new data extents at transaction commit
+time when balance finishes.
 
-Since all these functions are only for qgroup, move them to qgroup.c and
-export them is more appropriate.
+However balance is not done in a large transaction, every path
+replacement can happen in its own transaction.
+This makes the fix useless if transaction commits during relocation.
 
+For example:
+relocate_block_group()
+|-merge_reloc_roots()
+|  |- merge_reloc_root()
+|     |- btrfs_start_transaction()         <- Trans X
+|     |- replace_path()                    <- Cause leak
+|     |- btrfs_end_transaction_throttle()  <- Trans X commits here
+|     |                                       Leak not fixed
+|     |
+|     |- btrfs_start_transaction()         <- Trans Y
+|     |- replace_path()                    <- Cause leak
+|     |- btrfs_end_transaction_throttle()  <- Trans Y ends
+|                                             but not committed
+|-btrfs_join_transaction()                 <- Still trans Y
+|-qgroup_fix()                             <- Only fixes data leak
+|                                             in trans Y
+|-btrfs_commit_transaction()               <- Trans Y commits
+
+In that case, qgroup fixup can only fix data leak in trans Y, data leak
+in trans X is out of fix.
+
+So the correct fix should happens in the same transaction of
+replace_path().
+
+This patch fixes it by tracing both subtrees of tree block swap, so it
+can fix the problem and ensure all leaking and fix are in the same
+transaction, so no leak again.
+
+Reported-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/extent-tree.c | 220 +------------------------------------------------
- fs/btrfs/qgroup.c      | 211 +++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/qgroup.h      |  23 ++++++
- 3 files changed, 237 insertions(+), 217 deletions(-)
+ fs/btrfs/relocation.c | 119 ++++++++++----------------------------------------
+ 1 file changed, 23 insertions(+), 96 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 024eb5d..f7aa49d 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -8535,220 +8535,6 @@ reada:
- 	wc->reada_slot = slot;
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 33cde30..540f225 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -1901,6 +1901,29 @@ again:
+ 		BUG_ON(ret);
+ 
+ 		/*
++		 * Info qgroup to trace both subtrees.
++		 *
++		 * We must trace both trees.
++		 * 1) Tree reloc subtree
++		 *    If not traced, we will leak data numbers
++		 * 2) Fs subtree
++		 *    If not traced, we will double count old data
++		 *    and tree block numbers, if current trans doesn't free
++		 *    data reloc tree inode.
++		 */
++		ret = btrfs_qgroup_trace_subtree(trans, src, parent,
++				btrfs_header_generation(parent),
++				btrfs_header_level(parent));
++		if (ret < 0)
++			break;
++		ret = btrfs_qgroup_trace_subtree(trans, dest,
++				path->nodes[level],
++				btrfs_header_generation(path->nodes[level]),
++				btrfs_header_level(path->nodes[level]));
++		if (ret < 0)
++			break;
++
++		/*
+ 		 * swap blocks in fs tree and reloc tree.
+ 		 */
+ 		btrfs_set_node_blockptr(parent, slot, new_bytenr);
+@@ -3942,90 +3965,6 @@ int prepare_to_relocate(struct reloc_control *rc)
+ 	return 0;
  }
  
--static int account_leaf_items(struct btrfs_trans_handle *trans,
--			      struct btrfs_root *root,
--			      struct extent_buffer *eb)
+-/*
+- * Qgroup fixer for data chunk relocation.
+- * The data relocation is done in the following steps
+- * 1) Copy data extents into data reloc tree
+- * 2) Create tree reloc tree(special snapshot) for related subvolumes
+- * 3) Modify file extents in tree reloc tree
+- * 4) Merge tree reloc tree with original fs tree, by swapping tree blocks
+- *
+- * The problem is, data and tree reloc tree are not accounted to qgroup,
+- * and 4) will only info qgroup to track tree blocks change, not file extents
+- * in the tree blocks.
+- *
+- * The good news is, related data extents are all in data reloc tree, so we
+- * only need to info qgroup to track all file extents in data reloc tree
+- * before commit trans.
+- */
+-static int qgroup_fix_relocated_data_extents(struct btrfs_trans_handle *trans,
+-					     struct reloc_control *rc)
 -{
--	int nr = btrfs_header_nritems(eb);
--	int i, extent_type, ret;
+-	struct btrfs_fs_info *fs_info = rc->extent_root->fs_info;
+-	struct inode *inode = rc->data_inode;
+-	struct btrfs_root *data_reloc_root = BTRFS_I(inode)->root;
+-	struct btrfs_path *path;
 -	struct btrfs_key key;
--	struct btrfs_file_extent_item *fi;
--	u64 bytenr, num_bytes;
--
--	/* We can be called directly from walk_up_proc() */
--	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &root->fs_info->flags))
--		return 0;
--
--	for (i = 0; i < nr; i++) {
--		btrfs_item_key_to_cpu(eb, &key, i);
--
--		if (key.type != BTRFS_EXTENT_DATA_KEY)
--			continue;
--
--		fi = btrfs_item_ptr(eb, i, struct btrfs_file_extent_item);
--		/* filter out non qgroup-accountable extents  */
--		extent_type = btrfs_file_extent_type(eb, fi);
--
--		if (extent_type == BTRFS_FILE_EXTENT_INLINE)
--			continue;
--
--		bytenr = btrfs_file_extent_disk_bytenr(eb, fi);
--		if (!bytenr)
--			continue;
--
--		num_bytes = btrfs_file_extent_disk_num_bytes(eb, fi);
--
--		ret = btrfs_qgroup_trace_extent(trans, root->fs_info,
--						bytenr, num_bytes, GFP_NOFS);
--		if (ret)
--			return ret;
--	}
--	return 0;
--}
--
--/*
-- * Walk up the tree from the bottom, freeing leaves and any interior
-- * nodes which have had all slots visited. If a node (leaf or
-- * interior) is freed, the node above it will have it's slot
-- * incremented. The root node will never be freed.
-- *
-- * At the end of this function, we should have a path which has all
-- * slots incremented to the next position for a search. If we need to
-- * read a new node it will be NULL and the node above it will have the
-- * correct slot selected for a later read.
-- *
-- * If we increment the root nodes slot counter past the number of
-- * elements, 1 is returned to signal completion of the search.
-- */
--static int adjust_slots_upwards(struct btrfs_root *root,
--				struct btrfs_path *path, int root_level)
--{
--	int level = 0;
--	int nr, slot;
--	struct extent_buffer *eb;
--
--	if (root_level == 0)
--		return 1;
--
--	while (level <= root_level) {
--		eb = path->nodes[level];
--		nr = btrfs_header_nritems(eb);
--		path->slots[level]++;
--		slot = path->slots[level];
--		if (slot >= nr || level == 0) {
--			/*
--			 * Don't free the root -  we will detect this
--			 * condition after our loop and return a
--			 * positive value for caller to stop walking the tree.
--			 */
--			if (level != root_level) {
--				btrfs_tree_unlock_rw(eb, path->locks[level]);
--				path->locks[level] = 0;
--
--				free_extent_buffer(eb);
--				path->nodes[level] = NULL;
--				path->slots[level] = 0;
--			}
--		} else {
--			/*
--			 * We have a valid slot to walk back down
--			 * from. Stop here so caller can process these
--			 * new nodes.
--			 */
--			break;
--		}
--
--		level++;
--	}
--
--	eb = path->nodes[root_level];
--	if (path->slots[root_level] >= btrfs_header_nritems(eb))
--		return 1;
--
--	return 0;
--}
--
--/*
-- * root_eb is the subtree root and is locked before this function is called.
-- */
--static int account_shared_subtree(struct btrfs_trans_handle *trans,
--				  struct btrfs_root *root,
--				  struct extent_buffer *root_eb,
--				  u64 root_gen,
--				  int root_level)
--{
 -	int ret = 0;
--	int level;
--	struct extent_buffer *eb = root_eb;
--	struct btrfs_path *path = NULL;
 -
--	BUG_ON(root_level < 0 || root_level > BTRFS_MAX_LEVEL);
--	BUG_ON(root_eb == NULL);
--
--	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &root->fs_info->flags))
+-	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags))
 -		return 0;
 -
--	if (!extent_buffer_uptodate(root_eb)) {
--		ret = btrfs_read_buffer(root_eb, root_gen);
--		if (ret)
--			goto out;
--	}
--
--	if (root_level == 0) {
--		ret = account_leaf_items(trans, root, root_eb);
--		goto out;
--	}
+-	/*
+-	 * Only for stage where we update data pointers the qgroup fix is
+-	 * valid.
+-	 * For MOVING_DATA stage, we will miss the timing of swapping tree
+-	 * blocks, and won't fix it.
+-	 */
+-	if (!(rc->stage == UPDATE_DATA_PTRS && rc->extents_found))
+-		return 0;
 -
 -	path = btrfs_alloc_path();
 -	if (!path)
 -		return -ENOMEM;
+-	key.objectid = btrfs_ino(inode);
+-	key.type = BTRFS_EXTENT_DATA_KEY;
+-	key.offset = 0;
 -
--	/*
--	 * Walk down the tree.  Missing extent blocks are filled in as
--	 * we go. Metadata is accounted every time we read a new
--	 * extent block.
--	 *
--	 * When we reach a leaf, we account for file extent items in it,
--	 * walk back up the tree (adjusting slot pointers as we go)
--	 * and restart the search process.
--	 */
--	extent_buffer_get(root_eb); /* For path */
--	path->nodes[root_level] = root_eb;
--	path->slots[root_level] = 0;
--	path->locks[root_level] = 0; /* so release_path doesn't try to unlock */
--walk_down:
--	level = root_level;
--	while (level >= 0) {
--		if (path->nodes[level] == NULL) {
--			int parent_slot;
--			u64 child_gen;
--			u64 child_bytenr;
+-	ret = btrfs_search_slot(NULL, data_reloc_root, &key, path, 0, 0);
+-	if (ret < 0)
+-		goto out;
 -
--			/* We need to get child blockptr/gen from
--			 * parent before we can read it. */
--			eb = path->nodes[level + 1];
--			parent_slot = path->slots[level + 1];
--			child_bytenr = btrfs_node_blockptr(eb, parent_slot);
--			child_gen = btrfs_node_ptr_generation(eb, parent_slot);
+-	lock_extent(&BTRFS_I(inode)->io_tree, 0, (u64)-1);
+-	while (1) {
+-		struct btrfs_file_extent_item *fi;
 -
--			eb = read_tree_block(root, child_bytenr, child_gen);
--			if (IS_ERR(eb)) {
--				ret = PTR_ERR(eb);
--				goto out;
--			} else if (!extent_buffer_uptodate(eb)) {
--				free_extent_buffer(eb);
--				ret = -EIO;
--				goto out;
--			}
--
--			path->nodes[level] = eb;
--			path->slots[level] = 0;
--
--			btrfs_tree_read_lock(eb);
--			btrfs_set_lock_blocking_rw(eb, BTRFS_READ_LOCK);
--			path->locks[level] = BTRFS_READ_LOCK_BLOCKING;
--
--			ret = btrfs_qgroup_trace_extent(trans,
--					root->fs_info, child_bytenr,
--					root->nodesize, GFP_NOFS);
--			if (ret)
--				goto out;
+-		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
+-		if (key.objectid > btrfs_ino(inode))
+-			break;
+-		if (key.type != BTRFS_EXTENT_DATA_KEY)
+-			goto next;
+-		fi = btrfs_item_ptr(path->nodes[0], path->slots[0],
+-				    struct btrfs_file_extent_item);
+-		if (btrfs_file_extent_type(path->nodes[0], fi) !=
+-				BTRFS_FILE_EXTENT_REG)
+-			goto next;
+-		ret = btrfs_qgroup_trace_extent(trans, fs_info,
+-			btrfs_file_extent_disk_bytenr(path->nodes[0], fi),
+-			btrfs_file_extent_disk_num_bytes(path->nodes[0], fi),
+-			GFP_NOFS);
+-		if (ret < 0)
+-			break;
+-next:
+-		ret = btrfs_next_item(data_reloc_root, path);
+-		if (ret < 0)
+-			break;
+-		if (ret > 0) {
+-			ret = 0;
+-			break;
 -		}
--
--		if (level == 0) {
--			ret = account_leaf_items(trans, root, path->nodes[level]);
--			if (ret)
--				goto out;
--
--			/* Nonzero return here means we completed our search */
--			ret = adjust_slots_upwards(root, path, root_level);
--			if (ret)
--				break;
--
--			/* Restart search with new slots */
--			goto walk_down;
--		}
--
--		level--;
 -	}
--
--	ret = 0;
+-	unlock_extent(&BTRFS_I(inode)->io_tree, 0 , (u64)-1);
 -out:
 -	btrfs_free_path(path);
--
 -	return ret;
 -}
 -
- /*
-  * helper to process tree block while walking down the tree.
-  *
-@@ -8977,8 +8763,8 @@ skip:
- 		}
- 
- 		if (need_account) {
--			ret = account_shared_subtree(trans, root, next,
--						     generation, level - 1);
-+			ret = btrfs_qgroup_trace_subtree(trans, root, next,
-+							 generation, level - 1);
- 			if (ret) {
- 				btrfs_err_rl(root->fs_info,
- 					     "Error %d accounting shared subtree. Quota is out of sync, rescan required.",
-@@ -9075,7 +8861,7 @@ static noinline int walk_up_proc(struct btrfs_trans_handle *trans,
- 			else
- 				ret = btrfs_dec_ref(trans, root, eb, 0);
- 			BUG_ON(ret); /* -ENOMEM */
--			ret = account_leaf_items(trans, root, eb);
-+			ret = btrfs_qgroup_trace_leaf_items(trans, root, eb);
- 			if (ret) {
- 				btrfs_err_rl(root->fs_info,
- 					     "error %d accounting leaf items. Quota is out of sync, rescan required.",
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index e73eea3..e97f304 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1510,6 +1510,217 @@ int btrfs_qgroup_trace_extent(struct btrfs_trans_handle *trans,
- 	return 0;
- }
- 
-+int btrfs_qgroup_trace_leaf_items(struct btrfs_trans_handle *trans,
-+				  struct btrfs_root *root,
-+				  struct extent_buffer *eb)
-+{
-+	int nr = btrfs_header_nritems(eb);
-+	int i, extent_type, ret;
-+	struct btrfs_key key;
-+	struct btrfs_file_extent_item *fi;
-+	u64 bytenr, num_bytes;
-+
-+	/* We can be called directly from walk_up_proc() */
-+	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &root->fs_info->flags))
-+		return 0;
-+
-+	for (i = 0; i < nr; i++) {
-+		btrfs_item_key_to_cpu(eb, &key, i);
-+
-+		if (key.type != BTRFS_EXTENT_DATA_KEY)
-+			continue;
-+
-+		fi = btrfs_item_ptr(eb, i, struct btrfs_file_extent_item);
-+		/* filter out non qgroup-accountable extents  */
-+		extent_type = btrfs_file_extent_type(eb, fi);
-+
-+		if (extent_type == BTRFS_FILE_EXTENT_INLINE)
-+			continue;
-+
-+		bytenr = btrfs_file_extent_disk_bytenr(eb, fi);
-+		if (!bytenr)
-+			continue;
-+
-+		num_bytes = btrfs_file_extent_disk_num_bytes(eb, fi);
-+
-+		ret = btrfs_qgroup_trace_extent(trans, root->fs_info,
-+						bytenr, num_bytes, GFP_NOFS);
-+		if (ret)
-+			return ret;
-+	}
-+	return 0;
-+}
-+
-+/*
-+ * Walk up the tree from the bottom, freeing leaves and any interior
-+ * nodes which have had all slots visited. If a node (leaf or
-+ * interior) is freed, the node above it will have it's slot
-+ * incremented. The root node will never be freed.
-+ *
-+ * At the end of this function, we should have a path which has all
-+ * slots incremented to the next position for a search. If we need to
-+ * read a new node it will be NULL and the node above it will have the
-+ * correct slot selected for a later read.
-+ *
-+ * If we increment the root nodes slot counter past the number of
-+ * elements, 1 is returned to signal completion of the search.
-+ */
-+static int adjust_slots_upwards(struct btrfs_root *root,
-+				struct btrfs_path *path, int root_level)
-+{
-+	int level = 0;
-+	int nr, slot;
-+	struct extent_buffer *eb;
-+
-+	if (root_level == 0)
-+		return 1;
-+
-+	while (level <= root_level) {
-+		eb = path->nodes[level];
-+		nr = btrfs_header_nritems(eb);
-+		path->slots[level]++;
-+		slot = path->slots[level];
-+		if (slot >= nr || level == 0) {
-+			/*
-+			 * Don't free the root -  we will detect this
-+			 * condition after our loop and return a
-+			 * positive value for caller to stop walking the tree.
-+			 */
-+			if (level != root_level) {
-+				btrfs_tree_unlock_rw(eb, path->locks[level]);
-+				path->locks[level] = 0;
-+
-+				free_extent_buffer(eb);
-+				path->nodes[level] = NULL;
-+				path->slots[level] = 0;
-+			}
-+		} else {
-+			/*
-+			 * We have a valid slot to walk back down
-+			 * from. Stop here so caller can process these
-+			 * new nodes.
-+			 */
-+			break;
-+		}
-+
-+		level++;
-+	}
-+
-+	eb = path->nodes[root_level];
-+	if (path->slots[root_level] >= btrfs_header_nritems(eb))
-+		return 1;
-+
-+	return 0;
-+}
-+
-+int btrfs_qgroup_trace_subtree(struct btrfs_trans_handle *trans,
-+			       struct btrfs_root *root,
-+			       struct extent_buffer *root_eb,
-+			       u64 root_gen, int root_level)
-+{
-+	int ret = 0;
-+	int level;
-+	struct extent_buffer *eb = root_eb;
-+	struct btrfs_path *path = NULL;
-+
-+	BUG_ON(root_level < 0 || root_level > BTRFS_MAX_LEVEL);
-+	BUG_ON(root_eb == NULL);
-+
-+	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &root->fs_info->flags))
-+		return 0;
-+
-+	if (!extent_buffer_uptodate(root_eb)) {
-+		ret = btrfs_read_buffer(root_eb, root_gen);
-+		if (ret)
-+			goto out;
-+	}
-+
-+	if (root_level == 0) {
-+		ret = btrfs_qgroup_trace_leaf_items(trans, root, root_eb);
-+		goto out;
-+	}
-+
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
-+
-+	/*
-+	 * Walk down the tree.  Missing extent blocks are filled in as
-+	 * we go. Metadata is accounted every time we read a new
-+	 * extent block.
-+	 *
-+	 * When we reach a leaf, we account for file extent items in it,
-+	 * walk back up the tree (adjusting slot pointers as we go)
-+	 * and restart the search process.
-+	 */
-+	extent_buffer_get(root_eb); /* For path */
-+	path->nodes[root_level] = root_eb;
-+	path->slots[root_level] = 0;
-+	path->locks[root_level] = 0; /* so release_path doesn't try to unlock */
-+walk_down:
-+	level = root_level;
-+	while (level >= 0) {
-+		if (path->nodes[level] == NULL) {
-+			int parent_slot;
-+			u64 child_gen;
-+			u64 child_bytenr;
-+
-+			/* We need to get child blockptr/gen from
-+			 * parent before we can read it. */
-+			eb = path->nodes[level + 1];
-+			parent_slot = path->slots[level + 1];
-+			child_bytenr = btrfs_node_blockptr(eb, parent_slot);
-+			child_gen = btrfs_node_ptr_generation(eb, parent_slot);
-+
-+			eb = read_tree_block(root, child_bytenr, child_gen);
-+			if (IS_ERR(eb)) {
-+				ret = PTR_ERR(eb);
-+				goto out;
-+			} else if (!extent_buffer_uptodate(eb)) {
-+				free_extent_buffer(eb);
-+				ret = -EIO;
-+				goto out;
-+			}
-+
-+			path->nodes[level] = eb;
-+			path->slots[level] = 0;
-+
-+			btrfs_tree_read_lock(eb);
-+			btrfs_set_lock_blocking_rw(eb, BTRFS_READ_LOCK);
-+			path->locks[level] = BTRFS_READ_LOCK_BLOCKING;
-+
-+			ret = btrfs_qgroup_trace_extent(trans,
-+					root->fs_info, child_bytenr,
-+					root->nodesize, GFP_NOFS);
-+			if (ret)
-+				goto out;
-+		}
-+
-+		if (level == 0) {
-+			ret = btrfs_qgroup_trace_leaf_items(trans, root,
-+					path->nodes[level]);
-+			if (ret)
-+				goto out;
-+
-+			/* Nonzero return here means we completed our search */
-+			ret = adjust_slots_upwards(root, path, root_level);
-+			if (ret)
-+				break;
-+
-+			/* Restart search with new slots */
-+			goto walk_down;
-+		}
-+
-+		level--;
-+	}
-+
-+	ret = 0;
-+out:
-+	btrfs_free_path(path);
-+
-+	return ret;
-+}
-+
- #define UPDATE_NEW	0
- #define UPDATE_OLD	1
- /*
-diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index 9303e09..99c879d 100644
---- a/fs/btrfs/qgroup.h
-+++ b/fs/btrfs/qgroup.h
-@@ -122,6 +122,29 @@ int btrfs_qgroup_trace_extent(struct btrfs_trans_handle *trans,
- 		struct btrfs_fs_info *fs_info, u64 bytenr, u64 num_bytes,
- 		gfp_t gfp_flag);
- 
-+/*
-+ * Inform qgroup to trace all leaf items of data
-+ *
-+ * Return 0 for success
-+ * Return <0 for error(ENOMEM)
-+ */
-+int btrfs_qgroup_trace_leaf_items(struct btrfs_trans_handle *trans,
-+				  struct btrfs_root *root,
-+				  struct extent_buffer *eb);
-+/*
-+ * Inform qgroup to trace a whole subtree, including all its child tree
-+ * blocks and data.
-+ * The root tree block is specified by @root_eb.
-+ *
-+ * Normally used by relocation(tree block swap) and subvolume deletion.
-+ *
-+ * Return 0 for success
-+ * Return <0 for error(ENOMEM or tree search error)
-+ */
-+int btrfs_qgroup_trace_subtree(struct btrfs_trans_handle *trans,
-+			       struct btrfs_root *root,
-+			       struct extent_buffer *root_eb,
-+			       u64 root_gen, int root_level);
- int
- btrfs_qgroup_account_extent(struct btrfs_trans_handle *trans,
- 			    struct btrfs_fs_info *fs_info,
+ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
+ {
+ 	struct rb_root blocks = RB_ROOT;
+@@ -4216,13 +4155,6 @@ restart:
+ 		err = PTR_ERR(trans);
+ 		goto out_free;
+ 	}
+-	ret = qgroup_fix_relocated_data_extents(trans, rc);
+-	if (ret < 0) {
+-		btrfs_abort_transaction(trans, ret);
+-		if (!err)
+-			err = ret;
+-		goto out_free;
+-	}
+ 	btrfs_commit_transaction(trans, rc->extent_root);
+ out_free:
+ 	btrfs_free_block_rsv(rc->extent_root, rc->block_rsv);
+@@ -4591,11 +4523,6 @@ int btrfs_recover_relocation(struct btrfs_root *root)
+ 		err = PTR_ERR(trans);
+ 		goto out_free;
+ 	}
+-	err = qgroup_fix_relocated_data_extents(trans, rc);
+-	if (err < 0) {
+-		btrfs_abort_transaction(trans, err);
+-		goto out_free;
+-	}
+ 	err = btrfs_commit_transaction(trans, rc->extent_root);
+ out_free:
+ 	kfree(rc);
 -- 
 2.10.0
 

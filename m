@@ -1,45 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:43400 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:55403 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1751993AbcJRICK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 18 Oct 2016 04:02:10 -0400
-Received: from localhost.localdomain (unknown [10.167.226.107])
-        by cn.fujitsu.com (Postfix) with ESMTP id 9092941B4BC3
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Oct 2016 16:02:05 +0800 (CST)
-From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+        id S1758568AbcJRBcB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 17 Oct 2016 21:32:01 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: pass correct args to btrfs_async_run_delayed_refs()
-Date: Tue, 18 Oct 2016 15:56:13 +0800
-Message-Id: <20161018075613.10757-1-wangxg.fnst@cn.fujitsu.com>
+Cc: rgoldwyn@suse.com, rgoldwyn@suse.de
+Subject: [PATCH 0/4] Qgroup comment enhance and balance fix
+Date: Tue, 18 Oct 2016 09:31:25 +0800
+Message-Id: <20161018013129.23331-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In btrfs_truncate_inode_items()->btrfs_async_run_delayed_refs(), we
-swap the arg2 and arg3 wrongly, fix this.
+The patchset does the following things:
+1) Enhance comment for qgroup, rename 2 functions
+   Explain the how qgroup works, so new developers won't waste too much
+   time digging into the boring codes.
 
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
----
- fs/btrfs/inode.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+   The qgroup work flow is split into 3 main phrases:
+   Reverse, Trace, Account.
+   And rename functions like btrfs_qgroup_insert_dirty_extent_record()
+   to btrfs_qgroup_trace_extent(), to follow the "Trace" phrase.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 2b790bd..2f1372b 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4605,8 +4605,8 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
- 			BUG_ON(ret);
- 			if (btrfs_should_throttle_delayed_refs(trans, root))
- 				btrfs_async_run_delayed_refs(root,
--							     trans->transid,
--					trans->delayed_ref_updates * 2, 0);
-+					trans->delayed_ref_updates * 2,
-+					trans->transid, 0);
- 			if (be_nice) {
- 				if (truncate_space_check(trans, root,
- 							 extent_num_bytes)) {
+   Other function name already follows such schema before.
+
+2) Move account_shared_subtree() and account_leaf_items() to qgroup.c
+   Such functions are only used by qgroup, so move them to qgroup.c and
+   rename them to follow "trace" schema.
+
+3) Fix the long standing qgroup balance corruption
+   Commit 62b99540a1d91e4 doesn't fix the problem completely.
+   It can only handle case that merge_reloc_roots() are all done in one
+   transaction.
+
+   If transaction commits during merge_reloc_roots(), the data extents
+   will leak again.
+
+   The tree fix is to info qgroup to trace both subtree(tree reloc tree
+   and destination fs tree), at replace_path() time.
+   Inside  replace_path(), there is one transaction start and end, so we
+   must make qgroup to trace both subtrees.
+
+   Thanks for previous work, now we can easily trace subtree, so the fix
+   is quite simple now.
+
+   And the cause also makes it easier to create pinpoint test case for
+   this bug.
+
+Qu Wenruo (4):
+  btrfs: qgroup: Add comments explaining how btrfs qgroup works
+  btrfs: qgroup: Rename functions to make it follow
+    reserve,trace,account steps
+  btrfs: Expoert and move leaf/subtree qgroup helpers to qgroup.c
+  btrfs: qgroup: Fix qgroup data leaking by using subtree tracing
+
+ fs/btrfs/delayed-ref.c       |   2 +-
+ fs/btrfs/extent-tree.c       | 220 +------------------------------------------
+ fs/btrfs/qgroup.c            | 219 +++++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/qgroup.h            |  64 +++++++++++--
+ fs/btrfs/relocation.c        | 119 +++++------------------
+ fs/btrfs/tree-log.c          |   2 +-
+ include/trace/events/btrfs.h |   2 +-
+ 7 files changed, 302 insertions(+), 326 deletions(-)
+
 -- 
-2.9.0
+2.10.0
 
 
 

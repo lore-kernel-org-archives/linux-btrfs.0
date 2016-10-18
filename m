@@ -1,37 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f172.google.com ([209.85.220.172]:36858 "EHLO
-        mail-qk0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S935048AbcJRPCE (ORCPT
+Received: from resqmta-po-02v.sys.comcast.net ([96.114.154.161]:52274 "EHLO
+        resqmta-po-02v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S935790AbcJRRml (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 18 Oct 2016 11:02:04 -0400
-Received: by mail-qk0-f172.google.com with SMTP id o68so343515927qkf.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Oct 2016 08:02:04 -0700 (PDT)
-MIME-Version: 1.0
-From: Stefan Malte Schumacher <stefan.m.schumacher@gmail.com>
-Date: Tue, 18 Oct 2016 17:02:03 +0200
-Message-ID: <CAA3ktqmsf6S07MDrLhYfBJ2EYYConpHUj7A8FDWSZ09JsYP4eA@mail.gmail.com>
-Subject: Btrfs dev del
+        Tue, 18 Oct 2016 13:42:41 -0400
+Received: from calvin.localdomain ([10.0.0.8])
+        by beta.localdomain with esmtps (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128)
+        (Exim 4.84_2)
+        (envelope-from <twalberg@comcast.net>)
+        id 1bwYPO-0001Y4-Ih
+        for linux-btrfs@vger.kernel.org; Tue, 18 Oct 2016 12:42:38 -0500
+Received: from tew by calvin.localdomain with local (Exim 4.84_2)
+        (envelope-from <tew@calvin.localdomain>)
+        id 1bwYPO-000520-E9
+        for linux-btrfs@vger.kernel.org; Tue, 18 Oct 2016 12:42:38 -0500
+Date: Tue, 18 Oct 2016 12:42:38 -0500
+From: Tim Walberg <twalberg@comcast.net>
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Subject: question re: trim in btrfs
+Message-ID: <20161018174238.GB5559@comcast.net>
+Reply-To: Tim Walberg <twalberg@comcast.net>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello
+Unless I'm misinterpreting something it appears that maybe btrfs doesn't pass
+fstrim commands down to the underlying drives when being used in a RAID-1 config.
 
-One of the drives which I added to my array two days ago was most
-likely already damaged when I bought it - 312 read errors while
-scrubbing and lots of SMART errors. I want to take the drive out, go
-to my hardware vendor and have it replaced. So I issued the command:
-"btrfs dev del /dev/sdf /mnt/btrfs-raid". It has been going on for
-about an hour now. It seems that removing the drive triggered a
-balance operation - "btrfs fi show"  shows /dev/sdf as having Zero
-Data on it, while the size of the data stored on the other drives is
-increasing. What I would like to know is where btrfs takes the data to
-be replicated from - from the others drive or from the device about to
-be removed? I am using RAID1 on data, metadata and system so there
-should be a good copy of all the files on /dev/sdf. I just want to be
-certain that the damaged data on /dev/sdf are not spread around the
-filesystem in which case restoring my backup would be the best idea.
+I have this output from a small script I wrote to run at boot time (and also via
+cron.weekly), rather than using continous trim in the boot options:
 
-Yours sincerely
-Stefan
+# cat /var/log/trim.log
+Thu Oct 13 07:40:07 CDT 2016
+/boot: 454 MiB (476062720 bytes) trimmed
+
+Thu Oct 13 07:40:08 CDT 2016
+/: 8.9 GiB (9585152000 bytes) trimmed
+
+Thu Oct 13 07:40:22 CDT 2016
+/btrfs/0: 0 B (0 bytes) trimmed
+
+/boot and / are mdraid RAID 1 on partitions 1 and 3 of two Samsung 850 Pro SSDs.
+/btrfs/0 is a btrfs-raid RAID 1 of partition 4 on the same two drives. The btrfs
+case does not seem to accomplish anything. By comparison, I have the same drive
+in my laptop, but just a single one, and the non-btrfs-raid-1 file system on one
+of its partitions does run fstrim successfully.
+
+This is quite possibly a known limitation, but I didn't find anything about it
+through some quick searching. Maybe I didn't dive deep enough...
+
+-- 
+twalberg@gmail.com, twalberg@comcast.net

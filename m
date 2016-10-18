@@ -1,50 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:57495 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751522AbcJJVQ2 (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:46589 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1753461AbcJRKcY (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 Oct 2016 17:16:28 -0400
-Subject: Re: [PATCH] btrfs: let btrfs_delete_unused_bgs() to clean relocated
- bgs
-To: Naohiro Aota <naohiro.aota@hgst.com>, <linux-btrfs@vger.kernel.org>
-References: <1472802392-10851-1-git-send-email-naohiro.aota@hgst.com>
-CC: Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
-        <linux-kernel@vger.kernel.org>
-From: Chris Mason <clm@fb.com>
-Message-ID: <7ac97eed-6bc1-3b23-38cf-89c5eda49f23@fb.com>
-Date: Mon, 10 Oct 2016 17:04:03 -0400
-MIME-Version: 1.0
-In-Reply-To: <1472802392-10851-1-git-send-email-naohiro.aota@hgst.com>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+        Tue, 18 Oct 2016 06:32:24 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1bwRgr-0004nG-SB
+        for linux-btrfs@vger.kernel.org; Tue, 18 Oct 2016 12:32:13 +0200
+To: linux-btrfs@vger.kernel.org
+From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
+        <holger@applied-asynchrony.com>
+Subject: Re: [PATCH] btrfs: pass correct args to
+ btrfs_async_run_delayed_refs()
+Date: Tue, 18 Oct 2016 10:32:00 +0000 (UTC)
+Message-ID: <pan$9e691$50b48431$37da74db$d7e3b0a2@applied-asynchrony.com>
+References: <20161018075613.10757-1-wangxg.fnst@cn.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/02/2016 03:46 AM, Naohiro Aota wrote:
-> Currently, btrfs_relocate_chunk() is removing relocated BG by itself. But
-> the work can be done by btrfs_delete_unused_bgs() (and it's better since it
-> trim the BG). Let's dedupe the code.
->
-> While btrfs_delete_unused_bgs() is already hitting the relocated BG, it
-> skip the BG since the BG has "ro" flag set (to keep balancing BG intact).
-> On the other hand, btrfs cannot drop "ro" flag here to prevent additional
-> writes. So this patch make use of "removed" flag.
-> btrfs_delete_unused_bgs() now detect the flag to distinguish whether a
-> read-only BG is relocating or not.
->
-> Signed-off-by: Naohiro Aota <naohiro.aota@hgst.com>
+On Tue, 18 Oct 2016 15:56:13 +0800, Wang Xiaoguang wrote:
 
-This runs into trouble with btrfs_rm_device(), I've been triggering 
-crashes with btrfs/101 here.
+> In btrfs_truncate_inode_items()->btrfs_async_run_delayed_refs(), we
+> swap the arg2 and arg3 wrongly, fix this.
+> 
+> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+> ---
+>  fs/btrfs/inode.c | 4 ++--
+>  1 file changed, 2 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 2b790bd..2f1372b 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -4605,8 +4605,8 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
+>  			BUG_ON(ret);
+>  			if (btrfs_should_throttle_delayed_refs(trans, root))
+>  				btrfs_async_run_delayed_refs(root,
+> -							     trans->transid,
+> -					trans->delayed_ref_updates * 2, 0);
+> +					trans->delayed_ref_updates * 2,
+> +					trans->transid, 0);
+>  			if (be_nice) {
+>  				if (truncate_space_check(trans, root,
+>  							 extent_num_bytes)) {
 
-The problem is that by the time we get around to running 
-btrfs_delete_unused_bgs(), btrfs_rm_device() has long since free'd the 
-device.
+Reviewed-by: Holger Hoffstätte <holger@applied-asynchrony.com>
 
-I thought about calling btrfs_delete_unused_bgs() directly from 
-btrfs_rm_device(), but it might bail out without returning an error for 
-a number of reasons.
+Passing the wrong transid..why did this ever work?
 
-For now, I've reverted this patch from the pull, but we can bring it 
-back once the device removal path is covered.
+-h
 
--chris

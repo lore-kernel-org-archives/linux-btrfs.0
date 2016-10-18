@@ -1,27 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46103 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S934704AbcJQOGN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Oct 2016 10:06:13 -0400
-Date: Mon, 17 Oct 2016 16:06:10 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Junjie Mao <junjie.mao@enight.me>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] btrfs: assign error values to the correct bio structs
-Message-ID: <20161017140610.GK11398@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1476667225-7833-1-git-send-email-junjie.mao@enight.me>
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:34563 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1755097AbcJRNx2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 18 Oct 2016 09:53:28 -0400
+Subject: Re: [GIT PULL] Send fix for 4.9
+To: <fdmanana@kernel.org>, <linux-btrfs@vger.kernel.org>
+References: <1476482048-3659-1-git-send-email-fdmanana@kernel.org>
+CC: Filipe Manana <fdmanana@suse.com>
+From: Chris Mason <clm@fb.com>
+Message-ID: <58ffacb3-7f43-cd2d-b3b5-8fb8e54e5eb1@fb.com>
+Date: Tue, 18 Oct 2016 09:52:09 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1476667225-7833-1-git-send-email-junjie.mao@enight.me>
+In-Reply-To: <1476482048-3659-1-git-send-email-fdmanana@kernel.org>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 17, 2016 at 09:20:25AM +0800, Junjie Mao wrote:
-> Fixes: 4246a0b63bd8 ("block: add a bi_error field to struct bio")
-> 
-> Signed-off-by: Junjie Mao <junjie.mao@enight.me>
+On 10/14/2016 05:54 PM, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+>
+> Hi Chris, please pull the following send fix for the 4.9 kernel.
 
-Ack, but please resend it with CC: stable@vger.kernel.org # 4.3+
+Thanks Filipe, I've got this queued up for this week.
+
+-chris

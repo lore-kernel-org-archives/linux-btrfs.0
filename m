@@ -1,73 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f178.google.com ([209.85.216.178]:35776 "EHLO
-        mail-qt0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S942611AbcJSOjk (ORCPT
+Received: from aserp1050.oracle.com ([141.146.126.70]:47243 "EHLO
+        aserp1050.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S942881AbcJSOuT (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Oct 2016 10:39:40 -0400
-Received: by mail-qt0-f178.google.com with SMTP id f6so22903319qtd.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Oct 2016 07:39:39 -0700 (PDT)
+        Wed, 19 Oct 2016 10:50:19 -0400
+Received: from aserp1040.oracle.com (aserp1040.oracle.com [141.146.126.69])
+        by aserp1050.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id u9JD4ZlW019448
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Oct 2016 13:04:36 GMT
+Subject: Re: Monitoring Btrfs
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Stefan Malte Schumacher <stefan.m.schumacher@gmail.com>,
+        linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
+References: <CAA3ktqmhhasyk8L+W3jz9ifYw7UMoL4ueg1HQp7Co3L39xYe9Q@mail.gmail.com>
+ <05b79b4d-3f8d-7b78-d386-495b1dab1e70@gmail.com>
+ <c40e1675-f002-b2e4-b252-c5e17200f72a@oracle.com>
+ <a813c70b-e230-726e-e0bc-e8f15848cc44@gmail.com>
+ <a12e3815-98c3-5ab6-179b-2c8efb841533@oracle.com>
+ <9bbe4174-dcb0-ec14-2da8-eaf9b4f4ab82@gmail.com>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <bf0b049c-cd7a-00f4-cc20-68d50a7be039@oracle.com>
+Date: Wed, 19 Oct 2016 21:06:49 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtQh2C95=ug3x7wT98CA-fRAVXxd5Ghz4suYkENFCf8jQg@mail.gmail.com>
-References: <CAG6KGPS8Gvy2zGCe22mMmk4uXrqVyRP8FHayhe0ph-8vC+kA4A@mail.gmail.com>
- <CAG6KGPSeR1zAuU0Xo9DrEpd-0QC9agB7p7z+Lb69hxS233_Cvg@mail.gmail.com>
- <20161010234227.69746d3f@natsu> <CAJCQCtQh2C95=ug3x7wT98CA-fRAVXxd5Ghz4suYkENFCf8jQg@mail.gmail.com>
-From: Martin Dev <mrturtledev@gmail.com>
-Date: Wed, 19 Oct 2016 15:39:23 +0100
-Message-ID: <CAG6KGPTU0U1=WCA9cZgXrYtm=yDJFZDH+x2v7RtS=6RzmGzRTA@mail.gmail.com>
-Subject: Re: csum failed during copy/compare
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Roman Mamedov <rm@romanrm.net>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <9bbe4174-dcb0-ec14-2da8-eaf9b4f4ab82@gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Fails on Antergos Linux 4.8.2-1-ARCH #1 SMP PREEMPT Mon Oct 17
-08:11:46 CEST 2016 x86_64 GNU/Linux
 
-btrfs-progs v4.8.1
 
-On Mon, Oct 10, 2016 at 10:05 PM, Chris Murphy <lists@colorremedies.com> wrote:
-> On Mon, Oct 10, 2016 at 12:42 PM, Roman Mamedov <rm@romanrm.net> wrote:
->> On Mon, 10 Oct 2016 10:44:39 +0100
->> Martin Dev <mrturtledev@gmail.com> wrote:
+On 10/19/16 19:15, Austin S. Hemmelgarn wrote:
+> On 2016-10-18 17:36, Anand Jain wrote:
 >>
->>> I work for system verification of SSDs and we've recently come up
->>> against an issue with BTRFS on Ubuntu 16.04
 >>
->>> This seems to be a recent change
+>>>>>> I would like to monitor my btrfs-filesystem for missing drives.
 >>
->> ...well, a change in what?
 >>
->> If you really didn't change anything on your machines and the used process,
->> there is no reason for anything to start breaking, other than obvious hardware
->> issues from age/etc (likely not what's happening here).
+>>>>> This is actually correct behavior, the filesystem reports that it
+>>>>> should
+>>>>> have 6 devices, which is how it knows a device is missing.
 >>
->> So you most likely did change something yourself, and perhaps the change was
->> upgrading OS version, kernel version(!!!), or versions of software in general.
 >>
->> As such, the first suggestion would be go through the recent software updates
->> history, maybe even restore an OS image you used three months ago (if
->> available) and confirm that the problem doesn't occur there. After that it's a
->> process called bisecting, there are tools for that, but likely you don't even
->> need those yet, just carefully note when you got which upgrades, paying
->> highest attention to the kernel version, and note at which point the
->> corruptions start to occur.
->
->
-> There  have been various trim bugs, in Btrfs but also in the block
-> layer. And I don't remember all the different versions involved.  I'd
-> like to think 4.4.24 should behave the same as 4.8.1, so I would
-> retest with those two, using something without ubuntu specific
-> backports (i.e. something as close to the kernel.org trees of those
-> versions as possible). I have no idea what Ubuntu generic 4.4.0-21
-> translates into. Because of the 0, it makes me think it's literally
-> 4.4.0 with 21 sets of various backports, from some unknown time frame
-> without going and looking it up. If that's really 4.4.21, then it's
-> weirdly named, I don't know why any distro would do that.
->
-> In any case I would compare 4.8.1 and 4.4.24 because those two should
-> work and if not it's a bug that needs to get fixed. Independently,
-> check the SSD firmware. There have been bugs there also.
->
-> --
-> Chris Murphy
+>>>>  Missing - means missing at the time of mount. So how are you planning
+>>>> to monitor a disk which is failed while in production ?
+>>
+>>> No, in `btrfs fi show` it means that it can't find the device.
+>>
+>>  'btrfs fi show' is miss-leading as compared to 'btrfs fi show -m'
+>>  -m tells btrfs-kernel perspective of the devices, as of now
+>>  there is no code in the kernel which changes the device status
+>>  while its mounted (expect for readonly, which is irrelevant in
+>>  raid1 with 1 disk failed).
+
+> Actually, that's exactly how I would expect each of them to behave.  We
+> need some way to get both the state the kernel thinks the FS is in, and
+> the state it's actually in (according to the tools, not the kernel), and
+> '-m' reporting kernel state while no '-m' reports actual state is
+> exactly what I would expect in this case.
+
+
+> That leads also to another way I hadn't thought of to monitor a
+> filesystem.  The output of 'fi show' with and without '-m' should match
+> if the filesystem was healthy when mounted and is still healthy, if they
+> don't, then something is wrong.
+
+
+>>> 1. Filesystem flags.  These will change when the filesystem goes
+>>> degraded,
+>>
+>>   Which flag is in question here. ?
+> I should clarify here, I mean the mount options, I'm just used to the
+> monit terminology (which was not well picked in this case).  The big one
+> to watch is the read-only flag, as BTRFS will force a filesystem
+> read-only (which updates the mount options).  Any change to the mount
+> options though without manual intervention is generally a sign that
+> _something_ is wrong.
+
+
+  btrfs-progs shouldn't add its own intelligence in determining the
+  device state, it should be a transparent tool to report status from
+  the btrfs-kernel. So I opposed to the patches such as
+
+     commit 206efb60cbe3049e0d44c6da3c1909aeee18f813
+     btrfs-progs: Add missing devices check for mounted btrfs.
+
+  There are many ways a device can fail/recover in the SAN environment,
+  these device state managing intelligence should be at one place and
+  in the kernel. The volume manager part of the code in the kernel
+  is incomplete.
+

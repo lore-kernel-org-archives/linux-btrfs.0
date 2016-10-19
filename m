@@ -1,226 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:28346 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S941132AbcJSRIh (ORCPT
+Received: from mail-lf0-f53.google.com ([209.85.215.53]:34261 "EHLO
+        mail-lf0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S942093AbcJSRLb (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Oct 2016 13:08:37 -0400
-Subject: Re: [PATCH 3/3] btrfs-progs: Add command to check if balance op is
- req
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-References: <1476750915-3105-1-git-send-email-divya.indi@oracle.com>
- <1476750915-3105-2-git-send-email-divya.indi@oracle.com>
- <1476750915-3105-3-git-send-email-divya.indi@oracle.com>
- <1476750915-3105-4-git-send-email-divya.indi@oracle.com>
- <c451366c-089c-5fe0-bfdb-ba3941f79d9d@cn.fujitsu.com>
-Cc: ashish.samant@oracle.com, bo.li.liu@oracle.com
-From: Divya Indi <divya.indi@oracle.com>
-Message-ID: <84b80642-1c56-127c-ce1c-e38fd3bf0043@oracle.com>
-Date: Wed, 19 Oct 2016 10:08:23 -0700
+        Wed, 19 Oct 2016 13:11:31 -0400
+Received: by mail-lf0-f53.google.com with SMTP id b81so34021080lfe.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Oct 2016 10:11:31 -0700 (PDT)
+Subject: Re: Cross subvolume "cp --reflink"?
+To: Hugo Mills <hugo@carfax.org.uk>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <678dcd2e-13ca-0b83-6561-b7c6c10468b9@gmail.com>
+ <20161019170408.GA16645@carfax.org.uk>
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+Message-ID: <247c8242-d999-b791-68df-06ab3d91e814@gmail.com>
+Date: Wed, 19 Oct 2016 20:11:27 +0300
 MIME-Version: 1.0
-In-Reply-To: <c451366c-089c-5fe0-bfdb-ba3941f79d9d@cn.fujitsu.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <20161019170408.GA16645@carfax.org.uk>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="w1piAAG0ESEhU4SQ0MdKtXHRHhTo9pu6d"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/17/2016 06:42 PM, Qu Wenruo wrote:
->
->
-> At 10/18/2016 08:35 AM, Divya Indi wrote:
->> Add new subcommand to btrfs inspect-internal
->>
->> btrfs inspect-internal balance_check <path>
->> Checks whether 'btrfs balance' can help creating more space (Only
->> considers data block groups).
->
-> I didn't think it's good to add a new subcommand just for that.
->
-> Why not output such relocation sugguestion for you previous bg-analyze 
-> subcommand?
-> (It's better to make it a parameter to trigger such output)
->
-> Thanks,
-> Qu
-Or maybe as an option to btrfs balance start?
-Eg: btrfs balance start --check-only <path>
->>
->> Signed-off-by: Divya Indi <divya.indi@oracle.com>
->> Reviewed-by: Ashish Samant <ashish.samant@oracle.com>
->> Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
->> ---
->>  cmds-inspect.c |  147 
->> ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
->>  1 files changed, 147 insertions(+), 0 deletions(-)
->>
->> diff --git a/cmds-inspect.c b/cmds-inspect.c
->> index 0e2f15a..5baaa49 100644
->> --- a/cmds-inspect.c
->> +++ b/cmds-inspect.c
->> @@ -267,6 +267,151 @@ static const char * const 
->> cmd_inspect_inode_resolve_usage[] = {
->>      NULL
->>  };
->>
->> +static const char * const cmd_inspect_balance_check_usage[] = {
->> +    "btrfs inspect-internal balance_check <path>",
->> +    "To check whether 'btrfs balance' can help creating more space",
->> +    "",
->> +    "",
->> +    NULL
->> +};
->> +
->> +static int cmd_inspect_balance_check(int argc, char **argv)
->> +{
->> +    struct btrfs_ioctl_search_args args;
->> +    struct btrfs_ioctl_search_args bg_args;
->> +    struct btrfs_ioctl_search_key *sk;
->> +    struct btrfs_ioctl_search_key *bg_sk;
->> +    struct btrfs_ioctl_search_header *header;
->> +    struct btrfs_ioctl_search_header *bg_header;
->> +    struct btrfs_block_group_item *bg;
->> +    struct btrfs_chunk *chunk;
->> +    unsigned long off = 0;
->> +    unsigned long bg_off = 0;
->> +    DIR *dirstream = NULL;
->> +    int fd;
->> +    int i;
->> +    u64 total_free = 0;
->> +    u64 min_used = (u64)-1;
->> +    u64 free_of_min_used = 0;
->> +    u64 bg_of_min_used = 0;
->> +    u64 flags;
->> +    u64 used;
->> +    int ret = 0;
->> +    int nr_data_bgs = 0;
->> +
->> +    if (check_argc_exact(argc, 2))
->> +        usage(cmd_inspect_balance_check_usage);
->> +
->> +    fd = btrfs_open_dir(argv[optind], &dirstream, 1);
->> +    if (fd < 0)
->> +        return 1;
->> +
->> +    memset(&args, 0, sizeof(args));
->> +    sk = &args.key;
->> +    sk->min_offset = sk->min_transid = 0;
->> +    sk->max_offset = sk->max_transid = (u64)-1;
->> +
->> +    printf("%20s%20s%20s\n", "Start", "Len", "Used");
->> +    while (1) {
->> +        ret = get_chunks(fd, &args);
->> +        if (ret < 0)
->> +            goto out;
->> +
->> +        /*
->> +         * it should not happen.
->> +         */
->> +        if (sk->nr_items == 0)
->> +            break;
->> +
->> +        off = 0;
->> +        memset(&bg_args, 0, sizeof(bg_args));
->> +        bg_sk = &bg_args.key;
->> +
->> +        /* For every chunk, look up 1 exact match for block group in
->> +         * the extent tree. */
->> +        bg_sk->tree_id = BTRFS_EXTENT_TREE_OBJECTID;
->> +        bg_sk->min_type = BTRFS_BLOCK_GROUP_ITEM_KEY;
->> +        bg_sk->max_type = BTRFS_BLOCK_GROUP_ITEM_KEY;
->> +        bg_sk->min_transid =  0;
->> +        bg_sk->max_transid = (u64)-1;
->> +
->> +        for (i = 0; i < sk->nr_items; i++) {
->> +            header = (struct btrfs_ioctl_search_header *)(args.buf
->> +                                      + off);
->> +            off += sizeof(*header);
->> +            if (header->type == BTRFS_CHUNK_ITEM_KEY) {
->> +                chunk = (struct btrfs_chunk *)
->> +                    (args.buf + off);
->> +                ret = get_bg_info(fd, &bg_args, header->offset,
->> +                          chunk->length);
->> +                if (ret < 0)
->> +                    goto out;
->> +
->> +                /*
->> +                 * it should not happen.
->> +                 */
->> +                if (bg_sk->nr_items == 0)
->> +                    continue;
->> +
->> +                bg_off = 0;
->> +                bg_header = (struct btrfs_ioctl_search_header *)
->> +                        (bg_args.buf + bg_off);
->> +                bg_off += sizeof(*bg_header);
->> +                bg = (struct btrfs_block_group_item *)
->> +                     (bg_args.buf + bg_off);
->> +
->> +                flags = btrfs_block_group_flags(bg);
->> +                if (flags & BTRFS_BLOCK_GROUP_DATA) {
->> +                    used = btrfs_block_group_used(bg);
->> +                    nr_data_bgs++;
->> +                    printf("%20llu%20s%20s\n",
->> +                        bg_header->objectid,
->> +                        pretty_size(bg_header->offset),
->> +                        pretty_size(used));
->> +                    total_free += bg_header->offset - used;
->> +                    if (min_used >= used) {
->> +                        min_used = used;
->> +                        free_of_min_used =
->> +                            bg_header->offset - used;
->> +                        bg_of_min_used =
->> +                            bg_header->objectid;
->> +                    }
->> +                }
->> +            }
->> +
->> +            off += header->len;
->> +            sk->min_offset = header->offset + header->len;
->> +        }
->> +        sk->nr_items = 4096;
->> +
->> +    }
->> +
->> +    if (nr_data_bgs <= 1) {
->> +        printf("Data block groups in fs = %d, no need to do 
->> balance.\n",
->> +                nr_data_bgs);
->> +        ret = 1;
->> +        goto out;
->> +    }
->> +
->> +    printf("Total data bgs: %d\nTotal free space: %s\n"
->> +           "For min used bg %llu used = %s free = %s\n",
->> +        nr_data_bgs, pretty_size(total_free), bg_of_min_used,
->> +        pretty_size(min_used), pretty_size(free_of_min_used));
->> +
->> +    if (total_free - free_of_min_used > min_used) {
->> +        printf("run 'btrfs balance start -dvrange=%llu..%llu 
->> <mountpoint>'\n",
->> +                bg_of_min_used, bg_of_min_used + 1);
->> +        ret = 0;
->> +    } else {
->> +        printf("Please don't balance data block groups, no free 
->> space\n");
->> +        ret = 1;
->> +    }
->> +
->> +out:
->> +    close_file_or_dir(fd, dirstream);
->> +    return ret;
->> +}
->> +
->>  static int cmd_inspect_inode_resolve(int argc, char **argv)
->>  {
->>      int fd;
->> @@ -816,6 +961,8 @@ const struct cmd_group inspect_cmd_group = {
->>              cmd_inspect_min_dev_size_usage, NULL, 0 },
->>          { "bg_analysis", cmd_inspect_bg_analysis,
->>              cmd_inspect_bg_analysis_usage, NULL, 0 },
->> +        { "balance_check", cmd_inspect_balance_check,
->> +            cmd_inspect_balance_check_usage, NULL, 0 },
->>          { "dump-tree", cmd_inspect_dump_tree,
->>                  cmd_inspect_dump_tree_usage, NULL, 0 },
->>          { "dump-super", cmd_inspect_dump_super,
->>
->
->
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--w1piAAG0ESEhU4SQ0MdKtXHRHhTo9pu6d
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
 
+19.10.2016 20:04, Hugo Mills =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
+> On Wed, Oct 19, 2016 at 07:52:14PM +0300, Andrei Borzenkov wrote:
+>> I get "Failed to clone: Invalid cross-device link". Is it expected?
+>> Basically this is (on openSUSE TW which has root on subvolume)
+>>
+>> mount -o subvol=3D/ /dev/vda1 /mnt
+>> btrfs sub create /mnt/var/cache
+>> cp -a --reflink=3Dalways /var/cache/* /mnt/var/cache
+>>
+>> Kernel 4.7.5-1-default.
+>=20
+>    Yes, you're trying to copy across a mountpoint boundary. This isn't
+> going to work. You'll need to mount subvolid=3D0 on /mnt, and then use
+> the source and target of the cp *both* from within the /mnt subtree.
+>=20
+>    Reflink operations (including cp --reflink=3Dalways, and the
+> reflink-aware mv) work across subvol boundaries, but not mount
+> boundaries.
+>=20
+>    Hugo.
+>=20
+Yes, figured that much too. Thank you!
+
+
+--w1piAAG0ESEhU4SQ0MdKtXHRHhTo9pu6d
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iEYEARECAAYFAlgHqT8ACgkQR6LMutpd94zEYQCcDZNm0IH1D3tR2R+67yBLf1FG
+w64AnRBaXccqPqImp13V5ntCdvAB1wLO
+=WfOv
+-----END PGP SIGNATURE-----
+
+--w1piAAG0ESEhU4SQ0MdKtXHRHhTo9pu6d--

@@ -1,131 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:19390 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753671AbcJSVgh (ORCPT
+Received: from mail-lf0-f51.google.com ([209.85.215.51]:36503 "EHLO
+        mail-lf0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753589AbcJSWq2 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Oct 2016 17:36:37 -0400
-Subject: Re: Monitoring Btrfs
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Stefan Malte Schumacher <stefan.m.schumacher@gmail.com>,
-        linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
-References: <CAA3ktqmhhasyk8L+W3jz9ifYw7UMoL4ueg1HQp7Co3L39xYe9Q@mail.gmail.com>
- <05b79b4d-3f8d-7b78-d386-495b1dab1e70@gmail.com>
- <c40e1675-f002-b2e4-b252-c5e17200f72a@oracle.com>
- <a813c70b-e230-726e-e0bc-e8f15848cc44@gmail.com>
- <a12e3815-98c3-5ab6-179b-2c8efb841533@oracle.com>
- <9bbe4174-dcb0-ec14-2da8-eaf9b4f4ab82@gmail.com>
- <bf0b049c-cd7a-00f4-cc20-68d50a7be039@oracle.com>
- <dd66793c-709a-1b7e-09d0-99f1b745f908@gmail.com>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <f86ec2a9-16b7-0961-0685-86e7b094b3a3@oracle.com>
-Date: Thu, 20 Oct 2016 05:38:55 +0800
+        Wed, 19 Oct 2016 18:46:28 -0400
+Received: by mail-lf0-f51.google.com with SMTP id b75so46722969lfg.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Oct 2016 15:46:27 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <dd66793c-709a-1b7e-09d0-99f1b745f908@gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <CAA3ktqmhhasyk8L+W3jz9ifYw7UMoL4ueg1HQp7Co3L39xYe9Q@mail.gmail.com>
+References: <CAA3ktqmhhasyk8L+W3jz9ifYw7UMoL4ueg1HQp7Co3L39xYe9Q@mail.gmail.com>
+From: Stefan Malte Schumacher <stefan.m.schumacher@gmail.com>
+Date: Thu, 20 Oct 2016 00:46:25 +0200
+Message-ID: <CAA3ktqnht2NterzovpwhRoE0gDrEJ4=WEonttcHhdN9SDxvbOA@mail.gmail.com>
+Subject: Re: Monitoring Btrfs
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Thanks to everybody for the help. I have been doing regular
+smart-tests for quite some time and I also let scrub run on a regular
+basis.
+I will use a simple shellscript witch inspects the output of "greps
+btrfs fi show" for lines containing "missing" and another which checks
+"btrfs dev stats" for None-Zero Entries.
 
+Thanks everybody for your advice.
+Stefan
 
-On 10/19/16 21:33, Austin S. Hemmelgarn wrote:
-> On 2016-10-19 09:06, Anand Jain wrote:
->>
->>
->> On 10/19/16 19:15, Austin S. Hemmelgarn wrote:
->>> On 2016-10-18 17:36, Anand Jain wrote:
->>>>
->>>>
->>>>>>>> I would like to monitor my btrfs-filesystem for missing drives.
->>>>
->>>>
->>>>>>> This is actually correct behavior, the filesystem reports that it
->>>>>>> should
->>>>>>> have 6 devices, which is how it knows a device is missing.
->>>>
->>>>
->>>>>>  Missing - means missing at the time of mount. So how are you
->>>>>> planning
->>>>>> to monitor a disk which is failed while in production ?
->>>>
->>>>> No, in `btrfs fi show` it means that it can't find the device.
->>>>
->>>>  'btrfs fi show' is miss-leading as compared to 'btrfs fi show -m'
->>>>  -m tells btrfs-kernel perspective of the devices, as of now
->>>>  there is no code in the kernel which changes the device status
->>>>  while its mounted (expect for readonly, which is irrelevant in
->>>>  raid1 with 1 disk failed).
->>
->>> Actually, that's exactly how I would expect each of them to behave.  We
->>> need some way to get both the state the kernel thinks the FS is in, and
->>> the state it's actually in (according to the tools, not the kernel), and
->>> '-m' reporting kernel state while no '-m' reports actual state is
->>> exactly what I would expect in this case.
->>
->>
->>> That leads also to another way I hadn't thought of to monitor a
->>> filesystem.  The output of 'fi show' with and without '-m' should match
->>> if the filesystem was healthy when mounted and is still healthy, if they
->>> don't, then something is wrong.
->>
->>
->>>>> 1. Filesystem flags.  These will change when the filesystem goes
->>>>> degraded,
->>>>
->>>>   Which flag is in question here. ?
->>> I should clarify here, I mean the mount options, I'm just used to the
->>> monit terminology (which was not well picked in this case).  The big one
->>> to watch is the read-only flag, as BTRFS will force a filesystem
->>> read-only (which updates the mount options).  Any change to the mount
->>> options though without manual intervention is generally a sign that
->>> _something_ is wrong.
->>
->>
->>  btrfs-progs shouldn't add its own intelligence in determining the
->>  device state, it should be a transparent tool to report status from
->>  the btrfs-kernel. So I opposed to the patches such as
->>
->>     commit 206efb60cbe3049e0d44c6da3c1909aeee18f813
->>     btrfs-progs: Add missing devices check for mounted btrfs.
->>
->>  There are many ways a device can fail/recover in the SAN environment,
->>  these device state managing intelligence should be at one place and
->>  in the kernel. The volume manager part of the code in the kernel
->>  is incomplete.
->>
-> I don't agree that the management should be completely unified or that
-> the tools should just report kernel state.  The tools have to have some
-> way to check device state for unmounted filesystems because they have to
-> operate on unmounted filesystems, and because until the kernel gets
-> smart enough to actually handle device state properly, some method is
-> needed to check the actual state of the devices.  Even once the kernel
-> is smart enough, it's still helpful to see without mounting a filesystem
-> whether or not all the devices are there, and if we ever switch to a
-> real mount helper (which I am in favor of for multiple reasons), we'll
-> need device state checking in userspace for that too.
-
-
-  Bit out of context. here its about monitoring device when FS
-  is mounted, in this context, if there is tool which would make
-  its own intelligence without kernel, then that's wrong.
-
-
-
-
-> Take a look for at LVM.  The separation of responsibilities there is
-> ideally what we should be looking at long term for BTRFS.  The userspace
-> components tell the kernel what to do, and list both kernel state _and_
-> physical state in a readable manner.  The kernel tracks limited parts of
-> the state (only for active LV's, so the equivalent of mounted
-> filesystems, and even then only what it needs to track (Is this RAID
-> volume in sync?  Is that snapshot or thin storage pool getting close to
-> full?)), and sends notifications to a userspace component which then
-> acts on those conditions (possibly then telling the kernel what to do in
-> response to them).  On top of that, the userspace components don't
-> require a kernel which supports them for any off-line operations, and
-> the kernel works fine with older userspace.  Both userspace and the
-> kernel handle missing devices (userspace tools report them, the kernel
-> refuses to activate LV's that require them).
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+2016-10-17 18:44 GMT+02:00 Stefan Malte Schumacher
+<stefan.m.schumacher@gmail.com>:
+> Hello
+>
+> I would like to monitor my btrfs-filesystem for missing drives. On
+> Debian mdadm uses a script in /etc/cron.daily, which calls mdadm and
+> sends an email if anything is wrong with the array. I would like to do
+> the same with btrfs. In my first attempt I grepped and cut the
+> information from "btrfs fi show" and let the script send an email if
+> the number of devices was not equal to the preselected number.
+>
+> Then I saw this:
+>
+> ubuntu@ubuntu:~$ sudo btrfs filesystem show
+> Label: none  uuid: 67b4821f-16e0-436d-b521-e4ab2c7d3ab7
+>     Total devices 6 FS bytes used 5.47TiB
+>     devid    1 size 1.81TiB used 1.71TiB path /dev/sda3
+>     devid    2 size 1.81TiB used 1.71TiB path /dev/sdb3
+>     devid    3 size 1.82TiB used 1.72TiB path /dev/sdc1
+>     devid    4 size 1.82TiB used 1.72TiB path /dev/sdd1
+>     devid    5 size 2.73TiB used 2.62TiB path /dev/sde1
+>     *** Some devices missing
+>
+> on this page: https://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Devices
+> The number of devices is still at 6, despite the fact that one of the
+> drives is missing, which means that my first idea doesnt work. I have
+> two questions:
+> 1) Has anybody already written a script like this? After all, there is
+> no need to reinvent the wheel a second time.
+> 2) What should I best grep for? In this case I would just go for the
+> "missing". Does this cover all possible outputs of btrfs fi show in
+> case of a damaged array? What other outputs do I need to consider for
+> my script.
+>
+> Yours sincerely
+> Stefan

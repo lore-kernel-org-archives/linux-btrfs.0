@@ -1,87 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46652 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933523AbcJ1PKR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 28 Oct 2016 11:10:17 -0400
-Date: Fri, 28 Oct 2016 17:10:14 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/3] btrfs-progs: send: fix handling of multiple
- snapshots (-p option)
-Message-ID: <20161028151014.GI12522@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <201610190235.AA00002@WIN-5MHF4RKU941.jp.fujitsu.com>
+Received: from mgwym01.jp.fujitsu.com ([211.128.242.40]:36478 "EHLO
+        mgwym01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933120AbcJSCfb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 18 Oct 2016 22:35:31 -0400
+Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
+        by yt-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 3637BAC00AA
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Oct 2016 11:35:19 +0900 (JST)
+Received: from WIN-5MHF4RKU941.jp.fujitsu.com (unknown [10.124.102.163])
+        by m3051.s.css.fujitsu.com (Postfix) with SMTP id 25DFC43E
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Oct 2016 11:35:19 +0900 (JST)
+Message-Id: <201610190235.AA00002@WIN-5MHF4RKU941.jp.fujitsu.com>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Date: Wed, 19 Oct 2016 11:35:03 +0900
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 2/3] btrfs-progs: send: fix handling of multiple snapshots (-p option)
 MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="BOKacYhQ+x31HxR3"
-In-Reply-To: <201610190235.AA00002@WIN-5MHF4RKU941.jp.fujitsu.com>
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+We cannot send multiple snapshots at once by -p option.
 
---BOKacYhQ+x31HxR3
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+[before]
+# btrfs send -f /tmp/data0 -p Snap0 Snap[12]
+At subvol Snap1
+At subvol Snap2
+ERROR: parent determination failed for 0
+# 
 
-On Wed, Oct 19, 2016 at 11:35:03AM +0900, Tsutomu Itoh wrote:
-> We cannot send multiple snapshots at once by -p option.
+[after]
+# btrfs send -f /tmp/data0 -p Snap0 Snap[12]
+At subvol Snap1
+At subvol Snap2
+# 
 
-We cannot like that it's broken, or we cannot because it's not supposed
-to work that way. I guess it's the former, but the changelog text is a
-bit confusing.
-> 
-> [before]
-> # btrfs send -f /tmp/data0 -p Snap0 Snap[12]
-> At subvol Snap1
-> At subvol Snap2
-> ERROR: parent determination failed for 0
-> # 
-> 
-> [after]
-> # btrfs send -f /tmp/data0 -p Snap0 Snap[12]
-> At subvol Snap1
-> At subvol Snap2
-> # 
+Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+---
+ cmds-send.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
-I'm not sure it's fixed, I wrote a simple test, attached, that triggers
-the bug even with the patch applied.
-
---BOKacYhQ+x31HxR3
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: attachment; filename="test.sh"
-
-#!/bin/bash
-#
-# minimal test for the following syntax: btrfs send -p parent subvol1 subvol2
-
-source $TOP/tests/common
-
-check_prereq mkfs.btrfs
-check_prereq btrfs
-
-setup_root_helper
-prepare_test_dev 2g
-
-run_check $TOP/mkfs.btrfs -f $IMAGE
-run_check_mount_test_dev
-
-here=`pwd`
-cd "$TEST_MNT" || _fail "cannot chdir to TEST_MNT"
-
-run_check $SUDO_HELPER btrfs subvolume create subv-parent
-run_check $SUDO_HELPER dd if=/dev/urandom of=subv-parent/file bs=1M count=10
-run_check $SUDO_HELPER btrfs subvolume snapshot -r subv-parent subv-snap1
-run_check $SUDO_HELPER dd if=/dev/urandom of=subv-parent/file bs=1M count=10
-run_check $SUDO_HELPER btrfs subvolume snapshot -r subv-parent subv-snap2
-run_check $SUDO_HELPER dd if=/dev/urandom of=subv-parent/file bs=1M count=10
-run_check $SUDO_HELPER btrfs subvolume snapshot -r subv-parent subv-snap3
-
-run_check truncate -s0 "$here"/send.stream
-run_check chmod a+w "$here"/send.stream
-run_check $SUDO_HELPER btrfs send -f "$here"/send.stream -p subv-snap1 subv-snap2 subv-snap3
-
-cd "$here" || _fail "cannot chdir back to test directory"
-
-run_check_umount_test_dev
-
---BOKacYhQ+x31HxR3--
+diff --git a/cmds-send.c b/cmds-send.c
+index dfdfe01..2a8a697 100644
+--- a/cmds-send.c
++++ b/cmds-send.c
+@@ -650,7 +650,7 @@ int cmd_send(int argc, char **argv)
+ 			goto out;
+ 		}
+ 
+-		if (!full_send && !parent_root_id) {
++		if (!full_send && root_id) {
+ 			ret = find_good_parent(&send, root_id, &parent_root_id);
+ 			if (ret < 0) {
+ 				error("parent determination failed for %lld",
+@@ -673,7 +673,7 @@ int cmd_send(int argc, char **argv)
+ 		if (ret < 0)
+ 			goto out;
+ 
+-		if (!full_send) {
++		if (!full_send && root_id) {
+ 			/* done with this subvol, so add it to the clone sources */
+ 			ret = add_clone_source(&send, root_id);
+ 			if (ret < 0) {
+@@ -681,8 +681,6 @@ int cmd_send(int argc, char **argv)
+ 				goto out;
+ 			}
+ 		}
+-
+-		parent_root_id = 0;
+ 	}
+ 
+ 	ret = 0;
+-- 
+2.9.3

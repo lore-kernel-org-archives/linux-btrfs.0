@@ -1,52 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40134 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1756514AbcJSOXq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Oct 2016 10:23:46 -0400
-Date: Wed, 19 Oct 2016 16:23:44 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Cc: Holger =?iso-8859-1?Q?Hoffst=E4tte?=
-        <holger@applied-asynchrony.com>,
-        linux-btrfs@vger.kernel.org, jbacik@fb.com, dsterba@suse.com
-Subject: Re: [PATCH 2/2] btrfs: fix false enospc for compression
-Message-ID: <20161019142344.GR11398@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20161006025139.22776-1-wangxg.fnst@cn.fujitsu.com>
- <20161006025139.22776-2-wangxg.fnst@cn.fujitsu.com>
- <5800E4AB.2010701@applied-asynchrony.com>
- <5804937A.2060506@cn.fujitsu.com>
+Received: from mail-it0-f47.google.com ([209.85.214.47]:36894 "EHLO
+        mail-it0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S941920AbcJSOWl (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 19 Oct 2016 10:22:41 -0400
+Received: by mail-it0-f47.google.com with SMTP id m138so29547208itm.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Oct 2016 07:22:40 -0700 (PDT)
+Subject: Re: Monitoring Btrfs
+To: Anand Jain <anand.jain@oracle.com>,
+        Stefan Malte Schumacher <stefan.m.schumacher@gmail.com>,
+        linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
+References: <CAA3ktqmhhasyk8L+W3jz9ifYw7UMoL4ueg1HQp7Co3L39xYe9Q@mail.gmail.com>
+ <05b79b4d-3f8d-7b78-d386-495b1dab1e70@gmail.com>
+ <c40e1675-f002-b2e4-b252-c5e17200f72a@oracle.com>
+ <a813c70b-e230-726e-e0bc-e8f15848cc44@gmail.com>
+ <a12e3815-98c3-5ab6-179b-2c8efb841533@oracle.com>
+ <9bbe4174-dcb0-ec14-2da8-eaf9b4f4ab82@gmail.com>
+ <bf0b049c-cd7a-00f4-cc20-68d50a7be039@oracle.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <dd66793c-709a-1b7e-09d0-99f1b745f908@gmail.com>
+Date: Wed, 19 Oct 2016 09:33:21 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <5804937A.2060506@cn.fujitsu.com>
+In-Reply-To: <bf0b049c-cd7a-00f4-cc20-68d50a7be039@oracle.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 17, 2016 at 05:01:46PM +0800, Wang Xiaoguang wrote:
-> > [..]
-> >>   int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
-> >> -			      struct extent_state **cached_state);
-> >> +			      struct extent_state **cached_state, int flag);
-> >>   int btrfs_set_extent_defrag(struct inode *inode, u64 start, u64 end,
-> >> -			    struct extent_state **cached_state);
-> >> +			    struct extent_state **cached_state, int flag);
-> > [..]
-> >>   int btrfs_dirty_pages(struct btrfs_root *root, struct inode *inode,
-> >>   		      struct page **pages, size_t num_pages,
-> >>   		      loff_t pos, size_t write_bytes,
-> >> -		      struct extent_state **cached);
-> >> +		      struct extent_state **cached, int flag);
-> > Instead of adding "int flag" why not use the already defined
-> > btrfs_metadata_reserve_type enum? I know it's just an int at the end of
-> > the day, but the dedupe support already added another "int dedupe" argument
-> > and it's probably easy to cause confusion.
-> > Maybe later it would be beneficial to consolidate the flags into a consistent
-> > set of enum values to prevent more "int flag" inflation and better declare the
-> > intent of the extent state change. Not sure if that makes sense.
-> Yes, agree.
-> I'll rebase them later, thanks.
+On 2016-10-19 09:06, Anand Jain wrote:
+>
+>
+> On 10/19/16 19:15, Austin S. Hemmelgarn wrote:
+>> On 2016-10-18 17:36, Anand Jain wrote:
+>>>
+>>>
+>>>>>>> I would like to monitor my btrfs-filesystem for missing drives.
+>>>
+>>>
+>>>>>> This is actually correct behavior, the filesystem reports that it
+>>>>>> should
+>>>>>> have 6 devices, which is how it knows a device is missing.
+>>>
+>>>
+>>>>>  Missing - means missing at the time of mount. So how are you planning
+>>>>> to monitor a disk which is failed while in production ?
+>>>
+>>>> No, in `btrfs fi show` it means that it can't find the device.
+>>>
+>>>  'btrfs fi show' is miss-leading as compared to 'btrfs fi show -m'
+>>>  -m tells btrfs-kernel perspective of the devices, as of now
+>>>  there is no code in the kernel which changes the device status
+>>>  while its mounted (expect for readonly, which is irrelevant in
+>>>  raid1 with 1 disk failed).
+>
+>> Actually, that's exactly how I would expect each of them to behave.  We
+>> need some way to get both the state the kernel thinks the FS is in, and
+>> the state it's actually in (according to the tools, not the kernel), and
+>> '-m' reporting kernel state while no '-m' reports actual state is
+>> exactly what I would expect in this case.
+>
+>
+>> That leads also to another way I hadn't thought of to monitor a
+>> filesystem.  The output of 'fi show' with and without '-m' should match
+>> if the filesystem was healthy when mounted and is still healthy, if they
+>> don't, then something is wrong.
+>
+>
+>>>> 1. Filesystem flags.  These will change when the filesystem goes
+>>>> degraded,
+>>>
+>>>   Which flag is in question here. ?
+>> I should clarify here, I mean the mount options, I'm just used to the
+>> monit terminology (which was not well picked in this case).  The big one
+>> to watch is the read-only flag, as BTRFS will force a filesystem
+>> read-only (which updates the mount options).  Any change to the mount
+>> options though without manual intervention is generally a sign that
+>> _something_ is wrong.
+>
+>
+>  btrfs-progs shouldn't add its own intelligence in determining the
+>  device state, it should be a transparent tool to report status from
+>  the btrfs-kernel. So I opposed to the patches such as
+>
+>     commit 206efb60cbe3049e0d44c6da3c1909aeee18f813
+>     btrfs-progs: Add missing devices check for mounted btrfs.
+>
+>  There are many ways a device can fail/recover in the SAN environment,
+>  these device state managing intelligence should be at one place and
+>  in the kernel. The volume manager part of the code in the kernel
+>  is incomplete.
+>
+I don't agree that the management should be completely unified or that 
+the tools should just report kernel state.  The tools have to have some 
+way to check device state for unmounted filesystems because they have to 
+operate on unmounted filesystems, and because until the kernel gets 
+smart enough to actually handle device state properly, some method is 
+needed to check the actual state of the devices.  Even once the kernel 
+is smart enough, it's still helpful to see without mounting a filesystem 
+whether or not all the devices are there, and if we ever switch to a 
+real mount helper (which I am in favor of for multiple reasons), we'll 
+need device state checking in userspace for that too.
 
-Would be great. I won't manually merge the patch now as it's not a
-conflict against the current state, btrfs_set_extent_delalloc has the
-extra parameter already. Please consolidate them before this patch is
-supposed to be merged. Thanks.
+Take a look for at LVM.  The separation of responsibilities there is 
+ideally what we should be looking at long term for BTRFS.  The userspace 
+components tell the kernel what to do, and list both kernel state _and_ 
+physical state in a readable manner.  The kernel tracks limited parts of 
+the state (only for active LV's, so the equivalent of mounted 
+filesystems, and even then only what it needs to track (Is this RAID 
+volume in sync?  Is that snapshot or thin storage pool getting close to 
+full?)), and sends notifications to a userspace component which then 
+acts on those conditions (possibly then telling the kernel what to do in 
+response to them).  On top of that, the userspace components don't 
+require a kernel which supports them for any off-line operations, and 
+the kernel works fine with older userspace.  Both userspace and the 
+kernel handle missing devices (userspace tools report them, the kernel 
+refuses to activate LV's that require them).

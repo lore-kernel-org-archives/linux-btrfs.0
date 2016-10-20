@@ -1,85 +1,189 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:45486 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1758903AbcJTJlt (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 20 Oct 2016 05:41:49 -0400
-Subject: Re: [PATCH 1/2] btrfs: Add WARN_ON for qgroup reserved underflow
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>, <rgoldwyn@suse.de>,
-        <rgoldwyn@suse.com>
-References: <20160930011537.4857-1-quwenruo@cn.fujitsu.com>
- <20161019143142.GS11398@twin.jikos.cz>
- <0b4d5b87-4f47-3874-b1e3-a7e7e06f0c59@cn.fujitsu.com>
- <20161020092000.GW11398@suse.cz>
+Received: from cn.fujitsu.com ([222.73.24.84]:34860 "EHLO song.cn.fujitsu.com"
+        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+        id S1755046AbcJTC24 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 19 Oct 2016 22:28:56 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <abf1a09c-75e1-8cda-feb7-71b1d433f667@cn.fujitsu.com>
-Date: Thu, 20 Oct 2016 17:41:34 +0800
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH 2/2] btrfs: Add trace point for qgroup reserved space
+Date: Thu, 20 Oct 2016 10:28:42 +0800
+Message-Id: <20161020022842.27328-2-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20161020022842.27328-1-quwenruo@cn.fujitsu.com>
+References: <20161020022842.27328-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20161020092000.GW11398@suse.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Introduce the following trace points:
+qgroup_update_reserve
+qgroup_meta_reserve
 
+And modify the timing of btrfs_qgroup_free_delayed_ref() and
+btrfs_qgroup_release_data() events, to work with qgroup_update_reserve()
+event.
 
-At 10/20/2016 05:20 PM, David Sterba wrote:
-> On Thu, Oct 20, 2016 at 09:05:34AM +0800, Qu Wenruo wrote:
->>
->>
->> At 10/19/2016 10:31 PM, David Sterba wrote:
->>> On Fri, Sep 30, 2016 at 09:15:36AM +0800, Qu Wenruo wrote:
->>>> While the reason why qgroup reserved space may underflow is still under
->>>> investigation, such WARN_ON will help us to expose the bug more easily,
->>>> and for end-user we can detect and avoid underflow.
->>>>
->>>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
->>>> ---
->>>>  fs/btrfs/qgroup.c | 21 ++++++++++++++++-----
->>>>  1 file changed, 16 insertions(+), 5 deletions(-)
->>>>
->>>> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
->>>> index 8db2e29..8532587 100644
->>>> --- a/fs/btrfs/qgroup.c
->>>> +++ b/fs/btrfs/qgroup.c
->>>> @@ -1061,8 +1061,12 @@ static int __qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
->>>>  	WARN_ON(sign < 0 && qgroup->excl < num_bytes);
->>>>  	qgroup->excl += sign * num_bytes;
->>>>  	qgroup->excl_cmpr += sign * num_bytes;
->>>> -	if (sign > 0)
->>>> -		qgroup->reserved -= num_bytes;
->>>> +	if (sign > 0) {
->>>> +		if (WARN_ON(qgroup->reserved < num_bytes))
->>>
->>> That's only partially helpful, you should also print the numbers,
->>> ref_root and/or qgroup id.
->>>
->>
->> I'm OK to add more output.
->> But normally it's not really help though.
->
-> So do you need the warning at all? The next patch adds tracepoints, I
-> assume you turn them on and look for the issues you're debugging. The
-> warning would otherwise appear for any user. Without the message it's
-> IME more scary, it's not obvious what happened without looking into the
-> code.
->
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ fs/btrfs/qgroup.c            | 21 ++++++++++++++++++---
+ fs/btrfs/qgroup.h            |  2 +-
+ include/trace/events/btrfs.h | 43 +++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 62 insertions(+), 4 deletions(-)
 
-The WARN_ON() is needed to let end-user know there is something wrong 
-and encourage them to report the bug.
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index fc0c64e..aad34314 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1068,6 +1068,8 @@ static int __qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
+ 	qgroup->excl += sign * num_bytes;
+ 	qgroup->excl_cmpr += sign * num_bytes;
+ 	if (sign > 0) {
++		trace_qgroup_update_reserve(fs_info, qgroup->qgroupid,
++					    qgroup->reserved, (s64)-num_bytes);
+ 		if (WARN_ON(qgroup->reserved < num_bytes))
+ 			report_reserved_underflow(fs_info, qgroup,
+ 						  num_bytes);
+@@ -1094,6 +1096,9 @@ static int __qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
+ 		WARN_ON(sign < 0 && qgroup->excl < num_bytes);
+ 		qgroup->excl += sign * num_bytes;
+ 		if (sign > 0) {
++			trace_qgroup_update_reserve(fs_info, qgroup->qgroupid,
++						    qgroup->reserved,
++						    (s64)-num_bytes);
+ 			if (WARN_ON(qgroup->reserved < num_bytes))
+ 				report_reserved_underflow(fs_info, qgroup,
+ 							  num_bytes);
+@@ -2178,6 +2183,8 @@ static int qgroup_reserve(struct btrfs_root *root, u64 num_bytes)
+ 
+ 		qg = u64_to_ptr(unode->aux);
+ 
++		trace_qgroup_update_reserve(fs_info, qg->qgroupid,
++					    qg->reserved, num_bytes);
+ 		qg->reserved += num_bytes;
+ 	}
+ 
+@@ -2223,6 +2230,8 @@ void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
+ 
+ 		qg = u64_to_ptr(unode->aux);
+ 
++		trace_qgroup_update_reserve(fs_info, qg->qgroupid,
++					    qg->reserved, (s64)-num_bytes);
+ 		if (WARN_ON(qgroup->reserved < num_bytes))
+ 			report_reserved_underflow(fs_info, qgroup, num_bytes);
+ 		else
+@@ -2651,12 +2660,12 @@ static int __btrfs_qgroup_release_data(struct inode *inode, u64 start, u64 len,
+ 	if (ret < 0)
+ 		goto out;
+ 
+-	if (free) {
+-		qgroup_free(BTRFS_I(inode)->root, changeset.bytes_changed);
++	if (free)
+ 		trace_op = QGROUP_FREE;
+-	}
+ 	trace_btrfs_qgroup_release_data(inode, start, len,
+ 					changeset.bytes_changed, trace_op);
++	if (free)
++		qgroup_free(BTRFS_I(inode)->root, changeset.bytes_changed);
+ out:
+ 	ulist_free(changeset.range_changed);
+ 	return ret;
+@@ -2706,6 +2715,8 @@ int btrfs_qgroup_reserve_meta(struct btrfs_root *root, int num_bytes)
+ 		return 0;
+ 
+ 	BUG_ON(num_bytes != round_down(num_bytes, root->nodesize));
++	trace_qgroup_meta_reserve(root->fs_info, root->objectid,
++				  (s64)num_bytes);
+ 	ret = qgroup_reserve(root, num_bytes);
+ 	if (ret < 0)
+ 		return ret;
+@@ -2724,6 +2735,8 @@ void btrfs_qgroup_free_meta_all(struct btrfs_root *root)
+ 	reserved = atomic_xchg(&root->qgroup_meta_rsv, 0);
+ 	if (reserved == 0)
+ 		return;
++	trace_qgroup_meta_reserve(root->fs_info, root->objectid,
++				  (s64)-reserved);
+ 	qgroup_free(root, reserved);
+ }
+ 
+@@ -2736,6 +2749,8 @@ void btrfs_qgroup_free_meta(struct btrfs_root *root, int num_bytes)
+ 	BUG_ON(num_bytes != round_down(num_bytes, root->nodesize));
+ 	WARN_ON(atomic_read(&root->qgroup_meta_rsv) < num_bytes);
+ 	atomic_sub(num_bytes, &root->qgroup_meta_rsv);
++	trace_qgroup_meta_reserve(root->fs_info, root->objectid,
++				  (s64)-num_bytes);
+ 	qgroup_free(root, num_bytes);
+ }
+ 
+diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+index 1bc64c8..6b6756c 100644
+--- a/fs/btrfs/qgroup.h
++++ b/fs/btrfs/qgroup.h
+@@ -114,8 +114,8 @@ void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
+ static inline void btrfs_qgroup_free_delayed_ref(struct btrfs_fs_info *fs_info,
+ 						 u64 ref_root, u64 num_bytes)
+ {
+-	btrfs_qgroup_free_refroot(fs_info, ref_root, num_bytes);
+ 	trace_btrfs_qgroup_free_delayed_ref(fs_info, ref_root, num_bytes);
++	btrfs_qgroup_free_refroot(fs_info, ref_root, num_bytes);
+ }
+ void assert_qgroups_uptodate(struct btrfs_trans_handle *trans);
+ 
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index e030d6f..fb3cb6c 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -1468,6 +1468,49 @@ TRACE_EVENT(qgroup_update_counters,
+ 		  __entry->cur_new_count)
+ );
+ 
++TRACE_EVENT(qgroup_update_reserve,
++
++	TP_PROTO(struct btrfs_fs_info *fs_info, u64 qgid, u64 cur_reserved,
++		 s64 diff),
++
++	TP_ARGS(fs_info, qgid, cur_reserved, diff),
++
++	TP_STRUCT__entry_btrfs(
++		__field(	u64,	qgid			)
++		__field(	u64,	cur_reserved		)
++		__field(	s64,	diff			)
++	),
++
++	TP_fast_assign_btrfs(fs_info,
++		__entry->qgid		= qgid;
++		__entry->cur_reserved	= cur_reserved;
++		__entry->diff		= diff;
++	),
++
++	TP_printk_btrfs("qgid = %llu, cur_reserved = %llu, diff = %lld",
++		__entry->qgid, __entry->cur_reserved, __entry->diff)
++);
++
++TRACE_EVENT(qgroup_meta_reserve,
++
++	TP_PROTO(struct btrfs_fs_info *fs_info, u64 refroot, s64 diff),
++
++	TP_ARGS(fs_info, refroot, diff),
++
++	TP_STRUCT__entry_btrfs(
++		__field(	u64,	refroot			)
++		__field(	u64,	diff			)
++	),
++
++	TP_fast_assign_btrfs(fs_info,
++		__entry->refroot	= refroot;
++		__entry->diff		= diff;
++	),
++
++	TP_printk_btrfs("refroot = %llu, diff = %lld",
++		__entry->refroot, __entry->diff)
++);
++
+ #endif /* _TRACE_BTRFS_H */
+ 
+ /* This part must be outside protection */
+-- 
+2.10.0
 
-And, other than trace events, normally I just check if there is any 
-warning in kernel dmesg to do a quick check if the fix is OK or not.
-(trace events is never simpler than plain dmesg)
-
-So personally speaking, WARN_ON() is always needed and obvious enough 
-for both developer and end-user.
-
-But that's just my personal preference.
-More data on fsid and qgroupid after scary kernel WARN_ON() won't hurt 
-anyway.
-Especially fsid/qgroupid is useful for multi-btrfs/subvolume system.
-
-Thanks,
-Qu
 
 

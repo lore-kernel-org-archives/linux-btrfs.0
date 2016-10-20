@@ -1,24 +1,139 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51787 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754846AbcJXRvp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Oct 2016 13:51:45 -0400
-Date: Mon, 24 Oct 2016 19:51:43 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH v9.1 0/5] In-band de-duplication for btrfs-progs
-Message-ID: <20161024175143.GJ22935@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20161020020659.21803-1-quwenruo@cn.fujitsu.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:28362 "EHLO song.cn.fujitsu.com"
+        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+        id S1751139AbcJTCEi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 19 Oct 2016 22:04:38 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: [PATCH v13.1 00/14] Btrfs In-band De-duplication
+Date: Thu, 20 Oct 2016 10:03:39 +0800
+Message-Id: <20161020020339.21208-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20161020020659.21803-1-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 20, 2016 at 10:06:59AM +0800, Qu Wenruo wrote:
-> Patchset can be fetched from github:
-> https://github.com/adam900710/btrfs-progs.git dedupe_latest
+This patchset can be fetched from github:
+https://github.com/adam900710/linux.git wang_dedupe_latest
 
-Branch added to progs intergration, for preview and testing.
+This version is just another small update, rebased to Chris' for-linus-4.9
+branch.
+
+Since preparation patch for sub-page size and inband dedupe is already
+merged, now it's quite easy to rebase.
+Only 2 small conflicts happens in this rebase.
+
+Changelog:
+v2:
+  Totally reworked to handle multiple backends
+v3:
+  Fix a stupid but deadly on-disk backend bug
+  Add handle for multiple hash on same bytenr corner case to fix abort
+  trans error
+  Increase dedup rate by enhancing delayed ref handler for both backend.
+  Move dedup_add() to run_delayed_ref() time, to fix abort trans error.
+  Increase dedup block size up limit to 8M.
+v4:
+  Add dedup prop for disabling dedup for given files/dirs.
+  Merge inmem_search() and ondisk_search() into generic_search() to save
+  some code
+  Fix another delayed_ref related bug.
+  Use the same mutex for both inmem and ondisk backend.
+  Move dedup_add() back to btrfs_finish_ordered_io() to increase dedup
+  rate.
+v5:
+  Reuse compress routine for much simpler dedup function.
+  Slightly improved performance due to above modification.
+  Fix race between dedup enable/disable
+  Fix for false ENOSPC report
+v6:
+  Further enable/disable race window fix.
+  Minor format change according to checkpatch.
+v7:
+  Fix one concurrency bug with balance.
+  Slightly modify return value from -EINVAL to -EOPNOTSUPP for
+  btrfs_dedup_ioctl() to allow progs to distinguish unsupported commands
+  and wrong parameter.
+  Rebased to integration-4.6.
+v8:
+  Rename 'dedup' to 'dedupe'.
+  Add support to allow dedupe and compression work at the same time.
+  Fix several balance related bugs. Special thanks to Satoru Takeuchi,
+  who exposed most of them.
+  Small dedupe hit case performance improvement.
+v9:
+  Re-order the patchset to completely separate pure in-memory and any
+  on-disk format change.
+  Fold bug fixes into its original patch.
+v10:
+  Adding back missing bug fix patch.
+  Reduce on-disk item size.
+  Hide dedupe ioctl under CONFIG_BTRFS_DEBUG.
+v11:
+  Remove other backend and props support to focus on the framework and
+  in-memory backend. Suggested by David.
+  Better disable and buffered write race protection.
+  Comprehensive fix to dedupe metadata ENOSPC problem.
+v12:
+  Stateful 'enable' ioctl and new 'reconf' ioctl
+  New FORCE flag for enable ioctl to allow stateless ioctl
+  Precise error report and extendable ioctl structure.
+v12.1
+  Rebase to David's for-next-20160704 branch
+  Add co-ordinate patch for subpage and dedupe patchset. 
+v12.2
+  Rebase to David's for-next-20160715 branch
+  Add co-ordinate patch for other patchset.
+v13
+  Rebase to David's for-next-20160906 branch
+  Fix a reserved space leak bug, which only frees quota reserved space
+  but not space_info->byte_may_use.
+v13.1
+  Rebase to Chris' for-linux-4.9 branch
+
+Qu Wenruo (4):
+  btrfs: delayed-ref: Add support for increasing data ref under spinlock
+  btrfs: dedupe: Inband in-memory only de-duplication implement
+  btrfs: relocation: Enhance error handling to avoid BUG_ON
+  btrfs: dedupe: Introduce new reconfigure ioctl
+
+Wang Xiaoguang (10):
+  btrfs: dedupe: Introduce dedupe framework and its header
+  btrfs: dedupe: Introduce function to initialize dedupe info
+  btrfs: dedupe: Introduce function to add hash into in-memory tree
+  btrfs: dedupe: Introduce function to remove hash from in-memory tree
+  btrfs: dedupe: Introduce function to search for an existing hash
+  btrfs: dedupe: Implement btrfs_dedupe_calc_hash interface
+  btrfs: ordered-extent: Add support for dedupe
+  btrfs: dedupe: Add ioctl for inband dedupelication
+  btrfs: improve inode's outstanding_extents computation
+  btrfs: dedupe: fix false ENOSPC
+
+ fs/btrfs/Makefile                |   2 +-
+ fs/btrfs/ctree.h                 |  23 +-
+ fs/btrfs/dedupe.c                | 820 +++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/dedupe.h                | 201 +++++++++-
+ fs/btrfs/delayed-ref.c           |  30 +-
+ fs/btrfs/delayed-ref.h           |   8 +
+ fs/btrfs/disk-io.c               |   4 +
+ fs/btrfs/extent-tree.c           |  82 +++-
+ fs/btrfs/extent_io.c             |  63 ++-
+ fs/btrfs/extent_io.h             |  15 +-
+ fs/btrfs/file.c                  |  26 +-
+ fs/btrfs/free-space-cache.c      |   5 +-
+ fs/btrfs/inode-map.c             |   4 +-
+ fs/btrfs/inode.c                 | 423 ++++++++++++++++----
+ fs/btrfs/ioctl.c                 |  93 ++++-
+ fs/btrfs/ordered-data.c          |  46 ++-
+ fs/btrfs/ordered-data.h          |  14 +
+ fs/btrfs/relocation.c            |  44 ++-
+ fs/btrfs/sysfs.c                 |   2 +
+ fs/btrfs/tests/extent-io-tests.c |   6 +-
+ include/uapi/linux/btrfs.h       |  55 +++
+ 21 files changed, 1823 insertions(+), 143 deletions(-)
+ create mode 100644 fs/btrfs/dedupe.c
+
+-- 
+2.10.0
+
+
+

@@ -1,80 +1,123 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f175.google.com ([209.85.220.175]:34130 "EHLO
-        mail-qk0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933124AbcJUNT5 (ORCPT
+Received: from mail-yw0-f182.google.com ([209.85.161.182]:35440 "EHLO
+        mail-yw0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S934311AbcJUPSk (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 Oct 2016 09:19:57 -0400
-Received: by mail-qk0-f175.google.com with SMTP id f128so146432082qkb.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Oct 2016 06:19:56 -0700 (PDT)
+        Fri, 21 Oct 2016 11:18:40 -0400
+Received: by mail-yw0-f182.google.com with SMTP id t193so99380417ywc.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Oct 2016 08:18:39 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAG6KGPTU0U1=WCA9cZgXrYtm=yDJFZDH+x2v7RtS=6RzmGzRTA@mail.gmail.com>
-References: <CAG6KGPS8Gvy2zGCe22mMmk4uXrqVyRP8FHayhe0ph-8vC+kA4A@mail.gmail.com>
- <CAG6KGPSeR1zAuU0Xo9DrEpd-0QC9agB7p7z+Lb69hxS233_Cvg@mail.gmail.com>
- <20161010234227.69746d3f@natsu> <CAJCQCtQh2C95=ug3x7wT98CA-fRAVXxd5Ghz4suYkENFCf8jQg@mail.gmail.com>
- <CAG6KGPTU0U1=WCA9cZgXrYtm=yDJFZDH+x2v7RtS=6RzmGzRTA@mail.gmail.com>
-From: Martin Dev <mrturtledev@gmail.com>
-Date: Fri, 21 Oct 2016 14:19:55 +0100
-Message-ID: <CAG6KGPRy4xisK_H2RZm-==xuBtsRyqdZ5O=8=UE_MF1434gDHQ@mail.gmail.com>
-Subject: Re: csum failed during copy/compare
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Roman Mamedov <rm@romanrm.net>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+In-Reply-To: <CAMXnza2VriNZqRnRFttPbWHcDups95G6NV8E0LuUZ9PoaT4y7Q@mail.gmail.com>
+References: <CAMXnza15-UMtSugAzX_dYtLx1Rgi+OvASngQnqqTzW86tgDW8A@mail.gmail.com>
+ <CAJCQCtSLZibHtOA8e8qVYwmgoh-m7eUgR5BBft4dDrc6rT=Tjw@mail.gmail.com> <CAMXnza2VriNZqRnRFttPbWHcDups95G6NV8E0LuUZ9PoaT4y7Q@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Fri, 21 Oct 2016 09:18:38 -0600
+Message-ID: <CAJCQCtRY2kwBLArz1so8EusGE8OKdWcexT-oC++rHLxPj2-YNA@mail.gmail.com>
+Subject: Re: Help repairing a partition
+To: Suvayu Ali <fatkasuvayu+linux@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-SATA trace shows device behaving correctly.
-btrfs repair --ignore-errors /dev/sda2 /tmp/ will yield files that are
-not verifiable by FIO, and differ from the original files on the
-internal drive that they were copied from at the failing offset.
+On Fri, Oct 21, 2016 at 12:36 AM, Suvayu Ali
+<fatkasuvayu+linux@gmail.com> wrote:
 
-On Wed, Oct 19, 2016 at 3:39 PM, Martin Dev <mrturtledev@gmail.com> wrote:
-> Fails on Antergos Linux 4.8.2-1-ARCH #1 SMP PREEMPT Mon Oct 17
-> 08:11:46 CEST 2016 x86_64 GNU/Linux
+> I had upgraded to 4.7.3 to test this issue:
 >
-> btrfs-progs v4.8.1
+>   https://bugzilla.redhat.com/show_bug.cgi?id=1372910
 >
-> On Mon, Oct 10, 2016 at 10:05 PM, Chris Murphy <lists@colorremedies.com> wrote:
->> On Mon, Oct 10, 2016 at 12:42 PM, Roman Mamedov <rm@romanrm.net> wrote:
->>> On Mon, 10 Oct 2016 10:44:39 +0100
->>> Martin Dev <mrturtledev@gmail.com> wrote:
+> It hadn't helped, but I didn't have time to debug it any further.
+> Since the Fedora 23 repos have 4.4.1, I guess downgrading is easier
+> for me.
+
+Better is to go to http://koji.fedoraproject.org/ and type in
+btrfs-progs for the package, and find the most recent x.y-1.z version
+- right now that's 4.7.3, although 4.8.1 is probably OK also - it has
+no new features, mainly just a pile of bug fixes, which might be
+useful. So that'd be either:
+btrfs-progs-4.8.1-2.fc26
+or
+btrfs-progs-4.7.3-1.fc26
+
+And rpmbuild --rebuild them for F23 and then install. I would not
+downgrade to 4.4.1 - it's not that it's bad, it's just a waste of time
+if it can't help fix the problem which is very likely the older progs
+you have.
+
+
+>
+> Thanks for the pointer to the changelog; under 4.7.2 it mentions not
+> to repair with 4.7.1, so I'll try `btrfs check --repair` after the
+> downgrade.
+
+No. The older the progs the less safe the repair is. And this
+particular problem you have probably needs a newer progs to fix it
+anyway. So you need to go newer not older. That's pretty much always
+the case with Btrfs.
+
+
+>
+>>> followed by this summary:
 >>>
->>>> I work for system verification of SSDs and we've recently come up
->>>> against an issue with BTRFS on Ubuntu 16.04
+>>> checking csums
+>>> checking root refs
+>>> checking quota groups
+>>> Counts for qgroup id: 0/257 are different
+>>> our:            referenced 7746465792 referenced compressed 7746465792
+>>> disk:           referenced 7746461696 referenced compressed 7746461696
+>>> diff:           referenced 4096 referenced compressed 4096
+>>> our:            exclusive 7746465792 exclusive compressed 7746465792
+>>> disk:           exclusive 7746461696 exclusive compressed 7746461696
+>>> diff:           exclusive 4096 exclusive compressed 4096
+>>> Counts for qgroup id: 0/259 are different
+>>> our:            referenced 135641784320 referenced compressed 135641784320
+>>> disk:           referenced 135633862656 referenced compressed 135633862656
+>>> diff:           referenced 7921664 referenced compressed 7921664
+>>> our:            exclusive 135641784320 exclusive compressed 135641784320
+>>> disk:           exclusive 135633862656 exclusive compressed 135633862656
+>>> diff:           exclusive 7921664 exclusive compressed 7921664
+>>> found 167864082432 bytes used err is 0
+>>> total csum bytes: 161187492
+>>> total tree bytes: 2021015552
+>>> total fs tree bytes: 1725759488
+>>> total extent tree bytes: 86228992
+>>> btree space waste bytes: 386160897
+>>> file data blocks allocated: 1269363683328
+>>>  referenced 164438126592
 >>>
->>>> This seems to be a recent change
->>>
->>> ...well, a change in what?
->>>
->>> If you really didn't change anything on your machines and the used process,
->>> there is no reason for anything to start breaking, other than obvious hardware
->>> issues from age/etc (likely not what's happening here).
->>>
->>> So you most likely did change something yourself, and perhaps the change was
->>> upgrading OS version, kernel version(!!!), or versions of software in general.
->>>
->>> As such, the first suggestion would be go through the recent software updates
->>> history, maybe even restore an OS image you used three months ago (if
->>> available) and confirm that the problem doesn't occur there. After that it's a
->>> process called bisecting, there are tools for that, but likely you don't even
->>> need those yet, just carefully note when you got which upgrades, paying
->>> highest attention to the kernel version, and note at which point the
->>> corruptions start to occur.
+>>> How do I repair this?
 >>
->>
->> There  have been various trim bugs, in Btrfs but also in the block
->> layer. And I don't remember all the different versions involved.  I'd
->> like to think 4.4.24 should behave the same as 4.8.1, so I would
->> retest with those two, using something without ubuntu specific
->> backports (i.e. something as close to the kernel.org trees of those
->> versions as possible). I have no idea what Ubuntu generic 4.4.0-21
->> translates into. Because of the 0, it makes me think it's literally
->> 4.4.0 with 21 sets of various backports, from some unknown time frame
->> without going and looking it up. If that's really 4.4.21, then it's
->> weirdly named, I don't know why any distro would do that.
->>
->> In any case I would compare 4.8.1 and 4.4.24 because those two should
->> work and if not it's a bug that needs to get fixed. Independently,
->> check the SSD firmware. There have been bugs there also.
->>
->> --
->> Chris Murphy
+>> Yeah good question. I can't tell from the message whether different
+>> counts is a bad thing, or if it's just a notification, or what. Yet
+>> again btrfs-progs does not help the user make informed decisions, it's
+>> really frustrating. I think that part can be ignored though for now,
+>> and see if btrfs check --repair can fix the problem now that you have
+>> a backup.
+>
+> Indeed, I have never been this confused about a file system before.
+>
+> I tried repairing after the downgrade to 4.4.1, it says "Couldn't open
+> file system"!  Mounting now works without errors, I can also r/w files
+> as normal; go figure!
+
+Oh shit. That's hilarious. I'm not even going to edit what I wrote above.
+
+Anyway, it looks like you have quotas enabled. There are a number of
+quota related bug fixes in progs newer than 4.4, so you really ought
+to use something newer, and if it breaks then it's a bug and needs a
+good bug report write up so it can get fixed.
+
+In the meantime I would be wary with this file system if it's the only
+backup copy. (Actually I feel that way no matter the file system.) I'd
+make sure btrfs check with progs 4.7.3 or 4.8.1 come up clean (i.e.
+err is 0 is generally a good sign), and that a scrub also comes up
+clean with no errors: either 'btrfs scrub start <mp>' and then later
+check with 'btrfs scrub status' or use -BR flag to not background and
+show stats after completion.
+
+
+
+-- 
+Chris Murphy

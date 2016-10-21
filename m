@@ -1,108 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f173.google.com ([209.85.161.173]:35876 "EHLO
-        mail-yw0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752029AbcJTXsK (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:48861 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750715AbcJUDAS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 20 Oct 2016 19:48:10 -0400
-Received: by mail-yw0-f173.google.com with SMTP id u124so76695682ywg.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Oct 2016 16:48:09 -0700 (PDT)
+        Thu, 20 Oct 2016 23:00:18 -0400
+Date: Thu, 20 Oct 2016 20:00:05 -0700
+From: "Darrick J. Wong" <darrick.wong@oracle.com>
+To: Omar Sandoval <osandov@osandov.com>
+Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, fstests@vger.kernel.org,
+        btrfs <linux-btrfs@vger.kernel.org>, linux-xfs@vger.kernel.org
+Subject: Re: About reflink len = 0 behavior
+Message-ID: <20161021030005.GB5257@birch.djwong.org>
+References: <bedcb76a-4deb-bc0e-7a50-350a8a8db86f@cn.fujitsu.com>
+ <94d643cc-fa49-4b20-b265-55d50af15e47@cn.fujitsu.com>
+ <20161020154733.GA5436@vader>
 MIME-Version: 1.0
-In-Reply-To: <CAMXnza15-UMtSugAzX_dYtLx1Rgi+OvASngQnqqTzW86tgDW8A@mail.gmail.com>
-References: <CAMXnza15-UMtSugAzX_dYtLx1Rgi+OvASngQnqqTzW86tgDW8A@mail.gmail.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Thu, 20 Oct 2016 17:48:08 -0600
-Message-ID: <CAJCQCtSLZibHtOA8e8qVYwmgoh-m7eUgR5BBft4dDrc6rT=Tjw@mail.gmail.com>
-Subject: Re: Help repairing a partition
-To: Suvayu Ali <fatkasuvayu+linux@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20161020154733.GA5436@vader>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 20, 2016 at 3:20 PM, Suvayu Ali <fatkasuvayu+linux@gmail.com> wrote:
-> Hi,
->
-> (please CC me in replies, I'm not subscribed)
->
-> I'm using kernel 4.7.7-100.fc23 with btrfs-progs v4.7.1.
->
-> I had my /home, /var, and /opt as subvolumes in a btrfs partition.
-> Last night btrfs failed, and I was unable to mount it normally
-> (leading to boot failures).  The journal had messages like this:
->
->   BTRFS: open_ctree failed
->   BTRFS error: super_total_bytes ... mismatch with fs_devices total_rw_bytes
->   BTRFS error: failed to read chunk tree: -22
->
-> Finally I managed to mount it manually like this (after making a dd
-> image of the partition):
->
->   # mount -t btrfs -o ro,recovery,nospace_cache /dev/sdb2 /mnt
->
-> and managed to recover my data. Initially "btrfs check" yielded a few
->
->   parent transid verify failed on 101679726592 wanted 822619 found 822617
->
-> and
->
->   checksum verify failed on 101756387328 found 78C8A0BC wanted B7C59D79
->
-> however after backing up my data, I mounted without the "-o ro" (I got
-> a transid related message, but it did mount).  "btrfs check" now spits
-> out a whole bunch of:
->
->   Incorrect local backref count on 202118008832 root 259 owner 178928
-> offset 41181184 found 2 wanted 7 back 0x55713fbbf150
->   Incorrect global backref count on 202118008832 found 2 wanted 7
->   backpointer mismatch on [202118008832 376832]
+On Thu, Oct 20, 2016 at 08:47:33AM -0700, Omar Sandoval wrote:
+> On Thu, Oct 20, 2016 at 03:50:46PM +0800, Qu Wenruo wrote:
+> > Add cc to new xfs mail list.
+> > 
+> > 
+> > At 10/20/2016 03:46 PM, Qu Wenruo wrote:
+> > > Hi Darrick, xfs guys and btrfs guys.
+> > > 
+> > > Although such question is quite late as reflink generic tests are in
+> > > fstests for a long time, I'm still not sure what's the correct behavior
+> > > for reflink len = 0.
 
+"reflink to the end of the source file" is the current behavior for both.
 
-This is a known problem with btrfs-progs 4.7.1 it should not be used.
-https://btrfs.wiki.kernel.org/index.php/Changelog#btrfs-progs_4.7.1_.28Aug_2016.29
+> > > Test case generic/182 is causing different output between btrfs and xfs.
+> > > 
+> > > For btrfs, dedupe will just return 0 and check nothing, while for xfs
+> > > len == 0 means to check the whole file length.
+> > > 
+> > > Both makes sense for me, for btrfs len = 0 behavior, it just follows
+> > > read/write functions.
+> > > And I assume xfs follows reflink behavior, when len is not specified,
+> > > then reflink the length of src file.
 
-Upgrade to 4.7.3 or 4.8.1 is advised.
+Yes.
 
+> > > But since it's a generic test, we need to unify the behavior.
+> > > 
+> > > So, which one is the standard and which document should we follow for
+> > > such behavior definition?
 
+<shrug> I suppose since it'll stop deduping at the first non-matching range,
+there's not a lot of point in having "dedupe to wherever is the end of the
+file" feature.
 
+(Also, if he hasn't already, I'm sure Christoph will point out that we
+shouldn't really go changing the interface after the fact, even if the
+interface was mostly undocumented and afaict not tested by anything like
+xfstests for years...)
 
->
-> followed by this summary:
->
-> checking csums
-> checking root refs
-> checking quota groups
-> Counts for qgroup id: 0/257 are different
-> our:            referenced 7746465792 referenced compressed 7746465792
-> disk:           referenced 7746461696 referenced compressed 7746461696
-> diff:           referenced 4096 referenced compressed 4096
-> our:            exclusive 7746465792 exclusive compressed 7746465792
-> disk:           exclusive 7746461696 exclusive compressed 7746461696
-> diff:           exclusive 4096 exclusive compressed 4096
-> Counts for qgroup id: 0/259 are different
-> our:            referenced 135641784320 referenced compressed 135641784320
-> disk:           referenced 135633862656 referenced compressed 135633862656
-> diff:           referenced 7921664 referenced compressed 7921664
-> our:            exclusive 135641784320 exclusive compressed 135641784320
-> disk:           exclusive 135633862656 exclusive compressed 135633862656
-> diff:           exclusive 7921664 exclusive compressed 7921664
-> found 167864082432 bytes used err is 0
-> total csum bytes: 161187492
-> total tree bytes: 2021015552
-> total fs tree bytes: 1725759488
-> total extent tree bytes: 86228992
-> btree space waste bytes: 386160897
-> file data blocks allocated: 1269363683328
->  referenced 164438126592
->
-> How do I repair this?
+> > > Thanks,
+> > > Qu
+> 
+> Hey, Qu,
+> 
+> I brought this up a few months back here [1], and I think the conclusion
+> was that consistency with clone (so the XFS behavior) was probably what
+> we wanted. I just forgot to follow up and figure out if it would break
+> any userspace programs in a way that mattered (I doubt it).
 
-Yeah good question. I can't tell from the message whether different
-counts is a bad thing, or if it's just a notification, or what. Yet
-again btrfs-progs does not help the user make informed decisions, it's
-really frustrating. I think that part can be ignored though for now,
-and see if btrfs check --repair can fix the problem now that you have
-a backup.
+duperemove doesn't seem to send zero-byte dedupe requests.
 
+--D
 
--- 
-Chris Murphy
+> 
+> 1: http://marc.info/?l=linux-btrfs&m=146828374631829&w=2
+> 
+> -- 
+> Omar

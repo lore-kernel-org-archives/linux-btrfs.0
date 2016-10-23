@@ -1,281 +1,214 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:53941 "EHLO
+Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:40004 "EHLO
         cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1753889AbcJWRpW (ORCPT
+        by vger.kernel.org with ESMTP id S1753889AbcJWRrx (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 23 Oct 2016 13:45:22 -0400
-Subject: Re: [PATCH 1/2] btrfs: improve inode's outstanding_extents
- computation
-To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-References: <20161006025139.22776-1-wangxg.fnst@cn.fujitsu.com>
- <5295464f-2ee5-1918-3a27-a7746f60d3da@profihost.ag>
-Cc: jbacik@fb.com, dsterba@suse.com
+        Sun, 23 Oct 2016 13:47:53 -0400
+Subject: Re: BTRFS: space_info 4 has 18446742286429913088 free, is not full
+To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <1c94f3b1-b238-6668-7976-c0594f170dfe@profihost.ag>
+ <57EBAAF5.10509@cn.fujitsu.com>
+ <4f91af54-78ae-5c08-3daa-8a0c16210e5f@profihost.ag>
+ <57EBB329.9060009@cn.fujitsu.com>
+ <3e429001-020a-748b-c0c5-85b4091599a1@profihost.ag>
+ <57ECBAE7.5030807@cn.fujitsu.com>
+ <0e556b63-7c85-1e97-00b0-91bfca44e82c@profihost.ag>
+ <57ECBF0D.3050609@cn.fujitsu.com>
+ <85f85ca6-95c0-1394-9b09-93dcc00c2319@profihost.ag>
 From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
-Message-ID: <08b80583-54da-9984-9e32-b1750d7c51a5@profihost.ag>
-Date: Sun, 23 Oct 2016 19:45:17 +0200
+Message-ID: <7f04cba9-beeb-ea14-23a2-e4d9a79d0eca@profihost.ag>
+Date: Sun, 23 Oct 2016 19:47:50 +0200
 MIME-Version: 1.0
-In-Reply-To: <5295464f-2ee5-1918-3a27-a7746f60d3da@profihost.ag>
-Content-Type: text/plain; charset=iso-8859-15
+In-Reply-To: <85f85ca6-95c0-1394-9b09-93dcc00c2319@profihost.ag>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hello list,
 
-just want to report again that i've seen not a single ENOSPC msg with
-this series applied.
+just wanted to report that my ENOSPC errors are gone. Thanks to wang for
+his great patches.
 
-Now working fine since 18 days.
+but the space_info corruption still occours.
 
+On every umount i see:
+[93022.166222] BTRFS: space_info 4 has 208952672256 free, is not full
+[93022.166224] BTRFS: space_info total=363998478336, used=155045216256,
+pinned=0, reserved=0, may_use=524288, readonly=65536
+
+Greets,
 Stefan
 
-Am 14.10.2016 um 15:09 schrieb Stefan Priebe - Profihost AG:
+Am 29.09.2016 um 09:27 schrieb Stefan Priebe - Profihost AG:
+> Am 29.09.2016 um 09:13 schrieb Wang Xiaoguang:
+>>>> I found that compress sometime report ENOSPC error even in 4.8-rc8,
+>>>> currently
+>>> I cannot confirm that as i do not have anough space to test this without
+>>> compression ;-( But yes i've compression enabled.
+>> I might not get you, my poor english :)
+>> You mean that you only get ENOSPC error when compression is enabled?
+>>
+>> And when compression is not enabled, you do not get ENOSPC error?
 > 
-> Am 06.10.2016 um 04:51 schrieb Wang Xiaoguang:
->> This issue was revealed by modifying BTRFS_MAX_EXTENT_SIZE(128MB) to 64KB,
->> When modifying BTRFS_MAX_EXTENT_SIZE(128MB) to 64KB, fsstress test often
->> gets these warnings from btrfs_destroy_inode():
->> 	WARN_ON(BTRFS_I(inode)->outstanding_extents);
->> 	WARN_ON(BTRFS_I(inode)->reserved_extents);
->>
->> Simple test program below can reproduce this issue steadily.
->> Note: you need to modify BTRFS_MAX_EXTENT_SIZE to 64KB to have test,
->> otherwise there won't be such WARNING.
->> 	#include <string.h>
->> 	#include <unistd.h>
->> 	#include <sys/types.h>
->> 	#include <sys/stat.h>
->> 	#include <fcntl.h>
->>
->> 	int main(void)
->> 	{
->> 		int fd;
->> 		char buf[68 *1024];
->>
->> 		memset(buf, 0, 68 * 1024);
->> 		fd = open("testfile", O_CREAT | O_EXCL | O_RDWR);
->> 		pwrite(fd, buf, 68 * 1024, 64 * 1024);
->> 		return;
->> 	}
->>
->> When BTRFS_MAX_EXTENT_SIZE is 64KB, and buffered data range is:
->> 64KB						128K		132KB
->> |-----------------------------------------------|---------------|
->>                          64 + 4KB
->>
->> 1) for above data range, btrfs_delalloc_reserve_metadata() will reserve
->> metadata and set BTRFS_I(inode)->outstanding_extents to 2.
->> (68KB + 64KB - 1) / 64KB == 2
->>
->> Outstanding_extents: 2
->>
->> 2) then btrfs_dirty_page() will be called to dirty pages and set
->> EXTENT_DELALLOC flag. In this case, btrfs_set_bit_hook() will be called
->> twice.
->> The 1st set_bit_hook() call will set DEALLOC flag for the first 64K.
->> 64KB						128KB
->> |-----------------------------------------------|
->> 	64KB DELALLOC
->> Outstanding_extents: 2
->>
->> Set_bit_hooks() uses FIRST_DELALLOC flag to avoid re-increase
->> outstanding_extents counter.
->> So for 1st set_bit_hooks() call, it won't modify outstanding_extents,
->> it's still 2.
->>
->> Then FIRST_DELALLOC flag is *CLEARED*.
->>
->> 3) 2nd btrfs_set_bit_hook() call.
->> Because FIRST_DELALLOC have been cleared by previous set_bit_hook(),
->> btrfs_set_bit_hook() will increase BTRFS_I(inode)->outstanding_extents by
->> one, so now BTRFS_I(inode)->outstanding_extents is 3.
->> 64KB                                            128KB            132KB
->> |-----------------------------------------------|----------------|
->> 	64K DELALLOC				   4K DELALLOC
->> Outstanding_extents: 3
->>
->> But the correct outstanding_extents number should be 2, not 3.
->> The 2nd btrfs_set_bit_hook() call just screwed up this, and leads to the
->> WARN_ON().
->>
->> Normally, we can solve it by only increasing outstanding_extents in
->> set_bit_hook().
->> But the problem is for delalloc_reserve/release_metadata(), we only have
->> a 'length' parameter, and calculate in-accurate outstanding_extents.
->> If we only rely on set_bit_hook() release_metadata() will crew things up
->> as it will decrease inaccurate number.
->>
->> So the fix we use is:
->> 1) Increase *INACCURATE* outstanding_extents at delalloc_reserve_meta
->>    Just as a place holder.
->> 2) Increase *accurate* outstanding_extents at set_bit_hooks()
->>    This is the real increaser.
->> 3) Decrease *INACCURATE* outstanding_extents before returning
->>    This makes outstanding_extents to correct value.
->>
->> For 128M BTRFS_MAX_EXTENT_SIZE, due to limitation of
->> __btrfs_buffered_write(), each iteration will only handle about 2MB
->> data.
->> So btrfs_dirty_pages() won't need to handle cases cross 2 extents.
->>
->> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+> I can't tell you. I cannot test with compression not enabled. I do not
+> have anough free space on this disk.
 > 
-> Tested-by: Stefan Priebe <s.priebe@profihost.ag>
+>>>> I'm trying to fix it.
+>>> That sounds good but do you also get the
+>>> BTRFS: space_info 4 has 18446742286429913088 free, is not full
+>>>
+>>> kernel messages on umount? if not you might have found another problem.
+>> Yes, I seem similar messages, you can paste you whole dmesg info here.
 > 
-> Works fine since 8 days - no ENOSPC errors anymore.
+> ------------[ cut here ]------------
+> WARNING: CPU: 2 PID: 5187 at fs/btrfs/extent-tree.c:5790
+> btrfs_free_block_groups+0x346/0x430 [btrfs]()
+> Modules linked in: netconsole xt_multiport iptable_filter ip_tables
+> x_tables 8021q garp bonding x86_pkg_temp_thermal coretemp kvm_intel kvm
+> irqbypass sb_edac crc32_pclmul edac_core i2c_i801 i40e(O) vxlan
+> ip6_udp_tunnel udp_tunnel shpchp ipmi_si ipmi_msghandler button loop
+> btrfs dm_mod raid10 raid0 multipath linear raid456 async_raid6_recov
+> async_memcpy async_pq async_xor async_tx xor raid6_pq igb i2c_algo_bit
+> i2c_core usbhid raid1 md_mod xhci_pci sg ehci_pci xhci_hcd ehci_hcd
+> sd_mod ahci usbcore ptp libahci usb_common pps_core aacraid
+> CPU: 2 PID: 5187 Comm: umount Tainted: G O 4.4.22+63-ph #1
+> Hardware name: Supermicro Super Server/X10SRi-F, BIOS 2.0 12/17/2015
+> 0000000000000000 ffff880fda777d00 ffffffff813b69c3 0000000000000000
+> ffffffffc067a099 ffff880fda777d38 ffffffff810821c6 0000000000000000
+> ffff880074bf0a00 ffff88103c10c088 ffff88103c10c000 ffff88103c10c098
+> Call Trace:
+> [<ffffffff813b69c3>] dump_stack+0x63/0x90
+> [<ffffffff810821c6>] warn_slowpath_common+0x86/0xc0
+> [<ffffffff810822ba>] warn_slowpath_null+0x1a/0x20
+> [<ffffffffc05de9a6>] btrfs_free_block_groups+0x346/0x430 [btrfs]
+> [<ffffffffc05f0bad>] close_ctree+0x15d/0x330 [btrfs]
+> [<ffffffffc05bf409>] btrfs_put_super+0x19/0x20 [btrfs]
+> [<ffffffff811c85af>] generic_shutdown_super+0x6f/0x100
+> [<ffffffff811c8652>] kill_anon_super+0x12/0x20
+> [<ffffffffc05c0376>] btrfs_kill_super+0x16/0xa0 [btrfs]
+> [<ffffffff811c7ff3>] deactivate_locked_super+0x43/0x70
+> [<ffffffff811c807c>] deactivate_super+0x5c/0x60
+> [<ffffffff811e3b5f>] cleanup_mnt+0x3f/0x90
+> [<ffffffff811e3bf2>] __cleanup_mnt+0x12/0x20
+> [<ffffffff8109dad1>] task_work_run+0x81/0xa0
+> [<ffffffff810021c0>] exit_to_usermode_loop+0xb0/0xc0
+> [<ffffffff81002b44>] syscall_return_slowpath+0xd4/0x130
+> [<ffffffff8169dc0c>] int_ret_from_sys_call+0x25/0x8f
+> ---[ end trace cee6ace13018e13e ]---
+> ------------[ cut here ]------------
+> WARNING: CPU: 2 PID: 5187 at fs/btrfs/extent-tree.c:5791
+> btrfs_free_block_groups+0x365/0x430 [btrfs]()
+> Modules linked in: netconsole xt_multiport iptable_filter ip_tables
+> x_tables 8021q garp bonding x86_pkg_temp_thermal coretemp kvm_intel kvm
+> irqbypass sb_edac crc32_pclmul edac_core i2c_i801 i40e(O) vxlan
+> ip6_udp_tunnel udp_tunnel shpchp ipmi_si ipmi_msghandler button loop
+> btrfs dm_mod raid10 raid0 multipath linear raid456 async_raid6_recov
+> async_memcpy async_pq async_xor async_tx xor raid6_pq igb i2c_algo_bit
+> i2c_core usbhid raid1 md_mod xhci_pci sg ehci_pci xhci_hcd ehci_hcd
+> sd_mod ahci usbcore ptp libahci usb_common pps_core aacraid
+> CPU: 2 PID: 5187 Comm: umount Tainted: G W O 4.4.22+63-ph #1
+> Hardware name: Supermicro Super Server/X10SRi-F, BIOS 2.0 12/17/2015
+> 0000000000000000 ffff880fda777d00 ffffffff813b69c3 0000000000000000
+> ffffffffc067a099 ffff880fda777d38 ffffffff810821c6 0000000000000000
+> ffff880074bf0a00 ffff88103c10c088 ffff88103c10c000 ffff88103c10c098
+> Call Trace:
+> [<ffffffff813b69c3>] dump_stack+0x63/0x90
+> [<ffffffff810821c6>] warn_slowpath_common+0x86/0xc0
+> [<ffffffff810822ba>] warn_slowpath_null+0x1a/0x20
+> [<ffffffffc05de9c5>] btrfs_free_block_groups+0x365/0x430 [btrfs]
+> [<ffffffffc05f0bad>] close_ctree+0x15d/0x330 [btrfs]
+> [<ffffffffc05bf409>] btrfs_put_super+0x19/0x20 [btrfs]
+> [<ffffffff811c85af>] generic_shutdown_super+0x6f/0x100
+> [<ffffffff811c8652>] kill_anon_super+0x12/0x20
+> [<ffffffffc05c0376>] btrfs_kill_super+0x16/0xa0 [btrfs]
+> [<ffffffff811c7ff3>] deactivate_locked_super+0x43/0x70
+> [<ffffffff811c807c>] deactivate_super+0x5c/0x60
+> [<ffffffff811e3b5f>] cleanup_mnt+0x3f/0x90
+> [<ffffffff811e3bf2>] __cleanup_mnt+0x12/0x20
+> [<ffffffff8109dad1>] task_work_run+0x81/0xa0
+> [<ffffffff810021c0>] exit_to_usermode_loop+0xb0/0xc0
+> [<ffffffff81002b44>] syscall_return_slowpath+0xd4/0x130
+> [<ffffffff8169dc0c>] int_ret_from_sys_call+0x25/0x8f
+> ---[ end trace cee6ace13018e13f ]---
+> ------------[ cut here ]------------
+> WARNING: CPU: 2 PID: 5187 at fs/btrfs/extent-tree.c:10151
+> btrfs_free_block_groups+0x291/0x430 [btrfs]()
+> Modules linked in: netconsole xt_multiport iptable_filter ip_tables
+> x_tables 8021q garp bonding x86_pkg_temp_thermal coretemp kvm_intel kvm
+> irqbypass sb_edac crc32_pclmul edac_core i2c_i801 i40e(O) vxlan
+> ip6_udp_tunnel udp_tunnel shpchp ipmi_si ipmi_msghandler button loop
+> btrfs dm_mod raid10 raid0 multipath linear raid456 async_raid6_recov
+> async_memcpy async_pq async_xor async_tx xor raid6_pq igb i2c_algo_bit
+> i2c_core usbhid raid1 md_mod xhci_pci sg ehci_pci xhci_hcd ehci_hcd
+> sd_mod ahci usbcore ptp libahci usb_common pps_core aacraid
+> CPU: 2 PID: 5187 Comm: umount Tainted: G W O 4.4.22+63-ph #1
+> Hardware name: Supermicro Super Server/X10SRi-F, BIOS 2.0 12/17/2015
+> 0000000000000000 ffff880fda777d00 ffffffff813b69c3 0000000000000000
+> ffffffffc067a099 ffff880fda777d38 ffffffff810821c6 ffff880074bf0000
+> ffff880074bf0088 ffff880074bf0df8 ffff88103c10c000 0000000000000000
+> Call Trace:
+> [<ffffffff813b69c3>] dump_stack+0x63/0x90
+> [<ffffffff810821c6>] warn_slowpath_common+0x86/0xc0
+> [<ffffffff810822ba>] warn_slowpath_null+0x1a/0x20
+> [<ffffffffc05de8f1>] btrfs_free_block_groups+0x291/0x430 [btrfs]
+> [<ffffffffc05f0bad>] close_ctree+0x15d/0x330 [btrfs]
+> [<ffffffffc05bf409>] btrfs_put_super+0x19/0x20 [btrfs]
+> [<ffffffff811c85af>] generic_shutdown_super+0x6f/0x100
+> [<ffffffff811c8652>] kill_anon_super+0x12/0x20
+> [<ffffffffc05c0376>] btrfs_kill_super+0x16/0xa0 [btrfs]
+> [<ffffffff811c7ff3>] deactivate_locked_super+0x43/0x70
+> [<ffffffff811c807c>] deactivate_super+0x5c/0x60
+> [<ffffffff811e3b5f>] cleanup_mnt+0x3f/0x90
+> [<ffffffff811e3bf2>] __cleanup_mnt+0x12/0x20
+> [<ffffffff8109dad1>] task_work_run+0x81/0xa0
+> [<ffffffff810021c0>] exit_to_usermode_loop+0xb0/0xc0
+> [<ffffffff81002b44>] syscall_return_slowpath+0xd4/0x130
+> [<ffffffff8169dc0c>] int_ret_from_sys_call+0x25/0x8f
+> ---[ end trace cee6ace13018e140 ]---
+> BTRFS: space_info 4 has 18446742182612910080 free, is not full
+> BTRFS: space_info total=82678120448, used=64784695296, pinned=0,
+> reserved=0, may_use=1908990066688, readonly=0
 > 
 > Greets,
 > Stefan
 > 
->> ---
->>  fs/btrfs/ctree.h |  2 ++
->>  fs/btrfs/inode.c | 65 ++++++++++++++++++++++++++++++++++++++++++++++++++------
->>  fs/btrfs/ioctl.c |  6 ++----
->>  3 files changed, 62 insertions(+), 11 deletions(-)
+>> Regards,
+>> Xiaoguang Wang
 >>
->> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
->> index 33fe035..16885f6 100644
->> --- a/fs/btrfs/ctree.h
->> +++ b/fs/btrfs/ctree.h
->> @@ -3119,6 +3119,8 @@ int btrfs_start_delalloc_roots(struct btrfs_fs_info *fs_info, int delay_iput,
->>  			       int nr);
->>  int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
->>  			      struct extent_state **cached_state);
->> +int btrfs_set_extent_defrag(struct inode *inode, u64 start, u64 end,
->> +			    struct extent_state **cached_state);
->>  int btrfs_create_subvol_root(struct btrfs_trans_handle *trans,
->>  			     struct btrfs_root *new_root,
->>  			     struct btrfs_root *parent_root,
->> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
->> index e6811c4..a7193b1 100644
->> --- a/fs/btrfs/inode.c
->> +++ b/fs/btrfs/inode.c
->> @@ -1590,6 +1590,9 @@ static void btrfs_split_extent_hook(struct inode *inode,
->>  	if (!(orig->state & EXTENT_DELALLOC))
->>  		return;
->>  
->> +	if (btrfs_is_free_space_inode(inode))
->> +		return;
->> +
->>  	size = orig->end - orig->start + 1;
->>  	if (size > BTRFS_MAX_EXTENT_SIZE) {
->>  		u64 num_extents;
->> @@ -1632,6 +1635,9 @@ static void btrfs_merge_extent_hook(struct inode *inode,
->>  	if (!(other->state & EXTENT_DELALLOC))
->>  		return;
->>  
->> +	if (btrfs_is_free_space_inode(inode))
->> +		return;
->> +
->>  	if (new->start > other->start)
->>  		new_size = new->end - other->start + 1;
->>  	else
->> @@ -1727,7 +1733,6 @@ static void btrfs_del_delalloc_inode(struct btrfs_root *root,
->>  static void btrfs_set_bit_hook(struct inode *inode,
->>  			       struct extent_state *state, unsigned *bits)
->>  {
->> -
->>  	if ((*bits & EXTENT_DEFRAG) && !(*bits & EXTENT_DELALLOC))
->>  		WARN_ON(1);
->>  	/*
->> @@ -1738,13 +1743,16 @@ static void btrfs_set_bit_hook(struct inode *inode,
->>  	if (!(state->state & EXTENT_DELALLOC) && (*bits & EXTENT_DELALLOC)) {
->>  		struct btrfs_root *root = BTRFS_I(inode)->root;
->>  		u64 len = state->end + 1 - state->start;
->> +		u64 num_extents = div64_u64(len + BTRFS_MAX_EXTENT_SIZE - 1,
->> +					    BTRFS_MAX_EXTENT_SIZE);
->>  		bool do_list = !btrfs_is_free_space_inode(inode);
->>  
->> -		if (*bits & EXTENT_FIRST_DELALLOC) {
->> +		if (*bits & EXTENT_FIRST_DELALLOC)
->>  			*bits &= ~EXTENT_FIRST_DELALLOC;
->> -		} else {
->> +
->> +		if (do_list) {
->>  			spin_lock(&BTRFS_I(inode)->lock);
->> -			BTRFS_I(inode)->outstanding_extents++;
->> +			BTRFS_I(inode)->outstanding_extents += num_extents;
->>  			spin_unlock(&BTRFS_I(inode)->lock);
->>  		}
->>  
->> @@ -1792,7 +1800,7 @@ static void btrfs_clear_bit_hook(struct inode *inode,
->>  
->>  		if (*bits & EXTENT_FIRST_DELALLOC) {
->>  			*bits &= ~EXTENT_FIRST_DELALLOC;
->> -		} else if (!(*bits & EXTENT_DO_ACCOUNTING)) {
->> +		} else if (!(*bits & EXTENT_DO_ACCOUNTING) && do_list) {
->>  			spin_lock(&BTRFS_I(inode)->lock);
->>  			BTRFS_I(inode)->outstanding_extents -= num_extents;
->>  			spin_unlock(&BTRFS_I(inode)->lock);
->> @@ -1990,9 +1998,52 @@ static noinline int add_pending_csums(struct btrfs_trans_handle *trans,
->>  int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
->>  			      struct extent_state **cached_state)
->>  {
->> +	int ret;
->> +	u64 num_extents = div64_u64(end - start + BTRFS_MAX_EXTENT_SIZE,
->> +				    BTRFS_MAX_EXTENT_SIZE);
->> +
->> +	WARN_ON((end & (PAGE_SIZE - 1)) == 0);
->> +	ret = set_extent_delalloc(&BTRFS_I(inode)->io_tree, start, end,
->> +				  cached_state);
->> +
->> +	/*
->> +	 * btrfs_delalloc_reserve_metadata() will first add number of
->> +	 * outstanding extents according to data length, which is inaccurate
->> +	 * for case like dirtying already dirty pages.
->> +	 * so here we will decrease such inaccurate numbers, to make
->> +	 * outstanding_extents only rely on the correct values added by
->> +	 * set_bit_hook()
->> +	 *
->> +	 * Also, we skipped the metadata space reserve for space cache inodes,
->> +	 * so don't modify the outstanding_extents value.
->> +	 */
->> +	if (ret == 0 && !btrfs_is_free_space_inode(inode)) {
->> +		spin_lock(&BTRFS_I(inode)->lock);
->> +		BTRFS_I(inode)->outstanding_extents -= num_extents;
->> +		spin_unlock(&BTRFS_I(inode)->lock);
->> +	}
->> +
->> +	return ret;
->> +}
->> +
->> +int btrfs_set_extent_defrag(struct inode *inode, u64 start, u64 end,
->> +			    struct extent_state **cached_state)
->> +{
->> +	int ret;
->> +	u64 num_extents = div64_u64(end - start + BTRFS_MAX_EXTENT_SIZE,
->> +				    BTRFS_MAX_EXTENT_SIZE);
->> +
->>  	WARN_ON((end & (PAGE_SIZE - 1)) == 0);
->> -	return set_extent_delalloc(&BTRFS_I(inode)->io_tree, start, end,
->> -				   cached_state);
->> +	ret = set_extent_defrag(&BTRFS_I(inode)->io_tree, start, end,
->> +				cached_state);
->> +
->> +	if (ret == 0 && !btrfs_is_free_space_inode(inode)) {
->> +		spin_lock(&BTRFS_I(inode)->lock);
->> +		BTRFS_I(inode)->outstanding_extents -= num_extents;
->> +		spin_unlock(&BTRFS_I(inode)->lock);
->> +	}
->> +
->> +	return ret;
->>  }
->>  
->>  /* see btrfs_writepage_start_hook for details on why this is required */
->> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
->> index 7fd939b..6a19bea 100644
->> --- a/fs/btrfs/ioctl.c
->> +++ b/fs/btrfs/ioctl.c
->> @@ -1235,10 +1235,8 @@ again:
->>  				(page_cnt - i_done) << PAGE_SHIFT);
->>  	}
->>  
->> -
->> -	set_extent_defrag(&BTRFS_I(inode)->io_tree, page_start, page_end - 1,
->> -			  &cached_state);
->> -
->> +	btrfs_set_extent_defrag(inode, page_start,
->> +				page_end - 1, &cached_state);
->>  	unlock_extent_cached(&BTRFS_I(inode)->io_tree,
->>  			     page_start, page_end - 1, &cached_state,
->>  			     GFP_NOFS);
+>>>
+>>> Stefan
+>>>
+>>>> Regards,
+>>>> Xiaoguang Wang
+>>>>
+>>>>> I tried hard to reproduce it but i can't get it to reproduce with a
+>>>>> test
+>>>>> script. Any ideas?
+>>>>>
+>>>>> Stefan
+>>>>>
+>>>>>> Reagrds,
+>>>>>> Xiaoguang Wang
+>>>>>>
+>>>>>>> Greets,
+>>>>>>> Stefan
+>>>>>>>
+>>>>>>>> Regards,
+>>>>>>>> Xiaoguang Wang
+>>>>>>>>> Greets,
+>>>>>>>>> Stefan
+>>>>>>>>> -- 
+>>>>>>>>> To unsubscribe from this list: send the line "unsubscribe
+>>>>>>>>> linux-btrfs" in
+>>>>>>>>> the body of a message to majordomo@vger.kernel.org
+>>>>>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>>>>>>>
+>>>>>>>>>
+>>>>>>
+>>>>
+>>>>
+>>>
+>>
+>>
 >>

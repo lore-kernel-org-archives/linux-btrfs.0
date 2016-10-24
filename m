@@ -1,43 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:7440 "EHLO song.cn.fujitsu.com"
-        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S965719AbcJYLCo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 25 Oct 2016 07:02:44 -0400
-Received: from localhost.localdomain (unknown [10.167.226.107])
-        by cn.fujitsu.com (Postfix) with ESMTP id 8B11D41B4BC5
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Oct 2016 19:02:29 +0800 (CST)
-From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: minor codes cleanup
-Date: Tue, 25 Oct 2016 18:56:07 +0800
-Message-Id: <20161025105607.17476-1-wangxg.fnst@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:47312 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S938936AbcJXRFx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 24 Oct 2016 13:05:53 -0400
+Date: Mon, 24 Oct 2016 19:05:50 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Domagoj =?utf-8?B?VHLFoWFu?= <domagoj.trsan@gmail.com>
+Cc: linux-btrfs@vger.kernel.org, clm@fb.com, jbacik@fb.com, dsterba@suse.com
+Subject: Re: [PATCH v2] btrfs: change btrfs_csum_final result param type to u8
+Message-ID: <20161024170550.GF22935@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20161021114702.29425-1-domagoj.trsan@gmail.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20161021114702.29425-1-domagoj.trsan@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
----
-V1: Just one small codes cleanup, if you think it's not appropriate to
-    make a individual patch for it, please ignore it :)
----
- fs/btrfs/extent-tree.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+On Fri, Oct 21, 2016 at 12:47:02PM +0100, Domagoj Tršan wrote:
+> csum member of struct btrfs_super_block has array type of u8. It makes sense
+> that function btrfs_csum_final should be also declared to accept u8 *. I
+> changed the declaration of method void btrfs_csum_final(u32 crc, char *result);
+> to void btrfs_csum_final(u32 crc, u8 *result);
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 9aa6d2c..3c8f0ec 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2823,7 +2823,7 @@ int btrfs_should_throttle_delayed_refs(struct btrfs_trans_handle *trans,
- 	smp_mb();
- 	avg_runtime = fs_info->avg_delayed_ref_runtime;
- 	val = num_entries * avg_runtime;
--	if (num_entries * avg_runtime >= NSEC_PER_SEC)
-+	if (val >= NSEC_PER_SEC)
- 		return 1;
- 	if (val >= NSEC_PER_SEC / 2)
- 		return 2;
--- 
-2.9.0
+Ok that's better, just the signed-off-by line is missing. I would add it
+myself on behalf of contributors I know, but as a matter of practice,
+fix it please and resend the patch.  Using the "git commit -s" adds the
+line for you.
 
+It is a formality, established in the linux kernel development. If you
+need more explanatino what and why, please refer to the following docs.
 
-
+http://elinux.org/Developer_Certificate_Of_Origin
+https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/tree/Documentation/SubmittingPatches

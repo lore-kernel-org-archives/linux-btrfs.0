@@ -1,119 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f67.google.com ([209.85.215.67]:36180 "EHLO
-        mail-lf0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754925AbcJRGME (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 18 Oct 2016 02:12:04 -0400
-Subject: Re: [PATCH 2/2] man2/ioctl_fideduperange.2: clarify operation some
- more
-To: "Darrick J. Wong" <darrick.wong@oracle.com>
-References: <147675566778.12400.16090171199161180354.stgit@birch.djwong.org>
- <147675567514.12400.12489294497404900248.stgit@birch.djwong.org>
-Cc: mtk.manpages@gmail.com, linux-fsdevel@vger.kernel.org,
-        linux-api@vger.kernel.org, linux-xfs@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-man@vger.kernel.org
-From: "Michael Kerrisk (man-pages)" <mtk.manpages@gmail.com>
-Message-ID: <d63502f6-2485-0d36-18d4-bbd636ba497a@gmail.com>
-Date: Tue, 18 Oct 2016 08:11:58 +0200
-MIME-Version: 1.0
-In-Reply-To: <147675567514.12400.12489294497404900248.stgit@birch.djwong.org>
-Content-Type: text/plain; charset=utf-8
+Received: from mx2.suse.de ([195.135.220.15]:47380 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S934306AbcJXN6T (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 24 Oct 2016 09:58:19 -0400
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: clm@fb.com
+Subject: Btrfs progs pre-release 4.8.2-rc1
+Date: Mon, 24 Oct 2016 15:58:11 +0200
+Message-Id: <20161024135811.6122-1-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Darrick,
+Hi,
 
-On 10/18/2016 03:54 AM, Darrick J. Wong wrote:
-> Clarify the behavior of the dedupe ioctl.
+a pre-release has been tagged. There are build and misc bugfixes. I'm doing a
+rc for a minor release as it proved to be useful in the past when dealing with
+the build errors. Please test.  ETA for 4.8.2 is in +2 days.
 
-Thanks! Applied.
+Changes since 4.8.1:
+  * convert: also convert file attributes
+  * check: quota verify fixes, handle reloc tree
+  * build: add stub for FIEMAP_EXTENT_SHARED, compiles on ancient kernels
+  * build: add stub for BUILD_ASSERT when ioctl.h is included
+  * dump-tree: don't crash on unrecognized tree id for -t
+  * tests:
+    * add more ioctl tests
+    * convert: more symlink tests, attribute tests
+    * quota verify for reloc tree
+  * other cleanups
 
-Cheers,
+Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
+Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
 
-Michael
+Shortlog:
 
+David Sterba (10):
+      btrfs-progs: ioctl: add 32bit compat for SET_RECEIVED_SUBVOL
+      btrfs-progs: ioctl: add 64bit compat for SEND
+      btrfs-progs: tests: make the ioctl-test actually useful
+      btrfs-progs: test: add default ioctl-test build
+      btrfs-progs: mkfs: detect version of running kernel
+      btrfs-progs: build: detect fiemap shared flag but don't fail build
+      btrfs-progs: dump-tree: fix crash on unrecognized tree id
+      btrfs-progs: ioctl: fix build failure if BUILD_ASSERT is not defined
+      btrfs-progs: update CHANGES for v4.8.2
+      Btrfs progs v4.8.2-rc1
 
-> Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
-> ---
->  man2/ioctl_ficlonerange.2  |    2 +-
->  man2/ioctl_fideduperange.2 |   26 ++++++++++++++++++++++----
->  2 files changed, 23 insertions(+), 5 deletions(-)
-> 
-> 
-> diff --git a/man2/ioctl_ficlonerange.2 b/man2/ioctl_ficlonerange.2
-> index ac0738a..0e3ae0e 100644
-> --- a/man2/ioctl_ficlonerange.2
-> +++ b/man2/ioctl_ficlonerange.2
-> @@ -114,7 +114,7 @@ regions in directories.
->  .TP
->  .B EOPNOTSUPP
->  This can appear if the filesystem does not support reflinking either file
-> -descriptor.
-> +descriptor, or if either file descriptor refers to special inodes.
->  .TP
->  .B EPERM
->  .IR dest_fd
-> diff --git a/man2/ioctl_fideduperange.2 b/man2/ioctl_fideduperange.2
-> index c52fa2a..2112d10 100644
-> --- a/man2/ioctl_fideduperange.2
-> +++ b/man2/ioctl_fideduperange.2
-> @@ -99,21 +99,39 @@ Each deduplication operation targets
->  bytes in file descriptor
->  .IR dest_fd
->  at offset
-> -.IR logical_offset ".
-> +.IR dest_offset ".
->  The field
->  .IR reserved
->  must be zero.
-> +During the call,
-> +.IR src_fd
-> +must be open for reading and
-> +.IR dest_fd
-> +must be open for writing.
-> +For any call to this ioctl, there may not be more than 65,536
-> +requests attached; each request may not exceed 16MiB.
-> +By convention, the storage used by
-> +.IR src_fd
-> +is mapped into
-> +.IR dest_fd
-> +and the previous contents in
-> +.IR dest_fd
-> +are freed.
->  
->  Upon successful completion of this ioctl, the number of bytes successfully
->  deduplicated is returned in
->  .IR bytes_deduped
->  and a status code for the deduplication operation is returned in
->  .IR status ".
-> -
-> +If even a single byte in the range does not match, the deduplication
-> +request will be ignored and
-> +.IR status
-> +set to
-> +.BR FILE_DEDUPE_RANGE_DIFFERS .
->  The
->  .IR status
->  code is set to
-> -.B 0
-> +.B FILE_DEDUPE_RANGE_SAME
->  for success, a negative error code in case of error, or
->  .B FILE_DEDUPE_RANGE_DIFFERS
->  if the data did not match.
-> @@ -150,7 +168,7 @@ regions in directories.
->  .TP
->  .B EOPNOTSUPP
->  This can appear if the filesystem does not support deduplicating either file
-> -descriptor.
-> +descriptor, or if either file descriptor refers to special inodes.
->  .TP
->  .B EPERM
->  .IR dest_fd
-> 
-> 
+Karel Zak (1):
+      btrfs-progs: rename btrfs_scan_lblkid() to btrfs_scan_devices()
 
+Lakshmipathi.G (2):
+      btrfs-progs: btrfs-debugfs: cleanup unused variables reported by pylint
+      btrfs-progs: Add fast,slow symlinks, fifo types to convert test
 
--- 
-Michael Kerrisk
-Linux man-pages maintainer; http://www.kernel.org/doc/man-pages/
-Linux/UNIX System Programming Training: http://man7.org/training/
+Lu Fengqi (1):
+      btrfs-progs: move btrfs_extref_hash() to hash.h
+
+Qu Wenruo (9):
+      btrfs-progs: Copy btrfs inode flags from kernel header
+      btrfs-progs: Make btrfs-debug-tree print all readable strings for inode flags
+      btrfs-progs: convert: Convert ext inode flags to btrfs inode flags
+      btrfs-progs: convert-test: Add test case for common inode flags
+      btrfs-progs: Fix stack overflow for checking qgroup on tree reloc tree
+      btrfs-progs: test: Add test image for btrfsck qgroup rescan detection
+      btrfs-progs: test: Add image for quota verify stack overflow
+      btrfs-progs: rename raid6.c to raid56.c
+      btrfs-progs: volumes: Remove BUG_ON in raid56 write routine
+
+Tsutomu Itoh (2):
+      btrfs-progs: image: fix compiler warning
+      btrfs-progs: send: remove unnecessary code

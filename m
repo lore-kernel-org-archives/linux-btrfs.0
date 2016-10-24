@@ -1,36 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:58916 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:49076 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932446AbcJXO6E (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Oct 2016 10:58:04 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 4FB9BAC6C
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Oct 2016 14:58:01 +0000 (UTC)
-From: Goldwyn Rodrigues <rgoldwyn@suse.de>
-To: linux-btrfs@vger.kernel.org
-Cc: Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH] btrfs-progs: Initialize btrfs_path before use
-Date: Mon, 24 Oct 2016 09:57:54 -0500
-Message-Id: <20161024145754.7165-1-rgoldwyn@suse.de>
+        id S1750747AbcJXRXu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 24 Oct 2016 13:23:50 -0400
+Date: Mon, 24 Oct 2016 19:23:48 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH] btrfs-progs: Fix wrong tree block alignment for
+ unalianged block group
+Message-ID: <20161024172348.GG22935@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20161024072233.31643-1-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20161024072233.31643-1-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Goldwyn Rodrigues <rgoldwyn@suse.com>
+On Mon, Oct 24, 2016 at 03:22:33PM +0800, Qu Wenruo wrote:
+> Commit 854437ca(btrfs-progs: extent-tree: avoid allocating tree block
+> that crosses stripe boundary) introduces check for logical bytenr not
+> crossing stripe boundary.
+> 
+> However that check is not completely correct.
+> It only checks if the logical bytenr and length agaist absolute logical
+> offset.
+> That's to say, it only check if a tree block lies in 64K logical stripe.
+> 
+> But in fact, it's possible a block group starts at bytenr unaligned with
+> 64K, just like the following case.
+> 
+> Then btrfsck will give false alert.
+> 
+> 0       32K       64K       96K        128K         160K ...
+>         |--------------- Block group A ---------------------
+> 	|<-----TB 32K------>|
+>         |/Scrub stripe unit/|
+> |    WRONG UNIT   |
+> 
+> In that case, TB(tree block) at bytenr 32K in fact fits into the kernel
+> scrub stripe unit.
+> But doesn't fit into the pure logical 64K stripe.
+> 
+> Fix check_crossing_stripes() to compare bytenr to block group start, not
+> to absolute logical bytenr.
+> 
+> Reported-by: Jussi Kansanen <jussi.kansanen@gmail.com>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-While performing an fsck, an assertion failure occurs because of reusing path in a loop.
-ctree.c:1112: btrfs_search_slot: Warning: assertion `p->nodes[0] != NULL` failed, value 0
-
-Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
-
-diff --git a/cmds-check.c b/cmds-check.c
-index 670ccd1..a6f281c 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -7541,6 +7541,7 @@ static int record_orphan_data_extents(struct btrfs_fs_info *fs_info,
- 		key.objectid = dback->owner;
- 		key.type = BTRFS_EXTENT_DATA_KEY;
- 		key.offset = dback->offset;
-+		btrfs_init_path(path);
- 
- 		ret = btrfs_search_slot(NULL, dest_root, &key, path, 0, 0);
- 		/*
+Applied, thanks.

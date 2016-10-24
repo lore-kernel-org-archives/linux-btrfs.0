@@ -1,170 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:19656 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1756980AbcJXBIX (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 23 Oct 2016 21:08:23 -0400
-Subject: Re: build error btrfs-progs 4.8.1
-To: Peter Becker <floyd.net@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <CAEtw4r3fGWmR_reiYh7azaVnTsv=W9CV0-GNKWTju8wP9BfWFQ@mail.gmail.com>
- <CAEtw4r3O3qZd0qT1_9T3eu37PLgtBqaKbz8LtmKAhQSRu0RaEw@mail.gmail.com>
- <CAEtw4r1PQsO3gLCSq1L=yUTUCx-6Nn-9hQhrMszzp7OZK4SvJQ@mail.gmail.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <256788fe-24f3-96f6-befc-af50972e811e@cn.fujitsu.com>
-Date: Mon, 24 Oct 2016 09:08:13 +0800
-MIME-Version: 1.0
-In-Reply-To: <CAEtw4r1PQsO3gLCSq1L=yUTUCx-6Nn-9hQhrMszzp7OZK4SvJQ@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Received: from smtp.gentoo.org ([140.211.166.183]:56908 "EHLO smtp.gentoo.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S933689AbcJXI3v (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 24 Oct 2016 04:29:51 -0400
+From: slyich@gmail.com
+To: David Sterba <dsterba@suse.cz>
+Cc: linux-btrfs@vger.kernel.org, Sergei Trofimovich <slyfox@gentoo.org>
+Subject: [PATCH] ioctl.h: add missing kernel compatibility header for BUILD_ASSERT
+Date: Mon, 24 Oct 2016 09:29:12 +0100
+Message-Id: <20161024082912.20253-1-slyich@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-You must have moved HEAD from previous version, and didn't run make clean.
+From: Sergei Trofimovich <slyfox@gentoo.org>
 
-It is the *.o.d telling gcc which headers they need.
-And those *.o.d files are ignored by git, so it won't be cleaned by git 
-reset.
+Header breakage noticed by cynede. Reproducible as:
 
+    $ gcc -c /usr/include/btrfs/ioctl.h -o /tmp/a.o
+        /usr/include/btrfs/ioctl.h:42:14: error: expected declaration specifiers or '...' before 'sizeof'
+     BUILD_ASSERT(sizeof(struct btrfs_ioctl_vol_args) == 4096);
+                  ^~~~~~
 
-So the correct work flow is:
-0) make clean
-1) autogen
-2) configure
-3) make
+Basically gcc tries to say us BUILD_ASSERT is not visible.
 
-Thanks,
-Qu
+BUILD_ASSERT lives in kerncompat.h which this change adds.
 
-At 10/23/2016 03:32 AM, Peter Becker wrote:
-> Solved .. delete and clone again works .. but rebase / reset --hard
-> not .. hmm curious
->
-> 2016-10-21 23:30 GMT+02:00 Peter Becker <floyd.net@gmail.com>:
->> Generate build-system by:
->>    aclocal:    aclocal (GNU automake) 1.15
->>    autoconf:   autoconf (GNU Autoconf) 2.69
->>    autoheader: autoheader (GNU Autoconf) 2.69
->>    automake:   automake (GNU automake) 1.15
->>
->> Now type './configure' and 'make' to compile.
->>
->> checking for gcc... gcc
->> checking whether the C compiler works... yes
->> checking for C compiler default output file name... a.out
->> checking for suffix of executables...
->> checking whether we are cross compiling... no
->> checking for suffix of object files... o
->> checking whether we are using the GNU C compiler... yes
->> checking whether gcc accepts -g... yes
->> checking for gcc option to accept ISO C89... none needed
->> checking how to run the C preprocessor... gcc -E
->> checking for grep that handles long lines and -e... /bin/grep
->> checking for egrep... /bin/grep -E
->> checking for ANSI C header files... yes
->> checking for sys/types.h... yes
->> checking for sys/stat.h... yes
->> checking for stdlib.h... yes
->> checking for string.h... yes
->> checking for memory.h... yes
->> checking for strings.h... yes
->> checking for inttypes.h... yes
->> checking for stdint.h... yes
->> checking for unistd.h... yes
->> checking minix/config.h usability... no
->> checking minix/config.h presence... no
->> checking for minix/config.h... no
->> checking whether it is safe to define __EXTENSIONS__... yes
->> checking for gcc... (cached) gcc
->> checking whether we are using the GNU C compiler... (cached) yes
->> checking whether gcc accepts -g... (cached) yes
->> checking for gcc option to accept ISO C89... (cached) none needed
->> checking build system type... x86_64-pc-linux-gnu
->> checking host system type... x86_64-pc-linux-gnu
->> checking for an ANSI C-conforming const... yes
->> checking for working volatile... yes
->> checking whether byte ordering is bigendian... no
->> checking for special C compiler options needed for large files... no
->> checking for _FILE_OFFSET_BITS value needed for large files... no
->> checking for a BSD-compatible install... /usr/bin/install -c
->> checking whether ln -s works... yes
->> checking for ar... ar
->> checking for rm... /bin/rm
->> checking for rmdir... /bin/rmdir
->> checking for openat... yes
->> checking for pkg-config... /usr/bin/pkg-config
->> checking pkg-config is at least version 0.9.0... yes
->> checking execinfo.h usability... yes
->> checking execinfo.h presence... yes
->> checking for execinfo.h... yes
->> checking for backtrace... yes
->> checking for backtrace_symbols_fd... yes
->> checking for asciidoc... /usr/bin/asciidoc
->> checking for xmlto... /usr/bin/xmlto
->> checking for gzip... /bin/gzip
->> checking for mv... /bin/mv
->> checking for a sed that does not truncate output... /bin/sed
->> checking for EXT2FS... yes
->> checking for COM_ERR... yes
->> checking for FIEMAP_EXTENT_SHARED defined in linux/fiemap.h... yes
->> checking for BLKID... yes
->> checking for UUID... yes
->> checking for ZLIB... yes
->> checking for lzo_version in -llzo2... yes
->> configure: creating ./config.status
->> config.status: creating Makefile
->> config.status: creating Documentation/Makefile
->> config.status: creating version.h
->> config.status: creating config.h
->> config.status: config.h is unchanged
->>
->> btrfs-progs v4.8.1
->>
->> prefix:            /usr/local
->> exec prefix:       ${prefix}
->>
->> bindir:            ${exec_prefix}/bin
->> libdir:            ${exec_prefix}/lib
->> includedir:        ${prefix}/include
->>
->> compiler:          gcc
->> cflags:            -g -O1 -Wall -D_FORTIFY_SOURCE=2
->> ldflags:
->>
->> documentation:     yes
->> backtrace support: yes
->> btrfs-convert:     yes (ext2)
->>
->> Type 'make' to compile.
->>
->> make: *** Keine Regel vorhanden, um das Ziel "list.h",
->>    benötigt von "ctree.o", zu erstellen.  Schluss.
->>
->> 2016-10-21 23:23 GMT+02:00 Peter Becker <floyd.net@gmail.com>:
->>> $ uname -r
->>> 4.8.3-040803-generic
->>>
->>> $ git remote -v
->>> origin git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
->>> (fetch)
->>> origin git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
->>> (push)
->>>
->>> $ git pull
->>> Already up-to-date.
->>>
->>> $ ./autogen.sh
->>> ...
->>> $ ./configure
->>> ...
->>> $ make
->>> ...
->>> make: *** Keine Regel vorhanden, um das Ziel "list.h",
->>>    benötigt von "ctree.o", zu erstellen.  Schluss.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
+Reported-by: Mikhail Pukhlikov <cynede@gentoo.org>
+Signed-off-by: Sergei Trofimovich <slyfox@gentoo.org>
+---
+ ioctl.h | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
+diff --git a/ioctl.h b/ioctl.h
+index 238e7ef..ee650a9 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -26,6 +26,12 @@ extern "C" {
+ #include <asm/types.h>
+ #include <linux/ioctl.h>
+ 
++#if BTRFS_FLAT_INCLUDES
++#include "kerncompat.h"
++#else
++#include <btrfs/kerncompat.h>
++#endif /* BTRFS_FLAT_INCLUDES */
++
+ #ifndef __user
+ #define __user
+ #endif
+-- 
+2.10.1
 

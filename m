@@ -1,105 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:38185 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:30924 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1750800AbcJYDE3 (ORCPT
+        with ESMTP id S1754165AbcJYKtm (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Oct 2016 23:04:29 -0400
-Subject: Re: How to recover a filesystem without formatting nor using the
- btrfs check command.
-To: none <ytrezq@sdf-eu.org>, btrfs <linux-btrfs@vger.kernel.org>
-References: <580944C7.103@sdf-eu.org>
- <8c5ae48c-4af6-42d9-be0f-06d232764ff2@cn.fujitsu.com>
- <36f56365-27ac-878e-c5fb-f414646eda3a@sdf-eu.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <61df188a-bc12-c9c4-0322-766df4fb18c0@cn.fujitsu.com>
-Date: Tue, 25 Oct 2016 11:04:21 +0800
+        Tue, 25 Oct 2016 06:49:42 -0400
+Subject: Re: [PATCH 2/2] btrfs: fix false enospc for compression
+To: <dsterba@suse.cz>,
+        =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>,
+        <linux-btrfs@vger.kernel.org>, <jbacik@fb.com>, <dsterba@suse.com>
+References: <20161006025139.22776-1-wangxg.fnst@cn.fujitsu.com>
+ <20161006025139.22776-2-wangxg.fnst@cn.fujitsu.com>
+ <5800E4AB.2010701@applied-asynchrony.com> <5804937A.2060506@cn.fujitsu.com>
+ <20161019142344.GR11398@twin.jikos.cz>
+From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Message-ID: <580F3746.3030509@cn.fujitsu.com>
+Date: Tue, 25 Oct 2016 18:43:18 +0800
 MIME-Version: 1.0
-In-Reply-To: <36f56365-27ac-878e-c5fb-f414646eda3a@sdf-eu.org>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <20161019142344.GR11398@twin.jikos.cz>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+hi,
 
+On 10/19/2016 10:23 PM, David Sterba wrote:
+> On Mon, Oct 17, 2016 at 05:01:46PM +0800, Wang Xiaoguang wrote:
+>>> [..]
+>>>>    int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
+>>>> -			      struct extent_state **cached_state);
+>>>> +			      struct extent_state **cached_state, int flag);
+>>>>    int btrfs_set_extent_defrag(struct inode *inode, u64 start, u64 end,
+>>>> -			    struct extent_state **cached_state);
+>>>> +			    struct extent_state **cached_state, int flag);
+>>> [..]
+>>>>    int btrfs_dirty_pages(struct btrfs_root *root, struct inode *inode,
+>>>>    		      struct page **pages, size_t num_pages,
+>>>>    		      loff_t pos, size_t write_bytes,
+>>>> -		      struct extent_state **cached);
+>>>> +		      struct extent_state **cached, int flag);
+>>> Instead of adding "int flag" why not use the already defined
+>>> btrfs_metadata_reserve_type enum? I know it's just an int at the end of
+>>> the day, but the dedupe support already added another "int dedupe" argument
+>>> and it's probably easy to cause confusion.
+>>> Maybe later it would be beneficial to consolidate the flags into a consistent
+>>> set of enum values to prevent more "int flag" inflation and better declare the
+>>> intent of the extent state change. Not sure if that makes sense.
+>> Yes, agree.
+>> I'll rebase them later, thanks.
+> Would be great. I won't manually merge the patch now as it's not a
+> conflict against the current state, btrfs_set_extent_delalloc has the
+> extra parameter already. Please consolidate them before this patch is
+> supposed to be merged. Thanks.
+Sorry for being late, I have just finished the rebase work now.
+I'll run some fstests job, if no regressions, I'll send two patches 
+tomorrow :)
 
-At 10/25/2016 01:54 AM, none wrote:
-> So do you mean lowmem is also low cpu ?
+Regards,
+Xiaoguang Wang
 
-Not sure, but lowmem is high IO.
-And by design, it won't cause dead look unless there is a looping tree 
-block. But that will be detected by check_tree_block().
-
-So, it just avoids any possible dead loop AFAIK.
-
-> Indeed here's the output if the metadata image isn't enough (it
-> termintes correctly with the --lowmem option). I must recognize even
-> without the --repair option, btrfs check hangs.
-
-I just forgot you have uploaded the image dump.
-I'll check it.
-
-But according to lowmem output, it seems all your extent tree is screwed 
-up, maybe that's the cause of the problem?
-
-Thanks,
-Qu
 >
-> regards,
 >
-> Le 24/10/2016 à 03:15, Qu Wenruo a écrit :
->
->> You could try to use --mode lowmem, which doesn't ever use any loop to
->> get next block, but iterating trees.
->>
->> Current in mainline btrfs-progs, the low memory mode code only checks
->> extent/chunk trees, file/subvolume trees are still checked by original
->> mode.
->>
->> You could try the devel branch from David, which now contains the full
->> low memory mode check code:
->> https://github.com/kdave/btrfs-progs/tree/devel
->>
->> Although low memory mode doesn't support repair yet, it would give us
->> enough info on what's corrupted, so we can later fix it by hand or
->> enhance original mode.
->>
->> Thanks,
->> Qu
->>
->> At 10/24/2016 03:42 AM, none wrote:
->>
->>> Hello,
->>> I have the following bug
->>> https://bugzilla.kernel.org/show_bug.cgi?id=178781 in btrfs check, is
->>> there a way to recover my filesystem in clean state without formatting
->>> or using btrsfck ? Of course, the point is no longer need the files
->>> which are damaged.
->>> So is there a way to recover a btrfs filesystem by deleting the
->>> corrupted data instead of trying to restore it ?
->>>
->>> btrfs fi df /mnt/Opera_Mobile_Emulator_12.1_Linux
->>> Data, single: total=66.01GiB, used=0.00B
->>> System, DUP: total=8.00MiB, used=16.00KiB
->>> System, single: total=4.00MiB, used=0.00B
->>> Metadata, DUP: total=5.00GiB, used=28.00KiB
->>> Metadata, single: total=8.00MiB, used=0.00B
->>> GlobalReserve, single: total=4.00MiB, used=0.00B
->>>
->>> btrfs progs version 4.7.3 from Devuan
->>>
->>> Label: 'backup'  uuid: 56040bbb-ed5c-47f2-82e2-34457bd7b4f3
->>> Total devices 1 FS bytes used 44.00KiB
->>> devid    1 size 298.91GiB used 76.04GiB path
->>> /dev/mapper/isw_bdffeeeijj_Volume0p7
->>>
->>> uname -a
->>> Linux localhost 4.5.0-0.bpo.1-amd64 #1 SMP Debian 4.5.1-1~bpo8+1
->>> (2016-04-20) x86_64 GNU/Linux
->>>
->>> Result of btrfs-image on /dev/mapper/isw_bdffeeeijj_Volume0p7 :
->>> https://web.archive.org/web/20161020220914/https://filebin.net/7ni8kfpog1dxw4jc/btrfs-image_capture.xz
->>>
->>>
->>> Thanks,
->
+
 
 

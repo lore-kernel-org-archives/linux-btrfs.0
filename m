@@ -1,77 +1,149 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:54554 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1759445AbcJYSml (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:48841 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1759451AbcJYSmn (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 25 Oct 2016 14:42:41 -0400
+        Tue, 25 Oct 2016 14:42:43 -0400
 From: Josef Bacik <jbacik@fb.com>
 To: <linux-btrfs@vger.kernel.org>, <kernel-team@fb.com>, <david@fromorbit.com>,
         <jack@suse.cz>, <linux-fsdevel@vger.kernel.org>,
         <viro@zeniv.linux.org.uk>, <hch@infradead.org>, <jweiner@fb.com>
-Subject: [PATCH 0/5][RESEND] Support for metadata specific accounting
-Date: Tue, 25 Oct 2016 14:41:39 -0400
-Message-ID: <1477420904-1399-1-git-send-email-jbacik@fb.com>
+Subject: [PATCH 5/5] fs: don't set *REFERENCED unless we are on the lru list
+Date: Tue, 25 Oct 2016 14:41:44 -0400
+Message-ID: <1477420904-1399-6-git-send-email-jbacik@fb.com>
+In-Reply-To: <1477420904-1399-1-git-send-email-jbacik@fb.com>
+References: <1477420904-1399-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(Sending again as 5/5 got eaten and I used the wrong email address for Dave.)
+With anything that populates the inode/dentry cache with a lot of one time use
+inodes we can really put a lot of pressure on the system for things we don't
+need to keep in cache.  It takes two runs through the LRU to evict these one use
+entries, and if you have a lot of memory you can end up with 10's of millions of
+entries in the dcache or icache that have never actually been touched since they
+were first instantiated, and it will take a lot of CPU and a lot of pressure to
+evict all of them.
 
-(Dave again I apologize, for some reason our email server hates you and so I
-didn't get your previous responses again, and didn't notice until I was looking
-at the patchwork history for my previous submissions, so I'll try and answer all
-your questions here, and then I'll be much more judicious about making sure I'm
-getting your emails.)
+So instead do what we do with pagecache, only set the *REFERENCED flags if we
+are being used after we've been put onto the LRU.  This makes a significant
+difference in the system's ability to evict these useless cache entries.  With a
+fs_mark workload that creates 40 million files we get the following results (all
+in files/sec)
 
-This is my current batch of patches to add some better infrastructure for
-handling metadata related memory.  There's been a few changes to these patches
-since the last go around but the approach is essentially the same.
+Btrfs			Patched		Unpatched
+Average Files/sec:	72209.3		63254.2
+p50 Files/sec:		70850		57560
+p90 Files/sec:		68757		53085
+p99 Files/sec:		68757		53085
 
-Changes since last go around:
--WB_WRITTEN/WB_DIRTIED are now being counted in bytes.  This is necessary to
-deal with metadata that is smaller than page size.  Currently btrfs only does
-things in pagesize increments, but with these patches it will allow us to easily
-support sub-pagesize blocksizes so we need these counters to be in bytes.
--Added a METADATA_BYTES counter to account for the total number of bytes used
-for metadata.  We need this because the VM adjusts the dirty ratios based on how
-much memory it thinks we can dirty, which is just the amount of free memory
-plus the pagecache.
--Patch 5, which is a doozy, and I will explain below.
+XFS			Patched		Unpatched
+Average Files/sec:	61025.5		60719.5
+p50 Files/sec:		60107		59465
+p90 Files/sec: 		59300		57966
+p99 Files/sec: 		59227		57528
 
-This is a more complete approach to keeping track of memory that is in use for
-metadata.  Previously Btrfs had been using a special inode to allocate all of
-our metadata pages out of, so if we had a heavy metadata workload we still
-benefited from the balance_dirty_pages() throttling which kept everything sane.
-We want to kill this in order to make it easier to support pagesize > blocksize
-support in btrfs, in much the same way XFS does this support.
+Ext4			Patched		Unpatched
+Average Files/sec:	121785.4	119248.0
+p50 Files/sec:		120852		119274
+p90 Files/sec:		116703		112783
+p99 Files/sec:		114393		104934
 
-One concern that was brought up was the global accounting vs one bad actor.  We
-still need the global accounting so we can enforce the global dirty limits, but
-we have the per-bdi accounting as well to make sure we are punishing the bad
-actor and not all the other file systems that happened to be hooked into this
-infrastructure.
+The reason Btrfs has a much larger improvement is because it holds a lot more
+things in memory so benefits more from faster slab reclaim, but across the board
+is an improvement for each of the file systems.
 
-The *REFERENCED patch is to fix a behavior I noticed when testing these patches
-on a more memory-constrained system than I had previously used.  Now that the
-eviction of metadata pages is controlled soley through the shrinker interface I
-was seeing a big perf drop when we had to start doing memory reclaim.  This was
-because most of the RAM on the box (10gig of 16gig) was used soley by icache and
-dcache.  Because this workload was just create a file and never touch it again
-most of this cache was easily evictable.  However because we by default send
-every object in the icache/dcache through the LRU twice, it would take around
-10,000 iterations through the shrinker before it would start to evict things
-(there was ~10 million objects between the two caches).  The pagecache solves
-this by putting everything on the INACTIVE list first, and then theres a two
-part activation phase before it's moved to the active list, so you have to
-really touch a page a lot before it is considered active.  However we assume
-active first, which is very latency inducing when we want to start reclaiming
-objects.  Making this change keeps us in line with what pagecache does and
-eliminates the performance drop I was seeing.
+Signed-off-by: Josef Bacik <jbacik@fb.com>
+---
+ fs/dcache.c | 15 ++++++++++-----
+ fs/inode.c  |  5 ++++-
+ 2 files changed, 14 insertions(+), 6 deletions(-)
 
-Let me know what you think.  I've tried to keep this as minimal and sane as
-possible so we can build on it in the future as we want to handle more nuanced
-scenarios.  Also if we think this is a bad approach I won't feel as bad throwing
-it out ;).  Thanks,
+diff --git a/fs/dcache.c b/fs/dcache.c
+index 5c7cc95..a558075 100644
+--- a/fs/dcache.c
++++ b/fs/dcache.c
+@@ -779,8 +779,6 @@ repeat:
+ 			goto kill_it;
+ 	}
+ 
+-	if (!(dentry->d_flags & DCACHE_REFERENCED))
+-		dentry->d_flags |= DCACHE_REFERENCED;
+ 	dentry_lru_add(dentry);
+ 
+ 	dentry->d_lockref.count--;
+@@ -803,6 +801,13 @@ static inline void __dget_dlock(struct dentry *dentry)
+ 	dentry->d_lockref.count++;
+ }
+ 
++static inline void __dget_dlock_reference(struct dentry *dentry)
++{
++	if (dentry->d_flags & DCACHE_LRU_LIST)
++		dentry->d_flags |= DCACHE_REFERENCED;
++	dentry->d_lockref.count++;
++}
++
+ static inline void __dget(struct dentry *dentry)
+ {
+ 	lockref_get(&dentry->d_lockref);
+@@ -875,7 +880,7 @@ again:
+ 			    (alias->d_flags & DCACHE_DISCONNECTED)) {
+ 				discon_alias = alias;
+ 			} else {
+-				__dget_dlock(alias);
++				__dget_dlock_reference(alias);
+ 				spin_unlock(&alias->d_lock);
+ 				return alias;
+ 			}
+@@ -886,7 +891,7 @@ again:
+ 		alias = discon_alias;
+ 		spin_lock(&alias->d_lock);
+ 		if (S_ISDIR(inode->i_mode) || !d_unhashed(alias)) {
+-			__dget_dlock(alias);
++			__dget_dlock_reference(alias);
+ 			spin_unlock(&alias->d_lock);
+ 			return alias;
+ 		}
+@@ -2250,7 +2255,7 @@ struct dentry *__d_lookup(const struct dentry *parent, const struct qstr *name)
+ 		if (!d_same_name(dentry, parent, name))
+ 			goto next;
+ 
+-		dentry->d_lockref.count++;
++		__dget_dlock_reference(dentry);
+ 		found = dentry;
+ 		spin_unlock(&dentry->d_lock);
+ 		break;
+diff --git a/fs/inode.c b/fs/inode.c
+index 7e3ef3a..5937d3a 100644
+--- a/fs/inode.c
++++ b/fs/inode.c
+@@ -796,6 +796,8 @@ repeat:
+ 			__wait_on_freeing_inode(inode);
+ 			goto repeat;
+ 		}
++		if (!list_empty(&inode->i_lru))
++			inode->i_state |= I_REFERENCED;
+ 		__iget(inode);
+ 		spin_unlock(&inode->i_lock);
+ 		return inode;
+@@ -823,6 +825,8 @@ repeat:
+ 			__wait_on_freeing_inode(inode);
+ 			goto repeat;
+ 		}
++		if (!list_empty(&inode->i_lru))
++			inode->i_state |= I_REFERENCED;
+ 		__iget(inode);
+ 		spin_unlock(&inode->i_lock);
+ 		return inode;
+@@ -1463,7 +1467,6 @@ static void iput_final(struct inode *inode)
+ 		drop = generic_drop_inode(inode);
+ 
+ 	if (!drop && (sb->s_flags & MS_ACTIVE)) {
+-		inode->i_state |= I_REFERENCED;
+ 		inode_add_lru(inode);
+ 		spin_unlock(&inode->i_lock);
+ 		return;
+-- 
+2.7.4
 
-Josef

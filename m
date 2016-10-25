@@ -1,17 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:50833 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:44056 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1752372AbcJUJLd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 Oct 2016 05:11:33 -0400
-Received: from localhost.localdomain (unknown [10.167.226.107])
-        by cn.fujitsu.com (Postfix) with ESMTP id 617194010CF4
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Oct 2016 17:11:03 +0800 (CST)
+        id S932299AbcJYIdV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 25 Oct 2016 04:33:21 -0400
 From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: imporve delayed refs iterations
-Date: Fri, 21 Oct 2016 17:05:07 +0800
-Message-Id: <20161021090507.28425-1-wangxg.fnst@cn.fujitsu.com>
+Cc: bo.li.liu@oracle.com
+Subject: [PATCH v2] btrfs: imporve delayed refs iterations
+Date: Tue, 25 Oct 2016 16:26:33 +0800
+Message-Id: <20161025082633.4231-1-wangxg.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -57,6 +56,13 @@ For normal files, this patch also gives help, at least we do not need to
 iterate whole list to found BTRFS_ADD_DELAYED_REF nodes.
 
 Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+Tested-by: Holger Hoffstätte <holger@applied-asynchrony.com>
+
+---
+V2: remove useless "if" statment and use ASSERT to ensure that if a
+    delayed ref's action is BTRFS_DROP_DELAYED_REF, it should not be
+    in ref_add_list.
 ---
  fs/btrfs/delayed-ref.c | 14 ++++++++++++++
  fs/btrfs/delayed-ref.h |  8 ++++++++
@@ -65,7 +71,7 @@ Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
  4 files changed, 33 insertions(+), 6 deletions(-)
 
 diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index 8d93854..39c28e0 100644
+index 8d93854..65e9002 100644
 --- a/fs/btrfs/delayed-ref.c
 +++ b/fs/btrfs/delayed-ref.c
 @@ -189,6 +189,8 @@ static inline void drop_delayed_ref(struct btrfs_trans_handle *trans,
@@ -84,7 +90,7 @@ index 8d93854..39c28e0 100644
 +			if (ref->action == BTRFS_ADD_DELAYED_REF)
 +				list_add_tail(&exist->add_list,
 +					      &href->ref_add_list);
-+			else if (!list_empty(&exist->add_list))
++			else
 +				list_del(&exist->add_list);
  		} else
  			mod = -ref->ref_mod;
@@ -164,7 +170,7 @@ index 3a57f99..bc2edaf 100644
  			btrfs_put_delayed_ref(ref);
  		}
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 210c94a..1284222 100644
+index 210c94a..b2f542c 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
 @@ -2454,13 +2454,14 @@ select_delayed_ref(struct btrfs_delayed_ref_head *head)
@@ -183,7 +189,7 @@ index 210c94a..1284222 100644
 -			  list);
 +	ref = list_entry(head->ref_list.next, struct btrfs_delayed_ref_node,
 +			 list);
-+	WARN_ON(!list_empty(&ref->add_list));
++	ASSERT(list_empty(&ref->add_list));
 +	return ref;
  }
  

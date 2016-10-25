@@ -1,73 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym01.jp.fujitsu.com ([211.128.242.40]:36640 "EHLO
-        mgwym01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1756109AbcJSCgB (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 18 Oct 2016 22:36:01 -0400
-Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
-        by yt-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id BB476AC009C
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Oct 2016 11:35:53 +0900 (JST)
-Received: from WIN-5MHF4RKU941.jp.fujitsu.com (unknown [10.124.102.163])
-        by m3051.s.css.fujitsu.com (Postfix) with SMTP id AB90D417
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Oct 2016 11:35:53 +0900 (JST)
-Message-Id: <201610190235.AA00003@WIN-5MHF4RKU941.jp.fujitsu.com>
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Date: Wed, 19 Oct 2016 11:35:40 +0900
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/3] btrfs-progs: send: fix handling of -c option
+Received: from mx2.suse.de ([195.135.220.15]:53206 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S965854AbcJYNLZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 25 Oct 2016 09:11:25 -0400
+Date: Tue, 25 Oct 2016 15:11:22 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: minor codes cleanup
+Message-ID: <20161025131122.GO22935@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20161025105607.17476-1-wangxg.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20161025105607.17476-1-wangxg.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When two or more -c options are specified, cannot find a suitable
-parent. So, output stream is bigger than correct one.
+On Tue, Oct 25, 2016 at 06:56:07PM +0800, Wang Xiaoguang wrote:
+> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+> ---
+> V1: Just one small codes cleanup, if you think it's not appropriate to
+>     make a individual patch for it, please ignore it :)
 
-[before]
-# btrfs send -f /tmp/data1 -c Snap0 -c ../SnapX Snap[12] ../SnapY
-At subvol Snap1
-At subvol Snap2
-At subvol ../SnapY
-# ls -l /tmp/data1
--rw------- 1 root root 3153 Oct 19 10:37 /tmp/data1
-#
-
-[after]
-# btrfs send -f /tmp/data1 -c Snap0 -c ../SnapX Snap[12] ../SnapY
-At subvol Snap1
-At subvol Snap2
-At subvol ../SnapY
-# ls -l /tmp/data1
--rw------- 1 root root 1492 Oct 19 10:39 /tmp/data1
-#
-
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
----
- cmds-send.c | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
-
-diff --git a/cmds-send.c b/cmds-send.c
-index 2a8a697..b93a667 100644
---- a/cmds-send.c
-+++ b/cmds-send.c
-@@ -651,6 +651,18 @@ int cmd_send(int argc, char **argv)
- 		}
- 
- 		if (!full_send && root_id) {
-+			ret = init_root_path(&send, subvol);
-+			if (ret < 0)
-+				goto out;
-+
-+			ret = get_root_id(&send,
-+				subvol_strip_mountpoint(send.root_path, subvol),
-+				&root_id);
-+			if (ret < 0) {
-+				error("cannot resolve rootid for %s", subvol);
-+				goto out;
-+			}
-+
- 			ret = find_good_parent(&send, root_id, &parent_root_id);
- 			if (ret < 0) {
- 				error("parent determination failed for %lld",
--- 
-2.9.3
+No, that's fine, cleanups are welcome. The subject line could be
+improved though, describe what's been cleaned up, eg. "cleanup, use
+already calculated value". We could have tons of patches called  minor
+cleanups", but this makes searching and processing patches less pleasant
+for me.

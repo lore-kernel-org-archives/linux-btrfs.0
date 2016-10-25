@@ -1,99 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f177.google.com ([209.85.220.177]:40799 "EHLO
-        mail-qk0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751302AbcJYObP (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:45506 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1753905AbcJYPRn (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 25 Oct 2016 10:31:15 -0400
-Received: by mail-qk0-f177.google.com with SMTP id d23so9813517qke.7
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Oct 2016 07:31:15 -0700 (PDT)
-MIME-Version: 1.0
-From: George Chlipala <gchlip2@uic.edu>
-Date: Tue, 25 Oct 2016 09:30:34 -0500
-Message-ID: <CABaAYfRcZ5L_hU+J7DLyuLrGtHB0u+5YKSm7CQS4N08B0K3X_w@mail.gmail.com>
-Subject: Replace missing drive in RAID56 BTRFS without mounting.
+        Tue, 25 Oct 2016 11:17:43 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1bz3Tp-0002oE-OX
+        for linux-btrfs@vger.kernel.org; Tue, 25 Oct 2016 17:17:33 +0200
 To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Replace missing drive in RAID56 BTRFS without mounting.
+Date: Tue, 25 Oct 2016 15:16:54 +0000 (UTC)
+Message-ID: <pan$e0640$e75abc22$daca6577$7759c483@cox.net>
+References: <CABaAYfRcZ5L_hU+J7DLyuLrGtHB0u+5YKSm7CQS4N08B0K3X_w@mail.gmail.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We had a major failure in one drive in a RAID56 BTRFS volume and that
-drive is no longer accessible.   How can I replace the drive without
-mounting the filesystem?  I have tried using a degraded mount but I
-receive the following error messages
+George Chlipala posted on Tue, 25 Oct 2016 09:30:34 -0500 as excerpted:
 
-ROOT [prometheus:/root] # mount -v -t btrfs -o
-compress=zlib,space_cache,noatime,degraded,ro,recovery
-/dev/mapper/crypt10 /mnt2/new_pool/
-mount: wrong fs type, bad option, bad superblock on /dev/mapper/crypt10,
-       missing codepage or helper program, or other error
+> We had a major failure in one drive in a RAID56 BTRFS volume and that
+> drive is no longer accessible.   How can I replace the drive without
+> mounting the filesystem?  I have tried using a degraded mount but I
+> receive the following error messages
 
-       In some cases useful info is found in syslog - try
-       dmesg | tail or so.
+Someone should be along with specific help, but FYI, btrfs raid56 mode is 
+bugged at this time and may require a major rewrite to fix properly.  As 
+a result it's not recommended for anything but testing, and due to 
+immaturity of the raid56 code, deployment with backups ready or otherwise 
+with data that can be lost has always been the very strong recommendation 
+even before these specific bugs were known.
 
-Here is the output from dmesg...
+That being the case and since switching to other than raid56 mode is 
+strongly recommended anyway, blowing away the existing filesystem and 
+recreating in raid1 or raid10 mode, then restoring from backups if the 
+data was worth the trouble of having them, is the shortest and most 
+efficient way back to operation.
 
-[938397.877203] BTRFS info (device dm-16): allowing degraded mounts
-[938397.879023] BTRFS info (device dm-16): disk space caching is enabled
-[938397.880817] BTRFS: has skinny extents
-[938397.898619] BTRFS: failed to read chunk tree on dm-16
-[938397.911256] BTRFS: open_ctree failed
+Saving the data on the raid56 may be possible, but it's likely to require 
+serious effort and still may not succeed.  As I said, Chris Murphy or 
+someone else with experience at trying to recover raid56 should be along 
+with more detail, if you'd still prefer to go to that extra effort 
+regardless of the real chance it won't help, in case it can.
 
-I have tried a btrfs check...
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-ROOT [prometheus:/root] # btrfs check -p /dev/mapper/crypt10
-warning, device 3 is missing
-checksum verify failed on 21561344 found 01354400 wanted E5D6F9B6
-checksum verify failed on 21561344 found 790DBB66 wanted 6B6043A7
-checksum verify failed on 21561344 found 790DBB66 wanted 6B6043A7
-bytenr mismatch, want=21561344, have=3637706752
-Couldn't read chunk tree
-Couldn't open file system
-
-I have also tried btrfs restore...
-
-ROOT [prometheus:/root] # btrfs restore -l /dev/mapper/crypt10
-warning, device 3 is missing
-checksum verify failed on 21561344 found 01354400 wanted E5D6F9B6
-checksum verify failed on 21561344 found 790DBB66 wanted 6B6043A7
-checksum verify failed on 21561344 found 790DBB66 wanted 6B6043A7
-bytenr mismatch, want=21561344, have=3637706752
-Couldn't read chunk tree
-Could not open root, trying backup super
-warning, device 12 is missing
-warning, device 11 is missing
-warning, device 10 is missing
-warning, device 9 is missing
-warning, device 8 is missing
-warning, device 7 is missing
-warning, device 6 is missing
-warning, device 5 is missing
-warning, device 4 is missing
-warning, device 3 is missing
-warning, device 2 is missing
-checksum verify failed on 21020672 found 4EE9E0C6 wanted 7BF0006E
-checksum verify failed on 21020672 found 4EE9E0C6 wanted 7BF0006E
-bytenr mismatch, want=21020672, have=3637709824
-ERROR: cannot read chunk root
-Could not open root, trying backup super
-warning, device 12 is missing
-warning, device 11 is missing
-warning, device 10 is missing
-warning, device 9 is missing
-warning, device 8 is missing
-warning, device 7 is missing
-warning, device 6 is missing
-warning, device 5 is missing
-warning, device 4 is missing
-warning, device 3 is missing
-warning, device 2 is missing
-checksum verify failed on 21020672 found 4EE9E0C6 wanted 7BF0006E
-checksum verify failed on 21020672 found 4EE9E0C6 wanted 7BF0006E
-bytenr mismatch, want=21020672, have=3637709824
-ERROR: cannot read chunk root
-Could not open root, trying backup super
-
-Is there anything I can do?  Even a partial recovery would be helpful.
-
-Thanks!
-
-- George Chlipala

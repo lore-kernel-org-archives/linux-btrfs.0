@@ -1,52 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:45506 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1753905AbcJYPRn (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 25 Oct 2016 11:17:43 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1bz3Tp-0002oE-OX
-        for linux-btrfs@vger.kernel.org; Tue, 25 Oct 2016 17:17:33 +0200
+Received: from odin.sdf-eu.org ([178.63.35.194]:60291 "EHLO sdfeu.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754890AbcJYST7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 25 Oct 2016 14:19:59 -0400
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8;
+ format=flowed
+Date: Tue, 25 Oct 2016 20:19:45 +0200
+From: none <ytrezq@sdf-eu.org>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Replace missing drive in RAID56 BTRFS without mounting.
-Date: Tue, 25 Oct 2016 15:16:54 +0000 (UTC)
-Message-ID: <pan$e0640$e75abc22$daca6577$7759c483@cox.net>
-References: <CABaAYfRcZ5L_hU+J7DLyuLrGtHB0u+5YKSm7CQS4N08B0K3X_w@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Subject: Re: How to recover a filesystem without formatting nor using the
+ btrfs check command.
+In-Reply-To: <61df188a-bc12-c9c4-0322-766df4fb18c0@cn.fujitsu.com>
+References: <580944C7.103@sdf-eu.org>
+ <8c5ae48c-4af6-42d9-be0f-06d232764ff2@cn.fujitsu.com>
+ <36f56365-27ac-878e-c5fb-f414646eda3a@sdf-eu.org>
+ <61df188a-bc12-c9c4-0322-766df4fb18c0@cn.fujitsu.com>
+Message-ID: <a8b030a4fab174ade203bf061151f270@mx.sdfeu.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-George Chlipala posted on Tue, 25 Oct 2016 09:30:34 -0500 as excerpted:
+Le 2016-10-25 05:04, Qu Wenruo a écrit :
+> At 10/25/2016 01:54 AM, none wrote:
+>> So do you mean lowmem is also low cpu ?
+> 
+> Not sure, but lowmem is high IO.
+> And by design, it won't cause dead look unless there is a looping tree
+> block. But that will be detected by check_tree_block().
+> 
+> So, it just avoids any possible dead loop AFAIK.
+> 
+>> Indeed here's the output if the metadata image isn't enough (it
+>> termintes correctly with the --lowmem option). I must recognize even
+>> without the --repair option, btrfs check hangs.
+> 
+> I just forgot you have uploaded the image dump.
+> I'll check it.
+> 
+> But according to lowmem output, it seems all your extent tree is
+> screwed up, maybe that's the cause of the problem?
+I don’t think so, I can read and write to most files and no directory is 
+corrupt (even after running the btrfsck with lowmem).
 
-> We had a major failure in one drive in a RAID56 BTRFS volume and that
-> drive is no longer accessible.   How can I replace the drive without
-> mounting the filesystem?  I have tried using a degraded mount but I
-> receive the following error messages
+But of course, as the filesystem is corrupt, I avoid to mount it.
 
-Someone should be along with specific help, but FYI, btrfs raid56 mode is 
-bugged at this time and may require a major rewrite to fix properly.  As 
-a result it's not recommended for anything but testing, and due to 
-immaturity of the raid56 code, deployment with backups ready or otherwise 
-with data that can be lost has always been the very strong recommendation 
-even before these specific bugs were known.
-
-That being the case and since switching to other than raid56 mode is 
-strongly recommended anyway, blowing away the existing filesystem and 
-recreating in raid1 or raid10 mode, then restoring from backups if the 
-data was worth the trouble of having them, is the shortest and most 
-efficient way back to operation.
-
-Saving the data on the raid56 may be possible, but it's likely to require 
-serious effort and still may not succeed.  As I said, Chris Murphy or 
-someone else with experience at trying to recover raid56 should be along 
-with more detail, if you'd still prefer to go to that extra effort 
-regardless of the real chance it won't help, in case it can.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Looks like the output of the tool is wrong.
+> 
+> Thanks,
+> Qu
+>> 
+>> regards,
+>> 
+>> Le 24/10/2016 à 03:15, Qu Wenruo a écrit :
+>> 
+>>> You could try to use --mode lowmem, which doesn't ever use any loop 
+>>> to
+>>> get next block, but iterating trees.
+>>> 
+>>> Current in mainline btrfs-progs, the low memory mode code only checks
+>>> extent/chunk trees, file/subvolume trees are still checked by 
+>>> original
+>>> mode.
+>>> 
+>>> You could try the devel branch from David, which now contains the 
+>>> full
+>>> low memory mode check code:
+>>> https://github.com/kdave/btrfs-progs/tree/devel
+>>> 
+>>> Although low memory mode doesn't support repair yet, it would give us
+>>> enough info on what's corrupted, so we can later fix it by hand or
+>>> enhance original mode.
+>>> 
+>>> Thanks,
+>>> Qu
+>>> 
+>>> At 10/24/2016 03:42 AM, none wrote:
+>>> 
+>>>> Hello,
+>>>> I have the following bug
+>>>> https://bugzilla.kernel.org/show_bug.cgi?id=178781 in btrfs check, 
+>>>> is
+>>>> there a way to recover my filesystem in clean state without 
+>>>> formatting
+>>>> or using btrsfck ? Of course, the point is no longer need the files
+>>>> which are damaged.
+>>>> So is there a way to recover a btrfs filesystem by deleting the
+>>>> corrupted data instead of trying to restore it ?
+>>>> 
+>>>> btrfs fi df /mnt/Opera_Mobile_Emulator_12.1_Linux
+>>>> Data, single: total=66.01GiB, used=0.00B
+>>>> System, DUP: total=8.00MiB, used=16.00KiB
+>>>> System, single: total=4.00MiB, used=0.00B
+>>>> Metadata, DUP: total=5.00GiB, used=28.00KiB
+>>>> Metadata, single: total=8.00MiB, used=0.00B
+>>>> GlobalReserve, single: total=4.00MiB, used=0.00B
+>>>> 
+>>>> btrfs progs version 4.7.3 from Devuan
+>>>> 
+>>>> Label: 'backup'  uuid: 56040bbb-ed5c-47f2-82e2-34457bd7b4f3
+>>>> Total devices 1 FS bytes used 44.00KiB
+>>>> devid    1 size 298.91GiB used 76.04GiB path
+>>>> /dev/mapper/isw_bdffeeeijj_Volume0p7
+>>>> 
+>>>> uname -a
+>>>> Linux localhost 4.5.0-0.bpo.1-amd64 #1 SMP Debian 4.5.1-1~bpo8+1
+>>>> (2016-04-20) x86_64 GNU/Linux
+>>>> 
+>>>> Result of btrfs-image on /dev/mapper/isw_bdffeeeijj_Volume0p7 :
+>>>> https://web.archive.org/web/20161020220914/https://filebin.net/7ni8kfpog1dxw4jc/btrfs-image_capture.xz
+>>>> 
+>>>> 
+>>>> Thanks,
+>> 
 

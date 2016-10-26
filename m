@@ -1,15 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from odin.sdf-eu.org ([178.63.35.194]:60645 "EHLO sdfeu.org"
+Received: from odin.sdf-eu.org ([178.63.35.194]:63948 "EHLO sdfeu.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932115AbcJZLxE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 26 Oct 2016 07:53:04 -0400
+        id S1753120AbcJZTEC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 26 Oct 2016 15:04:02 -0400
+Received: from sdfeu.org (IDENT:www@odin.sdf-eu.org [178.63.35.194])
+        by sdfeu.org (8.15.2/8.14.3) with ESMTP id u9QJ3qx2009601
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Oct 2016 19:03:54 GMT
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8;
  format=flowed
-Date: Wed, 26 Oct 2016 13:52:47 +0200
+Date: Wed, 26 Oct 2016 21:03:52 +0200
 From: none <ytrezq@sdf-eu.org>
 To: linux-btrfs@vger.kernel.org
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Subject: Re: How to recover a filesystem without formatting nor using the
  btrfs check command.
 In-Reply-To: <08227414-b241-28a5-bbc6-7fb21d4b3e62@cn.fujitsu.com>
@@ -19,11 +21,11 @@ References: <580944C7.103@sdf-eu.org>
  <61df188a-bc12-c9c4-0322-766df4fb18c0@cn.fujitsu.com>
  <a8b030a4fab174ade203bf061151f270@mx.sdfeu.org>
  <08227414-b241-28a5-bbc6-7fb21d4b3e62@cn.fujitsu.com>
-Message-ID: <7dcfffa62234ff0fa5ae060f75df25f1@mx.sdfeu.org>
+Message-ID: <d83d6a24e011bb4423f264359637dff6@mx.sdfeu.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Le 2016-10-26 03:43, Qu Wenruo a écrit :
+Le 2016-10-26 03:43, Qu Wenruo a écrit :
 > Unfortunately, low memory mode is right here.
 > 
 > If btrfs-image dump the image correctly, your extent tree is really 
@@ -42,7 +44,7 @@ Please note df -h report 55Gb used due to a very high compression ratio.
 Basically most of the theoretical used space is done by less than 100 
 files. I want to delete them
 > That's why lowmem mode is reporting so many backref lost.
-Whithout the lowmem mode, only 3 lines are reported :
+Whithout the lowmem mode, only 3 lines are reported :
 
 Failed to find [75191291904, 168, 4096]
 btrfs unable to find ref byte nr 75191291904 parent 0 root 1  owner 1 
@@ -64,12 +66,12 @@ python and ruby cgi scripts.
 > As extent tree is screwed up, it's completely possible new write are
 > overwriting existing data.
 Though I only attempted to write to 3 files. But yes, this was something 
-I suspected : that writing damage things.
+I suspected : that writing damage things.
 > The only chance seems to be --init-extent-tree, but that's very
 > dangerous and I highly suspect the screwed up extent tree is caused by
 > interrupted extent tree rebuild.
 The problem is --init-extent-tree implies --repair which discard 
---mode=lowmem and cause the dead lock : 
+--mode=lowmem and cause the dead lock : 
 https://bugzilla.kernel.org/show_bug.cgi?id=178781
 > Thanks,
 > Qu
@@ -80,6 +82,7 @@ Do you mean it’s impossible to rescue anything by repairing ? (this is
 something I doubt since most files are valid)
 
 Thank you.
+
 > At 10/26/2016 02:19 AM, none wrote:
 >> Le 2016-10-25 05:04, Qu Wenruo a écrit :
 >>> At 10/25/2016 01:54 AM, none wrote:
@@ -178,3 +181,8 @@ Thank you.
 >>>>>> 
 >>>>>> 
 >>>>>> Thanks,
+>>>> 
+>> 
+>> 
+>> 
+

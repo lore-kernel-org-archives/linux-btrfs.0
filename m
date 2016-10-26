@@ -1,172 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f174.google.com ([209.85.192.174]:34515 "EHLO
-        mail-pf0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751222AbcJZFYL (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:37593 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1751810AbcJZPMM (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 26 Oct 2016 01:24:11 -0400
-Received: by mail-pf0-f174.google.com with SMTP id n85so16276511pfi.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Oct 2016 22:24:11 -0700 (PDT)
-Date: Tue, 25 Oct 2016 22:24:08 -0700
-From: Omar Sandoval <osandov@osandov.com>
-To: Andreas Dilger <adilger@dilger.ca>
-Cc: Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com, david@fromorbit.com, jack@suse.cz,
-        linux-fsdevel@vger.kernel.org, viro@zeniv.linux.org.uk,
-        hch@infradead.org, jweiner@fb.com
-Subject: Re: [PATCH 5/5] don't set *REFERENCED unless we are on the lru list
-Message-ID: <20161026052408.GA32082@vader>
+        Wed, 26 Oct 2016 11:12:12 -0400
+Subject: Re: [PATCH 5/5] fs: don't set *REFERENCED unless we are on the lru
+ list
+To: Dave Chinner <david@fromorbit.com>
 References: <1477420904-1399-1-git-send-email-jbacik@fb.com>
  <1477420904-1399-6-git-send-email-jbacik@fb.com>
- <20161025224442.GA18879@vader.DHCP.thefacebook.com>
- <706289B2-E2F9-46A0-903A-9D5CB5F21CBF@dilger.ca>
+ <20161025220112.GE14023@dastard>
+CC: <linux-btrfs@vger.kernel.org>, <kernel-team@fb.com>, <jack@suse.cz>,
+        <linux-fsdevel@vger.kernel.org>, <viro@zeniv.linux.org.uk>,
+        <hch@infradead.org>, <jweiner@fb.com>
+From: Josef Bacik <jbacik@fb.com>
+Message-ID: <d5f330d4-8969-b90c-9fe9-134b1bf5d57f@fb.com>
+Date: Wed, 26 Oct 2016 11:11:35 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <706289B2-E2F9-46A0-903A-9D5CB5F21CBF@dilger.ca>
+In-Reply-To: <20161025220112.GE14023@dastard>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 25, 2016 at 10:17:19PM -0600, Andreas Dilger wrote:
-> On Oct 25, 2016, at 4:44 PM, Omar Sandoval <osandov@osandov.com> wrote:
-> > 
-> > On Tue, Oct 25, 2016 at 02:41:44PM -0400, Josef Bacik wrote:
-> >> With anything that populates the inode/dentry cache with a lot of one time use
-> >> inodes we can really put a lot of pressure on the system for things we don't
-> >> need to keep in cache.  It takes two runs through the LRU to evict these one use
-> >> entries, and if you have a lot of memory you can end up with 10's of millions of
-> >> entries in the dcache or icache that have never actually been touched since they
-> >> were first instantiated, and it will take a lot of CPU and a lot of pressure to
-> >> evict all of them.
-> >> 
-> >> So instead do what we do with pagecache, only set the *REFERENCED flags if we
-> >> are being used after we've been put onto the LRU.  This makes a significant
-> >> difference in the system's ability to evict these useless cache entries.  With a
-> >> fs_mark workload that creates 40 million files we get the following results (all
-> >> in files/sec)
-> >> 
-> >> Btrfs			Patched		Unpatched
-> >> Average Files/sec:	72209.3		63254.2
-> >> p50 Files/sec:		70850		57560
-> >> p90 Files/sec:		68757		53085
-> >> p99 Files/sec:		68757		53085
-> >> 
-> >> XFS			Patched		Unpatched
-> >> Average Files/sec:	61025.5		60719.5
-> >> p50 Files/sec:		60107		59465
-> >> p90 Files/sec: 		59300		57966
-> >> p99 Files/sec: 		59227		57528
-> >> 
-> >> Ext4			Patched		Unpatched
-> >> Average Files/sec:	121785.4	119248.0
-> >> p50 Files/sec:		120852		119274
-> >> p90 Files/sec:		116703		112783
-> >> p99 Files/sec:		114393		104934
-> >> 
-> >> The reason Btrfs has a much larger improvement is because it holds a lot more
-> >> things in memory so benefits more from faster slab reclaim, but across the board
-> >> is an improvement for each of the file systems.
-> >> 
-> >> Signed-off-by: Josef Bacik <jbacik@fb.com>
-> >> ---
-> >> fs/dcache.c | 15 ++++++++++-----
-> >> fs/inode.c  |  5 ++++-
-> >> 2 files changed, 14 insertions(+), 6 deletions(-)
-> >> 
-> >> diff --git a/fs/dcache.c b/fs/dcache.c
-> >> index 5c7cc95..a558075 100644
-> >> --- a/fs/dcache.c
-> >> +++ b/fs/dcache.c
-> >> @@ -779,8 +779,6 @@ repeat:
-> >> 			goto kill_it;
-> >> 	}
-> >> 
-> >> -	if (!(dentry->d_flags & DCACHE_REFERENCED))
-> >> -		dentry->d_flags |= DCACHE_REFERENCED;
-> >> 	dentry_lru_add(dentry);
-> >> 
-> >> 	dentry->d_lockref.count--;
-> >> @@ -803,6 +801,13 @@ static inline void __dget_dlock(struct dentry *dentry)
-> >> 	dentry->d_lockref.count++;
-> >> }
-> >> 
-> >> +static inline void __dget_dlock_reference(struct dentry *dentry)
-> >> +{
-> >> +	if (dentry->d_flags & DCACHE_LRU_LIST)
-> >> +		dentry->d_flags |= DCACHE_REFERENCED;
-> >> +	dentry->d_lockref.count++;
-> >> +}
-> >> +
-> >> static inline void __dget(struct dentry *dentry)
-> >> {
-> >> 	lockref_get(&dentry->d_lockref);
-> >> @@ -875,7 +880,7 @@ again:
-> >> 			    (alias->d_flags & DCACHE_DISCONNECTED)) {
-> >> 				discon_alias = alias;
-> >> 			} else {
-> >> -				__dget_dlock(alias);
-> >> +				__dget_dlock_reference(alias);
-> >> 				spin_unlock(&alias->d_lock);
-> >> 				return alias;
-> >> 			}
-> >> @@ -886,7 +891,7 @@ again:
-> >> 		alias = discon_alias;
-> >> 		spin_lock(&alias->d_lock);
-> >> 		if (S_ISDIR(inode->i_mode) || !d_unhashed(alias)) {
-> >> -			__dget_dlock(alias);
-> >> +			__dget_dlock_reference(alias);
-> >> 			spin_unlock(&alias->d_lock);
-> >> 			return alias;
-> >> 		}
-> >> @@ -2250,7 +2255,7 @@ struct dentry *__d_lookup(const struct dentry *parent, const struct qstr *name)
-> >> 		if (!d_same_name(dentry, parent, name))
-> >> 			goto next;
-> >> 
-> >> -		dentry->d_lockref.count++;
-> >> +		__dget_dlock_reference(dentry);
-> > 
-> > This misses dentries that we get through __d_lookup_rcu(), so I think
-> > your change made it so most things aren't getting DCACHE_REFERENCED set
-> > at all. Maybe something like this instead?
-> > 
-> > diff --git a/fs/dcache.c b/fs/dcache.c
-> > index 5c7cc95..d7a56a8 100644
-> > --- a/fs/dcache.c
-> > +++ b/fs/dcache.c
-> > @@ -412,15 +412,6 @@ static void d_lru_shrink_move(struct list_lru_one *lru, struct dentry *dentry,
-> > 	list_lru_isolate_move(lru, &dentry->d_lru, list);
-> > }
-> > 
-> > -/*
-> > - * dentry_lru_(add|del)_list) must be called with d_lock held.
-> > - */
-> > -static void dentry_lru_add(struct dentry *dentry)
-> > -{
-> > -	if (unlikely(!(dentry->d_flags & DCACHE_LRU_LIST)))
-> > -		d_lru_add(dentry);
-> > -}
-> > -
-> > /**
-> >  * d_drop - drop a dentry
-> >  * @dentry: dentry to drop
-> > @@ -779,9 +770,12 @@ void dput(struct dentry *dentry)
-> > 			goto kill_it;
-> > 	}
-> > 
-> > -	if (!(dentry->d_flags & DCACHE_REFERENCED))
-> > -		dentry->d_flags |= DCACHE_REFERENCED;
-> > -	dentry_lru_add(dentry);
-> > +	if (likely(dentry->d_flags & DCACHE_LRU_LIST)) {
-> > +		if (!(dentry->d_flags & DCACHE_REFERENCED))
-> > +			dentry->d_flags |= DCACHE_REFERENCED;
-> 
-> There is no benefit to checking if DCACHE_REFERENCED is unset before
-> trying to set it.  You've already accessed the cacheline, so you can
-> avoid the branch here and just set it unconditionally.
-> 
-> Cheers, Andreas
+On 10/25/2016 06:01 PM, Dave Chinner wrote:
+> On Tue, Oct 25, 2016 at 02:41:44PM -0400, Josef Bacik wrote:
+>> With anything that populates the inode/dentry cache with a lot of one time use
+>> inodes we can really put a lot of pressure on the system for things we don't
+>> need to keep in cache.  It takes two runs through the LRU to evict these one use
+>> entries, and if you have a lot of memory you can end up with 10's of millions of
+>> entries in the dcache or icache that have never actually been touched since they
+>> were first instantiated, and it will take a lot of CPU and a lot of pressure to
+>> evict all of them.
+>>
+>> So instead do what we do with pagecache, only set the *REFERENCED flags if we
+>> are being used after we've been put onto the LRU.  This makes a significant
+>> difference in the system's ability to evict these useless cache entries.  With a
+>> fs_mark workload that creates 40 million files we get the following results (all
+>> in files/sec)
+>
+> What's the workload, storage, etc?
 
-We've accessed the cacheline, but it can still be shared, no? If we did
-this unconditionally, we'd dirty the cacheline on every dput() as
-opposed to only the first and second times it's been put.
+Oops sorry I thought I said it.  It's fs_mark creating 20 million empty files on 
+a single NVME drive.
 
--- 
-Omar
+>
+>> Btrfs			Patched		Unpatched
+>> Average Files/sec:	72209.3		63254.2
+>> p50 Files/sec:	70850		57560
+>> p90 Files/sec:	68757		53085
+>> p99 Files/sec:	68757		53085
+>
+> So how much of this is from changing the dentry referenced
+> behaviour, and how much from the inode? Can you separate out the two
+> changes so we know which one is actually affecting reclaim
+> performance?
+>
+> Indeed, I wonder if just changing the superblock shrinker
+> default_seeks for btrfs would have exactly the same impact because
+> that canbe used to exactly double the reclaim scan rate for the same
+> memory pressure.  If that doesn't change performance by a similar
+> amount (changing defaults seeks is the normal way of changing
+> shrinker balance), then more digging is required here to explain why
+> the referenced bits make such an impact to steady state
+> performance...
+>
+
+I'll tease out the impact of changing dcache vs icache vs both.  Yeah I'll 
+reduce default_seeks and see what that turns out to be.
+
+>> XFS			Patched		Unpatched
+>> Average Files/sec:	61025.5		60719.5
+>> p50 Files/sec:	60107		59465
+>> p90 Files/sec:	59300		57966
+>> p99 Files/sec:	59227		57528
+>
+> You made XFS never use I_REFERENCED at all (hint: not all
+> filesystems use find_inode/find_inode_fast()), so it's not clear
+> that the extra scanning (less than 1% difference in average
+> throughput) is actuallly the cause of things being slower in btrfs.
+>
+>> The reason Btrfs has a much larger improvement is because it holds a lot more
+>> things in memory so benefits more from faster slab reclaim, but across the board
+>> is an improvement for each of the file systems.
+>
+> Less than 1% for XFS and ~1.5% for ext4 is well within the
+> run-to-run variation of fsmark. It looks like it might be slightly
+> faster, but it's not a cut-and-dried win for anything other than
+> btrfs.
+>
+
+Sure the win in this benchmark is clearly benefiting btrfs the most, but I think 
+the overall approach is sound and likely to help everybody in theory.  Inside FB 
+we definitely have had problems where the memory pressure induced by some 
+idi^H^H^Hprocess goes along and runs find / which causes us to evict real things 
+that are being used rather than these one use inodes.  This sort of behavior 
+could possibly be mitigated by this patch, but I haven't sat down to figure out 
+a reliable way to mirror this workload to test that theory.  Thanks
+
+Josef
+

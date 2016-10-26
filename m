@@ -1,101 +1,154 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:37593 "EHLO
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:54779 "EHLO
         mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1751810AbcJZPMM (ORCPT
+        by vger.kernel.org with ESMTP id S1752959AbcJZPUy (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 26 Oct 2016 11:12:12 -0400
-Subject: Re: [PATCH 5/5] fs: don't set *REFERENCED unless we are on the lru
- list
-To: Dave Chinner <david@fromorbit.com>
+        Wed, 26 Oct 2016 11:20:54 -0400
+Subject: Re: [PATCH 3/5] writeback: add counters for metadata usage
+To: Tejun Heo <htejun@fb.com>
 References: <1477420904-1399-1-git-send-email-jbacik@fb.com>
- <1477420904-1399-6-git-send-email-jbacik@fb.com>
- <20161025220112.GE14023@dastard>
-CC: <linux-btrfs@vger.kernel.org>, <kernel-team@fb.com>, <jack@suse.cz>,
-        <linux-fsdevel@vger.kernel.org>, <viro@zeniv.linux.org.uk>,
-        <hch@infradead.org>, <jweiner@fb.com>
+ <1477420904-1399-4-git-send-email-jbacik@fb.com>
+ <20161025195037.GC13857@htj.duckdns.org>
+CC: <linux-btrfs@vger.kernel.org>, <kernel-team@fb.com>, <david@fromorbit.com>,
+        <jack@suse.cz>, <linux-fsdevel@vger.kernel.org>,
+        <viro@zeniv.linux.org.uk>, <hch@infradead.org>, <jweiner@fb.com>
 From: Josef Bacik <jbacik@fb.com>
-Message-ID: <d5f330d4-8969-b90c-9fe9-134b1bf5d57f@fb.com>
-Date: Wed, 26 Oct 2016 11:11:35 -0400
+Message-ID: <3578d0de-b971-8405-8e7a-71b79a7f9850@fb.com>
+Date: Wed, 26 Oct 2016 11:20:16 -0400
 MIME-Version: 1.0
-In-Reply-To: <20161025220112.GE14023@dastard>
+In-Reply-To: <20161025195037.GC13857@htj.duckdns.org>
 Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/25/2016 06:01 PM, Dave Chinner wrote:
-> On Tue, Oct 25, 2016 at 02:41:44PM -0400, Josef Bacik wrote:
->> With anything that populates the inode/dentry cache with a lot of one time use
->> inodes we can really put a lot of pressure on the system for things we don't
->> need to keep in cache.  It takes two runs through the LRU to evict these one use
->> entries, and if you have a lot of memory you can end up with 10's of millions of
->> entries in the dcache or icache that have never actually been touched since they
->> were first instantiated, and it will take a lot of CPU and a lot of pressure to
->> evict all of them.
+On 10/25/2016 03:50 PM, Tejun Heo wrote:
+> Hello,
+>
+> On Tue, Oct 25, 2016 at 02:41:42PM -0400, Josef Bacik wrote:
+>> Btrfs has no bounds except memory on the amount of dirty memory that we have in
+>> use for metadata.  Historically we have used a special inode so we could take
+>> advantage of the balance_dirty_pages throttling that comes with using pagecache.
+>> However as we'd like to support different blocksizes it would be nice to not
+>> have to rely on pagecache, but still get the balance_dirty_pages throttling
+>> without having to do it ourselves.
 >>
->> So instead do what we do with pagecache, only set the *REFERENCED flags if we
->> are being used after we've been put onto the LRU.  This makes a significant
->> difference in the system's ability to evict these useless cache entries.  With a
->> fs_mark workload that creates 40 million files we get the following results (all
->> in files/sec)
+>> So introduce *METADATA_DIRTY_BYTES and *METADATA_WRITEBACK_BYTES.  These are
+>> zone and bdi_writeback counters to keep track of how many bytes we have in
+>> flight for METADATA.  We need to count in bytes as blocksizes could be
+>> percentages of pagesize.  We simply convert the bytes to number of pages where
+>> it is needed for the throttling.
+>>
+>> Also introduce NR_METADATA_BYTES so we can keep track of the total amount of
+>> pages used for metadata on the system.  This is also needed so things like dirty
+>> throttling know that this is dirtyable memory as well and easily reclaimed.
+>>
+>> Signed-off-by: Josef Bacik <jbacik@fb.com>
 >
-> What's the workload, storage, etc?
+> Some nits.
+>
+> It'd be nice to note that this patch just introduces new fields
+> without using them and thus doesn't cause any behavioral changes.
+>
+>> @@ -51,6 +51,8 @@ static DEVICE_ATTR(cpumap,  S_IRUGO, node_read_cpumask, NULL);
+>>  static DEVICE_ATTR(cpulist, S_IRUGO, node_read_cpulist, NULL);
+>>
+>>  #define K(x) ((x) << (PAGE_SHIFT - 10))
+>> +#define BtoK(x) ((x) >> 10)
+>
+> This would belong in a separate patch but any chance we can share
+> these definitions?  It's fine to have the definitions in a couple
+> places but these are getting duplicated in multiple spots and actually
+> getting confusing with K meaning pages to kilobytes.  I'm not sure how
+> it exactly should be tho.
+>
+>> @@ -2473,6 +2504,100 @@ void account_page_dirtied(struct page *page, struct address_space *mapping)
+>>  EXPORT_SYMBOL(account_page_dirtied);
+>>
+>>  /*
+>
+> /**
+>
+>> + * account_metadata_dirtied
+>> + * @page - the page being dirited
+>> + * @bdi - the bdi that owns this page
+>> + * @bytes - the number of bytes being dirtied
+>> + *
+>> + * Do the dirty page accounting for metadata pages that aren't backed by an
+>> + * address_space.
+>> + */
+>> +void account_metadata_dirtied(struct page *page, struct backing_dev_info *bdi,
+>> +			      long bytes)
+>> +{
+>> +	unsigned long flags;
+>> +
+>> +	local_irq_save(flags);
+>> +	__mod_node_page_state(page_pgdat(page), NR_METADATA_DIRTY_BYTES,
+>> +			      bytes);
+>> +	__add_wb_stat(&bdi->wb, WB_DIRTIED_BYTES, bytes);
+>> +	__add_wb_stat(&bdi->wb, WB_METADATA_DIRTY_BYTES, bytes);
+>> +	current->nr_dirtied++;
+>> +	task_io_account_write(bytes);
+>> +	this_cpu_inc(bdp_ratelimits);
+>> +	local_irq_restore(flags);
+>
+> Again, I'm not sure about the explicit irq ops especially as some of
+> the counters are already irq safe.
+>
+>> +}
+>> +EXPORT_SYMBOL(account_metadata_dirtied);
+>> +
+>> +/*
+>
+> /**
+>
+>> + * account_metadata_cleaned
+>> + * @page - the page being cleaned
+>> + * @bdi - the bdi that owns this page
+>> + * @bytes - the number of bytes cleaned
+>> + *
+>> + * Called on a no longer dirty metadata page.
+>> + */
+>> +void account_metadata_cleaned(struct page *page, struct backing_dev_info *bdi,
+>> +			      long bytes)
+>> +{
+>> +	unsigned long flags;
+>> +
+>> +	local_irq_save(flags);
+>> +	__mod_node_page_state(page_pgdat(page), NR_METADATA_DIRTY_BYTES,
+>> +			      -bytes);
+>> +	__add_wb_stat(&bdi->wb, WB_METADATA_DIRTY_BYTES, -bytes);
+>> +	task_io_account_cancelled_write(bytes);
+>> +	local_irq_restore(flags);
+>
+> Ditto with irq and the following functions.
+>
+>> @@ -3701,7 +3703,20 @@ static unsigned long node_pagecache_reclaimable(struct pglist_data *pgdat)
+>>  	if (unlikely(delta > nr_pagecache_reclaimable))
+>>  		delta = nr_pagecache_reclaimable;
+>>
+>> -	return nr_pagecache_reclaimable - delta;
+>> +	nr_metadata_reclaimable =
+>> +		node_page_state(pgdat, NR_METADATA_BYTES) >> PAGE_SHIFT;
+>> +	/*
+>> +	 * We don't do writeout through the shrinkers so subtract any
+>> +	 * dirty/writeback metadata bytes from the reclaimable count.
+>> +	 */
+>
+> Hmm... up until this point, the dirty metadata was handled the same
+> way as regular dirty data but it deviates here.  Is this right?  The
+> calculations in writeback code also assumes that the dirty pages are
+> reclaimable.  If this is inherently different, it'd be nice to explain
+> more explicitly why this is different from others.
+>
 
-Oops sorry I thought I said it.  It's fs_mark creating 20 million empty files on 
-a single NVME drive.
-
->
->> Btrfs			Patched		Unpatched
->> Average Files/sec:	72209.3		63254.2
->> p50 Files/sec:	70850		57560
->> p90 Files/sec:	68757		53085
->> p99 Files/sec:	68757		53085
->
-> So how much of this is from changing the dentry referenced
-> behaviour, and how much from the inode? Can you separate out the two
-> changes so we know which one is actually affecting reclaim
-> performance?
->
-> Indeed, I wonder if just changing the superblock shrinker
-> default_seeks for btrfs would have exactly the same impact because
-> that canbe used to exactly double the reclaim scan rate for the same
-> memory pressure.  If that doesn't change performance by a similar
-> amount (changing defaults seeks is the normal way of changing
-> shrinker balance), then more digging is required here to explain why
-> the referenced bits make such an impact to steady state
-> performance...
->
-
-I'll tease out the impact of changing dcache vs icache vs both.  Yeah I'll 
-reduce default_seeks and see what that turns out to be.
-
->> XFS			Patched		Unpatched
->> Average Files/sec:	61025.5		60719.5
->> p50 Files/sec:	60107		59465
->> p90 Files/sec:	59300		57966
->> p99 Files/sec:	59227		57528
->
-> You made XFS never use I_REFERENCED at all (hint: not all
-> filesystems use find_inode/find_inode_fast()), so it's not clear
-> that the extra scanning (less than 1% difference in average
-> throughput) is actuallly the cause of things being slower in btrfs.
->
->> The reason Btrfs has a much larger improvement is because it holds a lot more
->> things in memory so benefits more from faster slab reclaim, but across the board
->> is an improvement for each of the file systems.
->
-> Less than 1% for XFS and ~1.5% for ext4 is well within the
-> run-to-run variation of fsmark. It looks like it might be slightly
-> faster, but it's not a cut-and-dried win for anything other than
-> btrfs.
->
-
-Sure the win in this benchmark is clearly benefiting btrfs the most, but I think 
-the overall approach is sound and likely to help everybody in theory.  Inside FB 
-we definitely have had problems where the memory pressure induced by some 
-idi^H^H^Hprocess goes along and runs find / which causes us to evict real things 
-that are being used rather than these one use inodes.  This sort of behavior 
-could possibly be mitigated by this patch, but I haven't sat down to figure out 
-a reliable way to mirror this workload to test that theory.  Thanks
+So there is logic above this that subtracts out the NR_FILE_DIRTY from the file 
+reclaimable if we can't do write's during reclaim.  Since we can always wait on 
+writeback during reclaim it doesn't subtract out writeback.  I took this to mean 
+that the general expectation of this function is to only count thing things that 
+the shrinker can specifically reclaim itself, so I discounted anything under io 
+since the slab shrinkers have no idea if its ok to write or not and so in the 
+case of btrfs simply skip anything that is dirty or under writeback.  Does that 
+make sense?  I'll fix up the other issues you pointed out.  Thanks,
 
 Josef
 

@@ -1,188 +1,159 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from odin.sdf-eu.org ([178.63.35.194]:63948 "EHLO sdfeu.org"
+Received: from ns.bouton.name ([109.74.195.142]:55182 "EHLO mail.bouton.name"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753120AbcJZTEC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 26 Oct 2016 15:04:02 -0400
-Received: from sdfeu.org (IDENT:www@odin.sdf-eu.org [178.63.35.194])
-        by sdfeu.org (8.15.2/8.14.3) with ESMTP id u9QJ3qx2009601
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Oct 2016 19:03:54 GMT
+        id S932653AbcJZXyI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 26 Oct 2016 19:54:08 -0400
+Received: from [192.168.0.32] (adsl.bouton.name [82.234.193.23])
+        by mail.bouton.name (Postfix) with ESMTP id 4F532B893
+        for <linux-btrfs@vger.kernel.org>; Thu, 27 Oct 2016 01:54:02 +0200 (CEST)
+Subject: Re: Compression and device replace on raid10 kernel panic on 4.4.6
+ and 4.6.x
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <b1fd641c-7047-e83c-83ff-582c6abfb815@bouton.name>
+From: Lionel Bouton <lionel-subscription@bouton.name>
+Message-ID: <e7707a30-e715-8a6f-c3ad-0e9171951f34@bouton.name>
+Date: Thu, 27 Oct 2016 01:54:02 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8;
- format=flowed
-Date: Wed, 26 Oct 2016 21:03:52 +0200
-From: none <ytrezq@sdf-eu.org>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: How to recover a filesystem without formatting nor using the
- btrfs check command.
-In-Reply-To: <08227414-b241-28a5-bbc6-7fb21d4b3e62@cn.fujitsu.com>
-References: <580944C7.103@sdf-eu.org>
- <8c5ae48c-4af6-42d9-be0f-06d232764ff2@cn.fujitsu.com>
- <36f56365-27ac-878e-c5fb-f414646eda3a@sdf-eu.org>
- <61df188a-bc12-c9c4-0322-766df4fb18c0@cn.fujitsu.com>
- <a8b030a4fab174ade203bf061151f270@mx.sdfeu.org>
- <08227414-b241-28a5-bbc6-7fb21d4b3e62@cn.fujitsu.com>
-Message-ID: <d83d6a24e011bb4423f264359637dff6@mx.sdfeu.org>
+In-Reply-To: <b1fd641c-7047-e83c-83ff-582c6abfb815@bouton.name>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Le 2016-10-26 03:43, Qu Wenruo a écrit :
-> Unfortunately, low memory mode is right here.
-> 
-> If btrfs-image dump the image correctly, your extent tree is really 
-> screwed up.
-> 
-> And how badly it is screwed up?
-> It only contains the basic block group info.
-> Almost empty, without any really useful EXTENT_ITEM/METADATA_ITEM.
-> You can check it by btrfs-debug-tree -t extent.
-> Normally, one EXTENT_DATA or tree block should have corresponding
-> EXTENT_ITEM or METADATA_ITEM in extent tree.
-> 
-> But in your dump, I only find EXTENT_ITEM less than a dozen, which is
-> totally abnormal for the used size of your fs.
-Please note df -h report 55Gb used due to a very high compression ratio. 
-Basically most of the theoretical used space is done by less than 100 
-files. I want to delete them
-> That's why lowmem mode is reporting so many backref lost.
-Whithout the lowmem mode, only 3 lines are reported :
+Hi,
 
-Failed to find [75191291904, 168, 4096]
-btrfs unable to find ref byte nr 75191291904 parent 0 root 1  owner 1 
-offset 0
-Failed to find [75191316480, 168, 4096]
-btrfs unable to find ref byte nr 75191316480 parent 0 root 1  owner 0 
-offset 1
-parent transid verify failed on 75191349248 wanted 3555361 found 3555362
-Ignoring transid failure
+Le 26/10/2016 à 02:57, Lionel Bouton a écrit :
+> Hi,
+>
+> I'm currently trying to recover from a disk failure on a 6-drive Btrfs
+> RAID10 filesystem. A "mount -o degraded" auto-resumes a current
+> btrfs-replace from a missing dev to a new disk. This eventually triggers
+> a kernel panic (and the panic  seemed faster on each new boot). I
+> managed to cancel the replace, hoping to get a usable (although in
+> degraded state) system this way.
 
-and then it’s cpu locked.
+The system didn't crash during the day (yeah). Although I had some
+PostgreSQL slave servers getting I/O errors (these are still on btrfs
+because we snapshot them). PostgreSQL is quite resilient : it auto
+aborts and restarts most of the time.
+I've just rebooted with Gentoo's 4.8.4 and started a new btrfs replace.
+The only problem so far (the night is young) is this :
 
-> It's almost a miracle that you can still write data into the fs.
-> And I heavily doubt the correctness of your existing files.
-They are definitely correct. I have several root filesystem and I can 
-chroot to all of them (though I’m mounting the partition readonly in 
-order to avoid dangerous writes in that case). In each case I tried 
-python and ruby cgi scripts.
-> As extent tree is screwed up, it's completely possible new write are
-> overwriting existing data.
-Though I only attempted to write to 3 files. But yes, this was something 
-I suspected : that writing damage things.
-> The only chance seems to be --init-extent-tree, but that's very
-> dangerous and I highly suspect the screwed up extent tree is caused by
-> interrupted extent tree rebuild.
-The problem is --init-extent-tree implies --repair which discard 
---mode=lowmem and cause the dead lock : 
-https://bugzilla.kernel.org/show_bug.cgi?id=178781
-> Thanks,
-> Qu
-> 
-And finally, I found several corrupt directories yesterday.
+Oct 27 00:36:57 zagreus kernel: BTRFS info (device sdc2): dev_replace
+from <missing disk> (devid 7) to /dev/sdb2 started
+Oct 27 00:43:01 zagreus kernel: BTRFS: decompress failed
+Oct 27 01:06:59 zagreus kernel: BTRFS: decompress failed
 
-Do you mean it’s impossible to rescue anything by repairing ? (this is 
-something I doubt since most files are valid)
+This is the first I've seen the "decompress failed" message, so clearly
+4.8.4 has changes detecting some kind of corruption that happened on
+this system with compressed extents.
+I've not seen any sign of a process getting an IO error (which it should
+according to lzo.c where I found the 2 possible printk for this message)
+so I don't have a clue which file might be corrupted. It's probably a
+very old extent, this filesystem uses compress=zlib, lzo was used a long
+time ago.
 
-Thank you.
+Some more information with the current state:
 
-> At 10/26/2016 02:19 AM, none wrote:
->> Le 2016-10-25 05:04, Qu Wenruo a écrit :
->>> At 10/25/2016 01:54 AM, none wrote:
->>>> So do you mean lowmem is also low cpu ?
->>> 
->>> Not sure, but lowmem is high IO.
->>> And by design, it won't cause dead look unless there is a looping 
->>> tree
->>> block. But that will be detected by check_tree_block().
->>> 
->>> So, it just avoids any possible dead loop AFAIK.
->>> 
->>>> Indeed here's the output if the metadata image isn't enough (it
->>>> termintes correctly with the --lowmem option). I must recognize even
->>>> without the --repair option, btrfs check hangs.
->>> 
->>> I just forgot you have uploaded the image dump.
->>> I'll check it.
->>> 
->>> But according to lowmem output, it seems all your extent tree is
->>> screwed up, maybe that's the cause of the problem?
->> I don’t think so, I can read and write to most files and no directory 
->> is
->> corrupt (even after running the btrfsck with lowmem).
->> 
->> But of course, as the filesystem is corrupt, I avoid to mount it.
->> 
->> Looks like the output of the tool is wrong.
->>> 
->>> Thanks,
->>> Qu
->>>> 
->>>> regards,
->>>> 
->>>> Le 24/10/2016 à 03:15, Qu Wenruo a écrit :
->>>> 
->>>>> You could try to use --mode lowmem, which doesn't ever use any loop 
->>>>> to
->>>>> get next block, but iterating trees.
->>>>> 
->>>>> Current in mainline btrfs-progs, the low memory mode code only 
->>>>> checks
->>>>> extent/chunk trees, file/subvolume trees are still checked by 
->>>>> original
->>>>> mode.
->>>>> 
->>>>> You could try the devel branch from David, which now contains the 
->>>>> full
->>>>> low memory mode check code:
->>>>> https://github.com/kdave/btrfs-progs/tree/devel
->>>>> 
->>>>> Although low memory mode doesn't support repair yet, it would give 
->>>>> us
->>>>> enough info on what's corrupted, so we can later fix it by hand or
->>>>> enhance original mode.
->>>>> 
->>>>> Thanks,
->>>>> Qu
->>>>> 
->>>>> At 10/24/2016 03:42 AM, none wrote:
->>>>> 
->>>>>> Hello,
->>>>>> I have the following bug
->>>>>> https://bugzilla.kernel.org/show_bug.cgi?id=178781 in btrfs check, 
->>>>>> is
->>>>>> there a way to recover my filesystem in clean state without 
->>>>>> formatting
->>>>>> or using btrsfck ? Of course, the point is no longer need the 
->>>>>> files
->>>>>> which are damaged.
->>>>>> So is there a way to recover a btrfs filesystem by deleting the
->>>>>> corrupted data instead of trying to restore it ?
->>>>>> 
->>>>>> btrfs fi df /mnt/Opera_Mobile_Emulator_12.1_Linux
->>>>>> Data, single: total=66.01GiB, used=0.00B
->>>>>> System, DUP: total=8.00MiB, used=16.00KiB
->>>>>> System, single: total=4.00MiB, used=0.00B
->>>>>> Metadata, DUP: total=5.00GiB, used=28.00KiB
->>>>>> Metadata, single: total=8.00MiB, used=0.00B
->>>>>> GlobalReserve, single: total=4.00MiB, used=0.00B
->>>>>> 
->>>>>> btrfs progs version 4.7.3 from Devuan
->>>>>> 
->>>>>> Label: 'backup'  uuid: 56040bbb-ed5c-47f2-82e2-34457bd7b4f3
->>>>>> Total devices 1 FS bytes used 44.00KiB
->>>>>> devid    1 size 298.91GiB used 76.04GiB path
->>>>>> /dev/mapper/isw_bdffeeeijj_Volume0p7
->>>>>> 
->>>>>> uname -a
->>>>>> Linux localhost 4.5.0-0.bpo.1-amd64 #1 SMP Debian 4.5.1-1~bpo8+1
->>>>>> (2016-04-20) x86_64 GNU/Linux
->>>>>> 
->>>>>> Result of btrfs-image on /dev/mapper/isw_bdffeeeijj_Volume0p7 :
->>>>>> https://web.archive.org/web/20161020220914/https://filebin.net/7ni8kfpog1dxw4jc/btrfs-image_capture.xz
->>>>>> 
->>>>>> 
->>>>>> 
->>>>>> Thanks,
->>>> 
->> 
->> 
->> 
+uname -a :
+Linux zagreus.<xxx> 4.8.4-gentoo #1 SMP Wed Oct 26 03:39:19 CEST 2016
+x86_64 Intel(R) Core(TM) i7 CPU 975 @ 3.33GHz GenuineIntel GNU/Linux
+
+btrfs --version :
+btrfs-progs v4.6.1
+
+btrfs fi show :
+Label: 'raid10_btrfs'  uuid: c67683fd-8fe3-4966-8b0a-063de25ac44c
+        Total devices 7 FS bytes used 6.03TiB
+        devid    0 size 2.72TiB used 2.14TiB path /dev/sdb2
+        devid    2 size 2.72TiB used 2.14TiB path /dev/sda2
+        devid    5 size 2.72TiB used 2.14TiB path /dev/sdc2
+        devid    6 size 2.72TiB used 2.14TiB path /dev/sde2
+        devid    8 size 2.72TiB used 2.14TiB path /dev/sdg2
+        devid    9 size 2.72TiB used 2.14TiB path /dev/sdd2
+        *** Some devices missing
+
+btrfs fi df /mnt/btrfs :
+Data, RAID10: total=6.42TiB, used=6.02TiB
+System, RAID10: total=288.00MiB, used=656.00KiB
+Metadata, RAID10: total=13.41GiB, used=11.49GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+I'll post the final result of the btrfs replace later (it's currently at
+5.6% after 45 minutes).
+
+Best regards,
+
+Lionel
+
+>
+> This is a hosted system and I just managed to have a basic KVM connected
+> to the rescue system where I could capture the console output after the
+> system stopped working.
+> This is on a 4.6.x kernel (I didn't have the opportunity to note down
+> the exact version yet) and I got this :
+>
+> http://imgur.com/a/D10z6
+>
+> The following elements in the stack trace caught my attention because I
+> remembered seeing some problems with compression and recovery reported
+> here :
+> clean_io_failure, btrfs_submit_compressed_read, btrfs_map_bio
+>
+> I found discussions on similar cases (involving clean_io_failure,
+> btrfs_submit_compressed_read, btrfs_map_bio) but it isn't clear to me if :
+> - the filesystem is damaged to the point where my best choice is
+> restoring backups and generating data again (a several days process but
+> I can manage to bring back the most important data in less than a day),
+> - a simple kernel upgrade can work around this (I currently run 4.4.6
+> with the default Gentoo patchset which probably trigger the same kind of
+> problem although I don't have a kernel panic screenshot yet to prove it).
+>
+> Other miscellanous informations :
+>
+> Another problem is that corruption happened at least 2 times on the
+> single subvolume hosting only nodatacow files (a PostgreSQL server). I'm
+> currently restoring backups for this data on mdadm raid10 + ext4 as it
+> is the most used service of this system...
+>
+> The filesystem is quite old (it probably began its life with 3.19 kernels).
+>
+> It passed a full scrub with flying colors a few hours ago.
+>
+> A btrfs check in the rescue environment found this :
+> checking extents
+> checking free space cache
+> checking fs roots
+> root 4485 inode 608 errors 400, nbytes wrong
+> found 3136342732761 bytes used err is 1
+> total csum bytes: 6403620384
+> total tree bytes: 12181405696
+> total fs tree bytes: 2774007808
+> total extent tree bytes: 1459339264
+> btree space waste bytes: 2186016312
+> file data blocks allocated: 7061947838464
+>  referenced 6796179566592
+> Btrfs v3.17
+>
+> The subvolume 4485 inode 608 was a simple text file. I saved a copy,
+> truncated/deleted it and restored it. btrfs check didn't complain at all
+> after this.
+>
+> Currently compiling a 4.8.4 kernel with Gentoo patches. I can easily try
+> 4.9-rc2 mainline or even a git tree if needed.
+> I can use this system without trying to replace the drive for a few days
+> if it can work reliably in this state. If I'm stuck with replace not
+> working another solution I can try is adding one drive and deleting the
+> missing one if this works and is the only known way to work around this.
+>
+> I have the opportunity to do some (non destructive) tests between 00:00
+> and 03:00 (GMT+2) or more if I don't fall asleep at the keyboard. This
+> has 6+TB of data and a total of 41 subvolumes (most of them snapshots).
+>
+> Best regards,
+>
+> Lionel
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 

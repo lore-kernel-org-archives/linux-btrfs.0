@@ -1,94 +1,148 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ns.bouton.name ([109.74.195.142]:41708 "EHLO mail.bouton.name"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751499AbcJZBDu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 25 Oct 2016 21:03:50 -0400
-Received: from [192.168.0.32] (adsl.bouton.name [82.234.193.23])
-        by mail.bouton.name (Postfix) with ESMTP id DF252B893
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Oct 2016 02:57:05 +0200 (CEST)
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Lionel Bouton <lionel-subscription@bouton.name>
-Subject: Compression and device replace on raid10 kernel panic on 4.4.6 and
- 4.6.x
-Message-ID: <b1fd641c-7047-e83c-83ff-582c6abfb815@bouton.name>
-Date: Wed, 26 Oct 2016 02:57:05 +0200
+Received: from cn.fujitsu.com ([59.151.112.132]:57964 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1752618AbcJZBnf (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 25 Oct 2016 21:43:35 -0400
+Subject: Re: How to recover a filesystem without formatting nor using the
+ btrfs check command.
+To: none <ytrezq@sdf-eu.org>, <linux-btrfs@vger.kernel.org>
+References: <580944C7.103@sdf-eu.org>
+ <8c5ae48c-4af6-42d9-be0f-06d232764ff2@cn.fujitsu.com>
+ <36f56365-27ac-878e-c5fb-f414646eda3a@sdf-eu.org>
+ <61df188a-bc12-c9c4-0322-766df4fb18c0@cn.fujitsu.com>
+ <a8b030a4fab174ade203bf061151f270@mx.sdfeu.org>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <08227414-b241-28a5-bbc6-7fb21d4b3e62@cn.fujitsu.com>
+Date: Wed, 26 Oct 2016 09:43:26 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <a8b030a4fab174ade203bf061151f270@mx.sdfeu.org>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Unfortunately, low memory mode is right here.
 
-I'm currently trying to recover from a disk failure on a 6-drive Btrfs
-RAID10 filesystem. A "mount -o degraded" auto-resumes a current
-btrfs-replace from a missing dev to a new disk. This eventually triggers
-a kernel panic (and the panic  seemed faster on each new boot). I
-managed to cancel the replace, hoping to get a usable (although in
-degraded state) system this way.
+If btrfs-image dump the image correctly, your extent tree is really 
+screwed up.
 
-This is a hosted system and I just managed to have a basic KVM connected
-to the rescue system where I could capture the console output after the
-system stopped working.
-This is on a 4.6.x kernel (I didn't have the opportunity to note down
-the exact version yet) and I got this :
+And how badly it is screwed up?
+It only contains the basic block group info.
+Almost empty, without any really useful EXTENT_ITEM/METADATA_ITEM.
 
-http://imgur.com/a/D10z6
+You can check it by btrfs-debug-tree -t extent.
+Normally, one EXTENT_DATA or tree block should have corresponding 
+EXTENT_ITEM or METADATA_ITEM in extent tree.
 
-The following elements in the stack trace caught my attention because I
-remembered seeing some problems with compression and recovery reported
-here :
-clean_io_failure, btrfs_submit_compressed_read, btrfs_map_bio
+But in your dump, I only find EXTENT_ITEM less than a dozen, which is 
+totally abnormal for the used size of your fs.
 
-I found discussions on similar cases (involving clean_io_failure,
-btrfs_submit_compressed_read, btrfs_map_bio) but it isn't clear to me if :
-- the filesystem is damaged to the point where my best choice is
-restoring backups and generating data again (a several days process but
-I can manage to bring back the most important data in less than a day),
-- a simple kernel upgrade can work around this (I currently run 4.4.6
-with the default Gentoo patchset which probably trigger the same kind of
-problem although I don't have a kernel panic screenshot yet to prove it).
+That's why lowmem mode is reporting so many backref lost.
 
-Other miscellanous informations :
+It's almost a miracle that you can still write data into the fs.
+And I heavily doubt the correctness of your existing files.
 
-Another problem is that corruption happened at least 2 times on the
-single subvolume hosting only nodatacow files (a PostgreSQL server). I'm
-currently restoring backups for this data on mdadm raid10 + ext4 as it
-is the most used service of this system...
+As extent tree is screwed up, it's completely possible new write are 
+overwriting existing data.
 
-The filesystem is quite old (it probably began its life with 3.19 kernels).
+The only chance seems to be --init-extent-tree, but that's very 
+dangerous and I highly suspect the screwed up extent tree is caused by 
+interrupted extent tree rebuild.
 
-It passed a full scrub with flying colors a few hours ago.
+Thanks,
+Qu
 
-A btrfs check in the rescue environment found this :
-checking extents
-checking free space cache
-checking fs roots
-root 4485 inode 608 errors 400, nbytes wrong
-found 3136342732761 bytes used err is 1
-total csum bytes: 6403620384
-total tree bytes: 12181405696
-total fs tree bytes: 2774007808
-total extent tree bytes: 1459339264
-btree space waste bytes: 2186016312
-file data blocks allocated: 7061947838464
- referenced 6796179566592
-Btrfs v3.17
+At 10/26/2016 02:19 AM, none wrote:
+> Le 2016-10-25 05:04, Qu Wenruo a écrit :
+>> At 10/25/2016 01:54 AM, none wrote:
+>>> So do you mean lowmem is also low cpu ?
+>>
+>> Not sure, but lowmem is high IO.
+>> And by design, it won't cause dead look unless there is a looping tree
+>> block. But that will be detected by check_tree_block().
+>>
+>> So, it just avoids any possible dead loop AFAIK.
+>>
+>>> Indeed here's the output if the metadata image isn't enough (it
+>>> termintes correctly with the --lowmem option). I must recognize even
+>>> without the --repair option, btrfs check hangs.
+>>
+>> I just forgot you have uploaded the image dump.
+>> I'll check it.
+>>
+>> But according to lowmem output, it seems all your extent tree is
+>> screwed up, maybe that's the cause of the problem?
+> I don’t think so, I can read and write to most files and no directory is
+> corrupt (even after running the btrfsck with lowmem).
+>
+> But of course, as the filesystem is corrupt, I avoid to mount it.
+>
+> Looks like the output of the tool is wrong.
+>>
+>> Thanks,
+>> Qu
+>>>
+>>> regards,
+>>>
+>>> Le 24/10/2016 à 03:15, Qu Wenruo a écrit :
+>>>
+>>>> You could try to use --mode lowmem, which doesn't ever use any loop to
+>>>> get next block, but iterating trees.
+>>>>
+>>>> Current in mainline btrfs-progs, the low memory mode code only checks
+>>>> extent/chunk trees, file/subvolume trees are still checked by original
+>>>> mode.
+>>>>
+>>>> You could try the devel branch from David, which now contains the full
+>>>> low memory mode check code:
+>>>> https://github.com/kdave/btrfs-progs/tree/devel
+>>>>
+>>>> Although low memory mode doesn't support repair yet, it would give us
+>>>> enough info on what's corrupted, so we can later fix it by hand or
+>>>> enhance original mode.
+>>>>
+>>>> Thanks,
+>>>> Qu
+>>>>
+>>>> At 10/24/2016 03:42 AM, none wrote:
+>>>>
+>>>>> Hello,
+>>>>> I have the following bug
+>>>>> https://bugzilla.kernel.org/show_bug.cgi?id=178781 in btrfs check, is
+>>>>> there a way to recover my filesystem in clean state without formatting
+>>>>> or using btrsfck ? Of course, the point is no longer need the files
+>>>>> which are damaged.
+>>>>> So is there a way to recover a btrfs filesystem by deleting the
+>>>>> corrupted data instead of trying to restore it ?
+>>>>>
+>>>>> btrfs fi df /mnt/Opera_Mobile_Emulator_12.1_Linux
+>>>>> Data, single: total=66.01GiB, used=0.00B
+>>>>> System, DUP: total=8.00MiB, used=16.00KiB
+>>>>> System, single: total=4.00MiB, used=0.00B
+>>>>> Metadata, DUP: total=5.00GiB, used=28.00KiB
+>>>>> Metadata, single: total=8.00MiB, used=0.00B
+>>>>> GlobalReserve, single: total=4.00MiB, used=0.00B
+>>>>>
+>>>>> btrfs progs version 4.7.3 from Devuan
+>>>>>
+>>>>> Label: 'backup'  uuid: 56040bbb-ed5c-47f2-82e2-34457bd7b4f3
+>>>>> Total devices 1 FS bytes used 44.00KiB
+>>>>> devid    1 size 298.91GiB used 76.04GiB path
+>>>>> /dev/mapper/isw_bdffeeeijj_Volume0p7
+>>>>>
+>>>>> uname -a
+>>>>> Linux localhost 4.5.0-0.bpo.1-amd64 #1 SMP Debian 4.5.1-1~bpo8+1
+>>>>> (2016-04-20) x86_64 GNU/Linux
+>>>>>
+>>>>> Result of btrfs-image on /dev/mapper/isw_bdffeeeijj_Volume0p7 :
+>>>>> https://web.archive.org/web/20161020220914/https://filebin.net/7ni8kfpog1dxw4jc/btrfs-image_capture.xz
+>>>>>
+>>>>>
+>>>>>
+>>>>> Thanks,
+>>>
+>
+>
+>
 
-The subvolume 4485 inode 608 was a simple text file. I saved a copy,
-truncated/deleted it and restored it. btrfs check didn't complain at all
-after this.
 
-Currently compiling a 4.8.4 kernel with Gentoo patches. I can easily try
-4.9-rc2 mainline or even a git tree if needed.
-I can use this system without trying to replace the drive for a few days
-if it can work reliably in this state. If I'm stuck with replace not
-working another solution I can try is adding one drive and deleting the
-missing one if this works and is the only known way to work around this.
-
-I have the opportunity to do some (non destructive) tests between 00:00
-and 03:00 (GMT+2) or more if I don't fall asleep at the keyboard. This
-has 6+TB of data and a total of 41 subvolumes (most of them snapshots).
-
-Best regards,
-
-Lionel

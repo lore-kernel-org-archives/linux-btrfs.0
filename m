@@ -1,29 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35377 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750813AbcJYOfw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 25 Oct 2016 10:35:52 -0400
-Date: Tue, 25 Oct 2016 16:35:45 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH 1/4] btrfs-progs: Fix memory leak in
- write_raid56_with_parity
-Message-ID: <20161025143545.GS22935@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20161024024335.6770-1-quwenruo@cn.fujitsu.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:19479 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1753211AbcJZBHd (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 25 Oct 2016 21:07:33 -0400
+Subject: Re: [PATCH 1/2] btrfs-progs: fsck: Add support to clear v1 free space
+ cache.
+To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
+References: <20161013092227.19761-1-quwenruo@cn.fujitsu.com>
+ <20161025140934.GQ22935@twin.jikos.cz>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <6845d4d0-c276-31b4-a8d7-21c6b5303adf@cn.fujitsu.com>
+Date: Wed, 26 Oct 2016 09:07:25 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20161024024335.6770-1-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20161025140934.GQ22935@twin.jikos.cz>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 24, 2016 at 10:43:32AM +0800, Qu Wenruo wrote:
-> Ebs and pointers are allocated, but if any of the allocation failed, we
-> should free the allocated memory.
-> 
-> Reported-by: David Sterba <dsterba@suse.cz>
-> Resolves-Coverity-CID: 1296749
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-1-4 applied, thanks. Please don't put my reported-by there.
+
+At 10/25/2016 10:09 PM, David Sterba wrote:
+> On Thu, Oct 13, 2016 at 05:22:26PM +0800, Qu Wenruo wrote:
+>> Kernel clear_cache mount option will only rebuilt free space cache if
+>> used space of that chunk has changed.
+>>
+>> So it won't ensure any corrupted free space cache get cleared.
+>>
+>> So add a new option "--clear-space-cache v1|v2" to btrfsck, to
+>> completely wipe out free space cache.
+>> So kernel won't complain again.
+>>
+>> Reported-by: Ivan P <chrnosphered@gmail.com>
+>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>
+> Applied with the attached diff, use it as a review feedback.
+>
+>
+Thanks for the diff, quite helpful.
+
+But I'm a little concerned about the minor coding styling.
+
+1) For non-zero comparison
+-				if (strcmp(optarg, "v1")) {
++				if (strcmp(optarg, "v1") != 0) {
+
+Is it recommended to use "!= 0" other than hiding it?
+I often see code hiding the "!= 0", so I'm a little curious about this.
+
+2) Long string indent
+-			error("failed to locate free space cache extent for block group %llu",
+-			      bg->key.objectid);
++			error(
++	"failed to locate free space cache extent for block group %llu: %d",
++				bg->key.objectid, ret);
+
+Kernel coding style allows us to use string longer than 80 chars, so we 
+don't need to break long string.
+
+But I'm not sure if we should change the indent.
+Normally I just keep the string at the same line of error()/warning(), 
+as we have no 80 chars limit.
+
+Or we should change indent to allow them fit in 80 chars?
+IIRC I did it several times in kernel or btrfs-progs, but it seems to be 
+modified to same line version.
+
+Thanks,
+Qu
+
+

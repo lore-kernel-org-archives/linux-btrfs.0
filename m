@@ -1,63 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from arcturus.aphlor.org ([188.246.204.175]:42404 "EHLO
-        arcturus.aphlor.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932218AbcJZXHM (ORCPT
+Received: from mail-oi0-f52.google.com ([209.85.218.52]:34829 "EHLO
+        mail-oi0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754962AbcJZXIL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 26 Oct 2016 19:07:12 -0400
-Date: Wed, 26 Oct 2016 19:07:07 -0400
-From: Dave Jones <davej@codemonkey.org.uk>
+        Wed, 26 Oct 2016 19:08:11 -0400
+MIME-Version: 1.0
+In-Reply-To: <2bdc068d-afd5-7a78-f334-26970c91aaca@fb.com>
+References: <20161026002752.qvrm6yxqb54fiqnd@codemonkey.org.uk>
+ <CA+55aFyv0k9e6bBqGm-LL3CUwimS4+rSu341P7SOV5ezYrrW_g@mail.gmail.com>
+ <CA+55aFydo5oxo+ihUfGffMK6cAZnbZ8WyEiF7xgEx1Bh_aOMww@mail.gmail.com>
+ <20161026163018.wx57yy554576s6e2@codemonkey.org.uk> <CA+55aFzsrRenu3NsDYr3qqO=fC9FUxkLc3M2wzeLBpN7ghwvwA@mail.gmail.com>
+ <20161026184201.6ofblkd3j5uxystq@codemonkey.org.uk> <CA+55aFwD9McVapb0svQrrvP1k6iSkqz5ENNGXY6b+Yo-k7wOsg@mail.gmail.com>
+ <488f9edc-6a1c-2c68-0d33-d3aa32ece9a4@fb.com> <ac6cd46c-d609-ef1f-019f-204248c26c12@fb.com>
+ <CA+55aFwY5jNcUAJzDWERP2r9iZHEKzHSwMi5AJCJiaVd3Z0E-g@mail.gmail.com>
+ <20161026224025.mou27kki4bslftli@codemonkey.org.uk> <CA+55aFyyP6VHOv6KbhVdMMtNfJLftbju_Ui2GNxXt0GgkKm0Jg@mail.gmail.com>
+ <CA+55aFyiJGk-A_cJH41Ec8Xj0Zz9M3EU-igJ9bgusj=nm28tFQ@mail.gmail.com> <2bdc068d-afd5-7a78-f334-26970c91aaca@fb.com>
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Date: Wed, 26 Oct 2016 16:08:08 -0700
+Message-ID: <CA+55aFxqRCEVxocpZVDMqinP=EsmgzcnvWpOT6x8NMmcBpWb2Q@mail.gmail.com>
+Subject: Re: bio linked list corruption.
 To: Jens Axboe <axboe@fb.com>
-Cc: Linus Torvalds <torvalds@linux-foundation.org>, Chris Mason <clm@fb.com>,
+Cc: Dave Jones <davej@codemonkey.org.uk>, Chris Mason <clm@fb.com>,
         Andy Lutomirski <luto@amacapital.net>,
         Andy Lutomirski <luto@kernel.org>, Al Viro <viro@zeniv.linux.org.uk>,
         Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
         linux-btrfs <linux-btrfs@vger.kernel.org>,
         Linux Kernel <linux-kernel@vger.kernel.org>,
         Dave Chinner <david@fromorbit.com>
-Subject: Re: bio linked list corruption.
-Message-ID: <20161026230706.cbhbfyceqnkdzwua@codemonkey.org.uk>
-References: <CA+55aFzsrRenu3NsDYr3qqO=fC9FUxkLc3M2wzeLBpN7ghwvwA@mail.gmail.com>
- <20161026184201.6ofblkd3j5uxystq@codemonkey.org.uk>
- <CA+55aFwD9McVapb0svQrrvP1k6iSkqz5ENNGXY6b+Yo-k7wOsg@mail.gmail.com>
- <488f9edc-6a1c-2c68-0d33-d3aa32ece9a4@fb.com>
- <ac6cd46c-d609-ef1f-019f-204248c26c12@fb.com>
- <CA+55aFwY5jNcUAJzDWERP2r9iZHEKzHSwMi5AJCJiaVd3Z0E-g@mail.gmail.com>
- <20161026224025.mou27kki4bslftli@codemonkey.org.uk>
- <CA+55aFyyP6VHOv6KbhVdMMtNfJLftbju_Ui2GNxXt0GgkKm0Jg@mail.gmail.com>
- <CA+55aFyiJGk-A_cJH41Ec8Xj0Zz9M3EU-igJ9bgusj=nm28tFQ@mail.gmail.com>
- <2bdc068d-afd5-7a78-f334-26970c91aaca@fb.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <2bdc068d-afd5-7a78-f334-26970c91aaca@fb.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 26, 2016 at 05:03:45PM -0600, Jens Axboe wrote:
- > On 10/26/2016 04:58 PM, Linus Torvalds wrote:
- > > On Wed, Oct 26, 2016 at 3:51 PM, Linus Torvalds
- > > <torvalds@linux-foundation.org> wrote:
- > >>
- > >> Dave: it might be a good idea to split that "WARN_ON_ONCE()" in
- > >> blk_mq_merge_queue_io() into two
- > >
- > > I did that myself too, since Dave sees this during boot.
- > >
- > > But I'm not getting the warning ;(
- > >
- > > Dave gets it with ext4, and thats' what I have too, so I'm not sure
- > > what the required trigger would be.
- > 
- > Actually, I think I see what might trigger it. You are on nvme, iirc,
- > and that has a deep queue. Dave, are you testing on a sata drive or
- > something similar with a shallower queue depth? If we end up sleeping
- > for a request, I think we could trigger data->ctx being different.
+On Wed, Oct 26, 2016 at 4:03 PM, Jens Axboe <axboe@fb.com> wrote:
+>
+> Actually, I think I see what might trigger it. You are on nvme, iirc,
+> and that has a deep queue.
 
-yeah, just regular sata. I've been meaning to put an ssd in that box for
-a while, but now it sounds like my procrastination may have paid off.
+Yes. I have long since moved on from slow disks, so all my systems are
+not just flash, but m.2 nvme ssd's.
 
- > Dave, can you hit the warnings with this? Totally untested...
- 
-Coming up..
- 
-	Dave
+So at least that could explain why Dave sees it at bootup but I don't.
 
+            Linus

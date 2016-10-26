@@ -1,24 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52112 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S944378AbcJaQmE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 31 Oct 2016 12:42:04 -0400
-Date: Mon, 31 Oct 2016 17:42:01 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH v2] btrfs: cleanup: use already calculated value in
- btrfs_should_throttle_delayed_refs()
-Message-ID: <20161031164201.GQ12522@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20161026072301.6748-1-wangxg.fnst@cn.fujitsu.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:59507 "EHLO song.cn.fujitsu.com"
+        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+        id S1751164AbcJZH34 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 26 Oct 2016 03:29:56 -0400
+From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH v2] btrfs: cleanup: use already calculated value in btrfs_should_throttle_delayed_refs()
+Date: Wed, 26 Oct 2016 15:23:01 +0800
+Message-Id: <20161026072301.6748-1-wangxg.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20161026072301.6748-1-wangxg.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 26, 2016 at 03:23:01PM +0800, Wang Xiaoguang wrote:
-> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+---
+ fs/btrfs/extent-tree.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 9aa6d2c..3c8f0ec 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2823,7 +2823,7 @@ int btrfs_should_throttle_delayed_refs(struct btrfs_trans_handle *trans,
+ 	smp_mb();
+ 	avg_runtime = fs_info->avg_delayed_ref_runtime;
+ 	val = num_entries * avg_runtime;
+-	if (num_entries * avg_runtime >= NSEC_PER_SEC)
++	if (val >= NSEC_PER_SEC)
+ 		return 1;
+ 	if (val >= NSEC_PER_SEC / 2)
+ 		return 2;
+-- 
+2.9.0
+
+
+

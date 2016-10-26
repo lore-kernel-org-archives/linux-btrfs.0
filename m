@@ -1,210 +1,149 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:44056 "EHLO song.cn.fujitsu.com"
-        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S932299AbcJYIdV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 25 Oct 2016 04:33:21 -0400
-From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:37701 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754317AbcJZOYA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 26 Oct 2016 10:24:00 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id B6101AC31
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Oct 2016 14:23:57 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: bo.li.liu@oracle.com
-Subject: [PATCH v2] btrfs: imporve delayed refs iterations
-Date: Tue, 25 Oct 2016 16:26:33 +0800
-Message-Id: <20161025082633.4231-1-wangxg.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH] btrfs: rename helper macros for qgroup and aux data casts
+Date: Wed, 26 Oct 2016 16:23:50 +0200
+Message-Id: <20161026142350.31557-1-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This issue was found when I tried to delete a heavily reflinked file,
-when deleting such files, other transaction operation will not have a
-chance to make progress, for example, start_transaction() will blocked
-in wait_current_trans(root) for long time, sometimes it even triggers
-soft lockups, and the time taken to delete such heavily reflinked file
-is also very large, often hundreds of seconds. Using perf top, it reports
-that:
+The helpers are not meant to be generic, the name is misleading. Convert
+them to static inlines for type checking.
 
-PerfTop:    7416 irqs/sec  kernel:99.8%  exact:  0.0% [4000Hz cpu-clock],  (all, 4 CPUs)
----------------------------------------------------------------------------------------
-    84.37%  [btrfs]             [k] __btrfs_run_delayed_refs.constprop.80
-    11.02%  [kernel]            [k] delay_tsc
-     0.79%  [kernel]            [k] _raw_spin_unlock_irq
-     0.78%  [kernel]            [k] _raw_spin_unlock_irqrestore
-     0.45%  [kernel]            [k] do_raw_spin_lock
-     0.18%  [kernel]            [k] __slab_alloc
-It seems __btrfs_run_delayed_refs() took most cpu time, after some debug
-work, I found it's select_delayed_ref() causing this issue, for a delayed
-head, in our case, it'll be full of BTRFS_DROP_DELAYED_REF nodes, but
-select_delayed_ref() will firstly try to iterate node list to find
-BTRFS_ADD_DELAYED_REF nodes, obviously it's a disaster in this case, and
-waste much time.
-
-To fix this issue, we introduce a new ref_add_list in struct btrfs_delayed_ref_head,
-then in select_delayed_ref(), if this list is not empty, we can directly use
-nodes in this list. With this patch, it just took about 10~15 seconds to
-delte the same file. Now using perf top, it reports that:
-
-PerfTop:    2734 irqs/sec  kernel:99.5%  exact:  0.0% [4000Hz cpu-clock],  (all, 4 CPUs)
-----------------------------------------------------------------------------------------
-
-    20.74%  [kernel]          [k] _raw_spin_unlock_irqrestore
-    16.33%  [kernel]          [k] __slab_alloc
-     5.41%  [kernel]          [k] lock_acquired
-     4.42%  [kernel]          [k] lock_acquire
-     4.05%  [kernel]          [k] lock_release
-     3.37%  [kernel]          [k] _raw_spin_unlock_irq
-
-For normal files, this patch also gives help, at least we do not need to
-iterate whole list to found BTRFS_ADD_DELAYED_REF nodes.
-
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
-Tested-by: Holger Hoffstätte <holger@applied-asynchrony.com>
-
+Signed-off-by: David Sterba <dsterba@suse.com>
 ---
-V2: remove useless "if" statment and use ASSERT to ensure that if a
-    delayed ref's action is BTRFS_DROP_DELAYED_REF, it should not be
-    in ref_add_list.
----
- fs/btrfs/delayed-ref.c | 14 ++++++++++++++
- fs/btrfs/delayed-ref.h |  8 ++++++++
- fs/btrfs/disk-io.c     |  2 ++
- fs/btrfs/extent-tree.c | 15 +++++++++------
- 4 files changed, 33 insertions(+), 6 deletions(-)
+ fs/btrfs/qgroup.c | 35 +++++++++++++++++++++--------------
+ 1 file changed, 21 insertions(+), 14 deletions(-)
 
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index 8d93854..65e9002 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -189,6 +189,8 @@ static inline void drop_delayed_ref(struct btrfs_trans_handle *trans,
- 	} else {
- 		assert_spin_locked(&head->lock);
- 		list_del(&ref->list);
-+		if (!list_empty(&ref->add_list))
-+			list_del(&ref->add_list);
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 11f4fffe503e..50b32cb25bdb 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -131,8 +131,15 @@ struct btrfs_qgroup_list {
+ 	struct btrfs_qgroup *member;
+ };
+ 
+-#define ptr_to_u64(x) ((u64)(uintptr_t)x)
+-#define u64_to_ptr(x) ((struct btrfs_qgroup *)(uintptr_t)x)
++static inline u64 qgroup_to_aux(struct btrfs_qgroup *qg)
++{
++	return (u64)(uintptr_t)qg;
++}
++
++static inline struct btrfs_qgroup* unode_aux_to_qgroup(struct ulist_node *n)
++{
++	return (struct btrfs_qgroup *)(uintptr_t)n->aux;
++}
+ 
+ static int
+ qgroup_rescan_init(struct btrfs_fs_info *fs_info, u64 progress_objectid,
+@@ -1066,7 +1073,7 @@ static int __qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
+ 	/* Get all of the parent groups that contain this qgroup */
+ 	list_for_each_entry(glist, &qgroup->groups, next_group) {
+ 		ret = ulist_add(tmp, glist->group->qgroupid,
+-				ptr_to_u64(glist->group), GFP_ATOMIC);
++				qgroup_to_aux(glist->group), GFP_ATOMIC);
+ 		if (ret < 0)
+ 			goto out;
  	}
- 	ref->in_tree = 0;
- 	btrfs_put_delayed_ref(ref);
-@@ -431,6 +433,11 @@ add_delayed_ref_tail_merge(struct btrfs_trans_handle *trans,
- 			exist->action = ref->action;
- 			mod = -exist->ref_mod;
- 			exist->ref_mod = ref->ref_mod;
-+			if (ref->action == BTRFS_ADD_DELAYED_REF)
-+				list_add_tail(&exist->add_list,
-+					      &href->ref_add_list);
-+			else
-+				list_del(&exist->add_list);
- 		} else
- 			mod = -ref->ref_mod;
+@@ -1074,7 +1081,7 @@ static int __qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
+ 	/* Iterate all of the parents and adjust their reference counts */
+ 	ULIST_ITER_INIT(&uiter);
+ 	while ((unode = ulist_next(tmp, &uiter))) {
+-		qgroup = u64_to_ptr(unode->aux);
++		qgroup = unode_aux_to_qgroup(unode);
+ 		qgroup->rfer += sign * num_bytes;
+ 		qgroup->rfer_cmpr += sign * num_bytes;
+ 		WARN_ON(sign < 0 && qgroup->excl < num_bytes);
+@@ -1087,7 +1094,7 @@ static int __qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
+ 		/* Add any parents of the parents */
+ 		list_for_each_entry(glist, &qgroup->groups, next_group) {
+ 			ret = ulist_add(tmp, glist->group->qgroupid,
+-					ptr_to_u64(glist->group), GFP_ATOMIC);
++					qgroup_to_aux(glist->group), GFP_ATOMIC);
+ 			if (ret < 0)
+ 				goto out;
+ 		}
+@@ -1535,30 +1542,30 @@ static int qgroup_update_refcnt(struct btrfs_fs_info *fs_info,
+ 			continue;
+ 
+ 		ulist_reinit(tmp);
+-		ret = ulist_add(qgroups, qg->qgroupid, ptr_to_u64(qg),
++		ret = ulist_add(qgroups, qg->qgroupid, qgroup_to_aux(qg),
+ 				GFP_ATOMIC);
+ 		if (ret < 0)
+ 			return ret;
+-		ret = ulist_add(tmp, qg->qgroupid, ptr_to_u64(qg), GFP_ATOMIC);
++		ret = ulist_add(tmp, qg->qgroupid, qgroup_to_aux(qg), GFP_ATOMIC);
+ 		if (ret < 0)
+ 			return ret;
+ 		ULIST_ITER_INIT(&tmp_uiter);
+ 		while ((tmp_unode = ulist_next(tmp, &tmp_uiter))) {
+ 			struct btrfs_qgroup_list *glist;
+ 
+-			qg = u64_to_ptr(tmp_unode->aux);
++			qg = unode_aux_to_qgroup(tmp_unode);
+ 			if (update_old)
+ 				btrfs_qgroup_update_old_refcnt(qg, seq, 1);
+ 			else
+ 				btrfs_qgroup_update_new_refcnt(qg, seq, 1);
+ 			list_for_each_entry(glist, &qg->groups, next_group) {
+ 				ret = ulist_add(qgroups, glist->group->qgroupid,
+-						ptr_to_u64(glist->group),
++						qgroup_to_aux(glist->group),
+ 						GFP_ATOMIC);
+ 				if (ret < 0)
+ 					return ret;
+ 				ret = ulist_add(tmp, glist->group->qgroupid,
+-						ptr_to_u64(glist->group),
++						qgroup_to_aux(glist->group),
+ 						GFP_ATOMIC);
+ 				if (ret < 0)
+ 					return ret;
+@@ -1619,7 +1626,7 @@ static int qgroup_update_counters(struct btrfs_fs_info *fs_info,
+ 	while ((unode = ulist_next(qgroups, &uiter))) {
+ 		bool dirty = false;
+ 
+-		qg = u64_to_ptr(unode->aux);
++		qg = unode_aux_to_qgroup(unode);
+ 		cur_old_count = btrfs_qgroup_get_old_refcnt(qg, seq);
+ 		cur_new_count = btrfs_qgroup_get_new_refcnt(qg, seq);
+ 
+@@ -2125,7 +2132,7 @@ static int qgroup_reserve(struct btrfs_root *root, u64 num_bytes)
+ 		struct btrfs_qgroup *qg;
+ 		struct btrfs_qgroup_list *glist;
+ 
+-		qg = u64_to_ptr(unode->aux);
++		qg = unode_aux_to_qgroup(unode);
+ 
+ 		if ((qg->lim_flags & BTRFS_QGROUP_LIMIT_MAX_RFER) &&
+ 		    qg->reserved + (s64)qg->rfer + num_bytes >
+@@ -2157,7 +2164,7 @@ static int qgroup_reserve(struct btrfs_root *root, u64 num_bytes)
+ 	while ((unode = ulist_next(fs_info->qgroup_ulist, &uiter))) {
+ 		struct btrfs_qgroup *qg;
+ 
+-		qg = u64_to_ptr(unode->aux);
++		qg = unode_aux_to_qgroup(unode);
+ 
+ 		qg->reserved += num_bytes;
  	}
-@@ -444,6 +451,8 @@ add_delayed_ref_tail_merge(struct btrfs_trans_handle *trans,
+@@ -2202,7 +2209,7 @@ void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
+ 		struct btrfs_qgroup *qg;
+ 		struct btrfs_qgroup_list *glist;
  
- add_tail:
- 	list_add_tail(&ref->list, &href->ref_list);
-+	if (ref->action == BTRFS_ADD_DELAYED_REF)
-+		list_add_tail(&ref->add_list, &href->ref_add_list);
- 	atomic_inc(&root->num_entries);
- 	trans->delayed_ref_updates++;
- 	spin_unlock(&href->lock);
-@@ -590,6 +599,7 @@ add_delayed_ref_head(struct btrfs_fs_info *fs_info,
- 	head_ref->must_insert_reserved = must_insert_reserved;
- 	head_ref->is_data = is_data;
- 	INIT_LIST_HEAD(&head_ref->ref_list);
-+	INIT_LIST_HEAD(&head_ref->ref_add_list);
- 	head_ref->processing = 0;
- 	head_ref->total_ref_mod = count_mod;
- 	head_ref->qgroup_reserved = 0;
-@@ -671,6 +681,8 @@ add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
- 	ref->is_head = 0;
- 	ref->in_tree = 1;
- 	ref->seq = seq;
-+	INIT_LIST_HEAD(&ref->list);
-+	INIT_LIST_HEAD(&ref->add_list);
+-		qg = u64_to_ptr(unode->aux);
++		qg = unode_aux_to_qgroup(unode);
  
- 	full_ref = btrfs_delayed_node_to_tree_ref(ref);
- 	full_ref->parent = parent;
-@@ -726,6 +738,8 @@ add_delayed_data_ref(struct btrfs_fs_info *fs_info,
- 	ref->is_head = 0;
- 	ref->in_tree = 1;
- 	ref->seq = seq;
-+	INIT_LIST_HEAD(&ref->list);
-+	INIT_LIST_HEAD(&ref->add_list);
- 
- 	full_ref = btrfs_delayed_node_to_data_ref(ref);
- 	full_ref->parent = parent;
-diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
-index 43f3629..dba9784 100644
---- a/fs/btrfs/delayed-ref.h
-+++ b/fs/btrfs/delayed-ref.h
-@@ -42,6 +42,12 @@ struct btrfs_delayed_ref_node {
- 
- 	/*data/tree ref use list, stored in ref_head->ref_list. */
- 	struct list_head list;
-+	/*
-+	 * If action is BTRFS_ADD_DELAYED_REF, also link this node to
-+	 * ref_head->ref_add_list, then we do not need to iterate the
-+	 * whole ref_head->ref_list to find BTRFS_ADD_DELAYED_REF nodes.
-+	 */
-+	struct list_head add_list;
- 
- 	/* the starting bytenr of the extent */
- 	u64 bytenr;
-@@ -99,6 +105,8 @@ struct btrfs_delayed_ref_head {
- 
- 	spinlock_t lock;
- 	struct list_head ref_list;
-+	/* accumulate add BTRFS_ADD_DELAYED_REF nodes to this ref_add_list. */
-+	struct list_head ref_add_list;
- 
- 	struct rb_node href_node;
- 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 3a57f99..bc2edaf 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -4354,6 +4354,8 @@ static int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
- 						 list) {
- 			ref->in_tree = 0;
- 			list_del(&ref->list);
-+			if (!list_empty(&ref->add_list))
-+				list_del(&ref->add_list);
- 			atomic_dec(&delayed_refs->num_entries);
- 			btrfs_put_delayed_ref(ref);
- 		}
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 210c94a..b2f542c 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2454,13 +2454,14 @@ select_delayed_ref(struct btrfs_delayed_ref_head *head)
- 	 * the extent item from the extent tree, when there still are references
- 	 * to add, which would fail because they would not find the extent item.
- 	 */
--	list_for_each_entry(ref, &head->ref_list, list) {
--		if (ref->action == BTRFS_ADD_DELAYED_REF)
--			return ref;
--	}
-+	if (!list_empty(&head->ref_add_list))
-+		return list_entry(head->ref_add_list.next,
-+				struct btrfs_delayed_ref_node, add_list);
- 
--	return list_entry(head->ref_list.next, struct btrfs_delayed_ref_node,
--			  list);
-+	ref = list_entry(head->ref_list.next, struct btrfs_delayed_ref_node,
-+			 list);
-+	ASSERT(list_empty(&ref->add_list));
-+	return ref;
- }
- 
- /*
-@@ -2620,6 +2621,8 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
- 			actual_count++;
- 			ref->in_tree = 0;
- 			list_del(&ref->list);
-+			if (!list_empty(&ref->add_list))
-+				list_del(&ref->add_list);
- 		}
- 		atomic_dec(&delayed_refs->num_entries);
+ 		qg->reserved -= num_bytes;
  
 -- 
-2.9.0
-
-
+2.10.1
 

@@ -1,265 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:14216 "EHLO song.cn.fujitsu.com"
-        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1750720AbcJZJ6r (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 26 Oct 2016 05:58:47 -0400
-From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3] generic: make 17[1-4] work well when btrfs compression is enabled
-Date: Wed, 26 Oct 2016 17:52:11 +0800
-Message-Id: <20161026095211.30091-1-wangxg.fnst@cn.fujitsu.com>
+Received: from arcturus.aphlor.org ([188.246.204.175]:54062 "EHLO
+        arcturus.aphlor.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752288AbcJ0RYT (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 27 Oct 2016 13:24:19 -0400
+Date: Thu, 27 Oct 2016 13:23:32 -0400
+From: Dave Jones <davej@codemonkey.org.uk>
+To: Dave Chinner <david@fromorbit.com>
+Cc: Chris Mason <clm@fb.com>, Andy Lutomirski <luto@amacapital.net>,
+        Andy Lutomirski <luto@kernel.org>,
+        Linus Torvalds <torvalds@linux-foundation.org>,
+        Jens Axboe <axboe@fb.com>, Al Viro <viro@zeniv.linux.org.uk>,
+        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Linux Kernel <linux-kernel@vger.kernel.org>
+Subject: Re: bio linked list corruption.
+Message-ID: <20161027172332.krdsrc5rlivq4mrv@codemonkey.org.uk>
+References: <CALCETrV5hr_QQ7eiqrac7huh3hX1Mp0ArrOmKKj_eKHw5gx76Q@mail.gmail.com>
+ <20161020230341.jsxpia2sy53xn5l5@codemonkey.org.uk>
+ <CALCETrVHXPw1PyKSQja07V+MxHJPcDkaLJ1rPF2Z3286tHY2Xw@mail.gmail.com>
+ <20161021200245.kahjzgqzdfyoe3uz@codemonkey.org.uk>
+ <20161022152033.gkmm3l75kqjzsije@codemonkey.org.uk>
+ <b1bbcbfc-dba2-952d-f1c0-87f532d5936b@fb.com>
+ <20161024044051.onmh4h6sc2bjxzzc@codemonkey.org.uk>
+ <77d9983d-a00a-1dc1-a9a1-631de1d0c146@fb.com>
+ <20161026002752.qvrm6yxqb54fiqnd@codemonkey.org.uk>
+ <20161027054133.GM14023@dastard>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20161027054133.GM14023@dastard>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When enabling btrfs compression, original codes can not fill fs
-correctly, here we introduce _fill_fs() in common/rc, which'll keep
-creating and writing files until enospc error occurs. Note _fill_fs
-is copied from tests/generic/256, but with some minor modifications.
+On Thu, Oct 27, 2016 at 04:41:33PM +1100, Dave Chinner wrote:
+ 
+ > And that's indicative of a delalloc metadata reservation being
+ > being too small and so we're allocating unreserved blocks.
+ > 
+ > Different symptoms, same underlying cause, I think.
+ > 
+ > I see the latter assert from time to time in my testing, but it's
+ > not common (maybe once a month) and I've never been able to track it
+ > down.  However, it doesn't affect production systems unless they hit
+ > ENOSPC hard enough that it causes the critical reserve pool to be
+ > exhausted iand so the allocation fails. That's extremely rare -
+ > usually takes a several hundred processes all trying to write as had
+ > as they can concurrently and to all slip through the ENOSPC
+ > detection without the correct metadata reservations and all require
+ > multiple metadata blocks to be allocated durign writeback...
+ > 
+ > If you've got a way to trigger it quickly and reliably, that would
+ > be helpful...
 
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
----
-V2: In common/, I did't find an existing function suitable for
-    these 4 test cases to fill fs, so I still use _pwrite_byte() with
-    a big enough file length fo fill fs. Note, for btrfs, metadata space
-    still is not full, only data space is full, but it's OK for these
-    4 test cases.
+Seems pretty quickly reproducable for me in some shape or form.
+Run trinity with --enable-fds=testfile and create enough children
+to create a fair bit of contention, (for me -C64 seems a good fit on
+spinning rust, but if you're running on shiny nvme you might have to pump it up a bit).
 
-    All these 4 cases pass in xfs and btrfs(without compression), if
-    btrfs has compression enabled, these 4 cases will fail for false
-    enospc error, I have sent kernel patches to fix this bug.
-
-V3: Introduce  _fill_fs in common/rc to fill fs.
----
- common/rc         | 50 ++++++++++++++++++++++++++++++++++++++++++
- tests/generic/171 |  4 +---
- tests/generic/172 |  4 ++--
- tests/generic/173 |  4 +---
- tests/generic/174 |  4 +---
- tests/generic/256 | 65 +++++--------------------------------------------------
- 6 files changed, 60 insertions(+), 71 deletions(-)
-
-diff --git a/common/rc b/common/rc
-index 7a9fc90..0e1ac5d 100644
---- a/common/rc
-+++ b/common/rc
-@@ -4003,6 +4003,56 @@ _require_xfs_mkfs_without_validation()
- 	fi
- }
- 
-+# Fill a file system by repeatedly creating files in the given folder
-+# starting with the given file size.  Files are reduced in size when
-+# they can no longer fit until no more files can be created.
-+_fill_fs()
-+{
-+	local file_size=$1
-+	local dir=$2
-+	local block_size=$3
-+	local switch_user=$4
-+	local file_count=1
-+	local bytes_written=0
-+
-+	if [ $# -ne 4 ]; then
-+		echo "Usage: _fill_fs filesize dir blocksize"
-+		exit 1
-+	fi
-+
-+	if [ $switch_user -eq 0 ]; then
-+		mkdir -p $dir
-+	else
-+		_user_do "mkdir -p $dir"
-+	fi
-+
-+	if [ $file_size -lt $block_size ]; then
-+		$file_size = $block_size
-+	fi
-+
-+	while [ $file_size -ge $block_size ]; do
-+		bytes_written=0
-+		if [ $switch_user -eq 0 ]; then
-+			$XFS_IO_PROG -f -c "pwrite 0 $file_size" \
-+				$dir/$file_count > /dev/null
-+		else
-+			_user_do "$XFS_IO_PROG -f -c \"pwrite 0 $file_size\" \
-+				$dir/$file_count > /dev/null"
-+		fi
-+
-+		if [ -f $dir/$file_count ]; then
-+			bytes_written=$(stat -c '%s' $dir/$file_count)
-+		fi
-+
-+		# If there was no room to make the file, then divide it in
-+		# half, and keep going
-+		if [ $bytes_written -lt $file_size ]; then
-+			file_size=$((file_size / 2))
-+		fi
-+		file_count=$((file_count + 1))
-+	done
-+}
-+
- init_rc
- 
- ################################################################################
-diff --git a/tests/generic/171 b/tests/generic/171
-index a69f798..fde8ef2 100755
---- a/tests/generic/171
-+++ b/tests/generic/171
-@@ -75,9 +75,7 @@ _cp_reflink $testdir/bigfile $testdir/clonefile
- sync
- 
- echo "Allocate the rest of the space"
--nr_free=$(stat -f -c '%f' $testdir)
--touch $testdir/file0 $testdir/file1
--_pwrite_byte 0x61 0 $((blksz * nr_free)) $testdir/eat_my_space >> $seqres.full 2>&1
-+_fill_fs $((32 * 1024 * 1024)) $testdir/space $blksz 0 >> $seqres.full 2>&1
- sync
- 
- echo "CoW the big file"
-diff --git a/tests/generic/172 b/tests/generic/172
-index 8192290..3625546 100755
---- a/tests/generic/172
-+++ b/tests/generic/172
-@@ -57,6 +57,7 @@ testdir=$SCRATCH_MNT/test-$seq
- mkdir $testdir
- 
- echo "Reformat with appropriate size"
-+blksz="$(get_block_size $testdir)"
- umount $SCRATCH_MNT
- 
- file_size=$((168 * 1024 * 1024))
-@@ -72,8 +73,7 @@ _cp_reflink $testdir/bigfile $testdir/clonefile
- sync
- 
- echo "Allocate the rest of the space"
--touch $testdir/file0 $testdir/file1
--_pwrite_byte 0x61 0 $fs_size $testdir/eat_my_space >> $seqres.full 2>&1
-+_fill_fs $((32 * 1024 * 1024)) $testdir/space $blksz 0 >> $seqres.full 2>&1
- sync
- 
- echo "CoW the big file"
-diff --git a/tests/generic/173 b/tests/generic/173
-index e35597f..3d583b1 100755
---- a/tests/generic/173
-+++ b/tests/generic/173
-@@ -75,9 +75,7 @@ _cp_reflink $testdir/bigfile $testdir/clonefile
- sync
- 
- echo "Allocate the rest of the space"
--nr_free=$(stat -f -c '%f' $testdir)
--touch $testdir/file0 $testdir/file1
--_pwrite_byte 0x61 0 $((blksz * nr_free)) $testdir/eat_my_space >> $seqres.full 2>&1
-+_fill_fs $((32 * 1024 * 1024)) $testdir/space $blksz 0 >> $seqres.full 2>&1
- sync
- 
- echo "mmap CoW the big file"
-diff --git a/tests/generic/174 b/tests/generic/174
-index e58d64b..bd7fc11 100755
---- a/tests/generic/174
-+++ b/tests/generic/174
-@@ -76,9 +76,7 @@ _cp_reflink $testdir/bigfile $testdir/clonefile
- sync
- 
- echo "Allocate the rest of the space"
--nr_free=$(stat -f -c '%f' $testdir)
--touch $testdir/file0 $testdir/file1
--_pwrite_byte 0x61 0 $((blksz * nr_free)) $testdir/eat_my_space >> $seqres.full 2>&1
-+_fill_fs $((32 * 1024 * 1024)) $testdir/space $blksz 0 >> $seqres.full 2>&1
- sync
- 
- echo "CoW the big file"
-diff --git a/tests/generic/256 b/tests/generic/256
-index cfbf790..9488648 100755
---- a/tests/generic/256
-+++ b/tests/generic/256
-@@ -53,64 +53,6 @@ _require_test
- 
- testfile=$TEST_DIR/256.$$
- 
--# _fill_fs()
--#
--# Fills a file system by repeatedly creating files in the given folder
--# starting with the given file size.  Files are reduced in size when
--# they can no longer fit untill no more files can be created.
--#
--# This routine is used by _test_full_fs_punch to test that a hole may
--# still be punched when the disk is full by borrowing reserved blocks.
--# All files are created as a non root user to prevent reserved blocks
--# from being consumed.
--#
--_fill_fs() {
--	local file_size=$1
--	local dir=$2
--	local block_size=$3
--	local file_count=1
--	local bytes_written=0
--
--	if [ $# -ne 3 ]
--	then
--		echo "USAGE: _fill_fs filesize dir block size"
--		exit 1
--	fi
--
--	# Creation of files or folders
--	# must not be done as root or
--	# reserved blocks will be consumed
--	_user_do "mkdir -p $dir &> /dev/null"
--	if [ $? -ne 0 ] ; then
--		return 0
--	fi
--
--	if [ $file_size -lt $block_size ]
--	then
--		$file_size = $block_size
--	fi
--
--	while [ $file_size -ge $block_size ]
--	do
--		bytes_written=0
--		_user_do "$XFS_IO_PROG -f -c \"pwrite 0 $file_size\" $dir/$file_count.bin &> /dev/null"
--
--		if [ -f $dir/$file_count.bin ]
--		then
--			bytes_written=`$XFS_IO_PROG -c "stat"  $dir/$file_count.bin | grep stat.size | cut -d ' ' -f3`
--		fi
--
--		# If there was no room to make the file,
--		# then divide it in half, and keep going
--		if [ $bytes_written -lt $file_size ]
--		then
--			file_size=$(( $file_size / 2 ))
--		fi
--		file_count=$(( $file_count + 1 ))
--
--	done
--}
--
- # _test_full_fs_punch()
- #
- # This function will test that a hole may be punched
-@@ -144,7 +86,10 @@ _test_full_fs_punch()
- 		-c "fsync" $file_name &> /dev/null
- 	chmod 666 $file_name
- 
--	_fill_fs $(( 1024 * 1024 * 1024 )) $path/fill $block_size
-+	# All files are created as a non root user to prevent reserved blocks
-+	# from being consumed.
-+	_fill_fs $(( 1024 * 1024 * 1024 )) $path/fill $block_size 1 \
-+		> /dev/null 2>&1
- 
- 	for (( i=0; i<$iterations; i++ ))
- 	do
-@@ -159,7 +104,7 @@ _test_full_fs_punch()
- 
- 		hole_offset=$(( $hole_offset + $hole_len + $hole_interval ))
- 
--		_fill_fs $hole_len $path/fill.$i $block_size
-+		_fill_fs $hole_len $path/fill.$i $block_size 1 > /dev/null 2>&1
- 
- 	done
- }
--- 
-2.9.0
-
-
+	Dave
 

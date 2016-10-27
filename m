@@ -1,56 +1,206 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ns.bouton.name ([109.74.195.142]:36820 "EHLO mail.bouton.name"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932388AbcJ0Auo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 26 Oct 2016 20:50:44 -0400
-Received: from [192.168.0.32] (adsl.bouton.name [82.234.193.23])
-        by mail.bouton.name (Postfix) with ESMTP id 26455BA56
-        for <linux-btrfs@vger.kernel.org>; Thu, 27 Oct 2016 02:50:38 +0200 (CEST)
-Subject: Re: Compression and device replace on raid10 kernel panic on 4.4.6
- and 4.6.x
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <b1fd641c-7047-e83c-83ff-582c6abfb815@bouton.name>
- <e7707a30-e715-8a6f-c3ad-0e9171951f34@bouton.name>
-From: Lionel Bouton <lionel-subscription@bouton.name>
-Message-ID: <eef3fc06-8283-33dd-cd81-f63921212105@bouton.name>
-Date: Thu, 27 Oct 2016 02:50:38 +0200
+Received: from cn.fujitsu.com ([59.151.112.132]:15856 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S934026AbcJ0BLo (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 26 Oct 2016 21:11:44 -0400
+Subject: Re: How to recover a filesystem without formatting nor using the
+ btrfs check command.
+To: none <ytrezq@sdf-eu.org>, <linux-btrfs@vger.kernel.org>
+References: <580944C7.103@sdf-eu.org>
+ <8c5ae48c-4af6-42d9-be0f-06d232764ff2@cn.fujitsu.com>
+ <36f56365-27ac-878e-c5fb-f414646eda3a@sdf-eu.org>
+ <61df188a-bc12-c9c4-0322-766df4fb18c0@cn.fujitsu.com>
+ <a8b030a4fab174ade203bf061151f270@mx.sdfeu.org>
+ <08227414-b241-28a5-bbc6-7fb21d4b3e62@cn.fujitsu.com>
+ <7dcfffa62234ff0fa5ae060f75df25f1@mx.sdfeu.org>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <2166adfe-88af-5d9a-295f-d7002d64ed0e@cn.fujitsu.com>
+Date: Thu, 27 Oct 2016 09:11:28 +0800
 MIME-Version: 1.0
-In-Reply-To: <e7707a30-e715-8a6f-c3ad-0e9171951f34@bouton.name>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <7dcfffa62234ff0fa5ae060f75df25f1@mx.sdfeu.org>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
 
-Le 27/10/2016 à 01:54, Lionel Bouton a écrit :
+
+At 10/26/2016 07:52 PM, none wrote:
+> Le 2016-10-26 03:43, Qu Wenruo a écrit :
+>> Unfortunately, low memory mode is right here.
+>>
+>> If btrfs-image dump the image correctly, your extent tree is really
+>> screwed up.
+>>
+>> And how badly it is screwed up?
+>> It only contains the basic block group info.
+>> Almost empty, without any really useful EXTENT_ITEM/METADATA_ITEM.
+>> You can check it by btrfs-debug-tree -t extent.
+>> Normally, one EXTENT_DATA or tree block should have corresponding
+>> EXTENT_ITEM or METADATA_ITEM in extent tree.
+>>
+>> But in your dump, I only find EXTENT_ITEM less than a dozen, which is
+>> totally abnormal for the used size of your fs.
+> Please note df -h report 55Gb used due to a very high compression ratio.
+> Basically most of the theoretical used space is done by less than 100
+> files. I want to delete them
+>> That's why lowmem mode is reporting so many backref lost.
+> Whithout the lowmem mode, only 3 lines are reported :
 >
-> I'll post the final result of the btrfs replace later (it's currently at
-> 5.6% after 45 minutes).
+> Failed to find [75191291904, 168, 4096]
+> btrfs unable to find ref byte nr 75191291904 parent 0 root 1  owner 1
+> offset 0
+> Failed to find [75191316480, 168, 4096]
+> btrfs unable to find ref byte nr 75191316480 parent 0 root 1  owner 0
+> offset 1
+> parent transid verify failed on 75191349248 wanted 3555361 found 3555362
+> Ignoring transid failure
+>
+> and then it’s cpu locked.
 
-Result : kernel panic (so 4.8.4 didn't solve my main problem).
-Unfortunately I don't have a remote KVM anymore so I couldn't capture
-this one. panic=60 however did its job twice (I tried to mount the
-filesystem again) confirming that a panic occured.
+It's the dead loop make btrfsck only able to check the first several 
+extents, no method to continue.
 
-It seems the problem may be located at a precise location. Yesterday the
-last replace resume logged :
-Oct 26 00:40:56 zagreus kernel: BTRFS info (device sdb2): continuing
-dev_replace from <missing disk> (devid 7) to /dev/sdb2 @12%
+If we solve the dead loop, then there won't be less error report from 
+original btrfsck.
+(lowmem mode just avoid the possibility to dead loop by its design)
 
-And today I was switching between a screen terminal windows when the
-crash happened and the replace was at 12.6%. A mount triggers the crash
-in ~20 seconds which is similar to what happened yesterday on the last try.
+>
+>> It's almost a miracle that you can still write data into the fs.
+>> And I heavily doubt the correctness of your existing files.
+> They are definitely correct. I have several root filesystem and I can
+> chroot to all of them (though I’m mounting the partition readonly in
+> order to avoid dangerous writes in that case). In each case I tried
+> python and ruby cgi scripts.
 
-I've successfully canceled the replace to get back a usable system.
+You should check more, normally scrub will help, but considering the 
+state of btrfs, scrub may not work at all or make things worse.
 
-I'll stop for tonight and see what happens during the day. I'd like to
-try a device add / delete next but I'm worried I could end up with a
-completely unusable filesystem if the device delete hits the same
-problem than replace.
-If the replace resuming on mount crashes the system I can cancel it but
-there's no way to do so with a device delete. Or is by any chance the
-skip_balance mount option a way to cancel a delete ?
+>> As extent tree is screwed up, it's completely possible new write are
+>> overwriting existing data.
+> Though I only attempted to write to 3 files. But yes, this was something
+> I suspected : that writing damage things.
+>> The only chance seems to be --init-extent-tree, but that's very
+>> dangerous and I highly suspect the screwed up extent tree is caused by
+>> interrupted extent tree rebuild.
+> The problem is --init-extent-tree implies --repair which discard
+> --mode=lowmem and cause the dead lock :
+> https://bugzilla.kernel.org/show_bug.cgi?id=178781
 
-Best regards,
+Yes, that's the problem, and current situation may be caused by 
+interrupted extent tree rebuild.
 
-Lionel
+>> Thanks,
+>> Qu
+>>
+> And finally, I found several corrupt directories yesterday.
+>
+> Do you mean it’s impossible to rescue anything by repairing ? (this is
+> something I doubt since most files are valid)
+
+Not completely, I'm digging into the dead loop problem, and after that 
+you may still recover the fs(or part of it) using --init-extent-tree.
+
+Thanks,
+Qu
+
+>
+> Thank you.
+>> At 10/26/2016 02:19 AM, none wrote:
+>>> Le 2016-10-25 05:04, Qu Wenruo a écrit :
+>>>> At 10/25/2016 01:54 AM, none wrote:
+>>>>> So do you mean lowmem is also low cpu ?
+>>>>
+>>>> Not sure, but lowmem is high IO.
+>>>> And by design, it won't cause dead look unless there is a looping tree
+>>>> block. But that will be detected by check_tree_block().
+>>>>
+>>>> So, it just avoids any possible dead loop AFAIK.
+>>>>
+>>>>> Indeed here's the output if the metadata image isn't enough (it
+>>>>> termintes correctly with the --lowmem option). I must recognize even
+>>>>> without the --repair option, btrfs check hangs.
+>>>>
+>>>> I just forgot you have uploaded the image dump.
+>>>> I'll check it.
+>>>>
+>>>> But according to lowmem output, it seems all your extent tree is
+>>>> screwed up, maybe that's the cause of the problem?
+>>> I don’t think so, I can read and write to most files and no directory is
+>>> corrupt (even after running the btrfsck with lowmem).
+>>>
+>>> But of course, as the filesystem is corrupt, I avoid to mount it.
+>>>
+>>> Looks like the output of the tool is wrong.
+>>>>
+>>>> Thanks,
+>>>> Qu
+>>>>>
+>>>>> regards,
+>>>>>
+>>>>> Le 24/10/2016 à 03:15, Qu Wenruo a écrit :
+>>>>>
+>>>>>> You could try to use --mode lowmem, which doesn't ever use any
+>>>>>> loop to
+>>>>>> get next block, but iterating trees.
+>>>>>>
+>>>>>> Current in mainline btrfs-progs, the low memory mode code only checks
+>>>>>> extent/chunk trees, file/subvolume trees are still checked by
+>>>>>> original
+>>>>>> mode.
+>>>>>>
+>>>>>> You could try the devel branch from David, which now contains the
+>>>>>> full
+>>>>>> low memory mode check code:
+>>>>>> https://github.com/kdave/btrfs-progs/tree/devel
+>>>>>>
+>>>>>> Although low memory mode doesn't support repair yet, it would give us
+>>>>>> enough info on what's corrupted, so we can later fix it by hand or
+>>>>>> enhance original mode.
+>>>>>>
+>>>>>> Thanks,
+>>>>>> Qu
+>>>>>>
+>>>>>> At 10/24/2016 03:42 AM, none wrote:
+>>>>>>
+>>>>>>> Hello,
+>>>>>>> I have the following bug
+>>>>>>> https://bugzilla.kernel.org/show_bug.cgi?id=178781 in btrfs
+>>>>>>> check, is
+>>>>>>> there a way to recover my filesystem in clean state without
+>>>>>>> formatting
+>>>>>>> or using btrsfck ? Of course, the point is no longer need the files
+>>>>>>> which are damaged.
+>>>>>>> So is there a way to recover a btrfs filesystem by deleting the
+>>>>>>> corrupted data instead of trying to restore it ?
+>>>>>>>
+>>>>>>> btrfs fi df /mnt/Opera_Mobile_Emulator_12.1_Linux
+>>>>>>> Data, single: total=66.01GiB, used=0.00B
+>>>>>>> System, DUP: total=8.00MiB, used=16.00KiB
+>>>>>>> System, single: total=4.00MiB, used=0.00B
+>>>>>>> Metadata, DUP: total=5.00GiB, used=28.00KiB
+>>>>>>> Metadata, single: total=8.00MiB, used=0.00B
+>>>>>>> GlobalReserve, single: total=4.00MiB, used=0.00B
+>>>>>>>
+>>>>>>> btrfs progs version 4.7.3 from Devuan
+>>>>>>>
+>>>>>>> Label: 'backup'  uuid: 56040bbb-ed5c-47f2-82e2-34457bd7b4f3
+>>>>>>> Total devices 1 FS bytes used 44.00KiB
+>>>>>>> devid    1 size 298.91GiB used 76.04GiB path
+>>>>>>> /dev/mapper/isw_bdffeeeijj_Volume0p7
+>>>>>>>
+>>>>>>> uname -a
+>>>>>>> Linux localhost 4.5.0-0.bpo.1-amd64 #1 SMP Debian 4.5.1-1~bpo8+1
+>>>>>>> (2016-04-20) x86_64 GNU/Linux
+>>>>>>>
+>>>>>>> Result of btrfs-image on /dev/mapper/isw_bdffeeeijj_Volume0p7 :
+>>>>>>> https://web.archive.org/web/20161020220914/https://filebin.net/7ni8kfpog1dxw4jc/btrfs-image_capture.xz
+>>>>>>>
+>>>>>>>
+>>>>>>>
+>>>>>>>
+>>>>>>> Thanks,
+>
+>
+
+

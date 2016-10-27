@@ -1,39 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f41.google.com ([74.125.82.41]:35035 "EHLO
-        mail-wm0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S965752AbcJ0OIv (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Oct 2016 10:08:51 -0400
-Received: by mail-wm0-f41.google.com with SMTP id e69so37303958wmg.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 27 Oct 2016 07:08:50 -0700 (PDT)
-Received: from system (HSI-KBW-046-005-000-248.hsi8.kabel-badenwuerttemberg.de. [46.5.0.248])
-        by smtp.gmail.com with ESMTPSA id x138sm2757048wme.14.2016.10.27.04.30.12
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Thu, 27 Oct 2016 04:30:12 -0700 (PDT)
-Date: Thu, 27 Oct 2016 13:30:11 +0200
-From: Saint Germain <saintger@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Subject: Identifying reflink / CoW files
-Message-ID: <20161027133011.631cf1e5@system>
+Received: from ns.bouton.name ([109.74.195.142]:56690 "EHLO mail.bouton.name"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S935408AbcJ0QHz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 27 Oct 2016 12:07:55 -0400
+Received: from [10.8.0.114] (vpn.jtek.fr [188.40.135.225])
+        by mail.bouton.name (Postfix) with ESMTP id 1C548B893
+        for <linux-btrfs@vger.kernel.org>; Thu, 27 Oct 2016 18:07:52 +0200 (CEST)
+Subject: Re: Compression and device replace on raid10 kernel panic on 4.4.6
+ and 4.6.x
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <b1fd641c-7047-e83c-83ff-582c6abfb815@bouton.name>
+ <e7707a30-e715-8a6f-c3ad-0e9171951f34@bouton.name>
+ <eef3fc06-8283-33dd-cd81-f63921212105@bouton.name>
+From: Lionel Bouton <lionel-subscription@bouton.name>
+Message-ID: <1114032c-07f4-4a32-780d-be38a32b83b7@bouton.name>
+Date: Thu, 27 Oct 2016 18:07:51 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+In-Reply-To: <eef3fc06-8283-33dd-cd81-f63921212105@bouton.name>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Hi,
 
-Following the previous discussion:
-https://www.spinics.net/lists/linux-btrfs/msg19075.html
+Le 27/10/2016 à 02:50, Lionel Bouton a écrit :
+> [...]
+> I'll stop for tonight and see what happens during the day. I'd like to
+> try a device add / delete next but I'm worried I could end up with a
+> completely unusable filesystem if the device delete hits the same
+> problem than replace.
+> If the replace resuming on mount crashes the system I can cancel it but
+> there's no way to do so with a device delete. Or is by any chance the
+> skip_balance mount option a way to cancel a delete ?
 
-I would be interested in finding a way to reliably identify reflink /
-CoW files in order to use deduplication programs (like fdupes, jdupes,
-rmlint) efficiently.
+Can anyone just confirm (or infirm) that skip_balance will indeed
+effectively cancel a device delete before I try something that could
+force me to resort to backups ?
 
-Using FIEMAP doesn't seem to be reliable according to this discussion
-on rmlint:
-https://github.com/sahib/rmlint/issues/132#issuecomment-157665154
-
-Is there another way that deduplication programs can easily use ?
-
-Thanks
+Lionel

@@ -1,43 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:56026 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1760229AbcJ1OIJ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 28 Oct 2016 10:08:09 -0400
-Date: Fri, 28 Oct 2016 10:08:04 -0400
-From: Chris Mason <clm@fb.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        LKML <linux-kernel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [GIT PULL] Btrfs
-Message-ID: <20161028140804.leiro4pzw3qrc6sa@floor.thefacebook.com>
+Received: from mx2.suse.de ([195.135.220.15]:46652 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S933523AbcJ1PKR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 28 Oct 2016 11:10:17 -0400
+Date: Fri, 28 Oct 2016 17:10:14 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/3] btrfs-progs: send: fix handling of multiple
+ snapshots (-p option)
+Message-ID: <20161028151014.GI12522@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <201610190235.AA00002@WIN-5MHF4RKU941.jp.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: multipart/mixed; boundary="BOKacYhQ+x31HxR3"
+In-Reply-To: <201610190235.AA00002@WIN-5MHF4RKU941.jp.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
 
-My for-linus-4.9 has two fixes in it:
+--BOKacYhQ+x31HxR3
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.9
+On Wed, Oct 19, 2016 at 11:35:03AM +0900, Tsutomu Itoh wrote:
+> We cannot send multiple snapshots at once by -p option.
 
-My patch fixes the btrfs list_head abuse that we tracked down during
-Dave Jones' memory corruption investigation.  With both Jens and my
-patches in place, I'm no longer able to trigger problems.
+We cannot like that it's broken, or we cannot because it's not supposed
+to work that way. I guess it's the former, but the changelog text is a
+bit confusing.
+> 
+> [before]
+> # btrfs send -f /tmp/data0 -p Snap0 Snap[12]
+> At subvol Snap1
+> At subvol Snap2
+> ERROR: parent determination failed for 0
+> # 
+> 
+> [after]
+> # btrfs send -f /tmp/data0 -p Snap0 Snap[12]
+> At subvol Snap1
+> At subvol Snap2
+> # 
 
-Filipe is fixing a difficult old bug between snapshots, balance and
-send.  Dave is cooking a few more for the next rc, but these are tested
-and ready:
+I'm not sure it's fixed, I wrote a simple test, attached, that triggers
+the bug even with the patch applied.
 
-Chris Mason (1) commits (+6/-14):
-    btrfs: fix races on root_log_ctx lists
+--BOKacYhQ+x31HxR3
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: attachment; filename="test.sh"
 
-Filipe Manana (1) commits (+58/-0):
-    Btrfs: fix incremental send failure caused by balance
+#!/bin/bash
+#
+# minimal test for the following syntax: btrfs send -p parent subvol1 subvol2
 
-Total: (2) commits (+64/-14)
+source $TOP/tests/common
 
- fs/btrfs/send.c     | 58 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/tree-log.c | 20 ++++++------------
- 2 files changed, 64 insertions(+), 14 deletions(-)
+check_prereq mkfs.btrfs
+check_prereq btrfs
+
+setup_root_helper
+prepare_test_dev 2g
+
+run_check $TOP/mkfs.btrfs -f $IMAGE
+run_check_mount_test_dev
+
+here=`pwd`
+cd "$TEST_MNT" || _fail "cannot chdir to TEST_MNT"
+
+run_check $SUDO_HELPER btrfs subvolume create subv-parent
+run_check $SUDO_HELPER dd if=/dev/urandom of=subv-parent/file bs=1M count=10
+run_check $SUDO_HELPER btrfs subvolume snapshot -r subv-parent subv-snap1
+run_check $SUDO_HELPER dd if=/dev/urandom of=subv-parent/file bs=1M count=10
+run_check $SUDO_HELPER btrfs subvolume snapshot -r subv-parent subv-snap2
+run_check $SUDO_HELPER dd if=/dev/urandom of=subv-parent/file bs=1M count=10
+run_check $SUDO_HELPER btrfs subvolume snapshot -r subv-parent subv-snap3
+
+run_check truncate -s0 "$here"/send.stream
+run_check chmod a+w "$here"/send.stream
+run_check $SUDO_HELPER btrfs send -f "$here"/send.stream -p subv-snap1 subv-snap2 subv-snap3
+
+cd "$here" || _fail "cannot chdir back to test directory"
+
+run_check_umount_test_dev
+
+--BOKacYhQ+x31HxR3--

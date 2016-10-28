@@ -1,66 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56170 "EHLO mx2.suse.de"
+Received: from mx1.redhat.com ([209.132.183.28]:37606 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1756196AbcJ1QWD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 28 Oct 2016 12:22:03 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id C365CAC64
-        for <linux-btrfs@vger.kernel.org>; Fri, 28 Oct 2016 16:22:01 +0000 (UTC)
-Date: Fri, 28 Oct 2016 18:22:00 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Goldwyn Rodrigues <rgoldwyn@suse.de>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org,
-        Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: Re: [PATCH] btrfs-progs: repair: Trickle down EEXISTS while freeing
-Message-ID: <20161028162200.GM12522@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20161027180508.8721-1-rgoldwyn@suse.de>
- <20161028144202.GH12522@twin.jikos.cz>
- <28691b60-81dd-2949-c71a-7002f2980b4b@suse.de>
+        id S1752728AbcJ1Cyu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 27 Oct 2016 22:54:50 -0400
+Received: from int-mx09.intmail.prod.int.phx2.redhat.com (int-mx09.intmail.prod.int.phx2.redhat.com [10.5.11.22])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by mx1.redhat.com (Postfix) with ESMTPS id 4134F61B98
+        for <linux-btrfs@vger.kernel.org>; Fri, 28 Oct 2016 02:54:50 +0000 (UTC)
+Received: from Liberator.local (ovpn03.gateway.prod.ext.phx2.redhat.com [10.5.9.3])
+        by int-mx09.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id u9S2snPp018131
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+        for <linux-btrfs@vger.kernel.org>; Thu, 27 Oct 2016 22:54:50 -0400
+Subject: Re: [PATCH] btrfs-progs: fix build for programs including ioctl.h
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <343f2d64-948b-9653-18eb-76ae2e852b88@redhat.com>
+From: Eric Sandeen <sandeen@redhat.com>
+Message-ID: <ae29e753-b1fc-f433-d498-bc50209bfa8d@redhat.com>
+Date: Thu, 27 Oct 2016 21:54:49 -0500
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <28691b60-81dd-2949-c71a-7002f2980b4b@suse.de>
+In-Reply-To: <343f2d64-948b-9653-18eb-76ae2e852b88@redhat.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Oct 28, 2016 at 10:02:06AM -0500, Goldwyn Rodrigues wrote:
+On 10/13/16 12:36 PM, Eric Sandeen wrote:
+> This was reported when docker failed to build against
+> btrfs-progs v4.8.1.
 > 
-> 
-> On 10/28/2016 09:42 AM, David Sterba wrote:
-> > On Thu, Oct 27, 2016 at 01:05:08PM -0500, Goldwyn Rodrigues wrote:
-> >> While deleting pending extents, we insert extents to the
-> >> extent_tree. However, because of corruption, this might already
-> >> be freed. We trickle the EEXISTS error and let the caller
-> >> decide what needs to be done with it. In this case, ignore, so
-> >> the repair may proceed.
-> >>
-> >> The primary motivation of this is to resolve this BUG_ON:
-> >> extent-tree.c:2731: alloc_reserved_tree_block: Assertion `ret` failed, value 0
-> >>
-> >> #2  assert_trace (val=0, line=2728, func=0x489510 <__func__.11558> "alloc_reserved_tree_block", 
-> >> 	filename=0x489065 "extent-tree.c", assertion=0x48cfb5 "ret") at kerncompat.h:102
-> >> #3  alloc_reserved_tree_block (trans=trans@entry=0x7e7240, root=root@entry=0x6a88a0, root_objectid=2, 
-> >> 	generation=175654, flags=0, key=key@entry=0x2bc5c70, level=0, ins=ins@entry=0x7fffffffcf30) at extent-tree.c:2728
-> >> #4  finish_current_insert (trans=trans@entry=0x7e7240, extent_root=extent_root@entry=0x6a88a0)
-> >>     at extent-tree.c:2108
-> >> #5  __free_extent (trans=trans@entry=0x7e7240, root=root@entry=0x6a88a0, bytenr=57127387136, 
-> >> 	num_bytes=<optimized out>, parent=parent@entry=0, root_objectid=<optimized out>, owner_objectid=0, 
-> >> 	owner_offset=owner_offset@entry=0, refs_to_drop=refs_to_drop@entry=1) at extent-tree.c:2410
-> >> #6  del_pending_extents (trans=trans@entry=0x7e7240, extent_root=0x6a88a0) at extent-tree.c:2448
-> > 
-> > Do you have a reproducer for that?
-> 
-> I have a corrupt btrfs-image, not a test case though. Should I share
-> that? If yes, where should I upload it?
+> It includes ioctl.h which now calls BUILD_ASSERT(), which
+> is defined in kerncompat.h, which was not included in the
+> ioctl.h header file.
 
-The image should not be large (compressed), if it's about to be stored
-in git. Minimizing can take time, I haven't analyzed the trace if
-there's an easier way to trigger it (eg corrupting a specific key).
-> >> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
-> > 
-> > Applied, thanks.
-> > 
-> 
-> Ahh, just realized. Spell check s/EEXISTS/EEXIST/
+Ping?
 
-Fixed.
+-Eric
+ 
+> Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+> ---
+> 
+> diff --git a/ioctl.h b/ioctl.h
+> index a7235c0..abea7ed 100644
+> --- a/ioctl.h
+> +++ b/ioctl.h
+> @@ -26,6 +26,12 @@ extern "C" {
+>  #include <asm/types.h>
+>  #include <linux/ioctl.h>
+>  
+> +#if BTRFS_FLAT_INCLUDES
+> +#include "kerncompat.h"
+> +#else
+> +#include <btrfs/kerncompat.h>
+> +#endif /* BTRFS_FLAT_INCLUDES */
+> +
+>  #ifndef __user
+>  #define __user
+>  #endif
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+

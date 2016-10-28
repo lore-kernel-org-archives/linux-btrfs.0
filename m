@@ -1,45 +1,137 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from synology.com ([59.124.61.242]:57403 "EHLO synology.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752113AbcJKJCP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Oct 2016 05:02:15 -0400
-From: robbieko <robbieko@synology.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Robbie Ko <robbieko@synology.com>
-Subject: [PATCH] Btrfs: fix -EINVEL in tree log recovering
-Date: Tue, 11 Oct 2016 17:01:14 +0800
-Message-Id: <1476176474-15900-1-git-send-email-robbieko@synology.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:48358 "EHLO song.cn.fujitsu.com"
+        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+        id S1034405AbcJ1CdM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 27 Oct 2016 22:33:12 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: [PATCH 00/19] Offline scrub support
+Date: Fri, 28 Oct 2016 10:31:36 +0800
+Message-Id: <20161028023155.27336-1-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Robbie Ko <robbieko@synology.com>
+For any one who wants to try it, it can be get from my repo:
+https://github.com/adam900710/btrfs-progs/tree/fsck_scrub
 
-when tree log recovery, space_cache rebuild or dirty maybe save the cache.
-and then replay extent with disk_bytenr and disk_num_bytes,
-but disk_bytenr and disk_num_bytes maybe had been use for free space inode,
-will lead to -EINVEL.
+Currently, I only tested it on SINGLE/DUP/RAID1/RAID5 filesystems, with
+mirror or parity or data corrupted.
+The tool are all able to detect them and give recoverbility report.
 
-BTRFS: error in btrfs_replay_log:2446: errno=-22 unknown (Failed to recover log tree)
+Several reports on kernel scrub screwing up good data stripes are in ML
+for sometime.
 
-therefore, we not save cache when tree log recovering.
+The reason seems to be lack of csum check before and after reconstruction, and
+unfinished parity write seems also involved.
 
-Signed-off-by: Robbie Ko <robbieko@synology.com>
----
- fs/btrfs/extent-tree.c | 1 +
- 1 file changed, 1 insertion(+)
+To get a comparable tool for kernel scrub, we need a user-space tool to
+act as benchmark to compare their different behaviors.
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 665da8f..38b932c 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3434,6 +3434,7 @@ again:
- 
- 	spin_lock(&block_group->lock);
- 	if (block_group->cached != BTRFS_CACHE_FINISHED ||
-+		block_group->fs_info->log_root_recovering ||
- 	    !btrfs_test_opt(root->fs_info, SPACE_CACHE)) {
- 		/*
- 		 * don't bother trying to write stuff out _if_
+So here is the RFC patch set for user-space scrub.
+
+Which can do:
+
+1) All mirror/backup check for non-parity based stripe
+   Which means for RAID1/DUP/RAID10, we can really check all mirrors
+   other than the 1st good mirror.
+
+   Current "--check-data-csum" option will be finally replace by scrub.
+   As it doesn't really check all mirrors, if it hits a good copy, then
+   resting copies will just be ignored.
+
+2) Comprehensive RAID5/6 full stripe check
+   It will take full use of btrfs csum(both tree and data).
+   It will only recover the full stripe if all recovered data matches
+   with its csum.
+
+In fact, it can already expose one new btrfs kernel bug.
+For example, after screwing up a data stripe, kernel did repairs using
+parity, but recovered full stripe has wrong parity.
+Need to scrub again to fix it.
+
+And this patchset also introduced new map_block() function, which is
+more flex than current btrfs_map_block(), and has a unified interface
+for all profiles.
+Check the 6th and 7th patch for details.
+
+They are already used in RAID5/6 scrub, but can also be used for other
+profiles too.
+
+The to-do list has been shortened, since RAID6 and new check logical is
+introduced.
+1) Repair support
+   In fact, current tool can already report recoverability, repair is
+   not hard to implement.
+
+2) Test cases
+   Need to make the infrastructure able to handle multi-device first.
+
+3) Make btrfsck able to handle RAID5 with missing device
+   Now it doesn't even open RAID5 btrfs with missing device, even though
+   scrub should be able to handle it.
+
+Changelog:
+V0.8 RFC:
+   Initial RFC patchset
+
+v1:
+   First formal patchset.
+   RAID6 recovery support added, mainly copied from kernel radi6 lib.
+   Cleaner recovery logical.
+
+Qu Wenruo (19):
+  btrfs-progs: raid56: Introduce raid56 header for later recovery usage
+  btrfs-progs: raid56: Introduce tables for RAID6 recovery
+  btrfs-progs: raid56: Allow raid6 to recover 2 data stripes
+  btrfs-progs: raid56: Allow raid6 to recover data and p
+  btrfs-progs: Introduce wrapper to recover raid56 data
+  btrfs-progs: Introduce new btrfs_map_block function which returns more
+    unified result.
+  btrfs-progs: Allow __btrfs_map_block_v2 to remove unrelated stripes
+  btrfs-progs: check/csum: Introduce function to read out one data csum
+  btrfs-progs: check/scrub: Introduce structures to support fsck scrub
+  btrfs-progs: check/scrub: Introduce function to scrub mirror based
+    tree block
+  btrfs-progs: check/scrub: Introduce function to scrub mirror based
+    data blocks
+  btrfs-progs: check/scrub: Introduce function to scrub one extent
+  btrfs-progs: check/scrub: Introduce function to scrub one data stripe
+  btrfs-progs: check/scrub: Introduce function to verify parities
+  btrfs-progs: extent-tree: Introduce function to check if there is any
+    extent in given range.
+  btrfs-progs: check/scrub: Introduce function to recover data parity
+  btrfs-progs: check/scrub: Introduce a function to scrub one full
+    stripe
+  btrfs-progs: check/scrub: Introduce function to check a whole block
+    group
+  btrfs-progs: fsck: Introduce offline scrub function
+
+ .gitignore                         |   2 +
+ Documentation/btrfs-check.asciidoc |   8 +
+ Makefile.in                        |  18 +-
+ check/check.h                      |  23 +
+ check/csum.c                       |  96 ++++
+ check/scrub.c                      | 924 +++++++++++++++++++++++++++++++++++++
+ cmds-check.c                       |  12 +-
+ ctree.h                            |   2 +
+ disk-io.c                          |   4 +-
+ disk-io.h                          |   6 +-
+ extent-tree.c                      |  52 +++
+ mktables.c                         | 142 ++++++
+ raid56.c                           | 175 +++++++
+ raid56.h                           |  47 ++
+ volumes.c                          | 283 ++++++++++++
+ volumes.h                          |  49 ++
+ 16 files changed, 1832 insertions(+), 11 deletions(-)
+ create mode 100644 check/check.h
+ create mode 100644 check/csum.c
+ create mode 100644 check/scrub.c
+ create mode 100644 mktables.c
+ create mode 100644 raid56.h
+
 -- 
-1.9.1
+2.10.1
+
+
 

@@ -1,74 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:20477 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:58749 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S938630AbcJ1CeI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Oct 2016 22:34:08 -0400
+        id S965910AbcJ1CdM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 27 Oct 2016 22:33:12 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: [PATCH 08/19] btrfs-progs: check/csum: Introduce function to read out one data csum
-Date: Fri, 28 Oct 2016 10:31:44 +0800
-Message-Id: <20161028023155.27336-9-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 09/19] btrfs-progs: check/scrub: Introduce structures to support fsck scrub
+Date: Fri, 28 Oct 2016 10:31:45 +0800
+Message-Id: <20161028023155.27336-10-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20161028023155.27336-1-quwenruo@cn.fujitsu.com>
 References: <20161028023155.27336-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce a new function, btrfs_read_one_data_csum(), to read just one
-data csum for check usage.
-
-Unlike original implement in cmds-check.c which checks csum by one
-CSUM_EXTENT, this just read out one csum(4 bytes).
-It is not fast but makes code easier to read.
-
-And will be used in later fsck scrub codes.
+Introuduce new local structures, scrub_full_stripe and scrub_stripe, for
+incoming offline scrub support.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- Makefile.in   |  6 ++--
- check/check.h | 21 +++++++++++++
- check/csum.c  | 96 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 121 insertions(+), 2 deletions(-)
- create mode 100644 check/check.h
- create mode 100644 check/csum.c
+ Makefile.in   |   2 +-
+ check/scrub.c | 110 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 111 insertions(+), 1 deletion(-)
+ create mode 100644 check/scrub.c
 
 diff --git a/Makefile.in b/Makefile.in
-index a25cda9..c89f13d 100644
+index c89f13d..a279124 100644
 --- a/Makefile.in
 +++ b/Makefile.in
-@@ -63,6 +63,7 @@ CFLAGS = @CFLAGS@ \
- 	 -fPIC \
- 	 -I$(TOPDIR) \
- 	 -I$(TOPDIR)/kernel-lib \
-+	 -I$(TOPDIR)/check \
- 	 $(EXTRAWARN_CFLAGS) \
- 	 $(DEBUG_CFLAGS_INTERNAL) \
- 	 $(EXTRA_CFLAGS)
-@@ -93,7 +94,8 @@ objects = ctree.o disk-io.o kernel-lib/radix-tree.o extent-tree.o print-tree.o \
- 	  extent-cache.o extent_io.o volumes.o utils.o repair.o \
+@@ -95,7 +95,7 @@ objects = ctree.o disk-io.o kernel-lib/radix-tree.o extent-tree.o print-tree.o \
  	  qgroup.o raid56.o free-space-cache.o kernel-lib/list_sort.o props.o \
  	  ulist.o qgroup-verify.o backref.o string-table.o task-utils.o \
--	  inode.o file.o find-root.o free-space-tree.o help.o tables.o
-+	  inode.o file.o find-root.o free-space-tree.o help.o tables.o \
-+	  check/csum.o
+ 	  inode.o file.o find-root.o free-space-tree.o help.o tables.o \
+-	  check/csum.o
++	  check/csum.o check/scrub.o
  cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
  	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
  	       cmds-quota.o cmds-qgroup.o cmds-replace.o cmds-check.o \
-@@ -439,7 +441,7 @@ clean-all: clean clean-doc clean-gen
- clean: $(CLEANDIRS)
- 	@echo "Cleaning"
- 	$(Q)$(RM) -f -- $(progs) cscope.out *.o *.o.d mktables tables.c \
--		kernel-lib/*.o kernel-lib/*.o.d \
-+		kernel-lib/*.o kernel-lib/*.o.d check/*.o check/*.o.d \
- 	      dir-test ioctl-test quick-test send-test library-test library-test-static \
- 	      btrfs.static mkfs.btrfs.static \
- 	      $(check_defs) \
-diff --git a/check/check.h b/check/check.h
+diff --git a/check/scrub.c b/check/scrub.c
 new file mode 100644
-index 0000000..61d1cac
+index 0000000..1ae7acd
 --- /dev/null
-+++ b/check/check.h
-@@ -0,0 +1,21 @@
++++ b/check/scrub.c
+@@ -0,0 +1,110 @@
 +/*
 + * Copyright (C) 2016 Fujitsu.  All rights reserved.
 + *
@@ -87,111 +61,98 @@ index 0000000..61d1cac
 + * Boston, MA 021110-1307, USA.
 + */
 +
-+/* check/csum.c */
-+int btrfs_read_one_data_csum(struct btrfs_fs_info *fs_info, u64 bytenr,
-+			     void *csum_ret);
-diff --git a/check/csum.c b/check/csum.c
-new file mode 100644
-index 0000000..53195ea
---- /dev/null
-+++ b/check/csum.c
-@@ -0,0 +1,96 @@
-+/*
-+ * Copyright (C) 2016 Fujitsu.  All rights reserved.
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public
-+ * License v2 as published by the Free Software Foundation.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-+ * General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public
-+ * License along with this program; if not, write to the
-+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-+ * Boston, MA 021110-1307, USA.
-+ */
-+
++#include <unistd.h>
 +#include "ctree.h"
++#include "volumes.h"
++#include "disk-io.h"
 +#include "utils.h"
-+/*
-+ * TODO:
-+ * 1) Add write support for csum
-+ *    So we can write new data extents and add csum into csum tree
-+ * 2) Add csum range search function
-+ *    So we don't need to search csum tree in a per-sectorsize loop.
-+ */
++#include "check.h"
 +
-+int btrfs_read_one_data_csum(struct btrfs_fs_info *fs_info, u64 bytenr,
-+			     void *csum_ret)
-+{
-+	struct btrfs_path *path;
-+	struct btrfs_key key;
-+	struct btrfs_root *csum_root = fs_info->csum_root;
-+	u32 item_offset;
-+	u32 item_size;
-+	u32 final_offset;
-+	u32 sectorsize = fs_info->tree_root->sectorsize;
-+	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
-+	int ret;
++struct scrub_stripe {
++	/* For P/Q logical start will be BTRFS_RAID5/6_P/Q_STRIPE */
++	u64 logical;
 +
-+	if (!csum_ret) {
-+		error("wrong parameter for %s", __func__);
-+		return -EINVAL;
-+	}
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
++	/* Device is missing */
++	unsigned int dev_missing:1;
 +
-+	key.objectid = BTRFS_EXTENT_CSUM_OBJECTID;
-+	key.type = BTRFS_EXTENT_CSUM_KEY;
-+	key.offset = bytenr;
++	/* Any tree/data csum mismatches */
++	unsigned int csum_mismatch:1;
 +
-+	ret = btrfs_search_slot(NULL, csum_root, &key, path, 0, 0);
-+	if (ret < 0)
-+		goto out;
-+	if (ret == 0) {
-+		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
-+		if (!IS_ALIGNED(key.offset, sectorsize)) {
-+			error("csum item bytenr %llu is not aligned to %u",
-+			      key.offset, sectorsize);
-+			ret = -EIO;
-+			goto out;
-+		}
-+		u32 offset = btrfs_item_ptr_offset(path->nodes[0],
-+						      path->slots[0]);
++	/* Some data doesn't have csum(nodatasum) */
++	unsigned int csum_missing:1;
 +
-+		read_extent_buffer(path->nodes[0], csum_ret, offset, csum_size);
-+		goto out;
-+	}
-+	ret = btrfs_previous_item(csum_root, path, BTRFS_EXTENT_CSUM_OBJECTID,
-+				  BTRFS_EXTENT_CSUM_KEY);
-+	if (ret)
-+		goto out;
-+	btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
-+	if (!IS_ALIGNED(key.offset, sectorsize)) {
-+		error("csum item bytenr %llu is not aligned to %u",
-+		      key.offset, sectorsize);
-+		ret = -EIO;
-+		goto out;
-+	}
-+	item_offset = btrfs_item_ptr_offset(path->nodes[0], path->slots[0]);
-+	item_size = btrfs_item_size_nr(path->nodes[0], path->slots[0]);
-+	if (key.offset + item_size / csum_size * sectorsize <= bytenr) {
-+		ret = 1;
-+		goto out;
-+	}
-+
-+	final_offset = (bytenr - key.offset) / sectorsize * csum_size +
-+		       item_offset;
-+	read_extent_buffer(path->nodes[0], csum_ret, final_offset, csum_size);
-+	ret = 0;
-+out:
-+	btrfs_free_path(path);
-+	return ret;
++	char *data;
 +};
++
++struct scrub_full_stripe {
++	u64 logical_start;
++	u64 logical_len;
++	u64 bg_type;
++	u32 nr_stripes;
++	u32 stripe_len;
++
++	/* Read error stripes */
++	u32 err_read_stripes;
++
++	/* Missing devices */
++	u32 err_missing_devs;
++
++	/* Csum error data stripes */
++	u32 err_csum_dstripes;
++
++	/* Missing csum data stripes */
++	u32 missing_csum_dstripes;
++
++	/* currupted stripe index */
++	int corrupted_index[2];
++
++	int nr_corrupted_stripes;
++
++	/* Already recovered once? */
++	unsigned int recovered:1;
++
++	struct scrub_stripe stripes[];
++};
++
++static void free_full_stripe(struct scrub_full_stripe *fstripe)
++{
++	int i;
++
++	for (i = 0; i < fstripe->nr_stripes; i++)
++		free(fstripe->stripes[i].data);
++	free(fstripe);
++}
++
++static struct scrub_full_stripe *alloc_full_stripe(int nr_stripes,
++						    u32 stripe_len)
++{
++	struct scrub_full_stripe *ret;
++	int size = sizeof(*ret) + nr_stripes * sizeof(struct scrub_stripe);
++	int i;
++
++	ret = malloc(size);
++	if (!ret)
++		return NULL;
++
++	memset(ret, 0, size);
++	ret->nr_stripes = nr_stripes;
++	ret->stripe_len = stripe_len;
++	ret->corrupted_index[0] = -1;
++	ret->corrupted_index[1] = -1;
++
++	/* Alloc data memory for each stripe */
++	for (i = 0; i < nr_stripes; i++) {
++		struct scrub_stripe *stripe = &ret->stripes[i];
++
++		stripe->data = malloc(stripe_len);
++		if (!stripe->data) {
++			free_full_stripe(ret);
++			return NULL;
++		}
++	}
++	return ret;
++}
++
 -- 
 2.10.1
 

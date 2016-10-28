@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from synology.com ([59.124.61.242]:36651 "EHLO synology.com"
+Received: from synology.com ([59.124.61.242]:36934 "EHLO synology.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S943100AbcJ1BlY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Oct 2016 21:41:24 -0400
+        id S964894AbcJ1Bl1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 27 Oct 2016 21:41:27 -0400
 From: robbieko <robbieko@synology.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Robbie Ko <robbieko@synology.com>
-Subject: [PATCH v2 3/6] Btrfs: incremental send, add generation for waiting_dir_move struct and check it in can_rmdir.
-Date: Fri, 28 Oct 2016 09:40:47 +0800
-Message-Id: <1477618850-12922-4-git-send-email-robbieko@synology.com>
+Subject: [PATCH v2 6/6] Btrfs: incremental send, add generation check in existence demtermination for the parent directory
+Date: Fri, 28 Oct 2016 09:40:50 +0800
+Message-Id: <1477618850-12922-7-git-send-email-robbieko@synology.com>
 In-Reply-To: <1477618850-12922-1-git-send-email-robbieko@synology.com>
 References: <1477618850-12922-1-git-send-email-robbieko@synology.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -16,122 +16,88 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Robbie Ko <robbieko@synology.com>
 
-Example scenario:
+Exampla scenario:
 Parent snapshot:
-|---- dir258/ (ino 258, gen 27)
-    |---- dir257/ (ino 257, gen 27)
-|---- dir259/ (ino 259, gen 27)
+|---- dir258/         (ino 258, gen 7, dir)
+    |--- dir257/      (ino 257, gen 7, dir)
+|---- dir259/         (ino 259, gen 7, dir)
 
 Send snapshot:
-|---- new_dir259/ (ino 259, gen 38)
-    |---- new_dir258/ (ino 258, gen 38)
-        |---- new_dir257/ (ino 257, gen 38)
+|---- file258         (ino 258, gen 10, file)
+|---- new_dir259/     (ino 259, gen 10, dir)
+    |--- dir257/      (ino 257, gen 7, dir)
 
-rmdir dir258/dir257
-mkdir o257-38-0
-mkdir o258-38-0
-chown o257-38-0 - uid=0, gid=0
-chmod o257-38-0 - mode=0755
-rename dir258 -> o258-27-0  -----> dir is empty, but waiting o257-38-0
-mkdir o259-38-0
-chown o258-38-0 - uid=0, gid=0
-chmod o258-38-0 - mode=0755
+mkdir o259-10-0
+rename dir258 -> o258-7-0
+utimes
+mkfile o258-10-0
+rename o258-10-0 -> file258
+utimes
+truncate file258 size=0
+chown file258 - uid=0, gid=0
+chmod file258 - mode=0644
+utimes file258
 rmdir dir259
-rename o259-38-0 -> new_dir259
+utimes
+rename o259-10-0 -> new_dir259
 utimes
 chown new_dir259 - uid=0, gid=0
 chmod new_dir259 - mode=0755
-rename o258-38-0 -> new_dir259/new_dir258
-utimes new_dir259/new_dir258
-utimes new_dir259
-rename o257-38-0 -> new_dir259/new_dir258/new_dir257
-rmdir o258-27-0             -----> when o257-38-0 finish, delete
-utimes new_dir259/new_dir258/new_dir257
-utimes new_dir259/new_dir258
-utimes new_dir259
+rename o258-7-0/dir257 -> new_dir259/dir257
+rmdir o258-7-0
+utimes new_dir259/dir257
+utimes o258-7-0
+ERROR: utimes o258-7-0 failed: No such file or directory
 
 While computing the send stream the following steps happen:
 
-1) While processing inode 257 we delete dir258/dir257 immediately.
-   After create o257-38-0, we then delay its rename operation
-   because its new parent in the send snapshot, inode 258,
-   was not yet processed and therefore not yet renamed.
+1) While processing inode 257 we create o259-10-0, and delaying dir257
+   rename operation because its new parent in the send snapshot, inode
+   259, was not yet processed and therefore not yet renamed;
 
-2) On processing inode 258, we need to check if all under files are done
-   before rmdir dir258. However, the waiting o257-38-0 (ino 257) will
-   mislead the check making it think dir257 (ino 257) is still there.
-   dir258 will be orphanized at first but in fact it has become empty.
+2) Later when processing inode 258 we orphanize dir258, and rename it to
+   o258-7-0, because under dir258 there is a dir257 waiting to be moved;
 
-Fix this by adding generation to waiting_dir_move struct, so can_rmdir
-can use it to correct the result.
+3) Finally, when 259 is finished processing we rename o258-7-0/dir257 to
+   new_dir259/dir257, and then remove directory o258-7-0. After updating
+   the time in the two parents if it's exist, we only check whether
+   the inode number exists in the send snapshot, which result in utimes
+   error, because old parent has been deleted;
+
+Fix this by adding generation check in existence demtermination for
+the parent directory.
 
 Signed-off-by: Robbie Ko <robbieko@synology.com>
 ---
- fs/btrfs/send.c | 15 ++++++++++++---
- 1 file changed, 12 insertions(+), 3 deletions(-)
+ fs/btrfs/send.c | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 22eca86..eaf1c92 100644
+index 81a2bee..b4a4724 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -237,6 +237,7 @@ struct pending_dir_move {
- struct waiting_dir_move {
- 	struct rb_node node;
- 	u64 ino;
-+	u64 gen;
- 	/*
- 	 * There might be some directory that could not be removed because it
- 	 * was waiting for this directory inode to be moved first. Therefore
-@@ -2930,6 +2931,7 @@ static int can_rmdir(struct send_ctx *sctx, u64 dir, u64 dir_gen,
- 	struct btrfs_key found_key;
- 	struct btrfs_key loc;
- 	struct btrfs_dir_item *di;
-+	u64 gen;
- 
- 	/*
- 	 * Don't try to rmdir the top/root subvolume dir.
-@@ -2969,8 +2971,13 @@ static int can_rmdir(struct send_ctx *sctx, u64 dir, u64 dir_gen,
- 				struct btrfs_dir_item);
- 		btrfs_dir_item_key_to_cpu(path->nodes[0], di, &loc);
- 
-+		ret = get_inode_info(root, loc.objectid, NULL, &gen, NULL,
-+				     NULL, NULL, NULL);
-+		if (ret < 0)
+@@ -3338,14 +3338,17 @@ finish:
+ 		/*
+ 		 * The parent inode might have been deleted in the send snapshot
+ 		 */
++		u64 gen;
+ 		ret = get_inode_info(sctx->send_root, cur->dir, NULL,
+-				     NULL, NULL, NULL, NULL, NULL);
+-		if (ret == -ENOENT) {
++				     &gen, NULL, NULL, NULL, NULL);
++
++		if (ret < 0 && ret != -ENOENT)
 +			goto out;
 +
- 		dm = get_waiting_dir_move(sctx, loc.objectid);
--		if (dm) {
-+		if (dm && dm->gen == gen) {
- 			struct orphan_dir_info *odi;
++		if (ret == -ENOENT || gen != cur->dir_gen) {
+ 			ret = 0;
+ 			continue;
+ 		}
+-		if (ret < 0)
+-			goto out;
  
- 			odi = add_orphan_dir_info(sctx, dir);
-@@ -3010,7 +3017,8 @@ static int is_waiting_for_move(struct send_ctx *sctx, u64 ino)
- 	return entry != NULL;
- }
- 
--static int add_waiting_dir_move(struct send_ctx *sctx, u64 ino, bool orphanized)
-+static int add_waiting_dir_move(struct send_ctx *sctx, u64 ino, u64 gen,
-+		     bool orphanized)
- {
- 	struct rb_node **p = &sctx->waiting_dir_moves.rb_node;
- 	struct rb_node *parent = NULL;
-@@ -3020,6 +3028,7 @@ static int add_waiting_dir_move(struct send_ctx *sctx, u64 ino, bool orphanized)
- 	if (!dm)
- 		return -ENOMEM;
- 	dm->ino = ino;
-+	dm->gen = gen;
- 	dm->rmdir_ino = 0;
- 	dm->orphanized = orphanized;
- 
-@@ -3117,7 +3126,7 @@ static int add_pending_dir_move(struct send_ctx *sctx,
- 			goto out;
- 	}
- 
--	ret = add_waiting_dir_move(sctx, pm->ino, is_orphan);
-+	ret = add_waiting_dir_move(sctx, pm->ino, pm->gen, is_orphan);
- 	if (ret)
- 		goto out;
- 
+ 		ret = send_utimes(sctx, cur->dir, cur->dir_gen);
+ 		if (ret < 0)
 -- 
 1.9.1
 

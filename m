@@ -1,168 +1,197 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:58749 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:20477 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1034414AbcJ1Cdc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Oct 2016 22:33:32 -0400
+        id S938630AbcJ1CeI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 27 Oct 2016 22:34:08 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: [PATCH 07/19] btrfs-progs: Allow __btrfs_map_block_v2 to remove unrelated stripes
-Date: Fri, 28 Oct 2016 10:31:43 +0800
-Message-Id: <20161028023155.27336-8-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 08/19] btrfs-progs: check/csum: Introduce function to read out one data csum
+Date: Fri, 28 Oct 2016 10:31:44 +0800
+Message-Id: <20161028023155.27336-9-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20161028023155.27336-1-quwenruo@cn.fujitsu.com>
 References: <20161028023155.27336-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For READ, caller normally hopes to get what they request, other than
-full stripe map.
+Introduce a new function, btrfs_read_one_data_csum(), to read just one
+data csum for check usage.
 
-In this case, we should remove unrelated stripe map, just like the
-following case:
-               32K               96K
-               |<-request range->|
-         0              64k           128K
-RAID0:   |    Data 1    |   Data 2    |
-              disk1         disk2
-Before this patch, we return the full stripe:
-Stripe 0: Logical 0, Physical X, Len 64K, Dev disk1
-Stripe 1: Logical 64k, Physical Y, Len 64K, Dev disk2
+Unlike original implement in cmds-check.c which checks csum by one
+CSUM_EXTENT, this just read out one csum(4 bytes).
+It is not fast but makes code easier to read.
 
-After this patch, we limit the stripe result to the request range:
-Stripe 0: Logical 32K, Physical X+32K, Len 32K, Dev disk1
-Stripe 1: Logical 64k, Physical Y, Len 32K, Dev disk2
-
-And if it's a RAID5/6 stripe, we just handle it like RAID0, ignoring
-parities.
-
-This should make caller easier to use.
+And will be used in later fsck scrub codes.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- volumes.c | 103 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 102 insertions(+), 1 deletion(-)
+ Makefile.in   |  6 ++--
+ check/check.h | 21 +++++++++++++
+ check/csum.c  | 96 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 121 insertions(+), 2 deletions(-)
+ create mode 100644 check/check.h
+ create mode 100644 check/csum.c
 
-diff --git a/volumes.c b/volumes.c
-index 00c7ccd..d46e735 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -1683,6 +1683,107 @@ static int fill_full_map_block(struct map_lookup *map, u64 start, u64 length,
- 	return 0;
- }
- 
-+static void del_one_stripe(struct btrfs_map_block *map_block, int i)
+diff --git a/Makefile.in b/Makefile.in
+index a25cda9..c89f13d 100644
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -63,6 +63,7 @@ CFLAGS = @CFLAGS@ \
+ 	 -fPIC \
+ 	 -I$(TOPDIR) \
+ 	 -I$(TOPDIR)/kernel-lib \
++	 -I$(TOPDIR)/check \
+ 	 $(EXTRAWARN_CFLAGS) \
+ 	 $(DEBUG_CFLAGS_INTERNAL) \
+ 	 $(EXTRA_CFLAGS)
+@@ -93,7 +94,8 @@ objects = ctree.o disk-io.o kernel-lib/radix-tree.o extent-tree.o print-tree.o \
+ 	  extent-cache.o extent_io.o volumes.o utils.o repair.o \
+ 	  qgroup.o raid56.o free-space-cache.o kernel-lib/list_sort.o props.o \
+ 	  ulist.o qgroup-verify.o backref.o string-table.o task-utils.o \
+-	  inode.o file.o find-root.o free-space-tree.o help.o tables.o
++	  inode.o file.o find-root.o free-space-tree.o help.o tables.o \
++	  check/csum.o
+ cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
+ 	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
+ 	       cmds-quota.o cmds-qgroup.o cmds-replace.o cmds-check.o \
+@@ -439,7 +441,7 @@ clean-all: clean clean-doc clean-gen
+ clean: $(CLEANDIRS)
+ 	@echo "Cleaning"
+ 	$(Q)$(RM) -f -- $(progs) cscope.out *.o *.o.d mktables tables.c \
+-		kernel-lib/*.o kernel-lib/*.o.d \
++		kernel-lib/*.o kernel-lib/*.o.d check/*.o check/*.o.d \
+ 	      dir-test ioctl-test quick-test send-test library-test library-test-static \
+ 	      btrfs.static mkfs.btrfs.static \
+ 	      $(check_defs) \
+diff --git a/check/check.h b/check/check.h
+new file mode 100644
+index 0000000..61d1cac
+--- /dev/null
++++ b/check/check.h
+@@ -0,0 +1,21 @@
++/*
++ * Copyright (C) 2016 Fujitsu.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
++
++/* check/csum.c */
++int btrfs_read_one_data_csum(struct btrfs_fs_info *fs_info, u64 bytenr,
++			     void *csum_ret);
+diff --git a/check/csum.c b/check/csum.c
+new file mode 100644
+index 0000000..53195ea
+--- /dev/null
++++ b/check/csum.c
+@@ -0,0 +1,96 @@
++/*
++ * Copyright (C) 2016 Fujitsu.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
++
++#include "ctree.h"
++#include "utils.h"
++/*
++ * TODO:
++ * 1) Add write support for csum
++ *    So we can write new data extents and add csum into csum tree
++ * 2) Add csum range search function
++ *    So we don't need to search csum tree in a per-sectorsize loop.
++ */
++
++int btrfs_read_one_data_csum(struct btrfs_fs_info *fs_info, u64 bytenr,
++			     void *csum_ret)
 +{
-+	int cur_nr = map_block->num_stripes;
-+	int size_left = (cur_nr - 1 - i) * sizeof(struct btrfs_map_stripe);
++	struct btrfs_path *path;
++	struct btrfs_key key;
++	struct btrfs_root *csum_root = fs_info->csum_root;
++	u32 item_offset;
++	u32 item_size;
++	u32 final_offset;
++	u32 sectorsize = fs_info->tree_root->sectorsize;
++	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
++	int ret;
 +
-+	memmove(&map_block->stripes[i], &map_block->stripes[i + 1], size_left);
-+	map_block->num_stripes--;
-+}
++	if (!csum_ret) {
++		error("wrong parameter for %s", __func__);
++		return -EINVAL;
++	}
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
 +
-+static void remove_unrelated_stripes(struct map_lookup *map,
-+				     int rw, u64 start, u64 length,
-+				     struct btrfs_map_block *map_block)
-+{
-+	int i = 0;
-+	/*
-+	 * RAID5/6 write must use full stripe.
-+	 * No need to do anything.
-+	 */
-+	if (map->type & (BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6) &&
-+	    rw == WRITE)
-+		return;
++	key.objectid = BTRFS_EXTENT_CSUM_OBJECTID;
++	key.type = BTRFS_EXTENT_CSUM_KEY;
++	key.offset = bytenr;
 +
-+	/*
-+	 * For RAID0/1/10/DUP, whatever read/write, we can remove unrelated
-+	 * stripes without causing anything wrong.
-+	 * RAID5/6 READ is just like RAID0, we don't care parity unless we need
-+	 * to recovery.
-+	 * For recovery, rw should be set to WRITE.
-+	 */
-+	while (i < map_block->num_stripes) {
-+		struct btrfs_map_stripe *stripe;
-+		u64 orig_logical; /* Original stripe logical start */
-+		u64 orig_end; /* Original stripe logical end */
-+
-+		stripe = &map_block->stripes[i];
-+
-+		/*
-+		 * For READ, we don't really care parity
-+		 */
-+		if (stripe->logical == BTRFS_RAID5_P_STRIPE ||
-+		    stripe->logical == BTRFS_RAID6_Q_STRIPE) {
-+			del_one_stripe(map_block, i);
-+			continue;
++	ret = btrfs_search_slot(NULL, csum_root, &key, path, 0, 0);
++	if (ret < 0)
++		goto out;
++	if (ret == 0) {
++		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
++		if (!IS_ALIGNED(key.offset, sectorsize)) {
++			error("csum item bytenr %llu is not aligned to %u",
++			      key.offset, sectorsize);
++			ret = -EIO;
++			goto out;
 +		}
-+		/* Completely unrelated stripe */
-+		if (stripe->logical >= start + length ||
-+		    stripe->logical + stripe->length <= start) {
-+			del_one_stripe(map_block, i);
-+			continue;
-+		}
-+		/* Covered stripe, modify its logical and physical */
-+		orig_logical = stripe->logical;
-+		orig_end = stripe->logical + stripe->length;
-+		if (start + length <= orig_end) {
-+			/*
-+			 * |<--range-->|
-+			 *   |  stripe   |
-+			 * Or
-+			 *     |<range>|
-+			 *   |  stripe   |
-+			 */
-+			stripe->logical = max(orig_logical, start);
-+			stripe->length = start + length;
-+			stripe->physical += stripe->logical - orig_logical;
-+		} else if (start >= orig_logical) {
-+			/*
-+			 *     |<-range--->|
-+			 * |  stripe     |
-+			 * Or
-+			 *     |<range>|
-+			 * |  stripe     |
-+			 */
-+			stripe->logical = start;
-+			stripe->length = min(orig_end, start + length);
-+			stripe->physical += stripe->logical - orig_logical;
-+		}
-+		/*
-+		 * Remaining case:
-+		 * |<----range----->|
-+		 *   | stripe |
-+		 * No need to do any modification
-+		 */
-+		i++;
++		u32 offset = btrfs_item_ptr_offset(path->nodes[0],
++						      path->slots[0]);
++
++		read_extent_buffer(path->nodes[0], csum_ret, offset, csum_size);
++		goto out;
++	}
++	ret = btrfs_previous_item(csum_root, path, BTRFS_EXTENT_CSUM_OBJECTID,
++				  BTRFS_EXTENT_CSUM_KEY);
++	if (ret)
++		goto out;
++	btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
++	if (!IS_ALIGNED(key.offset, sectorsize)) {
++		error("csum item bytenr %llu is not aligned to %u",
++		      key.offset, sectorsize);
++		ret = -EIO;
++		goto out;
++	}
++	item_offset = btrfs_item_ptr_offset(path->nodes[0], path->slots[0]);
++	item_size = btrfs_item_size_nr(path->nodes[0], path->slots[0]);
++	if (key.offset + item_size / csum_size * sectorsize <= bytenr) {
++		ret = 1;
++		goto out;
 +	}
 +
-+	/* Recaculate map_block size */
-+	map_block->start = 0;
-+	map_block->length = 0;
-+	for (i = 0; i < map_block->num_stripes; i++) {
-+		struct btrfs_map_stripe *stripe;
-+
-+		stripe = &map_block->stripes[i];
-+		if (stripe->logical > map_block->start)
-+			map_block->start = stripe->logical;
-+		if (stripe->logical + stripe->length >
-+		    map_block->start + map_block->length)
-+			map_block->length = stripe->logical + stripe->length -
-+					    map_block->start;
-+	}
-+}
-+
- int __btrfs_map_block_v2(struct btrfs_fs_info *fs_info, int rw, u64 logical,
- 			 u64 length, struct btrfs_map_block **map_ret)
- {
-@@ -1718,7 +1819,7 @@ int __btrfs_map_block_v2(struct btrfs_fs_info *fs_info, int rw, u64 logical,
- 		free(map_block);
- 		return ret;
- 	}
--	/* TODO: Remove unrelated map_stripes for READ operation */
-+	remove_unrelated_stripes(map, rw, logical, length, map_block);
- 
- 	*map_ret = map_block;
- 	return 0;
++	final_offset = (bytenr - key.offset) / sectorsize * csum_size +
++		       item_offset;
++	read_extent_buffer(path->nodes[0], csum_ret, final_offset, csum_size);
++	ret = 0;
++out:
++	btrfs_free_path(path);
++	return ret;
++};
 -- 
 2.10.1
 

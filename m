@@ -1,61 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:48010 "EHLO mx2.suse.de"
+Received: from ns.bouton.name ([109.74.195.142]:46852 "EHLO mail.bouton.name"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932740AbcJ1PUJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 28 Oct 2016 11:20:09 -0400
-Date: Fri, 28 Oct 2016 17:20:05 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Divya Indi <divya.indi@oracle.com>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org,
-        ashish.samant@oracle.com, bo.li.liu@oracle.com
-Subject: Re: [PATCH 3/3] btrfs-progs: Add command to check if balance op is
- req
-Message-ID: <20161028152005.GJ12522@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1476750915-3105-1-git-send-email-divya.indi@oracle.com>
- <1476750915-3105-2-git-send-email-divya.indi@oracle.com>
- <1476750915-3105-3-git-send-email-divya.indi@oracle.com>
- <1476750915-3105-4-git-send-email-divya.indi@oracle.com>
- <c451366c-089c-5fe0-bfdb-ba3941f79d9d@cn.fujitsu.com>
- <84b80642-1c56-127c-ce1c-e38fd3bf0043@oracle.com>
+        id S932740AbcJ1P1k (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 28 Oct 2016 11:27:40 -0400
+Received: from [10.8.0.114] (vpn.jtek.fr [188.40.135.225])
+        by mail.bouton.name (Postfix) with ESMTP id D20E2B943
+        for <linux-btrfs@vger.kernel.org>; Fri, 28 Oct 2016 17:27:34 +0200 (CEST)
+Subject: Re: Compression and device replace on raid10 kernel panic on 4.4.6
+ and 4.6.x
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <b1fd641c-7047-e83c-83ff-582c6abfb815@bouton.name>
+ <e7707a30-e715-8a6f-c3ad-0e9171951f34@bouton.name>
+ <eef3fc06-8283-33dd-cd81-f63921212105@bouton.name>
+ <1114032c-07f4-4a32-780d-be38a32b83b7@bouton.name>
+From: Lionel Bouton <lionel-subscription@bouton.name>
+Message-ID: <26bf41dd-7168-b1c5-41b7-4f80ce297bb5@bouton.name>
+Date: Fri, 28 Oct 2016 17:27:34 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <84b80642-1c56-127c-ce1c-e38fd3bf0043@oracle.com>
+In-Reply-To: <1114032c-07f4-4a32-780d-be38a32b83b7@bouton.name>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 19, 2016 at 10:08:23AM -0700, Divya Indi wrote:
-> On 10/17/2016 06:42 PM, Qu Wenruo wrote:
-> > At 10/18/2016 08:35 AM, Divya Indi wrote:
-> >> Add new subcommand to btrfs inspect-internal
-> >>
-> >> btrfs inspect-internal balance_check <path>
-> >> Checks whether 'btrfs balance' can help creating more space (Only
-> >> considers data block groups).
-> >
-> > I didn't think it's good to add a new subcommand just for that.
-> >
-> > Why not output such relocation sugguestion for you previous bg-analyze 
-> > subcommand?
-> > (It's better to make it a parameter to trigger such output)
-> Or maybe as an option to btrfs balance start?
-> Eg: btrfs balance start --check-only <path>
+Hi,
 
-I tend to agree with this approach. The usecase, with some random sample
-balance options:
+as I don't have much time to handle a long backup recovery, I didn't try
+the delete/add combination to avoid any risk.
+What I tried though, was fatal_errors=bug. As I don't have any console I
+thought it might at least help log the problem instead of the usual
+kernel panic.
 
- $ btrfs balance start --analyze -dusage=10 -musage=5 /path
+No luck : the problem still made the kernel panic. Unless someone comes
+up with a somewhat safe way to recover from this situation I'll let the
+filesystem as is (we are building a new platform where redundancy will
+be handled by Ceph anyway).
 
-returns if the command would be able to make any progress according to
-the given filters and then
+Lionel
 
- $ btrfs balance start -dusage=10 -musage=5 /path
+Le 27/10/2016 à 18:07, Lionel Bouton a écrit :
+> Hi,
+>
+> Le 27/10/2016 à 02:50, Lionel Bouton a écrit :
+>> [...]
+>> I'll stop for tonight and see what happens during the day. I'd like to
+>> try a device add / delete next but I'm worried I could end up with a
+>> completely unusable filesystem if the device delete hits the same
+>> problem than replace.
+>> If the replace resuming on mount crashes the system I can cancel it but
+>> there's no way to do so with a device delete. Or is by any chance the
+>> skip_balance mount option a way to cancel a delete ?
+> Can anyone just confirm (or infirm) that skip_balance will indeed
+> effectively cancel a device delete before I try something that could
+> force me to resort to backups ?
+> Lionel
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-would actually do that. This is inherently racy, as the analysis will
-happen in userspace and the filesystem block group layout could change
-in the meantime.
-
-This also implies that the filters are implemented in the userspace,
-duplicating the kernel code. This is not neccesarily bad, as this would
-work even on older kernels (with new progs), compared to a new analysis
-mode of balance implemented in kernel.

@@ -1,84 +1,320 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:48358 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S965908AbcJ1Ccn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Oct 2016 22:32:43 -0400
+        id S1034423AbcJ1Cdd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 27 Oct 2016 22:33:33 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: [PATCH 16/19] btrfs-progs: check/scrub: Introduce function to recover data parity
-Date: Fri, 28 Oct 2016 10:31:52 +0800
-Message-Id: <20161028023155.27336-17-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 17/19] btrfs-progs: check/scrub: Introduce a function to scrub one full stripe
+Date: Fri, 28 Oct 2016 10:31:53 +0800
+Message-Id: <20161028023155.27336-18-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20161028023155.27336-1-quwenruo@cn.fujitsu.com>
 References: <20161028023155.27336-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce function, recover_from_parities(), to recover data stripes.
+Introduce a new function, scrub_one_full_stripe(), to check a full
+stripe.
 
-However this function only support RAID5 yet, but should be good enough
-for the scrub framework.
+It handles the full stripe scrub in the following steps:
+0) Check if we need to check full stripe
+   If full stripe contains no extent, why waste our CPU and IO?
+
+1) Read out full stripe
+   Then we know how many devices are missing or have read error.
+   If out of repair, then exit
+
+   If have missing device or have read error, try recover here.
+
+2) Check data stripe against csum
+   We add data stripe with csum error as corrupted stripe, just like
+   dev missing or read error.
+   Then recheck if csum mismatch is still below tolerance.
+
+Finally we check the full stripe using 2 factors only:
+A) If the full stripe go through recover ever
+B) If the full stripe has csum error
+
+Combine factor A and B we get:
+1) A && B: Recovered, csum mismatch
+   Screwed up totally
+2) A && !B: Recovered, csum match
+   Recoverable, data corrupted but P/Q is good to recover
+3) !A && B: Not recovered, csum mismatch
+   Try to recover corrupted data stripes
+   If recovered csum match, then recoverable
+   Else, screwed up
+4) !A && !B: Not recovered, no csum mismatch
+   Best case, just check if P/Q matches.
+   If P/Q matches, everything is good
+   Else, just P/Q is screwed up, still recoverable.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- check/scrub.c | 49 +++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 49 insertions(+)
+ check/scrub.c | 254 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 254 insertions(+)
 
 diff --git a/check/scrub.c b/check/scrub.c
-index 7aeda88..7a8b783 100644
+index 7a8b783..24c0800 100644
 --- a/check/scrub.c
 +++ b/check/scrub.c
-@@ -495,3 +495,52 @@ out:
+@@ -544,3 +544,257 @@ static int recover_from_parities(struct btrfs_fs_info *fs_info,
  	free(ptrs);
  	return ret;
  }
 +
 +/*
-+ * Return >0 if out of repair
-+ * Return 0 for successful repair or no need to repair at all
-+ * Return <0 for fatal error
++ * Return 0 if we still have chance to recover
++ * Return <0 if we have no more chance
 + */
-+static int recover_from_parities(struct btrfs_fs_info *fs_info,
-+				  struct btrfs_scrub_progress *scrub_ctx,
-+				  struct scrub_full_stripe *fstripe)
++static int report_recoverablity(struct scrub_full_stripe *fstripe)
 +{
-+	void **ptrs;
-+	int nr_stripes = fstripe->nr_stripes;
-+	int stripe_len = BTRFS_STRIPE_LEN;
 +	int max_tolerance;
-+	int i;
-+	int ret;
-+
-+	/* No need to recover */
-+	if (!fstripe->nr_corrupted_stripes)
-+		return 0;
-+
-+	/* Already recovered once, no more chance */
-+	if (fstripe->recovered)
-+		return 1;
++	u64 start = fstripe->logical_start;
 +
 +	if (fstripe->bg_type & BTRFS_BLOCK_GROUP_RAID5)
 +		max_tolerance = 1;
 +	else
 +		max_tolerance = 2;
 +
-+	/* Out of repair */
-+	if (fstripe->nr_corrupted_stripes > max_tolerance)
-+		return 1;
++	if (fstripe->nr_corrupted_stripes > max_tolerance) {
++		error(
++	"full stripe %llu CORRUPTED: too many read error or corrupted devices",
++			start);
++		error(
++	"full stripe %llu: tolerance: %d, missing: %d, read error: %d, csum error: %d",
++			start, max_tolerance, fstripe->err_read_stripes,
++			fstripe->err_missing_devs, fstripe->err_csum_dstripes);
++		return -EIO;
++	}
++	return 0;
++}
 +
-+	ptrs = malloc(sizeof(void *) * fstripe->nr_stripes);
-+	if (!ptrs)
++static void clear_corrupted_stripe_record(struct scrub_full_stripe *fstripe)
++{
++	fstripe->corrupted_index[0] = -1;
++	fstripe->corrupted_index[1] = -1;
++	fstripe->nr_corrupted_stripes = 0;
++}
++
++static void record_corrupted_stripe(struct scrub_full_stripe *fstripe,
++				    int index)
++{
++	int i = 0;
++
++	for (i = 0; i < 2; i++) {
++		if (fstripe->corrupted_index[i] == -1) {
++			fstripe->corrupted_index[i] = index;
++			break;
++		}
++	}
++	fstripe->nr_corrupted_stripes++;
++}
++
++static int scrub_one_full_stripe(struct btrfs_fs_info *fs_info,
++				 struct btrfs_scrub_progress *scrub_ctx,
++				 u64 start, u64 *next_ret)
++{
++	struct scrub_full_stripe *fstripe;
++	struct btrfs_map_block *map_block = NULL;
++	u32 stripe_len = BTRFS_STRIPE_LEN;
++	u64 bg_type;
++	u64 len;
++	int i;
++	int ret;
++
++	if (!next_ret) {
++		error("invalid argument for %s", __func__);
++		return -EINVAL;
++	}
++
++	ret = __btrfs_map_block_v2(fs_info, WRITE, start, stripe_len,
++				   &map_block);
++	if (ret < 0) {
++		/* Let caller to skip the whole block group */
++		*next_ret = (u64)-1;
++		return ret;
++	}
++	start = map_block->start;
++	len = map_block->length;
++	*next_ret = start + len;
++
++	/*
++	 * Step 0: Check if we need to scrub the full stripe
++	 *
++	 * If no extent lies in the full stripe, not need to check
++	 */
++	ret = btrfs_check_extent_exists(fs_info, start, len);
++	if (ret < 0) {
++		free(map_block);
++		return ret;
++	}
++	/* No extents in range, no need to check */
++	if (ret == 0) {
++		free(map_block);
++		return 0;
++	}
++
++	bg_type = map_block->type & BTRFS_BLOCK_GROUP_PROFILE_MASK;
++	if (bg_type != BTRFS_BLOCK_GROUP_RAID5 && 
++	    bg_type != BTRFS_BLOCK_GROUP_RAID6) {
++		free(map_block);
++		return -EINVAL;
++	}
++
++	fstripe = alloc_full_stripe(map_block->num_stripes,
++				    map_block->stripe_len);
++	if (!fstripe)
 +		return -ENOMEM;
 +
-+	/* Construct ptrs */
-+	for (i = 0; i < nr_stripes; i++)
-+		ptrs[i] = fstripe->stripes[i].data;
++	fstripe->logical_start = map_block->start;
++	fstripe->nr_stripes = map_block->num_stripes;
++	fstripe->stripe_len = stripe_len;
++	fstripe->bg_type = bg_type;
 +
-+	ret = raid56_recov(nr_stripes, stripe_len, fstripe->bg_type,
-+			fstripe->corrupted_index[0],
-+			fstripe->corrupted_index[1], ptrs);
-+	fstripe->recovered = 1;
-+	free(ptrs);
++	/*
++	 * Step 1: Read out the whole full stripe
++	 *
++	 * Then we have the chance to exit early if too many devices are
++	 * missing.
++	 */
++	for (i = 0; i < map_block->num_stripes; i++) {
++		struct scrub_stripe *s_stripe = &fstripe->stripes[i];
++		struct btrfs_map_stripe *m_stripe = &map_block->stripes[i];
++
++		s_stripe->logical = m_stripe->logical;
++
++		if (m_stripe->dev->fd == -1) {
++			s_stripe->dev_missing = 1;
++			record_corrupted_stripe(fstripe, i);
++			fstripe->err_missing_devs++;
++			continue;
++		}
++
++		ret = pread(m_stripe->dev->fd, s_stripe->data, stripe_len,
++			    m_stripe->physical);
++		if (ret < stripe_len) {
++			record_corrupted_stripe(fstripe, i);
++			fstripe->err_read_stripes++;
++			continue;
++		}
++	}
++
++	ret = report_recoverablity(fstripe);
++	if (ret < 0)
++		goto out;
++
++	ret = recover_from_parities(fs_info, scrub_ctx, fstripe);
++	if (ret < 0) {
++		error("full stripe %llu CORRUPTED: failed to recover: %s\n",
++		      fstripe->logical_start, strerror(-ret));
++		goto out;
++	}
++
++	/*
++	 * Clear corrupted stripes report, since they are recovered,
++	 * and later checker need to record csum mismatch stripes reusing
++	 * these members
++	 */
++	clear_corrupted_stripe_record(fstripe);
++
++	/*
++	 * Step 2: Check each data stripes against csum
++	 */
++	for (i = 0; i < map_block->num_stripes; i++) {
++		struct scrub_stripe *stripe = &fstripe->stripes[i];
++
++		if (!is_data_stripe(stripe))
++			continue;
++		ret = scrub_one_data_stripe(fs_info, scrub_ctx, stripe,
++					    stripe_len);
++		if (ret < 0) {
++			fstripe->err_csum_dstripes++;
++			record_corrupted_stripe(fstripe, i);
++		}
++	}
++
++	ret = report_recoverablity(fstripe);
++	if (ret < 0)
++		goto out;
++
++	/*
++	 * Recovered before, but no csum error
++	 */
++	if (fstripe->err_csum_dstripes == 0 && fstripe->recovered) {
++		error(
++		"full stripe %llu RECOVERABLE: P/Q is good for recovery",
++			start);
++		ret = 0;
++		goto out;
++	}
++	/*
++	 * No csum error, not recovered before.
++	 *
++	 * Only need to check if P/Q matches.
++	 */
++	if (fstripe->err_csum_dstripes == 0 && !fstripe->recovered) {
++		ret = verify_parities(fs_info, scrub_ctx, fstripe);
++		if (ret < 0)
++			error(
++		"full stripe %llu CORRUPTED: failed to check P/Q: %s",
++				start, strerror(-ret));
++		if (ret > 0) {
++			error(
++		"full stripe %llu RECOVERABLE: only P/Q is corrupted",
++				start);
++			ret = 0;
++		}
++		goto out;
++	}
++
++	/*
++	 * Still csum error after recovery
++	 *
++	 * No mean to fix further, screwed up already.
++	 */
++	if (fstripe->err_csum_dstripes && fstripe->recovered) {
++		error(
++	"full stripe %llu CORRUPTED: csum still mismatch after recovery",
++			start);
++		ret = -EIO;
++		goto out;
++	}
++	
++	/* Csum mismatch, but we still has chance to recover. */
++	ret = recover_from_parities(fs_info, scrub_ctx, fstripe);
++	if (ret < 0) {
++		error(
++	"full stripe %llu CORRUPTED: failed to recover: %s\n",
++			fstripe->logical_start, strerror(-ret));
++		goto out;
++	}
++
++	/* After recovery, recheck data stripe csum */
++	for (i = 0; i < 2; i++) {
++		int index = fstripe->corrupted_index[i];
++		struct scrub_stripe *stripe;
++
++		if (i == -1)
++			continue;
++		stripe = &fstripe->stripes[index];
++		ret = scrub_one_data_stripe(fs_info, scrub_ctx, stripe,
++					    stripe_len);
++		if (ret < 0) {
++			error(
++	"full stripe %llu CORRUPTED: csum still mismatch after recovery",
++				start);
++			goto out;
++		}
++	}
++	error(
++	"full stripe %llu RECOVERABLE: Data stripes corrupted, but P/Q is good",
++		start);
++
++out:
++	free_full_stripe(fstripe);
++	free(map_block);
 +	return ret;
 +}
 -- 

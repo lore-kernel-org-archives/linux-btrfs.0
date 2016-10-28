@@ -1,103 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:48358 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S965899AbcJ1CcR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Oct 2016 22:32:17 -0400
+        id S965908AbcJ1Ccr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 27 Oct 2016 22:32:47 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: [PATCH 11/19] btrfs-progs: check/scrub: Introduce function to scrub mirror based data blocks
-Date: Fri, 28 Oct 2016 10:31:47 +0800
-Message-Id: <20161028023155.27336-12-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 12/19] btrfs-progs: check/scrub: Introduce function to scrub one extent
+Date: Fri, 28 Oct 2016 10:31:48 +0800
+Message-Id: <20161028023155.27336-13-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20161028023155.27336-1-quwenruo@cn.fujitsu.com>
 References: <20161028023155.27336-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce a new function, scrub_data_mirror(), to check mirror based
-data blocks.
+Introduce a new function, scrub_one_extent(), as a wrapper to check one
+extent.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- check/scrub.c | 69 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 69 insertions(+)
+ check/scrub.c | 76 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 76 insertions(+)
 
 diff --git a/check/scrub.c b/check/scrub.c
-index ef94193..b4bb081 100644
+index b4bb081..ab78a0d 100644
 --- a/check/scrub.c
 +++ b/check/scrub.c
-@@ -167,3 +167,72 @@ out:
+@@ -236,3 +236,79 @@ out:
+ 		return -EIO;
  	return ret;
  }
- 
-+static int scrub_data_mirror(struct btrfs_fs_info *fs_info,
-+			     struct btrfs_scrub_progress *scrub_ctx,
-+			     char *data, u64 start, u64 len, int mirror)
++
++/*
++ * Check all copies of range @start, @len.
++ * Caller must ensure the range is covered by th EXTENT_ITEM/METADATA_ITEM
++ * specified by path.
++ * If @report is set, it will report if the range is recoverable or totally
++ * corrupted if it has corrupted mirror.
++ *
++ * Return 0 if the range is all OK or recoverable.
++ * Return <0 if the range can't be recoverable.
++ */
++static int scrub_one_extent(struct btrfs_fs_info *fs_info,
++			    struct btrfs_scrub_progress *scrub_ctx,
++			    struct btrfs_path *path, u64 start, u64 len,
++			    int report)
 +{
-+	u64 cur = 0;
-+	u32 csum;
-+	u32 sectorsize = fs_info->tree_root->sectorsize;
-+	char *buf = NULL;
-+	int ret = 0;
-+	int err = 0;
++	struct btrfs_key key;
++	struct btrfs_extent_item *ei;
++	struct extent_buffer *leaf = path->nodes[0];
++	int slot = path->slots[0];
++	int num_copies;
++	int corrupted = 0;
++	u64 extent_start;
++	u64 extent_len;
++	int metadata = 0;
++	int i;
++	int ret;
 +
-+	if (!data) {
-+		buf = malloc(len);
-+		if (!buf)
-+			return -ENOMEM;
-+		/* Read out as much data as possible to speed up read */
-+		while (cur < len) {
-+			u64 read_len = len - cur;
++	btrfs_item_key_to_cpu(leaf, &key, slot);
++	if (key.type != BTRFS_METADATA_ITEM_KEY &&
++	    key.type != BTRFS_EXTENT_ITEM_KEY)
++		goto invalid_arg;
 +
-+			ret = read_extent_data(fs_info->tree_root, buf + cur,
-+					start + cur, &read_len, mirror);
-+			if (ret < 0) {
-+				error("failed to read out data at logical bytenr %llu mirror %d",
-+				      start + cur, mirror);
-+				scrub_ctx->read_errors++;
-+				goto out;
-+			}
-+			scrub_ctx->data_bytes_scrubbed += read_len;
-+			cur += read_len;
-+		}
++	extent_start = key.objectid;
++	if (key.type == BTRFS_METADATA_ITEM_KEY) {
++		extent_len = fs_info->tree_root->nodesize;
++		metadata = 1;
 +	} else {
-+		buf = data;
++		extent_len = key.offset;
++		ei = btrfs_item_ptr(leaf, slot, struct btrfs_extent_item);
++		if (btrfs_extent_flags(leaf, ei) & BTRFS_EXTENT_FLAG_TREE_BLOCK)
++			metadata = 1;
++	}
++	if (start >= extent_start + extent_len ||
++	    start + len <= extent_start)
++		goto invalid_arg;
++	num_copies = btrfs_num_copies(&fs_info->mapping_tree, start, len);
++	for (i = 1; i <= num_copies; i++) {
++		if (metadata) {
++			ret = scrub_tree_mirror(fs_info, scrub_ctx,
++					NULL, extent_start, i);
++			scrub_ctx->tree_extents_scrubbed++;
++		} else {
++			ret = scrub_data_mirror(fs_info, scrub_ctx, NULL,
++						start, len, i);
++			scrub_ctx->data_extents_scrubbed++;
++		}
++		if (ret < 0)
++			corrupted++;
 +	}
 +
-+	/* Check csum per-sectorsize */
-+	cur = 0;
-+	while (cur < len) {
-+		u32 data_csum = ~(u32)0;
-+
-+		ret = btrfs_read_one_data_csum(fs_info, start + cur, &csum);
-+		if (ret > 0) {
-+			scrub_ctx->csum_discards++;
-+			ret = 0;
-+
-+			/* In case only some csum are missing */
-+			goto next;
-+		}
-+		data_csum = btrfs_csum_data(NULL, buf + cur, data_csum,
-+					    sectorsize);
-+		btrfs_csum_final(data_csum, (u8 *)&data_csum);
-+		if (data_csum != csum) {
-+			error("data at bytenr %llu mirror %d csum mismatch, have %u expect %u",
-+			      start + cur, mirror, data_csum, csum);
-+			err = 1;
-+			scrub_ctx->csum_errors++;
-+			cur += sectorsize;
-+			continue;
-+		}
-+		scrub_ctx->data_bytes_scrubbed += sectorsize;
-+next:
-+		cur += sectorsize;
++	if (report) {
++		if (corrupted && corrupted < num_copies)
++			printf("bytenr %llu len %llu has corrupted mirror, but is recoverable\n",
++				start, len);
++		else if (corrupted >= num_copies)
++			error("bytenr %llu len %llu has corrupted mirror, can't be recovered",
++				start, len);
 +	}
-+out:
-+	if (!data)
-+		free(buf);
-+	if (!ret && err)
-+		return -EIO;
-+	return ret;
++	if (corrupted < num_copies)
++		return 0;
++	return -EIO;
++invalid_arg:
++	error("invalid parameter for %s", __func__);
++	return -EINVAL;
 +}
 -- 
 2.10.1

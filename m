@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from synology.com ([59.124.61.242]:36935 "EHLO synology.com"
+Received: from synology.com ([59.124.61.242]:37743 "EHLO synology.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S964918AbcJ1Bl1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Oct 2016 21:41:27 -0400
+        id S964894AbcJ1Blj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 27 Oct 2016 21:41:39 -0400
 From: robbieko <robbieko@synology.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Robbie Ko <robbieko@synology.com>
-Subject: [PATCH v2 1/6] Btrfs: incremental send, do not skip generation inconsistency check for inode 256.
-Date: Fri, 28 Oct 2016 09:40:45 +0800
-Message-Id: <1477618850-12922-2-git-send-email-robbieko@synology.com>
+Subject: [PATCH v2 4/6] Btrfs: incremental send, skip check overwritten if parents' generation are different
+Date: Fri, 28 Oct 2016 09:40:48 +0800
+Message-Id: <1477618850-12922-5-git-send-email-robbieko@synology.com>
 In-Reply-To: <1477618850-12922-1-git-send-email-robbieko@synology.com>
 References: <1477618850-12922-1-git-send-email-robbieko@synology.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -18,67 +18,72 @@ From: Robbie Ko <robbieko@synology.com>
 
 Example scenario:
 Parent snapshot:
-|.                (ino 256, gen 5)
-|---- a1/         (ino 257, gen 5)
-|---- a2/         (ino 258, gen 5)
+|---- d259_old/         (ino 259, gen 96)
+    |---- d1/           (ino 258, gen 96)
+|---- f                 (ino 257, gen 96)
 
 Send snapshot:
-|.                (ino 256, gen 7)
-|---- a2          (ino 257, gen 7)
+|---- d258/             (ino 258, gen 98)
+|---- d259/             (ino 259, gen 98)
+    |---- d1/           (ino 257, gen 98)
 
-rmdir a1
-mkfile o257-7-0
-rename o257-7-0 -> a2
-ERROR: rename o257-7-0 -> a2 failed: Is a directory
+unlink f
+mkdir o257-98-0
+mkdir o259-98-0
+chown o257-98-0 - uid=0, gid=0
+chmod o257-98-0 - mode=0755
+rmdir o258-96-0
+ERROR: rmdir o258-96-0 failed: No such file or directory
 
 While computing the send stream the following steps happen:
 
-1) delete a1;
+1) While processing inode 257 we create o257-98-0 and o259-98-0,
+   then delay o257-98-0 rename operation because its new parent
+   in the send snapshot, inode 259, was not yet processed and therefore
+   not yet renamed;
 
-2) mkfile o257-7-0;
+2) Later we want to delete d1 (ino 258, gen 96) while processing inode
+   258. In order to get its path for delete, we need to check if it is
+   overwritten in the send snapshot. And we find it is overwritten so
+   we delete it via unique name , which leads to error. The reason is
+   we will find out d1 is under parent directory (inode 259) in the send
+   snapshot, and for this case, because d1(inode 257, gen 98) is not same
+   as d1 (inode 258, gen 96), we conclude d1 has been overwritten.
 
-3) rename o257-7-0->a2;
-
-In step 3 we will check whether it will lead to overwrite.
-
-The generation number of inode 257's parent (ino 256) in send snapshot
-is 7, which is inconsistent with the one in parent snapshot (gen 5).
-For the general parent directory except inode 256, if its generation
-is not identical between parent and send snapshot, it will be removed
-then created. Thus it's not possible to happen overwrite under the new
-directory. However for the special inode 256, the above logic does not
-work since it is a subvolume. So overwrite check is required for the
-inode 256.
-Fix by skipping generation inconsistency check for inode 256.
+Fix this by adding generation check for the parent directory. Because
+both parent directory are not identical, we can just skip the overwrite
+check. In addition, inode 256 should not check for this since it is a
+subvolume.
 
 Signed-off-by: Robbie Ko <robbieko@synology.com>
 ---
- fs/btrfs/send.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+ fs/btrfs/send.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index a87675f..2060e75 100644
+index eaf1c92..139f492 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -1681,6 +1681,9 @@ static int is_inode_existent(struct send_ctx *sctx, u64 ino, u64 gen)
- {
- 	int ret;
- 
-+	if (ino == BTRFS_FIRST_FREE_OBJECTID)
-+		return 1;
-+
- 	ret = get_cur_inode_state(sctx, ino, gen);
- 	if (ret < 0)
+@@ -1938,6 +1938,19 @@ static int did_overwrite_ref(struct send_ctx *sctx,
+ 	if (ret <= 0)
  		goto out;
-@@ -1866,7 +1869,7 @@ static int will_overwrite_ref(struct send_ctx *sctx, u64 dir, u64 dir_gen,
- 	 * not deleted and then re-created, if it was then we have no overwrite
- 	 * and we can just unlink this entry.
- 	 */
--	if (sctx->parent_root) {
-+	if (sctx->parent_root && dir != BTRFS_FIRST_FREE_OBJECTID) {
- 		ret = get_inode_info(sctx->parent_root, dir, NULL, &gen, NULL,
- 				     NULL, NULL, NULL);
- 		if (ret < 0 && ret != -ENOENT)
+ 
++	if (dir != BTRFS_FIRST_FREE_OBJECTID) {
++		ret = get_inode_info(sctx->send_root, dir, NULL, &gen, NULL,
++				     NULL, NULL, NULL);
++		if (ret < 0 && ret != -ENOENT)
++			goto out;
++		if (ret) {
++			ret = 0;
++			goto out;
++		}
++		if (gen != dir_gen)
++			goto out;
++	}
++
+ 	/* check if the ref was overwritten by another ref */
+ 	ret = lookup_dir_item_inode(sctx->send_root, dir, name, name_len,
+ 			&ow_inode, &other_type);
 -- 
 1.9.1
 

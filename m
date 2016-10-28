@@ -1,106 +1,137 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:35648 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1752074AbcJ0SvI (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Oct 2016 14:51:08 -0400
-Received: from pps.filterd (m0001255.ppops.net [127.0.0.1])
-        by mx0b-00082601.pphosted.com (8.16.0.17/8.16.0.17) with SMTP id u9RIkXfw031944
-        for <linux-btrfs@vger.kernel.org>; Thu, 27 Oct 2016 11:51:07 -0700
-Received: from mail.thefacebook.com ([199.201.64.23])
-        by mx0b-00082601.pphosted.com with ESMTP id 26bcpmx9rs-1
-        (version=TLSv1 cipher=ECDHE-RSA-AES256-SHA bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Thu, 27 Oct 2016 11:51:07 -0700
-Received: from facebook.com (2401:db00:2040:5012:face:0:1:0)    by
- mx-out.facebook.com (10.223.100.99) with ESMTP id
- 510ea8989c7611e6900f24be05956610-52ffca50 for <linux-btrfs@vger.kernel.org>;
-        Thu, 27 Oct 2016 11:51:06 -0700
-From: Chris Mason <clm@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs: fix races on root_log_ctx lists
-Date: Thu, 27 Oct 2016 11:51:05 -0700
-Message-ID: <20161027185105.2016317-1-clm@fb.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from synology.com ([59.124.61.242]:36651 "EHLO synology.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S943100AbcJ1BlY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 27 Oct 2016 21:41:24 -0400
+From: robbieko <robbieko@synology.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Robbie Ko <robbieko@synology.com>
+Subject: [PATCH v2 3/6] Btrfs: incremental send, add generation for waiting_dir_move struct and check it in can_rmdir.
+Date: Fri, 28 Oct 2016 09:40:47 +0800
+Message-Id: <1477618850-12922-4-git-send-email-robbieko@synology.com>
+In-Reply-To: <1477618850-12922-1-git-send-email-robbieko@synology.com>
+References: <1477618850-12922-1-git-send-email-robbieko@synology.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_remove_all_log_ctxs takes a shortcut where it avoids walking the
-list because it knows all of the waiters are patiently waiting for the
-commit to finish.
+From: Robbie Ko <robbieko@synology.com>
 
-But, there's a small race where btrfs_sync_log can remove itself from
-the list if it finds a log commit is already done.  Also, it uses
-list_del_init() to remove itself from the list, but there's no way to
-know if btrfs_remove_all_log_ctxs has already run, so we don't know for
-sure if it is safe to call list_del_init().
+Example scenario:
+Parent snapshot:
+|---- dir258/ (ino 258, gen 27)
+    |---- dir257/ (ino 257, gen 27)
+|---- dir259/ (ino 259, gen 27)
 
-This gets rid of all the shortcuts for btrfs_remove_all_log_ctxs(), and
-just calls it with the proper locking.
+Send snapshot:
+|---- new_dir259/ (ino 259, gen 38)
+    |---- new_dir258/ (ino 258, gen 38)
+        |---- new_dir257/ (ino 257, gen 38)
 
-This is part two of the corruption fixed by cbd60aa7cd1.  I should have
-done this in the first place, but convinced myself the optimizations were
-safe.  A 12 hour run of dbench 2048 will eventually trigger a list debug
-WARN_ON for the list_del_init() in btrfs_sync_log().
+rmdir dir258/dir257
+mkdir o257-38-0
+mkdir o258-38-0
+chown o257-38-0 - uid=0, gid=0
+chmod o257-38-0 - mode=0755
+rename dir258 -> o258-27-0  -----> dir is empty, but waiting o257-38-0
+mkdir o259-38-0
+chown o258-38-0 - uid=0, gid=0
+chmod o258-38-0 - mode=0755
+rmdir dir259
+rename o259-38-0 -> new_dir259
+utimes
+chown new_dir259 - uid=0, gid=0
+chmod new_dir259 - mode=0755
+rename o258-38-0 -> new_dir259/new_dir258
+utimes new_dir259/new_dir258
+utimes new_dir259
+rename o257-38-0 -> new_dir259/new_dir258/new_dir257
+rmdir o258-27-0             -----> when o257-38-0 finish, delete
+utimes new_dir259/new_dir258/new_dir257
+utimes new_dir259/new_dir258
+utimes new_dir259
 
-Fixes: d1433debe7f4346cf9fc0dafc71c3137d2a97bc4
-Reported-by: Dave Jones <davej@codemonkey.org.uk>
-cc: stable@vger.kernel.org # 3.15+
-Signed-off-by: Chris Mason <clm@fb.com>
+While computing the send stream the following steps happen:
+
+1) While processing inode 257 we delete dir258/dir257 immediately.
+   After create o257-38-0, we then delay its rename operation
+   because its new parent in the send snapshot, inode 258,
+   was not yet processed and therefore not yet renamed.
+
+2) On processing inode 258, we need to check if all under files are done
+   before rmdir dir258. However, the waiting o257-38-0 (ino 257) will
+   mislead the check making it think dir257 (ino 257) is still there.
+   dir258 will be orphanized at first but in fact it has become empty.
+
+Fix this by adding generation to waiting_dir_move struct, so can_rmdir
+can use it to correct the result.
+
+Signed-off-by: Robbie Ko <robbieko@synology.com>
 ---
- fs/btrfs/tree-log.c | 20 ++++++--------------
- 1 file changed, 6 insertions(+), 14 deletions(-)
+ fs/btrfs/send.c | 15 ++++++++++++---
+ 1 file changed, 12 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 688df71..4b1c0a6 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -2713,14 +2713,12 @@ static inline void btrfs_remove_all_log_ctxs(struct btrfs_root *root,
- 					     int index, int error)
- {
- 	struct btrfs_log_ctx *ctx;
-+	struct btrfs_log_ctx *safe;
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 22eca86..eaf1c92 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -237,6 +237,7 @@ struct pending_dir_move {
+ struct waiting_dir_move {
+ 	struct rb_node node;
+ 	u64 ino;
++	u64 gen;
+ 	/*
+ 	 * There might be some directory that could not be removed because it
+ 	 * was waiting for this directory inode to be moved first. Therefore
+@@ -2930,6 +2931,7 @@ static int can_rmdir(struct send_ctx *sctx, u64 dir, u64 dir_gen,
+ 	struct btrfs_key found_key;
+ 	struct btrfs_key loc;
+ 	struct btrfs_dir_item *di;
++	u64 gen;
  
--	if (!error) {
--		INIT_LIST_HEAD(&root->log_ctxs[index]);
--		return;
--	}
--
--	list_for_each_entry(ctx, &root->log_ctxs[index], list)
-+	list_for_each_entry_safe(ctx, safe, &root->log_ctxs[index], list) {
-+		list_del_init(&ctx->list);
- 		ctx->log_ret = error;
-+	}
+ 	/*
+ 	 * Don't try to rmdir the top/root subvolume dir.
+@@ -2969,8 +2971,13 @@ static int can_rmdir(struct send_ctx *sctx, u64 dir, u64 dir_gen,
+ 				struct btrfs_dir_item);
+ 		btrfs_dir_item_key_to_cpu(path->nodes[0], di, &loc);
  
- 	INIT_LIST_HEAD(&root->log_ctxs[index]);
++		ret = get_inode_info(root, loc.objectid, NULL, &gen, NULL,
++				     NULL, NULL, NULL);
++		if (ret < 0)
++			goto out;
++
+ 		dm = get_waiting_dir_move(sctx, loc.objectid);
+-		if (dm) {
++		if (dm && dm->gen == gen) {
+ 			struct orphan_dir_info *odi;
+ 
+ 			odi = add_orphan_dir_info(sctx, dir);
+@@ -3010,7 +3017,8 @@ static int is_waiting_for_move(struct send_ctx *sctx, u64 ino)
+ 	return entry != NULL;
  }
-@@ -2961,13 +2959,9 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 	mutex_unlock(&root->log_mutex);
  
- out_wake_log_root:
--	/*
--	 * We needn't get log_mutex here because we are sure all
--	 * the other tasks are blocked.
--	 */
-+	mutex_lock(&log_root_tree->log_mutex);
- 	btrfs_remove_all_log_ctxs(log_root_tree, index2, ret);
+-static int add_waiting_dir_move(struct send_ctx *sctx, u64 ino, bool orphanized)
++static int add_waiting_dir_move(struct send_ctx *sctx, u64 ino, u64 gen,
++		     bool orphanized)
+ {
+ 	struct rb_node **p = &sctx->waiting_dir_moves.rb_node;
+ 	struct rb_node *parent = NULL;
+@@ -3020,6 +3028,7 @@ static int add_waiting_dir_move(struct send_ctx *sctx, u64 ino, bool orphanized)
+ 	if (!dm)
+ 		return -ENOMEM;
+ 	dm->ino = ino;
++	dm->gen = gen;
+ 	dm->rmdir_ino = 0;
+ 	dm->orphanized = orphanized;
  
--	mutex_lock(&log_root_tree->log_mutex);
- 	log_root_tree->log_transid_committed++;
- 	atomic_set(&log_root_tree->log_commit[index2], 0);
- 	mutex_unlock(&log_root_tree->log_mutex);
-@@ -2978,10 +2972,8 @@ out_wake_log_root:
- 	if (waitqueue_active(&log_root_tree->log_commit_wait[index2]))
- 		wake_up(&log_root_tree->log_commit_wait[index2]);
- out:
--	/* See above. */
--	btrfs_remove_all_log_ctxs(root, index1, ret);
--
- 	mutex_lock(&root->log_mutex);
-+	btrfs_remove_all_log_ctxs(root, index1, ret);
- 	root->log_transid_committed++;
- 	atomic_set(&root->log_commit[index1], 0);
- 	mutex_unlock(&root->log_mutex);
+@@ -3117,7 +3126,7 @@ static int add_pending_dir_move(struct send_ctx *sctx,
+ 			goto out;
+ 	}
+ 
+-	ret = add_waiting_dir_move(sctx, pm->ino, is_orphan);
++	ret = add_waiting_dir_move(sctx, pm->ino, pm->gen, is_orphan);
+ 	if (ret)
+ 		goto out;
+ 
 -- 
-2.9.3
+1.9.1
 

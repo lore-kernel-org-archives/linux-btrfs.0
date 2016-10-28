@@ -1,60 +1,135 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ns.bouton.name ([109.74.195.142]:46852 "EHLO mail.bouton.name"
+Received: from mx2.suse.de ([195.135.220.15]:51348 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932740AbcJ1P1k (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 28 Oct 2016 11:27:40 -0400
-Received: from [10.8.0.114] (vpn.jtek.fr [188.40.135.225])
-        by mail.bouton.name (Postfix) with ESMTP id D20E2B943
-        for <linux-btrfs@vger.kernel.org>; Fri, 28 Oct 2016 17:27:34 +0200 (CEST)
-Subject: Re: Compression and device replace on raid10 kernel panic on 4.4.6
- and 4.6.x
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <b1fd641c-7047-e83c-83ff-582c6abfb815@bouton.name>
- <e7707a30-e715-8a6f-c3ad-0e9171951f34@bouton.name>
- <eef3fc06-8283-33dd-cd81-f63921212105@bouton.name>
- <1114032c-07f4-4a32-780d-be38a32b83b7@bouton.name>
-From: Lionel Bouton <lionel-subscription@bouton.name>
-Message-ID: <26bf41dd-7168-b1c5-41b7-4f80ce297bb5@bouton.name>
-Date: Fri, 28 Oct 2016 17:27:34 +0200
+        id S1755287AbcJ1PoJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 28 Oct 2016 11:44:09 -0400
+Date: Fri, 28 Oct 2016 17:44:06 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Divya Indi <divya.indi@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, ashish.samant@oracle.com,
+        bo.li.liu@oracle.com
+Subject: Re: [PATCH 1/3] btrfs-progs: Generic functions to retrieve chunks
+ and their bg info
+Message-ID: <20161028154406.GK12522@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1476750915-3105-1-git-send-email-divya.indi@oracle.com>
+ <1476750915-3105-2-git-send-email-divya.indi@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <1114032c-07f4-4a32-780d-be38a32b83b7@bouton.name>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1476750915-3105-2-git-send-email-divya.indi@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Mon, Oct 17, 2016 at 05:35:13PM -0700, Divya Indi wrote:
+> An efficient alternative to retrieving block groups:
+> get_chunks(): Walk the chunk tree to retrieve the chunks.
+> get_bg_info(): For each retrieved chunk, lookup an exact match of block
+> group in the extent tree.
+> 
+> Signed-off-by: Divya Indi <divya.indi@oracle.com>
+> Reviewed-by: Ashish Samant <ashish.samant@oracle.com>
+> Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+>  cmds-inspect.c |   66 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  1 files changed, 66 insertions(+), 0 deletions(-)
+> 
+> diff --git a/cmds-inspect.c b/cmds-inspect.c
+> index 4b7cea0..f435ea9 100644
+> --- a/cmds-inspect.c
+> +++ b/cmds-inspect.c
+> @@ -81,6 +81,72 @@ out:
+>  	return !!ret;
+>  }
+>  
+> +static void bg_flags_to_str(u64 flags, char *ret)
+> +{
+> +	int empty = 1;
+> +
+> +	if (flags & BTRFS_BLOCK_GROUP_DATA) {
+> +		empty = 0;
+> +		strcpy(ret, "DATA");
+> +	}
+> +	if (flags & BTRFS_BLOCK_GROUP_METADATA) {
+> +		if (!empty)
+> +			strcat(ret, "|");
+> +		strcat(ret, "METADATA");
+> +	}
+> +	if (flags & BTRFS_BLOCK_GROUP_SYSTEM) {
+> +		if (!empty)
+> +			strcat(ret, "|");
+> +		strcat(ret, "SYSTEM");
+> +	}
+> +}
+> +
+> +/* Walking through the chunk tree to retrieve chunks. */
 
-as I don't have much time to handle a long backup recovery, I didn't try
-the delete/add combination to avoid any risk.
-What I tried though, was fatal_errors=bug. As I don't have any console I
-thought it might at least help log the problem instead of the usual
-kernel panic.
+No empty newline.
 
-No luck : the problem still made the kernel panic. Unless someone comes
-up with a somewhat safe way to recover from this situation I'll let the
-filesystem as is (we are building a new platform where redundancy will
-be handled by Ceph anyway).
+> +
+> +static int get_chunks(int fd, struct btrfs_ioctl_search_args *chunk_args)
+> +{
+> +	struct btrfs_ioctl_search_key *sk;
+> +	int ret;
+> +	int e;
+> +
+> +	sk = &chunk_args->key;
+> +
+> +	sk->tree_id = BTRFS_CHUNK_TREE_OBJECTID;
+> +	sk->min_objectid = sk->max_objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
+> +	sk->max_type = sk->min_type = BTRFS_CHUNK_ITEM_KEY;
 
-Lionel
+Please don't do multiple asignments in one statement.
 
-Le 27/10/2016 à 18:07, Lionel Bouton a écrit :
-> Hi,
->
-> Le 27/10/2016 à 02:50, Lionel Bouton a écrit :
->> [...]
->> I'll stop for tonight and see what happens during the day. I'd like to
->> try a device add / delete next but I'm worried I could end up with a
->> completely unusable filesystem if the device delete hits the same
->> problem than replace.
->> If the replace resuming on mount crashes the system I can cancel it but
->> there's no way to do so with a device delete. Or is by any chance the
->> skip_balance mount option a way to cancel a delete ?
-> Can anyone just confirm (or infirm) that skip_balance will indeed
-> effectively cancel a device delete before I try something that could
-> force me to resort to backups ?
-> Lionel
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> +	sk->nr_items = 4096;
+> +
+> +	ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, chunk_args);
+> +	e = errno;
 
+This is useless asignment, I've removed it from the code, please don't
+reintrduce it.
+
+> +	if (ret < 0) {
+> +		fprintf(stderr, "ret %d error '%s'\n", ret,
+> +				strerror(e));
+> +	}
+> +	return ret;
+> +}
+
+
+> +
+> +/* Given the objectid, find the block group item in the extent tree */
+> +static int get_bg_info(int fd, struct btrfs_ioctl_search_args *bg_args,
+> +		       u64 objectid, unsigned long length)
+> +{
+> +	struct btrfs_ioctl_search_key *bg_sk;
+> +	int ret;
+> +	int e;
+> +
+> +	bg_sk = &bg_args->key;
+> +
+> +	bg_sk->min_objectid = bg_sk->max_objectid = objectid;
+> +	bg_sk->nr_items = 1;
+> +	bg_sk->min_offset = bg_sk->max_offset = length;
+
+Same here.
+
+> +
+> +	ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, bg_args);
+> +	e = errno;
+> +	if (ret < 0) {
+> +		fprintf(stderr, "ret %d error '%s'\n", ret,
+> +				strerror(e));
+
+Please take a look how the error messages are constructed when the tree
+search ioctl fails, there are enough examples in the code.
+
+> +	}
+> +	return ret;
+> +}
+>  static const char * const cmd_inspect_inode_resolve_usage[] = {
+>  	"btrfs inspect-internal inode-resolve [-v] <inode> <path>",
+>  	"Get file system paths for the given inode",
+
+Actually, I'm not sure if such functions should exist at all, as they
+only hide the search ioctl but don't do any validation of the returned
+keys and data.

@@ -1,43 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:39418 "EHLO mx1.redhat.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753308AbcJ1MX0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 28 Oct 2016 08:23:26 -0400
-Received: from int-mx11.intmail.prod.int.phx2.redhat.com (int-mx11.intmail.prod.int.phx2.redhat.com [10.5.11.24])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by mx1.redhat.com (Postfix) with ESMTPS id A1E7C31B327
-        for <linux-btrfs@vger.kernel.org>; Fri, 28 Oct 2016 12:23:25 +0000 (UTC)
-Received: from [IPv6:::1] (ovpn03.gateway.prod.ext.phx2.redhat.com [10.5.9.3])
-        by int-mx11.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id u9SCNOcV014980
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-        for <linux-btrfs@vger.kernel.org>; Fri, 28 Oct 2016 08:23:25 -0400
-Subject: Re: [PATCH] btrfs-progs: fix build for programs including ioctl.h
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <343f2d64-948b-9653-18eb-76ae2e852b88@redhat.com>
- <ae29e753-b1fc-f433-d498-bc50209bfa8d@redhat.com>
-From: Eric Sandeen <sandeen@redhat.com>
-Message-ID: <b82b9a18-eb7f-24d9-828a-1959e2d5504c@redhat.com>
-Date: Fri, 28 Oct 2016 07:23:24 -0500
-MIME-Version: 1.0
-In-Reply-To: <ae29e753-b1fc-f433-d498-bc50209bfa8d@redhat.com>
-Content-Type: text/plain; charset=utf-8
+Received: from mail-pf0-f196.google.com ([209.85.192.196]:34606 "EHLO
+        mail-pf0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1756966AbcJ2INx (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 29 Oct 2016 04:13:53 -0400
+From: Ming Lei <tom.leiming@gmail.com>
+To: Jens Axboe <axboe@fb.com>, linux-kernel@vger.kernel.org
+Cc: linux-block@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        Christoph Hellwig <hch@infradead.org>,
+        "Kirill A . Shutemov" <kirill.shutemov@linux.intel.com>,
+        Ming Lei <tom.leiming@gmail.com>, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org (open list:BTRFS FILE SYSTEM)
+Subject: [PATCH 26/60] btrfs: set NO_MP for request queues behind BTRFS
+Date: Sat, 29 Oct 2016 16:08:25 +0800
+Message-Id: <1477728600-12938-27-git-send-email-tom.leiming@gmail.com>
+In-Reply-To: <1477728600-12938-1-git-send-email-tom.leiming@gmail.com>
+References: <1477728600-12938-1-git-send-email-tom.leiming@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/27/16 9:54 PM, Eric Sandeen wrote:
-> On 10/13/16 12:36 PM, Eric Sandeen wrote:
->> This was reported when docker failed to build against
->> btrfs-progs v4.8.1.
->>
->> It includes ioctl.h which now calls BUILD_ASSERT(), which
->> is defined in kerncompat.h, which was not included in the
->> ioctl.h header file.
-> 
-> Ping?
+There are lots of direct access to .bi_vcnt & .bi_io_vec
+of bio, and it isn't ready to support multipage bvecs
+for BTRFS, so set NO_MP for these request queues.
 
-Oh sorry I see it's in, I had searched by author and missed it.
+Signed-off-by: Ming Lei <tom.leiming@gmail.com>
+---
+ fs/btrfs/volumes.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-Thanks,
--Eric
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 71a60cc01451..2e7237a3b84d 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1011,6 +1011,9 @@ static int __btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
+ 		if (blk_queue_discard(q))
+ 			device->can_discard = 1;
+ 
++		/* BTRFS isn't ready to support multipage bvecs */
++		set_bit(QUEUE_FLAG_NO_MP, &q->queue_flags);
++
+ 		device->bdev = bdev;
+ 		device->in_fs_metadata = 0;
+ 		device->mode = flags;
+-- 
+2.7.4
 

@@ -1,65 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:28301 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932214AbcJLIdw (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Oct 2016 04:33:52 -0400
-Date: Wed, 12 Oct 2016 11:33:21 +0300
-From: Dan Carpenter <dan.carpenter@oracle.com>
-To: Chris Mason <clm@fb.com>, Omar Sandoval <osandov@fb.com>
-Cc: Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org, kernel-janitors@vger.kernel.org
-Subject: [patch] Btrfs: remove some no-op casts
-Message-ID: <20161012063924.GB13780@mwanda>
+Received: from mx2.suse.de ([195.135.220.15]:52112 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S944378AbcJaQmE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 31 Oct 2016 12:42:04 -0400
+Date: Mon, 31 Oct 2016 17:42:01 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH v2] btrfs: cleanup: use already calculated value in
+ btrfs_should_throttle_delayed_refs()
+Message-ID: <20161031164201.GQ12522@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20161026072301.6748-1-wangxg.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20161026072301.6748-1-wangxg.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We cast 0 to a u8 but then because of type promotion, it's immediately
-cast to int back to int before we do a bitwise negate.  The cast doesn't
-matter in this case, the code works as intended.  It causes a static
-checker warning though so let's remove it.
+On Wed, Oct 26, 2016 at 03:23:01PM +0800, Wang Xiaoguang wrote:
+> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
-Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 66a7551..8ed05d9 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -5569,7 +5569,7 @@ void le_bitmap_set(u8 *map, unsigned int start, int len)
- 		*p |= mask_to_set;
- 		len -= bits_to_set;
- 		bits_to_set = BITS_PER_BYTE;
--		mask_to_set = ~(u8)0;
-+		mask_to_set = ~0;
- 		p++;
- 	}
- 	if (len) {
-@@ -5589,7 +5589,7 @@ void le_bitmap_clear(u8 *map, unsigned int start, int len)
- 		*p &= ~mask_to_clear;
- 		len -= bits_to_clear;
- 		bits_to_clear = BITS_PER_BYTE;
--		mask_to_clear = ~(u8)0;
-+		mask_to_clear = ~0;
- 		p++;
- 	}
- 	if (len) {
-@@ -5679,7 +5679,7 @@ void extent_buffer_bitmap_set(struct extent_buffer *eb, unsigned long start,
- 		kaddr[offset] |= mask_to_set;
- 		len -= bits_to_set;
- 		bits_to_set = BITS_PER_BYTE;
--		mask_to_set = ~(u8)0;
-+		mask_to_set = ~0;
- 		if (++offset >= PAGE_SIZE && len > 0) {
- 			offset = 0;
- 			page = eb->pages[++i];
-@@ -5721,7 +5721,7 @@ void extent_buffer_bitmap_clear(struct extent_buffer *eb, unsigned long start,
- 		kaddr[offset] &= ~mask_to_clear;
- 		len -= bits_to_clear;
- 		bits_to_clear = BITS_PER_BYTE;
--		mask_to_clear = ~(u8)0;
-+		mask_to_clear = ~0;
- 		if (++offset >= PAGE_SIZE && len > 0) {
- 			offset = 0;
- 			page = eb->pages[++i];
+Reviewed-by: David Sterba <dsterba@suse.com>

@@ -1,75 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym01.jp.fujitsu.com ([211.128.242.40]:36478 "EHLO
-        mgwym01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933120AbcJSCfb (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 18 Oct 2016 22:35:31 -0400
-Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
-        by yt-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 3637BAC00AA
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Oct 2016 11:35:19 +0900 (JST)
-Received: from WIN-5MHF4RKU941.jp.fujitsu.com (unknown [10.124.102.163])
-        by m3051.s.css.fujitsu.com (Postfix) with SMTP id 25DFC43E
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Oct 2016 11:35:19 +0900 (JST)
-Message-Id: <201610190235.AA00002@WIN-5MHF4RKU941.jp.fujitsu.com>
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Date: Wed, 19 Oct 2016 11:35:03 +0900
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/3] btrfs-progs: send: fix handling of multiple snapshots (-p option)
+Received: from mx2.suse.de ([195.135.220.15]:60464 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S945521AbcJaSnZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 31 Oct 2016 14:43:25 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 50A64ABC8
+        for <linux-btrfs@vger.kernel.org>; Mon, 31 Oct 2016 18:43:23 +0000 (UTC)
+Subject: Re: [PATCH] btrfs-progs: repair: Trickle down EEXISTS while freeing
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+References: <20161027180508.8721-1-rgoldwyn@suse.de>
+ <20161028144202.GH12522@twin.jikos.cz>
+From: Goldwyn Rodrigues <rgoldwyn@suse.de>
+Message-ID: <211e0109-1ce7-44fd-1e73-a1f1a96c44e2@suse.de>
+Date: Mon, 31 Oct 2016 13:43:20 -0500
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20161028144202.GH12522@twin.jikos.cz>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We cannot send multiple snapshots at once by -p option.
+Hi David,
 
-[before]
-# btrfs send -f /tmp/data0 -p Snap0 Snap[12]
-At subvol Snap1
-At subvol Snap2
-ERROR: parent determination failed for 0
-# 
+On 10/28/2016 09:42 AM, David Sterba wrote:
+> On Thu, Oct 27, 2016 at 01:05:08PM -0500, Goldwyn Rodrigues wrote:
+>> While deleting pending extents, we insert extents to the 
+>> extent_tree. However, because of corruption, this might already be
+>> freed. We trickle the EEXISTS error and let the caller decide what
+>> needs to be done with it. In this case, ignore, so the repair may
+>> proceed.
+>> 
+>> The primary motivation of this is to resolve this BUG_ON: 
+>> extent-tree.c:2731: alloc_reserved_tree_block: Assertion `ret`
+>> failed, value 0
+>> 
+>> #2  assert_trace (val=0, line=2728, func=0x489510 <__func__.11558>
+>> "alloc_reserved_tree_block", filename=0x489065 "extent-tree.c",
+>> assertion=0x48cfb5 "ret") at kerncompat.h:102 #3
+>> alloc_reserved_tree_block (trans=trans@entry=0x7e7240,
+>> root=root@entry=0x6a88a0, root_objectid=2, generation=175654,
+>> flags=0, key=key@entry=0x2bc5c70, level=0,
+>> ins=ins@entry=0x7fffffffcf30) at extent-tree.c:2728 #4
+>> finish_current_insert (trans=trans@entry=0x7e7240,
+>> extent_root=extent_root@entry=0x6a88a0) at extent-tree.c:2108 #5
+>> __free_extent (trans=trans@entry=0x7e7240,
+>> root=root@entry=0x6a88a0, bytenr=57127387136, num_bytes=<optimized
+>> out>, parent=parent@entry=0, root_objectid=<optimized out>,
+>> owner_objectid=0, owner_offset=owner_offset@entry=0,
+>> refs_to_drop=refs_to_drop@entry=1) at extent-tree.c:2410 #6
+>> del_pending_extents (trans=trans@entry=0x7e7240,
+>> extent_root=0x6a88a0) at extent-tree.c:2448
+> 
+> Do you have a reproducer for that?
 
-[after]
-# btrfs send -f /tmp/data0 -p Snap0 Snap[12]
-At subvol Snap1
-At subvol Snap2
-# 
+>> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+> 
+> Applied, thanks.
+> 
 
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
----
- cmds-send.c | 6 ++----
- 1 file changed, 2 insertions(+), 4 deletions(-)
+While working on a reproducer (and further testing), I found this leaves
+the tree in a worse condition than before. Please leave this out for now.
 
-diff --git a/cmds-send.c b/cmds-send.c
-index dfdfe01..2a8a697 100644
---- a/cmds-send.c
-+++ b/cmds-send.c
-@@ -650,7 +650,7 @@ int cmd_send(int argc, char **argv)
- 			goto out;
- 		}
- 
--		if (!full_send && !parent_root_id) {
-+		if (!full_send && root_id) {
- 			ret = find_good_parent(&send, root_id, &parent_root_id);
- 			if (ret < 0) {
- 				error("parent determination failed for %lld",
-@@ -673,7 +673,7 @@ int cmd_send(int argc, char **argv)
- 		if (ret < 0)
- 			goto out;
- 
--		if (!full_send) {
-+		if (!full_send && root_id) {
- 			/* done with this subvol, so add it to the clone sources */
- 			ret = add_clone_source(&send, root_id);
- 			if (ret < 0) {
-@@ -681,8 +681,6 @@ int cmd_send(int argc, char **argv)
- 				goto out;
- 			}
- 		}
--
--		parent_root_id = 0;
- 	}
- 
- 	ret = 0;
+
 -- 
-2.9.3
+Goldwyn

@@ -1,82 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:21808 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1753056AbcJaBC7 (ORCPT
+Received: from mail-yw0-f180.google.com ([209.85.161.180]:34760 "EHLO
+        mail-yw0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1757543AbcJaB3Q (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 30 Oct 2016 21:02:59 -0400
-Subject: Re: btrfs check --repair: ERROR: cannot read chunk root
-To: Marc MERLIN <marc@merlins.org>, <linux-btrfs@vger.kernel.org>
-References: <20161030183437.GA3287@merlins.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <062d36da-197f-6a58-0b6e-208a5ca9fef3@cn.fujitsu.com>
-Date: Mon, 31 Oct 2016 09:02:50 +0800
+        Sun, 30 Oct 2016 21:29:16 -0400
+Received: by mail-yw0-f180.google.com with SMTP id w3so124874161ywg.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 30 Oct 2016 18:29:15 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20161030183437.GA3287@merlins.org>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+From: "Janos Toth F." <toth.f.janos@gmail.com>
+Date: Mon, 31 Oct 2016 02:29:14 +0100
+Message-ID: <CANznX5FFCHgON_SJ+pjLszMBPAfT2zXS6DEQ36BoFGNFnbZ-vw@mail.gmail.com>
+Subject: btrfs check --repair: ERROR: cannot read chunk root
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-At 10/31/2016 02:34 AM, Marc MERLIN wrote:
-> I have a filesystem on top of md raid5 that got a few problems due to the
-> underlying block layer (bad data cable).
-> The filesystem mounts fine, but had a few issues
-> Scrub runs (I didn't let it finish, it takes a _long_ time)
-> But check --repair won't even run at all:
->
-> myth:~# btrfs --version
-> btrfs-progs v4.7.3
-> myth:~# uname -r
-> 4.8.5-ia32-20161028
->
-> myth:~# btrfs check -p --repair  /dev/mapper/crypt_bcache0  2>&1 | tee
-> /var/spool/repair
-> bytenr mismatch, want=13835462344704, have=0
-> ERROR: cannot read chunk root
-
-Your chunk root is corrupted, and since chunk tree provides the 
-underlying disk layout, even for single device, so if we failed to read 
-it, then it will never be able to be mounted.
-
-You could try to use backup chunk root.
-
-"btrfs inspect-internal dump-super -f" to find the backup chunk root, 
-and use "btrfs check --chunk-root <backup chunk root bytenr>" to have 
-another try.
-
-Thanks,
-Qu
-> Couldn't open file system
-> enabling repair mode
-> myth:~#
->
-> myth:~# btrfs rescue super-recover -v /dev//mapper/crypt_bcache0
-> All Devices:
->         Device: id = 1, name = /dev//mapper/crypt_bcache0
->
-> Before Recovering:
->         [All good supers]:
->                 device name = /dev//mapper/crypt_bcache0
->                 superblock bytenr = 65536
->
->                 device name = /dev//mapper/crypt_bcache0
->                 superblock bytenr = 67108864
->
->                 device name = /dev//mapper/crypt_bcache0
->                 superblock bytenr = 274877906944
->
->         [All bad supers]:
->
-> All supers are valid, no need to recover
->
->
-> I don't care about the data, it's a backup array, but I'd still like to know
-> if I can recover from this state and do a repair to see how much data got
-> damaged
->
-> Thanks,
-> Marc
->
-
-
+I stopped using Btrfs RAID-5 after encountering this problem two times
+(once due to a failing SATA cable, once due to a random kernel problem
+which caused the SATA or the block device driver to reset/crash).
+As much as I can tell, the main problem is that after a de- and a
+subsequent re-attach (on purpose or due to failing cable/controller,
+kernel problem, etc), your de-synced disk is taken back to the "array"
+as if it was still in sync despite having a lower generation counter.
+The filesystem detects the errors later but it can't reliably handle,
+let alone fully correct them. If you search on this list with "RAID 5"
+you will see that RAID-5/6 scrub/repair has some known serious
+problems (which probably contribute to this but I guess something on
+top of those problems plays a part here to make this extra messy, like
+the generations never getting synced). The de-synchronization will get
+worse over time if your are in writable mode (the generation of the
+de-synced disk is stuck), up to he point of the filesystem becoming
+unmountable (if not already, probably due to scrub causing errors on
+the disks in sync).
+I was able to use "rescue" once and even achieve a read-only mount
+during the second time (with only a handful of broken files). But I
+could see a pattern and didn't want to end up in situations like that
+for a third time.
+Too bad, I would prefer RAID-5/6 over RAID-1/10 any day otherwise
+(RAID-5 is faster than RAID-1 and you can loose any two disks from a
+RAID-6, not just one from each mirrors on RAID-10) but most people
+think it's slow and obsolete (I mean they say that about hardware or
+mdadm RAID-5/6 and Btrfs's RAID-5/6 is frowned upon for true reasons)
+while it's actually the opposite with a limited number of drives (<=6,
+or may be up to 10).
+It's not impossible to get right though, RAID-Z is nice (except the
+inability to defrag the inevitable fragmentation), so I keep hoping...

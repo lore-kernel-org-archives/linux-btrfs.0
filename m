@@ -1,48 +1,154 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f180.google.com ([209.85.161.180]:34760 "EHLO
-        mail-yw0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1757543AbcJaB3Q (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:54656 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1757394AbcJaCGR (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 30 Oct 2016 21:29:16 -0400
-Received: by mail-yw0-f180.google.com with SMTP id w3so124874161ywg.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 30 Oct 2016 18:29:15 -0700 (PDT)
+        Sun, 30 Oct 2016 22:06:17 -0400
+Date: Sun, 30 Oct 2016 19:06:16 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs check --repair: ERROR: cannot read chunk root
+Message-ID: <20161031020616.GH28648@merlins.org>
+References: <20161030183437.GA3287@merlins.org> <062d36da-197f-6a58-0b6e-208a5ca9fef3@cn.fujitsu.com>
 MIME-Version: 1.0
-From: "Janos Toth F." <toth.f.janos@gmail.com>
-Date: Mon, 31 Oct 2016 02:29:14 +0100
-Message-ID: <CANznX5FFCHgON_SJ+pjLszMBPAfT2zXS6DEQ36BoFGNFnbZ-vw@mail.gmail.com>
-Subject: btrfs check --repair: ERROR: cannot read chunk root
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <062d36da-197f-6a58-0b6e-208a5ca9fef3@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I stopped using Btrfs RAID-5 after encountering this problem two times
-(once due to a failing SATA cable, once due to a random kernel problem
-which caused the SATA or the block device driver to reset/crash).
-As much as I can tell, the main problem is that after a de- and a
-subsequent re-attach (on purpose or due to failing cable/controller,
-kernel problem, etc), your de-synced disk is taken back to the "array"
-as if it was still in sync despite having a lower generation counter.
-The filesystem detects the errors later but it can't reliably handle,
-let alone fully correct them. If you search on this list with "RAID 5"
-you will see that RAID-5/6 scrub/repair has some known serious
-problems (which probably contribute to this but I guess something on
-top of those problems plays a part here to make this extra messy, like
-the generations never getting synced). The de-synchronization will get
-worse over time if your are in writable mode (the generation of the
-de-synced disk is stuck), up to he point of the filesystem becoming
-unmountable (if not already, probably due to scrub causing errors on
-the disks in sync).
-I was able to use "rescue" once and even achieve a read-only mount
-during the second time (with only a handful of broken files). But I
-could see a pattern and didn't want to end up in situations like that
-for a third time.
-Too bad, I would prefer RAID-5/6 over RAID-1/10 any day otherwise
-(RAID-5 is faster than RAID-1 and you can loose any two disks from a
-RAID-6, not just one from each mirrors on RAID-10) but most people
-think it's slow and obsolete (I mean they say that about hardware or
-mdadm RAID-5/6 and Btrfs's RAID-5/6 is frowned upon for true reasons)
-while it's actually the opposite with a limited number of drives (<=6,
-or may be up to 10).
-It's not impossible to get right though, RAID-Z is nice (except the
-inability to defrag the inevitable fragmentation), so I keep hoping...
+On Mon, Oct 31, 2016 at 09:02:50AM +0800, Qu Wenruo wrote:
+> Your chunk root is corrupted, and since chunk tree provides the 
+> underlying disk layout, even for single device, so if we failed to read 
+> it, then it will never be able to be mounted.
+ 
+That's the thing though, I can mount the filesystem just fine :)
+
+> You could try to use backup chunk root.
+> 
+> "btrfs inspect-internal dump-super -f" to find the backup chunk root, 
+> and use "btrfs check --chunk-root <backup chunk root bytenr>" to have 
+> another try.
+
+Am I doing this right? It doesn't seem to work
+
+myth:~# btrfs check -p --repair --chunk-root 13835462344704 /dev/mapper/crypt_bcache0  2>&1 | tee /var/spool/repair2
+bytenr mismatch, want=13835462344704, have=0
+ERROR: cannot read chunk root
+Couldn't open file system
+enabling repair mode
+
+
+myth:~# btrfs inspect-internal dump-super -f /dev/mapper/crypt_bcache0 | less
+superblock: bytenr=65536, device=/dev/mapper/crypt_bcache0
+---------------------------------------------------------
+csum_type               0 (crc32c)
+csum_size               4
+csum                    0x3814e4a0 [match]
+bytenr                  65536
+flags                   0x1
+                        ( WRITTEN )
+magic                   _BHRfS_M [match]
+fsid                    6692cf4c-93d9-438c-ac30-5db6381dc4f2
+label                   DS5
+generation              51176
+root                    13845513109504
+sys_array_size          129
+chunk_root_generation   51135
+root_level              1
+chunk_root              13835462344704
+chunk_root_level        1
+log_root                0
+log_root_transid        0
+log_root_level          0
+total_bytes             16002599346176
+bytes_used              14584560160768
+sectorsize              4096
+nodesize                16384
+leafsize                16384
+stripesize              4096
+root_dir                6
+num_devices             1
+compat_flags            0x0
+compat_ro_flags         0x0
+incompat_flags          0x169
+                        ( MIXED_BACKREF |
+                          COMPRESS_LZO |
+                          BIG_METADATA |
+                          EXTENDED_IREF |
+                          SKINNY_METADATA )
+cache_generation        51176
+uuid_tree_generation    51176
+dev_item.uuid           0cf779be-8e16-4982-b7d7-f8241deea0d1
+dev_item.fsid           6692cf4c-93d9-438c-ac30-5db6381dc4f2 [match]
+dev_item.type           0
+dev_item.total_bytes    16002599346176
+dev_item.bytes_used     14691011133440
+dev_item.io_align       4096
+dev_item.io_width       4096
+dev_item.sector_size    4096
+dev_item.devid          1
+dev_item.dev_group      0
+dev_item.seek_speed     0
+dev_item.bandwidth      0
+dev_item.generation     0
+sys_chunk_array[2048]:
+        item 0 key (FIRST_CHUNK_TREE CHUNK_ITEM 13835461197824)
+                chunk length 33554432 owner 2 stripe_len 65536
+                type SYSTEM|DUP num_stripes 2
+                        stripe 0 devid 1 offset 13500327919616
+                        dev uuid: 0cf779be-8e16-4982-b7d7-f8241deea0d1
+                        stripe 1 devid 1 offset 13500361474048
+                        dev uuid: 0cf779be-8e16-4982-b7d7-f8241deea0d1
+backup_roots[4]:
+        backup 0:
+                backup_tree_root:       12801101791232  gen: 51174      level: 1
+                backup_chunk_root:      13835462344704  gen: 51135      level: 1
+                backup_extent_root:     12801124352000  gen: 51174      level: 3
+                backup_fs_root:         10548133724160  gen: 51172      level: 0
+                backup_dev_root:        11125467824128  gen: 51172      level: 1
+                backup_csum_root:       12801133953024  gen: 51174      level: 3
+                backup_total_bytes:     16002599346176
+                backup_bytes_used:      14584560160768
+                backup_num_devices:     1
+
+        backup 1:
+                backup_tree_root:       13842532810752  gen: 51175      level: 1
+                backup_chunk_root:      13835462344704  gen: 51135      level: 1
+                backup_extent_root:     13843784695808  gen: 51175      level: 3
+                backup_fs_root:         10548133724160  gen: 51172      level: 0
+                backup_dev_root:        11125467824128  gen: 51172      level: 1
+                backup_csum_root:       13842542362624  gen: 51175      level: 3
+                backup_total_bytes:     16002599346176
+                backup_bytes_used:      14584560160768
+                backup_num_devices:     1
+
+        backup 2:
+                backup_tree_root:       13845513109504  gen: 51176      level: 1
+                backup_chunk_root:      13835462344704  gen: 51135      level: 1
+                backup_extent_root:     13845513191424  gen: 51176      level: 3
+                backup_fs_root:         10548133724160  gen: 51172      level: 0
+                backup_dev_root:        11125467824128  gen: 51172      level: 1
+                backup_csum_root:       13852180938752  gen: 51176      level: 3
+                backup_total_bytes:     16002599346176
+                backup_bytes_used:      14584560160768
+                backup_num_devices:     1
+
+        backup 3:
+                backup_tree_root:       12750807580672  gen: 51173      level: 1
+                backup_chunk_root:      13835462344704  gen: 51135      level: 1
+                backup_extent_root:     12750810447872  gen: 51173      level: 3
+                backup_fs_root:         10548133724160  gen: 51172      level: 0
+                backup_dev_root:        11125467824128  gen: 51172      level: 1
+                backup_csum_root:       12684302712832  gen: 51173      level: 3
+                backup_total_bytes:     16002599346176
+                backup_bytes_used:      14584560177152
+                backup_num_devices:     1
+
+
+
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

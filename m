@@ -1,168 +1,508 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:12559 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:20095 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S965823AbcKAICK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S965821AbcKAICK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Tue, 1 Nov 2016 04:02:10 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH v3 3/4] btrfs-progs: receive: introduce option to dump send stream
-Date: Tue,  1 Nov 2016 16:01:45 +0800
-Message-Id: <20161101080147.13163-4-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v3 4/4] btrfs-progs: remove send-test tool
+Date: Tue,  1 Nov 2016 16:01:46 +0800
+Message-Id: <20161101080147.13163-5-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20161101080147.13163-1-quwenruo@cn.fujitsu.com>
 References: <20161101080147.13163-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce new option, '--dump' for receive subcommand.
-
-With this command, user can dump the metadata of a send stream.
-Which is quite useful for education purpose or bug reporting.
+Since new "receive --dump" has better output and structure, it's time
+to remove old and function-weak send-test tool.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- Documentation/btrfs-receive.asciidoc | 15 ++++++++++++++-
- cmds-receive.c                       | 35 +++++++++++++++++++++++++++++++----
- 2 files changed, 45 insertions(+), 5 deletions(-)
+ Makefile.in |   6 +-
+ send-test.c | 447 ------------------------------------------------------------
+ 2 files changed, 1 insertion(+), 452 deletions(-)
+ delete mode 100644 send-test.c
 
-diff --git a/Documentation/btrfs-receive.asciidoc b/Documentation/btrfs-receive.asciidoc
-index e246603..f12e949 100644
---- a/Documentation/btrfs-receive.asciidoc
-+++ b/Documentation/btrfs-receive.asciidoc
-@@ -9,12 +9,19 @@ SYNOPSIS
- --------
- *btrfs receive* [options] <path>
+diff --git a/Makefile.in b/Makefile.in
+index c535c19..9295d32 100644
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -428,10 +428,6 @@ test-ioctl: ioctl-test ioctl-test-32 ioctl-test-64
+ 	$(Q)./ioctl-test-32 > ioctl-test-32.log
+ 	$(Q)./ioctl-test-64 > ioctl-test-64.log
  
-+or
-+
-+*btrfs receive* --dump [options]
-+
- DESCRIPTION
- -----------
- 
- Receive a stream of changes and replicate one or more subvolumes that were
- previously used with *btrfs send* The received subvolumes are stored to
--'path'.
-+'path', if '--dump' option is not given.
-+
-+If '--dump' option is given, *btrfs receive* will only do the validation of
-+the stream, and print the stream metadata.
- 
- *btrfs receive* will fail int the following cases:
- 
-@@ -56,6 +63,12 @@ By default the mountpoint is searched in '/proc/self/mounts'.
- If you do not have '/proc', eg. in a chroot environment, use this option to tell
- us where this filesystem is mounted.
- 
-+--dump::
-+print the stream metadata
-++
-+Does not accept the 'path' parameter. So with this option, *btrfs receive* won't
-+modify your filesystem, and can be run by non-privileged users.
-+
- EXIT STATUS
- -----------
- *btrfs receive* returns a zero exit status if it succeeds. Non zero is
-diff --git a/cmds-receive.c b/cmds-receive.c
-index d0525bf..1dcdb1a 100644
---- a/cmds-receive.c
-+++ b/cmds-receive.c
-@@ -49,6 +49,7 @@
- #include "send.h"
- #include "send-stream.h"
- #include "send-utils.h"
-+#include "send-dump.h"
- 
- static int g_verbose = 0;
- 
-@@ -1214,6 +1215,7 @@ int cmd_receive(int argc, char **argv)
- 	struct btrfs_receive r;
- 	int receive_fd = fileno(stdin);
- 	u64 max_errors = 1;
-+	int dump = 0;
- 	int ret = 0;
- 
- 	memset(&r, 0, sizeof(r));
-@@ -1226,9 +1228,11 @@ int cmd_receive(int argc, char **argv)
- 
- 	while (1) {
- 		int c;
-+		enum { GETOPT_VAL_DUMP = 257 };
- 		static const struct option long_opts[] = {
- 			{ "max-errors", required_argument, NULL, 'E' },
- 			{ "chroot", no_argument, NULL, 'C' },
-+			{ "dump", no_argument, NULL, GETOPT_VAL_DUMP },
- 			{ NULL, 0, NULL, 0 }
- 		};
- 
-@@ -1265,6 +1269,9 @@ int cmd_receive(int argc, char **argv)
- 				goto out;
- 			}
- 			break;
-+		case GETOPT_VAL_DUMP:
-+			dump = 1;
-+			break;
- 		case '?':
- 		default:
- 			error("receive args invalid");
-@@ -1272,7 +1279,9 @@ int cmd_receive(int argc, char **argv)
- 		}
- 	}
- 
--	if (check_argc_exact(argc - optind, 1))
-+	if (dump && check_argc_exact(argc - optind, 0))
-+		usage(cmd_receive_usage);
-+	if (!dump && check_argc_exact(argc - optind, 1))
- 		usage(cmd_receive_usage);
- 
- 	tomnt = argv[optind];
-@@ -1285,17 +1294,33 @@ int cmd_receive(int argc, char **argv)
- 		}
- 	}
- 
--	ret = do_receive(&r, tomnt, realmnt, receive_fd, max_errors);
-+	if (dump) {
-+		struct btrfs_dump_send_args dump_args;
-+
-+		dump_args.root_path[0] = '.';
-+		dump_args.root_path[1] = '\0';
-+		dump_args.full_subvol_path[0] = '.';
-+		dump_args.full_subvol_path[1] = '\0';
-+		ret = btrfs_read_and_process_send_stream(receive_fd,
-+				&btrfs_print_send_ops, &dump_args, 0, 0);
-+		if (ret < 0)
-+			error("failed to dump the send stream: %s",
-+			      strerror(-ret));
-+	} else {
-+		ret = do_receive(&r, tomnt, realmnt, receive_fd, max_errors);
-+	}
-+
- 	if (receive_fd != fileno(stdin))
- 		close(receive_fd);
+-send-test: $(objects) $(libs) send-test.o
+-	@echo "    [LD]     $@"
+-	$(Q)$(CC) $(CFLAGS) -o send-test $(objects) $(libs) send-test.o $(LDFLAGS) $(LIBS)
 -
- out:
- 
- 	return !!ret;
- }
- 
- const char * const cmd_receive_usage[] = {
--	"btrfs receive [-ve] [-f <infile>] [--max-errors <N>] <mount>",
-+	"btrfs receive [options] <mount>",
-+	"or",
-+	"btrfs receive --dump [options]",
- 	"Receive subvolumes from stdin.",
- 	"Receives one or more subvolumes that were previously",
- 	"sent with btrfs send. The received subvolumes are stored",
-@@ -1322,5 +1347,7 @@ const char * const cmd_receive_usage[] = {
- 	"-m <mountpoint>  The root mount point of the destination fs.",
- 	"                 If you do not have /proc use this to tell us where ",
- 	"                 this file system is mounted.",
-+	"--dump           Exam and output metadata info of send stream.",
-+	"                 Don't need <mount> parameter.",
- 	NULL
- };
+ library-test: $(libs_shared) library-test.o
+ 	@echo "    [LD]     $@"
+ 	$(Q)$(CC) $(CFLAGS) -o library-test library-test.o $(LDFLAGS) -lbtrfs
+@@ -464,7 +460,7 @@ clean: $(CLEANDIRS)
+ 	@echo "Cleaning"
+ 	$(Q)$(RM) -f -- $(progs) cscope.out *.o *.o.d \
+ 		kernel-lib/*.o kernel-lib/*.o.d \
+-	      dir-test ioctl-test quick-test send-test library-test library-test-static \
++	      dir-test ioctl-test quick-test library-test library-test-static \
+ 	      btrfs.static mkfs.btrfs.static \
+ 	      $(check_defs) \
+ 	      $(libs) $(lib_links) \
+diff --git a/send-test.c b/send-test.c
+deleted file mode 100644
+index 4645b89..0000000
+--- a/send-test.c
++++ /dev/null
+@@ -1,447 +0,0 @@
+-/*
+- * Copyright (C) 2013 SUSE.  All rights reserved.
+- *
+- * This code is adapted from cmds-send.c and cmds-receive.c,
+- * Both of which are:
+- *
+- * Copyright (C) 2012 Alexander Block.  All rights reserved.
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public
+- * License v2 as published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+- * General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public
+- * License along with this program; if not, write to the
+- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+- * Boston, MA 021110-1307, USA.
+- */
+-
+-#include <unistd.h>
+-#include <stdint.h>
+-#include <dirent.h>
+-#include <pthread.h>
+-#include <math.h>
+-#include <sys/types.h>
+-#include <sys/stat.h>
+-#include <fcntl.h>
+-#include <sys/ioctl.h>
+-#include <libgen.h>
+-#include <mntent.h>
+-#include <limits.h>
+-#include <stdlib.h>
+-#include <asm/types.h>
+-#include <uuid/uuid.h>
+-
+-/*
+- * This should be compilable without the rest of the btrfs-progs
+- * source distribution.
+- */
+-#if BTRFS_FLAT_INCLUDES
+-#include "send-utils.h"
+-#include "send-stream.h"
+-#else
+-#include <btrfs/send-utils.h>
+-#include <btrfs/send-stream.h>
+-#endif /* BTRFS_FLAT_INCLUDES */
+-
+-static int pipefd[2];
+-struct btrfs_ioctl_send_args io_send = {0, };
+-static char *subvol_path;
+-static char *root_path;
+-
+-struct recv_args {
+-	char *full_subvol_path;
+-	char *root_path;
+-};
+-
+-void usage(int error)
+-{
+-	printf("send-test <btrfs root> <subvol>\n");
+-	if (error)
+-		exit(error);
+-}
+-
+-static int print_subvol(const char *path, const u8 *uuid, u64 ctransid,
+-			void *user)
+-{
+-	struct recv_args *r = user;
+-	char uuid_str[BTRFS_UUID_UNPARSED_SIZE];
+-
+-	r->full_subvol_path = path_cat(r->root_path, path);
+-	uuid_unparse(uuid, uuid_str);
+-
+-	printf("subvol\t%s\t%llu\t%s\n", uuid_str,
+-	       (unsigned long long)ctransid, r->full_subvol_path);
+-
+-	return 0;
+-}
+-
+-static int print_snapshot(const char *path, const u8 *uuid, u64 ctransid,
+-			  const u8 *parent_uuid, u64 parent_ctransid,
+-			  void *user)
+-{
+-	struct recv_args *r = user;
+-	char uuid_str[BTRFS_UUID_UNPARSED_SIZE];
+-	char parent_uuid_str[BTRFS_UUID_UNPARSED_SIZE];
+-
+-	r->full_subvol_path = path_cat(r->root_path, path);
+-	uuid_unparse(uuid, uuid_str);
+-	uuid_unparse(parent_uuid, parent_uuid_str);
+-
+-	printf("snapshot\t%s\t%llu\t%s\t%llu\t%s\n", uuid_str,
+-	       (unsigned long long)ctransid, parent_uuid_str,
+-	       (unsigned long long)parent_ctransid, r->full_subvol_path);
+-
+-	return 0;
+-}
+-
+-static int print_mkfile(const char *path, void *user)
+-{
+-	struct recv_args *r = user;
+-	char *full_path = path_cat(r->full_subvol_path, path);
+-
+-	printf("mkfile\t%s\n", full_path);
+-
+-	free(full_path);
+-	return 0;
+-}
+-
+-static int print_mkdir(const char *path, void *user)
+-{
+-	struct recv_args *r = user;
+-	char *full_path = path_cat(r->full_subvol_path, path);
+-
+-	printf("mkdir\t%s\n", full_path);
+-
+-	free(full_path);
+-	return 0;
+-}
+-
+-static int print_mknod(const char *path, u64 mode, u64 dev, void *user)
+-{
+-	struct recv_args *r = user;
+-	char *full_path = path_cat(r->full_subvol_path, path);
+-
+-	printf("mknod\t%llo\t0x%llx\t%s\n", (unsigned long long)mode,
+-	       (unsigned long long)dev, full_path);
+-
+-	free(full_path);
+-	return 0;
+-}
+-
+-static int print_mkfifo(const char *path, void *user)
+-{
+-	struct recv_args *r = user;
+-	char *full_path = path_cat(r->full_subvol_path, path);
+-
+-	printf("mkfifo\t%s\n", full_path);
+-
+-	free(full_path);
+-	return 0;
+-}
+-
+-static int print_mksock(const char *path, void *user)
+-{
+-	struct recv_args *r = user;
+-	char *full_path = path_cat(r->full_subvol_path, path);
+-
+-	printf("mksock\t%s\n", full_path);
+-
+-	free(full_path);
+-	return 0;
+-}
+-
+-static int print_symlink(const char *path, const char *lnk, void *user)
+-{
+-	struct recv_args *r = user;
+-	char *full_path = path_cat(r->full_subvol_path, path);
+-
+-	printf("symlink\t%s\t%s\n", lnk, full_path);
+-
+-	free(full_path);
+-	return 0;
+-}
+-
+-static int print_rename(const char *from, const char *to, void *user)
+-{
+-	struct recv_args *r = user;
+-	char *full_from = path_cat(r->full_subvol_path, from);
+-	char *full_to = path_cat(r->full_subvol_path, to);
+-
+-	printf("rename\t%s\t%s\n", from, to);
+-
+-	free(full_from);
+-	free(full_to);
+-	return 0;
+-}
+-
+-static int print_link(const char *path, const char *lnk, void *user)
+-{
+-	struct recv_args *r = user;
+-	char *full_path = path_cat(r->full_subvol_path, path);
+-
+-	printf("link\t%s\t%s\n", lnk, full_path);
+-
+-	free(full_path);
+-	return 0;
+-}
+-
+-static int print_unlink(const char *path, void *user)
+-{
+-	struct recv_args *r = user;
+-	char *full_path = path_cat(r->full_subvol_path, path);
+-
+-	printf("unlink\t%s\n", full_path);
+-
+-	free(full_path);
+-	return 0;
+-}
+-
+-static int print_rmdir(const char *path, void *user)
+-{
+-	struct recv_args *r = user;
+-	char *full_path = path_cat(r->full_subvol_path, path);
+-
+-	printf("rmdir\t%s\n", full_path);
+-
+-	free(full_path);
+-	return 0;
+-}
+-
+-static int print_write(const char *path, const void *data, u64 offset,
+-		       u64 len, void *user)
+-{
+-	struct recv_args *r = user;
+-	char *full_path = path_cat(r->full_subvol_path, path);
+-
+-	printf("write\t%llu\t%llu\t%s\n", (unsigned long long)offset,
+-	       (unsigned long long)len, full_path);
+-
+-	free(full_path);
+-	return 0;
+-}
+-
+-static int print_clone(const char *path, u64 offset, u64 len,
+-		       const u8 *clone_uuid, u64 clone_ctransid,
+-		       const char *clone_path, u64 clone_offset,
+-		       void *user)
+-{
+-	struct recv_args *r = user;
+-	char *full_path = path_cat(r->full_subvol_path, path);
+-
+-	printf("clone\t%s\t%s\n", full_path, clone_path);
+-
+-	free(full_path);
+-	return 0;
+-}
+-
+-static int print_set_xattr(const char *path, const char *name,
+-			   const void *data, int len, void *user)
+-{
+-	struct recv_args *r = user;
+-	char *full_path = path_cat(r->full_subvol_path, path);
+-
+-	printf("set_xattr\t%s\t%s\t%d\n", full_path,
+-	       name, len);
+-
+-	free(full_path);
+-	return 0;
+-}
+-
+-static int print_remove_xattr(const char *path, const char *name, void *user)
+-{
+-	struct recv_args *r = user;
+-	char *full_path = path_cat(r->full_subvol_path, path);
+-
+-	printf("remove_xattr\t%s\t%s\n", full_path, name);
+-
+-	free(full_path);
+-	return 0;
+-}
+-
+-static int print_truncate(const char *path, u64 size, void *user)
+-{
+-	struct recv_args *r = user;
+-	char *full_path = path_cat(r->full_subvol_path, path);
+-
+-	printf("truncate\t%llu\t%s\n", (unsigned long long)size, full_path);
+-
+-	free(full_path);
+-	return 0;
+-}
+-
+-static int print_chmod(const char *path, u64 mode, void *user)
+-{
+-	struct recv_args *r = user;
+-	char *full_path = path_cat(r->full_subvol_path, path);
+-
+-	printf("chmod\t%llo\t%s\n", (unsigned long long)mode, full_path);
+-
+-	free(full_path);
+-	return 0;
+-}
+-
+-static int print_chown(const char *path, u64 uid, u64 gid, void *user)
+-{
+-	struct recv_args *r = user;
+-	char *full_path = path_cat(r->full_subvol_path, path);
+-
+-	printf("chown\t%llu\t%llu\t%s\n", (unsigned long long)uid,
+-	       (unsigned long long)gid, full_path);
+-
+-	free(full_path);
+-	return 0;
+-}
+-
+-static int print_utimes(const char *path, struct timespec *at,
+-			struct timespec *mt, struct timespec *ct,
+-			void *user)
+-{
+-	struct recv_args *r = user;
+-	char *full_path = path_cat(r->full_subvol_path, path);
+-
+-	printf("utimes\t%s\n", full_path);
+-
+-	free(full_path);
+-	return 0;
+-}
+-
+-static int print_update_extent(const char *path, u64 offset, u64 len,
+-			       void *user)
+-{
+-	struct recv_args *r = user;
+-	char *full_path = path_cat(r->full_subvol_path, path);
+-
+-	printf("update_extent\t%s\t%llu\t%llu\n", full_path, offset, len);
+-
+-	free(full_path);
+-	return 0;
+-}
+-
+-static struct btrfs_send_ops send_ops_print = {
+-	.subvol = print_subvol,
+-	.snapshot = print_snapshot,
+-	.mkfile = print_mkfile,
+-	.mkdir = print_mkdir,
+-	.mknod = print_mknod,
+-	.mkfifo = print_mkfifo,
+-	.mksock = print_mksock,
+-	.symlink = print_symlink,
+-	.rename = print_rename,
+-	.link = print_link,
+-	.unlink = print_unlink,
+-	.rmdir = print_rmdir,
+-	.write = print_write,
+-	.clone = print_clone,
+-	.set_xattr = print_set_xattr,
+-	.remove_xattr = print_remove_xattr,
+-	.truncate = print_truncate,
+-	.chmod = print_chmod,
+-	.chown = print_chown,
+-	.utimes = print_utimes,
+-	.update_extent = print_update_extent,
+-};
+-
+-static void *process_thread(void *arg_)
+-{
+-	int ret;
+-
+-	while (1) {
+-		ret = btrfs_read_and_process_send_stream(pipefd[0],
+-							 &send_ops_print, arg_, 0);
+-		if (ret)
+-			break;
+-	}
+-
+-	if (ret > 0)
+-		ret = 0;
+-
+-	return ERR_PTR(ret);
+-}
+-
+-int main(int argc, char **argv)
+-{
+-	int ret = 0;
+-	int subvol_fd;
+-	pthread_t t_read;
+-	void *t_err = NULL;
+-	struct recv_args r;
+-
+-	if (argc != 3)
+-		usage(EINVAL);
+-
+-	root_path = realpath(argv[1], NULL);
+-	if (!root_path) {
+-		ret = errno;
+-		usage(ret);
+-	}
+-
+-	subvol_path = realpath(argv[2], NULL);
+-	if (!subvol_path) {
+-		ret = errno;
+-		usage(ret);
+-	}
+-
+-	r.full_subvol_path = subvol_path;
+-	r.root_path = root_path;
+-
+-	subvol_fd = open(subvol_path, O_RDONLY|O_NOATIME);
+-	if (subvol_fd < 0) {
+-		ret = errno;
+-		fprintf(stderr, "ERROR: Subvolume open failed. %s\n",
+-			strerror(ret));
+-		goto out;
+-	}
+-
+-	ret = pipe(pipefd);
+-	if (ret < 0) {
+-		ret = errno;
+-		fprintf(stderr, "ERROR: pipe failed. %s\n", strerror(ret));
+-		goto out;
+-	}
+-
+-	ret = pthread_create(&t_read, NULL, process_thread, &r);
+-	if (ret < 0) {
+-		ret = errno;
+-		fprintf(stderr, "ERROR: pthread create failed. %s\n",
+-			strerror(ret));
+-		goto out;
+-	}
+-
+-	io_send.send_fd = pipefd[1];
+-	io_send.clone_sources_count = 0;
+-	io_send.clone_sources = NULL;
+-	io_send.parent_root = 0;
+-	io_send.flags = BTRFS_SEND_FLAG_NO_FILE_DATA;
+-
+-	ret = ioctl(subvol_fd, BTRFS_IOC_SEND, &io_send);
+-	if (ret < 0) {
+-		ret = errno;
+-		fprintf(stderr, "ERROR: send ioctl failed with %d: %s\n", ret,
+-			strerror(ret));
+-		goto out;
+-	}
+-
+-	close(pipefd[1]);
+-
+-	ret = pthread_join(t_read, &t_err);
+-	if (ret) {
+-		fprintf(stderr, "ERROR: pthread_join failed: %s\n",
+-			strerror(ret));
+-		goto out;
+-	}
+-	if (t_err) {
+-		ret = (long int)t_err;
+-		fprintf(stderr, "ERROR: failed to process send stream, ret=%ld "
+-			"(%s)\n", (long int)t_err, strerror(ret));
+-		goto out;
+-	}
+-
+-out:
+-	return !!ret;
+-}
 -- 
 2.10.1
 

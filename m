@@ -1,39 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f195.google.com ([209.85.192.195]:32792 "EHLO
-        mail-pf0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755379AbcKBDZq (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Nov 2016 23:25:46 -0400
-Received: by mail-pf0-f195.google.com with SMTP id a136so405502pfa.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 01 Nov 2016 20:25:46 -0700 (PDT)
-From: Nick Terrell <nickrterrell@gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:60047 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1423514AbcKANV3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 1 Nov 2016 09:21:29 -0400
+From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Nick Terrell <nickrterrell@gmail.com>
-Subject: [PATCH] btrfs: Call kunmap if zlib_inflateInit2 fails
-Date: Tue,  1 Nov 2016 20:25:27 -0700
-Message-Id: <20161102032527.62311-1-nickrterrell@gmail.com>
+Cc: David Sterba <dsterba@suse.com>, stable@vger.kernel.org, #@suse.cz,
+        4.4+@suse.cz
+Subject: [PATCH] btrfs: store and load values of stripes_min/stripes_max in balance status item
+Date: Tue,  1 Nov 2016 14:21:23 +0100
+Message-Id: <20161101132123.11673-1-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If zlib_inflateInit2 fails, the input page is never unmapped.
-Add a call to kunmap when it fails.
+The balance status item contains currently known filter values, but the
+stripes filter was unintentionally not among them. This would mean, that
+interrupted and automatically restarted balance does not apply the
+stripe filters.
 
-Signed-off-by: Nick Terrell <nickrterrell@gmail.com>
+Fixes: dee32d0ac3719ef8d640efaf0884111df444730f
+CC: stable@vger.kernel.org # 4.4+
+Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/zlib.c | 1 +
- 1 file changed, 1 insertion(+)
+ fs/btrfs/ctree.h | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/fs/btrfs/zlib.c b/fs/btrfs/zlib.c
-index 88d274e..30e19c9 100644
---- a/fs/btrfs/zlib.c
-+++ b/fs/btrfs/zlib.c
-@@ -250,6 +250,7 @@ static int zlib_decompress_biovec(struct list_head *ws, struct page **pages_in,
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 9d8edcb0813c..223c706aea1f 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2210,6 +2210,8 @@ btrfs_disk_balance_args_to_cpu(struct btrfs_balance_args *cpu,
+ 	cpu->target = le64_to_cpu(disk->target);
+ 	cpu->flags = le64_to_cpu(disk->flags);
+ 	cpu->limit = le64_to_cpu(disk->limit);
++	cpu->stripes_min = le32_to_cpu(disk->stripes_min);
++	cpu->stripes_max = le32_to_cpu(disk->stripes_max);
+ }
  
- 	if (Z_OK != zlib_inflateInit2(&workspace->strm, wbits)) {
- 		printk(KERN_WARNING "BTRFS: inflateInit failed\n");
-+		kunmap(pages_in[page_in_index]);
- 		return -EIO;
- 	}
- 	while (workspace->strm.total_in < srclen) {
+ static inline void
+@@ -2228,6 +2230,8 @@ btrfs_cpu_balance_args_to_disk(struct btrfs_disk_balance_args *disk,
+ 	disk->target = cpu_to_le64(cpu->target);
+ 	disk->flags = cpu_to_le64(cpu->flags);
+ 	disk->limit = cpu_to_le64(cpu->limit);
++	disk->stripes_min = cpu_to_le32(cpu->stripes_min);
++	disk->stripes_max = cpu_to_le32(cpu->stripes_max);
+ }
+ 
+ /* struct btrfs_super_block */
 -- 
-2.7.4
+2.10.1
 

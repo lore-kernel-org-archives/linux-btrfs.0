@@ -1,120 +1,129 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:51259 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1753416AbcKVTfd (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Nov 2016 14:35:33 -0500
-Subject: Re: [PATCH v2] btrfs: introduce priority based delalloc shrink
- mechanism
-To: <dsterba@suse.cz>, <jbacik@fb.com>,
-        Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
-        <linux-btrfs@vger.kernel.org>
-References: <57FF1E50.7000706@cn.fujitsu.com>
- <1476351085-26821-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
- <20161024154352.GD22935@twin.jikos.cz>
-From: Chris Mason <clm@fb.com>
-Message-ID: <712dd6bb-1550-d718-1301-65bc12dec174@fb.com>
-Date: Tue, 22 Nov 2016 14:35:04 -0500
+Received: from mail-vk0-f53.google.com ([209.85.213.53]:34204 "EHLO
+        mail-vk0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1169078AbcKANZZ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Nov 2016 09:25:25 -0400
+Received: by mail-vk0-f53.google.com with SMTP id x186so70475512vkd.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 01 Nov 2016 06:25:25 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20161024154352.GD22935@twin.jikos.cz>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+From: E V <eliventer@gmail.com>
+Date: Tue, 1 Nov 2016 09:25:23 -0400
+Message-ID: <CAJtFHUT-eW0S1kPs26aVKCu=TX4yTU6mvioc7r3mtJ90J8F6Cg@mail.gmail.com>
+Subject: dmesg traces from enospc_debug & kernel 4.9-r3
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/24/2016 11:43 AM, David Sterba wrote:
-> Hi Josef,
->
-> are you fine with V2?
->
-> On Thu, Oct 13, 2016 at 05:31:25PM +0800, Wang Xiaoguang wrote:
->> Since commit b02441999efcc6152b87cd58e7970bb7843f76cf, we don't wait all
->> ordered extents, but I run into some enospc errors when doing large file
->> create and delete tests, it's because shrink_delalloc() does not write
->> enough delalloc bytes and wait them finished:
->>     From: Miao Xie <miaox@cn.fujitsu.com>
->>     Date: Mon, 4 Nov 2013 23:13:25 +0800
->>     Subject: [PATCH] Btrfs: don't wait for the completion of all the ordered extents
->>
->>     It is very likely that there are lots of ordered extents in the filesytem,
->>     if we wait for the completion of all of them when we want to reclaim some
->>     space for the metadata space reservation, we would be blocked for a long
->>     time. The performance would drop down suddenly for a long time.
->>
->> Here we introduce a simple reclaim_priority variable, the lower the
->> value, the higher the priority, 0 is the maximum priority. The core
->> idea is:
->>     delalloc_bytes = percpu_counter_sum_positive(&root->fs_info->delalloc_bytes);
->>     if (reclaim_priority)
->>         to_reclaim = orig * (2 << (BTRFS_DEFAULT_FLUSH_PRIORITY - reclaim_priority));
->>     else
->>         to_reclaim = delalloc_bytes;
->>
->> Here 'orig' is the number of metadata we want to reserve, and as the priority
->> increases, we will try wo write more delalloc bytes, meanwhile if
->> "reclaim_priority == 0" returns true, we'll also wait all current ordered
->> extents to finish.
->>
->> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
->> ---
->>  fs/btrfs/extent-tree.c       | 63 ++++++++++++++++++++++++++------------------
->>  include/trace/events/btrfs.h | 11 +++-----
->>  2 files changed, 42 insertions(+), 32 deletions(-)
->>
+Testing 4.9-rc3 on my big backup system running rsync. Saw 10 traces
+over the last day, I broke them down into groups for were they differ
+with a full trace at the bottom for reference. Hopefully useful to
+somebody. Everything is running fine so far. Can send all the full
+traces if someone is interested.
 
-[ ... ]
+2 of these:
+trace6:[14843.507199]  [<ffffffffa019b38c>] ?
+btrfs_alloc_tree_block+0x3bc/0x4d0 [btrfs]
+trace6-[14843.507254]  [<ffffffffa0181e38>] ?
+__btrfs_cow_block+0x148/0x5d0 [btrfs]
+trace6-[14843.507294]  [<ffffffffa0182464>] ?
+btrfs_cow_block+0x114/0x1d0 [btrfs]
+trace6-[14843.507334]  [<ffffffffa01861d6>] ?
+btrfs_search_slot+0x206/0xa40 [btrfs]
+trace6-[14843.507376]  [<ffffffffa0216708>] ?
+__btrfs_qgroup_release_data+0x88/0x120 [btrfs]
 
->> @@ -5008,8 +5024,8 @@ static void btrfs_async_reclaim_metadata_space(struct work_struct *work)
->>  	struct btrfs_space_info *space_info;
->>  	u64 to_reclaim;
->>  	int flush_state;
->> -	int commit_cycles = 0;
->>  	u64 last_tickets_id;
->> +	int reclaim_priority = BTRFS_DEFAULT_FLUSH_PRIORITY;
->>
->>  	fs_info = container_of(work, struct btrfs_fs_info, async_reclaim_work);
->>  	space_info = __find_space_info(fs_info, BTRFS_BLOCK_GROUP_METADATA);
->> @@ -5030,8 +5046,11 @@ static void btrfs_async_reclaim_metadata_space(struct work_struct *work)
->>  		struct reserve_ticket *ticket;
->>  		int ret;
->>
->> +		if (flush_state > COMMIT_TRANS)
->> +			flush_state = FLUSH_DELAYED_ITEMS_NR;
->>  		ret = flush_space(fs_info->fs_root, space_info, to_reclaim,
->> -			    to_reclaim, flush_state);
->> +				  flush_state, reclaim_priority);
->> +
->>  		spin_lock(&space_info->lock);
->>  		if (!ret)
->>  			try_to_wake_tickets(fs_info->fs_root, space_info);
->> @@ -5049,21 +5068,15 @@ static void btrfs_async_reclaim_metadata_space(struct work_struct *work)
->>  		} else {
->>  			last_tickets_id = space_info->tickets_id;
->>  			flush_state = FLUSH_DELAYED_ITEMS_NR;
->> -			if (commit_cycles)
->> -				commit_cycles--;
->> +			reclaim_priority = BTRFS_DEFAULT_FLUSH_PRIORITY;
->>  		}
->>
->> -		if (flush_state > COMMIT_TRANS) {
->> -			commit_cycles++;
->> -			if (commit_cycles > 2) {
->> -				wake_all_tickets(&space_info->tickets);
->> -				space_info->flush = 0;
->> -			} else {
->> -				flush_state = FLUSH_DELAYED_ITEMS_NR;
->> -			}
->> +		if (flush_state > COMMIT_TRANS && reclaim_priority == 0) {
->> +			wake_all_tickets(&space_info->tickets);
->> +			space_info->flush = 0;
->>  		}
->>  		spin_unlock(&space_info->lock);
->> -	} while (flush_state <= COMMIT_TRANS);
->> +	} while ((flush_state <= COMMIT_TRANS) || (--reclaim_priority >= 0));
->>  }
+4 of these:
+trace8:[15611.350323]  [<ffffffffa019b38c>] ?
+btrfs_alloc_tree_block+0x3bc/0x4d0 [btrfs]
+trace8-[15611.350378]  [<ffffffffa017ec82>] ? leaf_space_used+0xd2/0x110 [btrfs]
+trace8-[15611.350417]  [<ffffffffa0181e38>] ?
+__btrfs_cow_block+0x148/0x5d0 [btrfs]
+trace8-[15611.350458]  [<ffffffffa0182464>] ?
+btrfs_cow_block+0x114/0x1d0 [btrfs]
+trace8-[15611.350498]  [<ffffffffa01861d6>] ?
+btrfs_search_slot+0x206/0xa40 [btrfs]
 
-I really like the idea behind this patch, but it's very difficult to 
-follow what is going on with flush_state and reclaim_priority in this 
-loop.  It needs big flashing signs explaining how long the loop is going 
-to continue and what the goals are for bumping or dropping each one.
+1 each of the following 4
+trace1:[14494.245397]  [<ffffffffa019b38c>] ?
+btrfs_alloc_tree_block+0x3bc/0x4d0 [btrfs]
+trace1-[14494.245457]  [<ffffffffa01d0f56>] ?
+read_extent_buffer_pages+0x1c6/0x2a0 [btrfs]
+trace1-[14494.245513]  [<ffffffffa0181e38>] ?
+__btrfs_cow_block+0x148/0x5d0 [btrfs]
+trace1-[14494.245553]  [<ffffffffa0182464>] ?
+btrfs_cow_block+0x114/0x1d0 [btrfs]
+trace1-[14494.245593]  [<ffffffffa01861d6>] ?
+btrfs_search_slot+0x206/0xa40 [btrfs]
+--
+trace10:[83879.470211]  [<ffffffffa019b38c>] ?
+btrfs_alloc_tree_block+0x3bc/0x4d0 [btrfs]
+trace10-[83879.470259]  [<ffffffff81094620>] ?
+autoremove_wake_function+0x30/0x30
+trace10-[83879.470299]  [<ffffffffa0181e38>] ?
+__btrfs_cow_block+0x148/0x5d0 [btrfs]
+trace10-[83879.470339]  [<ffffffffa0182464>] ?
+btrfs_cow_block+0x114/0x1d0 [btrfs]
+trace10-[83879.470378]  [<ffffffffa0185710>] ? push_leaf_left+0xf0/0x170 [btrfs]
+--
+trace7:[15069.248346]  [<ffffffffa019b38c>] ?
+btrfs_alloc_tree_block+0x3bc/0x4d0 [btrfs]
+trace7-[15069.248394]  [<ffffffff81139ff5>] ? __activate_page+0x1b5/0x250
+trace7-[15069.248423]  [<ffffffff81139e40>] ? put_pages_list+0x70/0x70
+trace7-[15069.248452]  [<ffffffff81139cb8>] ? pagevec_lru_move_fn+0xb8/0xd0
+trace7-[15069.248490]  [<ffffffffa0181e38>] ?
+__btrfs_cow_block+0x148/0x5d0 [btrfs]
+--
+trace9:[21545.901275]  [<ffffffffa019b38c>] ?
+btrfs_alloc_tree_block+0x3bc/0x4d0 [btrfs]
+trace9-[21545.901323]  [<ffffffff81087d8e>] ? update_curr+0x7e/0x100
+trace9-[21545.901361]  [<ffffffffa0181e38>] ?
+__btrfs_cow_block+0x148/0x5d0 [btrfs]
+trace9-[21545.901401]  [<ffffffffa0182464>] ?
+btrfs_cow_block+0x114/0x1d0 [btrfs]
+trace9-[21545.901443]  [<ffffffffa01861d6>] ?
+btrfs_search_slot+0x206/0xa40 [btrfs]
 
--chris
+A full one for reference
+$ cat trace10
+[83879.469227] use_block_rsv: 214 callbacks suppressed
+[83879.469257] ------------[ cut here ]------------
+[83879.469309] WARNING: CPU: 1 PID: 14025 at
+fs/btrfs/extent-tree.c:8325 btrfs_alloc_tree_block+0x3bc/0x4d0 [btrfs]
+[83879.469360] BTRFS: block rsv returned -28
+[83879.469787] CPU: 1 PID: 14025 Comm: kworker/u34:4 Tainted: G
+W I     4.9.0-rc3 #1
+[83879.469893] Workqueue: btrfs-endio-write btrfs_endio_write_helper [btrfs]
+[83879.469926]  0000000000000000 ffffffff812946c9 ffffc9000e5ab968
+0000000000000000
+[83879.469979]  ffffffff8105a27f ffff8808198d8158 ffffc9000e5ab9b8
+0000000000004000
+[83879.470033]  ffff8808198d8000 ffff88039e154f00 0000000000000000
+ffffffff8105a2ea
+[83879.470087] Call Trace:
+[83879.470113]  [<ffffffff812946c9>] ? dump_stack+0x46/0x5d
+[83879.470143]  [<ffffffff8105a27f>] ? __warn+0xbf/0xe0
+[83879.470170]  [<ffffffff8105a2ea>] ? warn_slowpath_fmt+0x4a/0x50
+[83879.470211]  [<ffffffffa019b38c>] ?
+btrfs_alloc_tree_block+0x3bc/0x4d0 [btrfs]
+[83879.470259]  [<ffffffff81094620>] ? autoremove_wake_function+0x30/0x30
+[83879.470299]  [<ffffffffa0181e38>] ? __btrfs_cow_block+0x148/0x5d0 [btrfs]
+[83879.470339]  [<ffffffffa0182464>] ? btrfs_cow_block+0x114/0x1d0 [btrfs]
+[83879.470378]  [<ffffffffa0185710>] ? push_leaf_left+0xf0/0x170 [btrfs]
+[83879.470418]  [<ffffffffa0185e3a>] ? split_leaf+0x57a/0x710 [btrfs]
+[83879.470456]  [<ffffffffa017ec82>] ? leaf_space_used+0xd2/0x110 [btrfs]
+[83879.470495]  [<ffffffffa01868f6>] ? btrfs_search_slot+0x926/0xa40 [btrfs]
+[83879.470540]  [<ffffffffa01c709e>] ? btrfs_get_token_32+0xee/0x110 [btrfs]
+[83879.470584]  [<ffffffffa01a1118>] ?
+btrfs_csum_file_blocks+0x3f8/0x610 [btrfs]
+[83879.470643]  [<ffffffffa01aefc1>] ?
+add_pending_csums.isra.48+0x41/0x60 [btrfs]
+[83879.470702]  [<ffffffffa01b6a5b>] ?
+btrfs_finish_ordered_io+0x31b/0x640 [btrfs]
+[83879.470761]  [<ffffffffa01ded63>] ? normal_work_helper+0xc3/0x2f0 [btrfs]
+[83879.470794]  [<ffffffff81071c3b>] ? process_one_work+0x14b/0x400
+[83879.470824]  [<ffffffff8107225d>] ? worker_thread+0x5d/0x470
+[83879.470853]  [<ffffffff81072200>] ? rescuer_thread+0x310/0x310
+[83879.470882]  [<ffffffff81076ffb>] ? kthread+0xcb/0xf0
+[83879.470909]  [<ffffffff81076f30>] ? kthread_park+0x50/0x50
+[83879.470939]  [<ffffffff815053d2>] ? ret_from_fork+0x22/0x30

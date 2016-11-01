@@ -1,64 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:33020 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:20095 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1167893AbcKAIC1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 1 Nov 2016 04:02:27 -0400
+        id S965656AbcKAICG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 1 Nov 2016 04:02:06 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: [PATCH v3 1/4] btrfs-progs: utils: Introduce function to escape characters
-Date: Tue,  1 Nov 2016 16:01:43 +0800
-Message-Id: <20161101080147.13163-2-quwenruo@cn.fujitsu.com>
-In-Reply-To: <20161101080147.13163-1-quwenruo@cn.fujitsu.com>
-References: <20161101080147.13163-1-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v3 0/4] Introduce dump option for btrfs-receive
+Date: Tue,  1 Nov 2016 16:01:42 +0800
+Message-Id: <20161101080147.13163-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce new function, escape_string_inplace(), to escape specified
-characters in place.
+The branch can be fetched from github:
+https://github.com/adam900710/btrfs-progs/tree/send_dump
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- utils.c | 17 +++++++++++++++++
- utils.h |  2 ++
- 2 files changed, 19 insertions(+)
+The branch doesn't contain the fake test case.
 
-diff --git a/utils.c b/utils.c
-index 3f54245..69faae1 100644
---- a/utils.c
-+++ b/utils.c
-@@ -4251,3 +4251,20 @@ unsigned int rand_range(unsigned int upper)
- 	 */
- 	return (unsigned int)(jrand48(rand_seed) % upper);
- }
-+
-+void string_escape_inplace(char *restrict string, char *restrict escape_chars)
-+{
-+	int i, j;
-+
-+	for (i = 0; i < strlen(escape_chars); i++) {
-+		j = 0;
-+		while (j < strlen(string)) {
-+			if (string[j] == escape_chars[i]) {
-+				memmove(string + j, string + j + 1,
-+					strlen(string) -j);
-+				continue;
-+			}
-+			j++;
-+		}
-+	}
-+}
-diff --git a/utils.h b/utils.h
-index 1a2dbcd..b36d411 100644
---- a/utils.h
-+++ b/utils.h
-@@ -457,4 +457,6 @@ unsigned int rand_range(unsigned int upper);
- /* Also allow setting the seed manually */
- void init_rand_seed(u64 seed);
- 
-+void string_escape_inplace(char *restrict string, char *restrict escape_chars);
-+
- #endif
+Introduce new "--dump" option for btrfs-receive, which will exam and dump
+metadata info of a send stream.
+This is quite handy to debug send stream.
+
+Since such function is provided by old send-test tool, which doesn't even
+compile now, remove the old send-test tool.
+
+changelog:
+v2:
+  Move from inspect subcommand to receive subcommand.
+v3:
+  Add output for ctime/mtime/atime
+  (Human readable local time like "1111-11-01 11:11:11")
+  Rearrange the output from "key1: value1, key2: value2" to
+  "key1=value1 key2=value2". Suggested by David
+  Rename macro path_cat_or_error() to PATH_CAT_OR_RET(). Suggested by David
+  Change pointer to array to avoid memory allocation error. Suggested by David
+  Add the 5th patch to add a fake test case to show how the new output looks
+  like.
+
+Qu Wenruo (4):
+  btrfs-progs: utils: Introduce function to escape characters
+  btrfs-progs: introduce new send-dump object
+  btrfs-progs: receive: introduce option to dump send stream
+  btrfs-progs: remove send-test tool
+
+ Documentation/btrfs-receive.asciidoc |  15 +-
+ Makefile.in                          |   8 +-
+ cmds-receive.c                       |  35 ++-
+ send-dump.c                          | 299 +++++++++++++++++++++++
+ send-dump.h                          |  29 +++
+ send-test.c                          | 447 -----------------------------------
+ utils.c                              |  17 ++
+ utils.h                              |   2 +
+ 8 files changed, 394 insertions(+), 458 deletions(-)
+ create mode 100644 send-dump.c
+ create mode 100644 send-dump.h
+ delete mode 100644 send-test.c
+
 -- 
 2.10.1
 

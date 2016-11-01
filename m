@@ -1,52 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:43005 "EHLO
-        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754844AbcKAEVs (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Nov 2016 00:21:48 -0400
-Date: Mon, 31 Oct 2016 21:21:40 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
-Message-ID: <20161101042140.atn73lqehgpqslgz@merlins.org>
-References: <60a0ce1f-7b2f-325e-51f7-ccad054fab8b@cn.fujitsu.com>
- <20161031054719.GN28648@merlins.org>
- <b31eaf2d-b339-6163-0108-28d1586c05e5@cn.fujitsu.com>
- <20161031062509.GO28648@merlins.org>
- <0c9e25b1-c8e1-6300-0c79-e9e3e8fd0f52@cn.fujitsu.com>
- <20161031063737.GP28648@merlins.org>
- <81e30812-be45-b4ff-3bf2-c79e805d445a@cn.fujitsu.com>
- <20161031084412.GI16645@carfax.org.uk>
- <20161031150422.GQ28648@merlins.org>
- <38fa8b04-ec2d-884f-e03c-8bc2fb888efb@cn.fujitsu.com>
+Received: from mail-oi0-f66.google.com ([209.85.218.66]:35243 "EHLO
+        mail-oi0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S965710AbcKAEqi (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Nov 2016 00:46:38 -0400
+Received: by mail-oi0-f66.google.com with SMTP id v84so8982078oie.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 31 Oct 2016 21:46:37 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <38fa8b04-ec2d-884f-e03c-8bc2fb888efb@cn.fujitsu.com>
-Subject: Re: btrfs check --repair: ERROR: cannot read chunk root
+From: Tobias Holst <tobby@tobby.eu>
+Date: Tue, 1 Nov 2016 05:46:15 +0100
+Message-ID: <CAGwxe4jsSHNP5qXy=wL6MuYNzKTQF70MpD-0aYhHaUzVR4SuLg@mail.gmail.com>
+Subject: cannot mount read-write because of unsupported optional features (2)
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 01, 2016 at 12:13:38PM +0800, Qu Wenruo wrote:
-> Would you try to locate the range where we starts to fail to read?
-> 
-> I still think the root problem is we failed to read the device in user
-> space.
- 
-Understood.
+Hi
 
-I'll run this then:
-myth:~# dd if=/dev/mapper/crypt_bcache0 of=/dev/null bs=1M &
-[2] 21108
-myth:~# while :; do killall -USR1 dd; sleep 1200; done
-275+0 records in
-274+0 records out
-287309824 bytes (287 MB) copied, 7.20248 s, 39.9 MB/s
+I can't mount my boot partition anymore. When I try it by entering
+"mount /dev/sdi1 /mnt/boot/" I get:
+> mount: wrong fs type, bad option, bad superblock on /dev/sdi1,
+>       missing codepage or helper program, or other error
+>
+>       In some cases useful info is found in syslog - try
+>       dmesg | tail or so.
 
-This will take a while to run, I'll report back on how far it goes.
+"dmesg | tail" gives me:
+> BTRFS info (device sdi1): using free space tree
+> BTRFS info (device sdi1): has skinny extents
+> BTRFS error (device sdi1): cannot mount read-write because of unsupported optional features (2)
+> BTRFS: open_ctree failed
 
-Thanks,
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+I am using an Ubuntu 16.10 Live CD with Kernel 4.8 and btrfs-progs v4.8.2.
+
+"btrfs inspect-internal dump-super /dev/sdi1" gives me the following:
+> superblock: bytenr=65536, device=/dev/sdi1
+> ---------------------------------------------------------
+> csum_type               0 (crc32c)
+> csum_size               4
+> csum                    0x0f346b08 [match]
+> bytenr                  65536
+> flags                   0x1
+>                        ( WRITTEN )
+> magic                   _BHRfS_M [match]
+> fsid                    67ac5740-1ced-4d59-8999-03bb3195ec49
+> label                   t-hyper-boot
+> generation              64
+> root                    20971520
+> sys_array_size          129
+> chunk_root_generation   43
+> root_level              1
+> chunk_root              12587008
+> chunk_root_level        0
+> log_root                0
+> log_root_transid        0
+> log_root_level          0
+> total_bytes             2147483648
+> bytes_used              102813696
+> sectorsize              4096
+> nodesize                4096
+> leafsize                4096
+> stripesize              4096
+> root_dir                6
+> num_devices             1
+> compat_flags            0x0
+> compat_ro_flags         0x3
+> incompat_flags          0x34d
+>                        ( MIXED_BACKREF |
+>                          MIXED_GROUPS |
+>                          COMPRESS_LZO |
+>                          EXTENDED_IREF |
+>                          SKINNY_METADATA |
+>                          NO_HOLES )
+> cache_generation        53
+> uuid_tree_generation    64
+> dev_item.uuid           273d5800-add1-45bb-8a11-ecd6d8c1503e
+> dev_item.fsid           67ac5740-1ced-4d59-8999-03bb3195ec49 [match]
+> dev_item.type           0
+> dev_item.total_bytes    2147483648
+> dev_item.bytes_used     667680768
+> dev_item.io_align       4096
+> dev_item.io_width       4096
+> dev_item.sector_size    4096
+> dev_item.devid          1
+> dev_item.dev_group      0
+> dev_item.seek_speed     0
+> dev_item.bandwidth      0
+> dev_item.generation     0
+
+Does anyone have an idea why I can't mount it anymore?
+
+Regards,
+Tobias

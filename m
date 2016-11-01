@@ -1,69 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:16282 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751704AbcKCBPA (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Nov 2016 21:15:00 -0400
-Subject: Re: [PATCH v3 1/4] btrfs-progs: utils: Introduce function to escape
- characters
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-References: <20161101080147.13163-1-quwenruo@cn.fujitsu.com>
- <20161101080147.13163-2-quwenruo@cn.fujitsu.com>
- <20161101100851.GV12522@suse.cz>
- <1382110a-9c56-e9e2-be33-77dbfffce4b6@cn.fujitsu.com>
- <20161102105550.GB12522@suse.cz>
+Received: from cn.fujitsu.com ([222.73.24.84]:33020 "EHLO song.cn.fujitsu.com"
+        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+        id S1167893AbcKAIC1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 1 Nov 2016 04:02:27 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <e2521e45-bfa4-cf0c-8a70-483d350a355c@cn.fujitsu.com>
-Date: Thu, 3 Nov 2016 09:14:51 +0800
+To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: [PATCH v3 1/4] btrfs-progs: utils: Introduce function to escape characters
+Date: Tue,  1 Nov 2016 16:01:43 +0800
+Message-Id: <20161101080147.13163-2-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20161101080147.13163-1-quwenruo@cn.fujitsu.com>
+References: <20161101080147.13163-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20161102105550.GB12522@suse.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Introduce new function, escape_string_inplace(), to escape specified
+characters in place.
 
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ utils.c | 17 +++++++++++++++++
+ utils.h |  2 ++
+ 2 files changed, 19 insertions(+)
 
-At 11/02/2016 06:55 PM, David Sterba wrote:
-> On Wed, Nov 02, 2016 at 09:19:10AM +0800, Qu Wenruo wrote:
->>
->>
->> At 11/01/2016 06:08 PM, David Sterba wrote:
->>> On Tue, Nov 01, 2016 at 04:01:43PM +0800, Qu Wenruo wrote:
->>>> Introduce new function, escape_string_inplace(), to escape specified
->>>> characters in place.
->>>
->>> Sorry, the pointer to seq_path was misleading. The actual escape
->>> function is mangle_path and it copies one string to another. As we just
->>> print the path, we can simply switch and call putchar.
->>>
->>
->> Putchar() method is indeed much easier to implement.
->>
->> But it makes us hard to do further formatting, like aligning the path to
->> given width. (At least we are still using 32 chars alignment for path)
->>
->> So I still prefer the current full function string escaping and still
->> use %-32s for formatting.
->>
->>
->> And the idea of implementing escape_string_inplace() as a pure string
->> manipulation function can make it more agile for later use.
->> For example, we can reuse it for print-tree.
->
-> Reusing is fine, but I really don't like that the function modifies the
-> argument. What if the function is called twice on the same string?
-Forgot to ask, what's the problem calling the function twice on the same 
-string?
+diff --git a/utils.c b/utils.c
+index 3f54245..69faae1 100644
+--- a/utils.c
++++ b/utils.c
+@@ -4251,3 +4251,20 @@ unsigned int rand_range(unsigned int upper)
+ 	 */
+ 	return (unsigned int)(jrand48(rand_seed) % upper);
+ }
++
++void string_escape_inplace(char *restrict string, char *restrict escape_chars)
++{
++	int i, j;
++
++	for (i = 0; i < strlen(escape_chars); i++) {
++		j = 0;
++		while (j < strlen(string)) {
++			if (string[j] == escape_chars[i]) {
++				memmove(string + j, string + j + 1,
++					strlen(string) -j);
++				continue;
++			}
++			j++;
++		}
++	}
++}
+diff --git a/utils.h b/utils.h
+index 1a2dbcd..b36d411 100644
+--- a/utils.h
++++ b/utils.h
+@@ -457,4 +457,6 @@ unsigned int rand_range(unsigned int upper);
+ /* Also allow setting the seed manually */
+ void init_rand_seed(u64 seed);
+ 
++void string_escape_inplace(char *restrict string, char *restrict escape_chars);
++
+ #endif
+-- 
+2.10.1
 
-escape_string_inplace(dest, " ");
-escape_string_inplace(dest, "\n");
-
-is just the same as
-
-escape_string_inplace(dest, " \n");
-
-So I see no problem here.
-
-Thanks,
-Qu
 
 

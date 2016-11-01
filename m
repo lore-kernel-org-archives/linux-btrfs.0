@@ -1,58 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40639 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751527AbcKRSMA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 Nov 2016 13:12:00 -0500
-Date: Fri, 18 Nov 2016 19:11:55 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Omar Sandoval <osandov@osandov.com>
-Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH v2 0/6] btrfs-progs: better space_cache=v2 support
-Message-ID: <20161118181155.GC12522@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1479148594.git.osandov@fb.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:58278 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1161088AbcKABKP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 31 Oct 2016 21:10:15 -0400
+Subject: Re: [PATCH v2 2/3] btrfs-progs: receive: Introduce option to exam and
+ dump send stream
+To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
+References: <20160907002935.8539-1-quwenruo@cn.fujitsu.com>
+ <20160907002935.8539-3-quwenruo@cn.fujitsu.com>
+ <20160908094228.GK16983@twin.jikos.cz> <20160908095613.GL16983@twin.jikos.cz>
+ <9e6d85ed-e9b7-0a7c-44d0-83f66f369692@cn.fujitsu.com>
+ <20161018120749.GO11398@suse.cz>
+ <ead991f8-710e-e865-7cdd-2a4390fec3dd@cn.fujitsu.com>
+ <20161031173109.GT12522@twin.jikos.cz>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <4fb4c7df-e0b5-3848-6dec-d2915f472699@cn.fujitsu.com>
+Date: Tue, 1 Nov 2016 09:10:09 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <cover.1479148594.git.osandov@fb.com>
+In-Reply-To: <20161031173109.GT12522@twin.jikos.cz>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 14, 2016 at 10:43:17AM -0800, Omar Sandoval wrote:
-> Cover letter from v1:
-> 
-> This series implements some support for space_cache=v2 in btrfs-progs.
-> In particular, this adds support for `btrfs check --clear-space-cache v2`,
-> proper printing of the free space tree flags for `btrfs inspect-internal
-> dump-super`, and better documentation.
-> 
-> We'd previously talked about always making btrfs-progs always invalidate
-> the free space tree when doing write operations, but I decided that this
-> should be an action explicitly requested by the user. It'd also be
-> unsafe if using a kernel without the free space tree valid bit support,
-> which is why I didn't implement a `btrfs check --invalidate-free-space-cache`
-> option. Doing the full clear is always safe.
-> 
-> Still missing is full read-write support, but this should hopefully
-> cover most btrfs-progs usage.
-> 
-> Changes since v1:
-> 
-> - Change unsigned -> unsigned int argument to
->   btrfs_check_fs_compatability() in patch 3
-> - Remove BUG_ON() in btrfs_del_root() in patch 4
-> - Return error from btrfs_free_tree_block() in patch 4
-> - Handle errors from btrfs_free_tree_block() and clean_tree_block() in
->   patch 4
-> - Add Qu Wenruo's Reviewed-by to patches 3, 4, and 5
-> 
-> Thanks!
-> 
-> Omar Sandoval (6):
->   btrfs-progs: add the FREE_SPACE_TREE_VALID compat_ro bit definition
->   btrfs-progs: format FREE_SPACE_TREE{,_VALID} nicely in dump-super
->   btrfs-progs: add OPEN_CTREE_INVALIDATE_FST flag
->   btrfs-progs: add btrfs_clear_free_space_tree() from the kernel
->   btrfs-progs: implement btrfs check --clear-space-cache v2
->   btrfs-progs: document space_cache=v2 more thoroughly
 
-Applied, thanks.
+
+At 11/01/2016 01:31 AM, David Sterba wrote:
+> On Wed, Oct 19, 2016 at 09:18:09AM +0800, Qu Wenruo wrote:
+>> At 10/18/2016 08:07 PM, David Sterba wrote:
+>>> On Thu, Oct 13, 2016 at 03:32:53PM +0800, Qu Wenruo wrote:
+>>>> Hi David,
+>>>>
+>>>> Any updates?
+>>>>
+>>>> If you're busy on these fix, I could fix these problem and send a new
+>>>> version.
+>>>
+>>> I was about to add the series to merge but the output format needs work.
+>>> At minimum, something that's parseable, so some commonly used format
+>>> (yaml or json). The current way is ok for quick overview, but I'd really
+>>> like to see more options of the output. The malloc/free problems are
+>>> minor.
+>>
+>> Thanks for the comment.
+>>
+>> It makes sense. And it can be the first step to make all btrfs commands
+>> output parseable.
+>>
+>> I could try to use json-c as our json library to add json output mode
+>> for send dump.
+>>
+>> Meanwhile the original design for send-dump is only for human, and the
+>> json output support will be a huge work(not only for send-dump, but
+>> quite a lot of other sub-commands).
+>>
+>> What about merge send dump first, and then add json support step-by-step?
+>
+> Ok, so let's do it in another way.
+>
+> The output format:
+> * one line per stream operation
+> * use key=value for all operation data
+> * file paths are unquoted, but escaped (same what seq_escape(" \t\n\\") does)
+> * two options where to put the filename, first or last, let's keep it
+>   first for now, we can move it later on,
+>   for multiple paths per operation, one of them will be just anoter
+>   key=value with descriptive key name
+>
+> Code changes:
+> * fold my two patches from branch dev/send-dump-wip
+> * the common block at the beginniing of each callback can be factored
+>   into a macro (ie. full_path, ret, and path_cat with the name of the
+>   operation)
+>
+> We'll also need some stream samples that trigger all operations so we
+> can tune the output.
+
+This sounds quite good to me.
+
+I'll update the patchset.
+
+I'm just a little curious about the stream samples.
+Should I create a send-dump-test to include all these samples? Or put 
+them somewhere else?
+
+Thanks,
+Qu
+
+

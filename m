@@ -1,40 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp04.smtpout.orange.fr ([80.12.242.126]:60382 "EHLO
-        smtp.smtpout.orange.fr" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1168562AbcKAK0k (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Nov 2016 06:26:40 -0400
-From: Christophe JAILLET <christophe.jaillet@wanadoo.fr>
-To: clm@fb.com, jbacik@fb.com, dsterba@suse.com
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        kernel-janitors@vger.kernel.org,
-        Christophe JAILLET <christophe.jaillet@wanadoo.fr>
-Subject: [PATCH] btrfs: Remove some dead code
-Date: Tue,  1 Nov 2016 11:26:06 +0100
-Message-Id: <20161101102606.27006-1-christophe.jaillet@wanadoo.fr>
+Received: from mx2.suse.de ([195.135.220.15]:52018 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753068AbcKBPVy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 2 Nov 2016 11:21:54 -0400
+Date: Wed, 2 Nov 2016 16:21:51 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz,
+        Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+Subject: Re: [PATCH v2 02/14] btrfs-progs: check: introduce function to find
+ dir_item
+Message-ID: <20161102152151.GH12522@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20160921031604.23334-1-quwenruo@cn.fujitsu.com>
+ <20160921031604.23334-3-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160921031604.23334-3-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-'btrfs_iget()' can not return an error pointer, so this test can be
-removed.
+On Wed, Sep 21, 2016 at 11:15:52AM +0800, Qu Wenruo wrote:
+> From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+> 
+> Introduce a new function find_dir_item() to find DIR_ITEM for the given
+> key, and check it with the specified INODE_REF/INODE_EXTREF match.
+> 
+> Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+>  cmds-check.c | 140 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 140 insertions(+)
+> 
+> diff --git a/cmds-check.c b/cmds-check.c
+> index 998ba63..4e25804 100644
+> --- a/cmds-check.c
+> +++ b/cmds-check.c
+> @@ -3848,6 +3848,146 @@ out:
+>  	return err;
+>  }
+>  
+> +#define ROOT_DIR_ERROR		(1<<1)	/* bad root_dir */
+> +#define DIR_ITEM_MISSING	(1<<2)	/* DIR_ITEM not found */
+> +#define DIR_ITEM_MISMATCH	(1<<3)	/* DIR_ITEM found but not match */
 
-Signed-off-by: Christophe JAILLET <christophe.jaillet@wanadoo.fr>
----
- fs/btrfs/free-space-cache.c | 2 --
- 1 file changed, 2 deletions(-)
-
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index e4b48f377d3a..afd8b0c10acd 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -75,8 +75,6 @@ static struct inode *__lookup_free_space_inode(struct btrfs_root *root,
- 	btrfs_release_path(path);
- 
- 	inode = btrfs_iget(root->fs_info->sb, &location, root, NULL);
--	if (!inode)
--		return ERR_PTR(-ENOENT);
- 	if (IS_ERR(inode))
- 		return inode;
- 	if (is_bad_inode(inode)) {
--- 
-2.9.3
-
+What's the reason for another definition of the error codes? They're
+mostly copied from te I_ERR_* counterparts. I'd rather have one set of
+error codes.

@@ -1,200 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34368 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:54292 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932217AbcKIO3p (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 9 Nov 2016 09:29:45 -0500
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com
-Subject: Btrfs progs pre-release 4.8.3-rc1
-Date: Wed,  9 Nov 2016 15:29:28 +0100
-Message-Id: <20161109142928.16003-1-dsterba@suse.com>
+        id S932268AbcKBXdo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 2 Nov 2016 19:33:44 -0400
+Date: Thu, 3 Nov 2016 00:33:40 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Lukas Lueg <lukas.lueg@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Fwd: State of the fuzzer
+Message-ID: <20161102233340.GI12522@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <CAJF-kYmnBt6yRLJ+R3HdJ03oqp_ptwXpat40vXoD_b=MUvJZUw@mail.gmail.com>
+ <20160909140059.GT16983@twin.jikos.cz>
+ <CAJF-kYnXjz_dg2eev3WUqg3=XTBX=W8e2qnLQKtpnC6cCHvR+Q@mail.gmail.com>
+ <CAJF-kYkG77sAQ4VOqX+Fovu+fO6WKVMZmUA8WG+uMU5EM2ZwUg@mail.gmail.com>
+ <CAJF-kYk_a6hwgbQRw+9yBb54hXxC49LAZVs25FnoHm+zosFMww@mail.gmail.com>
+ <CAJF-kYnH+cORfSLGx1Wb6S4iPDjnJxYOwm2trC_FbOK8t7bPVQ@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAJF-kYnH+cORfSLGx1Wb6S4iPDjnJxYOwm2trC_FbOK8t7bPVQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi,
 
-a pre-release has been tagged. Handful of fixes and lots of cleanups.
-ETA for 4.8.3 is in +2 days (2016-11-11).
+On Tue, Oct 11, 2016 at 02:07:48PM +0200, Lukas Lueg wrote:
+> I've now shut down all fuzzer nodes since they only cost money and
+> there is no progress on most of the aforementioned bugs.
 
-The queued changes for the 4.9 release are: check low-mem mode updates and send
-stream dump, plus the usual small stuff.
+sorry, I didn't know there are cost implications. I've triaged the bugs
+some time ago and tried to fix one of the underlying problems that would
+probably close serveal bugs, but it turned out to be not that easy.
 
-Changes:
-  * check:
-    * support for clearing space cache (v1)
-    * size reduction of inode backref structure
-  * send:
-    * fix handling of multiple snapshots (-p and -c options)
-    * transfer buffer increased (should reduce number of context switches)
-    * reuse existing file for output (-f), eg. when root cannot create files (NFS)
-  * dump-tree:
-    * print missing items for various structures
-    * new: dev stats, balance status item
-    * sync key names with kernel (the persistent items)
-  * subvol show: now able to print the toplevel subvolume -- the creation time
-    might be wrong though
-  * mkfs: store the creation time of toplevel root inode
-  * build: travis CI for devel
-  * other:
-    * lots of cleanups and refactoring
-    * switched to on-stack path structure
-    * fixes from coverity, asan, ubsan
-    * new tests
+There's not that much interest in k.org bugs from other developers and I
+have to split my time among several tasks or keep up with release
+schedules.
 
-Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
-
-Shortlog:
-
-David Sterba (134):
-      btrfs-progs: tests: switch to dump- commands from inspect
-      btrfs-progs: convert: switch more messages to common helpers
-      btrfs-progs: qgroups show: handle errors when resolving root id
-      btrfs-progs: remove unused function btrfs_get_path_rootid
-      btrfs-progs: rename lookup_ino_rootid
-      btrfs-progs: use existing rootid resolving helper in btrfs_list_get_path_rootid
-      btrfs-progs: opencode trivial helper __free_all_subvolumn
-      btrfs-progs: remove leading underscores from several helper
-      btrfs-progs: use symbolic tree name when searching
-      btrfs-progs: list: constify prefix arugment
-      btrfs-progs: use enum for list layout type
-      btrfs-progs: list: rename some helpers
-      btrfs-progs: list: switch to common message helpers
-      btrfs-progs: subvol list: setup list filters later
-      btrfs-progs: return void from btrfs_list_setup_filter
-      btrfs-progs: subvol list: cleanup layout argument setup
-      btrfs-progs: subvol list: remove useless comments
-      btrfs-progs: subvol list: simplify value assignments
-      btrfs-progs: subvol list: consilidate naming of otime varaibles
-      btrfs-progs: subvol list: add simplified helper for adding root backrefs
-      btrfs-progs: subvol list: consolidate uuid types accross functions
-      btrfs-progs: remove trivial helper root_lookup_init
-      btrfs-progs: subvol list: remove ugly goto construct
-      btrfs-progs: subvol list: better error message if subvol insertion fails
-      btrfs-progs: subvol show: print more details about toplevel subvolume
-      btrfs-progs: dump-tree: print missing dev_item data
-      btrfs-progs: dump-tree: print missing chunk data
-      btrfs-progs: dump-tree: print missing dev_extent data
-      btrfs-progs: dump-tree: factor inode_item dump to function
-      btrfs-progs: dump-tree: add helper to print timespec
-      btrfs-progs: dump-tree: print missing inode_item data
-      btrfs-progs: dump-tree: print missing dir_item data
-      btrfs-progs: dump-tree: print more root_item data
-      btrfs-progs: dump-tree: print missing data for file extent item
-      btrfs-progs: mkfs: store creation time of the toplevel subvolume
-      btrfs-progs: introduce key type for persistent temporary items
-      btrfs-progs: print-tree: extract offset from the item key
-      btrfs-progs: introduce key type for persistent permanent items
-      btrfs-progs: switch dev stats item to the permanent item key
-      btrfs-progs: teach print_leaf about permanent item subtypes
-      btrfs-progs: teach print_leaf about temporary item subtypes
-      btrfs-progs: add balance status structures
-      btrfs-progs: dump-tree: print balance status item
-      btrfs-progs: add dev stats on-disk structure
-      btrfs-progs: dump-tree: print dev stats
-      btrfs-progs: dump-tree: consolidate data key names
-      btrfs-progs: remove unused parameter from print_inode_item
-      btrfs-progs: dump-tree: pass item size instead of item
-      btrfs-progs: dump-tree: return void from print_* functions
-      btrfs-progs: dump-tree: simplify and fix check for empty uuid
-      btrfs-progs: dump-tree: constify char argument in print_root_ref
-      btrfs-progs: dump-tree: add untyped item ptr helper and use it
-      btrfs-progs: dump-tree: rename extent buffer variable in btrfs_print_leaf
-      btrfs-progs: dump-tree: move variable declarations closer to their use
-      btrfs-progs: dump-tree: move remaining item variables to the scope of use
-      btrfs-progs: dump-tree: cleanup types for item number iteration
-      btrfs-progs: dump-tree: convert key-to-string to table
-      btrfs-progs: dump-tree: convert dir-item-to-string to table
-      btrfs-progs: tests: add test for multi-subvolume send from parent
-      btrfs-progs: send: constify some arugments
-      btrfs-progs: send: increase size of transfer buffer
-      btrfs-progs: send: use proper type for read result, and rename the variable
-      btrfs-progs: send: clean types in write_buf
-      btrfs-progs: send: cleanup, rename some variables in dump_thread
-      btrfs-progs: send: cleanup, rename send context variables
-      btrfs-progs: send: cleanup use of ctransid delta temporary variable in find_good_parent
-      btrfs-progs: check: unify type for inode_backref::filetype
-      btrfs-progs: check: unify type for inode_backref::itemtype
-      btrfs-progs: check: reorder fields in inode_backref for better packing
-      btrfs-progs: mkfs: use const char for unmodified members of directory_name_entry
-      btrfs-progs: mkfs: constify some char parameters
-      btrfs-progs: reduce size of btrfs_path, locks are not used
-      btrfs-progs: reduce size of btrfs_path::reada
-      btrfs-progs: reduce size of btrfs_path::lowest_level
-      btrfs-progs: mkfs: use on-stack path buffer in cleanup_temp_chunks
-      btrfs-progs: convert: use on-stack path buffer in record_file_blocks
-      btrfs-progs: convert: use on-stack path buffer in create_image
-      btrfs-progs: convert: use on-stack path buffer in link_subvol
-      btrfs-progs: image: use on-stack path buffer in create_metadump
-      btrfs-progs: image: use on-stack path buffer in fixup_devices
-      btrfs-progs: image: add symbolic constant for max thread count
-      btrfs-progs: image: use fixed-size array for worker thread pointers
-      btrfs-progs: image: use embedded array for metadump cluster buffer
-      btrfs-progs: dump-tree: use new names for obsoleted keys
-      btrfs-progs: fi du: don't redefine standard macro/function
-      btrfs-progs: utils: remove useless check in make_btrfs
-      btrfs-progs: qgroup: use on-stack path buffer in repair_qgroup_info
-      btrfs-progs: qgroup: use on-stack path buffer in repair_qgroup_status
-      btrfs-progs: convert bitfield to separate variables in btrfs_path
-      btrfs-progs: check: use on-stack path buffer in add_missing_dir_index
-      btrfs-progs: check: use on-stack path buffer in delete_dir_index
-      btrfs-progs: check: use on-stack path buffer in find_normal_file_extent
-      btrfs-progs: check: use on-stack path buffer in try_repair_inode
-      btrfs-progs: check: use on-stack path buffer in repair_btree
-      btrfs-progs: check: use on-stack path buffer in try_to_fix_bad_block
-      btrfs-progs: check: use on-stack path buffer in verify_space_cache
-      btrfs-progs: check: use on-stack path buffer in check_extent_csums
-      btrfs-progs: check: use on-stack path buffer in check_extent_exists
-      btrfs-progs: check: use on-stack path buffer in delete_duplicate_records
-      btrfs-progs: check: use on-stack path buffer in record_orphan_data_extents
-      btrfs-progs: check: use on-stack path buffer in fixup_extent_refs
-      btrfs-progs: check: use on-stack path buffer in fixup_extent_flags
-      btrfs-progs: check: use on-stack path buffer in reset_block_groups
-      btrfs-progs: check: use on-stack path buffer in reset_balance
-      btrfs-progs: check: use on-stack path buffer in recow_extent_buffer
-      btrfs-progs: check: use on-stack path buffer in delete_bad_item
-      btrfs-progs: check: use on-stack path buffer in fill_csum_tree_from_one_fs_root
-      btrfs-progs: check: use on-stack path buffer in fill_csum_tree_from_fs
-      btrfs-progs: check: use on-stack path buffer in fill_csum_tree_from_extent
-      btrfs-progs: check: use on-stack path buffer in build_roots_info_cache
-      btrfs-progs: check: use on-stack path buffer in repair_root_items
-      btrfs-progs: tree-stats: use on-stack path buffer in calc_root_size
-      btrfs-progs: restore: use on-stack path buffer in set_file_xattrs
-      btrfs-progs: restore: use on-stack path buffer in copy_metadata
-      btrfs-progs: restore: use on-stack path buffer in copy_file
-      btrfs-progs: restore: use on-stack path buffer in copy_symlink
-      btrfs-progs: restore: use on-stack path buffer in search_dir
-      btrfs-progs: restore: use on-stack path buffer in do_list_roots
-      btrfs-progs: restore: use on-stack path buffer in find_first_dir
-      btrfs-progs: check: remove unused variable in record_extent
-      btrfs-progs: chunk-recover: use on-stack path buffer in rebuild_block_group
-      btrfs-progs: btrfstune: use on-stack path buffer in change_extents_uuid
-      btrfs-progs: btrfstune: use on-stack path buffer in change_devices_uuid
-      btrfs-progs: mkfs: simplify checks in directory_select
-      btrfs-progs: docs: update mkfs help string and manual page
-      btrfs-progs: fix unaligned u64 access in btrfs_alloc_data_chunk
-      btrfs-progs: fix search tree v2 ioctl detection
-      btrfs-progs: tests: teach scan-results about more errors
-      btrfs-progs: crc32: use fallback implementation for unaligned buffers
-      btrfs-progs: use correct type for device id iteration in get_fs_info
-      btrfs-progs: send: check for output file existence before creating
-      btrfs-progs: tests: teach extract_image about packed streams
-      btrfs-progs: update CHANGES for v4.8.3
-      Btrfs progs v4.8.3-rc1
-
-Qu Wenruo (5):
-      btrfs-progs: check: add support to clear v1 free space cache
-      btrfs-progs: fsck-tests: Check if clear space cache works
-      btrfs-progs: Ignore clang complete file
-      btrfs-progs: remove send-test tool
-      btrfs-progs: Fix memory leak in write_raid56_with_parity
-
-Roman Lebedev (1):
-      btrfs-progs: Add travis CI build support
-
-Tsutomu Itoh (3):
-      btrfs-progs: send: fix handling of multiple snapshots (-p option)
-      btrfs-progs: send: fix handling of -c option
-      btrfs-progs: tests: add checking of send multiple clone source option
-
+I appreciate that you took the time to do the tests and reports, I'll
+get to them eventually. I also hope you're not discouraged from further
+testing. This would make best sense only after all current fuzzer bugs
+are fixed, but I can't give you an ETA.

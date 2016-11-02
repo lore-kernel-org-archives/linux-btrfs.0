@@ -1,35 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f171.google.com ([209.85.216.171]:35022 "EHLO
-        mail-qt0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752582AbcKBLTR (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Nov 2016 07:19:17 -0400
-Received: by mail-qt0-f171.google.com with SMTP id c47so6706435qtc.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Nov 2016 04:19:16 -0700 (PDT)
+Received: from mail-qk0-f180.google.com ([209.85.220.180]:33888 "EHLO
+        mail-qk0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750763AbcKBLZl (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Nov 2016 07:25:41 -0400
+Received: by mail-qk0-f180.google.com with SMTP id q130so13838986qke.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 02 Nov 2016 04:25:41 -0700 (PDT)
 MIME-Version: 1.0
 Reply-To: badara+ml@gmail.com
-In-Reply-To: <CAKGv6CrpnfHhC8=tCcrH1+c+a0vLcLwz96gqoNCAxF6TxYD75g@mail.gmail.com>
+In-Reply-To: <7d615bfc-b7f0-dd01-6cff-61d0f978fc53@mendix.com>
 References: <CAN5=xXnZmaqApRds3w=AKLAvfk=+dEPNazEb+Tzym_=2OdnfzA@mail.gmail.com>
- <pan$af500$48f5b197$b20e4aa3$ec6e2ea2@cox.net> <CAKGv6CrpnfHhC8=tCcrH1+c+a0vLcLwz96gqoNCAxF6TxYD75g@mail.gmail.com>
+ <7d615bfc-b7f0-dd01-6cff-61d0f978fc53@mendix.com>
 From: Ahmed Badr <badara+ml@gmail.com>
-Date: Wed, 2 Nov 2016 13:18:35 +0200
-Message-ID: <CAN5=xXmCG0Gan5cwMtTugwvo2=orN9J8HWmJOj7k7x8PcKWwjA@mail.gmail.com>
+Date: Wed, 2 Nov 2016 13:25:00 +0200
+Message-ID: <CAN5=xXm+SEmXXer3a8PqHBASN4CJtsRFAMDDoq6ZMBXU0_VXPQ@mail.gmail.com>
 Subject: Re: Snapper & apt-btrfs-snapshot on Ubuntu
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 2, 2016 at 8:31 AM, Alex Powell
-<alexj.powellalt@googlemail.com> wrote:
-> Taking a step back as well- there is also the possibility that you
-> might not need snapshots
+On Wed, Nov 2, 2016 at 2:19 AM, Hans van Kranenburg
+<hans.van.kranenburg@mendix.com> wrote:
+> While all of the snapshots with a matching parent_uuid are snapshots of
+> the same thing in linear time for btrfs, the tools may have their own
+> added administration on top (like snapshot names, or directories they're
+> placed in), which prevents them from being able to do something with the
+> other ones. This is not the fault of btrfs, it's because those tools
+> probably are designed to ignore anything they didn't cause to happen
+> themselves.
 
-I do need it for my root partition at least in the initial phase of
-setting things up and trying out different software. Once the system
-is stable, I might might not need it that much.
-
-> If you're a noobie, I assume you're not using it to host some massive
-> Oracle DB and need all these features
-
-No I'm not hosting a DB on this server. If I'm not mistaken, I believe
-Btrfs's COW functionality is not suitable for DB storage anyway.
+I understand now. Both apps seems to behave well and do not mess with
+each others snapshots so I'm tempted to use both but I think I better
+stick to only one as I might get confused with so many snapshots and
+rollback to the wrong one.

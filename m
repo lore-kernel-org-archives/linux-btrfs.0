@@ -1,79 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:52316 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:38639 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752109AbcKBAh2 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Nov 2016 20:37:28 -0400
-Subject: Re: [PATCH v3 2/4] btrfs-progs: introduce new send-dump object
+        with ESMTP id S1751677AbcKBBTS (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Nov 2016 21:19:18 -0400
+Subject: Re: [PATCH v3 1/4] btrfs-progs: utils: Introduce function to escape
+ characters
 To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
 References: <20161101080147.13163-1-quwenruo@cn.fujitsu.com>
- <20161101080147.13163-3-quwenruo@cn.fujitsu.com>
- <20161101102209.GW12522@suse.cz>
+ <20161101080147.13163-2-quwenruo@cn.fujitsu.com>
+ <20161101100851.GV12522@suse.cz>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <e6a2018c-f335-9c6f-7152-87aea55fb5ec@cn.fujitsu.com>
-Date: Wed, 2 Nov 2016 08:37:20 +0800
+Message-ID: <1382110a-9c56-e9e2-be33-77dbfffce4b6@cn.fujitsu.com>
+Date: Wed, 2 Nov 2016 09:19:10 +0800
 MIME-Version: 1.0
-In-Reply-To: <20161101102209.GW12522@suse.cz>
+In-Reply-To: <20161101100851.GV12522@suse.cz>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-At 11/01/2016 06:22 PM, David Sterba wrote:
-> On Tue, Nov 01, 2016 at 04:01:44PM +0800, Qu Wenruo wrote:
->> +/*
->> + * Underlying PRINT_DUMP, the only difference is how we handle
->> + * the full path.
->> + */
->> +static int __print_dump(int subvol, void *user, const char *path,
->> +			const char *title, const char *fmt, ...)
+At 11/01/2016 06:08 PM, David Sterba wrote:
+> On Tue, Nov 01, 2016 at 04:01:43PM +0800, Qu Wenruo wrote:
+>> Introduce new function, escape_string_inplace(), to escape specified
+>> characters in place.
 >
-> printf-like the __attribute__ ((format (printf, ...)))
+> Sorry, the pointer to seq_path was misleading. The actual escape
+> function is mangle_path and it copies one string to another. As we just
+> print the path, we can simply switch and call putchar.
 >
->> +{
->> +	struct btrfs_dump_send_args *r = user;
->> +	char real_title[TITLE_WIDTH + 1] = { 0 };
->> +	char full_path[PATH_MAX] = {0};
->> +	char *out_path;
->> +	va_list args;
->> +	int ret;
->> +
->> +	if (subvol) {
->> +		PATH_CAT_OR_RET(title, r->full_subvol_path, r->root_path, path, ret);
->> +		out_path = r->full_subvol_path;
->> +	} else {
->> +		PATH_CAT_OR_RET(title, full_path, r->full_subvol_path, path, ret);
->> +		out_path = full_path;
->> +	}
->> +	string_escape_inplace(out_path, " \n\t\\");
->> +
->> +	/* Append ':' to title */
->> +	strncpy(real_title, title, TITLE_WIDTH - 1);
->> +	strncat(real_title, ":", TITLE_WIDTH);
->
-> I'd rather avoid such string operations, ':', just print everything.
 
-I'm completely OK to remove the ':'.
+Putchar() method is indeed much easier to implement.
 
->
->> +
->> +	/* Unified header, */
->> +	printf("%-*s%-*s", TITLE_WIDTH, real_title, PATH_WIDTH, out_path);
->
-> PATH_WIDTH is used only here, please hardcode it into the format string.
->
-> The rest of the patch looks good. I think I've seen some artifacts in
-> the output, but we can tune this later.
+But it makes us hard to do further formatting, like aligning the path to 
+given width. (At least we are still using 32 chars alignment for path)
 
-Would you like to share the artifacts so I can handle them in next update?
+So I still prefer the current full function string escaping and still 
+use %-32s for formatting.
 
->
->> +	ret = strftime(dest, max_size, "%Y-%m-%d %H:%M:%S", tm);
->
-> We should use the RFC 3339 format, as it's standardized and also is a
-> string without whitespace.
 
-Will use RFC 3339 in next version.
+And the idea of implementing escape_string_inplace() as a pure string 
+manipulation function can make it more agile for later use.
+For example, we can reuse it for print-tree.
+
+Although the current esacpe_string_inplace() can be further fine-tuned 
+to avoid calling memmove() in a loop, which I can update it in next version.
 
 Thanks,
 Qu

@@ -1,80 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.knebb.de ([85.25.100.221]:55124 "EHLO mail.knebb.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751752AbcKBKTQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 2 Nov 2016 06:19:16 -0400
-Subject: Re: Resizing BTRFS - raw partition
-To: Adam Borowski <kilobyte@angband.pl>, linux-btrfs@vger.kernel.org
-References: <92e3c63e-0301-7a25-7c56-56447a1948cc@knebb.de>
- <20161102091249.GL16645@carfax.org.uk>
- <6050c1f3-ff13-204c-ec32-3bcb62db7c5a@knebb.de>
- <20161102092926.GM16645@carfax.org.uk> <20161102101446.GB29764@angband.pl>
-From: =?UTF-8?Q?Christian_V=c3=b6lker?= <cvoelker@knebb.de>
-Message-ID: <f4ed1364-ad00-f8d5-cd6a-e78e4a1943fc@knebb.de>
-Date: Wed, 2 Nov 2016 11:16:50 +0100
+Received: from mail-qk0-f180.google.com ([209.85.220.180]:33728 "EHLO
+        mail-qk0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750801AbcKBLKd (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Nov 2016 07:10:33 -0400
+Received: by mail-qk0-f180.google.com with SMTP id x190so11642160qkb.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 02 Nov 2016 04:10:33 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20161102101446.GB29764@angband.pl>
-Content-Type: text/plain; charset=windows-1252
+Reply-To: badara+ml@gmail.com
+In-Reply-To: <pan$af500$48f5b197$b20e4aa3$ec6e2ea2@cox.net>
+References: <CAN5=xXnZmaqApRds3w=AKLAvfk=+dEPNazEb+Tzym_=2OdnfzA@mail.gmail.com>
+ <pan$af500$48f5b197$b20e4aa3$ec6e2ea2@cox.net>
+From: Ahmed Badr <badara+ml@gmail.com>
+Date: Wed, 2 Nov 2016 13:09:51 +0200
+Message-ID: <CAN5=xXkE4rq54RiEjUcT8B16aHujsfC3ky2uYpKB+YqOUPKGNg@mail.gmail.com>
+Subject: Re: Snapper & apt-btrfs-snapshot on Ubuntu
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Yohoo!
+On Wed, Nov 2, 2016 at 8:03 AM, Duncan <1i5t5.duncan@cox.net> wrote:
+> Btrfs tends to have scaling issues if you let the number of snapshots get
+> too high.  Try to keep it under 300 snapshots per subvolume (combined
+> between all tools) if at all possible, and if your use-case makes it easy
+> enough, try to keep it under 100 snapshots per subvolume.  Definitely
+> don't let it get into the thousands of snapshots per subvolume, or
+> commands such as btrfs balance and btrfs check will take MUCH longer and
+> use MANY TIMES more memory.
 
-Well, slightly off-topic now.
+Thanks for the heads up on that. I didn't find this info anywhere so I
+will  definitely do that. I don't think I'll even need that many
+snapshots in the first place. Since this is a dedicated backup server
+that I'll set and forget, I'll keep a snapshot every couple of hours
+for the first day and a daily snapshot for a week. I'll be backing the
+root partition on another computer anyway.
 
-It is a Debian derivative. Univention Corporate Server.
-
-uname -r says: 4.1.0-ucs190-amd64
-
-So I am pretty fine with the kernel.
-
-But indeed, I have to think about getting a more up-to-date btrfs as I
-ran on resizing in the "File too large" issue so I had to use "max"
-instead of "+100G". No big deal, just a minor issue.
-
-I use btrfs to checksum all files stored there as I had several issues
-the last years where files got corrupted.
-
-Greetings
-
-Christian
-
-
-Am 02.11.2016 um 11:14 schrieb Adam Borowski:
-> On Wed, Nov 02, 2016 at 09:29:26AM +0000, Hugo Mills wrote:
->> On Wed, Nov 02, 2016 at 10:18:03AM +0100, Christian Völker wrote:
->>> thanks for the quick reply. Regarding version- I prefer to use stable
->>> Linux versions....and I am not going to upgrade just btrfs outside of
->>> the verndors builds. So I am stuck happily with this version. And I run
->>> Linux since more than 10years, so I am really fine with it, I guess :D
->>    Well, btrfs-progs 0.19 was last released several years ago. If your
->> kernel is of the same kind of age, then you're going to be seeing a
->> whole load of really nasty data-corrupting or filesystem-breaking bugs
->> which have since been fixed. Basically, if something goes wrong with
->> your FS when you're running a kernel that old, the main rsponse you'll
->> get is, "well, that was silly of you, wasn't it?", and you'll have to
->> make a new filesystem and restore from your backups and hope it
->> doesn't happen again.
-> -progs 0.19 imply kernel 2.6.32 which comes from btrfs' infancy, when it
-> was hardly merged into mainline.  It's buggier than experimental features
-> like RAID5/6 nowadays.
->
->>    I would currently recommend running a 4.4 kernel or later. If you
->> want a "stable" kernel version from a distribution, and want some kind
->> of support for it when it goes wrong, you're probably going to have to
->> pay someone (Red Hat or SuSE, most likely) to support your
->> configuraion.
-> Kernels around 3.16 or so are pretty reliable -- ones I'm using on
-> production are 3.13 and 3.14, without a single issue.
->
-> As 2.6.32 is for you "stable" rather than "ancient and unsupported", I guess
-> you're on RHEL or a derivative.  For them, 3.10 is the next stable, which
-> is on the verge of what could be reasonable (but I still second Hugo's
-> advice of using at least the current LTS kernel, ie 4.4).
->
-> TL;DR:
-> DO NOT USE BTRFS ON ANCIENT KERNELS!!1!elebenty-one!
->
->
-> Meow!
-
+Since I'll be trying out several backup software to see which one
+suits me best I'll use Snapper prior to installing each software. I'm
+very excited since Btrfs will make this super easy

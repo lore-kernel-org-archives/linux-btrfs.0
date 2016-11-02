@@ -1,35 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f180.google.com ([209.85.220.180]:33888 "EHLO
-        mail-qk0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750763AbcKBLZl (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Nov 2016 07:25:41 -0400
-Received: by mail-qk0-f180.google.com with SMTP id q130so13838986qke.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Nov 2016 04:25:41 -0700 (PDT)
+Received: from mail-it0-f50.google.com ([209.85.214.50]:35148 "EHLO
+        mail-it0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750944AbcKBLkj (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Nov 2016 07:40:39 -0400
+Received: by mail-it0-f50.google.com with SMTP id e187so77422720itc.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 02 Nov 2016 04:40:39 -0700 (PDT)
+Subject: Re: Resizing BTRFS - raw partition
+To: =?UTF-8?Q?Christian_V=c3=b6lker?= <cvoelker@knebb.de>,
+        Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
+References: <92e3c63e-0301-7a25-7c56-56447a1948cc@knebb.de>
+ <20161102091249.GL16645@carfax.org.uk>
+ <6050c1f3-ff13-204c-ec32-3bcb62db7c5a@knebb.de>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <4748119f-099c-9403-511a-4888cf1f5c3e@gmail.com>
+Date: Wed, 2 Nov 2016 07:40:31 -0400
 MIME-Version: 1.0
-Reply-To: badara+ml@gmail.com
-In-Reply-To: <7d615bfc-b7f0-dd01-6cff-61d0f978fc53@mendix.com>
-References: <CAN5=xXnZmaqApRds3w=AKLAvfk=+dEPNazEb+Tzym_=2OdnfzA@mail.gmail.com>
- <7d615bfc-b7f0-dd01-6cff-61d0f978fc53@mendix.com>
-From: Ahmed Badr <badara+ml@gmail.com>
-Date: Wed, 2 Nov 2016 13:25:00 +0200
-Message-ID: <CAN5=xXm+SEmXXer3a8PqHBASN4CJtsRFAMDDoq6ZMBXU0_VXPQ@mail.gmail.com>
-Subject: Re: Snapper & apt-btrfs-snapshot on Ubuntu
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <6050c1f3-ff13-204c-ec32-3bcb62db7c5a@knebb.de>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 2, 2016 at 2:19 AM, Hans van Kranenburg
-<hans.van.kranenburg@mendix.com> wrote:
-> While all of the snapshots with a matching parent_uuid are snapshots of
-> the same thing in linear time for btrfs, the tools may have their own
-> added administration on top (like snapshot names, or directories they're
-> placed in), which prevents them from being able to do something with the
-> other ones. This is not the fault of btrfs, it's because those tools
-> probably are designed to ignore anything they didn't cause to happen
-> themselves.
+On 2016-11-02 05:18, Christian Völker wrote:
+> Hi Hugo,
+>
+> thanks for the quick reply. Regarding version- I prefer to use stable
+> Linux versions....and I am not going to upgrade just btrfs outside of
+> the verndors builds. So I am stuck happily with this version. And I run
+> Linux since more than 10years, so I am really fine with it, I guess :D
+>
+> And thanks again for your proposal. Yes, your command worked.
+>
+> I had to tell betrfs the devid!
+>
+> So this did NOT work:
+>
+>  btrfs fi resize  max /srv/share/
+>
+> Instead the following two commands worked:
+>
+>  btrfs fi resize  1:max /srv/share/
+>  btrfs fi resize  2:max /srv/share/
+>
+> And now boths phydevices show the correct size.
+>
+> This sound really strange for me that I have to tell btrfs to resize
+> just a single disk insteag of automatically resizing all disks...I bet
+> next time I have it forgotten again :-(
+Responding just to this in particular.
 
-I understand now. Both apps seems to behave well and do not mess with
-each others snapshots so I'm tempted to use both but I think I better
-stick to only one as I might get confused with so many snapshots and
-rollback to the wrong one.
+The reasoning behind this is that by requiring the device ID to be 
+specified, it reduces the amount of parsing required, which in turn 
+makes the command more robust.  There are also plenty of practical 
+reasons to resize just one device in a multi-device filesystem (for 
+example, if you're replacing one disk at a time, or just need to free up 
+some space on a single disk, etc), so we need to have support for that, 
+and in turn it's easier from a software maintenance perspective to just 
+require it to be that way.
+
+That said, I would love to have 'btrfs fi resize max' special cased to 
+just resize every device in the FS to max size, since increasing the 
+size of a device is much more common than reducing it, and it's a lot 
+more convenient than having to look up device ID's (because those can 
+change as devices are added to and removed from the FS).
+

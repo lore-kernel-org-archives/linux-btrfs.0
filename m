@@ -1,84 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f65.google.com ([209.85.215.65]:34649 "EHLO
-        mail-lf0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932488AbcKBVzS (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Nov 2016 17:55:18 -0400
-Received: by mail-lf0-f65.google.com with SMTP id o141so411337lff.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Nov 2016 14:55:17 -0700 (PDT)
-Received: from [10.0.0.101] (179.79-161-153.customer.lyse.net. [79.161.153.179])
-        by smtp.googlemail.com with ESMTPSA id u63sm811790lja.34.2016.11.02.14.55.15
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Wed, 02 Nov 2016 14:55:15 -0700 (PDT)
-To: linux-btrfs@vger.kernel.org
-From: Tom Arild Naess <tanaess@gmail.com>
-Subject: btrfs scrub with unexpected results
-Message-ID: <84df8b17-65ac-0f40-cf19-471b3664b0b3@gmail.com>
-Date: Wed, 2 Nov 2016 22:55:14 +0100
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:33782 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1751882AbcKCFRJ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 3 Nov 2016 01:17:09 -0400
+Date: Thu, 3 Nov 2016 01:17:07 -0400
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: Saint Germain <saintger@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Identifying reflink / CoW files
+Message-ID: <20161103051707.GE21290@hungrycats.org>
+References: <20161027133011.631cf1e5@system>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="JVTRtevMO87SusWP"
+In-Reply-To: <20161027133011.631cf1e5@system>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
 
-I have been running btrfs on a file server and backup server for a 
-couple of years now, both set up as RAID 10. The file server has been 
-running along without any problems since day one. My problems has been 
-with the backup server.
+--JVTRtevMO87SusWP
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-A little background about the backup server before I dive into the 
-problems. The server was a new build that was set to replace an aging 
-machine, and my intention was to start using btrfs send/receive instead 
-of hard links for the backups. Since I had 8x the space on the new 
-server, I just rsynced the whole lot of old backups to the new server. I 
-then made some scripts that created snapshots from the old file 
-hierarchy. As I started rewriting my backup scripts (on file server and 
-backup server) to use send/receive, I also tested scrubbing to see that 
-everything was OK. After doing this a few times, scrub found 
-unrecoverable files. This, I thought, should not be possible on new 
-disks. I tried to get some help on this list, but no answers were found, 
-and since I was unable to find what triggered this, I just stopped using 
-send/receive, and let my old backup regime live on on this new backup 
-server as well. I don't remember how I fixed the errors, but I guess I 
-just replaced the offending files with fresh ones, and scrub ran without 
-any more problems. I decided to let things just run like this, and set 
-up scrubbing on a monthly schedule.
+On Thu, Oct 27, 2016 at 01:30:11PM +0200, Saint Germain wrote:
+> Hello,
+>=20
+> Following the previous discussion:
+> https://www.spinics.net/lists/linux-btrfs/msg19075.html
+>=20
+> I would be interested in finding a way to reliably identify reflink /
+> CoW files in order to use deduplication programs (like fdupes, jdupes,
+> rmlint) efficiently.
+>=20
+> Using FIEMAP doesn't seem to be reliable according to this discussion
+> on rmlint:
+> https://github.com/sahib/rmlint/issues/132#issuecomment-157665154
 
-Last night I got the unpleasant mail from cron telling me that scrub had 
-failed (for the first time in over a year). Since I was running on an 
-older kernel (4.2.x), I decided to upgrade, and went for the latest of 
-the longterm branches, namely 4.4.30. After rebooting I did (for 
-whatever reason) check one of the offending files, and I could read the 
-file just fine! I checked the rest of the bunch, and all files read 
-fine, and had the same md5 sum as the originals! All these files were 
-located in those old snapshots. I thought that maybe this was because of 
-a bug resolved since my last kernel. Then I ran a new scrub, and this 
-one also reported unrecoverable errors. This time on two other files but 
-also in some of the old snapshots. I tried reading the files, and got 
-the expected I/O errors. One reboot later, these files reads just fine 
-again!
+Inline extents have no physical address (FIEMAP returns 0 in that field).
+You can't dedup them and each file can have only one, so if you see
+the FIEMAP_EXTENT_INLINE bit set, you can just skip processing the entire
+file immediately.
 
-Some system info:
+You can create a separate non-inline extent in a temporary file then
+use dedup to replace _both_ copies of the original inline extent.
+Or don't bother, as the savings are negligible.
 
-$ uname -a
-Linux backup 4.4.30-1-lts #1 SMP Tue Nov 1 22:09:20 CET 2016 x86_64 
-GNU/Linux
+> Is there another way that deduplication programs can easily use ?
 
-$ btrfs --version
-btrfs-progs v4.8.2
+The problem is that it's not files that are reflinked--individual extents
+are.  "reflink file copy" really just means "a file whose extents are
+100% shared with another file." It's possible for files on btrfs to have
+any percentage of shared extents from 0 to 100% in increments of the
+host page size.  It's also possible for the blocks to be shared with
+different extent boundaries.
 
-$ btrfs fi show /backup
-Label: none  uuid: 8825ce78-d620-48f5-9f03-8c4568d3719d
-     Total devices 4 FS bytes used 2.81TiB
-     devid    1 size 2.73TiB used 1.41TiB path /dev/sdb
-     devid    2 size 2.73TiB used 1.41TiB path /dev/sda
-     devid    3 size 2.73TiB used 1.41TiB path /dev/sdd
-     devid    4 size 2.73TiB used 1.41TiB path /dev/sdc
+The quality of the result therefore depends on the amount of effort
+put into measuring it.  If you look for the first non-hole extent in
+each file and use its physical address as a physical file identifier,
+then you get a fast reflink detector function that has a high risk of
+false positives.  If you map out two files and compare physical addresses
+block by block, you get a slow function with a low risk of false positives
+(but maybe a small risk of false negatives too).
 
+If your dedup program only does full-file reflink copies then the first
+extent physical address method is sufficient.  If your program does
+block- or extent-level dedup then it shouldn't be using files in its
+data model at all, except where necessary to provide a mechanism to
+access the physical blocks through the POSIX filesystem API.
 
-Thanks!
+FIEMAP will tell you about all the extents (physical address for extents
+that have them, zero for other extent types).  It's also slow and has
+assorted accuracy problems especially with compressed files.  Any user
+can run FIEMAP, and it uses only standard structure arrays.
 
-Tom Arild Naess
+SEARCH_V2 is root-only and requires parsing variable-length binary
+btrfs data encoding, but it's faster than FIEMAP and gives more accurate
+results on compressed files.
 
+> Thanks
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
+--JVTRtevMO87SusWP
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iEYEARECAAYFAlgayFMACgkQgfmLGlazG5yxxACcDvG3T4pyNRKKqqrMoiR2Zg/0
++CMAnjgSHzvgilox9lvl51ZbRSBNxuOi
+=ckeI
+-----END PGP SIGNATURE-----
+
+--JVTRtevMO87SusWP--

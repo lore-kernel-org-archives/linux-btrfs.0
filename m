@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:32612 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:50610 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S933568AbcKDBdx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 3 Nov 2016 21:33:53 -0400
+        id S933271AbcKDBd6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 3 Nov 2016 21:33:58 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH v14 15/15] btrfs: fix false enospc for in-band dedupe
-Date: Fri,  4 Nov 2016 09:33:04 +0800
-Message-Id: <20161104013304.11365-16-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v14 12/15] btrfs: dedupe: Add ioctl for inband dedupelication
+Date: Fri,  4 Nov 2016 09:33:01 +0800
+Message-Id: <20161104013304.11365-13-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20161104013304.11365-1-quwenruo@cn.fujitsu.com>
 References: <20161104013304.11365-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,370 +17,316 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
-When testing in-band dedupe, sometimes we got ENOSPC error, but fs still
-has much free space. After some debuging work, we found that it's
-btrfs_delalloc_reserve_metadata() which sometimes tries to reserve plenty
-of metadata space, even for very small data range.
+Add ioctl interface for inband dedupelication, which includes:
+1) enable
+2) disable
+3) status
 
-In btrfs_delalloc_reserve_metadata(), the number of metadata bytes we
-try to reserve is calculated by the difference between outstanding_extents
-and reserved_extents. Please see below case for how ENOSPC occurs:
+And a pseudo RO compat flag, to imply that btrfs now supports inband
+dedup.
+However we don't add any ondisk format change, it's just a pseudo RO
+compat flag.
 
-  1, Buffered write 128MB data in unit of 1MB, so finially we'll have
-inode outstanding extents be 1, and reserved_extents be 128.
-Note it's btrfs_merge_extent_hook() that merges these 1MB units into
-one big outstanding extent, but do not change reserved_extents.
+All these ioctl interfaces are state-less, which means caller don't need
+to bother previous dedupe state before calling them, and only need to
+care the final desired state.
 
-  2, When writing dirty pages, for in-band dedupe, cow_file_range() will
-split above big extent in unit of 16KB(assume our in-band dedupe blocksize
-is 16KB). When first split opeartion finishes, we'll have 2 outstanding
-extents and 128 reserved extents, and just right the currently generated
-ordered extent is dispatched to run and complete, then
-btrfs_delalloc_release_metadata()(see btrfs_finish_ordered_io()) will be
-called to release metadata, after that we will have 1 outstanding extents
-and 1 reserved extents(also see logic in drop_outstanding_extent()).
-Later cow_file_range() continues to handles left data range[16KB, 128MB), and
-if no other ordered extent was dispatched to run, there will be 8191
-outstanding extents and 1 reserved extent.
+For example, if user want to enable dedupe with specified block size and
+limit, just fill the ioctl structure and call enable ioctl.
+No need to check if dedupe is already running.
 
-  3, Now if another bufferd write for this file enters, then
-btrfs_delalloc_reserve_metadata() will at least try to reserve metadata
-for 8191 outstanding extents' metadata, for 64K node size, it'll be
-8191*65536*16, about 8GB metadata, this value is insane, it'll return ENOSPC
-error easily, especially for small fs.
+These ioctls will handle things like re-configure or disable quite well.
 
-But indeed when a file goes through in-band dedupe, its max extent size
-will no longer be BTRFS_MAX_EXTENT_SIZE(128MB), it'll be limited by
-in-band dedupe blocksize, so current metadata reservation method in btrfs
-is not appropriate or correct, here we introduce a new metadata reserve
-type BTRFS_RESERVE_DEDUPE. Using this flag, metadata reservation will
-be calcaulated by in-band dedupe blocksize.
+Also, for invalid parameters, enable ioctl interface will set the field
+of the first encounted invalid parameter to (-1) to inform caller.
+While for limit_nr/limit_mem, the value will be (0).
 
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/ctree.h       |  4 +++-
- fs/btrfs/dedupe.h      | 18 ++++++++++++++++++
- fs/btrfs/extent-tree.c | 13 ++++++++-----
- fs/btrfs/extent_io.c   |  7 ++++---
- fs/btrfs/extent_io.h   |  1 +
- fs/btrfs/file.c        |  3 +++
- fs/btrfs/inode.c       | 34 ++++++++++++++++++++++++++++++----
- fs/btrfs/ioctl.c       |  3 +++
- fs/btrfs/relocation.c  |  2 ++
- 9 files changed, 72 insertions(+), 13 deletions(-)
+ fs/btrfs/dedupe.c          | 50 ++++++++++++++++++++++++++++++++++
+ fs/btrfs/dedupe.h          | 17 ++++++++----
+ fs/btrfs/disk-io.c         |  3 ++
+ fs/btrfs/ioctl.c           | 68 ++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/sysfs.c           |  2 ++
+ include/uapi/linux/btrfs.h | 12 +++++++-
+ 6 files changed, 146 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 0564de6..8805e6a 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -107,9 +107,11 @@ static const int btrfs_csum_sizes[] = { 4 };
- enum btrfs_metadata_reserve_type {
- 	BTRFS_RESERVE_NORMAL,
- 	BTRFS_RESERVE_COMPRESS,
-+	BTRFS_RESERVE_DEDUPE,
- };
- int inode_need_compress(struct inode *inode);
--u64 btrfs_max_extent_size(enum btrfs_metadata_reserve_type reserve_type);
-+u64 btrfs_max_extent_size(struct inode *inode,
-+			  enum btrfs_metadata_reserve_type reserve_type);
+diff --git a/fs/btrfs/dedupe.c b/fs/btrfs/dedupe.c
+index d0d2f8a..37b5a05 100644
+--- a/fs/btrfs/dedupe.c
++++ b/fs/btrfs/dedupe.c
+@@ -41,6 +41,35 @@ static inline struct inmem_hash *inmem_alloc_hash(u16 algo)
+ 			GFP_NOFS);
+ }
  
- #define BTRFS_MAX_EXTENT_SIZE SZ_128M
- 
-diff --git a/fs/btrfs/dedupe.h b/fs/btrfs/dedupe.h
-index b2632ac..67a6759 100644
---- a/fs/btrfs/dedupe.h
-+++ b/fs/btrfs/dedupe.h
-@@ -22,6 +22,7 @@
- #include <linux/btrfs.h>
- #include <linux/wait.h>
- #include <crypto/hash.h>
-+#include "btrfs_inode.h"
- 
- static const int btrfs_hash_sizes[] = { 32 };
- 
-@@ -63,6 +64,23 @@ struct btrfs_dedupe_info {
- 
- struct btrfs_trans_handle;
- 
-+static inline u64 btrfs_dedupe_blocksize(struct inode *inode)
++void btrfs_dedupe_status(struct btrfs_fs_info *fs_info,
++			 struct btrfs_ioctl_dedupe_args *dargs)
 +{
-+	struct btrfs_fs_info *fs_info = BTRFS_I(inode)->root->fs_info;
++	struct btrfs_dedupe_info *dedupe_info = fs_info->dedupe_info;
 +
-+	return fs_info->dedupe_info->blocksize;
++	if (!fs_info->dedupe_enabled || !dedupe_info) {
++		dargs->status = 0;
++		dargs->blocksize = 0;
++		dargs->backend = 0;
++		dargs->hash_algo = 0;
++		dargs->limit_nr = 0;
++		dargs->current_nr = 0;
++		memset(dargs->__unused, -1, sizeof(dargs->__unused));
++		return;
++	}
++	mutex_lock(&dedupe_info->lock);
++	dargs->status = 1;
++	dargs->blocksize = dedupe_info->blocksize;
++	dargs->backend = dedupe_info->backend;
++	dargs->hash_algo = dedupe_info->hash_algo;
++	dargs->limit_nr = dedupe_info->limit_nr;
++	dargs->limit_mem = dedupe_info->limit_nr *
++		(sizeof(struct inmem_hash) +
++		 btrfs_hash_sizes[dedupe_info->hash_algo]);
++	dargs->current_nr = dedupe_info->current_nr;
++	mutex_unlock(&dedupe_info->lock);
++	memset(dargs->__unused, -1, sizeof(dargs->__unused));
 +}
 +
-+static inline int inode_need_dedupe(struct inode *inode)
+ static int init_dedupe_info(struct btrfs_dedupe_info **ret_info,
+ 			    struct btrfs_ioctl_dedupe_args *dargs)
+ {
+@@ -420,6 +449,27 @@ static void unblock_all_writers(struct btrfs_fs_info *fs_info)
+ 	percpu_up_write(sb->s_writers.rw_sem + SB_FREEZE_WRITE - 1);
+ }
+ 
++int btrfs_dedupe_cleanup(struct btrfs_fs_info *fs_info)
 +{
-+	struct btrfs_fs_info *fs_info = BTRFS_I(inode)->root->fs_info;
++	struct btrfs_dedupe_info *dedupe_info;
 +
-+	if (!fs_info->dedupe_enabled)
++	fs_info->dedupe_enabled = 0;
++	/* same as disable */
++	smp_wmb();
++	dedupe_info = fs_info->dedupe_info;
++	fs_info->dedupe_info = NULL;
++
++	if (!dedupe_info)
 +		return 0;
 +
-+	return 1;
++	if (dedupe_info->backend == BTRFS_DEDUPE_BACKEND_INMEMORY)
++		inmem_destroy(dedupe_info);
++
++	crypto_free_shash(dedupe_info->dedupe_driver);
++	kfree(dedupe_info);
++	return 0;
 +}
 +
- static inline int btrfs_dedupe_hash_hit(struct btrfs_dedupe_hash *hash)
+ int btrfs_dedupe_disable(struct btrfs_fs_info *fs_info)
  {
- 	return (hash && hash->bytenr);
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 0a8f0c4..f68450e 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -5859,7 +5859,7 @@ static unsigned drop_outstanding_extent(struct inode *inode, u64 num_bytes,
- 	unsigned drop_inode_space = 0;
- 	unsigned dropped_extents = 0;
- 	unsigned num_extents = 0;
--	u64 max_extent_size = btrfs_max_extent_size(reserve_type);
-+	u64 max_extent_size = btrfs_max_extent_size(inode, reserve_type);
+ 	struct btrfs_dedupe_info *dedupe_info;
+diff --git a/fs/btrfs/dedupe.h b/fs/btrfs/dedupe.h
+index 8311ee1..c3d50bc 100644
+--- a/fs/btrfs/dedupe.h
++++ b/fs/btrfs/dedupe.h
+@@ -91,6 +91,15 @@ static inline struct btrfs_dedupe_hash *btrfs_dedupe_alloc_hash(u16 algo)
+ int btrfs_dedupe_enable(struct btrfs_fs_info *fs_info,
+ 			struct btrfs_ioctl_dedupe_args *dargs);
  
- 	num_extents = (unsigned)div64_u64(num_bytes + max_extent_size - 1,
- 					  max_extent_size);
-@@ -5932,12 +5932,15 @@ static u64 calc_csum_metadata_size(struct inode *inode, u64 num_bytes,
- 	return btrfs_calc_trans_metadata_size(root, old_csums - num_csums);
- }
- 
--u64 btrfs_max_extent_size(enum btrfs_metadata_reserve_type reserve_type)
-+u64 btrfs_max_extent_size(struct inode *inode,
-+			  enum btrfs_metadata_reserve_type reserve_type)
- {
- 	if (reserve_type == BTRFS_RESERVE_COMPRESS)
- 		return SZ_128K;
--
--	return BTRFS_MAX_EXTENT_SIZE;
-+	else if (reserve_type == BTRFS_RESERVE_DEDUPE)
-+		return btrfs_dedupe_blocksize(inode);
-+	else
-+		return BTRFS_MAX_EXTENT_SIZE;
- }
++
++ /*
++ * Get inband dedupe info
++ * Since it needs to access different backends' hash size, which
++ * is not exported, we need such simple function.
++ */
++void btrfs_dedupe_status(struct btrfs_fs_info *fs_info,
++			 struct btrfs_ioctl_dedupe_args *dargs);
++
+ /*
+  * Disable dedupe and invalidate all its dedupe data.
+  * Called at dedupe disable time.
+@@ -102,12 +111,10 @@ int btrfs_dedupe_enable(struct btrfs_fs_info *fs_info,
+ int btrfs_dedupe_disable(struct btrfs_fs_info *fs_info);
  
  /*
-@@ -5959,7 +5962,7 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes,
- 	u64 to_free = 0;
- 	unsigned dropped;
- 	bool release_extra = false;
--	u64 max_extent_size = btrfs_max_extent_size(reserve_type);
-+	u64 max_extent_size = btrfs_max_extent_size(inode, reserve_type);
+- * Get current dedupe status.
+- * Return 0 for success
+- * No possible error yet
++ * Cleanup current btrfs_dedupe_info
++ * Called in umount time
+  */
+-void btrfs_dedupe_status(struct btrfs_fs_info *fs_info,
+-			 struct btrfs_ioctl_dedupe_args *dargs);
++int btrfs_dedupe_cleanup(struct btrfs_fs_info *fs_info);
  
- 	/* If we are a free space inode we need to not flush since we will be in
- 	 * the middle of a transaction commit.  We also don't need the delalloc
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 8c07306..11c2525 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -603,7 +603,7 @@ static int __clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 	btrfs_debug_check_extent_io_range(tree, start, end);
- 
- 	if (bits & EXTENT_DELALLOC)
--		bits |= EXTENT_NORESERVE | EXTENT_COMPRESS;
-+		bits |= EXTENT_NORESERVE | EXTENT_COMPRESS | EXTENT_DEDUPE;
- 
- 	if (delete)
- 		bits |= ~EXTENT_CTLBITS;
-@@ -783,7 +783,7 @@ void adjust_outstanding_extents(struct inode *inode,
- 		 * The whole range is locked, so we can safely clear
- 		 * EXTENT_COMPRESS flag.
- 		 */
--		state->state &= ~EXTENT_COMPRESS;
-+		state->state &= ~(EXTENT_COMPRESS | EXTENT_DEDUPE);
- 		adjust_one_outstanding_extent(inode,
- 				state->end - state->start + 1);
- 		node = rb_next(node);
-@@ -1575,7 +1575,8 @@ static noinline u64 find_delalloc_range(struct extent_io_tree *tree,
- 		state = rb_entry(node, struct extent_state, rb_node);
- 		if (found && (state->start != cur_start ||
- 			      (state->state & EXTENT_BOUNDARY) ||
--			      (state->state ^ pre_state) & EXTENT_COMPRESS)) {
-+			      (state->state ^ pre_state) & (EXTENT_COMPRESS |
-+			       EXTENT_DEDUPE))) {
- 			goto out;
- 		}
- 		if (!(state->state & EXTENT_DELALLOC)) {
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index d9f846c..c226d62 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -22,6 +22,7 @@
- #define EXTENT_QGROUP_RESERVED	(1U << 16)
- #define EXTENT_CLEAR_DATA_RESV	(1U << 17)
- #define	EXTENT_COMPRESS		(1U << 18)
-+#define EXTENT_DEDUPE		(1U << 19)
- #define EXTENT_IOBITS		(EXTENT_LOCKED | EXTENT_WRITEBACK)
- #define EXTENT_CTLBITS		(EXTENT_DO_ACCOUNTING | EXTENT_FIRST_DELALLOC)
- 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index f2b07ba..cb7c371 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -42,6 +42,7 @@
- #include "volumes.h"
+ /*
+  * Calculate hash for dedupe.
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 48511a4..876f1b1 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -50,6 +50,7 @@
+ #include "sysfs.h"
  #include "qgroup.h"
  #include "compression.h"
 +#include "dedupe.h"
  
- static struct kmem_cache *btrfs_inode_defrag_cachep;
- /*
-@@ -1537,6 +1538,8 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+ #ifdef CONFIG_X86
+ #include <asm/cpufeature.h>
+@@ -3970,6 +3971,8 @@ void close_ctree(struct btrfs_root *root)
  
- 	if (inode_need_compress(inode))
- 		reserve_type = BTRFS_RESERVE_COMPRESS;
-+	else if (inode_need_dedupe(inode))
-+		reserve_type = BTRFS_RESERVE_DEDUPE;
+ 	btrfs_free_qgroup_config(fs_info);
  
- 	while (iov_iter_count(i) > 0) {
- 		size_t offset = pos & (PAGE_SIZE - 1);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index ff35baa..728af50 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1734,20 +1734,23 @@ static int run_delalloc_range(struct inode *inode, struct page *locked_page,
- 	int ret;
- 	int force_cow = need_force_cow(inode, start, end);
- 	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
--	int need_compress;
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	struct btrfs_fs_info *fs_info = root->fs_info;
-+	int need_compress, need_dedupe;
- 
- 	need_compress = test_range_bit(io_tree, start, end,
- 				       EXTENT_COMPRESS, 1, NULL);
-+	need_dedupe = test_range_bit(io_tree, start, end,
-+				     EXTENT_DEDUPE, 1, NULL);
++	btrfs_dedupe_cleanup(fs_info);
 +
- 	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW && !force_cow) {
--		if (need_compress)
-+		if (need_compress || need_dedupe)
- 			adjust_outstanding_extents(inode, start, end);
- 
- 		ret = run_delalloc_nocow(inode, locked_page, start, end,
- 					 page_started, 1, nr_written);
- 	} else if (BTRFS_I(inode)->flags & BTRFS_INODE_PREALLOC && !force_cow) {
--		if (need_compress)
-+		if (need_compress || need_dedupe)
- 			adjust_outstanding_extents(inode, start, end);
- 
- 		ret = run_delalloc_nocow(inode, locked_page, start, end,
-@@ -1779,6 +1782,8 @@ static void btrfs_split_extent_hook(struct inode *inode,
- 
- 	if (orig->state & EXTENT_COMPRESS)
- 		max_extent_size = SZ_128K;
-+	else if (orig->state & EXTENT_DEDUPE)
-+		max_extent_size = btrfs_dedupe_blocksize(inode);
- 
- 	size = orig->end - orig->start + 1;
- 	if (size > max_extent_size) {
-@@ -1828,6 +1833,8 @@ static void btrfs_merge_extent_hook(struct inode *inode,
- 
- 	if (other->state & EXTENT_COMPRESS)
- 		max_extent_size = SZ_128K;
-+	else if (other->state & EXTENT_DEDUPE)
-+		max_extent_size = btrfs_dedupe_blocksize(inode);
- 
- 	if (new->start > other->start)
- 		new_size = new->end - other->start + 1;
-@@ -1940,6 +1947,9 @@ static void btrfs_set_bit_hook(struct inode *inode,
- 
- 		if (*bits & EXTENT_COMPRESS)
- 			max_extent_size = SZ_128K;
-+		else if (*bits & EXTENT_DEDUPE)
-+			max_extent_size = btrfs_dedupe_blocksize(inode);
-+
- 		num_extents = div64_u64(len + max_extent_size - 1,
- 					max_extent_size);
- 
-@@ -1998,6 +2008,9 @@ static void btrfs_clear_bit_hook(struct inode *inode,
- 		if (state->state & EXTENT_COMPRESS) {
- 			max_extent_size = SZ_128K;
- 			reserve_type = BTRFS_RESERVE_COMPRESS;
-+		} else if (state->state & EXTENT_DEDUPE) {
-+			max_extent_size = btrfs_dedupe_blocksize(inode);
-+			reserve_type = BTRFS_RESERVE_DEDUPE;
- 		}
- 
- 		num_extents = div64_u64(len + max_extent_size - 1,
-@@ -2216,6 +2229,8 @@ int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
- 
- 	if (flag == 1)
- 		max_extent_size = SZ_128K;
-+	else if (flag == 2)
-+		max_extent_size = btrfs_dedupe_blocksize(inode);
- 
- 	num_extents = div64_u64(end - start + max_extent_size,
- 				    max_extent_size);
-@@ -2223,6 +2238,8 @@ int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
- 	/* compression path */
- 	if (flag == 1)
- 		bits = EXTENT_DELALLOC | EXTENT_COMPRESS | EXTENT_UPTODATE;
-+	else if (flag == 2)
-+		bits = EXTENT_DELALLOC | EXTENT_DEDUPE | EXTENT_UPTODATE;
- 	else
- 		bits = EXTENT_DELALLOC | EXTENT_UPTODATE;
- 
-@@ -2333,6 +2350,9 @@ again:
- 
- 	if (inode_need_compress(inode))
- 		reserve_type = BTRFS_RESERVE_COMPRESS;
-+	else if (inode_need_dedupe(inode))
-+		reserve_type = BTRFS_RESERVE_DEDUPE;
-+
- 	ret = btrfs_delalloc_reserve_space(inode, page_start,
- 					   PAGE_SIZE, reserve_type);
- 	if (ret) {
-@@ -3269,7 +3289,8 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
- 	if (test_bit(BTRFS_ORDERED_COMPRESSED, &ordered_extent->flags)) {
- 		compress_type = ordered_extent->compress_type;
- 		reserve_type = BTRFS_RESERVE_COMPRESS;
--	}
-+	} else if (ordered_extent->hash)
-+		reserve_type = BTRFS_RESERVE_DEDUPE;
- 
- 	if (test_bit(BTRFS_ORDERED_PREALLOC, &ordered_extent->flags)) {
- 		BUG_ON(compress_type);
-@@ -5038,6 +5059,8 @@ int btrfs_truncate_block(struct inode *inode, loff_t from, loff_t len,
- 
- 	if (inode_need_compress(inode))
- 		reserve_type = BTRFS_RESERVE_COMPRESS;
-+	else if (inode_need_dedupe(inode))
-+		reserve_type = BTRFS_RESERVE_DEDUPE;
- 
- 	if ((offset & (blocksize - 1)) == 0 &&
- 	    (!len || ((len & (blocksize - 1)) == 0)))
-@@ -9322,6 +9345,9 @@ int btrfs_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
- 
- 	if (inode_need_compress(inode))
- 		reserve_type = BTRFS_RESERVE_COMPRESS;
-+	else if (inode_need_dedupe(inode))
-+		reserve_type = BTRFS_RESERVE_DEDUPE;
-+
- 	/*
- 	 * Reserving delalloc space after obtaining the page lock can lead to
- 	 * deadlock. For example, if a dirty page is locked by this function
+ 	if (percpu_counter_sum(&fs_info->delalloc_bytes)) {
+ 		btrfs_info(fs_info, "at unmount delalloc count %lld",
+ 		       percpu_counter_sum(&fs_info->delalloc_bytes));
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 3dd093b..2fc17b5 100644
+index 04c5b80..46159cf 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -1143,6 +1143,9 @@ static int cluster_pages_for_defrag(struct inode *inode,
+@@ -61,6 +61,7 @@
+ #include "qgroup.h"
+ #include "tree-log.h"
+ #include "compression.h"
++#include "dedupe.h"
  
- 	if (inode_need_compress(inode))
- 		reserve_type = BTRFS_RESERVE_COMPRESS;
-+	else if (inode_need_dedupe(inode))
-+		reserve_type = BTRFS_RESERVE_DEDUPE;
+ #ifdef CONFIG_64BIT
+ /* If we have a 32-bit userspace and 64-bit kernel, then the UAPI
+@@ -3282,6 +3283,69 @@ ssize_t btrfs_dedupe_file_range(struct file *src_file, u64 loff, u64 olen,
+ 	return olen;
+ }
+ 
++static long btrfs_ioctl_dedupe_ctl(struct btrfs_root *root, void __user *args)
++{
++	struct btrfs_ioctl_dedupe_args *dargs;
++	struct btrfs_fs_info *fs_info = root->fs_info;
++	int ret = 0;
 +
- 	ret = btrfs_delalloc_reserve_space(inode,
- 			start_index << PAGE_SHIFT,
- 			page_cnt << PAGE_SHIFT, reserve_type);
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 3cba053..9cf2bbd 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -3164,6 +3164,8 @@ static int relocate_file_extent_cluster(struct inode *inode,
++	if (!capable(CAP_SYS_ADMIN))
++		return -EPERM;
++
++	dargs = memdup_user(args, sizeof(*dargs));
++	if (IS_ERR(dargs)) {
++		ret = PTR_ERR(dargs);
++		return ret;
++	}
++
++	if (dargs->cmd >= BTRFS_DEDUPE_CTL_LAST) {
++		ret = -EINVAL;
++		goto out;
++	}
++	switch (dargs->cmd) {
++	case BTRFS_DEDUPE_CTL_ENABLE:
++		mutex_lock(&fs_info->dedupe_ioctl_lock);
++		ret = btrfs_dedupe_enable(fs_info, dargs);
++		/*
++		 * Also copy the result to caller for further use
++		 * if enable succeeded.
++		 * For error case, dargs is already set up with
++		 * special values indicating error reason.
++		 */
++		if (!ret)
++			btrfs_dedupe_status(fs_info, dargs);
++		mutex_unlock(&fs_info->dedupe_ioctl_lock);
++		break;
++	case BTRFS_DEDUPE_CTL_DISABLE:
++		mutex_lock(&fs_info->dedupe_ioctl_lock);
++		ret = btrfs_dedupe_disable(fs_info);
++		btrfs_dedupe_status(fs_info, dargs);
++		mutex_unlock(&fs_info->dedupe_ioctl_lock);
++		break;
++	case BTRFS_DEDUPE_CTL_STATUS:
++		mutex_lock(&fs_info->dedupe_ioctl_lock);
++		btrfs_dedupe_status(fs_info, dargs);
++		mutex_unlock(&fs_info->dedupe_ioctl_lock);
++		break;
++	default:
++		/*
++		 * Use this return value to inform progs that kernel
++		 * doesn't support such new command.
++		 */
++		ret = -EOPNOTSUPP;
++		goto out;
++	}
++	/*
++	 * All ioctl subcommand will modify user dargs,
++	 * Don't override return value unless copy fails
++	 */
++	if (copy_to_user(args, dargs, sizeof(*dargs)))
++		ret = -EFAULT;
++out:
++	kfree(dargs);
++	return ret;
++}
++
+ static int clone_finish_inode_update(struct btrfs_trans_handle *trans,
+ 				     struct inode *inode,
+ 				     u64 endoff,
+@@ -5631,6 +5695,10 @@ long btrfs_ioctl(struct file *file, unsigned int
+ 		return btrfs_ioctl_get_fslabel(file, argp);
+ 	case BTRFS_IOC_SET_FSLABEL:
+ 		return btrfs_ioctl_set_fslabel(file, argp);
++#ifdef CONFIG_BTRFS_DEBUG
++	case BTRFS_IOC_DEDUPE_CTL:
++		return btrfs_ioctl_dedupe_ctl(root, argp);
++#endif
+ 	case BTRFS_IOC_GET_SUPPORTED_FEATURES:
+ 		return btrfs_ioctl_get_supported_features(argp);
+ 	case BTRFS_IOC_GET_FEATURES:
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 1f157fb..cc408a5 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -206,6 +206,7 @@ BTRFS_FEAT_ATTR_INCOMPAT(raid56, RAID56);
+ BTRFS_FEAT_ATTR_INCOMPAT(skinny_metadata, SKINNY_METADATA);
+ BTRFS_FEAT_ATTR_INCOMPAT(no_holes, NO_HOLES);
+ BTRFS_FEAT_ATTR_COMPAT_RO(free_space_tree, FREE_SPACE_TREE);
++BTRFS_FEAT_ATTR_COMPAT_RO(dedupe, DEDUPE);
  
- 	if (inode_need_compress(inode))
- 		reserve_type = BTRFS_RESERVE_COMPRESS;
-+	else if (inode_need_dedupe(inode))
-+		reserve_type = BTRFS_RESERVE_DEDUPE;
+ static struct attribute *btrfs_supported_feature_attrs[] = {
+ 	BTRFS_FEAT_ATTR_PTR(mixed_backref),
+@@ -218,6 +219,7 @@ static struct attribute *btrfs_supported_feature_attrs[] = {
+ 	BTRFS_FEAT_ATTR_PTR(skinny_metadata),
+ 	BTRFS_FEAT_ATTR_PTR(no_holes),
+ 	BTRFS_FEAT_ATTR_PTR(free_space_tree),
++	BTRFS_FEAT_ATTR_PTR(dedupe),
+ 	NULL
+ };
  
- 	ra = kzalloc(sizeof(*ra), GFP_NOFS);
- 	if (!ra)
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index 3dc237c..b12c565 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -250,6 +250,7 @@ struct btrfs_ioctl_fs_info_args {
+  * first mount when booting older kernel versions.
+  */
+ #define BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE_VALID	(1ULL << 1)
++#define BTRFS_FEATURE_COMPAT_RO_DEDUPE		(1ULL << 2)
+ 
+ #define BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF	(1ULL << 0)
+ #define BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL	(1ULL << 1)
+@@ -646,7 +647,14 @@ struct btrfs_ioctl_get_dev_stats {
+ 
+ /* Default dedupe limit on number of hash */
+ #define BTRFS_DEDUPE_LIMIT_NR_DEFAULT	(32 * 1024)
+-
++/*
++ * de-duplication control modes
++ * For re-config, re-enable will handle it
++ */
++#define BTRFS_DEDUPE_CTL_ENABLE	1
++#define BTRFS_DEDUPE_CTL_DISABLE 2
++#define BTRFS_DEDUPE_CTL_STATUS	3
++#define BTRFS_DEDUPE_CTL_LAST	4
+ /*
+  * This structure is used for dedupe enable/disable/configure
+  * and status ioctl.
+@@ -873,6 +881,8 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
+ 				    struct btrfs_ioctl_dev_replace_args)
+ #define BTRFS_IOC_FILE_EXTENT_SAME _IOWR(BTRFS_IOCTL_MAGIC, 54, \
+ 					 struct btrfs_ioctl_same_args)
++#define BTRFS_IOC_DEDUPE_CTL	_IOWR(BTRFS_IOCTL_MAGIC, 55, \
++				      struct btrfs_ioctl_dedupe_args)
+ #define BTRFS_IOC_GET_FEATURES _IOR(BTRFS_IOCTL_MAGIC, 57, \
+ 				   struct btrfs_ioctl_feature_flags)
+ #define BTRFS_IOC_SET_FEATURES _IOW(BTRFS_IOCTL_MAGIC, 57, \
 -- 
 2.10.1
 

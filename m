@@ -1,238 +1,128 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:32612 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:50610 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S933311AbcKDBdu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 3 Nov 2016 21:33:50 -0400
+        id S933271AbcKDBdv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 3 Nov 2016 21:33:51 -0400
+Received: from localhost.localdomain (unknown [10.167.226.34])
+        by cn.fujitsu.com (Postfix) with ESMTP id EB204406CF6D
+        for <linux-btrfs@vger.kernel.org>; Fri,  4 Nov 2016 09:33:18 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH v14 08/15] btrfs: dedupe: Introduce function to search for an existing hash
-Date: Fri,  4 Nov 2016 09:32:57 +0800
-Message-Id: <20161104013304.11365-9-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v14 13/15] btrfs: relocation: Enhance error handling to avoid BUG_ON
+Date: Fri,  4 Nov 2016 09:33:02 +0800
+Message-Id: <20161104013304.11365-14-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20161104013304.11365-1-quwenruo@cn.fujitsu.com>
 References: <20161104013304.11365-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Since the introduce of btrfs dedupe tree, it's possible that balance can
+race with dedupe disabling.
 
-Introduce static function inmem_search() to handle the job for in-memory
-hash tree.
+When this happens, dedupe_enabled will make btrfs_get_fs_root() return
+PTR_ERR(-ENOENT).
+But due to a bug in error handling branch, when this happens
+backref_cache->nr_nodes is increased but the node is neither added to
+backref_cache or nr_nodes decreased.
+Causing BUG_ON() in backref_cache_cleanup()
 
-The trick is, we must ensure the delayed ref head is not being run at
-the time we search the for the hash.
+[ 2611.668810] ------------[ cut here ]------------
+[ 2611.669946] kernel BUG at
+/home/sat/ktest/linux/fs/btrfs/relocation.c:243!
+[ 2611.670572] invalid opcode: 0000 [#1] SMP
+[ 2611.686797] Call Trace:
+[ 2611.687034]  [<ffffffffa01f71d3>]
+btrfs_relocate_block_group+0x1b3/0x290 [btrfs]
+[ 2611.687706]  [<ffffffffa01cc177>]
+btrfs_relocate_chunk.isra.40+0x47/0xd0 [btrfs]
+[ 2611.688385]  [<ffffffffa01cdb12>] btrfs_balance+0xb22/0x11e0 [btrfs]
+[ 2611.688966]  [<ffffffffa01d9611>] btrfs_ioctl_balance+0x391/0x3a0
+[btrfs]
+[ 2611.689587]  [<ffffffffa01ddaf0>] btrfs_ioctl+0x1650/0x2290 [btrfs]
+[ 2611.690145]  [<ffffffff81171cda>] ? lru_cache_add+0x3a/0x80
+[ 2611.690647]  [<ffffffff81171e4c>] ?
+lru_cache_add_active_or_unevictable+0x4c/0xc0
+[ 2611.691310]  [<ffffffff81193f04>] ? handle_mm_fault+0xcd4/0x17f0
+[ 2611.691842]  [<ffffffff811da423>] ? cp_new_stat+0x153/0x180
+[ 2611.692342]  [<ffffffff8119913d>] ? __vma_link_rb+0xfd/0x110
+[ 2611.692842]  [<ffffffff81199209>] ? vma_link+0xb9/0xc0
+[ 2611.693303]  [<ffffffff811e7e81>] do_vfs_ioctl+0xa1/0x5a0
+[ 2611.693781]  [<ffffffff8104e024>] ? __do_page_fault+0x1b4/0x400
+[ 2611.694310]  [<ffffffff811e83c1>] SyS_ioctl+0x41/0x70
+[ 2611.694758]  [<ffffffff816dfc6e>] entry_SYSCALL_64_fastpath+0x12/0x71
+[ 2611.695331] Code: ff 48 8b 45 bf 49 83 af a8 05 00 00 01 49 89 87 a0
+05 00 00 e9 2e fd ff ff b8 f4 ff ff ff e9 e4 fb ff ff 0f 0b 0f 0b 0f 0b
+0f 0b <0f> 0b 0f 0b 41 89 c6 e9 b8 fb ff ff e8 9e a6 e8 e0 4c 89 e7 44
+[ 2611.697870] RIP  [<ffffffffa01f6fc1>]
+relocate_block_group+0x741/0x7a0 [btrfs]
+[ 2611.698818]  RSP <ffff88002a81fb30>
 
-With inmem_search(), we can implement the btrfs_dedupe_search()
-interface.
+This patch will call remove_backref_node() in error handling branch, and
+cache the returned -ENOENT in relocate_tree_block() and continue
+balancing.
 
+Reported-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Reviewed-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/dedupe.c | 185 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 185 insertions(+)
+ fs/btrfs/relocation.c | 22 +++++++++++++++++-----
+ 1 file changed, 17 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/dedupe.c b/fs/btrfs/dedupe.c
-index 14c57fa..ef4968f 100644
---- a/fs/btrfs/dedupe.c
-+++ b/fs/btrfs/dedupe.c
-@@ -20,6 +20,7 @@
- #include "btrfs_inode.h"
- #include "transaction.h"
- #include "delayed-ref.h"
-+#include "qgroup.h"
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 2f10441..3cba053 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -889,6 +889,13 @@ again:
+ 		root = read_fs_root(rc->extent_root->fs_info, key.offset);
+ 		if (IS_ERR(root)) {
+ 			err = PTR_ERR(root);
++			/*
++			 * Don't forget to cleanup current node.
++			 * As it may not be added to backref_cache but nr_node
++			 * increased.
++			 * This will cause BUG_ON() in backref_cache_cleanup().
++			 */
++			remove_backref_node(&rc->backref_cache, cur);
+ 			goto out;
+ 		}
  
- struct inmem_hash {
- 	struct rb_node hash_node;
-@@ -454,3 +455,187 @@ int btrfs_dedupe_disable(struct btrfs_fs_info *fs_info)
- 	kfree(dedupe_info);
- 	return 0;
- }
-+
-+/*
-+ * Caller must ensure the corresponding ref head is not being run.
-+ */
-+static struct inmem_hash *
-+inmem_search_hash(struct btrfs_dedupe_info *dedupe_info, u8 *hash)
-+{
-+	struct rb_node **p = &dedupe_info->hash_root.rb_node;
-+	struct rb_node *parent = NULL;
-+	struct inmem_hash *entry = NULL;
-+	u16 hash_algo = dedupe_info->hash_algo;
-+	int hash_len = btrfs_hash_sizes[hash_algo];
-+
-+	while (*p) {
-+		parent = *p;
-+		entry = rb_entry(parent, struct inmem_hash, hash_node);
-+
-+		if (memcmp(hash, entry->hash, hash_len) < 0) {
-+			p = &(*p)->rb_left;
-+		} else if (memcmp(hash, entry->hash, hash_len) > 0) {
-+			p = &(*p)->rb_right;
-+		} else {
-+			/* Found, need to re-add it to LRU list head */
-+			list_del(&entry->lru_list);
-+			list_add(&entry->lru_list, &dedupe_info->lru_list);
-+			return entry;
-+		}
-+	}
-+	return NULL;
-+}
-+
-+static int inmem_search(struct btrfs_dedupe_info *dedupe_info,
-+			struct inode *inode, u64 file_pos,
-+			struct btrfs_dedupe_hash *hash)
-+{
-+	int ret;
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct btrfs_trans_handle *trans;
-+	struct btrfs_delayed_ref_root *delayed_refs;
-+	struct btrfs_delayed_ref_head *head;
-+	struct btrfs_delayed_ref_head *insert_head;
-+	struct btrfs_delayed_data_ref *insert_dref;
-+	struct btrfs_qgroup_extent_record *insert_qrecord = NULL;
-+	struct inmem_hash *found_hash;
-+	int free_insert = 1;
-+	u64 bytenr;
-+	u32 num_bytes;
-+
-+	insert_head = kmem_cache_alloc(btrfs_delayed_ref_head_cachep, GFP_NOFS);
-+	if (!insert_head)
-+		return -ENOMEM;
-+	insert_head->extent_op = NULL;
-+	insert_dref = kmem_cache_alloc(btrfs_delayed_data_ref_cachep, GFP_NOFS);
-+	if (!insert_dref) {
-+		kmem_cache_free(btrfs_delayed_ref_head_cachep, insert_head);
-+		return -ENOMEM;
-+	}
-+	if (test_bit(BTRFS_FS_QUOTA_ENABLED, &root->fs_info->flags) &&
-+	    is_fstree(root->root_key.objectid)) {
-+		insert_qrecord = kmalloc(sizeof(*insert_qrecord), GFP_NOFS);
-+		if (!insert_qrecord) {
-+			kmem_cache_free(btrfs_delayed_ref_head_cachep,
-+					insert_head);
-+			kmem_cache_free(btrfs_delayed_data_ref_cachep,
-+					insert_dref);
-+			return -ENOMEM;
-+		}
-+	}
-+
-+	trans = btrfs_join_transaction(root);
-+	if (IS_ERR(trans)) {
-+		ret = PTR_ERR(trans);
-+		goto free_mem;
-+	}
-+
-+again:
-+	mutex_lock(&dedupe_info->lock);
-+	found_hash = inmem_search_hash(dedupe_info, hash->hash);
-+	/* If we don't find a duplicated extent, just return. */
-+	if (!found_hash) {
-+		ret = 0;
-+		goto out;
-+	}
-+	bytenr = found_hash->bytenr;
-+	num_bytes = found_hash->num_bytes;
-+
-+	delayed_refs = &trans->transaction->delayed_refs;
-+
-+	spin_lock(&delayed_refs->lock);
-+	head = btrfs_find_delayed_ref_head(trans, bytenr);
-+	if (!head) {
-+		/*
-+		 * We can safely insert a new delayed_ref as long as we
-+		 * hold delayed_refs->lock.
-+		 * Only need to use atomic inc_extent_ref()
-+		 */
-+		btrfs_add_delayed_data_ref_locked(root->fs_info, trans,
-+				insert_dref, insert_head, insert_qrecord,
-+				bytenr, num_bytes, 0, root->root_key.objectid,
-+				btrfs_ino(inode), file_pos, 0,
-+				BTRFS_ADD_DELAYED_REF);
-+		spin_unlock(&delayed_refs->lock);
-+
-+		/* add_delayed_data_ref_locked will free unused memory */
-+		free_insert = 0;
-+		hash->bytenr = bytenr;
-+		hash->num_bytes = num_bytes;
-+		ret = 1;
-+		goto out;
-+	}
-+
-+	/*
-+	 * We can't lock ref head with dedupe_info->lock hold or we will cause
-+	 * ABBA dead lock.
-+	 */
-+	mutex_unlock(&dedupe_info->lock);
-+	ret = btrfs_delayed_ref_lock(trans, head);
-+	spin_unlock(&delayed_refs->lock);
-+	if (ret == -EAGAIN)
-+		goto again;
-+
-+	mutex_lock(&dedupe_info->lock);
-+	/* Search again to ensure the hash is still here */
-+	found_hash = inmem_search_hash(dedupe_info, hash->hash);
-+	if (!found_hash) {
-+		ret = 0;
-+		mutex_unlock(&head->mutex);
-+		goto out;
-+	}
-+	ret = 1;
-+	hash->bytenr = bytenr;
-+	hash->num_bytes = num_bytes;
-+
-+	/*
-+	 * Increase the extent ref right now, to avoid delayed ref run
-+	 * Or we may increase ref on non-exist extent.
-+	 */
-+	btrfs_inc_extent_ref(trans, root, bytenr, num_bytes, 0,
-+			     root->root_key.objectid,
-+			     btrfs_ino(inode), file_pos);
-+	mutex_unlock(&head->mutex);
-+out:
-+	mutex_unlock(&dedupe_info->lock);
-+	btrfs_end_transaction(trans, root);
-+
-+free_mem:
-+	if (free_insert) {
-+		kmem_cache_free(btrfs_delayed_ref_head_cachep, insert_head);
-+		kmem_cache_free(btrfs_delayed_data_ref_cachep, insert_dref);
-+		kfree(insert_qrecord);
-+	}
-+	return ret;
-+}
-+
-+int btrfs_dedupe_search(struct btrfs_fs_info *fs_info,
-+			struct inode *inode, u64 file_pos,
-+			struct btrfs_dedupe_hash *hash)
-+{
-+	struct btrfs_dedupe_info *dedupe_info = fs_info->dedupe_info;
-+	int ret = -EINVAL;
-+
-+	if (!hash)
-+		return 0;
-+
-+	/*
-+	 * This function doesn't follow fs_info->dedupe_enabled as it will need
-+	 * to ensure any hashed extent to go through dedupe routine
-+	 */
-+	if (WARN_ON(dedupe_info == NULL))
-+		return -EINVAL;
-+
-+	if (WARN_ON(btrfs_dedupe_hash_hit(hash)))
-+		return -EINVAL;
-+
-+	if (dedupe_info->backend == BTRFS_DEDUPE_BACKEND_INMEMORY)
-+		ret = inmem_search(dedupe_info, inode, file_pos, hash);
-+
-+	/* It's possible hash->bytenr/num_bytenr already changed */
-+	if (ret == 0) {
-+		hash->num_bytes = 0;
-+		hash->bytenr = 0;
-+	}
-+	return ret;
-+}
+@@ -3015,14 +3022,21 @@ int relocate_tree_blocks(struct btrfs_trans_handle *trans,
+ 	}
+ 
+ 	rb_node = rb_first(blocks);
+-	while (rb_node) {
++	for (rb_node = rb_first(blocks); rb_node; rb_node = rb_next(rb_node)) {
+ 		block = rb_entry(rb_node, struct tree_block, rb_node);
+ 
+ 		node = build_backref_tree(rc, &block->key,
+ 					  block->level, block->bytenr);
+ 		if (IS_ERR(node)) {
++			/*
++			 * The root(dedupe tree yet) of the tree block is
++			 * going to be freed and can't be reached.
++			 * Just skip it and continue balancing.
++			 */
++			if (PTR_ERR(node) == -ENOENT)
++				continue;
+ 			err = PTR_ERR(node);
+-			goto out;
++			break;
+ 		}
+ 
+ 		ret = relocate_tree_block(trans, rc, node, &block->key,
+@@ -3030,11 +3044,9 @@ int relocate_tree_blocks(struct btrfs_trans_handle *trans,
+ 		if (ret < 0) {
+ 			if (ret != -EAGAIN || rb_node == rb_first(blocks))
+ 				err = ret;
+-			goto out;
++			break;
+ 		}
+-		rb_node = rb_next(rb_node);
+ 	}
+-out:
+ 	err = finish_pending_nodes(trans, rc, path, err);
+ 
+ out_free_path:
 -- 
 2.10.1
 

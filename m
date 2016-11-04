@@ -1,63 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from len.romanrm.net ([195.154.117.182]:54416 "EHLO len.romanrm.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753833AbcKDJAr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 4 Nov 2016 05:00:47 -0400
-Date: Fri, 4 Nov 2016 14:00:43 +0500
-From: Roman Mamedov <rm@romanrm.net>
-To: Marc MERLIN <marc@merlins.org>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, Hugo Mills <hugo@carfax.org.uk>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: btrfs check --repair: ERROR: cannot read chunk root
-Message-ID: <20161104140043.5d739dc9@natsu>
-In-Reply-To: <20161104080113.GG3529@merlins.org>
-References: <20161031054719.GN28648@merlins.org>
-        <b31eaf2d-b339-6163-0108-28d1586c05e5@cn.fujitsu.com>
-        <20161031062509.GO28648@merlins.org>
-        <0c9e25b1-c8e1-6300-0c79-e9e3e8fd0f52@cn.fujitsu.com>
-        <20161031063737.GP28648@merlins.org>
-        <81e30812-be45-b4ff-3bf2-c79e805d445a@cn.fujitsu.com>
-        <20161031084412.GI16645@carfax.org.uk>
-        <20161031150422.GQ28648@merlins.org>
-        <38fa8b04-ec2d-884f-e03c-8bc2fb888efb@cn.fujitsu.com>
-        <20161101042140.atn73lqehgpqslgz@merlins.org>
-        <20161104080113.GG3529@merlins.org>
+Received: from mail-wm0-f46.google.com ([74.125.82.46]:38721 "EHLO
+        mail-wm0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S934432AbcKDOlx (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Nov 2016 10:41:53 -0400
+Received: by mail-wm0-f46.google.com with SMTP id n67so54158855wme.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 04 Nov 2016 07:41:53 -0700 (PDT)
+Received: from system (HSI-KBW-046-005-000-248.hsi8.kabel-badenwuerttemberg.de. [46.5.0.248])
+        by smtp.gmail.com with ESMTPSA id c4sm4948875wmh.4.2016.11.04.07.41.50
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Fri, 04 Nov 2016 07:41:50 -0700 (PDT)
+Date: Fri, 4 Nov 2016 15:41:49 +0100
+From: Saint Germain <saintger@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Identifying reflink / CoW files
+Message-ID: <20161104154149.754c3eab@system>
+In-Reply-To: <20161103051707.GE21290@hungrycats.org>
+References: <20161027133011.631cf1e5@system>
+        <20161103051707.GE21290@hungrycats.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 4 Nov 2016 01:01:13 -0700
-Marc MERLIN <marc@merlins.org> wrote:
+On Thu, 3 Nov 2016 01:17:07 -0400, Zygo Blaxell
+<ce3g8jdj@umail.furryterror.org> wrote :
 
-> Basically I have this:
-> sde                            8:64   0   3.7T  0 
-> └─sde1                         8:65   0   3.7T  0 
->   └─md5                        9:5    0  14.6T  0 
->     └─bcache0                252:0    0  14.6T  0 
->       └─crypt_bcache0 (dm-0) 253:0    0  14.6T  0 
+> On Thu, Oct 27, 2016 at 01:30:11PM +0200, Saint Germain wrote:
+> > Hello,
+> > 
+> > Following the previous discussion:
+> > https://www.spinics.net/lists/linux-btrfs/msg19075.html
+> > 
+> > I would be interested in finding a way to reliably identify
+> > reflink / CoW files in order to use deduplication programs (like
+> > fdupes, jdupes, rmlint) efficiently.
+> > 
+> > Using FIEMAP doesn't seem to be reliable according to this
+> > discussion on rmlint:
+> > https://github.com/sahib/rmlint/issues/132#issuecomment-157665154
 > 
-> I'll try dd'ing the md5 directly now, but that's going to take another 2 days :(
+> Inline extents have no physical address (FIEMAP returns 0 in that
+> field). You can't dedup them and each file can have only one, so if
+> you see the FIEMAP_EXTENT_INLINE bit set, you can just skip
+> processing the entire file immediately.
 > 
-> That said, given that almost half the device is not readable from user space
-> for some reason, that would explain why btrfs check is failing. Obviously it
-> can't do its job if it can't read blocks.
+> You can create a separate non-inline extent in a temporary file then
+> use dedup to replace _both_ copies of the original inline extent.
+> Or don't bother, as the savings are negligible.
+> 
+> > Is there another way that deduplication programs can easily use ?
+> 
+> The problem is that it's not files that are reflinked--individual
+> extents are.  "reflink file copy" really just means "a file whose
+> extents are 100% shared with another file." It's possible for files
+> on btrfs to have any percentage of shared extents from 0 to 100% in
+> increments of the host page size.  It's also possible for the blocks
+> to be shared with different extent boundaries.
+> 
+> The quality of the result therefore depends on the amount of effort
+> put into measuring it.  If you look for the first non-hole extent in
+> each file and use its physical address as a physical file identifier,
+> then you get a fast reflink detector function that has a high risk of
+> false positives.  If you map out two files and compare physical
+> addresses block by block, you get a slow function with a low risk of
+> false positives (but maybe a small risk of false negatives too).
+> 
+> If your dedup program only does full-file reflink copies then the
+> first extent physical address method is sufficient.  If your program
+> does block- or extent-level dedup then it shouldn't be using files in
+> its data model at all, except where necessary to provide a mechanism
+> to access the physical blocks through the POSIX filesystem API.
+> 
+> FIEMAP will tell you about all the extents (physical address for
+> extents that have them, zero for other extent types).  It's also slow
+> and has assorted accuracy problems especially with compressed files.
+> Any user can run FIEMAP, and it uses only standard structure arrays.
+> 
+> SEARCH_V2 is root-only and requires parsing variable-length binary
+> btrfs data encoding, but it's faster than FIEMAP and gives more
+> accurate results on compressed files.
+> 
 
-I don't see anything to support the notion that "half is unreadable", maybe
-just a 512-byte sector is unreadable -- but that would be enough to make
-regular dd bail out -- which is why you should be using dd_rescue for this,
-not regular dd. Assuming you just want to copy over as much data as possible,
-and not simply test if dd fails or not (but in any case dd_rescue at least
-would not fail instantly and would tell you precise count of how much is
-unreadable).
+As the dedup program only does full-file reflink, the first extent
+physical address method can be used as a fast first check to identify
+potential files.
 
-There is "GNU ddrescue" and "dd_rescue", I liked the first one better, but
-they both work on a similar principle.
+But how to implement the second check in order to have 0% risk of false
+positive ?
+Because you said that mapping out two files and comparing the physical
+addresses block by block also has a low risk of false positives.
 
-Also didn't you recently have issues with bad block lists on mdadm. This
-mysterious "unreadable and nothing in dmesg" does appear to be a continuation
-of that.
-
--- 
-With respect,
-Roman
+Thank you very much for the detailed explanation !

@@ -1,84 +1,200 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym01.jp.fujitsu.com ([211.128.242.40]:34446 "EHLO
-        mgwym01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S941318AbcKOIoV (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 Nov 2016 03:44:21 -0500
-Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
-        by yt-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id AAF75AC0225
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Nov 2016 17:44:13 +0900 (JST)
-Subject: Re: [PATCH 2/3] btrfs-progs: send: fix handling of multiple snapshots
- (-p option)
+Received: from cn.fujitsu.com ([222.73.24.84]:32612 "EHLO song.cn.fujitsu.com"
+        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+        id S1755733AbcKDBdh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 3 Nov 2016 21:33:37 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-References: <201610190235.AA00002@WIN-5MHF4RKU941.jp.fujitsu.com>
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Message-ID: <68ca0b77-c3d2-ba42-7e0f-b5fcc8d54428@jp.fujitsu.com>
-Date: Tue, 15 Nov 2016 17:44:07 +0900
+Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Subject: [PATCH v14 05/15] btrfs: dedupe: Introduce function to add hash into in-memory tree
+Date: Fri,  4 Nov 2016 09:32:54 +0800
+Message-Id: <20161104013304.11365-6-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20161104013304.11365-1-quwenruo@cn.fujitsu.com>
+References: <20161104013304.11365-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <201610190235.AA00002@WIN-5MHF4RKU941.jp.fujitsu.com>
-Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-xfstests btrfs/038 fails when this patch is applied. Sorry for my fault.
-I posted the patch that corrected this problem.
+From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
-  [PATCH] btrfs-progs: send: fix failure of xfstests btrfs/038
+Introduce static function inmem_add() to add hash into in-memory tree.
+And now we can implement the btrfs_dedupe_add() interface.
 
-Thanks,
-Tsutomu
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Reviewed-by: Josef Bacik <jbacik@fb.com>
+---
+ fs/btrfs/dedupe.c | 151 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 151 insertions(+)
 
-On 2016/10/19 11:35, Tsutomu Itoh wrote:
-> We cannot send multiple snapshots at once by -p option.
-> 
-> [before]
-> # btrfs send -f /tmp/data0 -p Snap0 Snap[12]
-> At subvol Snap1
-> At subvol Snap2
-> ERROR: parent determination failed for 0
-> # 
-> 
-> [after]
-> # btrfs send -f /tmp/data0 -p Snap0 Snap[12]
-> At subvol Snap1
-> At subvol Snap2
-> # 
-> 
-> Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-> ---
->  cmds-send.c | 6 ++----
->  1 file changed, 2 insertions(+), 4 deletions(-)
-> 
-> diff --git a/cmds-send.c b/cmds-send.c
-> index dfdfe01..2a8a697 100644
-> --- a/cmds-send.c
-> +++ b/cmds-send.c
-> @@ -650,7 +650,7 @@ int cmd_send(int argc, char **argv)
->  			goto out;
->  		}
->  
-> -		if (!full_send && !parent_root_id) {
-> +		if (!full_send && root_id) {
->  			ret = find_good_parent(&send, root_id, &parent_root_id);
->  			if (ret < 0) {
->  				error("parent determination failed for %lld",
-> @@ -673,7 +673,7 @@ int cmd_send(int argc, char **argv)
->  		if (ret < 0)
->  			goto out;
->  
-> -		if (!full_send) {
-> +		if (!full_send && root_id) {
->  			/* done with this subvol, so add it to the clone sources */
->  			ret = add_clone_source(&send, root_id);
->  			if (ret < 0) {
-> @@ -681,8 +681,6 @@ int cmd_send(int argc, char **argv)
->  				goto out;
->  			}
->  		}
-> -
-> -		parent_root_id = 0;
->  	}
->  
->  	ret = 0;
-> 
+diff --git a/fs/btrfs/dedupe.c b/fs/btrfs/dedupe.c
+index b14166a..e51412b 100644
+--- a/fs/btrfs/dedupe.c
++++ b/fs/btrfs/dedupe.c
+@@ -32,6 +32,14 @@ struct inmem_hash {
+ 	u8 hash[];
+ };
+ 
++static inline struct inmem_hash *inmem_alloc_hash(u16 algo)
++{
++	if (WARN_ON(algo >= ARRAY_SIZE(btrfs_hash_sizes)))
++		return NULL;
++	return kzalloc(sizeof(struct inmem_hash) + btrfs_hash_sizes[algo],
++			GFP_NOFS);
++}
++
+ static int init_dedupe_info(struct btrfs_dedupe_info **ret_info,
+ 			    struct btrfs_ioctl_dedupe_args *dargs)
+ {
+@@ -183,3 +191,146 @@ int btrfs_dedupe_disable(struct btrfs_fs_info *fs_info)
+ 	/* Place holder for bisect, will be implemented in later patches */
+ 	return 0;
+ }
++
++static int inmem_insert_hash(struct rb_root *root,
++			     struct inmem_hash *hash, int hash_len)
++{
++	struct rb_node **p = &root->rb_node;
++	struct rb_node *parent = NULL;
++	struct inmem_hash *entry = NULL;
++
++	while (*p) {
++		parent = *p;
++		entry = rb_entry(parent, struct inmem_hash, hash_node);
++		if (memcmp(hash->hash, entry->hash, hash_len) < 0)
++			p = &(*p)->rb_left;
++		else if (memcmp(hash->hash, entry->hash, hash_len) > 0)
++			p = &(*p)->rb_right;
++		else
++			return 1;
++	}
++	rb_link_node(&hash->hash_node, parent, p);
++	rb_insert_color(&hash->hash_node, root);
++	return 0;
++}
++
++static int inmem_insert_bytenr(struct rb_root *root,
++			       struct inmem_hash *hash)
++{
++	struct rb_node **p = &root->rb_node;
++	struct rb_node *parent = NULL;
++	struct inmem_hash *entry = NULL;
++
++	while (*p) {
++		parent = *p;
++		entry = rb_entry(parent, struct inmem_hash, bytenr_node);
++		if (hash->bytenr < entry->bytenr)
++			p = &(*p)->rb_left;
++		else if (hash->bytenr > entry->bytenr)
++			p = &(*p)->rb_right;
++		else
++			return 1;
++	}
++	rb_link_node(&hash->bytenr_node, parent, p);
++	rb_insert_color(&hash->bytenr_node, root);
++	return 0;
++}
++
++static void __inmem_del(struct btrfs_dedupe_info *dedupe_info,
++			struct inmem_hash *hash)
++{
++	list_del(&hash->lru_list);
++	rb_erase(&hash->hash_node, &dedupe_info->hash_root);
++	rb_erase(&hash->bytenr_node, &dedupe_info->bytenr_root);
++
++	if (!WARN_ON(dedupe_info->current_nr == 0))
++		dedupe_info->current_nr--;
++
++	kfree(hash);
++}
++
++/*
++ * Insert a hash into in-memory dedupe tree
++ * Will remove exceeding last recent use hash.
++ *
++ * If the hash mathced with existing one, we won't insert it, to
++ * save memory
++ */
++static int inmem_add(struct btrfs_dedupe_info *dedupe_info,
++		     struct btrfs_dedupe_hash *hash)
++{
++	int ret = 0;
++	u16 algo = dedupe_info->hash_algo;
++	struct inmem_hash *ihash;
++
++	ihash = inmem_alloc_hash(algo);
++
++	if (!ihash)
++		return -ENOMEM;
++
++	/* Copy the data out */
++	ihash->bytenr = hash->bytenr;
++	ihash->num_bytes = hash->num_bytes;
++	memcpy(ihash->hash, hash->hash, btrfs_hash_sizes[algo]);
++
++	mutex_lock(&dedupe_info->lock);
++
++	ret = inmem_insert_bytenr(&dedupe_info->bytenr_root, ihash);
++	if (ret > 0) {
++		kfree(ihash);
++		ret = 0;
++		goto out;
++	}
++
++	ret = inmem_insert_hash(&dedupe_info->hash_root, ihash,
++				btrfs_hash_sizes[algo]);
++	if (ret > 0) {
++		/*
++		 * We only keep one hash in tree to save memory, so if
++		 * hash conflicts, free the one to insert.
++		 */
++		rb_erase(&ihash->bytenr_node, &dedupe_info->bytenr_root);
++		kfree(ihash);
++		ret = 0;
++		goto out;
++	}
++
++	list_add(&ihash->lru_list, &dedupe_info->lru_list);
++	dedupe_info->current_nr++;
++
++	/* Remove the last dedupe hash if we exceed limit */
++	while (dedupe_info->current_nr > dedupe_info->limit_nr) {
++		struct inmem_hash *last;
++
++		last = list_entry(dedupe_info->lru_list.prev,
++				  struct inmem_hash, lru_list);
++		__inmem_del(dedupe_info, last);
++	}
++out:
++	mutex_unlock(&dedupe_info->lock);
++	return 0;
++}
++
++int btrfs_dedupe_add(struct btrfs_trans_handle *trans,
++		     struct btrfs_fs_info *fs_info,
++		     struct btrfs_dedupe_hash *hash)
++{
++	struct btrfs_dedupe_info *dedupe_info = fs_info->dedupe_info;
++
++	if (!fs_info->dedupe_enabled || !hash)
++		return 0;
++
++	if (WARN_ON(dedupe_info == NULL))
++		return -EINVAL;
++
++	if (WARN_ON(!btrfs_dedupe_hash_hit(hash)))
++		return -EINVAL;
++
++	/* ignore old hash */
++	if (dedupe_info->blocksize != hash->num_bytes)
++		return 0;
++
++	if (dedupe_info->backend == BTRFS_DEDUPE_BACKEND_INMEMORY)
++		return inmem_add(dedupe_info, hash);
++	return -EINVAL;
++}
+-- 
+2.10.1
+
+
 

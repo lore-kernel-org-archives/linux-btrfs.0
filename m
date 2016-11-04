@@ -1,218 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:57985 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750799AbcKEClq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 4 Nov 2016 22:41:46 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id A43ABABE9
-        for <linux-btrfs@vger.kernel.org>; Sat,  5 Nov 2016 02:41:44 +0000 (UTC)
-From: jeffm@suse.com
-To: linux-btrfs@vger.kernel.org
-Cc: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH] btrfs: remove old tree_root dirent processing in btrfs_real_readdir()
-Date: Fri,  4 Nov 2016 22:41:33 -0400
-Message-Id: <1478313693-3356-1-git-send-email-jeffm@suse.com>
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:35855 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S932696AbcKDR23 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 4 Nov 2016 13:28:29 -0400
+Date: Fri, 4 Nov 2016 11:28:17 -0600
+From: Chris Mason <clm@fb.com>
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: [GIT PULL] Btrfs
+Message-ID: <20161104172816.GA62582@clm-mbp.thefacebook.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Jeff Mahoney <jeffm@suse.com>
+Hi Linus,
 
-Commit 3de4586c527 (Btrfs: Allow subvolumes and snapshots anywhere
-in the directory tree) introduced the current system of placing
-snapshots in the directory tree.  It also introduced the behavior of
-creating the snapshot and then creating the directory entries for it.
+My for-linus-4.9 branch:
 
-We've kept this code around for compatibility reasons, but it turns
-out that no file systems with the old tree_root based snapshots can
-be mounted on newer (>= 2009) kernels anyway.  About a month after the
-above commit, commit 2a7108ad89e (Btrfs: rev the disk format for the
-inode compat and csum selection changes) landed, changing the superblock
-magic number.
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.9
 
-As a result, we know that we'll never encounter tree_root-based dirents
-or have to deal with skipping our own snapshot dirents.  Since that
-also means that we're now only iterating over DIR_INDEX items, which only
-contain one directory entry per leaf item, we don't need to loop over
-the leaf item contents anymore either.
+Has some fixes that Dave Sterba collected.  We held off on these last 
+week because I was focused on the memory corruption testing.
 
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
----
- fs/btrfs/inode.c | 115 ++++++++++++++++++-------------------------------------
- 1 file changed, 37 insertions(+), 78 deletions(-)
+I had asked you about pulling this directly from Dave, and you can skip
+my merge commit here:
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 2b790bd..74f5a92 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5808,17 +5808,13 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
- 	u32 di_cur;
- 	u32 di_total;
- 	u32 di_len;
--	int key_type = BTRFS_DIR_INDEX_KEY;
- 	char tmp_name[32];
- 	char *name_ptr;
- 	int name_len;
- 	int is_curr = 0;	/* ctx->pos points to the current index? */
- 	bool emitted;
- 	bool put = false;
--
--	/* FIXME, use a real flag for deciding about the key type */
--	if (root->fs_info->tree_root == root)
--		key_type = BTRFS_DIR_ITEM_KEY;
-+	struct btrfs_key location;
- 
- 	if (!dir_emit_dots(file, ctx))
- 		return 0;
-@@ -5829,14 +5825,11 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
- 
- 	path->reada = READA_FORWARD;
- 
--	if (key_type == BTRFS_DIR_INDEX_KEY) {
--		INIT_LIST_HEAD(&ins_list);
--		INIT_LIST_HEAD(&del_list);
--		put = btrfs_readdir_get_delayed_items(inode, &ins_list,
--						      &del_list);
--	}
-+	INIT_LIST_HEAD(&ins_list);
-+	INIT_LIST_HEAD(&del_list);
-+	put = btrfs_readdir_get_delayed_items(inode, &ins_list, &del_list);
- 
--	key.type = key_type;
-+	key.type = BTRFS_DIR_INDEX_KEY;
- 	key.offset = ctx->pos;
- 	key.objectid = btrfs_ino(inode);
- 
-@@ -5862,85 +5855,53 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
- 
- 		if (found_key.objectid != key.objectid)
- 			break;
--		if (found_key.type != key_type)
-+		if (found_key.type != BTRFS_DIR_INDEX_KEY)
- 			break;
- 		if (found_key.offset < ctx->pos)
- 			goto next;
--		if (key_type == BTRFS_DIR_INDEX_KEY &&
--		    btrfs_should_delete_dir_index(&del_list,
--						  found_key.offset))
-+		if (btrfs_should_delete_dir_index(&del_list, found_key.offset))
- 			goto next;
- 
- 		ctx->pos = found_key.offset;
- 		is_curr = 1;
- 
- 		di = btrfs_item_ptr(leaf, slot, struct btrfs_dir_item);
--		di_cur = 0;
--		di_total = btrfs_item_size(leaf, item);
--
--		while (di_cur < di_total) {
--			struct btrfs_key location;
--
--			if (verify_dir_item(root, leaf, di))
--				break;
-+		if (verify_dir_item(root, leaf, di))
-+			goto next;
- 
--			name_len = btrfs_dir_name_len(leaf, di);
--			if (name_len <= sizeof(tmp_name)) {
--				name_ptr = tmp_name;
--			} else {
--				name_ptr = kmalloc(name_len, GFP_KERNEL);
--				if (!name_ptr) {
--					ret = -ENOMEM;
--					goto err;
--				}
-+		name_len = btrfs_dir_name_len(leaf, di);
-+		if (name_len <= sizeof(tmp_name)) {
-+			name_ptr = tmp_name;
-+		} else {
-+			name_ptr = kmalloc(name_len, GFP_KERNEL);
-+			if (!name_ptr) {
-+				ret = -ENOMEM;
-+				goto err;
- 			}
--			read_extent_buffer(leaf, name_ptr,
--					   (unsigned long)(di + 1), name_len);
--
--			d_type = btrfs_filetype_table[btrfs_dir_type(leaf, di)];
--			btrfs_dir_item_key_to_cpu(leaf, di, &location);
-+		}
-+		read_extent_buffer(leaf, name_ptr, (unsigned long)(di + 1),
-+				   name_len);
- 
-+		d_type = btrfs_filetype_table[btrfs_dir_type(leaf, di)];
-+		btrfs_dir_item_key_to_cpu(leaf, di, &location);
- 
--			/* is this a reference to our own snapshot? If so
--			 * skip it.
--			 *
--			 * In contrast to old kernels, we insert the snapshot's
--			 * dir item and dir index after it has been created, so
--			 * we won't find a reference to our own snapshot. We
--			 * still keep the following code for backward
--			 * compatibility.
--			 */
--			if (location.type == BTRFS_ROOT_ITEM_KEY &&
--			    location.objectid == root->root_key.objectid) {
--				over = 0;
--				goto skip;
--			}
--			over = !dir_emit(ctx, name_ptr, name_len,
--				       location.objectid, d_type);
-+		over = !dir_emit(ctx, name_ptr, name_len, location.objectid,
-+				 d_type);
- 
--skip:
--			if (name_ptr != tmp_name)
--				kfree(name_ptr);
-+		if (name_ptr != tmp_name)
-+			kfree(name_ptr);
- 
--			if (over)
--				goto nopos;
--			emitted = true;
--			di_len = btrfs_dir_name_len(leaf, di) +
--				 btrfs_dir_data_len(leaf, di) + sizeof(*di);
--			di_cur += di_len;
--			di = (struct btrfs_dir_item *)((char *)di + di_len);
--		}
-+		if (over)
-+			goto nopos;
- next:
- 		path->slots[0]++;
- 	}
- 
--	if (key_type == BTRFS_DIR_INDEX_KEY) {
--		if (is_curr)
--			ctx->pos++;
--		ret = btrfs_readdir_delayed_dir_index(ctx, &ins_list, &emitted);
--		if (ret)
--			goto nopos;
--	}
-+	if (is_curr)
-+		ctx->pos++;
-+	ret = btrfs_readdir_delayed_dir_index(ctx, &ins_list, &emitted);
-+	if (ret)
-+		goto nopos;
- 
- 	/*
- 	 * If we haven't emitted any dir entry, we must not touch ctx->pos as
-@@ -5971,12 +5932,10 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
- 	 * last entry requires it because doing so has broken 32bit apps
- 	 * in the past.
- 	 */
--	if (key_type == BTRFS_DIR_INDEX_KEY) {
--		if (ctx->pos >= INT_MAX)
--			ctx->pos = LLONG_MAX;
--		else
--			ctx->pos = INT_MAX;
--	}
-+	if (ctx->pos >= INT_MAX)
-+		ctx->pos = LLONG_MAX;
-+	else
-+		ctx->pos = INT_MAX;
- nopos:
- 	ret = 0;
- err:
--- 
-2.7.1
+git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-4.9-rc3
 
+I'll probably have the merge commit when I nail down a fix for the crash 
+Dave Jones triggered with trinity, but wanted to let you pick.
+
+Wang Xiaoguang (3) commits (+10/-2):
+     btrfs: pass correct args to btrfs_async_run_delayed_refs() (+2/-2)
+     btrfs: fix WARNING in btrfs_select_ref_head() (+3/-0)
+     btrfs: make file clone aware of fatal signals (+5/-0)
+
+Dan Carpenter (1) commits (+4/-4):
+     Btrfs: remove some no-op casts
+
+Liu Bo (1) commits (+8/-1):
+     Btrfs: kill BUG_ON in do_relocation
+
+Goldwyn Rodrigues (1) commits (+7/-2):
+     btrfs: qgroup: Prevent qgroup->reserved from going subzero
+
+Total: (6) commits (+29/-9)
+
+  fs/btrfs/extent-tree.c |  3 +++
+  fs/btrfs/extent_io.c   |  8 ++++----
+  fs/btrfs/inode.c       | 13 +++++++++----
+  fs/btrfs/ioctl.c       |  5 +++++
+  fs/btrfs/relocation.c  |  9 ++++++++-
+  5 files changed, 29 insertions(+), 9 deletions(-)

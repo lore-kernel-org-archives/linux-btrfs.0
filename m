@@ -1,95 +1,213 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:31624 "EHLO
-        cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1756598AbcKCQ2Q (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 3 Nov 2016 12:28:16 -0400
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
-Subject: recover btrfs with kernel 4.9-rc3 but btrfs progs fails
-Message-ID: <28e451c5-8654-6b21-2cdf-81f530f47d57@profihost.ag>
-Date: Thu, 3 Nov 2016 17:28:10 +0100
+Received: from cn.fujitsu.com ([59.151.112.132]:46790 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1756594AbcKDCKs (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Nov 2016 22:10:48 -0400
+Subject: Re: [BUG] Btrfs scrub sometime recalculate wrong parity in raid5
+To: <kreijack@inwind.it>, linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <8695beeb-f991-28c4-cf6b-8c92339e468f@inwind.it>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <f5a26f3c-2519-93b9-841f-4e16438bf458@cn.fujitsu.com>
+Date: Fri, 4 Nov 2016 10:10:38 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <8695beeb-f991-28c4-cf6b-8c92339e468f@inwind.it>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
-
-currently i've an fs which triggers this one on mount while originally
-having 50% disk free - but btrfs progs fails too.
-
-# btrfs check --repair -p /dev/vdb1
-enabling repair mode
-couldn't open RDWR because of unsupported option features (3).
-ERROR: cannot open file system
 
 
-[  164.378512] BTRFS info (device vdb1): using free space tree
-[  164.378513] BTRFS info (device vdb1): has skinny extents
-[  205.671655] ------------[ cut here ]------------
-[  205.671686] WARNING: CPU: 10 PID: 4629 at fs/btrfs/extent-tree.c:2961
-btrfs_run_delayed_refs+0x28d/0x2c0 [btrfs]
-[  205.671689] BTRFS: error (device vdb1) in
-btrfs_run_delayed_refs:2961: errno=-28 No space left
-[  205.671695] BTRFS: error (device vdb1) in
-btrfs_create_pending_block_groups:10349: errno=-28 No space left
-[  205.671764] BTRFS: error (device vdb1) in
-btrfs_create_pending_block_groups:10353: errno=-28 No space left
-[  205.671770] BTRFS: error (device vdb1) in
-add_block_group_free_space:1339: errno=-28 No space left
-[  205.671928] BTRFS: Transaction aborted (error -28)
-[  205.671929] Modules linked in: netconsole ipt_REJECT nf_reject_ipv4
-xt_multiport iptable_filter ip_tables x_tables i2c_piix4 i2c_core button
-crc32_pclmul ghash_clmulni_intel loop btrfs xor raid6_pq usbhid
-ata_generic virtio_blk virtio_net uhci_hcd ehci_hcd usbcore virtio_pci
-usb_common ata_piix floppy
-[  205.671943] CPU: 10 PID: 4629 Comm: mount Tainted: G        W
-4.9.0-rc3 #1
-[  205.671944] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996),
-BIOS 1.7.5-20140722_172050-sagunt 04/01/2014
-[  205.671946]  ffffb2ed110f78f0 ffffffffa23f2c93 ffffb2ed110f7940
-0000000000000000
-[  205.671948]  ffffb2ed110f7930 ffffffffa20865f1 00000b9129130170
-ffff8b4e7f1bc000
-[  205.671949]  ffff8b4e29130170 ffff8b4e27e5f000 0000000000000000
-00000000003105b4
-[  205.671951] Call Trace:
-[  205.671956]  [<ffffffffa23f2c93>] dump_stack+0x63/0x90
-[  205.671960]  [<ffffffffa20865f1>] __warn+0xd1/0xf0
-[  205.671962]  [<ffffffffa208665f>] warn_slowpath_fmt+0x4f/0x60
-[  205.671972]  [<ffffffffc0238bfd>] btrfs_run_delayed_refs+0x28d/0x2c0
-[btrfs]
-[  205.671982]  [<ffffffffc024f9b9>] btrfs_commit_transaction+0x29/0x70
-[btrfs]
-[  205.671993]  [<ffffffffc02962b3>] btrfs_recover_log_trees+0x3b3/0x440
-[btrfs]
-[  205.672004]  [<ffffffffc0292ed0>] ? replay_one_extent+0x730/0x730 [btrfs]
-[  205.672013]  [<ffffffffc024c85d>] open_ctree+0x264d/0x2760 [btrfs]
-[  205.672020]  [<ffffffffc0220547>] btrfs_mount+0xcc7/0xe00 [btrfs]
-[  205.672023]  [<ffffffffa2184810>] ? pcpu_next_unpop+0x40/0x50
-[  205.672025]  [<ffffffffa2408fe5>] ? find_next_bit+0x15/0x20
-[  205.672026]  [<ffffffffa218577d>] ? pcpu_alloc+0x32d/0x620
-[  205.672028]  [<ffffffffa21e91d5>] mount_fs+0x15/0x90
-[  205.672030]  [<ffffffffa2204f07>] vfs_kern_mount+0x67/0x110
-[  205.672037]  [<ffffffffc021fb2c>] btrfs_mount+0x2ac/0xe00 [btrfs]
-[  205.672039]  [<ffffffffa2184810>] ? pcpu_next_unpop+0x40/0x50
-[  205.672040]  [<ffffffffa2408fe5>] ? find_next_bit+0x15/0x20
-[  205.672041]  [<ffffffffa21e91d5>] mount_fs+0x15/0x90
-[  205.672042]  [<ffffffffa2204f07>] vfs_kern_mount+0x67/0x110
-[  205.672044]  [<ffffffffa2207642>] do_mount+0x192/0xc30
-[  205.672045]  [<ffffffffa21800f2>] ? memdup_user+0x42/0x60
-[  205.672046]  [<ffffffffa22083e4>] SyS_mount+0x94/0xd0
-[  205.672048]  [<ffffffffa2002af9>] do_syscall_64+0x69/0x200
-[  205.672049]  [<ffffffffa26fec6b>] entry_SYSCALL64_slow_path+0x25/0x25
-[  205.672050] ---[ end trace be50fce8648d2575 ]---
-[  205.672052] BTRFS: error (device vdb1) in
-btrfs_run_delayed_refs:2961: errno=-28 No space left
-[  205.672109] BTRFS: error (device vdb1) in btrfs_replay_log:2491:
-errno=-28 No space left (Failed to recover log tree)
-[  206.061658] BTRFS error (device vdb1): pending csums is 643072
-[  206.061801] BTRFS error (device vdb1): cleaner transaction attach
-returned -30
-[  206.577900] BTRFS error (device vdb1): open_ctree failed
+At 06/25/2016 08:21 PM, Goffredo Baroncelli wrote:
+> Hi all,
+>
+> following the thread "Adventures in btrfs raid5 disk recovery", I investigated a bit the BTRFS capability to scrub a corrupted raid5 filesystem. To test it, I first find where a file was stored, and then I tried to corrupt the data disks (when unmounted) or the parity disk.
+> The result showed that sometime the kernel recomputed the parity wrongly.
+>
+> I tested the following kernel
+> - 4.6.1
+> - 4.5.4
+> and both showed the same behavior.
+>
+> The test was performed as described below:
+>
+> 1) create a filesystem in raid5 mode (for data and metadata) of 1500MB
+>
+> 	truncate -s 500M disk1.img; losetup -f disk1.img
+> 	truncate -s 500M disk2.img; losetup -f disk2.img
+> 	truncate -s 500M disk3.img; losetup -f disk3.img
+> 	sudo mkfs.btrfs -d raid5 -m raid5 /dev/loop[0-2]
+> 	sudo mount /dev/loop0 mnt/
+>
+> 2) I created a file with a length of 128kb:
+>
+> 	python -c "print 'ad'+'a'*65534+'bd'+'b'*65533" | sudo tee mnt/out.txt
+> 	sudo umount mnt/
+>
+> 3) I looked at the output of 'btrfs-debug-tree /dev/loop0' and I was able to find where the file stripe is located:
+>
+> /dev/loop0: offset=81788928+16*4096        (64k, second half of the file: 'bdbbbb.....)
+> /dev/loop1: offset=61865984+16*4096        (64k, first half of the file: 'adaaaa.....)
+> /dev/loop2: offset=61865984+16*4096        (64k, parity: '\x03\x00\x03\x03\x03.....)
+>
+> 4) I tried to corrupt each disk (one disk per test), and then run a scrub:
+>
+> for example for the disk /dev/loop2:
+> 	sudo dd if=/dev/zero of=/dev/loop2 bs=1 \
+>         	        seek=$((61865984+16*4096)) count=5
+> 	sudo mount /dev/loop0 mnt
+> 	sudo btrfs scrub start mnt/.
 
-Stefan
+I reproduced your problem and find that seems to be a problem of race.
+
+The problem I found is mostly the same as yours, but with some more details:
+
+The script is like:
+-------
+#!/bin/bash
+
+dev1=/dev/vdb6
+dev2=/dev/vdb7
+dev3=/dev/vdb8
+mnt=/mnt/test
+
+umount $mnt
+# First full stripe layout is
+# dev1: Parity, dev2: Data Stripe1 dev3: Data Stripe2
+mkfs.btrfs $dev1 $dev2 $dev3 -f -m raid5 -d raid5
+mount $dev1 $mnt -o nospace_cache
+xfs_io -f -c "pwrite 0 128k" $mnt/file1
+sync
+umount $mnt
+
+dmesg -C
+# destory parity of data stripe 1
+dd if=/dev/urandom of=$dev2 bs=1 count=64k seek=546308096
+
+
+# btrfs-progs scrub
+# Newly introduced function, offline scrub, quite handy here
+btrfs check --scrub $dev1
+
+# kernel scrub
+mount $dev1 $mnt -o nospace_cache
+btrfs scrub start -B $mnt
+
+# Feel free to umount and call offline scrub
+# umount $mnt
+# btrfs check --scrub $dev1
+-------
+
+The result is divided into the following types:
+
+1) Kernel scrub reports 16 recoverable csum error
+    Same as offline scrub. All correct.
+
+2) Kernel scrub reports 17 or more recoverable csum error
+    Even we only corrupted 16 pages, the extra csum error comes out
+    almost no where
+
+3) Kernel scrub reports some unrecoverable csum error
+    Totally insane. But quite low possibility.
+
+I digged a little further into the case 2) and found:
+a) Kernel is scrubbing correct range
+    So the extra csum error is not caused by checking wrong logical
+    bytenr range
+
+b) Kernel is scrubbing some pages twice
+    That's the cause of the problem.
+
+
+And unlike most of us assume, in fact scrub full fs is a very racy thing.
+Scrubbing full fs is split into N scrubbing ioctls for each device.
+
+So for above script, kernel is doing *3* scrubbing work.
+For other profile it may not be a problem, but for RAID5/6 race can 
+happen easily like:
+
+Scrub dev1(P)           |  Scrub dev2(D1)        | Scrub dev3(D2)
+---------------------------------------------------------------
+Read out full stripe    | Read out D1            | Read out D2
+                         | Check Csum for D1      | Check Csum for D2
+                         | Csum mismatch (err++)  | Csum matches
+Cal parity              | Read out full stripe   |
+Parity mismatch         | Do recovery            |
+Check full stripe       |
+D1 csum mismatch (err++)|
+
+So csum mismatch can be counted twice.
+
+And since scrubbing for corrupted data stripe can easily race with 
+scrubbing for parity, if timing happens in a worse situation, it can 
+lead to unrecoverable csum error.
+
+On the other hand, if you only scrub the damaged device only, no race 
+will happen so case 2) 3) will just disappear.
+
+Would you please try to only scrub one device one time?
+
+>
+> 5) I check the disks at the offsets above, to verify that the data/parity is correct
+
+You could try the new offline scrub, it can save you a lot of time to 
+find data/parity corruption.
+https://github.com/adam900710/btrfs-progs/tree/fsck_scrub
+
+And of course, more reliable than kernel scrub (single thread, no extra 
+IO no race) :)
+
+Thanks,
+Qu
+
+>
+> However I found that:
+> 1) if I corrupt the parity disk (/dev/loop2), scrub don't find any corruption, but recomputed the parity (always correctly);
+>
+> 2) when I corrupted the other disks (/dev/loop[01]) btrfs was able to find the corruption. But I found two main behaviors:
+>
+> 2.a) the kernel repaired the damage, but compute the wrong parity. Where it was the parity, the kernel copied the data of the second disk on the parity disk
+>
+> 2.b) the kernel repaired the damage, and rebuild a correct parity
+>
+> I have to point out another strange thing: in dmesg I found two kinds of messages:
+>
+> msg1)
+> 	[....]
+> 	[ 1021.366944] BTRFS info (device loop2): disk space caching is enabled
+> 	[ 1021.366949] BTRFS: has skinny extents
+> 	[ 1021.399208] BTRFS warning (device loop2): checksum error at logical 142802944 on dev /dev/loop0, sector 159872, root 5, inode 257, offset 65536, length 4096, links 1 (path: out.txt)
+> 	[ 1021.399214] BTRFS error (device loop2): bdev /dev/loop0 errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
+> 	[ 1021.399291] BTRFS error (device loop2): fixed up error at logical 142802944 on dev /dev/loop0
+>
+> msg2)
+> 	[ 1017.435068] BTRFS info (device loop2): disk space caching is enabled
+> 	[ 1017.435074] BTRFS: has skinny extents
+> 	[ 1017.436778] BTRFS info (device loop2): bdev /dev/loop0 errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
+> 	[ 1017.463403] BTRFS warning (device loop2): checksum error at logical 142802944 on dev /dev/loop0, sector 159872, 	root 5, inode 257, offset 65536, length 4096, links 1 (path: out.txt)
+> 	[ 1017.463409] BTRFS error (device loop2): bdev /dev/loop0 errs: wr 0, rd 0, flush 0, corrupt 2, gen 0
+> 	[ 1017.463467] BTRFS warning (device loop2): checksum error at logical 142802944 on dev /dev/loop0, sector 159872, root 5, inode 257, offset 65536, length 4096, links 1 (path: out.txt)
+> 	[ 1017.463472] BTRFS error (device loop2): bdev /dev/loop0 errs: wr 0, rd 0, flush 0, corrupt 3, gen 0
+> 	[ 1017.463512] BTRFS error (device loop2): unable to fixup (regular) error at logical 142802944 on dev /dev/loop0
+> 	[ 1017.463535] BTRFS error (device loop2): fixed up error at logical 142802944 on dev /dev/loop0
+>
+>
+> but these seem to be UNrelated to the kernel behavior 2.a) or 2.b)
+>
+> Another strangeness is that SCRUB sometime reports
+>  ERROR: there are uncorrectable errors
+> and sometime reports
+>  WARNING: errors detected during scrubbing, corrected
+>
+> but also these seems UNrelated to the behavior 2.a) or 2.b) or msg1 or msg2
+>
+>
+> Enclosed you can find the script which I used to trigger the bug. I have to rerun it several times to show the problem because it doesn't happen every time. Pay attention that the offset and the loop device name are hard coded. You must run the script in the same directory where it is: eg "bash test.sh".
+>
+> Br
+> G.Baroncelli
+>
+>
+>
+>
+
+

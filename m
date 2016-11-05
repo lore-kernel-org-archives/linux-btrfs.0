@@ -1,221 +1,140 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:59003 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:59006 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751438AbcKER0m (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 5 Nov 2016 13:26:42 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 698DFACE6
-        for <linux-btrfs@vger.kernel.org>; Sat,  5 Nov 2016 17:26:40 +0000 (UTC)
+        id S1753211AbcKER0n (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 5 Nov 2016 13:26:43 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id AB9BEAD16
+        for <linux-btrfs@vger.kernel.org>; Sat,  5 Nov 2016 17:26:41 +0000 (UTC)
 From: jeffm@suse.com
 To: linux-btrfs@vger.kernel.org
 Cc: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH 1/2] btrfs: remove old tree_root dirent processing in btrfs_real_readdir()
-Date: Sat,  5 Nov 2016 13:26:34 -0400
-Message-Id: <1478366795-27009-1-git-send-email-jeffm@suse.com>
+Subject: [PATCH 2/2] btrfs: increment ctx->pos for every emitted or skipped dirent in readdir
+Date: Sat,  5 Nov 2016 13:26:35 -0400
+Message-Id: <1478366795-27009-2-git-send-email-jeffm@suse.com>
+In-Reply-To: <1478366795-27009-1-git-send-email-jeffm@suse.com>
+References: <1478366795-27009-1-git-send-email-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Jeff Mahoney <jeffm@suse.com>
 
-Commit 3de4586c527 (Btrfs: Allow subvolumes and snapshots anywhere
-in the directory tree) introduced the current system of placing
-snapshots in the directory tree.  It also introduced the behavior of
-creating the snapshot and then creating the directory entries for it.
+If we process the last item in the leaf and hit an I/O error while
+reading the next leaf, we return -EIO without having adjusted the
+position.  Since we have emitted dirents, getdents() will return
+the byte count to the user instead of the error.  Subsequent callers
+will emit the last successful dirent again, and return -EIO again,
+with the same result.  Callers loop forever.
 
-We've kept this code around for compatibility reasons, but it turns
-out that no file systems with the old tree_root based snapshots can
-be mounted on newer (>= 2009) kernels anyway.  About a month after the
-above commit, commit 2a7108ad89e (Btrfs: rev the disk format for the
-inode compat and csum selection changes) landed, changing the superblock
-magic number.
-
-As a result, we know that we'll never encounter tree_root-based dirents
-or have to deal with skipping our own snapshot dirents.  Since that
-also means that we're now only iterating over DIR_INDEX items, which only
-contain one directory entry per leaf item, we don't need to loop over
-the leaf item contents anymore either.
+Instead, if we always increment ctx->pos after emitting or skipping
+the dirent, we'll be sure that we won't hit the same one again.  When
+we go to process the next leaf, we won't have emitted any dirents
+and the -EIO will be returned to the user properly.  We also don't
+need to track if we've emitted a dirent already or if we've changed
+the position yet.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/inode.c | 118 +++++++++++++++++--------------------------------------
- 1 file changed, 37 insertions(+), 81 deletions(-)
+ fs/btrfs/delayed-inode.c |  3 +--
+ fs/btrfs/delayed-inode.h |  2 +-
+ fs/btrfs/inode.c         | 21 ++-------------------
+ 3 files changed, 4 insertions(+), 22 deletions(-)
 
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index 0fcf5f2..d90d444 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -1686,7 +1686,7 @@ int btrfs_should_delete_dir_index(struct list_head *del_list,
+  *
+  */
+ int btrfs_readdir_delayed_dir_index(struct dir_context *ctx,
+-				    struct list_head *ins_list, bool *emitted)
++				    struct list_head *ins_list)
+ {
+ 	struct btrfs_dir_item *di;
+ 	struct btrfs_delayed_item *curr, *next;
+@@ -1730,7 +1730,6 @@ int btrfs_readdir_delayed_dir_index(struct dir_context *ctx,
+ 
+ 		if (over)
+ 			return 1;
+-		*emitted = true;
+ 	}
+ 	return 0;
+ }
+diff --git a/fs/btrfs/delayed-inode.h b/fs/btrfs/delayed-inode.h
+index 2495b3d..2c1cbe2 100644
+--- a/fs/btrfs/delayed-inode.h
++++ b/fs/btrfs/delayed-inode.h
+@@ -146,7 +146,7 @@ void btrfs_readdir_put_delayed_items(struct inode *inode,
+ int btrfs_should_delete_dir_index(struct list_head *del_list,
+ 				  u64 index);
+ int btrfs_readdir_delayed_dir_index(struct dir_context *ctx,
+-				    struct list_head *ins_list, bool *emitted);
++				    struct list_head *ins_list);
+ 
+ /* for init */
+ int __init btrfs_delayed_inode_init(void);
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 2b790bd..c52239d 100644
+index c52239d..d8834bc 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -5805,20 +5805,13 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
- 	int slot;
- 	unsigned char d_type;
- 	int over = 0;
--	u32 di_cur;
--	u32 di_total;
--	u32 di_len;
--	int key_type = BTRFS_DIR_INDEX_KEY;
+@@ -5808,8 +5808,6 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
  	char tmp_name[32];
  	char *name_ptr;
  	int name_len;
- 	int is_curr = 0;	/* ctx->pos points to the current index? */
- 	bool emitted;
+-	int is_curr = 0;	/* ctx->pos points to the current index? */
+-	bool emitted;
  	bool put = false;
--
--	/* FIXME, use a real flag for deciding about the key type */
--	if (root->fs_info->tree_root == root)
--		key_type = BTRFS_DIR_ITEM_KEY;
-+	struct btrfs_key location;
+ 	struct btrfs_key location;
  
- 	if (!dir_emit_dots(file, ctx))
- 		return 0;
-@@ -5829,14 +5822,11 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
+@@ -5834,7 +5832,6 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
+ 	if (ret < 0)
+ 		goto err;
  
- 	path->reada = READA_FORWARD;
- 
--	if (key_type == BTRFS_DIR_INDEX_KEY) {
--		INIT_LIST_HEAD(&ins_list);
--		INIT_LIST_HEAD(&del_list);
--		put = btrfs_readdir_get_delayed_items(inode, &ins_list,
--						      &del_list);
--	}
-+	INIT_LIST_HEAD(&ins_list);
-+	INIT_LIST_HEAD(&del_list);
-+	put = btrfs_readdir_get_delayed_items(inode, &ins_list, &del_list);
- 
--	key.type = key_type;
-+	key.type = BTRFS_DIR_INDEX_KEY;
- 	key.offset = ctx->pos;
- 	key.objectid = btrfs_ino(inode);
- 
-@@ -5862,85 +5852,53 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
- 
- 		if (found_key.objectid != key.objectid)
- 			break;
--		if (found_key.type != key_type)
-+		if (found_key.type != BTRFS_DIR_INDEX_KEY)
- 			break;
- 		if (found_key.offset < ctx->pos)
- 			goto next;
--		if (key_type == BTRFS_DIR_INDEX_KEY &&
--		    btrfs_should_delete_dir_index(&del_list,
--						  found_key.offset))
-+		if (btrfs_should_delete_dir_index(&del_list, found_key.offset))
+-	emitted = false;
+ 	while (1) {
+ 		leaf = path->nodes[0];
+ 		slot = path->slots[0];
+@@ -5860,7 +5857,6 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
  			goto next;
  
  		ctx->pos = found_key.offset;
- 		is_curr = 1;
+-		is_curr = 1;
  
  		di = btrfs_item_ptr(leaf, slot, struct btrfs_dir_item);
--		di_cur = 0;
--		di_total = btrfs_item_size(leaf, item);
--
--		while (di_cur < di_total) {
--			struct btrfs_key location;
--
--			if (verify_dir_item(root, leaf, di))
--				break;
-+		if (verify_dir_item(root, leaf, di))
-+			goto next;
+ 		if (verify_dir_item(root, leaf, di))
+@@ -5890,29 +5886,16 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
  
--			name_len = btrfs_dir_name_len(leaf, di);
--			if (name_len <= sizeof(tmp_name)) {
--				name_ptr = tmp_name;
--			} else {
--				name_ptr = kmalloc(name_len, GFP_KERNEL);
--				if (!name_ptr) {
--					ret = -ENOMEM;
--					goto err;
--				}
-+		name_len = btrfs_dir_name_len(leaf, di);
-+		if (name_len <= sizeof(tmp_name)) {
-+			name_ptr = tmp_name;
-+		} else {
-+			name_ptr = kmalloc(name_len, GFP_KERNEL);
-+			if (!name_ptr) {
-+				ret = -ENOMEM;
-+				goto err;
- 			}
--			read_extent_buffer(leaf, name_ptr,
--					   (unsigned long)(di + 1), name_len);
--
--			d_type = btrfs_filetype_table[btrfs_dir_type(leaf, di)];
--			btrfs_dir_item_key_to_cpu(leaf, di, &location);
-+		}
-+		read_extent_buffer(leaf, name_ptr, (unsigned long)(di + 1),
-+				   name_len);
- 
-+		d_type = btrfs_filetype_table[btrfs_dir_type(leaf, di)];
-+		btrfs_dir_item_key_to_cpu(leaf, di, &location);
- 
--			/* is this a reference to our own snapshot? If so
--			 * skip it.
--			 *
--			 * In contrast to old kernels, we insert the snapshot's
--			 * dir item and dir index after it has been created, so
--			 * we won't find a reference to our own snapshot. We
--			 * still keep the following code for backward
--			 * compatibility.
--			 */
--			if (location.type == BTRFS_ROOT_ITEM_KEY &&
--			    location.objectid == root->root_key.objectid) {
--				over = 0;
--				goto skip;
--			}
--			over = !dir_emit(ctx, name_ptr, name_len,
--				       location.objectid, d_type);
-+		over = !dir_emit(ctx, name_ptr, name_len, location.objectid,
-+				 d_type);
- 
--skip:
--			if (name_ptr != tmp_name)
--				kfree(name_ptr);
-+		if (name_ptr != tmp_name)
-+			kfree(name_ptr);
- 
--			if (over)
--				goto nopos;
--			emitted = true;
--			di_len = btrfs_dir_name_len(leaf, di) +
--				 btrfs_dir_data_len(leaf, di) + sizeof(*di);
--			di_cur += di_len;
--			di = (struct btrfs_dir_item *)((char *)di + di_len);
--		}
-+		if (over)
-+			goto nopos;
+ 		if (over)
+ 			goto nopos;
++		ctx->pos++;
  next:
  		path->slots[0]++;
  	}
  
--	if (key_type == BTRFS_DIR_INDEX_KEY) {
--		if (is_curr)
--			ctx->pos++;
--		ret = btrfs_readdir_delayed_dir_index(ctx, &ins_list, &emitted);
--		if (ret)
--			goto nopos;
--	}
-+	if (is_curr)
-+		ctx->pos++;
-+	ret = btrfs_readdir_delayed_dir_index(ctx, &ins_list, &emitted);
-+	if (ret)
-+		goto nopos;
+-	if (is_curr)
+-		ctx->pos++;
+-	ret = btrfs_readdir_delayed_dir_index(ctx, &ins_list, &emitted);
++	ret = btrfs_readdir_delayed_dir_index(ctx, &ins_list);
+ 	if (ret)
+ 		goto nopos;
  
  	/*
- 	 * If we haven't emitted any dir entry, we must not touch ctx->pos as
-@@ -5971,12 +5929,10 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
- 	 * last entry requires it because doing so has broken 32bit apps
- 	 * in the past.
- 	 */
--	if (key_type == BTRFS_DIR_INDEX_KEY) {
--		if (ctx->pos >= INT_MAX)
--			ctx->pos = LLONG_MAX;
--		else
--			ctx->pos = INT_MAX;
--	}
-+	if (ctx->pos >= INT_MAX)
-+		ctx->pos = LLONG_MAX;
-+	else
-+		ctx->pos = INT_MAX;
- nopos:
- 	ret = 0;
- err:
+-	 * If we haven't emitted any dir entry, we must not touch ctx->pos as
+-	 * it was was set to the termination value in previous call. We assume
+-	 * that "." and ".." were emitted if we reach this point and set the
+-	 * termination value as well for an empty directory.
+-	 */
+-	if (ctx->pos > 2 && !emitted)
+-		goto nopos;
+-
+-	/* Reached end of directory/root. Bump pos past the last item. */
+-	ctx->pos++;
+-
+-	/*
+ 	 * Stop new entries from being returned after we return the last
+ 	 * entry.
+ 	 *
 -- 
 2.7.1
 

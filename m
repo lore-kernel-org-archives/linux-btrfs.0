@@ -1,141 +1,218 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:58234 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:57985 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754380AbcKEQ60 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 5 Nov 2016 12:58:26 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id DECC9ACE1
-        for <linux-btrfs@vger.kernel.org>; Sat,  5 Nov 2016 16:58:24 +0000 (UTC)
-Subject: Re: [PATCH] btrfs: remove old tree_root dirent processing in
- btrfs_real_readdir()
-References: <201611051116.1HL24jql%fengguang.wu@intel.com>
+        id S1750799AbcKEClq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 4 Nov 2016 22:41:46 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id A43ABABE9
+        for <linux-btrfs@vger.kernel.org>; Sat,  5 Nov 2016 02:41:44 +0000 (UTC)
+From: jeffm@suse.com
 To: linux-btrfs@vger.kernel.org
-From: Jeff Mahoney <jeffm@suse.com>
-Message-ID: <3d03bf21-8795-b175-e1d4-71c5b45f16e1@suse.com>
-Date: Sat, 5 Nov 2016 12:58:21 -0400
-MIME-Version: 1.0
-In-Reply-To: <201611051116.1HL24jql%fengguang.wu@intel.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="2cATU1vQvPEECjUQCHOOWwpmpdspauaDS"
+Cc: Jeff Mahoney <jeffm@suse.com>
+Subject: [PATCH] btrfs: remove old tree_root dirent processing in btrfs_real_readdir()
+Date: Fri,  4 Nov 2016 22:41:33 -0400
+Message-Id: <1478313693-3356-1-git-send-email-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---2cATU1vQvPEECjUQCHOOWwpmpdspauaDS
-Content-Type: multipart/mixed; boundary="7l5kgqJjuBgA61K1VAvmiNledi5kbeRkC";
- protected-headers="v1"
 From: Jeff Mahoney <jeffm@suse.com>
-To: linux-btrfs@vger.kernel.org
-Message-ID: <3d03bf21-8795-b175-e1d4-71c5b45f16e1@suse.com>
-Subject: Re: [PATCH] btrfs: remove old tree_root dirent processing in
- btrfs_real_readdir()
-References: <201611051116.1HL24jql%fengguang.wu@intel.com>
-In-Reply-To: <201611051116.1HL24jql%fengguang.wu@intel.com>
 
---7l5kgqJjuBgA61K1VAvmiNledi5kbeRkC
-Content-Type: text/plain; charset=windows-1252
-Content-Transfer-Encoding: quoted-printable
+Commit 3de4586c527 (Btrfs: Allow subvolumes and snapshots anywhere
+in the directory tree) introduced the current system of placing
+snapshots in the directory tree.  It also introduced the behavior of
+creating the snapshot and then creating the directory entries for it.
 
-On 11/4/16 11:24 PM, kbuild test robot wrote:
-> Hi Jeff,
->=20
-> [auto build test WARNING on btrfs/next]
-> [also build test WARNING on v4.9-rc3 next-20161028]
-> [if your patch is applied to the wrong git tree, please drop us a note =
-to help improve the system]
+We've kept this code around for compatibility reasons, but it turns
+out that no file systems with the old tree_root based snapshots can
+be mounted on newer (>= 2009) kernels anyway.  About a month after the
+above commit, commit 2a7108ad89e (Btrfs: rev the disk format for the
+inode compat and csum selection changes) landed, changing the superblock
+magic number.
 
+As a result, we know that we'll never encounter tree_root-based dirents
+or have to deal with skipping our own snapshot dirents.  Since that
+also means that we're now only iterating over DIR_INDEX items, which only
+contain one directory entry per leaf item, we don't need to loop over
+the leaf item contents anymore either.
 
-Whoops.  I cleaned this up in the next patch that I'm still testing.
-I'll re-send.
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ fs/btrfs/inode.c | 115 ++++++++++++++++++-------------------------------------
+ 1 file changed, 37 insertions(+), 78 deletions(-)
 
--Jeff
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 2b790bd..74f5a92 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5808,17 +5808,13 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
+ 	u32 di_cur;
+ 	u32 di_total;
+ 	u32 di_len;
+-	int key_type = BTRFS_DIR_INDEX_KEY;
+ 	char tmp_name[32];
+ 	char *name_ptr;
+ 	int name_len;
+ 	int is_curr = 0;	/* ctx->pos points to the current index? */
+ 	bool emitted;
+ 	bool put = false;
+-
+-	/* FIXME, use a real flag for deciding about the key type */
+-	if (root->fs_info->tree_root == root)
+-		key_type = BTRFS_DIR_ITEM_KEY;
++	struct btrfs_key location;
+ 
+ 	if (!dir_emit_dots(file, ctx))
+ 		return 0;
+@@ -5829,14 +5825,11 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
+ 
+ 	path->reada = READA_FORWARD;
+ 
+-	if (key_type == BTRFS_DIR_INDEX_KEY) {
+-		INIT_LIST_HEAD(&ins_list);
+-		INIT_LIST_HEAD(&del_list);
+-		put = btrfs_readdir_get_delayed_items(inode, &ins_list,
+-						      &del_list);
+-	}
++	INIT_LIST_HEAD(&ins_list);
++	INIT_LIST_HEAD(&del_list);
++	put = btrfs_readdir_get_delayed_items(inode, &ins_list, &del_list);
+ 
+-	key.type = key_type;
++	key.type = BTRFS_DIR_INDEX_KEY;
+ 	key.offset = ctx->pos;
+ 	key.objectid = btrfs_ino(inode);
+ 
+@@ -5862,85 +5855,53 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
+ 
+ 		if (found_key.objectid != key.objectid)
+ 			break;
+-		if (found_key.type != key_type)
++		if (found_key.type != BTRFS_DIR_INDEX_KEY)
+ 			break;
+ 		if (found_key.offset < ctx->pos)
+ 			goto next;
+-		if (key_type == BTRFS_DIR_INDEX_KEY &&
+-		    btrfs_should_delete_dir_index(&del_list,
+-						  found_key.offset))
++		if (btrfs_should_delete_dir_index(&del_list, found_key.offset))
+ 			goto next;
+ 
+ 		ctx->pos = found_key.offset;
+ 		is_curr = 1;
+ 
+ 		di = btrfs_item_ptr(leaf, slot, struct btrfs_dir_item);
+-		di_cur = 0;
+-		di_total = btrfs_item_size(leaf, item);
+-
+-		while (di_cur < di_total) {
+-			struct btrfs_key location;
+-
+-			if (verify_dir_item(root, leaf, di))
+-				break;
++		if (verify_dir_item(root, leaf, di))
++			goto next;
+ 
+-			name_len = btrfs_dir_name_len(leaf, di);
+-			if (name_len <= sizeof(tmp_name)) {
+-				name_ptr = tmp_name;
+-			} else {
+-				name_ptr = kmalloc(name_len, GFP_KERNEL);
+-				if (!name_ptr) {
+-					ret = -ENOMEM;
+-					goto err;
+-				}
++		name_len = btrfs_dir_name_len(leaf, di);
++		if (name_len <= sizeof(tmp_name)) {
++			name_ptr = tmp_name;
++		} else {
++			name_ptr = kmalloc(name_len, GFP_KERNEL);
++			if (!name_ptr) {
++				ret = -ENOMEM;
++				goto err;
+ 			}
+-			read_extent_buffer(leaf, name_ptr,
+-					   (unsigned long)(di + 1), name_len);
+-
+-			d_type = btrfs_filetype_table[btrfs_dir_type(leaf, di)];
+-			btrfs_dir_item_key_to_cpu(leaf, di, &location);
++		}
++		read_extent_buffer(leaf, name_ptr, (unsigned long)(di + 1),
++				   name_len);
+ 
++		d_type = btrfs_filetype_table[btrfs_dir_type(leaf, di)];
++		btrfs_dir_item_key_to_cpu(leaf, di, &location);
+ 
+-			/* is this a reference to our own snapshot? If so
+-			 * skip it.
+-			 *
+-			 * In contrast to old kernels, we insert the snapshot's
+-			 * dir item and dir index after it has been created, so
+-			 * we won't find a reference to our own snapshot. We
+-			 * still keep the following code for backward
+-			 * compatibility.
+-			 */
+-			if (location.type == BTRFS_ROOT_ITEM_KEY &&
+-			    location.objectid == root->root_key.objectid) {
+-				over = 0;
+-				goto skip;
+-			}
+-			over = !dir_emit(ctx, name_ptr, name_len,
+-				       location.objectid, d_type);
++		over = !dir_emit(ctx, name_ptr, name_len, location.objectid,
++				 d_type);
+ 
+-skip:
+-			if (name_ptr != tmp_name)
+-				kfree(name_ptr);
++		if (name_ptr != tmp_name)
++			kfree(name_ptr);
+ 
+-			if (over)
+-				goto nopos;
+-			emitted = true;
+-			di_len = btrfs_dir_name_len(leaf, di) +
+-				 btrfs_dir_data_len(leaf, di) + sizeof(*di);
+-			di_cur += di_len;
+-			di = (struct btrfs_dir_item *)((char *)di + di_len);
+-		}
++		if (over)
++			goto nopos;
+ next:
+ 		path->slots[0]++;
+ 	}
+ 
+-	if (key_type == BTRFS_DIR_INDEX_KEY) {
+-		if (is_curr)
+-			ctx->pos++;
+-		ret = btrfs_readdir_delayed_dir_index(ctx, &ins_list, &emitted);
+-		if (ret)
+-			goto nopos;
+-	}
++	if (is_curr)
++		ctx->pos++;
++	ret = btrfs_readdir_delayed_dir_index(ctx, &ins_list, &emitted);
++	if (ret)
++		goto nopos;
+ 
+ 	/*
+ 	 * If we haven't emitted any dir entry, we must not touch ctx->pos as
+@@ -5971,12 +5932,10 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
+ 	 * last entry requires it because doing so has broken 32bit apps
+ 	 * in the past.
+ 	 */
+-	if (key_type == BTRFS_DIR_INDEX_KEY) {
+-		if (ctx->pos >= INT_MAX)
+-			ctx->pos = LLONG_MAX;
+-		else
+-			ctx->pos = INT_MAX;
+-	}
++	if (ctx->pos >= INT_MAX)
++		ctx->pos = LLONG_MAX;
++	else
++		ctx->pos = INT_MAX;
+ nopos:
+ 	ret = 0;
+ err:
+-- 
+2.7.1
 
-> url:    https://github.com/0day-ci/linux/commits/jeffm-suse-com/btrfs-r=
-emove-old-tree_root-dirent-processing-in-btrfs_real_readdir/20161105-1044=
-32
-> base:   https://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btr=
-fs.git next
-> config: i386-randconfig-b0-11051048 (attached as .config)
-> compiler: gcc-5 (Debian 5.4.1-2) 5.4.1 20160904
-> reproduce:
->         # save the attached .config to linux build tree
->         make ARCH=3Di386=20
->=20
-> All warnings (new ones prefixed by >>):
->=20
->    fs/btrfs/inode.c: In function 'btrfs_real_readdir':
->>> fs/btrfs/inode.c:5754:6: warning: unused variable 'di_len' [-Wunused-=
-variable]
->      u32 di_len;
->          ^
->>> fs/btrfs/inode.c:5753:6: warning: unused variable 'di_total' [-Wunuse=
-d-variable]
->      u32 di_total;
->          ^
->>> fs/btrfs/inode.c:5752:6: warning: unused variable 'di_cur' [-Wunused-=
-variable]
->      u32 di_cur;
->          ^
->=20
-> vim +/di_len +5754 fs/btrfs/inode.c
->=20
-> 16cdcec7 Miao Xie    2011-04-22  5746  	struct list_head del_list;
-> 39279cc3 Chris Mason 2007-06-12  5747  	int ret;
-> 5f39d397 Chris Mason 2007-10-15  5748  	struct extent_buffer *leaf;
-> 39279cc3 Chris Mason 2007-06-12  5749  	int slot;
-> 39279cc3 Chris Mason 2007-06-12  5750  	unsigned char d_type;
-> 39279cc3 Chris Mason 2007-06-12  5751  	int over =3D 0;
-> 39279cc3 Chris Mason 2007-06-12 @5752  	u32 di_cur;
-> 39279cc3 Chris Mason 2007-06-12 @5753  	u32 di_total;
-> 39279cc3 Chris Mason 2007-06-12 @5754  	u32 di_len;
-> 5f39d397 Chris Mason 2007-10-15  5755  	char tmp_name[32];
-> 5f39d397 Chris Mason 2007-10-15  5756  	char *name_ptr;
-> 5f39d397 Chris Mason 2007-10-15  5757  	int name_len;
->=20
-> :::::: The code at line 5754 was first introduced by commit
-> :::::: 39279cc3d2704cfbf9c35dcb5bdd392159ae4625 Btrfs: split up super.c=
-
->=20
-> :::::: TO: Chris Mason <chris.mason@oracle.com>
-> :::::: CC: David Woodhouse <dwmw2@hera.kernel.org>
->=20
-> ---
-> 0-DAY kernel test infrastructure                Open Source Technology =
-Center
-> https://lists.01.org/pipermail/kbuild-all                   Intel Corpo=
-ration
->=20
-
-
---=20
-Jeff Mahoney
-SUSE Labs
-
-
---7l5kgqJjuBgA61K1VAvmiNledi5kbeRkC--
-
---2cATU1vQvPEECjUQCHOOWwpmpdspauaDS
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Comment: GPGTools - http://gpgtools.org
-
-iQIcBAEBCAAGBQJYHg+uAAoJEB57S2MheeWyfV4QAJegWMo+IKVje6sIFi14fuEu
-KUO/VfH5MvDcbFxr4tYGHvfutvP3jB6dslIdVNMZBakEcsxEjwJ51vHgyK09yS7b
-AiAA/HcjJyEGoS4qmIUPpVSqbg0HFnu7RaNZVgkGuCch7uczdVEhnmeI0ZvGaQUp
-/jnxAmYEstSln2oZIl4tKPbzmQtpo7YkMyKEP/MXOfubk611Nhs/meu1zBTGccO/
-Z7PVjDuA73A/qCfoya+zQx6GkOl1afqqlT5iKwPt8ms8vnR9meXogffArOTHiwOc
-htIpGXjZhijNopjPN2tISn7feyhZaG8GAzl0VRyUkrRqW7/ch0jsjK08hwYeE+B7
-zFq6TQhNpqJNQe0b8ESiw0KrPkoTNJTawoiLoFcKYn+fnIgNRkuTWzUEmxsRDUWa
-1V2zobbulU0wkmGuytCpA27HIqzxWM4VxBIPui+QJJJFObik2AK/xpOW8VVikzh6
-0i0Gsp2A5hiNs1zc7s8nZlAmzRuZHzR2vmG5ZmXL/JCwGRQD6jnBQpSd0SA3kh2D
-73/wX4g2TgnzzqRGF+gyWNwGJNXop6qpeJwpuBhwZiWaTeCROnk+xdvgzCuMkOcu
-CJzeCJsUvv8acJYZCy4J4DgvLT0bNaF1+XZ+6Gw/tOhhdG9LXbJF8q3WqZXYYpwI
-RvGJeJNlGx+xwW6ANDHd
-=7OMV
------END PGP SIGNATURE-----
-
---2cATU1vQvPEECjUQCHOOWwpmpdspauaDS--

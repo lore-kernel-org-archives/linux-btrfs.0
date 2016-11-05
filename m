@@ -1,171 +1,172 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-32.italiaonline.it ([212.48.25.160]:44075 "EHLO libero.it"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1750760AbcKEHXV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 5 Nov 2016 03:23:21 -0400
-From: Goffredo Baroncelli <kreijack@libero.it>
-Subject: Re: [BUG] Btrfs scrub sometime recalculate wrong parity in raid5
-Reply-To: Goffredo Baroncelli <kreijack@libero.it>
-References: <8695beeb-f991-28c4-cf6b-8c92339e468f@inwind.it>
- <f5a26f3c-2519-93b9-841f-4e16438bf458@cn.fujitsu.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <4794dd2c-edca-e161-e4e8-71ca1f2aa3d4@libero.it>
-Date: Sat, 5 Nov 2016 08:23:17 +0100
+Received: from frost.carfax.org.uk ([85.119.82.111]:39065 "EHLO
+        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750710AbcKEVbp (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 5 Nov 2016 17:31:45 -0400
+Received: from hrm by frost.carfax.org.uk with local (Exim 4.80)
+        (envelope-from <hrm@carfax.org.uk>)
+        id 1c38Yv-00049R-Ga
+        for linux-btrfs@vger.kernel.org; Sat, 05 Nov 2016 21:31:41 +0000
+Date: Sat, 5 Nov 2016 21:31:41 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Btrfs mailing list <linux-btrfs@vger.kernel.org>
+Subject: Transid verify failure after unexpected reboot (4.7, RAID-1)
+Message-ID: <20161105213141.GN16645@carfax.org.uk>
 MIME-Version: 1.0
-In-Reply-To: <f5a26f3c-2519-93b9-841f-4e16438bf458@cn.fujitsu.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="BtmVPk+Smchi6n7w"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Resent because I don't see it in ml
-----------------------------
-Hi Qu,
 
-On 2016-11-04 03:10, Qu Wenruo wrote:
-[...]
-> 
-> I reproduced your problem and find that seems to be a problem of race.
-[...]
-[...]> 
-> I digged a little further into the case 2) and found:
-> a) Kernel is scrubbing correct range
->    So the extra csum error is not caused by checking wrong logical
->    bytenr range
-> 
-> b) Kernel is scrubbing some pages twice
->    That's the cause of the problem.
+--BtmVPk+Smchi6n7w
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-For time constraint, I was unable to dig further this issue. I tried to add some printk to check if the code process correctly the data; what I found is 
+   Not sure if there's anything I can do about this or not. I suspect
+not, but if anyone's got any good ideas about fixing it, please let me
+know...
 
-1) the code seems to process the right data
-2) the code seems to produces the correct data (i.e. the code was able to rebuild the correct data on the basis of the check-sums and the parity)
-3) As you, I found that the code processed two time the same data
+   My server crashed earlier this evening -- an OOM tried to kill
+qemu, and kvm took exception to it.
 
-Unfortunately I was unable to figure why the code was unable to write the right data on the platter. Following the write path through the several handler of the bio was a job greater than my capabilities (and my time :-) )
+   After rebooting, my 6-device RAID-1 btrfs array wouldn't mount.
+Specifically:
 
-> 
-> 
-> And unlike most of us assume, in fact scrub full fs is a very racy thing.
-
-On the basis of your (and mine) observation that the code seems to process multiple time the same data, this may be an explanation.
-
-> Scrubbing full fs is split into N scrubbing ioctls for each device.
-> 
-> So for above script, kernel is doing *3* scrubbing work.
-> For other profile it may not be a problem, but for RAID5/6 race can happen easily like:
-> 
-> Scrub dev1(P)           |  Scrub dev2(D1)        | Scrub dev3(D2)
-> ---------------------------------------------------------------
-> Read out full stripe    | Read out D1            | Read out D2
->                         | Check Csum for D1      | Check Csum for D2
->                         | Csum mismatch (err++)  | Csum matches
-> Cal parity              | Read out full stripe   |
-> Parity mismatch         | Do recovery            |
-> Check full stripe       |
-> D1 csum mismatch (err++)|
-> 
-> So csum mismatch can be counted twice.
-> 
-> And since scrubbing for corrupted data stripe can easily race with
-> scrubbing for parity, if timing happens in a worse situation, it can
-> lead to unrecoverable csum error.
-
-Interesting, I wasn't aware that the scrub is done in parallel on the different disks. This explain a lot of strangeness....
-
-
-
-
+Nov  5 20:29:59 s_src@amelia kernel: BTRFS info (device sda2): disk space caching is enabled
+Nov  5 20:29:59 s_src@amelia kernel: BTRFS info (device sda2): bdev /dev/sda2 errs: wr 0, rd 50, flush 0, corrupt 4, gen 0
+Nov  5 20:29:59 s_src@amelia kernel: BTRFS info (device sda2): bdev /dev/sdb2 errs: wr 0, rd 0, flush 0, corrupt 6, gen 0
+Nov  5 20:29:59 s_src@amelia kernel: BTRFS info (device sda2): bdev /dev/sdd2 errs: wr 0, rd 0, flush 0, corrupt 2, gen 0
+Nov  5 20:29:59 s_src@amelia kernel: BTRFS info (device sda2): bdev /dev/sdh2 errs: wr 0, rd 0, flush 0, corrupt 2, gen 0
+Nov  5 20:29:59 s_src@amelia kernel: BTRFS error (device sda2): parent transid verify failed on 24536996052992 wanted 2001332 found 2000162
+Nov  5 20:29:59 s_src@amelia kernel: BTRFS error (device sda2): parent transid verify failed on 24536996052992 wanted 2001332 found 2000162
+Nov  5 20:29:59 s_src@amelia kernel: BTRFS error (device sda2): failed to read block groups: -5
+Nov  5 20:29:59 s_src@amelia kernel: BTRFS: open_ctree failed
  
-> On the other hand, if you only scrub the damaged device only, no race
-> will happen so case 2) 3) will just disappear.
+hrm@amelia:~ $ sudo btrfs fi show
+Label: 'system'  uuid: 96f4bf17-2531-4643-9384-cdf58c713140
+        Total devices 2 FS bytes used 75.44GiB
+        devid    1 size 111.79GiB used 91.79GiB path /dev/sde1
+        devid    2 size 111.79GiB used 91.79GiB path /dev/sdf1
+ 
+Label: 'amelia'  uuid: 1da97c6f-5467-4591-ad79-5d283db800d4
+        Total devices 6 FS bytes used 7.44TiB
+        devid    4 size 3.63TiB used 2.93TiB path /dev/sda2
+        devid    7 size 1.36TiB used 670.00GiB path /dev/sdd2
+        devid    9 size 1.81TiB used 1.11TiB path /dev/sdb2
+        devid   12 size 3.63TiB used 2.92TiB path /dev/sdh2
+        devid   13 size 3.63TiB used 2.83TiB path /dev/sdc2
+        devid   14 size 5.46TiB used 4.75TiB path /dev/sdg2
+ 
+btrfs-progs v4.0
+ 
+hrm@amelia:~ $ uname -a
+Linux amelia 4.7.0-dirty #153 SMP Mon Jul 25 04:22:08 BST 2016 x86_64 GNU/Linux
 
-> 
-> Would you please try to only scrub one device one time?
+hrm@amelia:~ $ sudo btrfs check --readonly /dev/sda2
+parent transid verify failed on 24536996052992 wanted 2001332 found 2000162
+parent transid verify failed on 24536996052992 wanted 2001332 found 2000162
+parent transid verify failed on 24536996052992 wanted 2001332 found 2000162
+parent transid verify failed on 24536996052992 wanted 2001332 found 2000162
+Ignoring transid failure
+leaf parent key incorrect 24536996052992
+Checking filesystem on /dev/sda2
+UUID: 1da97c6f-5467-4591-ad79-5d283db800d4
+checking extents
+parent transid verify failed on 24536995299328 wanted 2001332 found 2000162
+parent transid verify failed on 24536995299328 wanted 2001332 found 2000162
+parent transid verify failed on 24536995299328 wanted 2001332 found 2000162
+parent transid verify failed on 24536995299328 wanted 2001332 found 2000162
+Ignoring transid failure
+leaf parent key incorrect 24536995299328
+bad block 24536995299328
+Errors found in extent allocation tree or chunk allocation
+parent transid verify failed on 24536995299328 wanted 2001332 found 2000162
+Ignoring transid failure
+parent transid verify failed on 24536995954688 wanted 2001332 found 2000160
+parent transid verify failed on 24536995954688 wanted 2001332 found 2000160
+parent transid verify failed on 24536995954688 wanted 2001332 found 2000160
+parent transid verify failed on 24536995954688 wanted 2001332 found 2000160
+Ignoring transid failure
+parent transid verify failed on 24536996052992 wanted 2001332 found 2000162
+Ignoring transid failure
+parent transid verify failed on 24536996413440 wanted 2001332 found 2000160
+parent transid verify failed on 24536996413440 wanted 2001332 found 2000160
+parent transid verify failed on 24536996413440 wanted 2001332 found 2000160
+parent transid verify failed on 24536996413440 wanted 2001332 found 2000160
+Ignoring transid failure
+parent transid verify failed on 24536996577280 wanted 2001332 found 2000162
+parent transid verify failed on 24536996577280 wanted 2001332 found 2000162
+parent transid verify failed on 24536996577280 wanted 2001332 found 2000162
+parent transid verify failed on 24536996577280 wanted 2001332 found 2000162
+Ignoring transid failure
+checking free space cache
+parent transid verify failed on 24536995299328 wanted 2001332 found 2000162
+Ignoring transid failure
+There is no free space entry for 30211683549184-30212033085440
+cache appears valid but isnt 30210959343616
+parent transid verify failed on 24536995954688 wanted 2001332 found 2000160
+Ignoring transid failure
+There is no free space entry for 30214130446336-30214180569088
+cache appears valid but isnt 30213106827264
+parent transid verify failed on 24536996052992 wanted 2001332 found 2000162
+Ignoring transid failure
+There is no free space entry for 30240800890880-30241024114688
+cache appears valid but isnt 30239950372864
+found 503122865529 bytes used err is -22
+total csum bytes: 0
+total tree bytes: 20381696
+total fs tree bytes: 0
+total extent tree bytes: 16023552
+btree space waste bytes: 5113541
+file data blocks allocated: 1976303616
+ referenced 1976303616
+btrfs-progs v4.0
 
-I do it and I can confirm your hypothesis: if I do the scrub process 1 disk a time, I was unable to reproduce the corruption. Instead if I do the scrub process in parallel on all the disks, I sometime got a corruption: in average each 6 tests I got from 1 to 3 failures.
+   I make that five corrupt blocks in total, all about 1170
+generations earlier than they should be, which is quite a big
+distance. The hardware setup is a first-gen HP Microserver. Four of
+the devices are internal, and the remaining two are in an eSATA
+port-multiplier enclosure. I don't have any indication that any of
+that hardware had problems around the time of the crash, other than
+the hard reset I made when I found the machine was unresponsive.
 
-So the strategy of scrub must be different in case of a RAID6/5 chunk: in this case the parallel scrub must be avoided: the scrub must be performed on per stripe basis.
+   I'm currently in the process of using btrfs-restore to retrieve the
+data on it which hasn't been backed up yet -- that's a small but
+non-zero fraction of the total.
 
+   Other than killing this thing with fire and restoring from backup
+(which will take a few weeks), does anyone else have any suggestions
+for recovery?
 
-> 
->>
->> 5) I check the disks at the offsets above, to verify that the data/parity is correct
-> 
-> You could try the new offline scrub, it can save you a lot of time to find data/parity corruption.
-> https://github.com/adam900710/btrfs-progs/tree/fsck_scrub
-
-I will try it
-
-BR
-G.Baroncelli
-
-
-> 
-> And of course, more reliable than kernel scrub (single thread, no extra IO no race) :)
-> 
-> Thanks,
-> Qu
-> 
->>
->> However I found that:
->> 1) if I corrupt the parity disk (/dev/loop2), scrub don't find any corruption, but recomputed the parity (always correctly);
->>
->> 2) when I corrupted the other disks (/dev/loop[01]) btrfs was able to find the corruption. But I found two main behaviors:
->>
->> 2.a) the kernel repaired the damage, but compute the wrong parity. Where it was the parity, the kernel copied the data of the second disk on the parity disk
->>
->> 2.b) the kernel repaired the damage, and rebuild a correct parity
->>
->> I have to point out another strange thing: in dmesg I found two kinds of messages:
->>
->> msg1)
->>     [....]
->>     [ 1021.366944] BTRFS info (device loop2): disk space caching is enabled
->>     [ 1021.366949] BTRFS: has skinny extents
->>     [ 1021.399208] BTRFS warning (device loop2): checksum error at logical 142802944 on dev /dev/loop0, sector 159872, root 5, inode 257, offset 65536, length 4096, links 1 (path: out.txt)
->>     [ 1021.399214] BTRFS error (device loop2): bdev /dev/loop0 errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
->>     [ 1021.399291] BTRFS error (device loop2): fixed up error at logical 142802944 on dev /dev/loop0
->>
->> msg2)
->>     [ 1017.435068] BTRFS info (device loop2): disk space caching is enabled
->>     [ 1017.435074] BTRFS: has skinny extents
->>     [ 1017.436778] BTRFS info (device loop2): bdev /dev/loop0 errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
->>     [ 1017.463403] BTRFS warning (device loop2): checksum error at logical 142802944 on dev /dev/loop0, sector 159872,     root 5, inode 257, offset 65536, length 4096, links 1 (path: out.txt)
->>     [ 1017.463409] BTRFS error (device loop2): bdev /dev/loop0 errs: wr 0, rd 0, flush 0, corrupt 2, gen 0
->>     [ 1017.463467] BTRFS warning (device loop2): checksum error at logical 142802944 on dev /dev/loop0, sector 159872, root 5, inode 257, offset 65536, length 4096, links 1 (path: out.txt)
->>     [ 1017.463472] BTRFS error (device loop2): bdev /dev/loop0 errs: wr 0, rd 0, flush 0, corrupt 3, gen 0
->>     [ 1017.463512] BTRFS error (device loop2): unable to fixup (regular) error at logical 142802944 on dev /dev/loop0
->>     [ 1017.463535] BTRFS error (device loop2): fixed up error at logical 142802944 on dev /dev/loop0
->>
->>
->> but these seem to be UNrelated to the kernel behavior 2.a) or 2.b)
->>
->> Another strangeness is that SCRUB sometime reports
->>  ERROR: there are uncorrectable errors
->> and sometime reports
->>  WARNING: errors detected during scrubbing, corrected
->>
->> but also these seems UNrelated to the behavior 2.a) or 2.b) or msg1 or msg2
->>
->>
->> Enclosed you can find the script which I used to trigger the bug. I have to rerun it several times to show the problem because it doesn't happen every time. Pay attention that the offset and the loop device name are hard coded. You must run the script in the same directory where it is: eg "bash test.sh".
->>
->> Br
->> G.Baroncelli
->>
->>
->>
->>
-> 
-> 
-> 
-
+   Hugo.
 
 -- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+Hugo Mills             | "Can I offer you anything? Tea? Seedcake? Glass of
+hugo@... carfax.org.uk | Amontillado?"
+http://carfax.org.uk/  |
+PGP: E2AB1DE4          |                           Mrs Gillyflower, Doctor Who
 
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+--BtmVPk+Smchi6n7w
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJYHk+9AAoJEFheFHXiqx3kbcAQAI8VaHbMs/chaH9upFOFEy46
+Asnww3gcp/B9ilOAqOuf5V322SxOTb3z2tntAomW0unYEZ6rXhBq4Cu/luhejCSL
+VFidW7X7aZI3ShazWeCFwSKZOeCoQyyT7J/pXLpaw+JECv4QRU4pKacGIk/rUmhd
+tw8zG55g69WJM5tfgCIcvSakt4RynF6lgxd/3hjzlwD3blCwhqtfxck3BpQLHZXr
+sGvowvXA2oCjS1q4n8aDPNNvJzebTz2kBmvTrMiEi+SIzn+lXUb78c/hyvGcTTGO
+tJAeDgpUmaxdBp5hp7I8pRqePUYRGbnhBNcRagcStHK+54BPq/tobcC3kUPc4PMs
+3ljD9Z7uZQ97Dd/dl7PqUj3agpO9fi7Ks4SMcfx/Hxz0Ir5Rm2h1Ftm5OcDzTckN
+Sr3bvuseptyXUVDEGa9ITkv/KbWVAwjH2BCzCvZ/7hKPs3/QKfpjsDz9mNNCFjvV
+YMuVDB5hVhwEPmau5aQndOWkk+1A5cFEoERGdJuZIAfefXle9IkZERm8E1u9MJzr
+ZQRWLUQBs3Lb8W+/PBkb7syaUbAZ6FJLoDhOTpJtzqWmq2rxyK5x/5hq52tJz31/
+ciX/F0eSXNcH1KHxc7lOxurgbXcX3CKTtdv5r/lubrgV/lX7j5n29o8JquqOaz38
+QdrHmH6omi60WqD4VPCt
+=qZwv
+-----END PGP SIGNATURE-----
+
+--BtmVPk+Smchi6n7w--

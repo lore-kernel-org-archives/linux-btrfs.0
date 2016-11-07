@@ -1,172 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:39065 "EHLO
-        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750710AbcKEVbp (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 5 Nov 2016 17:31:45 -0400
-Received: from hrm by frost.carfax.org.uk with local (Exim 4.80)
-        (envelope-from <hrm@carfax.org.uk>)
-        id 1c38Yv-00049R-Ga
-        for linux-btrfs@vger.kernel.org; Sat, 05 Nov 2016 21:31:41 +0000
-Date: Sat, 5 Nov 2016 21:31:41 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Btrfs mailing list <linux-btrfs@vger.kernel.org>
-Subject: Transid verify failure after unexpected reboot (4.7, RAID-1)
-Message-ID: <20161105213141.GN16645@carfax.org.uk>
+Received: from cn.fujitsu.com ([59.151.112.132]:54096 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751301AbcKGBMH (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 Nov 2016 20:12:07 -0500
+Subject: Re: btrfs check --repair: ERROR: cannot read chunk root
+To: Marc MERLIN <marc@merlins.org>
+References: <20161031054719.GN28648@merlins.org>
+ <b31eaf2d-b339-6163-0108-28d1586c05e5@cn.fujitsu.com>
+ <20161031062509.GO28648@merlins.org>
+ <0c9e25b1-c8e1-6300-0c79-e9e3e8fd0f52@cn.fujitsu.com>
+ <20161031063737.GP28648@merlins.org>
+ <81e30812-be45-b4ff-3bf2-c79e805d445a@cn.fujitsu.com>
+ <20161031084412.GI16645@carfax.org.uk> <20161031150422.GQ28648@merlins.org>
+ <38fa8b04-ec2d-884f-e03c-8bc2fb888efb@cn.fujitsu.com>
+ <20161101042140.atn73lqehgpqslgz@merlins.org>
+ <20161104080113.GG3529@merlins.org>
+CC: Hugo Mills <hugo@carfax.org.uk>, <linux-btrfs@vger.kernel.org>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <4a5c36c5-3608-ef78-892c-6157bf2f34ae@cn.fujitsu.com>
+Date: Mon, 7 Nov 2016 09:11:54 +0800
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="BtmVPk+Smchi6n7w"
+In-Reply-To: <20161104080113.GG3529@merlins.org>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---BtmVPk+Smchi6n7w
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
 
-   Not sure if there's anything I can do about this or not. I suspect
-not, but if anyone's got any good ideas about fixing it, please let me
-know...
+At 11/04/2016 04:01 PM, Marc MERLIN wrote:
+> On Mon, Oct 31, 2016 at 09:21:40PM -0700, Marc MERLIN wrote:
+>> On Tue, Nov 01, 2016 at 12:13:38PM +0800, Qu Wenruo wrote:
+>>> Would you try to locate the range where we starts to fail to read?
+>>>
+>>> I still think the root problem is we failed to read the device in user
+>>> space.
+>>
+>> Understood.
+>>
+>> I'll run this then:
+>> myth:~# dd if=/dev/mapper/crypt_bcache0 of=/dev/null bs=1M &
+>> [2] 21108
+>> myth:~# while :; do killall -USR1 dd; sleep 1200; done
+>> 275+0 records in
+>> 274+0 records out
+>> 287309824 bytes (287 MB) copied, 7.20248 s, 39.9 MB/s
+>>
+>> This will take a while to run, I'll report back on how far it goes.
+>
+> Well, turns out you were right. My array is 14TB and dd was only able to
+> copy 8.8TB out of it.
+>
+> I wonder if it's a bug with bcache and source devices that are too big?
 
-   My server crashed earlier this evening -- an OOM tried to kill
-qemu, and kvm took exception to it.
+At least we know it's not a problem of btrfs-progs.
 
-   After rebooting, my 6-device RAID-1 btrfs array wouldn't mount.
-Specifically:
+And for bcache/soft raid/encryption, unfortunately I'm not familiar with 
+any of them.
 
-Nov  5 20:29:59 s_src@amelia kernel: BTRFS info (device sda2): disk space caching is enabled
-Nov  5 20:29:59 s_src@amelia kernel: BTRFS info (device sda2): bdev /dev/sda2 errs: wr 0, rd 50, flush 0, corrupt 4, gen 0
-Nov  5 20:29:59 s_src@amelia kernel: BTRFS info (device sda2): bdev /dev/sdb2 errs: wr 0, rd 0, flush 0, corrupt 6, gen 0
-Nov  5 20:29:59 s_src@amelia kernel: BTRFS info (device sda2): bdev /dev/sdd2 errs: wr 0, rd 0, flush 0, corrupt 2, gen 0
-Nov  5 20:29:59 s_src@amelia kernel: BTRFS info (device sda2): bdev /dev/sdh2 errs: wr 0, rd 0, flush 0, corrupt 2, gen 0
-Nov  5 20:29:59 s_src@amelia kernel: BTRFS error (device sda2): parent transid verify failed on 24536996052992 wanted 2001332 found 2000162
-Nov  5 20:29:59 s_src@amelia kernel: BTRFS error (device sda2): parent transid verify failed on 24536996052992 wanted 2001332 found 2000162
-Nov  5 20:29:59 s_src@amelia kernel: BTRFS error (device sda2): failed to read block groups: -5
-Nov  5 20:29:59 s_src@amelia kernel: BTRFS: open_ctree failed
- 
-hrm@amelia:~ $ sudo btrfs fi show
-Label: 'system'  uuid: 96f4bf17-2531-4643-9384-cdf58c713140
-        Total devices 2 FS bytes used 75.44GiB
-        devid    1 size 111.79GiB used 91.79GiB path /dev/sde1
-        devid    2 size 111.79GiB used 91.79GiB path /dev/sdf1
- 
-Label: 'amelia'  uuid: 1da97c6f-5467-4591-ad79-5d283db800d4
-        Total devices 6 FS bytes used 7.44TiB
-        devid    4 size 3.63TiB used 2.93TiB path /dev/sda2
-        devid    7 size 1.36TiB used 670.00GiB path /dev/sdd2
-        devid    9 size 1.81TiB used 1.11TiB path /dev/sdb2
-        devid   12 size 3.63TiB used 2.92TiB path /dev/sdh2
-        devid   13 size 3.63TiB used 2.83TiB path /dev/sdc2
-        devid   14 size 5.46TiB used 4.75TiB path /dev/sdg2
- 
-btrfs-progs v4.0
- 
-hrm@amelia:~ $ uname -a
-Linux amelia 4.7.0-dirty #153 SMP Mon Jul 25 04:22:08 BST 2016 x86_64 GNU/Linux
+I would recommend to report it to bcache/mdadm/encryption ML after 
+locating the layer which returns EINVAL.
 
-hrm@amelia:~ $ sudo btrfs check --readonly /dev/sda2
-parent transid verify failed on 24536996052992 wanted 2001332 found 2000162
-parent transid verify failed on 24536996052992 wanted 2001332 found 2000162
-parent transid verify failed on 24536996052992 wanted 2001332 found 2000162
-parent transid verify failed on 24536996052992 wanted 2001332 found 2000162
-Ignoring transid failure
-leaf parent key incorrect 24536996052992
-Checking filesystem on /dev/sda2
-UUID: 1da97c6f-5467-4591-ad79-5d283db800d4
-checking extents
-parent transid verify failed on 24536995299328 wanted 2001332 found 2000162
-parent transid verify failed on 24536995299328 wanted 2001332 found 2000162
-parent transid verify failed on 24536995299328 wanted 2001332 found 2000162
-parent transid verify failed on 24536995299328 wanted 2001332 found 2000162
-Ignoring transid failure
-leaf parent key incorrect 24536995299328
-bad block 24536995299328
-Errors found in extent allocation tree or chunk allocation
-parent transid verify failed on 24536995299328 wanted 2001332 found 2000162
-Ignoring transid failure
-parent transid verify failed on 24536995954688 wanted 2001332 found 2000160
-parent transid verify failed on 24536995954688 wanted 2001332 found 2000160
-parent transid verify failed on 24536995954688 wanted 2001332 found 2000160
-parent transid verify failed on 24536995954688 wanted 2001332 found 2000160
-Ignoring transid failure
-parent transid verify failed on 24536996052992 wanted 2001332 found 2000162
-Ignoring transid failure
-parent transid verify failed on 24536996413440 wanted 2001332 found 2000160
-parent transid verify failed on 24536996413440 wanted 2001332 found 2000160
-parent transid verify failed on 24536996413440 wanted 2001332 found 2000160
-parent transid verify failed on 24536996413440 wanted 2001332 found 2000160
-Ignoring transid failure
-parent transid verify failed on 24536996577280 wanted 2001332 found 2000162
-parent transid verify failed on 24536996577280 wanted 2001332 found 2000162
-parent transid verify failed on 24536996577280 wanted 2001332 found 2000162
-parent transid verify failed on 24536996577280 wanted 2001332 found 2000162
-Ignoring transid failure
-checking free space cache
-parent transid verify failed on 24536995299328 wanted 2001332 found 2000162
-Ignoring transid failure
-There is no free space entry for 30211683549184-30212033085440
-cache appears valid but isnt 30210959343616
-parent transid verify failed on 24536995954688 wanted 2001332 found 2000160
-Ignoring transid failure
-There is no free space entry for 30214130446336-30214180569088
-cache appears valid but isnt 30213106827264
-parent transid verify failed on 24536996052992 wanted 2001332 found 2000162
-Ignoring transid failure
-There is no free space entry for 30240800890880-30241024114688
-cache appears valid but isnt 30239950372864
-found 503122865529 bytes used err is -22
-total csum bytes: 0
-total tree bytes: 20381696
-total fs tree bytes: 0
-total extent tree bytes: 16023552
-btree space waste bytes: 5113541
-file data blocks allocated: 1976303616
- referenced 1976303616
-btrfs-progs v4.0
+>
+> 8782434271232 bytes (8.8 TB) copied, 214809 s, 40.9 MB/s
+> dd: reading `/dev/mapper/crypt_bcache0': Invalid argument
+> 8388608+0 records in
+> 8388608+0 records out
+> 8796093022208 bytes (8.8 TB) copied, 215197 s, 40.9 MB/s
+> [2]+  Exit 1                  dd if=/dev/mapper/crypt_bcache0 of=/dev/null bs=1M
+>
+> What's vexing is that absolutely nothing has been logged in the kernel dmesg
+> buffer about this read error.
+>
+> Basically I have this:
+> sde                            8:64   0   3.7T  0
+> └─sde1                         8:65   0   3.7T  0
+>   └─md5                        9:5    0  14.6T  0
+>     └─bcache0                252:0    0  14.6T  0
+>       └─crypt_bcache0 (dm-0) 253:0    0  14.6T  0
+>
+> I'll try dd'ing the md5 directly now, but that's going to take another 2 days :(
 
-   I make that five corrupt blocks in total, all about 1170
-generations earlier than they should be, which is quite a big
-distance. The hardware setup is a first-gen HP Microserver. Four of
-the devices are internal, and the remaining two are in an eSATA
-port-multiplier enclosure. I don't have any indication that any of
-that hardware had problems around the time of the crash, other than
-the hard reset I made when I found the machine was unresponsive.
+No need to read them out, just reading from the 8T would be good enough 
+for me.
 
-   I'm currently in the process of using btrfs-restore to retrieve the
-data on it which hasn't been backed up yet -- that's a small but
-non-zero fraction of the total.
+BTW, that's really a complicated layout, with soft raid, bcache, and 
+encryption, it will take a long time to find the real cause.
 
-   Other than killing this thing with fire and restoring from backup
-(which will take a few weeks), does anyone else have any suggestions
-for recovery?
+But at least we know the 8.8T position, we can save some time not 
+reading the whole disk.
 
-   Hugo.
+Thanks,
+Qu
 
--- 
-Hugo Mills             | "Can I offer you anything? Tea? Seedcake? Glass of
-hugo@... carfax.org.uk | Amontillado?"
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |                           Mrs Gillyflower, Doctor Who
+>
+> That said, given that almost half the device is not readable from user space
+> for some reason, that would explain why btrfs check is failing. Obviously it
+> can't do its job if it can't read blocks.
+>
+> I'll report back on what I find out with this problem but if you have
+> suggestions on what to look for, let me know :)
+>
+> Thanks.
+> Marc
+>
 
---BtmVPk+Smchi6n7w
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJYHk+9AAoJEFheFHXiqx3kbcAQAI8VaHbMs/chaH9upFOFEy46
-Asnww3gcp/B9ilOAqOuf5V322SxOTb3z2tntAomW0unYEZ6rXhBq4Cu/luhejCSL
-VFidW7X7aZI3ShazWeCFwSKZOeCoQyyT7J/pXLpaw+JECv4QRU4pKacGIk/rUmhd
-tw8zG55g69WJM5tfgCIcvSakt4RynF6lgxd/3hjzlwD3blCwhqtfxck3BpQLHZXr
-sGvowvXA2oCjS1q4n8aDPNNvJzebTz2kBmvTrMiEi+SIzn+lXUb78c/hyvGcTTGO
-tJAeDgpUmaxdBp5hp7I8pRqePUYRGbnhBNcRagcStHK+54BPq/tobcC3kUPc4PMs
-3ljD9Z7uZQ97Dd/dl7PqUj3agpO9fi7Ks4SMcfx/Hxz0Ir5Rm2h1Ftm5OcDzTckN
-Sr3bvuseptyXUVDEGa9ITkv/KbWVAwjH2BCzCvZ/7hKPs3/QKfpjsDz9mNNCFjvV
-YMuVDB5hVhwEPmau5aQndOWkk+1A5cFEoERGdJuZIAfefXle9IkZERm8E1u9MJzr
-ZQRWLUQBs3Lb8W+/PBkb7syaUbAZ6FJLoDhOTpJtzqWmq2rxyK5x/5hq52tJz31/
-ciX/F0eSXNcH1KHxc7lOxurgbXcX3CKTtdv5r/lubrgV/lX7j5n29o8JquqOaz38
-QdrHmH6omi60WqD4VPCt
-=qZwv
------END PGP SIGNATURE-----
-
---BtmVPk+Smchi6n7w--

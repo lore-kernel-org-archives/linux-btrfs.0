@@ -1,66 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33684 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:40268 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752176AbcKSCwo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 Nov 2016 21:52:44 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 9CDD0AAB7
-        for <linux-btrfs@vger.kernel.org>; Sat, 19 Nov 2016 02:52:42 +0000 (UTC)
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-From: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH] btrfs: Ensure proper sector alignment for
- btrfs_free_reserved_data_space
-Message-ID: <af6462e2-abaf-746a-6f69-1c83e549c059@suse.com>
-Date: Fri, 18 Nov 2016 21:52:40 -0500
+        id S932187AbcKGQTb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 7 Nov 2016 11:19:31 -0500
+Date: Mon, 7 Nov 2016 17:19:27 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Christophe JAILLET <christophe.jaillet@wanadoo.fr>
+Cc: clm@fb.com, jbacik@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, kernel-janitors@vger.kernel.org
+Subject: Re: [PATCH V2] btrfs: Remove some dead code
+Message-ID: <20161107161927.GP12522@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20161104070235.12975-1-christophe.jaillet@wanadoo.fr>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20161104070235.12975-1-christophe.jaillet@wanadoo.fr>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Jeff Mahoney <jeffm@suse.com>
-Subject: btrfs: Ensure proper sector alignment for
- btrfs_free_reserved_data_space
-References: bsc#1005666
-Patch-mainline: Submitted 18 Nov 2016, linux-btrfs
+On Fri, Nov 04, 2016 at 08:02:35AM +0100, Christophe JAILLET wrote:
+> 'btrfs_iget()' can not return NULL, so this test can be removed.
+> 
+> Signed-off-by: Christophe JAILLET <christophe.jaillet@wanadoo.fr>
 
-This fixes the WARN_ON on BTRFS_I(inode)->reserved_extents in
-btrfs_destroy_inode and the WARN_ON on nonzero delalloc bytes on umount
-with qgroups enabled.
-
-I was able to reproduce this by setting up a small (~500kb) quota limit
-and writing a file one byte at a time until I hit the limit.  The warnings
-would all hit on umount.
-
-The root cause is that we would reserve a block-sized range in both
-the reservation and the quota in btrfs_check_data_free_space, but if we
-encountered a problem (like e.g. EDQUOT), we would only release the single
-byte in the qgroup reservation.  That caused an iotree state split, which
-increased the number of outstanding extents, in turn disallowing releasing
-the metadata reservation.
-
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
----
- fs/btrfs/extent-tree.c |    7 +++++++
- 1 file changed, 7 insertions(+)
-
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3822,6 +3822,13 @@ void btrfs_free_reserved_data_space_noqu
-  */
- void btrfs_free_reserved_data_space(struct inode *inode, u64 start, u64 len)
- {
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+
-+	/* Make sure the range is aligned to sectorsize */
-+	len = round_up(start + len, root->sectorsize) -
-+	      round_down(start, root->sectorsize);
-+	start = round_down(start, root->sectorsize);
-+
- 	btrfs_free_reserved_data_space_noquota(inode, start, len);
- 	btrfs_qgroup_free_data(inode, start, len);
- }
-
-
--- 
-Jeff Mahoney
-SUSE Labs
+Patch replaced, I've edited the subject to be a bit more specific.

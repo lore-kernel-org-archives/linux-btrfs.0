@@ -1,34 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail02.iobjects.de ([188.40.134.68]:49916 "EHLO
-        mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932125AbcKGOL1 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Nov 2016 09:11:27 -0500
+Received: from mx2.suse.de ([195.135.220.15]:43021 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751982AbcKGQ7P (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 7 Nov 2016 11:59:15 -0500
+Date: Mon, 7 Nov 2016 17:58:41 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Adam Borowski <kilobyte@angband.pl>
+Cc: Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] btrfs: make block group flags in balance printks
  human-readable
-To: Adam Borowski <kilobyte@angband.pl>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Message-ID: <20161107165841.GQ12522@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <20161104072654.13411-1-kilobyte@angband.pl>
-From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>
-Message-ID: <58208B8C.5090104@applied-asynchrony.com>
-Date: Mon, 7 Nov 2016 15:11:24 +0100
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 In-Reply-To: <20161104072654.13411-1-kilobyte@angband.pl>
-Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/04/16 08:26, Adam Borowski wrote:
+On Fri, Nov 04, 2016 at 08:26:54AM +0100, Adam Borowski wrote:
 > They're not even documented anywhere, letting users with no recourse but
 > to RTFS.  It's no big burden to output the bitfield as words.
-> 
+
+Ok. Below are some comments (and style nitpicks).
+
 > Also, display unknown flags as hex.
 > 
 > Signed-off-by: Adam Borowski <kilobyte@angband.pl>
-
-Very helpful and works (for me) as advertised.
-
-Tested-by: Holger Hoffstätte <holger@applied-asynchrony.com>
-
 > ---
 >  fs/btrfs/relocation.c | 34 ++++++++++++++++++++++++++++++++--
 >  1 file changed, 32 insertions(+), 2 deletions(-)
@@ -46,7 +45,16 @@ Tested-by: Holger Hoffstätte <holger@applied-asynchrony.com>
 > +static void describe_block_group_flags(char *buf, u64 flags)
 > +{
 > +	if (!flags)
+
+	if (!flags) {
+
 > +		*buf += sprintf(buf, "|NONE");
+
+Should it be just 'buf'? Otherwise this stores 5 after 'E', which gets
+overwritten by 0 at the end but still. Unless I'm missing something.
+
+	} else {
+
 > +	else {
 > +#define DESCRIBE_FLAG(f, d) \
 > +			if (flags & BTRFS_BLOCK_GROUP_##f) { \
@@ -62,6 +70,9 @@ Tested-by: Holger Hoffstätte <holger@applied-asynchrony.com>
 > +		DESCRIBE_FLAG(RAID10,   "raid10");
 > +		DESCRIBE_FLAG(RAID5,    "raid5");
 > +		DESCRIBE_FLAG(RAID6,    "raid6");
+
+An #undef should go here.
+
 > +		if (flags)
 > +			buf += sprintf(buf, "|0x%llx", flags);
 > +	}
@@ -77,6 +88,21 @@ Tested-by: Holger Hoffstätte <holger@applied-asynchrony.com>
 >  	int rw = 0;
 >  	int err = 0;
 > +	char flags_str[128];
+
+This could be a problem. The relocation can trigger deep call chains
+when doing IO, that need stack. I'd rather avoid the static buffer,
+please switch it to kmalloc. As this is not a critical allocation, the
+fallback would be to print just the raw value as now.
+
+Also, please use snprintf. This would need extra variable to track
+number of already printed chars, but should be easy, schematically like:
+
+	remaining = BUFFERSIZE;
+
+	ret = snprintf(buf, remaining, "...");
+	remaining -= ret;
+	buf += ret;
+
 >  
 >  	rc = alloc_reloc_control(fs_info);
 >  	if (!rc)
@@ -93,5 +119,10 @@ Tested-by: Holger Hoffstätte <holger@applied-asynchrony.com>
 >  
 >  	btrfs_wait_block_group_reservations(rc->block_group);
 >  	btrfs_wait_nocow_writers(rc->block_group);
+> -- 
+> 2.10.2
 > 
-
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

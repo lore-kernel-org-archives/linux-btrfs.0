@@ -1,75 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from kiara-balancer-1.wellbehavedsoftware.com ([138.201.134.108]:33578
-        "EHLO kiara-balancer-1.wellbehavedsoftware.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S932586AbcKGSxy (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 7 Nov 2016 13:53:54 -0500
+Received: from tartarus.angband.pl ([89.206.35.136]:41575 "EHLO
+        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751802AbcKGUyS (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Nov 2016 15:54:18 -0500
+Date: Mon, 7 Nov 2016 21:54:09 +0100
+From: Adam Borowski <kilobyte@angband.pl>
+To: Mark Fasheh <mark@fasheh.com>
+Cc: dsterba@suse.cz, James Pharaoh <james@wellbehavedsoftware.com>,
+        linux-btrfs@vger.kernel.org
 Subject: Re: Announcing btrfs-dedupe
-To: Mark Fasheh <mfasheh@versity.com>
+Message-ID: <20161107205409.GA20325@angband.pl>
 References: <2855552b-714c-d1de-08f9-89153c293772@wellbehavedsoftware.com>
- <CAAXPY_LJshM+W+xinabu_-=-E6J8UBMRpy7VPLt8tNihpO68Lw@mail.gmail.com>
- <345b3aa4-6644-6730-09dd-549d320f58cb@wellbehavedsoftware.com>
-Cc: linux-btrfs@vger.kernel.org
-From: James Pharaoh <james@pharaoh.uk>
-Message-ID: <4bda2fea-1e25-08ef-c898-3c67f58a3e16@pharaoh.uk>
-Date: Mon, 7 Nov 2016 19:53:49 +0100
+ <20161107140200.GM12522@suse.cz>
+ <CAGe7X7n=xkveD4TS2cyfXx5-hydOCHTh=tjDK54h8HWpnK5NqQ@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <345b3aa4-6644-6730-09dd-549d320f58cb@wellbehavedsoftware.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAGe7X7n=xkveD4TS2cyfXx5-hydOCHTh=tjDK54h8HWpnK5NqQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-FWIW I have updated my comments about duperemove and also the "caveat" 
-section you mentioned in your other mail in the readme.
+On Mon, Nov 07, 2016 at 09:48:41AM -0800, Mark Fasheh wrote:
+> also on XFS with the dedupe ioctl (I believe this should be out with
+> Linux-4.9).
 
-http://btrfs-dedupe.com
+It's already there in 4.9-rc1, although you need a special version of
+xfsprogs (possibly already released, I didn't check).  It's an experimental
+feature that needs to be enabled with "-m reflink=1".
 
-James
+Despite that experimental status, I'd strongly recommend James to test his
+tool on xfs as well, as it's the second major implementation of this API[1].
 
-On 07/11/16 19:49, James Pharaoh wrote:
-> Annoyingly I can't find this now, but I definitely remember reading
-> someone, apparently someone knowledgable, claim that the latest version
-> of the kernel which I was using at the time, still suffered from issues
-> regarding the dedupe code.
->
-> This was a while ago, and I would be very pleased to hear that there is
-> high confidence in the current implementation! I'll post a link if I
-> manage to find the comments.
->
-> James
->
-> On 07/11/16 18:59, Mark Fasheh wrote:
->> Hi James,
->>
->> Re the following text on your project page:
->>
->> "IMPORTANT CAVEAT — I have read that there are race and/or error
->> conditions which can cause filesystem corruption in the kernel
->> implementation of the deduplication ioctl."
->>
->> Can you expound on that? I'm not aware of any bugs right now but if
->> there is any it'd absolutely be worth having that info on the btrfs
->> list.
->>
->> Thanks,
->>     --Mark
->>
->>
->> On Sun, Nov 6, 2016 at 7:30 AM, James Pharaoh
->> <james@wellbehavedsoftware.com> wrote:
->>> Hi all,
->>>
->>> I'm pleased to announce my btrfs deduplication utility, written in Rust.
->>> This operates on whole files, is fast, and I believe complements the
->>> existing utilities (duperemove, bedup), which exist currently.
->>>
->>> Please visit the homepage for more information:
->>>
->>> http://btrfs-dedupe.com
->>>
->>> James Pharaoh
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe
->>> linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+Mark has already included XFS in documentation of duperemove, all that looks
+amiss is btrfs-extent-same having an obsolete name.  But then, I never did
+any non-superficial tests on XFS, beyond "seems to work".
+
+
+Meow!
+
+[1]. For some reasons zfs-on-linux guys didn't implement this yet, despite
+it being an obvious thing on ZFS.
+-- 
+A MAP07 (Dead Simple) raspberry tincture recipe: 0.5l 95% alcohol, 1kg
+raspberries, 0.4kg sugar; put into a big jar for 1 month.  Filter out and
+throw away the fruits (can dump them into a cake, etc), let the drink age
+at least 3-6 months.

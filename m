@@ -1,75 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:9236 "EHLO song.cn.fujitsu.com"
-        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1751756AbcKCEIS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 3 Nov 2016 00:08:18 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: [PATCH v4 0/4] Introduce dump option for btrfs-receive
-Date: Thu,  3 Nov 2016 12:07:30 +0800
-Message-Id: <20161103040734.8098-1-quwenruo@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:45462 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750980AbcKGKUa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 7 Nov 2016 05:20:30 -0500
+Date: Mon, 7 Nov 2016 11:20:27 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH v4 1/4] btrfs-progs: utils: Introduce function to escape
+ characters
+Message-ID: <20161107102027.GK12522@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20161103040734.8098-1-quwenruo@cn.fujitsu.com>
+ <20161103040734.8098-2-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20161103040734.8098-2-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The branch can be fetched from github:
-https://github.com/adam900710/btrfs-progs/tree/send_dump
+On Thu, Nov 03, 2016 at 12:07:31PM +0800, Qu Wenruo wrote:
+> Introduce new function, escape_string_inplace(), to escape specified
+> characters in place.
+> 
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+>  utils.c | 24 ++++++++++++++++++++++++
+>  utils.h | 14 ++++++++++++++
+>  2 files changed, 38 insertions(+)
+> 
+> diff --git a/utils.c b/utils.c
+> index 3f54245..3c50d84 100644
+> --- a/utils.c
+> +++ b/utils.c
+> @@ -4251,3 +4251,27 @@ unsigned int rand_range(unsigned int upper)
+>  	 */
+>  	return (unsigned int)(jrand48(rand_seed) % upper);
+>  }
+> +
+> +static void escape_one_char(char *restrict string, char escape)
+> +{
+> +	int i = 0;
+> +	int j = 0;
+> +
+> +	while (string[j] != '\0') {
+> +		if (string[j] != escape) {
+> +			string[i] = string[j];
+> +			i++;
+> +		}
 
-The branch doesn't contain the fake test case.
-
-Introduce new "--dump" option for btrfs-receive, which will exam and dump
-metadata info of a send stream.
-This is quite handy to debug send stream.
-
-Since such function is provided by old send-test tool, which doesn't even
-compile now, remove the old send-test tool.
-
-changelog:
-v2:
-  Move from inspect subcommand to receive subcommand.
-v3:
-  Add output for ctime/mtime/atime
-  (Human readable local time like "1111-11-01 11:11:11")
-  Rearrange the output from "key1: value1, key2: value2" to
-  "key1=value1 key2=value2". Suggested by David
-  Rename macro path_cat_or_error() to PATH_CAT_OR_RET(). Suggested by David
-  Change pointer to array to avoid memory allocation error. Suggested by David
-  Add the 5th patch to add a fake test case to show how the new output looks
-  like.
-v4:
-  Fix two small output defeats exposed by David.
-  Add printf format checker attritube for __print_dump, suggested by David.
-  Manually disable -Wformat-zero-length in send-dump.
-  Ouput fattr's data, suggested by David.
-  Change c/m/a time to RFC3339 format, suggested by David.
-  Avoid calling memmove() in a loop in escape_string_inplace().
-  Proviode non-inplace version escape_string(), which will alloc memory by itself.
-
-Qu Wenruo (4):
-  btrfs-progs: utils: Introduce function to escape characters
-  btrfs-progs: introduce new send-dump object
-  btrfs-progs: receive: introduce option to dump send stream
-  btrfs-progs: misc-test: Add send stream dump test
-
- Documentation/btrfs-receive.asciidoc               |  15 +-
- Makefile.in                                        |   2 +-
- cmds-receive.c                                     |  35 ++-
- send-dump.c                                        | 298 +++++++++++++++++++++
- send-dump.h                                        |  29 ++
- .../016-send-dump-output/creation.stream.xz        | Bin 0 -> 984 bytes
- .../016-send-dump-output/deletion.stream.xz        | Bin 0 -> 408 bytes
- tests/misc-tests/016-send-dump-output/test.sh      |  23 ++
- utils.c                                            |  24 ++
- utils.h                                            |  14 +
- 10 files changed, 434 insertions(+), 6 deletions(-)
- create mode 100644 send-dump.c
- create mode 100644 send-dump.h
- create mode 100644 tests/misc-tests/016-send-dump-output/creation.stream.xz
- create mode 100644 tests/misc-tests/016-send-dump-output/deletion.stream.xz
- create mode 100755 tests/misc-tests/016-send-dump-output/test.sh
-
--- 
-2.10.1
-
-
-
+So how does this actually escape the characters? I don't see anything
+inserted. I think we don't have a common understanding of what's
+supposed to be done here. I mean C-string-like escaping. And this cannot
+be done inplace, as it increases string length. I've implemented it in a
+different way, so this patch is left out. The final stream dump output
+is preserved.

@@ -1,31 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46972 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:47096 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932635AbcKGRyC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 7 Nov 2016 12:54:02 -0500
-Date: Mon, 7 Nov 2016 18:53:40 +0100
+        id S933197AbcKGRzt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 7 Nov 2016 12:55:49 -0500
+Date: Mon, 7 Nov 2016 18:55:46 +0100
 From: David Sterba <dsterba@suse.cz>
 To: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH 2/2] btrfs: Add trace point for qgroup reserved space
-Message-ID: <20161107175339.GS12522@twin.jikos.cz>
+Subject: Re: [PATCH v2 1/2] btrfs: Add WARN_ON for qgroup reserved underflow
+Message-ID: <20161107175546.GT12522@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <20161020022842.27328-1-quwenruo@cn.fujitsu.com>
- <20161020022842.27328-2-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20161020022842.27328-2-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20161020022842.27328-1-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 20, 2016 at 10:28:42AM +0800, Qu Wenruo wrote:
-> Introduce the following trace points:
-> qgroup_update_reserve
-> qgroup_meta_reserve
+On Thu, Oct 20, 2016 at 10:28:41AM +0800, Qu Wenruo wrote:
+> Goldwyn Rodrigues has exposed and fixed a bug which underflows btrfs
+> qgroup reserved space, and leads to non-writable fs.
 > 
-> And modify the timing of btrfs_qgroup_free_delayed_ref() and
-> btrfs_qgroup_release_data() events, to work with qgroup_update_reserve()
-> event.
+> This reminds us that we don't have enough underflow check for qgroup
+> reserved space.
+> 
+> For underflow case, we should not really underflow the numbers but warn
+> and keeps qgroup still work.
+> 
+> So add more check on qgroup reserved space and add WARN_ON() and
+> btrfs_warn() for any underflow case.
+> 
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-I think this should go to a separate patch, as it's a functional change
-(and not obvious to me) unlike adding the tracepoints.
+Reviewed-by: David Sterba <dsterba@suse.com>

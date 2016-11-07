@@ -1,33 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from kiara-balancer-1.wellbehavedsoftware.com ([138.201.134.108]:37914
-        "EHLO kiara-balancer-1.wellbehavedsoftware.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751613AbcKFNkW (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 6 Nov 2016 08:40:22 -0500
-Received: from kiara-mail-exchange.vpn.wellbehavedsoftware.com (kiara-mail-exchange.vpn.wellbehavedsoftware.com [10.109.164.135])
-        by mail-hub.vpn.wellbehavedsoftware.com (Postfix) with ESMTP id 8FAE6173E24
-        for <linux-btrfs@vger.kernel.org>; Sun,  6 Nov 2016 13:30:53 +0000 (UTC)
-Received: from [10.109.135.63] (81.184.239.202.dyn.user.ono.com [81.184.239.202])
-        by kiara-mail-exchange.vpn.wellbehavedsoftware.com (Postfix) with ESMTPSA id 712F82C82F
-        for <linux-btrfs@vger.kernel.org>; Sun,  6 Nov 2016 13:30:53 +0000 (UTC)
-To: linux-btrfs@vger.kernel.org
-From: James Pharaoh <james@wellbehavedsoftware.com>
-Subject: Announcing btrfs-dedupe
-Message-ID: <2855552b-714c-d1de-08f9-89153c293772@wellbehavedsoftware.com>
-Date: Sun, 6 Nov 2016 14:30:52 +0100
+Received: from mx2.suse.de ([195.135.220.15]:44661 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751296AbcKGOCE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 7 Nov 2016 09:02:04 -0500
+Date: Mon, 7 Nov 2016 15:02:00 +0100
+From: David Sterba <dsterba@suse.cz>
+To: James Pharaoh <james@wellbehavedsoftware.com>
+Cc: linux-btrfs@vger.kernel.org, mark@fasheh.com
+Subject: Re: Announcing btrfs-dedupe
+Message-ID: <20161107140200.GM12522@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <2855552b-714c-d1de-08f9-89153c293772@wellbehavedsoftware.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <2855552b-714c-d1de-08f9-89153c293772@wellbehavedsoftware.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+On Sun, Nov 06, 2016 at 02:30:52PM +0100, James Pharaoh wrote:
+> I'm pleased to announce my btrfs deduplication utility, written in Rust. 
+> This operates on whole files, is fast, and I believe complements the 
+> existing utilities (duperemove, bedup), which exist currently.
 
-I'm pleased to announce my btrfs deduplication utility, written in Rust. 
-This operates on whole files, is fast, and I believe complements the 
-existing utilities (duperemove, bedup), which exist currently.
+Mark can correct me if I'm wrong, but AFAIK, duperemove can consume
+output of fdupes, which does the whole file scanning for duplicates. And
+I think adding a whole-file dedup mode to duperemove would be better
+(from user's POV) than writing a whole new tool, eg. because of existing
+availability of duperemove in the distros.
 
-Please visit the homepage for more information:
-
-http://btrfs-dedupe.com
-
-James Pharaoh
+Also looking to your roadmap, some of the items are implemented in
+duperemove: database of existing csums, cross filesystem boundary,
+mtime-based speedups).

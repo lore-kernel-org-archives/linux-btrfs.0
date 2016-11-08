@@ -1,58 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from kiara-balancer-1.wellbehavedsoftware.com ([138.201.134.108]:49646
-        "EHLO kiara-balancer-1.wellbehavedsoftware.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1753006AbcKHQ65 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 8 Nov 2016 11:58:57 -0500
+Received: from mail-it0-f48.google.com ([209.85.214.48]:37086 "EHLO
+        mail-it0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932873AbcKHREU (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Nov 2016 12:04:20 -0500
+Received: by mail-it0-f48.google.com with SMTP id u205so219790673itc.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Nov 2016 09:04:20 -0800 (PST)
 Subject: Re: Announcing btrfs-dedupe
-To: =?UTF-8?Q?Niccol=c3=b2_Belli?= <darkbasic@linuxsystems.it>
+To: "Darrick J. Wong" <darrick.wong@oracle.com>
 References: <2855552b-714c-d1de-08f9-89153c293772@wellbehavedsoftware.com>
- <e9a425e6-0f1a-42ca-8200-1cad1193f048@linuxsystems.it>
- <7c1d65d8-3a95-1a1b-761f-8d765ed4e3e3@wellbehavedsoftware.com>
- <15418748-e831-4056-b399-39e4f50369de@linuxsystems.it>
-Cc: linux-btrfs@vger.kernel.org
-From: James Pharaoh <james@wellbehavedsoftware.com>
-Message-ID: <23ae5e65-f6f1-3167-abeb-65b99aeca7cd@wellbehavedsoftware.com>
-Date: Tue, 8 Nov 2016 17:58:52 +0100
+ <20161107140200.GM12522@suse.cz> <1478572812.28957.4.camel@scientia.net>
+ <d32c6f44-970f-615d-cb01-6ef48cd8d1f6@gmail.com>
+ <20161108165706.GB16801@birch.djwong.org>
+Cc: Christoph Anton Mitterer <calestyo@scientia.net>, dsterba@suse.cz,
+        James Pharaoh <james@wellbehavedsoftware.com>,
+        linux-btrfs@vger.kernel.org, mark@fasheh.com
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <ec4e9e7a-6c85-b4a7-4ae1-e54b94ec0db3@gmail.com>
+Date: Tue, 8 Nov 2016 12:04:16 -0500
 MIME-Version: 1.0
-In-Reply-To: <15418748-e831-4056-b399-39e4f50369de@linuxsystems.it>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <20161108165706.GB16801@birch.djwong.org>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Yes, everything you have described here is something I intend to create, 
-and might as well include in the tool itself. I'll add it to the roadmap ;-)
+On 2016-11-08 11:57, Darrick J. Wong wrote:
+> On Tue, Nov 08, 2016 at 08:26:02AM -0500, Austin S. Hemmelgarn wrote:
+>> On 2016-11-07 21:40, Christoph Anton Mitterer wrote:
+>>> On Mon, 2016-11-07 at 15:02 +0100, David Sterba wrote:
+>>>> I think adding a whole-file dedup mode to duperemove would be better
+>>>> (from user's POV) than writing a whole new tool
+>>>
+>>> What would IMO be really good from a user's POV was, if one of the
+>>> tools, deemed to be the "best", would be added to the btrfs-progs and
+>>> simply become "the official" one.
+>>
+>> The problem is that for deduplication, most tools won't work well for
+>> everything.  For example the cases I use it in are very specific and have
+>> horrible performance using pretty much any available tool (I have a couple
+>> cases where I have disjoint subsets of the same directory tree with
+>> different prefixes, so I can tell exactly which files are duplicated, and
+>> that any duplicate file is 100% duplicate, as well as a couple of cases
+>> where changes are small, scattered, and highly predictable (and thus it's
+>> easier to find what's changed and dedupe everything else instead of finding
+>> what's the same), and none of the existing options do well in either
+>> situation).
+>>
+>> I'd argue at minimum for having the extent-same tool from duperemove in
+>> btrfs-progs, as that lets people do deduplication how they want without
+>> having to write C code.  Something equivalent that would let you call any
+>> BTRFS ioctl with (reasonably) arbitrary arguments might actually be even
+>> better (I can see such a tool being wonderful for debugging).
+>
+> Since xfsprogs 4.3, xfs_io has a 'dedupe' command that can talk to
+> FIDEDUPERANGE (f.k.a. EXTENT SAME):
+>
+> $ xfs_io -c '/mnt/srcfile srcoffset dstoffset length' /mnt/destfile
+>
+I actually hadn't known about this, thanks.  It means that xfs_io just 
+got even more useful despite me not running XFS.
 
-James
-
-On 08/11/16 17:57, Niccolò Belli wrote:
-> On martedì 8 novembre 2016 12:38:48 CET, James Pharaoh wrote:
->> You can't deduplicate a read-only snapshot, but you can create
->> read-write snapshots from them, deduplicate those, and then recreate
->> the read-only ones. This is what I've done.
->
-> Since snapper creates hundreds of snapshots, isn't this something that
-> the deduplication software could do for me if I explicitely tell it to
-> do so? I mean momentarily switching the snapshot to rw in order to
-> deduplicate it, then switching it back to ro.
->
->> In theory, once this has been done once, it shouldn't have to be done
->> again, at least for those snapshots, unless you want to modify the
->> deduplication. It's probably a good idea to defragment files and
->> directories first, as well.
->
-> I can't defragment anything, because it would take too much free space
-> to do so with so many snapshots. Instead, the deduplication software
-> could defragment each file before calling the extent-same ioctl, that
-> would be feasible. Such a way you will not need hilarious amounts of
-> free space to defragment the fs.
->
->> It should be possible to deduplicate a read-only file to a read-write
->> one, but that's probably not worth the effort in many real-world use
->> cases.
->
-> This is exactly what I would expect a deduplication tool to do when it
-> encounters a ro snapshot, except when I explicitely tell it to
-> momentarily switch the snapshot to rw in order to deduplicate it.
->
-> Niccolo' Belli

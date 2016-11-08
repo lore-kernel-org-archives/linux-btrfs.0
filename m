@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:16726 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:48752 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1750938AbcKHAhy (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Nov 2016 19:37:54 -0500
+        with ESMTP id S1750938AbcKHA55 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Nov 2016 19:57:57 -0500
 Subject: Re: [PATCH v4 1/4] btrfs-progs: utils: Introduce function to escape
  characters
 To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
@@ -10,8 +10,8 @@ References: <20161103040734.8098-1-quwenruo@cn.fujitsu.com>
  <20161103040734.8098-2-quwenruo@cn.fujitsu.com>
  <20161107102027.GK12522@twin.jikos.cz>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <58be30ff-591c-6a96-0f48-ea3ba8b8c76d@cn.fujitsu.com>
-Date: Tue, 8 Nov 2016 08:33:25 +0800
+Message-ID: <e7291503-310e-3c93-3574-dd1f838d6ad8@cn.fujitsu.com>
+Date: Tue, 8 Nov 2016 08:57:52 +0800
 MIME-Version: 1.0
 In-Reply-To: <20161107102027.GK12522@twin.jikos.cz>
 Content-Type: text/plain; charset="utf-8"; format=flowed
@@ -59,25 +59,16 @@ At 11/07/2016 06:20 PM, David Sterba wrote:
 > is preserved.
 >
 >
-Oh, sorry.
+And further more.
 
-I misunderstand the term "string escaping". I though it's just deleting 
-special characters.
+The new string escaping is screwing up original output.
 
-I checked your print_path_escaped() and finally got what string-escaping 
-should do.
+Operation lile mkfile lacks the final '\n'.
+String over the width will lack the ending ' ' to seperate later 
+key=value pairs.
 
-Sorry for the extra trouble.
-
-While still some small comment.
-+                         if (!isprint(c)) {
-+                                 printf("\\%c%c%c",
-+                                                 '0' + ((c & 0300) >> 6),
-+                                                 '0' + ((c & 070) >> 3),
-+                                                 '0' + (c & 07));
-
-For non-printable chars, isn't it more common to print it as hex other 
-than octal?
+It would be better to output the escaped string into a buffer and still 
+use printf() format to output them out as it used to be.
 
 Thanks,
 Qu

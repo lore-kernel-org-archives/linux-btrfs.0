@@ -1,40 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.linuxsystems.it ([79.7.78.67]:53884 "EHLO
-        mail.linuxsystems.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932177AbcKHRIU (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Nov 2016 12:08:20 -0500
-From: =?iso-8859-1?Q?Niccol=F2_Belli?= <darkbasic@linuxsystems.it>
-To: James Pharaoh <james@wellbehavedsoftware.com>
-Cc: <linux-btrfs@vger.kernel.org>
-Subject: Re: Announcing btrfs-dedupe
-Date: Tue, 08 Nov 2016 18:08:16 +0100
+Received: from mail-yw0-f174.google.com ([209.85.161.174]:36854 "EHLO
+        mail-yw0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751865AbcKHStd (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Nov 2016 13:49:33 -0500
+Received: by mail-yw0-f174.google.com with SMTP id l124so187361066ywb.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Nov 2016 10:49:33 -0800 (PST)
 MIME-Version: 1.0
-Message-ID: <3f44f9ee-34f3-49b6-a041-1d417bb97c22@linuxsystems.it>
-In-Reply-To: <23ae5e65-f6f1-3167-abeb-65b99aeca7cd@wellbehavedsoftware.com>
+In-Reply-To: <1478572812.28957.4.camel@scientia.net>
 References: <2855552b-714c-d1de-08f9-89153c293772@wellbehavedsoftware.com>
- <e9a425e6-0f1a-42ca-8200-1cad1193f048@linuxsystems.it>
- <7c1d65d8-3a95-1a1b-761f-8d765ed4e3e3@wellbehavedsoftware.com>
- <15418748-e831-4056-b399-39e4f50369de@linuxsystems.it>
- <23ae5e65-f6f1-3167-abeb-65b99aeca7cd@wellbehavedsoftware.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+ <20161107140200.GM12522@suse.cz> <1478572812.28957.4.camel@scientia.net>
+From: Mark Fasheh <mark@fasheh.com>
+Date: Tue, 8 Nov 2016 10:49:31 -0800
+Message-ID: <CAGe7X7=Paj=04_yKYUWSNJW=5T_XMs4DSUVLtcxjn=QXAUM-YQ@mail.gmail.com>
+Subject: Re: Announcing btrfs-dedupe
+To: Christoph Anton Mitterer <calestyo@scientia.net>
+Cc: dsterba@suse.cz, James Pharaoh <james@wellbehavedsoftware.com>,
+        linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On martedì 8 novembre 2016 17:58:52 CET, James Pharaoh wrote:
-> Yes, everything you have described here is something I intend 
-> to create, and might as well include in the tool itself. I'll 
-> add it to the roadmap ;-)
+On Mon, Nov 7, 2016 at 6:40 PM, Christoph Anton Mitterer
+<calestyo@scientia.net> wrote:
+> On Mon, 2016-11-07 at 15:02 +0100, David Sterba wrote:
+>> I think adding a whole-file dedup mode to duperemove would be better
+>> (from user's POV) than writing a whole new tool
+>
+> What would IMO be really good from a user's POV was, if one of the
+> tools, deemed to be the "best", would be added to the btrfs-progs and
+> simply become "the official" one.
 
-Sounds good, but I have yet another feature request which is even more 
-interesting in my opinion.
-If you ever used snapper you probably already found yourself in the 
-poisition when you want to free some space and you actually can't, because 
-the files you want to delete are already present in countless snapshots. 
-Such a way you will have to delete the unwanted files from every snapshot, 
-which is tedious task, even more difficult if you moved/renamed these 
-files. What I actually do is exploiting duperemove's hashfile to grep for 
-the checksum and obtain all the paths. Then I will have to switch the 
-snapshots to rw, manually delete each file and finally switch them back to 
-ro. A tool which automates these task would be awesome.
+Yeah there's two problems, one being that the extent-same ioctl (and
+duperemove) is cross-file system now so I. The other one James touches
+on, which is that there's a non trivial amount of complexity in
+duperemove so shoving it in btrfs progs just means we're going to have
+parallel development streams solving some different problems.
 
-Niccolo'
+That's not to say that every dedupe tool has to be complex - we have
+xfs_io to run the ioctl and I don't think it'd be a bad idea if
+btrfs-progs had a simple interface to it too.
+   --Mark
+
+
+
+-- 
+"When the going gets weird, the weird turn pro."
+Hunter S. Thompson

@@ -1,71 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:46674 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932557AbcKHTsJ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Nov 2016 14:48:09 -0500
-Date: Tue, 8 Nov 2016 11:47:48 -0800
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: Mark Fasheh <mark@fasheh.com>
-Cc: Adam Borowski <kilobyte@angband.pl>, dsterba@suse.cz,
-        James Pharaoh <james@wellbehavedsoftware.com>,
-        linux-btrfs@vger.kernel.org, ocfs2-devel@oss.oracle.com
+Received: from mail-wm0-f45.google.com ([74.125.82.45]:35256 "EHLO
+        mail-wm0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932588AbcKHWg2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Nov 2016 17:36:28 -0500
+Received: by mail-wm0-f45.google.com with SMTP id a197so273981379wmd.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Nov 2016 14:36:28 -0800 (PST)
+Date: Tue, 8 Nov 2016 23:36:25 +0100
+From: Saint Germain <saintger@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: James Pharaoh <james@wellbehavedsoftware.com>
 Subject: Re: Announcing btrfs-dedupe
-Message-ID: <20161108194748.GC16801@birch.djwong.org>
+Message-ID: <20161108233625.1eff15df@system>
+In-Reply-To: <2855552b-714c-d1de-08f9-89153c293772@wellbehavedsoftware.com>
 References: <2855552b-714c-d1de-08f9-89153c293772@wellbehavedsoftware.com>
- <20161107140200.GM12522@suse.cz>
- <CAGe7X7n=xkveD4TS2cyfXx5-hydOCHTh=tjDK54h8HWpnK5NqQ@mail.gmail.com>
- <20161107205409.GA20325@angband.pl>
- <20161108021722.GA16801@birch.djwong.org>
- <CAGe7X7m-rPmGxk3DXuo6Vo5qAQwRhNFEKyRZzYxP2iyy1mGrSw@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAGe7X7m-rPmGxk3DXuo6Vo5qAQwRhNFEKyRZzYxP2iyy1mGrSw@mail.gmail.com>
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 08, 2016 at 10:59:56AM -0800, Mark Fasheh wrote:
-> On Mon, Nov 7, 2016 at 6:17 PM, Darrick J. Wong <darrick.wong@oracle.com> wrote:
-> > On Mon, Nov 07, 2016 at 09:54:09PM +0100, Adam Borowski wrote:
-> >> Mark has already included XFS in documentation of duperemove, all that looks
-> >> amiss is btrfs-extent-same having an obsolete name.  But then, I never did
-> >> any non-superficial tests on XFS, beyond "seems to work".
-> 
-> I'd actually be ok dropping btrfs-extent-same completely at this point
-> but I'm concerned that it would leave some users behind.
-> 
-> 
-> > /me wonders if ocfs2 will ever catch up to the reflink/dedupe party. ;)
-> 
-> Hey, Ocfs2 started the reflink party! But yeah it's fallen behind
-> since then with respect to cow and dedupe. More importantly though I'd
-> like to see some extra extent tracking in there like XFS did with the
-> reflink b+tree.
+On Sun, 6 Nov 2016 14:30:52 +0100, James Pharaoh
+<james@wellbehavedsoftware.com> wrote :
 
-Perhaps this should move to the ocfs2 list, but...
-
-...as I understand ocfs2, each inode can point to the head of a refcount
-tree that maintains refcounts for all the physical blocks that are
-mapped by any of the files that share that refcount tree.  It wouldn't
-be difficult to hook up this existing refcount structure to the reflink
-and dedupe vfs ioctls, with the huge caveat that both inodes will end up
-belonging to the same refcount tree (or the call fails).  This might not
-be such a huge issue for reflink since we're generally only using it
-during a file copy anyway, but for dedupe this could have disastrous
-consequences if someone does an fs-wide dedupe and every file in the fs
-ends up with the same refcount tree.
-
-So I guess you could give each block group its own refcount tree or
-something so that all the writes in the fs don't end up contending for a
-single data structure.
-
---D
-
->    --Mark
+> Hi all,
 > 
-> -- 
-> "When the going gets weird, the weird turn pro."
-> Hunter S. Thompson
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> I'm pleased to announce my btrfs deduplication utility, written in
+> Rust. This operates on whole files, is fast, and I believe
+> complements the existing utilities (duperemove, bedup), which exist
+> currently.
+> 
+> Please visit the homepage for more information:
+> 
+> http://btrfs-dedupe.com
+> 
+
+Thanks for having shared your work.
+Please be aware of these other similar softwares:
+- jdupes: https://github.com/jbruchon/jdupes
+- rmlint: https://github.com/sahib/rmlint
+And of course fdupes.
+
+Some intesting points I have seen in them:
+- use xxhash to identify potential duplicates (huge speedup)
+- ability to deduplicate read-only snapshots
+- identify potential reflinked files (see also my email here:
+  https://www.spinics.net/lists/linux-btrfs/msg60081.html)
+- ability to filter out hardlinks
+- triangle problem: see jdupes readme
+- jdupes has started the process to be included in Debian
+
+I hope that will help and that you can share some codes with them !
+

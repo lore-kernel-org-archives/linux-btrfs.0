@@ -1,82 +1,233 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:48508 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751454AbcKHBp6 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Nov 2016 20:45:58 -0500
-Subject: Re: [PATCH v2 02/14] btrfs-progs: check: introduce function to find
- dir_item
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>,
-        Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-References: <20160921031604.23334-1-quwenruo@cn.fujitsu.com>
- <20160921031604.23334-3-quwenruo@cn.fujitsu.com>
- <20161102152151.GH12522@twin.jikos.cz>
- <cedc76f5-fadc-c6d0-b491-eb16ccc3e15a@cn.fujitsu.com>
- <20161107170523.GR12522@twin.jikos.cz>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <405368c7-cbaf-92cd-02ec-45d87b843dbc@cn.fujitsu.com>
-Date: Tue, 8 Nov 2016 09:45:54 +0800
+Received: from userp1040.oracle.com ([156.151.31.81]:45793 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933116AbcKHMJy (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Nov 2016 07:09:54 -0500
+Subject: Re: [PATCH 11/13] btrfs: introduce device dynamic state transition to
+ offline or failed
+To: dsterba@suse.cz
+References: <1462889372-5274-1-git-send-email-anand.jain@oracle.com>
+ <1462889372-5274-13-git-send-email-anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <e12caf1b-ba09-954e-253b-93655df3a025@oracle.com>
+Date: Tue, 8 Nov 2016 20:12:31 +0800
 MIME-Version: 1.0
-In-Reply-To: <20161107170523.GR12522@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <1462889372-5274-13-git-send-email-anand.jain@oracle.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
+Hi David,
 
-At 11/08/2016 01:05 AM, David Sterba wrote:
-> On Thu, Nov 03, 2016 at 09:58:21AM +0800, Qu Wenruo wrote:
->>
->>
->> At 11/02/2016 11:21 PM, David Sterba wrote:
->>> On Wed, Sep 21, 2016 at 11:15:52AM +0800, Qu Wenruo wrote:
->>>> From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
->>>>
->>>> Introduce a new function find_dir_item() to find DIR_ITEM for the given
->>>> key, and check it with the specified INODE_REF/INODE_EXTREF match.
->>>>
->>>> Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
->>>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
->>>> ---
->>>>  cmds-check.c | 140 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
->>>>  1 file changed, 140 insertions(+)
->>>>
->>>> diff --git a/cmds-check.c b/cmds-check.c
->>>> index 998ba63..4e25804 100644
->>>> --- a/cmds-check.c
->>>> +++ b/cmds-check.c
->>>> @@ -3848,6 +3848,146 @@ out:
->>>>  	return err;
->>>>  }
->>>>
->>>> +#define ROOT_DIR_ERROR		(1<<1)	/* bad root_dir */
->>>> +#define DIR_ITEM_MISSING	(1<<2)	/* DIR_ITEM not found */
->>>> +#define DIR_ITEM_MISMATCH	(1<<3)	/* DIR_ITEM found but not match */
->>>
->>> What's the reason for another definition of the error codes? They're
->>> mostly copied from te I_ERR_* counterparts. I'd rather have one set of
->>> error codes.
->>
->> The main reason is, in lowmem fsck mode, we are not checking inodes or
->> ref/backref in batch.
->>
->> If using I_ERR and REF_ERR, we can mixing them up as they share the same
->> bits.
->>
->> So we introduced the new error bitmap, to make sure all error bits won't
->> cover each other.
->>
->> It may be better if we rearrange I_ERR/REF_ERR to avoid conflicts.
->> E.g, let REF_ERR_ starts from lowest bit and let I_ERR_ starts from high
->> bits.
+  This patch isn't integrated, so when there is flank/failing device,
+  btrfs would never stop sending new read/write to the device. Would
+  want to know your opinion if that the right/final behavior ?
+
+Thanks, Anand
+
+
+On 05/10/16 22:09, Anand Jain wrote:
+> From: Anand Jain <Anand.Jain@oracle.com>
 >
-> Yes please. Third namespace for existing error bits is not a good
-> option. Move the I_ERR bits to start from 32 and use them in the low-mem
-> code that's been merged to devel.
+> This patch provides helper functions to force a device to offline
+> or failed, and we need this device states for the following reasons,
+> 1) a. it can be reported that device has failed when it does
+>    b. close the device when it goes offline so that blocklayer can
+>       cleanup
+> 2) identify the candidate for the auto replace
+> 3) avoid further commit error reported against the failing device and
+> 4) a device in the multi device btrfs may go offline from the system
+>    (but as of now in in some system config btrfs gets unmounted in this
+>     context, which is not a correct behavior)
 >
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
+> Tested-by: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
+> ---
+> v6: Changes on top of
+>     btrfs: rename btrfs_std_error to btrfs_handle_fs_error
 >
-Should I submit a separate fix or replace the patchset?
-
-Thanks,
-Qu
-
-
+>  fs/btrfs/volumes.c | 131 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  fs/btrfs/volumes.h |  14 ++++++
+>  2 files changed, 145 insertions(+)
+>
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 5e13ffbe1fbd..8890cc0f7733 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -7197,3 +7197,134 @@ out:
+>  	free_extent_map(em);
+>  	return ret;
+>  }
+> +
+> +static void __close_device(struct work_struct *work)
+> +{
+> +	struct btrfs_device *device;
+> +
+> +	device = container_of(work, struct btrfs_device, rcu_work);
+> +
+> +	if (device->closing_bdev)
+> +		blkdev_put(device->closing_bdev, device->mode);
+> +
+> +	device->closing_bdev = NULL;
+> +}
+> +
+> +static void close_device(struct rcu_head *head)
+> +{
+> +	struct btrfs_device *device;
+> +
+> +	device = container_of(head, struct btrfs_device, rcu);
+> +
+> +	INIT_WORK(&device->rcu_work, __close_device);
+> +	schedule_work(&device->rcu_work);
+> +}
+> +
+> +void device_force_close(struct btrfs_device *device)
+> +{
+> +	struct btrfs_fs_devices *fs_devices;
+> +
+> +	fs_devices = device->fs_devices;
+> +
+> +	mutex_lock(&fs_devices->device_list_mutex);
+> +	mutex_lock(&fs_devices->fs_info->chunk_mutex);
+> +	spin_lock(&fs_devices->fs_info->free_chunk_lock);
+> +
+> +	btrfs_assign_next_active_device(fs_devices->fs_info, device, NULL);
+> +
+> +	if (device->bdev)
+> +		fs_devices->open_devices--;
+> +
+> +	if (device->writeable) {
+> +		list_del_init(&device->dev_alloc_list);
+> +		fs_devices->rw_devices--;
+> +	}
+> +	device->writeable = 0;
+> +
+> +	/*
+> +	 * fixme: works for now, but its better to keep the state of
+> +	 * missing and offline different, and update rest of the
+> +	 * places where we check for only missing and not for failed
+> +	 * or offline as of now.
+> +	 */
+> +	device->missing = 1;
+> +	fs_devices->missing_devices++;
+> +	device->closing_bdev = device->bdev;
+> +	device->bdev = NULL;
+> +
+> +	call_rcu(&device->rcu, close_device);
+> +
+> +	spin_unlock(&fs_devices->fs_info->free_chunk_lock);
+> +	mutex_unlock(&fs_devices->fs_info->chunk_mutex);
+> +	mutex_unlock(&fs_devices->device_list_mutex);
+> +
+> +	rcu_barrier();
+> +}
+> +
+> +void btrfs_device_enforce_state(struct btrfs_device *dev, char *why)
+> +{
+> +	int tolerance;
+> +	bool degrade_option;
+> +	char dev_status[10];
+> +	char chunk_status[25];
+> +	struct btrfs_fs_info *fs_info;
+> +	struct btrfs_fs_devices *fs_devices;
+> +
+> +	fs_devices = dev->fs_devices;
+> +	fs_info = fs_devices->fs_info;
+> +	degrade_option = btrfs_test_opt(fs_info->fs_root, DEGRADED);
+> +
+> +	/* todo: support seed later */
+> +	if (fs_devices->seeding)
+> +		return;
+> +
+> +	/* this shouldn't be called if device is already missing */
+> +	if (dev->missing || !dev->bdev)
+> +		return;
+> +
+> +	if (dev->offline || dev->failed)
+> +		return;
+> +
+> +	/* Only RW device is requested to force close let FS handle it*/
+> +	if (fs_devices->rw_devices == 1) {
+> +		btrfs_handle_fs_error(fs_info, -EIO,
+> +			"force offline last RW device");
+> +		return;
+> +	}
+> +
+> +	if (!strcmp(why, "offline"))
+> +		dev->offline = 1;
+> +	else if (!strcmp(why, "failed"))
+> +		dev->failed = 1;
+> +	else
+> +		return;
+> +
+> +	/*
+> +	 * Here after, there shouldn't any reason why can't force
+> +	 * close this device
+> +	 */
+> +	btrfs_sysfs_rm_device_link(fs_devices, dev);
+> +	device_force_close(dev);
+> +	strcpy(dev_status, "closed");
+> +
+> +	tolerance = btrfs_check_degradable(fs_info,
+> +						fs_info->sb->s_flags);
+> +	if (tolerance > 0) {
+> +		strncpy(chunk_status, "chunk(s) degraded", 25);
+> +	} else if(tolerance < 0) {
+> +		strncpy(chunk_status, "chunk(s) failed", 25);
+> +	} else {
+> +		strncpy(chunk_status, "No chunk(s) are degraded", 25);
+> +	}
+> +
+> +	btrfs_warn_in_rcu(fs_info, "device %s marked %s, %s, %s",
+> +		rcu_str_deref(dev->name), why, dev_status, chunk_status);
+> +	btrfs_info_in_rcu(fs_info,
+> +		"num_devices %llu rw_devices %llu degraded-option: %s",
+> +		fs_devices->num_devices, fs_devices->rw_devices,
+> +		degrade_option ? "set":"unset");
+> +
+> +	if (tolerance < 0)
+> +		btrfs_handle_fs_error(fs_info, -EIO, "devices below critical level");
+> +
+> +}
+> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+> index 04b65b56c378..c7d4c658a0c4 100644
+> --- a/fs/btrfs/volumes.h
+> +++ b/fs/btrfs/volumes.h
+> @@ -66,13 +66,26 @@ struct btrfs_device {
+>  	struct btrfs_pending_bios pending_sync_bios;
+>
+>  	struct block_device *bdev;
+> +	struct block_device *closing_bdev;
+>
+>  	/* the mode sent to blkdev_get */
+>  	fmode_t mode;
+>
+>  	int writeable;
+>  	int in_fs_metadata;
+> +	/* missing: device wasn't found at the time of mount */
+>  	int missing;
+> +	/* failed: device confirmed to have experienced critical io failure */
+> +	int failed;
+> +	/*
+> +	 * offline: system or user or block layer transport has removed
+> +	 * offlined the device which was once present and without going
+> +	 * through unmount. Implies an intriem communication break down
+> +	 * and not necessarily a candidate for the device replace. And
+> +	 * device might be online after user intervention or after
+> +	 * block transport layer error recovery.
+> +	 */
+> +	int offline;
+>  	int can_discard;
+>  	int is_tgtdev_for_dev_replace;
+>
+> @@ -534,5 +547,6 @@ struct list_head *btrfs_get_fs_uuids(void);
+>  void btrfs_set_fs_info_ptr(struct btrfs_fs_info *fs_info);
+>  void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info);
+>  int btrfs_check_degradable(struct btrfs_fs_info *fs_info, unsigned flags);
+> +void btrfs_device_enforce_state(struct btrfs_device *dev, char *why);
+>
+>  #endif
+>

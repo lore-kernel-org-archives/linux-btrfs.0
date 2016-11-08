@@ -1,122 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56204 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753576AbcKYNEY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 Nov 2016 08:04:24 -0500
-Date: Fri, 25 Nov 2016 14:04:10 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Sanidhya Solanki <lkml.page@gmail.com>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org,
-        dsterba@suse.cz
-Subject: Re: [PATCH v3 2/3] btrfs: Add trace point for qgroup reserved space
-Message-ID: <20161125130410.GW12522@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20161108022044.686-1-quwenruo@cn.fujitsu.com>
- <20161108022044.686-2-quwenruo@cn.fujitsu.com>
- <20161108062712.180770ba@ad>
+Received: from cn.fujitsu.com ([222.73.24.84]:28108 "EHLO song.cn.fujitsu.com"
+        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+        id S1752158AbcKHCVU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 7 Nov 2016 21:21:20 -0500
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: [PATCH v3 1/3] btrfs: Add WARN_ON for qgroup reserved underflow
+Date: Tue,  8 Nov 2016 10:20:42 +0800
+Message-Id: <20161108022044.686-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20161108062712.180770ba@ad>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 08, 2016 at 06:27:12AM -0500, Sanidhya Solanki wrote:
-> On Tue,  8 Nov 2016 10:20:43 +0800
-> Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
-> 
-> > Introduce the following trace points:
-> > qgroup_update_reserve
-> > qgroup_meta_reserve
-> > 
-> > These trace points are handy to trace qgroup reserve space related
-> > problems.
-> > 
-> > Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> > ---
-> > Although I hope these trace points will not be used again.
-> > 
-> > v2:
-> >   None
-> > v3:
-> >   Separate from trace point timing modification patch.
-> > ---
-> >  fs/btrfs/qgroup.c            | 15 +++++++++++++++
-> >  include/trace/events/btrfs.h | 43 +++++++++++++++++++++++++++++++++++++++++++
-> >  2 files changed, 58 insertions(+)
-> > 
-> > diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-> > index fc0c64e..c00f962 100644
-> > --- a/fs/btrfs/qgroup.c
-> > +++ b/fs/btrfs/qgroup.c
-> > @@ -1068,6 +1068,8 @@ static int __qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
-> >  	qgroup->excl += sign * num_bytes;
-> >  	qgroup->excl_cmpr += sign * num_bytes;
-> >  	if (sign > 0) {
-> > +		trace_qgroup_update_reserve(fs_info, qgroup->qgroupid,
-> > +					    qgroup->reserved, (s64)-num_bytes);
-> >  		if (WARN_ON(qgroup->reserved < num_bytes))
-> >  			report_reserved_underflow(fs_info, qgroup,
-> >  						  num_bytes);
-> > @@ -1094,6 +1096,9 @@ static int __qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
-> >  		WARN_ON(sign < 0 && qgroup->excl < num_bytes);
-> >  		qgroup->excl += sign * num_bytes;
-> >  		if (sign > 0) {
-> > +			trace_qgroup_update_reserve(fs_info, qgroup->qgroupid,
-> > +						    qgroup->reserved,
-> > +						    (s64)-num_bytes);
-> >  			if (WARN_ON(qgroup->reserved < num_bytes))
-> >  				report_reserved_underflow(fs_info, qgroup,
-> >  							  num_bytes);
-> > @@ -2178,6 +2183,8 @@ static int qgroup_reserve(struct btrfs_root *root, u64 num_bytes)
-> >  
-> >  		qg = u64_to_ptr(unode->aux);
-> >  
-> > +		trace_qgroup_update_reserve(fs_info, qg->qgroupid,
-> > +					    qg->reserved, num_bytes);
-> >  		qg->reserved += num_bytes;
-> >  	}
-> >  
-> > @@ -2223,6 +2230,8 @@ void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
-> >  
-> >  		qg = u64_to_ptr(unode->aux);
-> >  
-> > +		trace_qgroup_update_reserve(fs_info, qg->qgroupid,
-> > +					    qg->reserved, (s64)-num_bytes);
-> >  		if (WARN_ON(qgroup->reserved < num_bytes))
-> >  			report_reserved_underflow(fs_info, qgroup, num_bytes);
-> >  		else
-> > @@ -2706,6 +2715,8 @@ int btrfs_qgroup_reserve_meta(struct btrfs_root *root, int num_bytes)
-> >  		return 0;
-> >  
-> >  	BUG_ON(num_bytes != round_down(num_bytes, root->nodesize));
-> > +	trace_qgroup_meta_reserve(root->fs_info, root->objectid,
-> > +				  (s64)num_bytes);
-> >  	ret = qgroup_reserve(root, num_bytes);
-> >  	if (ret < 0)
-> >  		return ret;
-> > @@ -2724,6 +2735,8 @@ void btrfs_qgroup_free_meta_all(struct btrfs_root *root)
-> >  	reserved = atomic_xchg(&root->qgroup_meta_rsv, 0);
-> >  	if (reserved == 0)
-> >  		return;
-> > +	trace_qgroup_meta_reserve(root->fs_info, root->objectid,
-> > +				  (s64)-reserved);
-> >  	qgroup_free(root, reserved);
-> >  }
-> >  
-> > @@ -2736,6 +2749,8 @@ void btrfs_qgroup_free_meta(struct btrfs_root *root, int num_bytes)
-> >  	BUG_ON(num_bytes != round_down(num_bytes, root->nodesize));
-> >  	WARN_ON(atomic_read(&root->qgroup_meta_rsv) < num_bytes);
-> >  	atomic_sub(num_bytes, &root->qgroup_meta_rsv);
-> > +	trace_qgroup_meta_reserve(root->fs_info, root->objectid,
-> > +				  (s64)-num_bytes);
-> >  	qgroup_free(root, num_bytes);
-> >  }
-> 
-> Why is there a hyphen in some places after "(s64)" and not in others? Is that supposed to be
-> type casting or something else?
+Goldwyn Rodrigues has exposed and fixed a bug which underflows btrfs
+qgroup reserved space, and leads to non-writable fs.
 
-Right, this looks strange and not clear from the context, besides that
-the typecast should precede negation: -(s64)num_bytes
+This reminds us that we don't have enough underflow check for qgroup
+reserved space.
 
-There's also a type mismatch in the 2nd tracepoint, where argument is
-s64, the tracepoint entry is u64 and printf format is %lld.
+For underflow case, we should not really underflow the numbers but warn
+and keeps qgroup still work.
+
+So add more check on qgroup reserved space and add WARN_ON() and
+btrfs_warn() for any underflow case.
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Reviewed-by: David Sterba <dsterba@suse.com>
+---
+v2:
+  Add btrfs_warn() output for fsid, qgroupid, original reserved space and
+  num_bytes to reduce, for end-user to locate the subvolume causing the
+  problem. Suggested by David.
+v3:
+  None
+---
+ fs/btrfs/qgroup.c | 32 +++++++++++++++++++++++++++-----
+ 1 file changed, 27 insertions(+), 5 deletions(-)
+
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 11f4fff..fc0c64e 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1031,6 +1031,15 @@ static void qgroup_dirty(struct btrfs_fs_info *fs_info,
+ 		list_add(&qgroup->dirty, &fs_info->dirty_qgroups);
+ }
+ 
++static void report_reserved_underflow(struct btrfs_fs_info *fs_info,
++				      struct btrfs_qgroup *qgroup,
++				      u64 num_bytes)
++{
++	btrfs_warn(fs_info,
++		"qgroup %llu reserved space underflow, have: %llu, to free: %llu",
++		qgroup->qgroupid, qgroup->reserved, num_bytes);
++	qgroup->reserved = 0;
++}
+ /*
+  * The easy accounting, if we are adding/removing the only ref for an extent
+  * then this qgroup and all of the parent qgroups get their reference and
+@@ -1058,8 +1067,13 @@ static int __qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
+ 	WARN_ON(sign < 0 && qgroup->excl < num_bytes);
+ 	qgroup->excl += sign * num_bytes;
+ 	qgroup->excl_cmpr += sign * num_bytes;
+-	if (sign > 0)
+-		qgroup->reserved -= num_bytes;
++	if (sign > 0) {
++		if (WARN_ON(qgroup->reserved < num_bytes))
++			report_reserved_underflow(fs_info, qgroup,
++						  num_bytes);
++		else
++			qgroup->reserved -= num_bytes;
++	}
+ 
+ 	qgroup_dirty(fs_info, qgroup);
+ 
+@@ -1079,8 +1093,13 @@ static int __qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
+ 		qgroup->rfer_cmpr += sign * num_bytes;
+ 		WARN_ON(sign < 0 && qgroup->excl < num_bytes);
+ 		qgroup->excl += sign * num_bytes;
+-		if (sign > 0)
+-			qgroup->reserved -= num_bytes;
++		if (sign > 0) {
++			if (WARN_ON(qgroup->reserved < num_bytes))
++				report_reserved_underflow(fs_info, qgroup,
++							  num_bytes);
++			else
++				qgroup->reserved -= num_bytes;
++		}
+ 		qgroup->excl_cmpr += sign * num_bytes;
+ 		qgroup_dirty(fs_info, qgroup);
+ 
+@@ -2204,7 +2223,10 @@ void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
+ 
+ 		qg = u64_to_ptr(unode->aux);
+ 
+-		qg->reserved -= num_bytes;
++		if (WARN_ON(qgroup->reserved < num_bytes))
++			report_reserved_underflow(fs_info, qgroup, num_bytes);
++		else
++			qgroup->reserved -= num_bytes;
+ 
+ 		list_for_each_entry(glist, &qg->groups, next_group) {
+ 			ret = ulist_add(fs_info->qgroup_ulist,
+-- 
+2.10.2
+
+
+

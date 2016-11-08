@@ -1,29 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:45793 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933116AbcKHMJy (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Nov 2016 07:09:54 -0500
-Subject: Re: [PATCH 11/13] btrfs: introduce device dynamic state transition to
- offline or failed
-To: dsterba@suse.cz
+Received: from aserp1040.oracle.com ([141.146.126.69]:33977 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932863AbcKHMP5 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Nov 2016 07:15:57 -0500
+Subject: Re: [PATCH 12/13] btrfs: check device for critical errors and mark
+ failed
+To: linux-btrfs@vger.kernel.org
 References: <1462889372-5274-1-git-send-email-anand.jain@oracle.com>
- <1462889372-5274-13-git-send-email-anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
+ <1462889372-5274-14-git-send-email-anand.jain@oracle.com>
+Cc: dsterba@suse.cz, yauhen.kharuzhy@zavadatar.com
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <e12caf1b-ba09-954e-253b-93655df3a025@oracle.com>
-Date: Tue, 8 Nov 2016 20:12:31 +0800
+Message-ID: <a8d004c7-2690-3851-c419-6d2df140b6e0@oracle.com>
+Date: Tue, 8 Nov 2016 20:18:13 +0800
 MIME-Version: 1.0
-In-Reply-To: <1462889372-5274-13-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1462889372-5274-14-git-send-email-anand.jain@oracle.com>
 Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-Hi David,
-
-  This patch isn't integrated, so when there is flank/failing device,
-  btrfs would never stop sending new read/write to the device. Would
-  want to know your opinion if that the right/final behavior ?
+  This patch is independent of the hot-space as such.
+  11/13 introduced new device state. This patch 12/13
+  brings the device to those new device states up on errors.
+  Would like to know your opinion on this as well.
 
 Thanks, Anand
 
@@ -31,203 +30,228 @@ Thanks, Anand
 On 05/10/16 22:09, Anand Jain wrote:
 > From: Anand Jain <Anand.Jain@oracle.com>
 >
-> This patch provides helper functions to force a device to offline
-> or failed, and we need this device states for the following reasons,
-> 1) a. it can be reported that device has failed when it does
->    b. close the device when it goes offline so that blocklayer can
->       cleanup
-> 2) identify the candidate for the auto replace
-> 3) avoid further commit error reported against the failing device and
-> 4) a device in the multi device btrfs may go offline from the system
->    (but as of now in in some system config btrfs gets unmounted in this
->     context, which is not a correct behavior)
+> Write and Flush errors are considered as critical errors,
+> upon which the device will be brought offline and marked as
+> failed. Write and Flush errors are identified using device
+> error statistics. This is monitored using a kthread
+> btrfs_health.
 >
 > Signed-off-by: Anand Jain <anand.jain@oracle.com>
 > Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
 > Tested-by: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
 > ---
-> v6: Changes on top of
->     btrfs: rename btrfs_std_error to btrfs_handle_fs_error
+> V6: Fix the case where the fail monitor would clash with user initated
+>     device operation.
 >
->  fs/btrfs/volumes.c | 131 +++++++++++++++++++++++++++++++++++++++++++++++++++++
->  fs/btrfs/volumes.h |  14 ++++++
->  2 files changed, 145 insertions(+)
+>  fs/btrfs/ctree.h   |   2 ++
+>  fs/btrfs/disk-io.c | 101 ++++++++++++++++++++++++++++++++++++++++++++++++++++-
+>  fs/btrfs/volumes.c |   1 +
+>  fs/btrfs/volumes.h |   4 +++
+>  4 files changed, 107 insertions(+), 1 deletion(-)
 >
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index aa693cfdc9f0..47e9cd9dd29a 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -1569,6 +1569,7 @@ struct btrfs_fs_info {
+>  	struct mutex tree_log_mutex;
+>  	struct mutex transaction_kthread_mutex;
+>  	struct mutex cleaner_mutex;
+> +	struct mutex health_mutex;
+>  	struct mutex chunk_mutex;
+>  	struct mutex volume_mutex;
+>
+> @@ -1686,6 +1687,7 @@ struct btrfs_fs_info {
+>  	struct btrfs_workqueue *extent_workers;
+>  	struct task_struct *transaction_kthread;
+>  	struct task_struct *cleaner_kthread;
+> +	struct task_struct *health_kthread;
+>  	int thread_pool_size;
+>
+>  	struct kobject *space_info_kobj;
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index b0648af4951d..8b538443fcd0 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -1876,6 +1876,93 @@ sleep:
+>  	return 0;
+>  }
+>
+> +/*
+> + * returns:
+> + * < 0 : Check didn't run, std error
+> + *   0 : No errors found
+> + * > 0 : # of devices having fatal errors
+> + */
+> +static int btrfs_update_devices_health(struct btrfs_root *root)
+> +{
+> +	int ret = 0;
+> +	struct btrfs_device *device;
+> +	struct btrfs_fs_info *fs_info = root->fs_info;
+> +
+> +	if (btrfs_fs_closing(fs_info))
+> +		return -EBUSY;
+> +
+> +	/* mark disk(s) with write or flush error(s) as failed */
+> +	mutex_lock(&fs_info->volume_mutex);
+> +	list_for_each_entry_rcu(device,
+> +			&fs_info->fs_devices->devices, dev_list) {
+> +		int c_err;
+> +
+> +		if (device->failed) {
+> +			ret++;
+> +			continue;
+> +		}
+> +
+> +		/*
+> +		 * todo: replace target device's write/flush error,
+> +		 * skip for now
+> +		 */
+> +		if (device->is_tgtdev_for_dev_replace)
+> +			continue;
+> +
+> +		if (!device->dev_stats_valid)
+> +			continue;
+> +
+> +		c_err = atomic_read(&device->new_critical_errs);
+> +		atomic_sub(c_err, &device->new_critical_errs);
+> +		if (c_err) {
+> +			btrfs_crit_in_rcu(fs_info,
+> +				"fatal error on device %s",
+> +					rcu_str_deref(device->name));
+> +			btrfs_device_enforce_state(device, "failed");
+> +			ret ++;
+> +		}
+> +	}
+> +	mutex_unlock(&fs_info->volume_mutex);
+> +
+> +	return ret;
+> +}
+> +
+> +/*
+> + * Devices health maintenance kthread, gets woken-up by transaction
+> + * kthread, once sysfs is ready, this should publish the report
+> + * through sysfs so that user land scripts and invoke actions.
+> + */
+> +static int health_kthread(void *arg)
+> +{
+> +	struct btrfs_root *root = arg;
+> +
+> +	do {
+> +		if (btrfs_need_cleaner_sleep(root))
+> +			goto sleep;
+> +
+> +		if (!mutex_trylock(&root->fs_info->health_mutex))
+> +			goto sleep;
+> +
+> +		if (btrfs_need_cleaner_sleep(root)) {
+> +			mutex_unlock(&root->fs_info->health_mutex);
+> +			goto sleep;
+> +		}
+> +
+> +		/* Check devices health */
+> +		btrfs_update_devices_health(root);
+> +
+> +		mutex_unlock(&root->fs_info->health_mutex);
+> +
+> +sleep:
+> +		set_current_state(TASK_INTERRUPTIBLE);
+> +		if (!kthread_should_stop())
+> +			schedule();
+> +		__set_current_state(TASK_RUNNING);
+> +	} while (!kthread_should_stop());
+> +
+> +	return 0;
+> +}
+> +
+>  static int transaction_kthread(void *arg)
+>  {
+>  	struct btrfs_root *root = arg;
+> @@ -1922,6 +2009,7 @@ static int transaction_kthread(void *arg)
+>  			btrfs_end_transaction(trans, root);
+>  		}
+>  sleep:
+> +		wake_up_process(root->fs_info->health_kthread);
+>  		wake_up_process(root->fs_info->cleaner_kthread);
+>  		mutex_unlock(&root->fs_info->transaction_kthread_mutex);
+>
+> @@ -2668,6 +2756,7 @@ int open_ctree(struct super_block *sb,
+>  	mutex_init(&fs_info->chunk_mutex);
+>  	mutex_init(&fs_info->transaction_kthread_mutex);
+>  	mutex_init(&fs_info->cleaner_mutex);
+> +	mutex_init(&fs_info->health_mutex);
+>  	mutex_init(&fs_info->volume_mutex);
+>  	mutex_init(&fs_info->ro_block_group_mutex);
+>  	init_rwsem(&fs_info->commit_root_sem);
+> @@ -3010,11 +3099,16 @@ retry_root_backup:
+>  	if (IS_ERR(fs_info->cleaner_kthread))
+>  		goto fail_sysfs;
+>
+> +	fs_info->health_kthread = kthread_run(health_kthread, tree_root,
+> +					       "btrfs-health");
+> +	if (IS_ERR(fs_info->health_kthread))
+> +		goto fail_cleaner;
+> +
+>  	fs_info->transaction_kthread = kthread_run(transaction_kthread,
+>  						   tree_root,
+>  						   "btrfs-transaction");
+>  	if (IS_ERR(fs_info->transaction_kthread))
+> -		goto fail_cleaner;
+> +		goto fail_health;
+>
+>  	if (!btrfs_test_opt(tree_root, SSD) &&
+>  	    !btrfs_test_opt(tree_root, NOSSD) &&
+> @@ -3178,6 +3272,10 @@ fail_trans_kthread:
+>  	kthread_stop(fs_info->transaction_kthread);
+>  	btrfs_cleanup_transaction(fs_info->tree_root);
+>  	btrfs_free_fs_roots(fs_info);
+> +
+> +fail_health:
+> +	kthread_stop(fs_info->health_kthread);
+> +
+>  fail_cleaner:
+>  	kthread_stop(fs_info->cleaner_kthread);
+>
+> @@ -3833,6 +3931,7 @@ void close_ctree(struct btrfs_root *root)
+>
+>  	kthread_stop(fs_info->transaction_kthread);
+>  	kthread_stop(fs_info->cleaner_kthread);
+> +	kthread_stop(fs_info->health_kthread);
+>
+>  	fs_info->closing = 2;
+>  	smp_mb();
 > diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 5e13ffbe1fbd..8890cc0f7733 100644
+> index 1190e048c7c9..c6aeed73c106 100644
 > --- a/fs/btrfs/volumes.c
 > +++ b/fs/btrfs/volumes.c
-> @@ -7197,3 +7197,134 @@ out:
->  	free_extent_map(em);
->  	return ret;
->  }
-> +
-> +static void __close_device(struct work_struct *work)
-> +{
-> +	struct btrfs_device *device;
-> +
-> +	device = container_of(work, struct btrfs_device, rcu_work);
-> +
-> +	if (device->closing_bdev)
-> +		blkdev_put(device->closing_bdev, device->mode);
-> +
-> +	device->closing_bdev = NULL;
-> +}
-> +
-> +static void close_device(struct rcu_head *head)
-> +{
-> +	struct btrfs_device *device;
-> +
-> +	device = container_of(head, struct btrfs_device, rcu);
-> +
-> +	INIT_WORK(&device->rcu_work, __close_device);
-> +	schedule_work(&device->rcu_work);
-> +}
-> +
-> +void device_force_close(struct btrfs_device *device)
-> +{
-> +	struct btrfs_fs_devices *fs_devices;
-> +
-> +	fs_devices = device->fs_devices;
-> +
-> +	mutex_lock(&fs_devices->device_list_mutex);
-> +	mutex_lock(&fs_devices->fs_info->chunk_mutex);
-> +	spin_lock(&fs_devices->fs_info->free_chunk_lock);
-> +
-> +	btrfs_assign_next_active_device(fs_devices->fs_info, device, NULL);
-> +
-> +	if (device->bdev)
-> +		fs_devices->open_devices--;
-> +
-> +	if (device->writeable) {
-> +		list_del_init(&device->dev_alloc_list);
-> +		fs_devices->rw_devices--;
-> +	}
-> +	device->writeable = 0;
-> +
-> +	/*
-> +	 * fixme: works for now, but its better to keep the state of
-> +	 * missing and offline different, and update rest of the
-> +	 * places where we check for only missing and not for failed
-> +	 * or offline as of now.
-> +	 */
-> +	device->missing = 1;
-> +	fs_devices->missing_devices++;
-> +	device->closing_bdev = device->bdev;
-> +	device->bdev = NULL;
-> +
-> +	call_rcu(&device->rcu, close_device);
-> +
-> +	spin_unlock(&fs_devices->fs_info->free_chunk_lock);
-> +	mutex_unlock(&fs_devices->fs_info->chunk_mutex);
-> +	mutex_unlock(&fs_devices->device_list_mutex);
-> +
-> +	rcu_barrier();
-> +}
-> +
-> +void btrfs_device_enforce_state(struct btrfs_device *dev, char *why)
-> +{
-> +	int tolerance;
-> +	bool degrade_option;
-> +	char dev_status[10];
-> +	char chunk_status[25];
-> +	struct btrfs_fs_info *fs_info;
-> +	struct btrfs_fs_devices *fs_devices;
-> +
-> +	fs_devices = dev->fs_devices;
-> +	fs_info = fs_devices->fs_info;
-> +	degrade_option = btrfs_test_opt(fs_info->fs_root, DEGRADED);
-> +
-> +	/* todo: support seed later */
-> +	if (fs_devices->seeding)
-> +		return;
-> +
-> +	/* this shouldn't be called if device is already missing */
-> +	if (dev->missing || !dev->bdev)
-> +		return;
-> +
-> +	if (dev->offline || dev->failed)
-> +		return;
-> +
-> +	/* Only RW device is requested to force close let FS handle it*/
-> +	if (fs_devices->rw_devices == 1) {
-> +		btrfs_handle_fs_error(fs_info, -EIO,
-> +			"force offline last RW device");
-> +		return;
-> +	}
-> +
-> +	if (!strcmp(why, "offline"))
-> +		dev->offline = 1;
-> +	else if (!strcmp(why, "failed"))
-> +		dev->failed = 1;
-> +	else
-> +		return;
-> +
-> +	/*
-> +	 * Here after, there shouldn't any reason why can't force
-> +	 * close this device
-> +	 */
-> +	btrfs_sysfs_rm_device_link(fs_devices, dev);
-> +	device_force_close(dev);
-> +	strcpy(dev_status, "closed");
-> +
-> +	tolerance = btrfs_check_degradable(fs_info,
-> +						fs_info->sb->s_flags);
-> +	if (tolerance > 0) {
-> +		strncpy(chunk_status, "chunk(s) degraded", 25);
-> +	} else if(tolerance < 0) {
-> +		strncpy(chunk_status, "chunk(s) failed", 25);
-> +	} else {
-> +		strncpy(chunk_status, "No chunk(s) are degraded", 25);
-> +	}
-> +
-> +	btrfs_warn_in_rcu(fs_info, "device %s marked %s, %s, %s",
-> +		rcu_str_deref(dev->name), why, dev_status, chunk_status);
-> +	btrfs_info_in_rcu(fs_info,
-> +		"num_devices %llu rw_devices %llu degraded-option: %s",
-> +		fs_devices->num_devices, fs_devices->rw_devices,
-> +		degrade_option ? "set":"unset");
-> +
-> +	if (tolerance < 0)
-> +		btrfs_handle_fs_error(fs_info, -EIO, "devices below critical level");
-> +
-> +}
+> @@ -233,6 +233,7 @@ static struct btrfs_device *__alloc_device(void)
+>  	spin_lock_init(&dev->reada_lock);
+>  	atomic_set(&dev->reada_in_flight, 0);
+>  	atomic_set(&dev->dev_stats_ccnt, 0);
+> +	atomic_set(&dev->new_critical_errs, 0);
+>  	btrfs_device_data_ordered_init(dev);
+>  	INIT_RADIX_TREE(&dev->reada_zones, GFP_NOFS & ~__GFP_DIRECT_RECLAIM);
+>  	INIT_RADIX_TREE(&dev->reada_extents, GFP_NOFS & ~__GFP_DIRECT_RECLAIM);
 > diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-> index 04b65b56c378..c7d4c658a0c4 100644
+> index 60eb098d8c76..1ad63ce5d328 100644
 > --- a/fs/btrfs/volumes.h
 > +++ b/fs/btrfs/volumes.h
-> @@ -66,13 +66,26 @@ struct btrfs_device {
->  	struct btrfs_pending_bios pending_sync_bios;
+> @@ -167,6 +167,7 @@ struct btrfs_device {
+>  	/* Counter to record the change of device stats */
+>  	atomic_t dev_stats_ccnt;
+>  	atomic_t dev_stat_values[BTRFS_DEV_STAT_VALUES_MAX];
+> +	atomic_t new_critical_errs;
+>  };
 >
->  	struct block_device *bdev;
-> +	struct block_device *closing_bdev;
+>  /*
+> @@ -537,6 +538,9 @@ static inline void btrfs_dev_stat_inc(struct btrfs_device *dev,
+>  	atomic_inc(dev->dev_stat_values + index);
+>  	smp_mb__before_atomic();
+>  	atomic_inc(&dev->dev_stats_ccnt);
+> +	if (index == BTRFS_DEV_STAT_WRITE_ERRS ||
+> +		index == BTRFS_DEV_STAT_FLUSH_ERRS)
+> +		atomic_inc(&dev->new_critical_errs);
+>  }
 >
->  	/* the mode sent to blkdev_get */
->  	fmode_t mode;
->
->  	int writeable;
->  	int in_fs_metadata;
-> +	/* missing: device wasn't found at the time of mount */
->  	int missing;
-> +	/* failed: device confirmed to have experienced critical io failure */
-> +	int failed;
-> +	/*
-> +	 * offline: system or user or block layer transport has removed
-> +	 * offlined the device which was once present and without going
-> +	 * through unmount. Implies an intriem communication break down
-> +	 * and not necessarily a candidate for the device replace. And
-> +	 * device might be online after user intervention or after
-> +	 * block transport layer error recovery.
-> +	 */
-> +	int offline;
->  	int can_discard;
->  	int is_tgtdev_for_dev_replace;
->
-> @@ -534,5 +547,6 @@ struct list_head *btrfs_get_fs_uuids(void);
->  void btrfs_set_fs_info_ptr(struct btrfs_fs_info *fs_info);
->  void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info);
->  int btrfs_check_degradable(struct btrfs_fs_info *fs_info, unsigned flags);
-> +void btrfs_device_enforce_state(struct btrfs_device *dev, char *why);
->
->  #endif
+>  static inline int btrfs_dev_stat_read(struct btrfs_device *dev,
 >

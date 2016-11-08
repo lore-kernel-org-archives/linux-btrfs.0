@@ -1,37 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from kiara-balancer-1.wellbehavedsoftware.com ([138.201.134.108]:59936
-        "EHLO kiara-balancer-1.wellbehavedsoftware.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1753137AbcKHGL5 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 8 Nov 2016 01:11:57 -0500
+Received: from mail.linuxsystems.it ([79.7.78.67]:50398 "EHLO
+        mail.linuxsystems.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932607AbcKHLQA (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Nov 2016 06:16:00 -0500
+From: =?iso-8859-1?Q?Niccol=F2_Belli?= <darkbasic@linuxsystems.it>
+To: James Pharaoh <james@wellbehavedsoftware.com>
+Cc: <linux-btrfs@vger.kernel.org>
 Subject: Re: Announcing btrfs-dedupe
-To: Christoph Anton Mitterer <calestyo@scientia.net>, dsterba@suse.cz
-References: <2855552b-714c-d1de-08f9-89153c293772@wellbehavedsoftware.com>
- <20161107140200.GM12522@suse.cz> <1478572812.28957.4.camel@scientia.net>
-Cc: linux-btrfs@vger.kernel.org, mark@fasheh.com
-From: James Pharaoh <james@wellbehavedsoftware.com>
-Message-ID: <4382e152-9984-fd31-5aa2-cf0a721517b0@wellbehavedsoftware.com>
-Date: Tue, 8 Nov 2016 07:11:51 +0100
+Date: Tue, 08 Nov 2016 12:06:01 +0100
 MIME-Version: 1.0
-In-Reply-To: <1478572812.28957.4.camel@scientia.net>
+Message-ID: <e9a425e6-0f1a-42ca-8200-1cad1193f048@linuxsystems.it>
+In-Reply-To: <2855552b-714c-d1de-08f9-89153c293772@wellbehavedsoftware.com>
+References: <2855552b-714c-d1de-08f9-89153c293772@wellbehavedsoftware.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Perhaps the complexity of doing this efficiently makes it inappropriate 
-for inclusion in the tool itself, whereas I believe the core 
-implementation's focus is on in-band deduplication, automatic and behind 
-the scenes.
+Nice, you should probably update the btrfs wiki as well, because there is 
+no mention of btrfs-dedupe.
 
-On 08/11/16 03:40, Christoph Anton Mitterer wrote:
-> On Mon, 2016-11-07 at 15:02 +0100, David Sterba wrote:
->> I think adding a whole-file dedup mode to duperemove would be better
->> (from user's POV) than writing a whole new tool
->
-> What would IMO be really good from a user's POV was, if one of the
-> tools, deemed to be the "best", would be added to the btrfs-progs and
-> simply become "the official" one.
->
-> Cheers,
-> Chris.
->
+First question, why this name? Don't you plan to support xfs as well?
+
+Second question, I'm trying deduplication tools for the very first time and 
+I still have to figure out how to handle snapper snapshots, which are read 
+only. I currently tried duperemove 0.11 git and I get tons of "Error 30: 
+Read-only file system while opening "/.../@snapshots/4385/...". How am I 
+supposed to handle snapper snapshots?
+
+I do not run duperemove from a live distro, instead I run it directly on 
+the system I want to deduplicate:
+
+sudo mount -o noatime,compress=lzo,autodefrag /dev/mapper/cryptroot 
+/home/niko/nosnap/rootfs/
+sudo duperemove -drh --dedupe-options=nofiemap 
+--hashfile=/home/niko/nosnap/rootfs.hash /home/niko/nosnap/rootfs/
+
+Is btrfs-dedupe able to handle snapper snapshots?
+
+Thanks,
+Niccolo' Belli

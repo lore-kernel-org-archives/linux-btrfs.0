@@ -1,916 +1,835 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:47705 "EHLO song.cn.fujitsu.com"
-        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1753619AbcKNH7b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Nov 2016 02:59:31 -0500
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH v14.1 02/16] btrfs: introduce type based delalloc metadata reserve
-Date: Mon, 14 Nov 2016 15:58:25 +0800
-Message-Id: <20161114075839.23587-3-quwenruo@cn.fujitsu.com>
-In-Reply-To: <20161114075839.23587-1-quwenruo@cn.fujitsu.com>
-References: <20161114075839.23587-1-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
+Received: from mail-it0-f68.google.com ([209.85.214.68]:34675 "EHLO
+        mail-it0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754633AbcKIW6G (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Nov 2016 17:58:06 -0500
+Received: by mail-it0-f68.google.com with SMTP id q124so25032516itd.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 09 Nov 2016 14:58:05 -0800 (PST)
+Subject: Re: [PATCH] f2fs: support multiple devices
+Mime-Version: 1.0 (Mac OS X Mail 9.3 \(3124\))
+Content-Type: multipart/signed; boundary="Apple-Mail=_BA06BDC1-F1E9-47DD-A826-6669C35625EE"; protocol="application/pgp-signature"; micalg=pgp-sha256
+From: Andreas Dilger <adilger@dilger.ca>
+In-Reply-To: <20161109205653.70061-1-jaegeuk@kernel.org>
+Date: Wed, 9 Nov 2016 15:57:53 -0700
+Cc: LKML <linux-kernel@vger.kernel.org>,
+        Lustre Development <lustre-devel@lists.lustre.org>,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        linux-f2fs-devel@lists.sourceforge.net,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-Id: <0D1876A8-BB77-4C1A-BE4F-B4A0E81DD4EA@dilger.ca>
+References: <20161109205653.70061-1-jaegeuk@kernel.org>
+To: Jaegeuk Kim <jaegeuk@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
-Introduce type based metadata reserve parameter for delalloc space
-reservation/freeing function.
+--Apple-Mail=_BA06BDC1-F1E9-47DD-A826-6669C35625EE
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain;
+	charset=us-ascii
 
-The problem we are going to solve is, btrfs use different max extent
-size for different mount options.
+On Nov 9, 2016, at 1:56 PM, Jaegeuk Kim <jaegeuk@kernel.org> wrote:
+>=20
+> This patch implements multiple devices support for f2fs.
+> Given multiple devices by mkfs.f2fs, f2fs shows them entirely as one =
+big
+> volume under one f2fs instance.
+>=20
+> Internal block management is very simple, but we will modify block
+> allocation and background GC policy to boost IO speed by exploiting =
+them
+> accoording to each device speed.
 
-For compression, the max extent size is 128K, while for non-compress write
-it's 128M.
-And further more, split/merge extent hook highly depends that max extent
-size.
+How will you integrate this into FIEMAP, since it is now possible if a
+file is split across multiple devices then it will return ambiguous =
+block
+numbers for a file.  I've been meaning to merge the FIEMAP handling in
+Lustre to support multiple devices in a single filesystem, so that this
+can be detected in userspace.
 
-Such situation contributes to quite a lot of false ENOSPC.
+struct ll_fiemap_extent {
+        __u64 fe_logical;  /* logical offset in bytes for the start of
+                            * the extent from the beginning of the file
+                            */
+        __u64 fe_physical; /* physical offset in bytes for the start
+                            * of the extent from the beginning of the =
+disk
+                            */
+        __u64 fe_length;   /* length in bytes for this extent */
+        __u64 fe_reserved64[2];
+        __u32 fe_flags;    /* FIEMAP_EXTENT_* flags for this extent */
+        __u32 fe_device;   /* device number for this extent */
+        __u32 fe_reserved[2];
+};
 
-So this patch introduce the facility to help solve these false ENOSPC
-related to different max extent size.
+This adds the 32-bit "fe_device" field, which would optionally be filled
+in by the filesystem (zero otherwise).  It would return the kernel =
+device
+number (i.e. st_dev), or for network filesystem (with FIEMAP_EXTENT_NET
+set) this could just return an integer device number since the device
+number is meaningless (and may conflict) on a remote system.
 
-Currently only normal 128M extent size is supported. More types will
-follow soon.
+Since AFAIK Btrfs also has multiple device support there are an =
+increasing
+number of places where this would be useful.
 
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- fs/btrfs/ctree.h             |  34 ++++++++++---
- fs/btrfs/extent-tree.c       |  50 +++++++++++++------
- fs/btrfs/file.c              |  22 ++++++---
- fs/btrfs/free-space-cache.c  |   6 ++-
- fs/btrfs/inode-map.c         |   6 ++-
- fs/btrfs/inode.c             | 114 ++++++++++++++++++++++++++++---------------
- fs/btrfs/ioctl.c             |  10 ++--
- fs/btrfs/relocation.c        |  11 +++--
- fs/btrfs/tests/inode-tests.c |  15 +++---
- 9 files changed, 180 insertions(+), 88 deletions(-)
+Cheers, Andreas
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 766d152..64c63c2 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -100,6 +100,19 @@ static const int btrfs_csum_sizes[] = { 4 };
- 
- #define BTRFS_MAX_EXTENT_SIZE SZ_128M
- 
-+/*
-+ * Type based metadata reserve type
-+ * This affects how btrfs reserve metadata space for buffered write.
-+ *
-+ * This is caused by the different max extent size for normal COW
-+ * and compression, and further in-band dedupe
-+ */
-+enum btrfs_metadata_reserve_type {
-+	BTRFS_RESERVE_NORMAL,
-+};
-+
-+u64 btrfs_max_extent_size(enum btrfs_metadata_reserve_type reserve_type);
-+
- struct btrfs_mapping_tree {
- 	struct extent_map_tree map_tree;
- };
-@@ -2693,10 +2706,14 @@ int btrfs_subvolume_reserve_metadata(struct btrfs_root *root,
- void btrfs_subvolume_release_metadata(struct btrfs_root *root,
- 				      struct btrfs_block_rsv *rsv,
- 				      u64 qgroup_reserved);
--int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes);
--void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes);
--int btrfs_delalloc_reserve_space(struct inode *inode, u64 start, u64 len);
--void btrfs_delalloc_release_space(struct inode *inode, u64 start, u64 len);
-+int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes,
-+			enum btrfs_metadata_reserve_type reserve_type);
-+void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes,
-+			enum btrfs_metadata_reserve_type reserve_type);
-+int btrfs_delalloc_reserve_space(struct inode *inode, u64 start, u64 len,
-+			enum btrfs_metadata_reserve_type reserve_type);
-+void btrfs_delalloc_release_space(struct inode *inode, u64 start, u64 len,
-+			enum btrfs_metadata_reserve_type reserve_type);
- void btrfs_init_block_rsv(struct btrfs_block_rsv *rsv, unsigned short type);
- struct btrfs_block_rsv *btrfs_alloc_block_rsv(struct btrfs_root *root,
- 					      unsigned short type);
-@@ -3138,9 +3155,11 @@ int btrfs_start_delalloc_inodes(struct btrfs_root *root, int delay_iput);
- int btrfs_start_delalloc_roots(struct btrfs_fs_info *fs_info, int delay_iput,
- 			       int nr);
- int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
--			      struct extent_state **cached_state, int dedupe);
-+			      struct extent_state **cached_state,
-+			      enum btrfs_metadata_reserve_type reserve_type);
- int btrfs_set_extent_defrag(struct inode *inode, u64 start, u64 end,
--			    struct extent_state **cached_state);
-+			    struct extent_state **cached_state,
-+			    enum btrfs_metadata_reserve_type reserve_type);
- int btrfs_create_subvol_root(struct btrfs_trans_handle *trans,
- 			     struct btrfs_root *new_root,
- 			     struct btrfs_root *parent_root,
-@@ -3233,7 +3252,8 @@ int btrfs_release_file(struct inode *inode, struct file *file);
- int btrfs_dirty_pages(struct btrfs_root *root, struct inode *inode,
- 		      struct page **pages, size_t num_pages,
- 		      loff_t pos, size_t write_bytes,
--		      struct extent_state **cached);
-+		      struct extent_state **cached,
-+		      enum btrfs_metadata_reserve_type reserve_type);
- int btrfs_fdatawrite_range(struct inode *inode, loff_t start, loff_t end);
- ssize_t btrfs_copy_file_range(struct file *file_in, loff_t pos_in,
- 			      struct file *file_out, loff_t pos_out,
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 4607af3..bd99f25 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -5841,15 +5841,16 @@ void btrfs_subvolume_release_metadata(struct btrfs_root *root,
-  * reserved extents that need to be freed.  This must be called with
-  * BTRFS_I(inode)->lock held.
-  */
--static unsigned drop_outstanding_extent(struct inode *inode, u64 num_bytes)
-+static unsigned drop_outstanding_extent(struct inode *inode, u64 num_bytes,
-+				enum btrfs_metadata_reserve_type reserve_type)
- {
- 	unsigned drop_inode_space = 0;
- 	unsigned dropped_extents = 0;
- 	unsigned num_extents = 0;
-+	u64 max_extent_size = btrfs_max_extent_size(reserve_type);
- 
--	num_extents = (unsigned)div64_u64(num_bytes +
--					  BTRFS_MAX_EXTENT_SIZE - 1,
--					  BTRFS_MAX_EXTENT_SIZE);
-+	num_extents = (unsigned)div64_u64(num_bytes + max_extent_size - 1,
-+					  max_extent_size);
- 	ASSERT(num_extents);
- 	ASSERT(BTRFS_I(inode)->outstanding_extents >= num_extents);
- 	BTRFS_I(inode)->outstanding_extents -= num_extents;
-@@ -5919,7 +5920,17 @@ static u64 calc_csum_metadata_size(struct inode *inode, u64 num_bytes,
- 	return btrfs_calc_trans_metadata_size(root, old_csums - num_csums);
- }
- 
--int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
-+u64 btrfs_max_extent_size(enum btrfs_metadata_reserve_type reserve_type)
-+{
-+	if (reserve_type == BTRFS_RESERVE_NORMAL)
-+		return BTRFS_MAX_EXTENT_SIZE;
-+
-+	ASSERT(0);
-+	return BTRFS_MAX_EXTENT_SIZE;
-+}
-+
-+int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes,
-+			enum btrfs_metadata_reserve_type reserve_type)
- {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	struct btrfs_block_rsv *block_rsv = &root->fs_info->delalloc_block_rsv;
-@@ -5930,6 +5941,7 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
- 	int ret = 0;
- 	bool delalloc_lock = true;
- 	u64 to_free = 0;
-+	u64 max_extent_size = btrfs_max_extent_size(reserve_type);
- 	unsigned dropped;
- 	bool release_extra = false;
- 
-@@ -5958,9 +5970,8 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
- 	num_bytes = ALIGN(num_bytes, root->sectorsize);
- 
- 	spin_lock(&BTRFS_I(inode)->lock);
--	nr_extents = (unsigned)div64_u64(num_bytes +
--					 BTRFS_MAX_EXTENT_SIZE - 1,
--					 BTRFS_MAX_EXTENT_SIZE);
-+	nr_extents = (unsigned)div64_u64(num_bytes + max_extent_size - 1,
-+					 max_extent_size);
- 	BTRFS_I(inode)->outstanding_extents += nr_extents;
- 
- 	nr_extents = 0;
-@@ -6011,7 +6022,7 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
- 
- out_fail:
- 	spin_lock(&BTRFS_I(inode)->lock);
--	dropped = drop_outstanding_extent(inode, num_bytes);
-+	dropped = drop_outstanding_extent(inode, num_bytes, reserve_type);
- 	/*
- 	 * If the inodes csum_bytes is the same as the original
- 	 * csum_bytes then we know we haven't raced with any free()ers
-@@ -6077,12 +6088,15 @@ out_fail:
-  * btrfs_delalloc_release_metadata - release a metadata reservation for an inode
-  * @inode: the inode to release the reservation for
-  * @num_bytes: the number of bytes we're releasing
-+ * @reserve_type: the type when we reserve delalloc space for this range.
-+ *                must be the same passed to btrfs_delalloc_reserve_metadata()
-  *
-  * This will release the metadata reservation for an inode.  This can be called
-  * once we complete IO for a given set of bytes to release their metadata
-  * reservations.
-  */
--void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes)
-+void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes,
-+			enum btrfs_metadata_reserve_type reserve_type)
- {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	u64 to_free = 0;
-@@ -6090,7 +6104,7 @@ void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes)
- 
- 	num_bytes = ALIGN(num_bytes, root->sectorsize);
- 	spin_lock(&BTRFS_I(inode)->lock);
--	dropped = drop_outstanding_extent(inode, num_bytes);
-+	dropped = drop_outstanding_extent(inode, num_bytes, reserve_type);
- 
- 	if (num_bytes)
- 		to_free = calc_csum_metadata_size(inode, num_bytes, 0);
-@@ -6114,6 +6128,8 @@ void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes)
-  * @inode: inode we're writing to
-  * @start: start range we are writing to
-  * @len: how long the range we are writing to
-+ * @reserve_type: the type of write we're reserving for.
-+ *		  determine the max extent size.
-  *
-  * This will do the following things
-  *
-@@ -6131,14 +6147,15 @@ void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes)
-  * Return 0 for success
-  * Return <0 for error(-ENOSPC or -EQUOT)
-  */
--int btrfs_delalloc_reserve_space(struct inode *inode, u64 start, u64 len)
-+int btrfs_delalloc_reserve_space(struct inode *inode, u64 start, u64 len,
-+				 enum btrfs_metadata_reserve_type reserve_type)
- {
- 	int ret;
- 
- 	ret = btrfs_check_data_free_space(inode, start, len);
- 	if (ret < 0)
- 		return ret;
--	ret = btrfs_delalloc_reserve_metadata(inode, len);
-+	ret = btrfs_delalloc_reserve_metadata(inode, len, reserve_type);
- 	if (ret < 0)
- 		btrfs_free_reserved_data_space(inode, start, len);
- 	return ret;
-@@ -6149,6 +6166,8 @@ int btrfs_delalloc_reserve_space(struct inode *inode, u64 start, u64 len)
-  * @inode: inode we're releasing space for
-  * @start: start position of the space already reserved
-  * @len: the len of the space already reserved
-+ * @reserve_type: the type of write we're releasing for
-+ *		  must match the type passed to btrfs_delalloc_reserve_space()
-  *
-  * This must be matched with a call to btrfs_delalloc_reserve_space.  This is
-  * called in the case that we don't need the metadata AND data reservations
-@@ -6159,9 +6178,10 @@ int btrfs_delalloc_reserve_space(struct inode *inode, u64 start, u64 len)
-  * list if there are no delalloc bytes left.
-  * Also it will handle the qgroup reserved space.
-  */
--void btrfs_delalloc_release_space(struct inode *inode, u64 start, u64 len)
-+void btrfs_delalloc_release_space(struct inode *inode, u64 start, u64 len,
-+			enum btrfs_metadata_reserve_type reserve_type)
- {
--	btrfs_delalloc_release_metadata(inode, len);
-+	btrfs_delalloc_release_metadata(inode, len, reserve_type);
- 	btrfs_free_reserved_data_space(inode, start, len);
- }
- 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 72a180d..f174381 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -488,7 +488,8 @@ static void btrfs_drop_pages(struct page **pages, size_t num_pages)
- int btrfs_dirty_pages(struct btrfs_root *root, struct inode *inode,
- 			     struct page **pages, size_t num_pages,
- 			     loff_t pos, size_t write_bytes,
--			     struct extent_state **cached)
-+			     struct extent_state **cached,
-+			     enum btrfs_metadata_reserve_type reserve_type)
- {
- 	int err = 0;
- 	int i;
-@@ -503,7 +504,7 @@ int btrfs_dirty_pages(struct btrfs_root *root, struct inode *inode,
- 
- 	end_of_last_block = start_pos + num_bytes - 1;
- 	err = btrfs_set_extent_delalloc(inode, start_pos, end_of_last_block,
--					cached, 0);
-+					cached, reserve_type);
- 	if (err)
- 		return err;
- 
-@@ -1521,6 +1522,7 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
- 	bool only_release_metadata = false;
- 	bool force_page_uptodate = false;
- 	bool need_unlock;
-+	enum btrfs_metadata_reserve_type reserve_type = BTRFS_RESERVE_NORMAL;
- 
- 	nrptrs = min(DIV_ROUND_UP(iov_iter_count(i), PAGE_SIZE),
- 			PAGE_SIZE / (sizeof(struct page *)));
-@@ -1583,7 +1585,8 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
- 			}
- 		}
- 
--		ret = btrfs_delalloc_reserve_metadata(inode, reserve_bytes);
-+		ret = btrfs_delalloc_reserve_metadata(inode, reserve_bytes,
-+						      reserve_type);
- 		if (ret) {
- 			if (!only_release_metadata)
- 				btrfs_free_reserved_data_space(inode, pos,
-@@ -1666,14 +1669,16 @@ again:
- 			}
- 			if (only_release_metadata) {
- 				btrfs_delalloc_release_metadata(inode,
--								release_bytes);
-+								release_bytes,
-+								reserve_type);
- 			} else {
- 				u64 __pos;
- 
- 				__pos = round_down(pos, root->sectorsize) +
- 					(dirty_pages << PAGE_SHIFT);
- 				btrfs_delalloc_release_space(inode, __pos,
--							     release_bytes);
-+							     release_bytes,
-+							     reserve_type);
- 			}
- 		}
- 
-@@ -1683,7 +1688,7 @@ again:
- 		if (copied > 0)
- 			ret = btrfs_dirty_pages(root, inode, pages,
- 						dirty_pages, pos, copied,
--						NULL);
-+						NULL, reserve_type);
- 		if (need_unlock)
- 			unlock_extent_cached(&BTRFS_I(inode)->io_tree,
- 					     lockstart, lockend, &cached_state,
-@@ -1724,11 +1729,12 @@ again:
- 	if (release_bytes) {
- 		if (only_release_metadata) {
- 			btrfs_end_write_no_snapshoting(root);
--			btrfs_delalloc_release_metadata(inode, release_bytes);
-+			btrfs_delalloc_release_metadata(inode, release_bytes,
-+							reserve_type);
- 		} else {
- 			btrfs_delalloc_release_space(inode,
- 						round_down(pos, root->sectorsize),
--						release_bytes);
-+						release_bytes, reserve_type);
- 		}
- 	}
- 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index e4b48f3..1e433f7 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -1297,7 +1297,8 @@ static int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
- 
- 	/* Everything is written out, now we dirty the pages in the file. */
- 	ret = btrfs_dirty_pages(root, inode, io_ctl->pages, io_ctl->num_pages,
--				0, i_size_read(inode), &cached_state);
-+				0, i_size_read(inode), &cached_state,
-+				BTRFS_RESERVE_NORMAL);
- 	if (ret)
- 		goto out_nospc;
- 
-@@ -3536,7 +3537,8 @@ int btrfs_write_out_ino_cache(struct btrfs_root *root,
- 
- 	if (ret) {
- 		if (release_metadata)
--			btrfs_delalloc_release_metadata(inode, inode->i_size);
-+			btrfs_delalloc_release_metadata(inode, inode->i_size,
-+							BTRFS_RESERVE_NORMAL);
- #ifdef DEBUG
- 		btrfs_err(root->fs_info,
- 			"failed to write free ino cache for root %llu",
-diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
-index d27014b..0335862 100644
---- a/fs/btrfs/inode-map.c
-+++ b/fs/btrfs/inode-map.c
-@@ -491,14 +491,16 @@ again:
- 	/* Just to make sure we have enough space */
- 	prealloc += 8 * PAGE_SIZE;
- 
--	ret = btrfs_delalloc_reserve_space(inode, 0, prealloc);
-+	ret = btrfs_delalloc_reserve_space(inode, 0, prealloc,
-+					   BTRFS_RESERVE_NORMAL);
- 	if (ret)
- 		goto out_put;
- 
- 	ret = btrfs_prealloc_file_range_trans(inode, trans, 0, 0, prealloc,
- 					      prealloc, prealloc, &alloc_hint);
- 	if (ret) {
--		btrfs_delalloc_release_metadata(inode, prealloc);
-+		btrfs_delalloc_release_metadata(inode, prealloc,
-+						BTRFS_RESERVE_NORMAL);
- 		goto out_put;
- 	}
- 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 25e0083..906ab27 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -315,7 +315,8 @@ static noinline int cow_file_range_inline(struct btrfs_root *root,
- 	}
- 
- 	set_bit(BTRFS_INODE_NEEDS_FULL_SYNC, &BTRFS_I(inode)->runtime_flags);
--	btrfs_delalloc_release_metadata(inode, end + 1 - start);
-+	btrfs_delalloc_release_metadata(inode, end + 1 - start,
-+					BTRFS_RESERVE_NORMAL);
- 	btrfs_drop_extent_cache(inode, start, aligned_end - 1, 0);
- out:
- 	/*
-@@ -1596,6 +1597,8 @@ static void btrfs_split_extent_hook(struct inode *inode,
- 				    struct extent_state *orig, u64 split)
- {
- 	u64 size;
-+	enum btrfs_metadata_reserve_type reserve_type = BTRFS_RESERVE_NORMAL;
-+	u64 max_extent_size;
- 
- 	/* not delalloc, ignore it */
- 	if (!(orig->state & EXTENT_DELALLOC))
-@@ -1604,8 +1607,10 @@ static void btrfs_split_extent_hook(struct inode *inode,
- 	if (btrfs_is_free_space_inode(inode))
- 		return;
- 
-+	max_extent_size = btrfs_max_extent_size(reserve_type);
-+
- 	size = orig->end - orig->start + 1;
--	if (size > BTRFS_MAX_EXTENT_SIZE) {
-+	if (size > max_extent_size) {
- 		u64 num_extents;
- 		u64 new_size;
- 
-@@ -1614,13 +1619,13 @@ static void btrfs_split_extent_hook(struct inode *inode,
- 		 * applies here, just in reverse.
- 		 */
- 		new_size = orig->end - split + 1;
--		num_extents = div64_u64(new_size + BTRFS_MAX_EXTENT_SIZE - 1,
--					BTRFS_MAX_EXTENT_SIZE);
-+		num_extents = div64_u64(new_size + max_extent_size - 1,
-+					max_extent_size);
- 		new_size = split - orig->start;
--		num_extents += div64_u64(new_size + BTRFS_MAX_EXTENT_SIZE - 1,
--					BTRFS_MAX_EXTENT_SIZE);
--		if (div64_u64(size + BTRFS_MAX_EXTENT_SIZE - 1,
--			      BTRFS_MAX_EXTENT_SIZE) >= num_extents)
-+		num_extents += div64_u64(new_size + max_extent_size - 1,
-+					 max_extent_size);
-+		if (div64_u64(size + max_extent_size - 1,
-+			      max_extent_size) >= num_extents)
- 			return;
- 	}
- 
-@@ -1641,6 +1646,8 @@ static void btrfs_merge_extent_hook(struct inode *inode,
- {
- 	u64 new_size, old_size;
- 	u64 num_extents;
-+	enum btrfs_metadata_reserve_type reserve_type = BTRFS_RESERVE_NORMAL;
-+	u64 max_extent_size;
- 
- 	/* not delalloc, ignore it */
- 	if (!(other->state & EXTENT_DELALLOC))
-@@ -1649,13 +1656,15 @@ static void btrfs_merge_extent_hook(struct inode *inode,
- 	if (btrfs_is_free_space_inode(inode))
- 		return;
- 
-+	max_extent_size = btrfs_max_extent_size(reserve_type);
-+
- 	if (new->start > other->start)
- 		new_size = new->end - other->start + 1;
- 	else
- 		new_size = other->end - new->start + 1;
- 
- 	/* we're not bigger than the max, unreserve the space and go */
--	if (new_size <= BTRFS_MAX_EXTENT_SIZE) {
-+	if (new_size <= max_extent_size) {
- 		spin_lock(&BTRFS_I(inode)->lock);
- 		BTRFS_I(inode)->outstanding_extents--;
- 		spin_unlock(&BTRFS_I(inode)->lock);
-@@ -1681,14 +1690,14 @@ static void btrfs_merge_extent_hook(struct inode *inode,
- 	 * this case.
- 	 */
- 	old_size = other->end - other->start + 1;
--	num_extents = div64_u64(old_size + BTRFS_MAX_EXTENT_SIZE - 1,
--				BTRFS_MAX_EXTENT_SIZE);
-+	num_extents = div64_u64(old_size + max_extent_size - 1,
-+				max_extent_size);
- 	old_size = new->end - new->start + 1;
--	num_extents += div64_u64(old_size + BTRFS_MAX_EXTENT_SIZE - 1,
--				 BTRFS_MAX_EXTENT_SIZE);
-+	num_extents += div64_u64(old_size + max_extent_size - 1,
-+				 max_extent_size);
- 
--	if (div64_u64(new_size + BTRFS_MAX_EXTENT_SIZE - 1,
--		      BTRFS_MAX_EXTENT_SIZE) >= num_extents)
-+	if (div64_u64(new_size + max_extent_size - 1,
-+		      max_extent_size) >= num_extents)
- 		return;
- 
- 	spin_lock(&BTRFS_I(inode)->lock);
-@@ -1754,10 +1763,16 @@ static void btrfs_set_bit_hook(struct inode *inode,
- 	if (!(state->state & EXTENT_DELALLOC) && (*bits & EXTENT_DELALLOC)) {
- 		struct btrfs_root *root = BTRFS_I(inode)->root;
- 		u64 len = state->end + 1 - state->start;
--		u64 num_extents = div64_u64(len + BTRFS_MAX_EXTENT_SIZE - 1,
--					    BTRFS_MAX_EXTENT_SIZE);
-+		enum btrfs_metadata_reserve_type reserve_type =
-+					BTRFS_RESERVE_NORMAL;
-+		u64 max_extent_size;
-+		u64 num_extents;
- 		bool do_list = !btrfs_is_free_space_inode(inode);
- 
-+		max_extent_size = btrfs_max_extent_size(reserve_type);
-+		num_extents = div64_u64(len + max_extent_size - 1,
-+					max_extent_size);
-+
- 		if (*bits & EXTENT_FIRST_DELALLOC)
- 			*bits &= ~EXTENT_FIRST_DELALLOC;
- 
-@@ -1792,8 +1807,9 @@ static void btrfs_clear_bit_hook(struct inode *inode,
- 				 unsigned *bits)
- {
- 	u64 len = state->end + 1 - state->start;
--	u64 num_extents = div64_u64(len + BTRFS_MAX_EXTENT_SIZE -1,
--				    BTRFS_MAX_EXTENT_SIZE);
-+	u64 max_extent_size;
-+	u64 num_extents;
-+	enum btrfs_metadata_reserve_type reserve_type = BTRFS_RESERVE_NORMAL;
- 
- 	spin_lock(&BTRFS_I(inode)->lock);
- 	if ((state->state & EXTENT_DEFRAG) && (*bits & EXTENT_DEFRAG))
-@@ -1809,6 +1825,10 @@ static void btrfs_clear_bit_hook(struct inode *inode,
- 		struct btrfs_root *root = BTRFS_I(inode)->root;
- 		bool do_list = !btrfs_is_free_space_inode(inode);
- 
-+		max_extent_size = btrfs_max_extent_size(reserve_type);
-+		num_extents = div64_u64(len + max_extent_size - 1,
-+					max_extent_size);
-+
- 		if (*bits & EXTENT_FIRST_DELALLOC) {
- 			*bits &= ~EXTENT_FIRST_DELALLOC;
- 		} else if (!(*bits & EXTENT_DO_ACCOUNTING) && do_list) {
-@@ -1824,7 +1844,8 @@ static void btrfs_clear_bit_hook(struct inode *inode,
- 		 */
- 		if (*bits & EXTENT_DO_ACCOUNTING &&
- 		    root != root->fs_info->tree_root)
--			btrfs_delalloc_release_metadata(inode, len);
-+			btrfs_delalloc_release_metadata(inode, len,
-+							reserve_type);
- 
- 		/* For sanity tests. */
- 		if (btrfs_is_testing(root->fs_info))
-@@ -2007,11 +2028,13 @@ static noinline int add_pending_csums(struct btrfs_trans_handle *trans,
- }
- 
- int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
--			      struct extent_state **cached_state, int dedupe)
-+			      struct extent_state **cached_state,
-+			      enum btrfs_metadata_reserve_type reserve_type)
- {
- 	int ret;
--	u64 num_extents = div64_u64(end - start + BTRFS_MAX_EXTENT_SIZE,
--				    BTRFS_MAX_EXTENT_SIZE);
-+	u64 max_extent_size = btrfs_max_extent_size(reserve_type);
-+	u64 num_extents = div64_u64(end - start + max_extent_size,
-+				    max_extent_size);
- 
- 	WARN_ON((end & (PAGE_SIZE - 1)) == 0);
- 	ret = set_extent_delalloc(&BTRFS_I(inode)->io_tree, start, end,
-@@ -2038,11 +2061,13 @@ int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
- }
- 
- int btrfs_set_extent_defrag(struct inode *inode, u64 start, u64 end,
--			    struct extent_state **cached_state)
-+			    struct extent_state **cached_state,
-+			    enum btrfs_metadata_reserve_type reserve_type)
- {
- 	int ret;
--	u64 num_extents = div64_u64(end - start + BTRFS_MAX_EXTENT_SIZE,
--				    BTRFS_MAX_EXTENT_SIZE);
-+	u64 max_extent_size = btrfs_max_extent_size(reserve_type);
-+	u64 num_extents = div64_u64(end - start + max_extent_size,
-+				    max_extent_size);
- 
- 	WARN_ON((end & (PAGE_SIZE - 1)) == 0);
- 	ret = set_extent_defrag(&BTRFS_I(inode)->io_tree, start, end,
-@@ -2073,6 +2098,7 @@ static void btrfs_writepage_fixup_worker(struct btrfs_work *work)
- 	u64 page_start;
- 	u64 page_end;
- 	int ret;
-+	enum btrfs_metadata_reserve_type reserve_type = BTRFS_RESERVE_NORMAL;
- 
- 	fixup = container_of(work, struct btrfs_writepage_fixup, work);
- 	page = fixup->page;
-@@ -2106,7 +2132,7 @@ again:
- 	}
- 
- 	ret = btrfs_delalloc_reserve_space(inode, page_start,
--					   PAGE_SIZE);
-+					   PAGE_SIZE, reserve_type);
- 	if (ret) {
- 		mapping_set_error(page->mapping, ret);
- 		end_extent_writepage(page, ret, page_start, page_end);
-@@ -2115,7 +2141,7 @@ again:
- 	 }
- 
- 	btrfs_set_extent_delalloc(inode, page_start, page_end, &cached_state,
--				  0);
-+				  reserve_type);
- 	ClearPageChecked(page);
- 	set_page_dirty(page);
- out:
-@@ -2925,6 +2951,7 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
- 	u64 logical_len = ordered_extent->len;
- 	bool nolock;
- 	bool truncated = false;
-+	enum btrfs_metadata_reserve_type reserve_type = BTRFS_RESERVE_NORMAL;
- 
- 	nolock = btrfs_is_free_space_inode(inode);
- 
-@@ -3048,7 +3075,8 @@ out_unlock:
- 			     ordered_extent->len - 1, &cached_state, GFP_NOFS);
- out:
- 	if (root != root->fs_info->tree_root)
--		btrfs_delalloc_release_metadata(inode, ordered_extent->len);
-+		btrfs_delalloc_release_metadata(inode, ordered_extent->len,
-+						reserve_type);
- 	if (trans)
- 		btrfs_end_transaction(trans, root);
- 
-@@ -4762,13 +4790,14 @@ int btrfs_truncate_block(struct inode *inode, loff_t from, loff_t len,
- 	int ret = 0;
- 	u64 block_start;
- 	u64 block_end;
-+	enum btrfs_metadata_reserve_type reserve_type = BTRFS_RESERVE_NORMAL;
- 
- 	if ((offset & (blocksize - 1)) == 0 &&
- 	    (!len || ((len & (blocksize - 1)) == 0)))
- 		goto out;
- 
- 	ret = btrfs_delalloc_reserve_space(inode,
--			round_down(from, blocksize), blocksize);
-+			round_down(from, blocksize), blocksize, reserve_type);
- 	if (ret)
- 		goto out;
- 
-@@ -4777,7 +4806,7 @@ again:
- 	if (!page) {
- 		btrfs_delalloc_release_space(inode,
- 				round_down(from, blocksize),
--				blocksize);
-+				blocksize, reserve_type);
- 		ret = -ENOMEM;
- 		goto out;
- 	}
-@@ -4820,7 +4849,7 @@ again:
- 			  0, 0, &cached_state, GFP_NOFS);
- 
- 	ret = btrfs_set_extent_delalloc(inode, block_start, block_end,
--					&cached_state, 0);
-+					&cached_state, reserve_type);
- 	if (ret) {
- 		unlock_extent_cached(io_tree, block_start, block_end,
- 				     &cached_state, GFP_NOFS);
-@@ -4848,7 +4877,7 @@ again:
- out_unlock:
- 	if (ret)
- 		btrfs_delalloc_release_space(inode, block_start,
--					     blocksize);
-+					     blocksize, reserve_type);
- 	unlock_page(page);
- 	put_page(page);
- out:
-@@ -8743,7 +8772,8 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
- 			inode_unlock(inode);
- 			relock = true;
- 		}
--		ret = btrfs_delalloc_reserve_space(inode, offset, count);
-+		ret = btrfs_delalloc_reserve_space(inode, offset, count,
-+						   BTRFS_RESERVE_NORMAL);
- 		if (ret)
- 			goto out;
- 		dio_data.outstanding_extents = div64_u64(count +
-@@ -8775,7 +8805,7 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
- 		if (ret < 0 && ret != -EIOCBQUEUED) {
- 			if (dio_data.reserve)
- 				btrfs_delalloc_release_space(inode, offset,
--							     dio_data.reserve);
-+					dio_data.reserve, BTRFS_RESERVE_NORMAL);
- 			/*
- 			 * On error we might have left some ordered extents
- 			 * without submitting corresponding bios for them, so
-@@ -8791,7 +8821,8 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
- 					0);
- 		} else if (ret >= 0 && (size_t)ret < count)
- 			btrfs_delalloc_release_space(inode, offset,
--						     count - (size_t)ret);
-+						     count - (size_t)ret,
-+						     BTRFS_RESERVE_NORMAL);
- 	}
- out:
- 	if (wakeup)
-@@ -9030,6 +9061,7 @@ int btrfs_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
- 	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
- 	struct btrfs_ordered_extent *ordered;
- 	struct extent_state *cached_state = NULL;
-+	enum btrfs_metadata_reserve_type reserve_type = BTRFS_RESERVE_NORMAL;
- 	char *kaddr;
- 	unsigned long zero_start;
- 	loff_t size;
-@@ -9056,7 +9088,7 @@ int btrfs_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
- 	 * being processed by btrfs_page_mkwrite() function.
- 	 */
- 	ret = btrfs_delalloc_reserve_space(inode, page_start,
--					   reserved_space);
-+					   reserved_space, reserve_type);
- 	if (!ret) {
- 		ret = file_update_time(vma->vm_file);
- 		reserved = 1;
-@@ -9108,7 +9140,8 @@ again:
- 			BTRFS_I(inode)->outstanding_extents++;
- 			spin_unlock(&BTRFS_I(inode)->lock);
- 			btrfs_delalloc_release_space(inode, page_start,
--						PAGE_SIZE - reserved_space);
-+						PAGE_SIZE - reserved_space,
-+						reserve_type);
- 		}
- 	}
- 
-@@ -9125,7 +9158,7 @@ again:
- 			  0, 0, &cached_state, GFP_NOFS);
- 
- 	ret = btrfs_set_extent_delalloc(inode, page_start, end,
--					&cached_state, 0);
-+					&cached_state, reserve_type);
- 	if (ret) {
- 		unlock_extent_cached(io_tree, page_start, page_end,
- 				     &cached_state, GFP_NOFS);
-@@ -9163,7 +9196,8 @@ out_unlock:
- 	}
- 	unlock_page(page);
- out:
--	btrfs_delalloc_release_space(inode, page_start, reserved_space);
-+	btrfs_delalloc_release_space(inode, page_start, reserved_space,
-+				     reserve_type);
- out_noreserve:
- 	sb_end_pagefault(inode->i_sb);
- 	return ret;
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index eff5eae..870737b 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1131,6 +1131,7 @@ static int cluster_pages_for_defrag(struct inode *inode,
- 	struct btrfs_ordered_extent *ordered;
- 	struct extent_state *cached_state = NULL;
- 	struct extent_io_tree *tree;
-+	enum btrfs_metadata_reserve_type reserve_type = BTRFS_RESERVE_NORMAL;
- 	gfp_t mask = btrfs_alloc_write_mask(inode->i_mapping);
- 
- 	file_end = (isize - 1) >> PAGE_SHIFT;
-@@ -1141,7 +1142,7 @@ static int cluster_pages_for_defrag(struct inode *inode,
- 
- 	ret = btrfs_delalloc_reserve_space(inode,
- 			start_index << PAGE_SHIFT,
--			page_cnt << PAGE_SHIFT);
-+			page_cnt << PAGE_SHIFT, reserve_type);
- 	if (ret)
- 		return ret;
- 	i_done = 0;
-@@ -1232,11 +1233,12 @@ again:
- 		spin_unlock(&BTRFS_I(inode)->lock);
- 		btrfs_delalloc_release_space(inode,
- 				start_index << PAGE_SHIFT,
--				(page_cnt - i_done) << PAGE_SHIFT);
-+				(page_cnt - i_done) << PAGE_SHIFT,
-+				reserve_type);
- 	}
- 
- 	btrfs_set_extent_defrag(inode, page_start,
--				page_end - 1, &cached_state);
-+				page_end - 1, &cached_state, reserve_type);
- 	unlock_extent_cached(&BTRFS_I(inode)->io_tree,
- 			     page_start, page_end - 1, &cached_state,
- 			     GFP_NOFS);
-@@ -1257,7 +1259,7 @@ out:
- 	}
- 	btrfs_delalloc_release_space(inode,
- 			start_index << PAGE_SHIFT,
--			page_cnt << PAGE_SHIFT);
-+			page_cnt << PAGE_SHIFT, reserve_type);
- 	return ret;
- 
- }
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index c4af0cd..0e4b370 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -3148,6 +3148,7 @@ static int relocate_file_extent_cluster(struct inode *inode,
- 	unsigned long last_index;
- 	struct page *page;
- 	struct file_ra_state *ra;
-+	enum btrfs_metadata_reserve_type reserve_type = BTRFS_RESERVE_NORMAL;
- 	gfp_t mask = btrfs_alloc_write_mask(inode->i_mapping);
- 	int nr = 0;
- 	int ret = 0;
-@@ -3173,7 +3174,8 @@ static int relocate_file_extent_cluster(struct inode *inode,
- 	index = (cluster->start - offset) >> PAGE_SHIFT;
- 	last_index = (cluster->end - offset) >> PAGE_SHIFT;
- 	while (index <= last_index) {
--		ret = btrfs_delalloc_reserve_metadata(inode, PAGE_SIZE);
-+		ret = btrfs_delalloc_reserve_metadata(inode, PAGE_SIZE,
-+						      reserve_type);
- 		if (ret)
- 			goto out;
- 
-@@ -3186,7 +3188,7 @@ static int relocate_file_extent_cluster(struct inode *inode,
- 						   mask);
- 			if (!page) {
- 				btrfs_delalloc_release_metadata(inode,
--							PAGE_SIZE);
-+						PAGE_SIZE, reserve_type);
- 				ret = -ENOMEM;
- 				goto out;
- 			}
-@@ -3205,7 +3207,7 @@ static int relocate_file_extent_cluster(struct inode *inode,
- 				unlock_page(page);
- 				put_page(page);
- 				btrfs_delalloc_release_metadata(inode,
--							PAGE_SIZE);
-+						PAGE_SIZE, reserve_type);
- 				ret = -EIO;
- 				goto out;
- 			}
-@@ -3226,7 +3228,8 @@ static int relocate_file_extent_cluster(struct inode *inode,
- 			nr++;
- 		}
- 
--		btrfs_set_extent_delalloc(inode, page_start, page_end, NULL, 0);
-+		btrfs_set_extent_delalloc(inode, page_start, page_end, NULL,
-+					  reserve_type);
- 		set_page_dirty(page);
- 
- 		unlock_extent(&BTRFS_I(inode)->io_tree,
-diff --git a/fs/btrfs/tests/inode-tests.c b/fs/btrfs/tests/inode-tests.c
-index 0bf4680..6edd44d 100644
---- a/fs/btrfs/tests/inode-tests.c
-+++ b/fs/btrfs/tests/inode-tests.c
-@@ -942,6 +942,7 @@ static int test_extent_accounting(u32 sectorsize, u32 nodesize)
- 	struct btrfs_fs_info *fs_info = NULL;
- 	struct inode *inode = NULL;
- 	struct btrfs_root *root = NULL;
-+	enum btrfs_metadata_reserve_type reserve_type = BTRFS_RESERVE_NORMAL;
- 	int ret = -ENOMEM;
- 
- 	inode = btrfs_new_test_inode();
-@@ -968,7 +969,7 @@ static int test_extent_accounting(u32 sectorsize, u32 nodesize)
- 	/* [BTRFS_MAX_EXTENT_SIZE] */
- 	BTRFS_I(inode)->outstanding_extents++;
- 	ret = btrfs_set_extent_delalloc(inode, 0, BTRFS_MAX_EXTENT_SIZE - 1,
--					NULL, 0);
-+					NULL, reserve_type);
- 	if (ret) {
- 		test_msg("btrfs_set_extent_delalloc returned %d\n", ret);
- 		goto out;
-@@ -984,7 +985,7 @@ static int test_extent_accounting(u32 sectorsize, u32 nodesize)
- 	BTRFS_I(inode)->outstanding_extents++;
- 	ret = btrfs_set_extent_delalloc(inode, BTRFS_MAX_EXTENT_SIZE,
- 					BTRFS_MAX_EXTENT_SIZE + sectorsize - 1,
--					NULL, 0);
-+					NULL, reserve_type);
- 	if (ret) {
- 		test_msg("btrfs_set_extent_delalloc returned %d\n", ret);
- 		goto out;
-@@ -1019,7 +1020,7 @@ static int test_extent_accounting(u32 sectorsize, u32 nodesize)
- 	ret = btrfs_set_extent_delalloc(inode, BTRFS_MAX_EXTENT_SIZE >> 1,
- 					(BTRFS_MAX_EXTENT_SIZE >> 1)
- 					+ sectorsize - 1,
--					NULL, 0);
-+					NULL, reserve_type);
- 	if (ret) {
- 		test_msg("btrfs_set_extent_delalloc returned %d\n", ret);
- 		goto out;
-@@ -1042,7 +1043,7 @@ static int test_extent_accounting(u32 sectorsize, u32 nodesize)
- 	ret = btrfs_set_extent_delalloc(inode,
- 			BTRFS_MAX_EXTENT_SIZE + 2 * sectorsize,
- 			(BTRFS_MAX_EXTENT_SIZE << 1) + 3 * sectorsize - 1,
--			NULL, 0);
-+			NULL, reserve_type);
- 	if (ret) {
- 		test_msg("btrfs_set_extent_delalloc returned %d\n", ret);
- 		goto out;
-@@ -1060,7 +1061,8 @@ static int test_extent_accounting(u32 sectorsize, u32 nodesize)
- 	BTRFS_I(inode)->outstanding_extents++;
- 	ret = btrfs_set_extent_delalloc(inode,
- 			BTRFS_MAX_EXTENT_SIZE + sectorsize,
--			BTRFS_MAX_EXTENT_SIZE + 2 * sectorsize - 1, NULL, 0);
-+			BTRFS_MAX_EXTENT_SIZE + 2 * sectorsize - 1, NULL,
-+			reserve_type);
- 	if (ret) {
- 		test_msg("btrfs_set_extent_delalloc returned %d\n", ret);
- 		goto out;
-@@ -1097,7 +1099,8 @@ static int test_extent_accounting(u32 sectorsize, u32 nodesize)
- 	BTRFS_I(inode)->outstanding_extents++;
- 	ret = btrfs_set_extent_delalloc(inode,
- 			BTRFS_MAX_EXTENT_SIZE + sectorsize,
--			BTRFS_MAX_EXTENT_SIZE + 2 * sectorsize - 1, NULL, 0);
-+			BTRFS_MAX_EXTENT_SIZE + 2 * sectorsize - 1, NULL,
-+			reserve_type);
- 	if (ret) {
- 		test_msg("btrfs_set_extent_delalloc returned %d\n", ret);
- 		goto out;
--- 
-2.10.2
+>=20
+> Signed-off-by: Jaegeuk Kim <jaegeuk@kernel.org>
+> ---
+> fs/f2fs/data.c          |  55 ++++++++++++++++---
+> fs/f2fs/f2fs.h          |  29 ++++++++--
+> fs/f2fs/segment.c       | 119 =
++++++++++++++++++++++++++++++------------
+> fs/f2fs/super.c         | 138 =
+++++++++++++++++++++++++++++++++++++++----------
+> include/linux/f2fs_fs.h |  10 +++-
+> 5 files changed, 277 insertions(+), 74 deletions(-)
+>=20
+> diff --git a/fs/f2fs/data.c b/fs/f2fs/data.c
+> index 47ded0c..e2be24e 100644
+> --- a/fs/f2fs/data.c
+> +++ b/fs/f2fs/data.c
+> @@ -88,6 +88,46 @@ static void f2fs_write_end_io(struct bio *bio)
+> }
+>=20
+> /*
+> + * Return true, if pre_bio's bdev is same as its target device.
+> + */
+> +struct block_device *f2fs_target_device(struct f2fs_sb_info *sbi,
+> +				block_t blk_addr, struct bio *bio)
+> +{
+> +	struct block_device *bdev =3D sbi->sb->s_bdev;
+> +	int i;
+> +
+> +	for (i =3D 0; i < sbi->s_ndevs; i++) {
+> +		if (FDEV(i).start_blk <=3D blk_addr &&
+> +					FDEV(i).end_blk >=3D blk_addr) {
+> +			blk_addr -=3D FDEV(i).start_blk;
+> +			bdev =3D FDEV(i).bdev;
+> +			break;
+> +		}
+> +	}
+> +	if (bio) {
+> +		bio->bi_bdev =3D bdev;
+> +		bio->bi_iter.bi_sector =3D SECTOR_FROM_BLOCK(blk_addr);
+> +	}
+> +	return bdev;
+> +}
+> +
+> +int f2fs_target_device_index(struct f2fs_sb_info *sbi, block_t =
+blkaddr)
+> +{
+> +	int i;
+> +
+> +	for (i =3D 0; i < sbi->s_ndevs; i++)
+> +		if (FDEV(i).start_blk <=3D blkaddr && FDEV(i).end_blk >=3D=
+ blkaddr)
+> +			return i;
+> +	return 0;
+> +}
+> +
+> +static bool __same_bdev(struct f2fs_sb_info *sbi,
+> +				block_t blk_addr, struct bio *bio)
+> +{
+> +	return f2fs_target_device(sbi, blk_addr, NULL) =3D=3D =
+bio->bi_bdev;
+> +}
+> +
+> +/*
+>  * Low-level block read/write IO operations.
+>  */
+> static struct bio *__bio_alloc(struct f2fs_sb_info *sbi, block_t =
+blk_addr,
+> @@ -97,8 +137,7 @@ static struct bio *__bio_alloc(struct f2fs_sb_info =
+*sbi, block_t blk_addr,
+>=20
+> 	bio =3D f2fs_bio_alloc(npages);
+>=20
+> -	bio->bi_bdev =3D sbi->sb->s_bdev;
+> -	bio->bi_iter.bi_sector =3D SECTOR_FROM_BLOCK(blk_addr);
+> +	f2fs_target_device(sbi, blk_addr, bio);
+> 	bio->bi_end_io =3D is_read ? f2fs_read_end_io : =
+f2fs_write_end_io;
+> 	bio->bi_private =3D is_read ? NULL : sbi;
+>=20
+> @@ -273,7 +312,8 @@ void f2fs_submit_page_mbio(struct f2fs_io_info =
+*fio)
+> 	down_write(&io->io_rwsem);
+>=20
+> 	if (io->bio && (io->last_block_in_bio !=3D fio->new_blkaddr - 1 =
+||
+> -	    (io->fio.op !=3D fio->op || io->fio.op_flags !=3D =
+fio->op_flags)))
+> +	    (io->fio.op !=3D fio->op || io->fio.op_flags !=3D =
+fio->op_flags) ||
+> +			!__same_bdev(sbi, fio->new_blkaddr, io->bio)))
+> 		__submit_merged_bio(io);
+> alloc_new:
+> 	if (io->bio =3D=3D NULL) {
+> @@ -965,7 +1005,6 @@ static struct bio *f2fs_grab_bio(struct inode =
+*inode, block_t blkaddr,
+> {
+> 	struct f2fs_sb_info *sbi =3D F2FS_I_SB(inode);
+> 	struct fscrypt_ctx *ctx =3D NULL;
+> -	struct block_device *bdev =3D sbi->sb->s_bdev;
+> 	struct bio *bio;
+>=20
+> 	if (f2fs_encrypted_inode(inode) && S_ISREG(inode->i_mode)) {
+> @@ -983,8 +1022,7 @@ static struct bio *f2fs_grab_bio(struct inode =
+*inode, block_t blkaddr,
+> 			fscrypt_release_ctx(ctx);
+> 		return ERR_PTR(-ENOMEM);
+> 	}
+> -	bio->bi_bdev =3D bdev;
+> -	bio->bi_iter.bi_sector =3D SECTOR_FROM_BLOCK(blkaddr);
+> +	f2fs_target_device(sbi, blkaddr, bio);
+> 	bio->bi_end_io =3D f2fs_read_end_io;
+> 	bio->bi_private =3D ctx;
+>=20
+> @@ -1079,7 +1117,8 @@ static int f2fs_mpage_readpages(struct =
+address_space *mapping,
+> 		 * This page will go to BIO.  Do we need to send this
+> 		 * BIO off first?
+> 		 */
+> -		if (bio && (last_block_in_bio !=3D block_nr - 1)) {
+> +		if (bio && (last_block_in_bio !=3D block_nr - 1 ||
+> +			!__same_bdev(F2FS_I_SB(inode), block_nr, bio))) =
+{
+> submit_and_realloc:
+> 			__submit_bio(F2FS_I_SB(inode), bio, DATA);
+> 			bio =3D NULL;
+> @@ -1738,6 +1777,8 @@ static ssize_t f2fs_direct_IO(struct kiocb =
+*iocb, struct iov_iter *iter)
+> 		return 0;
+> 	if (test_opt(F2FS_I_SB(inode), LFS))
+> 		return 0;
+> +	if (F2FS_I_SB(inode)->s_ndevs)
+> +		return 0;
+>=20
+> 	trace_f2fs_direct_IO_enter(inode, offset, count, rw);
+>=20
+> diff --git a/fs/f2fs/f2fs.h b/fs/f2fs/f2fs.h
+> index 9650514..1737c45 100644
+> --- a/fs/f2fs/f2fs.h
+> +++ b/fs/f2fs/f2fs.h
+> @@ -730,6 +730,20 @@ struct f2fs_bio_info {
+> 	struct rw_semaphore io_rwsem;	/* blocking op for bio */
+> };
+>=20
+> +#define FDEV(i)				(sbi->devs[i])
+> +#define RDEV(i)				(raw_super->devs[i])
+> +struct f2fs_dev_info {
+> +	struct block_device *bdev;
+> +	char path[MAX_PATH_LEN];
+> +	unsigned int total_segments;
+> +	block_t start_blk;
+> +	block_t end_blk;
+> +#ifdef CONFIG_BLK_DEV_ZONED
+> +	unsigned int nr_blkz;			/* Total number of zones =
+*/
+> +	u8 *blkz_type;				/* Array of zones type =
+*/
+> +#endif
+> +};
+> +
+> enum inode_type {
+> 	DIR_INODE,			/* for dirty dir inode */
+> 	FILE_INODE,			/* for dirty regular/symlink =
+inode */
+> @@ -778,10 +792,8 @@ struct f2fs_sb_info {
+> #endif
+>=20
+> #ifdef CONFIG_BLK_DEV_ZONED
+> -	unsigned int nr_blkz;			/* Total number of zones =
+*/
+> 	unsigned int blocks_per_blkz;		/* F2FS blocks per zone =
+*/
+> 	unsigned int log_blocks_per_blkz;	/* log2 F2FS blocks per =
+zone */
+> -	u8 *blkz_type;				/* Array of zones type =
+*/
+> #endif
+>=20
+> 	/* for node-related operations */
+> @@ -897,6 +909,8 @@ struct f2fs_sb_info {
+>=20
+> 	/* For shrinker support */
+> 	struct list_head s_list;
+> +	int s_ndevs;				/* number of devices */
+> +	struct f2fs_dev_info *devs;		/* for device list */
+> 	struct mutex umount_mutex;
+> 	unsigned int shrinker_run_no;
+>=20
+> @@ -2159,6 +2173,9 @@ void f2fs_submit_merged_bio_cond(struct =
+f2fs_sb_info *, struct inode *,
+> void f2fs_flush_merged_bios(struct f2fs_sb_info *);
+> int f2fs_submit_page_bio(struct f2fs_io_info *);
+> void f2fs_submit_page_mbio(struct f2fs_io_info *);
+> +struct block_device *f2fs_target_device(struct f2fs_sb_info *,
+> +				block_t, struct bio *);
+> +int f2fs_target_device_index(struct f2fs_sb_info *, block_t);
+> void set_data_blkaddr(struct dnode_of_data *);
+> void f2fs_update_data_blkaddr(struct dnode_of_data *, block_t);
+> int reserve_new_blocks(struct dnode_of_data *, blkcnt_t);
+> @@ -2446,11 +2463,15 @@ static inline int =
+f2fs_sb_mounted_blkzoned(struct super_block *sb)
+>=20
+> #ifdef CONFIG_BLK_DEV_ZONED
+> static inline int get_blkz_type(struct f2fs_sb_info *sbi,
+> -				block_t blkaddr)
+> +			struct block_device *bdev, block_t blkaddr)
+> {
+> 	unsigned int zno =3D blkaddr >> sbi->log_blocks_per_blkz;
+> +	int i;
+>=20
+> -	return sbi->blkz_type[zno];
+> +	for (i =3D 0; i < sbi->s_ndevs; i++)
+> +		if (FDEV(i).bdev =3D=3D bdev)
+> +			return FDEV(i).blkz_type[zno];
+> +	return -EINVAL;
+> }
+> #endif
+>=20
+> diff --git a/fs/f2fs/segment.c b/fs/f2fs/segment.c
+> index 7fb7dd3..ef727d1 100644
+> --- a/fs/f2fs/segment.c
+> +++ b/fs/f2fs/segment.c
+> @@ -403,6 +403,33 @@ void f2fs_balance_fs_bg(struct f2fs_sb_info *sbi)
+> 	}
+> }
+>=20
+> +static int __submit_flush_wait(struct block_device *bdev)
+> +{
+> +	struct bio *bio =3D f2fs_bio_alloc(0);
+> +	int ret;
+> +
+> +	bio_set_op_attrs(bio, REQ_OP_WRITE, WRITE_FLUSH);
+> +	bio->bi_bdev =3D bdev;
+> +	ret =3D submit_bio_wait(bio);
+> +	bio_put(bio);
+> +	return ret;
+> +}
+> +
+> +static int submit_flush_wait(struct f2fs_sb_info *sbi)
+> +{
+> +	int ret =3D __submit_flush_wait(sbi->sb->s_bdev);
+> +	int i;
+> +
+> +	if (sbi->s_ndevs && !ret) {
+> +		for (i =3D 1; i < sbi->s_ndevs; i++) {
+> +			ret =3D __submit_flush_wait(FDEV(i).bdev);
+> +			if (ret)
+> +				break;
+> +		}
+> +	}
+> +	return ret;
+> +}
+> +
+> static int issue_flush_thread(void *data)
+> {
+> 	struct f2fs_sb_info *sbi =3D data;
+> @@ -413,25 +440,18 @@ static int issue_flush_thread(void *data)
+> 		return 0;
+>=20
+> 	if (!llist_empty(&fcc->issue_list)) {
+> -		struct bio *bio;
+> 		struct flush_cmd *cmd, *next;
+> 		int ret;
+>=20
+> -		bio =3D f2fs_bio_alloc(0);
+> -
+> 		fcc->dispatch_list =3D llist_del_all(&fcc->issue_list);
+> 		fcc->dispatch_list =3D =
+llist_reverse_order(fcc->dispatch_list);
+>=20
+> -		bio->bi_bdev =3D sbi->sb->s_bdev;
+> -		bio_set_op_attrs(bio, REQ_OP_WRITE, WRITE_FLUSH);
+> -		ret =3D submit_bio_wait(bio);
+> -
+> +		ret =3D submit_flush_wait(sbi);
+> 		llist_for_each_entry_safe(cmd, next,
+> 					  fcc->dispatch_list, llnode) {
+> 			cmd->ret =3D ret;
+> 			complete(&cmd->wait);
+> 		}
+> -		bio_put(bio);
+> 		fcc->dispatch_list =3D NULL;
+> 	}
+>=20
+> @@ -452,15 +472,11 @@ int f2fs_issue_flush(struct f2fs_sb_info *sbi)
+> 		return 0;
+>=20
+> 	if (!test_opt(sbi, FLUSH_MERGE) || =
+!atomic_read(&fcc->submit_flush)) {
+> -		struct bio *bio =3D f2fs_bio_alloc(0);
+> 		int ret;
+>=20
+> 		atomic_inc(&fcc->submit_flush);
+> -		bio->bi_bdev =3D sbi->sb->s_bdev;
+> -		bio_set_op_attrs(bio, REQ_OP_WRITE, WRITE_FLUSH);
+> -		ret =3D submit_bio_wait(bio);
+> +		ret =3D submit_flush_wait(sbi);
+> 		atomic_dec(&fcc->submit_flush);
+> -		bio_put(bio);
+> 		return ret;
+> 	}
+>=20
+> @@ -637,14 +653,18 @@ static void f2fs_submit_bio_wait_endio(struct =
+bio *bio)
+>=20
+> /* this function is copied from blkdev_issue_discard from =
+block/blk-lib.c */
+> static int __f2fs_issue_discard_async(struct f2fs_sb_info *sbi,
+> -				block_t blkstart, block_t blklen)
+> +		struct block_device *bdev, block_t blkstart, block_t =
+blklen)
+> {
+> -	struct block_device *bdev =3D sbi->sb->s_bdev;
+> 	struct bio *bio =3D NULL;
+> 	int err;
+>=20
+> 	trace_f2fs_issue_discard(sbi->sb, blkstart, blklen);
+>=20
+> +	if (sbi->s_ndevs) {
+> +		int devi =3D f2fs_target_device_index(sbi, blkstart);
+> +
+> +		blkstart -=3D FDEV(devi).start_blk;
+> +	}
+> 	err =3D __blkdev_issue_discard(bdev,
+> 				SECTOR_FROM_BLOCK(blkstart),
+> 				SECTOR_FROM_BLOCK(blklen),
+> @@ -662,18 +682,24 @@ static int __f2fs_issue_discard_async(struct =
+f2fs_sb_info *sbi,
+> }
+>=20
+> #ifdef CONFIG_BLK_DEV_ZONED
+> -static int f2fs_issue_discard_zone(struct f2fs_sb_info *sbi,
+> -					block_t blkstart, block_t =
+blklen)
+> +static int __f2fs_issue_discard_zone(struct f2fs_sb_info *sbi,
+> +		struct block_device *bdev, block_t blkstart, block_t =
+blklen)
+> {
+> -	sector_t sector =3D SECTOR_FROM_BLOCK(blkstart);
+> 	sector_t nr_sects =3D SECTOR_FROM_BLOCK(blklen);
+> -	struct block_device *bdev =3D sbi->sb->s_bdev;
+> +	sector_t sector;
+> +	int devi =3D 0;
+>=20
+> -	if (nr_sects !=3D bdev_zone_size(bdev)) {
+> +	if (sbi->s_ndevs) {
+> +		devi =3D f2fs_target_device_index(sbi, blkstart);
+> +		blkstart -=3D FDEV(devi).start_blk;
+> +	}
+> +	sector =3D SECTOR_FROM_BLOCK(blkstart);
+> +
+> +	if (sector % bdev_zone_size(bdev) || nr_sects !=3D =
+bdev_zone_size(bdev)) {
+> 		f2fs_msg(sbi->sb, KERN_INFO,
+> -			 "Unaligned discard attempted (sector %llu + =
+%llu)",
+> -			 (unsigned long long)sector,
+> -			 (unsigned long long)nr_sects);
+> +			"(%d) %s: Unaligned discard attempted (block %x =
++ %x)",
+> +			devi, sbi->s_ndevs ? FDEV(devi).path: "",
+> +			blkstart, blklen);
+> 		return -EIO;
+> 	}
+>=20
+> @@ -682,14 +708,12 @@ static int f2fs_issue_discard_zone(struct =
+f2fs_sb_info *sbi,
+> 	 * use regular discard if the drive supports it. For sequential
+> 	 * zones, reset the zone write pointer.
+> 	 */
+> -	switch (get_blkz_type(sbi, blkstart)) {
+> +	switch (get_blkz_type(sbi, bdev, blkstart)) {
+>=20
+> 	case BLK_ZONE_TYPE_CONVENTIONAL:
+> 		if (!blk_queue_discard(bdev_get_queue(bdev)))
+> 			return 0;
+> -		return __f2fs_issue_discard_async(sbi, blkstart,
+> -						  blklen);
+> -
+> +		return __f2fs_issue_discard_async(sbi, bdev, blkstart, =
+blklen);
+> 	case BLK_ZONE_TYPE_SEQWRITE_REQ:
+> 	case BLK_ZONE_TYPE_SEQWRITE_PREF:
+> 		trace_f2fs_issue_reset_zone(sbi->sb, blkstart);
+> @@ -702,14 +726,45 @@ static int f2fs_issue_discard_zone(struct =
+f2fs_sb_info *sbi,
+> }
+> #endif
+>=20
+> +static int __issue_discard_async(struct f2fs_sb_info *sbi,
+> +		struct block_device *bdev, block_t blkstart, block_t =
+blklen)
+> +{
+> +#ifdef CONFIG_BLK_DEV_ZONED
+> +	if (f2fs_sb_mounted_blkzoned(sbi->sb) &&
+> +				bdev_zoned_model(bdev) !=3D =
+BLK_ZONED_NONE)
+> +		return __f2fs_issue_discard_zone(sbi, bdev, blkstart, =
+blklen);
+> +#endif
+> +	return __f2fs_issue_discard_async(sbi, bdev, blkstart, blklen);
+> +}
+> +
+> static int f2fs_issue_discard(struct f2fs_sb_info *sbi,
+> 				block_t blkstart, block_t blklen)
+> {
+> +	sector_t start =3D blkstart, len =3D 0;
+> +	struct block_device *bdev;
+> 	struct seg_entry *se;
+> 	unsigned int offset;
+> 	block_t i;
+> +	int err =3D 0;
+> +
+> +	bdev =3D f2fs_target_device(sbi, blkstart, NULL);
+> +
+> +	for (i =3D blkstart; i < blkstart + blklen; i++, len++) {
+> +		if (i !=3D start) {
+> +			struct block_device *bdev2 =3D
+> +				f2fs_target_device(sbi, i, NULL);
+> +
+> +			if (bdev2 !=3D bdev) {
+> +				err =3D __issue_discard_async(sbi, bdev,
+> +						start, len);
+> +				if (err)
+> +					return err;
+> +				bdev =3D bdev2;
+> +				start =3D i;
+> +				len =3D 0;
+> +			}
+> +		}
+>=20
+> -	for (i =3D blkstart; i < blkstart + blklen; i++) {
+> 		se =3D get_seg_entry(sbi, GET_SEGNO(sbi, i));
+> 		offset =3D GET_BLKOFF_FROM_SEG0(sbi, i);
+>=20
+> @@ -717,11 +772,9 @@ static int f2fs_issue_discard(struct f2fs_sb_info =
+*sbi,
+> 			sbi->discard_blks--;
+> 	}
+>=20
+> -#ifdef CONFIG_BLK_DEV_ZONED
+> -	if (f2fs_sb_mounted_blkzoned(sbi->sb))
+> -		return f2fs_issue_discard_zone(sbi, blkstart, blklen);
+> -#endif
+> -	return __f2fs_issue_discard_async(sbi, blkstart, blklen);
+> +	if (len)
+> +		err =3D __issue_discard_async(sbi, bdev, start, len);
+> +	return err;
+> }
+>=20
+> static void __add_discard_entry(struct f2fs_sb_info *sbi,
+> diff --git a/fs/f2fs/super.c b/fs/f2fs/super.c
+> index eca9aea..4ccbb86 100644
+> --- a/fs/f2fs/super.c
+> +++ b/fs/f2fs/super.c
+> @@ -713,6 +713,19 @@ static void destroy_percpu_info(struct =
+f2fs_sb_info *sbi)
+> 	percpu_counter_destroy(&sbi->total_valid_inode_count);
+> }
+>=20
+> +static void destroy_device_list(struct f2fs_sb_info *sbi)
+> +{
+> +	int i;
+> +
+> +	for (i =3D 0; i < sbi->s_ndevs; i++) {
+> +		blkdev_put(FDEV(i).bdev, FMODE_EXCL);
+> +#ifdef CONFIG_BLK_DEV_ZONED
+> +		kfree(FDEV(i).blkz_type);
+> +#endif
+> +	}
+> +	kfree(sbi->devs);
+> +}
+> +
+> static void f2fs_put_super(struct super_block *sb)
+> {
+> 	struct f2fs_sb_info *sbi =3D F2FS_SB(sb);
+> @@ -773,6 +786,8 @@ static void f2fs_put_super(struct super_block *sb)
+> 		crypto_free_shash(sbi->s_chksum_driver);
+> 	kfree(sbi->raw_super);
+>=20
+> +	destroy_device_list(sbi);
+> +
+> 	destroy_percpu_info(sbi);
+> 	kfree(sbi);
+> }
+> @@ -1516,9 +1531,9 @@ static int init_percpu_info(struct f2fs_sb_info =
+*sbi)
+> }
+>=20
+> #ifdef CONFIG_BLK_DEV_ZONED
+> -static int init_blkz_info(struct f2fs_sb_info *sbi)
+> +static int init_blkz_info(struct f2fs_sb_info *sbi, int devi)
+> {
+> -	struct block_device *bdev =3D sbi->sb->s_bdev;
+> +	struct block_device *bdev =3D FDEV(devi).bdev;
+> 	sector_t nr_sectors =3D bdev->bd_part->nr_sects;
+> 	sector_t sector =3D 0;
+> 	struct blk_zone *zones;
+> @@ -1529,15 +1544,21 @@ static int init_blkz_info(struct f2fs_sb_info =
+*sbi)
+> 	if (!f2fs_sb_mounted_blkzoned(sbi->sb))
+> 		return 0;
+>=20
+> +	if (sbi->blocks_per_blkz && sbi->blocks_per_blkz !=3D
+> +				SECTOR_TO_BLOCK(bdev_zone_size(bdev)))
+> +		return -EINVAL;
+> 	sbi->blocks_per_blkz =3D SECTOR_TO_BLOCK(bdev_zone_size(bdev));
+> +	if (sbi->log_blocks_per_blkz && sbi->log_blocks_per_blkz !=3D
+> +				__ilog2_u32(sbi->blocks_per_blkz))
+> +		return -EINVAL;
+> 	sbi->log_blocks_per_blkz =3D __ilog2_u32(sbi->blocks_per_blkz);
+> -	sbi->nr_blkz =3D SECTOR_TO_BLOCK(nr_sectors) >>
+> -		sbi->log_blocks_per_blkz;
+> +	FDEV(devi).nr_blkz =3D SECTOR_TO_BLOCK(nr_sectors) >>
+> +					sbi->log_blocks_per_blkz;
+> 	if (nr_sectors & (bdev_zone_size(bdev) - 1))
+> -		sbi->nr_blkz++;
+> +		FDEV(devi).nr_blkz++;
+>=20
+> -	sbi->blkz_type =3D kmalloc(sbi->nr_blkz, GFP_KERNEL);
+> -	if (!sbi->blkz_type)
+> +	FDEV(devi).blkz_type =3D kmalloc(FDEV(devi).nr_blkz, =
+GFP_KERNEL);
+> +	if (!FDEV(devi).blkz_type)
+> 		return -ENOMEM;
+>=20
+> #define F2FS_REPORT_NR_ZONES   4096
+> @@ -1562,7 +1583,7 @@ static int init_blkz_info(struct f2fs_sb_info =
+*sbi)
+> 		}
+>=20
+> 		for (i =3D 0; i < nr_zones; i++) {
+> -			sbi->blkz_type[n] =3D zones[i].type;
+> +			FDEV(devi).blkz_type[n] =3D zones[i].type;
+> 			sector +=3D zones[i].len;
+> 			n++;
+> 		}
+> @@ -1666,6 +1687,77 @@ int f2fs_commit_super(struct f2fs_sb_info *sbi, =
+bool recover)
+> 	return err;
+> }
+>=20
+> +static int f2fs_scan_devices(struct f2fs_sb_info *sbi)
+> +{
+> +	struct f2fs_super_block *raw_super =3D F2FS_RAW_SUPER(sbi);
+> +	int i;
+> +
+> +	for (i =3D 0; i < MAX_DEVICES; i++) {
+> +		if (!RDEV(i).path[0])
+> +			return 0;
+> +
+> +		if (i =3D=3D 0) {
+> +			sbi->devs =3D kzalloc(sizeof(struct =
+f2fs_dev_info) *
+> +						MAX_DEVICES, =
+GFP_KERNEL);
+> +			if (!sbi->devs)
+> +				return -ENOMEM;
+> +		}
+> +
+> +		memcpy(FDEV(i).path, RDEV(i).path, MAX_PATH_LEN);
+> +		FDEV(i).total_segments =3D =
+le32_to_cpu(RDEV(i).total_segments);
+> +		if (i =3D=3D 0) {
+> +			FDEV(i).start_blk =3D 0;
+> +			FDEV(i).end_blk =3D FDEV(i).start_blk +
+> +				(FDEV(i).total_segments <<
+> +				sbi->log_blocks_per_seg) - 1 +
+> +				=
+le32_to_cpu(raw_super->segment0_blkaddr);
+> +		} else {
+> +			FDEV(i).start_blk =3D FDEV(i - 1).end_blk + 1;
+> +			FDEV(i).end_blk =3D FDEV(i).start_blk +
+> +				(FDEV(i).total_segments <<
+> +				sbi->log_blocks_per_seg) - 1;
+> +		}
+> +
+> +		FDEV(i).bdev =3D blkdev_get_by_path(FDEV(i).path,
+> +					sbi->sb->s_mode, =
+sbi->sb->s_type);
+> +		if (IS_ERR(FDEV(i).bdev))
+> +			return PTR_ERR(FDEV(i).bdev);
+> +
+> +		/* to release errored devices */
+> +		sbi->s_ndevs =3D i + 1;
+> +
+> +#ifdef CONFIG_BLK_DEV_ZONED
+> +		if (bdev_zoned_model(FDEV(i).bdev) =3D=3D BLK_ZONED_HM =
+&&
+> +				!f2fs_sb_mounted_blkzoned(sbi->sb)) {
+> +			f2fs_msg(sbi->sb, KERN_ERR,
+> +				"Zoned block device feature not =
+enabled\n");
+> +			return -EINVAL;
+> +		}
+> +		if (bdev_zoned_model(FDEV(i).bdev) !=3D BLK_ZONED_NONE) =
+{
+> +			if (init_blkz_info(sbi, i)) {
+> +				f2fs_msg(sbi->sb, KERN_ERR,
+> +					"Failed to initialize F2FS =
+blkzone information");
+> +				return -EINVAL;
+> +			}
+> +			f2fs_msg(sbi->sb, KERN_INFO,
+> +				"Mount Device [%2d]: %20s, %8u, %8x - =
+%8x (zone: %s)",
+> +				i, FDEV(i).path,
+> +				FDEV(i).total_segments,
+> +				FDEV(i).start_blk, FDEV(i).end_blk,
+> +				bdev_zoned_model(FDEV(i).bdev) =3D=3D =
+BLK_ZONED_HA ?
+> +				"Host-aware" : "Host-managed");
+> +			continue;
+> +		}
+> +#endif
+> +		f2fs_msg(sbi->sb, KERN_INFO,
+> +			"Mount Device [%2d]: %20s, %8u, %8x - %8x",
+> +				i, FDEV(i).path,
+> +				FDEV(i).total_segments,
+> +				FDEV(i).start_blk, FDEV(i).end_blk);
+> +	}
+> +	return 0;
+> +}
+> +
+> static int f2fs_fill_super(struct super_block *sb, void *data, int =
+silent)
+> {
+> 	struct f2fs_sb_info *sbi;
+> @@ -1724,15 +1816,7 @@ static int f2fs_fill_super(struct super_block =
+*sb, void *data, int silent)
+> 			 "Zoned block device support is not enabled\n");
+> 		goto free_sb_buf;
+> 	}
+> -#else
+> -	if (bdev_zoned_model(sb->s_bdev) =3D=3D BLK_ZONED_HM &&
+> -	    !f2fs_sb_mounted_blkzoned(sb)) {
+> -		f2fs_msg(sb, KERN_ERR,
+> -			 "Zoned block device feature not enabled\n");
+> -		goto free_sb_buf;
+> -	}
+> #endif
+> -
+> 	default_options(sbi);
+> 	/* parse mount options */
+> 	options =3D kstrdup((const char *)data, GFP_KERNEL);
+> @@ -1802,6 +1886,13 @@ static int f2fs_fill_super(struct super_block =
+*sb, void *data, int silent)
+> 		goto free_meta_inode;
+> 	}
+>=20
+> +	/* Initialize device list */
+> +	err =3D f2fs_scan_devices(sbi);
+> +	if (err) {
+> +		f2fs_msg(sb, KERN_ERR, "Failed to find devices");
+> +		goto free_devices;
+> +	}
+> +
+> 	sbi->total_valid_node_count =3D
+> 				=
+le32_to_cpu(sbi->ckpt->valid_node_count);
+> 	percpu_counter_set(&sbi->total_valid_inode_count,
+> @@ -1820,15 +1911,6 @@ static int f2fs_fill_super(struct super_block =
+*sb, void *data, int silent)
+>=20
+> 	init_ino_entry_info(sbi);
+>=20
+> -#ifdef CONFIG_BLK_DEV_ZONED
+> -	err =3D init_blkz_info(sbi);
+> -	if (err) {
+> -		f2fs_msg(sb, KERN_ERR,
+> -			"Failed to initialize F2FS blkzone =
+information");
+> -		goto free_blkz;
+> -	}
+> -#endif
+> -
+> 	/* setup f2fs internal modules */
+> 	err =3D build_segment_manager(sbi);
+> 	if (err) {
+> @@ -2007,10 +2089,8 @@ static int f2fs_fill_super(struct super_block =
+*sb, void *data, int silent)
+> 	destroy_node_manager(sbi);
+> free_sm:
+> 	destroy_segment_manager(sbi);
+> -#ifdef CONFIG_BLK_DEV_ZONED
+> -free_blkz:
+> -	kfree(sbi->blkz_type);
+> -#endif
+> +free_devices:
+> +	destroy_device_list(sbi);
+> 	kfree(sbi->ckpt);
+> free_meta_inode:
+> 	make_bad_inode(sbi->meta_inode);
+> diff --git a/include/linux/f2fs_fs.h b/include/linux/f2fs_fs.h
+> index 422630b..cea41a1 100644
+> --- a/include/linux/f2fs_fs.h
+> +++ b/include/linux/f2fs_fs.h
+> @@ -52,10 +52,17 @@
+>=20
+> #define VERSION_LEN	256
+> #define MAX_VOLUME_NAME		512
+> +#define MAX_PATH_LEN		64
+> +#define MAX_DEVICES		8
+>=20
+> /*
+>  * For superblock
+>  */
+> +struct f2fs_device {
+> +	__u8 path[MAX_PATH_LEN];
+> +	__le32 total_segments;
+> +} __packed;
+> +
+> struct f2fs_super_block {
+> 	__le32 magic;			/* Magic Number */
+> 	__le16 major_ver;		/* Major Version */
+> @@ -94,7 +101,8 @@ struct f2fs_super_block {
+> 	__le32 feature;			/* defined features */
+> 	__u8 encryption_level;		/* versioning level for =
+encryption */
+> 	__u8 encrypt_pw_salt[16];	/* Salt used for string2key =
+algorithm */
+> -	__u8 reserved[871];		/* valid reserved region */
+> +	struct f2fs_device devs[MAX_DEVICES];	/* device list */
+> +	__u8 reserved[327];		/* valid reserved region */
+> } __packed;
+>=20
+> /*
+> --
+> 2.8.3
 
+Cheers, Andreas
 
+--Apple-Mail=_BA06BDC1-F1E9-47DD-A826-6669C35625EE
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment;
+	filename=signature.asc
+Content-Type: application/pgp-signature;
+	name=signature.asc
+Content-Description: Message signed with OpenPGP using GPGMail
 
+-----BEGIN PGP SIGNATURE-----
+Comment: GPGTools - http://gpgtools.org
+
+iQIVAwUBWCOp8nKl2rkXzB/gAQhk0g/7BhOJ930i/wnB/3lZfaANTj27ZxH4kZF9
+psQQwoJu8uZRLUhWKAqHh1jDMEUnPpsbdZLzhWG+0jYxc2WhEerrvmaZoN741UOm
++tpR3ecfmhlUSajDerlttcUHvhwdA6G3J0PGO67E5XbF4yM/MGbCLvHs3pdUKFi+
+naM+C1HGGZBr5u8tdEsjsKZYE8UaSu0g0MpbZuwyYqwxb5vO+6JSSockAFazTbLz
+QSTLgHgcVHBanc21v4G9RlOxDyAjGLHhs0qIcd9kz/AkBvn8SyiRmpbLFU/k/IG5
+6EdfrwHweBKnX7OKTmINmvBZDGld/AlB1DkQ/y0BLt6h9mBxcdRtzHUG9T7FL04K
+3WMxL30IT4g1qxY69IKNQpPyqBaFtYAVpEEopMjla6B8SMJE7PCxRLdMu2RBbFpT
+EHnNDp7MyraG3piOQGoMySD4MnkyJJnD8KF3PRghxS9ZcNPv7JPCQb3K0IQuLXPf
+U4SyfcNYv8PBQNGmQnHmXyDBJdaep4zArnyf24i1JI+hT8WvXclQ26yRfo3Zq1cg
+pGO42oSn/3n0i2ww8MskRo1aHF7GQbcuZLVYy5YiYexdt6f43hcRHGeS4yTC0lzI
+WOhJ2F33q1JcDLiVOI05ygVlhF0cyHCfX5I04PKvk8WViOYakYHXrOVuleopmGxZ
+8AiHA24QuOg=
+=6Yjv
+-----END PGP SIGNATURE-----
+
+--Apple-Mail=_BA06BDC1-F1E9-47DD-A826-6669C35625EE--

@@ -1,98 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:34425 "EHLO
-        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S934727AbcKLABv (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 Nov 2016 19:01:51 -0500
-From: Adam Borowski <kilobyte@angband.pl>
-To: =?UTF-8?q?Holger=20Hoffst=C3=A4tte?=
-        <holger@applied-asynchrony.com>,
-        David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org
-Cc: Adam Borowski <kilobyte@angband.pl>
-Date: Sat, 12 Nov 2016 00:59:59 +0100
-Message-Id: <20161111235959.8102-1-kilobyte@angband.pl>
-In-Reply-To: <5821D634.4070204@applied-asynchrony.com>
-References: <5821D634.4070204@applied-asynchrony.com>
-Subject: [PATCH v3-onstack] btrfs: make block group flags in balance printks human-readable
+Received: from mx2.suse.de ([195.135.220.15]:51236 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753745AbcKIRET (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 9 Nov 2016 12:04:19 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 93AAEAC34
+        for <linux-btrfs@vger.kernel.org>; Wed,  9 Nov 2016 17:04:17 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH 00/12] Misc cleanups
+Date: Wed,  9 Nov 2016 18:04:15 +0100
+Message-Id: <cover.1478710770.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-They're not even documented anywhere, letting users with no recourse but
-to RTFS.  It's no big burden to output the bitfield as words.
+Hi,
 
-Also, display unknown flags as hex.
+here's a bunch of cleanups and potential speed improvements when copying extent
+buffer pages, there are some special cases. I haven't done any performance
+measurements though.
 
-Signed-off-by: Adam Borowski <kilobyte@angband.pl>
----
- fs/btrfs/relocation.c | 41 ++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 38 insertions(+), 3 deletions(-)
+Patchset target is 4.10, can be found in branch misc-cleanups-4.10 in my repos.
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index c4af0cd..57d867d 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -4333,6 +4333,43 @@ static struct reloc_control *alloc_reloc_control(struct btrfs_fs_info *fs_info)
- }
- 
- /*
-+ * printk the block group being relocated
-+ */
-+static void describe_relocation(struct btrfs_fs_info *fs_info,
-+				struct btrfs_block_group_cache *block_group)
-+{
-+	char buf[128]; // prefixed by a '|' that'll be dropped
-+	u64 flags = block_group->flags;
-+
-+	if (unlikely(!flags)) // shouldn't happen
-+		strcpy(buf, "|NONE");
-+	else {
-+		char *bp = buf;
-+#define DESCRIBE_FLAG(f, d) \
-+		if (flags & BTRFS_BLOCK_GROUP_##f) { \
-+			bp += snprintf(bp, buf - bp + sizeof(buf), "|%s", d); \
-+			flags &= ~BTRFS_BLOCK_GROUP_##f; \
-+		}
-+		DESCRIBE_FLAG(DATA,     "data");
-+		DESCRIBE_FLAG(SYSTEM,   "system");
-+		DESCRIBE_FLAG(METADATA, "metadata");
-+		DESCRIBE_FLAG(RAID0,    "raid0");
-+		DESCRIBE_FLAG(RAID1,    "raid1");
-+		DESCRIBE_FLAG(DUP,      "dup");
-+		DESCRIBE_FLAG(RAID10,   "raid10");
-+		DESCRIBE_FLAG(RAID5,    "raid5");
-+		DESCRIBE_FLAG(RAID6,    "raid6");
-+		if (unlikely(flags))
-+			snprintf(buf, buf - bp + sizeof(buf), "|0x%llx", flags);
-+#undef DESCRIBE_FLAG
-+	}
-+
-+	btrfs_info(fs_info,
-+		   "relocating block group %llu flags %s",
-+		   block_group->key.objectid, buf+1);
-+}
-+
-+/*
-  * function to relocate all extents in a block group.
-  */
- int btrfs_relocate_block_group(struct btrfs_root *extent_root, u64 group_start)
-@@ -4388,9 +4425,7 @@ int btrfs_relocate_block_group(struct btrfs_root *extent_root, u64 group_start)
- 		goto out;
- 	}
- 
--	btrfs_info(extent_root->fs_info,
--		   "relocating block group %llu flags %llu",
--		   rc->block_group->key.objectid, rc->block_group->flags);
-+	describe_relocation(extent_root->fs_info, rc->block_group);
- 
- 	btrfs_wait_block_group_reservations(rc->block_group);
- 	btrfs_wait_nocow_writers(rc->block_group);
--- 
-2.10.2
+----------------------------------------------------------------
+David Sterba (12):
+      btrfs: reada, cleanup remove unneeded variable in __readahead_hook
+      btrfs: reada, remove unused parameter from __readahead_hook
+      btrfs: reada, sink start parameter to btree_readahead_hook
+      btrfs: reada, remove pointless BUG_ON in reada_find_extent
+      btrfs: reada, remove pointless BUG_ON check for fs_info
+      btrfs: remove trivial helper btrfs_find_tree_block
+      btrfs: delete unused member from superblock
+      btrfs: introduce helpers for updating eb uuids
+      btrfs: use new helpers to set uuids in eb
+      btrfs: use specialized page copying helpers in btrfs_clone_extent_buffer
+      btrfs: remove constant parameter to memset_extent_buffer and rename it
+      btrfs: add optimized version of eb to eb copy
 
-This is a version that uses a temp buffer on the stack, but does it in a
-separate function so it doesn't cost us anything when deep call chains are
-involved.  While balance that can trigger deep call chain, it's not called
-deeply itself.
-
-This approach is simpler than mucking with allocs and avoids code
-duplication that would be needed for handling failed alloc.
+ fs/btrfs/ctree.c                 | 49 ++++++++++++++++------------------------
+ fs/btrfs/ctree.h                 |  3 +--
+ fs/btrfs/disk-io.c               | 26 +++++++--------------
+ fs/btrfs/disk-io.h               |  2 --
+ fs/btrfs/extent-tree.c           |  4 ++--
+ fs/btrfs/extent_io.c             | 47 +++++++++++++++++++++++++++++++++-----
+ fs/btrfs/extent_io.h             |  9 ++++++--
+ fs/btrfs/file-item.c             |  2 +-
+ fs/btrfs/free-space-cache.c      |  4 ++--
+ fs/btrfs/inode.c                 |  2 +-
+ fs/btrfs/ioctl.c                 | 10 ++++----
+ fs/btrfs/reada.c                 | 24 ++++++--------------
+ fs/btrfs/relocation.c            |  2 +-
+ fs/btrfs/tests/extent-io-tests.c |  2 +-
+ fs/btrfs/volumes.c               |  6 ++---
+ 15 files changed, 98 insertions(+), 94 deletions(-)

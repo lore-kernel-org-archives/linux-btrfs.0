@@ -1,60 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51239 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:51246 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753745AbcKIREV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 9 Nov 2016 12:04:21 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id D3675ADB9
-        for <linux-btrfs@vger.kernel.org>; Wed,  9 Nov 2016 17:04:19 +0000 (UTC)
+        id S1753745AbcKIREX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 9 Nov 2016 12:04:23 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 35421AC34
+        for <linux-btrfs@vger.kernel.org>; Wed,  9 Nov 2016 17:04:22 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 01/12] btrfs: reada, cleanup remove unneeded variable in __readahead_hook
-Date: Wed,  9 Nov 2016 18:04:17 +0100
-Message-Id: <f05308a150fac41aeb3ab437d9bbd7dd78d26b18.1478710770.git.dsterba@suse.com>
+Subject: [PATCH 02/12] btrfs: reada, remove unused parameter from __readahead_hook
+Date: Wed,  9 Nov 2016 18:04:20 +0100
+Message-Id: <fb3a1c62919563806850d396c618550154b639bc.1478710770.git.dsterba@suse.com>
 In-Reply-To: <cover.1478710770.git.dsterba@suse.com>
 References: <cover.1478710770.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We can't touch the eb directly in case the function is called with a
-non-zero error, so we can read the eb level when needed.
+'start' is not used since "btrfs: reada: Pass reada_extent into
+__readahead_hook directly" (6e39dbe8b9e55280c).
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/reada.c | 6 +-----
- 1 file changed, 1 insertion(+), 5 deletions(-)
+ fs/btrfs/reada.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
-index 75bab76739be..378043823dca 100644
+index 378043823dca..018a303c91fb 100644
 --- a/fs/btrfs/reada.c
 +++ b/fs/btrfs/reada.c
-@@ -109,16 +109,12 @@ static void __readahead_hook(struct btrfs_fs_info *fs_info,
+@@ -107,7 +107,7 @@ static int reada_add_block(struct reada_control *rc, u64 logical,
+ /* in case of err, eb might be NULL */
+ static void __readahead_hook(struct btrfs_fs_info *fs_info,
  			     struct reada_extent *re, struct extent_buffer *eb,
- 			     u64 start, int err)
+-			     u64 start, int err)
++			     int err)
  {
--	int level = 0;
  	int nritems;
  	int i;
- 	u64 bytenr;
- 	u64 generation;
- 	struct list_head list;
+@@ -231,7 +231,7 @@ int btree_readahead_hook(struct btrfs_fs_info *fs_info,
+ 		goto start_machine;
+ 	}
  
--	if (eb)
--		level = btrfs_header_level(eb);
--
- 	spin_lock(&re->lock);
- 	/*
- 	 * just take the full list from the extent. afterwards we
-@@ -143,7 +139,7 @@ static void __readahead_hook(struct btrfs_fs_info *fs_info,
- 	 * trigger more readahead depending from the content, e.g.
- 	 * fetch the checksums for the extents in the leaf.
- 	 */
--	if (!level)
-+	if (!btrfs_header_level(eb))
- 		goto cleanup;
+-	__readahead_hook(fs_info, re, eb, start, err);
++	__readahead_hook(fs_info, re, eb, err);
+ 	reada_extent_put(fs_info, re);	/* our ref */
  
- 	nritems = btrfs_header_nritems(eb);
+ start_machine:
+@@ -713,9 +713,9 @@ static int reada_start_machine_dev(struct btrfs_fs_info *fs_info,
+ 	ret = reada_tree_block_flagged(fs_info->extent_root, logical,
+ 			mirror_num, &eb);
+ 	if (ret)
+-		__readahead_hook(fs_info, re, NULL, logical, ret);
++		__readahead_hook(fs_info, re, NULL, ret);
+ 	else if (eb)
+-		__readahead_hook(fs_info, re, eb, eb->start, ret);
++		__readahead_hook(fs_info, re, eb, ret);
+ 
+ 	if (eb)
+ 		free_extent_buffer(eb);
 -- 
 2.10.1
 

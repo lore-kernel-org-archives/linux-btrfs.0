@@ -1,42 +1,134 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51267 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:51270 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751277AbcKIREa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 9 Nov 2016 12:04:30 -0500
+        id S1754520AbcKIREd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 9 Nov 2016 12:04:33 -0500
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 37179AC34
-        for <linux-btrfs@vger.kernel.org>; Wed,  9 Nov 2016 17:04:29 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 91B21AC34
+        for <linux-btrfs@vger.kernel.org>; Wed,  9 Nov 2016 17:04:31 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 05/12] btrfs: reada, remove pointless BUG_ON check for fs_info
-Date: Wed,  9 Nov 2016 18:04:27 +0100
-Message-Id: <fe6a34d6438402135cf0a97b76f49aba9a92bf86.1478710770.git.dsterba@suse.com>
+Subject: [PATCH 06/12] btrfs: remove trivial helper btrfs_find_tree_block
+Date: Wed,  9 Nov 2016 18:04:29 +0100
+Message-Id: <a9c6f41807bedef5eb54c57ae20942f079ac892a.1478710770.git.dsterba@suse.com>
 In-Reply-To: <cover.1478710770.git.dsterba@suse.com>
 References: <cover.1478710770.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We dereference fs_info several times, besides that post-mount functions
-should never see a NULL fs_info.
+During the time, the function has been shrunk to the point that it just
+calls find_extent_buffer, just passing the parameters.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/reada.c | 1 -
- 1 file changed, 1 deletion(-)
+ fs/btrfs/ctree.c       | 10 +++++-----
+ fs/btrfs/disk-io.c     |  8 +-------
+ fs/btrfs/disk-io.h     |  2 --
+ fs/btrfs/extent-tree.c |  2 +-
+ 4 files changed, 7 insertions(+), 15 deletions(-)
 
-diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
-index 95d526af3fba..c241e1f0422f 100644
---- a/fs/btrfs/reada.c
-+++ b/fs/btrfs/reada.c
-@@ -439,7 +439,6 @@ static struct reada_extent *reada_find_extent(struct btrfs_root *root,
- 				/* ignore whether the entry was inserted */
- 				radix_tree_delete(&dev->reada_extents, index);
- 			}
--			BUG_ON(fs_info == NULL);
- 			radix_tree_delete(&fs_info->reada_tree, index);
- 			spin_unlock(&fs_info->reada_lock);
- 			btrfs_dev_replace_unlock(&fs_info->dev_replace, 0);
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index f6ba165d3f81..173768767d1b 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -1670,7 +1670,7 @@ int btrfs_realloc_node(struct btrfs_trans_handle *trans,
+ 			continue;
+ 		}
+ 
+-		cur = btrfs_find_tree_block(root->fs_info, blocknr);
++		cur = find_extent_buffer(root->fs_info, blocknr);
+ 		if (cur)
+ 			uptodate = btrfs_buffer_uptodate(cur, gen, 0);
+ 		else
+@@ -2255,7 +2255,7 @@ static void reada_for_search(struct btrfs_root *root,
+ 
+ 	search = btrfs_node_blockptr(node, slot);
+ 	blocksize = root->nodesize;
+-	eb = btrfs_find_tree_block(root->fs_info, search);
++	eb = find_extent_buffer(root->fs_info, search);
+ 	if (eb) {
+ 		free_extent_buffer(eb);
+ 		return;
+@@ -2314,7 +2314,7 @@ static noinline void reada_for_balance(struct btrfs_root *root,
+ 	if (slot > 0) {
+ 		block1 = btrfs_node_blockptr(parent, slot - 1);
+ 		gen = btrfs_node_ptr_generation(parent, slot - 1);
+-		eb = btrfs_find_tree_block(root->fs_info, block1);
++		eb = find_extent_buffer(root->fs_info, block1);
+ 		/*
+ 		 * if we get -eagain from btrfs_buffer_uptodate, we
+ 		 * don't want to return eagain here.  That will loop
+@@ -2327,7 +2327,7 @@ static noinline void reada_for_balance(struct btrfs_root *root,
+ 	if (slot + 1 < nritems) {
+ 		block2 = btrfs_node_blockptr(parent, slot + 1);
+ 		gen = btrfs_node_ptr_generation(parent, slot + 1);
+-		eb = btrfs_find_tree_block(root->fs_info, block2);
++		eb = find_extent_buffer(root->fs_info, block2);
+ 		if (eb && btrfs_buffer_uptodate(eb, gen, 1) != 0)
+ 			block2 = 0;
+ 		free_extent_buffer(eb);
+@@ -2445,7 +2445,7 @@ read_block_for_search(struct btrfs_trans_handle *trans,
+ 	blocknr = btrfs_node_blockptr(b, slot);
+ 	gen = btrfs_node_ptr_generation(b, slot);
+ 
+-	tmp = btrfs_find_tree_block(root->fs_info, blocknr);
++	tmp = find_extent_buffer(root->fs_info, blocknr);
+ 	if (tmp) {
+ 		/* first we do an atomic uptodate check */
+ 		if (btrfs_buffer_uptodate(tmp, gen, 1) > 0) {
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 9c4ef833ba0b..686d05acfdb7 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1191,12 +1191,6 @@ int reada_tree_block_flagged(struct btrfs_root *root, u64 bytenr,
+ 	return 0;
+ }
+ 
+-struct extent_buffer *btrfs_find_tree_block(struct btrfs_fs_info *fs_info,
+-					    u64 bytenr)
+-{
+-	return find_extent_buffer(fs_info, bytenr);
+-}
+-
+ struct extent_buffer *btrfs_find_create_tree_block(struct btrfs_root *root,
+ 						 u64 bytenr)
+ {
+@@ -4452,7 +4446,7 @@ static int btrfs_destroy_marked_extents(struct btrfs_root *root,
+ 
+ 		clear_extent_bits(dirty_pages, start, end, mark);
+ 		while (start <= end) {
+-			eb = btrfs_find_tree_block(root->fs_info, start);
++			eb = find_extent_buffer(root->fs_info, start);
+ 			start += root->nodesize;
+ 			if (!eb)
+ 				continue;
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index 1a3237e5700f..124e30c76626 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -63,8 +63,6 @@ struct buffer_head *btrfs_read_dev_super(struct block_device *bdev);
+ int btrfs_read_dev_one_super(struct block_device *bdev, int copy_num,
+ 			struct buffer_head **bh_ret);
+ int btrfs_commit_super(struct btrfs_root *root);
+-struct extent_buffer *btrfs_find_tree_block(struct btrfs_fs_info *fs_info,
+-					    u64 bytenr);
+ struct btrfs_root *btrfs_read_fs_root(struct btrfs_root *tree_root,
+ 				      struct btrfs_key *location);
+ int btrfs_init_fs_root(struct btrfs_root *root);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 4607af38c72e..e453c7a13bd1 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -8873,7 +8873,7 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
+ 	bytenr = btrfs_node_blockptr(path->nodes[level], path->slots[level]);
+ 	blocksize = root->nodesize;
+ 
+-	next = btrfs_find_tree_block(root->fs_info, bytenr);
++	next = find_extent_buffer(root->fs_info, bytenr);
+ 	if (!next) {
+ 		next = btrfs_find_create_tree_block(root, bytenr);
+ 		if (IS_ERR(next))
 -- 
 2.10.1
 

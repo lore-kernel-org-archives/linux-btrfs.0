@@ -1,64 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51246 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:51253 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753745AbcKIREX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 9 Nov 2016 12:04:23 -0500
+        id S1751277AbcKIRE0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 9 Nov 2016 12:04:26 -0500
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 35421AC34
-        for <linux-btrfs@vger.kernel.org>; Wed,  9 Nov 2016 17:04:22 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 88AA3AC34
+        for <linux-btrfs@vger.kernel.org>; Wed,  9 Nov 2016 17:04:24 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 02/12] btrfs: reada, remove unused parameter from __readahead_hook
-Date: Wed,  9 Nov 2016 18:04:20 +0100
-Message-Id: <fb3a1c62919563806850d396c618550154b639bc.1478710770.git.dsterba@suse.com>
+Subject: [PATCH 03/12] btrfs: reada, sink start parameter to btree_readahead_hook
+Date: Wed,  9 Nov 2016 18:04:22 +0100
+Message-Id: <36d0546ff66e4e3d2034468bac9f3b6888260f6a.1478710770.git.dsterba@suse.com>
 In-Reply-To: <cover.1478710770.git.dsterba@suse.com>
 References: <cover.1478710770.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-'start' is not used since "btrfs: reada: Pass reada_extent into
-__readahead_hook directly" (6e39dbe8b9e55280c).
+Originally, the eb and start were passed separately in case eb is NULL.
+Since the readahead has been refactored in 4.6, this is not true anymore
+and we can get rid of the parameter.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/reada.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ fs/btrfs/ctree.h   | 2 +-
+ fs/btrfs/disk-io.c | 4 ++--
+ fs/btrfs/reada.c   | 8 ++------
+ 3 files changed, 5 insertions(+), 9 deletions(-)
 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 9d8edcb0813c..5ae63f4e60df 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3661,7 +3661,7 @@ struct reada_control *btrfs_reada_add(struct btrfs_root *root,
+ int btrfs_reada_wait(void *handle);
+ void btrfs_reada_detach(void *handle);
+ int btree_readahead_hook(struct btrfs_fs_info *fs_info,
+-			 struct extent_buffer *eb, u64 start, int err);
++			 struct extent_buffer *eb, int err);
+ 
+ static inline int is_fstree(u64 rootid)
+ {
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 3a57f99d96aa..9c4ef833ba0b 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -747,7 +747,7 @@ static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
+ err:
+ 	if (reads_done &&
+ 	    test_and_clear_bit(EXTENT_BUFFER_READAHEAD, &eb->bflags))
+-		btree_readahead_hook(fs_info, eb, eb->start, ret);
++		btree_readahead_hook(fs_info, eb, ret);
+ 
+ 	if (ret) {
+ 		/*
+@@ -772,7 +772,7 @@ static int btree_io_failed_hook(struct page *page, int failed_mirror)
+ 	eb->read_mirror = failed_mirror;
+ 	atomic_dec(&eb->io_pages);
+ 	if (test_and_clear_bit(EXTENT_BUFFER_READAHEAD, &eb->bflags))
+-		btree_readahead_hook(eb->fs_info, eb, eb->start, -EIO);
++		btree_readahead_hook(eb->fs_info, eb, -EIO);
+ 	return -EIO;	/* we fixed nothing */
+ }
+ 
 diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
-index 378043823dca..018a303c91fb 100644
+index 018a303c91fb..fe068b197fc1 100644
 --- a/fs/btrfs/reada.c
 +++ b/fs/btrfs/reada.c
-@@ -107,7 +107,7 @@ static int reada_add_block(struct reada_control *rc, u64 logical,
- /* in case of err, eb might be NULL */
- static void __readahead_hook(struct btrfs_fs_info *fs_info,
- 			     struct reada_extent *re, struct extent_buffer *eb,
--			     u64 start, int err)
-+			     int err)
+@@ -209,12 +209,8 @@ static void __readahead_hook(struct btrfs_fs_info *fs_info,
+ 	return;
+ }
+ 
+-/*
+- * start is passed separately in case eb in NULL, which may be the case with
+- * failed I/O
+- */
+ int btree_readahead_hook(struct btrfs_fs_info *fs_info,
+-			 struct extent_buffer *eb, u64 start, int err)
++			 struct extent_buffer *eb, int err)
  {
- 	int nritems;
- 	int i;
-@@ -231,7 +231,7 @@ int btree_readahead_hook(struct btrfs_fs_info *fs_info,
- 		goto start_machine;
- 	}
- 
--	__readahead_hook(fs_info, re, eb, start, err);
-+	__readahead_hook(fs_info, re, eb, err);
- 	reada_extent_put(fs_info, re);	/* our ref */
- 
- start_machine:
-@@ -713,9 +713,9 @@ static int reada_start_machine_dev(struct btrfs_fs_info *fs_info,
- 	ret = reada_tree_block_flagged(fs_info->extent_root, logical,
- 			mirror_num, &eb);
- 	if (ret)
--		__readahead_hook(fs_info, re, NULL, logical, ret);
-+		__readahead_hook(fs_info, re, NULL, ret);
- 	else if (eb)
--		__readahead_hook(fs_info, re, eb, eb->start, ret);
-+		__readahead_hook(fs_info, re, eb, ret);
- 
- 	if (eb)
- 		free_extent_buffer(eb);
+ 	int ret = 0;
+ 	struct reada_extent *re;
+@@ -222,7 +218,7 @@ int btree_readahead_hook(struct btrfs_fs_info *fs_info,
+ 	/* find extent */
+ 	spin_lock(&fs_info->reada_lock);
+ 	re = radix_tree_lookup(&fs_info->reada_tree,
+-			       start >> PAGE_SHIFT);
++			       eb->start >> PAGE_SHIFT);
+ 	if (re)
+ 		re->refcnt++;
+ 	spin_unlock(&fs_info->reada_lock);
 -- 
 2.10.1
 

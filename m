@@ -1,57 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f67.google.com ([74.125.82.67]:35559 "EHLO
-        mail-wm0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751537AbcKIMrz (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Nov 2016 07:47:55 -0500
-Received: by mail-wm0-f67.google.com with SMTP id a20so18271810wme.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 09 Nov 2016 04:47:54 -0800 (PST)
-Date: Wed, 9 Nov 2016 13:47:51 +0100
-From: Saint Germain <saintger@gmail.com>
-To: <linux-btrfs@vger.kernel.org>
-Cc: =?ISO-8859-1?B?TmljY29s8g==?= Belli <darkbasic@linuxsystems.it>
+Received: from mx2.suse.de ([195.135.220.15]:41887 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753732AbcKIPCw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 9 Nov 2016 10:02:52 -0500
+Date: Wed, 9 Nov 2016 16:02:45 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Adam Borowski <kilobyte@angband.pl>
+Cc: Mark Fasheh <mark@fasheh.com>, dsterba@suse.cz,
+        James Pharaoh <james@wellbehavedsoftware.com>,
+        linux-btrfs@vger.kernel.org
 Subject: Re: Announcing btrfs-dedupe
-Message-ID: <20161109134751.434b5e83@system>
-In-Reply-To: <8f0cf023-7189-4de1-a72c-38a4deb8a049@linuxsystems.it>
+Message-ID: <20161109150245.GA12522@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <2855552b-714c-d1de-08f9-89153c293772@wellbehavedsoftware.com>
-        <20161108233625.1eff15df@system>
-        <8f0cf023-7189-4de1-a72c-38a4deb8a049@linuxsystems.it>
+ <20161107140200.GM12522@suse.cz>
+ <CAGe7X7n=xkveD4TS2cyfXx5-hydOCHTh=tjDK54h8HWpnK5NqQ@mail.gmail.com>
+ <20161107205409.GA20325@angband.pl>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20161107205409.GA20325@angband.pl>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 09 Nov 2016 12:24:51 +0100, Niccolò Belli
-<darkbasic@linuxsystems.it> wrote :
-> 
-> On martedì 8 novembre 2016 23:36:25 CET, Saint Germain wrote:
-> > Please be aware of these other similar softwares:
-> > - jdupes: https://github.com/jbruchon/jdupes
-> > - rmlint: https://github.com/sahib/rmlint
-> > And of course fdupes.
-> >
-> > Some intesting points I have seen in them:
-> > - use xxhash to identify potential duplicates (huge speedup)
-> > - ability to deduplicate read-only snapshots
-> > - identify potential reflinked files (see also my email here:
-> >   https://www.spinics.net/lists/linux-btrfs/msg60081.html)
-> > - ability to filter out hardlinks
-> > - triangle problem: see jdupes readme
-> > - jdupes has started the process to be included in Debian
-> >
-> > I hope that will help and that you can share some codes with them !
-> > 
-> Hi,
-> What do you think about jdupes? I'm searching an alternative to
-> duperemove and rmlint doesn't seem to support btrfs deduplication, so
-> I would like to try jdupes. My main problem with duperemove is a
-> memory leak, also it seems to lead to greater disk usage: 
-> https://github.com/markfasheh/duperemove/issues/163
+On Mon, Nov 07, 2016 at 09:54:09PM +0100, Adam Borowski wrote:
+> [1]. For some reasons zfs-on-linux guys didn't implement this yet, despite
+> it being an obvious thing on ZFS.
 
-rmlint is supporting btrfs deduplication:
-rmlint --algorithm=xxhash --types="duplicates" --hidden --config=sh:handler=clone --no-hardlinked
-
-I've used jdupes and rmlint to deduplicate 2TB with 4GB RAM and it took
-a few hours. So it is acceptable from a performance point of view.
-The problems I found have been corrected by both.
-
-Jdupes author is really kind and reactive !
+In my understanding, the COW mechanics are different, there are no
+extent back references, so this would require some design updates. See
+issue 405 at ZoL tracker.

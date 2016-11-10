@@ -1,64 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f173.google.com ([209.85.192.173]:33594 "EHLO
-        mail-pf0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933923AbcKJUJI (ORCPT
+Received: from mail-pf0-f176.google.com ([209.85.192.176]:34964 "EHLO
+        mail-pf0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S935170AbcKJUYQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 Nov 2016 15:09:08 -0500
-Received: by mail-pf0-f173.google.com with SMTP id d2so151796232pfd.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Nov 2016 12:09:08 -0800 (PST)
-Date: Thu, 10 Nov 2016 12:09:06 -0800
+        Thu, 10 Nov 2016 15:24:16 -0500
+Received: by mail-pf0-f176.google.com with SMTP id i88so150961328pfk.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Nov 2016 12:24:15 -0800 (PST)
+Date: Thu, 10 Nov 2016 12:24:13 -0800
 From: Omar Sandoval <osandov@osandov.com>
 To: Liu Bo <bo.li.liu@oracle.com>
 Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com
 Subject: Re: [PATCH] Btrfs: deal with existing encompassing extent map in
  btrfs_get_extent()
-Message-ID: <20161110200906.GA22359@vader.DHCP.thefacebook.com>
+Message-ID: <20161110202413.GB22359@vader.DHCP.thefacebook.com>
 References: <262a1e171d091626edbd23c637cb138ba9d84ed8.1478733376.git.osandov@fb.com>
  <20161110195718.GA22740@localhost.localdomain>
+ <20161110200906.GA22359@vader.DHCP.thefacebook.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20161110195718.GA22740@localhost.localdomain>
+In-Reply-To: <20161110200906.GA22359@vader.DHCP.thefacebook.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 10, 2016 at 12:01:20PM -0800, Liu Bo wrote:
-> On Wed, Nov 09, 2016 at 03:26:50PM -0800, Omar Sandoval wrote:
-> > From: Omar Sandoval <osandov@fb.com>
+On Thu, Nov 10, 2016 at 12:09:06PM -0800, Omar Sandoval wrote:
+> On Thu, Nov 10, 2016 at 12:01:20PM -0800, Liu Bo wrote:
+> > On Wed, Nov 09, 2016 at 03:26:50PM -0800, Omar Sandoval wrote:
+> > > From: Omar Sandoval <osandov@fb.com>
+> > > 
+> > > My QEMU VM was seeing inexplicable I/O errors that I tracked down to
+> > > errors coming from the qcow2 virtual drive in the host system. The qcow2
+> > > file is a nocow file on my Btrfs drive, which QEMU opens with O_DIRECT.
+> > > Every once in awhile, pread() or pwrite() would return EEXIST, which
+> > > makes no sense. This turned out to be a bug in btrfs_get_extent().
+> > > 
+> > > Commit 8dff9c853410 ("Btrfs: deal with duplciates during extent_map
+> > > insertion in btrfs_get_extent") fixed a case in btrfs_get_extent() where
+> > > two threads race on adding the same extent map to an inode's extent map
+> > > tree. However, if the added em is merged with an adjacent em in the
+> > > extent tree, then we'll end up with an existing extent that is not
+> > > identical to but instead encompasses the extent we tried to add. When we
+> > > call merge_extent_mapping() to find the nonoverlapping part of the new
+> > > em, the arithmetic overflows because there is no such thing. We then end
+> > > up trying to add a bogus em to the em_tree, which results in a EEXIST
+> > > that can bubble all the way up to userspace.
 > > 
-> > My QEMU VM was seeing inexplicable I/O errors that I tracked down to
-> > errors coming from the qcow2 virtual drive in the host system. The qcow2
-> > file is a nocow file on my Btrfs drive, which QEMU opens with O_DIRECT.
-> > Every once in awhile, pread() or pwrite() would return EEXIST, which
-> > makes no sense. This turned out to be a bug in btrfs_get_extent().
+> > I don't get how this could happen(even after reading Commit
+> > 8dff9c853410), btrfs_get_extent in direct_IO is protected by
+> > lock_extent_direct, the assumption is that a racy thread should be
+> > blocked by lock_extent_direct and when it gets the lock, it finds the
+> > just-inserted em when going into btrfs_get_extent if its offset is
+> > within [em->start, extent_map_end(em)].
 > > 
-> > Commit 8dff9c853410 ("Btrfs: deal with duplciates during extent_map
-> > insertion in btrfs_get_extent") fixed a case in btrfs_get_extent() where
-> > two threads race on adding the same extent map to an inode's extent map
-> > tree. However, if the added em is merged with an adjacent em in the
-> > extent tree, then we'll end up with an existing extent that is not
-> > identical to but instead encompasses the extent we tried to add. When we
-> > call merge_extent_mapping() to find the nonoverlapping part of the new
-> > em, the arithmetic overflows because there is no such thing. We then end
-> > up trying to add a bogus em to the em_tree, which results in a EEXIST
-> > that can bubble all the way up to userspace.
+> > I think we may also need to figure out why the above doesn't work as
+> > expected besides fixing another special case.
+> > 
+> > Thanks,
+> > 
+> > -liubo
 > 
-> I don't get how this could happen(even after reading Commit
-> 8dff9c853410), btrfs_get_extent in direct_IO is protected by
-> lock_extent_direct, the assumption is that a racy thread should be
-> blocked by lock_extent_direct and when it gets the lock, it finds the
-> just-inserted em when going into btrfs_get_extent if its offset is
-> within [em->start, extent_map_end(em)].
-> 
-> I think we may also need to figure out why the above doesn't work as
-> expected besides fixing another special case.
-> 
-> Thanks,
-> 
-> -liubo
+> lock_extent_direct() only protects the range you're doing I/O into, not
+> the entire extent. If two threads are doing two non-overlapping reads in
+> the same extent, then you can get this race.
 
-lock_extent_direct() only protects the range you're doing I/O into, not
-the entire extent. If two threads are doing two non-overlapping reads in
-the same extent, then you can get this race.
+More concretely, assume the extent tree on disk has:
+
++-------------------------+-------------------------------+
+|start=0,len=8192,bytenr=0|start=8192,len=8192,bytenr=8192|
++-------------------------+-------------------------------+
+
+And the extent map tree in memory has a single em cached for the second
+extent {start=8192, len=8192, bytenr=8192}. Then, two threads try do do
+direct I/O reads:
+
+Thread 1                               | Thread 2
+---------------------------------------+-------------------------------
+pread(offset=0, nbyte=4096)            | pread(offset=4096, nbyte=4096)
+lock_extent_direct(start=0, end=4095)  | lock_extent_direct(start=4096, end=8191)
+btrfs_get_extent(start=0, len=4096)    | btrfs_get_extent(start=4096, len4096)
+  lookup_extent_mapping() = NULL       |   lookup_extent_mapping() = NULL
+  reads extent from B-tree             |   reads extent from B-tree
+                                       |   write_lock(&em_tree->lock)
+				       |   add_extent_mapping(start=0, len=8192, bytenr=0)
+				       |     try_merge_map()
+				       |     em_tree now has {start=0, len=16384, bytenr=0}
+				       |   write_unlock(&em_tree->lock)
+write_lock(&em_tree->lock)             |
+add_extent_mapping(start=0, len=8192,  |
+                   bytenr=0) = -EEXIST |
+search_extent_mapping() = {start=0,    |
+                           len=16384,  |
+			   bytenr=0}   |
+merge_extent_mapping() does bogus math |
+and overflows, returns EEXIST          |
+
 
 -- 
 Omar

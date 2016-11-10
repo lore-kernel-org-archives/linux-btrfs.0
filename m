@@ -1,80 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:39811 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1753306AbcKJJSY (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 Nov 2016 04:18:24 -0500
-Subject: Re: Deletion of the CoW snapshots causes BTRFS ENOSPC error.
-To: =?UTF-8?B?0JrRgNCw0LLRhtC+0LIg0KDQvtC80LDQvSDQktC70LDQtNC40LzQuNGA0L4=?=
-         =?UTF-8?B?0LLQuNGH?= <r.kravtsov@sigma-it.ru>,
-        <linux-btrfs@vger.kernel.org>
-References: <8dbbf4f2-9770-ea4d-00b7-768cee84ddc1@sigma-it.ru>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <1e110719-e7f1-6004-d3dc-dbc7b09e7397@cn.fujitsu.com>
-Date: Thu, 10 Nov 2016 17:18:21 +0800
+Received: from mbox.akmail.it ([213.21.176.227]:50769 "EHLO pop.aknet.it"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1755335AbcKJNBI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 10 Nov 2016 08:01:08 -0500
+Message-ID: <1478782854.58246f86295b0@webmail.adria.it>
+Date: Thu, 10 Nov 2016 14:00:54 +0100
+From: bepi@adria.it
+To: Alex Powell <alexj.powellalt@googlemail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re:
+References: <1478714157.5823632d5829d@webmail.adria.it> <CAKGv6Coc4vzsJsJ8=AEP1-vcdDzCcNeeGAoerkMwaukAowOzwA@mail.gmail.com>
+In-Reply-To: <CAKGv6Coc4vzsJsJ8=AEP1-vcdDzCcNeeGAoerkMwaukAowOzwA@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <8dbbf4f2-9770-ea4d-00b7-768cee84ddc1@sigma-it.ru>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi.
+
+P.S. Sorry for the double sending and for the blank email subject.
 
 
-At 11/10/2016 03:40 PM, Кравцов Роман Владимирович wrote:
-> Hello.
->
-> We have two CI servers with Docker. Docker uses BTRFS storage driver,
-> also we use BTRFS for storing some data. To perform cloning of the data,
-> are used 'cp --reflink' command. When we trying to remove a few copies
-> of the cloned data, the ENOSPC error occurring. This error strongly
-> reproduced on the both servers. Before and after creation/deletion of
-> the data snapshot 'btrfs filesystem sync /var/lib/docker/db/STANDS' are
-> called.
+Yes.
+The various controls are designed to be used separated, and to be launched both
+as cronjobs and manually.
 
-This seems to be a known bug.
+For example 
+you can create a series of snapshots
 
-Would you please try the follow patch?
-https://patchwork.kernel.org/patch/9319179/
+  btrsfManage SNAPSHOT /
 
-Thanks,
-Qu
+and send the new snapshots (incremental stream)
 
->
-> [root@OraCI2 ~]# uname -a
-> Linux OraCI2.sigma-it.local 4.8.4-1.el7.elrepo.x86_64 #1 SMP Sat Oct 22
-> 11:47:38 EDT 2016 x86_64 x86_64 x86_64 GNU/Linux
->
-> [root@OraCI2 ~]# btrfs --version
-> btrfs-progs v4.8.1
->
-> [root@OraCI2 ~]# btrfs fi show
-> Label: 'BUILDS'  uuid: ce8952ff-30e5-48c5-8cd2-529c95667aa8
->     Total devices 1 FS bytes used 358.66GiB
->     devid    1 size 1000.00GiB used 383.00GiB path /dev/nvme0n1p1
->
-> Label: none  uuid: a712598d-cc4f-4dc5-bdfb-de7ae432b109
->     Total devices 1 FS bytes used 4.81TiB
->     devid    1 size 7.66TiB used 5.03TiB path
-> /dev/mapper/OraCI2-docker--data
->
-> Label: none  uuid: 89c0495f-ed26-4d66-b83b-ffb5882bd082
->     Total devices 1 FS bytes used 880.43GiB
->     devid    1 size 1.93TiB used 913.01GiB path /dev/nvme0n1p2
->
-> [root@OraCI2 ~]# btrfs fi df /var/lib/docker/db/STANDS
-> Data, single: total=4.96TiB, used=4.79TiB
-> System, DUP: total=8.00MiB, used=608.00KiB
-> Metadata, DUP: total=35.00GiB, used=23.33GiB
-> GlobalReserve, single: total=512.00MiB, used=0.00B
->
-> WBR,
-> Roman Kravtsov
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
+  btrsfManage SEND / /dev/sda1
 
+in cronjobs or manually, it is indifferent.
+
+
+Best regards.
+
+Gdb
+
+Scrive Alex Powell <alexj.powellalt@googlemail.com>:
+
+> Hi,
+> It would be good but perhaps each task should be created via cronjobs
+> instead of having a script running all the time or one script via one
+> cronjob
+> 
+> Working in the enterprise environment for a major bank, we quickly
+> learn that these sort of daily tasks should be split up
+> 
+> Kind Regards,
+> Alex
+> 
+> On Thu, Nov 10, 2016 at 4:25 AM,  <bepi@adria.it> wrote:
+> > Hi.
+> >
+> > I'm making a script for managing btrfs.
+> >
+> > To perform the scrub, to create and send (even to a remote system) of the
+> backup
+> > snapshot (or for one copy of the current state of the data).
+> >
+> > The script is designed to:
+> > - Be easy to use:
+> >   - The preparation is carried out automatically.
+> >   - Autodetect of the subvolume mounted.
+> > - Be safe and robust:
+> >   - Check that not exist a another btrfs managing already started.
+> >   - Subvolume for created and received snapshot are mounted and accessible
+> only
+> >     for the time necessary to perform the requested operation.
+> >   - Verify that the snapshot and sending snapshot are been executed
+> completely.
+> >   - Progressive numbering of the snapshots for identify with certainty
+> >     the latest snapshot.
+> >
+> > Are also available command for view the list of snaphost present, command
+> for
+> > delete the snapshots.
+> >
+> > For example:
+> >
+> > btrsfManage SCRUB /
+> > btrsfManage SNAPSHOT /
+> > btrsfManage SEND / /dev/sda1
+> > btrsfManage SEND / root@gdb.exnet.it/dev/sda1
+> > btrsfManage SNAPLIST /dev/sda1
+> > btrsfManage SNAPDEL /dev/sda1 "root-2016-11*"
+> >
+> > You are interested?
+> >
+> > Gdb
+> >
+> >
+> > ----------------------------------------------------
+> > This mail has been sent using Alpikom webmail system
+> > http://www.alpikom.it
+> >
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+
+
+
+
+----------------------------------------------------
+This mail has been sent using Alpikom webmail system
+http://www.alpikom.it
 

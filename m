@@ -1,40 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46297 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932305AbcKNMqe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Nov 2016 07:46:34 -0500
-Date: Mon, 14 Nov 2016 13:46:30 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Chris Mason <clm@fb.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PULL] Btrfs fixes for 4.9-rc5
-Message-ID: <20161114124630.GM12522@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1478789584.git.dsterba@suse.com>
- <7efb4535-dbd8-1c7c-c6f0-0dda234077e2@fb.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:40352 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933923AbcKJUGL (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 10 Nov 2016 15:06:11 -0500
+Date: Thu, 10 Nov 2016 23:04:38 +0300
+From: Dan Carpenter <dan.carpenter@oracle.com>
+To: Jens Axboe <axboe@fb.com>, Christoph Hellwig <hch@lst.de>
+Cc: Mike Christie <mchristi@redhat.com>,
+        Shaun Tancheff <shaun.tancheff@seagate.com>,
+        Hannes Reinecke <hare@suse.com>,
+        Johannes Thumshirn <jthumshirn@suse.de>,
+        Bart Van Assche <bart.vanassche@sandisk.com>,
+        Ming Lei <ming.lei@canonical.com>, linux-block@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, kernel-janitors@vger.kernel.org
+Subject: [patch] block: precedence bug in bio_set_op_attrs() macro
+Message-ID: <20161110200438.GA22854@mwanda>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <7efb4535-dbd8-1c7c-c6f0-0dda234077e2@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Nov 11, 2016 at 03:45:10PM -0500, Chris Mason wrote:
-> On 11/10/2016 10:00 AM, David Sterba wrote:
-> > Hi,
-> >
-> > two minor error handling fixes and one fix for balance sttus item that goes
-> > back to 4.4.
-> >
-> > The branch continues from my last pull that went to Linus' tree, so it would
-> > be a good idea to do the same as before. I've added a signed tag for branch.
-> 
-> Looking at this again before sending off:
-> 
-> btrfs: remove redundant check of btrfs_iget return value
-> 
-> Is really a cleanup and we should wait for the merge window.  Since this 
-> means rebasing the pull, I'm happy to send the others on Monday.
+This code causes a problem for flush_epd_write_bio() because | has
+higher precedence than ?: so it basically turns into:
 
-Technically it is a cleanup, but I look at it more from the correctness
-perspective and based of feelings that "this looks relvant for rc".
-But postponing for 4.10 fine for me.
+	((bio)->bi_opf |= REQ_SYNC;
+
+Which is wrong.
+
+Fixes: ef295ecf090d ("block: better op and flags encoding")
+Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
+
+diff --git a/include/linux/blk_types.h b/include/linux/blk_types.h
+index 562ac46..67fae32 100644
+--- a/include/linux/blk_types.h
++++ b/include/linux/blk_types.h
+@@ -208,7 +208,7 @@ enum req_flag_bits {
+ 
+ /* obsolete, don't use in new code */
+ #define bio_set_op_attrs(bio, op, op_flags) \
+-	((bio)->bi_opf |= (op | op_flags))
++	((bio)->bi_opf |= ((op) | (op_flags)))
+ 
+ static inline bool op_is_write(unsigned int op)
+ {

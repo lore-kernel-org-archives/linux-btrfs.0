@@ -1,52 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60047 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:39703 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1423514AbcKANV3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 1 Nov 2016 09:21:29 -0400
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>, stable@vger.kernel.org, #@suse.cz,
-        4.4+@suse.cz
-Subject: [PATCH] btrfs: store and load values of stripes_min/stripes_max in balance status item
-Date: Tue,  1 Nov 2016 14:21:23 +0100
-Message-Id: <20161101132123.11673-1-dsterba@suse.com>
+        id S933387AbcKJPGz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 10 Nov 2016 10:06:55 -0500
+Date: Thu, 10 Nov 2016 16:06:51 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Omar Sandoval <osandov@osandov.com>
+Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com, bo.li.liu@oracle.com
+Subject: Re: [PATCH] Btrfs: deal with existing encompassing extent map in
+ btrfs_get_extent()
+Message-ID: <20161110150651.GE12522@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <262a1e171d091626edbd23c637cb138ba9d84ed8.1478733376.git.osandov@fb.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <262a1e171d091626edbd23c637cb138ba9d84ed8.1478733376.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The balance status item contains currently known filter values, but the
-stripes filter was unintentionally not among them. This would mean, that
-interrupted and automatically restarted balance does not apply the
-stripe filters.
+On Wed, Nov 09, 2016 at 03:26:50PM -0800, Omar Sandoval wrote:
+> From: Omar Sandoval <osandov@fb.com>
+> 
+> My QEMU VM was seeing inexplicable I/O errors that I tracked down to
+> errors coming from the qcow2 virtual drive in the host system. The qcow2
+> file is a nocow file on my Btrfs drive, which QEMU opens with O_DIRECT.
+> Every once in awhile, pread() or pwrite() would return EEXIST, which
+> makes no sense. This turned out to be a bug in btrfs_get_extent().
+> 
+> Commit 8dff9c853410 ("Btrfs: deal with duplciates during extent_map
+> insertion in btrfs_get_extent") fixed a case in btrfs_get_extent() where
+> two threads race on adding the same extent map to an inode's extent map
+> tree. However, if the added em is merged with an adjacent em in the
+> extent tree, then we'll end up with an existing extent that is not
+> identical to but instead encompasses the extent we tried to add. When we
+> call merge_extent_mapping() to find the nonoverlapping part of the new
+> em, the arithmetic overflows because there is no such thing. We then end
+> up trying to add a bogus em to the em_tree, which results in a EEXIST
+> that can bubble all the way up to userspace.
 
-Fixes: dee32d0ac3719ef8d640efaf0884111df444730f
-CC: stable@vger.kernel.org # 4.4+
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/ctree.h | 4 ++++
- 1 file changed, 4 insertions(+)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 9d8edcb0813c..223c706aea1f 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2210,6 +2210,8 @@ btrfs_disk_balance_args_to_cpu(struct btrfs_balance_args *cpu,
- 	cpu->target = le64_to_cpu(disk->target);
- 	cpu->flags = le64_to_cpu(disk->flags);
- 	cpu->limit = le64_to_cpu(disk->limit);
-+	cpu->stripes_min = le32_to_cpu(disk->stripes_min);
-+	cpu->stripes_max = le32_to_cpu(disk->stripes_max);
- }
- 
- static inline void
-@@ -2228,6 +2230,8 @@ btrfs_cpu_balance_args_to_disk(struct btrfs_disk_balance_args *disk,
- 	disk->target = cpu_to_le64(cpu->target);
- 	disk->flags = cpu_to_le64(cpu->flags);
- 	disk->limit = cpu_to_le64(cpu->limit);
-+	disk->stripes_min = cpu_to_le32(cpu->stripes_min);
-+	disk->stripes_max = cpu_to_le32(cpu->stripes_max);
- }
- 
- /* struct btrfs_super_block */
--- 
-2.10.1
-
+Is this possibly the same bug that Liu Bo fixes in
+https://patchwork.kernel.org/patch/9413129/ ?

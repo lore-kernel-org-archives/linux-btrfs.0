@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:38230 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752760AbcKIXF3 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Nov 2016 18:05:29 -0500
-Date: Wed, 9 Nov 2016 15:05:11 -0800
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
+Received: from mail.kernel.org ([198.145.29.136]:33566 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751157AbcKJBMH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 9 Nov 2016 20:12:07 -0500
+Date: Wed, 9 Nov 2016 17:12:01 -0800
+From: Jaegeuk Kim <jaegeuk@kernel.org>
 To: Andreas Dilger <adilger@dilger.ca>
-Cc: Jaegeuk Kim <jaegeuk@kernel.org>, LKML <linux-kernel@vger.kernel.org>,
+Cc: LKML <linux-kernel@vger.kernel.org>,
         Lustre Development <lustre-devel@lists.lustre.org>,
         linux-fsdevel <linux-fsdevel@vger.kernel.org>,
         linux-f2fs-devel@lists.sourceforge.net,
         linux-btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: [PATCH] f2fs: support multiple devices
-Message-ID: <20161109230511.GA16807@birch.djwong.org>
+Message-ID: <20161110011201.GA72134@jaegeuk>
 References: <20161109205653.70061-1-jaegeuk@kernel.org>
  <0D1876A8-BB77-4C1A-BE4F-B4A0E81DD4EA@dilger.ca>
 MIME-Version: 1.0
@@ -58,22 +58,20 @@ On Wed, Nov 09, 2016 at 03:57:53PM -0700, Andreas Dilger wrote:
 > set) this could just return an integer device number since the device
 > number is meaningless (and may conflict) on a remote system.
 
-Same field size and similar meaning as the the fmr_device field in
-GETFSMAP, at least for blockdev based filesystems.  Intriguing.... ;)
-
-For GETFSMAP the number in fmr_device is either a device-unique 32-bit
-cookie or the implementer can set a magic FMH_OF_DEV_T flags bit marking
-it as an actual dev_t.
-
-What's the fe_device number mean for network filesystems?  Magic unique
-number?
+Thank you for pointing this out. Indeed, I missed this case in this patch.
+The fe_device would be good to handle this. Is there a plan to merge that
+change? BTW, how about using __u64 given huge_encode_dev()?
 
 > Since AFAIK Btrfs also has multiple device support there are an increasing
 > number of places where this would be useful.
 
-Ditto XFS.
+That's cool!
+Actually, I think this'd be very versatile for different types of storages such
+as open-channel SSD and SMR; this patch already handles HM-SMR.
+In F2FS especially, background cleaner can migrate blocks seamlessly across the
+devices later.
 
---D
+Thanks,
 
 > 
 > Cheers, Andreas

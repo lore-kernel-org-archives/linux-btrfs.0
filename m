@@ -1,47 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:56023 "EHLO song.cn.fujitsu.com"
-        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1752077AbcKGIGv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 7 Nov 2016 03:06:51 -0500
-Received: from localhost.localdomain (unknown [10.167.226.107])
-        by cn.fujitsu.com (Postfix) with ESMTP id 4B44241B4BC2
-        for <linux-btrfs@vger.kernel.org>; Mon,  7 Nov 2016 16:06:38 +0800 (CST)
-From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:38184 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S933808AbcKJPBz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 10 Nov 2016 10:01:55 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id AA299ACB2
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Nov 2016 15:01:54 +0000 (UTC)
+From: Goldwyn Rodrigues <rgoldwyn@suse.de>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/2] btrfs: add necessary comments about tickets_id
-Date: Mon,  7 Nov 2016 15:59:16 +0800
-Message-Id: <1478505557-1406-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
+Cc: Goldwyn Rodrigues <rgoldwyn@suse.com>
+Subject: [PATCH] Return best entry, if it is the first one
+Date: Thu, 10 Nov 2016 09:01:46 -0600
+Message-Id: <20161110150147.19766-1-rgoldwyn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Tickets_id's name may result in some misunderstandings,  it just indicates
-the next ticket will be handled and is not stored per ticket.
+The find_most_right_entry() tends to miss on the best entry if it
+is the first one on the list and there are only two entries in the list.
+So, we assign both prev and best to entry.
 
-Fixes: ce12965 ("btrfs: introduce tickets_id to determine whether
-asynchronous metadata reclaim work makes progress")
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+To do this, the selection process (rather the rejection) has to be
+performed earlier to skip on broken==count.
+
+Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 ---
- fs/btrfs/ctree.h | 4 ++++
- 1 file changed, 4 insertions(+)
+ cmds-check.c | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 0b8ce2b..9307084 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -429,6 +429,10 @@ struct btrfs_space_info {
- 	struct list_head ro_bgs;
- 	struct list_head priority_tickets;
- 	struct list_head tickets;
-+	/*
-+	 * tickets_id just indicates the next ticket will be handled, so note
-+	 * it's not stored per ticket.
-+	 */
- 	u64 tickets_id;
+diff --git a/cmds-check.c b/cmds-check.c
+index 368c1c5..779870a 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -8184,11 +8184,6 @@ static struct extent_entry *find_most_right_entry(struct list_head *entries)
+ 	struct extent_entry *entry, *best = NULL, *prev = NULL;
  
- 	struct rw_semaphore groups_sem;
+ 	list_for_each_entry(entry, entries, list) {
+-		if (!prev) {
+-			prev = entry;
+-			continue;
+-		}
+-
+ 		/*
+ 		 * If there are as many broken entries as entries then we know
+ 		 * not to trust this particular entry.
+@@ -8196,6 +8191,12 @@ static struct extent_entry *find_most_right_entry(struct list_head *entries)
+ 		if (entry->broken == entry->count)
+ 			continue;
+ 
++		if (!prev) {
++			best = entry;
++			prev = entry;
++			continue;
++		}
++
+ 		/*
+ 		 * If our current entry == best then we can't be sure our best
+ 		 * is really the best, so we need to keep searching.
 -- 
-2.5.0
-
-
+2.10.0
 

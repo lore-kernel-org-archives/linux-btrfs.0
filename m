@@ -1,56 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:51164 "EHLO
-        cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751317AbcKIUT1 (ORCPT
+Received: from snt004-omc2s17.hotmail.com ([65.55.90.92]:53694 "EHLO
+        SNT004-OMC2S17.hotmail.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751427AbcKJE0n (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 9 Nov 2016 15:19:27 -0500
-Subject: Re: spinning kworker with space_cache=v2 searching for free space
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "bo.li.liu@oracle.com" <bo.li.liu@oracle.com>
-References: <c9bf6cbb-ea68-a517-3c6e-7ff4ec1a788e@profihost.ag>
-From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
-Message-ID: <c01a47a5-ff65-1a6e-861f-ab7782bee0ed@profihost.ag>
-Date: Wed, 9 Nov 2016 21:19:21 +0100
+        Wed, 9 Nov 2016 23:26:43 -0500
+From: Kyle Gates <kylegates@live.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: df missing filesystem when run on subvolume
+Date: Thu, 10 Nov 2016 04:21:38 +0000
+Message-ID: <CY4PR06MB2726BB2ECD2A2F1758CB7A08B0B80@CY4PR06MB2726.namprd06.prod.outlook.com>
+References: <CY4PR06MB27260F46B45E0ABFF9A18C8AB0A00@CY4PR06MB2726.namprd06.prod.outlook.com>
+In-Reply-To: <CY4PR06MB27260F46B45E0ABFF9A18C8AB0A00@CY4PR06MB2726.namprd06.prod.outlook.com>
+Content-Type: text/plain; charset="iso-8859-1"
 MIME-Version: 1.0
-In-Reply-To: <c9bf6cbb-ea68-a517-3c6e-7ff4ec1a788e@profihost.ag>
-Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Resending, hopefully correct formatting.
 
-found this one from 2014:
-https://patchwork.kernel.org/patch/5551651/
+As the title suggests, running the df command on a subvolume doesn't return a filesystem. I'm not sure where the problem lies or if anyone else has noticed this. Some programs fail to detect free space as a result.
 
-it this still valid?
+Example for clarification:
+kyle@home:~$ sudo mount -o subvol=@data /mnt/btrfs/
+kyle@home:~$ mkdir /mnt/btrfs/directory
+kyle@home:~$ btrfs subvolume create /mnt/btrfs/subvolume
+Create subvolume '/mnt/btrfs/subvolume'
+kyle@home:~$ sudo btrfs subvolume list /mnt/btrfs/
+ID 258 gen 2757271 top level 5 path @data
+ID 5684 gen 2718215 top level 258 path subvolume
+kyle@home:~$ df /mnt/btrfs/
+Filesystem      1K-blocks       Used Available Use% Mounted on
+/dev/sdc2      1412456448 1170400072 240688008  83% /mnt/btrfs
+kyle@home:~$ df /mnt/btrfs/directory
+Filesystem      1K-blocks       Used Available Use% Mounted on
+/dev/sdc2      1412456448 1170400072 240688008  83% /mnt/btrfs
+kyle@home:~$ df /mnt/btrfs/subvolume
+Filesystem      1K-blocks       Used Available Use% Mounted on
+-              1412456448 1170400072 240688008  83% /mnt/btrfs/subvolume
 
-Am 09.11.2016 um 09:09 schrieb Stefan Priebe - Profihost AG:
-> Dear list,
-> 
-> even there's a lot of free space on my disk:
-> 
-> # df -h /vmbackup/
-> Filesystem                    Size  Used Avail Use% Mounted on
-> /dev/mapper/stripe0-backup   37T   24T   13T  64% /backup
-> 
-> # btrfs filesystem df /backup/
-> Data, single: total=23.75TiB, used=22.83TiB
-> System, DUP: total=8.00MiB, used=3.94MiB
-> Metadata, DUP: total=283.50GiB, used=105.82GiB
-> GlobalReserve, single: total=512.00MiB, used=0.00B
-> 
-> I always have a kworker process endless spinning.
-> 
-> # perf top shows:
->   47,56%  [kernel]               [k] rb_next
->    7,71%  [kernel]               [k] tree_search_offset.isra.25
->    6,44%  [kernel]               [k] btrfs_find_space_for_alloc
-> 
-> Mount options:
-> rw,noatime,compress-force=zlib,nossd,noacl,space_cache=v2,skip_balance
-> 
-> What's wrong here?
-> 
-> Greets,
-> Stefan
-> 
+Thanks,
+Kyle

@@ -1,52 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f169.google.com ([209.85.192.169]:33368 "EHLO
-        mail-pf0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933396AbcKJPmO (ORCPT
+Received: from mail02.iobjects.de ([188.40.134.68]:59842 "EHLO
+        mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752576AbcKJQBq (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 Nov 2016 10:42:14 -0500
-Received: by mail-pf0-f169.google.com with SMTP id d2so148572254pfd.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Nov 2016 07:42:14 -0800 (PST)
-Date: Thu, 10 Nov 2016 07:42:12 -0800
-From: Omar Sandoval <osandov@osandov.com>
-To: David Sterba <dsterba@suse.cz>
-Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com, bo.li.liu@oracle.com
+        Thu, 10 Nov 2016 11:01:46 -0500
 Subject: Re: [PATCH] Btrfs: deal with existing encompassing extent map in
  btrfs_get_extent()
-Message-ID: <20161110154212.GB29712@vader>
+To: Omar Sandoval <osandov@osandov.com>
 References: <262a1e171d091626edbd23c637cb138ba9d84ed8.1478733376.git.osandov@fb.com>
- <20161110150651.GE12522@twin.jikos.cz>
+ <58248E27.7080601@applied-asynchrony.com> <20161110153720.GA29712@vader>
+Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com
+From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>
+Message-ID: <582499E8.5090504@applied-asynchrony.com>
+Date: Thu, 10 Nov 2016 17:01:44 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20161110150651.GE12522@twin.jikos.cz>
+In-Reply-To: <20161110153720.GA29712@vader>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 10, 2016 at 04:06:51PM +0100, David Sterba wrote:
-> On Wed, Nov 09, 2016 at 03:26:50PM -0800, Omar Sandoval wrote:
-> > From: Omar Sandoval <osandov@fb.com>
-> > 
-> > My QEMU VM was seeing inexplicable I/O errors that I tracked down to
-> > errors coming from the qcow2 virtual drive in the host system. The qcow2
-> > file is a nocow file on my Btrfs drive, which QEMU opens with O_DIRECT.
-> > Every once in awhile, pread() or pwrite() would return EEXIST, which
-> > makes no sense. This turned out to be a bug in btrfs_get_extent().
-> > 
-> > Commit 8dff9c853410 ("Btrfs: deal with duplciates during extent_map
-> > insertion in btrfs_get_extent") fixed a case in btrfs_get_extent() where
-> > two threads race on adding the same extent map to an inode's extent map
-> > tree. However, if the added em is merged with an adjacent em in the
-> > extent tree, then we'll end up with an existing extent that is not
-> > identical to but instead encompasses the extent we tried to add. When we
-> > call merge_extent_mapping() to find the nonoverlapping part of the new
-> > em, the arithmetic overflows because there is no such thing. We then end
-> > up trying to add a bogus em to the em_tree, which results in a EEXIST
-> > that can bubble all the way up to userspace.
+On 11/10/16 16:37, Omar Sandoval wrote:
+> On Thu, Nov 10, 2016 at 04:11:35PM +0100, Holger Hoffstätte wrote:
+>> On 11/10/16 00:26, Omar Sandoval wrote:
+>>> From: Omar Sandoval <osandov@fb.com>
+>>>
+>>> My QEMU VM was seeing inexplicable I/O errors that I tracked down to
+>>> errors coming from the qcow2 virtual drive in the host system. The qcow2
+>>> file is a nocow file on my Btrfs drive, which QEMU opens with O_DIRECT.
+>>> Every once in awhile, pread() or pwrite() would return EEXIST, which
+>>> makes no sense. This turned out to be a bug in btrfs_get_extent().
+>>>
+>>> Commit 8dff9c853410 ("Btrfs: deal with duplciates during extent_map
+>>> insertion in btrfs_get_extent") fixed a case in btrfs_get_extent() where
+>>> two threads race on adding the same extent map to an inode's extent map
+>>> tree. However, if the added em is merged with an adjacent em in the
+>>> extent tree, then we'll end up with an existing extent that is not
+>>> identical to but instead encompasses the extent we tried to add. When we
+>>> call merge_extent_mapping() to find the nonoverlapping part of the new
+>>> em, the arithmetic overflows because there is no such thing. We then end
+>>> up trying to add a bogus em to the em_tree, which results in a EEXIST
+>>> that can bubble all the way up to userspace.
+>>>
+>>> Fix it by extending the identical extent map special case.
+>>>
+>>> Signed-off-by: Omar Sandoval <osandov@fb.com>
+>>> ---
+>>> Applies to 4.9-rc4.
+>>>
+>>> Here [1] is a reproducer for this bug that doesn't involve firing up a
+>>> QEMU VM. Also, a big shoutout to BCC [2] and BPF for making it possible
+>>> to debug this on my laptop without compiling a custom kernel and
+>>> rebooting just to add printks [3].
+>>>
+>>> 1: https://gist.github.com/osandov/d08aabe5d4dec15517e9fde17012fd3b
+>>
+>> I can't really make this reproducer fail. It builds and runs fine, but just
+>> exits with no messages (other than the one about drop_caches in dmesg).
+>> It creates the 1MB file and always returns 0. Ideas?
+>>
+>> -h
 > 
-> Is this possibly the same bug that Liu Bo fixes in
-> https://patchwork.kernel.org/patch/9413129/ ?
+> It's a race condition, so it doesn't happen 100% of the time. I imagine
+> it depends on the storage speed, as well. On my laptop, which is
+> dm-crypt on top of an SSD, it works about 50% of the time. Could you
+> just try running it 100 times or something and see if it fails?
 
-This looks different. In my case, btrfs_get_extent() fails before we'd
-even get that far into btrfs_get_blocks_direct().
+$for i ($(seq 1 1000)) ./pread_eexist_repro /mnt/test/$i || echo "fail"
 
--- 
-Omar
+..couple of thousand runs without problem, only lots of fallocating and
+cache dropping.
+
+Oh well, I tried. :)
+
+-h
+

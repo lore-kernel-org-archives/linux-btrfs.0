@@ -1,63 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47348 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932635AbcKGR7w (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 7 Nov 2016 12:59:52 -0500
-Date: Mon, 7 Nov 2016 18:59:48 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, rgoldwyn@suse.com, rgoldwyn@suse.de
-Subject: Re: [PATCH 0/4] Qgroup comment enhance and balance fix
-Message-ID: <20161107175948.GU12522@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20161018013129.23331-1-quwenruo@cn.fujitsu.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:19033 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933880AbcKKUWS (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 11 Nov 2016 15:22:18 -0500
+Date: Fri, 11 Nov 2016 12:22:10 -0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [RFC] btrfs: make max inline data can be equal to sectorsize
+Message-ID: <20161111202210.GB30930@dhcp-whq-twvpn-1-vpnpool-10-159-131-21.vpn.oracle.com>
+Reply-To: bo.li.liu@oracle.com
+References: <20161011064742.17364-1-wangxg.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20161018013129.23331-1-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20161011064742.17364-1-wangxg.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 18, 2016 at 09:31:25AM +0800, Qu Wenruo wrote:
-> The patchset does the following things:
-> 1) Enhance comment for qgroup, rename 2 functions
->    Explain the how qgroup works, so new developers won't waste too much
->    time digging into the boring codes.
+On Tue, Oct 11, 2016 at 02:47:42PM +0800, Wang Xiaoguang wrote:
+> If we use mount option "-o max_inline=sectorsize", say 4096, indeed
+> even for a fresh fs, say nodesize is 16k, we can not make the first
+> 4k data completely inline, I found this conditon causing this issue:
+>   !compressed_size && (actual_end & (root->sectorsize - 1)) == 0
 > 
->    The qgroup work flow is split into 3 main phrases:
->    Reverse, Trace, Account.
->    And rename functions like btrfs_qgroup_insert_dirty_extent_record()
->    to btrfs_qgroup_trace_extent(), to follow the "Trace" phrase.
-> 
->    Other function name already follows such schema before.
-> 
-> 2) Move account_shared_subtree() and account_leaf_items() to qgroup.c
->    Such functions are only used by qgroup, so move them to qgroup.c and
->    rename them to follow "trace" schema.
-> 
-> 3) Fix the long standing qgroup balance corruption
->    Commit 62b99540a1d91e4 doesn't fix the problem completely.
->    It can only handle case that merge_reloc_roots() are all done in one
->    transaction.
-> 
->    If transaction commits during merge_reloc_roots(), the data extents
->    will leak again.
-> 
->    The tree fix is to info qgroup to trace both subtree(tree reloc tree
->    and destination fs tree), at replace_path() time.
->    Inside  replace_path(), there is one transaction start and end, so we
->    must make qgroup to trace both subtrees.
-> 
->    Thanks for previous work, now we can easily trace subtree, so the fix
->    is quite simple now.
-> 
->    And the cause also makes it easier to create pinpoint test case for
->    this bug.
-> 
-> Qu Wenruo (4):
->   btrfs: qgroup: Add comments explaining how btrfs qgroup works
->   btrfs: qgroup: Rename functions to make it follow
->     reserve,trace,account steps
->   btrfs: Expoert and move leaf/subtree qgroup helpers to qgroup.c
->   btrfs: qgroup: Fix qgroup data leaking by using subtree tracing
+> If it retuns true, we'll not make data inline. For 4k sectorsize,
+> 0~4094 dara range, we can make it inline, but 0~4095, it can not.
+> I don't think this limition is useful, so here remove it which will
+> make max inline data can be equal to sectorsize.
 
-Added to next queue.
+It's difficult to tell whether we need this, I'm not a big fan of using
+max_inline size more than the default size 2048, given that most reports
+about ENOSPC is due to metadata and inline may make it worse.
+
+Thanks,
+
+-liubo
+
+> 
+> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+> ---
+>  fs/btrfs/inode.c | 2 --
+>  1 file changed, 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index ea15520..c0db393 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -267,8 +267,6 @@ static noinline int cow_file_range_inline(struct btrfs_root *root,
+>  	if (start > 0 ||
+>  	    actual_end > root->sectorsize ||
+>  	    data_len > BTRFS_MAX_INLINE_DATA_SIZE(root) ||
+> -	    (!compressed_size &&
+> -	    (actual_end & (root->sectorsize - 1)) == 0) ||
+>  	    end + 1 < isize ||
+>  	    data_len > root->fs_info->max_inline) {
+>  		return 1;
+> -- 
+> 2.9.0
+> 
+> 
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

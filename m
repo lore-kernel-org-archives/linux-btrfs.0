@@ -1,111 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44252 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932261AbcKNMZF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Nov 2016 07:25:05 -0500
-Date: Mon, 14 Nov 2016 13:25:01 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Henk Slager <eye1tm@gmail.com>
-Cc: clm@fb.com, linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Btrfs progs release 4.8.3
-Message-ID: <20161114122501.GK12522@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <20161111153831.22430-1-dsterba@suse.com>
- <CAPmG0jYZnB-Hva2GS3WCGQoer2p3rLu0xJBN3d0JfKPFCvi0sA@mail.gmail.com>
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:41542 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1756146AbcKKUqb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 11 Nov 2016 15:46:31 -0500
+Subject: Re: [PULL] Btrfs fixes for 4.9-rc5
+To: David Sterba <dsterba@suse.com>
+References: <cover.1478789584.git.dsterba@suse.com>
+CC: <linux-btrfs@vger.kernel.org>
+From: Chris Mason <clm@fb.com>
+Message-ID: <7efb4535-dbd8-1c7c-c6f0-0dda234077e2@fb.com>
+Date: Fri, 11 Nov 2016 15:45:10 -0500
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAPmG0jYZnB-Hva2GS3WCGQoer2p3rLu0xJBN3d0JfKPFCvi0sA@mail.gmail.com>
+In-Reply-To: <cover.1478789584.git.dsterba@suse.com>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Nov 13, 2016 at 02:28:02PM +0100, Henk Slager wrote:
-> On Fri, Nov 11, 2016 at 4:38 PM, David Sterba <dsterba@suse.com> wrote:
-> > Hi,
-> >
-> > btrfs-progs version 4.8.3 have been released. Handful of fixes and lots of
-> > cleanups.
-> >
-> > Changes:
-> >   * check:
-> >     * support for clearing space cache (v1)
-> >     * size reduction of inode backref structure
-> >   * send:
-> >     * fix handling of multiple snapshots (-p and -c options)
-> >     * transfer buffer increased (should reduce number of context switches)
-> >     * reuse existing file for output (-f), eg. when root cannot create files (NFS)
-> >   * dump-tree:
-> >     * print missing items for various structures
-> >     * new: dev stats, balance status item
-> >     * sync key names with kernel (the persistent items)
-> >   * subvol show: now able to print the toplevel subvolume -- the creation time
-> >     might be wrong though
-> >   * mkfs:
-> >     * store the creation time of toplevel root inode
-> 
-> It looks like commit 5c4d53450b2c6ff7169c99f9158c14ae96b7b0a8
->  (btrfs-progs: mkfs: store creation time of the toplevel subvolume'')
-> is not enough to display the creation time of a newly created fs with
-> tools v4.8.3, or am I missing something?
+On 11/10/2016 10:00 AM, David Sterba wrote:
+> Hi,
+>
+> two minor error handling fixes and one fix for balance sttus item that goes
+> back to 4.4.
+>
+> The branch continues from my last pull that went to Linus' tree, so it would
+> be a good idea to do the same as before. I've added a signed tag for branch.
 
-This is known and mentioned on the changelog entry above mkfs.
+Looking at this again before sending off:
 
-> With kernel 4.8.6-2-default as well as 4.9.0-rc4-1-default:
-> 
-> # /net/src/btrfs-progs/mkfs.btrfs -L ctimetest -m single /dev/loop0
-> btrfs-progs v4.8.3
-> See http://btrfs.wiki.kernel.org for more information.
-> 
-> Performing full device TRIM (100.00GiB) ...
-> Label:              ctimetest
-> UUID:               d65486f0-368b-4b2a-962b-176cd945feb5
-> Node size:          16384
-> Sector size:        4096
-> Filesystem size:    100.00GiB
-> Block group profiles:
->   Data:             single            8.00MiB
->   Metadata:         single            8.00MiB
->   System:           single            4.00MiB
-> SSD detected:       no
-> Incompat features:  extref, skinny-metadata
-> Number of devices:  1
-> Devices:
->    ID        SIZE  PATH
->     1   100.00GiB  /dev/loop0
-> 
-> # mount /dev/loop0 /mnt
-> # cd /mnt
-> # ls > test
-> # sync
-> # /net/src/btrfs-progs/btrfs sub sh .
-> /mnt
->         Name:                   <FS_TREE>
->         UUID:                   -
->         Parent UUID:            -
->         Received UUID:          -
->         Creation time:          -
->         Subvolume ID:           5
->         Generation:             9
->         Gen at creation:        0
->         Parent ID:              0
->         Top level ID:           0
->         Flags:                  -
->         Snapshot(s):
-> 
-> I noticed that   btrfs_set_stack_timespec_sec(&inode_item.otime, now);
-> is called twice during mkfs.btrfs, but during btrfs sub sh
-> get_ri.otime is 0 just before it is formatted/printed.
+btrfs: remove redundant check of btrfs_iget return value
 
-Your finding is right, I saw the same and would have fixed already, but
-it turned out to be more than a simple fix. The on-disk items are
-connected to in-memory ones, and the corresponding root item does not
-keep them in sync. Ie. setting the otime in one place does not propagate
-to the point where 'subvol show' reads it.
+Is really a cleanup and we should wait for the merge window.  Since this 
+means rebasing the pull, I'm happy to send the others on Monday.
 
-> My idea was to
-> patch the code (kernel and/or progs) such that I can also put a time
-> in some exiting filesystems.
+-chris
 
-Well, it's possible to write a oneshot tool to set the creation time, if
-it's really desired. It would be an arbitrary value set by the user,
-because the information about otime cannot be simply derived from the
-existing timestamps.
+>
+> ----------------------------------------------------------------
+> The following changes since commit 9d1032cc49a8a1065e79ee323de66bcb4fdbd535:
+>
+>   btrfs: fix WARNING in btrfs_select_ref_head() (2016-10-24 18:20:29 +0200)
+>
+> are available in the git repository at:
+>
+>   git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-4.9-rc5
+>
+> for you to fetch changes up to 3ed73b672c8707cab47ef0caf5d0c2a377ad70f2:
+>
+>   btrfs: Call kunmap if zlib_inflateInit2 fails (2016-11-07 18:07:03 +0100)
+>
+> ----------------------------------------------------------------
+> Christophe JAILLET (1):
+>       btrfs: remove redundant check of btrfs_iget return value
+>
+> David Sterba (1):
+>       btrfs: store and load values of stripes_min/stripes_max in balance status item
+>
+> Nick Terrell (1):
+>       btrfs: Call kunmap if zlib_inflateInit2 fails
+>
+>  fs/btrfs/ctree.h            | 4 ++++
+>  fs/btrfs/free-space-cache.c | 2 --
+>  fs/btrfs/zlib.c             | 1 +
+>  3 files changed, 5 insertions(+), 2 deletions(-)
+>

@@ -1,49 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40800 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1756736AbcKWQzb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Nov 2016 11:55:31 -0500
-Date: Wed, 23 Nov 2016 17:55:26 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: Chris Mason <clm@fb.com>, linux-btrfs@vger.kernel.org,
-        David Sterba <dsterba@suse.cz>, Filipe Manana <fdmanana@suse.com>
-Subject: Re: [PATCH] Btrfs: fix truncate down when no_holes feature is enabled
-Message-ID: <20161123165526.GR12522@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1478903265-24273-1-git-send-email-bo.li.liu@oracle.com>
- <e740caa9-33a8-7aa0-b4a4-c6fc22be4d3e@fb.com>
- <20161122200847.GA23828@localhost.localdomain>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20161122200847.GA23828@localhost.localdomain>
+Received: from userp1040.oracle.com ([156.151.31.81]:45777 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S934016AbcKKWUD (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 11 Nov 2016 17:20:03 -0500
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix truncate down when no_holes feature is enabled
+Date: Fri, 11 Nov 2016 14:27:45 -0800
+Message-Id: <1478903265-24273-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 22, 2016 at 12:08:47PM -0800, Liu Bo wrote:
-> On Tue, Nov 22, 2016 at 02:13:21PM -0500, Chris Mason wrote:
-> > On 11/11/2016 05:27 PM, Liu Bo wrote:
-> > > For such a file mapping,
-> > > 
-> > > [0-4k][hole][8k-12k]
-> > > 
-> > > In NO_HOLES mode, we don't have the [hole] extent any more.
-> > > Commit c1aa45759e90 ("Btrfs: fix shrinking truncate when the no_holes feature is enabled")
-> > >  fixed disk isize not being updated in NO_HOLES mode when data is not flushed.
-> > > 
-> > > However, even if data has been flushed, we can still have trouble
-> > > in updating disk isize since we updated disk isize to 'start' of
-> > > the last evicted extent.
-> > > 
-> > > Also add a ASSERT for better catching (for developers only).
-> > > 
-> > > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> > 
-> > Thanks Liu!
-> > 
-> > Reviewed-by: Chris Mason <clm@fb.com>
-> 
-> The added ASSERT() can cause generic/068 to crash because I didn't
-> filter out the 'log tree' case, I'm testing a V2 patch.
+For such a file mapping,
 
-I've hit the assert with btrfs/003, once and not deterministically in a VM.
+[0-4k][hole][8k-12k]
+
+In NO_HOLES mode, we don't have the [hole] extent any more.
+Commit c1aa45759e90 ("Btrfs: fix shrinking truncate when the no_holes feature is enabled")
+ fixed disk isize not being updated in NO_HOLES mode when data is not flushed.
+
+However, even if data has been flushed, we can still have trouble
+in updating disk isize since we updated disk isize to 'start' of
+the last evicted extent.
+
+Also add a ASSERT for better catching (for developers only).
+
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/inode.c | 16 +++++++++++++++-
+ 1 file changed, 15 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 2b790bd..603dd492 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4483,8 +4483,19 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
+ 		if (found_type > min_type) {
+ 			del_item = 1;
+ 		} else {
+-			if (item_end < new_size)
++			if (item_end < new_size) {
++				/*
++				 * With NO_HOLES mode, for the following mapping
++				 *
++				 * [0-4k][hole][8k-12k]
++				 *
++				 * if truncating isize down to 6k, it ends up
++				 * isize being 8k.
++				 */
++				if (btrfs_fs_incompat(root->fs_info, NO_HOLES))
++					last_size = new_size;
+ 				break;
++			}
+ 			if (found_key.offset >= new_size)
+ 				del_item = 1;
+ 			else
+@@ -4666,6 +4677,9 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
+ 			btrfs_abort_transaction(trans, ret);
+ 	}
+ error:
++	if (err == 0)
++		ASSERT(last_size == new_size);
++
+ 	if (root->root_key.objectid != BTRFS_TREE_LOG_OBJECTID)
+ 		btrfs_ordered_update_i_size(inode, last_size, NULL);
+ 
+-- 
+2.5.5
+

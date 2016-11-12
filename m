@@ -1,67 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from kiara-balancer-1.wellbehavedsoftware.com ([138.201.134.108]:39822
-        "EHLO kiara-balancer-1.wellbehavedsoftware.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S933161AbcKMMp6 (ORCPT
+Received: from mail-wm0-f68.google.com ([74.125.82.68]:34458 "EHLO
+        mail-wm0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751503AbcKLWOw (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 13 Nov 2016 07:45:58 -0500
-Subject: Re: Announcing btrfs-dedupe
-To: Saint Germain <saintger@gmail.com>, linux-btrfs@vger.kernel.org
-References: <2855552b-714c-d1de-08f9-89153c293772@wellbehavedsoftware.com>
- <20161108233625.1eff15df@system>
-From: James Pharaoh <james@wellbehavedsoftware.com>
-Message-ID: <c764e360-0be5-989c-b4f4-b560f2c7cb69@wellbehavedsoftware.com>
-Date: Sun, 13 Nov 2016 13:45:53 +0100
+        Sat, 12 Nov 2016 17:14:52 -0500
+Received: by mail-wm0-f68.google.com with SMTP id g23so5395001wme.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 12 Nov 2016 14:14:52 -0800 (PST)
+Date: Sat, 12 Nov 2016 22:14:49 +0000
+From: Sergei Trofimovich <slyich@gmail.com>
+To: David Sterba <dsterba@suse.cz>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] ioctl.h: add missing kernel compatibility header for
+ BUILD_ASSERT
+Message-ID: <20161112221449.0cd3d16b@sf>
+In-Reply-To: <20161024125205.GB11398@twin.jikos.cz>
+References: <20161024082912.20253-1-slyich@gmail.com>
+        <20161024125205.GB11398@twin.jikos.cz>
 MIME-Version: 1.0
-In-Reply-To: <20161108233625.1eff15df@system>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ boundary="Sig_/8qbanWxHQC3l6gmx/44yng="; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've updated the BTRFS wiki here with all the new tools people have 
-mentioned:
+--Sig_/8qbanWxHQC3l6gmx/44yng=
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-https://btrfs.wiki.kernel.org/index.php/Deduplication#Other_tools
+On Mon, 24 Oct 2016 14:52:05 +0200
+David Sterba <dsterba@suse.cz> wrote:
 
-Please let me know if anyone who does not have access to the wiki has 
-any additions, updates or corrections to what I've written here.
+> Hi,
+>=20
+> On Mon, Oct 24, 2016 at 09:29:12AM +0100, slyich@gmail.com wrote:
+> > From: Sergei Trofimovich <slyfox@gentoo.org>
+> >=20
+> > Header breakage noticed by cynede. Reproducible as:
+> >=20
+> >     $ gcc -c /usr/include/btrfs/ioctl.h -o /tmp/a.o
+> >         /usr/include/btrfs/ioctl.h:42:14: error: expected declaration s=
+pecifiers or '...' before 'sizeof'
+> >      BUILD_ASSERT(sizeof(struct btrfs_ioctl_vol_args) =3D=3D 4096);
+> >                   ^~~~~~
+> >=20
+> > Basically gcc tries to say us BUILD_ASSERT is not visible.
+> >=20
+> > BUILD_ASSERT lives in kerncompat.h which this change adds. =20
+>=20
+> I think including the kerncompat.h is too intrusive here, I've fixed by
+> providing an empty macro if it's not defined. I'll release 4.8.2 soon.
 
-James
+Apologies. I did not test your fix right afterwards. Seems now header is in=
+complete
+due to missing NULL (gcc-6):
 
-On 08/11/16 23:36, Saint Germain wrote:
-> On Sun, 6 Nov 2016 14:30:52 +0100, James Pharaoh
-> <james@wellbehavedsoftware.com> wrote :
->
->> Hi all,
->>
->> I'm pleased to announce my btrfs deduplication utility, written in
->> Rust. This operates on whole files, is fast, and I believe
->> complements the existing utilities (duperemove, bedup), which exist
->> currently.
->>
->> Please visit the homepage for more information:
->>
->> http://btrfs-dedupe.com
->>
->
-> Thanks for having shared your work.
-> Please be aware of these other similar softwares:
-> - jdupes: https://github.com/jbruchon/jdupes
-> - rmlint: https://github.com/sahib/rmlint
-> And of course fdupes.
->
-> Some intesting points I have seen in them:
-> - use xxhash to identify potential duplicates (huge speedup)
-> - ability to deduplicate read-only snapshots
-> - identify potential reflinked files (see also my email here:
->   https://www.spinics.net/lists/linux-btrfs/msg60081.html)
-> - ability to filter out hardlinks
-> - triangle problem: see jdupes readme
-> - jdupes has started the process to be included in Debian
->
-> I hope that will help and that you can share some codes with them !
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+btrfs-progs-v4.8.3 $ gcc -c ioctl.h -o /tmp/a.o
+ioctl.h: In function 'btrfs_err_str':
+ioctl.h:711:11: error: 'NULL' undeclared (first use in this function)
+    return NULL;
+           ^~~~
+ioctl.h:711:11: note: each undeclared identifier is reported only once for =
+each function it appears in
+
+--=20
+
+  Sergei
+
+--Sig_/8qbanWxHQC3l6gmx/44yng=
+Content-Type: application/pgp-signature
+Content-Description: Ци��ова� подпи�� OpenPGP
+
+-----BEGIN PGP SIGNATURE-----
+
+iEYEARECAAYFAlgnlFkACgkQcaHudmEf86o4jACgh+BFPSjH1NW8zz09jQwidb6g
+XXAAoIHJWxvuoj9QM+QrcS1dX859o+8Z
+=KWpx
+-----END PGP SIGNATURE-----
+
+--Sig_/8qbanWxHQC3l6gmx/44yng=--

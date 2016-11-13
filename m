@@ -1,42 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54292 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932268AbcKBXdo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 2 Nov 2016 19:33:44 -0400
-Date: Thu, 3 Nov 2016 00:33:40 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Lukas Lueg <lukas.lueg@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Fwd: State of the fuzzer
-Message-ID: <20161102233340.GI12522@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <CAJF-kYmnBt6yRLJ+R3HdJ03oqp_ptwXpat40vXoD_b=MUvJZUw@mail.gmail.com>
- <20160909140059.GT16983@twin.jikos.cz>
- <CAJF-kYnXjz_dg2eev3WUqg3=XTBX=W8e2qnLQKtpnC6cCHvR+Q@mail.gmail.com>
- <CAJF-kYkG77sAQ4VOqX+Fovu+fO6WKVMZmUA8WG+uMU5EM2ZwUg@mail.gmail.com>
- <CAJF-kYk_a6hwgbQRw+9yBb54hXxC49LAZVs25FnoHm+zosFMww@mail.gmail.com>
- <CAJF-kYnH+cORfSLGx1Wb6S4iPDjnJxYOwm2trC_FbOK8t7bPVQ@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAJF-kYnH+cORfSLGx1Wb6S4iPDjnJxYOwm2trC_FbOK8t7bPVQ@mail.gmail.com>
+Received: from mail-pg0-f48.google.com ([74.125.83.48]:34622 "EHLO
+        mail-pg0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932504AbcKMTmS (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 13 Nov 2016 14:42:18 -0500
+Received: by mail-pg0-f48.google.com with SMTP id x23so41510415pgx.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 13 Nov 2016 11:42:18 -0800 (PST)
+From: Omar Sandoval <osandov@osandov.com>
+To: linux-btrfs@vger.kernel.org
+Cc: kernel-team@fb.com
+Subject: [PATCH 0/6] btrfs-progs: better space_cache=v2 support
+Date: Sun, 13 Nov 2016 11:35:18 -0800
+Message-Id: <cover.1479064970.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Omar Sandoval <osandov@fb.com>
+
 Hi,
 
-On Tue, Oct 11, 2016 at 02:07:48PM +0200, Lukas Lueg wrote:
-> I've now shut down all fuzzer nodes since they only cost money and
-> there is no progress on most of the aforementioned bugs.
+This series implements some support for space_cache=v2 in btrfs-progs.
+In particular, this adds support for `btrfs check --clear-space-cache v2`,
+proper printing of the free space tree flags for `btrfs inspect-internal
+dump-super`, and better documentation.
 
-sorry, I didn't know there are cost implications. I've triaged the bugs
-some time ago and tried to fix one of the underlying problems that would
-probably close serveal bugs, but it turned out to be not that easy.
+We'd previously talked about always making btrfs-progs always invalidate
+the free space tree when doing write operations, but I decided that this
+should be an action explicitly requested by the user. It'd also be
+unsafe if using a kernel without the free space tree valid bit support,
+which is why I didn't implement a `btrfs check --invalidate-free-space-cache`
+option. Doing the full clear is always safe.
 
-There's not that much interest in k.org bugs from other developers and I
-have to split my time among several tasks or keep up with release
-schedules.
+Still missing is full read-write support, but this should hopefully
+cover most btrfs-progs usage.
 
-I appreciate that you took the time to do the tests and reports, I'll
-get to them eventually. I also hope you're not discouraged from further
-testing. This would make best sense only after all current fuzzer bugs
-are fixed, but I can't give you an ETA.
+Thanks!
+
+Omar Sandoval (6):
+  btrfs-progs: add the FREE_SPACE_TREE_VALID compat_ro bit definition
+  btrfs-progs: format FREE_SPACE_TREE{,_VALID} nicely in dump-super
+  btrfs-progs: add OPEN_CTREE_INVALIDATE_FST flag
+  btrfs-progs: add btrfs_clear_free_space_tree() from the kernel
+  btrfs-progs: implement btrfs check --clear-space-cache v2
+  btrfs-progs: document space_cache=v2 more thoroughly
+
+ Documentation/btrfs-check.asciidoc | 14 +++---
+ Documentation/btrfs-man5.asciidoc  | 43 +++++++++++--------
+ chunk-recover.c                    |  2 +-
+ cmds-check.c                       | 34 +++++++++++----
+ cmds-inspect-dump-super.c          | 24 +++++++++++
+ ctree.h                            | 19 +++++++++
+ disk-io.c                          | 28 +++++++-----
+ disk-io.h                          |  8 +++-
+ extent-tree.c                      | 10 +++++
+ free-space-tree.c                  | 87 ++++++++++++++++++++++++++++++++++++++
+ free-space-tree.h                  |  1 +
+ root-tree.c                        | 22 ++++++++++
+ 12 files changed, 248 insertions(+), 44 deletions(-)
+
+-- 
+2.10.2
+

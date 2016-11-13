@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f172.google.com ([209.85.192.172]:36726 "EHLO
-        mail-pf0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932504AbcKMTmI (ORCPT
+Received: from mail-pg0-f41.google.com ([74.125.83.41]:34727 "EHLO
+        mail-pg0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S934302AbcKMTmz (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 13 Nov 2016 14:42:08 -0500
-Received: by mail-pf0-f172.google.com with SMTP id 189so24689865pfz.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 13 Nov 2016 11:42:08 -0800 (PST)
+        Sun, 13 Nov 2016 14:42:55 -0500
+Received: by mail-pg0-f41.google.com with SMTP id x23so41515358pgx.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 13 Nov 2016 11:42:55 -0800 (PST)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
 Cc: kernel-team@fb.com
-Subject: [PATCH 3/6] btrfs-progs: add OPEN_CTREE_INVALIDATE_FST flag
-Date: Sun, 13 Nov 2016 11:35:21 -0800
-Message-Id: <b22be9b08513c06ad7a091ea502aaa31ee03ca34.1479064970.git.osandov@fb.com>
+Subject: [PATCH 4/6] btrfs-progs: add btrfs_clear_free_space_tree() from the kernel
+Date: Sun, 13 Nov 2016 11:35:22 -0800
+Message-Id: <7e976947939c42bec9756dd02b705d3b2bc387fc.1479064970.git.osandov@fb.com>
 In-Reply-To: <cover.1479064970.git.osandov@fb.com>
 References: <cover.1479064970.git.osandov@fb.com>
 In-Reply-To: <cover.1479064970.git.osandov@fb.com>
@@ -21,109 +21,210 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Omar Sandoval <osandov@fb.com>
 
-If this flag is passed to open_ctree(), we'll clear the
-FREE_SPACE_TREE_VALID compat_ro bit. The kernel will then reconstruct
-the free space tree the next time the filesystem is mounted.
-
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- chunk-recover.c |  2 +-
- disk-io.c       | 28 ++++++++++++++++++----------
- disk-io.h       |  8 +++++++-
- 3 files changed, 26 insertions(+), 12 deletions(-)
+ ctree.h           |  6 ++++
+ extent-tree.c     | 10 +++++++
+ free-space-tree.c | 87 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ free-space-tree.h |  1 +
+ root-tree.c       | 22 ++++++++++++++
+ 5 files changed, 126 insertions(+)
 
-diff --git a/chunk-recover.c b/chunk-recover.c
-index e33ee8b..e6b26ac 100644
---- a/chunk-recover.c
-+++ b/chunk-recover.c
-@@ -1477,7 +1477,7 @@ open_ctree_with_broken_chunk(struct recover_control *rc)
- 
- 	memcpy(fs_info->fsid, &disk_super->fsid, BTRFS_FSID_SIZE);
- 
--	ret = btrfs_check_fs_compatibility(disk_super, 1);
-+	ret = btrfs_check_fs_compatibility(disk_super, OPEN_CTREE_WRITES);
- 	if (ret)
- 		goto out_devices;
- 
-diff --git a/disk-io.c b/disk-io.c
-index a576300..a55fcc1 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -904,7 +904,7 @@ free_all:
- 	return NULL;
+diff --git a/ctree.h b/ctree.h
+index d67b852..90193ad 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -2504,6 +2504,10 @@ int btrfs_inc_ref(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 		  struct extent_buffer *buf, int record_parent);
+ int btrfs_dec_ref(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 		  struct extent_buffer *buf, int record_parent);
++void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
++			   struct btrfs_root *root,
++			   struct extent_buffer *buf,
++			   u64 parent, int last_ref);
+ int btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 		      struct btrfs_root *root,
+ 		      u64 bytenr, u64 num_bytes, u64 parent,
+@@ -2664,6 +2668,8 @@ int btrfs_add_root_ref(struct btrfs_trans_handle *trans,
+ int btrfs_insert_root(struct btrfs_trans_handle *trans, struct btrfs_root
+ 		      *root, struct btrfs_key *key, struct btrfs_root_item
+ 		      *item);
++int btrfs_del_root(struct btrfs_trans_handle *trans, struct btrfs_root *root,
++		   struct btrfs_key *key);
+ int btrfs_update_root(struct btrfs_trans_handle *trans, struct btrfs_root
+ 		      *root, struct btrfs_key *key, struct btrfs_root_item
+ 		      *item);
+diff --git a/extent-tree.c b/extent-tree.c
+index 3b1577e..d445723 100644
+--- a/extent-tree.c
++++ b/extent-tree.c
+@@ -2467,6 +2467,16 @@ static int del_pending_extents(struct btrfs_trans_handle *trans, struct
+ 	return err;
  }
  
--int btrfs_check_fs_compatibility(struct btrfs_super_block *sb, int writable)
-+int btrfs_check_fs_compatibility(struct btrfs_super_block *sb, unsigned flags)
- {
- 	u64 features;
- 
-@@ -923,13 +923,22 @@ int btrfs_check_fs_compatibility(struct btrfs_super_block *sb, int writable)
- 		btrfs_set_super_incompat_flags(sb, features);
- 	}
- 
--	features = btrfs_super_compat_ro_flags(sb) &
--		~BTRFS_FEATURE_COMPAT_RO_SUPP;
--	if (writable && features) {
--		printk("couldn't open RDWR because of unsupported "
--		       "option features (%Lx).\n",
--		       (unsigned long long)features);
--		return -ENOTSUP;
-+	features = btrfs_super_compat_ro_flags(sb);
-+	if (flags & OPEN_CTREE_WRITES) {
-+		if (flags & OPEN_CTREE_INVALIDATE_FST) {
-+			/* Clear the FREE_SPACE_TREE_VALID bit on disk... */
-+			features &= ~BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE_VALID;
-+			btrfs_set_super_compat_ro_flags(sb, features);
-+			/* ... and ignore the free space tree bit. */
-+			features &= ~BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE;
-+		}
-+		if (features & ~BTRFS_FEATURE_COMPAT_RO_SUPP) {
-+			printk("couldn't open RDWR because of unsupported "
-+			       "option features (%Lx).\n",
-+			       (unsigned long long)features);
-+			return -ENOTSUP;
-+		}
 +
- 	}
- 	return 0;
- }
-@@ -1320,8 +1329,7 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
- 
- 	memcpy(fs_info->fsid, &disk_super->fsid, BTRFS_FSID_SIZE);
- 
--	ret = btrfs_check_fs_compatibility(fs_info->super_copy,
--					   flags & OPEN_CTREE_WRITES);
-+	ret = btrfs_check_fs_compatibility(fs_info->super_copy, flags);
- 	if (ret)
- 		goto out_devices;
- 
-diff --git a/disk-io.h b/disk-io.h
-index 8ab36aa..5d4b281 100644
---- a/disk-io.h
-+++ b/disk-io.h
-@@ -74,6 +74,12 @@ enum btrfs_open_ctree_flags {
- 
- 	/* Allow to open a partially created filesystem */
- 	OPEN_CTREE_FS_PARTIAL = (1U << 12),
++void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
++			   struct btrfs_root *root,
++			   struct extent_buffer *buf,
++			   u64 parent, int last_ref)
++{
++	btrfs_free_extent(trans, root, buf->start, buf->len, parent,
++			  root->root_key.objectid, btrfs_header_level(buf), 0);
++}
 +
-+	/*
-+	 * Invalidate the free space tree (i.e., clear the FREE_SPACE_TREE_VALID
-+	 * compat_ro bit).
-+	 */
-+	OPEN_CTREE_INVALIDATE_FST = (1U << 13),
- };
- 
  /*
-@@ -128,7 +134,7 @@ int clean_tree_block(struct btrfs_trans_handle *trans,
+  * remove an extent from the root, returns 0 on success
+  */
+diff --git a/free-space-tree.c b/free-space-tree.c
+index 3c7a246..d972f26 100644
+--- a/free-space-tree.c
++++ b/free-space-tree.c
+@@ -20,6 +20,7 @@
+ #include "disk-io.h"
+ #include "free-space-cache.h"
+ #include "free-space-tree.h"
++#include "transaction.h"
  
- void btrfs_free_fs_info(struct btrfs_fs_info *fs_info);
- struct btrfs_fs_info *btrfs_new_fs_info(int writable, u64 sb_bytenr);
--int btrfs_check_fs_compatibility(struct btrfs_super_block *sb, int writable);
-+int btrfs_check_fs_compatibility(struct btrfs_super_block *sb, unsigned flags);
- int btrfs_setup_all_roots(struct btrfs_fs_info *fs_info, u64 root_tree_bytenr,
- 			  unsigned flags);
- void btrfs_release_all_roots(struct btrfs_fs_info *fs_info);
+ static struct btrfs_free_space_info *
+ search_free_space_info(struct btrfs_trans_handle *trans,
+@@ -67,6 +68,92 @@ static int free_space_test_bit(struct btrfs_block_group_cache *block_group,
+ 	return !!extent_buffer_test_bit(leaf, ptr, i);
+ }
+ 
++static int clear_free_space_tree(struct btrfs_trans_handle *trans,
++				 struct btrfs_root *root)
++{
++	struct btrfs_path *path;
++	struct btrfs_key key;
++	int nr;
++	int ret;
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++
++	key.objectid = 0;
++	key.type = 0;
++	key.offset = 0;
++
++	while (1) {
++		ret = btrfs_search_slot(trans, root, &key, path, -1, 1);
++		if (ret < 0)
++			goto out;
++
++		nr = btrfs_header_nritems(path->nodes[0]);
++		if (!nr)
++			break;
++
++		path->slots[0] = 0;
++		ret = btrfs_del_items(trans, root, path, 0, nr);
++		if (ret)
++			goto out;
++
++		btrfs_release_path(path);
++	}
++
++	ret = 0;
++out:
++	btrfs_free_path(path);
++	return ret;
++}
++
++int btrfs_clear_free_space_tree(struct btrfs_fs_info *fs_info)
++{
++	struct btrfs_trans_handle *trans;
++	struct btrfs_root *tree_root = fs_info->tree_root;
++	struct btrfs_root *free_space_root = fs_info->free_space_root;
++	int ret;
++	u64 features;
++
++	trans = btrfs_start_transaction(tree_root, 0);
++	if (IS_ERR(trans))
++		return PTR_ERR(trans);
++
++
++	features = btrfs_super_compat_ro_flags(fs_info->super_copy);
++	features &= ~(BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE_VALID |
++		      BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE);
++	btrfs_set_super_compat_ro_flags(fs_info->super_copy, features);
++	fs_info->free_space_root = NULL;
++
++	ret = clear_free_space_tree(trans, free_space_root);
++	if (ret)
++		goto abort;
++
++	ret = btrfs_del_root(trans, tree_root, &free_space_root->root_key);
++	if (ret)
++		goto abort;
++
++	list_del(&free_space_root->dirty_list);
++
++	clean_tree_block(trans, tree_root, free_space_root->node);
++	btrfs_free_tree_block(trans, free_space_root, free_space_root->node,
++			      0, 1);
++
++	free_extent_buffer(free_space_root->node);
++	free_extent_buffer(free_space_root->commit_root);
++	kfree(free_space_root);
++
++	ret = btrfs_commit_transaction(trans, tree_root);
++	if (ret)
++		return ret;
++
++	return 0;
++
++abort:
++	return ret;
++}
++
+ static int load_free_space_bitmaps(struct btrfs_fs_info *fs_info,
+ 				   struct btrfs_block_group_cache *block_group,
+ 				   struct btrfs_path *path,
+diff --git a/free-space-tree.h b/free-space-tree.h
+index 7529a46..4845f13 100644
+--- a/free-space-tree.h
++++ b/free-space-tree.h
+@@ -19,6 +19,7 @@
+ #ifndef __BTRFS_FREE_SPACE_TREE_H__
+ #define __BTRFS_FREE_SPACE_TREE_H__
+ 
++int btrfs_clear_free_space_tree(struct btrfs_fs_info *fs_info);
+ int load_free_space_tree(struct btrfs_fs_info *fs_info,
+ 			 struct btrfs_block_group_cache *block_group);
+ 
+diff --git a/root-tree.c b/root-tree.c
+index cca424e..c660447 100644
+--- a/root-tree.c
++++ b/root-tree.c
+@@ -143,6 +143,28 @@ int btrfs_insert_root(struct btrfs_trans_handle *trans, struct btrfs_root
+ 	return ret;
+ }
+ 
++/* drop the root item for 'key' from 'root' */
++int btrfs_del_root(struct btrfs_trans_handle *trans, struct btrfs_root *root,
++		   struct btrfs_key *key)
++{
++	struct btrfs_path *path;
++	int ret;
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++	ret = btrfs_search_slot(trans, root, key, path, -1, 1);
++	if (ret < 0)
++		goto out;
++
++	BUG_ON(ret != 0);
++
++	ret = btrfs_del_item(trans, root, path);
++out:
++	btrfs_free_path(path);
++	return ret;
++}
++
+ /*
+  * add a btrfs_root_ref item.  type is either BTRFS_ROOT_REF_KEY
+  * or BTRFS_ROOT_BACKREF_KEY.
 -- 
 2.10.2
 

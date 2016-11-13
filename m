@@ -1,31 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41887 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753732AbcKIPCw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 9 Nov 2016 10:02:52 -0500
-Date: Wed, 9 Nov 2016 16:02:45 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Adam Borowski <kilobyte@angband.pl>
-Cc: Mark Fasheh <mark@fasheh.com>, dsterba@suse.cz,
-        James Pharaoh <james@wellbehavedsoftware.com>,
-        linux-btrfs@vger.kernel.org
+Received: from kiara-balancer-1.wellbehavedsoftware.com ([138.201.134.108]:39822
+        "EHLO kiara-balancer-1.wellbehavedsoftware.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S933161AbcKMMp6 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 13 Nov 2016 07:45:58 -0500
 Subject: Re: Announcing btrfs-dedupe
-Message-ID: <20161109150245.GA12522@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+To: Saint Germain <saintger@gmail.com>, linux-btrfs@vger.kernel.org
 References: <2855552b-714c-d1de-08f9-89153c293772@wellbehavedsoftware.com>
- <20161107140200.GM12522@suse.cz>
- <CAGe7X7n=xkveD4TS2cyfXx5-hydOCHTh=tjDK54h8HWpnK5NqQ@mail.gmail.com>
- <20161107205409.GA20325@angband.pl>
+ <20161108233625.1eff15df@system>
+From: James Pharaoh <james@wellbehavedsoftware.com>
+Message-ID: <c764e360-0be5-989c-b4f4-b560f2c7cb69@wellbehavedsoftware.com>
+Date: Sun, 13 Nov 2016 13:45:53 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20161107205409.GA20325@angband.pl>
+In-Reply-To: <20161108233625.1eff15df@system>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 07, 2016 at 09:54:09PM +0100, Adam Borowski wrote:
-> [1]. For some reasons zfs-on-linux guys didn't implement this yet, despite
-> it being an obvious thing on ZFS.
+I've updated the BTRFS wiki here with all the new tools people have 
+mentioned:
 
-In my understanding, the COW mechanics are different, there are no
-extent back references, so this would require some design updates. See
-issue 405 at ZoL tracker.
+https://btrfs.wiki.kernel.org/index.php/Deduplication#Other_tools
+
+Please let me know if anyone who does not have access to the wiki has 
+any additions, updates or corrections to what I've written here.
+
+James
+
+On 08/11/16 23:36, Saint Germain wrote:
+> On Sun, 6 Nov 2016 14:30:52 +0100, James Pharaoh
+> <james@wellbehavedsoftware.com> wrote :
+>
+>> Hi all,
+>>
+>> I'm pleased to announce my btrfs deduplication utility, written in
+>> Rust. This operates on whole files, is fast, and I believe
+>> complements the existing utilities (duperemove, bedup), which exist
+>> currently.
+>>
+>> Please visit the homepage for more information:
+>>
+>> http://btrfs-dedupe.com
+>>
+>
+> Thanks for having shared your work.
+> Please be aware of these other similar softwares:
+> - jdupes: https://github.com/jbruchon/jdupes
+> - rmlint: https://github.com/sahib/rmlint
+> And of course fdupes.
+>
+> Some intesting points I have seen in them:
+> - use xxhash to identify potential duplicates (huge speedup)
+> - ability to deduplicate read-only snapshots
+> - identify potential reflinked files (see also my email here:
+>   https://www.spinics.net/lists/linux-btrfs/msg60081.html)
+> - ability to filter out hardlinks
+> - triangle problem: see jdupes readme
+> - jdupes has started the process to be included in Debian
+>
+> I hope that will help and that you can share some codes with them !
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

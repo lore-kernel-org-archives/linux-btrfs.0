@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f49.google.com ([74.125.83.49]:33883 "EHLO
-        mail-pg0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S934208AbcKMTnv (ORCPT
+Received: from mail-pf0-f176.google.com ([209.85.192.176]:33512 "EHLO
+        mail-pf0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S934208AbcKMToB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 13 Nov 2016 14:43:51 -0500
-Received: by mail-pg0-f49.google.com with SMTP id x23so41522655pgx.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 13 Nov 2016 11:43:51 -0800 (PST)
+        Sun, 13 Nov 2016 14:44:01 -0500
+Received: by mail-pf0-f176.google.com with SMTP id d2so24731834pfd.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 13 Nov 2016 11:44:01 -0800 (PST)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
 Cc: kernel-team@fb.com
-Subject: [PATCH 5/6] btrfs-progs: implement btrfs check --clear-space-cache v2
-Date: Sun, 13 Nov 2016 11:35:23 -0800
-Message-Id: <eb8a6a86e655b9d639b385ca6484cd6c5b932f08.1479064970.git.osandov@fb.com>
+Subject: [PATCH 6/6] btrfs-progs: document space_cache=v2 more thoroughly
+Date: Sun, 13 Nov 2016 11:35:24 -0800
+Message-Id: <215dd6b41e1aa835f46b2a28bdd3732c7f349845.1479064970.git.osandov@fb.com>
 In-Reply-To: <cover.1479064970.git.osandov@fb.com>
 References: <cover.1479064970.git.osandov@fb.com>
 In-Reply-To: <cover.1479064970.git.osandov@fb.com>
@@ -23,106 +23,64 @@ From: Omar Sandoval <osandov@fb.com>
 
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- Documentation/btrfs-check.asciidoc | 14 +++++++++-----
- cmds-check.c                       | 34 +++++++++++++++++++++++++---------
- 2 files changed, 34 insertions(+), 14 deletions(-)
+ Documentation/btrfs-man5.asciidoc | 43 +++++++++++++++++++++++----------------
+ 1 file changed, 25 insertions(+), 18 deletions(-)
 
-diff --git a/Documentation/btrfs-check.asciidoc b/Documentation/btrfs-check.asciidoc
-index 5ef414e..633cbbf 100644
---- a/Documentation/btrfs-check.asciidoc
-+++ b/Documentation/btrfs-check.asciidoc
-@@ -80,12 +80,16 @@ superblock is damaged.
+diff --git a/Documentation/btrfs-man5.asciidoc b/Documentation/btrfs-man5.asciidoc
+index d12b059..3b003d3 100644
+--- a/Documentation/btrfs-man5.asciidoc
++++ b/Documentation/btrfs-man5.asciidoc
+@@ -319,25 +319,32 @@ May be resumed with *btrfs balance resume* or the paused state can be removed
+ by *btrfs balance cancel*. The default behaviour is to start interrutpd balance.
  
- --clear-space-cache v1|v2::
- completely wipe all free space cache of given type
--
--NOTE: Only v1 free space cache supported is implemented.
- +
--Kernel mount option 'clear_cache' is only designed to rebuild free space cache
--which is modified during the lifetime of that mount option.  It doesn't rebuild
--all free space cache, nor clear them out.
-+For free space cache 'v1', the 'clear_cache' kernel mount option only rebuilds
-+the free space cache for block groups that are modified while the filesystem is
-+mounted with that option. Thus, using this option with 'v1' makes it possible
-+to actually clear the entire free space cache.
+ *space_cache*::
+-*space_cache=v2*::
++*space_cache='version'*::
+ *nospace_cache*::
+-('nospace_cache' since: 3.2, 'space_cache=v2' since 4.5, default: on)
+-+
+-Options to control the free space cache.  This affects performance as searching
+-for new free blocks could take longer if the space cache is not enabled. On the
+-other hand, managing the space cache consumes some resources.  It can be
+-disabled without clearing at mount time.
+-+
+-There are two implementations of how the space is tracked. The safe default is
+-'v1'.  On large filesystems (many-terabytes) and certain workloads the 'v1'
+-performance may degrade.  This problem is addressed by 'v2', that is based on
+-b-trees, sometimes referred to as 'free-space-tree'.
+-+
+-'Compatibility notes:'
+-+
+-* the 'v2' has to be enabled manually at mount time, once
+-* kernel without 'v2' support will be able to mount the filesystem in read-only mode
+-* 'v2' can be removed by mounting with 'clear_cache'
++('nospace_cache' since: 3.2, 'space_cache=v1' and 'space_cache=v2' since 4.5, default: 'space_cache=v1')
 ++
-+For free space cache 'v2', the 'clear_cache' kernel mount option does destroy
-+the entire free space cache. This option with 'v2' provides an alternative
-+method of clearing the free space cache that doesn't require mounting the
-+filesystem.
++Options to control the free space cache. The free space cache greatly improves
++performance when reading block group free space into memory. However, managing
++the space cache consumes some resources, including a small amount of disk
++space.
+++
++There are two implementations of the free space cache. The original
++implementation, 'v1', is the safe default. The 'v1' space cache can be disabled
++at mount time with 'nospace_cache' without clearing.
+++
++On very large filesystems (many terabytes) and certain workloads, the
++performance of the 'v1' space cache may degrade drastically. The 'v2'
++implementation, which adds a new B-tree called the free space tree, addresses
++this issue. Once enabled, the 'v2' space cache will always be used and cannot
++be disabled unless it is cleared. Use 'clear_cache,space_cache=v1' or
++'clear_cache,nospace_cache' to do so. If 'v2' is enabled, kernels without 'v2'
++support will only be able to mount the filesystem in read-only mode. The
++`btrfs(8)` command currently only has read-only support for 'v2'. A read-write
++command may be run on a 'v2' filesystem by clearing the cache, running the
++command, and then remounting with 'space_cache=v2'.
+++
++If a version is not explicitly specified, the default implementation will be
++chosen, which is 'v1' as of 4.9.
  
- 
- DANGEROUS OPTIONS
-diff --git a/cmds-check.c b/cmds-check.c
-index 57c4300..0eca102 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -11170,7 +11170,6 @@ const char * const cmd_check_usage[] = {
- 	"--chunk-root <bytenr>       use the given bytenr for the chunk tree root",
- 	"-p|--progress               indicate progress",
- 	"--clear-space-cache v1|v2   clear space cache for v1 or v2",
--	"                            NOTE: v1 support implemented",
- 	NULL
- };
- 
-@@ -11292,13 +11291,16 @@ int cmd_check(int argc, char **argv)
- 				}
- 				break;
- 			case GETOPT_VAL_CLEAR_SPACE_CACHE:
--				if (strcmp(optarg, "v1") != 0) {
--					error(
--			"only v1 support implmented, unrecognized value %s",
--			optarg);
-+				if (strcmp(optarg, "v1") == 0) {
-+					clear_space_cache = 1;
-+				} else if (strcmp(optarg, "v2") == 0) {
-+					clear_space_cache = 2;
-+					ctree_flags |= OPEN_CTREE_INVALIDATE_FST;
-+				} else {
-+					error("invalid argument to --clear-space-cache; "
-+					      "must be v1 or v2");
- 					exit(1);
- 				}
--				clear_space_cache = 1;
- 				ctree_flags |= OPEN_CTREE_WRITES;
- 				break;
- 		}
-@@ -11352,11 +11354,10 @@ int cmd_check(int argc, char **argv)
- 
- 	global_info = info;
- 	root = info->fs_root;
--	if (clear_space_cache) {
-+	if (clear_space_cache == 1) {
- 		if (btrfs_fs_compat_ro(info,
- 				BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE)) {
--			error(
--			"free space cache v2 detected, clearing not implemented");
-+			error("free space cache v2 detected; use --clear-space-cache v2");
- 			ret = 1;
- 			goto close_out;
- 		}
-@@ -11369,6 +11370,21 @@ int cmd_check(int argc, char **argv)
- 			printf("Free space cache cleared\n");
- 		}
- 		goto close_out;
-+	} else if (clear_space_cache == 2) {
-+		if (!btrfs_fs_compat_ro(info, BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE)) {
-+			printf("No free space cache v2 to clear\n");
-+			ret = 0;
-+			goto close_out;
-+		}
-+		printf("Clear free space cache v2\n");
-+		ret = btrfs_clear_free_space_tree(info);
-+		if (ret) {
-+			error("Failed to clear free space cache v2");
-+			ret = 1;
-+		} else {
-+			printf("Free space cache v2 cleared\n");
-+		}
-+		goto close_out;
- 	}
- 
- 	/*
+ *ssd*::
+ *nossd*::
 -- 
 2.10.2
 

@@ -1,79 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f68.google.com ([74.125.82.68]:34458 "EHLO
-        mail-wm0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751503AbcKLWOw (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 12 Nov 2016 17:14:52 -0500
-Received: by mail-wm0-f68.google.com with SMTP id g23so5395001wme.1
-        for <linux-btrfs@vger.kernel.org>; Sat, 12 Nov 2016 14:14:52 -0800 (PST)
-Date: Sat, 12 Nov 2016 22:14:49 +0000
-From: Sergei Trofimovich <slyich@gmail.com>
-To: David Sterba <dsterba@suse.cz>
+Received: from mx2.suse.de ([195.135.220.15]:45101 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752357AbcKNMew (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 Nov 2016 07:34:52 -0500
+Date: Mon, 14 Nov 2016 13:34:49 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Sergei Trofimovich <slyich@gmail.com>
 Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] ioctl.h: add missing kernel compatibility header for
  BUILD_ASSERT
-Message-ID: <20161112221449.0cd3d16b@sf>
-In-Reply-To: <20161024125205.GB11398@twin.jikos.cz>
+Message-ID: <20161114123449.GL12522@suse.cz>
+Reply-To: dsterba@suse.cz
 References: <20161024082912.20253-1-slyich@gmail.com>
-        <20161024125205.GB11398@twin.jikos.cz>
+ <20161024125205.GB11398@twin.jikos.cz>
+ <20161112221449.0cd3d16b@sf>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
- boundary="Sig_/8qbanWxHQC3l6gmx/44yng="; protocol="application/pgp-signature"
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20161112221449.0cd3d16b@sf>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/8qbanWxHQC3l6gmx/44yng=
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+On Sat, Nov 12, 2016 at 10:14:49PM +0000, Sergei Trofimovich wrote:
+> > > Basically gcc tries to say us BUILD_ASSERT is not visible.
+> > > 
+> > > BUILD_ASSERT lives in kerncompat.h which this change adds.  
+> > 
+> > I think including the kerncompat.h is too intrusive here, I've fixed by
+> > providing an empty macro if it's not defined. I'll release 4.8.2 soon.
+> 
+> Apologies. I did not test your fix right afterwards. Seems now header is incomplete
+> due to missing NULL (gcc-6):
+> 
+> btrfs-progs-v4.8.3 $ gcc -c ioctl.h -o /tmp/a.o
+> ioctl.h: In function 'btrfs_err_str':
+> ioctl.h:711:11: error: 'NULL' undeclared (first use in this function)
+>     return NULL;
+>            ^~~~
+> ioctl.h:711:11: note: each undeclared identifier is reported only once for each function it appears in
 
-On Mon, 24 Oct 2016 14:52:05 +0200
-David Sterba <dsterba@suse.cz> wrote:
+The ioctl.h file can be included in both C and C++ code, I'd rahter
+avoid to ifdef the right definition of NULL, so s/NULL/0/ seems as a
+best fix to me.
 
-> Hi,
->=20
-> On Mon, Oct 24, 2016 at 09:29:12AM +0100, slyich@gmail.com wrote:
-> > From: Sergei Trofimovich <slyfox@gentoo.org>
-> >=20
-> > Header breakage noticed by cynede. Reproducible as:
-> >=20
-> >     $ gcc -c /usr/include/btrfs/ioctl.h -o /tmp/a.o
-> >         /usr/include/btrfs/ioctl.h:42:14: error: expected declaration s=
-pecifiers or '...' before 'sizeof'
-> >      BUILD_ASSERT(sizeof(struct btrfs_ioctl_vol_args) =3D=3D 4096);
-> >                   ^~~~~~
-> >=20
-> > Basically gcc tries to say us BUILD_ASSERT is not visible.
-> >=20
-> > BUILD_ASSERT lives in kerncompat.h which this change adds. =20
->=20
-> I think including the kerncompat.h is too intrusive here, I've fixed by
-> providing an empty macro if it's not defined. I'll release 4.8.2 soon.
+Compiling with g++ shows other type errors like
 
-Apologies. I did not test your fix right afterwards. Seems now header is in=
-complete
-due to missing NULL (gcc-6):
+ioctl.h:709:5: warning: ISO C++ forbids converting a string constant to ‘char*’ [-Wwrite-strings]
+     "in progress";
 
-btrfs-progs-v4.8.3 $ gcc -c ioctl.h -o /tmp/a.o
-ioctl.h: In function 'btrfs_err_str':
-ioctl.h:711:11: error: 'NULL' undeclared (first use in this function)
-    return NULL;
-           ^~~~
-ioctl.h:711:11: note: each undeclared identifier is reported only once for =
-each function it appears in
-
---=20
-
-  Sergei
-
---Sig_/8qbanWxHQC3l6gmx/44yng=
-Content-Type: application/pgp-signature
-Content-Description: Ци��ова� подпи�� OpenPGP
-
------BEGIN PGP SIGNATURE-----
-
-iEYEARECAAYFAlgnlFkACgkQcaHudmEf86o4jACgh+BFPSjH1NW8zz09jQwidb6g
-XXAAoIHJWxvuoj9QM+QrcS1dX859o+8Z
-=KWpx
------END PGP SIGNATURE-----
-
---Sig_/8qbanWxHQC3l6gmx/44yng=--
+so we'd have to change the type to 'const char*'. I'm not sure how much
+breakage this could cause in programs using the header.

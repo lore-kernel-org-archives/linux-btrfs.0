@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f42.google.com ([74.125.83.42]:36271 "EHLO
-        mail-pg0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932515AbcKNSnc (ORCPT
+Received: from mail-pg0-f45.google.com ([74.125.83.45]:33391 "EHLO
+        mail-pg0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753292AbcKNSnd (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Nov 2016 13:43:32 -0500
-Received: by mail-pg0-f42.google.com with SMTP id f188so56725360pgc.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Nov 2016 10:43:32 -0800 (PST)
+        Mon, 14 Nov 2016 13:43:33 -0500
+Received: by mail-pg0-f45.google.com with SMTP id 3so56981347pgd.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Nov 2016 10:43:33 -0800 (PST)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
 Cc: kernel-team@fb.com
-Subject: [PATCH v2 1/6] btrfs-progs: add the FREE_SPACE_TREE_VALID compat_ro bit definition
-Date: Mon, 14 Nov 2016 10:43:18 -0800
-Message-Id: <74f83b8e9fbe48feff8fc0339bd7327f89f5cb6b.1479148594.git.osandov@fb.com>
+Subject: [PATCH v2 2/6] btrfs-progs: format FREE_SPACE_TREE{,_VALID} nicely in dump-super
+Date: Mon, 14 Nov 2016 10:43:19 -0800
+Message-Id: <86cfb5c7a06eb6fb488e4c615cd8dfbf2fa4180e.1479148594.git.osandov@fb.com>
 In-Reply-To: <cover.1479148594.git.osandov@fb.com>
 References: <cover.1479148594.git.osandov@fb.com>
 In-Reply-To: <cover.1479148594.git.osandov@fb.com>
@@ -21,44 +21,60 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Omar Sandoval <osandov@fb.com>
 
-This is just the definition; we don't support it yet.
-
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- ctree.h | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+ cmds-inspect-dump-super.c | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
 
-diff --git a/ctree.h b/ctree.h
-index d47f0ae..d67b852 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -467,6 +467,14 @@ struct btrfs_super_block {
-  * ones specified below then we will fail to mount
-  */
- #define BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE	(1ULL << 0)
-+/*
-+ * Older kernels on big-endian systems produced broken free space tree bitmaps,
-+ * and btrfs-progs also used to corrupt the free space tree. If this bit is
-+ * clear, then the free space tree cannot be trusted. btrfs-progs can also
-+ * intentionally clear this bit to ask the kernel to rebuild the free space
-+ * tree.
-+ */
-+#define BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE_VALID	(1ULL << 1)
+diff --git a/cmds-inspect-dump-super.c b/cmds-inspect-dump-super.c
+index d9f7bfb..ba0d708 100644
+--- a/cmds-inspect-dump-super.c
++++ b/cmds-inspect-dump-super.c
+@@ -197,6 +197,16 @@ struct readable_flag_entry {
+ 	char *output;
+ };
  
- #define BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF	(1ULL << 0)
- #define BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL	(1ULL << 1)
-@@ -493,6 +501,11 @@ struct btrfs_super_block {
++#define DEF_COMPAT_RO_FLAG_ENTRY(bit_name)		\
++	{BTRFS_FEATURE_COMPAT_RO_##bit_name, #bit_name}
++
++static struct readable_flag_entry compat_ro_flags_array[] = {
++	DEF_COMPAT_RO_FLAG_ENTRY(FREE_SPACE_TREE),
++	DEF_COMPAT_RO_FLAG_ENTRY(FREE_SPACE_TREE_VALID),
++};
++static const int compat_ro_flags_num = sizeof(compat_ro_flags_array) /
++				       sizeof(struct readable_flag_entry);
++
+ #define DEF_INCOMPAT_FLAG_ENTRY(bit_name)		\
+ 	{BTRFS_FEATURE_INCOMPAT_##bit_name, #bit_name}
  
- #define BTRFS_FEATURE_COMPAT_SUPP		0ULL
+@@ -268,6 +278,19 @@ static void __print_readable_flag(u64 flag, struct readable_flag_entry *array,
+ 	printf(")\n");
+ }
  
-+/*
-+ * The FREE_SPACE_TREE and FREE_SPACE_TREE_VALID compat_ro bits must not be
-+ * added here until read-write support for the free space tree is implemented in
-+ * btrfs-progs.
-+ */
- #define BTRFS_FEATURE_COMPAT_RO_SUPP		0ULL
- 
- #define BTRFS_FEATURE_INCOMPAT_SUPP			\
++static void print_readable_compat_ro_flag(u64 flag)
++{
++	/*
++	 * We know about the FREE_SPACE_TREE{,_VALID} bits, but we don't
++	 * actually support them yet.
++	 */
++	return __print_readable_flag(flag, compat_ro_flags_array,
++				     compat_ro_flags_num,
++				     BTRFS_FEATURE_COMPAT_RO_SUPP |
++				     BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE |
++				     BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE_VALID);
++}
++
+ static void print_readable_incompat_flag(u64 flag)
+ {
+ 	return __print_readable_flag(flag, incompat_flags_array,
+@@ -377,6 +400,7 @@ static void dump_superblock(struct btrfs_super_block *sb, int full)
+ 	       (unsigned long long)btrfs_super_compat_flags(sb));
+ 	printf("compat_ro_flags\t\t0x%llx\n",
+ 	       (unsigned long long)btrfs_super_compat_ro_flags(sb));
++	print_readable_compat_ro_flag(btrfs_super_compat_ro_flags(sb));
+ 	printf("incompat_flags\t\t0x%llx\n",
+ 	       (unsigned long long)btrfs_super_incompat_flags(sb));
+ 	print_readable_incompat_flag(btrfs_super_incompat_flags(sb));
 -- 
 2.10.2
 

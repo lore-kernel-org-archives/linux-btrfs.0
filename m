@@ -1,32 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55816 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933511AbcKNSYM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Nov 2016 13:24:12 -0500
-Date: Mon, 14 Nov 2016 19:24:07 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Adam Borowski <kilobyte@angband.pl>
-Cc: Holger =?iso-8859-1?Q?Hoffst=E4tte?=
+Received: from tartarus.angband.pl ([89.206.35.136]:47682 "EHLO
+        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932297AbcKNRpS (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 Nov 2016 12:45:18 -0500
+From: Adam Borowski <kilobyte@angband.pl>
+To: =?UTF-8?q?Holger=20Hoffst=C3=A4tte?=
         <holger@applied-asynchrony.com>,
         David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v4] btrfs: make block group flags in balance printks
- human-readable
-Message-ID: <20161114182407.GQ12522@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Cc: Adam Borowski <kilobyte@angband.pl>
+Date: Mon, 14 Nov 2016 18:44:34 +0100
+Message-Id: <20161114174434.27383-1-kilobyte@angband.pl>
+In-Reply-To: <20161114163747.GO12522@twin.jikos.cz>
 References: <20161114163747.GO12522@twin.jikos.cz>
- <20161114174434.27383-1-kilobyte@angband.pl>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20161114174434.27383-1-kilobyte@angband.pl>
+Subject: [PATCH v4] btrfs: make block group flags in balance printks human-readable
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 14, 2016 at 06:44:34PM +0100, Adam Borowski wrote:
-> They're not even documented anywhere, letting users with no recourse but
-> to RTFS.  It's no big burden to output the bitfield as words.
-> 
-> Also, display unknown flags as hex.
-> 
-> Signed-off-by: Adam Borowski <kilobyte@angband.pl>
+They're not even documented anywhere, letting users with no recourse but
+to RTFS.  It's no big burden to output the bitfield as words.
 
-Added to 4.10 queue, thanks.
+Also, display unknown flags as hex.
+
+Signed-off-by: Adam Borowski <kilobyte@angband.pl>
+---
+ fs/btrfs/relocation.c | 42 +++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 39 insertions(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index c4af0cd..9a3abf3 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -4333,6 +4333,44 @@ static struct reloc_control *alloc_reloc_control(struct btrfs_fs_info *fs_info)
+ }
+ 
+ /*
++ * printk the block group being relocated
++ */
++static void describe_relocation(struct btrfs_fs_info *fs_info,
++				struct btrfs_block_group_cache *block_group)
++{
++	char buf[128]; /* prefixed by a '|' that'll be dropped */
++	u64 flags = block_group->flags;
++
++	if (!flags) { /* shouldn't happen */
++		strcpy(buf, "|NONE");
++	} else {
++		char *bp = buf;
++
++#define DESCRIBE_FLAG(f, d) \
++		if (flags & BTRFS_BLOCK_GROUP_##f) { \
++			bp += snprintf(bp, buf - bp + sizeof(buf), "|%s", d); \
++			flags &= ~BTRFS_BLOCK_GROUP_##f; \
++		}
++		DESCRIBE_FLAG(DATA,     "data");
++		DESCRIBE_FLAG(SYSTEM,   "system");
++		DESCRIBE_FLAG(METADATA, "metadata");
++		DESCRIBE_FLAG(RAID0,    "raid0");
++		DESCRIBE_FLAG(RAID1,    "raid1");
++		DESCRIBE_FLAG(DUP,      "dup");
++		DESCRIBE_FLAG(RAID10,   "raid10");
++		DESCRIBE_FLAG(RAID5,    "raid5");
++		DESCRIBE_FLAG(RAID6,    "raid6");
++		if (flags)
++			snprintf(buf, buf - bp + sizeof(buf), "|0x%llx", flags);
++#undef DESCRIBE_FLAG
++	}
++
++	btrfs_info(fs_info,
++		   "relocating block group %llu flags %s",
++		   block_group->key.objectid, buf + 1);
++}
++
++/*
+  * function to relocate all extents in a block group.
+  */
+ int btrfs_relocate_block_group(struct btrfs_root *extent_root, u64 group_start)
+@@ -4388,9 +4426,7 @@ int btrfs_relocate_block_group(struct btrfs_root *extent_root, u64 group_start)
+ 		goto out;
+ 	}
+ 
+-	btrfs_info(extent_root->fs_info,
+-		   "relocating block group %llu flags %llu",
+-		   rc->block_group->key.objectid, rc->block_group->flags);
++	describe_relocation(extent_root->fs_info, rc->block_group);
+ 
+ 	btrfs_wait_block_group_reservations(rc->block_group);
+ 	btrfs_wait_nocow_writers(rc->block_group);
+-- 
+2.10.2
+

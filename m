@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:21539 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S932430AbcKNH73 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Nov 2016 02:59:29 -0500
+        id S933043AbcKNH7h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 Nov 2016 02:59:37 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH v14.1 04/16] btrfs: dedupe: Introduce dedupe framework and its header
-Date: Mon, 14 Nov 2016 15:58:27 +0800
-Message-Id: <20161114075839.23587-5-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v14.1 06/16] btrfs: dedupe: Introduce function to add hash into in-memory tree
+Date: Mon, 14 Nov 2016 15:58:29 +0800
+Message-Id: <20161114075839.23587-7-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20161114075839.23587-1-quwenruo@cn.fujitsu.com>
 References: <20161114075839.23587-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,242 +17,182 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
-Introduce the header for btrfs in-band(write time) de-duplication
-framework and needed header.
-
-The new de-duplication framework is going to support 2 different dedupe
-methods and 1 dedupe hash.
+Introduce static function inmem_add() to add hash into in-memory tree.
+And now we can implement the btrfs_dedupe_add() interface.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Reviewed-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/ctree.h           |   7 +++
- fs/btrfs/dedupe.h          | 137 ++++++++++++++++++++++++++++++++++++++++++++-
- fs/btrfs/disk-io.c         |   1 +
- include/uapi/linux/btrfs.h |  34 +++++++++++
- 4 files changed, 177 insertions(+), 2 deletions(-)
+ fs/btrfs/dedupe.c | 151 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 151 insertions(+)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 6097bf0..e21b315 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1099,6 +1099,13 @@ struct btrfs_fs_info {
- 
- 	/* Used to record internally whether fs has been frozen */
- 	int fs_frozen;
-+
-+	/*
-+	 * Inband de-duplication related structures
-+	 */
-+	unsigned long dedupe_enabled:1;
-+	struct btrfs_dedupe_info *dedupe_info;
-+	struct mutex dedupe_ioctl_lock;
+diff --git a/fs/btrfs/dedupe.c b/fs/btrfs/dedupe.c
+index b14166a..e51412b 100644
+--- a/fs/btrfs/dedupe.c
++++ b/fs/btrfs/dedupe.c
+@@ -32,6 +32,14 @@ struct inmem_hash {
+ 	u8 hash[];
  };
  
- struct btrfs_subvolume_writers {
-diff --git a/fs/btrfs/dedupe.h b/fs/btrfs/dedupe.h
-index 83ebfe2..5ecc321 100644
---- a/fs/btrfs/dedupe.h
-+++ b/fs/btrfs/dedupe.h
-@@ -19,6 +19,139 @@
- #ifndef __BTRFS_DEDUPE__
- #define __BTRFS_DEDUPE__
- 
--/* later in-band dedupe will expand this struct */
--struct btrfs_dedupe_hash;
-+#include <linux/btrfs.h>
-+#include <linux/wait.h>
-+#include <crypto/hash.h>
-+
-+static const int btrfs_hash_sizes[] = { 32 };
-+
-+/*
-+ * For caller outside of dedupe.c
-+ *
-+ * Different dedupe backends should have their own hash structure
-+ */
-+struct btrfs_dedupe_hash {
-+	u64 bytenr;
-+	u32 num_bytes;
-+
-+	/* last field is a variable length array of dedupe hash */
-+	u8 hash[];
-+};
-+
-+struct btrfs_dedupe_info {
-+	/* dedupe blocksize */
-+	u64 blocksize;
-+	u16 backend;
-+	u16 hash_algo;
-+
-+	struct crypto_shash *dedupe_driver;
-+
-+	/*
-+	 * Use mutex to portect both backends
-+	 * Even for in-memory backends, the rb-tree can be quite large,
-+	 * so mutex is better for such use case.
-+	 */
-+	struct mutex lock;
-+
-+	/* following members are only used in in-memory backend */
-+	struct rb_root hash_root;
-+	struct rb_root bytenr_root;
-+	struct list_head lru_list;
-+	u64 limit_nr;
-+	u64 current_nr;
-+};
-+
-+struct btrfs_trans_handle;
-+
-+static inline int btrfs_dedupe_hash_hit(struct btrfs_dedupe_hash *hash)
++static inline struct inmem_hash *inmem_alloc_hash(u16 algo)
 +{
-+	return (hash && hash->bytenr);
++	if (WARN_ON(algo >= ARRAY_SIZE(btrfs_hash_sizes)))
++		return NULL;
++	return kzalloc(sizeof(struct inmem_hash) + btrfs_hash_sizes[algo],
++			GFP_NOFS);
 +}
 +
-+int btrfs_dedupe_hash_size(u16 algo);
-+struct btrfs_dedupe_hash *btrfs_dedupe_alloc_hash(u16 algo);
+ static int init_dedupe_info(struct btrfs_dedupe_info **ret_info,
+ 			    struct btrfs_ioctl_dedupe_args *dargs)
+ {
+@@ -183,3 +191,146 @@ int btrfs_dedupe_disable(struct btrfs_fs_info *fs_info)
+ 	/* Place holder for bisect, will be implemented in later patches */
+ 	return 0;
+ }
++
++static int inmem_insert_hash(struct rb_root *root,
++			     struct inmem_hash *hash, int hash_len)
++{
++	struct rb_node **p = &root->rb_node;
++	struct rb_node *parent = NULL;
++	struct inmem_hash *entry = NULL;
++
++	while (*p) {
++		parent = *p;
++		entry = rb_entry(parent, struct inmem_hash, hash_node);
++		if (memcmp(hash->hash, entry->hash, hash_len) < 0)
++			p = &(*p)->rb_left;
++		else if (memcmp(hash->hash, entry->hash, hash_len) > 0)
++			p = &(*p)->rb_right;
++		else
++			return 1;
++	}
++	rb_link_node(&hash->hash_node, parent, p);
++	rb_insert_color(&hash->hash_node, root);
++	return 0;
++}
++
++static int inmem_insert_bytenr(struct rb_root *root,
++			       struct inmem_hash *hash)
++{
++	struct rb_node **p = &root->rb_node;
++	struct rb_node *parent = NULL;
++	struct inmem_hash *entry = NULL;
++
++	while (*p) {
++		parent = *p;
++		entry = rb_entry(parent, struct inmem_hash, bytenr_node);
++		if (hash->bytenr < entry->bytenr)
++			p = &(*p)->rb_left;
++		else if (hash->bytenr > entry->bytenr)
++			p = &(*p)->rb_right;
++		else
++			return 1;
++	}
++	rb_link_node(&hash->bytenr_node, parent, p);
++	rb_insert_color(&hash->bytenr_node, root);
++	return 0;
++}
++
++static void __inmem_del(struct btrfs_dedupe_info *dedupe_info,
++			struct inmem_hash *hash)
++{
++	list_del(&hash->lru_list);
++	rb_erase(&hash->hash_node, &dedupe_info->hash_root);
++	rb_erase(&hash->bytenr_node, &dedupe_info->bytenr_root);
++
++	if (!WARN_ON(dedupe_info->current_nr == 0))
++		dedupe_info->current_nr--;
++
++	kfree(hash);
++}
 +
 +/*
-+ * Initial inband dedupe info
-+ * Called at dedupe enable time.
++ * Insert a hash into in-memory dedupe tree
++ * Will remove exceeding last recent use hash.
 + *
-+ * Return 0 for success
-+ * Return <0 for any error
-+ * (from unsupported param to tree creation error for some backends)
++ * If the hash mathced with existing one, we won't insert it, to
++ * save memory
 + */
-+int btrfs_dedupe_enable(struct btrfs_fs_info *fs_info,
-+			struct btrfs_ioctl_dedupe_args *dargs);
++static int inmem_add(struct btrfs_dedupe_info *dedupe_info,
++		     struct btrfs_dedupe_hash *hash)
++{
++	int ret = 0;
++	u16 algo = dedupe_info->hash_algo;
++	struct inmem_hash *ihash;
 +
-+/*
-+ * Disable dedupe and invalidate all its dedupe data.
-+ * Called at dedupe disable time.
-+ *
-+ * Return 0 for success
-+ * Return <0 for any error
-+ * (tree operation error for some backends)
-+ */
-+int btrfs_dedupe_disable(struct btrfs_fs_info *fs_info);
++	ihash = inmem_alloc_hash(algo);
 +
-+/*
-+ * Get current dedupe status.
-+ * Return 0 for success
-+ * No possible error yet
-+ */
-+void btrfs_dedupe_status(struct btrfs_fs_info *fs_info,
-+			 struct btrfs_ioctl_dedupe_args *dargs);
++	if (!ihash)
++		return -ENOMEM;
 +
-+/*
-+ * Calculate hash for dedupe.
-+ * Caller must ensure [start, start + dedupe_bs) has valid data.
-+ *
-+ * Return 0 for success
-+ * Return <0 for any error
-+ * (error from hash codes)
-+ */
-+int btrfs_dedupe_calc_hash(struct btrfs_fs_info *fs_info,
-+			   struct inode *inode, u64 start,
-+			   struct btrfs_dedupe_hash *hash);
++	/* Copy the data out */
++	ihash->bytenr = hash->bytenr;
++	ihash->num_bytes = hash->num_bytes;
++	memcpy(ihash->hash, hash->hash, btrfs_hash_sizes[algo]);
 +
-+/*
-+ * Search for duplicated extents by calculated hash
-+ * Caller must call btrfs_dedupe_calc_hash() first to get the hash.
-+ *
-+ * @inode: the inode for we are writing
-+ * @file_pos: offset inside the inode
-+ * As we will increase extent ref immediately after a hash match,
-+ * we need @file_pos and @inode in this case.
-+ *
-+ * Return > 0 for a hash match, and the extent ref will be
-+ * *INCREASED*, and hash->bytenr/num_bytes will record the existing
-+ * extent data.
-+ * Return 0 for a hash miss. Nothing is done
-+ * Return <0 for any error
-+ * (tree operation error for some backends)
-+ */
-+int btrfs_dedupe_search(struct btrfs_fs_info *fs_info,
-+			struct inode *inode, u64 file_pos,
-+			struct btrfs_dedupe_hash *hash);
++	mutex_lock(&dedupe_info->lock);
 +
-+/*
-+ * Add a dedupe hash into dedupe info
-+ * Return 0 for success
-+ * Return <0 for any error
-+ * (tree operation error for some backends)
-+ */
++	ret = inmem_insert_bytenr(&dedupe_info->bytenr_root, ihash);
++	if (ret > 0) {
++		kfree(ihash);
++		ret = 0;
++		goto out;
++	}
++
++	ret = inmem_insert_hash(&dedupe_info->hash_root, ihash,
++				btrfs_hash_sizes[algo]);
++	if (ret > 0) {
++		/*
++		 * We only keep one hash in tree to save memory, so if
++		 * hash conflicts, free the one to insert.
++		 */
++		rb_erase(&ihash->bytenr_node, &dedupe_info->bytenr_root);
++		kfree(ihash);
++		ret = 0;
++		goto out;
++	}
++
++	list_add(&ihash->lru_list, &dedupe_info->lru_list);
++	dedupe_info->current_nr++;
++
++	/* Remove the last dedupe hash if we exceed limit */
++	while (dedupe_info->current_nr > dedupe_info->limit_nr) {
++		struct inmem_hash *last;
++
++		last = list_entry(dedupe_info->lru_list.prev,
++				  struct inmem_hash, lru_list);
++		__inmem_del(dedupe_info, last);
++	}
++out:
++	mutex_unlock(&dedupe_info->lock);
++	return 0;
++}
++
 +int btrfs_dedupe_add(struct btrfs_trans_handle *trans,
 +		     struct btrfs_fs_info *fs_info,
-+		     struct btrfs_dedupe_hash *hash);
++		     struct btrfs_dedupe_hash *hash)
++{
++	struct btrfs_dedupe_info *dedupe_info = fs_info->dedupe_info;
 +
-+/*
-+ * Remove a dedupe hash from dedupe info
-+ * Return 0 for success
-+ * Return <0 for any error
-+ * (tree operation error for some backends)
-+ *
-+ * NOTE: if hash deletion error is not handled well, it will lead
-+ * to corrupted fs, as later dedupe write can points to non-exist or even
-+ * wrong extent.
-+ */
-+int btrfs_dedupe_del(struct btrfs_trans_handle *trans,
-+		     struct btrfs_fs_info *fs_info, u64 bytenr);
- #endif
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 3a57f99..48511a4 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2659,6 +2659,7 @@ int open_ctree(struct super_block *sb,
- 	mutex_init(&fs_info->reloc_mutex);
- 	mutex_init(&fs_info->delalloc_root_mutex);
- 	mutex_init(&fs_info->cleaner_delayed_iput_mutex);
-+	mutex_init(&fs_info->dedupe_ioctl_lock);
- 	seqlock_init(&fs_info->profiles_lock);
- 
- 	INIT_LIST_HEAD(&fs_info->dirty_cowonly_roots);
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index db4c253..db1596c 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -629,6 +629,40 @@ struct btrfs_ioctl_get_dev_stats {
- 	__u64 unused[128 - 2 - BTRFS_DEV_STAT_VALUES_MAX]; /* pad to 1k */
- };
- 
-+/* In-band dedupe related */
-+#define BTRFS_DEDUPE_BACKEND_INMEMORY		0
-+#define BTRFS_DEDUPE_BACKEND_ONDISK		1
++	if (!fs_info->dedupe_enabled || !hash)
++		return 0;
 +
-+/* Only support inmemory yet, so count is still only 1 */
-+#define BTRFS_DEDUPE_BACKEND_COUNT		1
++	if (WARN_ON(dedupe_info == NULL))
++		return -EINVAL;
 +
-+/* Dedup block size limit and default value */
-+#define BTRFS_DEDUPE_BLOCKSIZE_MAX	(8 * 1024 * 1024)
-+#define BTRFS_DEDUPE_BLOCKSIZE_MIN	(16 * 1024)
-+#define BTRFS_DEDUPE_BLOCKSIZE_DEFAULT	(128 * 1024)
++	if (WARN_ON(!btrfs_dedupe_hash_hit(hash)))
++		return -EINVAL;
 +
-+/* Hash algorithm, only support SHA256 yet */
-+#define BTRFS_DEDUPE_HASH_SHA256		0
++	/* ignore old hash */
++	if (dedupe_info->blocksize != hash->num_bytes)
++		return 0;
 +
-+/*
-+ * This structure is used for dedupe enable/disable/configure
-+ * and status ioctl.
-+ * Reserved range should be set to 0xff.
-+ */
-+struct btrfs_ioctl_dedupe_args {
-+	__u16 cmd;		/* In: command */
-+	__u64 blocksize;	/* In/Out: blocksize */
-+	__u64 limit_nr;		/* In/Out: limit nr for inmem backend */
-+	__u64 limit_mem;	/* In/Out: limit mem for inmem backend */
-+	__u64 current_nr;	/* Out: current hash nr */
-+	__u16 backend;		/* In/Out: current backend */
-+	__u16 hash_algo;	/* In/Out: hash algorithm */
-+	u8 status;		/* Out: enabled or disabled */
-+	u8 flags;		/* In: special flags for ioctl */
-+	u8 __unused[472];	/* Pad to 512 bytes */
-+};
-+
-+
- #define BTRFS_QUOTA_CTL_ENABLE	1
- #define BTRFS_QUOTA_CTL_DISABLE	2
- #define BTRFS_QUOTA_CTL_RESCAN__NOTUSED	3
++	if (dedupe_info->backend == BTRFS_DEDUPE_BACKEND_INMEMORY)
++		return inmem_add(dedupe_info, hash);
++	return -EINVAL;
++}
 -- 
 2.10.2
 

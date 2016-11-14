@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:7138 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:21539 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1754559AbcKNH75 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Nov 2016 02:59:57 -0500
+        id S1754202AbcKNH7e (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 Nov 2016 02:59:34 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH v14.1 09/16] btrfs: dedupe: Introduce function to search for an existing hash
-Date: Mon, 14 Nov 2016 15:58:32 +0800
-Message-Id: <20161114075839.23587-10-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v14.1 11/16] btrfs: ordered-extent: Add support for dedupe
+Date: Mon, 14 Nov 2016 15:58:34 +0800
+Message-Id: <20161114075839.23587-12-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20161114075839.23587-1-quwenruo@cn.fujitsu.com>
 References: <20161114075839.23587-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,222 +17,150 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
-Introduce static function inmem_search() to handle the job for in-memory
-hash tree.
+Add ordered-extent support for dedupe.
 
-The trick is, we must ensure the delayed ref head is not being run at
-the time we search the for the hash.
-
-With inmem_search(), we can implement the btrfs_dedupe_search()
-interface.
+Note, current ordered-extent support only supports non-compressed source
+extent.
+Support for compressed source extent will be added later.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 Reviewed-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/dedupe.c | 185 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 185 insertions(+)
+ fs/btrfs/ordered-data.c | 46 ++++++++++++++++++++++++++++++++++++++++++----
+ fs/btrfs/ordered-data.h | 13 +++++++++++++
+ 2 files changed, 55 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/dedupe.c b/fs/btrfs/dedupe.c
-index 14c57fa..ef4968f 100644
---- a/fs/btrfs/dedupe.c
-+++ b/fs/btrfs/dedupe.c
-@@ -20,6 +20,7 @@
- #include "btrfs_inode.h"
- #include "transaction.h"
- #include "delayed-ref.h"
-+#include "qgroup.h"
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index b2d1e95..dc989af 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -26,6 +26,7 @@
+ #include "extent_io.h"
+ #include "disk-io.h"
+ #include "compression.h"
++#include "dedupe.h"
  
- struct inmem_hash {
- 	struct rb_node hash_node;
-@@ -454,3 +455,187 @@ int btrfs_dedupe_disable(struct btrfs_fs_info *fs_info)
- 	kfree(dedupe_info);
- 	return 0;
- }
+ static struct kmem_cache *btrfs_ordered_extent_cache;
+ 
+@@ -184,7 +185,8 @@ static inline struct rb_node *tree_search(struct btrfs_ordered_inode_tree *tree,
+  */
+ static int __btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
+ 				      u64 start, u64 len, u64 disk_len,
+-				      int type, int dio, int compress_type)
++				      int type, int dio, int compress_type,
++				      struct btrfs_dedupe_hash *hash)
+ {
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct btrfs_ordered_inode_tree *tree;
+@@ -204,6 +206,33 @@ static int __btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
+ 	entry->inode = igrab(inode);
+ 	entry->compress_type = compress_type;
+ 	entry->truncated_len = (u64)-1;
++	entry->hash = NULL;
++	/*
++	 * A hash hit means we have already incremented the extents delayed
++	 * ref.
++	 * We must handle this even if another process is trying to
++	 * turn off dedupe, otherwise we will leak a reference.
++	 */
++	if (hash && (hash->bytenr || root->fs_info->dedupe_enabled)) {
++		struct btrfs_dedupe_info *dedupe_info;
 +
-+/*
-+ * Caller must ensure the corresponding ref head is not being run.
-+ */
-+static struct inmem_hash *
-+inmem_search_hash(struct btrfs_dedupe_info *dedupe_info, u8 *hash)
-+{
-+	struct rb_node **p = &dedupe_info->hash_root.rb_node;
-+	struct rb_node *parent = NULL;
-+	struct inmem_hash *entry = NULL;
-+	u16 hash_algo = dedupe_info->hash_algo;
-+	int hash_len = btrfs_hash_sizes[hash_algo];
-+
-+	while (*p) {
-+		parent = *p;
-+		entry = rb_entry(parent, struct inmem_hash, hash_node);
-+
-+		if (memcmp(hash, entry->hash, hash_len) < 0) {
-+			p = &(*p)->rb_left;
-+		} else if (memcmp(hash, entry->hash, hash_len) > 0) {
-+			p = &(*p)->rb_right;
-+		} else {
-+			/* Found, need to re-add it to LRU list head */
-+			list_del(&entry->lru_list);
-+			list_add(&entry->lru_list, &dedupe_info->lru_list);
-+			return entry;
++		dedupe_info = root->fs_info->dedupe_info;
++		if (WARN_ON(dedupe_info == NULL)) {
++			kmem_cache_free(btrfs_ordered_extent_cache,
++					entry);
++			return -EINVAL;
 +		}
-+	}
-+	return NULL;
-+}
-+
-+static int inmem_search(struct btrfs_dedupe_info *dedupe_info,
-+			struct inode *inode, u64 file_pos,
-+			struct btrfs_dedupe_hash *hash)
-+{
-+	int ret;
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct btrfs_trans_handle *trans;
-+	struct btrfs_delayed_ref_root *delayed_refs;
-+	struct btrfs_delayed_ref_head *head;
-+	struct btrfs_delayed_ref_head *insert_head;
-+	struct btrfs_delayed_data_ref *insert_dref;
-+	struct btrfs_qgroup_extent_record *insert_qrecord = NULL;
-+	struct inmem_hash *found_hash;
-+	int free_insert = 1;
-+	u64 bytenr;
-+	u32 num_bytes;
-+
-+	insert_head = kmem_cache_alloc(btrfs_delayed_ref_head_cachep, GFP_NOFS);
-+	if (!insert_head)
-+		return -ENOMEM;
-+	insert_head->extent_op = NULL;
-+	insert_dref = kmem_cache_alloc(btrfs_delayed_data_ref_cachep, GFP_NOFS);
-+	if (!insert_dref) {
-+		kmem_cache_free(btrfs_delayed_ref_head_cachep, insert_head);
-+		return -ENOMEM;
-+	}
-+	if (test_bit(BTRFS_FS_QUOTA_ENABLED, &root->fs_info->flags) &&
-+	    is_fstree(root->root_key.objectid)) {
-+		insert_qrecord = kmalloc(sizeof(*insert_qrecord), GFP_NOFS);
-+		if (!insert_qrecord) {
-+			kmem_cache_free(btrfs_delayed_ref_head_cachep,
-+					insert_head);
-+			kmem_cache_free(btrfs_delayed_data_ref_cachep,
-+					insert_dref);
++		entry->hash = btrfs_dedupe_alloc_hash(dedupe_info->hash_algo);
++		if (!entry->hash) {
++			kmem_cache_free(btrfs_ordered_extent_cache, entry);
 +			return -ENOMEM;
 +		}
++		entry->hash->bytenr = hash->bytenr;
++		entry->hash->num_bytes = hash->num_bytes;
++		memcpy(entry->hash->hash, hash->hash,
++		       btrfs_hash_sizes[dedupe_info->hash_algo]);
 +	}
 +
-+	trans = btrfs_join_transaction(root);
-+	if (IS_ERR(trans)) {
-+		ret = PTR_ERR(trans);
-+		goto free_mem;
-+	}
-+
-+again:
-+	mutex_lock(&dedupe_info->lock);
-+	found_hash = inmem_search_hash(dedupe_info, hash->hash);
-+	/* If we don't find a duplicated extent, just return. */
-+	if (!found_hash) {
-+		ret = 0;
-+		goto out;
-+	}
-+	bytenr = found_hash->bytenr;
-+	num_bytes = found_hash->num_bytes;
-+
-+	delayed_refs = &trans->transaction->delayed_refs;
-+
-+	spin_lock(&delayed_refs->lock);
-+	head = btrfs_find_delayed_ref_head(trans, bytenr);
-+	if (!head) {
-+		/*
-+		 * We can safely insert a new delayed_ref as long as we
-+		 * hold delayed_refs->lock.
-+		 * Only need to use atomic inc_extent_ref()
-+		 */
-+		btrfs_add_delayed_data_ref_locked(root->fs_info, trans,
-+				insert_dref, insert_head, insert_qrecord,
-+				bytenr, num_bytes, 0, root->root_key.objectid,
-+				btrfs_ino(inode), file_pos, 0,
-+				BTRFS_ADD_DELAYED_REF);
-+		spin_unlock(&delayed_refs->lock);
-+
-+		/* add_delayed_data_ref_locked will free unused memory */
-+		free_insert = 0;
-+		hash->bytenr = bytenr;
-+		hash->num_bytes = num_bytes;
-+		ret = 1;
-+		goto out;
-+	}
-+
-+	/*
-+	 * We can't lock ref head with dedupe_info->lock hold or we will cause
-+	 * ABBA dead lock.
-+	 */
-+	mutex_unlock(&dedupe_info->lock);
-+	ret = btrfs_delayed_ref_lock(trans, head);
-+	spin_unlock(&delayed_refs->lock);
-+	if (ret == -EAGAIN)
-+		goto again;
-+
-+	mutex_lock(&dedupe_info->lock);
-+	/* Search again to ensure the hash is still here */
-+	found_hash = inmem_search_hash(dedupe_info, hash->hash);
-+	if (!found_hash) {
-+		ret = 0;
-+		mutex_unlock(&head->mutex);
-+		goto out;
-+	}
-+	ret = 1;
-+	hash->bytenr = bytenr;
-+	hash->num_bytes = num_bytes;
-+
-+	/*
-+	 * Increase the extent ref right now, to avoid delayed ref run
-+	 * Or we may increase ref on non-exist extent.
-+	 */
-+	btrfs_inc_extent_ref(trans, root, bytenr, num_bytes, 0,
-+			     root->root_key.objectid,
-+			     btrfs_ino(inode), file_pos);
-+	mutex_unlock(&head->mutex);
-+out:
-+	mutex_unlock(&dedupe_info->lock);
-+	btrfs_end_transaction(trans, root);
-+
-+free_mem:
-+	if (free_insert) {
-+		kmem_cache_free(btrfs_delayed_ref_head_cachep, insert_head);
-+		kmem_cache_free(btrfs_delayed_data_ref_cachep, insert_dref);
-+		kfree(insert_qrecord);
-+	}
-+	return ret;
-+}
-+
-+int btrfs_dedupe_search(struct btrfs_fs_info *fs_info,
-+			struct inode *inode, u64 file_pos,
-+			struct btrfs_dedupe_hash *hash)
+ 	if (type != BTRFS_ORDERED_IO_DONE && type != BTRFS_ORDERED_COMPLETE)
+ 		set_bit(type, &entry->flags);
+ 
+@@ -250,15 +279,23 @@ int btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
+ {
+ 	return __btrfs_add_ordered_extent(inode, file_offset, start, len,
+ 					  disk_len, type, 0,
+-					  BTRFS_COMPRESS_NONE);
++					  BTRFS_COMPRESS_NONE, NULL);
+ }
+ 
++int btrfs_add_ordered_extent_dedupe(struct inode *inode, u64 file_offset,
++				   u64 start, u64 len, u64 disk_len, int type,
++				   struct btrfs_dedupe_hash *hash)
 +{
-+	struct btrfs_dedupe_info *dedupe_info = fs_info->dedupe_info;
-+	int ret = -EINVAL;
-+
-+	if (!hash)
-+		return 0;
++	return __btrfs_add_ordered_extent(inode, file_offset, start, len,
++					  disk_len, type, 0,
++					  BTRFS_COMPRESS_NONE, hash);
++}
+ int btrfs_add_ordered_extent_dio(struct inode *inode, u64 file_offset,
+ 				 u64 start, u64 len, u64 disk_len, int type)
+ {
+ 	return __btrfs_add_ordered_extent(inode, file_offset, start, len,
+ 					  disk_len, type, 1,
+-					  BTRFS_COMPRESS_NONE);
++					  BTRFS_COMPRESS_NONE, NULL);
+ }
+ 
+ int btrfs_add_ordered_extent_compress(struct inode *inode, u64 file_offset,
+@@ -267,7 +304,7 @@ int btrfs_add_ordered_extent_compress(struct inode *inode, u64 file_offset,
+ {
+ 	return __btrfs_add_ordered_extent(inode, file_offset, start, len,
+ 					  disk_len, type, 0,
+-					  compress_type);
++					  compress_type, NULL);
+ }
+ 
+ /*
+@@ -577,6 +614,7 @@ void btrfs_put_ordered_extent(struct btrfs_ordered_extent *entry)
+ 			list_del(&sum->list);
+ 			kfree(sum);
+ 		}
++		kfree(entry->hash);
+ 		kmem_cache_free(btrfs_ordered_extent_cache, entry);
+ 	}
+ }
+diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
+index 4515077..8dda4a5 100644
+--- a/fs/btrfs/ordered-data.h
++++ b/fs/btrfs/ordered-data.h
+@@ -139,6 +139,16 @@ struct btrfs_ordered_extent {
+ 	struct completion completion;
+ 	struct btrfs_work flush_work;
+ 	struct list_head work_list;
 +
 +	/*
-+	 * This function doesn't follow fs_info->dedupe_enabled as it will need
-+	 * to ensure any hashed extent to go through dedupe routine
++	 * For inband deduplication
++	 * If hash is NULL, no deduplication.
++	 * If hash->bytenr is zero, means this is a dedupe miss, hash will
++	 * be added into dedupe tree.
++	 * If hash->bytenr is non-zero, this is a dedupe hit. Extent ref is
++	 * *ALREADY* increased.
 +	 */
-+	if (WARN_ON(dedupe_info == NULL))
-+		return -EINVAL;
-+
-+	if (WARN_ON(btrfs_dedupe_hash_hit(hash)))
-+		return -EINVAL;
-+
-+	if (dedupe_info->backend == BTRFS_DEDUPE_BACKEND_INMEMORY)
-+		ret = inmem_search(dedupe_info, inode, file_pos, hash);
-+
-+	/* It's possible hash->bytenr/num_bytenr already changed */
-+	if (ret == 0) {
-+		hash->num_bytes = 0;
-+		hash->bytenr = 0;
-+	}
-+	return ret;
-+}
++	struct btrfs_dedupe_hash *hash;
+ };
+ 
+ /*
+@@ -172,6 +182,9 @@ int btrfs_dec_test_first_ordered_pending(struct inode *inode,
+ 				   int uptodate);
+ int btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
+ 			     u64 start, u64 len, u64 disk_len, int type);
++int btrfs_add_ordered_extent_dedupe(struct inode *inode, u64 file_offset,
++				   u64 start, u64 len, u64 disk_len, int type,
++				   struct btrfs_dedupe_hash *hash);
+ int btrfs_add_ordered_extent_dio(struct inode *inode, u64 file_offset,
+ 				 u64 start, u64 len, u64 disk_len, int type);
+ int btrfs_add_ordered_extent_compress(struct inode *inode, u64 file_offset,
 -- 
 2.10.2
 

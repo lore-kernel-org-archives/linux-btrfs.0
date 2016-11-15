@@ -1,172 +1,270 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:41852 "EHLO
-        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1752168AbcKRWc0 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 Nov 2016 17:32:26 -0500
-Date: Fri, 18 Nov 2016 17:32:24 -0500
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: kreijack@inwind.it
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/2] RAID5/6 scrub race fix
-Message-ID: <20161118223224.GO21290@hungrycats.org>
+Received: from cn.fujitsu.com ([222.73.24.84]:8448 "EHLO song.cn.fujitsu.com"
+        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+        id S934180AbcKOCvD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 Nov 2016 21:51:03 -0500
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Cc: kreijack@libero.it
+Subject: [PATCH 1/2] btrfs: scrub: Introduce full stripe lock for RAID56
+Date: Tue, 15 Nov 2016 10:50:23 +0800
+Message-Id: <20161115025024.25299-2-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20161115025024.25299-1-quwenruo@cn.fujitsu.com>
 References: <20161115025024.25299-1-quwenruo@cn.fujitsu.com>
- <20161117231310.GN21290@hungrycats.org>
- <dc2a9254-fd86-a448-c327-d3ea2ea20ddd@libero.it>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="SSjFkhywpXnVG+rz"
-In-Reply-To: <dc2a9254-fd86-a448-c327-d3ea2ea20ddd@libero.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Unlike mirror based profiles, RAID5/6 recovery needs to read out the
+whole full stripe.
 
---SSjFkhywpXnVG+rz
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+And if we don't do proper protect, it can easily cause race condition.
 
-On Fri, Nov 18, 2016 at 07:09:34PM +0100, Goffredo Baroncelli wrote:
-> Hi Zygo
-> On 2016-11-18 00:13, Zygo Blaxell wrote:
-> > On Tue, Nov 15, 2016 at 10:50:22AM +0800, Qu Wenruo wrote:
-> >> Fix the so-called famous RAID5/6 scrub error.
-> >>
-> >> Thanks Goffredo Baroncelli for reporting the bug, and make it into our
-> >> sight.
-> >> (Yes, without the Phoronix report on this,
-> >> https://www.phoronix.com/scan.php?page=3Dnews_item&px=3DBtrfs-RAID-56-=
-Is-Bad,
-> >> I won't ever be aware of it)
-> >=20
-> > If you're hearing about btrfs RAID5 bugs for the first time through
-> > Phoronix, then your testing coverage is *clearly* inadequate.
-> >=20
-> > Fill up a RAID5 array, start a FS stress test, pull a drive out while
-> > that's running, let the FS stress test run for another hour, then try
-> > to replace or delete the missing device.  If there are any crashes,
-> > corruptions, or EIO during any part of this process (assuming all the
-> > remaining disks are healthy), then btrfs RAID5 is still broken, and
-> > you've found another bug to fix.
-> >=20
-> > The fact that so many problems in btrfs can still be found this way
-> > indicates to me that nobody is doing this basic level of testing
-> > (or if they are, they're not doing anything about the results).
->=20
-> [...]
->=20
-> Sorry but I don't find useful this kind of discussion.  Yes BTRFS
-> RAID5/6 needs a lot of care. Yes, *our* test coverage is far to be
-> complete; but this is not a fault of a single person; and Qu tried to
-> solve one issue and for this we should say only tanks..
->
-> Even if you don't find valuable the work of Qu (and my little one :-)
-> ), this required some time and need to be respected.
+Introduce 2 new functions: lock_full_stripe() and unlock_full_stripe()
+for RAID5/6.
+Which stores a rb_tree of mutex for full stripes, so scrub callers can
+use them to lock a full stripe to avoid race.
 
-I do find this work valuable, and I do thank you and Qu for it.
-I've been following it with great interest because I haven't had time
-to dive into it myself.  It's a use case I used before and would like
-to use again.
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ fs/btrfs/ctree.h       |   4 ++
+ fs/btrfs/extent-tree.c |   3 +
+ fs/btrfs/scrub.c       | 177 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 184 insertions(+)
 
-Most of my recent frustration, if directed at anyone, is really directed
-at Phoronix for conflating "one bug was fixed" with "ready for production
-use today," and I wanted to ensure that the latter rumor was promptly
-quashed.
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 9d8edcb..37d5f29 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -638,6 +638,10 @@ struct btrfs_block_group_cache {
+ 	 * Protected by free_space_lock.
+ 	 */
+ 	int needs_free_space;
++
++	/* Scrub full stripe lock tree for RAID5/6 scrub */
++	struct rb_root scrub_lock_root;
++	spinlock_t scrub_lock;
+ };
+ 
+ /* delayed seq elem */
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 4607af3..b098a1f 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -132,6 +132,7 @@ void btrfs_put_block_group(struct btrfs_block_group_cache *cache)
+ 	if (atomic_dec_and_test(&cache->count)) {
+ 		WARN_ON(cache->pinned > 0);
+ 		WARN_ON(cache->reserved > 0);
++		WARN_ON(!RB_EMPTY_ROOT(&cache->scrub_lock_root));
+ 		kfree(cache->free_space_ctl);
+ 		kfree(cache);
+ 	}
+@@ -10122,6 +10123,8 @@ btrfs_create_block_group_cache(struct btrfs_root *root, u64 start, u64 size)
+ 
+ 	atomic_set(&cache->count, 1);
+ 	spin_lock_init(&cache->lock);
++	spin_lock_init(&cache->scrub_lock);
++	cache->scrub_lock_root = RB_ROOT;
+ 	init_rwsem(&cache->data_rwsem);
+ 	INIT_LIST_HEAD(&cache->list);
+ 	INIT_LIST_HEAD(&cache->cluster_list);
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index fffb9ab..4fce415 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -240,6 +240,13 @@ struct scrub_warning {
+ 	struct btrfs_device	*dev;
+ };
+ 
++struct scrub_full_stripe_lock {
++	struct rb_node node;
++	u64 logical;
++	u64 refs;
++	struct mutex mutex;
++};
++
+ static void scrub_pending_bio_inc(struct scrub_ctx *sctx);
+ static void scrub_pending_bio_dec(struct scrub_ctx *sctx);
+ static void scrub_pending_trans_workers_inc(struct scrub_ctx *sctx);
+@@ -351,6 +358,176 @@ static void scrub_blocked_if_needed(struct btrfs_fs_info *fs_info)
+ }
+ 
+ /*
++ * Caller must hold cache->scrub_root_lock.
++ *
++ * Return existing full stripe and increase it refs
++ * Or return NULL, and insert @fstripe_lock into the bg cache
++ */
++static struct scrub_full_stripe_lock *
++add_scrub_lock(struct btrfs_block_group_cache *cache,
++	       struct scrub_full_stripe_lock *fstripe_lock)
++{
++	struct rb_node **p;
++	struct rb_node *parent = NULL;
++	struct scrub_full_stripe_lock *entry;
++
++	p = &cache->scrub_lock_root.rb_node;
++	while (*p) {
++		parent = *p;
++		entry = rb_entry(parent, struct scrub_full_stripe_lock, node);
++		if (fstripe_lock->logical < entry->logical) {
++			p = &(*p)->rb_left;
++		} else if (fstripe_lock->logical > entry->logical) {
++			p = &(*p)->rb_right;
++		} else {
++			entry->refs++;
++			return entry;
++		}
++	}
++	/* Insert new one */
++	rb_link_node(&fstripe_lock->node, parent, p);
++	rb_insert_color(&fstripe_lock->node, &cache->scrub_lock_root);
++
++	return NULL;
++}
++
++static struct scrub_full_stripe_lock *
++search_scrub_lock(struct btrfs_block_group_cache *cache, u64 bytenr)
++{
++	struct rb_node *node;
++	struct scrub_full_stripe_lock *entry;
++
++	node = cache->scrub_lock_root.rb_node;
++	while (node) {
++		entry = rb_entry(node, struct scrub_full_stripe_lock, node);
++		if (bytenr < entry->logical)
++			node = node->rb_left;
++		else if (bytenr > entry->logical)
++			node = node->rb_right;
++		else
++			return entry;
++	}
++	return NULL;
++}
++
++/*
++ * Helper to get full stripe logical from a normal bytenr.
++ * Thanks to the chaos of scrub structures, we need to get it all
++ * by ourselves, using btrfs_map_sblock().
++ */
++static int get_full_stripe_logical(struct btrfs_fs_info *fs_info, u64 bytenr,
++				   u64 *bytenr_ret)
++{
++	struct btrfs_bio *bbio = NULL;
++	u64 len;
++	int ret;
++
++	/* Just use map_sblock() to get full stripe logical */
++	ret = btrfs_map_sblock(fs_info, REQ_GET_READ_MIRRORS, bytenr, &len,
++			       &bbio, 0, 1);
++	if (ret || !bbio || !bbio->raid_map)
++		goto error;
++	*bytenr_ret = bbio->raid_map[0];
++	btrfs_put_bbio(bbio);
++	return 0;
++error:
++	btrfs_put_bbio(bbio);
++	if (ret)
++		return ret;
++	return -EIO;
++}
++
++/*
++ * To lock a full stripe to avoid concurrency of recovery and read
++ * It's only used for profiles with parities(RAID5/6), for other profiles it
++ * does nothing
++ */
++static int lock_full_stripe(struct btrfs_fs_info *fs_info, u64 bytenr,
++			    gfp_t gfp_flags)
++{
++	struct btrfs_block_group_cache *bg_cache;
++	struct scrub_full_stripe_lock *fstripe_lock;
++	struct scrub_full_stripe_lock *existing;
++	u64 fstripe_start;
++	int ret = 0;
++
++	bg_cache = btrfs_lookup_block_group(fs_info, bytenr);
++	if (!bg_cache)
++		return -ENOENT;
++
++	/* Mirror based profiles don't need full stripe lock */
++	if (!(bg_cache->flags & BTRFS_BLOCK_GROUP_RAID56_MASK))
++		goto out;
++
++	ret = get_full_stripe_logical(fs_info, bytenr, &fstripe_start);
++	if (ret < 0)
++		goto out;
++
++	fstripe_lock = kmalloc(sizeof(*fstripe_lock), gfp_flags);
++	if (!fstripe_lock) {
++		ret = -ENOENT;
++		goto out;
++	}
++
++	fstripe_lock->logical = fstripe_start;
++	fstripe_lock->refs = 1;
++	mutex_init(&fstripe_lock->mutex);
++
++	/* Now insert the full stripe lock */
++	spin_lock(&bg_cache->scrub_lock);
++	existing = add_scrub_lock(bg_cache, fstripe_lock);
++	if (existing) {
++		kfree(fstripe_lock);
++		fstripe_lock = existing;
++	}
++	spin_unlock(&bg_cache->scrub_lock);
++	mutex_lock(&fstripe_lock->mutex);
++
++out:
++	btrfs_put_block_group(bg_cache);
++	return ret;
++}
++
++static int unlock_full_stripe(struct btrfs_fs_info *fs_info, u64 bytenr)
++{
++	struct btrfs_block_group_cache *bg_cache;
++	struct scrub_full_stripe_lock *fstripe_lock;
++	u64 fstripe_start;
++	int ret = 0;
++
++	bg_cache = btrfs_lookup_block_group(fs_info, bytenr);
++	if (!bg_cache)
++		return -ENOENT;
++	if (!(bg_cache->flags & BTRFS_BLOCK_GROUP_RAID56_MASK))
++		goto out;
++
++	ret = get_full_stripe_logical(fs_info, bytenr, &fstripe_start);
++	if (ret < 0)
++		goto out;
++
++	spin_lock(&bg_cache->scrub_lock);
++	fstripe_lock = search_scrub_lock(bg_cache, fstripe_start);
++	/* This is a deadly problem, we hold a mutex but can't unlock it */
++	if (WARN_ON(!fstripe_lock)) {
++		ret = -ENOENT;
++		goto unlock;
++	}
++
++	mutex_unlock(&fstripe_lock->mutex);
++	if (!WARN_ON(fstripe_lock->refs == 0))
++		fstripe_lock->refs--;
++	if (fstripe_lock->refs == 0) {
++		rb_erase(&fstripe_lock->node, &bg_cache->scrub_lock_root);
++		kfree(fstripe_lock);
++	}
++unlock:
++	spin_unlock(&bg_cache->scrub_lock);
++out:
++	btrfs_put_block_group(bg_cache);
++	return ret;
++}
++
++/*
+  * used for workers that require transaction commits (i.e., for the
+  * NOCOW case)
+  */
+-- 
+2.10.2
 
-This is why I'm excited about Qu's work:  on my list of 7 btrfs-raid5
-recovery bugs (6 I found plus yours), Qu has fixed at least 2 of them,
-maybe as many as 4, with the patches so far.  I can fix 2 of the others,
-for a total of 6 fixed out of 7.
-
-Specifically, the 7 bugs I know of are:
-
-	1-2. BUG_ONs in functions that should return errors (I had
-	fixed both already when trying to recover my broken arrays)
-
-	3. scrub can't identify which drives or files are corrupted
-	(Qu might have fixed this--I won't know until I do testing)
-
-	4-6. symptom groups related to wrong data or EIO in scrub
-	recovery, including Goffredo's (Qu might have fixed all of these,
-	but from a quick read of the patch I think at least two are done).
-
-	7. the write hole.
-
-I'll know more after I've had a chance to run Qu's patches through
-testing, which I intend to do at some point.
-
-Optimistically, this means there could be only *one* bug remaining
-in the critical path for btrfs RAID56 single disk failure recovery.
-That last bug is the write hole, which is why I keep going on about it.
-It's the only bug I know exists in btrfs RAID56 that has neither an
-existing fix nor any evidence of someone actively working on it, even
-at the design proposal stage.  Please, I'd love to be wrong about this.
-
-When I described the situation recently as "a thin layer of bugs on
-top of a design defect", I was not trying to be mean.  I was trying to
-describe the situation *precisely*.
-
-The thin layer of bugs is much thinner thanks to Qu's work, and thanks
-in part to his work, I now have confidence that further investment in
-this area won't be wasted.
-
-> Finally, I don't think that we should compare the RAID-hole with this
-> kind of bug(fix). The former is a design issue, the latter is a bug
-> related of one of the basic feature of the raid system (recover from
-> the lost of a disk/corruption).
->
-> Even the MD subsystem (which is far behind btrfs) had tolerated
-> the raid-hole until last year.=20
-
-My frustration against this point is the attitude that mdadm was ever
-good enough, much less a model to emulate in the future.  It's 2016--there
-have been some advancements in the state of the art since the IBM patent
-describing RAID5 30 years ago, yet in the btrfs world, we seem to insist
-on repeating all the same mistakes in the same order.
-
-"We're as good as some existing broken-by-design thing" isn't a really
-useful attitude.  We should aspire to do *better* than the existing
-broken-by-design things.  If we didn't, we wouldn't be here, we'd all
-be lurking on some other list, running ext4 or xfs on mdadm or lvm.
-
-> And its solution is far to be cheap
-> (basically the MD subsystem wrote the data first in the journal
-> then on the disk... which is the kind of issue that a COW filesystem
-> would solve).
-
-Journalling isn't required.  It's sufficient to fix the interaction
-between the existing CoW and RAID5 layers (except for some datacow and
-PREALLOC cases).  This is "easy" in the sense that it requires only
-changes to the allocator (no on-disk format change), but "hard" in the
-sense that it requires changes to the allocator.
-
-See https://www.spinics.net/lists/linux-btrfs/msg59684.html
-(and look a couple of references upthread)
 
 
-> BR G.Baroncelli
->
->
->
->
->
->
-> -- gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-> Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5 --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
-> in the body of a message to majordomo@vger.kernel.org More majordomo
-> info at  http://vger.kernel.org/majordomo-info.html
-
---SSjFkhywpXnVG+rz
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iEYEARECAAYFAlgvgXgACgkQgfmLGlazG5yM3gCfd9iRzPdoUi1Wa27qYL9qNUBG
-23EAnigJAxRFhvWjYk7RKY4PObjrf0vE
-=oicC
------END PGP SIGNATURE-----
-
---SSjFkhywpXnVG+rz--

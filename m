@@ -1,75 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f173.google.com ([209.85.192.173]:33059 "EHLO
-        mail-pf0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751496AbcKIX06 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Nov 2016 18:26:58 -0500
-Received: by mail-pf0-f173.google.com with SMTP id d2so134501300pfd.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 09 Nov 2016 15:26:58 -0800 (PST)
-From: Omar Sandoval <osandov@osandov.com>
-To: linux-btrfs@vger.kernel.org
-Cc: kernel-team@fb.com
-Subject: [PATCH] Btrfs: deal with existing encompassing extent map in btrfs_get_extent()
-Date: Wed,  9 Nov 2016 15:26:50 -0800
-Message-Id: <262a1e171d091626edbd23c637cb138ba9d84ed8.1478733376.git.osandov@fb.com>
+Received: from mx2.suse.de ([195.135.220.15]:46911 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751263AbcKPQSI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 16 Nov 2016 11:18:08 -0500
+Date: Wed, 16 Nov 2016 17:18:02 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Shailendra Verma <shailendra.v@samsung.com>
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        Shailendra Verma <shailendra.capricorn@gmail.com>,
+        linux-kernel@vger.kernel.org, vidushi.koul@samsung.com
+Subject: Re: [PATCH] Fs: Btrfs - Improvement in code readability when
+Message-ID: <20161116161802.GV12522@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1478771261-1020-1-git-send-email-shailendra.v@samsung.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1478771261-1020-1-git-send-email-shailendra.v@samsung.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Omar Sandoval <osandov@fb.com>
+On Thu, Nov 10, 2016 at 03:17:41PM +0530, Shailendra Verma wrote:
+> From: "Shailendra Verma" <shailendra.v@samsung.com>
+> 
+> There is no need to call kfree() if memdup_user() fails, as no memory
+> was allocated and the error in the error-valued pointer should be returned.
+> 
+> Signed-off-by: Shailendra Verma <shailendra.v@samsung.com>
 
-My QEMU VM was seeing inexplicable I/O errors that I tracked down to
-errors coming from the qcow2 virtual drive in the host system. The qcow2
-file is a nocow file on my Btrfs drive, which QEMU opens with O_DIRECT.
-Every once in awhile, pread() or pwrite() would return EEXIST, which
-makes no sense. This turned out to be a bug in btrfs_get_extent().
-
-Commit 8dff9c853410 ("Btrfs: deal with duplciates during extent_map
-insertion in btrfs_get_extent") fixed a case in btrfs_get_extent() where
-two threads race on adding the same extent map to an inode's extent map
-tree. However, if the added em is merged with an adjacent em in the
-extent tree, then we'll end up with an existing extent that is not
-identical to but instead encompasses the extent we tried to add. When we
-call merge_extent_mapping() to find the nonoverlapping part of the new
-em, the arithmetic overflows because there is no such thing. We then end
-up trying to add a bogus em to the em_tree, which results in a EEXIST
-that can bubble all the way up to userspace.
-
-Fix it by extending the identical extent map special case.
-
-Signed-off-by: Omar Sandoval <osandov@fb.com>
----
-Applies to 4.9-rc4.
-
-Here [1] is a reproducer for this bug that doesn't involve firing up a
-QEMU VM. Also, a big shoutout to BCC [2] and BPF for making it possible
-to debug this on my laptop without compiling a custom kernel and
-rebooting just to add printks [3].
-
-1: https://gist.github.com/osandov/d08aabe5d4dec15517e9fde17012fd3b
-2: https://github.com/iovisor/bcc
-3: https://gist.github.com/osandov/eb1db868ce10c3af9e00b90f3a65bf9f
-
- fs/btrfs/inode.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 2b790bd..e5cf589 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7049,11 +7049,11 @@ struct extent_map *btrfs_get_extent(struct inode *inode, struct page *page,
- 		 * extent causing the -EEXIST.
- 		 */
- 		if (existing->start == em->start &&
--		    extent_map_end(existing) == extent_map_end(em) &&
-+		    extent_map_end(existing) >= extent_map_end(em) &&
- 		    em->block_start == existing->block_start) {
- 			/*
--			 * these two extents are the same, it happens
--			 * with inlines especially
-+			 * The existing extent map already encompasses the
-+			 * entire extent map we tried to add.
- 			 */
- 			free_extent_map(em);
- 			em = existing;
--- 
-2.10.2
-
+Queued for 4.10, I've edited the subject line as it's very descriptive.
+("btrfs: return early from failed memory allocations in ioctl handlers")

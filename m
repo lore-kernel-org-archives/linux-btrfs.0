@@ -1,88 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:41759 "EHLO
+Received: from bombadil.infradead.org ([198.137.202.9]:41770 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932155AbcKPMwd (ORCPT
+        with ESMTP id S932155AbcKPMwh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 Nov 2016 07:52:33 -0500
+        Wed, 16 Nov 2016 07:52:37 -0500
 Received: from 80-109-146-114.cable.dynamic.surfer.at ([80.109.146.114] helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.85_2 #1 (Red Hat Linux))
-        id 1c6zhY-0005SB-VT
-        for linux-btrfs@vger.kernel.org; Wed, 16 Nov 2016 12:52:33 +0000
+        id 1c6zhc-0005SR-1V
+        for linux-btrfs@vger.kernel.org; Wed, 16 Nov 2016 12:52:36 +0000
 From: Christoph Hellwig <hch@lst.de>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 4/9] btrfs: don't access the bio directly in btrfs_csum_one_bio
-Date: Wed, 16 Nov 2016 13:52:11 +0100
-Message-Id: <1479300736-9724-5-git-send-email-hch@lst.de>
+Subject: [PATCH 5/9] btrfs: use bi_size
+Date: Wed, 16 Nov 2016 13:52:12 +0100
+Message-Id: <1479300736-9724-6-git-send-email-hch@lst.de>
 In-Reply-To: <1479300736-9724-1-git-send-email-hch@lst.de>
 References: <1479300736-9724-1-git-send-email-hch@lst.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Use bio_for_each_segment_all to iterate over the segments instead.
-This requires a bit of reshuffling so that we only lookup up the ordered
-item once inside the bio_for_each_segment_all loop.
+Instead of using bi_vcnt to calculate it.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- fs/btrfs/file-item.c | 21 ++++++++++-----------
- 1 file changed, 10 insertions(+), 11 deletions(-)
+ fs/btrfs/compression.c | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index d0d571c..fa8aa53 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -447,13 +447,12 @@ int btrfs_csum_one_bio(struct btrfs_root *root, struct inode *inode,
- 		       struct bio *bio, u64 file_start, int contig)
- {
- 	struct btrfs_ordered_sum *sums;
--	struct btrfs_ordered_extent *ordered;
-+	struct btrfs_ordered_extent *ordered = NULL;
- 	char *data;
--	struct bio_vec *bvec = bio->bi_io_vec;
--	int bio_index = 0;
-+	struct bio_vec *bvec;
- 	int index;
- 	int nr_sectors;
--	int i;
-+	int i, j;
- 	unsigned long total_bytes = 0;
- 	unsigned long this_sum_bytes = 0;
- 	u64 offset;
-@@ -470,17 +469,20 @@ int btrfs_csum_one_bio(struct btrfs_root *root, struct inode *inode,
- 	if (contig)
- 		offset = file_start;
- 	else
--		offset = page_offset(bvec->bv_page) + bvec->bv_offset;
-+		offset = 0; /* shut up gcc */
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index 12a631d..8618ac3 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -562,7 +562,6 @@ static noinline int add_ra_bio_pages(struct inode *inode,
+  *
+  * bio->bi_iter.bi_sector points to the compressed extent on disk
+  * bio->bi_io_vec points to all of the inode pages
+- * bio->bi_vcnt is a count of pages
+  *
+  * After the compressed pages are read, we copy the bytes into the
+  * bio we were passed and then call the bio end_io calls
+@@ -574,7 +573,6 @@ int btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+ 	struct extent_map_tree *em_tree;
+ 	struct compressed_bio *cb;
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+-	unsigned long uncompressed_len = bio->bi_vcnt * PAGE_SIZE;
+ 	unsigned long compressed_len;
+ 	unsigned long nr_pages;
+ 	unsigned long pg_index;
+@@ -619,7 +617,7 @@ int btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+ 	free_extent_map(em);
+ 	em = NULL;
  
--	ordered = btrfs_lookup_ordered_extent(inode, offset);
--	BUG_ON(!ordered); /* Logic error */
- 	sums->bytenr = (u64)bio->bi_iter.bi_sector << 9;
- 	index = 0;
+-	cb->len = uncompressed_len;
++	cb->len = bio->bi_iter.bi_size;
+ 	cb->compressed_len = compressed_len;
+ 	cb->compress_type = extent_compress_type(bio_flags);
+ 	cb->orig_bio = bio;
+@@ -647,8 +645,7 @@ int btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+ 	add_ra_bio_pages(inode, em_start + em_len, cb);
  
--	while (bio_index < bio->bi_vcnt) {
-+	bio_for_each_segment_all(bvec, bio, j) {
- 		if (!contig)
- 			offset = page_offset(bvec->bv_page) + bvec->bv_offset;
+ 	/* include any pages we added in add_ra-bio_pages */
+-	uncompressed_len = bio->bi_vcnt * PAGE_SIZE;
+-	cb->len = uncompressed_len;
++	cb->len = bio->bi_iter.bi_size;
  
-+		if (!ordered) {
-+			ordered = btrfs_lookup_ordered_extent(inode, offset);
-+			BUG_ON(!ordered); /* Logic error */
-+		}
-+
- 		data = kmap_atomic(bvec->bv_page);
- 
- 		nr_sectors = BTRFS_BYTES_TO_BLKS(root->fs_info,
-@@ -529,9 +531,6 @@ int btrfs_csum_one_bio(struct btrfs_root *root, struct inode *inode,
- 		}
- 
- 		kunmap_atomic(data);
--
--		bio_index++;
--		bvec++;
- 	}
- 	this_sum_bytes = 0;
- 	btrfs_add_ordered_sum(inode, ordered, sums);
+ 	comp_bio = compressed_bio_alloc(bdev, cur_disk_byte, GFP_NOFS);
+ 	if (!comp_bio)
 -- 
 2.1.4
 

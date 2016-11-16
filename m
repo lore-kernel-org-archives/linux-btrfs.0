@@ -1,93 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:41808 "EHLO
+Received: from bombadil.infradead.org ([198.137.202.9]:41809 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932390AbcKPMwr (ORCPT
+        with ESMTP id S1751862AbcKPMwu (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 Nov 2016 07:52:47 -0500
+        Wed, 16 Nov 2016 07:52:50 -0500
 Received: from 80-109-146-114.cable.dynamic.surfer.at ([80.109.146.114] helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.85_2 #1 (Red Hat Linux))
-        id 1c6zhm-0005Ur-64
-        for linux-btrfs@vger.kernel.org; Wed, 16 Nov 2016 12:52:46 +0000
+        id 1c6zhp-0005VJ-EI
+        for linux-btrfs@vger.kernel.org; Wed, 16 Nov 2016 12:52:49 +0000
 From: Christoph Hellwig <hch@lst.de>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 8/9] btrfs: use bio_for_each_segment_all in __btrfsic_submit_bio
-Date: Wed, 16 Nov 2016 13:52:15 +0100
-Message-Id: <1479300736-9724-9-git-send-email-hch@lst.de>
+Subject: [PATCH 9/9] btrfs: only check bio size to see if a repair bio should have the failfast flag
+Date: Wed, 16 Nov 2016 13:52:16 +0100
+Message-Id: <1479300736-9724-10-git-send-email-hch@lst.de>
 In-Reply-To: <1479300736-9724-1-git-send-email-hch@lst.de>
 References: <1479300736-9724-1-git-send-email-hch@lst.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-And remove the bogus check for a NULL return value from kmap, which
-can't happen.  While we're at it: I don't think that kmapping up to 256
-will work without deadlocks on highmem machines, a better idea would
-be to use vm_map_ram to map all of them into a single virtual address
-range.  Incidentally that would also simplify the code a lot.
+The number of pages in a bio is a bad indicatator for the number of
+splits lower levels could do, and with the multipage bio_vec work even
+that measure goes away and will become a number of segments of physically
+contiguous areas instead.  Check the total bio size vs the sector size
+instead, which gives us an indication without any false negatives,
+although the false positive rate might increase a bit.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- fs/btrfs/check-integrity.c | 30 +++++++++++-------------------
- 1 file changed, 11 insertions(+), 19 deletions(-)
+ fs/btrfs/extent_io.c | 4 ++--
+ fs/btrfs/inode.c     | 4 +---
+ 2 files changed, 3 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
-index a6f657f..86f681f 100644
---- a/fs/btrfs/check-integrity.c
-+++ b/fs/btrfs/check-integrity.c
-@@ -2819,10 +2819,11 @@ static void __btrfsic_submit_bio(struct bio *bio)
- 	 * btrfsic_mount(), this might return NULL */
- 	dev_state = btrfsic_dev_state_lookup(bio->bi_bdev);
- 	if (NULL != dev_state &&
--	    (bio_op(bio) == REQ_OP_WRITE) && NULL != bio->bi_io_vec) {
-+	    (bio_op(bio) == REQ_OP_WRITE) && bio_has_data(bio)) {
- 		unsigned int i;
- 		u64 dev_bytenr;
- 		u64 cur_bytenr;
-+		struct bio_vec *bvec;
- 		int bio_is_patched;
- 		char **mapped_datav;
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index ea9ade7..a05fc41 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2296,7 +2296,7 @@ int btrfs_check_repairable(struct inode *inode, struct bio *failed_bio,
+ 	 *	a) deliver good data to the caller
+ 	 *	b) correct the bad sectors on disk
+ 	 */
+-	if (failed_bio->bi_vcnt > 1) {
++	if (failed_bio->bi_iter.bi_size > BTRFS_I(inode)->root->sectorsize) {
+ 		/*
+ 		 * to fulfill b), we need to know the exact failing sectors, as
+ 		 * we don't want to rewrite any more than the failed ones. thus,
+@@ -2403,7 +2403,7 @@ static int bio_readpage_error(struct bio *failed_bio, u64 phy_offset,
+ 		return -EIO;
+ 	}
  
-@@ -2840,32 +2841,23 @@ static void __btrfsic_submit_bio(struct bio *bio)
- 		if (!mapped_datav)
- 			goto leave;
- 		cur_bytenr = dev_bytenr;
--		for (i = 0; i < bio->bi_vcnt; i++) {
--			BUG_ON(bio->bi_io_vec[i].bv_len != PAGE_SIZE);
--			mapped_datav[i] = kmap(bio->bi_io_vec[i].bv_page);
--			if (!mapped_datav[i]) {
--				while (i > 0) {
--					i--;
--					kunmap(bio->bi_io_vec[i].bv_page);
--				}
--				kfree(mapped_datav);
--				goto leave;
--			}
-+
-+		bio_for_each_segment_all(bvec, bio, i) {
-+			BUG_ON(bvec->bv_len != PAGE_SIZE);
-+			mapped_datav[i] = kmap(bvec->bv_page);
-+
- 			if (dev_state->state->print_mask &
- 			    BTRFSIC_PRINT_MASK_SUBMIT_BIO_BH_VERBOSE)
- 				pr_info("#%u: bytenr=%llu, len=%u, offset=%u\n",
--				       i, cur_bytenr, bio->bi_io_vec[i].bv_len,
--				       bio->bi_io_vec[i].bv_offset);
--			cur_bytenr += bio->bi_io_vec[i].bv_len;
-+				       i, cur_bytenr, bvec->bv_len, bvec->bv_offset);
-+			cur_bytenr += bvec->bv_len;
- 		}
- 		btrfsic_process_written_block(dev_state, dev_bytenr,
- 					      mapped_datav, bio->bi_vcnt,
- 					      bio, &bio_is_patched,
- 					      NULL, bio->bi_opf);
--		while (i > 0) {
--			i--;
--			kunmap(bio->bi_io_vec[i].bv_page);
--		}
-+		bio_for_each_segment_all(bvec, bio, i)
-+			kunmap(bvec->bv_page);
- 		kfree(mapped_datav);
- 	} else if (NULL != dev_state && (bio->bi_opf & REQ_PREFLUSH)) {
- 		if (dev_state->state->print_mask &
+-	if (failed_bio->bi_vcnt > 1)
++	if (failed_bio->bi_iter.bi_size > BTRFS_I(inode)->root->sectorsize)
+ 		read_mode = READ_SYNC | REQ_FAILFAST_DEV;
+ 	else
+ 		read_mode = READ_SYNC;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 3f09cb6..54afe41 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -7933,9 +7933,7 @@ static int dio_read_error(struct inode *inode, struct bio *failed_bio,
+ 		return -EIO;
+ 	}
+ 
+-	if ((failed_bio->bi_vcnt > 1)
+-		|| (failed_bio->bi_io_vec->bv_len
+-			> BTRFS_I(inode)->root->sectorsize))
++	if (failed_bio->bi_iter.bi_size > BTRFS_I(inode)->root->sectorsize)
+ 		read_mode = READ_SYNC | REQ_FAILFAST_DEV;
+ 	else
+ 		read_mode = READ_SYNC;
 -- 
 2.1.4
 

@@ -1,119 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from virtualmin.buehlmann.net ([185.95.218.216]:46796 "EHLO
-        virtualmin.buehlmann.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932347AbcKPUcr (ORCPT
+Received: from mail.linuxsystems.it ([79.7.78.67]:52520 "EHLO
+        mail.linuxsystems.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S941111AbcKPWYi (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 Nov 2016 15:32:47 -0500
-Received: from [192.168.10.74] (46-126-153-42.dynamic.hispeed.ch [46.126.153.42])
-        by virtualmin.buehlmann.net (Postfix) with ESMTPSA id 7F3521627F5
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Nov 2016 21:32:43 +0100 (CET)
-Subject: Re: Send/receive snapshot from/between backup
-References: <a58d070d-30f8-9abe-04cd-4cb4ba88697b@buehlmann.net>
- <7bc4c937-fbe6-2e0f-8f2c-471d6b9481ad@siedziba.pl>
-From: =?UTF-8?B?UmVuw6kgQsO8aGxtYW5u?= <rene@buehlmann.net>
-To: linux-btrfs@vger.kernel.org
-Message-ID: <b7fae3c7-848e-f09b-4acd-1b9ce824ce99@buehlmann.net>
-Date: Wed, 16 Nov 2016 21:32:42 +0100
+        Wed, 16 Nov 2016 17:24:38 -0500
+From: =?iso-8859-1?Q?Niccol=F2_Belli?= <darkbasic@linuxsystems.it>
+To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        James Pharaoh <james@wellbehavedsoftware.com>,
+        Mark Fasheh <mfasheh@versity.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: Announcing btrfs-dedupe
+Date: Wed, 16 Nov 2016 23:24:33 +0100
 MIME-Version: 1.0
-In-Reply-To: <7bc4c937-fbe6-2e0f-8f2c-471d6b9481ad@siedziba.pl>
-Content-Type: text/plain; charset=utf-8
+Message-ID: <138b6c00-fb34-492b-92ae-d13630e0bb04@linuxsystems.it>
+In-Reply-To: <20161115175201.GL21290@hungrycats.org>
+References: <2855552b-714c-d1de-08f9-89153c293772@wellbehavedsoftware.com>
+ <CAAXPY_LJshM+W+xinabu_-=-E6J8UBMRpy7VPLt8tNihpO68Lw@mail.gmail.com>
+ <345b3aa4-6644-6730-09dd-549d320f58cb@wellbehavedsoftware.com>
+ <20161114180714.GF21290@hungrycats.org>
+ <a4e42724-d84a-e4f9-a3ea-d1fec31a5629@wellbehavedsoftware.com>
+ <dfb1372d-8bff-93ff-1ba7-d636e6c7fe4d@gmail.com>
+ <20161114195102.GI21290@hungrycats.org>
+ <4389716b-8082-ef89-7efc-60c2ae6b7db6@gmail.com>
+ <20161114211013.GJ21290@hungrycats.org>
+ <0b8cd1f0-fca4-b7df-2f41-13c40aee493d@gmail.com>
+ <20161115175201.GL21290@hungrycats.org>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/02/2016 05:13 PM, Piotr Pawłow wrote:
-> On 02.11.2016 15:23, René Bühlmann wrote:
->> Origin: S2 S3
->>
->> USB: S1 S2
->>
->> SSH: S1
->>
->> Transferring S3 to USB is no problem as S2 is on both btrfs drives. But
->> how can I transfer S3 to SSH?
-> If I understand correctly how send / receive works, for the incremental
-> receive to work there must be a subvolume on the destination which has
-> "received uuid" equal to the uuid of parent choosen for the incremental
-> send.
+On martedì 15 novembre 2016 18:52:01 CET, Zygo Blaxell wrote:
+> Like I said, millions of extents per week...
 >
->> I tried to transfer...
->>
->> 1. S3 from Origin to SSH -> does not work as there is no common snapshot.
->>
->> 2. S2 from USB to SSH -> did not work.
-> The "received uuid" of S1 on SSH is the uuid S1 had on Origin. The uuid
-> of S1 on USB is different, so when choosen as parent for the incremental
-> send it doesn't match.
+> 64K is an enormous dedup block size, especially if it comes with a 64K
+> alignment constraint as well.
 >
->> 3. S1 from USB to Origin (such that there is a common snapshot with SSH)
->> -> did not work.
-> There are no previously received subvolumes on Origin at all, so it
-> isn't going to work.
->
->> Is it correct that 1. would work if a common snapshot is present on
->> Origin and SSH?
-> If there was a snapshot received from Origin that still exists on
-> Origin, then yes, you could use it as a clone source for incremental send.
->
->> Is it expected that 2. and 3. do not work?
->>
->> Is there some other way to achieve it?
-> I doubt you can do it without some "hacking" to fool btrfs receive.
->
-> You would need a tool that can issue BTRFS_IOC_SET_RECEIVED_SUBVOL ioctl
-> to change the received uuid. Then you could:
->
-> 1. Change received uuid of S1 on SSH to match S1 uuid on USB.
-> 2. Send incremental S1-S2 from USB to SSH.
-> 3. Change received uuid of S2 on SSH to match S2 on Origin.
-> 4. Send incremental S2-S3 from Origin to SSH.
->
-> Regards
->
-Thanks for all the input,
+> These are the top ten duplicate block sizes from a sample of 95251
+> dedup ops on a medium-sized production server with 4TB of filesystem
+> (about one machine-day of data):
 
-I did successfully try this approach, could change the "received uuid"
-and then transfer a snapshot from a different source. So far so good.
+Which software do you use to dedupe your data? I tried duperemove but it 
+gets killed by the OOM killer because it triggers some kind of memory leak: 
+https://github.com/markfasheh/duperemove/issues/163
 
-But:
-
-Due to a lot of errors during btrfs check on SSH, I decided to recreate
-the BTRFS filesystem on SSH still with the goal to not transfer all the
-data over the network.
-
-These were the steps:
-
-1. Create a new btrfs (calling it SSH')
-
-2. Full transfer S1 from SSH to SSH'
-
-3. Incremental transfer S2 from USB to SSH' (S1 as parent)
-
-4. Incremental transfer S3 from Origin to SSH' (S2 as parent)
-
-5. Btrfs check SSH'
-
-6. Used rsync (with checksum-diff) to verify that S3 on Origin and SSH'
-contain the same files.
-
-
-Step 2 did work and beside of a single checksum error on SSH the
-transfer completed without errors.
-
-Step 3 and 4 did work as well and surprisingly, I did not even had to
-update the "received uuid". They cant be full transfers as that would
-have taken months with my bandwidth. How can this be?
-
-Step 5 did not return any errors
-
-Step 6 did find a single file differing which is due to the checksum
-error on step 2.
-
-
-So, everything seems to be fine now, I just do not understand why this
-did work without any updating of the UUID.
-Do you have an explanation for that?
-
-In any case, thanks for your help.
-René
-
-
+Niccolò Belli

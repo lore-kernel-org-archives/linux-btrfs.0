@@ -1,94 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51307 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:49287 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754530AbcKIREr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 9 Nov 2016 12:04:47 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 95371ADB9
-        for <linux-btrfs@vger.kernel.org>; Wed,  9 Nov 2016 17:04:45 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 12/12] btrfs: add optimized version of eb to eb copy
-Date: Wed,  9 Nov 2016 18:04:43 +0100
-Message-Id: <33e1acc5671528df6e144de60659673c6466011b.1478710770.git.dsterba@suse.com>
-In-Reply-To: <cover.1478710770.git.dsterba@suse.com>
-References: <cover.1478710770.git.dsterba@suse.com>
+        id S1753151AbcKPQiM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 16 Nov 2016 11:38:12 -0500
+Date: Wed, 16 Nov 2016 17:38:06 +0100
+From: David Sterba <dsterba@suse.cz>
+To: dsterba@suse.cz, Domagoj =?utf-8?B?VHLFoWFu?= <domagoj.trsan@gmail.com>,
+        linux-btrfs@vger.kernel.org, clm@fb.com, jbacik@fb.com,
+        dsterba@suse.com
+Subject: Re: [PATCH v3] btrfs: change btrfs_csum_final result param type to u8
+Message-ID: <20161116163806.GX12522@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20161027075233.4050-1-domagoj.trsan@gmail.com>
+ <20161031164724.GR12522@twin.jikos.cz>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20161031164724.GR12522@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Using copy_extent_buffer is suitable for copying betwenn buffers from an
-arbitrary offset and deals with page boundaries. This is not necessary
-when doing a full extent_buffer-to-extent_buffer copy. We can utilize
-the copy_page helper as well.
+On Mon, Oct 31, 2016 at 05:47:24PM +0100, David Sterba wrote:
+> On Thu, Oct 27, 2016 at 08:52:33AM +0100, Domagoj Tršan wrote:
+> > csum member of struct btrfs_super_block has array type of u8. It makes sense
+> > that function btrfs_csum_final should be also declared to accept u8 *. I
+> > changed the declaration of method void btrfs_csum_final(u32 crc, char *result);
+> > to void btrfs_csum_final(u32 crc, u8 *result);
+> 
+> Sorry, I've noticed it just now, several callers of btrfs_csum_final
+> cast the 2nd argument to (char *), which gets change to u8. Can you
+> please fix the callers? Thanks.
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/ctree.c     |  4 ++--
- fs/btrfs/extent_io.c | 14 ++++++++++++++
- fs/btrfs/extent_io.h |  2 ++
- 3 files changed, 18 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index be362b776138..25286a5912fc 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -260,7 +260,7 @@ int btrfs_copy_root(struct btrfs_trans_handle *trans,
- 	if (IS_ERR(cow))
- 		return PTR_ERR(cow);
- 
--	copy_extent_buffer(cow, buf, 0, 0, cow->len);
-+	copy_extent_buffer_full(cow, buf);
- 	btrfs_set_header_bytenr(cow, cow->start);
- 	btrfs_set_header_generation(cow, trans->transid);
- 	btrfs_set_header_backref_rev(cow, BTRFS_MIXED_BACKREF_REV);
-@@ -1129,7 +1129,7 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
- 
- 	/* cow is set to blocking by btrfs_init_new_buffer */
- 
--	copy_extent_buffer(cow, buf, 0, 0, cow->len);
-+	copy_extent_buffer_full(cow, buf);
- 	btrfs_set_header_bytenr(cow, cow->start);
- 	btrfs_set_header_generation(cow, trans->transid);
- 	btrfs_set_header_backref_rev(cow, BTRFS_MIXED_BACKREF_REV);
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index a7beacbe0087..333491e26742 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -5546,6 +5546,20 @@ void memzero_extent_buffer(struct extent_buffer *eb, unsigned long start,
- 	}
- }
- 
-+void copy_extent_buffer_full(struct extent_buffer *dst,
-+			     struct extent_buffer *src)
-+{
-+	int i;
-+	unsigned num_pages;
-+
-+	ASSERT(dst->len == src->len);
-+
-+	num_pages = num_extent_pages(dst->start, dst->len);
-+	for (i = 0; i < num_pages; i++)
-+		copy_page(page_address(dst->pages[i]),
-+				page_address(src->pages[i]));
-+}
-+
- void copy_extent_buffer(struct extent_buffer *dst, struct extent_buffer *src,
- 			unsigned long dst_offset, unsigned long src_offset,
- 			unsigned long len)
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 12fe17523df2..ae64c1917d0a 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -410,6 +410,8 @@ void write_extent_buffer_chunk_tree_uuid(struct extent_buffer *eb,
- 		const void *src);
- void write_extent_buffer(struct extent_buffer *eb, const void *src,
- 			 unsigned long start, unsigned long len);
-+void copy_extent_buffer_full(struct extent_buffer *dst,
-+			     struct extent_buffer *src);
- void copy_extent_buffer(struct extent_buffer *dst, struct extent_buffer *src,
- 			unsigned long dst_offset, unsigned long src_offset,
- 			unsigned long len);
--- 
-2.10.1
-
+Done and committed.

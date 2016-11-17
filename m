@@ -1,51 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40814 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751174AbcKQVuH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 Nov 2016 16:50:07 -0500
-Subject: Re: [Bug 186671] New: OOM on system with just rsync running 32GB of
- ram 30GB of pagecache
-To: E V <eliventer@gmail.com>
-References: <bug-186671-27@https.bugzilla.kernel.org/>
- <20161103115353.de87ff35756a4ca8b21d2c57@linux-foundation.org>
- <b5b0cef0-8482-e4de-cb81-69a4dd3410fb@suse.cz>
- <CAJtFHUQcJKSnyQ7t7-eDpiF2C+U23+iWpZ+X6fGEzN8qdbzmtA@mail.gmail.com>
- <a8cf869e-f527-9c65-d16d-ac70cf66472a@suse.cz>
- <CAJtFHUQgkvFaPdyRcoiV-m5hynDGo2qXfMXzZvGahoWp2LL_KA@mail.gmail.com>
- <bbcd6cb7-3b73-02e9-0409-4601a6f573f5@suse.cz>
- <CAJtFHUSka8nbaO5RNEcWVRi7VoQ7UORWkMu_7pNW3n_9iRRdew@mail.gmail.com>
- <CAJtFHUTn9Ejvyj3vJkqnsLoa6gci104-TPu5viG=epfJ9Rk_qg@mail.gmail.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>,
-        bugzilla-daemon@bugzilla.kernel.org, linux-mm@kvack.org,
-        Michal Hocko <mhocko@kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>
-From: Vlastimil Babka <vbabka@suse.cz>
-Message-ID: <4c85dfa5-9dbe-ea3c-7816-1ab321931e1c@suse.cz>
-Date: Thu, 17 Nov 2016 22:49:54 +0100
+Received: from dnvrco-outbound-snat.email.rr.com ([107.14.73.230]:38292 "EHLO
+        dnvrco-oedge-vip.email.rr.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1750714AbcKQWIX (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 17 Nov 2016 17:08:23 -0500
+Received: from localhost (localhost [127.0.0.1])
+        by smtp.aresgate.net (smtpd) with ESMTP id 91EF493CAD8
+        for <linux-btrfs@vger.kernel.org>; Thu, 17 Nov 2016 14:01:16 -0800 (PST)
+Received: from smtp.aresgate.net ([127.0.0.1])
+        by localhost (smtp.aresgate.net [127.0.0.1]) (amavisd-new, port 10024)
+        with LMTP id LAlOj-Z_PsKZ for <linux-btrfs@vger.kernel.org>;
+        Thu, 17 Nov 2016 14:01:15 -0800 (PST)
+Received: from gypsyops.denof.sin (cpe-76-172-86-115.socal.res.rr.com [76.172.86.115])
+        by smtp.aresgate.net (smtpd) with ESMTPSA id 6C53E93CAD0
+        for <linux-btrfs@vger.kernel.org>; Thu, 17 Nov 2016 14:01:15 -0800 (PST)
+Date: Thu, 17 Nov 2016 14:01:11 -0800
+From: Vladi Gergov <vladi@aresgate.net>
+To: linux-btrfs@vger.kernel.org
+Subject: btrfs raid1 degraded needs chunk root rebuild
+Message-ID: <20161117220111.GA13765@gypsyops.denof.sin>
 MIME-Version: 1.0
-In-Reply-To: <CAJtFHUTn9Ejvyj3vJkqnsLoa6gci104-TPu5viG=epfJ9Rk_qg@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/16/2016 02:39 PM, E V wrote:
-> System panic'd overnight running 4.9rc5 & rsync. Attached a photo of
-> the stack trace, and the 38 call traces in a 2 minute window shortly
-> before, to the bugzilla case for those not on it's e-mail list:
-> 
-> https://bugzilla.kernel.org/show_bug.cgi?id=186671
+Any ideas if currently I can still recover data from this volume? I have
+tried the new btrfs tools with btrfs rescue chunk-recover without much
+success. Any ideas if i can recover any of the data?
 
-The panic screenshot has only the last part, but the end marker says
-it's OOM with no killable processes. The DEBUG_VM config thus didn't
-trigger anything, and still there's tons of pagecache, mostly clean,
-that's not being reclaimed.
+----- Forwarded message from Chris Mason <chris.mason@oracle.com> -----
 
-Could you now try this?
-- enable CONFIG_PAGE_OWNER
-- boot with kernel option: page_owner=on
-- after the first oom, "cat /sys/kernel/debug/page_owner > file"
-- provide the file (compressed, it will be quite large)
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: btrfs raid1 degraded does not mount or fsck
+To: Vladi Gergov <vgergov@gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Date: Tue, 16 Nov 2010 16:50:58 -0500
+User-Agent: Sup/git
 
-Vlastimil
+Excerpts from Vladi Gergov's message of 2010-10-29 16:53:42 -0400:
+> >>> gypsyops @ /mnt > sudo mount -o degraded /dev/sdc das3/
+> Password:
+> mount: wrong fs type, bad option, bad superblock on /dev/sdc,
+>        missing codepage or helper program, or other error
+>        In some cases useful info is found in syslog - try
+>        dmesg | tail  or so
+>
+> [  684.577540] device label das4 devid 2 transid 107954 /dev/sdc
+> [  684.595150] btrfs: allowing degraded mounts
+> [  684.595594] btrfs: failed to read chunk root on sdb
+> [  684.604110] btrfs: open_ctree failed
+>
+> >>> gypsyops @ /mnt > sudo btrfsck /dev/sdc
+> btrfsck: volumes.c:1367: btrfs_read_sys_array: Assertion `!(ret)' failed.
 
+Ok, I dug through this and found the bug responsible for your
+unmountable FS.  When we're mounted in degraded mode, and we don't have
+enough drives available to do raid1,10, we're can use the wrong raid
+level for new allocations.
+
+I'm fixing the kernel side so this doesn't happen anymore, but I'll need
+to rebuild the chunk tree (and probably a few others) off your good disk to
+fix things.
+
+I've got it reproduced here though, so I'll make an fsck that can scan
+for the correct trees and fix it for you.
+
+Since you're basically going to be my first external fsck customer, is
+there anyway you can do a raw device based backup of the blocks?  This
+way if I do mess things up we can repeat the experiment.
+
+-chris
+
+!DSPAM:4ce2fd55191821234852255!
+
+
+
+----- End forwarded message -----
+
+-- 
+
+,-| Vladi
+`-| Gergov

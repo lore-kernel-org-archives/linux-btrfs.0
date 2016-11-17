@@ -1,46 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.linuxsystems.it ([79.7.78.67]:52520 "EHLO
-        mail.linuxsystems.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S941111AbcKPWYi (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:46090 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S933805AbcKQB1e (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 Nov 2016 17:24:38 -0500
-From: =?iso-8859-1?Q?Niccol=F2_Belli?= <darkbasic@linuxsystems.it>
-To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        James Pharaoh <james@wellbehavedsoftware.com>,
-        Mark Fasheh <mfasheh@versity.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: Announcing btrfs-dedupe
-Date: Wed, 16 Nov 2016 23:24:33 +0100
+        Wed, 16 Nov 2016 20:27:34 -0500
+Subject: Re: Btrfs Heatmap - v2 - block group internals!
+To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
+        <linux-btrfs@vger.kernel.org>
+References: <e69c35cc-d693-da18-5aba-e78ae42262cd@mendix.com>
+ <7a297aaa-f273-fb15-8e97-8c781e25f06a@mendix.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <fda30533-068c-69d8-064f-fbbec06a6d22@cn.fujitsu.com>
+Date: Thu, 17 Nov 2016 09:27:29 +0800
 MIME-Version: 1.0
-Message-ID: <138b6c00-fb34-492b-92ae-d13630e0bb04@linuxsystems.it>
-In-Reply-To: <20161115175201.GL21290@hungrycats.org>
-References: <2855552b-714c-d1de-08f9-89153c293772@wellbehavedsoftware.com>
- <CAAXPY_LJshM+W+xinabu_-=-E6J8UBMRpy7VPLt8tNihpO68Lw@mail.gmail.com>
- <345b3aa4-6644-6730-09dd-549d320f58cb@wellbehavedsoftware.com>
- <20161114180714.GF21290@hungrycats.org>
- <a4e42724-d84a-e4f9-a3ea-d1fec31a5629@wellbehavedsoftware.com>
- <dfb1372d-8bff-93ff-1ba7-d636e6c7fe4d@gmail.com>
- <20161114195102.GI21290@hungrycats.org>
- <4389716b-8082-ef89-7efc-60c2ae6b7db6@gmail.com>
- <20161114211013.GJ21290@hungrycats.org>
- <0b8cd1f0-fca4-b7df-2f41-13c40aee493d@gmail.com>
- <20161115175201.GL21290@hungrycats.org>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <7a297aaa-f273-fb15-8e97-8c781e25f06a@mendix.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On martedì 15 novembre 2016 18:52:01 CET, Zygo Blaxell wrote:
-> Like I said, millions of extents per week...
->
-> 64K is an enormous dedup block size, especially if it comes with a 64K
-> alignment constraint as well.
->
-> These are the top ten duplicate block sizes from a sample of 95251
-> dedup ops on a medium-sized production server with 4TB of filesystem
-> (about one machine-day of data):
 
-Which software do you use to dedupe your data? I tried duperemove but it 
-gets killed by the OOM killer because it triggers some kind of memory leak: 
-https://github.com/markfasheh/duperemove/issues/163
 
-Niccolò Belli
+At 11/17/2016 04:30 AM, Hans van Kranenburg wrote:
+> In the last two days I've added the --blockgroup option to btrfs heatmap
+> to let it create pictures of block group internals.
+>
+> Examples and more instructions are to be found in the README at:
+> https://github.com/knorrie/btrfs-heatmap/blob/master/README.md
+>
+> To use the new functionality it needs a fairly recent python-btrfs for
+> the 'skinny' METADATA_ITEM_KEY to be present. Latest python-btrfs
+> release is v0.3, created yesterday.
+>
+> Yay,
+>
+Wow, really cool!
+
+I always dream about a visualizing tool to represent the chunk and 
+extent level of btrfs.
+
+This should really save me from reading the boring dec numbers from 
+btrfs-debug-tree.
+
+Although IMHO the full fs output is mixing extent and chunk level
+together, which makes it a little hard to represent multi-device case,
+it's still an awesome tool!
+
+And considering the "show-block" tool in btrfs-progs is quite old,
+I think if the tool get further polished it may have a chance get into 
+btrfs-progs.
+
+Thanks,
+Qu
+
+

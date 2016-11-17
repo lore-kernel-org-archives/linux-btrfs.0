@@ -1,87 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:33764 "EHLO
-        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1751688AbcKQDCZ (ORCPT
+Received: from mail-qt0-f175.google.com ([209.85.216.175]:36681 "EHLO
+        mail-qt0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750785AbcKQFjM (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 Nov 2016 22:02:25 -0500
-Date: Wed, 16 Nov 2016 22:01:52 -0500
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: =?iso-8859-1?Q?Niccol=F2?= Belli <darkbasic@linuxsystems.it>
-Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        James Pharaoh <james@wellbehavedsoftware.com>,
-        Mark Fasheh <mfasheh@versity.com>, linux-btrfs@vger.kernel.org
-Subject: Re: Announcing btrfs-dedupe
-Message-ID: <20161117030150.GM21290@hungrycats.org>
-References: <345b3aa4-6644-6730-09dd-549d320f58cb@wellbehavedsoftware.com>
- <20161114180714.GF21290@hungrycats.org>
- <a4e42724-d84a-e4f9-a3ea-d1fec31a5629@wellbehavedsoftware.com>
- <dfb1372d-8bff-93ff-1ba7-d636e6c7fe4d@gmail.com>
- <20161114195102.GI21290@hungrycats.org>
- <4389716b-8082-ef89-7efc-60c2ae6b7db6@gmail.com>
- <20161114211013.GJ21290@hungrycats.org>
- <0b8cd1f0-fca4-b7df-2f41-13c40aee493d@gmail.com>
- <20161115175201.GL21290@hungrycats.org>
- <138b6c00-fb34-492b-92ae-d13630e0bb04@linuxsystems.it>
+        Thu, 17 Nov 2016 00:39:12 -0500
+Received: by mail-qt0-f175.google.com with SMTP id w33so122931992qtc.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Nov 2016 21:39:11 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="z8Ydz/NZAVzoOg+6"
-In-Reply-To: <138b6c00-fb34-492b-92ae-d13630e0bb04@linuxsystems.it>
+From: Chris Cui <chris.wei.cui@gmail.com>
+Date: Thu, 17 Nov 2016 13:39:10 +0800
+Message-ID: <CANx2UGGLP_jSNZ038H2Wd0bTwqSu=1VQKDaZ=sKr8ARg_Fgv4A@mail.gmail.com>
+Subject: Re: btrfs btree_ctree_super fault
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+We have just encountered the same bug on 4.9.0-rc2.  Any solution now?
 
---z8Ydz/NZAVzoOg+6
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-On Wed, Nov 16, 2016 at 11:24:33PM +0100, Niccol=F2 Belli wrote:
-> On marted=EC 15 novembre 2016 18:52:01 CET, Zygo Blaxell wrote:
-> >Like I said, millions of extents per week...
-> >
-> >64K is an enormous dedup block size, especially if it comes with a 64K
-> >alignment constraint as well.
-> >
-> >These are the top ten duplicate block sizes from a sample of 95251
-> >dedup ops on a medium-sized production server with 4TB of filesystem
-> >(about one machine-day of data):
->=20
-> Which software do you use to dedupe your data? I tried duperemove but it
-> gets killed by the OOM killer because it triggers some kind of memory lea=
-k:
-> https://github.com/markfasheh/duperemove/issues/163
-
-Duperemove does use a lot of memory, but the logs at that URL only show
-2G of RAM in duperemove--not nearly enough to trigger OOM under normal
-conditions on an 8G machine.  There's another process with 6G of virtual
-address space (although much less than that resident) that looks more
-interesting (i.e. duperemove might just be the victim of some interaction
-between baloo_file and the OOM killer).
-
-On the other hand, the logs also show kernel 4.8.  100% of my test
-machines failed to finish booting before they were cut down by OOM on
-4.7.x kernels.  The same problem occurs on early kernels in the 4.8.x
-series.  I am having good results with 4.8.6 and later, but you should
-be aware that significant changes have been made to the way OOM works
-in these kernel versions, and maybe you're hitting a regression for your
-use case.
-
-> Niccol=F2 Belli
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
---z8Ydz/NZAVzoOg+6
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iEYEARECAAYFAlgtHZsACgkQgfmLGlazG5xazQCgqLQkxwwTxX4SUOhjjEl6Ufbj
-DTcAoJzH5GVs1jKJ2B2JsnBpr4Z+ajzy
-=YUa/
------END PGP SIGNATURE-----
-
---z8Ydz/NZAVzoOg+6--
+> kernel BUG at fs/btrfs/ctree.c:3172!
+> invalid opcode: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
+> CPU: 0 PID: 22702 Comm: trinity-c40 Not tainted 4.9.0-rc4-think+ #1
+> task: ffff8804ffde37c0 task.stack: ffffc90002188000
+> RIP: 0010:[<ffffffffa00576b9>]
+>   [<ffffffffa00576b9>] btrfs_set_item_key_safe+0x179/0x190 [btrfs]
+> RSP: 0000:ffffc9000218b8a8  EFLAGS: 00010246
+> RAX: 0000000000000000 RBX: ffff8804fddcf348 RCX: 0000000000001000
+> RDX: 0000000000000000 RSI: ffffc9000218b9ce RDI: ffffc9000218b8c7
+> RBP: ffffc9000218b908 R08: 0000000000004000 R09: ffffc9000218b8c8
+> R10: 0000000000000000 R11: 0000000000000001 R12: ffffc9000218b8b6
+> R13: ffffc9000218b9ce R14: 0000000000000001 R15: ffff880480684a88
+> FS:  00007f7c7f998b40(0000) GS:ffff880507800000(0000) knlGS:0000000000000000
+> CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+> CR2: 0000000000000000 CR3: 000000044f15f000 CR4: 00000000001406f0
+> DR0: 00007f4ce439d000 DR1: 0000000000000000 DR2: 0000000000000000
+> DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000600
+> Stack:
+>  ffff880501430000 d305ffffa00a2245 006c000000000002 0500000000000010
+>  6c000000000002d3 0000000000001000 000000006427eebb ffff880480684a88
+>  0000000000000000 ffff8804fddcf348 0000000000002000 0000000000000000
+> Call Trace:
+>  [<ffffffffa009cff0>] __btrfs_drop_extents+0xb00/0xe30 [btrfs]

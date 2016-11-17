@@ -1,77 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from syrinx.knorrie.org ([82.94.188.77]:40925 "EHLO
-        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751621AbcKQVIk (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 Nov 2016 16:08:40 -0500
-Subject: Re: Btrfs Heatmap - v2 - block group internals!
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>, linux-btrfs@vger.kernel.org
-References: <e69c35cc-d693-da18-5aba-e78ae42262cd@mendix.com>
- <7a297aaa-f273-fb15-8e97-8c781e25f06a@mendix.com>
- <fda30533-068c-69d8-064f-fbbec06a6d22@cn.fujitsu.com>
- <68eecdb7-90e4-a5ba-ca63-f714faf88ede@mendix.com>
- <c067cd99-31ba-9e33-6da6-1d55c1a8c8f5@gmail.com>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>
-From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Message-ID: <0b5c943f-4f4b-3844-22d5-6e0f8dc5eb6e@mendix.com>
-Date: Thu, 17 Nov 2016 22:08:35 +0100
+Received: from mx2.suse.de ([195.135.220.15]:40814 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751174AbcKQVuH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 17 Nov 2016 16:50:07 -0500
+Subject: Re: [Bug 186671] New: OOM on system with just rsync running 32GB of
+ ram 30GB of pagecache
+To: E V <eliventer@gmail.com>
+References: <bug-186671-27@https.bugzilla.kernel.org/>
+ <20161103115353.de87ff35756a4ca8b21d2c57@linux-foundation.org>
+ <b5b0cef0-8482-e4de-cb81-69a4dd3410fb@suse.cz>
+ <CAJtFHUQcJKSnyQ7t7-eDpiF2C+U23+iWpZ+X6fGEzN8qdbzmtA@mail.gmail.com>
+ <a8cf869e-f527-9c65-d16d-ac70cf66472a@suse.cz>
+ <CAJtFHUQgkvFaPdyRcoiV-m5hynDGo2qXfMXzZvGahoWp2LL_KA@mail.gmail.com>
+ <bbcd6cb7-3b73-02e9-0409-4601a6f573f5@suse.cz>
+ <CAJtFHUSka8nbaO5RNEcWVRi7VoQ7UORWkMu_7pNW3n_9iRRdew@mail.gmail.com>
+ <CAJtFHUTn9Ejvyj3vJkqnsLoa6gci104-TPu5viG=epfJ9Rk_qg@mail.gmail.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>,
+        bugzilla-daemon@bugzilla.kernel.org, linux-mm@kvack.org,
+        Michal Hocko <mhocko@kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>
+From: Vlastimil Babka <vbabka@suse.cz>
+Message-ID: <4c85dfa5-9dbe-ea3c-7816-1ab321931e1c@suse.cz>
+Date: Thu, 17 Nov 2016 22:49:54 +0100
 MIME-Version: 1.0
-In-Reply-To: <c067cd99-31ba-9e33-6da6-1d55c1a8c8f5@gmail.com>
+In-Reply-To: <CAJtFHUTn9Ejvyj3vJkqnsLoa6gci104-TPu5viG=epfJ9Rk_qg@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/17/2016 08:27 PM, Austin S. Hemmelgarn wrote:
-> On 2016-11-17 13:51, Hans van Kranenburg wrote:
->>
->> When generating a picture of a file system with multiple devices,
->> boundaries between the separate devices are not visible now.
->>
->> If someone has a brilliant idea about how to do this without throwing
->> out actual usage data...
->>
-> The first thought that comes to mind for me is to make each device be a
-> different color, and otherwise obey the same intensity mapping
-> correlating to how much data is there.  For example, if you've got a 3
-> device FS, the parts of the image that correspond to device 1 would go
-> from 0x000000 to 0xFF0000, the parts for device 2 could be 0x000000 to
-> 0x00FF00, and the parts for device 3 could be 0x000000 to 0x0000FF. This
-> is of course not perfect (you can't tell what device each segment of
-> empty space corresponds to), but would probably cover most use cases.
-> (for example, with such a scheme, you could look at an image and tell
-> whether the data is relatively well distributed across all the devices
-> or you might need to re-balance).
+On 11/16/2016 02:39 PM, E V wrote:
+> System panic'd overnight running 4.9rc5 & rsync. Attached a photo of
+> the stack trace, and the 38 call traces in a 2 minute window shortly
+> before, to the bugzilla case for those not on it's e-mail list:
+> 
+> https://bugzilla.kernel.org/show_bug.cgi?id=186671
 
-"most use cases" -> what are those use cases? If you want to know how
-much total GiB or TiB is present on all devices, a simple btrfs fi show
-does suffice.
+The panic screenshot has only the last part, but the end marker says
+it's OOM with no killable processes. The DEBUG_VM config thus didn't
+trigger anything, and still there's tons of pagecache, mostly clean,
+that's not being reclaimed.
 
-Another option is to just write three images, one for each of the
-devices. :) Those are more easily compared.
+Could you now try this?
+- enable CONFIG_PAGE_OWNER
+- boot with kernel option: page_owner=on
+- after the first oom, "cat /sys/kernel/debug/page_owner > file"
+- provide the file (compressed, it will be quite large)
 
-The first idea with color that I had was to use two different colors for
-data and metadata. When also using separate colors for devices, it might
-all together become a big mess really quickly, or, maybe a beautiful
-rainbow.
+Vlastimil
 
-But, the fun with visualizations of data is that you learn whether they
-just work(tm) or don't as soon as you see them. Mathematical or
-algorithmic beauty is not always a good recipe for beauty as seen by the
-human eye.
-
-So, let's gather a bunch of ideas which we can try out and then observe
-the result.
-
-Before doing so, I'm going to restructure the code a bit more so I can
-write another script in the same directory, just doing import heatmap
-and calling a few functions in there to quickly try stuff, bypassing the
-normal cli api.
-
-Also, the png writing handling is now done by some random png library
-that I found, which requires me to build (or copy/resize) an entire
-pixel grid in memory, explicitely listing all pixel values, which is a
-bit of a memory hog for bigger pictures, so I want to see if something
-can be done there also.
-
--- 
-Hans van Kranenburg

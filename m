@@ -1,36 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f180.google.com ([209.85.161.180]:36214 "EHLO
-        mail-yw0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752452AbcKRUcS (ORCPT
+Received: from mail-it0-f50.google.com ([209.85.214.50]:36054 "EHLO
+        mail-it0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752035AbcKRUfN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 Nov 2016 15:32:18 -0500
-Received: by mail-yw0-f180.google.com with SMTP id a10so171568348ywa.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Nov 2016 12:32:18 -0800 (PST)
+        Fri, 18 Nov 2016 15:35:13 -0500
+Received: by mail-it0-f50.google.com with SMTP id l8so44040543iti.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 Nov 2016 12:35:13 -0800 (PST)
 MIME-Version: 1.0
 In-Reply-To: <e6042e5a-d283-f66e-9d08-6028c9ba1946@libero.it>
 References: <e6042e5a-d283-f66e-9d08-6028c9ba1946@libero.it>
-From: "Janos Toth F." <toth.f.janos@gmail.com>
-Date: Fri, 18 Nov 2016 21:32:17 +0100
-Message-ID: <CANznX5EvKzySaFrRFOULTkUqGGMRhKAQZEphMD9Kww_iOkN25A@mail.gmail.com>
+From: Timofey Titovets <nefelim4ag@gmail.com>
+Date: Fri, 18 Nov 2016 23:34:32 +0300
+Message-ID: <CAGqmi76db-UQ-rVW4fySZ9QnLW7mHn0-R_yhsHokVwndoJ52QA@mail.gmail.com>
 Subject: Re: RFC: raid with a variable stripe size
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: kreijack@inwind.it
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Zygo Blaxell <zblaxell@furryterror.org>
 Content-Type: text/plain; charset=UTF-8
-To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Based on the comments of this patch, stripe size could theoretically
-go as low as 512 byte:
-https://mail-archive.com/linux-btrfs@vger.kernel.org/msg56011.html
-If these very small (0.5k-2k) stripe sizes could really work (it's
-possible to implement such changes and it does not degrade performance
-too much - or at all - to keep it so low), we could use RAID-5(/6) on
-<=9(/10) disks with 512 byte physical sectors (assuming 4k filesystem
-sector size + 4k node size, although I am not sure if node size is
-really important here) without having to worry about RMW, extra space
-waste or additional fragmentation.
-
-On Fri, Nov 18, 2016 at 7:15 PM, Goffredo Baroncelli <kreijack@libero.it> wrote:
+2016-11-18 21:15 GMT+03:00 Goffredo Baroncelli <kreijack@libero.it>:
 > Hello,
 >
 > these are only my thoughts; no code here, but I would like to share it hoping that it could be useful.
@@ -79,13 +69,16 @@ On Fri, Nov 18, 2016 at 7:15 PM, Goffredo Baroncelli <kreijack@libero.it> wrote:
 >
 > BR
 > G.Baroncelli
->
->
->
-> --
-> gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-> Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+AFAIK, it's difficult to do such things with btrfs, because btrfs use
+chuck allocation for metadata & data,
+i.e. AFAIK ZFS work with storage more directly, so zfs directly span
+file to the different disks.
+
+May be it's can be implemented by some chunk allocator rework, i don't know.
+
+Fix me if i'm wrong, thanks.
+
+-- 
+Have a nice day,
+Timofey.

@@ -1,113 +1,144 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:37066 "EHLO
-        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751058AbcKQXN3 (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:25337 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1752037AbcKRA6E (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 Nov 2016 18:13:29 -0500
-Date: Thu, 17 Nov 2016 18:13:10 -0500
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, kreijack@libero.it
+        Thu, 17 Nov 2016 19:58:04 -0500
 Subject: Re: [PATCH 0/2] RAID5/6 scrub race fix
-Message-ID: <20161117231310.GN21290@hungrycats.org>
+To: <kreijack@inwind.it>, <linux-btrfs@vger.kernel.org>
 References: <20161115025024.25299-1-quwenruo@cn.fujitsu.com>
+ <d4209447-5fb5-e947-1546-45608814c87a@libero.it>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <746c65d8-ae19-50aa-9e21-fce5bde531e2@cn.fujitsu.com>
+Date: Fri, 18 Nov 2016 08:57:58 +0800
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="myGquMeQRBVzK6Jb"
-In-Reply-To: <20161115025024.25299-1-quwenruo@cn.fujitsu.com>
+In-Reply-To: <d4209447-5fb5-e947-1546-45608814c87a@libero.it>
+Content-Type: multipart/mixed;
+        boundary="------------E582B608DD2AB6130F366BBF"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+--------------E582B608DD2AB6130F366BBF
+Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Transfer-Encoding: 7bit
 
---myGquMeQRBVzK6Jb
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
 
-On Tue, Nov 15, 2016 at 10:50:22AM +0800, Qu Wenruo wrote:
-> Fix the so-called famous RAID5/6 scrub error.
->=20
-> Thanks Goffredo Baroncelli for reporting the bug, and make it into our
-> sight.
-> (Yes, without the Phoronix report on this,
-> https://www.phoronix.com/scan.php?page=3Dnews_item&px=3DBtrfs-RAID-56-Is-=
-Bad,
-> I won't ever be aware of it)
 
-If you're hearing about btrfs RAID5 bugs for the first time through
-Phoronix, then your testing coverage is *clearly* inadequate.
+At 11/18/2016 02:09 AM, Goffredo Baroncelli wrote:
+> Hi Qu,
+>
+> On 2016-11-15 03:50, Qu Wenruo wrote:
+>> Fix the so-called famous RAID5/6 scrub error.
+>>
+>> Thanks Goffredo Baroncelli for reporting the bug, and make it into our
+>> sight.
+>> (Yes, without the Phoronix report on this,
+>> https://www.phoronix.com/scan.php?page=news_item&px=Btrfs-RAID-56-Is-Bad,
+>> I won't ever be aware of it)
+>>
+>> Unlike many of us(including myself) assumed, it's not a timed bomb buried
+>> deeply into the RAID5/6 code, but a race condition in scrub recovery
+>> code.
+>>
+>> The problem is not found because normal mirror based profiles aren't
+>> affected by the race, since they are independent with each other.
+>
+> Unfortunately, even with these patches btrfs still fails to rebuild a raid5 array in my tests.
+> To perform the tests I create a filesystem raid5-three disks; then I created a file
+>
+> # python -c "print 'ad'+'a'*65534+'bd'+'b'*65533" >out.txt
+>
+> The filesystem layout is composed by stripes large 128k of data, and 64k of parity.
+>
+> The idea is that the first third of the stripe (64k on disk0) is composed by "adaaa...";
+> the second third (again 64k on disk1 is composed by "bdbbbb"; and finally the parity (disk0^disk1) is stored on the last portion of the stripe.
+>
+> Doing some calculation it is possible to know where the data is physically stored.
+>
+> I perform 3 tests:
+> 1) I corrupt some bytes of the data stored on disk0; mount the filesystem; run scrub; unmount the filesystem; check all the disks if the bytes of the stripe are corrected
+> 2) I corrupt some bytes of the data stored on disk1; mount the filesystem; run scrub; unmount the filesystem; check all the disks the bytes of the stripe are corrected
+> 3) I corrupt some bytes of the parity stored on disk2; mount the filesystem; run scrub; unmount the filesystem; check all the disks the bytes of the stripe are corrected
+>
+> Before your patches, my all tests fail (not all the times, but very often).
+> After your patches, test1 and test2 still fail. In my test test3 succeded.
 
-Fill up a RAID5 array, start a FS stress test, pull a drive out while
-that's running, let the FS stress test run for another hour, then try
-to replace or delete the missing device.  If there are any crashes,
-corruptions, or EIO during any part of this process (assuming all the
-remaining disks are healthy), then btrfs RAID5 is still broken, and
-you've found another bug to fix.
+Thanks for your report and script.
 
-The fact that so many problems in btrfs can still be found this way
-indicates to me that nobody is doing this basic level of testing
-(or if they are, they're not doing anything about the results).
+I compared my script with yours, and found the difference is, I'm 
+corrupting the whole data stripe (64K, and without space cache to make 
+sure all data are at the 1st full stripe), while you only corrupt 5 
+bytes of it.
 
-> Unlike many of us(including myself) assumed, it's not a timed bomb buried
-> deeply into the RAID5/6 code, but a race condition in scrub recovery
-> code.
+And in that case, btrfs won't report more error than expected 1, which 
+means the race fix is working.
 
-I don't see how this patch fixes the write hole issue at the core of
-btrfs RAID56.  It just makes the thin layer of bugs over that issue a
-little thinner.  There's still the metadata RMW update timebomb at the
-bottom of the bug pile that can't be fixed by scrub (the filesystem is
-unrecoverably damaged when the bomb goes off, so scrub isn't possible).
+But new btrfs-progs scrub will report that the recovered data stripes 
+are all OK, but P/Q is not correct.
 
-> The problem is not found because normal mirror based profiles aren't
-> affected by the race, since they are independent with each other.
+This seems to be a new bug, unrelated to the RAID5/6 scrub race(whose 
+main symptom is incorrect csum error number and sometimes even 
+unrecoverable error).
 
-True.
 
-> Although this time the fix doesn't affect the scrub code much, it should
-> warn us that current scrub code is really hard to maintain.
+I assume it will be easier to fix than the race, but I can be totally 
+wrong unless I dig into it further.
 
-This last sentence is true.  I found and fixed three BUG_ONs in RAID5
-code on the first day I started testing in degraded mode, then hit
-the scrub code and had to give up.  It was like a brick wall made out
-of mismatched assumptions and layering inversions, using uninitialized
-kernel data as mortar (though I suppose the "uninitialized" data symptom
-might just have been an unprotected memory access).
+Anyway I'll fix it in a new patchset.
 
-> Abuse of workquque to delay works and the full fs scrub is race prone.
->=20
-> Xfstest will follow a little later, as we don't have good enough tools
-> to corrupt data stripes pinpointly.
->=20
-> Qu Wenruo (2):
->   btrfs: scrub: Introduce full stripe lock for RAID56
->   btrfs: scrub: Fix RAID56 recovery race condition
->=20
->  fs/btrfs/ctree.h       |   4 ++
->  fs/btrfs/extent-tree.c |   3 +
->  fs/btrfs/scrub.c       | 192 +++++++++++++++++++++++++++++++++++++++++++=
-++++++
->  3 files changed, 199 insertions(+)
->=20
-> --=20
-> 2.10.2
->=20
->=20
->=20
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Thanks,
+Qu
 
---myGquMeQRBVzK6Jb
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+>
+> Enclosed my script which performs the tests (it uses loop device; please run in a VM; firts you have to uncomment the function make_imgs to create the disk image.).
+>
+> Let me know if I can help you providing more information.
+>
+> BR
+> G.Baroncelli
+>
+>
+>>
+>> Although this time the fix doesn't affect the scrub code much, it should
+>> warn us that current scrub code is really hard to maintain.
+>>
+>> Abuse of workquque to delay works and the full fs scrub is race prone.
+>>
+>> Xfstest will follow a little later, as we don't have good enough tools
+>> to corrupt data stripes pinpointly.
+>>
+>> Qu Wenruo (2):
+>>   btrfs: scrub: Introduce full stripe lock for RAID56
+>>   btrfs: scrub: Fix RAID56 recovery race condition
+>>
+>>  fs/btrfs/ctree.h       |   4 ++
+>>  fs/btrfs/extent-tree.c |   3 +
+>>  fs/btrfs/scrub.c       | 192 +++++++++++++++++++++++++++++++++++++++++++++++++
+>>  3 files changed, 199 insertions(+)
+>>
+>
+>
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
 
-iEYEARECAAYFAlguOYYACgkQgfmLGlazG5xC0QCgiNbcfb9Q1UCDPeRJoc4ESNKI
-YVwAn0RueaI3z/o+ILKug1AxEFlAOEMz
-=VNu0
------END PGP SIGNATURE-----
 
---myGquMeQRBVzK6Jb--
+--------------E582B608DD2AB6130F366BBF
+Content-Type: application/x-shellscript; name="raid56_recover.sh"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="raid56_recover.sh"
+
+IyEvYmluL2Jhc2gKCmRldjE9L2Rldi92ZGI2CmRldjI9L2Rldi92ZGI3CmRl
+djM9L2Rldi92ZGI4Cm1udD0vbW50L3Rlc3QKCnVtb3VudCAkbW50Cm1rZnMu
+YnRyZnMgJGRldjEgJGRldjIgJGRldjMgLWYgLW0gcmFpZDUgLWQgcmFpZDUK
+bW91bnQgJGRldjEgJG1udCAtbyBub3NwYWNlX2NhY2hlCnhmc19pbyAtZiAt
+YyAicHdyaXRlIDAgMjU2ayIgJG1udC9maWxlMQpzeW5jCnVtb3VudCAkbW50
+CgpkbWVzZyAtQwojIGRlc3RvcnkgcGFyaXR5CiNkZCBpZj0vZGV2L3VyYW5k
+b20gb2Y9JGRldjEgYnM9MSBjb3VudD02NGsgc2Vlaz01NjYyMzEwNDAKZGQg
+aWY9L2Rldi91cmFuZG9tIG9mPSRkZXYyIGJzPTEgY291bnQ9NjRrIHNlZWs9
+NTQ2MzA4MDk2CiNkZCBpZj0vZGV2L3VyYW5kb20gb2Y9JGRldjIgYnM9MSBj
+b3VudD0zMmsgc2Vlaz01NDYzNDA4NjQKCiMgYnRyZnMtcHJvZ3Mgc2NydWIK
+YnRyZnMgY2hlY2sgLS1zY3J1YiAkZGV2MQoKIyBzY3J1Ygptb3VudCAkZGV2
+MSAkbW50IC1vIG5vc3BhY2VfY2FjaGUKYnRyZnMgc2NydWIgc3RhcnQgLUIg
+JG1udAp1bW91bnQgJG1udAoKIyBidHJmcy1wcm9ncyBzY3J1YiByZWNoZWNr
+CmJ0cmZzIGNoZWNrIC0tc2NydWIgJGRldjEK
+
+--------------E582B608DD2AB6130F366BBF--

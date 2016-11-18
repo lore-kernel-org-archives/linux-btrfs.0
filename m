@@ -1,39 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from syrinx.knorrie.org ([82.94.188.77]:55884 "EHLO
-        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932332AbcKRQSH (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 Nov 2016 11:18:07 -0500
-Subject: Re: Btrfs Heatmap - v2 - block group internals!
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-References: <e69c35cc-d693-da18-5aba-e78ae42262cd@mendix.com>
- <7a297aaa-f273-fb15-8e97-8c781e25f06a@mendix.com>
- <fda30533-068c-69d8-064f-fbbec06a6d22@cn.fujitsu.com>
- <68eecdb7-90e4-a5ba-ca63-f714faf88ede@mendix.com>
- <c067cd99-31ba-9e33-6da6-1d55c1a8c8f5@gmail.com>
- <02310b0f-5fed-746a-ca05-d655dce7d57a@cn.fujitsu.com>
- <9945f788-2516-007b-43ce-dabcff263cd8@mendix.com>
- <64e34b7e-9d34-8697-0d1d-5b5b2c9a903d@gmail.com>
-From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Message-ID: <e29f274a-7b8b-c6c8-3ba8-20fe19759673@mendix.com>
-Date: Fri, 18 Nov 2016 17:18:03 +0100
+Received: from smtp-32.italiaonline.it ([212.48.25.160]:54225 "EHLO libero.it"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1752307AbcKRSPP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 18 Nov 2016 13:15:15 -0500
+Reply-To: kreijack@inwind.it
+From: Goffredo Baroncelli <kreijack@libero.it>
+Subject: RFC: raid with a variable stripe size
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: Zygo Blaxell <zblaxell@furryterror.org>
+Message-ID: <e6042e5a-d283-f66e-9d08-6028c9ba1946@libero.it>
+Date: Fri, 18 Nov 2016 19:15:12 +0100
 MIME-Version: 1.0
-In-Reply-To: <64e34b7e-9d34-8697-0d1d-5b5b2c9a903d@gmail.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/18/2016 04:30 PM, Austin S. Hemmelgarn wrote:
-> 
-> Now, I personally have no issue with the Hilbert ordering, but if there
-> were an option to use a linear ordering, I would almost certainly use
-> that instead, simply because I could more easily explain the data to
-> people.
+Hello,
 
-It's in there, but hidden :)
+these are only my thoughts; no code here, but I would like to share it hoping that it could be useful.
 
---curve linear
+As reported several times by Zygo (and others), one of the problem of raid5/6 is the write hole. Today BTRFS is not capable to address it.
+
+The problem is that the stripe size is bigger than the "sector size" (ok sector is not the correct word, but I am referring to the basic unit of writing on the disk, which is 4k or 16K in btrfs).
+So when btrfs writes less data than the stripe, the stripe is not filled; when it is filled by a subsequent write, a RMW of the parity is required.
+
+On the best of my understanding (which could be very wrong) ZFS try to solve this issue using a variable length stripe.
+
+On BTRFS this could be achieved using several BGs (== block group or chunk), one for each stripe size.
+
+For example, if a filesystem - RAID5 is composed by 4 DISK, the filesystem should have three BGs:
+BG #1,composed by two disks (1 data+ 1 parity)
+BG #2 composed by three disks (2 data + 1 parity)
+BG #3 composed by four disks (3 data + 1 parity).
+
+If the data to be written has a size of 4k, it will be allocated to the BG #1.
+If the data to be written has a size of 8k, it will be allocated to the BG #2
+If the data to be written has a size of 12k, it will be allocated to the BG #3
+If the data to be written has a size greater than 12k, it will be allocated to the BG3, until the data fills a full stripes; then the remainder will be stored in BG #1 or BG #2.
+
+
+To avoid unbalancing of the disk usage, each BG could use all the disks, even if a stripe uses less disks: i.e
+
+DISK1 DISK2 DISK3 DISK4
+S1    S1    S1    S2
+S2    S2    S3    S3
+S3    S4    S4    S4
+[....]
+
+Above is show a BG which uses all the four disks, but has a stripe which spans only 3 disks.
+
+
+Pro: 
+- btrfs already is capable to handle different BG in the filesystem, only the allocator has to change
+- no more RMW are required (== higher performance)
+
+Cons:
+- the data will be more fragmented
+- the filesystem, will have more BGs; this will require time-to time a re-balance. But is is an issue which we already know (even if may be not 100% addressed).
+
+
+Thoughts ?
+
+BR
+G.Baroncelli
+
+
 
 -- 
-Hans van Kranenburg
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

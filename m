@@ -1,83 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dnvrco-outbound-snat.email.rr.com ([107.14.73.230]:38292 "EHLO
-        dnvrco-oedge-vip.email.rr.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1750714AbcKQWIX (ORCPT
+Received: from mail-pf0-f173.google.com ([209.85.192.173]:35166 "EHLO
+        mail-pf0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753031AbcKRAIB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 Nov 2016 17:08:23 -0500
-Received: from localhost (localhost [127.0.0.1])
-        by smtp.aresgate.net (smtpd) with ESMTP id 91EF493CAD8
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Nov 2016 14:01:16 -0800 (PST)
-Received: from smtp.aresgate.net ([127.0.0.1])
-        by localhost (smtp.aresgate.net [127.0.0.1]) (amavisd-new, port 10024)
-        with LMTP id LAlOj-Z_PsKZ for <linux-btrfs@vger.kernel.org>;
-        Thu, 17 Nov 2016 14:01:15 -0800 (PST)
-Received: from gypsyops.denof.sin (cpe-76-172-86-115.socal.res.rr.com [76.172.86.115])
-        by smtp.aresgate.net (smtpd) with ESMTPSA id 6C53E93CAD0
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Nov 2016 14:01:15 -0800 (PST)
-Date: Thu, 17 Nov 2016 14:01:11 -0800
-From: Vladi Gergov <vladi@aresgate.net>
-To: linux-btrfs@vger.kernel.org
-Subject: btrfs raid1 degraded needs chunk root rebuild
-Message-ID: <20161117220111.GA13765@gypsyops.denof.sin>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+        Thu, 17 Nov 2016 19:08:01 -0500
+Received: by mail-pf0-f173.google.com with SMTP id i88so51150221pfk.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 17 Nov 2016 16:08:00 -0800 (PST)
+From: Omar Sandoval <osandov@osandov.com>
+To: linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org
+Cc: "Darrick J. Wong" <darrick.wong@oracle.com>,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        Christoph Hellwig <hch@infradead.org>, kernel-team@fb.com
+Subject: [RFC PATCH 0/2] Btrfs: make a source length of 0 imply EOF for dedupe
+Date: Thu, 17 Nov 2016 16:07:48 -0800
+Message-Id: <cover.1479427384.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Any ideas if currently I can still recover data from this volume? I have
-tried the new btrfs tools with btrfs rescue chunk-recover without much
-success. Any ideas if i can recover any of the data?
+From: Omar Sandoval <osandov@fb.com>
 
------ Forwarded message from Chris Mason <chris.mason@oracle.com> -----
+This is the follow-up to the discussions here [1] and here [2] that
+makes Btrfs treat a src_length of 0 to dedupe as "until EOF". The
+implementation is straightforward, but there are a few catches that
+convinced me to post this as an RFC:
 
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: btrfs raid1 degraded does not mount or fsck
-To: Vladi Gergov <vgergov@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Date: Tue, 16 Nov 2010 16:50:58 -0500
-User-Agent: Sup/git
+1. We still don't know for sure whether userspace cares about the
+   original Btrfs behavior. Darrick and I both seem to think not, but
+   hopefully someone will speak up if it matters to them.
+2. When doing the implicit EOF, XFS returns 0 for bytes_deduped. I
+   copied this in my implementation, but I'm guessing that's a bug
+   rather than a feature.
+3. Both XFS and Btrfs cap each dedupe operation to 16MB, but the
+   implicit EOF gets around this in the existing XFS implementation. I
+   copied this for the Btrfs implementation.
 
-Excerpts from Vladi Gergov's message of 2010-10-29 16:53:42 -0400:
-> >>> gypsyops @ /mnt > sudo mount -o degraded /dev/sdc das3/
-> Password:
-> mount: wrong fs type, bad option, bad superblock on /dev/sdc,
->        missing codepage or helper program, or other error
->        In some cases useful info is found in syslog - try
->        dmesg | tail  or so
->
-> [  684.577540] device label das4 devid 2 transid 107954 /dev/sdc
-> [  684.595150] btrfs: allowing degraded mounts
-> [  684.595594] btrfs: failed to read chunk root on sdb
-> [  684.604110] btrfs: open_ctree failed
->
-> >>> gypsyops @ /mnt > sudo btrfsck /dev/sdc
-> btrfsck: volumes.c:1367: btrfs_read_sys_array: Assertion `!(ret)' failed.
+So now we have 3 options:
 
-Ok, I dug through this and found the bug responsible for your
-unmountable FS.  When we're mounted in degraded mode, and we don't have
-enough drives available to do raid1,10, we're can use the wrong raid
-level for new allocations.
+a) Apply these patches as-is.
+b) Fix XFS to both return the actual bytes_deduped and cap the length
+   for the EOF case. Do the same for Btrfs.
+c) Make XFS consistent with the existing Btrfs behavior.
 
-I'm fixing the kernel side so this doesn't happen anymore, but I'll need
-to rebuild the chunk tree (and probably a few others) off your good disk to
-fix things.
+I'm starting to lean towards option c after writing this cover letter,
+but I might as well send these out and get a second opinion.
 
-I've got it reproduced here though, so I'll make an fsck that can scan
-for the correct trees and fix it for you.
+Thanks!
 
-Since you're basically going to be my first external fsck customer, is
-there anyway you can do a raw device based backup of the blocks?  This
-way if I do mess things up we can repeat the experiment.
+1: http://marc.info/?l=linux-btrfs&m=146828374631829&w=2
+2: http://marc.info/?l=linux-btrfs&m=147694962912532&w=2
 
--chris
+Omar Sandoval (2):
+  Btrfs: refactor btrfs_extent_same() slightly
+  Btrfs: make a source length of 0 imply EOF for dedupe
 
-!DSPAM:4ce2fd55191821234852255!
-
-
-
------ End forwarded message -----
+ fs/btrfs/ioctl.c | 45 ++++++++++++++++++++-------------------------
+ 1 file changed, 20 insertions(+), 25 deletions(-)
 
 -- 
+2.10.2
 
-,-| Vladi
-`-| Gergov

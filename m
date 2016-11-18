@@ -1,61 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:61191 "EHLO mout.gmx.net"
+Received: from mx2.suse.de ([195.135.220.15]:40873 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751139AbcKRGgm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 Nov 2016 01:36:42 -0500
-Subject: Re: [PATCH 2/3] btrfs-progs: test: expand size of test device of
- fsck-tests 013
-To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>, linux-btrfs@vger.kernel.org
+        id S1752057AbcKRSRs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 18 Nov 2016 13:17:48 -0500
+Date: Fri, 18 Nov 2016 19:17:44 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 3/3] btrfs-progs: test: fix convert-tests 004 failure
+Message-ID: <20161118181744.GD12522@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <201611180544.AA00017@WIN-5MHF4RKU941.jp.fujitsu.com>
- <201611180547.AA00018@WIN-5MHF4RKU941.jp.fujitsu.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <965496ad-0b2c-31af-2de5-e47bd3c7d586@gmx.com>
-Date: Fri, 18 Nov 2016 14:36:28 +0800
+ <201611180549.AA00019@WIN-5MHF4RKU941.jp.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <201611180547.AA00018@WIN-5MHF4RKU941.jp.fujitsu.com>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <201611180549.AA00019@WIN-5MHF4RKU941.jp.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 11/18/2016 01:47 PM, Tsutomu Itoh wrote:
-> In my test environment, size of /lib/modules/`uname -r`/* is
-> larger than 1GB, so test data can not copy to testdev.
-> Therefore we need expand the size of testdev.
-
-IMHO the correct fix is to enhance populate_fs() to fill the fs into a 
-given size, other than using the unreliable copy.
-
-Thanks,
-Qu
-
->
-> # make test-fsck
->     [TEST]   fsck-tests.sh
->     [TEST/fsck]   013-extent-tree-rebuild
-> failed: cp -aR /lib/modules/4.9.0-rc5/ /test/btrfs-progs/tests/mnt
-> test failed for case 013-extent-tree-rebuild
-> Makefile:272: recipe for target 'test-fsck' failed
-> make: *** [test-fsck] Error 1
+On Fri, Nov 18, 2016 at 02:49:51PM +0900, Tsutomu Itoh wrote:
+> convert-tests 004 failed because the argument to check_all_images
+> is not specified.
+> 
+> # make test-convert
+>     [TEST]   convert-tests.sh
+>     [TEST/conv]   004-ext2-backup-superblock-ranges
+> find: '': No such file or directory
 > #
->
+> 
 > Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 > ---
->  tests/fsck-tests/013-extent-tree-rebuild/test.sh | 2 +-
+>  tests/convert-tests/004-ext2-backup-superblock-ranges/test.sh | 2 +-
 >  1 file changed, 1 insertion(+), 1 deletion(-)
->
-> diff --git a/tests/fsck-tests/013-extent-tree-rebuild/test.sh b/tests/fsck-tests/013-extent-tree-rebuild/test.sh
-> index f678e29..92c5d04 100755
-> --- a/tests/fsck-tests/013-extent-tree-rebuild/test.sh
-> +++ b/tests/fsck-tests/013-extent-tree-rebuild/test.sh
-> @@ -7,7 +7,7 @@ check_prereq mkfs.btrfs
->  check_prereq btrfs
->
->  setup_root_helper
-> -prepare_test_dev 1G
-> +prepare_test_dev 2G
->
->  # test whether fsck can rebuild a corrupted extent tree
->  test_extent_tree_rebuild()
->
+> 
+> diff --git a/tests/convert-tests/004-ext2-backup-superblock-ranges/test.sh b/tests/convert-tests/004-ext2-backup-superblock-ranges/test.sh
+> index c56650b..d764ed8 100755
+> --- a/tests/convert-tests/004-ext2-backup-superblock-ranges/test.sh
+> +++ b/tests/convert-tests/004-ext2-backup-superblock-ranges/test.sh
+> @@ -39,4 +39,4 @@ function check_image() {
+>  	rm -f $TEST_DEV
+>  }
+>  
+> -check_all_images
+> +check_all_images `pwd`
+
+I'll add a fallback to use the current directory instead of forcing all
+callsites to supply it.

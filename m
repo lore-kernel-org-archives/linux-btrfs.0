@@ -1,58 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f52.google.com ([74.125.83.52]:34453 "EHLO
-        mail-pg0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753269AbcKPUym (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 Nov 2016 15:54:42 -0500
-Received: by mail-pg0-f52.google.com with SMTP id x23so80124536pgx.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Nov 2016 12:54:41 -0800 (PST)
-From: Omar Sandoval <osandov@osandov.com>
-To: linux-btrfs@vger.kernel.org
-Cc: kernel-team@fb.com
-Subject: [PATCH] btrfs-progs: check: fix missing newlines
-Date: Wed, 16 Nov 2016 12:54:32 -0800
-Message-Id: <93c639e51b05a52d8cab650f0c8eb3d5fd0ef5bc.1479328997.git.osandov@fb.com>
+Received: from mout.gmx.net ([212.227.15.15]:61191 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751139AbcKRGgm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 18 Nov 2016 01:36:42 -0500
+Subject: Re: [PATCH 2/3] btrfs-progs: test: expand size of test device of
+ fsck-tests 013
+To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>, linux-btrfs@vger.kernel.org
+References: <201611180544.AA00017@WIN-5MHF4RKU941.jp.fujitsu.com>
+ <201611180547.AA00018@WIN-5MHF4RKU941.jp.fujitsu.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <965496ad-0b2c-31af-2de5-e47bd3c7d586@gmx.com>
+Date: Fri, 18 Nov 2016 14:36:28 +0800
+MIME-Version: 1.0
+In-Reply-To: <201611180547.AA00018@WIN-5MHF4RKU941.jp.fujitsu.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Omar Sandoval <osandov@fb.com>
 
-Also, the other progress messages go to stderr, so "checking extents"
-probably should, as well.
 
-Fixes: c7a1f66a205f ("btrfs-progs: check: switch some messages to common helpers")
-Signed-off-by: Omar Sandoval <osandov@fb.com>
----
-As a side note, it seems almost completely random whether we print to
-stdout or stderr for any given message. That could probably use some
-cleaning up for consistency. A quick run of e2fsck indicated that it
-prints almost everything on stdout except for usage and administrative
-problems. xfs_repair just seems to put everything in stderr. I
-personally like the e2fsck approach. Anyone have any preference?
+On 11/18/2016 01:47 PM, Tsutomu Itoh wrote:
+> In my test environment, size of /lib/modules/`uname -r`/* is
+> larger than 1GB, so test data can not copy to testdev.
+> Therefore we need expand the size of testdev.
 
- cmds-check.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+IMHO the correct fix is to enhance populate_fs() to fill the fs into a 
+given size, other than using the unreliable copy.
 
-diff --git a/cmds-check.c b/cmds-check.c
-index 57c4300..3fb3bd7 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -11467,13 +11467,13 @@ int cmd_check(int argc, char **argv)
- 	}
- 
- 	if (!ctx.progress_enabled)
--		printf("checking extents");
-+		fprintf(stderr, "checking extents\n");
- 	if (check_mode == CHECK_MODE_LOWMEM)
- 		ret = check_chunks_and_extents_v2(root);
- 	else
- 		ret = check_chunks_and_extents(root);
- 	if (ret)
--		printf("Errors found in extent allocation tree or chunk allocation");
-+		error("errors found in extent allocation tree or chunk allocation");
- 
- 	ret = repair_root_items(info);
- 	if (ret < 0)
--- 
-2.10.2
+Thanks,
+Qu
 
+>
+> # make test-fsck
+>     [TEST]   fsck-tests.sh
+>     [TEST/fsck]   013-extent-tree-rebuild
+> failed: cp -aR /lib/modules/4.9.0-rc5/ /test/btrfs-progs/tests/mnt
+> test failed for case 013-extent-tree-rebuild
+> Makefile:272: recipe for target 'test-fsck' failed
+> make: *** [test-fsck] Error 1
+> #
+>
+> Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+> ---
+>  tests/fsck-tests/013-extent-tree-rebuild/test.sh | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+>
+> diff --git a/tests/fsck-tests/013-extent-tree-rebuild/test.sh b/tests/fsck-tests/013-extent-tree-rebuild/test.sh
+> index f678e29..92c5d04 100755
+> --- a/tests/fsck-tests/013-extent-tree-rebuild/test.sh
+> +++ b/tests/fsck-tests/013-extent-tree-rebuild/test.sh
+> @@ -7,7 +7,7 @@ check_prereq mkfs.btrfs
+>  check_prereq btrfs
+>
+>  setup_root_helper
+> -prepare_test_dev 1G
+> +prepare_test_dev 2G
+>
+>  # test whether fsck can rebuild a corrupted extent tree
+>  test_extent_tree_rebuild()
+>

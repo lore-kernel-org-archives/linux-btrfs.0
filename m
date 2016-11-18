@@ -1,108 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:56263 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751985AbcKRDWT (ORCPT
+Received: from bombadil.infradead.org ([198.137.202.9]:38587 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751058AbcKRFiy (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 Nov 2016 22:22:19 -0500
-Subject: Re: [RFC PATCH 1/2] Btrfs: refactor btrfs_extent_same() slightly
-To: Omar Sandoval <osandov@osandov.com>, <linux-btrfs@vger.kernel.org>,
-        <linux-xfs@vger.kernel.org>
+        Fri, 18 Nov 2016 00:38:54 -0500
+Date: Thu, 17 Nov 2016 21:38:53 -0800
+From: Christoph Hellwig <hch@infradead.org>
+To: Omar Sandoval <osandov@osandov.com>
+Cc: linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org,
+        "Darrick J. Wong" <darrick.wong@oracle.com>,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        Christoph Hellwig <hch@infradead.org>, kernel-team@fb.com
+Subject: Re: [RFC PATCH 0/2] Btrfs: make a source length of 0 imply EOF for
+ dedupe
+Message-ID: <20161118053853.GC31780@infradead.org>
 References: <cover.1479427384.git.osandov@fb.com>
- <35c668f0a23e0424569f812523c76a1828219f76.1479427384.git.osandov@fb.com>
-CC: "Darrick J. Wong" <darrick.wong@oracle.com>,
-        Christoph Hellwig <hch@infradead.org>, <kernel-team@fb.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <b9dd52b8-c43a-8e95-2e0d-914f6b12fe23@cn.fujitsu.com>
-Date: Fri, 18 Nov 2016 11:22:07 +0800
 MIME-Version: 1.0
-In-Reply-To: <35c668f0a23e0424569f812523c76a1828219f76.1479427384.git.osandov@fb.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <cover.1479427384.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Thu, Nov 17, 2016 at 04:07:48PM -0800, Omar Sandoval wrote:
+> So now we have 3 options:
+> 
+> a) Apply these patches as-is.
+> b) Fix XFS to both return the actual bytes_deduped and cap the length
+>    for the EOF case. Do the same for Btrfs.
+> c) Make XFS consistent with the existing Btrfs behavior.
+> 
+> I'm starting to lean towards option c after writing this cover letter,
+> but I might as well send these out and get a second opinion.
 
-
-At 11/18/2016 08:07 AM, Omar Sandoval wrote:
-> From: Omar Sandoval <osandov@fb.com>
->
-> This just makes the following patch cleaner.
-Looks good for me.
-
-It is just a good refactoring. Making code short and easier to read.
-
-And it doesn't affect the len = 0 behavior.
-So no matter what the choice we do, it can be applied independently.
-
-Reviewed-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-
-Thanks,
-Qu
->
-> Signed-off-by: Omar Sandoval <osandov@fb.com>
-> ---
->  fs/btrfs/ioctl.c | 33 ++++++++++++---------------------
->  1 file changed, 12 insertions(+), 21 deletions(-)
->
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 7acbd2c..e23f945 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -3124,26 +3124,27 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
->  	int ret;
->  	u64 len = olen;
->  	struct cmp_pages cmp;
-> -	int same_inode = 0;
-> +	bool same_inode = (src == dst);
->  	u64 same_lock_start = 0;
->  	u64 same_lock_len = 0;
->
-> -	if (src == dst)
-> -		same_inode = 1;
-> -
->  	if (len == 0)
->  		return 0;
->
-> -	if (same_inode) {
-> +	if (same_inode)
->  		inode_lock(src);
-> +	else
-> +		btrfs_double_inode_lock(src, dst);
->
-> -		ret = extent_same_check_offsets(src, loff, &len, olen);
-> -		if (ret)
-> -			goto out_unlock;
-> -		ret = extent_same_check_offsets(src, dst_loff, &len, olen);
-> -		if (ret)
-> -			goto out_unlock;
-> +	ret = extent_same_check_offsets(src, loff, &len, olen);
-> +	if (ret)
-> +		goto out_unlock;
->
-> +	ret = extent_same_check_offsets(dst, dst_loff, &len, olen);
-> +	if (ret)
-> +		goto out_unlock;
-> +
-> +	if (same_inode) {
->  		/*
->  		 * Single inode case wants the same checks, except we
->  		 * don't want our length pushed out past i_size as
-> @@ -3171,16 +3172,6 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
->
->  		same_lock_start = min_t(u64, loff, dst_loff);
->  		same_lock_len = max_t(u64, loff, dst_loff) + len - same_lock_start;
-> -	} else {
-> -		btrfs_double_inode_lock(src, dst);
-> -
-> -		ret = extent_same_check_offsets(src, loff, &len, olen);
-> -		if (ret)
-> -			goto out_unlock;
-> -
-> -		ret = extent_same_check_offsets(dst, dst_loff, &len, olen);
-> -		if (ret)
-> -			goto out_unlock;
->  	}
->
->  	/* don't make the dst file partly checksummed */
->
-
-
+I agree - btrfs was there first, and there is no fatal flaw in the ABI,
+so let's adjust XFS to it.

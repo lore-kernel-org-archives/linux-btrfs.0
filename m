@@ -1,86 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f65.google.com ([209.85.218.65]:33041 "EHLO
-        mail-oi0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753287AbcKRPat (ORCPT
+Received: from mail-it0-f67.google.com ([209.85.214.67]:33034 "EHLO
+        mail-it0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752168AbcKRPdk (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 Nov 2016 10:30:49 -0500
-Received: by mail-oi0-f65.google.com with SMTP id f201so7566053oib.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Nov 2016 07:30:49 -0800 (PST)
+        Fri, 18 Nov 2016 10:33:40 -0500
+Received: by mail-it0-f67.google.com with SMTP id c20so4980551itb.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 Nov 2016 07:33:40 -0800 (PST)
 Subject: Re: Btrfs Heatmap - v2 - block group internals!
 To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+        linux-btrfs@vger.kernel.org
 References: <e69c35cc-d693-da18-5aba-e78ae42262cd@mendix.com>
  <7a297aaa-f273-fb15-8e97-8c781e25f06a@mendix.com>
  <fda30533-068c-69d8-064f-fbbec06a6d22@cn.fujitsu.com>
  <68eecdb7-90e4-a5ba-ca63-f714faf88ede@mendix.com>
  <c067cd99-31ba-9e33-6da6-1d55c1a8c8f5@gmail.com>
- <02310b0f-5fed-746a-ca05-d655dce7d57a@cn.fujitsu.com>
- <9945f788-2516-007b-43ce-dabcff263cd8@mendix.com>
+ <0b5c943f-4f4b-3844-22d5-6e0f8dc5eb6e@mendix.com>
+ <eee07943-1bf6-fd87-abb2-23cf48ccab01@gmail.com>
+ <615cb35c-7700-abe2-edec-6c7041688ddc@mendix.com>
+Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <64e34b7e-9d34-8697-0d1d-5b5b2c9a903d@gmail.com>
-Date: Fri, 18 Nov 2016 10:30:45 -0500
+Message-ID: <cb0656ce-74cf-2bff-356c-eab26c36a824@gmail.com>
+Date: Fri, 18 Nov 2016 10:33:35 -0500
 MIME-Version: 1.0
-In-Reply-To: <9945f788-2516-007b-43ce-dabcff263cd8@mendix.com>
+In-Reply-To: <615cb35c-7700-abe2-edec-6c7041688ddc@mendix.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-11-18 10:08, Hans van Kranenburg wrote:
-> On 11/18/2016 03:08 AM, Qu Wenruo wrote:
->>>> When generating a picture of a file system with multiple devices,
->>>> boundaries between the separate devices are not visible now.
->>>>
->>>> If someone has a brilliant idea about how to do this without throwing
->>>> out actual usage data...
->>>>
->>> The first thought that comes to mind for me is to make each device be a
->>> different color, and otherwise obey the same intensity mapping
->>> correlating to how much data is there.  For example, if you've got a 3
->>> device FS, the parts of the image that correspond to device 1 would go
->>> from 0x000000 to 0xFF0000, the parts for device 2 could be 0x000000 to
->>> 0x00FF00, and the parts for device 3 could be 0x000000 to 0x0000FF. This
->>> is of course not perfect (you can't tell what device each segment of
->>> empty space corresponds to), but would probably cover most use cases.
->>> (for example, with such a scheme, you could look at an image and tell
->>> whether the data is relatively well distributed across all the devices
->>> or you might need to re-balance).
->>
->> What about linear output separated with lines(or just black)?
+On 2016-11-18 09:37, Hans van Kranenburg wrote:
+> Ha,
 >
-> Linear output does not produce useful images, except for really small
-> filesystems.
-However, it's how the human brain is hardwired to parse data like this 
-(two data points per item, one for value, one for ordering).  That's 
-part of the reason that all known writing systems use a linear 
-arrangement arrangement of symbols to store information (the other parts 
-have to do with things like storage efficiency and error detection (and 
-yes, I'm serious, those do play a part in the evolution of language and 
-writing)).
-
-As an example of why this is important, imagine showing someone who 
-understands the concept of data fragmentation (most people have little 
-to no issue understanding this concept) a heatmap of a filesystem with 
-no space fragmentation at all without explaining that it uses a a 
-Hilbert Curve 2d ordering.  Pretty much 100% of people who aren't 
-mathematicians or scientists will look at that and the first thought 
-that will come to their mind is almost certainly going to be along the 
-lines of 'holy crap that's fragmented really bad in this specific area'.
-
-This is the reason that pretty much nothing outside of scientific or 
-mathematical data uses a Hilbert curve based 2d ordering of data (and 
-even then, they almost never use it for final presentation of the data).
-
-Data presentation for something like this in a way that laypeople can 
-understand is hard, but it's also important.  Take a look at some of the 
-graphical tools for filesystem defragmentation.  The presentation 
-requirements there are pretty similar, and so is the data being 
-conveyed.  They all use a grid oriented linear presentation of 
-allocation data.  The difference is that they scale up the blocks so 
-that they're easily discernible by sight.  This allows them to represent 
-the data in a way that's trivial to explain (read this line-by-line), 
-unlike the Hilbert curve (the data follows a complex folded spiral 
-pattern which is fractal in nature).
-
-Now, I personally have no issue with the Hilbert ordering, but if there 
-were an option to use a linear ordering, I would almost certainly use 
-that instead, simply because I could more easily explain the data to people.
+> On 11/18/2016 01:36 PM, Austin S. Hemmelgarn wrote:
+>> On 2016-11-17 16:08, Hans van Kranenburg wrote:
+>>> On 11/17/2016 08:27 PM, Austin S. Hemmelgarn wrote:
+>>>> On 2016-11-17 13:51, Hans van Kranenburg wrote:
+>>> But, the fun with visualizations of data is that you learn whether they
+>>> just work(tm) or don't as soon as you see them. Mathematical or
+>>> algorithmic beauty is not always a good recipe for beauty as seen by the
+>>> human eye.
+>>>
+>>> So, let's gather a bunch of ideas which we can try out and then observe
+>>> the result.
+>>>
+>>> Before doing so, I'm going to restructure the code a bit more so I can
+>>> write another script in the same directory, just doing import heatmap
+>>> and calling a few functions in there to quickly try stuff, bypassing the
+>>> normal cli api.
+>>>
+>>> Also, the png writing handling is now done by some random png library
+>>> that I found, which requires me to build (or copy/resize) an entire
+>>> pixel grid in memory, explicitely listing all pixel values, which is a
+>>> bit of a memory hog for bigger pictures, so I want to see if something
+>>> can be done there also.
+>> I haven't had a chance to look at the code yet, but do you have an
+>> option to control how much data a pixel represents?  On a multi TB
+>> filesystem for example, you may not care about exact data, just an
+>> overall view of the data, in which case making each pixel represent a
+>> larger chunk of data (and thus reducing the resolution of the image)
+>> would almost certainly save some memory on big filesystems.
+>
+> --order, which defines the hilbert curve order.
+>
+> Example: for a 238GiB filesystem, when specifying --order 7, then 2**7 =
+> 128, so 128x128 = 16384 pixels, which means that a single one represents
+> ~16MiB
+>
+> when --size > --order, the image simply gets scaled up.
+>
+> When not specifying --order, a number gets chosen automatically with
+> which bytes per pixel is closest to 32MiB.
+>
+> When size is not specified, it's 10, or same as order if order is
+> greater than 10.
+>
+> Now this output should make sense:
+>
+> -# ./heatmap.py /mnt/238GiB
+> max_id 1 num_devices 1 fsid ed108358-c746-4e76-a071-3820d423a99d
+> nodesize 16384 sectorsize 4096 clone_alignment 4096
+> scope filesystem curve hilbert order 7 size 10 pngfile
+> fsid_ed10a358-c846-4e76-a071-3821d423a99d_at_1479473532.png
+> grid height 128 width 128 total_bytes 255057723392 bytes_per_pixel
+> 15567488.0 pixels 16384
+>
+> -# ./heatmap.py /mnt/40TiB
+> max_id 2 num_devices 2 fsid 9bc9947e-070f-4bbc-872e-49b2a39b3f7b
+> nodesize 16384 sectorsize 4096 clone_alignment 4096
+> scope filesystem curve hilbert order 10 size 10 pngfile
+> /home/beheer/heatmap/generated/fsid_9bd9947e-070f-4cbc-8e2e-49b3a39b8f7b_at_1479473950.png
+> grid height 1024 width 1024 total_bytes 46165378727936 bytes_per_pixel
+> 44026736.0 pixels 1048576
+>
+OK, here's another thought, is it possible to parse smaller chunks of 
+the image at a time, and then use some external tool (ImageMagick 
+maybe?) to stitch those together into the final image?  That might also 
+be useful for other reasons too (If you implement it so you can do 
+arbitrary ranges, you could use it to split separate devices into 
+independent images).

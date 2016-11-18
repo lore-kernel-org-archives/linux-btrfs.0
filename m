@@ -1,77 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f50.google.com ([74.125.83.50]:34838 "EHLO
-        mail-pg0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752352AbcKRTek (ORCPT
+Received: from mail-pg0-f47.google.com ([74.125.83.47]:33874 "EHLO
+        mail-pg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751971AbcKRTjx (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 Nov 2016 14:34:40 -0500
-Received: by mail-pg0-f50.google.com with SMTP id p66so105900913pga.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Nov 2016 11:34:39 -0800 (PST)
-Date: Fri, 18 Nov 2016 11:34:38 -0800
+        Fri, 18 Nov 2016 14:39:53 -0500
+Received: by mail-pg0-f47.google.com with SMTP id x23so103188587pgx.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 Nov 2016 11:39:52 -0800 (PST)
+Date: Fri, 18 Nov 2016 11:39:50 -0800
 From: Omar Sandoval <osandov@osandov.com>
 To: Christoph Hellwig <hch@lst.de>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 3/9] btrfs: don't access the bio directly in the raid5/6
- code
-Message-ID: <20161118193438.GC19038@vader.DHCP.thefacebook.com>
+Subject: Re: [PATCH 4/9] btrfs: don't access the bio directly in
+ btrfs_csum_one_bio
+Message-ID: <20161118193950.GD19038@vader.DHCP.thefacebook.com>
 References: <1479300736-9724-1-git-send-email-hch@lst.de>
- <1479300736-9724-4-git-send-email-hch@lst.de>
+ <1479300736-9724-5-git-send-email-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1479300736-9724-4-git-send-email-hch@lst.de>
+In-Reply-To: <1479300736-9724-5-git-send-email-hch@lst.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 16, 2016 at 01:52:10PM +0100, Christoph Hellwig wrote:
-> Just use bio_for_each_segment_all to iterate over all segments.
-
-The subject seems to be copied from patch 2 for this one. Otherwise,
+On Wed, Nov 16, 2016 at 01:52:11PM +0100, Christoph Hellwig wrote:
+> Use bio_for_each_segment_all to iterate over the segments instead.
+> This requires a bit of reshuffling so that we only lookup up the ordered
+> item once inside the bio_for_each_segment_all loop.
 
 Reviewed-by: Omar Sandoval <osandov@fb.com>
 
 > Signed-off-by: Christoph Hellwig <hch@lst.de>
 > ---
->  fs/btrfs/inode.c | 7 +++----
->  1 file changed, 3 insertions(+), 4 deletions(-)
+>  fs/btrfs/file-item.c | 21 ++++++++++-----------
+>  1 file changed, 10 insertions(+), 11 deletions(-)
 > 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 147df4c..3f09cb6 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -8394,7 +8394,7 @@ static int btrfs_submit_direct_hook(struct btrfs_dio_private *dip,
->  	struct btrfs_root *root = BTRFS_I(inode)->root;
->  	struct bio *bio;
->  	struct bio *orig_bio = dip->orig_bio;
-> -	struct bio_vec *bvec = orig_bio->bi_io_vec;
+> diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+> index d0d571c..fa8aa53 100644
+> --- a/fs/btrfs/file-item.c
+> +++ b/fs/btrfs/file-item.c
+> @@ -447,13 +447,12 @@ int btrfs_csum_one_bio(struct btrfs_root *root, struct inode *inode,
+>  		       struct bio *bio, u64 file_start, int contig)
+>  {
+>  	struct btrfs_ordered_sum *sums;
+> -	struct btrfs_ordered_extent *ordered;
+> +	struct btrfs_ordered_extent *ordered = NULL;
+>  	char *data;
+> -	struct bio_vec *bvec = bio->bi_io_vec;
+> -	int bio_index = 0;
 > +	struct bio_vec *bvec;
->  	u64 start_sector = orig_bio->bi_iter.bi_sector;
->  	u64 file_offset = dip->logical_offset;
->  	u64 submit_len = 0;
-> @@ -8403,7 +8403,7 @@ static int btrfs_submit_direct_hook(struct btrfs_dio_private *dip,
->  	int async_submit = 0;
+>  	int index;
 >  	int nr_sectors;
->  	int ret;
 > -	int i;
 > +	int i, j;
+>  	unsigned long total_bytes = 0;
+>  	unsigned long this_sum_bytes = 0;
+>  	u64 offset;
+> @@ -470,17 +469,20 @@ int btrfs_csum_one_bio(struct btrfs_root *root, struct inode *inode,
+>  	if (contig)
+>  		offset = file_start;
+>  	else
+> -		offset = page_offset(bvec->bv_page) + bvec->bv_offset;
+> +		offset = 0; /* shut up gcc */
 >  
->  	map_length = orig_bio->bi_iter.bi_size;
->  	ret = btrfs_map_block(root->fs_info, btrfs_op(orig_bio),
-> @@ -8433,7 +8433,7 @@ static int btrfs_submit_direct_hook(struct btrfs_dio_private *dip,
->  	btrfs_io_bio(bio)->logical = file_offset;
->  	atomic_inc(&dip->pending_bios);
+> -	ordered = btrfs_lookup_ordered_extent(inode, offset);
+> -	BUG_ON(!ordered); /* Logic error */
+>  	sums->bytenr = (u64)bio->bi_iter.bi_sector << 9;
+>  	index = 0;
 >  
-> -	while (bvec <= (orig_bio->bi_io_vec + orig_bio->bi_vcnt - 1)) {
-> +	bio_for_each_segment_all(bvec, orig_bio, j) {
->  		nr_sectors = BTRFS_BYTES_TO_BLKS(root->fs_info, bvec->bv_len);
->  		i = 0;
->  next_block:
-> @@ -8487,7 +8487,6 @@ static int btrfs_submit_direct_hook(struct btrfs_dio_private *dip,
->  				i++;
->  				goto next_block;
->  			}
-> -			bvec++;
+> -	while (bio_index < bio->bi_vcnt) {
+> +	bio_for_each_segment_all(bvec, bio, j) {
+>  		if (!contig)
+>  			offset = page_offset(bvec->bv_page) + bvec->bv_offset;
+>  
+> +		if (!ordered) {
+> +			ordered = btrfs_lookup_ordered_extent(inode, offset);
+> +			BUG_ON(!ordered); /* Logic error */
+> +		}
+> +
+>  		data = kmap_atomic(bvec->bv_page);
+>  
+>  		nr_sectors = BTRFS_BYTES_TO_BLKS(root->fs_info,
+> @@ -529,9 +531,6 @@ int btrfs_csum_one_bio(struct btrfs_root *root, struct inode *inode,
 >  		}
->  	}
 >  
+>  		kunmap_atomic(data);
+> -
+> -		bio_index++;
+> -		bvec++;
+>  	}
+>  	this_sum_bytes = 0;
+>  	btrfs_add_ordered_sum(inode, ordered, sums);
 > -- 
 > 2.1.4
 > 

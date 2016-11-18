@@ -1,138 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:37010 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:32834 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752818AbcKRKQf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 Nov 2016 05:16:35 -0500
-Received: from mail.kernel.org (localhost [127.0.0.1])
-        by mail.kernel.org (Postfix) with ESMTP id DC1F3200D6
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Nov 2016 10:16:32 +0000 (UTC)
-Received: from mail-it0-f50.google.com (mail-it0-f50.google.com [209.85.214.50])
-        (using TLSv1.2 with cipher AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 616EE2013D
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Nov 2016 10:16:27 +0000 (UTC)
-Received: by mail-it0-f50.google.com with SMTP id c20so19970093itb.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Nov 2016 02:16:27 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <1479461834-7883-1-git-send-email-fdmanana@kernel.org>
-References: <1479461834-7883-1-git-send-email-fdmanana@kernel.org>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Fri, 18 Nov 2016 10:16:26 +0000
-Message-ID: <CAL3q7H5wnGc29MLheA0q2Uh7XZ_OmjXwfuOgJfEwLnJ8o78gXA@mail.gmail.com>
-Subject: Re: [PATCH 1/3] Btrfs: remove balance warning that does not reflect a problem
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Cc: Josef Bacik <jbacik@fb.com>, Filipe Manana <fdmanana@suse.com>
-Content-Type: text/plain; charset=UTF-8
+        id S1752037AbcKRJhW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 18 Nov 2016 04:37:22 -0500
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Cc: jbacik@fb.com, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH 1/3] Btrfs: remove balance warning that does not reflect a problem
+Date: Fri, 18 Nov 2016 09:37:14 +0000
+Message-Id: <1479461834-7883-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Nov 18, 2016 at 9:37 AM,  <fdmanana@kernel.org> wrote:
-> From: Filipe Manana <fdmanana@suse.com>
->
-> On openSUSE/SLE systems where balance is triggered periodically in the
-> background, snapshotting happens when doing package installations and
-> upgrades, and (by default) the root system is organized with multiple
-> subvolumes, the following warning was triggered often:
->
-> [  630.773059] WARNING: CPU: 1 PID: 2549 at fs/btrfs/relocation.c:1848 replace_path+0x3f0/0x940 [btrfs]
-> [  630.773060] Modules linked in: af_packet iscsi_ibft iscsi_boot_sysfs xfs libcrc32c acpi_cpufreq tpm_tis ppdev tpm parport_pc parport pcspkr e1000
-> qemu_fw_cfg joydev i2c_piix4 button btrfs xor raid6_pq sr_mod cdrom ata_generic virtio_scsi bochs_drm drm_kms_helper syscopyarea sysfillrect sysimgblt
-> fb_sys_fops ttm ata_piix virtio_pci virtio_ring virtio serio_raw floppy drm sg
-> [  630.773070] CPU: 1 PID: 2549 Comm: btrfs Tainted: G        W       4.7.7-2-btrfs+ #2
-> [  630.773071] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.9.1-0-gb3ef39f-prebuilt.qemu-project.org 04/01/2014
-> [  630.773072]  0000000000000000 ffff8801f704b8c8 ffffffff813afd12 0000000000000000
-> [  630.773073]  0000000000000000 ffff8801f704b908 ffffffff81081f8b 0000073800000000
-> [  630.773075]  0000000000000001 ffff8801e32eb8c0 0000160000000000 ffff880000000000
-> [  630.773076] Call Trace:
-> [  630.773078]  [<ffffffff813afd12>] dump_stack+0x63/0x81
-> [  630.773079]  [<ffffffff81081f8b>] __warn+0xcb/0xf0
-> [  630.773080]  [<ffffffff8108207d>] warn_slowpath_null+0x1d/0x20
-> [  630.773090]  [<ffffffffc01f3310>] replace_path+0x3f0/0x940 [btrfs]
-> [  630.773092]  [<ffffffff8114bd1e>] ? ring_buffer_unlock_commit+0x3e/0x2a0
-> [  630.773102]  [<ffffffffc01f8ac4>] merge_reloc_root+0x2b4/0x600 [btrfs]
-> [  630.773111]  [<ffffffffc01f8f50>] merge_reloc_roots+0x140/0x250 [btrfs]
-> [  630.773120]  [<ffffffffc01f9377>] relocate_block_group+0x317/0x680 [btrfs]
-> [  630.773129]  [<ffffffffc01f98ac>] btrfs_relocate_block_group+0x1cc/0x2d0 [btrfs]
-> [  630.773139]  [<ffffffffc01ce406>] btrfs_relocate_chunk.isra.40+0x56/0xf0 [btrfs]
-> [  630.773149]  [<ffffffffc01cfaa5>] __btrfs_balance+0x8d5/0xbb0 [btrfs]
-> [  630.773159]  [<ffffffffc01d0050>] btrfs_balance+0x2d0/0x5e0 [btrfs]
-> [  630.773168]  [<ffffffffc01dbaa3>] btrfs_ioctl_balance+0x383/0x390 [btrfs]
-> [  630.773178]  [<ffffffffc01df3ef>] btrfs_ioctl+0x90f/0x1fb0 [btrfs]
-> [  630.773180]  [<ffffffff8106ed03>] ? pte_alloc_one+0x33/0x40
-> [  630.773182]  [<ffffffff812333d3>] do_vfs_ioctl+0x93/0x5a0
-> [  630.773183]  [<ffffffff81069803>] ? __do_page_fault+0x203/0x4e0
-> [  630.773185]  [<ffffffff81233959>] SyS_ioctl+0x79/0x90
-> [  630.773186]  [<ffffffff816f2ab6>] entry_SYSCALL_64_fastpath+0x1e/0xa8
-> [  630.773187] ---[ end trace 2cd6167577bf3be7 ]---
->
-> It turned out that this warning does not reflect any problem and just
-> makes users/system administrators worry about something going wrong.
-> The warning happens because when we create a relocation root (which is
-> just a snapshot of a subvolume tree) we set its last_snapshot field (as
-> well as for the subvolume's tree root) to a value corresponding to the
-> generation of the current transaction minus 1 (we do this at
-> relocation.c:create_reloc_root()). This means that when we merge the
-> relocation tree with the corresponding subvolume tree, at
-> walk_down_reloc_tree() we can catch pointers (bytenr/generation pairs)
-> with a generation that matches the generation of the transaction where
-> we created the relocation root, so those pointers correspond to tree
-> blocks created either before or after the relocation root was created.
-> If they were created before the relocation root (and in the same
-> transaction) we hit the warning, which we can safely remove because it
-> means the tree blocks are accessible from both trees (the subvolume
-> tree and the relocation tree).
->
-> So fix this by removing the warning and adding a couple assertions that
-> verify the pointer generations match and that their generation matches
-> the value of the last_snapshot field from the relocation tree plus 1.
->
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+From: Filipe Manana <fdmanana@suse.com>
 
+On openSUSE/SLE systems where balance is triggered periodically in the
+background, snapshotting happens when doing package installations and
+upgrades, and (by default) the root system is organized with multiple
+subvolumes, the following warning was triggered often:
 
-Ignore this patch in the series, since the second patch makes this one
-unnecessary.
-thanks
+[  630.773059] WARNING: CPU: 1 PID: 2549 at fs/btrfs/relocation.c:1848 replace_path+0x3f0/0x940 [btrfs]
+[  630.773060] Modules linked in: af_packet iscsi_ibft iscsi_boot_sysfs xfs libcrc32c acpi_cpufreq tpm_tis ppdev tpm parport_pc parport pcspkr e1000
+qemu_fw_cfg joydev i2c_piix4 button btrfs xor raid6_pq sr_mod cdrom ata_generic virtio_scsi bochs_drm drm_kms_helper syscopyarea sysfillrect sysimgblt
+fb_sys_fops ttm ata_piix virtio_pci virtio_ring virtio serio_raw floppy drm sg
+[  630.773070] CPU: 1 PID: 2549 Comm: btrfs Tainted: G        W       4.7.7-2-btrfs+ #2
+[  630.773071] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.9.1-0-gb3ef39f-prebuilt.qemu-project.org 04/01/2014
+[  630.773072]  0000000000000000 ffff8801f704b8c8 ffffffff813afd12 0000000000000000
+[  630.773073]  0000000000000000 ffff8801f704b908 ffffffff81081f8b 0000073800000000
+[  630.773075]  0000000000000001 ffff8801e32eb8c0 0000160000000000 ffff880000000000
+[  630.773076] Call Trace:
+[  630.773078]  [<ffffffff813afd12>] dump_stack+0x63/0x81
+[  630.773079]  [<ffffffff81081f8b>] __warn+0xcb/0xf0
+[  630.773080]  [<ffffffff8108207d>] warn_slowpath_null+0x1d/0x20
+[  630.773090]  [<ffffffffc01f3310>] replace_path+0x3f0/0x940 [btrfs]
+[  630.773092]  [<ffffffff8114bd1e>] ? ring_buffer_unlock_commit+0x3e/0x2a0
+[  630.773102]  [<ffffffffc01f8ac4>] merge_reloc_root+0x2b4/0x600 [btrfs]
+[  630.773111]  [<ffffffffc01f8f50>] merge_reloc_roots+0x140/0x250 [btrfs]
+[  630.773120]  [<ffffffffc01f9377>] relocate_block_group+0x317/0x680 [btrfs]
+[  630.773129]  [<ffffffffc01f98ac>] btrfs_relocate_block_group+0x1cc/0x2d0 [btrfs]
+[  630.773139]  [<ffffffffc01ce406>] btrfs_relocate_chunk.isra.40+0x56/0xf0 [btrfs]
+[  630.773149]  [<ffffffffc01cfaa5>] __btrfs_balance+0x8d5/0xbb0 [btrfs]
+[  630.773159]  [<ffffffffc01d0050>] btrfs_balance+0x2d0/0x5e0 [btrfs]
+[  630.773168]  [<ffffffffc01dbaa3>] btrfs_ioctl_balance+0x383/0x390 [btrfs]
+[  630.773178]  [<ffffffffc01df3ef>] btrfs_ioctl+0x90f/0x1fb0 [btrfs]
+[  630.773180]  [<ffffffff8106ed03>] ? pte_alloc_one+0x33/0x40
+[  630.773182]  [<ffffffff812333d3>] do_vfs_ioctl+0x93/0x5a0
+[  630.773183]  [<ffffffff81069803>] ? __do_page_fault+0x203/0x4e0
+[  630.773185]  [<ffffffff81233959>] SyS_ioctl+0x79/0x90
+[  630.773186]  [<ffffffff816f2ab6>] entry_SYSCALL_64_fastpath+0x1e/0xa8
+[  630.773187] ---[ end trace 2cd6167577bf3be7 ]---
 
-> ---
->  fs/btrfs/relocation.c | 21 ++++++++++++++++++++-
->  1 file changed, 20 insertions(+), 1 deletion(-)
->
-> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-> index 0ec8ffa..cdc1a1c 100644
-> --- a/fs/btrfs/relocation.c
-> +++ b/fs/btrfs/relocation.c
-> @@ -1848,7 +1848,26 @@ again:
->                         new_ptr_gen = 0;
->                 }
->
-> -               if (WARN_ON(new_bytenr > 0 && new_bytenr == old_bytenr)) {
-> +               /*
-> +                * When we create the reloc root (which is a snapshot of the
-> +                * subvolume tree) we set its last_snapshot field (as well as
-> +                * for the subvolume's tree root) to the value of the current
-> +                * transaction generation minus 1 (at create_reloc_root()).
-> +                * This means that at walk_down_reloc_tree() we can catch
-> +                * pointers (bytenr/generation pairs) with a generation
-> +                * matching the generation of the transaction where we created
-> +                * the reloc root, so those pointers correspond to tree blocks
-> +                * that were either created before or after the reloc root was
-> +                * created. If walk_down_reloc_tree() gave us a path that points
-> +                * to a tree block that was created (or COWed) before the reloc
-> +                * root was created and in the same transaction where the reloc
-> +                * root was created, we have nothing to do and can safely return
-> +                * (the tree block is already in both trees).
-> +                */
-> +               if (new_bytenr > 0 && new_bytenr == old_bytenr) {
-> +                       ASSERT(new_ptr_gen == old_ptr_gen);
-> +                       ASSERT(new_ptr_gen ==
-> +                              btrfs_root_last_snapshot(&src->root_item) + 1);
->                         ret = level;
->                         break;
->                 }
-> --
-> 2.7.0.rc3
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+It turned out that this warning does not reflect any problem and just
+makes users/system administrators worry about something going wrong.
+The warning happens because when we create a relocation root (which is
+just a snapshot of a subvolume tree) we set its last_snapshot field (as
+well as for the subvolume's tree root) to a value corresponding to the
+generation of the current transaction minus 1 (we do this at
+relocation.c:create_reloc_root()). This means that when we merge the
+relocation tree with the corresponding subvolume tree, at
+walk_down_reloc_tree() we can catch pointers (bytenr/generation pairs)
+with a generation that matches the generation of the transaction where
+we created the relocation root, so those pointers correspond to tree
+blocks created either before or after the relocation root was created.
+If they were created before the relocation root (and in the same
+transaction) we hit the warning, which we can safely remove because it
+means the tree blocks are accessible from both trees (the subvolume
+tree and the relocation tree).
+
+So fix this by removing the warning and adding a couple assertions that
+verify the pointer generations match and that their generation matches
+the value of the last_snapshot field from the relocation tree plus 1.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/relocation.c | 21 ++++++++++++++++++++-
+ 1 file changed, 20 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 0ec8ffa..cdc1a1c 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -1848,7 +1848,26 @@ again:
+ 			new_ptr_gen = 0;
+ 		}
+ 
+-		if (WARN_ON(new_bytenr > 0 && new_bytenr == old_bytenr)) {
++		/*
++		 * When we create the reloc root (which is a snapshot of the
++		 * subvolume tree) we set its last_snapshot field (as well as
++		 * for the subvolume's tree root) to the value of the current
++		 * transaction generation minus 1 (at create_reloc_root()).
++		 * This means that at walk_down_reloc_tree() we can catch
++		 * pointers (bytenr/generation pairs) with a generation
++		 * matching the generation of the transaction where we created
++		 * the reloc root, so those pointers correspond to tree blocks
++		 * that were either created before or after the reloc root was
++		 * created. If walk_down_reloc_tree() gave us a path that points
++		 * to a tree block that was created (or COWed) before the reloc
++		 * root was created and in the same transaction where the reloc
++		 * root was created, we have nothing to do and can safely return
++		 * (the tree block is already in both trees).
++		 */
++		if (new_bytenr > 0 && new_bytenr == old_bytenr) {
++			ASSERT(new_ptr_gen == old_ptr_gen);
++			ASSERT(new_ptr_gen ==
++			       btrfs_root_last_snapshot(&src->root_item) + 1);
+ 			ret = level;
+ 			break;
+ 		}
+-- 
+2.7.0.rc3
+

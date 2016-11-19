@@ -1,131 +1,158 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f182.google.com ([209.85.161.182]:34058 "EHLO
-        mail-yw0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752366AbcKRViq (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 Nov 2016 16:38:46 -0500
-Received: by mail-yw0-f182.google.com with SMTP id t125so171786313ywc.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Nov 2016 13:38:46 -0800 (PST)
+Received: from mout.gmx.net ([212.227.17.22]:55466 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752675AbcKSA5s (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 18 Nov 2016 19:57:48 -0500
+Subject: Re: Btrfs Heatmap - v2 - block group internals!
+To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        linux-btrfs@vger.kernel.org
+References: <e69c35cc-d693-da18-5aba-e78ae42262cd@mendix.com>
+ <7a297aaa-f273-fb15-8e97-8c781e25f06a@mendix.com>
+ <fda30533-068c-69d8-064f-fbbec06a6d22@cn.fujitsu.com>
+ <68eecdb7-90e4-a5ba-ca63-f714faf88ede@mendix.com>
+ <c067cd99-31ba-9e33-6da6-1d55c1a8c8f5@gmail.com>
+ <02310b0f-5fed-746a-ca05-d655dce7d57a@cn.fujitsu.com>
+ <9945f788-2516-007b-43ce-dabcff263cd8@mendix.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <b2e58da2-7f47-8827-3179-31ff50c9b6b9@gmx.com>
+Date: Sat, 19 Nov 2016 08:57:26 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAGqmi75BR8=dXGUcMHnj15H5i8dEH=d-y2vMHoAnGwMksHfj-Q@mail.gmail.com>
-References: <e6042e5a-d283-f66e-9d08-6028c9ba1946@libero.it>
- <CANznX5EvKzySaFrRFOULTkUqGGMRhKAQZEphMD9Kww_iOkN25A@mail.gmail.com> <CAGqmi75BR8=dXGUcMHnj15H5i8dEH=d-y2vMHoAnGwMksHfj-Q@mail.gmail.com>
-From: "Janos Toth F." <toth.f.janos@gmail.com>
-Date: Fri, 18 Nov 2016 22:38:30 +0100
-Message-ID: <CANznX5G3vtdLzhR+2zUFg9_OMKn3wpHNQtUS6PK4MHju+d1fqw@mail.gmail.com>
-Subject: Re: RFC: raid with a variable stripe size
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
-To: unlisted-recipients:; (no To-header on input)
+In-Reply-To: <9945f788-2516-007b-43ce-dabcff263cd8@mendix.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Yes, I don't think one could find any NAND based SSDs with <4k page
-size on the market right now (even =4k is hard to get) and 4k is
-becoming the new norm for HDDs. However, some HDD manufacturers
-continue to offer drives with 512 byte sectors (I think it's possible
-to get new ones in sizable quantities if you need them).
 
-I am aware it wouldn't solve the problem for >=4k sector devices
-unless you are ready to balance frequently. But I think it would still
-be a lot better to waste padding space on 4k stripes than, say, 64k
-stripes until you can balance the new block groups. And, if the space
-waste ratio is tolerable, then this could be an automatic background
-task as soon as an individual block group or their totals get to a
-high waste ratio.
 
-I suggest this as a quick temporal workaround because it could be
-cheap in terms of work if the above mentioned functionalities (stripe
-size change, auto-balance) would be worked on anyway (regardless of
-RAID-5/6 specific issues) until some better solution is realized
-(probably through a lot more work over a lot longer development
-period). RAID-5 isn't really optimal for a huge amount of disks (URE
-during rebuild issue...), so the temporary space waste is probably
-<=8x per unbalanced block groups (which are 1Gb or may be ~10Gb if I
-am not mistaken, so usually <<8x of the whole available space). But
-may be my guesstimates are wrong here.
-
-On Fri, Nov 18, 2016 at 9:51 PM, Timofey Titovets <nefelim4ag@gmail.com> wrote:
-> 2016-11-18 23:32 GMT+03:00 Janos Toth F. <toth.f.janos@gmail.com>:
->> Based on the comments of this patch, stripe size could theoretically
->> go as low as 512 byte:
->> https://mail-archive.com/linux-btrfs@vger.kernel.org/msg56011.html
->> If these very small (0.5k-2k) stripe sizes could really work (it's
->> possible to implement such changes and it does not degrade performance
->> too much - or at all - to keep it so low), we could use RAID-5(/6) on
->> <=9(/10) disks with 512 byte physical sectors (assuming 4k filesystem
->> sector size + 4k node size, although I am not sure if node size is
->> really important here) without having to worry about RMW, extra space
->> waste or additional fragmentation.
+On 11/18/2016 11:08 PM, Hans van Kranenburg wrote:
+> On 11/18/2016 03:08 AM, Qu Wenruo wrote:
 >>
->> On Fri, Nov 18, 2016 at 7:15 PM, Goffredo Baroncelli <kreijack@libero.it> wrote:
->>> Hello,
->>>
->>> these are only my thoughts; no code here, but I would like to share it hoping that it could be useful.
->>>
->>> As reported several times by Zygo (and others), one of the problem of raid5/6 is the write hole. Today BTRFS is not capable to address it.
->>>
->>> The problem is that the stripe size is bigger than the "sector size" (ok sector is not the correct word, but I am referring to the basic unit of writing on the disk, which is 4k or 16K in btrfs).
->>> So when btrfs writes less data than the stripe, the stripe is not filled; when it is filled by a subsequent write, a RMW of the parity is required.
->>>
->>> On the best of my understanding (which could be very wrong) ZFS try to solve this issue using a variable length stripe.
->>>
->>> On BTRFS this could be achieved using several BGs (== block group or chunk), one for each stripe size.
->>>
->>> For example, if a filesystem - RAID5 is composed by 4 DISK, the filesystem should have three BGs:
->>> BG #1,composed by two disks (1 data+ 1 parity)
->>> BG #2 composed by three disks (2 data + 1 parity)
->>> BG #3 composed by four disks (3 data + 1 parity).
->>>
->>> If the data to be written has a size of 4k, it will be allocated to the BG #1.
->>> If the data to be written has a size of 8k, it will be allocated to the BG #2
->>> If the data to be written has a size of 12k, it will be allocated to the BG #3
->>> If the data to be written has a size greater than 12k, it will be allocated to the BG3, until the data fills a full stripes; then the remainder will be stored in BG #1 or BG #2.
->>>
->>>
->>> To avoid unbalancing of the disk usage, each BG could use all the disks, even if a stripe uses less disks: i.e
->>>
->>> DISK1 DISK2 DISK3 DISK4
->>> S1    S1    S1    S2
->>> S2    S2    S3    S3
->>> S3    S4    S4    S4
->>> [....]
->>>
->>> Above is show a BG which uses all the four disks, but has a stripe which spans only 3 disks.
->>>
->>>
->>> Pro:
->>> - btrfs already is capable to handle different BG in the filesystem, only the allocator has to change
->>> - no more RMW are required (== higher performance)
->>>
->>> Cons:
->>> - the data will be more fragmented
->>> - the filesystem, will have more BGs; this will require time-to time a re-balance. But is is an issue which we already know (even if may be not 100% addressed).
->>>
->>>
->>> Thoughts ?
->>>
->>> BR
->>> G.Baroncelli
->>>
->>>
->>>
->>> --
->>> gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
->>> Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>> Just found one small problem.
+>> After specifying --size 16 to output a given block group (small block
+>> group, I need large size to make output visible), it takes a full cpu
+>> and takes a long long long time to run.
+>> So long I don't even want to wait.
+>>
+>> I changed size to 10, and it finished much faster.
+>>
+>> Is that expected?
 >
-> AFAIK all drives at now use 4k physical sector size, and use 512b only logically
-> So it's create another RWM Read 4k -> Modify 512b -> Write 4k, instead
-> of just write 512b.
+> Yes, hilbert curve size increases exponentially when increasing order.
 >
-> --
-> Have a nice day,
-> Timofey.
+> 2**16 = 65536, 65536x65536 = 4294967296 pixels in the png image.
+>
+> So even if you would have a petabyte filesystem, that would still mean
+> that a single pixel in the image represents only ~ 256kB. I don't think
+> your small block groups are 256kB big?
+>
+> Specifying values like this does not make any sense at all, and it
+> expected not to work well.
+>
+>>>> I don't see what displaying a blockgroup-level aggregate usage number
+>>>> has to do with multi-device, except that the same %usage will appear
+>>>> another time when using RAID1*.
+>>
+>> Although in fact, for profiles like RAID0/5/6/10, it's completely
+>> possible that one dev_extent contains all the data, while another
+>> dev_extent is almost empty.
+>
+> When using something like RAID0 profile, I would expect 50% of the data
+> to end up in one dev_extent and 50% in the other?
+
+First I'm mostly OK with current grayscale.
+What I'm saying can be considered as nitpicking.
+
+The only concern is, the for full fs output, we are in fact output 
+dev_extents of each device.
+
+In that case, we should output info at the same level of dev_extent.
+
+So if we really need to provide *accurate* gray scale, then we should 
+base on the %usage of a dev extent.
+
+
+And for 50%/50% assumption for RAID0, it's not true and we can easily 
+create a case where it's 100%/0%
+
+The method is as simple as the following script (Assume the data BG is 
+1G, and first write will be allcated to offset 0 of the BG)
+
+# Fill 1G BG with 64K files
+for i in $(seq -w 0 16383); do
+     xfs_io -f -c "pwrite 0 64k" $mnt/file_$i
+
+     # Sync fs to ensure extent allocation happens
+     sync
+done
+
+# Remove every each file, to create holes
+for i in $(seq -w 0 2 16383); do
+     rm $mnt/file_$i
+done
+btrfs fi sync $mnt
+
+Then, only the 2nd data stripe has data, while the 1st data stripe are free.
+
+
+Things will become more complicated when RAID5/6 is involved.
+>
+>> Strictly speaking, at full fs or dev level, we should output things at
+>> dev_extent level, then greyscale should be representing dev_extent
+>> usage(which is not possible or quite hard to calculate)
+>
+> That's what it's doing now?
+>
+>> Anyway, the greyscale is mostly OK, just as a good addition output for
+>> full fs graph.
+>
+> I don't follow.
+>
+>> Although if it could output the fs or specific dev without gray scale, I
+>> think it would be better.
+>> It will be much clearer about the dev_extent level fragments.
+>
+> I have no idea what you mean, sorry.
+
+The point is, for full fs or per-device output, a developer may focus on 
+the fragments of unallocated space in each device.
+
+In that case, an almost empty bg will be much like unallocated space.
+
+So I hope if there is any option to disable greyscale at full fs output, 
+it would be much better.
+
+Just like the blockgroup output, only black and while, and the example 
+in the github is really awesome!
+
+It shows a lot of thing I didn't have a clear view before.
+Like batched metadata extents (mostly for csum tree) and fragmented 
+metadata for other trees.
+
+Thanks,
+Qu
+>
+>>>> When generating a picture of a file system with multiple devices,
+>>>> boundaries between the separate devices are not visible now.
+>>>>
+>>>> If someone has a brilliant idea about how to do this without throwing
+>>>> out actual usage data...
+>>>>
+>>> The first thought that comes to mind for me is to make each device be a
+>>> different color, and otherwise obey the same intensity mapping
+>>> correlating to how much data is there.  For example, if you've got a 3
+>>> device FS, the parts of the image that correspond to device 1 would go
+>>> from 0x000000 to 0xFF0000, the parts for device 2 could be 0x000000 to
+>>> 0x00FF00, and the parts for device 3 could be 0x000000 to 0x0000FF. This
+>>> is of course not perfect (you can't tell what device each segment of
+>>> empty space corresponds to), but would probably cover most use cases.
+>>> (for example, with such a scheme, you could look at an image and tell
+>>> whether the data is relatively well distributed across all the devices
+>>> or you might need to re-balance).
+>>
+>> What about linear output separated with lines(or just black)?
+>
+> Linear output does not produce useful images, except for really small
+> filesystems.
+>

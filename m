@@ -1,92 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-32.italiaonline.it ([212.48.25.160]:60060 "EHLO libero.it"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1750958AbcKSJNm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 19 Nov 2016 04:13:42 -0500
-Reply-To: kreijack@inwind.it
-Subject: Re: RFC: raid with a variable stripe size
-References: <e6042e5a-d283-f66e-9d08-6028c9ba1946@libero.it>
- <20161119082252.GU21290@hungrycats.org>
-To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Message-ID: <80bfba90-2aab-16f7-83e6-00cc3f2b96b4@inwind.it>
-Date: Sat, 19 Nov 2016 10:13:39 +0100
+Received: from mail-yb0-f193.google.com ([209.85.213.193]:34024 "EHLO
+        mail-yb0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752920AbcKSU1u (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 19 Nov 2016 15:27:50 -0500
+Received: by mail-yb0-f193.google.com with SMTP id h184so10437606ybb.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 19 Nov 2016 12:27:50 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20161119082252.GU21290@hungrycats.org>
-Content-Type: text/plain; charset=windows-1252
+In-Reply-To: <5be14cba-943b-a622-b9af-394b76f2e650@gmail.com>
+References: <18970348.FUMEOFOSb3@merkaba> <1672818.LEbdb7TNyD@merkaba>
+ <5a0c51bd-4245-92e2-566b-cc3dbcc26a84@gmail.com> <2758726.eYgiA1VjUp@merkaba>
+ <CAJCQCtQnSYRMUWb3V3Qn+chb2o18F5dgoy2mxPw8vqnohrErjQ@mail.gmail.com> <5be14cba-943b-a622-b9af-394b76f2e650@gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Sat, 19 Nov 2016 12:27:49 -0800
+Message-ID: <CAJCQCtTWmOGt5izW5rBJ7u7C7Rgx3c=wgc3D+1ypqVWYj07fNw@mail.gmail.com>
+Subject: Re: degraded BTRFS RAID 1 not mountable: open_ctree failed, unable to
+ find block group for 0
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Martin Steigerwald <martin@lichtvoll.de>,
+        Martin Steigerwald <martin.steigerwald@teamix.de>,
+        Roman Mamedov <rm@romanrm.net>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-11-19 09:22, Zygo Blaxell wrote:
-[...]
->> If the data to be written has a size of 4k, it will be allocated to
->> the BG #1.  If the data to be written has a size of 8k, it will be
->> allocated to the BG #2 If the data to be written has a size of 12k,
->> it will be allocated to the BG #3 If the data to be written has a size
->> greater than 12k, it will be allocated to the BG3, until the data fills
->> a full stripes; then the remainder will be stored in BG #1 or BG #2.
-> 
-> OK I think I'm beginning to understand this idea better.  Short writes
-> degenerate to RAID1, and large writes behave more like RAID5.  No disk
-> format change is required because newer kernels would just allocate
-> block groups and distribute data differently.
-> 
-> That might be OK on SSD, but on spinning rust (where you're most likely
-> to find a RAID5 array) it'd be really seeky.  It'd also make 'df' output
-> even less predictive of actual data capacity.
-> 
-> Going back to the earlier example (but on 5 disks) we now have:
-> 
-> 	block groups with 5 disks:
-> 	D1 D2 D3 D4 P1
-> 	F1 F2 F3 P2 F4
-> 	F5 F6 P3 F7 F8
-> 
-> 	block groups with 4 disks:
-> 	E1 E2 E3 P4
-> 	D5 D6 P5 D7
-> 
-> 	block groups with 3 disks:
-> 	(none)
-> 
-> 	block groups with 2 disks:
-> 	F9 P6
-> 
-> Now every parity block contains data from only one transaction, but 
-> extents D and F are separated by up to 4GB of disk space.
-> 
-[....]
+On Thu, Nov 17, 2016 at 12:20 PM, Austin S. Hemmelgarn
+<ahferroin7@gmail.com> wrote:
+> On 2016-11-17 15:05, Chris Murphy wrote:
+>>
+>> I think the wiki should be updated to reflect that raid1 and raid10
+>> are mostly OK. I think it's grossly misleading to consider either as
+>> green/OK when a single degraded read write mount creates single chunks
+>> that will then prevent a subsequent degraded read write mount. And
+>> also the lack of various notifications of device faultiness I think
+>> make it less than OK also. It's not in the "do not use" category but
+>> it should be in the middle ground status so users can make informed
+>> decisions.
+>>
+> It's worth pointing out also regarding this:
+> * This is handled sanely in recent kernels (the check got changed from
+> per-fs to per-chunk, so you still have a usable FS if all the single chunks
+> are only on devices you still have).
 
-> 
-> When the disk does get close to full, this would lead to some nasty
-> early-ENOSPC issues.  It's bad enough now with just two competing
-> allocators (metadata and data)...imagine those problems multiplied by
-> 10 on a big RAID5 array.
+The status page should reflect the version with sane behavior,
+relative to the versions with not sane behavior. Otherwise people hit
+it unexpectedly despite the status page.
 
-I am incline to think that some problem would be reduced developing a daemon which starts a balance automatically when need (on the basis of the fragmentation). Anyway this is an issue which we should solve anyway.
-
-[...]
-> 
-> I now realize there's no need for any "plug extent" to physically
-> exist--the allocator can simply infer their existence on the fly by
-> noticing where the RAID stripe boundaries are, and remembering which
-> blocks it had allocated in the current uncommitted transaction.
+But still, the multiple device stuff really is not "OK" until there's
+some kind of faulty device concept and also notification for state
+changes from normal to faulty, faulty to normal, or even failed if
+that's reliably distinguishable from faulty.
 
 
-Even this could be a "simple" solution: when a write starts, the system has to use only empty stripes...
-> 
-> 
-> The tradeoff is that more balances would be required to avoid free space
-> fragmentation; on the other hand, typical RAID5 use cases involve storing
-> a lot of huge files, so the fragmentation won't be a very large percentage
-> of total space.  A few percent of disk capacity is a fair price to pay for
-> data integrity.
+> As far as the failed device handling issues, those are a problem with BTRFS
+> in general, not just raid1 and raid10, so I wouldn't count those against
+> raid1 and raid10.
 
-Both the methods would require a more aggressive balance. In this they are equal.
+Sure but raid56 are already flagged as not ready for prime time.
 
-BR
-G.Baroncelli
+
+
 -- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+Chris Murphy

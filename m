@@ -1,92 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:47682 "EHLO
-        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932297AbcKNRpS (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:28365 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752791AbcKTPvx (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Nov 2016 12:45:18 -0500
-From: Adam Borowski <kilobyte@angband.pl>
-To: =?UTF-8?q?Holger=20Hoffst=C3=A4tte?=
-        <holger@applied-asynchrony.com>,
-        David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org
-Cc: Adam Borowski <kilobyte@angband.pl>
-Date: Mon, 14 Nov 2016 18:44:34 +0100
-Message-Id: <20161114174434.27383-1-kilobyte@angband.pl>
-In-Reply-To: <20161114163747.GO12522@twin.jikos.cz>
-References: <20161114163747.GO12522@twin.jikos.cz>
-Subject: [PATCH v4] btrfs: make block group flags in balance printks human-readable
+        Sun, 20 Nov 2016 10:51:53 -0500
+Date: Sun, 20 Nov 2016 07:50:44 -0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Jeff Mahoney <jeffm@suse.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs: Ensure proper sector alignment for
+ btrfs_free_reserved_data_space
+Message-ID: <20161120155044.GA16057@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <af6462e2-abaf-746a-6f69-1c83e549c059@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <af6462e2-abaf-746a-6f69-1c83e549c059@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-They're not even documented anywhere, letting users with no recourse but
-to RTFS.  It's no big burden to output the bitfield as words.
+On Fri, Nov 18, 2016 at 09:52:40PM -0500, Jeff Mahoney wrote:
+> From: Jeff Mahoney <jeffm@suse.com>
+> Subject: btrfs: Ensure proper sector alignment for
+>  btrfs_free_reserved_data_space
+> References: bsc#1005666
+> Patch-mainline: Submitted 18 Nov 2016, linux-btrfs
+> 
+> This fixes the WARN_ON on BTRFS_I(inode)->reserved_extents in
+> btrfs_destroy_inode and the WARN_ON on nonzero delalloc bytes on umount
+> with qgroups enabled.
+> 
+> I was able to reproduce this by setting up a small (~500kb) quota limit
+> and writing a file one byte at a time until I hit the limit.  The warnings
+> would all hit on umount.
+> 
+> The root cause is that we would reserve a block-sized range in both
+> the reservation and the quota in btrfs_check_data_free_space, but if we
+> encountered a problem (like e.g. EDQUOT), we would only release the single
+> byte in the qgroup reservation.  That caused an iotree state split, which
+> increased the number of outstanding extents, in turn disallowing releasing
+> the metadata reservation.
+> 
+> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+> ---
+>  fs/btrfs/extent-tree.c |    7 +++++++
+>  1 file changed, 7 insertions(+)
+> 
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -3822,6 +3822,13 @@ void btrfs_free_reserved_data_space_noqu
+>   */
+>  void btrfs_free_reserved_data_space(struct inode *inode, u64 start, u64 len)
+>  {
+> +	struct btrfs_root *root = BTRFS_I(inode)->root;
+> +
+> +	/* Make sure the range is aligned to sectorsize */
+> +	len = round_up(start + len, root->sectorsize) -
+> +	      round_down(start, root->sectorsize);
+> +	start = round_down(start, root->sectorsize);
+> +
+>  	btrfs_free_reserved_data_space_noquota(inode, start, len);
+>  	btrfs_qgroup_free_data(inode, start, len);
 
-Also, display unknown flags as hex.
+The patch looks reasonable, but I'm afraid btrfs_fallocate can be
+affected since in btrfs_fallocate(), btrfs_qgroup_reserve_data() takes
+'cur_offset' and 'last_byte - cur_offset' which are possible unaligned
+to root->sectorsize, but if any errors occur during allocation,
+btrfs_qgroup_free_data() in btrfs_free_reserved_data_space() is gonna
+free aligned range and it ends up a negative qgroup value.
 
-Signed-off-by: Adam Borowski <kilobyte@angband.pl>
----
- fs/btrfs/relocation.c | 42 +++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 39 insertions(+), 3 deletions(-)
+Thanks,
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index c4af0cd..9a3abf3 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -4333,6 +4333,44 @@ static struct reloc_control *alloc_reloc_control(struct btrfs_fs_info *fs_info)
- }
- 
- /*
-+ * printk the block group being relocated
-+ */
-+static void describe_relocation(struct btrfs_fs_info *fs_info,
-+				struct btrfs_block_group_cache *block_group)
-+{
-+	char buf[128]; /* prefixed by a '|' that'll be dropped */
-+	u64 flags = block_group->flags;
-+
-+	if (!flags) { /* shouldn't happen */
-+		strcpy(buf, "|NONE");
-+	} else {
-+		char *bp = buf;
-+
-+#define DESCRIBE_FLAG(f, d) \
-+		if (flags & BTRFS_BLOCK_GROUP_##f) { \
-+			bp += snprintf(bp, buf - bp + sizeof(buf), "|%s", d); \
-+			flags &= ~BTRFS_BLOCK_GROUP_##f; \
-+		}
-+		DESCRIBE_FLAG(DATA,     "data");
-+		DESCRIBE_FLAG(SYSTEM,   "system");
-+		DESCRIBE_FLAG(METADATA, "metadata");
-+		DESCRIBE_FLAG(RAID0,    "raid0");
-+		DESCRIBE_FLAG(RAID1,    "raid1");
-+		DESCRIBE_FLAG(DUP,      "dup");
-+		DESCRIBE_FLAG(RAID10,   "raid10");
-+		DESCRIBE_FLAG(RAID5,    "raid5");
-+		DESCRIBE_FLAG(RAID6,    "raid6");
-+		if (flags)
-+			snprintf(buf, buf - bp + sizeof(buf), "|0x%llx", flags);
-+#undef DESCRIBE_FLAG
-+	}
-+
-+	btrfs_info(fs_info,
-+		   "relocating block group %llu flags %s",
-+		   block_group->key.objectid, buf + 1);
-+}
-+
-+/*
-  * function to relocate all extents in a block group.
-  */
- int btrfs_relocate_block_group(struct btrfs_root *extent_root, u64 group_start)
-@@ -4388,9 +4426,7 @@ int btrfs_relocate_block_group(struct btrfs_root *extent_root, u64 group_start)
- 		goto out;
- 	}
- 
--	btrfs_info(extent_root->fs_info,
--		   "relocating block group %llu flags %llu",
--		   rc->block_group->key.objectid, rc->block_group->flags);
-+	describe_relocation(extent_root->fs_info, rc->block_group);
- 
- 	btrfs_wait_block_group_reservations(rc->block_group);
- 	btrfs_wait_nocow_writers(rc->block_group);
--- 
-2.10.2
+-liubo
 
+>  }
+> 
+> 
+> -- 
+> Jeff Mahoney
+> SUSE Labs
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

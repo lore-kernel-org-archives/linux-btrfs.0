@@ -1,47 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from arcturus.aphlor.org ([188.246.204.175]:56792 "EHLO
-        arcturus.aphlor.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932912AbcKWT7C (ORCPT
+Received: from mail-qk0-f174.google.com ([209.85.220.174]:34984 "EHLO
+        mail-qk0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1756030AbcKVSth (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Nov 2016 14:59:02 -0500
-Date: Wed, 23 Nov 2016 14:58:45 -0500
-From: Dave Jones <davej@codemonkey.org.uk>
-To: Chris Mason <clm@fb.com>, Linus Torvalds <torvalds@linux-foundation.org>,
-        Jens Axboe <axboe@fb.com>, Andy Lutomirski <luto@amacapital.net>,
-        Andy Lutomirski <luto@kernel.org>, Al Viro <viro@zeniv.linux.org.uk>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Linux Kernel <linux-kernel@vger.kernel.org>,
-        Dave Chinner <david@fromorbit.com>
-Subject: Re: bio linked list corruption.
-Message-ID: <20161123195845.iphzr7ac4mu5ewjt@codemonkey.org.uk>
-References: <CA+55aFyiJGk-A_cJH41Ec8Xj0Zz9M3EU-igJ9bgusj=nm28tFQ@mail.gmail.com>
- <2bdc068d-afd5-7a78-f334-26970c91aaca@fb.com>
- <CA+55aFxqRCEVxocpZVDMqinP=EsmgzcnvWpOT6x8NMmcBpWb2Q@mail.gmail.com>
- <203e0319-bc9b-245c-e162-709267540d22@fb.com>
- <20161026233808.GC15247@clm-mbp.thefacebook.com>
- <20161026234751.e66xyzjiwifvbuha@codemonkey.org.uk>
- <20161031185514.b22zvbxvga4xcinz@codemonkey.org.uk>
- <CA+55aFwUBYzPcbecpHw9=f8h_JuX18x5bE=Kd_k9QkCcgoiBsA@mail.gmail.com>
- <20161031194454.GA49877@clm-mbp.thefacebook.com>
- <20161123193419.pq7adje2eanky2wx@codemonkey.org.uk>
+        Tue, 22 Nov 2016 13:49:37 -0500
+Received: by mail-qk0-f174.google.com with SMTP id n204so38267967qke.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Nov 2016 10:49:37 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20161123193419.pq7adje2eanky2wx@codemonkey.org.uk>
+From: Mike Gilbert <floppymaster@gmail.com>
+Date: Tue, 22 Nov 2016 13:49:15 -0500
+Message-ID: <CAJ0EP40tqX7MhtHcUiCMW5hRUrkhS+c3xPe=nRqCK8m5dc4FPA@mail.gmail.com>
+Subject: btrfs-progs-4.8.3 libbtrfs missing symbols?
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 23, 2016 at 02:34:19PM -0500, Dave Jones wrote:
+Hi,
 
- > [  317.689216] BUG: Bad page state in process kworker/u8:8  pfn:4d8fd4
- > trace from just before this happened. Does this shed any light ?
- > 
- > https://codemonkey.org.uk/junk/trace.txt
+I received a bug report about a build failure in a package (snapper)
+that utilizes libbtrfs.
 
-crap, I just noticed the timestamps in the trace come from quite a bit
-later.  I'll tweak the code to do the taint checking/ftrace stop after
-every syscall, that should narrow the window some more.
+https://bugs.gentoo.org/show_bug.cgi?id=600078
 
-Getting closer..
+To summarize the issue, the package has a configure test that executes
+the following:
 
-	Dave
+configure:16618: x86_64-pc-linux-gnu-gcc -o conftest -O2 -pipe
+-march=amdfam10 -frecord-gcc-switches -std=c99 -Wall -Wextra
+-Wformat=2 -Wmissing-prototypes -Wno-unused-parameter
+-DCONFDIR='"/etc/conf.d"' -Wl,-O1 -Wl,--as-needed conftest.c -lbtrfs
+>&5
+/usr/lib/gcc/x86_64-pc-linux-gnu/5.4.0/../../../../lib64/libbtrfs.so:
+undefined reference to `lookup_path_rootid'
+collect2: error: ld returned 1 exit status
+configure:16618: $? = 1
+
+It seems that the "lookup_path_rootid" symbol is not included in the library.
+
+Could someone look into this?

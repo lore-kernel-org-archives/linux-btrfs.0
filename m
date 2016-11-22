@@ -1,36 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:51418 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754874AbcK1UMS (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:55697 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1755807AbcKVT7r (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 Nov 2016 15:12:18 -0500
-Date: Mon, 28 Nov 2016 12:12:11 -0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Chris Mason <clm@fb.com>, Christian Borntraeger <borntraeger@de.ibm.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
-Subject: Re: btrfs: still lockdep splat for 4.9-rc5+ (btrfs_log_inode)
-Message-ID: <20161128201211.GB5005@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <b9063be2-8c01-2c15-ca2d-8460594128cf@de.ibm.com>
- <20161126134638.GA79987@clm-mbp.masoncoding.com>
+        Tue, 22 Nov 2016 14:59:47 -0500
+Subject: Re: [PATCH] Btrfs: adjust len of writes if following a preallocated
+ extent
+To: Liu Bo <bo.li.liu@oracle.com>, <linux-btrfs@vger.kernel.org>
+References: <1478287254-5458-1-git-send-email-bo.li.liu@oracle.com>
+CC: David Sterba <dsterba@suse.cz>
+From: Chris Mason <clm@fb.com>
+Message-ID: <f50c3464-bf8e-9dd9-658c-7f6b9652017b@fb.com>
+Date: Tue, 22 Nov 2016 14:59:35 -0500
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20161126134638.GA79987@clm-mbp.masoncoding.com>
+In-Reply-To: <1478287254-5458-1-git-send-email-bo.li.liu@oracle.com>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Nov 26, 2016 at 08:46:38AM -0500, Chris Mason wrote:
-> On Fri, Nov 25, 2016 at 10:03:25AM +0100, Christian Borntraeger wrote:
-> > FWIW, I still see the lockdep splat in btrfs in 4.9-rc5+
-> 
-> Filipe reworked the code to avoid taking the same lock twice.  As far as I
-> can tell, this just needs some annotation.
+On 11/04/2016 03:20 PM, Liu Bo wrote:
+> If we have
+>
+> |0--hole--4095||4096--preallocate--12287|
+>
+> instead of using preallocated space, a 8K direct write will just
+> create a new 8K extent and it'll end up with
+>
+> |0--new extent--8191||8192--preallocate--12287|
+>
+> It's because we find a hole em and then go to create a new 8K
+> extent directly without adjusting @len.
+>
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
-Besides this log_mutex, we have another false lockdep warning around
-block_group_cache->data_rwsem, we can use down_read_nested() to get rid
-of it.
+Reviewed-by: Chris Mason <clm@fb.com>
 
-Thanks,
-
--liubo
+-chris

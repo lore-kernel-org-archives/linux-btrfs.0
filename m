@@ -1,139 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:22165 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755032AbcKWVj2 (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:47036 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1756646AbcKVTPS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Nov 2016 16:39:28 -0500
-Date: Wed, 23 Nov 2016 13:39:16 -0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Filipe Manana <fdmanana@gmail.com>
-Cc: "dsterba@suse.cz" <dsterba@suse.cz>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Jeff Mahoney <jeffm@suse.com>, Chris Mason <clm@fb.com>
-Subject: Re: [PATCH] Btrfs: fix BUG_ON in btrfs_mark_buffer_dirty
-Message-ID: <20161123213916.GC24103@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1472844934-32343-1-git-send-email-bo.li.liu@oracle.com>
- <CAL3q7H5oCqgd9im-2AZA=zsOv+SCObon2f5wECA7hr58MNXTGw@mail.gmail.com>
- <20160906215151.GB31641@localhost.localdomain>
- <CAL3q7H7GEDy-NfPgWE7BN_+M8-hRPJ77BKgbrhbkhTcnjAQ7nQ@mail.gmail.com>
- <20161013003725.GA21350@localhost.localdomain>
- <CAL3q7H4XtHdr+PmCO-ExqJrpYrf6Zuh=jCWL_5jZV06kCtx_KA@mail.gmail.com>
- <20161017130025.GI11398@twin.jikos.cz>
- <20161017154443.GA13942@localhost.localdomain>
- <CAL3q7H5ngp02fS8LyL-DDYGW9Y9CTakqZ=1c3bYTUZHi6OobzA@mail.gmail.com>
- <CAL3q7H7MrcPCN64eWNtLm1=podB1o-hJm5=24qQ5bA6-L9iJwQ@mail.gmail.com>
+        Tue, 22 Nov 2016 14:15:18 -0500
+Subject: Re: [PATCH] Btrfs: fix truncate down when no_holes feature is enabled
+To: Liu Bo <bo.li.liu@oracle.com>, <linux-btrfs@vger.kernel.org>
+References: <1478903265-24273-1-git-send-email-bo.li.liu@oracle.com>
+CC: David Sterba <dsterba@suse.cz>, Filipe Manana <fdmanana@suse.com>
+From: Chris Mason <clm@fb.com>
+Message-ID: <e740caa9-33a8-7aa0-b4a4-c6fc22be4d3e@fb.com>
+Date: Tue, 22 Nov 2016 14:13:21 -0500
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAL3q7H7MrcPCN64eWNtLm1=podB1o-hJm5=24qQ5bA6-L9iJwQ@mail.gmail.com>
+In-Reply-To: <1478903265-24273-1-git-send-email-bo.li.liu@oracle.com>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 23, 2016 at 05:48:45PM +0000, Filipe Manana wrote:
-> On Wed, Nov 23, 2016 at 1:15 PM, Filipe Manana <fdmanana@gmail.com> wrote:
-> > On Mon, Oct 17, 2016 at 4:44 PM, Liu Bo <bo.li.liu@oracle.com> wrote:
-> >> On Mon, Oct 17, 2016 at 03:00:25PM +0200, David Sterba wrote:
-> >>> On Thu, Oct 13, 2016 at 09:47:11AM +0100, Filipe Manana wrote:
-> >>> > > Since the crash is similar to the call chains from Jeff's report,
-> >>> > > ie.
-> >>> > > btrfs_del_csums
-> >>> > >   -> btrfs_search_slot
-> >>> > >      -> btrfs_cow_block
-> >>> > >         -> btrfs_mark_buffer_dirty
-> >>> > >
-> >>> > > I just wonder that whether 4.8.0-rc8-btrfs-next-35+ has
-> >>> > >
-> >>> > > "[PATCH] Btrfs: fix BUG_ON in btrfs_mark_buffer_dirty" ?
-> >>> >
-> >>> > It isn't there, this 4.8.0-rc8-btrfs-next-35+ is a checkout of Chris'
-> >>> > for-linus-4.9 branch.
-> >>> > That patch should have been there, I was convinced that all these
-> >>> > related patches were already there, as it's impossible to run xfstests
-> >>> > with the integrity checker enabled.
-> >>>
-> >>> The referenced patch is the one in this thread, no? You've reported that
-> >>> even with that applied you can still reproduce a crash with integrity
-> >>> checker enabled. I haven't queued it as it seems it's an incomplete fix,
-> >>> thus waiting for another version.
-> >>
-> >> Yes, it's one of three patches in this thread, and they fixed different
-> >> problems,
-> >>
-> >> - the original patch and its v2 are to make check_leaf check non-root
-> >> leaf with zero-item,
-> >> - "[PATCH] Btrfs: fix BUG_ON in btrfs_mark_buffer_dirty" is to fix
-> >> check_leaf, which fixes the crash from Jeff's.
-> >> - "[PATCH] Btrfs: remove unnecessary btrfs_mark_buffer_dirty in split_leaf"
-> >>  is targeting a different crash with check integrity enabled, which
-> >> comes from Filipe's report.
-> >>
-> >> So to make sure I understand the whole thing, Filipe, can you reproduce the
-> >> crash around btrfs_del_csums() after applying this patch
-> >>  "[PATCH] Btrfs: fix BUG_ON in btrfs_mark_buffer_dirty"?
-> >
-> > So indeed, what is missing is patch from this thread, subject "Btrfs:
-> > fix BUG_ON in btrfs_mark_buffer_dirty".
-> > That is clearly missing in Linus' tree:
-> >
-> > https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/log/?id=refs%2Ftags%2Fv4.9-rc6&qt=author&q=liu+bo
-> >
-> > On the other hand, the other patch attached later to this thread, that
-> > removes the unnecessary btrfs_mark_buffer_dirty() was sent to Linus:
-> >
-> > https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=196e02490c934398f894e5cb0ee1ac8ad13ca576
-> >
-> > It seems I'm the only one running xfstests with the integrity checker
-> > enabled... Because it fails right away at btrfs/001 either with
-> > 4.9-rcs or Chris' for-linus-4.9.
-> > Applying "Btrfs: fix BUG_ON in btrfs_mark_buffer_dirty" fixes it.
-> 
-> Can you please resend the patch with a cc stable tag? Like:
-> 
->     Fixes: 1ba98d086fe3 (Btrfs: detect corruption when non-root leaf
-> has zero item)
->     Cc: stable@vger.kernel.org  # 4.8+
-> 
-> Since the offending patch is in 4.8 already.
+On 11/11/2016 05:27 PM, Liu Bo wrote:
+> For such a file mapping,
+>
+> [0-4k][hole][8k-12k]
+>
+> In NO_HOLES mode, we don't have the [hole] extent any more.
+> Commit c1aa45759e90 ("Btrfs: fix shrinking truncate when the no_holes feature is enabled")
+>  fixed disk isize not being updated in NO_HOLES mode when data is not flushed.
+>
+> However, even if data has been flushed, we can still have trouble
+> in updating disk isize since we updated disk isize to 'start' of
+> the last evicted extent.
+>
+> Also add a ASSERT for better catching (for developers only).
+>
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
-Sure, will do.
+Thanks Liu!
 
-> 
-> Also I spoke too early before. Even with that patch we still one more
-> issue: https://patchwork.kernel.org/patch/9444045/
-
-Had given it a reviewed-by.
-
-Thanks,
-
--liubo
-> 
-> 
-> Thanks Bo.
-> 
-> >
-> > thanks
-> >
-> >
-> >
-> >>
-> >> Thanks,
-> >>
-> >> -liubo
-> >
-> >
-> >
-> > --
-> > Filipe David Manana,
-> >
-> > "People will forget what you said,
-> >  people will forget what you did,
-> >  but people will never forget how you made them feel."
-> 
-> 
-> 
-> -- 
-> Filipe David Manana,
-> 
-> "People will forget what you said,
->  people will forget what you did,
->  but people will never forget how you made them feel."
+Reviewed-by: Chris Mason <clm@fb.com>

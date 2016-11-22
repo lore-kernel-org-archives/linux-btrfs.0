@@ -1,51 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:63936 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1755546AbcKVIia (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Nov 2016 03:38:30 -0500
+        id S1755373AbcKVIid (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 22 Nov 2016 03:38:33 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
-Subject: [RFC PATCH 2/3] fstests: common/ondisk.btrfs: Introduce function to get btrfs ondisk info
-Date: Tue, 22 Nov 2016 16:38:10 +0800
-Message-Id: <20161122083811.12636-3-quwenruo@cn.fujitsu.com>
+Subject: [RFC PATCH 3/3] fstests: btrfs: Add new test case to check scrub recovery and report
+Date: Tue, 22 Nov 2016 16:38:11 +0800
+Message-Id: <20161122083811.12636-4-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20161122083811.12636-1-quwenruo@cn.fujitsu.com>
 References: <20161122083811.12636-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce a new common header, ondisk.btrfs, to allow we manipulate
-btrfs on-disk data directly, to corrupt or verify data.
+In fact, desipte the existing btrfs scrub test cases, we didn't even
+test if scrub can really recovery data.
 
-Since the designed tool, btrfs-corrupt-block is no longer default
-installed, and furthermore it doesn't support to corrupt given mirror or
-stripe, it's near useless for later scrub verification test cases.
+Due to the recent exposed several critical RAID56 scrub problem, it's
+really needed to test the fundamental function before things get worse
+and worse.
 
-Not to mention its parameter is not updated and there is no man page for
-it.
-
-So here what we can do is, either wait for years for a reliable
-corrupter and see btrfs scrub never get verified for its basic function.
-Or use existing tools like btrfs-debug-tree
-(btrfs inspect-internal dump-tree) and bash to build a basic tool.
-
-I choose the later one, which is not perfect, only support one data
-chunk, hard to maintain(why we are using bash?!), but is good enough for
-RAID1/DUP testing.
+This test case add verification for btrfs RAID1/DUP scrub recovery.
+As it's the simplest profile, pure mirroring, not stripping nor parity.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- common/ondisk.btrfs | 113 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 113 insertions(+)
- create mode 100644 common/ondisk.btrfs
+ tests/btrfs/132     | 229 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/132.out | 111 +++++++++++++++++++++++++
+ tests/btrfs/group   |   2 +
+ 3 files changed, 342 insertions(+)
+ create mode 100755 tests/btrfs/132
+ create mode 100644 tests/btrfs/132.out
 
-diff --git a/common/ondisk.btrfs b/common/ondisk.btrfs
-new file mode 100644
-index 0000000..df87a08
+diff --git a/tests/btrfs/132 b/tests/btrfs/132
+new file mode 100755
+index 0000000..3198125
 --- /dev/null
-+++ b/common/ondisk.btrfs
-@@ -0,0 +1,113 @@
-+#!/bin/bash
++++ b/tests/btrfs/132
+@@ -0,0 +1,229 @@
++#! /bin/bash
++# FS QA Test 132
++#
++# Check if pure mirror based btrfs raid profiles(RAID1/DUP) can recover
++# data correctly by scrubbing, and the correctness of the error report
++#
++# We don't have good enough off-line or on-line tool to corrupt on-disk
++# data which can handle extents on different chunks.
++# So here we only create a small file extents, this will restrict the coverage
++#
 +#-----------------------------------------------------------------------
 +# Copyright (c) 2016 Fujitsu.  All Rights Reserved.
 +#
@@ -63,101 +66,335 @@ index 0000000..df87a08
 +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 +#-----------------------------------------------------------------------
 +#
-+# Helper functions to manipulate btrfs ondisk data, for scrub verification
 +
-+# Get the logical bytenr of the first block group matches the @profile
-+# @1: device contains the btrfs, mandatory 
-+# @2: type, must be one of "DATA", "SYSTEM" or "METADATA", ignore case, mandatory
-+# @3: profile, must be one of the support profile, ignore case, optional,
-+#     default to any profile
-+# Output "logical length" into stdout for usage.
-+# If failed, nothing is outputted, so caller should check the output
-+_btrfs_get_first_bg_by_type()
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
 +{
-+	local dev=$1
-+	local chunk_type=$(echo $2 | awk '{print toupper($0)}')
-+	local profile=$(echo $3 | awk '{print toupper($0)}')
++	cd /
++	rm -f $tmp.*
++}
 +
-+	_require_btrfs_subcommand inspect-internal
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/ondisk.btrfs
 +
-+	echo "_btrfs_get_first_bg_by_type: dev=$dev type=$chunk_type profile=$profile" \
-+		>> $seqres.full
++# remove previous $seqres.full before test
++rm -f $seqres.full
 +
-+	if [ -z "$dev" -o -z "$chunk_type" ]; then
-+		_fail "Missing device or chunk type argument for _btrfs_get_first_bg_by_type"
++# Golden output has csum, so no LOAD_FACTOR here
++runtimes=4
++
++# real QA test starts here
++
++# Modify as appropriate.
++_supported_fs btrfs
++_supported_os Linux
++
++# RAID1 needs at least 2 devices
++_require_scratch_dev_pool 2
++
++stripelen=65536
++# Corrupt mirrors at given logical bytenr
++# Only works if the range is in the first data chunk
++corrupt_one_mirror()
++{
++	local dest_logical=$1
++	local dest_len=$2
++	local devs[]="( $SCRATCH_DEV_POOL )"
++
++	dev=$(echo $SCRATCH_DEV_POOL | awk '{print $1}')
++	output=$(_btrfs_get_first_bg_by_type $dev data)
++	if [ -z "$output" ]; then
++		_fail "testcase error: failed to get first data chunk info"
++	fi
++	bg_logical=$(echo $output | awk '{print $1}')
++	bg_len=$(echo $output | awk '{print $2}')
++
++	if [ $dest_logical -ge $(( $bg_logical + $bg_len)) -o \
++	     $(( $dest_logical + $dest_len)) -le $bg_logical ]; then
++	     _fail "testcase error: ondisk layout is out of expect"
 +	fi
 +
-+	if [ ! -z $profile ]; then
-+		if [ $profile == "SINGLE" ]; then
-+			full_profile="$chunk_type"
-+		else
-+			full_profile="$chunk_type|$profile"
++
++	# Select random stripe (mirror) as corrupt destination
++	dest_stripe=$((RANDOM % 2))
++	output=$(_btrfs_get_chunk_stripe $dev $bg_logical $dest_stripe)
++	if [ -z "$output" ]; then
++		_fail "testcase error: failed to get first data chunk info"
++	fi
++	stripe_devid=$(echo $output | awk '{print $1}')
++	stripe_devid=$(($stripe_devid - 1))
++
++	stripe_offset=$(echo $output | awk '{print $2}')
++
++	real_offset=$(( $dest_logical - $bg_logical + $stripe_offset ))
++	dev=${devs[$(($stripe_devid))]}
++
++	# Corrupt the last stripe using random data
++	$XFS_IO_PROG -c "pwrite -S 0x0000 $real_offset $dest_len" $dev \
++		> /dev/null 2>&1
++}
++
++csum_mirrors()
++{
++	local dest_logical=$1
++	local dest_len=$2
++	local verify_corrupt=$3
++	local csums[]="( 0 0 )"
++
++	dev=$(echo $SCRATCH_DEV_POOL | awk '{print $1}')
++	output=$(_btrfs_get_first_bg_by_type $dev data)
++	if [ -z "$output" ]; then
++		_fail "testcase error: failed to get first data chunk info"
++	fi
++	bg_logical=$(echo $output | awk '{print $1}')
++	bg_len=$(echo $output | awk '{print $2}')
++
++	if [ $dest_logical -ge $(( $bg_logical + $bg_len)) -o \
++	     $(( $dest_logical + $dest_len)) -le $bg_logical ]; then
++	     _fail "testcase error: ondisk layout is out of expect"
++	fi
++
++	bg_offset=$(( $dest_logical - $bg_logical ))
++
++	for i in $(seq 0 1); do
++		local devs[]="( $SCRATCH_DEV_POOL )"
++		output=$(_btrfs_get_chunk_stripe $dev $bg_logical $i)
++		if [ -z "$output" ]; then
++			_fail "testcase error: failed to get first data chunk info"
 +		fi
-+	else
-+		full_profile="$chunk_type"
-+	fi
++		stripe_devid=$(echo $output | awk '{print $1}')
++		stripe_offset=$(echo $output | awk '{print $2}')
 +
-+	logical=$($BTRFS_UTIL_PROG inspect-internal dump-tree $dev -t chunk |\
-+		grep "type $full_profile" -m1 -B2 |\
-+		grep "CHUNK_ITEM [[:digit:]]*" -o | awk '{print $2}')
-+	length=$($BTRFS_UTIL_PROG inspect-internal dump-tree $dev -t chunk |\
-+		grep "type $full_profile" -m1 -B2 |\
-+		egrep "chunk length [[:digit:]]*" -o | awk '{print $3}')
-+	if [ -z "$logical" -o -z "$length" ]; then
-+		return;
++		real_offset=$(( $bg_offset + $stripe_offset ))
++
++		index=$(($stripe_devid - 1))
++		dev=${devs[$index]}
++
++		# xfs_io don't support to read out data into file, must use dd here now
++		csums[$i]=$(dd if=$dev bs=1 count=$dest_len skip=$real_offset \
++			   status=none | md5sum | awk '{print $1}')
++		if [ $verify_corrupt -eq 0 ]; then
++			echo "csum for stripe $i: ${csums[$i]}"
++		fi
++	done
++	if [ $verify_corrupt -ne 0 ]; then
++		if [ ${csums[0]} == ${csums[1]} ]; then
++			_fail "corruption failed"
++		else
++			echo "one of the mirror corrupted"
++			echo
++		fi
 +	fi
-+	echo "found bg logical=$logical length=$length" >> $seqres.full
-+	echo "$logical $length"
 +}
 +
-+# Get the stripe map for chunk specified by @logical parameter
-+# @1: device contains the btrfs, mandatory
-+# @2: logical bytenr of the chunk, mandatory
-+# @3: stripe number, optional, default to 0(first stripe)
-+# Output "devid dev_offset" into stdout for usage
-+# If failed, nothing is outputed, so caller should check the output
-+_btrfs_get_chunk_stripe()
++do_test()
 +{
-+	local dev=$1
-+	local logical=$2
-+	local stripenr=$3
++	profile=$1
 +
-+	_require_btrfs_subcommand inspect-internal
-+
-+	echo "_btrfs_get_chunk_stripe: dev=$dev logical=$logical stripenr=$stripenr" \
-+		>> $seqres.full
-+	if [ -z "$dev" -o -z "$logical" ]; then
-+		_fail "Missing device or logical argument for _btrfs_get_chunk_stripe"
++	if [ -z "$profile" ]; then
++		_fail "testcase error: profile argument is not given for do_test()"
 +	fi
 +
-+	if [ -z $stripenr ]; then
-+		stripenr=0
++	if [ $profile == "dup" ]; then
++		ndevs=1
++	elif [ $profile == "raid1" ]; then
++		ndevs=2
++	else
++		_fail "testcase error: profile $profile is not supported for this test case"
 +	fi
 +
-+	stripes=$($BTRFS_UTIL_PROG inspect-internal dump-tree $dev -t chunk |\
-+		grep "CHUNK_ITEM $logical" -A 2 |\
-+		grep -o "num_stripes [[:digit:]]*" |\
-+		awk '{print $2}')
-+	if [ -z $stripes ]; then
-+		return
++	echo "===Test scrub recovery for profile: $profile==="
++	_scratch_dev_pool_get $ndevs
++	_scratch_pool_mkfs "-m $profile -d $profile" >> $seqres.full 2>&1
++	dev=$(echo $SCRATCH_DEV_POOL | $AWK_PROG '{print $1}') 
++	output=$(_btrfs_get_first_bg_by_type $dev data $profile)
++
++	if [ -z "$output" ]; then
++		_fail "testcase error: unable to get first block group logical"
 +	fi
 +
-+	# For CHUNK_ITEM it takes 3 lines(Hit line includes), follows with
-+	# stripe info, each stripe takes 2 lines
-+	nr_lines=$((2 + 2 * $stripes))
-+	devid=$($BTRFS_UTIL_PROG inspect-internal dump-tree $dev -t chunk |\
-+		grep "CHUNK_ITEM $logical" -A $nr_lines |\
-+		grep "stripe $stripenr" | awk '{print $4}')
-+	dev_offset=$($BTRFS_UTIL_PROG inspect-internal dump-tree $dev -t chunk |\
-+		grep "CHUNK_ITEM $logical" -A $nr_lines |\
-+		grep "stripe $stripenr" | awk '{print $6}')
-+	if [ -z "$devid" -o -z "$dev_offset" ]; then
-+		return;
++
++	_scratch_mount >> $seqres.full 2>&1
++	_pwrite_byte 0xcdcd 0 $stripelen $SCRATCH_MNT/file > /dev/null 2>&1
++	_scratch_cycle_mount
++	file_logical=$($XFS_IO_PROG -c "fiemap" $SCRATCH_MNT/file | tail -n +2 |
++		awk '{print $3}' | cut -f1 -d\.)
++	file_logical=$(( $file_logical * 512 ))
++	_scratch_unmount
++
++	echo "before csum corruption"
++	csum_mirrors $file_logical $stripelen 0
++	echo ""
++	corrupt_one_mirror $file_logical $stripelen
++
++	# verify the corruption is good
++	csum_mirrors $file_logical $stripelen 1
++
++	_scratch_mount
++	# redirect the output, we will need it for several usage
++	$BTRFS_UTIL_PROG scrub start -B $SCRATCH_MNT &> $tmp.scrub_output
++	if [ $? -ne 0 ]; then
++		_fail "scrub found un-recoverable error"
 +	fi
-+	echo "found stripe=$stripenr devid=$devid dev_offset=$dev_offset" \
-+		>> $seqres.full
-+	echo "$devid $dev_offset"
++	cat $tmp.scrub_output >> $seqres.full
++	csum_errors=$(grep -o "csum=[[:digit:]]*" $tmp.scrub_output | cut -f2 -d=)
++	pagesize=$(getconf PAGESIZE)
++	expected_errors=$(($stripelen / $pagesize))
++	if [ $csum_errors -ne $(($stripelen / $pagesize)) ]; then
++		_fail "incorrect csum error number reported, have=$csum_errors, expected=$expected_errors"
++	fi
++	_scratch_unmount
++
++	echo "after csum corruption and scrub"
++	csum_mirrors $file_logical $stripelen 0
++	echo ""
++	_scratch_dev_pool_put
 +}
++
++for i in $(seq 0 $runtimes); do
++	do_test dup
++	do_test raid1
++done
++
++status=0
++exit
+diff --git a/tests/btrfs/132.out b/tests/btrfs/132.out
+new file mode 100644
+index 0000000..362574f
+--- /dev/null
++++ b/tests/btrfs/132.out
+@@ -0,0 +1,111 @@
++QA output created by 132
++===Test scrub recovery for profile: dup===
++before csum corruption
++csum for stripe 0: 27c9068d1b51da575a53ad34c57ca5cc
++csum for stripe 1: 27c9068d1b51da575a53ad34c57ca5cc
++
++one of the mirror corrupted
++
++after csum corruption and scrub
++csum for stripe 0: 27c9068d1b51da575a53ad34c57ca5cc
++csum for stripe 1: 27c9068d1b51da575a53ad34c57ca5cc
++
++===Test scrub recovery for profile: raid1===
++before csum corruption
++csum for stripe 0: 27c9068d1b51da575a53ad34c57ca5cc
++csum for stripe 1: 27c9068d1b51da575a53ad34c57ca5cc
++
++one of the mirror corrupted
++
++after csum corruption and scrub
++csum for stripe 0: 27c9068d1b51da575a53ad34c57ca5cc
++csum for stripe 1: 27c9068d1b51da575a53ad34c57ca5cc
++
++===Test scrub recovery for profile: dup===
++before csum corruption
++csum for stripe 0: 27c9068d1b51da575a53ad34c57ca5cc
++csum for stripe 1: 27c9068d1b51da575a53ad34c57ca5cc
++
++one of the mirror corrupted
++
++after csum corruption and scrub
++csum for stripe 0: 27c9068d1b51da575a53ad34c57ca5cc
++csum for stripe 1: 27c9068d1b51da575a53ad34c57ca5cc
++
++===Test scrub recovery for profile: raid1===
++before csum corruption
++csum for stripe 0: 27c9068d1b51da575a53ad34c57ca5cc
++csum for stripe 1: 27c9068d1b51da575a53ad34c57ca5cc
++
++one of the mirror corrupted
++
++after csum corruption and scrub
++csum for stripe 0: 27c9068d1b51da575a53ad34c57ca5cc
++csum for stripe 1: 27c9068d1b51da575a53ad34c57ca5cc
++
++===Test scrub recovery for profile: dup===
++before csum corruption
++csum for stripe 0: 27c9068d1b51da575a53ad34c57ca5cc
++csum for stripe 1: 27c9068d1b51da575a53ad34c57ca5cc
++
++one of the mirror corrupted
++
++after csum corruption and scrub
++csum for stripe 0: 27c9068d1b51da575a53ad34c57ca5cc
++csum for stripe 1: 27c9068d1b51da575a53ad34c57ca5cc
++
++===Test scrub recovery for profile: raid1===
++before csum corruption
++csum for stripe 0: 27c9068d1b51da575a53ad34c57ca5cc
++csum for stripe 1: 27c9068d1b51da575a53ad34c57ca5cc
++
++one of the mirror corrupted
++
++after csum corruption and scrub
++csum for stripe 0: 27c9068d1b51da575a53ad34c57ca5cc
++csum for stripe 1: 27c9068d1b51da575a53ad34c57ca5cc
++
++===Test scrub recovery for profile: dup===
++before csum corruption
++csum for stripe 0: 27c9068d1b51da575a53ad34c57ca5cc
++csum for stripe 1: 27c9068d1b51da575a53ad34c57ca5cc
++
++one of the mirror corrupted
++
++after csum corruption and scrub
++csum for stripe 0: 27c9068d1b51da575a53ad34c57ca5cc
++csum for stripe 1: 27c9068d1b51da575a53ad34c57ca5cc
++
++===Test scrub recovery for profile: raid1===
++before csum corruption
++csum for stripe 0: 27c9068d1b51da575a53ad34c57ca5cc
++csum for stripe 1: 27c9068d1b51da575a53ad34c57ca5cc
++
++one of the mirror corrupted
++
++after csum corruption and scrub
++csum for stripe 0: 27c9068d1b51da575a53ad34c57ca5cc
++csum for stripe 1: 27c9068d1b51da575a53ad34c57ca5cc
++
++===Test scrub recovery for profile: dup===
++before csum corruption
++csum for stripe 0: 27c9068d1b51da575a53ad34c57ca5cc
++csum for stripe 1: 27c9068d1b51da575a53ad34c57ca5cc
++
++one of the mirror corrupted
++
++after csum corruption and scrub
++csum for stripe 0: 27c9068d1b51da575a53ad34c57ca5cc
++csum for stripe 1: 27c9068d1b51da575a53ad34c57ca5cc
++
++===Test scrub recovery for profile: raid1===
++before csum corruption
++csum for stripe 0: 27c9068d1b51da575a53ad34c57ca5cc
++csum for stripe 1: 27c9068d1b51da575a53ad34c57ca5cc
++
++one of the mirror corrupted
++
++after csum corruption and scrub
++csum for stripe 0: 27c9068d1b51da575a53ad34c57ca5cc
++csum for stripe 1: 27c9068d1b51da575a53ad34c57ca5cc
++
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index c090604..61f26ed 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -134,3 +134,5 @@
+ 129 auto quick send
+ 130 auto clone send
+ 131 auto quick
++132 auto scrub
++
 -- 
 2.7.4
 

@@ -1,270 +1,1177 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52829 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932949AbcKVOsf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Nov 2016 09:48:35 -0500
-Subject: Re: [Bug 186671] New: OOM on system with just rsync running 32GB of
- ram 30GB of pagecache
-To: E V <eliventer@gmail.com>,
-        Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>
-References: <bug-186671-27@https.bugzilla.kernel.org/>
- <20161103115353.de87ff35756a4ca8b21d2c57@linux-foundation.org>
- <b5b0cef0-8482-e4de-cb81-69a4dd3410fb@suse.cz>
- <CAJtFHUQcJKSnyQ7t7-eDpiF2C+U23+iWpZ+X6fGEzN8qdbzmtA@mail.gmail.com>
- <a8cf869e-f527-9c65-d16d-ac70cf66472a@suse.cz>
- <CAJtFHUQgkvFaPdyRcoiV-m5hynDGo2qXfMXzZvGahoWp2LL_KA@mail.gmail.com>
- <bbcd6cb7-3b73-02e9-0409-4601a6f573f5@suse.cz>
- <CAJtFHUSka8nbaO5RNEcWVRi7VoQ7UORWkMu_7pNW3n_9iRRdew@mail.gmail.com>
- <CAJtFHUTn9Ejvyj3vJkqnsLoa6gci104-TPu5viG=epfJ9Rk_qg@mail.gmail.com>
- <4c85dfa5-9dbe-ea3c-7816-1ab321931e1c@suse.cz>
- <d0a4adfc-5017-71ba-c895-fc7603b54f7a@I-love.SAKURA.ne.jp>
- <CAJtFHUT3qK_DA2xPbWpjeaeHyqksM7+bYvvrFtL5g0=uP0jrvg@mail.gmail.com>
- <CAJtFHURrPdJcLrB1sN6YUnJ4F-aH6oSbMY59gVwiEHPt+BL9KA@mail.gmail.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>,
-        bugzilla-daemon@bugzilla.kernel.org, linux-mm@kvack.org,
-        Michal Hocko <mhocko@kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>,
-        Joonsoo Kim <iamjoonsoo.kim@lge.com>
-From: Vlastimil Babka <vbabka@suse.cz>
-Message-ID: <74787aa3-4140-2bae-ce59-5b67db33d811@suse.cz>
-Date: Tue, 22 Nov 2016 15:48:16 +0100
+Received: from a4-1.smtp-out.eu-west-1.amazonses.com ([54.240.4.1]:43016 "EHLO
+        a4-1.smtp-out.eu-west-1.amazonses.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1756069AbcKVQYS (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 22 Nov 2016 11:24:18 -0500
+From: Martin Raiber <martin@urbackup.org>
+Subject: Inconsistent free space with false ENOSPC
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Message-ID: <010201588c655ba6-4fe49dba-25fb-45ca-adf5-4bb721cd6ecb-000000@eu-west-1.amazonses.com>
+Date: Tue, 22 Nov 2016 14:16:42 +0000
 MIME-Version: 1.0
-In-Reply-To: <CAJtFHURrPdJcLrB1sN6YUnJ4F-aH6oSbMY59gVwiEHPt+BL9KA@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-256; boundary="------------ms030902000904030707010707"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/22/2016 02:58 PM, E V wrote:
-> System OOM'd several times last night with 4.8.10, I attached the
-> page_owner output from a morning cat ~8 hours after OOM's to the
-> bugzilla case, split and compressed to fit under the 5M attachment
-> limit. Let me know if you need anything else.
+This is a cryptographically signed message in MIME format.
 
-Looks like for some reason, the stack saving produces garbage stacks
-that only repeat save_stack_trace and save_stack functions :/
+--------------ms030902000904030707010707
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 
-But judging from gfp flags and page flags, most pages seem to be
-allocated with:
+Hi,
 
-mask 0x2400840(GFP_NOFS|__GFP_NOFAIL)
+I'm having a file system which is currently broken because of ENOSPC issu=
+es.
 
-and page flags:
+It is a single device file system with no compression and no quotas
+enabled but with some snapshots. Creation and initial ENOSPC/free space
+inconsistency with 4.4.20 and 4.4.30 (both vanilla).
+Currently I am on 4.9.0-rc6 and still getting ENOSPC. Interestingly,
+after running "btrfs check --repair" "df" shows 0 free space (Used
+516456408 Available 0), being inconsistent with the below other btrfs
+free space information.
 
-0x20000000000006c(referenced|uptodate|lru|active)
-or
-0x20000000000016c(referenced|uptodate|lru|active|owner_priv_1)
-or
-0x20000000000086c(referenced|uptodate|lru|active|private)
+I have tried clearing the space cache, using space_cache=3Dv2 and that
+doesn't help. It also cannot balance anything anymore.
 
-While GFP_HIGHUSER_MOVABLE (which I would expect on lru) are less frequent.
+Please tell me if anyone is interested in a btrfs-image of the file syste=
+m.
 
-Example:
-> grep GFP_NOFS page_owner_after_af | wc -l
-973596
-> grep GFP_HIGHUSER_MOVABLE page_owner_after_af | wc -l
-158879
-> grep GFP_NOFAIL page_owner_after_af | wc -l
-971442
+btrfs fi usage output:
 
-grepping for btrfs shows that at least some stacks for NOFS/NOFAIL pages
-imply it:
-clear_state_bit+0x135/0x1c0 [btrfs]
-or
-add_delayed_tree_ref+0xbf/0x170 [btrfs]
-or
-__btrfs_map_block+0x6a8/0x1200 [btrfs]
-or
-btrfs_buffer_uptodate+0x48/0x70 [btrfs]
-or
-btrfs_set_path_blocking+0x34/0x60 [btrfs]
+Overall:
+    Device size:                 512.00GiB
+    Device allocated:            512.00GiB
+    Device unallocated:            1.04MiB
+    Device missing:                  0.00B
+    Used:                        492.03GiB
+    Free (estimated):             19.59GiB      (min: 19.59GiB)
+    Data ratio:                       1.00
+    Metadata ratio:                   2.00
+    Global reserve:              512.00MiB      (used: 326.20MiB)
 
-and some more variants.
+Data,single: Size:507.98GiB, Used:488.39GiB
+   /dev/mapper/LUKS-CC-9a6043feb9d946269555a71ec0742c8b  507.98GiB
 
-So looks like the pages contain btrfs metadata, are on file lru and from
-previous checks of /proc/kpagecount we know that they most likely have
-page_count() == 0 but are not freed. Could btrfs guys provide some
-insight here?
+Metadata,DUP: Size:2.00GiB, Used:1.82GiB
+   /dev/mapper/LUKS-CC-9a6043feb9d946269555a71ec0742c8b    4.00GiB
 
-> On Fri, Nov 18, 2016 at 10:02 AM, E V <eliventer@gmail.com> wrote:
->> Yes, the short window between the stalls and the panic makes it
->> difficult to manually check much. I could setup a cron every 5 minutes
->> or so if you want. Also, I see the OOM's in 4.8, but it has yet to
->> panic on me. Where as 4.9rc has panic'd both times I've booted it, so
->> depending on what you want to look at it might be easier to
->> investigate on 4.8. Let me know, I can turn on a couple of the DEBUG
->> config's and build a new 4.8.8. Never looked into a netconsole or
->> serial console. I think just getting the system to use a higher res
->> console would be an improvement, but the OOM's seemed to be the root
->> cause of the panic so I haven't spent any time looking into that as of
->> yet,
->>
->> Thanks,
->> -Eli
->>
->> On Fri, Nov 18, 2016 at 6:54 AM, Tetsuo Handa
->> <penguin-kernel@i-love.sakura.ne.jp> wrote:
->>> On 2016/11/18 6:49, Vlastimil Babka wrote:
->>>> On 11/16/2016 02:39 PM, E V wrote:
->>>>> System panic'd overnight running 4.9rc5 & rsync. Attached a photo of
->>>>> the stack trace, and the 38 call traces in a 2 minute window shortly
->>>>> before, to the bugzilla case for those not on it's e-mail list:
->>>>>
->>>>> https://bugzilla.kernel.org/show_bug.cgi?id=186671
->>>>
->>>> The panic screenshot has only the last part, but the end marker says
->>>> it's OOM with no killable processes. The DEBUG_VM config thus didn't
->>>> trigger anything, and still there's tons of pagecache, mostly clean,
->>>> that's not being reclaimed.
->>>>
->>>> Could you now try this?
->>>> - enable CONFIG_PAGE_OWNER
->>>> - boot with kernel option: page_owner=on
->>>> - after the first oom, "cat /sys/kernel/debug/page_owner > file"
->>>> - provide the file (compressed, it will be quite large)
->>>
->>> Excuse me for a noise, but do we really need to do
->>> "cat /sys/kernel/debug/page_owner > file" after the first OOM killer
->>> invocation? I worry that it might be too difficult to do.
->>> Shouldn't we rather do "cat /sys/kernel/debug/page_owner > file"
->>> hourly and compare tendency between the latest one and previous one?
->>>
->>> This system has swap, and /var/log/messages before panic
->>> reports that swapin was stalling at memory allocation.
->>>
->>> ----------------------------------------
->>> [130346.262510] dsm_sa_datamgrd: page allocation stalls for 52400ms, order:0, mode:0x24200ca(GFP_HIGHUSER_MOVABLE)
->>> [130346.262572] CPU: 1 PID: 3622 Comm: dsm_sa_datamgrd Tainted: G        W I     4.9.0-rc5 #2
->>> [130346.262662]  0000000000000000 ffffffff8129ba69 ffffffff8170e4c8 ffffc90003ccb8d8
->>> [130346.262714]  ffffffff8113449f 024200ca1ca11b40 ffffffff8170e4c8 ffffc90003ccb880
->>> [130346.262765]  ffffffff00000010 ffffc90003ccb8e8 ffffc90003ccb898 ffff88041f226e80
->>> [130346.262817] Call Trace:
->>> [130346.262843]  [<ffffffff8129ba69>] ? dump_stack+0x46/0x5d
->>> [130346.262872]  [<ffffffff8113449f>] ? warn_alloc+0x11f/0x140
->>> [130346.262899]  [<ffffffff81134d7b>] ? __alloc_pages_slowpath+0x84b/0xa80
->>> [130346.262929]  [<ffffffff81135260>] ? __alloc_pages_nodemask+0x2b0/0x2f0
->>> [130346.262960]  [<ffffffff8117f1be>] ? alloc_pages_vma+0xbe/0x260
->>> [130346.262989]  [<ffffffff8112af02>] ? pagecache_get_page+0x22/0x280
->>> [130346.263019]  [<ffffffff81171b68>] ? __read_swap_cache_async+0x118/0x1a0
->>> [130346.263048]  [<ffffffff81171bff>] ? read_swap_cache_async+0xf/0x30
->>> [130346.263077]  [<ffffffff81171d8e>] ? swapin_readahead+0x16e/0x1c0
->>> [130346.263106]  [<ffffffff812a0f6e>] ? radix_tree_lookup_slot+0xe/0x20
->>> [130346.263135]  [<ffffffff8112ac84>] ? find_get_entry+0x14/0x130
->>> [130346.263162]  [<ffffffff8112af02>] ? pagecache_get_page+0x22/0x280
->>> [130346.263193]  [<ffffffff8115cb1f>] ? do_swap_page+0x44f/0x5f0
->>> [130346.263220]  [<ffffffff812a0f02>] ? __radix_tree_lookup+0x62/0xc0
->>> [130346.263249]  [<ffffffff8115e91a>] ? handle_mm_fault+0x66a/0xf00
->>> [130346.263277]  [<ffffffff8112ac84>] ? find_get_entry+0x14/0x130
->>> [130346.263305]  [<ffffffff8104a245>] ? __do_page_fault+0x1c5/0x490
->>> [130346.263336]  [<ffffffff8150e322>] ? page_fault+0x22/0x30
->>> [130346.263364]  [<ffffffff812a7cac>] ? copy_user_generic_string+0x2c/0x40
->>> [130346.263395]  [<ffffffff811adc1d>] ? set_fd_set+0x1d/0x30
->>> [130346.263422]  [<ffffffff811ae905>] ? core_sys_select+0x1a5/0x260
->>> [130346.263450]  [<ffffffff811a913a>] ? getname_flags+0x6a/0x1e0
->>> [130346.263479]  [<ffffffff8119ef25>] ? cp_new_stat+0x115/0x130
->>> [130346.263509]  [<ffffffff810bf01f>] ? ktime_get_ts64+0x3f/0xf0
->>> [130346.263537]  [<ffffffff811aea65>] ? SyS_select+0xa5/0xe0
->>> [130346.263564]  [<ffffffff8150c6a0>] ? entry_SYSCALL_64_fastpath+0x13/0x94
->>> ----------------------------------------
->>>
->>> Under such situation, trying to login and execute /bin/cat could take minutes.
->>> Also, writing to btrfs and ext4 seems to be stalling. The btrfs one is a
->>> situation where WQ_MEM_RECLAIM kernel workqueue is unable to make progress.
->>>
->>> ----------------------------------------
->>> [130420.008231] kworker/u34:21: page allocation stalls for 35028ms, order:0, mode:0x2400840(GFP_NOFS|__GFP_NOFAIL)
->>> [130420.008287] CPU: 5 PID: 24286 Comm: kworker/u34:21 Tainted: G        W I     4.9.0-rc5 #2
->>> [130420.008401] Workqueue: btrfs-extent-refs btrfs_extent_refs_helper [btrfs]
->>> [130420.008432]  0000000000000000 ffffffff8129ba69 ffffffff8170e4c8 ffffc900087836a0
->>> [130420.008483]  ffffffff8113449f 024008401e3f1b40 ffffffff8170e4c8 ffffc90008783648
->>> [130420.008534]  ffffffff00000010 ffffc900087836b0 ffffc90008783660 ffff88041ecc4340
->>> [130420.008586] Call Trace:
->>> [130420.008611]  [<ffffffff8129ba69>] ? dump_stack+0x46/0x5d
->>> [130420.008640]  [<ffffffff8113449f>] ? warn_alloc+0x11f/0x140
->>> [130420.008667]  [<ffffffff81134d7b>] ? __alloc_pages_slowpath+0x84b/0xa80
->>> [130420.008707]  [<ffffffffa020c432>] ? search_bitmap+0xc2/0x140 [btrfs]
->>> [130420.008736]  [<ffffffff81135260>] ? __alloc_pages_nodemask+0x2b0/0x2f0
->>> [130420.008766]  [<ffffffff8117dbda>] ? alloc_pages_current+0x8a/0x110
->>> [130420.008796]  [<ffffffff8112afcc>] ? pagecache_get_page+0xec/0x280
->>> [130420.008836]  [<ffffffffa01e9aa8>] ? alloc_extent_buffer+0x108/0x430 [btrfs]
->>> [130420.008875]  [<ffffffffa01b4108>] ? btrfs_alloc_tree_block+0x118/0x4d0 [btrfs]
->>> [130420.008927]  [<ffffffffa019ae38>] ? __btrfs_cow_block+0x148/0x5d0 [btrfs]
->>> [130420.008964]  [<ffffffffa019b464>] ? btrfs_cow_block+0x114/0x1d0 [btrfs]
->>> [130420.009001]  [<ffffffffa019f1d6>] ? btrfs_search_slot+0x206/0xa40 [btrfs]
->>> [130420.009039]  [<ffffffffa01a6089>] ? lookup_inline_extent_backref+0xd9/0x620 [btrfs]
->>> [130420.009095]  [<ffffffffa01e4e74>] ? set_extent_bit+0x24/0x30 [btrfs]
->>> [130420.009124]  [<ffffffff8118567f>] ? kmem_cache_alloc+0x17f/0x1b0
->>> [130420.009161]  [<ffffffffa01a7b1f>] ? __btrfs_free_extent.isra.69+0xef/0xd10 [btrfs]
->>> [130420.009215]  [<ffffffffa0214346>] ? btrfs_merge_delayed_refs+0x56/0x6f0 [btrfs]
->>> [130420.009269]  [<ffffffffa01ac545>] ? __btrfs_run_delayed_refs+0x745/0x1320 [btrfs]
->>> [130420.009314]  [<ffffffff810801ef>] ? ttwu_do_wakeup+0xf/0xe0
->>> [130420.009351]  [<ffffffffa01b0000>] ? btrfs_run_delayed_refs+0x90/0x2b0 [btrfs]
->>> [130420.009404]  [<ffffffffa01b02a4>] ? delayed_ref_async_start+0x84/0xa0 [btrfs]
->>> [130420.009459]  [<ffffffffa01f82a3>] ? normal_work_helper+0xc3/0x2f0 [btrfs]
->>> [130420.009490]  [<ffffffff81071efb>] ? process_one_work+0x14b/0x400
->>> [130420.009518]  [<ffffffff8107251d>] ? worker_thread+0x5d/0x470
->>> [130420.009546]  [<ffffffff810724c0>] ? rescuer_thread+0x310/0x310
->>> [130420.009573]  [<ffffffff8105ed54>] ? do_group_exit+0x34/0xb0
->>> [130420.009601]  [<ffffffff810772bb>] ? kthread+0xcb/0xf0
->>> [130420.009627]  [<ffffffff810771f0>] ? kthread_park+0x50/0x50
->>> [130420.009655]  [<ffffffff8150c8d2>] ? ret_from_fork+0x22/0x30
->>> ----------------------------------------
->>>
->>> ----------------------------------------
->>> [130438.436025] jbd2/dm-0-8: page allocation stalls for 10492ms, order:0, mode:0x2420848(GFP_NOFS|__GFP_NOFAIL|__GFP_HARDWALL|__GFP_MOVABLE)
->>> [130438.436095] CPU: 2 PID: 1838 Comm: jbd2/dm-0-8 Tainted: G        W I     4.9.0-rc5 #2
->>> [130438.436184]  0000000000000000 ffffffff8129ba69 ffffffff8170e4c8 ffffc90003e13728
->>> [130438.436237]  ffffffff8113449f 0242084800000200 ffffffff8170e4c8 ffffc90003e136d0
->>> [130438.436289]  0000000100000010 ffffc90003e13738 ffffc90003e136e8 0000000000000001
->>> [130438.436340] Call Trace:
->>> [130438.436368]  [<ffffffff8129ba69>] ? dump_stack+0x46/0x5d
->>> [130438.436399]  [<ffffffff8113449f>] ? warn_alloc+0x11f/0x140
->>> [130438.436426]  [<ffffffff81134d7b>] ? __alloc_pages_slowpath+0x84b/0xa80
->>> [130438.436455]  [<ffffffff81135260>] ? __alloc_pages_nodemask+0x2b0/0x2f0
->>> [130438.436488]  [<ffffffff8117dbda>] ? alloc_pages_current+0x8a/0x110
->>> [130438.436518]  [<ffffffff8112afcc>] ? pagecache_get_page+0xec/0x280
->>> [130438.436549]  [<ffffffff811cc051>] ? __getblk_gfp+0xf1/0x320
->>> [130438.436593]  [<ffffffffa02bc774>] ? ext4_get_branch+0xa4/0x130 [ext4]
->>> [130438.436628]  [<ffffffffa02bd24b>] ? ext4_ind_map_blocks+0xcb/0xb10 [ext4]
->>> [130438.436658]  [<ffffffff8108807e>] ? update_curr+0x7e/0x100
->>> [130438.436688]  [<ffffffff810bfe61>] ? ktime_get+0x31/0xa0
->>> [130438.436716]  [<ffffffff8112e329>] ? mempool_alloc+0x59/0x170
->>> [130438.436743]  [<ffffffff8108807e>] ? update_curr+0x7e/0x100
->>> [130438.436775]  [<ffffffffa0280813>] ? ext4_map_blocks+0x3c3/0x630 [ext4]
->>> [130438.436808]  [<ffffffffa0280ae4>] ? _ext4_get_block+0x64/0xc0 [ext4]
->>> [130438.436838]  [<ffffffff811ca6a7>] ? generic_block_bmap+0x37/0x50
->>> [130438.436870]  [<ffffffffa027fc57>] ? ext4_bmap+0x37/0xd0 [ext4]
->>> [130438.436901]  [<ffffffffa008a5e1>] ? jbd2_journal_bmap+0x21/0x70 [jbd2]
->>> [130438.436932]  [<ffffffffa008a6be>] ? jbd2_journal_get_descriptor_buffer+0x1e/0xc0 [jbd2]
->>> [130438.436979]  [<ffffffffa0086aa8>] ? jbd2_journal_write_revoke_records+0x198/0x2b0 [jbd2]
->>> [130438.437026]  [<ffffffffa0083236>] ? jbd2_journal_commit_transaction+0x5d6/0x19f0 [jbd2]
->>> [130438.437071]  [<ffffffff8108807e>] ? update_curr+0x7e/0x100
->>> [130438.437099]  [<ffffffff8108c8fc>] ? dequeue_task_fair+0x5dc/0x1120
->>> [130438.437127]  [<ffffffff8108f61c>] ? pick_next_task_fair+0x12c/0x420
->>> [130438.437157]  [<ffffffffa00884e8>] ? kjournald2+0xc8/0x250 [jbd2]
->>> [130438.437187]  [<ffffffff810948e0>] ? wake_up_atomic_t+0x30/0x30
->>> [130438.437216]  [<ffffffffa0088420>] ? commit_timeout+0x10/0x10 [jbd2]
->>> [130438.437247]  [<ffffffff810772bb>] ? kthread+0xcb/0xf0
->>> [130438.437273]  [<ffffffff810771f0>] ? kthread_park+0x50/0x50
->>> [130438.437304]  [<ffffffff8150c8d2>] ? ret_from_fork+0x22/0x30
->>> ----------------------------------------
->>>
->>> Under such situation, saving /sys/kernel/debug/page_owner to a file might
->>> be impossible. And, once the stalling started, it took less than 5 minutes
->>> before the kernel panics due to "Out of memory and no killable process".
->>> This could happen when E V is offline.
->>>
->>> Since rsyslogd is likely be killed by the OOM killer for situations like
->>> this, E V might want to try serial console or netconsole for saving kernel
->>> messages reliably.
->>>
->>> I don't know what we will find by analyzing /sys/kernel/debug/page_owner ,
->>> but if something is wrong, can't we try whether
->>> "echo 3 > /proc/sys/vm/drop_caches" before the stalling starts helps.
->>>
->>> I guess that this problem became visible by OOM detection rework which
->>> went to Linux 4.7. I don't know what "free_pcp:0kB local_pcp:0kB" means
->>> (get_page_from_freelist() for any order is failng?), but in general I think
->>> this /var/log/messages showed that free_pcp: and local_pcp: remains small.
->>>
+System,DUP: Size:8.00MiB, Used:80.00KiB
+   /dev/mapper/LUKS-CC-9a6043feb9d946269555a71ec0742c8b   16.00MiB
 
+Unallocated:
+   /dev/mapper/LUKS-CC-9a6043feb9d946269555a71ec0742c8b    1.04MiB
+
+btrfs-debugs output:
+
+block group offset 1103101952 len 1073741824 used 1029148672
+chunk_objectid 256 flags 1 usage 0.96
+block group offset 2176843776 len 1073741824 used 1066725376
+chunk_objectid 256 flags 1 usage 0.99
+block group offset 3250585600 len 1073741824 used 1070731264
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 4324327424 len 1073741824 used 1066201088
+chunk_objectid 256 flags 1 usage 0.99
+block group offset 5398069248 len 1073741824 used 1072377856
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 6471811072 len 1073741824 used 1070784512
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 7545552896 len 1073741824 used 1069023232
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 8619294720 len 1073741824 used 1058299904
+chunk_objectid 256 flags 1 usage 0.99
+block group offset 9693036544 len 1073741824 used 1069408256
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 10766778368 len 1073741824 used 1070317568
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 11840520192 len 1073741824 used 1068920832
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 12914262016 len 1073741824 used 1066930176
+chunk_objectid 256 flags 1 usage 0.99
+block group offset 13988003840 len 1073741824 used 1072746496
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 15061745664 len 1073741824 used 1073213440
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 16135487488 len 1073741824 used 1068171264
+chunk_objectid 256 flags 1 usage 0.99
+block group offset 17209229312 len 1073741824 used 1071550464
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 18282971136 len 1073741824 used 1073672192
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 19356712960 len 1073741824 used 1073508352
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 20430454784 len 1073741824 used 1073668096
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 21504196608 len 1073741824 used 1073577984
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 22577938432 len 1073741824 used 1073483776
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 23651680256 len 1073741824 used 1072021504
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 24725422080 len 1073741824 used 1073672192
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 25799163904 len 1073741824 used 1073176576
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 26872905728 len 1073741824 used 1073360896
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 27946647552 len 1073741824 used 1072599040
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 29020389376 len 1073741824 used 1073524736
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 31167873024 len 1073741824 used 1073561600
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 32241614848 len 1073741824 used 1072566272
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 33315356672 len 1073741824 used 1073635328
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 34389098496 len 1073741824 used 1073364992
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 36536582144 len 1073741824 used 1073344512
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 37610323968 len 1073741824 used 1073381376
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 38684065792 len 1073741824 used 1067831296
+chunk_objectid 256 flags 1 usage 0.99
+block group offset 39757807616 len 1073741824 used 1073496064
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 42979033088 len 1073741824 used 1073692672
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 52642709504 len 1073741824 used 1071665152
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 53716451328 len 1073741824 used 1073664000
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 55863934976 len 1073741824 used 1065877504
+chunk_objectid 256 flags 1 usage 0.99
+block group offset 65527611392 len 1073741824 used 1073713152
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 67675095040 len 1073741824 used 1069690880
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 69822578688 len 1073741824 used 1073594368
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 77338771456 len 1073741824 used 1073086464
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 79486255104 len 1073741824 used 1073184768
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 127804637184 len 1073741824 used 1073606656
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 131025862656 len 1073741824 used 1073373184
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 134247088128 len 1073741824 used 1073520640
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 135320829952 len 1073741824 used 1070874624
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 136394571776 len 1073741824 used 1073459200
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 138542055424 len 1073741824 used 1073004544
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 139615797248 len 1073741824 used 1068949504
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 143910764544 len 1073741824 used 1072885760
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 149279473664 len 1073741824 used 1069297664
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 231957594112 len 1073741824 used 1071689728
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 233031335936 len 1073741824 used 1073709056
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 280275976192 len 1073741824 used 1073672192
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 289939652608 len 1073741824 used 1073561600
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 296382103552 len 1073741824 used 1072517120
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 297455845376 len 1073741824 used 1073688576
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 298529587200 len 1073741824 used 1073717248
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 325373132800 len 1073741824 used 1073684480
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 329668100096 len 1073741824 used 1073545216
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 340405518336 len 1073741824 used 1073078272
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 359732871168 len 1073741824 used 1073602560
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 360806612992 len 1073741824 used 1073643520
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 361880354816 len 1073741824 used 1073471488
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 364027838464 len 1073741824 used 1073692672
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 365101580288 len 1073741824 used 1073717248
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 376912740352 len 1073741824 used 1073598464
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 390871384064 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 391945125888 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 395166351360 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 396240093184 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 403756285952 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 404830027776 len 1073741824 used 1069752320
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 411272478720 len 1073741824 used 1073627136
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 412346220544 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 414493704192 len 1073741824 used 1071886336
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 415567446016 len 1073741824 used 1072738304
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 416641187840 len 1073741824 used 1068167168
+chunk_objectid 256 flags 1 usage 0.99
+block group offset 419862413312 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 420936155136 len 1073741824 used 1073553408
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 422009896960 len 1073741824 used 1073647616
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 423083638784 len 1073741824 used 1073721344
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 424157380608 len 1073741824 used 1073700864
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 426304864256 len 1073741824 used 1073614848
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 427378606080 len 1073741824 used 1073725440
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 434894798848 len 1073741824 used 1073721344
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 435968540672 len 1073741824 used 1073696768
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 437042282496 len 1073741824 used 1073594368
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 438116024320 len 1073741824 used 1073721344
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 439189766144 len 1073741824 used 1073696768
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 441337249792 len 1073741824 used 1073651712
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 442410991616 len 1073741824 used 1073696768
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 443484733440 len 1073741824 used 1073721344
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 445632217088 len 1073741824 used 1073373184
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 448853442560 len 1073741824 used 1073709056
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 449927184384 len 1028653056 used 1028599808
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 454196985856 len 1073741824 used 1073516544
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 455270727680 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 456344469504 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 457418211328 len 1073741824 used 1073651712
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 458491953152 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 459565694976 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 460639436800 len 1073741824 used 1073709056
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 461713178624 len 1073741824 used 1073725440
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 462786920448 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 463860662272 len 1073741824 used 1073704960
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 464934404096 len 1073741824 used 1073565696
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 466008145920 len 1073741824 used 1073479680
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 467081887744 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 468155629568 len 1073741824 used 1073713152
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 469229371392 len 1073741824 used 1073700864
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 470303113216 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 471376855040 len 1073741824 used 1073717248
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 472450596864 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 473524338688 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 474598080512 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 475671822336 len 1073741824 used 1073491968
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 476745564160 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 478893047808 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 479966789632 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 481040531456 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 482114273280 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 483188015104 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 484261756928 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 485335498752 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 486409240576 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 487482982400 len 1073741824 used 1073700864
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 488556724224 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 489630466048 len 1073741824 used 1073618944
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 490704207872 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 491777949696 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 492851691520 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 493925433344 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 494999175168 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 496072916992 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 497146658816 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 498220400640 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 499294142464 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 500367884288 len 1073741824 used 1073729536
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 501441626112 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 502515367936 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 503589109760 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 504662851584 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 505736593408 len 1073741824 used 1073696768
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 506810335232 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 507884077056 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 508957818880 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 510031560704 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 511105302528 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 512179044352 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 513252786176 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 514326528000 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 515400269824 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 516474011648 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 517547753472 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 518621495296 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 519695237120 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 520768978944 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 521842720768 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 522916462592 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 523990204416 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 525063946240 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 526137688064 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 527211429888 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 528285171712 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 529358913536 len 1073741824 used 1073479680
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 530432655360 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 531506397184 len 1073741824 used 1073725440
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 532580139008 len 1073741824 used 1073729536
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 533653880832 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 534727622656 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 535801364480 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 536875106304 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 537948848128 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 539022589952 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 540096331776 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 541170073600 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 542243815424 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 543317557248 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 544391299072 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 545465040896 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 546538782720 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 547612524544 len 1073741824 used 1073479680
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 548686266368 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 549760008192 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 550833750016 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 551907491840 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 552981233664 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 554054975488 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 555128717312 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 556202459136 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 558349942784 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 559423684608 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 560497426432 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 561571168256 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 562644910080 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 563718651904 len 1073741824 used 1072037888
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 564792393728 len 1073741824 used 1073479680
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 565866135552 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 566939877376 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 568013619200 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 569087361024 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 570161102848 len 1073741824 used 1073491968
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 571234844672 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 572308586496 len 1073741824 used 1072955392
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 573382328320 len 1073741824 used 1073676288
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 574456070144 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 575529811968 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 576603553792 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 577677295616 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 578751037440 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 579824779264 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 580898521088 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 581972262912 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 583046004736 len 1073741824 used 1073639424
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 584119746560 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 585193488384 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 586267230208 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 587340972032 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 588414713856 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 589488455680 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 590562197504 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 591635939328 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 592709681152 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 593783422976 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 594857164800 len 1073741824 used 1073537024
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 595930906624 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 597004648448 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 598078390272 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 599152132096 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 600225873920 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 601299615744 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 602373357568 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 603447099392 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 604520841216 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 605594583040 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 606668324864 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 607742066688 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 608815808512 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 609889550336 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 610963292160 len 1073741824 used 1073479680
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 612037033984 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 613110775808 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 614184517632 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 615258259456 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 616332001280 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 617405743104 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 618479484928 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 619553226752 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 620626968576 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 621700710400 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 622774452224 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 623848194048 len 1073741824 used 1073676288
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 624921935872 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 625995677696 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 627069419520 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 628143161344 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 629216903168 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 630290644992 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 631364386816 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 632438128640 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 633511870464 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 634585612288 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 635659354112 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 636733095936 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 637806837760 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 638880579584 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 639954321408 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 641028063232 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 642101805056 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 643175546880 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 644249288704 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 645323030528 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 646396772352 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 647470514176 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 648544256000 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 649617997824 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 650691739648 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 651765481472 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 652839223296 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 653912965120 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 654986706944 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 656060448768 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 657134190592 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 658207932416 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 659281674240 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 660355416064 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 661429157888 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 662502899712 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 663576641536 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 664650383360 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 665724125184 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 666797867008 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 667871608832 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 668945350656 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 670019092480 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 671092834304 len 1073741824 used 1071968256
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 672166576128 len 1073741824 used 1058471936
+chunk_objectid 256 flags 1 usage 0.99
+block group offset 673240317952 len 1073741824 used 1065099264
+chunk_objectid 256 flags 1 usage 0.99
+block group offset 674314059776 len 1073741824 used 1064210432
+chunk_objectid 256 flags 1 usage 0.99
+block group offset 675387801600 len 1073741824 used 1058979840
+chunk_objectid 256 flags 1 usage 0.99
+block group offset 676461543424 len 1073741824 used 1052667904
+chunk_objectid 256 flags 1 usage 0.98
+block group offset 677535285248 len 1073741824 used 333135872
+chunk_objectid 256 flags 1 usage 0.31
+block group offset 678609027072 len 1073741824 used 218992640
+chunk_objectid 256 flags 1 usage 0.20
+block group offset 679682768896 len 1073741824 used 1010180096
+chunk_objectid 256 flags 1 usage 0.94
+block group offset 680756510720 len 1073741824 used 968945664
+chunk_objectid 256 flags 1 usage 0.90
+block group offset 681830252544 len 1073741824 used 523280384
+chunk_objectid 256 flags 1 usage 0.49
+block group offset 682903994368 len 1073741824 used 1069355008
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 683977736192 len 1073741824 used 1073135616
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 685051478016 len 1073741824 used 1073737728
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 686125219840 len 1073741824 used 169594880
+chunk_objectid 256 flags 1 usage 0.16
+block group offset 687198961664 len 1073741824 used 56483840
+chunk_objectid 256 flags 1 usage 0.05
+block group offset 688272703488 len 1073741824 used 819478528
+chunk_objectid 256 flags 1 usage 0.76
+block group offset 689883316224 len 1073741824 used 925794304
+chunk_objectid 256 flags 1 usage 0.86
+block group offset 690957058048 len 1073741824 used 1032155136
+chunk_objectid 256 flags 1 usage 0.96
+block group offset 692030799872 len 1073741824 used 1073713152
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 693104541696 len 1073741824 used 1073192960
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 694178283520 len 1073741824 used 1073217536
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 695252025344 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 696325767168 len 1073741824 used 1069629440
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 697399508992 len 1073741824 used 1073315840
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 698473250816 len 1073741824 used 1073680384
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 699546992640 len 1073741824 used 1072533504
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 700620734464 len 1073741824 used 1073201152
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 701694476288 len 1073741824 used 1072660480
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 702768218112 len 1073741824 used 1052811264
+chunk_objectid 256 flags 1 usage 0.98
+block group offset 703841959936 len 1073741824 used 1050193920
+chunk_objectid 256 flags 1 usage 0.98
+block group offset 704915701760 len 1073741824 used 902115328
+chunk_objectid 256 flags 1 usage 0.84
+block group offset 705989443584 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 707063185408 len 1073741824 used 699277312
+chunk_objectid 256 flags 1 usage 0.65
+block group offset 708136927232 len 1073741824 used 619708416
+chunk_objectid 256 flags 1 usage 0.58
+block group offset 709210669056 len 1073741824 used 796516352
+chunk_objectid 256 flags 1 usage 0.74
+block group offset 710284410880 len 1073741824 used 635936768
+chunk_objectid 256 flags 1 usage 0.59
+block group offset 711358152704 len 1073741824 used 981127168
+chunk_objectid 256 flags 1 usage 0.91
+block group offset 712431894528 len 1073741824 used 1064923136
+chunk_objectid 256 flags 1 usage 0.99
+block group offset 713505636352 len 1073741824 used 1029201920
+chunk_objectid 256 flags 1 usage 0.96
+block group offset 714579378176 len 1073741824 used 1067474944
+chunk_objectid 256 flags 1 usage 0.99
+block group offset 715653120000 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 716726861824 len 1073741824 used 1073737728
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 717800603648 len 1073741824 used 1070051328
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 718874345472 len 1073741824 used 1064763392
+chunk_objectid 256 flags 1 usage 0.99
+block group offset 719948087296 len 1073741824 used 1072758784
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 721021829120 len 1073741824 used 1069105152
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 722095570944 len 1073741824 used 1073446912
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 723169312768 len 1073741824 used 1070690304
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 724243054592 len 1073741824 used 1059532800
+chunk_objectid 256 flags 1 usage 0.99
+block group offset 725316796416 len 1073741824 used 1068711936
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 726390538240 len 1073741824 used 1073475584
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 727464280064 len 1073741824 used 1073205248
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 728538021888 len 1073741824 used 1069047808
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 729611763712 len 1073741824 used 1069502464
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 730685505536 len 1073741824 used 1073725440
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 731759247360 len 1073741824 used 1070542848
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 732832989184 len 1073741824 used 1070587904
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 733906731008 len 1073741824 used 986300416
+chunk_objectid 256 flags 1 usage 0.92
+block group offset 734980472832 len 1073741824 used 1068572672
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 736054214656 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 737127956480 len 1073741824 used 1073721344
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 738201698304 len 1073741824 used 1073565696
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 739275440128 len 1073741824 used 1072578560
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 740349181952 len 1073741824 used 1072590848
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 741422923776 len 1073741824 used 1073725440
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 742496665600 len 1073741824 used 1073647616
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 743570407424 len 1073741824 used 1073709056
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 744644149248 len 1073741824 used 1073528832
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 745717891072 len 1073741824 used 1073553408
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 746791632896 len 1073741824 used 1073672192
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 747865374720 len 1073741824 used 1073623040
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 748939116544 len 1073741824 used 1073029120
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 750012858368 len 1073741824 used 1073704960
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 751086600192 len 1073741824 used 1073393664
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 752160342016 len 1073741824 used 1073565696
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 753234083840 len 1073741824 used 1073700864
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 754307825664 len 1073741824 used 1073623040
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 755381567488 len 1073741824 used 1073577984
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 756455309312 len 1073741824 used 1073430528
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 757529051136 len 1073741824 used 1073680384
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 758602792960 len 1073741824 used 1073528832
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 759676534784 len 1073741824 used 1073397760
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 760750276608 len 1073741824 used 1073729536
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 761824018432 len 1073741824 used 1073590272
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 762897760256 len 1073741824 used 1073561600
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 763971502080 len 1073741824 used 1073684480
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 765045243904 len 1073741824 used 1073647616
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 766118985728 len 1073741824 used 1073299456
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 767192727552 len 1073741824 used 1073573888
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 768266469376 len 1073741824 used 1073639424
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 769340211200 len 1073741824 used 1073426432
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 770413953024 len 1073741824 used 1072795648
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 771487694848 len 1073741824 used 1073041408
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 772561436672 len 1073741824 used 1073250304
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 773635178496 len 1073741824 used 1073692672
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 774708920320 len 1073741824 used 1073483776
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 775782662144 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 776856403968 len 1073741824 used 1073635328
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 777930145792 len 1073741824 used 1073704960
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 779003887616 len 1073741824 used 1073295360
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 780077629440 len 1073741824 used 1073569792
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 781151371264 len 1073741824 used 1073696768
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 782225113088 len 1073741824 used 1073631232
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 783298854912 len 1073741824 used 1072775168
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 784372596736 len 1073741824 used 1073582080
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 785446338560 len 1073741824 used 1073537024
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 786520080384 len 1073741824 used 1073717248
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 787593822208 len 1073741824 used 1073709056
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 788667564032 len 1073741824 used 1071042560
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 789741305856 len 1073741824 used 1073061888
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 790815047680 len 1073741824 used 1073442816
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 791888789504 len 1073741824 used 1073369088
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 792962531328 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 794036273152 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 795110014976 len 1073741824 used 1073696768
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 796183756800 len 1073741824 used 1073672192
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 797257498624 len 1073741824 used 1073713152
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 798331240448 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 799404982272 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 800478724096 len 1073741824 used 1073401856
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 801552465920 len 1073741824 used 1073655808
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 802626207744 len 1073741824 used 1073057792
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 803699949568 len 1073741824 used 1072742400
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 804773691392 len 1073741824 used 1073713152
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 805847433216 len 1073741824 used 1073700864
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 806921175040 len 1073741824 used 1065246720
+chunk_objectid 256 flags 1 usage 0.99
+block group offset 807994916864 len 1073741824 used 1052016640
+chunk_objectid 256 flags 1 usage 0.98
+block group offset 809068658688 len 1073741824 used 1072533504
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 810142400512 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 811216142336 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 812289884160 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 813363625984 len 1073741824 used 1073737728
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 814437367808 len 1073741824 used 1062035456
+chunk_objectid 256 flags 1 usage 0.99
+block group offset 815511109632 len 1073741824 used 1073717248
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 816584851456 len 1073741824 used 1054617600
+chunk_objectid 256 flags 1 usage 0.98
+block group offset 817658593280 len 1073741824 used 1073467392
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 818732335104 len 1073741824 used 1055498240
+chunk_objectid 256 flags 1 usage 0.98
+block group offset 819806076928 len 1073741824 used 1073729536
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 820879818752 len 1073741824 used 1065500672
+chunk_objectid 256 flags 1 usage 0.99
+block group offset 821953560576 len 1073741824 used 1072975872
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 823027302400 len 1073741824 used 1052024832
+chunk_objectid 256 flags 1 usage 0.98
+block group offset 824101044224 len 1073741824 used 1073729536
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 825174786048 len 1073741824 used 1073737728
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 826248527872 len 1073741824 used 1073737728
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 827322269696 len 1073741824 used 1072889856
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 828396011520 len 1073741824 used 1060712448
+chunk_objectid 256 flags 1 usage 0.99
+block group offset 829469753344 len 1073741824 used 1042903040
+chunk_objectid 256 flags 1 usage 0.97
+block group offset 830543495168 len 1073741824 used 65138688
+chunk_objectid 256 flags 1 usage 0.06
+block group offset 831617236992 len 1073741824 used 171720704
+chunk_objectid 256 flags 1 usage 0.16
+block group offset 832690978816 len 1073741824 used 45895680
+chunk_objectid 256 flags 1 usage 0.04
+block group offset 833764720640 len 1073741824 used 494104576
+chunk_objectid 256 flags 1 usage 0.46
+block group offset 834838462464 len 1073741824 used 1073442816
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 835912204288 len 1073741824 used 1073586176
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 836985946112 len 1073741824 used 90529792
+chunk_objectid 256 flags 1 usage 0.08
+block group offset 838059687936 len 1073741824 used 4194304
+chunk_objectid 256 flags 1 usage 0.00
+block group offset 839133429760 len 1073741824 used 4194304
+chunk_objectid 256 flags 1 usage 0.00
+block group offset 840207171584 len 1073741824 used 4194304
+chunk_objectid 256 flags 1 usage 0.00
+block group offset 841280913408 len 1073741824 used 882728960
+chunk_objectid 256 flags 1 usage 0.82
+block group offset 842354655232 len 1073741824 used 1072635904
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 843428397056 len 1073741824 used 1073553408
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 844502138880 len 1073741824 used 1066938368
+chunk_objectid 256 flags 1 usage 0.99
+block group offset 845575880704 len 1073741824 used 1031524352
+chunk_objectid 256 flags 1 usage 0.96
+block group offset 846649622528 len 1073741824 used 1073717248
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 847723364352 len 1073741824 used 1049436160
+chunk_objectid 256 flags 1 usage 0.98
+block group offset 848797106176 len 1073741824 used 1073410048
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 849870848000 len 1073741824 used 1068904448
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 850944589824 len 1073741824 used 976367616
+chunk_objectid 256 flags 1 usage 0.91
+block group offset 852018331648 len 1073741824 used 1036746752
+chunk_objectid 256 flags 1 usage 0.97
+block group offset 853092073472 len 1073741824 used 1010917376
+chunk_objectid 256 flags 1 usage 0.94
+block group offset 854165815296 len 1073741824 used 1073385472
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 855239557120 len 1073741824 used 696066048
+chunk_objectid 256 flags 1 usage 0.65
+block group offset 856313298944 len 1073741824 used 42090496
+chunk_objectid 256 flags 1 usage 0.04
+block group offset 857387040768 len 1073741824 used 412647424
+chunk_objectid 256 flags 1 usage 0.38
+block group offset 858460782592 len 1073741824 used 773308416
+chunk_objectid 256 flags 1 usage 0.72
+block group offset 859534524416 len 1073741824 used 954793984
+chunk_objectid 256 flags 1 usage 0.89
+block group offset 860608266240 len 1073741824 used 1072414720
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 861682008064 len 1073741824 used 809218048
+chunk_objectid 256 flags 1 usage 0.75
+block group offset 862755749888 len 1073741824 used 1019576320
+chunk_objectid 256 flags 1 usage 0.95
+block group offset 863829491712 len 1073741824 used 899477504
+chunk_objectid 256 flags 1 usage 0.84
+block group offset 864903233536 len 1073741824 used 903045120
+chunk_objectid 256 flags 1 usage 0.84
+block group offset 865976975360 len 1073741824 used 994271232
+chunk_objectid 256 flags 1 usage 0.93
+block group offset 867050717184 len 1073741824 used 1024073728
+chunk_objectid 256 flags 1 usage 0.95
+block group offset 868124459008 len 1073741824 used 969252864
+chunk_objectid 256 flags 1 usage 0.90
+block group offset 869198200832 len 1073741824 used 1010638848
+chunk_objectid 256 flags 1 usage 0.94
+block group offset 870271942656 len 1073741824 used 1022263296
+chunk_objectid 256 flags 1 usage 0.95
+block group offset 871345684480 len 1073741824 used 784011264
+chunk_objectid 256 flags 1 usage 0.73
+block group offset 872419426304 len 1073741824 used 179294208
+chunk_objectid 256 flags 1 usage 0.17
+block group offset 873493168128 len 1073741824 used 991223808
+chunk_objectid 256 flags 1 usage 0.92
+block group offset 874566909952 len 1073741824 used 997720064
+chunk_objectid 256 flags 1 usage 0.93
+block group offset 875640651776 len 1073741824 used 951746560
+chunk_objectid 256 flags 1 usage 0.89
+block group offset 876714393600 len 1073741824 used 1060855808
+chunk_objectid 256 flags 1 usage 0.99
+block group offset 877788135424 len 1073741824 used 847339520
+chunk_objectid 256 flags 1 usage 0.79
+block group offset 878861877248 len 1073741824 used 1057038336
+chunk_objectid 256 flags 1 usage 0.98
+block group offset 879935619072 len 1073741824 used 999571456
+chunk_objectid 256 flags 1 usage 0.93
+block group offset 881009360896 len 1073741824 used 727867392
+chunk_objectid 256 flags 1 usage 0.68
+block group offset 882083102720 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 883693715456 len 1073741824 used 1052876800
+chunk_objectid 256 flags 1 usage 0.98
+block group offset 884767457280 len 1073741824 used 1073475584
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 885841199104 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 886914940928 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 887988682752 len 1073741824 used 1071341568
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 889062424576 len 1073741824 used 1073553408
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 890136166400 len 1073741824 used 1073508352
+chunk_objectid 256 flags 1 usage 1.00
+
+block group offset 891209908224 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 892283650048 len 1073741824 used 1073737728
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 893357391872 len 1073741824 used 1073733632
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 894431133696 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 895504875520 len 1073741824 used 1073741824
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 896578617344 len 1073741824 used 1073729536
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 897652359168 len 19922944 used 19922944
+chunk_objectid 256 flags 1 usage 1.00
+block group offset 897672282112 len 4128768 used 4128768 chunk_objectid
+256 flags 1 usage 1.00
+total_free 21030674432 min_used 4128768 free_of_min_used 0
+block_group_of_min_used 897672282112
+balance block group (897672282112) can reduce the number of data block gr=
+oup
+
+Regards,
+Martin Raiber
+
+
+
+--------------ms030902000904030707010707
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgEFADCABgkqhkiG9w0BBwEAAKCC
+CuQwggT6MIID4qADAgECAhBuZlYKQ9u25a8FBnl/zd+MMA0GCSqGSIb3DQEBCwUAMHUxCzAJ
+BgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBD
+ZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20gQ2xhc3MgMSBDbGll
+bnQgQ0EwHhcNMTYwOTE5MTMxNzAyWhcNMTcwOTE5MTMxNzAyWjBCMRwwGgYDVQQDDBNtYXJ0
+aW5AdXJiYWNrdXAub3JnMSIwIAYJKoZIhvcNAQkBFhNtYXJ0aW5AdXJiYWNrdXAub3JnMIIB
+IjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAw/FqcYQTj3z2wO8ASP8j0Jvb4AbMNgB9
+iv2PLMtAMzYmuW7w2VfUcXwWgM4Fkg6Nm33VhOK+Vryd2bj+jGNhm+DmbMZCfki/NrhdcHKH
+AT7i1NL1lps8X3xJ7N0eJpghht9Wx5OAUfGv18HDD3yBUzqW4x7OaGoKqM0DwyUm9O/rUU6D
+ugxVONmgprREB1JyJBAV8lgYbY0EEUFS1JECuxNcJQEY+G8EpUNCsZxc8nvROyRD72Aztuy2
+qQj4Rs+FzQNCplzmvXot7W0T2KAH9gKb25Q5Lv0sFQEux1stcJc6KKNea21UufblNMLApQ2Z
+cSNWwDF5R+YpUFW8HiBOmwIDAQABo4IBtzCCAbMwDgYDVR0PAQH/BAQDAgSwMB0GA1UdJQQW
+MBQGCCsGAQUFBwMCBggrBgEFBQcDBDAJBgNVHRMEAjAAMB0GA1UdDgQWBBTKwa9D/4YV1XsZ
+6affm7Wv4ykzdTAfBgNVHSMEGDAWgBQkgWw5Yb5JD4+3G0YrySi1J0htaDBvBggrBgEFBQcB
+AQRjMGEwJAYIKwYBBQUHMAGGGGh0dHA6Ly9vY3NwLnN0YXJ0c3NsLmNvbTA5BggrBgEFBQcw
+AoYtaHR0cDovL2FpYS5zdGFydHNzbC5jb20vY2VydHMvc2NhLmNsaWVudDEuY3J0MDgGA1Ud
+HwQxMC8wLaAroCmGJ2h0dHA6Ly9jcmwuc3RhcnRzc2wuY29tL3NjYS1jbGllbnQxLmNybDAe
+BgNVHREEFzAVgRNtYXJ0aW5AdXJiYWNrdXAub3JnMCMGA1UdEgQcMBqGGGh0dHA6Ly93d3cu
+c3RhcnRzc2wuY29tLzBHBgNVHSAEQDA+MDwGCysGAQQBgbU3AQIFMC0wKwYIKwYBBQUHAgEW
+H2h0dHBzOi8vd3d3LnN0YXJ0c3NsLmNvbS9wb2xpY3kwDQYJKoZIhvcNAQELBQADggEBADMT
+EdZtz2a7sT3FDGszfzlAfmwVamtLbG5+O6NC5xc1n9AtWa7LdRPsQzgIROT/e84D+uTPAo1c
+F6rEJ7oSqhgxJcAWgGN1G0KyEzSaFs+nLvfFN1LeaYQjElnmw87z6LGLvjOnfu01M0Atj+DR
+DB3NyRoAn2/5yXHJKP7/mlUSXV/fiplcvP+TJbYJwrL7QDETySua89BU0oH3vtidOm8rlWzl
+cZ4ug+kXzMMwjcwSIFb/P6LDZm3FMCNbg8sBt59+V5+Duk8y6aOcQ0GdGrIXMNs+oIKL5iQW
+sP9+c55K9mJVl4+3J4sTcyT/L2EOXxEZY+zEhnJAds9dQJXkKfswggXiMIIDyqADAgECAhBr
+p4p9CteI1lEK+Vnk57ThMA0GCSqGSIb3DQEBCwUAMH0xCzAJBgNVBAYTAklMMRYwFAYDVQQK
+Ew1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0aWZpY2F0ZSBT
+aWduaW5nMSkwJwYDVQQDEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTAeFw0x
+NTEyMTYwMTAwMDVaFw0zMDEyMTYwMTAwMDVaMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1T
+dGFydENvbSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
+eTEjMCEGA1UEAxMaU3RhcnRDb20gQ2xhc3MgMSBDbGllbnQgQ0EwggEiMA0GCSqGSIb3DQEB
+AQUAA4IBDwAwggEKAoIBAQC9fdr3w6J9g/Zbgv3bW1+uHht1wLUZr5gkrLtXedg17AkefMyU
+GwrQdvwObhajcVmnKVxhrUwkZPXRAwZZosRHfEIi5FH7x6SV/8Sp5lZEuiMnvMFG2MzLA84J
+6Ws5T4NfXZ0qn4TPgnr3X2vPVS51M7Ua9nIJgn8jvTra4eyyQzxvuA/GZwKg7VQfDCmCS+kI
+CslYYWgXOMt2xlsSslxLce0CGWRsT8EpMyt1iDflSjXZIsE7m1uTyHaKZspMLyIyz6mySu8j
+8BWWHpChNNeTrFuhVfrOAyDPFJVUvKZCLKBhibTLloyy+LatoWELrjdI4a8StZY8+dIR9t4A
+PXGzAgMBAAGjggFkMIIBYDAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0lBBYwFAYIKwYBBQUHAwIG
+CCsGAQUFBwMEMBIGA1UdEwEB/wQIMAYBAf8CAQAwMgYDVR0fBCswKTAnoCWgI4YhaHR0cDov
+L2NybC5zdGFydHNzbC5jb20vc2ZzY2EuY3JsMGYGCCsGAQUFBwEBBFowWDAkBggrBgEFBQcw
+AYYYaHR0cDovL29jc3Auc3RhcnRzc2wuY29tMDAGCCsGAQUFBzAChiRodHRwOi8vYWlhLnN0
+YXJ0c3NsLmNvbS9jZXJ0cy9jYS5jcnQwHQYDVR0OBBYEFCSBbDlhvkkPj7cbRivJKLUnSG1o
+MB8GA1UdIwQYMBaAFE4L7xqkQFulF2mHMMo0aEPQQa7yMD8GA1UdIAQ4MDYwNAYEVR0gADAs
+MCoGCCsGAQUFBwIBFh5odHRwOi8vd3d3LnN0YXJ0c3NsLmNvbS9wb2xpY3kwDQYJKoZIhvcN
+AQELBQADggIBAIvj94fsAYuErQ8BAluc4SMnIwS9NPBwAm5SH9uh2NCXTq7im61g7F1LIiNI
+/+wq37fUuaMbz4g7VarKQTgf8ubs0p7NZWcIe7Bvem2AWaXBsxsaRTYw5kG3DN8pd1hSEUuF
+oTa7DmNeFe8tiK1BrL3rbA/m48jp4AiFXgvxprJrW7izsyetOrRHPbkW4Y07v29MdhaPv3u1
+JELyszXqOzjIYo4sWlC8iDQXwgSW/ntvWy2n4LuiaozlCfXl149tKeqvwlvrla2Yklue/quW
+p9j9ou4T/OY0CXMuY+B8wNK0ohd2D4ShgFlMSjzAFRoHGKF81snTr2d1A7Ew02oF6UQyCkC2
+aNNsK5cWOojBar5c7HplX9aHYUCZouxIeU28SONJAxnATgR4cJ2jrpmYSz/kliUJ46S6UpVD
+o/ebn9c6PaM/XtDYCCaM/7XX6wc3s++sbQ7CtCn1Ax7df6ufQbwyO0V+oFa9H0KAsjHMzcwk
+3EV2B2NLatidKE/m7G+rB9m+FlVgIiSp0mGlg43QO9Kh1+JqvTCIzv2bJJkmPMLQJNuKKwHN
+L8F4GGp6jbAV+WL+LDeGfVcq8DHS3LrD+xyYEXQBiqZEdiPVOMxLDSUCXsDO0uCWpaNQ8j6y
+6S9p0xE/Ga0peVLadVHhqf9nXqKaxnr358VgfrxzUIrvOaOjMYIDzDCCA8gCAQEwgYkwdTEL
+MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29t
+IENlcnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAxIENs
+aWVudCBDQQIQbmZWCkPbtuWvBQZ5f83fjDANBglghkgBZQMEAgEFAKCCAhMwGAYJKoZIhvcN
+AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTYxMTIyMTQxNjM5WjAvBgkqhkiG
+9w0BCQQxIgQgm4H2qCeQqcROo5TgziyK1A374kL2uzrwYxIZoe+Dd1MwbAYJKoZIhvcNAQkP
+MV8wXTALBglghkgBZQMEASowCwYJYIZIAWUDBAECMAoGCCqGSIb3DQMHMA4GCCqGSIb3DQMC
+AgIAgDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggqhkiG9w0DAgIBKDCBmgYJKwYBBAGC
+NxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
+VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRD
+b20gQ2xhc3MgMSBDbGllbnQgQ0ECEG5mVgpD27blrwUGeX/N34wwgZwGCyqGSIb3DQEJEAIL
+MYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYDVQQL
+EyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
+Q2xhc3MgMSBDbGllbnQgQ0ECEG5mVgpD27blrwUGeX/N34wwDQYJKoZIhvcNAQEBBQAEggEA
+qUgwvDnPxMdlDqBbh5uYNPouvnWW/Ol/4kQPuncMWTM5v2SspfEBGbf2o/CJGrydZ1Z7+3bi
+utFlUzWClknXl2GJ8jVReyYkVmVRCMIy+FEucsA97c4xe9LuSy6ZNUjLQh0+cBHRadPKc4PP
+GLBzHFs9UC2IOxjSkQKmEJOgzXY7zBjKUJoHQn6l31ib6QfLX2q54Onfe6P0yBJcz9mHgTwK
+U4QQaE6Jj4eriLFOOcd4IcL1GxijIx7fmtSj592a+/FZV+sI6tbvXnspc96cVXbZHvdHKtjg
+IeW/Yzl6hxaE1kzvuJiW7zFqKDRVfVeMve0cGkM/vi21kYo8qxK/MAAAAAAAAA==
+--------------ms030902000904030707010707--

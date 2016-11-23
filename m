@@ -1,144 +1,127 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47913 "EHLO mx2.suse.de"
+Received: from mail.kernel.org ([198.145.29.136]:54788 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752557AbcK3NLR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 Nov 2016 08:11:17 -0500
-From: David Sterba <dsterba@suse.com>
-To: clm@fb.com
-Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
-Subject: [PULL] Btrfs updates for 4.10
-Date: Wed, 30 Nov 2016 14:11:09 +0100
-Message-Id: <cover.1480511073.git.dsterba@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+        id S964816AbcKWRrX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 23 Nov 2016 12:47:23 -0500
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Cc: bo.li.liu@oracle.com
+Subject: [PATCH] Btrfs: fix emptiness check for dirtied extent buffers at check_leaf()
+Date: Wed, 23 Nov 2016 17:47:15 +0000
+Message-Id: <1479923235-18968-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+From: Filipe Manana <fdmanana@suse.com>
 
-here's my first pull request for 4.10. Assorted patches that have been in
-for-next, mostly fixes and some cleanups. I'm expecting to send one more before
-the rc1, I don't see much reason to hold the current queue back for any longer.
+We can not simply use the owner field from an extent buffer's header to
+get the id of the respective tree when the extent buffer is from a
+relocation tree. When we create the root for a relocation tree we leave
+(on purpose) the owner field with the same value as the subvolume's tree
+root (we do this at ctree.c:btrfs_copy_root()). So we must ignore extent
+buffers from relocation trees, which have the BTRFS_HEADER_FLAG_RELOC
+flag set, because otherwise we will always consider the extent buffer
+as not being the root of the tree (the root of original subvolume tree
+is always different from the root of the respective relocation tree).
 
-----------------------------------------------------------------
-The following changes since commit e5517c2a5a49ed5e99047008629f1cd60246ea0e:
+This lead to assertion failures when running with the integrity checker
+enabled (CONFIG_BTRFS_FS_CHECK_INTEGRITY=y) such as the following:
 
-  Linux 4.9-rc7 (2016-11-27 13:08:04 -0800)
+[  643.393409] BTRFS critical (device sdg): corrupt leaf, non-root leaf's nritems is 0: block=38506496, root=260, slot=0
+[  643.397609] BTRFS info (device sdg): leaf 38506496 total ptrs 0 free space 3995
+[  643.407075] assertion failed: 0, file: fs/btrfs/disk-io.c, line: 4078
+[  643.408425] ------------[ cut here ]------------
+[  643.409112] kernel BUG at fs/btrfs/ctree.h:3419!
+[  643.409773] invalid opcode: 0000 [#1] PREEMPT SMP
+[  643.410447] Modules linked in: dm_flakey dm_mod crc32c_generic btrfs xor raid6_pq ppdev psmouse acpi_cpufreq parport_pc evdev parport tpm_tis tpm_tis_core pcspkr serio_raw i2c_piix4 sg tpm i2c_core button processor loop autofs4 ext4 crc16 jbd2 mbcache sr_mod cdrom sd_mod ata_generic virtio_scsi ata_piix libata virtio_pci virtio_ring scsi_mod virtio e1000 floppy
+[  643.414356] CPU: 11 PID: 32726 Comm: btrfs Not tainted 4.8.0-rc8-btrfs-next-35+ #1
+[  643.414356] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.9.1-0-gb3ef39f-prebuilt.qemu-project.org 04/01/2014
+[  643.414356] task: ffff880145e95b00 task.stack: ffff88014826c000
+[  643.414356] RIP: 0010:[<ffffffffa0352759>]  [<ffffffffa0352759>] assfail.constprop.41+0x1c/0x1e [btrfs]
+[  643.414356] RSP: 0018:ffff88014826fa28  EFLAGS: 00010292
+[  643.414356] RAX: 0000000000000039 RBX: ffff88014e2d7c38 RCX: 0000000000000001
+[  643.414356] RDX: ffff88023f4d2f58 RSI: ffffffff81806c63 RDI: 00000000ffffffff
+[  643.414356] RBP: ffff88014826fa28 R08: 0000000000000001 R09: 0000000000000000
+[  643.414356] R10: ffff88014826f918 R11: ffffffff82f3c5ed R12: ffff880172910000
+[  643.414356] R13: ffff880233992230 R14: ffff8801a68a3310 R15: fffffffffffffff8
+[  643.414356] FS:  00007f9ca305e8c0(0000) GS:ffff88023f4c0000(0000) knlGS:0000000000000000
+[  643.414356] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[  643.414356] CR2: 00007f9ca3071000 CR3: 000000015d01b000 CR4: 00000000000006e0
+[  643.414356] Stack:
+[  643.414356]  ffff88014826fa50 ffffffffa02d655a 000000000000000a ffff88014e2d7c38
+[  643.414356]  0000000000000000 ffff88014826faa8 ffffffffa02b72f3 ffff88014826fab8
+[  643.414356]  00ffffffa03228e4 0000000000000000 0000000000000000 ffff8801bbd4e000
+[  643.414356] Call Trace:
+[  643.414356]  [<ffffffffa02d655a>] btrfs_mark_buffer_dirty+0xdf/0xe5 [btrfs]
+[  643.414356]  [<ffffffffa02b72f3>] btrfs_copy_root+0x18a/0x1d1 [btrfs]
+[  643.414356]  [<ffffffffa0322921>] create_reloc_root+0x72/0x1ba [btrfs]
+[  643.414356]  [<ffffffffa03267c2>] btrfs_init_reloc_root+0x7b/0xa7 [btrfs]
+[  643.414356]  [<ffffffffa02d9e44>] record_root_in_trans+0xdf/0xed [btrfs]
+[  643.414356]  [<ffffffffa02db04e>] btrfs_record_root_in_trans+0x50/0x6a [btrfs]
+[  643.414356]  [<ffffffffa030ad2b>] create_subvol+0x472/0x773 [btrfs]
+[  643.414356]  [<ffffffffa030b406>] btrfs_mksubvol+0x3da/0x463 [btrfs]
+[  643.414356]  [<ffffffffa030b406>] ? btrfs_mksubvol+0x3da/0x463 [btrfs]
+[  643.414356]  [<ffffffff810781ac>] ? preempt_count_add+0x65/0x68
+[  643.414356]  [<ffffffff811a6e97>] ? __mnt_want_write+0x62/0x77
+[  643.414356]  [<ffffffffa030b55d>] btrfs_ioctl_snap_create_transid+0xce/0x187 [btrfs]
+[  643.414356]  [<ffffffffa030b67d>] btrfs_ioctl_snap_create+0x67/0x81 [btrfs]
+[  643.414356]  [<ffffffffa030ecfd>] btrfs_ioctl+0x508/0x20dd [btrfs]
+[  643.414356]  [<ffffffff81293e39>] ? __this_cpu_preempt_check+0x13/0x15
+[  643.414356]  [<ffffffff81155eca>] ? handle_mm_fault+0x976/0x9ab
+[  643.414356]  [<ffffffff81091300>] ? arch_local_irq_save+0x9/0xc
+[  643.414356]  [<ffffffff8119a2b0>] vfs_ioctl+0x18/0x34
+[  643.414356]  [<ffffffff8119a8e8>] do_vfs_ioctl+0x581/0x600
+[  643.414356]  [<ffffffff814b9552>] ? entry_SYSCALL_64_fastpath+0x5/0xa8
+[  643.414356]  [<ffffffff81093fe9>] ? trace_hardirqs_on_caller+0x17b/0x197
+[  643.414356]  [<ffffffff8119a9be>] SyS_ioctl+0x57/0x79
+[  643.414356]  [<ffffffff814b9565>] entry_SYSCALL_64_fastpath+0x18/0xa8
+[  643.414356]  [<ffffffff81091b08>] ? trace_hardirqs_off_caller+0x3f/0xaa
+[  643.414356] Code: 89 83 88 00 00 00 31 c0 5b 41 5c 41 5d 5d c3 55 89 f1 48 c7 c2 98 bc 35 a0 48 89 fe 48 c7 c7 05 be 35 a0 48 89 e5 e8 13 46 dd e0 <0f> 0b 55 89 f1 48 c7 c2 9f d3 35 a0 48 89 fe 48 c7 c7 7a d5 35
+[  643.414356] RIP  [<ffffffffa0352759>] assfail.constprop.41+0x1c/0x1e [btrfs]
+[  643.414356]  RSP <ffff88014826fa28>
+[  643.468267] ---[ end trace 6a1b3fb1a9d7d6e3 ]---
 
-are available in the git repository at:
+This can be easily reproduced by running xfstests with the integrity
+checker enabled.
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-chris-4.10
+Fixes: 1ba98d086fe3 (Btrfs: detect corruption when non-root leaf has zero item)
+Cc: stable@vger.kernel.org  # 4.8+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/disk-io.c | 13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
 
-for you to fetch changes up to 515bdc479097ec9d5f389202842345af3162f71c:
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index c4e673a..1cd3257 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -559,7 +559,15 @@ static noinline int check_leaf(struct btrfs_root *root,
+ 	u32 nritems = btrfs_header_nritems(leaf);
+ 	int slot;
+ 
+-	if (nritems == 0) {
++	/*
++	 * Extent buffers from a relocation tree have a owner field that
++	 * corresponds to the subvolume tree they are based on. So just from an
++	 * extent buffer alone we can not find out what is the id of the
++	 * corresponding subvolume tree, so we can not figure out if the extent
++	 * buffer corresponds to the root of the relocation tree or not. So skip
++	 * this check for relocation trees.
++	 */
++	if (nritems == 0 && !btrfs_header_flag(leaf, BTRFS_HEADER_FLAG_RELOC)) {
+ 		struct btrfs_root *check_root;
+ 
+ 		key.objectid = btrfs_header_owner(leaf);
+@@ -587,6 +595,9 @@ static noinline int check_leaf(struct btrfs_root *root,
+ 		return 0;
+ 	}
+ 
++	if (nritems == 0)
++		return 0;
++
+ 	/* Check the 0 item */
+ 	if (btrfs_item_offset_nr(leaf, 0) + btrfs_item_size_nr(leaf, 0) !=
+ 	    BTRFS_LEAF_DATA_SIZE(root)) {
+-- 
+2.7.0.rc3
 
-  Merge branch 'misc-4.10' into for-chris-4.10-20161130 (2016-11-30 14:02:20 +0100)
-
-----------------------------------------------------------------
-Adam Borowski (1):
-      btrfs: make block group flags in balance printks human-readable
-
-Christoph Hellwig (9):
-      btrfs: don't abuse REQ_OP_* flags for btrfs_map_block
-      btrfs: use bio iterators for the decompression handlers
-      btrfs: don't access the bio directly in the raid5/6 code
-      btrfs: don't access the bio directly in the direct I/O code
-      btrfs: don't access the bio directly in btrfs_csum_one_bio
-      btrfs: use bi_size
-      btrfs: calculate end of bio offset properly
-      btrfs: refactor __btrfs_lookup_bio_sums to use bio_for_each_segment_all
-      btrfs: use bio_for_each_segment_all in __btrfsic_submit_bio
-
-Christophe JAILLET (1):
-      btrfs: remove redundant check of btrfs_iget return value
-
-David Sterba (17):
-      btrfs: remove unused headers, statfs.h
-      btrfs: remove stale comment from btrfs_statfs
-      btrfs: rename helper macros for qgroup and aux data casts
-      btrfs: reada, cleanup remove unneeded variable in __readahead_hook
-      btrfs: reada, remove unused parameter from __readahead_hook
-      btrfs: reada, sink start parameter to btree_readahead_hook
-      btrfs: reada, remove pointless BUG_ON in reada_find_extent
-      btrfs: reada, remove pointless BUG_ON check for fs_info
-      btrfs: remove trivial helper btrfs_find_tree_block
-      btrfs: delete unused member from superblock
-      btrfs: introduce helpers for updating eb uuids
-      btrfs: use new helpers to set uuids in eb
-      btrfs: use specialized page copying helpers in btrfs_clone_extent_buffer
-      btrfs: remove constant parameter to memset_extent_buffer and rename it
-      btrfs: add optimized version of eb to eb copy
-      btrfs: store and load values of stripes_min/stripes_max in balance status item
-      Merge branch 'misc-4.10' into for-chris-4.10-20161130
-
-Domagoj Tršan (1):
-      btrfs: change btrfs_csum_final result param type to u8
-
-Jeff Mahoney (3):
-      btrfs: remove old tree_root dirent processing in btrfs_real_readdir()
-      btrfs: increment ctx->pos for every emitted or skipped dirent in readdir
-      btrfs: Ensure proper sector alignment for btrfs_free_reserved_data_space
-
-Josef Bacik (2):
-      Btrfs: fix file extent corruption
-      Btrfs: abort transaction if fill_holes() fails
-
-Liu Bo (1):
-      Btrfs: adjust len of writes if following a preallocated extent
-
-Nick Terrell (1):
-      btrfs: Call kunmap if zlib_inflateInit2 fails
-
-Omar Sandoval (1):
-      Btrfs: deal with existing encompassing extent map in btrfs_get_extent()
-
-Qu Wenruo (4):
-      btrfs: qgroup: Add comments explaining how btrfs qgroup works
-      btrfs: qgroup: Rename functions to make it follow reserve,trace,account steps
-      btrfs: Export and move leaf/subtree qgroup helpers to qgroup.c
-      btrfs: qgroup: Fix qgroup data leaking by using subtree tracing
-
-Shailendra Verma (1):
-      btrfs: return early from failed memory allocations in ioctl handlers
-
-Wang Xiaoguang (3):
-      btrfs: cleanup: use already calculated value in btrfs_should_throttle_delayed_refs()
-      btrfs: add necessary comments about tickets_id
-      btrfs: improve delayed refs iterations
-
-Xiaoguang Wang (1):
-      btrfs: remove useless comments
-
- fs/btrfs/check-integrity.c       |  32 ++---
- fs/btrfs/compression.c           | 142 ++++++++-------------
- fs/btrfs/compression.h           |  12 +-
- fs/btrfs/ctree.c                 |  49 +++-----
- fs/btrfs/ctree.h                 |  14 ++-
- fs/btrfs/delayed-inode.c         |   3 +-
- fs/btrfs/delayed-inode.h         |   2 +-
- fs/btrfs/delayed-ref.c           |  20 ++-
- fs/btrfs/delayed-ref.h           |   8 ++
- fs/btrfs/disk-io.c               |  30 ++---
- fs/btrfs/disk-io.h               |   4 +-
- fs/btrfs/extent-tree.c           | 263 ++++-----------------------------------
- fs/btrfs/extent_io.c             |  49 ++++++--
- fs/btrfs/extent_io.h             |   9 +-
- fs/btrfs/file-item.c             |  55 ++++----
- fs/btrfs/file.c                  |  35 +++++-
- fs/btrfs/free-space-cache.c      |  10 +-
- fs/btrfs/inode.c                 | 163 ++++++++----------------
- fs/btrfs/ioctl.c                 |  32 ++---
- fs/btrfs/lzo.c                   |  17 +--
- fs/btrfs/qgroup.c                | 256 ++++++++++++++++++++++++++++++++++---
- fs/btrfs/qgroup.h                |  64 +++++++++-
- fs/btrfs/raid56.c                |  16 +--
- fs/btrfs/reada.c                 |  28 ++---
- fs/btrfs/relocation.c            | 164 ++++++++++--------------
- fs/btrfs/scrub.c                 |  17 +--
- fs/btrfs/super.c                 |   4 -
- fs/btrfs/tests/extent-io-tests.c |   2 +-
- fs/btrfs/tree-log.c              |   2 +-
- fs/btrfs/volumes.c               |  64 +++++-----
- fs/btrfs/volumes.h               |  25 +++-
- fs/btrfs/zlib.c                  |  16 +--
- include/trace/events/btrfs.h     |   2 +-
- 33 files changed, 782 insertions(+), 827 deletions(-)

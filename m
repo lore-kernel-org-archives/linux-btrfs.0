@@ -1,45 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:60344 "EHLO song.cn.fujitsu.com"
-        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S932852AbcKHJiX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 8 Nov 2016 04:38:23 -0500
-Received: from localhost.localdomain (unknown [10.167.226.107])
-        by cn.fujitsu.com (Postfix) with ESMTP id 49FC24010D17
-        for <linux-btrfs@vger.kernel.org>; Tue,  8 Nov 2016 17:38:21 +0800 (CST)
-From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: limit the number of asynchronous delalloc pages to reasonable value
-Date: Tue,  8 Nov 2016 17:30:58 +0800
-Message-Id: <1478597458-29287-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
+Received: from mail-io0-f194.google.com ([209.85.223.194]:34399 "EHLO
+        mail-io0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S937846AbcKWNPo (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 23 Nov 2016 08:15:44 -0500
+Received: by mail-io0-f194.google.com with SMTP id r94so1596426ioe.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Nov 2016 05:15:44 -0800 (PST)
 MIME-Version: 1.0
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <20161017154443.GA13942@localhost.localdomain>
+References: <fe9b1bde-9069-b75f-eb53-83b729cde711@suse.com>
+ <1472844934-32343-1-git-send-email-bo.li.liu@oracle.com> <CAL3q7H5oCqgd9im-2AZA=zsOv+SCObon2f5wECA7hr58MNXTGw@mail.gmail.com>
+ <20160906215151.GB31641@localhost.localdomain> <CAL3q7H7GEDy-NfPgWE7BN_+M8-hRPJ77BKgbrhbkhTcnjAQ7nQ@mail.gmail.com>
+ <20161013003725.GA21350@localhost.localdomain> <CAL3q7H4XtHdr+PmCO-ExqJrpYrf6Zuh=jCWL_5jZV06kCtx_KA@mail.gmail.com>
+ <20161017130025.GI11398@twin.jikos.cz> <20161017154443.GA13942@localhost.localdomain>
+From: Filipe Manana <fdmanana@gmail.com>
+Date: Wed, 23 Nov 2016 13:15:43 +0000
+Message-ID: <CAL3q7H5ngp02fS8LyL-DDYGW9Y9CTakqZ=1c3bYTUZHi6OobzA@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: fix BUG_ON in btrfs_mark_buffer_dirty
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: "dsterba@suse.cz" <dsterba@suse.cz>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Jeff Mahoney <jeffm@suse.com>, Chris Mason <clm@fb.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The current limit of number of asynchronous delalloc pages is (10 * SZ_1M).
-For 4K page, the total ram bytes would be 40G, very big value, I think in
-most cases, this limit will not work, here I set limit of the number of
-asynchronous delalloc pages to SZ_1M(4GB ram bytes).
+On Mon, Oct 17, 2016 at 4:44 PM, Liu Bo <bo.li.liu@oracle.com> wrote:
+> On Mon, Oct 17, 2016 at 03:00:25PM +0200, David Sterba wrote:
+>> On Thu, Oct 13, 2016 at 09:47:11AM +0100, Filipe Manana wrote:
+>> > > Since the crash is similar to the call chains from Jeff's report,
+>> > > ie.
+>> > > btrfs_del_csums
+>> > >   -> btrfs_search_slot
+>> > >      -> btrfs_cow_block
+>> > >         -> btrfs_mark_buffer_dirty
+>> > >
+>> > > I just wonder that whether 4.8.0-rc8-btrfs-next-35+ has
+>> > >
+>> > > "[PATCH] Btrfs: fix BUG_ON in btrfs_mark_buffer_dirty" ?
+>> >
+>> > It isn't there, this 4.8.0-rc8-btrfs-next-35+ is a checkout of Chris'
+>> > for-linus-4.9 branch.
+>> > That patch should have been there, I was convinced that all these
+>> > related patches were already there, as it's impossible to run xfstests
+>> > with the integrity checker enabled.
+>>
+>> The referenced patch is the one in this thread, no? You've reported that
+>> even with that applied you can still reproduce a crash with integrity
+>> checker enabled. I haven't queued it as it seems it's an incomplete fix,
+>> thus waiting for another version.
+>
+> Yes, it's one of three patches in this thread, and they fixed different
+> problems,
+>
+> - the original patch and its v2 are to make check_leaf check non-root
+> leaf with zero-item,
+> - "[PATCH] Btrfs: fix BUG_ON in btrfs_mark_buffer_dirty" is to fix
+> check_leaf, which fixes the crash from Jeff's.
+> - "[PATCH] Btrfs: remove unnecessary btrfs_mark_buffer_dirty in split_leaf"
+>  is targeting a different crash with check integrity enabled, which
+> comes from Filipe's report.
+>
+> So to make sure I understand the whole thing, Filipe, can you reproduce the
+> crash around btrfs_del_csums() after applying this patch
+>  "[PATCH] Btrfs: fix BUG_ON in btrfs_mark_buffer_dirty"?
 
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
----
- fs/btrfs/inode.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+So indeed, what is missing is patch from this thread, subject "Btrfs:
+fix BUG_ON in btrfs_mark_buffer_dirty".
+That is clearly missing in Linus' tree:
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 8e3a5a2..3a910f6 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1158,7 +1158,7 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	unsigned long nr_pages;
- 	u64 cur_end;
--	int limit = 10 * SZ_1M;
-+	int limit = SZ_1M;
- 
- 	clear_extent_bit(&BTRFS_I(inode)->io_tree, start, end, EXTENT_LOCKED,
- 			 1, 0, NULL, GFP_NOFS);
+https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/log/?id=refs%2Ftags%2Fv4.9-rc6&qt=author&q=liu+bo
+
+On the other hand, the other patch attached later to this thread, that
+removes the unnecessary btrfs_mark_buffer_dirty() was sent to Linus:
+
+https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=196e02490c934398f894e5cb0ee1ac8ad13ca576
+
+It seems I'm the only one running xfstests with the integrity checker
+enabled... Because it fails right away at btrfs/001 either with
+4.9-rcs or Chris' for-linus-4.9.
+Applying "Btrfs: fix BUG_ON in btrfs_mark_buffer_dirty" fixes it.
+
+thanks
+
+
+
+>
+> Thanks,
+>
+> -liubo
+
+
+
 -- 
-2.5.0
+Filipe David Manana,
 
-
-
+"People will forget what you said,
+ people will forget what you did,
+ but people will never forget how you made them feel."

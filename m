@@ -1,127 +1,152 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:54788 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S964816AbcKWRrX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Nov 2016 12:47:23 -0500
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Cc: bo.li.liu@oracle.com
-Subject: [PATCH] Btrfs: fix emptiness check for dirtied extent buffers at check_leaf()
-Date: Wed, 23 Nov 2016 17:47:15 +0000
-Message-Id: <1479923235-18968-1-git-send-email-fdmanana@kernel.org>
+Received: from userp1050.oracle.com ([156.151.31.82]:39031 "EHLO
+        userp1050.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753807AbcKWVj2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 23 Nov 2016 16:39:28 -0500
+Received: from userp1040.oracle.com (userp1040.oracle.com [156.151.31.81])
+        by userp1050.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id uANLcqTH010338
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Nov 2016 21:38:52 GMT
+Date: Wed, 23 Nov 2016 13:37:03 -0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: fdmanana@kernel.org
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix emptiness check for dirtied extent buffers at
+ check_leaf()
+Message-ID: <20161123213702.GB24103@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1479923235-18968-1-git-send-email-fdmanana@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1479923235-18968-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+On Wed, Nov 23, 2016 at 05:47:15PM +0000, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> We can not simply use the owner field from an extent buffer's header to
+> get the id of the respective tree when the extent buffer is from a
+> relocation tree. When we create the root for a relocation tree we leave
+> (on purpose) the owner field with the same value as the subvolume's tree
+> root (we do this at ctree.c:btrfs_copy_root()). So we must ignore extent
+> buffers from relocation trees, which have the BTRFS_HEADER_FLAG_RELOC
+> flag set, because otherwise we will always consider the extent buffer
+> as not being the root of the tree (the root of original subvolume tree
+> is always different from the root of the respective relocation tree).
+> 
+> This lead to assertion failures when running with the integrity checker
+> enabled (CONFIG_BTRFS_FS_CHECK_INTEGRITY=y) such as the following:
+> 
+> [  643.393409] BTRFS critical (device sdg): corrupt leaf, non-root leaf's nritems is 0: block=38506496, root=260, slot=0
+> [  643.397609] BTRFS info (device sdg): leaf 38506496 total ptrs 0 free space 3995
+> [  643.407075] assertion failed: 0, file: fs/btrfs/disk-io.c, line: 4078
+> [  643.408425] ------------[ cut here ]------------
+> [  643.409112] kernel BUG at fs/btrfs/ctree.h:3419!
+> [  643.409773] invalid opcode: 0000 [#1] PREEMPT SMP
+> [  643.410447] Modules linked in: dm_flakey dm_mod crc32c_generic btrfs xor raid6_pq ppdev psmouse acpi_cpufreq parport_pc evdev parport tpm_tis tpm_tis_core pcspkr serio_raw i2c_piix4 sg tpm i2c_core button processor loop autofs4 ext4 crc16 jbd2 mbcache sr_mod cdrom sd_mod ata_generic virtio_scsi ata_piix libata virtio_pci virtio_ring scsi_mod virtio e1000 floppy
+> [  643.414356] CPU: 11 PID: 32726 Comm: btrfs Not tainted 4.8.0-rc8-btrfs-next-35+ #1
+> [  643.414356] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.9.1-0-gb3ef39f-prebuilt.qemu-project.org 04/01/2014
+> [  643.414356] task: ffff880145e95b00 task.stack: ffff88014826c000
+> [  643.414356] RIP: 0010:[<ffffffffa0352759>]  [<ffffffffa0352759>] assfail.constprop.41+0x1c/0x1e [btrfs]
+> [  643.414356] RSP: 0018:ffff88014826fa28  EFLAGS: 00010292
+> [  643.414356] RAX: 0000000000000039 RBX: ffff88014e2d7c38 RCX: 0000000000000001
+> [  643.414356] RDX: ffff88023f4d2f58 RSI: ffffffff81806c63 RDI: 00000000ffffffff
+> [  643.414356] RBP: ffff88014826fa28 R08: 0000000000000001 R09: 0000000000000000
+> [  643.414356] R10: ffff88014826f918 R11: ffffffff82f3c5ed R12: ffff880172910000
+> [  643.414356] R13: ffff880233992230 R14: ffff8801a68a3310 R15: fffffffffffffff8
+> [  643.414356] FS:  00007f9ca305e8c0(0000) GS:ffff88023f4c0000(0000) knlGS:0000000000000000
+> [  643.414356] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+> [  643.414356] CR2: 00007f9ca3071000 CR3: 000000015d01b000 CR4: 00000000000006e0
+> [  643.414356] Stack:
+> [  643.414356]  ffff88014826fa50 ffffffffa02d655a 000000000000000a ffff88014e2d7c38
+> [  643.414356]  0000000000000000 ffff88014826faa8 ffffffffa02b72f3 ffff88014826fab8
+> [  643.414356]  00ffffffa03228e4 0000000000000000 0000000000000000 ffff8801bbd4e000
+> [  643.414356] Call Trace:
+> [  643.414356]  [<ffffffffa02d655a>] btrfs_mark_buffer_dirty+0xdf/0xe5 [btrfs]
+> [  643.414356]  [<ffffffffa02b72f3>] btrfs_copy_root+0x18a/0x1d1 [btrfs]
+> [  643.414356]  [<ffffffffa0322921>] create_reloc_root+0x72/0x1ba [btrfs]
+> [  643.414356]  [<ffffffffa03267c2>] btrfs_init_reloc_root+0x7b/0xa7 [btrfs]
+> [  643.414356]  [<ffffffffa02d9e44>] record_root_in_trans+0xdf/0xed [btrfs]
+> [  643.414356]  [<ffffffffa02db04e>] btrfs_record_root_in_trans+0x50/0x6a [btrfs]
+> [  643.414356]  [<ffffffffa030ad2b>] create_subvol+0x472/0x773 [btrfs]
+> [  643.414356]  [<ffffffffa030b406>] btrfs_mksubvol+0x3da/0x463 [btrfs]
+> [  643.414356]  [<ffffffffa030b406>] ? btrfs_mksubvol+0x3da/0x463 [btrfs]
+> [  643.414356]  [<ffffffff810781ac>] ? preempt_count_add+0x65/0x68
+> [  643.414356]  [<ffffffff811a6e97>] ? __mnt_want_write+0x62/0x77
+> [  643.414356]  [<ffffffffa030b55d>] btrfs_ioctl_snap_create_transid+0xce/0x187 [btrfs]
+> [  643.414356]  [<ffffffffa030b67d>] btrfs_ioctl_snap_create+0x67/0x81 [btrfs]
+> [  643.414356]  [<ffffffffa030ecfd>] btrfs_ioctl+0x508/0x20dd [btrfs]
+> [  643.414356]  [<ffffffff81293e39>] ? __this_cpu_preempt_check+0x13/0x15
+> [  643.414356]  [<ffffffff81155eca>] ? handle_mm_fault+0x976/0x9ab
+> [  643.414356]  [<ffffffff81091300>] ? arch_local_irq_save+0x9/0xc
+> [  643.414356]  [<ffffffff8119a2b0>] vfs_ioctl+0x18/0x34
+> [  643.414356]  [<ffffffff8119a8e8>] do_vfs_ioctl+0x581/0x600
+> [  643.414356]  [<ffffffff814b9552>] ? entry_SYSCALL_64_fastpath+0x5/0xa8
+> [  643.414356]  [<ffffffff81093fe9>] ? trace_hardirqs_on_caller+0x17b/0x197
+> [  643.414356]  [<ffffffff8119a9be>] SyS_ioctl+0x57/0x79
+> [  643.414356]  [<ffffffff814b9565>] entry_SYSCALL_64_fastpath+0x18/0xa8
+> [  643.414356]  [<ffffffff81091b08>] ? trace_hardirqs_off_caller+0x3f/0xaa
+> [  643.414356] Code: 89 83 88 00 00 00 31 c0 5b 41 5c 41 5d 5d c3 55 89 f1 48 c7 c2 98 bc 35 a0 48 89 fe 48 c7 c7 05 be 35 a0 48 89 e5 e8 13 46 dd e0 <0f> 0b 55 89 f1 48 c7 c2 9f d3 35 a0 48 89 fe 48 c7 c7 7a d5 35
+> [  643.414356] RIP  [<ffffffffa0352759>] assfail.constprop.41+0x1c/0x1e [btrfs]
+> [  643.414356]  RSP <ffff88014826fa28>
+> [  643.468267] ---[ end trace 6a1b3fb1a9d7d6e3 ]---
+> 
+> This can be easily reproduced by running xfstests with the integrity
+> checker enabled.
+> 
+> Fixes: 1ba98d086fe3 (Btrfs: detect corruption when non-root leaf has zero item)
+> Cc: stable@vger.kernel.org  # 4.8+
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+>  fs/btrfs/disk-io.c | 13 ++++++++++++-
+>  1 file changed, 12 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index c4e673a..1cd3257 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -559,7 +559,15 @@ static noinline int check_leaf(struct btrfs_root *root,
+>  	u32 nritems = btrfs_header_nritems(leaf);
+>  	int slot;
+>  
+> -	if (nritems == 0) {
+> +	/*
+> +	 * Extent buffers from a relocation tree have a owner field that
+> +	 * corresponds to the subvolume tree they are based on. So just from an
+> +	 * extent buffer alone we can not find out what is the id of the
+> +	 * corresponding subvolume tree, so we can not figure out if the extent
+> +	 * buffer corresponds to the root of the relocation tree or not. So skip
+> +	 * this check for relocation trees.
+> +	 */
+> +	if (nritems == 0 && !btrfs_header_flag(leaf, BTRFS_HEADER_FLAG_RELOC)) {
 
-We can not simply use the owner field from an extent buffer's header to
-get the id of the respective tree when the extent buffer is from a
-relocation tree. When we create the root for a relocation tree we leave
-(on purpose) the owner field with the same value as the subvolume's tree
-root (we do this at ctree.c:btrfs_copy_root()). So we must ignore extent
-buffers from relocation trees, which have the BTRFS_HEADER_FLAG_RELOC
-flag set, because otherwise we will always consider the extent buffer
-as not being the root of the tree (the root of original subvolume tree
-is always different from the root of the respective relocation tree).
+Hmm, it seems that we're not able to fetch a reloc root created from
+btrfs_reloc_post_snapshot, otherwise we can access the reloc root via
+check_root->reloc_root.
 
-This lead to assertion failures when running with the integrity checker
-enabled (CONFIG_BTRFS_FS_CHECK_INTEGRITY=y) such as the following:
+Anyway,
 
-[  643.393409] BTRFS critical (device sdg): corrupt leaf, non-root leaf's nritems is 0: block=38506496, root=260, slot=0
-[  643.397609] BTRFS info (device sdg): leaf 38506496 total ptrs 0 free space 3995
-[  643.407075] assertion failed: 0, file: fs/btrfs/disk-io.c, line: 4078
-[  643.408425] ------------[ cut here ]------------
-[  643.409112] kernel BUG at fs/btrfs/ctree.h:3419!
-[  643.409773] invalid opcode: 0000 [#1] PREEMPT SMP
-[  643.410447] Modules linked in: dm_flakey dm_mod crc32c_generic btrfs xor raid6_pq ppdev psmouse acpi_cpufreq parport_pc evdev parport tpm_tis tpm_tis_core pcspkr serio_raw i2c_piix4 sg tpm i2c_core button processor loop autofs4 ext4 crc16 jbd2 mbcache sr_mod cdrom sd_mod ata_generic virtio_scsi ata_piix libata virtio_pci virtio_ring scsi_mod virtio e1000 floppy
-[  643.414356] CPU: 11 PID: 32726 Comm: btrfs Not tainted 4.8.0-rc8-btrfs-next-35+ #1
-[  643.414356] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.9.1-0-gb3ef39f-prebuilt.qemu-project.org 04/01/2014
-[  643.414356] task: ffff880145e95b00 task.stack: ffff88014826c000
-[  643.414356] RIP: 0010:[<ffffffffa0352759>]  [<ffffffffa0352759>] assfail.constprop.41+0x1c/0x1e [btrfs]
-[  643.414356] RSP: 0018:ffff88014826fa28  EFLAGS: 00010292
-[  643.414356] RAX: 0000000000000039 RBX: ffff88014e2d7c38 RCX: 0000000000000001
-[  643.414356] RDX: ffff88023f4d2f58 RSI: ffffffff81806c63 RDI: 00000000ffffffff
-[  643.414356] RBP: ffff88014826fa28 R08: 0000000000000001 R09: 0000000000000000
-[  643.414356] R10: ffff88014826f918 R11: ffffffff82f3c5ed R12: ffff880172910000
-[  643.414356] R13: ffff880233992230 R14: ffff8801a68a3310 R15: fffffffffffffff8
-[  643.414356] FS:  00007f9ca305e8c0(0000) GS:ffff88023f4c0000(0000) knlGS:0000000000000000
-[  643.414356] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[  643.414356] CR2: 00007f9ca3071000 CR3: 000000015d01b000 CR4: 00000000000006e0
-[  643.414356] Stack:
-[  643.414356]  ffff88014826fa50 ffffffffa02d655a 000000000000000a ffff88014e2d7c38
-[  643.414356]  0000000000000000 ffff88014826faa8 ffffffffa02b72f3 ffff88014826fab8
-[  643.414356]  00ffffffa03228e4 0000000000000000 0000000000000000 ffff8801bbd4e000
-[  643.414356] Call Trace:
-[  643.414356]  [<ffffffffa02d655a>] btrfs_mark_buffer_dirty+0xdf/0xe5 [btrfs]
-[  643.414356]  [<ffffffffa02b72f3>] btrfs_copy_root+0x18a/0x1d1 [btrfs]
-[  643.414356]  [<ffffffffa0322921>] create_reloc_root+0x72/0x1ba [btrfs]
-[  643.414356]  [<ffffffffa03267c2>] btrfs_init_reloc_root+0x7b/0xa7 [btrfs]
-[  643.414356]  [<ffffffffa02d9e44>] record_root_in_trans+0xdf/0xed [btrfs]
-[  643.414356]  [<ffffffffa02db04e>] btrfs_record_root_in_trans+0x50/0x6a [btrfs]
-[  643.414356]  [<ffffffffa030ad2b>] create_subvol+0x472/0x773 [btrfs]
-[  643.414356]  [<ffffffffa030b406>] btrfs_mksubvol+0x3da/0x463 [btrfs]
-[  643.414356]  [<ffffffffa030b406>] ? btrfs_mksubvol+0x3da/0x463 [btrfs]
-[  643.414356]  [<ffffffff810781ac>] ? preempt_count_add+0x65/0x68
-[  643.414356]  [<ffffffff811a6e97>] ? __mnt_want_write+0x62/0x77
-[  643.414356]  [<ffffffffa030b55d>] btrfs_ioctl_snap_create_transid+0xce/0x187 [btrfs]
-[  643.414356]  [<ffffffffa030b67d>] btrfs_ioctl_snap_create+0x67/0x81 [btrfs]
-[  643.414356]  [<ffffffffa030ecfd>] btrfs_ioctl+0x508/0x20dd [btrfs]
-[  643.414356]  [<ffffffff81293e39>] ? __this_cpu_preempt_check+0x13/0x15
-[  643.414356]  [<ffffffff81155eca>] ? handle_mm_fault+0x976/0x9ab
-[  643.414356]  [<ffffffff81091300>] ? arch_local_irq_save+0x9/0xc
-[  643.414356]  [<ffffffff8119a2b0>] vfs_ioctl+0x18/0x34
-[  643.414356]  [<ffffffff8119a8e8>] do_vfs_ioctl+0x581/0x600
-[  643.414356]  [<ffffffff814b9552>] ? entry_SYSCALL_64_fastpath+0x5/0xa8
-[  643.414356]  [<ffffffff81093fe9>] ? trace_hardirqs_on_caller+0x17b/0x197
-[  643.414356]  [<ffffffff8119a9be>] SyS_ioctl+0x57/0x79
-[  643.414356]  [<ffffffff814b9565>] entry_SYSCALL_64_fastpath+0x18/0xa8
-[  643.414356]  [<ffffffff81091b08>] ? trace_hardirqs_off_caller+0x3f/0xaa
-[  643.414356] Code: 89 83 88 00 00 00 31 c0 5b 41 5c 41 5d 5d c3 55 89 f1 48 c7 c2 98 bc 35 a0 48 89 fe 48 c7 c7 05 be 35 a0 48 89 e5 e8 13 46 dd e0 <0f> 0b 55 89 f1 48 c7 c2 9f d3 35 a0 48 89 fe 48 c7 c7 7a d5 35
-[  643.414356] RIP  [<ffffffffa0352759>] assfail.constprop.41+0x1c/0x1e [btrfs]
-[  643.414356]  RSP <ffff88014826fa28>
-[  643.468267] ---[ end trace 6a1b3fb1a9d7d6e3 ]---
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
-This can be easily reproduced by running xfstests with the integrity
-checker enabled.
+Thanks,
 
-Fixes: 1ba98d086fe3 (Btrfs: detect corruption when non-root leaf has zero item)
-Cc: stable@vger.kernel.org  # 4.8+
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/disk-io.c | 13 ++++++++++++-
- 1 file changed, 12 insertions(+), 1 deletion(-)
+-liubo
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index c4e673a..1cd3257 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -559,7 +559,15 @@ static noinline int check_leaf(struct btrfs_root *root,
- 	u32 nritems = btrfs_header_nritems(leaf);
- 	int slot;
- 
--	if (nritems == 0) {
-+	/*
-+	 * Extent buffers from a relocation tree have a owner field that
-+	 * corresponds to the subvolume tree they are based on. So just from an
-+	 * extent buffer alone we can not find out what is the id of the
-+	 * corresponding subvolume tree, so we can not figure out if the extent
-+	 * buffer corresponds to the root of the relocation tree or not. So skip
-+	 * this check for relocation trees.
-+	 */
-+	if (nritems == 0 && !btrfs_header_flag(leaf, BTRFS_HEADER_FLAG_RELOC)) {
- 		struct btrfs_root *check_root;
- 
- 		key.objectid = btrfs_header_owner(leaf);
-@@ -587,6 +595,9 @@ static noinline int check_leaf(struct btrfs_root *root,
- 		return 0;
- 	}
- 
-+	if (nritems == 0)
-+		return 0;
-+
- 	/* Check the 0 item */
- 	if (btrfs_item_offset_nr(leaf, 0) + btrfs_item_size_nr(leaf, 0) !=
- 	    BTRFS_LEAF_DATA_SIZE(root)) {
--- 
-2.7.0.rc3
-
+>  		struct btrfs_root *check_root;
+>  
+>  		key.objectid = btrfs_header_owner(leaf);
+> @@ -587,6 +595,9 @@ static noinline int check_leaf(struct btrfs_root *root,
+>  		return 0;
+>  	}
+>  
+> +	if (nritems == 0)
+> +		return 0;
+> +
+>  	/* Check the 0 item */
+>  	if (btrfs_item_offset_nr(leaf, 0) + btrfs_item_size_nr(leaf, 0) !=
+>  	    BTRFS_LEAF_DATA_SIZE(root)) {
+> -- 
+> 2.7.0.rc3
+> 

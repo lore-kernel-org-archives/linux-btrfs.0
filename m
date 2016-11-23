@@ -1,184 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:62874 "EHLO song.cn.fujitsu.com"
-        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1752476AbcKUIuz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 Nov 2016 03:50:55 -0500
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Cc: kreijack@inwind.it, ce3g8jdj@umail.furryterror.org
-Subject: [PATCH] btrfs: raid56: Use correct stolen pages to calculate P/Q
-Date: Mon, 21 Nov 2016 16:50:16 +0800
-Message-Id: <20161121085016.7148-1-quwenruo@cn.fujitsu.com>
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:39814 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+        by vger.kernel.org with ESMTP id S933269AbcKWN4B (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 23 Nov 2016 08:56:01 -0500
+Date: Wed, 23 Nov 2016 08:55:59 -0500
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: Dave Chinner <david@fromorbit.com>
+Cc: Omar Sandoval <osandov@osandov.com>, linux-btrfs@vger.kernel.org,
+        linux-xfs@vger.kernel.org, "Darrick J. Wong" <darrick.wong@oracle.com>,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        Christoph Hellwig <hch@infradead.org>, kernel-team@fb.com
+Subject: Re: [RFC PATCH 0/2] Btrfs: make a source length of 0 imply EOF for
+ dedupe
+Message-ID: <20161123135559.GC8685@hungrycats.org>
+References: <cover.1479427384.git.osandov@fb.com>
+ <20161123020210.GW21290@hungrycats.org>
+ <20161123042632.GQ31101@dastard>
 MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="VMt1DrMGOVs3KQwf"
+In-Reply-To: <20161123042632.GQ31101@dastard>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In the following situation, scrub will calculate wrong parity to
-overwrite correct one:
 
-RAID5 full stripe:
+--VMt1DrMGOVs3KQwf
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Before
-|     Dev 1      |     Dev  2     |     Dev 3     |
-| Data stripe 1  | Data stripe 2  | Parity Stripe |
---------------------------------------------------- 0
-| 0x0000 (Bad)   |     0xcdcd     |     0x0000    |
---------------------------------------------------- 4K
-|     0xcdcd     |     0xcdcd     |     0x0000    |
-...
-|     0xcdcd     |     0xcdcd     |     0x0000    |
---------------------------------------------------- 64K
+On Wed, Nov 23, 2016 at 03:26:32PM +1100, Dave Chinner wrote:
+> On Tue, Nov 22, 2016 at 09:02:10PM -0500, Zygo Blaxell wrote:
+> > On Thu, Nov 17, 2016 at 04:07:48PM -0800, Omar Sandoval wrote:
+> > > 3. Both XFS and Btrfs cap each dedupe operation to 16MB, but the
+> > >    implicit EOF gets around this in the existing XFS implementation. I
+> > >    copied this for the Btrfs implementation.
+> >=20
+> > Somewhat tangential to this patch, but on the dedup topic:  Can we raise
+> > or drop that 16MB limit?
+> >=20
+> > The maximum btrfs extent length is 128MB.  Currently the btrfs dedup
+> > behavior for a 128MB extent is to generate 8x16MB shared extent referen=
+ces
+> > with different extent offsets to a single 128MB physical extent.
+> > These references no longer look like the original 128MB extent to a
+> > userspace dedup tool.  That raises the difficulty level substantially
+> > for a userspace dedup tool when it tries to figure out which extents to
+> > keep and which to discard or rewrite.
+>=20
+> That, IMO, is a btrfs design/implementation problem, not a problem
+> with the API. Applications are always going to end up doing things
+> that aren't perfectly aligned to extent boundaries or sizes
+> regardless of the size limit that is placed on the dedupe ranges.
 
-After scrubbing dev3 only:
+Given that XFS doesn't have all the problems btrfs does, why does XFS
+have the same aribitrary size limit?  Especially since XFS demonstrably
+doesn't need it?
 
-|     Dev 1      |     Dev  2     |     Dev 3     |
-| Data stripe 1  | Data stripe 2  | Parity Stripe |
---------------------------------------------------- 0
-| 0xcdcd (Good)  |     0xcdcd     | 0xcdcd (Bad)  |
---------------------------------------------------- 4K
-|     0xcdcd     |     0xcdcd     |     0x0000    |
-...
-|     0xcdcd     |     0xcdcd     |     0x0000    |
---------------------------------------------------- 64K
+> > XFS may not have this problem--I haven't checked.
+>=20
+> It doesn't - it tracks shared blocks exactly and merges adjacent
+> extent records whenever possible.
+>=20
+> > Even if we want to keep the 16MB limit, there's also no way to query the
+> > kernel from userspace to find out what the limit is, other than by trial
+> > and error.  It's not even in a header file, userspace just has to *know=
+*.
+>=20
+> So add a define to the API to make it visible to applications and
+> document it in the man page.
 
-The calltrace of such corruption is as following:
+To answer some of my own questions on the btrfs side:  It looks like
+the btrfs implementation does have a reason for it (fixed-size arrays).
 
-scrub_bio_end_io_worker() get called for each extent read out
-|- scriub_block_complete()
-   |- Data extent csum mismatch
-   |- scrub_handle_errored_block
-      |- scrub_recheck_block()
-         |- scrub_submit_raid56_bio_wait()
-            |- raid56_parity_recover()
+> Cheers,
+>=20
+> Dave.
+> --=20
+> Dave Chinner
+> david@fromorbit.com
+>=20
 
-Now we have a rbio with correct data stripe 1 recovered.
-Let's call it "good_rbio".
+--VMt1DrMGOVs3KQwf
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-scrub_parity_check_and_repair()
-|- raid56_parity_submit_scrub_rbio()
-   |- lock_stripe_add()
-   |  |- steal_rbio()
-   |     |- Recovered data are steal from "good_rbio", stored into
-   |        rbio->stripe_pages[]
-   |        Now rbio->bio_pages[] are bad data read from disk.
-   |- async_scrub_parity()
-      |- scrub_parity_work() (delayed_call to scrub_parity_work)
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
 
-scrub_parity_work()
-|- raid56_parity_scrub_stripe()
-   |- validate_rbio_for_parity_scrub()
-      |- finish_parity_scrub()
-         |- Recalculate parity using *BAD* pages in rbio->bio_pages[]
-            So good parity is overwritten with *BAD* one
+iEYEARECAAYFAlg1n+8ACgkQgfmLGlazG5xAOQCghyuzCEmUK0gwanWn7rpQfMAy
+nWUAoOGnK4M7B5myEYHeSYa/+vr8BqMZ
+=0rpy
+-----END PGP SIGNATURE-----
 
-The fix is to introduce 2 new members, bad_ondisk_a/b, to struct
-btrfs_raid_bio, to info scrub code to use correct data pages to
-re-calculate parity.
-
-Reported-by: Goffredo Baroncelli <kreijack@inwind.it>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
-Thanks to the above hell of delayed function all and damn stupid code
-logical, such bug is quite hard to trace.
-
-The damn kernel scrub is already multi-thread, why do such meaningless
-delayed function call again and again?
-
-What's wrong with single thread scrub?
-We can do thing like in each stripe for raid56 which is easy and
-straightforward, only delayed thing is to wake up waiter:
-
-	lock_full_stripe()
-	if (!is_parity_stripe()) {
-		prepare_data_stripe_bios()
-		submit_and_wait_bios()
-		if (check_csum() == 0)
-			goto out;
-	}
-	prepare_full_stripe_bios()
-	submit_and_wait_bios()
-
-	recover_raid56_stipres();
-	prepare_full_stripe_write_bios()
-	submit_and_wait_bios()
-
-out:
-  	unlock_full_stripe()
-
-We really need to re-work the whole damn scrub code.
-
-Also, we need to enhance btrfs-progs to detect scrub problem(my
-submitted offline scrub is good enough for such usage), and tools to
-corrupt extents reliably to put it into xfstests test cases.
-
-RAID56 scrub code is neither tested nor well-designed.
----
- fs/btrfs/raid56.c | 29 ++++++++++++++++++++++++++++-
- 1 file changed, 28 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index d016d4a..87e3565 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -133,6 +133,16 @@ struct btrfs_raid_bio {
- 	/* second bad stripe (for raid6 use) */
- 	int failb;
- 
-+	/*
-+	 * For steal_rbio, we can steal recovered correct page,
-+	 * but in finish_parity_scrub(), we still use bad on-disk
-+	 * page to calculate parity.
-+	 * Use these members to info finish_parity_scrub() to use
-+	 * correct pages
-+	 */
-+	int bad_ondisk_a;
-+	int bad_ondisk_b;
-+
- 	int scrubp;
- 	/*
- 	 * number of pages needed to represent the full
-@@ -310,6 +320,12 @@ static void steal_rbio(struct btrfs_raid_bio *src, struct btrfs_raid_bio *dest)
- 	if (!test_bit(RBIO_CACHE_READY_BIT, &src->flags))
- 		return;
- 
-+	/* Record recovered stripe number */
-+	if (src->faila != -1)
-+		dest->bad_ondisk_a = src->faila;
-+	if (src->failb != -1)
-+		dest->bad_ondisk_b = src->failb;
-+
- 	for (i = 0; i < dest->nr_pages; i++) {
- 		s = src->stripe_pages[i];
- 		if (!s || !PageUptodate(s)) {
-@@ -998,6 +1014,8 @@ static struct btrfs_raid_bio *alloc_rbio(struct btrfs_root *root,
- 	rbio->stripe_npages = stripe_npages;
- 	rbio->faila = -1;
- 	rbio->failb = -1;
-+	rbio->bad_ondisk_a = -1;
-+	rbio->bad_ondisk_b = -1;
- 	atomic_set(&rbio->refs, 1);
- 	atomic_set(&rbio->error, 0);
- 	atomic_set(&rbio->stripes_pending, 0);
-@@ -2352,7 +2370,16 @@ static noinline void finish_parity_scrub(struct btrfs_raid_bio *rbio,
- 		void *parity;
- 		/* first collect one page from each data stripe */
- 		for (stripe = 0; stripe < nr_data; stripe++) {
--			p = page_in_rbio(rbio, stripe, pagenr, 0);
-+
-+			/*
-+			 * Use stolen recovered page other than bad
-+			 * on disk pages
-+			 */
-+			if (stripe == rbio->bad_ondisk_a ||
-+			    stripe == rbio->bad_ondisk_b)
-+				p = rbio_stripe_page(rbio, stripe, pagenr);
-+			else
-+				p = page_in_rbio(rbio, stripe, pagenr, 0);
- 			pointers[stripe] = kmap(p);
- 		}
- 
--- 
-2.10.2
-
-
-
+--VMt1DrMGOVs3KQwf--

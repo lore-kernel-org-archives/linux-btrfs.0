@@ -1,31 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f47.google.com ([74.125.83.47]:36015 "EHLO
-        mail-pg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932484AbcKWE5t (ORCPT
+Received: from mail-wj0-f195.google.com ([209.85.210.195]:36857 "EHLO
+        mail-wj0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754151AbcKWHKi (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Nov 2016 23:57:49 -0500
-Received: by mail-pg0-f47.google.com with SMTP id f188so1429613pgc.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Nov 2016 20:57:49 -0800 (PST)
-Date: Tue, 22 Nov 2016 20:49:41 -0800
-From: Omar Sandoval <osandov@osandov.com>
+        Wed, 23 Nov 2016 02:10:38 -0500
+Subject: Re: [PATCH v2] fideduperange.2: fix the discussion of maximum sizes
 To: "Darrick J. Wong" <darrick.wong@oracle.com>
+References: <20161123044816.GG16807@birch.djwong.org>
 Cc: mtk.manpages@gmail.com, linux-fsdevel@vger.kernel.org,
         linux-api@vger.kernel.org, linux-xfs@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-man@vger.kernel.org
-Subject: Re: [PATCH v2] fideduperange.2: fix the discussion of maximum sizes
-Message-ID: <20161123044941.GB27107@mew>
-References: <20161123044816.GG16807@birch.djwong.org>
+        linux-btrfs@vger.kernel.org, linux-man@vger.kernel.org,
+        osandov@osandov.com
+From: "Michael Kerrisk (man-pages)" <mtk.manpages@gmail.com>
+Message-ID: <c15252ae-ac37-5e02-44d6-d500228642e3@gmail.com>
+Date: Wed, 23 Nov 2016 08:05:56 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
 In-Reply-To: <20161123044816.GG16807@birch.djwong.org>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 22, 2016 at 08:48:16PM -0800, Darrick J. Wong wrote:
+On 11/23/2016 05:48 AM, Darrick J. Wong wrote:
 > Fix the discussion of the limitations on the dest_count and src_length
 > parameters to the fideduperange ioctl to reflect what's actually in the
 > kernel.
-> 
+
+Thanks Darrick. Applied.
+
+Cheers,
+
+Michael
+
+
 > Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
 > ---
 >  man2/ioctl_fideduperange.2 |   20 +++++++++++++++++---
@@ -76,8 +82,11 @@ On Tue, Nov 22, 2016 at 08:48:16PM -0800, Darrick J. Wong wrote:
 >  .B EBADF
 >  .IR src_fd
 >  is not open for reading;
+> .
+> 
 
-Reviewed-by: Omar Sandoval <osandov@fb.com>
 
 -- 
-Omar
+Michael Kerrisk
+Linux man-pages maintainer; http://www.kernel.org/doc/man-pages/
+Linux/UNIX System Programming Training: http://man7.org/training/

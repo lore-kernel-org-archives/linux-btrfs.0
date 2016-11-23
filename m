@@ -1,16 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:32428 "EHLO
+Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:40063 "EHLO
         cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S934495AbcKWPyb (ORCPT
+        by vger.kernel.org with ESMTP id S1756982AbcKWRVk (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Nov 2016 10:54:31 -0500
-Subject: Re: Btrfs: adjust len of writes if following a preallocated extent
+        Wed, 23 Nov 2016 12:21:40 -0500
+From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
+Subject: resend: Re: Btrfs: adjust len of writes if following a preallocated
+ extent
 To: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org
 References: <1478287254-5458-1-git-send-email-bo.li.liu@oracle.com>
 Cc: David Sterba <dsterba@suse.cz>
-From: NOC - Profihost AG <noc@profihost.ag>
-Message-ID: <3229ffdc-173e-525e-89c9-d4c9f9cf717e@profihost.ag>
-Date: Wed, 23 Nov 2016 16:54:26 +0100
+Message-ID: <b600e06c-f946-853a-d868-eed429f9097b@profihost.ag>
+Date: Wed, 23 Nov 2016 18:21:35 +0100
 MIME-Version: 1.0
 In-Reply-To: <1478287254-5458-1-git-send-email-bo.li.liu@oracle.com>
 Content-Type: text/plain; charset=utf-8
@@ -19,6 +20,7 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi,
 
+sorry last mail was from the wrong box.
 
 Am 04.11.2016 um 20:20 schrieb Liu Bo:
 > If we have
@@ -302,22 +304,3 @@ Stefan
 >  	em = btrfs_new_extent_direct(inode, start, len);
 >  	if (IS_ERR(em)) {
 > 
-
--- 
-Mit freundlichen Grüßen
-  Stefan Priebe
-Ihr Profihost Team
-
--------------------------------
-Profihost AG
-Expo Plaza 1
-30539 Hannover
-Deutschland
-
-Tel.: +49 (511) 5151 8181     | Fax.: +49 (511) 5151 8282
-URL: http://www.profihost.com | E-Mail: info@profihost.com
-
-Sitz der Gesellschaft: Hannover, USt-IdNr. DE813460827
-Registergericht: Amtsgericht Hannover, Register-Nr.: HRB 202350
-Vorstand: Cristoph Bluhm, Sebastian Bluhm, Stefan Priebe
-Aufsichtsrat: Prof. Dr. iur. Winfried Huck (Vorsitzender)

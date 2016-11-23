@@ -1,99 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:20146 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753651AbcKWCo4 (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:19290 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755461AbcKWC5w (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Nov 2016 21:44:56 -0500
-Date: Tue, 22 Nov 2016 18:44:19 -0800
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Cc: Omar Sandoval <osandov@osandov.com>, linux-btrfs@vger.kernel.org,
-        linux-xfs@vger.kernel.org, Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        Christoph Hellwig <hch@infradead.org>, kernel-team@fb.com
-Subject: Re: [RFC PATCH 0/2] Btrfs: make a source length of 0 imply EOF for
- dedupe
-Message-ID: <20161123024419.GQ16813@birch.djwong.org>
-References: <cover.1479427384.git.osandov@fb.com>
- <20161123020210.GW21290@hungrycats.org>
+        Tue, 22 Nov 2016 21:57:52 -0500
+Subject: Re: [PATCH v2 0/5] Make btrfs-progs really compatible with any kernel
+ version
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+References: <1448283378-10579-1-git-send-email-anand.jain@oracle.com>
+ <824aa945-fd1f-45a2-9123-2bd810f464d6@oracle.com>
+ <20161114121335.GJ12522@suse.cz>
+ <426cb2c7-b947-63d1-a8c4-8a575268377f@oracle.com>
+ <20161122131631.GM12522@suse.cz>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <cd34fe14-0fc0-9c31-ee8a-2096585f7b61@oracle.com>
+Date: Wed, 23 Nov 2016 11:00:49 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20161123020210.GW21290@hungrycats.org>
+In-Reply-To: <20161122131631.GM12522@suse.cz>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 22, 2016 at 09:02:10PM -0500, Zygo Blaxell wrote:
-> On Thu, Nov 17, 2016 at 04:07:48PM -0800, Omar Sandoval wrote:
-> > 3. Both XFS and Btrfs cap each dedupe operation to 16MB, but the
-> >    implicit EOF gets around this in the existing XFS implementation. I
-> >    copied this for the Btrfs implementation.
-> 
-> Somewhat tangential to this patch, but on the dedup topic:  Can we raise
-> or drop that 16MB limit?
-> 
-> The maximum btrfs extent length is 128MB.  Currently the btrfs dedup
-> behavior for a 128MB extent is to generate 8x16MB shared extent references
-> with different extent offsets to a single 128MB physical extent.
-> These references no longer look like the original 128MB extent to a
-> userspace dedup tool.  That raises the difficulty level substantially
-> for a userspace dedup tool when it tries to figure out which extents to
-> keep and which to discard or rewrite.
-> 
-> XFS may not have this problem--I haven't checked.  On btrfs it's
-> definitely not as simple as "bang two inode/offset/length pairs together
-> with dedup and disk space will be freed automagically."  If dedup is
-> done incorrectly on btrfs, it can end up just making the filesystem slow
-> without freeing any space.
 
-I copied the 16M limit into xfs/ocfs2 because btrfs had it. :)
 
-The VFS now limits the size of the incoming struct file_dedupe_range to
-whatever a page size is.  On x86 that only allows us 126 dedupe
-candidates, which means that a single call can perform up to ~2GB of IO.
-Storage is getting faster, but 2GB is still a fair amount for a single
-call.  Of course in XFS we do the dedupe one file and one page at a time
-to keep the memory footprint sane.
+On 11/22/16 21:16, David Sterba wrote:
+> On Tue, Nov 22, 2016 at 04:54:58PM +0800, Anand Jain wrote:
+>> On 11/14/16 20:13, David Sterba wrote:
+>>> On Tue, Nov 08, 2016 at 09:14:39PM +0800, Anand Jain wrote:
+>>>>   This patch isn't integrated, any idea why ?
+>>>
+>>> Because it does not cover all usecases.
+>>
+>>     You have stated one of the use case here
+>>      https://www.spinics.net/lists/linux-btrfs/msg49391.html
+>>
+>>     which I have it implemented in these patches
+>>       [PATCH 5/7] btrfs-progs: introduce framework version to features
+>>       [PATCH 6/7] btrfs-progs: add -O comp= option for mkfs.btrfs
+>>       [PATCH 7/7] btrfs-progs: add -O comp= option for btrfs-convert
+>>
+>>     was their more ?
+>
+> Yeah, it turned out there's more.
+>
+>>> I've committed the preparatory
+>>> bits from branch where I've been working on that feature so we can
+>>> actually get to the hard parts.
+>>
+>>   these patch set is a year old as well. are you planning to drop
+>>   these patches ? the clarity is missing. IMO.
+>
+> Preparatory bits are in patches:
+>
+>   btrfs-progs: mkfs: add names of matching sysfs feature names
+>   btrfs-progs: mkfs: enhance feature table
+>   btrfs-progs: mkfs: extend mkfs features with compat, safe and default versions
 
-On ppc64 with its huge 64k pages that comes out to 32GB of IO.
+  I don't seen these patches in the ML. Looks like it was integrated
+  in 4.8.3.
 
-One thing we (speaking for XFS, anyway) /could/ do is limit based on the
-theoretical IO count instead of clamping the length, e.g.
+> the core work is not yet done.
+>
+> The original usecase has been extended to allow for selecting features
+> that are compatible, ie. can be mounted, safe, ie. are ok wrt The
+> Status page, and default, ie. automatically selected by mkfs.
 
-if ((u64)dest_count * len >= (1ULL << 31))
-	return -E2BIG;
+> Additionally to
+> that, a system-wide preset from a config file in /etc.
 
-That way you /could/ specify a larger extent size if you pass in fewer
-file descriptors.  OTOH XFS will merge all the records together, so even
-if you deduped the whole 128M in 4k chunks you'll still end up with a
-single block mapping record and a single backref.
 
-Were I starting from scratch I'd probably just dump the existing dedupe
-interface in favor of a non-vectorized dedupe_range call taking the same
-parameters as clone_range:
+  Certainly these patches could have been on (cleanup/enhancement)
+  top of my patches which was sent a year back.
 
-int dedupe_range(src_fd, src_off, dest_fd, dest_off);
 
-I'd also change the semantics to "Find and share all identical blocks in
-this subrange.  Differing blocks are left alone." because it seems silly
-that duperemove can issue large requests but a single byte difference in
-the middle causes info->status to be set to FILE_DEDUPE_RANGE_DIFFERS
-and info->bytes_deduped only changes if the entire range was deduped.
 
-> The 16MB limit doesn't seem to be useful in practice.  The two useful
-> effects of the limit seem to be DoS mitigation.  There is no checking of
-> the RAM usage that I can find (i.e. if you fire off 16 dedup threads,
-> they want 256MB of RAM; put another way, if you want to tie up 16GB of
-> kernel RAM, all you have to do is create 1024 dedup threads), so it's
-> not an effective DoS mitigation feature.  Internally dedup could verify
-> blocks in batches of 16MB and check for signals/release and reacquire
-> locks in between, so it wouldn't tie up the kernel or the two inodes
-> for excessively long periods.
+Thanks. Anand
 
-(Does btrfs actually do the extent_same stuff in parallel??)
-
-> Even if we want to keep the 16MB limit, there's also no way to query the
-> kernel from userspace to find out what the limit is, other than by trial
-> and error.  It's not even in a header file, userspace just has to *know*.
-
--E2BIG?
-
---D
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

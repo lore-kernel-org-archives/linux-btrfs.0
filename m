@@ -1,160 +1,197 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:37524 "EHLO
-        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1750726AbcKXFQh (ORCPT
+Received: from mail.linuxsystems.it ([79.7.78.67]:51675 "EHLO
+        mail.linuxsystems.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S965321AbcKXOAb (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 24 Nov 2016 00:16:37 -0500
-Date: Thu, 24 Nov 2016 00:16:35 -0500
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc: Omar Sandoval <osandov@osandov.com>, linux-btrfs@vger.kernel.org,
-        linux-xfs@vger.kernel.org, Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        Christoph Hellwig <hch@infradead.org>, kernel-team@fb.com
-Subject: Re: [RFC PATCH 0/2] Btrfs: make a source length of 0 imply EOF for
- dedupe
-Message-ID: <20161124051634.GE8685@hungrycats.org>
-References: <cover.1479427384.git.osandov@fb.com>
- <20161123020210.GW21290@hungrycats.org>
- <20161123024419.GQ16813@birch.djwong.org>
+        Thu, 24 Nov 2016 09:00:31 -0500
+Received: from localhost (unknown [192.168.1.156])
+        by mail.linuxsystems.it (Postfix) with ESMTPSA id 8E052A9AF2
+        for <linux-btrfs@vger.kernel.org>; Thu, 24 Nov 2016 15:00:28 +0100 (CET)
+From: =?iso-8859-1?Q?Niccol=F2_Belli?= <darkbasic@linuxsystems.it>
+To: <linux-btrfs@vger.kernel.org>
+Subject: Increased disk usage after deduplication and system running out of =?iso-8859-1?Q?memory?=
+Date: Thu, 24 Nov 2016 15:00:26 +0100
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="IvGM3kKqwtniy32b"
-In-Reply-To: <20161123024419.GQ16813@birch.djwong.org>
+Message-ID: <51c36f62-739b-425c-9252-8f7dcf9d016c@linuxsystems.it>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
+I use snapper, so I have plenty of snapshots in my btrfs partition and most 
+of my data is already deduplicated because of that.
+Since long time ago I run offline defragmentation once (because I didn't 
+know extents get unshared) I wanted to run offline deduplication to free a 
+couple of GBs.
 
---IvGM3kKqwtniy32b
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+This is the script I use to stop snapper, set snapshots to rw, balance, 
+deduplicate, etc: https://paste.pound-python.org/show/vPUGVNjPQbDvr4HbtMgs/
 
-On Tue, Nov 22, 2016 at 06:44:19PM -0800, Darrick J. Wong wrote:
-> On Tue, Nov 22, 2016 at 09:02:10PM -0500, Zygo Blaxell wrote:
-> > On Thu, Nov 17, 2016 at 04:07:48PM -0800, Omar Sandoval wrote:
-> > > 3. Both XFS and Btrfs cap each dedupe operation to 16MB, but the
-> > >    implicit EOF gets around this in the existing XFS implementation. I
-> > >    copied this for the Btrfs implementation.
-> >=20
-> > Somewhat tangential to this patch, but on the dedup topic:  Can we raise
-> > or drop that 16MB limit?
-> >=20
-> > The maximum btrfs extent length is 128MB.  Currently the btrfs dedup
-> > behavior for a 128MB extent is to generate 8x16MB shared extent referen=
-ces
-> > with different extent offsets to a single 128MB physical extent.
-> > These references no longer look like the original 128MB extent to a
-> > userspace dedup tool.  That raises the difficulty level substantially
-> > for a userspace dedup tool when it tries to figure out which extents to
-> > keep and which to discard or rewrite.
-> >=20
-> > XFS may not have this problem--I haven't checked.  On btrfs it's
-> > definitely not as simple as "bang two inode/offset/length pairs together
-> > with dedup and disk space will be freed automagically."  If dedup is
-> > done incorrectly on btrfs, it can end up just making the filesystem slow
-> > without freeing any space.
->=20
-> I copied the 16M limit into xfs/ocfs2 because btrfs had it. :)
+$ cat after_balance 
+Overall:
+    Device size:                 152.36GiB                                  
+                                                                            
+                                                                            
+                         
+    Device allocated:            136.00GiB                                  
+                                                                            
+                                                                            
+                         
+    Device unallocated:           16.35GiB                                  
+                                                                            
+                                                                            
+                         
+    Device missing:                  0.00B                                  
+                                                                            
+                                                                            
+                         
+    Used:                        133.97GiB                                  
+                                                                            
+                                                                            
+                         
+    Free (estimated):             17.17GiB      (min: 17.17GiB)             
+                                                                            
+                                                                            
+                         
+    Data ratio:                       1.00                                  
+                                                                            
+                                                                            
+                         
+    Metadata ratio:                   1.00                                  
+                                                                            
+                                                                            
+                         
+    Global reserve:              239.94MiB      (used: 0.00B)               
+                                                                            
+                                                                            
+                         
+                                                                            
+                                                                            
+                                                                            
+                         
+Data,single: Size:133.00GiB, Used:132.18GiB                                 
+                                                                            
+                                                                            
+                         
+   /dev/mapper/cryptroot         133.00GiB                                  
+                                                                            
+                                                                            
+                         
+                                                                            
+                                                                            
+                                                                            
+                         
+Metadata,single: Size:3.00GiB, Used:1.79GiB                                 
+                                                                            
+                                                                            
+                         
+   /dev/mapper/cryptroot           3.00GiB                                  
+                                                                            
+                                                                            
+                         
+                                                                            
+                                                                            
+                                                                            
+                         
+System,single: Size:3.00MiB, Used:16.00KiB                                  
+                                                                            
+                                                                            
+                         
+   /dev/mapper/cryptroot           3.00MiB                                  
+                                                                            
+                                                                            
+                         
+                                                                            
+                                                                            
+                                                                            
+                         
+Unallocated:                                                                
+                                                                            
+                                                                            
+                         
+   /dev/mapper/cryptroot          16.35GiB                                  
+                                                                            
+                                                                            
+                         
 
-Finally, a clearly stated rationale.  ;)
 
-> The VFS now limits the size of the incoming struct file_dedupe_range to
-> whatever a page size is.  On x86 that only allows us 126 dedupe
-> candidates, which means that a single call can perform up to ~2GB of IO.
-> Storage is getting faster, but 2GB is still a fair amount for a single
-> call.  Of course in XFS we do the dedupe one file and one page at a time
-> to keep the memory footprint sane.
->=20
-> On ppc64 with its huge 64k pages that comes out to 32GB of IO.
->=20
-> One thing we (speaking for XFS, anyway) /could/ do is limit based on the
-> theoretical IO count instead of clamping the length, e.g.
->=20
-> if ((u64)dest_count * len >=3D (1ULL << 31))
-> 	return -E2BIG;
->=20
-> That way you /could/ specify a larger extent size if you pass in fewer
-> file descriptors.  OTOH XFS will merge all the records together, so even
-> if you deduped the whole 128M in 4k chunks you'll still end up with a
-> single block mapping record and a single backref.
+$ cat after_duperemove_and_balance                                          
+                                                                            
+                                                                            
+   
+Overall:                                                                    
+                                                                            
+                                                                            
+                         
+    Device size:                 152.36GiB                                  
+                                                                            
+                                                                            
+                         
+    Device allocated:            136.03GiB                                  
+                                                                            
+                                                                            
+                         
+    Device unallocated:           16.33GiB                                  
+                                                                            
+                                                                            
+                         
+    Device missing:                  0.00B                                  
+                                                                            
+                                                                            
+                         
+    Used:                        133.81GiB                                  
+                                                                            
+                                                                            
+                         
+    Free (estimated):             16.55GiB      (min: 16.55GiB)             
+                                                                            
+                                                                            
+                         
+    Data ratio:                       1.00                                  
+                                                                            
+                                                                            
+                         
+    Metadata ratio:                   1.00                                  
+                                                                            
+                                                                            
+                         
+    Global reserve:              512.00MiB      (used: 0.00B)
 
-This is why I'm mystified that XFS has this limitation.  On btrfs there
-were at least _reasons_ for it, even if they were just "we have a v0.3
-implementation and nobody's even started optimizing it yet."
+Data,single: Size:127.00GiB, Used:126.77GiB
+   /dev/mapper/cryptroot         127.00GiB
 
-The btrfs code calls kzalloc (with size limited by MAX_DEDUPE_LEN) in
-the context of the thread executing the ioctl.  It then loads up all the
-pages, compares them, then decides whether to continue with clone_range
-for the whole extent, or not.  btrfs doesn't seem to ever merge these.
+Metadata,single: Size:9.00GiB, Used:7.03GiB
+   /dev/mapper/cryptroot           9.00GiB
 
-> Were I starting from scratch I'd probably just dump the existing dedupe
-> interface in favor of a non-vectorized dedupe_range call taking the same
-> parameters as clone_range:
->=20
-> int dedupe_range(src_fd, src_off, dest_fd, dest_off);
->=20
-> I'd also change the semantics to "Find and share all identical blocks in
-> this subrange.  Differing blocks are left alone." because it seems silly
-> that duperemove can issue large requests but a single byte difference in
-> the middle causes info->status to be set to FILE_DEDUPE_RANGE_DIFFERS
-> and info->bytes_deduped only changes if the entire range was deduped.
+System,single: Size:32.00MiB, Used:16.00KiB
+   /dev/mapper/cryptroot          32.00MiB
 
-It'd also be nice if it replaced all existing shared refs to the dst
-blocks at the same time.  On btrfs, dedup agents have to find all the
-shared refs (either through brute force or by using LOGICAL_INO to look
-them all up through backrefs) and feed each one into extent_same until
-the last reference to dst is removed.  But maybe this is only needed to
-work around a btrfs thing that never happens on XFS... :-P
+Unallocated:
+   /dev/mapper/cryptroot          16.33GiB
 
-> > The 16MB limit doesn't seem to be useful in practice.  The two useful
-> > effects of the limit seem to be DoS mitigation.  There is no checking of
-> > the RAM usage that I can find (i.e. if you fire off 16 dedup threads,
-> > they want 256MB of RAM; put another way, if you want to tie up 16GB of
-> > kernel RAM, all you have to do is create 1024 dedup threads), so it's
-> > not an effective DoS mitigation feature.  Internally dedup could verify
-> > blocks in batches of 16MB and check for signals/release and reacquire
-> > locks in between, so it wouldn't tie up the kernel or the two inodes
-> > for excessively long periods.
->=20
-> (Does btrfs actually do the extent_same stuff in parallel??)
 
-A btrfs dedup agent can invoke multiple extent_sames in separate threads.
-It's not a good idea on a single filesystem--they all end up blocking
-on a disk IO or throttled in transaction commit--but in theory two users
-could be running separate dedup agents simultaneously.
+As you can see it freed 5.41 GB of data, but it also added 5.24 GB of 
+metadata. The estimated free space is now 16.55 GB, while before the 
+deduplication it was higher: 17.17 GB.
 
-A malicious agent doesn't care about sanity if it just wants to tie
-up resources.
+This is when running duperemove git with noblock, but almost nothing 
+changes if I omitt it (it defaults to block).
+Why did my metadata increase by a 4x factor? 99% of my data already had 
+shared extents because of snapshots, so why such a huge increase?
 
-> > Even if we want to keep the 16MB limit, there's also no way to query the
-> > kernel from userspace to find out what the limit is, other than by trial
-> > and error.  It's not even in a header file, userspace just has to *know=
-*.
->=20
-> -E2BIG?
+Deduplication didn't finish up to 100%, because duperemove got killed by 
+OOM killer at 99%: 
+https://paste.pound-python.org/show/yUcIOSzXcrfNPkF9rV2L/
 
-That's how it currently works:  an application fills in the size it wants,
-gets an error if it's too big (EINVAL?), and then has to guess which of
-the parameters the kernel didn't like.  Btrfs has had maybe half a dozen
-slight variations of this so far, always removing a restriction.
+As you can see from dmesg 
+(https://paste.pound-python.org/show/eZIkpxUU6QR9ij6Rn1Oq/) there is no 
+process stealing so much memory (my system has 8GB): the biggest one takes 
+as much as 700MB of vm.
 
-> --D
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->=20
+Another strange thing that you can see from the previous log is that it 
+tries to deduplicate /home/niko/nosnap/rootfs/@images/fedora25.qcow2 which 
+is a UNIQUE file. Such image is stored in a separate subvolume because I 
+don't want it to be snapshotted, so I'm pretty sure there are no other 
+copies of this image, but still it tries to deduplicate it.
 
---IvGM3kKqwtniy32b
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iEYEARECAAYFAlg2d7IACgkQgfmLGlazG5wRBgCdGi4poHYE/g+WZ4y0XhLGsAY+
-VIsAoOa861n/TWx9G7Wq7qnLYHXcizlV
-=vepW
------END PGP SIGNATURE-----
-
---IvGM3kKqwtniy32b--
+Niccolò Belli

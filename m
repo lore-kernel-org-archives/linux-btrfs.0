@@ -1,150 +1,160 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:48222 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1754815AbcKXEoz (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:37524 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1750726AbcKXFQh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Nov 2016 23:44:55 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1c9ltv-0004b2-Pa
-        for linux-btrfs@vger.kernel.org; Thu, 24 Nov 2016 05:44:47 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Inconsistent free space with false ENOSPC
-Date: Thu, 24 Nov 2016 04:44:41 +0000 (UTC)
-Message-ID: <pan$ba8df$dcc54160$f631205d$ba008359@cox.net>
-References: <010201588c655ba6-4fe49dba-25fb-45ca-adf5-4bb721cd6ecb-000000@eu-west-1.amazonses.com>
-        <010201588d22ec8f-40a41aa2-9046-462a-ab95-347f101dfd02-000000@eu-west-1.amazonses.com>
-        <pan$aca24$249fdeaf$20473dcc$c7efe94c@cox.net>
-        <0102015891fee0c8-d9e6073c-c86c-43a7-80f7-3d51dfefa0fd-000000@eu-west-1.amazonses.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+        Thu, 24 Nov 2016 00:16:37 -0500
+Date: Thu, 24 Nov 2016 00:16:35 -0500
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: "Darrick J. Wong" <darrick.wong@oracle.com>
+Cc: Omar Sandoval <osandov@osandov.com>, linux-btrfs@vger.kernel.org,
+        linux-xfs@vger.kernel.org, Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        Christoph Hellwig <hch@infradead.org>, kernel-team@fb.com
+Subject: Re: [RFC PATCH 0/2] Btrfs: make a source length of 0 imply EOF for
+ dedupe
+Message-ID: <20161124051634.GE8685@hungrycats.org>
+References: <cover.1479427384.git.osandov@fb.com>
+ <20161123020210.GW21290@hungrycats.org>
+ <20161123024419.GQ16813@birch.djwong.org>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="IvGM3kKqwtniy32b"
+In-Reply-To: <20161123024419.GQ16813@birch.djwong.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Martin Raiber posted on Wed, 23 Nov 2016 16:22:29 +0000 as excerpted:
 
-> On 23.11.2016 07:09 Duncan wrote:
->> Yes, you're in a *serious* metadata bind.
->> Any time global reserve has anything above zero usage, it means the
->> filesystem is in dire straits, and well over half of your global
->> reserve is used, a state that is quite rare as btrfs really tries hard
->> not to use that space at all under normal conditions and under most
->> conditions will ENOSPC before using the reserve at all.
->>
->> And the global reserve comes from metadata but isn't accounted in
->> metadata usage, so your available metadata is actually negative by the
->> amount of global reserve used.
->>
->> Meanwhile, all available space is allocated to either data or metadata
->> chunks already -- no unallocated space left to allocate new metadata
->> chunks to take care of the problem (well, ~1 MiB unallocated, but
->> that's not enough to allocate a chunk, metadata chunks being nominally
->> 256 MiB in size and with metadata dup, a pair of metadata chunks must
->> be allocated together, so 512 MiB would be needed, and of course even
->> if the 1 MiB could be allocated, it'd be ~1/2 MiB worth of metadata due
->> to metadata-dup and you're 300+ MiB into global reserve, so it wouldn't
->> even come close to fixing the problem).
->>
->>
->> Now normally, as mentioned in the ENOSPC discussion in the FAQ on the
->> wiki, temporarily adding (btrfs device add) another device of some GiB
->> (32 GiB should do reasonably well, 8 GiB may, a USB thumb drive of
->> suitable size can be used if necessary) and using the space it makes
->> available to do a balance (-dusage= incrementing from 0 to perhaps 30
->> to 70 percent, higher numbers will take longer and may not work at
->> first) in ordered to combine partially used chunks and free enough
->> space to then remove (btrfs device remove) the temporarily added
->> device.
->>
->> However, in your case the data usage is 488 of 508 GiB on a 512 GiB
->> device with space needed for several GiB of metadata as well, so while
->> in theory you could free up ~20 GiB of space that way and that should
->> get you out of the immediate bind, the filesystem will still be very
->> close to full, particularly after clearing out the global reserve
->> usage, with perhaps 16 GiB unallocated at ideal, ~97% used.  And as any
->> veteran sysadmin or filesystem expert will tell you, filesystems in
->> general like 10-20% free in ordered to be able to "breath" or work most
->> efficiently, with btrfs being no exception, so while the above might
->> get you out of the immediate bind, it's unlikely to work for long.
->>
->> Which means once you're out of the immediate bind, you're still going
->> to need to free some space, one way or another, and that might not be
->> as simple as the words make it appear.
-> 
-> Yes, adding a temporary disk allowed me to fix it. Though, it wanted to
-> write RAID1 metadata instead of DUP first, which further confused me.
+--IvGM3kKqwtniy32b
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-When a btrfs has two devices, it defaults to raid1 metadata.
+On Tue, Nov 22, 2016 at 06:44:19PM -0800, Darrick J. Wong wrote:
+> On Tue, Nov 22, 2016 at 09:02:10PM -0500, Zygo Blaxell wrote:
+> > On Thu, Nov 17, 2016 at 04:07:48PM -0800, Omar Sandoval wrote:
+> > > 3. Both XFS and Btrfs cap each dedupe operation to 16MB, but the
+> > >    implicit EOF gets around this in the existing XFS implementation. I
+> > >    copied this for the Btrfs implementation.
+> >=20
+> > Somewhat tangential to this patch, but on the dedup topic:  Can we raise
+> > or drop that 16MB limit?
+> >=20
+> > The maximum btrfs extent length is 128MB.  Currently the btrfs dedup
+> > behavior for a 128MB extent is to generate 8x16MB shared extent referen=
+ces
+> > with different extent offsets to a single 128MB physical extent.
+> > These references no longer look like the original 128MB extent to a
+> > userspace dedup tool.  That raises the difficulty level substantially
+> > for a userspace dedup tool when it tries to figure out which extents to
+> > keep and which to discard or rewrite.
+> >=20
+> > XFS may not have this problem--I haven't checked.  On btrfs it's
+> > definitely not as simple as "bang two inode/offset/length pairs together
+> > with dedup and disk space will be freed automagically."  If dedup is
+> > done incorrectly on btrfs, it can end up just making the filesystem slow
+> > without freeing any space.
+>=20
+> I copied the 16M limit into xfs/ocfs2 because btrfs had it. :)
 
-However, as the wiki covers, if you are short on metadata, you need to 
-balance data chunks to consolidate them, not metadata, as all those 
-chunks will be full already, thus the suggested -d, with the usage filter 
-(thus -dusage=) to limit balancing to those chunks that are less than X 
-percent full in ordered to efficiently consolidate them without wasting 
-time rewriting chunks that are at or near 100 percent full already and 
-thus can't be consolidated anyway.  That effect is compounded since the 
-more data a chunk contains the longer it takes to rewrite, while 
-conversely, the more data a chunk contains the more chunks of about the 
-same percentage full must be rewritten in ordered to free just one chunk. 
-10 chunks at 10% full consolidate to one, freeing 9, while taking about 
-the same time to rewrite as a single 100% full chunk.  10 chunks at 90% 
-full take 9 times as long as a single full chunk to rewrite, but only 
-free 1 chunk.
+Finally, a clearly stated rationale.  ;)
 
-Thus the idea is to start at -dusage=0, and increase a few percentage 
-points at a time until you're either satisfied with the amount of space 
-freed, or you've decided it's not worth the time it's taking to do even 
-higher percentages -- even on ssd as I am here, I'll normally stop at 
-between 50 and 70 percent, tho on ssd, not so much because of the time it 
-takes, but more because it's a waste of ssd write cycles -- not worth the 
-additional cost in write cycles to rewrite chunks more than 70% full, 
-because it takes rewriting so many of them to free just one.
+> The VFS now limits the size of the incoming struct file_dedupe_range to
+> whatever a page size is.  On x86 that only allows us 126 dedupe
+> candidates, which means that a single call can perform up to ~2GB of IO.
+> Storage is getting faster, but 2GB is still a fair amount for a single
+> call.  Of course in XFS we do the dedupe one file and one page at a time
+> to keep the memory footprint sane.
+>=20
+> On ppc64 with its huge 64k pages that comes out to 32GB of IO.
+>=20
+> One thing we (speaking for XFS, anyway) /could/ do is limit based on the
+> theoretical IO count instead of clamping the length, e.g.
+>=20
+> if ((u64)dest_count * len >=3D (1ULL << 31))
+> 	return -E2BIG;
+>=20
+> That way you /could/ specify a larger extent size if you pass in fewer
+> file descriptors.  OTOH XFS will merge all the records together, so even
+> if you deduped the whole 128M in 4k chunks you'll still end up with a
+> single block mapping record and a single backref.
 
-And the -d would have only dealt with data chunks, so the only metadata 
-rewrites would have been the ones necessary to point to the new location 
-for the data chunks.  Of course that wouldn't have been zero, 
-particularly so since the existing metadata chunks were full, and the new 
-ones would default to raid1, but that would soon enough be rewritten back 
-to dup when the btrfs device remove of the temporary device was done.
+This is why I'm mystified that XFS has this limitation.  On btrfs there
+were at least _reasons_ for it, even if they were just "we have a v0.3
+implementation and nobody's even started optimizing it yet."
 
-> File system is being written to by a program that watches disk usage and
-> deletes stuff/stops writing if too much is used. But it could not
-> anticipate the jump from 20GiB to zero free. I have now set
-> "metadata_ratio=8" to prevent that, and will lower it if it still
-> becomes a problem.
+The btrfs code calls kzalloc (with size limited by MAX_DEDUPE_LEN) in
+the context of the thread executing the ioctl.  It then loads up all the
+pages, compares them, then decides whether to continue with clone_range
+for the whole extent, or not.  btrfs doesn't seem to ever merge these.
 
-Yes, that should work, altho under ordinary circumstances manually 
-setting that ratio is discouraged. The option is mostly just legacy code 
-from back before btrfs could normally allocate metadata chunks on its own 
-when it needed them, but then again, the ordinary recommendation is not 
-to run over 90% full, as well, and the metadata ratio option remains 
-there for special cases, with yours obviously being one of them.  
+> Were I starting from scratch I'd probably just dump the existing dedupe
+> interface in favor of a non-vectorized dedupe_range call taking the same
+> parameters as clone_range:
+>=20
+> int dedupe_range(src_fd, src_off, dest_fd, dest_off);
+>=20
+> I'd also change the semantics to "Find and share all identical blocks in
+> this subrange.  Differing blocks are left alone." because it seems silly
+> that duperemove can issue large requests but a single byte difference in
+> the middle causes info->status to be set to FILE_DEDUPE_RANGE_DIFFERS
+> and info->bytes_deduped only changes if the entire range was deduped.
 
-> Perhaps it would be good to somehow show that "global reserve" belongs
-> to metadata and show in btrfs fi usage/df that metadata is full if
-> global reserve>=free metadata, so that future users are not as confused
-> by this situation as I was.
+It'd also be nice if it replaced all existing shared refs to the dst
+blocks at the same time.  On btrfs, dedup agents have to find all the
+shared refs (either through brute force or by using LOGICAL_INO to look
+them all up through backrefs) and feed each one into extent_same until
+the last reference to dst is removed.  But maybe this is only needed to
+work around a btrfs thing that never happens on XFS... :-P
 
-This has actually been in active discussion and AFAIK it is pretty much 
-agreed among the devs that eventually, the metadata usage figures should 
-include global reserve as well, and global reserve as a separate 
-statistic will at minimum be deemphasized, and may be moved out of user-
-targeted btrfs commands entirely and only exposed in developer-targeted 
-debug commands.  Only the patches actually doing that haven't been merged 
-yet.  There have been some posted, with the discussion centering on 
-whether global reserve should be indented under metadata but still show 
-up, or whether it should be folded into metadata and removed as a 
-separate item from user targeted reports entirely.
+> > The 16MB limit doesn't seem to be useful in practice.  The two useful
+> > effects of the limit seem to be DoS mitigation.  There is no checking of
+> > the RAM usage that I can find (i.e. if you fire off 16 dedup threads,
+> > they want 256MB of RAM; put another way, if you want to tie up 16GB of
+> > kernel RAM, all you have to do is create 1024 dedup threads), so it's
+> > not an effective DoS mitigation feature.  Internally dedup could verify
+> > blocks in batches of 16MB and check for signals/release and reacquire
+> > locks in between, so it wouldn't tie up the kernel or the two inodes
+> > for excessively long periods.
+>=20
+> (Does btrfs actually do the extent_same stuff in parallel??)
 
-So it /is/ set to change at some point.  It's worth noting here that on 
-this list at least, btrfs status remains "under heavy development, 
-stabilizing, but not yet fully stable and mature", and command output 
-formats remain subject to change as well, so changes of this nature can 
-indeed be expected.
+A btrfs dedup agent can invoke multiple extent_sames in separate threads.
+It's not a good idea on a single filesystem--they all end up blocking
+on a disk IO or throttled in transaction commit--but in theory two users
+could be running separate dedup agents simultaneously.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+A malicious agent doesn't care about sanity if it just wants to tie
+up resources.
 
+> > Even if we want to keep the 16MB limit, there's also no way to query the
+> > kernel from userspace to find out what the limit is, other than by trial
+> > and error.  It's not even in a header file, userspace just has to *know=
+*.
+>=20
+> -E2BIG?
+
+That's how it currently works:  an application fills in the size it wants,
+gets an error if it's too big (EINVAL?), and then has to guess which of
+the parameters the kernel didn't like.  Btrfs has had maybe half a dozen
+slight variations of this so far, always removing a restriction.
+
+> --D
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>=20
+
+--IvGM3kKqwtniy32b
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iEYEARECAAYFAlg2d7IACgkQgfmLGlazG5wRBgCdGi4poHYE/g+WZ4y0XhLGsAY+
+VIsAoOa861n/TWx9G7Wq7qnLYHXcizlV
+=vepW
+-----END PGP SIGNATURE-----
+
+--IvGM3kKqwtniy32b--

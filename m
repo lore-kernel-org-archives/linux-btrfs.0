@@ -1,534 +1,316 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:9727 "EHLO song.cn.fujitsu.com"
-        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S934522AbcKKIrf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 Nov 2016 03:47:35 -0500
-From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com, jbacik@fb.com, dsterba@suse.com, holger@applied-asynchrony.com,
-        s.priebe@profihost.ag, Qu Wenruo <quwenruo@cn.fujitsu.com>
-Subject: [PATCH 3/3] btrfs: Introduce COMPRESS reserve type to fix false enospc for compression
-Date: Fri, 11 Nov 2016 16:39:47 +0800
-Message-Id: <1478853587-28717-4-git-send-email-wangxg.fnst@cn.fujitsu.com>
-In-Reply-To: <1478853587-28717-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
-References: <1478853587-28717-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
+Received: from mail-vk0-f66.google.com ([209.85.213.66]:32917 "EHLO
+        mail-vk0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754566AbcKYOGf (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 25 Nov 2016 09:06:35 -0500
+Received: by mail-vk0-f66.google.com with SMTP id l126so1838576vkh.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Nov 2016 06:06:34 -0800 (PST)
 MIME-Version: 1.0
+In-Reply-To: <74787aa3-4140-2bae-ce59-5b67db33d811@suse.cz>
+References: <bug-186671-27@https.bugzilla.kernel.org/> <20161103115353.de87ff35756a4ca8b21d2c57@linux-foundation.org>
+ <b5b0cef0-8482-e4de-cb81-69a4dd3410fb@suse.cz> <CAJtFHUQcJKSnyQ7t7-eDpiF2C+U23+iWpZ+X6fGEzN8qdbzmtA@mail.gmail.com>
+ <a8cf869e-f527-9c65-d16d-ac70cf66472a@suse.cz> <CAJtFHUQgkvFaPdyRcoiV-m5hynDGo2qXfMXzZvGahoWp2LL_KA@mail.gmail.com>
+ <bbcd6cb7-3b73-02e9-0409-4601a6f573f5@suse.cz> <CAJtFHUSka8nbaO5RNEcWVRi7VoQ7UORWkMu_7pNW3n_9iRRdew@mail.gmail.com>
+ <CAJtFHUTn9Ejvyj3vJkqnsLoa6gci104-TPu5viG=epfJ9Rk_qg@mail.gmail.com>
+ <4c85dfa5-9dbe-ea3c-7816-1ab321931e1c@suse.cz> <d0a4adfc-5017-71ba-c895-fc7603b54f7a@I-love.SAKURA.ne.jp>
+ <CAJtFHUT3qK_DA2xPbWpjeaeHyqksM7+bYvvrFtL5g0=uP0jrvg@mail.gmail.com>
+ <CAJtFHURrPdJcLrB1sN6YUnJ4F-aH6oSbMY59gVwiEHPt+BL9KA@mail.gmail.com> <74787aa3-4140-2bae-ce59-5b67db33d811@suse.cz>
+From: E V <eliventer@gmail.com>
+Date: Fri, 25 Nov 2016 09:06:33 -0500
+Message-ID: <CAJtFHUSt1q=YYQXGVg+bK2H4fpDT0c0kqaXj3odLo6KFdJcwfg@mail.gmail.com>
+Subject: Re: [Bug 186671] New: OOM on system with just rsync running 32GB of
+ ram 30GB of pagecache
+To: Vlastimil Babka <vbabka@suse.cz>
+Cc: Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        bugzilla-daemon@bugzilla.kernel.org, linux-mm@kvack.org,
+        Michal Hocko <mhocko@kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>,
+        Joonsoo Kim <iamjoonsoo.kim@lge.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When testing btrfs compression, sometimes we got ENOSPC error, though fs
-still has much free space, xfstests generic/171, generic/172, generic/173,
-generic/174, generic/175 can reveal this bug in my test environment when
-compression is enabled.
+So I rebooted with 4.9rc6 with the patch inspired by the thread
+"[PATCH] btrfs: limit the number of asynchronous delalloc pages to
+reasonable value", but at 512K pages, ie:
 
-After some debuging work, we found that it's
-btrfs_delalloc_reserve_metadata() which sometimes tries to reserve too
-much metadata space, even for very small data range.
+ diff -u2 fs/btrfs/inode.c ../linux-4.9-rc6/fs/btrfs/
+--- fs/btrfs/inode.c    2016-11-13 13:32:32.000000000 -0500
++++ ../linux-4.9-rc6/fs/btrfs/inode.c   2016-11-23 08:31:02.145669550 -0500
+@@ -1159,5 +1159,5 @@
+        unsigned long nr_pages;
+        u64 cur_end;
+-       int limit = 10 * SZ_1M;
++       int limit = SZ_512K;
 
-In btrfs_delalloc_reserve_metadata(), the number of metadata bytes to
-reserve is calculated by the difference between outstanding extents and
-reserved extents.
-But due to bad designed drop_outstanding_extent() function, it can make
-the difference too big, and cause problem.
+        clear_extent_bit(&BTRFS_I(inode)->io_tree, start, end, EXTENT_LOCKED,
 
-The problem happens in the following flow with compression enabled.
+System still OOM'd after a few hours of rsync copying & deleting
+files, but it didn't panic this time which was nice ;-) I then set:
+echo 500 >> /proc/sys/vm/watermark_scale_factor
+echo 3 >> /proc/sys/vm/dirty_background_ratio
 
-1) Buffered write 128M data with 128K blocksize
-   outstanding_extents = 1
-   reserved_extents = 1024 (128M / 128K, one blocksize will get one
-                            reserved_extent)
+and system has been running rsync fine for most of a day. system
+memory load is noticably different in sar -r after changing the vm
+params, rsync during OOM:
+12:00:01 AM kbmemfree kbmemused  %memused kbbuffers  kbcached
+kbcommit   %commit  kbactive   kbinact   kbdirty
+03:25:05 AM    158616  32836640     99.52     72376  30853268
+2942644      3.62  26048876   4977872   4936488
+03:30:36 AM    157700  32837556     99.52     72468  30944468
+2940028      3.62  26070084   4957328   4957432
+03:35:02 AM   1802144  31193112     94.54     72560  29266432
+2944352      3.62  26184324   3182048    187784
+03:40:32 AM    157272  32837984     99.52     72648  30934432
+3007244      3.70  26102636   4930744   4927832
+03:45:05 AM    158288  32836968     99.52     72896  30980504
+412108      0.51  26089920   4959668   4977556
+running rsync after tuning VM params:
+08:35:01 AM   1903352  31091904     94.23    232772  26603624
+2680952      3.30  24133864   5019748   1229964
+08:40:01 AM   2878552  30116704     91.28    232800  25641520
+2697356      3.32  24158248   4039372   2864656
+08:45:01 AM   3482616  29512640     89.45    232656  25043068
+2696144      3.32  24087376   3526164   1897192
+08:50:01 AM   3590672  29404584     89.12    232856  24962856
+2704196      3.33  24078188   3451400    666760
+08:55:01 AM   2064900  30930356     93.74    234800  26480996
+2730384      3.36  24009244   5044012     50028
 
-   Note: it's btrfs_merge_extent_hook() to merge outstanding extents.
-         But reserved extents are still 1024.
-
-2) Allocate extents for dirty range
-   cow_file_range_async() split above large extent into small 128K
-   extents.
-   Let's assume 2 compressed extents have been split.
-
-   So we have:
-   outstanding_extents = 3
-   reserved_extents = 1024
-
-   range [0, 256K) has extents allocated
-
-3) One ordered extent get finished
-   btrfs_finish_ordered_io()
-   |- btrfs_delalloc_release_metadata()
-      |- drop_outstanding_extent()
-
-   drop_outstanding_extent() will free *ALL* redundant reserved extents.
-   So we have:
-   outstanding_extents = 2 (One has finished)
-   reserved_extents = 2
-
-4) Continue allocating extents for dirty range
-   cow_file_range_async() continue handling the remaining range.
-
-   When the whole 128M range is done and assume no more ordered extents
-   have finished.
-   outstanding_extents = 1023 (One has finished in Step 3)
-   reserved_extents = 2 (*ALL* freed in Step 3)
-
-5) Another buffered write happens to the file
-   btrfs_delalloc_reserve_metadata() will calculate metadata space.
-
-   The calculation is:
-   meta_to_reserve = (outstanding_extents - reserved_extents) * \
-		     nodesize * max_tree_level(8) * 2
-
-   If nodesize is 16K, it's 1021 * 16K * 8 * 2, near 256M.
-   If nodesize is 64K, it's about 1G.
-
-   That's totally insane.
-
-The fix is to introduce new reserve type, COMPRESSION, to info outstanding
-extents calculation algorithm, to get correct outstanding_extents based
-extent size.
-
-So in Step 1), outstanding_extents = 1024 reserved_extents = 1024
-Step 2): outstanding_extents = 1024 reserved_extents = 1024
-Step 3): outstanding_extents = 1023 reserved_extents = 1023
-
-And in Step 5) we reserve correct amount of metadata space.
-
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- fs/btrfs/ctree.h       |  2 ++
- fs/btrfs/extent-tree.c |  2 ++
- fs/btrfs/extent_io.c   | 61 ++++++++++++++++++++++++++++++++--
- fs/btrfs/extent_io.h   |  5 +++
- fs/btrfs/file.c        |  3 ++
- fs/btrfs/inode.c       | 89 ++++++++++++++++++++++++++++++++++++++++++--------
- fs/btrfs/ioctl.c       |  2 ++
- fs/btrfs/relocation.c  |  3 ++
- 8 files changed, 152 insertions(+), 15 deletions(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 64c63c2..6097bf0 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -109,9 +109,11 @@ static const int btrfs_csum_sizes[] = { 4 };
-  */
- enum btrfs_metadata_reserve_type {
- 	BTRFS_RESERVE_NORMAL,
-+	BTRFS_RESERVE_COMPRESS,
- };
- 
- u64 btrfs_max_extent_size(enum btrfs_metadata_reserve_type reserve_type);
-+int inode_need_compress(struct inode *inode);
- 
- struct btrfs_mapping_tree {
- 	struct extent_map_tree map_tree;
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index bd99f25..d5691b0 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -5924,6 +5924,8 @@ u64 btrfs_max_extent_size(enum btrfs_metadata_reserve_type reserve_type)
- {
- 	if (reserve_type == BTRFS_RESERVE_NORMAL)
- 		return BTRFS_MAX_EXTENT_SIZE;
-+	else if (reserve_type == BTRFS_RESERVE_COMPRESS)
-+		return SZ_128K;
- 
- 	ASSERT(0);
- 	return BTRFS_MAX_EXTENT_SIZE;
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 8ed05d9..854379d 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -603,7 +603,7 @@ static int __clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 	btrfs_debug_check_extent_io_range(tree, start, end);
- 
- 	if (bits & EXTENT_DELALLOC)
--		bits |= EXTENT_NORESERVE;
-+		bits |= EXTENT_NORESERVE | EXTENT_COMPRESS;
- 
- 	if (delete)
- 		bits |= ~EXTENT_CTLBITS;
-@@ -742,6 +742,60 @@ out:
- 
- }
- 
-+static void adjust_one_outstanding_extent(struct inode *inode, u64 len,
-+				enum btrfs_metadata_reserve_type reserve_type)
-+{
-+	unsigned old_extents, new_extents;
-+	u64 max_extent_size = btrfs_max_extent_size(reserve_type);
-+
-+	old_extents = div64_u64(len + max_extent_size - 1, max_extent_size);
-+	new_extents = div64_u64(len + BTRFS_MAX_EXTENT_SIZE - 1,
-+				BTRFS_MAX_EXTENT_SIZE);
-+	if (old_extents <= new_extents)
-+		return;
-+
-+	spin_lock(&BTRFS_I(inode)->lock);
-+	BTRFS_I(inode)->outstanding_extents -= old_extents - new_extents;
-+	spin_unlock(&BTRFS_I(inode)->lock);
-+}
-+
-+/*
-+ * For a extent with EXTENT_COMPRESS flag, if later it does not go through
-+ * compress path, we need to adjust the number of outstanding_extents.
-+ * It's because for extent with EXTENT_COMPRESS flag, its number of outstanding
-+ * extents is calculated by 128KB, so here we need to adjust it.
-+ */
-+void adjust_outstanding_extents(struct inode *inode, u64 start, u64 end,
-+				enum btrfs_metadata_reserve_type reserve_type)
-+{
-+	struct rb_node *node;
-+	struct extent_state *state;
-+	struct extent_io_tree *tree = &BTRFS_I(inode)->io_tree;
-+
-+	spin_lock(&tree->lock);
-+	node = tree_search(tree, start);
-+	if (!node)
-+		goto out;
-+
-+	while (1) {
-+		state = rb_entry(node, struct extent_state, rb_node);
-+		if (state->start > end)
-+			goto out;
-+		/*
-+		 * The whole range is locked, so we can safely clear
-+		 * EXTENT_COMPRESS flag.
-+		 */
-+		state->state &= ~EXTENT_COMPRESS;
-+		adjust_one_outstanding_extent(inode,
-+				state->end - state->start + 1, reserve_type);
-+		node = rb_next(node);
-+		if (!node)
-+			break;
-+	}
-+out:
-+	spin_unlock(&tree->lock);
-+}
-+
- static void wait_on_state(struct extent_io_tree *tree,
- 			  struct extent_state *state)
- 		__releases(tree->lock)
-@@ -1504,6 +1558,7 @@ static noinline u64 find_delalloc_range(struct extent_io_tree *tree,
- 	u64 cur_start = *start;
- 	u64 found = 0;
- 	u64 total_bytes = 0;
-+	unsigned pre_state;
- 
- 	spin_lock(&tree->lock);
- 
-@@ -1521,7 +1576,8 @@ static noinline u64 find_delalloc_range(struct extent_io_tree *tree,
- 	while (1) {
- 		state = rb_entry(node, struct extent_state, rb_node);
- 		if (found && (state->start != cur_start ||
--			      (state->state & EXTENT_BOUNDARY))) {
-+			      (state->state & EXTENT_BOUNDARY) ||
-+			      (state->state ^ pre_state) & EXTENT_COMPRESS)) {
- 			goto out;
- 		}
- 		if (!(state->state & EXTENT_DELALLOC)) {
-@@ -1537,6 +1593,7 @@ static noinline u64 find_delalloc_range(struct extent_io_tree *tree,
- 		found++;
- 		*end = state->end;
- 		cur_start = state->end + 1;
-+		pre_state = state->state;
- 		node = rb_next(node);
- 		total_bytes += state->end - state->start + 1;
- 		if (total_bytes >= max_bytes)
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index ab31d14..09dbdd7 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -21,6 +21,7 @@
- #define EXTENT_NORESERVE	(1U << 15)
- #define EXTENT_QGROUP_RESERVED	(1U << 16)
- #define EXTENT_CLEAR_DATA_RESV	(1U << 17)
-+#define EXTENT_COMPRESS		(1U << 18)
- #define EXTENT_IOBITS		(EXTENT_LOCKED | EXTENT_WRITEBACK)
- #define EXTENT_CTLBITS		(EXTENT_DO_ACCOUNTING | EXTENT_FIRST_DELALLOC)
- 
-@@ -248,6 +249,10 @@ int clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 		     unsigned bits, int wake, int delete,
- 		     struct extent_state **cached, gfp_t mask);
- 
-+enum btrfs_metadata_reserve_type;
-+void adjust_outstanding_extents(struct inode *inode, u64 start, u64 end,
-+		enum btrfs_metadata_reserve_type reserve_type);
-+
- static inline int unlock_extent(struct extent_io_tree *tree, u64 start, u64 end)
- {
- 	return clear_extent_bit(tree, start, end, EXTENT_LOCKED, 1, 0, NULL,
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index f174381..4abd280 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1532,6 +1532,9 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
- 	if (!pages)
- 		return -ENOMEM;
- 
-+	if (inode_need_compress(inode))
-+		reserve_type = BTRFS_RESERVE_COMPRESS;
-+
- 	while (iov_iter_count(i) > 0) {
- 		size_t offset = pos & (PAGE_SIZE - 1);
- 		size_t sector_offset;
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 906ab27..f3ea0e0 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -372,7 +372,7 @@ static noinline int add_async_extent(struct async_cow *cow,
- 	return 0;
- }
- 
--static inline int inode_need_compress(struct inode *inode)
-+int inode_need_compress(struct inode *inode)
- {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 
-@@ -711,6 +711,17 @@ retry:
- 					 async_extent->start +
- 					 async_extent->ram_size - 1);
- 
-+			/*
-+			 * We use 128KB as max extent size to calculate number
-+			 * of outstanding extents for this extent before, now
-+			 * it'll go throuth uncompressed IO, we need to use
-+			 * 128MB as max extent size to re-calculate number of
-+			 * outstanding extents for this extent.
-+			 */
-+			adjust_outstanding_extents(inode, async_extent->start,
-+						   async_extent->start +
-+						   async_extent->ram_size - 1,
-+						   BTRFS_RESERVE_COMPRESS);
- 			/* allocate blocks */
- 			ret = cow_file_range(inode, async_cow->locked_page,
- 					     async_extent->start,
-@@ -1153,7 +1164,8 @@ static noinline void async_cow_free(struct btrfs_work *work)
- 
- static int cow_file_range_async(struct inode *inode, struct page *locked_page,
- 				u64 start, u64 end, int *page_started,
--				unsigned long *nr_written)
-+				unsigned long *nr_written,
-+				enum btrfs_metadata_reserve_type reserve_type)
- {
- 	struct async_cow *async_cow;
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
-@@ -1171,11 +1183,10 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
- 		async_cow->locked_page = locked_page;
- 		async_cow->start = start;
- 
--		if (BTRFS_I(inode)->flags & BTRFS_INODE_NOCOMPRESS &&
--		    !btrfs_test_opt(root->fs_info, FORCE_COMPRESS))
--			cur_end = end;
--		else
-+		if (reserve_type == BTRFS_RESERVE_COMPRESS)
- 			cur_end = min(end, start + SZ_512K - 1);
-+		else
-+			ASSERT(0);
- 
- 		async_cow->end = cur_end;
- 		INIT_LIST_HEAD(&async_cow->extents);
-@@ -1574,21 +1585,37 @@ static int run_delalloc_range(struct inode *inode, struct page *locked_page,
- {
- 	int ret;
- 	int force_cow = need_force_cow(inode, start, end);
-+	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
-+	int need_compress;
-+	enum btrfs_metadata_reserve_type reserve_type = BTRFS_RESERVE_NORMAL;
-+
-+	need_compress = test_range_bit(io_tree, start, end,
-+				       EXTENT_COMPRESS, 1, NULL);
-+	if (need_compress)
-+		reserve_type = BTRFS_RESERVE_COMPRESS;
- 
- 	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW && !force_cow) {
-+		if (need_compress)
-+			adjust_outstanding_extents(inode, start, end,
-+						   reserve_type);
-+
- 		ret = run_delalloc_nocow(inode, locked_page, start, end,
- 					 page_started, 1, nr_written);
- 	} else if (BTRFS_I(inode)->flags & BTRFS_INODE_PREALLOC && !force_cow) {
-+		if (need_compress)
-+			adjust_outstanding_extents(inode, start, end,
-+						   reserve_type);
-+
- 		ret = run_delalloc_nocow(inode, locked_page, start, end,
- 					 page_started, 0, nr_written);
--	} else if (!inode_need_compress(inode)) {
-+	} else if (!need_compress) {
- 		ret = cow_file_range(inode, locked_page, start, end, end,
- 				      page_started, nr_written, 1, NULL);
- 	} else {
- 		set_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
- 			&BTRFS_I(inode)->runtime_flags);
- 		ret = cow_file_range_async(inode, locked_page, start, end,
--					   page_started, nr_written);
-+				page_started, nr_written, reserve_type);
- 	}
- 	return ret;
- }
-@@ -1607,6 +1634,8 @@ static void btrfs_split_extent_hook(struct inode *inode,
- 	if (btrfs_is_free_space_inode(inode))
- 		return;
- 
-+	if (orig->state & EXTENT_COMPRESS)
-+		reserve_type = BTRFS_RESERVE_COMPRESS;
- 	max_extent_size = btrfs_max_extent_size(reserve_type);
- 
- 	size = orig->end - orig->start + 1;
-@@ -1656,6 +1685,8 @@ static void btrfs_merge_extent_hook(struct inode *inode,
- 	if (btrfs_is_free_space_inode(inode))
- 		return;
- 
-+	if (other->state & EXTENT_COMPRESS)
-+		reserve_type = BTRFS_RESERVE_COMPRESS;
- 	max_extent_size = btrfs_max_extent_size(reserve_type);
- 
- 	if (new->start > other->start)
-@@ -1769,6 +1800,8 @@ static void btrfs_set_bit_hook(struct inode *inode,
- 		u64 num_extents;
- 		bool do_list = !btrfs_is_free_space_inode(inode);
- 
-+		if (*bits & EXTENT_COMPRESS)
-+			reserve_type = BTRFS_RESERVE_COMPRESS;
- 		max_extent_size = btrfs_max_extent_size(reserve_type);
- 		num_extents = div64_u64(len + max_extent_size - 1,
- 					max_extent_size);
-@@ -1825,6 +1858,8 @@ static void btrfs_clear_bit_hook(struct inode *inode,
- 		struct btrfs_root *root = BTRFS_I(inode)->root;
- 		bool do_list = !btrfs_is_free_space_inode(inode);
- 
-+		if (state->state & EXTENT_COMPRESS)
-+			reserve_type = BTRFS_RESERVE_COMPRESS;
- 		max_extent_size = btrfs_max_extent_size(reserve_type);
- 		num_extents = div64_u64(len + max_extent_size - 1,
- 					max_extent_size);
-@@ -2027,18 +2062,30 @@ static noinline int add_pending_csums(struct btrfs_trans_handle *trans,
- 	return 0;
- }
- 
-+/*
-+ * Normally flag should be 0, but if a data range will go through compress path,
-+ * set flag to 1. Note: here we should ensure enum btrfs_metadata_reserve_type
-+ * and flag's values are consistent.
-+ */
- int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
- 			      struct extent_state **cached_state,
- 			      enum btrfs_metadata_reserve_type reserve_type)
- {
- 	int ret;
-+	unsigned bits;
- 	u64 max_extent_size = btrfs_max_extent_size(reserve_type);
- 	u64 num_extents = div64_u64(end - start + max_extent_size,
- 				    max_extent_size);
- 
-+	/* compression path */
-+	if (reserve_type == BTRFS_RESERVE_COMPRESS)
-+		bits = EXTENT_DELALLOC | EXTENT_COMPRESS | EXTENT_UPTODATE;
-+	else
-+		bits = EXTENT_DELALLOC | EXTENT_UPTODATE;
-+
- 	WARN_ON((end & (PAGE_SIZE - 1)) == 0);
--	ret = set_extent_delalloc(&BTRFS_I(inode)->io_tree, start, end,
--				  cached_state);
-+	ret = set_extent_bit(&BTRFS_I(inode)->io_tree, start, end,
-+			     bits, NULL, cached_state, GFP_NOFS);
- 
- 	/*
- 	 * btrfs_delalloc_reserve_metadata() will first add number of
-@@ -2065,14 +2112,20 @@ int btrfs_set_extent_defrag(struct inode *inode, u64 start, u64 end,
- 			    enum btrfs_metadata_reserve_type reserve_type)
- {
- 	int ret;
-+	unsigned bits;
- 	u64 max_extent_size = btrfs_max_extent_size(reserve_type);
- 	u64 num_extents = div64_u64(end - start + max_extent_size,
- 				    max_extent_size);
- 
- 	WARN_ON((end & (PAGE_SIZE - 1)) == 0);
--	ret = set_extent_defrag(&BTRFS_I(inode)->io_tree, start, end,
--				cached_state);
-+	if (reserve_type == BTRFS_RESERVE_COMPRESS)
-+		bits = EXTENT_DELALLOC | EXTENT_UPTODATE | EXTENT_DEFRAG |
-+				EXTENT_COMPRESS;
-+	else
-+		bits = EXTENT_DELALLOC | EXTENT_UPTODATE | EXTENT_DEFRAG;
- 
-+	ret = set_extent_bit(&BTRFS_I(inode)->io_tree, start, end,
-+			     bits, NULL, cached_state, GFP_NOFS);
- 	if (ret == 0 && !btrfs_is_free_space_inode(inode)) {
- 		spin_lock(&BTRFS_I(inode)->lock);
- 		BTRFS_I(inode)->outstanding_extents -= num_extents;
-@@ -2131,6 +2184,8 @@ again:
- 		goto again;
- 	}
- 
-+	if (inode_need_compress(inode))
-+		reserve_type = BTRFS_RESERVE_COMPRESS;
- 	ret = btrfs_delalloc_reserve_space(inode, page_start,
- 					   PAGE_SIZE, reserve_type);
- 	if (ret) {
-@@ -3029,8 +3084,11 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
- 
- 	trans->block_rsv = &root->fs_info->delalloc_block_rsv;
- 
--	if (test_bit(BTRFS_ORDERED_COMPRESSED, &ordered_extent->flags))
-+	if (test_bit(BTRFS_ORDERED_COMPRESSED, &ordered_extent->flags)) {
- 		compress_type = ordered_extent->compress_type;
-+		reserve_type = BTRFS_RESERVE_COMPRESS;
-+	}
-+
- 	if (test_bit(BTRFS_ORDERED_PREALLOC, &ordered_extent->flags)) {
- 		BUG_ON(compress_type);
- 		ret = btrfs_mark_extent_written(trans, inode,
-@@ -4792,6 +4850,9 @@ int btrfs_truncate_block(struct inode *inode, loff_t from, loff_t len,
- 	u64 block_end;
- 	enum btrfs_metadata_reserve_type reserve_type = BTRFS_RESERVE_NORMAL;
- 
-+	if (inode_need_compress(inode))
-+		reserve_type = BTRFS_RESERVE_COMPRESS;
-+
- 	if ((offset & (blocksize - 1)) == 0 &&
- 	    (!len || ((len & (blocksize - 1)) == 0)))
- 		goto out;
-@@ -9079,6 +9140,8 @@ int btrfs_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
- 	page_end = page_start + PAGE_SIZE - 1;
- 	end = page_end;
- 
-+	if (inode_need_compress(inode))
-+		reserve_type = BTRFS_RESERVE_COMPRESS;
- 	/*
- 	 * Reserving delalloc space after obtaining the page lock can lead to
- 	 * deadlock. For example, if a dirty page is locked by this function
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 870737b..492ec2e 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1140,6 +1140,8 @@ static int cluster_pages_for_defrag(struct inode *inode,
- 
- 	page_cnt = min_t(u64, (u64)num_pages, (u64)file_end - start_index + 1);
- 
-+	if (inode_need_compress(inode))
-+		reserve_type = BTRFS_RESERVE_COMPRESS;
- 	ret = btrfs_delalloc_reserve_space(inode,
- 			start_index << PAGE_SHIFT,
- 			page_cnt << PAGE_SHIFT, reserve_type);
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 0e4b370..08cfb47 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -3156,6 +3156,9 @@ static int relocate_file_extent_cluster(struct inode *inode,
- 	if (!cluster->nr)
- 		return 0;
- 
-+	if (inode_need_compress(inode))
-+		reserve_type = BTRFS_RESERVE_COMPRESS;
-+
- 	ra = kzalloc(sizeof(*ra), GFP_NOFS);
- 	if (!ra)
- 		return -ENOMEM;
--- 
-2.7.4
-
-
-
+On Tue, Nov 22, 2016 at 9:48 AM, Vlastimil Babka <vbabka@suse.cz> wrote:
+> On 11/22/2016 02:58 PM, E V wrote:
+>> System OOM'd several times last night with 4.8.10, I attached the
+>> page_owner output from a morning cat ~8 hours after OOM's to the
+>> bugzilla case, split and compressed to fit under the 5M attachment
+>> limit. Let me know if you need anything else.
+>
+> Looks like for some reason, the stack saving produces garbage stacks
+> that only repeat save_stack_trace and save_stack functions :/
+>
+> But judging from gfp flags and page flags, most pages seem to be
+> allocated with:
+>
+> mask 0x2400840(GFP_NOFS|__GFP_NOFAIL)
+>
+> and page flags:
+>
+> 0x20000000000006c(referenced|uptodate|lru|active)
+> or
+> 0x20000000000016c(referenced|uptodate|lru|active|owner_priv_1)
+> or
+> 0x20000000000086c(referenced|uptodate|lru|active|private)
+>
+> While GFP_HIGHUSER_MOVABLE (which I would expect on lru) are less frequent.
+>
+> Example:
+>> grep GFP_NOFS page_owner_after_af | wc -l
+> 973596
+>> grep GFP_HIGHUSER_MOVABLE page_owner_after_af | wc -l
+> 158879
+>> grep GFP_NOFAIL page_owner_after_af | wc -l
+> 971442
+>
+> grepping for btrfs shows that at least some stacks for NOFS/NOFAIL pages
+> imply it:
+> clear_state_bit+0x135/0x1c0 [btrfs]
+> or
+> add_delayed_tree_ref+0xbf/0x170 [btrfs]
+> or
+> __btrfs_map_block+0x6a8/0x1200 [btrfs]
+> or
+> btrfs_buffer_uptodate+0x48/0x70 [btrfs]
+> or
+> btrfs_set_path_blocking+0x34/0x60 [btrfs]
+>
+> and some more variants.
+>
+> So looks like the pages contain btrfs metadata, are on file lru and from
+> previous checks of /proc/kpagecount we know that they most likely have
+> page_count() == 0 but are not freed. Could btrfs guys provide some
+> insight here?
+>
+>> On Fri, Nov 18, 2016 at 10:02 AM, E V <eliventer@gmail.com> wrote:
+>>> Yes, the short window between the stalls and the panic makes it
+>>> difficult to manually check much. I could setup a cron every 5 minutes
+>>> or so if you want. Also, I see the OOM's in 4.8, but it has yet to
+>>> panic on me. Where as 4.9rc has panic'd both times I've booted it, so
+>>> depending on what you want to look at it might be easier to
+>>> investigate on 4.8. Let me know, I can turn on a couple of the DEBUG
+>>> config's and build a new 4.8.8. Never looked into a netconsole or
+>>> serial console. I think just getting the system to use a higher res
+>>> console would be an improvement, but the OOM's seemed to be the root
+>>> cause of the panic so I haven't spent any time looking into that as of
+>>> yet,
+>>>
+>>> Thanks,
+>>> -Eli
+>>>
+>>> On Fri, Nov 18, 2016 at 6:54 AM, Tetsuo Handa
+>>> <penguin-kernel@i-love.sakura.ne.jp> wrote:
+>>>> On 2016/11/18 6:49, Vlastimil Babka wrote:
+>>>>> On 11/16/2016 02:39 PM, E V wrote:
+>>>>>> System panic'd overnight running 4.9rc5 & rsync. Attached a photo of
+>>>>>> the stack trace, and the 38 call traces in a 2 minute window shortly
+>>>>>> before, to the bugzilla case for those not on it's e-mail list:
+>>>>>>
+>>>>>> https://bugzilla.kernel.org/show_bug.cgi?id=186671
+>>>>>
+>>>>> The panic screenshot has only the last part, but the end marker says
+>>>>> it's OOM with no killable processes. The DEBUG_VM config thus didn't
+>>>>> trigger anything, and still there's tons of pagecache, mostly clean,
+>>>>> that's not being reclaimed.
+>>>>>
+>>>>> Could you now try this?
+>>>>> - enable CONFIG_PAGE_OWNER
+>>>>> - boot with kernel option: page_owner=on
+>>>>> - after the first oom, "cat /sys/kernel/debug/page_owner > file"
+>>>>> - provide the file (compressed, it will be quite large)
+>>>>
+>>>> Excuse me for a noise, but do we really need to do
+>>>> "cat /sys/kernel/debug/page_owner > file" after the first OOM killer
+>>>> invocation? I worry that it might be too difficult to do.
+>>>> Shouldn't we rather do "cat /sys/kernel/debug/page_owner > file"
+>>>> hourly and compare tendency between the latest one and previous one?
+>>>>
+>>>> This system has swap, and /var/log/messages before panic
+>>>> reports that swapin was stalling at memory allocation.
+>>>>
+>>>> ----------------------------------------
+>>>> [130346.262510] dsm_sa_datamgrd: page allocation stalls for 52400ms, order:0, mode:0x24200ca(GFP_HIGHUSER_MOVABLE)
+>>>> [130346.262572] CPU: 1 PID: 3622 Comm: dsm_sa_datamgrd Tainted: G        W I     4.9.0-rc5 #2
+>>>> [130346.262662]  0000000000000000 ffffffff8129ba69 ffffffff8170e4c8 ffffc90003ccb8d8
+>>>> [130346.262714]  ffffffff8113449f 024200ca1ca11b40 ffffffff8170e4c8 ffffc90003ccb880
+>>>> [130346.262765]  ffffffff00000010 ffffc90003ccb8e8 ffffc90003ccb898 ffff88041f226e80
+>>>> [130346.262817] Call Trace:
+>>>> [130346.262843]  [<ffffffff8129ba69>] ? dump_stack+0x46/0x5d
+>>>> [130346.262872]  [<ffffffff8113449f>] ? warn_alloc+0x11f/0x140
+>>>> [130346.262899]  [<ffffffff81134d7b>] ? __alloc_pages_slowpath+0x84b/0xa80
+>>>> [130346.262929]  [<ffffffff81135260>] ? __alloc_pages_nodemask+0x2b0/0x2f0
+>>>> [130346.262960]  [<ffffffff8117f1be>] ? alloc_pages_vma+0xbe/0x260
+>>>> [130346.262989]  [<ffffffff8112af02>] ? pagecache_get_page+0x22/0x280
+>>>> [130346.263019]  [<ffffffff81171b68>] ? __read_swap_cache_async+0x118/0x1a0
+>>>> [130346.263048]  [<ffffffff81171bff>] ? read_swap_cache_async+0xf/0x30
+>>>> [130346.263077]  [<ffffffff81171d8e>] ? swapin_readahead+0x16e/0x1c0
+>>>> [130346.263106]  [<ffffffff812a0f6e>] ? radix_tree_lookup_slot+0xe/0x20
+>>>> [130346.263135]  [<ffffffff8112ac84>] ? find_get_entry+0x14/0x130
+>>>> [130346.263162]  [<ffffffff8112af02>] ? pagecache_get_page+0x22/0x280
+>>>> [130346.263193]  [<ffffffff8115cb1f>] ? do_swap_page+0x44f/0x5f0
+>>>> [130346.263220]  [<ffffffff812a0f02>] ? __radix_tree_lookup+0x62/0xc0
+>>>> [130346.263249]  [<ffffffff8115e91a>] ? handle_mm_fault+0x66a/0xf00
+>>>> [130346.263277]  [<ffffffff8112ac84>] ? find_get_entry+0x14/0x130
+>>>> [130346.263305]  [<ffffffff8104a245>] ? __do_page_fault+0x1c5/0x490
+>>>> [130346.263336]  [<ffffffff8150e322>] ? page_fault+0x22/0x30
+>>>> [130346.263364]  [<ffffffff812a7cac>] ? copy_user_generic_string+0x2c/0x40
+>>>> [130346.263395]  [<ffffffff811adc1d>] ? set_fd_set+0x1d/0x30
+>>>> [130346.263422]  [<ffffffff811ae905>] ? core_sys_select+0x1a5/0x260
+>>>> [130346.263450]  [<ffffffff811a913a>] ? getname_flags+0x6a/0x1e0
+>>>> [130346.263479]  [<ffffffff8119ef25>] ? cp_new_stat+0x115/0x130
+>>>> [130346.263509]  [<ffffffff810bf01f>] ? ktime_get_ts64+0x3f/0xf0
+>>>> [130346.263537]  [<ffffffff811aea65>] ? SyS_select+0xa5/0xe0
+>>>> [130346.263564]  [<ffffffff8150c6a0>] ? entry_SYSCALL_64_fastpath+0x13/0x94
+>>>> ----------------------------------------
+>>>>
+>>>> Under such situation, trying to login and execute /bin/cat could take minutes.
+>>>> Also, writing to btrfs and ext4 seems to be stalling. The btrfs one is a
+>>>> situation where WQ_MEM_RECLAIM kernel workqueue is unable to make progress.
+>>>>
+>>>> ----------------------------------------
+>>>> [130420.008231] kworker/u34:21: page allocation stalls for 35028ms, order:0, mode:0x2400840(GFP_NOFS|__GFP_NOFAIL)
+>>>> [130420.008287] CPU: 5 PID: 24286 Comm: kworker/u34:21 Tainted: G        W I     4.9.0-rc5 #2
+>>>> [130420.008401] Workqueue: btrfs-extent-refs btrfs_extent_refs_helper [btrfs]
+>>>> [130420.008432]  0000000000000000 ffffffff8129ba69 ffffffff8170e4c8 ffffc900087836a0
+>>>> [130420.008483]  ffffffff8113449f 024008401e3f1b40 ffffffff8170e4c8 ffffc90008783648
+>>>> [130420.008534]  ffffffff00000010 ffffc900087836b0 ffffc90008783660 ffff88041ecc4340
+>>>> [130420.008586] Call Trace:
+>>>> [130420.008611]  [<ffffffff8129ba69>] ? dump_stack+0x46/0x5d
+>>>> [130420.008640]  [<ffffffff8113449f>] ? warn_alloc+0x11f/0x140
+>>>> [130420.008667]  [<ffffffff81134d7b>] ? __alloc_pages_slowpath+0x84b/0xa80
+>>>> [130420.008707]  [<ffffffffa020c432>] ? search_bitmap+0xc2/0x140 [btrfs]
+>>>> [130420.008736]  [<ffffffff81135260>] ? __alloc_pages_nodemask+0x2b0/0x2f0
+>>>> [130420.008766]  [<ffffffff8117dbda>] ? alloc_pages_current+0x8a/0x110
+>>>> [130420.008796]  [<ffffffff8112afcc>] ? pagecache_get_page+0xec/0x280
+>>>> [130420.008836]  [<ffffffffa01e9aa8>] ? alloc_extent_buffer+0x108/0x430 [btrfs]
+>>>> [130420.008875]  [<ffffffffa01b4108>] ? btrfs_alloc_tree_block+0x118/0x4d0 [btrfs]
+>>>> [130420.008927]  [<ffffffffa019ae38>] ? __btrfs_cow_block+0x148/0x5d0 [btrfs]
+>>>> [130420.008964]  [<ffffffffa019b464>] ? btrfs_cow_block+0x114/0x1d0 [btrfs]
+>>>> [130420.009001]  [<ffffffffa019f1d6>] ? btrfs_search_slot+0x206/0xa40 [btrfs]
+>>>> [130420.009039]  [<ffffffffa01a6089>] ? lookup_inline_extent_backref+0xd9/0x620 [btrfs]
+>>>> [130420.009095]  [<ffffffffa01e4e74>] ? set_extent_bit+0x24/0x30 [btrfs]
+>>>> [130420.009124]  [<ffffffff8118567f>] ? kmem_cache_alloc+0x17f/0x1b0
+>>>> [130420.009161]  [<ffffffffa01a7b1f>] ? __btrfs_free_extent.isra.69+0xef/0xd10 [btrfs]
+>>>> [130420.009215]  [<ffffffffa0214346>] ? btrfs_merge_delayed_refs+0x56/0x6f0 [btrfs]
+>>>> [130420.009269]  [<ffffffffa01ac545>] ? __btrfs_run_delayed_refs+0x745/0x1320 [btrfs]
+>>>> [130420.009314]  [<ffffffff810801ef>] ? ttwu_do_wakeup+0xf/0xe0
+>>>> [130420.009351]  [<ffffffffa01b0000>] ? btrfs_run_delayed_refs+0x90/0x2b0 [btrfs]
+>>>> [130420.009404]  [<ffffffffa01b02a4>] ? delayed_ref_async_start+0x84/0xa0 [btrfs]
+>>>> [130420.009459]  [<ffffffffa01f82a3>] ? normal_work_helper+0xc3/0x2f0 [btrfs]
+>>>> [130420.009490]  [<ffffffff81071efb>] ? process_one_work+0x14b/0x400
+>>>> [130420.009518]  [<ffffffff8107251d>] ? worker_thread+0x5d/0x470
+>>>> [130420.009546]  [<ffffffff810724c0>] ? rescuer_thread+0x310/0x310
+>>>> [130420.009573]  [<ffffffff8105ed54>] ? do_group_exit+0x34/0xb0
+>>>> [130420.009601]  [<ffffffff810772bb>] ? kthread+0xcb/0xf0
+>>>> [130420.009627]  [<ffffffff810771f0>] ? kthread_park+0x50/0x50
+>>>> [130420.009655]  [<ffffffff8150c8d2>] ? ret_from_fork+0x22/0x30
+>>>> ----------------------------------------
+>>>>
+>>>> ----------------------------------------
+>>>> [130438.436025] jbd2/dm-0-8: page allocation stalls for 10492ms, order:0, mode:0x2420848(GFP_NOFS|__GFP_NOFAIL|__GFP_HARDWALL|__GFP_MOVABLE)
+>>>> [130438.436095] CPU: 2 PID: 1838 Comm: jbd2/dm-0-8 Tainted: G        W I     4.9.0-rc5 #2
+>>>> [130438.436184]  0000000000000000 ffffffff8129ba69 ffffffff8170e4c8 ffffc90003e13728
+>>>> [130438.436237]  ffffffff8113449f 0242084800000200 ffffffff8170e4c8 ffffc90003e136d0
+>>>> [130438.436289]  0000000100000010 ffffc90003e13738 ffffc90003e136e8 0000000000000001
+>>>> [130438.436340] Call Trace:
+>>>> [130438.436368]  [<ffffffff8129ba69>] ? dump_stack+0x46/0x5d
+>>>> [130438.436399]  [<ffffffff8113449f>] ? warn_alloc+0x11f/0x140
+>>>> [130438.436426]  [<ffffffff81134d7b>] ? __alloc_pages_slowpath+0x84b/0xa80
+>>>> [130438.436455]  [<ffffffff81135260>] ? __alloc_pages_nodemask+0x2b0/0x2f0
+>>>> [130438.436488]  [<ffffffff8117dbda>] ? alloc_pages_current+0x8a/0x110
+>>>> [130438.436518]  [<ffffffff8112afcc>] ? pagecache_get_page+0xec/0x280
+>>>> [130438.436549]  [<ffffffff811cc051>] ? __getblk_gfp+0xf1/0x320
+>>>> [130438.436593]  [<ffffffffa02bc774>] ? ext4_get_branch+0xa4/0x130 [ext4]
+>>>> [130438.436628]  [<ffffffffa02bd24b>] ? ext4_ind_map_blocks+0xcb/0xb10 [ext4]
+>>>> [130438.436658]  [<ffffffff8108807e>] ? update_curr+0x7e/0x100
+>>>> [130438.436688]  [<ffffffff810bfe61>] ? ktime_get+0x31/0xa0
+>>>> [130438.436716]  [<ffffffff8112e329>] ? mempool_alloc+0x59/0x170
+>>>> [130438.436743]  [<ffffffff8108807e>] ? update_curr+0x7e/0x100
+>>>> [130438.436775]  [<ffffffffa0280813>] ? ext4_map_blocks+0x3c3/0x630 [ext4]
+>>>> [130438.436808]  [<ffffffffa0280ae4>] ? _ext4_get_block+0x64/0xc0 [ext4]
+>>>> [130438.436838]  [<ffffffff811ca6a7>] ? generic_block_bmap+0x37/0x50
+>>>> [130438.436870]  [<ffffffffa027fc57>] ? ext4_bmap+0x37/0xd0 [ext4]
+>>>> [130438.436901]  [<ffffffffa008a5e1>] ? jbd2_journal_bmap+0x21/0x70 [jbd2]
+>>>> [130438.436932]  [<ffffffffa008a6be>] ? jbd2_journal_get_descriptor_buffer+0x1e/0xc0 [jbd2]
+>>>> [130438.436979]  [<ffffffffa0086aa8>] ? jbd2_journal_write_revoke_records+0x198/0x2b0 [jbd2]
+>>>> [130438.437026]  [<ffffffffa0083236>] ? jbd2_journal_commit_transaction+0x5d6/0x19f0 [jbd2]
+>>>> [130438.437071]  [<ffffffff8108807e>] ? update_curr+0x7e/0x100
+>>>> [130438.437099]  [<ffffffff8108c8fc>] ? dequeue_task_fair+0x5dc/0x1120
+>>>> [130438.437127]  [<ffffffff8108f61c>] ? pick_next_task_fair+0x12c/0x420
+>>>> [130438.437157]  [<ffffffffa00884e8>] ? kjournald2+0xc8/0x250 [jbd2]
+>>>> [130438.437187]  [<ffffffff810948e0>] ? wake_up_atomic_t+0x30/0x30
+>>>> [130438.437216]  [<ffffffffa0088420>] ? commit_timeout+0x10/0x10 [jbd2]
+>>>> [130438.437247]  [<ffffffff810772bb>] ? kthread+0xcb/0xf0
+>>>> [130438.437273]  [<ffffffff810771f0>] ? kthread_park+0x50/0x50
+>>>> [130438.437304]  [<ffffffff8150c8d2>] ? ret_from_fork+0x22/0x30
+>>>> ----------------------------------------
+>>>>
+>>>> Under such situation, saving /sys/kernel/debug/page_owner to a file might
+>>>> be impossible. And, once the stalling started, it took less than 5 minutes
+>>>> before the kernel panics due to "Out of memory and no killable process".
+>>>> This could happen when E V is offline.
+>>>>
+>>>> Since rsyslogd is likely be killed by the OOM killer for situations like
+>>>> this, E V might want to try serial console or netconsole for saving kernel
+>>>> messages reliably.
+>>>>
+>>>> I don't know what we will find by analyzing /sys/kernel/debug/page_owner ,
+>>>> but if something is wrong, can't we try whether
+>>>> "echo 3 > /proc/sys/vm/drop_caches" before the stalling starts helps.
+>>>>
+>>>> I guess that this problem became visible by OOM detection rework which
+>>>> went to Linux 4.7. I don't know what "free_pcp:0kB local_pcp:0kB" means
+>>>> (get_page_from_freelist() for any order is failng?), but in general I think
+>>>> this /var/log/messages showed that free_pcp: and local_pcp: remains small.
+>>>>
+>

@@ -1,228 +1,118 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:9272 "EHLO song.cn.fujitsu.com"
-        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1751119AbcKYD7b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 24 Nov 2016 22:59:31 -0500
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Received: from rae.mywh.net ([62.109.39.45]:55369 "EHLO rae.mywh.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750771AbcKYVFP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 25 Nov 2016 16:05:15 -0500
+Received: from [128.77.16.244] (port=37274 helo=[192.168.1.169])
+        by rae.mywh.net with esmtpsa (TLSv1:DHE-RSA-AES128-SHA:128)
+        (Exim 4.87)
+        (envelope-from <btrfs+list@olstad.com>)
+        id 1cAMyA-0002e9-Nu
+        for linux-btrfs@vger.kernel.org; Fri, 25 Nov 2016 21:19:42 +0100
+From: Kai Stian Olstad <btrfs+list@olstad.com>
+Subject: mount raid1 gives open_ctree failed
 To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com, kreijack@inwind.it
-Subject: [PATCH v3] btrfs: raid56: Use correct stolen pages to calculate P/Q
-Date: Fri, 25 Nov 2016 11:58:57 +0800
-Message-Id: <20161125035857.20539-1-quwenruo@cn.fujitsu.com>
+Message-ID: <603b293e-8b74-a8ed-893b-c9c041af20ef@olstad.com>
+Date: Fri, 25 Nov 2016 21:19:47 +0100
 MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In the following situation, scrub will calculate wrong parity to
-overwrite correct one:
+Hi
 
-RAID5 full stripe:
+I have problem mounting my 3 disk raid1.
+This happened after upgrading from Kubuntu 14.04 to 16.04.
 
-Before
-|     Dev 1      |     Dev  2     |     Dev 3     |
-| Data stripe 1  | Data stripe 2  | Parity Stripe |
---------------------------------------------------- 0
-| 0x0000 (Bad)   |     0xcdcd     |     0x0000    |
---------------------------------------------------- 4K
-|     0xcdcd     |     0xcdcd     |     0x0000    |
-...
-|     0xcdcd     |     0xcdcd     |     0x0000    |
---------------------------------------------------- 64K
+The raid1 started as a 2 disk raid1 and was gowned to 3 disks raid1 a
+while back. The physical disk has dm-crypt LUKS on top.
 
-After scrubbing dev3 only:
+Does anyone have any advise?
 
-|     Dev 1      |     Dev  2     |     Dev 3     |
-| Data stripe 1  | Data stripe 2  | Parity Stripe |
---------------------------------------------------- 0
-| 0xcdcd (Good)  |     0xcdcd     | 0xcdcd (Bad)  |
---------------------------------------------------- 4K
-|     0xcdcd     |     0xcdcd     |     0x0000    |
-...
-|     0xcdcd     |     0xcdcd     |     0x0000    |
---------------------------------------------------- 64K
+Information about the system follow, if you need more information please
+let me know.
 
-The calltrace of such corruption is as following:
 
-scrub_bio_end_io_worker() get called for each extent read out
-|- scriub_block_complete()
-   |- Data extent csum mismatch
-   |- scrub_handle_errored_block
-      |- scrub_recheck_block()
-         |- scrub_submit_raid56_bio_wait()
-            |- raid56_parity_recover()
+$ sudo mount /mnt/nydata
+------------------------
+mount: wrong fs type, bad option, bad superblock on /dev/mapper/cdisk20,
+       missing codepage or helper program, or other error
 
-Now we have a rbio with correct data stripe 1 recovered.
-Let's call it "good_rbio".
+The output in syslog after the failed mount:
 
-scrub_parity_check_and_repair()
-|- raid56_parity_submit_scrub_rbio()
-   |- lock_stripe_add()
-   |  |- steal_rbio()
-   |     |- Recovered data are steal from "good_rbio", stored into
-   |        rbio->stripe_pages[]
-   |        Now rbio->bio_pages[] are bad data read from disk.
-   |- async_scrub_parity()
-      |- scrub_parity_work() (delayed_call to scrub_parity_work)
+/var/log/syslog
+---------------
+Nov 25 20:25:35 cb kernel: [13486.074249] BTRFS info (device dm-11):
+enabling auto defrag
+Nov 25 20:25:35 cb kernel: [13486.074257] BTRFS info (device dm-11):
+disk space caching is enabled
+Nov 25 20:25:35 cb kernel: [13486.139842] attempt to access beyond end
+of device
+Nov 25 20:25:35 cb kernel: [13486.139847] dm-10: rw=32, want=5263951296,
+limit=4294963198
+Nov 25 20:25:35 cb kernel: [13486.139868] attempt to access beyond end
+of device
+Nov 25 20:25:35 cb kernel: [13486.139870] dm-9: rw=32, want=5261815232,
+limit=4294963198
+Nov 25 20:25:35 cb kernel: [13486.139880] BTRFS: failed to read tree
+root on dm-11
+Nov 25 20:25:35 cb kernel: [13486.160009] BTRFS: open_ctree failed
 
-scrub_parity_work()
-|- raid56_parity_scrub_stripe()
-   |- validate_rbio_for_parity_scrub()
-      |- finish_parity_scrub()
-         |- Recalculate parity using *BAD* pages in rbio->bio_pages[]
-            So good parity is overwritten with *BAD* one
 
-The fix is to introduce 2 new members, bad_ondisk_a/b, to struct
-btrfs_raid_bio, to info scrub code to use correct data pages to
-re-calculate parity.
+$ sudo btrfs filesystem show
+----------------------------
+Label: none  uuid: 6554e692-6c1c-4a69-8ff8-cb5615fb9200
+        Total devices 3 FS bytes used 6.38TiB
+        devid    1 size 5.46TiB used 4.38TiB path /dev/mapper/cdisk20
+        devid    2 size 5.46TiB used 4.38TiB path /dev/mapper/cdisk21
+        devid    3 size 5.46TiB used 4.38TiB path /dev/mapper/cdisk22
 
-Reported-by: Goffredo Baroncelli <kreijack@inwind.it>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
-v2:
-  Fix a bug that some pages are not unmapped, reported by Chris.
-v3:
-  Fix a bug using un-initialized pages, which leads to parity corruption
-  again.
----
- fs/btrfs/raid56.c | 62 +++++++++++++++++++++++++++++++++++++++++++++++++++----
- 1 file changed, 58 insertions(+), 4 deletions(-)
+$ ls -l /dev/mapper/cdisk2[0-2]
+-------------------------------
+lrwxrwxrwx 1 root root 8 nov.  25 17:28 /dev/mapper/cdisk20 -> ../dm-10
+lrwxrwxrwx 1 root root 7 nov.  25 17:28 /dev/mapper/cdisk21 -> ../dm-9
+lrwxrwxrwx 1 root root 8 nov.  25 17:28 /dev/mapper/cdisk22 -> ../dm-11
 
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index d016d4a..08ba9cb7 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -133,6 +133,16 @@ struct btrfs_raid_bio {
- 	/* second bad stripe (for raid6 use) */
- 	int failb;
- 
-+	/*
-+	 * For steal_rbio, we can steal recovered correct page,
-+	 * but in finish_parity_scrub(), we still use bad on-disk
-+	 * page to calculate parity.
-+	 * Use these members to info finish_parity_scrub() to use
-+	 * correct pages
-+	 */
-+	int bad_ondisk_a;
-+	int bad_ondisk_b;
-+
- 	int scrubp;
- 	/*
- 	 * number of pages needed to represent the full
-@@ -310,6 +320,12 @@ static void steal_rbio(struct btrfs_raid_bio *src, struct btrfs_raid_bio *dest)
- 	if (!test_bit(RBIO_CACHE_READY_BIT, &src->flags))
- 		return;
- 
-+	/* Record recovered stripe number */
-+	if (src->faila != -1)
-+		dest->bad_ondisk_a = src->faila;
-+	if (src->failb != -1)
-+		dest->bad_ondisk_b = src->failb;
-+
- 	for (i = 0; i < dest->nr_pages; i++) {
- 		s = src->stripe_pages[i];
- 		if (!s || !PageUptodate(s)) {
-@@ -998,6 +1014,8 @@ static struct btrfs_raid_bio *alloc_rbio(struct btrfs_root *root,
- 	rbio->stripe_npages = stripe_npages;
- 	rbio->faila = -1;
- 	rbio->failb = -1;
-+	rbio->bad_ondisk_a = -1;
-+	rbio->bad_ondisk_b = -1;
- 	atomic_set(&rbio->refs, 1);
- 	atomic_set(&rbio->error, 0);
- 	atomic_set(&rbio->stripes_pending, 0);
-@@ -2271,6 +2289,9 @@ static int alloc_rbio_essential_pages(struct btrfs_raid_bio *rbio)
- 	int bit;
- 	int index;
- 	struct page *page;
-+	struct page *bio_page;
-+	void *ptr;
-+	void *bio_ptr;
- 
- 	for_each_set_bit(bit, rbio->dbitmap, rbio->stripe_npages) {
- 		for (i = 0; i < rbio->real_stripes; i++) {
-@@ -2281,6 +2302,23 @@ static int alloc_rbio_essential_pages(struct btrfs_raid_bio *rbio)
- 			page = alloc_page(GFP_NOFS | __GFP_HIGHMEM);
- 			if (!page)
- 				return -ENOMEM;
-+
-+			/*
-+			 * It's possible that only several pages need recover,
-+			 * and rest are all good.
-+			 * In that case we need to copy good bio pages into
-+			 * stripe_pages[], as we will use stripe_pages[] other
-+			 * than bio_pages[] in finish_parity_scrub().
-+			 */
-+			bio_page = page_in_rbio(rbio, i, bit, 0);
-+			if ((i == rbio->bad_ondisk_a ||
-+			     i == rbio->bad_ondisk_b) && bio_page) {
-+				ptr = kmap(page);
-+				bio_ptr = kmap(bio_page);
-+				memcpy(ptr, bio_ptr, PAGE_SIZE);
-+				kunmap(bio_page);
-+				kunmap(page);
-+			}
- 			rbio->stripe_pages[index] = page;
- 		}
- 	}
-@@ -2292,6 +2330,7 @@ static noinline void finish_parity_scrub(struct btrfs_raid_bio *rbio,
- {
- 	struct btrfs_bio *bbio = rbio->bbio;
- 	void *pointers[rbio->real_stripes];
-+	struct page *mapped_pages[rbio->real_stripes];
- 	DECLARE_BITMAP(pbitmap, rbio->stripe_npages);
- 	int nr_data = rbio->nr_data;
- 	int stripe;
-@@ -2352,12 +2391,24 @@ static noinline void finish_parity_scrub(struct btrfs_raid_bio *rbio,
- 		void *parity;
- 		/* first collect one page from each data stripe */
- 		for (stripe = 0; stripe < nr_data; stripe++) {
--			p = page_in_rbio(rbio, stripe, pagenr, 0);
-+
-+			/*
-+			 * Use stolen recovered page other than bad
-+			 * on disk pages
-+			 */
-+			if (stripe == rbio->bad_ondisk_a ||
-+			    stripe == rbio->bad_ondisk_b)
-+				p = rbio_stripe_page(rbio, stripe, pagenr);
-+			else
-+				p = page_in_rbio(rbio, stripe, pagenr, 0);
- 			pointers[stripe] = kmap(p);
-+			mapped_pages[stripe] = p;
- 		}
- 
- 		/* then add the parity stripe */
--		pointers[stripe++] = kmap(p_page);
-+		pointers[stripe] = kmap(p_page);
-+		mapped_pages[stripe] = p_page;
-+		stripe++;
- 
- 		if (q_stripe != -1) {
- 
-@@ -2365,7 +2416,9 @@ static noinline void finish_parity_scrub(struct btrfs_raid_bio *rbio,
- 			 * raid6, add the qstripe and call the
- 			 * library function to fill in our p/q
- 			 */
--			pointers[stripe++] = kmap(q_page);
-+			pointers[stripe] = kmap(q_page);
-+			mapped_pages[stripe] = q_page;
-+			stripe++;
- 
- 			raid6_call.gen_syndrome(rbio->real_stripes, PAGE_SIZE,
- 						pointers);
-@@ -2385,8 +2438,9 @@ static noinline void finish_parity_scrub(struct btrfs_raid_bio *rbio,
- 			bitmap_clear(rbio->dbitmap, pagenr, 1);
- 		kunmap(p);
- 
-+		/* Free mapped pages */
- 		for (stripe = 0; stripe < rbio->real_stripes; stripe++)
--			kunmap(page_in_rbio(rbio, stripe, pagenr, 0));
-+			kunmap(mapped_pages[stripe]);
- 	}
- 
- 	__free_page(p_page);
+
+$ sudo btrfs check /dev/mapper/cdisk20
+--------------------------------------
+bytenr mismatch, want=11817687138304, have=0
+Couldn't read tree root
+Couldn't open file system
+
+
+
+$ sudo btrfs-find-root /dev/mapper/cdisk20 | head
+-------------------------------------------------
+Couldn't read tree root
+Superblock thinks the generation is 743329
+Superblock thinks the level is 1
+Well block 11197008461824(gen: 743302 level: 1) seems good, but
+generation/level doesn't match, want gen: 743329 level: 1
+Well block 11196999434240(gen: 743301 level: 1) seems good, but
+generation/level doesn't match, want gen: 743329 level: 1
+Well block 11196990472192(gen: 743292 level: 1) seems good, but
+generation/level doesn't match, want gen: 743329 level: 1
+Well block 11196989538304(gen: 743291 level: 1) seems good, but
+generation/level doesn't match, want gen: 743329 level: 1
+Well block 11196988424192(gen: 743290 level: 1) seems good, but
+generation/level doesn't match, want gen: 743329 level: 1
+Well block 11196987424768(gen: 743289 level: 1) seems good, but
+generation/level doesn't match, want gen: 743329 level: 1
+Well block 11196986736640(gen: 743288 level: 1) seems good, but
+generation/level doesn't match, want gen: 743329 level: 1
+Well block 11196985982976(gen: 743287 level: 1) seems good, but
+generation/level doesn't match, want gen: 743329 level: 1
+
+
+
+/etc/fstab
+----------
+/dev/mapper/cdisk20   /mnt/nydata   btrfs
+defaults,autodefrag,space_cache               0 0
+/dev/mapper/cdisk20   /data/film    btrfs
+defaults,autodefrag,space_cache,subvol=film   0 0
+
+
 -- 
-2.7.4
-
-
-
+Kai Stian Olstad

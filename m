@@ -1,56 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-16.italiaonline.it ([212.48.25.144]:55394 "EHLO libero.it"
+Received: from smtp-16.italiaonline.it ([212.48.25.144]:36527 "EHLO libero.it"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1750997AbcKZNNA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 26 Nov 2016 08:13:00 -0500
+        id S1751549AbcKZNYq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 26 Nov 2016 08:24:46 -0500
 Reply-To: kreijack@inwind.it
-Subject: Re: [PATCH] btrfs: raid56: Use correct stolen pages to calculate P/Q
-References: <20161121085016.7148-1-quwenruo@cn.fujitsu.com>
- <94606bda-dab0-e7c9-7fc6-1af9069b64fc@inwind.it>
- <f814eb1b-844b-2ace-c948-3be20da2fd29@cn.fujitsu.com>
- <a75c9a72-148c-9fbd-dfb8-7cde58bee9c9@inwind.it>
- <20161125043119.GG8685@hungrycats.org>
-To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Subject: Re: My system mounts the wrong btrfs partition, from the wrong disk!
+References: <a39949b5-abab-40a3-943e-818b6ca7106b@linuxsystems.it>
+ <20161125161712.1df4f7b6@natsu>
+ <CAJCQCtQNpoYHkjYtiW6kd+CF0ic-qZWFRC1RHnSavj3ntUcFxg@mail.gmail.com>
+To: Chris Murphy <lists@colorremedies.com>, Roman Mamedov <rm@romanrm.net>
+Cc: =?UTF-8?Q?Niccol=c3=b2_Belli?= <darkbasic@linuxsystems.it>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 From: Goffredo Baroncelli <kreijack@inwind.it>
-Message-ID: <cd7ee5cc-d384-7c9c-d656-cef2569b749a@inwind.it>
-Date: Sat, 26 Nov 2016 14:12:56 +0100
+Message-ID: <4539a551-1d00-1686-f222-c607a1594f29@inwind.it>
+Date: Sat, 26 Nov 2016 14:24:44 +0100
 MIME-Version: 1.0
-In-Reply-To: <20161125043119.GG8685@hungrycats.org>
-Content-Type: text/plain; charset=windows-1252
+In-Reply-To: <CAJCQCtQNpoYHkjYtiW6kd+CF0ic-qZWFRC1RHnSavj3ntUcFxg@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-11-25 05:31, Zygo Blaxell wrote:
->>> Do you mean, read the corrupted data won't repair it?
->>>
->>> IIRC that's the designed behavior.
->> :O
+On 2016-11-26 00:56, Chris Murphy wrote:
+> On Fri, Nov 25, 2016 at 4:17 AM, Roman Mamedov <rm@romanrm.net> wrote:
+>> On Fri, 25 Nov 2016 12:05:57 +0100
+>> Niccolò Belli <darkbasic@linuxsystems.it> wrote:
 >>
->> You are right... I was unaware of that....
-> This is correct.
+>>> This is something pretty unbelievable, so I had to repeat it several times
+>>> before finding the courage to actually post it to the mailing list :)
+>>>
+>>> After dozens of data loss I don't trust my btrfs partition that much, so I
+>>> make a backup copy with dd weekly.
+>>
+>> https://btrfs.wiki.kernel.org/index.php/Gotchas#Block-level_copies_of_devices
+>>
+>> "don't make copies with dd."
 > 
-> Ordinary reads shouldn't touch corrupt data, they should only read
-> around it.  Scrubs in read-write mode should write corrected data over
-> the corrupt data.  Read-only scrubs can only report errors without
-> correcting them.
+> Yeah.
 > 
-> Rewriting corrupt data outside of scrub (i.e. on every read) is a
-> bad idea.  Consider what happens if a RAM controller gets too hot:
-> checksums start failing randomly, but the data on disk is still OK.
-> If we tried to fix the bad data on every read, we'd probably just trash
-> the filesystem in some cases.
+> In the user's defense, it's way overdue for the kernel to refuse to
+> mount without some override flag like XFS does. This behavior is just
+> plain user hostile right now, and Btrfs gets an extra ding because
+> it's supposed to be better: easier to admin and have better data
+> integrity. Basically this is Btrfs eating at least one, possibly both,
+> file systems at the same time without warning, and it's not good
+> enough to warn in the wiki.
+> 
 
 
+When I read these "incidents" on the ML, I still think that the actual BTRFS way to handling the devices discovery is overcomplicated and not reliable: currently udev push back the device in the kernel which manages an own list of btrfs devices. Then the mount command suggests the kernel to mount a filesystem on the basis of the UUID. In case of problem nor udev nor mount are capable to print any useful message and/or suggestion. Even in case of UUID conflicts (which could be very simple to handle) this system is unreliable.
 
-I cant agree. If the filesystem is mounted read-only this behavior may be correct; bur in others cases I don't see any reason to not correct wrong data even in the read case. If your ram is unreliable you have big problem anyway.
+In the past I developed a mount.btrfs helper which took care of devices discovery and also of these checks; also it could be a place where develop the handling of incomplete multi-disks filesystem....
 
-The likelihood that the data contained in a disk is "corrupted" is higher than the likelihood that the RAM is bad.
+I hope that sooner or later someone rethink about that.
 
-BTW Btrfs in RAID1 mode corrects the data even in the read case. So I am still convinced that is the RAID5/6 behavior "strange".
+http://www.spinics.net/lists/linux-btrfs/msg39706.html
+
 
 BR
 G.Baroncelli
+
+
 -- 
 gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
 Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

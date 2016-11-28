@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-16.italiaonline.it ([212.48.25.144]:60190 "EHLO libero.it"
+Received: from smtp-16.italiaonline.it ([212.48.25.144]:48999 "EHLO libero.it"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1754833AbcK1Scn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 Nov 2016 13:32:43 -0500
+        id S1751432AbcK1Spv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 28 Nov 2016 13:45:51 -0500
 Reply-To: kreijack@inwind.it
 Subject: Re: [PATCH] btrfs: raid56: Use correct stolen pages to calculate P/Q
 References: <20161121085016.7148-1-quwenruo@cn.fujitsu.com>
@@ -11,32 +11,82 @@ References: <20161121085016.7148-1-quwenruo@cn.fujitsu.com>
  <a75c9a72-148c-9fbd-dfb8-7cde58bee9c9@inwind.it>
  <20161125043119.GG8685@hungrycats.org>
  <cd7ee5cc-d384-7c9c-d656-cef2569b749a@inwind.it>
- <1480304269.6254.6.camel@scientia.net>
-To: Christoph Anton Mitterer <calestyo@scientia.net>,
+ <20161126185402.GK8685@hungrycats.org>
+ <59e0b1c7-51a9-ede4-6571-fa0b20394145@inwind.it>
+ <451f26a9-2880-9887-c17e-97c2690a2baa@cn.fujitsu.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>,
         Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
 From: Goffredo Baroncelli <kreijack@inwind.it>
-Message-ID: <2b15ae6f-51ce-45ff-47c0-699506de4e56@inwind.it>
-Date: Mon, 28 Nov 2016 19:32:38 +0100
+Message-ID: <ad8f8dd8-123f-bbf3-04fb-bb6b64a050fd@inwind.it>
+Date: Mon, 28 Nov 2016 19:45:49 +0100
 MIME-Version: 1.0
-In-Reply-To: <1480304269.6254.6.camel@scientia.net>
+In-Reply-To: <451f26a9-2880-9887-c17e-97c2690a2baa@cn.fujitsu.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-11-28 04:37, Christoph Anton Mitterer wrote:
-> I think for safety it's best to repair as early as possible (and thus
-> on read when a damage is detected), as further  blocks/devices may fail
-> till eventually a scrub(with repair) would be run manually.
+On 2016-11-28 01:40, Qu Wenruo wrote:
 > 
-> However, there may some workloads under which such auto-repair is
-> undesirable as it may cost performance and safety may be less important
-> than that.
+> At 11/27/2016 07:16 AM, Goffredo Baroncelli wrote:
+>> On 2016-11-26 19:54, Zygo Blaxell wrote:
+>>> On Sat, Nov 26, 2016 at 02:12:56PM +0100, Goffredo Baroncelli wrote:
+>>>> On 2016-11-25 05:31, Zygo Blaxell wrote:
+>> [...]
+>>>>
+>>>> BTW Btrfs in RAID1 mode corrects the data even in the read case. So
+>>>
+>>> Have you tested this?  I think you'll find that it doesn't.
+>>
+>> Yes I tested it; and it does the rebuild automatically.
+>> I corrupted a disk of mirror, then I read the related file. The log  says:
+>>
+>> [   59.287748] BTRFS warning (device vdb): csum failed ino 257 off 0 csum 12813760 expected csum 3114703128
+>> [   59.291542] BTRFS warning (device vdb): csum failed ino 257 off 0 csum 12813760 expected csum 3114703128
+>> [   59.294950] BTRFS info (device vdb): read error corrected: ino 257 off 0 (dev /dev/vdb sector 2154496)
+>>                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>>
+>> IIRC In case of RAID5/6 the last line is missing. However in both the case the data returned is good; but in RAID1 the data is corrected also on the disk.
+>>
+>> Where you read that the data is not rebuild automatically ?
+>>
+>> In fact I was surprised that RAID5/6 behaves differently....
+>>
+> 
+> Yes, I also tried that and realized that RAID1 is recovering corrupted data at *READ* time.
+> 
+> The main difference between RAID1 and RAID56 seems to be the complexity.
+> 
+> For RAID56, we have different read/write behavior, for read, we use flag BTRFS_RBIO_READ_REBUILD, which will only rebuild data but not write them into disk.
+> And I'm a little concern about the race between read time fix and write.
+> 
+> I assume it's possible to change the behavior to follow RAID1, but I'd like to do it in the following steps:
+> 1) Fix known RAID56 bugs
+>    With the v3 patch and previous 2 patches, it seems OK now.
+> 2) Full fstests test case, with all possible corruption combination
+>    (WIP)
+> 3) Rework current RAID56 code to a cleaner and more readable status
+>    (long term)
+> 4) Add the support to fix things at read time.
+> 
+> So the behavior change is not something we will see in short time.
 
-I am assuming that a corruption is a quite rare event. So occasionally it could happens that a page is corrupted and the system corrects it. This shouldn't  have an impact on the workloads.
++1
+I am understanding that the status of RAID5/6 code is so badly that we need to correct all the more critical bugs and then increase the tests for not regression.
+On the point 3, I don't know the code well enough to say something, the code is very complex.
+I see the point 4 as the less urgent. 
+
+Let me to make a request: I would like to know your opinion about my email "RFC: raid with a variable stripe size", which started a little thread. I am asking this because you now have the hands on this code: my suggestion (use different BG, with different stripe size to avoid RMW cycles) or the Zygo's one (don't fill a stripe if you don't need to avoid RMW cycles) are difficult to implement ?
 
 BR
 G.Baroncelli
+
+
+> 
+> Thanks,
+> Qu
+
+
 -- 
 gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
 Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

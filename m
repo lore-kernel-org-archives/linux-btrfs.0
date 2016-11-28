@@ -1,71 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f194.google.com ([209.85.223.194]:33144 "EHLO
-        mail-io0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751015AbcK1Tjh (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:48832 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-OK)
+        by vger.kernel.org with ESMTP id S1755713AbcK1Vsh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 Nov 2016 14:39:37 -0500
-Received: by mail-io0-f194.google.com with SMTP id j92so24859139ioi.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Nov 2016 11:39:36 -0800 (PST)
+        Mon, 28 Nov 2016 16:48:37 -0500
+Date: Mon, 28 Nov 2016 16:48:29 -0500
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: Goffredo Baroncelli <kreijack@inwind.it>
+Cc: Christoph Anton Mitterer <calestyo@scientia.net>,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] btrfs: raid56: Use correct stolen pages to calculate P/Q
-To: Christoph Anton Mitterer <calestyo@scientia.net>, kreijack@inwind.it,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Message-ID: <20161128214829.GO8685@hungrycats.org>
 References: <20161121085016.7148-1-quwenruo@cn.fujitsu.com>
  <94606bda-dab0-e7c9-7fc6-1af9069b64fc@inwind.it>
  <f814eb1b-844b-2ace-c948-3be20da2fd29@cn.fujitsu.com>
  <a75c9a72-148c-9fbd-dfb8-7cde58bee9c9@inwind.it>
  <20161125043119.GG8685@hungrycats.org>
  <cd7ee5cc-d384-7c9c-d656-cef2569b749a@inwind.it>
- <20161126185402.GK8685@hungrycats.org>
- <59e0b1c7-51a9-ede4-6571-fa0b20394145@inwind.it>
- <451f26a9-2880-9887-c17e-97c2690a2baa@cn.fujitsu.com>
- <ad8f8dd8-123f-bbf3-04fb-bb6b64a050fd@inwind.it>
- <1480359711.6747.13.camel@scientia.net>
-Cc: linux-btrfs@vger.kernel.org
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <56437dde-944a-52dd-146d-d94824ed408e@gmail.com>
-Date: Mon, 28 Nov 2016 14:39:31 -0500
+ <1480304269.6254.6.camel@scientia.net>
+ <2b15ae6f-51ce-45ff-47c0-699506de4e56@inwind.it>
 MIME-Version: 1.0
-In-Reply-To: <1480359711.6747.13.camel@scientia.net>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="yK/6QRnH3Zanb0EF"
+In-Reply-To: <2b15ae6f-51ce-45ff-47c0-699506de4e56@inwind.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-11-28 14:01, Christoph Anton Mitterer wrote:
-> On Mon, 2016-11-28 at 19:45 +0100, Goffredo Baroncelli wrote:
->> I am understanding that the status of RAID5/6 code is so badly
-> Just some random thought:
->
-> If the code for raid56 is really as bad as it's often claimed (I
-> haven't read it, to be honest) .... could it perhaps make sense to
-> consider to start it from scratch? And/or merge it with a more generic
-> approach that allows n-way-parity RAIDs (I think such patch was posted
-> hear some year(s) ago).
-Such a suggestion for higher order parity support was made some time ago 
-(at least a year and a half I believe, probably more).  It was at the 
-time stated that it was planned after n-way replication and raid5/6.
 
-Personally I feel that sort of road-map is misguided, as all three are 
-functionally interdependent as the original proposal had suggested, and 
-I'm also of the opinion that the raid5/6 code probably should be redone 
-from scratch (I wasn't the one who wrote it, and can't contribute much 
-more than some attempts at testing as a third-party, so I obviously 
-can't make that decision myself).  Doing so would likely make it much 
-easier to implement higher order parity (and arbitrary 
-striping/replication, which is something I'm _very_ interested in).  The 
-existing code isn't bad in a stylistic or even traditional coding sense, 
-but makes a significant number of poor choices in the high-level side of 
-things (all the issues with parity for example).  If we just want 
-working raid5/6, then working on the existing implementation is fine. 
-If we want support for arbitrary combinations of 
-striping/replication/parity (which would be a killer feature and 
-something that BTRFS could actually say nothing else has), then 
-rewriting from scratch is probably easier because of some of the 
-low-level design choices made in the raid5/6 code.
+--yK/6QRnH3Zanb0EF
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Part of the problem though is that there are more admins and support 
-focused people than coders involved.  In my case I very much do not have 
-the expertise to work on kernel code beyond tweaking constants and 
-twiddling default values for things (I'm technically a programmer, but 
-90% of the work I do is sysops type stuff written in a mix of sh, 
-Python, and about 7 different data serialization formats).
+On Mon, Nov 28, 2016 at 07:32:38PM +0100, Goffredo Baroncelli wrote:
+> On 2016-11-28 04:37, Christoph Anton Mitterer wrote:
+> > I think for safety it's best to repair as early as possible (and thus
+> > on read when a damage is detected), as further  blocks/devices may fail
+> > till eventually a scrub(with repair) would be run manually.
+> >=20
+> > However, there may some workloads under which such auto-repair is
+> > undesirable as it may cost performance and safety may be less important
+> > than that.
+>=20
+> I am assuming that a corruption is a quite rare event. So occasionally
+> it could happens that a page is corrupted and the system corrects
+> it. This shouldn't  have an impact on the workloads.
+
+Depends heavily on the specifics of the failure case.  If a drive's
+embedded controller RAM fails, you get corruption on the majority of
+reads from a single disk, and most writes will be corrupted (even if they
+were not before).  If there's a transient failure due to environmental
+issues (e.g. short-term high-amplitude vibration or overheating) then
+writes may pause for mechanical retry loops.  If there is bitrot in SSDs
+(particularly in the address translation tables) it looks like a wall
+of random noise that only ends when the disk goes offline.  You can get
+combinations of these (e.g. RAM failures caused by transient overheating)
+where the drive's behavior changes over time.
+
+When in doubt, don't write.
+
+> BR
+> G.Baroncelli
+> --=20
+> gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+> Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+>=20
+
+--yK/6QRnH3Zanb0EF
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iEYEARECAAYFAlg8pi0ACgkQgfmLGlazG5yU9QCgj+dkjWhfe2JkQE/8r4IV+XNU
+UHwAn0V4IbEw1K8Yr7kmev8tqFmWgklx
+=aEv8
+-----END PGP SIGNATURE-----
+
+--yK/6QRnH3Zanb0EF--

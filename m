@@ -1,92 +1,165 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-16.italiaonline.it ([212.48.25.144]:48999 "EHLO libero.it"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751432AbcK1Spv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 Nov 2016 13:45:51 -0500
-Reply-To: kreijack@inwind.it
+Received: from mailgw-01.dd24.net ([193.46.215.41]:59475 "EHLO
+        mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751569AbcK1TBK (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 28 Nov 2016 14:01:10 -0500
+Message-ID: <1480359616.6747.11.camel@scientia.net>
 Subject: Re: [PATCH] btrfs: raid56: Use correct stolen pages to calculate P/Q
+From: Christoph Anton Mitterer <calestyo@scientia.net>
+To: kreijack@inwind.it, Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Date: Mon, 28 Nov 2016 20:00:16 +0100
+In-Reply-To: <2b15ae6f-51ce-45ff-47c0-699506de4e56@inwind.it>
 References: <20161121085016.7148-1-quwenruo@cn.fujitsu.com>
- <94606bda-dab0-e7c9-7fc6-1af9069b64fc@inwind.it>
- <f814eb1b-844b-2ace-c948-3be20da2fd29@cn.fujitsu.com>
- <a75c9a72-148c-9fbd-dfb8-7cde58bee9c9@inwind.it>
- <20161125043119.GG8685@hungrycats.org>
- <cd7ee5cc-d384-7c9c-d656-cef2569b749a@inwind.it>
- <20161126185402.GK8685@hungrycats.org>
- <59e0b1c7-51a9-ede4-6571-fa0b20394145@inwind.it>
- <451f26a9-2880-9887-c17e-97c2690a2baa@cn.fujitsu.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Cc: linux-btrfs@vger.kernel.org
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Message-ID: <ad8f8dd8-123f-bbf3-04fb-bb6b64a050fd@inwind.it>
-Date: Mon, 28 Nov 2016 19:45:49 +0100
-MIME-Version: 1.0
-In-Reply-To: <451f26a9-2880-9887-c17e-97c2690a2baa@cn.fujitsu.com>
-Content-Type: text/plain; charset=utf-8
+         <94606bda-dab0-e7c9-7fc6-1af9069b64fc@inwind.it>
+         <f814eb1b-844b-2ace-c948-3be20da2fd29@cn.fujitsu.com>
+         <a75c9a72-148c-9fbd-dfb8-7cde58bee9c9@inwind.it>
+         <20161125043119.GG8685@hungrycats.org>
+         <cd7ee5cc-d384-7c9c-d656-cef2569b749a@inwind.it>
+         <1480304269.6254.6.camel@scientia.net>
+         <2b15ae6f-51ce-45ff-47c0-699506de4e56@inwind.it>
+Content-Type: multipart/signed; micalg="sha-512";
+        protocol="application/x-pkcs7-signature";
+        boundary="=-TNnyqIBQOtSOFLzmLkkO"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-11-28 01:40, Qu Wenruo wrote:
-> 
-> At 11/27/2016 07:16 AM, Goffredo Baroncelli wrote:
->> On 2016-11-26 19:54, Zygo Blaxell wrote:
->>> On Sat, Nov 26, 2016 at 02:12:56PM +0100, Goffredo Baroncelli wrote:
->>>> On 2016-11-25 05:31, Zygo Blaxell wrote:
->> [...]
->>>>
->>>> BTW Btrfs in RAID1 mode corrects the data even in the read case. So
->>>
->>> Have you tested this?  I think you'll find that it doesn't.
->>
->> Yes I tested it; and it does the rebuild automatically.
->> I corrupted a disk of mirror, then I read the related file. The log  says:
->>
->> [   59.287748] BTRFS warning (device vdb): csum failed ino 257 off 0 csum 12813760 expected csum 3114703128
->> [   59.291542] BTRFS warning (device vdb): csum failed ino 257 off 0 csum 12813760 expected csum 3114703128
->> [   59.294950] BTRFS info (device vdb): read error corrected: ino 257 off 0 (dev /dev/vdb sector 2154496)
->>                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
->>
->> IIRC In case of RAID5/6 the last line is missing. However in both the case the data returned is good; but in RAID1 the data is corrected also on the disk.
->>
->> Where you read that the data is not rebuild automatically ?
->>
->> In fact I was surprised that RAID5/6 behaves differently....
->>
-> 
-> Yes, I also tried that and realized that RAID1 is recovering corrupted data at *READ* time.
-> 
-> The main difference between RAID1 and RAID56 seems to be the complexity.
-> 
-> For RAID56, we have different read/write behavior, for read, we use flag BTRFS_RBIO_READ_REBUILD, which will only rebuild data but not write them into disk.
-> And I'm a little concern about the race between read time fix and write.
-> 
-> I assume it's possible to change the behavior to follow RAID1, but I'd like to do it in the following steps:
-> 1) Fix known RAID56 bugs
->    With the v3 patch and previous 2 patches, it seems OK now.
-> 2) Full fstests test case, with all possible corruption combination
->    (WIP)
-> 3) Rework current RAID56 code to a cleaner and more readable status
->    (long term)
-> 4) Add the support to fix things at read time.
-> 
-> So the behavior change is not something we will see in short time.
 
-+1
-I am understanding that the status of RAID5/6 code is so badly that we need to correct all the more critical bugs and then increase the tests for not regression.
-On the point 3, I don't know the code well enough to say something, the code is very complex.
-I see the point 4 as the less urgent. 
+--=-TNnyqIBQOtSOFLzmLkkO
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-Let me to make a request: I would like to know your opinion about my email "RFC: raid with a variable stripe size", which started a little thread. I am asking this because you now have the hands on this code: my suggestion (use different BG, with different stripe size to avoid RMW cycles) or the Zygo's one (don't fill a stripe if you don't need to avoid RMW cycles) are difficult to implement ?
+On Mon, 2016-11-28 at 19:32 +0100, Goffredo Baroncelli wrote:
+> I am assuming that a corruption is a quite rare event. So
+> occasionally it could happens that a page is corrupted and the system
+> corrects it. This shouldn't=C2=A0=C2=A0have an impact on the workloads.
 
-BR
-G.Baroncelli
+Probably, but it still make sense to make it configurable, especially
+as an option like this would be needed to make a btrfs truly non-
+writing to the device again...
+
+The ro mount option just says that the files/permissions/etc. don't
+change - not that any internas doesn't change, so it would IMO be an
+abuse if ro would be used to disable repairs.
+
+And some people simply may want that - and if it's just to rule out the
+possibility of corruptions on a ro-fs in case of bad memory ;)
+
+Cheers,
+Chris.
+--=-TNnyqIBQOtSOFLzmLkkO
+Content-Type: application/x-pkcs7-signature; name="smime.p7s"
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Transfer-Encoding: base64
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEmow
+ggXiMIIDyqADAgECAhBctkhuRwyYxn/2gNtkSuKNMA0GCSqGSIb3DQEBCwUAMH0xCzAJBgNVBAYT
+AklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0
+aWZpY2F0ZSBTaWduaW5nMSkwJwYDVQQDEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
+eTAeFw0xNTEyMTYwMTAwMDVaFw0zMDEyMTYwMTAwMDVaMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQK
+Ew1TdGFydENvbSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
+eTEjMCEGA1UEAxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0EwggEiMA0GCSqGSIb3DQEBAQUA
+A4IBDwAwggEKAoIBAQDuD1CMlQkjhKz1UGqP1jeiTiH9MgllRz6vOPrVG/eE0H/J4QQLV/PeL8RT
+4xc44bEzsoJu0IhwnEchb+TxE/qw88w7hxODuw3N8Faxix6a1jp83+RWvZHZf78+O+3GYBpekZfT
+Oe9A/FoTXbcgwZfLTMQodn+ckNnX31M/1M2f2/7VA7QBlvihontyHQOlIlryQXnGI0UMCD21oopK
+tW48ckv0wUVg8irBKGMeD65gTON/Fsw/ZBbBqadoD1jt85FIM1ql24WUBEBwO1d0ykCKOIbgcqes
+3fbcjQpruUNMBbIu1MMIRMqwjx/M7IvSKcS7VYRWl0/K2byzWvBAHh/1AgMBAAGjggFkMIIBYDAO
+BgNVHQ8BAf8EBAMCAQYwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMBIGA1UdEwEB/wQI
+MAYBAf8CAQAwMgYDVR0fBCswKTAnoCWgI4YhaHR0cDovL2NybC5zdGFydHNzbC5jb20vc2ZzY2Eu
+Y3JsMGYGCCsGAQUFBwEBBFowWDAkBggrBgEFBQcwAYYYaHR0cDovL29jc3Auc3RhcnRzc2wuY29t
+MDAGCCsGAQUFBzAChiRodHRwOi8vYWlhLnN0YXJ0c3NsLmNvbS9jZXJ0cy9jYS5jcnQwHQYDVR0O
+BBYEFJmXqxg1OotZRUOYsnJxyPT7Cc8WMB8GA1UdIwQYMBaAFE4L7xqkQFulF2mHMMo0aEPQQa7y
+MD8GA1UdIAQ4MDYwNAYEVR0gADAsMCoGCCsGAQUFBwIBFh5odHRwOi8vd3d3LnN0YXJ0c3NsLmNv
+bS9wb2xpY3kwDQYJKoZIhvcNAQELBQADggIBAJlBQQTO9iT1TjA0eEO7V/1AbBvMAfibjAgofxmJ
+01jBmHKg0pbTjWInTTYoxb3LBgz3mfjvvS1PjnIfb29MyVm0G/PSHjgq7Ews1dEJMPC9XTuxPf2c
++MWLkynBlotW542JprW+iTWfZafyUtzIKW1hk0YASJ8zSSj8D++9yR+0UhkbvlECJkdi1+et0EaI
+7HIX6ccj1rfcFFflWX/fPT64dn9jpg9s0nuJug4WsVkEK236WndZoMHrZmgF7CIyZ3T0muqYwkAS
+DDcRt9A21o/Mc+D8Q6GVmKRGB3gEKvOtsioHZEqJv6CdAm3a6gloo5pX3RL1eCzc8Lzfs4T0ISZj
+r8xNMbTGlsuHaFH+stDewKsfnpo4N64OtAGrzmVfFFsMIRENRHsVlSEe/6LVpBpjn00+7bqEN3qe
+qSxIOraYJ12mJ08G4YnP2U1fadHIaS50O5ZXqAivoBl9pi/6CBNc5wIMlkXMyFZ0sLsI+9ErFDu9
+OJhX7iWCo69X0ydlzXj08+2K1PKyr+g6/vTPHur63JotNrhyoWEJyWEjBLA4QmJXfGpB5u+bCwNf
+sFpcYAlkiFt1Rs2vemgSBy3q4DHDbPKvr1YImZNRSHP+TX9NP94JRkmqcyD/qaN7u2JV1pRAlwG0
+npyrn6ZQM1QHV+iFbwQ4VqLMWk//QVo/rZy1MIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwcz1F+2kRA
+DzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjEp
+MCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMTGlN0YXJ0
+Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIzNlowejEL
+MAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAfBgNVBAMM
+GENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50
+aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqeP2vwE3Cp
+YosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjrFe0zmZWZ
+0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ0+c1NYFQ
+T6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJnmiiId9e
+0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7r2NVLkpo
+Gbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA0BtydQC0
+mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS7XEGOuCU
+09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6a1rkhJl7
+1rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8bxPJiX2/
+VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/MAsGA1Ud
+DwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAdBgNVHQ4E
+FgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI9PsJzxYw
+bwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5jb20wOQYI
+KwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQyLmNydDA4
+BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50Mi5jcmww
+IAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6Ly93d3cu
+c3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcBAgQwLDAq
+BggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3DQEBCwUA
+A4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7SG3MQkyO
+kvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndjZIHMfSkn
+hdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9RS51K1gt
+H4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11Yeq6UTW/
+JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwc
+z1F+2kRADzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20g
+THRkLjEpMCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMT
+GlN0YXJ0Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIz
+NlowejELMAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAf
+BgNVBAMMGENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9A
+c2NpZW50aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqe
+P2vwE3CpYosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjr
+Fe0zmZWZ0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ
+0+c1NYFQT6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJ
+nmiiId9e0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7
+r2NVLkpoGbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA
+0BtydQC0mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS
+7XEGOuCU09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6
+a1rkhJl71rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8
+bxPJiX2/VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/
+MAsGA1UdDwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAd
+BgNVHQ4EFgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI
+9PsJzxYwbwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5j
+b20wOQYIKwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQy
+LmNydDA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50
+Mi5jcmwwIAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6
+Ly93d3cuc3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcB
+AgQwLDAqBggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3
+DQEBCwUAA4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7
+SG3MQkyOkvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndj
+ZIHMfSknhdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9
+RS51K1gtH4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11
+Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
+MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
+cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
+QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
+SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTYxMTI4MTkwMDE2WjBPBgkqhkiG9w0BCQQxQgRAs4Ic
+7cRJ9TnlYd7brHZT+jETVNftfKBwtDlc9kG8ntIxb8KlVCsAj3/ZykICrXnp2VhOkaiVJ5cicdi7
+r5eMFzCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
+bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
+AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
+DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
+VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
+Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAa3mJ
+5U0PIgnMjvvRNo13Z6JnBba4VP0scvxOzdFvlLbmi0RhhMLF1f/vvs8U9LOfr+5xfn687RnUC/7p
+XxfLZUyMve27liz7X4/RcL0VZEimZrdFAfXvXbWSWK2XpNzxaiHNsnMEyapgnJD52NBlQvMbF2kI
+xYbLU7lscutNEOYm9Hog0asuYMQP9nNLWf4JrEaCKu8DD4VTE4IBMHgEvfpU5NBsoWOFkh+coOdp
+vu5yDhQvtdYKkSr4RT1k5oHy6L1rCkbRNqdkvqzRq98JbLvjW7vnKYUYCctG0iWNjtULpnuPqH+1
+4a8SW1BR5DXezUpBfaXTGDGuwJ6k2XMIkC29m44znCzFfv7XiRFsxHa0dceq7MNaY4igTzMIBxiG
+RqTBgaqvGrF7apTGM5Prf+8MfkIBBv2tomu47sP2vWHqmWawBGVF3Hh1wPRHPJq2M5eHH1S+GJ/C
+5HQELatbg1n5+94dHwKqjuOw1wX6LbYe5R2E5bAnxmMKC39OGWURV0cL/rZuxDpPOlBcDyjSpGdv
+z3S7AOR97zL3HbaAtCHp0BQavETyO1ZN5peSShuNdxfZunMbfkFclXXH0tzUiEKQI4t6i7UtaNvH
+t7Rl7096Y8DNFcDrcnzlVE10DtWpfiX84geio7IXFLRd6zajCZD2h1Uw/Q5xNFZU1+CMOx4AAAAA
+AAA=
 
 
-> 
-> Thanks,
-> Qu
+--=-TNnyqIBQOtSOFLzmLkkO--
 
-
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

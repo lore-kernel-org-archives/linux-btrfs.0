@@ -1,82 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:45565 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1754123AbcK1IU3 (ORCPT
+Received: from zaphod.cobb.me.uk ([213.138.97.131]:58408 "EHLO
+        zaphod.cobb.me.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932614AbcK1Jtg (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 Nov 2016 03:20:29 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1cBHAg-00029c-9i
-        for linux-btrfs@vger.kernel.org; Mon, 28 Nov 2016 09:20:18 +0100
+        Mon, 28 Nov 2016 04:49:36 -0500
+Received: from black.home.cobb.me.uk (unknown [192.168.0.205])
+        by zaphod.cobb.me.uk (Postfix) with ESMTP id 96F919B98A
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Nov 2016 09:49:33 +0000 (GMT)
+Received: from [192.168.0.211] (novatech.home.cobb.me.uk [192.168.0.211])
+        by black.home.cobb.me.uk (Postfix) with ESMTPS id 3890D5FBB2
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Nov 2016 09:49:33 +0000 (GMT)
+Subject: Re: [Not TLS] Re: mount option nodatacow for VMs on SSD?
 To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77@gmail.com>
-Subject: Re: mount option nodatacow for VMs on SSD?
-Date: Mon, 28 Nov 2016 09:20:15 +0100
-Message-ID: <20161128092015.70b75dd8@jupiter.sol.kaishome.de>
 References: <20161125082840.GA32711@rus.uni-stuttgart.de>
-        <20161126112710.6aca8bac@jupiter.sol.kaishome.de>
-        <20161128003829.GD15348@rus.uni-stuttgart.de>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+ <20161126112710.6aca8bac@jupiter.sol.kaishome.de>
+ <20161128003829.GD15348@rus.uni-stuttgart.de>
+ <pan$1eaab$d4d4facd$e2735d04$2fc4a8e@cox.net>
+From: Graham Cobb <g.btrfs@cobb.uk.net>
+Message-ID: <2df2e8e6-5ac4-a9c0-70bc-406fd84e9784@cobb.uk.net>
+Date: Mon, 28 Nov 2016 09:49:33 +0000
+MIME-Version: 1.0
+In-Reply-To: <pan$1eaab$d4d4facd$e2735d04$2fc4a8e@cox.net>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Mon, 28 Nov 2016 01:38:29 +0100
-schrieb Ulli Horlacher <framstag@rus.uni-stuttgart.de>:
+On 28/11/16 02:56, Duncan wrote:
+> It should still be worth turning on autodefrag on an existing somewhat 
+> fragmented filesystem.  It just might take some time to defrag files you 
+> do modify, and won't touch those you don't, which in some cases might 
+> make it worth defragging those manually.  Or simply create new 
+> filesystems, mount them with autodefrag, and copy everything over so 
+> you're starting fresh, as I do.
 
-> On Sat 2016-11-26 (11:27), Kai Krakow wrote:
-> 
-> > > I have vmware and virtualbox VMs on btrfs SSD.  
-> 
-> > As a side note: I don't think you can use "nodatacow" just for one
-> > subvolume while the other subvolumes of the same btrfs are mounted
-> > different. The wiki is just wrong here.
-> > 
-> > The list of possible mount options in the wiki explicitly lists
-> > "nodatacow" as not working per subvolume - just globally for the
-> > whole fs.  
-> 
-> Thanks for pointing this out!
-> I have misunderstood this, first.
+Could that "copy" be (a series of) send/receive, so that snapshots and
+reflinks are preserved?  Does autodefrag work in that case or does the
+send/receive somehow override that and end up preserving the original
+(fragmented) extent structure?
 
-You can, however, use chattr to make the subvolume root directory (that
-one where it is mounted) nodatacow (chattr +C) _before_ placing any
-files or directories in there. That way, newly created files and
-directories will inherit the flag. Take note that this flag can only
-applied to directories and empty (zero-sized) files.
-
-That way, you get the intended benefit and your next question applies a
-little less because:
-
-> Ok, then next question :-)
-> 
-> What is better (for a single user workstation): using mount option
-> "autodefrag" or call "btrfs filesystem defragment -r" (-t ?) via
-> nightly cronjob?
-> 
-> So far, I use neither.
-
-When using the above method to make your VM images nodatacow, the only
-fragmentation issue you need to handle is when doing snapshots.
-Snapshots are subject to copy-on-write. If you do heavy snapshotting,
-you'll be getting heavy fragmentation based on the write-patterns. I
-don't know if autodefrag will handle nodatacow files. You may want to
-use a dedupe utility after defragmentation, like duperemove (running
-it manually) or bees (a background daemon also trying to keep
-fragmentation low).
-
-If you are doing no or infrequent snapshots, I won't bother with manual
-defragging at all for your VM images since you're on SSD. If you aren't
-going to use snapshots at all, you even won't have to think about
-autodefrag, tho I still recommend to enable it (see post from Duncan).
-
-Manual defrag is a highly write-intensive operation, rewriting multiple
-gigabytes of data. I strongly recommend against using it on a daily
-basis for SSD.
-
--- 
-Regards,
-Kai
-
-Replies to list-only preferred.
+Graham
 

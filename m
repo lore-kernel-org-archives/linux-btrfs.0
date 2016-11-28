@@ -1,32 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.linuxsystems.it ([79.7.78.67]:36833 "EHLO
-        mail.linuxsystems.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754175AbcK1LLx (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 Nov 2016 06:11:53 -0500
-From: =?iso-8859-1?Q?Niccol=F2_Belli?= <darkbasic@linuxsystems.it>
-To: Kai Krakow <hurikhan77@gmail.com>
-Cc: <linux-btrfs@vger.kernel.org>
-Subject: Re: mount option nodatacow for VMs on =?iso-8859-1?Q?SSD=3F?=
-Date: Mon, 28 Nov 2016 12:11:49 +0100
+Received: from len.romanrm.net ([195.154.117.182]:48754 "EHLO len.romanrm.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754507AbcK1M1P (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 28 Nov 2016 07:27:15 -0500
+Date: Mon, 28 Nov 2016 17:27:10 +0500
+From: Roman Mamedov <rm@romanrm.net>
+To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: fix hole read corruption for compressed inline
+ extents
+Message-ID: <20161128172710.202587ce@natsu>
+In-Reply-To: <1480309392-4786-1-git-send-email-ce3g8jdj@umail.furryterror.org>
+References: <1480309392-4786-1-git-send-email-ce3g8jdj@umail.furryterror.org>
 MIME-Version: 1.0
-Message-ID: <ca646391-bd9f-49b2-bca4-8faee04fd82a@linuxsystems.it>
-In-Reply-To: <20161128092015.70b75dd8@jupiter.sol.kaishome.de>
-References: <20161125082840.GA32711@rus.uni-stuttgart.de>
- <20161126112710.6aca8bac@jupiter.sol.kaishome.de>
- <20161128003829.GD15348@rus.uni-stuttgart.de>
- <20161128092015.70b75dd8@jupiter.sol.kaishome.de>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On lunedì 28 novembre 2016 09:20:15 CET, Kai Krakow wrote:
-> You can, however, use chattr to make the subvolume root directory (that
-> one where it is mounted) nodatacow (chattr +C) _before_ placing any
-> files or directories in there. That way, newly created files and
-> directories will inherit the flag. Take note that this flag can only
-> applied to directories and empty (zero-sized) files.
+On Mon, 28 Nov 2016 00:03:12 -0500
+Zygo Blaxell <ce3g8jdj@umail.furryterror.org> wrote:
 
-Do I keep checksumming for this directory such a way?
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 8e3a5a2..b1314d6 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -6803,6 +6803,12 @@ static noinline int uncompress_inline(struct btrfs_path *path,
+>  	max_size = min_t(unsigned long, PAGE_SIZE, max_size);
+>  	ret = btrfs_decompress(compress_type, tmp, page,
+>  			       extent_offset, inline_size, max_size);
+> +	WARN_ON(max_size > PAGE_SIZE);
+> +	if (max_size < PAGE_SIZE) {
+> +		char *map = kmap(page);
+> +		memset(map + max_size, 0, PAGE_SIZE - max_size);
+> +		kunmap(page);
+> +	}
+>  	kfree(tmp);
+>  	return ret;
+>  }
 
-Niccolò Belli
+Wasn't this already posted as:
+
+btrfs: fix silent data corruption while reading compressed inline extents
+https://patchwork.kernel.org/patch/9371971/
+
+but you don't indicate that's a V2 or something, and in fact the patch seems
+exactly the same, just the subject and commit message are entirely different.
+Quite confusing.
+
+-- 
+With respect,
+Roman

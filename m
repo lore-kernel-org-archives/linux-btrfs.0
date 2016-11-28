@@ -1,91 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:36615 "EHLO
-        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754512AbcKYJPg (ORCPT
+Received: from mail-pg0-f47.google.com ([74.125.83.47]:35856 "EHLO
+        mail-pg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752456AbcK1Vij (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 Nov 2016 04:15:36 -0500
-From: Christoph Hellwig <hch@lst.de>
-To: linux-btrfs@vger.kernel.org
-Cc: Liu Bo <bo.li.liu@oracle.com>, Omar Sandoval <osandov@osandov.com>
-Subject: [PATCH 8/8] btrfs: use bio_for_each_segment_all in __btrfsic_submit_bio
-Date: Fri, 25 Nov 2016 09:07:53 +0100
-Message-Id: <1480061273-5722-9-git-send-email-hch@lst.de>
-In-Reply-To: <1480061273-5722-1-git-send-email-hch@lst.de>
+        Mon, 28 Nov 2016 16:38:39 -0500
+Received: by mail-pg0-f47.google.com with SMTP id f188so60773307pgc.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Nov 2016 13:38:38 -0800 (PST)
+Date: Mon, 28 Nov 2016 13:38:34 -0800
+From: Omar Sandoval <osandov@osandov.com>
+To: Christoph Hellwig <hch@lst.de>
+Cc: linux-btrfs@vger.kernel.org, Liu Bo <bo.li.liu@oracle.com>
+Subject: Re: [PATCH 6/8] btrfs: calculate end of bio offset properly
+Message-ID: <20161128213834.GA8808@vader.DHCP.thefacebook.com>
 References: <1480061273-5722-1-git-send-email-hch@lst.de>
+ <1480061273-5722-7-git-send-email-hch@lst.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1480061273-5722-7-git-send-email-hch@lst.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-And remove the bogus check for a NULL return value from kmap, which
-can't happen.  While we're at it: I don't think that kmapping up to 256
-will work without deadlocks on highmem machines, a better idea would
-be to use vm_map_ram to map all of them into a single virtual address
-range.  Incidentally that would also simplify the code a lot.
+On Fri, Nov 25, 2016 at 09:07:51AM +0100, Christoph Hellwig wrote:
+> Use the bvec offset and len members to prepare for multipage bvecs.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
 Reviewed-by: Omar Sandoval <osandov@fb.com>
----
- fs/btrfs/check-integrity.c | 30 +++++++++++-------------------
- 1 file changed, 11 insertions(+), 19 deletions(-)
 
-diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
-index a6f657f..86f681f 100644
---- a/fs/btrfs/check-integrity.c
-+++ b/fs/btrfs/check-integrity.c
-@@ -2819,10 +2819,11 @@ static void __btrfsic_submit_bio(struct bio *bio)
- 	 * btrfsic_mount(), this might return NULL */
- 	dev_state = btrfsic_dev_state_lookup(bio->bi_bdev);
- 	if (NULL != dev_state &&
--	    (bio_op(bio) == REQ_OP_WRITE) && NULL != bio->bi_io_vec) {
-+	    (bio_op(bio) == REQ_OP_WRITE) && bio_has_data(bio)) {
- 		unsigned int i;
- 		u64 dev_bytenr;
- 		u64 cur_bytenr;
-+		struct bio_vec *bvec;
- 		int bio_is_patched;
- 		char **mapped_datav;
- 
-@@ -2840,32 +2841,23 @@ static void __btrfsic_submit_bio(struct bio *bio)
- 		if (!mapped_datav)
- 			goto leave;
- 		cur_bytenr = dev_bytenr;
--		for (i = 0; i < bio->bi_vcnt; i++) {
--			BUG_ON(bio->bi_io_vec[i].bv_len != PAGE_SIZE);
--			mapped_datav[i] = kmap(bio->bi_io_vec[i].bv_page);
--			if (!mapped_datav[i]) {
--				while (i > 0) {
--					i--;
--					kunmap(bio->bi_io_vec[i].bv_page);
--				}
--				kfree(mapped_datav);
--				goto leave;
--			}
-+
-+		bio_for_each_segment_all(bvec, bio, i) {
-+			BUG_ON(bvec->bv_len != PAGE_SIZE);
-+			mapped_datav[i] = kmap(bvec->bv_page);
-+
- 			if (dev_state->state->print_mask &
- 			    BTRFSIC_PRINT_MASK_SUBMIT_BIO_BH_VERBOSE)
- 				pr_info("#%u: bytenr=%llu, len=%u, offset=%u\n",
--				       i, cur_bytenr, bio->bi_io_vec[i].bv_len,
--				       bio->bi_io_vec[i].bv_offset);
--			cur_bytenr += bio->bi_io_vec[i].bv_len;
-+				       i, cur_bytenr, bvec->bv_len, bvec->bv_offset);
-+			cur_bytenr += bvec->bv_len;
- 		}
- 		btrfsic_process_written_block(dev_state, dev_bytenr,
- 					      mapped_datav, bio->bi_vcnt,
- 					      bio, &bio_is_patched,
- 					      NULL, bio->bi_opf);
--		while (i > 0) {
--			i--;
--			kunmap(bio->bi_io_vec[i].bv_page);
--		}
-+		bio_for_each_segment_all(bvec, bio, i)
-+			kunmap(bvec->bv_page);
- 		kfree(mapped_datav);
- 	} else if (NULL != dev_state && (bio->bi_opf & REQ_PREFLUSH)) {
- 		if (dev_state->state->print_mask &
--- 
-2.1.4
-
+> Signed-off-by: Christoph Hellwig <hch@lst.de>
+> ---
+>  fs/btrfs/compression.c | 10 ++++++++--
+>  1 file changed, 8 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+> index 77042a8..3c1c25c 100644
+> --- a/fs/btrfs/compression.c
+> +++ b/fs/btrfs/compression.c
+> @@ -445,6 +445,13 @@ int btrfs_submit_compressed_write(struct inode *inode, u64 start,
+>  	return 0;
+>  }
+>  
+> +static u64 bio_end_offset(struct bio *bio)
+> +{
+> +	struct bio_vec *last = &bio->bi_io_vec[bio->bi_vcnt - 1];
+> +
+> +	return page_offset(last->bv_page) + last->bv_len + last->bv_offset;
+> +}
+> +
+>  static noinline int add_ra_bio_pages(struct inode *inode,
+>  				     u64 compressed_end,
+>  				     struct compressed_bio *cb)
+> @@ -463,8 +470,7 @@ static noinline int add_ra_bio_pages(struct inode *inode,
+>  	u64 end;
+>  	int misses = 0;
+>  
+> -	page = cb->orig_bio->bi_io_vec[cb->orig_bio->bi_vcnt - 1].bv_page;
+> -	last_offset = (page_offset(page) + PAGE_SIZE);
+> +	last_offset = bio_end_offset(cb->orig_bio);
+>  	em_tree = &BTRFS_I(inode)->extent_tree;
+>  	tree = &BTRFS_I(inode)->io_tree;
+>  
+> -- 
+> 2.1.4
+> 

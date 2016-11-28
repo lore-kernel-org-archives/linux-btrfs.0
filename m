@@ -1,45 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-16-i4.italiaonline.it ([212.48.25.213]:53540 "EHLO
-        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751532AbcK0SS5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 27 Nov 2016 13:18:57 -0500
-From: Giuseppe Della Bianca <bepi@adria.it>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: [CORRUPTION FILESYSTEM] Corrupted and unrecoverable file system during the snapshot receive
-Date: Sun, 27 Nov 2016 19:18:38 +0100
-Message-ID: <1606562.nMLPFcA8R6@exnet.gdb.it>
-In-Reply-To: <CAJCQCtRpppbJb4a_zEdRFi7Fbxnhg5VkLktHuLMW2Z0H-cOkDg@mail.gmail.com>
-References: <1479730155.5832e3eb3fde8@webmail.adria.it> <5108140.l7kIxhTaVr@exnet.gdb.it> <CAJCQCtRpppbJb4a_zEdRFi7Fbxnhg5VkLktHuLMW2Z0H-cOkDg@mail.gmail.com>
+Received: from smtp2.belwue.de ([129.143.2.15]:46281 "EHLO smtp2.belwue.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751015AbcK1AjZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 27 Nov 2016 19:39:25 -0500
+Received: from fex.rus.uni-stuttgart.de (fex.rus.uni-stuttgart.de [129.69.1.129])
+        by smtp2.belwue.de with SMTP id uAS0cTA6015516
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Nov 2016 01:38:30 +0100 (MET)
+        env-from (framstag@rus.uni-stuttgart.de)
+Date: Mon, 28 Nov 2016 01:38:29 +0100
+From: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: mount option nodatacow for VMs on SSD?
+Message-ID: <20161128003829.GD15348@rus.uni-stuttgart.de>
+References: <20161125082840.GA32711@rus.uni-stuttgart.de>
+ <20161126112710.6aca8bac@jupiter.sol.kaishome.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20161126112710.6aca8bac@jupiter.sol.kaishome.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I have reinstalled from scratch my system (for remote receiving of the 
-snapshot).
-Now it uses the 4.8.8-100.fc23.x86_64 kernel, and now I have a separate 
-partition for '''possible dangerous''' test.
+On Sat 2016-11-26 (11:27), Kai Krakow wrote:
 
-I do not remember the exact sequence that caused the corruption of the file 
-system, but now it worked without problem.
+> > I have vmware and virtualbox VMs on btrfs SSD.
 
-If I have problems again, I will update the btrfs-tools and I will try to fix.
-
-P.S The silent and unrecoverable corruption are not entirely friendly ( :) ).
-
-Thank you for answer.
-
-Gdb
-
-
-> I haven't seen this with 4.7.10. I suggest running 'btrfs check'
-> (without repair) using a recent btrfs-progs. You can find 4.8.3 in
-> koji, just download the appropriate rpm, and 'dnf update *rpm'
+> As a side note: I don't think you can use "nodatacow" just for one
+> subvolume while the other subvolumes of the same btrfs are mounted
+> different. The wiki is just wrong here.
 > 
-> As for kernel, Fedora 23 has 4.8.8 in updates (stable) and 4.8.10 is
-> in updates-testing, I suggest moving to one of those.
-> 
-> 
-> Chris Murphy
+> The list of possible mount options in the wiki explicitly lists
+> "nodatacow" as not working per subvolume - just globally for the whole
+> fs.
 
+Thanks for pointing this out!
+I have misunderstood this, first.
+
+Ok, then next question :-)
+
+What is better (for a single user workstation): using mount option
+"autodefrag" or call "btrfs filesystem defragment -r" (-t ?) via nightly
+cronjob?
+
+So far, I use neither.
+
+
+-- 
+Ullrich Horlacher              Server und Virtualisierung
+Rechenzentrum TIK         
+Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
+Allmandring 30a                Tel:    ++49-711-68565868
+70569 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
+REF:<20161126112710.6aca8bac@jupiter.sol.kaishome.de>

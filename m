@@ -1,108 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:28108 "EHLO song.cn.fujitsu.com"
-        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1752158AbcKHCVU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 7 Nov 2016 21:21:20 -0500
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: [PATCH v3 1/3] btrfs: Add WARN_ON for qgroup reserved underflow
-Date: Tue,  8 Nov 2016 10:20:42 +0800
-Message-Id: <20161108022044.686-1-quwenruo@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:49940 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750820AbcK2QK6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 29 Nov 2016 11:10:58 -0500
+Date: Tue, 29 Nov 2016 17:10:53 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz, lkml.page@gmail.com
+Subject: Re: [PATCH v4 1/3] btrfs: Add WARN_ON for qgroup reserved underflow
+Message-ID: <20161129161053.GI12522@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20161128014009.12179-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20161128014009.12179-1-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Goldwyn Rodrigues has exposed and fixed a bug which underflows btrfs
-qgroup reserved space, and leads to non-writable fs.
+On Mon, Nov 28, 2016 at 09:40:07AM +0800, Qu Wenruo wrote:
+> Goldwyn Rodrigues has exposed and fixed a bug which underflows btrfs
+> qgroup reserved space, and leads to non-writable fs.
+> 
+> This reminds us that we don't have enough underflow check for qgroup
+> reserved space.
+> 
+> For underflow case, we should not really underflow the numbers but warn
+> and keeps qgroup still work.
+> 
+> So add more check on qgroup reserved space and add WARN_ON() and
+> btrfs_warn() for any underflow case.
+> 
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> Reviewed-by: David Sterba <dsterba@suse.com>
 
-This reminds us that we don't have enough underflow check for qgroup
-reserved space.
-
-For underflow case, we should not really underflow the numbers but warn
-and keeps qgroup still work.
-
-So add more check on qgroup reserved space and add WARN_ON() and
-btrfs_warn() for any underflow case.
-
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
----
-v2:
-  Add btrfs_warn() output for fsid, qgroupid, original reserved space and
-  num_bytes to reduce, for end-user to locate the subvolume causing the
-  problem. Suggested by David.
-v3:
-  None
----
- fs/btrfs/qgroup.c | 32 +++++++++++++++++++++++++++-----
- 1 file changed, 27 insertions(+), 5 deletions(-)
-
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 11f4fff..fc0c64e 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1031,6 +1031,15 @@ static void qgroup_dirty(struct btrfs_fs_info *fs_info,
- 		list_add(&qgroup->dirty, &fs_info->dirty_qgroups);
- }
- 
-+static void report_reserved_underflow(struct btrfs_fs_info *fs_info,
-+				      struct btrfs_qgroup *qgroup,
-+				      u64 num_bytes)
-+{
-+	btrfs_warn(fs_info,
-+		"qgroup %llu reserved space underflow, have: %llu, to free: %llu",
-+		qgroup->qgroupid, qgroup->reserved, num_bytes);
-+	qgroup->reserved = 0;
-+}
- /*
-  * The easy accounting, if we are adding/removing the only ref for an extent
-  * then this qgroup and all of the parent qgroups get their reference and
-@@ -1058,8 +1067,13 @@ static int __qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
- 	WARN_ON(sign < 0 && qgroup->excl < num_bytes);
- 	qgroup->excl += sign * num_bytes;
- 	qgroup->excl_cmpr += sign * num_bytes;
--	if (sign > 0)
--		qgroup->reserved -= num_bytes;
-+	if (sign > 0) {
-+		if (WARN_ON(qgroup->reserved < num_bytes))
-+			report_reserved_underflow(fs_info, qgroup,
-+						  num_bytes);
-+		else
-+			qgroup->reserved -= num_bytes;
-+	}
- 
- 	qgroup_dirty(fs_info, qgroup);
- 
-@@ -1079,8 +1093,13 @@ static int __qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
- 		qgroup->rfer_cmpr += sign * num_bytes;
- 		WARN_ON(sign < 0 && qgroup->excl < num_bytes);
- 		qgroup->excl += sign * num_bytes;
--		if (sign > 0)
--			qgroup->reserved -= num_bytes;
-+		if (sign > 0) {
-+			if (WARN_ON(qgroup->reserved < num_bytes))
-+				report_reserved_underflow(fs_info, qgroup,
-+							  num_bytes);
-+			else
-+				qgroup->reserved -= num_bytes;
-+		}
- 		qgroup->excl_cmpr += sign * num_bytes;
- 		qgroup_dirty(fs_info, qgroup);
- 
-@@ -2204,7 +2223,10 @@ void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
- 
- 		qg = u64_to_ptr(unode->aux);
- 
--		qg->reserved -= num_bytes;
-+		if (WARN_ON(qgroup->reserved < num_bytes))
-+			report_reserved_underflow(fs_info, qgroup, num_bytes);
-+		else
-+			qgroup->reserved -= num_bytes;
- 
- 		list_for_each_entry(glist, &qg->groups, next_group) {
- 			ret = ulist_add(fs_info->qgroup_ulist,
--- 
-2.10.2
-
-
-
+One of the warnings is visible during xfstests
+(btrfs_qgroup_free_refroot), is there a fix? Either a patch in
+mailinglist or work in progress. If not, I'm a bit reluctant to add it
+to 4.10 as we'd get that reported from users for sure.

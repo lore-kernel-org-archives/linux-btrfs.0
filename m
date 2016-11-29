@@ -1,56 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f193.google.com ([209.85.223.193]:33701 "EHLO
+Received: from mail-io0-f193.google.com ([209.85.223.193]:33524 "EHLO
         mail-io0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751494AbcK2MTF (ORCPT
+        with ESMTP id S1755002AbcK2MVW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 29 Nov 2016 07:19:05 -0500
-Received: by mail-io0-f193.google.com with SMTP id j92so29072667ioi.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 Nov 2016 04:19:04 -0800 (PST)
-Subject: Re: [Not TLS] Re: mount option nodatacow for VMs on SSD?
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+        Tue, 29 Nov 2016 07:21:22 -0500
+Received: by mail-io0-f193.google.com with SMTP id j92so29081933ioi.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 29 Nov 2016 04:20:50 -0800 (PST)
+Received: from [191.9.206.254] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
+        by smtp.gmail.com with ESMTPSA id b196sm21529247ioe.16.2016.11.29.04.20.47
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Tue, 29 Nov 2016 04:20:47 -0800 (PST)
+Subject: Re: mount option nodatacow for VMs on SSD?
+To: linux-btrfs@vger.kernel.org
 References: <20161125082840.GA32711@rus.uni-stuttgart.de>
  <20161126112710.6aca8bac@jupiter.sol.kaishome.de>
  <20161128003829.GD15348@rus.uni-stuttgart.de>
- <pan$1eaab$d4d4facd$e2735d04$2fc4a8e@cox.net>
- <2df2e8e6-5ac4-a9c0-70bc-406fd84e9784@cobb.uk.net>
- <pan$a292d$fa229462$80743716$b85be0fd@cox.net>
+ <20161128092015.70b75dd8@jupiter.sol.kaishome.de>
+ <ca646391-bd9f-49b2-bca4-8faee04fd82a@linuxsystems.it>
+ <pan$8ecb6$a69408d3$b47213c2$9bfeddf6@cox.net>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <c655b303-685c-e1ea-2ff6-31672ba0f5d2@gmail.com>
-Date: Tue, 29 Nov 2016 07:18:57 -0500
+Message-ID: <72906a86-ec80-3c37-d364-14ba0433a213@gmail.com>
+Date: Tue, 29 Nov 2016 07:20:43 -0500
 MIME-Version: 1.0
-In-Reply-To: <pan$a292d$fa229462$80743716$b85be0fd@cox.net>
+In-Reply-To: <pan$8ecb6$a69408d3$b47213c2$9bfeddf6@cox.net>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-11-29 00:14, Duncan wrote:
-> Graham Cobb posted on Mon, 28 Nov 2016 09:49:33 +0000 as excerpted:
+On 2016-11-29 00:06, Duncan wrote:
+> Niccolò Belli posted on Mon, 28 Nov 2016 12:11:49 +0100 as excerpted:
 >
->> On 28/11/16 02:56, Duncan wrote:
->>> It should still be worth turning on autodefrag on an existing somewhat
->>> fragmented filesystem.  It just might take some time to defrag files
->>> you do modify, and won't touch those you don't, which in some cases
->>> might make it worth defragging those manually.  Or simply create new
->>> filesystems, mount them with autodefrag, and copy everything over so
->>> you're starting fresh, as I do.
+>> On lunedì 28 novembre 2016 09:20:15 CET, Kai Krakow wrote:
+>>> You can, however, use chattr to make the subvolume root directory (that
+>>> one where it is mounted) nodatacow (chattr +C) _before_ placing any
+>>> files or directories in there. That way, newly created files and
+>>> directories will inherit the flag. Take note that this flag can only
+>>> applied to directories and empty (zero-sized) files.
 >>
->> Could that "copy" be (a series of) send/receive, so that snapshots and
->> reflinks are preserved?  Does autodefrag work in that case or does the
->> send/receive somehow override that and end up preserving the original
->> (fragmented) extent structure?
+>> Do I keep checksumming for this directory such a way?
 >
-> Very good question that I don't know the answer to as I've not seen it
-> discussed previously.  (I'm not a dev, just a list regular and user of
-> btrfs myself, and my personal use-case involves neither snapshots nor
-> send/receive, so on those topics if I've not seen it covered previously
-> either here or on the wiki, I won't know.)
+> No.  Keeping checksums current on NOCOW files is racy, and compression
+> would be complex as well because rewritten data may compress more or less
+> well than the original so the on-filesystem size could change, so both
+> features are disabled in the presence of NOCOW, regardless of how it is
+> set.
 >
-> Someone else know?
+> Put another way, btrfs assumes COW by default and many of its features
+> depend on COW -- that's why these features don't tend to be implemented
+> on conventional rewrite-in-place filesystems in the first place.  Both
+> checksumming and compression are among these COW-dependent features.
 >
-Autodefrag does work in that case, but not because there's any special 
-handling for it.  In the case of send/receive, the receiving side is 
-doing nothing that couldn't be done as a normal user (except possibly a 
-few ioctls to set subvolume UUID's), so any data it writes will be 
-subject to all processing done by the FS (so sending from an 
-uncompressed volume to one with compress=X will result in the data being 
-compressed on the receiving end too).
+We really should get this put up somewhere very visible on the wiki. 
+It's pretty blatantly obvious to anyone with a CS degree, but most users 
+don't have a CS degree, and I can't count the number of e-mails I've 
+sent explaining why checksums plus NOCOW are a recipe for disaster.

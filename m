@@ -1,191 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:53120 "EHLO
-        mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750754AbcK2Bww (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:40720 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1753135AbcK2DTL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 Nov 2016 20:52:52 -0500
-Message-ID: <1480384367.6747.46.camel@scientia.net>
+        Mon, 28 Nov 2016 22:19:11 -0500
+Date: Mon, 28 Nov 2016 22:19:08 -0500
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: Christoph Anton Mitterer <calestyo@scientia.net>
+Cc: Goffredo Baroncelli <kreijack@inwind.it>,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] btrfs: raid56: Use correct stolen pages to calculate P/Q
-From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
-        Goffredo Baroncelli <kreijack@inwind.it>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Date: Tue, 29 Nov 2016 02:52:47 +0100
-In-Reply-To: <20161128214829.GO8685@hungrycats.org>
+Message-ID: <20161129031908.GP8685@hungrycats.org>
 References: <20161121085016.7148-1-quwenruo@cn.fujitsu.com>
-         <94606bda-dab0-e7c9-7fc6-1af9069b64fc@inwind.it>
-         <f814eb1b-844b-2ace-c948-3be20da2fd29@cn.fujitsu.com>
-         <a75c9a72-148c-9fbd-dfb8-7cde58bee9c9@inwind.it>
-         <20161125043119.GG8685@hungrycats.org>
-         <cd7ee5cc-d384-7c9c-d656-cef2569b749a@inwind.it>
-         <1480304269.6254.6.camel@scientia.net>
-         <2b15ae6f-51ce-45ff-47c0-699506de4e56@inwind.it>
-         <20161128214829.GO8685@hungrycats.org>
-Content-Type: multipart/signed; micalg="sha-512";
-        protocol="application/x-pkcs7-signature";
-        boundary="=-JVNjyPqfck4/S7zmf559"
-Mime-Version: 1.0
+ <94606bda-dab0-e7c9-7fc6-1af9069b64fc@inwind.it>
+ <f814eb1b-844b-2ace-c948-3be20da2fd29@cn.fujitsu.com>
+ <a75c9a72-148c-9fbd-dfb8-7cde58bee9c9@inwind.it>
+ <20161125043119.GG8685@hungrycats.org>
+ <cd7ee5cc-d384-7c9c-d656-cef2569b749a@inwind.it>
+ <1480304269.6254.6.camel@scientia.net>
+ <2b15ae6f-51ce-45ff-47c0-699506de4e56@inwind.it>
+ <20161128214829.GO8685@hungrycats.org>
+ <1480384367.6747.46.camel@scientia.net>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="acOuGx3oQeOcSZJu"
+In-Reply-To: <1480384367.6747.46.camel@scientia.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-JVNjyPqfck4/S7zmf559
-Content-Type: text/plain; charset="UTF-8"
+--acOuGx3oQeOcSZJu
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
 
-On Mon, 2016-11-28 at 16:48 -0500, Zygo Blaxell wrote:
-> If a drive's
-> embedded controller RAM fails, you get corruption on the majority of
-> reads from a single disk, and most writes will be corrupted (even if
-> they
-> were not before).
-
-Administrating a multi-PiB Tier-2 for the LHC Computing Grid with quite
-a number of disks for nearly 10 years now, I'd have never stumbled on
-such a case of breakage so far...
-
-Actually most cases are as simple as HDD fails to work and this is
-properly signalled to the controller.
-
-
-
-> If there's a transient failure due to environmental
-> issues (e.g. short-term high-amplitude vibration or overheating) then
-> writes may pause for mechanical retry loops.=C2=A0=C2=A0If there is bitro=
-t in
-> SSDs
-> (particularly in the address translation tables) it looks like a wall
-> of random noise that only ends when the disk goes offline.=C2=A0=C2=A0You=
- can
-> get
-> combinations of these (e.g. RAM failures caused by transient
-> overheating)
-> where the drive's behavior changes over time.
+On Tue, Nov 29, 2016 at 02:52:47AM +0100, Christoph Anton Mitterer wrote:
+> On Mon, 2016-11-28 at 16:48 -0500, Zygo Blaxell wrote:
+> > If a drive's
+> > embedded controller RAM fails, you get corruption on the majority of
+> > reads from a single disk, and most writes will be corrupted (even if
+> > they
+> > were not before).
 >=20
-> When in doubt, don't write.
+> Administrating a multi-PiB Tier-2 for the LHC Computing Grid with quite
+> a number of disks for nearly 10 years now, I'd have never stumbled on
+> such a case of breakage so far...
 
-Sorry, but these cases as any cases of memory issues (be it main memory
-or HDD controller) would also kick in at any normal writes.
+In data centers you won't see breakages that are common on desktop and
+laptop drives.  Laptops in particular sometimes (often?) go to places
+that are much less friendly to hardware.
 
-So there's no point in protecting against this on the storage side...
+All my NAS and enterprise drives in server racks and data centers just
+wake up one morning stone dead or with a few well-behaved bad sectors,
+with none of this drama.  Boring!
 
-Either never write at all... or have good backups for these rare cases.
+> Actually most cases are as simple as HDD fails to work and this is
+> properly signalled to the controller.
+>=20
+>=20
+>=20
+> > If there's a transient failure due to environmental
+> > issues (e.g. short-term high-amplitude vibration or overheating) then
+> > writes may pause for mechanical retry loops.=A0=A0If there is bitrot in
+> > SSDs
+> > (particularly in the address translation tables) it looks like a wall
+> > of random noise that only ends when the disk goes offline.=A0=A0You can
+> > get
+> > combinations of these (e.g. RAM failures caused by transient
+> > overheating)
+> > where the drive's behavior changes over time.
+> >=20
+> > When in doubt, don't write.
+>=20
+> Sorry, but these cases as any cases of memory issues (be it main memory
+> or HDD controller) would also kick in at any normal writes.
 
+Yes, but in a RAID1 context there will be another disk with a good copy
+(or if main RAM is failing, the entire filesystem will be toast no matter
+what you do).
 
-
-Cheers,
-Chris.
---=-JVNjyPqfck4/S7zmf559
-Content-Type: application/x-pkcs7-signature; name="smime.p7s"
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Transfer-Encoding: base64
-
-MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEmow
-ggXiMIIDyqADAgECAhBctkhuRwyYxn/2gNtkSuKNMA0GCSqGSIb3DQEBCwUAMH0xCzAJBgNVBAYT
-AklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0
-aWZpY2F0ZSBTaWduaW5nMSkwJwYDVQQDEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
-eTAeFw0xNTEyMTYwMTAwMDVaFw0zMDEyMTYwMTAwMDVaMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQK
-Ew1TdGFydENvbSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
-eTEjMCEGA1UEAxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0EwggEiMA0GCSqGSIb3DQEBAQUA
-A4IBDwAwggEKAoIBAQDuD1CMlQkjhKz1UGqP1jeiTiH9MgllRz6vOPrVG/eE0H/J4QQLV/PeL8RT
-4xc44bEzsoJu0IhwnEchb+TxE/qw88w7hxODuw3N8Faxix6a1jp83+RWvZHZf78+O+3GYBpekZfT
-Oe9A/FoTXbcgwZfLTMQodn+ckNnX31M/1M2f2/7VA7QBlvihontyHQOlIlryQXnGI0UMCD21oopK
-tW48ckv0wUVg8irBKGMeD65gTON/Fsw/ZBbBqadoD1jt85FIM1ql24WUBEBwO1d0ykCKOIbgcqes
-3fbcjQpruUNMBbIu1MMIRMqwjx/M7IvSKcS7VYRWl0/K2byzWvBAHh/1AgMBAAGjggFkMIIBYDAO
-BgNVHQ8BAf8EBAMCAQYwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMBIGA1UdEwEB/wQI
-MAYBAf8CAQAwMgYDVR0fBCswKTAnoCWgI4YhaHR0cDovL2NybC5zdGFydHNzbC5jb20vc2ZzY2Eu
-Y3JsMGYGCCsGAQUFBwEBBFowWDAkBggrBgEFBQcwAYYYaHR0cDovL29jc3Auc3RhcnRzc2wuY29t
-MDAGCCsGAQUFBzAChiRodHRwOi8vYWlhLnN0YXJ0c3NsLmNvbS9jZXJ0cy9jYS5jcnQwHQYDVR0O
-BBYEFJmXqxg1OotZRUOYsnJxyPT7Cc8WMB8GA1UdIwQYMBaAFE4L7xqkQFulF2mHMMo0aEPQQa7y
-MD8GA1UdIAQ4MDYwNAYEVR0gADAsMCoGCCsGAQUFBwIBFh5odHRwOi8vd3d3LnN0YXJ0c3NsLmNv
-bS9wb2xpY3kwDQYJKoZIhvcNAQELBQADggIBAJlBQQTO9iT1TjA0eEO7V/1AbBvMAfibjAgofxmJ
-01jBmHKg0pbTjWInTTYoxb3LBgz3mfjvvS1PjnIfb29MyVm0G/PSHjgq7Ews1dEJMPC9XTuxPf2c
-+MWLkynBlotW542JprW+iTWfZafyUtzIKW1hk0YASJ8zSSj8D++9yR+0UhkbvlECJkdi1+et0EaI
-7HIX6ccj1rfcFFflWX/fPT64dn9jpg9s0nuJug4WsVkEK236WndZoMHrZmgF7CIyZ3T0muqYwkAS
-DDcRt9A21o/Mc+D8Q6GVmKRGB3gEKvOtsioHZEqJv6CdAm3a6gloo5pX3RL1eCzc8Lzfs4T0ISZj
-r8xNMbTGlsuHaFH+stDewKsfnpo4N64OtAGrzmVfFFsMIRENRHsVlSEe/6LVpBpjn00+7bqEN3qe
-qSxIOraYJ12mJ08G4YnP2U1fadHIaS50O5ZXqAivoBl9pi/6CBNc5wIMlkXMyFZ0sLsI+9ErFDu9
-OJhX7iWCo69X0ydlzXj08+2K1PKyr+g6/vTPHur63JotNrhyoWEJyWEjBLA4QmJXfGpB5u+bCwNf
-sFpcYAlkiFt1Rs2vemgSBy3q4DHDbPKvr1YImZNRSHP+TX9NP94JRkmqcyD/qaN7u2JV1pRAlwG0
-npyrn6ZQM1QHV+iFbwQ4VqLMWk//QVo/rZy1MIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwcz1F+2kRA
-DzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjEp
-MCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMTGlN0YXJ0
-Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIzNlowejEL
-MAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAfBgNVBAMM
-GENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50
-aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqeP2vwE3Cp
-YosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjrFe0zmZWZ
-0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ0+c1NYFQ
-T6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJnmiiId9e
-0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7r2NVLkpo
-Gbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA0BtydQC0
-mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS7XEGOuCU
-09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6a1rkhJl7
-1rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8bxPJiX2/
-VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/MAsGA1Ud
-DwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAdBgNVHQ4E
-FgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI9PsJzxYw
-bwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5jb20wOQYI
-KwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQyLmNydDA4
-BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50Mi5jcmww
-IAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6Ly93d3cu
-c3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcBAgQwLDAq
-BggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3DQEBCwUA
-A4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7SG3MQkyO
-kvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndjZIHMfSkn
-hdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9RS51K1gt
-H4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11Yeq6UTW/
-JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwc
-z1F+2kRADzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20g
-THRkLjEpMCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMT
-GlN0YXJ0Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIz
-NlowejELMAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAf
-BgNVBAMMGENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9A
-c2NpZW50aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqe
-P2vwE3CpYosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjr
-Fe0zmZWZ0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ
-0+c1NYFQT6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJ
-nmiiId9e0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7
-r2NVLkpoGbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA
-0BtydQC0mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS
-7XEGOuCU09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6
-a1rkhJl71rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8
-bxPJiX2/VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/
-MAsGA1UdDwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAd
-BgNVHQ4EFgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI
-9PsJzxYwbwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5j
-b20wOQYIKwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQy
-LmNydDA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50
-Mi5jcmwwIAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6
-Ly93d3cuc3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcB
-AgQwLDAqBggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3
-DQEBCwUAA4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7
-SG3MQkyOkvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndj
-ZIHMfSknhdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9
-RS51K1gtH4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11
-Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
-MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
-cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
-QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
-SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTYxMTI5MDE1MjQ3WjBPBgkqhkiG9w0BCQQxQgRAU1f4
-86aaHpClILkV1WptmuHLqdyxYHJNazs2+3f+BxHURQeS9sMmcrTtxLwCxgW+Z0puHMDrzQ/wmCpo
-6qOfKTCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
-bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
-AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
-DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
-VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
-Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAJRmk
-6jCEEtsiw/Z/YGNUdjTPIxs0+HbXtDfLoaylukysOs6uZPzlKD6SrKYIquAzh2kjDsVgp4+vwBvs
-qwGcPLD8x4NklW+dWbrmKRhnTanv7+MLNXF9zW3Xv7+vY5bWSO4vmHL8CUO1JWPXU46xBwB2m1/8
-+T3klS58jsPc/3B9sesnc/xsDlYSetn4VMNUyyaXiSp6Cx2JIVbJODWZVRZmaa8XceDObFuIexoU
-S9U/5BpkHmBdrp6+clgLGqqx2k/eL30ZtKq/w5q8axnLZqngfuGEKR2XovJkCVP2sxJL3WSgry4z
-pT1GA6/Vow2kZhz5WxXCfjoXN+zkfiLsZ87BxXITQ0+dL8q/ZVUiXDGO90UY7IJ3CNXJYKikKqJB
-ZIGoF4dtIJMbkZlLpWUoLVYkG1cDE/i6GWU3bwF5ZAGTTcLfOj4Lp86ALgc6If855ZPnJ1qWrUpS
-9PkVLTN0jGYrFHHY86+O39Jv1P2/WEuMohyIdiLPXtU1tjCZhvT3bcRIXcJsfbowQY/rSCz1o9lU
-RLXKwvryVm6o6NU8cxEabq2k7JfxOpOblfCE0/diqBEiEWRzk3VkfGojB4T9LMTLlAtIaszgSzG9
-oZOL80wiVtmba0ctFqO7SXt1pSeg1BFPMnoIo8BWc7zn80XFbjheYJNjuJJdAqD0O/+VhEoAAAAA
-AAA=
+> So there's no point in protecting against this on the storage side...
+>=20
+> Either never write at all... or have good backups for these rare cases.
+>=20
+>=20
+>=20
+> Cheers,
+> Chris.
 
 
---=-JVNjyPqfck4/S7zmf559--
 
+--acOuGx3oQeOcSZJu
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iEYEARECAAYFAlg886wACgkQgfmLGlazG5xE5ACfeyg6jtyhLGwrCGcmxP01Jd17
+pg8AoI45+BltjyL+fyuN9U8Xbccn6wBp
+=KB55
+-----END PGP SIGNATURE-----
+
+--acOuGx3oQeOcSZJu--

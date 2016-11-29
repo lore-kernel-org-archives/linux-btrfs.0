@@ -1,49 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:51245 "EHLO
+Received: from [195.159.176.226] ([195.159.176.226]:34594 "EHLO
         blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1753460AbcK2FGb (ORCPT
+        with ESMTP id S1751308AbcK2FOb (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 29 Nov 2016 00:06:31 -0500
+        Tue, 29 Nov 2016 00:14:31 -0500
 Received: from list by blaine.gmane.org with local (Exim 4.84_2)
         (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1cBacb-0000Du-At
-        for linux-btrfs@vger.kernel.org; Tue, 29 Nov 2016 06:06:25 +0100
+        id 1cBakL-0004Yj-K7
+        for linux-btrfs@vger.kernel.org; Tue, 29 Nov 2016 06:14:25 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: mount option nodatacow for VMs on SSD?
-Date: Tue, 29 Nov 2016 05:06:17 +0000 (UTC)
-Message-ID: <pan$8ecb6$a69408d3$b47213c2$9bfeddf6@cox.net>
+Subject: Re: [Not TLS] Re: mount option nodatacow for VMs on SSD?
+Date: Tue, 29 Nov 2016 05:14:18 +0000 (UTC)
+Message-ID: <pan$a292d$fa229462$80743716$b85be0fd@cox.net>
 References: <20161125082840.GA32711@rus.uni-stuttgart.de>
         <20161126112710.6aca8bac@jupiter.sol.kaishome.de>
         <20161128003829.GD15348@rus.uni-stuttgart.de>
-        <20161128092015.70b75dd8@jupiter.sol.kaishome.de>
-        <ca646391-bd9f-49b2-bca4-8faee04fd82a@linuxsystems.it>
+        <pan$1eaab$d4d4facd$e2735d04$2fc4a8e@cox.net>
+        <2df2e8e6-5ac4-a9c0-70bc-406fd84e9784@cobb.uk.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Niccolò Belli posted on Mon, 28 Nov 2016 12:11:49 +0100 as excerpted:
+Graham Cobb posted on Mon, 28 Nov 2016 09:49:33 +0000 as excerpted:
 
-> On lunedì 28 novembre 2016 09:20:15 CET, Kai Krakow wrote:
->> You can, however, use chattr to make the subvolume root directory (that
->> one where it is mounted) nodatacow (chattr +C) _before_ placing any
->> files or directories in there. That way, newly created files and
->> directories will inherit the flag. Take note that this flag can only
->> applied to directories and empty (zero-sized) files.
+> On 28/11/16 02:56, Duncan wrote:
+>> It should still be worth turning on autodefrag on an existing somewhat
+>> fragmented filesystem.  It just might take some time to defrag files
+>> you do modify, and won't touch those you don't, which in some cases
+>> might make it worth defragging those manually.  Or simply create new
+>> filesystems, mount them with autodefrag, and copy everything over so
+>> you're starting fresh, as I do.
 > 
-> Do I keep checksumming for this directory such a way?
+> Could that "copy" be (a series of) send/receive, so that snapshots and
+> reflinks are preserved?  Does autodefrag work in that case or does the
+> send/receive somehow override that and end up preserving the original
+> (fragmented) extent structure?
 
-No.  Keeping checksums current on NOCOW files is racy, and compression 
-would be complex as well because rewritten data may compress more or less 
-well than the original so the on-filesystem size could change, so both 
-features are disabled in the presence of NOCOW, regardless of how it is 
-set.
+Very good question that I don't know the answer to as I've not seen it 
+discussed previously.  (I'm not a dev, just a list regular and user of 
+btrfs myself, and my personal use-case involves neither snapshots nor 
+send/receive, so on those topics if I've not seen it covered previously 
+either here or on the wiki, I won't know.)
 
-Put another way, btrfs assumes COW by default and many of its features 
-depend on COW -- that's why these features don't tend to be implemented 
-on conventional rewrite-in-place filesystems in the first place.  Both 
-checksumming and compression are among these COW-dependent features.
+Someone else know?
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

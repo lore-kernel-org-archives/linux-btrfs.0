@@ -1,100 +1,149 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yb0-f173.google.com ([209.85.213.173]:32910 "EHLO
-        mail-yb0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752167AbcK2Wwb (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:39810 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1753427AbcK2WyS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 29 Nov 2016 17:52:31 -0500
-Received: by mail-yb0-f173.google.com with SMTP id v132so12172905yba.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 Nov 2016 14:52:30 -0800 (PST)
+        Tue, 29 Nov 2016 17:54:18 -0500
+Date: Tue, 29 Nov 2016 17:54:00 -0500
+From: Zygo Blaxell <zblaxell@furryterror.org>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Goffredo Baroncelli <kreijack@inwind.it>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: RFC: raid with a variable stripe size
+Message-ID: <20161129225400.GT8685@hungrycats.org>
+References: <e6042e5a-d283-f66e-9d08-6028c9ba1946@libero.it>
+ <657fcefe-4e6c-ced3-a3c9-2dc1f77e1404@cn.fujitsu.com>
+ <CAJCQCtR==9wadS=9swcUhHJ77tGksvHMvNd3ZJrpt3+-U779tA@mail.gmail.com>
+ <cf02a446-f83d-0d4b-2b60-70a99e18ab39@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <0d3d3ecd-44a4-fb7f-8f68-aca342d89d04@googlemail.com>
-References: <10bbbf97-7f43-c972-a832-4a8cf054d5e5@xgm.de> <4ef63089-407d-0f18-b182-74c631874a02@gmail.com>
- <0d3d3ecd-44a4-fb7f-8f68-aca342d89d04@googlemail.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Tue, 29 Nov 2016 15:52:29 -0700
-Message-ID: <CAJCQCtSnt5yqm6kpA2AOz7p=wZFVxzUz8RH8r2o73ym45mYVFg@mail.gmail.com>
-Subject: Re: Convert from RAID 5 to 10
-To: Wilson Meier <wilson.meier@gmail.com>
-Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="6zn93sY2JrH9m7VZ"
+In-Reply-To: <cf02a446-f83d-0d4b-2b60-70a99e18ab39@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 29, 2016 at 3:34 PM, Wilson Meier <wilson.meier@gmail.com> wrote:
-> On 29.11.2016 18:54, Austin S. Hemmelgarn wrote:
->> On 2016-11-29 12:20, Florian Lindner wrote:
->>> Hello,
->>>
->>> I have 4 harddisks with 3TB capacity each. They are all used in a
->>> btrfs RAID 5. It has come to my attention, that there
->>> seem to be major flaws in btrfs' raid 5 implementation. Because of
->>> that, I want to convert the the raid 5 to a raid 10
->>> and I have several questions.
->>>
->>> * Is that possible as an online conversion?
->> Yes, as long as you have a complete array to begin with (converting from
->> a degraded raid5/6 array has the same issues as rebuilding a degraded
->> raid5/6 array).
->>>
->>> * Since my effective capacity will shrink during conversions, does
->>> btrfs check if there is enough free capacity to
->>> convert? As you see below, right now it's probably too full, but I'm
->>> going to delete some stuff.
->> No, you'll have to do the math yourself.  This would be a great project
->> idea to place on the wiki though.
->>>
->>> * I understand the command to convert is
->>>
->>> btrfs balance start -dconvert=raid10 -mconvert=raid10 /mnt
->>>
->>> Correct?
->> Yes, but I would personally convert first metadata then data.  The
->> raid10 profile gets better performance than raid5, so converting the
->> metadata first (by issuing a balance just covering the metadata) should
->> speed up the data conversion a bit).
->>>
->>> * What disks are allowed to fail? My understanding of a raid 10 is
->>> like that
->>>
->>> disks = {a, b, c, d}
->>>
->>> raid0( raid1(a, b), raid1(c, d) )
->>>
->>> This way (a XOR b) AND (c XOR d) are allowed to fail without the raid
->>> to fail (either a or b and c or d are allowed to fail)
->>>
->>> How is that with a btrfs raid 10?
->> A BTRFS raid10 can only sustain one disk failure.  Ideally, it would
->> work like you show, but in practice it doesn't.
-> I'm a little bit concerned right now. I migrated my 4 disk raid6 to
-> raid10 because of the known raid5/6 problems. I assumed that btrfs
-> raid10 can handle 2 disk failures as longs as they occur in different
-> stripes.
-> Could you please point out why it cannot sustain 2 disk failures?
 
-Conventional raid10 has a fixed assignment of which drives are
-mirrored pairs, and this doesn't happen with Btrfs at the device level
-but rather the chunk level. And a chunk stripe number is not fixed to
-a particular device, therefore it's possible a device will have more
-than one chunk stripe number. So what that means is the loss of two
-devices has a pretty decent chance of resulting in the loss of both
-copies of a chunk, whereas conventional RAID 10 must lose both
-mirrored pairs for data loss to happen.
+--6zn93sY2JrH9m7VZ
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-With very cursory testing what I've found is btrfs-progs establishes
-an initial stripe number to device mapping that's different than the
-kernel code. The kernel code appears to be pretty consistent so long
-as the member devices are identically sized. So it's probably not an
-unfixable problem, but the effect is that right now Btrfs raid10
-profile is more like raid0+1.
+On Tue, Nov 29, 2016 at 02:03:58PM +0800, Qu Wenruo wrote:
+> At 11/29/2016 01:51 PM, Chris Murphy wrote:
+> >On Mon, Nov 28, 2016 at 5:48 PM, Qu Wenruo <quwenruo@cn.fujitsu.com> wro=
+te:
+> >>
+> >>
+> >>At 11/19/2016 02:15 AM, Goffredo Baroncelli wrote:
+> >>>
+> >>>Hello,
+> >>>
+> >>>these are only my thoughts; no code here, but I would like to share it
+> >>>hoping that it could be useful.
+> >>>
+> >>>As reported several times by Zygo (and others), one of the problem of
+> >>>raid5/6 is the write hole. Today BTRFS is not capable to address it.
+> >>
+> >>
+> >>I'd say, no need to address yet, since current soft RAID5/6 can't handl=
+e it
+> >>yet.
+> >>
+> >>Personally speaking, Btrfs should implementing RAID56 support just like
+> >>Btrfs on mdadm.
+> >>See how badly the current RAID56 works?
+> >>
+> >>The marginally benefit of btrfs RAID56 to scrub data better than tradit=
+ion
+> >>RAID56 is just a joke in current code base.
+> >
+> >Btrfs is subject to the write hole problem on disk, but any read or
+> >scrub that needs to reconstruct from parity that is corrupt results in
+> >a checksum error and EIO. So corruption is not passed up to user
+> >space. Recent versions of md/mdadm support a write journal to avoid
+> >the write hole problem on disk in case of a crash.
+>=20
+> That's interesting.
+>=20
+> So I think it's less worthy to support RAID56 in btrfs, especially
+> considering the stability.
+>=20
+> My widest dream is, btrfs calls device mapper to build a micro RAID1/5/6/=
+10
+> device for each chunk.
+> Which should save us tons of codes and bugs.
+>=20
+> And for better recovery, enhance device mapper to provide interface to ju=
+dge
+> which block is correct.
+>=20
+> Although that's just dream anyway.
 
-You can use
-$ sudo btrfs insp dump-tr -t 3 /dev/
+It would be nice to do that for balancing.  In many balance cases
+(especially device delete and full balance after device add) it's not
+necessary to rewrite the data in a block group, only copy it verbatim
+to a different physical location (like pvmove does) and update the chunk
+tree with the new address when it's done.  No need to rewrite the whole
+extent tree.
 
-That will dump the chunk tree, and you can see if any device has more
-than one chunk stripe number associated with it.
+> Thanks,
+> Qu
+> >
+> >>>The problem is that the stripe size is bigger than the "sector size" (=
+ok
+> >>>sector is not the correct word, but I am referring to the basic unit of
+> >>>writing on the disk, which is 4k or 16K in btrfs).
+> >>>So when btrfs writes less data than the stripe, the stripe is not fill=
+ed;
+> >>>when it is filled by a subsequent write, a RMW of the parity is requir=
+ed.
+> >>>
+> >>>On the best of my understanding (which could be very wrong) ZFS try to
+> >>>solve this issue using a variable length stripe.
+> >>
+> >>
+> >>Did you mean ZFS record size?
+> >>IIRC that's file extent minimum size, and I didn't see how that can han=
+dle
+> >>the write hole problem.
+> >>
+> >>Or did ZFS handle the problem?
+> >
+> >ZFS isn't subject to the write hole. My understanding is they get
+> >around this because all writes are COW, there is no RMW.
+> >But the
+> >variable stripe size means they don't have to do the usual (fixed)
+> >full stripe write for just, for example a 4KiB change in data for a
+> >single file. Conversely Btrfs does do RMW in such a case.
+> >
+> >
+> >>Anyway, it should be a low priority thing, and personally speaking,
+> >>any large behavior modification involving  both extent allocator and bg
+> >>allocator will be bug prone.
+> >
+> >I tend to agree. I think the non-scalability of Btrfs raid10, which
+> >makes it behave more like raid 0+1, is a higher priority because right
+> >now it's misleading to say the least; and then the longer term goal
+> >for scaleable huge file systems is how Btrfs can shed irreparably
+> >damaged parts of the file system (tree pruning) rather than
+> >reconstruction.
+> >
+> >
+> >
+>=20
+>=20
 
+--6zn93sY2JrH9m7VZ
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
--- 
-Chris Murphy
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iEYEARECAAYFAlg+BwgACgkQgfmLGlazG5yhvwCfWKyCj0TKSlp4/rUR4YvUUZOu
+0jcAn2Fv9biWPaul4O0hdGeHmr4ZlZtJ
+=ZlJK
+-----END PGP SIGNATURE-----
+
+--6zn93sY2JrH9m7VZ--

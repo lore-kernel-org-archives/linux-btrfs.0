@@ -1,119 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:47312 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933335AbcK1UH3 (ORCPT
+Received: from mail-wj0-f177.google.com ([209.85.210.177]:36003 "EHLO
+        mail-wj0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1757483AbcK2PS0 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 Nov 2016 15:07:29 -0500
-Date: Mon, 28 Nov 2016 12:07:01 -0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org,
-        Anand Jain <anand.jain@oracle.com>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>
-Subject: Re: [PATCH v2 1/2] Btrfs: add more valid checks for superblock
-Message-ID: <20161128200658.GA5005@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1464980715-6442-1-git-send-email-bo.li.liu@oracle.com>
- <20161125165019.GZ12522@twin.jikos.cz>
+        Tue, 29 Nov 2016 10:18:26 -0500
+Received: by mail-wj0-f177.google.com with SMTP id qp4so148138987wjc.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 29 Nov 2016 07:18:25 -0800 (PST)
+Received: from [131.220.163.37] (ltfreyermuth.physik.uni-bonn.de. [131.220.163.37])
+        by smtp.googlemail.com with ESMTPSA id ua15sm68272317wjb.1.2016.11.29.07.18.23
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Tue, 29 Nov 2016 07:18:24 -0800 (PST)
+References: <79c9366a-913f-375f-8fa6-729947b74901@jp.fujitsu.com>
+Subject: Re: [bug] btrfs-progs-v4.8.4: test of 'btrfs receive' in xfstests
+ fails
+To: linux-btrfs@vger.kernel.org
+From: Oliver Freyermuth <o.freyermuth@googlemail.com>
+Message-ID: <4cb0f005-6c09-37e2-8448-ab5181e47a80@googlemail.com>
+Date: Tue, 29 Nov 2016 16:18:23 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20161125165019.GZ12522@twin.jikos.cz>
+In-Reply-To: <79c9366a-913f-375f-8fa6-729947b74901@jp.fujitsu.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Nov 25, 2016 at 05:50:19PM +0100, David Sterba wrote:
-> On Fri, Jun 03, 2016 at 12:05:14PM -0700, Liu Bo wrote:
-> > @@ -6648,6 +6648,7 @@ int btrfs_read_chunk_tree(struct btrfs_root *root)
-> >  	struct btrfs_key found_key;
-> >  	int ret;
-> >  	int slot;
-> > +	u64 total_dev = 0;
-> >  
-> >  	root = root->fs_info->chunk_root;
-> >  
-> > @@ -6689,6 +6690,7 @@ int btrfs_read_chunk_tree(struct btrfs_root *root)
-> >  			ret = read_one_dev(root, leaf, dev_item);
-> >  			if (ret)
-> >  				goto error;
-> > +			total_dev++;
-> >  		} else if (found_key.type == BTRFS_CHUNK_ITEM_KEY) {
-> >  			struct btrfs_chunk *chunk;
-> >  			chunk = btrfs_item_ptr(leaf, slot, struct btrfs_chunk);
-> > @@ -6698,6 +6700,28 @@ int btrfs_read_chunk_tree(struct btrfs_root *root)
-> >  		}
-> >  		path->slots[0]++;
-> >  	}
-> > +
-> > +	/*
-> > +	 * After loading chunk tree, we've got all device information,
-> > +	 * do another round of validation check.
-> > +	 */
-> > +	if (total_dev != root->fs_info->fs_devices->total_devices) {
-> > +		btrfs_err(root->fs_info,
-> > +	   "super_num_devices(%llu) mismatch with num_devices(%llu) found here",
-> > +			  btrfs_super_num_devices(root->fs_info->super_copy),
-> > +			  total_dev);
-> > +		ret = -EINVAL;
-> 
-> Turns out this check is too strict in combination with an intermediate
-> state and a bug in device deletion.
-> 
-> We've had several reports where a filesystem becomes unmountable due to
-> the above check, where the wrong value is just stored in the superblock
-> and is fixable by simply setting it to the right value. The right value
-> is number of dev items found in the dev tree, which is exactly the
-> total_dev that we read here.
-> 
-> The intermediate state can be caused by removing the device item in
-> btrfs_rm_device (see comment before btrfs_rm_dev_item call). This
-> apparently happens, when the device deletion is not finished, ie. the
-> superblock is not overwritten with a new copy.
+Hi, 
 
-I see.
+just to chime in on this: This issue also affects me as a "downstream" user, 
+so it also breaks real-life usecases. 
 
-Looks like currently it does commit_transaction in btrfs_rm_devi_item() while it
-doesn't in btrfs_add_device, so it turns out that the logics in adding a device
-and removing a device are a little bit different,
+I use btrbk for backup, and when performing a regular incremental backup,
+after switching to btrfs-progs 4.8.4, I get the same "short read from stream" problem. 
 
-btrfs_rm_device                              btrfs_init_new_devices
-  ...                                          ...
-  ->btrfs_rm_dev_item                          ->btrfs_start_transaction()
-    ->btrfs_start_transaction                  ->mutex_lock(&device_list_mutex)
-    ->#rm dev item in chunk tree               ->list_add
-    ->btrfs_commit_transaction                 ->btrfs_set_super_num_device
-  ->mutex_lock(&device_list_mutex)             ->mutex_unlock(&device_list_mutex)
-  ->list_del()                                 ->btrfs_add_device
-  ->btrfs_set_super_num_device                 ->btrfs_commit_transaction()
-  ->mutext_unlock(&device_list_mutex)
+Internally, btrbk issues something along the lines of:
+btrfs send -p /mnt/btrfs_pool/_btrbk_snap/home.20161127T020001+0100 /mnt/btrfs_pool/_btrbk_snap/home.20161127T030001+0100 | btrfs receive /mnt/btrfs_backup/alien17/
+which then exits with a non-zero return code due to the "short read from stream" issue. 
 
+Needless to say, everything is fine again after downgrade to btrfs-progs 4.8.3. 
 
-Not sure why we made it different around commit_transaction, but seems that we
-can avoid the situation described above by changing how we play with transaction
-in rm_device.
+Cheers, 
+	Oliver
 
-> 
-> So: do you agree to make it just a warning, and fixup the superblock
-> num_devices here? A userspace fix is also possible, but when this
-> happens and the filesystem is not mountable, a fix from outside of the
-> filesystem might be hard.
-
-I'm OK with setting up a warning.
-
-Thanks,
-
--liubo
-
-> 
-> > +		goto error;
-> > +	}
-> > +	if (btrfs_super_total_bytes(root->fs_info->super_copy) <
-> > +	    root->fs_info->fs_devices->total_rw_bytes) {
-> > +		btrfs_err(root->fs_info,
-> > +	"super_total_bytes(%llu) mismatch with fs_devices total_rw_bytes(%llu)",
-> > +			  btrfs_super_total_bytes(root->fs_info->super_copy),
-> > +			  root->fs_info->fs_devices->total_rw_bytes);
-> > +		ret = -EINVAL;
-> > +		goto error;
-> > +	}
-> >  	ret = 0;
-> >  error:
-> >  	unlock_chunks(root);
+PS: While I will check back for replies in the archive, a courtesy cc will be 
+appreciated since I am not subscribed to the list.

@@ -1,81 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:48832 "EHLO
-        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-OK)
-        by vger.kernel.org with ESMTP id S1755713AbcK1Vsh (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:51612 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1753137AbcK2Asa (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 Nov 2016 16:48:37 -0500
-Date: Mon, 28 Nov 2016 16:48:29 -0500
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: Goffredo Baroncelli <kreijack@inwind.it>
-Cc: Christoph Anton Mitterer <calestyo@scientia.net>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: raid56: Use correct stolen pages to calculate P/Q
-Message-ID: <20161128214829.GO8685@hungrycats.org>
-References: <20161121085016.7148-1-quwenruo@cn.fujitsu.com>
- <94606bda-dab0-e7c9-7fc6-1af9069b64fc@inwind.it>
- <f814eb1b-844b-2ace-c948-3be20da2fd29@cn.fujitsu.com>
- <a75c9a72-148c-9fbd-dfb8-7cde58bee9c9@inwind.it>
- <20161125043119.GG8685@hungrycats.org>
- <cd7ee5cc-d384-7c9c-d656-cef2569b749a@inwind.it>
- <1480304269.6254.6.camel@scientia.net>
- <2b15ae6f-51ce-45ff-47c0-699506de4e56@inwind.it>
+        Mon, 28 Nov 2016 19:48:30 -0500
+Subject: Re: RFC: raid with a variable stripe size
+To: <kreijack@inwind.it>, linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <e6042e5a-d283-f66e-9d08-6028c9ba1946@libero.it>
+CC: Zygo Blaxell <zblaxell@furryterror.org>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <657fcefe-4e6c-ced3-a3c9-2dc1f77e1404@cn.fujitsu.com>
+Date: Tue, 29 Nov 2016 08:48:19 +0800
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="yK/6QRnH3Zanb0EF"
-In-Reply-To: <2b15ae6f-51ce-45ff-47c0-699506de4e56@inwind.it>
+In-Reply-To: <e6042e5a-d283-f66e-9d08-6028c9ba1946@libero.it>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---yK/6QRnH3Zanb0EF
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
 
-On Mon, Nov 28, 2016 at 07:32:38PM +0100, Goffredo Baroncelli wrote:
-> On 2016-11-28 04:37, Christoph Anton Mitterer wrote:
-> > I think for safety it's best to repair as early as possible (and thus
-> > on read when a damage is detected), as further  blocks/devices may fail
-> > till eventually a scrub(with repair) would be run manually.
-> >=20
-> > However, there may some workloads under which such auto-repair is
-> > undesirable as it may cost performance and safety may be less important
-> > than that.
->=20
-> I am assuming that a corruption is a quite rare event. So occasionally
-> it could happens that a page is corrupted and the system corrects
-> it. This shouldn't  have an impact on the workloads.
+At 11/19/2016 02:15 AM, Goffredo Baroncelli wrote:
+> Hello,
+>
+> these are only my thoughts; no code here, but I would like to share it hoping that it could be useful.
+>
+> As reported several times by Zygo (and others), one of the problem of raid5/6 is the write hole. Today BTRFS is not capable to address it.
 
-Depends heavily on the specifics of the failure case.  If a drive's
-embedded controller RAM fails, you get corruption on the majority of
-reads from a single disk, and most writes will be corrupted (even if they
-were not before).  If there's a transient failure due to environmental
-issues (e.g. short-term high-amplitude vibration or overheating) then
-writes may pause for mechanical retry loops.  If there is bitrot in SSDs
-(particularly in the address translation tables) it looks like a wall
-of random noise that only ends when the disk goes offline.  You can get
-combinations of these (e.g. RAM failures caused by transient overheating)
-where the drive's behavior changes over time.
+I'd say, no need to address yet, since current soft RAID5/6 can't handle 
+it yet.
 
-When in doubt, don't write.
+Personally speaking, Btrfs should implementing RAID56 support just like 
+Btrfs on mdadm.
+See how badly the current RAID56 works?
 
+The marginally benefit of btrfs RAID56 to scrub data better than 
+tradition RAID56 is just a joke in current code base.
+
+>
+> The problem is that the stripe size is bigger than the "sector size" (ok sector is not the correct word, but I am referring to the basic unit of writing on the disk, which is 4k or 16K in btrfs).
+> So when btrfs writes less data than the stripe, the stripe is not filled; when it is filled by a subsequent write, a RMW of the parity is required.
+>
+> On the best of my understanding (which could be very wrong) ZFS try to solve this issue using a variable length stripe.
+
+Did you mean ZFS record size?
+IIRC that's file extent minimum size, and I didn't see how that can 
+handle the write hole problem.
+
+Or did ZFS handle the problem?
+
+Anyway, it should be a low priority thing, and personally speaking,
+any large behavior modification involving  both extent allocator and bg 
+allocator will be bug prone.
+
+>
+> On BTRFS this could be achieved using several BGs (== block group or chunk), one for each stripe size.
+>
+> For example, if a filesystem - RAID5 is composed by 4 DISK, the filesystem should have three BGs:
+> BG #1,composed by two disks (1 data+ 1 parity)
+> BG #2 composed by three disks (2 data + 1 parity)
+> BG #3 composed by four disks (3 data + 1 parity).
+
+Too complicated bg layout and further extent allocator modification.
+
+More code means more bugs, and I'm pretty sure it will be bug prone.
+
+
+Although the idea of variable stripe size can somewhat reduce the 
+problem under certain situation.
+
+For example, if sectorsize is 64K, and we make stripe len to 32K, and 
+use 3 disc RAID5, we can avoid such write hole problem.
+Withouth modification to extent/chunk allocator.
+
+And I'd prefer to make stripe len mkfs time parameter, not possible to 
+modify after mkfs. To make things easy.
+
+Thanks,
+Qu
+
+>
+> If the data to be written has a size of 4k, it will be allocated to the BG #1.
+> If the data to be written has a size of 8k, it will be allocated to the BG #2
+> If the data to be written has a size of 12k, it will be allocated to the BG #3
+> If the data to be written has a size greater than 12k, it will be allocated to the BG3, until the data fills a full stripes; then the remainder will be stored in BG #1 or BG #2.
+>
+>
+> To avoid unbalancing of the disk usage, each BG could use all the disks, even if a stripe uses less disks: i.e
+>
+> DISK1 DISK2 DISK3 DISK4
+> S1    S1    S1    S2
+> S2    S2    S3    S3
+> S3    S4    S4    S4
+> [....]
+>
+> Above is show a BG which uses all the four disks, but has a stripe which spans only 3 disks.
+>
+>
+> Pro:
+> - btrfs already is capable to handle different BG in the filesystem, only the allocator has to change
+> - no more RMW are required (== higher performance)
+>
+> Cons:
+> - the data will be more fragmented
+> - the filesystem, will have more BGs; this will require time-to time a re-balance. But is is an issue which we already know (even if may be not 100% addressed).
+>
+>
+> Thoughts ?
+>
 > BR
 > G.Baroncelli
-> --=20
-> gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-> Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
->=20
+>
+>
+>
 
---yK/6QRnH3Zanb0EF
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iEYEARECAAYFAlg8pi0ACgkQgfmLGlazG5yU9QCgj+dkjWhfe2JkQE/8r4IV+XNU
-UHwAn0V4IbEw1K8Yr7kmev8tqFmWgklx
-=aEv8
------END PGP SIGNATURE-----
-
---yK/6QRnH3Zanb0EF--

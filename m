@@ -1,75 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f178.google.com ([209.85.161.178]:35784 "EHLO
-        mail-yw0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751673AbcK3XCa (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 Nov 2016 18:02:30 -0500
-Received: by mail-yw0-f178.google.com with SMTP id i145so171488238ywg.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Nov 2016 15:02:30 -0800 (PST)
+Received: from mx.ewheeler.net ([66.155.3.69]:54688 "EHLO mail.ewheeler.net"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1754515AbcK3X5i (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 30 Nov 2016 18:57:38 -0500
+Date: Wed, 30 Nov 2016 15:57:28 -0800 (PST)
+From: Eric Wheeler <bcache@lists.ewheeler.net>
+To: Marc MERLIN <marc@merlins.org>
+cc: Coly Li <i@coly.li>, linux-bcache@vger.kernel.org,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: 4.8.8, bcache deadlock and hard lockup
+In-Reply-To: <20161130164646.d6ejlv72hzellddd@merlins.org>
+Message-ID: <alpine.LRH.2.11.1611301553420.22682@mail.ewheeler.net>
+References: <20161118164643.g7ttuzgsj74d6fbz@merlins.org> <20161118184915.j6dlazbgminxnxzx@merlins.org> <b6c3daab-d990-e873-4d0f-0f0afe2259b1@coly.li> <alpine.LRH.2.11.1611291255350.1914@mail.ewheeler.net> <20161130164646.d6ejlv72hzellddd@merlins.org>
 MIME-Version: 1.0
-In-Reply-To: <04e767a6-ff6f-95ba-f2f9-6061035dcd10@profihost.ag>
-References: <04e767a6-ff6f-95ba-f2f9-6061035dcd10@profihost.ag>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Wed, 30 Nov 2016 16:02:29 -0700
-Message-ID: <CAJCQCtQJV5jCLbON3Fk+DHCztRqAVN35rfMcHiWKWRT3yg+c_A@mail.gmail.com>
-Subject: Re: Metadata balance fails ENOSPC
-To: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: TEXT/PLAIN; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 30, 2016 at 2:03 PM, Stefan Priebe - Profihost AG
-<s.priebe@profihost.ag> wrote:
-> Hello,
->
-> # btrfs balance start -v -dusage=0 -musage=1 /ssddisk/
-> Dumping filters: flags 0x7, state 0x0, force is off
->   DATA (flags 0x2): balancing, usage=0
->   METADATA (flags 0x2): balancing, usage=1
->   SYSTEM (flags 0x2): balancing, usage=1
-> ERROR: error during balancing '/ssddisk/': No space left on device
-> There may be more info in syslog - try dmesg | tail
+On Wed, 30 Nov 2016, Marc MERLIN wrote:
+> +btrfs mailing list, see below why
+> 
+> On Tue, Nov 29, 2016 at 12:59:44PM -0800, Eric Wheeler wrote:
+> > On Mon, 27 Nov 2016, Coly Li wrote:
+> > > 
+> > > Yes, too many work queues... I guess the locking might be caused by some
+> > > very obscure reference of closure code. I cannot have any clue if I
+> > > cannot find a stable procedure to reproduce this issue.
+> > > 
+> > > Hmm, if there is a tool to clone all the meta data of the back end cache
+> > > and whole cached device, there might be a method to replay the oops much
+> > > easier.
+> > > 
+> > > Eric, do you have any hint ?
+> > 
+> > Note that the backing device doesn't have any metadata, just a superblock. 
+> > You can easily dd that off onto some other volume without transferring the 
+> > data. By default, data starts at 8k, or whatever you used in `make-bcache 
+> > -w`.
+> 
+> Ok, Linus helped me find a workaround for this problem:
+> https://lkml.org/lkml/2016/11/29/667
+> namely:
+>    echo 2 > /proc/sys/vm/dirty_ratio
+>    echo 1 > /proc/sys/vm/dirty_background_ratio
+> (it's a 24GB system, so the defaults of 20 and 10 were creating too many
+> requests in th buffers)
+> 
+> Note that this is only a workaround, not a fix.
+> 
+> When I did this and re tried my big copy again, I still got 100+ kernel
+> work queues, but apparently the underlying swraid5 was able to unblock
+> and satisfy the write requests before too many accumulated and crashed
+> the kernel.
+> 
+> I'm not a kernel coder, but seems to me that bcache needs a way to
+> throttle incoming requests if there are too many so that it does not end
+> up in a state where things blow up due to too many piled up requests.
+> 
+> You should be able to reproduce this by taking 5 spinning rust drives,
+> put raid5 on top, dmcrypt, bcache and hopefully any filesystem (although
+> I used btrfs) and send lots of requests.
+> Actually to be honest, the problems have mostly been happening when I do
+> btrfs scrub and btrfs send/receive which both generate I/O from within
+> the kernel instead of user space.
+> So here, btrfs may be a contributor to the problem too, but while btrfs
+> still trashes my system if I remove the caching device on bcache (and
+> with the default dirty ratio values), it doesn't crash the kernel.
+> 
+> I'll start another separate thread with the btrfs folks on how much
+> pressure is put on the system, but on your side it would be good to help
+> ensure that bcache doesn't crash the system altogether if too many
+> requests are allowed to pile up.
 
-You haven't provided kernel messages at the time of the error.
 
-Also useful is the kernel version.
+Try BFQ.  It is AWESOME and helps reduce the congestion problem with bulk 
+writes at the request queue on its way to the spinning disk or SSD:
+	http://algo.ing.unimo.it/people/paolo/disk_sched/
 
+use the latest BFQ git here, merge it into v4.8.y:
+	https://github.com/linusw/linux-bfq/commits/bfq-v8
 
+This doesn't completely fix the dirty_ration problem, but it is far better 
+than CFQ or deadline in my opinion (and experience).
 
->
-> # btrfs filesystem show /ssddisk/
-> Label: none  uuid: a69d2e90-c2ca-4589-9876-234446868adc
->         Total devices 1 FS bytes used 305.67GiB
->         devid    1 size 500.00GiB used 500.00GiB path /dev/vdb1
->
-> # btrfs filesystem usage /ssddisk/
-> Overall:
->     Device size:                 500.00GiB
->     Device allocated:            500.00GiB
->     Device unallocated:            1.05MiB
-
-Drive is actually fully allocated so if Btrfs needs to create a new
-chunk right now, it can't. However,
+-Eric
 
 
 
->
-> Data,single: Size:483.97GiB, Used:298.18GiB
->    /dev/vdb1     483.97GiB
->
-> Metadata,single: Size:16.00GiB, Used:7.51GiB
->    /dev/vdb1      16.00GiB
->
-> System,single: Size:32.00MiB, Used:144.00KiB
->    /dev/vdb1      32.00MiB
-
-All three chunk types have quite a bit of unused space in them, so
-it's unclear why there's a no space left error.
-
-Try remounting with enoscp_debug, and then trigger the problem again,
-and post the resulting kernel messages.
+--
+Eric Wheeler
 
 
--- 
-Chris Murphy
+> 
+> Thanks,
+> Marc
+> -- 
+> "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+> Microsoft is to operating systems ....
+>                                       .... what McDonalds is to gourmet cooking
+> Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-bcache" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

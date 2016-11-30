@@ -1,40 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:50830 "EHLO
-        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S966604AbcKLReE (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 12 Nov 2016 12:34:04 -0500
-Date: Sat, 12 Nov 2016 09:34:01 -0800
-From: Christoph Hellwig <hch@infradead.org>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: Christoph Hellwig <hch@infradead.org>, linux-btrfs@vger.kernel.org,
-        Miao Xie <miaox@cn.fujitsu.com>,
-        Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: Re: bi_vcnt checks for repair
-Message-ID: <20161112173401.GA27521@infradead.org>
-References: <20161110200601.GA2859@infradead.org>
- <20161111193151.GA30930@dhcp-whq-twvpn-1-vpnpool-10-159-131-21.vpn.oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:33688 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1757922AbcK3ObR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 30 Nov 2016 09:31:17 -0500
+Date: Wed, 30 Nov 2016 15:31:11 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.com
+Subject: Re: [PATCH] btrfs-progs: Use helper functions to access
+ btrfs_super_block->sys_chunk_array_size
+Message-ID: <20161130143111.GL12522@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1480431542-16889-1-git-send-email-chandan@linux.vnet.ibm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20161111193151.GA30930@dhcp-whq-twvpn-1-vpnpool-10-159-131-21.vpn.oracle.com>
+In-Reply-To: <1480431542-16889-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Nov 11, 2016 at 11:31:51AM -0800, Liu Bo wrote:
-> Try to explain it a bit, the following assumes that the data that's
-> being read has at least one copy in another device,
+On Tue, Nov 29, 2016 at 08:29:02PM +0530, Chandan Rajendra wrote:
+> btrfs_super_block->sys_chunk_array_size is stored as le32 data on
+> disk. However insert_temp_chunk_item() writes sys_chunk_array_size in
+> host cpu order. This commit fixes this by using super block access
+> helper functions to read and write
+> btrfs_super_block->sys_chunk_array_size field.
 > 
-> if a read bio contains two pages and the second one is failing on
-> checksum check, then we get into bio_readpage_error, in which it finds
-> this bio has two pages, so it creats a new bio (so-called validation
-> request) which only includes the fail-on-checksum victim page and issues
-> it with REQ_FAILFAST_DEV to read the page again in hope of passing the
-> checksum check, if it stills fails somehow, it comes into
-> bio_readpage_error again to do another try but along with a different
-> copy.
+> Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+> ---
+>  utils.c | 5 ++++-
+>  1 file changed, 4 insertions(+), 1 deletion(-)
 > 
-> Overall, this bi_vcnt is to tell whether the bio is a normal one and a
-> validation one.  If the validation bio got merged somehow, then we need
-> to do something to prevent that from happening.
+> diff --git a/utils.c b/utils.c
+> index d0189ad..7b17b20 100644
+> --- a/utils.c
+> +++ b/utils.c
+> @@ -562,14 +562,17 @@ static int insert_temp_chunk_item(int fd, struct extent_buffer *buf,
+>  	 */
+>  	if (type & BTRFS_BLOCK_GROUP_SYSTEM) {
+>  		char *cur;
+> +		u32 array_size;
+>  
+>  		cur = (char *)sb->sys_chunk_array + sb->sys_chunk_array_size;
 
-Can't we just set a different end_io handler for the two cases?
+This should also use the accessor, 'sb' is directly mapped to the buffer
+read from disk.
+
+>  		memcpy(cur, &disk_key, sizeof(disk_key));
+>  		cur += sizeof(disk_key);
+>  		read_extent_buffer(buf, cur, (unsigned long int)chunk,
+>  				   btrfs_chunk_item_size(1));
+> -		sb->sys_chunk_array_size += btrfs_chunk_item_size(1) +
+> +		array_size = btrfs_super_sys_array_size(sb);
+> +		array_size += btrfs_chunk_item_size(1) +
+>  					    sizeof(disk_key);
+> +		btrfs_set_super_sys_array_size(sb, array_size);
+>  
+>  		ret = write_temp_super(fd, sb, cfg->super_bytenr);
+>  	}
+> -- 
+> 2.5.5
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

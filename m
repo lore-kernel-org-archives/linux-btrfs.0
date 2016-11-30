@@ -1,87 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:37823 "EHLO
-        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754403AbcK3SRV (ORCPT
+Received: from mail-yw0-f196.google.com ([209.85.161.196]:34939 "EHLO
+        mail-yw0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1422849AbcK3S7x (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 Nov 2016 13:17:21 -0500
-Date: Wed, 30 Nov 2016 10:16:53 -0800
-From: Marc MERLIN <marc@merlins.org>
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Michal Hocko <mhocko@kernel.org>, Vlastimil Babka <vbabka@suse.cz>,
-        linux-mm <linux-mm@kvack.org>, Joonsoo Kim <iamjoonsoo.kim@lge.com>,
-        torvalds@linux-foundation.org
-Message-ID: <20161130181653.g2hujqqu2fu2unjj@merlins.org>
-References: <20161118164643.g7ttuzgsj74d6fbz@merlins.org>
- <20161118184915.j6dlazbgminxnxzx@merlins.org>
- <b6c3daab-d990-e873-4d0f-0f0afe2259b1@coly.li>
- <alpine.LRH.2.11.1611291255350.1914@mail.ewheeler.net>
- <20161130164646.d6ejlv72hzellddd@merlins.org>
- <20161130171814.3yrqzzoocg3kz4ki@merlins.org>
- <6303e492-62f8-cbcc-4536-81350f2e9a86@gmail.com>
+        Wed, 30 Nov 2016 13:59:53 -0500
+Received: by mail-yw0-f196.google.com with SMTP id b66so15185132ywh.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Nov 2016 10:59:53 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <6303e492-62f8-cbcc-4536-81350f2e9a86@gmail.com>
-Subject: Re: btrfs flooding the I/O subsystem and hanging the machine, with
- bcache cache turned off
+In-Reply-To: <20161130190404.4f0e4bd5@natsu>
+References: <10bbbf97-7f43-c972-a832-4a8cf054d5e5@xgm.de> <4ef63089-407d-0f18-b182-74c631874a02@gmail.com>
+ <0d3d3ecd-44a4-fb7f-8f68-aca342d89d04@googlemail.com> <CAJCQCtSnt5yqm6kpA2AOz7p=wZFVxzUz8RH8r2o73ym45mYVFg@mail.gmail.com>
+ <fce2df8b-0775-1ecf-c08d-960018822c20@googlemail.com> <20161130103808.74e5ae95@natsu>
+ <d9a72702-0507-c085-3bed-7ee5f8063ae3@gmail.com> <20161130190404.4f0e4bd5@natsu>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Wed, 30 Nov 2016 11:59:51 -0700
+Message-ID: <CAJCQCtTQmJ5rE5GqntDBZwuq4TqgbJJa_uWDie1nFG+mTvfHaQ@mail.gmail.com>
+Subject: Re: Convert from RAID 5 to 10
+To: Roman Mamedov <rm@romanrm.net>
+Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Wilson Meier <wilson.meier@gmail.com>,
+        Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-+folks from linux-mm thread for your suggestion
+On Wed, Nov 30, 2016 at 7:04 AM, Roman Mamedov <rm@romanrm.net> wrote:
+> On Wed, 30 Nov 2016 07:50:17 -0500
 
-On Wed, Nov 30, 2016 at 01:00:45PM -0500, Austin S. Hemmelgarn wrote:
-> > swraid5 < bcache < dmcrypt < btrfs
-> > 
-> > Copying with btrfs send/receive causes massive hangs on the system.
-> > Please see this explanation from Linus on why the workaround was
-> > suggested:
-> > https://lkml.org/lkml/2016/11/29/667
-> And Linux' assessment is absolutely correct (at least, the general
-> assessment is, I have no idea about btrfs_start_shared_extent, but I'm more
-> than willing to bet he's correct that that's the culprit).
+> Also I don't know what is particularly insane about copying a 4-8 GB file onto
+> a storage array. I'd expect both disks to write at the same time (like they
+> do in pretty much any other RAID1 system), not one-after-another, effectively
+> slowing down the entire operation by as much as 2x in extreme cases.
 
-> > All of this mostly went away with Linus' suggestion:
-> > echo 2 > /proc/sys/vm/dirty_ratio
-> > echo 1 > /proc/sys/vm/dirty_background_ratio
-> > 
-> > But that's hiding the symptom which I think is that btrfs is piling up too many I/O
-> > requests during btrfs send/receive and btrfs scrub (probably balance too) and not
-> > looking at resulting impact to system health.
+I don't experience this behavior. Writes take the same amount of time
+to single profile volume as a two device raid1 profile volume. iotop
+reports 2x the write bandwidth when writing to the raid1 volume, which
+corresponds to simultaneous writes to both drives in the volume. It's
+also not an elaborate setup by any means: two laptop drives, each in
+cheap USB 3.0 cases using bus power only, connected to a USB 3.0 hub,
+in turn connected to an Intel NUC.
 
-> I see pretty much identical behavior using any number of other storage
-> configurations on a USB 2.0 flash drive connected to a system with 16GB of
-> RAM with the default dirty ratios because it's trying to cache up to 3.2GB
-> of data for writeback.  While BTRFS is doing highly sub-optimal things here,
-> the ancient default writeback ratios are just as much a culprit.  I would
-> suggest that get changed to 200MB or 20% of RAM, whichever is smaller, which
-> would give overall almost identical behavior to x86-32, which in turn works
-> reasonably well for most cases.  I sadly don't have the time, patience, or
-> expertise to write up such a patch myself though.
 
-Dear linux-mm folks, is that something you could consider (changing the
-dirty_ratio defaults) given that it affects at least bcache and btrfs
-(with or without bcache)?
+>
+> Comparing to Ext4, that one appears to have the "errors=continue" behavior by
+> default, the user has to explicitly request "errors=remount-ro", and I have
+> never seen anyone use or recommend the third option of "errors=panic", which
+> is basically the equivalent of the current Btrfs practce.
 
-By the way, on the 200MB max suggestion, when I had 2 and 1% (or 480MB
-and 240MB on my 24GB system), this was enough to make btrfs behave
-sanely, but only if I had bcache turned off.
-With bcache enabled, those values were just enough so that bcache didn't
-crash my system, but not enough that prevent undesirable behaviour
-(things hanging, 100+ bcache kworkers piled up, and more). However, the
-copy did succeed, despite the relative impact on the system, so it's
-better than nothing :)
-But the impact from bcache probably goes beyond what btrfs is
-responsible for, so I have a separate thread on the bcache list:
-http://marc.info/?l=linux-bcache&m=148052441423532&w=2
-http://marc.info/?l=linux-bcache&m=148052620524162&w=2
+I think in the context of degradedness, it may be appropriate to mount
+degraded,ro by default rather than fail. But changing the default
+isn't enough for the root fs use case, because the mount command isn't
+even issued when udev's btrfs 'dev scan' fails to report back all
+devices available. In this case there is a sort of "pre check" before
+even mounting is attempted, and that is what fails.
 
-On the plus side, btrfs did ok with 0 visible impact to my system with
-those 480 and 240MB dirty ratio values.
+Also,  Btrfs has fatal_errors=panic and it's not the default. Rather,
+we just get mount failure. There really isn't anything quite like this
+in the mdadm/lvm + other file system world where the array is active
+degraded and the file system mounts anyway; if it doesn't mount it's
+because the array isn't active, and doesn't even exist yet.
 
-Thanks for your reply, Austin.
-Marc
+
+> Unplugging and replugging a SATA cable of a RAID1 member should never put your
+> system under the risk of a massive filesystem corruption; you cannot say it
+> absolutely doesn't with the current implementation.
+
+I can't say it absolutely doesn't even with md. Of course it
+shouldn't, but users do report corruptions on all of the other fs
+lists (ext4, XFS, linux-raid) from time to time that are not the
+result of user error.
+
+
+
+
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+Chris Murphy

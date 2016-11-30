@@ -1,56 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:58633 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1752603AbcK3CNz (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 29 Nov 2016 21:13:55 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1cBuP5-0002eV-9Z
-        for linux-btrfs@vger.kernel.org; Wed, 30 Nov 2016 03:13:47 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: True size of btrfs data chunk
-Date: Wed, 30 Nov 2016 02:13:38 +0000 (UTC)
-Message-ID: <pan$b11a5$ec6d0e80$982b9cb0$a4cf188b@cox.net>
-References: <CAGqmi74qK2v0JCtAjan8aju+sK3LWPWwMgnJOP3i2srrqnLHSA@mail.gmail.com>
-        <44a745cd-ebb0-e62b-371c-8a37edd951fb@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from len.romanrm.net ([195.154.117.182]:51308 "EHLO len.romanrm.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750700AbcK3FiO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 30 Nov 2016 00:38:14 -0500
+Date: Wed, 30 Nov 2016 10:38:08 +0500
+From: Roman Mamedov <rm@romanrm.net>
+To: Wilson Meier <wilson.meier@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Convert from RAID 5 to 10
+Message-ID: <20161130103808.74e5ae95@natsu>
+In-Reply-To: <fce2df8b-0775-1ecf-c08d-960018822c20@googlemail.com>
+References: <10bbbf97-7f43-c972-a832-4a8cf054d5e5@xgm.de>
+ <4ef63089-407d-0f18-b182-74c631874a02@gmail.com>
+ <0d3d3ecd-44a4-fb7f-8f68-aca342d89d04@googlemail.com>
+ <CAJCQCtSnt5yqm6kpA2AOz7p=wZFVxzUz8RH8r2o73ym45mYVFg@mail.gmail.com>
+ <fce2df8b-0775-1ecf-c08d-960018822c20@googlemail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Austin S. Hemmelgarn posted on Tue, 29 Nov 2016 09:58:50 -0500 as
-excerpted:
+On Wed, 30 Nov 2016 00:16:48 +0100
+Wilson Meier <wilson.meier@gmail.com> wrote:
 
-> On 2016-11-29 09:32, Timofey Titovets wrote:
->> Hi, as wiki say https://btrfs.wiki.kernel.org/index.php/Glossary:
+> That said, btrfs shouldn't be used for other then raid1 as every other
+> raid level has serious problems or at least doesn't work as the expected
+> raid level (in terms of failure recovery).
 
-Bad link.  Without the terminating colon it works, however.
+RAID1 shouldn't be used either:
 
-https://btrfs.wiki.kernel.org/index.php/Glossary
+*) Read performance is not optimized: all metadata is always read from the
+first device unless it has failed, data reads are supposedly balanced between
+devices per PID of the process reading. Better implementations dispatch reads
+per request to devices that are currently idle.
 
->> A part of a block group. Chunks are either 1 GiB in size (for data) or
->> 256 MiB (for metadata).
+*) Write performance is not optimized, during long full bandwidth sequential
+writes it is common to see devices writing not in parallel, but with a long
+periods of just one device writing, then another. (Admittedly have been some
+time since I tested that).
 
-> This is only about the normal case.  Chunks are variable in size.  In
-> most cases, data chunks will be 1GB and metadata 256MB.  They will
-> however be smaller if there isn't enough space left for a full chunk,
-> and will get larger as well once you get past a certain filesystem size
-> (I don't remember the exact size, but I've seen people talking about big
-> (double digit TB sized) filesystems with 5GB+ sized data chunks).
+*) A degraded RAID1 won't mount by default.
 
-Yes.  The wiki is correct about the _nominal_ size, but it doesn't say 
-"nominal", making the overall claim invalid.
+If this was the root filesystem, the machine won't boot.
 
-If I had a wiki account I'd probably change it right now, but for 
-personal reasons I don't fully understand myself, I seem to treat web 
-pages, including wikis I could in theory edit, as read-only, even if the 
-alternative is replying repeatedly to list threads such as this, vs. a 
-single wiki edit.  [shrug]
+To mount it, you need to add the "degraded" mount option.
+However you have exactly a single chance at that, you MUST restore the RAID to
+non-degraded state while it's mounted during that session, since it won't ever
+mount again in the r/w+degraded mode, and in r/o mode you can't perform any
+operations on the filesystem, including adding/removing devices.
+
+*) It does not properly handle a device disappearing during operation. (There
+is a patchset to add that).
+
+*) It does not properly handle said device returning (under a
+different /dev/sdX name, for bonus points).
+
+Most of these also apply to all other RAID levels.
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+With respect,
+Roman

@@ -1,157 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f67.google.com ([74.125.82.67]:36554 "EHLO
-        mail-wm0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755042AbcK2X6Y (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:58633 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1752603AbcK3CNz (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 29 Nov 2016 18:58:24 -0500
-Received: by mail-wm0-f67.google.com with SMTP id m203so26862276wma.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 Nov 2016 15:58:23 -0800 (PST)
-From: Wilson Meier <wilson.meier@gmail.com>
-Subject: Re: Convert from RAID 5 to 10
-To: Chris Murphy <lists@colorremedies.com>,
-        Wilson Meier <wilson.meier@gmail.com>
-References: <10bbbf97-7f43-c972-a832-4a8cf054d5e5@xgm.de>
- <4ef63089-407d-0f18-b182-74c631874a02@gmail.com>
- <0d3d3ecd-44a4-fb7f-8f68-aca342d89d04@googlemail.com>
- <CAJCQCtSnt5yqm6kpA2AOz7p=wZFVxzUz8RH8r2o73ym45mYVFg@mail.gmail.com>
- <fce2df8b-0775-1ecf-c08d-960018822c20@googlemail.com>
- <CAJCQCtRJRF5j+Dvx+K2DiRyq84xdWxPPzndc-rnor30tWyOFTg@mail.gmail.com>
-Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-ID: <22a09449-3c70-5516-ab37-22858139659b@googlemail.com>
-Date: Wed, 30 Nov 2016 00:58:21 +0100
-MIME-Version: 1.0
-In-Reply-To: <CAJCQCtRJRF5j+Dvx+K2DiRyq84xdWxPPzndc-rnor30tWyOFTg@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+        Tue, 29 Nov 2016 21:13:55 -0500
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1cBuP5-0002eV-9Z
+        for linux-btrfs@vger.kernel.org; Wed, 30 Nov 2016 03:13:47 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: True size of btrfs data chunk
+Date: Wed, 30 Nov 2016 02:13:38 +0000 (UTC)
+Message-ID: <pan$b11a5$ec6d0e80$982b9cb0$a4cf188b@cox.net>
+References: <CAGqmi74qK2v0JCtAjan8aju+sK3LWPWwMgnJOP3i2srrqnLHSA@mail.gmail.com>
+        <44a745cd-ebb0-e62b-371c-8a37edd951fb@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Austin S. Hemmelgarn posted on Tue, 29 Nov 2016 09:58:50 -0500 as
+excerpted:
 
+> On 2016-11-29 09:32, Timofey Titovets wrote:
+>> Hi, as wiki say https://btrfs.wiki.kernel.org/index.php/Glossary:
 
-On 30.11.2016 00:49, Chris Murphy wrote:
-> On Tue, Nov 29, 2016 at 4:16 PM, Wilson Meier <wilson.meier@gmail.com> wrote:
->>
->>
->> On 29.11.2016 23:52, Chris Murphy wrote:
->>> On Tue, Nov 29, 2016 at 3:34 PM, Wilson Meier <wilson.meier@gmail.com> wrote:
->>>> On 29.11.2016 18:54, Austin S. Hemmelgarn wrote:
->>>>> On 2016-11-29 12:20, Florian Lindner wrote:
->>>>>> Hello,
->>>>>>
->>>>>> I have 4 harddisks with 3TB capacity each. They are all used in a
->>>>>> btrfs RAID 5. It has come to my attention, that there
->>>>>> seem to be major flaws in btrfs' raid 5 implementation. Because of
->>>>>> that, I want to convert the the raid 5 to a raid 10
->>>>>> and I have several questions.
->>>>>>
->>>>>> * Is that possible as an online conversion?
->>>>> Yes, as long as you have a complete array to begin with (converting from
->>>>> a degraded raid5/6 array has the same issues as rebuilding a degraded
->>>>> raid5/6 array).
->>>>>>
->>>>>> * Since my effective capacity will shrink during conversions, does
->>>>>> btrfs check if there is enough free capacity to
->>>>>> convert? As you see below, right now it's probably too full, but I'm
->>>>>> going to delete some stuff.
->>>>> No, you'll have to do the math yourself.  This would be a great project
->>>>> idea to place on the wiki though.
->>>>>>
->>>>>> * I understand the command to convert is
->>>>>>
->>>>>> btrfs balance start -dconvert=raid10 -mconvert=raid10 /mnt
->>>>>>
->>>>>> Correct?
->>>>> Yes, but I would personally convert first metadata then data.  The
->>>>> raid10 profile gets better performance than raid5, so converting the
->>>>> metadata first (by issuing a balance just covering the metadata) should
->>>>> speed up the data conversion a bit).
->>>>>>
->>>>>> * What disks are allowed to fail? My understanding of a raid 10 is
->>>>>> like that
->>>>>>
->>>>>> disks = {a, b, c, d}
->>>>>>
->>>>>> raid0( raid1(a, b), raid1(c, d) )
->>>>>>
->>>>>> This way (a XOR b) AND (c XOR d) are allowed to fail without the raid
->>>>>> to fail (either a or b and c or d are allowed to fail)
->>>>>>
->>>>>> How is that with a btrfs raid 10?
->>>>> A BTRFS raid10 can only sustain one disk failure.  Ideally, it would
->>>>> work like you show, but in practice it doesn't.
->>>> I'm a little bit concerned right now. I migrated my 4 disk raid6 to
->>>> raid10 because of the known raid5/6 problems. I assumed that btrfs
->>>> raid10 can handle 2 disk failures as longs as they occur in different
->>>> stripes.
->>>> Could you please point out why it cannot sustain 2 disk failures?
->>>
->>> Conventional raid10 has a fixed assignment of which drives are
->>> mirrored pairs, and this doesn't happen with Btrfs at the device level
->>> but rather the chunk level. And a chunk stripe number is not fixed to
->>> a particular device, therefore it's possible a device will have more
->>> than one chunk stripe number. So what that means is the loss of two
->>> devices has a pretty decent chance of resulting in the loss of both
->>> copies of a chunk, whereas conventional RAID 10 must lose both
->>> mirrored pairs for data loss to happen.
->>>
->>> With very cursory testing what I've found is btrfs-progs establishes
->>> an initial stripe number to device mapping that's different than the
->>> kernel code. The kernel code appears to be pretty consistent so long
->>> as the member devices are identically sized. So it's probably not an
->>> unfixable problem, but the effect is that right now Btrfs raid10
->>> profile is more like raid0+1.
->>>
->>> You can use
->>> $ sudo btrfs insp dump-tr -t 3 /dev/
->>>
->>> That will dump the chunk tree, and you can see if any device has more
->>> than one chunk stripe number associated with it.
->>>
->>>
->> Huh, that makes sense. That probably should be fixed :)
->>
->> Given your advised command (extended it a bit for readability):
->> # btrfs insp dump-tr -t 3 /dev/mapper/luks-2.1 | grep "stripe " | awk '{
->> print $1" "$2" "$3" "$4 }' | sort -u
->>
->> I get:
->> stripe 0 devid 1
->> stripe 0 devid 4
->> stripe 1 devid 2
->> stripe 1 devid 3
->> stripe 1 devid 4
->> stripe 2 devid 1
->> stripe 2 devid 2
->> stripe 2 devid 3
->> stripe 3 devid 1
->> stripe 3 devid 2
->> stripe 3 devid 3
->> stripe 3 devid 4
->>
->> Now i'm even more concerned!
-> 
-> Uhh yeah, this is a four device raid10? I'm a little confused why it's
-> not consistently showing four stripes per chunk, which would mean the
-> same number of strip 0's as stripe 3's. I don't know what that's
-> about.
-> 
-Yes, 4 devices. It does show 4 stripes per chunk, but the command above
-sorts and makes the results unique (sort -u). This gives a quick
-overview of multiple stripes on a single device.
+Bad link.  Without the terminating colon it works, however.
 
-> A full balance might make the mapping consistent.
->
-Will give i a try.
+https://btrfs.wiki.kernel.org/index.php/Glossary
 
->> That said, btrfs shouldn't be used for other then raid1 as every other
->> raid level has serious problems or at least doesn't work as the expected
->> raid level (in terms of failure recovery).
-> 
-> Well, raid1 is also single device failure tolerance only as well.
-> There is no device n raid1.
-> 
-Sure, but this is the expected behaviour of raid1. So at least no
-surprise here :)
+>> A part of a block group. Chunks are either 1 GiB in size (for data) or
+>> 256 MiB (for metadata).
 
+> This is only about the normal case.  Chunks are variable in size.  In
+> most cases, data chunks will be 1GB and metadata 256MB.  They will
+> however be smaller if there isn't enough space left for a full chunk,
+> and will get larger as well once you get past a certain filesystem size
+> (I don't remember the exact size, but I've seen people talking about big
+> (double digit TB sized) filesystems with 5GB+ sized data chunks).
 
+Yes.  The wiki is correct about the _nominal_ size, but it doesn't say 
+"nominal", making the overall claim invalid.
+
+If I had a wiki account I'd probably change it right now, but for 
+personal reasons I don't fully understand myself, I seem to treat web 
+pages, including wikis I could in theory edit, as read-only, even if the 
+alternative is replying repeatedly to list threads such as this, vs. a 
+single wiki edit.  [shrug]
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

@@ -1,82 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f196.google.com ([209.85.223.196]:36721 "EHLO
-        mail-io0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755506AbcK3QO6 (ORCPT
+Received: from mail-io0-f193.google.com ([209.85.223.193]:33721 "EHLO
+        mail-io0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755563AbcK3QxR (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 Nov 2016 11:14:58 -0500
-Received: by mail-io0-f196.google.com with SMTP id k19so3332770iod.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Nov 2016 08:14:58 -0800 (PST)
+        Wed, 30 Nov 2016 11:53:17 -0500
+Received: by mail-io0-f193.google.com with SMTP id j92so3591761ioi.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Nov 2016 08:53:17 -0800 (PST)
 MIME-Version: 1.0
 Reply-To: fdmanana@gmail.com
-In-Reply-To: <1477621974-1103-1-git-send-email-robbieko@synology.com>
-References: <1477621974-1103-1-git-send-email-robbieko@synology.com>
+In-Reply-To: <1475832647-14012-1-git-send-email-robbieko@synology.com>
+References: <1475832647-14012-1-git-send-email-robbieko@synology.com>
 From: Filipe Manana <fdmanana@gmail.com>
-Date: Wed, 30 Nov 2016 16:14:56 +0000
-Message-ID: <CAL3q7H4QnMc1nikiL_sLU2rBRN9gR4whKoc-yRLhyjP--Znfvw@mail.gmail.com>
-Subject: Re: [PATCH v2] Btrfs: fix enospc in hole punching
+Date: Wed, 30 Nov 2016 16:53:15 +0000
+Message-ID: <CAL3q7H7F=fiETSd5SVwq=EPP9gKK0-tRvwA_N6N=yFrujKGYMA@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: fix infinite loop when tree log recovery
 To: robbieko <robbieko@synology.com>
 Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Oct 28, 2016 at 3:32 AM, robbieko <robbieko@synology.com> wrote:
+On Fri, Oct 7, 2016 at 10:30 AM, robbieko <robbieko@synology.com> wrote:
 > From: Robbie Ko <robbieko@synology.com>
 >
-> The hole punching can result in adding new leafs (and as a consequence
-> new nodes) to the tree because when we find file extent items that span
-> beyond the hole range we may end up not deleting them (just adjusting them)
-> and add new file extent items representing holes.
+> if log tree like below:
+> leaf N:
+>         ...
+>         item 240 key (282 DIR_LOG_ITEM 0) itemoff 8189 itemsize 8
+>                 dir log end 1275809046
+> leaf N+1:
+>         item 0 key (282 DIR_LOG_ITEM 3936149215) itemoff 16275 itemsize 8
+>                 dir log end 18446744073709551615
+>         ...
 >
-> That after splitting a leaf (therefore creating a new one), a new node
-> might be added to each level of the tree (since there's a new key and
-> every parent node was full).
->
-> Fix this by use btrfs_calc_trans_metadata_size instead of
-> btrfs_calc_trunc_metadata_size.
->
-> v2:
-> * Improve the change log
+> when start_ret > 1275809046, but slot[0] never >= nritems,
+> so never go to next leaf.
 
-Version information does not belong in the changelog but after the ---
-below (it wouldn't make sense to have it in the git changelogs...).
-See https://btrfs.wiki.kernel.org/index.php/Developer's_FAQ#Repeated_submissions
-and examples from others that submit patches to this list.
+This doesn't explain how the infinite loop happens. Nor exactly how
+any problem happens.
 
->
-> Signed-off-by: Robbie Ko <robbieko@synology.com>
+It's important to have detailed information in the change logs. I
+understand that english isn't your native tongue (it's not mine
+either, and I'm far from mastering it), but that's not an excuse to
+not express all the important information in detail (we can all live
+with grammar errors and typos, and we all do such errors frequently).
 
-I've reworded the changelog for clarity and added it to my branch at:
+I've added this patch to my branch at
 https://git.kernel.org/cgit/linux/kernel/git/fdmanana/linux.git/log/?h=for-chris-4.10
+but with a modified changelog and subject.
+
+The results of the wrong logic that decides when to move to the next
+leaf are unpredictable, and it won't always result in an infinite
+loop. We are accessing a slot that doesn't point to an item, to a
+memory location containing garbage to something unexpected, and in the
+worst case that location is beyond the last page of the extent buffer.
 
 Thanks.
 
+
+>
+> Signed-off-by: Robbie Ko <robbieko@synology.com>
 > ---
->  fs/btrfs/file.c | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
+>  fs/btrfs/tree-log.c | 3 +--
+>  1 file changed, 1 insertion(+), 2 deletions(-)
 >
-> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index fea31a4..809ca85 100644
-> --- a/fs/btrfs/file.c
-> +++ b/fs/btrfs/file.c
-> @@ -2322,7 +2322,7 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
->         u64 tail_len;
->         u64 orig_start = offset;
->         u64 cur_offset;
-> -       u64 min_size = btrfs_calc_trunc_metadata_size(root, 1);
-> +       u64 min_size = btrfs_calc_trans_metadata_size(root, 1);
->         u64 drop_end;
->         int ret = 0;
->         int err = 0;
-> @@ -2469,7 +2469,7 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
->                 ret = -ENOMEM;
->                 goto out_free;
+> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+> index ef9c55b..e63dd99 100644
+> --- a/fs/btrfs/tree-log.c
+> +++ b/fs/btrfs/tree-log.c
+> @@ -1940,12 +1940,11 @@ static noinline int find_dir_range(struct btrfs_root *root,
+>  next:
+>         /* check the next slot in the tree to see if it is a valid item */
+>         nritems = btrfs_header_nritems(path->nodes[0]);
+> +       path->slots[0]++;
+>         if (path->slots[0] >= nritems) {
+>                 ret = btrfs_next_leaf(root, path);
+>                 if (ret)
+>                         goto out;
+> -       } else {
+> -               path->slots[0]++;
 >         }
-> -       rsv->size = btrfs_calc_trunc_metadata_size(root, 1);
-> +       rsv->size = btrfs_calc_trans_metadata_size(root, 1);
->         rsv->failfast = 1;
 >
->         /*
+>         btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
 > --
 > 1.9.1
 >

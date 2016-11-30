@@ -1,35 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:48632 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751606AbcK3QeT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 Nov 2016 11:34:19 -0500
-Date: Wed, 30 Nov 2016 17:34:14 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org,
-        Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-Subject: Re: [PATCH v2 02/14] btrfs-progs: check: introduce function to find
- dir_item
-Message-ID: <20161130163414.GS12522@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20160921031604.23334-1-quwenruo@cn.fujitsu.com>
- <20160921031604.23334-3-quwenruo@cn.fujitsu.com>
- <20161102152151.GH12522@twin.jikos.cz>
- <cedc76f5-fadc-c6d0-b491-eb16ccc3e15a@cn.fujitsu.com>
- <20161107170523.GR12522@twin.jikos.cz>
- <bef6db9e-c106-c31b-22a5-708d2ce1221b@cn.fujitsu.com>
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:36375 "EHLO
+        mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752395AbcK3QfD (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 30 Nov 2016 11:35:03 -0500
+From: Martin Steigerwald <martin@lichtvoll.de>
+To: Wilson Meier <wilson.meier@gmail.com>
+Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+Subject: Re: Convert from RAID 5 to 10
+Date: Wed, 30 Nov 2016 17:35:00 +0100
+Message-ID: <3704790.nMdNB9Lobq@merkaba>
+In-Reply-To: <e9a4cba5-53b7-b6f0-af83-467f5f95f5b8@googlemail.com>
+References: <10bbbf97-7f43-c972-a832-4a8cf054d5e5@xgm.de> <19671a71-5d1c-c42e-db3d-c870ec08b2ff@gmail.com> <e9a4cba5-53b7-b6f0-af83-467f5f95f5b8@googlemail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <bef6db9e-c106-c31b-22a5-708d2ce1221b@cn.fujitsu.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 16, 2016 at 10:27:59AM +0800, Qu Wenruo wrote:
-> > Yes please. Third namespace for existing error bits is not a good
-> > option. Move the I_ERR bits to start from 32 and use them in the low-mem
-> > code that's been merged to devel.
+Am Mittwoch, 30. November 2016, 16:49:59 CET schrieb Wilson Meier:
+> Am 30/11/16 um 15:37 schrieb Austin S. Hemmelgarn:
+> > On 2016-11-30 08:12, Wilson Meier wrote:
+> >> Am 30/11/16 um 11:41 schrieb Duncan:
+> >>> Wilson Meier posted on Wed, 30 Nov 2016 09:35:36 +0100 as excerpted:
+> >>>> Am 30/11/16 um 09:06 schrieb Martin Steigerwald:
+> >>>>> Am Mittwoch, 30. November 2016, 10:38:08 CET schrieb Roman Mamedov:
+[…]
+> >> It is really disappointing to not have this information in the wiki
+> >> itself. This would have saved me, and i'm quite sure others too, a lot
+> >> of time.
+> >> Sorry for being a bit frustrated.
 > 
-> I didn't see such fix in devel branch.
+> I'm not angry or something like that :) .
+> I just would like to have the possibility to read such information about
+> the storage i put my personal data (> 3 TB) on its official wiki.
 
-Well, that's because nobody implemented it and I was not intending to do
-it myself as it's a followup to yor lowmem patchset in devel.
+Anyone can get an account on the wiki and add notes there, so feel free.
+
+You can even use footnotes or something like that. Maybe it would be good to 
+add a paragraph there that features are related to one another, so while BTRFS 
+RAID 1 for example might be quite okay, it depends on features that are still 
+flaky.
+
+I for myself rely quite much on BTRFS RAID 1 with lzo compression and it seems 
+to work okay for me.
+
+-- 
+Martin

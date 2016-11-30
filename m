@@ -1,134 +1,135 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:47314 "EHLO
-        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752196AbcK1SwJ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 Nov 2016 13:52:09 -0500
-From: Adam Borowski <kilobyte@angband.pl>
-To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Cc: Adam Borowski <kilobyte@angband.pl>
-Date: Mon, 28 Nov 2016 19:51:53 +0100
-Message-Id: <20161128185153.14908-1-kilobyte@angband.pl>
-Subject: [PATCH] btrfs-progs: mkfs, balance convert: warn about RAID5/6 in fiery letters
+Received: from mx2.suse.de ([195.135.220.15]:43116 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1757198AbcK3PcU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 30 Nov 2016 10:32:20 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id AEABBABC3
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Nov 2016 15:32:18 +0000 (UTC)
+Date: Wed, 30 Nov 2016 16:32:15 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Goldwyn Rodrigues <rgoldwyn@suse.de>
+Cc: linux-btrfs@vger.kernel.org, Goldwyn Rodrigues <rgoldwyn@suse.com>
+Subject: Re: [PATCH] btrfs-progs: Fix extents after finding all errors
+Message-ID: <20161130153215.GQ12522@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20161110150147.19766-1-rgoldwyn@suse.de>
+ <20161110150147.19766-2-rgoldwyn@suse.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20161110150147.19766-2-rgoldwyn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-People who don't frequent IRC nor the mailing list tend to believe RAID 5/6
-are stable; this leads to data loss.  Thus, let's do warn them.
+On Thu, Nov 10, 2016 at 09:01:47AM -0600, Goldwyn Rodrigues wrote:
+> Simplifying the logic of fixing.
+> 
+> Calling fixup_extent_ref() after encountering every error causes
+> more error messages after the extent is fixed. In case of multiple errors,
+> this is confusing because the error message is displayed after the fix
+> message and it works on stale data. It is best to show all errors and
+> then fix the extents.
+> 
+> Set a variable and call fixup_extent_ref() if it is set. err is not used,
+> so cleared it.
 
-At this point, I think fiery letters that won't be missed are warranted.
+Sounds ok, more comments below.
 
-Kernel 4.9 and its -progs will be a part of LTS of multiple distributions,
-so leaving experimental features without a warning is inappropriate.
+> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+> ---
+>  cmds-check.c | 75 +++++++++++++++++++-----------------------------------------
+>  1 file changed, 24 insertions(+), 51 deletions(-)
+> 
+> diff --git a/cmds-check.c b/cmds-check.c
+> index 779870a..8fa0b38 100644
+> --- a/cmds-check.c
+> +++ b/cmds-check.c
+> @@ -8994,6 +8994,9 @@ out:
+>  			ret = err;
+>  	}
+>  
+> +	if (!ret)
+> +		fprintf(stderr, "Repaired extent references for %llu\n", (unsigned long long)rec->start);
 
-Signed-off-by: Adam Borowski <kilobyte@angband.pl>
----
- cmds-balance.c |  2 ++
- mkfs.c         |  2 ++
- utils.c        | 46 ++++++++++++++++++++++++++++++++++++++++++++++
- utils.h        |  2 ++
- 4 files changed, 52 insertions(+)
+Line too long, please stick to ~80 chars, here it's easy to break line
+after string.
 
-diff --git a/cmds-balance.c b/cmds-balance.c
-index f17345e..0967162 100644
---- a/cmds-balance.c
-+++ b/cmds-balance.c
-@@ -48,8 +48,10 @@ static int parse_one_profile(const char *profile, u64 *flags)
- 	} else if (!strcmp(profile, "raid10")) {
- 		*flags |= BTRFS_BLOCK_GROUP_RAID10;
- 	} else if (!strcmp(profile, "raid5")) {
-+		print_raid56_warning();
- 		*flags |= BTRFS_BLOCK_GROUP_RAID5;
- 	} else if (!strcmp(profile, "raid6")) {
-+		print_raid56_warning();
- 		*flags |= BTRFS_BLOCK_GROUP_RAID6;
- 	} else if (!strcmp(profile, "dup")) {
- 		*flags |= BTRFS_BLOCK_GROUP_DUP;
-diff --git a/mkfs.c b/mkfs.c
-index e501a93..8d460b7 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -378,8 +378,10 @@ static u64 parse_profile(const char *s)
- 	} else if (strcasecmp(s, "raid1") == 0) {
- 		return BTRFS_BLOCK_GROUP_RAID1;
- 	} else if (strcasecmp(s, "raid5") == 0) {
-+		print_raid56_warning();
- 		return BTRFS_BLOCK_GROUP_RAID5;
- 	} else if (strcasecmp(s, "raid6") == 0) {
-+		print_raid56_warning();
- 		return BTRFS_BLOCK_GROUP_RAID6;
- 	} else if (strcasecmp(s, "raid10") == 0) {
- 		return BTRFS_BLOCK_GROUP_RAID10;
-diff --git a/utils.c b/utils.c
-index 69b580a..b9e44c2 100644
---- a/utils.c
-+++ b/utils.c
-@@ -4204,6 +4204,52 @@ out:
- 	return ret;
- }
- 
-+#define NFL 5
-+#define CYCLE (NFL * 2 - 2)
-+/* force text-on-black even if reversed */
-+#define BG "\e[0;40;"
-+static const char *fire_levels[NFL] =
-+{ BG"1;30m", BG"31m", BG"1;31m", BG"1;33m", BG"1;37m", };
-+#undef BG
-+
-+/* If this ever gets localized, we'll need to split by characters not bytes. */
-+static void text_on_fire(const char *str)
-+{
-+	int s = 0, sl, chunks, len = strlen(str);
-+
-+	/* no colors if our output is redirected */
-+	if (!isatty(fileno(stderr)))
-+		return (void)fputs(str, stderr);
-+
-+	/* repeat the scheme if too long, try 2-3 letters per level */
-+	chunks = (len / CYCLE / 3 + 1) * CYCLE + 1;
-+	for (int ch = 0; ch < chunks; ++ch) {
-+		int lev = ch % CYCLE;
-+		fputs(fire_levels[(lev < NFL) ? lev : CYCLE - lev],
-+		      stderr);
-+		sl = len * (ch + 1) / chunks;
-+		for (; s < sl; ++s)
-+			fputc(*str++, stderr);
-+	}
-+	fputs("\e[0m", stderr); /* reset color */
-+}
-+#undef NFL
-+#undef CYCLE
-+
-+void print_raid56_warning(void)
-+{
-+	static int given = 0;
-+	if (given)
-+		return;
-+	given = 1;
-+
-+	fprintf(stderr,
-+"WARNING: btrfs RAID5 and 6 are still experimental, suffering from serious\n"
-+"problems.  Thus, you are advised not to continue unless you know what you're\n"
-+"doing.  In all cases, do keep up-to-date backups!\n");
-+	text_on_fire("Don't use RAID5/6 for anything important!\n");
-+}
-+
- void init_rand_seed(u64 seed)
- {
- 	int i;
-diff --git a/utils.h b/utils.h
-index 366ca29..00a253a 100644
---- a/utils.h
-+++ b/utils.h
-@@ -423,6 +423,8 @@ static inline int __error_on(int condition, const char *fmt, ...)
- 	return 1;
- }
- 
-+void print_raid56_warning(void);
-+
- /* Pseudo random number generator wrappers */
- u32 rand_u32(void);
- 
--- 
-2.10.2
+> +
+>  	btrfs_release_path(&path);
+>  	return ret;
+>  }
+> @@ -9051,7 +9054,11 @@ static int fixup_extent_flags(struct btrfs_fs_info *fs_info,
+>  	btrfs_set_extent_flags(path.nodes[0], ei, flags);
+>  	btrfs_mark_buffer_dirty(path.nodes[0]);
+>  	btrfs_release_path(&path);
+> -	return btrfs_commit_transaction(trans, root);
+> +	ret = btrfs_commit_transaction(trans, root);
+> +	if (!ret)
+> +		fprintf(stderr, "Repaired extent flags for %llu\n", (unsigned long long)rec->start);
+> +
+> +	return ret;
+>  }
+>  
+>  /* right now we only prune from the extent allocation tree */
+> @@ -9178,11 +9185,8 @@ static int check_extent_refs(struct btrfs_root *root,
+>  {
+>  	struct extent_record *rec;
+>  	struct cache_extent *cache;
+> -	int err = 0;
+>  	int ret = 0;
+> -	int fixed = 0;
+>  	int had_dups = 0;
+> -	int recorded = 0;
+>  
+>  	if (repair) {
+>  		/*
+> @@ -9251,9 +9255,8 @@ static int check_extent_refs(struct btrfs_root *root,
+>  
+>  	while(1) {
+>  		int cur_err = 0;
+> +		int fix = 0;
+>  
+> -		fixed = 0;
+> -		recorded = 0;
+>  		cache = search_cache_extent(extent_cache, 0);
+>  		if (!cache)
+>  			break;
+> @@ -9261,7 +9264,6 @@ static int check_extent_refs(struct btrfs_root *root,
+>  		if (rec->num_duplicates) {
+>  			fprintf(stderr, "extent item %llu has multiple extent "
+>  				"items\n", (unsigned long long)rec->start);
+> -			err = 1;
+>  			cur_err = 1;
+>  		}
+>  
+> @@ -9272,57 +9274,33 @@ static int check_extent_refs(struct btrfs_root *root,
+>  			fprintf(stderr, "extent item %llu, found %llu\n",
+>  				(unsigned long long)rec->extent_item_refs,
+>  				(unsigned long long)rec->refs);
+> -			ret = record_orphan_data_extents(root->fs_info, rec);
+> -			if (ret < 0)
+> +			fix = record_orphan_data_extents(root->fs_info, rec);
+> +			if (fix < 0)
+>  				goto repair_abort;
 
+I think ret has to be set to fix here as well (in some way, eg. not
+using fix for a return value), otherwise the repair_abort label will not
+thake the same code path as before.
+
+> -			if (ret == 0) {
+> -				recorded = 1;
+> -			} else {
+> -				/*
+> -				 * we can't use the extent to repair file
+> -				 * extent, let the fallback method handle it.
+> -				 */
+> -				if (!fixed && repair) {
+> -					ret = fixup_extent_refs(
+> -							root->fs_info,
+> -							extent_cache, rec);
+> -					if (ret)
+> -						goto repair_abort;
+> -					fixed = 1;
+> -				}
+> -			}
+> -			err = 1;

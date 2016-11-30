@@ -1,83 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:48836 "EHLO
-        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752565AbcK1FIi (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 Nov 2016 00:08:38 -0500
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: fix hole read corruption for compressed inline extents
-Date: Mon, 28 Nov 2016 00:03:12 -0500
-Message-Id: <1480309392-4786-1-git-send-email-ce3g8jdj@umail.furryterror.org>
+Received: from len.romanrm.net ([195.154.117.182]:41284 "EHLO len.romanrm.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1757251AbcK3OEI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 30 Nov 2016 09:04:08 -0500
+Date: Wed, 30 Nov 2016 19:04:04 +0500
+From: Roman Mamedov <rm@romanrm.net>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: Wilson Meier <wilson.meier@gmail.com>,
+        Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Convert from RAID 5 to 10
+Message-ID: <20161130190404.4f0e4bd5@natsu>
+In-Reply-To: <d9a72702-0507-c085-3bed-7ee5f8063ae3@gmail.com>
+References: <10bbbf97-7f43-c972-a832-4a8cf054d5e5@xgm.de>
+ <4ef63089-407d-0f18-b182-74c631874a02@gmail.com>
+ <0d3d3ecd-44a4-fb7f-8f68-aca342d89d04@googlemail.com>
+ <CAJCQCtSnt5yqm6kpA2AOz7p=wZFVxzUz8RH8r2o73ym45mYVFg@mail.gmail.com>
+ <fce2df8b-0775-1ecf-c08d-960018822c20@googlemail.com>
+ <20161130103808.74e5ae95@natsu>
+ <d9a72702-0507-c085-3bed-7ee5f8063ae3@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit c8b978188c ("Btrfs: Add zlib compression support") produces
-data corruption when reading a file with a hole positioned after an
-inline extent.  btrfs_get_extent will return uninitialized kernel memory
-instead of zero bytes in the hole.
+On Wed, 30 Nov 2016 07:50:17 -0500
+"Austin S. Hemmelgarn" <ahferroin7@gmail.com> wrote:
 
-Commit 93c82d5750 ("Btrfs: zero page past end of inline file items")
-fills the hole by memset to zero after *uncompressed* inline extents.
+> > *) Read performance is not optimized: all metadata is always read from the
+> > first device unless it has failed, data reads are supposedly balanced between
+> > devices per PID of the process reading. Better implementations dispatch reads
+> > per request to devices that are currently idle.
+> Based on what I've seen, the metadata reads get balanced too.
 
-This patch provides the missing memset for holes after *compressed*
-inline extents.
+https://github.com/torvalds/linux/blob/v4.8/fs/btrfs/disk-io.c#L451
+This starts from the mirror number 0 and tries others in an incrementing
+order, until succeeds. It appears that as long as the mirror with copy #0 is up
+and not corrupted, all reads will simply get satisfied from it.
 
-The offending holes appear in the wild and will appear during routine
-data integrity audits (e.g. comparing backups against their originals).
-They can also be created intentionally by fuzzing or crafting a filesystem
-image.
+> > *) Write performance is not optimized, during long full bandwidth sequential
+> > writes it is common to see devices writing not in parallel, but with a long
+> > periods of just one device writing, then another. (Admittedly have been some
+> > time since I tested that).
+> I've never seen this be an issue in practice, especially if you're using 
+> transparent compression (which caps extent size, and therefore I/O size 
+> to a given device, at 128k).  I'm also sane enough that I'm not doing 
+> bulk streaming writes to traditional HDD's or fully saturating the 
+> bandwidth on my SSD's (you should be over-provisioning whenever 
+> possible).  For a desktop user, unless you're doing real-time video 
+> recording at higher than HD resolution with high quality surround sound, 
+> this probably isn't going to hit you (and even then you should be 
+> recording to a temporary location with much faster write speeds (tmpfs 
+> or ext4 without a journal for example) because you'll likely get hit 
+> with fragmentation).
 
-Holes like these are not intended to occur in btrfs; however, I tested
-tagged kernels between v3.5 and the present, and found that all of them
-can create such holes.  Whether we like them or not, this kind of hole
-is now part of the btrfs de-facto on-disk format, and we need to be able
-to read such holes without an infoleak or wrong data.
+I did not use compression while observing this;
 
-An example of a hole leading to data corruption:
+Also I don't know what is particularly insane about copying a 4-8 GB file onto
+a storage array. I'd expect both disks to write at the same time (like they
+do in pretty much any other RAID1 system), not one-after-another, effectively
+slowing down the entire operation by as much as 2x in extreme cases.
 
-        item 61 key (606890 INODE_ITEM 0) itemoff 9662 itemsize 160
-                inode generation 50 transid 50 size 47424 nbytes 49141
-                block group 0 mode 100644 links 1 uid 0 gid 0
-                rdev 0 flags 0x0(none)
-        item 62 key (606890 INODE_REF 603050) itemoff 9642 itemsize 20
-                inode ref index 3 namelen 10 name: DB_File.so
-        item 63 key (606890 EXTENT_DATA 0) itemoff 8280 itemsize 1362
-                inline extent data size 1341 ram 4085 compress(zlib)
-        item 64 key (606890 EXTENT_DATA 4096) itemoff 8227 itemsize 53
-                extent data disk byte 5367308288 nr 20480
-                extent data offset 0 nr 45056 ram 45056
-                extent compression(zlib)
+> As far as not mounting degraded by default, that's a conscious design 
+> choice that isn't going to change.  There's a switch (adding 'degraded' 
+> to the mount options) to enable this behavior per-mount, so we're still 
+> on-par in that respect with LVM and MD, we just picked a different 
+> default.  In this case, I actually feel it's a better default for most 
+> cases, because most regular users aren't doing exhaustive monitoring, 
+> and thus are not likely to notice the filesystem being mounted degraded 
+> until it's far too late.  If the filesystem is degraded, then 
+> _something_ has happened that the user needs to know about, and until 
+> some sane monitoring solution is implemented, the easiest way to ensure 
+> this is to refuse to mount.
 
-Different data appears in userspace during each uncached read of the 10
-bytes between offset 4085 and 4095.  The extent in item 63 is not long
-enough to fill the first page of the file, so a memset is required to
-fill the space between item 63 (ending at 4085) and item 64 (beginning
-at 4096) with zero.
+The easiest is to write to dmesg and syslog, if a user doesn't monitor those
+either, it's their own fault; and the more user friendly one would be to still
+auto mount degraded, but read-only.
 
-Signed-off-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Comparing to Ext4, that one appears to have the "errors=continue" behavior by
+default, the user has to explicitly request "errors=remount-ro", and I have
+never seen anyone use or recommend the third option of "errors=panic", which
+is basically the equivalent of the current Btrfs practce.
 
----
- fs/btrfs/inode.c | 6 ++++++
- 1 file changed, 6 insertions(+)
+> > *) It does not properly handle a device disappearing during operation. (There
+> > is a patchset to add that).
+> >
+> > *) It does not properly handle said device returning (under a
+> > different /dev/sdX name, for bonus points).
+> These are not an easy problem to fix completely, especially considering 
+> that the device is currently guaranteed to reappear under a different 
+> name because BTRFS will still have an open reference on the original 
+> device name.
+> 
+> On top of that, if you've got hardware that's doing this without manual 
+> intervention, you've got much bigger issues than how BTRFS reacts to it. 
+>   No correctly working hardware should be doing this.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 8e3a5a2..b1314d6 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6803,6 +6803,12 @@ static noinline int uncompress_inline(struct btrfs_path *path,
- 	max_size = min_t(unsigned long, PAGE_SIZE, max_size);
- 	ret = btrfs_decompress(compress_type, tmp, page,
- 			       extent_offset, inline_size, max_size);
-+	WARN_ON(max_size > PAGE_SIZE);
-+	if (max_size < PAGE_SIZE) {
-+		char *map = kmap(page);
-+		memset(map + max_size, 0, PAGE_SIZE - max_size);
-+		kunmap(page);
-+	}
- 	kfree(tmp);
- 	return ret;
- }
+Unplugging and replugging a SATA cable of a RAID1 member should never put your
+system under the risk of a massive filesystem corruption; you cannot say it
+absolutely doesn't with the current implementation.
+
 -- 
-2.1.4
-
+With respect,
+Roman

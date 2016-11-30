@@ -1,54 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:33320 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S935190AbcKDTND (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Nov 2016 15:13:03 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
+Received: from mail.kernel.org ([198.145.29.136]:38856 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1758533AbcK3Rgq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 30 Nov 2016 12:36:46 -0500
+From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] Btrfs: adjust len of writes if following a preallocated extent
-Date: Fri,  4 Nov 2016 12:20:54 -0700
-Message-Id: <1478287254-5458-1-git-send-email-bo.li.liu@oracle.com>
+Cc: clm@fb.com, Filipe Manana <fdmanana@suse.com>
+Subject: [GIT PULL] Btrfs fixes for 4.10
+Date: Wed, 30 Nov 2016 17:36:14 +0000
+Message-Id: <1480527374-20998-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we have
+From: Filipe Manana <fdmanana@suse.com>
 
-|0--hole--4095||4096--preallocate--12287|
+Hi Chris,
 
-instead of using preallocated space, a 8K direct write will just
-create a new 8K extent and it'll end up with
+Here follows a small list of fixes a couple cleanups for the 4.10 merge
+window. It contains all the patches from the previous pull request (which
+got unanswered nor were the changes pulled yet apparently). The most important
+change is still the fix for the extent tree corruption that happens due to
+balance when qgroups are enabled (a regression introduced in 4.7 by a fix for
+a regression from the last qgroups rework). This has been hitting SLE and
+openSUSE users and QA very badly, where transactions keep getting aborted when
+running delayed references leaving the root filesystem in RO mode and nearly
+unusable.
+There are fixes here that allow us to run xfstests again with the integrity
+checker enabled, which has been impossible since 4.8 (apparently I'm the
+only one running xfstests with the integrity checker enabled, which is useful
+to validate dirtied leafs, like checking if there are keys out of order, etc).
+The rest are just some trivial fixes, most of them tagged for stable, and two
+cleanups.
 
-|0--new extent--8191||8192--preallocate--12287|
+Thanks.
 
-It's because we find a hole em and then go to create a new 8K
-extent directly without adjusting @len.
+The following changes since commit e3597e6090ddf40904dce6d0a5a404e2c490cac6:
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/inode.c | 8 +++++---
- 1 file changed, 5 insertions(+), 3 deletions(-)
+  Merge branch 'for-4.9-rc3' of git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux into for-linus-4.9 (2016-11-01 12:54:45 -0700)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 2b790bd..48e9356 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7783,10 +7783,12 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
- 	}
- 
- 	/*
--	 * this will cow the extent, reset the len in case we changed
--	 * it above
-+	 * this will cow the extent, if em is within [start, len], then
-+	 * probably we've found a preallocated/existing extent, let's
-+	 * give it a chance to use preallocated space.
- 	 */
--	len = bh_result->b_size;
-+	len = min_t(u64, bh_result->b_size, em->len - (start - em->start));
-+	len = ALIGN(len, root->sectorsize);
- 	free_extent_map(em);
- 	em = btrfs_new_extent_direct(inode, start, len);
- 	if (IS_ERR(em)) {
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/fdmanana/linux.git for-chris-4.10
+
+for you to fetch changes up to 2a7bf53f577e49c43de4ffa7776056de26db65d9:
+
+  Btrfs: fix tree search logic when replaying directory entry deletes (2016-11-30 16:56:12 +0000)
+
+----------------------------------------------------------------
+Filipe Manana (5):
+      Btrfs: fix relocation incorrectly dropping data references
+      Btrfs: remove unused code when creating and merging reloc trees
+      Btrfs: remove rb_node field from the delayed ref node structure
+      Btrfs: fix emptiness check for dirtied extent buffers at check_leaf()
+      Btrfs: fix qgroup rescan worker initialization
+
+Liu Bo (1):
+      Btrfs: fix BUG_ON in btrfs_mark_buffer_dirty
+
+Robbie Ko (3):
+      Btrfs: fix enospc in hole punching
+      Btrfs: fix deadlock caused by fsync when logging directory entries
+      Btrfs: fix tree search logic when replaying directory entry deletes
+
+ fs/btrfs/delayed-ref.h |  6 ------
+ fs/btrfs/disk-io.c     | 23 +++++++++++++++++++----
+ fs/btrfs/file.c        |  4 ++--
+ fs/btrfs/qgroup.c      |  5 +----
+ fs/btrfs/relocation.c  | 34 ++++++++++++----------------------
+ fs/btrfs/tree-log.c    |  7 +++----
+ 6 files changed, 37 insertions(+), 42 deletions(-)
+
 -- 
-2.5.5
+2.7.0.rc3
 

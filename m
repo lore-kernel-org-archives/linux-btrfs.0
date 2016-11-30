@@ -1,115 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:8448 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:5344 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1755204AbcKOCu4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Nov 2016 21:50:56 -0500
+        id S1754270AbcK3Hhh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 30 Nov 2016 02:37:37 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Cc: kreijack@libero.it
-Subject: [PATCH 2/2] btrfs: scrub: Fix RAID56 recovery race condition
-Date: Tue, 15 Nov 2016 10:50:24 +0800
-Message-Id: <20161115025024.25299-3-quwenruo@cn.fujitsu.com>
-In-Reply-To: <20161115025024.25299-1-quwenruo@cn.fujitsu.com>
-References: <20161115025024.25299-1-quwenruo@cn.fujitsu.com>
+Cc: dsterba@suse.cz
+Subject: [PATCH v5 1/3] btrfs: Add WARN_ON for qgroup reserved underflow
+Date: Wed, 30 Nov 2016 15:36:38 +0800
+Message-Id: <20161130073640.20364-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When scrubbing a RAID5 which has recoverable data corruption (only one
-data stripe is corrupted), sometimes scrub will report more csum errors
-than expected. Sometimes even unrecoverable error will be reported.
+Goldwyn Rodrigues has exposed and fixed a bug which underflows btrfs
+qgroup reserved space, and leads to non-writable fs.
 
-The problem can be easily reproduced by the following steps:
-1) Create a btrfs with RAID5 data profile with 3 devs
-2) Mount it with nospace_cache or space_cache=v2
-   To avoid extra data space usage.
-3) Create a 128K file and sync the fs, unmount it
-   Now the 128K file lies at the beginning of the data chunk
-4) Locate the physical bytenr of data chunk on dev3
-   Dev3 is the 1st data stripe.
-5) Corrupt the first 64K of the data chunk stripe on dev3
-6) Mount the fs and scrub it
+This reminds us that we don't have enough underflow check for qgroup
+reserved space.
 
-The correct csum error number should be 16(assuming using x86_64).
-Larger csum error number can be reported in a 1/3 chance.
-And unrecoverable error can also be reported in a 1/10 chance.
+For underflow case, we should not really underflow the numbers but warn
+and keeps qgroup still work.
 
-The root cause of the problem is RAID5/6 recover code has race
-condition, due to the fact that full scrub is initiated per device.
+So add more check on qgroup reserved space and add WARN_ON() and
+btrfs_warn() for any underflow case.
 
-While for other mirror based profiles, each mirror is independent with
-each other, so race won't cause any big problem.
-
-For example:
-        Corrupted       |       Correct          |      Correct        |
-|   Scrub dev3 (D1)     |    Scrub dev2 (D2)     |    Scrub dev1(P)    |
-------------------------------------------------------------------------
-Read out D1             |Read out D2             |Read full stripe     |
-Check csum              |Check csum              |Check parity         |
-Csum mismatch           |Csum match, continue    |Parity mismatch      |
-handle_errored_block    |                        |handle_errored_block |
- Read out full stripe   |                        | Read out full stripe|
- D1 csum error(err++)   |                        | D1 csum error(err++)|
- Recover D1             |                        | Recover D1          |
-
-So D1's csum error is accounted twice, just because
-handle_errored_block() doesn't have enough protect, and race can happen.
-
-On even worse case, for example D1's recovery code is re-writing
-D1/D2/P, and P's recovery code is just reading out full stripe, then we
-can cause unrecoverable error.
-
-This patch will use previously introduced lock_full_stripe() and
-unlock_full_stripe() to protect the whole scrub_handle_errored_block()
-function for RAID56 recovery.
-So no extra csum error nor unrecoverable error.
-
-Reported-by: Goffredo Baroncelli <kreijack@libero.it>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Reviewed-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/scrub.c | 15 +++++++++++++++
- 1 file changed, 15 insertions(+)
+v2:
+  Add btrfs_warn() output for fsid, qgroupid, original reserved space and
+  num_bytes to reduce, for end-user to locate the subvolume causing the
+  problem. Suggested by David.
+v3:
+  None
+v4:
+  None
+v5:
+  Fix a copy-n-paste error, which leads to reserved space error.
+  Ironically, the patch will detect the problem caused by itself.
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 4fce415..1215a61 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -1067,6 +1067,7 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
- 	unsigned int have_csum;
- 	struct scrub_block *sblocks_for_recheck; /* holds one for each mirror */
- 	struct scrub_block *sblock_bad;
-+	int lock_ret;
- 	int ret;
- 	int mirror_index;
- 	int page_num;
-@@ -1096,6 +1097,17 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
- 	have_csum = sblock_to_check->pagev[0]->have_csum;
- 	dev = sblock_to_check->pagev[0]->dev;
- 
-+	/*
-+	 * For RAID5/6 race can happen for different dev scrub thread.
-+	 * For data corruption, Parity and Data thread will both try
-+	 * to recovery the data.
-+	 * Race can lead to double added csum error, or even unrecoverable
-+	 * error.
-+	 */
-+	ret = lock_full_stripe(fs_info, logical, GFP_NOFS);
-+	if (ret < 0)
-+		return ret;
-+
- 	if (sctx->is_dev_replace && !is_metadata && !have_csum) {
- 		sblocks_for_recheck = NULL;
- 		goto nodatasum_case;
-@@ -1432,6 +1444,9 @@ out:
- 		kfree(sblocks_for_recheck);
- 	}
- 
-+	lock_ret = unlock_full_stripe(fs_info, logical);
-+	if (lock_ret < 0)
-+		return lock_ret;
- 	return 0;
+To David:
+  This is only part of the fix, test case like btrfs/104 will still
+  reproduce kernel warning.
+  Fix will come soon.
+---
+ fs/btrfs/qgroup.c | 32 +++++++++++++++++++++++++++-----
+ 1 file changed, 27 insertions(+), 5 deletions(-)
+
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 11f4fff..368cdaf 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1031,6 +1031,15 @@ static void qgroup_dirty(struct btrfs_fs_info *fs_info,
+ 		list_add(&qgroup->dirty, &fs_info->dirty_qgroups);
  }
  
++static void report_reserved_underflow(struct btrfs_fs_info *fs_info,
++				      struct btrfs_qgroup *qgroup,
++				      u64 num_bytes)
++{
++	btrfs_warn(fs_info,
++		"qgroup %llu reserved space underflow, have: %llu, to free: %llu",
++		qgroup->qgroupid, qgroup->reserved, num_bytes);
++	qgroup->reserved = 0;
++}
+ /*
+  * The easy accounting, if we are adding/removing the only ref for an extent
+  * then this qgroup and all of the parent qgroups get their reference and
+@@ -1058,8 +1067,13 @@ static int __qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
+ 	WARN_ON(sign < 0 && qgroup->excl < num_bytes);
+ 	qgroup->excl += sign * num_bytes;
+ 	qgroup->excl_cmpr += sign * num_bytes;
+-	if (sign > 0)
+-		qgroup->reserved -= num_bytes;
++	if (sign > 0) {
++		if (WARN_ON(qgroup->reserved < num_bytes))
++			report_reserved_underflow(fs_info, qgroup,
++						  num_bytes);
++		else
++			qgroup->reserved -= num_bytes;
++	}
+ 
+ 	qgroup_dirty(fs_info, qgroup);
+ 
+@@ -1079,8 +1093,13 @@ static int __qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
+ 		qgroup->rfer_cmpr += sign * num_bytes;
+ 		WARN_ON(sign < 0 && qgroup->excl < num_bytes);
+ 		qgroup->excl += sign * num_bytes;
+-		if (sign > 0)
+-			qgroup->reserved -= num_bytes;
++		if (sign > 0) {
++			if (WARN_ON(qgroup->reserved < num_bytes))
++				report_reserved_underflow(fs_info, qgroup,
++							  num_bytes);
++			else
++				qgroup->reserved -= num_bytes;
++		}
+ 		qgroup->excl_cmpr += sign * num_bytes;
+ 		qgroup_dirty(fs_info, qgroup);
+ 
+@@ -2204,7 +2223,10 @@ void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
+ 
+ 		qg = u64_to_ptr(unode->aux);
+ 
+-		qg->reserved -= num_bytes;
++		if (WARN_ON(qg->reserved < num_bytes))
++			report_reserved_underflow(fs_info, qg, num_bytes);
++		else
++			qg->reserved -= num_bytes;
+ 
+ 		list_for_each_entry(glist, &qg->groups, next_group) {
+ 			ret = ulist_add(fs_info->qgroup_ulist,
 -- 
 2.10.2
 

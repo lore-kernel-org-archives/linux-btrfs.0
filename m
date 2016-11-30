@@ -1,42 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f65.google.com ([209.85.214.65]:33722 "EHLO
-        mail-it0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750979AbcKPBHz (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 Nov 2016 20:07:55 -0500
-Received: by mail-it0-f65.google.com with SMTP id c20so4020514itb.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Nov 2016 17:07:55 -0800 (PST)
-Received: from hary-Aspire-X3400G.Belkin (174-84-237-140.res.bhn.net. [174.84.237.140])
-        by smtp.googlemail.com with ESMTPSA id l3sm2486748iti.3.2016.11.15.17.07.54
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
-        Tue, 15 Nov 2016 17:07:54 -0800 (PST)
-From: Harinath Nampally <harinath922@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Minor coverity defect fix - CID 1125928 In set_file_xattrs: Dereference of an explicit null value
-Date: Tue, 15 Nov 2016 20:07:53 -0500
-Message-Id: <1479258473-30053-1-git-send-email-harinath922@gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:41425 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751566AbcK3PVe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 30 Nov 2016 10:21:34 -0500
+Date: Wed, 30 Nov 2016 16:21:28 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Harinath Nampally <harinath922@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Minor coverity defect fix - CID 1125928 In
+ set_file_xattrs: Dereference of an explicit null value
+Message-ID: <20161130152128.GP12522@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1479258473-30053-1-git-send-email-harinath922@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1479258473-30053-1-git-send-email-harinath922@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
----
- cmds-restore.c | 3 +++
- 1 file changed, 3 insertions(+)
+Hi,
 
-diff --git a/cmds-restore.c b/cmds-restore.c
-index a8c67a5..6c2ea8a 100644
---- a/cmds-restore.c
-+++ b/cmds-restore.c
-@@ -509,6 +509,9 @@ static int set_file_xattrs(struct btrfs_root *root, u64 inode,
- 
- 		while (cur < total_len) {
- 			len = btrfs_dir_name_len(leaf, di);
-+                        if (len == 0) {
-+                                goto out;
-+                        }
- 			if (len > name_len) {
- 				free(name);
- 				name = (char *) malloc(len + 1);
--- 
-2.7.4
+this patch lacks basic formatting requirements, this has been
+extensively documented eg. here https://btrfs.wiki.kernel.org/index.php/Developer's_FAQ .
 
+Besides the formalities, I'm missing what's the change rationale. It
+deals with a strange case when the xattr name length is 0, which is
+unexpected and should not be handled silently. Next I'm not sure if
+bailing out of the function is right, there are more items to process.
+Best if we could skip the damaged ones but still continue.

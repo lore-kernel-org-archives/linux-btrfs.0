@@ -1,49 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:36375 "EHLO
-        mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752395AbcK3QfD (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:37018 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753815AbcK3Qqv (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 Nov 2016 11:35:03 -0500
-From: Martin Steigerwald <martin@lichtvoll.de>
-To: Wilson Meier <wilson.meier@gmail.com>
-Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-Subject: Re: Convert from RAID 5 to 10
-Date: Wed, 30 Nov 2016 17:35:00 +0100
-Message-ID: <3704790.nMdNB9Lobq@merkaba>
-In-Reply-To: <e9a4cba5-53b7-b6f0-af83-467f5f95f5b8@googlemail.com>
-References: <10bbbf97-7f43-c972-a832-4a8cf054d5e5@xgm.de> <19671a71-5d1c-c42e-db3d-c870ec08b2ff@gmail.com> <e9a4cba5-53b7-b6f0-af83-467f5f95f5b8@googlemail.com>
+        Wed, 30 Nov 2016 11:46:51 -0500
+Date: Wed, 30 Nov 2016 08:46:46 -0800
+From: Marc MERLIN <marc@merlins.org>
+To: Eric Wheeler <bcache@lists.ewheeler.net>
+Cc: Coly Li <i@coly.li>, linux-bcache@vger.kernel.org,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-ID: <20161130164646.d6ejlv72hzellddd@merlins.org>
+References: <20161118164643.g7ttuzgsj74d6fbz@merlins.org>
+ <20161118184915.j6dlazbgminxnxzx@merlins.org>
+ <b6c3daab-d990-e873-4d0f-0f0afe2259b1@coly.li>
+ <alpine.LRH.2.11.1611291255350.1914@mail.ewheeler.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <alpine.LRH.2.11.1611291255350.1914@mail.ewheeler.net>
+Subject: Re: 4.8.8, bcache deadlock and hard lockup
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Mittwoch, 30. November 2016, 16:49:59 CET schrieb Wilson Meier:
-> Am 30/11/16 um 15:37 schrieb Austin S. Hemmelgarn:
-> > On 2016-11-30 08:12, Wilson Meier wrote:
-> >> Am 30/11/16 um 11:41 schrieb Duncan:
-> >>> Wilson Meier posted on Wed, 30 Nov 2016 09:35:36 +0100 as excerpted:
-> >>>> Am 30/11/16 um 09:06 schrieb Martin Steigerwald:
-> >>>>> Am Mittwoch, 30. November 2016, 10:38:08 CET schrieb Roman Mamedov:
-[…]
-> >> It is really disappointing to not have this information in the wiki
-> >> itself. This would have saved me, and i'm quite sure others too, a lot
-> >> of time.
-> >> Sorry for being a bit frustrated.
++btrfs mailing list, see below why
+
+On Tue, Nov 29, 2016 at 12:59:44PM -0800, Eric Wheeler wrote:
+> On Mon, 27 Nov 2016, Coly Li wrote:
+> > 
+> > Yes, too many work queues... I guess the locking might be caused by some
+> > very obscure reference of closure code. I cannot have any clue if I
+> > cannot find a stable procedure to reproduce this issue.
+> > 
+> > Hmm, if there is a tool to clone all the meta data of the back end cache
+> > and whole cached device, there might be a method to replay the oops much
+> > easier.
+> > 
+> > Eric, do you have any hint ?
 > 
-> I'm not angry or something like that :) .
-> I just would like to have the possibility to read such information about
-> the storage i put my personal data (> 3 TB) on its official wiki.
+> Note that the backing device doesn't have any metadata, just a superblock. 
+> You can easily dd that off onto some other volume without transferring the 
+> data. By default, data starts at 8k, or whatever you used in `make-bcache 
+> -w`.
 
-Anyone can get an account on the wiki and add notes there, so feel free.
+Ok, Linus helped me find a workaround for this problem:
+https://lkml.org/lkml/2016/11/29/667
+namely:
+   echo 2 > /proc/sys/vm/dirty_ratio
+   echo 1 > /proc/sys/vm/dirty_background_ratio
+(it's a 24GB system, so the defaults of 20 and 10 were creating too many
+requests in th buffers)
 
-You can even use footnotes or something like that. Maybe it would be good to 
-add a paragraph there that features are related to one another, so while BTRFS 
-RAID 1 for example might be quite okay, it depends on features that are still 
-flaky.
+Note that this is only a workaround, not a fix.
 
-I for myself rely quite much on BTRFS RAID 1 with lzo compression and it seems 
-to work okay for me.
+When I did this and re tried my big copy again, I still got 100+ kernel
+work queues, but apparently the underlying swraid5 was able to unblock
+and satisfy the write requests before too many accumulated and crashed
+the kernel.
 
+I'm not a kernel coder, but seems to me that bcache needs a way to
+throttle incoming requests if there are too many so that it does not end
+up in a state where things blow up due to too many piled up requests.
+
+You should be able to reproduce this by taking 5 spinning rust drives,
+put raid5 on top, dmcrypt, bcache and hopefully any filesystem (although
+I used btrfs) and send lots of requests.
+Actually to be honest, the problems have mostly been happening when I do
+btrfs scrub and btrfs send/receive which both generate I/O from within
+the kernel instead of user space.
+So here, btrfs may be a contributor to the problem too, but while btrfs
+still trashes my system if I remove the caching device on bcache (and
+with the default dirty ratio values), it doesn't crash the kernel.
+
+I'll start another separate thread with the btrfs folks on how much
+pressure is put on the system, but on your side it would be good to help
+ensure that bcache doesn't crash the system altogether if too many
+requests are allowed to pile up.
+
+Thanks,
+Marc
 -- 
-Martin
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

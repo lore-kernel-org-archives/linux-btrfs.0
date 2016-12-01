@@ -1,67 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f46.google.com ([209.85.215.46]:33045 "EHLO
-        mail-lf0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751758AbcLAVku (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Dec 2016 16:40:50 -0500
-Received: by mail-lf0-f46.google.com with SMTP id c13so181497827lfg.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 01 Dec 2016 13:40:50 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <CAJCQCtSuVNKnXVdOzWamNGGh+43a0PQacjAHGrFyjPYCPYPfvQ@mail.gmail.com>
-References: <10bbbf97-7f43-c972-a832-4a8cf054d5e5@xgm.de> <fce2df8b-0775-1ecf-c08d-960018822c20@googlemail.com>
- <20161130103808.74e5ae95@natsu> <3713990.abIjkpnqyF@merkaba>
- <73d0d10c-7a06-b282-ee76-4512aaed5723@googlemail.com> <pan$7a75f$e48f1aa5$204a0630$9d1c1cc4@cox.net>
- <b13f13a4-639d-d460-7642-c8f8fe646832@googlemail.com> <19671a71-5d1c-c42e-db3d-c870ec08b2ff@gmail.com>
- <CAJCQCtRnqp15QZ9V+AtBu1_7QwChdoRMs0nHg3stWnJOyy8qMw@mail.gmail.com>
- <CAKinxcUBNa5durypXVvesfkYY_bTj8W79wuj-2SeNYmFEZMfjw@mail.gmail.com> <CAJCQCtSuVNKnXVdOzWamNGGh+43a0PQacjAHGrFyjPYCPYPfvQ@mail.gmail.com>
-From: Tomasz Kusmierz <tom.kusmierz@gmail.com>
-Date: Thu, 1 Dec 2016 21:40:48 +0000
-Message-ID: <CAKinxcU39Rz4vJ651X+AZt9VGtRmwJwjq0sxR98MSZ0QgQ0U9A@mail.gmail.com>
-Subject: Re: Convert from RAID 5 to 10
-To: Chris Murphy <lists@colorremedies.com>
-Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Wilson Meier <wilson.meier@gmail.com>, Duncan <1i5t5.duncan@cox.net>,
+Received: from mx.ewheeler.net ([66.155.3.69]:41364 "EHLO mail.ewheeler.net"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1752715AbcLAV7m (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 1 Dec 2016 16:59:42 -0500
+Date: Thu, 1 Dec 2016 13:58:33 -0800 (PST)
+From: Eric Wheeler <bcache@lists.ewheeler.net>
+To: Marc MERLIN <marc@merlins.org>
+cc: Coly Li <i@coly.li>, linux-bcache@vger.kernel.org,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: 4.8.8, bcache deadlock and hard lockup
+In-Reply-To: <20161201000919.GB13371@merlins.org>
+Message-ID: <alpine.LRH.2.11.1612011350290.22682@mail.ewheeler.net>
+References: <20161118164643.g7ttuzgsj74d6fbz@merlins.org> <20161118184915.j6dlazbgminxnxzx@merlins.org> <b6c3daab-d990-e873-4d0f-0f0afe2259b1@coly.li> <alpine.LRH.2.11.1611291255350.1914@mail.ewheeler.net> <20161130164646.d6ejlv72hzellddd@merlins.org>
+ <alpine.LRH.2.11.1611301553420.22682@mail.ewheeler.net> <20161201000919.GB13371@merlins.org>
+MIME-Version: 1.0
+Content-Type: TEXT/PLAIN; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-FYI.
-There is an old saying in embedded circles that I revolve that evolved
-from Arthur C Clarke "Any sufficiently advanced technology is
-indistinguishable from magic." Engineering version states "Any
-sufficiently advanced incompetence is indistinguishable from malice"
-Also I'll quote you on throwing under the bus thing :) (I actually
-like that justification)
+On Wed, 30 Nov 2016, Marc MERLIN wrote:
+> On Wed, Nov 30, 2016 at 03:57:28PM -0800, Eric Wheeler wrote:
+> > > I'll start another separate thread with the btrfs folks on how much
+> > > pressure is put on the system, but on your side it would be good to help
+> > > ensure that bcache doesn't crash the system altogether if too many
+> > > requests are allowed to pile up.
+> > 
+> > Try BFQ.  It is AWESOME and helps reduce the congestion problem with bulk 
+> > writes at the request queue on its way to the spinning disk or SSD:
+> > 	http://algo.ing.unimo.it/people/paolo/disk_sched/
+> > 
+> > use the latest BFQ git here, merge it into v4.8.y:
+> > 	https://github.com/linusw/linux-bfq/commits/bfq-v8
+> > 
+> > This doesn't completely fix the dirty_ration problem, but it is far better 
+> > than CFQ or deadline in my opinion (and experience).
+> 
+> That's good to know thanks.
+> But for my uninformed opinion, is there anything bcache can do to throttle
+> incoming requests if they are piling up, or they're coming from producers
+> upstream and bcache has no choice but try and process them as quickly as
+> possible without a way to block the sender if too many are coming?
 
-On 1 December 2016 at 17:28, Chris Murphy <lists@colorremedies.com> wrote:
-> On Wed, Nov 30, 2016 at 1:29 PM, Tomasz Kusmierz <tom.kusmierz@gmail.com> wrote:
->
->> Please, I beg you add another column to man and wiki stating clearly
->> how many devices every profile can withstand to loose. I frequently
->> have to explain how btrfs profiles work and show quotes from this
->> mailing list because "dawning-kruger effect victims" keep poping up
->> with statements like "in btrfs raid10 with 8 drives you can loose 4
->> drives" ... I seriously beg you guys, my beating stick is half broken
->> by now.
->
-> You need a new stick. It's called the ad hominem attack. When stupid
-> people say stupid things, the dispute is not about the facts or
-> opinions in the argument itself, but rather the person involved. There
-> is the possibility this is more than stupidity, it really borders on
-> maliciousness. Any ethical code of conduct for a list will accept ad
-> hominem attacks over the willful dissemination of provably wrong
-> information. When stupid assholes throw users under the bus with
-> provably wrong (and bad) advice, it becomes something of an obligation
-> to resort to name calling.
->
-> Of course, I'd also like the wiki to clearly state the only profile
-> that tolerates more than one device loss is raid6; and be very
-> explicit with the manifestly wrong terminology being used by Btrfs's
-> raid10 terminology. That is a fairly egregious violation of common
-> terminology and the trust we're supposed to be developing, both in the
-> usage of common terms, but also in Btrfs specifically.
->
->
->
+Not really.  The congestion isn't in bcache, its at the disk queue beyond 
+bcache, but userspace processes are blocked by the (huge) pagecache dirty 
+writeback which happens before bcache gets it and must complete before 
+userspace may proceed: 
+
+fs -> pagecache -> bcache -> {ssd,disk}  
+
+The real issue is that the dirty page cache gets really big, flushes, 
+waits for downstream devices (bcache->ssd,disk) to finish, and then 
+returns to userspace.  The only way to limit dirty cache are those options 
+that Linus mentioned.
+
+BFQ can help for processes not tied to the flush because it may re-order 
+other process requests ahead of the big flush---so even though a big flush 
+is happening and that process is stalled, others might proceed without 
+delay.
+
+See this thread, too:
+	https://groups.google.com/forum/#!msg/bfq-iosched/M2M_UhbC05A/hf6Ni9JbAQAJ
+
+--
+Eric Wheeler
+
+
+
+> 
+> Thanks,
+> Marc
+> -- 
+> "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+> Microsoft is to operating systems ....
+>                                       .... what McDonalds is to gourmet cooking
+> Home page: http://marc.merlins.org/  
 > --
-> Chris Murphy
+> To unsubscribe from this list: send the line "unsubscribe linux-bcache" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

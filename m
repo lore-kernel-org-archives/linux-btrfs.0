@@ -1,45 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49141 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752100AbcLLNPN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Dec 2016 08:15:13 -0500
-Date: Mon, 12 Dec 2016 14:15:07 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
-Subject: Re: [PATCH] Btrfs: use down_read_nested to make lockdep silent
-Message-ID: <20161212131507.GO12522@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1480628659-17731-1-git-send-email-bo.li.liu@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1480628659-17731-1-git-send-email-bo.li.liu@oracle.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:45632 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750946AbcLAVgS (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Dec 2016 16:36:18 -0500
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] Btrfs: add 'inode' for extent map tracepoint
+Date: Thu,  1 Dec 2016 13:44:01 -0800
+Message-Id: <1480628641-17476-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 01, 2016 at 01:44:19PM -0800, Liu Bo wrote:
-> If @block_group is not @used_bg, it'll try to get @used_bg's lock without
-> droping @block_group 's lock and lockdep has throwed a scary deadlock warning
-> about it.
-> Fix it by using down_read_nested.
-> 
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> ---
->  fs/btrfs/extent-tree.c | 3 ++-
->  1 file changed, 2 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 210c94a..cdb082a 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -7394,7 +7394,8 @@ btrfs_lock_cluster(struct btrfs_block_group_cache *block_group,
->  
->  		spin_unlock(&cluster->refill_lock);
->  
-> -		down_read(&used_bg->data_rwsem);
-> +		/* We should only have one-level nested. */
-> +		down_read_nested(&used_bg->data_rwsem, 1);
+'inode' is an important field for btrfs_get_extent, lets trace it.
 
-While looking what down_read_nested does, I've found
-SINGLE_DEPTH_NESTING, defined to 1. I'd rather use it instead of '1', as
-it gives more more pointers to the docs.
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/inode.c             |  2 +-
+ include/trace/events/btrfs.h | 13 ++++++++-----
+ 2 files changed, 9 insertions(+), 6 deletions(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 603dd492..79f35b6 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -7095,7 +7095,7 @@ struct extent_map *btrfs_get_extent(struct inode *inode, struct page *page,
+ 	write_unlock(&em_tree->lock);
+ out:
+ 
+-	trace_btrfs_get_extent(root, em);
++	trace_btrfs_get_extent(root, inode, em);
+ 
+ 	btrfs_free_path(path);
+ 	if (trans) {
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index e030d6f..0e04208 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -184,14 +184,16 @@ DEFINE_EVENT(btrfs__inode, btrfs_inode_evict,
+ 
+ TRACE_EVENT_CONDITION(btrfs_get_extent,
+ 
+-	TP_PROTO(struct btrfs_root *root, struct extent_map *map),
++	TP_PROTO(struct btrfs_root *root, struct inode *inode,
++		 struct extent_map *map),
+ 
+-	TP_ARGS(root, map),
++	TP_ARGS(root, inode, map),
+ 
+ 	TP_CONDITION(map),
+ 
+ 	TP_STRUCT__entry_btrfs(
+ 		__field(	u64,  root_objectid	)
++		__field(	u64,  ino		)
+ 		__field(	u64,  start		)
+ 		__field(	u64,  len		)
+ 		__field(	u64,  orig_start	)
+@@ -204,7 +206,8 @@ TRACE_EVENT_CONDITION(btrfs_get_extent,
+ 
+ 	TP_fast_assign_btrfs(root->fs_info,
+ 		__entry->root_objectid	= root->root_key.objectid;
+-		__entry->start 		= map->start;
++		__entry->ino		= btrfs_ino(inode);
++		__entry->start		= map->start;
+ 		__entry->len		= map->len;
+ 		__entry->orig_start	= map->orig_start;
+ 		__entry->block_start	= map->block_start;
+@@ -214,12 +217,12 @@ TRACE_EVENT_CONDITION(btrfs_get_extent,
+ 		__entry->compress_type	= map->compress_type;
+ 	),
+ 
+-	TP_printk_btrfs("root = %llu(%s), start = %llu, len = %llu, "
++	TP_printk_btrfs("root = %llu(%s), ino = %llu start = %llu, len = %llu, "
+ 		  "orig_start = %llu, block_start = %llu(%s), "
+ 		  "block_len = %llu, flags = %s, refs = %u, "
+ 		  "compress_type = %u",
+ 		  show_root_type(__entry->root_objectid),
+-		  (unsigned long long)__entry->start,
++		  __entry->ino, (unsigned long long)__entry->start,
+ 		  (unsigned long long)__entry->len,
+ 		  (unsigned long long)__entry->orig_start,
+ 		  show_map_type(__entry->block_start),
+-- 
+2.5.5
+

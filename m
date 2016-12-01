@@ -1,25 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:48340 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751581AbcLLNJL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Dec 2016 08:09:11 -0500
-Date: Mon, 12 Dec 2016 14:09:05 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
-Subject: Re: [PATCH] Btrfs: add truncated_len for ordered extent tracepoints
-Message-ID: <20161212130905.GN12522@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1480628650-17607-1-git-send-email-bo.li.liu@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1480628650-17607-1-git-send-email-bo.li.liu@oracle.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:50059 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750946AbcLAVg3 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Dec 2016 16:36:29 -0500
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] Btrfs: add truncated_len for ordered extent tracepoints
+Date: Thu,  1 Dec 2016 13:44:10 -0800
+Message-Id: <1480628650-17607-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 01, 2016 at 01:44:10PM -0800, Liu Bo wrote:
-> This can help us monitor truncated ordered extents.
-> 
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+This can help us monitor truncated ordered extents.
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ include/trace/events/btrfs.h | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index e030d6f..1dc1197 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -259,6 +259,7 @@ DECLARE_EVENT_CLASS(btrfs__ordered_extent,
+ 		__field(	int,  compress_type	)
+ 		__field(	int,  refs		)
+ 		__field(	u64,  root_objectid	)
++		__field(	u64,  truncated_len	)
+ 	),
+ 
+ 	TP_fast_assign_btrfs(btrfs_sb(inode->i_sb),
+@@ -273,10 +274,12 @@ DECLARE_EVENT_CLASS(btrfs__ordered_extent,
+ 		__entry->refs		= atomic_read(&ordered->refs);
+ 		__entry->root_objectid	=
+ 				BTRFS_I(inode)->root->root_key.objectid;
++		__entry->truncated_len	= ordered->truncated_len;
+ 	),
+ 
+ 	TP_printk_btrfs("root = %llu(%s), ino = %llu, file_offset = %llu, "
+ 		  "start = %llu, len = %llu, disk_len = %llu, "
++		  "truncated_len = %llu, "
+ 		  "bytes_left = %llu, flags = %s, compress_type = %d, "
+ 		  "refs = %d",
+ 		  show_root_type(__entry->root_objectid),
+@@ -285,6 +288,7 @@ DECLARE_EVENT_CLASS(btrfs__ordered_extent,
+ 		  (unsigned long long)__entry->start,
+ 		  (unsigned long long)__entry->len,
+ 		  (unsigned long long)__entry->disk_len,
++		  (unsigned long long)__entry->truncated_len,
+ 		  (unsigned long long)__entry->bytes_left,
+ 		  show_ordered_flags(__entry->flags),
+ 		  __entry->compress_type, __entry->refs)
+-- 
+2.5.5
+

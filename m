@@ -1,106 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx.ewheeler.net ([66.155.3.69]:54688 "EHLO mail.ewheeler.net"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1754515AbcK3X5i (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 Nov 2016 18:57:38 -0500
-Date: Wed, 30 Nov 2016 15:57:28 -0800 (PST)
-From: Eric Wheeler <bcache@lists.ewheeler.net>
-To: Marc MERLIN <marc@merlins.org>
-cc: Coly Li <i@coly.li>, linux-bcache@vger.kernel.org,
+Received: from magic.merlins.org ([209.81.13.136]:41495 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1756237AbcLAAJ0 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 30 Nov 2016 19:09:26 -0500
+Date: Wed, 30 Nov 2016 16:09:19 -0800
+From: Marc MERLIN <marc@merlins.org>
+To: Eric Wheeler <bcache@lists.ewheeler.net>
+Cc: Coly Li <i@coly.li>, linux-bcache@vger.kernel.org,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Subject: Re: 4.8.8, bcache deadlock and hard lockup
-In-Reply-To: <20161130164646.d6ejlv72hzellddd@merlins.org>
-Message-ID: <alpine.LRH.2.11.1611301553420.22682@mail.ewheeler.net>
-References: <20161118164643.g7ttuzgsj74d6fbz@merlins.org> <20161118184915.j6dlazbgminxnxzx@merlins.org> <b6c3daab-d990-e873-4d0f-0f0afe2259b1@coly.li> <alpine.LRH.2.11.1611291255350.1914@mail.ewheeler.net> <20161130164646.d6ejlv72hzellddd@merlins.org>
+Message-ID: <20161201000919.GB13371@merlins.org>
+References: <20161118164643.g7ttuzgsj74d6fbz@merlins.org> <20161118184915.j6dlazbgminxnxzx@merlins.org> <b6c3daab-d990-e873-4d0f-0f0afe2259b1@coly.li> <alpine.LRH.2.11.1611291255350.1914@mail.ewheeler.net> <20161130164646.d6ejlv72hzellddd@merlins.org> <alpine.LRH.2.11.1611301553420.22682@mail.ewheeler.net>
 MIME-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <alpine.LRH.2.11.1611301553420.22682@mail.ewheeler.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 30 Nov 2016, Marc MERLIN wrote:
-> +btrfs mailing list, see below why
+On Wed, Nov 30, 2016 at 03:57:28PM -0800, Eric Wheeler wrote:
+> > I'll start another separate thread with the btrfs folks on how much
+> > pressure is put on the system, but on your side it would be good to help
+> > ensure that bcache doesn't crash the system altogether if too many
+> > requests are allowed to pile up.
 > 
-> On Tue, Nov 29, 2016 at 12:59:44PM -0800, Eric Wheeler wrote:
-> > On Mon, 27 Nov 2016, Coly Li wrote:
-> > > 
-> > > Yes, too many work queues... I guess the locking might be caused by some
-> > > very obscure reference of closure code. I cannot have any clue if I
-> > > cannot find a stable procedure to reproduce this issue.
-> > > 
-> > > Hmm, if there is a tool to clone all the meta data of the back end cache
-> > > and whole cached device, there might be a method to replay the oops much
-> > > easier.
-> > > 
-> > > Eric, do you have any hint ?
-> > 
-> > Note that the backing device doesn't have any metadata, just a superblock. 
-> > You can easily dd that off onto some other volume without transferring the 
-> > data. By default, data starts at 8k, or whatever you used in `make-bcache 
-> > -w`.
+> Try BFQ.  It is AWESOME and helps reduce the congestion problem with bulk 
+> writes at the request queue on its way to the spinning disk or SSD:
+> 	http://algo.ing.unimo.it/people/paolo/disk_sched/
 > 
-> Ok, Linus helped me find a workaround for this problem:
-> https://lkml.org/lkml/2016/11/29/667
-> namely:
->    echo 2 > /proc/sys/vm/dirty_ratio
->    echo 1 > /proc/sys/vm/dirty_background_ratio
-> (it's a 24GB system, so the defaults of 20 and 10 were creating too many
-> requests in th buffers)
+> use the latest BFQ git here, merge it into v4.8.y:
+> 	https://github.com/linusw/linux-bfq/commits/bfq-v8
 > 
-> Note that this is only a workaround, not a fix.
-> 
-> When I did this and re tried my big copy again, I still got 100+ kernel
-> work queues, but apparently the underlying swraid5 was able to unblock
-> and satisfy the write requests before too many accumulated and crashed
-> the kernel.
-> 
-> I'm not a kernel coder, but seems to me that bcache needs a way to
-> throttle incoming requests if there are too many so that it does not end
-> up in a state where things blow up due to too many piled up requests.
-> 
-> You should be able to reproduce this by taking 5 spinning rust drives,
-> put raid5 on top, dmcrypt, bcache and hopefully any filesystem (although
-> I used btrfs) and send lots of requests.
-> Actually to be honest, the problems have mostly been happening when I do
-> btrfs scrub and btrfs send/receive which both generate I/O from within
-> the kernel instead of user space.
-> So here, btrfs may be a contributor to the problem too, but while btrfs
-> still trashes my system if I remove the caching device on bcache (and
-> with the default dirty ratio values), it doesn't crash the kernel.
-> 
-> I'll start another separate thread with the btrfs folks on how much
-> pressure is put on the system, but on your side it would be good to help
-> ensure that bcache doesn't crash the system altogether if too many
-> requests are allowed to pile up.
+> This doesn't completely fix the dirty_ration problem, but it is far better 
+> than CFQ or deadline in my opinion (and experience).
 
+That's good to know thanks.
+But for my uninformed opinion, is there anything bcache can do to throttle
+incoming requests if they are piling up, or they're coming from producers
+upstream and bcache has no choice but try and process them as quickly as
+possible without a way to block the sender if too many are coming?
 
-Try BFQ.  It is AWESOME and helps reduce the congestion problem with bulk 
-writes at the request queue on its way to the spinning disk or SSD:
-	http://algo.ing.unimo.it/people/paolo/disk_sched/
-
-use the latest BFQ git here, merge it into v4.8.y:
-	https://github.com/linusw/linux-bfq/commits/bfq-v8
-
-This doesn't completely fix the dirty_ration problem, but it is far better 
-than CFQ or deadline in my opinion (and experience).
-
--Eric
-
-
-
---
-Eric Wheeler
-
-
-> 
-> Thanks,
-> Marc
-> -- 
-> "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-> Microsoft is to operating systems ....
->                                       .... what McDonalds is to gourmet cooking
-> Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-bcache" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Thanks,
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

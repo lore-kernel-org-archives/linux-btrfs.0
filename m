@@ -1,75 +1,120 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:21600 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1750731AbcLAF4U (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 1 Dec 2016 00:56:20 -0500
+        id S1750731AbcLAF4Y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 1 Dec 2016 00:56:24 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH 1/2] btrfs: qgroup: Return actually freed bytes for qgroup release or free data
-Date: Thu,  1 Dec 2016 13:54:55 +0800
-Message-Id: <20161201055456.32062-1-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 2/2] btrfs: qgroup: Fix qgroup reserved space underflow caused by buffered write and quota enable
+Date: Thu,  1 Dec 2016 13:54:56 +0800
+Message-Id: <20161201055456.32062-2-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20161201055456.32062-1-quwenruo@cn.fujitsu.com>
+References: <20161201055456.32062-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_qgroup_release/free_data() only returns 0 or minus error
-number(ENOMEM is the only possible error).
+[BUG]
+Under the following case, we can underflow qgroup reserved space.
 
-This is normally good enough, but sometimes we need the accurate byte
-number it freed/released.
+            Task A                |            Task B
+---------------------------------------------------------------
+ Quota disabled                   |
+ Buffered write                   |
+ |- btrfs_check_data_free_space() |
+ |  *NO* qgroup space is reserved |
+ |  since quota is *DISABLED*     |
+ |- All pages are copied to page  |
+    cache                         |
+                                  | Enable quota
+                                  | Quota scan finished
+                                  |
+                                  | Sync_fs
+                                  | |- run_delalloc_range
+                                  | |- Write pages
+                                  | |- btrfs_finish_ordered_io
+                                  |    |- insert_reserved_file_extent
+                                  |       |- btrfs_qgroup_release_data()
+                                  |          Since no qgroup space is
+                                             reserved in Task A, we
+                                             underflow qgroup reserved
+                                             space
+This can be detected by fstest btrfs/104.
 
-Change it to return actually released/freed bytenr number instead of 0
-for success.
-And slightly modify related extent_changeset structure, since in btrfs
-one none-hole data extent won't be larger than 128M, so "unsigned int"
-is large enough for the use case.
+[CAUSE]
+In insert_reserved_file_extent() we info qgroup to release the @ram_bytes
+size of qgroup reserved_space under all case.
+And btrfs_qgroup_release_data() will check if qgroup is enabled.
+
+However in above case, the buffered write happens before quota is
+enabled, so we don't havee reserved space for that range.
+
+[FIX]
+In insert_reserved_file_extent(), we info qgroup to release the acctual
+byte number it released.
+In above case, since we don't have reserved space, we info qgroup to
+release 0 byte, so the problem can be fixed.
+
+And thanks to the @reserved parameter introduced by qgroup rework, and
+previous patch to return release bytes, the fix can be as small as less
+than 10 lines.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/extent-tree.c | 2 +-
- fs/btrfs/extent_io.h   | 2 +-
- fs/btrfs/qgroup.c      | 1 +
- 3 files changed, 3 insertions(+), 2 deletions(-)
+To David:
+These 2 patches, with updated extra WARN_ON() patch(V5), btrfs on x86_64 is
+good for current qgroup test group.
+But the bug reported by Chadan still exists, and the fix for that will be
+delayed for a while, as the fix involves large interface change
+(add struct extent_changeset for every qgroup reserve caller).
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index ac3ae27..dae287d 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4318,7 +4318,7 @@ int btrfs_check_data_free_space(struct inode *inode, u64 start, u64 len)
+I'll run extra tests for that fix to ensure they are OK and won't cause
+extra bugs.
+
+Thanks,
+Qu
+---
+ fs/btrfs/inode.c | 15 ++++++++++-----
+ 1 file changed, 10 insertions(+), 5 deletions(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 242dc7e..3db58d9 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2256,6 +2256,7 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
+ 	struct btrfs_path *path;
+ 	struct extent_buffer *leaf;
+ 	struct btrfs_key ins;
++	u64 qg_released;
+ 	int extent_inserted = 0;
+ 	int ret;
  
- 	/* Use new btrfs_qgroup_reserve_data to reserve precious data space. */
- 	ret = btrfs_qgroup_reserve_data(inode, start, len);
--	if (ret)
+@@ -2311,15 +2312,19 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
+ 	ins.objectid = disk_bytenr;
+ 	ins.offset = disk_num_bytes;
+ 	ins.type = BTRFS_EXTENT_ITEM_KEY;
+-	ret = btrfs_alloc_reserved_file_extent(trans, root,
+-					root->root_key.objectid,
+-					btrfs_ino(inode), file_pos,
+-					ram_bytes, &ins);
++
+ 	/*
+ 	 * Release the reserved range from inode dirty range map, as it is
+ 	 * already moved into delayed_ref_head
+ 	 */
+-	btrfs_qgroup_release_data(inode, file_pos, ram_bytes);
++	ret = btrfs_qgroup_release_data(inode, file_pos, ram_bytes);
 +	if (ret < 0)
- 		btrfs_free_reserved_data_space_noquota(inode, start, len);
- 	return ret;
- }
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 8df24c6..13edb86 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -190,7 +190,7 @@ struct extent_buffer {
-  */
- struct extent_changeset {
- 	/* How many bytes are set/cleared in this operation */
--	u64 bytes_changed;
-+	unsigned int bytes_changed;
- 
- 	/* Changed ranges */
- 	struct ulist *range_changed;
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 1ad3be8..7263065 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2873,6 +2873,7 @@ static int __btrfs_qgroup_release_data(struct inode *inode, u64 start, u64 len,
- 	}
- 	trace_btrfs_qgroup_release_data(inode, start, len,
- 					changeset.bytes_changed, trace_op);
-+	ret = changeset.bytes_changed;
++		goto out;
++	qg_released = ret;
++	ret = btrfs_alloc_reserved_file_extent(trans, root,
++					root->root_key.objectid,
++					btrfs_ino(inode), file_pos,
++					qg_released, &ins);
  out:
- 	ulist_free(changeset.range_changed);
- 	return ret;
+ 	btrfs_free_path(path);
+ 
 -- 
 2.10.2
 

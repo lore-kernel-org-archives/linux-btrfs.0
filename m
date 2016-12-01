@@ -1,80 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:22521 "EHLO
-        cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1757299AbcLAOKW (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 1 Dec 2016 09:10:22 -0500
-Subject: Re: Metadata balance fails ENOSPC
-To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
-        Andrei Borzenkov <arvidjaar@gmail.com>
-References: <04e767a6-ff6f-95ba-f2f9-6061035dcd10@profihost.ag>
- <CAJCQCtQJV5jCLbON3Fk+DHCztRqAVN35rfMcHiWKWRT3yg+c_A@mail.gmail.com>
- <af47955b-19a4-7ff5-8d88-d94f40300e65@profihost.ag>
- <CAA91j0WLve+R5VBHkb7p2NO_hTuLcRp5KvjsPmnZgOoF1MTWzA@mail.gmail.com>
- <a4b76eec-8967-e7f6-544b-8b05f362c585@mendix.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
-Message-ID: <abf74fc8-3198-8987-bb32-2fb61199f88a@profihost.ag>
-Date: Thu, 1 Dec 2016 15:10:18 +0100
+Received: from cn.fujitsu.com ([222.73.24.84]:21600 "EHLO song.cn.fujitsu.com"
+        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+        id S1750731AbcLAF4U (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 1 Dec 2016 00:56:20 -0500
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH 1/2] btrfs: qgroup: Return actually freed bytes for qgroup release or free data
+Date: Thu,  1 Dec 2016 13:54:55 +0800
+Message-Id: <20161201055456.32062-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <a4b76eec-8967-e7f6-544b-8b05f362c585@mendix.com>
-Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+btrfs_qgroup_release/free_data() only returns 0 or minus error
+number(ENOMEM is the only possible error).
 
-Am 01.12.2016 um 14:51 schrieb Hans van Kranenburg:
-> On 12/01/2016 09:12 AM, Andrei Borzenkov wrote:
->> On Thu, Dec 1, 2016 at 10:49 AM, Stefan Priebe - Profihost AG
->> <s.priebe@profihost.ag> wrote:
->> ...
->>>
->>> Custom 4.4 kernel with patches up to 4.10. But i already tried 4.9-rc7
->>> which does the same.
->>>
->>>
->>>>> # btrfs filesystem show /ssddisk/
->>>>> Label: none  uuid: a69d2e90-c2ca-4589-9876-234446868adc
->>>>>         Total devices 1 FS bytes used 305.67GiB
->>>>>         devid    1 size 500.00GiB used 500.00GiB path /dev/vdb1
->>>>>
->>>>> # btrfs filesystem usage /ssddisk/
->>>>> Overall:
->>>>>     Device size:                 500.00GiB
->>>>>     Device allocated:            500.00GiB
->>>>>     Device unallocated:            1.05MiB
->>>>
->>>> Drive is actually fully allocated so if Btrfs needs to create a new
->>>> chunk right now, it can't. However,
->>>
->>> Yes but there's lot of free space:
->>>     Free (estimated):            193.46GiB      (min: 193.46GiB)
->>>
->>> How does this match?
->>>
->>>
->>>> All three chunk types have quite a bit of unused space in them, so
->>>> it's unclear why there's a no space left error.
->>>>
->>
->> I remember discussion that balance always tries to pre-allocate one
->> chunk in advance, and I believe there was patch to correct it but I am
->> not sure whether it was merged.
-> 
-> http://www.spinics.net/lists/linux-btrfs/msg56772.html
+This is normally good enough, but sometimes we need the accurate byte
+number it freed/released.
 
-Thanks - still don't understand why that one is not upstream or why it
-was reverted. Looks absolutely reasonable to me. Other option would be
-to make it possible to make allocated unused space unallocted again - no
-idea how todo that.
+Change it to return actually released/freed bytenr number instead of 0
+for success.
+And slightly modify related extent_changeset structure, since in btrfs
+one none-hole data extent won't be larger than 128M, so "unsigned int"
+is large enough for the use case.
 
-> 
->>>> Try remounting with enoscp_debug, and then trigger the problem again,
->>>> and post the resulting kernel messages.
->>>
->>> With enospc debug it says:
->>> [39193.425682] BTRFS warning (device vdb1): no space to allocate a new
->>> chunk for block group 839941881856
->>> [39193.426033] BTRFS info (device vdb1): 1 enospc errors during balance
-> 
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ fs/btrfs/extent-tree.c | 2 +-
+ fs/btrfs/extent_io.h   | 2 +-
+ fs/btrfs/qgroup.c      | 1 +
+ 3 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index ac3ae27..dae287d 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4318,7 +4318,7 @@ int btrfs_check_data_free_space(struct inode *inode, u64 start, u64 len)
+ 
+ 	/* Use new btrfs_qgroup_reserve_data to reserve precious data space. */
+ 	ret = btrfs_qgroup_reserve_data(inode, start, len);
+-	if (ret)
++	if (ret < 0)
+ 		btrfs_free_reserved_data_space_noquota(inode, start, len);
+ 	return ret;
+ }
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index 8df24c6..13edb86 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -190,7 +190,7 @@ struct extent_buffer {
+  */
+ struct extent_changeset {
+ 	/* How many bytes are set/cleared in this operation */
+-	u64 bytes_changed;
++	unsigned int bytes_changed;
+ 
+ 	/* Changed ranges */
+ 	struct ulist *range_changed;
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 1ad3be8..7263065 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -2873,6 +2873,7 @@ static int __btrfs_qgroup_release_data(struct inode *inode, u64 start, u64 len,
+ 	}
+ 	trace_btrfs_qgroup_release_data(inode, start, len,
+ 					changeset.bytes_changed, trace_op);
++	ret = changeset.bytes_changed;
+ out:
+ 	ulist_free(changeset.range_changed);
+ 	return ret;
+-- 
+2.10.2
+
+
+

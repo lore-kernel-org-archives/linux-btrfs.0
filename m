@@ -1,117 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:60154 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1750847AbcLAHED (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Dec 2016 02:04:03 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1cCL9u-0006VQ-6E
-        for linux-btrfs@vger.kernel.org; Thu, 01 Dec 2016 07:47:54 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Convert from RAID 5 to 10
-Date: Thu, 1 Dec 2016 06:47:47 +0000 (UTC)
-Message-ID: <pan$8dacd$8d489a52$c14c4613$c5dd0426@cox.net>
-References: <10bbbf97-7f43-c972-a832-4a8cf054d5e5@xgm.de>
-        <fce2df8b-0775-1ecf-c08d-960018822c20@googlemail.com>
-        <20161130103808.74e5ae95@natsu> <3713990.abIjkpnqyF@merkaba>
-        <73d0d10c-7a06-b282-ee76-4512aaed5723@googlemail.com>
-        <pan$7a75f$e48f1aa5$204a0630$9d1c1cc4@cox.net>
-        <b13f13a4-639d-d460-7642-c8f8fe646832@googlemail.com>
-        <19671a71-5d1c-c42e-db3d-c870ec08b2ff@gmail.com>
-        <e9a4cba5-53b7-b6f0-af83-467f5f95f5b8@googlemail.com>
-        <21e6765c-21f9-1726-b06f-9bd5f67c7b49@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:22345 "EHLO
+        cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751414AbcLAHvJ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 1 Dec 2016 02:51:09 -0500
+Subject: Re: Metadata balance fails ENOSPC
+To: Chris Murphy <lists@colorremedies.com>
+References: <04e767a6-ff6f-95ba-f2f9-6061035dcd10@profihost.ag>
+ <CAJCQCtQJV5jCLbON3Fk+DHCztRqAVN35rfMcHiWKWRT3yg+c_A@mail.gmail.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
+Message-ID: <af47955b-19a4-7ff5-8d88-d94f40300e65@profihost.ag>
+Date: Thu, 1 Dec 2016 08:49:42 +0100
+MIME-Version: 1.0
+In-Reply-To: <CAJCQCtQJV5jCLbON3Fk+DHCztRqAVN35rfMcHiWKWRT3yg+c_A@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Austin S. Hemmelgarn posted on Wed, 30 Nov 2016 11:48:57 -0500 as
-excerpted:
+Am 01.12.2016 um 00:02 schrieb Chris Murphy:
+> On Wed, Nov 30, 2016 at 2:03 PM, Stefan Priebe - Profihost AG
+> <s.priebe@profihost.ag> wrote:
+>> Hello,
+>>
+>> # btrfs balance start -v -dusage=0 -musage=1 /ssddisk/
+>> Dumping filters: flags 0x7, state 0x0, force is off
+>>   DATA (flags 0x2): balancing, usage=0
+>>   METADATA (flags 0x2): balancing, usage=1
+>>   SYSTEM (flags 0x2): balancing, usage=1
+>> ERROR: error during balancing '/ssddisk/': No space left on device
+>> There may be more info in syslog - try dmesg | tail
+> 
+> You haven't provided kernel messages at the time of the error.
 
-> On 2016-11-30 10:49, Wilson Meier wrote:
+Kernel Message:
+[  429.107723] BTRFS info (device vdb1): 1 enospc errors during balance
 
->> Do you also have all home users in mind, which go to vacation (sometime
->>> 3 weeks) and don't have a 24/7 support team to replace monitored disks
->> which do report SMART errors?
+> Also useful is the kernel version.
 
-> Better than 90% of people I know either shut down their systems when
-> they're going to be away for a long period of time, or like me have ways
-> to log in remotely and tell the FS to not use that disk anymore.
-
-https://btrfs.wiki.kernel.org/index.php/Getting_started ...
-
-... has two warnings offset in red right in the first section:
-
-* If you have btrfs filesystems, run the latest kernel.
-
-* You should keep and test backups of your data, and be prepared to use 
-them.
-
-It also says:
-
-The status of btrfs was experimental for a long time, but the the core 
-functionality is considered good enough for daily use. [...]
-While many people use it reliably, there are still problems being found.
+Custom 4.4 kernel with patches up to 4.10. But i already tried 4.9-rc7
+which does the same.
 
 
-Were I editing that or something very similar would be on the main 
-landing page and as a general status announcement on the feature and 
-profile status page.  However, it IS on the wiki.
+>> # btrfs filesystem show /ssddisk/
+>> Label: none  uuid: a69d2e90-c2ca-4589-9876-234446868adc
+>>         Total devices 1 FS bytes used 305.67GiB
+>>         devid    1 size 500.00GiB used 500.00GiB path /dev/vdb1
+>>
+>> # btrfs filesystem usage /ssddisk/
+>> Overall:
+>>     Device size:                 500.00GiB
+>>     Device allocated:            500.00GiB
+>>     Device unallocated:            1.05MiB
+> 
+> Drive is actually fully allocated so if Btrfs needs to create a new
+> chunk right now, it can't. However,
 
-As to the three weeks vacation thing...
+Yes but there's lot of free space:
+    Free (estimated):            193.46GiB      (min: 193.46GiB)
 
-And "daily use" != "three weeks without physical access to something 
-you're going to actually be relying on for parts of those three weeks".
+How does this match?
 
-And "keep and test backups [and] be prepared to use them" != "go away for 
-three weeks and leave yourself unable to restore from those backups, for 
-something you're relying on over those three weeks", either.
 
-As Austin says, many home users actually shut down their systems when 
-they're going to be away, because they are /not/ going to be using them 
-in that period, and *certainly* *don't* actually /rely/ on them.
+> All three chunk types have quite a bit of unused space in them, so
+> it's unclear why there's a no space left error.
+> 
+> Try remounting with enoscp_debug, and then trigger the problem again,
+> and post the resulting kernel messages.
 
-And most of those that /do/ actually rely on them, have learned or will 
-learn, possibly the hard way, that "things happen", and they need either 
-someone that can be called to poke the systems if necessary, or 
-alternative plans in case what they can't access ATM fails.
+With enospc debug it says:
+[39193.425682] BTRFS warning (device vdb1): no space to allocate a new
+chunk for block group 839941881856
+[39193.426033] BTRFS info (device vdb1): 1 enospc errors during balance
 
-Meanwhile, arguably those who /are/ relying on their filesystems to be up 
-and running for extended periods while they can't actually poke (or have 
-someone else poke) the hardware if necessary, shouldn't be running btrfs 
-as yet in the first place, as it's simply not stable and mature enough 
-for that.  And people who really care about it will have done the 
-research to know the stability status.  And people who don't... well, by 
-not doing that research they've effectively defined it as not that 
-important in their life, other things have taken priority.  So if btrfs 
-fails on them and they didn't know it's stability status, it can only be 
-because it wasn't that important to them that they know, so no big deal.
-
-(I know for certain that before /I/ switched to btrfs, I scoured both the 
-wiki and the manpages, as well as reading a number of articles on btrfs, 
-and then still posted to this list a number of questions I had remaining 
-after doing all that, and got answers I read as well, before I actually 
-did my switch.  That's because it was my data at risk, data I place a 
-high enough value on to want to know the risk at which I was placing it 
-and the best way to deal with various issues I could anticipate possibly 
-happening, before they actually happened.  And I actually did some of my 
-own testing before final deployment, as well, satisfying myself that I 
-/could/ reasonably deal with various hardware and software disaster 
-scenarios, before putting any real data at risk, as well.
-
-Of course I don't expect everyone to do all that, but then I don't expect 
-everyone to place the value in their data that I do in mine.  Which is 
-fine, as long as they're willing to live with the consequences of the 
-priority they placed on appreciating and dealing appropriately with the 
-risk factor on their data, based on the definition of value their actions 
-placed on it.  If they're willing to risk the data because it's of no 
-particular value to them anyway, well then, no such preliminary research 
-and testing is required.  Indeed, it would be stupid, because they surely 
-have more important and higher priority things to deal with.)
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Greets,
+Stefan

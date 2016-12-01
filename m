@@ -1,60 +1,179 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f180.google.com ([209.85.223.180]:36662 "EHLO
-        mail-io0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753228AbcLBMlp (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Dec 2016 07:41:45 -0500
-Received: by mail-io0-f180.google.com with SMTP id m5so340858456ioe.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 02 Dec 2016 04:41:45 -0800 (PST)
-Subject: Re: [PATCH] btrfs-progs: add dev stats returncode option
-To: Mike Fleetwood <mike.fleetwood@googlemail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <20161201184305.3415-1-ahferroin7@gmail.com>
- <CAMU1PDi_iTUMJOejS-yVxyZH6oWpk4A6Po7h=7Z3Sqq40EZxXw@mail.gmail.com>
+Received: from mail-io0-f195.google.com ([209.85.223.195]:33634 "EHLO
+        mail-io0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1757144AbcLASnd (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Dec 2016 13:43:33 -0500
+Received: by mail-io0-f195.google.com with SMTP id j92so2717868ioi.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 01 Dec 2016 10:43:33 -0800 (PST)
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <c8b07541-6320-1e51-cd5b-4d8207b3f152@gmail.com>
-Date: Fri, 2 Dec 2016 07:41:37 -0500
-MIME-Version: 1.0
-In-Reply-To: <CAMU1PDi_iTUMJOejS-yVxyZH6oWpk4A6Po7h=7Z3Sqq40EZxXw@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Subject: [PATCH] btrfs-progs: add dev stats returncode option
+Date: Thu,  1 Dec 2016 13:43:05 -0500
+Message-Id: <20161201184305.3415-1-ahferroin7@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-12-01 15:32, Mike Fleetwood wrote:
-> On 1 December 2016 at 18:43, Austin S. Hemmelgarn <ahferroin7@gmail.com> wrote:
->> Currently, `btrfs device stats` returns non-zero only when there was an
->> error getting the counter values.  This is fine for when it gets run by a
->> user directly, but is a serious pain when trying to use it in a script or
->> for monitoring since you need to parse the (not at all machine friendly)
->> output to check the counter values.
->>
->> This patch adds an option ('-s') which causes `btrfs device stats`
->> to set bit 7 in the return code if any of the counters are non-zero.
->> This greatly simplifies checking from a script or monitoring software
->> if any errors have been recorded.  In the event that this switch is
->> passed and an error occurs reading the stats, the return code will have
->> bit 0 set (so if there are errors reading counters, and the counters
->> which were read were non-zero, the return value will be 129).
->
-> I don't think using bit 7 is a good idea.  Bash (and I think all
-> shells) report exist status 128+SIGNUM when the process is killed by a
-> signal.  I.e. status 129 would be returned when a process is killed by
-> SIGHUP.
->
-> Perhaps bit 6 would be OK to use.
-Ah, you're right, I actually completely forgot about this.  I'll send an 
-updated version later today.
->
-> Thanks,
-> Mike
->
-> https://tiswww.case.edu/php/chet/bash/bashref.html#Exit-Status
-> "Exit statuses fall between 0 and 255, though, as explained below, the
-> shell may use values above 125 specially. ...
->
-> When a command terminates on a fatal signal whose number is N, Bash
-> uses the value 128+N as the exit status. ...
->
-> If a command is not found, the child process created to execute it
-> returns a status of 127. If a command is found but is not executable,
-> the return status is 126."
+Currently, `btrfs device stats` returns non-zero only when there was an
+error getting the counter values.  This is fine for when it gets run by a
+user directly, but is a serious pain when trying to use it in a script or
+for monitoring since you need to parse the (not at all machine friendly)
+output to check the counter values.
+
+This patch adds an option ('-s') which causes `btrfs device stats`
+to set bit 7 in the return code if any of the counters are non-zero.
+This greatly simplifies checking from a script or monitoring software
+if any errors have been recorded.  In the event that this switch is
+passed and an error occurs reading the stats, the return code will have
+bit 0 set (so if there are errors reading counters, and the counters
+which were read were non-zero, the return value will be 129).
+
+Signed-off-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
+---
+Tested on multiple filesystems with various values of error counters
+(all manually set with a hex-editor)
+
+Both the flag letter and the bit being set were picked rather arbitrarily
+(-s intended to be short for status, bit 7 just seemed reasonable).
+I have no issue changing either, but would prefer to avoid bikeshedding
+about stuff like this since this helps out with an area where BTRFS is
+severely lacking right now (monitoring).
+
+ Documentation/btrfs-device.asciidoc |  8 +++++++-
+ cmds-device.c                       | 39 ++++++++++++++++++++++++++++++-------
+ 2 files changed, 39 insertions(+), 8 deletions(-)
+
+diff --git a/Documentation/btrfs-device.asciidoc b/Documentation/btrfs-device.asciidoc
+index 239c99b..97a2ed6 100644
+--- a/Documentation/btrfs-device.asciidoc
++++ b/Documentation/btrfs-device.asciidoc
+@@ -98,7 +98,7 @@ remain as such. Reloading the kernel module will drop this information. There's
+ an alternative way of mounting multiple-device filesystem without the need for
+ prior scanning. See the mount option 'device'.
+ 
+-*stats* [-z] <path>|<device>::
++*stats* [-zs] <path>|<device>::
+ Read and print the device IO error statistics for all devices of the given
+ filesystem identified by <path> or for a single <device>. See section *DEVICE
+ STATS* for more information.
+@@ -108,6 +108,9 @@ STATS* for more information.
+ -z::::
+ Print the stats and reset the values to zero afterwards.
+ 
++-s::::
++Set the high bit of the return-code if any error statistics are non-zero.
++
+ *usage* [options] <path> [<path>...]::
+ Show detailed information about internal allocations in devices.
+ +
+@@ -231,6 +234,9 @@ EXIT STATUS
+ *btrfs device* returns a zero exit status if it succeeds. Non zero is
+ returned in case of failure.
+ 
++If the '-s' option is used, *btrfs device stats* will add 128 to the
++exit status if any of the error counters is non-zero.
++
+ AVAILABILITY
+ ------------
+ *btrfs* is part of btrfs-progs.
+diff --git a/cmds-device.c b/cmds-device.c
+index fa0830f..3fa3018 100644
+--- a/cmds-device.c
++++ b/cmds-device.c
+@@ -376,6 +376,7 @@ static const char * const cmd_device_stats_usage[] = {
+ 	"Show current device IO stats.",
+ 	"",
+ 	"-z                     show current stats and reset values to zero",
++	"-s                     return non-zero if any stat counter is not zero",
+ 	NULL
+ };
+ 
+@@ -389,14 +390,18 @@ static int cmd_device_stats(int argc, char **argv)
+ 	int i;
+ 	int c;
+ 	int err = 0;
++	int status = 0;
+ 	__u64 flags = 0;
+ 	DIR *dirstream = NULL;
+ 
+-	while ((c = getopt(argc, argv, "z")) != -1) {
++	while ((c = getopt(argc, argv, "zs")) != -1) {
+ 		switch (c) {
+ 		case 'z':
+ 			flags = BTRFS_DEV_STATS_RESET;
+ 			break;
++		case 's':
++			status = 1;
++			break;
+ 		case '?':
+ 		default:
+ 			usage(cmd_device_stats_usage);
+@@ -440,7 +445,7 @@ static int cmd_device_stats(int argc, char **argv)
+ 		if (ioctl(fdmnt, BTRFS_IOC_GET_DEV_STATS, &args) < 0) {
+ 			error("DEV_STATS ioctl failed on %s: %s",
+ 			      path, strerror(errno));
+-			err = 1;
++			err |= 1;
+ 		} else {
+ 			char *canonical_path;
+ 
+@@ -457,31 +462,51 @@ static int cmd_device_stats(int argc, char **argv)
+ 					 "devid:%llu", args.devid);
+ 			}
+ 
+-			if (args.nr_items >= BTRFS_DEV_STAT_WRITE_ERRS + 1)
++			if (args.nr_items >= BTRFS_DEV_STAT_WRITE_ERRS + 1) {
+ 				printf("[%s].write_io_errs   %llu\n",
+ 				       canonical_path,
+ 				       (unsigned long long) args.values[
+ 					BTRFS_DEV_STAT_WRITE_ERRS]);
+-			if (args.nr_items >= BTRFS_DEV_STAT_READ_ERRS + 1)
++				if ((status == 1) && (args.values[BTRFS_DEV_STAT_WRITE_ERRS] > 0)) {
++					err |= 128;
++				}
++			}
++			if (args.nr_items >= BTRFS_DEV_STAT_READ_ERRS + 1) {
+ 				printf("[%s].read_io_errs    %llu\n",
+ 				       canonical_path,
+ 				       (unsigned long long) args.values[
+ 					BTRFS_DEV_STAT_READ_ERRS]);
+-			if (args.nr_items >= BTRFS_DEV_STAT_FLUSH_ERRS + 1)
++				if ((status == 1) && (args.values[BTRFS_DEV_STAT_READ_ERRS] > 0)) {
++					err |= 128;
++				}
++			}
++			if (args.nr_items >= BTRFS_DEV_STAT_FLUSH_ERRS + 1) {
+ 				printf("[%s].flush_io_errs   %llu\n",
+ 				       canonical_path,
+ 				       (unsigned long long) args.values[
+ 					BTRFS_DEV_STAT_FLUSH_ERRS]);
+-			if (args.nr_items >= BTRFS_DEV_STAT_CORRUPTION_ERRS + 1)
++				if ((status == 1) && (args.values[BTRFS_DEV_STAT_FLUSH_ERRS] > 0)) {
++					err |= 128;
++				}
++			}
++			if (args.nr_items >= BTRFS_DEV_STAT_CORRUPTION_ERRS + 1) {
+ 				printf("[%s].corruption_errs %llu\n",
+ 				       canonical_path,
+ 				       (unsigned long long) args.values[
+ 					BTRFS_DEV_STAT_CORRUPTION_ERRS]);
+-			if (args.nr_items >= BTRFS_DEV_STAT_GENERATION_ERRS + 1)
++				if ((status == 1) && (args.values[BTRFS_DEV_STAT_CORRUPTION_ERRS] > 0)) {
++					err |= 128;
++				}
++			}
++			if (args.nr_items >= BTRFS_DEV_STAT_GENERATION_ERRS + 1) {
+ 				printf("[%s].generation_errs %llu\n",
+ 				       canonical_path,
+ 				       (unsigned long long) args.values[
+ 					BTRFS_DEV_STAT_GENERATION_ERRS]);
++				if ((status == 1) && (args.values[BTRFS_DEV_STAT_GENERATION_ERRS] > 0)) {
++					err |= 128;
++				}
++			}
+ 
+ 			free(canonical_path);
+ 		}
+-- 
+2.11.0
 

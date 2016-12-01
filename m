@@ -1,30 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45307 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752954AbcLAPXq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 1 Dec 2016 10:23:46 -0500
-Date: Thu, 1 Dec 2016 16:23:41 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.com
-Subject: Re: [PATCH V2] btrfs-progs: Use helper function to access
- btrfs_super_block->sys_chunk_array_size
-Message-ID: <20161201152341.GT12522@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1480600274-13623-1-git-send-email-chandan@linux.vnet.ibm.com>
+Received: from arcturus.aphlor.org ([188.246.204.175]:54154 "EHLO
+        arcturus.aphlor.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1756630AbcLAPce (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Dec 2016 10:32:34 -0500
+Date: Thu, 1 Dec 2016 10:32:09 -0500
+From: Dave Jones <davej@codemonkey.org.uk>
+To: Chris Mason <clm@fb.com>, Linus Torvalds <torvalds@linux-foundation.org>,
+        Jens Axboe <axboe@fb.com>, Andy Lutomirski <luto@amacapital.net>,
+        Andy Lutomirski <luto@kernel.org>, Al Viro <viro@zeniv.linux.org.uk>,
+        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Linux Kernel <linux-kernel@vger.kernel.org>,
+        Dave Chinner <david@fromorbit.com>
+Subject: Re: btrfs_destroy_inode warn (outstanding extents)
+Message-ID: <20161201153209.kylizqipi7a2wcpj@codemonkey.org.uk>
+References: <2bdc068d-afd5-7a78-f334-26970c91aaca@fb.com>
+ <CA+55aFxqRCEVxocpZVDMqinP=EsmgzcnvWpOT6x8NMmcBpWb2Q@mail.gmail.com>
+ <203e0319-bc9b-245c-e162-709267540d22@fb.com>
+ <20161026233808.GC15247@clm-mbp.thefacebook.com>
+ <20161026234751.e66xyzjiwifvbuha@codemonkey.org.uk>
+ <20161031185514.b22zvbxvga4xcinz@codemonkey.org.uk>
+ <CA+55aFwUBYzPcbecpHw9=f8h_JuX18x5bE=Kd_k9QkCcgoiBsA@mail.gmail.com>
+ <20161031194454.GA49877@clm-mbp.thefacebook.com>
+ <20161123193419.pq7adje2eanky2wx@codemonkey.org.uk>
+ <20161123195845.iphzr7ac4mu5ewjt@codemonkey.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1480600274-13623-1-git-send-email-chandan@linux.vnet.ibm.com>
+In-Reply-To: <20161123195845.iphzr7ac4mu5ewjt@codemonkey.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 01, 2016 at 07:21:14PM +0530, Chandan Rajendra wrote:
-> btrfs_super_block->sys_chunk_array_size is stored as le32 data on
-> disk. However insert_temp_chunk_item() writes sys_chunk_array_size in
-> host cpu order. This commit fixes this by using super block access
-> helper functions to read and write
-> btrfs_super_block->sys_chunk_array_size field.
-> 
-> Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+On Wed, Nov 23, 2016 at 02:58:45PM -0500, Dave Jones wrote:
+ > On Wed, Nov 23, 2016 at 02:34:19PM -0500, Dave Jones wrote:
+ > 
+ >  > [  317.689216] BUG: Bad page state in process kworker/u8:8  pfn:4d8fd4
+ >  > trace from just before this happened. Does this shed any light ?
+ >  > 
+ >  > https://codemonkey.org.uk/junk/trace.txt
+ > 
+ > crap, I just noticed the timestamps in the trace come from quite a bit
+ > later.  I'll tweak the code to do the taint checking/ftrace stop after
+ > every syscall, that should narrow the window some more.
+ > 
+ > Getting closer..
 
-Applied, thanks.
+Ok, this is getting more like it.
+http://codemonkey.org.uk/junk/btrfs-destroy-inode-outstanding-extents.txt
+
+Also same bug, different run, but a different traceview http://codemonkey.org.uk/junk/btrfs-destroy-inode-outstanding-extents-function-graph.txt
+
+(function-graph screws up the RIP for some reason, 'return_to_handler'
+ should actually be btrfs_destroy_inode)
+
+
+Anyways, I've got some code that works pretty well for dumping the
+ftrace buffer now when things go awry.  I just need to run it enough
+times that I hit that bad page state instead of this, or a lockdep bug first.
+
+	Dave
+

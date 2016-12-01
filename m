@@ -1,38 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.linuxsystems.it ([79.7.78.67]:40698 "EHLO
-        mail.linuxsystems.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750831AbcLALgD (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Dec 2016 06:36:03 -0500
-From: =?iso-8859-1?Q?Niccol=F2_Belli?= <darkbasic@linuxsystems.it>
-To: Wilson Meier <wilson.meier@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Convert from RAID 5 to 10
-Date: Thu, 01 Dec 2016 12:36:00 +0100
+Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:63945 "EHLO
+        cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751676AbcLALzx (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 1 Dec 2016 06:55:53 -0500
+Subject: Re: Metadata balance fails ENOSPC
+To: Andrei Borzenkov <arvidjaar@gmail.com>
+References: <04e767a6-ff6f-95ba-f2f9-6061035dcd10@profihost.ag>
+ <CAJCQCtQJV5jCLbON3Fk+DHCztRqAVN35rfMcHiWKWRT3yg+c_A@mail.gmail.com>
+ <af47955b-19a4-7ff5-8d88-d94f40300e65@profihost.ag>
+ <CAA91j0WLve+R5VBHkb7p2NO_hTuLcRp5KvjsPmnZgOoF1MTWzA@mail.gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
+Message-ID: <f4f9b69c-ae3b-69e3-3dbd-3173b4627bef@profihost.ag>
+Date: Thu, 1 Dec 2016 12:55:48 +0100
 MIME-Version: 1.0
-Message-ID: <f1b39aa5-e540-4443-ab2e-de0117340b54@linuxsystems.it>
-In-Reply-To: <668d0396-e0aa-8f67-f96a-490924175bb9@googlemail.com>
-References: <10bbbf97-7f43-c972-a832-4a8cf054d5e5@xgm.de>
- <fce2df8b-0775-1ecf-c08d-960018822c20@googlemail.com>
- <20161130103808.74e5ae95@natsu> <3713990.abIjkpnqyF@merkaba>
- <73d0d10c-7a06-b282-ee76-4512aaed5723@googlemail.com>
- <pan$7a75f$e48f1aa5$204a0630$9d1c1cc4@cox.net>
- <b13f13a4-639d-d460-7642-c8f8fe646832@googlemail.com>
- <19671a71-5d1c-c42e-db3d-c870ec08b2ff@gmail.com>
- <e9a4cba5-53b7-b6f0-af83-467f5f95f5b8@googlemail.com>
- <21e6765c-21f9-1726-b06f-9bd5f67c7b49@gmail.com>
- <668d0396-e0aa-8f67-f96a-490924175bb9@googlemail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <CAA91j0WLve+R5VBHkb7p2NO_hTuLcRp5KvjsPmnZgOoF1MTWzA@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On giovedì 1 dicembre 2016 10:37:13 CET, Wilson Meier wrote:
-> The only thing i have asked for is to document the *known*
-> problems/flaws/limitations of all raid profiles and link to them from
-> the stability matrix.
 
-+1
+Am 01.12.2016 um 09:12 schrieb Andrei Borzenkov:
+> On Thu, Dec 1, 2016 at 10:49 AM, Stefan Priebe - Profihost AG
+> <s.priebe@profihost.ag> wrote:
+> ...
+>>
+>> Custom 4.4 kernel with patches up to 4.10. But i already tried 4.9-rc7
+>> which does the same.
+>>
+>>
+>>>> # btrfs filesystem show /ssddisk/
+>>>> Label: none  uuid: a69d2e90-c2ca-4589-9876-234446868adc
+>>>>         Total devices 1 FS bytes used 305.67GiB
+>>>>         devid    1 size 500.00GiB used 500.00GiB path /dev/vdb1
+>>>>
+>>>> # btrfs filesystem usage /ssddisk/
+>>>> Overall:
+>>>>     Device size:                 500.00GiB
+>>>>     Device allocated:            500.00GiB
+>>>>     Device unallocated:            1.05MiB
+>>>
+>>> Drive is actually fully allocated so if Btrfs needs to create a new
+>>> chunk right now, it can't. However,
+>>
+>> Yes but there's lot of free space:
+>>     Free (estimated):            193.46GiB      (min: 193.46GiB)
+>>
+>> How does this match?
+>>
+>>
+>>> All three chunk types have quite a bit of unused space in them, so
+>>> it's unclear why there's a no space left error.
+>>>
+> 
+> I remember discussion that balance always tries to pre-allocate one
+> chunk in advance, and I believe there was patch to correct it but I am
+> not sure whether it was merged.
 
-Do someone mind if I ask for an account and I start copy-pasting any 
-relevant post in this thread?
+Is there otherwise a possibility to make the free space unallocated again?
 
-Niccolò Belli
+Stefan
+
+> 
+>>> Try remounting with enoscp_debug, and then trigger the problem again,
+>>> and post the resulting kernel messages.
+>>
+>> With enospc debug it says:
+>> [39193.425682] BTRFS warning (device vdb1): no space to allocate a new
+>> chunk for block group 839941881856
+>> [39193.426033] BTRFS info (device vdb1): 1 enospc errors during balance
+>>

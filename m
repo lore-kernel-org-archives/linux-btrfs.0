@@ -1,43 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:26119 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1756686AbcLUHiy (ORCPT
+Received: from mx0b-001b2d01.pphosted.com ([148.163.158.5]:58643 "EHLO
+        mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1757305AbcLANv3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Dec 2016 02:38:54 -0500
-From: Anand Jain <anand.jain@oracle.com>
+        Thu, 1 Dec 2016 08:51:29 -0500
+Received: from pps.filterd (m0098419.ppops.net [127.0.0.1])
+        by mx0b-001b2d01.pphosted.com (8.16.0.17/8.16.0.17) with SMTP id uB1DnDsW108822
+        for <linux-btrfs@vger.kernel.org>; Thu, 1 Dec 2016 08:51:29 -0500
+Received: from e36.co.us.ibm.com (e36.co.us.ibm.com [32.97.110.154])
+        by mx0b-001b2d01.pphosted.com with ESMTP id 272ms2h80k-1
+        (version=TLSv1.2 cipher=AES256-SHA bits=256 verify=NOT)
+        for <linux-btrfs@vger.kernel.org>; Thu, 01 Dec 2016 08:51:28 -0500
+Received: from localhost
+        by e36.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+        for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+        Thu, 1 Dec 2016 06:51:28 -0700
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>
-Subject: [PATCH 2/2 RFC] btrfs: btrfs_defrag_root() doesn't defrag extent root tree
-Date: Wed, 21 Dec 2016 15:42:08 +0800
-Message-Id: <20161221074208.32597-2-anand.jain@oracle.com>
-In-Reply-To: <20161221074208.32597-1-anand.jain@oracle.com>
-References: <20161221074208.32597-1-anand.jain@oracle.com>
+Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, dsterba@suse.com
+Subject: [PATCH V2] btrfs-progs: Use helper function to access btrfs_super_block->sys_chunk_array_size
+Date: Thu,  1 Dec 2016 19:21:14 +0530
+Message-Id: <1480600274-13623-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since btrfs_defrag_leaves() does not support extent_root,
-remove its corresponding call. The user can use the file
-based defrag to defrag extents as of now.
+btrfs_super_block->sys_chunk_array_size is stored as le32 data on
+disk. However insert_temp_chunk_item() writes sys_chunk_array_size in
+host cpu order. This commit fixes this by using super block access
+helper functions to read and write
+btrfs_super_block->sys_chunk_array_size field.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 ---
- fs/btrfs/ioctl.c | 3 ---
- 1 file changed, 3 deletions(-)
+ utils.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index bd1bb7fcea8a..112456baffe9 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2613,9 +2613,6 @@ static int btrfs_ioctl_defrag(struct file *file, void __user *argp)
- 			goto out;
- 		}
- 		ret = btrfs_defrag_root(root);
--		if (ret)
--			goto out;
--		ret = btrfs_defrag_root(root->fs_info->extent_root);
- 		break;
- 	case S_IFREG:
- 		if (!(file->f_mode & FMODE_WRITE)) {
+diff --git a/utils.c b/utils.c
+index d0189ad..74dde1e 100644
+--- a/utils.c
++++ b/utils.c
+@@ -562,14 +562,18 @@ static int insert_temp_chunk_item(int fd, struct extent_buffer *buf,
+ 	 */
+ 	if (type & BTRFS_BLOCK_GROUP_SYSTEM) {
+ 		char *cur;
++		u32 array_size;
+ 
+-		cur = (char *)sb->sys_chunk_array + sb->sys_chunk_array_size;
++		cur = (char *)sb->sys_chunk_array
++			+ btrfs_super_sys_array_size(sb);
+ 		memcpy(cur, &disk_key, sizeof(disk_key));
+ 		cur += sizeof(disk_key);
+ 		read_extent_buffer(buf, cur, (unsigned long int)chunk,
+ 				   btrfs_chunk_item_size(1));
+-		sb->sys_chunk_array_size += btrfs_chunk_item_size(1) +
++		array_size = btrfs_super_sys_array_size(sb);
++		array_size += btrfs_chunk_item_size(1) +
+ 					    sizeof(disk_key);
++		btrfs_set_super_sys_array_size(sb, array_size);
+ 
+ 		ret = write_temp_super(fd, sb, cfg->super_bytenr);
+ 	}
 -- 
-2.10.0
+2.5.5
 

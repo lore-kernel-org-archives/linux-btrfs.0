@@ -1,101 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yb0-f178.google.com ([209.85.213.178]:33947 "EHLO
-        mail-yb0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1761088AbcLAVWC (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Dec 2016 16:22:02 -0500
-Received: by mail-yb0-f178.google.com with SMTP id d59so33584472ybi.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 01 Dec 2016 13:22:02 -0800 (PST)
+Received: from mail-lf0-f46.google.com ([209.85.215.46]:33045 "EHLO
+        mail-lf0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751758AbcLAVku (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Dec 2016 16:40:50 -0500
+Received: by mail-lf0-f46.google.com with SMTP id c13so181497827lfg.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 01 Dec 2016 13:40:50 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20161201154952.GC20966@dhcp22.suse.cz>
-References: <20161118164643.g7ttuzgsj74d6fbz@merlins.org> <20161118184915.j6dlazbgminxnxzx@merlins.org>
- <b6c3daab-d990-e873-4d0f-0f0afe2259b1@coly.li> <alpine.LRH.2.11.1611291255350.1914@mail.ewheeler.net>
- <20161130164646.d6ejlv72hzellddd@merlins.org> <20161130171814.3yrqzzoocg3kz4ki@merlins.org>
- <6303e492-62f8-cbcc-4536-81350f2e9a86@gmail.com> <20161130181653.g2hujqqu2fu2unjj@merlins.org>
- <20161201154952.GC20966@dhcp22.suse.cz>
-From: "Janos Toth F." <toth.f.janos@gmail.com>
-Date: Thu, 1 Dec 2016 22:21:46 +0100
-Message-ID: <CANznX5EGyM_jDTKyb=5oGPi=_zORmZAaVxHrP2rJ-K4V9jHfLg@mail.gmail.com>
-Subject: Re: btrfs flooding the I/O subsystem and hanging the machine, with
- bcache cache turned off
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+In-Reply-To: <CAJCQCtSuVNKnXVdOzWamNGGh+43a0PQacjAHGrFyjPYCPYPfvQ@mail.gmail.com>
+References: <10bbbf97-7f43-c972-a832-4a8cf054d5e5@xgm.de> <fce2df8b-0775-1ecf-c08d-960018822c20@googlemail.com>
+ <20161130103808.74e5ae95@natsu> <3713990.abIjkpnqyF@merkaba>
+ <73d0d10c-7a06-b282-ee76-4512aaed5723@googlemail.com> <pan$7a75f$e48f1aa5$204a0630$9d1c1cc4@cox.net>
+ <b13f13a4-639d-d460-7642-c8f8fe646832@googlemail.com> <19671a71-5d1c-c42e-db3d-c870ec08b2ff@gmail.com>
+ <CAJCQCtRnqp15QZ9V+AtBu1_7QwChdoRMs0nHg3stWnJOyy8qMw@mail.gmail.com>
+ <CAKinxcUBNa5durypXVvesfkYY_bTj8W79wuj-2SeNYmFEZMfjw@mail.gmail.com> <CAJCQCtSuVNKnXVdOzWamNGGh+43a0PQacjAHGrFyjPYCPYPfvQ@mail.gmail.com>
+From: Tomasz Kusmierz <tom.kusmierz@gmail.com>
+Date: Thu, 1 Dec 2016 21:40:48 +0000
+Message-ID: <CAKinxcU39Rz4vJ651X+AZt9VGtRmwJwjq0sxR98MSZ0QgQ0U9A@mail.gmail.com>
+Subject: Re: Convert from RAID 5 to 10
+To: Chris Murphy <lists@colorremedies.com>
+Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Wilson Meier <wilson.meier@gmail.com>, Duncan <1i5t5.duncan@cox.net>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Is there any fundamental reason not to support huge writeback caches?
-(I mean, besides working around bugs and/or questionably poor design
-choices which no one wishes to fix.)
-The obvious drawback is the increased risk of data loss upon hardware
-failure or kernel panic but why couldn't the user be allowed to draw
-the line between probability of data loss and potential performance
-gains?
+FYI.
+There is an old saying in embedded circles that I revolve that evolved
+from Arthur C Clarke "Any sufficiently advanced technology is
+indistinguishable from magic." Engineering version states "Any
+sufficiently advanced incompetence is indistinguishable from malice"
+Also I'll quote you on throwing under the bus thing :) (I actually
+like that justification)
 
-The last time I changed hardware, I put double the amount of RAM into
-my little home server for the sole reason to use a relatively huge
-cache, especially a huge writeback cache. Although I realized it soon
-enough that writeback ratios like 20/45 will make the system unstable
-(OOM reaping) even if ~90% of the memory is theoretically free = used
-as some form of cache, read or write, depending on this ratio
-parameter and I ended up below the default to get rid of The Reaper.
-
-My plan was to try and decrease the fragmentation of files which are
-created by dumping several parallel real-time video streams into
-separate files (and also minimize the HDD head seeks due to that).
-(The computer in question is on a UPS.)
-
-On Thu, Dec 1, 2016 at 4:49 PM, Michal Hocko <mhocko@kernel.org> wrote:
-> On Wed 30-11-16 10:16:53, Marc MERLIN wrote:
->> +folks from linux-mm thread for your suggestion
->>
->> On Wed, Nov 30, 2016 at 01:00:45PM -0500, Austin S. Hemmelgarn wrote:
->> > > swraid5 < bcache < dmcrypt < btrfs
->> > >
->> > > Copying with btrfs send/receive causes massive hangs on the system.
->> > > Please see this explanation from Linus on why the workaround was
->> > > suggested:
->> > > https://lkml.org/lkml/2016/11/29/667
->> > And Linux' assessment is absolutely correct (at least, the general
->> > assessment is, I have no idea about btrfs_start_shared_extent, but I'm more
->> > than willing to bet he's correct that that's the culprit).
->>
->> > > All of this mostly went away with Linus' suggestion:
->> > > echo 2 > /proc/sys/vm/dirty_ratio
->> > > echo 1 > /proc/sys/vm/dirty_background_ratio
->> > >
->> > > But that's hiding the symptom which I think is that btrfs is piling up too many I/O
->> > > requests during btrfs send/receive and btrfs scrub (probably balance too) and not
->> > > looking at resulting impact to system health.
->>
->> > I see pretty much identical behavior using any number of other storage
->> > configurations on a USB 2.0 flash drive connected to a system with 16GB of
->> > RAM with the default dirty ratios because it's trying to cache up to 3.2GB
->> > of data for writeback.  While BTRFS is doing highly sub-optimal things here,
->> > the ancient default writeback ratios are just as much a culprit.  I would
->> > suggest that get changed to 200MB or 20% of RAM, whichever is smaller, which
->> > would give overall almost identical behavior to x86-32, which in turn works
->> > reasonably well for most cases.  I sadly don't have the time, patience, or
->> > expertise to write up such a patch myself though.
->>
->> Dear linux-mm folks, is that something you could consider (changing the
->> dirty_ratio defaults) given that it affects at least bcache and btrfs
->> (with or without bcache)?
+On 1 December 2016 at 17:28, Chris Murphy <lists@colorremedies.com> wrote:
+> On Wed, Nov 30, 2016 at 1:29 PM, Tomasz Kusmierz <tom.kusmierz@gmail.com> wrote:
 >
-> As much as the dirty_*ratio defaults a major PITA this is not something
-> that would be _easy_ to change without high risks of regressions. This
-> topic has been discussed many times with many good ideas, nothing really
-> materialized from them though :/
+>> Please, I beg you add another column to man and wiki stating clearly
+>> how many devices every profile can withstand to loose. I frequently
+>> have to explain how btrfs profiles work and show quotes from this
+>> mailing list because "dawning-kruger effect victims" keep poping up
+>> with statements like "in btrfs raid10 with 8 drives you can loose 4
+>> drives" ... I seriously beg you guys, my beating stick is half broken
+>> by now.
 >
-> To be honest I really do hate dirty_*ratio and have seen many issues on
-> very large machines and always suggested to use dirty_bytes instead but
-> a particular value has always been a challenge to get right. It has
-> always been very workload specific.
+> You need a new stick. It's called the ad hominem attack. When stupid
+> people say stupid things, the dispute is not about the facts or
+> opinions in the argument itself, but rather the person involved. There
+> is the possibility this is more than stupidity, it really borders on
+> maliciousness. Any ethical code of conduct for a list will accept ad
+> hominem attacks over the willful dissemination of provably wrong
+> information. When stupid assholes throw users under the bus with
+> provably wrong (and bad) advice, it becomes something of an obligation
+> to resort to name calling.
 >
-> That being said this is something more for IO people than MM IMHO.
+> Of course, I'd also like the wiki to clearly state the only profile
+> that tolerates more than one device loss is raid6; and be very
+> explicit with the manifestly wrong terminology being used by Btrfs's
+> raid10 terminology. That is a fairly egregious violation of common
+> terminology and the trust we're supposed to be developing, both in the
+> usage of common terms, but also in Btrfs specifically.
+>
+>
 >
 > --
-> Michal Hocko
-> SUSE Labs
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Chris Murphy

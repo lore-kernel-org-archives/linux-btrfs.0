@@ -1,123 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49273 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:45053 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751894AbcLDCDw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 3 Dec 2016 21:03:52 -0500
-Subject: Re: [PATCH 01/18] btrfs: call functions that overwrite their root
- parameter with fs_info
-To: Omar Sandoval <osandov@osandov.com>
-References: <1480655258-15400-1-git-send-email-jeffm@suse.com>
- <1480655258-15400-2-git-send-email-jeffm@suse.com>
- <20161202223236.GA17540@vader.DHCP.thefacebook.com>
-Cc: linux-btrfs@vger.kernel.org
-From: Jeff Mahoney <jeffm@suse.com>
-Message-ID: <4e897c20-52a6-0422-0eb0-a0953470ba1b@suse.com>
-Date: Sat, 3 Dec 2016 21:03:34 -0500
-MIME-Version: 1.0
-In-Reply-To: <20161202223236.GA17540@vader.DHCP.thefacebook.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="B4vRG1CjxeMsNAuvOpunJo3EN7iI1F8uF"
+        id S1751201AbcLBFHp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 2 Dec 2016 00:07:45 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 00ABEAAD0
+        for <linux-btrfs@vger.kernel.org>; Fri,  2 Dec 2016 05:07:44 +0000 (UTC)
+From: jeffm@suse.com
+To: linux-btrfs@vger.kernel.org
+Cc: Jeff Mahoney <jeffm@suse.com>
+Subject: [PATCH 00/18] misc-4.10: root->fs_info patchset
+Date: Fri,  2 Dec 2016 00:07:20 -0500
+Message-Id: <1480655258-15400-1-git-send-email-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---B4vRG1CjxeMsNAuvOpunJo3EN7iI1F8uF
-Content-Type: multipart/mixed; boundary="E0UAiFw2s5j1XGENCdkxUfll0aQajr76M";
- protected-headers="v1"
 From: Jeff Mahoney <jeffm@suse.com>
-To: Omar Sandoval <osandov@osandov.com>
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <4e897c20-52a6-0422-0eb0-a0953470ba1b@suse.com>
-Subject: Re: [PATCH 01/18] btrfs: call functions that overwrite their root
- parameter with fs_info
-References: <1480655258-15400-1-git-send-email-jeffm@suse.com>
- <1480655258-15400-2-git-send-email-jeffm@suse.com>
- <20161202223236.GA17540@vader.DHCP.thefacebook.com>
-In-Reply-To: <20161202223236.GA17540@vader.DHCP.thefacebook.com>
 
---E0UAiFw2s5j1XGENCdkxUfll0aQajr76M
-Content-Type: text/plain; charset=windows-1252
-Content-Transfer-Encoding: quoted-printable
+Hi all -
 
-On 12/2/16 5:32 PM, Omar Sandoval wrote:
-> On Fri, Dec 02, 2016 at 12:07:21AM -0500, jeffm@suse.com wrote:
->> From: Jeff Mahoney <jeffm@suse.com>
->>
->> There are 11 functions that accept a root parameter and immediately
->> overwrite it.  We can pass those an fs_info pointer instead.
->>
->> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
->> ---
->>  fs/btrfs/ctree.h            |  4 ++--
->>  fs/btrfs/disk-io.c          |  4 ++--
->>  fs/btrfs/extent-tree.c      | 17 +++++++-------
->>  fs/btrfs/file-item.c        |  5 ++---
->>  fs/btrfs/free-space-cache.c |  5 ++---
->>  fs/btrfs/free-space-cache.h |  2 +-
->>  fs/btrfs/transaction.c      |  9 ++++----
->>  fs/btrfs/tree-log.c         |  6 ++---
->>  fs/btrfs/volumes.c          | 55 +++++++++++++++++++++---------------=
----------
->>  fs/btrfs/volumes.h          |  4 ++--
->>  10 files changed, 52 insertions(+), 59 deletions(-)
->>
->=20
-> [snip]
->=20
->>  int btrfs_remove_chunk(struct btrfs_trans_handle *trans,
->> -		       struct btrfs_root *root, u64 chunk_offset)
->> +		       struct btrfs_fs_info *fs_info, u64 chunk_offset)
->>  {
->> +	struct btrfs_root *root =3D fs_info->chunk_root;
->>  	struct extent_map_tree *em_tree;
->>  	struct extent_map *em;
->>  	struct btrfs_root *extent_root =3D root->fs_info->extent_root;
->> @@ -2812,8 +2811,7 @@ int btrfs_remove_chunk(struct btrfs_trans_handle=
- *trans,
->>  	struct btrfs_fs_devices *fs_devices =3D root->fs_info->fs_devices;
->> =20
->>  	/* Just in case */
->> -	root =3D root->fs_info->chunk_root;
->> -	em_tree =3D &root->fs_info->mapping_tree.map_tree;
->> +	em_tree =3D &fs_info->mapping_tree.map_tree;
->=20
-> I think this "Just in case" comment was referring to the reassignment o=
-f
-> the root, so it's just confusing now.
-
-Agreed.  Thanks for the review.
+Here's the latest version of my root->fs_info patchset.  It's against
+Dave's misc-4.10 branch.
 
 -Jeff
 
---=20
-Jeff Mahoney
-SUSE Labs
+---
 
+Jeff Mahoney (18):
+  btrfs: call functions that overwrite their root parameter with fs_info
+  btrfs: call functions that always use the same root with fs_info
+    instead
+  btrfs: btrfs_init_new_device should use fs_info->dev_root
+  btrfs: alloc_reserved_file_extent trace point should use extent_root
+  btrfs: struct btrfsic_state->root should be an fs_info
+  btrfs: struct reada_control.root -> reada_control.fs_info
+  btrfs: root->fs_info cleanup, use fs_info->dev_root everywhere
+  btrfs: root->fs_info cleanup, io_ctl_init
+  btrfs: pull node/sector/stripe sizes out of root and into fs_info
+  btrfs: root->fs_info cleanup, btrfs_calc_{trans,trunc}_metadata_size
+  btrfs: root->fs_info cleanup, lock/unlock_chunks
+  btrfs: root->fs_info cleanup, update_block_group{,flags}
+  btrfs: root->fs_info cleanup, add fs_info convenience variables
+  btrfs: root->fs_info cleanup, access fs_info->delayed_root directly
+  btrfs: convert extent-tree tracepoints to use fs_info
+  btrfs: simplify btrfs_wait_cache_io prototype
+  btrfs: take an fs_info directly when the root is not used otherwise
+  btrfs: split btrfs_wait_marked_extents into normal and tree log
+    functions
 
---E0UAiFw2s5j1XGENCdkxUfll0aQajr76M--
+ fs/btrfs/backref.c                     |    8 +-
+ fs/btrfs/check-integrity.c             |   73 +-
+ fs/btrfs/check-integrity.h             |    5 +-
+ fs/btrfs/compression.c                 |   54 +-
+ fs/btrfs/ctree.c                       |  468 ++++++------
+ fs/btrfs/ctree.h                       |  216 +++---
+ fs/btrfs/delayed-inode.c               |  134 ++--
+ fs/btrfs/delayed-inode.h               |   19 +-
+ fs/btrfs/dev-replace.c                 |   58 +-
+ fs/btrfs/dev-replace.h                 |    4 +-
+ fs/btrfs/dir-item.c                    |   45 +-
+ fs/btrfs/disk-io.c                     |  538 +++++++-------
+ fs/btrfs/disk-io.h                     |   30 +-
+ fs/btrfs/export.c                      |   10 +-
+ fs/btrfs/extent-tree.c                 | 1269 ++++++++++++++++----------------
+ fs/btrfs/extent_io.c                   |   61 +-
+ fs/btrfs/extent_io.h                   |    8 +-
+ fs/btrfs/file-item.c                   |  152 ++--
+ fs/btrfs/file.c                        |  194 ++---
+ fs/btrfs/free-space-cache.c            |  154 ++--
+ fs/btrfs/free-space-cache.h            |   12 +-
+ fs/btrfs/free-space-tree.c             |   36 +-
+ fs/btrfs/inode-item.c                  |   11 +-
+ fs/btrfs/inode-map.c                   |   22 +-
+ fs/btrfs/inode.c                       |  691 +++++++++--------
+ fs/btrfs/ioctl.c                       |  518 +++++++------
+ fs/btrfs/ordered-data.c                |   38 +-
+ fs/btrfs/ordered-data.h                |    4 +-
+ fs/btrfs/print-tree.c                  |   19 +-
+ fs/btrfs/print-tree.h                  |    4 +-
+ fs/btrfs/props.c                       |    5 +-
+ fs/btrfs/qgroup.c                      |   56 +-
+ fs/btrfs/qgroup.h                      |    2 +-
+ fs/btrfs/raid56.c                      |   62 +-
+ fs/btrfs/raid56.h                      |    8 +-
+ fs/btrfs/reada.c                       |   34 +-
+ fs/btrfs/relocation.c                  |  229 +++---
+ fs/btrfs/root-tree.c                   |   26 +-
+ fs/btrfs/scrub.c                       |  157 ++--
+ fs/btrfs/send.c                        |   29 +-
+ fs/btrfs/super.c                       |  130 ++--
+ fs/btrfs/tests/btrfs-tests.c           |   13 +-
+ fs/btrfs/tests/btrfs-tests.h           |    4 +-
+ fs/btrfs/tests/extent-buffer-tests.c   |    7 +-
+ fs/btrfs/tests/extent-io-tests.c       |    5 +-
+ fs/btrfs/tests/free-space-tests.c      |   18 +-
+ fs/btrfs/tests/free-space-tree-tests.c |    9 +-
+ fs/btrfs/tests/inode-tests.c           |   16 +-
+ fs/btrfs/tests/qgroup-tests.c          |   11 +-
+ fs/btrfs/transaction.c                 |  562 +++++++-------
+ fs/btrfs/transaction.h                 |   11 +-
+ fs/btrfs/tree-log.c                    |  191 ++---
+ fs/btrfs/uuid-tree.c                   |   21 +-
+ fs/btrfs/volumes.c                     |  753 +++++++++----------
+ fs/btrfs/volumes.h                     |   43 +-
+ fs/btrfs/xattr.c                       |   19 +-
+ include/trace/events/btrfs.h           |   65 +-
+ 57 files changed, 3745 insertions(+), 3596 deletions(-)
 
---B4vRG1CjxeMsNAuvOpunJo3EN7iI1F8uF
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+-- 
+2.7.1
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG/MacGPG2 v2
-
-iQIcBAEBCAAGBQJYQ3l5AAoJEB57S2MheeWyZpEP/igTVte9M56C2U4vPlyNfOzV
-Dk1NeX9Z0yKfQpCv31GDcpfRjyH6LDPQce0BV5q98sF3yVAMYeaJY4iC87M2s3lk
-71tmp2ob+KDpOpDo4j1LrSEANFF77zffJk3pLJn1oFpzBQJMUnOl6gOa4cg/n2SI
-tDeYh0kGGI1Edk9lWIvSHtdMzzlXn5KBMjAK0mk6LJuG7bgRuuQftO8ZDqXD+6Z7
-vDlsumWb6kdhOVNC4Jhn5sTzSKIEtaNRd1I2oj6+5xRcc01R/WV/aoKdrunMuImd
-NvrD4jt9t7r5Rgm7eYsppuCdDHWrgxLrbMHbTYOMdSS2ysEIZeEunMQk/yMx+Hij
-Fp7yyG/ZpAMA8bFwy6WZumq6y3QpEQ14DRmUkThl6mO9gMLqF7jddSeXkvDBPy5Y
-dAaF8URwJie0gUUHLjpdC+hIa2Gu5T7J0LbBEP/0AW11qy01REljqbE8F08G4iVc
-kWraUF00FnNfU3RTOgCYmWtGptZPBuOdH1Z9zuPEjDXc8sdWP22sJ2G9bZsEEWZd
-cge0pr1Xwe3THTkE9u7mYD0qHqJ9oj5RMZr9aht2MpjveDcV9fTjVYVHsAV4a1MD
-0eGBAJG0Q80ipi6tgHQMhq6tU9hdwDiCMlZKlNmvZ7MzcRfN7cS9KJ8MZ5lwADuT
-TwBaSXidy8E42N1Ckuhs
-=Yzox
------END PGP SIGNATURE-----
-
---B4vRG1CjxeMsNAuvOpunJo3EN7iI1F8uF--

@@ -1,179 +1,477 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f195.google.com ([209.85.223.195]:33634 "EHLO
-        mail-io0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1757144AbcLASnd (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Dec 2016 13:43:33 -0500
-Received: by mail-io0-f195.google.com with SMTP id j92so2717868ioi.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 01 Dec 2016 10:43:33 -0800 (PST)
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Subject: [PATCH] btrfs-progs: add dev stats returncode option
-Date: Thu,  1 Dec 2016 13:43:05 -0500
-Message-Id: <20161201184305.3415-1-ahferroin7@gmail.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:48485 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751364AbcLBBl2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Dec 2016 20:41:28 -0500
+Date: Thu, 1 Dec 2016 17:41:12 -0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Filipe Manana <fdmanana@gmail.com>
+Cc: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        David Sterba <dsterba@suse.cz>, Josef Bacik <jbacik@fb.com>
+Subject: Re: resend: Re: Btrfs: adjust len of writes if following a
+ preallocated extent
+Message-ID: <20161202014111.GA11558@dhcp-whq-twvpn-2-vpnpool-10-159-164-218.vpn.oracle.com>
+Reply-To: bo.li.liu@oracle.com
+References: <1478287254-5458-1-git-send-email-bo.li.liu@oracle.com>
+ <b600e06c-f946-853a-d868-eed429f9097b@profihost.ag>
+ <20161123212210.GA24103@localhost.localdomain>
+ <CAL3q7H4T35BVRh73pSoE51UygQwPCzdNSVHR1U1jbRqyO0j-rQ@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAL3q7H4T35BVRh73pSoE51UygQwPCzdNSVHR1U1jbRqyO0j-rQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently, `btrfs device stats` returns non-zero only when there was an
-error getting the counter values.  This is fine for when it gets run by a
-user directly, but is a serious pain when trying to use it in a script or
-for monitoring since you need to parse the (not at all machine friendly)
-output to check the counter values.
+On Thu, Nov 24, 2016 at 11:13:37AM +0000, Filipe Manana wrote:
+> On Wed, Nov 23, 2016 at 9:22 PM, Liu Bo <bo.li.liu@oracle.com> wrote:
+> > Hi,
+> >
+> > On Wed, Nov 23, 2016 at 06:21:35PM +0100, Stefan Priebe - Profihost AG wrote:
+> >> Hi,
+> >>
+> >> sorry last mail was from the wrong box.
+> >>
+> >> Am 04.11.2016 um 20:20 schrieb Liu Bo:
+> >> > If we have
+> >> >
+> >> > |0--hole--4095||4096--preallocate--12287|
+> >> >
+> >> > instead of using preallocated space, a 8K direct write will just
+> >> > create a new 8K extent and it'll end up with
+> >> >
+> >> > |0--new extent--8191||8192--preallocate--12287|
+> >> >
+> >> > It's because we find a hole em and then go to create a new 8K
+> >> > extent directly without adjusting @len.
+> >>
+> >> after applying that one on top of my 4.4 btrfs branch (includes patches
+> >> up to 4.10 / next). i'm getting deadlocks in btrfs.
+> >
+> > This is really interesting, thanks for the quick testing.
+> >
+> > After going through the stacks listed below, I think the patch has
+> > exposed a bug around BTRFS_I(inode)->dio_sem:
+> >
+> > 1. Since fsync has acquired inode_lock(), the dio write must be
+> > an overwrite within EOF.
+> >
+> > 2. Lets say the inode size is 16k and it already has a preallocated extent [4k, 8k],
+> > then we feed it with a dio write against [0k, 8k], with this patch
+> > applied, the write can be splitted into a new extent of [0, 4k] and a
+> > fill-write against the preallocated one [4k, 8k],
+> >
+> > 3.
+> >         dio                                                           fsync
+> > ->btrfs_direct_IO                                                  btrfs_sync_file
+> >  ->do_direct_IO
+> >   ->get_more_blocks()                                                ->inode_lock()
+> >     ->btrfs_get_blocks_direct() # for [0, 8k]                        ->btrfs_log_inode()
+> >       ->btrfs_new_direct_extent()                                      ->btrfs_log_changed_extents()
+> >         ->btrfs_create_dio_extent()
+> >           ->down_read(&BTRFS_I(inode)->dio_sem)
+> >             # dio write is splitted and
+> >             # em of [0, 4k] is inserted as well as
+> >             # the ordered extent.
+> >           ->up_read(&BTRFS_I(inode)->dio_sem)
+> >    # do_direct_IO tries to collect more pages
+> >    # before sending them down, so [0, 4k] is not
+> >    # yet submitted.
+> > --------------------------------------------------------------------------------------------------------
+> >                                                                          ->down_write(&BTRFS_I(inode)->dio_sem)
+> >                                                                          # found ordered extent of [0, 4k]
+> >                                                                          # wait for [0, 4k] to finish
+> >   ->get_more_blocks()
+> >     ->btrfs_get_blocks_direct() # for [4k, 8k]
+> >       ->btrfs_create_dio_extent()
+> >         -> up_read(&BTRFS_I(inode)->dio_sem)
+> >            # deadlock occurs
+> >
+> > 4. _Without_ this patch, we could hit the deadlock as well under space pressure,
+> > i.e. if we request [0, 8k], but btrfs_reserve_extent() returns only [0, 4k].
+> >
+> > (Filipe may correct me, cc'd Filipe.)
+> 
+> The analysis is correct Bo.
+> Originally to fix races between fsync and direct IO writes there was a
+> solution [1, 2] that didn't involve adding a semaphore and relied on
+> creating first the ordered extents and then the extent maps only in
+> the direct IO write path (we do things in the reverse order everywhere
+> else). It worked and was documented in comments but wasn't
+> particularly elegant and Josef was not happy because of that, so then
+> we added the semaphore and made direct IO write path create the extent
+> maps and ordered extents in the same order as everywhere else [3].
+> 
+> So here I can only see 2 simple solutions. Either revert [3] (which
+> added the semaphore) or acquire the semaphore at a higher level in
+> direct IO write path like this:
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 1f980ef..b2c277d 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -7237,7 +7237,6 @@ static struct extent_map
+> *btrfs_create_dio_extent(struct inode *inode,
+>         struct extent_map *em = NULL;
+>         int ret;
+> 
+> -       down_read(&BTRFS_I(inode)->dio_sem);
+>         if (type != BTRFS_ORDERED_NOCOW) {
+>                 em = create_pinned_em(inode, start, len, orig_start,
+>                                       block_start, block_len, orig_block_len,
+> @@ -7256,8 +7255,6 @@ static struct extent_map
+> *btrfs_create_dio_extent(struct inode *inode,
+>                 em = ERR_PTR(ret);
+>         }
+>   out:
+> -       up_read(&BTRFS_I(inode)->dio_sem);
+> -
+>         return em;
+>  }
+> 
+> @@ -8715,11 +8712,14 @@ static ssize_t btrfs_direct_IO(struct kiocb
+> *iocb, struct iov_iter *iter)
+>                 wakeup = false;
+>         }
+> 
+> +       if (iov_iter_rw(iter) == WRITE)
+> +               down_read(&BTRFS_I(inode)->dio_sem);
+>         ret = __blockdev_direct_IO(iocb, inode,
+> 
+> BTRFS_I(inode)->root->fs_info->fs_devices->latest_bdev,
+>                                    iter, btrfs_get_blocks_direct, NULL,
+>                                    btrfs_submit_direct, flags);
+>         if (iov_iter_rw(iter) == WRITE) {
+> +               up_read(&BTRFS_I(inode)->dio_sem);
+>                 current->journal_info = NULL;
+>                 if (ret < 0 && ret != -EIOCBQUEUED) {
+>                         if (dio_data.reserve)
+> 
+> 
+> Let me know what you think. Thanks.
 
-This patch adds an option ('-s') which causes `btrfs device stats`
-to set bit 7 in the return code if any of the counters are non-zero.
-This greatly simplifies checking from a script or monitoring software
-if any errors have been recorded.  In the event that this switch is
-passed and an error occurs reading the stats, the return code will have
-bit 0 set (so if there are errors reading counters, and the counters
-which were read were non-zero, the return value will be 129).
+Hi Filipe,
 
-Signed-off-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
----
-Tested on multiple filesystems with various values of error counters
-(all manually set with a hex-editor)
+After going over again fs/direct-io.c, the AIO dio_complete is diffrent from the
+'Note that' part in your patch [1], what am I missing?
 
-Both the flag letter and the bit being set were picked rather arbitrarily
-(-s intended to be short for status, bit 7 just seemed reasonable).
-I have no issue changing either, but would prefer to avoid bikeshedding
-about stuff like this since this helps out with an area where BTRFS is
-severely lacking right now (monitoring).
+-------------------------------------------------------------------------
+static ssize_t dio_complete(struct dio *dio, ssize_t ret, bool is_async)
+{
+	...
+	if (!(dio->flags & DIO_SKIP_DIO_COUNT))
+		inode_dio_end(dio->inode);
 
- Documentation/btrfs-device.asciidoc |  8 +++++++-
- cmds-device.c                       | 39 ++++++++++++++++++++++++++++++-------
- 2 files changed, 39 insertions(+), 8 deletions(-)
+	if (is_async) {
+		/*
+		 * generic_write_sync expects ki_pos to have been updated
+		 * already, but the submission path only does this for
+		 * synchronous I/O.
+		 */
+		dio->iocb->ki_pos += transferred;
 
-diff --git a/Documentation/btrfs-device.asciidoc b/Documentation/btrfs-device.asciidoc
-index 239c99b..97a2ed6 100644
---- a/Documentation/btrfs-device.asciidoc
-+++ b/Documentation/btrfs-device.asciidoc
-@@ -98,7 +98,7 @@ remain as such. Reloading the kernel module will drop this information. There's
- an alternative way of mounting multiple-device filesystem without the need for
- prior scanning. See the mount option 'device'.
- 
--*stats* [-z] <path>|<device>::
-+*stats* [-zs] <path>|<device>::
- Read and print the device IO error statistics for all devices of the given
- filesystem identified by <path> or for a single <device>. See section *DEVICE
- STATS* for more information.
-@@ -108,6 +108,9 @@ STATS* for more information.
- -z::::
- Print the stats and reset the values to zero afterwards.
- 
-+-s::::
-+Set the high bit of the return-code if any error statistics are non-zero.
-+
- *usage* [options] <path> [<path>...]::
- Show detailed information about internal allocations in devices.
- +
-@@ -231,6 +234,9 @@ EXIT STATUS
- *btrfs device* returns a zero exit status if it succeeds. Non zero is
- returned in case of failure.
- 
-+If the '-s' option is used, *btrfs device stats* will add 128 to the
-+exit status if any of the error counters is non-zero.
-+
- AVAILABILITY
- ------------
- *btrfs* is part of btrfs-progs.
-diff --git a/cmds-device.c b/cmds-device.c
-index fa0830f..3fa3018 100644
---- a/cmds-device.c
-+++ b/cmds-device.c
-@@ -376,6 +376,7 @@ static const char * const cmd_device_stats_usage[] = {
- 	"Show current device IO stats.",
- 	"",
- 	"-z                     show current stats and reset values to zero",
-+	"-s                     return non-zero if any stat counter is not zero",
- 	NULL
- };
- 
-@@ -389,14 +390,18 @@ static int cmd_device_stats(int argc, char **argv)
- 	int i;
- 	int c;
- 	int err = 0;
-+	int status = 0;
- 	__u64 flags = 0;
- 	DIR *dirstream = NULL;
- 
--	while ((c = getopt(argc, argv, "z")) != -1) {
-+	while ((c = getopt(argc, argv, "zs")) != -1) {
- 		switch (c) {
- 		case 'z':
- 			flags = BTRFS_DEV_STATS_RESET;
- 			break;
-+		case 's':
-+			status = 1;
-+			break;
- 		case '?':
- 		default:
- 			usage(cmd_device_stats_usage);
-@@ -440,7 +445,7 @@ static int cmd_device_stats(int argc, char **argv)
- 		if (ioctl(fdmnt, BTRFS_IOC_GET_DEV_STATS, &args) < 0) {
- 			error("DEV_STATS ioctl failed on %s: %s",
- 			      path, strerror(errno));
--			err = 1;
-+			err |= 1;
- 		} else {
- 			char *canonical_path;
- 
-@@ -457,31 +462,51 @@ static int cmd_device_stats(int argc, char **argv)
- 					 "devid:%llu", args.devid);
- 			}
- 
--			if (args.nr_items >= BTRFS_DEV_STAT_WRITE_ERRS + 1)
-+			if (args.nr_items >= BTRFS_DEV_STAT_WRITE_ERRS + 1) {
- 				printf("[%s].write_io_errs   %llu\n",
- 				       canonical_path,
- 				       (unsigned long long) args.values[
- 					BTRFS_DEV_STAT_WRITE_ERRS]);
--			if (args.nr_items >= BTRFS_DEV_STAT_READ_ERRS + 1)
-+				if ((status == 1) && (args.values[BTRFS_DEV_STAT_WRITE_ERRS] > 0)) {
-+					err |= 128;
-+				}
-+			}
-+			if (args.nr_items >= BTRFS_DEV_STAT_READ_ERRS + 1) {
- 				printf("[%s].read_io_errs    %llu\n",
- 				       canonical_path,
- 				       (unsigned long long) args.values[
- 					BTRFS_DEV_STAT_READ_ERRS]);
--			if (args.nr_items >= BTRFS_DEV_STAT_FLUSH_ERRS + 1)
-+				if ((status == 1) && (args.values[BTRFS_DEV_STAT_READ_ERRS] > 0)) {
-+					err |= 128;
-+				}
-+			}
-+			if (args.nr_items >= BTRFS_DEV_STAT_FLUSH_ERRS + 1) {
- 				printf("[%s].flush_io_errs   %llu\n",
- 				       canonical_path,
- 				       (unsigned long long) args.values[
- 					BTRFS_DEV_STAT_FLUSH_ERRS]);
--			if (args.nr_items >= BTRFS_DEV_STAT_CORRUPTION_ERRS + 1)
-+				if ((status == 1) && (args.values[BTRFS_DEV_STAT_FLUSH_ERRS] > 0)) {
-+					err |= 128;
-+				}
-+			}
-+			if (args.nr_items >= BTRFS_DEV_STAT_CORRUPTION_ERRS + 1) {
- 				printf("[%s].corruption_errs %llu\n",
- 				       canonical_path,
- 				       (unsigned long long) args.values[
- 					BTRFS_DEV_STAT_CORRUPTION_ERRS]);
--			if (args.nr_items >= BTRFS_DEV_STAT_GENERATION_ERRS + 1)
-+				if ((status == 1) && (args.values[BTRFS_DEV_STAT_CORRUPTION_ERRS] > 0)) {
-+					err |= 128;
-+				}
-+			}
-+			if (args.nr_items >= BTRFS_DEV_STAT_GENERATION_ERRS + 1) {
- 				printf("[%s].generation_errs %llu\n",
- 				       canonical_path,
- 				       (unsigned long long) args.values[
- 					BTRFS_DEV_STAT_GENERATION_ERRS]);
-+				if ((status == 1) && (args.values[BTRFS_DEV_STAT_GENERATION_ERRS] > 0)) {
-+					err |= 128;
-+				}
-+			}
- 
- 			free(canonical_path);
- 		}
--- 
-2.11.0
+		if (dio->op == REQ_OP_WRITE)
+			ret = generic_write_sync(dio->iocb,  transferred);
+		dio->iocb->ki_complete(dio->iocb, ret, 0);
+	}
+	...
+}
+-------------------------------------------------------------------------
 
+[1] https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=de0ee0edb21fbab4c7afa3e94573ecfebfb0244e
+
+Thanks,
+
+-liubo
+
+> 
+> [1] https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=de0ee0edb21fbab4c7afa3e94573ecfebfb0244e
+> [2] https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=0b901916a00bc7b14ee83cc8e41c3b0d561a8f22
+> [3] https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=5f9a8a51d8b95505d8de8b7191ae2ed8c504d4af
+> 
+> 
+> >
+> > Thanks,
+> >
+> > -liubo
+> >
+> >>
+> >> Traces here:
+> >> INFO: task btrfs-transacti:604 blocked for more than 120 seconds.
+> >>       Not tainted 4.4.34 #1
+> >> "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> >> btrfs-transacti D ffff8814e78cbe00     0   604      2 0x00080000
+> >>  ffff8814e78cbe00 ffff88017367a540 ffff8814e2f88000 ffff8814e78cc000
+> >>  ffff8814e78cbe38 ffff88123616c510 ffff8814e24c81f0 ffff88153fb0a000
+> >>  ffff8814e78cbe18 ffffffff816a8425 ffff8814e63165a0 ffff8814e78cbe88
+> >> Call Trace:
+> >>  [<ffffffff816a8425>] schedule+0x35/0x80
+> >>  [<ffffffffc03751a5>] btrfs_commit_transaction+0x275/0xa50 [btrfs]
+> >>  [<ffffffffc036fdd6>] transaction_kthread+0x1d6/0x200 [btrfs]
+> >>  [<ffffffff810a0cbb>] kthread+0xdb/0x100
+> >>  [<ffffffff816ac84f>] ret_from_fork+0x3f/0x70
+> >> DWARF2 unwinder stuck at ret_from_fork+0x3f/0x70
+> >>
+> >> Leftover inexact backtrace:
+> >>
+> >>  [<ffffffff810a0be0>] ? kthread_park+0x60/0x60
+> >> INFO: task mysqld:1977 blocked for more than 120 seconds.
+> >>       Not tainted 4.4.34 #1
+> >> "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> >> mysqld          D ffff88142ef1bcf8     0  1977      1 0x00080000
+> >>  ffff88142ef1bcf8 ffffffff81e0f500 ffff8814dc2c4a80 ffff88142ef1c000
+> >>  ffff8814e32ed298 ffff8814e32ed2c0 ffff88110aa9a000 ffff8814e32ed000
+> >>  ffff88142ef1bd10 ffffffff816a8425 ffff8814e32ed000 ffff88142ef1bd60
+> >> Call Trace:
+> >>  [<ffffffff816a8425>] schedule+0x35/0x80
+> >>  [<ffffffffc03b38a2>] wait_for_writer+0xa2/0xb0 [btrfs]
+> >>  [<ffffffffc03bb439>] btrfs_sync_log+0xe9/0xa00 [btrfs]
+> >>  [<ffffffffc038d1bf>] btrfs_sync_file+0x35f/0x3d0 [btrfs]
+> >>  [<ffffffff8120055d>] vfs_fsync_range+0x3d/0xb0
+> >>  [<ffffffff8120062d>] do_fsync+0x3d/0x70
+> >>  [<ffffffff812008a0>] SyS_fsync+0x10/0x20
+> >>  [<ffffffff816ac4ee>] entry_SYSCALL_64_fastpath+0x12/0x71
+> >> DWARF2 unwinder stuck at entry_SYSCALL_64_fastpath+0x12/0x71
+> >>
+> >> Leftover inexact backtrace:
+> >>
+> >> INFO: task mysqld:3249 blocked for more than 120 seconds.
+> >>       Not tainted 4.4.34 #1
+> >> "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> >> mysqld          D ffff881475fdfa40     0  3249      1 0x00080000
+> >>  ffff881475fdfa40 ffff88017367ca80 ffff8814433d2540 ffff881475fe0000
+> >>  ffff88040da39ba0 0000000000230000 ffff88040da39c20 0000000000238000
+> >>  ffff881475fdfa58 ffffffff816a8425 0000000000008000 ffff881475fdfb18
+> >> Call Trace:
+> >>  [<ffffffff816a8425>] schedule+0x35/0x80
+> >>  [<ffffffffc03b4cb7>]
+> >> wait_ordered_extents.isra.18.constprop.23+0x147/0x3d0 [btrfs]
+> >>  [<ffffffffc03b5182>] btrfs_log_changed_extents+0x242/0x610 [btrfs]
+> >>  [<ffffffffc03ba6a4>] btrfs_log_inode+0x874/0xb80 [btrfs]
+> >>  [<ffffffffc03bac6c>] btrfs_log_inode_parent+0x22c/0x910 [btrfs]
+> >>  [<ffffffffc03bc292>] btrfs_log_dentry_safe+0x62/0x80 [btrfs]
+> >>  [<ffffffffc038d0ec>] btrfs_sync_file+0x28c/0x3d0 [btrfs]
+> >>  [<ffffffff8120055d>] vfs_fsync_range+0x3d/0xb0
+> >>  [<ffffffff8120062d>] do_fsync+0x3d/0x70
+> >>  [<ffffffff812008a0>] SyS_fsync+0x10/0x20
+> >>  [<ffffffff816ac4ee>] entry_SYSCALL_64_fastpath+0x12/0x71
+> >> DWARF2 unwinder stuck at entry_SYSCALL_64_fastpath+0x12/0x71
+> >>
+> >> Leftover inexact backtrace:
+> >>
+> >> INFO: task mysqld:3250 blocked for more than 120 seconds.
+> >>       Not tainted 4.4.34 #1
+> >> "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> >> mysqld          D ffff881374edb868     0  3250      1 0x00080000
+> >>  ffff881374edb868 ffff8801736b2540 ffff8814433d4a80 ffff881374edc000
+> >>  ffff8814e26f81c8 ffff8814e26f81e0 0000000000238000 00000000000a8000
+> >>  ffff881374edb880 ffffffff816a8425 ffff8814433d4a80 ffff881374edb8d8
+> >> Call Trace:
+> >>  [<ffffffff816a8425>] schedule+0x35/0x80
+> >>  [<ffffffff816aaffd>] rwsem_down_read_failed+0xed/0x130
+> >>  [<ffffffff813ce404>] call_rwsem_down_read_failed+0x14/0x30
+> >> DWARF2 unwinder stuck at call_rwsem_down_read_failed+0x14/0x30
+> >>
+> >> Leftover inexact backtrace:
+> >>
+> >>  [<ffffffff816aa5a7>] ? down_read+0x17/0x20
+> >>  [<ffffffffc0376cc6>] btrfs_create_dio_extent+0x46/0x1e0 [btrfs]
+> >>  [<ffffffffc0386a68>] btrfs_get_blocks_direct+0x3d8/0x730 [btrfs]
+> >>  [<ffffffffc0378b2e>] ? btrfs_submit_direct+0x1ce/0x740 [btrfs]
+> >>  [<ffffffff8120b2c7>] do_blockdev_direct_IO+0x11f7/0x2bc0
+> >>  [<ffffffffc0386690>] ? btrfs_page_exists_in_range+0xe0/0xe0 [btrfs]
+> >>  [<ffffffffc0378960>] ? btrfs_getattr+0xa0/0xa0 [btrfs]
+> >>  [<ffffffff8120ccd3>] __blockdev_direct_IO+0x43/0x50
+> >>  [<ffffffffc0378960>] ? btrfs_getattr+0xa0/0xa0 [btrfs]
+> >>  [<ffffffffc0377e11>] btrfs_direct_IO+0x1d1/0x380 [btrfs]
+> >>  [<ffffffffc0378960>] ? btrfs_getattr+0xa0/0xa0 [btrfs]
+> >>  [<ffffffff8115656a>] generic_file_direct_write+0xaa/0x170
+> >>  [<ffffffffc038d4de>] btrfs_file_write_iter+0x2ae/0x560 [btrfs]
+> >>  [<ffffffff810f73c1>] ? futex_wake+0x81/0x150
+> >>  [<ffffffff811cedd4>] new_sync_write+0x84/0xb0
+> >>  [<ffffffff811cee26>] __vfs_write+0x26/0x40
+> >>  [<ffffffff811cf419>] vfs_write+0xa9/0x190
+> >>  [<ffffffff810026af>] ? enter_from_user_mode+0x1f/0x50
+> >>  [<ffffffff811d027b>] SyS_pwrite64+0x6b/0xa0
+> >>  [<ffffffff81002b20>] ? syscall_return_slowpath+0xb0/0x130
+> >>  [<ffffffff816ac4ee>] entry_SYSCALL_64_fastpath+0x12/0x71
+> >> INFO: task btrfs-transacti:604 blocked for more than 120 seconds.
+> >>       Not tainted 4.4.34 #1
+> >> "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> >> btrfs-transacti D ffff8814e78cbe00     0   604      2 0x00080000
+> >>  ffff8814e78cbe00 ffff88017367a540 ffff8814e2f88000 ffff8814e78cc000
+> >>  ffff8814e78cbe38 ffff88123616c510 ffff8814e24c81f0 ffff88153fb0a000
+> >>  ffff8814e78cbe18 ffffffff816a8425 ffff8814e63165a0 ffff8814e78cbe88
+> >> Call Trace:
+> >>  [<ffffffff816a8425>] schedule+0x35/0x80
+> >>  [<ffffffffc03751a5>] btrfs_commit_transaction+0x275/0xa50 [btrfs]
+> >>  [<ffffffffc036fdd6>] transaction_kthread+0x1d6/0x200 [btrfs]
+> >>  [<ffffffff810a0cbb>] kthread+0xdb/0x100
+> >>  [<ffffffff816ac84f>] ret_from_fork+0x3f/0x70
+> >> DWARF2 unwinder stuck at ret_from_fork+0x3f/0x70
+> >>
+> >> Leftover inexact backtrace:
+> >>
+> >>  [<ffffffff810a0be0>] ? kthread_park+0x60/0x60
+> >> INFO: task mysqld:1977 blocked for more than 120 seconds.
+> >>       Not tainted 4.4.34 #1
+> >> "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> >> mysqld          D ffff88142ef1bcf8     0  1977      1 0x00080000
+> >>  ffff88142ef1bcf8 ffffffff81e0f500 ffff8814dc2c4a80 ffff88142ef1c000
+> >>  ffff8814e32ed298 ffff8814e32ed2c0 ffff88110aa9a000 ffff8814e32ed000
+> >>  ffff88142ef1bd10 ffffffff816a8425 ffff8814e32ed000 ffff88142ef1bd60
+> >> Call Trace:
+> >>  [<ffffffff816a8425>] schedule+0x35/0x80
+> >>  [<ffffffffc03b38a2>] wait_for_writer+0xa2/0xb0 [btrfs]
+> >>  [<ffffffffc03bb439>] btrfs_sync_log+0xe9/0xa00 [btrfs]
+> >>  [<ffffffffc038d1bf>] btrfs_sync_file+0x35f/0x3d0 [btrfs]
+> >>  [<ffffffff8120055d>] vfs_fsync_range+0x3d/0xb0
+> >>  [<ffffffff8120062d>] do_fsync+0x3d/0x70
+> >>  [<ffffffff812008a0>] SyS_fsync+0x10/0x20
+> >>  [<ffffffff816ac4ee>] entry_SYSCALL_64_fastpath+0x12/0x71
+> >> DWARF2 unwinder stuck at entry_SYSCALL_64_fastpath+0x12/0x71
+> >>
+> >> Leftover inexact backtrace:
+> >>
+> >> INFO: task mysqld:3249 blocked for more than 120 seconds.
+> >>       Not tainted 4.4.34 #1
+> >> "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> >> mysqld          D ffff881475fdfa40     0  3249      1 0x00080000
+> >>  ffff881475fdfa40 ffff88017367ca80 ffff8814433d2540 ffff881475fe0000
+> >>  ffff88040da39ba0 0000000000230000 ffff88040da39c20 0000000000238000
+> >>  ffff881475fdfa58 ffffffff816a8425 0000000000008000 ffff881475fdfb18
+> >> Call Trace:
+> >>  [<ffffffff816a8425>] schedule+0x35/0x80
+> >>  [<ffffffffc03b4cb7>]
+> >> wait_ordered_extents.isra.18.constprop.23+0x147/0x3d0 [btrfs]
+> >>  [<ffffffffc03b5182>] btrfs_log_changed_extents+0x242/0x610 [btrfs]
+> >>  [<ffffffffc03ba6a4>] btrfs_log_inode+0x874/0xb80 [btrfs]
+> >>  [<ffffffffc03bac6c>] btrfs_log_inode_parent+0x22c/0x910 [btrfs]
+> >>  [<ffffffffc03bc292>] btrfs_log_dentry_safe+0x62/0x80 [btrfs]
+> >>  [<ffffffffc038d0ec>] btrfs_sync_file+0x28c/0x3d0 [btrfs]
+> >>  [<ffffffff8120055d>] vfs_fsync_range+0x3d/0xb0
+> >>  [<ffffffff8120062d>] do_fsync+0x3d/0x70
+> >>  [<ffffffff812008a0>] SyS_fsync+0x10/0x20
+> >>  [<ffffffff816ac4ee>] entry_SYSCALL_64_fastpath+0x12/0x71
+> >> DWARF2 unwinder stuck at entry_SYSCALL_64_fastpath+0x12/0x71
+> >>
+> >> Leftover inexact backtrace:
+> >>
+> >> INFO: task mysqld:3250 blocked for more than 120 seconds.
+> >>       Not tainted 4.4.34 #1
+> >> "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> >> mysqld          D ffff881374edb868     0  3250      1 0x00080000
+> >>  ffff881374edb868 ffff8801736b2540 ffff8814433d4a80 ffff881374edc000
+> >>  ffff8814e26f81c8 ffff8814e26f81e0 0000000000238000 00000000000a8000
+> >>  ffff881374edb880 ffffffff816a8425 ffff8814433d4a80 ffff881374edb8d8
+> >> Call Trace:
+> >>  [<ffffffff816a8425>] schedule+0x35/0x80
+> >>  [<ffffffff816aaffd>] rwsem_down_read_failed+0xed/0x130
+> >>  [<ffffffff813ce404>] call_rwsem_down_read_failed+0x14/0x30
+> >> DWARF2 unwinder stuck at call_rwsem_down_read_failed+0x14/0x30
+> >>
+> >> Leftover inexact backtrace:
+> >>
+> >>  [<ffffffff816aa5a7>] ? down_read+0x17/0x20
+> >>  [<ffffffffc0376cc6>] btrfs_create_dio_extent+0x46/0x1e0 [btrfs]
+> >>  [<ffffffffc0386a68>] btrfs_get_blocks_direct+0x3d8/0x730 [btrfs]
+> >>  [<ffffffffc0378b2e>] ? btrfs_submit_direct+0x1ce/0x740 [btrfs]
+> >>  [<ffffffff8120b2c7>] do_blockdev_direct_IO+0x11f7/0x2bc0
+> >>  [<ffffffffc0386690>] ? btrfs_page_exists_in_range+0xe0/0xe0 [btrfs]
+> >>  [<ffffffffc0378960>] ? btrfs_getattr+0xa0/0xa0 [btrfs]
+> >>  [<ffffffff8120ccd3>] __blockdev_direct_IO+0x43/0x50
+> >>  [<ffffffffc0378960>] ? btrfs_getattr+0xa0/0xa0 [btrfs]
+> >>  [<ffffffffc0377e11>] btrfs_direct_IO+0x1d1/0x380 [btrfs]
+> >>  [<ffffffffc0378960>] ? btrfs_getattr+0xa0/0xa0 [btrfs]
+> >>  [<ffffffff8115656a>] generic_file_direct_write+0xaa/0x170
+> >>  [<ffffffffc038d4de>] btrfs_file_write_iter+0x2ae/0x560 [btrfs]
+> >>  [<ffffffff810f73c1>] ? futex_wake+0x81/0x150
+> >>  [<ffffffff811cedd4>] new_sync_write+0x84/0xb0
+> >>  [<ffffffff811cee26>] __vfs_write+0x26/0x40
+> >>  [<ffffffff811cf419>] vfs_write+0xa9/0x190
+> >>  [<ffffffff810026af>] ? enter_from_user_mode+0x1f/0x50
+> >>  [<ffffffff811d027b>] SyS_pwrite64+0x6b/0xa0
+> >>  [<ffffffff81002b20>] ? syscall_return_slowpath+0xb0/0x130
+> >>  [<ffffffff816ac4ee>] entry_SYSCALL_64_fastpath+0x12/0x71
+> >> INFO: task btrfs-transacti:604 blocked for more than 120 seconds.
+> >>       Not tainted 4.4.34 #1
+> >> "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> >> btrfs-transacti D ffff8814e78cbe00     0   604      2 0x00080000
+> >>  ffff8814e78cbe00 ffff88017367a540 ffff8814e2f88000 ffff8814e78cc000
+> >>  ffff8814e78cbe38 ffff88123616c510 ffff8814e24c81f0 ffff88153fb0a000
+> >>  ffff8814e78cbe18 ffffffff816a8425 ffff8814e63165a0 ffff8814e78cbe88
+> >> Call Trace:
+> >>  [<ffffffff816a8425>] schedule+0x35/0x80
+> >>  [<ffffffffc03751a5>] btrfs_commit_transaction+0x275/0xa50 [btrfs]
+> >>  [<ffffffffc036fdd6>] transaction_kthread+0x1d6/0x200 [btrfs]
+> >>  [<ffffffff810a0cbb>] kthread+0xdb/0x100
+> >>  [<ffffffff816ac84f>] ret_from_fork+0x3f/0x70
+> >> DWARF2 unwinder stuck at ret_from_fork+0x3f/0x70
+> >>
+> >> Leftover inexact backtrace:
+> >>
+> >>  [<ffffffff810a0be0>] ? kthread_park+0x60/0x60
+> >> INFO: task mysqld:1977 blocked for more than 120 seconds.
+> >>       Not tainted 4.4.34 #1
+> >> "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> >> mysqld          D ffff88142ef1bcf8     0  1977      1 0x00080000
+> >>  ffff88142ef1bcf8 ffffffff81e0f500 ffff8814dc2c4a80 ffff88142ef1c000
+> >>  ffff8814e32ed298 ffff8814e32ed2c0 ffff88110aa9a000 ffff8814e32ed000
+> >>  ffff88142ef1bd10 ffffffff816a8425 ffff8814e32ed000 ffff88142ef1bd60
+> >> Call Trace:
+> >>  [<ffffffff816a8425>] schedule+0x35/0x80
+> >>  [<ffffffffc03b38a2>] wait_for_writer+0xa2/0xb0 [btrfs]
+> >>  [<ffffffffc03bb439>] btrfs_sync_log+0xe9/0xa00 [btrfs]
+> >>  [<ffffffffc038d1bf>] btrfs_sync_file+0x35f/0x3d0 [btrfs]
+> >>  [<ffffffff8120055d>] vfs_fsync_range+0x3d/0xb0
+> >>  [<ffffffff8120062d>] do_fsync+0x3d/0x70
+> >>  [<ffffffff812008a0>] SyS_fsync+0x10/0x20
+> >>  [<ffffffff816ac4ee>] entry_SYSCALL_64_fastpath+0x12/0x71
+> >> DWARF2 unwinder stuck at entry_SYSCALL_64_fastpath+0x12/0x71
+> >>
+> >> Leftover inexact backtrace:
+> >>
+> >> Greets,
+> >> Stefan
+> >>
+> >> >
+> >> > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> >> > Reviewed-by: Chris Mason <clm@fb.com>
+> >> > ---
+> >> >  fs/btrfs/inode.c | 8 +++++---
+> >> >  1 file changed, 5 insertions(+), 3 deletions(-)
+> >> >
+> >> > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> >> > index 2b790bd..48e9356 100644
+> >> > --- a/fs/btrfs/inode.c
+> >> > +++ b/fs/btrfs/inode.c
+> >> > @@ -7783,10 +7783,12 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
+> >> >     }
+> >> >
+> >> >     /*
+> >> > -    * this will cow the extent, reset the len in case we changed
+> >> > -    * it above
+> >> > +    * this will cow the extent, if em is within [start, len], then
+> >> > +    * probably we've found a preallocated/existing extent, let's
+> >> > +    * give it a chance to use preallocated space.
+> >> >      */
+> >> > -   len = bh_result->b_size;
+> >> > +   len = min_t(u64, bh_result->b_size, em->len - (start - em->start));
+> >> > +   len = ALIGN(len, root->sectorsize);
+> >> >     free_extent_map(em);
+> >> >     em = btrfs_new_extent_direct(inode, start, len);
+> >> >     if (IS_ERR(em)) {
+> >> >
+> 
+> 
+> 
+> -- 
+> Filipe David Manana,
+> 
+> "People will forget what you said,
+>  people will forget what you did,
+>  but people will never forget how you made them feel."
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

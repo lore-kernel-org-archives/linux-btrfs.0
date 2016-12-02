@@ -1,54 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtprelay01.ispgateway.de ([80.67.29.23]:57728 "EHLO
-        smtprelay01.ispgateway.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754915AbcLBK1a (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Dec 2016 05:27:30 -0500
-Received: from [77.13.65.66] (helo=hermione.invalid)
-        by smtprelay01.ispgateway.de with esmtpsa (TLSv1.2:AES256-GCM-SHA384:256)
-        (Exim 4.84)
-        (envelope-from <envelope@m-berberich.de>)
-        id 1cCkm4-0008KD-82
-        for linux-btrfs@vger.kernel.org; Fri, 02 Dec 2016 11:09:00 +0100
-Received: from berberic by hermione.invalid with local (Exim 4.88)
-        (envelope-from <envelope@m-berberich.de>)
-        id 1cCkm3-0004Kd-MW
-        for linux-btrfs@vger.kernel.org; Fri, 02 Dec 2016 11:08:59 +0100
-Date: Fri, 2 Dec 2016 11:08:59 +0100
-From: M G Berberich <btrfs@oss.m-berberich.de>
-To: linux-btrfs@vger.kernel.org
-Subject: 4.9-rc7 regression: scrub status blocks
-Message-ID: <20161202100859.nywt3p3ne5i7kjbs@invalid>
+Received: from mail-qt0-f173.google.com ([209.85.216.173]:36824 "EHLO
+        mail-qt0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1757961AbcLBTH5 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Dec 2016 14:07:57 -0500
+Received: by mail-qt0-f173.google.com with SMTP id w33so260652432qtc.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 02 Dec 2016 11:07:56 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+From: Blake Lewis <blake@portworx.com>
+Date: Fri, 2 Dec 2016 11:07:54 -0800
+Message-ID: <CAFuzrVeWdz2Lup-x1OiJjVcknQRysiiZVYG1doxNdGKiHB+Jaw@mail.gmail.com>
+Subject: missing checksums on reboot
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Hi, all, this is my first posting to the mailing list.  I am a
+long-time file system guy who is just starting to take a serious
+interest in btrfs.
 
-on a system with 4.9.0-rc7 I have the problem, that ‘scrub status’
-blocks when a scru is running.
+My company's product uses btrfs for its backing storage.  We
+maintain a log file to let us synchronize after reboots.  In
+testing, we find that when the system panics and we read the
+file after coming back up, we intermittently (but fairly often)
+get "no csum found for inode X start Y" messages and from our
+point of view, the log is corrupt.
 
-Example. I startet a scrub and then (in another shell) ‘scrub status’
-was startet while. It blocked and returned only after the scrub
-finished (hours later) with:
+Here are a few pertinent details:
 
-    WARNING: failed to read status: Connection reset by peer
-    scrub status for 24717d37-4fa5-4a66-ac3c-e8f3558b3fce
-	    no stats available
-	    total bytes scrubbed: 0.00B with 0 errors
+1) When we see this, the device is always an SSD.
+2) We reproduce it easily with 3.10 kernels but we have not
+been able to reproduce it in 4.8.
+3) The log file is opened with O_SYNC|O_DIRECT; its size is 128MB
+and we are appending to it.
+4) No other activity in the file system except a generated sequential
+write workload
+5) Panics are induced with "echo c > /proc/sysrq-trigger".
 
-After the scrub ended, ‘scrub status’ returns:
+We filed a bug (https://bugzilla.kernel.org/show_bug.cgi?id=188051)
+but I wanted to see if anyone here recognized these symptoms and
+could point me in the right direction, especially since the problem
+seems to have gone away in more recent releases.  We can't realistically
+make our customers run newer kernels, so I want to understand the
+nature of the bug and whether it might be able to fix it in the older
+code.
 
-    scrub status for 24717d37-4fa5-4a66-ac3c-e8f3558b3fce
-	    scrub started at Thu Dec  1 20:35:15 2016 and finished after 03:48:39
-	    total bytes scrubbed: 909.96GiB with 0 errors
+Thanks for any guidance.
 
-There are no errors in dmesg.
-
-	MfG
-	bmg
-
--- 
-„Des is völlig wurscht, was heut beschlos- | M G Berberich
- sen wird: I bin sowieso dagegn!“          | mail@m-berberich.de
-(SPD-Stadtrat Kurt Schindler; Regensburg)  | 
+Blake

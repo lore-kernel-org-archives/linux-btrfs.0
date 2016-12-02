@@ -1,46 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:36073 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751678AbcLBFJo (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Dec 2016 00:09:44 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1cCg6M-0000UO-Dc
-        for linux-btrfs@vger.kernel.org; Fri, 02 Dec 2016 06:09:38 +0100
+Received: from smtprelay01.ispgateway.de ([80.67.29.23]:57728 "EHLO
+        smtprelay01.ispgateway.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754915AbcLBK1a (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Dec 2016 05:27:30 -0500
+Received: from [77.13.65.66] (helo=hermione.invalid)
+        by smtprelay01.ispgateway.de with esmtpsa (TLSv1.2:AES256-GCM-SHA384:256)
+        (Exim 4.84)
+        (envelope-from <envelope@m-berberich.de>)
+        id 1cCkm4-0008KD-82
+        for linux-btrfs@vger.kernel.org; Fri, 02 Dec 2016 11:09:00 +0100
+Received: from berberic by hermione.invalid with local (Exim 4.88)
+        (envelope-from <envelope@m-berberich.de>)
+        id 1cCkm3-0004Kd-MW
+        for linux-btrfs@vger.kernel.org; Fri, 02 Dec 2016 11:08:59 +0100
+Date: Fri, 2 Dec 2016 11:08:59 +0100
+From: M G Berberich <btrfs@oss.m-berberich.de>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: [PATCH] btrfs-progs: doc: Update docs about RAID profiles
-Date: Fri, 2 Dec 2016 05:09:29 +0000 (UTC)
-Message-ID: <pan$eefb3$ec5cb11a$a6a72bcd$61cd518@cox.net>
-References: <20161201200117.6743-1-ahferroin7@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: 4.9-rc7 regression: scrub status blocks
+Message-ID: <20161202100859.nywt3p3ne5i7kjbs@invalid>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Austin S. Hemmelgarn posted on Thu, 01 Dec 2016 15:01:17 -0500 as
-excerpted:
+Hello,
 
-> This adds some more info about chunk profiles in the mkfs manpage,
-> specifically providing better info about raid1 and raid10 profiles and
-> the fact that they can't survive more than one device failing.
-> 
-> This should hopefully make it less likely that people hit unexpected
-> behavior when using these profiles.
-> 
-> Signed-off-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
-> ---
-> This should work to cover most of the issues brought up on the mailing
-> list recently regarding this particular aspect of documentation.
-> 
->  Documentation/mkfs.btrfs.asciidoc | 44
->  ++++++++++++++++++++++++++++++++-------
->  1 file changed, 36 insertions(+), 8 deletions(-)
+on a system with 4.9.0-rc7 I have the problem, that ‘scrub status’
+blocks when a scru is running.
 
-FWIW, LGTM as a btrfs user and list regular.  Thanks. =:^)
+Example. I startet a scrub and then (in another shell) ‘scrub status’
+was startet while. It blocked and returned only after the scrub
+finished (hours later) with:
+
+    WARNING: failed to read status: Connection reset by peer
+    scrub status for 24717d37-4fa5-4a66-ac3c-e8f3558b3fce
+	    no stats available
+	    total bytes scrubbed: 0.00B with 0 errors
+
+After the scrub ended, ‘scrub status’ returns:
+
+    scrub status for 24717d37-4fa5-4a66-ac3c-e8f3558b3fce
+	    scrub started at Thu Dec  1 20:35:15 2016 and finished after 03:48:39
+	    total bytes scrubbed: 909.96GiB with 0 errors
+
+There are no errors in dmesg.
+
+	MfG
+	bmg
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+„Des is völlig wurscht, was heut beschlos- | M G Berberich
+ sen wird: I bin sowieso dagegn!“          | mail@m-berberich.de
+(SPD-Stadtrat Kurt Schindler; Regensburg)  | 

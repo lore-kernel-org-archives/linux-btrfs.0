@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45074 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:45095 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752118AbcLBFHu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1752480AbcLBFHu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Fri, 2 Dec 2016 00:07:50 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 2F52DABD3
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 4DFAFAC10
         for <linux-btrfs@vger.kernel.org>; Fri,  2 Dec 2016 05:07:49 +0000 (UTC)
 From: jeffm@suse.com
 To: linux-btrfs@vger.kernel.org
 Cc: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH 10/18] btrfs: root->fs_info cleanup, btrfs_calc_{trans,trunc}_metadata_size
-Date: Fri,  2 Dec 2016 00:07:30 -0500
-Message-Id: <1480655258-15400-11-git-send-email-jeffm@suse.com>
+Subject: [PATCH 11/18] btrfs: root->fs_info cleanup, lock/unlock_chunks
+Date: Fri,  2 Dec 2016 00:07:31 -0500
+Message-Id: <1480655258-15400-12-git-send-email-jeffm@suse.com>
 In-Reply-To: <1480655258-15400-1-git-send-email-jeffm@suse.com>
 References: <1480655258-15400-1-git-send-email-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -21,307 +21,392 @@ From: Jeff Mahoney <jeffm@suse.com>
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/ctree.h            |  8 ++++----
- fs/btrfs/delayed-inode.c    |  4 ++--
- fs/btrfs/extent-tree.c      | 35 +++++++++++++++++++----------------
- fs/btrfs/file.c             |  4 ++--
- fs/btrfs/free-space-cache.c |  4 ++--
- fs/btrfs/inode-map.c        |  3 ++-
- fs/btrfs/inode.c            |  4 ++--
- fs/btrfs/props.c            |  2 +-
- fs/btrfs/transaction.c      |  5 +++--
- 9 files changed, 37 insertions(+), 32 deletions(-)
+ fs/btrfs/disk-io.c          |  4 +--
+ fs/btrfs/extent-tree.c      |  8 +++---
+ fs/btrfs/free-space-cache.c |  4 +--
+ fs/btrfs/volumes.c          | 70 ++++++++++++++++++++++-----------------------
+ fs/btrfs/volumes.h          |  8 +++---
+ 5 files changed, 47 insertions(+), 47 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 6a5c007..19b6bb2 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2535,20 +2535,20 @@ static inline gfp_t btrfs_alloc_write_mask(struct address_space *mapping)
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 3d4fb99..5abf3af 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3998,7 +3998,7 @@ void close_ctree(struct btrfs_fs_info *fs_info)
+ 	__btrfs_free_block_rsv(root->orphan_block_rsv);
+ 	root->orphan_block_rsv = NULL;
  
- u64 btrfs_csum_bytes_to_leaves(struct btrfs_root *root, u64 csum_bytes);
+-	lock_chunks(root);
++	lock_chunks(root->fs_info);
+ 	while (!list_empty(&fs_info->pinned_chunks)) {
+ 		struct extent_map *em;
  
--static inline u64 btrfs_calc_trans_metadata_size(struct btrfs_root *root,
-+static inline u64 btrfs_calc_trans_metadata_size(struct btrfs_fs_info *fs_info,
- 						 unsigned num_items)
- {
--	return root->fs_info->nodesize * BTRFS_MAX_LEVEL * 2 * num_items;
-+	return fs_info->nodesize * BTRFS_MAX_LEVEL * 2 * num_items;
+@@ -4007,7 +4007,7 @@ void close_ctree(struct btrfs_fs_info *fs_info)
+ 		list_del_init(&em->list);
+ 		free_extent_map(em);
+ 	}
+-	unlock_chunks(root);
++	unlock_chunks(root->fs_info);
  }
  
- /*
-  * Doing a truncate won't result in new nodes or leaves, just what we need for
-  * COW.
-  */
--static inline u64 btrfs_calc_trunc_metadata_size(struct btrfs_root *root,
-+static inline u64 btrfs_calc_trunc_metadata_size(struct btrfs_fs_info *fs_info,
- 						 unsigned num_items)
- {
--	return root->fs_info->nodesize * BTRFS_MAX_LEVEL * num_items;
-+	return fs_info->nodesize * BTRFS_MAX_LEVEL * num_items;
- }
- 
- int btrfs_should_throttle_delayed_refs(struct btrfs_trans_handle *trans,
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index d90d444..d4e0781 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -549,7 +549,7 @@ static int btrfs_delayed_item_reserve_metadata(struct btrfs_trans_handle *trans,
- 	src_rsv = trans->block_rsv;
- 	dst_rsv = &root->fs_info->delayed_block_rsv;
- 
--	num_bytes = btrfs_calc_trans_metadata_size(root, 1);
-+	num_bytes = btrfs_calc_trans_metadata_size(root->fs_info, 1);
- 	ret = btrfs_block_rsv_migrate(src_rsv, dst_rsv, num_bytes, 1);
- 	if (!ret) {
- 		trace_btrfs_space_reservation(root->fs_info, "delayed_item",
-@@ -592,7 +592,7 @@ static int btrfs_delayed_inode_reserve_metadata(
- 	src_rsv = trans->block_rsv;
- 	dst_rsv = &root->fs_info->delayed_block_rsv;
- 
--	num_bytes = btrfs_calc_trans_metadata_size(root, 1);
-+	num_bytes = btrfs_calc_trans_metadata_size(root->fs_info, 1);
- 
- 	/*
- 	 * If our block_rsv is the delalloc block reserve then check and see if
+ int btrfs_buffer_uptodate(struct extent_buffer *buf, u64 parent_transid,
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 127a54b..b8ad81c 100644
+index b8ad81c..cc9ae54 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -2791,13 +2791,13 @@ int btrfs_check_space_for_delayed_refs(struct btrfs_trans_handle *trans,
- 	u64 num_bytes, num_dirty_bgs_bytes;
- 	int ret = 0;
- 
--	num_bytes = btrfs_calc_trans_metadata_size(root, 1);
-+	num_bytes = btrfs_calc_trans_metadata_size(root->fs_info, 1);
- 	num_heads = heads_to_leaves(root, num_heads);
- 	if (num_heads > 1)
- 		num_bytes += (num_heads - 1) * root->fs_info->nodesize;
- 	num_bytes <<= 1;
- 	num_bytes += btrfs_csum_bytes_to_leaves(root, csum_bytes) * root->fs_info->nodesize;
--	num_dirty_bgs_bytes = btrfs_calc_trans_metadata_size(root,
-+	num_dirty_bgs_bytes = btrfs_calc_trans_metadata_size(root->fs_info,
- 							     num_dirty_bgs);
- 	global_rsv = &root->fs_info->global_block_rsv;
- 
-@@ -4440,8 +4440,8 @@ void check_system_chunk(struct btrfs_trans_handle *trans,
- 	num_devs = get_profile_num_devs(root, type);
- 
- 	/* num_devs device items to update and 1 chunk item to add or remove */
--	thresh = btrfs_calc_trunc_metadata_size(root, num_devs) +
--		btrfs_calc_trans_metadata_size(root, 1);
-+	thresh = btrfs_calc_trunc_metadata_size(root->fs_info, num_devs) +
-+		btrfs_calc_trans_metadata_size(root->fs_info, 1);
- 
- 	if (left < thresh && btrfs_test_opt(root->fs_info, ENOSPC_DEBUG)) {
- 		btrfs_info(root->fs_info, "left=%llu, need=%llu, flags=%llu",
-@@ -4695,7 +4695,7 @@ static inline int calc_reclaim_items_nr(struct btrfs_root *root, u64 to_reclaim)
- 	u64 bytes;
- 	int nr;
- 
--	bytes = btrfs_calc_trans_metadata_size(root, 1);
-+	bytes = btrfs_calc_trans_metadata_size(root->fs_info, 1);
- 	nr = (int)div64_u64(to_reclaim, bytes);
- 	if (!nr)
- 		nr = 1;
-@@ -5770,7 +5770,7 @@ int btrfs_orphan_reserve_metadata(struct btrfs_trans_handle *trans,
- 	 * added it, so this takes the reservation so we can release it later
- 	 * when we are truly done with the orphan item.
- 	 */
--	u64 num_bytes = btrfs_calc_trans_metadata_size(root, 1);
-+	u64 num_bytes = btrfs_calc_trans_metadata_size(root->fs_info, 1);
- 	trace_btrfs_space_reservation(root->fs_info, "orphan",
- 				      btrfs_ino(inode), num_bytes, 1);
- 	return btrfs_block_rsv_migrate(src_rsv, dst_rsv, num_bytes, 1);
-@@ -5779,7 +5779,7 @@ int btrfs_orphan_reserve_metadata(struct btrfs_trans_handle *trans,
- void btrfs_orphan_release_metadata(struct inode *inode)
- {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
--	u64 num_bytes = btrfs_calc_trans_metadata_size(root, 1);
-+	u64 num_bytes = btrfs_calc_trans_metadata_size(root->fs_info, 1);
- 	trace_btrfs_space_reservation(root->fs_info, "orphan",
- 				      btrfs_ino(inode), num_bytes, 0);
- 	btrfs_block_rsv_release(root, root->orphan_block_rsv, num_bytes);
-@@ -5821,7 +5821,7 @@ int btrfs_subvolume_reserve_metadata(struct btrfs_root *root,
- 
- 	*qgroup_reserved = num_bytes;
- 
--	num_bytes = btrfs_calc_trans_metadata_size(root, items);
-+	num_bytes = btrfs_calc_trans_metadata_size(root->fs_info, items);
- 	rsv->space_info = __find_space_info(root->fs_info,
- 					    BTRFS_BLOCK_GROUP_METADATA);
- 	ret = btrfs_block_rsv_add(root, rsv, num_bytes,
-@@ -5925,10 +5925,11 @@ static u64 calc_csum_metadata_size(struct inode *inode, u64 num_bytes,
- 		return 0;
- 
- 	if (reserve)
--		return btrfs_calc_trans_metadata_size(root,
-+		return btrfs_calc_trans_metadata_size(root->fs_info,
- 						      num_csums - old_csums);
- 
--	return btrfs_calc_trans_metadata_size(root, old_csums - num_csums);
-+	return btrfs_calc_trans_metadata_size(root->fs_info,
-+					      old_csums - num_csums);
- }
- 
- int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
-@@ -5982,7 +5983,8 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
- 			BTRFS_I(inode)->reserved_extents;
- 
- 	/* We always want to reserve a slot for updating the inode. */
--	to_reserve = btrfs_calc_trans_metadata_size(root, nr_extents + 1);
-+	to_reserve = btrfs_calc_trans_metadata_size(root->fs_info,
-+						    nr_extents + 1);
- 	to_reserve += calc_csum_metadata_size(inode, num_bytes, 1);
- 	csum_bytes = BTRFS_I(inode)->csum_bytes;
- 	spin_unlock(&BTRFS_I(inode)->lock);
-@@ -6004,7 +6006,7 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
- 	spin_lock(&BTRFS_I(inode)->lock);
- 	if (test_and_set_bit(BTRFS_INODE_DELALLOC_META_RESERVED,
- 			     &BTRFS_I(inode)->runtime_flags)) {
--		to_reserve -= btrfs_calc_trans_metadata_size(root, 1);
-+		to_reserve -= btrfs_calc_trans_metadata_size(root->fs_info, 1);
- 		release_extra = true;
+@@ -9436,9 +9436,9 @@ int btrfs_inc_block_group_ro(struct btrfs_root *root,
+ out:
+ 	if (cache->flags & BTRFS_BLOCK_GROUP_SYSTEM) {
+ 		alloc_flags = update_block_group_flags(root, cache->flags);
+-		lock_chunks(root->fs_info->chunk_root);
++		lock_chunks(root->fs_info);
+ 		check_system_chunk(trans, root, alloc_flags);
+-		unlock_chunks(root->fs_info->chunk_root);
++		unlock_chunks(root->fs_info);
  	}
- 	BTRFS_I(inode)->reserved_extents += nr_extents;
-@@ -6018,8 +6020,7 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
- 					      btrfs_ino(inode), to_reserve, 1);
- 	if (release_extra)
- 		btrfs_block_rsv_release(root, block_rsv,
--					btrfs_calc_trans_metadata_size(root,
--								       1));
-+			btrfs_calc_trans_metadata_size(root->fs_info, 1));
- 	return 0;
+ 	mutex_unlock(&root->fs_info->ro_block_group_mutex);
  
- out_fail:
-@@ -6074,7 +6075,8 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+@@ -10482,7 +10482,7 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
+ 
+ 	memcpy(&key, &block_group->key, sizeof(key));
+ 
+-	lock_chunks(root);
++	lock_chunks(root->fs_info);
+ 	if (!list_empty(&em->list)) {
+ 		/* We're in the transaction->pending_chunks list. */
+ 		free_extent_map(em);
+@@ -10550,7 +10550,7 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
+ 		free_extent_map(em);
  	}
- 	spin_unlock(&BTRFS_I(inode)->lock);
- 	if (dropped)
--		to_free += btrfs_calc_trans_metadata_size(root, dropped);
-+		to_free += btrfs_calc_trans_metadata_size(root->fs_info,
-+							  dropped);
  
- 	if (to_free) {
- 		btrfs_block_rsv_release(root, block_rsv, to_free);
-@@ -6109,7 +6111,8 @@ void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes)
- 		to_free = calc_csum_metadata_size(inode, num_bytes, 0);
- 	spin_unlock(&BTRFS_I(inode)->lock);
- 	if (dropped > 0)
--		to_free += btrfs_calc_trans_metadata_size(root, dropped);
-+		to_free += btrfs_calc_trans_metadata_size(root->fs_info,
-+							  dropped);
+-	unlock_chunks(root);
++	unlock_chunks(root->fs_info);
  
- 	if (btrfs_is_testing(root->fs_info))
- 		return;
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 1e0af55..008670e 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2369,7 +2369,7 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 	u64 tail_len;
- 	u64 orig_start = offset;
- 	u64 cur_offset;
--	u64 min_size = btrfs_calc_trunc_metadata_size(root, 1);
-+	u64 min_size = btrfs_calc_trunc_metadata_size(root->fs_info, 1);
- 	u64 drop_end;
- 	int ret = 0;
- 	int err = 0;
-@@ -2516,7 +2516,7 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 		ret = -ENOMEM;
- 		goto out_free;
- 	}
--	rsv->size = btrfs_calc_trunc_metadata_size(root, 1);
-+	rsv->size = btrfs_calc_trunc_metadata_size(root->fs_info, 1);
- 	rsv->failfast = 1;
- 
- 	/*
+ 	ret = remove_block_group_free_space(trans, root->fs_info, block_group);
+ 	if (ret)
 diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 2d71654..aee1255 100644
+index aee1255..8424617 100644
 --- a/fs/btrfs/free-space-cache.c
 +++ b/fs/btrfs/free-space-cache.c
-@@ -210,8 +210,8 @@ int btrfs_check_trunc_cache_free_space(struct btrfs_root *root,
- 	int ret;
+@@ -3328,7 +3328,7 @@ void btrfs_put_block_group_trimming(struct btrfs_block_group_cache *block_group)
+ 	spin_unlock(&block_group->lock);
  
- 	/* 1 for slack space, 1 for updating the inode */
--	needed_bytes = btrfs_calc_trunc_metadata_size(root, 1) +
--		btrfs_calc_trans_metadata_size(root, 1);
-+	needed_bytes = btrfs_calc_trunc_metadata_size(root->fs_info, 1) +
-+		btrfs_calc_trans_metadata_size(root->fs_info, 1);
+ 	if (cleanup) {
+-		lock_chunks(block_group->fs_info->chunk_root);
++		lock_chunks(block_group->fs_info);
+ 		em_tree = &block_group->fs_info->mapping_tree.map_tree;
+ 		write_lock(&em_tree->lock);
+ 		em = lookup_extent_mapping(em_tree, block_group->key.objectid,
+@@ -3340,7 +3340,7 @@ void btrfs_put_block_group_trimming(struct btrfs_block_group_cache *block_group)
+ 		 */
+ 		remove_extent_mapping(em_tree, em);
+ 		write_unlock(&em_tree->lock);
+-		unlock_chunks(block_group->fs_info->chunk_root);
++		unlock_chunks(block_group->fs_info);
  
- 	spin_lock(&rsv->lock);
- 	if (rsv->reserved < needed_bytes)
-diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
-index d27014b..0c49267 100644
---- a/fs/btrfs/inode-map.c
-+++ b/fs/btrfs/inode-map.c
-@@ -433,7 +433,8 @@ int btrfs_save_ino_cache(struct btrfs_root *root,
- 	 * 1 item for free space object
- 	 * 3 items for pre-allocation
- 	 */
--	trans->bytes_reserved = btrfs_calc_trans_metadata_size(root, 10);
-+	trans->bytes_reserved = btrfs_calc_trans_metadata_size(root->fs_info,
-+							       10);
- 	ret = btrfs_block_rsv_add(root, trans->block_rsv,
- 				  trans->bytes_reserved,
- 				  BTRFS_RESERVE_NO_FLUSH);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 9d2dbdb..d0a236f 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5217,7 +5217,7 @@ void btrfs_evict_inode(struct inode *inode)
- 		return;
+ 		/* once for us and once for the tree */
+ 		free_extent_map(em);
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 6b3bcc4..a53086f 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1889,10 +1889,10 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path, u64 devid)
  	}
  
--	min_size = btrfs_calc_trunc_metadata_size(root, 1);
-+	min_size = btrfs_calc_trunc_metadata_size(root->fs_info, 1);
+ 	if (device->writeable) {
+-		lock_chunks(root);
++		lock_chunks(root->fs_info);
+ 		list_del_init(&device->dev_alloc_list);
+ 		device->fs_devices->rw_devices--;
+-		unlock_chunks(root);
++		unlock_chunks(root->fs_info);
+ 		clear_super = true;
+ 	}
  
- 	evict_inode_truncate_pages(inode);
+@@ -1981,11 +1981,11 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path, u64 devid)
  
-@@ -9073,7 +9073,7 @@ static int btrfs_truncate(struct inode *inode)
- 	int err = 0;
- 	struct btrfs_trans_handle *trans;
- 	u64 mask = root->fs_info->sectorsize - 1;
--	u64 min_size = btrfs_calc_trunc_metadata_size(root, 1);
-+	u64 min_size = btrfs_calc_trunc_metadata_size(root->fs_info, 1);
+ error_undo:
+ 	if (device->writeable) {
+-		lock_chunks(root);
++		lock_chunks(root->fs_info);
+ 		list_add(&device->dev_alloc_list,
+ 			 &root->fs_info->fs_devices->alloc_list);
+ 		device->fs_devices->rw_devices++;
+-		unlock_chunks(root);
++		unlock_chunks(root->fs_info);
+ 	}
+ 	goto out;
+ }
+@@ -2212,9 +2212,9 @@ static int btrfs_prepare_sprout(struct btrfs_root *root)
+ 	list_for_each_entry(device, &seed_devices->devices, dev_list)
+ 		device->fs_devices = seed_devices;
  
- 	ret = btrfs_wait_ordered_range(inode, inode->i_size & (~mask),
- 				       (u64)-1);
-diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
-index cf0b444..f4a5876 100644
---- a/fs/btrfs/props.c
-+++ b/fs/btrfs/props.c
-@@ -320,7 +320,7 @@ static int inherit_props(struct btrfs_trans_handle *trans,
- 		if (!value)
- 			continue;
+-	lock_chunks(root);
++	lock_chunks(root->fs_info);
+ 	list_splice_init(&fs_devices->alloc_list, &seed_devices->alloc_list);
+-	unlock_chunks(root);
++	unlock_chunks(root->fs_info);
  
--		num_bytes = btrfs_calc_trans_metadata_size(root, 1);
-+		num_bytes = btrfs_calc_trans_metadata_size(root->fs_info, 1);
- 		ret = btrfs_block_rsv_add(root, trans->block_rsv,
- 					  num_bytes, BTRFS_RESERVE_NO_FLUSH);
- 		if (ret)
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index b8aaf1c..bec5aa0 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -502,7 +502,8 @@ start_transaction(struct btrfs_root *root, unsigned int num_items,
- 		if (ret)
- 			return ERR_PTR(ret);
+ 	fs_devices->seeding = 0;
+ 	fs_devices->num_devices = 0;
+@@ -2404,7 +2404,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, char *device_path)
+ 	device->fs_devices = root->fs_info->fs_devices;
  
--		num_bytes = btrfs_calc_trans_metadata_size(root, num_items);
-+		num_bytes = btrfs_calc_trans_metadata_size(root->fs_info,
-+							   num_items);
- 		/*
- 		 * Do the reservation for the relocation root creation
- 		 */
-@@ -624,7 +625,7 @@ struct btrfs_trans_handle *btrfs_start_transaction_fallback_global_rsv(
- 	if (IS_ERR(trans))
- 		return trans;
+ 	mutex_lock(&root->fs_info->fs_devices->device_list_mutex);
+-	lock_chunks(root);
++	lock_chunks(root->fs_info);
+ 	list_add_rcu(&device->dev_list, &root->fs_info->fs_devices->devices);
+ 	list_add(&device->dev_alloc_list,
+ 		 &root->fs_info->fs_devices->alloc_list);
+@@ -2438,13 +2438,13 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, char *device_path)
+ 	 */
+ 	btrfs_clear_space_info_full(root->fs_info);
  
--	num_bytes = btrfs_calc_trans_metadata_size(root, num_items);
-+	num_bytes = btrfs_calc_trans_metadata_size(root->fs_info, num_items);
- 	ret = btrfs_cond_migrate_bytes(root->fs_info,
- 				       &root->fs_info->trans_block_rsv,
- 				       num_bytes,
+-	unlock_chunks(root);
++	unlock_chunks(root->fs_info);
+ 	mutex_unlock(&root->fs_info->fs_devices->device_list_mutex);
+ 
+ 	if (seeding_dev) {
+-		lock_chunks(root);
++		lock_chunks(root->fs_info);
+ 		ret = init_first_rw_device(trans, root, device);
+-		unlock_chunks(root);
++		unlock_chunks(root->fs_info);
+ 		if (ret) {
+ 			btrfs_abort_transaction(trans, ret);
+ 			goto error_trans;
+@@ -2689,13 +2689,13 @@ int btrfs_grow_device(struct btrfs_trans_handle *trans,
+ 	if (!device->writeable)
+ 		return -EACCES;
+ 
+-	lock_chunks(device->fs_info->dev_root);
++	lock_chunks(device->fs_info);
+ 	old_total = btrfs_super_total_bytes(super_copy);
+ 	diff = new_size - device->total_bytes;
+ 
+ 	if (new_size <= device->total_bytes ||
+ 	    device->is_tgtdev_for_dev_replace) {
+-		unlock_chunks(device->fs_info->dev_root);
++		unlock_chunks(device->fs_info);
+ 		return -EINVAL;
+ 	}
+ 
+@@ -2710,7 +2710,7 @@ int btrfs_grow_device(struct btrfs_trans_handle *trans,
+ 	if (list_empty(&device->resized_list))
+ 		list_add_tail(&device->resized_list,
+ 			      &fs_devices->resized_devices);
+-	unlock_chunks(device->fs_info->dev_root);
++	unlock_chunks(device->fs_info);
+ 
+ 	return btrfs_update_device(trans, device);
+ }
+@@ -2766,7 +2766,7 @@ static int btrfs_del_sys_chunk(struct btrfs_fs_info *fs_info,
+ 	u32 cur;
+ 	struct btrfs_key key;
+ 
+-	lock_chunks(root);
++	lock_chunks(root->fs_info);
+ 	array_size = btrfs_super_sys_array_size(super_copy);
+ 
+ 	ptr = super_copy->sys_chunk_array;
+@@ -2796,7 +2796,7 @@ static int btrfs_del_sys_chunk(struct btrfs_fs_info *fs_info,
+ 			cur += len;
+ 		}
+ 	}
+-	unlock_chunks(root);
++	unlock_chunks(root->fs_info);
+ 	return ret;
+ }
+ 
+@@ -2833,9 +2833,9 @@ int btrfs_remove_chunk(struct btrfs_trans_handle *trans,
+ 		return -EINVAL;
+ 	}
+ 	map = em->map_lookup;
+-	lock_chunks(root->fs_info->chunk_root);
++	lock_chunks(fs_info);
+ 	check_system_chunk(trans, extent_root, map->type);
+-	unlock_chunks(root->fs_info->chunk_root);
++	unlock_chunks(fs_info);
+ 
+ 	/*
+ 	 * Take the device list mutex to prevent races with the final phase of
+@@ -2855,14 +2855,14 @@ int btrfs_remove_chunk(struct btrfs_trans_handle *trans,
+ 		}
+ 
+ 		if (device->bytes_used > 0) {
+-			lock_chunks(root);
++			lock_chunks(root->fs_info);
+ 			btrfs_device_set_bytes_used(device,
+ 					device->bytes_used - dev_extent_len);
+ 			spin_lock(&root->fs_info->free_chunk_lock);
+ 			root->fs_info->free_chunk_space += dev_extent_len;
+ 			spin_unlock(&root->fs_info->free_chunk_lock);
+ 			btrfs_clear_space_info_full(root->fs_info);
+-			unlock_chunks(root);
++			unlock_chunks(root->fs_info);
+ 		}
+ 
+ 		if (map->stripes[i].dev) {
+@@ -4384,7 +4384,7 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
+ 
+ 	path->reada = READA_FORWARD;
+ 
+-	lock_chunks(root);
++	lock_chunks(root->fs_info);
+ 
+ 	btrfs_device_set_total_bytes(device, new_size);
+ 	if (device->writeable) {
+@@ -4393,7 +4393,7 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
+ 		root->fs_info->free_chunk_space -= diff;
+ 		spin_unlock(&root->fs_info->free_chunk_lock);
+ 	}
+-	unlock_chunks(root);
++	unlock_chunks(root->fs_info);
+ 
+ again:
+ 	key.objectid = device->devid;
+@@ -4465,7 +4465,7 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
+ 		goto done;
+ 	}
+ 
+-	lock_chunks(root);
++	lock_chunks(root->fs_info);
+ 
+ 	/*
+ 	 * We checked in the above loop all device extents that were already in
+@@ -4485,7 +4485,7 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
+ 
+ 		if (contains_pending_extent(trans->transaction, device,
+ 					    &start, len)) {
+-			unlock_chunks(root);
++			unlock_chunks(root->fs_info);
+ 			checked_pending_chunks = true;
+ 			failed = 0;
+ 			retried = false;
+@@ -4503,7 +4503,7 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
+ 
+ 	WARN_ON(diff > old_total);
+ 	btrfs_set_super_total_bytes(super_copy, old_total - diff);
+-	unlock_chunks(root);
++	unlock_chunks(root->fs_info);
+ 
+ 	/* Now btrfs_update_device() will change the on-disk size. */
+ 	ret = btrfs_update_device(trans, device);
+@@ -4511,14 +4511,14 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
+ done:
+ 	btrfs_free_path(path);
+ 	if (ret) {
+-		lock_chunks(root);
++		lock_chunks(root->fs_info);
+ 		btrfs_device_set_total_bytes(device, old_size);
+ 		if (device->writeable)
+ 			device->fs_devices->total_rw_bytes += diff;
+ 		spin_lock(&root->fs_info->free_chunk_lock);
+ 		root->fs_info->free_chunk_space += diff;
+ 		spin_unlock(&root->fs_info->free_chunk_lock);
+-		unlock_chunks(root);
++		unlock_chunks(root->fs_info);
+ 	}
+ 	return ret;
+ }
+@@ -4532,11 +4532,11 @@ static int btrfs_add_system_chunk(struct btrfs_root *root,
+ 	u32 array_size;
+ 	u8 *ptr;
+ 
+-	lock_chunks(root);
++	lock_chunks(root->fs_info);
+ 	array_size = btrfs_super_sys_array_size(super_copy);
+ 	if (array_size + item_size + sizeof(disk_key)
+ 			> BTRFS_SYSTEM_CHUNK_ARRAY_SIZE) {
+-		unlock_chunks(root);
++		unlock_chunks(root->fs_info);
+ 		return -EFBIG;
+ 	}
+ 
+@@ -4547,7 +4547,7 @@ static int btrfs_add_system_chunk(struct btrfs_root *root,
+ 	memcpy(ptr, chunk, item_size);
+ 	item_size += sizeof(disk_key);
+ 	btrfs_set_super_sys_array_size(super_copy, array_size + item_size);
+-	unlock_chunks(root);
++	unlock_chunks(root->fs_info);
+ 
+ 	return 0;
+ }
+@@ -6805,7 +6805,7 @@ int btrfs_read_chunk_tree(struct btrfs_fs_info *fs_info)
+ 		return -ENOMEM;
+ 
+ 	mutex_lock(&uuid_mutex);
+-	lock_chunks(root);
++	lock_chunks(root->fs_info);
+ 
+ 	/*
+ 	 * Read all device items, and then all the chunk items. All
+@@ -6872,7 +6872,7 @@ int btrfs_read_chunk_tree(struct btrfs_fs_info *fs_info)
+ 	}
+ 	ret = 0;
+ error:
+-	unlock_chunks(root);
++	unlock_chunks(root->fs_info);
+ 	mutex_unlock(&uuid_mutex);
+ 
+ 	btrfs_free_path(path);
+@@ -7173,13 +7173,13 @@ void btrfs_update_commit_device_size(struct btrfs_fs_info *fs_info)
+ 		return;
+ 
+ 	mutex_lock(&fs_devices->device_list_mutex);
+-	lock_chunks(fs_info->dev_root);
++	lock_chunks(fs_info);
+ 	list_for_each_entry_safe(curr, next, &fs_devices->resized_devices,
+ 				 resized_list) {
+ 		list_del_init(&curr->resized_list);
+ 		curr->commit_total_bytes = curr->disk_total_bytes;
+ 	}
+-	unlock_chunks(fs_info->dev_root);
++	unlock_chunks(fs_info);
+ 	mutex_unlock(&fs_devices->device_list_mutex);
+ }
+ 
+@@ -7196,7 +7196,7 @@ void btrfs_update_commit_device_bytes_used(struct btrfs_root *root,
+ 		return;
+ 
+ 	/* In order to kick the device replace finish process */
+-	lock_chunks(root);
++	lock_chunks(root->fs_info);
+ 	list_for_each_entry(em, &transaction->pending_chunks, list) {
+ 		map = em->map_lookup;
+ 
+@@ -7205,7 +7205,7 @@ void btrfs_update_commit_device_bytes_used(struct btrfs_root *root,
+ 			dev->commit_bytes_used = dev->bytes_used;
+ 		}
+ 	}
+-	unlock_chunks(root);
++	unlock_chunks(root->fs_info);
+ }
+ 
+ void btrfs_set_fs_info_ptr(struct btrfs_fs_info *fs_info)
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 8592217..724d18c 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -532,14 +532,14 @@ void btrfs_update_commit_device_size(struct btrfs_fs_info *fs_info);
+ void btrfs_update_commit_device_bytes_used(struct btrfs_root *root,
+ 					struct btrfs_transaction *transaction);
+ 
+-static inline void lock_chunks(struct btrfs_root *root)
++static inline void lock_chunks(struct btrfs_fs_info *fs_info)
+ {
+-	mutex_lock(&root->fs_info->chunk_mutex);
++	mutex_lock(&fs_info->chunk_mutex);
+ }
+ 
+-static inline void unlock_chunks(struct btrfs_root *root)
++static inline void unlock_chunks(struct btrfs_fs_info *fs_info)
+ {
+-	mutex_unlock(&root->fs_info->chunk_mutex);
++	mutex_unlock(&fs_info->chunk_mutex);
+ }
+ 
+ struct list_head *btrfs_get_fs_uuids(void);
 -- 
 2.7.1
 

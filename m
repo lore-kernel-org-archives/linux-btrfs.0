@@ -1,95 +1,146 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from hapkido.dreamhost.com ([66.33.216.122]:47289 "EHLO
-        hapkido.dreamhost.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750766AbcLCOgP (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 3 Dec 2016 09:36:15 -0500
-Received: from homiemail-a13.g.dreamhost.com (sub3.mail.dreamhost.com [69.163.253.7])
-        by hapkido.dreamhost.com (Postfix) with ESMTP id 221BCDF424
-        for <linux-btrfs@vger.kernel.org>; Fri,  2 Dec 2016 18:35:18 -0800 (PST)
-Received: from homiemail-a13.g.dreamhost.com (localhost [127.0.0.1])
-        by homiemail-a13.g.dreamhost.com (Postfix) with ESMTP id 579A6334075
-        for <linux-btrfs@vger.kernel.org>; Fri,  2 Dec 2016 18:35:17 -0800 (PST)
-Received: from [192.168.0.96] (89-70-178-52.dynamic.chello.pl [89.70.178.52])
-        (using TLSv1 with cipher DHE-RSA-AES128-SHA (128/128 bits))
-        (No client certificate requested)
-        (Authenticated sender: liori@exroot.org)
-        by homiemail-a13.g.dreamhost.com (Postfix) with ESMTPSA id E48FF33406C
-        for <linux-btrfs@vger.kernel.org>; Fri,  2 Dec 2016 18:35:16 -0800 (PST)
+Received: from mout.gmx.net ([212.227.17.21]:62665 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752585AbcLCSkl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 3 Dec 2016 13:40:41 -0500
+Received: from thetick.localnet ([93.181.44.247]) by mail.gmx.com (mrgmx101
+ [212.227.17.168]) with ESMTPSA (Nemesis) id 0LzoSt-1chRSu13Wl-0154EO for
+ <linux-btrfs@vger.kernel.org>; Sat, 03 Dec 2016 19:40:39 +0100
+From: Marc Joliet <marcec@gmx.de>
 To: linux-btrfs@vger.kernel.org
-From: Tomasz Melcer <liori@exroot.org>
-Subject: `btrfs check --repair` stuck in a loop // filesystem repair case
- study
-Message-ID: <ffe12396-dea8-80aa-7268-9cf3325ffc56@exroot.org>
-Date: Sat, 3 Dec 2016 03:35:14 +0100
+Subject: system hangs due to qgroups
+Date: Sat, 03 Dec 2016 19:40:37 +0100
+Message-ID: <1776088.42rHLKPlSp@thetick>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: multipart/signed; boundary="nextPart2521038.i4JNgvaHUW"; micalg="pgp-sha256"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+--nextPart2521038.i4JNgvaHUW
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
 
-I have a btrfs filesystem on a 4TB HDD connected with USB 2.0. Some time 
-ago I accidentally disconnected the drive while doing heavy writes. 
-After reconnecting it seemed like the filesystem still works (it mounted 
-fine and I could read some files chosen at random), but I ran `btrfs 
-scrub` to be sure.
+Hello all,
 
-`btrfs scrub` aborted itself after ~20 hours, after reading ~3.5TB of 
-data. `dmesg` contained a single line:
+I'm having some trouble with btrfs on a laptop, possibly due to qgroups=
+. =20
+Specifically, some file system activities (e.g., snapshot creation,=20
+baloo_file_extractor from KDE Plasma) cause the system to hang for up t=
+o about=20
+40 minutes, maybe more.  It always causes (most of) my desktop to hang,=
+=20
+(although I can usually navigate between pre-existing Konsole tabs) and=
+=20
+prevents new programs from starting.  I've seen the system load go up t=
+o >30=20
+before the laptop suddenly resumes normal operation.  I've been seeing =
+this=20
+since Linux 4.7, maybe already 4.6.
 
-#v+
-BTRFS error (device dm-0): bad tree block start 0 3527021166592
-#v-
+Now, I thought that maybe this was (indirectly) due to an overly full f=
+ile=20
+system (~90% full), so I deleted some things I didn't need to get it up=
+ to 15%=20
+free.  (For the record, I also tried mounting with ssd_spread.)  After =
+that, I=20
+ran a balance with -dusage=3D50, which started out promising, but then =
+went back=20
+to the "bad" behaviour.  *But* it seemed better than before overall, so=
+ I=20
+started a balance with -musage=3D10, then -musage=3D50.  That turned ou=
+t to be a=20
+mistake.  Since I had to transport the laptop, and couldn't wait for "b=
+alance=20
+cancel" to return (IIUC it only returns after the next block (group?) i=
+s=20
+freed), I forced the laptop off.
 
-I couldn't find any further details anywhere in logs. I assume this 
-means that some data have actually been lost from this filesystem. I 
-have backups of data from this drive, so I decided to play a little 
-trying out btrfs recovery strategies.
+After I next turned on the laptop, the balance resumed, causing bootup =
+to=20
+fail, after which I remembered about the skip_balance mount option, whi=
+ch I=20
+tried in a rescue shell from an initramfs.  But wait, that failed, too!=
+ =20
+Specifically, the stack trace I get whenever I try it includes as one o=
+f the=20
+last lines:
 
-I checked whether there are any bad blocks on the raw device — all 
-blocks were read successfully.
-
-I created a devicemapper snapshot/overlay to keep the raw device data 
-read only and track the changes made by any recovery procedures.
-
-I ran `btrfstune -u` on the overlay to avoid having two devices with the 
-same uuid. This was done using a dedicated VM which did not see the raw 
-device (suggested by `Ke` on IRC). BTW, this command resulted in the 
-overlay device growing by ~25GB, which IIUC means that around 6M 
-4096-byte blocks were changed in the process (is that expected?).
-
-I was recommended to run `btrfs check`. The result is here: [1] (323 
-lines of output), and IIRC it finished in few hours.
-
-  [1] https://gist.github.com/liori/f8c5e69677e8c9d6038d2e3e4db9aa42
-
-(5 data checksum errors are a preexisting condition, I knew about them 
-before the incident).
-
-I then started `btrfs check --repair`. This was about a week ago, and it 
-is still going. The partial output is here: [2] (already almost 18k 
-lines). The same problems are being found again and again in a loop, as 
-if it was stuck.
-
-  [2] https://gist.github.com/liori/01494afbe63cd19ba49be663be937d84
-
-I do observe that the ctime of the overlay file is updated every once a 
-while, but the file itself does not grow anymore after some initial 
-change of ~70k blocks. My interpretation is that even if the repair 
-process writes anything, it only keeps writing in the same places again 
-and again.
-
-I did not have any snapshots on this filesystem. I did have some 
-deduplicated content, but no more than 4 copies of any data block, and 
-deduplication resulted in saving ~1TB of space total. The device was 
-never a part of a multi-device setup.
-
-Is there anything more I can do with this filesystem to bring it to a 
-state where I can `btrfs scrub` it, know what have been lost, etc? Is 
-this behavior of `btrfs scrub --repair` expected and will it ever finish?
-
-Thank you,
+"RIP [<ffffffff8131226f>] qgroup_fix_relocated_data_extents+0x1f/0x2a8"=
 
 
--- 
-Tomasz Melcer
+(I can take photos of the full stack trace if requested.)
+
+So then I ran "btrfs qgroup show /sysroot/", which showed many quota gr=
+oups,=20
+much to my surprise.  On the upside, at least now I discovered the like=
+ly=20
+reason for the performance problems.
+
+(I actually think I know why I'm seeing qgroups: at one point I was try=
+ing out=20
+various snapshot/backup tools for btrfs, and one (I forgot which)=20
+unconditionally activated quota support, which infuriated me, but I pro=
+mptly=20
+deactivated it, or so I thought.  Is quota support automatically enable=
+d when=20
+qgroups are discovered, or did I perhaps not disable quota support prop=
+erly?)
+
+Since I couldn't use skip_balance, and logically can't destroy qgroups =
+on a=20
+read-only file system, I decided to wait for a regular mount to finish.=
+  That=20
+has been running since Tuesday, and I am slowly growing impatient.
+
+Thus I arrive at my question(s): is there anything else I can try, shor=
+t of=20
+reformatting and restoring from backup?  Can I use btrfs-check here, or=
+ any=20
+other tool?  Or...?
+
+Also, should I be able to avoid reformatting: how do I properly disable=
+ quota=20
+support?
+
+(BTW, searching for qgroup_fix_relocated_data_extents turned up the ML =
+thread=20
+"[PATCH] Btrfs: fix endless loop in balancing block groups", could that=
+ be=20
+related?)
+
+The laptop is currently running Gentoo with Linux 4.8.10 and btrfs-prog=
+s=20
+4.8.4.
+
+Greetings
+=2D-=20
+Marc Joliet
+=2D-
+"People who think they know everything really annoy those of us who kno=
+w we
+don't" - Bjarne Stroustrup
+
+--nextPart2521038.i4JNgvaHUW
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIcBAABCAAGBQJYQxGmAAoJEL/Q5oYsiHj0YSsP/1YHFWSvfC2E/AWZhjPujkj9
+ZgiEZ2USfd6VP/gk0hyqINQxiy4C3eIVqAy0wh9FJKssw8lM4/aOyT9+sf6VUu3v
+BGbpqCevCS56SBZbw+/iNSqrEHtIB/p5UXzEX3XjMuonGTAhbXcOWp0rCETdZtD7
+IjsQMs94h2DIfQF1BJXjZu0liIg+jpoGrIlHU+jyk/r2x0Ytn5ASUhIq982k2GP3
+JFVv98Dm1vKAL5UPbbo47Xv+1vC8CuHzjaVzm3rSI9ej4P7OpAEVzW9yrHHOPPSH
+7KE2apm6g1vJQ5AXizOfwxWqg1F1f6pl2H0zo8kkQkwdxUbbgKhY0Qu9wkvUgmiC
+SbcyJpIytQXuy+w6X+g//wp88Yo9hYpgGzE8X60htomr8XbPt6eEJVF+Sk8gV/6h
+S8yhxGtkxMuORO87T4pYGSTNilwO5C7peB0yHge5MGI/NT17R1rHVQPkEAe95Omb
+7Fe+vaMpL2eeJJas3w3i5VYr/VAPunCgWyfjB8rJCGjF2E2bxhEJ2h/ZDcgLlrer
+Rx8g6eRVBcittrlLXHR5PodVBncjmak8xtoGMPUYPqhOjV9rEVhnE6k2m5/+nx45
+pnFy2PYtTDJByO9YZEzVrf3iwJahfkre9BYJfVj5mRNwMiAp5PPPV2PEpJSVWJtM
+uqqLLGN7o7rXJpEIr4KD
+=GFMr
+-----END PGP SIGNATURE-----
+
+--nextPart2521038.i4JNgvaHUW--
+

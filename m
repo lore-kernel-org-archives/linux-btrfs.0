@@ -1,66 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f194.google.com ([209.85.161.194]:36541 "EHLO
-        mail-yw0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750754AbcLCUPW (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 3 Dec 2016 15:15:22 -0500
-Received: by mail-yw0-f194.google.com with SMTP id r204so23907956ywb.3
-        for <linux-btrfs@vger.kernel.org>; Sat, 03 Dec 2016 12:14:29 -0800 (PST)
+Received: from mail-yw0-f181.google.com ([209.85.161.181]:34829 "EHLO
+        mail-yw0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750949AbcLCUmo (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 3 Dec 2016 15:42:44 -0500
+Received: by mail-yw0-f181.google.com with SMTP id i145so236149405ywg.2
+        for <linux-btrfs@vger.kernel.org>; Sat, 03 Dec 2016 12:42:43 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CAFuzrVfF61EYSuxfb-68EsnN3evJaMWrABtGj-79OCmb8-ncnA@mail.gmail.com>
-References: <CAFuzrVeWdz2Lup-x1OiJjVcknQRysiiZVYG1doxNdGKiHB+Jaw@mail.gmail.com>
- <4533be53-6c95-11a4-e101-6df9ca88410f@bouton.name> <CAFuzrVfF61EYSuxfb-68EsnN3evJaMWrABtGj-79OCmb8-ncnA@mail.gmail.com>
+In-Reply-To: <1776088.42rHLKPlSp@thetick>
+References: <1776088.42rHLKPlSp@thetick>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Sat, 3 Dec 2016 13:14:28 -0700
-Message-ID: <CAJCQCtTq7-q=yBg_JK=9AcQfr6zB17cHY8NcHV6-zz23eACbmA@mail.gmail.com>
-Subject: Re: missing checksums on reboot
-To: Blake Lewis <blake@portworx.com>
-Cc: Lionel Bouton <lionel-subscription@bouton.name>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Sat, 3 Dec 2016 13:42:42 -0700
+Message-ID: <CAJCQCtRxhjKAcZy7wuXCFM1=70eG+TJPwEoyD7zq0iEw8f2urQ@mail.gmail.com>
+Subject: Re: system hangs due to qgroups
+To: Marc Joliet <marcec@gmx.de>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Dec 2, 2016 at 1:36 PM, Blake Lewis <blake@portworx.com> wrote:
-> Well, 3.10 is what you get with the RHEL7.x distributions, so that's
-> why people are running it.
-> Apparently, it is "good enough" for many purposes.
+On Sat, Dec 3, 2016 at 11:40 AM, Marc Joliet <marcec@gmx.de> wrote:
+> Hello all,
+>
+> I'm having some trouble with btrfs on a laptop, possibly due to qgroups.
+> Specifically, some file system activities (e.g., snapshot creation,
+> baloo_file_extractor from KDE Plasma) cause the system to hang for up to about
+> 40 minutes, maybe more.
 
-Nope. Btrfs in RHEL 7 is a technology preview, and ...
+Do you get any blocked tasks kernel messages? If so, issue sysrq+w
+during the hang, and then check the system log (dmesg may not contain
+everything if the command fills the message buffer). If it's a hang
+without any kernel messages, then issue sysrq+t.
 
-"Technology Preview features are currently unsupported, may not be
-functionally complete, and are not suitable for deployment in
-production. "
-
-
-> My real goal here is to understand the scope of the bug and whether
-> any mitigation is
-> possible.  Of course, I don't expect anyone else to make a patch for
-> me (or even to accept
-> my patch), but if I knew what the bug is and what was done to fix it,
-> I'd be in a much better
-> position to decide what to do.  If anyone can shed any light on this,
-> I'd be very grateful.
-
-https://git.kernel.org/cgit/linux/kernel/git/stable/linux-stable.git/diff/?id=v4.8.12&id2=v3.19&dt=2
-
-There's more than 10000 lines changed between 3.19 and 4.8.12. You're
-in the right place, but it's a shot in the dark if any developer
-remembers the particular problem you're having compared to the massive
-pile of bugs fixed and changes made since then. The RHEL 3.10 kernel
-as I understand it has v3.19 Btrfs code. You might test with a 4.1.36
-kernel to see if your problem reproduces. There was some O_DIRECTbug
-fixes a while back but I have no idea what kernel versions those were.
-
-If the fix is relatively recent, it simply may not have been
-backported very far because kernels go EOL and backporting just
-doesn't happen, not that it can't be done. So you might search the
-list for O_DIRECT, and see if anything looks familiar. If that doesn't
-pan out you can start doing simple bisects with longterm kernel.org
-kernels, starting with the oldest (which is where I got 4.1.36) and
-see if you can find a commit that fixes the problem, and then if it
-applies cleanly to the much older kernel you're using.
+https://www.kernel.org/doc/Documentation/sysrq.txt
 
 
+
+
+>
+> After I next turned on the laptop, the balance resumed, causing bootup to
+> fail, after which I remembered about the skip_balance mount option, which I
+> tried in a rescue shell from an initramfs.
+
+The file system is the root filesystem? If so, skip_balance may not be
+happening soon enough. Use kernel parameter rootflags=skip_balance
+which will apply this mount option at the very first moment the file
+system is mounted during boot.
+
+
+
+> Since I couldn't use skip_balance, and logically can't destroy qgroups on a
+> read-only file system, I decided to wait for a regular mount to finish.  That
+> has been running since Tuesday, and I am slowly growing impatient.
+
+Haha, no kidding! I think that's very patient.
+
+
+> Thus I arrive at my question(s): is there anything else I can try, short of
+> reformatting and restoring from backup?  Can I use btrfs-check here, or any
+> other tool?  Or...?
+
+Yes, btrfs-progs 4.8.5 has the latest qgroup checks, so if there's
+something wrong it should find it and if not that's a bug of its own.
+
+
+
+> Also, should I be able to avoid reformatting: how do I properly disable quota
+> support?
+
+'btrfs quota disable' is the only command that applies to this and it
+requires rw mount; there's no 'noquota' mount option.
 
 -- 
 Chris Murphy

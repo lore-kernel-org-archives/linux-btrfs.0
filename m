@@ -1,146 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:62665 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752585AbcLCSkl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 3 Dec 2016 13:40:41 -0500
-Received: from thetick.localnet ([93.181.44.247]) by mail.gmx.com (mrgmx101
- [212.227.17.168]) with ESMTPSA (Nemesis) id 0LzoSt-1chRSu13Wl-0154EO for
- <linux-btrfs@vger.kernel.org>; Sat, 03 Dec 2016 19:40:39 +0100
-From: Marc Joliet <marcec@gmx.de>
-To: linux-btrfs@vger.kernel.org
-Subject: system hangs due to qgroups
-Date: Sat, 03 Dec 2016 19:40:37 +0100
-Message-ID: <1776088.42rHLKPlSp@thetick>
+Received: from mail-yw0-f194.google.com ([209.85.161.194]:36541 "EHLO
+        mail-yw0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750754AbcLCUPW (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 3 Dec 2016 15:15:22 -0500
+Received: by mail-yw0-f194.google.com with SMTP id r204so23907956ywb.3
+        for <linux-btrfs@vger.kernel.org>; Sat, 03 Dec 2016 12:14:29 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart2521038.i4JNgvaHUW"; micalg="pgp-sha256"; protocol="application/pgp-signature"
+In-Reply-To: <CAFuzrVfF61EYSuxfb-68EsnN3evJaMWrABtGj-79OCmb8-ncnA@mail.gmail.com>
+References: <CAFuzrVeWdz2Lup-x1OiJjVcknQRysiiZVYG1doxNdGKiHB+Jaw@mail.gmail.com>
+ <4533be53-6c95-11a4-e101-6df9ca88410f@bouton.name> <CAFuzrVfF61EYSuxfb-68EsnN3evJaMWrABtGj-79OCmb8-ncnA@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Sat, 3 Dec 2016 13:14:28 -0700
+Message-ID: <CAJCQCtTq7-q=yBg_JK=9AcQfr6zB17cHY8NcHV6-zz23eACbmA@mail.gmail.com>
+Subject: Re: missing checksums on reboot
+To: Blake Lewis <blake@portworx.com>
+Cc: Lionel Bouton <lionel-subscription@bouton.name>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart2521038.i4JNgvaHUW
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="utf-8"
+On Fri, Dec 2, 2016 at 1:36 PM, Blake Lewis <blake@portworx.com> wrote:
+> Well, 3.10 is what you get with the RHEL7.x distributions, so that's
+> why people are running it.
+> Apparently, it is "good enough" for many purposes.
 
-Hello all,
+Nope. Btrfs in RHEL 7 is a technology preview, and ...
 
-I'm having some trouble with btrfs on a laptop, possibly due to qgroups=
-. =20
-Specifically, some file system activities (e.g., snapshot creation,=20
-baloo_file_extractor from KDE Plasma) cause the system to hang for up t=
-o about=20
-40 minutes, maybe more.  It always causes (most of) my desktop to hang,=
-=20
-(although I can usually navigate between pre-existing Konsole tabs) and=
-=20
-prevents new programs from starting.  I've seen the system load go up t=
-o >30=20
-before the laptop suddenly resumes normal operation.  I've been seeing =
-this=20
-since Linux 4.7, maybe already 4.6.
-
-Now, I thought that maybe this was (indirectly) due to an overly full f=
-ile=20
-system (~90% full), so I deleted some things I didn't need to get it up=
- to 15%=20
-free.  (For the record, I also tried mounting with ssd_spread.)  After =
-that, I=20
-ran a balance with -dusage=3D50, which started out promising, but then =
-went back=20
-to the "bad" behaviour.  *But* it seemed better than before overall, so=
- I=20
-started a balance with -musage=3D10, then -musage=3D50.  That turned ou=
-t to be a=20
-mistake.  Since I had to transport the laptop, and couldn't wait for "b=
-alance=20
-cancel" to return (IIUC it only returns after the next block (group?) i=
-s=20
-freed), I forced the laptop off.
-
-After I next turned on the laptop, the balance resumed, causing bootup =
-to=20
-fail, after which I remembered about the skip_balance mount option, whi=
-ch I=20
-tried in a rescue shell from an initramfs.  But wait, that failed, too!=
- =20
-Specifically, the stack trace I get whenever I try it includes as one o=
-f the=20
-last lines:
-
-"RIP [<ffffffff8131226f>] qgroup_fix_relocated_data_extents+0x1f/0x2a8"=
+"Technology Preview features are currently unsupported, may not be
+functionally complete, and are not suitable for deployment in
+production. "
 
 
-(I can take photos of the full stack trace if requested.)
+> My real goal here is to understand the scope of the bug and whether
+> any mitigation is
+> possible.  Of course, I don't expect anyone else to make a patch for
+> me (or even to accept
+> my patch), but if I knew what the bug is and what was done to fix it,
+> I'd be in a much better
+> position to decide what to do.  If anyone can shed any light on this,
+> I'd be very grateful.
 
-So then I ran "btrfs qgroup show /sysroot/", which showed many quota gr=
-oups,=20
-much to my surprise.  On the upside, at least now I discovered the like=
-ly=20
-reason for the performance problems.
+https://git.kernel.org/cgit/linux/kernel/git/stable/linux-stable.git/diff/?id=v4.8.12&id2=v3.19&dt=2
 
-(I actually think I know why I'm seeing qgroups: at one point I was try=
-ing out=20
-various snapshot/backup tools for btrfs, and one (I forgot which)=20
-unconditionally activated quota support, which infuriated me, but I pro=
-mptly=20
-deactivated it, or so I thought.  Is quota support automatically enable=
-d when=20
-qgroups are discovered, or did I perhaps not disable quota support prop=
-erly?)
+There's more than 10000 lines changed between 3.19 and 4.8.12. You're
+in the right place, but it's a shot in the dark if any developer
+remembers the particular problem you're having compared to the massive
+pile of bugs fixed and changes made since then. The RHEL 3.10 kernel
+as I understand it has v3.19 Btrfs code. You might test with a 4.1.36
+kernel to see if your problem reproduces. There was some O_DIRECTbug
+fixes a while back but I have no idea what kernel versions those were.
 
-Since I couldn't use skip_balance, and logically can't destroy qgroups =
-on a=20
-read-only file system, I decided to wait for a regular mount to finish.=
-  That=20
-has been running since Tuesday, and I am slowly growing impatient.
+If the fix is relatively recent, it simply may not have been
+backported very far because kernels go EOL and backporting just
+doesn't happen, not that it can't be done. So you might search the
+list for O_DIRECT, and see if anything looks familiar. If that doesn't
+pan out you can start doing simple bisects with longterm kernel.org
+kernels, starting with the oldest (which is where I got 4.1.36) and
+see if you can find a commit that fixes the problem, and then if it
+applies cleanly to the much older kernel you're using.
 
-Thus I arrive at my question(s): is there anything else I can try, shor=
-t of=20
-reformatting and restoring from backup?  Can I use btrfs-check here, or=
- any=20
-other tool?  Or...?
 
-Also, should I be able to avoid reformatting: how do I properly disable=
- quota=20
-support?
 
-(BTW, searching for qgroup_fix_relocated_data_extents turned up the ML =
-thread=20
-"[PATCH] Btrfs: fix endless loop in balancing block groups", could that=
- be=20
-related?)
-
-The laptop is currently running Gentoo with Linux 4.8.10 and btrfs-prog=
-s=20
-4.8.4.
-
-Greetings
-=2D-=20
-Marc Joliet
-=2D-
-"People who think they know everything really annoy those of us who kno=
-w we
-don't" - Bjarne Stroustrup
-
---nextPart2521038.i4JNgvaHUW
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
-
------BEGIN PGP SIGNATURE-----
-
-iQIcBAABCAAGBQJYQxGmAAoJEL/Q5oYsiHj0YSsP/1YHFWSvfC2E/AWZhjPujkj9
-ZgiEZ2USfd6VP/gk0hyqINQxiy4C3eIVqAy0wh9FJKssw8lM4/aOyT9+sf6VUu3v
-BGbpqCevCS56SBZbw+/iNSqrEHtIB/p5UXzEX3XjMuonGTAhbXcOWp0rCETdZtD7
-IjsQMs94h2DIfQF1BJXjZu0liIg+jpoGrIlHU+jyk/r2x0Ytn5ASUhIq982k2GP3
-JFVv98Dm1vKAL5UPbbo47Xv+1vC8CuHzjaVzm3rSI9ej4P7OpAEVzW9yrHHOPPSH
-7KE2apm6g1vJQ5AXizOfwxWqg1F1f6pl2H0zo8kkQkwdxUbbgKhY0Qu9wkvUgmiC
-SbcyJpIytQXuy+w6X+g//wp88Yo9hYpgGzE8X60htomr8XbPt6eEJVF+Sk8gV/6h
-S8yhxGtkxMuORO87T4pYGSTNilwO5C7peB0yHge5MGI/NT17R1rHVQPkEAe95Omb
-7Fe+vaMpL2eeJJas3w3i5VYr/VAPunCgWyfjB8rJCGjF2E2bxhEJ2h/ZDcgLlrer
-Rx8g6eRVBcittrlLXHR5PodVBncjmak8xtoGMPUYPqhOjV9rEVhnE6k2m5/+nx45
-pnFy2PYtTDJByO9YZEzVrf3iwJahfkre9BYJfVj5mRNwMiAp5PPPV2PEpJSVWJtM
-uqqLLGN7o7rXJpEIr4KD
-=GFMr
------END PGP SIGNATURE-----
-
---nextPart2521038.i4JNgvaHUW--
-
+-- 
+Chris Murphy

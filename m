@@ -1,79 +1,133 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55539 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932498AbcLNLNy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Dec 2016 06:13:54 -0500
-Date: Wed, 14 Dec 2016 11:54:09 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, Qu Wenruo <quwenruo@cn.fujitsu.com>
-Subject: Re: [PATCH v2] btrfs-progs: qgroup: add sync option to 'qgroup show'
-Message-ID: <20161214105409.GA3620@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <201612070307.AA00021@WIN-5MHF4RKU941.jp.fujitsu.com>
- <201612070755.AA00022@WIN-5MHF4RKU941.jp.fujitsu.com>
+Received: from mail-db5eur01on0093.outbound.protection.outlook.com ([104.47.2.93]:64152
+        "EHLO EUR01-DB5-obe.outbound.protection.outlook.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751072AbcLCVmS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 3 Dec 2016 16:42:18 -0500
+Subject: [PATCH] btrfs: limit async_work allocation and worker func duration
+From: Maxim Patlasov <mpatlasov@virtuozzo.com>
+To: <clm@fb.com>
+CC: <jbacik@fb.com>, <linux-kernel@vger.kernel.org>,
+        <linux-btrfs@vger.kernel.org>, <mpatlasov@virtuozzo.com>
+Date: Fri, 2 Dec 2016 17:51:36 -0800
+Message-ID: <148072986343.13061.16191252239168261528.stgit@maxim-thinkpad>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <201612070755.AA00022@WIN-5MHF4RKU941.jp.fujitsu.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 07, 2016 at 04:55:15PM +0900, Tsutomu Itoh wrote:
-> The 'qgroup show' command does not synchronize filesystem.
-> Therefore, 'qgroup show' may not display the correct value unless
-> synchronized with 'filesystem sync' command etc.
-> 
-> So add the '--sync' and '--no-sync' options so that we can choose
-> whether or not to synchronize when executing the command.
-> 
-> Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-> ---
-> v2: use getopt_long with enum instead of single letter (suggested by Qu)
-> ---
->  Documentation/btrfs-qgroup.asciidoc |  6 ++++++
->  cmds-qgroup.c                       | 33 +++++++++++++++++++++++++++++----
->  2 files changed, 35 insertions(+), 4 deletions(-)
-> 
-> diff --git a/Documentation/btrfs-qgroup.asciidoc b/Documentation/btrfs-qgroup.asciidoc
-> index 438dbc7..9c65795 100644
-> --- a/Documentation/btrfs-qgroup.asciidoc
-> +++ b/Documentation/btrfs-qgroup.asciidoc
-> @@ -126,6 +126,12 @@ Prefix \'+' means ascending order and \'-' means descending order of <attr>.
->  If no prefix is given, use ascending order by default.
->  +
->  If multiple <attr>s is given, use comma to separate.
-> ++
-> +--sync::::
-> +To retrieve information after updating the status of qgroups,
-> +invoke sync before getting information.
+Problem statement: unprivileged user who has read-write access to more than
+one btrfs subvolume may easily consume all kernel memory (eventually
+triggering oom-killer).
 
-This could be more specific, that it's a filesystem sync.
+Reproducer (./mkrmdir below essentially loops over mkdir/rmdir):
 
-> +--no-sync::::
-> +Do not invoke sync before getting information (default).
+[root@kteam1 ~]# cat prep.sh
 
-I'm not sure we need this option, how is it supposed to be used?
+DEV=/dev/sdb
+mkfs.btrfs -f $DEV
+mount $DEV /mnt
+for i in `seq 1 16`
+do
+	mkdir /mnt/$i
+	btrfs subvolume create /mnt/SV_$i
+	ID=`btrfs subvolume list /mnt |grep "SV_$i$" |cut -d ' ' -f 2`
+	mount -t btrfs -o subvolid=$ID $DEV /mnt/$i
+	chmod a+rwx /mnt/$i
+done
 
-> @@ -311,8 +313,15 @@ static int cmd_qgroup_show(int argc, char **argv)
->  
->  	while (1) {
->  		int c;
-> +		enum {
-> +			GETOPT_VAL_SORT = 256,
-> +			GETOPT_VAL_SYNC,
-> +			GETOPT_VAL_NO_SYNC
-> +		};
->  		static const struct option long_options[] = {
-> -			{"sort", required_argument, NULL, 'S'},
-> +			{"sort", required_argument, NULL, GETOPT_VAL_SORT},
+[root@kteam1 ~]# sh prep.sh
 
-This change is unrelated to the patch, please make a separate patch for
-that.
+[maxim@kteam1 ~]$ for i in `seq 1 16`; do ./mkrmdir /mnt/$i 2000 2000 & done
 
-Otherwise looks good.
+[root@kteam1 ~]# for i in `seq 1 4`; do grep "kmalloc-128" /proc/slabinfo | grep -v dma; sleep 60; done
+kmalloc-128        10144  10144    128   32    1 : tunables    0    0    0 : slabdata    317    317      0
+kmalloc-128       9992352 9992352    128   32    1 : tunables    0    0    0 : slabdata 312261 312261      0
+kmalloc-128       24226752 24226752    128   32    1 : tunables    0    0    0 : slabdata 757086 757086      0
+kmalloc-128       42754240 42754240    128   32    1 : tunables    0    0    0 : slabdata 1336070 1336070      0
 
-> +			{"sync", no_argument, NULL, GETOPT_VAL_SYNC},
-> +			{"no-sync", no_argument, NULL, GETOPT_VAL_NO_SYNC},
->  			{ NULL, 0, NULL, 0 }
->  		};
->  
+The huge numbers above come from insane number of async_work-s allocated
+and queued by btrfs_wq_run_delayed_node.
+
+The problem is caused by btrfs_wq_run_delayed_node() queuing more and more
+works if the number of delayed items is above BTRFS_DELAYED_BACKGROUND. The
+worker func (btrfs_async_run_delayed_root) processes at least
+BTRFS_DELAYED_BATCH items (if they are present in the list). So, the machinery
+works as expected while the list is almost empty. As soon as it is getting
+bigger, worker func starts to process more than one item at a time, it takes
+longer, and the chances to have async_works queued more than needed is getting
+higher.
+
+The problem above is worsened by another flaw of delayed-inode implementation:
+if async_work was queued in a throttling branch (number of items >=
+BTRFS_DELAYED_WRITEBACK), corresponding worker func won't quit until
+the number of items < BTRFS_DELAYED_BACKGROUND / 2. So, it is possible that
+the func occupies CPU infinitely (up to 30sec in my experiments): while the
+func is trying to drain the list, the user activity may add more and more
+items to the list.
+
+The patch fixes both problems in straightforward way: refuse queuing too
+many works in btrfs_wq_run_delayed_node and bail out of worker func if
+at least BTRFS_DELAYED_WRITEBACK items are processed.
+
+Signed-off-by: Maxim Patlasov <mpatlasov@virtuozzo.com>
+---
+ fs/btrfs/async-thread.c  |    8 ++++++++
+ fs/btrfs/async-thread.h  |    1 +
+ fs/btrfs/delayed-inode.c |    6 ++++--
+ 3 files changed, 13 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
+index e0f071f..29f6252 100644
+--- a/fs/btrfs/async-thread.c
++++ b/fs/btrfs/async-thread.c
+@@ -86,6 +86,14 @@ btrfs_work_owner(struct btrfs_work *work)
+ 	return work->wq->fs_info;
+ }
+ 
++bool btrfs_workqueue_normal_congested(struct btrfs_workqueue *wq)
++{
++	int thresh = wq->normal->thresh != NO_THRESHOLD ?
++		wq->normal->thresh : num_possible_cpus();
++
++	return atomic_read(&wq->normal->pending) > thresh * 2;
++}
++
+ BTRFS_WORK_HELPER(worker_helper);
+ BTRFS_WORK_HELPER(delalloc_helper);
+ BTRFS_WORK_HELPER(flush_delalloc_helper);
+diff --git a/fs/btrfs/async-thread.h b/fs/btrfs/async-thread.h
+index 8e52484..1f95973 100644
+--- a/fs/btrfs/async-thread.h
++++ b/fs/btrfs/async-thread.h
+@@ -84,4 +84,5 @@ void btrfs_workqueue_set_max(struct btrfs_workqueue *wq, int max);
+ void btrfs_set_work_high_priority(struct btrfs_work *work);
+ struct btrfs_fs_info *btrfs_work_owner(struct btrfs_work *work);
+ struct btrfs_fs_info *btrfs_workqueue_owner(struct __btrfs_workqueue *wq);
++bool btrfs_workqueue_normal_congested(struct btrfs_workqueue *wq);
+ #endif
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index 3eeb9cd..de946dd 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -1356,7 +1356,8 @@ release_path:
+ 	total_done++;
+ 
+ 	btrfs_release_prepared_delayed_node(delayed_node);
+-	if (async_work->nr == 0 || total_done < async_work->nr)
++	if ((async_work->nr == 0 && total_done < BTRFS_DELAYED_WRITEBACK) ||
++	    total_done < async_work->nr)
+ 		goto again;
+ 
+ free_path:
+@@ -1372,7 +1373,8 @@ static int btrfs_wq_run_delayed_node(struct btrfs_delayed_root *delayed_root,
+ {
+ 	struct btrfs_async_delayed_work *async_work;
+ 
+-	if (atomic_read(&delayed_root->items) < BTRFS_DELAYED_BACKGROUND)
++	if (atomic_read(&delayed_root->items) < BTRFS_DELAYED_BACKGROUND ||
++	    btrfs_workqueue_normal_congested(fs_info->delayed_workers))
+ 		return 0;
+ 
+ 	async_work = kmalloc(sizeof(*async_work), GFP_NOFS);
+

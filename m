@@ -1,59 +1,103 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ua0-f175.google.com ([209.85.217.175]:35682 "EHLO
-        mail-ua0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750867AbcLDTLS (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 Dec 2016 14:11:18 -0500
-Received: by mail-ua0-f175.google.com with SMTP id 12so329680022uas.2
-        for <linux-btrfs@vger.kernel.org>; Sun, 04 Dec 2016 11:11:17 -0800 (PST)
+Received: from mout.gmx.net ([212.227.17.20]:49781 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750867AbcLDTVB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 4 Dec 2016 14:21:01 -0500
+Received: from thetick.localnet ([93.181.44.247]) by mail.gmx.com (mrgmx103
+ [212.227.17.168]) with ESMTPSA (Nemesis) id 0MYOCL-1c9PMu2cOP-00VBH4 for
+ <linux-btrfs@vger.kernel.org>; Sun, 04 Dec 2016 20:20:57 +0100
+From: Marc Joliet <marcec@gmx.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: system hangs due to qgroups
+Date: Sun, 04 Dec 2016 20:20:51 +0100
+Message-ID: <5831203.ygVuIMpfzH@thetick>
+In-Reply-To: <pan$69035$81ae24e2$d7110ac$22963947@cox.net>
+References: <1776088.42rHLKPlSp@thetick> <3405186.JXS0fWUK5s@thetick> <pan$69035$81ae24e2$d7110ac$22963947@cox.net>
 MIME-Version: 1.0
-From: Henk Slager <eye1tm@gmail.com>
-Date: Sun, 4 Dec 2016 20:11:16 +0100
-Message-ID: <CAPmG0jYzCNTFEpA_tZAJE2BpohLPtxmu=WE_vB2ypBSJoD_Zvw@mail.gmail.com>
-Subject: btrfs restore differs from normal copy
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: multipart/signed; boundary="nextPart2626642.ofJKjVAHtj"; micalg="pgp-sha256"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+--nextPart2626642.ofJKjVAHtj
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
 
-I noticed that a monthly differential snapshot creation ended with an
-error although the created snapshot itself seemed OK. To test en be
-more confident, I also transferred the diff between the 2016-12-01 en
-2016-12-02 and that went without an error from send or receive. The
-send runs on a server and heavily relies on 'Received UUID'. The
-receive runs at the same time on a fanless system that is only a
-monthly btrfs backup receive target if all works well.
+On Sunday 04 December 2016 18:24:08 Duncan wrote:
+> Marc Joliet posted on Sun, 04 Dec 2016 17:02:48 +0100 as excerpted:
+> > That's a good idea, although I'll probably start with sysrescuecd (=
+Linux
+> > 4.8.5 and btrfs-progs 4.7.3), as I already have experience with it.=
 
-After the 2016-12-01 snapshot receive, the fs refused to mount after
-reboot and same as for another mount refusal, I did a clear_space
-mount and that made it work again. A scrub revealed 2 csum errors,
-each in a VM imagefle (35GB and 16GB), so I thought I use btrfs
-restore this time to fix the backup, prepare for next month, without
-growing the fs with 51GB and also get hints on the root cause of the
-csum errors.
+> >=20
+> > [After trying it]
+> >=20
+> > Well, crap, I was able to get images of the file system (one saniti=
+zed),
+> > but mounting always fails with "device or resource busy" (with no
+> > corresponding dmesg output).  (Also, that drive's partitions weren'=
+t
+> > discovered on bootup, I had to run partprobe first.)  I never see t=
+hat
+> > in the initramfs, so I'm not sure what's causing that.
+>=20
+> If I understand correctly what you're doing, that part is easily enou=
+gh
+> explained.
+>=20
+> Remember that btrfs, unlike most filesystems, is multi-device capable=
+.
+> The way it tracks which devices belong to which filesystems is by UUI=
+D,
+> universally *UNIQUE* ID.  If you image a device via dd or similar, yo=
+u of
+> course image its UUID as well, destroying the "unique" assumption in =
+UUID
+> and confusing btrfs, which will consider it part of the existing
+> filesystem if the original devices with that filesystem UUID remain
+> hooked up.
+>=20
+> So if you did what I believe you did, try to mount the image while th=
+e
+> original filesystem devices remain attached and mounted, btrfs is sim=
+ply
+> saying that filesystem (which btrfs identifies by UUID) is already
+> mounted: "device or resource busy".
+[...]
 
-The 16GB VM imagefile only exists in the 2016-12-01 snapshot (after I
-deleted the 2016-12-02 snapshot), so with regex I just fetched the
-file. I had to press 'y' once on the "We seem to be looping a lot
-...".
-I ran  btrfs restore with -o -i -s -v options (and --path-regex).
+Nope, sorry if I wasn't clear, I didn't mean that I tried to mount the =
+image=20
+(can you even mount images created with btrfs-image?).  Plus the images=
+ are=20
+xz-compressed.
 
-# dd_rescue -W <restored_imagefile> <original_imagefile_in_temp_rw_snapshot>
-showed about 11GB diff, which is way more than the 4k block with failed csum.
+=2D-=20
+Marc Joliet
+=2D-
+"People who think they know everything really annoy those of us who kno=
+w we
+don't" - Bjarne Stroustrup
 
-I did the same for another, older VM imagefile (no csum error blocks)
-in the 2016-12-01 snapshot. That gave 2GB diff. If I mount the fs and
-just copy the file instead of btrfs restore, the diff is 0, as
-expected.
+--nextPart2626642.ofJKjVAHtj
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
 
-On both computers:
-# uname -r
-4.8.10-1-default
-# btrfs --version
-btrfs-progs v4.8.2+20161031
+-----BEGIN PGP SIGNATURE-----
 
-The mount options of the receive fs( everything is default CoW:
-rw,noatime,compress=lzo,nossd,space_cache,subvolid=5,subvol=/
+iQIcBAABCAAGBQJYRGyTAAoJEL/Q5oYsiHj0FxsP/jQ8RHbdD2ytznY4gleOtLcF
+B+AIA+SmtDjJQ6HDxeMFJBaaJEgtyJx3r1vtxxcS0u5EcNM4TukqU5sgHjssmG9X
+P3vT6mJsyV/QWkaV48UC14UTDW0mvMN5Mi6aZjAGyRXXymVmyO8yhqfGD9oWnEJY
+wEmy1Mb/JbqFHtjKnnDMZF+MjF2Jh9HVm940G+gTsyY1oESnw0R0NcKyhIJ5NVFl
++6MgLGIoXGZc5XRRbFLTt4bLRGDmADMHZfNM/9hHJ/zlk+CKF79RWCCkgdvw148v
+ygClvW4nJn5dkFpFTZcKeDXEqvWdjM7fREDxrrw+5kTowXOzkmQJty7iwCZULome
+lY515ANJw4S2St5OdSS7N3AS0Je+/uzElUY0qrauR7agW84fDFFt+MdEBYWiIR68
+eBnAWYkEt6DxYeXVCQr5m17qcRwlR6i5ScNJLkSCP5JoD2OxktQk083jrerrS4/Z
+1ozzNYFwD0uJsW6P5oQp6mG9xIAjtw0FR8Rm8LLBMWxi9UVTzi4qtlGH5dzxvwRk
+aDpYv37NksiODnmJOQrBQfg/3YeLhbLTaNtcNlhI5xx8di9j8OVZVuBkBs9yjAdi
+9cHveK+/AuX7lDFB2bXo0CS5zPTEAZOkc2y38JOTMRAzBCG3oEgXWCP/GCBMw5qQ
+Jrip1qVO/9fVBco/C6Z3
+=+NPf
+-----END PGP SIGNATURE-----
 
-Any idea why btrfs restores wrong file data?
+--nextPart2626642.ofJKjVAHtj--
+

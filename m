@@ -1,36 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52595 "EHLO mx2.suse.de"
+Received: from m50-132.163.com ([123.125.50.132]:52499 "EHLO m50-132.163.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750712AbcLLNi3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Dec 2016 08:38:29 -0500
-Date: Mon, 12 Dec 2016 14:38:20 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Omar Sandoval <osandov@osandov.com>
-Cc: Pan Bian <bianpan2016@163.com>, Chris Mason <clm@fb.com>,
+        id S1752142AbcLDExQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 3 Dec 2016 23:53:16 -0500
+From: Pan Bian <bianpan2016@163.com>
+To: Omar Sandoval <osandov@osandov.com>, Chris Mason <clm@fb.com>,
         Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH 1/1] btrfs: fix improper return value
-Message-ID: <20161212133820.GQ12522@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1480827113-3928-1-git-send-email-bianpan2016@163.com>
- <20161204195707.GA21783@vader>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20161204195707.GA21783@vader>
+        linux-btrfs@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org, Pan Bian <bianpan2016@163.com>
+Subject: [PATCH 1/1] btrfs: fix improper return value
+Date: Sun,  4 Dec 2016 12:51:53 +0800
+Message-Id: <1480827113-3928-1-git-send-email-bianpan2016@163.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Dec 04, 2016 at 11:57:07AM -0800, Omar Sandoval wrote:
-> On Sun, Dec 04, 2016 at 12:51:53PM +0800, Pan Bian wrote:
-> > In function btrfs_uuid_tree_iterate(), errno is assigned to variable ret
-> > on errors. However, it directly returns 0. It may be better to return
-> > ret. This patch also removes the warning, because the caller already
-> > prints a warning.
-> > 
-> > Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=188731
-> 
-> Looks good.
-> 
-> Reviewed-by: Omar Sandoval <osandov@fb.com>
+In function btrfs_uuid_tree_iterate(), errno is assigned to variable ret
+on errors. However, it directly returns 0. It may be better to return
+ret. This patch also removes the warning, because the caller already
+prints a warning.
 
-Added to 4.10 queue.
+Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=188731
+Signed-off-by: Pan Bian <bianpan2016@163.com>
+---
+ fs/btrfs/uuid-tree.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/uuid-tree.c b/fs/btrfs/uuid-tree.c
+index 7fc89e4..83bb2f2 100644
+--- a/fs/btrfs/uuid-tree.c
++++ b/fs/btrfs/uuid-tree.c
+@@ -351,7 +351,5 @@ int btrfs_uuid_tree_iterate(struct btrfs_fs_info *fs_info,
+ 
+ out:
+ 	btrfs_free_path(path);
+-	if (ret)
+-		btrfs_warn(fs_info, "btrfs_uuid_tree_iterate failed %d", ret);
+-	return 0;
++	return ret;
+ }
+-- 
+1.9.1
+
+

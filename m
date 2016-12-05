@@ -1,37 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:49259 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1752589AbcLMTDo (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Dec 2016 14:03:44 -0500
-Subject: Re: [PATCH] btrfs: limit async_work allocation and worker func
- duration
-To: Maxim Patlasov <mpatlasov@virtuozzo.com>, <dsterba@suse.cz>
-References: <148072986343.13061.16191252239168261528.stgit@maxim-thinkpad>
- <20161212145443.GT12522@twin.jikos.cz>
- <2d4aaf16-b9b3-6cd9-d542-c74f00811c93@virtuozzo.com>
-CC: <jbacik@fb.com>, <linux-kernel@vger.kernel.org>,
-        <linux-btrfs@vger.kernel.org>
-From: Chris Mason <clm@fb.com>
-Message-ID: <47667065-cf42-50b7-2862-d270628dc8f8@fb.com>
-Date: Tue, 13 Dec 2016 14:03:31 -0500
+Received: from cn.fujitsu.com ([222.73.24.84]:48545 "EHLO song.cn.fujitsu.com"
+        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+        id S1751993AbcLEJMW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 5 Dec 2016 04:12:22 -0500
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH 0/4] Lowmem fsck false alert fixes
+Date: Mon,  5 Dec 2016 17:07:52 +0800
+Message-Id: <20161205090756.7960-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <2d4aaf16-b9b3-6cd9-d542-c74f00811c93@virtuozzo.com>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/12/2016 03:35 PM, Maxim Patlasov wrote:
-> On 12/12/2016 06:54 AM, David Sterba wrote:
->
-> As far as we don't have any NO_THRESHOLD users of
-> btrfs_workqueue_normal_congested for now, I tend to think it's better to
-> add a descriptive comment and simply return "false" from
-> btrfs_workqueue_normal_congested rather than trying to address some
-> future needs now. See please v2 of the patch.
->
+Btrfs-progs test case 023 will cause assert and a lot of false alerts
+for lowmem mode.
 
-Thanks, I've got v2 and added a cc for stable to v3.15+, which isn't 
-exactly right, but its when the new workqueue system was put in place.
+The problems are caused by several reasons, from bad handler for tree
+reloc root(calling btrfs_read_fs_root on tree reloc tree) to too
+restrict check.
 
--chris
+Fix the lowmem mode bugs.
+
+There is another bug which affects both original mode and lowmem mode,
+it seems to be caused by this commit:
+commit 00e769d04c2c83029d6c71fbded133597d93ad55
+Author: Goldwyn Rodrigues <rgoldwyn@suse.com>
+Date:   Tue Nov 29 10:24:52 2016 -0600
+
+    btrfs-progs: Correct value printed by assertions/BUG_ON/WARN_ON
+
+Informed Goldwyn to fix it.
+So the fix for the common assert is not included in this patchset.
+
+Qu Wenruo (4):
+  btrfs-progs: check: Fix assert when using lowmem on fs with tree reloc
+    tree
+  btrfs-progs: check: Fix lowmem mode stack overflow caused by fsck/023
+  btrfs-progs: check: Fix lowmem false alert on tree reloc tree
+  btrfs-progs: check: Fix false alert on generation mismatch for tree
+    reloc tree
+
+ cmds-check.c | 71 +++++++++++++++++++++++++++++++++++++++++++++++-------------
+ 1 file changed, 56 insertions(+), 15 deletions(-)
+
+-- 
+2.10.2
+
+
+

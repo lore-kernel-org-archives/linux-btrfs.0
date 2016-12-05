@@ -1,175 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f53.google.com ([209.85.218.53]:36130 "EHLO
-        mail-oi0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751064AbcLERde (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Dec 2016 12:33:34 -0500
-Received: by mail-oi0-f53.google.com with SMTP id v84so347691815oie.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 05 Dec 2016 09:33:34 -0800 (PST)
-MIME-Version: 1.0
-From: Gerard Saraber <gsaraber@rarcoa.com>
-Date: Mon, 5 Dec 2016 11:33:32 -0600
-Message-ID: <CAPsdh32T2Ep0uZ3ihrAOa3QR1chvGTf244zs=0=s4wze5-kPKw@mail.gmail.com>
-Subject: BTRFS kernel OOPS 4.8.11
+Received: from mout.gmx.net ([212.227.15.15]:59931 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753380AbcLEXWt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 5 Dec 2016 18:22:49 -0500
+Received: from thetick.localnet ([93.181.44.247]) by mail.gmx.com (mrgmx003
+ [212.227.17.190]) with ESMTPSA (Nemesis) id 0M08eS-1cWXLm3My4-00uKYk for
+ <linux-btrfs@vger.kernel.org>; Tue, 06 Dec 2016 00:22:46 +0100
+From: Marc Joliet <marcec@gmx.de>
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: system hangs due to qgroups
+Date: Tue, 06 Dec 2016 00:22:39 +0100
+Message-ID: <1480981684.lgmix35ydX@thetick>
+In-Reply-To: <2608128.Ab7p211pZ6@thetick>
+References: <1776088.42rHLKPlSp@thetick> <1959752.x5si3bfagL@thetick> <2608128.Ab7p211pZ6@thetick>
+MIME-Version: 1.0
+Content-Type: multipart/signed; boundary="nextPart2248839.J3P8tNhYXq"; micalg="pgp-sha256"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I have a NAS with a mix of 6, 4 and 3 TB drives:
+--nextPart2248839.J3P8tNhYXq
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
 
-shrapnel zm # btrfs filesystem df /home/exports
-Data, RAID1: total=19.59TiB, used=19.51TiB
-System, RAID1: total=32.00MiB, used=2.75MiB
-Metadata, RAID1: total=76.00GiB, used=74.71GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
-shrapnel zm # btrfs filesystem usage /home/exports
-Overall:
-     Device size:                  63.68TiB
-     Device allocated:             39.34TiB
-     Device unallocated:           24.34TiB
-     Device missing:                  0.00B
-     Used:                         39.17TiB
-     Free (estimated):             12.25TiB      (min: 12.25TiB)
-     Data ratio:                       2.00
-     Metadata ratio:                   2.00
-     Global reserve:              512.00MiB      (used: 0.00B)
+On Monday 05 December 2016 11:16:35 Marc Joliet wrote:
+[...]
+> https://dl.dropboxusercontent.com/u/5328255/arthur_root_4.7.3_sanitiz=
+ed.imag
+> e.xz
+> https://dl.dropboxusercontent.com/u/5328255/arthur_root_4.8.5_sanitiz=
+ed.ima
+> ge.xz
 
-Data,RAID1: Size:19.59TiB, Used:19.51TiB
-    /dev/sda        3.99TiB
-    /dev/sdb        2.21TiB
-    /dev/sdc        2.21TiB
-    /dev/sdd        4.00TiB
-    /dev/sde        2.21TiB
-    /dev/sdf        3.99TiB
-    /dev/sdg        1.30TiB
-    /dev/sdh        4.00TiB
-    /dev/sdj        1.30TiB
-    /dev/sdk        1.30TiB
-    /dev/sdl        1.30TiB
-    /dev/sdm        2.21TiB
-    /dev/sdo        2.18TiB
-    /dev/sdp        2.21TiB
-    /dev/sdq        2.21TiB
-    /dev/sds        1.30TiB
-    /dev/sdt        1.30TiB
+BTW, since my problem appears to have been known, does anybody still ca=
+re=20
+about these?
 
-Metadata,RAID1: Size:76.00GiB, Used:74.71GiB
-    /dev/sda       35.00GiB
-    /dev/sdb        1.00GiB
-    /dev/sdc        3.00GiB
-    /dev/sdd       32.00GiB
-    /dev/sde        3.00GiB
-    /dev/sdf       35.00GiB
-    /dev/sdh       29.00GiB
-    /dev/sdj        2.00GiB
-    /dev/sdk        1.00GiB
-    /dev/sdl        1.00GiB
-    /dev/sdm        2.00GiB
-    /dev/sdo        4.00GiB
-    /dev/sds        3.00GiB
-    /dev/sdt        1.00GiB
+=2D-=20
+Marc Joliet
+=2D-
+"People who think they know everything really annoy those of us who kno=
+w we
+don't" - Bjarne Stroustrup
 
-System,RAID1: Size:32.00MiB, Used:2.75MiB
-    /dev/sdd       32.00MiB
-    /dev/sdf       32.00MiB
+--nextPart2248839.J3P8tNhYXq
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
 
-Unallocated:
-    /dev/sda        1.43TiB
-    /dev/sdb        1.43TiB
-    /dev/sdc        1.43TiB
-    /dev/sdd        1.43TiB
-    /dev/sde        1.43TiB
-    /dev/sdf        1.43TiB
-    /dev/sdg        1.43TiB
-    /dev/sdh        1.43TiB
-    /dev/sdj        1.43TiB
-    /dev/sdk        1.43TiB
-    /dev/sdl        1.43TiB
-    /dev/sdm        1.43TiB
-    /dev/sdo        1.46TiB
-    /dev/sdp        1.43TiB
-    /dev/sdq        1.43TiB
-    /dev/sds        1.43TiB
-    /dev/sdt        1.43TiB
+-----BEGIN PGP SIGNATURE-----
 
-One of them keeps throwing errors, during this command, the oops happened:
-# btrfs device delete /dev/sdt /home/exports
+iQIcBAABCAAGBQJYRfa/AAoJEL/Q5oYsiHj0cTwP/jJ5+8SrBtG9DJBJd4nRH4mM
+MNTOVU5L8dnsuR542CjxO2G5ickZTSe6EZb+qPe3dsLaQy5lmXKE6KF9ZmunkeaB
+xPdIfMto2tWNwdNyghDypiL0hPNZh+8zKdWP1DjYf1X1uc9f7NDUiPlW/O0Hcq9Q
+uwgag7yDhE1XG+JttVARheUdadV7f/bGn0BnCiZV5baVIDtNM3BDR+1gTUAMDb7p
+wZJm2UiG1JVEr5N39jVub4hqn7PuEpc/Pkq9pfG9pqmDXkdB+wUrsa03qSurOk/U
+tZubPjV/L3kriueJqMFD07a9TSFcdZLSEUb7qcjn6aTVHBxLQLuqSvM1WjwAvM1b
+y0/c6CsLupG7AGU3oH6H2q6bmKVWUTJ5MzutZtxFVXOWqtOhslzh/nVjmRJhOmoi
+J7COk4E13pztGXmVu/gUxTmhbW87dOH8iAPpDeE8xZzix7WciOF4/LG3lfZ3JahE
+AAOHapf2MLm4cer+nf2C7tjVD20gQLlDjO7MWXPqYnMLgeQkTRM5a9W2DueDI5wp
+YBG6tpkxIaoXoQeSj2NBtAmJlZ+fa0wmCIhhnKUiM+Ko9klVdUR8Cdw1ZbGLXiJZ
+lbNOm5Ei1qkRa45ASt6q0R4MdsGkg90pksTtJPDOimK71Ez0FhCekCn4PzGVWj+i
+mFwkMQ103BVsXEbGkXvK
+=ZuKe
+-----END PGP SIGNATURE-----
 
+--nextPart2248839.J3P8tNhYXq--
 
-Dec 05 08:33:30 [kernel] [259785.367744] BTRFS info (device sdt): csum
-failed ino 122743909 extent 1473222864896 csum 879250177 wanted 3941849660
-mirror 0
-Dec 05 08:33:30 [kernel] [259785.387033] ------------[ cut here
-]------------
-Dec 05 08:33:30 [kernel] [259785.387049] kernel BUG at
-fs/btrfs/extent_io.c:2041!
-Dec 05 08:33:30 [kernel] [259785.387062] invalid opcode: 0000 [#1] SMP
-Dec 05 08:33:30 [kernel] [259785.387072] Modules linked in: btrfs
-zlib_deflate megaraid_sas
-Dec 05 08:33:30 [kernel] [259785.387096] CPU: 2 PID: 14355 Comm:
-kworker/u8:11 Tainted: G        W       4.8.11 #1
-Dec 05 08:33:30 [kernel] [259785.387112] Hardware name: Supermicro
-X7DB8/X7DB8, BIOS 6.00 06/23/2006
-Dec 05 08:33:30 [kernel] [259785.387161] Workqueue: btrfs-endio
-btrfs_endio_helper [btrfs]
-Dec 05 08:33:30 [kernel] [259785.387177] task: ffff88081b8e8b00 task.stack:
-ffff88046b490000
-Dec 05 08:33:30 [kernel] [259785.387189] RIP: 0010:[<ffffffffa0084f21>]
-  [<ffffffffa0084f21>] repair_io_failure+0x221/0x250 [btrfs]
-Dec 05 08:33:30 [kernel] [259785.387223] RSP: 0018:ffff88046b493c30
-  EFLAGS: 00010202
-Dec 05 08:33:30 [kernel] [259785.387235] RAX: 0000000000000000 RBX:
-000000006b4e0140 RCX: 0000000000000000
-Dec 05 08:33:30 [kernel] [259785.387250] RDX: 0000000000000000 RSI:
-0000000000000000 RDI: ffff88071dddc840
-Dec 05 08:33:30 [kernel] [259785.387264] RBP: ffff88046b493c90 R08:
-0000015701409000 R09: ffff88071dddc840
-Dec 05 08:33:30 [kernel] [259785.387280] R10: 0000000001ac0000 R11:
-000000006b4e37c0 R12: ffff88046b4e30a8
-Dec 05 08:33:30 [kernel] [259785.387295] R13: 0000000000000000 R14:
-00001df9496b9000 R15: ffff8801471b6000
-Dec 05 08:33:30 [kernel] [259785.387560] FS:  0000000000000000(0000)
-GS:ffff88083fd00000(0000) knlGS:0000000000000000
-Dec 05 08:33:30 [kernel] [259785.387825] CS:  0010 DS: 0000 ES: 0000 CR0:
-0000000080050033
-Dec 05 08:33:30 [kernel] [259785.387962] CR2: 000000000226f000 CR3:
-0000000255358000 CR4: 00000000000006e0
-Dec 05 08:33:30 [kernel] [259785.388002] Stack:
-Dec 05 08:33:30 [kernel] [259785.388002]  000000000283e000 ffff880703f4a370
-0000000000001000 ffffea001d05ff40
-Dec 05 08:33:30 [kernel] [259785.388002]  0000000000001000 0000000000007000
-ffff88071dddc840 ffff880703f4a180
-Dec 05 08:33:30 [kernel] [259785.388002]  000000000283e000 ffff8801471b6000
-ffff880703f4a370 ffff880703f4a1e8
-Dec 05 08:33:30 [kernel] [259785.388002] Call Trace:
-Dec 05 08:33:30 [kernel] [259785.388002]  [<ffffffffa0085166>]
-clean_io_failure+0x136/0x150 [btrfs]
-Dec 05 08:33:30 [kernel] [259785.388002]  [<ffffffffa00858ee>]
-end_bio_extent_readpage+0x2be/0x510 [btrfs]
-Dec 05 08:33:30 [kernel] [259785.388002]  [<ffffffff813d9611>]
-bio_endio+0x51/0x60
-Dec 05 08:33:30 [kernel] [259785.388002]  [<ffffffffa005ab27>]
-end_workqueue_fn+0x37/0x40 [btrfs]
-Dec 05 08:33:30 [kernel] [259785.388002]  [<ffffffffa0096c22>]
-btrfs_scrubparity_helper+0xc2/0x300 [btrfs]
-Dec 05 08:33:30 [kernel] [259785.388002]  [<ffffffffa0096f49>]
-btrfs_endio_helper+0x9/0x10 [btrfs]
-Dec 05 08:33:30 [kernel] [259785.388002]  [<ffffffff810d78b6>]
-process_one_work+0x146/0x4a0
-Dec 05 08:33:30 [kernel] [259785.388002]  [<ffffffff810d7c53>]
-worker_thread+0x43/0x4d0
-Dec 05 08:33:30 [kernel] [259785.388002]  [<ffffffff81a96af7>] ?
-__schedule+0x247/0x670
-Dec 05 08:33:30 [kernel] [259785.388002]  [<ffffffff810d7c10>] ?
-process_one_work+0x4a0/0x4a0
-                 - Last output repeated twice -
-Dec 05 08:33:30 [kernel] [259785.388002]  [<ffffffff810dd164>]
-kthread+0xc4/0xe0
-Dec 05 08:33:30 [kernel] [259785.388002]  [<ffffffff81a9ad3f>]
-ret_from_fork+0x1f/0x40
-Dec 05 08:33:30 [kernel] [259785.388002]  [<ffffffff810dd0a0>] ?
-__kthread_parkme+0x70/0x70
-Dec 05 08:33:30 [kernel] [259785.388002] Code: 41 bd fb ff ff ff e9 6b fe
-ff ff be 01 00 00 00 4c 89 ff 41 bd fb ff ff ff e8 bc 4f 05 00 4c 89 e7 e8
-74 46 35 e1 e9 4b fe ff ff <0f> 0b be 01 00 00 00 4c 89 ff 41 bd fb ff ff
-ff e8 9a 4f 05 00

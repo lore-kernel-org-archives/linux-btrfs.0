@@ -1,67 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:14419 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1750746AbcLEFH1 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Dec 2016 00:07:27 -0500
+Received: from mail-pf0-f193.google.com ([209.85.192.193]:36684 "EHLO
+        mail-pf0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750841AbcLEFvH (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Dec 2016 00:51:07 -0500
+Received: by mail-pf0-f193.google.com with SMTP id c4so16465338pfb.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 04 Dec 2016 21:51:06 -0800 (PST)
+Received: from [172.27.27.99] (122-59-45-101.jetstream.xtra.co.nz. [122.59.45.101])
+        by smtp.gmail.com with ESMTPSA id f132sm23820156pfa.72.2016.12.04.21.51.03
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Sun, 04 Dec 2016 21:51:04 -0800 (PST)
 Subject: Re: btrfs repair and zero-log doesn't seem to do anything
-To: Calle Kabo <calle.kabo@gmail.com>, <linux-btrfs@vger.kernel.org>
+To: linux-btrfs@vger.kernel.org
 References: <6dbdc042-6b05-8270-e869-fcf95a99157d@gmail.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <a3bad432-968b-83e8-4c35-69e27124107e@cn.fujitsu.com>
-Date: Mon, 5 Dec 2016 13:07:09 +0800
+ <a3bad432-968b-83e8-4c35-69e27124107e@cn.fujitsu.com>
+From: Calle Kabo <calle.kabo@gmail.com>
+Message-ID: <24c80d7e-e2d9-0b93-2ded-96ddcb741070@gmail.com>
+Date: Mon, 5 Dec 2016 18:50:59 +1300
 MIME-Version: 1.0
-In-Reply-To: <6dbdc042-6b05-8270-e869-fcf95a99157d@gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <a3bad432-968b-83e8-4c35-69e27124107e@cn.fujitsu.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
+> Maybe -D would list all the file structures?
 
-At 12/05/2016 11:49 AM, Calle Kabo wrote:
->
->> IMHO there will be 2 alternative method to recover:
->>
->> 1) Btrfs restore
->>    The safest method to recover files.
->>    Although it may need a lot of space to restore recovered data.
->>
->> 2) Btrfs check --init-extent-tree
->>    This will use fs tree to try to rebuild the extent tree.
->>    I don't believe it's only extent tree corrupted, so this may make
->>    things even *worse*, but at least it won't take several TBs to
->>    recover data which you may already have backup.
->
-> Thanks! I tested restoring a small directory and it worked beautifully.
-> Is there any way to list the files/directories? I don't think I can
-> remember all of the paths that were on there...
->
-> /Calle
+I tried that first but didn't see anything, but when combined with -v it
+shows the files that would have been restored.
 
-I'm not familiar with btrfs-restore tool.
-But a quick glance at the man page shows there is some options like
--r <rooid>
---path-regex <path>
--d
---list-roots
--D
-
-Those options would help.
-Maybe -D would list all the file structures?
+e.g.
+# btrfs restore -v -D --path-regex '^/(|Documents(|/.*))$'
+/dev/mapper/data-0 /tmp
 
 
-And if btrfs restore works perfectly fine without even a problem,
-then it seems to indicate that only extent tree is corrupted.
-In that case, --init-extent-tree may have a little chance to recover the fs.
-(But under most case, maybe over 50%?, it may make things worse)
+Awesome, big thanks for your help!
 
-Thanks,
-Qu
-
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
-
-
+/Calle

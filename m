@@ -1,52 +1,173 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:55480 "EHLO mx1.redhat.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750841AbcLEHKQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 5 Dec 2016 02:10:16 -0500
-Date: Mon, 5 Dec 2016 15:10:14 +0800
-From: Eryu Guan <eguan@redhat.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
-Subject: Re: [RFC PATCH 1/3] fstests: common: rename _require_btrfs to
- _require_btrfs_subcommand
-Message-ID: <20161205071014.GR29149@eguan.usersys.redhat.com>
-References: <20161122083811.12636-1-quwenruo@cn.fujitsu.com>
- <20161122083811.12636-2-quwenruo@cn.fujitsu.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:8761 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1750841AbcLEHK1 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Dec 2016 02:10:27 -0500
+Subject: Re: [PATCH 1/2] btrfs-progs: Correct value printed by
+ assertions/BUG_ON/WARN_ON
+To: Goldwyn Rodrigues <rgoldwyn@suse.de>, <linux-btrfs@vger.kernel.org>,
+        David Sterba <dsterba@suse.com>
+References: <20161129162452.28402-1-rgoldwyn@suse.de>
+CC: Goldwyn Rodrigues <rgoldwyn@suse.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <f0beaab1-a09c-cd3e-c00e-2727c3ec8ecd@cn.fujitsu.com>
+Date: Mon, 5 Dec 2016 15:10:16 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20161122083811.12636-2-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20161129162452.28402-1-rgoldwyn@suse.de>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 22, 2016 at 04:38:09PM +0800, Qu Wenruo wrote:
-> Rename _require_btrfs() to _require_btrfs_subcommand() to avoid
-> confusion, as all other _require_btrfs_* has a quite clear suffix, like
-> _require_btrfs_mkfs_feature() or _require_btrfs_fs_feature().
-> 
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> ---
->  common/rc       | 2 +-
->  tests/btrfs/004 | 2 +-
->  tests/btrfs/048 | 2 +-
->  tests/btrfs/059 | 2 +-
->  tests/btrfs/131 | 2 +-
->  5 files changed, 5 insertions(+), 5 deletions(-)
-> 
-> diff --git a/common/rc b/common/rc
-> index e3b54ec..6d333dd 100644
-> --- a/common/rc
-> +++ b/common/rc
-> @@ -3017,7 +3017,7 @@ _require_deletable_scratch_dev_pool()
->  }
->  
->  # We check for btrfs and (optionally) features of the btrfs command
-> -_require_btrfs()
-> +_require_btrfs_subcommand()
+Hi, Goldwyn and David,
 
-_require_btrfs_command seems good enough. And it should be improved to
-handle subcommands like dump-tree (like what _require_xfs_io_command
-does), otherwise tests fail if old version of btrfs-progs is installed
-where inspect-internal doesn't have dump-tree support.
+This patch seems to cause btrfs test case 023 to fail.
+
+Bisect leads me to this patch.
+
+
+$ ./btrfs check ~/quota_balance_loop_backref.raw.restored
+Checking filesystem on /home/adam/quota_balance_loop_backref.raw.restored
+UUID: c33c5ce3-3ad9-4320-9201-c337c04e0051
+checking extents
+btrfs: cmds-check.c:12284: build_roots_info_cache: Assertion `!(ret == 
+0)' failed.
+Aborted (core dumped)
+
+
+And gdb backref:
+#0  0x00007ffff6fd204f in raise () from /usr/lib/libc.so.6
+#1  0x00007ffff6fd347a in abort () from /usr/lib/libc.so.6
+#2  0x00007ffff6fcaea7 in __assert_fail_base () from /usr/lib/libc.so.6
+#3  0x00007ffff6fcaf52 in __assert_fail () from /usr/lib/libc.so.6
+#4  0x0000000000440426 in build_roots_info_cache (info=0x6f43c0) at 
+cmds-check.c:12284
+#5  0x0000000000440945 in repair_root_items (info=0x6f43c0) at 
+cmds-check.c:12412
+#6  0x00000000004418c3 in cmd_check (argc=2, argv=0x7fffffffe100) at 
+cmds-check.c:12892
+#7  0x000000000040a74c in main (argc=2, argv=0x7fffffffe100) at btrfs.c:301
+
+
+For frame 4:
+(gdb) frame 4
+#4  0x0000000000440426 in build_roots_info_cache (info=0x6f43c0) at 
+cmds-check.c:12284
+12284				ASSERT(ret == 0);
+(gdb) list
+12279				rii->cache_extent.start = root_id;
+12280				rii->cache_extent.size = 1;
+12281				rii->level = (u8)-1;
+12282				entry = &rii->cache_extent;
+12283				ret = insert_cache_extent(roots_info_cache, entry);
+12284				ASSERT(ret == 0);
+12285			} else {
+12286				rii = container_of(entry, struct root_item_info,
+12287						   cache_extent);
+12288			}
+(gdb) print ret
+$1 = 0
+
+For me, ASSERT(ret == 0) seems quite safe and common here.
+Doesn't the patch changed the ASSERT() behavior?
 
 Thanks,
-Eryu
+Qu
+
+At 11/30/2016 12:24 AM, Goldwyn Rodrigues wrote:
+> From: Goldwyn Rodrigues <rgoldwyn@suse.com>
+>
+> The values passed to BUG_ON/WARN_ON are negated(!) and printed, which
+> results in printing the value zero for each bug/warning. For example:
+> volumes.c:988: btrfs_alloc_chunk: Assertion `ret` failed, value 0
+>
+> This is not useful. Instead changed to print the value of the parameter
+> passed to BUG_ON()/WARN_ON(). The value needed to be changed to long
+> to accomodate pointers being passed.
+>
+> Also, consolidated assert() and BUG() into ifndef.
+>
+> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+> ---
+>  kerncompat.h | 35 +++++++++++++++--------------------
+>  1 file changed, 15 insertions(+), 20 deletions(-)
+>
+> diff --git a/kerncompat.h b/kerncompat.h
+> index ed9a042..9bd25bd 100644
+> --- a/kerncompat.h
+> +++ b/kerncompat.h
+> @@ -88,39 +88,36 @@ static inline void print_trace(void)
+>  }
+>
+>  static inline void assert_trace(const char *assertion, const char *filename,
+> -			      const char *func, unsigned line, int val)
+> +			      const char *func, unsigned line, long val)
+>  {
+> -	if (val)
+> +	if (!val)
+>  		return;
+>  	if (assertion)
+> -		fprintf(stderr, "%s:%d: %s: Assertion `%s` failed, value %d\n",
+> +		fprintf(stderr, "%s:%d: %s: Assertion `%s` failed, value %ld\n",
+>  			filename, line, func, assertion, val);
+>  	else
+> -		fprintf(stderr, "%s:%d: %s: Assertion failed, value %d.\n",
+> +		fprintf(stderr, "%s:%d: %s: Assertion failed, value %ld.\n",
+>  			filename, line, func, val);
+>  	print_trace();
+>  	abort();
+>  	exit(1);
+>  }
+>
+> -#define BUG() assert_trace(NULL, __FILE__, __func__, __LINE__, 0)
+> -#else
+> -#define BUG() assert(0)
+>  #endif
+>
+>  static inline void warning_trace(const char *assertion, const char *filename,
+> -			      const char *func, unsigned line, int val,
+> +			      const char *func, unsigned line, long val,
+>  			      int trace)
+>  {
+> -	if (val)
+> +	if (!val)
+>  		return;
+>  	if (assertion)
+>  		fprintf(stderr,
+> -			"%s:%d: %s: Warning: assertion `%s` failed, value %d\n",
+> +			"%s:%d: %s: Warning: assertion `%s` failed, value %ld\n",
+>  			filename, line, func, assertion, val);
+>  	else
+>  		fprintf(stderr,
+> -			"%s:%d: %s: Warning: assertion failed, value %d.\n",
+> +			"%s:%d: %s: Warning: assertion failed, value %ld.\n",
+>  			filename, line, func, val);
+>  #ifndef BTRFS_DISABLE_BACKTRACE
+>  	if (trace)
+> @@ -299,17 +296,15 @@ static inline long IS_ERR(const void *ptr)
+>  #define vfree(x) free(x)
+>
+>  #ifndef BTRFS_DISABLE_BACKTRACE
+> -#define BUG_ON(c) assert_trace(#c, __FILE__, __func__, __LINE__, !(c))
+> -#define WARN_ON(c) warning_trace(#c, __FILE__, __func__, __LINE__, !(c), 1)
+> +#define BUG_ON(c) assert_trace(#c, __FILE__, __func__, __LINE__, (long)(c))
+> +#define WARN_ON(c) warning_trace(#c, __FILE__, __func__, __LINE__, (long)(c), 1)
+> +#define	ASSERT(c) assert_trace(#c, __FILE__, __func__, __LINE__, (long)!(c))
+> +#define BUG() assert_trace(NULL, __FILE__, __func__, __LINE__, 1)
+>  #else
+>  #define BUG_ON(c) assert(!(c))
+> -#define WARN_ON(c) warning_trace(#c, __FILE__, __func__, __LINE__, !(c), 0)
+> -#endif
+> -
+> -#ifndef BTRFS_DISABLE_BACKTRACE
+> -#define	ASSERT(c) assert_trace(#c, __FILE__, __func__, __LINE__, (c))
+> -#else
+> -#define ASSERT(c) assert(c)
+> +#define WARN_ON(c) warning_trace(#c, __FILE__, __func__, __LINE__, (long)(c), 0)
+> +#define ASSERT(c) assert(!(c))
+> +#define BUG() assert(0)
+>  #endif
+>
+>  #define container_of(ptr, type, member) ({                      \
+>
+
+

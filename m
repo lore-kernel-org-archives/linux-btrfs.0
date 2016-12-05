@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f196.google.com ([209.85.223.196]:36637 "EHLO
-        mail-io0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751590AbcLEUKb (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Dec 2016 15:10:31 -0500
+Received: from mail-wm0-f67.google.com ([74.125.82.67]:34923 "EHLO
+        mail-wm0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752257AbcLEULA (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Dec 2016 15:11:00 -0500
 MIME-Version: 1.0
 In-Reply-To: <CAOMGZ=Eb8mw6CfGaruM-tRir7pWn78vLTaCqp1pGPqkagfzPPA@mail.gmail.com>
 References: <CA+55aFyiJGk-A_cJH41Ec8Xj0Zz9M3EU-igJ9bgusj=nm28tFQ@mail.gmail.com>
@@ -15,11 +15,11 @@ References: <CA+55aFyiJGk-A_cJH41Ec8Xj0Zz9M3EU-igJ9bgusj=nm28tFQ@mail.gmail.com>
  <CAOMGZ=EsaGs9B3jc5X+3Sa1vyBfBW6AznYy3JR1=6iJMgCgG0g@mail.gmail.com>
  <CAOMGZ=HfdHLXrRCbzvXcQTgfA-PAErtwZQfPzFr4P8H0MJWZ5g@mail.gmail.com>
  <CA+55aFxeWe2VQaW30qGR0syiZ75jSwFwg3Ac+wS20KDtf5UKNw@mail.gmail.com> <CAOMGZ=Eb8mw6CfGaruM-tRir7pWn78vLTaCqp1pGPqkagfzPPA@mail.gmail.com>
-From: Linus Torvalds <torvalds@linux-foundation.org>
-Date: Mon, 5 Dec 2016 12:10:29 -0800
-Message-ID: <CA+55aFzEG-6pkJXy4itiXsHPu_VV5q2vd6zJLq6vmi=AzdnaUw@mail.gmail.com>
+From: Vegard Nossum <vegard.nossum@gmail.com>
+Date: Mon, 5 Dec 2016 21:10:57 +0100
+Message-ID: <CAOMGZ=G_wM13ikKt7cTUt1gppsf4TAzFwg2kybUYMvEuzJyj2w@mail.gmail.com>
 Subject: Re: bio linked list corruption.
-To: Vegard Nossum <vegard.nossum@gmail.com>
+To: Linus Torvalds <torvalds@linux-foundation.org>
 Cc: Dave Jones <davej@codemonkey.org.uk>, Chris Mason <clm@fb.com>,
         Jens Axboe <axboe@fb.com>, Andy Lutomirski <luto@amacapital.net>,
         Andy Lutomirski <luto@kernel.org>, Al Viro <viro@zeniv.linux.org.uk>,
@@ -27,65 +27,35 @@ Cc: Dave Jones <davej@codemonkey.org.uk>, Chris Mason <clm@fb.com>,
         linux-btrfs <linux-btrfs@vger.kernel.org>,
         Linux Kernel <linux-kernel@vger.kernel.org>,
         Dave Chinner <david@fromorbit.com>
-Content-Type: multipart/mixed; boundary=001a113efc341e88880542eee1fa
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---001a113efc341e88880542eee1fa
-Content-Type: text/plain; charset=UTF-8
-
-On Mon, Dec 5, 2016 at 11:11 AM, Vegard Nossum <vegard.nossum@gmail.com> wrote:
+On 5 December 2016 at 20:11, Vegard Nossum <vegard.nossum@gmail.com> wrote:
+> On 5 December 2016 at 18:55, Linus Torvalds
+> <torvalds@linux-foundation.org> wrote:
+>> On Mon, Dec 5, 2016 at 9:09 AM, Vegard Nossum <vegard.nossum@gmail.com> wrote:
+>> Since you apparently can recreate this fairly easily, how about trying
+>> this stupid patch?
+>>
+>> NOTE! This is entirely untested. I may have screwed this up entirely.
+>> You get the idea, though - just remove the wait queue head from the
+>> list - the list entries stay around, but nothing points to the stack
+>> entry (that we're going to free) any more.
+>>
+>> And add the warning to see if this actually ever triggers (and because
+>> I'd like to see the callchain when it does, to see if it's another
+>> waitqueue somewhere or what..)
 >
 > ------------[ cut here ]------------
 > WARNING: CPU: 22 PID: 14012 at mm/shmem.c:2668 shmem_fallocate+0x9a7/0xac0
+> Kernel panic - not syncing: panic_on_warn set ...
 
-Ok, good. So that's confirmed as the cause of this problem.
+So I noticed that panic_on_warn just after sending the email and I've
+been waiting for it it to trigger again.
 
-And the call chain that I wanted is obviously completely
-uninteresting, because it's call cghain on the other side (the page
-fault side) that would show the nested wake queue behavior. I was just
-being stupid about it.
+The warning has triggered twice more without panic_on_warn set and I
+haven't seen any crash yet.
 
-I wonder if we have any other places where we just blithely assume
-that "wake_up_all()" will actually empty the whole wait queue. It's
-_usually_ true, but as noted, nested waiting does happen.
 
-Anyway, can you try this patch instead? It should actually cause the
-wake_up_all() to always remove all entries, and thus the WARN_ON()
-should no longer happen (and I removed the "list_del()" hackery).
-
-                       Linus
-
---001a113efc341e88880542eee1fa
-Content-Type: text/plain; charset=US-ASCII; name="patch.diff"
-Content-Disposition: attachment; filename="patch.diff"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_iwcih6wv1
-
-ZGlmZiAtLWdpdCBhL21tL3NobWVtLmMgYi9tbS9zaG1lbS5jCmluZGV4IDE2NmViZjVkMmJjZS4u
-MTdiZWI0NGU5ZjRmIDEwMDY0NAotLS0gYS9tbS9zaG1lbS5jCisrKyBiL21tL3NobWVtLmMKQEAg
-LTE4NDgsNiArMTg0OCwxOSBAQCBhbGxvY19ub2h1Z2U6CQlwYWdlID0gc2htZW1fYWxsb2NfYW5k
-X2FjY3RfcGFnZShnZnAsIGluZm8sIHNiaW5mbywKIAlyZXR1cm4gZXJyb3I7CiB9CiAKKy8qCisg
-KiBUaGlzIGlzIGxpa2UgYXV0b3JlbW92ZV93YWtlX2Z1bmN0aW9uLCBidXQgaXQgcmVtb3ZlcyB0
-aGUgd2FpdCBxdWV1ZQorICogZW50cnkgdW5jb25kaXRpb25hbGx5IC0gZXZlbiBpZiBzb21ldGhp
-bmcgZWxzZSBoYWQgYWxyZWFkeSB3b2tlbiB0aGUKKyAqIHRhcmdldC4KKyAqLworc3RhdGljIGlu
-dCBzeW5jaHJvbm91c193YWtlX2Z1bmN0aW9uKHdhaXRfcXVldWVfdCAqd2FpdCwgdW5zaWduZWQg
-bW9kZSwgaW50IHN5bmMsIHZvaWQgKmtleSkKK3sKKwlpbnQgcmV0ID0gZGVmYXVsdF93YWtlX2Z1
-bmN0aW9uKHdhaXQsIG1vZGUsIHN5bmMsIGtleSk7CisJbGlzdF9kZWxfaW5pdCgmd2FpdC0+dGFz
-a19saXN0KTsKKwlyZXR1cm4gcmV0OworfQorCisKIHN0YXRpYyBpbnQgc2htZW1fZmF1bHQoc3Ry
-dWN0IHZtX2FyZWFfc3RydWN0ICp2bWEsIHN0cnVjdCB2bV9mYXVsdCAqdm1mKQogewogCXN0cnVj
-dCBpbm9kZSAqaW5vZGUgPSBmaWxlX2lub2RlKHZtYS0+dm1fZmlsZSk7CkBAIC0xODgzLDcgKzE4
-OTYsNyBAQCBzdGF0aWMgaW50IHNobWVtX2ZhdWx0KHN0cnVjdCB2bV9hcmVhX3N0cnVjdCAqdm1h
-LCBzdHJ1Y3Qgdm1fZmF1bHQgKnZtZikKIAkJICAgIHZtZi0+cGdvZmYgPj0gc2htZW1fZmFsbG9j
-LT5zdGFydCAmJgogCQkgICAgdm1mLT5wZ29mZiA8IHNobWVtX2ZhbGxvYy0+bmV4dCkgewogCQkJ
-d2FpdF9xdWV1ZV9oZWFkX3QgKnNobWVtX2ZhbGxvY193YWl0cTsKLQkJCURFRklORV9XQUlUKHNo
-bWVtX2ZhdWx0X3dhaXQpOworCQkJREVGSU5FX1dBSVRfRlVOQyhzaG1lbV9mYXVsdF93YWl0LCBz
-eW5jaHJvbm91c193YWtlX2Z1bmN0aW9uKTsKIAogCQkJcmV0ID0gVk1fRkFVTFRfTk9QQUdFOwog
-CQkJaWYgKCh2bWYtPmZsYWdzICYgRkFVTFRfRkxBR19BTExPV19SRVRSWSkgJiYKQEAgLTI2NjUs
-NiArMjY3OCw3IEBAIHN0YXRpYyBsb25nIHNobWVtX2ZhbGxvY2F0ZShzdHJ1Y3QgZmlsZSAqZmls
-ZSwgaW50IG1vZGUsIGxvZmZfdCBvZmZzZXQsCiAJCXNwaW5fbG9jaygmaW5vZGUtPmlfbG9jayk7
-CiAJCWlub2RlLT5pX3ByaXZhdGUgPSBOVUxMOwogCQl3YWtlX3VwX2FsbCgmc2htZW1fZmFsbG9j
-X3dhaXRxKTsKKwkJV0FSTl9PTl9PTkNFKCFsaXN0X2VtcHR5KCZzaG1lbV9mYWxsb2Nfd2FpdHEu
-dGFza19saXN0KSk7CiAJCXNwaW5fdW5sb2NrKCZpbm9kZS0+aV9sb2NrKTsKIAkJZXJyb3IgPSAw
-OwogCQlnb3RvIG91dDsK
---001a113efc341e88880542eee1fa--
+Vegard

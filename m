@@ -1,196 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53095 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751176AbcLELis (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 5 Dec 2016 06:38:48 -0500
-Subject: Re: [PATCH 1/2] btrfs-progs: Correct value printed by
- assertions/BUG_ON/WARN_ON
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org,
-        David Sterba <dsterba@suse.com>
-References: <20161129162452.28402-1-rgoldwyn@suse.de>
- <f0beaab1-a09c-cd3e-c00e-2727c3ec8ecd@cn.fujitsu.com>
-Cc: Goldwyn Rodrigues <rgoldwyn@suse.com>
-From: Goldwyn Rodrigues <rgoldwyn@suse.de>
-Message-ID: <ff3428dc-ee0e-8feb-fa76-1627b4fa411b@suse.de>
-Date: Mon, 5 Dec 2016 05:38:25 -0600
-MIME-Version: 1.0
-In-Reply-To: <f0beaab1-a09c-cd3e-c00e-2727c3ec8ecd@cn.fujitsu.com>
-Content-Type: text/plain; charset=utf-8
+Received: from [195.159.176.226] ([195.159.176.226]:47028 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1751086AbcLELvg (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Dec 2016 06:51:36 -0500
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1cDrns-0006K3-Jf
+        for linux-btrfs@vger.kernel.org; Mon, 05 Dec 2016 12:51:28 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Metadata balance fails ENOSPC
+Date: Mon, 5 Dec 2016 11:51:18 +0000 (UTC)
+Message-ID: <pan$d30bd$9f6e479e$48969f15$6982ee22@cox.net>
+References: <04e767a6-ff6f-95ba-f2f9-6061035dcd10@profihost.ag>
+        <CAJCQCtQJV5jCLbON3Fk+DHCztRqAVN35rfMcHiWKWRT3yg+c_A@mail.gmail.com>
+        <af47955b-19a4-7ff5-8d88-d94f40300e65@profihost.ag>
+        <CAA91j0WLve+R5VBHkb7p2NO_hTuLcRp5KvjsPmnZgOoF1MTWzA@mail.gmail.com>
+        <a4b76eec-8967-e7f6-544b-8b05f362c585@mendix.com>
+        <abf74fc8-3198-8987-bb32-2fb61199f88a@profihost.ag>
+        <CAJCQCtTyAGFvVU2BHXzaJNLC-OAT-LTTjemizAw8GtM=-ycwLg@mail.gmail.com>
+        <7f3285e4-e6d3-8db7-15c3-9c93e3dfe95b@gmail.com>
+        <697340c2-cf0a-6799-f8e5-f550a0d998b0@profihost.ag>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Qu,
+Stefan Priebe - Profihost AG posted on Mon, 05 Dec 2016 12:12:12 +0100 as
+excerpted:
 
-Yes, the assert for ifdef BTRFS_DIABLE_BACKTRACE is not correct. The
-condition should not have a not(!).
+> isn't there a way to move free space to unallocated space again?
 
-Thanks for reporting.
-
-On 12/05/2016 01:10 AM, Qu Wenruo wrote:
-> Hi, Goldwyn and David,
-> 
-> This patch seems to cause btrfs test case 023 to fail.
-> 
-> Bisect leads me to this patch.
-> 
-> 
-> $ ./btrfs check ~/quota_balance_loop_backref.raw.restored
-> Checking filesystem on /home/adam/quota_balance_loop_backref.raw.restored
-> UUID: c33c5ce3-3ad9-4320-9201-c337c04e0051
-> checking extents
-> btrfs: cmds-check.c:12284: build_roots_info_cache: Assertion `!(ret ==
-> 0)' failed.
-> Aborted (core dumped)
-> 
-> 
-> And gdb backref:
-> #0  0x00007ffff6fd204f in raise () from /usr/lib/libc.so.6
-> #1  0x00007ffff6fd347a in abort () from /usr/lib/libc.so.6
-> #2  0x00007ffff6fcaea7 in __assert_fail_base () from /usr/lib/libc.so.6
-> #3  0x00007ffff6fcaf52 in __assert_fail () from /usr/lib/libc.so.6
-> #4  0x0000000000440426 in build_roots_info_cache (info=0x6f43c0) at
-> cmds-check.c:12284
-> #5  0x0000000000440945 in repair_root_items (info=0x6f43c0) at
-> cmds-check.c:12412
-> #6  0x00000000004418c3 in cmd_check (argc=2, argv=0x7fffffffe100) at
-> cmds-check.c:12892
-> #7  0x000000000040a74c in main (argc=2, argv=0x7fffffffe100) at btrfs.c:301
-> 
-> 
-> For frame 4:
-> (gdb) frame 4
-> #4  0x0000000000440426 in build_roots_info_cache (info=0x6f43c0) at
-> cmds-check.c:12284
-> 12284                ASSERT(ret == 0);
-> (gdb) list
-> 12279                rii->cache_extent.start = root_id;
-> 12280                rii->cache_extent.size = 1;
-> 12281                rii->level = (u8)-1;
-> 12282                entry = &rii->cache_extent;
-> 12283                ret = insert_cache_extent(roots_info_cache, entry);
-> 12284                ASSERT(ret == 0);
-> 12285            } else {
-> 12286                rii = container_of(entry, struct root_item_info,
-> 12287                           cache_extent);
-> 12288            }
-> (gdb) print ret
-> $1 = 0
-> 
-> For me, ASSERT(ret == 0) seems quite safe and common here.
-> Doesn't the patch changed the ASSERT() behavior?
-> 
-> Thanks,
-> Qu
-> 
-> At 11/30/2016 12:24 AM, Goldwyn Rodrigues wrote:
->> From: Goldwyn Rodrigues <rgoldwyn@suse.com>
->>
->> The values passed to BUG_ON/WARN_ON are negated(!) and printed, which
->> results in printing the value zero for each bug/warning. For example:
->> volumes.c:988: btrfs_alloc_chunk: Assertion `ret` failed, value 0
->>
->> This is not useful. Instead changed to print the value of the parameter
->> passed to BUG_ON()/WARN_ON(). The value needed to be changed to long
->> to accomodate pointers being passed.
->>
->> Also, consolidated assert() and BUG() into ifndef.
->>
->> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
->> ---
->>  kerncompat.h | 35 +++++++++++++++--------------------
->>  1 file changed, 15 insertions(+), 20 deletions(-)
->>
->> diff --git a/kerncompat.h b/kerncompat.h
->> index ed9a042..9bd25bd 100644
->> --- a/kerncompat.h
->> +++ b/kerncompat.h
->> @@ -88,39 +88,36 @@ static inline void print_trace(void)
->>  }
->>
->>  static inline void assert_trace(const char *assertion, const char
->> *filename,
->> -                  const char *func, unsigned line, int val)
->> +                  const char *func, unsigned line, long val)
->>  {
->> -    if (val)
->> +    if (!val)
->>          return;
->>      if (assertion)
->> -        fprintf(stderr, "%s:%d: %s: Assertion `%s` failed, value %d\n",
->> +        fprintf(stderr, "%s:%d: %s: Assertion `%s` failed, value %ld\n",
->>              filename, line, func, assertion, val);
->>      else
->> -        fprintf(stderr, "%s:%d: %s: Assertion failed, value %d.\n",
->> +        fprintf(stderr, "%s:%d: %s: Assertion failed, value %ld.\n",
->>              filename, line, func, val);
->>      print_trace();
->>      abort();
->>      exit(1);
->>  }
->>
->> -#define BUG() assert_trace(NULL, __FILE__, __func__, __LINE__, 0)
->> -#else
->> -#define BUG() assert(0)
->>  #endif
->>
->>  static inline void warning_trace(const char *assertion, const char
->> *filename,
->> -                  const char *func, unsigned line, int val,
->> +                  const char *func, unsigned line, long val,
->>                    int trace)
->>  {
->> -    if (val)
->> +    if (!val)
->>          return;
->>      if (assertion)
->>          fprintf(stderr,
->> -            "%s:%d: %s: Warning: assertion `%s` failed, value %d\n",
->> +            "%s:%d: %s: Warning: assertion `%s` failed, value %ld\n",
->>              filename, line, func, assertion, val);
->>      else
->>          fprintf(stderr,
->> -            "%s:%d: %s: Warning: assertion failed, value %d.\n",
->> +            "%s:%d: %s: Warning: assertion failed, value %ld.\n",
->>              filename, line, func, val);
->>  #ifndef BTRFS_DISABLE_BACKTRACE
->>      if (trace)
->> @@ -299,17 +296,15 @@ static inline long IS_ERR(const void *ptr)
->>  #define vfree(x) free(x)
->>
->>  #ifndef BTRFS_DISABLE_BACKTRACE
->> -#define BUG_ON(c) assert_trace(#c, __FILE__, __func__, __LINE__, !(c))
->> -#define WARN_ON(c) warning_trace(#c, __FILE__, __func__, __LINE__,
->> !(c), 1)
->> +#define BUG_ON(c) assert_trace(#c, __FILE__, __func__, __LINE__,
->> (long)(c))
->> +#define WARN_ON(c) warning_trace(#c, __FILE__, __func__, __LINE__,
->> (long)(c), 1)
->> +#define    ASSERT(c) assert_trace(#c, __FILE__, __func__, __LINE__,
->> (long)!(c))
->> +#define BUG() assert_trace(NULL, __FILE__, __func__, __LINE__, 1)
->>  #else
->>  #define BUG_ON(c) assert(!(c))
->> -#define WARN_ON(c) warning_trace(#c, __FILE__, __func__, __LINE__,
->> !(c), 0)
->> -#endif
->> -
->> -#ifndef BTRFS_DISABLE_BACKTRACE
->> -#define    ASSERT(c) assert_trace(#c, __FILE__, __func__, __LINE__, (c))
->> -#else
->> -#define ASSERT(c) assert(c)
->> +#define WARN_ON(c) warning_trace(#c, __FILE__, __func__, __LINE__,
->> (long)(c), 0)
->> +#define ASSERT(c) assert(!(c))
-
-This should be assert(c), without the not(!)
-
->> +#define BUG() assert(0)
->>  #endif
->>
->>  #define container_of(ptr, type, member) ({                      \
->>
-> 
-> 
+Yes, btrfs balance, but...
 
 -- 
-Goldwyn
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

@@ -1,159 +1,228 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:32397 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751038AbcLEAjQ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 Dec 2016 19:39:16 -0500
-Subject: Re: system hangs due to qgroups
-To: Marc Joliet <marcec@gmx.de>, <linux-btrfs@vger.kernel.org>
-References: <1776088.42rHLKPlSp@thetick>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <5f35cc2d-4c3d-b14c-01f6-4bfb0f22823b@cn.fujitsu.com>
-Date: Mon, 5 Dec 2016 08:39:02 +0800
+Received: from mail-pg0-f46.google.com ([74.125.83.46]:32938 "EHLO
+        mail-pg0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751227AbcLEC2i (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 Dec 2016 21:28:38 -0500
+Received: by mail-pg0-f46.google.com with SMTP id 3so130938335pgd.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 04 Dec 2016 18:28:38 -0800 (PST)
+Received: from [172.27.27.99] (122-59-45-101.jetstream.xtra.co.nz. [122.59.45.101])
+        by smtp.gmail.com with ESMTPSA id a30sm22716830pgd.45.2016.12.04.18.28.34
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Sun, 04 Dec 2016 18:28:36 -0800 (PST)
+To: linux-btrfs@vger.kernel.org
+From: Calle Kabo <calle.kabo@gmail.com>
+Subject: btrfs repair and zero-log doesn't seem to do anything
+Message-ID: <d3fdffb8-b5b5-11a7-1e04-d40c75059be7@gmail.com>
+Date: Mon, 5 Dec 2016 15:28:30 +1300
 MIME-Version: 1.0
-In-Reply-To: <1776088.42rHLKPlSp@thetick>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: multipart/mixed;
+ boundary="------------62280DD6EC2BF19ADC61D16A"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is a multi-part message in MIME format.
+--------------62280DD6EC2BF19ADC61D16A
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 7bit
 
+Hi,
 
-At 12/04/2016 02:40 AM, Marc Joliet wrote:
-> Hello all,
->
-> I'm having some trouble with btrfs on a laptop, possibly due to qgroups.
-> Specifically, some file system activities (e.g., snapshot creation,
-> baloo_file_extractor from KDE Plasma) cause the system to hang for up to about
-> 40 minutes, maybe more.  It always causes (most of) my desktop to hang,
-> (although I can usually navigate between pre-existing Konsole tabs) and
-> prevents new programs from starting.  I've seen the system load go up to >30
-> before the laptop suddenly resumes normal operation.  I've been seeing this
-> since Linux 4.7, maybe already 4.6.
+I've got a Netgear NAS with an encrypted 4 disk RAID5 setup. One of the
+hard drives was emailing me about errors so I swapped it out before it
+died. While syncing another disk died. So I've cloned the disk I
+replaced before it died and managed to get the array running again. You
+can read more about that here:
+https://community.netgear.com/t5/Using-your-ReadyNAS/Re-adding-disk-to-volume/m-p/1179982/highlight/false
 
-Qgroup is CPU intensive operation.
+But now BTRFS won't mount. I'd like to mount it read only so I can move
+the stuff to another drive and then format the NAS into a new array. If
+there's some data loss that's fine, the most important stuff is already
+backed up, but there are a few things that aren't backed up that I find
+it worth the effort of trying to restore if at all possible.
 
-The main problem is the design of btrfs extent tree, which bias towards 
-snapshot creating speed, but quite complicated if used for tracing all 
-referencer (which qgroup heavily relies on it).
+Mandatory information:
+root@MyNAS:~# uname -a
+Linux MyNAS 4.1.30.armada.1 #1 SMP Thu Sep 22 16:39:49 PDT 2016 armv7l
+GNU/Linux
+root@MyNAS:~# btrfs --version
+btrfs-progs v4.7.3
+root@MyNAS:~# btrfs fi show
+Label: '0e35246e:data'  uuid: b6283e48-ebd3-4fdb-8976-b66b1f0868bc
+        Total devices 1 FS bytes used 3.99TiB
+        devid    1 size 8.17TiB used 4.22TiB path /dev/dm-0
 
+Here's what I've done (/dev/mapper/data-0 is symlinked to /dev/dm-0 so
+they're interchangeable):
 
-The main factor affecting qgroup speed, is how many shared extents are 
-in the fs.
-This including reflinked files and snapshot, under most case snapshot is 
-the main part.
+root@MyNAS:~# mount -t btrfs -o ro,recovery,nospace_cache,clear_cache
+/dev/dm-0 /data
+mount: wrong fs type, bad option, bad superblock on /dev/mapper/data-0,
+       missing codepage or helper program, or other error
 
-Unless we find a better solution, to keep both qgroup accurate and fast, 
-I'd recommend to keep qgroup under a reasonable number.
-(Personally speaking, 10 would be good)
+       In some cases useful info is found in syslog - try
+       dmesg | tail or so.
+root@MyNAS:~# dmesg | tail
+[25168.491582] BTRFS info (device dm-0): enabling auto recovery
+[25168.724395] BTRFS (device dm-0): parent transid verify failed on
+2474687627264 wanted 558760 found 558769
+[25168.732497] BTRFS (device dm-0): parent transid verify failed on
+2474687627264 wanted 558760 found 558769
+[25168.734444] BTRFS (device dm-0): parent transid verify failed on
+2474687627264 wanted 558760 found 558769
+[25168.736294] BTRFS (device dm-0): parent transid verify failed on
+2474687627264 wanted 558760 found 558769
+[25169.583328] BTRFS (device dm-0): bad tree block start
+6746185026026631152 3067274493952
+[25169.595978] BTRFS (device dm-0): bad tree block start
+13892978140409233545 3067274493952
+[25169.597777] BTRFS (device dm-0): bad tree block start
+6746185026026631152 3067274493952
+[25169.599472] BTRFS (device dm-0): bad tree block start
+13892978140409233545 3067274493952
+[25169.599516] BTRFS: Failed to read block groups: -5
+[25169.640222] BTRFS: open_ctree failed
 
-Despite the qgroup, relocation(balancing) should also be affected by the 
-number of shared extents.
+root@MyNAS:~# btrfs rescue zero-log /dev/mapper/data-0
+parent transid verify failed on 2474648240128 wanted 558760 found 558765
+parent transid verify failed on 2474648240128 wanted 558760 found 558765
+parent transid verify failed on 2474648240128 wanted 558760 found 558765
+parent transid verify failed on 2474648240128 wanted 558760 found 558765
+Ignoring transid failure
+parent transid verify failed on 2474688413696 wanted 558760 found 558769
+parent transid verify failed on 2474688413696 wanted 558760 found 558769
+parent transid verify failed on 2474688413696 wanted 558760 found 558769
+parent transid verify failed on 2474688413696 wanted 558760 found 558769
+Ignoring transid failure
+parent transid verify failed on 2474691854336 wanted 558765 found 558758
+parent transid verify failed on 2474691854336 wanted 558765 found 558758
+parent transid verify failed on 2474691854336 wanted 558765 found 558758
+parent transid verify failed on 2474691854336 wanted 558765 found 558758
+Ignoring transid failure
+leaf parent key incorrect 2474691854336
+Clearing log on /dev/mapper/data-0, previous log_root 0, level 0
+Unable to find block group for 0
+extent-tree.c:289: find_search_start: Assertion `1` failed.
 
->
-> Now, I thought that maybe this was (indirectly) due to an overly full file
-> system (~90% full), so I deleted some things I didn't need to get it up to 15%
-> free.  (For the record, I also tried mounting with ssd_spread.)  After that, I
-> ran a balance with -dusage=50, which started out promising, but then went back
-> to the "bad" behaviour.  *But* it seemed better than before overall, so I
-> started a balance with -musage=10, then -musage=50.  That turned out to be a
-> mistake.  Since I had to transport the laptop, and couldn't wait for "balance
-> cancel" to return (IIUC it only returns after the next block (group?) is
-> freed), I forced the laptop off.
->
-> After I next turned on the laptop, the balance resumed, causing bootup to
-> fail, after which I remembered about the skip_balance mount option, which I
-> tried in a rescue shell from an initramfs.  But wait, that failed, too!
-> Specifically, the stack trace I get whenever I try it includes as one of the
-> last lines:
->
-> "RIP [<ffffffff8131226f>] qgroup_fix_relocated_data_extents+0x1f/0x2a8"
+The output of btrfs check --repair /dev/mapper/data-0 is attached.
 
-This seems to be a NULL pointer bug in qgroup relocation fix.
+What should I do next? Run --init-csum-tree? btrfs restore to a USB
+drive? Any help much appreciated.
 
-The latest fix (not merged yet) should address it.
+/Calle
 
-You could try the for-next-20161125 branch from David to fix it:
-https://github.com/kdave/btrfs-devel/tree/for-next-20161125
+--------------62280DD6EC2BF19ADC61D16A
+Content-Type: text/x-log;
+ name="btrfsrepair.log"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment;
+ filename="btrfsrepair.log"
 
->
-> (I can take photos of the full stack trace if requested.)
->
-> So then I ran "btrfs qgroup show /sysroot/", which showed many quota groups,
-> much to my surprise.  On the upside, at least now I discovered the likely
-> reason for the performance problems.
+parent transid verify failed on 2474648240128 wanted 558760 found 558765
+parent transid verify failed on 2474648240128 wanted 558760 found 558765
+parent transid verify failed on 2474648240128 wanted 558760 found 558765
+parent transid verify failed on 2474648240128 wanted 558760 found 558765
+Ignoring transid failure
+parent transid verify failed on 2474688413696 wanted 558760 found 558769
+parent transid verify failed on 2474688413696 wanted 558760 found 558769
+parent transid verify failed on 2474688413696 wanted 558760 found 558769
+parent transid verify failed on 2474688413696 wanted 558760 found 558769
+Ignoring transid failure
+parent transid verify failed on 2474691854336 wanted 558765 found 558758
+parent transid verify failed on 2474691854336 wanted 558765 found 558758
+parent transid verify failed on 2474691854336 wanted 558765 found 558758
+parent transid verify failed on 2474691854336 wanted 558765 found 558758
+Ignoring transid failure
+leaf parent key incorrect 2474691854336
+checking extents
+parent transid verify failed on 2474682548224 wanted 558760 found 558769
+parent transid verify failed on 2474682548224 wanted 558760 found 558769
+parent transid verify failed on 2474682548224 wanted 558760 found 558769
+parent transid verify failed on 2474682548224 wanted 558760 found 558769
+Ignoring transid failure
+parent transid verify failed on 2474721148928 wanted 558758 found 558769
+parent transid verify failed on 2474721148928 wanted 558758 found 558769
+parent transid verify failed on 2474721148928 wanted 558758 found 558769
+parent transid verify failed on 2474721148928 wanted 558758 found 558769
+Ignoring transid failure
+checksum verify failed on 2474683826176 found A7762F46 wanted 1C12DF79
+checksum verify failed on 2474683826176 found A7762F46 wanted 1C12DF79
+checksum verify failed on 2474683826176 found 7B09FD0A wanted 6F493491
+checksum verify failed on 2474683826176 found 7B09FD0A wanted 6F493491
+bytenr mismatch, want=2474683826176, have=13830340915957161993
+parent transid verify failed on 2474648338432 wanted 558765 found 558760
+parent transid verify failed on 2474648338432 wanted 558765 found 558760
+parent transid verify failed on 2474648338432 wanted 558765 found 558760
+parent transid verify failed on 2474648338432 wanted 558765 found 558760
+Ignoring transid failure
+parent transid verify failed on 2474648338432 wanted 558765 found 558760
+Ignoring transid failure
+parent transid verify failed on 2474648338432 wanted 558765 found 558760
+Ignoring transid failure
+parent transid verify failed on 2474648338432 wanted 558765 found 558760
+Ignoring transid failure
+parent transid verify failed on 2474648338432 wanted 558765 found 558760
+Ignoring transid failure
+parent transid verify failed on 2474648338432 wanted 558765 found 558760
+Ignoring transid failure
+parent transid verify failed on 2474648338432 wanted 558765 found 558760
+Ignoring transid failure
+parent transid verify failed on 2474648338432 wanted 558765 found 558760
+Ignoring transid failure
+parent transid verify failed on 2474648338432 wanted 558765 found 558760
+Ignoring transid failure
+parent transid verify failed on 2474648338432 wanted 558765 found 558760
+Ignoring transid failure
+parent transid verify failed on 2474648338432 wanted 558765 found 558760
+Ignoring transid failure
+parent transid verify failed on 2474648338432 wanted 558765 found 558760
+Ignoring transid failure
+parent transid verify failed on 2474648338432 wanted 558765 found 558760
+Ignoring transid failure
+parent transid verify failed on 2474648338432 wanted 558765 found 558760
+Ignoring transid failure
+parent transid verify failed on 2474648338432 wanted 558765 found 558760
+Ignoring transid failure
+parent transid verify failed on 2474648338432 wanted 558765 found 558760
+Ignoring transid failure
+parent transid verify failed on 2474648338432 wanted 558765 found 558760
+Ignoring transid failure
+parent transid verify failed on 2474648338432 wanted 558765 found 558760
+Ignoring transid failure
+parent transid verify failed on 2474648338432 wanted 558765 found 558760
+Ignoring transid failure
+parent transid verify failed on 2474682548224 wanted 558760 found 558769
+Ignoring transid failure
+parent transid verify failed on 2474648338432 wanted 558765 found 558760
+Ignoring transid failure
+leaf parent key incorrect 2474682548224
+bad block 2474682548224
+Errors found in extent allocation tree or chunk allocation
+parent transid verify failed on 2474691854336 wanted 558765 found 558758
+Ignoring transid failure
+leaf parent key incorrect 2474691854336
+extent buffer leak: start 2474648240128 len 32768
+extent buffer leak: start 2474648240128 len 32768
+extent buffer leak: start 2474648240128 len 32768
+extent buffer leak: start 2474648240128 len 32768
+extent buffer leak: start 2474648240128 len 32768
+extent buffer leak: start 2474648240128 len 32768
+extent buffer leak: start 2474648240128 len 32768
+extent buffer leak: start 2474648240128 len 32768
+extent buffer leak: start 2474648240128 len 32768
+extent buffer leak: start 2474648240128 len 32768
+extent buffer leak: start 2474648240128 len 32768
+extent buffer leak: start 2474648240128 len 32768
+extent buffer leak: start 2474648240128 len 32768
+extent buffer leak: start 2474648240128 len 32768
+extent buffer leak: start 2474648240128 len 32768
+extent buffer leak: start 2474648240128 len 32768
+extent buffer leak: start 2474648240128 len 32768
+extent buffer leak: start 2474648240128 len 32768
+extent buffer leak: start 2474648240128 len 32768
+extent buffer leak: start 2474648240128 len 32768
+enabling repair mode
+Checking filesystem on /dev/mapper/data-0
+UUID: b6283e48-ebd3-4fdb-8976-b66b1f0868bc
 
-So, the number of qgroups is the cause for the slowness.
-
->
-> (I actually think I know why I'm seeing qgroups: at one point I was trying out
-> various snapshot/backup tools for btrfs, and one (I forgot which)
-> unconditionally activated quota support, which infuriated me, but I promptly
-> deactivated it, or so I thought.  Is quota support automatically enabled when
-> qgroups are discovered, or did I perhaps not disable quota support properly?)
-
-Qgroup will always be enabled after "btrfs quota enable", and until 
-"btrfs quota disable" to disable it.
-
-No method to temporarily disable quota, since quota must trace any 
-modification, or qgroup number will be out of true.
-
-So, one should manually disable quota.
-(And that's the backup tool to blame, it should either info user or 
-disable qgroup on uninstallation)
-
->
-> Since I couldn't use skip_balance, and logically can't destroy qgroups on a
-> read-only file system, I decided to wait for a regular mount to finish.  That
-> has been running since Tuesday, and I am slowly growing impatient.
->
-> Thus I arrive at my question(s): is there anything else I can try, short of
-> reformatting and restoring from backup?  Can I use btrfs-check here, or any
-> other tool?  Or...?
->
-> Also, should I be able to avoid reformatting: how do I properly disable quota
-> support?
-
-"btrfs quota disable <mnt>", yes you need RW mount.
-Any RW mountable snapshot/subvolume is OK.
-
->
-> (BTW, searching for qgroup_fix_relocated_data_extents turned up the ML thread
-> "[PATCH] Btrfs: fix endless loop in balancing block groups", could that be
-> related?)
-
-Nope, the actual fixing patches are:
-[PATCH 1/4] btrfs: qgroup: Add comments explaining how btrfs qgroup works
-[PATCH 2/4] btrfs: qgroup: Rename functions to make it follow 
-reserve,trace,account steps
-[PATCH 3/4] btrfs: Expoert and move leaf/subtree qgroup helpers to qgroup.c
-[PATCH 4/4] btrfs: qgroup: Fix qgroup data leaking by using subtree tracing
-
-
-The 4th patch is the real working one, but relies on previous 3 to apply.
-
-The regression is also caused by my patch:
-[PATCH v3.1 2/3] btrfs: relocation: Fix leaking qgroups numbers on data 
-extents
-
-Sorry for the trouble.
-
-
-And for your recovery, I'd suggest to install an Archlinux into a USB 
-HDD or USB stick, and compile David's branch and install it into the USB 
-HDD.
-
-Then use the USB storage as rescue tool to mount the fs, which should do 
-RW mount with or without skip_balance mount option.
-So you could disable quota then.
-
-Thanks,
-Qu
-
-
->
-> The laptop is currently running Gentoo with Linux 4.8.10 and btrfs-progs
-> 4.8.4.
->
-> Greetings
->
-
-
+--------------62280DD6EC2BF19ADC61D16A--

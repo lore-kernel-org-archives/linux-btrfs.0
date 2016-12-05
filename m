@@ -1,80 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:50228 "EHLO
+Received: from [195.159.176.226] ([195.159.176.226]:50568 "EHLO
         blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751075AbcLECcm (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 Dec 2016 21:32:42 -0500
+        with ESMTP id S1751120AbcLECwM (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 Dec 2016 21:52:12 -0500
 Received: from list by blaine.gmane.org with local (Exim 4.84_2)
         (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1cDj51-0005Nv-BS
-        for linux-btrfs@vger.kernel.org; Mon, 05 Dec 2016 03:32:35 +0100
+        id 1cDjNs-0005bf-NG
+        for linux-btrfs@vger.kernel.org; Mon, 05 Dec 2016 03:52:04 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: system hangs due to qgroups
-Date: Mon, 5 Dec 2016 02:32:27 +0000 (UTC)
-Message-ID: <pan$8ca94$cc30e15b$935bf922$c3b45b75@cox.net>
-References: <1776088.42rHLKPlSp@thetick> <3405186.JXS0fWUK5s@thetick>
-        <pan$69035$81ae24e2$d7110ac$22963947@cox.net> <5831203.ygVuIMpfzH@thetick>
+Subject: Re: btrfs fi du is unreliable
+Date: Mon, 5 Dec 2016 02:51:45 +0000 (UTC)
+Message-ID: <pan$9f9e6$dc770aea$b355d690$762e1ab2@cox.net>
+References: <CAJCQCtQcz6W-UD5eDAiWG1QJk3tSF7boN2haG_Du=PD_U6rx1g@mail.gmail.com>
+        <CAPmG0jbMMBvY4pFm4D0AYi=QqGsiskVq4aE=bX3JtK_fUkcvFw@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Marc Joliet posted on Sun, 04 Dec 2016 20:20:51 +0100 as excerpted:
+Henk Slager posted on Sun, 04 Dec 2016 23:17:23 +0100 as excerpted:
 
-> On Sunday 04 December 2016 18:24:08 Duncan wrote:
->> Marc Joliet posted on Sun, 04 Dec 2016 17:02:48 +0100 as excerpted:
+> There are no btrfs changes between kernels 4.8.10 and 4.8.11. There is
+> no compress mount option in my case, that is the only thing I currently
+> can think of that could make your Set shared number non-zero.
 
->> > [After trying it]
->> > 
->> > Well, crap, I was able to get images of the file system (one
->> > sanitized),
->> > but mounting always fails with "device or resource busy" (with no
->> > corresponding dmesg output).  (Also, that drive's partitions weren't
->> > discovered on bootup, I had to run partprobe first.)  I never see
->> > that in the initramfs, so I'm not sure what's causing that.
->> 
->> If I understand correctly what you're doing, that part is easily enough
->> explained.
->> 
->> Remember that btrfs, unlike most filesystems, is multi-device capable.
->> The way it tracks which devices belong to which filesystems is by UUID,
->> universally *UNIQUE* ID.  If you image a device via dd or similar, you
->> of course image its UUID as well, destroying the "unique" assumption in
->> UUID and confusing btrfs, which will consider it part of the existing
->> filesystem if the original devices with that filesystem UUID remain
->> hooked up.
->> 
->> So if you did what I believe you did, try to mount the image while the
->> original filesystem devices remain attached and mounted, btrfs is
->> simply saying that filesystem (which btrfs identifies by UUID) is
->> already mounted: "device or resource busy".
-> [...]
-> 
-> Nope, sorry if I wasn't clear, I didn't mean that I tried to mount the
-> image (can you even mount images created with btrfs-image?).  Plus the
-> images are xz-compressed.
+Compression... might actually explain what I'm seeing here, even if it 
+doesn't explain Chris Murphy's issue.
 
-Namespace collision.
+I don't do subvolumes or snapshots here, and I've not, knowingly at 
+least, setup any reflinked files, so I expected my btrfs fi du's to all 
+show 0 bytes shared.
 
-I interpreted "image" as referring to an "image" taken with dd or 
-similar, which as I explained naturally copies the filesystem UUID as 
-well, and if both that dd-created image and the original filesystem are 
-visible to btrfs at the same time, bad things happen because btrfs 
-considers them part of the same filesystem.
+And / shows exactly that, 0 bytes shared, but /home (/h here) shows a 
+shared count in the /summary/ while a grep -v ' -  /h' of the full output 
+only outputs the summary line, no actual file listing as shared.
 
-And if you tried to mount /that/ image while the original filesystem was 
-already mounted, you /might/ get a busy error as it could think it was 
-already mounted.  (And you'd be lucky if so, because it just might save 
-you serious corruption, tho corruption might still happen due to btrfs 
-writing to the image instead of the mounted original filesystem.)
+(As my admin user so I can sudo w/o password, $$ indicates a command 
+line.  Again, /home is a symlink to /h here, /h is thus the actual 
+mountpoint for /home, an entirely separate btrfs, not a subvolume.)
 
-I wasn't considering trying to mount the btrfs-created metadata images...
+$$ sudo btrfs fi du -s /
+     Total   Exclusive  Set shared  Filename
+   2.94GiB     2.94GiB       0.00B  /
 
-Anyway, as long as you weren't trying to mount or work with the dd-
-created image at the same time as the original was mounted, you should be 
-good.  Just remove one (or don't create the loopback device out of the 
-image file so it's not exposed as a device that btrfs can see) before 
-trying to mount the other and you should be good.
+$$ sudo btrfs fi du -s /h
+     Total   Exclusive  Set shared  Filename
+  16.16GiB    16.16GiB    32.00KiB  /h
+
+$$ sudo btrfs fi du /h | grep -v ' -  /h' 
+     Total   Exclusive  Set shared  Filename
+  16.16GiB    16.16GiB    32.00KiB  /h
+
+But I do use compress=lzo on both filesystems.  If compression accounts 
+for the shared, however, I wonder why / isn't showing any shared, since 
+it's mounted with compress=lzo as well.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

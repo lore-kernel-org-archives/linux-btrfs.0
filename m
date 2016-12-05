@@ -1,138 +1,127 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f193.google.com ([209.85.220.193]:35330 "EHLO
-        mail-qk0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754155AbcL0RTM (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Dec 2016 12:19:12 -0500
-Received: by mail-qk0-f193.google.com with SMTP id u25so28927230qki.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Dec 2016 09:19:11 -0800 (PST)
-Message-ID: <1482859147.2771.5.camel@poochiereds.net>
-Subject: LSF/MM 2017: Call for Proposals
-From: Jeff Layton <jlayton@poochiereds.net>
-To: linux-block@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-cifs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org, linux-ide@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-mm@kvack.org,
-        linux-nfs@vger.kernel.org, linux-scsi@vger.kernel.org,
-        "xfs@oss.sgi.com" <xfs@oss.sgi.com>, ceph-devel@vger.kernel.org,
-        linux-nvme@lists.infradead.org
-Cc: "lsf-pc@lists.linux-foundation.org"
-        <lsf-pc@lists.linux-foundation.org>
-Date: Tue, 27 Dec 2016 12:19:07 -0500
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+Received: from mail-wm0-f42.google.com ([74.125.82.42]:36845 "EHLO
+        mail-wm0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751443AbcLERKR (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Dec 2016 12:10:17 -0500
+MIME-Version: 1.0
+In-Reply-To: <CAOMGZ=EsaGs9B3jc5X+3Sa1vyBfBW6AznYy3JR1=6iJMgCgG0g@mail.gmail.com>
+References: <CA+55aFyiJGk-A_cJH41Ec8Xj0Zz9M3EU-igJ9bgusj=nm28tFQ@mail.gmail.com>
+ <2bdc068d-afd5-7a78-f334-26970c91aaca@fb.com> <CA+55aFxqRCEVxocpZVDMqinP=EsmgzcnvWpOT6x8NMmcBpWb2Q@mail.gmail.com>
+ <203e0319-bc9b-245c-e162-709267540d22@fb.com> <20161026233808.GC15247@clm-mbp.thefacebook.com>
+ <20161026234751.e66xyzjiwifvbuha@codemonkey.org.uk> <20161031185514.b22zvbxvga4xcinz@codemonkey.org.uk>
+ <CA+55aFwUBYzPcbecpHw9=f8h_JuX18x5bE=Kd_k9QkCcgoiBsA@mail.gmail.com>
+ <20161031194454.GA49877@clm-mbp.thefacebook.com> <20161123193419.pq7adje2eanky2wx@codemonkey.org.uk>
+ <20161123195845.iphzr7ac4mu5ewjt@codemonkey.org.uk> <CAOMGZ=HPUoVZ8_yBLsMUHLigvKadKwBio-8gJ5-WM+2Fe4BZ6A@mail.gmail.com>
+ <CAOMGZ=EsaGs9B3jc5X+3Sa1vyBfBW6AznYy3JR1=6iJMgCgG0g@mail.gmail.com>
+From: Vegard Nossum <vegard.nossum@gmail.com>
+Date: Mon, 5 Dec 2016 18:09:29 +0100
+Message-ID: <CAOMGZ=HfdHLXrRCbzvXcQTgfA-PAErtwZQfPzFr4P8H0MJWZ5g@mail.gmail.com>
+Subject: Re: bio linked list corruption.
+To: Dave Jones <davej@codemonkey.org.uk>, Chris Mason <clm@fb.com>,
+        Linus Torvalds <torvalds@linux-foundation.org>,
+        Jens Axboe <axboe@fb.com>, Andy Lutomirski <luto@amacapital.net>,
+        Andy Lutomirski <luto@kernel.org>, Al Viro <viro@zeniv.linux.org.uk>,
+        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Linux Kernel <linux-kernel@vger.kernel.org>,
+        Dave Chinner <david@fromorbit.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We initially sent this pretty early this year, so this is a resend in           
-case anyone missed the first posting. The call for topics and attendance        
-requests is open until January 15th, 2017.
+On 5 December 2016 at 12:10, Vegard Nossum <vegard.nossum@gmail.com> wrote:
+> On 5 December 2016 at 00:04, Vegard Nossum <vegard.nossum@gmail.com> wrote:
+>> FWIW I hit this as well:
+>>
+>> BUG: unable to handle kernel paging request at ffffffff81ff08b7
+>> IP: [<ffffffff8135f2ea>] __lock_acquire.isra.32+0xda/0x1a30
+>> CPU: 0 PID: 21744 Comm: trinity-c56 Tainted: G    B           4.9.0-rc7+ #217
+> [...]
+>
+>> I think you can rule out btrfs in any case, probably block layer as
+>> well, since it looks like this comes from shmem.
+>
+> I should rather say that the VM runs on a 9p root filesystem and it
+> doesn't use/mount any block devices or disk-based filesystems.
+>
+> I have all the trinity logs for the crash if that's useful. I tried a
+> couple of runs with just the (at the time) in-progress syscalls but it
+> didn't turn up anything interesting. Otherwise it seems like a lot of
+> data to go through by hand.
 
-The original message follows:
+I've hit this another 7 times in the past ~3 hours.
 
-----------------------8<------------------------
+Three times the address being dereferenced has pointed to
+iov_iter_init+0xaf (even across a kernel rebuild), three times it has
+pointed to put_prev_entity+0x55, once to 0x800000008, and twice to
+0x292. The fact that it would hit even one of those more than once
+across runs is pretty suspicious to me, although the ones that point
+to iov_iter_init and put_prev_entity point to "random" instructions in
+the sense that they are neither entry points nor return addresses.
 
-The annual Linux Storage, Filesystem and Memory Management (LSF/MM)
-Summit for 2017 will be held on March 20th and 21st at the Hyatt
-Cambridge, Cambridge, MA. LSF/MM is an invitation-only technical
-workshop to map out improvements to the Linux storage, filesystem and
-memory management subsystems that will make their way into the mainline
-kernel within the coming years.
+shmem_fault() was always on the stack, but it came from different
+syscalls: add_key(), newuname(), pipe2(), newstat(), fstat(),
+clock_settime(), mount(), etc.
 
-    http://events.linuxfoundation.org/events/linux-storage-filesystem-and-mm-summit
+I also got this warning which is related:
 
-Like last year, LSF/MM will be colocated with the Linux Foundation Vault
-conference which takes place on March 22nd and 23rd in the same Venue.
-For those that do not know, Vault is designed to be an event where open
-source storage and filesystem practitioners meet storage implementors
-and, as such, it would be of benefit for LSF/MM attendees to attend.
+------------[ cut here ]------------
+WARNING: CPU: 9 PID: 25045 at lib/list_debug.c:59 __list_del_entry+0x14f/0x1d0
+list_del corruption. prev->next should be ffff88014bdc79e8, but was
+ffff88014bfbfc60
+Kernel panic - not syncing: panic_on_warn set ...
 
-Unlike past years, Vault admission is not free for LSF/MM attendees this
-year unless they're giving a talk. There is a discount for LSF/MM
-attendees, however we would also like to encourage folks to submit talk
-proposals to speak at the Vault conference.
+CPU: 9 PID: 25045 Comm: trinity-c22 Not tainted 4.9.0-rc7+ #219
+Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS
+Ubuntu-1.8.2-1ubuntu1 04/01/2014
+ffff88014bdc7700 ffffffff81fb0861 ffffffff83e74b60 ffff88014bdc77d8
+ffffffff84006c00 ffffffff847103e0 ffff88014bdc77c8 ffffffff81515244
+0000000041b58ab3 ffffffff844e21c2 ffffffff81515061 ffffffff00000054
+Call Trace:
+[<ffffffff81fb0861>] dump_stack+0x83/0xb2
+[<ffffffff81515244>] panic+0x1e3/0x3ad
+[<ffffffff81515061>] ? percpu_up_read_preempt_enable.constprop.45+0xcb/0xcb
+[<ffffffff82016f7f>] ? __list_del_entry+0x14f/0x1d0
+[<ffffffff812708bf>] __warn+0x1bf/0x1e0
+[<ffffffff8135f2d2>] ? __lock_acquire.isra.32+0xc2/0x1a30
+[<ffffffff8127098c>] warn_slowpath_fmt+0xac/0xd0
+[<ffffffff812708e0>] ? __warn+0x1e0/0x1e0
+[<ffffffff813530c0>] ? finish_wait+0xb0/0x180
+[<ffffffff82016f7f>] __list_del_entry+0x14f/0x1d0
+[<ffffffff813530c0>] ? finish_wait+0xb0/0x180
+[<ffffffff813530cb>] finish_wait+0xbb/0x180
+[<ffffffff81576227>] shmem_fault+0x4c7/0x6b0
+[<ffffffff81574743>] ? shmem_getpage_gfp+0x673/0x1c90
+[<ffffffff81575d60>] ? shmem_getpage_gfp+0x1c90/0x1c90
+[<ffffffff81352150>] ? wake_atomic_t_function+0x210/0x210
+[<ffffffff815ad316>] __do_fault+0x206/0x410
+[<ffffffff815ad110>] ? do_page_mkwrite+0x320/0x320
+[<ffffffff815b80ac>] ? handle_mm_fault+0x1cc/0x2a60
+[<ffffffff815b8fd7>] handle_mm_fault+0x10f7/0x2a60
+[<ffffffff815b8012>] ? handle_mm_fault+0x132/0x2a60
+[<ffffffff81310a7f>] ? thread_group_cputime+0x49f/0x6e0
+[<ffffffff815b7ee0>] ? __pmd_alloc+0x370/0x370
+[<ffffffff81310a9c>] ? thread_group_cputime+0x4bc/0x6e0
+[<ffffffff81310d2d>] ? thread_group_cputime_adjusted+0x6d/0xe0
+[<ffffffff81237170>] ? __do_page_fault+0x220/0x9f0
+[<ffffffff815cba10>] ? find_vma+0x30/0x150
+[<ffffffff812373a2>] __do_page_fault+0x452/0x9f0
+[<ffffffff81237bf5>] trace_do_page_fault+0x1e5/0x3a0
+[<ffffffff8122a007>] do_async_page_fault+0x27/0xa0
+[<ffffffff83c97618>] async_page_fault+0x28/0x30
+[<ffffffff81fdec7c>] ? copy_user_generic_string+0x2c/0x40
+[<ffffffff812b0303>] ? SyS_times+0x93/0x110
+[<ffffffff812b0270>] ? do_sys_times+0x2b0/0x2b0
+[<ffffffff812b0270>] ? do_sys_times+0x2b0/0x2b0
+[<ffffffff8100524f>] do_syscall_64+0x1af/0x4d0
+[<ffffffff83c96534>] entry_SYSCALL64_slow_path+0x25/0x25
+------------[ cut here ]------------
 
-    http://events.linuxfoundation.org/events/vault
+The warning shows that it made it past the list_empty_careful() check
+in finish_wait() but then bugs out on the &wait->task_list
+dereference.
 
-On behalf of the committee I am issuing a call for agenda proposals that
-are suitable for cross-track discussion as well as technical subjects
-for the breakout sessions.
+Anything stick out?
 
-If advance notice is required for visa applications then please point
-that out in your proposal or request to attend, and submit the topic
-as soon as possible.
 
-1) Proposals for agenda topics should be sent before January 15th, 2016
-to:
-
-    lsf-pc@lists.linux-foundation.org
-
-and cc the Linux list or lists that are relevant for the topic in
-question:
-
-    ATA:   linux-ide@vger.kernel.org
-    Block: linux-block@vger.kernel.org
-    FS:    linux-fsdevel@vger.kernel.org
-    MM:    linux-mm@kvack.org
-    SCSI:  linux-scsi@vger.kernel.org
-    NVMe:  linux-nvme@lists.infradead.org
-
-Please tag your proposal with [LSF/MM TOPIC] to make it easier to track.
-In addition, please make sure to start a new thread for each topic
-rather than following up to an existing one.  Agenda topics and
-attendees will be selected by the program committee, but the final
-agenda will be formed by consensus of the attendees on the day.
-
-2) Requests to attend the summit for those that are not proposing a
-topic should be sent to:
-
-    lsf-pc@lists.linux-foundation.org
-
-Please summarise what expertise you will bring to the meeting, and what
-you would like to discuss. Please also tag your email with [LSF/MM
-ATTEND] and send it as a new thread so there is less chance of it
-getting lost.
-
-We will try to cap attendance at around 25-30 per track to facilitate
-discussions although the final numbers will depend on the room sizes at
-the venue.
-
-Brief presentations are allowed to guide discussion, but are strongly
-discouraged. There will be no recording or audio bridge. However, we
-expect that written minutes will be published as we did in previous
-years:
-
-2016: https://lwn.net/Articles/lsfmm2016/
-
-2015: https://lwn.net/Articles/lsfmm2015/
-
-2014: http://lwn.net/Articles/LSFMM2014/
-
-2013: http://lwn.net/Articles/548089/
-
-3) If you have feedback on last year's meeting that we can use to
-improve this year's, please also send that to:
-
-    lsf-pc@lists.linux-foundation.org
-
-Thank you on behalf of the program committee:
-
-Storage:
-    James Bottomley
-    Martin K. Petersen (track chair)
-    Sagi Grimberg
-
-Filesystems:
-    Anna Schumaker
-    Chris Mason
-    Eric Sandeen
-    Jan Kara
-    Jeff Layton (summit chair)
-    Josef Bacik (track chair)
-    Trond Myklebust
-
-MM:
-    Johannes Weiner
-    Rik van Riel (track chair)
--- 
-Jeff Layton <jlayton@poochiereds.net>
+Vegard

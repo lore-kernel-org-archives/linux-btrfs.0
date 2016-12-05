@@ -1,63 +1,134 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:50568 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751120AbcLECwM (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 Dec 2016 21:52:12 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1cDjNs-0005bf-NG
-        for linux-btrfs@vger.kernel.org; Mon, 05 Dec 2016 03:52:04 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs fi du is unreliable
-Date: Mon, 5 Dec 2016 02:51:45 +0000 (UTC)
-Message-ID: <pan$9f9e6$dc770aea$b355d690$762e1ab2@cox.net>
-References: <CAJCQCtQcz6W-UD5eDAiWG1QJk3tSF7boN2haG_Du=PD_U6rx1g@mail.gmail.com>
-        <CAPmG0jbMMBvY4pFm4D0AYi=QqGsiskVq4aE=bX3JtK_fUkcvFw@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from cn.fujitsu.com ([59.151.112.132]:7507 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751120AbcLEDQg (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 Dec 2016 22:16:36 -0500
+Subject: Re: btrfs repair and zero-log doesn't seem to do anything
+To: Calle Kabo <calle.kabo@gmail.com>, <linux-btrfs@vger.kernel.org>
+References: <d3fdffb8-b5b5-11a7-1e04-d40c75059be7@gmail.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <4fe6af11-a137-04ab-2714-5c6dc013bc06@cn.fujitsu.com>
+Date: Mon, 5 Dec 2016 11:16:22 +0800
+MIME-Version: 1.0
+In-Reply-To: <d3fdffb8-b5b5-11a7-1e04-d40c75059be7@gmail.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Henk Slager posted on Sun, 04 Dec 2016 23:17:23 +0100 as excerpted:
 
-> There are no btrfs changes between kernels 4.8.10 and 4.8.11. There is
-> no compress mount option in my case, that is the only thing I currently
-> can think of that could make your Set shared number non-zero.
 
-Compression... might actually explain what I'm seeing here, even if it 
-doesn't explain Chris Murphy's issue.
+At 12/05/2016 10:28 AM, Calle Kabo wrote:
+> Hi,
+>
+> I've got a Netgear NAS with an encrypted 4 disk RAID5 setup. One of the
+> hard drives was emailing me about errors so I swapped it out before it
+> died. While syncing another disk died. So I've cloned the disk I
+> replaced before it died and managed to get the array running again. You
+> can read more about that here:
+> https://community.netgear.com/t5/Using-your-ReadyNAS/Re-adding-disk-to-volume/m-p/1179982/highlight/false
+>
+> But now BTRFS won't mount. I'd like to mount it read only so I can move
+> the stuff to another drive and then format the NAS into a new array. If
+> there's some data loss that's fine, the most important stuff is already
+> backed up, but there are a few things that aren't backed up that I find
+> it worth the effort of trying to restore if at all possible.
+>
+> Mandatory information:
+> root@MyNAS:~# uname -a
+> Linux MyNAS 4.1.30.armada.1 #1 SMP Thu Sep 22 16:39:49 PDT 2016 armv7l
+> GNU/Linux
+> root@MyNAS:~# btrfs --version
+> btrfs-progs v4.7.3
+> root@MyNAS:~# btrfs fi show
+> Label: '0e35246e:data'  uuid: b6283e48-ebd3-4fdb-8976-b66b1f0868bc
+>         Total devices 1 FS bytes used 3.99TiB
+>         devid    1 size 8.17TiB used 4.22TiB path /dev/dm-0
+>
+> Here's what I've done (/dev/mapper/data-0 is symlinked to /dev/dm-0 so
+> they're interchangeable):
+>
+> root@MyNAS:~# mount -t btrfs -o ro,recovery,nospace_cache,clear_cache
+> /dev/dm-0 /data
+> mount: wrong fs type, bad option, bad superblock on /dev/mapper/data-0,
+>        missing codepage or helper program, or other error
+>
+>        In some cases useful info is found in syslog - try
+>        dmesg | tail or so.
+> root@MyNAS:~# dmesg | tail
+> [25168.491582] BTRFS info (device dm-0): enabling auto recovery
+> [25168.724395] BTRFS (device dm-0): parent transid verify failed on
+> 2474687627264 wanted 558760 found 558769
+> [25168.732497] BTRFS (device dm-0): parent transid verify failed on
+> 2474687627264 wanted 558760 found 558769
+> [25168.734444] BTRFS (device dm-0): parent transid verify failed on
+> 2474687627264 wanted 558760 found 558769
+> [25168.736294] BTRFS (device dm-0): parent transid verify failed on
+> 2474687627264 wanted 558760 found 558769
+> [25169.583328] BTRFS (device dm-0): bad tree block start
+> 6746185026026631152 3067274493952
+> [25169.595978] BTRFS (device dm-0): bad tree block start
+> 13892978140409233545 3067274493952
+> [25169.597777] BTRFS (device dm-0): bad tree block start
+> 6746185026026631152 3067274493952
+> [25169.599472] BTRFS (device dm-0): bad tree block start
+> 13892978140409233545 3067274493952
+> [25169.599516] BTRFS: Failed to read block groups: -5
+> [25169.640222] BTRFS: open_ctree failed
 
-I don't do subvolumes or snapshots here, and I've not, knowingly at 
-least, setup any reflinked files, so I expected my btrfs fi du's to all 
-show 0 bytes shared.
+According to the fsck report, extent tree seems to be corrupted heavily.
+A lot of transid error and bad tree blocks.
 
-And / shows exactly that, 0 bytes shared, but /home (/h here) shows a 
-shared count in the /summary/ while a grep -v ' -  /h' of the full output 
-only outputs the summary line, no actual file listing as shared.
+No wonder kernel refuses to mount it.
 
-(As my admin user so I can sudo w/o password, $$ indicates a command 
-line.  Again, /home is a symlink to /h here, /h is thus the actual 
-mountpoint for /home, an entirely separate btrfs, not a subvolume.)
+>
+> root@MyNAS:~# btrfs rescue zero-log /dev/mapper/data-0
+> parent transid verify failed on 2474648240128 wanted 558760 found 558765
+> parent transid verify failed on 2474648240128 wanted 558760 found 558765
+> parent transid verify failed on 2474648240128 wanted 558760 found 558765
+> parent transid verify failed on 2474648240128 wanted 558760 found 558765
+> Ignoring transid failure
+> parent transid verify failed on 2474688413696 wanted 558760 found 558769
+> parent transid verify failed on 2474688413696 wanted 558760 found 558769
+> parent transid verify failed on 2474688413696 wanted 558760 found 558769
+> parent transid verify failed on 2474688413696 wanted 558760 found 558769
+> Ignoring transid failure
+> parent transid verify failed on 2474691854336 wanted 558765 found 558758
+> parent transid verify failed on 2474691854336 wanted 558765 found 558758
+> parent transid verify failed on 2474691854336 wanted 558765 found 558758
+> parent transid verify failed on 2474691854336 wanted 558765 found 558758
+> Ignoring transid failure
+> leaf parent key incorrect 2474691854336
+> Clearing log on /dev/mapper/data-0, previous log_root 0, level 0
+> Unable to find block group for 0
+> extent-tree.c:289: find_search_start: Assertion `1` failed.
 
-$$ sudo btrfs fi du -s /
-     Total   Exclusive  Set shared  Filename
-   2.94GiB     2.94GiB       0.00B  /
+Zero log won't help on such heavily damaged fs.
 
-$$ sudo btrfs fi du -s /h
-     Total   Exclusive  Set shared  Filename
-  16.16GiB    16.16GiB    32.00KiB  /h
+>
+> The output of btrfs check --repair /dev/mapper/data-0 is attached.
 
-$$ sudo btrfs fi du /h | grep -v ' -  /h' 
-     Total   Exclusive  Set shared  Filename
-  16.16GiB    16.16GiB    32.00KiB  /h
+Considering it's extent tree heavily damaged, normal repair won't help.
 
-But I do use compress=lzo on both filesystems.  If compression accounts 
-for the shared, however, I wonder why / isn't showing any shared, since 
-it's mounted with compress=lzo as well.
+IMHO there will be 2 alternative method to recover:
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+1) Btrfs restore
+    The safest method to recover files.
+    Although it may need a lot of space to restore recovered data.
+
+2) Btrfs check --init-extent-tree
+    This will use fs tree to try to rebuild the extent tree.
+    I don't believe it's only extent tree corrupted, so this may make
+    things even *worse*, but at least it won't take several TBs to
+    recover data which you may already have backup.
+
+Thanks,
+Qu
+>
+> What should I do next? Run --init-csum-tree? btrfs restore to a USB
+> drive? Any help much appreciated.
+>
+> /Calle
+>
+>
+
 

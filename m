@@ -1,84 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:44868 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:4190 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751161AbcLFDEn (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Dec 2016 22:04:43 -0500
-Subject: Re: [PATCH v2 02/14] btrfs-progs: check: introduce function to find
- dir_item
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>,
-        Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-References: <20160921031604.23334-1-quwenruo@cn.fujitsu.com>
- <20160921031604.23334-3-quwenruo@cn.fujitsu.com>
- <20161102152151.GH12522@twin.jikos.cz>
+        with ESMTP id S1751972AbcLFDIx (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Dec 2016 22:08:53 -0500
+Subject: Re: [PATCH 1/2] btrfs-progs: Correct value printed by
+ assertions/BUG_ON/WARN_ON
+To: Goldwyn Rodrigues <rgoldwyn@suse.de>, <linux-btrfs@vger.kernel.org>,
+        David Sterba <dsterba@suse.com>
+References: <20161129162452.28402-1-rgoldwyn@suse.de>
+ <f0beaab1-a09c-cd3e-c00e-2727c3ec8ecd@cn.fujitsu.com>
+ <ff3428dc-ee0e-8feb-fa76-1627b4fa411b@suse.de>
+ <a5d9ed5f-d8cc-f2ae-52e2-5a4bf4285910@cn.fujitsu.com>
+ <f1fad444-39d0-d79f-0774-491d5f444ed5@suse.de>
+CC: Goldwyn Rodrigues <rgoldwyn@suse.com>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <58468eae-e59e-61ff-6d50-233b27995bc1@cn.fujitsu.com>
-Date: Tue, 6 Dec 2016 11:04:24 +0800
+Message-ID: <3a1b9e0d-db65-91aa-f298-519b0040c220@cn.fujitsu.com>
+Date: Tue, 6 Dec 2016 11:08:46 +0800
 MIME-Version: 1.0
-In-Reply-To: <20161102152151.GH12522@twin.jikos.cz>
+In-Reply-To: <f1fad444-39d0-d79f-0774-491d5f444ed5@suse.de>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-At 11/02/2016 11:21 PM, David Sterba wrote:
-> On Wed, Sep 21, 2016 at 11:15:52AM +0800, Qu Wenruo wrote:
->> From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
->>
->> Introduce a new function find_dir_item() to find DIR_ITEM for the given
->> key, and check it with the specified INODE_REF/INODE_EXTREF match.
->>
->> Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
->> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
->> ---
->>  cmds-check.c | 140 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
->>  1 file changed, 140 insertions(+)
->>
->> diff --git a/cmds-check.c b/cmds-check.c
->> index 998ba63..4e25804 100644
->> --- a/cmds-check.c
->> +++ b/cmds-check.c
->> @@ -3848,6 +3848,146 @@ out:
->>  	return err;
->>  }
->>
->> +#define ROOT_DIR_ERROR		(1<<1)	/* bad root_dir */
->> +#define DIR_ITEM_MISSING	(1<<2)	/* DIR_ITEM not found */
->> +#define DIR_ITEM_MISMATCH	(1<<3)	/* DIR_ITEM found but not match */
+At 12/06/2016 10:51 AM, Goldwyn Rodrigues wrote:
 >
-> What's the reason for another definition of the error codes? They're
-> mostly copied from te I_ERR_* counterparts. I'd rather have one set of
-> error codes.
+>
+> On 12/05/2016 08:03 PM, Qu Wenruo wrote:
+>> BTW, the DISABLE_BACKTRACE branch seems quite different from backtrace one.
+>>
+>> #define BUG_ON(c) assert_trace(#c, __FILE__, __func__, __LINE__, (long)(c))
+>> #define WARN_ON(c) warning_trace(#c, __FILE__, __func__, __LINE__,
+>> (long)(c))
+>> #define ASSERT(c) assert_trace(#c, __FILE__, __func__, __LINE__,
+>> (long)!(c))
+>> #define BUG() assert_trace(NULL, __FILE__, __func__, __LINE__, 1)
+>> #else
+>> #define BUG_ON(c) assert(!(c))
+>> #define WARN_ON(c) warning_trace(#c, __FILE__, __func__, __LINE__,
+>> (long)(c))
+>> #define ASSERT(c) assert(!(c))
+>> #define BUG() assert(0)
+>>
+>> Condition of BUG_ON/ASSERT/BUG are all logical notted for
+>> DISABLE_BACKTRACE.
+>> While WARN_ON() of both branch are the same condition.
+>
+> WARN_ON is using warning_trace as opposed to assert, and that is the
+> reason it is not notted.
+>
+>>
+>> This seems quite confusing to me.
+>>
+>> Any idea to make it more straightforward?
+>>
+>
+> I just kept it the same as before. warning_trace was using an extra
+> variable, trace, which was not needed because the print_trace was
+> already in ifndefs.
 
-I tried to merge them into a 32bit error bits.
+I mean, better make the condition the same for both BUG/BUG_ON/ASSERT.
+So that we don't need to manually logical not the condition.
 
-But things turns out that, I_ERR and REF_ERR have already taken 28 bits.
-For a int type, we only have extra 4bits.
+For example:
+#define ASSERT(c) assert_trace(#c, __FILE__, __func__, __LINE__,（long）(c))
+and
+#define ASSERT(c) assert((c))
 
-All fs tree level error code are OK to merge.
-But extent tree level errors, including extent ref/backref error bits, 
-and tree block level errors, like bad key type in current content or bad 
-item size, have no corresponding bits.
-
-These bits are already over 4 bits.
-
-
-Yes, we can expand the error bit to u64, but that will be a huge 
-modification for both the original mode and lowmem mode.
-
-
-What about letting me separate the lowmem code from cmds-check.c into 
-check/lowmem.c and using the current error when you're going to create 
-check/ directory?
-
-It should be OK to merge all lowmem error bits into one int type, but 
-not possible to do it with original mode error bits without expanding 
-the int type.
-Since we have different error bit standard, this leads to completely 
-different usage on these bits.
-A lot of lowmem bit won't be used by original mode and vice-verse.
+This looks much more straightforward, and easier to expose bug at review 
+time.
 
 Thanks,
 Qu
+
+
+>
+> If you are talking about keeping WARN_ON outside of ifndef, yes, that
+> will reduce the code further by another line.
+>
 
 

@@ -1,78 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:57362 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751364AbcLFA35 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Dec 2016 19:29:57 -0500
-Subject: Re: [SOLVED] Re: system hangs due to qgroups
-To: Marc Joliet <marcec@gmx.de>, <linux-btrfs@vger.kernel.org>
-References: <1776088.42rHLKPlSp@thetick>
- <5f35cc2d-4c3d-b14c-01f6-4bfb0f22823b@cn.fujitsu.com>
- <29619565.vvZbx4DoIQ@thetick> <4448819.RKs36le3Tk@thetick>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <593ee12d-a353-d834-2390-a68aaf6377a8@cn.fujitsu.com>
-Date: Tue, 6 Dec 2016 08:29:48 +0800
+Received: from mail-yw0-f196.google.com ([209.85.161.196]:35614 "EHLO
+        mail-yw0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751244AbcLFBeD (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Dec 2016 20:34:03 -0500
+Received: by mail-yw0-f196.google.com with SMTP id b66so27528360ywh.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 05 Dec 2016 17:34:03 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <4448819.RKs36le3Tk@thetick>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <51de09f3-f0e2-1e4d-f4a8-496d326d8d9c@fb.com>
+References: <CAJCQCtTRXEcJmP8vu1uaJHME2UnosHPOP9vmQM3GBACoJDpLPA@mail.gmail.com>
+ <51de09f3-f0e2-1e4d-f4a8-496d326d8d9c@fb.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Mon, 5 Dec 2016 18:34:02 -0700
+Message-ID: <CAJCQCtRHro5BtEObyhF=0CuPGroE+yFQCOoMoBKGhqbpuPBa7Q@mail.gmail.com>
+Subject: Re: crc32c_le performance hit
+To: Chris Mason <clm@fb.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-At 12/05/2016 10:43 PM, Marc Joliet wrote:
-> On Monday 05 December 2016 12:01:28 Marc Joliet wrote:
->>> This seems to be a NULL pointer bug in qgroup relocation fix.
->>>
->>>
->>>
->>> The latest fix (not merged yet) should address it.
->>>
->>>
->>>
->>> You could try the for-next-20161125 branch from David to fix it:
->>> https://github.com/kdave/btrfs-devel/tree/for-next-20161125
+On Mon, Dec 5, 2016 at 8:46 AM, Chris Mason <clm@fb.com> wrote:
+> On 12/04/2016 04:28 PM, Chris Murphy wrote:
 >>
->> OK, I'll try that, thanks!  I just have to wait for it to finish cloning...
+>> 4.8.11-300.fc25.x86_64
 >>
-> [...]
->>> And for your recovery, I'd suggest to install an Archlinux into a USB
->>> HDD or USB stick, and compile David's branch and install it into the USB
->>> HDD.
->>>
->>>
->>>
->>> Then use the USB storage as rescue tool to mount the fs, which should do
->>> RW mount with or without skip_balance mount option.
->>> So you could disable quota then.
+>> I'm currently doing a btrfs send/receive and I'm seeing a rather large
+>> hit for crc32c, bigger than aes-ni (the volume is on dm crypt), using
+>> perf top.
 >>
->> OK, I'll try that, thanks!
+>>   14.03%  btrfs                                    [.] __crc32c_le
+>>   10.50%  [kernel]                                 [k] _aesni_enc4
+>>
 >
-> Excellent, thank you, that worked!  My laptop is working normally again.  I'll
-> keep an eye on it, but so far two balance operations ran normally (that is,
-> they completed within a few minutes and without hanging the system).
+> This is surprising, although send/recv does do a lot of small crc runs. What
+> is the overall CPU usage?
+
+Before issuing btrfs send, btrfs receive:
+%Cpu(s):  0.2 us,  0.2 sy,  0.0 ni, 99.5 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+
+During:
+%Cpu(s):  5.1 us, 18.2 sy,  0.0 ni, 35.0 id, 40.2 wa,  0.7 hi,  0.8 si,  0.0 st
+
+Full output
+https://paste.fedoraproject.org/500097/
+
+Lots of waiting, but most of that 18% hit is coming from the two btrfs
+commands themselves. The same thing doesn't happen with a btrfs scrub,
+which also has to compute crc's albeit just once.
+
+
+
+
+>Maybe pin btrfs to a single CPU and use mpstat to
+> see how hot that one CPU is.  If we're 14% of a CPU running at 100%, that's
+> a big deal.  If we're 14% of a CPU running at 5%, we safely ignore it.
+
+I'm not sure how to do this, but if all btrfs processes were pinned to
+a single core, based on the more than dozen active processes I see in
+top during send/receive, it would definitely soak all of that core.
+
+
 >
-> (Specifically, since I didn't find out how to get a different kernel onto the
-> Arch USB stick, I simply installed the kernel on my desktop, then did
-> everything from an initramfs emergency shell, then moved the SSD back into the
-> laptop.)
+>>
+>> Complete output is here for 1 month:
+>>
+>> https://urldefense.proofpoint.com/v2/url?u=https-3A__paste.fedoraproject.org_498914_&d=DgIBaQ&c=5VD0RTtNlTh3ycd41b3MUw&r=9QPtTAxcitoznaWRKKHoEQ&m=YXgqrDMWJP2u2reRh04tnYz4CrO5SPUhSHd1cF2OcR0&s=axoqoaw0ZkYXdDxlTODLOfzqEK7uIJHqMsBjpkyIw5o&e=
+>>
+>> I don't remember crc32's taking this much CPU before, so it seems like
+>> a regression but offhand I don't know when it started.
+>>
+>> [chris@f25s ~]$ dmesg | grep crc32
+>> [    4.226700] Btrfs loaded, crc32c=crc32c-intel
 >
-> Thanks, everyone!
 >
-Glad that helped.
-
-I just forgot that you're using gentoo, not archlinux, and kernel 
-install script won't work for archlinux.
-
-Anyway, I'm glad that works for you.
-
-BTW, if you haven't yet disable quota, would you please give a report on 
-how many qgroup you have?
-And how CPU is spinning for balancing with quota enabled?
-
-This would help us to evaluate how qgroup slows down the process if 
-there are too many snapshots.
-
-Thanks,
-Qu
+> At least we know you're using the intel accelerated one.  Every time someone
+> posts this dmesg output to the list, I owe Jeff another beer.
 
 
+Glad I can increase your beer liability. :-D
+
+
+
+-- 
+Chris Murphy

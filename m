@@ -1,69 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:49728 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751829AbcLFO4J (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 6 Dec 2016 09:56:09 -0500
-Received: from thetick.localnet ([93.181.44.247]) by mail.gmx.com (mrgmx102
- [212.227.17.168]) with ESMTPSA (Nemesis) id 0LtDpH-1cgR9015ad-012tPq for
- <linux-btrfs@vger.kernel.org>; Tue, 06 Dec 2016 15:55:29 +0100
-From: Marc Joliet <marcec@gmx.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: [SOLVED] Re: system hangs due to qgroups
-Date: Tue, 06 Dec 2016 15:55:24 +0100
-Message-ID: <1615257.2oeV6PA6UW@thetick>
-In-Reply-To: <2186923.2Z4iRAdtdf@thetick>
-References: <1776088.42rHLKPlSp@thetick> <593ee12d-a353-d834-2390-a68aaf6377a8@cn.fujitsu.com> <2186923.2Z4iRAdtdf@thetick>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:50961 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1753793AbcLFPnF (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 6 Dec 2016 10:43:05 -0500
+Subject: Re: crc32c_le performance hit
+To: Chris Murphy <lists@colorremedies.com>
+References: <CAJCQCtTRXEcJmP8vu1uaJHME2UnosHPOP9vmQM3GBACoJDpLPA@mail.gmail.com>
+ <51de09f3-f0e2-1e4d-f4a8-496d326d8d9c@fb.com>
+ <CAJCQCtRHro5BtEObyhF=0CuPGroE+yFQCOoMoBKGhqbpuPBa7Q@mail.gmail.com>
+CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: Chris Mason <clm@fb.com>
+Message-ID: <ea1c02be-b7ae-dc60-6d72-8ac04d842ad5@fb.com>
+Date: Tue, 6 Dec 2016 10:16:51 -0500
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart98737669.x8Ms5CtC6q"; micalg="pgp-sha256"; protocol="application/pgp-signature"
+In-Reply-To: <CAJCQCtRHro5BtEObyhF=0CuPGroE+yFQCOoMoBKGhqbpuPBa7Q@mail.gmail.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart98737669.x8Ms5CtC6q
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="utf-8"
+On 12/05/2016 08:34 PM, Chris Murphy wrote:
+> On Mon, Dec 5, 2016 at 8:46 AM, Chris Mason <clm@fb.com> wrote:
+>> On 12/04/2016 04:28 PM, Chris Murphy wrote:
+>>>
+>>> 4.8.11-300.fc25.x86_64
+>>>
+>>> I'm currently doing a btrfs send/receive and I'm seeing a rather large
+>>> hit for crc32c, bigger than aes-ni (the volume is on dm crypt), using
+>>> perf top.
+>>>
+>>>   14.03%  btrfs                                    [.] __crc32c_le
+>>>   10.50%  [kernel]                                 [k] _aesni_enc4
+>>>
+>>
+>> This is surprising, although send/recv does do a lot of small crc runs. What
+>> is the overall CPU usage?
+>
+> Before issuing btrfs send, btrfs receive:
+> %Cpu(s):  0.2 us,  0.2 sy,  0.0 ni, 99.5 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+>
+> During:
+> %Cpu(s):  5.1 us, 18.2 sy,  0.0 ni, 35.0 id, 40.2 wa,  0.7 hi,  0.8 si,  0.0 st
+>
+> Full output
+> https://urldefense.proofpoint.com/v2/url?u=https-3A__paste.fedoraproject.org_500097_&d=DgIBaQ&c=5VD0RTtNlTh3ycd41b3MUw&r=9QPtTAxcitoznaWRKKHoEQ&m=svwboLaftKw8i8TJ7J-VEs1UtIBPsaEw6-H1ijzbrxQ&s=t64ReJkaNbpHAPdqzPcXS7rLlACNHhBOt2uJ8-fYjfU&e=
+>
+> Lots of waiting, but most of that 18% hit is coming from the two btrfs
+> commands themselves. The same thing doesn't happen with a btrfs scrub,
+> which also has to compute crc's albeit just once.
+>
+>> Maybe pin btrfs to a single CPU and use mpstat to
+>> see how hot that one CPU is.  If we're 14% of a CPU running at 100%, that's
+>> a big deal.  If we're 14% of a CPU running at 5%, we safely ignore it.
+>
+> I'm not sure how to do this, but if all btrfs processes were pinned to
+> a single core, based on the more than dozen active processes I see in
+> top during send/receive, it would definitely soak all of that core.
 
-On Tuesday 06 December 2016 11:12:12 Marc Joliet wrote:
-> I have disabled quotas already (first thing I did after
-> mounting).  However,  there were definitely 20-30, maybe more (enough=
- for
-> 2, maybe 3, console pages -- I don't know how many lines the initramf=
-s
-> rescue shell has, but based on that, you could estimate the number of=
+So what should be happening is the btrfs command triggering ioctls that 
+assemble the send stream.  If we just pin the btrfs command, I'm hoping 
+that will account for most of the crc32c cpu time.  We definitely do 
+crcs as we read in data/metadata, but those won't be the teeny 
+incrementals that send/recv causes.
 
-> qgroups).
+Long way of saying that if we use "taskset -c 0 btrfs send", it should 
+isolate the send/recv overhead from the normal FS.  We do love our 
+helper threads, but it's part of the picture at least.
 
-Of course, you can probably check the sanitized images I posted for mor=
-e=20
-information.
-
-=2D-=20
-Marc Joliet
-=2D-
-"People who think they know everything really annoy those of us who kno=
-w we
-don't" - Bjarne Stroustrup
-
---nextPart98737669.x8Ms5CtC6q
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
-
------BEGIN PGP SIGNATURE-----
-
-iQIcBAABCAAGBQJYRtFcAAoJEL/Q5oYsiHj0UgsQAJNw+IjmHNMiWk5/gVl6YrYi
-tn2+AxMLGR7OHbtt229LoZc2xBunjM4Z41OrIli71u1BswgdAuCYEkt2rBo4sGi7
-lnuafgFDgUAI13jlQAQSmjgO58iae9gHESVvd1JEESrCYSvtiJ4+EXlXBKbc/4Ll
-6fXd62c8io/cX+yv+DjdwmkDHqCCDaVlrSlLu7YDZy3nXvSE/Woz27vR88EP3Kbf
-euCJPCEV+lsSGnQL5NOsbgby9ckUuZrpTj3pOiLFBIk+gP/0E9kBK8wsi5flcPFt
-Tx9fNeE1LDcy0pE6zp8retaeBzAuMWFTssHYG0y8Di0q13GSguahnD7Ra265t3hp
-/gPOLksTKRKFQUHbLkzpN6C2+ccx1ZFaiPyDSVsU+RvlcINo/WdlbTkDJZFjtSHB
-lpRnZ4HF7Mb7nRfWiYIrE6w8b7Daqt37T0zat8SahJyEY2j+eLi7AOAys9gx42kc
-g/F0OAPYoew4zifTGLmI9PDyLWiEUwg7w7yQBaMRVgRiMP37fIktwARoQG+FCUSK
-gTie3GWiSzys2XZNFemUzPXwCxVyqlcBbqxqqSIYIZd4ZzMH64YLKR6Vadn9vaTs
-4yoMiEcucNt9l90Hdj6b8VtzY7mwb6Sc9Zh2x4U9xNZu6kJ96JOoZivu7pXHSqOq
-7gDHZCpDphY3+JjIjjA1
-=ZtOc
------END PGP SIGNATURE-----
-
---nextPart98737669.x8Ms5CtC6q--
-
+-chris

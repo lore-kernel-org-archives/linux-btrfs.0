@@ -1,68 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:59931 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753380AbcLEXWt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 5 Dec 2016 18:22:49 -0500
-Received: from thetick.localnet ([93.181.44.247]) by mail.gmx.com (mrgmx003
- [212.227.17.190]) with ESMTPSA (Nemesis) id 0M08eS-1cWXLm3My4-00uKYk for
- <linux-btrfs@vger.kernel.org>; Tue, 06 Dec 2016 00:22:46 +0100
-From: Marc Joliet <marcec@gmx.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: system hangs due to qgroups
-Date: Tue, 06 Dec 2016 00:22:39 +0100
-Message-ID: <1480981684.lgmix35ydX@thetick>
-In-Reply-To: <2608128.Ab7p211pZ6@thetick>
-References: <1776088.42rHLKPlSp@thetick> <1959752.x5si3bfagL@thetick> <2608128.Ab7p211pZ6@thetick>
+Received: from cn.fujitsu.com ([59.151.112.132]:57362 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751364AbcLFA35 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Dec 2016 19:29:57 -0500
+Subject: Re: [SOLVED] Re: system hangs due to qgroups
+To: Marc Joliet <marcec@gmx.de>, <linux-btrfs@vger.kernel.org>
+References: <1776088.42rHLKPlSp@thetick>
+ <5f35cc2d-4c3d-b14c-01f6-4bfb0f22823b@cn.fujitsu.com>
+ <29619565.vvZbx4DoIQ@thetick> <4448819.RKs36le3Tk@thetick>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <593ee12d-a353-d834-2390-a68aaf6377a8@cn.fujitsu.com>
+Date: Tue, 6 Dec 2016 08:29:48 +0800
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart2248839.J3P8tNhYXq"; micalg="pgp-sha256"; protocol="application/pgp-signature"
+In-Reply-To: <4448819.RKs36le3Tk@thetick>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart2248839.J3P8tNhYXq
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="utf-8"
 
-On Monday 05 December 2016 11:16:35 Marc Joliet wrote:
-[...]
-> https://dl.dropboxusercontent.com/u/5328255/arthur_root_4.7.3_sanitiz=
-ed.imag
-> e.xz
-> https://dl.dropboxusercontent.com/u/5328255/arthur_root_4.8.5_sanitiz=
-ed.ima
-> ge.xz
 
-BTW, since my problem appears to have been known, does anybody still ca=
-re=20
-about these?
+At 12/05/2016 10:43 PM, Marc Joliet wrote:
+> On Monday 05 December 2016 12:01:28 Marc Joliet wrote:
+>>> This seems to be a NULL pointer bug in qgroup relocation fix.
+>>>
+>>>
+>>>
+>>> The latest fix (not merged yet) should address it.
+>>>
+>>>
+>>>
+>>> You could try the for-next-20161125 branch from David to fix it:
+>>> https://github.com/kdave/btrfs-devel/tree/for-next-20161125
+>>
+>> OK, I'll try that, thanks!  I just have to wait for it to finish cloning...
+>>
+> [...]
+>>> And for your recovery, I'd suggest to install an Archlinux into a USB
+>>> HDD or USB stick, and compile David's branch and install it into the USB
+>>> HDD.
+>>>
+>>>
+>>>
+>>> Then use the USB storage as rescue tool to mount the fs, which should do
+>>> RW mount with or without skip_balance mount option.
+>>> So you could disable quota then.
+>>
+>> OK, I'll try that, thanks!
+>
+> Excellent, thank you, that worked!  My laptop is working normally again.  I'll
+> keep an eye on it, but so far two balance operations ran normally (that is,
+> they completed within a few minutes and without hanging the system).
+>
+> (Specifically, since I didn't find out how to get a different kernel onto the
+> Arch USB stick, I simply installed the kernel on my desktop, then did
+> everything from an initramfs emergency shell, then moved the SSD back into the
+> laptop.)
+>
+> Thanks, everyone!
+>
+Glad that helped.
 
-=2D-=20
-Marc Joliet
-=2D-
-"People who think they know everything really annoy those of us who kno=
-w we
-don't" - Bjarne Stroustrup
+I just forgot that you're using gentoo, not archlinux, and kernel 
+install script won't work for archlinux.
 
---nextPart2248839.J3P8tNhYXq
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
+Anyway, I'm glad that works for you.
 
------BEGIN PGP SIGNATURE-----
+BTW, if you haven't yet disable quota, would you please give a report on 
+how many qgroup you have?
+And how CPU is spinning for balancing with quota enabled?
 
-iQIcBAABCAAGBQJYRfa/AAoJEL/Q5oYsiHj0cTwP/jJ5+8SrBtG9DJBJd4nRH4mM
-MNTOVU5L8dnsuR542CjxO2G5ickZTSe6EZb+qPe3dsLaQy5lmXKE6KF9ZmunkeaB
-xPdIfMto2tWNwdNyghDypiL0hPNZh+8zKdWP1DjYf1X1uc9f7NDUiPlW/O0Hcq9Q
-uwgag7yDhE1XG+JttVARheUdadV7f/bGn0BnCiZV5baVIDtNM3BDR+1gTUAMDb7p
-wZJm2UiG1JVEr5N39jVub4hqn7PuEpc/Pkq9pfG9pqmDXkdB+wUrsa03qSurOk/U
-tZubPjV/L3kriueJqMFD07a9TSFcdZLSEUb7qcjn6aTVHBxLQLuqSvM1WjwAvM1b
-y0/c6CsLupG7AGU3oH6H2q6bmKVWUTJ5MzutZtxFVXOWqtOhslzh/nVjmRJhOmoi
-J7COk4E13pztGXmVu/gUxTmhbW87dOH8iAPpDeE8xZzix7WciOF4/LG3lfZ3JahE
-AAOHapf2MLm4cer+nf2C7tjVD20gQLlDjO7MWXPqYnMLgeQkTRM5a9W2DueDI5wp
-YBG6tpkxIaoXoQeSj2NBtAmJlZ+fa0wmCIhhnKUiM+Ko9klVdUR8Cdw1ZbGLXiJZ
-lbNOm5Ei1qkRa45ASt6q0R4MdsGkg90pksTtJPDOimK71Ez0FhCekCn4PzGVWj+i
-mFwkMQ103BVsXEbGkXvK
-=ZuKe
------END PGP SIGNATURE-----
+This would help us to evaluate how qgroup slows down the process if 
+there are too many snapshots.
 
---nextPart2248839.J3P8tNhYXq--
+Thanks,
+Qu
+
 

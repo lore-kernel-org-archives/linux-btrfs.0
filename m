@@ -1,87 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:4637 "EHLO song.cn.fujitsu.com"
-        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1751786AbcLGBaa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 6 Dec 2016 20:30:30 -0500
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, Goldwyn Rodrigues <rgoldwyn@suse.de>
-Subject: [PATCH] btrfs-progs: Fix disable backtrace assert error
-Date: Wed,  7 Dec 2016 09:29:44 +0800
-Message-Id: <20161207012944.10545-1-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
+Received: from aserp1040.oracle.com ([141.146.126.69]:37452 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751598AbcLFEkF (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Dec 2016 23:40:05 -0500
+From: Anand Jain <anand.jain@oracle.com>
+To: dsterba@suse.cz
+Cc: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/3] Misc fixes mostly cleanup
+Date: Tue,  6 Dec 2016 12:43:06 +0800
+Message-Id: <20161206044309.3450-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Due to commit 00e769d04c2c83029d6c71(btrfs-progs: Correct value printed
-by assertions/BUG_ON/WARN_ON), which changed the assert_trace()
-parameter, the condition passed to assert/WARN_ON/BUG_ON are logical
-notted for backtrace enabled and disabled case.
+A set of unrelated miscellaneous cleanup patches.
 
-Such behavior makes us easier to pass value wrong, and in fact it did
-cause us to pass wrong condition for ASSERT().
+Anand Jain (3):
+  btrfs: use BTRFS_COMPRESS_NONE to specify no compression
+  btrfs: cow_file_range() num_bytes and disk_num_bytes are same
+  btrfs: consolidate auto defrag kick off policies
 
-Instead of passing different conditions for ASSERT/WARN_ON/BUG_ON()
-manually, this patch will use BUG_ON() to implement the resting
-ASSERT/WARN_ON/BUG(), so we don't need to pass 3 different conditions
-but only one.
+ fs/btrfs/inode.c | 44 ++++++++++++++++++++++++++------------------
+ 1 file changed, 26 insertions(+), 18 deletions(-)
 
-And to further info the review for the fact that the condition should be
-different, rename "assert_trace" to "bugon_trace", as unlike assert, we
-will only trigger the bug when condition is true.
-
-Also, move WARN_ON() out of the ifdef branch, as it's completely the
-same for both branches.
-
-Cc: Goldwyn Rodrigues <rgoldwyn@suse.de>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- kerncompat.h | 19 +++++++++++--------
- 1 file changed, 11 insertions(+), 8 deletions(-)
-
-diff --git a/kerncompat.h b/kerncompat.h
-index e374614..be77608 100644
---- a/kerncompat.h
-+++ b/kerncompat.h
-@@ -277,7 +277,7 @@ static inline long IS_ERR(const void *ptr)
- #define vfree(x) free(x)
- 
- #ifndef BTRFS_DISABLE_BACKTRACE
--static inline void assert_trace(const char *assertion, const char *filename,
-+static inline void bugon_trace(const char *assertion, const char *filename,
- 			      const char *func, unsigned line, long val)
- {
- 	if (!val)
-@@ -287,17 +287,20 @@ static inline void assert_trace(const char *assertion, const char *filename,
- 	exit(1);
- }
- 
--#define BUG_ON(c) assert_trace(#c, __FILE__, __func__, __LINE__, (long)(c))
--#define WARN_ON(c) warning_trace(#c, __FILE__, __func__, __LINE__, (long)(c))
--#define	ASSERT(c) assert_trace(#c, __FILE__, __func__, __LINE__, (long)!(c))
--#define BUG() assert_trace(NULL, __FILE__, __func__, __LINE__, 1)
-+#define BUG_ON(c) bugon_trace(#c, __FILE__, __func__, __LINE__, (long)(c))
- #else
- #define BUG_ON(c) assert(!(c))
--#define WARN_ON(c) warning_trace(#c, __FILE__, __func__, __LINE__, (long)(c))
--#define ASSERT(c) assert(!(c))
--#define BUG() assert(0)
- #endif
- 
-+#define WARN_ON(c) warning_trace(#c, __FILE__, __func__, __LINE__, (long)(c))
-+/*
-+ * TODO: ASSERT() should be depercated. In case like ASSERT(ret == 0), it
-+ * won't output any useful value for ret.
-+ * Should be replaced by BUG_ON(ret);
-+ */
-+#define	ASSERT(c) BUG_ON(!(c))
-+#define BUG() BUG_ON(1)
-+
- #define container_of(ptr, type, member) ({                      \
-         const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
- 	        (type *)( (char *)__mptr - offsetof(type,member) );})
 -- 
-2.10.2
-
-
+2.10.0
 

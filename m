@@ -1,70 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:50961 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1753793AbcLFPnF (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 6 Dec 2016 10:43:05 -0500
-Subject: Re: crc32c_le performance hit
-To: Chris Murphy <lists@colorremedies.com>
-References: <CAJCQCtTRXEcJmP8vu1uaJHME2UnosHPOP9vmQM3GBACoJDpLPA@mail.gmail.com>
- <51de09f3-f0e2-1e4d-f4a8-496d326d8d9c@fb.com>
- <CAJCQCtRHro5BtEObyhF=0CuPGroE+yFQCOoMoBKGhqbpuPBa7Q@mail.gmail.com>
-CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Chris Mason <clm@fb.com>
-Message-ID: <ea1c02be-b7ae-dc60-6d72-8ac04d842ad5@fb.com>
-Date: Tue, 6 Dec 2016 10:16:51 -0500
+Received: from cn.fujitsu.com ([59.151.112.132]:15145 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1752626AbcLGAbU (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Dec 2016 19:31:20 -0500
+Subject: Re: [PATCH 1/2] btrfs-progs: Correct value printed by
+ assertions/BUG_ON/WARN_ON
+To: Goldwyn Rodrigues <rgoldwyn@suse.de>, <linux-btrfs@vger.kernel.org>,
+        David Sterba <dsterba@suse.com>
+References: <20161129162452.28402-1-rgoldwyn@suse.de>
+ <f0beaab1-a09c-cd3e-c00e-2727c3ec8ecd@cn.fujitsu.com>
+ <ff3428dc-ee0e-8feb-fa76-1627b4fa411b@suse.de>
+ <a5d9ed5f-d8cc-f2ae-52e2-5a4bf4285910@cn.fujitsu.com>
+ <f1fad444-39d0-d79f-0774-491d5f444ed5@suse.de>
+ <3a1b9e0d-db65-91aa-f298-519b0040c220@cn.fujitsu.com>
+ <b929d5ff-2ec1-9ac0-eb39-d2ed3ddff6da@suse.de>
+CC: Goldwyn Rodrigues <rgoldwyn@suse.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <269500a6-a96d-c23e-fced-f74d55059b63@cn.fujitsu.com>
+Date: Wed, 7 Dec 2016 08:31:14 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtRHro5BtEObyhF=0CuPGroE+yFQCOoMoBKGhqbpuPBa7Q@mail.gmail.com>
+In-Reply-To: <b929d5ff-2ec1-9ac0-eb39-d2ed3ddff6da@suse.de>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/05/2016 08:34 PM, Chris Murphy wrote:
-> On Mon, Dec 5, 2016 at 8:46 AM, Chris Mason <clm@fb.com> wrote:
->> On 12/04/2016 04:28 PM, Chris Murphy wrote:
->>>
->>> 4.8.11-300.fc25.x86_64
->>>
->>> I'm currently doing a btrfs send/receive and I'm seeing a rather large
->>> hit for crc32c, bigger than aes-ni (the volume is on dm crypt), using
->>> perf top.
->>>
->>>   14.03%  btrfs                                    [.] __crc32c_le
->>>   10.50%  [kernel]                                 [k] _aesni_enc4
->>>
+
+
+At 12/06/2016 08:44 PM, Goldwyn Rodrigues wrote:
+>
+>
+> On 12/05/2016 09:08 PM, Qu Wenruo wrote:
 >>
->> This is surprising, although send/recv does do a lot of small crc runs. What
->> is the overall CPU usage?
+>>
+>> At 12/06/2016 10:51 AM, Goldwyn Rodrigues wrote:
+>>>
+>>>
+>>> On 12/05/2016 08:03 PM, Qu Wenruo wrote:
+>>>> BTW, the DISABLE_BACKTRACE branch seems quite different from
+>>>> backtrace one.
+>>>>
+>>>> #define BUG_ON(c) assert_trace(#c, __FILE__, __func__, __LINE__,
+>>>> (long)(c))
+>>>> #define WARN_ON(c) warning_trace(#c, __FILE__, __func__, __LINE__,
+>>>> (long)(c))
+>>>> #define ASSERT(c) assert_trace(#c, __FILE__, __func__, __LINE__,
+>>>> (long)!(c))
+>>>> #define BUG() assert_trace(NULL, __FILE__, __func__, __LINE__, 1)
+>>>> #else
+>>>> #define BUG_ON(c) assert(!(c))
+>>>> #define WARN_ON(c) warning_trace(#c, __FILE__, __func__, __LINE__,
+>>>> (long)(c))
+>>>> #define ASSERT(c) assert(!(c))
+>>>> #define BUG() assert(0)
+>>>>
+>>>> Condition of BUG_ON/ASSERT/BUG are all logical notted for
+>>>> DISABLE_BACKTRACE.
+>>>> While WARN_ON() of both branch are the same condition.
+>>>
+>>> WARN_ON is using warning_trace as opposed to assert, and that is the
+>>> reason it is not notted.
+>>>
+>>>>
+>>>> This seems quite confusing to me.
+>>>>
+>>>> Any idea to make it more straightforward?
+>>>>
+>>>
+>>> I just kept it the same as before. warning_trace was using an extra
+>>> variable, trace, which was not needed because the print_trace was
+>>> already in ifndefs.
+>>
+>> I mean, better make the condition the same for both BUG/BUG_ON/ASSERT.
+>> So that we don't need to manually logical not the condition.
 >
-> Before issuing btrfs send, btrfs receive:
-> %Cpu(s):  0.2 us,  0.2 sy,  0.0 ni, 99.5 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
->
-> During:
-> %Cpu(s):  5.1 us, 18.2 sy,  0.0 ni, 35.0 id, 40.2 wa,  0.7 hi,  0.8 si,  0.0 st
->
-> Full output
-> https://urldefense.proofpoint.com/v2/url?u=https-3A__paste.fedoraproject.org_500097_&d=DgIBaQ&c=5VD0RTtNlTh3ycd41b3MUw&r=9QPtTAxcitoznaWRKKHoEQ&m=svwboLaftKw8i8TJ7J-VEs1UtIBPsaEw6-H1ijzbrxQ&s=t64ReJkaNbpHAPdqzPcXS7rLlACNHhBOt2uJ8-fYjfU&e=
->
-> Lots of waiting, but most of that 18% hit is coming from the two btrfs
-> commands themselves. The same thing doesn't happen with a btrfs scrub,
-> which also has to compute crc's albeit just once.
->
->> Maybe pin btrfs to a single CPU and use mpstat to
->> see how hot that one CPU is.  If we're 14% of a CPU running at 100%, that's
->> a big deal.  If we're 14% of a CPU running at 5%, we safely ignore it.
->
-> I'm not sure how to do this, but if all btrfs processes were pinned to
-> a single core, based on the more than dozen active processes I see in
-> top during send/receive, it would definitely soak all of that core.
+> First of all, ASSERT and BUG_ON have opposite meanings. ASSERT() checks
+> if the condition is true and continues (halts if false). BUG_ON() "bugs"
+> if condition is true and halts (continues if false). So you would have
+> to use opposite conditions.
 
-So what should be happening is the btrfs command triggering ioctls that 
-assemble the send stream.  If we just pin the btrfs command, I'm hoping 
-that will account for most of the crc32c cpu time.  We definitely do 
-crcs as we read in data/metadata, but those won't be the teeny 
-incrementals that send/recv causes.
+I know, I mean, for both backtrace disabled and enabled case, the 
+condition should be the same.
 
-Long way of saying that if we use "taskset -c 0 btrfs send", it should 
-isolate the send/recv overhead from the normal FS.  We do love our 
-helper threads, but it's part of the picture at least.
+If not the same condition, it means assert_trace() has different meaning 
+than original assert.
 
--chris
+>
+>>
+>> For example:
+>> #define ASSERT(c) assert_trace(#c, __FILE__, __func__, __LINE__,（long）
+>> (c))
+>> and
+>> #define ASSERT(c) assert((c))
+>>
+>> This looks much more straightforward, and easier to expose bug at review
+>> time.
+>
+> Could you explain with a patch? You idea seems to add more code than
+> reduce it.
+
+Sure, will submit one soon.
+
+Thanks,
+Qu
+
+

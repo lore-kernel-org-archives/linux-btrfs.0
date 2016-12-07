@@ -1,237 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:48012 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932784AbcLGVhg (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:43342 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932883AbcLGVhg (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Dec 2016 16:37:36 -0500
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Chris Mason <clm@fb.com>, Jan Kara <jack@suse.cz>,
         David Sterba <dsterba@suse.cz>
-Subject: [PATCH 3/6] Btrfs: refactor btrfs_file_write_iter
-Date: Wed,  7 Dec 2016 13:45:07 -0800
-Message-Id: <1481147110-20048-4-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH 1/6] Btrfs: add mount option for dax
+Date: Wed,  7 Dec 2016 13:45:05 -0800
+Message-Id: <1481147110-20048-2-git-send-email-bo.li.liu@oracle.com>
 In-Reply-To: <1481147110-20048-1-git-send-email-bo.li.liu@oracle.com>
 References: <1481147110-20048-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This adds a helper function btrfs_file_write_check for file checks, permission
-check and necessary time and size extention.
-
-With this, we simplify btrfs_file_write_iter by putting details into seperated
-buffered_write and direct_write callback.
-
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/file.c | 128 ++++++++++++++++++++++++++++++++++----------------------
- 1 file changed, 78 insertions(+), 50 deletions(-)
+ fs/btrfs/ctree.h |  1 +
+ fs/btrfs/super.c | 40 +++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 40 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 3a14c87..06e55e8 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -44,6 +44,7 @@
- #include "compression.h"
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 0b8ce2b..e54c6e6 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1317,6 +1317,7 @@ static inline u32 BTRFS_MAX_XATTR_SIZE(const struct btrfs_root *root)
+ #define BTRFS_MOUNT_FRAGMENT_METADATA	(1 << 25)
+ #define BTRFS_MOUNT_FREE_SPACE_TREE	(1 << 26)
+ #define BTRFS_MOUNT_NOLOGREPLAY		(1 << 27)
++#define BTRFS_MOUNT_DAX		(1 << 28)
  
- static struct kmem_cache *btrfs_inode_defrag_cachep;
-+static ssize_t btrfs_file_write_check(struct kiocb *iocb, struct iov_iter *from);
- /*
-  * when auto defrag is enabled we
-  * queue up these defrag structs to remember which
-@@ -1735,20 +1736,25 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
- 	return num_written ? num_written : ret;
- }
+ #define BTRFS_DEFAULT_COMMIT_INTERVAL	(30)
+ #define BTRFS_DEFAULT_MAX_INLINE	(2048)
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 74ed5aa..9b18f3d 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -323,7 +323,7 @@ enum {
+ 	Opt_commit_interval, Opt_barrier, Opt_nodefrag, Opt_nodiscard,
+ 	Opt_noenospc_debug, Opt_noflushoncommit, Opt_acl, Opt_datacow,
+ 	Opt_datasum, Opt_treelog, Opt_noinode_cache, Opt_usebackuproot,
+-	Opt_nologreplay, Opt_norecovery,
++	Opt_nologreplay, Opt_norecovery, Opt_dax,
+ #ifdef CONFIG_BTRFS_DEBUG
+ 	Opt_fragment_data, Opt_fragment_metadata, Opt_fragment_all,
+ #endif
+@@ -383,6 +383,7 @@ static const match_table_t tokens = {
+ 	{Opt_rescan_uuid_tree, "rescan_uuid_tree"},
+ 	{Opt_fatal_errors, "fatal_errors=%s"},
+ 	{Opt_commit_interval, "commit=%d"},
++	{Opt_dax, "dax"},
+ #ifdef CONFIG_BTRFS_DEBUG
+ 	{Opt_fragment_data, "fragment=data"},
+ 	{Opt_fragment_metadata, "fragment=metadata"},
+@@ -410,6 +411,7 @@ int btrfs_parse_options(struct btrfs_root *root, char *options,
+ 	enum btrfs_compression_type saved_compress_type;
+ 	bool saved_compress_force;
+ 	int no_compress = 0;
++	int set_bdev = 0;
  
--static ssize_t __btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
-+static ssize_t btrfs_file_direct_write(struct kiocb *iocb,
-+				       struct iov_iter *from)
- {
- 	struct file *file = iocb->ki_filp;
- 	struct inode *inode = file_inode(file);
- 	loff_t pos = iocb->ki_pos;
--	ssize_t written;
-+	ssize_t written = 0;
- 	ssize_t written_buffered;
- 	loff_t endbyte;
- 	int err;
- 
--	written = generic_file_direct_write(iocb, from);
-+	inode_lock(inode);
-+	err = btrfs_file_write_check(iocb, from);
-+	if (err)
-+		goto out;
- 
-+	written = generic_file_direct_write(iocb, from);
- 	if (written < 0 || !iov_iter_count(from))
--		return written;
-+		goto out;
- 
- 	pos += written;
- 	written_buffered = __btrfs_buffered_write(file, from, pos);
-@@ -1772,6 +1778,7 @@ static ssize_t __btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
- 	invalidate_mapping_pages(file->f_mapping, pos >> PAGE_SHIFT,
- 				 endbyte >> PAGE_SHIFT);
- out:
-+	inode_unlock(inode);
- 	return written ? written : err;
- }
- 
-@@ -1793,47 +1800,56 @@ static void update_time_for_write(struct inode *inode)
- 		inode_inc_iversion(inode);
- }
- 
--static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
--				    struct iov_iter *from)
-+static ssize_t btrfs_file_buffered_write(struct kiocb *iocb,
-+					 struct iov_iter *from)
-+{
-+	struct file *file = iocb->ki_filp;
-+	struct inode *inode = file_inode(file);
-+	loff_t pos;
-+	loff_t oldsize;
-+	ssize_t ret;
+ 	cache_gen = btrfs_super_cache_generation(root->fs_info->super_copy);
+ 	if (btrfs_fs_compat_ro(root->fs_info, FREE_SPACE_TREE))
+@@ -470,6 +472,40 @@ int btrfs_parse_options(struct btrfs_root *root, char *options,
+ 			btrfs_clear_opt(info->mount_opt, NODATACOW);
+ 			btrfs_clear_opt(info->mount_opt, NODATASUM);
+ 			break;
++#ifdef CONFIG_FS_DAX
++		case Opt_dax:
++			btrfs_set_and_info(info, DAX, "setting dax");
++			/*
++			 * sb->s_blocksize is set to root->sectorsize
++			 * sb->s_bdev is required, but btrfs doesn't set it
++			 * because of multi-device, so here we set it
++			 * temporarily.
++			 * We allows only one device in dax case.
++			 */
++			if (!info->sb->s_bdev) {
++				info->sb->s_bdev = info->fs_devices->latest_bdev;
++				set_bdev = 1;
++			}
++			ret = bdev_dax_supported(info->sb, info->sb->s_blocksize);
++			if (set_bdev)
++				info->sb->s_bdev = NULL;
++			if (ret)
++				goto out;
 +
-+	inode_lock(inode);
-+	ret = btrfs_file_write_check(iocb, from);
-+	if (ret)
-+		goto out;
++			/* dax inode doesn't need inline. */
++			info->max_inline = 0;
++			btrfs_info(info, "max_inline at %llu", info->max_inline);
 +
-+	current->backing_dev_info = inode_to_bdi(inode);
++			btrfs_clear_opt(info->mount_opt, COMPRESS);
++			btrfs_clear_opt(info->mount_opt, FORCE_COMPRESS);
++			btrfs_set_opt(info->mount_opt, NODATACOW);
++			btrfs_set_opt(info->mount_opt, NODATASUM);
++			btrfs_info(info,
++				   "setting nodatacow, compression disabled");
 +
-+	pos = iocb->ki_pos;
-+	ret = __btrfs_buffered_write(file, from, pos);
-+	if (ret > 0)
-+		iocb->ki_pos = pos + ret;
-+	if (oldsize < pos)
-+		pagecache_isize_extended(inode, oldsize,
-+					i_size_read(inode));
-+
-+	current->backing_dev_info = NULL;
-+out:
-+	inode_unlock(inode);
-+	return ret;
-+}
-+
-+static ssize_t btrfs_file_write_check(struct kiocb *iocb,
-+				      struct iov_iter *from)
- {
- 	struct file *file = iocb->ki_filp;
- 	struct inode *inode = file_inode(file);
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
--	u64 start_pos;
--	u64 end_pos;
--	ssize_t num_written = 0;
--	bool sync = (file->f_flags & O_DSYNC) || IS_SYNC(file->f_mapping->host);
- 	ssize_t err;
- 	loff_t pos;
- 	size_t count;
- 	loff_t oldsize;
--	int clean_page = 0;
-+	u64 start_pos;
-+	u64 end_pos;
- 
--	inode_lock(inode);
- 	err = generic_write_checks(iocb, from);
--	if (err <= 0) {
--		inode_unlock(inode);
-+	if (err <= 0)
- 		return err;
--	}
- 
--	current->backing_dev_info = inode_to_bdi(inode);
- 	err = file_remove_privs(file);
--	if (err) {
--		inode_unlock(inode);
--		goto out;
--	}
--
--	/*
--	 * If BTRFS flips readonly due to some impossible error
--	 * (fs_info->fs_state now has BTRFS_SUPER_FLAG_ERROR),
--	 * although we have opened a file as writable, we have
--	 * to stop this write operation to ensure FS consistency.
--	 */
--	if (test_bit(BTRFS_FS_STATE_ERROR, &root->fs_info->fs_state)) {
--		inode_unlock(inode);
--		err = -EROFS;
--		goto out;
--	}
-+	if (err)
-+		return err;
- 
- 	/*
- 	 * We reserve space for updating the inode when we reserve space for the
-@@ -1851,30 +1867,43 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
- 		/* Expand hole size to cover write data, preventing empty gap */
- 		end_pos = round_up(pos + count, root->sectorsize);
- 		err = btrfs_cont_expand(inode, oldsize, end_pos);
--		if (err) {
--			inode_unlock(inode);
--			goto out;
--		}
--		if (start_pos > round_up(oldsize, root->sectorsize))
--			clean_page = 1;
-+		if (err)
-+			return err;
- 	}
- 
-+	return 0;
-+}
-+
-+static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
-+				    struct iov_iter *from)
-+{
-+	struct file *file = iocb->ki_filp;
-+	struct inode *inode = file_inode(file);
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	ssize_t num_written = 0;
-+	bool sync = (file->f_flags & O_DSYNC) || IS_SYNC(file->f_mapping->host);
-+
-+	if (!iov_iter_count(from))
-+		return 0;
-+
-+	/*
-+	 * If BTRFS flips readonly due to some impossible error
-+	 * (fs_info->fs_state now has BTRFS_SUPER_FLAG_ERROR),
-+	 * although we have opened a file as writable, we have
-+	 * to stop this write operation to ensure FS consistency.
-+	 */
-+	if (test_bit(BTRFS_FS_STATE_ERROR, &root->fs_info->fs_state))
-+		return -EROFS;
-+
- 	if (sync)
- 		atomic_inc(&BTRFS_I(inode)->sync_writers);
- 
- 	if (iocb->ki_flags & IOCB_DIRECT) {
--		num_written = __btrfs_direct_write(iocb, from);
-+		num_written = btrfs_file_direct_write(iocb, from);
- 	} else {
--		num_written = __btrfs_buffered_write(file, from, pos);
--		if (num_written > 0)
--			iocb->ki_pos = pos + num_written;
--		if (clean_page)
--			pagecache_isize_extended(inode, oldsize,
--						i_size_read(inode));
-+		num_written = btrfs_file_buffered_write(iocb, from);
- 	}
- 
--	inode_unlock(inode);
--
- 	/*
- 	 * We also have to set last_sub_trans to the current log transid,
- 	 * otherwise subsequent syncs to a file that's been synced in this
-@@ -1888,9 +1917,8 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
- 
- 	if (sync)
- 		atomic_dec(&BTRFS_I(inode)->sync_writers);
--out:
--	current->backing_dev_info = NULL;
--	return num_written ? num_written : err;
-+
-+	return num_written;
- }
- 
- int btrfs_release_file(struct inode *inode, struct file *filp)
++			/* dax doesn't expect other fancy options. */
++			goto out;
++#endif
+ 		case Opt_nodatacow:
+ 			if (!btrfs_test_opt(info, NODATACOW)) {
+ 				if (!btrfs_test_opt(info, COMPRESS) ||
+@@ -1232,6 +1268,8 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
+ 		seq_puts(seq, ",nodatasum");
+ 	if (btrfs_test_opt(info, NODATACOW))
+ 		seq_puts(seq, ",nodatacow");
++	if (btrfs_test_opt(info, DAX))
++		seq_puts(seq, ",dax");
+ 	if (btrfs_test_opt(info, NOBARRIER))
+ 		seq_puts(seq, ",nobarrier");
+ 	if (info->max_inline != BTRFS_DEFAULT_MAX_INLINE)
 -- 
 2.5.5
 

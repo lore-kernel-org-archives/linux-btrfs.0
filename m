@@ -1,124 +1,151 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:50558 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753106AbcLGVtY (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Dec 2016 16:49:24 -0500
-Date: Wed, 7 Dec 2016 13:49:13 -0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Yclept Nemo <orbisvicis@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [bug]: possible recursive locking detected
-Message-ID: <20161207214913.GA29547@dhcp-whq-twvpn-2-vpnpool-10-159-183-5.vpn.oracle.com>
-Reply-To: bo.li.liu@oracle.com
-References: <CALurfZUCpzPKgLafJFy2SehfWq_4qYxaaHkWJ82Q8dn3XjDD0w@mail.gmail.com>
+Received: from mail-qk0-f194.google.com ([209.85.220.194]:33806 "EHLO
+        mail-qk0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932243AbcLGWgb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Dec 2016 17:36:31 -0500
+Received: by mail-qk0-f194.google.com with SMTP id y205so50718805qkb.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 07 Dec 2016 14:36:30 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CALurfZUCpzPKgLafJFy2SehfWq_4qYxaaHkWJ82Q8dn3XjDD0w@mail.gmail.com>
+In-Reply-To: <ea1c02be-b7ae-dc60-6d72-8ac04d842ad5@fb.com>
+References: <CAJCQCtTRXEcJmP8vu1uaJHME2UnosHPOP9vmQM3GBACoJDpLPA@mail.gmail.com>
+ <51de09f3-f0e2-1e4d-f4a8-496d326d8d9c@fb.com> <CAJCQCtRHro5BtEObyhF=0CuPGroE+yFQCOoMoBKGhqbpuPBa7Q@mail.gmail.com>
+ <ea1c02be-b7ae-dc60-6d72-8ac04d842ad5@fb.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Wed, 7 Dec 2016 15:18:57 -0700
+Message-ID: <CAJCQCtQZ5GppLRDMTv4T3oP9hDk+yi1CRuyNU-BsDKh1O9Uu4g@mail.gmail.com>
+Subject: Re: crc32c_le performance hit
+To: Chris Mason <clm@fb.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: multipart/mixed; boundary=94eb2c0812f2436726054318e8f6
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+--94eb2c0812f2436726054318e8f6
+Content-Type: text/plain; charset=UTF-8
 
-On Wed, Dec 07, 2016 at 11:11:41AM -0500, Yclept Nemo wrote:
-> kernel version: drm-next x86_64
-> abrt (fedora) bug report: https://bugzilla.redhat.com/show_bug.cgi?id=1402453
+# taskset -c 0 btrfs send /mnt/first/subvol.ro/ | btrfs receive /mnt/int/
 
-I believe the patch [1] can address this warning.
+Attaching top and perf top while this send receive happens. The use of
+taskset -c 0 doesn't seem to affect the results.
 
-[1]: https://patchwork.kernel.org/patch/9457035/
 
-Thanks,
+Chris Murphy
 
--liubo
+--94eb2c0812f2436726054318e8f6
+Content-Type: text/plain; charset=US-ASCII; name="perftop_tasksetc0_4.8.12.txt"
+Content-Disposition: attachment; filename="perftop_tasksetc0_4.8.12.txt"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_iwfhxjq30
 
-> dmesg snippet (the full dmesg is 15Mb):
-> 
-> kernel: =============================================
-> kernel: [ INFO: possible recursive locking detected ]
-> kernel: 4.9.0-0.rc8.git0.1.fc25.x86_64 #1 Not tainted
-> kernel: ---------------------------------------------
-> kernel: gvfsd-metadata/1397 is trying to acquire lock:
-> kernel:  (
-> kernel: &ei->log_mutex
-> kernel: ){+.+...}
-> kernel: , at:
-> kernel: [<ffffffffc05f53f2>] btrfs_log_inode+0x162/0x1190 [btrfs]
-> kernel:
->         but task is already holding lock:
-> kernel:  (
-> kernel: &ei->log_mutex
-> kernel: ){+.+...}
-> kernel: , at:
-> kernel: [<ffffffffc05f53f2>] btrfs_log_inode+0x162/0x1190 [btrfs]
-> kernel:
->         other info that might help us debug this:
-> kernel:  Possible unsafe locking scenario:
-> kernel:        CPU0
-> kernel:        ----
-> kernel:   lock(
-> kernel: &ei->log_mutex
-> kernel: );
-> kernel:   lock(
-> kernel: &ei->log_mutex
-> kernel: );
-> kernel:
->          *** DEADLOCK ***
-> kernel:  May be due to missing lock nesting notation
-> kernel: 3 locks held by gvfsd-metadata/1397:
-> kernel:  #0:
-> kernel:  (
-> kernel: &type->i_mutex_dir_key
-> kernel: #3
-> kernel: ){++++++}
-> kernel: , at:
-> kernel: [<ffffffffc05c3de3>] btrfs_sync_file+0x163/0x4c0 [btrfs]
-> kernel:  #1:
-> kernel:  (
-> kernel: sb_internal
-> kernel: ){.+.+.+}
-> kernel: , at:
-> kernel: [<ffffffffc05aaa16>] start_transaction+0x2f6/0x530 [btrfs]
-> kernel:  #2:
-> kernel:  (
-> kernel: &ei->log_mutex
-> kernel: ){+.+...}
-> kernel: , at:
-> kernel: [<ffffffffc05f53f2>] btrfs_log_inode+0x162/0x1190 [btrfs]
-> kernel:
->         stack backtrace:
-> kernel: CPU: 0 PID: 1397 Comm: gvfsd-metadata Not tainted
-> 4.9.0-0.rc8.git0.1.fc25.x86_64 #1
-> kernel: Hardware name:    /LP NF4 Series, BIOS 6.00 PG 01/25/2005
-> kernel:  ffffb5c3c383b760 ffffffffa64772e3 ffffffffa7be05e0 ffff96512b328000
-> kernel:  ffffb5c3c383b828 ffffffffa611231e ffffb5c3c383b780 ffffffff00000003
-> kernel:  00000000c383b7a8 ffffffffa74e5600 6629c0631375af20 ffff96512b328ca8
-> kernel: Call Trace:
-> kernel:  [<ffffffffa64772e3>] dump_stack+0x86/0xc3
-> kernel:  [<ffffffffa611231e>] __lock_acquire+0x78e/0x1290
-> kernel:  [<ffffffffa60ed4b0>] ? sched_clock_cpu+0x90/0xc0
-> kernel:  [<ffffffffa691395e>] ? mutex_unlock+0xe/0x10
-> kernel:  [<ffffffffa6113286>] lock_acquire+0xf6/0x1f0
-> kernel:  [<ffffffffc05f53f2>] ? btrfs_log_inode+0x162/0x1190 [btrfs]
-> kernel:  [<ffffffffa6912ce6>] mutex_lock_nested+0x86/0x3f0
-> kernel:  [<ffffffffc05f53f2>] ? btrfs_log_inode+0x162/0x1190 [btrfs]
-> kernel:  [<ffffffffc060bb05>] ? __btrfs_release_delayed_node+0x75/0x1c0 [btrfs]
-> kernel:  [<ffffffffc05f53f2>] ? btrfs_log_inode+0x162/0x1190 [btrfs]
-> kernel:  [<ffffffffc060d999>] ?
-> btrfs_commit_inode_delayed_inode+0xe9/0x130 [btrfs]
-> kernel:  [<ffffffffc05f53f2>] btrfs_log_inode+0x162/0x1190 [btrfs]
-> kernel:  [<ffffffffa60e16fa>] ? __might_sleep+0x4a/0x80
-> kernel:  [<ffffffffc05f5fa8>] btrfs_log_inode+0xd18/0x1190 [btrfs]
-> kernel:  [<ffffffffa60ed3b7>] ? sched_clock_local+0x17/0x80
-> kernel:  [<ffffffffc0635dc7>] log_new_dir_dentries+0x1e1/0x4c0 [btrfs]
-> kernel:  [<ffffffffc05f6d48>] btrfs_log_inode_parent+0x898/0x940 [btrfs]
-> kernel:  [<ffffffffa62ca879>] ? dget_parent+0x99/0x2a0
-> kernel:  [<ffffffffc05f7d92>] btrfs_log_dentry_safe+0x62/0x80 [btrfs]
-> kernel:  [<ffffffffc05c3f92>] btrfs_sync_file+0x312/0x4c0 [btrfs]
-> kernel:  [<ffffffffa62eb6db>] vfs_fsync_range+0x4b/0xb0
-> kernel:  [<ffffffffa62eb79d>] do_fsync+0x3d/0x70
-> kernel:  [<ffffffffa62eba60>] SyS_fsync+0x10/0x20
-> kernel:  [<ffffffffa6917741>] entry_SYSCALL_64_fastpath+0x1f/0xc2
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+U2FtcGxlczogNTFLIG9mIGV2ZW50ICdjeWNsZXM6cHAnLCBFdmVudCBjb3VudCAoYXBwcm94Lik6
+IDEzNDM1MDIwMjY5Ck92ZXJoZWFkICBTaGFyZWQgT2JqZWN0ICAgICAgICAgICAgICAgU3ltYm9s
+CjE4LjA0JSAgYnRyZnMgICAgICAgICAgICAgICAgICAgICAgIFsuXSBfX2NyYzMyY19sZQo4LjUw
+JSAgW2tlcm5lbF0gICAgICAgICAgICAgICAgICAgIFtrXSBfYWVzbmlfZGVjNAo2Ljc1JSAgW2tl
+cm5lbF0gICAgICAgICAgICAgICAgICAgIFtrXSBfX3JhZGl4X3RyZWVfbG9va3VwCjUuMDAlICBb
+a2VybmVsXSAgICAgICAgICAgICAgICAgICAgW2tdIGNvcHlfdXNlcl9lbmhhbmNlZF9mYXN0X3N0
+cmluZwoyLjQxJSAgW2tlcm5lbF0gICAgICAgICAgICAgICAgICAgIFtrXSBtZW1jcHlfZXJtcwox
+Ljg5JSAgW2tlcm5lbF0gICAgICAgICAgICAgICAgICAgIFtrXSBzZW5kX2V4dGVudF9kYXRhCjEu
+NzclICBba2VybmVsXSAgICAgICAgICAgICAgICAgICAgW2tdIGFlc25pX3h0c19jcnlwdDgKMC45
+OSUgIFtrZXJuZWxdICAgICAgICAgICAgICAgICAgICBba10gbWVtc2V0X2VybXMKMC45NCUgIFtr
+ZXJuZWxdICAgICAgICAgICAgICAgICAgICBba10gdXBkYXRlX2Jsb2NrZWRfYXZlcmFnZXMKMC44
+OSUgIFtrZXJuZWxdICAgICAgICAgICAgICAgICAgICBba10gX193YWtlX3VwX2JpdAowLjgyJSAg
+W2tlcm5lbF0gICAgICAgICAgICAgICAgICAgIFtrXSBjcnlwdF9jb252ZXJ0CjAuNzclICBba2Vy
+bmVsXSAgICAgICAgICAgICAgICAgICAgW2tdIGdldF9wYWdlX2Zyb21fZnJlZWxpc3QKMC43MCUg
+IFtrZXJuZWxdICAgICAgICAgICAgICAgICAgICBba10gX19saXN0X2RlbF9lbnRyeQowLjQ3JSAg
+W2tlcm5lbF0gICAgICAgICAgICAgICAgICAgIFtrXSBfYWVzbmlfZW5jMQowLjQ2JSAgW2tlcm5l
+bF0gICAgICAgICAgICAgICAgICAgIFtrXSBnbHVlX3h0c19jcnlwdF8xMjhiaXQKMC40MSUgIFtr
+ZXJuZWxdICAgICAgICAgICAgICAgICAgICBba10gX19kb19wYWdlX2NhY2hlX3JlYWRhaGVhZAow
+LjM5JSAgW2tlcm5lbF0gICAgICAgICAgICAgICAgICAgIFtrXSByYWRpeF90cmVlX2xvb2t1cAow
+LjM2JSAgW2tlcm5lbF0gICAgICAgICAgICAgICAgICAgIFtrXSBfcmF3X3NwaW5fbG9jawowLjM2
+JSAgW2tlcm5lbF0gICAgICAgICAgICAgICAgICAgIFtrXSBjZmJfaW1hZ2VibGl0CjAuMzUlICBw
+ZXJmICAgICAgICAgICAgICAgICAgICAgICAgWy5dIGRzb19fZmluZF9zeW1ib2wKMC4zNSUgIFtr
+ZXJuZWxdICAgICAgICAgICAgICAgICAgICBba10gY3JjXzk2CjAuMzMlICBba2VybmVsXSAgICAg
+ICAgICAgICAgICAgICAgW2tdIGNyY180OAowLjMzJSAgW2tlcm5lbF0gICAgICAgICAgICAgICAg
+ICAgIFtrXSBjcmNfMTI4CjAuMzElICBba2VybmVsXSAgICAgICAgICAgICAgICAgICAgW2tdIGNy
+Y180MgowLjMxJSAgW2tlcm5lbF0gICAgICAgICAgICAgICAgICAgIFtrXSBjcmNfMzIKMC4zMSUg
+IFtrZXJuZWxdICAgICAgICAgICAgICAgICAgICBba10gY3JjXzgwCjAuMzElICBba2VybmVsXSAg
+ICAgICAgICAgICAgICAgICAgW2tdIF9fc2NoZWR1bGUKMC4zMSUgIFtrZXJuZWxdICAgICAgICAg
+ICAgICAgICAgICBba10gYmFkX3JhbmdlCjAuMzAlICBba2VybmVsXSAgICAgICAgICAgICAgICAg
+ICAgW2tdIF9fY2hlY2tfb2JqZWN0X3NpemUKMC4zMCUgIFtrZXJuZWxdICAgICAgICAgICAgICAg
+ICAgICBba10gY3JjXzExMgowLjMwJSAgW2tlcm5lbF0gICAgICAgICAgICAgICAgICAgIFtrXSBf
+cmF3X3NwaW5fbG9ja19pcnFzYXZlCjAuMzAlICBba2VybmVsXSAgICAgICAgICAgICAgICAgICAg
+W2tdIGZyZWVfaG90X2NvbGRfcGFnZQowLjI5JSAgW2tlcm5lbF0gICAgICAgICAgICAgICAgICAg
+IFtrXSBjcmNfNjQKMC4yOSUgIFtrZXJuZWxdICAgICAgICAgICAgICAgICAgICBba10gY3JjXzE2
+CjAuMjglICBba2VybmVsXSAgICAgICAgICAgICAgICAgICAgW2tdIG1vZHVsZV9nZXRfa2FsbHN5
+bQowLjI4JSAgW2tlcm5lbF0gICAgICAgICAgICAgICAgICAgIFtrXSBnZW5lcmljX2Jpbl9zZWFy
+Y2guY29uc3Rwcm9wLjM3CjAuMjclICBba2VybmVsXSAgICAgICAgICAgICAgICAgICAgW2tdIHBp
+cGVfd3JpdGUKMC4yNyUgIGxpYmMtMi4yNC5zbyAgICAgICAgICAgICAgICBbLl0gdmZwcmludGYK
+MC4yNyUgIGxpYmMtMi4yNC5zbyAgICAgICAgICAgICAgICBbLl0gX19zdHJjbXBfc3NlMl91bmFs
+aWduZWQKMC4yNyUgIFtrZXJuZWxdICAgICAgICAgICAgICAgICAgICBba10gZnJlZV9wY3BwYWdl
+c19idWxrCjAuMjYlICBba2VybmVsXSAgICAgICAgICAgICAgICAgICAgW2tdIGJsa2NpcGhlcl93
+YWxrX25leHQKMC4yNiUgIFtrZXJuZWxdICAgICAgICAgICAgICAgICAgICBba10gX19idHJmc19t
+YXBfYmxvY2sKMC4yNiUgIFtrZXJuZWxdICAgICAgICAgICAgICAgICAgICBba10gX19hbGxvY19w
+YWdlc19ub2RlbWFzawowLjI2JSAgW2tlcm5lbF0gICAgICAgICAgICAgICAgICAgIFtrXSBwYWdl
+X2NhY2hlX3ByZXZfaG9sZQowLjI2JSAgW2tlcm5lbF0gICAgICAgICAgICAgICAgICAgIFtrXSB1
+bmxvY2tfcGFnZQowLjI1JSAgW2tlcm5lbF0gICAgICAgICAgICAgICAgICAgIFtrXSBfX2xvb2t1
+cF9leHRlbnRfbWFwcGluZwowLjI1JSAgW2tlcm5lbF0gICAgICAgICAgICAgICAgICAgIFtrXSBr
+bWVtX2NhY2hlX2FsbG9jCm5vIHN5bWJvbHMgcGFzc2VkIHRoZSBnaXZlbiBmaWx0ZXIuCgo=
+--94eb2c0812f2436726054318e8f6
+Content-Type: text/plain; charset=US-ASCII; name="top_tasksetc0_4.8.12.txt"
+Content-Disposition: attachment; filename="top_tasksetc0_4.8.12.txt"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_iwfhxjr11
+
+dG9wIC0gMTU6MTI6MDIgdXAgOCBtaW4sICAyIHVzZXJzLCAgbG9hZCBhdmVyYWdlOiAwLjUxLCAw
+LjIyLCAwLjEyClRhc2tzOiAyMDggdG90YWwsICAgMyBydW5uaW5nLCAyMDUgc2xlZXBpbmcsICAg
+MCBzdG9wcGVkLCAgIDAgem9tYmllCiVDcHUocyk6ICA2LjggdXMsIDE5Ljkgc3ksICAwLjAgbmks
+IDU3LjMgaWQsIDE0LjIgd2EsICAwLjkgaGksICAwLjkgc2ksICAwLjAgc3QKS2lCIE1lbSA6ICAz
+OTY1MjA0IHRvdGFsLCAgMjc1NjM0NCBmcmVlLCAgIDE2NjE5NiB1c2VkLCAgMTA0MjY2NCBidWZm
+L2NhY2hlCktpQiBTd2FwOiAgODM4ODYwNCB0b3RhbCwgIDgzODg2MDQgZnJlZSwgICAgICAgIDAg
+dXNlZC4gIDM1Mjg1MjggYXZhaWwgTWVtIAoKUElEIFVTRVIgICAgICBQUiAgTkkgICAgVklSVCAg
+ICBSRVMgICAgU0hSIFMgICVDUFUgJU1FTSAgICAgVElNRSsgQ09NTUFORCAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCjEzNjcg
+cm9vdCAgICAgIDIwICAgMCAgIDE1OTI4ICAgMTE4MCAgIDEwNDAgUiAgMzguNiAgMC4wICAgMDow
+Mi41MSBidHJmcyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAKMTM2NiByb290ICAgICAgMjAgICAwICAgMjQxMjQgICAxMTYw
+ICAgMTAxNiBSICAyNy4xICAwLjAgICAwOjAxLjY3IGJ0cmZzICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAoxMjQ5IHJvb3Qg
+ICAgICAyMCAgIDAgICAgICAgMCAgICAgIDAgICAgICAwIFMgICA5LjIgIDAuMCAgIDA6MDAuNzAg
+a3dvcmtlci91ODowICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgCjEyMyByb290ICAgICAgMjAgICAwICAgICAgIDAgICAgICAwICAgICAg
+MCBTICAgNy45ICAwLjAgICAwOjAwLjgxIGt3b3JrZXIvdTg6MyAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAoxMzE5IHJvb3QgICAgICAy
+MCAgIDAgICAgICAgMCAgICAgIDAgICAgICAwIFMgICA1LjkgIDAuMCAgIDA6MDAuMjAga3dvcmtl
+ci91ODo1ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgCjU3IHJvb3QgICAgICAyMCAgIDAgICAgICAgMCAgICAgIDAgICAgICAwIFMgICA1
+LjAgIDAuMCAgIDA6MDAuODUga3dvcmtlci91ODoxICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCjEzNzAgcm9vdCAgICAgIDIwICAgMCAg
+ICAgICAwICAgICAgMCAgICAgIDAgUyAgIDUuMCAgMC4wICAgMDowMC4xNSBrd29ya2VyL3U4OjYg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAKMTEzIHJvb3QgICAgICAyMCAgIDAgICAgICAgMCAgICAgIDAgICAgICAwIFMgICA0LjMgIDAu
+MCAgIDA6MDAuNDMga3dvcmtlci91ODoyICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgCjE1MyByb290ICAgICAgMjAgICAwICAgICAgIDAg
+ICAgICAwICAgICAgMCBTICAgMy4zICAwLjAgICAwOjAwLjU2IGt3b3JrZXIvdTg6NCAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAo4MTUg
+cm9vdCAgICAgIDIwICAgMCAgMTM5Njk2ICAgMjk2NCAgIDI3MDggUyAgIDAuNyAgMC4xICAgMDow
+My45NCBhZ2V0dHkgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAKMTM2OSBjaHJpcyAgICAgMjAgICAwICAxNTY2NjQgICA0MjM2
+ICAgMzcyMCBSICAgMC43ICAwLjEgICAwOjAwLjA3IHRvcCAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAo3IHJvb3QgICAg
+ICAyMCAgIDAgICAgICAgMCAgICAgIDAgICAgICAwIFMgICAwLjMgIDAuMCAgIDA6MDAuMjkgcmN1
+X3NjaGVkICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgCjkgcm9vdCAgICAgIDIwICAgMCAgICAgICAwICAgICAgMCAgICAgIDAgUyAg
+IDAuMyAgMC4wICAgMDowMC4xNSByY3Vvcy8wICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKMjEgcm9vdCAgICAgIDIwICAgMCAg
+ICAgICAwICAgICAgMCAgICAgIDAgUyAgIDAuMyAgMC4wICAgMDowMC4wOSByY3Vvcy8xICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAKNzg3IHJvb3QgICAgICAyMCAgIDAgIDQ2NzE4OCAgMTQ1NTYgIDExNjY0IFMgICAwLjMgIDAu
+NCAgIDA6MDIuMzIgTmV0d29ya01hbmFnZXIgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgCjEgcm9vdCAgICAgIDIwICAgMCAgMTQ5Mjk2ICAx
+MDcyNCAgIDc2OTIgUyAgIDAuMCAgMC4zICAgMDowMy4xOSBzeXN0ZW1kICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKMiByb290
+ICAgICAgMjAgICAwICAgICAgIDAgICAgICAwICAgICAgMCBTICAgMC4wICAwLjAgICAwOjAwLjAy
+IGt0aHJlYWRkICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgIAozIHJvb3QgICAgICAyMCAgIDAgICAgICAgMCAgICAgIDAgICAgICAw
+IFMgICAwLjAgIDAuMCAgIDA6MDAuMDAga3NvZnRpcnFkLzAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCjUgcm9vdCAgICAgICAwIC0y
+MCAgICAgICAwICAgICAgMCAgICAgIDAgUyAgIDAuMCAgMC4wICAgMDowMC4wMCBrd29ya2VyLzA6
+MEggICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAK
+--94eb2c0812f2436726054318e8f6--

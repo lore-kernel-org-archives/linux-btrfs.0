@@ -1,70 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:48008 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932648AbcLGVhf (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Dec 2016 16:37:35 -0500
+Received: from aserp1040.oracle.com ([141.146.126.69]:43340 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932887AbcLGVhg (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Dec 2016 16:37:36 -0500
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Chris Mason <clm@fb.com>, Jan Kara <jack@suse.cz>,
         David Sterba <dsterba@suse.cz>
-Subject: [PATCH 0/6] btrfs dax IO
-Date: Wed,  7 Dec 2016 13:45:04 -0800
-Message-Id: <1481147110-20048-1-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH 2/6] Btrfs: set single device limit for dax usecase
+Date: Wed,  7 Dec 2016 13:45:06 -0800
+Message-Id: <1481147110-20048-3-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1481147110-20048-1-git-send-email-bo.li.liu@oracle.com>
+References: <1481147110-20048-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a prelimanary patch set to add dax support for btrfs, with
-this we can do normal read/write to dax files and can mmap dax files
-to userspace so that applications have the ability to access
-persistent memory directly.
+Dax on btrfs is not ready for multiple device.
 
-Please note that currently this is limited to nocow, i.e. all dax
-inodes do not have COW behaviour.
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/ioctl.c | 6 ++++++
+ fs/btrfs/super.c | 7 +++++++
+ 2 files changed, 13 insertions(+)
 
-COW:   	    	     	no
-mutliple device:	no
-clone/reflink:		no
-snapshot:		no
-compression:		no
-checksum:		no
-
-Right now snapshot is disabled while mounting with -odax, but snapshot
-can be created without -odax, and writing to a dax file in snapshot
-will get -EIO.
-
-Clone/reflink is dealt with as same as snapshot, -EIO will be returned
-when writing to shared extents.
-
-This has adopted the latest iomap framework for dax read/write
-and dax mmap.
-
-With kernel command option "memmap=", I've had the whole patch set
-tested with fstests, except those issues caused by failure of creating
-snapshot/reflink and requirement for mutliple device, fstests said OK.
-
-To test it, simply use kernel cmd option "memmap=", mkfs.btrfs and
-mount -odax, then you're ready to go run anything upon dax-version
-btrfs.
-
-Liu Bo (6):
-  Btrfs: add mount option for dax
-  Btrfs: set single device limit for dax usecase
-  Btrfs: refactor btrfs_file_write_iter
-  Btrfs: add DAX support for nocow btrfs
-  Btrfs: add mmap_sem to avoid race between page faults and
-    truncate/hole_punch
-  Btrfs: add tracepoint for btrfs_get_blocks_dax_fault
-
- fs/btrfs/Kconfig             |   1 +
- fs/btrfs/btrfs_inode.h       |   7 +
- fs/btrfs/ctree.h             |   6 +
- fs/btrfs/file.c              | 342 +++++++++++++++++++-----
- fs/btrfs/inode.c             | 599 +++++++++++++++++++++++++++++++++++++++++--
- fs/btrfs/ioctl.c             |  26 +-
- fs/btrfs/super.c             |  47 +++-
- include/trace/events/btrfs.h | 106 ++++++++
- 8 files changed, 1048 insertions(+), 86 deletions(-)
-
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 7acbd2c..ab30d88 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2663,6 +2663,12 @@ static long btrfs_ioctl_add_dev(struct btrfs_root *root, void __user *arg)
+ 	if (!capable(CAP_SYS_ADMIN))
+ 		return -EPERM;
+ 
++	if (btrfs_test_opt(root->fs_info, DAX)) {
++		btrfs_info(root->fs_info,
++			   "dax doesn't support multiple devices\n");
++		return -EOPNOTSUPP;
++	}
++
+ 	if (atomic_xchg(&root->fs_info->mutually_exclusive_operation_running,
+ 			1)) {
+ 		return BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS;
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 9b18f3d..8cb94ab 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -475,6 +475,13 @@ int btrfs_parse_options(struct btrfs_root *root, char *options,
+ #ifdef CONFIG_FS_DAX
+ 		case Opt_dax:
+ 			btrfs_set_and_info(info, DAX, "setting dax");
++			if (btrfs_super_num_devices(info->super_copy) > 1) {
++				btrfs_info(info,
++					  "dax doesn't support multiple devices(%llu)\n",
++					   btrfs_super_num_devices(info->super_copy));
++				ret = -EOPNOTSUPP;
++				goto out;
++			}
+ 			/*
+ 			 * sb->s_blocksize is set to root->sectorsize
+ 			 * sb->s_bdev is required, but btrfs doesn't set it
 -- 
 2.5.5
 

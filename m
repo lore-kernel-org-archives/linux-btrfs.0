@@ -1,110 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52958 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:37358 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753280AbcLMTkJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Dec 2016 14:40:09 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 66BE6AAC8
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Dec 2016 19:39:36 +0000 (UTC)
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-From: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH] btrfs: drop unused extent_op arg from
- btrfs_add_delayed_data_ref
-Message-ID: <1d914e77-1f5e-47ec-1858-50f0a4dc9023@suse.com>
-Date: Tue, 13 Dec 2016 14:39:34 -0500
+        id S1752809AbcLGPGz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 7 Dec 2016 10:06:55 -0500
+Subject: Re: [PATCH] btrfs-progs: Fix disable backtrace assert error
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+References: <20161207012944.10545-1-quwenruo@cn.fujitsu.com>
+Cc: dsterba@suse.cz
+From: Goldwyn Rodrigues <rgoldwyn@suse.de>
+Message-ID: <05213ee7-ecb9-8171-d4b3-eec45204ff25@suse.de>
+Date: Wed, 7 Dec 2016 09:06:49 -0600
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20161207012944.10545-1-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_add_delayed_data_ref is always called with a NULL extent_op,
-so let's drop the argument.
 
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
----
- fs/btrfs/delayed-ref.c | 6 ++----
- fs/btrfs/delayed-ref.h | 3 +--
- fs/btrfs/extent-tree.c | 7 +++----
- 3 files changed, 6 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index 8d93854..299fb2e 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -811,15 +811,13 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
- 			       struct btrfs_trans_handle *trans,
- 			       u64 bytenr, u64 num_bytes,
- 			       u64 parent, u64 ref_root,
--			       u64 owner, u64 offset, u64 reserved, int action,
--			       struct btrfs_delayed_extent_op *extent_op)
-+			       u64 owner, u64 offset, u64 reserved, int action)
- {
- 	struct btrfs_delayed_data_ref *ref;
- 	struct btrfs_delayed_ref_head *head_ref;
- 	struct btrfs_delayed_ref_root *delayed_refs;
- 	struct btrfs_qgroup_extent_record *record = NULL;
- 
--	BUG_ON(extent_op && !extent_op->is_data);
- 	ref = kmem_cache_alloc(btrfs_delayed_data_ref_cachep, GFP_NOFS);
- 	if (!ref)
- 		return -ENOMEM;
-@@ -841,7 +839,7 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
- 		}
- 	}
- 
--	head_ref->extent_op = extent_op;
-+	head_ref->extent_op = NULL;
- 
- 	delayed_refs = &trans->transaction->delayed_refs;
- 	spin_lock(&delayed_refs->lock);
-diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
-index 43f3629..a4be1cc 100644
---- a/fs/btrfs/delayed-ref.h
-+++ b/fs/btrfs/delayed-ref.h
-@@ -248,8 +248,7 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
- 			       struct btrfs_trans_handle *trans,
- 			       u64 bytenr, u64 num_bytes,
- 			       u64 parent, u64 ref_root,
--			       u64 owner, u64 offset, u64 reserved, int action,
--			       struct btrfs_delayed_extent_op *extent_op);
-+			       u64 owner, u64 offset, u64 reserved, int action);
- int btrfs_add_delayed_extent_op(struct btrfs_fs_info *fs_info,
- 				struct btrfs_trans_handle *trans,
- 				u64 bytenr, u64 num_bytes,
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 73a8d31..4471632 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2099,7 +2099,7 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
- 		ret = btrfs_add_delayed_data_ref(fs_info, trans, bytenr,
- 					num_bytes, parent, root_objectid,
- 					owner, offset, 0,
--					BTRFS_ADD_DELAYED_REF, NULL);
-+					BTRFS_ADD_DELAYED_REF);
- 	}
- 	return ret;
- }
-@@ -7255,7 +7255,7 @@ int btrfs_free_extent(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 						num_bytes,
- 						parent, root_objectid, owner,
- 						offset, 0,
--						BTRFS_DROP_DELAYED_REF, NULL);
-+						BTRFS_DROP_DELAYED_REF);
- 	}
- 	return ret;
- }
-@@ -8205,8 +8205,7 @@ int btrfs_alloc_reserved_file_extent(struct btrfs_trans_handle *trans,
- 	ret = btrfs_add_delayed_data_ref(root->fs_info, trans, ins->objectid,
- 					 ins->offset, 0,
- 					 root_objectid, owner, offset,
--					 ram_bytes, BTRFS_ADD_DELAYED_EXTENT,
--					 NULL);
-+					 ram_bytes, BTRFS_ADD_DELAYED_EXTENT); 
- 	return ret;
- }
- 
+On 12/06/2016 07:29 PM, Qu Wenruo wrote:
+> Due to commit 00e769d04c2c83029d6c71(btrfs-progs: Correct value printed
+> by assertions/BUG_ON/WARN_ON), which changed the assert_trace()
+> parameter, the condition passed to assert/WARN_ON/BUG_ON are logical
+> notted for backtrace enabled and disabled case.
+> 
+> Such behavior makes us easier to pass value wrong, and in fact it did
+> cause us to pass wrong condition for ASSERT().
+> 
+> Instead of passing different conditions for ASSERT/WARN_ON/BUG_ON()
+> manually, this patch will use BUG_ON() to implement the resting
+> ASSERT/WARN_ON/BUG(), so we don't need to pass 3 different conditions
+> but only one.
+> 
+> And to further info the review for the fact that the condition should be
+> different, rename "assert_trace" to "bugon_trace", as unlike assert, we
+> will only trigger the bug when condition is true.
+> 
+> Also, move WARN_ON() out of the ifdef branch, as it's completely the
+> same for both branches.
+> 
+> Cc: Goldwyn Rodrigues <rgoldwyn@suse.de>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+>  kerncompat.h | 19 +++++++++++--------
+>  1 file changed, 11 insertions(+), 8 deletions(-)
+> 
+> diff --git a/kerncompat.h b/kerncompat.h
+> index e374614..be77608 100644
+> --- a/kerncompat.h
+> +++ b/kerncompat.h
+> @@ -277,7 +277,7 @@ static inline long IS_ERR(const void *ptr)
+>  #define vfree(x) free(x)
+>  
+>  #ifndef BTRFS_DISABLE_BACKTRACE
+> -static inline void assert_trace(const char *assertion, const char *filename,
+> +static inline void bugon_trace(const char *assertion, const char *filename,
+>  			      const char *func, unsigned line, long val)
+>  {
+>  	if (!val)
 
+To keep confusion to the minimum, you can call this *condition instead
+of *assertion.
+
+> @@ -287,17 +287,20 @@ static inline void assert_trace(const char *assertion, const char *filename,
+>  	exit(1);
+>  }
+>  
+> -#define BUG_ON(c) assert_trace(#c, __FILE__, __func__, __LINE__, (long)(c))
+> -#define WARN_ON(c) warning_trace(#c, __FILE__, __func__, __LINE__, (long)(c))
+> -#define	ASSERT(c) assert_trace(#c, __FILE__, __func__, __LINE__, (long)!(c))
+> -#define BUG() assert_trace(NULL, __FILE__, __func__, __LINE__, 1)
+> +#define BUG_ON(c) bugon_trace(#c, __FILE__, __func__, __LINE__, (long)(c))
+>  #else
+>  #define BUG_ON(c) assert(!(c))
+> -#define WARN_ON(c) warning_trace(#c, __FILE__, __func__, __LINE__, (long)(c))
+> -#define ASSERT(c) assert(!(c))
+> -#define BUG() assert(0)
+>  #endif
+>  
+> +#define WARN_ON(c) warning_trace(#c, __FILE__, __func__, __LINE__, (long)(c))
+> +/*
+> + * TODO: ASSERT() should be depercated. In case like ASSERT(ret == 0), it
+> + * won't output any useful value for ret.
+> + * Should be replaced by BUG_ON(ret);
+> + */
+> +#define	ASSERT(c) BUG_ON(!(c))
+
+I am not sure of this. As you are stating, this (double negation) will
+kill the value of the condition. Won't it be better to remove all
+ASSERTs first instead of putting this TODO?
+
+
+> +#define BUG() BUG_ON(1)
+> +
+>  #define container_of(ptr, type, member) ({                      \
+>          const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
+>  	        (type *)( (char *)__mptr - offsetof(type,member) );})
+> 
 
 -- 
-Jeff Mahoney
-SUSE Labs
+Goldwyn

@@ -1,151 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f194.google.com ([209.85.220.194]:33806 "EHLO
-        mail-qk0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932243AbcLGWgb (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Dec 2016 17:36:31 -0500
-Received: by mail-qk0-f194.google.com with SMTP id y205so50718805qkb.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 07 Dec 2016 14:36:30 -0800 (PST)
+Received: from mx0b-001b2d01.pphosted.com ([148.163.158.5]:44870 "EHLO
+        mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1751367AbcLHOc1 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 8 Dec 2016 09:32:27 -0500
+Received: from pps.filterd (m0098420.ppops.net [127.0.0.1])
+        by mx0b-001b2d01.pphosted.com (8.16.0.17/8.16.0.17) with SMTP id uB8EVDYL063082
+        for <linux-btrfs@vger.kernel.org>; Thu, 8 Dec 2016 09:32:26 -0500
+Received: from e23smtp09.au.ibm.com (e23smtp09.au.ibm.com [202.81.31.142])
+        by mx0b-001b2d01.pphosted.com with ESMTP id 277857vpw4-1
+        (version=TLSv1.2 cipher=AES256-SHA bits=256 verify=NOT)
+        for <linux-btrfs@vger.kernel.org>; Thu, 08 Dec 2016 09:32:25 -0500
+Received: from localhost
+        by e23smtp09.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+        for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+        Fri, 9 Dec 2016 00:32:22 +1000
+Received: from d23relay06.au.ibm.com (d23relay06.au.ibm.com [9.185.63.219])
+        by d23dlp01.au.ibm.com (Postfix) with ESMTP id C96BF2CE8046
+        for <linux-btrfs@vger.kernel.org>; Fri,  9 Dec 2016 01:32:20 +1100 (EST)
+Received: from d23av05.au.ibm.com (d23av05.au.ibm.com [9.190.234.119])
+        by d23relay06.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id uB8EWKbI50004132
+        for <linux-btrfs@vger.kernel.org>; Fri, 9 Dec 2016 01:32:20 +1100
+Received: from d23av05.au.ibm.com (localhost [127.0.0.1])
+        by d23av05.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id uB8EWKRT022261
+        for <linux-btrfs@vger.kernel.org>; Fri, 9 Dec 2016 01:32:20 +1100
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH 1/2] btrfs: qgroup: Introduce extent changeset for qgroup reserve functions
+Date: Thu, 08 Dec 2016 19:59:02 +0530
+In-Reply-To: <20161202020307.6025-1-quwenruo@cn.fujitsu.com>
+References: <20161202020307.6025-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <ea1c02be-b7ae-dc60-6d72-8ac04d842ad5@fb.com>
-References: <CAJCQCtTRXEcJmP8vu1uaJHME2UnosHPOP9vmQM3GBACoJDpLPA@mail.gmail.com>
- <51de09f3-f0e2-1e4d-f4a8-496d326d8d9c@fb.com> <CAJCQCtRHro5BtEObyhF=0CuPGroE+yFQCOoMoBKGhqbpuPBa7Q@mail.gmail.com>
- <ea1c02be-b7ae-dc60-6d72-8ac04d842ad5@fb.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Wed, 7 Dec 2016 15:18:57 -0700
-Message-ID: <CAJCQCtQZ5GppLRDMTv4T3oP9hDk+yi1CRuyNU-BsDKh1O9Uu4g@mail.gmail.com>
-Subject: Re: crc32c_le performance hit
-To: Chris Mason <clm@fb.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: multipart/mixed; boundary=94eb2c0812f2436726054318e8f6
+Content-Type: text/plain; charset="us-ascii"
+Message-Id: <10093188.Rk5diOXqMO@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---94eb2c0812f2436726054318e8f6
-Content-Type: text/plain; charset=UTF-8
+On Friday, December 02, 2016 10:03:06 AM Qu Wenruo wrote:
+> Introduce a new parameter, struct extent_changeset for
+> btrfs_qgroup_reserved_data() and its callers.
+> 
+> Such extent_changeset was used in btrfs_qgroup_reserve_data() to record
+> which range it reserved in current reserve, so it can free it at error
+> path.
+> 
+> The reason we need to export it to callers is, at buffered write error
+> path, without knowing what exactly which range we reserved in current
+> allocation, we can free space which is not reserved by us.
+> 
+> This will lead to qgroup reserved space underflow.
+>
 
-# taskset -c 0 btrfs send /mnt/first/subvol.ro/ | btrfs receive /mnt/int/
+Hi Qu,
 
-Attaching top and perf top while this send receive happens. The use of
-taskset -c 0 doesn't seem to affect the results.
+On which git tree are these patches based off? This patch fails to apply
+cleanly on kdave/for-next branch that is available as of today.
 
+-- 
+chandan
 
-Chris Murphy
-
---94eb2c0812f2436726054318e8f6
-Content-Type: text/plain; charset=US-ASCII; name="perftop_tasksetc0_4.8.12.txt"
-Content-Disposition: attachment; filename="perftop_tasksetc0_4.8.12.txt"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_iwfhxjq30
-
-U2FtcGxlczogNTFLIG9mIGV2ZW50ICdjeWNsZXM6cHAnLCBFdmVudCBjb3VudCAoYXBwcm94Lik6
-IDEzNDM1MDIwMjY5Ck92ZXJoZWFkICBTaGFyZWQgT2JqZWN0ICAgICAgICAgICAgICAgU3ltYm9s
-CjE4LjA0JSAgYnRyZnMgICAgICAgICAgICAgICAgICAgICAgIFsuXSBfX2NyYzMyY19sZQo4LjUw
-JSAgW2tlcm5lbF0gICAgICAgICAgICAgICAgICAgIFtrXSBfYWVzbmlfZGVjNAo2Ljc1JSAgW2tl
-cm5lbF0gICAgICAgICAgICAgICAgICAgIFtrXSBfX3JhZGl4X3RyZWVfbG9va3VwCjUuMDAlICBb
-a2VybmVsXSAgICAgICAgICAgICAgICAgICAgW2tdIGNvcHlfdXNlcl9lbmhhbmNlZF9mYXN0X3N0
-cmluZwoyLjQxJSAgW2tlcm5lbF0gICAgICAgICAgICAgICAgICAgIFtrXSBtZW1jcHlfZXJtcwox
-Ljg5JSAgW2tlcm5lbF0gICAgICAgICAgICAgICAgICAgIFtrXSBzZW5kX2V4dGVudF9kYXRhCjEu
-NzclICBba2VybmVsXSAgICAgICAgICAgICAgICAgICAgW2tdIGFlc25pX3h0c19jcnlwdDgKMC45
-OSUgIFtrZXJuZWxdICAgICAgICAgICAgICAgICAgICBba10gbWVtc2V0X2VybXMKMC45NCUgIFtr
-ZXJuZWxdICAgICAgICAgICAgICAgICAgICBba10gdXBkYXRlX2Jsb2NrZWRfYXZlcmFnZXMKMC44
-OSUgIFtrZXJuZWxdICAgICAgICAgICAgICAgICAgICBba10gX193YWtlX3VwX2JpdAowLjgyJSAg
-W2tlcm5lbF0gICAgICAgICAgICAgICAgICAgIFtrXSBjcnlwdF9jb252ZXJ0CjAuNzclICBba2Vy
-bmVsXSAgICAgICAgICAgICAgICAgICAgW2tdIGdldF9wYWdlX2Zyb21fZnJlZWxpc3QKMC43MCUg
-IFtrZXJuZWxdICAgICAgICAgICAgICAgICAgICBba10gX19saXN0X2RlbF9lbnRyeQowLjQ3JSAg
-W2tlcm5lbF0gICAgICAgICAgICAgICAgICAgIFtrXSBfYWVzbmlfZW5jMQowLjQ2JSAgW2tlcm5l
-bF0gICAgICAgICAgICAgICAgICAgIFtrXSBnbHVlX3h0c19jcnlwdF8xMjhiaXQKMC40MSUgIFtr
-ZXJuZWxdICAgICAgICAgICAgICAgICAgICBba10gX19kb19wYWdlX2NhY2hlX3JlYWRhaGVhZAow
-LjM5JSAgW2tlcm5lbF0gICAgICAgICAgICAgICAgICAgIFtrXSByYWRpeF90cmVlX2xvb2t1cAow
-LjM2JSAgW2tlcm5lbF0gICAgICAgICAgICAgICAgICAgIFtrXSBfcmF3X3NwaW5fbG9jawowLjM2
-JSAgW2tlcm5lbF0gICAgICAgICAgICAgICAgICAgIFtrXSBjZmJfaW1hZ2VibGl0CjAuMzUlICBw
-ZXJmICAgICAgICAgICAgICAgICAgICAgICAgWy5dIGRzb19fZmluZF9zeW1ib2wKMC4zNSUgIFtr
-ZXJuZWxdICAgICAgICAgICAgICAgICAgICBba10gY3JjXzk2CjAuMzMlICBba2VybmVsXSAgICAg
-ICAgICAgICAgICAgICAgW2tdIGNyY180OAowLjMzJSAgW2tlcm5lbF0gICAgICAgICAgICAgICAg
-ICAgIFtrXSBjcmNfMTI4CjAuMzElICBba2VybmVsXSAgICAgICAgICAgICAgICAgICAgW2tdIGNy
-Y180MgowLjMxJSAgW2tlcm5lbF0gICAgICAgICAgICAgICAgICAgIFtrXSBjcmNfMzIKMC4zMSUg
-IFtrZXJuZWxdICAgICAgICAgICAgICAgICAgICBba10gY3JjXzgwCjAuMzElICBba2VybmVsXSAg
-ICAgICAgICAgICAgICAgICAgW2tdIF9fc2NoZWR1bGUKMC4zMSUgIFtrZXJuZWxdICAgICAgICAg
-ICAgICAgICAgICBba10gYmFkX3JhbmdlCjAuMzAlICBba2VybmVsXSAgICAgICAgICAgICAgICAg
-ICAgW2tdIF9fY2hlY2tfb2JqZWN0X3NpemUKMC4zMCUgIFtrZXJuZWxdICAgICAgICAgICAgICAg
-ICAgICBba10gY3JjXzExMgowLjMwJSAgW2tlcm5lbF0gICAgICAgICAgICAgICAgICAgIFtrXSBf
-cmF3X3NwaW5fbG9ja19pcnFzYXZlCjAuMzAlICBba2VybmVsXSAgICAgICAgICAgICAgICAgICAg
-W2tdIGZyZWVfaG90X2NvbGRfcGFnZQowLjI5JSAgW2tlcm5lbF0gICAgICAgICAgICAgICAgICAg
-IFtrXSBjcmNfNjQKMC4yOSUgIFtrZXJuZWxdICAgICAgICAgICAgICAgICAgICBba10gY3JjXzE2
-CjAuMjglICBba2VybmVsXSAgICAgICAgICAgICAgICAgICAgW2tdIG1vZHVsZV9nZXRfa2FsbHN5
-bQowLjI4JSAgW2tlcm5lbF0gICAgICAgICAgICAgICAgICAgIFtrXSBnZW5lcmljX2Jpbl9zZWFy
-Y2guY29uc3Rwcm9wLjM3CjAuMjclICBba2VybmVsXSAgICAgICAgICAgICAgICAgICAgW2tdIHBp
-cGVfd3JpdGUKMC4yNyUgIGxpYmMtMi4yNC5zbyAgICAgICAgICAgICAgICBbLl0gdmZwcmludGYK
-MC4yNyUgIGxpYmMtMi4yNC5zbyAgICAgICAgICAgICAgICBbLl0gX19zdHJjbXBfc3NlMl91bmFs
-aWduZWQKMC4yNyUgIFtrZXJuZWxdICAgICAgICAgICAgICAgICAgICBba10gZnJlZV9wY3BwYWdl
-c19idWxrCjAuMjYlICBba2VybmVsXSAgICAgICAgICAgICAgICAgICAgW2tdIGJsa2NpcGhlcl93
-YWxrX25leHQKMC4yNiUgIFtrZXJuZWxdICAgICAgICAgICAgICAgICAgICBba10gX19idHJmc19t
-YXBfYmxvY2sKMC4yNiUgIFtrZXJuZWxdICAgICAgICAgICAgICAgICAgICBba10gX19hbGxvY19w
-YWdlc19ub2RlbWFzawowLjI2JSAgW2tlcm5lbF0gICAgICAgICAgICAgICAgICAgIFtrXSBwYWdl
-X2NhY2hlX3ByZXZfaG9sZQowLjI2JSAgW2tlcm5lbF0gICAgICAgICAgICAgICAgICAgIFtrXSB1
-bmxvY2tfcGFnZQowLjI1JSAgW2tlcm5lbF0gICAgICAgICAgICAgICAgICAgIFtrXSBfX2xvb2t1
-cF9leHRlbnRfbWFwcGluZwowLjI1JSAgW2tlcm5lbF0gICAgICAgICAgICAgICAgICAgIFtrXSBr
-bWVtX2NhY2hlX2FsbG9jCm5vIHN5bWJvbHMgcGFzc2VkIHRoZSBnaXZlbiBmaWx0ZXIuCgo=
---94eb2c0812f2436726054318e8f6
-Content-Type: text/plain; charset=US-ASCII; name="top_tasksetc0_4.8.12.txt"
-Content-Disposition: attachment; filename="top_tasksetc0_4.8.12.txt"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_iwfhxjr11
-
-dG9wIC0gMTU6MTI6MDIgdXAgOCBtaW4sICAyIHVzZXJzLCAgbG9hZCBhdmVyYWdlOiAwLjUxLCAw
-LjIyLCAwLjEyClRhc2tzOiAyMDggdG90YWwsICAgMyBydW5uaW5nLCAyMDUgc2xlZXBpbmcsICAg
-MCBzdG9wcGVkLCAgIDAgem9tYmllCiVDcHUocyk6ICA2LjggdXMsIDE5Ljkgc3ksICAwLjAgbmks
-IDU3LjMgaWQsIDE0LjIgd2EsICAwLjkgaGksICAwLjkgc2ksICAwLjAgc3QKS2lCIE1lbSA6ICAz
-OTY1MjA0IHRvdGFsLCAgMjc1NjM0NCBmcmVlLCAgIDE2NjE5NiB1c2VkLCAgMTA0MjY2NCBidWZm
-L2NhY2hlCktpQiBTd2FwOiAgODM4ODYwNCB0b3RhbCwgIDgzODg2MDQgZnJlZSwgICAgICAgIDAg
-dXNlZC4gIDM1Mjg1MjggYXZhaWwgTWVtIAoKUElEIFVTRVIgICAgICBQUiAgTkkgICAgVklSVCAg
-ICBSRVMgICAgU0hSIFMgICVDUFUgJU1FTSAgICAgVElNRSsgQ09NTUFORCAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCjEzNjcg
-cm9vdCAgICAgIDIwICAgMCAgIDE1OTI4ICAgMTE4MCAgIDEwNDAgUiAgMzguNiAgMC4wICAgMDow
-Mi41MSBidHJmcyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAKMTM2NiByb290ICAgICAgMjAgICAwICAgMjQxMjQgICAxMTYw
-ICAgMTAxNiBSICAyNy4xICAwLjAgICAwOjAxLjY3IGJ0cmZzICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAoxMjQ5IHJvb3Qg
-ICAgICAyMCAgIDAgICAgICAgMCAgICAgIDAgICAgICAwIFMgICA5LjIgIDAuMCAgIDA6MDAuNzAg
-a3dvcmtlci91ODowICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgCjEyMyByb290ICAgICAgMjAgICAwICAgICAgIDAgICAgICAwICAgICAg
-MCBTICAgNy45ICAwLjAgICAwOjAwLjgxIGt3b3JrZXIvdTg6MyAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAoxMzE5IHJvb3QgICAgICAy
-MCAgIDAgICAgICAgMCAgICAgIDAgICAgICAwIFMgICA1LjkgIDAuMCAgIDA6MDAuMjAga3dvcmtl
-ci91ODo1ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgCjU3IHJvb3QgICAgICAyMCAgIDAgICAgICAgMCAgICAgIDAgICAgICAwIFMgICA1
-LjAgIDAuMCAgIDA6MDAuODUga3dvcmtlci91ODoxICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCjEzNzAgcm9vdCAgICAgIDIwICAgMCAg
-ICAgICAwICAgICAgMCAgICAgIDAgUyAgIDUuMCAgMC4wICAgMDowMC4xNSBrd29ya2VyL3U4OjYg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAKMTEzIHJvb3QgICAgICAyMCAgIDAgICAgICAgMCAgICAgIDAgICAgICAwIFMgICA0LjMgIDAu
-MCAgIDA6MDAuNDMga3dvcmtlci91ODoyICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgCjE1MyByb290ICAgICAgMjAgICAwICAgICAgIDAg
-ICAgICAwICAgICAgMCBTICAgMy4zICAwLjAgICAwOjAwLjU2IGt3b3JrZXIvdTg6NCAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAo4MTUg
-cm9vdCAgICAgIDIwICAgMCAgMTM5Njk2ICAgMjk2NCAgIDI3MDggUyAgIDAuNyAgMC4xICAgMDow
-My45NCBhZ2V0dHkgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAKMTM2OSBjaHJpcyAgICAgMjAgICAwICAxNTY2NjQgICA0MjM2
-ICAgMzcyMCBSICAgMC43ICAwLjEgICAwOjAwLjA3IHRvcCAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAo3IHJvb3QgICAg
-ICAyMCAgIDAgICAgICAgMCAgICAgIDAgICAgICAwIFMgICAwLjMgIDAuMCAgIDA6MDAuMjkgcmN1
-X3NjaGVkICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgCjkgcm9vdCAgICAgIDIwICAgMCAgICAgICAwICAgICAgMCAgICAgIDAgUyAg
-IDAuMyAgMC4wICAgMDowMC4xNSByY3Vvcy8wICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKMjEgcm9vdCAgICAgIDIwICAgMCAg
-ICAgICAwICAgICAgMCAgICAgIDAgUyAgIDAuMyAgMC4wICAgMDowMC4wOSByY3Vvcy8xICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAKNzg3IHJvb3QgICAgICAyMCAgIDAgIDQ2NzE4OCAgMTQ1NTYgIDExNjY0IFMgICAwLjMgIDAu
-NCAgIDA6MDIuMzIgTmV0d29ya01hbmFnZXIgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgCjEgcm9vdCAgICAgIDIwICAgMCAgMTQ5Mjk2ICAx
-MDcyNCAgIDc2OTIgUyAgIDAuMCAgMC4zICAgMDowMy4xOSBzeXN0ZW1kICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKMiByb290
-ICAgICAgMjAgICAwICAgICAgIDAgICAgICAwICAgICAgMCBTICAgMC4wICAwLjAgICAwOjAwLjAy
-IGt0aHJlYWRkICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgIAozIHJvb3QgICAgICAyMCAgIDAgICAgICAgMCAgICAgIDAgICAgICAw
-IFMgICAwLjAgIDAuMCAgIDA6MDAuMDAga3NvZnRpcnFkLzAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCjUgcm9vdCAgICAgICAwIC0y
-MCAgICAgICAwICAgICAgMCAgICAgIDAgUyAgIDAuMCAgMC4wICAgMDowMC4wMCBrd29ya2VyLzA6
-MEggICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAK
---94eb2c0812f2436726054318e8f6--

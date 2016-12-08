@@ -1,106 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:51717 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752923AbcLHQps (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Dec 2016 11:45:48 -0500
-Date: Thu, 8 Dec 2016 08:45:39 -0800
+Received: from userp1040.oracle.com ([156.151.31.81]:24673 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751487AbcLHQxz (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Dec 2016 11:53:55 -0500
+Date: Thu, 8 Dec 2016 08:53:47 -0800
 From: Liu Bo <bo.li.liu@oracle.com>
-To: Jan Kara <jack@suse.cz>
-Cc: Chris Mason <clm@fb.com>, linux-btrfs@vger.kernel.org,
-        David Sterba <dsterba@suse.cz>
-Subject: Re: [PATCH 4/6] Btrfs: add DAX support for nocow btrfs
-Message-ID: <20161208164539.GB20111@localhost.localdomain>
+To: Xin Zhou <xin.zhou@gmx.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/6] btrfs dax IO
+Message-ID: <20161208165347.GC20111@localhost.localdomain>
 Reply-To: bo.li.liu@oracle.com
-References: <1481147110-20048-1-git-send-email-bo.li.liu@oracle.com>
- <1481147110-20048-5-git-send-email-bo.li.liu@oracle.com>
- <ad5694be-df94-f1ed-46ac-96ef19d8007d@fb.com>
- <20161208104741.GB4049@quack2.suse.cz>
+References: <trinity-f6bd31da-24aa-4876-bde0-fe5b26b1af92-1481179495753@3capp-mailcom-bs01>
+ <trinity-1b4598b4-93e0-4762-90a6-d2f7aadc7dd2-1481179698241@3capp-mailcom-bs01>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20161208104741.GB4049@quack2.suse.cz>
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <trinity-1b4598b4-93e0-4762-90a6-d2f7aadc7dd2-1481179698241@3capp-mailcom-bs01>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 08, 2016 at 11:47:41AM +0100, Jan Kara wrote:
-> On Wed 07-12-16 17:15:42, Chris Mason wrote:
-> > On 12/07/2016 04:45 PM, Liu Bo wrote:
-> > >This has implemented DAX support for btrfs with nocow and single-device.
-> > >
-> > >DAX is developed for block devices that are memory-like in order to avoid
-> > >double buffer in both page cache and the storage, so DAX can performs reads and
-> > >writes directly to the storage device, and for those who prefer to using
-> > >filesystem, filesystem dax support can help to map the storage into userspace
-> > >for file-mapping.
-> > >
-> > >Since I haven't figure out how to map multiple devices to userspace without
-> > >pagecache, this DAX support is only for single-device, and I don't think
-> > >DAX(Direct Access) can work with cow, this is limited to nocow case.  I made
-> > >this by setting nodatacow in dax mount option.
-> > 
-> > Interesting, this is a nice small start.  It might make more sense to limit
-> > snapshots to readonly in DAX mode until we can figure out how to cow
-> > properly.  I think it can be done, I just need to sit down with the dax code
-> > to do a good review.
-> > 
-> > But bigger picture, if we can't cow and we can't crc and we can't
-> > multi-device, I'd rather let XFS/ext4 sort out the dax space until we pull
-> > in more of the btrfs features too.
-> 
-> So normal DAX IO (via read(2) and write(2)) is very similar to direct IO so
-> I don't think there would be any obstacle to support all the features with
-> that.
+On Thu, Dec 08, 2016 at 07:48:18AM +0100, Xin Zhou wrote:
+> Hi Liu,
+>  
+> From the patch, is the snapshot disabled by disabling the COW in the mounting path?
+> It seems the create_snapshot() in ioctl.c does not get changed.
 
-For DAX IO via read(2)/write(2), cow is OK while the mutliple devices is
-a problem as currently iomap_dax_actor only takes one <device, blocknum>
-pair:
+Well, I think I made a mistake in this cover letter, snapshot still
+works while mounting with dax, but if a snapshot is taken, then we'll
+get -EIO while writing to dax inodes that belong to either snapshot tree
+or its source tree.  So in fact, only a readonly snapshot makes sense in
+practice, I'll update the patch so that we only allow a readonly
+snapshot to be taken.
 
-- raid 0, one device is written once a time
-- raid 1/10 and others, 2 or more devices need to be written each time
+COW is disabled by letting the dax mount option imply the "nodatacow"
+option.
 
-> For mmap(2) things get more difficult but still: The filesystem gets
-> normal ->fault notifications when the page is first faulted in. So you
-> can COW if you need to at that moment.
-
-Right.
-
-> Also DAX PTEs can be write-protected (well, as of the coming merge
-> window) as normal PTEs and then you'll get ->pfn_mkwrite /
-> ->page_mkwrite notification when someone tries to write via mmap and
-> you can do your stuff at that point.
-
-That's right, but I think the problem comes from the fact that only
-->fault with FAULT_FLAG_WRITE gets to space allocation where we could
-cow to new location.
-
-For page_mkwrite, btrfs does cow while writing back a dirty page, but
-dax doesn't do delayed allocation so dax_writeback_one doesn't have
-place to do cow.
-
-Also thank you for the great write-protected patch, since another reason
-I decided to disable cow is that there is no write-protected on DAX
-PTEs, so without that even if we can do cow, we don't have a way to
-update every pte pointing to our cow'd dax pfn.
-
-> So DAX mappings are not that
-> different from filesystem point of view. There are some differences wrt.
-> locking (you don't have page lock, but you use a lock bit in radix tree
-> entry instead for that) but that's about it. So I don't see a principial
-> reason why we cannot support all btrfs features for DAX... But if you see
-> some problem, let me know and we can talk if we could somehow help from the
-> DAX side.
-
-Yeah, looks like we have two problems at least, one is dax_writeback_one
-and the other is iomap.
-
-> 
-> BTW, I also don't see how the multiple devices are a problem. Actually XFS
-> supports that (with its real-time devices) just fine - your ->iomap_begin()
-> returns a <device, blocknumber> pair and that should be all that's needed,
-> no?
-
-xfs is a bit different, it only writes to one device at a time, sort of
-a raid0.
+Thanks for spotting this!
 
 Thanks,
 
 -liubo
+
+> 
+> I experienced some similar system but am a bit new to the brtfs code.
+>   
+> Thanks, 
+> Xin
+>  
+>  
+> 
+> Subject: [PATCH 0/6] btrfs dax IOFrom: Liu Bo <bo.li.liu@xxxxxxxxxx>Date: Wed, 7 Dec 2016 13:45:04 -0800Cc: Chris Mason <clm@xxxxxx>, Jan Kara <jack@xxxxxxx>, David Sterba <dsterba@xxxxxxx>
+> This is a prelimanary patch set to add dax support for btrfs, with
+> this we can do normal read/write to dax files and can mmap dax files
+> to userspace so that applications have the ability to access
+> persistent memory directly.
+> 
+> Please note that currently this is limited to nocow, i.e. all dax
+> inodes do not have COW behaviour.
+> 
+> COW:   	    	     	no
+> mutliple device:	no
+> clone/reflink:		no
+> snapshot:		no
+> compression:		no
+> checksum:		no
+> 
+> Right now snapshot is disabled while mounting with -odax, but snapshot
+> can be created without -odax, and writing to a dax file in snapshot
+> will get -EIO.
+> 
+> Clone/reflink is dealt with as same as snapshot, -EIO will be returned
+> when writing to shared extents.
+> 
+> This has adopted the latest iomap framework for dax read/write
+> and dax mmap.
+> 
+>  
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

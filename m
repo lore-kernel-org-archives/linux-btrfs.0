@@ -1,102 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53923 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:54598 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752186AbcLHUH7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 8 Dec 2016 15:07:59 -0500
-Subject: Re: duperemove : some real world figures on BTRFS deduplication
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        =?UTF-8?Q?Sw=c3=a2mi_Petaramesh?= <swami@petaramesh.org>,
+        id S1752308AbcLHUPm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 8 Dec 2016 15:15:42 -0500
+Subject: Re: out-of-band dedup status?
+To: Christoph Anton Mitterer <calestyo@scientia.net>,
         linux-btrfs@vger.kernel.org
-References: <81bcff57-4bee-18d5-cac4-3359150730a5@petaramesh.org>
- <8da6fc44-2756-0bfd-7d7c-e11529f54f74@gmail.com>
+References: <1481222198.6563.3.camel@scientia.net>
 From: Jeff Mahoney <jeffm@suse.com>
-Message-ID: <808d0394-db2a-0a15-d084-309accc04ff9@suse.com>
-Date: Thu, 8 Dec 2016 15:07:53 -0500
+Message-ID: <539d7c1c-5041-fb99-0ec5-81291f9f6609@suse.com>
+Date: Thu, 8 Dec 2016 15:15:38 -0500
 MIME-Version: 1.0
-In-Reply-To: <8da6fc44-2756-0bfd-7d7c-e11529f54f74@gmail.com>
+In-Reply-To: <1481222198.6563.3.camel@scientia.net>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="mMlbDQlnFW5eL8Tk7dfolWxaQMRNBUN1n"
+ boundary="s5pAoNKLoqf0B7RhkErskicFLJw9p63gr"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---mMlbDQlnFW5eL8Tk7dfolWxaQMRNBUN1n
-Content-Type: multipart/mixed; boundary="oFaqa9iI7bFXEps6QD6DQ0J1Qkf7cwAxR";
+--s5pAoNKLoqf0B7RhkErskicFLJw9p63gr
+Content-Type: multipart/mixed; boundary="vbCvL2WnCUPdXOw6r0tIF9qdXEqC0bS8C";
  protected-headers="v1"
 From: Jeff Mahoney <jeffm@suse.com>
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
- =?UTF-8?Q?Sw=c3=a2mi_Petaramesh?= <swami@petaramesh.org>,
+To: Christoph Anton Mitterer <calestyo@scientia.net>,
  linux-btrfs@vger.kernel.org
-Message-ID: <808d0394-db2a-0a15-d084-309accc04ff9@suse.com>
-Subject: Re: duperemove : some real world figures on BTRFS deduplication
-References: <81bcff57-4bee-18d5-cac4-3359150730a5@petaramesh.org>
- <8da6fc44-2756-0bfd-7d7c-e11529f54f74@gmail.com>
-In-Reply-To: <8da6fc44-2756-0bfd-7d7c-e11529f54f74@gmail.com>
+Message-ID: <539d7c1c-5041-fb99-0ec5-81291f9f6609@suse.com>
+Subject: Re: out-of-band dedup status?
+References: <1481222198.6563.3.camel@scientia.net>
+In-Reply-To: <1481222198.6563.3.camel@scientia.net>
 
---oFaqa9iI7bFXEps6QD6DQ0J1Qkf7cwAxR
+--vbCvL2WnCUPdXOw6r0tIF9qdXEqC0bS8C
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
-On 12/8/16 10:42 AM, Austin S. Hemmelgarn wrote:
-> On 2016-12-08 10:11, Sw=C3=A2mi Petaramesh wrote:
->> Hi, Some real world figures about running duperemove deduplication on
->> BTRFS :
->>
->> I have an external 2,5", 5400 RPM, 1 TB HD, USB3, on which I store the=
+On 12/8/16 1:36 PM, Christoph Anton Mitterer wrote:
+> Hey.
+>=20
+> I just wondered whether out-of-band/"offline" dedup is safe for general=
 
->> BTRFS backups (full rsync) of 5 PCs, using 2 different distros,
->> typically at the same update level, and all of them more of less shari=
-ng
->> the entirety or part of the same set of user files.
->>
->> For each of these PCs I keep a series of 4-5 BTRFS subvolume snapshots=
+> use... https://btrfs.wiki.kernel.org/index.php/Status kinda implies so
+> (it tells about unspecified performance issues), but this seems again
+> already outdated (kernel 4.7)...
+> :-(
 
->> for having complete backups at different points in time.
->>
->> The HD was full to 93% and made a good testbed for deduplicating.
->>
->> So I ran duperemove on this HD, on a machine doing "only this", using =
-a
->> hashfile. The machine being an Intel i5 with 6 GB of RAM.
->>
->> Well, the damn thing has been running for 15 days uninterrupted !
->> ...Until I [Ctrl]-C it this morning as I had to move with the machine =
-(I
->> wasn't expecting it to last THAT long...).
->>
->> It took about 48 hours just for calculating the files hashes.
->>
->> Then it took another 48 hours just for "loading the hashes of duplicat=
-e
->> extents".
->>
->> Then it took 11 days deduplicating until I killed it.
->>
->> At the end, the disk that was 93% full is now 76% full, so I saved 17%=
+SUSE supports it in SLE12 using our 3.12 and 4.4 -based kernels.  There
+haven't been a lot of changes to the kernel component of it.  It's
+pretty simple: check to see if the ranges are identical between two
+files and then reflink between them.
 
->> of 1 TB (170 GB) by deduplicating for 15 days.
->>
->> Well the thing "works" and my disk isn't full anymore, so that's a ver=
-y
->> partial success, but still l wonder if the gain is worth the effort...=
+> My intention was to use it with duperemove, but AFAIU, the kernel
+> itself will anyway do a byte-by-byte comparison before any
+> deduplication, so in principle it should be totally safe regardless of
+> the stability of the userland tool, right?
+> Especially I wouldn't want that "identity" is only assumed because of
+> some checksum identity (or collision ;) ).
 
-> So, some general explanation here:
-> Duperemove hashes data in blocks of (by default) 128kB, which means for=
+Yep.  It does a full check in the kernel for precisely that reason.
+It's not even enough to do it in userspace because we don't want dedupe
+to be race prone.  It's either atomically identical or it's not, and we
+don't dedupe if it's not.  If it changes immediately after the ioctl
+returns, that's fine -- the cloned range will be CoW'd properly.
 
-> ~930GB, you've got about 7618560 blocks to hash, which partly explains
-> why it took so long to hash.  Once that's done, it then has to compare
-> hashes for all combinations of those blocks, which totals to
-> 58042456473600 comparisons (hence that taking a long time).  The block
-> size thus becomes a trade-off between performance when hashing and
-> actual space savings (smaller block size makes hashing take longer, but=
+> Also, is there anything to take note of when this is used with
+> compression and snapshots?
 
-> gives overall slightly better results for deduplication).
+I don't believe so.  IIRC dedupe maps the file to see if it's already
+cloned, so it's safe for snapshots (or could relink extents in a
+snapshot that diverged and then were restored to their original
+contents.  Dedupe works with the uncompressed data, so compression
+shouldn't matter here.  I haven't tested it, though.
 
-IIRC, the core of the duperemove duplicate matcher isn't an O(n^2)
-algorithm.  I think Mark used a bloom filter to reduce the data set
-prior to matching, but I haven't looked at the code in a while.
+> What when I use it with incremental send/receive... i.e. I dedupe the
+> "master" and then send/receive this to another btrfs... will it work
+> (that is will the copy be also deduplicated, with no longer needed
+> extents properly being freed)... or at least not cause any corruptions?=
+
+
+It should.  IIRC send also maps the file (using a different mechanism)
+and receive will clone those ranges on the other end.
+
+> Any other things in terms of possible issues, data corruption, etc.
+> that one should know when using deduplication?
+
+There shouldn't be.  We haven't had any bug reports at SUSE.
 
 -Jeff
 
@@ -105,9 +93,9 @@ Jeff Mahoney
 SUSE Labs
 
 
---oFaqa9iI7bFXEps6QD6DQ0J1Qkf7cwAxR--
+--vbCvL2WnCUPdXOw6r0tIF9qdXEqC0bS8C--
 
---mMlbDQlnFW5eL8Tk7dfolWxaQMRNBUN1n
+--s5pAoNKLoqf0B7RhkErskicFLJw9p63gr
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
@@ -115,19 +103,19 @@ Content-Disposition: attachment; filename="signature.asc"
 -----BEGIN PGP SIGNATURE-----
 Comment: GPGTools - http://gpgtools.org
 
-iQIcBAEBCAAGBQJYSb2aAAoJEB57S2MheeWySbgP/iUOE2EsNcFtbR8fL8RHNfqh
-rBVA/czDRqhs4Qtk+jSmag1anDmExtxymtPtY9NlUuHi21/xrNFgVnx4tXms70gc
-GO7UppnlxGe2mXukw2olVgMCNVWUOSaFLLe2bbKRLS/I44+aVexv21FJ63fedZbj
-bkfKm6W3xLwo/CmezKthDluicboNaiOXt+5UXkOrdU72rhCvzCeIbxQBUpnDWGcZ
-PyaBrRJUK+VexZMJmZpGg4bKQCO8oZkOKeTlwhjKTu072xbeaKtLIKiDba8eyNJE
-rS+0BE0QBvPTtt/l3y0ck9L+1uBxyTuy2hsMlPLGdcg10fmw16A4cqCg0NlpzVof
-cohNA6CQw29yjGLXBsyUttgksU9n93qiD28v8KHXfk5zuayTm8YaLla2TkI78IZW
-XSMRI7mkbxrs9nZ4Os0Phf05HMK3TaOvrDA0A94fs3oIZxEiwuwctXBfIAynEl5O
-hkGVwCPq50d5lht3/h4cMSo1gLWCll5EH10ALcD2lDHeVIwYVB90AjlvQMYy4bAq
-uI/ZhzKKbgaFCYesz3uKflMeiYRnRvcGNv/spV7D58le/Rh/hG10HRaucey4/iaH
-cBJCGK5xAW33/vkG4vowlr1nVJNGF0Kzf9MlQLQT5W0j5l1T7ZmgP2kUzX5feY7q
-EAclYv1CzjcvpSGGu50t
-=0q8x
+iQIcBAEBCAAGBQJYSb9rAAoJEB57S2MheeWyQhoP/2BlHxobvMjm8Hjm8tnizuc+
+NLN/SeZJrV3o5EQU4HHhHjko9vFkZTgKD/PlNiHYB4DQFVMZ9xw1pn2HcdKPMWzb
+glqQKrMmleAI6+8MGe0Oqcx55aYwe8i6EuETAW4JyQlrwY1DSE7DLVrUpx/qIOFZ
+aX9CdEnVj30J470TMkBliObVDdx7fx/is8bCTzB2VNiDMaNa3S0lk9ZJ1y/asAf2
+orggg2vLCGxR4IDXAnlX1JFoGr8B4VpJrmZcYutxFV4NT2z9yCDkxydJVEolMrDT
+eQQdABCJYSXxU9lnBEbAH5EnHX3ST2i0nxO/xPeGy9P0ag9SymZahFahKIRM80dW
+0sTawfjhHFGczTozcOChl/IlAzpIwymkoGBgHnS6jrS4Jj4P6Yr7aBdpc7T6t94q
+idxHZJiyp6xBn25ieDsEKAK0QqgcMltq3VY7aPYlcyHBA7tEN67jDExhwkSS8vJX
+SkgUz32Gt/rx7b0sXqefqdNESbfx6P1+3bX5WkRkTIFtac/TVO2KBHkq7ClLakum
+9PJ12FRqQz/rjXDcmmn5SZwRvTOnu7ZptyXXIrGm2ZnNVVl/hdzTBuxQdG3PMeXj
+nYXLVavtoFZrZFWRl0HpUnrJwZb8bdEyQRSK+7/LAAZ8z0mb0FqlIqH4qrLDQbwd
+uQurzSlzbGJH0EewN1dm
+=LoV2
 -----END PGP SIGNATURE-----
 
---mMlbDQlnFW5eL8Tk7dfolWxaQMRNBUN1n--
+--s5pAoNKLoqf0B7RhkErskicFLJw9p63gr--

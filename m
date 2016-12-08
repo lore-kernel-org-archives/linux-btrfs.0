@@ -1,178 +1,121 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:37598 "EHLO
-        mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932109AbcLHSgn (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Dec 2016 13:36:43 -0500
-Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.26])
-        by mailgw-01.dd24.net (Postfix) with ESMTP id 57C125FD49
-        for <linux-btrfs@vger.kernel.org>; Thu,  8 Dec 2016 18:36:41 +0000 (UTC)
-Received: from mailgw-01.dd24.net ([192.168.1.35])
-        by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10235)
-        with ESMTP id xFjS-p5-eUxh for <linux-btrfs@vger.kernel.org>;
-        Thu,  8 Dec 2016 18:36:39 +0000 (UTC)
-Received: from heisenberg.fritz.box (ppp-46-244-211-129.dynamic.mnet-online.de [46.244.211.129])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by mailgw-01.dd24.net (Postfix) with ESMTPSA
-        for <linux-btrfs@vger.kernel.org>; Thu,  8 Dec 2016 18:36:39 +0000 (UTC)
-Message-ID: <1481222198.6563.3.camel@scientia.net>
-Subject: out-of-band dedup status?
-From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: linux-btrfs@vger.kernel.org
-Date: Thu, 08 Dec 2016 19:36:38 +0100
-Content-Type: multipart/signed; micalg="sha-512";
-        protocol="application/x-pkcs7-signature";
-        boundary="=-GkeH632D9zndIASWD8u+"
-Mime-Version: 1.0
+Received: from mx2.suse.de ([195.135.220.15]:53886 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751959AbcLHUHV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 8 Dec 2016 15:07:21 -0500
+Subject: Re: duperemove : some real world figures on BTRFS deduplication
+To: =?UTF-8?Q?Sw=c3=a2mi_Petaramesh?= <swami@petaramesh.org>,
+        linux-btrfs@vger.kernel.org
+References: <81bcff57-4bee-18d5-cac4-3359150730a5@petaramesh.org>
+From: Jeff Mahoney <jeffm@suse.com>
+Message-ID: <930fe4c7-b936-8f2d-fc4c-cc5574c27f19@suse.com>
+Date: Thu, 8 Dec 2016 15:07:09 -0500
+MIME-Version: 1.0
+In-Reply-To: <81bcff57-4bee-18d5-cac4-3359150730a5@petaramesh.org>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="XEjAcss7rnHaKkr7QwALAgbSRcidxmsU2"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--XEjAcss7rnHaKkr7QwALAgbSRcidxmsU2
+Content-Type: multipart/mixed; boundary="jLHPCBh01j1KbijUVnCVgUn6LMAwuRBhr";
+ protected-headers="v1"
+From: Jeff Mahoney <jeffm@suse.com>
+To: =?UTF-8?Q?Sw=c3=a2mi_Petaramesh?= <swami@petaramesh.org>,
+ linux-btrfs@vger.kernel.org
+Message-ID: <930fe4c7-b936-8f2d-fc4c-cc5574c27f19@suse.com>
+Subject: Re: duperemove : some real world figures on BTRFS deduplication
+References: <81bcff57-4bee-18d5-cac4-3359150730a5@petaramesh.org>
+In-Reply-To: <81bcff57-4bee-18d5-cac4-3359150730a5@petaramesh.org>
 
---=-GkeH632D9zndIASWD8u+
-Content-Type: text/plain; charset="UTF-8"
+--jLHPCBh01j1KbijUVnCVgUn6LMAwuRBhr
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
-Hey.
+On 12/8/16 10:11 AM, Sw=C3=A2mi Petaramesh wrote:
+> Hi, Some real world figures about running duperemove deduplication on
+> BTRFS :
+>=20
+> I have an external 2,5", 5400 RPM, 1 TB HD, USB3, on which I store the
+> BTRFS backups (full rsync) of 5 PCs, using 2 different distros,
+> typically at the same update level, and all of them more of less sharin=
+g
+> the entirety or part of the same set of user files.
+>=20
+> For each of these PCs I keep a series of 4-5 BTRFS subvolume snapshots
+> for having complete backups at different points in time.
+>=20
+> The HD was full to 93% and made a good testbed for deduplicating.
+>=20
+> So I ran duperemove on this HD, on a machine doing "only this", using a=
 
-I just wondered whether out-of-band/"offline" dedup is safe for general
-use... https://btrfs.wiki.kernel.org/index.php/Status kinda implies so
-(it tells about unspecified performance issues), but this seems again
-already outdated (kernel 4.7)...
-:-(
+> hashfile. The machine being an Intel i5 with 6 GB of RAM.
+>=20
+> Well, the damn thing has been running for 15 days uninterrupted !
+> ...Until I [Ctrl]-C it this morning as I had to move with the machine (=
+I
+> wasn't expecting it to last THAT long...).
+>=20
+> It took about 48 hours just for calculating the files hashes.
+>=20
+> Then it took another 48 hours just for "loading the hashes of duplicate=
 
-My intention was to use it with duperemove, but AFAIU, the kernel
-itself will anyway do a byte-by-byte comparison before any
-deduplication, so in principle it should be totally safe regardless of
-the stability of the userland tool, right?
-Especially I wouldn't want that "identity" is only assumed because of
-some checksum identity (or collision ;) ).
+> extents".
+>=20
+> Then it took 11 days deduplicating until I killed it.
+>=20
+> At the end, the disk that was 93% full is now 76% full, so I saved 17%
+> of 1 TB (170 GB) by deduplicating for 15 days.
+>=20
+> Well the thing "works" and my disk isn't full anymore, so that's a very=
 
-Also, is there anything to take note of when this is used with
-compression and snapshots?
+> partial success, but still l wonder if the gain is worth the effort...
 
-What when I use it with incremental send/receive... i.e. I dedupe the
-"master" and then send/receive this to another btrfs... will it work
-(that is will the copy be also deduplicated, with no longer needed
-extents properly being freed)... or at least not cause any corruptions?
+What version were you using?  I know Mark had put a bunch of effort into
+reducing the memory footprint and runtime.  The earlier versions were
+"can we get this thing working" while the newer versions are more efficie=
+nt.
 
-Any other things in terms of possible issues, data corruption, etc.
-that one should know when using deduplication?
+What throughput are you getting to that disk?  I get that it's USB3, but
+reading 1TB doesn't take a terribly long time so 15 days is pretty
+ridiculous.
 
+At any rate, the good news is that when you run it again, assuming you
+used the hash file, it will not have to rescan most of your data set.
 
-Thanks :)
+-Jeff
 
-Chris.
---=-GkeH632D9zndIASWD8u+
-Content-Type: application/x-pkcs7-signature; name="smime.p7s"
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Transfer-Encoding: base64
-
-MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEmow
-ggXiMIIDyqADAgECAhBctkhuRwyYxn/2gNtkSuKNMA0GCSqGSIb3DQEBCwUAMH0xCzAJBgNVBAYT
-AklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0
-aWZpY2F0ZSBTaWduaW5nMSkwJwYDVQQDEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
-eTAeFw0xNTEyMTYwMTAwMDVaFw0zMDEyMTYwMTAwMDVaMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQK
-Ew1TdGFydENvbSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
-eTEjMCEGA1UEAxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0EwggEiMA0GCSqGSIb3DQEBAQUA
-A4IBDwAwggEKAoIBAQDuD1CMlQkjhKz1UGqP1jeiTiH9MgllRz6vOPrVG/eE0H/J4QQLV/PeL8RT
-4xc44bEzsoJu0IhwnEchb+TxE/qw88w7hxODuw3N8Faxix6a1jp83+RWvZHZf78+O+3GYBpekZfT
-Oe9A/FoTXbcgwZfLTMQodn+ckNnX31M/1M2f2/7VA7QBlvihontyHQOlIlryQXnGI0UMCD21oopK
-tW48ckv0wUVg8irBKGMeD65gTON/Fsw/ZBbBqadoD1jt85FIM1ql24WUBEBwO1d0ykCKOIbgcqes
-3fbcjQpruUNMBbIu1MMIRMqwjx/M7IvSKcS7VYRWl0/K2byzWvBAHh/1AgMBAAGjggFkMIIBYDAO
-BgNVHQ8BAf8EBAMCAQYwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMBIGA1UdEwEB/wQI
-MAYBAf8CAQAwMgYDVR0fBCswKTAnoCWgI4YhaHR0cDovL2NybC5zdGFydHNzbC5jb20vc2ZzY2Eu
-Y3JsMGYGCCsGAQUFBwEBBFowWDAkBggrBgEFBQcwAYYYaHR0cDovL29jc3Auc3RhcnRzc2wuY29t
-MDAGCCsGAQUFBzAChiRodHRwOi8vYWlhLnN0YXJ0c3NsLmNvbS9jZXJ0cy9jYS5jcnQwHQYDVR0O
-BBYEFJmXqxg1OotZRUOYsnJxyPT7Cc8WMB8GA1UdIwQYMBaAFE4L7xqkQFulF2mHMMo0aEPQQa7y
-MD8GA1UdIAQ4MDYwNAYEVR0gADAsMCoGCCsGAQUFBwIBFh5odHRwOi8vd3d3LnN0YXJ0c3NsLmNv
-bS9wb2xpY3kwDQYJKoZIhvcNAQELBQADggIBAJlBQQTO9iT1TjA0eEO7V/1AbBvMAfibjAgofxmJ
-01jBmHKg0pbTjWInTTYoxb3LBgz3mfjvvS1PjnIfb29MyVm0G/PSHjgq7Ews1dEJMPC9XTuxPf2c
-+MWLkynBlotW542JprW+iTWfZafyUtzIKW1hk0YASJ8zSSj8D++9yR+0UhkbvlECJkdi1+et0EaI
-7HIX6ccj1rfcFFflWX/fPT64dn9jpg9s0nuJug4WsVkEK236WndZoMHrZmgF7CIyZ3T0muqYwkAS
-DDcRt9A21o/Mc+D8Q6GVmKRGB3gEKvOtsioHZEqJv6CdAm3a6gloo5pX3RL1eCzc8Lzfs4T0ISZj
-r8xNMbTGlsuHaFH+stDewKsfnpo4N64OtAGrzmVfFFsMIRENRHsVlSEe/6LVpBpjn00+7bqEN3qe
-qSxIOraYJ12mJ08G4YnP2U1fadHIaS50O5ZXqAivoBl9pi/6CBNc5wIMlkXMyFZ0sLsI+9ErFDu9
-OJhX7iWCo69X0ydlzXj08+2K1PKyr+g6/vTPHur63JotNrhyoWEJyWEjBLA4QmJXfGpB5u+bCwNf
-sFpcYAlkiFt1Rs2vemgSBy3q4DHDbPKvr1YImZNRSHP+TX9NP94JRkmqcyD/qaN7u2JV1pRAlwG0
-npyrn6ZQM1QHV+iFbwQ4VqLMWk//QVo/rZy1MIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwcz1F+2kRA
-DzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjEp
-MCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMTGlN0YXJ0
-Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIzNlowejEL
-MAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAfBgNVBAMM
-GENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50
-aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqeP2vwE3Cp
-YosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjrFe0zmZWZ
-0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ0+c1NYFQ
-T6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJnmiiId9e
-0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7r2NVLkpo
-Gbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA0BtydQC0
-mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS7XEGOuCU
-09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6a1rkhJl7
-1rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8bxPJiX2/
-VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/MAsGA1Ud
-DwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAdBgNVHQ4E
-FgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI9PsJzxYw
-bwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5jb20wOQYI
-KwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQyLmNydDA4
-BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50Mi5jcmww
-IAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6Ly93d3cu
-c3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcBAgQwLDAq
-BggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3DQEBCwUA
-A4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7SG3MQkyO
-kvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndjZIHMfSkn
-hdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9RS51K1gt
-H4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11Yeq6UTW/
-JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwc
-z1F+2kRADzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20g
-THRkLjEpMCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMT
-GlN0YXJ0Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIz
-NlowejELMAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAf
-BgNVBAMMGENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9A
-c2NpZW50aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqe
-P2vwE3CpYosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjr
-Fe0zmZWZ0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ
-0+c1NYFQT6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJ
-nmiiId9e0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7
-r2NVLkpoGbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA
-0BtydQC0mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS
-7XEGOuCU09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6
-a1rkhJl71rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8
-bxPJiX2/VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/
-MAsGA1UdDwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAd
-BgNVHQ4EFgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI
-9PsJzxYwbwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5j
-b20wOQYIKwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQy
-LmNydDA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50
-Mi5jcmwwIAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6
-Ly93d3cuc3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcB
-AgQwLDAqBggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3
-DQEBCwUAA4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7
-SG3MQkyOkvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndj
-ZIHMfSknhdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9
-RS51K1gtH4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11
-Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
-MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
-cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
-QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
-SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTYxMjA4MTgzNjM4WjBPBgkqhkiG9w0BCQQxQgRAaNUd
-u3G93AXh0pzmY+QtdjFhy4LfQTIYbbrFrjY+JLy/IH79tkhAU4EJp+aG9XDQ4ivtQ2ymSDOapHDa
-WXsaYTCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
-bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
-AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
-DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
-VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
-Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAK70q
-Xnp21Nglc5pUCd7gChwYhZ7vU9xqKll6FO8Vq8AllTwCxsx1dJxy3pT61+d4tvMGCzLUwMlVSsuG
-wgSSc4RR+iD2GUIZdDtdiPQp/ZEe9CrsiyXGZpppY1FH/3N8nRswGaAEJ62cgsHRoNyNJz6/amAz
-TdLOQQJfSAtxyNbRj86nJcepwyIz13RHb96X1GIk3lBMZFiDM9UeHcvEqKdSOwFQVP3H2o/apO0T
-Vq9DzoqebblqszzAHp24oZxXOFjPp8EATfAHSa8NbN+s1ECy/6yVeAxFurVjqv7XSm/Npk4ZPHRs
-gwQgiUdD7AohJdtFidalUWizMNMOUa4B+JNl4HyZzNaBHOqBgz3ejKEDrDYoJo6oYtK5e4At9QAf
-bgthm1GT7dOyWP0oerjG1cbL8Ghy72UlaAvKssg4DwW5mhoR+0pKfc8B7r31vVvbxOPOt8JgIGYl
-7xgJKDzPRXCghRhYPIbf26Pn3UBXGw/ufeI8gxTfYlWrA1YeyPjG2DlL9fBzLO9cGuojkqFKZNAm
-F1dKsWbzEnLBqWCHrruwXO2mznf7N9Hin3+knsMhvH1WHlbATVcFlh1eGvUt5SkVZBJ/Hgmrgevt
-hBKsIwqEdgFoRV4XCfLLl8sOAXaz6/74Q0npcdVZ/qAKKP52vAA1VwLTUZ6/dXAazUM2TlMAAAAA
-AAA=
+--=20
+Jeff Mahoney
+SUSE Labs
 
 
---=-GkeH632D9zndIASWD8u+--
+--jLHPCBh01j1KbijUVnCVgUn6LMAwuRBhr--
 
+--XEjAcss7rnHaKkr7QwALAgbSRcidxmsU2
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Comment: GPGTools - http://gpgtools.org
+
+iQIcBAEBCAAGBQJYSb1uAAoJEB57S2MheeWywAAQAKIOZf+QfSiIaLHuVO2b/7ts
+FLMDLpPV9Or/WuSC85ckC3Dqwxw+e0S2I4QmsBUwS13Aywh6CfWRhRIJm4m98lsF
+QXcTweMgJl5UDaLtNEIk/QSE/1pNgHXGDQKpf5mT67TFchwl5yYcmly5WbGuXdk+
+poUH92D5bgFe9Pq8BbOR8B5sll24MQ1zelPpK0iYyAqOUCr6U/TyMNnjvbqk584k
+8/IzVdmpdBFPx+20wEoo6qOzgyy4NFiv50UMJNobzK+p7PgyPcyvJNc6fS92NG21
+tb2hPlbzqiqBOuux2VV9miRGlKhHnLtpAd3tbhRkpg9qFCIT9MtuUDoS/yMI977J
+c4UtjOM7o1v20NpZadOaBc+/2a6tF6CIyGDtlYpjg2q8Pq5aej7t/noe/UTeQFVC
+5m9zzyuy0HYSJRyKzcsijimNXlSuEjf48AeEl4Tu8f+D6yJQKOZcv1IYxg6lv8U9
+w1NabVP/01P7Mdebs4+0HqxA2L/hDdGnvU3p5o+nw07VHPTkCNmF05OiGZ0Q0THX
+94d7oeL3ukw2hq01AGJHat3yCMpibSgwN9EPOHm/Xfl3xqtmvi3OSfKylpOJiCYE
+jKYjbCMGGx7cTq41rkz0O7nxShQPf3+N+C+mJ4a1fK7EsOrExmTw/2I4zZYMKaYn
+I5qrkAAHUL51wLHD6Zgk
+=dwqn
+-----END PGP SIGNATURE-----
+
+--XEjAcss7rnHaKkr7QwALAgbSRcidxmsU2--

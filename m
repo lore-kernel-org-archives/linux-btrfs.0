@@ -1,66 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay3-d.mail.gandi.net ([217.70.183.195]:53058 "EHLO
-        relay3-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752496AbcLHPL3 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Dec 2016 10:11:29 -0500
-Received: from mfilter36-d.gandi.net (mfilter36-d.gandi.net [217.70.178.167])
-        by relay3-d.mail.gandi.net (Postfix) with ESMTP id 86982A815F
-        for <linux-btrfs@vger.kernel.org>; Thu,  8 Dec 2016 16:11:26 +0100 (CET)
-Received: from relay3-d.mail.gandi.net ([IPv6:::ffff:217.70.183.195])
-        by mfilter36-d.gandi.net (mfilter36-d.gandi.net [::ffff:10.0.15.180]) (amavisd-new, port 10024)
-        with ESMTP id A4vwpcz7_JlE for <linux-btrfs@vger.kernel.org>;
-        Thu,  8 Dec 2016 16:11:24 +0100 (CET)
-Received: from [10.137.2.13] (port-mbouisso.univ-montp2.fr [162.38.105.117])
-        (Authenticated sender: swami@petaramesh.org)
-        by relay3-d.mail.gandi.net (Postfix) with ESMTPSA id 32C17A80E5
-        for <linux-btrfs@vger.kernel.org>; Thu,  8 Dec 2016 16:11:23 +0100 (CET)
-From: =?UTF-8?Q?Sw=c3=a2mi_Petaramesh?= <swami@petaramesh.org>
-Subject: duperemove : some real world figures on BTRFS deduplication
-To: linux-btrfs@vger.kernel.org
-Message-ID: <81bcff57-4bee-18d5-cac4-3359150730a5@petaramesh.org>
-Date: Thu, 8 Dec 2016 16:11:22 +0100
+Received: from tartarus.angband.pl ([89.206.35.136]:43015 "EHLO
+        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751772AbcLHPbA (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Dec 2016 10:31:00 -0500
+Date: Thu, 8 Dec 2016 16:30:04 +0100
+From: Adam Borowski <kilobyte@angband.pl>
+To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: mkfs, balance convert: warn about RAID5/6
+ in fiery letters
+Message-ID: <20161208153004.GA31795@angband.pl>
+References: <20161128185153.14908-1-kilobyte@angband.pl>
+ <20161130151245.GO12522@twin.jikos.cz>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20161130151245.GO12522@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, Some real world figures about running duperemove deduplication on
-BTRFS :
+On Wed, Nov 30, 2016 at 04:12:46PM +0100, David Sterba wrote:
+> On Mon, Nov 28, 2016 at 07:51:53PM +0100, Adam Borowski wrote:
+> > People who don't frequent IRC nor the mailing list tend to believe RAID 5/6
+> > are stable; this leads to data loss.  Thus, let's do warn them.
+> > 
+> > At this point, I think fiery letters that won't be missed are warranted.
+> > 
+> > Kernel 4.9 and its -progs will be a part of LTS of multiple distributions,
+> > so leaving experimental features without a warning is inappropriate.
+> 
+> I'm ok with adding the warning about raid56 feature, but I have some
+> comments to how it's implemented.
+> 
+> Special case warning for the raid56 is ok, as it corresponds to the
+> 'mkfs_features' table where the missing value for 'safe' should lead to
+> a similar warning. This is planned to be more generic, so I just want to
+> make sure we can adjust it later without problems.
 
-I have an external 2,5", 5400 RPM, 1 TB HD, USB3, on which I store the
-BTRFS backups (full rsync) of 5 PCs, using 2 different distros,
-typically at the same update level, and all of them more of less sharing
-the entirety or part of the same set of user files.
+There are at least two tools that can make a raid56: mkfs and balance
+convert.  mkfs_features is used for the former but not for the latter.  It
+doesn't appear to be machine-parseable as well (but that's a matter of
+editing the #define).
 
-For each of these PCs I keep a series of 4-5 BTRFS subvolume snapshots
-for having complete backups at different points in time.
+Of course, making this generic is doable, I just don't know how do you plan
+to do that.
 
-The HD was full to 93% and made a good testbed for deduplicating.
+Should I try to use mkfs_features somehow, or do it as a variant of the
+current patch for now?
 
-So I ran duperemove on this HD, on a machine doing "only this", using a
-hashfile. The machine being an Intel i5 with 6 GB of RAM.
+> The warning should go last, after the final summary (and respect verbosity
+> level).
 
-Well, the damn thing has been running for 15 days uninterrupted !
-...Until I [Ctrl]-C it this morning as I had to move with the machine (I
-wasn't expecting it to last THAT long...).
+and for balance convert, before the output.
 
-It took about 48 hours just for calculating the files hashes.
+> The colors seem a bit too much to me, red text or just emphasize
+> 'warning' would IMHO suffice.
 
-Then it took another 48 hours just for "loading the hashes of duplicate
-extents".
+(in the paragraph before:)
+> If the message were not colored, I'd completely miss the warning.
 
-Then it took 11 days deduplicating until I killed it.
+... which means the color works!  It _is_ intended to be offensive, so
+people can't possibly miss it.
 
-At the end, the disk that was 93% full is now 76% full, so I saved 17%
-of 1 TB (170 GB) by deduplicating for 15 days.
+XFS uses something far more tame: black text on red background (\e[0;30;41m)
+but I want something that conveys the message appropriately.
 
-Well the thing "works" and my disk isn't full anymore, so that's a very
-partial success, but still l wonder if the gain is worth the effort...
+Obviously I'm not married to a particular color for this bikeshed, I just
+want a color that makes the neighbours complain :p
 
-Best regards.
 
-ॐ
+English lacks a proper word for this, something akin to
+https://en.wiktionary.org/wiki/oczojebny
 
 -- 
-Swâmi Petaramesh <swami@petaramesh.org> PGP 9076E32E
-
+u-boot problems can be solved with the help of your old SCSI manuals, the
+parts that deal with goat termination.  You need a black-handled knife, and
+an appropriate set of candles (number and color matters).  Or was it a
+silver-handled knife?  Crap, need to look that up.

@@ -1,38 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:24971 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:51717 "EHLO
         aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753119AbcLHPTK (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Dec 2016 10:19:10 -0500
-Date: Thu, 8 Dec 2016 07:19:00 -0800
+        with ESMTP id S1752923AbcLHQps (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Dec 2016 11:45:48 -0500
+Date: Thu, 8 Dec 2016 08:45:39 -0800
 From: Liu Bo <bo.li.liu@oracle.com>
-To: dsterba@suse.cz
-Cc: linux-btrfs@vger.kernel.org, Chris Mason <clm@fb.com>,
-        Jan Kara <jack@suse.cz>
-Subject: Re: [PATCH 2/6] Btrfs: set single device limit for dax usecase
-Message-ID: <20161208151900.GA20111@localhost.localdomain>
+To: Jan Kara <jack@suse.cz>
+Cc: Chris Mason <clm@fb.com>, linux-btrfs@vger.kernel.org,
+        David Sterba <dsterba@suse.cz>
+Subject: Re: [PATCH 4/6] Btrfs: add DAX support for nocow btrfs
+Message-ID: <20161208164539.GB20111@localhost.localdomain>
 Reply-To: bo.li.liu@oracle.com
 References: <1481147110-20048-1-git-send-email-bo.li.liu@oracle.com>
- <1481147110-20048-3-git-send-email-bo.li.liu@oracle.com>
- <20161208133559.GE12522@suse.cz>
+ <1481147110-20048-5-git-send-email-bo.li.liu@oracle.com>
+ <ad5694be-df94-f1ed-46ac-96ef19d8007d@fb.com>
+ <20161208104741.GB4049@quack2.suse.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20161208133559.GE12522@suse.cz>
+In-Reply-To: <20161208104741.GB4049@quack2.suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 08, 2016 at 02:35:59PM +0100, David Sterba wrote:
-> On Wed, Dec 07, 2016 at 01:45:06PM -0800, Liu Bo wrote:
-> > Dax on btrfs is not ready for multiple device.
+On Thu, Dec 08, 2016 at 11:47:41AM +0100, Jan Kara wrote:
+> On Wed 07-12-16 17:15:42, Chris Mason wrote:
+> > On 12/07/2016 04:45 PM, Liu Bo wrote:
+> > >This has implemented DAX support for btrfs with nocow and single-device.
+> > >
+> > >DAX is developed for block devices that are memory-like in order to avoid
+> > >double buffer in both page cache and the storage, so DAX can performs reads and
+> > >writes directly to the storage device, and for those who prefer to using
+> > >filesystem, filesystem dax support can help to map the storage into userspace
+> > >for file-mapping.
+> > >
+> > >Since I haven't figure out how to map multiple devices to userspace without
+> > >pagecache, this DAX support is only for single-device, and I don't think
+> > >DAX(Direct Access) can work with cow, this is limited to nocow case.  I made
+> > >this by setting nodatacow in dax mount option.
+> > 
+> > Interesting, this is a nice small start.  It might make more sense to limit
+> > snapshots to readonly in DAX mode until we can figure out how to cow
+> > properly.  I think it can be done, I just need to sit down with the dax code
+> > to do a good review.
+> > 
+> > But bigger picture, if we can't cow and we can't crc and we can't
+> > multi-device, I'd rather let XFS/ext4 sort out the dax space until we pull
+> > in more of the btrfs features too.
 > 
-> How about DUP? Technically it's not multi-device but still stores
-> multiple copies, so I don't know if the implementation is ok with that.
+> So normal DAX IO (via read(2) and write(2)) is very similar to direct IO so
+> I don't think there would be any obstacle to support all the features with
+> that.
 
-Good question.
+For DAX IO via read(2)/write(2), cow is OK while the mutliple devices is
+a problem as currently iomap_dax_actor only takes one <device, blocknum>
+pair:
 
-For this patch set, meta DUP is OK while data DUP is not, the main
-obstacle is that the actual copy-to-device operation happens in iomap
-code (iomap_dax_actor), not inside filesystem itself, and it only takes
-one <device, blocknum> pair to copy to device.
+- raid 0, one device is written once a time
+- raid 1/10 and others, 2 or more devices need to be written each time
+
+> For mmap(2) things get more difficult but still: The filesystem gets
+> normal ->fault notifications when the page is first faulted in. So you
+> can COW if you need to at that moment.
+
+Right.
+
+> Also DAX PTEs can be write-protected (well, as of the coming merge
+> window) as normal PTEs and then you'll get ->pfn_mkwrite /
+> ->page_mkwrite notification when someone tries to write via mmap and
+> you can do your stuff at that point.
+
+That's right, but I think the problem comes from the fact that only
+->fault with FAULT_FLAG_WRITE gets to space allocation where we could
+cow to new location.
+
+For page_mkwrite, btrfs does cow while writing back a dirty page, but
+dax doesn't do delayed allocation so dax_writeback_one doesn't have
+place to do cow.
+
+Also thank you for the great write-protected patch, since another reason
+I decided to disable cow is that there is no write-protected on DAX
+PTEs, so without that even if we can do cow, we don't have a way to
+update every pte pointing to our cow'd dax pfn.
+
+> So DAX mappings are not that
+> different from filesystem point of view. There are some differences wrt.
+> locking (you don't have page lock, but you use a lock bit in radix tree
+> entry instead for that) but that's about it. So I don't see a principial
+> reason why we cannot support all btrfs features for DAX... But if you see
+> some problem, let me know and we can talk if we could somehow help from the
+> DAX side.
+
+Yeah, looks like we have two problems at least, one is dax_writeback_one
+and the other is iomap.
+
+> 
+> BTW, I also don't see how the multiple devices are a problem. Actually XFS
+> supports that (with its real-time devices) just fine - your ->iomap_begin()
+> returns a <device, blocknumber> pair and that should be all that's needed,
+> no?
+
+xfs is a bit different, it only writes to one device at a time, sort of
+a raid0.
 
 Thanks,
 

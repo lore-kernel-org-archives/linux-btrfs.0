@@ -1,62 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-001b2d01.pphosted.com ([148.163.158.5]:44870 "EHLO
-        mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1751367AbcLHOc1 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 8 Dec 2016 09:32:27 -0500
-Received: from pps.filterd (m0098420.ppops.net [127.0.0.1])
-        by mx0b-001b2d01.pphosted.com (8.16.0.17/8.16.0.17) with SMTP id uB8EVDYL063082
-        for <linux-btrfs@vger.kernel.org>; Thu, 8 Dec 2016 09:32:26 -0500
-Received: from e23smtp09.au.ibm.com (e23smtp09.au.ibm.com [202.81.31.142])
-        by mx0b-001b2d01.pphosted.com with ESMTP id 277857vpw4-1
-        (version=TLSv1.2 cipher=AES256-SHA bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Thu, 08 Dec 2016 09:32:25 -0500
-Received: from localhost
-        by e23smtp09.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-        for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-        Fri, 9 Dec 2016 00:32:22 +1000
-Received: from d23relay06.au.ibm.com (d23relay06.au.ibm.com [9.185.63.219])
-        by d23dlp01.au.ibm.com (Postfix) with ESMTP id C96BF2CE8046
-        for <linux-btrfs@vger.kernel.org>; Fri,  9 Dec 2016 01:32:20 +1100 (EST)
-Received: from d23av05.au.ibm.com (d23av05.au.ibm.com [9.190.234.119])
-        by d23relay06.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id uB8EWKbI50004132
-        for <linux-btrfs@vger.kernel.org>; Fri, 9 Dec 2016 01:32:20 +1100
-Received: from d23av05.au.ibm.com (localhost [127.0.0.1])
-        by d23av05.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id uB8EWKRT022261
-        for <linux-btrfs@vger.kernel.org>; Fri, 9 Dec 2016 01:32:20 +1100
-From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH 1/2] btrfs: qgroup: Introduce extent changeset for qgroup reserve functions
-Date: Thu, 08 Dec 2016 19:59:02 +0530
-In-Reply-To: <20161202020307.6025-1-quwenruo@cn.fujitsu.com>
-References: <20161202020307.6025-1-quwenruo@cn.fujitsu.com>
+Received: from relay3-d.mail.gandi.net ([217.70.183.195]:53058 "EHLO
+        relay3-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752496AbcLHPL3 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Dec 2016 10:11:29 -0500
+Received: from mfilter36-d.gandi.net (mfilter36-d.gandi.net [217.70.178.167])
+        by relay3-d.mail.gandi.net (Postfix) with ESMTP id 86982A815F
+        for <linux-btrfs@vger.kernel.org>; Thu,  8 Dec 2016 16:11:26 +0100 (CET)
+Received: from relay3-d.mail.gandi.net ([IPv6:::ffff:217.70.183.195])
+        by mfilter36-d.gandi.net (mfilter36-d.gandi.net [::ffff:10.0.15.180]) (amavisd-new, port 10024)
+        with ESMTP id A4vwpcz7_JlE for <linux-btrfs@vger.kernel.org>;
+        Thu,  8 Dec 2016 16:11:24 +0100 (CET)
+Received: from [10.137.2.13] (port-mbouisso.univ-montp2.fr [162.38.105.117])
+        (Authenticated sender: swami@petaramesh.org)
+        by relay3-d.mail.gandi.net (Postfix) with ESMTPSA id 32C17A80E5
+        for <linux-btrfs@vger.kernel.org>; Thu,  8 Dec 2016 16:11:23 +0100 (CET)
+From: =?UTF-8?Q?Sw=c3=a2mi_Petaramesh?= <swami@petaramesh.org>
+Subject: duperemove : some real world figures on BTRFS deduplication
+To: linux-btrfs@vger.kernel.org
+Message-ID: <81bcff57-4bee-18d5-cac4-3359150730a5@petaramesh.org>
+Date: Thu, 8 Dec 2016 16:11:22 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Message-Id: <10093188.Rk5diOXqMO@localhost.localdomain>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Friday, December 02, 2016 10:03:06 AM Qu Wenruo wrote:
-> Introduce a new parameter, struct extent_changeset for
-> btrfs_qgroup_reserved_data() and its callers.
-> 
-> Such extent_changeset was used in btrfs_qgroup_reserve_data() to record
-> which range it reserved in current reserve, so it can free it at error
-> path.
-> 
-> The reason we need to export it to callers is, at buffered write error
-> path, without knowing what exactly which range we reserved in current
-> allocation, we can free space which is not reserved by us.
-> 
-> This will lead to qgroup reserved space underflow.
->
+Hi, Some real world figures about running duperemove deduplication on
+BTRFS :
 
-Hi Qu,
+I have an external 2,5", 5400 RPM, 1 TB HD, USB3, on which I store the
+BTRFS backups (full rsync) of 5 PCs, using 2 different distros,
+typically at the same update level, and all of them more of less sharing
+the entirety or part of the same set of user files.
 
-On which git tree are these patches based off? This patch fails to apply
-cleanly on kdave/for-next branch that is available as of today.
+For each of these PCs I keep a series of 4-5 BTRFS subvolume snapshots
+for having complete backups at different points in time.
+
+The HD was full to 93% and made a good testbed for deduplicating.
+
+So I ran duperemove on this HD, on a machine doing "only this", using a
+hashfile. The machine being an Intel i5 with 6 GB of RAM.
+
+Well, the damn thing has been running for 15 days uninterrupted !
+...Until I [Ctrl]-C it this morning as I had to move with the machine (I
+wasn't expecting it to last THAT long...).
+
+It took about 48 hours just for calculating the files hashes.
+
+Then it took another 48 hours just for "loading the hashes of duplicate
+extents".
+
+Then it took 11 days deduplicating until I killed it.
+
+At the end, the disk that was 93% full is now 76% full, so I saved 17%
+of 1 TB (170 GB) by deduplicating for 15 days.
+
+Well the thing "works" and my disk isn't full anymore, so that's a very
+partial success, but still l wonder if the gain is worth the effort...
+
+Best regards.
+
+ॐ
 
 -- 
-chandan
+Swâmi Petaramesh <swami@petaramesh.org> PGP 9076E32E
 

@@ -1,77 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:43015 "EHLO
-        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751772AbcLHPbA (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Dec 2016 10:31:00 -0500
-Date: Thu, 8 Dec 2016 16:30:04 +0100
-From: Adam Borowski <kilobyte@angband.pl>
-To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: mkfs, balance convert: warn about RAID5/6
- in fiery letters
-Message-ID: <20161208153004.GA31795@angband.pl>
-References: <20161128185153.14908-1-kilobyte@angband.pl>
- <20161130151245.GO12522@twin.jikos.cz>
+Received: from mail-io0-f195.google.com ([209.85.223.195]:34612 "EHLO
+        mail-io0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753786AbcLHPm0 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Dec 2016 10:42:26 -0500
+Received: by mail-io0-f195.google.com with SMTP id y124so766153iof.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 08 Dec 2016 07:42:26 -0800 (PST)
+Subject: Re: duperemove : some real world figures on BTRFS deduplication
+To: =?UTF-8?Q?Sw=c3=a2mi_Petaramesh?= <swami@petaramesh.org>,
+        linux-btrfs@vger.kernel.org
+References: <81bcff57-4bee-18d5-cac4-3359150730a5@petaramesh.org>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <8da6fc44-2756-0bfd-7d7c-e11529f54f74@gmail.com>
+Date: Thu, 8 Dec 2016 10:42:21 -0500
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20161130151245.GO12522@twin.jikos.cz>
+In-Reply-To: <81bcff57-4bee-18d5-cac4-3359150730a5@petaramesh.org>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 30, 2016 at 04:12:46PM +0100, David Sterba wrote:
-> On Mon, Nov 28, 2016 at 07:51:53PM +0100, Adam Borowski wrote:
-> > People who don't frequent IRC nor the mailing list tend to believe RAID 5/6
-> > are stable; this leads to data loss.  Thus, let's do warn them.
-> > 
-> > At this point, I think fiery letters that won't be missed are warranted.
-> > 
-> > Kernel 4.9 and its -progs will be a part of LTS of multiple distributions,
-> > so leaving experimental features without a warning is inappropriate.
-> 
-> I'm ok with adding the warning about raid56 feature, but I have some
-> comments to how it's implemented.
-> 
-> Special case warning for the raid56 is ok, as it corresponds to the
-> 'mkfs_features' table where the missing value for 'safe' should lead to
-> a similar warning. This is planned to be more generic, so I just want to
-> make sure we can adjust it later without problems.
+On 2016-12-08 10:11, Swâmi Petaramesh wrote:
+> Hi, Some real world figures about running duperemove deduplication on
+> BTRFS :
+>
+> I have an external 2,5", 5400 RPM, 1 TB HD, USB3, on which I store the
+> BTRFS backups (full rsync) of 5 PCs, using 2 different distros,
+> typically at the same update level, and all of them more of less sharing
+> the entirety or part of the same set of user files.
+>
+> For each of these PCs I keep a series of 4-5 BTRFS subvolume snapshots
+> for having complete backups at different points in time.
+>
+> The HD was full to 93% and made a good testbed for deduplicating.
+>
+> So I ran duperemove on this HD, on a machine doing "only this", using a
+> hashfile. The machine being an Intel i5 with 6 GB of RAM.
+>
+> Well, the damn thing has been running for 15 days uninterrupted !
+> ...Until I [Ctrl]-C it this morning as I had to move with the machine (I
+> wasn't expecting it to last THAT long...).
+>
+> It took about 48 hours just for calculating the files hashes.
+>
+> Then it took another 48 hours just for "loading the hashes of duplicate
+> extents".
+>
+> Then it took 11 days deduplicating until I killed it.
+>
+> At the end, the disk that was 93% full is now 76% full, so I saved 17%
+> of 1 TB (170 GB) by deduplicating for 15 days.
+>
+> Well the thing "works" and my disk isn't full anymore, so that's a very
+> partial success, but still l wonder if the gain is worth the effort...
+So, some general explanation here:
+Duperemove hashes data in blocks of (by default) 128kB, which means for 
+~930GB, you've got about 7618560 blocks to hash, which partly explains 
+why it took so long to hash.  Once that's done, it then has to compare 
+hashes for all combinations of those blocks, which totals to 
+58042456473600 comparisons (hence that taking a long time).  The block 
+size thus becomes a trade-off between performance when hashing and 
+actual space savings (smaller block size makes hashing take longer, but 
+gives overall slightly better results for deduplication).
 
-There are at least two tools that can make a raid56: mkfs and balance
-convert.  mkfs_features is used for the former but not for the latter.  It
-doesn't appear to be machine-parseable as well (but that's a matter of
-editing the #define).
+As far as the rest, given your hashing performance (which is not 
+particularly good I might add, roughly 5.6MB/s), the amount of time it 
+was taking to do the actual deduplication is reasonable since the 
+deduplication ioctl does a byte-wise comparison of the extents to be 
+deduplicated prior to actually ref-linking them to ensure you don't lose 
+data.
 
-Of course, making this generic is doable, I just don't know how do you plan
-to do that.
+Because of this, generic batch deduplication is not all that great on 
+BTRFS.  There are cases where it can work, but usually they're pretty 
+specific cases.  In most cases though, you're better off doing a custom 
+tool that knows about how your data is laid out and what's likely to be 
+duplicated (I've actually got two tools for this for the two cases where 
+I use deduplication, they use knowledge of the data-set itself to figure 
+out what's duplicated, then just call the ioctl through a wrapper 
+(previously the one included in duperemove, currently xfs_io)).
 
-Should I try to use mkfs_features somehow, or do it as a variant of the
-current patch for now?
-
-> The warning should go last, after the final summary (and respect verbosity
-> level).
-
-and for balance convert, before the output.
-
-> The colors seem a bit too much to me, red text or just emphasize
-> 'warning' would IMHO suffice.
-
-(in the paragraph before:)
-> If the message were not colored, I'd completely miss the warning.
-
-... which means the color works!  It _is_ intended to be offensive, so
-people can't possibly miss it.
-
-XFS uses something far more tame: black text on red background (\e[0;30;41m)
-but I want something that conveys the message appropriately.
-
-Obviously I'm not married to a particular color for this bikeshed, I just
-want a color that makes the neighbours complain :p
-
-
-English lacks a proper word for this, something akin to
-https://en.wiktionary.org/wiki/oczojebny
-
--- 
-u-boot problems can be solved with the help of your old SCSI manuals, the
-parts that deal with goat termination.  You need a black-handled knife, and
-an appropriate set of candles (number and color matters).  Or was it a
-silver-handled knife?  Crap, need to look that up.

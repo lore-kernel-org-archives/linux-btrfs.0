@@ -1,63 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail05.adl6.internode.on.net ([150.101.137.143]:24702 "EHLO
+Received: from ipmail05.adl6.internode.on.net ([150.101.137.143]:7388 "EHLO
         ipmail05.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751563AbcLIErX (ORCPT
+        by vger.kernel.org with ESMTP id S1750807AbcLIFOE (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 8 Dec 2016 23:47:23 -0500
-Date: Fri, 9 Dec 2016 15:47:20 +1100
+        Fri, 9 Dec 2016 00:14:04 -0500
+Date: Fri, 9 Dec 2016 16:13:59 +1100
 From: Dave Chinner <david@fromorbit.com>
 To: Liu Bo <bo.li.liu@oracle.com>
 Cc: linux-btrfs@vger.kernel.org, Chris Mason <clm@fb.com>,
         Jan Kara <jack@suse.cz>, David Sterba <dsterba@suse.cz>
-Subject: Re: [PATCH 1/6] Btrfs: add mount option for dax
-Message-ID: <20161209044720.GN4219@dastard>
+Subject: Re: [PATCH 4/6] Btrfs: add DAX support for nocow btrfs
+Message-ID: <20161209051359.GO4219@dastard>
 References: <1481147110-20048-1-git-send-email-bo.li.liu@oracle.com>
- <1481147110-20048-2-git-send-email-bo.li.liu@oracle.com>
+ <1481147110-20048-5-git-send-email-bo.li.liu@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1481147110-20048-2-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1481147110-20048-5-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 07, 2016 at 01:45:05PM -0800, Liu Bo wrote:
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> ---
->  fs/btrfs/ctree.h |  1 +
->  fs/btrfs/super.c | 40 +++++++++++++++++++++++++++++++++++++++-
->  2 files changed, 40 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 0b8ce2b..e54c6e6 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -1317,6 +1317,7 @@ static inline u32 BTRFS_MAX_XATTR_SIZE(const struct btrfs_root *root)
->  #define BTRFS_MOUNT_FRAGMENT_METADATA	(1 << 25)
->  #define BTRFS_MOUNT_FREE_SPACE_TREE	(1 << 26)
->  #define BTRFS_MOUNT_NOLOGREPLAY		(1 << 27)
-> +#define BTRFS_MOUNT_DAX		(1 << 28)
->  
->  #define BTRFS_DEFAULT_COMMIT_INTERVAL	(30)
->  #define BTRFS_DEFAULT_MAX_INLINE	(2048)
-> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> index 74ed5aa..9b18f3d 100644
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -323,7 +323,7 @@ enum {
->  	Opt_commit_interval, Opt_barrier, Opt_nodefrag, Opt_nodiscard,
->  	Opt_noenospc_debug, Opt_noflushoncommit, Opt_acl, Opt_datacow,
->  	Opt_datasum, Opt_treelog, Opt_noinode_cache, Opt_usebackuproot,
-> -	Opt_nologreplay, Opt_norecovery,
-> +	Opt_nologreplay, Opt_norecovery, Opt_dax,
+On Wed, Dec 07, 2016 at 01:45:08PM -0800, Liu Bo wrote:
+> Since I haven't figure out how to map multiple devices to userspace without
+> pagecache, this DAX support is only for single-device, and I don't think
+> DAX(Direct Access) can work with cow, this is limited to nocow case.  I made
+> this by setting nodatacow in dax mount option.
 
-Can we please not create more filesystems with a DAX mount option?
-This was only even an enabler, and not meant to be a permanent
-thing. The permanent functionality for DAX is supposed to be
-per-inode inheritable DAX flags - not mount options - so that
-applications can choose on a per file basis to enable/disable DAX
-access as they see fit.
+DAX can be made to work with COW quite easily - it's already been
+done, in fact. Go look up Nova for how it works with DAX:
 
-This also enables the filesystem to reject the attempt to turn on
-DAX if the set of contexts for the file are not DAX compatible....
+https://github.com/Andiry/nova
+
+Essentially, it has a set of "temporary pages" it links to the inode
+where writes are done directly, and when a synchronisation event
+occurs it pulls them from the per-inode list, does whatever
+transformations are needed (e.g. CRC calculation, mirroring, etc)
+and marks them them as current in the inode extent list.
+
+When a new overwrite comes along, it allocates a new block in the
+temporary page list, copies the existing data into it, and then uses
+that block for DAX until the next synchronisation event occurs.
+
+For XFS, CoW for DAX through read/write isn't really any different
+to the direct IO path we currently already have. And for page write
+faults on shared extents, instead of zeroing the newly allocated
+block we simply copy the original data into the new block before the
+allocation returns. It does mean, however, that XFS does not have
+the capability for data transformations in the IO path. This limits
+us to atomic write devices (software raid 0 or hardware redundancy
+such as DIMM mirroring), but we can still do out-of-band online data
+transformations and movement (e.g. dedupe, defrag) with DAX.
+
+Yes, I know these methods are very different to how btrfs uses COW.
+However, my point is that DAX and CoW and/or mulitple devices are
+not incompatible if the architecture is correctly structured. i.e
+DAX should be able to work even with most of btrfs's special magic
+still enabled.
 
 Cheers,
 

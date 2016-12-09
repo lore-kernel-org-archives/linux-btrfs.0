@@ -1,51 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36336 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S934917AbcLTOKR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Dec 2016 09:10:17 -0500
-Date: Tue, 20 Dec 2016 15:09:55 +0100
-From: David Sterba <dsterba@suse.cz>
-To: "Xiang, Yang" <Yang.Xiang@Teradata.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Newbie question about linux-btrfs patch
-Message-ID: <20161220140955.GH3620@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <D47D5796.10F84%Yang.Xiang@teradata.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:36012 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751756AbcLIR4v (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Dec 2016 12:56:51 -0500
+Date: Fri, 9 Dec 2016 09:56:45 -0800
+From: "Darrick J. Wong" <darrick.wong@oracle.com>
+To: mfasheh@versity.com
+Cc: xfs <linux-xfs@vger.kernel.org>, linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] duperemove: test presence of dedupe ioctl
+Message-ID: <20161209175645.GB16813@birch.djwong.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <D47D5796.10F84%Yang.Xiang@teradata.com>
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Dec 19, 2016 at 05:23:33PM +0000, Xiang, Yang wrote:
-> We are interested in testing out and possibly contribute to the btrfs
-> dedup effort. I¹ve been looking around the github at:
-> git://repo.or.cz/btrfs-progs-unstable/devel.git
-> And I couldn¹t locate any of the patch set some of you mentioned in the
-> posts such as: 
-> http://www.spinics.net/lists/linux-btrfs/msg53408.html
+Since a zero-length dedupe operation is guaranteed to succeed, use that
+to test whether or not this filesystem supports dedupe.
 
-You can find general information about development at the wiki
-https://btrfs.wiki.kernel.org/index.php/Main_Page#Developer_documentation
+Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+---
+ file_scan.c |   47 +++++++++++++++++++++++++++++++++++++----------
+ 1 file changed, 37 insertions(+), 10 deletions(-)
 
-There are several git repositories, patches are also sent to the
-mailinglist, optionally with pointers to the git repository where you
-can find them.
-
-> Can someone please show me the way as how to grab the latest patch set and
-> apply to both kernel source and users space prog soruce for linux-btrfs?
-
-The kernel module and userspace progs do not share a git repository,
-although portions of the code are the same in both.
-
-If you're interested in the latest development branches, they might
-exist in developers' git trees and after review go to my tree [1] to the
-branches named like 'for-next-20161212'. This consists of patches that
-are likely to go to Chris' git tree [2] that gets forwarded to the final
-destination in Linus' tree. Depending on the development cycle, the
-patches stay in the for-next branch until their time comes. More on that
-in [3].
-
-[1] https://git.kernel.org/cgit/linux/kernel/git/kdave/linux.git/
-[2] https://git.kernel.org/cgit/linux/kernel/git/mason/linux-btrfs.git/
-[3] https://btrfs.wiki.kernel.org/index.php/Developer's_FAQ#Development_schedule
+diff --git a/file_scan.c b/file_scan.c
+index 617f166..a34453e 100644
+--- a/file_scan.c
++++ b/file_scan.c
+@@ -45,11 +45,7 @@
+ #include "file_scan.h"
+ #include "dbfile.h"
+ #include "util.h"
+-
+-/* This is not in linux/magic.h */
+-#ifndef	XFS_SB_MAGIC
+-#define	XFS_SB_MAGIC		0x58465342	/* 'XFSB' */
+-#endif
++#include "btrfs-ioctl.h"
+ 
+ static char path[PATH_MAX] = { 0, };
+ static char *pathp = path;
+@@ -189,6 +185,39 @@ static int walk_dir(const char *name)
+ 	return ret;
+ }
+ 
++struct fake_btrfs_ioctl_same_args {
++	struct btrfs_ioctl_same_args args;
++	struct btrfs_ioctl_same_extent_info info;
++};
++
++/*
++ * A zero-length dedupe between two files should always succeed,
++ * so we can use this to test the presence of dedupe functionality.
++ */
++static bool check_ioctl_works(int fd)
++{
++	struct fake_btrfs_ioctl_same_args sa = {0};
++	struct stat sb;
++	static int cached = -1;
++	int ret;
++
++	if (cached >= 0)
++		return cached != 0;
++
++	ret = fstat(fd, &sb);
++	if (ret)
++		return false;
++
++	sa.args.dest_count = 1;
++	sa.args.length = 0;
++	sa.info.fd = fd;
++	sa.info.logical_offset = 0;
++	errno = 0;
++	ret = btrfs_extent_same(fd, &sa.args);
++	cached = !ret && !errno && !sa.info.status;
++	return cached != 0;
++}
++
+ static int __add_file(const char *name, struct stat *st,
+ 		      struct filerec **ret_file)
+ {
+@@ -235,12 +264,10 @@ static int __add_file(const char *name, struct stat *st,
+ 		goto out;
+ 	}
+ 
+-	if (run_dedupe &&
+-	    ((fs.f_type != BTRFS_SUPER_MAGIC &&
+-	      fs.f_type != XFS_SB_MAGIC))) {
++	if (run_dedupe && !check_ioctl_works(fd)) {
+ 		close(fd);
+-		fprintf(stderr,	"\"%s\": Can only dedupe files on btrfs or xfs "
+-			"(experimental)\n", name);
++		fprintf(stderr,	"\"%s\": dedupe ioctl not supported on this "
++			"filesystem.\n", name);
+ 		return ENOSYS;
+ 	}
+ 

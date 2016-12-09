@@ -1,40 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f176.google.com ([209.85.161.176]:36566 "EHLO
-        mail-yw0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751723AbcLIC6H (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Dec 2016 21:58:07 -0500
-Received: by mail-yw0-f176.google.com with SMTP id a10so4358176ywa.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 08 Dec 2016 18:58:06 -0800 (PST)
+Received: from mail-wm0-f42.google.com ([74.125.82.42]:36887 "EHLO
+        mail-wm0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751701AbcLIH4g (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Dec 2016 02:56:36 -0500
+Received: by mail-wm0-f42.google.com with SMTP id t79so14573892wmt.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 08 Dec 2016 23:56:35 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <81bcff57-4bee-18d5-cac4-3359150730a5@petaramesh.org>
-References: <81bcff57-4bee-18d5-cac4-3359150730a5@petaramesh.org>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Thu, 8 Dec 2016 19:58:05 -0700
-Message-ID: <CAJCQCtS8zCMYYiedYpkL4bZE0PvEF+sLGG96Uq=Ms1qjd4uCpg@mail.gmail.com>
+In-Reply-To: <CAEtw4r2Q3pz8FQrKgij_fWTBw7p2YRB6DqYrXzoOZ-g0htiKAw@mail.gmail.com>
+References: <81bcff57-4bee-18d5-cac4-3359150730a5@petaramesh.org> <CAEtw4r2Q3pz8FQrKgij_fWTBw7p2YRB6DqYrXzoOZ-g0htiKAw@mail.gmail.com>
+From: Peter Becker <floyd.net@gmail.com>
+Date: Fri, 9 Dec 2016 08:56:33 +0100
+Message-ID: <CAEtw4r3mn9YDcwMApN1+akNZRUo9WU4XkfV_+5jQOU_1ifv19g@mail.gmail.com>
 Subject: Re: duperemove : some real world figures on BTRFS deduplication
 To: =?UTF-8?Q?Sw=C3=A2mi_Petaramesh?= <swami@petaramesh.org>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 8, 2016 at 8:11 AM, Swâmi Petaramesh <swami@petaramesh.org> wrote:
+> 2016-12-08 16:11 GMT+01:00 Swâmi Petaramesh <swami@petaramesh.org>:
+>
+> Then it took another 48 hours just for "loading the hashes of duplicate
+> extents".
+>
 
-> Well, the damn thing has been running for 15 days uninterrupted !
-> ...Until I [Ctrl]-C it this morning as I had to move with the machine (I
-> wasn't expecting it to last THAT long...).
+This issue i adressing currently with the following patches:
+https://github.com/Floyddotnet/duperemove/commits/digest_trigger
 
-Can you check some bigger files and see if they've become fragmented?
-I'm seeing 1.4GiB files with 2-3 extents reported by filefrag, go to
-over 5000 fragments during dedupe. This is not something I recall
-happening some months ago.
+Tested with a 3,9 TB directory, with 4723 objects:
 
-I inadvertently replied to the wrong dedupe thread about my test and
-what I'm finding, it's here.
-https://www.spinics.net/lists/linux-btrfs/msg61304.html
+old implementation of dbfile_load_hashes took 36593ms
+new implementation of dbfile_load_hashes took 11ms
 
-But if you're seeing something similar, then it would explain why it's
-so slow in your case.
-
--- 
-Chris Murphy
+You can use this versions save. But i have to do more work. (for
+example a migrationscript for existing hashfiles)

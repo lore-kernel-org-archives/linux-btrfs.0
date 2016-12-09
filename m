@@ -1,27 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:29554 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750751AbcLEFQL (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Dec 2016 00:16:11 -0500
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id uB55GAS1025233
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 5 Dec 2016 05:16:10 GMT
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id uB55G9FL018495
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 5 Dec 2016 05:16:09 GMT
-Received: from abhmp0019.oracle.com (abhmp0019.oracle.com [141.146.116.25])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id uB55G9D8017968
-        for <linux-btrfs@vger.kernel.org>; Mon, 5 Dec 2016 05:16:09 GMT
-From: Ed Nadolski <ed.nadolski@oracle.com>
-Content-Type: text/plain; charset=us-ascii
-Date: Sun, 4 Dec 2016 22:16:07 -0700
-Subject: 
-To: linux-btrfs@vger.kernel.org
-Message-Id: <A3042361-54D4-4270-8BEC-2AA883DCB34B@oracle.com>
-Mime-Version: 1.0 (Mac OS X Mail 8.2 \(2104\))
+Received: from cn.fujitsu.com ([222.73.24.84]:54939 "EHLO song.cn.fujitsu.com"
+        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+        id S1751802AbcLICaB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 8 Dec 2016 21:30:01 -0500
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org, dsterba@suse.cz, chandan@linux.vnet.ibm.com
+Subject: [PATCH 00/10] Qgroup fixes for kdave/for-next-20161125 branch
+Date: Fri,  9 Dec 2016 10:28:35 +0800
+Message-Id: <20161209022835.10168-1-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-subscribe linux-btrfs
+The branch can be fetched from github:
+https://github.com/adam900710/linux.git for-david-next-qgroup-fixes
+
+If David wants to push these fixes to 4.10, then I can rebase these patches to
+Chris' for-linus branch.
+
+Recent qgroup fixes for several problems:
+1) Qgroup reserved space underflow
+   Caused by several reasons, from buffer write happens before qgroup enable,
+   to freeing qgroup space not reserved by caller.
+
+2) inode_cache mount option corruption
+
+3) Enhance qgroup trace point
+   Used for debugging above problems.
+
+All patches are already submitted to mail list.
+The 1st patch is the diff between V4 and V5 patch which adds WARN_ON() for
+underflowing qgroup reserved space.
+
+Qu Wenruo (10):
+  btrfs: qgroup: Fix wrong qgroup passed to reserved space error report
+  btrfs: qgroup: Add trace point for qgroup reserved space
+  btrfs: qgroup: Re-arrange tracepoint timing to co-operate with
+    reserved space tracepoint
+  btrfs: qgroup: Fix qgroup corruption caused by inode_cache mount
+    option
+  btrfs: qgroup: Add quick exit for non-fs extents
+  btrfs: qgroup: Cleanup btrfs_qgroup_prepare_account_extents function
+  btrfs: qgroup: Return actually freed bytes for qgroup release or free
+    data
+  btrfs: qgroup: Fix qgroup reserved space underflow caused by buffered
+    write and quota enable
+  btrfs: qgroup: Introduce extent changeset for qgroup reserve functions
+  btrfs: qgroup: Fix qgroup reserved space underflow by only freeing
+    reserved ranges
+
+ fs/btrfs/ctree.h             |  14 +--
+ fs/btrfs/extent-tree.c       |  32 ++++---
+ fs/btrfs/extent_io.h         |  24 +++++-
+ fs/btrfs/file.c              |  45 ++++++----
+ fs/btrfs/inode-map.c         |   4 +-
+ fs/btrfs/inode.c             |  69 +++++++++------
+ fs/btrfs/ioctl.c             |   9 +-
+ fs/btrfs/qgroup.c            | 197 +++++++++++++++++++++++++++++++------------
+ fs/btrfs/qgroup.h            |  14 ++-
+ fs/btrfs/relocation.c        |  12 +--
+ fs/btrfs/transaction.c       |  20 ++---
+ include/trace/events/btrfs.h |  43 ++++++++++
+ 12 files changed, 341 insertions(+), 142 deletions(-)
+
+-- 
+2.10.2
+
+
+

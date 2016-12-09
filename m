@@ -1,47 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f196.google.com ([209.85.223.196]:35112 "EHLO
-        mail-io0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932313AbcLIMhE (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Dec 2016 07:37:04 -0500
-Received: by mail-io0-f196.google.com with SMTP id f73so6522421ioe.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 09 Dec 2016 04:37:04 -0800 (PST)
-Subject: Re: autoversioning?
-To: linux-btrfs@vger.kernel.org,
-        Ulli Horlacher <framstag@rus.uni-stuttgart.de>
-References: <20161209110213.GA21685@rus.uni-stuttgart.de>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <0219ed6f-e332-5bf1-96b9-f1b1bc09c2e7@gmail.com>
-Date: Fri, 9 Dec 2016 07:36:59 -0500
+Received: from slow1-d.mail.gandi.net ([217.70.178.86]:34878 "EHLO
+        slow1-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753148AbcLINtC (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Dec 2016 08:49:02 -0500
+Received: from relay2-d.mail.gandi.net (relay2-d.mail.gandi.net [217.70.183.194])
+        by slow1-d.mail.gandi.net (Postfix) with ESMTP id F09BF47F966
+        for <linux-btrfs@vger.kernel.org>; Fri,  9 Dec 2016 14:45:55 +0100 (CET)
+Subject: Re: duperemove : some real world figures on BTRFS deduplication
+To: Chris Murphy <lists@colorremedies.com>
+References: <81bcff57-4bee-18d5-cac4-3359150730a5@petaramesh.org>
+ <CAJCQCtS8zCMYYiedYpkL4bZE0PvEF+sLGG96Uq=Ms1qjd4uCpg@mail.gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: =?UTF-8?Q?Sw=c3=a2mi_Petaramesh?= <swami@petaramesh.org>
+Message-ID: <2d4f5ee2-fc2b-ac48-8f4b-eecf8936b9e1@petaramesh.org>
+Date: Fri, 9 Dec 2016 14:45:48 +0100
 MIME-Version: 1.0
-In-Reply-To: <20161209110213.GA21685@rus.uni-stuttgart.de>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+In-Reply-To: <CAJCQCtS8zCMYYiedYpkL4bZE0PvEF+sLGG96Uq=Ms1qjd4uCpg@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-12-09 06:02, Ulli Horlacher wrote:
-> Is file autoversioning possible with btrfs?
->
-> I have a VMS background, where the standard filesystem automatically
-> creates a new version for every file that is written.
->
-> The number of versions can be controlled globally, on directory or on file
-> base.
->
-> With btrfs I can create manually a file version (clone) with
-> "cp -a --reflink"
-> but I want this to be done automatically.
->
-> I could set up an incron-job (inotify), but perhaps there is a better,
-> easier solution?
->
-The first thing that comes to mind is a FUSE module I saw a while back 
-that does this.  AFAIK, it doesn't do any reflinking, but it handles the 
-COW needed for the versioning itself, so it works on any filesystem, not 
-just BTRFS (and you could easily run batch deduplication from time to 
-time on the backing storage so that you have things nicely reflinked). 
-I sadly don't remember what the FUSE module was called though (I 
-remember it because I thought the idea was neat, not because I need 
-something like that), but I do distinctly remember that it exists.
+Hi Chris, thanks for your answer,
 
-Alternatively, something using fanotify would probably work better than 
-both options, but it would have to be pretty smart to be reliable.
+On 12/09/2016 03:58 AM, Chris Murphy wrote:
+> Can you check some bigger files and see if they've become fragmented?
+> I'm seeing 1.4GiB files with 2-3 extents reported by filefrag, go to
+> over 5000 fragments during dedupe. This is not something I recall
+> happening some months ago.
+
+I have checked directories containing VM hard disks, that would be good
+candidates. As they're backed up using full rsyncs, I wouldn't expect
+them to be heavily fragmented (OTOH the whole BTRFS filesystem is lzo
+compressed, and I believe that it may affect the number of extents
+reported by filefrag...?)
+
+Anyway this is the number of fragments that I get for a bunch of VMS HD
+files which are in the range from a couple GB to about 20 GB.
+
+The number of fragments reported by filefrag : 2907, 2560, 314, 10107
+
+If compression has nothing to do with this, then this is heavy
+fragmentation.
+
+Kind regards.
+
+ॐ
+
+-- 
+Swâmi Petaramesh <swami@petaramesh.org> PGP 9076E32E
+

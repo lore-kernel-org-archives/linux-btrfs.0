@@ -1,42 +1,111 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp2.belwue.de ([129.143.2.15]:36099 "EHLO smtp2.belwue.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932245AbcLILCV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 9 Dec 2016 06:02:21 -0500
-Received: from fex.rus.uni-stuttgart.de (fex.rus.uni-stuttgart.de [129.69.1.129])
-        by smtp2.belwue.de with SMTP id uB9B2Dhv000460
-        for <linux-btrfs@vger.kernel.org>; Fri, 9 Dec 2016 12:02:13 +0100 (MET)
-        env-from (framstag@rus.uni-stuttgart.de)
-Date: Fri, 9 Dec 2016 12:02:13 +0100
-From: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
-To: linux-btrfs@vger.kernel.org
-Subject: autoversioning?
-Message-ID: <20161209110213.GA21685@rus.uni-stuttgart.de>
+Received: from mail-io0-f194.google.com ([209.85.223.194]:33150 "EHLO
+        mail-io0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752823AbcLIM31 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Dec 2016 07:29:27 -0500
+Received: by mail-io0-f194.google.com with SMTP id p13so6453068ioi.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 09 Dec 2016 04:29:27 -0800 (PST)
+Subject: Re: out-of-band dedup status?
+To: Chris Murphy <lists@colorremedies.com>,
+        "Darrick J. Wong" <darrick.wong@oracle.com>
+References: <1481222198.6563.3.camel@scientia.net>
+ <539d7c1c-5041-fb99-0ec5-81291f9f6609@suse.com>
+ <CAJCQCtQYof6yjOOc9rf5MFL=Gb-uai7CZGgygsThv+w=Hz=LFQ@mail.gmail.com>
+ <59259055.MCA93YCoJj@thetick>
+ <CAJCQCtStTRUnubdoCFr9JpaWS_y5_NFb5m7AFzRcA6-kPJ_N+A@mail.gmail.com>
+ <20161209022647.GE16801@birch.djwong.org>
+ <CAJCQCtSRUmQarebB6rK_sCiVGpBZ-Xcptr17zu_XoJC8EF9BoQ@mail.gmail.com>
+Cc: Marc Joliet <marcec@gmx.de>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <c992df7d-d58f-1b59-371e-149516bb358e@gmail.com>
+Date: Fri, 9 Dec 2016 07:29:21 -0500
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAJCQCtSRUmQarebB6rK_sCiVGpBZ-Xcptr17zu_XoJC8EF9BoQ@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Is file autoversioning possible with btrfs?
+On 2016-12-08 21:54, Chris Murphy wrote:
+> On Thu, Dec 8, 2016 at 7:26 PM, Darrick J. Wong <darrick.wong@oracle.com> wrote:
+>> On Thu, Dec 08, 2016 at 05:45:40PM -0700, Chris Murphy wrote:
+>>> OK something's wrong.
+>>>
+>>> Kernel 4.8.12 and duperemove v0.11.beta4. Brand new file system
+>>> (mkfs.btrfs -dsingle -msingle, default mount options) and two
+>>> identical files separately copied.
+>>>
+>>> [chris@f25s]$ ls -li /mnt/test
+>>> total 2811904
+>>> 260 -rw-r--r--. 1 root root 1439694848 Dec  8 17:26
+>>> Fedora-Workstation-Live-x86_64-25_Beta-1.1.iso
+>>> 259 -rw-r--r--. 1 root root 1439694848 Dec  8 17:26
+>>> Fedora-Workstation-Live-x86_64-25_Beta-1.1.iso2
+>>>
+>>> [chris@f25s]$ filefrag /mnt/test/*
+>>> /mnt/test/Fedora-Workstation-Live-x86_64-25_Beta-1.1.iso: 3 extents found
+>>> /mnt/test/Fedora-Workstation-Live-x86_64-25_Beta-1.1.iso2: 2 extents found
+>>>
+>>>
+>>> [chris@f25s duperemove]$ sudo ./duperemove -dv /mnt/test/*
+>>> Using 128K blocks
+>>> Using hash: murmur3
+>>> Gathering file list...
+>>> Using 4 threads for file hashing phase
+>>> [1/2] (50.00%) csum: /mnt/test/Fedora-Workstation-Live-x86_64-25_Beta-1.1.iso
+>>> [2/2] (100.00%) csum: /mnt/test/Fedora-Workstation-Live-x86_64-25_Beta-1.1.iso2
+>>> Total files:  2
+>>> Total hashes: 21968
+>>> Loading only duplicated hashes from hashfile.
+>>> Using 4 threads for dedupe phase
+>>> [0xba8400] (00001/10947) Try to dedupe extents with id e47862ea
+>>> [0xba84a0] (00003/10947) Try to dedupe extents with id ffed44f2
+>>> [0xba84f0] (00002/10947) Try to dedupe extents with id ffeefcdd
+>>> [0xba8540] (00004/10947) Try to dedupe extents with id ffe4cf64
+>>> [0xba8540] Add extent for file
+>>> "/mnt/test/Fedora-Workstation-Live-x86_64-25_Beta-1.1.iso" at offset
+>>> 1182924800 (4)
+>>> [0xba8540] Add extent for file
+>>> "/mnt/test/Fedora-Workstation-Live-x86_64-25_Beta-1.1.iso2" at offset
+>>> 1182924800 (5)
+>>> [0xba8540] Dedupe 1 extents (id: ffe4cf64) with target: (1182924800,
+>>> 131072), "/mnt/test/Fedora-Workstation-Live-x86_64-25_Beta-1.1.iso"
+>>
+>> Ew, it's deduping these two 1.4GB files 128K at a time, which results in
+>> 12000 ioctl calls.  Each of those 12000 calls has to lock the two
+>> inodes, read the file contents, remap the blocks, etc.  instead of
+>> finding the maximal identical range and making a single call for the
+>> whole range.
+>>
+>> That's probably why it's taking forever to dedupe.
+>
+> Yes but it looks like it's also heavily fragmenting the files as a
+> result as well.
+>
+This kind of reinforces what I've been telling people recently, namely 
+that while generic batch deduplication generally works, it's quite often 
+better to do a custom tool that understands your data-set and knows how 
+to handle it efficiently.
 
-I have a VMS background, where the standard filesystem automatically
-creates a new version for every file that is written.
+As an example, one of the cases where I use deduplication is on a set of 
+directories that are disjoint sets of a larger tree.  So, the 
+directories look something like this:
++ a
+| + file1
+| \ file2
++ b
+| + file3
+| \ file2
+\ c
+   + file1
+   \ file3
 
-The number of versions can be controlled globally, on directory or on file
-base.
-
-With btrfs I can create manually a file version (clone) with
-"cp -a --reflink"
-but I want this to be done automatically.
-
-I could set up an incron-job (inotify), but perhaps there is a better,
-easier solution?
-
-
--- 
-Ullrich Horlacher              Server und Virtualisierung
-Rechenzentrum TIK         
-Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
-Allmandring 30a                Tel:    ++49-711-68565868
-70569 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
-REF:<20161209110213.GA21685@rus.uni-stuttgart.de>
+In this case, I know that if a/file1 and c/file1 have the same mtime and 
+size, they're (supposed to be) copies of the same file.  Given this, the 
+tool I use for this just checks for duplicate names with the same size 
+and mtime, and then counts on the ioctl's check to verify that the files 
+are actually identical (and throws a warning if they aren't), and does 
+some special stuff to submit things such that any given file both has 
+the fewest possible number of extents and all the extents are roughly 
+the same size.  On average, even with the fancy extent size calculation 
+logic, this still takes less than a quarter of the time that duperemove 
+took on the same data-set.

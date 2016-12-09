@@ -1,47 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:59034 "EHLO
-        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753308AbcLIIoG (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Dec 2016 03:44:06 -0500
-Date: Fri, 9 Dec 2016 09:43:52 +0100
-From: Adam Borowski <kilobyte@angband.pl>
-To: Jeff Mahoney <jeffm@suse.com>
-Cc: Christoph Anton Mitterer <calestyo@scientia.net>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: out-of-band dedup status?
-Message-ID: <20161209084352.GB28652@angband.pl>
-References: <1481222198.6563.3.camel@scientia.net>
- <539d7c1c-5041-fb99-0ec5-81291f9f6609@suse.com>
+Received: from smtp2.belwue.de ([129.143.2.15]:36099 "EHLO smtp2.belwue.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S932245AbcLILCV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 9 Dec 2016 06:02:21 -0500
+Received: from fex.rus.uni-stuttgart.de (fex.rus.uni-stuttgart.de [129.69.1.129])
+        by smtp2.belwue.de with SMTP id uB9B2Dhv000460
+        for <linux-btrfs@vger.kernel.org>; Fri, 9 Dec 2016 12:02:13 +0100 (MET)
+        env-from (framstag@rus.uni-stuttgart.de)
+Date: Fri, 9 Dec 2016 12:02:13 +0100
+From: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
+To: linux-btrfs@vger.kernel.org
+Subject: autoversioning?
+Message-ID: <20161209110213.GA21685@rus.uni-stuttgart.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <539d7c1c-5041-fb99-0ec5-81291f9f6609@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 08, 2016 at 03:15:38PM -0500, Jeff Mahoney wrote:
-> On 12/8/16 1:36 PM, Christoph Anton Mitterer wrote:
-> > I just wondered whether out-of-band/"offline" dedup is safe for general
-> > use... https://btrfs.wiki.kernel.org/index.php/Status kinda implies so
-> > (it tells about unspecified performance issues), but this seems again
-> > already outdated (kernel 4.7)...
-> 
-> SUSE supports it in SLE12 using our 3.12 and 4.4 -based kernels.  There
-> haven't been a lot of changes to the kernel component of it.  It's
-> pretty simple: check to see if the ranges are identical between two
-> files and then reflink between them.
-> 
-> > Any other things in terms of possible issues, data corruption, etc.
-> > that one should know when using deduplication?
-> 
-> There shouldn't be.  We haven't had any bug reports at SUSE.
+Is file autoversioning possible with btrfs?
 
-I use it on busy machines on ancient kernels (3.14, one 3.13) without any
-hint of problems other than dedupe itself being slow.
+I have a VMS background, where the standard filesystem automatically
+creates a new version for every file that is written.
+
+The number of versions can be controlled globally, on directory or on file
+base.
+
+With btrfs I can create manually a file version (clone) with
+"cp -a --reflink"
+but I want this to be done automatically.
+
+I could set up an incron-job (inotify), but perhaps there is a better,
+easier solution?
 
 
-Meow!
 -- 
-u-boot problems can be solved with the help of your old SCSI manuals, the
-parts that deal with goat termination.  You need a black-handled knife, and
-an appropriate set of candles (number and color matters).  Or was it a
-silver-handled knife?  Crap, need to look that up.
+Ullrich Horlacher              Server und Virtualisierung
+Rechenzentrum TIK         
+Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
+Allmandring 30a                Tel:    ++49-711-68565868
+70569 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
+REF:<20161209110213.GA21685@rus.uni-stuttgart.de>

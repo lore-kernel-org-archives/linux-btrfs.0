@@ -1,81 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:24673 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751487AbcLHQxz (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Dec 2016 11:53:55 -0500
-Date: Thu, 8 Dec 2016 08:53:47 -0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Xin Zhou <xin.zhou@gmx.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/6] btrfs dax IO
-Message-ID: <20161208165347.GC20111@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <trinity-f6bd31da-24aa-4876-bde0-fe5b26b1af92-1481179495753@3capp-mailcom-bs01>
- <trinity-1b4598b4-93e0-4762-90a6-d2f7aadc7dd2-1481179698241@3capp-mailcom-bs01>
+Received: from ipmail05.adl6.internode.on.net ([150.101.137.143]:24702 "EHLO
+        ipmail05.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751563AbcLIErX (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 8 Dec 2016 23:47:23 -0500
+Date: Fri, 9 Dec 2016 15:47:20 +1100
+From: Dave Chinner <david@fromorbit.com>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, Chris Mason <clm@fb.com>,
+        Jan Kara <jack@suse.cz>, David Sterba <dsterba@suse.cz>
+Subject: Re: [PATCH 1/6] Btrfs: add mount option for dax
+Message-ID: <20161209044720.GN4219@dastard>
+References: <1481147110-20048-1-git-send-email-bo.li.liu@oracle.com>
+ <1481147110-20048-2-git-send-email-bo.li.liu@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <trinity-1b4598b4-93e0-4762-90a6-d2f7aadc7dd2-1481179698241@3capp-mailcom-bs01>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1481147110-20048-2-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 08, 2016 at 07:48:18AM +0100, Xin Zhou wrote:
-> Hi Liu,
->  
-> From the patch, is the snapshot disabled by disabling the COW in the mounting path?
-> It seems the create_snapshot() in ioctl.c does not get changed.
+On Wed, Dec 07, 2016 at 01:45:05PM -0800, Liu Bo wrote:
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+>  fs/btrfs/ctree.h |  1 +
+>  fs/btrfs/super.c | 40 +++++++++++++++++++++++++++++++++++++++-
+>  2 files changed, 40 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 0b8ce2b..e54c6e6 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -1317,6 +1317,7 @@ static inline u32 BTRFS_MAX_XATTR_SIZE(const struct btrfs_root *root)
+>  #define BTRFS_MOUNT_FRAGMENT_METADATA	(1 << 25)
+>  #define BTRFS_MOUNT_FREE_SPACE_TREE	(1 << 26)
+>  #define BTRFS_MOUNT_NOLOGREPLAY		(1 << 27)
+> +#define BTRFS_MOUNT_DAX		(1 << 28)
+>  
+>  #define BTRFS_DEFAULT_COMMIT_INTERVAL	(30)
+>  #define BTRFS_DEFAULT_MAX_INLINE	(2048)
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 74ed5aa..9b18f3d 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -323,7 +323,7 @@ enum {
+>  	Opt_commit_interval, Opt_barrier, Opt_nodefrag, Opt_nodiscard,
+>  	Opt_noenospc_debug, Opt_noflushoncommit, Opt_acl, Opt_datacow,
+>  	Opt_datasum, Opt_treelog, Opt_noinode_cache, Opt_usebackuproot,
+> -	Opt_nologreplay, Opt_norecovery,
+> +	Opt_nologreplay, Opt_norecovery, Opt_dax,
 
-Well, I think I made a mistake in this cover letter, snapshot still
-works while mounting with dax, but if a snapshot is taken, then we'll
-get -EIO while writing to dax inodes that belong to either snapshot tree
-or its source tree.  So in fact, only a readonly snapshot makes sense in
-practice, I'll update the patch so that we only allow a readonly
-snapshot to be taken.
+Can we please not create more filesystems with a DAX mount option?
+This was only even an enabler, and not meant to be a permanent
+thing. The permanent functionality for DAX is supposed to be
+per-inode inheritable DAX flags - not mount options - so that
+applications can choose on a per file basis to enable/disable DAX
+access as they see fit.
 
-COW is disabled by letting the dax mount option imply the "nodatacow"
-option.
+This also enables the filesystem to reject the attempt to turn on
+DAX if the set of contexts for the file are not DAX compatible....
 
-Thanks for spotting this!
+Cheers,
 
-Thanks,
-
--liubo
-
-> 
-> I experienced some similar system but am a bit new to the brtfs code.
->   
-> Thanks, 
-> Xin
->  
->  
-> 
-> Subject: [PATCH 0/6] btrfs dax IOFrom: Liu Bo <bo.li.liu@xxxxxxxxxx>Date: Wed, 7 Dec 2016 13:45:04 -0800Cc: Chris Mason <clm@xxxxxx>, Jan Kara <jack@xxxxxxx>, David Sterba <dsterba@xxxxxxx>
-> This is a prelimanary patch set to add dax support for btrfs, with
-> this we can do normal read/write to dax files and can mmap dax files
-> to userspace so that applications have the ability to access
-> persistent memory directly.
-> 
-> Please note that currently this is limited to nocow, i.e. all dax
-> inodes do not have COW behaviour.
-> 
-> COW:   	    	     	no
-> mutliple device:	no
-> clone/reflink:		no
-> snapshot:		no
-> compression:		no
-> checksum:		no
-> 
-> Right now snapshot is disabled while mounting with -odax, but snapshot
-> can be created without -odax, and writing to a dax file in snapshot
-> will get -EIO.
-> 
-> Clone/reflink is dealt with as same as snapshot, -EIO will be returned
-> when writing to shared extents.
-> 
-> This has adopted the latest iomap framework for dax read/write
-> and dax mmap.
-> 
->  
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

@@ -1,96 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:40934 "EHLO
-        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751031AbcLKFQm (ORCPT
+Received: from mail-yw0-f170.google.com ([209.85.161.170]:35507 "EHLO
+        mail-yw0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752275AbcLKFrR (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 11 Dec 2016 00:16:42 -0500
-Date: Sun, 11 Dec 2016 00:16:41 -0500
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: Roman Mamedov <rm@romanrm.net>, Filipe Manana <fdmanana@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: fix hole read corruption for compressed inline
- extents
-Message-ID: <20161211051641.GA21290@hungrycats.org>
-References: <1480309392-4786-1-git-send-email-ce3g8jdj@umail.furryterror.org>
- <20161128172710.202587ce@natsu>
+        Sun, 11 Dec 2016 00:47:17 -0500
+Received: by mail-yw0-f170.google.com with SMTP id i145so43404314ywg.2
+        for <linux-btrfs@vger.kernel.org>; Sat, 10 Dec 2016 21:47:16 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="fH+ug0VWbLbTAXDy"
-In-Reply-To: <20161128172710.202587ce@natsu>
+In-Reply-To: <CADph71xWQyFca34=K9b-1sSNUCChUnBggvcj1O5NKi8hpQjvfA@mail.gmail.com>
+References: <CADph71xWQyFca34=K9b-1sSNUCChUnBggvcj1O5NKi8hpQjvfA@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Sat, 10 Dec 2016 22:47:15 -0700
+Message-ID: <CAJCQCtTC5T0v6jZpALTPwn=CvWn-kJXZX2vVFAEjjk9xokqoPQ@mail.gmail.com>
+Subject: Re: btrfs-find-root duration?
+To: Markus Binsteiner <makkus@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Sat, Dec 10, 2016 at 5:12 PM, Markus Binsteiner <makkus@gmail.com> wrote:
+> It seems I've accidentally deleted all files in my home directory,
+> which sits in its own btrfs partition (lvm on luks). Now I'm trying to
+> find the roots to be able to use btrfs restore later on.
+>
+> btrfs-find-root seems to be taking ages though. I've run it like so:
+>
+> btrfs-find-root /dev/mapper/think--big-home  -o 5 > roots.txt
 
---fH+ug0VWbLbTAXDy
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Uhh, just do btrfs-find-root by itself to get everything it can find.
+And then work backwards from the most recent generation using btrfs
+restore -t using each root bytenr from btrfs-find-root. The more
+recent the generation, the better your luck that it hasn't been
+overwritten yet; but too recent and your data may not exist in that
+root. It really depends how fast you umounted the volume after
+deleting everything.
 
-Ping?
 
-I know at least two people have read this patch, but it hasn't appeared in
-the usual integration branches yet, and I've seen no actionable suggestion
-to improve it.  I've provided two non-overlapping rationales for it.
-Is there something else you are looking for?
 
-This patch is a fix for a simple data corruption bug.  It (or some
-equivalent fix for the same bug) should be on its way to all stable
-kernels starting from 2.6.32.
-
-Thanks
-
-On Mon, Nov 28, 2016 at 05:27:10PM +0500, Roman Mamedov wrote:
-> On Mon, 28 Nov 2016 00:03:12 -0500
-> Zygo Blaxell <ce3g8jdj@umail.furryterror.org> wrote:
->=20
-> > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> > index 8e3a5a2..b1314d6 100644
-> > --- a/fs/btrfs/inode.c
-> > +++ b/fs/btrfs/inode.c
-> > @@ -6803,6 +6803,12 @@ static noinline int uncompress_inline(struct btr=
-fs_path *path,
-> >  	max_size =3D min_t(unsigned long, PAGE_SIZE, max_size);
-> >  	ret =3D btrfs_decompress(compress_type, tmp, page,
-> >  			       extent_offset, inline_size, max_size);
-> > +	WARN_ON(max_size > PAGE_SIZE);
-> > +	if (max_size < PAGE_SIZE) {
-> > +		char *map =3D kmap(page);
-> > +		memset(map + max_size, 0, PAGE_SIZE - max_size);
-> > +		kunmap(page);
-> > +	}
-> >  	kfree(tmp);
-> >  	return ret;
-> >  }
->=20
-> Wasn't this already posted as:
->=20
-> btrfs: fix silent data corruption while reading compressed inline extents
-> https://patchwork.kernel.org/patch/9371971/
->=20
-> but you don't indicate that's a V2 or something, and in fact the patch se=
-ems
-> exactly the same, just the subject and commit message are entirely differ=
-ent.
-> Quite confusing.
->=20
-> --=20
-> With respect,
-> Roman
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
---fH+ug0VWbLbTAXDy
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iEYEARECAAYFAlhM4TkACgkQgfmLGlazG5xp8gCfayiY6xy+tHvNCBDk1LpH0dam
-sZIAn0VvQP/lNHW4bXPAIg0BJPiRZdyo
-=kc1n
------END PGP SIGNATURE-----
-
---fH+ug0VWbLbTAXDy--
+-- 
+Chris Murphy

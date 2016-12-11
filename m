@@ -1,88 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f171.google.com ([209.85.223.171]:35292 "EHLO
-        mail-io0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751324AbcLKBmz (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:40934 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751031AbcLKFQm (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 10 Dec 2016 20:42:55 -0500
-Received: by mail-io0-f171.google.com with SMTP id h30so119208957iod.2
-        for <linux-btrfs@vger.kernel.org>; Sat, 10 Dec 2016 17:42:55 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <trinity-19716973-6bfa-438e-8068-ccb3d257eaad-1481419066346@3capp-mailcom-bs02>
-References: <CADph71xWQyFca34=K9b-1sSNUCChUnBggvcj1O5NKi8hpQjvfA@mail.gmail.com>
- <trinity-19716973-6bfa-438e-8068-ccb3d257eaad-1481419066346@3capp-mailcom-bs02>
-From: Markus Binsteiner <makkus@gmail.com>
-Date: Sun, 11 Dec 2016 14:42:54 +1300
-Message-ID: <CADph71wkR31DEK2RREqcDLm6guP10ZDhBHPtrx6ehswVKOhqAw@mail.gmail.com>
-Subject: Re: btrfs-find-root duration?
-To: Xin Zhou <xin.zhou@gmx.com>
+        Sun, 11 Dec 2016 00:16:42 -0500
+Date: Sun, 11 Dec 2016 00:16:41 -0500
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: Roman Mamedov <rm@romanrm.net>, Filipe Manana <fdmanana@gmail.com>
 Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: [PATCH] btrfs: fix hole read corruption for compressed inline
+ extents
+Message-ID: <20161211051641.GA21290@hungrycats.org>
+References: <1480309392-4786-1-git-send-email-ce3g8jdj@umail.furryterror.org>
+ <20161128172710.202587ce@natsu>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="fH+ug0VWbLbTAXDy"
+In-Reply-To: <20161128172710.202587ce@natsu>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Xin,
 
-thanks. I did not enable autosnap, and I'm pretty sure Debian didn't
-do it for me either, as I would have seen the subvolumes created by it
-at some stage. Good to know about this feature though, will definitely
-use it next time around.
+--fH+ug0VWbLbTAXDy
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Cheers,
-Markus
+Ping?
 
-On Sun, Dec 11, 2016 at 2:17 PM, Xin Zhou <xin.zhou@gmx.com> wrote:
-> Hi Markus,
->
-> Some file system automatically generates snapshot, and create a hidden
-> folder for recovery,
-> if the user accidently deletes some files.
->
-> It seems btrfs also has a autosnap feature,
-> so if this option has been enabled before deletion,
-> or the volume has been mannually generated snapshots, then probably it might
-> be able to perform fast recover.
->
-> Regards,
-> Xin
->
-> Sent: Saturday, December 10, 2016 at 4:12 PM
-> From: "Markus Binsteiner" <makkus@gmail.com>
-> To: linux-btrfs@vger.kernel.org
-> Subject: btrfs-find-root duration?
-> It seems I've accidentally deleted all files in my home directory,
-> which sits in its own btrfs partition (lvm on luks). Now I'm trying to
-> find the roots to be able to use btrfs restore later on.
->
-> btrfs-find-root seems to be taking ages though. I've run it like so:
->
-> btrfs-find-root /dev/mapper/think--big-home -o 5 > roots.txt
->
-> After 16 hours, there is still no output, but it's still running
-> utilizing 100% of one core. Is there any way to gauge how much longer
-> it'll take? Should there have been output already while it's running?
->
-> When I run it without redirecting stdout, I get:
->
-> $ btrfs-find-root /dev/mapper/think--big-home -o 5
->
-> Superblock doesn't contain generation info for root 5
-> Superblock doesn't contain the level info for root 5
->
-> When I omit the '-o 5', it says:
->
-> $ btrfs-find-root /dev/mapper/think--big-home
->
-> Superblock thinks the generation is 593818
-> Superblock thinks the level is 0
->
-> Is the latter the way to run it? Did that initially, but that didn't
-> return any results in a reasonable timeframe either.
->
-> The filesystem was created with Debian Jessie, but I'm using Ubuntu (
-> btrfs-progs v4.7.3 ) to try to restore the files at the moment.
->
-> Thanks!
+I know at least two people have read this patch, but it hasn't appeared in
+the usual integration branches yet, and I've seen no actionable suggestion
+to improve it.  I've provided two non-overlapping rationales for it.
+Is there something else you are looking for?
+
+This patch is a fix for a simple data corruption bug.  It (or some
+equivalent fix for the same bug) should be on its way to all stable
+kernels starting from 2.6.32.
+
+Thanks
+
+On Mon, Nov 28, 2016 at 05:27:10PM +0500, Roman Mamedov wrote:
+> On Mon, 28 Nov 2016 00:03:12 -0500
+> Zygo Blaxell <ce3g8jdj@umail.furryterror.org> wrote:
+>=20
+> > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> > index 8e3a5a2..b1314d6 100644
+> > --- a/fs/btrfs/inode.c
+> > +++ b/fs/btrfs/inode.c
+> > @@ -6803,6 +6803,12 @@ static noinline int uncompress_inline(struct btr=
+fs_path *path,
+> >  	max_size =3D min_t(unsigned long, PAGE_SIZE, max_size);
+> >  	ret =3D btrfs_decompress(compress_type, tmp, page,
+> >  			       extent_offset, inline_size, max_size);
+> > +	WARN_ON(max_size > PAGE_SIZE);
+> > +	if (max_size < PAGE_SIZE) {
+> > +		char *map =3D kmap(page);
+> > +		memset(map + max_size, 0, PAGE_SIZE - max_size);
+> > +		kunmap(page);
+> > +	}
+> >  	kfree(tmp);
+> >  	return ret;
+> >  }
+>=20
+> Wasn't this already posted as:
+>=20
+> btrfs: fix silent data corruption while reading compressed inline extents
+> https://patchwork.kernel.org/patch/9371971/
+>=20
+> but you don't indicate that's a V2 or something, and in fact the patch se=
+ems
+> exactly the same, just the subject and commit message are entirely differ=
+ent.
+> Quite confusing.
+>=20
+> --=20
+> With respect,
+> Roman
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
-> More majordomo info at http://vger.kernel.org/majordomo-info.html
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+--fH+ug0VWbLbTAXDy
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iEYEARECAAYFAlhM4TkACgkQgfmLGlazG5xp8gCfayiY6xy+tHvNCBDk1LpH0dam
+sZIAn0VvQP/lNHW4bXPAIg0BJPiRZdyo
+=kc1n
+-----END PGP SIGNATURE-----
+
+--fH+ug0VWbLbTAXDy--

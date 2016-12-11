@@ -1,226 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f170.google.com ([209.85.161.170]:34031 "EHLO
-        mail-yw0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753553AbcLKTAr (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 11 Dec 2016 14:00:47 -0500
-Received: by mail-yw0-f170.google.com with SMTP id t125so50141561ywc.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 11 Dec 2016 11:00:46 -0800 (PST)
+Received: from mout.gmx.net ([212.227.15.15]:53648 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753870AbcLKV7X (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 11 Dec 2016 16:59:23 -0500
 MIME-Version: 1.0
-In-Reply-To: <CAKinxcV8tPF_y5HoU_DVy88rfHaGwzFrzQjSiQCcFM71H+a+Gw@mail.gmail.com>
-References: <CAKinxcV8tPF_y5HoU_DVy88rfHaGwzFrzQjSiQCcFM71H+a+Gw@mail.gmail.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Sun, 11 Dec 2016 12:00:45 -0700
-Message-ID: <CAJCQCtQ1az+PeyAw=7nTasajqNskttiF1LoTQ_UJEeLc_LhkNw@mail.gmail.com>
-Subject: Re: How to get back a deleted sub-volume.
-To: Tomasz Kusmierz <tom.kusmierz@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <trinity-d5f70dd5-70da-4b78-8748-0e6d84c42139-1481493557992@3capp-mailcom-bs05>
+From: "Xin Zhou" <xin.zhou@gmx.com>
+To: "Zygo Blaxell" <ce3g8jdj@umail.furryterror.org>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: fix hole read corruption for compressed inline
+ extents
 Content-Type: text/plain; charset=UTF-8
+Date: Sun, 11 Dec 2016 22:59:18 +0100
+In-Reply-To: <20161211051641.GA21290@hungrycats.org>
+References: <1480309392-4786-1-git-send-email-ce3g8jdj@umail.furryterror.org>
+ <20161128172710.202587ce@natsu>, <20161211051641.GA21290@hungrycats.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Dec 11, 2016 at 10:40 AM, Tomasz Kusmierz
-<tom.kusmierz@gmail.com> wrote:
-> Hi,
+Hi Zygo,
+Since the corruption happens after I/O and checksum,
+could it be possible to add some bug catcher code in code path for debug build,
+to help narrowing down the issue?
+Thanks,
+Xin
+ 
+ 
+
+Sent: Saturday, December 10, 2016 at 9:16 PM
+From: "Zygo Blaxell" <ce3g8jdj@umail.furryterror.org>
+To: "Roman Mamedov" <rm@romanrm.net>, "Filipe Manana" <fdmanana@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: fix hole read corruption for compressed inline extents
+Ping?
+
+I know at least two people have read this patch, but it hasn't appeared in
+the usual integration branches yet, and I've seen no actionable suggestion
+to improve it. I've provided two non-overlapping rationales for it.
+Is there something else you are looking for?
+
+This patch is a fix for a simple data corruption bug. It (or some
+equivalent fix for the same bug) should be on its way to all stable
+kernels starting from 2.6.32.
+
+Thanks
+
+On Mon, Nov 28, 2016 at 05:27:10PM +0500, Roman Mamedov wrote:
+> On Mon, 28 Nov 2016 00:03:12 -0500
+> Zygo Blaxell <ce3g8jdj@umail.furryterror.org> wrote:
 >
-> So, I've found my self in a pickle after following this steps:
-> 1. trying to migrate an array to different system, it became apparent
-> that importing array there was not possible to import it because I've
-> had a very large amount of snapshots (every 15 minutes during office
-> hours amounting to few K) so I've had to remove snapshots for main
-> data storage.
-
-True, there is no recursive incremental send.
-
-> 2. while playing with live array, it become apparent that some bright
-> spark implemented a "delete all sub-volumes while removing array from
-> system" ... needles to say that this behaviour is unexpected to say al
-> least ... and I wanted to punch somebody in face.
-
-The technical part of this is vague. I'm guessing you used 'btrfs
-device remove' butt it works no differently than lvremove - when a
-device is removed from an array, it wipes the signature from that
-device.  You probably can restore that signature and use that device
-again, depending on what the profile is for metadata and data, it may
-be usable stand alone.
-
-Proposing assault is probably not the best way to ask for advice
-though. Just a guess.
-
-
-
-
+> > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> > index 8e3a5a2..b1314d6 100644
+> > --- a/fs/btrfs/inode.c
+> > +++ b/fs/btrfs/inode.c
+> > @@ -6803,6 +6803,12 @@ static noinline int uncompress_inline(struct btrfs_path *path,
+> > max_size = min_t(unsigned long, PAGE_SIZE, max_size);
+> > ret = btrfs_decompress(compress_type, tmp, page,
+> > extent_offset, inline_size, max_size);
+> > + WARN_ON(max_size > PAGE_SIZE);
+> > + if (max_size < PAGE_SIZE) {
+> > + char *map = kmap(page);
+> > + memset(map + max_size, 0, PAGE_SIZE - max_size);
+> > + kunmap(page);
+> > + }
+> > kfree(tmp);
+> > return ret;
+> > }
 >
-> Since then I was trying to rescue as much data as I can, luckily I
-> managed to get a lot of data from snapshots for "other than share"
-> volumes (because those were not deleted :/) but the most important
-> volume "share" prove difficult. This subvolume comes out with a lot of
-> errors on readout with "btrfs restore /dev/sda /mnt2/temp2/ -x -m -S
-> -s -i -t".
+> Wasn't this already posted as:
 >
-> Also for some reason I can't use a lot of root blocks that I find with
-> btrfs-find-root ..
+> btrfs: fix silent data corruption while reading compressed inline extents
+> https://patchwork.kernel.org/patch/9371971/
 >
-> To put some detail here:
-> btrfs-find-root -a /dev/sda
-> Superblock thinks the generation is 184540
-> Superblock thinks the level is 1
-> Well block 919363862528(gen: 184540 level: 1) seems good, and it
-> matches superblock
-> Well block 919356325888(gen: 184539 level: 1) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 919343529984(gen: 184538 level: 1) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 920041308160(gen: 184537 level: 1) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 919941955584(gen: 184536 level: 1) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 919670538240(gen: 184535 level: 1) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 920045371392(gen: 184532 level: 1) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 920070209536(gen: 184531 level: 1) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 920117510144(gen: 184530 level: 1) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1 <<<---- here
-> stuff is gone
-> Well block 920139055104(gen: 184511 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 920139022336(gen: 184511 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 920138989568(gen: 184511 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 920138973184(gen: 184511 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 920137596928(gen: 184511 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 920137531392(gen: 184511 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 920137515008(gen: 184511 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 920135991296(gen: 184511 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 920135958528(gen: 184511 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 920135925760(gen: 184511 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 920135827456(gen: 184511 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 920135811072(gen: 184511 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 920133697536(gen: 184511 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 920133664768(gen: 184511 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 920133337088(gen: 184511 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 920133206016(gen: 184511 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 920132976640(gen: 184511 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 920132878336(gen: 184511 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 920132845568(gen: 184511 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 920128045056(gen: 184511 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 920127946752(gen: 184511 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 920127897600(gen: 184511 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 920127881216(gen: 184511 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 920127864832(gen: 184511 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 920127848448(gen: 184511 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 920127799296(gen: 184511 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 919815143424(gen: 184508 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 919814569984(gen: 184508 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 919811866624(gen: 184508 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 919803232256(gen: 184496 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 919712989184(gen: 184455 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 919711891456(gen: 184455 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 919706271744(gen: 184455 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 919703568384(gen: 184455 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 919699865600(gen: 184455 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 919647092736(gen: 184455 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 1417026879488(gen: 184334 level: 1) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1 <<--- I can
-> only use that with btrfs restore and it's month old
-> Well block 1417025896448(gen: 184333 level: 1) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 1417029484544(gen: 184332 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 1417029320704(gen: 184332 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 1417029173248(gen: 184332 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 1417027616768(gen: 184332 level: 0) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 1417024831488(gen: 184331 level: 1) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 1417021079552(gen: 184330 level: 1) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 1417014001664(gen: 184329 level: 1) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 1417011970048(gen: 184328 level: 1) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> Well block 1417009758208(gen: 184327 level: 1) seems good, but
-> generation/level doesn't match, want gen: 184540 level:
-> ... rest of lines omitted to not trash the list to much.
+> but you don't indicate that's a V2 or something, and in fact the patch seems
+> exactly the same, just the subject and commit message are entirely different.
+> Quite confusing.
 >
-> this line:
-> Well block 920117510144(gen: 184530 level: 1) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> is where stuff is missing,
-
-A root tree is only kept around for about 2 minutes, so it's going to
-be freed up and subject to being overwritten  if there's no snapshot
-to pin it in place.
-
->
-> and this line:
-> Well block 1417026879488(gen: 184334 level: 1) seems good, but
-> generation/level doesn't match, want gen: 184540 level: 1
-> is the only line that physically work with
-> btrfs restore /dev/sda /mnt2/temp2/ -x -m -S -s -i -t
-
-That particular
-
->
->
-> as you can see there is a vast "generation hole" between 184530 and
-> 184334 ... more 200 generations ... and this results in only being
-> able to access data that is month old :( and some of it is strangelly
-> corrupted :(
-
-You're leaving out a lot of information. If you have thousands of
-snapshots, and one of those snapshots has the data in it you want,
-then you shouldn't need to use btrfs restore. Btrfs restore is a
-scraping tool to try to find data, with no assurance of success at
-all, from freed up metadata and data blocks. That data certainly could
-be corrupt because all or parts of it may have been overwritten
-already.
-
-If the data is in a stable snapshot that has not been deleted, then
-you should be able to find it and extract it with a normal mount. If
-the file system can't be mounted normally then that's what you need to
-look at first - so presumably it's not mounting normally; but does it
-mount with usebackuproot? Or ro,usebackuproot? Or
-ro,usebackuproot,degraded?
-
-
--- 
-Chris Murphy
+> --
+> With respect,
+> Roman
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at http://vger.kernel.org/majordomo-info.html[http://vger.kernel.org/majordomo-info.html]

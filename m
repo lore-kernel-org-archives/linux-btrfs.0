@@ -1,49 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f172.google.com ([209.85.161.172]:34141 "EHLO
-        mail-yw0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753944AbcLKXlH (ORCPT
+Received: from mail-io0-f171.google.com ([209.85.223.171]:36833 "EHLO
+        mail-io0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753952AbcLLAMh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 11 Dec 2016 18:41:07 -0500
-Received: by mail-yw0-f172.google.com with SMTP id t125so52990278ywc.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 11 Dec 2016 15:41:07 -0800 (PST)
+        Sun, 11 Dec 2016 19:12:37 -0500
+Received: by mail-io0-f171.google.com with SMTP id a81so138403237ioe.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 11 Dec 2016 16:12:37 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CADph71zoOB72o2PoUY_qqMsg_TpvBokugR9UzZHo6kPsNm4PNg@mail.gmail.com>
+In-Reply-To: <CAJCQCtQLRRaAyCa8DBHmcizcLHTajmp_vzGU7MkEvshtO4bbNQ@mail.gmail.com>
 References: <CADph71xWQyFca34=K9b-1sSNUCChUnBggvcj1O5NKi8hpQjvfA@mail.gmail.com>
  <CAJCQCtTC5T0v6jZpALTPwn=CvWn-kJXZX2vVFAEjjk9xokqoPQ@mail.gmail.com>
  <CADph71wae2AQT-v-hu0YcJdNE+dWxRZ7yQVmMEMLyhzsC-FHqQ@mail.gmail.com>
- <CAJCQCtT5CG4M4nYmmefEfWjapmg3TpMXJSVmTE89r6iPxV6xHw@mail.gmail.com> <CADph71zoOB72o2PoUY_qqMsg_TpvBokugR9UzZHo6kPsNm4PNg@mail.gmail.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Sun, 11 Dec 2016 16:41:06 -0700
-Message-ID: <CAJCQCtQLRRaAyCa8DBHmcizcLHTajmp_vzGU7MkEvshtO4bbNQ@mail.gmail.com>
+ <CAJCQCtT5CG4M4nYmmefEfWjapmg3TpMXJSVmTE89r6iPxV6xHw@mail.gmail.com>
+ <CADph71zoOB72o2PoUY_qqMsg_TpvBokugR9UzZHo6kPsNm4PNg@mail.gmail.com> <CAJCQCtQLRRaAyCa8DBHmcizcLHTajmp_vzGU7MkEvshtO4bbNQ@mail.gmail.com>
+From: Markus Binsteiner <makkus@gmail.com>
+Date: Mon, 12 Dec 2016 13:12:35 +1300
+Message-ID: <CADph71yACvRhb6AWixoaR28+VHZeaGmZqawqY3MSBcSeJM=6Qw@mail.gmail.com>
 Subject: Re: btrfs-find-root duration?
-To: Markus Binsteiner <makkus@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Dec 11, 2016 at 4:30 PM, Markus Binsteiner <makkus@gmail.com> wrote:
->> OK when I do it on a file system with just 14GiB of metadata it's
->> maybe 15 seconds. So a few minutes sounds sorta suspicious to me but,
->> *shrug* I don't have a file system the same size to try it on, maybe
->> it's a memory intensive task and once the system gets low on RAM while
->> traversing the file system it slows done a ton.
->
-> Ok, thanks, looks like there is some other issue then as well. The
-> process doesn't take up any memory at all, just 100% of one core.
->
-> Maybe I'll try to use it with an older version of btrfs-progs, from
-> Debian Jessie. Don't think it'll make any difference, but I don't know
-> what else to try. At this point I'm more curious than anything else.
-> I've got backups for most of my stuff, just a few rogue scripts I'd
-> have to re-write. Still, would be nice to get those back.
+> You might try 'btrfs check' without repairing, using a recent version
+> of btrfs-progs and see if it finds anything unusual.
 
-You might try 'btrfs check' without repairing, using a recent version
-of btrfs-progs and see if it finds anything unusual.
+Not quite sure what that output means, but btrfs check returns instantly:
 
-Although, are there many snapshots? That would cause the rentention of roots.
+$ sudo btrfs check /dev/mapper/think--big-home
+Checking filesystem on /dev/mapper/think--big-home
+UUID: 7f1ce0ed-5986-43ae-b0dd-727eee19fd08
+checking extents
+checking free space cache
+checking fs roots
+checking csums
+checking root refs
+found 655360 bytes used err is 0
+total csum bytes: 0
+total tree bytes: 131072
+total fs tree bytes: 32768
+total extent tree bytes: 16384
+btree space waste bytes: 123528
+file data blocks allocated: 524288
+ referenced 524288
 
+When I do the same thing on the root-OS partition that is on the same
+disk, it takes a bit longer to complete, and I'm getting:
 
--- 
-Chris Murphy
+$ sudo btrfs check /dev/mapper/think--big-jessie
+Checking filesystem on /dev/mapper/think--big-jessie
+UUID: d82e2746-4164-41fa-b528-5a5838d818c6
+checking extents
+checking free space cache
+checking fs roots
+checking csums
+checking root refs
+found 29295181824 bytes used err is 0
+total csum bytes: 27623652
+total tree bytes: 973848576
+total fs tree bytes: 874446848
+total extent tree bytes: 62554112
+btree space waste bytes: 154131992
+file data blocks allocated: 29202391040
+ referenced 30898016256
+
+So I reckon the tree(s) in my home partition is just empty? Why would
+btrfs-find-tree take so long to complete though? Also, I've tried to
+run btrfs-find-tree on the root-OS partition, but that also didn't
+complete within the 10 minutes I tried (so far).
+
+> Although, are there many snapshots? That would cause the rentention of roots.
+
+I can't remember exactly, but it's very possible I didn't use any
+snapshots on this machine at all.

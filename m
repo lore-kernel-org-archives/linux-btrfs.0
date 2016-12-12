@@ -1,61 +1,142 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:15925 "EHLO song.cn.fujitsu.com"
-        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S932511AbcLMJor (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Dec 2016 04:44:47 -0500
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Cc: chandan@linux.vnet.ibm.com
-Subject: [PATCH 3/3] btrfs-progs: convert-test: trigger chunk allocation after convert
-Date: Tue, 13 Dec 2016 17:44:15 +0800
-Message-Id: <20161213094415.30912-4-quwenruo@cn.fujitsu.com>
-In-Reply-To: <20161213094415.30912-1-quwenruo@cn.fujitsu.com>
-References: <20161213094415.30912-1-quwenruo@cn.fujitsu.com>
+Received: from mail-ve1eur01on0110.outbound.protection.outlook.com ([104.47.1.110]:2560
+        "EHLO EUR01-VE1-obe.outbound.protection.outlook.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751465AbcLMAGG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 12 Dec 2016 19:06:06 -0500
+Subject: [PATCH v2] btrfs: limit async_work allocation and worker func
+ duration
+From: Maxim Patlasov <mpatlasov@virtuozzo.com>
+To: <dsterba@suse.cz>
+CC: <jbacik@fb.com>, <clm@fb.com>, <linux-kernel@vger.kernel.org>,
+        <linux-btrfs@vger.kernel.org>, <mpatlasov@virtuozzo.com>
+Date: Mon, 12 Dec 2016 14:32:44 -0800
+Message-ID: <148158188817.14549.6890368240319389582.stgit@maxim-thinkpad>
 MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Populate fs after convert so we can trigger data chunk allocation.
-This can expose too restrict old rollback condition
+Problem statement: unprivileged user who has read-write access to more than
+one btrfs subvolume may easily consume all kernel memory (eventually
+triggering oom-killer).
 
-Reported-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Reproducer (./mkrmdir below essentially loops over mkdir/rmdir):
+
+[root@kteam1 ~]# cat prep.sh
+
+DEV=/dev/sdb
+mkfs.btrfs -f $DEV
+mount $DEV /mnt
+for i in `seq 1 16`
+do
+	mkdir /mnt/$i
+	btrfs subvolume create /mnt/SV_$i
+	ID=`btrfs subvolume list /mnt |grep "SV_$i$" |cut -d ' ' -f 2`
+	mount -t btrfs -o subvolid=$ID $DEV /mnt/$i
+	chmod a+rwx /mnt/$i
+done
+
+[root@kteam1 ~]# sh prep.sh
+
+[maxim@kteam1 ~]$ for i in `seq 1 16`; do ./mkrmdir /mnt/$i 2000 2000 & done
+
+[root@kteam1 ~]# for i in `seq 1 4`; do grep "kmalloc-128" /proc/slabinfo | grep -v dma; sleep 60; done
+kmalloc-128        10144  10144    128   32    1 : tunables    0    0    0 : slabdata    317    317      0
+kmalloc-128       9992352 9992352    128   32    1 : tunables    0    0    0 : slabdata 312261 312261      0
+kmalloc-128       24226752 24226752    128   32    1 : tunables    0    0    0 : slabdata 757086 757086      0
+kmalloc-128       42754240 42754240    128   32    1 : tunables    0    0    0 : slabdata 1336070 1336070      0
+
+The huge numbers above come from insane number of async_work-s allocated
+and queued by btrfs_wq_run_delayed_node.
+
+The problem is caused by btrfs_wq_run_delayed_node() queuing more and more
+works if the number of delayed items is above BTRFS_DELAYED_BACKGROUND. The
+worker func (btrfs_async_run_delayed_root) processes at least
+BTRFS_DELAYED_BATCH items (if they are present in the list). So, the machinery
+works as expected while the list is almost empty. As soon as it is getting
+bigger, worker func starts to process more than one item at a time, it takes
+longer, and the chances to have async_works queued more than needed is getting
+higher.
+
+The problem above is worsened by another flaw of delayed-inode implementation:
+if async_work was queued in a throttling branch (number of items >=
+BTRFS_DELAYED_WRITEBACK), corresponding worker func won't quit until
+the number of items < BTRFS_DELAYED_BACKGROUND / 2. So, it is possible that
+the func occupies CPU infinitely (up to 30sec in my experiments): while the
+func is trying to drain the list, the user activity may add more and more
+items to the list.
+
+The patch fixes both problems in straightforward way: refuse queuing too
+many works in btrfs_wq_run_delayed_node and bail out of worker func if
+at least BTRFS_DELAYED_WRITEBACK items are processed.
+
+Changed in v2: remove support of thresh == NO_THRESHOLD.
+
+Signed-off-by: Maxim Patlasov <mpatlasov@virtuozzo.com>
 ---
- tests/common         | 4 ++++
- tests/common.convert | 3 +++
- 2 files changed, 7 insertions(+)
+ fs/btrfs/async-thread.c  |   14 ++++++++++++++
+ fs/btrfs/async-thread.h  |    1 +
+ fs/btrfs/delayed-inode.c |    6 ++++--
+ 3 files changed, 19 insertions(+), 2 deletions(-)
 
-diff --git a/tests/common b/tests/common
-index 571118a..4a1330f 100644
---- a/tests/common
-+++ b/tests/common
-@@ -486,6 +486,10 @@ generate_dataset() {
- 				run_check $SUDO_HELPER ln -s "$dirpath/$long_filename" "$dirpath/slow_slink.$num"
- 			done
- 			;;
-+		large)
-+			run_check $SUDO_HELPER dd if=/dev/urandom bs=32M count=1 \
-+			of="$dirpath/$dataset_type" bs=32M >/dev/null 2>&1
-+			;;
- 	esac
+diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
+index e0f071f..63d1977 100644
+--- a/fs/btrfs/async-thread.c
++++ b/fs/btrfs/async-thread.c
+@@ -86,6 +86,20 @@ btrfs_work_owner(struct btrfs_work *work)
+ 	return work->wq->fs_info;
  }
  
-diff --git a/tests/common.convert b/tests/common.convert
-index a2d3152..8c9242e 100644
---- a/tests/common.convert
-+++ b/tests/common.convert
-@@ -160,6 +160,9 @@ convert_test_post_checks_all() {
- 	convert_test_post_check_checksums "$1"
- 	convert_test_post_check_permissions "$2"
- 	convert_test_post_check_acl "$3"
++bool btrfs_workqueue_normal_congested(struct btrfs_workqueue *wq)
++{
++	/*
++	 * We could compare wq->normal->pending with num_online_cpus()
++	 * to support "thresh == NO_THRESHOLD" case, but it requires
++	 * moving up atomic_inc/dec in thresh_queue/exec_hook. Let's
++	 * postpone it until someone needs the support of that case.
++	 */
++	if (wq->normal->thresh == NO_THRESHOLD)
++		return false;
 +
-+	# Create a large file to trigger data chunk allocation
-+	generate_dataset "large"
- 	run_check_umount_test_dev
- }
++	return atomic_read(&wq->normal->pending) > wq->normal->thresh * 2;
++}
++
+ BTRFS_WORK_HELPER(worker_helper);
+ BTRFS_WORK_HELPER(delalloc_helper);
+ BTRFS_WORK_HELPER(flush_delalloc_helper);
+diff --git a/fs/btrfs/async-thread.h b/fs/btrfs/async-thread.h
+index 8e52484..1f95973 100644
+--- a/fs/btrfs/async-thread.h
++++ b/fs/btrfs/async-thread.h
+@@ -84,4 +84,5 @@ void btrfs_workqueue_set_max(struct btrfs_workqueue *wq, int max);
+ void btrfs_set_work_high_priority(struct btrfs_work *work);
+ struct btrfs_fs_info *btrfs_work_owner(struct btrfs_work *work);
+ struct btrfs_fs_info *btrfs_workqueue_owner(struct __btrfs_workqueue *wq);
++bool btrfs_workqueue_normal_congested(struct btrfs_workqueue *wq);
+ #endif
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index 3eeb9cd..de946dd 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -1356,7 +1356,8 @@ release_path:
+ 	total_done++;
  
--- 
-2.10.2
-
-
+ 	btrfs_release_prepared_delayed_node(delayed_node);
+-	if (async_work->nr == 0 || total_done < async_work->nr)
++	if ((async_work->nr == 0 && total_done < BTRFS_DELAYED_WRITEBACK) ||
++	    total_done < async_work->nr)
+ 		goto again;
+ 
+ free_path:
+@@ -1372,7 +1373,8 @@ static int btrfs_wq_run_delayed_node(struct btrfs_delayed_root *delayed_root,
+ {
+ 	struct btrfs_async_delayed_work *async_work;
+ 
+-	if (atomic_read(&delayed_root->items) < BTRFS_DELAYED_BACKGROUND)
++	if (atomic_read(&delayed_root->items) < BTRFS_DELAYED_BACKGROUND ||
++	    btrfs_workqueue_normal_congested(fs_info->delayed_workers))
+ 		return 0;
+ 
+ 	async_work = kmalloc(sizeof(*async_work), GFP_NOFS);
 

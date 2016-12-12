@@ -1,181 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f172.google.com ([209.85.223.172]:33804 "EHLO
-        mail-io0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753790AbcLLCKk (ORCPT
+Received: from mail-yw0-f193.google.com ([209.85.161.193]:36020 "EHLO
+        mail-yw0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751677AbcLLEGp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 11 Dec 2016 21:10:40 -0500
-Received: by mail-io0-f172.google.com with SMTP id p42so153376349ioo.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 11 Dec 2016 18:10:40 -0800 (PST)
+        Sun, 11 Dec 2016 23:06:45 -0500
+Received: by mail-yw0-f193.google.com with SMTP id r204so6774664ywb.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 11 Dec 2016 20:06:45 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtT1y+j2d9x907CZaT+g-21nQ1MkC1gR9eJdZ5xPRuPAng@mail.gmail.com>
+In-Reply-To: <CADph71xdM4A2zd0ACmm4GNVp=Jwdp7935q9ur8bkha4+PmVSHg@mail.gmail.com>
 References: <CADph71xWQyFca34=K9b-1sSNUCChUnBggvcj1O5NKi8hpQjvfA@mail.gmail.com>
  <CAJCQCtTC5T0v6jZpALTPwn=CvWn-kJXZX2vVFAEjjk9xokqoPQ@mail.gmail.com>
  <CADph71wae2AQT-v-hu0YcJdNE+dWxRZ7yQVmMEMLyhzsC-FHqQ@mail.gmail.com>
  <CAJCQCtT5CG4M4nYmmefEfWjapmg3TpMXJSVmTE89r6iPxV6xHw@mail.gmail.com>
  <CADph71zoOB72o2PoUY_qqMsg_TpvBokugR9UzZHo6kPsNm4PNg@mail.gmail.com>
  <CAJCQCtQLRRaAyCa8DBHmcizcLHTajmp_vzGU7MkEvshtO4bbNQ@mail.gmail.com>
- <CADph71yACvRhb6AWixoaR28+VHZeaGmZqawqY3MSBcSeJM=6Qw@mail.gmail.com> <CAJCQCtT1y+j2d9x907CZaT+g-21nQ1MkC1gR9eJdZ5xPRuPAng@mail.gmail.com>
-From: Markus Binsteiner <makkus@gmail.com>
-Date: Mon, 12 Dec 2016 15:10:39 +1300
-Message-ID: <CADph71xdM4A2zd0ACmm4GNVp=Jwdp7935q9ur8bkha4+PmVSHg@mail.gmail.com>
+ <CADph71yACvRhb6AWixoaR28+VHZeaGmZqawqY3MSBcSeJM=6Qw@mail.gmail.com>
+ <CAJCQCtT1y+j2d9x907CZaT+g-21nQ1MkC1gR9eJdZ5xPRuPAng@mail.gmail.com> <CADph71xdM4A2zd0ACmm4GNVp=Jwdp7935q9ur8bkha4+PmVSHg@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Sun, 11 Dec 2016 21:06:43 -0700
+Message-ID: <CAJCQCtS=91WcH2s91DUG+RBv=kSKHrVF61Cn124EKskavTQMQg@mail.gmail.com>
 Subject: Re: btrfs-find-root duration?
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: multipart/mixed; boundary=001a113f2248364e4305436c9ca2
+To: Markus Binsteiner <makkus@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---001a113f2248364e4305436c9ca2
-Content-Type: text/plain; charset=UTF-8
+I don't know, maybe. This is not a new file system, clearly, it has
+half million+ generations.
 
-> This is what I'd expect if the volume has only had a mkfs done and
-> then mounted and umounted. No files. What do you get for
->
-> btrfs ins dump-s -fa /dev/mapper/think--big-home
+backup_roots[4]:
+    backup 0:
+        backup_tree_root:    29360128    gen: 593817    level: 1
+        backup_chunk_root:    20971520    gen: 591139    level: 1
+        backup_extent_root:    29376512    gen: 593817    level: 1
+        backup_fs_root:        132562944    gen: 593815    level: 0
+        backup_dev_root:    29409280    gen: 593817    level: 0
+        backup_csum_root:    29491200    gen: 593817    level: 0
+        backup_total_bytes:    254007050240
+        backup_bytes_used:    43532288
+        backup_num_devices:    1
 
-(attached)
 
-Also tried btrfs check -b /dev/mapper/think--big-home, but that errored:
+    backup 1:
+        backup_tree_root:    138821632    gen: 593818    level: 0
+        backup_chunk_root:    21020672    gen: 593818    level: 0
+        backup_extent_root:    138805248    gen: 593818    level: 0
+        backup_fs_root:        132562944    gen: 593815    level: 0
+        backup_dev_root:    132841472    gen: 593818    level: 0
+        backup_csum_root:    138870784    gen: 593818    level: 0
+        backup_total_bytes:    254007050240
+        backup_bytes_used:    655360
+        backup_num_devices:    1
 
-# btrfs  check -b /dev/mapper/think--big-home
-volumes.c:1588: btrfs_chunk_readonly: Assertion `!ce` failed.
-btrfs(+0x50940)[0x56351dc8f940]
-btrfs(+0x50967)[0x56351dc8f967]
-btrfs(btrfs_chunk_readonly+0x5a)[0x56351dc91c93]
-btrfs(btrfs_read_block_groups+0x1dc)[0x56351dc8749b]
-btrfs(btrfs_setup_all_roots+0x33b)[0x56351dc82adc]
-btrfs(+0x43ed8)[0x56351dc82ed8]
-btrfs(open_ctree_fs_info+0xd5)[0x56351dc82ffd]
-btrfs(cmd_check+0x457)[0x56351dc6c332]
-btrfs(main+0x139)[0x56351dc4efab]
-/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf1)[0x7efee8d6d3f1]
-btrfs(_start+0x2a)[0x56351dc4efea]
 
-So, you reckon going back to an older version of btrfs-progs might be
-worth a shot then?
+The old chunk root and tree root might come in handy, from backup0,
+which is the generation prior to the one currently set in the super
+blocks. The bytes_used vs dev_item.bytes_used is also interesting,
+huge difference. So it looks like this was umounted very soon after
+you realized what you did.
 
---001a113f2248364e4305436c9ca2
-Content-Type: text/plain; charset=US-ASCII; name="btrfs_ins_dump.txt"
-Content-Disposition: attachment; filename="btrfs_ins_dump.txt"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_iwlfzitq1
+What do you get for
 
-c3VwZXJibG9jazogYnl0ZW5yPTY1NTM2LCBkZXZpY2U9L2Rldi9tYXBwZXIvdGhpbmstLWJpZy1o
-b21lCi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
-LS0tLQpjc3VtX3R5cGUJCTAgKGNyYzMyYykKY3N1bV9zaXplCQk0CmNzdW0JCQkweGE2NGIzNDNi
-IFttYXRjaF0KYnl0ZW5yCQkJNjU1MzYKZmxhZ3MJCQkweDEKCQkJKCBXUklUVEVOICkKbWFnaWMJ
-CQlfQkhSZlNfTSBbbWF0Y2hdCmZzaWQJCQk3ZjFjZTBlZC01OTg2LTQzYWUtYjBkZC03MjdlZWUx
-OWZkMDgKbGFiZWwJCQkKZ2VuZXJhdGlvbgkJNTkzODE4CnJvb3QJCQkxMzg4MjE2MzIKc3lzX2Fy
-cmF5X3NpemUJCTIyNgpjaHVua19yb290X2dlbmVyYXRpb24JNTkzODE4CnJvb3RfbGV2ZWwJCTAK
-Y2h1bmtfcm9vdAkJMjEwMjA2NzIKY2h1bmtfcm9vdF9sZXZlbAkwCmxvZ19yb290CQkwCmxvZ19y
-b290X3RyYW5zaWQJMApsb2dfcm9vdF9sZXZlbAkJMAp0b3RhbF9ieXRlcwkJMjU0MDA3MDUwMjQw
-CmJ5dGVzX3VzZWQJCTY1NTM2MApzZWN0b3JzaXplCQk0MDk2Cm5vZGVzaXplCQkxNjM4NApsZWFm
-c2l6ZQkJMTYzODQKc3RyaXBlc2l6ZQkJNDA5Ngpyb290X2RpcgkJNgpudW1fZGV2aWNlcwkJMQpj
-b21wYXRfZmxhZ3MJCTB4MApjb21wYXRfcm9fZmxhZ3MJCTB4MAppbmNvbXBhdF9mbGFncwkJMHg2
-OQoJCQkoIE1JWEVEX0JBQ0tSRUYgfAoJCQkgIENPTVBSRVNTX0xaTyB8CgkJCSAgQklHX01FVEFE
-QVRBIHwKCQkJICBFWFRFTkRFRF9JUkVGICkKY2FjaGVfZ2VuZXJhdGlvbgk1OTM4MTgKdXVpZF90
-cmVlX2dlbmVyYXRpb24JNTkzODE4CmRldl9pdGVtLnV1aWQJCTU5Yjk2NDM4LWJlODYtNDM5Ny1h
-ODQyLTFlMWM2ZWZkNzQ3OQpkZXZfaXRlbS5mc2lkCQk3ZjFjZTBlZC01OTg2LTQzYWUtYjBkZC03
-MjdlZWUxOWZkMDggW21hdGNoXQpkZXZfaXRlbS50eXBlCQkwCmRldl9pdGVtLnRvdGFsX2J5dGVz
-CTI1NDAwNzA1MDI0MApkZXZfaXRlbS5ieXRlc191c2VkCTE4MjA2NjM0ODAzMgpkZXZfaXRlbS5p
-b19hbGlnbgk0MDk2CmRldl9pdGVtLmlvX3dpZHRoCTQwOTYKZGV2X2l0ZW0uc2VjdG9yX3NpemUJ
-NDA5NgpkZXZfaXRlbS5kZXZpZAkJMQpkZXZfaXRlbS5kZXZfZ3JvdXAJMApkZXZfaXRlbS5zZWVr
-X3NwZWVkCTAKZGV2X2l0ZW0uYmFuZHdpZHRoCTAKZGV2X2l0ZW0uZ2VuZXJhdGlvbgkwCnN5c19j
-aHVua19hcnJheVsyMDQ4XToKCWl0ZW0gMCBrZXkgKEZJUlNUX0NIVU5LX1RSRUUgQ0hVTktfSVRF
-TSAwKQoJCWNodW5rIGxlbmd0aCA0MTk0MzA0IG93bmVyIDIgc3RyaXBlX2xlbiA2NTUzNgoJCXR5
-cGUgU1lTVEVNIG51bV9zdHJpcGVzIDEKCQkJc3RyaXBlIDAgZGV2aWQgMSBvZmZzZXQgMAoJCQlk
-ZXYgdXVpZDogNTliOTY0MzgtYmU4Ni00Mzk3LWE4NDItMWUxYzZlZmQ3NDc5CglpdGVtIDEga2V5
-IChGSVJTVF9DSFVOS19UUkVFIENIVU5LX0lURU0gMjA5NzE1MjApCgkJY2h1bmsgbGVuZ3RoIDgz
-ODg2MDggb3duZXIgMiBzdHJpcGVfbGVuIDY1NTM2CgkJdHlwZSBTWVNURU18RFVQIG51bV9zdHJp
-cGVzIDIKCQkJc3RyaXBlIDAgZGV2aWQgMSBvZmZzZXQgMjA5NzE1MjAKCQkJZGV2IHV1aWQ6IDU5
-Yjk2NDM4LWJlODYtNDM5Ny1hODQyLTFlMWM2ZWZkNzQ3OQoJCQlzdHJpcGUgMSBkZXZpZCAxIG9m
-ZnNldCAyOTM2MDEyOAoJCQlkZXYgdXVpZDogNTliOTY0MzgtYmU4Ni00Mzk3LWE4NDItMWUxYzZl
-ZmQ3NDc5CmJhY2t1cF9yb290c1s0XToKCWJhY2t1cCAwOgoJCWJhY2t1cF90cmVlX3Jvb3Q6CTI5
-MzYwMTI4CWdlbjogNTkzODE3CWxldmVsOiAxCgkJYmFja3VwX2NodW5rX3Jvb3Q6CTIwOTcxNTIw
-CWdlbjogNTkxMTM5CWxldmVsOiAxCgkJYmFja3VwX2V4dGVudF9yb290OgkyOTM3NjUxMglnZW46
-IDU5MzgxNwlsZXZlbDogMQoJCWJhY2t1cF9mc19yb290OgkJMTMyNTYyOTQ0CWdlbjogNTkzODE1
-CWxldmVsOiAwCgkJYmFja3VwX2Rldl9yb290OgkyOTQwOTI4MAlnZW46IDU5MzgxNwlsZXZlbDog
-MAoJCWJhY2t1cF9jc3VtX3Jvb3Q6CTI5NDkxMjAwCWdlbjogNTkzODE3CWxldmVsOiAwCgkJYmFj
-a3VwX3RvdGFsX2J5dGVzOgkyNTQwMDcwNTAyNDAKCQliYWNrdXBfYnl0ZXNfdXNlZDoJNDM1MzIy
-ODgKCQliYWNrdXBfbnVtX2RldmljZXM6CTEKCgliYWNrdXAgMToKCQliYWNrdXBfdHJlZV9yb290
-OgkxMzg4MjE2MzIJZ2VuOiA1OTM4MTgJbGV2ZWw6IDAKCQliYWNrdXBfY2h1bmtfcm9vdDoJMjEw
-MjA2NzIJZ2VuOiA1OTM4MTgJbGV2ZWw6IDAKCQliYWNrdXBfZXh0ZW50X3Jvb3Q6CTEzODgwNTI0
-OAlnZW46IDU5MzgxOAlsZXZlbDogMAoJCWJhY2t1cF9mc19yb290OgkJMTMyNTYyOTQ0CWdlbjog
-NTkzODE1CWxldmVsOiAwCgkJYmFja3VwX2Rldl9yb290OgkxMzI4NDE0NzIJZ2VuOiA1OTM4MTgJ
-bGV2ZWw6IDAKCQliYWNrdXBfY3N1bV9yb290OgkxMzg4NzA3ODQJZ2VuOiA1OTM4MTgJbGV2ZWw6
-IDAKCQliYWNrdXBfdG90YWxfYnl0ZXM6CTI1NDAwNzA1MDI0MAoJCWJhY2t1cF9ieXRlc191c2Vk
-Ogk2NTUzNjAKCQliYWNrdXBfbnVtX2RldmljZXM6CTEKCgliYWNrdXAgMjoKCQliYWNrdXBfdHJl
-ZV9yb290OgkxMzg3ODg4NjQJZ2VuOiA1OTM4MTUJbGV2ZWw6IDEKCQliYWNrdXBfY2h1bmtfcm9v
-dDoJMjA5NzE1MjAJZ2VuOiA1OTExMzkJbGV2ZWw6IDEKCQliYWNrdXBfZXh0ZW50X3Jvb3Q6CTEz
-Mjg0MTQ3MglnZW46IDU5MzgxNQlsZXZlbDogMQoJCWJhY2t1cF9mc19yb290OgkJMTMyNTYyOTQ0
-CWdlbjogNTkzODE1CWxldmVsOiAwCgkJYmFja3VwX2Rldl9yb290OgkxMDE4MTE4MTQ0CWdlbjog
-NTkyOTgzCWxldmVsOiAwCgkJYmFja3VwX2NzdW1fcm9vdDoJMTM0NzI1NjMyCWdlbjogNTkzODE1
-CWxldmVsOiAwCgkJYmFja3VwX3RvdGFsX2J5dGVzOgkyNTQwMDcwNTAyNDAKCQliYWNrdXBfYnl0
-ZXNfdXNlZDoJNDM1MzIyODgKCQliYWNrdXBfbnVtX2RldmljZXM6CTEKCgliYWNrdXAgMzoKCQli
-YWNrdXBfdHJlZV9yb290OgkxMzg4NzA3ODQJZ2VuOiA1OTM4MTYJbGV2ZWw6IDEKCQliYWNrdXBf
-Y2h1bmtfcm9vdDoJMjA5NzE1MjAJZ2VuOiA1OTExMzkJbGV2ZWw6IDEKCQliYWNrdXBfZXh0ZW50
-X3Jvb3Q6CTEzODg4NzE2OAlnZW46IDU5MzgxNglsZXZlbDogMQoJCWJhY2t1cF9mc19yb290OgkJ
-MTMyNTYyOTQ0CWdlbjogNTkzODE1CWxldmVsOiAwCgkJYmFja3VwX2Rldl9yb290OgkxMDE4MTE4
-MTQ0CWdlbjogNTkyOTgzCWxldmVsOiAwCgkJYmFja3VwX2NzdW1fcm9vdDoJMTM4OTUyNzA0CWdl
-bjogNTkzODE2CWxldmVsOiAwCgkJYmFja3VwX3RvdGFsX2J5dGVzOgkyNTQwMDcwNTAyNDAKCQli
-YWNrdXBfYnl0ZXNfdXNlZDoJNDM1MzIyODgKCQliYWNrdXBfbnVtX2RldmljZXM6CTEKCgpzdXBl
-cmJsb2NrOiBieXRlbnI9NjcxMDg4NjQsIGRldmljZT0vZGV2L21hcHBlci90aGluay0tYmlnLWhv
-bWUKLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
-LS0tCmNzdW1fdHlwZQkJMCAoY3JjMzJjKQpjc3VtX3NpemUJCTQKY3N1bQkJCTB4MDYyYTFjZjUg
-W21hdGNoXQpieXRlbnIJCQk2NzEwODg2NApmbGFncwkJCTB4MQoJCQkoIFdSSVRURU4gKQptYWdp
-YwkJCV9CSFJmU19NIFttYXRjaF0KZnNpZAkJCTdmMWNlMGVkLTU5ODYtNDNhZS1iMGRkLTcyN2Vl
-ZTE5ZmQwOApsYWJlbAkJCQpnZW5lcmF0aW9uCQk1OTM4MTgKcm9vdAkJCTEzODgyMTYzMgpzeXNf
-YXJyYXlfc2l6ZQkJMjI2CmNodW5rX3Jvb3RfZ2VuZXJhdGlvbgk1OTM4MTgKcm9vdF9sZXZlbAkJ
-MApjaHVua19yb290CQkyMTAyMDY3MgpjaHVua19yb290X2xldmVsCTAKbG9nX3Jvb3QJCTAKbG9n
-X3Jvb3RfdHJhbnNpZAkwCmxvZ19yb290X2xldmVsCQkwCnRvdGFsX2J5dGVzCQkyNTQwMDcwNTAy
-NDAKYnl0ZXNfdXNlZAkJNjU1MzYwCnNlY3RvcnNpemUJCTQwOTYKbm9kZXNpemUJCTE2Mzg0Cmxl
-YWZzaXplCQkxNjM4NApzdHJpcGVzaXplCQk0MDk2CnJvb3RfZGlyCQk2Cm51bV9kZXZpY2VzCQkx
-CmNvbXBhdF9mbGFncwkJMHgwCmNvbXBhdF9yb19mbGFncwkJMHgwCmluY29tcGF0X2ZsYWdzCQkw
-eDY5CgkJCSggTUlYRURfQkFDS1JFRiB8CgkJCSAgQ09NUFJFU1NfTFpPIHwKCQkJICBCSUdfTUVU
-QURBVEEgfAoJCQkgIEVYVEVOREVEX0lSRUYgKQpjYWNoZV9nZW5lcmF0aW9uCTU5MzgxOAp1dWlk
-X3RyZWVfZ2VuZXJhdGlvbgk1OTM4MTgKZGV2X2l0ZW0udXVpZAkJNTliOTY0MzgtYmU4Ni00Mzk3
-LWE4NDItMWUxYzZlZmQ3NDc5CmRldl9pdGVtLmZzaWQJCTdmMWNlMGVkLTU5ODYtNDNhZS1iMGRk
-LTcyN2VlZTE5ZmQwOCBbbWF0Y2hdCmRldl9pdGVtLnR5cGUJCTAKZGV2X2l0ZW0udG90YWxfYnl0
-ZXMJMjU0MDA3MDUwMjQwCmRldl9pdGVtLmJ5dGVzX3VzZWQJMTgyMDY2MzQ4MDMyCmRldl9pdGVt
-LmlvX2FsaWduCTQwOTYKZGV2X2l0ZW0uaW9fd2lkdGgJNDA5NgpkZXZfaXRlbS5zZWN0b3Jfc2l6
-ZQk0MDk2CmRldl9pdGVtLmRldmlkCQkxCmRldl9pdGVtLmRldl9ncm91cAkwCmRldl9pdGVtLnNl
-ZWtfc3BlZWQJMApkZXZfaXRlbS5iYW5kd2lkdGgJMApkZXZfaXRlbS5nZW5lcmF0aW9uCTAKc3lz
-X2NodW5rX2FycmF5WzIwNDhdOgoJaXRlbSAwIGtleSAoRklSU1RfQ0hVTktfVFJFRSBDSFVOS19J
-VEVNIDApCgkJY2h1bmsgbGVuZ3RoIDQxOTQzMDQgb3duZXIgMiBzdHJpcGVfbGVuIDY1NTM2CgkJ
-dHlwZSBTWVNURU0gbnVtX3N0cmlwZXMgMQoJCQlzdHJpcGUgMCBkZXZpZCAxIG9mZnNldCAwCgkJ
-CWRldiB1dWlkOiA1OWI5NjQzOC1iZTg2LTQzOTctYTg0Mi0xZTFjNmVmZDc0NzkKCWl0ZW0gMSBr
-ZXkgKEZJUlNUX0NIVU5LX1RSRUUgQ0hVTktfSVRFTSAyMDk3MTUyMCkKCQljaHVuayBsZW5ndGgg
-ODM4ODYwOCBvd25lciAyIHN0cmlwZV9sZW4gNjU1MzYKCQl0eXBlIFNZU1RFTXxEVVAgbnVtX3N0
-cmlwZXMgMgoJCQlzdHJpcGUgMCBkZXZpZCAxIG9mZnNldCAyMDk3MTUyMAoJCQlkZXYgdXVpZDog
-NTliOTY0MzgtYmU4Ni00Mzk3LWE4NDItMWUxYzZlZmQ3NDc5CgkJCXN0cmlwZSAxIGRldmlkIDEg
-b2Zmc2V0IDI5MzYwMTI4CgkJCWRldiB1dWlkOiA1OWI5NjQzOC1iZTg2LTQzOTctYTg0Mi0xZTFj
-NmVmZDc0NzkKYmFja3VwX3Jvb3RzWzRdOgoJYmFja3VwIDA6CgkJYmFja3VwX3RyZWVfcm9vdDoJ
-MjkzNjAxMjgJZ2VuOiA1OTM4MTcJbGV2ZWw6IDEKCQliYWNrdXBfY2h1bmtfcm9vdDoJMjA5NzE1
-MjAJZ2VuOiA1OTExMzkJbGV2ZWw6IDEKCQliYWNrdXBfZXh0ZW50X3Jvb3Q6CTI5Mzc2NTEyCWdl
-bjogNTkzODE3CWxldmVsOiAxCgkJYmFja3VwX2ZzX3Jvb3Q6CQkxMzI1NjI5NDQJZ2VuOiA1OTM4
-MTUJbGV2ZWw6IDAKCQliYWNrdXBfZGV2X3Jvb3Q6CTI5NDA5MjgwCWdlbjogNTkzODE3CWxldmVs
-OiAwCgkJYmFja3VwX2NzdW1fcm9vdDoJMjk0OTEyMDAJZ2VuOiA1OTM4MTcJbGV2ZWw6IDAKCQli
-YWNrdXBfdG90YWxfYnl0ZXM6CTI1NDAwNzA1MDI0MAoJCWJhY2t1cF9ieXRlc191c2VkOgk0MzUz
-MjI4OAoJCWJhY2t1cF9udW1fZGV2aWNlczoJMQoKCWJhY2t1cCAxOgoJCWJhY2t1cF90cmVlX3Jv
-b3Q6CTEzODgyMTYzMglnZW46IDU5MzgxOAlsZXZlbDogMAoJCWJhY2t1cF9jaHVua19yb290Ogky
-MTAyMDY3MglnZW46IDU5MzgxOAlsZXZlbDogMAoJCWJhY2t1cF9leHRlbnRfcm9vdDoJMTM4ODA1
-MjQ4CWdlbjogNTkzODE4CWxldmVsOiAwCgkJYmFja3VwX2ZzX3Jvb3Q6CQkxMzI1NjI5NDQJZ2Vu
-OiA1OTM4MTUJbGV2ZWw6IDAKCQliYWNrdXBfZGV2X3Jvb3Q6CTEzMjg0MTQ3MglnZW46IDU5Mzgx
-OAlsZXZlbDogMAoJCWJhY2t1cF9jc3VtX3Jvb3Q6CTEzODg3MDc4NAlnZW46IDU5MzgxOAlsZXZl
-bDogMAoJCWJhY2t1cF90b3RhbF9ieXRlczoJMjU0MDA3MDUwMjQwCgkJYmFja3VwX2J5dGVzX3Vz
-ZWQ6CTY1NTM2MAoJCWJhY2t1cF9udW1fZGV2aWNlczoJMQoKCWJhY2t1cCAyOgoJCWJhY2t1cF90
-cmVlX3Jvb3Q6CTEzODc4ODg2NAlnZW46IDU5MzgxNQlsZXZlbDogMQoJCWJhY2t1cF9jaHVua19y
-b290OgkyMDk3MTUyMAlnZW46IDU5MTEzOQlsZXZlbDogMQoJCWJhY2t1cF9leHRlbnRfcm9vdDoJ
-MTMyODQxNDcyCWdlbjogNTkzODE1CWxldmVsOiAxCgkJYmFja3VwX2ZzX3Jvb3Q6CQkxMzI1NjI5
-NDQJZ2VuOiA1OTM4MTUJbGV2ZWw6IDAKCQliYWNrdXBfZGV2X3Jvb3Q6CTEwMTgxMTgxNDQJZ2Vu
-OiA1OTI5ODMJbGV2ZWw6IDAKCQliYWNrdXBfY3N1bV9yb290OgkxMzQ3MjU2MzIJZ2VuOiA1OTM4
-MTUJbGV2ZWw6IDAKCQliYWNrdXBfdG90YWxfYnl0ZXM6CTI1NDAwNzA1MDI0MAoJCWJhY2t1cF9i
-eXRlc191c2VkOgk0MzUzMjI4OAoJCWJhY2t1cF9udW1fZGV2aWNlczoJMQoKCWJhY2t1cCAzOgoJ
-CWJhY2t1cF90cmVlX3Jvb3Q6CTEzODg3MDc4NAlnZW46IDU5MzgxNglsZXZlbDogMQoJCWJhY2t1
-cF9jaHVua19yb290OgkyMDk3MTUyMAlnZW46IDU5MTEzOQlsZXZlbDogMQoJCWJhY2t1cF9leHRl
-bnRfcm9vdDoJMTM4ODg3MTY4CWdlbjogNTkzODE2CWxldmVsOiAxCgkJYmFja3VwX2ZzX3Jvb3Q6
-CQkxMzI1NjI5NDQJZ2VuOiA1OTM4MTUJbGV2ZWw6IDAKCQliYWNrdXBfZGV2X3Jvb3Q6CTEwMTgx
-MTgxNDQJZ2VuOiA1OTI5ODMJbGV2ZWw6IDAKCQliYWNrdXBfY3N1bV9yb290OgkxMzg5NTI3MDQJ
-Z2VuOiA1OTM4MTYJbGV2ZWw6IDAKCQliYWNrdXBfdG90YWxfYnl0ZXM6CTI1NDAwNzA1MDI0MAoJ
-CWJhY2t1cF9ieXRlc191c2VkOgk0MzUzMjI4OAoJCWJhY2t1cF9udW1fZGV2aWNlczoJMQoKCgo=
---001a113f2248364e4305436c9ca2--
+btrfs restore -l <dev>
+
+Maybe just try this, which is the oldest generation we know about
+right now, which is found in backup root 2.
+
+sudo btrfs restore -D -v -t 138788864 /dev/mapper/brick1 .
+
+That's a dry run so the path to save stuff to doesn't matter, so I'm
+just using . for that. But what you'll get is a file listing. If
+there's nothing listed, then it's a dead end. But if it's listing
+everything you want, it's a win. Just point to a proper destination
+and remove -D. However, another possibility is that it's a partial -
+i.e. it might be a generation in between the cleaner running, so some
+stuff is restored but not all of it.
+
+Yeah, maybe there's a way to get an older generation and root with an
+older copy of btrfs-progs. I think the current one isn't working very
+well...on yet another file system I have that is very new (week) but
+has hours of writes on it,
+
+[chris@f25s ~]$ sudo btrfs-find-root /dev/mapper/brick1
+Superblock thinks the generation is 5727
+Superblock thinks the level is 1
+Found tree root at 426847567872 gen 5727 level 1
+
+
+That's it. So no hang, but only one tree root which is just bogus.
+Even the superblock has more information than this. I'm used to seeing
+dozens or more.
+
+
+Chris Murphy

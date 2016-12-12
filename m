@@ -1,263 +1,239 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f53.google.com ([74.125.82.53]:37054 "EHLO
-        mail-wm0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753064AbcLLA4L (ORCPT
+Received: from mail-yw0-f173.google.com ([209.85.161.173]:35334 "EHLO
+        mail-yw0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752638AbcLLBM1 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 11 Dec 2016 19:56:11 -0500
-Received: by mail-wm0-f53.google.com with SMTP id t79so44536769wmt.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 11 Dec 2016 16:56:10 -0800 (PST)
+        Sun, 11 Dec 2016 20:12:27 -0500
+Received: by mail-yw0-f173.google.com with SMTP id i145so54188213ywg.2
+        for <linux-btrfs@vger.kernel.org>; Sun, 11 Dec 2016 17:12:26 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtQ1az+PeyAw=7nTasajqNskttiF1LoTQ_UJEeLc_LhkNw@mail.gmail.com>
-References: <CAKinxcV8tPF_y5HoU_DVy88rfHaGwzFrzQjSiQCcFM71H+a+Gw@mail.gmail.com>
- <CAJCQCtQ1az+PeyAw=7nTasajqNskttiF1LoTQ_UJEeLc_LhkNw@mail.gmail.com>
-From: Tomasz Kusmierz <tom.kusmierz@gmail.com>
-Date: Mon, 12 Dec 2016 00:56:08 +0000
-Message-ID: <CAKinxcWE2RWdb2GG+cX7Sp1LHyx5LNKJ--EAqWVD2HTwpyJ7eQ@mail.gmail.com>
-Subject: Re: How to get back a deleted sub-volume.
-To: Chris Murphy <lists@colorremedies.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <CADph71yACvRhb6AWixoaR28+VHZeaGmZqawqY3MSBcSeJM=6Qw@mail.gmail.com>
+References: <CADph71xWQyFca34=K9b-1sSNUCChUnBggvcj1O5NKi8hpQjvfA@mail.gmail.com>
+ <CAJCQCtTC5T0v6jZpALTPwn=CvWn-kJXZX2vVFAEjjk9xokqoPQ@mail.gmail.com>
+ <CADph71wae2AQT-v-hu0YcJdNE+dWxRZ7yQVmMEMLyhzsC-FHqQ@mail.gmail.com>
+ <CAJCQCtT5CG4M4nYmmefEfWjapmg3TpMXJSVmTE89r6iPxV6xHw@mail.gmail.com>
+ <CADph71zoOB72o2PoUY_qqMsg_TpvBokugR9UzZHo6kPsNm4PNg@mail.gmail.com>
+ <CAJCQCtQLRRaAyCa8DBHmcizcLHTajmp_vzGU7MkEvshtO4bbNQ@mail.gmail.com> <CADph71yACvRhb6AWixoaR28+VHZeaGmZqawqY3MSBcSeJM=6Qw@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Sun, 11 Dec 2016 18:12:25 -0700
+Message-ID: <CAJCQCtT1y+j2d9x907CZaT+g-21nQ1MkC1gR9eJdZ5xPRuPAng@mail.gmail.com>
+Subject: Re: btrfs-find-root duration?
+To: Markus Binsteiner <makkus@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: multipart/mixed; boundary=94eb2c076c10f7599005436bcb44
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris, for all the time you helped so far I have to really appologize
-I've led you a stray ... so, reson the subvolumes were deleted is
-nothing to do with btrfs it self, I'm using "Rockstor" to ease
-managment tasks. This tool / environment / distribution treats a
-singular btrfs FS as a "pool" ( something in line of zfs :/ ) and when
-one removes a pool from the system it will actually go and delete
-subvolumes from FS before unmounting it and removing reference of it
-from it's DB (yes a bit shiet I know). so I'm not blaming anybody here
-for disapearing subvolumes, it's just me commig back to belive in man
-kind to get kicked in the gonads by mankind stupidity.
+--94eb2c076c10f7599005436bcb44
+Content-Type: text/plain; charset=UTF-8
 
-ALSO by importing the fs to their "solution" is just actually mounting
-and walking the tree of subvolumes to to create all the references in
-local DB (for rockstor of course, still nothing to do with btrfs
-functionality). To be able to ïmport" I've had to remove before
-mentioned snpshots becouse imports script was timing out.
+On Sun, Dec 11, 2016 at 5:12 PM, Markus Binsteiner <makkus@gmail.com> wrote:
+>> You might try 'btrfs check' without repairing, using a recent version
+>> of btrfs-progs and see if it finds anything unusual.
+>
+> Not quite sure what that output means, but btrfs check returns instantly:
+>
+> $ sudo btrfs check /dev/mapper/think--big-home
+> Checking filesystem on /dev/mapper/think--big-home
+> UUID: 7f1ce0ed-5986-43ae-b0dd-727eee19fd08
+> checking extents
+> checking free space cache
+> checking fs roots
+> checking csums
+> checking root refs
+> found 655360 bytes used err is 0
+> total csum bytes: 0
+> total tree bytes: 131072
+> total fs tree bytes: 32768
+> total extent tree bytes: 16384
+> btree space waste bytes: 123528
+> file data blocks allocated: 524288
+>  referenced 524288
 
-So for a single subvolume (called physically "share") I was left with
-no snapshots (removed by me to make import not time out) and then this
-subvolume was removed when I was trying to remove a fs (pool) from a
-running system.
+This is what I'd expect if the volume has only had a mkfs done and
+then mounted and umounted. No files. What do you get for
 
-I've polled both disks (2 disk fs raid1) and I'm trying to rescue as
-much data as I can.
+btrfs ins dump-s -fa /dev/mapper/think--big-home
 
-The question is, why suddenly when I removed the snapshots and
-(someone else removed) the subvolume, there is such a great gap in
-generations of FS (over 200 generations missing) and the most recent
-generation that actually can me touched by btrfs restore is over a
-month old.
+>
+> When I do the same thing on the root-OS partition that is on the same
+> disk, it takes a bit longer to complete, and I'm getting:
+>
+> $ sudo btrfs check /dev/mapper/think--big-jessie
+> Checking filesystem on /dev/mapper/think--big-jessie
+> UUID: d82e2746-4164-41fa-b528-5a5838d818c6
+> checking extents
+> checking free space cache
+> checking fs roots
+> checking csums
+> checking root refs
+> found 29295181824 bytes used err is 0
+> total csum bytes: 27623652
+> total tree bytes: 973848576
+> total fs tree bytes: 874446848
+> total extent tree bytes: 62554112
+> btree space waste bytes: 154131992
+> file data blocks allocated: 29202391040
+>  referenced 30898016256
+>
+> So I reckon the tree(s) in my home partition is just empty? Why would
+> btrfs-find-tree take so long to complete though?
 
-How to over come that ?
+Looks like a bug. I'm not sure when this regression began, but I see
+it with btrfs-progs-4.8.5-1.fc26.x86_64 on a new file system, with no
+files and also one volume that has a single file. But it's not hanging
+on older file systems.
+
+# btrfs-find-root /dev/mapper/vg-test2
+Superblock thinks the generation is 8
+Superblock thinks the level is 0
+
+Indefinite hang.
 
 
 
-On 11 December 2016 at 19:00, Chris Murphy <lists@colorremedies.com> wrote:
-> On Sun, Dec 11, 2016 at 10:40 AM, Tomasz Kusmierz
-> <tom.kusmierz@gmail.com> wrote:
->> Hi,
->>
->> So, I've found my self in a pickle after following this steps:
->> 1. trying to migrate an array to different system, it became apparent
->> that importing array there was not possible to import it because I've
->> had a very large amount of snapshots (every 15 minutes during office
->> hours amounting to few K) so I've had to remove snapshots for main
->> data storage.
->
-> True, there is no recursive incremental send.
->
->> 2. while playing with live array, it become apparent that some bright
->> spark implemented a "delete all sub-volumes while removing array from
->> system" ... needles to say that this behaviour is unexpected to say al
->> least ... and I wanted to punch somebody in face.
->
-> The technical part of this is vague. I'm guessing you used 'btrfs
-> device remove' butt it works no differently than lvremove - when a
-> device is removed from an array, it wipes the signature from that
-> device.  You probably can restore that signature and use that device
-> again, depending on what the profile is for metadata and data, it may
-> be usable stand alone.
->
-> Proposing assault is probably not the best way to ask for advice
-> though. Just a guess.
->
->
->
->
->>
->> Since then I was trying to rescue as much data as I can, luckily I
->> managed to get a lot of data from snapshots for "other than share"
->> volumes (because those were not deleted :/) but the most important
->> volume "share" prove difficult. This subvolume comes out with a lot of
->> errors on readout with "btrfs restore /dev/sda /mnt2/temp2/ -x -m -S
->> -s -i -t".
->>
->> Also for some reason I can't use a lot of root blocks that I find with
->> btrfs-find-root ..
->>
->> To put some detail here:
->> btrfs-find-root -a /dev/sda
->> Superblock thinks the generation is 184540
->> Superblock thinks the level is 1
->> Well block 919363862528(gen: 184540 level: 1) seems good, and it
->> matches superblock
->> Well block 919356325888(gen: 184539 level: 1) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 919343529984(gen: 184538 level: 1) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 920041308160(gen: 184537 level: 1) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 919941955584(gen: 184536 level: 1) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 919670538240(gen: 184535 level: 1) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 920045371392(gen: 184532 level: 1) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 920070209536(gen: 184531 level: 1) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 920117510144(gen: 184530 level: 1) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1 <<<---- here
->> stuff is gone
->> Well block 920139055104(gen: 184511 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 920139022336(gen: 184511 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 920138989568(gen: 184511 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 920138973184(gen: 184511 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 920137596928(gen: 184511 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 920137531392(gen: 184511 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 920137515008(gen: 184511 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 920135991296(gen: 184511 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 920135958528(gen: 184511 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 920135925760(gen: 184511 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 920135827456(gen: 184511 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 920135811072(gen: 184511 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 920133697536(gen: 184511 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 920133664768(gen: 184511 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 920133337088(gen: 184511 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 920133206016(gen: 184511 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 920132976640(gen: 184511 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 920132878336(gen: 184511 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 920132845568(gen: 184511 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 920128045056(gen: 184511 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 920127946752(gen: 184511 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 920127897600(gen: 184511 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 920127881216(gen: 184511 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 920127864832(gen: 184511 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 920127848448(gen: 184511 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 920127799296(gen: 184511 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 919815143424(gen: 184508 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 919814569984(gen: 184508 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 919811866624(gen: 184508 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 919803232256(gen: 184496 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 919712989184(gen: 184455 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 919711891456(gen: 184455 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 919706271744(gen: 184455 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 919703568384(gen: 184455 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 919699865600(gen: 184455 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 919647092736(gen: 184455 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 1417026879488(gen: 184334 level: 1) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1 <<--- I can
->> only use that with btrfs restore and it's month old
->> Well block 1417025896448(gen: 184333 level: 1) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 1417029484544(gen: 184332 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 1417029320704(gen: 184332 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 1417029173248(gen: 184332 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 1417027616768(gen: 184332 level: 0) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 1417024831488(gen: 184331 level: 1) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 1417021079552(gen: 184330 level: 1) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 1417014001664(gen: 184329 level: 1) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 1417011970048(gen: 184328 level: 1) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> Well block 1417009758208(gen: 184327 level: 1) seems good, but
->> generation/level doesn't match, want gen: 184540 level:
->> ... rest of lines omitted to not trash the list to much.
->>
->> this line:
->> Well block 920117510144(gen: 184530 level: 1) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> is where stuff is missing,
->
-> A root tree is only kept around for about 2 minutes, so it's going to
-> be freed up and subject to being overwritten  if there's no snapshot
-> to pin it in place.
->
->>
->> and this line:
->> Well block 1417026879488(gen: 184334 level: 1) seems good, but
->> generation/level doesn't match, want gen: 184540 level: 1
->> is the only line that physically work with
->> btrfs restore /dev/sda /mnt2/temp2/ -x -m -S -s -i -t
->
-> That particular
->
->>
->>
->> as you can see there is a vast "generation hole" between 184530 and
->> 184334 ... more 200 generations ... and this results in only being
->> able to access data that is month old :( and some of it is strangelly
->> corrupted :(
->
-> You're leaving out a lot of information. If you have thousands of
-> snapshots, and one of those snapshots has the data in it you want,
-> then you shouldn't need to use btrfs restore. Btrfs restore is a
-> scraping tool to try to find data, with no assurance of success at
-> all, from freed up metadata and data blocks. That data certainly could
-> be corrupt because all or parts of it may have been overwritten
-> already.
->
-> If the data is in a stable snapshot that has not been deleted, then
-> you should be able to find it and extract it with a normal mount. If
-> the file system can't be mounted normally then that's what you need to
-> look at first - so presumably it's not mounting normally; but does it
-> mount with usebackuproot? Or ro,usebackuproot? Or
-> ro,usebackuproot,degraded?
->
->
-> --
-> Chris Murphy
+>Also, I've tried to
+> run btrfs-find-tree on the root-OS partition, but that also didn't
+> complete within the 10 minutes I tried (so far).
+
+Yeah same here, but unlike your case it completes fast for older file
+systems with a decent amount of data on it. I'm not sure what the
+pattern is here that results in the hang. Unfortunately strace is not
+revealing I think - attached anyway.
+
+
+
+-- 
+Chris Murphy
+
+--94eb2c076c10f7599005436bcb44
+Content-Type: text/plain; charset=US-ASCII; name="strace_btrfsfindroot.txt"
+Content-Disposition: attachment; filename="strace_btrfsfindroot.txt"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_iwldwe5f0
+
+cm9vdEBmMjVoIH5dIyBzdHJhY2UgYnRyZnMtZmluZC1yb290IC9kZXYvbWFwcGVyL3ZnLXRlc3Qy
+CmV4ZWN2ZSgiL3NiaW4vYnRyZnMtZmluZC1yb290IiwgWyJidHJmcy1maW5kLXJvb3QiLCAiL2Rl
+di9tYXBwZXIvdmctdGVzdDIiXSwgWy8qIDMxIHZhcnMgKi9dKSA9IDAKYnJrKE5VTEwpICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgID0gMHg1NTcxZDAxZjcwMDAKbW1hcChOVUxMLCA4MTky
+LCBQUk9UX1JFQUR8UFJPVF9XUklURSwgTUFQX1BSSVZBVEV8TUFQX0FOT05ZTU9VUywgLTEsIDAp
+ID0gMHg3ZjM4OWExMDYwMDAKYWNjZXNzKCIvZXRjL2xkLnNvLnByZWxvYWQiLCBSX09LKSAgICAg
+ID0gLTEgRU5PRU5UIChObyBzdWNoIGZpbGUgb3IgZGlyZWN0b3J5KQpvcGVuKCIvZXRjL2xkLnNv
+LmNhY2hlIiwgT19SRE9OTFl8T19DTE9FWEVDKSA9IDMKZnN0YXQoMywge3N0X21vZGU9U19JRlJF
+R3wwNjQ0LCBzdF9zaXplPTk5MDM4LCAuLi59KSA9IDAKbW1hcChOVUxMLCA5OTAzOCwgUFJPVF9S
+RUFELCBNQVBfUFJJVkFURSwgMywgMCkgPSAweDdmMzg5YTBlZDAwMApjbG9zZSgzKSAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgPSAwCm9wZW4oIi9saWI2NC9saWJ1dWlkLnNvLjEiLCBP
+X1JET05MWXxPX0NMT0VYRUMpID0gMwpyZWFkKDMsICJcMTc3RUxGXDJcMVwxXDBcMFwwXDBcMFww
+XDBcMFwwXDNcMD5cMFwxXDBcMFwwUFwyNFwwXDBcMFwwXDBcMCIuLi4sIDgzMikgPSA4MzIKZnN0
+YXQoMywge3N0X21vZGU9U19JRlJFR3wwNzU1LCBzdF9zaXplPTE5NTI4LCAuLi59KSA9IDAKbW1h
+cChOVUxMLCAyMTEzNTUyLCBQUk9UX1JFQUR8UFJPVF9FWEVDLCBNQVBfUFJJVkFURXxNQVBfREVO
+WVdSSVRFLCAzLCAwKSA9IDB4N2YzODk5Y2RlMDAwCm1wcm90ZWN0KDB4N2YzODk5Y2UyMDAwLCAy
+MDkzMDU2LCBQUk9UX05PTkUpID0gMAptbWFwKDB4N2YzODk5ZWUxMDAwLCA0MDk2LCBQUk9UX1JF
+QUR8UFJPVF9XUklURSwgTUFQX1BSSVZBVEV8TUFQX0ZJWEVEfE1BUF9ERU5ZV1JJVEUsIDMsIDB4
+MzAwMCkgPSAweDdmMzg5OWVlMTAwMAptbWFwKDB4N2YzODk5ZWUyMDAwLCAxNiwgUFJPVF9SRUFE
+fFBST1RfV1JJVEUsIE1BUF9QUklWQVRFfE1BUF9GSVhFRHxNQVBfQU5PTllNT1VTLCAtMSwgMCkg
+PSAweDdmMzg5OWVlMjAwMApjbG9zZSgzKSAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+PSAwCm9wZW4oIi9saWI2NC9saWJibGtpZC5zby4xIiwgT19SRE9OTFl8T19DTE9FWEVDKSA9IDMK
+cmVhZCgzLCAiXDE3N0VMRlwyXDFcMVwwXDBcMFwwXDBcMFwwXDBcMFwzXDA+XDBcMVwwXDBcMGBc
+MjA2XDBcMFwwXDBcMFwwIi4uLiwgODMyKSA9IDgzMgpmc3RhdCgzLCB7c3RfbW9kZT1TX0lGUkVH
+fDA3NTUsIHN0X3NpemU9Mjc1NTIwLCAuLi59KSA9IDAKbW1hcChOVUxMLCAyMzY4NDQ4LCBQUk9U
+X1JFQUR8UFJPVF9FWEVDLCBNQVBfUFJJVkFURXxNQVBfREVOWVdSSVRFLCAzLCAwKSA9IDB4N2Yz
+ODk5YTliMDAwCm1wcm90ZWN0KDB4N2YzODk5YWQ4MDAwLCAyMDk3MTUyLCBQUk9UX05PTkUpID0g
+MAptbWFwKDB4N2YzODk5Y2Q4MDAwLCAyMDQ4MCwgUFJPVF9SRUFEfFBST1RfV1JJVEUsIE1BUF9Q
+UklWQVRFfE1BUF9GSVhFRHxNQVBfREVOWVdSSVRFLCAzLCAweDNkMDAwKSA9IDB4N2YzODk5Y2Q4
+MDAwCm1tYXAoMHg3ZjM4OTljZGQwMDAsIDk2MCwgUFJPVF9SRUFEfFBST1RfV1JJVEUsIE1BUF9Q
+UklWQVRFfE1BUF9GSVhFRHxNQVBfQU5PTllNT1VTLCAtMSwgMCkgPSAweDdmMzg5OWNkZDAwMApj
+bG9zZSgzKSAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgPSAwCm9wZW4oIi9saWI2NC9s
+aWJ6LnNvLjEiLCBPX1JET05MWXxPX0NMT0VYRUMpID0gMwpyZWFkKDMsICJcMTc3RUxGXDJcMVwx
+XDBcMFwwXDBcMFwwXDBcMFwwXDNcMD5cMFwxXDBcMFwwYCBcMFwwXDBcMFwwXDAiLi4uLCA4MzIp
+ID0gODMyCmZzdGF0KDMsIHtzdF9tb2RlPVNfSUZSRUd8MDc1NSwgc3Rfc2l6ZT04OTUyMCwgLi4u
+fSkgPSAwCm1tYXAoTlVMTCwgMjE4MzI3MiwgUFJPVF9SRUFEfFBST1RfRVhFQywgTUFQX1BSSVZB
+VEV8TUFQX0RFTllXUklURSwgMywgMCkgPSAweDdmMzg5OTg4NTAwMAptcHJvdGVjdCgweDdmMzg5
+OTg5YTAwMCwgMjA5MzA1NiwgUFJPVF9OT05FKSA9IDAKbW1hcCgweDdmMzg5OWE5OTAwMCwgODE5
+MiwgUFJPVF9SRUFEfFBST1RfV1JJVEUsIE1BUF9QUklWQVRFfE1BUF9GSVhFRHxNQVBfREVOWVdS
+SVRFLCAzLCAweDE0MDAwKSA9IDB4N2YzODk5YTk5MDAwCmNsb3NlKDMpICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICA9IDAKb3BlbigiL2xpYjY0L2xpYmx6bzIuc28uMiIsIE9fUkRPTkxZ
+fE9fQ0xPRVhFQykgPSAzCnJlYWQoMywgIlwxNzdFTEZcMlwxXDFcMFwwXDBcMFwwXDBcMFwwXDBc
+M1wwPlwwXDFcMFwwXDBAJVwwXDBcMFwwXDBcMCIuLi4sIDgzMikgPSA4MzIKZnN0YXQoMywge3N0
+X21vZGU9U19JRlJFR3wwNzU1LCBzdF9zaXplPTE0MjMxMiwgLi4ufSkgPSAwCm1tYXAoTlVMTCwg
+MjIzNjQyNCwgUFJPVF9SRUFEfFBST1RfRVhFQywgTUFQX1BSSVZBVEV8TUFQX0RFTllXUklURSwg
+MywgMCkgPSAweDdmMzg5OTY2MjAwMAptcHJvdGVjdCgweDdmMzg5OTY4NDAwMCwgMjA5MzA1Niwg
+UFJPVF9OT05FKSA9IDAKbW1hcCgweDdmMzg5OTg4MzAwMCwgNDA5NiwgUFJPVF9SRUFEfFBST1Rf
+V1JJVEUsIE1BUF9QUklWQVRFfE1BUF9GSVhFRHxNQVBfREVOWVdSSVRFLCAzLCAweDIxMDAwKSA9
+IDB4N2YzODk5ODgzMDAwCm1tYXAoMHg3ZjM4OTk4ODQwMDAsIDgsIFBST1RfUkVBRHxQUk9UX1dS
+SVRFLCBNQVBfUFJJVkFURXxNQVBfRklYRUR8TUFQX0FOT05ZTU9VUywgLTEsIDApID0gMHg3ZjM4
+OTk4ODQwMDAKY2xvc2UoMykgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgID0gMApvcGVu
+KCIvbGliNjQvbGlicHRocmVhZC5zby4wIiwgT19SRE9OTFl8T19DTE9FWEVDKSA9IDMKcmVhZCgz
+LCAiXDE3N0VMRlwyXDFcMVwwXDBcMFwwXDBcMFwwXDBcMFwzXDA+XDBcMVwwXDBcMFwyNDBgXDBc
+MFwwXDBcMFwwIi4uLiwgODMyKSA9IDgzMgpmc3RhdCgzLCB7c3RfbW9kZT1TX0lGUkVHfDA3NTUs
+IHN0X3NpemU9MTUxMTEyLCAuLi59KSA9IDAKbW1hcChOVUxMLCAyMjE3MDAwLCBQUk9UX1JFQUR8
+UFJPVF9FWEVDLCBNQVBfUFJJVkFURXxNQVBfREVOWVdSSVRFLCAzLCAwKSA9IDB4N2YzODk5NDQ0
+MDAwCm1wcm90ZWN0KDB4N2YzODk5NDVjMDAwLCAyMDk3MTUyLCBQUk9UX05PTkUpID0gMAptbWFw
+KDB4N2YzODk5NjVjMDAwLCA4MTkyLCBQUk9UX1JFQUR8UFJPVF9XUklURSwgTUFQX1BSSVZBVEV8
+TUFQX0ZJWEVEfE1BUF9ERU5ZV1JJVEUsIDMsIDB4MTgwMDApID0gMHg3ZjM4OTk2NWMwMDAKbW1h
+cCgweDdmMzg5OTY1ZTAwMCwgMTMzNTIsIFBST1RfUkVBRHxQUk9UX1dSSVRFLCBNQVBfUFJJVkFU
+RXxNQVBfRklYRUR8TUFQX0FOT05ZTU9VUywgLTEsIDApID0gMHg3ZjM4OTk2NWUwMDAKY2xvc2Uo
+MykgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgID0gMApvcGVuKCIvbGliNjQvbGliYy5z
+by42IiwgT19SRE9OTFl8T19DTE9FWEVDKSA9IDMKcmVhZCgzLCAiXDE3N0VMRlwyXDFcMVwzXDBc
+MFwwXDBcMFwwXDBcMFwzXDA+XDBcMVwwXDBcMCBcNVwyXDBcMFwwXDBcMCIuLi4sIDgzMikgPSA4
+MzIKZnN0YXQoMywge3N0X21vZGU9U19JRlJFR3wwNzU1LCBzdF9zaXplPTIxMTU4MzIsIC4uLn0p
+ID0gMAptbWFwKE5VTEwsIDgxOTIsIFBST1RfUkVBRHxQUk9UX1dSSVRFLCBNQVBfUFJJVkFURXxN
+QVBfQU5PTllNT1VTLCAtMSwgMCkgPSAweDdmMzg5YTBlYjAwMAptbWFwKE5VTEwsIDM5NTUwNDAs
+IFBST1RfUkVBRHxQUk9UX0VYRUMsIE1BUF9QUklWQVRFfE1BUF9ERU5ZV1JJVEUsIDMsIDApID0g
+MHg3ZjM4OTkwN2UwMDAKbXByb3RlY3QoMHg3ZjM4OTkyM2IwMDAsIDIwOTMwNTYsIFBST1RfTk9O
+RSkgPSAwCm1tYXAoMHg3ZjM4OTk0M2EwMDAsIDI0NTc2LCBQUk9UX1JFQUR8UFJPVF9XUklURSwg
+TUFQX1BSSVZBVEV8TUFQX0ZJWEVEfE1BUF9ERU5ZV1JJVEUsIDMsIDB4MWJjMDAwKSA9IDB4N2Yz
+ODk5NDNhMDAwCm1tYXAoMHg3ZjM4OTk0NDAwMDAsIDE0Njg4LCBQUk9UX1JFQUR8UFJPVF9XUklU
+RSwgTUFQX1BSSVZBVEV8TUFQX0ZJWEVEfE1BUF9BTk9OWU1PVVMsIC0xLCAwKSA9IDB4N2YzODk5
+NDQwMDAwCmNsb3NlKDMpICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA9IDAKbW1hcChO
+VUxMLCAxMjI4OCwgUFJPVF9SRUFEfFBST1RfV1JJVEUsIE1BUF9QUklWQVRFfE1BUF9BTk9OWU1P
+VVMsIC0xLCAwKSA9IDB4N2YzODlhMGU4MDAwCmFyY2hfcHJjdGwoQVJDSF9TRVRfRlMsIDB4N2Yz
+ODlhMGU4OGMwKSA9IDAKbXByb3RlY3QoMHg3ZjM4OTk0M2EwMDAsIDE2Mzg0LCBQUk9UX1JFQUQp
+ID0gMAptcHJvdGVjdCgweDdmMzg5OTY1YzAwMCwgNDA5NiwgUFJPVF9SRUFEKSA9IDAKbXByb3Rl
+Y3QoMHg3ZjM4OTk4ODMwMDAsIDQwOTYsIFBST1RfUkVBRCkgPSAwCm1wcm90ZWN0KDB4N2YzODk5
+YTk5MDAwLCA0MDk2LCBQUk9UX1JFQUQpID0gMAptcHJvdGVjdCgweDdmMzg5OWVlMTAwMCwgNDA5
+NiwgUFJPVF9SRUFEKSA9IDAKbXByb3RlY3QoMHg3ZjM4OTljZDgwMDAsIDE2Mzg0LCBQUk9UX1JF
+QUQpID0gMAptcHJvdGVjdCgweDU1NzFjZmFiNDAwMCwgODE5MiwgUFJPVF9SRUFEKSA9IDAKbXBy
+b3RlY3QoMHg3ZjM4OWExMDgwMDAsIDQwOTYsIFBST1RfUkVBRCkgPSAwCm11bm1hcCgweDdmMzg5
+YTBlZDAwMCwgOTkwMzgpICAgICAgICAgICA9IDAKc2V0X3RpZF9hZGRyZXNzKDB4N2YzODlhMGU4
+YjkwKSAgICAgICAgID0gMzk1MgpzZXRfcm9idXN0X2xpc3QoMHg3ZjM4OWEwZThiYTAsIDI0KSAg
+ICAgPSAwCnJ0X3NpZ2FjdGlvbihTSUdSVE1JTiwgezB4N2YzODk5NDQ5YjQwLCBbXSwgU0FfUkVT
+VE9SRVJ8U0FfU0lHSU5GTywgMHg3ZjM4OTk0NTU1YzB9LCBOVUxMLCA4KSA9IDAKcnRfc2lnYWN0
+aW9uKFNJR1JUXzEsIHsweDdmMzg5OTQ0OWJkMCwgW10sIFNBX1JFU1RPUkVSfFNBX1JFU1RBUlR8
+U0FfU0lHSU5GTywgMHg3ZjM4OTk0NTU1YzB9LCBOVUxMLCA4KSA9IDAKcnRfc2lncHJvY21hc2so
+U0lHX1VOQkxPQ0ssIFtSVE1JTiBSVF8xXSwgTlVMTCwgOCkgPSAwCmdldHJsaW1pdChSTElNSVRf
+U1RBQ0ssIHtybGltX2N1cj04MTkyKjEwMjQsIHJsaW1fbWF4PVJMSU02NF9JTkZJTklUWX0pID0g
+MApzdGF0KCIvZGV2L21hcHBlci92Zy10ZXN0MiIsIHtzdF9tb2RlPVNfSUZCTEt8MDY2MCwgc3Rf
+cmRldj1tYWtlZGV2KDI1MywgNyksIC4uLn0pID0gMApvcGVuKCIvZGV2L21hcHBlci92Zy10ZXN0
+MiIsIE9fUkRPTkxZKSAgPSAzCmZhZHZpc2U2NCgzLCAwLCAwLCBQT1NJWF9GQURWX0RPTlRORUVE
+KSA9IDAKYnJrKE5VTEwpICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgID0gMHg1NTcxZDAx
+ZjcwMDAKYnJrKDB4NTU3MWQwMjE4MDAwKSAgICAgICAgICAgICAgICAgICAgID0gMHg1NTcxZDAy
+MTgwMDAKYnJrKE5VTEwpICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgID0gMHg1NTcxZDAy
+MTgwMDAKbHNlZWsoMywgMCwgU0VFS19FTkQpICAgICAgICAgICAgICAgICAgID0gMjY4NDM1NDU2
+MDAwCmxzZWVrKDMsIDAsIFNFRUtfU0VUKSAgICAgICAgICAgICAgICAgICA9IDAKcHJlYWQ2NCgz
+LCAiXDIzMWRcNFwyNDRcMFwwXDBcMFwwXDBcMFwwXDBcMFwwXDBcMFwwXDBcMFwwXDBcMFwwXDBc
+MFwwXDBcMFwwXDBcMCIuLi4sIDQwOTYsIDY1NTM2KSA9IDQwOTYKb3BlbigiL2Rldi9tYXBwZXIv
+dmctdGVzdDIiLCBPX1JET05MWSkgID0gNApmYWR2aXNlNjQoNCwgMCwgMCwgUE9TSVhfRkFEVl9E
+T05UTkVFRCkgPSAwCnByZWFkNjQoMywgIlwyMzFkXDRcMjQ0XDBcMFwwXDBcMFwwXDBcMFwwXDBc
+MFwwXDBcMFwwXDBcMFwwXDBcMFwwXDBcMFwwXDBcMFwwXDAiLi4uLCA0MDk2LCA2NTUzNikgPSA0
+MDk2CnByZWFkNjQoNCwgInMrXDI2MHRcMFwwXDBcMFwwXDBcMFwwXDBcMFwwXDBcMFwwXDBcMFww
+XDBcMFwwXDBcMFwwXDBcMFwwXDBcMCIuLi4sIDE2Mzg0LCAxNDc0NTYpID0gMTYzODQKcHJlYWQ2
+NCg0LCAiXDMzNVgvKlwwXDBcMFwwXDBcMFwwXDBcMFwwXDBcMFwwXDBcMFwwXDBcMFwwXDBcMFww
+XDBcMFwwXDBcMFwwIi4uLiwgMTYzODQsIDIxMTUxNzQ0KSA9IDE2Mzg0CnByZWFkNjQoNCwgIidc
+MzUzbVwxNlwwXDBcMFwwXDBcMFwwXDBcMFwwXDBcMFwwXDBcMFwwXDBcMFwwXDBcMFwwXDBcMFww
+XDBcMFwwIi4uLiwgMTYzODQsIDIxMTY4MTI4KSA9IDE2Mzg0CnByZWFkNjQoNCwgIj4lXDIzNDhc
+MFwwXDBcMFwwXDBcMFwwXDBcMFwwXDBcMFwwXDBcMFwwXDBcMFwwXDBcMFwwXDBcMFwwXDBcMCIu
+Li4sIDE2Mzg0LCAyMTEzNTM2MCkgPSAxNjM4NApwcmVhZDY0KDQsICJcMjQwe1wyMjdcMzY2XDBc
+MFwwXDBcMFwwXDBcMFwwXDBcMFwwXDBcMFwwXDBcMFwwXDBcMFwwXDBcMFwwXDBcMFwwXDAiLi4u
+LCAxNjM4NCwgMjExODQ1MTIpID0gMTYzODQKcHJlYWQ2NCg0LCAiT1wyMjQsL1wwXDBcMFwwXDBc
+MFwwXDBcMFwwXDBcMFwwXDBcMFwwXDBcMFwwXDBcMFwwXDBcMFwwXDBcMFwwIi4uLiwgMTYzODQs
+IDIxMDA0Mjg4KSA9IDE2Mzg0CmNsb3NlKDMpICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICA9IDAKZnN0YXQoMSwge3N0X21vZGU9U19JRkNIUnwwNjIwLCBzdF9yZGV2PW1ha2VkZXYoMTM2
+LCAxKSwgLi4ufSkgPSAwCndyaXRlKDEsICJTdXBlcmJsb2NrIHRoaW5rcyB0aGUgZ2VuZXJhdGlv
+biIuLi4sIDM5U3VwZXJibG9jayB0aGlua3MgdGhlIGdlbmVyYXRpb24gaXMgMTAKKSA9IDM5Cndy
+aXRlKDEsICJTdXBlcmJsb2NrIHRoaW5rcyB0aGUgbGV2ZWwgaXMgMCIuLi4sIDMzU3VwZXJibG9j
+ayB0aGlua3MgdGhlIGxldmVsIGlzIDAKKSA9IDMzCl5DLS0tIFNJR0lOVCB7c2lfc2lnbm89U0lH
+SU5ULCBzaV9jb2RlPVNJX0tFUk5FTH0gLS0tCnN0cmFjZTogUHJvY2VzcyAzOTUyIGRldGFjaGVk
+Cltyb290QGYyNWggfl0jIAoK
+--94eb2c076c10f7599005436bcb44--

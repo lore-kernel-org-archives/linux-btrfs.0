@@ -1,87 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:12502 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751550AbcLNAxf (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Dec 2016 19:53:35 -0500
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
-        by cn.fujitsu.com (Postfix) with ESMTP id 64A6C4670486
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Dec 2016 08:52:47 +0800 (CST)
-Subject: Re: [PATCH 3/3] btrfs-progs: convert-test: trigger chunk allocation
- after convert
-To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-References: <20161213094415.30912-1-quwenruo@cn.fujitsu.com>
- <20161213094415.30912-4-quwenruo@cn.fujitsu.com>
- <3f0a48ad-9e38-1919-530c-537acf342b5a@jp.fujitsu.com>
-CC: <linux-btrfs@vger.kernel.org>
+Received: from cn.fujitsu.com ([222.73.24.84]:9722 "EHLO song.cn.fujitsu.com"
+        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+        id S932720AbcLMJon (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 13 Dec 2016 04:44:43 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <397f8ce3-428d-798f-f79e-f1d72476d760@cn.fujitsu.com>
-Date: Wed, 14 Dec 2016 08:52:46 +0800
+To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Cc: chandan@linux.vnet.ibm.com
+Subject: [PATCH 1/3] btrfs-progs: file-item: Fix wrong file extents inserted
+Date: Tue, 13 Dec 2016 17:44:13 +0800
+Message-Id: <20161213094415.30912-2-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20161213094415.30912-1-quwenruo@cn.fujitsu.com>
+References: <20161213094415.30912-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <3f0a48ad-9e38-1919-530c-537acf342b5a@jp.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+If we specify NO_HOLES incompat feature when converting, the result
+image still uses hole file extents.
+And further more, the hole is incorrect as its disk_num_bytes is not
+zero.
 
+The problem is at btrfs_insert_file_extent() which doesn't check if we
+are going to insert hole file extent.
 
-At 12/14/2016 07:51 AM, Tsutomu Itoh wrote:
-> On 2016/12/13 18:44, Qu Wenruo wrote:
->> Populate fs after convert so we can trigger data chunk allocation.
->> This can expose too restrict old rollback condition
->>
->> Reported-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
->> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
->> ---
->>  tests/common         | 4 ++++
->>  tests/common.convert | 3 +++
->>  2 files changed, 7 insertions(+)
->>
->> diff --git a/tests/common b/tests/common
->> index 571118a..4a1330f 100644
->> --- a/tests/common
->> +++ b/tests/common
->> @@ -486,6 +486,10 @@ generate_dataset() {
->>  				run_check $SUDO_HELPER ln -s "$dirpath/$long_filename" "$dirpath/slow_slink.$num"
->>  			done
->>  			;;
->> +		large)
->> +			run_check $SUDO_HELPER dd if=/dev/urandom bs=32M count=1 \
->> +			of="$dirpath/$dataset_type" bs=32M >/dev/null 2>&1
->> +			;;
->
-> Too many bs=.
->
-> Thanks,
-> Tsutomu
+Modify it to skip hole file extents to allow it follow restrict NO_HOLES
+flag.
 
-Oh, right.
+And since no_holes flag can be triggered on half-way, so current fsck
+won't report such error, as it consider it as old file holes.
 
-Thanks for pointing it out, I'll update it soon.
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ convert/main.c |  2 +-
+ file-item.c    | 11 +++++++++++
+ 2 files changed, 12 insertions(+), 1 deletion(-)
 
-Thanks,
-Qu
->
->>  	esac
->>  }
->>
->> diff --git a/tests/common.convert b/tests/common.convert
->> index a2d3152..8c9242e 100644
->> --- a/tests/common.convert
->> +++ b/tests/common.convert
->> @@ -160,6 +160,9 @@ convert_test_post_checks_all() {
->>  	convert_test_post_check_checksums "$1"
->>  	convert_test_post_check_permissions "$2"
->>  	convert_test_post_check_acl "$3"
->> +
->> +	# Create a large file to trigger data chunk allocation
->> +	generate_dataset "large"
->>  	run_check_umount_test_dev
->>  }
->>
->>
->
->
->
+diff --git a/convert/main.c b/convert/main.c
+index 4b4cea4..e6d8b3e 100644
+--- a/convert/main.c
++++ b/convert/main.c
+@@ -336,7 +336,7 @@ static int record_file_blocks(struct blk_iterate_data *data,
+ 		       key.offset > cur_off);
+ 		fi = btrfs_item_ptr(node, slot, struct btrfs_file_extent_item);
+ 		extent_disk_bytenr = btrfs_file_extent_disk_bytenr(node, fi);
+-		extent_num_bytes = btrfs_file_extent_disk_num_bytes(node, fi);
++		extent_num_bytes = btrfs_file_extent_num_bytes(node, fi);
+ 		BUG_ON(cur_off - key.offset >= extent_num_bytes);
+ 		btrfs_release_path(&path);
+ 
+diff --git a/file-item.c b/file-item.c
+index 67c0b4f..e462b4b 100644
+--- a/file-item.c
++++ b/file-item.c
+@@ -36,11 +36,22 @@ int btrfs_insert_file_extent(struct btrfs_trans_handle *trans,
+ 			     u64 disk_num_bytes, u64 num_bytes)
+ {
+ 	int ret = 0;
++	int is_hole = 0;
+ 	struct btrfs_file_extent_item *item;
+ 	struct btrfs_key file_key;
+ 	struct btrfs_path *path;
+ 	struct extent_buffer *leaf;
+ 
++	if (offset == 0)
++		is_hole = 1;
++	/* For NO_HOLES, we don't insert hole file extent */
++	if (btrfs_fs_incompat(root->fs_info, NO_HOLES) && is_hole)
++		return 0;
++
++	/* For hole, its disk_bytenr and disk_num_bytes must be 0 */
++	if (is_hole)
++		disk_num_bytes = 0;
++
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+ 		return -ENOMEM;
+-- 
+2.10.2
+
 
 

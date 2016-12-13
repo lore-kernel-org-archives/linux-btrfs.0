@@ -1,93 +1,142 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-001b2d01.pphosted.com ([148.163.156.1]:49764 "EHLO
-        mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S932312AbcLMM5I (ORCPT
+Received: from extserverfr1.prnet.org ([188.165.208.21]:42464 "EHLO
+        extserverfr1.prnet.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753382AbcLMRfb (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Dec 2016 07:57:08 -0500
-Received: from pps.filterd (m0098393.ppops.net [127.0.0.1])
-        by mx0a-001b2d01.pphosted.com (8.16.0.17/8.16.0.17) with SMTP id uBDCsJUb052724
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Dec 2016 07:57:07 -0500
-Received: from e23smtp08.au.ibm.com (e23smtp08.au.ibm.com [202.81.31.141])
-        by mx0a-001b2d01.pphosted.com with ESMTP id 27acdaqy3e-1
-        (version=TLSv1.2 cipher=AES256-SHA bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Dec 2016 07:57:06 -0500
-Received: from localhost
-        by e23smtp08.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-        for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-        Tue, 13 Dec 2016 22:57:04 +1000
-Received: from d23relay08.au.ibm.com (d23relay08.au.ibm.com [9.185.71.33])
-        by d23dlp02.au.ibm.com (Postfix) with ESMTP id 9D9662BB0055
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Dec 2016 23:57:02 +1100 (EST)
-Received: from d23av01.au.ibm.com (d23av01.au.ibm.com [9.190.234.96])
-        by d23relay08.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id uBDCv3vm54526150
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Dec 2016 23:57:03 +1100
-Received: from d23av01.au.ibm.com (localhost [127.0.0.1])
-        by d23av01.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id uBDCv2iR028409
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Dec 2016 23:57:02 +1100
-From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH 2/2] btrfs: qgroup: Fix qgroup reserved space underflow by only freeing reserved ranges
-Date: Tue, 13 Dec 2016 18:26:59 +0530
-In-Reply-To: <20161202020307.6025-2-quwenruo@cn.fujitsu.com>
-References: <20161202020307.6025-1-quwenruo@cn.fujitsu.com> <20161202020307.6025-2-quwenruo@cn.fujitsu.com>
+        Tue, 13 Dec 2016 12:35:31 -0500
+To: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+From: David Arendt <admin@prnet.org>
+Subject: page allocation stall in kernel 4.9 when copying files from one btrfs
+ hdd to another
+Message-ID: <bd1cf980-56cc-3212-8de0-b2cc1bf576cf@prnet.org>
+Date: Tue, 13 Dec 2016 18:11:01 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Message-Id: <16662538.OxiIrCRCJe@localhost.localdomain>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Friday, December 02, 2016 10:03:07 AM Qu Wenruo wrote:
-> [BUG]
-> For the following case, btrfs can underflow qgroup reserved space
-> at error path:
-> (Page size 4K, function name without "btrfs_" prefix)
-> 
->          Task A                  |             Task B
-> ----------------------------------------------------------------------
-> Buffered_write [0, 2K)           |
-> |- check_data_free_space()       |
-> |  |- qgroup_reserve_data()      |
-> |     Range aligned to page      |
-> |     range [0, 4K)          <<< |
-> |     4K bytes reserved      <<< |
-> |- copy pages to page cache      |
->                                  | Buffered_write [2K, 4K)
->                                  | |- check_data_free_space()
->                                  | |  |- qgroup_reserved_data()
->                                  | |     Range alinged to page
->                                  | |     range [0, 4K)
->                                  | |     Already reserved by A <<<
->                                  | |     0 bytes reserved      <<<
->                                  | |- delalloc_reserve_metadata()
->                                  | |  And it *FAILED* (Maybe EQUOTA)
->                                  | |- free_reserved_data_space()
->                                       |- qgroup_free_data()
->                                          Range aligned to page range
->                                          [0, 4K)
->                                          Freeing 4K
-> (Special thanks to Chandan for the detailed report and analyse)
-> 
-> [CAUSE]
-> Above Task B is freeing reserved data range [0, 4K) which is actually
-> reserved by Task A.
-> 
-> And at write back time, page dirty by Task A will go through writeback
-> routine, which will free 4K reserved data space at file extent insert
-> time, causing the qgroup underflow.
-> 
-> [FIX]
-> For btrfs_qgroup_free_data(), add @reserved parameter to only free
-> data ranges reserved by previous btrfs_qgroup_reserve_data().
-> So in above case, Task B will try to free 0 byte, so no underflow.
->
+Hi,
 
-The changes look good to me. Also, I did not notice any regressions when
-executing fstests with the patch applied.
+I receive the following page allocation stall while copying lots of
+large files from one btrfs hdd to another.
 
-Reviewed-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-Tested-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+Dec 13 13:04:29 server kernel: kworker/u16:8: page allocation stalls for
+12260ms, order:0, mode:0x2400840(GFP_NOFS|__GFP_NOFAIL)
+Dec 13 13:04:29 server kernel: CPU: 0 PID: 24959 Comm: kworker/u16:8
+Tainted: P           O    4.9.0 #1
+Dec 13 13:04:29 server kernel: Hardware name: ASUS All Series/H87M-PRO,
+BIOS 2102 10/28/2014
+Dec 13 13:04:29 server kernel: Workqueue: btrfs-extent-refs
+btrfs_extent_refs_helper
+Dec 13 13:04:29 server kernel:  0000000000000000 ffffffff813f3a59
+ffffffff81976b28 ffffc90011093750
+Dec 13 13:04:29 server kernel:  ffffffff81114fc1 02400840f39b6bc0
+ffffffff81976b28 ffffc900110936f8
+Dec 13 13:04:29 server kernel:  ffff880700000010 ffffc90011093760
+ffffc90011093710 0000000002400840
+Dec 13 13:04:29 server kernel: Call Trace:
+Dec 13 13:04:29 server kernel:  [<ffffffff813f3a59>] ? dump_stack+0x46/0x5d
+Dec 13 13:04:29 server kernel:  [<ffffffff81114fc1>] ?
+warn_alloc+0x111/0x130
+Dec 13 13:04:33 server kernel:  [<ffffffff81115c38>] ?
+__alloc_pages_nodemask+0xbe8/0xd30
+Dec 13 13:04:33 server kernel:  [<ffffffff8110de74>] ?
+pagecache_get_page+0xe4/0x230
+Dec 13 13:04:33 server kernel:  [<ffffffff81323a8b>] ?
+alloc_extent_buffer+0x10b/0x400
+Dec 13 13:04:33 server kernel:  [<ffffffff812ef8c5>] ?
+btrfs_alloc_tree_block+0x125/0x560
+Dec 13 13:04:33 server kernel:  [<ffffffff8132442f>] ?
+read_extent_buffer_pages+0x21f/0x280
+Dec 13 13:04:33 server kernel:  [<ffffffff812d81f1>] ?
+__btrfs_cow_block+0x141/0x580
+Dec 13 13:04:33 server kernel:  [<ffffffff812d87b0>] ?
+btrfs_cow_block+0x100/0x150
+Dec 13 13:04:33 server kernel:  [<ffffffff812dc1d9>] ?
+btrfs_search_slot+0x1e9/0x9c0
+Dec 13 13:04:33 server kernel:  [<ffffffff8131ead2>] ?
+__set_extent_bit+0x512/0x550
+Dec 13 13:04:33 server kernel:  [<ffffffff812e1ab5>] ?
+lookup_inline_extent_backref+0xf5/0x5e0
+Dec 13 13:04:34 server kernel:  [<ffffffff8131f0a4>] ?
+set_extent_bit+0x24/0x30
+Dec 13 13:04:34 server kernel:  [<ffffffff812e4334>] ?
+update_block_group.isra.34+0x114/0x380
+Dec 13 13:04:34 server kernel:  [<ffffffff812e4694>] ?
+__btrfs_free_extent.isra.35+0xf4/0xd20
+Dec 13 13:04:34 server kernel:  [<ffffffff8134d561>] ?
+btrfs_merge_delayed_refs+0x61/0x5d0
+Dec 13 13:04:34 server kernel:  [<ffffffff812e8bd2>] ?
+__btrfs_run_delayed_refs+0x902/0x10a0
+Dec 13 13:04:34 server kernel:  [<ffffffff812ec0f0>] ?
+btrfs_run_delayed_refs+0x90/0x2a0
+Dec 13 13:04:34 server kernel:  [<ffffffff812ec384>] ?
+delayed_ref_async_start+0x84/0xa0
+Dec 13 13:04:34 server kernel:  [<ffffffff8109c16d>] ?
+process_one_work+0x11d/0x3b0
+Dec 13 13:04:34 server kernel:  [<ffffffff8109c442>] ?
+worker_thread+0x42/0x4b0
+Dec 13 13:04:34 server kernel:  [<ffffffff8109c400>] ?
+process_one_work+0x3b0/0x3b0
+Dec 13 13:04:34 server kernel:  [<ffffffff8109c400>] ?
+process_one_work+0x3b0/0x3b0
+Dec 13 13:04:34 server kernel:  [<ffffffff8108ba5e>] ?
+do_group_exit+0x2e/0xa0
+Dec 13 13:04:34 server kernel:  [<ffffffff810a12d9>] ? kthread+0xb9/0xd0
+Dec 13 13:04:34 server kernel:  [<ffffffff810a1220>] ?
+kthread_park+0x50/0x50
+Dec 13 13:04:34 server kernel:  [<ffffffff81798cd2>] ?
+ret_from_fork+0x22/0x30
+Dec 13 13:04:34 server kernel: Mem-Info:
+Dec 13 13:04:34 server kernel: active_anon:20 inactive_anon:34
+isolated_anon:0\x0a active_file:7370032 inactive_file:450105
+isolated_file:320\x0a unevictable:0 dirty:522748 writeback:189
+unstable:0\x0a slab_reclaimable:178255 slab_unreclaimable:124617\x0a
+mapped:4236 shmem:0 pagetables:1163 bounce:0\x0a free:38224 free_pcp:241
+free_cma:0
+Dec 13 13:04:34 server kernel: Node 0 active_anon:80kB
+inactive_anon:136kB active_file:29480128kB inactive_file:1800420kB
+unevictable:0kB isolated(anon):0kB isolated(file):1280kB mapped:16944kB
+dirty:2090992kB writeback:756kB shmem:0kB writeback_tmp:0kB unstable:0kB
+pages_scanned:258821 all_unreclaimable? no
+Dec 13 13:04:34 server kernel: DMA free:15868kB min:8kB low:20kB
+high:32kB active_anon:0kB inactive_anon:0kB active_file:0kB
+inactive_file:0kB unevictable:0kB writepending:0kB present:15976kB
+managed:15892kB mlocked:0kB slab_reclaimable:0kB slab_unreclaimable:24kB
+kernel_stack:0kB pagetables:0kB bounce:0kB free_pcp:0kB local_pcp:0kB
+free_cma:0kB
+Dec 13 13:04:34 server kernel: lowmem_reserve[]: 0 3428 32019 32019
+Dec 13 13:04:34 server kernel: DMA32 free:116800kB min:2448kB low:5956kB
+high:9464kB active_anon:0kB inactive_anon:0kB active_file:3087928kB
+inactive_file:191336kB unevictable:0kB writepending:221828kB
+present:3590832kB managed:3513936kB mlocked:0kB slab_reclaimable:93252kB
+slab_unreclaimable:20520kB kernel_stack:48kB pagetables:212kB bounce:0kB
+free_pcp:4kB local_pcp:0kB free_cma:0kB
+Dec 13 13:04:34 server kernel: lowmem_reserve[]: 0 0 0 0
+Dec 13 13:04:34 server kernel: DMA: 1*4kB (U) 1*8kB (U) 1*16kB (U)
+1*32kB (U) 1*64kB (U) 1*128kB (U) 1*256kB (U) 0*512kB 1*1024kB (U)
+1*2048kB (M) 3*4096kB (M) = 15868kB
+Dec 13 13:04:34 server kernel: DMA32: 940*4kB (UME) 4006*8kB (UME)
+3308*16kB (UME) 791*32kB (UME) 41*64kB (UE) 1*128kB (U) 0*256kB 0*512kB
+0*1024kB 0*2048kB 0*4096kB = 116800kB
+Dec 13 13:04:34 server kernel: Normal: 75*4kB (E) 192*8kB (UE) 94*16kB
+(UME) 57*32kB (U) 33*64kB (UM) 16*128kB (UM) 10*256kB (UM) 4*512kB (U)
+0*1024kB 1*2048kB (U) 1*4096kB (U) = 20076kB
+Dec 13 13:04:34 server kernel: Node 0 hugepages_total=0 hugepages_free=0
+hugepages_surp=0 hugepages_size=2048kB
+Dec 13 13:04:34 server kernel: 7820441 total pagecache pages
+Dec 13 13:04:34 server kernel: 69 pages in swap cache
+Dec 13 13:04:34 server kernel: Swap cache stats: add 60282, delete
+60213, find 249865/258319
+Dec 13 13:04:34 server kernel: Free swap  = 62482976kB
+Dec 13 13:04:34 server kernel: Total swap = 62522692kB
+Dec 13 13:04:34 server kernel: 8364614 pages RAM
+Dec 13 13:04:34 server kernel: 0 pages HighMem/MovableOnly
+Dec 13 13:04:34 server kernel: 162971 pages reserved
 
--- 
-chandan
+Has anyone any idea what could go wrong here ?
+
+Thanks in advance,
+
+David Arendt
 

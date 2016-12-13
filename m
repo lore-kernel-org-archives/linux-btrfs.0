@@ -1,29 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39439 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:52958 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932720AbcLSR5e (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Dec 2016 12:57:34 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 35641AC74
-        for <linux-btrfs@vger.kernel.org>; Mon, 19 Dec 2016 17:57:33 +0000 (UTC)
-Date: Mon, 19 Dec 2016 18:57:18 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Jeff Mahoney <jeffm@suse.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: drop unused extent_op arg from
+        id S1753280AbcLMTkJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 13 Dec 2016 14:40:09 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 66BE6AAC8
+        for <linux-btrfs@vger.kernel.org>; Tue, 13 Dec 2016 19:39:36 +0000 (UTC)
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: Jeff Mahoney <jeffm@suse.com>
+Subject: [PATCH] btrfs: drop unused extent_op arg from
  btrfs_add_delayed_data_ref
-Message-ID: <20161219175718.GG3620@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1d914e77-1f5e-47ec-1858-50f0a4dc9023@suse.com>
+Message-ID: <1d914e77-1f5e-47ec-1858-50f0a4dc9023@suse.com>
+Date: Tue, 13 Dec 2016 14:39:34 -0500
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1d914e77-1f5e-47ec-1858-50f0a4dc9023@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 13, 2016 at 02:39:34PM -0500, Jeff Mahoney wrote:
-> btrfs_add_delayed_data_ref is always called with a NULL extent_op,
-> so let's drop the argument.
-> 
-> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
+btrfs_add_delayed_data_ref is always called with a NULL extent_op,
+so let's drop the argument.
+
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ fs/btrfs/delayed-ref.c | 6 ++----
+ fs/btrfs/delayed-ref.h | 3 +--
+ fs/btrfs/extent-tree.c | 7 +++----
+ 3 files changed, 6 insertions(+), 10 deletions(-)
+
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index 8d93854..299fb2e 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -811,15 +811,13 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+ 			       struct btrfs_trans_handle *trans,
+ 			       u64 bytenr, u64 num_bytes,
+ 			       u64 parent, u64 ref_root,
+-			       u64 owner, u64 offset, u64 reserved, int action,
+-			       struct btrfs_delayed_extent_op *extent_op)
++			       u64 owner, u64 offset, u64 reserved, int action)
+ {
+ 	struct btrfs_delayed_data_ref *ref;
+ 	struct btrfs_delayed_ref_head *head_ref;
+ 	struct btrfs_delayed_ref_root *delayed_refs;
+ 	struct btrfs_qgroup_extent_record *record = NULL;
+ 
+-	BUG_ON(extent_op && !extent_op->is_data);
+ 	ref = kmem_cache_alloc(btrfs_delayed_data_ref_cachep, GFP_NOFS);
+ 	if (!ref)
+ 		return -ENOMEM;
+@@ -841,7 +839,7 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+ 		}
+ 	}
+ 
+-	head_ref->extent_op = extent_op;
++	head_ref->extent_op = NULL;
+ 
+ 	delayed_refs = &trans->transaction->delayed_refs;
+ 	spin_lock(&delayed_refs->lock);
+diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+index 43f3629..a4be1cc 100644
+--- a/fs/btrfs/delayed-ref.h
++++ b/fs/btrfs/delayed-ref.h
+@@ -248,8 +248,7 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+ 			       struct btrfs_trans_handle *trans,
+ 			       u64 bytenr, u64 num_bytes,
+ 			       u64 parent, u64 ref_root,
+-			       u64 owner, u64 offset, u64 reserved, int action,
+-			       struct btrfs_delayed_extent_op *extent_op);
++			       u64 owner, u64 offset, u64 reserved, int action);
+ int btrfs_add_delayed_extent_op(struct btrfs_fs_info *fs_info,
+ 				struct btrfs_trans_handle *trans,
+ 				u64 bytenr, u64 num_bytes,
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 73a8d31..4471632 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2099,7 +2099,7 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+ 		ret = btrfs_add_delayed_data_ref(fs_info, trans, bytenr,
+ 					num_bytes, parent, root_objectid,
+ 					owner, offset, 0,
+-					BTRFS_ADD_DELAYED_REF, NULL);
++					BTRFS_ADD_DELAYED_REF);
+ 	}
+ 	return ret;
+ }
+@@ -7255,7 +7255,7 @@ int btrfs_free_extent(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 						num_bytes,
+ 						parent, root_objectid, owner,
+ 						offset, 0,
+-						BTRFS_DROP_DELAYED_REF, NULL);
++						BTRFS_DROP_DELAYED_REF);
+ 	}
+ 	return ret;
+ }
+@@ -8205,8 +8205,7 @@ int btrfs_alloc_reserved_file_extent(struct btrfs_trans_handle *trans,
+ 	ret = btrfs_add_delayed_data_ref(root->fs_info, trans, ins->objectid,
+ 					 ins->offset, 0,
+ 					 root_objectid, owner, offset,
+-					 ram_bytes, BTRFS_ADD_DELAYED_EXTENT,
+-					 NULL);
++					 ram_bytes, BTRFS_ADD_DELAYED_EXTENT); 
+ 	return ret;
+ }
+ 
+
+
+-- 
+Jeff Mahoney
+SUSE Labs

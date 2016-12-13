@@ -1,48 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52429 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933857AbcLMTdh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Dec 2016 14:33:37 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id A9184AAB9
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Dec 2016 19:33:35 +0000 (UTC)
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-From: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH] btrfs: fix error handling when run_delayed_extent_op fails
-Message-ID: <cbbf1064-dc95-b1e2-94d9-b3b2879913d8@suse.com>
-Date: Tue, 13 Dec 2016 14:33:33 -0500
+Received: from cn.fujitsu.com ([222.73.24.84]:9722 "EHLO song.cn.fujitsu.com"
+        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+        id S932645AbcLMJog (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 13 Dec 2016 04:44:36 -0500
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Cc: chandan@linux.vnet.ibm.com
+Subject: [PATCH 0/3] Convert rollback rework and test enhancement
+Date: Tue, 13 Dec 2016 17:44:12 +0800
+Message-Id: <20161213094415.30912-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In __btrfs_run_delayed_refs, the error path when run_delayed_extent_op
-fails sets locked_ref->processing = 0 but doesn't re-increment
-delayed_refs->num_heads_ready.  As a result, we can end up triggering
-the WARN_ON in btrfs_select_ref_head since the head remains in the tree
-with ->processing = 0 and the ready count is off.
+Current convert rollback condition is too restrict for new convert
+behavior, and has several problems.
 
-Fixes: d7df2c796d7 (Btrfs: attach delayed ref updates to delayed ref heads)
-Reported-by: Jon Nelson <jnelson-suse@jamponi.net>
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
----
- fs/btrfs/extent-tree.c | 1 +
- 1 file changed, 1 insertion(+)
+1) Can't rollback new convert image with new data chunk
+Chunk level check can't handle newly allocated data chunk, which is not
+1:1 mapped but completely valid in new behavior.
+The last patch will enhance the test case to handle it.
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 4607af3..73a8d31 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2588,6 +2588,7 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
- 					if (must_insert_reserved)
- 						locked_ref->must_insert_reserved = 1;
- 					locked_ref->processing = 0;
-+					delayed_refs->num_heads_ready++;
- 					btrfs_debug(fs_info,
- 						    "run_delayed_extent_op returned %d",
- 						    ret);
+2) Can't rollback real no-hole image
+Since it assumes hole file extent as requirement.
+And due to the possibility to enable no_holes halfway, btrfsck won't
+report such error, since it's acceptable.
 
+3) Too complex logical, and RW btrfs tree operations
+In fact, considering how small data we need to rewrite (1M + 128K), we
+don't really need to open btrfs read-write.
+Just copy needed data and re-fill. Simple and easy.
+
+Thanks Chandan, his report on failure of rollback leads to this rework.
+
+Qu Wenruo (3):
+  btrfs-progs: file-item: Fix wrong file extents inserted
+  btrfs-progs: convert: Rework rollback to handle new convert image
+  btrfs-progs: convert-test: trigger chunk allocation after convert
+
+ convert/main.c       | 693 ++++++++++++++++++++-------------------------------
+ file-item.c          |  11 +
+ tests/common         |   4 +
+ tests/common.convert |   3 +
+ 4 files changed, 285 insertions(+), 426 deletions(-)
 
 -- 
-Jeff Mahoney
-SUSE Labs
+2.10.2
+
+
+

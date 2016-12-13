@@ -1,52 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:36334 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:35646 "EHLO
         aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752679AbcLMUX6 (ORCPT
+        with ESMTP id S1751256AbcLMXvP (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Dec 2016 15:23:58 -0500
+        Tue, 13 Dec 2016 18:51:15 -0500
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>, Josef Bacik <jbacik@fb.com>
-Subject: [PATCH] Btrfs: fix comment in btrfs_page_mkwrite
-Date: Tue, 13 Dec 2016 12:31:35 -0800
-Message-Id: <1481661095-11608-1-git-send-email-bo.li.liu@oracle.com>
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH v2] Btrfs: use down_read_nested to make lockdep silent
+Date: Tue, 13 Dec 2016 15:58:40 -0800
+Message-Id: <1481673520-30560-1-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1480628659-17731-1-git-send-email-bo.li.liu@oracle.com>
+References: <1480628659-17731-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The comment about "page_mkwrite gets called every time the page is dirtied" in
-btrfs_page_mkwrite is not correct, it only gets called the first time the page
-gets dirtied after the page faults in.
-
-However, we don't need to touch the code because it works well, although the
-proper logic is to check if delalloc bits has been set and if so, go free
-reserved space, if not, set the delalloc bits for dirty page range.
+If @block_group is not @used_bg, it'll try to get @used_bg's lock without
+droping @block_group 's lock and lockdep has throwed a scary deadlock warning
+about it.
+Fix it by using down_read_nested.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/inode.c | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+v2: Use 'SINGLE_DEPTH_NESTING' to avoid magic number.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 8e3a5a2..0bec9cc 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -9063,11 +9063,11 @@ int btrfs_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
- 	}
+ fs/btrfs/extent-tree.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 4607af3..68e9d25 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -7397,7 +7397,8 @@ btrfs_lock_cluster(struct btrfs_block_group_cache *block_group,
  
- 	/*
--	 * XXX - page_mkwrite gets called every time the page is dirtied, even
--	 * if it was already dirty, so for space accounting reasons we need to
--	 * clear any delalloc bits for the range we are fixing to save.  There
--	 * is probably a better way to do this, but for now keep consistent with
--	 * prepare_pages in the normal write path.
-+	 * page_mkwrite gets called when the page is firstly dirtied after it's
-+	 * faulted in, but write(2) could also dirty a page and set delalloc
-+	 * bits, thus in this case for space account reason, we still need to
-+	 * clear any delalloc bits within this page range since we have to
-+	 * reserve data&meta space before lock_page() (see above comments).
- 	 */
- 	clear_extent_bit(&BTRFS_I(inode)->io_tree, page_start, end,
- 			  EXTENT_DIRTY | EXTENT_DELALLOC |
+ 		spin_unlock(&cluster->refill_lock);
+ 
+-		down_read(&used_bg->data_rwsem);
++		/* We should only have one-level nested. */
++		down_read_nested(&used_bg->data_rwsem, SINGLE_DEPTH_NESTING);
+ 
+ 		spin_lock(&cluster->refill_lock);
+ 		if (used_bg == cluster->block_group)
 -- 
 2.5.5
 

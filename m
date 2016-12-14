@@ -1,84 +1,143 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f172.google.com ([209.85.216.172]:34864 "EHLO
-        mail-qt0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S941150AbcLVOmI (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Dec 2016 09:42:08 -0500
-Received: by mail-qt0-f172.google.com with SMTP id c47so236312183qtc.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Dec 2016 06:42:07 -0800 (PST)
-Message-ID: <1482417724.3924.39.camel@redhat.com>
-Subject: Re: [RFC PATCH v1 00/30] fs: inode->i_version rework and
- optimization
-From: Jeff Layton <jlayton@redhat.com>
-To: Christoph Hellwig <hch@infradead.org>
-Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-nfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org
-Date: Thu, 22 Dec 2016 09:42:04 -0500
-In-Reply-To: <20161222084549.GA8833@infradead.org>
-References: <1482339827-7882-1-git-send-email-jlayton@redhat.com>
-         <20161222084549.GA8833@infradead.org>
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+Received: from mx2.suse.de ([195.135.220.15]:51466 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1755004AbcLNOmp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 14 Dec 2016 09:42:45 -0500
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: clm@fb.com
+Subject: Btrfs progs pre-release 4.9-rc1
+Date: Wed, 14 Dec 2016 15:42:24 +0100
+Message-Id: <20161214144224.17846-1-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2016-12-22 at 00:45 -0800, Christoph Hellwig wrote:
-> On Wed, Dec 21, 2016 at 12:03:17PM -0500, Jeff Layton wrote:
-> > 
-> > Only btrfs, ext4, and xfs implement it for data changes. Because of
-> > this, these filesystems must log the inode to disk whenever the
-> > i_version counter changes. That has a non-zero performance impact,
-> > especially on write-heavy workloads, because we end up dirtying the
-> > inode metadata on every write, not just when the times change. [1]
-> 
-> Do you have numbers to justify these changes?
+Hi,
 
-I have numbers. As to whether they justify the changes, I'm not sure.
-This helps a lot on a (admittedly nonsensical) 1-byte write workload. On
-XFS, with this fio jobfile:
+a pre-release has been tagged. Contains almost the entire devel branch from
+today. There are small fixes, the lowmem mode of check gets more updates but
+still does not work in the --repair mode and is considered experimental.
 
---------------------8<------------------
-[global]
-direct=0
-size=2g
-filesize=512m
-bsrange=1-1
-timeout=60
-numjobs=1
-directory=/mnt/scratch
+ETA for 4.9 is in +6 days (2016-12-20).
 
-[f1]
-filename=randwrite
-rw=randwrite
---------------------8<------------------
+Minor fixes, docs improvements or more testcases will be still considered for
+4.9 release.
 
-Unpatched kernel:
-  WRITE: io=7707KB, aggrb=128KB/s, minb=128KB/s, maxb=128KB/s, mint=60000msec, maxt=60000msec
+Changes:
+  * check: many lowmem mode updates
+  * send: use splice syscall to copy buffer from kernel
+  * receive: new option to dump the stream in textual form
+  * convert:
+    * move sources to own directory
+    * prevent accounting of blocks beyond end of the device
+    * make it work with 64k sectorsize
+  * mkfs: move sources to own directory
+  * defrag: warns if directory used without -r
+  * dev stats:
+    * new option to check stats for non-zero values
+    * add long option for -z
+  * library: version bump to 0.1.2, added subvol_uuid_search2
+  * other:
+    * cleanups
+    * docs updates
 
-Patched kernel:
-  WRITE: io=12701KB, aggrb=211KB/s, minb=211KB/s, maxb=211KB/s, mint=60000msec, maxt=60000msec
+Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
+Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
 
-So quite a difference there and it's pretty consistent across runs. If I
-change the jobfile to have "direct=1" and "bsrange=4k-4k", then any
-variation between the two doesn't seem to be significant (numbers vary
-as much between runs on the same kernels and are roughly the same).
+Shortlog:
 
-Playing with buffered I/O sizes between 1 byte and 4k shows that as the
-I/O sizes get larger, this makes less difference (which is what I'd
-expect).
+Adam Borowski (1):
+      btrfs-progs: man mkfs: warn about RAID5/6 being experimental
 
-Previous testing with ext4 shows roughly the same results. btrfs shows
-some benefit here but significantly less than with ext4 or xfs. Not sure
-why that is yet -- maybe CoW effects?
+Anand Jain (1):
+      btrfs-progs: recursive defrag cleanup duplicate code
 
-That said, I don't have a great test rig for this. I'm using VMs with a
-dedicated LVM volume that's on a random SSD I had laying around. It
-could use testing on a wider set of configurations and workloads.
+Austin S. Hemmelgarn (1):
+      btrfs-progs: dev stats: add dev stats returncode option
 
-I was also hoping that others may have workloads that they think might
-be (postively or negatively) affected by these changes. If you can think
-of any in particular, then I'm interested to hear about them.
+Chandan Rajendra (3):
+      btrfs-progs: Use helper function to access btrfs_super_block->sys_chunk_array_size
+      btrfs-progs: convert: Prevent accounting blocks beyond end of device
+      btrfs-progs: convert: Fix migrate_super_block() to work with 64k sectorsize
 
--- 
-Jeff Layton <jlayton@redhat.com>
+David Sterba (35):
+      btrfs-progs: remove extra newline from messages
+      btrfs-progs: use symbolic name for first inode number when searching
+      btrfs-progs: send: use splice syscall instead of read/write to transfer buffer
+      btrfs-progs: send: rename thread callback to read data from kernel
+      btrfs-progs: make incompat bit wrappers more compact
+      btrfs-progs: receive: rename receive context variable
+      btrfs-progs: check: use on-stack path buffer in check_fs_first_inode
+      btrfs-progs: check: use on-stack path buffer in check_fs_root_v2
+      btrfs-progs: check: use on-stack path buffer in check_fs_roots_v2
+      btrfs-progs: send dump: introduce helper for printing escaped path
+      btrfs-progs: send dump: print escaped path
+      btrfs-progs: send dump: use reentrant variant of localtime
+      btrfs-progs: tests: add more gobal option to test 001-btrfs
+      btrfs-progs: docs: update receive help and manual page
+      btrfs-progs: build: extend pattern rules for standalone directories
+      btrfs-progs: move btrfs-convert to own directory
+      btrfs-progs: move mkfs.btrfs sources to own directory
+      btrfs-progs: tests: check for partscan support in misc/006-partitioned-loopdev
+      btrfs-progs: run mkfs tests in CI
+      btrfs-progs: mkfs: annotation of a case
+      btrfs-progs: docs: clarify trim after mkfs -K
+      btrfs-progs: docs: make documentation updates workflow more clear
+      btrfs-progs: dev stats: adjust some error messages
+      btrfs-progs: dev stats: use char type path
+      btrfs-progs: dev stats: use table based printing of items
+      btrfs-progs: dev stats: add long option for -z
+      btrfs-progs: docs: update dev stats help and manual page
+      btrfs-progs: help: fix printing of aliased commands
+      btrfs-progs: fixup API after change in subvol_uuid_search
+      btrfs-progs: library: bump to 0.1.2
+      btrfs-progs: handle failed strdup in subvol_uuid_search2
+      btrfs-progs: dev stats: update option name for checking non-zero status
+      btrfs-progs: defrag: cleanup temporary errno value
+      btrfs-progs: defrag: warn when deframgenting directories without -r
+      btrfs-progs: update CHANGES for v4.9
+
+Goldwyn Rodrigues (5):
+      btrfs-progs: Correct value printed by assertions/BUG_ON/WARN_ON
+      btrfs-progs: Remove duplicate printfs in warning_trace()/assert_trace()
+      btrfs-progs: check: fix extents after finding all errors
+      btrfs-progs: Initialize ret to suppress compiler warning
+      btrfs-progs: find_free_dev_extent() closer to kernel code
+
+Lu Fengqi (11):
+      btrfs-progs: check: introduce function to find dir_item
+      btrfs-progs: check: introduce function to check inode_ref
+      btrfs-progs: check: introduce function to check inode_extref
+      btrfs-progs: check: introduce function to find inode_ref
+      btrfs-progs: check: introduce function to check dir_item
+      btrfs-progs: check: introduce function to check file extent
+      btrfs-progs: check: introduce function to check inode item
+      btrfs-progs: check: introduce function to check fs root
+      btrfs-progs: check: introduce function to check root ref
+      btrfs-progs: check: introduce low_memory mode fs_tree check
+      btrfs-progs: check: fix the return value bug of cmd_check()
+
+Noah Massey (1):
+      btrfs-progs: docs: fix typo in mkfs manual page
+
+Prasanth K S R (3):
+      btrfs-progs: subvol_uuid_search: return error on memory allocation failure
+      btrfs-progs: subvol_uuid_search: return error encoded pointer
+      btrfs-progs: subvol_uuid_search: return error code on memory allocation failure
+
+Qu Wenruo (11):
+      btrfs-progs: raid56: Introduce new function to calculate raid5 parity or data stripe
+      btrfs-progs: volumes: Use new raid5_gen_result to calculate raid5 parity
+      btrfs-progs: check: Enhance leaf traversal function to handle missing inode item
+      btrfs-progs: fsck: Fix patch allocation check and leak in check_fs_first_inode
+      btrfs-progs: check: fix NULL pointer dereference for possible memory allocation failure
+      btrfs-progs: introduce new send-dump object
+      btrfs-progs: receive: introduce option to dump send stream
+      btrfs-progs: check: Fix assert when using lowmem on fs with tree reloc tree
+      btrfs-progs: check: Fix lowmem mode stack overflow caused by fsck/023
+      btrfs-progs: check: Fix lowmem false alert on tree reloc tree
+      btrfs-progs: check: Fix false alert on generation mismatch for tree reloc tree
+
+Wang Xiaoguang (1):
+      btrfs-progs: check: skip shared node or leaf check for low_memory mode
+

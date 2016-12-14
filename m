@@ -1,97 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:36012 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751756AbcLIR4v (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Dec 2016 12:56:51 -0500
-Date: Fri, 9 Dec 2016 09:56:45 -0800
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: mfasheh@versity.com
-Cc: xfs <linux-xfs@vger.kernel.org>, linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] duperemove: test presence of dedupe ioctl
-Message-ID: <20161209175645.GB16813@birch.djwong.org>
+Received: from bombadil.infradead.org ([198.137.202.9]:56161 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754954AbcLNKpL (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 14 Dec 2016 05:45:11 -0500
+Date: Wed, 14 Dec 2016 02:44:36 -0800
+From: Christoph Hellwig <hch@infradead.org>
+To: "Darrick J. Wong" <darrick.wong@oracle.com>
+Cc: mfasheh@versity.com, xfs <linux-xfs@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] duperemove: test presence of dedupe ioctl
+Message-ID: <20161214104436.GB16862@infradead.org>
+References: <20161209175645.GB16813@birch.djwong.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20161209175645.GB16813@birch.djwong.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since a zero-length dedupe operation is guaranteed to succeed, use that
-to test whether or not this filesystem supports dedupe.
+On Fri, Dec 09, 2016 at 09:56:45AM -0800, Darrick J. Wong wrote:
+> Since a zero-length dedupe operation is guaranteed to succeed, use that
+> to test whether or not this filesystem supports dedupe.
+> 
+> Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+> ---
+>  file_scan.c |   47 +++++++++++++++++++++++++++++++++++++----------
+>  1 file changed, 37 insertions(+), 10 deletions(-)
+> 
+> diff --git a/file_scan.c b/file_scan.c
+> index 617f166..a34453e 100644
+> --- a/file_scan.c
+> +++ b/file_scan.c
+> @@ -45,11 +45,7 @@
+>  #include "file_scan.h"
+>  #include "dbfile.h"
+>  #include "util.h"
+> -
+> -/* This is not in linux/magic.h */
+> -#ifndef	XFS_SB_MAGIC
+> -#define	XFS_SB_MAGIC		0x58465342	/* 'XFSB' */
+> -#endif
+> +#include "btrfs-ioctl.h"
+>  
+>  static char path[PATH_MAX] = { 0, };
+>  static char *pathp = path;
+> @@ -189,6 +185,39 @@ static int walk_dir(const char *name)
+>  	return ret;
+>  }
+>  
+> +struct fake_btrfs_ioctl_same_args {
+> +	struct btrfs_ioctl_same_args args;
+> +	struct btrfs_ioctl_same_extent_info info;
+> +};
 
-Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
----
- file_scan.c |   47 +++++++++++++++++++++++++++++++++++++----------
- 1 file changed, 37 insertions(+), 10 deletions(-)
-
-diff --git a/file_scan.c b/file_scan.c
-index 617f166..a34453e 100644
---- a/file_scan.c
-+++ b/file_scan.c
-@@ -45,11 +45,7 @@
- #include "file_scan.h"
- #include "dbfile.h"
- #include "util.h"
--
--/* This is not in linux/magic.h */
--#ifndef	XFS_SB_MAGIC
--#define	XFS_SB_MAGIC		0x58465342	/* 'XFSB' */
--#endif
-+#include "btrfs-ioctl.h"
- 
- static char path[PATH_MAX] = { 0, };
- static char *pathp = path;
-@@ -189,6 +185,39 @@ static int walk_dir(const char *name)
- 	return ret;
- }
- 
-+struct fake_btrfs_ioctl_same_args {
-+	struct btrfs_ioctl_same_args args;
-+	struct btrfs_ioctl_same_extent_info info;
-+};
-+
-+/*
-+ * A zero-length dedupe between two files should always succeed,
-+ * so we can use this to test the presence of dedupe functionality.
-+ */
-+static bool check_ioctl_works(int fd)
-+{
-+	struct fake_btrfs_ioctl_same_args sa = {0};
-+	struct stat sb;
-+	static int cached = -1;
-+	int ret;
-+
-+	if (cached >= 0)
-+		return cached != 0;
-+
-+	ret = fstat(fd, &sb);
-+	if (ret)
-+		return false;
-+
-+	sa.args.dest_count = 1;
-+	sa.args.length = 0;
-+	sa.info.fd = fd;
-+	sa.info.logical_offset = 0;
-+	errno = 0;
-+	ret = btrfs_extent_same(fd, &sa.args);
-+	cached = !ret && !errno && !sa.info.status;
-+	return cached != 0;
-+}
-+
- static int __add_file(const char *name, struct stat *st,
- 		      struct filerec **ret_file)
- {
-@@ -235,12 +264,10 @@ static int __add_file(const char *name, struct stat *st,
- 		goto out;
- 	}
- 
--	if (run_dedupe &&
--	    ((fs.f_type != BTRFS_SUPER_MAGIC &&
--	      fs.f_type != XFS_SB_MAGIC))) {
-+	if (run_dedupe && !check_ioctl_works(fd)) {
- 		close(fd);
--		fprintf(stderr,	"\"%s\": Can only dedupe files on btrfs or xfs "
--			"(experimental)\n", name);
-+		fprintf(stderr,	"\"%s\": dedupe ioctl not supported on this "
-+			"filesystem.\n", name);
- 		return ENOSYS;
- 	}
- 
+Why does this need a fake structure here?

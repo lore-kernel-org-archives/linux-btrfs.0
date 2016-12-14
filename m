@@ -1,84 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1050.oracle.com ([141.146.126.70]:47073 "EHLO
-        aserp1050.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753071AbcLMXwx (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:33869 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753976AbcLNTDw (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Dec 2016 18:52:53 -0500
-Received: from aserp1040.oracle.com (aserp1040.oracle.com [141.146.126.69])
-        by aserp1050.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id uBDNqoZI015659
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Dec 2016 23:52:50 GMT
+        Wed, 14 Dec 2016 14:03:52 -0500
+Date: Wed, 14 Dec 2016 11:03:09 -0800
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH v2] Btrfs: fix lockdep warning about log_mutex
-Date: Tue, 13 Dec 2016 15:59:29 -0800
-Message-Id: <1481673569-31042-1-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1480628704-18216-1-git-send-email-bo.li.liu@oracle.com>
-References: <1480628704-18216-1-git-send-email-bo.li.liu@oracle.com>
+Cc: David Sterba <dsterba@suse.cz>, fdmanana@gmail.com,
+        wangxg.fnst@cn.fujitsu.com, Josef Bacik <jbacik@fb.com>
+Subject: Re: [PATCH] Btrfs: fix btrfs_ordered_update_i_size to update
+ disk_i_size properly
+Message-ID: <20161214190309.GA10388@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1480628770-18848-1-git-send-email-bo.li.liu@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1480628770-18848-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While checking INODE_REF/INODE_EXTREF for a corner case, we may acquire a
-different inode's log_mutex with holding the current inode's log_mutex, and
-lockdep has complained this with a possilble deadlock warning.
+On Thu, Dec 01, 2016 at 01:46:10PM -0800, Liu Bo wrote:
+> btrfs_ordered_update_i_size can be called by truncate and endio, but only endio
+> takes ordered_extent which contains the completed IO.
+> 
+> while truncating down a file, if there are some in-flight IOs,
+> btrfs_ordered_update_i_size in endio will set disk_i_size to @orig_offset that
+> is zero.  If truncating-down fails somehow, we try to recover in memory isize
+> with this zero'd disk_i_size.
+> 
+> Fix it by only updating disk_i_size with @orig_offset when
+> btrfs_ordered_update_i_size is not called from endio while truncating down and
+> waiting for in-flight IOs completing their work before recover in-memory size.
+> 
+> Besides fixing the above issue, add an assertion for last_size to double check
+> we truncate down to the desired size.
+> 
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+>  fs/btrfs/inode.c        | 14 ++++++++++++++
+>  fs/btrfs/ordered-data.c |  9 +++++++--
+>  2 files changed, 21 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 09157dd..ef3594d 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -4682,6 +4682,13 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
+>  
+>  	btrfs_free_path(path);
+>  
+> +	if (err == 0) {
+> +		/* only inline file may have last_size != new_size */
+> +		if (new_size >= root->sectorsize ||
+> +		    new_size > root->fs_info->max_inline)
+> +			ASSERT(last_size == new_size);
+> +	}
+> +
 
-Fix this by using mutex_lock_nested() when processing the other inode's
-log_mutex.
+This ASSERT has been hit by fstests/generic/299, and it didn't show up
+the first time I tested, I'm trying to figure out whether we have
+problems in code or in this ASSERT.
 
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
-v2: Use SINGLE_DEPTH_NESTING to avoid magic number.
+Thanks,
 
- fs/btrfs/tree-log.c | 13 ++++++++++---
- 1 file changed, 10 insertions(+), 3 deletions(-)
+-liubo
 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 3d33c4e..298ab3b 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -37,6 +37,7 @@
-  */
- #define LOG_INODE_ALL 0
- #define LOG_INODE_EXISTS 1
-+#define LOG_OTHER_INODE 2
- 
- /*
-  * directory trouble cases
-@@ -4624,7 +4625,7 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 	if (S_ISDIR(inode->i_mode) ||
- 	    (!test_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
- 		       &BTRFS_I(inode)->runtime_flags) &&
--	     inode_only == LOG_INODE_EXISTS))
-+	     inode_only >= LOG_INODE_EXISTS))
- 		max_key.type = BTRFS_XATTR_ITEM_KEY;
- 	else
- 		max_key.type = (u8)-1;
-@@ -4648,7 +4649,13 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 		return ret;
- 	}
- 
--	mutex_lock(&BTRFS_I(inode)->log_mutex);
-+	if (inode_only == LOG_OTHER_INODE) {
-+		inode_only = LOG_INODE_EXISTS;
-+		mutex_lock_nested(&BTRFS_I(inode)->log_mutex,
-+				  SINGLE_DEPTH_NESTING);
-+	} else {
-+		mutex_lock(&BTRFS_I(inode)->log_mutex);
-+	}
- 
- 	/*
- 	 * a brute force approach to making sure we get the most uptodate
-@@ -4800,7 +4807,7 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 				 * unpin it.
- 				 */
- 				err = btrfs_log_inode(trans, root, other_inode,
--						      LOG_INODE_EXISTS,
-+						      LOG_OTHER_INODE,
- 						      0, LLONG_MAX, ctx);
- 				iput(other_inode);
- 				if (err)
--- 
-2.5.5
-
+>  	if (be_nice && bytes_deleted > SZ_32M) {
+>  		unsigned long updates = trans->delayed_ref_updates;
+>  		if (updates) {
+> @@ -5064,6 +5071,13 @@ static int btrfs_setsize(struct inode *inode, struct iattr *attr)
+>  		if (ret && inode->i_nlink) {
+>  			int err;
+>  
+> +			/* To get a stable disk_i_size */
+> +			err = btrfs_wait_ordered_range(inode, 0, (u64)-1);
+> +			if (err) {
+> +				btrfs_orphan_del(NULL, inode);
+> +				return err;
+> +			}
+> +
+>  			/*
+>  			 * failed to truncate, disk_i_size is only adjusted down
+>  			 * as we remove extents, so it should represent the true
+> diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+> index b2d1e95..5eaa25a 100644
+> --- a/fs/btrfs/ordered-data.c
+> +++ b/fs/btrfs/ordered-data.c
+> @@ -982,8 +982,13 @@ int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
+>  	}
+>  	disk_i_size = BTRFS_I(inode)->disk_i_size;
+>  
+> -	/* truncate file */
+> -	if (disk_i_size > i_size) {
+> +	/*
+> +	 * truncate file.
+> +	 * If ordered is not NULL, then this is called from endio and
+> +	 * disk_i_size will be updated by either truncate itself or any
+> +	 * in-flight IOs which are inside the disk_i_size.
+> +	 */
+> +	if (!ordered && disk_i_size > i_size) {
+>  		BTRFS_I(inode)->disk_i_size = orig_offset;
+>  		ret = 0;
+>  		goto out;
+> -- 
+> 2.5.5
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

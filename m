@@ -1,29 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:49408 "EHLO
-        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754214AbcLPHxv (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:45061 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751934AbcLOHFy (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Dec 2016 02:53:51 -0500
-Date: Thu, 15 Dec 2016 23:53:03 -0800
-From: Christoph Hellwig <hch@infradead.org>
-To: "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc: Christoph Hellwig <hch@infradead.org>, mfasheh@versity.com,
-        xfs <linux-xfs@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] duperemove: test presence of dedupe ioctl
-Message-ID: <20161216075303.GA14470@infradead.org>
-References: <20161209175645.GB16813@birch.djwong.org>
- <20161214104436.GB16862@infradead.org>
- <20161214183845.GA5357@birch.djwong.org>
- <20161214192607.GA2280@infradead.org>
- <20161216012014.GG5357@birch.djwong.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20161216012014.GG5357@birch.djwong.org>
+        Thu, 15 Dec 2016 02:05:54 -0500
+From: Liu Bo <bo.li.liu@oracle.com>
+To: David Sterba <dsterba@suse.cz>
+Cc: linux-btrfs@vger.kernel.org
+Subject: [GIT PULL] btrfs fixes and cleanups
+Date: Wed, 14 Dec 2016 23:13:32 -0800
+Message-Id: <1481786012-18586-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 15, 2016 at 05:20:14PM -0800, Darrick J. Wong wrote:
-> Fair enough, no need to pollute the namespace.
+Hi David,
 
-Or confuse poor readers with the 'fake' name :)
+This is the collection of my patches targetting 4.10, I've
+dropped patch "Btrfs: adjust len of writes if following a
+preallocated extent" because of the deadlock caused by this
+commit.
+
+Patches are based on v4.9-rc8, and test against fstests with
+default mount options has been taken to make sure it doesn't
+break anything.
+
+I haven't got a kernel.org git repo, so this is mainly for
+tracking purpose and for testing git flow.
+
+(cherry-pick patches might be the only way at this moment...sorry
+for the inconvenience.)
+
+Anyway, patches can be found at
+
+	https://github.com/liubogithub/btrfs-work.git for-dave
+
+Thanks,
+liubo
+
+Liu Bo (9):
+  Btrfs: add 'inode' for extent map tracepoint
+  Btrfs: add truncated_len for ordered extent tracepoints
+  Btrfs: use down_read_nested to make lockdep silent
+  Btrfs: fix lockdep warning about log_mutex
+  Btrfs: fix truncate down when no_holes feature is enabled
+  Btrfs: fix btrfs_ordered_update_i_size to update disk_i_size properly
+  Btrfs: fix comment in btrfs_page_mkwrite
+  Btrfs: clean up btrfs_ordered_update_i_size
+  Btrfs: fix another race between truncate and lockless dio write
+
+ fs/btrfs/extent-tree.c       |  3 ++-
+ fs/btrfs/inode.c             | 43 +++++++++++++++++++++++++++++++++++--------
+ fs/btrfs/ordered-data.c      | 42 ++++++++++++++++++++++++------------------
+ fs/btrfs/tree-log.c          | 13 ++++++++++---
+ include/trace/events/btrfs.h | 16 ++++++++++++----
+ 5 files changed, 83 insertions(+), 34 deletions(-)
+
+-- 
+2.5.5
+

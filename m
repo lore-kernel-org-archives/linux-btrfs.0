@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f67.google.com ([74.125.82.67]:35184 "EHLO
-        mail-wm0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1757846AbcLOOH4 (ORCPT
+Received: from mail-wm0-f68.google.com ([74.125.82.68]:35245 "EHLO
+        mail-wm0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1757941AbcLOOIA (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Dec 2016 09:07:56 -0500
+        Thu, 15 Dec 2016 09:08:00 -0500
 From: Michal Hocko <mhocko@kernel.org>
 To: <linux-mm@kvack.org>, <linux-fsdevel@vger.kernel.org>
 Cc: Andrew Morton <akpm@linux-foundation.org>,
@@ -16,9 +16,9 @@ Cc: Andrew Morton <akpm@linux-foundation.org>,
         reiserfs-devel@vger.kernel.org, linux-ntfs-dev@lists.sourceforge.net,
         linux-f2fs-devel@lists.sourceforge.net, linux-afs@lists.infradead.org,
         LKML <linux-kernel@vger.kernel.org>, Michal Hocko <mhocko@suse.com>
-Subject: [PATCH 5/9] xfs: use memalloc_nofs_{save,restore} instead of memalloc_noio*
-Date: Thu, 15 Dec 2016 15:07:11 +0100
-Message-Id: <20161215140715.12732-6-mhocko@kernel.org>
+Subject: [PATCH 8/9] Revert "ext4: avoid deadlocks in the writeback path by using sb_getblk_gfp"
+Date: Thu, 15 Dec 2016 15:07:14 +0100
+Message-Id: <20161215140715.12732-9-mhocko@kernel.org>
 In-Reply-To: <20161215140715.12732-1-mhocko@kernel.org>
 References: <20161215140715.12732-1-mhocko@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -26,86 +26,58 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Michal Hocko <mhocko@suse.com>
 
-kmem_zalloc_large and _xfs_buf_map_pages use memalloc_noio_{save,restore}
-API to prevent from reclaim recursion into the fs because vmalloc can
-invoke unconditional GFP_KERNEL allocations and these functions might be
-called from the NOFS contexts. The memalloc_noio_save will enforce
-GFP_NOIO context which is even weaker than GFP_NOFS and that seems to be
-unnecessary. Let's use memalloc_nofs_{save,restore} instead as it should
-provide exactly what we need here - implicit GFP_NOFS context.
+This reverts commit c45653c341f5c8a0ce19c8f0ad4678640849cb86 because
+sb_getblk_gfp is not really needed as
+sb_getblk
+  __getblk_gfp
+    __getblk_slow
+      grow_buffers
+        grow_dev_page
+	  gfp_mask = mapping_gfp_constraint(inode->i_mapping, ~__GFP_FS) | gfp
+
+so __GFP_FS is cleared unconditionally and therefore the above commit
+didn't have any real effect in fact.
+
+This patch should not introduce any functional change. The main point
+of this change is to reduce explicit GFP_NOFS usage inside ext4 code to
+make the review of the remaining usage easier.
 
 Signed-off-by: Michal Hocko <mhocko@suse.com>
 ---
- fs/xfs/kmem.c    | 10 +++++-----
- fs/xfs/xfs_buf.c |  8 ++++----
- 2 files changed, 9 insertions(+), 9 deletions(-)
+ fs/ext4/extents.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/fs/xfs/kmem.c b/fs/xfs/kmem.c
-index a76a05dae96b..d69ed5e76621 100644
---- a/fs/xfs/kmem.c
-+++ b/fs/xfs/kmem.c
-@@ -65,7 +65,7 @@ kmem_alloc(size_t size, xfs_km_flags_t flags)
- void *
- kmem_zalloc_large(size_t size, xfs_km_flags_t flags)
- {
--	unsigned noio_flag = 0;
-+	unsigned nofs_flag = 0;
- 	void	*ptr;
- 	gfp_t	lflags;
+diff --git a/fs/ext4/extents.c b/fs/ext4/extents.c
+index b1f8416923ab..ef815eb72389 100644
+--- a/fs/ext4/extents.c
++++ b/fs/ext4/extents.c
+@@ -518,7 +518,7 @@ __read_extent_tree_block(const char *function, unsigned int line,
+ 	struct buffer_head		*bh;
+ 	int				err;
  
-@@ -80,14 +80,14 @@ kmem_zalloc_large(size_t size, xfs_km_flags_t flags)
- 	 * context via PF_MEMALLOC_NOIO to prevent memory reclaim re-entering
- 	 * the filesystem here and potentially deadlocking.
- 	 */
--	if ((current->flags & PF_MEMALLOC_NOFS) || (flags & KM_NOFS))
--		noio_flag = memalloc_noio_save();
-+	if (flags & KM_NOFS)
-+		nofs_flag = memalloc_nofs_save();
+-	bh = sb_getblk_gfp(inode->i_sb, pblk, __GFP_MOVABLE | GFP_NOFS);
++	bh = sb_getblk(inode->i_sb, pblk);
+ 	if (unlikely(!bh))
+ 		return ERR_PTR(-ENOMEM);
  
- 	lflags = kmem_flags_convert(flags);
- 	ptr = __vmalloc(size, lflags | __GFP_HIGHMEM | __GFP_ZERO, PAGE_KERNEL);
+@@ -1096,7 +1096,7 @@ static int ext4_ext_split(handle_t *handle, struct inode *inode,
+ 		err = -EFSCORRUPTED;
+ 		goto cleanup;
+ 	}
+-	bh = sb_getblk_gfp(inode->i_sb, newblock, __GFP_MOVABLE | GFP_NOFS);
++	bh = sb_getblk(inode->i_sb, newblock);
+ 	if (unlikely(!bh)) {
+ 		err = -ENOMEM;
+ 		goto cleanup;
+@@ -1290,7 +1290,7 @@ static int ext4_ext_grow_indepth(handle_t *handle, struct inode *inode,
+ 	if (newblock == 0)
+ 		return err;
  
--	if ((current->flags & PF_MEMALLOC_NOFS) || (flags & KM_NOFS))
--		memalloc_noio_restore(noio_flag);
-+	if (flags & KM_NOFS)
-+		memalloc_nofs_restore(nofs_flag);
- 
- 	return ptr;
- }
-diff --git a/fs/xfs/xfs_buf.c b/fs/xfs/xfs_buf.c
-index f31ae592dcae..5c6f9bd4d8be 100644
---- a/fs/xfs/xfs_buf.c
-+++ b/fs/xfs/xfs_buf.c
-@@ -441,17 +441,17 @@ _xfs_buf_map_pages(
- 		bp->b_addr = NULL;
- 	} else {
- 		int retried = 0;
--		unsigned noio_flag;
-+		unsigned nofs_flag;
- 
- 		/*
- 		 * vm_map_ram() will allocate auxillary structures (e.g.
- 		 * pagetables) with GFP_KERNEL, yet we are likely to be under
- 		 * GFP_NOFS context here. Hence we need to tell memory reclaim
--		 * that we are in such a context via PF_MEMALLOC_NOIO to prevent
-+		 * that we are in such a context via PF_MEMALLOC_NOFS to prevent
- 		 * memory reclaim re-entering the filesystem here and
- 		 * potentially deadlocking.
- 		 */
--		noio_flag = memalloc_noio_save();
-+		nofs_flag = memalloc_nofs_save();
- 		do {
- 			bp->b_addr = vm_map_ram(bp->b_pages, bp->b_page_count,
- 						-1, PAGE_KERNEL);
-@@ -459,7 +459,7 @@ _xfs_buf_map_pages(
- 				break;
- 			vm_unmap_aliases();
- 		} while (retried++ <= 1);
--		memalloc_noio_restore(noio_flag);
-+		memalloc_noio_restore(nofs_flag);
- 
- 		if (!bp->b_addr)
- 			return -ENOMEM;
+-	bh = sb_getblk_gfp(inode->i_sb, newblock, __GFP_MOVABLE | GFP_NOFS);
++	bh = sb_getblk(inode->i_sb, newblock);
+ 	if (unlikely(!bh))
+ 		return -ENOMEM;
+ 	lock_buffer(bh);
 -- 
 2.10.2
 

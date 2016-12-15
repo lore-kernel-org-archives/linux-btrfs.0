@@ -1,40 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:26579 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:33431 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1752675AbcLOH2y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Dec 2016 02:28:54 -0500
+        id S1755731AbcLOJFz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 15 Dec 2016 04:05:55 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
 Cc: t-itoh@jp.fujitsu.com
-Subject: [PATCH] btrfs-progs: Fix NULL pointer when receive clone operation
-Date: Thu, 15 Dec 2016 15:28:02 +0800
-Message-Id: <20161215072802.21452-1-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v2 0/3] Convert rollback rework for v4.9
+Date: Thu, 15 Dec 2016 17:03:28 +0800
+Message-Id: <20161215090331.27486-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The subvol_info returned from subvol_uuid_search() can be NULL.
-So the branch checking IS_ERR(si) should also check if it's NULL.
+Can be fetched from github:
+https://github.com/adam900710/btrfs-progs.git convert_rework_for_4.9
 
-Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- cmds-receive.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+This is mainly to fix problems exposed by Chandan's fix for 64K nodesize.
 
-diff --git a/cmds-receive.c b/cmds-receive.c
-index cb42aa2..c8f2fff 100644
---- a/cmds-receive.c
-+++ b/cmds-receive.c
-@@ -750,7 +750,7 @@ static int process_clone(const char *path, u64 offset, u64 len,
- 	si = subvol_uuid_search(&rctx->sus, 0, clone_uuid, clone_ctransid,
- 				NULL,
- 				subvol_search_by_received_uuid);
--	if (IS_ERR(si)) {
-+	if (IS_ERR(si) || !si) {
- 		if (memcmp(clone_uuid, rctx->cur_subvol.received_uuid,
- 				BTRFS_UUID_SIZE) == 0) {
- 			/* TODO check generation of extent */
+The problem is, although we're still using old rollback functions, it
+has quite a lot of problems to support the new behavior.
+
+1) Can't rollback new convert image with new data chunk
+Chunk level check can't handle newly allocated data chunk, which is not
+1:1 mapped but completely valid in new behavior.
+The last patch will enhance the test case to handle it.
+
+2) Can't rollback real no-hole image
+Since it assumes hole file extent as requirement.
+And due to the possibility to enable no_holes halfway, btrfsck won't
+report such error, since it's acceptable.
+
+3) Too complex logical, and RW btrfs tree operations
+In fact, considering how small data we need to rewrite (1M + 128K), we
+don't really need to open btrfs read-write.
+Just copy needed data and re-fill. Simple and easy.
+
+Thanks Chandan, his report on failure of rollback leads to this rework.
+
+And this is still small fixes, most of the patch are just deleting old codes.
+All rollback test cases from btrfs-progs and fstests are passed.
+
+v2:
+  Fix a bug that we can still rollback if convert subvolume is just orphaned,
+  not deleted. Exposed by btrfs/012.
+
+Qu Wenruo (3):
+  btrfs-progs: file-item: Fix wrong file extents inserted
+  btrfs-progs: convert: Rework rollback to handle new convert image
+  btrfs-progs: convert-test: trigger chunk allocation after convert
+
+ convert/main.c       | 699 ++++++++++++++++++++-------------------------------
+ file-item.c          |  11 +
+ tests/common         |   4 +
+ tests/common.convert |   3 +
+ 4 files changed, 297 insertions(+), 420 deletions(-)
+
 -- 
 2.10.2
 

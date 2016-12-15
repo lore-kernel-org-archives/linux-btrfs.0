@@ -1,61 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm01.jp.fujitsu.com ([202.219.69.168]:22627 "EHLO
-        mgwkm01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754690AbcLOEbN (ORCPT
+Received: from mail-wj0-f193.google.com ([209.85.210.193]:35355 "EHLO
+        mail-wj0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752070AbcLOOH6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Dec 2016 23:31:13 -0500
-Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
-        by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id D1E63AC00B2
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Dec 2016 13:31:08 +0900 (JST)
-Message-Id: <201612150430.AA00025@WIN-5MHF4RKU941.jp.fujitsu.com>
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Date: Thu, 15 Dec 2016 13:30:55 +0900
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH v3 2/2] btrfs-progs: qgroup: change the value of sort option
-In-Reply-To: <201612070307.AA00021@WIN-5MHF4RKU941.jp.fujitsu.com>
-References: <201612070307.AA00021@WIN-5MHF4RKU941.jp.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+        Thu, 15 Dec 2016 09:07:58 -0500
+From: Michal Hocko <mhocko@kernel.org>
+To: <linux-mm@kvack.org>, <linux-fsdevel@vger.kernel.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>,
+        Dave Chinner <david@fromorbit.com>, "Theodore Ts'o" <tytso@mit.edu>,
+        Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.cz>,
+        Jan Kara <jack@suse.cz>, ceph-devel@vger.kernel.org,
+        cluster-devel@redhat.com, linux-nfs@vger.kernel.org, logfs@logfs.org,
+        linux-xfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-mtd@lists.infradead.org,
+        reiserfs-devel@vger.kernel.org, linux-ntfs-dev@lists.sourceforge.net,
+        linux-f2fs-devel@lists.sourceforge.net, linux-afs@lists.infradead.org,
+        LKML <linux-kernel@vger.kernel.org>, Michal Hocko <mhocko@suse.com>
+Subject: [PATCH 6/9] jbd2: mark the transaction context with the scope GFP_NOFS context
+Date: Thu, 15 Dec 2016 15:07:12 +0100
+Message-Id: <20161215140715.12732-7-mhocko@kernel.org>
+In-Reply-To: <20161215140715.12732-1-mhocko@kernel.org>
+References: <20161215140715.12732-1-mhocko@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The value of sort option ('S') is not used for option letter.
-Therefore, I'll change the single letter to non-character.
+From: Michal Hocko <mhocko@suse.com>
 
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
----
-This patch is separated from patch of --sync option.
----
- cmds-qgroup.c | 7 ++++---
- 1 file changed, 4 insertions(+), 3 deletions(-)
+now that we have memalloc_nofs_{save,restore} api we can mark the whole
+transaction context as implicitly GFP_NOFS. All allocations will
+automatically inherit GFP_NOFS this way. This means that we do not have
+to mark any of those requests with GFP_NOFS and moreover all the
+ext4_kv[mz]alloc(GFP_NOFS) are also safe now because even the hardcoded
+GFP_KERNEL allocations deep inside the vmalloc will be NOFS now.
 
-diff --git a/cmds-qgroup.c b/cmds-qgroup.c
-index 2a10c97..34e3bcc 100644
---- a/cmds-qgroup.c
-+++ b/cmds-qgroup.c
-@@ -313,10 +313,11 @@ static int cmd_qgroup_show(int argc, char **argv)
- 	while (1) {
- 		int c;
- 		enum {
--			GETOPT_VAL_SYNC = 256
-+			GETOPT_VAL_SORT = 256,
-+			GETOPT_VAL_SYNC
- 		};
- 		static const struct option long_options[] = {
--			{"sort", required_argument, NULL, 'S'},
-+			{"sort", required_argument, NULL, GETOPT_VAL_SORT},
- 			{"sync", no_argument, NULL, GETOPT_VAL_SYNC},
- 			{ NULL, 0, NULL, 0 }
- 		};
-@@ -347,7 +348,7 @@ static int cmd_qgroup_show(int argc, char **argv)
- 		case 'f':
- 			filter_flag |= 0x2;
- 			break;
--		case 'S':
-+		case GETOPT_VAL_SORT:
- 			ret = btrfs_qgroup_parse_sort_string(optarg,
- 							     &comparer_set);
- 			if (ret)
+Signed-off-by: Michal Hocko <mhocko@suse.com>
+---
+ fs/jbd2/transaction.c | 11 +++++++++++
+ include/linux/jbd2.h  |  2 ++
+ 2 files changed, 13 insertions(+)
+
+diff --git a/fs/jbd2/transaction.c b/fs/jbd2/transaction.c
+index e1652665bd93..35a5d3d76182 100644
+--- a/fs/jbd2/transaction.c
++++ b/fs/jbd2/transaction.c
+@@ -388,6 +388,11 @@ static int start_this_handle(journal_t *journal, handle_t *handle,
+ 
+ 	rwsem_acquire_read(&journal->j_trans_commit_map, 0, 0, _THIS_IP_);
+ 	jbd2_journal_free_transaction(new_transaction);
++	/*
++	 * Make sure that no allocations done while the transaction is
++	 * open is going to recurse back to the fs layer.
++	 */
++	handle->saved_alloc_context = memalloc_nofs_save();
+ 	return 0;
+ }
+ 
+@@ -466,6 +471,7 @@ handle_t *jbd2__journal_start(journal_t *journal, int nblocks, int rsv_blocks,
+ 	trace_jbd2_handle_start(journal->j_fs_dev->bd_dev,
+ 				handle->h_transaction->t_tid, type,
+ 				line_no, nblocks);
++
+ 	return handle;
+ }
+ EXPORT_SYMBOL(jbd2__journal_start);
+@@ -1760,6 +1766,11 @@ int jbd2_journal_stop(handle_t *handle)
+ 	if (handle->h_rsv_handle)
+ 		jbd2_journal_free_reserved(handle->h_rsv_handle);
+ free_and_exit:
++	/*
++	 * scope of th GFP_NOFS context is over here and so we can
++	 * restore the original alloc context.
++	 */
++	memalloc_nofs_restore(handle->saved_alloc_context);
+ 	jbd2_free_handle(handle);
+ 	return err;
+ }
+diff --git a/include/linux/jbd2.h b/include/linux/jbd2.h
+index dfaa1f4dcb0c..606b6bce3a5b 100644
+--- a/include/linux/jbd2.h
++++ b/include/linux/jbd2.h
+@@ -491,6 +491,8 @@ struct jbd2_journal_handle
+ 
+ 	unsigned long		h_start_jiffies;
+ 	unsigned int		h_requested_credits;
++
++	unsigned int		saved_alloc_context;
+ };
+ 
+ 
 -- 
-2.9.3
+2.10.2
+

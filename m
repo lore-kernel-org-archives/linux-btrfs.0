@@ -1,53 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40033 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1764593AbcLTS2i (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Dec 2016 13:28:38 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id CD2F8AAC8
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Dec 2016 18:28:36 +0000 (UTC)
-From: jeffm@suse.com
+Received: from mgwkm01.jp.fujitsu.com ([202.219.69.168]:23570 "EHLO
+        mgwkm01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754878AbcLOEdX (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 14 Dec 2016 23:33:23 -0500
+Received: from m3050.s.css.fujitsu.com (msm.b.css.fujitsu.com [10.134.21.208])
+        by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id 5539FAC0160
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Dec 2016 13:33:18 +0900 (JST)
+Message-Id: <201612150433.AA00026@WIN-5MHF4RKU941.jp.fujitsu.com>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Date: Thu, 15 Dec 2016 13:33:05 +0900
 To: linux-btrfs@vger.kernel.org
-Cc: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH 2/2] btrfs: fix locking when we put back a delayed ref that's too new
-Date: Tue, 20 Dec 2016 13:28:28 -0500
-Message-Id: <1482258508-7594-2-git-send-email-jeffm@suse.com>
-In-Reply-To: <1482258508-7594-1-git-send-email-jeffm@suse.com>
-References: <1482258508-7594-1-git-send-email-jeffm@suse.com>
+Cc: dsterba@suse.cz
+Subject: [PATCH v2] btrfs-progs: tests: add test for --sync option of qgroup show
+In-Reply-To: <201612080544.AA00023@WIN-5MHF4RKU941.jp.fujitsu.com>
+References: <201612080544.AA00023@WIN-5MHF4RKU941.jp.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Jeff Mahoney <jeffm@suse.com>
+Simple test script for the following patch.
 
-In __btrfs_run_delayed_refs, when we put back a delayed ref that's too
-new, we have already dropped the lock on locked_ref when we set
-->processing = 0.
+   btrfs-progs: qgroup: add sync option to 'qgroup show'
 
-This patch keeps the lock to cover that assignment.
-
-Fixes: d7df2c796d7 (Btrfs: attach delayed ref updates to delayed ref heads)
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 ---
- fs/btrfs/extent-tree.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+v2: dropped the test of --no-sync
+---
+ tests/cli-tests/005-qgroup-show-sync/test.sh | 30 ++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
+ create mode 100755 tests/cli-tests/005-qgroup-show-sync/test.sh
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index d74adf1..930ac8e 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2526,11 +2526,11 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
- 		if (ref && ref->seq &&
- 		    btrfs_check_delayed_seq(fs_info, delayed_refs, ref->seq)) {
- 			spin_unlock(&locked_ref->lock);
--			btrfs_delayed_ref_unlock(locked_ref);
- 			spin_lock(&delayed_refs->lock);
- 			locked_ref->processing = 0;
- 			delayed_refs->num_heads_ready++;
- 			spin_unlock(&delayed_refs->lock);
-+			btrfs_delayed_ref_unlock(locked_ref);
- 			locked_ref = NULL;
- 			cond_resched();
- 			count++;
+diff --git a/tests/cli-tests/005-qgroup-show-sync/test.sh b/tests/cli-tests/005-qgroup-show-sync/test.sh
+new file mode 100755
+index 0000000..a325b48
+--- /dev/null
++++ b/tests/cli-tests/005-qgroup-show-sync/test.sh
+@@ -0,0 +1,30 @@
++#!/bin/bash
++#
++# simple test of qgroup show --sync option
++
++source $TOP/tests/common
++
++check_prereq mkfs.btrfs
++check_prereq btrfs
++
++setup_root_helper
++prepare_test_dev 1g
++
++run_check $TOP/mkfs.btrfs -f $IMAGE
++run_check_mount_test_dev
++
++run_check $SUDO_HELPER $TOP/btrfs subvolume create $TEST_MNT/Sub
++run_check $SUDO_HELPER $TOP/btrfs quota enable $TEST_MNT/Sub
++
++for opt in '' '--' '--sync'; do
++	run_check $SUDO_HELPER $TOP/btrfs qgroup limit 300M $TEST_MNT/Sub
++	run_check $SUDU_HELPER dd if=/dev/zero of=$TEST_MNT/Sub/file bs=1M count=200
++
++	run_check $SUDO_HELPER $TOP/btrfs qgroup show -re $opt $TEST_MNT/Sub
++
++	run_check $SUDO_HELPER $TOP/btrfs qgroup limit none $TEST_MNT/Sub
++	run_check rm -f $TEST_MNT/Sub/file
++	run_check $TOP/btrfs filesystem sync $TEST_MNT/Sub
++done
++
++run_check_umount_test_dev
 -- 
-1.8.5.6
+2.9.3
+
 

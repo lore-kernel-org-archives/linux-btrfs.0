@@ -1,91 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:46851 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753335AbcLAVil (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Dec 2016 16:38:41 -0500
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>, fdmanana@gmail.com,
-        wangxg.fnst@cn.fujitsu.com, Josef Bacik <jbacik@fb.com>
-Subject: [PATCH] Btrfs: fix btrfs_ordered_update_i_size to update disk_i_size properly
-Date: Thu,  1 Dec 2016 13:46:10 -0800
-Message-Id: <1480628770-18848-1-git-send-email-bo.li.liu@oracle.com>
+Received: from mgwym04.jp.fujitsu.com ([211.128.242.43]:63929 "EHLO
+        mgwym04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S934330AbcLOACj (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 14 Dec 2016 19:02:39 -0500
+Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
+        by yt-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id 98348AC0181
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Dec 2016 09:02:29 +0900 (JST)
+Subject: Re: [PATCH v2] btrfs-progs: qgroup: add sync option to 'qgroup show'
+To: dsterba@suse.cz
+References: <201612070307.AA00021@WIN-5MHF4RKU941.jp.fujitsu.com>
+ <201612070755.AA00022@WIN-5MHF4RKU941.jp.fujitsu.com>
+ <20161214105409.GA3620@twin.jikos.cz>
+Cc: linux-btrfs@vger.kernel.org, Qu Wenruo <quwenruo@cn.fujitsu.com>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Message-ID: <c48dd7dd-ce7f-1e06-c7c5-f87d3812caf6@jp.fujitsu.com>
+Date: Thu, 15 Dec 2016 09:02:08 +0900
+MIME-Version: 1.0
+In-Reply-To: <20161214105409.GA3620@twin.jikos.cz>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_ordered_update_i_size can be called by truncate and endio, but only endio
-takes ordered_extent which contains the completed IO.
+Hi David,
 
-while truncating down a file, if there are some in-flight IOs,
-btrfs_ordered_update_i_size in endio will set disk_i_size to @orig_offset that
-is zero.  If truncating-down fails somehow, we try to recover in memory isize
-with this zero'd disk_i_size.
+Thanks for the review.
 
-Fix it by only updating disk_i_size with @orig_offset when
-btrfs_ordered_update_i_size is not called from endio while truncating down and
-waiting for in-flight IOs completing their work before recover in-memory size.
+On 2016/12/14 19:54, David Sterba wrote:
+> On Wed, Dec 07, 2016 at 04:55:15PM +0900, Tsutomu Itoh wrote:
+>> The 'qgroup show' command does not synchronize filesystem.
+>> Therefore, 'qgroup show' may not display the correct value unless
+>> synchronized with 'filesystem sync' command etc.
+>>
+>> So add the '--sync' and '--no-sync' options so that we can choose
+>> whether or not to synchronize when executing the command.
+>>
+>> Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+>> ---
+>> v2: use getopt_long with enum instead of single letter (suggested by Qu)
+>> ---
+>>  Documentation/btrfs-qgroup.asciidoc |  6 ++++++
+>>  cmds-qgroup.c                       | 33 +++++++++++++++++++++++++++++----
+>>  2 files changed, 35 insertions(+), 4 deletions(-)
+>>
+>> diff --git a/Documentation/btrfs-qgroup.asciidoc b/Documentation/btrfs-qgroup.asciidoc
+>> index 438dbc7..9c65795 100644
+>> --- a/Documentation/btrfs-qgroup.asciidoc
+>> +++ b/Documentation/btrfs-qgroup.asciidoc
+>> @@ -126,6 +126,12 @@ Prefix \'+' means ascending order and \'-' means descending order of <attr>.
+>>  If no prefix is given, use ascending order by default.
+>>  +
+>>  If multiple <attr>s is given, use comma to separate.
+>> ++
+>> +--sync::::
+>> +To retrieve information after updating the status of qgroups,
+>> +invoke sync before getting information.
+> 
+> This could be more specific, that it's a filesystem sync.
+> 
+>> +--no-sync::::
+>> +Do not invoke sync before getting information (default).
+> 
+> I'm not sure we need this option, how is it supposed to be used?
 
-Besides fixing the above issue, add an assertion for last_size to double check
-we truncate down to the desired size.
+I made it to pair with --sync, but there is no use case in particular.
+So, I would like to drop this with the next patch.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/inode.c        | 14 ++++++++++++++
- fs/btrfs/ordered-data.c |  9 +++++++--
- 2 files changed, 21 insertions(+), 2 deletions(-)
+> 
+>> @@ -311,8 +313,15 @@ static int cmd_qgroup_show(int argc, char **argv)
+>>  
+>>  	while (1) {
+>>  		int c;
+>> +		enum {
+>> +			GETOPT_VAL_SORT = 256,
+>> +			GETOPT_VAL_SYNC,
+>> +			GETOPT_VAL_NO_SYNC
+>> +		};
+>>  		static const struct option long_options[] = {
+>> -			{"sort", required_argument, NULL, 'S'},
+>> +			{"sort", required_argument, NULL, GETOPT_VAL_SORT},
+> 
+> This change is unrelated to the patch, please make a separate patch for
+> that.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 09157dd..ef3594d 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4682,6 +4682,13 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
- 
- 	btrfs_free_path(path);
- 
-+	if (err == 0) {
-+		/* only inline file may have last_size != new_size */
-+		if (new_size >= root->sectorsize ||
-+		    new_size > root->fs_info->max_inline)
-+			ASSERT(last_size == new_size);
-+	}
-+
- 	if (be_nice && bytes_deleted > SZ_32M) {
- 		unsigned long updates = trans->delayed_ref_updates;
- 		if (updates) {
-@@ -5064,6 +5071,13 @@ static int btrfs_setsize(struct inode *inode, struct iattr *attr)
- 		if (ret && inode->i_nlink) {
- 			int err;
- 
-+			/* To get a stable disk_i_size */
-+			err = btrfs_wait_ordered_range(inode, 0, (u64)-1);
-+			if (err) {
-+				btrfs_orphan_del(NULL, inode);
-+				return err;
-+			}
-+
- 			/*
- 			 * failed to truncate, disk_i_size is only adjusted down
- 			 * as we remove extents, so it should represent the true
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index b2d1e95..5eaa25a 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -982,8 +982,13 @@ int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
- 	}
- 	disk_i_size = BTRFS_I(inode)->disk_i_size;
- 
--	/* truncate file */
--	if (disk_i_size > i_size) {
-+	/*
-+	 * truncate file.
-+	 * If ordered is not NULL, then this is called from endio and
-+	 * disk_i_size will be updated by either truncate itself or any
-+	 * in-flight IOs which are inside the disk_i_size.
-+	 */
-+	if (!ordered && disk_i_size > i_size) {
- 		BTRFS_I(inode)->disk_i_size = orig_offset;
- 		ret = 0;
- 		goto out;
--- 
-2.5.5
+OK. I'll separate this with the next patch.
+
+Thanks,
+Tsutomu
+
+> 
+> Otherwise looks good.
+> 
+>> +			{"sync", no_argument, NULL, GETOPT_VAL_SYNC},
+>> +			{"no-sync", no_argument, NULL, GETOPT_VAL_NO_SYNC},
+>>  			{ NULL, 0, NULL, 0 }
+>>  		};
+>>  
+
 

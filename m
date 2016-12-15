@@ -1,66 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f67.google.com ([74.125.83.67]:35450 "EHLO
-        mail-pg0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754045AbcLPGqJ (ORCPT
+Received: from aserp1050.oracle.com ([141.146.126.70]:34396 "EHLO
+        aserp1050.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752964AbcLOG5h (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Dec 2016 01:46:09 -0500
-Received: by mail-pg0-f67.google.com with SMTP id p66so8720101pga.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Dec 2016 22:45:43 -0800 (PST)
-From: Takafumi Kubota <takafumi.kubota1012@sslab.ics.keio.ac.jp>
+        Thu, 15 Dec 2016 01:57:37 -0500
+Received: from aserp1040.oracle.com (aserp1040.oracle.com [141.146.126.69])
+        by aserp1050.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id uBF6vTPq028702
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Dec 2016 06:57:29 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com, jbacik@fb.com, dsterba@suse.com, linux-kernel@vger.kernel.org,
-        fdmanana@suse.com, naota@elisp.net,
-        Takafumi Kubota <takafumi.kubota1012@sslab.ics.keio.ac.jp>
-Subject: [PATCH] Btrfs: add another missing end_page_writeback on submit_extent_page failure
-Date: Fri, 16 Dec 2016 15:41:50 +0900
-Message-Id: <1481870510-44290-1-git-send-email-takafumi.kubota1012@sslab.ics.keio.ac.jp>
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] Btrfs: fix another race between truncate and lockless dio write
+Date: Wed, 14 Dec 2016 23:04:05 -0800
+Message-Id: <1481785445-13329-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is actually inspired by Filipe's patch(55e3bd2e0c2e1).
+Dio writes can update i_size in btrfs_get_blocks_direct when it
+writes to offset beyond EOF so that endio can update disk_i_size
+correctly (because we don't udpate disk_i_size beyond i_size).
 
-When submit_extent_page() in __extent_writepage_io() fails,
-Btrfs misses clearing a writeback bit of the failed page.
-This causes the false under-writeback page.
-Then, another sync task hangs in filemap_fdatawait_range(),
-because it waits the false under-writeback page.
+However, when truncating down a file, we firstly update i_size
+and then wait for in-flight lockless dio reads/writes, according
+to the above, i_size may have been changed in dio writes, and
+file extents don't get truncated.
 
-CPU0                            CPU1
+For lockless dio writes are always overwrites, i_size is not
+supposed to be changed, so this adds a check to filter out this
+case.
 
-__extent_writepage_io()
-  ret = submit_extent_page() // fail
+The race could be reproduced by fstests/generic/299 with patch
+"Btrfs: fix btrfs_ordered_update_i_size to update disk_i_size properly"
+ applied.
 
-  if (ret)
-    SetPageError(page)
-    // miss clearing the writeback bit
-
-                                sync()
-                                  ...
-                                  filemap_fdatawait_range()
-                                    wait_on_page_writeback(page);
-                                    // wait the false under-writeback page
-
-Signed-off-by: Takafumi Kubota <takafumi.kubota1012@sslab.ics.keio.ac.jp>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/extent_io.c | 4 +++-
+ fs/btrfs/inode.c | 4 +++-
  1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 1e67723..ef9793b 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3443,8 +3443,10 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
- 					 bdev, &epd->bio, max_nr,
- 					 end_bio_extent_writepage,
- 					 0, 0, 0, false);
--		if (ret)
-+		if (ret) {
- 			SetPageError(page);
-+			end_page_writeback(page);
-+		}
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index c9973e5..171d8e8 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -72,6 +72,7 @@ struct btrfs_dio_data {
+ 	u64 reserve;
+ 	u64 unsubmitted_oe_range_start;
+ 	u64 unsubmitted_oe_range_end;
++	int overwrite;
+ };
  
- 		cur = cur + iosize;
- 		pg_offset += iosize;
+ static const struct inode_operations btrfs_dir_inode_operations;
+@@ -7833,7 +7834,7 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
+ 		 * Need to update the i_size under the extent lock so buffered
+ 		 * readers will get the updated i_size when we unlock.
+ 		 */
+-		if (start + len > i_size_read(inode))
++		if (!dio_data->overwrite && start + len > i_size_read(inode))
+ 			i_size_write(inode, start + len);
+ 
+ 		adjust_dio_outstanding_extents(inode, dio_data, len);
+@@ -8715,6 +8716,7 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
+ 		 * not unlock the i_mutex at this case.
+ 		 */
+ 		if (offset + count <= inode->i_size) {
++			dio_data.overwrite = 1;
+ 			inode_unlock(inode);
+ 			relock = true;
+ 		}
 -- 
-1.9.3
+2.5.5
 

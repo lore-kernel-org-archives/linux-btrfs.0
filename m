@@ -1,100 +1,126 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym04.jp.fujitsu.com ([211.128.242.43]:63929 "EHLO
-        mgwym04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S934330AbcLOACj (ORCPT
+Received: from mgwym01.jp.fujitsu.com ([211.128.242.40]:27751 "EHLO
+        mgwym01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754956AbcLOEaH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Dec 2016 19:02:39 -0500
+        Wed, 14 Dec 2016 23:30:07 -0500
 Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
-        by yt-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id 98348AC0181
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Dec 2016 09:02:29 +0900 (JST)
-Subject: Re: [PATCH v2] btrfs-progs: qgroup: add sync option to 'qgroup show'
-To: dsterba@suse.cz
-References: <201612070307.AA00021@WIN-5MHF4RKU941.jp.fujitsu.com>
- <201612070755.AA00022@WIN-5MHF4RKU941.jp.fujitsu.com>
- <20161214105409.GA3620@twin.jikos.cz>
-Cc: linux-btrfs@vger.kernel.org, Qu Wenruo <quwenruo@cn.fujitsu.com>
+        by yt-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 9AE17AC0153
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Dec 2016 13:29:52 +0900 (JST)
+Message-Id: <201612150429.AA00024@WIN-5MHF4RKU941.jp.fujitsu.com>
 From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Message-ID: <c48dd7dd-ce7f-1e06-c7c5-f87d3812caf6@jp.fujitsu.com>
-Date: Thu, 15 Dec 2016 09:02:08 +0900
+Date: Thu, 15 Dec 2016 13:29:28 +0900
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH v3 1/2] btrfs-progs: qgroup: add sync option to 'qgroup show'
+In-Reply-To: <201612070307.AA00021@WIN-5MHF4RKU941.jp.fujitsu.com>
+References: <201612070307.AA00021@WIN-5MHF4RKU941.jp.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20161214105409.GA3620@twin.jikos.cz>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi David,
+The 'qgroup show' command does not synchronize filesystem.
+Therefore, 'qgroup show' may not display the correct value unless
+synchronized with 'filesystem sync' command etc.
 
-Thanks for the review.
+So add the '--sync' option so that we can choose whether or not
+to synchronize when executing the command.
 
-On 2016/12/14 19:54, David Sterba wrote:
-> On Wed, Dec 07, 2016 at 04:55:15PM +0900, Tsutomu Itoh wrote:
->> The 'qgroup show' command does not synchronize filesystem.
->> Therefore, 'qgroup show' may not display the correct value unless
->> synchronized with 'filesystem sync' command etc.
->>
->> So add the '--sync' and '--no-sync' options so that we can choose
->> whether or not to synchronize when executing the command.
->>
->> Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
->> ---
->> v2: use getopt_long with enum instead of single letter (suggested by Qu)
->> ---
->>  Documentation/btrfs-qgroup.asciidoc |  6 ++++++
->>  cmds-qgroup.c                       | 33 +++++++++++++++++++++++++++++----
->>  2 files changed, 35 insertions(+), 4 deletions(-)
->>
->> diff --git a/Documentation/btrfs-qgroup.asciidoc b/Documentation/btrfs-qgroup.asciidoc
->> index 438dbc7..9c65795 100644
->> --- a/Documentation/btrfs-qgroup.asciidoc
->> +++ b/Documentation/btrfs-qgroup.asciidoc
->> @@ -126,6 +126,12 @@ Prefix \'+' means ascending order and \'-' means descending order of <attr>.
->>  If no prefix is given, use ascending order by default.
->>  +
->>  If multiple <attr>s is given, use comma to separate.
->> ++
->> +--sync::::
->> +To retrieve information after updating the status of qgroups,
->> +invoke sync before getting information.
-> 
-> This could be more specific, that it's a filesystem sync.
-> 
->> +--no-sync::::
->> +Do not invoke sync before getting information (default).
-> 
-> I'm not sure we need this option, how is it supposed to be used?
+Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+---
+v2: use getopt_long with enum instead of single letter (suggested by Qu)
+v3: dropped the --no-sync option and separated the patch of sort
+    option (suggested by David)
+---
+ Documentation/btrfs-qgroup.asciidoc |  4 ++++
+ cmds-qgroup.c                       | 22 ++++++++++++++++++++--
+ 2 files changed, 24 insertions(+), 2 deletions(-)
 
-I made it to pair with --sync, but there is no use case in particular.
-So, I would like to drop this with the next patch.
-
-> 
->> @@ -311,8 +313,15 @@ static int cmd_qgroup_show(int argc, char **argv)
->>  
->>  	while (1) {
->>  		int c;
->> +		enum {
->> +			GETOPT_VAL_SORT = 256,
->> +			GETOPT_VAL_SYNC,
->> +			GETOPT_VAL_NO_SYNC
->> +		};
->>  		static const struct option long_options[] = {
->> -			{"sort", required_argument, NULL, 'S'},
->> +			{"sort", required_argument, NULL, GETOPT_VAL_SORT},
-> 
-> This change is unrelated to the patch, please make a separate patch for
-> that.
-
-OK. I'll separate this with the next patch.
-
-Thanks,
-Tsutomu
-
-> 
-> Otherwise looks good.
-> 
->> +			{"sync", no_argument, NULL, GETOPT_VAL_SYNC},
->> +			{"no-sync", no_argument, NULL, GETOPT_VAL_NO_SYNC},
->>  			{ NULL, 0, NULL, 0 }
->>  		};
->>  
-
-
+diff --git a/Documentation/btrfs-qgroup.asciidoc b/Documentation/btrfs-qgroup.asciidoc
+index 438dbc7..3053f2e 100644
+--- a/Documentation/btrfs-qgroup.asciidoc
++++ b/Documentation/btrfs-qgroup.asciidoc
+@@ -126,6 +126,10 @@ Prefix \'+' means ascending order and \'-' means descending order of <attr>.
+ If no prefix is given, use ascending order by default.
+ +
+ If multiple <attr>s is given, use comma to separate.
+++
++--sync::::
++To retrieve information after updating the state of qgroups,
++force sync of the filesystem identified by <path> before getting information.
+ 
+ EXIT STATUS
+ -----------
+diff --git a/cmds-qgroup.c b/cmds-qgroup.c
+index bc15077..2a10c97 100644
+--- a/cmds-qgroup.c
++++ b/cmds-qgroup.c
+@@ -272,8 +272,7 @@ static int cmd_qgroup_destroy(int argc, char **argv)
+ }
+ 
+ static const char * const cmd_qgroup_show_usage[] = {
+-	"btrfs qgroup show -pcreFf "
+-	"[--sort=qgroupid,rfer,excl,max_rfer,max_excl] <path>",
++	"btrfs qgroup show [options] <path>",
+ 	"Show subvolume quota groups.",
+ 	"-p             print parent qgroup id",
+ 	"-c             print child qgroup id",
+@@ -288,6 +287,7 @@ static const char * const cmd_qgroup_show_usage[] = {
+ 	"               list qgroups sorted by specified items",
+ 	"               you can use '+' or '-' in front of each item.",
+ 	"               (+:ascending, -:descending, ascending default)",
++	"--sync         force sync of the filesystem before getting info",
+ 	NULL
+ };
+ 
+@@ -301,6 +301,7 @@ static int cmd_qgroup_show(int argc, char **argv)
+ 	u64 qgroupid;
+ 	int filter_flag = 0;
+ 	unsigned unit_mode;
++	int sync = 0;
+ 
+ 	struct btrfs_qgroup_comparer_set *comparer_set;
+ 	struct btrfs_qgroup_filter_set *filter_set;
+@@ -311,8 +312,12 @@ static int cmd_qgroup_show(int argc, char **argv)
+ 
+ 	while (1) {
+ 		int c;
++		enum {
++			GETOPT_VAL_SYNC = 256
++		};
+ 		static const struct option long_options[] = {
+ 			{"sort", required_argument, NULL, 'S'},
++			{"sync", no_argument, NULL, GETOPT_VAL_SYNC},
+ 			{ NULL, 0, NULL, 0 }
+ 		};
+ 
+@@ -348,6 +353,9 @@ static int cmd_qgroup_show(int argc, char **argv)
+ 			if (ret)
+ 				usage(cmd_qgroup_show_usage);
+ 			break;
++		case GETOPT_VAL_SYNC:
++			sync = 1;
++			break;
+ 		default:
+ 			usage(cmd_qgroup_show_usage);
+ 		}
+@@ -365,6 +373,16 @@ static int cmd_qgroup_show(int argc, char **argv)
+ 		return 1;
+ 	}
+ 
++	if (sync) {
++		ret = ioctl(fd, BTRFS_IOC_SYNC);
++		if (ret < 0) {
++			error("sync ioctl failed on '%s': %s", path,
++			      strerror(errno));
++			close_file_or_dir(fd, dirstream);
++			goto out;
++		}
++	}
++
+ 	if (filter_flag) {
+ 		ret = lookup_path_rootid(fd, &qgroupid);
+ 		if (ret < 0) {
+-- 
+2.9.3

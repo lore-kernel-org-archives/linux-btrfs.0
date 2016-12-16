@@ -1,95 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:52096 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1754556AbcLPTu3 (ORCPT
+Received: from mail-wj0-f193.google.com ([209.85.210.193]:33716 "EHLO
+        mail-wj0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754586AbcLPWMF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Dec 2016 14:50:29 -0500
-Subject: Re: OOM: Better, but still there on 4.9
-To: Michal Hocko <mhocko@kernel.org>, Nils Holland <nholland@tisys.org>
-References: <20161215225702.GA27944@boerne.fritz.box>
- <20161216073941.GA26976@dhcp22.suse.cz>
-CC: <linux-kernel@vger.kernel.org>, <linux-mm@kvack.org>,
-        David Sterba <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-From: Chris Mason <clm@fb.com>
-Message-ID: <1e7af6ae-ff31-2678-11e2-aa22cf554d8d@fb.com>
-Date: Fri, 16 Dec 2016 14:50:07 -0500
+        Fri, 16 Dec 2016 17:12:05 -0500
+Date: Fri, 16 Dec 2016 23:12:02 +0100
+From: Michal Hocko <mhocko@kernel.org>
+To: Johannes Weiner <hannes@cmpxchg.org>
+Cc: Nils Holland <nholland@tisys.org>, linux-kernel@vger.kernel.org,
+        linux-mm@kvack.org, Chris Mason <clm@fb.com>,
+        David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/2] mm, oom: do not enfore OOM killer for __GFP_NOFAIL
+ automatically
+Message-ID: <20161216221202.GE7645@dhcp22.suse.cz>
+References: <20161216073941.GA26976@dhcp22.suse.cz>
+ <20161216155808.12809-1-mhocko@kernel.org>
+ <20161216155808.12809-3-mhocko@kernel.org>
+ <20161216173151.GA23182@cmpxchg.org>
 MIME-Version: 1.0
-In-Reply-To: <20161216073941.GA26976@dhcp22.suse.cz>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20161216173151.GA23182@cmpxchg.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/16/2016 02:39 AM, Michal Hocko wrote:
-> [CC linux-mm and btrfs guys]
->
-> On Thu 15-12-16 23:57:04, Nils Holland wrote:
-> [...]
->> Of course, none of this are workloads that are new / special in any
->> way - prior to 4.8, I never experienced any issues doing the exact
->> same things.
->>
->> Dec 15 19:02:16 teela kernel: kworker/u4:5 invoked oom-killer: gfp_mask=0x2400840(GFP_NOFS|__GFP_NOFAIL), nodemask=0, order=0, oom_score_adj=0
->> Dec 15 19:02:18 teela kernel: kworker/u4:5 cpuset=/ mems_allowed=0
->> Dec 15 19:02:18 teela kernel: CPU: 1 PID: 2603 Comm: kworker/u4:5 Not tainted 4.9.0-gentoo #2
->> Dec 15 19:02:18 teela kernel: Hardware name: Hewlett-Packard Compaq 15 Notebook PC/21F7, BIOS F.22 08/06/2014
->> Dec 15 19:02:18 teela kernel: Workqueue: writeback wb_workfn (flush-btrfs-1)
->> Dec 15 19:02:18 teela kernel:  eff0b604 c142bcce eff0b734 00000000 eff0b634 c1163332 00000000 00000292
->> Dec 15 19:02:18 teela kernel:  eff0b634 c1431876 eff0b638 e7fb0b00 e7fa2900 e7fa2900 c1b58785 eff0b734
->> Dec 15 19:02:18 teela kernel:  eff0b678 c110795f c1043895 eff0b664 c11075c7 00000007 00000000 00000000
->> Dec 15 19:02:18 teela kernel: Call Trace:
->> Dec 15 19:02:18 teela kernel:  [<c142bcce>] dump_stack+0x47/0x69
->> Dec 15 19:02:18 teela kernel:  [<c1163332>] dump_header+0x60/0x178
->> Dec 15 19:02:18 teela kernel:  [<c1431876>] ? ___ratelimit+0x86/0xe0
->> Dec 15 19:02:18 teela kernel:  [<c110795f>] oom_kill_process+0x20f/0x3d0
->> Dec 15 19:02:18 teela kernel:  [<c1043895>] ? has_capability_noaudit+0x15/0x20
->> Dec 15 19:02:18 teela kernel:  [<c11075c7>] ? oom_badness.part.13+0xb7/0x130
->> Dec 15 19:02:18 teela kernel:  [<c1107df9>] out_of_memory+0xd9/0x260
->> Dec 15 19:02:18 teela kernel:  [<c110ba0b>] __alloc_pages_nodemask+0xbfb/0xc80
->> Dec 15 19:02:18 teela kernel:  [<c110414d>] pagecache_get_page+0xad/0x270
->> Dec 15 19:02:18 teela kernel:  [<c13664a6>] alloc_extent_buffer+0x116/0x3e0
->> Dec 15 19:02:18 teela kernel:  [<c1334a2e>] btrfs_find_create_tree_block+0xe/0x10
->> Dec 15 19:02:18 teela kernel:  [<c132a57f>] btrfs_alloc_tree_block+0x1ef/0x5f0
->> Dec 15 19:02:18 teela kernel:  [<c130f7c3>] __btrfs_cow_block+0x143/0x5f0
->> Dec 15 19:02:18 teela kernel:  [<c130fe1a>] btrfs_cow_block+0x13a/0x220
->> Dec 15 19:02:18 teela kernel:  [<c13132f1>] btrfs_search_slot+0x1d1/0x870
->> Dec 15 19:02:18 teela kernel:  [<c132fcdd>] btrfs_lookup_file_extent+0x4d/0x60
->> Dec 15 19:02:18 teela kernel:  [<c1354fe6>] __btrfs_drop_extents+0x176/0x1070
->> Dec 15 19:02:18 teela kernel:  [<c1150377>] ? kmem_cache_alloc+0xb7/0x190
->> Dec 15 19:02:18 teela kernel:  [<c133dbb5>] ? start_transaction+0x65/0x4b0
->> Dec 15 19:02:18 teela kernel:  [<c1150597>] ? __kmalloc+0x147/0x1e0
->> Dec 15 19:02:18 teela kernel:  [<c1345005>] cow_file_range_inline+0x215/0x6b0
->> Dec 15 19:02:18 teela kernel:  [<c13459fc>] cow_file_range.isra.49+0x55c/0x6d0
->> Dec 15 19:02:18 teela kernel:  [<c1361795>] ? lock_extent_bits+0x75/0x1e0
->> Dec 15 19:02:18 teela kernel:  [<c1346d51>] run_delalloc_range+0x441/0x470
->> Dec 15 19:02:18 teela kernel:  [<c13626e4>] writepage_delalloc.isra.47+0x144/0x1e0
->> Dec 15 19:02:18 teela kernel:  [<c1364548>] __extent_writepage+0xd8/0x2b0
->> Dec 15 19:02:18 teela kernel:  [<c1365c4c>] extent_writepages+0x25c/0x380
->> Dec 15 19:02:18 teela kernel:  [<c1342cd0>] ? btrfs_real_readdir+0x610/0x610
->> Dec 15 19:02:18 teela kernel:  [<c133ff0f>] btrfs_writepages+0x1f/0x30
->> Dec 15 19:02:18 teela kernel:  [<c110ff85>] do_writepages+0x15/0x40
->> Dec 15 19:02:18 teela kernel:  [<c1190a95>] __writeback_single_inode+0x35/0x2f0
->> Dec 15 19:02:18 teela kernel:  [<c119112e>] writeback_sb_inodes+0x16e/0x340
->> Dec 15 19:02:18 teela kernel:  [<c119145a>] wb_writeback+0xaa/0x280
->> Dec 15 19:02:18 teela kernel:  [<c1191de8>] wb_workfn+0xd8/0x3e0
->> Dec 15 19:02:18 teela kernel:  [<c104fd34>] process_one_work+0x114/0x3e0
->> Dec 15 19:02:18 teela kernel:  [<c1050b4f>] worker_thread+0x2f/0x4b0
->> Dec 15 19:02:18 teela kernel:  [<c1050b20>] ? create_worker+0x180/0x180
->> Dec 15 19:02:18 teela kernel:  [<c10552e7>] kthread+0x97/0xb0
->> Dec 15 19:02:18 teela kernel:  [<c1055250>] ? __kthread_parkme+0x60/0x60
->> Dec 15 19:02:18 teela kernel:  [<c19b5cb7>] ret_from_fork+0x1b/0x28
->> Dec 15 19:02:18 teela kernel: Mem-Info:
->> Dec 15 19:02:18 teela kernel: active_anon:58685 inactive_anon:90 isolated_anon:0
->>                                active_file:274324 inactive_file:281962 isolated_file:0
->
-> OK, so there is still some anonymous memory that could be swapped out
-> and quite a lot of page cache. This might be harder to reclaim because
-> the allocation is a GFP_NOFS request which is limited in its reclaim
-> capabilities. It might be possible that those pagecache pages are pinned
-> in some way by the the filesystem.
+On Fri 16-12-16 12:31:51, Johannes Weiner wrote:
+> On Fri, Dec 16, 2016 at 04:58:08PM +0100, Michal Hocko wrote:
+> > @@ -1013,7 +1013,7 @@ bool out_of_memory(struct oom_control *oc)
+> >  	 * make sure exclude 0 mask - all other users should have at least
+> >  	 * ___GFP_DIRECT_RECLAIM to get here.
+> >  	 */
+> > -	if (oc->gfp_mask && !(oc->gfp_mask & (__GFP_FS|__GFP_NOFAIL)))
+> > +	if (oc->gfp_mask && !(oc->gfp_mask & __GFP_FS))
+> >  		return true;
+> 
+> This makes sense, we should go back to what we had here. Because it's
+> not that the reported OOMs are premature - there is genuinely no more
+> memory reclaimable from the allocating context - but that this class
+> of allocations should never invoke the OOM killer in the first place.
 
-Reading harder, its possible those pagecache pages are all from the 
-btree inode.  They shouldn't be pinned by btrfs, kswapd should be able 
-to wander in and free a good chunk.  What btrfs wants to happen is for 
-this allocation to sit and wait for kswapd to make progress.
+agreed, at least not with the current implementtion. If we had a proper
+accounting where we know that the memory pinned by the fs is not really
+there then we could invoke the oom killer and be safe
 
--chris
+> > @@ -3737,6 +3752,16 @@ __alloc_pages_slowpath(gfp_t gfp_mask, unsigned int order,
+> >  		 */
+> >  		WARN_ON_ONCE(order > PAGE_ALLOC_COSTLY_ORDER);
+> >  
+> > +		/*
+> > +		 * Help non-failing allocations by giving them access to memory
+> > +		 * reserves but do not use ALLOC_NO_WATERMARKS because this
+> > +		 * could deplete whole memory reserves which would just make
+> > +		 * the situation worse
+> > +		 */
+> > +		page = __alloc_pages_cpuset_fallback(gfp_mask, order, ALLOC_HARDER, ac);
+> > +		if (page)
+> > +			goto got_pg;
+> > +
+> 
+> But this should be a separate patch, IMO.
+> 
+> Do we observe GFP_NOFS lockups when we don't do this? 
+
+this is hard to tell but considering users like grow_dev_page we can get
+stuck with a very slow progress I believe. Those allocations could see
+some help.
+
+> Don't we risk
+> premature exhaustion of the memory reserves, and it's better to wait
+> for other reclaimers to make some progress instead?
+
+waiting for other reclaimers would be preferable but we should at least
+give these some priority, which is what ALLOC_HARDER should help with.
+
+> Should we give
+> reserve access to all GFP_NOFS allocations, or just the ones from a
+> reclaim/cleaning context?
+
+I would focus only for those which are important enough. Which are those
+is a harder question. But certainly those with GFP_NOFAIL are important
+enough.
+
+> All that should go into the changelog of a separate allocation booster
+> patch, I think.
+
+The reason I did both in the same patch is to address the concern about
+potential lockups when NOFS|NOFAIL cannot make any progress. I've chosen
+ALLOC_HARDER to give the minimum portion of the reserves so that we do
+not risk other high priority users to be blocked out but still help a
+bit at least and prevent from starvation when other reclaimers are
+faster to consume the reclaimed memory.
+
+I can extend the changelog of course but I believe that having both
+changes together makes some sense. NOFS|NOFAIL allocations are not all
+that rare and sometimes we really depend on them making a further
+progress.
+
+-- 
+Michal Hocko
+SUSE Labs

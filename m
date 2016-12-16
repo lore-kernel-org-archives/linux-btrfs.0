@@ -1,12 +1,10 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f65.google.com ([74.125.82.65]:33751 "EHLO
-        mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1759565AbcLPQ2n (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Dec 2016 11:28:43 -0500
-Message-ID: <1481905648.4304.12.camel@gmail.com>
-Subject: Re: [PATCH 0/9 v2] scope GFP_NOFS api
-From: Mike Galbraith <umgwanakikbuti@gmail.com>
+Received: from mx1.redhat.com ([209.132.183.28]:57450 "EHLO mx1.redhat.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1161071AbcLPQiD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 16 Dec 2016 11:38:03 -0500
+Date: Fri, 16 Dec 2016 11:38:01 -0500
+From: Brian Foster <bfoster@redhat.com>
 To: Michal Hocko <mhocko@kernel.org>
 Cc: linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
         Andrew Morton <akpm@linux-foundation.org>,
@@ -18,395 +16,201 @@ Cc: linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-mtd@lists.infradead.org,
         reiserfs-devel@vger.kernel.org, linux-ntfs-dev@lists.sourceforge.net,
         linux-f2fs-devel@lists.sourceforge.net, linux-afs@lists.infradead.org,
-        LKML <linux-kernel@vger.kernel.org>,
-        "Peter Zijlstra (Intel)" <peterz@infradead.org>
-Date: Fri, 16 Dec 2016 17:27:28 +0100
-In-Reply-To: <20161216153502.GP13940@dhcp22.suse.cz>
+        LKML <linux-kernel@vger.kernel.org>, Michal Hocko <mhocko@suse.com>
+Subject: Re: [PATCH 3/9] xfs: abstract PF_FSTRANS to PF_MEMALLOC_NOFS
+Message-ID: <20161216163801.GF8447@bfoster.bfoster>
 References: <20161215140715.12732-1-mhocko@kernel.org>
-         <1481900758.31172.20.camel@gmail.com>
-         <20161216153502.GP13940@dhcp22.suse.cz>
-Content-Type: text/plain; charset="us-ascii"
-Mime-Version: 1.0
+ <20161215140715.12732-4-mhocko@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20161215140715.12732-4-mhocko@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 2016-12-16 at 16:35 +0100, Michal Hocko wrote:
-> On Fri 16-12-16 16:05:58, Mike Galbraith wrote:
-> > On Thu, 2016-12-15 at 15:07 +0100, Michal Hocko wrote:
-> > > Hi,
-> > > I have posted the previous version here [1]. Since then I have added a
-> > > support to suppress reclaim lockdep warnings (__GFP_NOLOCKDEP) to allow
-> > > removing GFP_NOFS usage motivated by the lockdep false positives. On top
-> > > of that I've tried to convert few KM_NOFS usages to use the new flag in
-> > > the xfs code base. This would need a review from somebody familiar with
-> > > xfs of course.
-> > 
-> > The wild ass guess below prevents the xfs explosion below when running
-> > ltp zram tests.
+On Thu, Dec 15, 2016 at 03:07:09PM +0100, Michal Hocko wrote:
+> From: Michal Hocko <mhocko@suse.com>
 > 
-> Yes this looks correct. Thanks for noticing. I will fold it to the
-> patch2. Thanks for testing Mike!
+> xfs has defined PF_FSTRANS to declare a scope GFP_NOFS semantic quite
+> some time ago. We would like to make this concept more generic and use
+> it for other filesystems as well. Let's start by giving the flag a
+> more genric name PF_MEMALLOC_NOFS which is in line with an exiting
 
-I had ulterior motives, was hoping you might have made the irksome RT
-gripe below just _go away_, as staring at it ain't working out ;-)
+Typos: generic						     existing
 
-[ 1441.309006] =========================================================
-[ 1441.309006] [ INFO: possible irq lock inversion dependency detected ]
-[ 1441.309007] 4.10.0-rt9-rt #11 Tainted: G            E  
-[ 1441.309007] ---------------------------------------------------------
-[ 1441.309008] kswapd0/165 just changed the state of lock:
-[ 1441.309009]  (&journal->j_state_lock){+.+.-.}, at: [<ffffffffa00a6d60>] jbd2_complete_transaction+0x20/0x90 [jbd2]
-[ 1441.309017] but this lock took another, RECLAIM_FS-unsafe lock in the past:
-[ 1441.309017]  (&tb->tb6_lock){+.+.+.}
-[ 1441.309018] and interrupts could create inverse lock ordering between them.
-[ 1441.309018] other info that might help us debug this:
-[ 1441.309018] Chain exists of: &journal->j_state_lock --> &journal->j_list_lock --> &tb->tb6_lock
-[ 1441.309019]  Possible interrupt unsafe locking scenario:
-[ 1441.309019]        CPU0                    CPU1
-[ 1441.309019]        ----                    ----
-[ 1441.309019]   lock(&tb->tb6_lock);
-[ 1441.309020]                                local_irq_disable();
-[ 1441.309020]                                lock(&journal->j_state_lock);
-[ 1441.309020]                                lock(&journal->j_list_lock);
-[ 1441.309021]   <Interrupt>
-[ 1441.309021]     lock(&journal->j_state_lock);
-[ 1441.309021] *** DEADLOCK ***
-[ 1441.309022] 2 locks held by kswapd0/165:
-[ 1441.309022]  #0:  (shrinker_rwsem){+.+...}, at: [<ffffffff811efa2a>] shrink_slab+0x7a/0x6c0
-[ 1441.309027]  #1:  (&type->s_umount_key#29){+.+.+.}, at: [<ffffffff8126f20b>] trylock_super+0x1b/0x50
-[ 1441.309030] the shortest dependencies between 2nd lock and 1st lock:
-[ 1441.309031]    -> (&tb->tb6_lock){+.+.+.} ops: 271 {
-[ 1441.309032]       HARDIRQ-ON-W at:
-[ 1441.309035] [<ffffffff810e11b8>] __lock_acquire+0x938/0x1770
-[ 1441.309036] [<ffffffff810e2564>] lock_acquire+0xd4/0x270
-[ 1441.309039] [<ffffffff8174d291>] rt_write_lock+0x31/0x40
-[ 1441.309041] [<ffffffff816e66e3>] __ip6_ins_rt+0x33/0x70
-[ 1441.309043] [<ffffffff816eccd1>] ip6_route_add+0x81/0xd0
-[ 1441.309044] [<ffffffff816dbf33>] addrconf_prefix_route+0x133/0x1d0
-[ 1441.309046] [<ffffffff816e16eb>] inet6_addr_add+0x1eb/0x250
-[ 1441.309047] [<ffffffff816e294b>] inet6_rtm_newaddr+0x33b/0x410
-[ 1441.309049] [<ffffffff81613c35>] rtnetlink_rcv_msg+0x95/0x220
-[ 1441.309051] [<ffffffff8163a477>] netlink_rcv_skb+0xa7/0xc0
-[ 1441.309053] [<ffffffff8160de88>] rtnetlink_rcv+0x28/0x30
-[ 1441.309054] [<ffffffff81639e53>] netlink_unicast+0x143/0x1f0
-[ 1441.309055] [<ffffffff8163a222>] netlink_sendmsg+0x322/0x3a0
-[ 1441.309057] [<ffffffff815d5c48>] sock_sendmsg+0x38/0x50
-[ 1441.309058] [<ffffffff815d60a6>] SYSC_sendto+0xf6/0x170
-[ 1441.309060] [<ffffffff815d6f6e>] SyS_sendto+0xe/0x10
-[ 1441.309061] [<ffffffff8174d545>] entry_SYSCALL_64_fastpath+0x23/0xc6
-[ 1441.309061]       SOFTIRQ-ON-W at:
-[ 1441.309063] [<ffffffff810e0b03>] __lock_acquire+0x283/0x1770
-[ 1441.309064] [<ffffffff810e2564>] lock_acquire+0xd4/0x270
-[ 1441.309064] [<ffffffff8174d291>] rt_write_lock+0x31/0x40
-[ 1441.309065] [<ffffffff816e66e3>] __ip6_ins_rt+0x33/0x70
-[ 1441.309067] [<ffffffff816eccd1>] ip6_route_add+0x81/0xd0
-[ 1441.309067] [<ffffffff816dbf33>] addrconf_prefix_route+0x133/0x1d0
-[ 1441.309068] [<ffffffff816e16eb>] inet6_addr_add+0x1eb/0x250
-[ 1441.309069] [<ffffffff816e294b>] inet6_rtm_newaddr+0x33b/0x410
-[ 1441.309071] [<ffffffff81613c35>] rtnetlink_rcv_msg+0x95/0x220
-[ 1441.309073] [<ffffffff8163a477>] netlink_rcv_skb+0xa7/0xc0
-[ 1441.309074] [<ffffffff8160de88>] rtnetlink_rcv+0x28/0x30
-[ 1441.309075] [<ffffffff81639e53>] netlink_unicast+0x143/0x1f0
-[ 1441.309077] [<ffffffff8163a222>] netlink_sendmsg+0x322/0x3a0
-[ 1441.309078] [<ffffffff815d5c48>] sock_sendmsg+0x38/0x50
-[ 1441.309079] [<ffffffff815d60a6>] SYSC_sendto+0xf6/0x170
-[ 1441.309080] [<ffffffff815d6f6e>] SyS_sendto+0xe/0x10
-[ 1441.309081] [<ffffffff8174d545>] entry_SYSCALL_64_fastpath+0x23/0xc6
-[ 1441.309081]       RECLAIM_FS-ON-W at:
-[ 1441.309082] [<ffffffff810e0316>] mark_held_locks+0x66/0x90
-[ 1441.309084] [<ffffffff810e34a8>] lockdep_trace_alloc+0xd8/0x120
-[ 1441.309085] [<ffffffff81246df6>] kmem_cache_alloc_node+0x36/0x310
-[ 1441.309086] [<ffffffff815dfd4e>] __alloc_skb+0x4e/0x280
-[ 1441.309088] [<ffffffff816ee6ac>] inet6_rt_notify+0x5c/0x130
-[ 1441.309089] [<ffffffff816f101b>] fib6_add+0x56b/0xa30
-[ 1441.309090] [<ffffffff816e66f8>] __ip6_ins_rt+0x48/0x70
-[ 1441.309091] [<ffffffff816eccd1>] ip6_route_add+0x81/0xd0
-[ 1441.309092] [<ffffffff816dbf33>] addrconf_prefix_route+0x133/0x1d0
-[ 1441.309093] [<ffffffff816e16eb>] inet6_addr_add+0x1eb/0x250
-[ 1441.309094] [<ffffffff816e294b>] inet6_rtm_newaddr+0x33b/0x410
-[ 1441.309096] [<ffffffff81613c35>] rtnetlink_rcv_msg+0x95/0x220
-[ 1441.309097] [<ffffffff8163a477>] netlink_rcv_skb+0xa7/0xc0
-[ 1441.309098] [<ffffffff8160de88>] rtnetlink_rcv+0x28/0x30
-[ 1441.309099] [<ffffffff81639e53>] netlink_unicast+0x143/0x1f0
-[ 1441.309100] [<ffffffff8163a222>] netlink_sendmsg+0x322/0x3a0
-[ 1441.309102] [<ffffffff815d5c48>] sock_sendmsg+0x38/0x50
-[ 1441.309103] [<ffffffff815d60a6>] SYSC_sendto+0xf6/0x170
-[ 1441.309104] [<ffffffff815d6f6e>] SyS_sendto+0xe/0x10
-[ 1441.309105] [<ffffffff8174d545>] entry_SYSCALL_64_fastpath+0x23/0xc6
-[ 1441.309105]       INITIAL USE at:
-[ 1441.309106] [<ffffffff810e0b4e>] __lock_acquire+0x2ce/0x1770
-[ 1441.309107] [<ffffffff810e2564>] lock_acquire+0xd4/0x270
-[ 1441.309108] [<ffffffff8174d291>] rt_write_lock+0x31/0x40
-[ 1441.309109] [<ffffffff816e66e3>] __ip6_ins_rt+0x33/0x70
-[ 1441.309110] [<ffffffff816eccd1>] ip6_route_add+0x81/0xd0
-[ 1441.309111] [<ffffffff816dbf33>] addrconf_prefix_route+0x133/0x1d0
-[ 1441.309112] [<ffffffff816e16eb>] inet6_addr_add+0x1eb/0x250
-[ 1441.309113] [<ffffffff816e294b>] inet6_rtm_newaddr+0x33b/0x410
-[ 1441.309115] [<ffffffff81613c35>] rtnetlink_rcv_msg+0x95/0x220
-[ 1441.309116] [<ffffffff8163a477>] netlink_rcv_skb+0xa7/0xc0
-[ 1441.309117] [<ffffffff8160de88>] rtnetlink_rcv+0x28/0x30
-[ 1441.309118] [<ffffffff81639e53>] netlink_unicast+0x143/0x1f0
-[ 1441.309119] [<ffffffff8163a222>] netlink_sendmsg+0x322/0x3a0
-[ 1441.309120] [<ffffffff815d5c48>] sock_sendmsg+0x38/0x50
-[ 1441.309121] [<ffffffff815d60a6>] SYSC_sendto+0xf6/0x170
-[ 1441.309122] [<ffffffff815d6f6e>] SyS_sendto+0xe/0x10
-[ 1441.309123] [<ffffffff8174d545>] entry_SYSCALL_64_fastpath+0x23/0xc6
-[ 1441.309123]     }
-[ 1441.309125]     ... key      at: [<ffffffff82dd96e0>] __key.59908+0x0/0x8
-[ 1441.309125]     ... acquired at:
-[ 1441.309126] [<ffffffff810e2564>] lock_acquire+0xd4/0x270
-[ 1441.309127] [<ffffffff8174d307>] rt_read_lock+0x47/0x60
-[ 1441.309128] [<ffffffff816ea541>] ip6_pol_route+0x61/0xa60
-[ 1441.309130] [<ffffffff816eaf5a>] ip6_pol_route_input+0x1a/0x20
-[ 1441.309131] [<ffffffff81718f21>] fib6_rule_action+0xa1/0x1e0
-[ 1441.309133] [<ffffffff81621e53>] fib_rules_lookup+0x153/0x2e0
-[ 1441.309134] [<ffffffff81719219>] fib6_rule_lookup+0x59/0xc0
-[ 1441.309135] [<ffffffff816e6a3e>] ip6_route_input_lookup+0x4e/0x60
-[ 1441.309136] [<ffffffff816ec59d>] ip6_route_input+0xdd/0x1a0
-[ 1441.309137] [<ffffffff816d87d0>] ip6_rcv_finish+0x60/0x200
-[ 1441.309139] [<ffffffffa09e00b0>] ip_sabotage_in+0x30/0x40 [br_netfilter]
-[ 1441.309141] [<ffffffff8163c7ac>] nf_hook_slow+0x2c/0xf0
-[ 1441.309142] [<ffffffff816d998a>] ipv6_rcv+0x72a/0x980
-[ 1441.309143] [<ffffffff815f81ef>] __netif_receive_skb_core+0x38f/0xd20
-[ 1441.309144] [<ffffffff815f8b98>] __netif_receive_skb+0x18/0x60
-[ 1441.309145] [<ffffffff815fa4c1>] netif_receive_skb_internal+0x61/0x1d0
-[ 1441.309147] [<ffffffff815fa668>] netif_receive_skb+0x38/0x180
-[ 1441.309151] [<ffffffffa09b77e5>] br_pass_frame_up+0xd5/0x2c0 [bridge]
-[ 1441.309154] [<ffffffffa09b7d66>] br_handle_frame_finish+0x256/0x5c0 [bridge]
-[ 1441.309156] [<ffffffffa09e159c>] br_nf_hook_thresh+0xac/0x220 [br_netfilter]
-[ 1441.309157] [<ffffffffa09e2ee3>] br_nf_pre_routing_finish_ipv6+0x1c3/0x340 [br_netfilter]
-[ 1441.309158] [<ffffffffa09e349d>] br_nf_pre_routing_ipv6+0xdd/0x27a [br_netfilter]
-[ 1441.309159] [<ffffffffa09e2942>] br_nf_pre_routing+0x1b2/0x540 [br_netfilter]
-[ 1441.309160] [<ffffffff8163c7ac>] nf_hook_slow+0x2c/0xf0
-[ 1441.309163] [<ffffffffa09b82f7>] br_handle_frame+0x227/0x5b0 [bridge]
-[ 1441.309164] [<ffffffff815f8036>] __netif_receive_skb_core+0x1d6/0xd20
-[ 1441.309165] [<ffffffff815f8b98>] __netif_receive_skb+0x18/0x60
-[ 1441.309166] [<ffffffff815fa4c1>] netif_receive_skb_internal+0x61/0x1d0
-[ 1441.309167] [<ffffffff815fbca2>] napi_gro_receive+0x192/0x250
-[ 1441.309171] [<ffffffffa03f2163>] rtl8169_poll+0x183/0x6a0 [r8169]
-[ 1441.309172] [<ffffffff815faea0>] net_rx_action+0x3b0/0x700
-[ 1441.309173] [<ffffffff810841a5>] do_current_softirqs+0x285/0x680
-[ 1441.309174] [<ffffffff81084607>] __local_bh_enable+0x67/0x80
-[ 1441.309177] [<ffffffff810f7d81>] irq_forced_thread_fn+0x41/0x60
-[ 1441.309178] [<ffffffff810f832f>] irq_thread+0x13f/0x1e0
-[ 1441.309179] [<ffffffff810a5ecc>] kthread+0x10c/0x140
-[ 1441.309180] [<ffffffff8174d7da>] ret_from_fork+0x2a/0x40
-[ 1441.309181]   -> (&per_cpu(local_softirq_locks[i], __cpu).lock){+.+...} ops: 3582145 {
-[ 1441.309182]      HARDIRQ-ON-W at:
-[ 1441.309183] [<ffffffff810e11b8>] __lock_acquire+0x938/0x1770
-[ 1441.309184] [<ffffffff810e2564>] lock_acquire+0xd4/0x270
-[ 1441.309185] [<ffffffff8174cdea>] rt_spin_lock__no_mg+0x5a/0x70
-[ 1441.309186] [<ffffffff81084094>] do_current_softirqs+0x174/0x680
-[ 1441.309187] [<ffffffff81084607>] __local_bh_enable+0x67/0x80
-[ 1441.309188] [<ffffffff8113c631>] cgroup_idr_alloc.constprop.41+0x61/0x80
-[ 1441.309190] [<ffffffff811d4d5b>] cgroup_setup_root+0x65/0x28f
-[ 1441.309191] [<ffffffff81d9ef88>] cgroup_init+0xf7/0x3e5
-[ 1441.309193] [<ffffffff81d770d1>] start_kernel+0x43f/0x484
-[ 1441.309194] [<ffffffff81d76599>] x86_64_start_reservations+0x2a/0x2c
-[ 1441.309195] [<ffffffff81d766d8>] x86_64_start_kernel+0x13d/0x14c
-[ 1441.309196] [<ffffffff810001b5>] start_cpu+0x5/0x14
-[ 1441.309196]      SOFTIRQ-ON-W at:
-[ 1441.309197] [<ffffffff810e0b03>] __lock_acquire+0x283/0x1770
-[ 1441.309198] [<ffffffff810e2564>] lock_acquire+0xd4/0x270
-[ 1441.309199] [<ffffffff8174cdea>] rt_spin_lock__no_mg+0x5a/0x70
-[ 1441.309200] [<ffffffff81084094>] do_current_softirqs+0x174/0x680
-[ 1441.309201] [<ffffffff81084607>] __local_bh_enable+0x67/0x80
-[ 1441.309202] [<ffffffff8113c631>] cgroup_idr_alloc.constprop.41+0x61/0x80
-[ 1441.309203] [<ffffffff811d4d5b>] cgroup_setup_root+0x65/0x28f
-[ 1441.309204] [<ffffffff81d9ef88>] cgroup_init+0xf7/0x3e5
-[ 1441.309204] [<ffffffff81d770d1>] start_kernel+0x43f/0x484
-[ 1441.309205] [<ffffffff81d76599>] x86_64_start_reservations+0x2a/0x2c
-[ 1441.309206] [<ffffffff81d766d8>] x86_64_start_kernel+0x13d/0x14c
-[ 1441.309207] [<ffffffff810001b5>] start_cpu+0x5/0x14
-[ 1441.309207]      INITIAL USE at:
-[ 1441.309208] [<ffffffff810e0b4e>] __lock_acquire+0x2ce/0x1770
-[ 1441.309209] [<ffffffff810e2564>] lock_acquire+0xd4/0x270
-[ 1441.309210] [<ffffffff8174cdea>] rt_spin_lock__no_mg+0x5a/0x70
-[ 1441.309211] [<ffffffff81084094>] do_current_softirqs+0x174/0x680
-[ 1441.309212] [<ffffffff81084607>] __local_bh_enable+0x67/0x80
-[ 1441.309213] [<ffffffff8113c631>] cgroup_idr_alloc.constprop.41+0x61/0x80
-[ 1441.309213] [<ffffffff811d4d5b>] cgroup_setup_root+0x65/0x28f
-[ 1441.309215] [<ffffffff81d9ef88>] cgroup_init+0xf7/0x3e5
-[ 1441.309216] [<ffffffff81d770d1>] start_kernel+0x43f/0x484
-[ 1441.309216] [<ffffffff81d76599>] x86_64_start_reservations+0x2a/0x2c
-[ 1441.309217] [<ffffffff81d766d8>] x86_64_start_kernel+0x13d/0x14c
-[ 1441.309218] [<ffffffff810001b5>] start_cpu+0x5/0x14
-[ 1441.309218]    }
-[ 1441.309220]    ... key      at: [<ffffffff81f6c110>] __key.38555+0x0/0x8
-[ 1441.309220]    ... acquired at:
-[ 1441.309221] [<ffffffff810e2564>] lock_acquire+0xd4/0x270
-[ 1441.309222] [<ffffffff8174cdea>] rt_spin_lock__no_mg+0x5a/0x70
-[ 1441.309222] [<ffffffff81084094>] do_current_softirqs+0x174/0x680
-[ 1441.309223] [<ffffffff81084607>] __local_bh_enable+0x67/0x80
-[ 1441.309225] [<ffffffff81200bc9>] wb_wakeup_delayed+0x69/0x70
-[ 1441.309226] [<ffffffff812a0aab>] __mark_inode_dirty+0x60b/0x7c0
-[ 1441.309227] [<ffffffff812ab235>] mark_buffer_dirty+0xb5/0x240
-[ 1441.309231] [<ffffffffa009ba1d>] __jbd2_journal_temp_unlink_buffer+0xbd/0xe0 [jbd2]
-[ 1441.309233] [<ffffffffa009e40a>] __jbd2_journal_refile_buffer+0xba/0xe0 [jbd2]
-[ 1441.309235] [<ffffffffa009fbed>] jbd2_journal_commit_transaction+0x112d/0x2130 [jbd2]
-[ 1441.309237] [<ffffffffa00a53dd>] kjournald2+0xcd/0x270 [jbd2]
-[ 1441.309239] [<ffffffff810a5ecc>] kthread+0x10c/0x140
-[ 1441.309239] [<ffffffff8174d7da>] ret_from_fork+0x2a/0x40
-[ 1441.309240]  -> (&journal->j_list_lock){+.+...} ops: 587416 {
-[ 1441.309241]     HARDIRQ-ON-W at:
-[ 1441.309242] [<ffffffff810e11b8>] __lock_acquire+0x938/0x1770
-[ 1441.309243] [<ffffffff810e2564>] lock_acquire+0xd4/0x270
-[ 1441.309244] [<ffffffff8174cd6f>] rt_spin_lock+0x5f/0x80
-[ 1441.309246] [<ffffffffa009d529>] do_get_write_access+0x3b9/0x5c0 [jbd2]
-[ 1441.309248] [<ffffffffa009d761>] jbd2_journal_get_write_access+0x31/0x60 [jbd2]
-[ 1441.309259] [<ffffffffa0105259>] __ext4_journal_get_write_access+0x49/0x90 [ext4]
-[ 1441.309264] [<ffffffffa00c5cb2>] ext4_file_open+0x1c2/0x230 [ext4]
-[ 1441.309265] [<ffffffff81268281>] do_dentry_open+0x231/0x360
-[ 1441.309266] [<ffffffff81269642>] vfs_open+0x52/0x80
-[ 1441.309268] [<ffffffff8127b206>] path_openat+0x476/0xdd0
-[ 1441.309269] [<ffffffff8127d64e>] do_filp_open+0x7e/0xd0
-[ 1441.309270] [<ffffffff812723b7>] do_open_execat+0x67/0x150
-[ 1441.309271] [<ffffffff812739ec>] do_execveat_common.isra.34+0x25c/0x9a0
-[ 1441.309272] [<ffffffff8127415c>] do_execve+0x2c/0x30
-[ 1441.309274] [<ffffffff81098c46>] call_usermodehelper_exec_async+0xf6/0x130
-[ 1441.309274] [<ffffffff8174d7da>] ret_from_fork+0x2a/0x40
-[ 1441.309275]     SOFTIRQ-ON-W at:
-[ 1441.309276] [<ffffffff810e0b03>] __lock_acquire+0x283/0x1770
-[ 1441.309277] [<ffffffff810e2564>] lock_acquire+0xd4/0x270
-[ 1441.309277] [<ffffffff8174cd6f>] rt_spin_lock+0x5f/0x80
-[ 1441.309279] [<ffffffffa009d529>] do_get_write_access+0x3b9/0x5c0 [jbd2]
-[ 1441.309281] [<ffffffffa009d761>] jbd2_journal_get_write_access+0x31/0x60 [jbd2]
-[ 1441.309288] [<ffffffffa0105259>] __ext4_journal_get_write_access+0x49/0x90 [ext4]
-[ 1441.309293] [<ffffffffa00c5cb2>] ext4_file_open+0x1c2/0x230 [ext4]
-[ 1441.309294] [<ffffffff81268281>] do_dentry_open+0x231/0x360
-[ 1441.309295] [<ffffffff81269642>] vfs_open+0x52/0x80
-[ 1441.309296] [<ffffffff8127b206>] path_openat+0x476/0xdd0
-[ 1441.309297] [<ffffffff8127d64e>] do_filp_open+0x7e/0xd0
-[ 1441.309298] [<ffffffff812723b7>] do_open_execat+0x67/0x150
-[ 1441.309299] [<ffffffff812739ec>] do_execveat_common.isra.34+0x25c/0x9a0
-[ 1441.309300] [<ffffffff8127415c>] do_execve+0x2c/0x30
-[ 1441.309301] [<ffffffff81098c46>] call_usermodehelper_exec_async+0xf6/0x130
-[ 1441.309302] [<ffffffff8174d7da>] ret_from_fork+0x2a/0x40
-[ 1441.309302]     INITIAL USE at:
-[ 1441.309303] [<ffffffff810e0b4e>] __lock_acquire+0x2ce/0x1770
-[ 1441.309304] [<ffffffff810e2564>] lock_acquire+0xd4/0x270
-[ 1441.309305] [<ffffffff8174cd6f>] rt_spin_lock+0x5f/0x80
-[ 1441.309307] [<ffffffffa009d529>] do_get_write_access+0x3b9/0x5c0 [jbd2]
-[ 1441.309308] [<ffffffffa009d761>] jbd2_journal_get_write_access+0x31/0x60 [jbd2]
-[ 1441.309314] [<ffffffffa0105259>] __ext4_journal_get_write_access+0x49/0x90 [ext4]
-[ 1441.309319] [<ffffffffa00c5cb2>] ext4_file_open+0x1c2/0x230 [ext4]
-[ 1441.309319] [<ffffffff81268281>] do_dentry_open+0x231/0x360
-[ 1441.309320] [<ffffffff81269642>] vfs_open+0x52/0x80
-[ 1441.309321] [<ffffffff8127b206>] path_openat+0x476/0xdd0
-[ 1441.309322] [<ffffffff8127d64e>] do_filp_open+0x7e/0xd0
-[ 1441.309323] [<ffffffff812723b7>] do_open_execat+0x67/0x150
-[ 1441.309324] [<ffffffff812739ec>] do_execveat_common.isra.34+0x25c/0x9a0
-[ 1441.309325] [<ffffffff8127415c>] do_execve+0x2c/0x30
-[ 1441.309326] [<ffffffff81098c46>] call_usermodehelper_exec_async+0xf6/0x130
-[ 1441.309327] [<ffffffff8174d7da>] ret_from_fork+0x2a/0x40
-[ 1441.309327]   }
-[ 1441.309330]   ... key      at: [<ffffffffa00af5c0>] __key.47251+0x0/0xffffffffffff9a40 [jbd2]
-[ 1441.309330]   ... acquired at:
-[ 1441.309331] [<ffffffff810e2564>] lock_acquire+0xd4/0x270
-[ 1441.309331] [<ffffffff8174cd6f>] rt_spin_lock+0x5f/0x80
-[ 1441.309333] [<ffffffffa009ee25>] jbd2_journal_commit_transaction+0x365/0x2130 [jbd2]
-[ 1441.309335] [<ffffffffa00a53dd>] kjournald2+0xcd/0x270 [jbd2]
-[ 1441.309337] [<ffffffff810a5ecc>] kthread+0x10c/0x140
-[ 1441.309337] [<ffffffff8174d7da>] ret_from_fork+0x2a/0x40
-[ 1441.309338] -> (&journal->j_state_lock){+.+.-.} ops: 5849939 {
-[ 1441.309339]    HARDIRQ-ON-W at:
-[ 1441.309340] [<ffffffff810e11b8>] __lock_acquire+0x938/0x1770
-[ 1441.309341] [<ffffffff810e2564>] lock_acquire+0xd4/0x270
-[ 1441.309341] [<ffffffff8174d291>] rt_write_lock+0x31/0x40
-[ 1441.309348] [<ffffffffa00e9c0d>] ext4_init_journal_params+0x4d/0xc0 [ext4]
-[ 1441.309353] [<ffffffffa00f515e>] ext4_fill_super+0x1e4e/0x3770 [ext4]
-[ 1441.309355] [<ffffffff8126ee4a>] mount_bdev+0x18a/0x1c0
-[ 1441.309360] [<ffffffffa00e9705>] ext4_mount+0x15/0x20 [ext4]
-[ 1441.309361] [<ffffffff8126fa79>] mount_fs+0x39/0x170
-[ 1441.309362] [<ffffffff81290817>] vfs_kern_mount+0x67/0x130
-[ 1441.309363] [<ffffffff812939fb>] do_mount+0x1bb/0xc60
-[ 1441.309364] [<ffffffff81294773>] SyS_mount+0x83/0xd0
-[ 1441.309365] [<ffffffff8174d545>] entry_SYSCALL_64_fastpath+0x23/0xc6
-[ 1441.309365]    SOFTIRQ-ON-W at:
-[ 1441.309366] [<ffffffff810e0b03>] __lock_acquire+0x283/0x1770
-[ 1441.309367] [<ffffffff810e2564>] lock_acquire+0xd4/0x270
-[ 1441.309368] [<ffffffff8174d291>] rt_write_lock+0x31/0x40
-[ 1441.309373] [<ffffffffa00e9c0d>] ext4_init_journal_params+0x4d/0xc0 [ext4]
-[ 1441.309378] [<ffffffffa00f515e>] ext4_fill_super+0x1e4e/0x3770 [ext4]
-[ 1441.309379] [<ffffffff8126ee4a>] mount_bdev+0x18a/0x1c0
-[ 1441.309383] [<ffffffffa00e9705>] ext4_mount+0x15/0x20 [ext4]
-[ 1441.309385] [<ffffffff8126fa79>] mount_fs+0x39/0x170
-[ 1441.309385] [<ffffffff81290817>] vfs_kern_mount+0x67/0x130
-[ 1441.309386] [<ffffffff812939fb>] do_mount+0x1bb/0xc60
-[ 1441.309387] [<ffffffff81294773>] SyS_mount+0x83/0xd0
-[ 1441.309388] [<ffffffff8174d545>] entry_SYSCALL_64_fastpath+0x23/0xc6
-[ 1441.309388]    IN-RECLAIM_FS-W at:
-[ 1441.309390] [<ffffffff810e0b36>] __lock_acquire+0x2b6/0x1770
-[ 1441.309391] [<ffffffff810e2564>] lock_acquire+0xd4/0x270
-[ 1441.309391] [<ffffffff8174d307>] rt_read_lock+0x47/0x60
-[ 1441.309394] [<ffffffffa00a6d60>] jbd2_complete_transaction+0x20/0x90 [jbd2]
-[ 1441.309398] [<ffffffffa00d472e>] ext4_evict_inode+0x37e/0x700 [ext4]
-[ 1441.309400] [<ffffffff8128b221>] evict+0xd1/0x1a0
-[ 1441.309401] [<ffffffff8128b33d>] dispose_list+0x4d/0x70
-[ 1441.309402] [<ffffffff8128c60b>] prune_icache_sb+0x4b/0x60
-[ 1441.309404] [<ffffffff8126f381>] super_cache_scan+0x141/0x190
-[ 1441.309405] [<ffffffff811efc27>] shrink_slab+0x277/0x6c0
-[ 1441.309406] [<ffffffff811f4523>] shrink_node+0x2e3/0x2f0
-[ 1441.309407] [<ffffffff811f5a7f>] kswapd+0x34f/0x980
-[ 1441.309409] [<ffffffff810a5ecc>] kthread+0x10c/0x140
-[ 1441.309409] [<ffffffff8174d7da>] ret_from_fork+0x2a/0x40
-[ 1441.309410]    INITIAL USE at:
-[ 1441.309411] [<ffffffff810e0b4e>] __lock_acquire+0x2ce/0x1770
-[ 1441.309412] [<ffffffff810e2564>] lock_acquire+0xd4/0x270
-[ 1441.309412] [<ffffffff8174d291>] rt_write_lock+0x31/0x40
-[ 1441.309417] [<ffffffffa00e9c0d>] ext4_init_journal_params+0x4d/0xc0 [ext4]
-[ 1441.309422] [<ffffffffa00f515e>] ext4_fill_super+0x1e4e/0x3770 [ext4]
-[ 1441.309423] [<ffffffff8126ee4a>] mount_bdev+0x18a/0x1c0
-[ 1441.309427] [<ffffffffa00e9705>] ext4_mount+0x15/0x20 [ext4]
-[ 1441.309429] [<ffffffff8126fa79>] mount_fs+0x39/0x170
-[ 1441.309429] [<ffffffff81290817>] vfs_kern_mount+0x67/0x130
-[ 1441.309430] [<ffffffff812939fb>] do_mount+0x1bb/0xc60
-[ 1441.309431] [<ffffffff81294773>] SyS_mount+0x83/0xd0
-[ 1441.309432] [<ffffffff8174d545>] entry_SYSCALL_64_fastpath+0x23/0xc6
-[ 1441.309432]  }
-[ 1441.309435]  ... key      at: [<ffffffffa00af5b0>] __key.47253+0x0/0xffffffffffff9a50 [jbd2]
-[ 1441.309435]  ... acquired at:
-[ 1441.309436] [<ffffffff810df99e>] check_usage_forwards+0x11e/0x120
-[ 1441.309437] [<ffffffff810e01a8>] mark_lock+0x1e8/0x2f0
-[ 1441.309437] [<ffffffff810e0b36>] __lock_acquire+0x2b6/0x1770
-[ 1441.309438] [<ffffffff810e2564>] lock_acquire+0xd4/0x270
-[ 1441.309439] [<ffffffff8174d307>] rt_read_lock+0x47/0x60
-[ 1441.309441] [<ffffffffa00a6d60>] jbd2_complete_transaction+0x20/0x90 [jbd2]
-[ 1441.309446] [<ffffffffa00d472e>] ext4_evict_inode+0x37e/0x700 [ext4]
-[ 1441.309447] [<ffffffff8128b221>] evict+0xd1/0x1a0
-[ 1441.309448] [<ffffffff8128b33d>] dispose_list+0x4d/0x70
-[ 1441.309449] [<ffffffff8128c60b>] prune_icache_sb+0x4b/0x60
-[ 1441.309450] [<ffffffff8126f381>] super_cache_scan+0x141/0x190
-[ 1441.309451] [<ffffffff811efc27>] shrink_slab+0x277/0x6c0
-[ 1441.309452] [<ffffffff811f4523>] shrink_node+0x2e3/0x2f0
-[ 1441.309453] [<ffffffff811f5a7f>] kswapd+0x34f/0x980
-[ 1441.309454] [<ffffffff810a5ecc>] kthread+0x10c/0x140
-[ 1441.309455] [<ffffffff8174d7da>] ret_from_fork+0x2a/0x40
-[ 1441.309455] stack backtrace:
-[ 1441.309457] CPU: 0 PID: 165 Comm: kswapd0 Tainted: G            E   4.10.0-rt9-rt #11
-[ 1441.309457] Hardware name: MEDION MS-7848/MS-7848, BIOS M7848W08.20C 09/23/2013
-[ 1441.309457] Call Trace:
-[ 1441.309459]  dump_stack+0x85/0xc8
-[ 1441.309461]  print_irq_inversion_bug.part.34+0x1ac/0x1b8
-[ 1441.309462]  check_usage_forwards+0x11e/0x120
-[ 1441.309463]  ? check_usage_backwards+0x120/0x120
-[ 1441.309463]  mark_lock+0x1e8/0x2f0
-[ 1441.309464]  __lock_acquire+0x2b6/0x1770
-[ 1441.309465]  ? __lock_acquire+0x420/0x1770
-[ 1441.309466]  lock_acquire+0xd4/0x270
-[ 1441.309468]  ? jbd2_complete_transaction+0x20/0x90 [jbd2]
-[ 1441.309469]  rt_read_lock+0x47/0x60
-[ 1441.309471]  ? jbd2_complete_transaction+0x20/0x90 [jbd2]
-[ 1441.309472]  jbd2_complete_transaction+0x20/0x90 [jbd2]
-[ 1441.309477]  ext4_evict_inode+0x37e/0x700 [ext4]
-[ 1441.309478]  evict+0xd1/0x1a0
-[ 1441.309479]  dispose_list+0x4d/0x70
-[ 1441.309480]  prune_icache_sb+0x4b/0x60
-[ 1441.309481]  super_cache_scan+0x141/0x190
-[ 1441.309482]  shrink_slab+0x277/0x6c0
-[ 1441.309483]  shrink_node+0x2e3/0x2f0
-[ 1441.309485]  kswapd+0x34f/0x980
-[ 1441.309487]  kthread+0x10c/0x140
-[ 1441.309488]  ? mem_cgroup_shrink_node+0x390/0x390
-[ 1441.309488]  ? kthread_park+0x90/0x90
-[ 1441.309489]  ret_from_fork+0x2a/0x40
+> PF_MEMALLOC_NOIO already used for the same purpose for GFP_NOIO
+> contexts. Replace all PF_FSTRANS usage from the xfs code in the first
+> step before we introduce a full API for it as xfs uses the flag directly
+> anyway.
+> 
+> This patch doesn't introduce any functional change.
+> 
+> Signed-off-by: Michal Hocko <mhocko@suse.com>
+> ---
+
+Otherwise seems fine to me:
+
+Reviewed-by: Brian Foster <bfoster@redhat.com>
+
+>  fs/xfs/kmem.c             |  4 ++--
+>  fs/xfs/kmem.h             |  2 +-
+>  fs/xfs/libxfs/xfs_btree.c |  2 +-
+>  fs/xfs/xfs_aops.c         |  6 +++---
+>  fs/xfs/xfs_trans.c        | 12 ++++++------
+>  include/linux/sched.h     |  2 ++
+>  6 files changed, 15 insertions(+), 13 deletions(-)
+> 
+> diff --git a/fs/xfs/kmem.c b/fs/xfs/kmem.c
+> index 339c696bbc01..a76a05dae96b 100644
+> --- a/fs/xfs/kmem.c
+> +++ b/fs/xfs/kmem.c
+> @@ -80,13 +80,13 @@ kmem_zalloc_large(size_t size, xfs_km_flags_t flags)
+>  	 * context via PF_MEMALLOC_NOIO to prevent memory reclaim re-entering
+>  	 * the filesystem here and potentially deadlocking.
+>  	 */
+> -	if ((current->flags & PF_FSTRANS) || (flags & KM_NOFS))
+> +	if ((current->flags & PF_MEMALLOC_NOFS) || (flags & KM_NOFS))
+>  		noio_flag = memalloc_noio_save();
+>  
+>  	lflags = kmem_flags_convert(flags);
+>  	ptr = __vmalloc(size, lflags | __GFP_HIGHMEM | __GFP_ZERO, PAGE_KERNEL);
+>  
+> -	if ((current->flags & PF_FSTRANS) || (flags & KM_NOFS))
+> +	if ((current->flags & PF_MEMALLOC_NOFS) || (flags & KM_NOFS))
+>  		memalloc_noio_restore(noio_flag);
+>  
+>  	return ptr;
+> diff --git a/fs/xfs/kmem.h b/fs/xfs/kmem.h
+> index ea3984091d58..e40ddd12900b 100644
+> --- a/fs/xfs/kmem.h
+> +++ b/fs/xfs/kmem.h
+> @@ -51,7 +51,7 @@ kmem_flags_convert(xfs_km_flags_t flags)
+>  		lflags = GFP_ATOMIC | __GFP_NOWARN;
+>  	} else {
+>  		lflags = GFP_KERNEL | __GFP_NOWARN;
+> -		if ((current->flags & PF_FSTRANS) || (flags & KM_NOFS))
+> +		if ((current->flags & PF_MEMALLOC_NOFS) || (flags & KM_NOFS))
+>  			lflags &= ~__GFP_FS;
+>  	}
+>  
+> diff --git a/fs/xfs/libxfs/xfs_btree.c b/fs/xfs/libxfs/xfs_btree.c
+> index 21e6a6ab6b9a..a2672ba4dc33 100644
+> --- a/fs/xfs/libxfs/xfs_btree.c
+> +++ b/fs/xfs/libxfs/xfs_btree.c
+> @@ -2866,7 +2866,7 @@ xfs_btree_split_worker(
+>  	struct xfs_btree_split_args	*args = container_of(work,
+>  						struct xfs_btree_split_args, work);
+>  	unsigned long		pflags;
+> -	unsigned long		new_pflags = PF_FSTRANS;
+> +	unsigned long		new_pflags = PF_MEMALLOC_NOFS;
+>  
+>  	/*
+>  	 * we are in a transaction context here, but may also be doing work
+> diff --git a/fs/xfs/xfs_aops.c b/fs/xfs/xfs_aops.c
+> index 0f56fcd3a5d5..61ca9f9c5a12 100644
+> --- a/fs/xfs/xfs_aops.c
+> +++ b/fs/xfs/xfs_aops.c
+> @@ -189,7 +189,7 @@ xfs_setfilesize_trans_alloc(
+>  	 * We hand off the transaction to the completion thread now, so
+>  	 * clear the flag here.
+>  	 */
+> -	current_restore_flags_nested(&tp->t_pflags, PF_FSTRANS);
+> +	current_restore_flags_nested(&tp->t_pflags, PF_MEMALLOC_NOFS);
+>  	return 0;
+>  }
+>  
+> @@ -252,7 +252,7 @@ xfs_setfilesize_ioend(
+>  	 * thus we need to mark ourselves as being in a transaction manually.
+>  	 * Similarly for freeze protection.
+>  	 */
+> -	current_set_flags_nested(&tp->t_pflags, PF_FSTRANS);
+> +	current_set_flags_nested(&tp->t_pflags, PF_MEMALLOC_NOFS);
+>  	__sb_writers_acquired(VFS_I(ip)->i_sb, SB_FREEZE_FS);
+>  
+>  	/* we abort the update if there was an IO error */
+> @@ -1015,7 +1015,7 @@ xfs_do_writepage(
+>  	 * Given that we do not allow direct reclaim to call us, we should
+>  	 * never be called while in a filesystem transaction.
+>  	 */
+> -	if (WARN_ON_ONCE(current->flags & PF_FSTRANS))
+> +	if (WARN_ON_ONCE(current->flags & PF_MEMALLOC_NOFS))
+>  		goto redirty;
+>  
+>  	/*
+> diff --git a/fs/xfs/xfs_trans.c b/fs/xfs/xfs_trans.c
+> index 70f42ea86dfb..f5969c8274fc 100644
+> --- a/fs/xfs/xfs_trans.c
+> +++ b/fs/xfs/xfs_trans.c
+> @@ -134,7 +134,7 @@ xfs_trans_reserve(
+>  	bool		rsvd = (tp->t_flags & XFS_TRANS_RESERVE) != 0;
+>  
+>  	/* Mark this thread as being in a transaction */
+> -	current_set_flags_nested(&tp->t_pflags, PF_FSTRANS);
+> +	current_set_flags_nested(&tp->t_pflags, PF_MEMALLOC_NOFS);
+>  
+>  	/*
+>  	 * Attempt to reserve the needed disk blocks by decrementing
+> @@ -144,7 +144,7 @@ xfs_trans_reserve(
+>  	if (blocks > 0) {
+>  		error = xfs_mod_fdblocks(tp->t_mountp, -((int64_t)blocks), rsvd);
+>  		if (error != 0) {
+> -			current_restore_flags_nested(&tp->t_pflags, PF_FSTRANS);
+> +			current_restore_flags_nested(&tp->t_pflags, PF_MEMALLOC_NOFS);
+>  			return -ENOSPC;
+>  		}
+>  		tp->t_blk_res += blocks;
+> @@ -221,7 +221,7 @@ xfs_trans_reserve(
+>  		tp->t_blk_res = 0;
+>  	}
+>  
+> -	current_restore_flags_nested(&tp->t_pflags, PF_FSTRANS);
+> +	current_restore_flags_nested(&tp->t_pflags, PF_MEMALLOC_NOFS);
+>  
+>  	return error;
+>  }
+> @@ -914,7 +914,7 @@ __xfs_trans_commit(
+>  
+>  	xfs_log_commit_cil(mp, tp, &commit_lsn, regrant);
+>  
+> -	current_restore_flags_nested(&tp->t_pflags, PF_FSTRANS);
+> +	current_restore_flags_nested(&tp->t_pflags, PF_MEMALLOC_NOFS);
+>  	xfs_trans_free(tp);
+>  
+>  	/*
+> @@ -944,7 +944,7 @@ __xfs_trans_commit(
+>  		if (commit_lsn == -1 && !error)
+>  			error = -EIO;
+>  	}
+> -	current_restore_flags_nested(&tp->t_pflags, PF_FSTRANS);
+> +	current_restore_flags_nested(&tp->t_pflags, PF_MEMALLOC_NOFS);
+>  	xfs_trans_free_items(tp, NULLCOMMITLSN, !!error);
+>  	xfs_trans_free(tp);
+>  
+> @@ -998,7 +998,7 @@ xfs_trans_cancel(
+>  		xfs_log_done(mp, tp->t_ticket, NULL, false);
+>  
+>  	/* mark this thread as no longer being in a transaction */
+> -	current_restore_flags_nested(&tp->t_pflags, PF_FSTRANS);
+> +	current_restore_flags_nested(&tp->t_pflags, PF_MEMALLOC_NOFS);
+>  
+>  	xfs_trans_free_items(tp, NULLCOMMITLSN, dirty);
+>  	xfs_trans_free(tp);
+> diff --git a/include/linux/sched.h b/include/linux/sched.h
+> index 4d1905245c7a..baffd340ea82 100644
+> --- a/include/linux/sched.h
+> +++ b/include/linux/sched.h
+> @@ -2320,6 +2320,8 @@ extern void thread_group_cputime_adjusted(struct task_struct *p, cputime_t *ut,
+>  #define PF_FREEZER_SKIP	0x40000000	/* Freezer should not count it as freezable */
+>  #define PF_SUSPEND_TASK 0x80000000      /* this thread called freeze_processes and should not be frozen */
+>  
+> +#define PF_MEMALLOC_NOFS PF_FSTRANS	/* Transition to a more generic GFP_NOFS scope semantic */
+> +
+>  /*
+>   * Only the _current_ task can read/write to tsk->flags, but other
+>   * tasks can access tsk->flags in readonly mode for example
+> -- 
+> 2.10.2
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-xfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

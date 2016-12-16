@@ -1,173 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:49948 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1762622AbcLPXSl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Dec 2016 18:18:41 -0500
-Received: from thetick.localnet ([93.181.44.247]) by mail.gmx.com (mrgmx001
- [212.227.17.190]) with ESMTPSA (Nemesis) id 0MQ2Wx-1cER0U2LBb-005Ei8 for
- <linux-btrfs@vger.kernel.org>; Sat, 17 Dec 2016 00:18:33 +0100
-From: Marc Joliet <marcec@gmx.de>
+Received: from mail-qt0-f194.google.com ([209.85.216.194]:33127 "EHLO
+        mail-qt0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932457AbcLPXsH (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 16 Dec 2016 18:48:07 -0500
+Received: by mail-qt0-f194.google.com with SMTP id n6so12643161qtd.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 16 Dec 2016 15:48:07 -0800 (PST)
+Received: from [192.168.0.2] (c-76-124-64-166.hsd1.pa.comcast.net. [76.124.64.166])
+        by smtp.gmail.com with ESMTPSA id n188sm4866569qkc.30.2016.12.16.15.48.06
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Fri, 16 Dec 2016 15:48:06 -0800 (PST)
 To: linux-btrfs@vger.kernel.org
-Subject: btrfs-check finds file extent holes
-Date: Sat, 17 Dec 2016 00:18:13 +0100
-Message-ID: <6935146.pedKUuRHNK@thetick>
+From: "John L. Center" <jlcenter15@gmail.com>
+Subject: uncorrectable error, but no file there
+Message-ID: <26f42ead-53d3-a7d3-d7bf-597ed7ad5342@gmail.com>
+Date: Fri, 16 Dec 2016 18:48:05 -0500
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart3849436.OO6qEtAKF4"; micalg="pgp-sha256"; protocol="application/pgp-signature"
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart3849436.OO6qEtAKF4
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="utf-8"
+Hi,
 
-Hello,
+I ran a btrfs scrub & found 3 uncorrectable errors:
 
-After my backup drive displayed a weird issue (programs accessing it su=
-ddenly=20
-started zombifying, but it worked fine after a reboot), I decided to ch=
-eck the=20
-file system.  The initial results with btrfs-check's low-memory mode fo=
-und=20
-reference count mismatches, but that seems to have been a false positiv=
-e,=20
-since btrfs-check's normal mode does not find them.  Instead, it compla=
-ins=20
-about several file extent holes:
+[ 5461.412007] BTRFS warning (device md126p2): checksum error at logical
+193296359424 on dev /dev/md126p2, sector 379645488, root 257, inode
+1795724, offset 217088, length 4096, links 1 (path:
+usr/lib/x86_64-linux-gnu/tracker-1.0/libtracker-data.so.0.0.0)
+[ 5461.412010] BTRFS error (device md126p2): bdev /dev/md126p2 errs: wr
+0, rd 0, flush 0, corrupt 1, gen 0
 
-# btrfs check /dev/sdd2      =20
-Checking filesystem on /dev/sdd2
-UUID: f97b3cda-15e8-418b-bb9b-235391ef2a38
-checking extents
-checking free space cache
-checking fs roots
-root 30634 inode 95066 errors 100, file extent discount
-Found file extent holes:
-        start: 413696, len: 4096
-root 30635 inode 95066 errors 100, file extent discount
-Found file extent holes:
-        start: 413696, len: 4096
-root 30636 inode 95066 errors 100, file extent discount
-Found file extent holes:
-        start: 413696, len: 4096
-root 30657 inode 95066 errors 100, file extent discount
-Found file extent holes:
-        start: 413696, len: 4096
-root 30746 inode 95066 errors 100, file extent discount
-Found file extent holes:
-        start: 413696, len: 4096
-root 30747 inode 95066 errors 100, file extent discount
-Found file extent holes:
-        start: 413696, len: 4096
-root 30764 inode 95066 errors 100, file extent discount
-Found file extent holes:
-        start: 413696, len: 4096
-root 30834 inode 95066 errors 100, file extent discount
-Found file extent holes:
-        start: 413696, len: 4096
-root 30835 inode 95066 errors 100, file extent discount
-Found file extent holes:
-        start: 413696, len: 4096
-root 30915 inode 95066 errors 100, file extent discount
-Found file extent holes:
-        start: 413696, len: 4096
-root 30916 inode 95066 errors 100, file extent discount
-Found file extent holes:
-        start: 413696, len: 4096
-root 30942 inode 95066 errors 100, file extent discount
-Found file extent holes:
-        start: 413696, len: 4096
-root 31038 inode 95066 errors 100, file extent discount
-Found file extent holes:
-        start: 413696, len: 4096
-root 31053 inode 95066 errors 100, file extent discount
-Found file extent holes:
-        start: 413696, len: 4096
-root 31366 inode 95066 errors 100, file extent discount
-Found file extent holes:
-        start: 413696, len: 4096
-root 31367 inode 95066 errors 100, file extent discount
-Found file extent holes:
-        start: 413696, len: 4096
-root 31368 inode 95066 errors 100, file extent discount
-Found file extent holes:
-        start: 413696, len: 4096
-root 31385 inode 95066 errors 100, file extent discount
-Found file extent holes:
-        start: 413696, len: 4096
-root 31425 inode 95066 errors 100, file extent discount
-Found file extent holes:
-        start: 413696, len: 4096
-root 31473 inode 95066 errors 100, file extent discount
-Found file extent holes:
-        start: 413696, len: 4096
-root 31499 inode 95066 errors 100, file extent discount
-Found file extent holes:
-        start: 413696, len: 4096
-root 31554 inode 95066 errors 100, file extent discount
-Found file extent holes:
-        start: 413696, len: 4096
-root 31572 inode 95066 errors 100, file extent discount
-Found file extent holes:
-        start: 413696, len: 4096
-root 31606 inode 95066 errors 100, file extent discount
-Found file extent holes:
-        start: 413696, len: 4096
-root 31653 inode 95066 errors 100, file extent discount
-Found file extent holes:
-        start: 413696, len: 4096
-root 31680 inode 95066 errors 100, file extent discount
-Found file extent holes:
-        start: 413696, len: 4096
 
-(The check is still not done, it's been running for about 24 hours now.=
-)
+[11697.574762] BTRFS warning (device md126p2): checksum error at logical
+1093372104704 on dev /dev/md126p2, sector 2140817192, root 257, inode
+2428736, offset 20480, length 4096, links 1 (path:
+opt/WS/build/media_build/v4l/tm6000-stds.o)
+[11697.574766] BTRFS error (device md126p2): bdev /dev/md126p2 errs: wr
+0, rd 0, flush 0, corrupt 2, gen 0
 
-Is this something that btrfs-check can safely repair, or that is perhap=
-s even=20
-harmless?
 
-% uname -a
-Linux thetick 4.8.14-gentoo #1 SMP PREEMPT Sun Dec 11 17:09:09 CET 2016=
- x86_64=20
-AMD Athlon(tm) 64 X2 Dual Core Processor 4200+ AuthenticAMD GNU/Linux
-% /sbin/btrfs --version
-btrfs-progs v4.8.5
+[12411.525644] BTRFS warning (device md126p2): checksum error at logical
+1198857195520 on dev /dev/md126p2, sector 2328296072, root 257, inode
+2689483, offset 28672, length 782, links 1 (path:
+usr/share/texlive/texmf-dist/fonts/type1/public/pxfonts/pxbexa.pfb)
+[12411.525646] BTRFS error (device md126p2): bdev /dev/md126p2 errs: wr
+0, rd 0, flush 0, corrupt 3, gen 0
 
-I can't show any other output because btrfs-check is still running.  I =
-can=20
-only say that the file system is 1TB large and about 88% full (fuller t=
-han=20
-normal, which is about 85%).
 
-Greetings
-=2D-=20
-Marc Joliet
-=2D-
-"People who think they know everything really annoy those of us who kno=
-w we
-don't" - Bjarne Stroustrup
+Two of the errors were at files that were installed as part of packages
+& one was created when I compiled some drivers.  I deleted the driver
+file & reinstalled the 2 packages.  When I ran scrub again, I still had
+1 uncorrectable error, but noticed that btrfs wrote to dmesg that 4 were
+found:
 
---nextPart3849436.OO6qEtAKF4
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
+[61530.256323] BTRFS warning (device md126p2): checksum error at logical
+193296359424 on dev /dev/md126p2, sector 379645488, root 257, inode
+1795724, offset 217088: path resolving failed with ret=-2
+[61530.256325] BTRFS error (device md126p2): bdev /dev/md126p2 errs: wr
+0, rd 0, flush 0, corrupt 4, gen 0
 
------BEGIN PGP SIGNATURE-----
+Btrfs scrub only reported that 1 was found:
 
-iQIcBAABCAAGBQJYVHY1AAoJEL/Q5oYsiHj0gF0QAIQz4+CxK3DevTyL50xnrcOp
-UQfd1BR1+jLsJruJoRw53B/PFT2HirCx2VBiUtYDHQmTMLBugkJ4SAgG9L655+oV
-iVhALANcrXq+ivsIaHcubPbf5tVEbissO+QJ54d2JiJ4XQmIt6g7ADqmhQv0nV1T
-JhcpMTNN+x6aMAUKtTGTO5qzOMG3JX8mVTA70ZJ0OSlogqQgmc23oAnWD2jQIZ87
-7PmK7/9vTQ4D0Lhf+OxydOKY6HAmYgF+WhkrdEM1pxKf5VOOwmf9cfmJ5EgIxW23
-K/4INCKWjM3+TaSPwaZCtiopf9lW+3bIHuAAMFQpbABmUh7NL0JlMJu7HuAkniK8
-pLmUB+53BIbOM61e0hbaBZdouAx9n3J6hKi8v1JJs13I59OqyzIFVGcWLOmbVJcr
-V7fHrNU9hMMmtWP5LF68KSjivQqdcCBZcQsTh8mKTexU89wBNuQeBIr7jxv5mmmv
-Z8YRFwIki5jqhv+C5TKvpI16g79kCt7GiAaBooI4H9forg6Miu/Dz9UykIcQ9alR
-xi7TOambSbTLwuWusT8hlGhVyD6Jdb6mWQflu1zxzPS8jW/X+ow/DSw+xa52+hWO
-mMjrJ7LBaC+DYdHj4mueOsVW9g02Rpjmvwe84reOiyM/KdNMZUfvn1TjGIdZiyho
-XtL9vEqYN1GCVswZWvS4
-=Ff8X
------END PGP SIGNATURE-----
+john@mariposa:~$ sudo btrfs scrub status -d /
+scrub status for ac8fcd40-8879-4416-8259-c30980e526d2
+scrub device /dev/md126p2 (id 1) history
+	scrub started at Fri Dec 16 15:19:03 2016 and finished after 02:25:27
+	total bytes scrubbed: 1.14TiB with 1 errors
+	error details: csum=1
+	corrected errors: 0, uncorrectable errors: 1, unverified errors: 0
 
---nextPart3849436.OO6qEtAKF4--
+Does btrfs keep a running tally of the errors found between runs?  I
+never noticed this before, but this is also the first uncorrectable
+errors I've had since rebuilding by system.  Also, notice that the one
+error it found represented the space that was occupied by the first
+file, libtracker-data.so.0.0.0.  When I reinstalled the package, it
+didn't overwrite the inode that the file was originally at.  How do I
+clean up this inode so that my btrfs partition is error free again?  :-)
+
+Also, what would have caused this kind of error?  It's been running well
+since I rebuilt it.  SMART has found no problem with the drives.  I'm
+running Ubuntu 16.04 w/ kernel 4.8.15 & btrfs-progs v4.8.5-dirty.
+
+Thanks.
+
+	-John
 

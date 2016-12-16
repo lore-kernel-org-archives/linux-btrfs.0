@@ -1,171 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wj0-f195.google.com ([209.85.210.195]:34422 "EHLO
-        mail-wj0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1762003AbcLPP6Z (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Dec 2016 10:58:25 -0500
-From: Michal Hocko <mhocko@kernel.org>
-To: Nils Holland <nholland@tisys.org>
-Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, Chris Mason <clm@fb.com>,
+Received: from gum.cmpxchg.org ([85.214.110.215]:52948 "EHLO gum.cmpxchg.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1756742AbcLPRg7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 16 Dec 2016 12:36:59 -0500
+Date: Fri, 16 Dec 2016 12:31:51 -0500
+From: Johannes Weiner <hannes@cmpxchg.org>
+To: Michal Hocko <mhocko@kernel.org>
+Cc: Nils Holland <nholland@tisys.org>, linux-kernel@vger.kernel.org,
+        linux-mm@kvack.org, Chris Mason <clm@fb.com>,
         David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
         Michal Hocko <mhocko@suse.com>
-Subject: [PATCH 1/2] mm: consolidate GFP_NOFAIL checks in the allocator slowpath
-Date: Fri, 16 Dec 2016 16:58:07 +0100
-Message-Id: <20161216155808.12809-2-mhocko@kernel.org>
-In-Reply-To: <20161216155808.12809-1-mhocko@kernel.org>
+Subject: Re: [PATCH 2/2] mm, oom: do not enfore OOM killer for __GFP_NOFAIL
+ automatically
+Message-ID: <20161216173151.GA23182@cmpxchg.org>
 References: <20161216073941.GA26976@dhcp22.suse.cz>
  <20161216155808.12809-1-mhocko@kernel.org>
+ <20161216155808.12809-3-mhocko@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20161216155808.12809-3-mhocko@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Michal Hocko <mhocko@suse.com>
+On Fri, Dec 16, 2016 at 04:58:08PM +0100, Michal Hocko wrote:
+> @@ -1013,7 +1013,7 @@ bool out_of_memory(struct oom_control *oc)
+>  	 * make sure exclude 0 mask - all other users should have at least
+>  	 * ___GFP_DIRECT_RECLAIM to get here.
+>  	 */
+> -	if (oc->gfp_mask && !(oc->gfp_mask & (__GFP_FS|__GFP_NOFAIL)))
+> +	if (oc->gfp_mask && !(oc->gfp_mask & __GFP_FS))
+>  		return true;
 
-Tetsuo Handa has pointed out that 0a0337e0d1d1 ("mm, oom: rework oom
-detection") has subtly changed semantic for costly high order requests
-with __GFP_NOFAIL and withtout __GFP_REPEAT and those can fail right now.
-My code inspection didn't reveal any such users in the tree but it is
-true that this might lead to unexpected allocation failures and
-subsequent OOPs.
+This makes sense, we should go back to what we had here. Because it's
+not that the reported OOMs are premature - there is genuinely no more
+memory reclaimable from the allocating context - but that this class
+of allocations should never invoke the OOM killer in the first place.
 
-__alloc_pages_slowpath wrt. GFP_NOFAIL is hard to follow currently.
-There are few special cases but we are lacking a catch all place to be
-sure we will not miss any case where the non failing allocation might
-fail. This patch reorganizes the code a bit and puts all those special
-cases under nopage label which is the generic go-to-fail path. Non
-failing allocations are retried or those that cannot retry like
-non-sleeping allocation go to the failure point directly. This should
-make the code flow much easier to follow and make it less error prone
-for future changes.
+> @@ -3737,6 +3752,16 @@ __alloc_pages_slowpath(gfp_t gfp_mask, unsigned int order,
+>  		 */
+>  		WARN_ON_ONCE(order > PAGE_ALLOC_COSTLY_ORDER);
+>  
+> +		/*
+> +		 * Help non-failing allocations by giving them access to memory
+> +		 * reserves but do not use ALLOC_NO_WATERMARKS because this
+> +		 * could deplete whole memory reserves which would just make
+> +		 * the situation worse
+> +		 */
+> +		page = __alloc_pages_cpuset_fallback(gfp_mask, order, ALLOC_HARDER, ac);
+> +		if (page)
+> +			goto got_pg;
+> +
 
-While we are there we have to move the stall check up to catch
-potentially looping non-failing allocations.
+But this should be a separate patch, IMO.
 
-Changes since v1
-- do not skip direct reclaim for TIF_MEMDIE && GFP_NOFAIL as per Hillf
-- do not skip __alloc_pages_may_oom for TIF_MEMDIE && GFP_NOFAIL as
-  per Tetsuo
-
-Signed-off-by: Michal Hocko <mhocko@suse.com>
-Acked-by: Vlastimil Babka <vbabka@suse.cz>
-Acked-by: Johannes Weiner <hannes@cmpxchg.org>
-Acked-by: Hillf Danton <hillf.zj@alibaba-inc.com>
----
- mm/page_alloc.c | 75 +++++++++++++++++++++++++++++++++------------------------
- 1 file changed, 44 insertions(+), 31 deletions(-)
-
-diff --git a/mm/page_alloc.c b/mm/page_alloc.c
-index 3f2c9e535f7f..095e2fa286de 100644
---- a/mm/page_alloc.c
-+++ b/mm/page_alloc.c
-@@ -3640,35 +3640,21 @@ __alloc_pages_slowpath(gfp_t gfp_mask, unsigned int order,
- 		goto got_pg;
- 
- 	/* Caller is not willing to reclaim, we can't balance anything */
--	if (!can_direct_reclaim) {
--		/*
--		 * All existing users of the __GFP_NOFAIL are blockable, so warn
--		 * of any new users that actually allow this type of allocation
--		 * to fail.
--		 */
--		WARN_ON_ONCE(gfp_mask & __GFP_NOFAIL);
-+	if (!can_direct_reclaim)
- 		goto nopage;
--	}
- 
--	/* Avoid recursion of direct reclaim */
--	if (current->flags & PF_MEMALLOC) {
--		/*
--		 * __GFP_NOFAIL request from this context is rather bizarre
--		 * because we cannot reclaim anything and only can loop waiting
--		 * for somebody to do a work for us.
--		 */
--		if (WARN_ON_ONCE(gfp_mask & __GFP_NOFAIL)) {
--			cond_resched();
--			goto retry;
--		}
--		goto nopage;
-+	/* Make sure we know about allocations which stall for too long */
-+	if (time_after(jiffies, alloc_start + stall_timeout)) {
-+		warn_alloc(gfp_mask,
-+			"page alloction stalls for %ums, order:%u",
-+			jiffies_to_msecs(jiffies-alloc_start), order);
-+		stall_timeout += 10 * HZ;
- 	}
- 
--	/* Avoid allocations with no watermarks from looping endlessly */
--	if (test_thread_flag(TIF_MEMDIE) && !(gfp_mask & __GFP_NOFAIL))
-+	/* Avoid recursion of direct reclaim */
-+	if (current->flags & PF_MEMALLOC)
- 		goto nopage;
- 
--
- 	/* Try direct reclaim and then allocating */
- 	page = __alloc_pages_direct_reclaim(gfp_mask, order, alloc_flags, ac,
- 							&did_some_progress);
-@@ -3692,14 +3678,6 @@ __alloc_pages_slowpath(gfp_t gfp_mask, unsigned int order,
- 	if (order > PAGE_ALLOC_COSTLY_ORDER && !(gfp_mask & __GFP_REPEAT))
- 		goto nopage;
- 
--	/* Make sure we know about allocations which stall for too long */
--	if (time_after(jiffies, alloc_start + stall_timeout)) {
--		warn_alloc(gfp_mask,
--			"page allocation stalls for %ums, order:%u",
--			jiffies_to_msecs(jiffies-alloc_start), order);
--		stall_timeout += 10 * HZ;
--	}
--
- 	if (should_reclaim_retry(gfp_mask, order, ac, alloc_flags,
- 				 did_some_progress > 0, &no_progress_loops))
- 		goto retry;
-@@ -3721,6 +3699,10 @@ __alloc_pages_slowpath(gfp_t gfp_mask, unsigned int order,
- 	if (page)
- 		goto got_pg;
- 
-+	/* Avoid allocations with no watermarks from looping endlessly */
-+	if (test_thread_flag(TIF_MEMDIE))
-+		goto nopage;
-+
- 	/* Retry as long as the OOM killer is making progress */
- 	if (did_some_progress) {
- 		no_progress_loops = 0;
-@@ -3728,6 +3710,37 @@ __alloc_pages_slowpath(gfp_t gfp_mask, unsigned int order,
- 	}
- 
- nopage:
-+	/*
-+	 * Make sure that __GFP_NOFAIL request doesn't leak out and make sure
-+	 * we always retry
-+	 */
-+	if (gfp_mask & __GFP_NOFAIL) {
-+		/*
-+		 * All existing users of the __GFP_NOFAIL are blockable, so warn
-+		 * of any new users that actually require GFP_NOWAIT
-+		 */
-+		if (WARN_ON_ONCE(!can_direct_reclaim))
-+			goto fail;
-+
-+		/*
-+		 * PF_MEMALLOC request from this context is rather bizarre
-+		 * because we cannot reclaim anything and only can loop waiting
-+		 * for somebody to do a work for us
-+		 */
-+		WARN_ON_ONCE(current->flags & PF_MEMALLOC);
-+
-+		/*
-+		 * non failing costly orders are a hard requirement which we
-+		 * are not prepared for much so let's warn about these users
-+		 * so that we can identify them and convert them to something
-+		 * else.
-+		 */
-+		WARN_ON_ONCE(order > PAGE_ALLOC_COSTLY_ORDER);
-+
-+		cond_resched();
-+		goto retry;
-+	}
-+fail:
- 	warn_alloc(gfp_mask,
- 			"page allocation failure: order:%u", order);
- got_pg:
--- 
-2.10.2
-
+Do we observe GFP_NOFS lockups when we don't do this? Don't we risk
+premature exhaustion of the memory reserves, and it's better to wait
+for other reclaimers to make some progress instead? Should we give
+reserve access to all GFP_NOFS allocations, or just the ones from a
+reclaim/cleaning context? All that should go into the changelog of a
+separate allocation booster patch, I think.

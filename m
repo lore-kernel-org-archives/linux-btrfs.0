@@ -1,75 +1,128 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f67.google.com ([74.125.82.67]:34964 "EHLO
-        mail-wm0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932697AbcLQACH (ORCPT
+Received: from www262.sakura.ne.jp ([202.181.97.72]:36764 "EHLO
+        www262.sakura.ne.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1756272AbcLQLRg (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Dec 2016 19:02:07 -0500
-Date: Sat, 17 Dec 2016 01:02:03 +0100
-From: Michal Hocko <mhocko@kernel.org>
-To: Nils Holland <nholland@tisys.org>
-Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, Chris Mason <clm@fb.com>,
-        David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org
-Subject: Re: OOM: Better, but still there on
-Message-ID: <20161217000203.GC23392@dhcp22.suse.cz>
+        Sat, 17 Dec 2016 06:17:36 -0500
+Subject: Re: [PATCH 2/2] mm, oom: do not enfore OOM killer for __GFP_NOFAIL
+ automatically
+To: Michal Hocko <mhocko@kernel.org>, Johannes Weiner <hannes@cmpxchg.org>
 References: <20161216073941.GA26976@dhcp22.suse.cz>
  <20161216155808.12809-1-mhocko@kernel.org>
- <20161216184655.GA5664@boerne.fritz.box>
+ <20161216155808.12809-3-mhocko@kernel.org>
+ <20161216173151.GA23182@cmpxchg.org> <20161216221202.GE7645@dhcp22.suse.cz>
+Cc: Nils Holland <nholland@tisys.org>, linux-kernel@vger.kernel.org,
+        linux-mm@kvack.org, Chris Mason <clm@fb.com>,
+        David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org
+From: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
+Message-ID: <18652e94-8f5c-dcf1-16e6-0deab6c642ec@I-love.SAKURA.ne.jp>
+Date: Sat, 17 Dec 2016 20:17:07 +0900
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20161216184655.GA5664@boerne.fritz.box>
+In-Reply-To: <20161216221202.GE7645@dhcp22.suse.cz>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri 16-12-16 19:47:00, Nils Holland wrote:
-[...]
-> Despite the fact that I'm no expert, I can see that there's no more
-> GFP_NOFS being logged, which seems to be what the patches tried to
-> achieve. What the still present OOMs mean remains up for
-> interpretation by the experts, all I can say is that in the (pre-4.8?)
-> past, doing all of the things I just did would probably slow down my
-> machine quite a bit, but I can't remember to have ever seen it OOM or
-> even crash completely.
+Michal Hocko wrote:
+> On Fri 16-12-16 12:31:51, Johannes Weiner wrote:
+>>> @@ -3737,6 +3752,16 @@ __alloc_pages_slowpath(gfp_t gfp_mask, unsigned int order,
+>>>  		 */
+>>>  		WARN_ON_ONCE(order > PAGE_ALLOC_COSTLY_ORDER);
+>>>  
+>>> +		/*
+>>> +		 * Help non-failing allocations by giving them access to memory
+>>> +		 * reserves but do not use ALLOC_NO_WATERMARKS because this
+>>> +		 * could deplete whole memory reserves which would just make
+>>> +		 * the situation worse
+>>> +		 */
+>>> +		page = __alloc_pages_cpuset_fallback(gfp_mask, order, ALLOC_HARDER, ac);
+>>> +		if (page)
+>>> +			goto got_pg;
+>>> +
+>>
+>> But this should be a separate patch, IMO.
+>>
+>> Do we observe GFP_NOFS lockups when we don't do this? 
 > 
-> Dec 16 18:56:24 boerne.fritz.box kernel: Purging GPU memory, 37 pages freed, 10219 pages still pinned.
-> Dec 16 18:56:29 boerne.fritz.box kernel: kthreadd invoked oom-killer: gfp_mask=0x27080c0(GFP_KERNEL_ACCOUNT|__GFP_ZERO|__GFP_NOTRACK), nodemask=0, order=1, oom_score_adj=0
-> Dec 16 18:56:29 boerne.fritz.box kernel: kthreadd cpuset=/ mems_allowed=0
-[...]
-> Dec 16 18:56:29 boerne.fritz.box kernel: Normal free:41008kB min:41100kB low:51372kB high:61644kB active_anon:0kB inactive_anon:0kB active_file:470556kB inactive_file:148kB unevictable:0kB writepending:1616kB present:897016kB managed:831480kB mlocked:0kB slab_reclaimable:213172kB slab_unreclaimable:86236kB kernel_stack:1864kB pagetables:3572kB bounce:0kB free_pcp:532kB local_pcp:456kB free_cma:0kB
+> this is hard to tell but considering users like grow_dev_page we can get
+> stuck with a very slow progress I believe. Those allocations could see
+> some help.
+> 
+>> Don't we risk
+>> premature exhaustion of the memory reserves, and it's better to wait
+>> for other reclaimers to make some progress instead?
+> 
+> waiting for other reclaimers would be preferable but we should at least
+> give these some priority, which is what ALLOC_HARDER should help with.
+> 
+>> Should we give
+>> reserve access to all GFP_NOFS allocations, or just the ones from a
+>> reclaim/cleaning context?
+> 
+> I would focus only for those which are important enough. Which are those
+> is a harder question. But certainly those with GFP_NOFAIL are important
+> enough.
+> 
+>> All that should go into the changelog of a separate allocation booster
+>> patch, I think.
+> 
+> The reason I did both in the same patch is to address the concern about
+> potential lockups when NOFS|NOFAIL cannot make any progress. I've chosen
+> ALLOC_HARDER to give the minimum portion of the reserves so that we do
+> not risk other high priority users to be blocked out but still help a
+> bit at least and prevent from starvation when other reclaimers are
+> faster to consume the reclaimed memory.
+> 
+> I can extend the changelog of course but I believe that having both
+> changes together makes some sense. NOFS|NOFAIL allocations are not all
+> that rare and sometimes we really depend on them making a further
+> progress.
+> 
 
-this is a GFP_KERNEL allocation so it cannot use the highmem zone again.
-There is no anonymous memory in this zone but the allocation
-context implies the full reclaim context so the file LRU should be
-reclaimable. For some reason ~470MB of the active file LRU is still
-there. This is quite unexpected. It is harder to tell more without
-further data. It would be great if you could enable reclaim related
-tracepoints:
+I feel that allowing access to memory reserves based on __GFP_NOFAIL might not
+make sense. My understanding is that actual I/O operation triggered by I/O
+requests by filesystem code are processed by other threads. Even if we grant
+access to memory reserves to GFP_NOFS | __GFP_NOFAIL allocations by fs code,
+I think that it is possible that memory allocations by underlying bio code
+fails to make a further progress unless memory reserves are granted as well.
 
-mount -t tracefs none /debug/trace
-echo 1 > /debug/trace/events/vmscan/enable
-cat /debug/trace/trace_pipe > trace.log
+Below is a typical trace which I observe under OOM lockuped situation (though
+this trace is from an OOM stress test using XFS).
 
-should help
-[...]
+----------------------------------------
+[ 1845.187246] MemAlloc: kworker/2:1(14498) flags=0x4208060 switches=323636 seq=48 gfp=0x2400000(GFP_NOIO) order=0 delay=430400 uninterruptible
+[ 1845.187248] kworker/2:1     D12712 14498      2 0x00000080
+[ 1845.187251] Workqueue: events_freezable_power_ disk_events_workfn
+[ 1845.187252] Call Trace:
+[ 1845.187253]  ? __schedule+0x23f/0xba0
+[ 1845.187254]  schedule+0x38/0x90
+[ 1845.187255]  schedule_timeout+0x205/0x4a0
+[ 1845.187256]  ? del_timer_sync+0xd0/0xd0
+[ 1845.187257]  schedule_timeout_uninterruptible+0x25/0x30
+[ 1845.187258]  __alloc_pages_nodemask+0x1035/0x10e0
+[ 1845.187259]  ? alloc_request_struct+0x14/0x20
+[ 1845.187261]  alloc_pages_current+0x96/0x1b0
+[ 1845.187262]  ? bio_alloc_bioset+0x20f/0x2e0
+[ 1845.187264]  bio_copy_kern+0xc4/0x180
+[ 1845.187265]  blk_rq_map_kern+0x6f/0x120
+[ 1845.187268]  __scsi_execute.isra.23+0x12f/0x160
+[ 1845.187270]  scsi_execute_req_flags+0x8f/0x100
+[ 1845.187271]  sr_check_events+0xba/0x2b0 [sr_mod]
+[ 1845.187274]  cdrom_check_events+0x13/0x30 [cdrom]
+[ 1845.187275]  sr_block_check_events+0x25/0x30 [sr_mod]
+[ 1845.187276]  disk_check_events+0x5b/0x150
+[ 1845.187277]  disk_events_workfn+0x17/0x20
+[ 1845.187278]  process_one_work+0x1fc/0x750
+[ 1845.187279]  ? process_one_work+0x167/0x750
+[ 1845.187279]  worker_thread+0x126/0x4a0
+[ 1845.187280]  kthread+0x10a/0x140
+[ 1845.187281]  ? process_one_work+0x750/0x750
+[ 1845.187282]  ? kthread_create_on_node+0x60/0x60
+[ 1845.187283]  ret_from_fork+0x2a/0x40
+----------------------------------------
 
-> Dec 16 18:56:31 boerne.fritz.box kernel: xfce4-terminal invoked oom-killer: gfp_mask=0x25000c0(GFP_KERNEL_ACCOUNT), nodemask=0, order=0, oom_score_adj=0
+I think that this GFP_NOIO allocation request needs to consume more memory reserves
+than GFP_NOFS allocation request to make progress. 
+Do we want to add __GFP_NOFAIL to this GFP_NOIO allocation request in order to allow
+access to memory reserves as well as GFP_NOFS | __GFP_NOFAIL allocation request?
 
-another allocation in a short time. Killing the task has obviously
-didn't help because the lowmem memory pressure hasn't been relieved
-
-[...]
-> Dec 16 18:56:32 boerne.fritz.box kernel: Normal free:41028kB min:41100kB low:51372kB high:61644kB active_anon:0kB inactive_anon:0kB active_file:472164kB inactive_file:108kB unevictable:0kB writepending:112kB present:897016kB managed:831480kB mlocked:0kB slab_reclaimable:213236kB slab_unreclaimable:86360kB kernel_stack:1584kB pagetables:2564kB bounce:32kB free_pcp:180kB local_pcp:24kB free_cma:0kB
-
-in fact we have even more pages on the file LRUs.
-
-[...]
-
-> Dec 16 18:56:32 boerne.fritz.box kernel: xfce4-terminal invoked oom-killer: gfp_mask=0x25000c0(GFP_KERNEL_ACCOUNT), nodemask=0, order=0, oom_score_adj=0
-[...]
-> Dec 16 18:56:32 boerne.fritz.box kernel: Normal free:40988kB min:41100kB low:51372kB high:61644kB active_anon:0kB inactive_anon:0kB active_file:472436kB inactive_file:144kB unevictable:0kB writepending:312kB present:897016kB managed:831480kB mlocked:0kB slab_reclaimable:213236kB slab_unreclaimable:86360kB kernel_stack:1584kB pagetables:2464kB bounce:32kB free_pcp:116kB local_pcp:0kB free_cma:0kB
-
-same here. All that suggests that the page cache cannot be reclaimed for
-some reason. It is hard to tell why but there is definitely something
-bad going on.
--- 
-Michal Hocko
-SUSE Labs

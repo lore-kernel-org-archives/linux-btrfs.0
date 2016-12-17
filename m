@@ -1,26 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f68.google.com ([209.85.215.68]:32971 "EHLO
-        mail-lf0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753560AbcLQKGa (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 17 Dec 2016 05:06:30 -0500
-Received: by mail-lf0-f68.google.com with SMTP id y21so3287803lfa.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 17 Dec 2016 02:06:29 -0800 (PST)
-From: =?utf-8?B?SmFyaSBTZXBww6Rsw6Q=?= <lihamakaroonilaatikko@gmail.com>
-Content-Type: text/plain; charset=utf-8
-Mime-Version: 1.0 (Mac OS X Mail 10.2 \(3259\))
-Date: Sat, 17 Dec 2016 12:06:26 +0200
-Subject: Help please: BTRFS fs crashed due to bad removal of USB drive, no
- help from recovery procedures
-Message-Id: <66A9C2C6-028F-466B-9EFF-F06BF3FB4694@gmail.com>
-To: linux-btrfs@vger.kernel.org
+Received: from mout.gmx.net ([212.227.15.18]:50534 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751664AbcLQU1r (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 17 Dec 2016 15:27:47 -0500
+MIME-Version: 1.0
+Message-ID: <trinity-2653fb5f-aa88-4ece-bced-51dee466d428-1482006464623@3capp-mailcom-bs11>
+From: "Xin Zhou" <xin.zhou@gmx.com>
+To: =?UTF-8?Q?=22Jari_Sepp=C3=A4l=C3=A4=22?=
+        <lihamakaroonilaatikko@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Help please: BTRFS fs crashed due to bad removal of USB drive,
+ no help from recovery procedures
+Content-Type: text/plain; charset=UTF-8
+Date: Sat, 17 Dec 2016 21:27:44 +0100
+In-Reply-To: <66A9C2C6-028F-466B-9EFF-F06BF3FB4694@gmail.com>
+References: <66A9C2C6-028F-466B-9EFF-F06BF3FB4694@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+
+
+Hi Jari,
+ 
+Similar with other file system, btrfs has copies of super blocks.
+Try to run "man btrfs check", "man btrfs rescue" and related commands for more details.
+Regards,
+Xin
+ 
+ 
+
+Sent: Saturday, December 17, 2016 at 2:06 AM
+From: "Jari Seppälä" <lihamakaroonilaatikko@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: Help please: BTRFS fs crashed due to bad removal of USB drive, no help from recovery procedures
 Syslog tells:
-[  135.446222] BTRFS error (device sdb1): system chunk array too small 0 < 97
-[  135.446260] BTRFS error (device sdb1): superblock contains fatal errors
-[  135.462544] BTRFS error (device sdb1): open_ctree failed
+[ 135.446222] BTRFS error (device sdb1): system chunk array too small 0 < 97
+[ 135.446260] BTRFS error (device sdb1): superblock contains fatal errors
+[ 135.462544] BTRFS error (device sdb1): open_ctree failed
 
 What have been done:
 * All "btrfs rescue" options
@@ -37,3 +53,7 @@ Jari
 --
 *** Jari Seppälä
 
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at http://vger.kernel.org/majordomo-info.html

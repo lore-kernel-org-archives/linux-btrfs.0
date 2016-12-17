@@ -1,75 +1,153 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from syrinx.knorrie.org ([82.94.188.77]:38552 "EHLO
-        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932697AbcLQAFY (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Dec 2016 19:05:24 -0500
-Subject: Re: uncorrectable error, but no file there
-To: "John L. Center" <jlcenter15@gmail.com>, linux-btrfs@vger.kernel.org
-References: <26f42ead-53d3-a7d3-d7bf-597ed7ad5342@gmail.com>
-From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Message-ID: <7fed01e8-2e71-e15d-3f93-1428e0b91d5d@mendix.com>
-Date: Sat, 17 Dec 2016 01:05:21 +0100
+Received: from mout.gmx.net ([212.227.15.15]:50627 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751965AbcLQJEH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 17 Dec 2016 04:04:07 -0500
+Received: from thetick.localnet ([93.181.44.247]) by mail.gmx.com (mrgmx003
+ [212.227.17.190]) with ESMTPSA (Nemesis) id 0Lg0wl-1cyb181gbb-00pbre for
+ <linux-btrfs@vger.kernel.org>; Sat, 17 Dec 2016 10:04:03 +0100
+From: Marc Joliet <marcec@gmx.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs-check finds file extent holes
+Date: Sat, 17 Dec 2016 10:03:51 +0100
+Message-ID: <2080492.0Ca6ckHrMZ@thetick>
+In-Reply-To: <6935146.pedKUuRHNK@thetick>
+References: <6935146.pedKUuRHNK@thetick>
 MIME-Version: 1.0
-In-Reply-To: <26f42ead-53d3-a7d3-d7bf-597ed7ad5342@gmail.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: multipart/signed; boundary="nextPart1889854.mUd62f3TLF"; micalg="pgp-sha256"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/17/2016 12:48 AM, John L. Center wrote:
-> Hi,
-> 
-> I ran a btrfs scrub & found 3 uncorrectable errors:
-> 
-> [...]
-> When I ran scrub again, I still had
-> 1 uncorrectable error, but noticed that btrfs wrote to dmesg that 4 were
-> found:
-> 
-> [61530.256323] BTRFS warning (device md126p2): checksum error at logical
-> 193296359424 on dev /dev/md126p2, sector 379645488, root 257, inode
-> 1795724, offset 217088: path resolving failed with ret=-2
-> [61530.256325] BTRFS error (device md126p2): bdev /dev/md126p2 errs: wr
-> 0, rd 0, flush 0, corrupt 4, gen 0
-> 
-> Btrfs scrub only reported that 1 was found:
-> 
-> john@mariposa:~$ sudo btrfs scrub status -d /
-> scrub status for ac8fcd40-8879-4416-8259-c30980e526d2
-> scrub device /dev/md126p2 (id 1) history
-> 	scrub started at Fri Dec 16 15:19:03 2016 and finished after 02:25:27
-> 	total bytes scrubbed: 1.14TiB with 1 errors
-> 	error details: csum=1
-> 	corrected errors: 0, uncorrectable errors: 1, unverified errors: 0
-> 
-> Does btrfs keep a running tally of the errors found between runs?
+--nextPart1889854.mUd62f3TLF
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
 
-The lines with the 1234 corrupt errors are not from scrub. The counters
-are not managed by scrub, they are in kernel counters which record the
-total amount of failed reads etc on a physical device.
+OK, btrfs-check finished about an hour after I sent this, here's the co=
+mplete=20
+output:
 
-You can see all error counters by doing 'btrfs device stats
-<path>|<device>' (see man btrfs-device)
+# btrfs check /dev/sdd2      =20
+Checking filesystem on /dev/sdd2
+UUID: f97b3cda-15e8-418b-bb9b-235391ef2a38
+checking extents
+checking free space cache
+checking fs roots
+root 30634 inode 95066 errors 100, file extent discount
+Found file extent holes:
+        start: 413696, len: 4096
+root 30635 inode 95066 errors 100, file extent discount
+Found file extent holes:
+        start: 413696, len: 4096
+root 30636 inode 95066 errors 100, file extent discount
+Found file extent holes:
+        start: 413696, len: 4096
+root 30657 inode 95066 errors 100, file extent discount
+Found file extent holes:
+        start: 413696, len: 4096
+root 30746 inode 95066 errors 100, file extent discount
+Found file extent holes:
+        start: 413696, len: 4096
+root 30747 inode 95066 errors 100, file extent discount
+Found file extent holes:
+        start: 413696, len: 4096
+root 30764 inode 95066 errors 100, file extent discount
+Found file extent holes:
+        start: 413696, len: 4096
+root 30834 inode 95066 errors 100, file extent discount
+Found file extent holes:
+        start: 413696, len: 4096
+root 30835 inode 95066 errors 100, file extent discount
+Found file extent holes:
+        start: 413696, len: 4096
+root 30915 inode 95066 errors 100, file extent discount
+Found file extent holes:
+        start: 413696, len: 4096
+root 30916 inode 95066 errors 100, file extent discount
+Found file extent holes:
+        start: 413696, len: 4096
+root 30942 inode 95066 errors 100, file extent discount
+Found file extent holes:
+        start: 413696, len: 4096
+root 31038 inode 95066 errors 100, file extent discount
+Found file extent holes:
+        start: 413696, len: 4096
+root 31053 inode 95066 errors 100, file extent discount
+Found file extent holes:
+        start: 413696, len: 4096
+root 31366 inode 95066 errors 100, file extent discount
+Found file extent holes:
+        start: 413696, len: 4096
+root 31367 inode 95066 errors 100, file extent discount
+Found file extent holes:
+        start: 413696, len: 4096
+root 31368 inode 95066 errors 100, file extent discount
+Found file extent holes:
+        start: 413696, len: 4096
+root 31385 inode 95066 errors 100, file extent discount
+Found file extent holes:
+        start: 413696, len: 4096
+root 31425 inode 95066 errors 100, file extent discount
+Found file extent holes:
+        start: 413696, len: 4096
+root 31473 inode 95066 errors 100, file extent discount
+Found file extent holes:
+        start: 413696, len: 4096
+root 31499 inode 95066 errors 100, file extent discount
+Found file extent holes:
+        start: 413696, len: 4096
+root 31554 inode 95066 errors 100, file extent discount
+Found file extent holes:
+        start: 413696, len: 4096
+root 31572 inode 95066 errors 100, file extent discount
+Found file extent holes:
+        start: 413696, len: 4096
+root 31606 inode 95066 errors 100, file extent discount
+Found file extent holes:
+        start: 413696, len: 4096
+root 31653 inode 95066 errors 100, file extent discount
+Found file extent holes:
+        start: 413696, len: 4096
+root 31680 inode 95066 errors 100, file extent discount
+Found file extent holes:
+        start: 413696, len: 4096
+found 904425616176 bytes used err is 1
+total csum bytes: 873691128
+total tree bytes: 11120295936
+total fs tree bytes: 8620965888
+total extent tree bytes: 1368756224
+btree space waste bytes: 2415249740
+file data blocks allocated: 19427350777856
+ referenced 1003936649216
 
->  I
-> never noticed this before, but this is also the first uncorrectable
-> errors I've had since rebuilding by system.  Also, notice that the one
-> error it found represented the space that was occupied by the first
-> file, libtracker-data.so.0.0.0.  When I reinstalled the package, it
-> didn't overwrite the inode that the file was originally at.  How do I
-> clean up this inode so that my btrfs partition is error free again?  :-)
-> 
-> Also, what would have caused this kind of error?  It's been running well
-> since I rebuilt it.  SMART has found no problem with the drives.  I'm
-> running Ubuntu 16.04 w/ kernel 4.8.15 & btrfs-progs v4.8.5-dirty.
+Greetings
+=2D-=20
+Marc Joliet
+=2D-
+"People who think they know everything really annoy those of us who kno=
+w we
+don't" - Bjarne Stroustrup
 
-I don't know about these right now, but could answer the first one. :)
+--nextPart1889854.mUd62f3TLF
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
 
-Only some thoughts... Since it's checksum errors I would suspect actual
-disk errors. If SMART doesn't record them it's not physical read
-failures, but simply the disk returning something else than what was
-written before. With some other filesystems you would be working with
-silently corrupted data right now.
+-----BEGIN PGP SIGNATURE-----
 
--- 
-Hans van Kranenburg
+iQIcBAABCAAGBQJYVP93AAoJEL/Q5oYsiHj04k4P/A1EV+7Ji7rmPzT/FSb4iHB5
+dKb0KwySDz2/isEDtSO8CoXT6XMy1EZF9Fga171V/bx1uuO8HP5Wkb0OdoqPPXFc
+Nnxf5eBGPzGKuPeQCFEkVEnjiyJ5Uf2iWodvKRmXqhK0Le+V93mytPqAwcd9wXu1
+mJBYRUakaFE9uEQdWacdOncIMNrKRs8LHlEx/XFeC1Z0j3/QDt6f/pqph9WKV1mZ
+R18m+deegzOVfrRMrodcKRbQIWNkAcaNTwoDdQwewrUxkB+KLhALSb2A9l7layVA
+zvLDgfz7dfKJQvDDIllCUNHU5TkGaAEn174NKDTE29HUcvohJxT/amQGnuyVangK
+dUVt0QJp51Pw3WZtFYKMf76fCQsaB8udKOf/skgSnhNpBGOKPkNGTHm83ae000VQ
+oejeYsYWEzgqGqLrSY6yaGebTV3yp9gtUTr/5sn0Zsp7qFjL+Ww1i0ipPgAqTdoq
+zRW6tSHjT5kQmhgxe4pxW+avojf+JDzqOE1Kwok3KGTechmmLPZbjzV9iCKgrNcx
+03xJ1c+H7k21jqlpWDXS2bKkh5vmow9CPsYrTConWeBRJ0tdTErj42TUI/incsRV
+OjBS9/ZjqCOkzuI9tF/gQOCiaVeAf53X/0YS+BA3iFEdMKK0ZeqMUiYSXH7lCBM/
+gfFhu/fPhf58bZ+yp3bR
+=grhV
+-----END PGP SIGNATURE-----
+
+--nextPart1889854.mUd62f3TLF--
+

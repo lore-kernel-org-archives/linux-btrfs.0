@@ -1,63 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:10642 "EHLO song.cn.fujitsu.com"
-        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1752805AbcLSG5E (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Dec 2016 01:57:04 -0500
-Received: from localhost.localdomain (unknown [10.167.226.34])
-        by cn.fujitsu.com (Postfix) with ESMTP id 7329D41B4BDF
-        for <linux-btrfs@vger.kernel.org>; Mon, 19 Dec 2016 14:56:52 +0800 (CST)
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Received: from syrinx.knorrie.org ([82.94.188.77]:42779 "EHLO
+        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750933AbcLRX1c (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 18 Dec 2016 18:27:32 -0500
+Received: from [IPv6:2001:980:4a41:fb::12] (unknown [IPv6:2001:980:4a41:fb::12])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by syrinx.knorrie.org (Postfix) with ESMTPSA id 0C15D6002F
+        for <linux-btrfs@vger.kernel.org>; Mon, 19 Dec 2016 00:27:26 +0100 (CET)
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 6/6] btrfs-progs: convert-test: trigger chunk allocation after convert
-Date: Mon, 19 Dec 2016 14:56:42 +0800
-Message-Id: <20161219065642.25078-7-quwenruo@cn.fujitsu.com>
-In-Reply-To: <20161219065642.25078-1-quwenruo@cn.fujitsu.com>
-References: <20161219065642.25078-1-quwenruo@cn.fujitsu.com>
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Subject: python-btrfs v4, yay
+Message-ID: <1d9ac517-8723-8e60-2478-718ee544b3ea@mendix.com>
+Date: Mon, 19 Dec 2016 00:27:25 +0100
 MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Populate fs after convert so we can trigger data chunk allocation.
-This can expose too restrict old rollback condition
+I just tagged v4 of the python btrfs library.
 
-Reported-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- tests/common         | 4 ++++
- tests/common.convert | 3 +++
- 2 files changed, 7 insertions(+)
+https://github.com/knorrie/python-btrfs
 
-diff --git a/tests/common b/tests/common
-index 571118a..51c2e26 100644
---- a/tests/common
-+++ b/tests/common
-@@ -486,6 +486,10 @@ generate_dataset() {
- 				run_check $SUDO_HELPER ln -s "$dirpath/$long_filename" "$dirpath/slow_slink.$num"
- 			done
- 			;;
-+		large)
-+			run_check $SUDO_HELPER dd if=/dev/urandom bs=32M count=1 \
-+				of="$dirpath/$dataset_type" >/dev/null 2>&1
-+			;;
- 	esac
- }
- 
-diff --git a/tests/common.convert b/tests/common.convert
-index a2d3152..8c9242e 100644
---- a/tests/common.convert
-+++ b/tests/common.convert
-@@ -160,6 +160,9 @@ convert_test_post_checks_all() {
- 	convert_test_post_check_checksums "$1"
- 	convert_test_post_check_permissions "$2"
- 	convert_test_post_check_acl "$3"
-+
-+	# Create a large file to trigger data chunk allocation
-+	generate_dataset "large"
- 	run_check_umount_test_dev
- }
- 
+>From CHANGES:
+
+python-btfs v4, Dec 18 2016
+  * Bump/inverse versioning, there will never be a v1.0, just keep
+    developing and releasing. \:D/
+  * IOCTLs: LOGICAL_INO
+  * New datastructures: InodeItem, RootItem, DiskKey, TimeSpec
+  * Add all constants to pretty print tree keys
+  * Behaviour change: don't load extent refs by default
+  * Keep transid value when retrieving a BlockGroupItem
+  * Known issue:
+    - SHARED_BLOCK_REF and TREE_BLOCK_REF are missing in extent refs
+
+Actually, there's another known issue, (except for the typo in btrfs
+above...) which I just forgot to mention there:
+
+ * the IOCTL number handling only works correctly for amd64 now
+
+As usual, there is a huge amount of information in commit messages,
+which explains all the what why and hows of each change or added
+feature. So, you're invited to browse the commits and get news ideas
+about exploring the internals of your btrfs file system.
+
+Writing tutorial-style documentation is planned later, so for now the
+source code, together with the contents of examples/ which shows a few
+simple ideas of what can be done is the documentation.
+
+Have fun,
+
 -- 
-2.10.2
-
-
-
+Hans van Kranenburg

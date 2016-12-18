@@ -1,152 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from www262.sakura.ne.jp ([202.181.97.72]:34037 "EHLO
-        www262.sakura.ne.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750715AbcLRFPW (ORCPT
+Received: from mail-wm0-f68.google.com ([74.125.82.68]:34527 "EHLO
+        mail-wm0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1756216AbcLRQha (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 18 Dec 2016 00:15:22 -0500
-To: nholland@tisys.org, mhocko@kernel.org
-Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, clm@fb.com,
-        dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: OOM: Better, but still there on
-From: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
-References: <20161216184655.GA5664@boerne.fritz.box>
-        <20161217000203.GC23392@dhcp22.suse.cz>
-        <20161217125950.GA3321@boerne.fritz.box>
-        <862a1ada-17f1-9cff-c89b-46c47432e89f@I-love.SAKURA.ne.jp>
-        <20161217210646.GA11358@boerne.fritz.box>
-In-Reply-To: <20161217210646.GA11358@boerne.fritz.box>
-Message-Id: <201612181414.ICD78142.SVtOFJLOFOFMHQ@I-love.SAKURA.ne.jp>
-Date: Sun, 18 Dec 2016 14:14:57 +0900
-Mime-Version: 1.0
+        Sun, 18 Dec 2016 11:37:30 -0500
+Date: Sun, 18 Dec 2016 17:37:27 +0100
+From: Michal Hocko <mhocko@kernel.org>
+To: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
+Cc: Johannes Weiner <hannes@cmpxchg.org>, Nils Holland <nholland@tisys.org>,
+        linux-kernel@vger.kernel.org, linux-mm@kvack.org,
+        Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.cz>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/2] mm, oom: do not enfore OOM killer for __GFP_NOFAIL
+ automatically
+Message-ID: <20161218163727.GC8440@dhcp22.suse.cz>
+References: <20161216073941.GA26976@dhcp22.suse.cz>
+ <20161216155808.12809-1-mhocko@kernel.org>
+ <20161216155808.12809-3-mhocko@kernel.org>
+ <20161216173151.GA23182@cmpxchg.org>
+ <20161216221202.GE7645@dhcp22.suse.cz>
+ <18652e94-8f5c-dcf1-16e6-0deab6c642ec@I-love.SAKURA.ne.jp>
+MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <18652e94-8f5c-dcf1-16e6-0deab6c642ec@I-love.SAKURA.ne.jp>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Nils Holland wrote:
-> On Sat, Dec 17, 2016 at 11:44:45PM +0900, Tetsuo Handa wrote:
-> > On 2016/12/17 21:59, Nils Holland wrote:
-> > > On Sat, Dec 17, 2016 at 01:02:03AM +0100, Michal Hocko wrote:
-> > >> mount -t tracefs none /debug/trace
-> > >> echo 1 > /debug/trace/events/vmscan/enable
-> > >> cat /debug/trace/trace_pipe > trace.log
-> > >>
-> > >> should help
-> > >> [...]
-> > >
-> > > No problem! I enabled writing the trace data to a file and then tried
-> > > to trigger another OOM situation. That worked, this time without a
-> > > complete kernel panic, but with only my processes being killed and the
-> > > system becoming unresponsive.
-> >
-> > Under OOM situation, writing to a file on disk unlikely works. Maybe
-> > logging via network ( "cat /debug/trace/trace_pipe > /dev/udp/$ip/$port"
-> > if your are using bash) works better. (I wish we can do it from kernel
-> > so that /bin/cat is not disturbed by delays due to page fault.)
-> >
-> > If you can configure netconsole for logging OOM killer messages and
-> > UDP socket for logging trace_pipe messages, udplogger at
-> > https://osdn.net/projects/akari/scm/svn/tree/head/branches/udplogger/
-> > might fit for logging both output with timestamp into a single file.
->
-> Actually, I decided to give this a try once more on machine #2, i.e.
-> not the one that produced the previous trace, but the other one.
->
-> I logged via netconsole as well as 'cat /debug/trace/trace_pipe' via
-> the network to another machine running udplogger. After the machine
-> had been frehsly booted and I had set up the logging, unpacking of the
-> firefox source tarball started. After it had been unpacking for a
-> while, the first load of trace messages started to appear. Some time
-> later, OOMs started to appear - I've got quite a lot of them in my
-> capture file this time.
+On Sat 17-12-16 20:17:07, Tetsuo Handa wrote:
+[...]
+> I feel that allowing access to memory reserves based on __GFP_NOFAIL might not
+> make sense. My understanding is that actual I/O operation triggered by I/O
+> requests by filesystem code are processed by other threads. Even if we grant
+> access to memory reserves to GFP_NOFS | __GFP_NOFAIL allocations by fs code,
+> I think that it is possible that memory allocations by underlying bio code
+> fails to make a further progress unless memory reserves are granted as well.
 
-Thank you for capturing. I think it worked well. Let's wait for Michal.
+IO layer should rely on mempools to guarantee a forward progress.
 
-The first OOM killer invocation was
+> Below is a typical trace which I observe under OOM lockuped situation (though
+> this trace is from an OOM stress test using XFS).
+> 
+> ----------------------------------------
+> [ 1845.187246] MemAlloc: kworker/2:1(14498) flags=0x4208060 switches=323636 seq=48 gfp=0x2400000(GFP_NOIO) order=0 delay=430400 uninterruptible
+> [ 1845.187248] kworker/2:1     D12712 14498      2 0x00000080
+> [ 1845.187251] Workqueue: events_freezable_power_ disk_events_workfn
+> [ 1845.187252] Call Trace:
+> [ 1845.187253]  ? __schedule+0x23f/0xba0
+> [ 1845.187254]  schedule+0x38/0x90
+> [ 1845.187255]  schedule_timeout+0x205/0x4a0
+> [ 1845.187256]  ? del_timer_sync+0xd0/0xd0
+> [ 1845.187257]  schedule_timeout_uninterruptible+0x25/0x30
+> [ 1845.187258]  __alloc_pages_nodemask+0x1035/0x10e0
+> [ 1845.187259]  ? alloc_request_struct+0x14/0x20
+> [ 1845.187261]  alloc_pages_current+0x96/0x1b0
+> [ 1845.187262]  ? bio_alloc_bioset+0x20f/0x2e0
+> [ 1845.187264]  bio_copy_kern+0xc4/0x180
+> [ 1845.187265]  blk_rq_map_kern+0x6f/0x120
+> [ 1845.187268]  __scsi_execute.isra.23+0x12f/0x160
+> [ 1845.187270]  scsi_execute_req_flags+0x8f/0x100
+> [ 1845.187271]  sr_check_events+0xba/0x2b0 [sr_mod]
+> [ 1845.187274]  cdrom_check_events+0x13/0x30 [cdrom]
+> [ 1845.187275]  sr_block_check_events+0x25/0x30 [sr_mod]
+> [ 1845.187276]  disk_check_events+0x5b/0x150
+> [ 1845.187277]  disk_events_workfn+0x17/0x20
+> [ 1845.187278]  process_one_work+0x1fc/0x750
+> [ 1845.187279]  ? process_one_work+0x167/0x750
+> [ 1845.187279]  worker_thread+0x126/0x4a0
+> [ 1845.187280]  kthread+0x10a/0x140
+> [ 1845.187281]  ? process_one_work+0x750/0x750
+> [ 1845.187282]  ? kthread_create_on_node+0x60/0x60
+> [ 1845.187283]  ret_from_fork+0x2a/0x40
+> ----------------------------------------
+> 
+> I think that this GFP_NOIO allocation request needs to consume more memory reserves
+> than GFP_NOFS allocation request to make progress. 
 
-  2016-12-17 21:36:56 192.168.17.23:6665 [ 1276.828639] Killed process 3894 (xz) total-vm:68640kB, anon-rss:65920kB, file-rss:1696kB, shmem-rss:0kB
+AFAIU, this is an allocation path which doesn't block a forward progress
+on a regular IO. It is merely a check whether there is a new medium in
+the CDROM (aka regular polling of the device). I really fail to see any
+reason why this one should get any access to memory reserves at all.
 
-and the last OOM killer invocation was
+I actually do not see any reason why it should be NOIO in the first
+place but I am not familiar with this code much so there might be some
+reasons for that. The fact that it might stall under a heavy memory
+pressure is sad but who actually cares?
 
-  2016-12-17 21:39:27 192.168.17.23:6665 [ 1426.800677] Killed process 3070 (screen) total-vm:7440kB, anon-rss:960kB, file-rss:2360kB, shmem-rss:0kB
+> Do we want to add __GFP_NOFAIL to this GFP_NOIO allocation request
+> in order to allow access to memory reserves as well as GFP_NOFS |
+> __GFP_NOFAIL allocation request?
 
-and trace output was sent until
+Why?
 
-  2016-12-17 21:37:07 192.168.17.23:48468     kworker/u4:4-3896  [000] ....  1287.202958: mm_shrink_slab_start: super_cache_scan+0x0/0x170 f4436ed4: nid: 0 objects to shrink 86 gfp_flags GFP_NOFS|__GFP_NOFAIL pgs_scanned 32 lru_pgs 406078 cache items 412 delta 0 total_scan 86
-
-which (I hope) should be sufficient for analysis.
-
->
-> Unfortunately, the reclaim trace messages stopped a while after the first
-> OOM messages show up - most likely my "cat" had been killed at that
-> point or became unresponsive. :-/
->
-> In the end, the machine didn't completely panic, but after nothing new
-> showed up being logged via the network, I walked up to the
-> machine and found it in a state where I couldn't really log in to it
-> anymore, but all that worked was, as always, a magic SysRequest reboot.
-
-There is a known issue (since Linux 2.6.32) that all memory allocation requests
-get stuck due to kswapd v.s. shrink_inactive_list() livelock which occurs under
-almost OOM situation ( http://lkml.kernel.org/r/20160211225929.GU14668@dastard ).
-If we hit it, even "page allocation stalls for " messages do not show up.
-
-Even if we didn't hit it, although agetty and sshd were still alive
-
-  2016-12-17 21:39:27 192.168.17.23:6665 [ 1426.800614] [ 2800]     0  2800     1152      494       6       3        0             0 agetty
-  2016-12-17 21:39:27 192.168.17.23:6665 [ 1426.800618] [ 2802]     0  2802     1457     1055       6       3        0         -1000 sshd
-
-memory allocation was delaying too much
-
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034624] btrfs-transacti: page alloction stalls for 93995ms, order:0, mode:0x2400840(GFP_NOFS|__GFP_NOFAIL)
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034628] CPU: 1 PID: 1949 Comm: btrfs-transacti Not tainted 4.9.0-gentoo #3
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034630] Hardware name: Hewlett-Packard Compaq 15 Notebook PC/21F7, BIOS F.22 08/06/2014
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034638]  f162f94c c142bd8e 00000001 00000000 f162f970 c110ad7e c1b58833 02400840
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034645]  f162f978 f162f980 c1b55814 f162f960 00000160 f162fa38 c110b78c 02400840
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034652]  c1b55814 00016f2b 00000000 00400000 00000000 f21d0000 f21d0000 00000001
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034653] Call Trace:
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034660]  [<c142bd8e>] dump_stack+0x47/0x69
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034666]  [<c110ad7e>] warn_alloc+0xce/0xf0
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034671]  [<c110b78c>] __alloc_pages_nodemask+0x97c/0xd30
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034678]  [<c1103fbd>] ? find_get_entry+0x1d/0x100
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034681]  [<c1102fc1>] ? add_to_page_cache_lru+0x61/0xc0
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034685]  [<c110414d>] pagecache_get_page+0xad/0x270
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034692]  [<c1366556>] alloc_extent_buffer+0x116/0x3e0
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034699]  [<c1334ade>] btrfs_find_create_tree_block+0xe/0x10
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034704]  [<c132a62f>] btrfs_alloc_tree_block+0x1ef/0x5f0
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034710]  [<c1079050>] ? autoremove_wake_function+0x40/0x40
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034716]  [<c130f873>] __btrfs_cow_block+0x143/0x5f0
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034723]  [<c130feca>] btrfs_cow_block+0x13a/0x220
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034727]  [<c13133a1>] btrfs_search_slot+0x1d1/0x870
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034731]  [<c131a74a>] lookup_inline_extent_backref+0x10a/0x6d0
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034736]  [<c19b656c>] ? common_interrupt+0x2c/0x34
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034742]  [<c131c959>] __btrfs_free_extent+0x129/0xe80
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034750]  [<c1322160>] __btrfs_run_delayed_refs+0xaf0/0x13e0
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034754]  [<c106f759>] ? set_next_entity+0x659/0xec0
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034757]  [<c106c351>] ? put_prev_entity+0x21/0xcf0
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034801]  [<fa83b2da>] ? xfs_attr3_leaf_add_work+0x25a/0x420 [xfs]
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034808]  [<c13259f1>] btrfs_run_delayed_refs+0x71/0x260
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034813]  [<c10903ef>] ? lock_timer_base+0x5f/0x80
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034818]  [<c133cefb>] btrfs_commit_transaction+0x2b/0xd30
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034821]  [<c133dc65>] ? start_transaction+0x65/0x4b0
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034826]  [<c1337f65>] transaction_kthread+0x1b5/0x1d0
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034830]  [<c1337db0>] ? btrfs_cleanup_transaction+0x490/0x490
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034833]  [<c10552e7>] kthread+0x97/0xb0
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034837]  [<c1055250>] ? __kthread_parkme+0x60/0x60
-  2016-12-17 21:41:03 192.168.17.23:6665 [ 1521.034842]  [<c19b5d77>] ret_from_fork+0x1b/0x28
-
-and therefore memory allocation by page fault by trying to login was too slow to wait.
-
->
-> The complete log, from machine boot right up to the point where it
-> wouldn't really do anything anymore, is up again on my web server (~42
-> MB, 928 KB packed):
->
-> http://ftp.tisys.org/pub/misc/teela_2016-12-17.log.xz
->
-> Greetings
-> Nils
->
-
-It might be pointless to check, but is your 4.9.0-gentoo kernel using 4.9.0 final source?
-The typo "page alloction stalls" was fixed in v4.9-rc5. Maybe some last minute changes are
-missing...
+-- 
+Michal Hocko
+SUSE Labs

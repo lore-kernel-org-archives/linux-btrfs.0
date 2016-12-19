@@ -1,114 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:61747 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932519AbcLSSoX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Dec 2016 13:44:23 -0500
+Received: from syrinx.knorrie.org ([82.94.188.77]:35410 "EHLO
+        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932629AbcLSSyP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 19 Dec 2016 13:54:15 -0500
+Received: from [IPv6:2001:980:4a41:fb::12] (unknown [IPv6:2001:980:4a41:fb::12])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by syrinx.knorrie.org (Postfix) with ESMTPSA id 3F9AF60040
+        for <linux-btrfs@vger.kernel.org>; Mon, 19 Dec 2016 19:54:13 +0100 (CET)
+Subject: Re: Btrfs Heatmap - v3 - scriptable .. more flexible
+To: linux-btrfs@vger.kernel.org
+References: <0ad8cf30-04bb-40d3-9929-388eb26a765e@mendix.com>
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Message-ID: <408eeebc-58b5-f783-a17a-68d2678b2372@mendix.com>
+Date: Mon, 19 Dec 2016 19:54:13 +0100
 MIME-Version: 1.0
-Message-ID: <trinity-65b0bf95-1288-4044-9bd4-c47299bb96c4-1482173054794@3capp-mailcom-bs02>
-From: "Xin Zhou" <xin.zhou@gmx.com>
-To: =?UTF-8?Q?=22Jari_Sepp=C3=A4l=C3=A4=22?=
-        <lihamakaroonilaatikko@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Help please: BTRFS fs crashed due to bad removal of USB drive,
- no help from recovery procedures
-Content-Type: text/plain; charset=UTF-8
-Date: Mon, 19 Dec 2016 19:44:14 +0100
-In-Reply-To: <5A6A5345-FD05-402C-A003-7C742007F94D@gmail.com>
-References: <66A9C2C6-028F-466B-9EFF-F06BF3FB4694@gmail.com>
- <trinity-2653fb5f-aa88-4ece-bced-51dee466d428-1482006464623@3capp-mailcom-bs11>,
- <5A6A5345-FD05-402C-A003-7C742007F94D@gmail.com>
+In-Reply-To: <0ad8cf30-04bb-40d3-9929-388eb26a765e@mendix.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Jari,
+Rereading this...
 
-The message shows:
-> [ 135.446260] BTRFS error (device sdb1): superblock contains fatal errors
- 
-So according this info, before trying to run repair / rescue procedure, would you like to show the 0,1,2 superblock status?
+On 12/19/2016 12:53 AM, Hans van Kranenburg wrote:
+> [...]
+> 
+> Qu Wenruo pointed out that the greyscale value used for dev_extent (the
+> usage for the block group is used here) does not necessarily have to be
+> correct: "And for 50%/50% assumption for RAID0, it's not true and we can
+> easily create a case where it's 100%/0%". (Qu)
+> 
+> I replied on that with "OTOH, for most cases it will still be correct
+> enough for the eye, because statistically seen, distribution of data
+> over the stripes will be more uniform more often than not".
+> 
+> Still, "The point is, for full fs or per-device output, a developer may
+> focus on the fragments of unallocated space in each device." (Qu)
 
-Regards,
-Xin
- 
- 
+What does "unallocated" mean here?
 
-Sent: Monday, December 19, 2016 at 2:32 AM
-From: "Jari Seppälä" <lihamakaroonilaatikko@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: "Xin Zhou" <xin.zhou@gmx.com>
-Subject: Re: Help please: BTRFS fs crashed due to bad removal of USB drive, no help from recovery procedures
-Xin Zhou <xin.zhou@gmx.com> kirjoitti 17.12.2016 kello 22.27:
->
-> Hi Jari,
->
-> Similar with other file system, btrfs has copies of super blocks.
-> Try to run "man btrfs check", "man btrfs rescue" and related commands for more details.
-> Regards,
-> Xin
+I always use "unallocated" for space that is not part of a
+dev_extent/chunk/blockgroup at all, and "unused" for free space inside
+allocated space.
 
-Hi Xin,
+> The last commit, "Don't hardcode minimal brightness for dev_extents"
+> exposes the min_brightness, which tunes the brightness range of
+> allocated space. "Setting it to 255 will cause any allocated space to
+> show up as bright white, regardless of usage."
 
-I did follow all recovery procedures from man and wiki pages. Tools do not help as they thing there is no BTRFS fs anymore. However if I try to reformat the device I get:
+If meant as unused free space in allocated dev_extent space, then this
+does not help much of course.
 
-btrfs-progs v4.4
-See http://btrfs.wiki.kernel.org for more information.
-/dev/sdb1 appears to contain an existing filesystem (btrfs).
+OTOH, I don't think the information of data distribution over
+dev_extents belonging to a single blockgroup is available at all, when
+walking the IOCTL paths.
 
-So, recovery tools seem to thing there is no btrfs filesystem. Mkfs seems to thing there is.
-
-What I have tried:
-btrfsck /dev/sdb1
-mount -t btrfs -o ro /dev/sdb1 /mnt/share/
-mount -t btrfs -o ro,recovery /dev/sdb1 /mnt/share/
-mount -t btrfs -o roootflags=recovery,nospace_cache /dev/sdb1 /mnt/share/
-mount -t btrfs -o rootflags=recovery,nospace_cache /dev/sdb1 /mnt/share/
-mount -t btrfs -o rootflags=recovery,nospace_cache,clear_cache /dev/sdb1 /mnt/share/
-mount -t btrfs -o ro,rootflags=recovery,nospace_cache,clear_cache /dev/sdb1 /mnt/share/
-btrfs restore /dev/sdb1 /target/device
-btrfs rescue zero-log /dev/sdb1
-btrfsck --init-csum-tree /dev/sdb1
-btrfsck --fix-crc /dev/sdb1
-btrfsck --check-data-csum /dev/sdb1
-btrfs rescue chunk-recover /dev/sdb1
-btrfs rescue super-recover /dev/sdb1
-btrfs rescue zero-log /dev/sdb1
-
-No help whatsoever.
-
-Jari
-
->
->
->
-> Sent: Saturday, December 17, 2016 at 2:06 AM
-> From: "Jari Seppälä" <lihamakaroonilaatikko@gmail.com>
-> To: linux-btrfs@vger.kernel.org
-> Subject: Help please: BTRFS fs crashed due to bad removal of USB drive, no help from recovery procedures
-> Syslog tells:
-> [ 135.446222] BTRFS error (device sdb1): system chunk array too small 0 < 97
-> [ 135.446260] BTRFS error (device sdb1): superblock contains fatal errors
-> [ 135.462544] BTRFS error (device sdb1): open_ctree failed
->
-> What have been done:
-> * All "btrfs rescue" options
->
-> Info on system
-> * fs on external SSD via USB
-> * kernel 4.9.0 (tried with 4.8.13)
-> * btrfs-tools 4.4
-> * Mythbuntu (Ubuntu) 16.04.1 LTS with latest fixes 2012-12-16
->
-> Any help appreciated. Around 300G of TV recordings on the drive, which of course will eventually come as replays.
->
-> Jari
-> --
-> *** Jari Seppälä
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at http://vger.kernel.org/majordomo-info.html[http://vger.kernel.org/majordomo-info.html]
-
---
-*** Jari Seppälä
- 
+-- 
+Hans van Kranenburg

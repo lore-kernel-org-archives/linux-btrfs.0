@@ -1,270 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mbox.akmail.it ([213.21.176.227]:60930 "EHLO pop.aknet.it"
+Received: from mbox.akmail.it ([213.21.176.227]:39088 "EHLO pop.aknet.it"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754930AbcLSMqm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Dec 2016 07:46:42 -0500
-Message-ID: <1482151590.5857d6a665842@webmail.adria.it>
-Date: Mon, 19 Dec 2016 13:46:30 +0100
+        id S1754722AbcLSM4Q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 19 Dec 2016 07:56:16 -0500
+Message-ID: <1482152074.5857d88ab133a@webmail.adria.it>
+Date: Mon, 19 Dec 2016 13:54:34 +0100
 From: bepi@adria.it
-To: Xin Zhou <xin.zhou@gmx.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [CORRUPTION FILESYSTEM] Corrupted and unrecoverable file system during the snapshot receive
-References: <1479730155.5832e3eb3fde8@webmail.adria.it> <CAJCQCtRpppbJb4a_zEdRFi7Fbxnhg5VkLktHuLMW2Z0H-cOkDg@mail.gmail.com> <2329571.vMCvUE5AeF@exnet.gdb.it>, <9712851.I7FUyRd5GC@exnet.gdb.it> <trinity-46cbb3e7-b072-4e9a-a504-e67b58cc9c9c-1482096970056@3capp-mailcom-bs08>
-In-Reply-To: <trinity-46cbb3e7-b072-4e9a-a504-e67b58cc9c9c-1482096970056@3capp-mailcom-bs08>
+References: <1479730155.5832e3eb3fde8@webmail.adria.it> <83dbcf2c-df10-5628-fc46-9d33a7bf78af@cn.fujitsu.com>
+In-Reply-To: <83dbcf2c-df10-5628-fc46-9d33a7bf78af@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi.
-
-It is a bit complex.
-
-
-Primary system
-
-subvolume on SSD devices on PCIe slot
-
-/root/ (fedora 23, 50GB usati)
-
-/btrfssnapshot/
-/btrfssnapshot/root/  (for /root/ snapshot)
-/btrfssnapshot/root/root.1
-/btrfssnapshot/root/root.2
-/btrfssnapshot/root/root.XYZ
-
-
-subvolume on device HDD "1" sata
-
-/data_storage/  (data, 100GB usati)
-/data_backup/   (backup tar files, programs, downloads, etc., used 250GB)
-
-/btrfssnapshot/
-/btrfssnapshot/data_storage/  (for /data_storage/ snapshot)
-/btrfssnapshot/data_backup/   (for /data_backup/ snapshot)
-/btrfssnapshot/data_storage/data_storage.1
-/btrfssnapshot/data_storage/data_storage.2
-/btrfssnapshot/data_storage/data_storage.XYZ
-/btrfssnapshot/data_backup/data_backup.1
-/btrfssnapshot/data_backup/data_backup.2
-/btrfssnapshot/data_backup/data_backup.XYZ
+> 
+> 
+> At 11/21/2016 08:09 PM, bepi@adria.it wrote:
+> > Hi.
+> >
+> > My system: Fedora 23, kernel-4.7.10-100.fc23.x86_64
+> btrfs-progs-4.4.1-1.fc23.x86_64
+> >
+> > Testing the remote differential receive (via ssh and in local network) of
+> 24
+> > sequential snapshots, and simultaneously deleting the snapshot, (in the
+> same
+> > file system, but in a different subvolume), there has been an file access
+> error,
+> > and the file system has corrupt.
+> 
+> Are you using qgroup?
+> 
+> IIRC, Filipe fixed a problem which could cause backref corruption which 
+> only happens if quota is enabled.
+> 
+> Thanks,
+> Qu
 
 
-subvolume on HDD device "2" sata
+Unfortunately not.
 
-partition 1
-
-/btrfsreceive/root/  (for receive /btrfssnapshot/root/ snapshot)
-/btrfsreceive/root/.part/
-
-partition 2
-
-/btrfsreceive/data_storage/  (for receive /btrfssnapshot/data_storage/ snapshot)
-/btrfsreceive/data_storage/.part/
-/btrfsreceive/data_backup/  (for receive /btrfssnapshot/data_backup/ snapshot)
-/btrfsreceive/data_backup/.part/
+I read that thread (and others), but no one it seemed like my case.
 
 
-
-Secondary system for receiving snapshot
-
-subvolume on HDD device "3" sata
-
-partition 1
-
-/btrfsreceive/root/
-/btrfsreceive/root/.part/
-
-partition 2
-
-/btrfsreceive/data_storage/  (for receive /btrfssnapshot/data_storage/ snapshot)
-/btrfsreceive/data_storage/.part/
-/btrfsreceive/data_backup/  (for receive /btrfssnapshot/data_backup/ snapshot)
-/btrfsreceive/data_backup/.part/
-
-
-My bash script create snapshot of /root/, /data_storage/ and /data_backup/ on
-/btrfssnapshot/ .
-Snapshot is created with .part extension, when the creation is finished
-properly, is renamed to .1, .2, .XYZ .
-
-
-My bash script send snapshot from /btrfssnapshot/root/,
-/btrfssnapshot/data_storage/ and /btrfssnapshot/data_backup/ (sending
-differential, n - 1 -> n) to the subvolume /btrfsreceive/root/,
-/btrfsreceive/data_storage/ and /btrfsreceive/data_backup/.
-
-
-My bash script sends the same snapshot also to the secondary system for
-receiving snapshots (using ssh).
-
-
-P.S. If I recreate the receiving partition from scratch, the receive working
-properly.
-
-
-The previous problems information are in this thread.
-Please, you can read the thread?
-
-
-Thanks to you.
+To you (Thanks).
 
 
 Gdb
 
 
-
-Scrive Xin Zhou <xin.zhou@gmx.com>:
-
 > 
-> Hi Giuseppe,
-> 
-> Would you like to tell some details about:
-> 1. the XYZ snapshot was taken from which subvolume
-> 2. where the base (initial) snapshot is stored
-> 3. The 3 partitions receives the same snapshot, are they in the same btrfs
-> configuration and subvol structure?
-> 
-> Also, would you send the link reports "two files unreadable error" post
-> mentioned in step 2? 
-> Hope can see the message and figure out if the issue first comes from sender
-> or receiver side. 
-> 
-> Thanks,
-> Xin
->  
-> 
-> Sent: Sunday, December 18, 2016 at 11:59 AM
-> From: "Giuseppe Della Bianca" <bepi@adria.it>
-> To: linux-btrfs@vger.kernel.org
-> Subject: Re: [CORRUPTION FILESYSTEM] Corrupted and unrecoverable file system
-> during the snapshot receive
-> > Same problem, this time on a local subvolume.
 > >
-> > kernel-4.8.8-100.fc23.x86_64
+> > Both scrub, both recovery and clear_cache mount options, both btrfsck,
+> have
+> > failed, the file system is left in a state unusable.
 > >
-> > btrfs-progs v4.8.5
-> ]zac[
-> 
-> I had three filesystem corruption.
-> 
-> The point at which the problem it appeared, is similar in all three cases.
-> 
-> Subvolume structure and operations sequence:
-> 
-> btrfsreceive/
-> btrfsreceive/root/
-> btrfsreceive/root/.part/
-> 
-> 1) Sending XYZ differential snapshot in to ' btrfsreceive/root/.part/ '.
-> 2) Create snapshot from ' btrfsreceive/root/.part/XYZ ' to '
-> btrfsreceive/root
-> /XYZ '.
-> 3) Delete snapshot ' btrfsreceive/root/.part/XYZ '.
-> 
-> Always in step 2) I had two files unreadable error (view previous posts),
-> and
-> one already existing object error (see below).
-> 
-> All three times I had to re-create from scratch the various partitions (on
-> disks and systems different).
-> 
-> I can help you, in some way, to find the problem?
-> 
-> Or is useless to continue report it?
-> 
+> > After reformatting the filesystem, remote receive of 24 snapshots worked
+> properly.
+> >
+> > The file system is used exclusively for receive the snapshot, it is
+> composed of
+> > a single device.
+> > The initial snapshot is a linux installation of 50Gb.
+> >
+> >
+> > I think that there was a race condition between the receive and deletion
+> of
+> > snapshots (that were performed on two different subvolume).
+> >
+> >
+> > Best regards.
+> >
+> > gdb
+> >
+> > ----------------------------------------------------
+> > This mail has been sent using Alpikom webmail system
+> > http://www.alpikom.it
+> >
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> >
+> >
 > 
 > 
-> dic 18 18:29:58 exnetold.gdb.it kernel: ------------[ cut here ]------------
-> dic 18 18:29:58 exnetold.gdb.it kernel: WARNING: CPU: 1 PID: 4325 at
-> fs/btrfs/extent-tree.c:2960 btrfs_run_delayed_refs+0x283/0x2b0 [btrfs]
-> dic 18 18:29:58 exnetold.gdb.it kernel: BTRFS: Transaction aborted (error
-> -17)
-> dic 18 18:29:58 exnetold.gdb.it kernel: Modules linked in: fuse xt_CHECKSUM
-> ipt_MASQUERADE nf_nat_masquerade_ipv4 tun nf_conntrack_netbios_ns
-> nf_conntrack_br
-> dic 18 18:29:58 exnetold.gdb.it kernel: soundcore acpi_cpufreq tpm_tis
-> tpm_tis_core tpm nfsd auth_rpcgss nfs_acl lockd grace sunrpc ata_generic
-> nouveau vide
-> dic 18 18:29:58 exnetold.gdb.it kernel: CPU: 1 PID: 4325 Comm: umount
-> Tainted:
-> G W 4.8.8-100.fc23.x86_64 #1
-> dic 18 18:29:58 exnetold.gdb.it kernel: Hardware name: System manufacturer
-> System Product Name/M2N, BIOS 0902 02/16/2009
-> dic 18 18:29:58 exnetold.gdb.it kernel: 0000000000000286 00000000dd260fac
-> ffff8ffa0d25bb60 ffffffffbc3e493e
-> dic 18 18:29:58 exnetold.gdb.it kernel: ffff8ffa0d25bbb0 0000000000000000
-> ffff8ffa0d25bba0 ffffffffbc0a0ecb
-> dic 18 18:29:58 exnetold.gdb.it kernel: 00000b9000000049 ffff8ff9e61b40a0
-> ffff8ffa2da77800 ffffffffffffffff
-> dic 18 18:29:58 exnetold.gdb.it kernel: Call Trace:
-> dic 18 18:29:58 exnetold.gdb.it kernel: [<ffffffffbc3e493e>]
-> dump_stack+0x63/0x85
-> dic 18 18:29:58 exnetold.gdb.it kernel: [<ffffffffbc0a0ecb>]
-> __warn+0xcb/0xf0
-> dic 18 18:29:58 exnetold.gdb.it kernel: [<ffffffffbc0a0f4f>]
-> warn_slowpath_fmt+0x5f/0x80
-> dic 18 18:29:58 exnetold.gdb.it kernel: [<ffffffffc07eb4e3>]
-> btrfs_run_delayed_refs+0x283/0x2b0 [btrfs]
-> dic 18 18:29:58 exnetold.gdb.it kernel: [<ffffffffc07d62ec>] ?
-> btrfs_cow_block+0x10c/0x1e0 [btrfs]
-> dic 18 18:29:58 exnetold.gdb.it kernel: [<ffffffffc07ff62e>]
-> commit_cowonly_roots+0xae/0x2e0 [btrfs]
-> dic 18 18:29:58 exnetold.gdb.it kernel: [<ffffffffc07eb466>] ?
-> btrfs_run_delayed_refs+0x206/0x2b0 [btrfs]
-> dic 18 18:29:58 exnetold.gdb.it kernel: [<ffffffffc08706b4>] ?
-> btrfs_qgroup_account_extents+0x84/0x180 [btrfs]
-> dic 18 18:29:58 exnetold.gdb.it kernel: [<ffffffffc0802187>]
-> btrfs_commit_transaction+0x547/0xa40 [btrfs]
-> dic 18 18:29:58 exnetold.gdb.it kernel: [<ffffffffc07faa9f>]
-> btrfs_commit_super+0x8f/0xa0 [btrfs]
-> dic 18 18:29:58 exnetold.gdb.it kernel: [<ffffffffc07fcbcb>]
-> close_ctree+0x2db/0x380 [btrfs]
-> dic 18 18:29:58 exnetold.gdb.it kernel: [<ffffffffbc26d3da>] ?
-> evict_inodes+0x15a/0x180
-> dic 18 18:29:58 exnetold.gdb.it kernel: [<ffffffffc07ccf29>]
-> btrfs_put_super+0x19/0x20 [btrfs]
-> dic 18 18:29:58 exnetold.gdb.it kernel: [<ffffffffbc2520bf>]
-> generic_shutdown_super+0x6f/0xf0
-> dic 18 18:29:58 exnetold.gdb.it kernel: [<ffffffffbc2523b2>]
-> kill_anon_super+0x12/0x20
-> dic 18 18:29:58 exnetold.gdb.it kernel: [<ffffffffc07cdd98>]
-> btrfs_kill_super+0x18/0x110 [btrfs]
-> dic 18 18:29:58 exnetold.gdb.it kernel: [<ffffffffbc252763>]
-> deactivate_locked_super+0x43/0x70
-> dic 18 18:29:58 exnetold.gdb.it kernel: [<ffffffffbc2527ec>]
-> deactivate_super+0x5c/0x60
-> dic 18 18:29:58 exnetold.gdb.it kernel: [<ffffffffbc2711bf>]
-> cleanup_mnt+0x3f/0x90
-> dic 18 18:29:58 exnetold.gdb.it kernel: [<ffffffffbc271252>]
-> __cleanup_mnt+0x12/0x20
-> dic 18 18:29:58 exnetold.gdb.it kernel: [<ffffffffbc0bf0ce>]
-> task_work_run+0x7e/0xa0
-> dic 18 18:29:58 exnetold.gdb.it kernel: [<ffffffffbc0032d2>]
-> exit_to_usermode_loop+0xc2/0xd0
-> dic 18 18:29:58 exnetold.gdb.it kernel: [<ffffffffbc003bf1>]
-> syscall_return_slowpath+0xa1/0xb0
-> dic 18 18:29:58 exnetold.gdb.it kernel: [<ffffffffbc7ffb3a>]
-> entry_SYSCALL_64_fastpath+0xa2/0xa4
-> dic 18 18:29:58 exnetold.gdb.it kernel: ---[ end trace f7eb2e818f727168 ]---
-> dic 18 18:29:58 exnetold.gdb.it kernel: BTRFS: error (device sda3) in
-> btrfs_run_delayed_refs:2960: errno=-17 Object already exists
-> dic 18 18:29:58 exnetold.gdb.it kernel: BTRFS info (device sda3): forced
-> readonly
-> dic 18 18:29:58 exnetold.gdb.it kernel: BTRFS warning (device sda3):
-> Skipping
-> commit of aborted transaction.
-> dic 18 18:29:58 exnetold.gdb.it kernel: BTRFS: error (device sda3) in
-> cleanup_transaction:1854: errno=-17 Object already exists
-> dic 18 18:29:58 exnetold.gdb.it kernel: BTRFS error (device sda3): commit
-> super ret -17
-> dic 18 18:29:58 exnetold.gdb.it kernel: BTRFS error (device sda3): cleaner
-> transaction attach returned -30
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at http://vger.kernel.org/majordomo-info.html
 > 
 
 

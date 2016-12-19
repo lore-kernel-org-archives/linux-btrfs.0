@@ -1,53 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from youngberry.canonical.com ([91.189.89.112]:35527 "EHLO
-        youngberry.canonical.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1761615AbcLPPZ2 (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:34953 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S933192AbcLSQrl (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Dec 2016 10:25:28 -0500
-From: Colin King <colin.king@canonical.com>
-To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>, Jeff Mahoney <jeffm@suse.com>,
-        linux-btrfs@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org
-Subject: [PATCH] btrfs: remove redundant inode null check
-Date: Fri, 16 Dec 2016 15:24:46 +0000
-Message-Id: <20161216152446.23361-1-colin.king@canonical.com>
+        Mon, 19 Dec 2016 11:47:41 -0500
+Date: Mon, 19 Dec 2016 11:46:23 -0500
+From: Josef Bacik <jbacik@fb.com>
+Subject: Re: [PATCH] btrfs: use rb_entry()
+To: Geliang Tang <geliangtang@gmail.com>
+CC: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
+        <linux-btrfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>
+Message-ID: <1482165983.6766.0@smtp.office365.com>
+In-Reply-To: <e7f25691fb620d01df75e3526897c7fb0e0ef6f8.1482158996.git.geliangtang@gmail.
+        com>
+References: <e7f25691fb620d01df75e3526897c7fb0e0ef6f8.1482158996.git.geliangtang@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Colin Ian King <colin.king@canonical.com>
+On Mon, Dec 19, 2016 at 9:53 AM, Geliang Tang <geliangtang@gmail.com> 
+wrote:
+> To make the code clearer, use rb_entry() instead of container_of() to
+> deal with rbtree.
+> 
+> Signed-off-by: Geliang Tang <geliangtang@gmail.com>
 
-The check for a null inode is redundant since the function
-is a callback for exportfs, which will itself crash if
-dentry->d_inode or parent->d_inode is NULL.  Removing the
-null check makes this consistent with other file systems.
+Reviewed-by: Josef Bacik <jbacik@fb.com>
 
-Found with static analysis by CoverityScan, CID 1389472
+Thanks,
 
-Kudos to Jeff Mahoney for reviewing and explaining the error in
-my original patch (most of this explanation went into the above
-commit message).
-
-Signed-off-by: Colin Ian King <colin.king@canonical.com>
----
- fs/btrfs/export.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/export.c b/fs/btrfs/export.c
-index 340d907..e90f781 100644
---- a/fs/btrfs/export.c
-+++ b/fs/btrfs/export.c
-@@ -235,7 +235,7 @@ static int btrfs_get_name(struct dentry *parent, char *name,
- 	int ret;
- 	u64 ino;
- 
--	if (!dir || !inode)
-+	if (!dir)
- 		return -EINVAL;
- 
- 	if (!S_ISDIR(dir->i_mode))
--- 
-2.10.2
+Josef
 

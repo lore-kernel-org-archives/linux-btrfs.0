@@ -1,84 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:40636 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752247AbcLFEkN (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Dec 2016 23:40:13 -0500
-From: Anand Jain <anand.jain@oracle.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:28369 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755141AbcLSLII (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 19 Dec 2016 06:08:08 -0500
+Subject: Re: [PATCH 3/3] btrfs: consolidate auto defrag kick off policies
 To: dsterba@suse.cz
-Cc: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/3] btrfs: cow_file_range() num_bytes and disk_num_bytes are same
-Date: Tue,  6 Dec 2016 12:43:08 +0800
-Message-Id: <20161206044309.3450-3-anand.jain@oracle.com>
-In-Reply-To: <20161206044309.3450-1-anand.jain@oracle.com>
 References: <20161206044309.3450-1-anand.jain@oracle.com>
+ <20161206044309.3450-4-anand.jain@oracle.com>
+ <20161212141204.GR12522@twin.jikos.cz>
+From: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Message-ID: <53820526-8974-ae63-dcbe-ec21e9254b2e@oracle.com>
+Date: Mon, 19 Dec 2016 19:11:38 +0800
+MIME-Version: 1.0
+In-Reply-To: <20161212141204.GR12522@twin.jikos.cz>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch deletes local variable disk_num_bytes as its value
-is same as num_bytes in the function cow_file_range().
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- fs/btrfs/inode.c | 11 ++++-------
- 1 file changed, 4 insertions(+), 7 deletions(-)
+(sorry for the delay due to my vacation).
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 96e5f8a49d4c..79f073e94f2d 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -944,7 +944,6 @@ static noinline int cow_file_range(struct inode *inode,
- 	u64 alloc_hint = 0;
- 	u64 num_bytes;
- 	unsigned long ram_size;
--	u64 disk_num_bytes;
- 	u64 cur_alloc_size;
- 	u64 blocksize = root->sectorsize;
- 	struct btrfs_key ins;
-@@ -960,7 +959,6 @@ static noinline int cow_file_range(struct inode *inode,
- 
- 	num_bytes = ALIGN(end - start + 1, blocksize);
- 	num_bytes = max(blocksize,  num_bytes);
--	disk_num_bytes = num_bytes;
- 
- 	/* if this is a small write inside eof, kick off defrag */
- 	if (num_bytes < SZ_64K &&
-@@ -989,16 +987,16 @@ static noinline int cow_file_range(struct inode *inode,
- 		}
- 	}
- 
--	BUG_ON(disk_num_bytes >
-+	BUG_ON(num_bytes >
- 	       btrfs_super_total_bytes(root->fs_info->super_copy));
- 
- 	alloc_hint = get_extent_allocation_hint(inode, start, num_bytes);
- 	btrfs_drop_extent_cache(inode, start, start + num_bytes - 1, 0);
- 
--	while (disk_num_bytes > 0) {
-+	while (num_bytes > 0) {
- 		unsigned long op;
- 
--		cur_alloc_size = disk_num_bytes;
-+		cur_alloc_size = num_bytes;
- 		ret = btrfs_reserve_extent(root, cur_alloc_size, cur_alloc_size,
- 					   root->sectorsize, 0, alloc_hint,
- 					   &ins, 1, 1);
-@@ -1055,7 +1053,7 @@ static noinline int cow_file_range(struct inode *inode,
- 
- 		btrfs_dec_block_group_reservations(root->fs_info, ins.objectid);
- 
--		if (disk_num_bytes < cur_alloc_size)
-+		if (num_bytes < cur_alloc_size)
- 			break;
- 
- 		/* we're not doing compressed IO, don't unlock the first
-@@ -1073,7 +1071,6 @@ static noinline int cow_file_range(struct inode *inode,
- 					     delalloc_end, locked_page,
- 					     EXTENT_LOCKED | EXTENT_DELALLOC,
- 					     op);
--		disk_num_bytes -= cur_alloc_size;
- 		num_bytes -= cur_alloc_size;
- 		alloc_hint = ins.objectid + ins.offset;
- 		start += cur_alloc_size;
--- 
-2.10.0
+On 12/12/16 22:12, David Sterba wrote:
+> On Tue, Dec 06, 2016 at 12:43:09PM +0800, Anand Jain wrote:
+>> As of now writes smaller than 64k for non compressed extents and 16k
+>> for compressed extents inside eof are considered as candidate
+>> for auto defrag, put them together at a place.
+>
+> Missing sign-off.
+sorry will fix.
 
+>> ---
+>>  fs/btrfs/inode.c | 27 +++++++++++++++++++--------
+>>  1 file changed, 19 insertions(+), 8 deletions(-)
+>>
+>> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+>> index 79f073e94f2d..b157575166c6 100644
+>> --- a/fs/btrfs/inode.c
+>> +++ b/fs/btrfs/inode.c
+>> @@ -388,6 +388,22 @@ static inline int inode_need_compress(struct inode *inode)
+>>  	return 0;
+>>  }
+>>
+>> +static inline void inode_should_defrag(struct inode *inode,
+>> +		u64 start, u64 end, u64 num_bytes, int comp_type)
+>> +{
+>> +	u64 small_write = SZ_64K;
+>> +	if (comp_type)
+>> +		small_write = SZ_16K;
+>
+> I think the small_write value should be passed directly, not the
+> compression type.
+
+  Will do.
+
+>> +
+>> +	if (!num_bytes)
+>> +		num_bytes = end - start + 1;
+>
+> And the callers should pass the range length. Calculating inside the
+> function makes it less clear. One of the callers passes an blocksize
+> aligned value and the other doest not, so both know what's the right
+> value.
+
+  agreed. I have sent out v2. Kindly find it.
+
+Thanks, Anand
+
+
+
+> Otherwise the cleanup is good. I'll merge the other two patches, please
+> update and resend this one. Thanks.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

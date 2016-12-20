@@ -1,79 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:35877 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755522AbcLSLJV (ORCPT
+Received: from wmauth3.doit.wisc.edu ([144.92.197.226]:39103 "EHLO
+        smtpauth3.wiscmail.wisc.edu" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S964841AbcLTQw3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Dec 2016 06:09:21 -0500
-Subject: Re: [PATCH] recursive defrag cleanup
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <20161206043938.3249-1-anand.jain@oracle.com>
- <20161212171927.GY12522@twin.jikos.cz>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <9799c1aa-e365-f05d-2b96-017edc67ec90@oracle.com>
-Date: Mon, 19 Dec 2016 19:12:51 +0800
-MIME-Version: 1.0
-In-Reply-To: <20161212171927.GY12522@twin.jikos.cz>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+        Tue, 20 Dec 2016 11:52:29 -0500
+MIME-version: 1.0
+Content-type: text/plain; CHARSET=US-ASCII; format=flowed
+Received: from avs-daemon.smtpauth3.wiscmail.wisc.edu by
+ smtpauth3.wiscmail.wisc.edu
+ (Oracle Communications Messaging Server 8.0.1.1.0 64bit (built Jun 15 2016))
+ id <0OIH00E00Q9HQE00@smtpauth3.wiscmail.wisc.edu> for
+ linux-btrfs@vger.kernel.org; Tue, 20 Dec 2016 09:52:27 -0600 (CST)
+Received: from Square-Circle-Consulting-LLC.local
+ (97-88-43-202.dhcp.roch.mn.charter.com [97.88.43.202])
+ by smtpauth3.wiscmail.wisc.edu
+ (Oracle Communications Messaging Server 8.0.1.1.0 64bit (built Jun 15 2016))
+ with ESMTPSA id <0OIH0025OQRDPT10@smtpauth3.wiscmail.wisc.edu> for
+ linux-btrfs@vger.kernel.org; Tue, 20 Dec 2016 09:52:27 -0600 (CST)
+From: David Hanke <hanke.list@ece.wisc.edu>
+Subject: btrfs_log2phys: cannot lookup extent mapping
+To: linux-btrfs@vger.kernel.org
+Message-id: <89be6fee-5b18-7a9d-11ea-85abeab28022@ece.wisc.edu>
+Date: Tue, 20 Dec 2016 09:52:25 -0600
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Greetings!
+
+I've been using a btrfs-based volume for backups, but lately the 
+system's been filling the syslog with errors like "btrfs_log2phys: 
+cannot lookup extent mapping for 7129125486592" at the rate of hundreds 
+per second. (Please see output below for more details.) Despite the 
+errors, the files I've looked at appear to be written and read successfully.
+
+I'm wondering if the contents of the volume are trustworthy and whether 
+this problem is resolvable without backing up, erasing and starting over?
+
+Thank you!
+
+David
 
 
-On 12/13/16 01:19, David Sterba wrote:
-> On Tue, Dec 06, 2016 at 12:39:37PM +0800, Anand Jain wrote:
->> The command,
->>    btrfs fi defrag -v /btrfs
->>  does nothing, it won't defrag the files under /btrfs as user
->>  may expect. The command with recursive option
->>    btrfs fi defrag -vr /btrfs
->>  would defrag all the files under /btrfs including files in
->>  its sub directories.
->>
->>  While attempting to fix this. The patch below 1/1 provides
->>  a cleanup. And the actual fix is pending, as to my understanding
->>  of nfwt() it does not provide the list of file without
->>  files under its sub directories.
->
-> What kind of fix do you mean? We could detect if there's a directory in
-> the list of arguments and assume the recursive mode. I think this is
-> what most users expect.
+# uname -a
+Linux backup2 3.0.101.RNx86_64.3 #1 SMP Wed Apr 1 16:02:14 PDT 2015 
+x86_64 GNU/Linux
 
-As per BTRFS-FILESYSTEM(8)
-  :
----------
-Note
-Directory arguments without -r do not defragment files recursively but 
-will defragment certain internal trees (extent tree and the subvolume 
-tree). This has been confusing and could be removed in the future.
----------
+# btrfs --version
+Btrfs v3.17.3
 
-  I was thinking the following as a fix..
-    without -r: apply it on the extent tree (current behavior)
-                (and probably add a warning as you suggest below).
-    with -r only: error, and say also use (new) per-file option -x,
-                  (instead of applying on all files of dir in arg and
-                  its sub-dir. [*])
-    with -x: apply it on all the files in the dir in the arg
-    with -xr: apply it on all files in the dir in the arg and
-              its sub-dir.
+#   btrfs fi show
+Label: '43f66d40:root'  uuid: 6e546e1a-15a3-4e9d-97f7-9693659a5e7e
+     Total devices 1 FS bytes used 571.47MiB
+     devid    1 size 4.00GiB used 3.36GiB path /dev/md0
 
-> Currently passing a directory will defragment the extent tree, but I
-> think we should extend the defrag ioctl flags to explictly ask for that.
+Label: '43f66d40:data'  uuid: 0900d3c7-fda1-463a-81e5-19c04e68a0cb
+     Total devices 1 FS bytes used 27.61TiB
+     devid    1 size 36.34TiB used 27.99TiB path /dev/md127
 
-  I am ok with this approach as well, which means,
-    without -r: apply it on all files in dir. (instead of current way
-                of applying on the extent tree. [*])
-    with -r: apply it on all files in dir and its sub-dir.
-    with -e (new): apply it on extent tree.
+Btrfs v3.17.3
 
-  [*] changes the current cli semantics
+# dmesg | head
+s_log2phys: cannot lookup extent mapping for 7168108658688
+btrfs_log2phys: cannot lookup extent mapping for 7168108658688
+btrfs_log2phys: cannot lookup extent mapping for 7168108658688
+btrfs_log2phys: cannot lookup extent mapping for 7168108658688
+btrfs_log2phys: cannot lookup extent mapping for 7168108658688
+btrfs_log2phys: cannot lookup extent mapping for 7168108658688
+btrfs_log2phys: cannot lookup extent mapping for 7168108658688
+btrfs_log2phys: cannot lookup extent mapping for 7168108658688
+btrfs_log2phys: cannot lookup extent mapping for 7168108658688
+btrfs_log2phys: cannot lookup extent mapping for 7168108658688
 
-> At minimum, a directory without -r could print a warning about what it's
-> really doing. But I'm open to other ideas.
+# dmesg | tail
+btrfs_log2phys: cannot lookup extent mapping for 7168110034944
+btrfs_log2phys: cannot lookup extent mapping for 7168110034944
+btrfs_log2phys: cannot lookup extent mapping for 7168110034944
+btrfs_log2phys: cannot lookup extent mapping for 7168110034944
+btrfs_log2phys: cannot lookup extent mapping for 7168110034944
+btrfs_log2phys: cannot lookup extent mapping for 7168110034944
+btrfs_log2phys: cannot lookup extent mapping for 7168110034944
+btrfs_log2phys: cannot lookup extent mapping for 7168110034944
+btrfs_log2phys: cannot lookup extent mapping for 7168110034944
+btrfs_log2phys: cannot lookup extent mapping for 7168110034944
 
-  agreed.
+[dmesg.log is filled with 3951 lines of the same type of errors]
 
-  (was on vacation sorry for the delay).
-
-
-Thanks, Anand

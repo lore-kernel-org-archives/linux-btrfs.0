@@ -1,87 +1,123 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from wmauth3.doit.wisc.edu ([144.92.197.226]:39103 "EHLO
-        smtpauth3.wiscmail.wisc.edu" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S964841AbcLTQw3 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Dec 2016 11:52:29 -0500
-MIME-version: 1.0
-Content-type: text/plain; CHARSET=US-ASCII; format=flowed
-Received: from avs-daemon.smtpauth3.wiscmail.wisc.edu by
- smtpauth3.wiscmail.wisc.edu
- (Oracle Communications Messaging Server 8.0.1.1.0 64bit (built Jun 15 2016))
- id <0OIH00E00Q9HQE00@smtpauth3.wiscmail.wisc.edu> for
- linux-btrfs@vger.kernel.org; Tue, 20 Dec 2016 09:52:27 -0600 (CST)
-Received: from Square-Circle-Consulting-LLC.local
- (97-88-43-202.dhcp.roch.mn.charter.com [97.88.43.202])
- by smtpauth3.wiscmail.wisc.edu
- (Oracle Communications Messaging Server 8.0.1.1.0 64bit (built Jun 15 2016))
- with ESMTPSA id <0OIH0025OQRDPT10@smtpauth3.wiscmail.wisc.edu> for
- linux-btrfs@vger.kernel.org; Tue, 20 Dec 2016 09:52:27 -0600 (CST)
-From: David Hanke <hanke.list@ece.wisc.edu>
-Subject: btrfs_log2phys: cannot lookup extent mapping
-To: linux-btrfs@vger.kernel.org
-Message-id: <89be6fee-5b18-7a9d-11ea-85abeab28022@ece.wisc.edu>
-Date: Tue, 20 Dec 2016 09:52:25 -0600
+Received: from mout.gmx.net ([212.227.17.22]:49863 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751359AbcLTRnQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 20 Dec 2016 12:43:16 -0500
+MIME-Version: 1.0
+Message-ID: <trinity-f5b0b96e-286c-4485-a02e-1f96bca7a906-1482255789582@3capp-mailcom-bs06>
+From: "Xin Zhou" <xin.zhou@gmx.com>
+To: "Giuseppe Della Bianca" <bepi@adria.it>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [CORRUPTION FILESYSTEM] Corrupted and unrecoverable file system
+ during the snapshot receive
+Content-Type: text/plain; charset=UTF-8
+Date: Tue, 20 Dec 2016 18:43:09 +0100
+In-Reply-To: <1843121.XhPNI7cFmJ@exnet.gdb.it>
+References: <1479730155.5832e3eb3fde8@webmail.adria.it>
+ <9712851.I7FUyRd5GC@exnet.gdb.it>
+ <trinity-46cbb3e7-b072-4e9a-a504-e67b58cc9c9c-1482096970056@3capp-mailcom-bs08>,
+ <1843121.XhPNI7cFmJ@exnet.gdb.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Greetings!
+Hi,
 
-I've been using a btrfs-based volume for backups, but lately the 
-system's been filling the syslog with errors like "btrfs_log2phys: 
-cannot lookup extent mapping for 7129125486592" at the rate of hundreds 
-per second. (Please see output below for more details.) Despite the 
-errors, the files I've looked at appear to be written and read successfully.
+The system seems running some customized scripts continuously backup data from a NVME drive to HDDs.
+If the 3 HDDs backup storage are same in btrfs config, and the there is a bug in btrfs code,
+they all suppose to fail after the same operation sequence.
 
-I'm wondering if the contents of the volume are trustworthy and whether 
-this problem is resolvable without backing up, erasing and starting over?
+Otherwise, probably one of the HDDs might have issue, or there is a bug in layer below btrfs.
 
-Thank you!
+For the customize script, it might be helpful to check the file system consistency after each transfer.
+That might be useful to figure out which step generates a corruption, and if there is error propagations.
 
-David
+Regards,
+Xin
+ 
+ 
+
+Sent: Monday, December 19, 2016 at 10:55 AM
+From: "Giuseppe Della Bianca" <bepi@adria.it>
+To: "Xin Zhou" <xin.zhou@gmx.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [CORRUPTION FILESYSTEM] Corrupted and unrecoverable file system during the snapshot receive
+a concrete example
 
 
-# uname -a
-Linux backup2 3.0.101.RNx86_64.3 #1 SMP Wed Apr 1 16:02:14 PDT 2015 
-x86_64 GNU/Linux
+SNAPSHOT
 
-# btrfs --version
-Btrfs v3.17.3
+/dev/nvme0n1p2 on /tmp/tmp.X3vU6dLLVI type btrfs (rw,relatime,ssd,space_cache,subvolid=5,subvol=/)
 
-#   btrfs fi show
-Label: '43f66d40:root'  uuid: 6e546e1a-15a3-4e9d-97f7-9693659a5e7e
-     Total devices 1 FS bytes used 571.47MiB
-     devid    1 size 4.00GiB used 3.36GiB path /dev/md0
+btrfsManage SNAPSHOT /
 
-Label: '43f66d40:data'  uuid: 0900d3c7-fda1-463a-81e5-19c04e68a0cb
-     Total devices 1 FS bytes used 27.61TiB
-     devid    1 size 36.34TiB used 27.99TiB path /dev/md127
+(2016-12-19 19:44:00) Start btrfsManage
+. . . Start managing SNAPSHOT ' / ' filesystem ' root ' snapshot
 
-Btrfs v3.17.3
+In ' btrfssnapshot ' latest source snapshot ' root-2016-12-18_15:10:01.40 '
+. . . date ' 2016-12-18_15:10:01 ' number ' 40 '
 
-# dmesg | head
-s_log2phys: cannot lookup extent mapping for 7168108658688
-btrfs_log2phys: cannot lookup extent mapping for 7168108658688
-btrfs_log2phys: cannot lookup extent mapping for 7168108658688
-btrfs_log2phys: cannot lookup extent mapping for 7168108658688
-btrfs_log2phys: cannot lookup extent mapping for 7168108658688
-btrfs_log2phys: cannot lookup extent mapping for 7168108658688
-btrfs_log2phys: cannot lookup extent mapping for 7168108658688
-btrfs_log2phys: cannot lookup extent mapping for 7168108658688
-btrfs_log2phys: cannot lookup extent mapping for 7168108658688
-btrfs_log2phys: cannot lookup extent mapping for 7168108658688
+Creation ' root-2016-12-19_19:44:00.part ' snapshot from ' root ' subvolume
+. . . Create a readonly snapshot of '/tmp/tmp.X3vU6dLLVI/root' in '/tmp/tmp.X3vU6dLLVI/btrfssnapshot/root/root-2016-12-19_19:44:00.part'
 
-# dmesg | tail
-btrfs_log2phys: cannot lookup extent mapping for 7168110034944
-btrfs_log2phys: cannot lookup extent mapping for 7168110034944
-btrfs_log2phys: cannot lookup extent mapping for 7168110034944
-btrfs_log2phys: cannot lookup extent mapping for 7168110034944
-btrfs_log2phys: cannot lookup extent mapping for 7168110034944
-btrfs_log2phys: cannot lookup extent mapping for 7168110034944
-btrfs_log2phys: cannot lookup extent mapping for 7168110034944
-btrfs_log2phys: cannot lookup extent mapping for 7168110034944
-btrfs_log2phys: cannot lookup extent mapping for 7168110034944
-btrfs_log2phys: cannot lookup extent mapping for 7168110034944
+Renaming ' root-2016-12-19_19:44:00.part ' into ' root-2016-12-19_19:44:00.41 ' snapshot
 
-[dmesg.log is filled with 3951 lines of the same type of errors]
+Source snapshot list of ' root ' subvolume
+. . . btrfssnapshot/root/root-2016-08-28-12-35-01.1
+]zac[
+. . . btrfssnapshot/root/root-2016-12-19_19:44:00.41
 
+(2016-12-19 19:44:05) End btrfsManage
+. . . End managing SNAPSHOT ' / ' filesystem ' root ' snapshot
+CORRECTLY
+
+
+
+SEND e RECEIVE
+
+/dev/nvme0n1p2 on /tmp/tmp.o78czE0Bo6 type btrfs (rw,relatime,ssd,space_cache,subvolid=5,subvol=/)
+/dev/sda2 on /tmp/tmp.XcwqQCKq09 type btrfs (rw,relatime,space_cache,subvolid=5,subvol=/)
+
+btrfsManage SEND / /dev/sda2
+
+(2016-12-19 19:47:24) Start btrfsManage
+. . . Start managing SEND ' / ' filesystem ' root ' snapshot in ' /dev/sda2 '
+
+Sending ' root-2016-12-19_19:44:00.41 ' source snapshot to ' btrfsreceive ' subvolume
+. . . btrfs send -p /tmp/tmp.o78czE0Bo6/btrfssnapshot/root/root-2016-12-18_15:10:01.40 /tmp/tmp.o78czE0Bo6/btrfssnapshot/root/root-2016-12-19_19:44:00.41 | btrfs receive /tmp/tmp.XcwqQCKq09/btrfsreceive/root/.part/
+. . . At subvol /tmp/tmp.o78czE0Bo6/btrfssnapshot/root/root-2016-12-19_19:44:00.41
+. . . At snapshot root-2016-12-19_19:44:00.41
+
+Creation ' root-2016-12-19_19:44:00.41 ' snapshot from ' .part/root-2016-12-19_19:44:00.41 ' subvolume
+. . . Create a readonly snapshot of '/tmp/tmp.XcwqQCKq09/btrfsreceive/root/.part/root-2016-12-19_19:44:00.41' in '/tmp/tmp.XcwqQCKq09/btrfsreceive/root/root-2016-12-19_19:44:00.41'
+. . . Delete subvolume (commit): '/tmp/tmp.XcwqQCKq09/btrfsreceive/root/.part/root-2016-12-19_19:44:00.41'
+
+Snapshot list in ' /dev/sda2 ' device
+. . . btrfsreceive/data_backup/data_backup-2016-12-17_12:07:00.1
+. . . btrfsreceive/data_storage/data_storage-2016-12-10_17:05:51.1
+. . . btrfsreceive/root/root-2016-08-28-12-35-01.1
+]zac[
+. . . btrfsreceive/root/root-2016-12-19_19:44:00.41
+
+(2016-12-19 19:48:37) End btrfsManage
+. . . End managing SEND ' / ' filesystem ' root ' snapshot in ' /dev/sda2 '
+CORRECTLY
+
+
+
+> Hi Giuseppe,
+>
+> Would you like to tell some details about:
+> 1. the XYZ snapshot was taken from which subvolume
+> 2. where the base (initial) snapshot is stored
+> 3. The 3 partitions receives the same snapshot, are they in the same btrfs
+> configuration and subvol structure?
+>
+> Also, would you send the link reports "two files unreadable error" post
+> mentioned in step 2? Hope can see the message and figure out if the issue
+> first comes from sender or receiver side.
+>
+> Thanks,
+> Xin
+>
+>
+ 

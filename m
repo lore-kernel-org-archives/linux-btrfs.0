@@ -1,106 +1,284 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:25028 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1762219AbcLTHa6 (ORCPT
+Received: from mail-lf0-f68.google.com ([209.85.215.68]:36073 "EHLO
+        mail-lf0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754639AbcLTHzL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Dec 2016 02:30:58 -0500
-Subject: Re: v4.9-rc7 scrub kernel panic
-To: btrfs <linux-btrfs@vger.kernel.org>
-References: <f6695ea9-4c2a-be31-ad62-a86164833642@cn.fujitsu.com>
-CC: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <1bbc627d-8947-54e8-6376-3ef48cc59e38@cn.fujitsu.com>
-Date: Tue, 20 Dec 2016 15:30:49 +0800
-MIME-Version: 1.0
-In-Reply-To: <f6695ea9-4c2a-be31-ad62-a86164833642@cn.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+        Tue, 20 Dec 2016 02:55:11 -0500
+Received: by mail-lf0-f68.google.com with SMTP id o20so9567168lfg.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 19 Dec 2016 23:55:07 -0800 (PST)
+Subject: Re: Help please: BTRFS fs crashed due to bad removal of USB drive, no
+ help from recovery procedures
+Mime-Version: 1.0 (Mac OS X Mail 10.2 \(3259\))
+Content-Type: text/plain; charset=utf-8
+From: =?utf-8?B?SmFyaSBTZXBww6Rsw6Q=?= <lihamakaroonilaatikko@gmail.com>
+In-Reply-To: <trinity-65b0bf95-1288-4044-9bd4-c47299bb96c4-1482173054794@3capp-mailcom-bs02>
+Date: Tue, 20 Dec 2016 09:55:04 +0200
+Cc: linux-btrfs@vger.kernel.org
+Message-Id: <D3373265-0EB0-45A5-B951-2368186D1AAB@gmail.com>
+References: <66A9C2C6-028F-466B-9EFF-F06BF3FB4694@gmail.com>
+ <trinity-2653fb5f-aa88-4ece-bced-51dee466d428-1482006464623@3capp-mailcom-bs11>
+ <5A6A5345-FD05-402C-A003-7C742007F94D@gmail.com>
+ <trinity-65b0bf95-1288-4044-9bd4-c47299bb96c4-1482173054794@3capp-mailcom-bs02>
+To: Xin Zhou <xin.zhou@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Further info:
+Xin Zhou <xin.zhou@gmx.com> kirjoitti 19.12.2016 kello 20.44:
+> 
+> Hi Jari,
+> 
+> The message shows:
+>> [ 135.446260] BTRFS error (device sdb1): superblock contains fatal errors
+> 
+> So according this info, before trying to run repair / rescue procedure, would you like to show the 0,1,2 superblock status?
+> 
+btrfs-show-super /dev/sdb1 -i 0 to 2
 
-I tested several versions of old kernel starts from v4.7, and they all 
-failed on two of my physical machines.
+superblock: bytenr=65536, device=/dev/sdb1
+---------------------------------------------------------
+csum			0x73d698e5 [match]
+bytenr			65536
+flags			0x1
+			( WRITTEN )
+magic			_BHRfS_M [match]
+fsid			82651f91-4989-415b-bd83-ae830f12608c
+label			share
+generation		75016
+root			29851648
+sys_array_size		0
+chunk_root_generation	75016
+root_level		1
+chunk_root		20971520
+chunk_root_level	0
+log_root		0
+log_root_transid	0
+log_root_level		0
+total_bytes		536869842944
+bytes_used		294473035776
+sectorsize		4096
+nodesize		16384
+leafsize		16384
+stripesize		4096
+root_dir		6
+num_devices		1
+compat_flags		0x0
+compat_ro_flags		0x0
+incompat_flags		0x161
+			( MIXED_BACKREF |
+			  BIG_METADATA |
+			  EXTENDED_IREF |
+			  SKINNY_METADATA )
+csum_type		0
+csum_size		4
+cache_generation	75012
+uuid_tree_generation	75012
+dev_item.uuid		108c02c0-9812-428e-8f90-23bdf88e11bf
+dev_item.fsid		82651f91-4989-415b-bd83-ae830f12608c [match]
+dev_item.type		0
+dev_item.total_bytes	536869842944
+dev_item.bytes_used	440259313664
+dev_item.io_align	0
+dev_item.io_width	0
+dev_item.sector_size	0
+dev_item.devid		1
+dev_item.dev_group	0
+dev_item.seek_speed	0
+dev_item.bandwidth	0
+dev_item.generation	0
 
-But strangely, they all passed in KVM guests using virtio.
+superblock: bytenr=67108864, device=/dev/sdb1
+---------------------------------------------------------
+csum			0xd3b7b02b [match]
+bytenr			67108864
+flags			0x1
+			( WRITTEN )
+magic			_BHRfS_M [match]
+fsid			82651f91-4989-415b-bd83-ae830f12608c
+label			share
+generation		75016
+root			29851648
+sys_array_size		0
+chunk_root_generation	75016
+root_level		1
+chunk_root		20971520
+chunk_root_level	0
+log_root		0
+log_root_transid	0
+log_root_level		0
+total_bytes		536869842944
+bytes_used		294473035776
+sectorsize		4096
+nodesize		16384
+leafsize		16384
+stripesize		4096
+root_dir		6
+num_devices		1
+compat_flags		0x0
+compat_ro_flags		0x0
+incompat_flags		0x161
+			( MIXED_BACKREF |
+			  BIG_METADATA |
+			  EXTENDED_IREF |
+			  SKINNY_METADATA )
+csum_type		0
+csum_size		4
+cache_generation	75012
+uuid_tree_generation	75012
+dev_item.uuid		108c02c0-9812-428e-8f90-23bdf88e11bf
+dev_item.fsid		82651f91-4989-415b-bd83-ae830f12608c [match]
+dev_item.type		0
+dev_item.total_bytes	536869842944
+dev_item.bytes_used	440259313664
+dev_item.io_align	0
+dev_item.io_width	0
+dev_item.sector_size	0
+dev_item.devid		1
+dev_item.dev_group	0
+dev_item.seek_speed	0
+dev_item.bandwidth	0
+dev_item.generation	0
 
-Not sure if it's related to the device size (over 50G for each device in 
-physical machines, while less than 10G for each in VM)
+superblock: bytenr=274877906944, device=/dev/sdb1
+---------------------------------------------------------
+csum			0x2e30e61a [match]
+bytenr			274877906944
+flags			0x1
+			( WRITTEN )
+magic			_BHRfS_M [match]
+fsid			82651f91-4989-415b-bd83-ae830f12608c
+label			share
+generation		75016
+root			29851648
+sys_array_size		0
+chunk_root_generation	75016
+root_level		1
+chunk_root		20971520
+chunk_root_level	0
+log_root		0
+log_root_transid	0
+log_root_level		0
+total_bytes		536869842944
+bytes_used		294473035776
+sectorsize		4096
+nodesize		16384
+leafsize		16384
+stripesize		4096
+root_dir		6
+num_devices		1
+compat_flags		0x0
+compat_ro_flags		0x0
+incompat_flags		0x161
+			( MIXED_BACKREF |
+			  BIG_METADATA |
+			  EXTENDED_IREF |
+			  SKINNY_METADATA )
+csum_type		0
+csum_size		4
+cache_generation	75012
+uuid_tree_generation	75012
+dev_item.uuid		108c02c0-9812-428e-8f90-23bdf88e11bf
+dev_item.fsid		82651f91-4989-415b-bd83-ae830f12608c [match]
+dev_item.type		0
+dev_item.total_bytes	536869842944
+dev_item.bytes_used	440259313664
+dev_item.io_align	0
+dev_item.io_width	0
+dev_item.sector_size	0
+dev_item.devid		1
+dev_item.dev_group	0
+dev_item.seek_speed	0
+dev_item.bandwidth	0
+dev_item.generation	0
 
-And the profile causing the problem is, unsurprisingly, RAID5 and RAID6.
 
-For other profile it seems to be OK.
+Regards,
 
-Thanks,
-Qu
+Jari
 
-At 12/13/2016 11:15 AM, Qu Wenruo wrote:
-> Hi
->
-> When testing Chris' for-linus-4.10 branch.
->
-> I found that even at the branch base, v4.9-rc7, btrfs can't pass
-> quite a lot of scrub tests, including btrfs/011 and btrfs/069.
->
-> The btrfs/069 will fail 100%, with the following back trace:
->
-> general protection fault: 0000 [#1] SMP
-> Modules linked in: btrfs(O) xor zlib_deflate raid6_pq
-> x86_pkg_temp_thermal ext4 jbd2 mbcache e1000e efivarfs [last unloaded:
-> btrfs]
-> CPU: 3 PID: 5300 Comm: kworker/u8:4 Tainted: G           O    4.9.0-rc7+
-> #20
-> Hardware name: FUJITSU ESPRIMO P720/D3221-A1, BIOS V4.6.5.4 R1.17.0 for
-> D3221-A1x 03/06/2014
-> Workqueue: btrfs-endio-raid56 btrfs_endio_raid56_helper [btrfs]
-> task: ffff88008dbcb740 task.stack: ffffc90001230000
-> RIP: 0010:[<ffffffff813a2fa8>]  [<ffffffff813a2fa8>]
-> generic_make_request_checks+0x198/0x5a0
-> RSP: 0018:ffffc90001233b08  EFLAGS: 00010202
-> RAX: 0000000000000000 RBX: ffff88007f963228 RCX: 0000000000000001
-> RDX: 0000000080000000 RSI: 0000000000000000 RDI: 6b6b6b6b6b6b6b6b
-> RBP: ffffc90001233b68 R08: 00000000868a9b14 R09: eab761b200000000
-> R10: 0000000000000001 R11: 0000000000000001 R12: 0000000000000040
-> R13: 0000000000000004 R14: ffff88008dbc5a88 R15: 0000000000000010
-> FS:  0000000000000000(0000) GS:ffff880119e00000(0000)
-> knlGS:0000000000000000
-> CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-> CR2: 00000000019c7058 CR3: 00000001150b4000 CR4: 00000000001406e0
-> Stack:
->  0000000000000002 ffffffff813a4cff ffffffff00000000 0000000000000296
->  0000000000000292 ffff88008dbcb740 ffffffff00000003 ffff88007f963228
->  00000000ffffffff 0000000000000004 ffff88008dbc5a88 0000000000000010
-> Call Trace:
->  [<ffffffff813a4cff>] ? generic_make_request+0xcf/0x290
->  [<ffffffff813a4c54>] generic_make_request+0x24/0x290
->  [<ffffffff813a4cff>] ? generic_make_request+0xcf/0x290
->  [<ffffffff813a4f2e>] submit_bio+0x6e/0x120
->  [<ffffffffa087279d>] ? page_in_rbio+0x4d/0x80 [btrfs]
->  [<ffffffffa08737d0>] ? rbio_orig_end_io+0x80/0x80 [btrfs]
->  [<ffffffffa0873e31>] finish_rmw+0x401/0x550 [btrfs]
->  [<ffffffffa0874fc6>] validate_rbio_for_rmw+0x36/0x40 [btrfs]
->  [<ffffffffa087504d>] raid_rmw_end_io+0x7d/0x90 [btrfs]
->  [<ffffffff8139c536>] bio_endio+0x56/0x60
->  [<ffffffffa07e6e5c>] end_workqueue_fn+0x3c/0x40 [btrfs]
->  [<ffffffffa08285bf>] btrfs_scrubparity_helper+0xef/0x610 [btrfs]
->  [<ffffffffa0828b9e>] btrfs_endio_raid56_helper+0xe/0x10 [btrfs]
->  [<ffffffff810ec8df>] process_one_work+0x2af/0x720
->  [<ffffffff810ec85b>] ? process_one_work+0x22b/0x720
->  [<ffffffff810ecd9b>] worker_thread+0x4b/0x4f0
->  [<ffffffff810ecd50>] ? process_one_work+0x720/0x720
->  [<ffffffff810ecd50>] ? process_one_work+0x720/0x720
->  [<ffffffff810f39d3>] kthread+0xf3/0x110
->  [<ffffffff810f38e0>] ? kthread_park+0x60/0x60
->  [<ffffffff81857647>] ret_from_fork+0x27/0x40
-> Code: 00 00 0f 1f 44 00 00 65 8b 05 9d 71 c6 7e 89 c0 48 0f a3 05 c3 13
-> b8 00 0f 92 c3 0f 82 dd 02 00 00 bb 01 00 00 00 e9 8c 00 00 00 <48> 8b
-> 47 08 48 8b 40 50 48 c1 f8 09 48 85 c0 0f 84 99 fe ff ff
-> RIP  [<ffffffff813a2fa8>] generic_make_request_checks+0x198/0x5a0
->  RSP <ffffc90001233b08>
->
-> Is this a known bug or a new one caused by the block layer change?
->
-> Thanks,
-> Qu
+> Regards,
+> Xin
+>  
+>  
+> 
+> Sent: Monday, December 19, 2016 at 2:32 AM
+> From: "Jari Seppälä" <lihamakaroonilaatikko@gmail.com>
+> To: linux-btrfs@vger.kernel.org
+> Cc: "Xin Zhou" <xin.zhou@gmx.com>
+> Subject: Re: Help please: BTRFS fs crashed due to bad removal of USB drive, no help from recovery procedures
+> Xin Zhou <xin.zhou@gmx.com> kirjoitti 17.12.2016 kello 22.27:
+>> 
+>> Hi Jari,
+>> 
+>> Similar with other file system, btrfs has copies of super blocks.
+>> Try to run "man btrfs check", "man btrfs rescue" and related commands for more details.
+>> Regards,
+>> Xin
+> 
+> Hi Xin,
+> 
+> I did follow all recovery procedures from man and wiki pages. Tools do not help as they thing there is no BTRFS fs anymore. However if I try to reformat the device I get:
+> 
+> btrfs-progs v4.4
+> See http://btrfs.wiki.kernel.org for more information.
+> /dev/sdb1 appears to contain an existing filesystem (btrfs).
+> 
+> So, recovery tools seem to thing there is no btrfs filesystem. Mkfs seems to thing there is.
+> 
+> What I have tried:
+> btrfsck /dev/sdb1
+> mount -t btrfs -o ro /dev/sdb1 /mnt/share/
+> mount -t btrfs -o ro,recovery /dev/sdb1 /mnt/share/
+> mount -t btrfs -o roootflags=recovery,nospace_cache /dev/sdb1 /mnt/share/
+> mount -t btrfs -o rootflags=recovery,nospace_cache /dev/sdb1 /mnt/share/
+> mount -t btrfs -o rootflags=recovery,nospace_cache,clear_cache /dev/sdb1 /mnt/share/
+> mount -t btrfs -o ro,rootflags=recovery,nospace_cache,clear_cache /dev/sdb1 /mnt/share/
+> btrfs restore /dev/sdb1 /target/device
+> btrfs rescue zero-log /dev/sdb1
+> btrfsck --init-csum-tree /dev/sdb1
+> btrfsck --fix-crc /dev/sdb1
+> btrfsck --check-data-csum /dev/sdb1
+> btrfs rescue chunk-recover /dev/sdb1
+> btrfs rescue super-recover /dev/sdb1
+> btrfs rescue zero-log /dev/sdb1
+> 
+> No help whatsoever.
+> 
+> Jari
+> 
+>> 
+>> 
+>> 
+>> Sent: Saturday, December 17, 2016 at 2:06 AM
+>> From: "Jari Seppälä" <lihamakaroonilaatikko@gmail.com>
+>> To: linux-btrfs@vger.kernel.org
+>> Subject: Help please: BTRFS fs crashed due to bad removal of USB drive, no help from recovery procedures
+>> Syslog tells:
+>> [ 135.446222] BTRFS error (device sdb1): system chunk array too small 0 < 97
+>> [ 135.446260] BTRFS error (device sdb1): superblock contains fatal errors
+>> [ 135.462544] BTRFS error (device sdb1): open_ctree failed
+>> 
+>> What have been done:
+>> * All "btrfs rescue" options
+>> 
+>> Info on system
+>> * fs on external SSD via USB
+>> * kernel 4.9.0 (tried with 4.8.13)
+>> * btrfs-tools 4.4
+>> * Mythbuntu (Ubuntu) 16.04.1 LTS with latest fixes 2012-12-16
+>> 
+>> Any help appreciated. Around 300G of TV recordings on the drive, which of course will eventually come as replays.
+>> 
+>> Jari
+>> --
+>> *** Jari Seppälä
+>> 
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at http://vger.kernel.org/majordomo-info.html[http://vger.kernel.org/majordomo-info.html]
+> 
+
+--
+*** Jari Seppälä
 
 

@@ -1,35 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from len.romanrm.net ([195.154.117.182]:51708 "EHLO len.romanrm.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752580AbcLaIIu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 31 Dec 2016 03:08:50 -0500
-Date: Sat, 31 Dec 2016 13:08:40 +0500
-From: Roman Mamedov <rm@romanrm.net>
-To: Rich Gannon <rich@richgannon.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Can't add/replace a device on degraded filesystem
-Message-ID: <20161231130840.45e7230f@natsu>
-In-Reply-To: <86f5b7b9-b54e-8b80-26a9-6f13f3609a7b@richgannon.net>
-References: <86f5b7b9-b54e-8b80-26a9-6f13f3609a7b@richgannon.net>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Received: from aserp1040.oracle.com ([141.146.126.69]:49908 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755999AbcLUHiw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Dec 2016 02:38:52 -0500
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>
+Subject: [PATCH 1/2] btrfs: btrfs_defrag_root() doesn't support any option
+Date: Wed, 21 Dec 2016 15:42:07 +0800
+Message-Id: <20161221074208.32597-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 29 Dec 2016 19:27:30 -0500
-Rich Gannon <rich@richgannon.net> wrote:
+Both BTRFS_IOC_DEFRAG and BTRFS_IOC_DEFRAG_RANGE call the same
+function- btrfs_ioctl_defrag(), however BTRFS_IOC_DEFRAG does
+not support any argument, so check that and return not supported
+if provided. This has valid impact at the user end, in the cli below
+  btrfs filesystem defrag -clzo /btrfs
+the -c option (or similarly other) is only applicable to the file
+defrag, which is either provided in the argument or when used along
+with the -r option, however as of now the above cli does not report
+any error. This patch will fix it.
 
-> I can mount my filesystem with -o degraded, but I can not do btrfs 
-> replace or btrfs device add as the filesystem is in read-only mode, and 
-> I can not mount read-write.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ fs/btrfs/ioctl.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-You can try my patch which removes that limitation 
-https://patchwork.kernel.org/patch/9419189/
-
-Also as Duncan said there's a "more proper" patch to fix this in the works
-somewhere, which does a per-chunk check for degraded, and would also allow to
-mount the FS read-write in your case.
-
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 7acbd2cf6192..bd1bb7fcea8a 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2608,6 +2608,10 @@ static int btrfs_ioctl_defrag(struct file *file, void __user *argp)
+ 			ret = -EPERM;
+ 			goto out;
+ 		}
++		if (argp) {
++			ret = -EOPNOTSUPP;
++			goto out;
++		}
+ 		ret = btrfs_defrag_root(root);
+ 		if (ret)
+ 			goto out;
 -- 
-With respect,
-Roman
+2.10.0
+

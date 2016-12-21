@@ -1,40 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:45684 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:46122 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S935159AbcLURDw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Dec 2016 12:03:52 -0500
+        id S933996AbcLURDt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Dec 2016 12:03:49 -0500
 From: Jeff Layton <jlayton@redhat.com>
 To: linux-fsdevel@vger.kernel.org
 Cc: linux-kernel@vger.kernel.org, linux-nfs@vger.kernel.org,
         linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
         linux-xfs@vger.kernel.org
-Subject: [RFC PATCH v1 04/30] f2fs: don't bother setting i_version
-Date: Wed, 21 Dec 2016 12:03:21 -0500
-Message-Id: <1482339827-7882-5-git-send-email-jlayton@redhat.com>
+Subject: [RFC PATCH v1 01/30] lustre: don't set f_version in ll_readdir
+Date: Wed, 21 Dec 2016 12:03:18 -0500
+Message-Id: <1482339827-7882-2-git-send-email-jlayton@redhat.com>
 In-Reply-To: <1482339827-7882-1-git-send-email-jlayton@redhat.com>
 References: <1482339827-7882-1-git-send-email-jlayton@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It's not used in f2fs currently. Just remove the initialization.
+f_version is only ever used by filesystem-specific code, and nothing in
+lustre ever looks at it.
 
 Signed-off-by: Jeff Layton <jlayton@redhat.com>
 ---
- fs/f2fs/super.c | 1 -
- 1 file changed, 1 deletion(-)
+ drivers/staging/lustre/lustre/llite/dir.c | 3 ---
+ 1 file changed, 3 deletions(-)
 
-diff --git a/fs/f2fs/super.c b/fs/f2fs/super.c
-index 702638e21c76..78cceb0bed9e 100644
---- a/fs/f2fs/super.c
-+++ b/fs/f2fs/super.c
-@@ -572,7 +572,6 @@ static struct inode *f2fs_alloc_inode(struct super_block *sb)
- 	init_once((void *) fi);
- 
- 	/* Initialize f2fs-specific inode info */
--	fi->vfs_inode.i_version = 1;
- 	atomic_set(&fi->dirty_pages, 0);
- 	fi->i_current_depth = 1;
- 	fi->i_advise = 0;
+diff --git a/drivers/staging/lustre/lustre/llite/dir.c b/drivers/staging/lustre/lustre/llite/dir.c
+index ea5d247a3f70..1d288ec5f03e 100644
+--- a/drivers/staging/lustre/lustre/llite/dir.c
++++ b/drivers/staging/lustre/lustre/llite/dir.c
+@@ -367,8 +367,6 @@ static int ll_readdir(struct file *filp, struct dir_context *ctx)
+ 	}
+ 	ctx->pos = pos;
+ 	ll_finish_md_op_data(op_data);
+-	filp->f_version = inode->i_version;
+-
+ out:
+ 	if (!rc)
+ 		ll_stats_ops_tally(sbi, LPROC_LL_READDIR, 1);
+@@ -1671,7 +1669,6 @@ static loff_t ll_dir_seek(struct file *file, loff_t offset, int origin)
+ 			else
+ 				fd->lfd_pos = offset;
+ 			file->f_pos = offset;
+-			file->f_version = 0;
+ 		}
+ 		ret = offset;
+ 	}
 -- 
 2.7.4
 

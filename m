@@ -1,170 +1,174 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:48391 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S932479AbcLTXZM (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Dec 2016 18:25:12 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1cJTmE-0002Pv-Rn
-        for linux-btrfs@vger.kernel.org; Wed, 21 Dec 2016 00:24:58 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs_log2phys: cannot lookup extent mapping
-Date: Tue, 20 Dec 2016 23:24:47 +0000 (UTC)
-Message-ID: <pan$14679$e5d5bc21$812abe03$ef75194d@cox.net>
-References: <89be6fee-5b18-7a9d-11ea-85abeab28022@ece.wisc.edu>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mbox.akmail.it ([213.21.176.227]:41931 "EHLO pop.aknet.it"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751175AbcLUM1R (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Dec 2016 07:27:17 -0500
+Message-ID: <1482323222.585a7516d6aa4@webmail.adria.it>
+Date: Wed, 21 Dec 2016 13:27:02 +0100
+From: bepi@adria.it
+To: Xin Zhou <xin.zhou@gmx.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [CORRUPTION FILESYSTEM] Corrupted and unrecoverable file system during the snapshot receive
+References: <1479730155.5832e3eb3fde8@webmail.adria.it> <9712851.I7FUyRd5GC@exnet.gdb.it> <trinity-46cbb3e7-b072-4e9a-a504-e67b58cc9c9c-1482096970056@3capp-mailcom-bs08>, <1843121.XhPNI7cFmJ@exnet.gdb.it> <trinity-f5b0b96e-286c-4485-a02e-1f96bca7a906-1482255789582@3capp-mailcom-bs06>
+In-Reply-To: <trinity-f5b0b96e-286c-4485-a02e-1f96bca7a906-1482255789582@3capp-mailcom-bs06>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-David Hanke posted on Tue, 20 Dec 2016 09:52:25 -0600 as excerpted:
+Hi.
 
-> I've been using a btrfs-based volume for backups, but lately the
-> system's been filling the syslog with errors like "btrfs_log2phys:
-> cannot lookup extent mapping for 7129125486592" at the rate of hundreds
-> per second. (Please see output below for more details.) Despite the
-> errors, the files I've looked at appear to be written and read
-> successfully.
+I will insert ' btrfs check ' after each ' receive ' in my script.
+
+I will test again my hardware.
+But is not very likely that 2 computers, 3 HDD, 3 partitions, all have issue.
+
+I think that the problem is a concomitance of operations, a race condition, a
+random conditions.
+I'll try to create a test case.
+
+
+P.S. For find the problem may need to insert tools as ' coredumper ' and  '
+sanitize ' in ' btrfs ', detect in realtime the ' extent ' corruption, and log
+detection.
+
+
+Thank you.
+
+Gdb
+
+
+
+Xin Zhou <xin.zhou@gmx.com>:
+
+> Hi,
 > 
-> I'm wondering if the contents of the volume are trustworthy and whether
-> this problem is resolvable without backing up, erasing and starting
-> over?
+> The system seems running some customized scripts continuously backup data
+> from a NVME drive to HDDs.
+> If the 3 HDDs backup storage are same in btrfs config, and the there is a bug
+> in btrfs code,
+> they all suppose to fail after the same operation sequence.
 > 
-> Thank you!
+> Otherwise, probably one of the HDDs might have issue, or there is a bug in
+> layer below btrfs.
 > 
-> David
+> For the customize script, it might be helpful to check the file system
+> consistency after each transfer.
+> That might be useful to figure out which step generates a corruption, and if
+> there is error propagations.
+> 
+> Regards,
+> Xin
+>  
+>  
+> 
+> Sent: Monday, December 19, 2016 at 10:55 AM
+> From: "Giuseppe Della Bianca" <bepi@adria.it>
+> To: "Xin Zhou" <xin.zhou@gmx.com>
+> Cc: linux-btrfs@vger.kernel.org
+> Subject: Re: [CORRUPTION FILESYSTEM] Corrupted and unrecoverable file system
+> during the snapshot receive
+> a concrete example
 > 
 > 
-> # uname -a
-> Linux backup2 3.0.101.RNx86_64.3 #1 SMP Wed Apr 1 16:02:14 PDT 2015
-> x86_64 GNU/Linux
+> SNAPSHOT
 > 
-> # btrfs --version
-> Btrfs v3.17.3
-
-FWIW...
-
-[TL;DR: see the four bottom line choices, at the bottom.]
-
-This is the upstream btrfs development and discussion list for a 
-filesystem that's still stabilizing (that is, not fully stable and 
-mature) and that remains under heavy development and bug fixing.  As 
-such, list focus is heavily forward looking, with an extremely strong 
-recommendation to use current kernels (and to a lessor extent btrfs 
-userspace) if you're going to be running btrfs, as these have all the 
-latest bugfixes.
-
-Put a different way, the general view and strong recommendation of the 
-list is that because btrfs is still under heavy development, with bug 
-fixes, some more major than others, every kernel cycle, while we 
-recognize that choosing to run old and stale^H^Hble kernels and userspace 
-is a legitimate choice on its own, that choice of stability over support 
-for the latest and greatest, is viewed as incompatible with choosing to 
-run a still under heavy development filesystem.  Choosing one OR the 
-other is strongly recommended.
-
-For list purposes, we recommend and best support the last two kernel 
-release series in two tracks, LTS/long-term-stable, or current release 
-track.  On the LTS track, that's the LTS 4.4 and 4.1 series.  On the 
-current track, 4.9 is the latest release, so 4.9 and 4.8 are best 
-supported.
-
-Meanwhile, it's worth keeping in mind that the experimental label and 
-accompanying extremely strong "eat your babies" level warnings weren't 
-peeled off until IIRC 3.12 or so, meaning anything before that is not 
-only ancient history in list terms, but also still labeled as "eat your 
-babies" level experimental.  Why anyone choosing to run an ancient eat-
-your-babies level experimental version of a filesystem that's now rather 
-more stable and mature, tho not yet fully stabilized, is beyond me.  If 
-they're interested in newer filesystems, running newer and less buggy 
-versions is reasonable; if they're interested in years-stale level of 
-stability, then running such filesystems, especially when still labeled 
-eat-your-babies level experimental back then, seems an extremely odd 
-choice indeed.
-
-Of course, on-list we do recognize that various distros did and do offer 
-support at some level for older than list-recommended version btrfs, in 
-part because they backport fixes from newer versions.  However, because 
-we're forward development focused we don't track what patches these 
-distros may or may not have backported and thus aren't in a good position 
-to provide good support for them.  Instead, users choosing to use such 
-kernels are generally asked to choose between upgrading to something 
-reasonably supportable on-list if they wish to go that route, or referred 
-back to their distros for the support they're in a far better position to 
-offer, since they know what they've backported and what they haven't, 
-while we don't.
-
-As for btrfs userspace, the way btrfs works, during normal runtime, 
-userspace primarily calls the kernel to do the real work, so userspace 
-version isn't as big a deal unless you're trying to use a feature only 
-supported by newer versions, except that if it's /too/ old, the impedance 
-mismatch between the commands as they were then and the commands in 
-current versions makes support rather more difficult.  However, once 
-there's a problem, then the age of userspace code becomes more vital, as 
-then it's actually the userspace code doing the work, and only newer 
-versions of btrfs check and btrfs restore, for instance, can detect and 
-fix problems where code has only recently been added to do so.
-
-In general, then, with btrfs-progs releases and versioning synced to that 
-of the kernel, a reasonable rule of thumb is to run userspace of a 
-similar version to your kernel, tho unless you're experiencing problems, 
-getting a version or two behind on your userspace isn't a big deal.  That 
-way, userspace command formats and output will be close enough to current 
-for easier support, and if there's a fix for a specific problem you've 
-posted in newer userspace, the problem and fix are still fresh enough in 
-people's minds that someone will probably recognize it and point out that 
-a newer version can handle that, and you can worry about upgrading to the 
-latest and greatest at that point.
-
-So bottom line, you have four choices:
-
-1) Upgrade to something reasonably current to get better on-list support.
-
-This would be LTS kernels 4.4 preferred, or 4.1, acceptable, or current 
-kernels 4.9 or 4.8, and similarly versioned userspace, so no older than 
-btrfs-progs 4.0.
-
-2) Choose to stay with your distro's versions and get support from them.
-
-Particularly if you are already paying for that support, might as well 
-use it.
-
-3) Recognize the fundamental incompatibility between wanting to run old 
-and stale/stable for the stability it is supposed to offer, and wanting 
-to run a still under heavy development not fully stable and mature 
-filesystem like btrfs, and either switch to a more stable and mature 
-filesystem that better meets your needs for those qualities, or upgrade 
-to a distro or distro version that better meets your needs for current 
-software better supported by current upstreams like this btrfs list.
-
-4) Stay with what you have, and muddle through as best you can.
-
-After all, it's not like we /refuse/ to offer support to btrfs that old, 
-if we recognize a problem that we know can be fixed by code that old 
-we'll still tell you, and if we know there's a fix in newer versions 
-we'll still tell you and try to point you at the appropriate patch for 
-you to apply to your old version if possible, but we simply recognize 
-that for something that old, our support will be rather limited, at best.
-
-But it remains your system and your data, so your choice, even if it's 
-against everything we normally recommend.
+> /dev/nvme0n1p2 on /tmp/tmp.X3vU6dLLVI type btrfs
+> (rw,relatime,ssd,space_cache,subvolid=5,subvol=/)
+> 
+> btrfsManage SNAPSHOT /
+> 
+> (2016-12-19 19:44:00) Start btrfsManage
+> . . . Start managing SNAPSHOT ' / ' filesystem ' root ' snapshot
+> 
+> In ' btrfssnapshot ' latest source snapshot ' root-2016-12-18_15:10:01.40 '
+> . . . date ' 2016-12-18_15:10:01 ' number ' 40 '
+> 
+> Creation ' root-2016-12-19_19:44:00.part ' snapshot from ' root ' subvolume
+> . . . Create a readonly snapshot of '/tmp/tmp.X3vU6dLLVI/root' in
+> '/tmp/tmp.X3vU6dLLVI/btrfssnapshot/root/root-2016-12-19_19:44:00.part'
+> 
+> Renaming ' root-2016-12-19_19:44:00.part ' into ' root-2016-12-19_19:44:00.41
+> ' snapshot
+> 
+> Source snapshot list of ' root ' subvolume
+> . . . btrfssnapshot/root/root-2016-08-28-12-35-01.1
+> ]zac[
+> . . . btrfssnapshot/root/root-2016-12-19_19:44:00.41
+> 
+> (2016-12-19 19:44:05) End btrfsManage
+> . . . End managing SNAPSHOT ' / ' filesystem ' root ' snapshot
+> CORRECTLY
+> 
+> 
+> 
+> SEND e RECEIVE
+> 
+> /dev/nvme0n1p2 on /tmp/tmp.o78czE0Bo6 type btrfs
+> (rw,relatime,ssd,space_cache,subvolid=5,subvol=/)
+> /dev/sda2 on /tmp/tmp.XcwqQCKq09 type btrfs
+> (rw,relatime,space_cache,subvolid=5,subvol=/)
+> 
+> btrfsManage SEND / /dev/sda2
+> 
+> (2016-12-19 19:47:24) Start btrfsManage
+> . . . Start managing SEND ' / ' filesystem ' root ' snapshot in ' /dev/sda2
+> '
+> 
+> Sending ' root-2016-12-19_19:44:00.41 ' source snapshot to ' btrfsreceive '
+> subvolume
+> . . . btrfs send -p
+> /tmp/tmp.o78czE0Bo6/btrfssnapshot/root/root-2016-12-18_15:10:01.40
+> /tmp/tmp.o78czE0Bo6/btrfssnapshot/root/root-2016-12-19_19:44:00.41 | btrfs
+> receive /tmp/tmp.XcwqQCKq09/btrfsreceive/root/.part/
+> . . . At subvol
+> /tmp/tmp.o78czE0Bo6/btrfssnapshot/root/root-2016-12-19_19:44:00.41
+> . . . At snapshot root-2016-12-19_19:44:00.41
+> 
+> Creation ' root-2016-12-19_19:44:00.41 ' snapshot from '
+> .part/root-2016-12-19_19:44:00.41 ' subvolume
+> . . . Create a readonly snapshot of
+> '/tmp/tmp.XcwqQCKq09/btrfsreceive/root/.part/root-2016-12-19_19:44:00.41' in
+> '/tmp/tmp.XcwqQCKq09/btrfsreceive/root/root-2016-12-19_19:44:00.41'
+> . . . Delete subvolume (commit):
+> '/tmp/tmp.XcwqQCKq09/btrfsreceive/root/.part/root-2016-12-19_19:44:00.41'
+> 
+> Snapshot list in ' /dev/sda2 ' device
+> . . . btrfsreceive/data_backup/data_backup-2016-12-17_12:07:00.1
+> . . . btrfsreceive/data_storage/data_storage-2016-12-10_17:05:51.1
+> . . . btrfsreceive/root/root-2016-08-28-12-35-01.1
+> ]zac[
+> . . . btrfsreceive/root/root-2016-12-19_19:44:00.41
+> 
+> (2016-12-19 19:48:37) End btrfsManage
+> . . . End managing SEND ' / ' filesystem ' root ' snapshot in ' /dev/sda2 '
+> CORRECTLY
+> 
+> 
+> 
+> > Hi Giuseppe,
+> >
+> > Would you like to tell some details about:
+> > 1. the XYZ snapshot was taken from which subvolume
+> > 2. where the base (initial) snapshot is stored
+> > 3. The 3 partitions receives the same snapshot, are they in the same btrfs
+> > configuration and subvol structure?
+> >
+> > Also, would you send the link reports "two files unreadable error" post
+> > mentioned in step 2? Hope can see the message and figure out if the issue
+> > first comes from sender or receiver side.
+> >
+> > Thanks,
+> > Xin
+> >
+> >
+>  
+> 
 
 
-Finally, a personal disclosure.  I'm a btrfs user and list regular, not a 
-dev.  As such, my own answers will rarely get code-level technical or 
-point to specific patches, but because I /am/ a regular, I can still 
-answer the stuff that comes up regularly, leaving the real devs and more 
-expert replies to cover detailed content that's beyond me.  So while it's 
-quite possible someone else will recognize a specific bug and be able to 
-point you toward a specific fix, tho honestly I don't expect it for 
-something as old as what you're posting about, general list-recommended 
-upgrades and alternatives for people posting with positively ancient 
-versions is squarely within my reply territory. =:^)
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+
+----------------------------------------------------
+This mail has been sent using Alpikom webmail system
+http://www.alpikom.it
 

@@ -1,53 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f68.google.com ([209.85.214.68]:36052 "EHLO
-        mail-it0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754427AbcLVMXC (ORCPT
+Received: from tartarus.angband.pl ([89.206.35.136]:35209 "EHLO
+        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S965627AbcLVPO3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Dec 2016 07:23:02 -0500
-Received: by mail-it0-f68.google.com with SMTP id n68so20653303itn.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Dec 2016 04:23:02 -0800 (PST)
-Subject: Re: [bug or by design ?] btrfs defrag compression does not persist
-To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-References: <16053303-2857-9729-a94f-d697004f019d@oracle.com>
-Cc: David Sterba <dsterba@suse.cz>, Chris Mason <clm@fb.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <007826d2-17a4-d993-b35b-f15e8a722790@gmail.com>
-Date: Thu, 22 Dec 2016 07:22:50 -0500
+        Thu, 22 Dec 2016 10:14:29 -0500
+Received: from kilobyte by tartarus.angband.pl with local (Exim 4.88)
+        (envelope-from <kilobyte@angband.pl>)
+        id 1cK54b-00059K-7s
+        for linux-btrfs@vger.kernel.org; Thu, 22 Dec 2016 16:14:25 +0100
+Date: Thu, 22 Dec 2016 16:14:25 +0100
+From: Adam Borowski <kilobyte@angband.pl>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs_log2phys: cannot lookup extent mapping
+Message-ID: <20161222151425.ecryyvnz2feaygrr@angband.pl>
+References: <89be6fee-5b18-7a9d-11ea-85abeab28022@ece.wisc.edu>
+ <pan$14679$e5d5bc21$812abe03$ef75194d@cox.net>
+ <4e2fcf15-5af4-54b0-f7bb-46518b9bb5a4@ece.wisc.edu>
+ <pan$67936$e25a272c$77926cea$931807ed@cox.net>
 MIME-Version: 1.0
-In-Reply-To: <16053303-2857-9729-a94f-d697004f019d@oracle.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <pan$67936$e25a272c$77926cea$931807ed@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-12-21 21:28, Anand Jain wrote:
->
-> A quick design specific question.
->
-> The following command converts file-data-extents to the specified
-> encoder (lzo).
->
->   $ btrfs filesystem defrag -v -r -f -clzo dir/
->
-> However the lzo property does not persist through the file modify.
-> As the above operation does not update the btrfs.compression property.
->
-> Question:
->  I wonder if this should be a bug or if its by design ?
->  What could be the main use case to _associate compression
->  at the time of defrag_ ?
-While I didn't write the tool, I'm pretty certain that it was by design. 
-  The primary use cases as I see them for compressing using defrag are:
-1. Repacking files after mounting without compression (I do this myself 
-whenever I have to boot into a different distro than what I already have 
-on the system since I always use compress=none when mounting from 
-recovery media).
-2. Actually compressing files after marking them for compression.
-3. Using multi-tier in-line compression (for example, 'live' data is LZO 
-compressed, data which has sat idle for a while is ZLIB compressed).
+On Thu, Dec 22, 2016 at 10:11:35AM +0000, Duncan wrote:
+> Given the maturing-but-not-yet-fully-stable-and-mature state of btrfs 
+> today, being no further from a usable current backup than the data you're 
+> willing to lose, at least worst-case, remains an even stronger 
+> recommendation than it is on fully mature and stable filesystem, kernel 
+> and hardware.
 
->  The no-conflict fix will be to add another option to make
->  it persistent.
-This ideally should be better documented (nothing says it will persist, 
-but nothing I can find says it won't either), but I personally feel that 
-defrag shouldn't be mucking about with file attributes beyond the stuff 
-that's implicitly updated by shuffling extents around.
+The usual rant about backups which I snipped is 110%[1] right, however I
+disagree that btrfs is worse than other filesystems for data safety.
+
+On one hand, btrfs:
+* is buggy
+* fails the KISS principle to a ridiculous degree
+* lacks logic people take for granted (especially on RAID)
+On the other, other filesystems:
+* suffer from silent data loss every time the disk doesn't notice an error!
+  Allowing silent data loss fails the most basic requirement for a
+  filesystem.  Btrfs at least makes that loss noisy (single) so you can
+  recover from backups, or handles it (redundant RAID).
+* don't have frequent snapshots to save you from human error (including
+  other software)
+* make backups time-costly.  rsync needs to at least stat everything, on a
+  populated disk that's often half an hour or more, on btrfs a no-op backup
+  takes O(1).
+
+So sorry, but I had enough woe with those "fully mature and stable"
+filesystems.  Thus I use btrfs pretty much everywhere, backing up my crap
+every 24 hours, important bits every 3 hours.
+
+
+Meow!
+
+[1]. Above 100% as it's more true than people read it.
+-- 
+Autotools hint: to do a zx-spectrum build on a pdp11 host, type:
+  ./configure --host=zx-spectrum --build=pdp11

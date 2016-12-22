@@ -1,114 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-001b2d01.pphosted.com ([148.163.158.5]:43038 "EHLO
-        mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S935495AbcLWJag (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:47980 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S938498AbcLVFml (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 23 Dec 2016 04:30:36 -0500
-Received: from pps.filterd (m0098420.ppops.net [127.0.0.1])
-        by mx0b-001b2d01.pphosted.com (8.16.0.17/8.16.0.17) with SMTP id uBN9U1dC122409
-        for <linux-btrfs@vger.kernel.org>; Fri, 23 Dec 2016 04:30:35 -0500
-Received: from e19.ny.us.ibm.com (e19.ny.us.ibm.com [129.33.205.209])
-        by mx0b-001b2d01.pphosted.com with ESMTP id 27gwmkqb8j-1
-        (version=TLSv1.2 cipher=AES256-SHA bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Fri, 23 Dec 2016 04:30:35 -0500
-Received: from localhost
-        by e19.ny.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-        for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-        Fri, 23 Dec 2016 04:30:34 -0500
-From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, fdmanana@suse.com,
-        dsterba@suse.com
-Subject: [PATCH] Btrfs: Fix deadlock between direct IO and fast fsync
-Date: Fri, 23 Dec 2016 15:00:18 +0530
-Message-Id: <1482485418-4190-1-git-send-email-chandan@linux.vnet.ibm.com>
+        Thu, 22 Dec 2016 00:42:41 -0500
+Date: Wed, 21 Dec 2016 21:42:32 -0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: jeffm@suse.com
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/2] btrfs: fix locking when we put back a delayed ref
+ that's too new
+Message-ID: <20161222054232.GA11373@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1482258508-7594-1-git-send-email-jeffm@suse.com>
+ <1482258508-7594-2-git-send-email-jeffm@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1482258508-7594-2-git-send-email-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The following deadlock is seen when executing generic/113 test,
+On Tue, Dec 20, 2016 at 01:28:28PM -0500, jeffm@suse.com wrote:
+> From: Jeff Mahoney <jeffm@suse.com>
+> 
+> In __btrfs_run_delayed_refs, when we put back a delayed ref that's too
+> new, we have already dropped the lock on locked_ref when we set
+> ->processing = 0.
+> 
+> This patch keeps the lock to cover that assignment.
+> 
+> Fixes: d7df2c796d7 (Btrfs: attach delayed ref updates to delayed ref heads)
+> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+> ---
+>  fs/btrfs/extent-tree.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index d74adf1..930ac8e 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -2526,11 +2526,11 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+>  		if (ref && ref->seq &&
+>  		    btrfs_check_delayed_seq(fs_info, delayed_refs, ref->seq)) {
+>  			spin_unlock(&locked_ref->lock);
+> -			btrfs_delayed_ref_unlock(locked_ref);
+>  			spin_lock(&delayed_refs->lock);
+>  			locked_ref->processing = 0;
+>  			delayed_refs->num_heads_ready++;
+>  			spin_unlock(&delayed_refs->lock);
+> +			btrfs_delayed_ref_unlock(locked_ref);
 
- ---------------------------------------------------------+----------------------------------------------------
-  Direct I/O task                                           Fast fsync task
- ---------------------------------------------------------+----------------------------------------------------
-  btrfs_direct_IO
-    __blockdev_direct_IO
-     do_blockdev_direct_IO
-      do_direct_IO
-       btrfs_get_blocks_direct
-        while (blocks needs to written)
-         get_more_blocks (first iteration)
-          btrfs_get_blocks_direct
-           btrfs_create_dio_extent
-             down_read(&BTRFS_I(inode) >dio_sem)
-             Create and add extent map and ordered extent
-             up_read(&BTRFS_I(inode) >dio_sem)
-                                                            btrfs_sync_file
-                                                              btrfs_log_dentry_safe
-                                                               btrfs_log_inode_parent
-                                                                btrfs_log_inode
-                                                                 btrfs_log_changed_extents
-                                                                  down_write(&BTRFS_I(inode) >dio_sem)
-                                                                   Collect new extent maps and ordered extents
-                                                                    wait for ordered extent completion
-         get_more_blocks (second iteration)
-          btrfs_get_blocks_direct
-           btrfs_create_dio_extent
-             down_read(&BTRFS_I(inode) >dio_sem)
- --------------------------------------------------------------------------------------------------------------
+I don't think that this would end up a deadlock as we use mutex_try_lock
+for head->mutex everywhere, but I'd rather have it cleaned up.
 
-In the above description, Btrfs direct I/O code path has not yet started
-submitting bios for file range covered by the initial ordered
-extent. Meanwhile, The fast fsync task obtains the write semaphore and
-waits for I/O on the ordered extent to get completed. However, the
-Direct I/O task is now blocked on obtaining the read semaphore.
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
-To resolve the deadlock, this commit modifies the Direct I/O code path
-to obtain the read semaphore before invoking
-__blockdev_direct_IO(). The semaphore is then given up after
-__blockdev_direct_IO() returns. This allows the Direct I/O code to
-complete I/O on all the ordered extents it creates.
+Thanks,
 
-Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
----
- fs/btrfs/inode.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 5ca88f0..f796037 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7325,7 +7325,6 @@ static struct extent_map *btrfs_create_dio_extent(struct inode *inode,
- 	struct extent_map *em = NULL;
- 	int ret;
- 
--	down_read(&BTRFS_I(inode)->dio_sem);
- 	if (type != BTRFS_ORDERED_NOCOW) {
- 		em = create_pinned_em(inode, start, len, orig_start,
- 				      block_start, block_len, orig_block_len,
-@@ -7344,7 +7343,6 @@ static struct extent_map *btrfs_create_dio_extent(struct inode *inode,
- 		em = ERR_PTR(ret);
- 	}
-  out:
--	up_read(&BTRFS_I(inode)->dio_sem);
- 
- 	return em;
- }
-@@ -8800,6 +8798,7 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
- 		dio_data.unsubmitted_oe_range_start = (u64)offset;
- 		dio_data.unsubmitted_oe_range_end = (u64)offset;
- 		current->journal_info = &dio_data;
-+		down_read(&BTRFS_I(inode)->dio_sem);
- 	} else if (test_bit(BTRFS_INODE_READDIO_NEED_LOCK,
- 				     &BTRFS_I(inode)->runtime_flags)) {
- 		inode_dio_end(inode);
-@@ -8812,6 +8811,7 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
- 				   iter, btrfs_get_blocks_direct, NULL,
- 				   btrfs_submit_direct, flags);
- 	if (iov_iter_rw(iter) == WRITE) {
-+		up_read(&BTRFS_I(inode)->dio_sem);
- 		current->journal_info = NULL;
- 		if (ret < 0 && ret != -EIOCBQUEUED) {
- 			if (dio_data.reserve)
--- 
-2.5.5
-
+-liubo
+>  			locked_ref = NULL;
+>  			cond_resched();
+>  			count++;
+> -- 
+> 1.8.5.6
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

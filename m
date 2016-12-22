@@ -1,55 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:48214 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752298AbcLLNI2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Dec 2016 08:08:28 -0500
-Date: Mon, 12 Dec 2016 14:08:22 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
-Subject: Re: [PATCH] Btrfs: add 'inode' for extent map tracepoint
-Message-ID: <20161212130821.GM12522@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1480628641-17476-1-git-send-email-bo.li.liu@oracle.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:46359 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933024AbcLVNBv (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 22 Dec 2016 08:01:51 -0500
+Date: Thu, 22 Dec 2016 15:53:05 +0300
+From: Dan Carpenter <dan.carpenter@oracle.com>
+To: jeffm@suse.com
+Cc: linux-btrfs@vger.kernel.org
+Subject: [bug report] btrfs: root->fs_info cleanup, add fs_info convenience
+ variables
+Message-ID: <20161222125304.GA16117@elgon.mountain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1480628641-17476-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 01, 2016 at 01:44:01PM -0800, Liu Bo wrote:
->  	TP_STRUCT__entry_btrfs(
->  		__field(	u64,  root_objectid	)
-> +		__field(	u64,  ino		)
->  		__field(	u64,  start		)
->  		__field(	u64,  len		)
->  		__field(	u64,  orig_start	)
-> @@ -204,7 +206,8 @@ TRACE_EVENT_CONDITION(btrfs_get_extent,
->  
->  	TP_fast_assign_btrfs(root->fs_info,
->  		__entry->root_objectid	= root->root_key.objectid;
-> -		__entry->start 		= map->start;
-> +		__entry->ino		= btrfs_ino(inode);
-> +		__entry->start		= map->start;
->  		__entry->len		= map->len;
->  		__entry->orig_start	= map->orig_start;
->  		__entry->block_start	= map->block_start;
-> @@ -214,12 +217,12 @@ TRACE_EVENT_CONDITION(btrfs_get_extent,
->  		__entry->compress_type	= map->compress_type;
->  	),
->  
-> -	TP_printk_btrfs("root = %llu(%s), start = %llu, len = %llu, "
-> +	TP_printk_btrfs("root = %llu(%s), ino = %llu start = %llu, len = %llu, "
->  		  "orig_start = %llu, block_start = %llu(%s), "
->  		  "block_len = %llu, flags = %s, refs = %u, "
->  		  "compress_type = %u",
->  		  show_root_type(__entry->root_objectid),
-> -		  (unsigned long long)__entry->start,
-> +		  __entry->ino, (unsigned long long)__entry->start,
+Hello Jeff Mahoney,
 
-I think the (unsigned long long) cast should be used here as well, at
-least for consistency with the other u64.
+This is a semi-automatic email about new static checker warnings.
 
->  		  (unsigned long long)__entry->len,
->  		  (unsigned long long)__entry->orig_start,
->  		  show_map_type(__entry->block_start),
+The patch 0b246afa62b0: "btrfs: root->fs_info cleanup, add fs_info 
+convenience variables" from Jun 22, 2016, leads to the following 
+Smatch complaint:
+
+fs/btrfs/export.c:238 btrfs_get_name()
+	 warn: variable dereferenced before check 'inode' (see line 226)
+
+fs/btrfs/export.c
+   225		struct inode *dir = d_inode(parent);
+   226		struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+                                                         ^^^^^^^^^^^
+Patch adds dereference.
+
+   227		struct btrfs_path *path;
+   228		struct btrfs_root *root = BTRFS_I(dir)->root;
+   229		struct btrfs_inode_ref *iref;
+   230		struct btrfs_root_ref *rref;
+   231		struct extent_buffer *leaf;
+   232		unsigned long name_ptr;
+   233		struct btrfs_key key;
+   234		int name_len;
+   235		int ret;
+   236		u64 ino;
+   237	
+   238		if (!dir || !inode)
+                             ^^^^^
+Old code checked for NULL.
+
+   239			return -EINVAL;
+   240	
+
+regards,
+dan carpenter

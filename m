@@ -1,48 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cdptpa-outbound-snat.email.rr.com ([107.14.166.229]:46444 "EHLO
-        cdptpa-oedge-vip.email.rr.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1752840AbcLIVTM (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:27714 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753451AbcLWDPB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 9 Dec 2016 16:19:12 -0500
-Date: Fri, 9 Dec 2016 16:12:06 -0500
-From: Steven Rostedt <rostedt@goodmis.org>
-To: Dave Jones <davej@codemonkey.org.uk>, Chris Mason <clm@fb.com>,
-        Linus Torvalds <torvalds@linux-foundation.org>,
-        Jens Axboe <axboe@fb.com>, Andy Lutomirski <luto@amacapital.net>,
-        Andy Lutomirski <luto@kernel.org>, Al Viro <viro@zeniv.linux.org.uk>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Linux Kernel <linux-kernel@vger.kernel.org>,
-        Dave Chinner <david@fromorbit.com>
-Subject: Re: btrfs_destroy_inode warn (outstanding extents)
-Message-ID: <20161209211205.lzby7yswhptyhpkd@home.goodmis.org>
-References: <CA+55aFxqRCEVxocpZVDMqinP=EsmgzcnvWpOT6x8NMmcBpWb2Q@mail.gmail.com>
- <203e0319-bc9b-245c-e162-709267540d22@fb.com>
- <20161026233808.GC15247@clm-mbp.thefacebook.com>
- <20161026234751.e66xyzjiwifvbuha@codemonkey.org.uk>
- <20161031185514.b22zvbxvga4xcinz@codemonkey.org.uk>
- <CA+55aFwUBYzPcbecpHw9=f8h_JuX18x5bE=Kd_k9QkCcgoiBsA@mail.gmail.com>
- <20161031194454.GA49877@clm-mbp.thefacebook.com>
- <20161123193419.pq7adje2eanky2wx@codemonkey.org.uk>
- <20161123195845.iphzr7ac4mu5ewjt@codemonkey.org.uk>
- <20161201153209.kylizqipi7a2wcpj@codemonkey.org.uk>
+        Thu, 22 Dec 2016 22:15:01 -0500
+Subject: Re: [PATCH] Btrfs: adjust outstanding_extents counter properly when
+ dio write is split
+To: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org
+References: <1482455634-9185-1-git-send-email-bo.li.liu@oracle.com>
+Cc: David Sterba <dsterba@suse.cz>, Anand.Jain.anand.jain@oracle.com
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <46602de5-32b2-6d76-e7b1-24acbe41f6f9@oracle.com>
+Date: Fri, 23 Dec 2016 11:18:19 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20161201153209.kylizqipi7a2wcpj@codemonkey.org.uk>
+In-Reply-To: <1482455634-9185-1-git-send-email-bo.li.liu@oracle.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 01, 2016 at 10:32:09AM -0500, Dave Jones wrote:
-> 
-> (function-graph screws up the RIP for some reason, 'return_to_handler'
->  should actually be btrfs_destroy_inode)
 
-That's because function_graph hijacks the return address and replaces it with
-return_to_handler. The back trace has code to show what that handler is
-suppose to be. But I should see why the WARNING shows it instead, and fix
-that too.
+On 12/23/16 09:13, Liu Bo wrote:
+> Currently how btrfs dio deals with split dio write is not good
+> enough if dio write is split into several segments due to the
+> lack of contiguous space, a large dio write like 'dd bs=1G count=1'
+> can end up with incorrect outstanding_extents counter and endio
+> would complain loudly with an assertion.
+>
+> This fixes the problem by compensating the outstanding_extents
+> counter in inode if a large dio write gets split.
 
-Thanks,
+  Fix works. Thanks Liu bo for working on this.
 
--- Steve
+  Tested-by: Anand Jain <anand.jain@oracle.com>
 
+> Reported-by: Anand Jain <anand.jain@oracle.com>
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+>  fs/btrfs/inode.c | 11 +++++++++--
+>  1 file changed, 9 insertions(+), 2 deletions(-)
+>
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index a4c8796..4175987 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -7641,11 +7641,18 @@ static void adjust_dio_outstanding_extents(struct inode *inode,
+>  	 * within our reservation, otherwise we need to adjust our inode
+>  	 * counter appropriately.
+>  	 */
+> -	if (dio_data->outstanding_extents) {
+> +	if (dio_data->outstanding_extents >= num_extents) {
+>  		dio_data->outstanding_extents -= num_extents;
+>  	} else {
+> +		/*
+> +		 * If dio write length has been split due to no large enough
+> +		 * contiguous space, we need to compensate our inode counter
+> +		 * appropriately.
+> +		 */
+> +		u64 num_needed = num_extents - dio_data->outstanding_extents;
+> +
+>  		spin_lock(&BTRFS_I(inode)->lock);
+> -		BTRFS_I(inode)->outstanding_extents += num_extents;
+> +		BTRFS_I(inode)->outstanding_extents += num_needed;
+>  		spin_unlock(&BTRFS_I(inode)->lock);
+>  	}
+>  }
+>

@@ -1,170 +1,214 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f193.google.com ([209.85.223.193]:35288 "EHLO
-        mail-io0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S938676AbcLWMny (ORCPT
+Received: from mail-io0-f194.google.com ([209.85.223.194]:34590 "EHLO
+        mail-io0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S938676AbcLWMpp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 23 Dec 2016 07:43:54 -0500
-Received: by mail-io0-f193.google.com with SMTP id f73so32008163ioe.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 23 Dec 2016 04:43:54 -0800 (PST)
+        Fri, 23 Dec 2016 07:45:45 -0500
+Received: by mail-io0-f194.google.com with SMTP id n85so5717366ioi.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 23 Dec 2016 04:45:45 -0800 (PST)
 Subject: Re: btrfs_log2phys: cannot lookup extent mapping
-To: Adam Borowski <kilobyte@angband.pl>
+To: Xin Zhou <xin.zhou@gmx.com>, David Hanke <hanke.list@ece.wisc.edu>
 References: <89be6fee-5b18-7a9d-11ea-85abeab28022@ece.wisc.edu>
  <pan$14679$e5d5bc21$812abe03$ef75194d@cox.net>
  <4e2fcf15-5af4-54b0-f7bb-46518b9bb5a4@ece.wisc.edu>
- <pan$67936$e25a272c$77926cea$931807ed@cox.net>
- <20161222151425.ecryyvnz2feaygrr@angband.pl>
- <67d0fb6f-a4d9-5a2a-d5b9-ccdfd3fb64f6@gmail.com>
- <20161223081402.dawagp67j35jrdcj@angband.pl>
+ <trinity-bd177067-2929-40d1-8548-fed25a956b10-1482449901027@3capp-mailcom-bs12>
 Cc: linux-btrfs@vger.kernel.org
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <af8d5201-9bd3-f68f-c429-d94ea35864cb@gmail.com>
-Date: Fri, 23 Dec 2016 07:43:50 -0500
+Message-ID: <5b2adfc3-7958-e19c-5d09-0cde596597f9@gmail.com>
+Date: Fri, 23 Dec 2016 07:45:42 -0500
 MIME-Version: 1.0
-In-Reply-To: <20161223081402.dawagp67j35jrdcj@angband.pl>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+In-Reply-To: <trinity-bd177067-2929-40d1-8548-fed25a956b10-1482449901027@3capp-mailcom-bs12>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-12-23 03:14, Adam Borowski wrote:
-> On Thu, Dec 22, 2016 at 01:28:37PM -0500, Austin S. Hemmelgarn wrote:
->> On 2016-12-22 10:14, Adam Borowski wrote:
->>> On the other, other filesystems:
->>> * suffer from silent data loss every time the disk doesn't notice an error!
->>>   Allowing silent data loss fails the most basic requirement for a
->>>   filesystem.  Btrfs at least makes that loss noisy (single) so you can
->>>   recover from backups, or handles it (redundant RAID).
->> No, allowing silent data loss fails the most basic requirement for a
->> _storage system_.  A filesystem is generally a key component in a data
->> storage system, but people regularly conflate the two as having the same
->> meaning, which is absolutely wrong.  Most traditional filesystems are
->> designed under the assumption that if someone cares about at-rest data
->> integrity, they will purchase hardware to ensure at-rest data integrity.
->
-> You mean, like per-sector checksums even cheapest disks are supposed to
-> have?  I don't think storage-side hardware can possibly ensure such
-> integrity, they can at most be better made than bottom-of-the-barrel disks.
-Or RAID arrays, or some other setup.
->
-> There's a difference between detecting corruption (checksums) and rectifying
-> it; the latter relies on the former done reliably.
-Agreed, but there are situations in which even BTRFS can't detect things 
-reliably.
->
->> This is a perfectly reasonable stance, especially considering that ensuring
->> at-rest data integrity is _hard_ (BTRFS is better at it than most
->> filesystems, but it still can't do it to the degree that most of the people
->> who actually require it need).  A filesystem's job is traditionally to
->> organize things, not verify them or provide redundancy.
->
-> Which layer do you propose to verify integrity of the data then?  Anything
-> even remotely complete would need to be closely integrated with the
-> filesystem -- and thus it might be done outright as a part of the filesystem
-> rather than as an afterthought.
-I'm not saying a filesystem shouldn't verify data integrity, I'm saying 
-that many don't because they rely on another layer (usually between them 
-and the block device) to do so, which is a perfectly reasonable approach.
->
->>> So sorry, but I had enough woe with those "fully mature and stable"
->>> filesystems.  Thus I use btrfs pretty much everywhere, backing up my crap
->>> every 24 hours, important bits every 3 hours.
->> I use BTRFS pretty much everywhere too.  I've also had more catastrophic
->> failures from BTRFS than any other filesystem I've used except FAT (NTFS is
->> a close third).
->
-> Perhaps it's just a matter of luck, but my personal experience doesn't paint
-> btrfs in such a bad light.  Non-dev woes that I suffered are:
->
-> * 2.6.31: ENOSPC that no deletion/etc could recover from, had to backup and
->   restore
->
-> * 3.14: deleting ~100k daily snapshots in one go on a box with only 3G RAM
->   OOMed (slab allocation, despite lots of free swap user pages could be
->   swapped to).  I aborted mount after several hours, dmesg suggested it was
->   making progress, but I didn't wait and instead nuked it and restored from
->   the originals (these were backups).
->
-> * 3.8 vendor kernel: on an arm SoC[1] that's been pounded for ~3 years with
->   heavy load (3 jobs doing snapshot+dpkg+compile+teardown) I once hit
->   unrecoverable corruption somewhere on a snapshot, had to copy base images
->   (less work than recreating, they were ok), nuke and re-mkfs.  Had this
->   been real data rather than transient retryable working copy, it'd be lost.
-I've lost about 6 filesystems to various issues since I started using 
-BTRFS.  Given that that's 6 filesystems since about 3.10, which work out 
-to about 2 filesystems a year (and this is still not counting hardware 
-failures or issues I caused myself while poking around at things I 
-shouldn't have been).  In comparison to about 4 in 10 years aggregated 
-over every other filesystem I've ever used (NTFS, FAT32, exFAT, XFS, 
-JFS, NILFS2, ext{2,3,4}, HFS+, SquashFS, and a couple of others), which 
-works out to 1 every 2.5 years.  BTRFS has a pretty blatantly worse 
-track record than anything else I've used.
-
-That said, I have not lost a single FS since 3.18 using BTRFS, but most 
-of that is that the parts I actually use (raid1 mode, checksumming, 
-single snapshots per subvolume) are functionally stable, and that I've 
-gotten much smarter about keeping things from getting into states where 
-the filesystem will get irreversibly wedged into a corner.
->
-> (Obviously not counting regular hardware failures.)
->
->> I've also recovered sanely without needing a new filesystem and a full
->> data restoration on ext4, FAT, and even XFS more than I have on BTRFS
->
-> Right; thought I did have one case when btrfs saved me when ext4 would have
-> not -- previous generation was readily available when the most recent write
-> hit a newly bad sector.
-Same, but I also wouldn't have been using ext4 by itself, I would have 
-been using it on top of LVM based RAID, and thus would have survived 
-anyway with a better than 50% chance of having the correct data.  You 
-can't compare BTRFS as-is with it's default feature set to ext4 or XFS 
-by themselves in terms of reliability, because BTRFS tries to do more. 
-You need to be comparing to an equivalent storage setup (so either ZFS, 
-or ext4/XFS on top of a good RAID array), in which case it generally 
-loses pretty bad.
->
-> And being recently burned by ext4 silently losing data, then shortly later
-> btrfs nicely informing me about such loss (immediately rectified by taking
-> from backups and replacing the disk), I'm really reluctant about using any
-> filesystem without checksums.
->
->> That said, the two of us and most of the other list regulars have a much
->> better understanding of the involved risks than a significant majority of
->> 'normal' users
->
-> True that.  BTRFS is... quirky.
-I think the bigger issues are that it's significantly different from ZFS 
-in many respects (which is the closest experience most seasoned 
-sysadmins will have had), and many distros started shipping 'support' 
-for it way sooner than they should have.
->
->> and in terms of performance too, even mounted with no checksumming
->> and no COW for everything but metadata, ext4 and XFS still beat the tar out
->> of BTRFS in terms of performance)
->
-> Pine64, class 4 SD card (quoting numbers from memory, 3 tries each):
-> * git reset --hard of a big tree: btrfs 3m45s, f2fs 4m, ext4 12m, xfs 16-18m
->   (big variance)
-> * ./configure && make -j4 && make test of a shit package with only ~2MB of
->   persistent writes: f2fs 95s, btrfs 97s, xfs 120s, ext4 122s.  I don't even
->   understand where the difference comes from, on a CPU-bound task with
->   virtually no writeout...
-An SD card benefits very significantly from the COW nature of BTRFS 
-though because it makes the firmware's job of wear-leveling easier. 
-Doing similar on an x86 system with a good SSD (high-quality 
-wear-leveling, no built-in deduplication, no built-in compression, only 
-about 5% difference between read and write speed) or a decent consumer 
-HDD (7200 RPM 1TB SATA 3), I see BTRFS do roughly 10-20% worse than XFS 
-and ext4 (I've not tested F2FS much, it holds little interest for me for 
-multiple reasons).  Same storage stack, I see similar relative 
-performance for runs of iozone and fio, and roughly similar relative 
-performance for xfstests restricted to just the stuff that runs on all 
-three filesystems.  Now, part of this may be because it's x86, but I 
-doubt it since it's a recent 64-bit processor.
+On 2016-12-22 18:38, Xin Zhou wrote:
+> Hi,
+> If the change of disk format between versions is precisely documented,
+> it is plausible to create a utility to convert the old volume to new ones,
+> trigger the workflow, upgrade the kernel and boots up for mounting the new volume.
+> Currently, the btrfs wiki shows partial content of the on-disk format.
+> Thanks,
+> Xin
+Last I checked, the on-disk format has not changed since some time in 
+2.6.  The only potential issues going back are if he creates a new 
+filesystem with newer btrfs-progs, or tries to use the newer format 
+free-space cache (which I would still avoid even on current versions for 
+other reasons).
 >
 >
-> Meow!
 >
-> [1]. Using Samsung's fancy-schmancy über eMMC -- like Ukrainian brewers, too
-> backward to know corpo beer is supposed to be made from urine, no one told
-> those guys flash is supposed to have sharply limited write endurance.
+> Sent: Wednesday, December 21, 2016 at 6:50 AM
+> From: "David Hanke" <hanke.list@ece.wisc.edu>
+> To: linux-btrfs@vger.kernel.org
+> Subject: Re: btrfs_log2phys: cannot lookup extent mapping
+> Hi Duncan,
+>
+> Thank you for your reply. If I've emailed the wrong list, please let me
+> know. What I hear you saying, in short, is that btrfs is not yet fully
+> stable but current 4.x versions may work better. I'm willing to upgrade,
+> but I'm told that the upgrade process may result in total failure, and
+> I'm not sure I can trust the contents of the volume either way. Given
+> that, it seems I must backup the backup, erase and start over. What
+> would you do?
+>
+> Thank you,
+>
+> David
+>
+>
+> On 12/20/16 17:24, Duncan wrote:
+>> David Hanke posted on Tue, 20 Dec 2016 09:52:25 -0600 as excerpted:
+>>
+>>> I've been using a btrfs-based volume for backups, but lately the
+>>> system's been filling the syslog with errors like "btrfs_log2phys:
+>>> cannot lookup extent mapping for 7129125486592" at the rate of hundreds
+>>> per second. (Please see output below for more details.) Despite the
+>>> errors, the files I've looked at appear to be written and read
+>>> successfully.
+>>>
+>>> I'm wondering if the contents of the volume are trustworthy and whether
+>>> this problem is resolvable without backing up, erasing and starting
+>>> over?
+>>>
+>>> Thank you!
+>>>
+>>> David
+>>>
+>>>
+>>> # uname -a
+>>> Linux backup2 3.0.101.RNx86_64.3 #1 SMP Wed Apr 1 16:02:14 PDT 2015
+>>> x86_64 GNU/Linux
+>>>
+>>> # btrfs --version
+>>> Btrfs v3.17.3
+>> FWIW...
+>>
+>> [TL;DR: see the four bottom line choices, at the bottom.]
+>>
+>> This is the upstream btrfs development and discussion list for a
+>> filesystem that's still stabilizing (that is, not fully stable and
+>> mature) and that remains under heavy development and bug fixing. As
+>> such, list focus is heavily forward looking, with an extremely strong
+>> recommendation to use current kernels (and to a lessor extent btrfs
+>> userspace) if you're going to be running btrfs, as these have all the
+>> latest bugfixes.
+>>
+>> Put a different way, the general view and strong recommendation of the
+>> list is that because btrfs is still under heavy development, with bug
+>> fixes, some more major than others, every kernel cycle, while we
+>> recognize that choosing to run old and stale^H^Hble kernels and userspace
+>> is a legitimate choice on its own, that choice of stability over support
+>> for the latest and greatest, is viewed as incompatible with choosing to
+>> run a still under heavy development filesystem. Choosing one OR the
+>> other is strongly recommended.
+>>
+>> For list purposes, we recommend and best support the last two kernel
+>> release series in two tracks, LTS/long-term-stable, or current release
+>> track. On the LTS track, that's the LTS 4.4 and 4.1 series. On the
+>> current track, 4.9 is the latest release, so 4.9 and 4.8 are best
+>> supported.
+>>
+>> Meanwhile, it's worth keeping in mind that the experimental label and
+>> accompanying extremely strong "eat your babies" level warnings weren't
+>> peeled off until IIRC 3.12 or so, meaning anything before that is not
+>> only ancient history in list terms, but also still labeled as "eat your
+>> babies" level experimental. Why anyone choosing to run an ancient eat-
+>> your-babies level experimental version of a filesystem that's now rather
+>> more stable and mature, tho not yet fully stabilized, is beyond me. If
+>> they're interested in newer filesystems, running newer and less buggy
+>> versions is reasonable; if they're interested in years-stale level of
+>> stability, then running such filesystems, especially when still labeled
+>> eat-your-babies level experimental back then, seems an extremely odd
+>> choice indeed.
+>>
+>> Of course, on-list we do recognize that various distros did and do offer
+>> support at some level for older than list-recommended version btrfs, in
+>> part because they backport fixes from newer versions. However, because
+>> we're forward development focused we don't track what patches these
+>> distros may or may not have backported and thus aren't in a good position
+>> to provide good support for them. Instead, users choosing to use such
+>> kernels are generally asked to choose between upgrading to something
+>> reasonably supportable on-list if they wish to go that route, or referred
+>> back to their distros for the support they're in a far better position to
+>> offer, since they know what they've backported and what they haven't,
+>> while we don't.
+>>
+>> As for btrfs userspace, the way btrfs works, during normal runtime,
+>> userspace primarily calls the kernel to do the real work, so userspace
+>> version isn't as big a deal unless you're trying to use a feature only
+>> supported by newer versions, except that if it's /too/ old, the impedance
+>> mismatch between the commands as they were then and the commands in
+>> current versions makes support rather more difficult. However, once
+>> there's a problem, then the age of userspace code becomes more vital, as
+>> then it's actually the userspace code doing the work, and only newer
+>> versions of btrfs check and btrfs restore, for instance, can detect and
+>> fix problems where code has only recently been added to do so.
+>>
+>> In general, then, with btrfs-progs releases and versioning synced to that
+>> of the kernel, a reasonable rule of thumb is to run userspace of a
+>> similar version to your kernel, tho unless you're experiencing problems,
+>> getting a version or two behind on your userspace isn't a big deal. That
+>> way, userspace command formats and output will be close enough to current
+>> for easier support, and if there's a fix for a specific problem you've
+>> posted in newer userspace, the problem and fix are still fresh enough in
+>> people's minds that someone will probably recognize it and point out that
+>> a newer version can handle that, and you can worry about upgrading to the
+>> latest and greatest at that point.
+>>
+>> So bottom line, you have four choices:
+>>
+>> 1) Upgrade to something reasonably current to get better on-list support.
+>>
+>> This would be LTS kernels 4.4 preferred, or 4.1, acceptable, or current
+>> kernels 4.9 or 4.8, and similarly versioned userspace, so no older than
+>> btrfs-progs 4.0.
+>>
+>> 2) Choose to stay with your distro's versions and get support from them.
+>>
+>> Particularly if you are already paying for that support, might as well
+>> use it.
+>>
+>> 3) Recognize the fundamental incompatibility between wanting to run old
+>> and stale/stable for the stability it is supposed to offer, and wanting
+>> to run a still under heavy development not fully stable and mature
+>> filesystem like btrfs, and either switch to a more stable and mature
+>> filesystem that better meets your needs for those qualities, or upgrade
+>> to a distro or distro version that better meets your needs for current
+>> software better supported by current upstreams like this btrfs list.
+>>
+>> 4) Stay with what you have, and muddle through as best you can.
+>>
+>> After all, it's not like we /refuse/ to offer support to btrfs that old,
+>> if we recognize a problem that we know can be fixed by code that old
+>> we'll still tell you, and if we know there's a fix in newer versions
+>> we'll still tell you and try to point you at the appropriate patch for
+>> you to apply to your old version if possible, but we simply recognize
+>> that for something that old, our support will be rather limited, at best.
+>>
+>> But it remains your system and your data, so your choice, even if it's
+>> against everything we normally recommend.
+>>
+>>
+>> Finally, a personal disclosure. I'm a btrfs user and list regular, not a
+>> dev. As such, my own answers will rarely get code-level technical or
+>> point to specific patches, but because I /am/ a regular, I can still
+>> answer the stuff that comes up regularly, leaving the real devs and more
+>> expert replies to cover detailed content that's beyond me. So while it's
+>> quite possible someone else will recognize a specific bug and be able to
+>> point you toward a specific fix, tho honestly I don't expect it for
+>> something as old as what you're posting about, general list-recommended
+>> upgrades and alternatives for people posting with positively ancient
+>> versions is squarely within my reply territory. =:^)
+>>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at http://vger.kernel.org/majordomo-info.html
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 >
 

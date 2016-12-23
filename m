@@ -1,142 +1,147 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ve1eur01on0110.outbound.protection.outlook.com ([104.47.1.110]:2560
-        "EHLO EUR01-VE1-obe.outbound.protection.outlook.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751465AbcLMAGG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Dec 2016 19:06:06 -0500
-Subject: [PATCH v2] btrfs: limit async_work allocation and worker func
- duration
-From: Maxim Patlasov <mpatlasov@virtuozzo.com>
-To: <dsterba@suse.cz>
-CC: <jbacik@fb.com>, <clm@fb.com>, <linux-kernel@vger.kernel.org>,
-        <linux-btrfs@vger.kernel.org>, <mpatlasov@virtuozzo.com>
-Date: Mon, 12 Dec 2016 14:32:44 -0800
-Message-ID: <148158188817.14549.6890368240319389582.stgit@maxim-thinkpad>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Received: from mx2.suse.de ([195.135.220.15]:57596 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1759172AbcLWThm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 23 Dec 2016 14:37:42 -0500
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: clm@fb.com
+Subject: Btrfs progs release 4.9
+Date: Fri, 23 Dec 2016 20:37:14 +0100
+Message-Id: <20161223193714.22461-1-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Problem statement: unprivileged user who has read-write access to more than
-one btrfs subvolume may easily consume all kernel memory (eventually
-triggering oom-killer).
+Hi,
 
-Reproducer (./mkrmdir below essentially loops over mkdir/rmdir):
+btrfs-progs version 4.9 have been released. There are some new UI enhancements
+and updates to the lowmem mode of checker. This is still not finished, missing
+the repair mode.
 
-[root@kteam1 ~]# cat prep.sh
+You might have noticed that the github issue tracker has been enabled for the
+project. This is additional to the other usual reporting channels, listed in
+README. Maybe in the future the TODO and release goals are tracked there as
+well.
 
-DEV=/dev/sdb
-mkfs.btrfs -f $DEV
-mount $DEV /mnt
-for i in `seq 1 16`
-do
-	mkdir /mnt/$i
-	btrfs subvolume create /mnt/SV_$i
-	ID=`btrfs subvolume list /mnt |grep "SV_$i$" |cut -d ' ' -f 2`
-	mount -t btrfs -o subvolid=$ID $DEV /mnt/$i
-	chmod a+rwx /mnt/$i
-done
+Changes:
+  * check: many lowmem mode updates
+  * send: use splice syscall to copy buffer from kernel
+  * receive: new option to dump the stream in textual form
+  * convert:
+    * move sources to own directory
+    * prevent accounting of blocks beyond end of the device
+    * make it work with 64k sectorsize
+  * mkfs: move sources to own directory
+  * defrag: warns if directory used without -r
+  * dev stats:
+    * new option to check stats for non-zero values
+    * add long option for -z
+  * library: version bump to 0.1.2, added subvol_uuid_search2
+  * other:
+    * cleanups
+    * docs updates
 
-[root@kteam1 ~]# sh prep.sh
+Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
+Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
 
-[maxim@kteam1 ~]$ for i in `seq 1 16`; do ./mkrmdir /mnt/$i 2000 2000 & done
+Shortlog:
 
-[root@kteam1 ~]# for i in `seq 1 4`; do grep "kmalloc-128" /proc/slabinfo | grep -v dma; sleep 60; done
-kmalloc-128        10144  10144    128   32    1 : tunables    0    0    0 : slabdata    317    317      0
-kmalloc-128       9992352 9992352    128   32    1 : tunables    0    0    0 : slabdata 312261 312261      0
-kmalloc-128       24226752 24226752    128   32    1 : tunables    0    0    0 : slabdata 757086 757086      0
-kmalloc-128       42754240 42754240    128   32    1 : tunables    0    0    0 : slabdata 1336070 1336070      0
+Adam Borowski (1):
+      btrfs-progs: man mkfs: warn about RAID5/6 being experimental
 
-The huge numbers above come from insane number of async_work-s allocated
-and queued by btrfs_wq_run_delayed_node.
+Anand Jain (1):
+      btrfs-progs: recursive defrag cleanup duplicate code
 
-The problem is caused by btrfs_wq_run_delayed_node() queuing more and more
-works if the number of delayed items is above BTRFS_DELAYED_BACKGROUND. The
-worker func (btrfs_async_run_delayed_root) processes at least
-BTRFS_DELAYED_BATCH items (if they are present in the list). So, the machinery
-works as expected while the list is almost empty. As soon as it is getting
-bigger, worker func starts to process more than one item at a time, it takes
-longer, and the chances to have async_works queued more than needed is getting
-higher.
+Austin S. Hemmelgarn (1):
+      btrfs-progs: dev stats: add dev stats returncode option
 
-The problem above is worsened by another flaw of delayed-inode implementation:
-if async_work was queued in a throttling branch (number of items >=
-BTRFS_DELAYED_WRITEBACK), corresponding worker func won't quit until
-the number of items < BTRFS_DELAYED_BACKGROUND / 2. So, it is possible that
-the func occupies CPU infinitely (up to 30sec in my experiments): while the
-func is trying to drain the list, the user activity may add more and more
-items to the list.
+Chandan Rajendra (3):
+      btrfs-progs: Use helper function to access btrfs_super_block->sys_chunk_array_size
+      btrfs-progs: convert: Prevent accounting blocks beyond end of device
+      btrfs-progs: convert: Fix migrate_super_block() to work with 64k sectorsize
 
-The patch fixes both problems in straightforward way: refuse queuing too
-many works in btrfs_wq_run_delayed_node and bail out of worker func if
-at least BTRFS_DELAYED_WRITEBACK items are processed.
+David Sterba (36):
+      btrfs-progs: remove extra newline from messages
+      btrfs-progs: use symbolic name for first inode number when searching
+      btrfs-progs: send: use splice syscall instead of read/write to transfer buffer
+      btrfs-progs: send: rename thread callback to read data from kernel
+      btrfs-progs: make incompat bit wrappers more compact
+      btrfs-progs: receive: rename receive context variable
+      btrfs-progs: check: use on-stack path buffer in check_fs_first_inode
+      btrfs-progs: check: use on-stack path buffer in check_fs_root_v2
+      btrfs-progs: check: use on-stack path buffer in check_fs_roots_v2
+      btrfs-progs: send dump: introduce helper for printing escaped path
+      btrfs-progs: send dump: print escaped path
+      btrfs-progs: send dump: use reentrant variant of localtime
+      btrfs-progs: tests: add more gobal option to test 001-btrfs
+      btrfs-progs: docs: update receive help and manual page
+      btrfs-progs: build: extend pattern rules for standalone directories
+      btrfs-progs: move btrfs-convert to own directory
+      btrfs-progs: move mkfs.btrfs sources to own directory
+      btrfs-progs: tests: check for partscan support in misc/006-partitioned-loopdev
+      btrfs-progs: run mkfs tests in CI
+      btrfs-progs: mkfs: annotation of a case
+      btrfs-progs: docs: clarify trim after mkfs -K
+      btrfs-progs: docs: make documentation updates workflow more clear
+      btrfs-progs: dev stats: adjust some error messages
+      btrfs-progs: dev stats: use char type path
+      btrfs-progs: dev stats: use table based printing of items
+      btrfs-progs: dev stats: add long option for -z
+      btrfs-progs: docs: update dev stats help and manual page
+      btrfs-progs: help: fix printing of aliased commands
+      btrfs-progs: fixup API after change in subvol_uuid_search
+      btrfs-progs: library: bump to 0.1.2
+      btrfs-progs: handle failed strdup in subvol_uuid_search2
+      btrfs-progs: dev stats: update option name for checking non-zero status
+      btrfs-progs: defrag: cleanup temporary errno value
+      btrfs-progs: defrag: warn when deframgenting directories without -r
+      btrfs-progs: update CHANGES for v4.9
+      Btrfs progs v4.9
 
-Changed in v2: remove support of thresh == NO_THRESHOLD.
+Goldwyn Rodrigues (5):
+      btrfs-progs: Correct value printed by assertions/BUG_ON/WARN_ON
+      btrfs-progs: Remove duplicate printfs in warning_trace()/assert_trace()
+      btrfs-progs: check: fix extents after finding all errors
+      btrfs-progs: Initialize ret to suppress compiler warning
+      btrfs-progs: find_free_dev_extent() closer to kernel code
 
-Signed-off-by: Maxim Patlasov <mpatlasov@virtuozzo.com>
----
- fs/btrfs/async-thread.c  |   14 ++++++++++++++
- fs/btrfs/async-thread.h  |    1 +
- fs/btrfs/delayed-inode.c |    6 ++++--
- 3 files changed, 19 insertions(+), 2 deletions(-)
+Lu Fengqi (11):
+      btrfs-progs: check: introduce function to find dir_item
+      btrfs-progs: check: introduce function to check inode_ref
+      btrfs-progs: check: introduce function to check inode_extref
+      btrfs-progs: check: introduce function to find inode_ref
+      btrfs-progs: check: introduce function to check dir_item
+      btrfs-progs: check: introduce function to check file extent
+      btrfs-progs: check: introduce function to check inode item
+      btrfs-progs: check: introduce function to check fs root
+      btrfs-progs: check: introduce function to check root ref
+      btrfs-progs: check: introduce low_memory mode fs_tree check
+      btrfs-progs: check: fix the return value bug of cmd_check()
 
-diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
-index e0f071f..63d1977 100644
---- a/fs/btrfs/async-thread.c
-+++ b/fs/btrfs/async-thread.c
-@@ -86,6 +86,20 @@ btrfs_work_owner(struct btrfs_work *work)
- 	return work->wq->fs_info;
- }
- 
-+bool btrfs_workqueue_normal_congested(struct btrfs_workqueue *wq)
-+{
-+	/*
-+	 * We could compare wq->normal->pending with num_online_cpus()
-+	 * to support "thresh == NO_THRESHOLD" case, but it requires
-+	 * moving up atomic_inc/dec in thresh_queue/exec_hook. Let's
-+	 * postpone it until someone needs the support of that case.
-+	 */
-+	if (wq->normal->thresh == NO_THRESHOLD)
-+		return false;
-+
-+	return atomic_read(&wq->normal->pending) > wq->normal->thresh * 2;
-+}
-+
- BTRFS_WORK_HELPER(worker_helper);
- BTRFS_WORK_HELPER(delalloc_helper);
- BTRFS_WORK_HELPER(flush_delalloc_helper);
-diff --git a/fs/btrfs/async-thread.h b/fs/btrfs/async-thread.h
-index 8e52484..1f95973 100644
---- a/fs/btrfs/async-thread.h
-+++ b/fs/btrfs/async-thread.h
-@@ -84,4 +84,5 @@ void btrfs_workqueue_set_max(struct btrfs_workqueue *wq, int max);
- void btrfs_set_work_high_priority(struct btrfs_work *work);
- struct btrfs_fs_info *btrfs_work_owner(struct btrfs_work *work);
- struct btrfs_fs_info *btrfs_workqueue_owner(struct __btrfs_workqueue *wq);
-+bool btrfs_workqueue_normal_congested(struct btrfs_workqueue *wq);
- #endif
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 3eeb9cd..de946dd 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -1356,7 +1356,8 @@ release_path:
- 	total_done++;
- 
- 	btrfs_release_prepared_delayed_node(delayed_node);
--	if (async_work->nr == 0 || total_done < async_work->nr)
-+	if ((async_work->nr == 0 && total_done < BTRFS_DELAYED_WRITEBACK) ||
-+	    total_done < async_work->nr)
- 		goto again;
- 
- free_path:
-@@ -1372,7 +1373,8 @@ static int btrfs_wq_run_delayed_node(struct btrfs_delayed_root *delayed_root,
- {
- 	struct btrfs_async_delayed_work *async_work;
- 
--	if (atomic_read(&delayed_root->items) < BTRFS_DELAYED_BACKGROUND)
-+	if (atomic_read(&delayed_root->items) < BTRFS_DELAYED_BACKGROUND ||
-+	    btrfs_workqueue_normal_congested(fs_info->delayed_workers))
- 		return 0;
- 
- 	async_work = kmalloc(sizeof(*async_work), GFP_NOFS);
+Noah Massey (1):
+      btrfs-progs: docs: fix typo in mkfs manual page
+
+Prasanth K S R (3):
+      btrfs-progs: subvol_uuid_search: return error on memory allocation failure
+      btrfs-progs: subvol_uuid_search: return error encoded pointer
+      btrfs-progs: subvol_uuid_search: return error code on memory allocation failure
+
+Qu Wenruo (14):
+      btrfs-progs: raid56: Introduce new function to calculate raid5 parity or data stripe
+      btrfs-progs: volumes: Use new raid5_gen_result to calculate raid5 parity
+      btrfs-progs: check: Enhance leaf traversal function to handle missing inode item
+      btrfs-progs: fsck: Fix patch allocation check and leak in check_fs_first_inode
+      btrfs-progs: check: fix NULL pointer dereference for possible memory allocation failure
+      btrfs-progs: introduce new send-dump object
+      btrfs-progs: receive: introduce option to dump send stream
+      btrfs-progs: check: Fix assert when using lowmem on fs with tree reloc tree
+      btrfs-progs: check: Fix lowmem mode stack overflow caused by fsck/023
+      btrfs-progs: check: Fix lowmem false alert on tree reloc tree
+      btrfs-progs: check: Fix false alert on generation mismatch for tree reloc tree
+      btrfs-progs: Fix NULL pointer when receive clone operation
+      btrfs-progs: file-item: Fix wrong file extents inserted
+      btrfs-progs: convert-test: trigger chunk allocation after convert
+
+Wang Xiaoguang (1):
+      btrfs-progs: check: skip shared node or leaf check for low_memory mode
 

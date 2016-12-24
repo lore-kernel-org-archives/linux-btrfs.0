@@ -1,96 +1,149 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:50478 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1750971AbcLXJhc (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 24 Dec 2016 04:37:32 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1cKilT-0004ux-Su
-        for linux-btrfs@vger.kernel.org; Sat, 24 Dec 2016 10:37:19 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: [BUG] kernel BUG at fs/btrfs/extent_io.c:2041 repair_io_failure
- (v4.8.11)
-Date: Sat, 24 Dec 2016 09:37:12 +0000 (UTC)
-Message-ID: <pan$32d3$c1252fb4$635d3287$d238a362@cox.net>
-References: <CAOE4rSz5zeQYcGU3saZOk9HHb53NOwVF_vZV6m_UgQLftr9efQ@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from smtp-31-i4.italiaonline.it ([212.48.25.216]:56122 "EHLO
+        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751765AbcLXMQe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 24 Dec 2016 07:16:34 -0500
+From: Giuseppe Della Bianca <bepi@adria.it>
+To: Xin Zhou <xin.zhou@gmx.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [CORRUPTION FILESYSTEM] Corrupted and unrecoverable file system during the snapshot receive
+Date: Sat, 24 Dec 2016 13:16:10 +0100
+Message-ID: <26479704.a8Su2NvQ2R@exnet.gdb.it>
+In-Reply-To: <trinity-8b1613bd-b3dc-4e8b-96ac-53275b6cad7c-1482518120336@3capp-mailcom-bs08>
+References: <1479730155.5832e3eb3fde8@webmail.adria.it> <1482515316.585d63747d460@webmail.adria.it> <trinity-8b1613bd-b3dc-4e8b-96ac-53275b6cad7c-1482518120336@3capp-mailcom-bs08>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-DÄvis MosÄns posted on Sat, 24 Dec 2016 04:22:24 +0200 as excerpted:
+Hi.
 
-> On two disk RAID1 btrfs partition one disk went offline, other was still
-> writing, then kernel paniced.
+LOCAL "btrfs send/receive"
 
-[snip btrfs fi usage as not needed for this reply]
-
-> Now kernel panics every time after some time when accessing that
-> partition.
+btrfs send -p /tmp/tmp.hkAa8XaliZ/btrfssnapshot/root/root-2016-12-18_15:10:01.40 /tmp/tmp.hkAa8XaliZ/btrfssnapshot/root/root-2016-12-19_19:44:00.41 | btrfs receive /tmp/tmp.NRYgYVC3p6/btrfsreceive/root/.part/
 
 
-Have you done a scrub on the filesystem since the event that offlined one 
-of the two component devices?  If not, please do so ASAP.  Expect some 
-repairs.
+REMOTE "btrfs send/receive"
 
-As for the continued panics, I'm not a dev (just a list regular and btrfs 
-raid1 user affected by this myself) so can't read enough of that bug-dump 
-to know if this is the bug or not, but do you use btrfs compression, 
-either via the compress mount option or via later compression using 
-defrag with the appropriate commandline option?
+btrfs send -p /tmp/tmp.BTACBk7xuK/btrfssnapshot/root/root-2016-12-18_15:10:01.40 /tmp/tmp.BTACBk7xuK/btrfssnapshot/root/root-2016-12-19_19:44:00.41 | ssh root@exnetold.gdb.it btrfsManage REMOTE_RECEIVE /dev/sda3 root root-2016-12-19_19:44:00.41
 
-Because there is a known and AFAIK not yet fixed problem that only 
-affects people using compression, and that would only show up with raid1/
-raid10/dup modes as with single/raid0, the affected data would simply 
-fail checksum and be gone (not sure about raid56, but that has its own 
-even worse problems), so it hasn't gotten the priority those of us that 
-do use compression on raid1 believe it deserves.
+Remote btrfsManage script (btrfsManage REMOTE_RECEIVE /dev/sda3 root root-2016-12-19_19:44:00.41) executes 
 
-The problem is that while in theory btrfs on raid1 should try the other 
-mirror if the copy it's reading fails checksum, and while it does just 
-that for uncompressed data, with compression, it seems to do that at 
-first, but if it has to deal with too many such first-mirror errors at 
-once, it will kernel panic.
+cat - | btrfs receive /tmp/tmp.Wd5togIiaL/btrfsreceive/root/.part/
 
-And a scenario where one device goes offline while the other continues 
-writing, tends to trigger this quite easily, as there's often enough 
-difference between the two mirrors, in files that will tend to be 
-accessed again after mount, to trigger this compression-only panic.
 
-But in my experience, if you can keep whatever else from accessing the 
-filesystem long enough for a scrub to do its job, it has always corrected 
-the problem here, and then I and my normal applications can go about 
-their business without triggering further kernel panics.
+The waiting for the end of a command, in shell script, is implicit/automatic.
 
-The problem is that sometimes the affected filesystems are used by boot 
-services, so I have to boot to systemd emergency or rescue mode (I forgot 
-which, whichever one does the mounts but doesn't start normal services) 
-and do the scrub from there, because if I try to boot normally, the 
-starting services read enough affected files from the filesystem to 
-trigger the panic before I get a chance to do the scrub.
 
-Luckily I'm on ssd, with relatively small independent btrfs on their own 
-partitions and / mounted read-only unless I'm actually updating the 
-system, so / itself doesn't tend to be affected, and /home and /var/log, 
-which do tend to be affected, are relatively small, and take less than a 
-minute to scrub.  So here at least, booting to emergency/rescue mode to 
-do the scrub isn't too disruptive.  Were it a multi-terabyte btrfs on 
-spinning rust, as yours appears to be, the scrub would take far longer, 
-and I'd possibly be sitting and waiting for hours for it to finish so I 
-could get on with the boot.  Were that the case here, I think I'd pretty 
-quickly either divide up into much smaller filesystems in ordered to 
-allow me to finish the scrubs on boot-critical data more quickly (as I 
-was already doing, long before btrfs), or decide to use some other 
-filesystem for at least the boot-critical stuff.
+Regards.
 
-Or of course, now that I know that it apparently only affects people 
-using compression, I'd turn that off and rewrite at least the boot-
-critical stuff to decompress it, so as not to be affected.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Gdb
+
+> Hi,
+> 
+> Would you like to show the "btrfs send/receive" command the script are
+> using, including all the parameters, and how the script waits for a
+> completion of a transfer.
+> 
+> From the beginning of the thread, it seems the transfer tests are going
+> through different network environment. 
+> Thanks,
+> Xin
+> 
+> Sent: Friday, December 23, 2016 at 9:48 AM
+> From: bepi@adria.it
+> To: "Xin Zhou" <xin.zhou@gmx.com>
+> Cc: "Btrfs BTRFS" <linux-btrfs@vger.kernel.org>
+> Subject: Re: [CORRUPTION FILESYSTEM] Corrupted and unrecoverable file system
+> during the snapshot receive Yes.
+> 
+> Is through to the btrfs-tools error message that the script has printed,
+> that I realized the filesystem corruption.
+> 
+> 
+> P.S. Various messages that you see in the working examples of the script,
+> are emitted directly by the btrfs-tools.
+> 
+> 
+> Gdb
+> 
+> Xin Zhou <xin.zhou@gmx.com>:
+> > Hi,
+> > 
+> > Does the script check the transfer status, and is there a transfer returns
+> > an error code?
+> > Thanks,
+> > Xin
+> > Â 
+> > Â 
+> > 
+> > Sent:Â Thursday, December 22, 2016 at 11:28 PM
+> > From:Â "Giuseppe Della Bianca" <bepi@adria.it>
+> > To:Â "Btrfs BTRFS" <linux-btrfs@vger.kernel.org>
+> > Subject:Â Re: [CORRUPTION FILESYSTEM] Corrupted and unrecoverable file
+> > system during the snapshot receive
+> > (synthetic resend)
+> > 
+> > Hi.
+> > 
+> > Is possible that there are transfers, cancellations and other, at the same
+> > time, but not in the same subvolume.
+> > 
+> > My script checks that there are no transfers in progress on the same
+> > subvolume.
+> > 
+> > Is possible that the same subvolume is mounted several times (temporary
+> > mount
+> > at the beginning, and unmount at the end, in my script).
+> > 
+> > 
+> > Thanks for all.
+> > 
+> > 
+> > P.S. Sorry for my bad English.
+> > 
+> > 
+> > Gdb
+> > 
+> > In data mercoledÃ¬ 21 dicembre 2016 23:14:44, Xin Zhou ha scritto:
+> > > Hi,
+> > > Racing condition can happen, if running multiple transfers to the same
+> > > destination. Would you like to tell how many transfers are the scripts
+> > > running at a time to a specific hdd?
+> > > 
+> > > Thanks,
+> > > Xin
+> > > 
+> > > 
+> > > Sent: Wednesday, December 21, 2016 at 1:11 PM
+> > > From: "Chris Murphy" <lists@colorremedies.com>
+> > > To: No recipient address
+> > > Cc: "Giuseppe Della Bianca" <bepi@adria.it>, "Xin Zhou"
+> > 
+> > <xin.zhou@gmx.com>,
+> > 
+> > > "Btrfs BTRFS" <linux-btrfs@vger.kernel.org> Subject: Re: [CORRUPTION
+> > > FILESYSTEM] Corrupted and unrecoverable file system during the snapshot
+> > > receive
+> > > On Wed, Dec 21, 2016 at 2:09 PM, Chris Murphy <lists@colorremedies.com>
+> > 
+> > wrote:
+> > > > What about CONFIG_BTRFS_FS_CHECK_INTEGRITY? And then using check_int
+> > > > mount option?
+> > > 
+> > > This slows things down, and in that case it might avoid the problem if
+> > > it's the result of a race condition.
+> > > 
+> > > --
+> > > Chris Murphy
+> > 
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at http://vger.kernel.org/majordomo-info.html
+> 
+> ----------------------------------------------------
+> This mail has been sent using Alpikom webmail system
+> http://www.alpikom.it[http://www.alpikom.it]
+>  
 

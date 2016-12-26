@@ -1,95 +1,144 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f173.google.com ([209.85.223.173]:34362 "EHLO
-        mail-io0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932257AbcLZP5d (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Dec 2016 10:57:33 -0500
-Received: by mail-io0-f173.google.com with SMTP id p42so298624981ioo.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Dec 2016 07:57:33 -0800 (PST)
+Received: from mout.gmx.net ([212.227.17.22]:59207 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753418AbcLZRlo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Dec 2016 12:41:44 -0500
 MIME-Version: 1.0
-From: =?UTF-8?B?RMSBdmlzIE1vc8SBbnM=?= <davispuh@gmail.com>
-Date: Mon, 26 Dec 2016 17:57:32 +0200
-Message-ID: <CAOE4rSxUw8rAgio7oQyvpKgpPGSpvvApc2cRSu0wM5bqvBn4QQ@mail.gmail.com>
-Subject: WARNING at fs/btrfs/extent-tree.c:3201 btrfs_cross_ref_exist (v4.8.11)
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-ID: <trinity-d9166515-7045-4c19-a026-3d838d64deed-1482774098147@3capp-mailcom-bs06>
+From: "Xin Zhou" <xin.zhou@gmx.com>
+To: "Giuseppe Della Bianca" <bepi@adria.it>
+Cc: "Btrfs BTRFS" <linux-btrfs@vger.kernel.org>
+Subject: Re: [CORRUPTION FILESYSTEM] Corrupted and unrecoverable file system
+ during the snapshot receive
 Content-Type: text/plain; charset=UTF-8
+Date: Mon, 26 Dec 2016 18:41:38 +0100
+In-Reply-To: <3040771.5eLdPxENH3@exnet.gdb.it>
+References: <1479730155.5832e3eb3fde8@webmail.adria.it>
+ <26479704.a8Su2NvQ2R@exnet.gdb.it>
+ <trinity-3b871d96-6d50-44af-9f6d-3fbf2f7fbfd8-1482610539986@3capp-mailcom-bs13>,
+ <3040771.5eLdPxENH3@exnet.gdb.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When doing btrfs balance, this warning appeared in kernel log
 
-[ 1158.352427] ------------[ cut here ]------------
-[ 1158.352442] WARNING: CPU: 5 PID: 6 at
-/mnt/linux/fs/btrfs/extent-tree.c:3201 btrfs_cross_ref_exist+0xe8/0xf0
-[btrfs]
-[ 1158.352443] Modules linked in: xt_CHECKSUM ipt_MASQUERADE
-nf_nat_masquerade_ipv4 tun cfg80211 rfkill nf_conntrack_netbios_ns
-nf_conntrack_broadcast xt_tcpudp xt_CT ip6t_rpfilter ip6t_REJECT
-nf_reject_ipv6 ipt_REJECT nf_reject_ipv4 xt_conntrack ip_set nfnetlink
-ebtable_nat ebtable_broute ip6table_nat nf_conntrack_ipv6
-nf_defrag_ipv6 nf_nat_ipv6 ip6table_mangle ip6table_raw
-ip6table_security iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4
-nf_nat_ipv4 nf_nat nf_conntrack iptable_mangle iptable_raw
-iptable_security ebtable_filter ebtables bridge ip6table_filter
-ip6_tables stp llc iptable_filter kvm_amd kvm irqbypass saa7134_alsa
-it87 hwmon_vid crct10dif_pclmul crc32_pclmul ghash_clmulni_intel
-saa7134 aesni_intel aes_x86_64 lrw tveeprom snd_hda_codec_hdmi
-snd_hda_codec_realtek gf128mul snd_hda_codec_generic
-[ 1158.352477]  rc_core glue_helper v4l2_common videobuf2_dma_sg
-snd_hda_intel videobuf2_memops snd_hda_codec ablk_helper
-videobuf2_v4l2 r8169 cryptd videobuf2_core mac_hid videodev mxm_wmi
-snd_hda_core mii evdev media k10temp fam15h_power snd_hwdep pcspkr
-snd_pcm sp5100_tco snd_timer snd i2c_piix4 acpi_cpufreq shpchp
-tpm_infineon tpm_tis soundcore wmi button tpm_tis_core tpm
-sch_fq_codel vboxnetflt(O) vboxnetadp(O) nfsd pci_stub auth_rpcgss
-oid_registry nfs_acl lockd grace sunrpc vboxpci(O) vboxdrv(O)
-nvidia_uvm(PO) btrfs xor zlib_deflate raid6_pq sd_mod ata_generic
-pata_acpi serio_raw atkbd libps2 ohci_pci nvidia_drm(PO)
-nvidia_modeset(PO) nvidia(PO) firewire_ohci firewire_core crc_itu_t
-drm_kms_helper pata_atiixp syscopyarea sysfillrect ehci_pci sysimgblt
-fb_sys_fops xhci_pci ohci_hcd xhci_hcd ehci_hcd
-[ 1158.352519]  ahci drm libahci usbcore usb_common i2c_core i8042
-serio mvsas libsas scsi_transport_sas libata scsi_mod crc32c_generic
-crc32c_intel vfat fat ip_tables x_tables
-[ 1158.352582] CPU: 5 PID: 6 Comm: kworker/u16:0 Tainted: P        W
-O    4.8.11-ARCH-dirty #1
-[ 1158.352583] Hardware name: Gigabyte Technology Co., Ltd.
-GA-990FXA-UD3/GA-990FXA-UD3, BIOS FFe 11/08/2013
-[ 1158.352585] Workqueue: writeback wb_workfn (flush-btrfs-5)
-[ 1158.352588]  0000000000000286 00000000f6b4c4af ffff880612f276f0
-ffffffff812e9a00
-[ 1158.352591]  0000000000000000 0000000000000000 ffff880612f27730
-ffffffff8107bcab
-[ 1158.352594]  00000c8100000002 ffff88060115f000 ffff880609ada800
-0000000000000001
-[ 1158.352598] Call Trace:
-[ 1158.352600]  [<ffffffff812e9a00>] dump_stack+0x63/0x83
-[ 1158.352602]  [<ffffffff8107bcab>] __warn+0xcb/0xf0
-[ 1158.352605]  [<ffffffff8107bddd>] warn_slowpath_null+0x1d/0x20
-[ 1158.352619]  [<ffffffffa10785a8>] btrfs_cross_ref_exist+0xe8/0xf0 [btrfs]
-[ 1158.352636]  [<ffffffffa109d3d2>] run_delalloc_nocow+0x7b2/0xbd0 [btrfs]
-[ 1158.352654]  [<ffffffffa109db96>] run_delalloc_range+0x3a6/0x3c0 [btrfs]
-[ 1158.352673]  [<ffffffffa10b6cb5>]
-writepage_delalloc.isra.20+0x105/0x170 [btrfs]
-[ 1158.352691]  [<ffffffffa10b95a9>] __extent_writepage+0xd9/0x370 [btrfs]
-[ 1158.352693]  [<ffffffff811b38f0>] ? __page_check_address+0x1c0/0x1c0
-[ 1158.352711]  [<ffffffffa10b9aff>]
-extent_write_cache_pages.isra.16.constprop.31+0x2bf/0x400 [btrfs]
-[ 1158.352730]  [<ffffffffa10ba41d>] extent_writepages+0x5d/0x90 [btrfs]
-[ 1158.352747]  [<ffffffffa1099790>] ? btrfs_direct_IO+0x380/0x380 [btrfs]
-[ 1158.352764]  [<ffffffffa1097c38>] btrfs_writepages+0x28/0x30 [btrfs]
-[ 1158.352766]  [<ffffffff8117de0e>] do_writepages+0x1e/0x30
-[ 1158.352769]  [<ffffffff81229525>] __writeback_single_inode+0x45/0x3b0
-[ 1158.352771]  [<ffffffff81229e2a>] writeback_sb_inodes+0x2ba/0x5c0
-[ 1158.352773]  [<ffffffff8122a3cb>] wb_writeback+0x10b/0x350
-[ 1158.352775]  [<ffffffff8122adc2>] wb_workfn+0x112/0x450
-[ 1158.352778]  [<ffffffff810b9e39>] ? pick_next_task_fair+0x309/0x4d0
-[ 1158.352781]  [<ffffffff810a27a7>] ? finish_task_switch+0x77/0x1e0
-[ 1158.352783]  [<ffffffff810951d5>] process_one_work+0x1e5/0x470
-[ 1158.352786]  [<ffffffff810954a8>] worker_thread+0x48/0x4e0
-[ 1158.352788]  [<ffffffff81095460>] ? process_one_work+0x470/0x470
-[ 1158.352791]  [<ffffffff8109b118>] kthread+0xd8/0xf0
-[ 1158.352793]  [<ffffffff8102d7b0>] ? __switch_to+0x300/0x720
-[ 1158.352796]  [<ffffffff815cb4bf>] ret_from_fork+0x1f/0x40
-[ 1158.352799]  [<ffffffff8109b040>] ? kthread_worker_fn+0x170/0x170
-[ 1158.352800] ---[ end trace 8e5f1bbb5e9b7cb6 ]---
+That is one way to diagnose the issue in data path.
+If ssh can guarantee data transfer and retry, then those data protection company does not need to have a whole team handle the send / receive for remote data backup.
+
+In your case, if the conection is very light, then the issue could be in other place.
+
+Xin 
+ 
+
+Sent: Monday, December 26, 2016 at 3:04 AM
+From: "Giuseppe Della Bianca" <bepi@adria.it>
+To: "Xin Zhou" <xin.zhou@gmx.com>, "Btrfs BTRFS" <linux-btrfs@vger.kernel.org>
+Subject: Re: [CORRUPTION FILESYSTEM] Corrupted and unrecoverable file system during the snapshot receive
+Hi.
+
+I agree with Duncan, and I add:
+
+- For remote transfer is used ssh.
+ssh is designed to ensure integrity of data.
+- Remote transfer uses a Gigabit Ethernet, it is never congested.
+- I had the same problems with a local btrfs receive.
+- The script currently has 907 lines of code, many of which are to ensure the
+detection and display of btrfs tools errors.
+- The script stops executing when btrs tools return an error code.
+- Is not possible that the script does not display error messages or ignore
+error code of btrfs tools.
+
+An example of today:
+
+(2016-12-26 10:53:51) Start btrfsManage
+. . . Start managing SEND ' / ' filesystem ' root ' snapshot in ' /dev/sda2 '
+
+Sending ' root-2016-12-04_18:13:57.35 ' source snapshot to ' btrfsreceive ' subvolume
+. . . btrfs send -p /tmp/tmp.xJWkEN1U23/btrfssnapshot/root/root-2016-12-03_18:07:09.34 /tmp/tmp.xJWkEN1U23/btrfssnapshot/root/root-2016-12-04_18:13:57.35 | btrfs receive /tmp/tmp.pWWKP4vfAy/btrfsreceive/root/.part/
+. . . At subvol /tmp/tmp.xJWkEN1U23/btrfssnapshot/root/root-2016-12-04_18:13:57.35
+. . . ERROR: truncate usr/share/locale/it/LC_MESSAGES/kio4.mo failed: Read-only file system
+. . . At snapshot root-2016-12-04_18:13:57.35
+. . . _EC_ERR_ 1
+. . . _EC_ERR_ 141
+
+(2016-12-26 10:54:28) End btrfsManage
+. . . End managing SEND ' / ' filesystem ' root ' snapshot in ' /dev/sda2 '
+WITH ERRORS
+
+
+Checking filesystem on /dev/sda2
+UUID: 44f1de7e-a65b-41ce-8ff4-20f7ed83e106
+checking extents
+ref mismatch on [62408097792 16384] extent item 0, found 1
+Backref 62408097792 parent 1060 root 1060 not found in extent tree
+backpointer mismatch on [62408097792 16384]
+owner ref check failed [62408097792 16384]
+ref mismatch on [77565509632 16384] extent item 0, found 1
+Backref 77565509632 parent 1060 root 1060 not found in extent tree
+backpointer mismatch on [77565509632 16384]
+]zac[
+Backref 77826916352 parent 1060 root 1060 not found in extent tree
+backpointer mismatch on [77826916352 16384]
+owner ref check failed [77826916352 16384]
+ref mismatch on [77853933568 16384] extent item 0, found 1
+Backref 77853933568 parent 1060 root 1060 not found in extent tree
+backpointer mismatch on [77853933568 16384]
+owner ref check failed [77853933568 16384]
+checking free space cache
+checking fs roots
+warning line 3822
+checking csums
+checking root refs
+found 135128678400 bytes used err is 0
+total csum bytes: 126946572
+total tree bytes: 5132206080
+total fs tree bytes: 4744757248
+total extent tree bytes: 240795648
+btree space waste bytes: 914832832
+file data blocks allocated: 3311786532864
+referenced 703616266240
+
+
+
+Is likely that mine is a special case.
+
+But a special case, with a code change in other points, can become a problem for many.
+
+It's not nice to say, but it seems I have to hope that my problem becomes a problem of many.
+
+Meanwhile, I'll find my own workaround of a probable serious btrfs bug.
+
+
+Thank you.
+
+Gdb
+
+
+> Hi,
+>
+> Probably can try to use "-v" to enable more output print.
+> A quick look at the send / receive code, it seems a little bit risky.
+> It seems lack of specific error handlings, and in most cases, return the
+> same error code. I think it might be helpful, when a transfer succeed, the
+> command prints the transfer id, source / dest, and a specific "success"
+> string.
+> Such output could help the script to figure out if a transfer really
+> succeed.
+>
+> The code is relatively new to me, I did not see retry logic in stream
+> handling, please correct me if I am wrong about this. So, I am not quite
+> sure about the transfer behavior, if the system subject to network issues
+> in heavy workload, in which packets missing or connect issues are not rare.
+>
+> Since the test mentioned at the begining deletes the snapshots after a
+> transfer, while most users keep the middle snapshot even in cascading
+> transfer, probably the current btrfs and cmds still works for regular
+> users.
+>
+> Thanks,
+> Xin
+>
+>
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at http://vger.kernel.org/majordomo-info.html

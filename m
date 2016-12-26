@@ -1,124 +1,174 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:2344 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:26380 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1754943AbcLZGaU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Dec 2016 01:30:20 -0500
+        id S1754858AbcLZGaY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Dec 2016 01:30:24 -0500
 Received: from localhost.localdomain (unknown [10.167.226.34])
-        by cn.fujitsu.com (Postfix) with ESMTP id 38FEC41B4BE3
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Dec 2016 14:29:45 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id 86DAC41B4BE0
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Dec 2016 14:29:44 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 12/19] btrfs-progs: scrub: Introduce function to scrub one extent
-Date: Mon, 26 Dec 2016 14:29:32 +0800
-Message-Id: <20161226062939.5841-13-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v2 09/19] btrfs-progs: scrub: Introduce structures to support fsck scrub for RAID56
+Date: Mon, 26 Dec 2016 14:29:29 +0800
+Message-Id: <20161226062939.5841-10-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20161226062939.5841-1-quwenruo@cn.fujitsu.com>
 References: <20161226062939.5841-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce a new function, scrub_one_extent(), as a wrapper to check one
-extent.
+Introuduce new local structures, scrub_full_stripe and scrub_stripe, for
+incoming offline RAID56 scrub support.
 
-It will accept a btrfs_path parameter @path, which must points to a
-META/EXTENT_ITEM.
-And @start, @len, which must be a subset of META/EXTENT_ITEM.
-
-Parameter @report will determine if we output error.
-Since the function will be reused by RAID56 code, we want it able to be
-silent.
+For pure stripe/mirror based profiles, like raid0/1/10/dup/single, we
+will follow the original bytenr and mirror number based iteration, so
+they don't need any extra structures for these profiles.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- scrub.c | 79 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 79 insertions(+)
+ Makefile.in |   2 +-
+ scrub.c     | 120 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 121 insertions(+), 1 deletion(-)
+ create mode 100644 scrub.c
 
+diff --git a/Makefile.in b/Makefile.in
+index bb619bfe..41da7ab5 100644
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -99,7 +99,7 @@ objects = ctree.o disk-io.o kernel-lib/radix-tree.o extent-tree.o print-tree.o \
+ 	  qgroup.o free-space-cache.o kernel-lib/list_sort.o props.o \
+ 	  ulist.o qgroup-verify.o backref.o string-table.o task-utils.o \
+ 	  inode.o file.o find-root.o free-space-tree.o help.o send-dump.o \
+-	  kernel-lib/tables.o kernel-lib/raid56.o csum.o
++	  kernel-lib/tables.o kernel-lib/raid56.o csum.o scrub.o
+ cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
+ 	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
+ 	       cmds-quota.o cmds-qgroup.o cmds-replace.o cmds-check.o \
 diff --git a/scrub.c b/scrub.c
-index 2563f407..f4ed0b78 100644
---- a/scrub.c
+new file mode 100644
+index 00000000..c9ca817e
+--- /dev/null
 +++ b/scrub.c
-@@ -272,3 +272,82 @@ out:
- 		return -EIO;
- 	return ret;
- }
+@@ -0,0 +1,120 @@
++/*
++ * Copyright (C) 2016 Fujitsu.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
 +
 +/*
-+ * Check all copies of range @start, @len.
-+ * Caller must ensure the range is covered by EXTENT_ITEM/METADATA_ITEM
-+ * specified by leaf of @path.
-+ * And @start, @len must be a subset of the EXTENT_ITEM/METADATA_ITEM.
-+ *
-+ * If @report is set, it will report if the range is recoverable or totally
-+ * corrupted if it has corrupted mirror.
-+ * This parameter is used for silent verification for RAID5/6 recovery code.
-+ *
-+ * Return 0 if the range is all OK or recoverable.
-+ * Return <0 if the range can't be recoverable.
++ * Main part to implement offline(unmounted) btrfs scrub
 + */
-+static int scrub_one_extent(struct btrfs_fs_info *fs_info,
-+			    struct btrfs_scrub_progress *scrub_ctx,
-+			    struct btrfs_path *path, u64 start, u64 len,
-+			    int report)
++
++#include <unistd.h>
++#include "ctree.h"
++#include "volumes.h"
++#include "disk-io.h"
++#include "utils.h"
++
++/*
++ * For parity based profile(RAID56)
++ * Mirror/stripe based on won't need this. They are iterated by bytenr and
++ * mirror number.
++ */
++struct scrub_stripe {
++	/* For P/Q logical start will be BTRFS_RAID5/6_P/Q_STRIPE */
++	u64 logical;
++
++	/* Device is missing */
++	unsigned int dev_missing:1;
++
++	/* Any tree/data csum mismatches */
++	unsigned int csum_mismatch:1;
++
++	/* Some data doesn't have csum(nodatasum) */
++	unsigned int csum_missing:1;
++
++	char *data;
++};
++
++/*
++ * RAID56 full stripe(data stripes + P/Q)
++ */
++struct scrub_full_stripe {
++	u64 logical_start;
++	u64 logical_len;
++	u64 bg_type;
++	u32 nr_stripes;
++	u32 stripe_len;
++
++	/* Read error stripes */
++	u32 err_read_stripes;
++
++	/* Missing devices */
++	u32 err_missing_devs;
++
++	/* Csum error data stripes */
++	u32 err_csum_dstripes;
++
++	/* Missing csum data stripes */
++	u32 missing_csum_dstripes;
++
++	/* currupted stripe index */
++	int corrupted_index[2];
++
++	int nr_corrupted_stripes;
++
++	/* Already recovered once? */
++	unsigned int recovered:1;
++
++	struct scrub_stripe stripes[];
++};
++
++static void free_full_stripe(struct scrub_full_stripe *fstripe)
 +{
-+	struct btrfs_key key;
-+	struct btrfs_extent_item *ei;
-+	struct extent_buffer *leaf = path->nodes[0];
-+	int slot = path->slots[0];
-+	int num_copies;
-+	int corrupted = 0;
-+	u64 extent_start;
-+	u64 extent_len;
-+	int metadata = 0;
 +	int i;
-+	int ret;
 +
-+	btrfs_item_key_to_cpu(leaf, &key, slot);
-+	if (key.type != BTRFS_METADATA_ITEM_KEY &&
-+	    key.type != BTRFS_EXTENT_ITEM_KEY)
-+		goto invalid_arg;
++	for (i = 0; i < fstripe->nr_stripes; i++)
++		free(fstripe->stripes[i].data);
++	free(fstripe);
++}
 +
-+	extent_start = key.objectid;
-+	if (key.type == BTRFS_METADATA_ITEM_KEY) {
-+		extent_len = fs_info->tree_root->nodesize;
-+		metadata = 1;
-+	} else {
-+		extent_len = key.offset;
-+		ei = btrfs_item_ptr(leaf, slot, struct btrfs_extent_item);
-+		if (btrfs_extent_flags(leaf, ei) & BTRFS_EXTENT_FLAG_TREE_BLOCK)
-+			metadata = 1;
-+	}
-+	if (start >= extent_start + extent_len ||
-+	    start + len <= extent_start)
-+		goto invalid_arg;
-+	num_copies = btrfs_num_copies(&fs_info->mapping_tree, start, len);
-+	for (i = 1; i <= num_copies; i++) {
-+		if (metadata) {
-+			ret = scrub_tree_mirror(fs_info, scrub_ctx,
-+					NULL, extent_start, i);
-+			scrub_ctx->tree_extents_scrubbed++;
-+		} else {
-+			ret = scrub_data_mirror(fs_info, scrub_ctx, NULL,
-+						start, len, i);
-+			scrub_ctx->data_extents_scrubbed++;
++static struct scrub_full_stripe *alloc_full_stripe(int nr_stripes,
++						    u32 stripe_len)
++{
++	struct scrub_full_stripe *ret;
++	int size = sizeof(*ret) + nr_stripes * sizeof(struct scrub_stripe);
++	int i;
++
++	ret = malloc(size);
++	if (!ret)
++		return NULL;
++
++	memset(ret, 0, size);
++	ret->nr_stripes = nr_stripes;
++	ret->stripe_len = stripe_len;
++	ret->corrupted_index[0] = -1;
++	ret->corrupted_index[1] = -1;
++
++	/* Alloc data memory for each stripe */
++	for (i = 0; i < nr_stripes; i++) {
++		struct scrub_stripe *stripe = &ret->stripes[i];
++
++		stripe->data = malloc(stripe_len);
++		if (!stripe->data) {
++			free_full_stripe(ret);
++			return NULL;
 +		}
-+		if (ret < 0)
-+			corrupted++;
 +	}
-+
-+	if (report) {
-+		if (corrupted && corrupted < num_copies)
-+			printf("bytenr %llu len %llu has corrupted mirror, but is recoverable\n",
-+				start, len);
-+		else if (corrupted >= num_copies)
-+			error("bytenr %llu len %llu has corrupted mirror, can't be recovered",
-+				start, len);
-+	}
-+	if (corrupted < num_copies)
-+		return 0;
-+	return -EIO;
-+invalid_arg:
-+	error("invalid parameter for %s", __func__);
-+	return -EINVAL;
++	return ret;
 +}
 -- 
 2.11.0

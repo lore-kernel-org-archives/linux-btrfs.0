@@ -1,122 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:26380 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:2344 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1754893AbcLZGaX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Dec 2016 01:30:23 -0500
+        id S1755026AbcLZGa0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Dec 2016 01:30:26 -0500
 Received: from localhost.localdomain (unknown [10.167.226.34])
-        by cn.fujitsu.com (Postfix) with ESMTP id EC84941B4BE2
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Dec 2016 14:29:44 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id 2168241B4BED
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Dec 2016 14:29:47 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 11/19] btrfs-progs: scrub: Introduce function to scrub mirror based data blocks
-Date: Mon, 26 Dec 2016 14:29:31 +0800
-Message-Id: <20161226062939.5841-12-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v2 16/19] btrfs-progs: scrub: Introduce function to recover data parity
+Date: Mon, 26 Dec 2016 14:29:36 +0800
+Message-Id: <20161226062939.5841-17-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20161226062939.5841-1-quwenruo@cn.fujitsu.com>
 References: <20161226062939.5841-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce a new function, scrub_data_mirror(), to check mirror based
-data blocks.
+Introduce function, recover_from_parities(), to recover data stripes.
 
-It can also accept @data parameter to use in-memory data instead of
-reading them out of disk.
-This is a handy feature for RAID5/6 recovery verification code.
+It just wraps raid56_recov() with extra check functions to
+scrub_full_stripe structure.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- scrub.c | 82 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 82 insertions(+)
+ scrub.c | 51 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 51 insertions(+)
 
 diff --git a/scrub.c b/scrub.c
-index 4cf678fb..2563f407 100644
+index 238feb3c..522802c2 100644
 --- a/scrub.c
 +++ b/scrub.c
-@@ -190,3 +190,85 @@ out:
- 	free_extent_buffer(eb);
+@@ -549,3 +549,54 @@ out:
+ 	free(ptrs);
  	return ret;
  }
 +
 +/*
-+ * Scrub one data mirror given by @start @len and @mirror, or @data
-+ * If @data is not given, try to read it from disk.
-+ * This function will try to read out all the data then check sum.
++ * Try to recover data stripe from P or Q stripe
 + *
-+ * If @data is given, just use the data.
-+ * This behavior is useful for RAID5/6 recovery code to verify recovered data.
-+ *
-+ * Return 0 if everything is OK.
-+ * Return <0 if something goes wrong, and @scrub_ctx accounting will be updated
-+ * if it's a data corruption.
++ * Return >0 if it can't be require any more.
++ * Return 0 for successful repair or no need to repair at all
++ * Return <0 for fatal error
 + */
-+static int scrub_data_mirror(struct btrfs_fs_info *fs_info,
-+			     struct btrfs_scrub_progress *scrub_ctx,
-+			     char *data, u64 start, u64 len, int mirror)
++static int recover_from_parities(struct btrfs_fs_info *fs_info,
++				  struct btrfs_scrub_progress *scrub_ctx,
++				  struct scrub_full_stripe *fstripe)
 +{
-+	u64 cur = 0;
-+	u32 csum;
-+	u32 sectorsize = fs_info->tree_root->sectorsize;
-+	char *buf = NULL;
-+	int ret = 0;
-+	int err = 0;
++	void **ptrs;
++	int nr_stripes = fstripe->nr_stripes;
++	int stripe_len = BTRFS_STRIPE_LEN;
++	int max_tolerance;
++	int i;
++	int ret;
 +
-+	if (!data) {
-+		buf = malloc(len);
-+		if (!buf)
-+			return -ENOMEM;
-+		/* Read out as much data as possible to speed up read */
-+		while (cur < len) {
-+			u64 read_len = len - cur;
++	/* No need to recover */
++	if (!fstripe->nr_corrupted_stripes)
++		return 0;
 +
-+			ret = read_extent_data(fs_info->tree_root, buf + cur,
-+					start + cur, &read_len, mirror);
-+			if (ret < 0) {
-+				error("failed to read out data at logical bytenr %llu mirror %d",
-+				      start + cur, mirror);
-+				scrub_ctx->read_errors++;
-+				goto out;
-+			}
-+			scrub_ctx->data_bytes_scrubbed += read_len;
-+			cur += read_len;
-+		}
-+	} else {
-+		buf = data;
-+	}
++	/* Already recovered once, no more chance */
++	if (fstripe->recovered)
++		return 1;
 +
-+	/* Check csum per-sectorsize */
-+	cur = 0;
-+	while (cur < len) {
-+		u32 data_csum = ~(u32)0;
++	if (fstripe->bg_type & BTRFS_BLOCK_GROUP_RAID5)
++		max_tolerance = 1;
++	else
++		max_tolerance = 2;
 +
-+		ret = btrfs_read_one_data_csum(fs_info, start + cur, &csum);
-+		if (ret > 0) {
-+			scrub_ctx->csum_discards++;
-+			ret = 0;
++	/* Out of repair */
++	if (fstripe->nr_corrupted_stripes > max_tolerance)
++		return 1;
 +
-+			/* In case only some csum are missing */
-+			goto next;
-+		}
-+		data_csum = btrfs_csum_data(NULL, buf + cur, data_csum,
-+					    sectorsize);
-+		btrfs_csum_final(data_csum, (u8 *)&data_csum);
-+		if (data_csum != csum) {
-+			error("data at bytenr %llu mirror %d csum mismatch, have %u expect %u",
-+			      start + cur, mirror, data_csum, csum);
-+			err = 1;
-+			scrub_ctx->csum_errors++;
-+			cur += sectorsize;
-+			continue;
-+		}
-+		scrub_ctx->data_bytes_scrubbed += sectorsize;
-+next:
-+		cur += sectorsize;
-+	}
-+out:
-+	if (!data)
-+		free(buf);
-+	if (!ret && err)
-+		return -EIO;
++	ptrs = malloc(sizeof(void *) * fstripe->nr_stripes);
++	if (!ptrs)
++		return -ENOMEM;
++
++	/* Construct ptrs */
++	for (i = 0; i < nr_stripes; i++)
++		ptrs[i] = fstripe->stripes[i].data;
++
++	ret = raid56_recov(nr_stripes, stripe_len, fstripe->bg_type,
++			fstripe->corrupted_index[0],
++			fstripe->corrupted_index[1], ptrs);
++	fstripe->recovered = 1;
++	free(ptrs);
 +	return ret;
 +}
 -- 

@@ -1,146 +1,141 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:2344 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1754301AbcLZGaP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Dec 2016 01:30:15 -0500
+        id S1752754AbcLZGaQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Dec 2016 01:30:16 -0500
 Received: from localhost.localdomain (unknown [10.167.226.34])
-        by cn.fujitsu.com (Postfix) with ESMTP id BD2F441B4BE1
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Dec 2016 14:29:44 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id 9A76041B4BDC
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Dec 2016 14:29:43 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 10/19] btrfs-progs: scrub: Introduce function to scrub mirror based tree block
-Date: Mon, 26 Dec 2016 14:29:30 +0800
-Message-Id: <20161226062939.5841-11-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v2 05/19] btrfs-progs: Introduce wrapper to recover raid56 data
+Date: Mon, 26 Dec 2016 14:29:25 +0800
+Message-Id: <20161226062939.5841-6-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20161226062939.5841-1-quwenruo@cn.fujitsu.com>
 References: <20161226062939.5841-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce a new function, scrub_tree_mirror(), to scrub mirror based
-tree blocks (Single/DUP/RAID0/1/10)
+Introduce a wrapper to recover raid56 data.
 
-This function can also be used on in-memory tree blocks using @data
-parameter.
-This is very handy for RAID5/6 case, either checking the data stripe
-tree block by @bytenr and 0 as @mirror, or using @data parameter for
-recovered in-memory data.
+The logical is the same with kernel one, but with different interfaces,
+since kernel ones cares the performance while in btrfs we don't care
+that much.
+
+And the interface is more caller friendly inside btrfs-progs.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- disk-io.c |  4 ++--
- disk-io.h |  2 ++
- scrub.c   | 72 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 76 insertions(+), 2 deletions(-)
+ kernel-lib/raid56.c | 77 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ kernel-lib/raid56.h | 11 ++++++++
+ 2 files changed, 88 insertions(+)
 
-diff --git a/disk-io.c b/disk-io.c
-index 9140a81b..d5011572 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -51,8 +51,8 @@ static u32 max_nritems(u8 level, u32 nodesize)
- 		sizeof(struct btrfs_key_ptr));
- }
- 
--static int check_tree_block(struct btrfs_fs_info *fs_info,
--			    struct extent_buffer *buf)
-+int check_tree_block(struct btrfs_fs_info *fs_info,
-+		     struct extent_buffer *buf)
- {
- 
- 	struct btrfs_fs_devices *fs_devices;
-diff --git a/disk-io.h b/disk-io.h
-index 4de9fef7..db883d57 100644
---- a/disk-io.h
-+++ b/disk-io.h
-@@ -119,6 +119,8 @@ static inline struct extent_buffer* read_tree_block(
- 			parent_transid);
- }
- 
-+int check_tree_block(struct btrfs_fs_info *fs_info,
-+		     struct extent_buffer *buf);
- int read_extent_data(struct btrfs_root *root, char *data, u64 logical,
- 		     u64 *len, int mirror);
- void readahead_tree_block(struct btrfs_root *root, u64 bytenr, u32 blocksize,
-diff --git a/scrub.c b/scrub.c
-index c9ca817e..4cf678fb 100644
---- a/scrub.c
-+++ b/scrub.c
-@@ -118,3 +118,75 @@ static struct scrub_full_stripe *alloc_full_stripe(int nr_stripes,
+diff --git a/kernel-lib/raid56.c b/kernel-lib/raid56.c
+index e078972b..e3a9339e 100644
+--- a/kernel-lib/raid56.c
++++ b/kernel-lib/raid56.c
+@@ -280,3 +280,80 @@ int raid6_recov_datap(int nr_devs, size_t stripe_len, int dest1, void **data)
  	}
- 	return ret;
+ 	return 0;
  }
 +
-+static inline int is_data_stripe(struct scrub_stripe *stripe)
++/* Original raid56 recovery wrapper */
++int raid56_recov(int nr_devs, size_t stripe_len, u64 profile, int dest1,
++		 int dest2, void **data)
 +{
-+	u64 bytenr = stripe->logical;
-+
-+	if (bytenr == BTRFS_RAID5_P_STRIPE || bytenr == BTRFS_RAID6_Q_STRIPE)
-+		return 0;
-+	return 1;
-+}
-+
-+/*
-+ * Scrub one tree mirror given by @bytenr and @mirror, or @data.
-+ * If @data is not given(NULL), the function will try to read out tree block
-+ * using @bytenr and @mirror.
-+ * If @data is given, use data directly, won't try to read from disk.
-+ *
-+ * The extra @data prameter is handy for RAID5/6 recovery code to verify
-+ * the recovered data.
-+ *
-+ * Return 0 if everything is OK.
-+ * Return <0 something goes wrong, and @scrub_ctx accounting will be updated
-+ * if it's a data corruption.
-+ */
-+static int scrub_tree_mirror(struct btrfs_fs_info *fs_info,
-+			     struct btrfs_scrub_progress *scrub_ctx,
-+			     char *data, u64 bytenr, int mirror)
-+{
-+	struct extent_buffer *eb;
-+	u32 nodesize = fs_info->tree_root->nodesize;
++	int min_devs;
 +	int ret;
 +
-+	if (!IS_ALIGNED(bytenr, fs_info->tree_root->sectorsize)) {
-+		/* Such error will be reported by check_tree_block() */
-+		scrub_ctx->verify_errors++;
-+		return -EIO;
-+	}
++	if (profile & BTRFS_BLOCK_GROUP_RAID5)
++		min_devs = 2;
++	else if (profile & BTRFS_BLOCK_GROUP_RAID6)
++		min_devs = 3;
++	else
++		return -EINVAL;
++	if (nr_devs < min_devs)
++		return -EINVAL;
 +
-+	eb = btrfs_find_create_tree_block(fs_info, bytenr, nodesize);
-+	if (!eb)
-+		return -ENOMEM;
-+	if (data) {
-+		memcpy(eb->data, data, nodesize);
-+	} else {
-+		ret = read_whole_eb(fs_info, eb, mirror);
-+		if (ret) {
-+			scrub_ctx->read_errors++;
-+			error("failed to read tree block %llu mirror %d",
-+			      bytenr, mirror);
-+			goto out;
++	/* Nothing to recover */
++	if (dest1 == -1 && dest2 == -1)
++		return 0;
++
++	/* Reorder dest1/2, so only dest2 can be -1  */
++	if (dest1 == -1) {
++		dest1 = dest2;
++		dest2 = -1;
++	} else if (dest2 != -1 && dest1 != -1) {
++		/* Reorder dest1/2, ensure dest2 > dest1 */
++		if (dest1 > dest2) {
++			int tmp;
++
++			tmp = dest2;
++			dest2 = dest1;
++			dest1 = tmp;
 +		}
 +	}
 +
-+	scrub_ctx->tree_bytes_scrubbed += nodesize;
-+	if (csum_tree_block(fs_info->tree_root, eb, 1)) {
-+		error("tree block %llu mirror %d checksum mismatch", bytenr,
-+			mirror);
-+		scrub_ctx->csum_errors++;
-+		ret = -EIO;
-+		goto out;
-+	}
-+	ret = check_tree_block(fs_info, eb);
-+	if (ret < 0) {
-+		error("tree block %llu mirror %d is invalid", bytenr, mirror);
-+		scrub_ctx->verify_errors++;
-+		goto out;
++	if (profile & BTRFS_BLOCK_GROUP_RAID5) {
++		if (dest2 != -1)
++			return 1;
++		return raid5_gen_result(nr_devs, stripe_len, dest1, data);
 +	}
 +
-+	scrub_ctx->tree_extents_scrubbed++;
-+out:
-+	free_extent_buffer(eb);
-+	return ret;
++	/* RAID6 one dev corrupted case*/
++	if (dest2 == -1) {
++		/* Regenerate P/Q */
++		if (dest1 == nr_devs - 1 || dest1 == nr_devs - 2) {
++			raid6_gen_syndrome(nr_devs, stripe_len, data);
++			return 0;
++		}
++
++		/* Regerneate data from P */
++		return raid5_gen_result(nr_devs - 1, stripe_len, dest1, data);
++	}
++
++	/* P/Q bot corrupted */
++	if (dest1 == nr_devs - 2 && dest2 == nr_devs - 1) {
++		raid6_gen_syndrome(nr_devs, stripe_len, data);
++		return 0;
++	}
++
++	/* 2 Data corrupted */
++	if (dest2 < nr_devs - 2)
++		return raid6_recov_data2(nr_devs, stripe_len, dest1, dest2,
++					 data);
++	/* Data and P*/
++	if (dest2 == nr_devs - 1)
++		return raid6_recov_datap(nr_devs, stripe_len, dest1, data);
++
++	/*
++	 * Final case, Data and Q, recover data first then regenerate Q
++	 */
++	ret = raid5_gen_result(nr_devs - 1, stripe_len, dest1, data);
++	if (ret < 0)
++		return ret;
++	raid6_gen_syndrome(nr_devs, stripe_len, data);
++	return 0;
 +}
+diff --git a/kernel-lib/raid56.h b/kernel-lib/raid56.h
+index e088279b..9aee39aa 100644
+--- a/kernel-lib/raid56.h
++++ b/kernel-lib/raid56.h
+@@ -44,4 +44,15 @@ int raid6_recov_data2(int nr_devs, size_t stripe_len, int dest1, int dest2,
+ 		      void **data);
+ /* Recover data and P */
+ int raid6_recov_datap(int nr_devs, size_t stripe_len, int dest1, void **data);
++
++/*
++ * Recover raid56 data
++ * @dest1/2 can be -1 to indicate correct data
++ *
++ * Return >0 for unrecoverable case.
++ * Return 0 for recoverable case, And recovered data will be stored into @data
++ * Return <0 for fatal error
++ */
++int raid56_recov(int nr_devs, size_t stripe_len, u64 profile, int dest1,
++		 int dest2, void **data);
+ #endif
 -- 
 2.11.0
 

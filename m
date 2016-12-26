@@ -1,118 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from celine.tisys.org ([85.25.117.166]:54878 "EHLO celine.tisys.org"
+Received: from mx2.suse.de ([195.135.220.15]:47491 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753705AbcLWW0I (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 23 Dec 2016 17:26:08 -0500
-Date: Fri, 23 Dec 2016 23:26:00 +0100
-From: Nils Holland <nholland@tisys.org>
-To: Michal Hocko <mhocko@kernel.org>
-Cc: Mel Gorman <mgorman@suse.de>, Johannes Weiner <hannes@cmpxchg.org>,
+        id S1752138AbcLZM06 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Dec 2016 07:26:58 -0500
+Date: Mon, 26 Dec 2016 13:26:51 +0100
+From: Michal Hocko <mhocko@kernel.org>
+To: kernel test robot <xiaolong.ye@intel.com>
+Cc: Nils Holland <nholland@tisys.org>, Mel Gorman <mgorman@suse.de>,
+        Johannes Weiner <hannes@cmpxchg.org>,
         Vladimir Davydov <vdavydov.dev@gmail.com>,
         Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>,
         linux-kernel@vger.kernel.org, linux-mm@kvack.org,
         Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.cz>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [RFC PATCH] mm, memcg: fix (Re: OOM: Better, but still there on)
-Message-ID: <20161223222559.GA5568@teela.multi.box>
-References: <20161219134534.GC5164@dhcp22.suse.cz>
- <20161220020829.GA5449@boerne.fritz.box>
- <20161221073658.GC16502@dhcp22.suse.cz>
- <20161222101028.GA11105@ppc-nas.fritz.box>
- <20161222191719.GA19898@dhcp22.suse.cz>
- <20161222214611.GA3015@boerne.fritz.box>
- <20161223105157.GB23109@dhcp22.suse.cz>
- <20161223121851.GA27413@ppc-nas.fritz.box>
- <20161223125728.GE23109@dhcp22.suse.cz>
- <20161223144738.GB23117@dhcp22.suse.cz>
+        linux-btrfs@vger.kernel.org, lkp@01.org
+Subject: Re: [lkp-developer] [mm, memcg]  d18e2b2aca:
+ WARNING:at_mm/memcontrol.c:#mem_cgroup_update_lru_size
+Message-ID: <20161226122651.GA20715@dhcp22.suse.cz>
+References: <20161223144738.GB23117@dhcp22.suse.cz>
+ <20161225222556.GH19366@yexl-desktop>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20161223144738.GB23117@dhcp22.suse.cz>
+In-Reply-To: <20161225222556.GH19366@yexl-desktop>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Dec 23, 2016 at 03:47:39PM +0100, Michal Hocko wrote:
+On Mon 26-12-16 06:25:56, kernel test robot wrote:
 > 
-> Nils, even though this is still highly experimental, could you give it a
-> try please?
+> FYI, we noticed the following commit:
+> 
+> commit: d18e2b2aca0396849f588241e134787a829c707d ("mm, memcg: fix (Re: OOM: Better, but still there on)")
+> url: https://github.com/0day-ci/linux/commits/Michal-Hocko/mm-memcg-fix-Re-OOM-Better-but-still-there-on/20161223-225057
+> base: git://git.cmpxchg.org/linux-mmotm.git master
+> 
+> in testcase: boot
+> 
+> on test machine: qemu-system-i386 -enable-kvm -m 360M
+> 
+> caused below changes:
+> 
+> 
+> +--------------------------------------------------------+------------+------------+
+> |                                                        | c7d85b880b | d18e2b2aca |
+> +--------------------------------------------------------+------------+------------+
+> | boot_successes                                         | 8          | 0          |
+> | boot_failures                                          | 0          | 2          |
+> | WARNING:at_mm/memcontrol.c:#mem_cgroup_update_lru_size | 0          | 2          |
+> | kernel_BUG_at_mm/memcontrol.c                          | 0          | 2          |
+> | invalid_opcode:#[##]DEBUG_PAGEALLOC                    | 0          | 2          |
+> | Kernel_panic-not_syncing:Fatal_exception               | 0          | 2          |
+> +--------------------------------------------------------+------------+------------+
+> 
+> 
+> 
+> [   95.226364] init: tty6 main process (990) killed by TERM signal
+> [   95.314020] init: plymouth-upstart-bridge main process (1039) terminated with status 1
+> [   97.588568] ------------[ cut here ]------------
+> [   97.594364] WARNING: CPU: 0 PID: 1055 at mm/memcontrol.c:1032 mem_cgroup_update_lru_size+0xdd/0x12b
+> [   97.606654] mem_cgroup_update_lru_size(40297f00, 0, -1): lru_size 1 but empty
+> [   97.615140] Modules linked in:
+> [   97.618834] CPU: 0 PID: 1055 Comm: killall5 Not tainted 4.9.0-mm1-00095-gd18e2b2 #82
+> [   97.628008] Call Trace:
+> [   97.631025]  dump_stack+0x16/0x18
+> [   97.635107]  __warn+0xaf/0xc6
+> [   97.638729]  ? mem_cgroup_update_lru_size+0xdd/0x12b
 
-Yes, no problem! So I kept the very first patch you sent but had to
-revert the latest version of the debugging patch (the one in
-which you added the "mm_vmscan_inactive_list_is_low" event) because
-otherwise the patch you just sent wouldn't apply. Then I rebooted with
-memory cgroups enabled again, and the first thing that strikes the eye
-is that I get this during boot:
-
-[    1.568174] ------------[ cut here ]------------
-[    1.568327] WARNING: CPU: 0 PID: 1 at mm/memcontrol.c:1032 mem_cgroup_update_lru_size+0x118/0x130
-[    1.568543] mem_cgroup_update_lru_size(f4406400, 2, 1): lru_size 0 but not empty
-[    1.568754] Modules linked in:
-[    1.568922] CPU: 0 PID: 1 Comm: swapper/0 Not tainted 4.9.0-gentoo #6
-[    1.569052] Hardware name: Hewlett-Packard Compaq 15 Notebook PC/21F7, BIOS F.22 08/06/2014
-[    1.571750]  f44e5b84 c142bdee f44e5bc8 c1b5ade0 f44e5bb4 c103ab1d c1b583e4 f44e5be4
-[    1.572262]  00000001 c1b5ade0 00000408 c11603d8 00000408 00000000 c1b5af73 00000001
-[    1.572774]  f44e5bd0 c103ab76 00000009 00000000 f44e5bc8 c1b583e4 f44e5be4 f44e5c18
-[    1.573285] Call Trace:
-[    1.573419]  [<c142bdee>] dump_stack+0x47/0x69
-[    1.573551]  [<c103ab1d>] __warn+0xed/0x110
-[    1.573681]  [<c11603d8>] ? mem_cgroup_update_lru_size+0x118/0x130
-[    1.573812]  [<c103ab76>] warn_slowpath_fmt+0x36/0x40
-[    1.573942]  [<c11603d8>] mem_cgroup_update_lru_size+0x118/0x130
-[    1.574076]  [<c1111467>] __pagevec_lru_add_fn+0xd7/0x1b0
-[    1.574206]  [<c1111390>] ? perf_trace_mm_lru_insertion+0x150/0x150
-[    1.574336]  [<c111239d>] pagevec_lru_move_fn+0x4d/0x80
-[    1.574465]  [<c1111390>] ? perf_trace_mm_lru_insertion+0x150/0x150
-[    1.574595]  [<c11127e5>] __lru_cache_add+0x45/0x60
-[    1.574724]  [<c1112848>] lru_cache_add+0x8/0x10
-[    1.574852]  [<c1102fc1>] add_to_page_cache_lru+0x61/0xc0
-[    1.574982]  [<c110418e>] pagecache_get_page+0xee/0x270
-[    1.575111]  [<c11060f0>] grab_cache_page_write_begin+0x20/0x40
-[    1.575243]  [<c118b955>] simple_write_begin+0x25/0xd0
-[    1.575372]  [<c11061b8>] generic_perform_write+0xa8/0x1a0
-[    1.575503]  [<c1106447>] __generic_file_write_iter+0x197/0x1f0
-[    1.575634]  [<c110663f>] generic_file_write_iter+0x19f/0x2b0
-[    1.575766]  [<c11669c1>] __vfs_write+0xd1/0x140
-[    1.575897]  [<c1166bc5>] vfs_write+0x95/0x1b0
-[    1.576026]  [<c1166daf>] SyS_write+0x3f/0x90
-[    1.576157]  [<c1ce4474>] xwrite+0x1c/0x4b
-[    1.576285]  [<c1ce44c5>] do_copy+0x22/0xac
-[    1.576413]  [<c1ce42c3>] write_buffer+0x1d/0x2c
-[    1.576540]  [<c1ce42f0>] flush_buffer+0x1e/0x70
-[    1.576670]  [<c1d0eae8>] unxz+0x149/0x211
-[    1.576798]  [<c1d0e99f>] ? unlzo+0x359/0x359
-[    1.576926]  [<c1ce4946>] unpack_to_rootfs+0x14f/0x246
-[    1.577054]  [<c1ce42d2>] ? write_buffer+0x2c/0x2c
-[    1.577183]  [<c1ce4216>] ? initrd_load+0x3b/0x3b
-[    1.577312]  [<c1ce4b20>] ? maybe_link.part.3+0xe3/0xe3
-[    1.577443]  [<c1ce4b67>] populate_rootfs+0x47/0x8f
-[    1.577573]  [<c1000456>] do_one_initcall+0x36/0x150
-[    1.577701]  [<c1ce351e>] ? repair_env_string+0x12/0x54
-[    1.577832]  [<c1054ded>] ? parse_args+0x25d/0x400
-[    1.577962]  [<c1ce3baf>] ? kernel_init_freeable+0x101/0x19e
-[    1.578092]  [<c1ce3bcf>] kernel_init_freeable+0x121/0x19e
-[    1.578222]  [<c19b0700>] ? rest_init+0x60/0x60
-[    1.578350]  [<c19b070b>] kernel_init+0xb/0x100
-[    1.578480]  [<c1060c7c>] ? schedule_tail+0xc/0x50
-[    1.578608]  [<c19b0700>] ? rest_init+0x60/0x60
-[    1.578737]  [<c19b5db7>] ret_from_fork+0x1b/0x28
-[    1.578871] ---[ end trace cf6f1adac9dfe60e ]---
-
-The machine then continued to boot just normally, however, so I
-started my ordinary tests. And in fact, they were working just fine,
-i.e. no OOMing anymore, even during heavy tarball unpacking.
-
-Would it make sense to capture more trace data for you at this point?
-As I'm on the go, I don't currently have a second machine for
-capturing over the network, but since we're not having OOMs or other
-issues now, capturing to file should probably work just fine.
-
-I'll keep the patch applied and see if I notice anything else that
-doesn't look normal during day to day usage, especially during my
-ordinary Gentoo updates, which consist of a lot of fetching /
-unpacking / building, and in the recent past had been very problematic
-(in fact, that was where the problem first struck me and the "heavy
-tarball unpacking" test was then just what I distilled it down to
-in order to manually reproduce this with the least time and effort
-possible).
-
-Greetings
-Nils
+Do you have the full backtrace?
+-- 
+Michal Hocko
+SUSE Labs

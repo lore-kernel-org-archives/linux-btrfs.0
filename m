@@ -1,114 +1,122 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f172.google.com ([209.85.161.172]:35535 "EHLO
-        mail-yw0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751095AbcLZHHC (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Dec 2016 02:07:02 -0500
-Received: by mail-yw0-f172.google.com with SMTP id v81so51178138ywb.2
-        for <linux-btrfs@vger.kernel.org>; Sun, 25 Dec 2016 23:07:02 -0800 (PST)
+Received: from smtp-33-i4.italiaonline.it ([212.48.25.218]:35943 "EHLO
+        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1752852AbcLZLEu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Dec 2016 06:04:50 -0500
+From: Giuseppe Della Bianca <bepi@adria.it>
+To: Xin Zhou <xin.zhou@gmx.com>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: [CORRUPTION FILESYSTEM] Corrupted and unrecoverable file system during the snapshot receive
+Date: Mon, 26 Dec 2016 12:04:26 +0100
+Message-ID: <3040771.5eLdPxENH3@exnet.gdb.it>
+In-Reply-To: <trinity-3b871d96-6d50-44af-9f6d-3fbf2f7fbfd8-1482610539986@3capp-mailcom-bs13>
+References: <1479730155.5832e3eb3fde8@webmail.adria.it> <26479704.a8Su2NvQ2R@exnet.gdb.it> <trinity-3b871d96-6d50-44af-9f6d-3fbf2f7fbfd8-1482610539986@3capp-mailcom-bs13>
 MIME-Version: 1.0
-In-Reply-To: <pan$6de89$3108fb7c$12cf2501$859bb20@cox.net>
-References: <1482703234.6497.1.camel@scientia.net> <pan$6de89$3108fb7c$12cf2501$859bb20@cox.net>
-From: "Janos Toth F." <toth.f.janos@gmail.com>
-Date: Mon, 26 Dec 2016 08:06:46 +0100
-Message-ID: <CANznX5ExM=aug3A0F_Hq3p5RaCifN9=+U1=UPy=KSBc5Owjjng@mail.gmail.com>
-Subject: Re: some free space cache corruptions
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I am not sure I can remember a time when btrfs check did not print
-this "cache and super generation don't match, space cache will be
-invalidated" message, so I started ignoring it a long time ago because
-I never seemed to have problem with missing free space and never got
-any similar warnings/errors in the kernel log.
+Hi.
 
-On Mon, Dec 26, 2016 at 1:12 AM, Duncan <1i5t5.duncan@cox.net> wrote:
-> Christoph Anton Mitterer posted on Sun, 25 Dec 2016 23:00:34 +0100 as
-> excerpted:
->
->> # btrfs check /dev/mapper/data-a2 ; echo $?
->> Checking filesystem on /dev/mapper/data-a2
->
-> [...]
->
->> checking free space cache
->> block group 5431552376832 has wrong amount of free space
->> failed to load free space cache for block group 5431552376832
->
-> [...]
->
->> 0
->>
->> => same error again...
->>
->> Any ideas how to resolve? And is this some serious error that could have
->> caused corruptions?
->
-> By themselves, free-space cache warnings are minor and not a serious
-> issue at all -- the cache is just that, a cache, designed to speed
-> operation but not actually necessary, and btrfs can detect and route
-> around space-cache corruption on-the-fly so by itself it's not a big deal.
->
-> These warnings are however hints that something out of the routine has
-> happened, and that you might wish to freshen your backups, run btrfs
-> check and scrub and see if anything else is wrong (if you get them at
-> mount, you got them /running/ btrfs check and nothing else out of the
-> ordinary was reported), etc.
->
-> Three things to note:
->
-> 1) Plain btrfs check, without options that trigger fixes, is read-only,
-> so you are likely to see anything unusual it reports again in repeated
-> runs, unless the filesystem itself, or a scrub, etc, has fixed things in
-> the mean time.  (And as I said, the space-cache is only a cache, designed
-> to speed things up, cache corruption is fairly common and btrfs can and
-> does deal with it without issue.  In fact btrfs has the nospace_cache
-> option to entirely disable it at mount.)
->
-> 2) It recently came to the attention of the devs that the existing btrfs
-> mount-option method of clearing the free-space cache only clears it for
-> block-groups/chunks it encounters on-the-fly.  It doesn't do a systematic
-> beginning-to-end clear.  As such, in some instances it's possible to run
-> with the clear_cache mount option (see the btrfs (5) manpage for mount
-> option specifics, but to head off another question, it's recommended to
-> stay with v1 cache for now) and still see space-cache warnings you
-> thought should be cleared up, if btrfs didn't deal with those chunks in
-> the run where the cache was cleared.
->
-> 3) As a result of #2, the devs only very recently added support in btrfs
-> check for a /full/ space-cache-v1 clear, using the new
-> --clear-space-cache option.  But your btrfs-progs v4.7.3 is too old to
-> support it.  I know it's in the v4.9 I just upgraded to... checking the
-> wiki it appears the option was added in btrfs-progs v4.8.3 (v4.8.4 for v2
-> cache).
->
-> So if you want you can try the clear_cache mount option, and if that
-> doesn't do it, upgrade to a current btrfs-progs and run it with the
-> --clear-space-cache option, but you're not endangering your filesystem or
-> anything by simply waiting until you get a btrfs-progs update from your
-> distro, if you decide to.  The space-cache warnings aren't indicative of
-> a serious problem now and btrfs deals with them on its own, they are
-> simply hints that something, perhaps a crash with the btrfs mounted
-> writable, happened at some time in the past, and that it it might be wise
-> to investigate further for other damage, which you've already done, so
-> you're good. =:^)
->
-> Tho if you haven't recently run a scrub, I'd do that as well (and in fact
-> recommend running it before check if you can successfully mount), since
-> the problems it detects and fixes are conceptually different than the
-> ones btrfs check deals with.  Scrub deals with actual on-media
-> corruption, blocks not matching their checksum, while check deals with
-> filesystem logic errors, whether or not the blocks containing them match
-> the checksum.
->
-> --
-> Duncan - List replies preferred.   No HTML msgs.
-> "Every nonfree program has a lord, a master --
-> and if you use the program, he is your master."  Richard Stallman
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I agree with Duncan, and I add:
+
+- For remote transfer is used ssh.
+  ssh is designed to ensure integrity of data.
+- Remote transfer uses a Gigabit Ethernet, it is never congested.
+- I had the same problems with a local btrfs receive.
+- The script currently has 907 lines of code, many of which are to ensure the 
+detection and display of btrfs tools errors.
+- The script stops executing when btrs tools return an error code.
+- Is not possible that the script does not display error messages or ignore 
+error code of btrfs tools.
+
+An example of today:
+
+(2016-12-26 10:53:51) Start btrfsManage
+. . . Start managing SEND ' / ' filesystem ' root ' snapshot in ' /dev/sda2 '
+
+Sending ' root-2016-12-04_18:13:57.35 ' source snapshot to ' btrfsreceive ' subvolume
+. . . btrfs send -p /tmp/tmp.xJWkEN1U23/btrfssnapshot/root/root-2016-12-03_18:07:09.34 /tmp/tmp.xJWkEN1U23/btrfssnapshot/root/root-2016-12-04_18:13:57.35 | btrfs receive /tmp/tmp.pWWKP4vfAy/btrfsreceive/root/.part/
+. . . At subvol /tmp/tmp.xJWkEN1U23/btrfssnapshot/root/root-2016-12-04_18:13:57.35
+. . . ERROR: truncate usr/share/locale/it/LC_MESSAGES/kio4.mo failed: Read-only file system
+. . . At snapshot root-2016-12-04_18:13:57.35
+. . . _EC_ERR_ 1
+. . . _EC_ERR_ 141
+
+(2016-12-26 10:54:28) End btrfsManage
+. . . End managing SEND ' / ' filesystem ' root ' snapshot in ' /dev/sda2 '
+WITH ERRORS
+
+
+Checking filesystem on /dev/sda2
+UUID: 44f1de7e-a65b-41ce-8ff4-20f7ed83e106
+checking extents
+ref mismatch on [62408097792 16384] extent item 0, found 1
+Backref 62408097792 parent 1060 root 1060 not found in extent tree
+backpointer mismatch on [62408097792 16384]
+owner ref check failed [62408097792 16384]
+ref mismatch on [77565509632 16384] extent item 0, found 1
+Backref 77565509632 parent 1060 root 1060 not found in extent tree
+backpointer mismatch on [77565509632 16384]
+]zac[
+Backref 77826916352 parent 1060 root 1060 not found in extent tree
+backpointer mismatch on [77826916352 16384]
+owner ref check failed [77826916352 16384]
+ref mismatch on [77853933568 16384] extent item 0, found 1
+Backref 77853933568 parent 1060 root 1060 not found in extent tree
+backpointer mismatch on [77853933568 16384]
+owner ref check failed [77853933568 16384]
+checking free space cache
+checking fs roots
+warning line 3822
+checking csums
+checking root refs
+found 135128678400 bytes used err is 0
+total csum bytes: 126946572
+total tree bytes: 5132206080
+total fs tree bytes: 4744757248
+total extent tree bytes: 240795648
+btree space waste bytes: 914832832
+file data blocks allocated: 3311786532864
+ referenced 703616266240
+
+
+
+Is likely that mine is a special case.
+
+But a special case, with a code change in other points, can become a problem for many.
+
+It's not nice to say, but it seems I have to hope that my problem becomes a problem of many.
+
+Meanwhile, I'll find my own workaround of a probable serious btrfs bug.
+
+
+Thank you.
+
+Gdb
+
+
+> Hi,
+> 
+> Probably can try to use "-v" to enable more output print.
+> A quick look at the send / receive code, it seems a little bit risky.
+> It seems lack of specific error handlings, and in most cases, return the
+> same error code. I think it might be helpful, when a transfer succeed, the
+> command prints the transfer id, source / dest, and a specific "success"
+> string.
+> Such output could help the script to figure out if a transfer really
+> succeed.
+> 
+> The code is relatively new to me, I did not see retry logic in stream
+> handling, please correct me if I am wrong about this. So, I am not quite
+> sure about the transfer behavior, if the system subject to network issues
+> in heavy workload, in which packets missing or connect issues are not rare.
+> 
+> Since the test mentioned at the begining deletes the snapshots after a
+> transfer, while most users keep the middle snapshot even in cascading
+> transfer, probably the current btrfs and cmds still works for regular
+> users.
+> 
+> Thanks,
+> Xin
+>  
+>  

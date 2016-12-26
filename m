@@ -1,225 +1,142 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:59910 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1755692AbcLOItP (ORCPT
+Received: from mail-wm0-f67.google.com ([74.125.82.67]:33386 "EHLO
+        mail-wm0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932336AbcLZLIV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Dec 2016 03:49:15 -0500
-Subject: Re: Btrfs progs pre-release 4.9-rc1
-To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>, David Sterba <dsterba@suse.com>
-References: <20161214144224.17846-1-dsterba@suse.com>
- <6c4324b7-90b7-37f0-42ae-101a22f65dbb@jp.fujitsu.com>
- <e69f50ac-abe1-4237-d20c-62085d03f82e@jp.fujitsu.com>
-CC: <linux-btrfs@vger.kernel.org>, <clm@fb.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <63484213-6023-5861-2c1e-6fa967831596@cn.fujitsu.com>
-Date: Thu, 15 Dec 2016 16:49:08 +0800
-MIME-Version: 1.0
-In-Reply-To: <e69f50ac-abe1-4237-d20c-62085d03f82e@jp.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+        Mon, 26 Dec 2016 06:08:21 -0500
+Received: by mail-wm0-f67.google.com with SMTP id u144so52617222wmu.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Dec 2016 03:08:20 -0800 (PST)
+From: Nikolay Borisov <n.borisov.lkml@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: clm@fb.com, jbacik@fb.com, dsterba@suse.com,
+        Nikolay Borisov <n.borisov.lkml@gmail.com>
+Subject: [PATCH] btrfs: Replace ACCESS_ONCE with (READ|WRITE)_ONCE
+Date: Mon, 26 Dec 2016 13:08:09 +0200
+Message-Id: <1482750489-13666-1-git-send-email-n.borisov.lkml@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Use the newer and standardized functions when performing volatile
+accesses. Following text is taken from 4d3199e4ca8e
+("locking: Remove ACCESS_ONCE() usage") :
 
+    ACCESS_ONCE() does not work reliably on non-scalar types.
+    For example gcc 4.6 and 4.7 might remove the volatile tag
+    for such accesses during the SRA (scalar replacement of
+    aggregates) step:
+	https://gcc.gnu.org/bugzilla/show_bug.cgi?id=58145
 
-At 12/15/2016 04:41 PM, Tsutomu Itoh wrote:
-> On 2016/12/15 15:45, Tsutomu Itoh wrote:
->> On 2016/12/14 23:42, David Sterba wrote:
->>> Hi,
->>>
->>> a pre-release has been tagged. Contains almost the entire devel branch from
->>> today. There are small fixes, the lowmem mode of check gets more updates but
->>> still does not work in the --repair mode and is considered experimental.
->>>
->>> ETA for 4.9 is in +6 days (2016-12-20).
->>>
->>> Minor fixes, docs improvements or more testcases will be still considered for
->>> 4.9 release.
->>
->> xfstests btrfs/{108,109,117} that was working in 4.8.5 will not work properly.
->>
->> + ./check btrfs/108
->> FSTYP         -- btrfs
->> PLATFORM      -- Linux/x86_64 luna 4.9.0
->> MKFS_OPTIONS  -- /dev/sdb3
->> MOUNT_OPTIONS -- /dev/sdb3 /test6
->>
->> btrfs/108 1s ... [failed, exit status 1] - output mismatch (see /xfstests/results//btrfs/108.out.bad)
->>     --- tests/btrfs/108.out     2015-10-19 09:55:52.000000000 +0900
->>     +++ /xfstests/results//btrfs/108.out.bad    2016-12-15 15:41:43.771411349 +0900
->>     @@ -8,6 +8,6 @@
->>      File digests in the original filesystem:
->>      fbf36a062ffcbd644b5739c4d683ccc7  SCRATCH_MNT/snap/foo
->>      5d2c92827a70aad932cfe7363105c55e  SCRATCH_MNT/snap/bar
->>     -File digests in the new filesystem:
->>     -fbf36a062ffcbd644b5739c4d683ccc7  SCRATCH_MNT/snap/foo
->>     -5d2c92827a70aad932cfe7363105c55e  SCRATCH_MNT/snap/bar
->>     +./common/rc: line 2784: 22352 Segmentation fault      (core dumped) "$@" >> $seqres.full 2>&1
->>     ...
->>     (Run 'diff -u tests/btrfs/108.out /xfstests/results//btrfs/108.out.bad'  to see the entire diff)
->> Ran: btrfs/108
->> Failures: btrfs/108
->> Failed 1 of 1 tests
->
-> Another problem was found. xfstests btrfs/012 will not succeed.
->
-> btrfs/012 58s ... [failed, exit status 1] - output mismatch (see /xfstests/results//btrfs/012.out.bad)
->     --- tests/btrfs/012.out     2015-08-04 16:09:38.000000000 +0900
->     +++ /xfstests/results//btrfs/012.out.bad    2016-12-15 17:38:10.305009249 +0900
->     @@ -1 +1,3 @@
->      == QA output created by 012
->     +btrfs-convert rollback failed
->     +(see /xfstests/results//btrfs/012.full for details)
->     ...
->     (Run 'diff -u tests/btrfs/012.out /xfstests/results//btrfs/012.out.bad'  to see the entire diff)
->
-> Thanks,
-> Tsutomu
+Signed-off-by: Nikolay Borisov <n.borisov.lkml@gmail.com>
+---
+ fs/btrfs/delayed-inode.c |  4 ++--
+ fs/btrfs/super.c         |  2 +-
+ fs/btrfs/transaction.c   | 10 +++++-----
+ fs/btrfs/tree-log.h      |  4 ++--
+ 4 files changed, 10 insertions(+), 10 deletions(-)
 
-Thanks for the test.
-
-Chandan has reported such regression, after his migrate_super_block() 
-fix for 64K nodesize.
-But that's not really caused by this patch, just too restrict rollback 
-condition.
-
-This can be fixed by the following patches:
-[1/3] btrfs-progs: file-item: Fix wrong file extents inserted
-[2/3] btrfs-progs: convert: Rework rollback to handle new convert image
-[3/3] btrfs-progs: convert-test: trigger chunk allocation after convert
-
-Thanks,
-Qu
->
->>
->> Thanks,
->> Tsutomu
->>
->>>
->>> Changes:
->>>   * check: many lowmem mode updates
->>>   * send: use splice syscall to copy buffer from kernel
->>>   * receive: new option to dump the stream in textual form
->>>   * convert:
->>>     * move sources to own directory
->>>     * prevent accounting of blocks beyond end of the device
->>>     * make it work with 64k sectorsize
->>>   * mkfs: move sources to own directory
->>>   * defrag: warns if directory used without -r
->>>   * dev stats:
->>>     * new option to check stats for non-zero values
->>>     * add long option for -z
->>>   * library: version bump to 0.1.2, added subvol_uuid_search2
->>>   * other:
->>>     * cleanups
->>>     * docs updates
->>>
->>> Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
->>> Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
->>>
->>> Shortlog:
->>>
->>> Adam Borowski (1):
->>>       btrfs-progs: man mkfs: warn about RAID5/6 being experimental
->>>
->>> Anand Jain (1):
->>>       btrfs-progs: recursive defrag cleanup duplicate code
->>>
->>> Austin S. Hemmelgarn (1):
->>>       btrfs-progs: dev stats: add dev stats returncode option
->>>
->>> Chandan Rajendra (3):
->>>       btrfs-progs: Use helper function to access btrfs_super_block->sys_chunk_array_size
->>>       btrfs-progs: convert: Prevent accounting blocks beyond end of device
->>>       btrfs-progs: convert: Fix migrate_super_block() to work with 64k sectorsize
->>>
->>> David Sterba (35):
->>>       btrfs-progs: remove extra newline from messages
->>>       btrfs-progs: use symbolic name for first inode number when searching
->>>       btrfs-progs: send: use splice syscall instead of read/write to transfer buffer
->>>       btrfs-progs: send: rename thread callback to read data from kernel
->>>       btrfs-progs: make incompat bit wrappers more compact
->>>       btrfs-progs: receive: rename receive context variable
->>>       btrfs-progs: check: use on-stack path buffer in check_fs_first_inode
->>>       btrfs-progs: check: use on-stack path buffer in check_fs_root_v2
->>>       btrfs-progs: check: use on-stack path buffer in check_fs_roots_v2
->>>       btrfs-progs: send dump: introduce helper for printing escaped path
->>>       btrfs-progs: send dump: print escaped path
->>>       btrfs-progs: send dump: use reentrant variant of localtime
->>>       btrfs-progs: tests: add more gobal option to test 001-btrfs
->>>       btrfs-progs: docs: update receive help and manual page
->>>       btrfs-progs: build: extend pattern rules for standalone directories
->>>       btrfs-progs: move btrfs-convert to own directory
->>>       btrfs-progs: move mkfs.btrfs sources to own directory
->>>       btrfs-progs: tests: check for partscan support in misc/006-partitioned-loopdev
->>>       btrfs-progs: run mkfs tests in CI
->>>       btrfs-progs: mkfs: annotation of a case
->>>       btrfs-progs: docs: clarify trim after mkfs -K
->>>       btrfs-progs: docs: make documentation updates workflow more clear
->>>       btrfs-progs: dev stats: adjust some error messages
->>>       btrfs-progs: dev stats: use char type path
->>>       btrfs-progs: dev stats: use table based printing of items
->>>       btrfs-progs: dev stats: add long option for -z
->>>       btrfs-progs: docs: update dev stats help and manual page
->>>       btrfs-progs: help: fix printing of aliased commands
->>>       btrfs-progs: fixup API after change in subvol_uuid_search
->>>       btrfs-progs: library: bump to 0.1.2
->>>       btrfs-progs: handle failed strdup in subvol_uuid_search2
->>>       btrfs-progs: dev stats: update option name for checking non-zero status
->>>       btrfs-progs: defrag: cleanup temporary errno value
->>>       btrfs-progs: defrag: warn when deframgenting directories without -r
->>>       btrfs-progs: update CHANGES for v4.9
->>>
->>> Goldwyn Rodrigues (5):
->>>       btrfs-progs: Correct value printed by assertions/BUG_ON/WARN_ON
->>>       btrfs-progs: Remove duplicate printfs in warning_trace()/assert_trace()
->>>       btrfs-progs: check: fix extents after finding all errors
->>>       btrfs-progs: Initialize ret to suppress compiler warning
->>>       btrfs-progs: find_free_dev_extent() closer to kernel code
->>>
->>> Lu Fengqi (11):
->>>       btrfs-progs: check: introduce function to find dir_item
->>>       btrfs-progs: check: introduce function to check inode_ref
->>>       btrfs-progs: check: introduce function to check inode_extref
->>>       btrfs-progs: check: introduce function to find inode_ref
->>>       btrfs-progs: check: introduce function to check dir_item
->>>       btrfs-progs: check: introduce function to check file extent
->>>       btrfs-progs: check: introduce function to check inode item
->>>       btrfs-progs: check: introduce function to check fs root
->>>       btrfs-progs: check: introduce function to check root ref
->>>       btrfs-progs: check: introduce low_memory mode fs_tree check
->>>       btrfs-progs: check: fix the return value bug of cmd_check()
->>>
->>> Noah Massey (1):
->>>       btrfs-progs: docs: fix typo in mkfs manual page
->>>
->>> Prasanth K S R (3):
->>>       btrfs-progs: subvol_uuid_search: return error on memory allocation failure
->>>       btrfs-progs: subvol_uuid_search: return error encoded pointer
->>>       btrfs-progs: subvol_uuid_search: return error code on memory allocation failure
->>>
->>> Qu Wenruo (11):
->>>       btrfs-progs: raid56: Introduce new function to calculate raid5 parity or data stripe
->>>       btrfs-progs: volumes: Use new raid5_gen_result to calculate raid5 parity
->>>       btrfs-progs: check: Enhance leaf traversal function to handle missing inode item
->>>       btrfs-progs: fsck: Fix patch allocation check and leak in check_fs_first_inode
->>>       btrfs-progs: check: fix NULL pointer dereference for possible memory allocation failure
->>>       btrfs-progs: introduce new send-dump object
->>>       btrfs-progs: receive: introduce option to dump send stream
->>>       btrfs-progs: check: Fix assert when using lowmem on fs with tree reloc tree
->>>       btrfs-progs: check: Fix lowmem mode stack overflow caused by fsck/023
->>>       btrfs-progs: check: Fix lowmem false alert on tree reloc tree
->>>       btrfs-progs: check: Fix false alert on generation mismatch for tree reloc tree
->>>
->>> Wang Xiaoguang (1):
->>>       btrfs-progs: check: skip shared node or leaf check for low_memory mode
->>>
->>
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
-
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index 80982a83c9fd..353e40fceba8 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -79,7 +79,7 @@ static struct btrfs_delayed_node *btrfs_get_delayed_node(struct inode *inode)
+ 	u64 ino = btrfs_ino(inode);
+ 	struct btrfs_delayed_node *node;
+ 
+-	node = ACCESS_ONCE(btrfs_inode->delayed_node);
++	node = READ_ONCE(btrfs_inode->delayed_node);
+ 	if (node) {
+ 		atomic_inc(&node->refs);
+ 		return node;
+@@ -1292,7 +1292,7 @@ void btrfs_remove_delayed_node(struct inode *inode)
+ {
+ 	struct btrfs_delayed_node *delayed_node;
+ 
+-	delayed_node = ACCESS_ONCE(BTRFS_I(inode)->delayed_node);
++	delayed_node = READ_ONCE(BTRFS_I(inode)->delayed_node);
+ 	if (!delayed_node)
+ 		return;
+ 
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index b5ae7d3d1896..93ed29c2a38b 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -265,7 +265,7 @@ void __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
+ 		           function, line, errstr);
+ 		return;
+ 	}
+-	ACCESS_ONCE(trans->transaction->aborted) = errno;
++	WRITE_ONCE(trans->transaction->aborted, errno);
+ 	/* Wake up anybody who may be waiting on this transaction */
+ 	wake_up(&fs_info->transaction_wait);
+ 	wake_up(&fs_info->transaction_blocked_wait);
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 0e0508f488b2..bd2890c2c9d3 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -866,14 +866,14 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
+ 
+ 	if (lock && !atomic_read(&info->open_ioctl_trans) &&
+ 	    should_end_transaction(trans) &&
+-	    ACCESS_ONCE(cur_trans->state) == TRANS_STATE_RUNNING) {
++	    READ_ONCE(cur_trans->state) == TRANS_STATE_RUNNING) {
+ 		spin_lock(&info->trans_lock);
+ 		if (cur_trans->state == TRANS_STATE_RUNNING)
+ 			cur_trans->state = TRANS_STATE_BLOCKED;
+ 		spin_unlock(&info->trans_lock);
+ 	}
+ 
+-	if (lock && ACCESS_ONCE(cur_trans->state) == TRANS_STATE_BLOCKED) {
++	if (lock && READ_ONCE(cur_trans->state) == TRANS_STATE_BLOCKED) {
+ 		if (throttle)
+ 			return btrfs_commit_transaction(trans);
+ 		else
+@@ -1940,7 +1940,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+ 	int ret;
+ 
+ 	/* Stop the commit early if ->aborted is set */
+-	if (unlikely(ACCESS_ONCE(cur_trans->aborted))) {
++	if (unlikely(READ_ONCE(cur_trans->aborted))) {
+ 		ret = cur_trans->aborted;
+ 		btrfs_end_transaction(trans);
+ 		return ret;
+@@ -2080,7 +2080,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+ 		   atomic_read(&cur_trans->num_writers) == 1);
+ 
+ 	/* ->aborted might be set after the previous check, so check it */
+-	if (unlikely(ACCESS_ONCE(cur_trans->aborted))) {
++	if (unlikely(READ_ONCE(cur_trans->aborted))) {
+ 		ret = cur_trans->aborted;
+ 		goto scrub_continue;
+ 	}
+@@ -2194,7 +2194,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+ 	 * The tasks which save the space cache and inode cache may also
+ 	 * update ->aborted, check it.
+ 	 */
+-	if (unlikely(ACCESS_ONCE(cur_trans->aborted))) {
++	if (unlikely(READ_ONCE(cur_trans->aborted))) {
+ 		ret = cur_trans->aborted;
+ 		mutex_unlock(&fs_info->tree_log_mutex);
+ 		mutex_unlock(&fs_info->reloc_mutex);
+diff --git a/fs/btrfs/tree-log.h b/fs/btrfs/tree-log.h
+index ab858e31ccbc..127eae01bb1b 100644
+--- a/fs/btrfs/tree-log.h
++++ b/fs/btrfs/tree-log.h
+@@ -48,13 +48,13 @@ static inline void btrfs_init_log_ctx(struct btrfs_log_ctx *ctx,
+ static inline void btrfs_set_log_full_commit(struct btrfs_fs_info *fs_info,
+ 					     struct btrfs_trans_handle *trans)
+ {
+-	ACCESS_ONCE(fs_info->last_trans_log_full_commit) = trans->transid;
++	WRITE_ONCE(fs_info->last_trans_log_full_commit, trans->transid);
+ }
+ 
+ static inline int btrfs_need_log_full_commit(struct btrfs_fs_info *fs_info,
+ 					     struct btrfs_trans_handle *trans)
+ {
+-	return ACCESS_ONCE(fs_info->last_trans_log_full_commit) ==
++	return READ_ONCE(fs_info->last_trans_log_full_commit) ==
+ 		trans->transid;
+ }
+ 
+-- 
+2.7.4
 

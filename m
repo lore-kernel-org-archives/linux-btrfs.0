@@ -1,51 +1,214 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wj0-f194.google.com ([209.85.210.194]:33255 "EHLO
-        mail-wj0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750858AbcL0J2d (ORCPT
+Received: from wmauth2.doit.wisc.edu ([144.92.197.222]:47344 "EHLO
+        smtpauth2.wiscmail.wisc.edu" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1754569AbcL0QXA (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Dec 2016 04:28:33 -0500
-Received: by mail-wj0-f194.google.com with SMTP id kp2so50818692wjc.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Dec 2016 01:28:32 -0800 (PST)
-Received: from [10.2.2.44] (host74-184-static.96-5-b.business.telecomitalia.it. [5.96.184.74])
-        by smtp.googlemail.com with ESMTPSA id i132sm54974838wmf.14.2016.12.27.01.28.30
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 27 Dec 2016 01:28:31 -0800 (PST)
-Subject: Re: [CORRUPTION FILESYSTEM] Corrupted and unrecoverable file
- system during the snapshot receive
-From: Giuseppe Della Bianca <g.dellabianca@gestiware.it>
-To: linux-btrfs@vger.kernel.org
-In-Reply-To: <CAJCQCtSZf+Z12HzhNHX8XMXZH4peNVQ=a_kbFJS3gUUKq=_T0g@mail.gmail.com>
-Content-Type: text/plain; charset="UTF-8"
-Date: Tue, 27 Dec 2016 10:29:06 +0100
-Message-ID: <1482830946.3502.6.camel@localhost>
-Mime-Version: 1.0
+        Tue, 27 Dec 2016 11:23:00 -0500
+MIME-version: 1.0
+Content-type: text/plain; CHARSET=US-ASCII; format=flowed
+Received: from avs-daemon.smtpauth2.wiscmail.wisc.edu by
+ smtpauth2.wiscmail.wisc.edu
+ (Oracle Communications Messaging Server 8.0.1.1.0 64bit (built Jun 15 2016))
+ id <0OIU00H00QD67V00@smtpauth2.wiscmail.wisc.edu> for
+ linux-btrfs@vger.kernel.org; Tue, 27 Dec 2016 10:22:59 -0600 (CST)
+Subject: Re: btrfs_log2phys: cannot lookup extent mapping
+References: <89be6fee-5b18-7a9d-11ea-85abeab28022@ece.wisc.edu>
+ <pan$14679$e5d5bc21$812abe03$ef75194d@cox.net>
+ <4e2fcf15-5af4-54b0-f7bb-46518b9bb5a4@ece.wisc.edu>
+From: David Hanke <hanke.list@ece.wisc.edu>
+To: linux-btrfs@vger.kernel.org, xin.zhou@gmx.com, ahferroin7@gmail.com,
+        kilobyte@angband.pl, 1i5t5.duncan@cox.net
+Message-id: <74321f20-05e6-8bde-0adc-b0b4af8148c2@ece.wisc.edu>
+Date: Tue, 27 Dec 2016 10:22:58 -0600
+In-reply-to: <4e2fcf15-5af4-54b0-f7bb-46518b9bb5a4@ece.wisc.edu>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi.
+Belated thanks to Duncan, Adam, Austin and Xin for your replies and 
+thank you to everyone who's working on btrfs!
 
-Only for information.
+Sincerely,
 
-I tried ' check_int ' mount option, but with a few tens of GB used, the
-kernel freezes completely (no ops, no messages, no panic, none).
-
-
-Thanks for all.
-
-Gdb
-
-P.S. Thanks and happy work to all.
-
->>On Wed, Dec 21, 2016 at 2:09 PM, Chris Murphy <li...@colorremedies.com> wrote:
->> What about CONFIG_BTRFS_FS_CHECK_INTEGRITY? And then using check_int
->> mount option?
->This slows things down, and in that case it might avoid the problem if
->it's the result of a race condition.
-
->-- 
->Chris Murphy
->--
+David
 
 
+On 12/21/16 08:50, David Hanke wrote:
+> Hi Duncan,
+>
+> Thank you for your reply. If I've emailed the wrong list, please let 
+> me know. What I hear you saying, in short, is that btrfs is not yet 
+> fully stable but current 4.x versions may work better. I'm willing to 
+> upgrade, but I'm told that the upgrade process may result in total 
+> failure, and I'm not sure I can trust the contents of the volume 
+> either way. Given that, it seems I must backup the backup, erase and 
+> start over. What would you do?
+>
+> Thank you,
+>
+> David
+>
+>
+> On 12/20/16 17:24, Duncan wrote:
+>> David Hanke posted on Tue, 20 Dec 2016 09:52:25 -0600 as excerpted:
+>>
+>>> I've been using a btrfs-based volume for backups, but lately the
+>>> system's been filling the syslog with errors like "btrfs_log2phys:
+>>> cannot lookup extent mapping for 7129125486592" at the rate of hundreds
+>>> per second. (Please see output below for more details.) Despite the
+>>> errors, the files I've looked at appear to be written and read
+>>> successfully.
+>>>
+>>> I'm wondering if the contents of the volume are trustworthy and whether
+>>> this problem is resolvable without backing up, erasing and starting
+>>> over?
+>>>
+>>> Thank you!
+>>>
+>>> David
+>>>
+>>>
+>>> # uname -a
+>>> Linux backup2 3.0.101.RNx86_64.3 #1 SMP Wed Apr 1 16:02:14 PDT 2015
+>>> x86_64 GNU/Linux
+>>>
+>>> # btrfs --version
+>>> Btrfs v3.17.3
+>> FWIW...
+>>
+>> [TL;DR: see the four bottom line choices, at the bottom.]
+>>
+>> This is the upstream btrfs development and discussion list for a
+>> filesystem that's still stabilizing (that is, not fully stable and
+>> mature) and that remains under heavy development and bug fixing.  As
+>> such, list focus is heavily forward looking, with an extremely strong
+>> recommendation to use current kernels (and to a lessor extent btrfs
+>> userspace) if you're going to be running btrfs, as these have all the
+>> latest bugfixes.
+>>
+>> Put a different way, the general view and strong recommendation of the
+>> list is that because btrfs is still under heavy development, with bug
+>> fixes, some more major than others, every kernel cycle, while we
+>> recognize that choosing to run old and stale^H^Hble kernels and 
+>> userspace
+>> is a legitimate choice on its own, that choice of stability over support
+>> for the latest and greatest, is viewed as incompatible with choosing to
+>> run a still under heavy development filesystem.  Choosing one OR the
+>> other is strongly recommended.
+>>
+>> For list purposes, we recommend and best support the last two kernel
+>> release series in two tracks, LTS/long-term-stable, or current release
+>> track.  On the LTS track, that's the LTS 4.4 and 4.1 series.  On the
+>> current track, 4.9 is the latest release, so 4.9 and 4.8 are best
+>> supported.
+>>
+>> Meanwhile, it's worth keeping in mind that the experimental label and
+>> accompanying extremely strong "eat your babies" level warnings weren't
+>> peeled off until IIRC 3.12 or so, meaning anything before that is not
+>> only ancient history in list terms, but also still labeled as "eat your
+>> babies" level experimental.  Why anyone choosing to run an ancient eat-
+>> your-babies level experimental version of a filesystem that's now rather
+>> more stable and mature, tho not yet fully stabilized, is beyond me.  If
+>> they're interested in newer filesystems, running newer and less buggy
+>> versions is reasonable; if they're interested in years-stale level of
+>> stability, then running such filesystems, especially when still labeled
+>> eat-your-babies level experimental back then, seems an extremely odd
+>> choice indeed.
+>>
+>> Of course, on-list we do recognize that various distros did and do offer
+>> support at some level for older than list-recommended version btrfs, in
+>> part because they backport fixes from newer versions.  However, because
+>> we're forward development focused we don't track what patches these
+>> distros may or may not have backported and thus aren't in a good 
+>> position
+>> to provide good support for them.  Instead, users choosing to use such
+>> kernels are generally asked to choose between upgrading to something
+>> reasonably supportable on-list if they wish to go that route, or 
+>> referred
+>> back to their distros for the support they're in a far better 
+>> position to
+>> offer, since they know what they've backported and what they haven't,
+>> while we don't.
+>>
+>> As for btrfs userspace, the way btrfs works, during normal runtime,
+>> userspace primarily calls the kernel to do the real work, so userspace
+>> version isn't as big a deal unless you're trying to use a feature only
+>> supported by newer versions, except that if it's /too/ old, the 
+>> impedance
+>> mismatch between the commands as they were then and the commands in
+>> current versions makes support rather more difficult.  However, once
+>> there's a problem, then the age of userspace code becomes more vital, as
+>> then it's actually the userspace code doing the work, and only newer
+>> versions of btrfs check and btrfs restore, for instance, can detect and
+>> fix problems where code has only recently been added to do so.
+>>
+>> In general, then, with btrfs-progs releases and versioning synced to 
+>> that
+>> of the kernel, a reasonable rule of thumb is to run userspace of a
+>> similar version to your kernel, tho unless you're experiencing problems,
+>> getting a version or two behind on your userspace isn't a big deal.  
+>> That
+>> way, userspace command formats and output will be close enough to 
+>> current
+>> for easier support, and if there's a fix for a specific problem you've
+>> posted in newer userspace, the problem and fix are still fresh enough in
+>> people's minds that someone will probably recognize it and point out 
+>> that
+>> a newer version can handle that, and you can worry about upgrading to 
+>> the
+>> latest and greatest at that point.
+>>
+>> So bottom line, you have four choices:
+>>
+>> 1) Upgrade to something reasonably current to get better on-list 
+>> support.
+>>
+>> This would be LTS kernels 4.4 preferred, or 4.1, acceptable, or current
+>> kernels 4.9 or 4.8, and similarly versioned userspace, so no older than
+>> btrfs-progs 4.0.
+>>
+>> 2) Choose to stay with your distro's versions and get support from them.
+>>
+>> Particularly if you are already paying for that support, might as well
+>> use it.
+>>
+>> 3) Recognize the fundamental incompatibility between wanting to run old
+>> and stale/stable for the stability it is supposed to offer, and wanting
+>> to run a still under heavy development not fully stable and mature
+>> filesystem like btrfs, and either switch to a more stable and mature
+>> filesystem that better meets your needs for those qualities, or upgrade
+>> to a distro or distro version that better meets your needs for current
+>> software better supported by current upstreams like this btrfs list.
+>>
+>> 4) Stay with what you have, and muddle through as best you can.
+>>
+>> After all, it's not like we /refuse/ to offer support to btrfs that old,
+>> if we recognize a problem that we know can be fixed by code that old
+>> we'll still tell you, and if we know there's a fix in newer versions
+>> we'll still tell you and try to point you at the appropriate patch for
+>> you to apply to your old version if possible, but we simply recognize
+>> that for something that old, our support will be rather limited, at 
+>> best.
+>>
+>> But it remains your system and your data, so your choice, even if it's
+>> against everything we normally recommend.
+>>
+>>
+>> Finally, a personal disclosure.  I'm a btrfs user and list regular, 
+>> not a
+>> dev.  As such, my own answers will rarely get code-level technical or
+>> point to specific patches, but because I /am/ a regular, I can still
+>> answer the stuff that comes up regularly, leaving the real devs and more
+>> expert replies to cover detailed content that's beyond me.  So while 
+>> it's
+>> quite possible someone else will recognize a specific bug and be able to
+>> point you toward a specific fix, tho honestly I don't expect it for
+>> something as old as what you're posting about, general list-recommended
+>> upgrades and alternatives for people posting with positively ancient
+>> versions is squarely within my reply territory. =:^)
+>>
+>
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 

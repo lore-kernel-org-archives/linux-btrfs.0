@@ -1,143 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:59207 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.18]:51288 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753418AbcLZRlo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Dec 2016 12:41:44 -0500
+        id S1752026AbcL0DUa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Dec 2016 22:20:30 -0500
 MIME-Version: 1.0
-Message-ID: <trinity-d9166515-7045-4c19-a026-3d838d64deed-1482774098147@3capp-mailcom-bs06>
+Message-ID: <trinity-5d6e6c7c-a910-4c9d-945e-bbbbbe6d0ad0-1482808825364@3capp-mailcom-bs01>
 From: "Xin Zhou" <xin.zhou@gmx.com>
-To: "Giuseppe Della Bianca" <bepi@adria.it>
-Cc: "Btrfs BTRFS" <linux-btrfs@vger.kernel.org>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [CORRUPTION FILESYSTEM] Corrupted and unrecoverable file system
  during the snapshot receive
 Content-Type: text/plain; charset=UTF-8
-Date: Mon, 26 Dec 2016 18:41:38 +0100
-In-Reply-To: <3040771.5eLdPxENH3@exnet.gdb.it>
+Date: Tue, 27 Dec 2016 04:20:25 +0100
+In-Reply-To: <pan$8c5dd$219346e7$7ef2e02e$288572ab@cox.net>
 References: <1479730155.5832e3eb3fde8@webmail.adria.it>
+ <1482515316.585d63747d460@webmail.adria.it>
+ <trinity-8b1613bd-b3dc-4e8b-96ac-53275b6cad7c-1482518120336@3capp-mailcom-bs08>
  <26479704.a8Su2NvQ2R@exnet.gdb.it>
- <trinity-3b871d96-6d50-44af-9f6d-3fbf2f7fbfd8-1482610539986@3capp-mailcom-bs13>,
- <3040771.5eLdPxENH3@exnet.gdb.it>
+ <trinity-3b871d96-6d50-44af-9f6d-3fbf2f7fbfd8-1482610539986@3capp-mailcom-bs13>
+ <pan$75761$bfdd58c9$f0dc28fc$33093136@cox.net>
+ <trinity-3c499d54-80d4-4e77-992f-fa53b112c5a0-1482719769501@3capp-mailcom-bs14>,
+ <pan$8c5dd$219346e7$7ef2e02e$288572ab@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-That is one way to diagnose the issue in data path.
-If ssh can guarantee data transfer and retry, then those data protection company does not need to have a whole team handle the send / receive for remote data backup.
-
-In your case, if the conection is very light, then the issue could be in other place.
-
-Xin 
+>Unless there are bugs that
+>would show up in other situations as well (or an out-of-space condition
+>is triggered that would likewise show up in other situations with a
+>similar amount of data/metadata written),
  
+That is exactly some bugs come from.
+For simple cases, it is ok to assume the send/receive always succeed.
+And if it errors out, assumes the delete always succeed, and the file system is in consistent status,
+and good luck with the data.
 
-Sent: Monday, December 26, 2016 at 3:04 AM
-From: "Giuseppe Della Bianca" <bepi@adria.it>
-To: "Xin Zhou" <xin.zhou@gmx.com>, "Btrfs BTRFS" <linux-btrfs@vger.kernel.org>
+
+
+Xin
+
+
+
+
+Sent: Sunday, December 25, 2016 at 7:52 PM
+From: Duncan <1i5t5.duncan@cox.net>
+To: linux-btrfs@vger.kernel.org
 Subject: Re: [CORRUPTION FILESYSTEM] Corrupted and unrecoverable file system during the snapshot receive
-Hi.
+Xin Zhou posted on Mon, 26 Dec 2016 03:36:09 +0100 as excerpted:
 
-I agree with Duncan, and I add:
+> One interesting thing to investigate might be the btrfs send / receive
+> result, under a disruptive network environment. If the connection breaks
+> in the middle of transfer (at different phase, maybe), see what could be
+> the file system status.
 
-- For remote transfer is used ssh.
-ssh is designed to ensure integrity of data.
-- Remote transfer uses a Gigabit Ethernet, it is never congested.
-- I had the same problems with a local btrfs receive.
-- The script currently has 907 lines of code, many of which are to ensure the
-detection and display of btrfs tools errors.
-- The script stops executing when btrs tools return an error code.
-- Is not possible that the script does not display error messages or ignore
-error code of btrfs tools.
+Btrfs send, sends from a read-only snapshot, so the sending filesystem
+shouldn't be harmed no matter what happens to send.
 
-An example of today:
+Btrfs receive does all its work in a new subvolume (basically a snapshot
+in an incremental send, tho I'm not sure it's a full snapshot in the
+technical sense), modifying the files therein using standard calls used
+in other contexts as well, so absent bugs that should appear in those
+other contexts too if they exist, the worst damage that a receive should
+be able to do is an unfaithful replay of the send stream, such that an
+appropriate copy of the sent snapshot doesn't appear on the receiver.
 
-(2016-12-26 10:53:51) Start btrfsManage
-. . . Start managing SEND ' / ' filesystem ' root ' snapshot in ' /dev/sda2 '
+Which means even in the case of error, cleanup is as simple as deleting
+the aborted/incompletely-received subvolume. Unless there are bugs that
+would show up in other situations as well (or an out-of-space condition
+is triggered that would likewise show up in other situations with a
+similar amount of data/metadata written), there should be no effects
+outside that received subvolume.
 
-Sending ' root-2016-12-04_18:13:57.35 ' source snapshot to ' btrfsreceive ' subvolume
-. . . btrfs send -p /tmp/tmp.xJWkEN1U23/btrfssnapshot/root/root-2016-12-03_18:07:09.34 /tmp/tmp.xJWkEN1U23/btrfssnapshot/root/root-2016-12-04_18:13:57.35 | btrfs receive /tmp/tmp.pWWKP4vfAy/btrfsreceive/root/.part/
-. . . At subvol /tmp/tmp.xJWkEN1U23/btrfssnapshot/root/root-2016-12-04_18:13:57.35
-. . . ERROR: truncate usr/share/locale/it/LC_MESSAGES/kio4.mo failed: Read-only file system
-. . . At snapshot root-2016-12-04_18:13:57.35
-. . . _EC_ERR_ 1
-. . . _EC_ERR_ 141
+--
+Duncan - List replies preferred. No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master." Richard Stallman
 
-(2016-12-26 10:54:28) End btrfsManage
-. . . End managing SEND ' / ' filesystem ' root ' snapshot in ' /dev/sda2 '
-WITH ERRORS
-
-
-Checking filesystem on /dev/sda2
-UUID: 44f1de7e-a65b-41ce-8ff4-20f7ed83e106
-checking extents
-ref mismatch on [62408097792 16384] extent item 0, found 1
-Backref 62408097792 parent 1060 root 1060 not found in extent tree
-backpointer mismatch on [62408097792 16384]
-owner ref check failed [62408097792 16384]
-ref mismatch on [77565509632 16384] extent item 0, found 1
-Backref 77565509632 parent 1060 root 1060 not found in extent tree
-backpointer mismatch on [77565509632 16384]
-]zac[
-Backref 77826916352 parent 1060 root 1060 not found in extent tree
-backpointer mismatch on [77826916352 16384]
-owner ref check failed [77826916352 16384]
-ref mismatch on [77853933568 16384] extent item 0, found 1
-Backref 77853933568 parent 1060 root 1060 not found in extent tree
-backpointer mismatch on [77853933568 16384]
-owner ref check failed [77853933568 16384]
-checking free space cache
-checking fs roots
-warning line 3822
-checking csums
-checking root refs
-found 135128678400 bytes used err is 0
-total csum bytes: 126946572
-total tree bytes: 5132206080
-total fs tree bytes: 4744757248
-total extent tree bytes: 240795648
-btree space waste bytes: 914832832
-file data blocks allocated: 3311786532864
-referenced 703616266240
-
-
-
-Is likely that mine is a special case.
-
-But a special case, with a code change in other points, can become a problem for many.
-
-It's not nice to say, but it seems I have to hope that my problem becomes a problem of many.
-
-Meanwhile, I'll find my own workaround of a probable serious btrfs bug.
-
-
-Thank you.
-
-Gdb
-
-
-> Hi,
->
-> Probably can try to use "-v" to enable more output print.
-> A quick look at the send / receive code, it seems a little bit risky.
-> It seems lack of specific error handlings, and in most cases, return the
-> same error code. I think it might be helpful, when a transfer succeed, the
-> command prints the transfer id, source / dest, and a specific "success"
-> string.
-> Such output could help the script to figure out if a transfer really
-> succeed.
->
-> The code is relatively new to me, I did not see retry logic in stream
-> handling, please correct me if I am wrong about this. So, I am not quite
-> sure about the transfer behavior, if the system subject to network issues
-> in heavy workload, in which packets missing or connect issues are not rare.
->
-> Since the test mentioned at the begining deletes the snapshots after a
-> transfer, while most users keep the middle snapshot even in cascading
-> transfer, probably the current btrfs and cmds still works for regular
-> users.
->
-> Thanks,
-> Xin
->
->
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 the body of a message to majordomo@vger.kernel.org

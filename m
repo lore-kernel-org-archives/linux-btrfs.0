@@ -1,109 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from celine.tisys.org ([85.25.117.166]:47406 "EHLO celine.tisys.org"
+Received: from mx2.suse.de ([195.135.220.15]:44589 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932997AbcL0TdR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Dec 2016 14:33:17 -0500
-Date: Tue, 27 Dec 2016 20:33:09 +0100
-From: Nils Holland <nholland@tisys.org>
-To: Michal Hocko <mhocko@kernel.org>
-Cc: Mel Gorman <mgorman@suse.de>, Johannes Weiner <hannes@cmpxchg.org>,
+        id S1751105AbcL1Iv1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Dec 2016 03:51:27 -0500
+Date: Wed, 28 Dec 2016 09:51:17 +0100
+From: Michal Hocko <mhocko@kernel.org>
+To: kbuild test robot <lkp@intel.com>
+Cc: kbuild-all@01.org, Nils Holland <nholland@tisys.org>,
+        Mel Gorman <mgorman@suse.de>, Johannes Weiner <hannes@cmpxchg.org>,
         Vladimir Davydov <vdavydov.dev@gmail.com>,
         Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>,
         linux-kernel@vger.kernel.org, linux-mm@kvack.org,
         Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.cz>,
         linux-btrfs@vger.kernel.org
-Subject: Re: [RFC PATCH] mm, memcg: fix (Re: OOM: Better, but still there on)
-Message-ID: <20161227193308.GA17454@boerne.fritz.box>
-References: <20161222101028.GA11105@ppc-nas.fritz.box>
- <20161222191719.GA19898@dhcp22.suse.cz>
- <20161222214611.GA3015@boerne.fritz.box>
- <20161223105157.GB23109@dhcp22.suse.cz>
- <20161223121851.GA27413@ppc-nas.fritz.box>
- <20161223125728.GE23109@dhcp22.suse.cz>
- <20161223144738.GB23117@dhcp22.suse.cz>
- <20161223222559.GA5568@teela.multi.box>
- <20161226124839.GB20715@dhcp22.suse.cz>
- <20161227155532.GI1308@dhcp22.suse.cz>
+Subject: Re: [PATCH] mm, vmscan: consider eligible zones in get_scan_count
+Message-ID: <20161228085116.GC11470@dhcp22.suse.cz>
+References: <20161227155532.GI1308@dhcp22.suse.cz>
+ <201612280000.aOluloG2%fengguang.wu@intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20161227155532.GI1308@dhcp22.suse.cz>
+In-Reply-To: <201612280000.aOluloG2%fengguang.wu@intel.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 27, 2016 at 04:55:33PM +0100, Michal Hocko wrote:
-> Hi,
-> could you try to run with the following patch on top of the previous
-> one? I do not think it will make a large change in your workload but
-> I think we need something like that so some testing under which is known
-> to make a high lowmem pressure would be really appreciated. If you have
-> more time to play with it then running with and without the patch with
-> mm_vmscan_direct_reclaim_{start,end} tracepoints enabled could tell us
-> whether it make any difference at all.
+On Wed 28-12-16 00:28:38, kbuild test robot wrote:
+> Hi Michal,
+> 
+> [auto build test ERROR on mmotm/master]
+> [also build test ERROR on v4.10-rc1 next-20161224]
+> [if your patch is applied to the wrong git tree, please drop us a note to help improve the system]
+> 
+> url:    https://github.com/0day-ci/linux/commits/Michal-Hocko/mm-vmscan-consider-eligible-zones-in-get_scan_count/20161228-000917
+> base:   git://git.cmpxchg.org/linux-mmotm.git master
+> config: i386-tinyconfig (attached as .config)
+> compiler: gcc-6 (Debian 6.2.0-3) 6.2.0 20160901
+> reproduce:
+>         # save the attached .config to linux build tree
+>         make ARCH=i386 
+> 
+> All errors (new ones prefixed by >>):
+> 
+>    mm/vmscan.c: In function 'lruvec_lru_size_zone_idx':
+> >> mm/vmscan.c:264:10: error: implicit declaration of function 'lruvec_zone_lru_size' [-Werror=implicit-function-declaration]
+>       size = lruvec_zone_lru_size(lruvec, lru, zid);
 
-Of course, no problem!
-
-First, about the events to trace: mm_vmscan_direct_reclaim_start
-doesn't seem to exist, but mm_vmscan_direct_reclaim_begin does. I'm
-sure that's what you meant and so I took that one instead.
-
-Then I have to admit in both cases (once without the latest patch,
-once with) very little trace data was actually produced. In the case
-without the patch, the reclaim was started more often and reclaimed a
-smaller number of pages each time, in the case with the patch it was
-invoked less often, and with the last time it was invoked it reclaimed
-a rather big number of pages. I have no clue, however, if that
-happened "by chance" or if it was actually causes by the patch and
-thus an expected change.
-
-In both cases, my test case was: Reboot, setup logging, do "emerge
-firefox" (which unpacks and builds the firefox sources), then, when
-the emerge had come so far that the unpacking was done and the
-building had started, switch to another console and untar the latest
-kernel, libreoffice and (once more) firefox sources there. After that
-had completed, I aborted the emerge build process and stopped tracing.
-
-Here's the trace data captured without the latest patch applied:
-
-khugepaged-22    [000] ....   566.123383: mm_vmscan_direct_reclaim_begin: order=9 may_writepage=1 gfp_flags=GFP_TRANSHUGE classzone_idx=3
-khugepaged-22    [000] .N..   566.165520: mm_vmscan_direct_reclaim_end: nr_reclaimed=1100
-khugepaged-22    [001] ....   587.515424: mm_vmscan_direct_reclaim_begin: order=9 may_writepage=1 gfp_flags=GFP_TRANSHUGE classzone_idx=3
-khugepaged-22    [000] ....   587.596035: mm_vmscan_direct_reclaim_end: nr_reclaimed=1029
-khugepaged-22    [001] ....   599.879536: mm_vmscan_direct_reclaim_begin: order=9 may_writepage=1 gfp_flags=GFP_TRANSHUGE classzone_idx=3
-khugepaged-22    [000] ....   601.000812: mm_vmscan_direct_reclaim_end: nr_reclaimed=1100
-khugepaged-22    [001] ....   601.228137: mm_vmscan_direct_reclaim_begin: order=9 may_writepage=1 gfp_flags=GFP_TRANSHUGE classzone_idx=3
-khugepaged-22    [001] ....   601.309952: mm_vmscan_direct_reclaim_end: nr_reclaimed=1081
-khugepaged-22    [001] ....   694.935267: mm_vmscan_direct_reclaim_begin: order=9 may_writepage=1 gfp_flags=GFP_TRANSHUGE classzone_idx=3
-khugepaged-22    [001] .N..   695.081943: mm_vmscan_direct_reclaim_end: nr_reclaimed=1071
-khugepaged-22    [001] ....   701.370707: mm_vmscan_direct_reclaim_begin: order=9 may_writepage=1 gfp_flags=GFP_TRANSHUGE classzone_idx=3
-khugepaged-22    [001] ....   701.372798: mm_vmscan_direct_reclaim_end: nr_reclaimed=1089
-khugepaged-22    [001] ....   764.752036: mm_vmscan_direct_reclaim_begin: order=9 may_writepage=1 gfp_flags=GFP_TRANSHUGE classzone_idx=3
-khugepaged-22    [000] ....   771.047905: mm_vmscan_direct_reclaim_end: nr_reclaimed=1039
-khugepaged-22    [000] ....   781.760515: mm_vmscan_direct_reclaim_begin: order=9 may_writepage=1 gfp_flags=GFP_TRANSHUGE classzone_idx=3
-khugepaged-22    [001] ....   781.826543: mm_vmscan_direct_reclaim_end: nr_reclaimed=1040
-khugepaged-22    [001] ....   782.595575: mm_vmscan_direct_reclaim_begin: order=9 may_writepage=1 gfp_flags=GFP_TRANSHUGE classzone_idx=3
-khugepaged-22    [000] ....   782.638591: mm_vmscan_direct_reclaim_end: nr_reclaimed=1040
-khugepaged-22    [001] ....   782.930455: mm_vmscan_direct_reclaim_begin: order=9 may_writepage=1 gfp_flags=GFP_TRANSHUGE classzone_idx=3
-khugepaged-22    [001] ....   782.993608: mm_vmscan_direct_reclaim_end: nr_reclaimed=1040
-khugepaged-22    [001] ....   783.330378: mm_vmscan_direct_reclaim_begin: order=9 may_writepage=1 gfp_flags=GFP_TRANSHUGE classzone_idx=3
-khugepaged-22    [001] ....   783.369653: mm_vmscan_direct_reclaim_end: nr_reclaimed=1040
-
-And this is the same with the patch applied:
-
-khugepaged-22    [001] ....   523.599997: mm_vmscan_direct_reclaim_begin: order=9 may_writepage=1 gfp_flags=GFP_TRANSHUGE classzone_idx=3
-khugepaged-22    [001] ....   523.683110: mm_vmscan_direct_reclaim_end: nr_reclaimed=1092
-khugepaged-22    [001] ....   535.345477: mm_vmscan_direct_reclaim_begin: order=9 may_writepage=1 gfp_flags=GFP_TRANSHUGE classzone_idx=3
-khugepaged-22    [001] ....   535.401189: mm_vmscan_direct_reclaim_end: nr_reclaimed=1078
-khugepaged-22    [000] ....   692.876716: mm_vmscan_direct_reclaim_begin: order=9 may_writepage=1 gfp_flags=GFP_TRANSHUGE classzone_idx=3
-khugepaged-22    [001] ....   703.312399: mm_vmscan_direct_reclaim_end: nr_reclaimed=197759
-
-If my test case and thus the results don't sound good, I could of
-course try some other test cases ... like capturing for a longer
-period of time or trying to produce more memory pressure by running
-more processes at the same time, or something like that.
-
-Besides that I can say that the patch hasn't produced any warnings or
-other issues so far, so at first glance, it doesn't seem to hurt
-anything.
-
-Greetings
-Nils
+this patch depends on the previous one
+http://lkml.kernel.org/r/20161226124839.GB20715@dhcp22.suse.cz
+-- 
+Michal Hocko
+SUSE Labs

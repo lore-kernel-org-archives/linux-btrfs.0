@@ -1,209 +1,160 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:55653 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1753708AbcL2Wb5 (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:37386 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751075AbcL3ArR (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Dec 2016 17:31:57 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1cMjEj-0007Va-EE
-        for linux-btrfs@vger.kernel.org; Thu, 29 Dec 2016 23:31:49 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: mounting failed any file on my filesystem
-Date: Thu, 29 Dec 2016 22:31:29 +0000 (UTC)
-Message-ID: <pan$623d2$cd2f67c9$e174a628$49552d7a@cox.net>
-References: <1707774.BW2KGqTm4d@dibsi>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+        Thu, 29 Dec 2016 19:47:17 -0500
+Subject: Re: Btrfs send does not preserve reflinked files within subvolumes.
+To: Glenn Washburn <development@efficientek.com>
+References: <20161228204430.348cb61f@crass-Ideapad-Z570>
+ <c4956c5f-b9e2-fe28-0c0d-4e6a03da9a7c@cn.fujitsu.com>
+ <20161229042055.17e4774e@crass-Ideapad-Z570>
+CC: <linux-btrfs@vger.kernel.org>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <a9f1fb46-5311-2279-68a0-66cf9979ebac@cn.fujitsu.com>
+Date: Fri, 30 Dec 2016 08:47:07 +0800
+MIME-Version: 1.0
+In-Reply-To: <20161229042055.17e4774e@crass-Ideapad-Z570>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Jan Koester posted on Thu, 29 Dec 2016 20:05:35 +0100 as excerpted:
+Hi Glenn,
 
-> Hi,
-> 
-> i have problem with filesystem if my system crashed i have made been
-> hard reset of the system after my Filesystem was crashed. I have already
-> tried to repair without success you can see it on log file. It's seem
-> one corrupted block brings complete filesystem to crashing.
-> 
-> Have anybody idea what happened with my filesystem ?
-> 
-> dmesg if open file:
-> [29450.404327] WARNING: CPU: 5 PID: 16161 at
-> /build/linux-lIgGMF/linux-4.8.11/ fs/btrfs/extent-tree.c:6945
-> __btrfs_free_extent.isra.71+0x8e2/0xd60 [btrfs]
+At 12/29/2016 06:20 PM, Glenn Washburn wrote:
+> Hi Qu,
+>
+> Thanks for your response.  I've attached the send file as you have
+> requested. The "-2" one is created from the same script modified to
+> create a snapshot of C called C.snap instead of setting C to readonly,
+> and sending C.snap instead of C.  The second version is to mirror what
+> you seemed to do in your reply.  Still no reflinking.  I've included
+> the original script and log again, which was modified to show more
+> verbose logging on the receive.
 
-First a disclaimer.  I'm a btrfs user and list regular, not a dev.  As 
-such I don't really read call traces much beyond checking the kernel 
-version, and don't do code.  It's likely that you will get a more 
-authoritative reply from someone who does, and it should take precedence, 
-but in the mean time, I can try to deal with the preliminaries.
+Confirmed it's kernel bug.
+Send stream doesn't contain the clone operation.
 
-Kernel 4.8.11, good.  But you run btrfs check below, and we don't have 
-the version of your btrfs-progs userspace.  Please report that too.
+So it's kernel send to blame.
 
-> btrfs output:
-> root@dibsi:/home/jan# btrfs check /dev/disk/by-uuid/
-> 73d4dc77-6ff3-412f-9b0a-0d11458faf32
+>
+> As I was using btrgs-progs v4.4, I've compiled v4.9 to get the nice
+> --dump option for receive (which you seem to have added, kudos!).  The
+> output of the dump option is in the *.recv-dump.log files.  However, I
+> see no clone command in the output.
+>
+> Keep in mind that I'm running Ubuntu kernel 4.4.0-53-generic, which I
+> believe to be mostly v4.4.30 with a few patches.  Any ideas when send
+> started using "clone" in the kernel?
 
-Note that btrfs check is read-only by default.  It will report what it 
-thinks are errors, but won't attempt to fix them unless you add various 
-options (such as --repair) to tell it to do so.  This is by design and is 
-very important, as attempting to repair problems that it doesn't properly 
-understand could make the problems worse instead of better.  So even tho 
-the above command will only report what it sees as problems, not attempt 
-to fix them, you did the right thing by running check without --repair 
-first, and posting the results here for an expert to look at and tell you 
-whether to try --repair, or what else to try instead.
+Not pretty sure about from which exact kernel version send can detect 
+reflink.
 
-> Checking filesystem on
-> /dev/disk/by-uuid/73d4dc77-6ff3-412f-9b0a-0d11458faf32
-> UUID: 73d4dc77-6ff3-412f-9b0a-0d11458faf32
-> checking extents
-> parent transid verify failed on 2280458502144 wanted 861168
-> found 860380
-> parent transid verify failed on 2280458502144 wanted 861168
-> found 860380
-> checksum verify failed on 2280458502144 found FC3DF84D
-> wanted 2164EB93
-> checksum verify failed on 2280458502144 found FC3DF84D
-> wanted 2164EB93
-> bytenr mismatch, want=2280458502144, have=15938383240448
-[...]
+AFAIC I sent an RFC patch to disable reflink detection in send in July 
+2016, and it just got rejected.
 
-Some other information that we normally ask for includes the output from 
-a few other btrfs commands.
+So I assume at least v4.6 kernel works.
 
-It's unclear from your report if the filesystem will mount at all.  The 
-subject says mount failed, but then it mentions any file on the 
-filesystem, which seems to imply that you could mount, but that any file 
-you attempted to actually access after mounting crashes the system with 
-the trace you posted, so I'm not sure if you can actually mount the 
-filesystem at all.
+Thanks,
+Qu
 
-If you can't mount the filesystem, at least try to post the output from...
+>
+> Thanks,
+> Glenn
+>
+> On Thu, 29 Dec 2016 13:55:46 +0800
+> Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>
+>> Hi,
+>>
+>> I tried just what you did, and use "btrfs receive --dump" to exam the
+>> send stream.
+>>
+>> And things works quite well:
+>>
+>> $ sudo mount /dev/sda6  /mnt/btrfs/
+>> $ sudo btrfs subvolume create /mnt/btrfs/subv1
+>> $ sudo xfs_io -f -c "pwrite 0 2M" /mnt/btrfs/subv1/file1
+>> $ sudo xfs_io -f -c "reflink /mnt/btrfs/subv1/file1 0 0 2M"
+>> /mnt/btrfs/subv1/file1.ref
+>> $ sudo btrfs subv snap -r /mnt/btrfs/subv1/ /mnt/btrfs/ro_snap
+>> $ sudo btrfs send /mnt/btrfs/ro_snap/ > /tmp/output
+>> $ sudo btrfs receive --dump < /tmp/output
+>>
+>> And the output shows like this:
+>> subvol          ./ro_snap
+>> uuid=e788bb6e-8ec6-dd47-a452-e26196d22699 transid=9
+>> chown           ./ro_snap/                      gid=0 uid=0
+>> chmod           ./ro_snap/                      mode=755
+>> utimes          ./ro_snap/
+>> atime=2016-12-29T13:46:00+0800 mtime=2016-12-29T13:46:50+0800
+>> ctime=2016-12-29T13:46:50+0800
+>> mkfile          ./ro_snap/o257-8-0rename          ./ro_snap/o257-8-0
+>>           dest=./ro_snap/file1
+>> utimes          ./ro_snap/
+>> atime=2016-12-29T13:46:00+0800 mtime=2016-12-29T13:46:50+0800
+>> ctime=2016-12-29T13:46:50+0800
+>> write           ./ro_snap/file1                 offset=0 len=49152
+>> write           ./ro_snap/file1                 offset=49152 len=49152
+>> <snip normal write for file1>
+>> write           ./ro_snap/file1                 offset=2064384
+>> len=32768 truncate        ./ro_snap/file1                 size=2097152
+>> chown           ./ro_snap/file1                 gid=0 uid=0
+>> chmod           ./ro_snap/file1                 mode=600
+>> utimes          ./ro_snap/file1
+>> atime=2016-12-29T13:46:24+0800 mtime=2016-12-29T13:46:24+0800
+>> ctime=2016-12-29T13:46:24+0800
+>> mkfile          ./ro_snap/o258-8-0rename          ./ro_snap/o258-8-0
+>>           dest=./ro_snap/file1.ref
+>> utimes          ./ro_snap/
+>> atime=2016-12-29T13:46:00+0800 mtime=2016-12-29T13:46:50+0800
+>> ctime=2016-12-29T13:46:50+0800
+>> clone           ./ro_snap/file1.ref             offset=0 len=2097152
+>> from=./ro_snap/file1 clone_offset=0
+>> ^^^ Here is the clone operation
+>>
+>> truncate        ./ro_snap/file1.ref             size=2097152
+>> chown           ./ro_snap/file1.ref             gid=0 uid=0
+>> chmod           ./ro_snap/file1.ref             mode=600
+>> utimes          ./ro_snap/file1.ref
+>> atime=2016-12-29T13:46:50+0800 mtime=2016-12-29T13:47:07+0800
+>> ctime=2016-12-29T13:47:07+0800
+>>
+>> And in fact, btrfs send can even handle reflink to parent subvolume.
+>> (Although this behavior can be deadly for heavily reflinked files)
+>>
+>>
+>> So, would you please upload the send stream for us to check?
+>>
+>> Thanks,
+>> Qu
+>>
+>> At 12/29/2016 10:44 AM, Glenn Washburn wrote:
+>>> I'm having a hard time getting btrfs receive to create reflinked
+>>> files and have a trivial example that I believe *should* work but
+>>> doesn't. I've attached a script that I used to perform this test,
+>>> so others can try to reproduce.  The text file is the output of the
+>>> shell script except the last command, which is a tool I wrote to
+>>> print the extent info from FIEMAP.  "btrfs fi du" would work just
+>>> as well, but I'm on Ubuntu 16.04, whose btrfs progs doesn't have
+>>> that command yet.  I've also tested on Ubuntu 16.10 with similar
+>>> results, except that "btrfs fi du" is on that version and confirms
+>>> what my tool displays.
+>>>
+>>> So, can send not do what I'm trying to get it to do? If it can now,
+>>> when did that feature get introduced (must have been after kernel
+>>> 4.8)?  I'm very surprised that this feature wouldn't have already
+>>> been done and if not that no one seems to be complaining about it.
+>>> I've done a decent amount of searching on this and have come up with
+>>> nothing.  Any help would be greatly appreciated.
+>>>
+>>> Thanks,
+>>> Glenn
+>>>
+>>>
+>>
+>>
+>
+>
 
-btrfs filesystem show
-
-If you can mount the filesystem, then the much more detailed...
-
-btrfs filesystem usage
-
-... if your btrfs-progs is new enough, or...
-
-btrfs filesystem df
-
-... if btrfs-progs is too old to have the usage command.
-
-Also, if it's not clear from the output of the commands above (usage by 
-itself, or show plus df, should answer most of the below, but show alone 
-only provides some of the information), tell us a bit more about the 
-filesystem in question:
-
-Single device (like traditional filesystems) or multiple device?  If 
-multiple device, what raid levels if you know them, or did you just go 
-with the defaults.  If single device, again, defaults, or did you specify 
-single or dup, particularly for metadata.
-
-Also, how big was the filesystem and how close to full?  And was it on 
-ssd, spinning rust, or on top of something virtual (like a VM image 
-existing as a file on the host, or lvm, or mdraid, etc)?
-
-
-Meanwhile, if you can mount, the first thing I'd try is btrfs scrub 
-(unless you were running btrfs raid56 mode, which makes things far more 
-complex as it's not stable yet and isn't recommended except for testing 
-with data you can afford to lose).  Often, a scrub can fix much of the 
-damage of a crash if you were running raid1 mode (multi-device metadata 
-default), raid10, or dup (single device metadata default, except on ssd), 
-as those have a second checksummed copy that will often be correct that 
-scrub can use to fix the bad copy, but it will detect but be unable to 
-fix damage in single mode (default for data) or raid0 mode, as those 
-don't have a second copy available to fix the first.
-
-Because the default for single device btrfs is dup metadata, single data, 
-in that case the scrub should fix most or all of metadata, allowing you 
-to access small file (roughly anything under a couple KiB) and larger 
-files that weren't themselves damaged, but you may still have damage in 
-some files of any significant size.
-
-But scrub can only run if you can mount the filesystem.  If you can't, 
-then you have to try other things in ordered to get it mountable, first.  
-Many of these other things tend to be much more complex and risky, so if 
-you can mount at all, try scrub first, and see how much it helps.  Here 
-I'm dual-device raid1 for nearly all my btrfs, and (assuming I can mount 
-the affected filesystem, which I usually can) I now run scrub first thing 
-after a crash, as a preventative measure even without knowing if the 
-filesystem was damaged or not.
-
-If the filesystem won't mount, then the recommendation is /likely/ to be 
-trying the usebackuproot mount option (which replaced the older recovery 
-mount option, but you're using a new enough kernel for usebackuproot), 
-which will try some older tree roots if the newest one is damaged.  You 
-may have to use that option with readonly, which of course will prevent 
-running scrub or the like while mounted, but may help you get access to 
-the data at least to freshen up your backups.  However, usebackuproot 
-will by definition sacrifice the last seconds of writes before the crash, 
-and while I'd probably try this option on my own system without asking, 
-I'm not comfortable recommending it to others, so I'd suggest waiting for 
-one of the higher experts to confirm, before trying it yourself.
-
-Beyond usebackuproot, you get into more risky attempts to repair that may 
-instead do further damage if they don't work.  This is where btrfs check 
---repair lives, along with some other check options, btrfs rescue, etc.  
-Unless specifically told otherwise by an expert after they look at the 
-filesystem info, these are risky enough that if at all possible, you want 
-to freshen your backups before you try them.
-
-That's where btrfs restore comes in, as it lets you try to attempt 
-restoring files from an unmountable filesystem, while not actually 
-writing to that filesystem, thus not risking doing further damage, in the 
-process.  Of course that means you have to have some place to put the 
-files it's going to restore.  In simple mode you just run btrfs restore 
-with commandline parameters telling it what device to try to restore from 
-and where to put the restored files (and some options telling it whether 
-to try restoring metadata like file ownership, permissions, dates, etc), 
-and it just works.
-
-However, should btrfs restore's simple mode fail, there's more complex 
-advanced modes to try, still without risking further damage to the 
-filesystem in question, but that gets complex enough it needs its own 
-post... if you come to that.  There's a page on the wiki with some 
-instructions, but they may not be current and it's a complex enough 
-operation that most people need help beyond what's on the wiki (and in 
-the btrfs-restore manpage), anyway.  But here's the link so you can take 
-a look at what the general operation looks like:
-
-https://btrfs.wiki.kernel.org/index.php/Restore
-
-Meanwhile, it's a bit late now, but in general, btrfs is considered still 
-in heavy development, stabilizing but not yet fully stable and mature.  
-As such, while any sysadmin worth the label will tell you that you are 
-defining any data you don't have backups for as not worth the time, 
-trouble and resources to do those backups, basically defining it as throw-
-away data because it's /not/ worth backing up or by definition you'd 
-/have/ those backups, even for normal stable and mature filesystems, with 
-btrfs still stabilizing, backups are even /more/ strongly recommended, as 
-is keeping them current within the window of data you're willing to lose 
-if you lose the primary copy, and keeping those backups practically 
-usable (not over a slow net link that'll take over a week to download in 
-ordered to restore, for instance, one real case that was posted).  If 
-you're doing that then losing a filesystem isn't going to be a big stress 
-and you can afford to skip the real complex and risky stuff (unless 
-you're simply doing it to learn how) and just restore from backup, as it 
-will be simpler.  If not, then you should really reexamine whether btrfs 
-is the right filesystem choice for you, because it /isn't/ yet fully 
-stable and mature, and chances are you'd be better off with a more stable 
-and mature filesystem where not having updated at-hand backups is less of 
-a risk (altho as I said any sysadmin worth the name will tell you not 
-having backups is literally defining the data as throw-away value, 
-because in the real world, "things happen", and there's too many of those 
-things possible in the real world to behave otherwise).
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
 

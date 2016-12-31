@@ -1,75 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:44298 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1750696AbcLaFFX (ORCPT
+Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:46279 "EHLO
+        cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1752580AbcLaHba (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 31 Dec 2016 00:05:23 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1cNBqz-0006hB-8e
-        for linux-btrfs@vger.kernel.org; Sat, 31 Dec 2016 06:05:13 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: mounting failed any file on my filesystem
-Date: Sat, 31 Dec 2016 05:05:03 +0000 (UTC)
-Message-ID: <pan$bd7c7$afa10b63$6e7887fc$c8620080@cox.net>
-References: <1707774.BW2KGqTm4d@dibsi>
-        <pan$623d2$cd2f67c9$e174a628$49552d7a@cox.net> <2145119.sEvPFsN8jE@dibsi>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+        Sat, 31 Dec 2016 02:31:30 -0500
+Subject: Re: [PATCH 0/3] introduce type based delalloc metadata reserve to fix
+ some false enospc issues
+To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+References: <1478853587-28717-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
+Cc: clm@fb.com, jbacik@fb.com, dsterba@suse.com, holger@applied-asynchrony.com
+From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
+Message-ID: <310b5ef9-3e08-129d-66bf-500478e65424@profihost.ag>
+Date: Sat, 31 Dec 2016 08:31:26 +0100
+MIME-Version: 1.0
+In-Reply-To: <1478853587-28717-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset=iso-8859-15
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Jan Koester posted on Fri, 30 Dec 2016 13:17:37 +0100 as excerpted:
+Any news on this series? I can't see it in 4.9 nor in 4.10-rc
 
-> sudo btrfs filesystem df /mnt
-> Data, RAID6: total=1.22TiB, used=0.00B
-> System, RAID6: total=96.00MiB, used=0.00B
-> Metadata, RAID6: total=8.25GiB, used=80.00KiB
-> GlobalReserve, single: total=512.00MiB, used=8.00KiB
+Stefan
 
-Expanding on what I already mentioned in passing (hoping it wasn't the 
-case), raid56 mode (so including your raid6) remains quite unstable, with 
-known problems that make it unsuitable for the sort of purposes people 
-normally run parity-raid for.  So it's actively negatively recommended 
-unless you're running it for the specific purpose of trying to help the 
-devs work out the problems with it, using only throw-away-value test data 
-in case those problems eat it, which unfortunately they have a 
-significantly real chance of doing, with raid56 at this point.
-
-So you need to get off of it ASAP, and hope any data that wasn't already 
-throw-away-value, doesn't end up being thrown away anyway, in the process.
-
-Unfortunately, as I said in the earlier post, I'm just a user, tho a list 
-regular, myself, not a dev.  And I've been staying well away from raid56 
-/because/ of these problems (as well as because it didn't fit my use-case 
-in the first place), so other than noting the severity of the issues, 
-I've not really been paying attention to the various threads with people 
-trying to fix the problems and save at least some of their raid56 stored 
-data.
-
-So if you want to try to save the data, you'll need help from a dev or 
-higher level expert, or failing that, at least to examine the last couple 
-2-3 months worth of list threads and find the raid56 ones with methods to 
-try to save what can be saved, and possibly to patch at least some of the 
-problems in ordered to not make the problem worse while you're doing so.
-
-But it's going to require some reasonable technical know-how to try to do 
-that, as well as the time and hassle, so honestly, unless that data's 
-/really/ worth it, it may be better to simply cut and run, doing a fresh 
-mkfs and being done with btrfs raid56 for now, without spending more time 
-on it, only to find you can't save much anyway.  Tho if it's worth it to 
-you, you may be able to save much of it, but you could spend a month's 
-man-hours doing it too and possibly still come up empty.  Plus be 
-careful, because stuff like scrub that would normally help, can make the 
-problem much much worse in the case of raid56 ATM.  Yes, the problems 
-with it ATM *are* that bad.  Unfortunately.  There's actually talk of 
-scrapping the code (almost?) entirely and starting over again, as there's 
-a real question as to whether it can even be properly fixed, tho I'm not 
-sure it will come to that.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Am 11.11.2016 um 09:39 schrieb Wang Xiaoguang:
+> When having compression enabled, Stefan Priebe ofen got enospc errors
+> though fs still has much free space. Qu Wenruo also has submitted a
+> fstests test case which can reproduce this bug steadily, please see
+> url: https://patchwork.kernel.org/patch/9420527
+> 
+> First patch[1/3] "btrfs: improve inode's outstanding_extents computation" is to
+> fix outstanding_extents and reserved_extents account issues. This issue was revealed
+> by modifying BTRFS_MAX_EXTENT_SIZE(128MB) to 64KB, When modifying
+> BTRFS_MAX_EXTENT_SIZE(128MB) to 64KB, fsstress test often gets these warnings from
+> btrfs_destroy_inode():
+>         WARN_ON(BTRFS_I(inode)->outstanding_extents);
+>         WARN_ON(BTRFS_I(inode)->reserved_extents);
+> Please see this patch's commit message for detailed info, and this patch is
+> necessary to patch2 and patch3.
+> 
+> For false enospc, the root reasson is that for compression, its max extent size will
+> be 128k, not 128MB. If we still use 128MB as max extent size to reserve metadata for
+> compression, obviously it's not appropriate. In patch "btrfs: Introduce COMPRESS
+> reserve type to fix false enospc for compression" commit message,
+> we explain why false enospc error occurs, please see it for detailed info.
+> 
+> To fix this issue, we introduce a new enum type:
+> 	enum btrfs_metadata_reserve_type {
+> 		BTRFS_RESERVE_NORMAL,
+>         	BTRFS_RESERVE_COMPRESS,
+> 	};
+> For btrfs_delalloc_[reserve|release]_metadata() and
+> btrfs_delalloc_[reserve|release]_space(), we introce a new btrfs_metadata_reserve_type
+> argument, then if a path needs to go compression, we pass BTRFS_RESERVE_COMPRESS,
+> otherwise pass BTRFS_RESERVE_NORMAL.
+> 
+> With these patchs, Stefan no longer saw such false enospc errors, and Qu Wenruo's
+> fstests test case will also pass. I have also run whole fstests multiple times,
+> no regression occurs, thanks.
+> 
+> Wang Xiaoguang (3):
+>   btrfs: improve inode's outstanding_extents computation
+>   btrfs: introduce type based delalloc metadata reserve
+>   btrfs: Introduce COMPRESS reserve type to fix false enospc for
+>     compression
+> 
+>  fs/btrfs/ctree.h             |  36 +++++--
+>  fs/btrfs/extent-tree.c       |  52 ++++++---
+>  fs/btrfs/extent_io.c         |  61 ++++++++++-
+>  fs/btrfs/extent_io.h         |   5 +
+>  fs/btrfs/file.c              |  25 +++--
+>  fs/btrfs/free-space-cache.c  |   6 +-
+>  fs/btrfs/inode-map.c         |   6 +-
+>  fs/btrfs/inode.c             | 246 ++++++++++++++++++++++++++++++++++---------
+>  fs/btrfs/ioctl.c             |  16 +--
+>  fs/btrfs/relocation.c        |  14 ++-
+>  fs/btrfs/tests/inode-tests.c |  15 +--
+>  11 files changed, 381 insertions(+), 101 deletions(-)
+> 

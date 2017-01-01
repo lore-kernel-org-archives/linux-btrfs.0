@@ -1,30 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:59369 "EHLO mx2.suse.de"
+Received: from mout.gmx.net ([212.227.17.20]:61686 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1758174AbdAERn4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 5 Jan 2017 12:43:56 -0500
-Date: Thu, 5 Jan 2017 18:43:38 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: fix false enospc error when truncating heavily
- reflinked file
-Message-ID: <20170105174338.GA12081@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20160907121738.23713-1-wangxg.fnst@cn.fujitsu.com>
- <4e3e1e7e-aeaf-9b81-0b0e-d1311f2b7ef1@cn.fujitsu.com>
+        id S1752989AbdAAEi1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 31 Dec 2016 23:38:27 -0500
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <4e3e1e7e-aeaf-9b81-0b0e-d1311f2b7ef1@cn.fujitsu.com>
+Message-ID: <trinity-99778bf7-78b4-4455-8c1a-32e20c3e71e8-1483245504786@3capp-mailcom-bs08>
+From: "Xin Zhou" <xin.zhou@gmx.com>
+To: "Peter Becker" <floyd.net@gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [markfasheh/duperemove] Why blocksize is limit to 1MB?
+Content-Type: text/plain; charset=UTF-8
+Date: Sun, 1 Jan 2017 05:38:24 +0100
+In-Reply-To: <CAEtw4r0-wgdQj4nO9HxCFvzXpRVhU=nqcKxRmDUsFVBuVrfong@mail.gmail.com>
+References: <CAEtw4r0-wgdQj4nO9HxCFvzXpRVhU=nqcKxRmDUsFVBuVrfong@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 04, 2017 at 03:52:47PM +0800, Qu Wenruo wrote:
-> Any comment on this patch?
-> 
-> Without it, btrfs will always fail for generic/387.
+Hi,
 
-The fix looks good to me, adding it to next. There's a very similar
-pattern in btrfs_punch_hole, but this function uses the trans reserve
-and not truncate reserve. The modified reproducer does not trigger the
-enospc, but it also could try harder.
+In general, the larger the block / chunk size is, the less dedup can be achieved.
+1M is already a little bit too big in size.
+
+Thanks,
+Xin
+
+ 
+ 
+
+Sent: Friday, December 30, 2016 at 12:28 PM
+From: "Peter Becker" <floyd.net@gmail.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: [markfasheh/duperemove] Why blocksize is limit to 1MB?
+Hello, i have a 8 TB volume with multiple files with hundreds of GB each.
+I try to dedupe this because the first hundred GB of many files are identical.
+With 128KB blocksize with nofiemap and lookup-extends=no option, will
+take more then a week (only dedupe, previously hashed). So i tryed -b
+100M but this returned me an error: "Blocksize is bounded ...".
+
+The reason is that the blocksize is limit to
+
+#define MAX_BLOCKSIZE (1024U*1024)
+
+But i can't found any description why.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at http://vger.kernel.org/majordomo-info.html

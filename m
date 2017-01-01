@@ -1,72 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:60685 "EHLO mout.gmx.net"
+Received: from odin.sdf-eu.org ([178.63.35.194]:65496 "EHLO sdfeu.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1755136AbdAARZA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 1 Jan 2017 12:25:00 -0500
-From: Jan Koester <jan.koester@gmx.net>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: mounting failed any file on my filesystem
-Date: Sun, 01 Jan 2017 18:24:53 +0100
-Message-ID: <2674218.ScDppde5Xv@dibsi>
-In-Reply-To: <pan$bd7c7$afa10b63$6e7887fc$c8620080@cox.net>
-References: <1707774.BW2KGqTm4d@dibsi> <2145119.sEvPFsN8jE@dibsi> <pan$bd7c7$afa10b63$6e7887fc$c8620080@cox.net>
+        id S1755167AbdAAXkU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 1 Jan 2017 18:40:20 -0500
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=UTF-8;
+ format=flowed
+Date: Mon, 02 Jan 2017 00:29:52 +0100
+From: none <ytrezq@sdf-eu.org>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: How to recover a filesystem without formatting nor using the
+ btrfs check command.
+In-Reply-To: <2166adfe-88af-5d9a-295f-d7002d64ed0e@cn.fujitsu.com>
+References: <580944C7.103@sdf-eu.org>
+ <8c5ae48c-4af6-42d9-be0f-06d232764ff2@cn.fujitsu.com>
+ <36f56365-27ac-878e-c5fb-f414646eda3a@sdf-eu.org>
+ <61df188a-bc12-c9c4-0322-766df4fb18c0@cn.fujitsu.com>
+ <a8b030a4fab174ade203bf061151f270@mx.sdfeu.org>
+ <08227414-b241-28a5-bbc6-7fb21d4b3e62@cn.fujitsu.com>
+ <7dcfffa62234ff0fa5ae060f75df25f1@mx.sdfeu.org>
+ <2166adfe-88af-5d9a-295f-d7002d64ed0e@cn.fujitsu.com>
+Message-ID: <866efefad9d62f7f00c117edc4715651@mx.sdfeu.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Samstag, 31. Dezember 2016 05:05:03 CET Duncan wrote:
-> Jan Koester posted on Fri, 30 Dec 2016 13:17:37 +0100 as excerpted:
-> > sudo btrfs filesystem df /mnt
-> > Data, RAID6: total=1.22TiB, used=0.00B
-> > System, RAID6: total=96.00MiB, used=0.00B
-> > Metadata, RAID6: total=8.25GiB, used=80.00KiB
-> > GlobalReserve, single: total=512.00MiB, used=8.00KiB
+Le 2016-10-27 03:11, Qu Wenruo a écrit :
+> At 10/26/2016 07:52 PM, none wrote:
+>> Le 2016-10-26 03:43, Qu Wenruo a écrit :
+>>> Unfortunately, low memory mode is right here.
+>>> 
+>>> If btrfs-image dump the image correctly, your extent tree is really
+>>> screwed up.
+>>> 
+>>> And how badly it is screwed up?
+>>> It only contains the basic block group info.
+>>> Almost empty, without any really useful EXTENT_ITEM/METADATA_ITEM.
+>>> You can check it by btrfs-debug-tree -t extent.
+>>> Normally, one EXTENT_DATA or tree block should have corresponding
+>>> EXTENT_ITEM or METADATA_ITEM in extent tree.
+>>> 
+>>> But in your dump, I only find EXTENT_ITEM less than a dozen, which is
+>>> totally abnormal for the used size of your fs.
+>> Please note df -h report 55Gb used due to a very high compression 
+>> ratio.
+>> Basically most of the theoretical used space is done by less than 100
+>> files. I want to delete them
+>>> That's why lowmem mode is reporting so many backref lost.
+>> Whithout the lowmem mode, only 3 lines are reported :
+>> 
+>> Failed to find [75191291904, 168, 4096]
+>> btrfs unable to find ref byte nr 75191291904 parent 0 root 1  owner 1
+>> offset 0
+>> Failed to find [75191316480, 168, 4096]
+>> btrfs unable to find ref byte nr 75191316480 parent 0 root 1  owner 0
+>> offset 1
+>> parent transid verify failed on 75191349248 wanted 3555361 found 
+>> 3555362
+>> Ignoring transid failure
+>> 
+>> and then it’s cpu locked.
 > 
-> Expanding on what I already mentioned in passing (hoping it wasn't the
-> case), raid56 mode (so including your raid6) remains quite unstable, with
-> known problems that make it unsuitable for the sort of purposes people
-> normally run parity-raid for.  So it's actively negatively recommended
-> unless you're running it for the specific purpose of trying to help the
-> devs work out the problems with it, using only throw-away-value test data
-> in case those problems eat it, which unfortunately they have a
-> significantly real chance of doing, with raid56 at this point.
+> It's the dead loop make btrfsck only able to check the first several
+> extents, no method to continue.
 > 
-> So you need to get off of it ASAP, and hope any data that wasn't already
-> throw-away-value, doesn't end up being thrown away anyway, in the process.
+> If we solve the dead loop, then there won't be less error report from
+> original btrfsck.
+> (lowmem mode just avoid the possibility to dead loop by its design)
 > 
-> Unfortunately, as I said in the earlier post, I'm just a user, tho a list
-> regular, myself, not a dev.  And I've been staying well away from raid56
-> /because/ of these problems (as well as because it didn't fit my use-case
-> in the first place), so other than noting the severity of the issues,
-> I've not really been paying attention to the various threads with people
-> trying to fix the problems and save at least some of their raid56 stored
-> data.
+>> 
+>>> It's almost a miracle that you can still write data into the fs.
+>>> And I heavily doubt the correctness of your existing files.
+>> They are definitely correct. I have several root filesystem and I can
+>> chroot to all of them (though I’m mounting the partition readonly in
+>> order to avoid dangerous writes in that case). In each case I tried
+>> python and ruby cgi scripts.
 > 
-> So if you want to try to save the data, you'll need help from a dev or
-> higher level expert, or failing that, at least to examine the last couple
-> 2-3 months worth of list threads and find the raid56 ones with methods to
-> try to save what can be saved, and possibly to patch at least some of the
-> problems in ordered to not make the problem worse while you're doing so.
+> You should check more, normally scrub will help, but considering the
+> state of btrfs, scrub may not work at all or make things worse.
 > 
-> But it's going to require some reasonable technical know-how to try to do
-> that, as well as the time and hassle, so honestly, unless that data's
-> /really/ worth it, it may be better to simply cut and run, doing a fresh
-> mkfs and being done with btrfs raid56 for now, without spending more time
-> on it, only to find you can't save much anyway.  Tho if it's worth it to
-> you, you may be able to save much of it, but you could spend a month's
-> man-hours doing it too and possibly still come up empty.  Plus be
-> careful, because stuff like scrub that would normally help, can make the
-> problem much much worse in the case of raid56 ATM.  Yes, the problems
-> with it ATM *are* that bad.  Unfortunately.  There's actually talk of
-> scrapping the code (almost?) entirely and starting over again, as there's
-> a real question as to whether it can even be properly fixed, tho I'm not
-> sure it will come to that.
+>>> As extent tree is screwed up, it's completely possible new write are
+>>> overwriting existing data.
+>> Though I only attempted to write to 3 files. But yes, this was 
+>> something
+>> I suspected : that writing damage things.
+>>> The only chance seems to be --init-extent-tree, but that's very
+>>> dangerous and I highly suspect the screwed up extent tree is caused 
+>>> by
+>>> interrupted extent tree rebuild.
+>> The problem is --init-extent-tree implies --repair which discard
+>> --mode=lowmem and cause the dead lock :
+>> https://bugzilla.kernel.org/show_bug.cgi?id=178781
+> 
+> Yes, that's the problem, and current situation may be caused by
+> interrupted extent tree rebuild.
+> 
+>>> Thanks,
+>>> Qu
+>>> 
+>> And finally, I found several corrupt directories yesterday.
+>> 
+>> Do you mean it’s impossible to rescue anything by repairing ? (this is
+>> something I doubt since most files are valid)
+> 
+> Not completely, I'm digging into the dead loop problem, and after that
+> you may still recover the fs(or part of it) using --init-extent-tree.
+> 
+> Thanks,
+> Qu
+> 
+>> 
+>> Thank you.
 
-I have backup of this data i wan't to help the Dev's too fix this bug because i 
-have enough hard drives.I can also give remote access to show what happend 
-with the filesystem or other thins that could he to fix this bug. I see at the 
-moment much things happened on the raid56 code.
+Hello, what’s the status of my report since last October ?
 
-
+thanks,

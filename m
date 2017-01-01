@@ -1,107 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:61134 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.20]:58596 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753230AbdAAJ2z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 1 Jan 2017 04:28:55 -0500
-Subject: Re: Btrfs send does not preserve reflinked files within subvolumes.
-To: Glenn Washburn <development@efficientek.com>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>
-References: <20161228204430.348cb61f@crass-Ideapad-Z570>
- <c4956c5f-b9e2-fe28-0c0d-4e6a03da9a7c@cn.fujitsu.com>
- <20161229042055.17e4774e@crass-Ideapad-Z570>
- <a9f1fb46-5311-2279-68a0-66cf9979ebac@cn.fujitsu.com>
- <20161231180614.3c78537b@crass-Ideapad-Z570>
-Cc: linux-btrfs@vger.kernel.org
+        id S1753230AbdAAJdt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 1 Jan 2017 04:33:49 -0500
+Subject: Re: [PATCH 0/3] introduce type based delalloc metadata reserve to fix
+ some false enospc issues
+To: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>,
+        Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
+        linux-btrfs@vger.kernel.org
+References: <1478853587-28717-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
+ <310b5ef9-3e08-129d-66bf-500478e65424@profihost.ag>
+Cc: clm@fb.com, jbacik@fb.com, dsterba@suse.com, holger@applied-asynchrony.com
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <6ac3a0db-91f7-14d9-b3ae-d95009100f2e@gmx.com>
-Date: Sun, 1 Jan 2017 17:28:22 +0800
+Message-ID: <2a3f8cb2-e4e9-e534-ee3d-ff5ad517e71a@gmx.com>
+Date: Sun, 1 Jan 2017 17:32:46 +0800
 MIME-Version: 1.0
-In-Reply-To: <20161231180614.3c78537b@crass-Ideapad-Z570>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+In-Reply-To: <310b5ef9-3e08-129d-66bf-500478e65424@profihost.ag>
+Content-Type: text/plain; charset=iso-8859-15; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Glenn,
+Hi Stefan,
 
-On 01/01/2017 08:06 AM, Glenn Washburn wrote:
-> Hey Qu,
->
-> On Fri, 30 Dec 2016 08:47:07 +0800
-> Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
->
->> Hi Glenn,
->>
->> Confirmed it's kernel bug.
->> Send stream doesn't contain the clone operation.
->>
->> So it's kernel send to blame.
->>
->>>
->>> As I was using btrgs-progs v4.4, I've compiled v4.9 to get the nice
->>> --dump option for receive (which you seem to have added, kudos!).
->>> The output of the dump option is in the *.recv-dump.log files.
->>> However, I see no clone command in the output.
->>>
->>> Keep in mind that I'm running Ubuntu kernel 4.4.0-53-generic, which
->>> I believe to be mostly v4.4.30 with a few patches.  Any ideas when
->>> send started using "clone" in the kernel?
->>
->> Not pretty sure about from which exact kernel version send can detect
->> reflink.
->>
->> AFAIC I sent an RFC patch to disable reflink detection in send in
->> July 2016, and it just got rejected.
->>
->> So I assume at least v4.6 kernel works.
->
-> I've tested with Ubuntu's 4.8 kernel and still no luck.  What kernel
-> version are you using? And what version of btrfs-progs?
+I'm trying to push it to for-next (will be v4.11), but no response yet.
 
-Mainline v4.8 and v4.9 works for me.
+It would be quite nice for you to test the following git pull and give 
+some feedback, so that we can merge it faster.
 
-Maybe Ubuntu adds some out-of-tree patch?
-Would you please try mainline kernel?
-
->
-> If I understand you correctly, you're trying to submit a patch that
-> disables reflink detection, which would prevent what I'm trying to do?
-
-Yes. But it's just an RFC patch, and IIRC Jeff from SUSE is working on a 
-new backref iteration algorithm to handle it.
-So the RFC patch will never be merged.
-
-> Why is this desired and is it able to be switched off?
-
-The patch doesn't get merged into mainline, so nothing to worry unless 
-Ubuntu picked it.
-And if Ubuntu picked it, unless Ubuntu guys add some black magic, no 
-method to disable it.
-
-The idea is, current backref walker will iterate *ALL* backrefs, to 
-ensure we can find correct owner to send out clone operation other than 
-normal write.
-
-Normally it works fine, but for case like in-band or out-of-band dedupe, 
-it's possible an extent to be referred millions times.
-
-Furthermore due to the bad designed backref walk algorithm, it takes 
-O(n^3)~O(n^4) time to iterate all backref.
-This means we will takes hours for one backref walk, hanging the fs.
-
-So, right now I'm not sure what's going wrong. I can only suggest to use 
-mainline kernel to test the behavior other than Ubuntu one.
-
-If it's not convenient for you to build mainline kernel, I would suggest 
-to extract kernel from Archlinux, whose kernel is almost mainline with 
-minium modification.
-(Any quite easy to extract, just unxz it)
+https://mail-archive.com/linux-btrfs@vger.kernel.org/msg60418.html
 
 Thanks,
 Qu
 
+On 12/31/2016 03:31 PM, Stefan Priebe - Profihost AG wrote:
+> Any news on this series? I can't see it in 4.9 nor in 4.10-rc
 >
-> Thanks,
-> Glenn
+> Stefan
+>
+> Am 11.11.2016 um 09:39 schrieb Wang Xiaoguang:
+>> When having compression enabled, Stefan Priebe ofen got enospc errors
+>> though fs still has much free space. Qu Wenruo also has submitted a
+>> fstests test case which can reproduce this bug steadily, please see
+>> url: https://patchwork.kernel.org/patch/9420527
+>>
+>> First patch[1/3] "btrfs: improve inode's outstanding_extents computation" is to
+>> fix outstanding_extents and reserved_extents account issues. This issue was revealed
+>> by modifying BTRFS_MAX_EXTENT_SIZE(128MB) to 64KB, When modifying
+>> BTRFS_MAX_EXTENT_SIZE(128MB) to 64KB, fsstress test often gets these warnings from
+>> btrfs_destroy_inode():
+>>         WARN_ON(BTRFS_I(inode)->outstanding_extents);
+>>         WARN_ON(BTRFS_I(inode)->reserved_extents);
+>> Please see this patch's commit message for detailed info, and this patch is
+>> necessary to patch2 and patch3.
+>>
+>> For false enospc, the root reasson is that for compression, its max extent size will
+>> be 128k, not 128MB. If we still use 128MB as max extent size to reserve metadata for
+>> compression, obviously it's not appropriate. In patch "btrfs: Introduce COMPRESS
+>> reserve type to fix false enospc for compression" commit message,
+>> we explain why false enospc error occurs, please see it for detailed info.
+>>
+>> To fix this issue, we introduce a new enum type:
+>> 	enum btrfs_metadata_reserve_type {
+>> 		BTRFS_RESERVE_NORMAL,
+>>         	BTRFS_RESERVE_COMPRESS,
+>> 	};
+>> For btrfs_delalloc_[reserve|release]_metadata() and
+>> btrfs_delalloc_[reserve|release]_space(), we introce a new btrfs_metadata_reserve_type
+>> argument, then if a path needs to go compression, we pass BTRFS_RESERVE_COMPRESS,
+>> otherwise pass BTRFS_RESERVE_NORMAL.
+>>
+>> With these patchs, Stefan no longer saw such false enospc errors, and Qu Wenruo's
+>> fstests test case will also pass. I have also run whole fstests multiple times,
+>> no regression occurs, thanks.
+>>
+>> Wang Xiaoguang (3):
+>>   btrfs: improve inode's outstanding_extents computation
+>>   btrfs: introduce type based delalloc metadata reserve
+>>   btrfs: Introduce COMPRESS reserve type to fix false enospc for
+>>     compression
+>>
+>>  fs/btrfs/ctree.h             |  36 +++++--
+>>  fs/btrfs/extent-tree.c       |  52 ++++++---
+>>  fs/btrfs/extent_io.c         |  61 ++++++++++-
+>>  fs/btrfs/extent_io.h         |   5 +
+>>  fs/btrfs/file.c              |  25 +++--
+>>  fs/btrfs/free-space-cache.c  |   6 +-
+>>  fs/btrfs/inode-map.c         |   6 +-
+>>  fs/btrfs/inode.c             | 246 ++++++++++++++++++++++++++++++++++---------
+>>  fs/btrfs/ioctl.c             |  16 +--
+>>  fs/btrfs/relocation.c        |  14 ++-
+>>  fs/btrfs/tests/inode-tests.c |  15 +--
+>>  11 files changed, 381 insertions(+), 101 deletions(-)
+>>
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org

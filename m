@@ -1,24 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f193.google.com ([209.85.161.193]:33548 "EHLO
-        mail-yw0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751440AbdABMcK (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Jan 2017 07:32:10 -0500
-Received: by mail-yw0-f193.google.com with SMTP id s68so35377140ywg.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 02 Jan 2017 04:32:09 -0800 (PST)
+Received: from mout.gmx.net ([212.227.15.15]:64072 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S933935AbdABTgF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 2 Jan 2017 14:36:05 -0500
 MIME-Version: 1.0
-In-Reply-To: <trinity-99778bf7-78b4-4455-8c1a-32e20c3e71e8-1483245504786@3capp-mailcom-bs08>
-References: <CAEtw4r0-wgdQj4nO9HxCFvzXpRVhU=nqcKxRmDUsFVBuVrfong@mail.gmail.com>
- <trinity-99778bf7-78b4-4455-8c1a-32e20c3e71e8-1483245504786@3capp-mailcom-bs08>
-From: Peter Becker <floyd.net@gmail.com>
-Date: Mon, 2 Jan 2017 13:32:08 +0100
-Message-ID: <CAEtw4r2ksf_m8r=Bn5YPazG39y65TKFG66ekQSL8FBYgwH3XtQ@mail.gmail.com>
-Subject: Re: [markfasheh/duperemove] Why blocksize is limit to 1MB?
-To: Xin Zhou <xin.zhou@gmx.com>
+Message-ID: <trinity-b8db84a6-4613-42c5-8eb6-38c8b1354184-1483385761401@3capp-mailcom-bs06>
+From: "Xin Zhou" <xin.zhou@gmx.com>
+To: "Peter Becker" <floyd.net@gmail.com>
 Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [markfasheh/duperemove] Why blocksize is limit to 1MB?
 Content-Type: text/plain; charset=UTF-8
+Date: Mon, 2 Jan 2017 20:36:01 +0100
+In-Reply-To: <CAEtw4r2ksf_m8r=Bn5YPazG39y65TKFG66ekQSL8FBYgwH3XtQ@mail.gmail.com>
+References: <CAEtw4r0-wgdQj4nO9HxCFvzXpRVhU=nqcKxRmDUsFVBuVrfong@mail.gmail.com>
+ <trinity-99778bf7-78b4-4455-8c1a-32e20c3e71e8-1483245504786@3capp-mailcom-bs08>,
+ <CAEtw4r2ksf_m8r=Bn5YPazG39y65TKFG66ekQSL8FBYgwH3XtQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
+
+Before doing that, probably one way to think about it could be,
+what would be the probablitity of two 100M blocks generate the same hash and be treated as identical.
+Thanks,
+Xin
+ 
+ 
+
+Sent: Monday, January 02, 2017 at 4:32 AM
+From: "Peter Becker" <floyd.net@gmail.com>
+To: "Xin Zhou" <xin.zhou@gmx.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [markfasheh/duperemove] Why blocksize is limit to 1MB?
 > 1M is already a little bit too big in size.
 
 Not in my usecase :)

@@ -1,34 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50077 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:50420 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1755805AbdABPQV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 2 Jan 2017 10:16:21 -0500
-Date: Mon, 2 Jan 2017 16:16:04 +0100
+        id S1750897AbdABPZr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 2 Jan 2017 10:25:47 -0500
+Date: Mon, 2 Jan 2017 16:25:31 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <n.borisov.lkml@gmail.com>
-Cc: linux-btrfs@vger.kernel.org, clm@fb.com, jbacik@fb.com, dsterba@suse.com
-Subject: Re: [PATCH] btrfs: Replace ACCESS_ONCE with (READ|WRITE)_ONCE
-Message-ID: <20170102151604.GI12081@twin.jikos.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Goldwyn Rodrigues <rgoldwyn@suse.de>,
+        Goldwyn Rodrigues <rgoldwyn@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: Get the highest inode for lost+found
+Message-ID: <20170102152531.GJ12081@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1482750489-13666-1-git-send-email-n.borisov.lkml@gmail.com>
+References: <20161220120854.4270-1-rgoldwyn@suse.de>
+ <bbcb3da4-bae9-6d2a-ad23-9239531aa5ea@cn.fujitsu.com>
+ <9b0ecf8e-dd7d-d019-9272-61a2ba00d0a6@suse.de>
+ <ed81b5d3-d39c-f725-87e8-4e317c790aa9@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1482750489-13666-1-git-send-email-n.borisov.lkml@gmail.com>
+In-Reply-To: <ed81b5d3-d39c-f725-87e8-4e317c790aa9@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Dec 26, 2016 at 01:08:09PM +0200, Nikolay Borisov wrote:
-> Use the newer and standardized functions when performing volatile
-> accesses. Following text is taken from 4d3199e4ca8e
-> ("locking: Remove ACCESS_ONCE() usage") :
-> 
->     ACCESS_ONCE() does not work reliably on non-scalar types.
->     For example gcc 4.6 and 4.7 might remove the volatile tag
->     for such accesses during the SRA (scalar replacement of
->     aggregates) step:
-> 	https://gcc.gnu.org/bugzilla/show_bug.cgi?id=58145
-> 
-> Signed-off-by: Nikolay Borisov <n.borisov.lkml@gmail.com>
+On Fri, Dec 23, 2016 at 09:08:32AM +0800, Qu Wenruo wrote:
+> >>> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+> Reviewed-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-A patch fort that has been sent and queued already,
-https://patchwork.kernel.org/patch/9476137/
+Applied, thanks.

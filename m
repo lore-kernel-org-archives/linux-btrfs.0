@@ -1,66 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:5016 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751175AbdAPB7y (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 15 Jan 2017 20:59:54 -0500
-Subject: Re: [PATCH 0/3 for-4.10] RAID56 scrub fixes
-To: <linux-btrfs@vger.kernel.org>, <dsterba@suse.cz>, <clm@fb.com>
-References: <20161212093843.8878-1-quwenruo@cn.fujitsu.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <35ebd3e4-c6e9-5102-b336-416e9352267e@cn.fujitsu.com>
-Date: Mon, 16 Jan 2017 09:59:45 +0800
+Received: from mx2.suse.de ([195.135.220.15]:55339 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751639AbdABQry (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 2 Jan 2017 11:47:54 -0500
+Date: Mon, 2 Jan 2017 17:47:38 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz, jbacik@fb.com
+Subject: Re: [PULL REQUEST FOR NEXT PATCH 00/26] Patches from Fujitsu for
+ next version
+Message-ID: <20170102164738.GK12081@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20161230010036.28099-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20161212093843.8878-1-quwenruo@cn.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20161230010036.28099-1-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi David, Chris,
+On Fri, Dec 30, 2016 at 09:00:36AM +0800, Qu Wenruo wrote:
+> Hi, please fetch the following branch for next branch:
+> https://github.com/adam900710/linux.git fujitsu_for_next
+> 
+> This branch contains most of Fujitsu unmerged patches for for-next branch.
+> 
+> Latest David's for-next-20161219 branch can cause kernel panic so I don't
+> use it as base, but v4.10-rc1.
 
-Any comment on this patchset?
+The for-next branch will be reassembled again as we're past rc1 now.
 
-Although we don't recommend user to use RAID5/6 for now, but this 
-patchset still fixes 2 quite important bugs for RAID5/6.
+> I ran the full xfstests test cases, with both default mount options and
+> compress=lzo options.
+> Fixes are working and no new regression.
+> 
+> So I thing it should be good enough to act as a base for for-next branch.
+> 
+> This big patch set contains the following fixes:
+> 
+> 1) Wang's fixes for compression ENOSPC
 
-And current so far the test shows no regression.
-(Although test cases like btrfs/011 and btrfs/069 is still causing 
-problem, as v4.10-rc without this patch will also cause problems).
+AFAIK, the patches have been reviewed only partially and used to be part
+of for-next until the merge conflicts became unbearable. Patches
+touching space handling need review before merging and at least some
+sort of ack in case of for-next.
 
-And the patchset is relatively small enough for an rc.
+> 2) Qgroup reserved space fix and WARN_ON
 
-Thanks,
-Qu
+Similar situation here.
 
-At 12/12/2016 05:38 PM, Qu Wenruo wrote:
-> Can be feteched from github:
-> https://github.com/adam900710/linux.git raid56_fixes
->
-> Fixes 2 scrub bugs:
-> 1) Scrub recover correct data, but wrong parity
-> 2) Scrub report wrong csum error number, or even unrecoverable error
->
-> The patches are still undergoing xfstests, but currect for-linus-4.10 is already
-> causing deadlock for btrfs/011, even without the patches.
->
-> So I'd remove btrfs/011 and continue the test, even these test cases won't trigger
-> real recover code.
->
-> But the current internal test cases are quite good so far.
-> I'll test them for several extra loop, and submit the internal test for reference.
-> (Since it's not suitable for xfstest, so I'd only submit the test script, which
-> needs manually to probe chunk layout)
->
-> Qu Wenruo (3):
->   btrfs: scrub: Introduce full stripe lock for RAID56
->   btrfs: scrub: Fix RAID56 recovery race conditiong
->   btrfs: raid56: Use correct stolen pages to calculate P/Q
->
->  fs/btrfs/ctree.h       |   4 ++
->  fs/btrfs/extent-tree.c |   3 +
->  fs/btrfs/raid56.c      |  62 ++++++++++++++--
->  fs/btrfs/scrub.c       | 192 +++++++++++++++++++++++++++++++++++++++++++++++++
->  4 files changed, 257 insertions(+), 4 deletions(-)
->
+> 3) Inband dedupe work
 
-
+As this is a new feature, I'll postpone it for now until the for-next
+branch is settled after the merge window.

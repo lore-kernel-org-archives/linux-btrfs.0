@@ -1,77 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:64072 "EHLO mout.gmx.net"
+Received: from mx2.suse.de ([195.135.220.15]:39279 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933935AbdABTgF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 2 Jan 2017 14:36:05 -0500
+        id S1756130AbdABVCZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 2 Jan 2017 16:02:25 -0500
+Subject: Re: Will fstrim discard unused parts of chunks?
+To: Andrei Borzenkov <arvidjaar@gmail.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <d538b76e-ecdc-19bb-2395-281a5c7c44e5@gmail.com>
+From: Jeff Mahoney <jeffm@suse.com>
+Message-ID: <08b63d21-820e-6e69-bb5f-c9f94d8fc8ac@suse.com>
+Date: Mon, 2 Jan 2017 16:02:18 -0500
 MIME-Version: 1.0
-Message-ID: <trinity-b8db84a6-4613-42c5-8eb6-38c8b1354184-1483385761401@3capp-mailcom-bs06>
-From: "Xin Zhou" <xin.zhou@gmx.com>
-To: "Peter Becker" <floyd.net@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [markfasheh/duperemove] Why blocksize is limit to 1MB?
-Content-Type: text/plain; charset=UTF-8
-Date: Mon, 2 Jan 2017 20:36:01 +0100
-In-Reply-To: <CAEtw4r2ksf_m8r=Bn5YPazG39y65TKFG66ekQSL8FBYgwH3XtQ@mail.gmail.com>
-References: <CAEtw4r0-wgdQj4nO9HxCFvzXpRVhU=nqcKxRmDUsFVBuVrfong@mail.gmail.com>
- <trinity-99778bf7-78b4-4455-8c1a-32e20c3e71e8-1483245504786@3capp-mailcom-bs08>,
- <CAEtw4r2ksf_m8r=Bn5YPazG39y65TKFG66ekQSL8FBYgwH3XtQ@mail.gmail.com>
+In-Reply-To: <d538b76e-ecdc-19bb-2395-281a5c7c44e5@gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="LNTuaeSPax4aIITMA12733VNul0uaT7dF"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--LNTuaeSPax4aIITMA12733VNul0uaT7dF
+Content-Type: multipart/mixed; boundary="rDj0JcbMER6fJeWB0jTBRPeMV9XA2UBlM";
+ protected-headers="v1"
+From: Jeff Mahoney <jeffm@suse.com>
+To: Andrei Borzenkov <arvidjaar@gmail.com>,
+ "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Message-ID: <08b63d21-820e-6e69-bb5f-c9f94d8fc8ac@suse.com>
+Subject: Re: Will fstrim discard unused parts of chunks?
+References: <d538b76e-ecdc-19bb-2395-281a5c7c44e5@gmail.com>
+In-Reply-To: <d538b76e-ecdc-19bb-2395-281a5c7c44e5@gmail.com>
 
-Before doing that, probably one way to think about it could be,
-what would be the probablitity of two 100M blocks generate the same hash and be treated as identical.
-Thanks,
-Xin
- 
- 
+--rDj0JcbMER6fJeWB0jTBRPeMV9XA2UBlM
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 
-Sent: Monday, January 02, 2017 at 4:32 AM
-From: "Peter Becker" <floyd.net@gmail.com>
-To: "Xin Zhou" <xin.zhou@gmx.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [markfasheh/duperemove] Why blocksize is limit to 1MB?
-> 1M is already a little bit too big in size.
+On 1/2/17 4:55 AM, Andrei Borzenkov wrote:
+> I try to understand what exactly is trimmed in case of btrfs. Using
+> installation in QEMU I see that host file size is about 9GB, allocated
+> size in guest approximately matches it and used space in guest is 7.6GB=
+=2E
+> After some experimenting it looks like host size follows "Device
+> allocated" value in "btrfs filesystem usage" which leads me to believe
+> trim only considers space outside of allocated chunks. Is it correct?
 
-Not in my usecase :)
+It should consider all available space.  The code iterates over all
+block groups and trims free space and then iterates over free dev
+extents, which is all of the unallocated space.
 
-Is it right the this isn't an limit in btrfs? So i can patch this and try 100M.
-The reason is, that i must dedupe the whole 8 TB in less then a day
-but with 128K and 1M blocksize it will take a week.
+Which kernel version are you using?  This stuff was broken for a while
+but was fixed in 4.3.
 
-I don't know why adding extends take so long.
-I/O during adding extends is less then 4MB/s, and CPU (dual core) and
-memory (8 GB) usage are less then 20%, on bare metal.
+-Jeff
 
-2017-01-01 5:38 GMT+01:00 Xin Zhou <xin.zhou@gmx.com>:
-> Hi,
->
-> In general, the larger the block / chunk size is, the less dedup can be achieved.
-> 1M is already a little bit too big in size.
->
-> Thanks,
-> Xin
->
->
->
->
-> Sent: Friday, December 30, 2016 at 12:28 PM
-> From: "Peter Becker" <floyd.net@gmail.com>
-> To: linux-btrfs <linux-btrfs@vger.kernel.org>
-> Subject: [markfasheh/duperemove] Why blocksize is limit to 1MB?
-> Hello, i have a 8 TB volume with multiple files with hundreds of GB each.
-> I try to dedupe this because the first hundred GB of many files are identical.
-> With 128KB blocksize with nofiemap and lookup-extends=no option, will
-> take more then a week (only dedupe, previously hashed). So i tryed -b
-> 100M but this returned me an error: "Blocksize is bounded ...".
->
-> The reason is that the blocksize is limit to
->
-> #define MAX_BLOCKSIZE (1024U*1024)
->
-> But i can't found any description why.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at http://vger.kernel.org/majordomo-info.html
+--=20
+Jeff Mahoney
+SUSE Labs
+
+
+--rDj0JcbMER6fJeWB0jTBRPeMV9XA2UBlM--
+
+--LNTuaeSPax4aIITMA12733VNul0uaT7dF
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG/MacGPG2 v2
+
+iQIcBAEBCAAGBQJYar/dAAoJEB57S2MheeWyBCIQAIMR7loKksGVAzdod1u1JrdP
+NBDD4VCf0J/brdpvwa/Gv5bAvm/V6/Pn9W/GKMw2CcVUUOP5t5xP2NGhkYAh1OVz
+2ilCvOCX445aHRfsK4Uc9cZPcpQ9MIXSGso2olZDVAT1uXYQbqoryoBEv8lTqxDB
+Jp767zEcnoRlBYPbyl729HdCxikiR3lAqqIfURhZ7WFH6waWPzYxBtjqMhKmcext
+InAufGCzDqLK+jK1nG6DQ+D/feS2rtPMcXz0qkUjhHdeUOD8z0wXiM6jOtSQ1soN
+HL0Otj7qSlEnvPmFQMT7mW7Rr4U9SA9ir/icVq4OMHVyd80nLXxMV1yjL8P6UUcO
+nhut6ADkXF6rPtqRFWEA9/p+OqIuAZVxSU+NiAzqBYO89b5J93L983Xl80TCiBXL
+3HoYPQFKr294MMQezyTcZNeQhzfaAR282ifA64WQ2ogCqY/QrrfVFXGfpo+aC2E1
+oAmS4Uqg38mZ77X+PHMhvDJv9ysc2Ucill6WaiCcGqHWlt80lsnfkjLyU7SMuWfA
+dIk7ia4REaVYOHFhWb64wPCfEVgViC4RUAMuSyMDUaeuWxnNzdqbYxq2rKOy2lxi
+8r7X7r7rIE6Bgh++Byr0QogtBb4mJwZtYo1f4ppdygDYSVbnj42FhHwtfKHcvALv
+KOB5TbCI0MvXvs+VKwl5
+=pSMb
+-----END PGP SIGNATURE-----
+
+--LNTuaeSPax4aIITMA12733VNul0uaT7dF--

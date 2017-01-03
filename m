@@ -1,212 +1,308 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f66.google.com ([209.85.214.66]:36836 "EHLO
-        mail-it0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933577AbdACUJe (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Jan 2017 15:09:34 -0500
-Received: by mail-it0-f66.google.com with SMTP id n68so51825049itn.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 03 Jan 2017 12:08:38 -0800 (PST)
-Subject: Re: [PATCH] recursive defrag cleanup
-To: "Janos Toth F." <toth.f.janos@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <20161206043938.3249-1-anand.jain@oracle.com>
- <20161212171927.GY12522@twin.jikos.cz>
- <9799c1aa-e365-f05d-2b96-017edc67ec90@oracle.com>
- <CANznX5FsY==9svvhmRtAG=9_GE5PHYU34B3Hboq-A36GvTf+pg@mail.gmail.com>
- <9fdde3f9-e2ed-b3d3-a8ec-da6ae27dfe95@oracle.com>
- <CANznX5FPg60U252u-1VDJdb6x7j562bMMSCoRJXF4zTrsayy2Q@mail.gmail.com>
- <1e291178-2b84-f4e1-25c8-e4cbd37718ae@gmail.com>
- <CANznX5Ed4GNCKcMGJBSwJ8dPik5z3y2fyYNdtk=ar9PKL9kJLA@mail.gmail.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <e63a01d8-d47b-5e4a-795f-4a40e0b4854e@gmail.com>
-Date: Tue, 3 Jan 2017 15:08:33 -0500
+Received: from aserp1040.oracle.com ([141.146.126.69]:37244 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933932AbdACVCM (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Jan 2017 16:02:12 -0500
+Date: Tue, 3 Jan 2017 13:00:46 -0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, clm@fb.com, jbacik@fb.com, dsterba@suse.com,
+        holger@applied-asynchrony.com, s.priebe@profihost.ag
+Subject: Re: [PATCH 1/3] btrfs: improve inode's outstanding_extents
+ computation
+Message-ID: <20170103210045.GA4651@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1478853587-28717-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
+ <1478853587-28717-2-git-send-email-wangxg.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <CANznX5Ed4GNCKcMGJBSwJ8dPik5z3y2fyYNdtk=ar9PKL9kJLA@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1478853587-28717-2-git-send-email-wangxg.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-01-03 13:16, Janos Toth F. wrote:
-> On Tue, Jan 3, 2017 at 5:01 PM, Austin S. Hemmelgarn
-> <ahferroin7@gmail.com> wrote:
->> I agree on this point.  I actually hadn't known that it didn't recurse into
->> sub-volumes, and that's a pretty significant caveat that should be
->> documented (and ideally fixed, defrag doesn't need to worry about
->> cross-subvolume stuff because it breaks reflinks anyway).
->
-> I think it descends into subvolumes to picks up the files (data)
-> inside them. I was referring to picking up the "child" subvolumes
-> (trees) and defrag those (as if you fed all the subvolumes to a
-> non-recursive defrag one-by-one with the current implementation --- if
-> I understand this current implementation correctly*).
->
-> To keep it simple: the recursive mode (IMO) should not ignore any
-> entities which the defrag tool is able to meaningfully operate on (no
-> matter if these are file data, directory metadata or subvolume tree
-> metadata, etc --- if it can be fragmented and can be defraged by this
-> tool, it should be done during a recursive mode operation with no
-> exceptions --- unless you can and do set explicit exceptions). I think
-> only the subvolume and/or the directory (*) metadata are currently
-> ignored by the recursive mode (if anything).
->
-> * But you got me a little bit confused again. After reading the first
-> few emails in this thread I thought only files (data) and subvolumes
-> (tree metadata) can be defraged by this tool and it's a no-op for
-> regular directories. Yet you seem to imply it's possible to defrag
-> regular directories (the directory metadata), meaning defrag can
-> operate on 3 type of entities in total (file data, subvolume tree
-> metadata, regular directory metadata).
-Actually, I was under the impression that it could defrag directory 
-metadata, but I may be completely wrong about that (and it wouldn't 
-surprise me if it didn't, considering what I mentioned about it probably 
-having near zero performance benefit for most people).
->
->> For single directories, -t almost certainly has near zero effect since
->> directories are entirely in metadata.  For single files, it should only have
->> an effect if it's smaller than the size of the file (it probably is for your
->> usage if you've got hour long video files).  As far as the behavior above
->> 128MB, stuff like that is expected to a certain extent when you have highly
->> fragmented free space (the FS has to hunt harder to find a large enough free
->> area to place the extent).
->>
->> FWIW, unless you have insanely slow storage, 32MB is a reasonable target
->> fragment size.  Fragmentation is mostly an issue with sequential reads, and
->> usually by the time you're through processing that 32MB of data, your
->> storage device will have the next 32MB ready.  The optimal value of course
->> depends on many things, but 32-64MB is reasonable for most users who aren't
->> streaming multiple files simultaneously off of a slow hard drive.
->
-> Yes, I know and it's not a problem to use <=32Mb. I just wondered why
->> =128Mb seems to be so incredibly slow for me.
-> Well, actually, I also wondered if the defrag tool can "create" big
-> enough continuous free space chunks by relocating other (probably
-> small[ish]) files (including non-fragmented files) in order to make
-> room for huge fragmented files to be re-assembled there as continuous
-> files. I just didn't make the connection between these two questions.
-> I mean, defrag will obviously fail with huge target extent sizes and
-> huge fragmented files if the free space is fragmented (and why
-> wouldn't it be somewhat fragmented...? deleting fragmented files will
-> result in fragmented free space and new files will be fragmented if
-> free space is fragmented, so you will delete fragmented files once
-> again, and it goes on forever -> that was my nightmare with ZFS... it
-> feels like the FS can only become more and more fragmented over time
-> unless you keep a lot of free space [let's say >50%] all the time and
-> it still remains somewhat random).
+On Fri, Nov 11, 2016 at 04:39:45PM +0800, Wang Xiaoguang wrote:
+> This issue was revealed by modifying BTRFS_MAX_EXTENT_SIZE(128MB) to 64KB,
+> When modifying BTRFS_MAX_EXTENT_SIZE(128MB) to 64KB, fsstress test often
+> gets these warnings from btrfs_destroy_inode():
+> 	WARN_ON(BTRFS_I(inode)->outstanding_extents);
+> 	WARN_ON(BTRFS_I(inode)->reserved_extents);
+> 
+> Simple test program below can reproduce this issue steadily.
+> Note: you need to modify BTRFS_MAX_EXTENT_SIZE to 64KB to have test,
+> otherwise there won't be such WARNING.
+> 	#include <string.h>
+> 	#include <unistd.h>
+> 	#include <sys/types.h>
+> 	#include <sys/stat.h>
+> 	#include <fcntl.h>
+> 
+> 	int main(void)
+> 	{
+> 		int fd;
+> 		char buf[68 *1024];
+> 
+> 		memset(buf, 0, 68 * 1024);
+> 		fd = open("testfile", O_CREAT | O_EXCL | O_RDWR);
 
->
-> Although, this brings up complications. A really extensive defrag
-> would require some sort of smart planning: building a map of objects
-> (including free space and continuous files), divining the best
-> possible target and trying to achieve that shape by heavy
-> reorganization of (meta/)data.
->
->> Really use case specific question, but have you tried putting each set of
->> files (one for each stream) in it's own sub-volume?  Your metadata
->> performance is probably degrading from the sheer number of extents involved
->> (assuming H.264 encoding and full HD video with DVD quality audio, you're
->> probably looking at at least 1000 extents for each file, probably more), and
->> splitting into a subvolume per-stream should segregate the metadata for each
->> set of files, which should in turn help avoid stuff like lock contention
->> (and may actually make both balance and defrag run faster).
->
-> Before I had a dedicated disk+filesystem for these files I did think
-> about creating a subvolume for all these video recordings rather than
-> keeping them in a simple directory under a big multi-disk filesystem's
-> root/default subvolume. (The decision to separate these files was
-> forced by an external scale-ability problem --- limited number of
-> connectors/slots for disks and limited "working" RAID options in Btrfs
-> --- rather than an explicit desire for segregation -> although in the
-> light of these issues it might came on it's own at some point by now)
-> but I didn't really see the point. On the contrary, I would think
-> segregation by subvolumes could only complicate things further. It can
-> only increase the total complexity if it does anything. The total
-> amount of metadata will be roughly the same or more but not less. You
-> just add more complexity to the basket (making it bigger in some
-> sense) by introducing subvolumes.
-Because each subvolume is functionally it's own tree, it has it's own 
-locking for changes and other stuff, which means that splitting into 
-subvolumes will usually help with concurrency.  A lot of high 
-concurrency performance benchmarks do significantly better if you split 
-things into individual subvolumes (and this drives a couple of the other 
-kernel developers crazy to no end).  It's not well published, but this 
-is actually the recommended usage if you can afford the complexity and 
-don't need snapshots.
->
-> But if it could "serve the common good", I could certainly try as a test-case.
->
-> The file size tends to be anywhere between 200 and 2000 Megabytes and
-> I observed some heavy fragmentation, like ~2k extents per ~2Gb files,
-> thus 1Mb/extent sizes on average. I guess it also depends on the total
-> write cache load (some database-like loads often result in write cache
-> flushing-frenzies but other times I allow up to ~1Gb to be cached in
-> memory before the disk has to write anything, so the extent size could
-> build up to >32Mb --- if the allocator is smart enough and free space
-> fragments are big enough...).
-In general, the allocator should be smart enough to do this properly.
+                pwrite(fd, buf, 64 * 1024, 64 * 1024);
 
-As far as how much your buffering for write-back, that should depend 
-entirely on how fast your RAM is relative to your storage device.  The 
-smaller the gap between your storage and your RAM in terms of speed, the 
-more you should be buffering (up to a point).  FWIW, I find that with 
-DDR3-1600 RAM and a good (~540MB/s sequential write) SATA3 SSD, about 
-160-320MB gets a near ideal balance of performance, throughput, and 
-fragmentation, but of course YMMV.
->
->> You also have to factor
->> in that directories tend to have more sticking power than file blocks in the
->> VFS cache, since they're (usually) used more frequently, so once you've read
->> the directory the first time, it's almost certainly going to be completely
->> in cache.
->
-> I tired to tune that in the past (to favor metadata even more than the
-> default behavior) but I ended up with OOMs.
-Yeah, it's not easy, especially since Linux doesn't support setting the 
-parameters per-filesystem (or better yet per-block-device).
->
->> To put it in perspective, a directory with about 20-25 entries and all
->> file/directory names less than 15 characters (roughly typical root
->> directory, not counting the . and .. pseudo-entries) easily fits entirely in
->> one metadata block on BTRFS with a 16k block size (the current default),
->> with lots of room to spare.
->
-> I use 4k nodesize. I am not sure why I picked that (probably in order
-> to try minimizing locking contention which I might thought I had a
-> problem with, years ago).
-You might want to try with 16k node-size.  It's been the default for a 
-while now for new filesystems (or at least, large filesystems, but yours 
-is probably well above the threshold considering that you're talking 
-about multiple hour long video streams).  A larger node-size helps with 
-caching (usually), and often cuts down on fragmentation a bit (because 
-it functionally sets the smallest possible fragment, so 16k node-size 
-means you have worst-case 4 times fewer fragments than with a 4k node-size).
->
->> then you're talking small enough improvements that you won't notice unless
->> you're constantly listing the directory and trashing the page cache at the
->> same time.
->
-> Well, actually, I do. I already filed a request on ffmpeg's bug
-> tracker to ask for Direct-IO support because video recording with
-> ffmpeg constantly flushes my page cache (and it's not the only job of
-> this little home server).
-Out of curiosity, just on this part, have you tried using cgroups to 
-keep the memory usage isolated better?  Setting up a cgroup correctly 
-for this is of course non-trivial, but at least you won't take down the 
-whole machine if you get the parameters wrong.  Check 
-Documentation/cgroup-v1/memory.txt and/or Documentation/cgroup-v2.txt in 
-the kernel source tree for info on setup (If you're using systemd, 
-you're using cgroup-v2, if you're using OpenRC (Gentoo and friends 
-default init system), you'd be using cgroup-v1, beyond that, I have no 
-idea).
+(During my test, I had to add the above in order to reproduce the
+warning, another alternative way is to use truncate and pread.)
 
-Also, if you can get ffmpeg to spit out the stream on stdout, you could 
-pipe to dd and have that use Direct-IO.  The dd command should be 
-something along the lines of:
-dd of=<filename> oflag=direct iflag=fullblock bs=<arbitrary large 
-multiple of node-size>
-The oflag will force dd to open the output file with O_DIRECT, the iflag 
-will force it to collect full blocks of data before writing them (the 
-size is set by bs=, I'd recommend using a power of 2 that's a multiple 
-of your node-size, larger numbers will increase latency but reduce 
-fragmentation and improve throughput).  This may still use a significant 
-amount of RAM (the pipe is essentially an in-memory buffer), and may 
-crowd out other applications, but I have no idea how much it may or may 
-not help.
+> 		pwrite(fd, buf, 68 * 1024, 64 * 1024);
+> 		return;
+> 	}
+> 
+> When BTRFS_MAX_EXTENT_SIZE is 64KB, and buffered data range is:
+> 64KB						128K		132KB
+> |-----------------------------------------------|---------------|
+>                          64 + 4KB
+> 
+> 1) for above data range, btrfs_delalloc_reserve_metadata() will reserve
+> metadata and set BTRFS_I(inode)->outstanding_extents to 2.
+> (68KB + 64KB - 1) / 64KB == 2
+> 
+> Outstanding_extents: 2
+> 
+> 2) then btrfs_dirty_page() will be called to dirty pages and set
+> EXTENT_DELALLOC flag. In this case, btrfs_set_bit_hook() will be called
+> twice.
+> The 1st set_bit_hook() call will set DEALLOC flag for the first 64K.
+> 64KB						128KB
+> |-----------------------------------------------|
+> 	64KB DELALLOC
+> Outstanding_extents: 2
+
+I think that here the 1st extent [64k, 128k] is only set with
+EXTENT_UPTODATE since other bits like DELALLOC has been cleared by
+lock_and_cleanup_extent_if_need.
+
+It would work if we check EXTENT_UPTODATE on deciding whether to clear
+EXTENT_FIRST_DELALLOC, i.e.
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 4175987..4eace1a 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1752,7 +1752,12 @@ static void btrfs_set_bit_hook(struct inode *inode,
+ 		bool do_list = !btrfs_is_free_space_inode(inode);
+ 
+ 		if (*bits & EXTENT_FIRST_DELALLOC) {
+-			*bits &= ~EXTENT_FIRST_DELALLOC;
++			/*
++			 * With EXTENT_UPTODATE, the state gets rewritten
++			 * before writing it back, or gets read from disk.
++			 */
++			if (!(state->state & EXTENT_UPTODATE))
++				*bits &= ~EXTENT_FIRST_DELALLOC;
+ 		} else {
+ 			spin_lock(&BTRFS_I(inode)->lock);
+ 			BTRFS_I(inode)->outstanding_extents++;
+
+Thanks,
+
+-liubo
+
+> 
+> Set_bit_hooks() uses FIRST_DELALLOC flag to avoid re-increase
+> outstanding_extents counter.
+> So for 1st set_bit_hooks() call, it won't modify outstanding_extents,
+> it's still 2.
+> 
+> Then FIRST_DELALLOC flag is *CLEARED*.
+> 
+> 3) 2nd btrfs_set_bit_hook() call.
+> Because FIRST_DELALLOC have been cleared by previous set_bit_hook(),
+> btrfs_set_bit_hook() will increase BTRFS_I(inode)->outstanding_extents by
+> one, so now BTRFS_I(inode)->outstanding_extents is 3.
+> 64KB                                            128KB            132KB
+> |-----------------------------------------------|----------------|
+> 	64K DELALLOC				   4K DELALLOC
+> Outstanding_extents: 3
+> 
+> But the correct outstanding_extents number should be 2, not 3.
+> The 2nd btrfs_set_bit_hook() call just screwed up this, and leads to the
+> WARN_ON().
+> 
+> Normally, we can solve it by only increasing outstanding_extents in
+> set_bit_hook().
+> But the problem is for delalloc_reserve/release_metadata(), we only have
+> a 'length' parameter, and calculate in-accurate outstanding_extents.
+> If we only rely on set_bit_hook() release_metadata() will crew things up
+> as it will decrease inaccurate number.
+> 
+> So the fix we use is:
+> 1) Increase *INACCURATE* outstanding_extents at delalloc_reserve_meta
+>    Just as a place holder.
+> 2) Increase *accurate* outstanding_extents at set_bit_hooks()
+>    This is the real increaser.
+> 3) Decrease *INACCURATE* outstanding_extents before returning
+>    This makes outstanding_extents to correct value.
+> 
+> For 128M BTRFS_MAX_EXTENT_SIZE, due to limitation of
+> __btrfs_buffered_write(), each iteration will only handle about 2MB
+> data.
+> So btrfs_dirty_pages() won't need to handle cases cross 2 extents.
+> 
+> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+> ---
+>  fs/btrfs/ctree.h |  2 ++
+>  fs/btrfs/inode.c | 65 ++++++++++++++++++++++++++++++++++++++++++++++++++------
+>  fs/btrfs/ioctl.c |  6 ++----
+>  3 files changed, 62 insertions(+), 11 deletions(-)
+> 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 9d8edcb..766d152 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -3139,6 +3139,8 @@ int btrfs_start_delalloc_roots(struct btrfs_fs_info *fs_info, int delay_iput,
+>  			       int nr);
+>  int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
+>  			      struct extent_state **cached_state, int dedupe);
+> +int btrfs_set_extent_defrag(struct inode *inode, u64 start, u64 end,
+> +			    struct extent_state **cached_state);
+>  int btrfs_create_subvol_root(struct btrfs_trans_handle *trans,
+>  			     struct btrfs_root *new_root,
+>  			     struct btrfs_root *parent_root,
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 1f980ef..25e0083 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -1601,6 +1601,9 @@ static void btrfs_split_extent_hook(struct inode *inode,
+>  	if (!(orig->state & EXTENT_DELALLOC))
+>  		return;
+>  
+> +	if (btrfs_is_free_space_inode(inode))
+> +		return;
+> +
+>  	size = orig->end - orig->start + 1;
+>  	if (size > BTRFS_MAX_EXTENT_SIZE) {
+>  		u64 num_extents;
+> @@ -1643,6 +1646,9 @@ static void btrfs_merge_extent_hook(struct inode *inode,
+>  	if (!(other->state & EXTENT_DELALLOC))
+>  		return;
+>  
+> +	if (btrfs_is_free_space_inode(inode))
+> +		return;
+> +
+>  	if (new->start > other->start)
+>  		new_size = new->end - other->start + 1;
+>  	else
+> @@ -1738,7 +1744,6 @@ static void btrfs_del_delalloc_inode(struct btrfs_root *root,
+>  static void btrfs_set_bit_hook(struct inode *inode,
+>  			       struct extent_state *state, unsigned *bits)
+>  {
+> -
+>  	if ((*bits & EXTENT_DEFRAG) && !(*bits & EXTENT_DELALLOC))
+>  		WARN_ON(1);
+>  	/*
+> @@ -1749,13 +1754,16 @@ static void btrfs_set_bit_hook(struct inode *inode,
+>  	if (!(state->state & EXTENT_DELALLOC) && (*bits & EXTENT_DELALLOC)) {
+>  		struct btrfs_root *root = BTRFS_I(inode)->root;
+>  		u64 len = state->end + 1 - state->start;
+> +		u64 num_extents = div64_u64(len + BTRFS_MAX_EXTENT_SIZE - 1,
+> +					    BTRFS_MAX_EXTENT_SIZE);
+>  		bool do_list = !btrfs_is_free_space_inode(inode);
+>  
+> -		if (*bits & EXTENT_FIRST_DELALLOC) {
+> +		if (*bits & EXTENT_FIRST_DELALLOC)
+>  			*bits &= ~EXTENT_FIRST_DELALLOC;
+> -		} else {
+> +
+> +		if (do_list) {
+>  			spin_lock(&BTRFS_I(inode)->lock);
+> -			BTRFS_I(inode)->outstanding_extents++;
+> +			BTRFS_I(inode)->outstanding_extents += num_extents;
+>  			spin_unlock(&BTRFS_I(inode)->lock);
+>  		}
+>  
+> @@ -1803,7 +1811,7 @@ static void btrfs_clear_bit_hook(struct inode *inode,
+>  
+>  		if (*bits & EXTENT_FIRST_DELALLOC) {
+>  			*bits &= ~EXTENT_FIRST_DELALLOC;
+> -		} else if (!(*bits & EXTENT_DO_ACCOUNTING)) {
+> +		} else if (!(*bits & EXTENT_DO_ACCOUNTING) && do_list) {
+>  			spin_lock(&BTRFS_I(inode)->lock);
+>  			BTRFS_I(inode)->outstanding_extents -= num_extents;
+>  			spin_unlock(&BTRFS_I(inode)->lock);
+> @@ -2001,9 +2009,52 @@ static noinline int add_pending_csums(struct btrfs_trans_handle *trans,
+>  int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
+>  			      struct extent_state **cached_state, int dedupe)
+>  {
+> +	int ret;
+> +	u64 num_extents = div64_u64(end - start + BTRFS_MAX_EXTENT_SIZE,
+> +				    BTRFS_MAX_EXTENT_SIZE);
+> +
+> +	WARN_ON((end & (PAGE_SIZE - 1)) == 0);
+> +	ret = set_extent_delalloc(&BTRFS_I(inode)->io_tree, start, end,
+> +				  cached_state);
+> +
+> +	/*
+> +	 * btrfs_delalloc_reserve_metadata() will first add number of
+> +	 * outstanding extents according to data length, which is inaccurate
+> +	 * for case like dirtying already dirty pages.
+> +	 * so here we will decrease such inaccurate numbers, to make
+> +	 * outstanding_extents only rely on the correct values added by
+> +	 * set_bit_hook()
+> +	 *
+> +	 * Also, we skipped the metadata space reserve for space cache inodes,
+> +	 * so don't modify the outstanding_extents value.
+> +	 */
+> +	if (ret == 0 && !btrfs_is_free_space_inode(inode)) {
+> +		spin_lock(&BTRFS_I(inode)->lock);
+> +		BTRFS_I(inode)->outstanding_extents -= num_extents;
+> +		spin_unlock(&BTRFS_I(inode)->lock);
+> +	}
+> +
+> +	return ret;
+> +}
+> +
+> +int btrfs_set_extent_defrag(struct inode *inode, u64 start, u64 end,
+> +			    struct extent_state **cached_state)
+> +{
+> +	int ret;
+> +	u64 num_extents = div64_u64(end - start + BTRFS_MAX_EXTENT_SIZE,
+> +				    BTRFS_MAX_EXTENT_SIZE);
+> +
+>  	WARN_ON((end & (PAGE_SIZE - 1)) == 0);
+> -	return set_extent_delalloc(&BTRFS_I(inode)->io_tree, start, end,
+> -				   cached_state);
+> +	ret = set_extent_defrag(&BTRFS_I(inode)->io_tree, start, end,
+> +				cached_state);
+> +
+> +	if (ret == 0 && !btrfs_is_free_space_inode(inode)) {
+> +		spin_lock(&BTRFS_I(inode)->lock);
+> +		BTRFS_I(inode)->outstanding_extents -= num_extents;
+> +		spin_unlock(&BTRFS_I(inode)->lock);
+> +	}
+> +
+> +	return ret;
+>  }
+>  
+>  /* see btrfs_writepage_start_hook for details on why this is required */
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 7163457..eff5eae 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -1235,10 +1235,8 @@ again:
+>  				(page_cnt - i_done) << PAGE_SHIFT);
+>  	}
+>  
+> -
+> -	set_extent_defrag(&BTRFS_I(inode)->io_tree, page_start, page_end - 1,
+> -			  &cached_state);
+> -
+> +	btrfs_set_extent_defrag(inode, page_start,
+> +				page_end - 1, &cached_state);
+>  	unlock_extent_cached(&BTRFS_I(inode)->io_tree,
+>  			     page_start, page_end - 1, &cached_state,
+>  			     GFP_NOFS);
+> -- 
+> 2.7.4
+> 
+> 
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,32 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36593 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:40110 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1759373AbdACQC2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 3 Jan 2017 11:02:28 -0500
-Date: Tue, 3 Jan 2017 17:02:12 +0100
+        id S1751321AbdACQmC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 3 Jan 2017 11:42:02 -0500
+Date: Tue, 3 Jan 2017 17:41:45 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Philippe Loctaux <phil@philippeloctaux.com>
-Cc: clm@fb.com, jbacik@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] btrfs: file.c: file cleanup
-Message-ID: <20170103160211.GO12081@twin.jikos.cz>
+To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2] btrfs-progs: utils: negative numbers are more
+ plausible than sizes over 8 EiB
+Message-ID: <20170103164145.GS12081@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1481897853-13232-1-git-send-email-phil@philippeloctaux.com>
+References: <1480797594-2337-1-git-send-email-ce3g8jdj@umail.furryterror.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1481897853-13232-1-git-send-email-phil@philippeloctaux.com>
+In-Reply-To: <1480797594-2337-1-git-send-email-ce3g8jdj@umail.furryterror.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Dec 16, 2016 at 03:17:33PM +0100, Philippe Loctaux wrote:
-> cleaned up the file with checkpatch
-                      ^^^^^^^^^^^^^^^
+On Sat, Dec 03, 2016 at 03:39:54PM -0500, Zygo Blaxell wrote:
+> I got tired of seeing "16.00EiB" whenever btrfs-progs encounters a
+> negative size value, e.g. during resize:
+> 
+> Unallocated:
+>    /dev/mapper/datamd18   16.00EiB
+> 
+> This version is much more useful:
+> 
+> Unallocated:
+>    /dev/mapper/datamd18  -26.29GiB
+> 
+> Signed-off-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
 
-Sorry, this is an example of what should not be done. Checkpatch can
-detect lots of things that once were valid or tolerated but are not
-today. There are minor coding style violations that have accumulated
-over the years, missing newline here and there or the extra { } around
-statements. We can live with that and change it eventually when
-modifying the surrounding code. I'm happy to apply cleanup patches that
-are a byproduct of actually reading the code, but just running
-checkpatch and generating patches is below the treshold.
+>From some perspective, negative numbers are better than the insane EiB
+sizes. I've started to fix it properly, ie account for the size of the
+device under deletion. Turns out this needs to retrieve information from
+the protected search ioctl, so in some cases we wouldn't be able to
+calculate the numbers exactly anyway. This similar to calculating the
+space stats in case of raid5/6.
+
+So I'm going to merge this patch, tough I'd not modify the the function
+prototype but rather add a new unit mode so the caller can actually say
+how the 64bit numbers should be printed.

@@ -1,126 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:24284 "EHLO
-        cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S965717AbdADQNW (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 4 Jan 2017 11:13:22 -0500
-Subject: Re: [PATCH 0/3] introduce type based delalloc metadata reserve to fix
- some false enospc issues
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
-        linux-btrfs@vger.kernel.org
-References: <1478853587-28717-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
- <310b5ef9-3e08-129d-66bf-500478e65424@profihost.ag>
- <2a3f8cb2-e4e9-e534-ee3d-ff5ad517e71a@gmx.com>
-Cc: clm@fb.com, jbacik@fb.com, dsterba@suse.com, holger@applied-asynchrony.com
-From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
-Message-ID: <30979d9a-993c-c130-5b1b-09cfe5955409@profihost.ag>
-Date: Wed, 4 Jan 2017 17:13:19 +0100
+Received: from mail-yw0-f172.google.com ([209.85.161.172]:33441 "EHLO
+        mail-yw0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S934222AbdADWVZ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Jan 2017 17:21:25 -0500
+Received: by mail-yw0-f172.google.com with SMTP id r204so327574433ywb.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 04 Jan 2017 14:20:51 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <2a3f8cb2-e4e9-e534-ee3d-ff5ad517e71a@gmx.com>
-Content-Type: text/plain; charset=iso-8859-15
+In-Reply-To: <e63a01d8-d47b-5e4a-795f-4a40e0b4854e@gmail.com>
+References: <20161206043938.3249-1-anand.jain@oracle.com> <20161212171927.GY12522@twin.jikos.cz>
+ <9799c1aa-e365-f05d-2b96-017edc67ec90@oracle.com> <CANznX5FsY==9svvhmRtAG=9_GE5PHYU34B3Hboq-A36GvTf+pg@mail.gmail.com>
+ <9fdde3f9-e2ed-b3d3-a8ec-da6ae27dfe95@oracle.com> <CANznX5FPg60U252u-1VDJdb6x7j562bMMSCoRJXF4zTrsayy2Q@mail.gmail.com>
+ <1e291178-2b84-f4e1-25c8-e4cbd37718ae@gmail.com> <CANznX5Ed4GNCKcMGJBSwJ8dPik5z3y2fyYNdtk=ar9PKL9kJLA@mail.gmail.com>
+ <e63a01d8-d47b-5e4a-795f-4a40e0b4854e@gmail.com>
+From: "Janos Toth F." <toth.f.janos@gmail.com>
+Date: Wed, 4 Jan 2017 23:12:20 +0100
+Message-ID: <CANznX5HPOR92p18jFcGbLuLAXnYGkr-z0FhSJ=GqX=7RbnTrbg@mail.gmail.com>
+Subject: Re: [PATCH] recursive defrag cleanup
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Qu,
+I separated these 9 camera storages into 9 subvolumes (so now I have
+10 subvols in total in this filesystem with the "root" subvol). It's
+obviously way too early to talk about long term performance but now I
+can tell that recursive defrag does NOT descend into "child"
+subvolumes (it does not pick up the files located in these "child"
+subvolumes when I point it to the "root" subvolume with the -r
+option). That's very inconvenient (one might need to write a scrip
+with a long static list of subvolumes and maintain it over time or
+write a scrip which acquires the list from the subvolume list command
+and feeds it to the defrag command one-by-one).
 
-Am 01.01.2017 um 10:32 schrieb Qu Wenruo:
-> Hi Stefan,
-> 
-> I'm trying to push it to for-next (will be v4.11), but no response yet.
-> 
-> It would be quite nice for you to test the following git pull and give
-> some feedback, so that we can merge it faster.
-> 
-> https://mail-archive.com/linux-btrfs@vger.kernel.org/msg60418.html
+> Because each subvolume is functionally it's own tree, it has it's own
+> locking for changes and other stuff, which means that splitting into
+> subvolumes will usually help with concurrency.  A lot of high concurrency
+> performance benchmarks do significantly better if you split things into
+> individual subvolumes (and this drives a couple of the other kernel
+> developers crazy to no end).  It's not well published, but this is actually
+> the recommended usage if you can afford the complexity and don't need
+> snapshots.
 
-I'm also getting a notifier that wang's email does not exist anymore
-(wangxg.fnst@cn.fujitsu.com).
+I am not a developer but this idea drives me crazy as well. I know
+it's a silly reasoning but if you blindly extrapolate this idea you
+come to the conclusion that every single file should be transparently
+placed in it's own unique subvolume (by some automatic background
+task) and every directory should automatically be a subvolume. I guess
+there must be some inconveniently sub-optimal behavior in the tree
+handling which could theoretically be optimized (or the observed
+performance improvement of the subvolume segregation is some kind of
+measurement error which does not really translate into actual real
+life overall performance befit but only looks like that from some
+specific perspective of the tests).
 
-I would like to test that branch will need some time todo so. Last time
-i tried 4.10-rc1 i had the same problems like this guy:
-https://www.marc.info/?l=linux-btrfs&m=148338312525137&w=2
+> As far as how much your buffering for write-back, that should depend
+> entirely on how fast your RAM is relative to your storage device.  The
+> smaller the gap between your storage and your RAM in terms of speed, the
+> more you should be buffering (up to a point).  FWIW, I find that with
+> DDR3-1600 RAM and a good (~540MB/s sequential write) SATA3 SSD, about
+> 160-320MB gets a near ideal balance of performance, throughput, and
+> fragmentation, but of course YMMV.
 
-Stefan
+I don't think I share your logic on this. I usually consider the write
+load random and I don't like my softwares possibly stalling while
+there is plenty of RAM laying around to be used as a buffer until some
+other tasks might stop trashing the disks (e.g. "bigger is always
+better").
 
-> Thanks,
-> Qu
-> 
-> On 12/31/2016 03:31 PM, Stefan Priebe - Profihost AG wrote:
->> Any news on this series? I can't see it in 4.9 nor in 4.10-rc
->>
->> Stefan
->>
->> Am 11.11.2016 um 09:39 schrieb Wang Xiaoguang:
->>> When having compression enabled, Stefan Priebe ofen got enospc errors
->>> though fs still has much free space. Qu Wenruo also has submitted a
->>> fstests test case which can reproduce this bug steadily, please see
->>> url: https://patchwork.kernel.org/patch/9420527
->>>
->>> First patch[1/3] "btrfs: improve inode's outstanding_extents
->>> computation" is to
->>> fix outstanding_extents and reserved_extents account issues. This
->>> issue was revealed
->>> by modifying BTRFS_MAX_EXTENT_SIZE(128MB) to 64KB, When modifying
->>> BTRFS_MAX_EXTENT_SIZE(128MB) to 64KB, fsstress test often gets these
->>> warnings from
->>> btrfs_destroy_inode():
->>>         WARN_ON(BTRFS_I(inode)->outstanding_extents);
->>>         WARN_ON(BTRFS_I(inode)->reserved_extents);
->>> Please see this patch's commit message for detailed info, and this
->>> patch is
->>> necessary to patch2 and patch3.
->>>
->>> For false enospc, the root reasson is that for compression, its max
->>> extent size will
->>> be 128k, not 128MB. If we still use 128MB as max extent size to
->>> reserve metadata for
->>> compression, obviously it's not appropriate. In patch "btrfs:
->>> Introduce COMPRESS
->>> reserve type to fix false enospc for compression" commit message,
->>> we explain why false enospc error occurs, please see it for detailed
->>> info.
->>>
->>> To fix this issue, we introduce a new enum type:
->>>     enum btrfs_metadata_reserve_type {
->>>         BTRFS_RESERVE_NORMAL,
->>>             BTRFS_RESERVE_COMPRESS,
->>>     };
->>> For btrfs_delalloc_[reserve|release]_metadata() and
->>> btrfs_delalloc_[reserve|release]_space(), we introce a new
->>> btrfs_metadata_reserve_type
->>> argument, then if a path needs to go compression, we pass
->>> BTRFS_RESERVE_COMPRESS,
->>> otherwise pass BTRFS_RESERVE_NORMAL.
->>>
->>> With these patchs, Stefan no longer saw such false enospc errors, and
->>> Qu Wenruo's
->>> fstests test case will also pass. I have also run whole fstests
->>> multiple times,
->>> no regression occurs, thanks.
->>>
->>> Wang Xiaoguang (3):
->>>   btrfs: improve inode's outstanding_extents computation
->>>   btrfs: introduce type based delalloc metadata reserve
->>>   btrfs: Introduce COMPRESS reserve type to fix false enospc for
->>>     compression
->>>
->>>  fs/btrfs/ctree.h             |  36 +++++--
->>>  fs/btrfs/extent-tree.c       |  52 ++++++---
->>>  fs/btrfs/extent_io.c         |  61 ++++++++++-
->>>  fs/btrfs/extent_io.h         |   5 +
->>>  fs/btrfs/file.c              |  25 +++--
->>>  fs/btrfs/free-space-cache.c  |   6 +-
->>>  fs/btrfs/inode-map.c         |   6 +-
->>>  fs/btrfs/inode.c             | 246
->>> ++++++++++++++++++++++++++++++++++---------
->>>  fs/btrfs/ioctl.c             |  16 +--
->>>  fs/btrfs/relocation.c        |  14 ++-
->>>  fs/btrfs/tests/inode-tests.c |  15 +--
->>>  11 files changed, 381 insertions(+), 101 deletions(-)
->>>
->> -- 
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
+> Out of curiosity, just on this part, have you tried using cgroups to keep
+> the memory usage isolated better?
+
+No, I didn't even know cgroups can control the pagecache based on the
+process which generates the cache-able IO.
+To be honest, I don't think it's worth the effort for me (I would need
+to learn how to use cgroups, I have zero experience with that).
+
+> Also, if you can get ffmpeg to spit out the stream on stdout, you could pipe
+> to dd and have that use Direct-IO.  The dd command should be something along
+> the lines of:
+> dd of=<filename> oflag=direct iflag=fullblock bs=<arbitrary large multiple
+> of node-size>
+> The oflag will force dd to open the output file with O_DIRECT, the iflag
+> will force it to collect full blocks of data before writing them (the size
+> is set by bs=, I'd recommend using a power of 2 that's a multiple of your
+> node-size, larger numbers will increase latency but reduce fragmentation and
+> improve throughput).  This may still use a significant amount of RAM (the
+> pipe is essentially an in-memory buffer), and may crowd out other
+> applications, but I have no idea how much it may or may not help.
+
+This I can try (when I have no better things to play with). Thank you.

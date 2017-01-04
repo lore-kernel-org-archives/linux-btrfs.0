@@ -1,91 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f172.google.com ([209.85.161.172]:33441 "EHLO
-        mail-yw0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S934222AbdADWVZ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Jan 2017 17:21:25 -0500
-Received: by mail-yw0-f172.google.com with SMTP id r204so327574433ywb.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 04 Jan 2017 14:20:51 -0800 (PST)
+Received: from odin.sdf-eu.org ([178.63.35.194]:52338 "EHLO sdfeu.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S968808AbdADWaP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 4 Jan 2017 17:30:15 -0500
 MIME-Version: 1.0
-In-Reply-To: <e63a01d8-d47b-5e4a-795f-4a40e0b4854e@gmail.com>
-References: <20161206043938.3249-1-anand.jain@oracle.com> <20161212171927.GY12522@twin.jikos.cz>
- <9799c1aa-e365-f05d-2b96-017edc67ec90@oracle.com> <CANznX5FsY==9svvhmRtAG=9_GE5PHYU34B3Hboq-A36GvTf+pg@mail.gmail.com>
- <9fdde3f9-e2ed-b3d3-a8ec-da6ae27dfe95@oracle.com> <CANznX5FPg60U252u-1VDJdb6x7j562bMMSCoRJXF4zTrsayy2Q@mail.gmail.com>
- <1e291178-2b84-f4e1-25c8-e4cbd37718ae@gmail.com> <CANznX5Ed4GNCKcMGJBSwJ8dPik5z3y2fyYNdtk=ar9PKL9kJLA@mail.gmail.com>
- <e63a01d8-d47b-5e4a-795f-4a40e0b4854e@gmail.com>
-From: "Janos Toth F." <toth.f.janos@gmail.com>
-Date: Wed, 4 Jan 2017 23:12:20 +0100
-Message-ID: <CANznX5HPOR92p18jFcGbLuLAXnYGkr-z0FhSJ=GqX=7RbnTrbg@mail.gmail.com>
-Subject: Re: [PATCH] recursive defrag cleanup
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=UTF-8;
+ format=flowed
+Date: Wed, 04 Jan 2017 23:29:42 +0100
+From: none <ytrezq@sdf-eu.org>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: How to recover a filesystem without formatting nor using the
+ btrfs check command.
+In-Reply-To: <24b88326-e44b-adc6-044d-ae678316f9a6@cn.fujitsu.com>
+References: <580944C7.103@sdf-eu.org>
+ <8c5ae48c-4af6-42d9-be0f-06d232764ff2@cn.fujitsu.com>
+ <36f56365-27ac-878e-c5fb-f414646eda3a@sdf-eu.org>
+ <61df188a-bc12-c9c4-0322-766df4fb18c0@cn.fujitsu.com>
+ <a8b030a4fab174ade203bf061151f270@mx.sdfeu.org>
+ <08227414-b241-28a5-bbc6-7fb21d4b3e62@cn.fujitsu.com>
+ <7dcfffa62234ff0fa5ae060f75df25f1@mx.sdfeu.org>
+ <2166adfe-88af-5d9a-295f-d7002d64ed0e@cn.fujitsu.com>
+ <866efefad9d62f7f00c117edc4715651@mx.sdfeu.org>
+ <24b88326-e44b-adc6-044d-ae678316f9a6@cn.fujitsu.com>
+Message-ID: <ce3a4bebb63ae1c4d526f9943081e903@mx.sdfeu.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I separated these 9 camera storages into 9 subvolumes (so now I have
-10 subvols in total in this filesystem with the "root" subvol). It's
-obviously way too early to talk about long term performance but now I
-can tell that recursive defrag does NOT descend into "child"
-subvolumes (it does not pick up the files located in these "child"
-subvolumes when I point it to the "root" subvolume with the -r
-option). That's very inconvenient (one might need to write a scrip
-with a long static list of subvolumes and maintain it over time or
-write a scrip which acquires the list from the subvolume list command
-and feeds it to the defrag command one-by-one).
+Le 2017-01-03 07:11, Qu Wenruo a écrit :
+>> 
+>> Hello, what’s the status of my report since last October ?
+>> 
+>> thanks,
+>> 
+>> 
+> Sorry for the late reply.
+> 
+> I tried your image but...
+> It's so slow, no matter the mode I'm using.
+> 
+> So I'm not sure if it's a deadlock since lowmem mode still takes
+> several minuts and just output the same output.
+Anyway, I got the lowmem mode finishing. But it didn’t solved my 
+problem. I have a core i7‑6700k ᴄᴘᴜ
+> The fs contains SOOOOOOOOO many reflinks and I can hardly determine if
+> it's normal or deadlock.
+> 
+Yes, but most those reflinks are used only by a small number of sparse 
+file whose content are made of 0 bits (they still represent several 
+hundreds of Gb data). If those files can be deleted, then I should be 
+able to btrfs the disk normally. (the problem is I can’t do it because 
+of filesystem corruption)
 
-> Because each subvolume is functionally it's own tree, it has it's own
-> locking for changes and other stuff, which means that splitting into
-> subvolumes will usually help with concurrency.  A lot of high concurrency
-> performance benchmarks do significantly better if you split things into
-> individual subvolumes (and this drives a couple of the other kernel
-> developers crazy to no end).  It's not well published, but this is actually
-> the recommended usage if you can afford the complexity and don't need
-> snapshots.
+I don’t know how much they are, but I think the number is high enough to 
+make btrfscking the disk as hard as breaking encryption.
 
-I am not a developer but this idea drives me crazy as well. I know
-it's a silly reasoning but if you blindly extrapolate this idea you
-come to the conclusion that every single file should be transparently
-placed in it's own unique subvolume (by some automatic background
-task) and every directory should automatically be a subvolume. I guess
-there must be some inconveniently sub-optimal behavior in the tree
-handling which could theoretically be optimized (or the observed
-performance improvement of the subvolume segregation is some kind of
-measurement error which does not really translate into actual real
-life overall performance befit but only looks like that from some
-specific perspective of the tests).
+> Considering btrfs check original mode is using list to iteration
+> backrefs, it can be very very slow, maybe O(n^3)~O(n^4).
+> 
+> And considering the number of reflinks, it can be longer than your
+> assumption (maybe longer than 48 hours).
 
-> As far as how much your buffering for write-back, that should depend
-> entirely on how fast your RAM is relative to your storage device.  The
-> smaller the gap between your storage and your RAM in terms of speed, the
-> more you should be buffering (up to a point).  FWIW, I find that with
-> DDR3-1600 RAM and a good (~540MB/s sequential write) SATA3 SSD, about
-> 160-320MB gets a near ideal balance of performance, throughput, and
-> fragmentation, but of course YMMV.
+I tried running it and even after a week nothing is finished. I never 
+assumed anything.
 
-I don't think I share your logic on this. I usually consider the write
-load random and I don't like my softwares possibly stalling while
-there is plenty of RAM laying around to be used as a buffer until some
-other tasks might stop trashing the disks (e.g. "bigger is always
-better").
+> Just try xfstests generic/175, and see how slow btrfs check is.
+> 
+> 
+> And since your fs tree is super big, normal btrfs-debug-tree output
+> will be over several GBs for debugging, this also makes things quite
+> nasty to debug manually.
+But most of the virtual space is used by only a small number of very 
+large files which I agree to delete.
 
-> Out of curiosity, just on this part, have you tried using cgroups to keep
-> the memory usage isolated better?
+> IMHO we only have 2 remaining methods to fix your fs:
+> 1) Rework current backref structure.
+>    Use rb-tree other than list to iteration.
+> 2) Introduce --init-extent-tree in lowmem mode.
+> 
+> Neither way it's a quick fix.
+> And I'm trying to implement the 2nd method first, but it may takes a
+> lot of time.
+> (I still have a lot of other btrfs development to do, sorry)
+> 
+> I'd suggest you to rebuild the fs, considering the time we need to fix 
+> it.
+which I can’t, looks like it will takes some months to get a rce 
+vulnerability in git to get fixed (before corrupting the filesystem, I 
+saw ᴄᴠᴇ‑2016‑2315 was fixed incorrectly on GitHub servers).
 
-No, I didn't even know cgroups can control the pagecache based on the
-process which generates the cache-able IO.
-To be honest, I don't think it's worth the effort for me (I would need
-to learn how to use cgroups, I have zero experience with that).
-
-> Also, if you can get ffmpeg to spit out the stream on stdout, you could pipe
-> to dd and have that use Direct-IO.  The dd command should be something along
-> the lines of:
-> dd of=<filename> oflag=direct iflag=fullblock bs=<arbitrary large multiple
-> of node-size>
-> The oflag will force dd to open the output file with O_DIRECT, the iflag
-> will force it to collect full blocks of data before writing them (the size
-> is set by bs=, I'd recommend using a power of 2 that's a multiple of your
-> node-size, larger numbers will increase latency but reduce fragmentation and
-> improve throughput).  This may still use a significant amount of RAM (the
-> pipe is essentially an in-memory buffer), and may crowd out other
-> applications, but I have no idea how much it may or may not help.
-
-This I can try (when I have no better things to play with). Thank you.
+As soon as I get access to my previous work data, I will be able to 
+trace the root cause in ~1‒5 hours.
+> Thanks,
+> Qu
+regards,

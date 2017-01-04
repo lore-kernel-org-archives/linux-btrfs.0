@@ -1,94 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f65.google.com ([209.85.214.65]:34236 "EHLO
-        mail-it0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752518AbdA3UFu (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 30 Jan 2017 15:05:50 -0500
-Received: by mail-it0-f65.google.com with SMTP id o185so16676392itb.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 Jan 2017 12:04:26 -0800 (PST)
+Received: from cn.fujitsu.com ([59.151.112.132]:41810 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751602AbdADHxE (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Jan 2017 02:53:04 -0500
+Subject: Re: [PATCH] btrfs: fix false enospc error when truncating heavily
+ reflinked file
+To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
+References: <20160907121738.23713-1-wangxg.fnst@cn.fujitsu.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <4e3e1e7e-aeaf-9b81-0b0e-d1311f2b7ef1@cn.fujitsu.com>
+Date: Wed, 4 Jan 2017 15:52:47 +0800
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <1476176474-15900-1-git-send-email-robbieko@synology.com>
-References: <1476176474-15900-1-git-send-email-robbieko@synology.com>
-From: Filipe Manana <fdmanana@gmail.com>
-Date: Mon, 30 Jan 2017 20:04:25 +0000
-Message-ID: <CAL3q7H4kRh32wDOqX9DuzEb6RkuJeCpVrMUoCO3UADr1Rs8+jQ@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: fix -EINVEL in tree log recovering
-To: robbieko <robbieko@synology.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <20160907121738.23713-1-wangxg.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 11, 2016 at 10:01 AM, robbieko <robbieko@synology.com> wrote:
-> From: Robbie Ko <robbieko@synology.com>
+Hi,
+
+Any comment on this patch?
+
+Without it, btrfs will always fail for generic/387.
+
+Thanks,
+Qu
+
+At 09/07/2016 08:17 PM, Wang Xiaoguang wrote:
+> Below test script can reveal this bug:
+>     dd if=/dev/zero of=fs.img bs=$((1024*1024)) count=100
+>     dev=$(losetup --show -f fs.img)
+>     mkdir -p /mnt/mntpoint
+>     mkfs.btrfs  -f $dev
+>     mount $dev /mnt/mntpoint
+>     cd /mnt/mntpoint
 >
-> when tree log recovery, space_cache rebuild or dirty maybe save the cache.
-> and then replay extent with disk_bytenr and disk_num_bytes,
-> but disk_bytenr and disk_num_bytes maybe had been use for free space inode,
-> will lead to -EINVEL.
-
--EINVEL -> -EINVAL
-
-More importantly, and sorry to say, but I can't parse nor make sense
-of your change log.
-It kind of seems you're saying that replaying an extent from the log
-tree can collide somehow with the space reserved for a free space
-cache, or the other way around, writing a space cache attempts to use
-an extent that overlaps an extent that was replayed during log
-recovery (presumably during the transaction commit done at the end of
-the log recovery).
-
-Now honestly, think of how you would explain the problem in your
-native tongue. Do you think a single short sentence like that is
-enough to explain such a non-trivial problem? I doubt it, no matter
-what language we pick... Or think that in a few months or maybe years
-(or whatever time frame) even you forgot what was the problem and
-you're trying to remember the details by reading the change log - do
-you think this change log would help at all?
-
-At least tell us what (function) is returning -EINVAL, make a function
-call graph, give a sample scenario, or better yet, send a test case
-(fstests) to reproduce this, since it seems to be a fully
-deterministic and 100% reproducible case.
-
-Thanks.
-
+>     echo "workdir is: /mnt/mntpoint"
+>     blocksize=$((128 * 1024))
+>     dd if=/dev/zero of=testfile bs=$blocksize count=1
+>     sync
+>     count=$((17*1024*1024*1024/blocksize))
+>     echo "file size is:" $((count*blocksize))
+>     for ((i = 1; i <= $count; i++)); do
+>         dst_offset=$((blocksize * i))
+>         xfs_io -f -c "reflink testfile 0 $dst_offset $blocksize"\
+>                 testfile > /dev/null
+>     done
+>     sync
+>     truncate --size 0 testfile
 >
-> BTRFS: error in btrfs_replay_log:2446: errno=-22 unknown (Failed to recover log tree)
+> The last truncate operation will fail for ENOSPC reason, but indeed
+> it should not fail.
 >
-> therefore, we not save cache when tree log recovering.
+> In btrfs_truncate(), we use a temporary block_rsv to do truncate
+> operation. With every btrfs_truncate_inode_items() call, we migrate space
+> to this block_rsv, but forget to cleanup previous reservation, which
+> will make this block_rsv's reserved bytes keep growing, and this reserved
+> space will only be released in the end of btrfs_truncate(), this metadata
+> leak will impact other's metadata reservation. In this case, it's
+> "btrfs_start_transaction(root, 2);" fails for enospc error, which make
+> this truncate operation fail.
 >
-> Signed-off-by: Robbie Ko <robbieko@synology.com>
+> Call btrfs_block_rsv_release() to fix this bug.
+>
+> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 > ---
->  fs/btrfs/extent-tree.c | 1 +
+>  fs/btrfs/inode.c | 1 +
 >  1 file changed, 1 insertion(+)
 >
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 665da8f..38b932c 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -3434,6 +3434,7 @@ again:
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index e6811c4..40f0762 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -9206,6 +9206,7 @@ static int btrfs_truncate(struct inode *inode)
+>  			break;
+>  		}
 >
->         spin_lock(&block_group->lock);
->         if (block_group->cached != BTRFS_CACHE_FINISHED ||
-> +               block_group->fs_info->log_root_recovering ||
->             !btrfs_test_opt(root->fs_info, SPACE_CACHE)) {
->                 /*
->                  * don't bother trying to write stuff out _if_
-> --
-> 1.9.1
+> +		btrfs_block_rsv_release(root, rsv, -1);
+>  		ret = btrfs_block_rsv_migrate(&root->fs_info->trans_block_rsv,
+>  					      rsv, min_size, 0);
+>  		BUG_ON(ret);	/* shouldn't happen */
 >
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
 
-
--- 
-Filipe David Manana,
-
-"People will forget what you said,
- people will forget what you did,
- but people will never forget how you made them feel."

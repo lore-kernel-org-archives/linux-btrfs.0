@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from synology.com ([59.124.61.242]:39661 "EHLO synology.com"
+Received: from synology.com ([59.124.61.242]:40408 "EHLO synology.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1033230AbdAEI0d (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 5 Jan 2017 03:26:33 -0500
+        id S1033226AbdAEI0e (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 5 Jan 2017 03:26:34 -0500
 From: robbieko <robbieko@synology.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Robbie Ko <robbieko@synology.com>
-Subject: [PATCH v3 3/6] Btrfs: incremental send, fix not necessary waiting for rmdir operation
-Date: Thu,  5 Jan 2017 16:24:57 +0800
-Message-Id: <1483604700-21017-4-git-send-email-robbieko@synology.com>
+Subject: [PATCH v3 4/6] Btrfs: incremental send, fix invalid path for rmdir operations
+Date: Thu,  5 Jan 2017 16:24:58 +0800
+Message-Id: <1483604700-21017-5-git-send-email-robbieko@synology.com>
 In-Reply-To: <1483604700-21017-1-git-send-email-robbieko@synology.com>
 References: <1483604700-21017-1-git-send-email-robbieko@synology.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -17,126 +17,78 @@ List-ID: <linux-btrfs.vger.kernel.org>
 From: Robbie Ko <robbieko@synology.com>
 
 Under certain situations, an incremental send operation can
-delay rmdir operation when processing inode 258, but it is
-not necessary, because dir258 is empty.
+a rmdir operation that will make the receiving end fail when
+attempting to execute it, because the path is not exist.
 
 Example scenario:
 Parent snapshot:
-|---- dir258/ (ino 258, gen 27)
-    |---- dir257/ (ino 257, gen 27)
-|---- dir259/ (ino 259, gen 27)
+|---- d259_old/         (ino 259, gen 96)
+    |---- d1/           (ino 258, gen 96)
+|---- f                 (ino 257, gen 96)
 
 Send snapshot:
-|---- new_dir259/ (ino 259, gen 38)
-    |---- new_dir258/ (ino 258, gen 38)
-        |---- new_dir257/ (ino 257, gen 38)
+|---- d258/             (ino 258, gen 98)
+|---- d259/             (ino 259, gen 98)
+    |---- d1/           (ino 257, gen 98)
 
-rmdir dir258/dir257
-mkdir o257-38-0
-mkdir o258-38-0
-chown o257-38-0 - uid=0, gid=0
-chmod o257-38-0 - mode=0755
-rename dir258 -> o258-27-0  -----> dir is empty, but waiting o257-38-0
-mkdir o259-38-0
-chown o258-38-0 - uid=0, gid=0
-chmod o258-38-0 - mode=0755
-rmdir dir259
-rename o259-38-0 -> new_dir259
-utimes
-chown new_dir259 - uid=0, gid=0
-chmod new_dir259 - mode=0755
-rename o258-38-0 -> new_dir259/new_dir258
-utimes new_dir259/new_dir258
-utimes new_dir259
-rename o257-38-0 -> new_dir259/new_dir258/new_dir257
-rmdir o258-27-0             -----> when o257-38-0 finish, delete
-utimes new_dir259/new_dir258/new_dir257
-utimes new_dir259/new_dir258
-utimes new_dir259
+unlink f
+mkdir o257-98-0
+mkdir o259-98-0
+chown o257-98-0 - uid=0, gid=0
+chmod o257-98-0 - mode=0755
+rmdir o258-96-0
+ERROR: rmdir o258-96-0 failed: No such file or directory
 
 While computing the send stream the following steps happen:
 
-1) While processing inode 257 we delete dir258/dir257 immediately.
-   After create o257-38-0, we then delay its rename operation
-   because its new parent in the send snapshot, inode 258,
-   was not yet processed and therefore not yet renamed.
+1) While processing inode 257 we create o257-98-0 and o259-98-0,
+   then delay o257-98-0 rename operation because its new parent
+   in the send snapshot, inode 259, was not yet processed and therefore
+   not yet renamed;
 
-2) On processing inode 258, we need to check if all under files are done
-   before rmdir dir258. However, the waiting o257-38-0 (ino 257) will
-   mislead the check making it think dir257 (ino 257) is still there.
-   dir258 will be orphanized at first but in fact it has become empty.
+2) Later we want to delete d1 (ino 258, gen 96) while processing inode
+   258. In order to get its path for delete, we need to check if it is
+   overwritten in the send snapshot. And we find it is overwritten so
+   we delete it via unique name , which leads to error. The reason is
+   we will find out d1 is under parent directory (inode 259) in the send
+   snapshot, and for this case, because d1(inode 257, gen 98) is not same
+   as d1 (inode 258, gen 96), we conclude d1 has been overwritten.
 
-Fix this by adding generation to waiting_dir_move struct, so can_rmdir
-can use it to correct the result.
+Fix this by adding generation check for the parent directory. Because
+both parent directory are not identical, we can just skip the overwrite
+check. In addition, inode 256 should not check for this since it is a
+subvolume.
 
 Signed-off-by: Robbie Ko <robbieko@synology.com>
 ---
 V3: improve the change log
- fs/btrfs/send.c | 15 ++++++++++++---
- 1 file changed, 12 insertions(+), 3 deletions(-)
+ fs/btrfs/send.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 22eca86..eaf1c92 100644
+index eaf1c92..139f492 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -237,6 +237,7 @@ struct pending_dir_move {
- struct waiting_dir_move {
- 	struct rb_node node;
- 	u64 ino;
-+	u64 gen;
- 	/*
- 	 * There might be some directory that could not be removed because it
- 	 * was waiting for this directory inode to be moved first. Therefore
-@@ -2930,6 +2931,7 @@ static int can_rmdir(struct send_ctx *sctx, u64 dir, u64 dir_gen,
- 	struct btrfs_key found_key;
- 	struct btrfs_key loc;
- 	struct btrfs_dir_item *di;
-+	u64 gen;
- 
- 	/*
- 	 * Don't try to rmdir the top/root subvolume dir.
-@@ -2969,8 +2971,13 @@ static int can_rmdir(struct send_ctx *sctx, u64 dir, u64 dir_gen,
- 				struct btrfs_dir_item);
- 		btrfs_dir_item_key_to_cpu(path->nodes[0], di, &loc);
- 
-+		ret = get_inode_info(root, loc.objectid, NULL, &gen, NULL,
-+				     NULL, NULL, NULL);
-+		if (ret < 0)
-+			goto out;
-+
- 		dm = get_waiting_dir_move(sctx, loc.objectid);
--		if (dm) {
-+		if (dm && dm->gen == gen) {
- 			struct orphan_dir_info *odi;
- 
- 			odi = add_orphan_dir_info(sctx, dir);
-@@ -3010,7 +3017,8 @@ static int is_waiting_for_move(struct send_ctx *sctx, u64 ino)
- 	return entry != NULL;
- }
- 
--static int add_waiting_dir_move(struct send_ctx *sctx, u64 ino, bool orphanized)
-+static int add_waiting_dir_move(struct send_ctx *sctx, u64 ino, u64 gen,
-+		     bool orphanized)
- {
- 	struct rb_node **p = &sctx->waiting_dir_moves.rb_node;
- 	struct rb_node *parent = NULL;
-@@ -3020,6 +3028,7 @@ static int add_waiting_dir_move(struct send_ctx *sctx, u64 ino, bool orphanized)
- 	if (!dm)
- 		return -ENOMEM;
- 	dm->ino = ino;
-+	dm->gen = gen;
- 	dm->rmdir_ino = 0;
- 	dm->orphanized = orphanized;
- 
-@@ -3117,7 +3126,7 @@ static int add_pending_dir_move(struct send_ctx *sctx,
- 			goto out;
- 	}
- 
--	ret = add_waiting_dir_move(sctx, pm->ino, is_orphan);
-+	ret = add_waiting_dir_move(sctx, pm->ino, pm->gen, is_orphan);
- 	if (ret)
+@@ -1938,6 +1938,19 @@ static int did_overwrite_ref(struct send_ctx *sctx,
+ 	if (ret <= 0)
  		goto out;
  
++	if (dir != BTRFS_FIRST_FREE_OBJECTID) {
++		ret = get_inode_info(sctx->send_root, dir, NULL, &gen, NULL,
++				     NULL, NULL, NULL);
++		if (ret < 0 && ret != -ENOENT)
++			goto out;
++		if (ret) {
++			ret = 0;
++			goto out;
++		}
++		if (gen != dir_gen)
++			goto out;
++	}
++
+ 	/* check if the ref was overwritten by another ref */
+ 	ret = lookup_dir_item_inode(sctx->send_root, dir, name, name_len,
+ 			&ow_inode, &other_type);
 -- 
 1.9.1
 

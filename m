@@ -1,266 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f65.google.com ([209.85.214.65]:34088 "EHLO
-        mail-it0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S965374AbdAELbI (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Jan 2017 06:31:08 -0500
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <ea8911b56cc08ecb821c4a6bb8e4646c@synology.com>
-References: <1483527210-2530-1-git-send-email-robbieko@synology.com>
- <1483527210-2530-3-git-send-email-robbieko@synology.com> <CAL3q7H7y2iLrUQVGBDBsNUqn0JRTqqUCrpL6m1yAvHyK1E7ZLg@mail.gmail.com>
- <ea8911b56cc08ecb821c4a6bb8e4646c@synology.com>
-From: Filipe Manana <fdmanana@gmail.com>
-Date: Thu, 5 Jan 2017 11:31:06 +0000
-Message-ID: <CAL3q7H6qQZ+H8KU86x46Va8bmwhrMrWzH=8K7385BpuPLD5MFQ@mail.gmail.com>
-Subject: Re: [PATCH v3 2/4] xfstests: btrfs/132: add test for invaild update
- time by an incremental send
-To: robbieko <robbieko@synology.com>
-Cc: fstests@vger.kernel.org,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from mx2.suse.de ([195.135.220.15]:50420 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751607AbdAEPXN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 5 Jan 2017 10:23:13 -0500
+From: David Sterba <dsterba@suse.com>
+To: clm@fb.com
+Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
+Subject: [PULL] Btrfs fixes for 4.10
+Date: Thu,  5 Jan 2017 16:22:08 +0100
+Message-Id: <cover.1483629310.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 5, 2017 at 2:45 AM, robbieko <robbieko@synology.com> wrote:
-> Filipe Manana 於 2017-01-04 21:09 寫到:
->
->> On Wed, Jan 4, 2017 at 10:53 AM, robbieko <robbieko@synology.com> wrote:
->>>
->>> From: Robbie Ko <robbieko@synology.com>
->>>
->>> Test that an incremental send operation dosen't' work because
->>> it tries to update the time to a deleted directory after it finishes
->>> a move operation.
->>>
->>> The other one is that an operation is applied to a file using the old
->>> name not the new name.
->>>
->>> This test exercises scenarios used to fail in btrfs and are fixed by
->>> the following patches for the linux kernel:
->>>
->>> "Btrfs: incremental send, add generation check for the inode waiting for
->>> rmdir operation."
->>> "Btrfs: incremental send, add generation check in existence
->>> demtermination for the parent directory"
->>>
->>> Signed-off-by: Robbie Ko <robbieko@synology.com>
->>> ---
->>> V3: remove "run_" based helpers
->>> V2: improve the change log
->>>
->>>  tests/btrfs/132     | 123
->>> ++++++++++++++++++++++++++++++++++++++++++++++++++++
->>>  tests/btrfs/132.out |   7 +++
->>>  tests/btrfs/group   |   1 +
->>>  3 files changed, 131 insertions(+)
->>>  create mode 100755 tests/btrfs/132
->>>  create mode 100644 tests/btrfs/132.out
->>>
->>> diff --git a/tests/btrfs/132 b/tests/btrfs/132
->>> new file mode 100755
->>> index 0000000..f1bb698
->>> --- /dev/null
->>> +++ b/tests/btrfs/132
->>> @@ -0,0 +1,123 @@
->>> +#! /bin/bash
->>> +# FS QA Test No. btrfs/132
->>> +#
->>> +# Test that an incremental send operation dosen't' work because
->>> +# it tries to update the time to a deleted directory after it finishes
->>> +# a move operation.
->>> +#
->>> +# The other one is that an operation is applied to a file using the old
->>> +# name not the new name.
->>> +#
->>> +#-----------------------------------------------------------------------
->>> +# Copyright (C) 2016 Synology Inc. All Rights Reserved.
->>> +# Author: Robbie Ko <robbieko@synology.com>
->>> +#
->>> +# This program is free software; you can redistribute it and/or
->>> +# modify it under the terms of the GNU General Public License as
->>> +# published by the Free Software Foundation.
->>> +#
->>> +# This program is distributed in the hope that it would be useful,
->>> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
->>> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
->>> +# GNU General Public License for more details.
->>> +#
->>> +# You should have received a copy of the GNU General Public License
->>> +# along with this program; if not, write the Free Software Foundation,
->>> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
->>> +#-----------------------------------------------------------------------
->>> +#
->>> +
->>> +seq=`basename $0`
->>> +seqres=$RESULT_DIR/$seq
->>> +echo "QA output created by $seq"
->>> +
->>> +tmp=/tmp/$$
->>> +status=1       # failure is the default!
->>> +trap "_cleanup; exit \$status" 0 1 2 3 15
->>> +
->>> +_cleanup()
->>> +{
->>> +       cd /
->>> +       rm -fr $send_files_dir
->>> +       rm -f $tmp.*
->>> +}
->>> +
->>> +# get standard environment, filters and checks
->>> +. ./common/rc
->>> +. ./common/filter
->>> +
->>> +# real QA test starts here
->>> +_supported_fs btrfs
->>> +_supported_os Linux
->>> +_require_test
->>> +_require_scratch
->>> +_require_fssum
->>> +
->>> +send_files_dir=$TEST_DIR/btrfs-test-$seq
->>> +
->>> +rm -f $seqres.full
->>> +rm -fr $send_files_dir
->>> +mkdir $send_files_dir
->>> +
->>> +_scratch_mkfs >>$seqres.full 2>&1
->>> +_scratch_mount
->>> +
->>> +mkdir $SCRATCH_MNT/dir257
->>> +mkdir $SCRATCH_MNT/dir258
->>> +mkdir $SCRATCH_MNT/dir259
->>> +mv $SCRATCH_MNT/dir257 $SCRATCH_MNT/dir258/dir257
->>> +
->>> +# Filesystem looks like:
->>> +#
->>> +# .                                                             (ino
->>> 256)
->>> +# |--- dir258/                                                  (ino
->>> 258)
->>> +# |    |--- dir257/                                             (ino
->>> 257)
->>> +# |
->>> +# |--- dir259/                                                  (ino
->>> 259)
->>> +#
->>> +$BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT \
->>> +    $SCRATCH_MNT/mysnap1 > /dev/null
->>> +
->>> +mv $SCRATCH_MNT/dir258/dir257 $SCRATCH_MNT/dir257
->>> +rmdir $SCRATCH_MNT/dir258
->>> +rmdir $SCRATCH_MNT/dir259
->>> +_scratch_unmount
->>> +_scratch_mount
->>
->>
->> Why do need to remount the fs? There's also a _scratch_remount function.
->>
->> Again, I would like to see comments in the test explaining why and
->> how/why did the incremental send operation used to fail (like most of
->> the existing send/receive tests have).
->>
->> thanks
->
->
-> Because we need to use the same inode 258 recreate, so need to delete the
-> old dir258 and dir259, then remount the fs, the next new file will be
-> generated
-> from inode 258.
+Hi,
 
-So you want to recreate the same inodes, with the same numbers but
-different generation values. You can get the same effect by using the
-mount option "-o inode_cache" (which is more obvious and doesn't rely
-on an implementation detail that is not guaranteed to exist forever).
-Again, as I said in my reply to some other test, this should be well
-explained as a comment in the test.
+a collection of fixes (lockdep, delayed ref locking, dio). The
+btrfs_uuid_tree_iterate return value fix has a visible impact so it's added to
+the mix. Please pull.
 
-thanks
+The following changes since commit 2939e1a86f758b55cdba73e29397dd3d94df13bc:
 
->
->
-> thanks
->
->>
->>> +touch $SCRATCH_MNT/file258
->>> +mkdir $SCRATCH_MNT/new_dir259
->>> +mv $SCRATCH_MNT/dir257 $SCRATCH_MNT/new_dir259/dir257
->>> +
->>> +# Filesystem now looks like:
->>> +#
->>> +# .                                                             (ino
->>> 256)
->>> +# |--- file258                                                  (ino
->>> 258)
->>> +# |
->>> +# |--- new_dir259/                                              (ino
->>> 259)
->>> +# |    |--- dir257/                                             (ino
->>> 257)
->>> +#
->>> +$BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT \
->>> +    $SCRATCH_MNT/mysnap2 > /dev/null
->>> +
->>> +$FSSUM_PROG -A -f -w $send_files_dir/1.fssum $SCRATCH_MNT/mysnap1
->>> +$FSSUM_PROG -A -f -w $send_files_dir/2.fssum \
->>> +        -x $SCRATCH_MNT/mysnap2/mysnap1 $SCRATCH_MNT/mysnap2
->>> +
->>> +$BTRFS_UTIL_PROG send $SCRATCH_MNT/mysnap1 -f \
->>> +    $send_files_dir/1.snap 2>&1 1>/dev/null | _filter_scratch
->>> +$BTRFS_UTIL_PROG send -p $SCRATCH_MNT/mysnap1 $SCRATCH_MNT/mysnap2 \
->>> +       -f $send_files_dir/2.snap 2>&1 1>/dev/null | _filter_scratch
->>> +
->>> +# Now recreate the filesystem by receiving both send streams and verify
->>> we get
->>> +# the same content that the original filesystem had.
->>> +_scratch_unmount
->>> +_scratch_mkfs >>$seqres.full 2>&1
->>> +_scratch_mount
->>> +
->>> +$BTRFS_UTIL_PROG receive $SCRATCH_MNT -f $send_files_dir/1.snap >
->>> /dev/null
->>> +$FSSUM_PROG -r $send_files_dir/1.fssum $SCRATCH_MNT/mysnap1
->>> +$BTRFS_UTIL_PROG receive $SCRATCH_MNT -f $send_files_dir/2.snap >
->>> /dev/null
->>> +$FSSUM_PROG -r $send_files_dir/2.fssum $SCRATCH_MNT/mysnap2
->>> +
->>> +echo "Silence is golden"
->>> +status=0
->>> +exit
->>> diff --git a/tests/btrfs/132.out b/tests/btrfs/132.out
->>> new file mode 100644
->>> index 0000000..ff21547
->>> --- /dev/null
->>> +++ b/tests/btrfs/132.out
->>> @@ -0,0 +1,7 @@
->>> +QA output created by 132
->>> +At subvol SCRATCH_MNT/mysnap1
->>> +At subvol SCRATCH_MNT/mysnap2
->>> +At subvol mysnap1
->>> +OK
->>> +OK
->>> +Silence is golden
->>> diff --git a/tests/btrfs/group b/tests/btrfs/group
->>> index a7a070a..1b12382 100644
->>> --- a/tests/btrfs/group
->>> +++ b/tests/btrfs/group
->>> @@ -134,3 +134,4 @@
->>>  129 auto quick send
->>>  130 auto clone send
->>>  131 auto quick send
->>> +132 auto quick send
->>> --
->>> 1.9.1
->>>
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+  btrfs: limit async_work allocation and worker func duration (2016-12-13 11:01:30 -0800)
 
+are available in the git repository at:
 
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-chris-4.10
 
--- 
-Filipe David Manana,
+for you to fetch changes up to 3dda13a8ad787f3d4c4f18c8c05f8eebc7ea135a:
 
-"People will forget what you said,
- people will forget what you did,
- but people will never forget how you made them feel."
+  Merge branch 'misc-4.10' into for-chris-4.10-20170104 (2017-01-04 11:42:16 +0100)
+
+----------------------------------------------------------------
+David Sterba (1):
+      Merge branch 'misc-4.10' into for-chris-4.10-20170104
+
+Jeff Mahoney (2):
+      btrfs: fix error handling when run_delayed_extent_op fails
+      btrfs: fix locking when we put back a delayed ref that's too new
+
+Liu Bo (3):
+      Btrfs: use down_read_nested to make lockdep silent
+      Btrfs: fix lockdep warning about log_mutex
+      Btrfs: adjust outstanding_extents counter properly when dio write is split
+
+Pan Bian (1):
+      btrfs: return the actual error value from  from btrfs_uuid_tree_iterate
+
+ fs/btrfs/extent-tree.c |  8 ++++++--
+ fs/btrfs/inode.c       | 11 +++++++++--
+ fs/btrfs/tree-log.c    | 13 ++++++++++---
+ fs/btrfs/uuid-tree.c   |  4 +---
+ 4 files changed, 26 insertions(+), 10 deletions(-)

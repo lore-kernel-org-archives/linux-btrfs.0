@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from synology.com ([59.124.61.242]:40408 "EHLO synology.com"
+Received: from synology.com ([59.124.61.242]:40369 "EHLO synology.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1033226AbdAEI0e (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 5 Jan 2017 03:26:34 -0500
+        id S1033225AbdAEI0f (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 5 Jan 2017 03:26:35 -0500
 From: robbieko <robbieko@synology.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Robbie Ko <robbieko@synology.com>
-Subject: [PATCH v3 4/6] Btrfs: incremental send, fix invalid path for rmdir operations
-Date: Thu,  5 Jan 2017 16:24:58 +0800
-Message-Id: <1483604700-21017-5-git-send-email-robbieko@synology.com>
+Subject: [PATCH v3 5/6] Btrfs: incremental send, fix invalid rename operations
+Date: Thu,  5 Jan 2017 16:24:59 +0800
+Message-Id: <1483604700-21017-6-git-send-email-robbieko@synology.com>
 In-Reply-To: <1483604700-21017-1-git-send-email-robbieko@synology.com>
 References: <1483604700-21017-1-git-send-email-robbieko@synology.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -17,78 +17,85 @@ List-ID: <linux-btrfs.vger.kernel.org>
 From: Robbie Ko <robbieko@synology.com>
 
 Under certain situations, an incremental send operation can
-a rmdir operation that will make the receiving end fail when
-attempting to execute it, because the path is not exist.
+a rename operation that will make the receiving end fail when
+attempting to execute it, because the source has been deleted.
 
 Example scenario:
 Parent snapshot:
-|---- d259_old/         (ino 259, gen 96)
-    |---- d1/           (ino 258, gen 96)
-|---- f                 (ino 257, gen 96)
+|---- d1/              (ino 257, gen 44)
+|---- d4/              (ino 258, gen 44)
+|---- d3/              (ino 259, gen 44)
 
 Send snapshot:
-|---- d258/             (ino 258, gen 98)
-|---- d259/             (ino 259, gen 98)
-    |---- d1/           (ino 257, gen 98)
+|---- d1/              (ino 258, gen 47)
+|---- d4/              (ino 260, gen 47)
+    |---- d3/          (ino 259, gen 47)
+        |---- d1/          (ino 257, gen 47)
 
-unlink f
-mkdir o257-98-0
-mkdir o259-98-0
-chown o257-98-0 - uid=0, gid=0
-chmod o257-98-0 - mode=0755
-rmdir o258-96-0
-ERROR: rmdir o258-96-0 failed: No such file or directory
+rmdir d1
+mkdir o257-47-0
+mkdir o259-47-0
+chown o257-47-0 - uid=0, gid=0
+chmod o257-47-0 - mode=0755
+rmdir d4
+mkdir o258-47-0
+rename d1 -> o257-44-0
+ERROR: rename d1 -> o257-44-0 failed: No such file or directory
 
 While computing the send stream the following steps happen:
 
-1) While processing inode 257 we create o257-98-0 and o259-98-0,
-   then delay o257-98-0 rename operation because its new parent
-   in the send snapshot, inode 259, was not yet processed and therefore
-   not yet renamed;
+1) While processing inode 257 we remove the d1 (ino 257, gen 44),
+   create o257-47-0 and o259-47-0, and delay o257-47-0 rename operation
+   because its new parent in the send snapshot, inode 259, was not yet
+   processed and therefore not yet renamed;
 
-2) Later we want to delete d1 (ino 258, gen 96) while processing inode
-   258. In order to get its path for delete, we need to check if it is
-   overwritten in the send snapshot. And we find it is overwritten so
-   we delete it via unique name , which leads to error. The reason is
-   we will find out d1 is under parent directory (inode 259) in the send
-   snapshot, and for this case, because d1(inode 257, gen 98) is not same
-   as d1 (inode 258, gen 96), we conclude d1 has been overwritten.
+2) Later when processing on inode 258, after we create o258-47-0 before
+   rename it to d1, we need to check whether it will overwrite others.
+   It shows it will overwrite to d1 (inode 257, gen 44) so needs to
+   rename d1 (inode 257, gen 44) to unique name. But it was previously
+   removed, which leads to rename failed. The reason why we thought
+   d1 (inode 257, gen 44) would be overwirtten is inode 257 with diffent
+   generation 47 is waiting for move, then we are mislead they are the
+   same since we miss the generation check for them.
 
-Fix this by adding generation check for the parent directory. Because
-both parent directory are not identical, we can just skip the overwrite
-check. In addition, inode 256 should not check for this since it is a
-subvolume.
+Fix this by adding generation check for the inode if it is waiting for
+move.
 
 Signed-off-by: Robbie Ko <robbieko@synology.com>
 ---
 V3: improve the change log
- fs/btrfs/send.c | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+ fs/btrfs/send.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index eaf1c92..139f492 100644
+index 139f492..81a2bee 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -1938,6 +1938,19 @@ static int did_overwrite_ref(struct send_ctx *sctx,
- 	if (ret <= 0)
- 		goto out;
+@@ -1857,6 +1857,7 @@ static int will_overwrite_ref(struct send_ctx *sctx, u64 dir, u64 dir_gen,
+ 	u64 gen;
+ 	u64 other_inode = 0;
+ 	u8 other_type = 0;
++	struct waiting_dir_move *dm = NULL;
  
-+	if (dir != BTRFS_FIRST_FREE_OBJECTID) {
-+		ret = get_inode_info(sctx->send_root, dir, NULL, &gen, NULL,
-+				     NULL, NULL, NULL);
-+		if (ret < 0 && ret != -ENOENT)
-+			goto out;
-+		if (ret) {
+ 	if (!sctx->parent_root)
+ 		goto out;
+@@ -1898,11 +1899,15 @@ static int will_overwrite_ref(struct send_ctx *sctx, u64 dir, u64 dir_gen,
+ 	 * overwrite anything at this point in time.
+ 	 */
+ 	if (other_inode > sctx->send_progress ||
+-	    is_waiting_for_move(sctx, other_inode)) {
++		((dm = get_waiting_dir_move(sctx, other_inode)) != NULL)) {
+ 		ret = get_inode_info(sctx->parent_root, other_inode, NULL,
+ 				who_gen, NULL, NULL, NULL, NULL);
+ 		if (ret < 0)
+ 			goto out;
++		if (dm && dm->gen != *who_gen) {
 +			ret = 0;
 +			goto out;
 +		}
-+		if (gen != dir_gen)
-+			goto out;
-+	}
-+
- 	/* check if the ref was overwritten by another ref */
- 	ret = lookup_dir_item_inode(sctx->send_root, dir, name, name_len,
- 			&ow_inode, &other_type);
+ 
+ 		ret = 1;
+ 		*who_ino = other_inode;
 -- 
 1.9.1
 

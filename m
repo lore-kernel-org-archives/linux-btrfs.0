@@ -1,89 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from synology.com ([59.124.61.242]:45010 "EHLO synology.com"
+Received: from synology.com ([59.124.61.242]:45009 "EHLO synology.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1033253AbdAEI1A (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 5 Jan 2017 03:27:00 -0500
+        id S1033254AbdAEI1B (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 5 Jan 2017 03:27:01 -0500
 From: robbieko <robbieko@synology.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Robbie Ko <robbieko@synology.com>
-Subject: [PATCH v3 1/6] Btrfs: incremental send, fix failure to rename with the name collision
-Date: Thu,  5 Jan 2017 16:24:55 +0800
-Message-Id: <1483604700-21017-2-git-send-email-robbieko@synology.com>
-In-Reply-To: <1483604700-21017-1-git-send-email-robbieko@synology.com>
-References: <1483604700-21017-1-git-send-email-robbieko@synology.com>
+Subject: [PATCH v3 0/6] Btrfs: incremental send, fix serval case failure
+Date: Thu,  5 Jan 2017 16:24:54 +0800
+Message-Id: <1483604700-21017-1-git-send-email-robbieko@synology.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Robbie Ko <robbieko@synology.com>
 
-Under certain situations, an incremental send operation can
-a rename operation that will make the receiving end fail when
-attempting to execute it, because the target is exist.
+Patch for fix btrfs incremental send.
+These patches base on v4.8.0-rc8
 
-Example scenario:
-Parent snapshot:
-|.                (ino 256, gen 5)
-|---- a1/         (ino 257, gen 5)
-|---- a2/         (ino 258, gen 5)
+V3: Improve the change log
+V2: Add a new patch "add generation check in existence demtermination for
+    the parent directory"
 
-Send snapshot:
-|.                (ino 256, gen 7)
-|---- a2          (ino 257, gen 7)
+Robbie Ko (6):
+  Btrfs: incremental send, fix failure to rename with the name collision
+  Btrfs: incremental send, fix invalid path for truncate operations
+  Btrfs: incremental send, fix not necessary waiting for rmdir operation
+  Btrfs: incremental send, fix invalid path for rmdir operations
+  Btrfs: incremental send, fix invalid rename operations
+  Btrfs: incremental send, fix invalid utime operations
 
-rmdir a1
-mkfile o257-7-0
-rename o257-7-0 -> a2
-ERROR: rename o257-7-0 -> a2 failed: Is a directory
+ fs/btrfs/send.c | 61 ++++++++++++++++++++++++++++++++++++++++++++-------------
+ 1 file changed, 47 insertions(+), 14 deletions(-)
 
-While computing the send stream the following steps happen:
-
-1) delete a1;
-
-2) mkfile o257-7-0;
-
-3) rename o257-7-0->a2;
-
-In step 3 we will check whether it will lead to overwrite.
-
-The generation number of inode 257's parent (ino 256) in send snapshot
-is 7, which is inconsistent with the one in parent snapshot (gen 5).
-For the general parent directory except inode 256, if its generation
-is not identical between parent and send snapshot, it will be removed
-then created. Thus it's not possible to happen overwrite under the new
-directory. However for the special inode 256, the above logic does not
-work since it is a subvolume. So overwrite check is required for the
-inode 256.
-Fix by skipping generation inconsistency check for inode 256.
-
-Signed-off-by: Robbie Ko <robbieko@synology.com>
----
-V3: improve the change log
- fs/btrfs/send.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index a87675f..2060e75 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -1681,6 +1681,9 @@ static int is_inode_existent(struct send_ctx *sctx, u64 ino, u64 gen)
- {
- 	int ret;
- 
-+	if (ino == BTRFS_FIRST_FREE_OBJECTID)
-+		return 1;
-+
- 	ret = get_cur_inode_state(sctx, ino, gen);
- 	if (ret < 0)
- 		goto out;
-@@ -1866,7 +1869,7 @@ static int will_overwrite_ref(struct send_ctx *sctx, u64 dir, u64 dir_gen,
- 	 * not deleted and then re-created, if it was then we have no overwrite
- 	 * and we can just unlink this entry.
- 	 */
--	if (sctx->parent_root) {
-+	if (sctx->parent_root && dir != BTRFS_FIRST_FREE_OBJECTID) {
- 		ret = get_inode_info(sctx->parent_root, dir, NULL, &gen, NULL,
- 				     NULL, NULL, NULL);
- 		if (ret < 0 && ret != -ENOENT)
 -- 
 1.9.1
 

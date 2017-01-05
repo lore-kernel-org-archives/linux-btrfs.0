@@ -1,35 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:32300 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1750703AbdAWHNk (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 23 Jan 2017 02:13:40 -0500
-Subject: Re: [PATCH] btrfs: raid56: Remove unused variant in lock_stripe_add
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-References: <20170116022306.32446-1-quwenruo@cn.fujitsu.com>
- <20170120182450.GG11951@twin.jikos.cz>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <1d87f1fe-535f-ac9a-70de-7373d9ce2f77@cn.fujitsu.com>
-Date: Mon, 23 Jan 2017 15:13:24 +0800
-MIME-Version: 1.0
-In-Reply-To: <20170120182450.GG11951@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Received: from synology.com ([59.124.61.242]:40368 "EHLO synology.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1033112AbdAEI0e (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 5 Jan 2017 03:26:34 -0500
+From: robbieko <robbieko@synology.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Robbie Ko <robbieko@synology.com>
+Subject: [PATCH v3 6/6] Btrfs: incremental send, fix invalid utime operations
+Date: Thu,  5 Jan 2017 16:25:00 +0800
+Message-Id: <1483604700-21017-7-git-send-email-robbieko@synology.com>
+In-Reply-To: <1483604700-21017-1-git-send-email-robbieko@synology.com>
+References: <1483604700-21017-1-git-send-email-robbieko@synology.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Robbie Ko <robbieko@synology.com>
 
+Under certain situations, an incremental send operation can
+a utime operation that will make the receiving end fail when
+attempting to execute it, because the path has been deleted.
 
-At 01/21/2017 02:24 AM, David Sterba wrote:
-> On Mon, Jan 16, 2017 at 10:23:06AM +0800, Qu Wenruo wrote:
->> Variant 'walk' in lock_stripe_add() is never used.
->> Remove it.
->>
->> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
->
-> Added to 4.11 queue, thaks. Changelog and subject edited.
->
->
-Thanks for the kind info.
-Qu
+Exampla scenario:
+Parent snapshot:
+|---- dir258/         (ino 258, gen 7, dir)
+    |--- dir257/      (ino 257, gen 7, dir)
+|---- dir259/         (ino 259, gen 7, dir)
 
+Send snapshot:
+|---- file258         (ino 258, gen 10, file)
+|---- new_dir259/     (ino 259, gen 10, dir)
+    |--- dir257/      (ino 257, gen 7, dir)
+
+mkdir o259-10-0
+rename dir258 -> o258-7-0
+utimes
+mkfile o258-10-0
+rename o258-10-0 -> file258
+utimes
+truncate file258 size=0
+chown file258 - uid=0, gid=0
+chmod file258 - mode=0644
+utimes file258
+rmdir dir259
+utimes
+rename o259-10-0 -> new_dir259
+utimes
+chown new_dir259 - uid=0, gid=0
+chmod new_dir259 - mode=0755
+rename o258-7-0/dir257 -> new_dir259/dir257
+rmdir o258-7-0
+utimes new_dir259/dir257
+utimes o258-7-0
+ERROR: utimes o258-7-0 failed: No such file or directory
+
+While computing the send stream the following steps happen:
+
+1) While processing inode 257 we create o259-10-0, and delaying dir257
+   rename operation because its new parent in the send snapshot, inode
+   259, was not yet processed and therefore not yet renamed;
+
+2) Later when processing inode 258 we orphanize dir258, and rename it to
+   o258-7-0, because under dir258 there is a dir257 waiting to be moved;
+
+3) Finally, when 259 is finished processing we rename o258-7-0/dir257 to
+   new_dir259/dir257, and then remove directory o258-7-0. After updating
+   the time in the two parents if it's exist, we only check whether
+   the inode number exists in the send snapshot, which result in utimes
+   error, because old parent has been deleted;
+
+Fix this by adding generation check in existence demtermination for
+the parent directory.
+
+Signed-off-by: Robbie Ko <robbieko@synology.com>
+---
+V3: improve the change log
+ fs/btrfs/send.c | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
+
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 81a2bee..b4a4724 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -3338,14 +3338,17 @@ finish:
+ 		/*
+ 		 * The parent inode might have been deleted in the send snapshot
+ 		 */
++		u64 gen;
+ 		ret = get_inode_info(sctx->send_root, cur->dir, NULL,
+-				     NULL, NULL, NULL, NULL, NULL);
+-		if (ret == -ENOENT) {
++				     &gen, NULL, NULL, NULL, NULL);
++
++		if (ret < 0 && ret != -ENOENT)
++			goto out;
++
++		if (ret == -ENOENT || gen != cur->dir_gen) {
+ 			ret = 0;
+ 			continue;
+ 		}
+-		if (ret < 0)
+-			goto out;
+ 
+ 		ret = send_utimes(sctx, cur->dir, cur->dir_gen);
+ 		if (ret < 0)
+-- 
+1.9.1
 

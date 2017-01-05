@@ -1,133 +1,171 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:63734 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1030664AbdAEGCy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 5 Jan 2017 01:02:54 -0500
-Subject: Re: v4.9-rc7 scrub kernel panic
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, btrfs <linux-btrfs@vger.kernel.org>
-References: <f6695ea9-4c2a-be31-ad62-a86164833642@cn.fujitsu.com>
- <1bbc627d-8947-54e8-6376-3ef48cc59e38@cn.fujitsu.com>
-Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <e4d32e1c-180d-2aef-a2f2-3888386d7d97@gmx.com>
-Date: Thu, 5 Jan 2017 14:02:23 +0800
-MIME-Version: 1.0
-In-Reply-To: <1bbc627d-8947-54e8-6376-3ef48cc59e38@cn.fujitsu.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Received: from [195.159.176.226] ([195.159.176.226]:55270 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1033461AbdAEJXz (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Jan 2017 04:23:55 -0500
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1cP4Gw-0004ko-G5
+        for linux-btrfs@vger.kernel.org; Thu, 05 Jan 2017 10:23:46 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: kernel crash after upgrading to 4.9
+Date: Thu, 5 Jan 2017 09:23:35 +0000 (UTC)
+Message-ID: <pan$bae57$81ae2edc$f6b8d81e$acf53525@cox.net>
+References: <c0d145b6-6c81-ef52-4876-85eab927bae7@techsquare.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sometimes I got kernel NULL pointer warning like:
+Matt McKinnon posted on Wed, 04 Jan 2017 10:25:17 -0500 as excerpted:
 
-[  778.248521] BUG: unable to handle kernel NULL pointer dereference at 
-00000000000005f0
-[  778.249728] IP: generic_make_request_checks+0x4d/0x610
+> Hi All,
+> 
+> I seem to have a similar issue to a subject in December:
+> 
+> Subject: page allocation stall in kernel 4.9 when copying files from one
+> btrfs hdd to another
+> 
+> In my case, this is caused when rsync'ing large amounts of data over NFS
+> to the server with the BTRFS file system.  This was not apparent in the
+> previous kernel (4.7).
+> 
+> The poster mentioned some suggestions from Ducan here:
+> 
+> https://mail-archive.com/linux-btrfs@vger.kernel.org/msg60083.html
+> 
+> But those are not visible in the thread.  What suggestions were given to
+> help alleviate this pain?
 
-And the address 0x5f0 is just ((struct block_device *)0)->bd_disk->queue.
+In his case the copying was from 7.2krpm to 5.6krpm drives, but not the 
+reverse or when copying from slower to faster.
 
-I added some extra WARN_ON/BUG_ON() to rbio_add_io_page() where we set 
-io->bi_dev.
+I said that sounded very much like an earlier bug report to both this 
+list and LKML, where Linus responded, suggesting twiddling the dirty_* 
+writecache knobs...  Here's my earlier post there quoted (nearly) 
+verbatim, including footnotes.  I don't know how much memory your system 
+has but the below numbers for my 16 GB system should give you a 
+reasonable idea for initial ballpark settings...
 
-And unsurprisingly, that WAR_ON/BUG_ON() got triggered even we checked 
-stripe->dev->bdev before allocating new bio.
+It's generally accepted wisdom among kernel devs and sysadmins[1] that 
+the existing dirty* write-cache defaults, set at a time when common 
+system memories measured in the MiB, not the GiB of today, are no longer 
+appropriate and should be lowered, but the lack of agreement as to 
+precisely what the settings should be, combined with inertia and the lack 
+of practical pressure given that those who know about the problem have 
+long since adjusted their own systems accordingly, means the existing now 
+generally agreed to be inappropriate defaults continue to remain. =:^(
 
-So there must be some race which corrupts stripe->dev->bdev.
+These knobs can be tweaked in several ways.  For temporary 
+experimentation, it's generally easiest to write (as root) updated values 
+directly to the /proc/sys/vm/dirty_* files themselves.  Once you find 
+values you are comfortable with, most distros have an existing sysctl 
+config[2] that can be altered as appropriate, so the settings get 
+reapplied at each boot.
 
-I'll keep digging but if any one can reproduce the bug, it would be 
-quite helpful to reproduce the bug by running fstests/btrfs/069.
+Various articles with the details are easily googled so I'll be brief 
+here, but here's the apropos settings and comments from my own
+/etc/sysctl.conf and a brief explanation:
 
-Thanks,
-Qu
+# write-cache, foreground/background flushing
+# vm.dirty_ratio = 10 (% of RAM)
+# make it 3% of 16G ~ half a gig
+vm.dirty_ratio = 3
+# vm.dirty_bytes = 0
 
-At 12/20/2016 03:30 PM, Qu Wenruo wrote:
-> Further info:
->
-> I tested several versions of old kernel starts from v4.7, and they all
-> failed on two of my physical machines.
->
-> But strangely, they all passed in KVM guests using virtio.
->
-> Not sure if it's related to the device size (over 50G for each device in
-> physical machines, while less than 10G for each in VM)
->
-> And the profile causing the problem is, unsurprisingly, RAID5 and RAID6.
->
-> For other profile it seems to be OK.
->
-> Thanks,
-> Qu
->
-> At 12/13/2016 11:15 AM, Qu Wenruo wrote:
->> Hi
->>
->> When testing Chris' for-linus-4.10 branch.
->>
->> I found that even at the branch base, v4.9-rc7, btrfs can't pass
->> quite a lot of scrub tests, including btrfs/011 and btrfs/069.
->>
->> The btrfs/069 will fail 100%, with the following back trace:
->>
->> general protection fault: 0000 [#1] SMP
->> Modules linked in: btrfs(O) xor zlib_deflate raid6_pq
->> x86_pkg_temp_thermal ext4 jbd2 mbcache e1000e efivarfs [last unloaded:
->> btrfs]
->> CPU: 3 PID: 5300 Comm: kworker/u8:4 Tainted: G           O    4.9.0-rc7+
->> #20
->> Hardware name: FUJITSU ESPRIMO P720/D3221-A1, BIOS V4.6.5.4 R1.17.0 for
->> D3221-A1x 03/06/2014
->> Workqueue: btrfs-endio-raid56 btrfs_endio_raid56_helper [btrfs]
->> task: ffff88008dbcb740 task.stack: ffffc90001230000
->> RIP: 0010:[<ffffffff813a2fa8>]  [<ffffffff813a2fa8>]
->> generic_make_request_checks+0x198/0x5a0
->> RSP: 0018:ffffc90001233b08  EFLAGS: 00010202
->> RAX: 0000000000000000 RBX: ffff88007f963228 RCX: 0000000000000001
->> RDX: 0000000080000000 RSI: 0000000000000000 RDI: 6b6b6b6b6b6b6b6b
->> RBP: ffffc90001233b68 R08: 00000000868a9b14 R09: eab761b200000000
->> R10: 0000000000000001 R11: 0000000000000001 R12: 0000000000000040
->> R13: 0000000000000004 R14: ffff88008dbc5a88 R15: 0000000000000010
->> FS:  0000000000000000(0000) GS:ffff880119e00000(0000)
->> knlGS:0000000000000000
->> CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
->> CR2: 00000000019c7058 CR3: 00000001150b4000 CR4: 00000000001406e0
->> Stack:
->>  0000000000000002 ffffffff813a4cff ffffffff00000000 0000000000000296
->>  0000000000000292 ffff88008dbcb740 ffffffff00000003 ffff88007f963228
->>  00000000ffffffff 0000000000000004 ffff88008dbc5a88 0000000000000010
->> Call Trace:
->>  [<ffffffff813a4cff>] ? generic_make_request+0xcf/0x290
->>  [<ffffffff813a4c54>] generic_make_request+0x24/0x290
->>  [<ffffffff813a4cff>] ? generic_make_request+0xcf/0x290
->>  [<ffffffff813a4f2e>] submit_bio+0x6e/0x120
->>  [<ffffffffa087279d>] ? page_in_rbio+0x4d/0x80 [btrfs]
->>  [<ffffffffa08737d0>] ? rbio_orig_end_io+0x80/0x80 [btrfs]
->>  [<ffffffffa0873e31>] finish_rmw+0x401/0x550 [btrfs]
->>  [<ffffffffa0874fc6>] validate_rbio_for_rmw+0x36/0x40 [btrfs]
->>  [<ffffffffa087504d>] raid_rmw_end_io+0x7d/0x90 [btrfs]
->>  [<ffffffff8139c536>] bio_endio+0x56/0x60
->>  [<ffffffffa07e6e5c>] end_workqueue_fn+0x3c/0x40 [btrfs]
->>  [<ffffffffa08285bf>] btrfs_scrubparity_helper+0xef/0x610 [btrfs]
->>  [<ffffffffa0828b9e>] btrfs_endio_raid56_helper+0xe/0x10 [btrfs]
->>  [<ffffffff810ec8df>] process_one_work+0x2af/0x720
->>  [<ffffffff810ec85b>] ? process_one_work+0x22b/0x720
->>  [<ffffffff810ecd9b>] worker_thread+0x4b/0x4f0
->>  [<ffffffff810ecd50>] ? process_one_work+0x720/0x720
->>  [<ffffffff810ecd50>] ? process_one_work+0x720/0x720
->>  [<ffffffff810f39d3>] kthread+0xf3/0x110
->>  [<ffffffff810f38e0>] ? kthread_park+0x60/0x60
->>  [<ffffffff81857647>] ret_from_fork+0x27/0x40
->> Code: 00 00 0f 1f 44 00 00 65 8b 05 9d 71 c6 7e 89 c0 48 0f a3 05 c3 13
->> b8 00 0f 92 c3 0f 82 dd 02 00 00 bb 01 00 00 00 e9 8c 00 00 00 <48> 8b
->> 47 08 48 8b 40 50 48 c1 f8 09 48 85 c0 0f 84 99 fe ff ff
->> RIP  [<ffffffff813a2fa8>] generic_make_request_checks+0x198/0x5a0
->>  RSP <ffffc90001233b08>
->>
->> Is this a known bug or a new one caused by the block layer change?
->>
->> Thanks,
->> Qu
->
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+# vm.dirty_background_ratio = 5 (% of RAM)
+# make it 1% of 16G ~ 160 M
+vm.dirty_background_ratio = 1
+# vm.dirty_background_bytes = 0
+
+# vm.dirty_expire_centisecs = 2999 (30 sec)
+# vm.dirty_writeback_centisecs = 499 (5 sec)
+# make it 10 sec
+vm.dirty_writeback_centisecs = 1000
+
+
+The *_bytes and *_ratio files configure the same thing in different ways, 
+ratio being percentage of RAM, bytes being... bytes.  Set one or the 
+other as you prefer and the other one will be automatically zeroed out.  
+The vm.dirty_background_* settings control when the kernel starts lower 
+priority flushing, while high priority vm.dirty_* (not background) 
+settings control when the kernel forces threads trying to do further 
+writes to wait until some currently in-flight writes are completed.
+
+(Rereading this now, I seem to have been inaccurate on one detail.  I'm 
+not a dev and definitely not a kernel dev, but from what I've read, once 
+foreground writeback is triggered, the kernel actually accounts writes to 
+the threads actually doing the writing, causing them to spend much of 
+their time they'd otherwise be using to dirty even more memory in IO-
+wait, waiting to write out memory they've already dirtied, thus 
+throttling their ability to dirty even more memory, ultimately slowing 
+down their ability to dirty memory to the speed at which writeback is 
+actually occurring.)
+
+But those values only apply to size up until the expiry time has 
+occurred, at which point writeback is still forced.  That's where that 
+setting comes in.
+
+The problem is that memory has gotten bigger much faster than the speed 
+of actually writing out to slow spinning rust has increased. (Fast ssds 
+have far less issues in this regard, tho slow flash like common USB thumb 
+drives remain affected, indeed, sometimes even more so.)  Common random-
+write spinning rust write speeds are 100 MiB/sec and may be as low as 30 
+MiB/sec.  Meanwhile, the default 10% dirty_ratio, at 16 GiB memory size, 
+approaches[3] 1.6 GiB, ~1600 MiB.  At 100 MiB/sec that's 16 seconds worth 
+of writeback to clear.  At 30 MiB/sec, that's... well beyond the 30 
+second expiry time!
+
+To be clear, there's still a bug if the system crashes as a result -- the 
+normal case should simply be a system that at worst doesn't respond for 
+the writeback period, to be sure a problem in itself when that period 
+exceeds double-digit seconds, but surely less of one than a total crash, 
+as long as the system /does/ come back after perhaps half a minute or so.
+
+Anyway, as you can see from the above excerpt from my own sysctl.conf, 
+for my 16 GiB system, I use a much more reasonable 1% background writeback 
+trigger, ~160 MiB on 16 GiB, and 3% high-priority/foreground, ~ half a 
+GiB on 16 GiB.  I actually set those long ago, before I switched to btrfs 
+and before I switched to ssd as well, but even tho ssd should work far 
+better with the defaults than spinning rust does, those settings don't 
+hurt on ssd either, and I've seen no reason to change them.
+
+So try 1% background and 3% foreground flushing ratios on your 32 GiB 
+system as well, and see if that helps, or possibly try setting the _bytes 
+values instead, since 1% is still quite huge in writeback time terms, on 
+32 GiB.  Tweaking those down on the previously reported bug certainly 
+helped there as he couldn't reproduce after that, and it looks like 
+you're running 2+ GiB dirty based on your posted meminfo now, so it 
+should reduce that, and hopefully eliminate the trigger for you, tho of 
+course it won't fix the root bug.  As I said it shouldn't crash in any 
+case, even if it goes unresponsive for half a minute or so at a time, so 
+there's certainly a bug to fix, but that will hopefully let you work 
+without running into it.
+
+Again, you can write the new values direct to the proc interface without 
+rebooting, for experimentation.  Once you find values appropriate for 
+you, however, write them to sysctl.conf or whatever your distro uses 
+instead, so they get applied automatically at each boot.
+
+---
+[1] Sysadmins:  Like me, no claim to dev here, nor am I a professional 
+sysadmin, but arguably I do take the responsibility of adminning my own 
+systems more seriously than most appear to, enough to claim sysadmin as 
+an appropriate descriptor.
+
+[2] Sysctl config.  Look in /etc/sysctl.d/* and/or /etc/sysctl.conf, as 
+appropriate to your distro.
+
+[3] Approaches: The memory figure used for calculating this percentage 
+excludes some things so it won't actually reach 10% of total memory.  But 
+the exclusions are small enough that they can be hand-waved away for 
+purposes of this discussion.
+
+
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

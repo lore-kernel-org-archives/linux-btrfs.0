@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f66.google.com ([74.125.82.66]:33154 "EHLO
+Received: from mail-wm0-f66.google.com ([74.125.82.66]:33117 "EHLO
         mail-wm0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755128AbdAFOLU (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Jan 2017 09:11:20 -0500
+        with ESMTP id S1752814AbdAFOLR (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Jan 2017 09:11:17 -0500
 From: Michal Hocko <mhocko@kernel.org>
 To: <linux-mm@kvack.org>, <linux-fsdevel@vger.kernel.org>
 Cc: Andrew Morton <akpm@linux-foundation.org>,
@@ -15,187 +15,69 @@ Cc: Andrew Morton <akpm@linux-foundation.org>,
         linux-mtd@lists.infradead.org, reiserfs-devel@vger.kernel.org,
         linux-ntfs-dev@lists.sourceforge.net,
         linux-f2fs-devel@lists.sourceforge.net, linux-afs@lists.infradead.org,
-        LKML <linux-kernel@vger.kernel.org>, Michal Hocko <mhocko@suse.com>
-Subject: [PATCH 2/8] xfs: abstract PF_FSTRANS to PF_MEMALLOC_NOFS
-Date: Fri,  6 Jan 2017 15:11:01 +0100
-Message-Id: <20170106141107.23953-3-mhocko@kernel.org>
-In-Reply-To: <20170106141107.23953-1-mhocko@kernel.org>
-References: <20170106141107.23953-1-mhocko@kernel.org>
+        LKML <linux-kernel@vger.kernel.org>, Brian Foster <bfoster@redhat.com>,
+        Michal Hocko <mhocko@suse.com>,
+        "Peter Zijlstra (Intel)" <peterz@infradead.org>
+Subject: [PATCH 0/8 v3] scope GFP_NOFS api
+Date: Fri,  6 Jan 2017 15:10:59 +0100
+Message-Id: <20170106141107.23953-1-mhocko@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Michal Hocko <mhocko@suse.com>
+Hi,
+I have posted the previous version here [1]. Since then I've added some
+reviewed bys and fixed some minor issues. I've dropped patch 2 [2] based
+on Dave's request [3]. I agree that this can be done later and doing
+all at once. I still think that __GFP_NOLOCKDEP should be added by this
+series to make the further development easier.
 
-xfs has defined PF_FSTRANS to declare a scope GFP_NOFS semantic quite
-some time ago. We would like to make this concept more generic and use
-it for other filesystems as well. Let's start by giving the flag a
-more generic name PF_MEMALLOC_NOFS which is in line with an exiting
-PF_MEMALLOC_NOIO already used for the same purpose for GFP_NOIO
-contexts. Replace all PF_FSTRANS usage from the xfs code in the first
-step before we introduce a full API for it as xfs uses the flag directly
-anyway.
+There didn't seem to be any real objections and so I think we should go
+and merge this and build further on top. I would like to get rid of all
+explicit GFP_NOFS usage in ext4 code. I have something half baked already
+and will send it later on. I also hope we can get further with the xfs
+as well.
 
-This patch doesn't introduce any functional change.
+I haven't heard anything from btrfs or other filesystems guys which is a
+bit unfortunate but I do not want to wait for them to much longer, they
+can join the effort later on.
 
-Signed-off-by: Michal Hocko <mhocko@suse.com>
-Reviewed-by: Brian Foster <bfoster@redhat.com>
----
- fs/xfs/kmem.c             |  4 ++--
+The patchset is based on next-20170106
+
+Diffstat says
+ fs/ext4/acl.c             |  6 +++---
+ fs/ext4/extents.c         |  8 ++++----
+ fs/ext4/resize.c          |  4 ++--
+ fs/ext4/xattr.c           |  4 ++--
+ fs/jbd2/journal.c         |  7 +++++++
+ fs/jbd2/transaction.c     | 11 +++++++++++
+ fs/xfs/kmem.c             | 10 +++++-----
  fs/xfs/kmem.h             |  2 +-
  fs/xfs/libxfs/xfs_btree.c |  2 +-
  fs/xfs/xfs_aops.c         |  6 +++---
+ fs/xfs/xfs_buf.c          |  8 ++++----
  fs/xfs/xfs_trans.c        | 12 ++++++------
- include/linux/sched.h     |  2 ++
- 6 files changed, 15 insertions(+), 13 deletions(-)
+ include/linux/gfp.h       | 18 +++++++++++++++++-
+ include/linux/jbd2.h      |  2 ++
+ include/linux/sched.h     | 32 ++++++++++++++++++++++++++------
+ kernel/locking/lockdep.c  |  6 +++++-
+ lib/radix-tree.c          |  2 ++
+ mm/page_alloc.c           |  8 +++++---
+ mm/vmscan.c               |  6 +++---
+ 19 files changed, 109 insertions(+), 45 deletions(-)
 
-diff --git a/fs/xfs/kmem.c b/fs/xfs/kmem.c
-index 339c696bbc01..a76a05dae96b 100644
---- a/fs/xfs/kmem.c
-+++ b/fs/xfs/kmem.c
-@@ -80,13 +80,13 @@ kmem_zalloc_large(size_t size, xfs_km_flags_t flags)
- 	 * context via PF_MEMALLOC_NOIO to prevent memory reclaim re-entering
- 	 * the filesystem here and potentially deadlocking.
- 	 */
--	if ((current->flags & PF_FSTRANS) || (flags & KM_NOFS))
-+	if ((current->flags & PF_MEMALLOC_NOFS) || (flags & KM_NOFS))
- 		noio_flag = memalloc_noio_save();
- 
- 	lflags = kmem_flags_convert(flags);
- 	ptr = __vmalloc(size, lflags | __GFP_HIGHMEM | __GFP_ZERO, PAGE_KERNEL);
- 
--	if ((current->flags & PF_FSTRANS) || (flags & KM_NOFS))
-+	if ((current->flags & PF_MEMALLOC_NOFS) || (flags & KM_NOFS))
- 		memalloc_noio_restore(noio_flag);
- 
- 	return ptr;
-diff --git a/fs/xfs/kmem.h b/fs/xfs/kmem.h
-index 689f746224e7..d973dbfc2bfa 100644
---- a/fs/xfs/kmem.h
-+++ b/fs/xfs/kmem.h
-@@ -50,7 +50,7 @@ kmem_flags_convert(xfs_km_flags_t flags)
- 		lflags = GFP_ATOMIC | __GFP_NOWARN;
- 	} else {
- 		lflags = GFP_KERNEL | __GFP_NOWARN;
--		if ((current->flags & PF_FSTRANS) || (flags & KM_NOFS))
-+		if ((current->flags & PF_MEMALLOC_NOFS) || (flags & KM_NOFS))
- 			lflags &= ~__GFP_FS;
- 	}
- 
-diff --git a/fs/xfs/libxfs/xfs_btree.c b/fs/xfs/libxfs/xfs_btree.c
-index 21e6a6ab6b9a..a2672ba4dc33 100644
---- a/fs/xfs/libxfs/xfs_btree.c
-+++ b/fs/xfs/libxfs/xfs_btree.c
-@@ -2866,7 +2866,7 @@ xfs_btree_split_worker(
- 	struct xfs_btree_split_args	*args = container_of(work,
- 						struct xfs_btree_split_args, work);
- 	unsigned long		pflags;
--	unsigned long		new_pflags = PF_FSTRANS;
-+	unsigned long		new_pflags = PF_MEMALLOC_NOFS;
- 
- 	/*
- 	 * we are in a transaction context here, but may also be doing work
-diff --git a/fs/xfs/xfs_aops.c b/fs/xfs/xfs_aops.c
-index ef382bfb402b..d4094bb55033 100644
---- a/fs/xfs/xfs_aops.c
-+++ b/fs/xfs/xfs_aops.c
-@@ -189,7 +189,7 @@ xfs_setfilesize_trans_alloc(
- 	 * We hand off the transaction to the completion thread now, so
- 	 * clear the flag here.
- 	 */
--	current_restore_flags_nested(&tp->t_pflags, PF_FSTRANS);
-+	current_restore_flags_nested(&tp->t_pflags, PF_MEMALLOC_NOFS);
- 	return 0;
- }
- 
-@@ -252,7 +252,7 @@ xfs_setfilesize_ioend(
- 	 * thus we need to mark ourselves as being in a transaction manually.
- 	 * Similarly for freeze protection.
- 	 */
--	current_set_flags_nested(&tp->t_pflags, PF_FSTRANS);
-+	current_set_flags_nested(&tp->t_pflags, PF_MEMALLOC_NOFS);
- 	__sb_writers_acquired(VFS_I(ip)->i_sb, SB_FREEZE_FS);
- 
- 	/* we abort the update if there was an IO error */
-@@ -1015,7 +1015,7 @@ xfs_do_writepage(
- 	 * Given that we do not allow direct reclaim to call us, we should
- 	 * never be called while in a filesystem transaction.
- 	 */
--	if (WARN_ON_ONCE(current->flags & PF_FSTRANS))
-+	if (WARN_ON_ONCE(current->flags & PF_MEMALLOC_NOFS))
- 		goto redirty;
- 
- 	/*
-diff --git a/fs/xfs/xfs_trans.c b/fs/xfs/xfs_trans.c
-index 70f42ea86dfb..f5969c8274fc 100644
---- a/fs/xfs/xfs_trans.c
-+++ b/fs/xfs/xfs_trans.c
-@@ -134,7 +134,7 @@ xfs_trans_reserve(
- 	bool		rsvd = (tp->t_flags & XFS_TRANS_RESERVE) != 0;
- 
- 	/* Mark this thread as being in a transaction */
--	current_set_flags_nested(&tp->t_pflags, PF_FSTRANS);
-+	current_set_flags_nested(&tp->t_pflags, PF_MEMALLOC_NOFS);
- 
- 	/*
- 	 * Attempt to reserve the needed disk blocks by decrementing
-@@ -144,7 +144,7 @@ xfs_trans_reserve(
- 	if (blocks > 0) {
- 		error = xfs_mod_fdblocks(tp->t_mountp, -((int64_t)blocks), rsvd);
- 		if (error != 0) {
--			current_restore_flags_nested(&tp->t_pflags, PF_FSTRANS);
-+			current_restore_flags_nested(&tp->t_pflags, PF_MEMALLOC_NOFS);
- 			return -ENOSPC;
- 		}
- 		tp->t_blk_res += blocks;
-@@ -221,7 +221,7 @@ xfs_trans_reserve(
- 		tp->t_blk_res = 0;
- 	}
- 
--	current_restore_flags_nested(&tp->t_pflags, PF_FSTRANS);
-+	current_restore_flags_nested(&tp->t_pflags, PF_MEMALLOC_NOFS);
- 
- 	return error;
- }
-@@ -914,7 +914,7 @@ __xfs_trans_commit(
- 
- 	xfs_log_commit_cil(mp, tp, &commit_lsn, regrant);
- 
--	current_restore_flags_nested(&tp->t_pflags, PF_FSTRANS);
-+	current_restore_flags_nested(&tp->t_pflags, PF_MEMALLOC_NOFS);
- 	xfs_trans_free(tp);
- 
- 	/*
-@@ -944,7 +944,7 @@ __xfs_trans_commit(
- 		if (commit_lsn == -1 && !error)
- 			error = -EIO;
- 	}
--	current_restore_flags_nested(&tp->t_pflags, PF_FSTRANS);
-+	current_restore_flags_nested(&tp->t_pflags, PF_MEMALLOC_NOFS);
- 	xfs_trans_free_items(tp, NULLCOMMITLSN, !!error);
- 	xfs_trans_free(tp);
- 
-@@ -998,7 +998,7 @@ xfs_trans_cancel(
- 		xfs_log_done(mp, tp->t_ticket, NULL, false);
- 
- 	/* mark this thread as no longer being in a transaction */
--	current_restore_flags_nested(&tp->t_pflags, PF_FSTRANS);
-+	current_restore_flags_nested(&tp->t_pflags, PF_MEMALLOC_NOFS);
- 
- 	xfs_trans_free_items(tp, NULLCOMMITLSN, dirty);
- 	xfs_trans_free(tp);
-diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 1531c48f56e2..abeb84604d32 100644
---- a/include/linux/sched.h
-+++ b/include/linux/sched.h
-@@ -2320,6 +2320,8 @@ extern void thread_group_cputime_adjusted(struct task_struct *p, cputime_t *ut,
- #define PF_FREEZER_SKIP	0x40000000	/* Freezer should not count it as freezable */
- #define PF_SUSPEND_TASK 0x80000000      /* this thread called freeze_processes and should not be frozen */
- 
-+#define PF_MEMALLOC_NOFS PF_FSTRANS	/* Transition to a more generic GFP_NOFS scope semantic */
-+
- /*
-  * Only the _current_ task can read/write to tsk->flags, but other
-  * tasks can access tsk->flags in readonly mode for example
--- 
-2.11.0
+Shortlog:
+Michal Hocko (8):
+      lockdep: allow to disable reclaim lockup detection
+      xfs: abstract PF_FSTRANS to PF_MEMALLOC_NOFS
+      mm: introduce memalloc_nofs_{save,restore} API
+      xfs: use memalloc_nofs_{save,restore} instead of memalloc_noio*
+      jbd2: mark the transaction context with the scope GFP_NOFS context
+      jbd2: make the whole kjournald2 kthread NOFS safe
+      Revert "ext4: avoid deadlocks in the writeback path by using sb_getblk_gfp"
+      Revert "ext4: fix wrong gfp type under transaction"
+
+[1] http://lkml.kernel.org/r/20161215140715.12732-1-mhocko@kernel.org
+[2] http://lkml.kernel.org/r/20161215140715.12732-3-mhocko@kernel.org
+[3] http://lkml.kernel.org/r/20161219212413.GN4326@dastard
+
 

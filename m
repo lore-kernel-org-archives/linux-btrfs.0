@@ -1,41 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:48619 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1757987AbdAEQZI (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 5 Jan 2017 11:25:08 -0500
-Subject: Re: [PULL] Btrfs fixes for 4.10
-To: David Sterba <dsterba@suse.com>
-References: <cover.1483629310.git.dsterba@suse.com>
-CC: <linux-btrfs@vger.kernel.org>
-From: Chris Mason <clm@fb.com>
-Message-ID: <f06e8daf-6aaa-1086-e433-c71425f9d7e4@fb.com>
-Date: Thu, 5 Jan 2017 11:24:40 -0500
+Received: from userp1040.oracle.com ([156.151.31.81]:18044 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753592AbdAFHIK (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Jan 2017 02:08:10 -0500
+Date: Thu, 5 Jan 2017 23:07:32 -0800
+From: "Darrick J. Wong" <darrick.wong@oracle.com>
+To: mfasheh@versity.com
+Cc: Christoph Hellwig <hch@infradead.org>, xfs <linux-xfs@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH v2] duperemove: test presence of dedupe ioctl
+Message-ID: <20170106070732.GA14020@birch.djwong.org>
 MIME-Version: 1.0
-In-Reply-To: <cover.1483629310.git.dsterba@suse.com>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 01/05/2017 10:22 AM, David Sterba wrote:
-> Hi,
->
-> a collection of fixes (lockdep, delayed ref locking, dio). The
-> btrfs_uuid_tree_iterate return value fix has a visible impact so it's added to
-> the mix. Please pull.
->
-> The following changes since commit 2939e1a86f758b55cdba73e29397dd3d94df13bc:
->
->   btrfs: limit async_work allocation and worker func duration (2016-12-13 11:01:30 -0800)
->
-> are available in the git repository at:
->
->   git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-chris-4.10
->
-> for you to fetch changes up to 3dda13a8ad787f3d4c4f18c8c05f8eebc7ea135a:
->
->   Merge branch 'misc-4.10' into for-chris-4.10-20170104 (2017-01-04 11:42:16 +0100)
+Since a zero-length dedupe operation is guaranteed to succeed, use that
+to test whether or not this filesystem supports dedupe.
 
-Thanks Dave, testing started here.
+Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+---
+v2: declare variables on the stack instead of introducing fake types
+---
+ file_scan.c |   45 +++++++++++++++++++++++++++++++++++----------
+ 1 file changed, 35 insertions(+), 10 deletions(-)
 
--chris
+diff --git a/file_scan.c b/file_scan.c
+index 617f166..2708bfe 100644
+--- a/file_scan.c
++++ b/file_scan.c
+@@ -45,11 +45,7 @@
+ #include "file_scan.h"
+ #include "dbfile.h"
+ #include "util.h"
+-
+-/* This is not in linux/magic.h */
+-#ifndef	XFS_SB_MAGIC
+-#define	XFS_SB_MAGIC		0x58465342	/* 'XFSB' */
+-#endif
++#include "btrfs-ioctl.h"
+ 
+ static char path[PATH_MAX] = { 0, };
+ static char *pathp = path;
+@@ -189,6 +185,37 @@ static int walk_dir(const char *name)
+ 	return ret;
+ }
+ 
++/*
++ * A zero-length dedupe between two files should always succeed,
++ * so we can use this to test the presence of dedupe functionality.
++ */
++static bool check_ioctl_works(int fd)
++{
++	struct {
++		struct btrfs_ioctl_same_args args;
++		struct btrfs_ioctl_same_extent_info info;
++	} sa = {0};
++	struct stat sb;
++	static int cached = -1;
++	int ret;
++
++	if (cached >= 0)
++		return cached != 0;
++
++	ret = fstat(fd, &sb);
++	if (ret)
++		return false;
++
++	sa.args.dest_count = 1;
++	sa.args.length = 0;
++	sa.info.fd = fd;
++	sa.info.logical_offset = 0;
++	errno = 0;
++	ret = btrfs_extent_same(fd, &sa.args);
++	cached = !ret && !errno && !sa.info.status;
++	return cached;
++}
++
+ static int __add_file(const char *name, struct stat *st,
+ 		      struct filerec **ret_file)
+ {
+@@ -235,12 +262,10 @@ static int __add_file(const char *name, struct stat *st,
+ 		goto out;
+ 	}
+ 
+-	if (run_dedupe &&
+-	    ((fs.f_type != BTRFS_SUPER_MAGIC &&
+-	      fs.f_type != XFS_SB_MAGIC))) {
++	if (run_dedupe && !check_ioctl_works(fd)) {
+ 		close(fd);
+-		fprintf(stderr,	"\"%s\": Can only dedupe files on btrfs or xfs "
+-			"(experimental)\n", name);
++		fprintf(stderr,	"\"%s\": dedupe ioctl not supported on this "
++			"filesystem.\n", name);
+ 		return ENOSYS;
+ 	}
+ 

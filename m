@@ -1,98 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:49909 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751209AbdALQGC (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 12 Jan 2017 11:06:02 -0500
-From: Liu Bo <bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:45655 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S935111AbdAFMrW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 6 Jan 2017 07:47:22 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 16993AAC8
+        for <linux-btrfs@vger.kernel.org>; Fri,  6 Jan 2017 12:45:45 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH v2] Btrfs: fix btrfs_ordered_update_i_size to update disk_i_size properly
-Date: Thu, 12 Jan 2017 08:13:26 -0800
-Message-Id: <1484237606-17576-1-git-send-email-bo.li.liu@oracle.com>
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH] btrfs: remove unused logic of limiting async delalloc pages
+Date: Fri,  6 Jan 2017 13:45:30 +0100
+Message-Id: <20170106124530.13909-1-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_ordered_update_i_size can be called by truncate and endio, but only endio
-takes ordered_extent which contains the completed IO.
+A proposed patch in https://marc.info/?l=linux-btrfs&m=147859791003837
+pointed out bad limit threshold in cow_file_range_async, but it turned
+out that the whole logic is not necessary and is done by writeback. We
+agreed to remove it.
 
-while truncating down a file, if there are some in-flight IOs,
-btrfs_ordered_update_i_size in endio will set disk_i_size to @orig_offset that
-is zero.  If truncating-down fails somehow, we try to recover in memory isize
-with this zero'd disk_i_size.
-
-Fix it by only updating disk_i_size with @orig_offset when
-btrfs_ordered_update_i_size is not called from endio while truncating down and
-waiting for in-flight IOs completing their work before recover in-memory size.
-
-Besides fixing the above issue, add an assertion for last_size to double check
-we truncate down to the desired size.
-
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
 ---
-v2: add comments to clarify why we should update disk_i_size in the truncate case.
-
- fs/btrfs/inode.c        | 14 ++++++++++++++
- fs/btrfs/ordered-data.c | 14 ++++++++++++--
- 2 files changed, 26 insertions(+), 2 deletions(-)
+ fs/btrfs/inode.c | 7 -------
+ 1 file changed, 7 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 1cf8e20..a872628 100644
+index a713d9d324b0..3d9649fddb0f 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -4682,6 +4682,13 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
+@@ -1164,7 +1164,6 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	unsigned long nr_pages;
+ 	u64 cur_end;
+-	int limit = 10 * SZ_1M;
  
- 	btrfs_free_path(path);
+ 	clear_extent_bit(&BTRFS_I(inode)->io_tree, start, end, EXTENT_LOCKED,
+ 			 1, 0, NULL, GFP_NOFS);
+@@ -1196,12 +1195,6 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
  
-+	if (err == 0) {
-+		/* only inline file may have last_size != new_size */
-+		if (new_size >= root->sectorsize ||
-+		    new_size > root->fs_info->max_inline)
-+			ASSERT(last_size == new_size);
-+	}
-+
- 	if (be_nice && bytes_deleted > SZ_32M) {
- 		unsigned long updates = trans->delayed_ref_updates;
- 		if (updates) {
-@@ -5064,6 +5071,13 @@ static int btrfs_setsize(struct inode *inode, struct iattr *attr)
- 		if (ret && inode->i_nlink) {
- 			int err;
+ 		btrfs_queue_work(fs_info->delalloc_workers, &async_cow->work);
  
-+			/* To get a stable disk_i_size */
-+			err = btrfs_wait_ordered_range(inode, 0, (u64)-1);
-+			if (err) {
-+				btrfs_orphan_del(NULL, inode);
-+				return err;
-+			}
-+
- 			/*
- 			 * failed to truncate, disk_i_size is only adjusted down
- 			 * as we remove extents, so it should represent the true
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index b2d1e95..35277c5 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -982,8 +982,18 @@ int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
- 	}
- 	disk_i_size = BTRFS_I(inode)->disk_i_size;
- 
--	/* truncate file */
--	if (disk_i_size > i_size) {
-+	/*
-+	 * truncate file.
-+	 * If ordered is not NULL, then this is called from endio and
-+	 * disk_i_size will be updated by either truncate itself or any
-+	 * in-flight IOs which are inside the disk_i_size.
-+	 *
-+	 * Because btrfs_setsize() may set i_size with disk_i_size if truncate
-+	 * fails somehow, we need to make sure we have a precise disk_i_size by
-+	 * updating it as usual.
-+	 *
-+	 */
-+	if (!ordered && disk_i_size > i_size) {
- 		BTRFS_I(inode)->disk_i_size = orig_offset;
- 		ret = 0;
- 		goto out;
+-		if (atomic_read(&fs_info->async_delalloc_pages) > limit) {
+-			wait_event(fs_info->async_submit_wait,
+-				   (atomic_read(&fs_info->async_delalloc_pages) <
+-				    limit));
+-		}
+-
+ 		while (atomic_read(&fs_info->async_submit_draining) &&
+ 		       atomic_read(&fs_info->async_delalloc_pages)) {
+ 			wait_event(fs_info->async_submit_wait,
 -- 
-2.5.5
+2.10.1
 

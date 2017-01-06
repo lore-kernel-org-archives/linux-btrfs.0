@@ -1,98 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:18044 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753592AbdAFHIK (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Jan 2017 02:08:10 -0500
-Date: Thu, 5 Jan 2017 23:07:32 -0800
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: mfasheh@versity.com
-Cc: Christoph Hellwig <hch@infradead.org>, xfs <linux-xfs@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2] duperemove: test presence of dedupe ioctl
-Message-ID: <20170106070732.GA14020@birch.djwong.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from mail-it0-f67.google.com ([209.85.214.67]:33431 "EHLO
+        mail-it0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S965358AbdAFDk4 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Jan 2017 22:40:56 -0500
+Received: by mail-it0-f67.google.com with SMTP id c20so963104itb.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 05 Jan 2017 19:40:56 -0800 (PST)
+From: Nicholas D Steeves <nsteeves@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Nicholas D Steeves <nsteeves@gmail.com>
+Subject: [PATCH] Fix user-facing typos/spelling in user-facing strings
+Date: Thu,  5 Jan 2017 22:40:46 -0500
+Message-Id: <20170106034047.26632-1-nsteeves@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since a zero-length dedupe operation is guaranteed to succeed, use that
-to test whether or not this filesystem supports dedupe.
+Hi,
 
-Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
----
-v2: declare variables on the stack instead of introducing fake types
----
- file_scan.c |   45 +++++++++++++++++++++++++++++++++++----------
- 1 file changed, 35 insertions(+), 10 deletions(-)
+This is just another trivial patch for typos/spelling in user facing strings.
 
-diff --git a/file_scan.c b/file_scan.c
-index 617f166..2708bfe 100644
---- a/file_scan.c
-+++ b/file_scan.c
-@@ -45,11 +45,7 @@
- #include "file_scan.h"
- #include "dbfile.h"
- #include "util.h"
--
--/* This is not in linux/magic.h */
--#ifndef	XFS_SB_MAGIC
--#define	XFS_SB_MAGIC		0x58465342	/* 'XFSB' */
--#endif
-+#include "btrfs-ioctl.h"
- 
- static char path[PATH_MAX] = { 0, };
- static char *pathp = path;
-@@ -189,6 +185,37 @@ static int walk_dir(const char *name)
- 	return ret;
- }
- 
-+/*
-+ * A zero-length dedupe between two files should always succeed,
-+ * so we can use this to test the presence of dedupe functionality.
-+ */
-+static bool check_ioctl_works(int fd)
-+{
-+	struct {
-+		struct btrfs_ioctl_same_args args;
-+		struct btrfs_ioctl_same_extent_info info;
-+	} sa = {0};
-+	struct stat sb;
-+	static int cached = -1;
-+	int ret;
-+
-+	if (cached >= 0)
-+		return cached != 0;
-+
-+	ret = fstat(fd, &sb);
-+	if (ret)
-+		return false;
-+
-+	sa.args.dest_count = 1;
-+	sa.args.length = 0;
-+	sa.info.fd = fd;
-+	sa.info.logical_offset = 0;
-+	errno = 0;
-+	ret = btrfs_extent_same(fd, &sa.args);
-+	cached = !ret && !errno && !sa.info.status;
-+	return cached;
-+}
-+
- static int __add_file(const char *name, struct stat *st,
- 		      struct filerec **ret_file)
- {
-@@ -235,12 +262,10 @@ static int __add_file(const char *name, struct stat *st,
- 		goto out;
- 	}
- 
--	if (run_dedupe &&
--	    ((fs.f_type != BTRFS_SUPER_MAGIC &&
--	      fs.f_type != XFS_SB_MAGIC))) {
-+	if (run_dedupe && !check_ioctl_works(fd)) {
- 		close(fd);
--		fprintf(stderr,	"\"%s\": Can only dedupe files on btrfs or xfs "
--			"(experimental)\n", name);
-+		fprintf(stderr,	"\"%s\": dedupe ioctl not supported on this "
-+			"filesystem.\n", name);
- 		return ENOSYS;
- 	}
- 
+Sincerely,
+Nicholas
+
+Nicholas D Steeves (1):
+  Fix spelling/typos in user-facing strings.
+
+ Documentation/btrfs-device.asciidoc | 2 +-
+ Documentation/btrfs-quota.asciidoc  | 4 ++--
+ image/main.c                        | 2 +-
+ mkfs/main.c                         | 2 +-
+ 4 files changed, 5 insertions(+), 5 deletions(-)
+
+-- 
+2.9.3
+

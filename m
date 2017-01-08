@@ -1,49 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from kiara-balancer-1.wellbehavedsoftware.com ([138.201.134.108]:35986
+Received: from kiara-balancer-1.wellbehavedsoftware.com ([138.201.134.108]:41456
         "EHLO kiara-balancer-1.wellbehavedsoftware.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1754196AbdAHRFl (ORCPT
+        by vger.kernel.org with ESMTP id S933708AbdAHWE5 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 8 Jan 2017 12:05:41 -0500
-Received: from kiara-mail-exchange.vpn.wellbehavedsoftware.com (kiara-mail-exchange.vpn.wellbehavedsoftware.com [10.109.164.135])
-        by mail-hub.vpn.wellbehavedsoftware.com (Postfix) with ESMTP id 3FD275B5730
-        for <linux-btrfs@vger.kernel.org>; Sun,  8 Jan 2017 16:56:29 +0000 (UTC)
-Received: from [10.109.134.101] (81.184.239.202.dyn.user.ono.com [81.184.239.202])
-        by kiara-mail-exchange.vpn.wellbehavedsoftware.com (Postfix) with ESMTPSA id 720323C2A8
-        for <linux-btrfs@vger.kernel.org>; Sun,  8 Jan 2017 16:57:08 +0000 (UTC)
-To: linux-btrfs@vger.kernel.org
+        Sun, 8 Jan 2017 17:04:57 -0500
+Subject: Re: Announcing btrfs-dedupe 1.1.0
+To: j@mailb.org
+References: <b81e1e04-394b-06a8-d4cb-acfe436a8423@pharaoh.uk>
+ <a665ce04-b168-0783-baf2-d32a4679aa0a@mailb.org>
+Cc: linux-btrfs@vger.kernel.org
 From: James Pharaoh <james@pharaoh.uk>
-Subject: Announcing btrfs-dedupe 1.1.0
-Message-ID: <b81e1e04-394b-06a8-d4cb-acfe436a8423@pharaoh.uk>
-Date: Sun, 8 Jan 2017 17:57:02 +0100
+Message-ID: <596569fb-7136-a638-b25f-24940dbc23ae@pharaoh.uk>
+Date: Sun, 8 Jan 2017 23:04:52 +0100
 MIME-Version: 1.0
+In-Reply-To: <a665ce04-b168-0783-baf2-d32a4679aa0a@mailb.org>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi everyone,
+It's supposed to be public! Will have to look into that....
 
-I'm pleased to announce a new version of my btrfs-dedupe tool, written 
-in rust, available here:
+In any case, it's also on github here:
 
-http://btrfs-dedupe.com/
+https://github.com/wellbehavedsoftware/btrfs-dedupe
 
-Binary packages built on ubuntu (probably will work elsewhere, but 
-haven't tried this), are available at:
+James
 
-https://dist.wellbehavedsoftware.com/btrfs-dedupe/
-
-This version is considered ready for production use. It maintains a 
-compressed database of the filesystem state, and it tracks file 
-metadata, hashes file contents, and the extent-map contents, in order to 
-work out what needs to be deduplicated.
-
-This is a whole-file deduplication tool, similar to bedup, but since it 
-is written in Rust, and designed to work with the dedupe ioctl, I think 
-it's more suitable for production use.
-
-As normal for open source, this comes without any warranty etc, but the 
-only updates are performed via the defragment and deduplication ioctls, 
-and so assuming they work correctly then this should not cause any 
-corruption.
-
-Please feel free to contact me with any questions/problems.
+On 08/01/17 22:22, j@mailb.org wrote:
+> hey,
+>
+> On 01/08/2017 05:57 PM, James Pharaoh wrote:
+>> As normal for open source
+>
+> where is the source?
+>
+> https://gitlab.wellbehavedsoftware.com/well-behaved-software/btrfs-dedupe does
+> not have a way to browse the code
+>
+> git clone https://gitlab.wellbehavedsoftware.com/well-behaved-software/btrfs-dedupe
+>
+> asks for Username for 'https://gitlab.wellbehavedsoftware.com':
+>
+> the site has a tooltip suggesting otherwise:
+> <span class="visibility-icon has-tooltip" data-container="body" title="Public -
+> The project can be cloned without any authentication.">
+>
+> j
+>

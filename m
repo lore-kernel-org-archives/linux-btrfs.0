@@ -1,56 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from untroubled.org ([69.5.1.51]:56954 "HELO untroubled.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with SMTP
-        id S940706AbdAFWn1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 6 Jan 2017 17:43:27 -0500
-Date: Fri, 6 Jan 2017 16:43:06 -0600
-From: Bruce Guenter <bruce@untroubled.org>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs subvolume delete --commit-after doesn't wait for deletions
-Message-ID: <20170106224306.GA8756@untroubled.org>
-References: <20170105014656.GA19542@untroubled.org>
- <495af306-19bc-6af1-4411-e2eefe143891@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:34725 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750822AbdAHNQI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 8 Jan 2017 08:16:08 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 3BA28AAC4
+        for <linux-btrfs@vger.kernel.org>; Sun,  8 Jan 2017 13:16:07 +0000 (UTC)
+To: linux-btrfs@vger.kernel.org, Jeff Mahoney <jeffm@suse.com>,
+        David Sterba <dsterba@suse.com>
+From: Goldwyn Rodrigues <rgoldwyn@suse.de>
+Subject: [RFC] Converging userspace and kernel code
+Message-ID: <512c15bf-3c4b-3b88-1106-a7d43386400f@suse.de>
+Date: Sun, 8 Jan 2017 07:16:04 -0600
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha256;
-        protocol="application/pgp-signature"; boundary="PNTmBPCT7hxwcZjr"
-In-Reply-To: <495af306-19bc-6af1-4411-e2eefe143891@cn.fujitsu.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---PNTmBPCT7hxwcZjr
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+1. Motivation
+While fixing user space tools for btrfs-progs, I found a couple of bugs
+which are already solved in kernel space but were not ported to user
+space. User space is a little ignored when it comes to fixing bugs in
+the core functionality. XFS developers have already performed this and
+the userspace and kernel code walks in lockstep for libxfs.
 
-On Thu, Jan 05, 2017 at 10:03:17AM +0800, Qu Wenruo wrote:
-> To wait the deletion finish, please use "btrfs filesystem sync".
 
-That doesn't entirely work either. It does appear to wait for something,
-but disk space available continues to increase after it exits.
+2. Implementation
 
---=20
-Bruce Guenter <bruce@untroubled.org>                http://untroubled.org/
+2.1 Code Re-arranaging
+Re-arrange the kernel code so that core functions are in a separate
+directory "libbtrfs" or "core". (There is already libbtrfs_objects
+keyword defined in Makefile.in, so I am not sure if we should use
+libbtrfs, or perhaps just core). The core directory will contain
+algorithms, function prototypes and implementations spcific to btrfs.
 
---PNTmBPCT7hxwcZjr
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Comparing the current situation, ctree.h is pretty "polluted" with
+functions prototypes which do not belong there, the definition of which
+are not in ctree.c. An example: functions which use struct dentry, inode
+or other kernel component can be moved out of the core. Besides,
+functions which could survive with btrfs_inode as opposed to inode
+should be changed so. We would need new files to split the logic, such
+as creating inode.c to keep all inode related code.
 
------BEGIN PGP SIGNATURE-----
+2.2 Kernel Stubs
+Making the core directory a drop-in replacement will require kernel
+stubs which would make some meaning in user-space. This may or may not
+be included in kerncompat.h. Personally, I would prefer to move
+kerncompat.h into kernel-stub linux/*.h files. The down-side is we could
+have a lot of files and directories for stubs, not forgetting the ones
+for trace/*.h or event asm/*.h.
 
-iQIcBAEBCAAGBQJYcB15AAoJEFFRvcnBTTxnpkIQAIiEieP/EQjf+Ak+fJhvR+Id
-Gdr2uRsOnx6lkNHNCVh7at2G4je54A1IX8557GhDR3/8uOXZ09cWm8Qk0MNfMjU4
-O1VL2fhgss3X8e949jklufbYYc/G8gjvDW5OLSdw0Ohexs0ufxYuYQkET+kGTrbR
-swWVXo7yUzwhyzUe48GeA34gy0HONPkjEotA+807NdD1kiAYlt2+DUPEIC3dABKI
-BoKY/iucF9x5eCps1KhZdClZ87719e4otUy3n1RbBi/p5E/cMVdGPJRllycffh/K
-8C59AWSaTi/l+Qv/sllaj0Kpmz/g3GK23DxW4SsQM3J9AcQ2qJErpkZtlM7jgHL0
-v0OpLS+Kzpgd/Nv5WGL28Pcr67FUBudhp176gy0inH3JdAiNpzq0WX0Ls8tzLdU+
-8v1iyy36GYy9KJA+y4aO+6qdedEewuK7XNYjBBuenyBbr4/EtCphNjYUuPRCijnq
-ERwrbtsYBMNIZXoiZjdT2LjPSuBv1sn74vJJh4K4qstEo7sDpMNKKiHTGwi5AwYJ
-UK9Tu+2fg0MS/UHAoeTG7xUb294ZyA0gPcbowOVbyvOLt7A8TNphIIdKaY3PYTcx
-vz3vZQwEoxsBpIF/UZe56W0DwPm5OQ5PA0YAugfxXwKFFb89qRn2MpRbEG0boLxL
-UgP6qyuEoOl/sAoZtHqd
-=Kl1f
------END PGP SIGNATURE-----
+2.3 Flag day
+Flag day would be the day we move to the new directory structure. Until
+then, we send the patches with the current directory structure. After
+flag day, all patches must be ported to the new directory structure. We
+could request developers to repost/retest patches leading up to the flag
+day.
 
---PNTmBPCT7hxwcZjr--
+
+3. Post converging
+Checks/scripts to make sure that patches which are pushed to kernel
+space will not render user space tools uncompilable.
+
+While these are my (and my teams) thoughts, I would like suggestions
+and/or criticism to improve the idea.
+
+-- 
+Goldwyn

@@ -1,10 +1,13 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f65.google.com ([74.125.83.65]:32941 "EHLO
-        mail-pg0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752041AbdAFOTG (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Jan 2017 09:19:06 -0500
-From: Michal Hocko <mhocko@kernel.org>
-To: <linux-mm@kvack.org>, <linux-fsdevel@vger.kernel.org>
+Received: from mx2.suse.de ([195.135.220.15]:43883 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754718AbdAIM7O (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 9 Jan 2017 07:59:14 -0500
+Subject: Re: [PATCH 2/8] xfs: abstract PF_FSTRANS to PF_MEMALLOC_NOFS
+To: Michal Hocko <mhocko@kernel.org>, linux-mm@kvack.org,
+        linux-fsdevel@vger.kernel.org
+References: <20170106141107.23953-1-mhocko@kernel.org>
+ <20170106141107.23953-3-mhocko@kernel.org>
 Cc: Andrew Morton <akpm@linux-foundation.org>,
         Dave Chinner <david@fromorbit.com>, djwong@kernel.org,
         "Theodore Ts'o" <tytso@mit.edu>, Chris Mason <clm@fb.com>,
@@ -16,98 +19,51 @@ Cc: Andrew Morton <akpm@linux-foundation.org>,
         linux-ntfs-dev@lists.sourceforge.net,
         linux-f2fs-devel@lists.sourceforge.net, linux-afs@lists.infradead.org,
         LKML <linux-kernel@vger.kernel.org>, Michal Hocko <mhocko@suse.com>
-Subject: [DEBUG PATCH 2/2] silent warnings which we cannot do anything about
-Date: Fri,  6 Jan 2017 15:18:45 +0100
-Message-Id: <20170106141845.24362-3-mhocko@kernel.org>
-In-Reply-To: <20170106141845.24362-1-mhocko@kernel.org>
-References: <20170106141107.23953-1-mhocko@kernel.org>
- <20170106141845.24362-1-mhocko@kernel.org>
+From: Vlastimil Babka <vbabka@suse.cz>
+Message-ID: <bf7594a9-7e1a-0895-2d0e-df1f27502db1@suse.cz>
+Date: Mon, 9 Jan 2017 13:59:05 +0100
+MIME-Version: 1.0
+In-Reply-To: <20170106141107.23953-3-mhocko@kernel.org>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Michal Hocko <mhocko@suse.com>
+On 01/06/2017 03:11 PM, Michal Hocko wrote:
+> From: Michal Hocko <mhocko@suse.com>
+> 
+> xfs has defined PF_FSTRANS to declare a scope GFP_NOFS semantic quite
+> some time ago. We would like to make this concept more generic and use
+> it for other filesystems as well. Let's start by giving the flag a
+> more generic name PF_MEMALLOC_NOFS which is in line with an exiting
+> PF_MEMALLOC_NOIO already used for the same purpose for GFP_NOIO
+> contexts. Replace all PF_FSTRANS usage from the xfs code in the first
+> step before we introduce a full API for it as xfs uses the flag directly
+> anyway.
+> 
+> This patch doesn't introduce any functional change.
+> 
+> Signed-off-by: Michal Hocko <mhocko@suse.com>
+> Reviewed-by: Brian Foster <bfoster@redhat.com>
 
-THIS PATCH IS FOR TESTING ONLY AND NOT MEANT TO HIT LINUS TREE
+Acked-by: Vlastimil Babka <vbabka@suse.cz>
 
-There are some code paths used by all the filesystems which we cannot
-change to drop the GFP_NOFS, yet they generate a lot of warnings.
-Provide {disable,enable}_scope_gfp_check to silence those.
-alloc_page_buffers and grow_dev_page are silenced right away.
+A nit:
 
-Signed-off-by: Michal Hocko <mhocko@suse.com>
----
- fs/buffer.c           |  4 ++++
- include/linux/sched.h | 11 +++++++++++
- mm/page_alloc.c       |  3 +++
- 3 files changed, 18 insertions(+)
+> --- a/include/linux/sched.h
+> +++ b/include/linux/sched.h
+> @@ -2320,6 +2320,8 @@ extern void thread_group_cputime_adjusted(struct task_struct *p, cputime_t *ut,
+>  #define PF_FREEZER_SKIP	0x40000000	/* Freezer should not count it as freezable */
+>  #define PF_SUSPEND_TASK 0x80000000      /* this thread called freeze_processes and should not be frozen */
+>  
+> +#define PF_MEMALLOC_NOFS PF_FSTRANS	/* Transition to a more generic GFP_NOFS scope semantic */
 
-diff --git a/fs/buffer.c b/fs/buffer.c
-index 28484b3ebc98..dbe529e7881b 100644
---- a/fs/buffer.c
-+++ b/fs/buffer.c
-@@ -873,7 +873,9 @@ struct buffer_head *alloc_page_buffers(struct page *page, unsigned long size,
- 	head = NULL;
- 	offset = PAGE_SIZE;
- 	while ((offset -= size) >= 0) {
-+		disable_scope_gfp_check();
- 		bh = alloc_buffer_head(GFP_NOFS);
-+		enable_scope_gfp_check();
- 		if (!bh)
- 			goto no_grow;
- 
-@@ -1003,7 +1005,9 @@ grow_dev_page(struct block_device *bdev, sector_t block,
- 	 */
- 	gfp_mask |= __GFP_NOFAIL;
- 
-+	disable_scope_gfp_check();
- 	page = find_or_create_page(inode->i_mapping, index, gfp_mask);
-+	enable_scope_gfp_check();
- 	if (!page)
- 		return ret;
- 
-diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 59428926e989..f60294732ed5 100644
---- a/include/linux/sched.h
-+++ b/include/linux/sched.h
-@@ -1988,6 +1988,7 @@ struct task_struct {
- 	/* A live task holds one reference. */
- 	atomic_t stack_refcount;
- #endif
-+	bool disable_scope_gfp_warn;
- 	unsigned long nofs_caller;
- 	unsigned long noio_caller;
- /* CPU-specific state of this task */
-@@ -2390,6 +2391,16 @@ static inline unsigned int __memalloc_nofs_save(unsigned long caller)
- 	return flags;
- }
- 
-+static inline void disable_scope_gfp_check(void)
-+{
-+	current->disable_scope_gfp_warn = true;
-+}
-+
-+static inline void enable_scope_gfp_check(void)
-+{
-+	current->disable_scope_gfp_warn = false;
-+}
-+
- #define memalloc_nofs_save()	__memalloc_nofs_save(_RET_IP_)
- 
- static inline void memalloc_nofs_restore(unsigned int flags)
-diff --git a/mm/page_alloc.c b/mm/page_alloc.c
-index 87a2bb5262b2..5405278bd733 100644
---- a/mm/page_alloc.c
-+++ b/mm/page_alloc.c
-@@ -3762,6 +3762,9 @@ void debug_scope_gfp_context(gfp_t gfp_mask)
- 	if (!(gfp_mask & __GFP_DIRECT_RECLAIM))
- 		return;
- 
-+	if (current->disable_scope_gfp_warn)
-+		return;
-+
- 	if (current->flags & PF_MEMALLOC_NOIO)
- 		restrict_mask = __GFP_IO;
- 	else if ((current->flags & PF_MEMALLOC_NOFS) && (gfp_mask & __GFP_IO))
--- 
-2.11.0
+I don't see why this transition is needed, as there are already no users
+of PF_FSTRANS after this patch. The next patch doesn't remove any more,
+so this is just extra churn IMHO. But not a strong objection.
+
+> +
+>  /*
+>   * Only the _current_ task can read/write to tsk->flags, but other
+>   * tasks can access tsk->flags in readonly mode for example
+> 
 

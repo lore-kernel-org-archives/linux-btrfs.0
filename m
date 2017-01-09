@@ -1,43 +1,155 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33499 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751115AbdAQQQk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Jan 2017 11:16:40 -0500
-Date: Tue, 17 Jan 2017 17:15:50 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <n.borisov.lkml@gmail.com>
-Cc: dsterba@suse.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 00/24] tree-log inode vs btrfs_inode cleanups
-Message-ID: <20170117161550.GW12081@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1484229650-24554-1-git-send-email-n.borisov.lkml@gmail.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:58133 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751298AbdAIAxm (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 Jan 2017 19:53:42 -0500
+Subject: Re: [PATCH] btrfs: fix crash when tracepoint arguments are freed by
+ wq callbacks
+To: David Sterba <dsterba@suse.com>, <linux-btrfs@vger.kernel.org>
+References: <20170106141134.8133-1-dsterba@suse.com>
+CC: <bigeasy@linutronix.de>, <stable@vger.kernel.org>, <#@suse.cz>,
+        <4.8+@suse.cz>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <d1c4aaba-86ad-d238-5094-bd28d05d32d4@cn.fujitsu.com>
+Date: Mon, 9 Jan 2017 08:53:12 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1484229650-24554-1-git-send-email-n.borisov.lkml@gmail.com>
+In-Reply-To: <20170106141134.8133-1-dsterba@suse.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 12, 2017 at 04:00:26PM +0200, Nikolay Borisov wrote:
-> So here is a new set of patches cleaning up tree-log function 
-> w.r.t inode vs btrfs_inode. There are still some which remain 
-> but I didn't find compelling arguments to cleaning them up, so 
-> I've left them unchanged. This time there are some size shrinkage:
-> 
->    text	   data	    bss	    dec	    hex	filename
->    2530598	 174661	  28288	2733547	 29b5eb	fs/btrfs/btrfs.ko - upstream master
-> 
->  	text	   data	    bss	    dec	    hex	filename
->  	2530774	 174661	  28288	2733723	 29b69b	fs/btrfs/btrfs.ko - before tree-log cleanup
-> 
->     text	   data	    bss	    dec	    hex	filename
-> 	2530163	 174661	  28288	2733112	 29b438	fs/btrfs/btrfs.ko - both series applied 
-> 
-> So the net result of the 2 series is 435 bytes and I assume there 
-> will be further reduction in size once further cleanups are made 
 
-Thanks. I was about to apply the series but patch 06/24 fails to apply
-on anytihing that I could use (master, cmason's integration or the
-cleanups-next branch). Can you please refresh it on top of master? The
-conflict looks like the patch tries to apply the same change twice to
-btrfs_del_dir_entries_in_log, so it would be better is you check.
-Thanks.
+
+At 01/06/2017 10:11 PM, David Sterba wrote:
+> Enabling btrfs tracepoints leads to instant crash, as reported. The wq
+> callbacks could free the memory and the tracepoints started to
+> dereference the members to get to fs_info.
+>
+> The proposed fix https://marc.info/?l=linux-btrfs&m=148172436722606&w=2
+> removed the tracepoints but we could preserve them by passing only the
+> required data in a safe way.
+>
+> Fixes: bc074524e123 ("btrfs: prefix fsid to all trace events")
+> CC: stable@vger.kernel.org # 4.8+
+> Reported-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+> Signed-off-by: David Sterba <dsterba@suse.com>
+
+Reviewed-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+
+Thanks for the fix.
+Qu
+
+> ---
+>  fs/btrfs/async-thread.c      | 15 +++++++++++----
+>  include/trace/events/btrfs.h | 22 +++++++++++++---------
+>  2 files changed, 24 insertions(+), 13 deletions(-)
+>
+> diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
+> index 63d197724519..ff0b0be92d61 100644
+> --- a/fs/btrfs/async-thread.c
+> +++ b/fs/btrfs/async-thread.c
+> @@ -273,6 +273,8 @@ static void run_ordered_work(struct __btrfs_workqueue *wq)
+>  	unsigned long flags;
+>
+>  	while (1) {
+> +		void *wtag;
+> +
+>  		spin_lock_irqsave(lock, flags);
+>  		if (list_empty(list))
+>  			break;
+> @@ -299,11 +301,13 @@ static void run_ordered_work(struct __btrfs_workqueue *wq)
+>  		spin_unlock_irqrestore(lock, flags);
+>
+>  		/*
+> -		 * we don't want to call the ordered free functions
+> -		 * with the lock held though
+> +		 * We don't want to call the ordered free functions with the
+> +		 * lock held though. Save the work as tag for the trace event,
+> +		 * because the callback could free the structure.
+>  		 */
+> +		wtag = work;
+>  		work->ordered_free(work);
+> -		trace_btrfs_all_work_done(work);
+> +		trace_btrfs_all_work_done(wq->fs_info, wtag);
+>  	}
+>  	spin_unlock_irqrestore(lock, flags);
+>  }
+> @@ -311,6 +315,7 @@ static void run_ordered_work(struct __btrfs_workqueue *wq)
+>  static void normal_work_helper(struct btrfs_work *work)
+>  {
+>  	struct __btrfs_workqueue *wq;
+> +	void *wtag;
+>  	int need_order = 0;
+>
+>  	/*
+> @@ -324,6 +329,8 @@ static void normal_work_helper(struct btrfs_work *work)
+>  	if (work->ordered_func)
+>  		need_order = 1;
+>  	wq = work->wq;
+> +	/* Safe for tracepoints in case work gets freed by the callback */
+> +	wtag = work;
+>
+>  	trace_btrfs_work_sched(work);
+>  	thresh_exec_hook(wq);
+> @@ -333,7 +340,7 @@ static void normal_work_helper(struct btrfs_work *work)
+>  		run_ordered_work(wq);
+>  	}
+>  	if (!need_order)
+> -		trace_btrfs_all_work_done(work);
+> +		trace_btrfs_all_work_done(wq->fs_info, wtag);
+>  }
+>
+>  void btrfs_init_work(struct btrfs_work *work, btrfs_work_func_t uniq_func,
+> diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+> index c14bed4ab097..b09225c77676 100644
+> --- a/include/trace/events/btrfs.h
+> +++ b/include/trace/events/btrfs.h
+> @@ -1157,22 +1157,26 @@ DECLARE_EVENT_CLASS(btrfs__work,
+>  		   __entry->func, __entry->ordered_func, __entry->ordered_free)
+>  );
+>
+> -/* For situiations that the work is freed */
+> +/*
+> + * For situiations when the work is freed, we pass fs_info and a tag that that
+> + * matches address of the work structure so it can be paired with the
+> + * scheduling event.
+> + */
+>  DECLARE_EVENT_CLASS(btrfs__work__done,
+>
+> -	TP_PROTO(struct btrfs_work *work),
+> +	TP_PROTO(struct btrfs_fs_info *fs_info, void *wtag),
+>
+> -	TP_ARGS(work),
+> +	TP_ARGS(fs_info, wtag),
+>
+>  	TP_STRUCT__entry_btrfs(
+> -		__field(	void *,	work			)
+> +		__field(	void *,	wtag			)
+>  	),
+>
+> -	TP_fast_assign_btrfs(btrfs_work_owner(work),
+> -		__entry->work		= work;
+> +	TP_fast_assign_btrfs(fs_info,
+> +		__entry->wtag		= wtag;
+>  	),
+>
+> -	TP_printk_btrfs("work->%p", __entry->work)
+> +	TP_printk_btrfs("work->%p", __entry->wtag)
+>  );
+>
+>  DEFINE_EVENT(btrfs__work, btrfs_work_queued,
+> @@ -1191,9 +1195,9 @@ DEFINE_EVENT(btrfs__work, btrfs_work_sched,
+>
+>  DEFINE_EVENT(btrfs__work__done, btrfs_all_work_done,
+>
+> -	TP_PROTO(struct btrfs_work *work),
+> +	TP_PROTO(struct btrfs_fs_info *fs_info, void *wtag),
+>
+> -	TP_ARGS(work)
+> +	TP_ARGS(fs_info, wtag)
+>  );
+>
+>  DEFINE_EVENT(btrfs__work, btrfs_ordered_sched,
+>
+
+

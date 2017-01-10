@@ -1,53 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53901 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S935492AbdAJQFB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Jan 2017 11:05:01 -0500
-Subject: Re: [RFC] Converging userspace and kernel code
-To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org,
-        Jeff Mahoney <jeffm@suse.com>, David Sterba <dsterba@suse.com>
-References: <512c15bf-3c4b-3b88-1106-a7d43386400f@suse.de>
- <1b68f099-53e8-1bc8-5ffc-2dd0b21a32ae@oracle.com>
- <09ea1fbd-74a1-d9f5-ba86-bc7c9118d49f@suse.de>
- <d0a11a09-322d-89bc-1a15-598f6a14e6be@oracle.com>
-From: Goldwyn Rodrigues <rgoldwyn@suse.de>
-Message-ID: <d0c2e05d-0b7a-a782-80b8-e1776e7b6fdb@suse.de>
-Date: Tue, 10 Jan 2017 10:04:56 -0600
+Received: from mail-io0-f195.google.com ([209.85.223.195]:33016 "EHLO
+        mail-io0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S935492AbdAJQF0 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 10 Jan 2017 11:05:26 -0500
+Received: by mail-io0-f195.google.com with SMTP id 101so6511538iom.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jan 2017 08:05:26 -0800 (PST)
+Subject: Re: mkfs.btrfs/balance small-btrfs chunk size RFC
+To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
+References: <pan$cb31b$a126bd1f$577e9db8$38b890f5@cox.net>
+ <db8aff8c-44a5-f488-56de-4a9ec87e44e0@gmail.com>
+ <20170110152905.GJ19585@carfax.org.uk>
+ <c934f74c-6dac-b66f-13cf-eb9bf0a79aac@gmail.com>
+ <20170110154753.GK19585@carfax.org.uk>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <46721c7c-2be2-28e8-c387-4d88b6d1a09d@gmail.com>
+Date: Tue, 10 Jan 2017 11:05:17 -0500
 MIME-Version: 1.0
-In-Reply-To: <d0a11a09-322d-89bc-1a15-598f6a14e6be@oracle.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20170110154753.GK19585@carfax.org.uk>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 2017-01-10 10:47, Hugo Mills wrote:
+> On Tue, Jan 10, 2017 at 10:42:51AM -0500, Austin S. Hemmelgarn wrote:
+>> Most of the issue in this case is with the size of the initial
+>> chunk. That said, I've got quite a few reasonably sized filesystems
+>> (I think the largest is 200GB) with moderate usage (max 90GB of
+>> data), and none of them are using more than the first 16kB block in
+>> the System chunk. While I'm not necessarily a typical user, I'd be
+>> willing to bet based on this that in general, most people who aren't
+>> storing very large amounts of data or taking huge numbers of
+>> snapshots aren't going to need a system chunk much bigger than 1MB.
+>
+>    Again, the system chunk has *nothing* to do with snapshots.
+Apologies, I somehow completely missed the part of your first reply 
+where you commented on that...
+>
+>    Agreed with everything else, though.
+>
+>    Hugo.
+>
 
-
-On 01/10/2017 09:20 AM, Anand Jain wrote:
-> 
-> 
-> On 01/10/17 20:14, Goldwyn Rodrigues wrote:
->>
->>
->> On 01/09/2017 09:28 PM, Anand Jain wrote:
->>>
->>> Goldwyn,
->>>
->>>  Could you add a list what functionality in btrfs-progs will
->>>  be using the 'core'. ?
->>
->>
->> There are too many to list. It would contain the algorithmic functions
->> of btrfs which would be able to interact with both kernel and
->> btrfs-progs.
-> 
->  I am getting confused. How about a few from the btrfs-progs ?
-> 
-> 
-
-Functions such as open_ctree(), or the set/get functions. The idea is to
-keep the codebase of this core component the same in btrfs-progs and kernel.
-
-As an example, see how XFS have done using libxfs. Something around the
-same lines.
-
--- 
-Goldwyn

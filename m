@@ -1,125 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f66.google.com ([209.85.214.66]:33186 "EHLO
-        mail-it0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751281AbdAJO6C (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:28089 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S936951AbdAJPQd (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Jan 2017 09:58:02 -0500
-Received: by mail-it0-f66.google.com with SMTP id c20so12912434itb.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jan 2017 06:58:02 -0800 (PST)
-Received: from [191.9.206.254] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
-        by smtp.gmail.com with ESMTPSA id e72sm1369908iof.26.2017.01.10.06.57.59
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 10 Jan 2017 06:58:00 -0800 (PST)
-Subject: Re: mkfs.btrfs/balance small-btrfs chunk size RFC
-To: linux-btrfs@vger.kernel.org
-References: <pan$cb31b$a126bd1f$577e9db8$38b890f5@cox.net>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <db8aff8c-44a5-f488-56de-4a9ec87e44e0@gmail.com>
-Date: Tue, 10 Jan 2017 09:57:52 -0500
+        Tue, 10 Jan 2017 10:16:33 -0500
+Subject: Re: [RFC] Converging userspace and kernel code
+To: Goldwyn Rodrigues <rgoldwyn@suse.de>, linux-btrfs@vger.kernel.org,
+        Jeff Mahoney <jeffm@suse.com>, David Sterba <dsterba@suse.com>
+References: <512c15bf-3c4b-3b88-1106-a7d43386400f@suse.de>
+ <1b68f099-53e8-1bc8-5ffc-2dd0b21a32ae@oracle.com>
+ <09ea1fbd-74a1-d9f5-ba86-bc7c9118d49f@suse.de>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <d0a11a09-322d-89bc-1a15-598f6a14e6be@oracle.com>
+Date: Tue, 10 Jan 2017 23:20:22 +0800
 MIME-Version: 1.0
-In-Reply-To: <pan$cb31b$a126bd1f$577e9db8$38b890f5@cox.net>
+In-Reply-To: <09ea1fbd-74a1-d9f5-ba86-bc7c9118d49f@suse.de>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-01-09 22:55, Duncan wrote:
-> This post is triggered by a balance problem due to oversized chunks that
-> I have currently.
->
-> Proposal 1: Ensure maximum chunk sizes are less than 1/8 the size of the
-> filesystem (down to where they can't be any smaller, at least).
->
-> Proposal 2: Drastically reduce default system chunk size on small btrfs.
->
-> Here's the real-life scenario:  My /boot is 256 MiB mixed-bg-mode DUP.
->
-> Unfortunately, mkfs.btrfs apparently creates the first mixed chunk as 64
-> MiB, making it unbalancable.  64 MiB duped due to dup mode is 128 MiB,
-> exactly half the btrfs size.  But there's also a 16 MiB system chunk,
-> duped to 32 MiB, so even with a still-empty fs immediately after creation
-> I can't balance that chunk (which isn't entirely empty apparently in
-> ordered to keep it from being erased by the kernel auto-clean or a
-> balance, leaving no record of the chunk mode), because the 1/4 the btrfs
-> chunk dups to 1/2 the btrfs, and with the system chunk as well, there's
-> not half the btrfs left in ordered to create a second chunk along with
-> its dup to balance into.
->
-> But if I fill the btrfs enough to create another mixed chunk, it's only
-> 16 MiB in size, duped to 32 MiB, and btrfs usage shows it going from 64
-> MiB to 80 MiB (16 MiB change, the additional chunk size), with the
-> resulting duped size going from 128 MiB to 160 MiB (32 MiB change, the
-> additional chunk duped size).
->
-> Now if those first chunks were 32 MiB or even the 16 MiB of the second,
-> there'd obviously be more of them used for the same file content, but as
-> long as I kept enough unallocated space on the btrfs to handle twice the
-> size (due to dup) of the largest chunk, I could still balance all chunks,
-> something that's flat impossible when the first mixed chunk dups to half
-> the btrfs, and there has to be room for the system chunk as well.
->
-> So if the maximum created chunk size was limited to 1/8 the btrfs size,
-> it would dup to 1/4 the size, and balances should actually be possible.
->
-> As for proposal 2...
->
-> The system chunk size is 16 MiB, duped to 32 MiB, despite only a single 4
-> KiB block actually being used.  Locking up 16 MiB, duped to 32 MiB thus
-> 1/8 the entire btrfs space of 256 MiB, for a single 4 KiB block, duped to
-> 8 KiB, 1/20th of 1 percent of that system chunk used if my math is
-> correct, is ridiculous on a sub-GiB btrfs.
->
-> I don't know what the minimum chunk size actually is, but something like
-> 1 MiB system chunk size, if possible, would be far more reasonable in the
-> sub-GiB btrfs context.  Otherwise 2 or even 4 MiB, the latter of which
-> would dup to 8 MiB, would be tolerable, but a 16 MiB system chunk for a
-> single 4 KiB block... and then dup /that/... just ridiculous.
->
-> It wouldn't be quite so bad if the global reserve (reported at 16 MiB)
-> came from the system chunk instead of metadata (mixed-chunk here), and
-> putting that in the system chunk would make sense since it's effectively
-> system-reserved space, but of course it doesn't work that way, and I'd
-> guess changing that would be a hairy nightmare, far worse than simply
-> clamping down on created chunk sizes a bit, and likely practically
-> impossible to implement at this stage.
->
->
-> But I'd expect clamping down on created chunk size, simply adding a check
-> to ensure it's under 1/8 the full btrfs size (down to the minimum allowed
-> chunk size, of course), to be quite practical and reasonably easy to
-> implement.  Similarly altho I'm less sure of how small the minimum system
-> chunk size can be, I expect maximum system chunk size can reasonably be
-> limited to say 4 MiB, if not 1 or 2 MiB, on sub-GiB btrfs.
->
-> So RFC, how realistic and simple does this look to the devs actually
-> doing the code?  Is it a small enough job it could qualify as a bug fix
-> (as it arguably is, given that the btrfs is /created/ with chunks that
-> are impossible to balance, at present, or at least was around 4.8 time,
-> as I believe that's about when I created the btrfs), be tested and make
-> it into released code within say five kernel cycles, a year's time?
-> Obviously I'm hoping so. =:^)
->
-I can't personally comment on the code itself right now (I've actually 
-never looked at the mkfs code, or any of the stuff that deals with the 
-System chunk), but I can make a few general comments on this:
-1. This behavior is still the case as of a Git build from yesterday (I 
-just verified this myself with the locally built copy of btrfs-progs on 
-my laptop).
-2. Given the implications of snapshotting and typical usage, I'd say 
-it's not likely that the System chunk will need to be much more than a 
-single filesystem block on such a small FS.  I don't use more than a 
-single snapshot at a time, but I do have lots of subvolumes on my 
-laptop's root filesystem, and it's System chunk usage is still only one 
-FS block (16kb in my case)).  That said, ISTR reading somewhere that the 
-System chunk is functionally fixed-size (can't be more than one chunk, 
-and BTRFS can't resize an existing chunk).
-3. In theory, it shouldn't be hard to get mkfs to use different sizes 
-when creating the FS.  For at least the System chunk though, it may face 
-limitations due to kernel expectations.
 
-Given the above three points, I'd like to make a slightly different 
-proposal:
-Add options to mkfs to specify the size of the initial Data, Metadata, 
-and System chunk in the filesystem, and document clearly some reasonable 
-numbers based on FS size and intended usage.
+
+On 01/10/17 20:14, Goldwyn Rodrigues wrote:
+>
+>
+> On 01/09/2017 09:28 PM, Anand Jain wrote:
+>>
+>> Goldwyn,
+>>
+>>  Could you add a list what functionality in btrfs-progs will
+>>  be using the 'core'. ?
+>
+>
+> There are too many to list. It would contain the algorithmic functions
+> of btrfs which would be able to interact with both kernel and btrfs-progs.
+
+  I am getting confused. How about a few from the btrfs-progs ?
+
+Thanks, Anand
 

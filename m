@@ -1,149 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:60772 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1750805AbdAMAq7 (ORCPT
+Received: from mail-wm0-f68.google.com ([74.125.82.68]:36002 "EHLO
+        mail-wm0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753430AbdAJSfy (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 12 Jan 2017 19:46:59 -0500
-Subject: Re: [GIT PULL] btrfs fixes and cleanups
-To: <bo.li.liu@oracle.com>
-References: <1481786012-18586-1-git-send-email-bo.li.liu@oracle.com>
- <04f553db-e164-8f52-7ece-885faa34ee9c@cn.fujitsu.com>
- <20170112161027.GA24433@localhost.localdomain>
-CC: David Sterba <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <29af9ea6-706d-a02c-bd69-191365ad8153@cn.fujitsu.com>
-Date: Fri, 13 Jan 2017 08:46:34 +0800
-MIME-Version: 1.0
-In-Reply-To: <20170112161027.GA24433@localhost.localdomain>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+        Tue, 10 Jan 2017 13:35:54 -0500
+Received: by mail-wm0-f68.google.com with SMTP id r126so11434304wmr.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jan 2017 10:35:54 -0800 (PST)
+From: Nikolay Borisov <n.borisov.lkml@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Nikolay Borisov <n.borisov.lkml@gmail.com>
+Subject: [RFC PATCH 00/12] Refactor btrfs_inode VS inode in delayed-inode.c
+Date: Tue, 10 Jan 2017 20:35:30 +0200
+Message-Id: <1484073342-28854-1-git-send-email-n.borisov.lkml@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hello, 
+
+After following the discussion in [1] I took a look at what's the 
+state of VFS-related members being used in core BTRFS code. It turned 
+out there are quite a few functions which operate on struct btrfs_inode, 
+yet take struct inode. As a result they have to resort ot excessive 
+usage of BTRFS_I, furthermore passing inode around doesn't help the 
+poor reader inferring why inode might be passed to a particular function. 
+
+In order to better separate core btrfs functionalities from those part,
+which interface with the VFS I took a look around the code and this is 
+the result. I'd like to solicit opinions whether people think this 
+refactoring is useful, since I have gathered a list of a lot more
+functions which might use a bit of inode VS btrfs_inode changes. Also, 
+a lot of function take inode just because btrfs_ino was taking an inode.
+
+The patches are self-explanatory, with the first one dealing with 
+btrfs_ino being the bulk of it. This paves the way to restructuring 
+a lot of functions. 
+
+If the maintainers think this should be merged I'd rather resend it 
+as a single patch so as not to pollute the git history. This 
+version can be used for fine-grained discussion and feedback. 
 
 
-At 01/13/2017 12:10 AM, Liu Bo wrote:
-> Hi,
->
-> On Wed, Dec 28, 2016 at 05:30:59PM +0800, Qu Wenruo wrote:
->> Hi Liu,
->>
->> At 12/15/2016 03:13 PM, Liu Bo wrote:
->>> Hi David,
->>>
->>> This is the collection of my patches targetting 4.10, I've
->>> dropped patch "Btrfs: adjust len of writes if following a
->>> preallocated extent" because of the deadlock caused by this
->>> commit.
->>>
->>> Patches are based on v4.9-rc8, and test against fstests with
->>> default mount options has been taken to make sure it doesn't
->>> break anything.
->>>
->>> I haven't got a kernel.org git repo, so this is mainly for
->>> tracking purpose and for testing git flow.
->>>
->>> (cherry-pick patches might be the only way at this moment...sorry
->>> for the inconvenience.)
->>>
->>> Anyway, patches can be found at
->>>
->>> 	https://github.com/liubogithub/btrfs-work.git for-dave
->>>
->>> Thanks,
->>> liubo
->>>
->>> Liu Bo (9):
->>>   Btrfs: add 'inode' for extent map tracepoint
->>>   Btrfs: add truncated_len for ordered extent tracepoints
->>>   Btrfs: use down_read_nested to make lockdep silent
->>>   Btrfs: fix lockdep warning about log_mutex
->>>   Btrfs: fix truncate down when no_holes feature is enabled
->>>   Btrfs: fix btrfs_ordered_update_i_size to update disk_i_size properly
->>>   Btrfs: fix comment in btrfs_page_mkwrite
->>>   Btrfs: clean up btrfs_ordered_update_i_size
->>
->> While testing David's for-next-20161219 branch, I found btrfs/06[0-5] will
->> cause the following kernel panic when ran them in a row.
->>
->> [ 4207.963063] assertion failed: disk_i_size < i_size, file:
->> fs/btrfs//ordered-data.c, line: 1041
->> [ 4207.963722] ------------[ cut here ]------------
->> [ 4207.964008] kernel BUG at fs/btrfs//ctree.h:3418!
->> [ 4207.964008] invalid opcode: 0000 [#1] SMP
->> [ 4207.964008] Modules linked in: btrfs(O) netconsole ext4 jbd2 mbcache xor
->> zlib_deflate raid6_pq xfs [last unloaded: btrfs]
->> [ 4207.964008] CPU: 0 PID: 3829 Comm: kworker/u4:5 Tainted: G O    4.9.0+
->> #60
->> [ 4207.964008] Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS
->> 1.10.1-20161122_114906-anatol 04/01/2014
->> [ 4207.964008] Workqueue: btrfs-endio-write btrfs_endio_write_helper [btrfs]
->> [ 4207.964008] task: ffff88000bbf8040 task.stack: ffffc90006598000
->> [ 4207.964008] RIP: 0010:[<ffffffffa0462245>]  [<ffffffffa0462245>]
->> assfail.constprop.10+0x1c/0x1e [btrfs]
->> <snip>
->> [ 4207.964008] Call Trace:
->> [ 4207.964008]  [<ffffffffa03f1f41>] btrfs_ordered_update_i_size+0x2b1/0x2e0
->> [btrfs]
->> [ 4207.964008]  [<ffffffffa03dd435>] btrfs_finish_ordered_io+0x335/0x6b0
->> [btrfs]
->> [ 4207.964008]  [<ffffffffa03dd7c5>] finish_ordered_fn+0x15/0x20 [btrfs]
->> [ 4207.964008]  [<ffffffffa040961f>] btrfs_scrubparity_helper+0xef/0x610
->> [btrfs]
->> [ 4207.964008]  [<ffffffffa0409bce>] btrfs_endio_write_helper+0xe/0x10
->> [btrfs]
->> [ 4207.964008]  [<ffffffff810ec9ef>] process_one_work+0x2af/0x720
->> [ 4207.964008]  [<ffffffff810ec96b>] ? process_one_work+0x22b/0x720
->> [ 4207.964008]  [<ffffffff810eceab>] worker_thread+0x4b/0x4f0
->> [ 4207.964008]  [<ffffffff810ece60>] ? process_one_work+0x720/0x720
->> [ 4207.964008]  [<ffffffff810ece60>] ? process_one_work+0x720/0x720
->> [ 4207.964008]  [<ffffffff810f3d93>] kthread+0xf3/0x110
->> [ 4207.964008]  [<ffffffff810f3ca0>] ? kthread_park+0x60/0x60
->> [ 4207.964008]  [<ffffffff818af7c7>] ret_from_fork+0x27/0x40
->> [ 4207.964008] Code: c7 00 e4 46 a0 48 89 e5 e8 c8 3c d8 e0 0f 0b 55 89 f1
->> 48 c7 c2 83 90 46 a0 48 89 fe 48 c7 c7 b0 e4 46 a0 48 89 e5 e8 aa 3c d8 e0
->> <0f> 0b 55 89 f1 48 c7 c2 fb 90 46 a0 48 89 fe 48 c7 c7 e8 e5 46
->> [ 4207.964008] RIP  [<ffffffffa0462245>] assfail.constprop.10+0x1c/0x1e
->> [btrfs]
->> [ 4207.964008]  RSP <ffffc9000659bc18>
->> [ 4207.964008] ---[ end trace f7759d2fce14da9f ]---
->>
->> Not sure if it's related to patch or just it exposed some bug we don't find
->> before.
->>
->> Hopes it will help.
->>
->
-> Thanks for spotting it, just found out that this ASSERT is not true any
-> more after patch "Btrfs: fix btrfs_ordered_update_i_size to update
-> disk_i_size properly".
->
-> I'm doing a v2 to remove it.
+[1] http://marc.info/?l=linux-btrfs&m=148388138221778
 
-Glad it's not a big problem.
+Nikolay Borisov (12):
+  btrfs: Make btrfs_ino take a struct btrfs_inode
+  btrfs: Make btrfs_get_delayed_node take btrfs_inode
+  btrfs: Make btrfs_get_or_create_delayed_node take btrfs_inode
+  btrfs: Make btrfs_delayed_inode_reserve_metadata take btrfs_inode
+  btrfs: Make btrfs_insert_delayed_dir_index take btrfs_inode
+  btrfs: Make btrfs_delete_delayed_dir_index take btrfs_inode
+  btrfs: Make btrfs_delayed_delete_inode_ref take btrfs_inode
+  btrfs: Make btrfs_kill_delayed_inode_items take btrfs_inode
+  btrfs: Make btrfs_remove_delayed_node take btrfs_inode
+  btrfs: Make btrfs_commit_inode_delayed_inode take btrfs_inode
+  btrfs: Make btrfs_commit_inode_delayed_items take btrfs_inode
+  btrfs: Make btrfs_inode_delayed_dir_index_count take btrfs_inode
 
-Thanks,
-Qu
+ fs/btrfs/btrfs_inode.h      |  10 ++--
+ fs/btrfs/compression.c      |   2 +-
+ fs/btrfs/delayed-inode.c    |  54 +++++++++---------
+ fs/btrfs/delayed-inode.h    |  16 +++---
+ fs/btrfs/dir-item.c         |   4 +-
+ fs/btrfs/export.c           |  10 ++--
+ fs/btrfs/extent-tree.c      |  10 ++--
+ fs/btrfs/extent_io.c        |  10 ++--
+ fs/btrfs/file-item.c        |   4 +-
+ fs/btrfs/file.c             |  12 ++--
+ fs/btrfs/free-space-cache.c |   2 +-
+ fs/btrfs/inode.c            | 134 ++++++++++++++++++++++----------------------
+ fs/btrfs/ioctl.c            |  26 ++++-----
+ fs/btrfs/props.c            |   4 +-
+ fs/btrfs/relocation.c       |  16 +++---
+ fs/btrfs/transaction.c      |   4 +-
+ fs/btrfs/tree-log.c         |  46 +++++++--------
+ fs/btrfs/xattr.c            |  10 ++--
+ 18 files changed, 186 insertions(+), 188 deletions(-)
 
->
-> Thanks,
->
-> -liubo
->
->> Thanks,
->> Qu
->>
->>>   Btrfs: fix another race between truncate and lockless dio write
->>>
->>>  fs/btrfs/extent-tree.c       |  3 ++-
->>>  fs/btrfs/inode.c             | 43 +++++++++++++++++++++++++++++++++++--------
->>>  fs/btrfs/ordered-data.c      | 42 ++++++++++++++++++++++++------------------
->>>  fs/btrfs/tree-log.c          | 13 ++++++++++---
->>>  include/trace/events/btrfs.h | 16 ++++++++++++----
->>>  5 files changed, 83 insertions(+), 34 deletions(-)
->>>
->>
->>
->
->
-
+-- 
+2.7.4
 

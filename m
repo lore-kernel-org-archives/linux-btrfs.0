@@ -1,108 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wj0-f195.google.com ([209.85.210.195]:36015 "EHLO
-        mail-wj0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1765917AbdAJSf4 (ORCPT
+Received: from mail-wm0-f67.google.com ([74.125.82.67]:36040 "EHLO
+        mail-wm0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S936994AbdAJSf5 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Jan 2017 13:35:56 -0500
-Received: by mail-wj0-f195.google.com with SMTP id dh1so8083336wjb.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jan 2017 10:35:55 -0800 (PST)
+        Tue, 10 Jan 2017 13:35:57 -0500
+Received: by mail-wm0-f67.google.com with SMTP id r126so11434545wmr.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jan 2017 10:35:56 -0800 (PST)
 From: Nikolay Borisov <n.borisov.lkml@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Nikolay Borisov <n.borisov.lkml@gmail.com>
-Subject: [PATCH 02/12] btrfs: Make btrfs_get_delayed_node take btrfs_inode
-Date: Tue, 10 Jan 2017 20:35:32 +0200
-Message-Id: <1484073342-28854-3-git-send-email-n.borisov.lkml@gmail.com>
+Subject: [PATCH 03/12] btrfs: Make btrfs_get_or_create_delayed_node take btrfs_inode
+Date: Tue, 10 Jan 2017 20:35:33 +0200
+Message-Id: <1484073342-28854-4-git-send-email-n.borisov.lkml@gmail.com>
 In-Reply-To: <1484073342-28854-1-git-send-email-n.borisov.lkml@gmail.com>
 References: <1484073342-28854-1-git-send-email-n.borisov.lkml@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This function is internal to btrfs and doesn't really deal with any
-VFS members, as such it needn't take a struct inode refrence but
-btrfs_inode.
-
 Signed-off-by: Nikolay Borisov <n.borisov.lkml@gmail.com>
 ---
- fs/btrfs/delayed-inode.c | 17 ++++++++---------
- 1 file changed, 8 insertions(+), 9 deletions(-)
+ fs/btrfs/delayed-inode.c | 11 +++++------
+ 1 file changed, 5 insertions(+), 6 deletions(-)
 
 diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 15f9b8e9dbf6..ad95b97bb6c6 100644
+index ad95b97bb6c6..4059b4168210 100644
 --- a/fs/btrfs/delayed-inode.c
 +++ b/fs/btrfs/delayed-inode.c
-@@ -72,9 +72,8 @@ static inline int btrfs_is_continuous_delayed_item(
- 	return 0;
- }
+@@ -106,10 +106,9 @@ static struct btrfs_delayed_node *btrfs_get_delayed_node(struct btrfs_inode *btr
  
--static struct btrfs_delayed_node *btrfs_get_delayed_node(struct inode *inode)
-+static struct btrfs_delayed_node *btrfs_get_delayed_node(struct btrfs_inode *btrfs_inode)
+ /* Will return either the node or PTR_ERR(-ENOMEM) */
+ static struct btrfs_delayed_node *btrfs_get_or_create_delayed_node(
+-							struct inode *inode)
++							struct btrfs_inode *btrfs_inode)
  {
+ 	struct btrfs_delayed_node *node;
 -	struct btrfs_inode *btrfs_inode = BTRFS_I(inode);
  	struct btrfs_root *root = btrfs_inode->root;
  	u64 ino = btrfs_ino(btrfs_inode);
- 	struct btrfs_delayed_node *node;
-@@ -116,7 +115,7 @@ static struct btrfs_delayed_node *btrfs_get_or_create_delayed_node(
+ 	int ret;
+@@ -1442,7 +1441,7 @@ int btrfs_insert_delayed_dir_index(struct btrfs_trans_handle *trans,
+ 	struct btrfs_dir_item *dir_item;
  	int ret;
  
- again:
--	node = btrfs_get_delayed_node(inode);
-+	node = btrfs_get_delayed_node(btrfs_inode);
- 	if (node)
- 		return node;
+-	delayed_node = btrfs_get_or_create_delayed_node(dir);
++	delayed_node = btrfs_get_or_create_delayed_node(BTRFS_I(dir));
+ 	if (IS_ERR(delayed_node))
+ 		return PTR_ERR(delayed_node);
  
-@@ -1198,7 +1197,7 @@ int btrfs_run_delayed_items_nr(struct btrfs_trans_handle *trans,
- int btrfs_commit_inode_delayed_items(struct btrfs_trans_handle *trans,
- 				     struct inode *inode)
- {
--	struct btrfs_delayed_node *delayed_node = btrfs_get_delayed_node(inode);
-+	struct btrfs_delayed_node *delayed_node = btrfs_get_delayed_node(BTRFS_I(inode));
- 	struct btrfs_path *path;
- 	struct btrfs_block_rsv *block_rsv;
+@@ -1516,7 +1515,7 @@ int btrfs_delete_delayed_dir_index(struct btrfs_trans_handle *trans,
+ 	struct btrfs_key item_key;
  	int ret;
-@@ -1237,7 +1236,7 @@ int btrfs_commit_inode_delayed_inode(struct inode *inode)
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	struct btrfs_trans_handle *trans;
--	struct btrfs_delayed_node *delayed_node = btrfs_get_delayed_node(inode);
-+	struct btrfs_delayed_node *delayed_node = btrfs_get_delayed_node(BTRFS_I(inode));
- 	struct btrfs_path *path;
- 	struct btrfs_block_rsv *block_rsv;
- 	int ret;
-@@ -1560,7 +1559,7 @@ int btrfs_delete_delayed_dir_index(struct btrfs_trans_handle *trans,
  
- int btrfs_inode_delayed_dir_index_count(struct inode *inode)
- {
--	struct btrfs_delayed_node *delayed_node = btrfs_get_delayed_node(inode);
-+	struct btrfs_delayed_node *delayed_node = btrfs_get_delayed_node(BTRFS_I(inode));
+-	node = btrfs_get_or_create_delayed_node(dir);
++	node = btrfs_get_or_create_delayed_node(BTRFS_I(dir));
+ 	if (IS_ERR(node))
+ 		return PTR_ERR(node);
  
- 	if (!delayed_node)
- 		return -ENOENT;
-@@ -1587,7 +1586,7 @@ bool btrfs_readdir_get_delayed_items(struct inode *inode,
+@@ -1830,7 +1829,7 @@ int btrfs_delayed_update_inode(struct btrfs_trans_handle *trans,
  	struct btrfs_delayed_node *delayed_node;
- 	struct btrfs_delayed_item *item;
+ 	int ret = 0;
  
--	delayed_node = btrfs_get_delayed_node(inode);
-+	delayed_node = btrfs_get_delayed_node(BTRFS_I(inode));
- 	if (!delayed_node)
- 		return false;
+-	delayed_node = btrfs_get_or_create_delayed_node(inode);
++	delayed_node = btrfs_get_or_create_delayed_node(BTRFS_I(inode));
+ 	if (IS_ERR(delayed_node))
+ 		return PTR_ERR(delayed_node);
  
-@@ -1776,7 +1775,7 @@ int btrfs_fill_inode(struct inode *inode, u32 *rdev)
- 	struct btrfs_delayed_node *delayed_node;
- 	struct btrfs_inode_item *inode_item;
+@@ -1868,7 +1867,7 @@ int btrfs_delayed_delete_inode_ref(struct inode *inode)
+ 	if (test_bit(BTRFS_FS_LOG_RECOVERING, &fs_info->flags))
+ 		return -EAGAIN;
  
--	delayed_node = btrfs_get_delayed_node(inode);
-+	delayed_node = btrfs_get_delayed_node(BTRFS_I(inode));
- 	if (!delayed_node)
- 		return -ENOENT;
- 
-@@ -1937,7 +1936,7 @@ void btrfs_kill_delayed_inode_items(struct inode *inode)
- {
- 	struct btrfs_delayed_node *delayed_node;
- 
--	delayed_node = btrfs_get_delayed_node(inode);
-+	delayed_node = btrfs_get_delayed_node(BTRFS_I(inode));
- 	if (!delayed_node)
- 		return;
+-	delayed_node = btrfs_get_or_create_delayed_node(inode);
++	delayed_node = btrfs_get_or_create_delayed_node(BTRFS_I(inode));
+ 	if (IS_ERR(delayed_node))
+ 		return PTR_ERR(delayed_node);
  
 -- 
 2.7.4

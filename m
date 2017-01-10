@@ -1,176 +1,220 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41400 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S937035AbdAIVi0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 9 Jan 2017 16:38:26 -0500
+Received: from cn.fujitsu.com ([59.151.112.132]:19150 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S939690AbdAJAff (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Jan 2017 19:35:35 -0500
 Subject: Re: [RFC] Converging userspace and kernel code
-To: Omar Sandoval <osandov@osandov.com>, Eric Sandeen <sandeen@redhat.com>
+To: Goldwyn Rodrigues <rgoldwyn@suse.de>, <linux-btrfs@vger.kernel.org>,
+        Jeff Mahoney <jeffm@suse.com>, David Sterba <dsterba@suse.com>
 References: <512c15bf-3c4b-3b88-1106-a7d43386400f@suse.de>
  <65341974-d15f-408c-abad-98c2a5bb8743@cn.fujitsu.com>
- <4d1d233a-1002-169e-ec9b-14df3b1af86c@redhat.com>
- <20170109213405.GB29762@vader.DHCP.thefacebook.com>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, Goldwyn Rodrigues <rgoldwyn@suse.de>,
-        linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
-From: Jeff Mahoney <jeffm@suse.com>
-Message-ID: <a6acab91-9c87-a579-4070-fb603ef3542d@suse.com>
-Date: Mon, 9 Jan 2017 16:38:22 -0500
+ <2a7a4b30-3a90-1aaf-b9ba-9269c58a31c9@suse.de>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <27be1998-e535-b630-e10c-778cc53acd2e@cn.fujitsu.com>
+Date: Tue, 10 Jan 2017 08:35:26 +0800
 MIME-Version: 1.0
-In-Reply-To: <20170109213405.GB29762@vader.DHCP.thefacebook.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="IGvInIuEscQRVIajMTWbl4e1IeULkTo0r"
+In-Reply-To: <2a7a4b30-3a90-1aaf-b9ba-9269c58a31c9@suse.de>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---IGvInIuEscQRVIajMTWbl4e1IeULkTo0r
-Content-Type: multipart/mixed; boundary="OcPXDQ0Dtu5HuWEhQ9U9JRKrkXHgGochW";
- protected-headers="v1"
-From: Jeff Mahoney <jeffm@suse.com>
-To: Omar Sandoval <osandov@osandov.com>, Eric Sandeen <sandeen@redhat.com>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, Goldwyn Rodrigues
- <rgoldwyn@suse.de>, linux-btrfs@vger.kernel.org,
- David Sterba <dsterba@suse.com>
-Message-ID: <a6acab91-9c87-a579-4070-fb603ef3542d@suse.com>
-Subject: Re: [RFC] Converging userspace and kernel code
-References: <512c15bf-3c4b-3b88-1106-a7d43386400f@suse.de>
- <65341974-d15f-408c-abad-98c2a5bb8743@cn.fujitsu.com>
- <4d1d233a-1002-169e-ec9b-14df3b1af86c@redhat.com>
- <20170109213405.GB29762@vader.DHCP.thefacebook.com>
-In-Reply-To: <20170109213405.GB29762@vader.DHCP.thefacebook.com>
 
---OcPXDQ0Dtu5HuWEhQ9U9JRKrkXHgGochW
-Content-Type: text/plain; charset=windows-1252
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
 
-On 1/9/17 4:34 PM, Omar Sandoval wrote:
-> On Mon, Jan 09, 2017 at 09:31:39AM -0600, Eric Sandeen wrote:
->> On 1/8/17 8:11 PM, Qu Wenruo wrote:
+At 01/09/2017 08:06 PM, Goldwyn Rodrigues wrote:
+>
+>
+> On 01/08/2017 08:11 PM, Qu Wenruo wrote:
+>>
+>>
+>> At 01/08/2017 09:16 PM, Goldwyn Rodrigues wrote:
+>>>
+>>> 1. Motivation
+>>> While fixing user space tools for btrfs-progs, I found a couple of bugs
+>>> which are already solved in kernel space but were not ported to user
+>>> space. User space is a little ignored when it comes to fixing bugs in
+>>> the core functionality. XFS developers have already performed this and
+>>> the userspace and kernel code walks in lockstep for libxfs.
+>>
+>> Personally speaking, I'm not a fan of re-using kernel code in btrfs-progs.
+>>
+>> In fact, in btrfs-progs, we don't need a lot of kernel facilities, like
+>> page/VFS/lock(btrfs-progs works in single thread under most case).
+>
+> The core functionality would be specific to btrfs algorithms. While I
+> agree it cannot do away with kernel components completely, we will be
+> minimizing the dependency of kernel components. The parts which interact
+> with kernel such as inode/dentry/etc handling would be moved out of this
+> core.
+
+If we can move kernel facilities completely (or at least most of them), 
+then the idea sounds good for me.
+
+So the first step would be isolating btrfs algorithms from kernel 
+facilities.
+
+>
+>>
+>> And that should make btrfs-progs easier to maintain.
+>>
+>> Furthermore, there are cases while kernel is doing things wrong while
+>> btrfs-progs does it right.
+>>
+>> Like RAID56 scrub, kernel scrub can screw up P/Q while (still
+>> out-of-tree though) scrub won't.
+>>
+>
+> Time to fix it?
+
+Patch already sent.
+
+BTW, in kernel and in btrfs-progs, scrub are completely different.
+Kernel scrub uses different flags and have tons of dirty hacks for 
+variants fixes.
+
+While in btrfs-progs offline scrub, everything is just as easy as 
+reading things out, check csum and parity.
+
+>
+>>
+>> Personally speaking, I'd like to see btrfs-progs as a lightweight
+>> re-implementation without the mess from kernel.
+>> Btrfs-progs and kernel can do cross-check, while btrfs-progs can be more
+>> developer friendly.
+>
+> This cross-check, and lack of thereof, is what I wish to save. As for
+> being developer-friendly, you need to know the internal workings of the
+> kernel components to work on btrfs-progs. The core shall act as a
+> library on top of which btrfs-progs will be built/migrated.
+
+That depends on how independent the "core" btrfs part is.
+
+If completely independent,(Don't ever has any page/VFS/race code) I'm 
+completely fine with that.
+
+But the problem is, at least from current code base, even btrfs_path 
+structure has quite a lot kernel facilities, mainly locks.
+(Just check the different size of btrfs_path in kernel and btrfs-progs)
+
+So although the idea itself is very nice, but the practice may be quite 
+hard.
+
+That's why I prefer current btrfs-progs method, because it's more close 
+to the core of btrfs algorithm, unlike kernel, which is a superset.
+In this case, I prefer to let kernel use and expand btrfs-progs code, 
+other than pull in a superset from kernel.
+
+>
+>>
+>> (I'm already trying to re-implement btrfs_map_block() in btrfs-progs
+>> with a better interface in out-of-tree offline scrub patchset)
+>>
 >>>
 >>>
->>> At 01/08/2017 09:16 PM, Goldwyn Rodrigues wrote:
->>>>
->>>> 1. Motivation
->>>> While fixing user space tools for btrfs-progs, I found a couple of b=
-ugs
->>>> which are already solved in kernel space but were not ported to user=
-
->>>> space. User space is a little ignored when it comes to fixing bugs i=
-n
->>>> the core functionality. XFS developers have already performed this a=
-nd
->>>> the userspace and kernel code walks in lockstep for libxfs.
+>>> 2. Implementation
 >>>
->>> Personally speaking, I'm not a fan of re-using kernel code in btrfs-p=
-rogs.
+>>> 2.1 Code Re-arranaging
+>>> Re-arrange the kernel code so that core functions are in a separate
+>>> directory "libbtrfs" or "core". (There is already libbtrfs_objects
+>>> keyword defined in Makefile.in, so I am not sure if we should use
+>>> libbtrfs, or perhaps just core). The core directory will contain
+>>> algorithms, function prototypes and implementations spcific to btrfs.
 >>
->> But it already does re-use kernel code, it's just that the re-use is
->> extremely stale, with unfixed bugs in both directions as a result
->> (at least last time I looked.)
+>> Well, we have kernel-lib/ for it already.
+>> And it sounds much like what you want.
+>
+> While kernel-lib exists, it is not complete to perform a drop-in
+> replacement.
+>
 >>
->>> In fact, in btrfs-progs, we don't need a lot of kernel facilities,
->>> like page/VFS/lock(btrfs-progs works in single thread under most
->>> case).
+>> Further more, there is already work to separate fs/btrfs/ctree.h and
+>> include/uapi/linux/btrfs_tree.h (already done in kernel though).
+>
+> Another advantage of performing this. doing the same thing twice ;)
+>
+>>
+>> We could start from the same thing in btrfs-progs.
+>>
 >>>
->>> And that should make btrfs-progs easier to maintain.
+>>> Comparing the current situation, ctree.h is pretty "polluted" with
+>>> functions prototypes which do not belong there, the definition of which
+>>> are not in ctree.c. An example: functions which use struct dentry, inode
+>>> or other kernel component can be moved out of the core. Besides,
+>>> functions which could survive with btrfs_inode as opposed to inode
+>>> should be changed so. We would need new files to split the logic, such
+>>> as creating inode.c to keep all inode related code.
+>>>
+>>> 2.2 Kernel Stubs
+>>> Making the core directory a drop-in replacement will require kernel
+>>> stubs which would make some meaning in user-space. This may or may not
+>>> be included in kerncompat.h. Personally, I would prefer to move
+>>> kerncompat.h into kernel-stub linux/*.h files. The down-side is we could
+>>> have a lot of files and directories for stubs, not forgetting the ones
+>>> for trace/*.h or event asm/*.h.
 >>
->> But as Goldwyn already pointed out, many bugs have gone un-fixed
->> in userspace, in code which was forked long ago from kernelspace.
+>> Errr, I'm not a fan of 2.2 and 2.3 though.
 >>
->> For things like locking it's trivial to define that away.
+>> Yes, we have cases that over 90% code can be reused from kernel, like
+>> raid6 recovery tables.
 >>
->> xfsprogs does i.e. -
+>> But that's almost pure algorithm part. (And I followed David's
+>> suggestion to put them into kernel-lib)
 >>
->> /* miscellaneous kernel routines not in user space */
->> #define down_read(a)            ((void) 0)
->> #define up_read(a)              ((void) 0)
->> #define spin_lock_init(a)       ((void) 0)
->> #define spin_lock(a)            ((void) 0)
->> #define spin_unlock(a)          ((void) 0)
->> #define likely(x)               (x)
->> #define unlikely(x)             (x)
->> #define rcu_read_lock()         ((void) 0)
->> #define rcu_read_unlock()       ((void) 0)
->> #define WARN_ON_ONCE(expr)      ((void) 0)
+>
+> Yes, it is algorithmic specific code which we want to pull. _Not_ the
+> entire fs/btrfs/*. This would require some additions to kernel-lib and
+> quite a few kernel stubs.
+>
+>> For anything kernel specific, like ftrace/mutex/page/VFS, I prefer a
+>> lightweight re-write, which is easier to write and review.
+>
+> And it should be so.
+>
+>>
+>> In my experience, I just used about 300 lines to rewrite
+>> btrfs_map_block(), compare to kernel 500+ lines and variant wrappers, no
+>> to mention easier to understand interface.
+>> Examples are:
+>> https://patchwork.kernel.org/patch/9488519/
+>> https://patchwork.kernel.org/patch/9488505/
 >>
 >>
->>> Furthermore, there are cases while kernel is doing things wrong while=
+>> Especially since there may be more hidden bugs in kernel code.
+>
+> Like Christoph said, We'd rather fix "hidden bugs" in both kernel and
+> tools rather than just the tools.
 
->>> btrfs-progs does it right.
+While most of the bugs I found in RAID5/6 and dev-replace are all 
+related to race, which doesn't ever exist in btrfs-progs.
+(That's why I love btrfs-progs so much than the kernel part)
+
+So the problem is still how independent we can extract the core functions.
+
+Thanks,
+Qu
+
+>
 >>
->> All the more reason to sync it up, fixes should always be in both
->> places, right?
+>> Thanks,
+>> Qu
 >>
->> I had looked at this a few years ago, and started trying to sync thing=
-s
->> up, but got daunted and busy and never completed anything.  :(  I sent=
-
->> a few fixups back in April 2013 to get things /slightly/ closer.
+>>>
+>>> 2.3 Flag day
+>>> Flag day would be the day we move to the new directory structure. Until
+>>> then, we send the patches with the current directory structure. After
+>>> flag day, all patches must be ported to the new directory structure. We
+>>> could request developers to repost/retest patches leading up to the flag
+>>> day.
+>>>
+>>>
+>>> 3. Post converging
+>>> Checks/scripts to make sure that patches which are pushed to kernel
+>>> space will not render user space tools uncompilable.
+>>>
+>>> While these are my (and my teams) thoughts, I would like suggestions
+>>> and/or criticism to improve the idea.
+>>>
 >>
->> The libxfs sync in xfs has borne fruit; I'm of the opinion that simila=
-r
->> work would help btrfs too, though it can be a long road.
 >>
->> (e2fsprogs has gone the other way, and has a completely separate
->> re-implementation in userspace; it works, I guess, but I have to say
->> that I really like the code commonality in xfs.)
->>
->=20
-> Yup, I also think we should be going in the XFS direction. It's a big
-> maintenance burden to have to worry about the code in two places. (E.g.=
-,
-> the biggest reason I haven't gotten around to implementing full free
-> space tree support in btrfs-progs is that it's such a pain in the ass t=
-o
-> port new kernel code to the outdated progs code.)
-
-Another advantage is that we will be able to at least write test cases
-for the shared code that can be run entirely in userspace.  That
-obviously doesn't address a huge class of potential problems, but it's
-better than what we have now.
-
-> As far as I know, the only reason it hasn't happened yet is that no one=
-
-> has agreed to do it, and we're all just hoping someone else will take
-> care of it.
-
-Yeah, I think that's exactly it.  Having one shared source base is going
-to be easier to maintain for everyone.  The longer we wait to do it, the
-more it will diverge.  This is a topic we've been discussing in our
-team's weekly call for the past few weeks.  I think Goldwyn is granting
-that last wish. :)
-
--Jeff
-
---=20
-Jeff Mahoney
-SUSE Labs
+>
 
 
---OcPXDQ0Dtu5HuWEhQ9U9JRKrkXHgGochW--
-
---IGvInIuEscQRVIajMTWbl4e1IeULkTo0r
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Comment: GPGTools - http://gpgtools.org
-
-iQIcBAEBCAAGBQJYdALOAAoJEB57S2MheeWyyMoP/RrMed2Tk+wzElwHzUnwYrMh
-r5H0KCrqmunEfjMtCnaIp6J8kE/sqSbnByBRcb32QVOEKzI8q5+Lo3kcmC0bNzxO
-6gz7+l46Z3kXUXSPnjWtJZwEl9e0sHyKblu06jlncQcN6V8yP2Lt+ToC5EyyxD+D
-tKN7coEcszPI7UGnPxxDphb0tuA8sZY7RZ+7uMqKe9fFFm9XHMO1gxFk9YMTgjiR
-mOFycyxMVvacjlDkGDkR5eMk3nHitFP7nr3oTNN7+KcGoxRPGR9wcrvCyIQ1Db3N
-urI5UaS40m/GcQB3L2DF67G7GI0Ixn0+vXATLXgZgBh9+ccHkaEGB/74NetUd17J
-zc1iAq/YHAACzGcTC0IScP6ceEqdC3q6rbDoBlYorcGXBdyRs5DEL3MNTuSS+62j
-b6RRJg3/1G52u9WIwrsvxDDurh2NDYqTaTmDTru9ODjZQj3ktiIUXI3kNF4CnIvC
-wKU2CkueJFCOCy433nEZNvQ3AIT8BTvrVMyUGlF0LPenkMXr8INW9cOs4pN/mEGA
-56StbYqPXQFTQR9fJEVhEJWZWKhNS/hVrDoyk2IVjj7LSeRbEkysOo501bGsyaGO
-SeZAQrQRQCV/HnWk1UYdpOfL82WifiE2AFWWFSkLjfoArJ4iXUSiSCoR+VnwHn/l
-qa2MkC2pvekNOBmx8vEC
-=pVNw
------END PGP SIGNATURE-----
-
---IGvInIuEscQRVIajMTWbl4e1IeULkTo0r--

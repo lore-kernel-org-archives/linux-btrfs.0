@@ -1,96 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:61381 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:24716 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1754451AbdAKCdE (ORCPT
+        with ESMTP id S1754150AbdAKCqC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Jan 2017 21:33:04 -0500
-Subject: Re: [RFC] Converging userspace and kernel code
-To: Anand Jain <anand.jain@oracle.com>, Goldwyn Rodrigues <rgoldwyn@suse.de>,
-        <linux-btrfs@vger.kernel.org>, Jeff Mahoney <jeffm@suse.com>,
-        David Sterba <dsterba@suse.com>
-References: <512c15bf-3c4b-3b88-1106-a7d43386400f@suse.de>
- <1b68f099-53e8-1bc8-5ffc-2dd0b21a32ae@oracle.com>
- <09ea1fbd-74a1-d9f5-ba86-bc7c9118d49f@suse.de>
- <d0a11a09-322d-89bc-1a15-598f6a14e6be@oracle.com>
- <d0c2e05d-0b7a-a782-80b8-e1776e7b6fdb@suse.de>
- <2dfce804-d1ba-d9e4-e7b3-9c726ff5b49b@oracle.com>
+        Tue, 10 Jan 2017 21:46:02 -0500
+Subject: Re: Generic/389 xfs_io segfault on btrfs and ext4
+To: Eric Sandeen <sandeen@sandeen.net>, Eryu Guan <eguan@redhat.com>,
+        <agruenba@redhat.com>, btrfs <linux-btrfs@vger.kernel.org>,
+        <fstests@vger.kernel.org>, <linux-xfs@vger.kernel.org>
+References: <ca7ae533-8d7f-9783-1900-bdfb17d6a32c@cn.fujitsu.com>
+ <d5116871-0bb3-46b0-c9e3-def74bd57967@sandeen.net>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <d53b25ca-82bb-96ae-33fd-1286f3b367db@cn.fujitsu.com>
-Date: Wed, 11 Jan 2017 10:32:43 +0800
+Message-ID: <5c56afcd-13b0-d3b3-e18c-0b902691d8f4@cn.fujitsu.com>
+Date: Wed, 11 Jan 2017 10:45:52 +0800
 MIME-Version: 1.0
-In-Reply-To: <2dfce804-d1ba-d9e4-e7b3-9c726ff5b49b@oracle.com>
+In-Reply-To: <d5116871-0bb3-46b0-c9e3-def74bd57967@sandeen.net>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-At 01/11/2017 10:23 AM, Anand Jain wrote:
->
->
-> On 01/11/17 00:04, Goldwyn Rodrigues wrote:
+At 01/11/2017 10:40 AM, Eric Sandeen wrote:
+> On 1/10/17 8:08 PM, Qu Wenruo wrote:
+>> Hi, Andreas and Eryu,
 >>
->>
->> On 01/10/2017 09:20 AM, Anand Jain wrote:
->>>
->>>
->>> On 01/10/17 20:14, Goldwyn Rodrigues wrote:
->>>>
->>>>
->>>> On 01/09/2017 09:28 PM, Anand Jain wrote:
->>>>>
->>>>> Goldwyn,
->>>>>
->>>>>  Could you add a list what functionality in btrfs-progs will
->>>>>  be using the 'core'. ?
->>>>
->>>>
->>>> There are too many to list. It would contain the algorithmic functions
->>>> of btrfs which would be able to interact with both kernel and
->>>> btrfs-progs.
->>>
->>>  I am getting confused. How about a few from the btrfs-progs ?
->>>
->>>
->>
->> Functions such as open_ctree(), or the set/get functions. The idea is to
->> keep the codebase of this core component the same in btrfs-progs and
->> kernel.
+>> I found test case generic/389 fails on btrfs and ext4, and it fails with xfs_io segfault.
 >
->  The btrfs-progs open_ctree() is used for the offline functionality
->  such as fsck...
+> Details, please?
 >
->> As an example, see how XFS have done using libxfs. Something around the
->> same lines.
->>
+> Works ok here:
 >
->  Does XFS progs access the disks directly (without going through the
->  kernel) while kernel has mounted the disk ? If yes, how does it
->  maintain the consistency ? Calling sync for the sake of read access
->  by the progs, is not a good idea as it causes jitters in the steady
->  state IOPS for the applications. I have investigated these concerns
->  at the data centers earlier.
+> # ./check  generic/389
+> FSTYP         -- ext4
+> PLATFORM      -- Linux/x86_64 bp-05 4.9.0-rc1+
+> MKFS_OPTIONS  -- /dev/sdb2
+> MOUNT_OPTIONS -- -o acl,user_xattr -o context=system_u:object_r:nfs_t:s0 /dev/sdb2 /mnt/scratch
+>
+> generic/389 1s ... 1s
+> Ran: generic/389
+> Passed all 1 tests
+>
+> # rpm -q xfsprogs
+> xfsprogs-4.9.0-1.el6.x86_64
 
-Just a quick glance, and I found that libxfs is much like interfaces of 
-OOP languages.
+OK, that's the problem.
 
-For example, in libxfs, there are functions calling xfs_trans_commit(), 
-but there is not implementation.
+My repo only provides old xfsprogs, which xfsprogs-4.5.0-2.fc25.x86_64.
 
-The implementation part can diff between kernel and xfsprogs.
+>
+> What version of kernel and xfsprogs were you testing, and what was the segfault?
 
+Kernel is mainline v4.10-rc1.
+No debuginfo installed, so no backtrace, but since there is so many
 
-Which seems very nicely arranged for me, and since it's just interfaces, 
-I hardly see how it can cause performance problems.
+So the problem is the old xfsprogs, I'll update or compile xfsprogs.
+Thanks for your kind info.
 
 Thanks,
 Qu
+
 >
-> Thanks, Anand
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Thanks,
+> -Eric
+>
+>> So it seems to be a bug in xfsprogs, but I'm already using the latest release from Fedora.
+>>
+>> Is this a known bug?
+>>
+>> Thanks,
+>> Qu
+>>
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-xfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
 >
 >
 

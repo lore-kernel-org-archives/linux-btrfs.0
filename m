@@ -1,47 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39266 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1759756AbdAIMOg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 9 Jan 2017 07:14:36 -0500
-From: David Sterba <dsterba@suse.com>
-To: clm@fb.com
-Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
-Subject: [PULL] Btrfs tracepoint updates for 4.10
-Date: Mon,  9 Jan 2017 13:14:14 +0100
-Message-Id: <cover.1483963803.git.dsterba@suse.com>
+Received: from mail-oi0-f41.google.com ([209.85.218.41]:32776 "EHLO
+        mail-oi0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753659AbdAKK3a (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 11 Jan 2017 05:29:30 -0500
+Received: by mail-oi0-f41.google.com with SMTP id w204so83229317oiw.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jan 2017 02:29:30 -0800 (PST)
+MIME-Version: 1.0
+From: Miklos Szeredi <miklos@szeredi.hu>
+Date: Wed, 11 Jan 2017 11:29:28 +0100
+Message-ID: <CAJfpegv9EhT4Y3QjTZBHoMKSiVGtfmTGPhJp_rh3a7=rFCHu5A@mail.gmail.com>
+Subject: [LSF/MM TOPIC] sharing pages between mappings
+To: linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, lsf-pc@lists.linux-foundation.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+I know there's work on this for xfs, but could this be done in generic mm code?
 
-I've selected a handful of tracepoint fixes and updates. The fixes a crash when
-tracepoints are enabled so this can be considered urgent, the others are minor
-harmless improvements. The qgroup tracepoint update is not included as it
-depends on other patches so it'll possibly go later or with the rest of the
-qgroup patches.
+What are the obstacles?  page->mapping and page->index are the obvious ones.
 
-The following changes since commit 2939e1a86f758b55cdba73e29397dd3d94df13bc:
+If that's too difficult is it maybe enough to share mappings between
+files while they are completely identical and clone the mapping when
+necessary?
 
-  btrfs: limit async_work allocation and worker func duration (2016-12-13 11:01:30 -0800)
+All COW filesystems would benefit, as well as layered ones: lots of
+fuse fs, and in some cases overlayfs too.
 
-are available in the git repository at:
+Related:  what can DAX do in the presence of cloned block?
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tracepoint-updates-4.10
-
-for you to fetch changes up to 562a7a07bf61e2949f7cbdb6ac7537ad9e2794d1:
-
-  btrfs: make tracepoint format strings more compact (2017-01-09 11:27:07 +0100)
-
-----------------------------------------------------------------
-David Sterba (2):
-      btrfs: fix crash when tracepoint arguments are freed by wq callbacks
-      btrfs: make tracepoint format strings more compact
-
-Liu Bo (2):
-      Btrfs: add 'inode' for extent map tracepoint
-      Btrfs: add truncated_len for ordered extent tracepoints
-
- fs/btrfs/async-thread.c      |  15 +++--
- fs/btrfs/inode.c             |   2 +-
- include/trace/events/btrfs.h | 146 +++++++++++++++++++++++--------------------
- 3 files changed, 91 insertions(+), 72 deletions(-)
+Thanks,
+Miklos

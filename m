@@ -1,62 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:39873 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1750807AbdAKTBn (ORCPT
+Received: from mail-wm0-f67.google.com ([74.125.82.67]:33862 "EHLO
+        mail-wm0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750807AbdAKTED (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Jan 2017 14:01:43 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1cRO90-0001V0-Fx
-        for linux-btrfs@vger.kernel.org; Wed, 11 Jan 2017 20:01:10 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: mkfs.btrfs/balance small-btrfs chunk size RFC
-Date: Wed, 11 Jan 2017 19:00:45 +0000 (UTC)
-Message-ID: <pan$48f22$a985e7db$d84237a3$58044790@cox.net>
-References: <pan$cb31b$a126bd1f$577e9db8$38b890f5@cox.net>
-        <db8aff8c-44a5-f488-56de-4a9ec87e44e0@gmail.com>
-        <20170110152905.GJ19585@carfax.org.uk>
-        <c934f74c-6dac-b66f-13cf-eb9bf0a79aac@gmail.com>
-        <20170110154753.GK19585@carfax.org.uk>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+        Wed, 11 Jan 2017 14:04:03 -0500
+Received: by mail-wm0-f67.google.com with SMTP id c85so158731wmi.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jan 2017 11:04:03 -0800 (PST)
+Content-Type: text/plain; charset=utf-8
+Mime-Version: 1.0 (Mac OS X Mail 10.2 \(3259\))
+Subject: Re: Best practices for raid 1
+From: Tomasz Kusmierz <tom.kusmierz@gmail.com>
+In-Reply-To: <MWHPR10MB1472DFDAF96ED8C7E5EB9FC494670@MWHPR10MB1472.namprd10.prod.outlook.com>
+Date: Wed, 11 Jan 2017 19:04:00 +0000
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Message-Id: <F9190DED-AA28-4C6E-9217-4C567BBFF0A7@gmail.com>
+References: <MWHPR10MB1472DFDAF96ED8C7E5EB9FC494670@MWHPR10MB1472.namprd10.prod.outlook.com>
+To: Vinko Magecic <vinko.magecic@construction.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hugo Mills posted on Tue, 10 Jan 2017 15:47:53 +0000 as excerpted:
 
-> On Tue, Jan 10, 2017 at 10:42:51AM -0500, Austin S. Hemmelgarn wrote:
->> Most of the issue in this case is with the size of the initial chunk.
->> That said, I've got quite a few reasonably sized filesystems (I think
->> the largest is 200GB) with moderate usage (max 90GB of data), and none
->> of them are using more than the first 16kB block in the System chunk.
->> While I'm not necessarily a typical user, I'd be willing to bet based
->> on this that in general, most people who aren't storing very large
->> amounts of data or taking huge numbers of snapshots aren't going to
->> need a system chunk much bigger than 1MB.
+> On 10 Jan 2017, at 21:07, Vinko Magecic <vinko.magecic@construction.com> wrote:
 > 
->    Again, the system chunk has *nothing* to do with snapshots.
+> Hello,
+> 
+> I set up a raid 1 with two btrfs devices and came across some situations in my testing that I can't get a straight answer on.
+> 1) When replacing a volume, do I still need to `umount /path` and then `mount -o degraded ...` the good volume before doing the `btrfs replace start ...` ? I didn't see anything that said I had to and when I tested it without mounting the volume it was able to replace the device without any issue. Is that considered bad and could risk damage or has `replace` made it possible to replace devices without umounting the filesystem?
 
-Given your explanation of the system chunk containing the chunk tree but 
-not being (directly) related to snapshots, I took that as...
+No need to unmount, just replace old with new. Your scenario seems very convoluted and it’s pointless
 
-Many snapshots, some being old snapshots of now changed data, thus 
-potentially multiplying the working copy data several times and of course 
-requiring more chunks in ordered to contain all that archived data.
+> 2) Everything I see about replacing a drive says to use `/old/device /new/device` but what if the old device can't be read or no longer exists? Would that be a `btrfs device add /new/device; btrfs balance start /new/device` ?
+In case where old device is missing you’ve got few options:
+- if you have enough space to fit the data and enough of disks to comply with redundancy - just remove the drive, So for example is you have 3 x 1TB drives with raid 1 And use less than 1TB of data total - juste remove one drive and you will have 2 x 1TB drives in raid 1 and btrfs fill just rebalance stuff for you !
+- if you have not enough space to fi the data / not enough disks left to comply with raid lever - your only option is to add disk first then remove missing (btrfs dev delete missing /mount_point_of_your_fs)
 
-So while snapshots aren't directly related to the system chunk, the fact 
-that they're snapshotting /something/ that's presumably changing or 
-there'd be no need for snapshots, and the snapshot-archived versions of 
-that /something/ presumably takes additional chunks, makes snapshots 
-indirectly related to the required size of the system chunk(s), in 
-ordered to contain the chunk tree supporting all the other chunks, 
-necessary due not to live data, but due to the snapshots.
+> 3) When I have the RAID1 with two devices and I want to grow it out, which is the better practice? Create a larger volume, replace the old device with the new device and then do it a second time for the other device, or attaching the new volumes to the label/uuid one at a time and with each one use `btrfs filesystem resize devid:max /mountpoint`.
 
-Is that a correct read, or is (somehow) that indirect dependency not 
-there either, despite the system chunk(s) containing the chunk tree?
+You kinda misunderstand the principal of btrfs. Btrfs will span across ALL the available space you’ve got. If you have multiple devices in this setup (remember that partition IS A DEVICE), it will span across multiple devices and you can’t change this. Now btrfs resize is mean for resizing a file system occupying a device (or partition). So work flow is that is you want to shrink a device (partition) you first shrink fs on this device than size down the device (partition) … if you want to increase the size of device (partition) you increase size of device (partition) than you grow filesystem within this device (partition). This is 100% irrespective of total cumulative size of file system. 
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Let’s say you’ve got a btrfs file system that is spanning across 3 x 1TB devices … and those devices are partitions. You have raid 1 setup - your complete amount of available space is 1.5 TB. Let’s say you want to shrink of of partitions to 0.5TB -> first you shrink FS on this partition (balance will runn automatically) -> you shrink partition down to 0.5TB -> from now on your total available space is 1.25TB. 
+
+Simples right ? :)
+
+> Thanks
+> 
+> 
+> 
+> 
+>    --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 

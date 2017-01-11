@@ -1,96 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f171.google.com ([209.85.192.171]:36042 "EHLO
-        mail-pf0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751323AbdARHiI (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Jan 2017 02:38:08 -0500
-Received: by mail-pf0-f171.google.com with SMTP id 189so2319762pfu.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 17 Jan 2017 23:38:08 -0800 (PST)
-From: Omar Sandoval <osandov@osandov.com>
-To: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>,
-        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>
-Cc: kernel-team@fb.com
-Subject: [PATCH] Btrfs: refactor btrfs_extent_same() slightly
-Date: Tue, 17 Jan 2017 23:37:38 -0800
-Message-Id: <0e35cf0b96176e03494585709f5170dff94e1e55.1484724993.git.osandov@fb.com>
+Received: from mx2.suse.de ([195.135.220.15]:57839 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S966988AbdAKN4J (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 11 Jan 2017 08:56:09 -0500
+Date: Wed, 11 Jan 2017 14:55:50 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Michal Hocko <mhocko@kernel.org>
+Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
+        Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, Michal Hocko <mhocko@suse.com>
+Subject: Re: [PATCH 1/2] etrfs: fix up misleading GFP_NOFS usage in
+ btrfs_releasepage
+Message-ID: <20170111135550.GJ12081@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170109143903.32280-1-mhocko@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170109143903.32280-1-mhocko@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Omar Sandoval <osandov@fb.com>
+On Mon, Jan 09, 2017 at 03:39:02PM +0100, Michal Hocko wrote:
+> From: Michal Hocko <mhocko@suse.com>
+> 
+> b335b0034e25 ("Btrfs: Avoid using __GFP_HIGHMEM with slab allocator")
+> has reduced the allocation mask in btrfs_releasepage to GFP_NOFS just
+> to prevent from giving an unappropriate gfp mask to the slab allocator
+> deeper down the callchain (in alloc_extent_state). This is wrong for
+> two reasons a) GFP_NOFS might be just too restrictive for the calling
+> context b) it is better to tweak the gfp mask down when it needs that.
+> 
+> So just remove the mask tweaking from btrfs_releasepage and move it
+> down to alloc_extent_state where it is needed.
+> 
+> Signed-off-by: Michal Hocko <mhocko@suse.com>
+> ---
+>  fs/btrfs/extent_io.c | 5 +++++
+>  fs/btrfs/inode.c     | 2 +-
+>  2 files changed, 6 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index b38150eec6b4..f6ae94a4acad 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -226,6 +226,11 @@ static struct extent_state *alloc_extent_state(gfp_t mask)
+>  {
+>  	struct extent_state *state;
+>  
+> +	/*
+> +	 * The given mask might be not appropriate for the slab allocator,
+> +	 * drop the unsupported bits
+> +	 */
+> +	mask &= ~(__GFP_DMA32|__GFP_HIGHMEM);
 
-This was originally a prep patch for changing the behavior on len=0, but
-we went another direction with that. This still makes the function
-slightly easier to follow.
+Is this future proof enough? As it's enumerating some gfp flags, what if
+more are necessary in the future? I'm interested about some synthetic
+gfp flags that would not require knowledge about what is or is not
+acceptable for slab allocator.
 
-Reviewed-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Signed-off-by: Omar Sandoval <osandov@fb.com>
----
-Qu thought this would still be a worthwhile cleanup. I'm fine either
-way. Applies to Dave's for-next branch.
-
- fs/btrfs/ioctl.c | 33 ++++++++++++---------------------
- 1 file changed, 12 insertions(+), 21 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index bf7227d43b5d..3542dddde3d2 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3127,26 +3127,27 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
- 	int ret;
- 	u64 len = olen;
- 	struct cmp_pages cmp;
--	int same_inode = 0;
-+	bool same_inode = (src == dst);
- 	u64 same_lock_start = 0;
- 	u64 same_lock_len = 0;
- 
--	if (src == dst)
--		same_inode = 1;
--
- 	if (len == 0)
- 		return 0;
- 
--	if (same_inode) {
-+	if (same_inode)
- 		inode_lock(src);
-+	else
-+		btrfs_double_inode_lock(src, dst);
- 
--		ret = extent_same_check_offsets(src, loff, &len, olen);
--		if (ret)
--			goto out_unlock;
--		ret = extent_same_check_offsets(src, dst_loff, &len, olen);
--		if (ret)
--			goto out_unlock;
-+	ret = extent_same_check_offsets(src, loff, &len, olen);
-+	if (ret)
-+		goto out_unlock;
- 
-+	ret = extent_same_check_offsets(dst, dst_loff, &len, olen);
-+	if (ret)
-+		goto out_unlock;
-+
-+	if (same_inode) {
- 		/*
- 		 * Single inode case wants the same checks, except we
- 		 * don't want our length pushed out past i_size as
-@@ -3174,16 +3175,6 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
- 
- 		same_lock_start = min_t(u64, loff, dst_loff);
- 		same_lock_len = max_t(u64, loff, dst_loff) + len - same_lock_start;
--	} else {
--		btrfs_double_inode_lock(src, dst);
--
--		ret = extent_same_check_offsets(src, loff, &len, olen);
--		if (ret)
--			goto out_unlock;
--
--		ret = extent_same_check_offsets(dst, dst_loff, &len, olen);
--		if (ret)
--			goto out_unlock;
- 	}
- 
- 	/* don't make the dst file partly checksummed */
--- 
-2.11.0
-
+But otherwise looks ok to me, I'm going to merge the patch. Thanks.

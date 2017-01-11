@@ -1,110 +1,325 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from atrey.karlin.mff.cuni.cz ([195.113.26.193]:54294 "EHLO
-        atrey.karlin.mff.cuni.cz" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932954AbdAKNHO (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:21704 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S964959AbdAKKDH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Jan 2017 08:07:14 -0500
-Date: Wed, 11 Jan 2017 14:07:08 +0100
-From: Petr Janecek <janecek@ucw.cz>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: BUG at mount time on v4.8.10 (and 4.9.2)
-Message-ID: <20170111130708.GA7214@atrey.karlin.mff.cuni.cz>
-References: <20170106043600.GB4502@atrey.karlin.mff.cuni.cz>
+        Wed, 11 Jan 2017 05:03:07 -0500
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
+        by cn.fujitsu.com (Postfix) with ESMTP id 168DC47AD1FF
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jan 2017 18:02:58 +0800 (CST)
+From: Su Yue <suy.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATH v2 1/2] btrfs-progs: cmds-check.c: supports inode nbytes fix in lowmem
+Date: Wed, 11 Jan 2017 18:03:08 +0800
+Message-ID: <20170111100309.10811-1-suy.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170106043600.GB4502@atrey.karlin.mff.cuni.cz>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Added 'repair_inode_item' which dispatches functions such as
+'repair_inode__nbytes_lowmem' to correct errors and
+'struct inode_item_fix_info' to store correct values and errors.
 
-> > I just got a BUG on mount of a raid10 fs. /dev/sde was added to
-> > the fs recently and balance has been started. After reboot (balance
-> > still running), the fs can not be mounted any more.
-> 
-> 
-> Try the skip_balance mount option (as described on the wiki or in the 
-> btrfs (5) manpage).
+v2:
+   reassign err to info.err in process_one_leaf.
+   
+Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
+---
+ cmds-check.c | 166 +++++++++++++++++++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 155 insertions(+), 11 deletions(-)
 
-  unfortunately, I get almost same trace with "-o skip_balance".
-Same thing happens on 4.9.2. Mounting "ro,skip_balance" works, so I can
-recover the data. But balance was supposed to be working, and running a
-balance after adding a device to almost full fs is imho exactly what one
-whould do.
+diff --git a/cmds-check.c b/cmds-check.c
+index 1dba298..dad10cb 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -371,6 +371,17 @@ struct root_item_info {
+ };
+ 
+ /*
++ * Use inode_item_fix_info as function check_inode_item's arg.
++ */
++struct inode_item_fix_info {
++	u64 ino;
++	u64 isize;
++	u64 nbytes;
++
++	int err;
++};
++
++/*
+  * Error bit for low memory mode check.
+  *
+  * Currently no caller cares about it yet.  Just internal use for error
+@@ -1866,13 +1877,16 @@ struct node_refs {
+ static int update_nodes_refs(struct btrfs_root *root, u64 bytenr,
+ 			     struct node_refs *nrefs, u64 level);
+ static int check_inode_item(struct btrfs_root *root, struct btrfs_path *path,
+-			    unsigned int ext_ref);
+-
++			    unsigned int ext_ref,
++			    struct inode_item_fix_info *info);
++static int repair_inode_item(struct btrfs_root *root,
++			     struct inode_item_fix_info *info);
+ static int process_one_leaf_v2(struct btrfs_root *root, struct btrfs_path *path,
+ 			       struct node_refs *nrefs, int *level, int ext_ref)
+ {
+ 	struct extent_buffer *cur = path->nodes[0];
+ 	struct btrfs_key key;
++	struct inode_item_fix_info info;
+ 	u64 cur_bytenr;
+ 	u32 nritems;
+ 	u64 first_ino = 0;
+@@ -1881,6 +1895,7 @@ static int process_one_leaf_v2(struct btrfs_root *root, struct btrfs_path *path,
+ 	int ret = 0; /* Final return value */
+ 	int err = 0; /* Positive error bitmap */
+ 
++	memset(&info, 0, sizeof(info));
+ 	cur_bytenr = cur->start;
+ 
+ 	/* skip to first inode item or the first inode number change */
+@@ -1900,8 +1915,27 @@ static int process_one_leaf_v2(struct btrfs_root *root, struct btrfs_path *path,
+ 	path->slots[0] = i;
+ 
+ again:
+-	err |= check_inode_item(root, path, ext_ref);
++	err |= check_inode_item(root, path, ext_ref, &info);
++
++	if (repair && (err & ~LAST_ITEM)) {
++		ret = repair_inode_item(root, &info);
+ 
++		if (ret < 0)
++			goto out;
++		/*
++		 * if some errors was repaired, path shall be searched
++		 * again since path has been changed
++		 */
++		if (ret == 0) {
++			btrfs_item_key_to_cpu(path->nodes[0], &key,
++					      path->slots[0]);
++			btrfs_release_path(path);
++			btrfs_search_slot(NULL, root, &key, path, 0, 0);
++
++			cur = path->nodes[0];
++			err = info.err;
++		}
++	}
+ 	if (err & LAST_ITEM)
+ 		goto out;
+ 
+@@ -2211,7 +2245,8 @@ out:
+ }
+ 
+ static int check_inode_item(struct btrfs_root *root, struct btrfs_path *path,
+-			    unsigned int ext_ref);
++			    unsigned int ext_ref,
++			    struct inode_item_fix_info *info);
+ 
+ static int walk_down_tree_v2(struct btrfs_root *root, struct btrfs_path *path,
+ 			     int *level, struct node_refs *nrefs, int ext_ref)
+@@ -2293,7 +2328,7 @@ static int walk_down_tree_v2(struct btrfs_root *root, struct btrfs_path *path,
+ 		}
+ 
+ 		ret = check_child_node(root, cur, path->slots[*level], next);
+-		if (ret < 0) 
++		if (ret < 0)
+ 			break;
+ 
+ 		if (btrfs_is_leaf(next))
+@@ -2383,6 +2418,105 @@ out:
+ 	return ret;
+ }
+ 
++/*
++ * Set inode's nbytes to correct value in @info
++ *
++ * Returns <0  means on error
++ * Returns  0  means successful repair
++ */
++static int repair_inode_nbytes_lowmem(struct btrfs_trans_handle *trans,
++				      struct btrfs_root *root,
++				      struct inode_item_fix_info *info)
++{
++	struct btrfs_inode_item *ei;
++	struct btrfs_key key;
++	struct btrfs_path path;
++	int ret;
++
++	ASSERT(info);
++	key.objectid = info->ino;
++	key.type = BTRFS_INODE_ITEM_KEY;
++	key.offset = 0;
++
++	ret = btrfs_search_slot(trans, root, &key, &path, 0, 1);
++	if (ret < 0)
++		goto out;
++	if (ret > 0) {
++		ret = -ENOENT;
++		goto out;
++	}
++
++	ei = btrfs_item_ptr(path.nodes[0], path.slots[0],
++			    struct btrfs_inode_item);
++	btrfs_set_inode_nbytes(path.nodes[0], ei, info->nbytes);
++	btrfs_mark_buffer_dirty(path.nodes[0]);
++	printf("reset nbytes for inode %llu root %llu\n", info->ino,
++	       root->root_key.objectid);
++out:
++	btrfs_release_path(&path);
++	return ret;
++}
++
++/*
++ * repair_inode_item - repair inode item errors
++ *
++ * Repair the inode item if error can be repaired. Any caller should compare
++ * @info->err with the before, if err diffs, some contexts should be notified.
++ *
++ * @root:     subvolume_root
++ * @info:     contains correct values and error
++ *            when it returns, @info stores the unrepairable errors
++ *
++ * Returns < 0 represents repair function error
++ * Returns 0   represents have fixed some errors or no error at all
++ * Returns > 0 represents it can't fix any error
++ */
++static int repair_inode_item(struct btrfs_root *root,
++			     struct inode_item_fix_info *info)
++{
++	struct btrfs_trans_handle *trans;
++	int ret = 0;
++	int err;
++
++	ASSERT(info);
++	err = info->err;
++	if (!err) {
++		/* nothing to repair */
++		ret = 0;
++		goto out;
++	}
++	if (!(err & NBYTES_ERROR)) {
++		warning("root %llu INODE[%llu] have error(s) can't repair, error : %d",
++			root->objectid,	info->ino, err);
++		/* can't fix any errors, ret should be positive */
++		ret = err;
++		goto out;
++	}
++
++	trans = btrfs_start_transaction(root, 1);
++	if (IS_ERR(trans)) {
++		ret = PTR_ERR(trans);
++		goto out;
++	}
++
++	if (err & NBYTES_ERROR) {
++		ret = repair_inode_nbytes_lowmem(trans, root, info);
++		if (ret == 0)
++			err &= ~NBYTES_ERROR;
++		else if (ret < 0)
++			goto out;
++	}
++
++	if (err != info->err) {
++		info->err = err;
++		ret = 0;
++	}
++
++	btrfs_commit_transaction(trans, root);
++out:
++	return ret;
++}
++
+ static int repair_inode_isize(struct btrfs_trans_handle *trans,
+ 			      struct btrfs_root *root, struct btrfs_path *path,
+ 			      struct inode_record *rec)
+@@ -4781,7 +4915,8 @@ static int check_file_extent(struct btrfs_root *root, struct btrfs_key *fkey,
+  * Return >0 for error or hit the traversal is done(by error bitmap)
+  */
+ static int check_inode_item(struct btrfs_root *root, struct btrfs_path *path,
+-			    unsigned int ext_ref)
++			    unsigned int ext_ref,
++			    struct inode_item_fix_info *info)
+ {
+ 	struct extent_buffer *node;
+ 	struct btrfs_inode_item *ii;
+@@ -4821,6 +4956,7 @@ static int check_inode_item(struct btrfs_root *root, struct btrfs_path *path,
+ 	dir = imode_to_type(mode) == BTRFS_FT_DIR;
+ 	nlink = btrfs_inode_nlink(node, ii);
+ 	nodatasum = btrfs_inode_flags(node, ii) & BTRFS_INODE_NODATASUM;
++	info->ino = inode_id;
+ 
+ 	while (1) {
+ 		ret = btrfs_next_item(root, path);
+@@ -4924,11 +5060,13 @@ out:
+ 
+ 		if (nbytes != extent_size) {
+ 			err |= NBYTES_ERROR;
++			info->nbytes = extent_size;
+ 			error("root %llu INODE[%llu] nbytes(%llu) not equal to extent_size(%llu)",
+ 			      root->objectid, inode_id, nbytes, extent_size);
+ 		}
+ 	}
+ 
++	info->err = err & ~LAST_ITEM;
+ 	return err;
+ }
+ 
+@@ -4936,9 +5074,11 @@ static int check_fs_first_inode(struct btrfs_root *root, unsigned int ext_ref)
+ {
+ 	struct btrfs_path path;
+ 	struct btrfs_key key;
++	struct inode_item_fix_info info;
+ 	int err = 0;
+ 	int ret;
+ 
++	memset(&info, 0, sizeof(info));
+ 	btrfs_init_path(&path);
+ 	key.objectid = BTRFS_FIRST_FREE_OBJECTID;
+ 	key.type = BTRFS_INODE_ITEM_KEY;
+@@ -4952,12 +5092,17 @@ static int check_fs_first_inode(struct btrfs_root *root, unsigned int ext_ref)
+ 		err |= INODE_ITEM_MISSING;
+ 	}
+ 
+-	err |= check_inode_item(root, &path, ext_ref);
++	err |= check_inode_item(root, &path, ext_ref, &info);
+ 	err &= ~LAST_ITEM;
+ 	if (err && !ret)
+ 		ret = -EIO;
+ out:
+ 	btrfs_release_path(&path);
++	if (repair) {
++		ret = repair_inode_item(root, &info);
++		if (!info.err)
++			ret = 0;
++	}
+ 	return ret;
+ }
+ 
+@@ -9322,7 +9467,7 @@ static int check_extent_refs(struct btrfs_root *root,
+ 		/*
+ 		 * Although it's not a extent ref's problem, we reuse this
+ 		 * routine for error reporting.
+-		 * No repair function yet.
++		 * No repair function yet
+ 		 */
+ 		if (rec->crossing_stripes) {
+ 			fprintf(stderr,
+@@ -12719,11 +12864,10 @@ int cmd_check(int argc, char **argv)
+ 	}
+ 
+ 	/*
+-	 * Not supported yet
++	 * Support partailly
+ 	 */
+ 	if (repair && check_mode == CHECK_MODE_LOWMEM) {
+-		error("low memory mode doesn't support repair yet");
+-		exit(1);
++		warning("low memory mode supports repair partailly");
+ 	}
+ 
+ 	radix_tree_init();
+-- 
+2.11.0
 
-[...]
-> I'm just a user and list regular, not a dev, so dumps such as the below 
-> don't mean much to me.  Often, about the only thing useful I can pick out 
-> of them is the kernel version (which matches what you provided in the 
-> subject, 4.8.10), but in this case, there's something additional...
-> 
-> > [ 1380.872569] BUG: unable to handle kernel paging request at
-> > fffffffffffffd60
-> > [ 1380.879592] IP: [<ffffffffc045cf6f>]
-> > qgroup_fix_relocated_data_extents+0x1f/0x2a0 [btrfs]
-> 
-> qgroup?  You're using btrfs quotas?  
 
-  No, I confirmed that after the successful readonly mount.
->From btrfs_recover_relocation(), qgroup_fix_relocated_data_extent() is
-called unconditionally, except for some error conditions before.
-Maybe that is the problem? Log from 4.9.2 is below.
-
-
-Regards
-
-Petr
-
-
-
-[  135.044216] BUG: unable to handle kernel paging request at fffffffffffffd60
-[  135.051531] IP: [<ffffffffc06ef0ef>] qgroup_fix_relocated_data_extents+0x1f/0x2b0 [btrfs]
-[  135.059953] PGD 1d5809067 [  135.062597] PUD 1d580b067 
-PMD 0 [  135.066153] 
-[  135.067858] Oops: 0000 [#1] SMP
-[  135.071109] Modules linked in: nfsd auth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc xfs libcrc32c crc32c_generic x86_pkg_temp_thermal coretemp kvm_intel kvm irqbypass crc32_pclmul iTCO_wdt ghash_clmulni_intel iTCO_vendor_support aesni_intel aes_x86_64 ablk_helper cryptd lrw loop mei_me i2c_i801 gf128mul ipmi_watchdog glue_helper pcspkr i2c_smbus mei raid10 acpi_cpufreq tpm_tis ie31200_edac tpm_tis_core md_mod evdev tpm battery video shpchp acpi_power_meter edac_core button processor ipmi_si ipmi_poweroff ipmi_devintf ipmi_msghandler autofs4 btrfs xor raid6_pq sg sd_mod hid_generic usbhid hid xhci_pci ahci igb xhci_hcd libahci i2c_algo_bit i2c_core mpt3sas dca raid_class usbcore libata scsi_transport_sas ptp crc32c_intel pps_core usb_common scsi_mod fan thermal
-[  135.149994] CPU: 5 PID: 1180 Comm: mount Not tainted 4.9.2 #11
-[  135.155932] Hardware name: Supermicro Super Server/X11SSL-CF, BIOS 1.0a 01/29/2016
-[  135.163606] task: ffff97b615f271c0 task.stack: ffffb90f03db4000
-[  135.169653] RIP: 0010:[<ffffffffc06ef0ef>]  [<ffffffffc06ef0ef>] qgroup_fix_relocated_data_extents+0x1f/0x2b0 [btrfs]
-[  135.180548] RSP: 0018:ffffb90f03db7a00  EFLAGS: 00010246
-[  135.185981] RAX: 0000000000000000 RBX: ffff97b6162be000 RCX: 0000000000007ce5
-[  135.193239] RDX: ffff97b60c07aa90 RSI: ffff97b60703e000 RDI: ffff97b60c07aa00
-[  135.200501] RBP: ffff97b60ae46000 R08: ffff97b6162be000 R09: ffff97b60c07aa00
-[  135.207764] R10: 0000000000000000 R11: 0000000000000001 R12: ffffb90f03db7a98
-[  135.215027] R13: ffff97b60c07aa00 R14: ffff97b60703e000 R15: 0000000000000000
-[  135.222292] FS:  00007f748468d840(0000) GS:ffff97b637940000(0000) knlGS:0000000000000000
-[  135.230525] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[  135.236399] CR2: fffffffffffffd60 CR3: 000000085651b000 CR4: 00000000003406e0
-[  135.243654] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-[  135.250909] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
-[  135.258171] Stack:
-[  135.260304]  0000000000000000 ffff97b60c07aa00 0000000000000801 ffff97b60ae80000
-[  135.268309]  ffff97b60c07aa00 0000000000000801 ffffffffc069ca08 ffff97b615f271c0
-[  135.276317]  0000000000000000 0000000000000246 ffff97b614ca72a0 ffff97b60ae46000
-[  135.284335] Call Trace:
-[  135.286917]  [<ffffffffc069ca08>] ? start_transaction+0x98/0x4a0 [btrfs]
-[  135.293762]  [<ffffffffc06f2cc3>] ? btrfs_recover_relocation+0x3b3/0x440 [btrfs]
-[  135.301321]  [<ffffffffc06995aa>] ? open_ctree+0x214a/0x2600 [btrfs]
-[  135.307817]  [<ffffffffc066d41b>] ? btrfs_mount+0xd0b/0xe40 [btrfs]
-[  135.314215]  [<ffffffff8314c7d7>] ? pcpu_alloc_area+0x2a7/0x3d0
-[  135.320265]  [<ffffffff834f373f>] ? __mutex_unlock_slowpath+0x9f/0x130
-[  135.326921]  [<ffffffff8314d423>] ? pcpu_alloc+0x323/0x620
-[  135.332535]  [<ffffffff83199fb1>] ? mount_fs+0x31/0x160
-[  135.337884]  [<ffffffff83094047>] ? __init_waitqueue_head+0x17/0x30
-[  135.344281]  [<ffffffff831b4c9d>] ? vfs_kern_mount+0x5d/0x110
-[  135.350153]  [<ffffffffc066c8b4>] ? btrfs_mount+0x1a4/0xe40 [btrfs]
-[  135.356545]  [<ffffffff8314d423>] ? pcpu_alloc+0x323/0x620
-[  135.362151]  [<ffffffff83199fb1>] ? mount_fs+0x31/0x160
-[  135.367499]  [<ffffffff83094047>] ? __init_waitqueue_head+0x17/0x30
-[  135.373886]  [<ffffffff831b4c9d>] ? vfs_kern_mount+0x5d/0x110
-[  135.379755]  [<ffffffff831b7814>] ? do_mount+0x1b4/0xc30
-[  135.385190]  [<ffffffff831b857f>] ? SyS_mount+0x7f/0xc0
-[  135.390535]  [<ffffffff83001b5a>] ? do_syscall_64+0x6a/0x240
-[  135.396320]  [<ffffffff834f6246>] ? entry_SYSCALL64_slow_path+0x25/0x25
-[  135.403062] Code: 00 00 5b 5d c3 0f 0b 0f 1f 44 00 00 41 57 41 56 41 55 41 54 55 53 48 83 ec 50 48 8b 46 08 4c 8b 7e 10 48 8b 98 f0 01 00 00 31 c0 <49> 8b af 60 fd ff ff 48 8b 53 20 83 e2 40 74 09 80 be d8 05 00 
-[  135.429926] RIP  [<ffffffffc06ef0ef>] qgroup_fix_relocated_data_extents+0x1f/0x2b0 [btrfs]
-[  135.438474]  RSP <ffffb90f03db7a00>
-[  135.442082] CR2: fffffffffffffd60
-[  135.445526] ---[ end trace 603287b5bf87e6dd ]---
 

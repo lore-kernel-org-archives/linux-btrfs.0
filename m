@@ -1,46 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:34400 "EHLO mx1.redhat.com"
+Received: from mx2.suse.de ([195.135.220.15]:43932 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751925AbdAKCxg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Jan 2017 21:53:36 -0500
-Subject: Re: Generic/389 xfs_io segfault on btrfs and ext4
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, Eric Sandeen <sandeen@sandeen.net>,
-        Eryu Guan <eguan@redhat.com>, agruenba@redhat.com,
-        btrfs <linux-btrfs@vger.kernel.org>, fstests@vger.kernel.org,
-        linux-xfs@vger.kernel.org
-References: <ca7ae533-8d7f-9783-1900-bdfb17d6a32c@cn.fujitsu.com>
- <d5116871-0bb3-46b0-c9e3-def74bd57967@sandeen.net>
- <5c56afcd-13b0-d3b3-e18c-0b902691d8f4@cn.fujitsu.com>
-From: Eric Sandeen <sandeen@redhat.com>
-Message-ID: <c5ea839d-1962-e363-d83b-936328f985df@redhat.com>
-Date: Tue, 10 Jan 2017 20:53:34 -0600
+        id S1752051AbdAKCzN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 10 Jan 2017 21:55:13 -0500
+Subject: Re: [RFC] Converging userspace and kernel code
+To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org,
+        Jeff Mahoney <jeffm@suse.com>, David Sterba <dsterba@suse.com>
+References: <512c15bf-3c4b-3b88-1106-a7d43386400f@suse.de>
+ <1b68f099-53e8-1bc8-5ffc-2dd0b21a32ae@oracle.com>
+ <09ea1fbd-74a1-d9f5-ba86-bc7c9118d49f@suse.de>
+ <d0a11a09-322d-89bc-1a15-598f6a14e6be@oracle.com>
+ <d0c2e05d-0b7a-a782-80b8-e1776e7b6fdb@suse.de>
+ <2dfce804-d1ba-d9e4-e7b3-9c726ff5b49b@oracle.com>
+From: Goldwyn Rodrigues <rgoldwyn@suse.de>
+Message-ID: <4e6b1087-6c6b-c071-7e67-a41c7f146a29@suse.de>
+Date: Tue, 10 Jan 2017 20:55:07 -0600
 MIME-Version: 1.0
-In-Reply-To: <5c56afcd-13b0-d3b3-e18c-0b902691d8f4@cn.fujitsu.com>
+In-Reply-To: <2dfce804-d1ba-d9e4-e7b3-9c726ff5b49b@oracle.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 1/10/17 8:45 PM, Qu Wenruo wrote:
+
+
+On 01/10/2017 08:23 PM, Anand Jain wrote:
 > 
 > 
-> At 01/11/2017 10:40 AM, Eric Sandeen wrote:
-
-...
-
->> What version of kernel and xfsprogs were you testing, and what was the segfault?
+> On 01/11/17 00:04, Goldwyn Rodrigues wrote:
+>>
+>>
+>> On 01/10/2017 09:20 AM, Anand Jain wrote:
+>>>
+>>>
+>>> On 01/10/17 20:14, Goldwyn Rodrigues wrote:
+>>>>
+>>>>
+>>>> On 01/09/2017 09:28 PM, Anand Jain wrote:
+>>>>>
+>>>>> Goldwyn,
+>>>>>
+>>>>>  Could you add a list what functionality in btrfs-progs will
+>>>>>  be using the 'core'. ?
+>>>>
+>>>>
+>>>> There are too many to list. It would contain the algorithmic functions
+>>>> of btrfs which would be able to interact with both kernel and
+>>>> btrfs-progs.
+>>>
+>>>  I am getting confused. How about a few from the btrfs-progs ?
+>>>
+>>>
+>>
+>> Functions such as open_ctree(), or the set/get functions. The idea is to
+>> keep the codebase of this core component the same in btrfs-progs and
+>> kernel.
 > 
-> Kernel is mainline v4.10-rc1.
-> No debuginfo installed, so no backtrace, but since there is so many
+>  The btrfs-progs open_ctree() is used for the offline functionality
+>  such as fsck...
 > 
-> So the problem is the old xfsprogs, I'll update or compile xfsprogs.
-> Thanks for your kind info.
+>> As an example, see how XFS have done using libxfs. Something around the
+>> same lines.
+>>
+> 
+>  Does XFS progs access the disks directly (without going through the
+>  kernel) while kernel has mounted the disk ? If yes, how does it
+>  maintain the consistency ? Calling sync for the sake of read access
+>  by the progs, is not a good idea as it causes jitters in the steady
+>  state IOPS for the applications. I have investigated these concerns
+>  at the data centers earlier.
+> 
 
-Just FWIW, I always have latest xfsprogs in rawhide, but I don't usually push
-to other fedoras.
+I think you are misunderstanding the effort. The effort is not to use
+the common code simultaneously between the kernel and the progs, but to
+keep a common *codebase*. Both kernel and userspace would provide the
+same functionality as it is currently, though independently in their own
+right. IOW, this is not a data sync but a codebase sync.
 
-It should be easy to grab
-https://kojipkgs.fedoraproject.org/packages/xfsprogs/4.9.0/1.fc26/src/xfsprogs-4.9.0-1.fc26.src.rpm
-and rebuild & install.
+The objective (besides others) is to have faster bug resolution, and
+better "transfer" of logic from kernel to user space and vice versa.
 
--Eric
+xfsprogs, depending on the operation used acts on the disk directly
+without the kernel mounting it (say mkfs or xfs_repair), or disk being
+mounted (say xfs_growfs)
 
+
+-- 
+Goldwyn

@@ -1,52 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f68.google.com ([74.125.82.68]:34129 "EHLO
-        mail-wm0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S940086AbdAIOjM (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Jan 2017 09:39:12 -0500
+Received: from mx2.suse.de ([195.135.220.15]:40050 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1762001AbdAKQQ7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 11 Jan 2017 11:16:59 -0500
+Date: Wed, 11 Jan 2017 17:16:56 +0100
 From: Michal Hocko <mhocko@kernel.org>
-To: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
-        Josef Bacik <jbacik@fb.com>
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Michal Hocko <mhocko@suse.com>
-Subject: [PATCH 2/2] btrfs: drop gfp mask tweaking in try_release_extent_state
-Date: Mon,  9 Jan 2017 15:39:03 +0100
-Message-Id: <20170109143903.32280-2-mhocko@kernel.org>
-In-Reply-To: <20170109143903.32280-1-mhocko@kernel.org>
+To: David Sterba <dsterba@suse.cz>
+Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
+        Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: Re: [PATCH 1/2] etrfs: fix up misleading GFP_NOFS usage in
+ btrfs_releasepage
+Message-ID: <20170111161655.GF16365@dhcp22.suse.cz>
 References: <20170109143903.32280-1-mhocko@kernel.org>
+ <20170111135550.GJ12081@twin.jikos.cz>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170111135550.GJ12081@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Michal Hocko <mhocko@suse.com>
+On Wed 11-01-17 14:55:50, David Sterba wrote:
+> On Mon, Jan 09, 2017 at 03:39:02PM +0100, Michal Hocko wrote:
+> > From: Michal Hocko <mhocko@suse.com>
+> > 
+> > b335b0034e25 ("Btrfs: Avoid using __GFP_HIGHMEM with slab allocator")
+> > has reduced the allocation mask in btrfs_releasepage to GFP_NOFS just
+> > to prevent from giving an unappropriate gfp mask to the slab allocator
+> > deeper down the callchain (in alloc_extent_state). This is wrong for
+> > two reasons a) GFP_NOFS might be just too restrictive for the calling
+> > context b) it is better to tweak the gfp mask down when it needs that.
+> > 
+> > So just remove the mask tweaking from btrfs_releasepage and move it
+> > down to alloc_extent_state where it is needed.
+> > 
+> > Signed-off-by: Michal Hocko <mhocko@suse.com>
+> > ---
+> >  fs/btrfs/extent_io.c | 5 +++++
+> >  fs/btrfs/inode.c     | 2 +-
+> >  2 files changed, 6 insertions(+), 1 deletion(-)
+> > 
+> > diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> > index b38150eec6b4..f6ae94a4acad 100644
+> > --- a/fs/btrfs/extent_io.c
+> > +++ b/fs/btrfs/extent_io.c
+> > @@ -226,6 +226,11 @@ static struct extent_state *alloc_extent_state(gfp_t mask)
+> >  {
+> >  	struct extent_state *state;
+> >  
+> > +	/*
+> > +	 * The given mask might be not appropriate for the slab allocator,
+> > +	 * drop the unsupported bits
+> > +	 */
+> > +	mask &= ~(__GFP_DMA32|__GFP_HIGHMEM);
+> 
+> Is this future proof enough? As it's enumerating some gfp flags, what if
+> more are necessary in the future? I'm interested about some synthetic
+> gfp flags that would not require knowledge about what is or is not
+> acceptable for slab allocator.
 
-try_release_extent_state reduces the gfp mask to GFP_NOFS if it is
-compatible. This is true for GFP_KERNEL as well. There is no real
-reason to do that though. There is no new lock taken down the
-the only consumer of the gfp mask which is
-try_release_extent_state
-  clear_extent_bit
-    __clear_extent_bit
-      alloc_extent_state
+Well, I agree, that something like slab_restrict_gfp_mask(gfp_t gfp_mask)
+would be much better. And in fact that sounds like a nice future
+cleanup. I haven't checked how many users would find it useful yet but I
+am putting that on my todo list.
 
-So this seems just unnecessary and confusing.
+> But otherwise looks ok to me, I'm going to merge the patch. Thanks.
 
-Signed-off-by: Michal Hocko <mhocko@suse.com>
----
- fs/btrfs/extent_io.c | 2 --
- 1 file changed, 2 deletions(-)
+Thanks!
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index f6ae94a4acad..8158930c8d4a 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4326,8 +4326,6 @@ static int try_release_extent_state(struct extent_map_tree *map,
- 			   EXTENT_IOBITS, 0, NULL))
- 		ret = 0;
- 	else {
--		if ((mask & GFP_NOFS) == GFP_NOFS)
--			mask = GFP_NOFS;
- 		/*
- 		 * at this point we can safely clear everything except the
- 		 * locked bit and the nodatasum bit
 -- 
-2.11.0
-
+Michal Hocko
+SUSE Labs

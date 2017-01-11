@@ -1,94 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f194.google.com ([209.85.161.194]:36677 "EHLO
-        mail-yw0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932200AbdAKBHT (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:60560 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S935739AbdAKCJC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Jan 2017 20:07:19 -0500
-Received: by mail-yw0-f194.google.com with SMTP id l75so5998350ywb.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jan 2017 17:07:19 -0800 (PST)
+        Tue, 10 Jan 2017 21:09:02 -0500
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Subject: Generic/389 xfs_io segfault on btrfs and ext4
+To: Eryu Guan <eguan@redhat.com>, <agruenba@redhat.com>,
+        btrfs <linux-btrfs@vger.kernel.org>, <fstests@vger.kernel.org>,
+        <linux-xfs@vger.kernel.org>
+Message-ID: <ca7ae533-8d7f-9783-1900-bdfb17d6a32c@cn.fujitsu.com>
+Date: Wed, 11 Jan 2017 10:08:54 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtRhgxqtrpnsibOPqkMA75Cf=ryRAeTb0Gf-ygy=gjD_Yg@mail.gmail.com>
-References: <CAJCQCtRhgxqtrpnsibOPqkMA75Cf=ryRAeTb0Gf-ygy=gjD_Yg@mail.gmail.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Tue, 10 Jan 2017 18:07:18 -0700
-Message-ID: <CAJCQCtT73Zh2F13tg3v4UZC3+rdTMhgC==Ag3LZQ-RZMTpisOg@mail.gmail.com>
-Subject: Re: read-only fs, kernel 4.9.0, fs/btrfs/delayed-inode.c:1170 __btrfs_run_delayed_items,
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 2, 2017 at 11:50 AM, Chris Murphy <lists@colorremedies.com> wrote:
-> Attempt 2. The original post isn't showing up on spinics, just my followup.
->
->
-> The Problem: The file system goes read-only soon after startup. It
-> only happens with a particular subvolume used for root fs, and only
-> with kernel 4.9.0 and 4.10-rc1.
->
-> If I boot kernel 4.8.15 with this subvolume as root fs, the problem
-> doesn't happen.
-> If I boot kernel 4.9.0 with a different subvolume as root fs, the
-> problem doesn't happen.
->
-> btrfs-progs 4.8.5, btrfs check reports no problems
->
-> Complete dmesg:
-> https://drive.google.com/open?id=0B_2Asp8DGjJ9SXZhWXdWSGVRbE0
->
->
-> And this is a snippet of the call trace.
-> [   34.787957] ------------[ cut here ]------------
-> [   34.788019] WARNING: CPU: 1 PID: 398 at
-> fs/btrfs/delayed-inode.c:1170 __btrfs_run_delayed_items+0x5f3/0x600
-> [btrfs]
-> [   34.788029] BTRFS: Transaction aborted (error -2)
-> [   34.788031] Modules linked in:
-> [...snipped...]
-> [   34.788272] CPU: 1 PID: 398 Comm: btrfs-transacti Not tainted
-> 4.9.0-1.fc26.x86_64 #1
-> [   34.788276] Hardware name: HP HP Spectre Notebook/81A0, BIOS F.30 12/15/2016
-> [   34.788281]  ffff9bb10134fca0 ffffffffab3ecfcd ffff9bb10134fcf0
-> 0000000000000000
-> [   34.788288]  ffff9bb10134fce0 ffffffffab0a2fbb 0000049200000002
-> ffff8bed30862800
-> [   34.788294]  00000000fffffffe 00000000ffffffff ffff8bed28194be0
-> ffff8bed30ede1c0
-> [   34.788301] Call Trace:
-> [   34.788312]  [<ffffffffab3ecfcd>] dump_stack+0x63/0x86
-> [   34.788318]  [<ffffffffab0a2fbb>] __warn+0xcb/0xf0
-> [   34.788323]  [<ffffffffab0a303f>] warn_slowpath_fmt+0x5f/0x80
-> [   34.788386]  [<ffffffffc03ef810>] ?
-> __btrfs_release_delayed_node+0x70/0x1c0 [btrfs]
-> [   34.788429]  [<ffffffffc03f0913>]
-> __btrfs_run_delayed_items+0x5f3/0x600 [btrfs]
-> [   34.788436]  [<ffffffffab229850>] ? kmem_cache_free+0x1c0/0x1f0
-> [   34.788473]  [<ffffffffc03f0f73>] btrfs_run_delayed_items+0x13/0x20 [btrfs]
-> [   34.788511]  [<ffffffffc039303a>]
-> btrfs_commit_transaction+0x23a/0xa20 [btrfs]
-> [   34.788549]  [<ffffffffc038dc7e>] transaction_kthread+0x1ce/0x1f0 [btrfs]
-> [   34.788583]  [<ffffffffc038dab0>] ?
-> btrfs_cleanup_transaction+0x520/0x520 [btrfs]
-> [   34.788590]  [<ffffffffab0c3319>] kthread+0xd9/0xf0
-> [   34.788597]  [<ffffffffab0c3240>] ? kthread_park+0x60/0x60
-> [   34.788603]  [<ffffffffab815e15>] ret_from_fork+0x25/0x30
-> [   34.788622] ---[ end trace d28d9fa7dece608b ]---
-> [   34.788628] BTRFS: error (device nvme0n1p4) in
-> __btrfs_run_delayed_items:1170: errno=-2 No such entry
-> [   34.788632] BTRFS info (device nvme0n1p4): forced readonly
-> [   34.788636] BTRFS warning (device nvme0n1p4): Skipping commit of
-> aborted transaction.
-> [   34.788640] BTRFS: error (device nvme0n1p4) in
-> cleanup_transaction:1850: errno=-2 No such entry
-> [   34.789000] BTRFS info (device nvme0n1p4): delayed_refs has NO entry
+Hi, Andreas and Eryu,
+
+I found test case generic/389 fails on btrfs and ext4, and it fails with 
+xfs_io segfault.
+
+So it seems to be a bug in xfsprogs, but I'm already using the latest 
+release from Fedora.
+
+Is this a known bug?
+
+Thanks,
+Qu
 
 
-
-This still happens with 4.9.2 and 4.10-rc3. The file-system goes read
-only within 30 seconds of fs mount.
-
-
-
--- 
-Chris Murphy

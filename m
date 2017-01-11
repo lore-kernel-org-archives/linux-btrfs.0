@@ -1,32 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:60560 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S935739AbdAKCJC (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:17435 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754130AbdAKCUk (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Jan 2017 21:09:02 -0500
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Subject: Generic/389 xfs_io segfault on btrfs and ext4
-To: Eryu Guan <eguan@redhat.com>, <agruenba@redhat.com>,
-        btrfs <linux-btrfs@vger.kernel.org>, <fstests@vger.kernel.org>,
-        <linux-xfs@vger.kernel.org>
-Message-ID: <ca7ae533-8d7f-9783-1900-bdfb17d6a32c@cn.fujitsu.com>
-Date: Wed, 11 Jan 2017 10:08:54 +0800
+        Tue, 10 Jan 2017 21:20:40 -0500
+Subject: Re: [RFC] Converging userspace and kernel code
+To: Goldwyn Rodrigues <rgoldwyn@suse.de>, linux-btrfs@vger.kernel.org,
+        Jeff Mahoney <jeffm@suse.com>, David Sterba <dsterba@suse.com>
+References: <512c15bf-3c4b-3b88-1106-a7d43386400f@suse.de>
+ <1b68f099-53e8-1bc8-5ffc-2dd0b21a32ae@oracle.com>
+ <09ea1fbd-74a1-d9f5-ba86-bc7c9118d49f@suse.de>
+ <d0a11a09-322d-89bc-1a15-598f6a14e6be@oracle.com>
+ <d0c2e05d-0b7a-a782-80b8-e1776e7b6fdb@suse.de>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <2dfce804-d1ba-d9e4-e7b3-9c726ff5b49b@oracle.com>
+Date: Wed, 11 Jan 2017 10:23:34 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <d0c2e05d-0b7a-a782-80b8-e1776e7b6fdb@suse.de>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, Andreas and Eryu,
-
-I found test case generic/389 fails on btrfs and ext4, and it fails with 
-xfs_io segfault.
-
-So it seems to be a bug in xfsprogs, but I'm already using the latest 
-release from Fedora.
-
-Is this a known bug?
-
-Thanks,
-Qu
 
 
+On 01/11/17 00:04, Goldwyn Rodrigues wrote:
+>
+>
+> On 01/10/2017 09:20 AM, Anand Jain wrote:
+>>
+>>
+>> On 01/10/17 20:14, Goldwyn Rodrigues wrote:
+>>>
+>>>
+>>> On 01/09/2017 09:28 PM, Anand Jain wrote:
+>>>>
+>>>> Goldwyn,
+>>>>
+>>>>  Could you add a list what functionality in btrfs-progs will
+>>>>  be using the 'core'. ?
+>>>
+>>>
+>>> There are too many to list. It would contain the algorithmic functions
+>>> of btrfs which would be able to interact with both kernel and
+>>> btrfs-progs.
+>>
+>>  I am getting confused. How about a few from the btrfs-progs ?
+>>
+>>
+>
+> Functions such as open_ctree(), or the set/get functions. The idea is to
+> keep the codebase of this core component the same in btrfs-progs and kernel.
+
+  The btrfs-progs open_ctree() is used for the offline functionality
+  such as fsck...
+
+> As an example, see how XFS have done using libxfs. Something around the
+> same lines.
+>
+
+  Does XFS progs access the disks directly (without going through the
+  kernel) while kernel has mounted the disk ? If yes, how does it
+  maintain the consistency ? Calling sync for the sake of read access
+  by the progs, is not a good idea as it causes jitters in the steady
+  state IOPS for the applications. I have investigated these concerns
+  at the data centers earlier.
+
+Thanks, Anand

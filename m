@@ -1,152 +1,185 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:39214 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:39206 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752393AbdASMOW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1751970AbdASMOW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Thu, 19 Jan 2017 07:14:22 -0500
 Received: from mail.kernel.org (localhost [127.0.0.1])
-        by mail.kernel.org (Postfix) with ESMTP id DC70D2051F
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2017 12:04:06 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTP id EBF1D2050E
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2017 12:03:55 +0000 (UTC)
 Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 57FE120511
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2017 12:04:05 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 5749D204FC
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2017 12:03:54 +0000 (UTC)
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/3] Btrfs: incremental send, do not issue invalid rmdir operations
-Date: Thu, 12 Jan 2017 03:07:33 +0000
-Message-Id: <1484190453-17227-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH 2/3] Btrfs: incremental send, do not delay rename when parent inode is new
+Date: Thu, 12 Jan 2017 03:07:22 +0000
+Message-Id: <1484190442-17178-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Robbie Ko <robbieko@synology.com>
+From: Filipe Manana <fdmanana@suse.com>
 
-When both the parent and send snapshots have a directory inode with the
-same number but different generations (therefore they are different
-inodes) and both have an entry with the same name, an incremental send
-stream will contain an invalid rmdir operation that refers to the
-orphanized name of the inode from the parent snapshot.
+When we are checking if we need to delay the rename operation for an
+inode we not checking if a parent inode that exists in the send and
+parent snapshots is really the same inode or not, that is, we are not
+comparing the generation number of the parent inode in the send and
+parent snapshots. Not only this results in unnecessarily delaying a
+rename operation but also can later on make us generate an incorrect
+name for a new inode in the send snapshot that has the same number
+as another inode in the parent snapshot but a different generation.
 
-The following example scenario shows how this happens.
+Here follows an example where this happens.
 
 Parent snapshot:
 
- .
- |---- d259_old/               (ino 259, gen 9)
- |         |---- d1/           (ino 258, gen 9)
+ .                                                  (ino 256, gen 3)
+ |--- dir258/                                       (ino 258, gen 7)
+ |       |--- dir257/                               (ino 257, gen 7)
  |
- |---- f                       (ino 257, gen 9)
+ |--- dir259/                                       (ino 259, gen 7)
 
 Send snapshot:
 
- .
- |---- d258/                   (ino 258, gen 7)
- |---- d259/                   (ino 259, gen 7)
-         |---- d1/             (ino 257, gen 7)
+ .                                                  (ino 256, gen 3)
+ |--- file258                                       (ino 258, gen 10)
+ |
+ |--- new_dir259/                                   (ino 259, gen 10)
+          |--- dir257/                              (ino 257, gen 7)
 
-When the kernel is processing inode 258 it notices that in both snapshots
-there is an inode numbered 259 that is a parent of an inode 258. However
-it ignores the fact that the inodes numbered 259 have different generations
-in both snapshots, which means they are effectively different inodes.
-Then it checks that both inodes 259 have a dentry named "d1" and because
-of that it issues a rmdir operation with orphanized name of the inode 258
-from the parent snapshot. This happens at send.c:process_record_refs(),
-which calls send.c:did_overwrite_first_ref() that returns true and because
-of that later on at process_recorded_refs() such rmdir operation is issued
-because the inode being currently processed (258) is a directory and it
-was deleted in the send snapshot (and replaced with another inode that has
-the same number and is a directory too).
-Fix this issue by comparing the generations of parent directory inodes
-that have the same number and make send.c:did_overwrite_first_ref() when
-the generations are different.
+The following steps happen when computing the incremental send stream:
 
-The following steps reproduce the problem.
+1) When processing inode 257, its new parent is created using its orphan
+   name (o257-21-0), and the rename operation for inode 257 is delayed
+   because its new parent (inode 259) was not yet processed - this
+   decision to delay the rename operation does not make much sense
+   because the inode 259 in the send snapshot is a new inode, it's not
+   the same as inode 259 in the parent snapshot.
+
+2) When processing inode 258 we end up delaying its rmdir operation,
+   because inode 257 was not yet renamed (moved away from the directory
+   inode 258 represents). We also create the new inode 258 using its
+   orphan name "o258-10-0", then rename it to its final name of "file258"
+   and then issue a truncate operation for it. However this truncate
+   operation contains an incorrect name, which corresponds to the orphan
+   name and not to the final name, which makes the receiver fail. This
+   happens because when we attempt to compute the inode's current name
+   we verify that there's another inode with the same number (258) that
+   has its rmdir operation pending and because of that we generate an
+   orphan name for the new inode 258 (we do this in the function
+   get_cur_path()).
+
+Fix this by not delayed the rename operation of an inode if it has parents
+with the same number but different generations in both snapshots.
+
+The following steps reproduce this example scenario.
 
  $ mkfs.btrfs -f /dev/sdb
  $ mount /dev/sdb /mnt
- $ touch /mnt/f
- $ mkdir /mnt/d1
- $ mkdir /mnt/d259_old
- $ mv /mnt/d1 /mnt/d259_old/d1
- $ btrfs subvolume snapshot -r /mnt /mnt/snap1
- $ btrfs send /mnt/snap1 -f /tmp/1.snap
- $ umount /mnt
-
- $ mkfs.btrfs -f /dev/sdc
- $ mount /dev/sdc /mnt
- $ mkdir /mnt/d1
+ $ mkdir /mnt/dir257
  $ mkdir /mnt/dir258
  $ mkdir /mnt/dir259
- $ mv /mnt/d1 /mnt/dir259/d1
+ $ mv /mnt/dir257 /mnt/dir258/dir257
+ $ btrfs subvolume snapshot -r /mnt /mnt/snap1
+
+ $ mv /mnt/dir258/dir257 /mnt/dir257
+ $ rmdir /mnt/dir258
+ $ rmdir /mnt/dir259
+
+ # Remount the filesystem so that the next created inodes will have the
+ # numbers 258 and 259. This is because when a filesystem is mounted,
+ # btrfs sets the subvolume's inode counter to a value corresponding to
+ # the highest inode number in the subvolume plus 1. This inode counter
+ # is used to assign a unique number to each new inode and it's
+ # incremented by 1 after very inode creation.
+ # Note: we unmount and then mount instead of doing a mount with
+ # "-o remount" because otherwise the inode counter remains at value 260.
+ $ umount /mnt
+ $ mount /dev/sdb /mnt
+ $ touch /mnt/file258
+ $ mkdir /mnt/new_dir259
+ $ mv /mnt/dir257 /mnt/new_dir259/dir257
  $ btrfs subvolume snapshot -r /mnt /mnt/snap2
- $ btrfs receive /mnt/ -f /tmp/1.snap
- # Take note that once the filesystem is created, its current
- # generation has value 7 so the inodes from the second snapshot all have
- # a generation value of 7. And after receiving the first snapshot
- # the filesystem is at a generation value of 10, because the call to
- # create the second snapshot bumps the generation to 8 (the snapshot
- # creation ioctl does a transaction commit), the receive command calls
- # the snapshot creation ioctl to create the first snapshot, which bumps
- # the filesystem's generation to 9, and finally when the receive
- # operation finishes it calls an ioctl to transition the first snapshot
- # (snap1) from RW mode to RO mode, which does another transaction commit
- # and bumps the filesystem's generation to 10. This means all the inodes
- # in the first snapshot (snap1) have a generation value of 9.
- $ rm -f /tmp/1.snap
+
  $ btrfs send /mnt/snap1 -f /tmp/1.snap
  $ btrfs send -p /mnt/snap1 /mnt/snap2 -f /tmp/2.snap
+
  $ umount /mnt
-
- $ mkfs.btrfs -f /dev/sdd
- $ mount /dev/sdd /mnt
- $ btrfs receive /mnt -f /tmp/1.snap
- $ btrfs receive -vv /mnt -f /tmp/2.snap
- receiving snapshot mysnap2 uuid=9c03962f-f620-0047-9f98-32e5a87116d9, ctransid=7 parent_uuid=d17a6e3f-14e5-df4f-be39-a7951a5399aa, parent_ctransid=9
+ $ mkfs.btrfs -f /dev/sdc
+ $ mount /dev/sdc /mnt
+ $ btrfs receive /mnt -f /tmo/1.snap
+ $ btrfs receive /mnt -f /tmo/2.snap -vv
+ receiving snapshot mysnap2 uuid=e059b6d1-7f55-f140-8d7c-9a3039d23c97, ctransid=10 parent_uuid=77e98cb6-8762-814f-9e05-e8ba877fc0b0, parent_ctransid=7
  utimes
- unlink f
- mkdir o257-7-0
- mkdir o259-7-0
- rename o257-7-0 -> o259-7-0/d1
- chown o259-7-0/d1 - uid=0, gid=0
- chmod o259-7-0/d1 - mode=0755
- utimes o259-7-0/d1
- rmdir o258-9-0
- ERROR: rmdir o258-9-0 failed: No such file or directory
+ mkdir o259-10-0
+ rename dir258 -> o258-7-0
+ utimes
+ mkfile o258-10-0
+ rename o258-10-0 -> file258
+ utimes
+ truncate o258-10-0 size=0
+ ERROR: truncate o258-10-0 failed: No such file or directory
 
-Signed-off-by: Robbie Ko <robbieko@synology.com>
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-[Rewrote changelog to be more precise and clear]
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
-
+Reported-by: Robbie Ko <robbieko@synology.com>
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/send.c | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+ fs/btrfs/send.c | 19 ++++++++++++++++---
+ 1 file changed, 16 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 2742324..712922e 100644
+index 2ae32c4..2742324 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -1937,6 +1937,19 @@ static int did_overwrite_ref(struct send_ctx *sctx,
- 	if (ret <= 0)
- 		goto out;
- 
-+	if (dir != BTRFS_FIRST_FREE_OBJECTID) {
-+		ret = get_inode_info(sctx->send_root, dir, NULL, &gen, NULL,
-+				     NULL, NULL, NULL);
-+		if (ret < 0 && ret != -ENOENT)
-+			goto out;
-+		if (ret) {
-+			ret = 0;
-+			goto out;
-+		}
-+		if (gen != dir_gen)
-+			goto out;
-+	}
+@@ -3559,6 +3559,7 @@ static int wait_for_parent_move(struct send_ctx *sctx,
+ {
+ 	int ret = 0;
+ 	u64 ino = parent_ref->dir;
++	u64 ino_gen = parent_ref->dir_gen;
+ 	u64 parent_ino_before, parent_ino_after;
+ 	struct fs_path *path_before = NULL;
+ 	struct fs_path *path_after = NULL;
+@@ -3579,6 +3580,8 @@ static int wait_for_parent_move(struct send_ctx *sctx,
+ 	 * at get_cur_path()).
+ 	 */
+ 	while (ino > BTRFS_FIRST_FREE_OBJECTID) {
++		u64 parent_ino_after_gen;
 +
- 	/* check if the ref was overwritten by another ref */
- 	ret = lookup_dir_item_inode(sctx->send_root, dir, name, name_len,
- 			&ow_inode, &other_type);
+ 		if (is_waiting_for_move(sctx, ino)) {
+ 			/*
+ 			 * If the current inode is an ancestor of ino in the
+@@ -3601,7 +3604,7 @@ static int wait_for_parent_move(struct send_ctx *sctx,
+ 		fs_path_reset(path_after);
+ 
+ 		ret = get_first_ref(sctx->send_root, ino, &parent_ino_after,
+-				    NULL, path_after);
++				    &parent_ino_after_gen, path_after);
+ 		if (ret < 0)
+ 			goto out;
+ 		ret = get_first_ref(sctx->parent_root, ino, &parent_ino_before,
+@@ -3618,10 +3621,20 @@ static int wait_for_parent_move(struct send_ctx *sctx,
+ 		if (ino > sctx->cur_ino &&
+ 		    (parent_ino_before != parent_ino_after || len1 != len2 ||
+ 		     memcmp(path_before->start, path_after->start, len1))) {
+-			ret = 1;
+-			break;
++			u64 parent_ino_gen;
++
++			ret = get_inode_info(sctx->parent_root, ino, NULL,
++					     &parent_ino_gen, NULL, NULL, NULL,
++					     NULL);
++			if (ret < 0)
++				goto out;
++			if (ino_gen == parent_ino_gen) {
++				ret = 1;
++				break;
++			}
+ 		}
+ 		ino = parent_ino_after;
++		ino_gen = parent_ino_after_gen;
+ 	}
+ 
+ out:
 -- 
 2.7.0.rc3
 

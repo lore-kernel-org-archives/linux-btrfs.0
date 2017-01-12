@@ -1,143 +1,189 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ua0-f174.google.com ([209.85.217.174]:33021 "EHLO
-        mail-ua0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751093AbdAKXYg (ORCPT
+Received: from mailgw-01.dd24.net ([193.46.215.41]:58053 "EHLO
+        mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S965062AbdALBH3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Jan 2017 18:24:36 -0500
-Received: by mail-ua0-f174.google.com with SMTP id i68so2434835uad.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jan 2017 15:24:35 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <CAOMcM8dtdsHEOCFNZCtSBCE3U_70DtkFOzXFzt6Dh7dTrWJGfg@mail.gmail.com>
-References: <CAOMcM8dtdsHEOCFNZCtSBCE3U_70DtkFOzXFzt6Dh7dTrWJGfg@mail.gmail.com>
-From: Michael Boratko <boratko@gmail.com>
-Date: Wed, 11 Jan 2017 18:23:54 -0500
-Message-ID: <CAOMcM8e5MeVdygbA5g_5oLbr-udGcK6Bo3HK=HP_i_E2R=6OhA@mail.gmail.com>
-Subject: Re: Restart during btrfs balance raid1 conversion, now can only mount read-only
+        Wed, 11 Jan 2017 20:07:29 -0500
+Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
+        by mailgw-01.dd24.net (Postfix) with ESMTP id D274D5FC79
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Jan 2017 01:07:25 +0000 (UTC)
+Received: from mailgw-01.dd24.net ([192.168.1.35])
+        by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10235)
+        with ESMTP id SWsAPekMCfEd for <linux-btrfs@vger.kernel.org>;
+        Thu, 12 Jan 2017 01:07:23 +0000 (UTC)
+Received: from heisenberg.fritz.box (host-82-135-95-36.customer.m-online.net [82.135.95.36])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by mailgw-01.dd24.net (Postfix) with ESMTPSA
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Jan 2017 01:07:23 +0000 (UTC)
+Message-ID: <1484183243.10253.5.camel@scientia.net>
+Subject: corruption: yet another one after deleting a ro snapshot
+From: Christoph Anton Mitterer <calestyo@scientia.net>
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Date: Thu, 12 Jan 2017 02:07:23 +0100
+Content-Type: multipart/signed; micalg="sha-512";
+        protocol="application/x-pkcs7-signature";
+        boundary="=-iTqfA26F3c7gOEPDivh4"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I solved the problem. After much futzing with mount options and trying
-check --repair, I ended up booting into an Antergos live USB, which
-runs kernel and tools 4.9, and was able to succesfully mount the btrfs
-volume there. This time, before shutting down, I paused the balance
-operation. (Not sure if that was necessary.) When I rebooted back into
-Debian, I was able to mount the device normally.
+
+--=-iTqfA26F3c7gOEPDivh4
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+Hey.
+
+Linux heisenberg 4.8.0-2-amd64 #1 SMP Debian 4.8.15-2 (2017-01-04)
+x86_64 GNU/Linux
+btrfs-progs v4.7.3
+
+I've had this already at least once some year ago or so:
+
+I was doing backups (incremental via send/receive).
+After everything was copied, I unmounted the destination fs, made a
+fsck, all fine.
+Then I mounted it again and did nothing but deleting the old snapshot.
+After that, another fsck with the following errors:
 
 
-On Wed, Jan 11, 2017 at 4:19 PM, Michael Boratko <boratko@gmail.com> wrote:
-> I had an 8TB btrfs filesystem setup with my data, and added a 4TB and
-> 3TB drive to it and then ran a raid1 conversion using the command
-> btrfs balance start -dconvert=raid1 -mconvert=raid1 /mnt/btrfs
->
-> It was running OK, but then I restarted the computer without pausing
-> the rebalance (I wasn't aware that would be necessary). Upon reboot,
-> the system got stuck on the mounting operation (as well as decryption
-> of two of the drives - all drives are setup with encryption and
-> automatically get unlocked via keyfiles at boot) and dropped me to a
-> root shell. I removed the line which was mounting the btrfs volume in
-> fstab, and rebooted successfully, however now when I attempt to mount
-> the btrfs volume normally it just hangs with no response, and the
-> command never terminates and cannot be killed.
->
-> I am able to mount the drive read-only, but am unable to mount it as
-> read-write even when using the mount option "skip_balance".
->
-> Relevant debug info:
-> uname -a
-> Linux gaussBonnetXeon 4.8.0-0.bpo.2-amd64 #1 SMP Debian
-> 4.8.11-1~bpo8+1 (2016-12-14) x86_64 GNU/Linux
->
-> btrfs --version
-> btrfs-progs v4.7.3
->
-> btrfs fi show
-> Label: none  uuid: d5c3f49c-3c69-4fd8-b9ab-272c0dbc1eab
-> Total devices 3 FS bytes used 2.61TiB
-> devid    1 size 7.00TiB used 2.64TiB path /dev/mapper/Seagate_Archive_8TB-btrfs
-> devid    2 size 3.64TiB used 930.00GiB path /dev/mapper/4TB
-> devid    3 size 2.73TiB used 0.00B path /dev/mapper/3TB
->
-> btrfs fi df /mnt/btrfs
-> Data, RAID1: total=925.00GiB, used=912.85GiB
-> Data, single: total=1.71TiB, used=1.71TiB
-> System, DUP: total=8.00MiB, used=352.00KiB
-> Metadata, RAID1: total=5.00GiB, used=2.12GiB
-> Metadata, DUP: total=8.50GiB, used=7.61GiB
-> GlobalReserve, single: total=512.00MiB, used=1.05MiB
->
-> dmesg (from when I try to mount as rw):
-> [ 3202.640391] BTRFS info (device dm-10): disk space caching is enabled
-> [ 3377.624283] BUG: unable to handle kernel paging request at fffffffffffffe10
-> [ 3377.624293] IP: [<ffffffffc0618c9b>]
-> qgroup_fix_relocated_data_extents+0x2b/0x2c0 [btrfs]
-> [ 3377.624341] PGD 111e09067 PUD 111e0b067 PMD 0
-> [ 3377.624348] Oops: 0000 [#1] SMP
-> [ 3377.624352] Modules linked in: ipt_REJECT(E) nf_reject_ipv4(E)
-> rfcomm(E) xt_multiport(E) iptable_filter(E) ip_tables(E) x_tables(E)
-> binfmt_misc(E) nfsd(E) auth_rpcgss(E) nfs_acl(E) lockd(E) grace(E)
-> sunrpc(E) bnep(E) cfg80211(E) snd_hda_codec_hdmi(E) nvidia_drm(POE)
-> btusb(E) btrtl(E) drm_kms_helper(E) btbcm(E) btintel(E) drm(E)
-> bluetooth(E) iTCO_wdt(E) iTCO_vendor_support(E) coretemp(E) joydev(E)
-> kvm_intel(E) snd_hda_intel(E) snd_ca0106(E) rfkill(E) evdev(E)
-> snd_hda_codec(E) nvidia_modeset(POE) snd_rawmidi(E) kvm(E)
-> snd_seq_device(E) snd_hda_core(E) snd_ac97_codec(E) snd_hwdep(E)
-> i7core_edac(E) i2c_i801(E) snd_pcm(E) nvidia(POE) irqbypass(E)
-> pcspkr(E) edac_core(E) i2c_smbus(E) snd_timer(E) snd(E) soundcore(E)
-> ac97_bus(E) ipmi_si(E) ipmi_msghandler(E) shpchp(E) lpc_ich(E)
-> mfd_core(E) acpi_cpufreq(E)
-> [ 3377.624400]  button(E) tpm_tis(E) tpm_tis_core(E) tpm(E) fuse(E)
-> parport_pc(E) ppdev(E) lp(E) parport(E) autofs4(E) ext4(E) crc16(E)
-> jbd2(E) fscrypto(E) mbcache(E) btrfs(E) xor(E) raid6_pq(E) xts(E)
-> gf128mul(E) algif_skcipher(E) af_alg(E) dm_crypt(E) dm_mod(E)
-> sr_mod(E) cdrom(E) hid_generic(E) usbhid(E) hid(E) sg(E) sd_mod(E)
-> ahci(E) libahci(E) xhci_pci(E) crc32c_intel(E) ehci_pci(E) xhci_hcd(E)
-> libata(E) ehci_hcd(E) e1000e(E) scsi_mod(E) usbcore(E) ptp(E)
-> usb_common(E) pps_core(E) fjes(E)
-> [ 3377.624426] CPU: 0 PID: 1909 Comm: mount Tainted: P           OE
-> 4.8.0-0.bpo.2-amd64 #1 Debian 4.8.11-1~bpo8+1
-> [ 3377.624428] Hardware name: Intel Corporation S3420GP/S3420GP, BIOS
-> S3420GP.86B.01.00.0040.021120101620 02/11/2010
-> [ 3377.624430] task: ffff9277e47f7100 task.stack: ffff92770a060000
-> [ 3377.624431] RIP: 0010:[<ffffffffc0618c9b>]  [<ffffffffc0618c9b>]
-> qgroup_fix_relocated_data_extents+0x2b/0x2c0 [btrfs]
-> [ 3377.624454] RSP: 0018:ffff92770a063cb8  EFLAGS: 00210246
-> [ 3377.624455] RAX: ffff927805ee3000 RBX: ffff92772a31de00 RCX: 0000000000000000
-> [ 3377.624457] RDX: ffff9277edf22090 RSI: ffff9274d3f5b800 RDI: ffff9277edf22000
-> [ 3377.624458] RBP: ffff927805e5d800 R08: 0000000000000000 R09: ffff9277edf22000
-> [ 3377.624460] R10: 0000000000000000 R11: 0000000000000000 R12: ffff92770a063d50
-> [ 3377.624461] R13: ffff9274d3f5b800 R14: 0000000000000000 R15: ffff9277edf22000
-> [ 3377.624463] FS:  00007f0f98765840(0000) GS:ffff92781fc00000(0000)
-> knlGS:0000000000000000
-> [ 3377.624465] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-> [ 3377.624467] CR2: fffffffffffffe10 CR3: 000000034b952000 CR4: 00000000000006f0
-> [ 3377.624468] Stack:
-> [ 3377.624470]  ffffffffc05c14a2 0000000000000801 ffff9277edf22000
-> ffff927805ee3000
-> [ 3377.624473]  0000000000000801 ffff9277edf22000 ffffffffc05c3ed6
-> 0000000000000000
-> [ 3377.624476]  0000000000000000 00000000dc2f7325 ffff92772a31de00
-> ffff927805e5d800
-> [ 3377.624478] Call Trace:
-> [ 3377.624497]  [<ffffffffc05c14a2>] ?
-> join_transaction.isra.15+0x22/0x3f0 [btrfs]
-> [ 3377.624516]  [<ffffffffc05c3ed6>] ? start_transaction+0x96/0x4d0 [btrfs]
-> [ 3377.624537]  [<ffffffffc061d288>] ?
-> btrfs_recover_relocation+0x2e8/0x420 [btrfs]
-> [ 3377.624551]  [<ffffffffc0592fff>] ? btrfs_remount+0x40f/0x570 [btrfs]
-> [ 3377.624555]  [<ffffffff8941d852>] ? shrink_dcache_sb+0xd2/0x120
-> [ 3377.624558]  [<ffffffff894087c8>] ? do_remount_sb+0x68/0x1d0
-> [ 3377.624561]  [<ffffffff89428249>] ? do_mount+0x709/0xc70
-> [ 3377.624564]  [<ffffffff893a256a>] ? memdup_user+0x4a/0x70
-> [ 3377.624566]  [<ffffffff89428a94>] ? SyS_mount+0x84/0xc0
-> [ 3377.624570]  [<ffffffff897f3b76>] ? system_call_fast_compare_end+0xc/0x96
-> [ 3377.624571] Code: 66 66 66 66 90 41 57 41 56 41 55 41 54 55 53 48
-> 83 ec 50 4c 8b 76 10 65 48 8b 04 25 28 00 00 00 48 89 44 24 48 31 c0
-> 48 8b 46 08 <49> 8b ae 10 fe ff ff 48 8b 98 f0 01 00 00 31 c0 f6 83 50
-> 0d 00
-> [ 3377.624600] RIP  [<ffffffffc0618c9b>]
-> qgroup_fix_relocated_data_extents+0x2b/0x2c0 [btrfs]
-> [ 3377.624621]  RSP <ffff92770a063cb8>
-> [ 3377.624622] CR2: fffffffffffffe10
-> [ 3377.624624] ---[ end trace 547a7c76f9cea091 ]---
+Usually I have quite positive experiences with btrfs (things seem to be
+fine even after a crash or accidental removal of the USB cable which
+attaches the HDD)... but I'm every time shocked again, when supposedly
+simple and basic operations like this cause such corruptions.
+Kinda gives one the feeling as if quite deep bugs are still everywhere
+in place, especially as such "hard to explain" errors happens every now
+and then (take e.g. my mails "strange btrfs deadlock", "csum errors
+during btrfs check" from the last days... and I don't seem to be the
+only one who suffers from such problems, even with the basic parts of
+btrfs which are considered to be stable - I mean we're not talking
+about RAID56 here)... sigh :-(
+
+
+While these files are precious, I have in total copies of all these
+files, 3 on btrfs and 1 on ext4 (just to be on the safe side if btrfs
+gets corrupted for no good reason :-( ).... so I could do some
+debugging here if some developer tells me what to do.
+
+
+Anyway... what should I do to repair the fs? Or is it better to simply
+re-create that backup from scratch?
+
+
+Cheers,
+Chris.
+--=-iTqfA26F3c7gOEPDivh4
+Content-Type: application/x-pkcs7-signature; name="smime.p7s"
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Transfer-Encoding: base64
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEmow
+ggXiMIIDyqADAgECAhBctkhuRwyYxn/2gNtkSuKNMA0GCSqGSIb3DQEBCwUAMH0xCzAJBgNVBAYT
+AklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0
+aWZpY2F0ZSBTaWduaW5nMSkwJwYDVQQDEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
+eTAeFw0xNTEyMTYwMTAwMDVaFw0zMDEyMTYwMTAwMDVaMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQK
+Ew1TdGFydENvbSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
+eTEjMCEGA1UEAxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0EwggEiMA0GCSqGSIb3DQEBAQUA
+A4IBDwAwggEKAoIBAQDuD1CMlQkjhKz1UGqP1jeiTiH9MgllRz6vOPrVG/eE0H/J4QQLV/PeL8RT
+4xc44bEzsoJu0IhwnEchb+TxE/qw88w7hxODuw3N8Faxix6a1jp83+RWvZHZf78+O+3GYBpekZfT
+Oe9A/FoTXbcgwZfLTMQodn+ckNnX31M/1M2f2/7VA7QBlvihontyHQOlIlryQXnGI0UMCD21oopK
+tW48ckv0wUVg8irBKGMeD65gTON/Fsw/ZBbBqadoD1jt85FIM1ql24WUBEBwO1d0ykCKOIbgcqes
+3fbcjQpruUNMBbIu1MMIRMqwjx/M7IvSKcS7VYRWl0/K2byzWvBAHh/1AgMBAAGjggFkMIIBYDAO
+BgNVHQ8BAf8EBAMCAQYwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMBIGA1UdEwEB/wQI
+MAYBAf8CAQAwMgYDVR0fBCswKTAnoCWgI4YhaHR0cDovL2NybC5zdGFydHNzbC5jb20vc2ZzY2Eu
+Y3JsMGYGCCsGAQUFBwEBBFowWDAkBggrBgEFBQcwAYYYaHR0cDovL29jc3Auc3RhcnRzc2wuY29t
+MDAGCCsGAQUFBzAChiRodHRwOi8vYWlhLnN0YXJ0c3NsLmNvbS9jZXJ0cy9jYS5jcnQwHQYDVR0O
+BBYEFJmXqxg1OotZRUOYsnJxyPT7Cc8WMB8GA1UdIwQYMBaAFE4L7xqkQFulF2mHMMo0aEPQQa7y
+MD8GA1UdIAQ4MDYwNAYEVR0gADAsMCoGCCsGAQUFBwIBFh5odHRwOi8vd3d3LnN0YXJ0c3NsLmNv
+bS9wb2xpY3kwDQYJKoZIhvcNAQELBQADggIBAJlBQQTO9iT1TjA0eEO7V/1AbBvMAfibjAgofxmJ
+01jBmHKg0pbTjWInTTYoxb3LBgz3mfjvvS1PjnIfb29MyVm0G/PSHjgq7Ews1dEJMPC9XTuxPf2c
++MWLkynBlotW542JprW+iTWfZafyUtzIKW1hk0YASJ8zSSj8D++9yR+0UhkbvlECJkdi1+et0EaI
+7HIX6ccj1rfcFFflWX/fPT64dn9jpg9s0nuJug4WsVkEK236WndZoMHrZmgF7CIyZ3T0muqYwkAS
+DDcRt9A21o/Mc+D8Q6GVmKRGB3gEKvOtsioHZEqJv6CdAm3a6gloo5pX3RL1eCzc8Lzfs4T0ISZj
+r8xNMbTGlsuHaFH+stDewKsfnpo4N64OtAGrzmVfFFsMIRENRHsVlSEe/6LVpBpjn00+7bqEN3qe
+qSxIOraYJ12mJ08G4YnP2U1fadHIaS50O5ZXqAivoBl9pi/6CBNc5wIMlkXMyFZ0sLsI+9ErFDu9
+OJhX7iWCo69X0ydlzXj08+2K1PKyr+g6/vTPHur63JotNrhyoWEJyWEjBLA4QmJXfGpB5u+bCwNf
+sFpcYAlkiFt1Rs2vemgSBy3q4DHDbPKvr1YImZNRSHP+TX9NP94JRkmqcyD/qaN7u2JV1pRAlwG0
+npyrn6ZQM1QHV+iFbwQ4VqLMWk//QVo/rZy1MIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwcz1F+2kRA
+DzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjEp
+MCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMTGlN0YXJ0
+Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIzNlowejEL
+MAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAfBgNVBAMM
+GENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50
+aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqeP2vwE3Cp
+YosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjrFe0zmZWZ
+0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ0+c1NYFQ
+T6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJnmiiId9e
+0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7r2NVLkpo
+Gbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA0BtydQC0
+mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS7XEGOuCU
+09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6a1rkhJl7
+1rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8bxPJiX2/
+VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/MAsGA1Ud
+DwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAdBgNVHQ4E
+FgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI9PsJzxYw
+bwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5jb20wOQYI
+KwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQyLmNydDA4
+BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50Mi5jcmww
+IAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6Ly93d3cu
+c3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcBAgQwLDAq
+BggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3DQEBCwUA
+A4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7SG3MQkyO
+kvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndjZIHMfSkn
+hdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9RS51K1gt
+H4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11Yeq6UTW/
+JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwc
+z1F+2kRADzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20g
+THRkLjEpMCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMT
+GlN0YXJ0Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIz
+NlowejELMAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAf
+BgNVBAMMGENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9A
+c2NpZW50aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqe
+P2vwE3CpYosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjr
+Fe0zmZWZ0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ
+0+c1NYFQT6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJ
+nmiiId9e0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7
+r2NVLkpoGbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA
+0BtydQC0mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS
+7XEGOuCU09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6
+a1rkhJl71rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8
+bxPJiX2/VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/
+MAsGA1UdDwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAd
+BgNVHQ4EFgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI
+9PsJzxYwbwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5j
+b20wOQYIKwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQy
+LmNydDA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50
+Mi5jcmwwIAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6
+Ly93d3cuc3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcB
+AgQwLDAqBggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3
+DQEBCwUAA4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7
+SG3MQkyOkvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndj
+ZIHMfSknhdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9
+RS51K1gtH4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11
+Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
+MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
+cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
+QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
+SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwMTEyMDEwNzIzWjBPBgkqhkiG9w0BCQQxQgRAOkAg
+8vf+AWucHYR6SnKT8U4cKMWZufHM5x/1u/UsYJdPkeWocpTnglxCGYQskP3Oa8YicKTFHE+aTg/b
+dBhJNzCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
+bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
+AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
+DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
+VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
+Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAJshx
+VaDxKQjmYnD45fyG/N4HwWSjGK4v1KiSctId4SVdx3WKSYSk7qtEMI2Gm2cSTaa0YGe4AXTc3cUk
+YfXpz3xTFqzPrKJuA65CLkroFAGtRYpyTvKHtTgzHySH3nmIA8pjd8jMhLHAfL9w/sQV4oPh87C2
+yq4l/SVccb60/5ysTxnc1Kzd78a6STusX3arfezZb53TsECr1qhiMD+hp2uclHjkZApzB9au0/sM
+sqqwu6ulB52EFBXn70latI6ry5YXb6YzHydLBCfQ1HgRsy9R/eh/j9eMYQ4NWKPe9/vD6sXsdsvh
+jVDlXr6+VliestIS60BiPZ+kxZJIFBhXHKD9xCgJmcSLKDo2UuzbVuhCSAbVXXpjmqLX0KcHTC3V
+oXeFhvBOUeHFQNEdysbh7mVluAk+QHiVKOOCXBNItAv8X7pfErSPto3j0iXu7FzFb6f+/1nsMtlN
+l2NqE4sY4rPSeBQ4eeOxnjdYjxqIa9At5W7KvPa3VbAXKcfARhcYRfjd7/yIzGwJyPRmpxWi9Ewt
+UPezy+n1FIAW+Q39ewj2QYfGbrd86BknSl0v0Gpz62EIGKKbxEdF6coZmr10By/eYOR5IHqUIzS0
+lri5WYEHi1HwtqshFWj/8nTRYdd81tQvgfG8hK55UfD2wNSBRXpFAg8/esNh0FuvKyVGyOAAAAAA
+AAA=
+
+
+--=-iTqfA26F3c7gOEPDivh4--
+

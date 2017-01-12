@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f65.google.com ([74.125.82.65]:35575 "EHLO
-        mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750914AbdALOBE (ORCPT
+Received: from mail-lf0-f65.google.com ([209.85.215.65]:36421 "EHLO
+        mail-lf0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750974AbdALOBL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 12 Jan 2017 09:01:04 -0500
-Received: by mail-wm0-f65.google.com with SMTP id l2so3918561wml.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Jan 2017 06:01:01 -0800 (PST)
+        Thu, 12 Jan 2017 09:01:11 -0500
+Received: by mail-lf0-f65.google.com with SMTP id h65so1925323lfi.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Jan 2017 06:01:10 -0800 (PST)
 From: Nikolay Borisov <n.borisov.lkml@gmail.com>
 To: dsterba@suse.com
 Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <n.borisov.lkml@gmail.com>
-Subject: [PATCH 05/24] btrfs: Make btrfs_log_new_name take btrfs_inode
-Date: Thu, 12 Jan 2017 16:00:31 +0200
-Message-Id: <1484229650-24554-6-git-send-email-n.borisov.lkml@gmail.com>
+Subject: [PATCH 12/24] btrfs: Make btrfs_log_trailing_hole take btrfs_inode
+Date: Thu, 12 Jan 2017 16:00:38 +0200
+Message-Id: <1484229650-24554-13-git-send-email-n.borisov.lkml@gmail.com>
 In-Reply-To: <1484229650-24554-1-git-send-email-n.borisov.lkml@gmail.com>
 References: <1484229650-24554-1-git-send-email-n.borisov.lkml@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -19,104 +19,42 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Signed-off-by: Nikolay Borisov <n.borisov.lkml@gmail.com>
 ---
- fs/btrfs/inode.c    |  8 ++++----
- fs/btrfs/tree-log.c | 18 ++++++++----------
- fs/btrfs/tree-log.h |  2 +-
- 3 files changed, 13 insertions(+), 15 deletions(-)
+ fs/btrfs/tree-log.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index c2835d0b7098..131669ca1f07 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6600,7 +6600,7 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
- 				goto fail;
- 		}
- 		d_instantiate(dentry, inode);
--		btrfs_log_new_name(trans, inode, NULL, parent);
-+		btrfs_log_new_name(trans, BTRFS_I(inode), NULL, parent);
- 	}
- 
- 	btrfs_balance_delayed_items(fs_info);
-@@ -9653,13 +9653,13 @@ static int btrfs_rename_exchange(struct inode *old_dir,
- 
- 	if (root_log_pinned) {
- 		parent = new_dentry->d_parent;
--		btrfs_log_new_name(trans, old_inode, old_dir, parent);
-+		btrfs_log_new_name(trans, BTRFS_I(old_inode), BTRFS_I(old_dir), parent);
- 		btrfs_end_log_trans(root);
- 		root_log_pinned = false;
- 	}
- 	if (dest_log_pinned) {
- 		parent = old_dentry->d_parent;
--		btrfs_log_new_name(trans, new_inode, new_dir, parent);
-+		btrfs_log_new_name(trans, BTRFS_I(new_inode), BTRFS_I(new_dir), parent);
- 		btrfs_end_log_trans(dest);
- 		dest_log_pinned = false;
- 	}
-@@ -9925,7 +9925,7 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
- 	if (log_pinned) {
- 		struct dentry *parent = new_dentry->d_parent;
- 
--		btrfs_log_new_name(trans, old_inode, old_dir, parent);
-+		btrfs_log_new_name(trans, BTRFS_I(old_inode), BTRFS_I(old_dir), parent);
- 		btrfs_end_log_trans(root);
- 		log_pinned = false;
- 	}
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 806e0ffc9150..f37194700f3a 100644
+index 4d8726aad7b3..98b40e65d880 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -5802,30 +5802,28 @@ void btrfs_record_snapshot_destroy(struct btrfs_trans_handle *trans,
-  * full transaction commit is required.
+@@ -4371,7 +4371,7 @@ static int btrfs_log_all_xattrs(struct btrfs_trans_handle *trans,
   */
- int btrfs_log_new_name(struct btrfs_trans_handle *trans,
--			struct inode *inode, struct inode *old_dir,
-+			struct btrfs_inode *inode, struct btrfs_inode *old_dir,
- 			struct dentry *parent)
+ static int btrfs_log_trailing_hole(struct btrfs_trans_handle *trans,
+ 				   struct btrfs_root *root,
+-				   struct inode *inode,
++				   struct btrfs_inode *inode,
+ 				   struct btrfs_path *path)
  {
--	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
--	struct btrfs_root * root = BTRFS_I(inode)->root;
-+	struct btrfs_fs_info *fs_info = btrfs_sb(inode->vfs_inode.i_sb);
-+	struct btrfs_root * root = inode->root;
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+@@ -4381,8 +4381,8 @@ static int btrfs_log_trailing_hole(struct btrfs_trans_handle *trans,
+ 	u64 hole_size;
+ 	struct extent_buffer *leaf;
+ 	struct btrfs_root *log = root->log_root;
+-	const u64 ino = btrfs_ino(BTRFS_I(inode));
+-	const u64 i_size = i_size_read(inode);
++	const u64 ino = btrfs_ino(inode);
++	const u64 i_size = i_size_read(&inode->vfs_inode);
  
- 	/*
- 	 * this will force the logging code to walk the dentry chain
- 	 * up for the file
- 	 */
--	if (S_ISREG(inode->i_mode))
--		BTRFS_I(inode)->last_unlink_trans = trans->transid;
-+	if (S_ISREG(inode->vfs_inode.i_mode))
-+		inode->last_unlink_trans = trans->transid;
- 
- 	/*
- 	 * if this inode hasn't been logged and directory we're renaming it
- 	 * from hasn't been logged, we don't need to log it
- 	 */
--	if (BTRFS_I(inode)->logged_trans <=
--	    fs_info->last_trans_committed &&
--	    (!old_dir || BTRFS_I(old_dir)->logged_trans <=
--		    fs_info->last_trans_committed))
-+	if (inode->logged_trans <= fs_info->last_trans_committed &&
-+	    (!old_dir || old_dir->logged_trans <= fs_info->last_trans_committed))
+ 	if (!btrfs_fs_incompat(fs_info, NO_HOLES))
  		return 0;
- 
--	return btrfs_log_inode_parent(trans, root, inode, parent, 0,
-+	return btrfs_log_inode_parent(trans, root, &inode->vfs_inode, parent, 0,
- 				      LLONG_MAX, 1, NULL);
- }
- 
-diff --git a/fs/btrfs/tree-log.h b/fs/btrfs/tree-log.h
-index e08ce78b2ad4..2bcbac7efa9c 100644
---- a/fs/btrfs/tree-log.h
-+++ b/fs/btrfs/tree-log.h
-@@ -85,6 +85,6 @@ void btrfs_record_unlink_dir(struct btrfs_trans_handle *trans,
- void btrfs_record_snapshot_destroy(struct btrfs_trans_handle *trans,
- 				   struct btrfs_inode *dir);
- int btrfs_log_new_name(struct btrfs_trans_handle *trans,
--			struct inode *inode, struct inode *old_dir,
-+			struct btrfs_inode *inode, struct btrfs_inode *old_dir,
- 			struct dentry *parent);
- #endif
+@@ -4918,7 +4918,7 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+ 	if (max_key.type >= BTRFS_EXTENT_DATA_KEY && !fast_search) {
+ 		btrfs_release_path(path);
+ 		btrfs_release_path(dst_path);
+-		err = btrfs_log_trailing_hole(trans, root, inode, path);
++		err = btrfs_log_trailing_hole(trans, root, BTRFS_I(inode), path);
+ 		if (err)
+ 			goto out_unlock;
+ 	}
 -- 
 2.7.4
 

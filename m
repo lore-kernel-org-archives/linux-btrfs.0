@@ -1,43 +1,136 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f54.google.com ([74.125.83.54]:33699 "EHLO
-        mail-pg0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750823AbdANEZG (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:47683 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750778AbdALQDI (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 13 Jan 2017 23:25:06 -0500
-Received: by mail-pg0-f54.google.com with SMTP id 204so552756pge.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Jan 2017 20:25:05 -0800 (PST)
-Date: Fri, 13 Jan 2017 20:24:42 -0800
-From: Omar Sandoval <osandov@osandov.com>
-To: lsf-pc@lists.linux-foundation.org
-Cc: linux-block@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org
-Subject: [LSF/MM ATTEND] blk-mq I/O scheduling, Btrfs, VFS topics
-Message-ID: <20170114042442.GA4463@vader>
+        Thu, 12 Jan 2017 11:03:08 -0500
+Date: Thu, 12 Jan 2017 08:10:27 -0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org
+Subject: Re: [GIT PULL] btrfs fixes and cleanups
+Message-ID: <20170112161027.GA24433@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1481786012-18586-1-git-send-email-bo.li.liu@oracle.com>
+ <04f553db-e164-8f52-7ece-885faa34ee9c@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <04f553db-e164-8f52-7ece-885faa34ee9c@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi,
 
-I'd like to attend LSF/MM again this year to discuss topics in blk-mq,
-Btrfs, and the VFS.
+On Wed, Dec 28, 2016 at 05:30:59PM +0800, Qu Wenruo wrote:
+> Hi Liu,
+> 
+> At 12/15/2016 03:13 PM, Liu Bo wrote:
+> > Hi David,
+> > 
+> > This is the collection of my patches targetting 4.10, I've
+> > dropped patch "Btrfs: adjust len of writes if following a
+> > preallocated extent" because of the deadlock caused by this
+> > commit.
+> > 
+> > Patches are based on v4.9-rc8, and test against fstests with
+> > default mount options has been taken to make sure it doesn't
+> > break anything.
+> > 
+> > I haven't got a kernel.org git repo, so this is mainly for
+> > tracking purpose and for testing git flow.
+> > 
+> > (cherry-pick patches might be the only way at this moment...sorry
+> > for the inconvenience.)
+> > 
+> > Anyway, patches can be found at
+> > 
+> > 	https://github.com/liubogithub/btrfs-work.git for-dave
+> > 
+> > Thanks,
+> > liubo
+> > 
+> > Liu Bo (9):
+> >   Btrfs: add 'inode' for extent map tracepoint
+> >   Btrfs: add truncated_len for ordered extent tracepoints
+> >   Btrfs: use down_read_nested to make lockdep silent
+> >   Btrfs: fix lockdep warning about log_mutex
+> >   Btrfs: fix truncate down when no_holes feature is enabled
+> >   Btrfs: fix btrfs_ordered_update_i_size to update disk_i_size properly
+> >   Btrfs: fix comment in btrfs_page_mkwrite
+> >   Btrfs: clean up btrfs_ordered_update_i_size
+> 
+> While testing David's for-next-20161219 branch, I found btrfs/06[0-5] will
+> cause the following kernel panic when ran them in a row.
+> 
+> [ 4207.963063] assertion failed: disk_i_size < i_size, file:
+> fs/btrfs//ordered-data.c, line: 1041
+> [ 4207.963722] ------------[ cut here ]------------
+> [ 4207.964008] kernel BUG at fs/btrfs//ctree.h:3418!
+> [ 4207.964008] invalid opcode: 0000 [#1] SMP
+> [ 4207.964008] Modules linked in: btrfs(O) netconsole ext4 jbd2 mbcache xor
+> zlib_deflate raid6_pq xfs [last unloaded: btrfs]
+> [ 4207.964008] CPU: 0 PID: 3829 Comm: kworker/u4:5 Tainted: G O    4.9.0+
+> #60
+> [ 4207.964008] Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS
+> 1.10.1-20161122_114906-anatol 04/01/2014
+> [ 4207.964008] Workqueue: btrfs-endio-write btrfs_endio_write_helper [btrfs]
+> [ 4207.964008] task: ffff88000bbf8040 task.stack: ffffc90006598000
+> [ 4207.964008] RIP: 0010:[<ffffffffa0462245>]  [<ffffffffa0462245>]
+> assfail.constprop.10+0x1c/0x1e [btrfs]
+> <snip>
+> [ 4207.964008] Call Trace:
+> [ 4207.964008]  [<ffffffffa03f1f41>] btrfs_ordered_update_i_size+0x2b1/0x2e0
+> [btrfs]
+> [ 4207.964008]  [<ffffffffa03dd435>] btrfs_finish_ordered_io+0x335/0x6b0
+> [btrfs]
+> [ 4207.964008]  [<ffffffffa03dd7c5>] finish_ordered_fn+0x15/0x20 [btrfs]
+> [ 4207.964008]  [<ffffffffa040961f>] btrfs_scrubparity_helper+0xef/0x610
+> [btrfs]
+> [ 4207.964008]  [<ffffffffa0409bce>] btrfs_endio_write_helper+0xe/0x10
+> [btrfs]
+> [ 4207.964008]  [<ffffffff810ec9ef>] process_one_work+0x2af/0x720
+> [ 4207.964008]  [<ffffffff810ec96b>] ? process_one_work+0x22b/0x720
+> [ 4207.964008]  [<ffffffff810eceab>] worker_thread+0x4b/0x4f0
+> [ 4207.964008]  [<ffffffff810ece60>] ? process_one_work+0x720/0x720
+> [ 4207.964008]  [<ffffffff810ece60>] ? process_one_work+0x720/0x720
+> [ 4207.964008]  [<ffffffff810f3d93>] kthread+0xf3/0x110
+> [ 4207.964008]  [<ffffffff810f3ca0>] ? kthread_park+0x60/0x60
+> [ 4207.964008]  [<ffffffff818af7c7>] ret_from_fork+0x27/0x40
+> [ 4207.964008] Code: c7 00 e4 46 a0 48 89 e5 e8 c8 3c d8 e0 0f 0b 55 89 f1
+> 48 c7 c2 83 90 46 a0 48 89 fe 48 c7 c7 b0 e4 46 a0 48 89 e5 e8 aa 3c d8 e0
+> <0f> 0b 55 89 f1 48 c7 c2 fb 90 46 a0 48 89 fe 48 c7 c7 e8 e5 46
+> [ 4207.964008] RIP  [<ffffffffa0462245>] assfail.constprop.10+0x1c/0x1e
+> [btrfs]
+> [ 4207.964008]  RSP <ffffc9000659bc18>
+> [ 4207.964008] ---[ end trace f7759d2fce14da9f ]---
+> 
+> Not sure if it's related to patch or just it exposed some bug we don't find
+> before.
+> 
+> Hopes it will help.
+>
 
-I've been working on the blk-mq I/O scheduling framework [1] with Jens.
-Once that is finalized, the next step is a proper multiqueue scheduler.
-I've put together a prototype with a few basic ideas [2], but there's
-still work to be done. It's hard to say where exactly we'll be in time
-for LSF/MM since things are moving pretty fast, but I'm sure there will
-be something to discuss.
+Thanks for spotting it, just found out that this ASSERT is not true any
+more after patch "Btrfs: fix btrfs_ordered_update_i_size to update
+disk_i_size properly".
 
-I'd also like to meet with the other Btrfs developers to talk about
-what's on the roadmap.
+I'm doing a v2 to remove it.
 
-Finally, I'm interested in VFS topics including statx and the mount(2)
-API. I'd also love to work out the issues with my linkat() AT_REPLACE
-patches.
+Thanks,
 
-Thanks!
-
-1: http://git.kernel.dk/cgit/linux-block/log/?h=blk-mq-sched
-2: https://github.com/osandov/linux/tree/mq-token-iosched
+-liubo
+ 
+> Thanks,
+> Qu
+> 
+> >   Btrfs: fix another race between truncate and lockless dio write
+> > 
+> >  fs/btrfs/extent-tree.c       |  3 ++-
+> >  fs/btrfs/inode.c             | 43 +++++++++++++++++++++++++++++++++++--------
+> >  fs/btrfs/ordered-data.c      | 42 ++++++++++++++++++++++++------------------
+> >  fs/btrfs/tree-log.c          | 13 ++++++++++---
+> >  include/trace/events/btrfs.h | 16 ++++++++++++----
+> >  5 files changed, 83 insertions(+), 34 deletions(-)
+> > 
+> 
+> 

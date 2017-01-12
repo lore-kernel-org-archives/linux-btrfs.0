@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f196.google.com ([209.85.220.196]:35268 "EHLO
-        mail-qk0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751053AbdALOBW (ORCPT
+Received: from mail-wm0-f66.google.com ([74.125.82.66]:35775 "EHLO
+        mail-wm0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751038AbdALOBO (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 12 Jan 2017 09:01:22 -0500
-Received: by mail-qk0-f196.google.com with SMTP id u25so2786930qki.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Jan 2017 06:01:21 -0800 (PST)
+        Thu, 12 Jan 2017 09:01:14 -0500
+Received: by mail-wm0-f66.google.com with SMTP id l2so3919985wml.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Jan 2017 06:01:14 -0800 (PST)
 From: Nikolay Borisov <n.borisov.lkml@gmail.com>
 To: dsterba@suse.com
 Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <n.borisov.lkml@gmail.com>
-Subject: [PATCH 24/24] btrfs: Make count_inode_refs take btrfs_inode
-Date: Thu, 12 Jan 2017 16:00:50 +0200
-Message-Id: <1484229650-24554-25-git-send-email-n.borisov.lkml@gmail.com>
+Subject: [PATCH 15/24] btrfs: Make log_dir_items take btrfs_inode
+Date: Thu, 12 Jan 2017 16:00:41 +0200
+Message-Id: <1484229650-24554-16-git-send-email-n.borisov.lkml@gmail.com>
 In-Reply-To: <1484229650-24554-1-git-send-email-n.borisov.lkml@gmail.com>
 References: <1484229650-24554-1-git-send-email-n.borisov.lkml@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -23,36 +23,36 @@ Signed-off-by: Nikolay Borisov <n.borisov.lkml@gmail.com>
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 0c5eb664640f..162223404eca 100644
+index 5abe54963049..84c1ab4c8a7f 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -1401,7 +1401,7 @@ static int count_inode_extrefs(struct btrfs_root *root,
- }
- 
- static int count_inode_refs(struct btrfs_root *root,
--			       struct inode *inode, struct btrfs_path *path)
-+			       struct btrfs_inode *inode, struct btrfs_path *path)
- {
- 	int ret;
- 	struct btrfs_key key;
-@@ -1409,7 +1409,7 @@ static int count_inode_refs(struct btrfs_root *root,
- 	unsigned long ptr;
- 	unsigned long ptr_end;
- 	int name_len;
+@@ -3259,7 +3259,7 @@ static noinline int insert_dir_log_key(struct btrfs_trans_handle *trans,
+  * to replay anything deleted before the fsync
+  */
+ static noinline int log_dir_items(struct btrfs_trans_handle *trans,
+-			  struct btrfs_root *root, struct inode *inode,
++			  struct btrfs_root *root, struct btrfs_inode *inode,
+ 			  struct btrfs_path *path,
+ 			  struct btrfs_path *dst_path, int key_type,
+ 			  struct btrfs_log_ctx *ctx,
+@@ -3274,7 +3274,7 @@ static noinline int log_dir_items(struct btrfs_trans_handle *trans,
+ 	int nritems;
+ 	u64 first_offset = min_offset;
+ 	u64 last_offset = (u64)-1;
 -	u64 ino = btrfs_ino(BTRFS_I(inode));
 +	u64 ino = btrfs_ino(inode);
  
- 	key.objectid = ino;
- 	key.type = BTRFS_INODE_REF_KEY;
-@@ -1480,7 +1480,7 @@ static noinline int fixup_inode_link_count(struct btrfs_trans_handle *trans,
- 	if (!path)
- 		return -ENOMEM;
+ 	log = root->log_root;
  
--	ret = count_inode_refs(root, inode, path);
-+	ret = count_inode_refs(root, BTRFS_I(inode), path);
- 	if (ret < 0)
- 		goto out;
- 
+@@ -3463,7 +3463,7 @@ static noinline int log_directory_changes(struct btrfs_trans_handle *trans,
+ 	min_key = 0;
+ 	max_key = 0;
+ 	while (1) {
+-		ret = log_dir_items(trans, root, inode, path,
++		ret = log_dir_items(trans, root, BTRFS_I(inode), path,
+ 				    dst_path, key_type, ctx, min_key,
+ 				    &max_key);
+ 		if (ret)
 -- 
 2.7.4
 

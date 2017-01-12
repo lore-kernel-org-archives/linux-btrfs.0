@@ -1,80 +1,147 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wj0-f195.google.com ([209.85.210.195]:35045 "EHLO
-        mail-wj0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1757051AbdAJSgK (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Jan 2017 13:36:10 -0500
-Received: by mail-wj0-f195.google.com with SMTP id ey1so9326061wjd.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jan 2017 10:36:10 -0800 (PST)
-From: Nikolay Borisov <n.borisov.lkml@gmail.com>
+Received: from mail.kernel.org ([198.145.29.136]:37646 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751654AbdASMDq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Jan 2017 07:03:46 -0500
+Received: from mail.kernel.org (localhost [127.0.0.1])
+        by mail.kernel.org (Postfix) with ESMTP id 8EAD4204FC
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2017 12:03:44 +0000 (UTC)
+Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id E02162050E
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2017 12:03:41 +0000 (UTC)
+From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Cc: Nikolay Borisov <n.borisov.lkml@gmail.com>
-Subject: [PATCH 12/12] btrfs: Make btrfs_inode_delayed_dir_index_count take btrfs_inode
-Date: Tue, 10 Jan 2017 20:35:42 +0200
-Message-Id: <1484073342-28854-13-git-send-email-n.borisov.lkml@gmail.com>
-In-Reply-To: <1484073342-28854-1-git-send-email-n.borisov.lkml@gmail.com>
-References: <1484073342-28854-1-git-send-email-n.borisov.lkml@gmail.com>
+Subject: [PATCH 1/3] Btrfs: send, fix failure to rename top level inode due to name collision
+Date: Thu, 12 Jan 2017 03:07:08 +0000
+Message-Id: <1484190428-17128-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Nikolay Borisov <n.borisov.lkml@gmail.com>
----
- fs/btrfs/delayed-inode.c | 6 +++---
- fs/btrfs/delayed-inode.h | 2 +-
- fs/btrfs/inode.c         | 2 +-
- 3 files changed, 5 insertions(+), 5 deletions(-)
+From: Robbie Ko <robbieko@synology.com>
 
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 0afbea220fbb..00a3e62222d6 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -1556,9 +1556,9 @@ int btrfs_delete_delayed_dir_index(struct btrfs_trans_handle *trans,
- 	return ret;
- }
- 
--int btrfs_inode_delayed_dir_index_count(struct inode *inode)
-+int btrfs_inode_delayed_dir_index_count(struct btrfs_inode *inode)
+Under certain situations, an incremental send operation can fail due to a
+premature attempt to create a new top level inode (a direct child of the
+subvolume/snapshot root) whose name collides with another inode that was
+removed from the send snapshot.
+
+Consider the following example scenario.
+
+Parent snapshot:
+
+  .                 (ino 256, gen 8)
+  |---- a1/         (ino 257, gen 9)
+  |---- a2/         (ino 258, gen 9)
+
+Send snapshot:
+
+  .                 (ino 256, gen 3)
+  |---- a2/         (ino 257, gen 7)
+
+In this scenario, when receiving the incremental send stream, the btrfs
+receive command fails like this (ran in verbose mode, -vv argument):
+
+  rmdir a1
+  mkfile o257-7-0
+  rename o257-7-0 -> a2
+  ERROR: rename o257-7-0 -> a2 failed: Is a directory
+
+What happens when computing the incremental send stream is:
+
+1) An operation to remove the directory with inode number 257 and
+   generation 9 is issued.
+
+2) An operation to create the inode with number 257 and generation 7 is
+   issued. This creates the inode with an orphanized name of "o257-7-0".
+
+3) An operation rename the new inode 257 to its final name, "a2", is
+   issued. This is incorrect because inode 258, which has the same name
+   and it's a child of the same parent (root inode 256), was not yet
+   processed and therefore no rmdir operation for it was yet issued.
+   The rename operation is issued because we fail to detect that the
+   name of the new inode 257 collides with inode 258, because their
+   parent, a subvolume/snapshot root (inode 256) has a different
+   generation in both snapshots.
+
+So fix this by ignoring the generation value of a parent directory that
+matches a root inode (number 256) when we are checking if the name of the
+inode currently being processed collides with the name of some other
+inode that was not yet processed.
+
+We can achieve this scenario of different inodes with the same number but
+different generation values either by mounting a filesystem with the inode
+cache option (-o inode_cache) or by creating and sending snapshots across
+different filesystems, like in the following example:
+
+  $ mkfs.btrfs -f /dev/sdb
+  $ mount /dev/sdb /mnt
+  $ mkdir /mnt/a1
+  $ mkdir /mnt/a2
+  $ btrfs subvolume snapshot -r /mnt /mnt/snap1
+  $ btrfs send /mnt/snap1 -f /tmp/1.snap
+  $ umount /mnt
+
+  $ mkfs.btrfs -f /dev/sdc
+  $ mount /dev/sdc /mnt
+  $ touch /mnt/a2
+  $ btrfs subvolume snapshot -r /mnt /mnt/snap2
+  $ btrfs receive /mnt -f /tmp/1.snap
+  # Take note that once the filesystem is created, its current
+  # generation has value 7 so the inode from the second snapshot has
+  # a generation value of 7. And after receiving the first snapshot
+  # the filesystem is at a generation value of 10, because the call to
+  # create the second snapshot bumps the generation to 8 (the snapshot
+  # creation ioctl does a transaction commit), the receive command calls
+  # the snapshot creation ioctl to create the first snapshot, which bumps
+  # the filesystem's generation to 9, and finally when the receive
+  # operation finishes it calls an ioctl to transition the first snapshot
+  # (snap1) from RW mode to RO mode, which does another transaction commit
+  # and bumps the filesystem's generation to 10.
+  $ rm -f /tmp/1.snap
+  $ btrfs send /mnt/snap1 -f /tmp/1.snap
+  $ btrfs send -p /mnt/snap1 /mnt/snap2 -f /tmp/2.snap
+  $ umount /mnt
+
+  $ mkfs.btrfs -f /dev/sdd
+  $ mount /dev/sdd /mnt
+  $ btrfs receive /mnt /tmp/1.snap
+  # Receive of snapshot snap2 used to fail.
+  $ btrfs receive /mnt /tmp/2.snap
+
+Signed-off-by: Robbie Ko <robbieko@synology.com>
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+[Rewrote changelog to be more precise and clear]
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/send.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index d145ce8..2ae32c4 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -1681,6 +1681,9 @@ static int is_inode_existent(struct send_ctx *sctx, u64 ino, u64 gen)
  {
--	struct btrfs_delayed_node *delayed_node = btrfs_get_delayed_node(BTRFS_I(inode));
-+	struct btrfs_delayed_node *delayed_node = btrfs_get_delayed_node(inode);
+ 	int ret;
  
- 	if (!delayed_node)
- 		return -ENOENT;
-@@ -1573,7 +1573,7 @@ int btrfs_inode_delayed_dir_index_count(struct inode *inode)
- 		return -EINVAL;
- 	}
- 
--	BTRFS_I(inode)->index_cnt = delayed_node->index_cnt;
-+	inode->index_cnt = delayed_node->index_cnt;
- 	btrfs_release_delayed_node(delayed_node);
- 	return 0;
- }
-diff --git a/fs/btrfs/delayed-inode.h b/fs/btrfs/delayed-inode.h
-index 40bf1a943146..40327cc3b99a 100644
---- a/fs/btrfs/delayed-inode.h
-+++ b/fs/btrfs/delayed-inode.h
-@@ -109,7 +109,7 @@ int btrfs_delete_delayed_dir_index(struct btrfs_trans_handle *trans,
- 				   struct btrfs_fs_info *fs_info,
- 				   struct btrfs_inode *dir, u64 index);
- 
--int btrfs_inode_delayed_dir_index_count(struct inode *inode);
-+int btrfs_inode_delayed_dir_index_count(struct btrfs_inode *inode);
- 
- int btrfs_run_delayed_items(struct btrfs_trans_handle *trans,
- 			    struct btrfs_fs_info *fs_info);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 92051c441435..80060aa2eda2 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6106,7 +6106,7 @@ int btrfs_set_inode_index(struct inode *dir, u64 *index)
- 	int ret = 0;
- 
- 	if (BTRFS_I(dir)->index_cnt == (u64)-1) {
--		ret = btrfs_inode_delayed_dir_index_count(dir);
-+		ret = btrfs_inode_delayed_dir_index_count(BTRFS_I(dir));
- 		if (ret) {
- 			ret = btrfs_set_inode_index_count(dir);
- 			if (ret)
++	if (ino == BTRFS_FIRST_FREE_OBJECTID)
++		return 1;
++
+ 	ret = get_cur_inode_state(sctx, ino, gen);
+ 	if (ret < 0)
+ 		goto out;
+@@ -1866,7 +1869,7 @@ static int will_overwrite_ref(struct send_ctx *sctx, u64 dir, u64 dir_gen,
+ 	 * not deleted and then re-created, if it was then we have no overwrite
+ 	 * and we can just unlink this entry.
+ 	 */
+-	if (sctx->parent_root) {
++	if (sctx->parent_root && dir != BTRFS_FIRST_FREE_OBJECTID) {
+ 		ret = get_inode_info(sctx->parent_root, dir, NULL, &gen, NULL,
+ 				     NULL, NULL, NULL);
+ 		if (ret < 0 && ret != -ENOENT)
 -- 
-2.7.4
+2.7.0.rc3
 

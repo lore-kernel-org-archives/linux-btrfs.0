@@ -1,224 +1,205 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:45693 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751517AbdALCiu (ORCPT
+Received: from amphorawinery.eu ([138.201.173.239]:59458 "EHLO
+        mail.amphorawinery.eu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750860AbdALJzX (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Jan 2017 21:38:50 -0500
-Subject: Re: corruption: yet another one after deleting a ro snapshot
-To: Christoph Anton Mitterer <calestyo@scientia.net>,
-        <linux-btrfs@vger.kernel.org>
-References: <1484183243.10253.5.camel@scientia.net>
- <a7b82ec9-bd8d-d6bb-27e7-3732b466ca06@cn.fujitsu.com>
- <1484188092.29002.4.camel@scientia.net>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <25993bdf-d1fe-30df-7236-b9d5d6e5cfb2@cn.fujitsu.com>
-Date: Thu, 12 Jan 2017 10:38:41 +0800
+        Thu, 12 Jan 2017 04:55:23 -0500
+Received: from _ (amphorawinery.eu [138.201.173.239])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        (Authenticated sender: gregory@amphorawinery.eu)
+        by mail.amphorawinery.eu (Postfix) with ESMTPSA id A47051E0467
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Jan 2017 10:45:47 +0100 (CET)
 MIME-Version: 1.0
-In-Reply-To: <1484188092.29002.4.camel@scientia.net>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Date: Thu, 12 Jan 2017 10:45:47 +0100
+From: Gregory Petit <gregory@amphorawinery.eu>
+To: linux-btrfs@vger.kernel.org
+Subject: RAID10: uncorrectable errors
+Message-ID: <707f7f482dd48c08544574b71ab77299@amphorawinery.eu>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
 
+I'm currently facing some uncorrectable errors in my RAID10 
+configuration.
 
-At 01/12/2017 10:28 AM, Christoph Anton Mitterer wrote:
-> Hey Qu,
->
-> On Thu, 2017-01-12 at 09:25 +0800, Qu Wenruo wrote:
->> And since you just deleted a subvolume and unmount it soon
-> Indeed, I unmounted it pretty quickly afterwards...
->
-> I had mounted it (ro) in the meantime, and did a whole
-> find mntoint > /dev/null
-> on it just to see whether going through the file hierarchy causes any
-> kernel errors already.
-> There are about 1,2 million files on the fs (in now only one snapshot)
-> and that took some 3-5 mins...
-> Not sure whether it continues to delete the subvol when it's mounted
-> ro... if so, it would have had some time.
+I'm running Proxmox (on debian) and my virtual machines are running on a 
+btrfs RAID10 configuration. Before I was running RAID5 and had also 
+uncorrectable errors. I found out then that RAID5 is not stable yet, so 
+I reformatted the disks to RAID10.
 
-IIRC, RO mount won't continue background deletion.
+Now, 2 days after formatting, I'm facing the same issue again. I don't 
+use anything special like snapshots, the whole disk space is available 
+for the VM's. All disks are about 1 year old and are SSD.
 
-So the fsck result won't change.
->
-> However, another fsck afterwards:
-> # btrfs check /dev/mapper/data-a3 ; echo $?
-> Checking filesystem on /dev/mapper/data-a3
-> UUID: 326d292d-f97b-43ca-b1e8-c722d3474719
-> checking extents
-> ref mismatch on [37765120 16384] extent item 0, found 1
-> Backref 37765120 parent 6403 root 6403 not found in extent tree
-> backpointer mismatch on [37765120 16384]
-> owner ref check failed [37765120 16384]
-> ref mismatch on [51200000 16384] extent item 0, found 1
-> Backref 51200000 parent 6403 root 6403 not found in extent tree
-> backpointer mismatch on [51200000 16384]
-> owner ref check failed [51200000 16384]
-> ref mismatch on [78135296 16384] extent item 0, found 1
-> Backref 78135296 parent 6403 root 6403 not found in extent tree
-> backpointer mismatch on [78135296 16384]
-> owner ref check failed [78135296 16384]
-> ref mismatch on [5960381235200 16384] extent item 0, found 1
-> Backref 5960381235200 parent 6403 root 6403 not found in extent tree
-> backpointer mismatch on [5960381235200 16384]
-> checking free space cache
-> checking fs roots
-> checking csums
-> checking root refs
-> found 7483995824128 bytes used err is 0
-> total csum bytes: 7296183880
-> total tree bytes: 10875944960
-> total fs tree bytes: 2035286016
-> total extent tree bytes: 1015988224
-> btree space waste bytes: 920641324
-> file data blocks allocated: 8267656339456
->  referenced 8389440876544
-> 0
->
->
->> , I assume
->> the
->> btrfs is still doing background subvolume deletion, maybe it's just
->> a
->> false alert from btrfsck.
-> If one deleted a subvol and unmounts too fast, will this already cause
-> a corruption or does btrfs simply continue to cleanup during the next
-> time(s) it's mounted?
+Here are the details:
 
-It will continue the deletion on next RW mount.
+scrub started at Wed Jan 11 18:00:01 2017 and finished after 00:19:23
+total bytes scrubbed: 1.14TiB with 4 errors
+error details: csum=4
+corrected errors: 0, uncorrectable errors: 4, unverified errors: 0
 
-But, I'm still not sure whether it's a false alert or a *REAL* corruption.
+ From dmesg:
+Wed Jan 11 18:10:35 2017] BTRFS error (device sda): bdev /dev/sda errs: 
+wr 0, rd 0, flush 0, corrupt 1, gen 0
+[Wed Jan 11 18:10:35 2017] BTRFS error (device sda): unable to fixup 
+(regular) error at logical 631657844736 on dev /dev/sda
+[Wed Jan 11 18:10:51 2017] BTRFS error (device sda): bdev /dev/sdb errs: 
+wr 0, rd 0, flush 0, corrupt 1, gen 0
+[Wed Jan 11 18:10:51 2017] BTRFS error (device sda): unable to fixup 
+(regular) error at logical 632954847232 on dev /dev/sdb
+[Wed Jan 11 18:18:57 2017] BTRFS error (device sda): bdev /dev/sdc errs: 
+wr 0, rd 0, flush 0, corrupt 1, gen 0
+[Wed Jan 11 18:18:57 2017] BTRFS error (device sda): unable to fixup 
+(regular) error at logical 632954847232 on dev /dev/sdc
+[Wed Jan 11 18:19:19 2017] BTRFS error (device sda): bdev /dev/sde errs: 
+wr 0, rd 0, flush 0, corrupt 1, gen 0
+[Wed Jan 11 18:19:19 2017] BTRFS error (device sda): unable to fixup 
+(regular) error at logical 631657844736 on dev /dev/sde
 
-Even it may cause problem and corrupt your data, I still hope you could 
-do a rw mount and trigger a btrfs fi sync.
+root@proxmox:~# uname -a
+Linux proxmox 4.4.35-2-pve #1 SMP Mon Jan 9 10:21:44 CET 2017 x86_64 
+GNU/Linux
 
-If it's a false alert, we can fix it then with ease.
-Or, it's a really big problem.
+root@proxmox:~# btrfs filesystem show /mnt/big_data/
+Label: 'BIG_DATA'  uuid: 1d0c910a-648e-48fd-9c19-d344c2feb6e2
+Total devices 4 FS bytes used 585.96GiB
+devid    1 size 465.76GiB used 296.54GiB path /dev/sda
+devid    2 size 465.76GiB used 296.54GiB path /dev/sdb
+devid    3 size 465.76GiB used 296.54GiB path /dev/sdc
+devid    4 size 465.76GiB used 296.54GiB path /dev/sde
 
->
->
->
->> Would you please try btrfs check --mode=lowmem using latest btrfs-
->> progs?
-> Here we go, however still with v4.7.3:
->
-> # btrfs check --mode=lowmem /dev/mapper/data-a3 ; echo $?
-> Checking filesystem on /dev/mapper/data-a3
-> UUID: 326d292d-f97b-43ca-b1e8-c722d3474719
-> checking extents
-> ERROR: block group[74117545984 1073741824] used 1073741824 but extent items used 0
+root@proxmox:~# btrfs fi df /mnt/big_data/
+Data, RAID10: total=590.00GiB, used=585.32GiB
+System, RAID10: total=80.00MiB, used=80.00KiB
+Metadata, RAID10: total=3.00GiB, used=658.00MiB
+GlobalReserve, single: total=224.00MiB, used=0.00B
 
-Errr, lowmem mode is much restrict on this case then.
-Quite some block groups has mismatch used space.
+root@proxmox:~# btrfs check --repair /dev/sda
+enabling repair mode
+Checking filesystem on /dev/sda
+UUID: 1d0c910a-648e-48fd-9c19-d344c2feb6e2
+checking extents
+Fixed 0 roots.
+checking free space cache
+cache and super generation don't match, space cache will be invalidated
+checking fs roots
+checking csums
+checking root refs
+found 629498146816 bytes used err is 0
+total csum bytes: 613917644
+total tree bytes: 691027968
+total fs tree bytes: 25133056
+total extent tree bytes: 27066368
+btree space waste bytes: 24605870
+file data blocks allocated: 4390718836736
+  referenced 622326341632
 
-But according to the same used number, I assume it's a lowmmem mode bug.
+root@proxmox:~# btrfs check --repair /dev/sdb
+enabling repair mode
+Checking filesystem on /dev/sdb
+UUID: 1d0c910a-648e-48fd-9c19-d344c2feb6e2
+checking extents
+Fixed 0 roots.
+checking free space cache
+cache and super generation don't match, space cache will be invalidated
+checking fs roots
+checking csums
+checking root refs
+found 629498146816 bytes used err is 0
+total csum bytes: 613917644
+total tree bytes: 691027968
+total fs tree bytes: 25133056
+total extent tree bytes: 27066368
+btree space waste bytes: 24605870
+file data blocks allocated: 4390718836736
+  referenced 622326341632
 
-Would you please try 4.9 btrfs-progs?
+root@proxmox:~# btrfs check --repair /dev/sdc
+enabling repair mode
+Checking filesystem on /dev/sdc
+UUID: 1d0c910a-648e-48fd-9c19-d344c2feb6e2
+checking extents
+Fixed 0 roots.
+checking free space cache
+cache and super generation don't match, space cache will be invalidated
+checking fs roots
+checking csums
+checking root refs
+found 629498146816 bytes used err is 0
+total csum bytes: 613917644
+total tree bytes: 691027968
+total fs tree bytes: 25133056
+total extent tree bytes: 27066368
+btree space waste bytes: 24605870
+file data blocks allocated: 4390718836736
+  referenced 622326341632
 
-> ERROR: block group[239473786880 1073741824] used 1073741824 but extent items used 1207959552
-> ERROR: block group[500393050112 1073741824] used 1073741824 but extent items used 1207959552
-> ERROR: block group[581997428736 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[626557714432 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[668433645568 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[948680261632 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[982503129088 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[1039411445760 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[1054443831296 1073741824] used 1073741824 but extent items used 1207959552
-> ERROR: block group[1190809042944 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[1279392743424 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[1481256206336 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[1620842643456 1073741824] used 1073741824 but extent items used 1207959552
-> ERROR: block group[1914511032320 1073741824] used 1073741824 but extent items used 1207959552
-> ERROR: block group[3055361720320 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[3216422993920 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[3670615785472 1073741824] used 1073741824 but extent items used 1207959552
-> ERROR: block group[3801612288000 1073741824] used 1073741824 but extent items used 1207959552
-> ERROR: block group[3828455833600 1073741824] used 1073741824 but extent items used 1207959552
-> ERROR: block group[4250973241344 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[4261710659584 1073741824] used 1073741824 but extent items used 1074266112
-> ERROR: block group[4392707162112 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[4558063403008 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[4607455526912 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[4635372814336 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[4640204652544 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[4642352136192 1073741824] used 1073741824 but extent items used 1207959552
-> ERROR: block group[4681006841856 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[5063795802112 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[5171169984512 1073741824] used 1073741824 but extent items used 1207959552
-> ERROR: block group[5216267141120 1073741824] used 1073741824 but extent items used 1207959552
-> ERROR: block group[5290355326976 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[5445511020544 1073741824] used 1073741824 but extent items used 1074266112
-> ERROR: block group[6084387405824 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[6104788500480 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[6878956355584 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[6997067956224 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[7702516334592 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[8051482427392 1073741824] used 1073741824 but extent items used 1084751872
-> ERROR: block group[8116980678656 1073741824] used 1073217536 but extent items used 0
-> ERROR: extent[5960381235200 16384] backref lost (owner: 6403, level: 1)
+root@proxmox:~# btrfs check --repair /dev/sde
+enabling repair mode
+Checking filesystem on /dev/sde
+UUID: 1d0c910a-648e-48fd-9c19-d344c2feb6e2
+checking extents
+Fixed 0 roots.
+checking free space cache
+cache and super generation don't match, space cache will be invalidated
+checking fs roots
+checking csums
+checking root refs
+found 629498163200 bytes used err is 0
+total csum bytes: 613917644
+total tree bytes: 691044352
+total fs tree bytes: 25133056
+total extent tree bytes: 27082752
+btree space waste bytes: 24622062
+file data blocks allocated: 4390718836736
+  referenced 622326341632
 
-So same missing backref.
-It's quite possible a kernel bug then.
+Scrub after the repair:
+btrfs scrub status /mnt/big_data/
+scrub status for 1d0c910a-648e-48fd-9c19-d344c2feb6e2
+scrub started at Thu Jan 12 10:22:10 2017 and finished after 00:19:29
+total bytes scrubbed: 1.14TiB with 4 errors
+error details: csum=4
+corrected errors: 0, uncorrectable errors: 4, unverified errors: 0
 
-> ERROR: check node failed root 6403 bytenr 5960381235200 level 1, force continue check
-> ERROR: extent[51200000 16384] backref lost (owner: 257, level: 1)
-> ERROR: check node failed root 6403 bytenr 51200000 level 1, force continue check
-> ERROR: extent[37765120 16384] backref lost (owner: 257, level: 1)
-> ERROR: check node failed root 6403 bytenr 37765120 level 1, force continue check
-> ERROR: extent[78135296 16384] backref lost (owner: 257, level: 1)
-> ERROR: check node failed root 6403 bytenr 78135296 level 1, force continue check
-> Errors found in extent allocation tree or chunk allocation
-> checking free space cache
-> checking fs roots
-> checking csums
-> checking root refs
-> found 7483995758592 bytes used err is 0
-> total csum bytes: 7296183880
-> total tree bytes: 11018780672
-> total fs tree bytes: 2178121728
-> total extent tree bytes: 1015988224
-> btree space waste bytes: 936782513
-> file data blocks allocated: 9157658292224
->  referenced 9292573106176
-> 0
->
->
-> btw: even if these may be false positives... shouldn't btrfs-check
-> return non-zero in any case an error might have been found?! Seems like
-> another bug...
+dmesg again:
+[Thu Jan 12 10:21:46 2017] BTRFS: has skinny extents
+[Thu Jan 12 10:21:46 2017] BTRFS info (device sda): bdev /dev/sda errs: 
+wr 0, rd 0, flush 0, corrupt 1, gen 0
+[Thu Jan 12 10:21:46 2017] BTRFS info (device sda): bdev /dev/sdb errs: 
+wr 0, rd 0, flush 0, corrupt 1, gen 0
+[Thu Jan 12 10:21:46 2017] BTRFS info (device sda): bdev /dev/sdc errs: 
+wr 0, rd 0, flush 0, corrupt 1, gen 0
+[Thu Jan 12 10:21:46 2017] BTRFS info (device sda): bdev /dev/sde errs: 
+wr 0, rd 0, flush 0, corrupt 1, gen 0
+[Thu Jan 12 10:21:46 2017] BTRFS: detected SSD devices, enabling SSD 
+mode
+[Thu Jan 12 10:21:46 2017] BTRFS: checking UUID tree
+[Thu Jan 12 10:32:51 2017] BTRFS error (device sda): bdev /dev/sda errs: 
+wr 0, rd 0, flush 0, corrupt 2, gen 0
+[Thu Jan 12 10:32:51 2017] BTRFS error (device sda): unable to fixup 
+(regular) error at logical 631657844736 on dev /dev/sda
+[Thu Jan 12 10:33:05 2017] BTRFS error (device sda): bdev /dev/sdb errs: 
+wr 0, rd 0, flush 0, corrupt 2, gen 0
+[Thu Jan 12 10:33:05 2017] BTRFS error (device sda): unable to fixup 
+(regular) error at logical 632954847232 on dev /dev/sdb
+[Thu Jan 12 10:41:14 2017] BTRFS error (device sda): bdev /dev/sdc errs: 
+wr 0, rd 0, flush 0, corrupt 2, gen 0
+[Thu Jan 12 10:41:14 2017] BTRFS error (device sda): unable to fixup 
+(regular) error at logical 632954847232 on dev /dev/sdc
+[Thu Jan 12 10:41:36 2017] BTRFS error (device sda): bdev /dev/sde errs: 
+wr 0, rd 0, flush 0, corrupt 2, gen 0
+[Thu Jan 12 10:41:36 2017] BTRFS error (device sda): unable to fixup 
+(regular) error at logical 631657844736 on dev /dev/sde
 
-IIRC it's fixed in latest btrfs-progs.
-So it's always recommended to use latest btrfs-progs.
+Does someone have an idea why those errors happen so fast? Since it is 
+RAID 10 I would assume it repairs an error based on the mirror, but it 
+seems to do the opposite and duplicate the error to the mirror.
 
-Thanks,
-Qu
+Thanks a lot,
 
->
->
->
-> For policy reasons here it's a bit problematic to simply compile my own
->  btrfs-progs from git master... so I could either go leave it with just
-> 4.7.3 (which is probably little helpful for you) and mount the fs now
-> rw for a while, see whether the errors still occur after say 15 mins
-> (where it should have had time to delete the subvol)... or  we shelve
-> this until 4.9.something hit Debian.
-> What would you prefer?
->
->
->> And it's also recommended to call btrfs fi sync, then wait for some
->> time
->> (depending on the subvolume size) to allow btrfs to fully delete the
->> subvolume, then try btrfsck.
->
-> Shouldn't it do these things automatically on unmount (or probably even
-> remount,ro)?!
-> I mean a normal user will never know about the necessity of these
-> steps,... and "some time" is also pretty unspecific even if one knows
-> about it.
->
->
-> Cheers,
-> Chris.
->
-
-
+Gregory

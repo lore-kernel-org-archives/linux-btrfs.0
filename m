@@ -1,198 +1,321 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:33289 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:6674 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1750990AbdAPI3l (ORCPT
+        with ESMTP id S1752447AbdALDxl (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 Jan 2017 03:29:41 -0500
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-        by cn.fujitsu.com (Postfix) with ESMTP id 1447047AD1F0
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 Jan 2017 16:29:29 +0800 (CST)
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+        Wed, 11 Jan 2017 22:53:41 -0500
+From: Su Yue <suy.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH RFC] btrfs: replace: Use ref counts to avoid destroying target device when canceled
-Date: Mon, 16 Jan 2017 16:29:27 +0800
-Message-ID: <20170116082927.29416-1-quwenruo@cn.fujitsu.com>
+CC: <dsterba@suse.com>
+Subject: [PATCH v3 1/3] btrfs-progs: cmds-check.c: supports inode nbytes fix in lowmem
+Date: Thu, 12 Jan 2017 11:53:28 +0800
+Message-ID: <20170112035330.21376-1-suy.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-!!! DON'T MERGE THIS PATCH !!!
+Added 'repair_inode_item' which dispatches functions such as
+'repair_inode__nbytes_lowmem' to correct errors and
+'struct inode_item_fix_info' to store correct values and errors.
 
-When dev-replace and scrub are run at the same time, dev-replace can be
-canceled. It's quite common for btrfs/069.
-
-While in that case, target device can be destroyed, leading to a
-user-after-free bug:
-
-     Process A (dev-replace)         |         Process B(scrub)
-----------------------------------------------------------------------
-                                     |(Any RW is OK)
-                                     |scrub_setup_recheck_block()
-                                     ||- btrfs_map_sblock()
-                                     |   Got a bbio with tgtdev
-btrfs_dev_replace_finishing()        |
-|- btrfs_destory_dev_replace_tgtdev()|
-   |- call_rcu(free_device)          |
-      |- __free_device()             |
-         |- kfree(device)            |
-                                     | Scrub worker:
-                                     | Access bbio->stripes[], which
-                                     | contains tgtdev.
-                                     | This triggers general protection.
-
-The bug is mostly common for RAID5/6 since there are abuse of workqueue
-to delay its work, while it's still possible for other profile to
-trigger the bug.
-
-This patch introduces 'tgtdev_refs' and 'tgtdev_wait' for btrfs_device
-to wait for all its user released the target device.
-
-Currently the patch only works for profiles other than RAID5/6.
-RAID5/6 can cause deadlock when scrub is finished or canceled.
-Still digging the cause for RAID5/6
-
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/dev-replace.c |  7 ++++++-
- fs/btrfs/volumes.c     | 36 +++++++++++++++++++++++++++++++++++-
- fs/btrfs/volumes.h     | 10 ++++++++++
- 3 files changed, 51 insertions(+), 2 deletions(-)
+v2: reassign err to info.err after repaired in process_one_leaf_v2
+v3: none
+---
+ cmds-check.c | 166 +++++++++++++++++++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 155 insertions(+), 11 deletions(-)
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 5de280b9ad73..794a6a0bedf2 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -558,7 +558,6 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
- 			  rcu_str_deref(src_device->name),
- 			  src_device->devid,
- 			  rcu_str_deref(tgt_device->name));
--	tgt_device->is_tgtdev_for_dev_replace = 0;
- 	tgt_device->devid = src_device->devid;
- 	src_device->devid = BTRFS_DEV_REPLACE_DEVID;
- 	memcpy(uuid_tmp, tgt_device->uuid, sizeof(uuid_tmp));
-@@ -579,6 +578,12 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
- 
- 	btrfs_dev_replace_unlock(dev_replace, 1);
- 
-+	/*
-+	 * Only change is_tgtdev_for_dev_replace flag after all its
-+	 * users get released.
-+	 */
-+	wait_target_device(tgt_device);
-+	tgt_device->is_tgtdev_for_dev_replace = 0;
- 	btrfs_rm_dev_replace_blocked(fs_info);
- 
- 	btrfs_rm_dev_replace_remove_srcdev(fs_info, src_device);
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index bb8592e1a364..74a6ee981b78 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2064,6 +2064,7 @@ void btrfs_destroy_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
- 	WARN_ON(!tgtdev);
- 	mutex_lock(&fs_info->fs_devices->device_list_mutex);
- 
-+	wait_target_device(tgtdev);
- 	btrfs_sysfs_rm_device_link(fs_info->fs_devices, tgtdev);
- 
- 	if (tgtdev->bdev)
-@@ -2598,6 +2599,8 @@ int btrfs_init_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
- 	device->is_tgtdev_for_dev_replace = 1;
- 	device->mode = FMODE_EXCL;
- 	device->dev_stats_valid = 1;
-+	atomic_set(&device->tgtdev_refs, 0);
-+	init_waitqueue_head(&device->tgtdev_wait);
- 	set_blocksize(device->bdev, 4096);
- 	device->fs_devices = fs_info->fs_devices;
- 	list_add(&device->dev_list, &fs_info->fs_devices->devices);
-@@ -2624,6 +2627,8 @@ void btrfs_init_dev_replace_tgtdev_for_resume(struct btrfs_fs_info *fs_info,
- 	tgtdev->sector_size = sectorsize;
- 	tgtdev->fs_info = fs_info;
- 	tgtdev->in_fs_metadata = 1;
-+	atomic_set(&tgtdev->tgtdev_refs, 0);
-+	init_waitqueue_head(&tgtdev->tgtdev_wait);
- }
- 
- static noinline int btrfs_update_device(struct btrfs_trans_handle *trans,
-@@ -5302,6 +5307,32 @@ static struct btrfs_bio *alloc_btrfs_bio(int total_stripes, int real_stripes)
- 	return bbio;
- }
- 
-+static void pin_bbio_target_device(struct btrfs_bio *bbio)
-+{
-+	int i;
-+
-+	for (i = 0; i < bbio->num_stripes; i++) {
-+		struct btrfs_device *device = bbio->stripes[i].dev;
-+
-+		if (device->is_tgtdev_for_dev_replace)
-+			atomic_inc(&device->tgtdev_refs);
-+	}
-+}
-+
-+static void unpin_bbio_target_device(struct btrfs_bio *bbio)
-+{
-+	int i;
-+
-+	for (i = 0; i < bbio->num_stripes; i++) {
-+		struct btrfs_device *device = bbio->stripes[i].dev;
-+
-+		if (device->is_tgtdev_for_dev_replace) {
-+			atomic_dec(&device->tgtdev_refs);
-+			wake_up(&device->tgtdev_wait);
-+		}
-+	}
-+}
-+
- void btrfs_get_bbio(struct btrfs_bio *bbio)
- {
- 	WARN_ON(!atomic_read(&bbio->refs));
-@@ -5312,8 +5343,10 @@ void btrfs_put_bbio(struct btrfs_bio *bbio)
- {
- 	if (!bbio)
- 		return;
--	if (atomic_dec_and_test(&bbio->refs))
-+	if (atomic_dec_and_test(&bbio->refs)) {
-+		unpin_bbio_target_device(bbio);
- 		kfree(bbio);
-+	}
- }
- 
- static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
-@@ -5868,6 +5901,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
- 		bbio->stripes[0].physical = physical_to_patch_in_first_stripe;
- 		bbio->mirror_num = map->num_stripes + 1;
- 	}
-+	pin_bbio_target_device(bbio);
- out:
- 	if (dev_replace_is_ongoing) {
- 		btrfs_dev_replace_clear_lock_blocking(dev_replace);
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 811328984702..1b4069dbe1c3 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -149,6 +149,10 @@ struct btrfs_device {
- 	/* Counter to record the change of device stats */
- 	atomic_t dev_stats_ccnt;
- 	atomic_t dev_stat_values[BTRFS_DEV_STAT_VALUES_MAX];
-+
-+	/* To ensure we wait this target device before destroying it */
-+	atomic_t tgtdev_refs;
-+	wait_queue_head_t tgtdev_wait;
+diff --git a/cmds-check.c b/cmds-check.c
+index 1dba298..dad10cb 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -371,6 +371,17 @@ struct root_item_info {
  };
  
  /*
-@@ -538,4 +542,10 @@ struct list_head *btrfs_get_fs_uuids(void);
- void btrfs_set_fs_info_ptr(struct btrfs_fs_info *fs_info);
- void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info);
++ * Use inode_item_fix_info as function check_inode_item's arg.
++ */
++struct inode_item_fix_info {
++	u64 ino;
++	u64 isize;
++	u64 nbytes;
++
++	int err;
++};
++
++/*
+  * Error bit for low memory mode check.
+  *
+  * Currently no caller cares about it yet.  Just internal use for error
+@@ -1866,13 +1877,16 @@ struct node_refs {
+ static int update_nodes_refs(struct btrfs_root *root, u64 bytenr,
+ 			     struct node_refs *nrefs, u64 level);
+ static int check_inode_item(struct btrfs_root *root, struct btrfs_path *path,
+-			    unsigned int ext_ref);
+-
++			    unsigned int ext_ref,
++			    struct inode_item_fix_info *info);
++static int repair_inode_item(struct btrfs_root *root,
++			     struct inode_item_fix_info *info);
+ static int process_one_leaf_v2(struct btrfs_root *root, struct btrfs_path *path,
+ 			       struct node_refs *nrefs, int *level, int ext_ref)
+ {
+ 	struct extent_buffer *cur = path->nodes[0];
+ 	struct btrfs_key key;
++	struct inode_item_fix_info info;
+ 	u64 cur_bytenr;
+ 	u32 nritems;
+ 	u64 first_ino = 0;
+@@ -1881,6 +1895,7 @@ static int process_one_leaf_v2(struct btrfs_root *root, struct btrfs_path *path,
+ 	int ret = 0; /* Final return value */
+ 	int err = 0; /* Positive error bitmap */
  
-+static inline void wait_target_device(struct btrfs_device *tgtdev)
++	memset(&info, 0, sizeof(info));
+ 	cur_bytenr = cur->start;
+ 
+ 	/* skip to first inode item or the first inode number change */
+@@ -1900,8 +1915,27 @@ static int process_one_leaf_v2(struct btrfs_root *root, struct btrfs_path *path,
+ 	path->slots[0] = i;
+ 
+ again:
+-	err |= check_inode_item(root, path, ext_ref);
++	err |= check_inode_item(root, path, ext_ref, &info);
++
++	if (repair && (err & ~LAST_ITEM)) {
++		ret = repair_inode_item(root, &info);
+ 
++		if (ret < 0)
++			goto out;
++		/*
++		 * if some errors was repaired, path shall be searched
++		 * again since path has been changed
++		 */
++		if (ret == 0) {
++			btrfs_item_key_to_cpu(path->nodes[0], &key,
++					      path->slots[0]);
++			btrfs_release_path(path);
++			btrfs_search_slot(NULL, root, &key, path, 0, 0);
++
++			cur = path->nodes[0];
++			err = info.err;
++		}
++	}
+ 	if (err & LAST_ITEM)
+ 		goto out;
+ 
+@@ -2211,7 +2245,8 @@ out:
+ }
+ 
+ static int check_inode_item(struct btrfs_root *root, struct btrfs_path *path,
+-			    unsigned int ext_ref);
++			    unsigned int ext_ref,
++			    struct inode_item_fix_info *info);
+ 
+ static int walk_down_tree_v2(struct btrfs_root *root, struct btrfs_path *path,
+ 			     int *level, struct node_refs *nrefs, int ext_ref)
+@@ -2293,7 +2328,7 @@ static int walk_down_tree_v2(struct btrfs_root *root, struct btrfs_path *path,
+ 		}
+ 
+ 		ret = check_child_node(root, cur, path->slots[*level], next);
+-		if (ret < 0) 
++		if (ret < 0)
+ 			break;
+ 
+ 		if (btrfs_is_leaf(next))
+@@ -2383,6 +2418,105 @@ out:
+ 	return ret;
+ }
+ 
++/*
++ * Set inode's nbytes to correct value in @info
++ *
++ * Returns <0  means on error
++ * Returns  0  means successful repair
++ */
++static int repair_inode_nbytes_lowmem(struct btrfs_trans_handle *trans,
++				      struct btrfs_root *root,
++				      struct inode_item_fix_info *info)
 +{
-+	if (!tgtdev || !tgtdev->is_tgtdev_for_dev_replace)
-+		return;
-+	wait_event(tgtdev->tgtdev_wait, atomic_read(&tgtdev->tgtdev_refs) == 0);
++	struct btrfs_inode_item *ei;
++	struct btrfs_key key;
++	struct btrfs_path path;
++	int ret;
++
++	ASSERT(info);
++	key.objectid = info->ino;
++	key.type = BTRFS_INODE_ITEM_KEY;
++	key.offset = 0;
++
++	ret = btrfs_search_slot(trans, root, &key, &path, 0, 1);
++	if (ret < 0)
++		goto out;
++	if (ret > 0) {
++		ret = -ENOENT;
++		goto out;
++	}
++
++	ei = btrfs_item_ptr(path.nodes[0], path.slots[0],
++			    struct btrfs_inode_item);
++	btrfs_set_inode_nbytes(path.nodes[0], ei, info->nbytes);
++	btrfs_mark_buffer_dirty(path.nodes[0]);
++	printf("reset nbytes for inode %llu root %llu\n", info->ino,
++	       root->root_key.objectid);
++out:
++	btrfs_release_path(&path);
++	return ret;
 +}
- #endif
++
++/*
++ * repair_inode_item - repair inode item errors
++ *
++ * Repair the inode item if error can be repaired. Any caller should compare
++ * @info->err with the before, if err diffs, some contexts should be notified.
++ *
++ * @root:     subvolume_root
++ * @info:     contains correct values and error
++ *            when it returns, @info stores the unrepairable errors
++ *
++ * Returns < 0 represents repair function error
++ * Returns 0   represents have fixed some errors or no error at all
++ * Returns > 0 represents it can't fix any error
++ */
++static int repair_inode_item(struct btrfs_root *root,
++			     struct inode_item_fix_info *info)
++{
++	struct btrfs_trans_handle *trans;
++	int ret = 0;
++	int err;
++
++	ASSERT(info);
++	err = info->err;
++	if (!err) {
++		/* nothing to repair */
++		ret = 0;
++		goto out;
++	}
++	if (!(err & NBYTES_ERROR)) {
++		warning("root %llu INODE[%llu] have error(s) can't repair, error : %d",
++			root->objectid,	info->ino, err);
++		/* can't fix any errors, ret should be positive */
++		ret = err;
++		goto out;
++	}
++
++	trans = btrfs_start_transaction(root, 1);
++	if (IS_ERR(trans)) {
++		ret = PTR_ERR(trans);
++		goto out;
++	}
++
++	if (err & NBYTES_ERROR) {
++		ret = repair_inode_nbytes_lowmem(trans, root, info);
++		if (ret == 0)
++			err &= ~NBYTES_ERROR;
++		else if (ret < 0)
++			goto out;
++	}
++
++	if (err != info->err) {
++		info->err = err;
++		ret = 0;
++	}
++
++	btrfs_commit_transaction(trans, root);
++out:
++	return ret;
++}
++
+ static int repair_inode_isize(struct btrfs_trans_handle *trans,
+ 			      struct btrfs_root *root, struct btrfs_path *path,
+ 			      struct inode_record *rec)
+@@ -4781,7 +4915,8 @@ static int check_file_extent(struct btrfs_root *root, struct btrfs_key *fkey,
+  * Return >0 for error or hit the traversal is done(by error bitmap)
+  */
+ static int check_inode_item(struct btrfs_root *root, struct btrfs_path *path,
+-			    unsigned int ext_ref)
++			    unsigned int ext_ref,
++			    struct inode_item_fix_info *info)
+ {
+ 	struct extent_buffer *node;
+ 	struct btrfs_inode_item *ii;
+@@ -4821,6 +4956,7 @@ static int check_inode_item(struct btrfs_root *root, struct btrfs_path *path,
+ 	dir = imode_to_type(mode) == BTRFS_FT_DIR;
+ 	nlink = btrfs_inode_nlink(node, ii);
+ 	nodatasum = btrfs_inode_flags(node, ii) & BTRFS_INODE_NODATASUM;
++	info->ino = inode_id;
+ 
+ 	while (1) {
+ 		ret = btrfs_next_item(root, path);
+@@ -4924,11 +5060,13 @@ out:
+ 
+ 		if (nbytes != extent_size) {
+ 			err |= NBYTES_ERROR;
++			info->nbytes = extent_size;
+ 			error("root %llu INODE[%llu] nbytes(%llu) not equal to extent_size(%llu)",
+ 			      root->objectid, inode_id, nbytes, extent_size);
+ 		}
+ 	}
+ 
++	info->err = err & ~LAST_ITEM;
+ 	return err;
+ }
+ 
+@@ -4936,9 +5074,11 @@ static int check_fs_first_inode(struct btrfs_root *root, unsigned int ext_ref)
+ {
+ 	struct btrfs_path path;
+ 	struct btrfs_key key;
++	struct inode_item_fix_info info;
+ 	int err = 0;
+ 	int ret;
+ 
++	memset(&info, 0, sizeof(info));
+ 	btrfs_init_path(&path);
+ 	key.objectid = BTRFS_FIRST_FREE_OBJECTID;
+ 	key.type = BTRFS_INODE_ITEM_KEY;
+@@ -4952,12 +5092,17 @@ static int check_fs_first_inode(struct btrfs_root *root, unsigned int ext_ref)
+ 		err |= INODE_ITEM_MISSING;
+ 	}
+ 
+-	err |= check_inode_item(root, &path, ext_ref);
++	err |= check_inode_item(root, &path, ext_ref, &info);
+ 	err &= ~LAST_ITEM;
+ 	if (err && !ret)
+ 		ret = -EIO;
+ out:
+ 	btrfs_release_path(&path);
++	if (repair) {
++		ret = repair_inode_item(root, &info);
++		if (!info.err)
++			ret = 0;
++	}
+ 	return ret;
+ }
+ 
+@@ -9322,7 +9467,7 @@ static int check_extent_refs(struct btrfs_root *root,
+ 		/*
+ 		 * Although it's not a extent ref's problem, we reuse this
+ 		 * routine for error reporting.
+-		 * No repair function yet.
++		 * No repair function yet
+ 		 */
+ 		if (rec->crossing_stripes) {
+ 			fprintf(stderr,
+@@ -12719,11 +12864,10 @@ int cmd_check(int argc, char **argv)
+ 	}
+ 
+ 	/*
+-	 * Not supported yet
++	 * Support partailly
+ 	 */
+ 	if (repair && check_mode == CHECK_MODE_LOWMEM) {
+-		error("low memory mode doesn't support repair yet");
+-		exit(1);
++		warning("low memory mode supports repair partailly");
+ 	}
+ 
+ 	radix_tree_init();
 -- 
 2.11.0
 

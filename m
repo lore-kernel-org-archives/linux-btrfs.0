@@ -1,92 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56520 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750893AbdAQPqm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Jan 2017 10:46:42 -0500
-Date: Tue, 17 Jan 2017 16:46:37 +0100
-From: Jan Kara <jack@suse.cz>
-To: Miklos Szeredi <miklos@szeredi.hu>
-Cc: Jan Kara <jack@suse.cz>, linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, lsf-pc@lists.linux-foundation.org
-Subject: Re: [Lsf-pc] [LSF/MM TOPIC] sharing pages between mappings
-Message-ID: <20170117154637.GT2517@quack2.suse.cz>
-References: <CAJfpegv9EhT4Y3QjTZBHoMKSiVGtfmTGPhJp_rh3a7=rFCHu5A@mail.gmail.com>
- <20170111115143.GJ16116@quack2.suse.cz>
- <CAJfpeguuBgypYh3G1Ew1a37o4WuRozPzLe=D_gh2BbtYXE=zzg@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAJfpeguuBgypYh3G1Ew1a37o4WuRozPzLe=D_gh2BbtYXE=zzg@mail.gmail.com>
+Received: from mail-wm0-f65.google.com ([74.125.82.65]:36118 "EHLO
+        mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750825AbdALOA7 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 12 Jan 2017 09:00:59 -0500
+Received: by mail-wm0-f65.google.com with SMTP id r126so3893877wmr.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Jan 2017 06:00:59 -0800 (PST)
+From: Nikolay Borisov <n.borisov.lkml@gmail.com>
+To: dsterba@suse.com
+Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <n.borisov.lkml@gmail.com>
+Subject: [PATCH 03/24] btrfs: Make btrfs_record_snapshot_destroy take btrfs_inode
+Date: Thu, 12 Jan 2017 16:00:29 +0200
+Message-Id: <1484229650-24554-4-git-send-email-n.borisov.lkml@gmail.com>
+In-Reply-To: <1484229650-24554-1-git-send-email-n.borisov.lkml@gmail.com>
+References: <1484229650-24554-1-git-send-email-n.borisov.lkml@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed 11-01-17 15:13:19, Miklos Szeredi wrote:
-> On Wed, Jan 11, 2017 at 12:51 PM, Jan Kara <jack@suse.cz> wrote:
-> > On Wed 11-01-17 11:29:28, Miklos Szeredi wrote:
-> >> I know there's work on this for xfs, but could this be done in generic mm
-> >> code?
-> >>
-> >> What are the obstacles?  page->mapping and page->index are the obvious
-> >> ones.
-> >
-> > Yes, these two are the main that come to my mind. Also you'd need to
-> > somehow share the mapping->i_mmap tree so that unmap_mapping_range() works.
-> >
-> >> If that's too difficult is it maybe enough to share mappings between
-> >> files while they are completely identical and clone the mapping when
-> >> necessary?
-> >
-> > Well, but how would the page->mapping->host indirection work? Even if you
-> > have identical contents of the mappings, you still need to be aware there
-> > are several inodes behind them and you need to pick the right one
-> > somehow...
-> 
-> When do we actually need page->mapping->host?  The only place where
-> it's not available is page writeback.  Then we can know that the
-> original page was already cow-ed and after being cowed, the page
-> belong only to a single inode.
+Signed-off-by: Nikolay Borisov <n.borisov.lkml@gmail.com>
+---
+ fs/btrfs/ioctl.c    | 2 +-
+ fs/btrfs/tree-log.c | 8 ++++----
+ fs/btrfs/tree-log.h | 2 +-
+ 3 files changed, 6 insertions(+), 6 deletions(-)
 
-Yeah, in principle the information may exist, however propagating it to all
-appropriate place may be a mess.
-
-> What then happens if the newly written data is cloned before being
-> written back?   We can either write back the page during the clone, so
-> that only clean pages are ever shared.  Or we can let dirty pages be
-> shared between inodes.
-
-The former is what I'd suggest for sanity... I.e. share only read-only
-pages.
-
-> In that latter case the question is: do we
-> care about which inode we use for writing back the data?  Is the inode
-> needed at all?  I don't know enough about filesystem internals to see
-> clearly what happens in such a situation.
-> 
-> >> All COW filesystems would benefit, as well as layered ones: lots of
-> >> fuse fs, and in some cases overlayfs too.
-> >>
-> >> Related:  what can DAX do in the presence of cloned block?
-> >
-> > For DAX handling a block COW should be doable if that is what you are
-> > asking about. Handling of blocks that can be written to while they are
-> > shared will be rather difficult (you have problems with keeping dirty bits
-> > in the radix tree consistent if nothing else).
-> 
-> What happens if you do:
-> 
-> - clone_file_range(A, off1, B, off2, len);
-> 
-> - mmap both A and B using DAX.
-> 
-> The mapping will contain the same struct page for two different mappings, no?
-
-Not the same struct page, as DAX does not have pages with struct page.
-However the same pfn will be underlying off1 of A and off2 of B. And for
-reads this is just fine. Once you want to write, you have to make sure you
-COW before you start modifying the data or you'll get data corruption (we
-synchronize operations using the exceptional entries in mapping->page_tree
-in DAX and these are separate for A and B).
-
-									Honza
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index e8e1f5f5f93a..7d1b5378de49 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2497,7 +2497,7 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
+ 	trans->block_rsv = &block_rsv;
+ 	trans->bytes_reserved = block_rsv.size;
+ 
+-	btrfs_record_snapshot_destroy(trans, dir);
++	btrfs_record_snapshot_destroy(trans, BTRFS_I(dir));
+ 
+ 	ret = btrfs_unlink_subvol(trans, root, dir,
+ 				dest->root_key.objectid,
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 0b1e2629ea48..db787d957b74 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -5787,11 +5787,11 @@ void btrfs_record_unlink_dir(struct btrfs_trans_handle *trans,
+  * parent root and tree of tree roots trees, etc) are done.
+  */
+ void btrfs_record_snapshot_destroy(struct btrfs_trans_handle *trans,
+-				   struct inode *dir)
++				   struct btrfs_inode *dir)
+ {
+-	mutex_lock(&BTRFS_I(dir)->log_mutex);
+-	BTRFS_I(dir)->last_unlink_trans = trans->transid;
+-	mutex_unlock(&BTRFS_I(dir)->log_mutex);
++	mutex_lock(&dir->log_mutex);
++	dir->last_unlink_trans = trans->transid;
++	mutex_unlock(&dir->log_mutex);
+ }
+ 
+ /*
+diff --git a/fs/btrfs/tree-log.h b/fs/btrfs/tree-log.h
+index 69702eef9603..e08ce78b2ad4 100644
+--- a/fs/btrfs/tree-log.h
++++ b/fs/btrfs/tree-log.h
+@@ -83,7 +83,7 @@ void btrfs_record_unlink_dir(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_inode *dir, struct btrfs_inode *inode,
+ 			     int for_rename);
+ void btrfs_record_snapshot_destroy(struct btrfs_trans_handle *trans,
+-				   struct inode *dir);
++				   struct btrfs_inode *dir);
+ int btrfs_log_new_name(struct btrfs_trans_handle *trans,
+ 			struct inode *inode, struct inode *old_dir,
+ 			struct dentry *parent);
 -- 
-Jan Kara <jack@suse.com>
-SUSE Labs, CR
+2.7.4
+

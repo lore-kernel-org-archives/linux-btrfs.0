@@ -1,79 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:58053 "EHLO
+Received: from mailgw-01.dd24.net ([193.46.215.41]:58166 "EHLO
         mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S965062AbdALBH3 (ORCPT
+        with ESMTP id S1762146AbdALBNv (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Jan 2017 20:07:29 -0500
+        Wed, 11 Jan 2017 20:13:51 -0500
 Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
-        by mailgw-01.dd24.net (Postfix) with ESMTP id D274D5FC79
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Jan 2017 01:07:25 +0000 (UTC)
+        by mailgw-01.dd24.net (Postfix) with ESMTP id C32395FC71
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Jan 2017 01:13:47 +0000 (UTC)
 Received: from mailgw-01.dd24.net ([192.168.1.35])
         by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10235)
-        with ESMTP id SWsAPekMCfEd for <linux-btrfs@vger.kernel.org>;
-        Thu, 12 Jan 2017 01:07:23 +0000 (UTC)
+        with ESMTP id 9LasJ5I__RAd for <linux-btrfs@vger.kernel.org>;
+        Thu, 12 Jan 2017 01:13:45 +0000 (UTC)
 Received: from heisenberg.fritz.box (host-82-135-95-36.customer.m-online.net [82.135.95.36])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
         by mailgw-01.dd24.net (Postfix) with ESMTPSA
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Jan 2017 01:07:23 +0000 (UTC)
-Message-ID: <1484183243.10253.5.camel@scientia.net>
-Subject: corruption: yet another one after deleting a ro snapshot
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Jan 2017 01:13:45 +0000 (UTC)
+Message-ID: <1484183624.10253.7.camel@scientia.net>
+Subject: Re: corruption: yet another one after deleting a ro snapshot
 From: Christoph Anton Mitterer <calestyo@scientia.net>
 To: linux-btrfs@vger.kernel.org
-Date: Thu, 12 Jan 2017 02:07:23 +0100
+Date: Thu, 12 Jan 2017 02:13:44 +0100
+In-Reply-To: <1484183243.10253.5.camel@scientia.net>
+References: <1484183243.10253.5.camel@scientia.net>
 Content-Type: multipart/signed; micalg="sha-512";
         protocol="application/x-pkcs7-signature";
-        boundary="=-iTqfA26F3c7gOEPDivh4"
+        boundary="=-BUhfJGe9vttXxl/uYDLO"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-iTqfA26F3c7gOEPDivh4
+--=-BUhfJGe9vttXxl/uYDLO
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-Hey.
+Oops.... forgot to copy and past the actual fsck output O:-)
+# btrfs check /dev/mapper/data-a3 ; echo $?
+Checking filesystem on /dev/mapper/data-a3
+UUID: 326d292d-f97b-43ca-b1e8-c722d3474719
+checking extents
+ref mismatch on [37765120 16384] extent item 0, found 1
+Backref 37765120 parent 6403 root 6403 not found in extent tree
+backpointer mismatch on [37765120 16384]
+owner ref check failed [37765120 16384]
+ref mismatch on [51200000 16384] extent item 0, found 1
+Backref 51200000 parent 6403 root 6403 not found in extent tree
+backpointer mismatch on [51200000 16384]
+owner ref check failed [51200000 16384]
+ref mismatch on [78135296 16384] extent item 0, found 1
+Backref 78135296 parent 6403 root 6403 not found in extent tree
+backpointer mismatch on [78135296 16384]
+owner ref check failed [78135296 16384]
+ref mismatch on [5960381235200 16384] extent item 0, found 1
+Backref 5960381235200 parent 6403 root 6403 not found in extent tree
+backpointer mismatch on [5960381235200 16384]
+checking free space cache
+checking fs roots
+checking csums
+checking root refs
+found 7483995824128 bytes used err is 0
+total csum bytes: 7296183880
+total tree bytes: 10875944960
+total fs tree bytes: 2035286016
+total extent tree bytes: 1015988224
+btree space waste bytes: 920641324
+file data blocks allocated: 8267656339456
+=C2=A0referenced 8389440876544
+0
 
-Linux heisenberg 4.8.0-2-amd64 #1 SMP Debian 4.8.15-2 (2017-01-04)
-x86_64 GNU/Linux
-btrfs-progs v4.7.3
-
-I've had this already at least once some year ago or so:
-
-I was doing backups (incremental via send/receive).
-After everything was copied, I unmounted the destination fs, made a
-fsck, all fine.
-Then I mounted it again and did nothing but deleting the old snapshot.
-After that, another fsck with the following errors:
 
 
-Usually I have quite positive experiences with btrfs (things seem to be
-fine even after a crash or accidental removal of the USB cable which
-attaches the HDD)... but I'm every time shocked again, when supposedly
-simple and basic operations like this cause such corruptions.
-Kinda gives one the feeling as if quite deep bugs are still everywhere
-in place, especially as such "hard to explain" errors happens every now
-and then (take e.g. my mails "strange btrfs deadlock", "csum errors
-during btrfs check" from the last days... and I don't seem to be the
-only one who suffers from such problems, even with the basic parts of
-btrfs which are considered to be stable - I mean we're not talking
-about RAID56 here)... sigh :-(
+Also I've found the previous occasion of the apparently same issue:
+https://www.spinics.net/lists/linux-btrfs/msg45190.html
 
 
-While these files are precious, I have in total copies of all these
-files, 3 on btrfs and 1 on ext4 (just to be on the safe side if btrfs
-gets corrupted for no good reason :-( ).... so I could do some
-debugging here if some developer tells me what to do.
-
-
-Anyway... what should I do to repair the fs? Or is it better to simply
-re-create that backup from scratch?
+What's the suggested way in reporting bugs? Here on the list?
+kernel.org bugzilla?
+It's a bit worrying that even just I myself has reported quite a number
+of likely bugs here on the ML which never got a reaction from a
+developer and thus likely still sleep under to hood :-/
 
 
 Cheers,
 Chris.
---=-iTqfA26F3c7gOEPDivh4
+--=-BUhfJGe9vttXxl/uYDLO
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -165,25 +176,25 @@ Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
 MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
 cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
 QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
-SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwMTEyMDEwNzIzWjBPBgkqhkiG9w0BCQQxQgRAOkAg
-8vf+AWucHYR6SnKT8U4cKMWZufHM5x/1u/UsYJdPkeWocpTnglxCGYQskP3Oa8YicKTFHE+aTg/b
-dBhJNzCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
+SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwMTEyMDExMzQ1WjBPBgkqhkiG9w0BCQQxQgRAFBZv
+I3CFs7bPDjy/j6xrIFaICuRbOv6zdW6CNtq16aggybssVfQFpal1mTiJR0ZKwIA1vptJd4eP+Fit
+qxKmFDCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
 bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
 AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
 DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
 VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
-Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAJshx
-VaDxKQjmYnD45fyG/N4HwWSjGK4v1KiSctId4SVdx3WKSYSk7qtEMI2Gm2cSTaa0YGe4AXTc3cUk
-YfXpz3xTFqzPrKJuA65CLkroFAGtRYpyTvKHtTgzHySH3nmIA8pjd8jMhLHAfL9w/sQV4oPh87C2
-yq4l/SVccb60/5ysTxnc1Kzd78a6STusX3arfezZb53TsECr1qhiMD+hp2uclHjkZApzB9au0/sM
-sqqwu6ulB52EFBXn70latI6ry5YXb6YzHydLBCfQ1HgRsy9R/eh/j9eMYQ4NWKPe9/vD6sXsdsvh
-jVDlXr6+VliestIS60BiPZ+kxZJIFBhXHKD9xCgJmcSLKDo2UuzbVuhCSAbVXXpjmqLX0KcHTC3V
-oXeFhvBOUeHFQNEdysbh7mVluAk+QHiVKOOCXBNItAv8X7pfErSPto3j0iXu7FzFb6f+/1nsMtlN
-l2NqE4sY4rPSeBQ4eeOxnjdYjxqIa9At5W7KvPa3VbAXKcfARhcYRfjd7/yIzGwJyPRmpxWi9Ewt
-UPezy+n1FIAW+Q39ewj2QYfGbrd86BknSl0v0Gpz62EIGKKbxEdF6coZmr10By/eYOR5IHqUIzS0
-lri5WYEHi1HwtqshFWj/8nTRYdd81tQvgfG8hK55UfD2wNSBRXpFAg8/esNh0FuvKyVGyOAAAAAA
+Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAlxuy
+RrmhWLIUriC97Uar4K5BhH0AMTRs9YPsU9glbSET9GusehTWgT+X2NzQ4dLXj5K4dn0w0rvECjUN
+La0NJOTP1rb5oij8se5UofhM6AYteUQapVx9qZHKbpisVYgS7xFHj8g+ptMTC0PZ8/P7lBrAn0Ag
+iUV5BD7ILqWoHziblhyF4hnDPX/KP5cICIHbtw6Sb9AIn6m2skK45NxwAEFMJvd/lXYHM5c2mCtJ
+y/zdjxpuIxVjFGxBonq0ZyzPy7Amp/f5oJoJHsQlhmt2u3hc/z1k46S3DI5XpcYsuKKFYwFdt+Wj
+vIQPoF8n0vXbI395C/I4hJ2CImKLpwbXXtNLeoXuYOc8uLbZ2nKjf1ft4Y9E5a8aLuCFYE2TQpyv
+ZXc2OPTZjZEJj2SDI5wxg8sAoVge6LDtoIDk+phvfTVSBSaTrKkwp+NGy47pf3Tzt3Hx3sdLfkfC
+LxhE9I3xx6NR0asDK52Km1qk7IQQrevhGC6SFSefA329LSjT9e9BXlItFRfLrxm2TTumur4XYtxc
+VUNANOVql8+sf4WF53nZuOQs2i2ujYNsCU1QMNLiySnskQXYfWR9OV1e+E6tE/YGjos4qdGHggiI
+PkvPr69bceYrGkIvgHGCpdx6wB1nlxcZQju+tG6m108pvC7tHrvfZIE4lVsy4EXHCB5RV4MAAAAA
 AAA=
 
 
---=-iTqfA26F3c7gOEPDivh4--
+--=-BUhfJGe9vttXxl/uYDLO--
 

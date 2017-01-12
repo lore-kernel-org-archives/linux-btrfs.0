@@ -1,111 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f65.google.com ([74.125.82.65]:34627 "EHLO
-        mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750815AbdALM6O (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 12 Jan 2017 07:58:14 -0500
-Received: by mail-wm0-f65.google.com with SMTP id c85so3484028wmi.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Jan 2017 04:58:13 -0800 (PST)
-Content-Type: text/plain; charset=utf-8
-Mime-Version: 1.0 (Mac OS X Mail 10.2 \(3259\))
-Subject: Re: Best practices for raid 1
-From: Tomasz Kusmierz <tom.kusmierz@gmail.com>
-In-Reply-To: <3a92c3f2-c1a2-0d3f-7516-bd67b15664ff@gmail.com>
-Date: Thu, 12 Jan 2017 12:58:08 +0000
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Vinko Magecic <vinko.magecic@construction.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Message-Id: <CB82EA7F-E9A7-42F7-B51F-2A9FDA2BC1E9@gmail.com>
-References: <MWHPR10MB1472DFDAF96ED8C7E5EB9FC494670@MWHPR10MB1472.namprd10.prod.outlook.com>
- <CAJCQCtSExodPXzv67PL1ORFyFsQNtyHNB_px8BbEEq+a-6K6+Q@mail.gmail.com>
- <450800E6-A053-48E2-AE08-45B5E5F71E9E@gmail.com>
- <3a92c3f2-c1a2-0d3f-7516-bd67b15664ff@gmail.com>
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Received: from p3nlsmtpcp01-02.prod.phx3.secureserver.net ([184.168.200.140]:42958
+        "EHLO p3nlsmtpcp01-02.prod.phx3.secureserver.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750730AbdALOiw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 12 Jan 2017 09:38:52 -0500
+MIME-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Date: Thu, 12 Jan 2017 07:37:44 -0700
+From: lakshmipathi.g@giis.co.in
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btfs-progs: fsck-tests: corrupt nlink value test
+In-Reply-To: <77e26cd7-0390-d02e-3dda-7107a2c68e7d@cn.fujitsu.com>
+References: <20170107231955.GA24631@fedori>
+ <c9e21f30-2231-94cd-09ed-8422951e7b69@cn.fujitsu.com>
+ <fdc7f38883f4333cad73b7a92a1ba00a@giis.co.in>
+ <77e26cd7-0390-d02e-3dda-7107a2c68e7d@cn.fujitsu.com>
+Message-ID: <f5ef3a5bec7fccbd06559eda6a7cf59a@giis.co.in>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-That was long winded way of saying “there is no mechanism in btrfs to tell you exactly which device is missing” but thanks anyway.
+Hi Qu,
 
-> On 12 Jan 2017, at 12:47, Austin S. Hemmelgarn <ahferroin7@gmail.com> wrote:
-> 
-> On 2017-01-11 15:37, Tomasz Kusmierz wrote:
->> I would like to use this thread to ask few questions:
->> 
->> If we have 2 devices dying on us and we run RAID6 - this theoretically will still run (despite our current problems). Now let’s say that we booted up raid6 of 10 disk and 2 of them dies but operator does NOT know what are dev ID of disk that died, How does one removes those devices other than using “-missing” ??? I ask because it’s in multiple places stated to use “replace” when your device dies but nobody ever states how to find out which /dev/ node is actually missing  …. so when I want to use a replace, I don’t know what to use within command :/ … This whole thing might have an additional complication - if FS is fool, than one would need to add disks than remove missing.
-> raid6 is a special case right now (aside from the fact that it's not safe for general usage) because it's the only profile on BTRFS that can sustain more than one failed disk.  In the case that the devices aren't actually listed as missing (most disks won't disappear unless the cabling, storage controller, or disk electronics are bad), you can use btrfs fi show to see what the mapping is.  If the disks are missing (again, not likely unless there's a pretty severe electrical failure somewhere), it's safer in that case to add enough devices to satisfy replication and storage constraints, then just run 'btrfs device delete missing' to get rid of the other disks.
->> 
->> 
->>> On 10 Jan 2017, at 21:49, Chris Murphy <lists@colorremedies.com> wrote:
->>> 
->>> On Tue, Jan 10, 2017 at 2:07 PM, Vinko Magecic
->>> <vinko.magecic@construction.com> wrote:
->>>> Hello,
->>>> 
->>>> I set up a raid 1 with two btrfs devices and came across some situations in my testing that I can't get a straight answer on.
->>>> 
->>>> 1) When replacing a volume, do I still need to `umount /path` and then `mount -o degraded ...` the good volume before doing the `btrfs replace start ...` ?
->>> 
->>> No. If the device being replaced is unreliable, use -r to limit the
->>> reads from the device being replaced.
->>> 
->>> 
->>> 
->>>> I didn't see anything that said I had to and when I tested it without mounting the volume it was able to replace the device without any issue. Is that considered bad and could risk damage or has `replace` made it possible to replace devices without umounting the filesystem?
->>> 
->>> It's always been possible even before 'replace'.
->>> btrfs dev add <dev3>
->>> btrfs dev rem <dev1>
->>> 
->>> But there are some bugs in dev replace that Qu is working on; I think
->>> they mainly negatively impact raid56 though.
->>> 
->>> The one limitation of 'replace' is that the new block device must be
->>> equal to or larger than the block device being replaced; where dev add
->>>> dev rem doesn't require this.
->>> 
->>> 
->>>> 2) Everything I see about replacing a drive says to use `/old/device /new/device` but what if the old device can't be read or no longer exists?
->>> 
->>> The command works whether the device is present or not; but if it's
->>> present and working then any errors on one device can be corrected by
->>> the other, whereas if the device is missing, then any errors on the
->>> remaining device can't be corrected. Off hand I'm not sure if the
->>> replace continues and an error just logged...I think that's what
->>> should happen.
->>> 
->>> 
->>>> Would that be a `btrfs device add /new/device; btrfs balance start /new/device` ?
->>> 
->>> dev add then dev rem; the balance isn't necessary.
->>> 
->>>> 
->>>> 3) When I have the RAID1 with two devices and I want to grow it out, which is the better practice? Create a larger volume, replace the old device with the new device and then do it a second time for the other device, or attaching the new volumes to the label/uuid one at a time and with each one use `btrfs filesystem resize devid:max /mountpoint`.
->>> 
->>> If you're replacing a 2x raid1 with two bigger replacements, you'd use
->>> 'btrfs replace' twice. Maybe it'd work concurrently, I've never tried
->>> it, but useful for someone to test and see if it explodes because if
->>> it's allowed, it should work or fail gracefully.
->>> 
->>> There's no need to do filesystem resizes when doing either 'replace'
->>> or 'dev add' followed by 'dev rem' because the fs resize is implied.
->>> First it's resized/grown with add; and then it's resized/shrink with
->>> remove. For replace there's a consolidation of steps, it's been a
->>> while since I've looked at the code so I can't tell you what steps it
->>> skips, what the state of the devices are in during the replace, which
->>> one active writes go to.
->>> 
->>> 
->>> --
->>> Chris Murphy
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->> 
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->> 
-> 
+Thanks for the details, I'll create image using these steps. Never used 
+btrfs-image before will try it out.  in the mean time: I was thinking 
+about these two approaches:
 
+--
+I agree on the dependency issue with btrfs-debug-tree. Test script will 
+break if output is changed or jumbled.
+If btrfs-debug-tree is the only issue, possible solution can be :
+
+(a) when btrfs-debug-tree breaks the scripts add a backward captiable 
+option (--print-old-format) for outputs. (or)
+(b) Use 'ls -i' to find the inode object id?  I guess that will be more 
+reliable than parsing btrfs-debug-tree output.  (or)
+(c) may be use hard-corded id, if i'm not wrong, first object id will be 
+always 256+1 = 257
+
+I slightly prefer script over image because:
+* It might be more easier to have script to add new functionality (ex: 
+corrupt nlink field from hardlink)
+* It allows option to inject corruption sequentitally.
+ex: clean image->injection corrupt-x -> run btrfsck -> fixed image -> 
+inject corruption 'variant of' x  -> repeat the process.
+* It might also be more easier to deal with possible RAID-based 
+corruption test scripts.
+--
+
+To my (QA) eyes, creating new image from 'mkfs.btrfs' for a each 
+btrfs-progs version, injecting corruption (using ls -i output) and then 
+verifying looks better. This way we can even catch any (rare) changes 
+made to mkfs.btrfs. Script makes btrfsck heavily dependent on 
+'mkfs.btrfs' which is a good thing,imo.
+
+Let me know your thoughts. thanks!
+
+Cheers.
+Lakshmipathi.G

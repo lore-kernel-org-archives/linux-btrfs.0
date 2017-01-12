@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f66.google.com ([74.125.82.66]:36471 "EHLO
-        mail-wm0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751078AbdALOBV (ORCPT
+Received: from mail-wm0-f68.google.com ([74.125.82.68]:33619 "EHLO
+        mail-wm0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751053AbdALOBR (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 12 Jan 2017 09:01:21 -0500
-Received: by mail-wm0-f66.google.com with SMTP id r126so3896441wmr.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Jan 2017 06:01:20 -0800 (PST)
+        Thu, 12 Jan 2017 09:01:17 -0500
+Received: by mail-wm0-f68.google.com with SMTP id r144so3910767wme.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Jan 2017 06:01:16 -0800 (PST)
 From: Nikolay Borisov <n.borisov.lkml@gmail.com>
 To: dsterba@suse.com
 Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <n.borisov.lkml@gmail.com>
-Subject: [PATCH 23/24] btrfs: Make count_inode_extrefs take btrfs_inode
-Date: Thu, 12 Jan 2017 16:00:49 +0200
-Message-Id: <1484229650-24554-24-git-send-email-n.borisov.lkml@gmail.com>
+Subject: [PATCH 19/24] btrfs: Make drop_one_dir_item take btrfs_inode
+Date: Thu, 12 Jan 2017 16:00:45 +0200
+Message-Id: <1484229650-24554-20-git-send-email-n.borisov.lkml@gmail.com>
 In-Reply-To: <1484229650-24554-1-git-send-email-n.borisov.lkml@gmail.com>
 References: <1484229650-24554-1-git-send-email-n.borisov.lkml@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -19,37 +19,56 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Signed-off-by: Nikolay Borisov <n.borisov.lkml@gmail.com>
 ---
- fs/btrfs/tree-log.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ fs/btrfs/tree-log.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 172faaed2658..0c5eb664640f 100644
+index 73a7e7b5aadc..834d90398cb4 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -1357,14 +1357,14 @@ static int insert_orphan_item(struct btrfs_trans_handle *trans,
- }
- 
- static int count_inode_extrefs(struct btrfs_root *root,
--			       struct inode *inode, struct btrfs_path *path)
-+			       struct btrfs_inode *inode, struct btrfs_path *path)
+@@ -842,7 +842,7 @@ static noinline int replay_one_extent(struct btrfs_trans_handle *trans,
+ static noinline int drop_one_dir_item(struct btrfs_trans_handle *trans,
+ 				      struct btrfs_root *root,
+ 				      struct btrfs_path *path,
+-				      struct inode *dir,
++				      struct btrfs_inode *dir,
+ 				      struct btrfs_dir_item *di)
  {
- 	int ret = 0;
- 	int name_len;
- 	unsigned int nlink = 0;
- 	u32 item_size;
- 	u32 cur_offset = 0;
--	u64 inode_objectid = btrfs_ino(BTRFS_I(inode));
-+	u64 inode_objectid = btrfs_ino(inode);
- 	u64 offset = 0;
- 	unsigned long ptr;
- 	struct btrfs_inode_extref *extref;
-@@ -1486,7 +1486,7 @@ static noinline int fixup_inode_link_count(struct btrfs_trans_handle *trans,
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+@@ -874,7 +874,7 @@ static noinline int drop_one_dir_item(struct btrfs_trans_handle *trans,
+ 	if (ret)
+ 		goto out;
  
- 	nlink = ret;
+-	ret = btrfs_unlink_inode(trans, root, BTRFS_I(dir), BTRFS_I(inode), name, name_len);
++	ret = btrfs_unlink_inode(trans, root, dir, BTRFS_I(inode), name, name_len);
+ 	if (ret)
+ 		goto out;
+ 	else
+@@ -1150,7 +1150,7 @@ static inline int __add_inode_ref(struct btrfs_trans_handle *trans,
+ 	di = btrfs_lookup_dir_index_item(trans, root, path, btrfs_ino(BTRFS_I(dir)),
+ 					 ref_index, name, namelen, 0);
+ 	if (di && !IS_ERR(di)) {
+-		ret = drop_one_dir_item(trans, root, path, dir, di);
++		ret = drop_one_dir_item(trans, root, path, BTRFS_I(dir), di);
+ 		if (ret)
+ 			return ret;
+ 	}
+@@ -1160,7 +1160,7 @@ static inline int __add_inode_ref(struct btrfs_trans_handle *trans,
+ 	di = btrfs_lookup_dir_item(trans, root, path, btrfs_ino(BTRFS_I(dir)),
+ 				   name, namelen, 0);
+ 	if (di && !IS_ERR(di)) {
+-		ret = drop_one_dir_item(trans, root, path, dir, di);
++		ret = drop_one_dir_item(trans, root, path, BTRFS_I(dir), di);
+ 		if (ret)
+ 			return ret;
+ 	}
+@@ -1768,7 +1768,7 @@ static noinline int replay_one_name(struct btrfs_trans_handle *trans,
+ 	if (!exists)
+ 		goto out;
  
--	ret = count_inode_extrefs(root, inode, path);
-+	ret = count_inode_extrefs(root, BTRFS_I(inode), path);
- 	if (ret < 0)
+-	ret = drop_one_dir_item(trans, root, path, dir, dst_di);
++	ret = drop_one_dir_item(trans, root, path, BTRFS_I(dir), dst_di);
+ 	if (ret)
  		goto out;
  
 -- 

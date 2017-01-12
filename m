@@ -1,70 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:29993 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:34693 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1750804AbdALBTI (ORCPT
+        with ESMTP id S1759617AbdALBZs (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Jan 2017 20:19:08 -0500
-Subject: Re: [PATCH] btfs-progs: fsck-tests: corrupt nlink value test
-To: <lakshmipathi.g@giis.co.in>
-References: <20170107231955.GA24631@fedori>
- <c9e21f30-2231-94cd-09ed-8422951e7b69@cn.fujitsu.com>
- <fdc7f38883f4333cad73b7a92a1ba00a@giis.co.in>
-CC: <linux-btrfs@vger.kernel.org>
+        Wed, 11 Jan 2017 20:25:48 -0500
+Subject: Re: corruption: yet another one after deleting a ro snapshot
+To: Christoph Anton Mitterer <calestyo@scientia.net>,
+        <linux-btrfs@vger.kernel.org>
+References: <1484183243.10253.5.camel@scientia.net>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <77e26cd7-0390-d02e-3dda-7107a2c68e7d@cn.fujitsu.com>
-Date: Thu, 12 Jan 2017 09:19:00 +0800
+Message-ID: <a7b82ec9-bd8d-d6bb-27e7-3732b466ca06@cn.fujitsu.com>
+Date: Thu, 12 Jan 2017 09:25:40 +0800
 MIME-Version: 1.0
-In-Reply-To: <fdc7f38883f4333cad73b7a92a1ba00a@giis.co.in>
+In-Reply-To: <1484183243.10253.5.camel@scientia.net>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-At 01/11/2017 01:36 AM, lakshmipathi.g@giis.co.in wrote:
->> What about submitting a btrfs-image and use generic test load?
+At 01/12/2017 09:07 AM, Christoph Anton Mitterer wrote:
+> Hey.
 >
-> Okay, how to share the corrupted btrfs-image? using github?  And also do
-> you have references for this kind of
-> setup under btrfs-progs/tests/?  So that  I can follow its model.
+> Linux heisenberg 4.8.0-2-amd64 #1 SMP Debian 4.8.15-2 (2017-01-04)
+> x86_64 GNU/Linux
+> btrfs-progs v4.7.3
+>
+> I've had this already at least once some year ago or so:
+>
+> I was doing backups (incremental via send/receive).
+> After everything was copied, I unmounted the destination fs, made a
+> fsck, all fine.
+> Then I mounted it again and did nothing but deleting the old snapshot.
+> After that, another fsck with the following errors:
+>
 
-At least I follow the following steps to create image:
+According to the messages, some tree blocks has wrong extent backref.
 
-- Create a 256M file
-   The default size of image.
-   All zero content is recommended for high compression ratio.
-   Both hole or fallocate is OK.
+And since you just deleted a subvolume and unmount it soon, I assume the 
+btrfs is still doing background subvolume deletion, maybe it's just a 
+false alert from btrfsck.
 
-- Make btrfs on that file
+Would you please try btrfs check --mode=lowmem using latest btrfs-progs?
 
-- Fill the fs with minimum content
-   Just enough files/dirs for next step.
-   The smaller space it takes the better
+Sometimes bugs in original mode are fixed in lowmem mode.
 
-- Corrupt the fs
-   Either using btrfs-corrupt-block or manually
-
-- Take the dump
-   Either by btrfs-image or just use the raw image.
-
-   It's recommended to use btrfs-image and with -c9 option, which
-   can reduce the file size dramatically compared to xz raw image.
-   But we must ensure the recovered image still has the same
-   corruption, or we must use raw image.
-
-   For raw image, xz it just like other tests.
-
-   Normally submitted images are less than 100K, and that's small enough
-   to send as patch.
+And it's also recommended to call btrfs fi sync, then wait for some time 
+(depending on the subvolume size) to allow btrfs to fully delete the 
+subvolume, then try btrfsck.
 
 Thanks,
 Qu
-
 >
-> Cheers.
-> Lakshmipathi.G
+> Usually I have quite positive experiences with btrfs (things seem to be
+> fine even after a crash or accidental removal of the USB cable which
+> attaches the HDD)... but I'm every time shocked again, when supposedly
+> simple and basic operations like this cause such corruptions.
+> Kinda gives one the feeling as if quite deep bugs are still everywhere
+> in place, especially as such "hard to explain" errors happens every now
+> and then (take e.g. my mails "strange btrfs deadlock", "csum errors
+> during btrfs check" from the last days... and I don't seem to be the
+> only one who suffers from such problems, even with the basic parts of
+> btrfs which are considered to be stable - I mean we're not talking
+> about RAID56 here)... sigh :-(
 >
 >
+> While these files are precious, I have in total copies of all these
+> files, 3 on btrfs and 1 on ext4 (just to be on the safe side if btrfs
+> gets corrupted for no good reason :-( ).... so I could do some
+> debugging here if some developer tells me what to do.
+>
+>
+> Anyway... what should I do to repair the fs? Or is it better to simply
+> re-create that backup from scratch?
+>
+>
+> Cheers,
+> Chris.
 >
 
 

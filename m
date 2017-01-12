@@ -1,113 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:37646 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:39214 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751654AbdASMDq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Jan 2017 07:03:46 -0500
+        id S1752393AbdASMOW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Jan 2017 07:14:22 -0500
 Received: from mail.kernel.org (localhost [127.0.0.1])
-        by mail.kernel.org (Postfix) with ESMTP id 8EAD4204FC
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2017 12:03:44 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTP id DC70D2051F
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2017 12:04:06 +0000 (UTC)
 Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id E02162050E
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2017 12:03:41 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 57FE120511
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2017 12:04:05 +0000 (UTC)
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/3] Btrfs: send, fix failure to rename top level inode due to name collision
-Date: Thu, 12 Jan 2017 03:07:08 +0000
-Message-Id: <1484190428-17128-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH 3/3] Btrfs: incremental send, do not issue invalid rmdir operations
+Date: Thu, 12 Jan 2017 03:07:33 +0000
+Message-Id: <1484190453-17227-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Robbie Ko <robbieko@synology.com>
 
-Under certain situations, an incremental send operation can fail due to a
-premature attempt to create a new top level inode (a direct child of the
-subvolume/snapshot root) whose name collides with another inode that was
-removed from the send snapshot.
+When both the parent and send snapshots have a directory inode with the
+same number but different generations (therefore they are different
+inodes) and both have an entry with the same name, an incremental send
+stream will contain an invalid rmdir operation that refers to the
+orphanized name of the inode from the parent snapshot.
 
-Consider the following example scenario.
+The following example scenario shows how this happens.
 
 Parent snapshot:
 
-  .                 (ino 256, gen 8)
-  |---- a1/         (ino 257, gen 9)
-  |---- a2/         (ino 258, gen 9)
+ .
+ |---- d259_old/               (ino 259, gen 9)
+ |         |---- d1/           (ino 258, gen 9)
+ |
+ |---- f                       (ino 257, gen 9)
 
 Send snapshot:
 
-  .                 (ino 256, gen 3)
-  |---- a2/         (ino 257, gen 7)
+ .
+ |---- d258/                   (ino 258, gen 7)
+ |---- d259/                   (ino 259, gen 7)
+         |---- d1/             (ino 257, gen 7)
 
-In this scenario, when receiving the incremental send stream, the btrfs
-receive command fails like this (ran in verbose mode, -vv argument):
+When the kernel is processing inode 258 it notices that in both snapshots
+there is an inode numbered 259 that is a parent of an inode 258. However
+it ignores the fact that the inodes numbered 259 have different generations
+in both snapshots, which means they are effectively different inodes.
+Then it checks that both inodes 259 have a dentry named "d1" and because
+of that it issues a rmdir operation with orphanized name of the inode 258
+from the parent snapshot. This happens at send.c:process_record_refs(),
+which calls send.c:did_overwrite_first_ref() that returns true and because
+of that later on at process_recorded_refs() such rmdir operation is issued
+because the inode being currently processed (258) is a directory and it
+was deleted in the send snapshot (and replaced with another inode that has
+the same number and is a directory too).
+Fix this issue by comparing the generations of parent directory inodes
+that have the same number and make send.c:did_overwrite_first_ref() when
+the generations are different.
 
-  rmdir a1
-  mkfile o257-7-0
-  rename o257-7-0 -> a2
-  ERROR: rename o257-7-0 -> a2 failed: Is a directory
+The following steps reproduce the problem.
 
-What happens when computing the incremental send stream is:
+ $ mkfs.btrfs -f /dev/sdb
+ $ mount /dev/sdb /mnt
+ $ touch /mnt/f
+ $ mkdir /mnt/d1
+ $ mkdir /mnt/d259_old
+ $ mv /mnt/d1 /mnt/d259_old/d1
+ $ btrfs subvolume snapshot -r /mnt /mnt/snap1
+ $ btrfs send /mnt/snap1 -f /tmp/1.snap
+ $ umount /mnt
 
-1) An operation to remove the directory with inode number 257 and
-   generation 9 is issued.
+ $ mkfs.btrfs -f /dev/sdc
+ $ mount /dev/sdc /mnt
+ $ mkdir /mnt/d1
+ $ mkdir /mnt/dir258
+ $ mkdir /mnt/dir259
+ $ mv /mnt/d1 /mnt/dir259/d1
+ $ btrfs subvolume snapshot -r /mnt /mnt/snap2
+ $ btrfs receive /mnt/ -f /tmp/1.snap
+ # Take note that once the filesystem is created, its current
+ # generation has value 7 so the inodes from the second snapshot all have
+ # a generation value of 7. And after receiving the first snapshot
+ # the filesystem is at a generation value of 10, because the call to
+ # create the second snapshot bumps the generation to 8 (the snapshot
+ # creation ioctl does a transaction commit), the receive command calls
+ # the snapshot creation ioctl to create the first snapshot, which bumps
+ # the filesystem's generation to 9, and finally when the receive
+ # operation finishes it calls an ioctl to transition the first snapshot
+ # (snap1) from RW mode to RO mode, which does another transaction commit
+ # and bumps the filesystem's generation to 10. This means all the inodes
+ # in the first snapshot (snap1) have a generation value of 9.
+ $ rm -f /tmp/1.snap
+ $ btrfs send /mnt/snap1 -f /tmp/1.snap
+ $ btrfs send -p /mnt/snap1 /mnt/snap2 -f /tmp/2.snap
+ $ umount /mnt
 
-2) An operation to create the inode with number 257 and generation 7 is
-   issued. This creates the inode with an orphanized name of "o257-7-0".
-
-3) An operation rename the new inode 257 to its final name, "a2", is
-   issued. This is incorrect because inode 258, which has the same name
-   and it's a child of the same parent (root inode 256), was not yet
-   processed and therefore no rmdir operation for it was yet issued.
-   The rename operation is issued because we fail to detect that the
-   name of the new inode 257 collides with inode 258, because their
-   parent, a subvolume/snapshot root (inode 256) has a different
-   generation in both snapshots.
-
-So fix this by ignoring the generation value of a parent directory that
-matches a root inode (number 256) when we are checking if the name of the
-inode currently being processed collides with the name of some other
-inode that was not yet processed.
-
-We can achieve this scenario of different inodes with the same number but
-different generation values either by mounting a filesystem with the inode
-cache option (-o inode_cache) or by creating and sending snapshots across
-different filesystems, like in the following example:
-
-  $ mkfs.btrfs -f /dev/sdb
-  $ mount /dev/sdb /mnt
-  $ mkdir /mnt/a1
-  $ mkdir /mnt/a2
-  $ btrfs subvolume snapshot -r /mnt /mnt/snap1
-  $ btrfs send /mnt/snap1 -f /tmp/1.snap
-  $ umount /mnt
-
-  $ mkfs.btrfs -f /dev/sdc
-  $ mount /dev/sdc /mnt
-  $ touch /mnt/a2
-  $ btrfs subvolume snapshot -r /mnt /mnt/snap2
-  $ btrfs receive /mnt -f /tmp/1.snap
-  # Take note that once the filesystem is created, its current
-  # generation has value 7 so the inode from the second snapshot has
-  # a generation value of 7. And after receiving the first snapshot
-  # the filesystem is at a generation value of 10, because the call to
-  # create the second snapshot bumps the generation to 8 (the snapshot
-  # creation ioctl does a transaction commit), the receive command calls
-  # the snapshot creation ioctl to create the first snapshot, which bumps
-  # the filesystem's generation to 9, and finally when the receive
-  # operation finishes it calls an ioctl to transition the first snapshot
-  # (snap1) from RW mode to RO mode, which does another transaction commit
-  # and bumps the filesystem's generation to 10.
-  $ rm -f /tmp/1.snap
-  $ btrfs send /mnt/snap1 -f /tmp/1.snap
-  $ btrfs send -p /mnt/snap1 /mnt/snap2 -f /tmp/2.snap
-  $ umount /mnt
-
-  $ mkfs.btrfs -f /dev/sdd
-  $ mount /dev/sdd /mnt
-  $ btrfs receive /mnt /tmp/1.snap
-  # Receive of snapshot snap2 used to fail.
-  $ btrfs receive /mnt /tmp/2.snap
+ $ mkfs.btrfs -f /dev/sdd
+ $ mount /dev/sdd /mnt
+ $ btrfs receive /mnt -f /tmp/1.snap
+ $ btrfs receive -vv /mnt -f /tmp/2.snap
+ receiving snapshot mysnap2 uuid=9c03962f-f620-0047-9f98-32e5a87116d9, ctransid=7 parent_uuid=d17a6e3f-14e5-df4f-be39-a7951a5399aa, parent_ctransid=9
+ utimes
+ unlink f
+ mkdir o257-7-0
+ mkdir o259-7-0
+ rename o257-7-0 -> o259-7-0/d1
+ chown o259-7-0/d1 - uid=0, gid=0
+ chmod o259-7-0/d1 - mode=0755
+ utimes o259-7-0/d1
+ rmdir o258-9-0
+ ERROR: rmdir o258-9-0 failed: No such file or directory
 
 Signed-off-by: Robbie Ko <robbieko@synology.com>
 Reviewed-by: Filipe Manana <fdmanana@suse.com>
@@ -116,32 +120,33 @@ Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/send.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+ fs/btrfs/send.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index d145ce8..2ae32c4 100644
+index 2742324..712922e 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -1681,6 +1681,9 @@ static int is_inode_existent(struct send_ctx *sctx, u64 ino, u64 gen)
- {
- 	int ret;
- 
-+	if (ino == BTRFS_FIRST_FREE_OBJECTID)
-+		return 1;
-+
- 	ret = get_cur_inode_state(sctx, ino, gen);
- 	if (ret < 0)
+@@ -1937,6 +1937,19 @@ static int did_overwrite_ref(struct send_ctx *sctx,
+ 	if (ret <= 0)
  		goto out;
-@@ -1866,7 +1869,7 @@ static int will_overwrite_ref(struct send_ctx *sctx, u64 dir, u64 dir_gen,
- 	 * not deleted and then re-created, if it was then we have no overwrite
- 	 * and we can just unlink this entry.
- 	 */
--	if (sctx->parent_root) {
-+	if (sctx->parent_root && dir != BTRFS_FIRST_FREE_OBJECTID) {
- 		ret = get_inode_info(sctx->parent_root, dir, NULL, &gen, NULL,
- 				     NULL, NULL, NULL);
- 		if (ret < 0 && ret != -ENOENT)
+ 
++	if (dir != BTRFS_FIRST_FREE_OBJECTID) {
++		ret = get_inode_info(sctx->send_root, dir, NULL, &gen, NULL,
++				     NULL, NULL, NULL);
++		if (ret < 0 && ret != -ENOENT)
++			goto out;
++		if (ret) {
++			ret = 0;
++			goto out;
++		}
++		if (gen != dir_gen)
++			goto out;
++	}
++
+ 	/* check if the ref was overwritten by another ref */
+ 	ret = lookup_dir_item_inode(sctx->send_root, dir, name, name_len,
+ 			&ow_inode, &other_type);
 -- 
 2.7.0.rc3
 

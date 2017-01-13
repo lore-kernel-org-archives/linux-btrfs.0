@@ -1,88 +1,123 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38795 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751386AbdAYL5t (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 25 Jan 2017 06:57:49 -0500
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com
-Subject: Btrfs progs pre-release 4.9.1-rc1
-Date: Wed, 25 Jan 2017 12:57:29 +0100
-Message-Id: <20170125115729.10310-1-dsterba@suse.com>
+Received: from mail-pf0-f194.google.com ([209.85.192.194]:33864 "EHLO
+        mail-pf0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751108AbdAMGMj (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 13 Jan 2017 01:12:39 -0500
+Received: by mail-pf0-f194.google.com with SMTP id y143so6845296pfb.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Jan 2017 22:12:39 -0800 (PST)
+Subject: Re: [PATCH] Btrfs: add another missing end_page_writeback on
+ submit_extent_page failure
+To: bo.li.liu@oracle.com
+References: <1481870510-44290-1-git-send-email-takafumi.kubota1012@sslab.ics.keio.ac.jp>
+ <20161222062044.GC11373@localhost.localdomain>
+Cc: linux-btrfs@vger.kernel.org, clm@fb.com, jbacik@fb.com, dsterba@suse.com,
+        linux-kernel@vger.kernel.org, fdmanana@suse.com, naota@elisp.net
+From: takafumi-sslab <takafumi.kubota1012@sslab.ics.keio.ac.jp>
+Message-ID: <a90bf4a2-ca72-26c2-10f3-d38a3106dc6a@sslab.ics.keio.ac.jp>
+Date: Fri, 13 Jan 2017 15:12:31 +0900
+MIME-Version: 1.0
+In-Reply-To: <20161222062044.GC11373@localhost.localdomain>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Thanks for your replying.
 
-a pre-release has been tagged, fixes that have queued so far.
+I understand this bug is more complicated than I expected.
+I classify error cases under submit_extent_page() below
 
-* check:
-  * use correct inode number for lost+found files
-  * lowmem mode: fix false alert on dropped leaf
-* size reports: negative numbers might appear in size reports during device
-  deletes (previously in EiB units)
-* mkfs: print device being trimmed
-* defrag: v1 ioctl support dropped
-* quota: print message before starting to wait for rescan
-* qgroup show: new option to sync before printing the stats
-* other:
-  * corrupt-block enhancements
-  * backtrace and co. cleanups
-  * doc fixes
+A: ENOMEM error at btrfs_bio_alloc() in submit_extent_page()
+I first assumed this case and sent the mail.
+When bio_ret is NULL, submit_extent_page() calls btrfs_bio_alloc().
+Then, btrfs_bio_alloc() may fail and submit_extent_page() returns -ENOMEM.
+In this case, bio_endio() is not called and the page's writeback bit 
+remains.
+So, there is a need to call end_page_writeback() in the error handling.
 
-ETA for 4.9.1 is in +2 days (2017-01-27).
+B: errors under submit_one_bio() of submit_extent_page()
+Errors that occur under submit_one_bio() handles at bio_endio(), and 
+bio_endio() would call end_page_writeback().
 
-Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
+Therefore, as you mentioned in the last mail, simply adding 
+end_page_writeback() like my last email and commit 55e3bd2e0c2e1 can 
+conflict in the case of B.
+To avoid such conflict, one easy solution is adding PageWriteback() 
+check too.
 
-Shortlog:
+How do you think of this solution?
 
-David Sterba (18):
-      btrfs-progs: make negative number pretty printing optional
-      btrfs-progs: enable negative numbers for unallocated device space
-      btrfs-progs: mkfs: print device name while trimming
-      btrfs-progs: defrag: force using v2 defrag ioctl and make default 32M threshold actually work
-      btrfs-progs: defrag: remove v1 ioctl support
-      btrfs-progs: qgroups show: clean up errno passing
-      btrfs-progs: qgroup show: refine error messages
-      btrfs-progs: tests: 005-qgroup-show
-      btrfs-progs: kerncompat: add separate trace print for BUG_ON
-      btrfs-progs: kerncompat: pass exact condition value from ASSERT
-      btrfs-progs: kerncompat: disconnect assert and warning messages
-      btrfs-progs: kerncompat: simplify warning_trace
-      btrfs-progs: qgroup show: do not error if sync fails
-      btrfs-progs: tests: add variable quotation to cli-tests
-      btrfs-progs: tests: use built binaries for 004-send-parent-multi-subvol
-      btrfs-progs: mkfs/convert: separate the convert part from make_btrfs
-      btrfs-progs: update CHANGES for v4.9.1
-      Btrfs progs v4.9.1-rc1
+Sincerely,
 
-Esteve Fernandez (1):
-      btrfs-progs: docs: fix typo in btrfs-subvolume
+On 2016/12/22 15:20, Liu Bo wrote:
+> On Fri, Dec 16, 2016 at 03:41:50PM +0900, Takafumi Kubota wrote:
+>> This is actually inspired by Filipe's patch(55e3bd2e0c2e1).
+>>
+>> When submit_extent_page() in __extent_writepage_io() fails,
+>> Btrfs misses clearing a writeback bit of the failed page.
+>> This causes the false under-writeback page.
+>> Then, another sync task hangs in filemap_fdatawait_range(),
+>> because it waits the false under-writeback page.
+>>
+>> CPU0                            CPU1
+>>
+>> __extent_writepage_io()
+>>    ret = submit_extent_page() // fail
+>>
+>>    if (ret)
+>>      SetPageError(page)
+>>      // miss clearing the writeback bit
+>>
+>>                                  sync()
+>>                                    ...
+>>                                    filemap_fdatawait_range()
+>>                                      wait_on_page_writeback(page);
+>>                                      // wait the false under-writeback page
+>>
+>> Signed-off-by: Takafumi Kubota <takafumi.kubota1012@sslab.ics.keio.ac.jp>
+>> ---
+>>   fs/btrfs/extent_io.c | 4 +++-
+>>   1 file changed, 3 insertions(+), 1 deletion(-)
+>>
+>> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+>> index 1e67723..ef9793b 100644
+>> --- a/fs/btrfs/extent_io.c
+>> +++ b/fs/btrfs/extent_io.c
+>> @@ -3443,8 +3443,10 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
+>>   					 bdev, &epd->bio, max_nr,
+>>   					 end_bio_extent_writepage,
+>>   					 0, 0, 0, false);
+>> -		if (ret)
+>> +		if (ret) {
+>>   			SetPageError(page);
+>> +			end_page_writeback(page);
+>> +		}
+> OK...this could be complex as we don't know which part in
+> submit_extent_page gets the error, if the page has been added into bio
+> and bio_end would call end_page_writepage(page) as well, so whichever
+> comes later, the BUG() in end_page_writeback() would complain.
+>
+> Looks like commit 55e3bd2e0c2e1 also has the same problem although I
+> gave it my reviewed-by.
+>
+> Thanks,
+>
+> -liubo
+>
+>>   
+>>   		cur = cur + iosize;
+>>   		pg_offset += iosize;
+>> -- 
+>> 1.9.3
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-Goldwyn Rodrigues (2):
-      btrfs-progs: check: get the highest inode for lost+found
-      btrfs-progs: sanitize - Use correct source for memcpy
-
-Jeff Mahoney (1):
-      btrfs-progs: quota: fix printing during wait mode
-
-Lakshmipathi.G (2):
-      btrfs-progs: corrupt-block: Include inode nlink field
-      btrfs-progs: corrupt-block: Include more inode fields
-
-Nicholas D Steeves (1):
-      btrfs-progs: Fix spelling/typos in user-facing strings
-
-Qu Wenruo (2):
-      btrfs-progs: check: fix false alert on dropped leaf in lowmem mode
-      btrfs-progs: Fix disable backtrace assert error
-
-Tsutomu Itoh (3):
-      btrfs-progs: qgroup: add sync option to 'qgroup show'
-      btrfs-progs: qgroup: change the value of sort option
-      btrfs-progs: tests: add test for --sync option of qgroup show
-
-Zygo Blaxell (1):
-      btrfs-progs: utils: negative numbers are more plausible than sizes over 8 EiB
+-- 
+Keio University
+System Software Laboratory
+Takafumi Kubota
+takafumi.kubota1012@sslab.ics.keio.jp
 

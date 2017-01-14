@@ -1,114 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail1.trendhosting.net ([195.8.117.5]:38967 "EHLO
-        mail1.trendhosting.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751770AbdANKhJ (ORCPT
+Received: from syrinx.knorrie.org ([82.94.188.77]:49140 "EHLO
+        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751663AbdANTi6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 14 Jan 2017 05:37:09 -0500
-Received: from localhost (localhost [127.0.0.1])
-        by mail1.trendhosting.net (Postfix) with ESMTP id AA6DF150B4
-        for <linux-btrfs@vger.kernel.org>; Sat, 14 Jan 2017 10:29:24 +0000 (GMT)
-Received: from mail1.trendhosting.net ([127.0.0.1])
-        by localhost (thp003.trendhosting.net [127.0.0.1]) (amavisd-new, port 10024)
-        with LMTP id I07qAgOSTfRH for <linux-btrfs@vger.kernel.org>;
-        Sat, 14 Jan 2017 10:29:22 +0000 (GMT)
+        Sat, 14 Jan 2017 14:38:58 -0500
+Received: from [IPv6:2001:980:4a41:fb::12] (unknown [IPv6:2001:980:4a41:fb::12])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by syrinx.knorrie.org (Postfix) with ESMTPSA id B711160017
+        for <linux-btrfs@vger.kernel.org>; Sat, 14 Jan 2017 20:38:53 +0100 (CET)
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Subject: python-btrfs v5, yay
 To: linux-btrfs@vger.kernel.org
-From: Daniel Pocock <daniel@pocock.pro>
-Subject: could not do orphan cleanup -22, btrfsck using 100% CPU, no activity
-Message-ID: <98610bec-fc49-af0e-9dcf-49e80ee92070@pocock.pro>
-Date: Sat, 14 Jan 2017 11:29:21 +0100
+Message-ID: <21458b49-50ad-161f-588d-26fb52bcf857@mendix.com>
+Date: Sat, 14 Jan 2017 20:38:52 +0100
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I just tagged v5 of the python btrfs library:
 
-I had a system that experienced a kernel panic and after rebooting, one
-of the btrfs filesystems doesn't mount on the first attempt
+https://github.com/knorrie/python-btrfs
 
-The filesystem does mount if I run the mount command manually in the
-emergency shell
+>From CHANGES:
 
-The following messages appear in the kernel log:
+python-btrfs v5, Jan 14 2017
+  * Revamp and fix loading of extent backreferences.
+  * Explode when detecting a non x86_64 arch.
+  * Add a crc32c implementation and example script to create
+    a dir_item offset hash.
 
+  The biggest change is done in the loading of backreferences of data
+and metadata extents. The way it was done was plain wrong in a number of
+cases and ignored/missed a bunch of types of objects. See the commits
+since v4 and their messages for much more detailed info.
 
-BTRFS critical (device sdc1): corrupt leaf, bad key order:
-block=790251626496,root=1, slot=46
-BTRFS error (device sdc1): Error removing orphan entry, stopping orphan
-cleanup
-BTRFS error (device sdc1): could not do orphan cleanup -22
+  And, instead of fixing the library to work correctly for non-amd64
+users, it currently explodes preventively, which is at least better than
+using wrong IOCTL numbers.
 
+  The third change, the crc32c addition is a bit of a weird duck in the
+bite, but I didn't want to leave it out yet:
 
+In the previous weekend, I was able to help out a user on IRC to repair
+a metadata page which had about 10 bytes overwritten with crap (in
+memory) that really didn't belong there. btrfs-debug-tree even
+segfaulted on the result. By loading a 16kiB metadata page, which was
+dd-ed from the disk in python-btrfs with some missing datastructures
+hacked in, we ended up with a very convenient way to look around in the
+data and set the attributes of two metadata item records to the right
+values and write back the page to the 16kiB binary file. Because a
+dir_item was involved, which needed to get the right filename crc in the
+key offset field again, we had to figure out how to create it, and I
+learned that crc32c doesn't mean a single thing, because I took me a
+while to find out why every crc32c lib I could find gave me the
+consistent same result, being different than what btrfs crc32c would show...
 
-There is a particular file that is now inaccessible.  It is not
-important, but any attempt to access it gives an IO error.  When I look
-at it with 'ls', it shows lots of question marks:
+And yes, after writing back the metadata page, the filesystem was usable
+again! :-)
 
-$ ls broken-file.txt
-?????     ?    ?    filename
+Have fun,
 
-
-
-I was able to copy all files off the filesystem, except that one, using
-rsync, so I just created a new filesystem and started using that instead.
-
-However, I kept a copy of the broken filesystem for troubleshooting
-
-I tried running
-
-    # btrfsck /dev/sdc1
-
-and a lot of output appears:
-
-checking extents
-bad key ordering 46 47
-bad block 790251626496
-Errors found in extent allocation tree or chunk allocation
-checking free space cache
-checking fs roots
-bad key ordering 46 47
-root 367 inode 474635 errors 2000, link count wrong
-        unresolved ref dir 20136875 index 5 namelen 6 name foobar
-filetype 0 errors 3, no dir item, no dir index
-  .. many errors like that
-
-
-root 367 inode 19964842 errors 400, nbytes wrong
-
-root 367 inode 19964855 errors 2001, no inode item, link count wrong
-        unresolved ref dir 11208629 index 100627 namelen 6 name Tb8Qlf
-filetype 1 errors 4, no inode ref
-  ... and many like that 
-
-Checking filesystem on /dev/sdc1
-UUID:
-found 92684783616 bytes used err is 1
-total csum bytes: 88527744
-total tree bytes: 439730176
-total fs tree bytes: 174620672
-total extent tree bytes: 127827968
-btree space waste bytes: 131661981
-file data blocks allocated: 6149394432
- referenced 2896289792
-
-
-
-Then I tried btrfsck --repair while monitoring with top and iostat
-
-I notice that there is read activity for about a minute, btrfsck sits
-there for a long time (over 30 minutes) using 100% CPU and a constant
-4.4% of RAM and no more disk activity
-
-If I enable the btrfsck progress indicator, the animation appears, but
-still no disk activity
-
-I saw previous discussions about the "could not do orphan cleanup -22"
-messages and it is not clear if this is something that needs to be fixed.
-
-The kernel is 4.8.0-2-amd64 and I tried both btrfs-progs v4.7.3 (Debian)
-and v4.9 (compiled myself)
-
-Regards,
-
-Daniel
-
-
+-- 
+Hans van Kranenburg

@@ -1,91 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from kiara-balancer-1.wellbehavedsoftware.com ([138.201.134.108]:60502
-        "EHLO kiara-balancer-1.wellbehavedsoftware.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1750760AbdAMTIX (ORCPT
+Received: from mail1.trendhosting.net ([195.8.117.5]:38967 "EHLO
+        mail1.trendhosting.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751770AbdANKhJ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 13 Jan 2017 14:08:23 -0500
-Subject: Re: Announcing btrfs-dedupe 1.1.0
-To: Robert Krig <robert.krig@render-wahnsinn.de>, linux-btrfs@vger.kernel.org
-References: <b81e1e04-394b-06a8-d4cb-acfe436a8423@pharaoh.uk>
- <08ac7d06-367e-a2ec-dc15-ee71aa3dada2@render-wahnsinn.de>
-From: James Pharaoh <james@pharaoh.uk>
-Message-ID: <18c395fe-3f32-9433-622e-e2ba5148bb2e@pharaoh.uk>
-Date: Fri, 13 Jan 2017 20:08:18 +0100
+        Sat, 14 Jan 2017 05:37:09 -0500
+Received: from localhost (localhost [127.0.0.1])
+        by mail1.trendhosting.net (Postfix) with ESMTP id AA6DF150B4
+        for <linux-btrfs@vger.kernel.org>; Sat, 14 Jan 2017 10:29:24 +0000 (GMT)
+Received: from mail1.trendhosting.net ([127.0.0.1])
+        by localhost (thp003.trendhosting.net [127.0.0.1]) (amavisd-new, port 10024)
+        with LMTP id I07qAgOSTfRH for <linux-btrfs@vger.kernel.org>;
+        Sat, 14 Jan 2017 10:29:22 +0000 (GMT)
+To: linux-btrfs@vger.kernel.org
+From: Daniel Pocock <daniel@pocock.pro>
+Subject: could not do orphan cleanup -22, btrfsck using 100% CPU, no activity
+Message-ID: <98610bec-fc49-af0e-9dcf-49e80ee92070@pocock.pro>
+Date: Sat, 14 Jan 2017 11:29:21 +0100
 MIME-Version: 1.0
-In-Reply-To: <08ac7d06-367e-a2ec-dc15-ee71aa3dada2@render-wahnsinn.de>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Did you try the binaries? I can build binaries for other platforms if 
-you let me know what you are interested in.
 
-In any case, you'll need to install rust:
+I had a system that experienced a kernel panic and after rebooting, one
+of the btrfs filesystems doesn't mount on the first attempt
 
-https://www.rust-lang.org/install.html
+The filesystem does mount if I run the mount command manually in the
+emergency shell
 
-Which will tell you to do this on Linux, and presumably all unix platforms:
+The following messages appear in the kernel log:
 
-curl https://sh.rustup.rs -sSf | sh
 
-You can either log in and out or reload your profile to get the 
-installed software in your PATH:
+BTRFS critical (device sdc1): corrupt leaf, bad key order:
+block=790251626496,root=1, slot=46
+BTRFS error (device sdc1): Error removing orphan entry, stopping orphan
+cleanup
+BTRFS error (device sdc1): could not do orphan cleanup -22
 
-source ~/.profile
 
-Then you can checkout btrfs-dedupe, eg from my gitlab public https, I'll 
-assume you have git installed:
 
-git clone 
-https://gitlab.wellbehavedsoftware.com/well-behaved-software/btrfs-dedupe.git
+There is a particular file that is now inaccessible.  It is not
+important, but any attempt to access it gives an IO error.  When I look
+at it with 'ls', it shows lots of question marks:
 
-Then cd in and build using cargo:
+$ ls broken-file.txt
+?????     ?    ?    filename
 
-cd btrfs-dedupe
-cargo build --release
 
-There is basically just one binary which will end up in 
-target/release/btrfs-dedupe.
 
-I'll add these instructions to the README later.
+I was able to copy all files off the filesystem, except that one, using
+rsync, so I just created a new filesystem and started using that instead.
 
-James
+However, I kept a copy of the broken filesystem for troubleshooting
 
-On 13/01/17 13:56, Robert Krig wrote:
-> Hi, could you include some build instructions for people that are
-> unfamiliar with compiling rust code?
->
->
-> On 08.01.2017 17:57, James Pharaoh wrote:
->> Hi everyone,
->>
->> I'm pleased to announce a new version of my btrfs-dedupe tool, written
->> in rust, available here:
->>
->> http://btrfs-dedupe.com/
->>
->> Binary packages built on ubuntu (probably will work elsewhere, but
->> haven't tried this), are available at:
->>
->> https://dist.wellbehavedsoftware.com/btrfs-dedupe/
->>
->> This version is considered ready for production use. It maintains a
->> compressed database of the filesystem state, and it tracks file
->> metadata, hashes file contents, and the extent-map contents, in order
->> to work out what needs to be deduplicated.
->>
->> This is a whole-file deduplication tool, similar to bedup, but since
->> it is written in Rust, and designed to work with the dedupe ioctl, I
->> think it's more suitable for production use.
->>
->> As normal for open source, this comes without any warranty etc, but
->> the only updates are performed via the defragment and deduplication
->> ioctls, and so assuming they work correctly then this should not cause
->> any corruption.
->>
->> Please feel free to contact me with any questions/problems.
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+I tried running
+
+    # btrfsck /dev/sdc1
+
+and a lot of output appears:
+
+checking extents
+bad key ordering 46 47
+bad block 790251626496
+Errors found in extent allocation tree or chunk allocation
+checking free space cache
+checking fs roots
+bad key ordering 46 47
+root 367 inode 474635 errors 2000, link count wrong
+        unresolved ref dir 20136875 index 5 namelen 6 name foobar
+filetype 0 errors 3, no dir item, no dir index
+  .. many errors like that
+
+
+root 367 inode 19964842 errors 400, nbytes wrong
+
+root 367 inode 19964855 errors 2001, no inode item, link count wrong
+        unresolved ref dir 11208629 index 100627 namelen 6 name Tb8Qlf
+filetype 1 errors 4, no inode ref
+  ... and many like that 
+
+Checking filesystem on /dev/sdc1
+UUID:
+found 92684783616 bytes used err is 1
+total csum bytes: 88527744
+total tree bytes: 439730176
+total fs tree bytes: 174620672
+total extent tree bytes: 127827968
+btree space waste bytes: 131661981
+file data blocks allocated: 6149394432
+ referenced 2896289792
+
+
+
+Then I tried btrfsck --repair while monitoring with top and iostat
+
+I notice that there is read activity for about a minute, btrfsck sits
+there for a long time (over 30 minutes) using 100% CPU and a constant
+4.4% of RAM and no more disk activity
+
+If I enable the btrfsck progress indicator, the animation appears, but
+still no disk activity
+
+I saw previous discussions about the "could not do orphan cleanup -22"
+messages and it is not clear if this is something that needs to be fixed.
+
+The kernel is 4.8.0-2-amd64 and I tried both btrfs-progs v4.7.3 (Debian)
+and v4.9 (compiled myself)
+
+Regards,
+
+Daniel
+
+

@@ -1,196 +1,190 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.ispconfig.waimanu.io ([46.4.54.26]:54818 "EHLO
-        mail.ispconfig.waimanu.io" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750727AbdAOUum (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:14956 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751175AbdAPBjG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 15 Jan 2017 15:50:42 -0500
-Received: from localhost (localhost [127.0.0.1])
-        by mail.ispconfig.waimanu.io (Postfix) with ESMTP id F37A920E5038
-        for <linux-btrfs@vger.kernel.org>; Sun, 15 Jan 2017 21:41:16 +0100 (CET)
-Received: from mail.ispconfig.waimanu.io ([127.0.0.1])
-        by localhost (mail.ispconfig.waimanu.io [127.0.0.1]) (amavisd-new, port 10026)
-        with ESMTP id qJixtlLn70QF for <linux-btrfs@vger.kernel.org>;
-        Sun, 15 Jan 2017 21:41:16 +0100 (CET)
-Received: from roundcube.waimanu.io (apache [10.23.0.194])
-        (Authenticated sender: yosijo@waimanu.io)
-        by mail.ispconfig.waimanu.io (Postfix) with ESMTPSA id EB29920E5024
-        for <linux-btrfs@vger.kernel.org>; Sun, 15 Jan 2017 21:41:15 +0100 (CET)
+        Sun, 15 Jan 2017 20:39:06 -0500
+Subject: Re: corruption: yet another one after deleting a ro snapshot
+To: Christoph Anton Mitterer <calestyo@scientia.net>,
+        <linux-btrfs@vger.kernel.org>
+References: <1484183243.10253.5.camel@scientia.net>
+ <a7b82ec9-bd8d-d6bb-27e7-3732b466ca06@cn.fujitsu.com>
+ <1484188092.29002.4.camel@scientia.net>
+ <25993bdf-d1fe-30df-7236-b9d5d6e5cfb2@cn.fujitsu.com>
+ <1484499869.17186.1.camel@scientia.net>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <4d7e21ed-a8f6-6c75-4a14-ff43201bd27b@cn.fujitsu.com>
+Date: Mon, 16 Jan 2017 09:38:53 +0800
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="=_af246e3981a2e980d35fef8bfa3456cc"
-Date: Sun, 15 Jan 2017 21:41:15 +0100
-From: York-Simon Johannsen <yosijo@waimanu.io>
-To: Linux btrfs <linux-btrfs@vger.kernel.org>
-Subject: delete subvolume bad key order
-Message-ID: <57b7141f8a502f842383016252e33bd5@yosijo.de>
+In-Reply-To: <1484499869.17186.1.camel@scientia.net>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
-
---=_af246e3981a2e980d35fef8bfa3456cc
-Content-Type: multipart/mixed;
- boundary="=_304944cb7a36f7002f4276eb0029a537"
-
---=_304944cb7a36f7002f4276eb0029a537
-Content-Transfer-Encoding: 7bit
-Content-Type: text/plain; charset=US-ASCII;
- format=flowed
-
-Hello,
-
-i have the message 'bad key order' and as you can see is the message of 
-the debug very creepy. The RAM is ECC based and i have already checked 
-this, no errors here. A 'btrfs check --repair' unfortunately did not 
-help. What else can I do?
-
-The system builds as follows:
-
-sda ---------------\
-sdb --\             \
-sdc ----md0(Raid5)-----vg0(Stripe)--btrfs2(lv)--btrfs
-sdd --/
 
 
-Log:
-http://pastebin.com/Pu9ENpUM
+At 01/16/2017 01:04 AM, Christoph Anton Mitterer wrote:
+> On Thu, 2017-01-12 at 10:38 +0800, Qu Wenruo wrote:
+>> IIRC, RO mount won't continue background deletion.
+> I see.
+>
+>
+>> Would you please try 4.9 btrfs-progs?
+>
+> Done now, see results (lowmem and original mode) below:
+>
+> # btrfs version
+> btrfs-progs v4.9
+>
+> # btrfs check /dev/nbd0 ; echo $?
+> Checking filesystem on /dev/nbd0
+> UUID: 326d292d-f97b-43ca-b1e8-c722d3474719
+> checking extents
+> ref mismatch on [37765120 16384] extent item 0, found 1
+> Backref 37765120 parent 6403 root 6403 not found in extent tree
+> backpointer mismatch on [37765120 16384]
+> owner ref check failed [37765120 16384]
+> ref mismatch on [51200000 16384] extent item 0, found 1
+> Backref 51200000 parent 6403 root 6403 not found in extent tree
+> backpointer mismatch on [51200000 16384]
+> owner ref check failed [51200000 16384]
+> ref mismatch on [78135296 16384] extent item 0, found 1
+> Backref 78135296 parent 6403 root 6403 not found in extent tree
+> backpointer mismatch on [78135296 16384]
+> owner ref check failed [78135296 16384]
+> ref mismatch on [5960381235200 16384] extent item 0, found 1
+> Backref 5960381235200 parent 6403 root 6403 not found in extent tree
+> backpointer mismatch on [5960381235200 16384]
+> checking free space cache
+> checking fs roots
+> checking csums
+> checking root refs
+> found 7483995824128 bytes used err is 0
+> total csum bytes: 7296183880
+> total tree bytes: 10875944960
+> total fs tree bytes: 2035286016
+> total extent tree bytes: 1015988224
+> btree space waste bytes: 920641324
+> file data blocks allocated: 8267656339456
+>  referenced 8389440876544
+> 0
+>
+>
+> # btrfs check --mode=lowmem /dev/nbd0 ; echo $?
+> Checking filesystem on /dev/nbd0
+> UUID: 326d292d-f97b-43ca-b1e8-c722d3474719
+> checking extents
+> ERROR: block group[74117545984 1073741824] used 1073741824 but extent items used 0
+> ERROR: block group[239473786880 1073741824] used 1073741824 but extent items used 1207959552
+> ERROR: block group[500393050112 1073741824] used 1073741824 but extent items used 1207959552
+> ERROR: block group[581997428736 1073741824] used 1073741824 but extent items used 0
+> ERROR: block group[626557714432 1073741824] used 1073741824 but extent items used 0
+> ERROR: block group[668433645568 1073741824] used 1073741824 but extent items used 0
+> ERROR: block group[948680261632 1073741824] used 1073741824 but extent items used 0
+> ERROR: block group[982503129088 1073741824] used 1073741824 but extent items used 0
+> ERROR: block group[1039411445760 1073741824] used 1073741824 but extent items used 0
+> ERROR: block group[1054443831296 1073741824] used 1073741824 but extent items used 1207959552
+> ERROR: block group[1190809042944 1073741824] used 1073741824 but extent items used 0
+> ERROR: block group[1279392743424 1073741824] used 1073741824 but extent items used 0
+> ERROR: block group[1481256206336 1073741824] used 1073741824 but extent items used 0
+> ERROR: block group[1620842643456 1073741824] used 1073741824 but extent items used 1207959552
+> ERROR: block group[1914511032320 1073741824] used 1073741824 but extent items used 1207959552
+> ERROR: block group[3055361720320 1073741824] used 1073741824 but extent items used 0
+> ERROR: block group[3216422993920 1073741824] used 1073741824 but extent items used 0
+> ERROR: block group[3670615785472 1073741824] used 1073741824 but extent items used 1207959552
+> ERROR: block group[3801612288000 1073741824] used 1073741824 but extent items used 1207959552
+> ERROR: block group[3828455833600 1073741824] used 1073741824 but extent items used 1207959552
+> ERROR: block group[4250973241344 1073741824] used 1073741824 but extent items used 0
+> ERROR: block group[4261710659584 1073741824] used 1073741824 but extent items used 1074266112
+> ERROR: block group[4392707162112 1073741824] used 1073741824 but extent items used 0
+> ERROR: block group[4558063403008 1073741824] used 1073741824 but extent items used 0
+> ERROR: block group[4607455526912 1073741824] used 1073741824 but extent items used 0
+> ERROR: block group[4635372814336 1073741824] used 1073741824 but extent items used 0
+> ERROR: block group[4640204652544 1073741824] used 1073741824 but extent items used 0
+> ERROR: block group[4642352136192 1073741824] used 1073741824 but extent items used 1207959552
+> ERROR: block group[4681006841856 1073741824] used 1073741824 but extent items used 0
+> ERROR: block group[5063795802112 1073741824] used 1073741824 but extent items used 0
+> ERROR: block group[5171169984512 1073741824] used 1073741824 but extent items used 1207959552
+> ERROR: block group[5216267141120 1073741824] used 1073741824 but extent items used 1207959552
+> ERROR: block group[5290355326976 1073741824] used 1073741824 but extent items used 0
+> ERROR: block group[5445511020544 1073741824] used 1073741824 but extent items used 1074266112
+> ERROR: block group[6084387405824 1073741824] used 1073741824 but extent items used 0
+> ERROR: block group[6104788500480 1073741824] used 1073741824 but extent items used 0
+> ERROR: block group[6878956355584 1073741824] used 1073741824 but extent items used 0
+> ERROR: block group[6997067956224 1073741824] used 1073741824 but extent items used 0
+> ERROR: block group[7702516334592 1073741824] used 1073741824 but extent items used 0
+> ERROR: block group[8051482427392 1073741824] used 1073741824 but extent items used 1084751872
+> ERROR: block group[8116980678656 1073741824] used 1073217536 but extent items used 0
+> ERROR: extent[5960381235200 16384] backref lost (owner: 6403, level: 1)
+> ERROR: check node failed root 6403 bytenr 5960381235200 level 1, force continue check
+> ERROR: extent[51200000 16384] backref lost (owner: 257, level: 1)
+> ERROR: check node failed root 6403 bytenr 51200000 level 1, force continue check
+> ERROR: extent[37765120 16384] backref lost (owner: 257, level: 1)
+> ERROR: check node failed root 6403 bytenr 37765120 level 1, force continue check
+> ERROR: extent[78135296 16384] backref lost (owner: 257, level: 1)
+> ERROR: check node failed root 6403 bytenr 78135296 level 1, force continue check
+> ERROR: errors found in extent allocation tree or chunk allocation
+> checking free space cache
+> checking fs roots
+> found 7483995758592 bytes used err is -5
+> total csum bytes: 7296183880
+> total tree bytes: 11018780672
+> total fs tree bytes: 2178121728
+> total extent tree bytes: 1015988224
+> btree space waste bytes: 936782513
+> file data blocks allocated: 9157658292224
+>  referenced 9292573106176
+> 1
+>
+>
+> It's the same fs as I was talking before, I just had to do it via NBD.
+>
 
-Overview:
-http://pastebin.com/PnddKQYz
+So the fs is REALLY corrupted. Although we still don't know if it's 
+persistent.
 
-Debug:
-http://pastebin.com/qmR30AjJ
+BTW, lowmem mode seems to have a new false alert when checking the block 
+group item.
 
-Greeting York
---=_304944cb7a36f7002f4276eb0029a537
-Content-Transfer-Encoding: 7bit
-Content-Type: application/pgp-keys;
- name=0xD987052F.asc
-Content-Disposition: attachment;
- filename=0xD987052F.asc;
- size=5724
+>
+>> But, I'm still not sure whether it's a false alert or a *REAL*
+>> corruption.
+>>
+>> Even it may cause problem and corrupt your data, I still hope you
+>> could
+>> do a rw mount and trigger a btrfs fi sync.
+>>
+>> If it's a false alert, we can fix it then with ease.
+>> Or, it's a really big problem.
+>
+> So what should I do next (as said, this is just a backup for me, so
+> while it would be annoying to recreate it (because nearly the full
+> 8TiB) I could do it without any problem)... in terms of debugging this
+> issue?
 
------BEGIN PGP PUBLIC KEY BLOCK-----
-Version: GnuPG v1
+Did you have any "lightweight" method to reproduce the bug?
 
-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
-bkBnbWFpbC5jb20pIDx5b2pvaGFubnNlbkBnbWFpbC5jb20+iQI9BBMBCAAnBQJX
-bqYQAhsDBQkBPGFnBQsJCAcCBhUICQoLAgQWAgMBAh4BAheAAAoJECkbqG/ZhwUv
-LMgP+gMb4Dm5AHGORVeBbrnVSokCbBRbgXECGEZs/3T77j3EfSqiw+Baj2kTdMki
-bNDlY2yiAAtW1crjbbz/GfaosRQS5U9ZUO1mmrEdHB5ibhm+As0TKQUoVyiwj/yH
-b6us4LJywaRWqGnYlzUBEa6fL0QD6t8DEliCygbCmuxPmrI1lOmBcsQmfMR067w/
-bfBzr9tK2cq6K81S0do+i15mxah53MVa7V6aACm5/KWcRiqDZ09yKYpQNbGwlcue
-JT1mKCbomY37do0RFKpxR6dRJEkT8Udmr4QsuocIVpsKzf6XvlcqW7u3QfSRb7LX
-H44Bno0jxcR4+EuziFRZVzr5i+t4ysnep0+ghNaWvulO5QVlflXCsLSpL4d0uiHV
-wKozam+LsPk/nhsqggtQGTe43F3TjfVKN9xGMsb1zFQNXxFLudEQVWY2gd1OJe8k
-YZ6bgpXQVYxraQZIdpHL9HVU596bm+5y71swEWd36ksT0iywBPyzHeyFWgbzze9/
-UGQPs6QZNY4qwOUSCqN1tU8rjXS0CTMa1xWlIa8rLtH++v/inH+nS8VUTp2z6gwE
-DnAesm8NiKpuA0nFumjPycxe4XOsBTay6UeEylEHRxANgFicJ8lOPNksCoeJCF05
-2yi3jMocYVWfox5e8Y7XHliM/yXZNWZ96H/yyE300GyWr24utDxZb3JrLVNpbW9u
-IEpvaGFubnNlbiAoeW9zaWpvQHdhaW1hbnUuaW8pIDx5b3Npam9Ad2FpbWFudS5p
-bz6JAj0EEwEIACcFAle8cNcCGwMFCQE8YWcFCwkIBwIGFQgJCgsCBBYCAwECHgEC
-F4AACgkQKRuob9mHBS9dWBAAgo3rh3JpL6DhENrDMcL97E+90JMyGx7q1MYS42Pp
-GBOf4f6CsiQMJ+zGliV4N4XYM8KH/T+FhTBzi27YJDd6YX9dh0VEh4cR2tjnZXxl
-ahKl8BJDkBjAdHS96MwxApNYkX51kLGvglqgFDgecAojtswfmFrXwAcMKD4r+AeV
-tjwLGMnvRuV57d6QYFrELjmP0GN0kJrdqvS9ZJNakXLy7GKiJ3kNto5b7cql5Jgk
-Rb1mCBytoofkER9hkNZ/RYIQtmoX8OQGv6Z/Jpf0fNU+QP9nEIcyfnq6kyVuIp5V
-UfbMTa6GMwuD/tAR0A6ID657xamDDoF01mR2CDIQ2fr4nR4kKG0NGbz228wXnwo4
-PD/9gGgIYRKgiGV+tqSburLO4ZpJXEClbTAVWMUSl6cVmNeW8RFK3ICxHBmzlNZP
-MYLlv6gu8dvPc2P9j9m2wFIf0sJp4ekycX3ClkZheQQWSOXJdsEUwrHOI5Y+XYQA
-mHdb+8sx7udaf/E9RRow8ZeEmup0zeETjS/UO11smgMuEz8YZYqABgDtHINQDJ1f
-UQeeUAa1fTUZceIrKHi9w2c4BVdGpaLT7H76u6DhG2FU1Z6pDJTmfYGBQWNJUmXM
-U7lcz8o9Hf8BC2Z2M1AgNAyUQGwPyVZBcOBZrYoOh9IQLg+lpSn9ucpBS+DmOfiO
-DjO5Ag0EV1QMyQEQAMak2vDJv1DumFvPioDim6Vp24NBmWvCexTZvhCDE4t92IfP
-kQbpihl+ceDeMKF42N/xAnjuNgCcXDDi9RGWatQja178ygT56Tj2+5X4bPcaJ1Nj
-2YIQ7zKO1TxdcJ/dWLKT65dls5ZbSi+gmZlcIXNrdIWSd0uozKjXcS8VoOfoBMNH
-rxTMoKEULTHveOsmIKu9lFZtbiC49HnZsO7Dgs1xvDDzvvjIoBFgytBqnO/LUyoP
-PVCPcyEqY7jN5AlwBaJYspcJCr6+mYTzPpWiqLHKz1kbUP7cICevqwzVUf1RfVTl
-lHatD1UZwwQAucRfuUrdqoiSv4/tPuttZ8efea0OgGAkAE7vuPjBAgiRb2lWMM+V
-Y60RAXeb7RvUWzRKL59E/Y7FbUoC6jCkHX2HEUK8Ed1DK21Emz5zpfxUXarGz+So
-SLRLLvCrFIaQtncihDRu9sOx5ChcklIWwmptRiqlCGrAZYKcxwBWHCj//hC2fRkR
-I2VL62scQuKvMDLwFDiQD3DM7zH2uQQa8T3V8CAH47A4p2auSfun3iYqe+s2W9s+
-SdKAuFis5nX4FIb775drBkckCc4tBtyAjv7vhkLkZkdXHAslBZMC4rUhraqnu/Nb
-ZAw9D7+59c+DAfBcglyKvqAeyaCHxfK2x44NfEwCMHeFim5w+4uBcCPnV2gHABEB
-AAGJAiUEGAEIAA8FAldUDMkCGwwFCQE8YWcACgkQKRuob9mHBS8p3g/9FXSM3ra6
-V92dtnXTWkMUCYHJ7s4miHN6VyapowUz6zPgthJ56lxMLx4Ag7DC6NCY9xCNfcDD
-insVuuHcoI4muOf7OJGOcibAOnRZhmJ1ORZ1Ko39HVpztgkLOu/mgVPE4E+Aim+5
-q01K/Azei/pBc3rBe0y/gtESkLXbAL3zgG6PjbLVWi6FW8Jyi171Q5eJjBFDrn6G
-l+WlqXnj21oopFTDwCjGCDaze9uFzzEZ+QtsiaYWCsnGf3jLRPdHSw+Zcf9MWjwO
-xLOKqxpPfLyEA1yRdW45jHCDgdPDOtRhzS14eFofLhl4L/d90pbpcaLvWnit0CdS
-2ObdAI8nEkTgjZB3VyCCU18kDco3IsdKsf5xKuxZwVyxOh75PWUwoYLXHIh8udF7
-vTmuC22Z6W43uo7V/SRM+xaAAJN4cPXSfxqX+yRr8zx2QYhUCLGyGaLhWczCwMSx
-m6ofD/aSPov44zgVDViPJElSxTOBtkbID4jOnlojvKmdr4TgvF9kX2RslHvJxJIW
-0KyJpnWGn5wMJZaua4gdLpEH8WsdyvWieEbZnnnzjEyJLQIf05kSutYR0ae3RtTS
-ooXgAYUrvGcxIVIva9NZSznT5xdQKD4t6Dw6rIs8fWCLWvoLtF/MSDGeMsKV4kxk
-JYYX+uCVHYhF0sD2tmqzTsSJGixDPHWcqR4=
-=WDo7
------END PGP PUBLIC KEY BLOCK-----
+For example, on a 1G btrfs fs with moderate operations, for example 
+15min or so, to reproduce the bug?
 
---=_304944cb7a36f7002f4276eb0029a537--
+>
+> Shall I rw-mount the fs and do sync and wait and retry? Or is there
+> anything else that you want me to try before in order to get the kernel
+> bug (if any) or btrfs-progs bug nailed down?
+
+Personally speaking, rw mount would help, to verify if it's just a bug 
+that will disappear after the deletion is done.
+
+But considering the size of your fs, it may not be a good idea as we 
+don't have reliable method to recover/rebuild extent tree yet.
+
+Thanks,
+Qu
+
+>
+>
+> Cheers,
+> Chris.
+>
 
 
---=_af246e3981a2e980d35fef8bfa3456cc
-Content-Type: application/pgp-signature;
- name=signature.asc
-Content-Disposition: attachment;
- filename=signature.asc;
- size=819
-Content-Description: OpenPGP digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJYe95rAAoJECkbqG/ZhwUvVlIP/0Fiaa+uyqqp5yagGXT0Bn+3
-GgGijM+LV1nqlhKkAwmsXCduyUKYiX8ExN0j1pFxeHWIZD8DqfUAjHJTmJxPP2po
-0krbsyQlf0n3AF4O1DLFyVu6zElWha/isRDGuLk1OhdfzoKMNWUTWvi3plEGptso
-wpHTDLLQJGPh0wx731dFQ6CmFOIM+arPbc5lLT6gvemhBeRcDMUmZiN2w9pp8/yP
-wbISxrmOAzMfO2TIBE2uyZbXqzy4NBXB1O5urgnRU8uiAjCWXbqcQz68tEYRP9Li
-qsx4J7PpkLA5Tx7jp+MV7z3yR2oT7f6MBNnMQwRSlPoVbplqw8C55SM25kTftaBA
-GPDjx1CnHmt4ww7ngWwRuXoKiW3i80O6PtY+rkmqbICkvTqsOT0Gngqe739aHVTp
-OCl/W0UOymalpLdbGywpfDbo9XasEDkejrzEZyJ10z5QRI7F1y09FMA8M/ZlRt2u
-ew5g4P5EBG0xt/2yQu+k0dm7C3qBEiczfTb3E51W8hq627crjjQJzp+vr8NuSog1
-BjjspRrsdaNQJuDu3DyoZTKS+9DjoXL+3ZfGP8ZyXAC0yBlFF33yB0SykNzZpWNd
-x8H8xcH4RR6miBcqdFOubqiNJxNuIbK34KRTHB5MhtcgwDPBcEThxGj7VmDYkbC9
-GdwnQrrjHARjfuoMrXyM
-=vvPy
------END PGP SIGNATURE-----
-
---=_af246e3981a2e980d35fef8bfa3456cc--

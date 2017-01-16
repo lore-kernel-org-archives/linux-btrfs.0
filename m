@@ -1,101 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:18859 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:5016 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1750947AbdAWJPQ (ORCPT
+        with ESMTP id S1751175AbdAPB7y (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 23 Jan 2017 04:15:16 -0500
+        Sun, 15 Jan 2017 20:59:54 -0500
+Subject: Re: [PATCH 0/3 for-4.10] RAID56 scrub fixes
+To: <linux-btrfs@vger.kernel.org>, <dsterba@suse.cz>, <clm@fb.com>
+References: <20161212093843.8878-1-quwenruo@cn.fujitsu.com>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <calestyo@scientia.net>, <chris@colorremedies.com>, <dsterba@suse.cz>,
-        Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-Subject: [PATCH 9/9] btrfs-progs: fsck: Fix lowmem mode override to allow it skip repair work
-Date: Mon, 23 Jan 2017 17:13:59 +0800
-Message-ID: <20170123091359.21390-11-quwenruo@cn.fujitsu.com>
-In-Reply-To: <20170123091359.21390-1-quwenruo@cn.fujitsu.com>
-References: <20170123091359.21390-1-quwenruo@cn.fujitsu.com>
+Message-ID: <35ebd3e4-c6e9-5102-b336-416e9352267e@cn.fujitsu.com>
+Date: Mon, 16 Jan 2017 09:59:45 +0800
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <20161212093843.8878-1-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+Hi David, Chris,
 
-Current common.local doesn't handle lowmem mode well.
-It passes "--mode=lowmem" alone with "--repair", making it unable to
-check lowmem mode.
+Any comment on this patchset?
 
-It's caused by the following bugs:
+Although we don't recommend user to use RAID5/6 for now, but this 
+patchset still fixes 2 quite important bugs for RAID5/6.
 
-1) Wrong variable in test/common.local
-   We should check TEST_ARGS_CHECK, not TEST_CHECK, which is not defined
-   so we never return 1.
+And current so far the test shows no regression.
+(Although test cases like btrfs/011 and btrfs/069 is still causing 
+problem, as v4.10-rc without this patch will also cause problems).
 
-2) Wrong parameter passed to _cmd_spec() in test/common
-   This prevents us from grepping the correct parameters.
+And the patchset is relatively small enough for an rc.
 
-Fix it.
+Thanks,
+Qu
 
-Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
----
- tests/common       | 8 ++++----
- tests/common.local | 2 +-
- 2 files changed, 5 insertions(+), 5 deletions(-)
-
-diff --git a/tests/common b/tests/common
-index 51c2e267..7ad436e3 100644
---- a/tests/common
-+++ b/tests/common
-@@ -106,7 +106,7 @@ run_check()
- 	ins=$(_get_spec_ins "$@")
- 	spec=$(($ins-1))
- 	cmd=$(eval echo "\${$spec}")
--	spec=$(_cmd_spec "$cmd")
-+	spec=$(_cmd_spec "${@:$spec}")
- 	set -- "${@:1:$(($ins-1))}" $spec "${@: $ins}"
- 	echo "############### $@" >> "$RESULTS" 2>&1
- 	if [[ $TEST_LOG =~ tty ]]; then echo "CMD: $@" > /dev/tty; fi
-@@ -128,7 +128,7 @@ run_check_stdout()
- 	ins=$(_get_spec_ins "$@")
- 	spec=$(($ins-1))
- 	cmd=$(eval echo "\${$spec}")
--	spec=$(_cmd_spec "$cmd")
-+	spec=$(_cmd_spec "${@:$spec}")
- 	set -- "${@:1:$(($ins-1))}" $spec "${@: $ins}"
- 	echo "############### $@" >> "$RESULTS" 2>&1
- 	if [[ $TEST_LOG =~ tty ]]; then echo "CMD(stdout): $@" > /dev/tty; fi
-@@ -152,7 +152,7 @@ run_mayfail()
- 	ins=$(_get_spec_ins "$@")
- 	spec=$(($ins-1))
- 	cmd=$(eval echo "\${$spec}")
--	spec=$(_cmd_spec "$cmd")
-+	spec=$(_cmd_spec "${@:$spec}")
- 	set -- "${@:1:$(($ins-1))}" $spec "${@: $ins}"
- 	echo "############### $@" >> "$RESULTS" 2>&1
- 	if [[ $TEST_LOG =~ tty ]]; then echo "CMD(mayfail): $@" > /dev/tty; fi
-@@ -188,7 +188,7 @@ run_mustfail()
- 	ins=$(_get_spec_ins "$@")
- 	spec=$(($ins-1))
- 	cmd=$(eval echo "\${$spec}")
--	spec=$(_cmd_spec "$cmd")
-+	spec=$(_cmd_spec "${@:$spec}")
- 	set -- "${@:1:$(($ins-1))}" $spec "${@: $ins}"
- 	echo "############### $@" >> "$RESULTS" 2>&1
- 	if [[ $TEST_LOG =~ tty ]]; then echo "CMD(mustfail): $@" > /dev/tty; fi
-diff --git a/tests/common.local b/tests/common.local
-index 9f567c27..4f56bb08 100644
---- a/tests/common.local
-+++ b/tests/common.local
-@@ -17,7 +17,7 @@ TEST_ARGS_CHECK=--mode=lowmem
- # break tests
- _skip_spec()
- {
--	if echo "$TEST_CHECK" | grep -q 'mode=lowmem' &&
-+	if echo "$TEST_ARGS_CHECK" | grep -q 'mode=lowmem' &&
- 	   echo "$@" | grep -q -- '--repair'; then
- 		return 0
- 	fi
--- 
-2.11.0
-
+At 12/12/2016 05:38 PM, Qu Wenruo wrote:
+> Can be feteched from github:
+> https://github.com/adam900710/linux.git raid56_fixes
+>
+> Fixes 2 scrub bugs:
+> 1) Scrub recover correct data, but wrong parity
+> 2) Scrub report wrong csum error number, or even unrecoverable error
+>
+> The patches are still undergoing xfstests, but currect for-linus-4.10 is already
+> causing deadlock for btrfs/011, even without the patches.
+>
+> So I'd remove btrfs/011 and continue the test, even these test cases won't trigger
+> real recover code.
+>
+> But the current internal test cases are quite good so far.
+> I'll test them for several extra loop, and submit the internal test for reference.
+> (Since it's not suitable for xfstest, so I'd only submit the test script, which
+> needs manually to probe chunk layout)
+>
+> Qu Wenruo (3):
+>   btrfs: scrub: Introduce full stripe lock for RAID56
+>   btrfs: scrub: Fix RAID56 recovery race conditiong
+>   btrfs: raid56: Use correct stolen pages to calculate P/Q
+>
+>  fs/btrfs/ctree.h       |   4 ++
+>  fs/btrfs/extent-tree.c |   3 +
+>  fs/btrfs/raid56.c      |  62 ++++++++++++++--
+>  fs/btrfs/scrub.c       | 192 +++++++++++++++++++++++++++++++++++++++++++++++++
+>  4 files changed, 257 insertions(+), 4 deletions(-)
+>
 
 

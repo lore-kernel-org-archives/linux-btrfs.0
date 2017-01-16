@@ -1,168 +1,207 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:50373 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1750857AbdAPFsB (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:37593 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1750978AbdAPI3r (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 Jan 2017 00:48:01 -0500
-Subject: Re: corruption: yet another one after deleting a ro snapshot
-To: Christoph Anton Mitterer <calestyo@scientia.net>,
-        <linux-btrfs@vger.kernel.org>
-References: <1484183243.10253.5.camel@scientia.net>
- <a7b82ec9-bd8d-d6bb-27e7-3732b466ca06@cn.fujitsu.com>
- <1484188092.29002.4.camel@scientia.net>
- <25993bdf-d1fe-30df-7236-b9d5d6e5cfb2@cn.fujitsu.com>
- <1484499869.17186.1.camel@scientia.net>
- <4d7e21ed-a8f6-6c75-4a14-ff43201bd27b@cn.fujitsu.com>
- <1484535383.7577.53.camel@scientia.net>
- <657ea421-0058-b641-ef31-c7d371fa58ca@cn.fujitsu.com>
- <1484542415.21166.1.camel@scientia.net>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <a0aad88a-e19e-e013-7533-4a5bf0783763@cn.fujitsu.com>
-Date: Mon, 16 Jan 2017 13:47:51 +0800
-MIME-Version: 1.0
-In-Reply-To: <1484542415.21166.1.camel@scientia.net>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+        Mon, 16 Jan 2017 03:29:47 -0500
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1cT2fS-0004K0-P6
+        for linux-btrfs@vger.kernel.org; Mon, 16 Jan 2017 09:29:30 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: [ISSUE] uncorrectable errors on Raid1
+Date: Mon, 16 Jan 2017 08:28:57 +0000 (UTC)
+Message-ID: <pan$e40ff$b4ae6eee$a2e29a1a$fc4e4760@cox.net>
+References: <13125824.3612316.1484511403145.JavaMail.zimbra@laposte.net>
+        <997304564.3648227.1484512081332.JavaMail.zimbra@laposte.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+randomtechguy@laposte.net posted on Sun, 15 Jan 2017 21:28:01 +0100 as
+excerpted:
+
+> Hello /all,
+> 
+> I have some concerns about the raid 1 of BTRFS. I have encountered 114
+> uncorrectable errors on the directory hosting my 'seafile-data'. Seafile
+> is a software to backup the data. My 2 hard drives seems to be fined.
+> SMARTCTL reports do not identify any badlocks (Reallocated_Event_Count
+> or Current_Pending_Sector).
+> How can I have uncorrectable errors since BTRFS is assuring data
+> integrity ? How did my data got corrupted ? What can I do to ensure that
+> it does not happen again ?
+
+It's worth noting that btrfs data integrity is based on checksums over 
+data and metadata blocks, and that btrfs raid1 makes exactly two copies 
+of each chunk and block within a chunk.  If both copies of a block fail 
+to match checksum, btrfs (either in normal operation or via scrub) can't 
+fall back to the second copy as it's also bad.
+
+Unfortunately, that seems to have happened to you.  How, I can't say.
+
+And here comes the disclaimer.  I'm a normal if somewhat advanced btrfs 
+user (I run gentoo and routinely build from sources, applying patches as 
+necessary, doing git bisects, etc.) and list regular, not a dev.  So 
+there's a limit to what I can cover, but I can address some of the easier 
+stuff where it has been covered on the list previously, and by doing so, 
+free the more advanced list regulars and devs for the more complex 
+answers and for further development, etc.
+
+There's a roadmapped proposal to offer N-way-mirroring, instead of just 
+the two-way currently available, which would of course allow N fallbacks 
+in case the first two are bad, and I've been intensely interested in 3-
+way for my own use, but that has been scheduled for attention right after 
+parity-raid (raid5/6 mode) for well over a full major kernel cycle now, 
+since at least 3.6 (when I first started seriously looking into btrfs), 
+when raid56 was supposed to be introduced in a (minor) kernel cycle or 
+two.  Unfortunately, it was 3.19 before raid56 code was nominally 
+complete, and just in the last couple kernel cycles (4.8/4.9) it became 
+clear that the existing raid56 code is still majorly flawed, to the point 
+a full or near full rewrite may be necessary, so now we're looking at 
+another year or two likely for it to stabilize properly, meaning it could 
+easily be 5.x (assuming 4.19 is the last 4.x, as was 3.19 for 3.x) before 
+raid56 stabilization, and then easily 5.10 before N-way-mirroring is 
+first available and maybe 6.x before stabilization, even if N-way-
+mirroring doesn't end up with any of the long development time and then 
+long term stability problems that hit raid56 mode.  So very possibly five 
+years out... and in kernel terms five years is a very long time, the 
+practical horizon for any sort of predicting at all, so who knows, 
+really, but what we do know is it's unlikely in anything like the near 
+future.
+
+> You can find below all the useful information I can think of. If you
+> need more, let me know.
+
+> If I attempt to read the corresponding file, I have an " Input/output
+> error ".
+
+That's normal when both mirrors fail checksum verification.  You can try 
+btrfs restore on the unmounted filesystem, telling it (using the regex 
+option) to restore only that file or files and where to put them, but 
+they may well be corrupt even if you can retrieve them that way.  With 
+more work, you could depend on btrfs' copy-on-write nature and the fact 
+that previous root generations are likely available, to find and feed to 
+btrfs restore older roots and hope that it can find and restore an 
+uncorrupted copy that way, but honestly, you better have some pretty 
+advanced technical chops to even think about that -- I'm not sure I could 
+do it here, tho I'd certainly try if I didn't have a backup to resort to.
+
+Which of course brings up backups.  As any sysadmin worth the name will 
+tell you, what you /really/ think about the value of your data is defined 
+by the number of backups you have of it, and the faithfulness with which 
+you update those backups.  No backups means you value the time and 
+resources saved by /not/ doing those backups more than the data that you 
+are risking losing as a result of not having those backups.  A single 
+backup of course means much lower risk, but the same thing applies there 
+-- only one backup means you value the time and resources saved by not 
+making a second more than the risk of actually needing that second backup 
+because both the working copy and the first backup failed at the same 
+time, for whatever reason.
+
+Of course that's for normal, fully stable, hardware and filesystems.  
+Btrfs, while no longer (since 3.12, IIRC) labeled "eat your data" 
+experimental, remains under heavy development and not yet entirely stable 
+and mature.  As such, the additional risk to any data stored on the not 
+yet fully stable and mature btrfs must be taken into account when 
+assigning relative value to backups or the lack thereof, tilting the 
+balance toward more backups than one would consider worth the trouble on 
+a more stable and mature filesystem.
+
+Thus it can be safely and confidently stated that you either have 
+backups, or by your (in)actions in not having them, placed a lower value 
+on the data than on your time and resources that would be used in backing 
+it up.  So a problem with btrfs that results in loss of some or all of 
+the data on it isn't a big problem, because you can either resort to your 
+backups if you have to, or the data was of only trivial value as defined 
+by the lack of backups in any case, as even if you lose it, you saved 
+what you considered of more value, the time and trouble that would have 
+otherwise gone into making those backups.
+
+Since it's just a few files here, not the entire filesystem, it's even 
+less of a problem.  Just restore from backups if you have them.  Or try 
+btrfs restore on them, and if they're corrupted from that or it doesn't 
+work at all, no big deal since the files were obviously not worth a lot 
+anyway as they weren't backed up, and you can just delete the problem 
+files and move on, or worse comes to worse, blow away the filesystem with 
+a fresh mkfs, and move on.
+
+Meanwhile...
+
+> Here is my Raid1 configuration: [snippage]
+
+> sudo btrfs fi df /mnt
+> Data, RAID1: total=299.00GiB, used=298.15GiB
+> Data, single: total=8.00MiB, used=0.00B
+> System, RAID1: total=8.00MiB, used=64.00KiB
+> System, single: total=4.00MiB, used=0.00B
+> Metadata, RAID1: total=2.00GiB, used=887.55MiB
+> Metadata, single: total=8.00MiB, used=0.00B
+> GlobalReserve, single: total=304.00MiB, used=0.00B
+
+It's worth noting that those data, system and metadata single-mode chunks 
+are an artifact from an older mkfs.btrfs, and can be eliminated using for 
+example btrfs balance start -dusage=0 -musage=0 or btrfs balance start 
+-profiles=single.  (GlobalReserve is different and always single, despite 
+it actually coming from metadata, the reason metadata as reported never 
+gets entirely full.)
 
 
-At 01/16/2017 12:53 PM, Christoph Anton Mitterer wrote:
-> On Mon, 2017-01-16 at 11:16 +0800, Qu Wenruo wrote:
->> It would be very nice if you could paste the output of
->> "btrfs-debug-tree -t extent <your_device>" and "btrfs-debug-tree -t
->> root
->> <your device>"
->>
->> That would help us to fix the bug in lowmem mode.
-> I'll send you the link in a private mail ... if any other developer
-> needs it, just ask me or Qu for the link.
->
->
->> BTW, if it's possible, would you please try to run btrfs-check
->> before
->> your next deletion on ro-snapshots?
-> You mean in general, when I do my next runs of backups respectively
-> snaphot-cleanup?
-> Sure, actually I did this this time as well (in original mode, though),
-> and no error was found.
->
-> For what should I look out?
+> btrfs --version btrfs-progs v3.19.1
+> 
+> 
+> sudo smartctl -a /dev/sde
+> smartctl 6.2 2013-07-26 r3841
+> [x86_64-linux-3.10.0-327.28.3.el7.x86_64] (local build)
 
-Nothing special, just in case the fs is already corrupted.
+If that's your current kernel, an upgrade to at minimum the LTS kernel 
+4.1 series is *VERY* strongly recommended.  As mentioned above, btrfs 
+prior to kernel 3.12 still had the "experimental" label, and is well out 
+of the practical support range for this list.  All sorts of btrfs bugs 
+have been found and fixed since 3.10, and it could in fact be one of 
+them, likely in combination with something else like a system crash or 
+hard shutdown without proper unmounting, or simply some strange corner-
+case that wasn't dealt with properly back then, that triggered your 
+uncorrectable errors.
 
->
->
->> Not really needed, as all corruption happens on tree block of root
->> 6403,
->> it means, if it's a real corruption, it will only disturb you(make
->> fs
->> suddenly RO) when you try to modify something(leaves under that node)
->> in
->> that subvolume.
-> Ah... and it couldn't cause corruption to the same data blocks if they
-> were used by another snaphshot?
+Here on this list, which does focus on the mainstream kernel and forward 
+development, the recommended kernels are the last two kernels in one of 
+two tracks, current stable release or the mainstream LTS kernel series.  
+For current stable, 4.10 is in development so 4.9 and 4.8 are supported, 
+tho 4.8 is now EOL on kernel.org, so people should be moving to 4.9 by 
+now unless they have specific reason not to.  For LTS, the 4.4 series is 
+the latest, with 4.1 previous to that, so 4.4 and 4.1 are supported.  
+Previous to 4.1, while we do try, enough development has happened since 
+then that practical support quality is likely to be quite reduced, with a 
+very early suggestion being an upgrade to something newer.
 
-No, it won't cause corruption to any data block, no matter shared or not.
+Of course we realize that various distros have chosen to support btrfs on 
+their older kernels, backporting various patches as they consider 
+appropriate.  However, we don't track what they've backported and what 
+they haven't, and thus aren't in a particularly good position to offer 
+support.  The distros choosing to do that backporting and support should 
+be far better resources in that case, as they actually know what they've 
+backported and what they haven't.
 
->
->
->
->> And I highly suspect if the subvolume 6403 is the RO snapshot you
->> just removed.
-> I guess there is no way to find out whether it was that snapshot, is
-> there?
+Tho if I'm not mistaken and based on what I've read, RHEL offered 
+experimental support for btrfs back then, but never full support, and 
+even that experimental support is long ended, so you may be on your own 
+there in any case.  But that's second hand.  Maybe they still offer it?
 
-"btrfs subvolume list" could do it."
-If no output of 6403, then it's removed.
+But if you're choosing to use that ancient a long-term-supported 
+enterprise distro and kernel, presumably you value stability very highly, 
+which would seem at its root to be incompatible with btrfs' status as 
+still in development and stabilizing, not yet fully stable and mature.  
+So a reevaluation is likely in order, as depending on your needs and 
+priorities, your use of either RHEL 7 and its old kernel for stability 
+reasons, or your use of the still under heavy development and not yet 
+fully stable btrfs, would appear to be inappropriate for your 
+circumstances and priorities and may well need changed.
 
-And "btrfs-debug-tree -t root" also has info for it.
-A deleted subvolume won't have corresponding ROOT_BACKREF, and its 
-ROOT_ITEM should have none-zero drop key.
-
-And in your case, your subvolume is indeed undergoing deletion.
-
-
-Also checked the extent tree, the result is a little interesting:
-1) Most tree backref are good.
-    In fact, 3 of all the 4 errors reported are tree blocks shared by
-    other subvolumes, like:
-
-item 77 key (51200000 METADATA_ITEM 1) itemoff 13070 itemsize 42
-		extent refs 2 gen 11 flags TREE_BLOCK|FULL_BACKREF
-		tree block skinny level 1
-		tree block backref root 7285
-		tree block backref root 6572
-
-This means the tree blocks are share by 2 other subvolumes,
-7285 and 6572.
-
-7285 subvolume is completely OK, while 6572 is also undergoing subvolume 
-deletion(while real deletion doesn't start yet).
-
-And considering the generation, I assume 6403 is deleted before 6572.
-
-So we're almost clear that, btrfs (maybe only btrfsck) doesn't handle it 
-well if there are multiple subvolume undergoing deletion.
-
-This gives us enough info to try to build such image by ourselves now.
-(Although still quite hard to do though).
-
-Also that also explained why btrfs-progs test image 021 won't trigger 
-the problem.
-As it's only one subvolume undergoing deletion and no full backref extent.
-
-
-
-And for the scary lowmem mode, it's false alert.
-
-I manually checked the used size of a block group and it's OK.
-
-BTW, most of your block groups are completely used, without any space.
-But interestingly, mostly data extent size are just 512K, larger than
-compressed extent upper limit, but still quite small.
-
-In other words, your fs seems to be fragmented considering the upper 
-limit of a data extent is 128M.
-(Or your case is quite common in common world?)
-
->
->
->
->> If 'btrfs subvolume list' can't find that subvolume, then I think
->> it's
->> mostly OK for you to RW mount and wait the subvolume to be fully
->> deleted.
->>
->> And I think you have already provided enough data for us to, at
->> least
->> try to, reproduce the bug.
->
-> I won't do the remount,rw this night, so you have the rest of your
-> day/night time to think of anything further I should test or provide
-> you with from that fs... then it will be "gone" (in the sense of
-> mounted RW).
-> Just give your veto if I should wait :)
-
-At least from extent and root tree dump, I found nothing wrong.
-
-It's still possible that some full backref needs to be checked from 
-subvolume tree (consdiering your fs size, not really practical) and can 
-be wrong, but the possibility is quite low.
-And in that case, there should be more than 4 extent tree errors reported.
-
-So you are mostly OK to mount it rw any time you want, and I have 
-already downloaded the raw data.
-
-Hard part is remaining for us developers to build such small image to 
-reproduce your situation then.
-
-Thanks,
-Qu
->
->
-> Thanks,
-> Chris.
->
-
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

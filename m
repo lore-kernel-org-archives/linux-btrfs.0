@@ -1,74 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:6674 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752796AbdALDxo (ORCPT
+Received: from mail-lf0-f47.google.com ([209.85.215.47]:36044 "EHLO
+        mail-lf0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750994AbdAPLFx (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Jan 2017 22:53:44 -0500
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <dsterba@suse.com>
-Subject: [PATCH v3 3/3] btrfs-progs: fsck-tests/016: lowmem mode check for images
-Date: Thu, 12 Jan 2017 11:53:30 +0800
-Message-ID: <20170112035330.21376-3-suy.fnst@cn.fujitsu.com>
-In-Reply-To: <20170112035330.21376-1-suy.fnst@cn.fujitsu.com>
-References: <20170112035330.21376-1-suy.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+        Mon, 16 Jan 2017 06:05:53 -0500
+Received: by mail-lf0-f47.google.com with SMTP id z134so76255100lff.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Jan 2017 03:05:52 -0800 (PST)
+Subject: Re: corruption: yet another one after deleting a ro snapshot
+From: Giuseppe Della Bianca <g.dellabianca@gestiware.it>
+To: quwenruo@cn.fujitsu.com, calestyo@scientia.net
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Date: Mon, 16 Jan 2017 12:06:35 +0100
+Message-ID: <1484564795.3527.18.camel@localhost>
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since lowmem mode can repair inode nbytes error now, modify this test case
-to allow lowmem mode repair.
+Hi.
 
-Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
----
-v3: add this patch.
----
- tests/fsck-tests/016-wrong-inode-nbytes/test.sh | 33 +++++++++++++++++++++++++
- 1 file changed, 33 insertions(+)
- create mode 100755 tests/fsck-tests/016-wrong-inode-nbytes/test.sh
+If it can be helpful.
 
-diff --git a/tests/fsck-tests/016-wrong-inode-nbytes/test.sh b/tests/fsck-tests/016-wrong-inode-nbytes/test.sh
-new file mode 100755
-index 0000000..f8466cb
---- /dev/null
-+++ b/tests/fsck-tests/016-wrong-inode-nbytes/test.sh
-@@ -0,0 +1,33 @@
-+#!/bin/bash
-+# check inode nbytes in both normal and lowmem mode
-+
-+source $TOP/tests/common
-+
-+check_prereq btrfs
-+
-+check_image() {
-+	local image
-+	local image2;
-+
-+	image=$1
-+	image2=$image"_2"
-+	cp "$image" "$image2"
-+
-+	echo "testing image $(basename $image)" >> "$RESULTS"
-+	"$TOP/btrfs" check "$image" >> "$RESULTS" 2>&1
-+	[ $? -eq 0 ] && _fail "btrfs check should have detected corruption"
-+
-+	run_check "$TOP/btrfs" check --repair "$image"
-+	run_check "$TOP/btrfs" check "$image"
-+
-+	echo "testing image $(basename $image2)" >> "$RESULTS"
-+	"$TOP/btrfs" check --mode=lowmem "$image2" >> "$RESULTS" 2>&1
-+	[ $? -eq 0 ] && _fail "btrfs lowmem check should detected corruption"
-+
-+	run_check "$TOP/btrfs" check --mode=lowmem --repair "$image2"
-+	run_check "$TOP/btrfs" check --mode=lowmem "$image2"
-+
-+	rm "$image2"
-+}
-+
-+check_all_images
--- 
-2.11.0
+How to double checking the status of my filesystem, I launched ' btrfs
+scrub / ' and/or ' du -sh /* '.
+If the file system is corrupt, in my case, the command have aborted.
 
 
+Regards.
+
+
+gdb
 

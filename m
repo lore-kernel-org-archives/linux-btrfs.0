@@ -1,185 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:39206 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751970AbdASMOW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Jan 2017 07:14:22 -0500
-Received: from mail.kernel.org (localhost [127.0.0.1])
-        by mail.kernel.org (Postfix) with ESMTP id EBF1D2050E
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2017 12:03:55 +0000 (UTC)
-Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 5749D204FC
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2017 12:03:54 +0000 (UTC)
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/3] Btrfs: incremental send, do not delay rename when parent inode is new
-Date: Thu, 12 Jan 2017 03:07:22 +0000
-Message-Id: <1484190442-17178-1-git-send-email-fdmanana@kernel.org>
+Received: from mail-wm0-f65.google.com ([74.125.82.65]:35473 "EHLO
+        mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751079AbdAQWig (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 17 Jan 2017 17:38:36 -0500
+Received: by mail-wm0-f65.google.com with SMTP id d140so25582778wmd.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 Jan 2017 14:38:36 -0800 (PST)
+From: Nikolay Borisov <n.borisov.lkml@gmail.com>
+To: dsterba@suse.cz
+Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <n.borisov.lkml@gmail.com>
+Subject: [PATCHv2 00/24] tree-log inode vs btrfs_inode cleanups
+Date: Wed, 18 Jan 2017 00:31:26 +0200
+Message-Id: <1484692310-3987-1-git-send-email-n.borisov.lkml@gmail.com>
+In-Reply-To: <20170117161550.GW12081@twin.jikos.cz>
+References: <20170117161550.GW12081@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
 
-When we are checking if we need to delay the rename operation for an
-inode we not checking if a parent inode that exists in the send and
-parent snapshots is really the same inode or not, that is, we are not
-comparing the generation number of the parent inode in the send and
-parent snapshots. Not only this results in unnecessarily delaying a
-rename operation but also can later on make us generate an incorrect
-name for a new inode in the send snapshot that has the same number
-as another inode in the parent snapshot but a different generation.
+So here is a new set of patches cleaning up tree-log function 
+w.r.t inode vs btrfs_inode. There are still some which remain 
+but I didn't find compelling arguments to cleaning them up, so 
+I've left them unchanged. This time there are some size shrinkage:
 
-Here follows an example where this happens.
+   text	   data	    bss	    dec	    hex	filename
+   2530598	 174661	  28288	2733547	 29b5eb	fs/btrfs/btrfs.ko - upstream master
 
-Parent snapshot:
+ 	text	   data	    bss	    dec	    hex	filename
+ 	2530774	 174661	  28288	2733723	 29b69b	fs/btrfs/btrfs.ko - before tree-log cleanup
 
- .                                                  (ino 256, gen 3)
- |--- dir258/                                       (ino 258, gen 7)
- |       |--- dir257/                               (ino 257, gen 7)
- |
- |--- dir259/                                       (ino 259, gen 7)
+    text	   data	    bss	    dec	    hex	filename
+	2530163	 174661	  28288	2733112	 29b438	fs/btrfs/btrfs.ko - both series applied 
 
-Send snapshot:
+So the net result of the 2 series is 435 bytes and I assume there 
+will be further reduction in size once further cleanups are made 
 
- .                                                  (ino 256, gen 3)
- |--- file258                                       (ino 258, gen 10)
- |
- |--- new_dir259/                                   (ino 259, gen 10)
-          |--- dir257/                              (ino 257, gen 7)
+Changes since v1: 
+ * Rebased all patche to latest master
 
-The following steps happen when computing the incremental send stream:
+Nikolay Borisov (24):
+  btrfs: Make btrfs_must_commit_transaction take btrfs_inode
+  btrfs: Make btrfs_record_unlink_dir take btrfs_inode
+  btrfs: Make btrfs_record_snapshot_destroy take btrfs_inode
+  btrfs: Make btrfs_inode_in_log take btrfs_inode
+  btrfs: Make btrfs_log_new_name take btrfs_inode
+  btrfs: Make btrfs_del_dir_entries_in_log take btrfs_inode
+  btrfs: Make btrfs_del_inode_ref take btrfs_inode
+  btrfs: Make logged_inode_size take btrfs_inode
+  btrfs: Make btrfs_check_ref_name_override take btrfs_inode
+  btrfs: Make copy_items take btrfs_inode
+  btrfs: Make btrfs_log_all_xattrs take btrfs_inode
+  btrfs: Make btrfs_log_trailing_hole take btrfs_inode
+  btrfs: Make btrfs_get_logged_extents take btrfs_inode
+  btrfs: Make btrfs_log_changed_extents take btrfs_inode
+  btrfs: Make log_dir_items take btrfs_inode
+  btrfs: Make log_directory_changes take btrfs_inode
+  btrfs: Make log_new_dir_dentries take btrfs_inode
+  btrfs: Make btrfs_unlink_inode take btrfs_inode
+  btrfs: Make drop_one_dir_item take btrfs_inode
+  btrfs: Make __add_inode_ref take btrfs_inode
+  btrfs: Make log_inode_item take btrfs_inode
+  btrfs: Make btrfs_log_inode take btrfs_inode
+  btrfs: Make count_inode_extrefs take btrfs_inode
+  btrfs: Make count_inode_refs take btrfs_inode
 
-1) When processing inode 257, its new parent is created using its orphan
-   name (o257-21-0), and the rename operation for inode 257 is delayed
-   because its new parent (inode 259) was not yet processed - this
-   decision to delay the rename operation does not make much sense
-   because the inode 259 in the send snapshot is a new inode, it's not
-   the same as inode 259 in the parent snapshot.
+ fs/btrfs/btrfs_inode.h  |  16 ++-
+ fs/btrfs/ctree.h        |   2 +-
+ fs/btrfs/file.c         |   2 +-
+ fs/btrfs/inode.c        |  90 ++++++++-------
+ fs/btrfs/ioctl.c        |   2 +-
+ fs/btrfs/ordered-data.c |   4 +-
+ fs/btrfs/ordered-data.h |   2 +-
+ fs/btrfs/tree-log.c     | 288 +++++++++++++++++++++++-------------------------
+ fs/btrfs/tree-log.h     |  10 +-
+ 9 files changed, 201 insertions(+), 215 deletions(-)
 
-2) When processing inode 258 we end up delaying its rmdir operation,
-   because inode 257 was not yet renamed (moved away from the directory
-   inode 258 represents). We also create the new inode 258 using its
-   orphan name "o258-10-0", then rename it to its final name of "file258"
-   and then issue a truncate operation for it. However this truncate
-   operation contains an incorrect name, which corresponds to the orphan
-   name and not to the final name, which makes the receiver fail. This
-   happens because when we attempt to compute the inode's current name
-   we verify that there's another inode with the same number (258) that
-   has its rmdir operation pending and because of that we generate an
-   orphan name for the new inode 258 (we do this in the function
-   get_cur_path()).
-
-Fix this by not delayed the rename operation of an inode if it has parents
-with the same number but different generations in both snapshots.
-
-The following steps reproduce this example scenario.
-
- $ mkfs.btrfs -f /dev/sdb
- $ mount /dev/sdb /mnt
- $ mkdir /mnt/dir257
- $ mkdir /mnt/dir258
- $ mkdir /mnt/dir259
- $ mv /mnt/dir257 /mnt/dir258/dir257
- $ btrfs subvolume snapshot -r /mnt /mnt/snap1
-
- $ mv /mnt/dir258/dir257 /mnt/dir257
- $ rmdir /mnt/dir258
- $ rmdir /mnt/dir259
-
- # Remount the filesystem so that the next created inodes will have the
- # numbers 258 and 259. This is because when a filesystem is mounted,
- # btrfs sets the subvolume's inode counter to a value corresponding to
- # the highest inode number in the subvolume plus 1. This inode counter
- # is used to assign a unique number to each new inode and it's
- # incremented by 1 after very inode creation.
- # Note: we unmount and then mount instead of doing a mount with
- # "-o remount" because otherwise the inode counter remains at value 260.
- $ umount /mnt
- $ mount /dev/sdb /mnt
- $ touch /mnt/file258
- $ mkdir /mnt/new_dir259
- $ mv /mnt/dir257 /mnt/new_dir259/dir257
- $ btrfs subvolume snapshot -r /mnt /mnt/snap2
-
- $ btrfs send /mnt/snap1 -f /tmp/1.snap
- $ btrfs send -p /mnt/snap1 /mnt/snap2 -f /tmp/2.snap
-
- $ umount /mnt
- $ mkfs.btrfs -f /dev/sdc
- $ mount /dev/sdc /mnt
- $ btrfs receive /mnt -f /tmo/1.snap
- $ btrfs receive /mnt -f /tmo/2.snap -vv
- receiving snapshot mysnap2 uuid=e059b6d1-7f55-f140-8d7c-9a3039d23c97, ctransid=10 parent_uuid=77e98cb6-8762-814f-9e05-e8ba877fc0b0, parent_ctransid=7
- utimes
- mkdir o259-10-0
- rename dir258 -> o258-7-0
- utimes
- mkfile o258-10-0
- rename o258-10-0 -> file258
- utimes
- truncate o258-10-0 size=0
- ERROR: truncate o258-10-0 failed: No such file or directory
-
-Reported-by: Robbie Ko <robbieko@synology.com>
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/send.c | 19 ++++++++++++++++---
- 1 file changed, 16 insertions(+), 3 deletions(-)
-
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 2ae32c4..2742324 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -3559,6 +3559,7 @@ static int wait_for_parent_move(struct send_ctx *sctx,
- {
- 	int ret = 0;
- 	u64 ino = parent_ref->dir;
-+	u64 ino_gen = parent_ref->dir_gen;
- 	u64 parent_ino_before, parent_ino_after;
- 	struct fs_path *path_before = NULL;
- 	struct fs_path *path_after = NULL;
-@@ -3579,6 +3580,8 @@ static int wait_for_parent_move(struct send_ctx *sctx,
- 	 * at get_cur_path()).
- 	 */
- 	while (ino > BTRFS_FIRST_FREE_OBJECTID) {
-+		u64 parent_ino_after_gen;
-+
- 		if (is_waiting_for_move(sctx, ino)) {
- 			/*
- 			 * If the current inode is an ancestor of ino in the
-@@ -3601,7 +3604,7 @@ static int wait_for_parent_move(struct send_ctx *sctx,
- 		fs_path_reset(path_after);
- 
- 		ret = get_first_ref(sctx->send_root, ino, &parent_ino_after,
--				    NULL, path_after);
-+				    &parent_ino_after_gen, path_after);
- 		if (ret < 0)
- 			goto out;
- 		ret = get_first_ref(sctx->parent_root, ino, &parent_ino_before,
-@@ -3618,10 +3621,20 @@ static int wait_for_parent_move(struct send_ctx *sctx,
- 		if (ino > sctx->cur_ino &&
- 		    (parent_ino_before != parent_ino_after || len1 != len2 ||
- 		     memcmp(path_before->start, path_after->start, len1))) {
--			ret = 1;
--			break;
-+			u64 parent_ino_gen;
-+
-+			ret = get_inode_info(sctx->parent_root, ino, NULL,
-+					     &parent_ino_gen, NULL, NULL, NULL,
-+					     NULL);
-+			if (ret < 0)
-+				goto out;
-+			if (ino_gen == parent_ino_gen) {
-+				ret = 1;
-+				break;
-+			}
- 		}
- 		ino = parent_ino_after;
-+		ino_gen = parent_ino_after_gen;
- 	}
- 
- out:
 -- 
-2.7.0.rc3
+2.7.4
 

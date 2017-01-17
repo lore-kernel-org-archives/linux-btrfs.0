@@ -1,80 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f65.google.com ([74.125.82.65]:35473 "EHLO
+Received: from mail-wm0-f65.google.com ([74.125.82.65]:35882 "EHLO
         mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751079AbdAQWig (ORCPT
+        with ESMTP id S1751228AbdAQWjv (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Jan 2017 17:38:36 -0500
-Received: by mail-wm0-f65.google.com with SMTP id d140so25582778wmd.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 17 Jan 2017 14:38:36 -0800 (PST)
+        Tue, 17 Jan 2017 17:39:51 -0500
+Received: by mail-wm0-f65.google.com with SMTP id r126so41992974wmr.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 Jan 2017 14:39:40 -0800 (PST)
 From: Nikolay Borisov <n.borisov.lkml@gmail.com>
 To: dsterba@suse.cz
 Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <n.borisov.lkml@gmail.com>
-Subject: [PATCHv2 00/24] tree-log inode vs btrfs_inode cleanups
-Date: Wed, 18 Jan 2017 00:31:26 +0200
-Message-Id: <1484692310-3987-1-git-send-email-n.borisov.lkml@gmail.com>
-In-Reply-To: <20170117161550.GW12081@twin.jikos.cz>
+Subject: [PATCHv2 01/24] btrfs: Make btrfs_must_commit_transaction take btrfs_inode
+Date: Wed, 18 Jan 2017 00:31:27 +0200
+Message-Id: <1484692310-3987-2-git-send-email-n.borisov.lkml@gmail.com>
+In-Reply-To: <1484692310-3987-1-git-send-email-n.borisov.lkml@gmail.com>
 References: <20170117161550.GW12081@twin.jikos.cz>
+ <1484692310-3987-1-git-send-email-n.borisov.lkml@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Signed-off-by: Nikolay Borisov <n.borisov.lkml@gmail.com>
+---
+ fs/btrfs/tree-log.c | 18 +++++++++---------
+ 1 file changed, 9 insertions(+), 9 deletions(-)
 
-So here is a new set of patches cleaning up tree-log function 
-w.r.t inode vs btrfs_inode. There are still some which remain 
-but I didn't find compelling arguments to cleaning them up, so 
-I've left them unchanged. This time there are some size shrinkage:
-
-   text	   data	    bss	    dec	    hex	filename
-   2530598	 174661	  28288	2733547	 29b5eb	fs/btrfs/btrfs.ko - upstream master
-
- 	text	   data	    bss	    dec	    hex	filename
- 	2530774	 174661	  28288	2733723	 29b69b	fs/btrfs/btrfs.ko - before tree-log cleanup
-
-    text	   data	    bss	    dec	    hex	filename
-	2530163	 174661	  28288	2733112	 29b438	fs/btrfs/btrfs.ko - both series applied 
-
-So the net result of the 2 series is 435 bytes and I assume there 
-will be further reduction in size once further cleanups are made 
-
-Changes since v1: 
- * Rebased all patche to latest master
-
-Nikolay Borisov (24):
-  btrfs: Make btrfs_must_commit_transaction take btrfs_inode
-  btrfs: Make btrfs_record_unlink_dir take btrfs_inode
-  btrfs: Make btrfs_record_snapshot_destroy take btrfs_inode
-  btrfs: Make btrfs_inode_in_log take btrfs_inode
-  btrfs: Make btrfs_log_new_name take btrfs_inode
-  btrfs: Make btrfs_del_dir_entries_in_log take btrfs_inode
-  btrfs: Make btrfs_del_inode_ref take btrfs_inode
-  btrfs: Make logged_inode_size take btrfs_inode
-  btrfs: Make btrfs_check_ref_name_override take btrfs_inode
-  btrfs: Make copy_items take btrfs_inode
-  btrfs: Make btrfs_log_all_xattrs take btrfs_inode
-  btrfs: Make btrfs_log_trailing_hole take btrfs_inode
-  btrfs: Make btrfs_get_logged_extents take btrfs_inode
-  btrfs: Make btrfs_log_changed_extents take btrfs_inode
-  btrfs: Make log_dir_items take btrfs_inode
-  btrfs: Make log_directory_changes take btrfs_inode
-  btrfs: Make log_new_dir_dentries take btrfs_inode
-  btrfs: Make btrfs_unlink_inode take btrfs_inode
-  btrfs: Make drop_one_dir_item take btrfs_inode
-  btrfs: Make __add_inode_ref take btrfs_inode
-  btrfs: Make log_inode_item take btrfs_inode
-  btrfs: Make btrfs_log_inode take btrfs_inode
-  btrfs: Make count_inode_extrefs take btrfs_inode
-  btrfs: Make count_inode_refs take btrfs_inode
-
- fs/btrfs/btrfs_inode.h  |  16 ++-
- fs/btrfs/ctree.h        |   2 +-
- fs/btrfs/file.c         |   2 +-
- fs/btrfs/inode.c        |  90 ++++++++-------
- fs/btrfs/ioctl.c        |   2 +-
- fs/btrfs/ordered-data.c |   4 +-
- fs/btrfs/ordered-data.h |   2 +-
- fs/btrfs/tree-log.c     | 288 +++++++++++++++++++++++-------------------------
- fs/btrfs/tree-log.h     |  10 +-
- 9 files changed, 201 insertions(+), 215 deletions(-)
-
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index b814cd7bbe70..a2a822a993af 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -5021,13 +5021,13 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+  * we logged the inode or it might have also done the unlink).
+  */
+ static bool btrfs_must_commit_transaction(struct btrfs_trans_handle *trans,
+-					  struct inode *inode)
++					  struct btrfs_inode *inode)
+ {
+-	struct btrfs_fs_info *fs_info = BTRFS_I(inode)->root->fs_info;
++	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+ 	bool ret = false;
+ 
+-	mutex_lock(&BTRFS_I(inode)->log_mutex);
+-	if (BTRFS_I(inode)->last_unlink_trans > fs_info->last_trans_committed) {
++	mutex_lock(&inode->log_mutex);
++	if (inode->last_unlink_trans > fs_info->last_trans_committed) {
+ 		/*
+ 		 * Make sure any commits to the log are forced to be full
+ 		 * commits.
+@@ -5035,7 +5035,7 @@ static bool btrfs_must_commit_transaction(struct btrfs_trans_handle *trans,
+ 		btrfs_set_log_full_commit(fs_info, trans);
+ 		ret = true;
+ 	}
+-	mutex_unlock(&BTRFS_I(inode)->log_mutex);
++	mutex_unlock(&inode->log_mutex);
+ 
+ 	return ret;
+ }
+@@ -5084,7 +5084,7 @@ static noinline int check_parent_dirs_for_sync(struct btrfs_trans_handle *trans,
+ 			BTRFS_I(inode)->logged_trans = trans->transid;
+ 		smp_mb();
+ 
+-		if (btrfs_must_commit_transaction(trans, inode)) {
++		if (btrfs_must_commit_transaction(trans, BTRFS_I(inode))) {
+ 			ret = 1;
+ 			break;
+ 		}
+@@ -5094,7 +5094,7 @@ static noinline int check_parent_dirs_for_sync(struct btrfs_trans_handle *trans,
+ 
+ 		if (IS_ROOT(parent)) {
+ 			inode = d_inode(parent);
+-			if (btrfs_must_commit_transaction(trans, inode))
++			if (btrfs_must_commit_transaction(trans, BTRFS_I(inode)))
+ 				ret = 1;
+ 			break;
+ 		}
+@@ -5248,7 +5248,7 @@ static int log_new_dir_dentries(struct btrfs_trans_handle *trans,
+ 			ret = btrfs_log_inode(trans, root, di_inode,
+ 					      log_mode, 0, LLONG_MAX, ctx);
+ 			if (!ret &&
+-			    btrfs_must_commit_transaction(trans, di_inode))
++			    btrfs_must_commit_transaction(trans, BTRFS_I(di_inode)))
+ 				ret = 1;
+ 			iput(di_inode);
+ 			if (ret)
+@@ -5368,7 +5368,7 @@ static int btrfs_log_all_parents(struct btrfs_trans_handle *trans,
+ 			ret = btrfs_log_inode(trans, root, dir_inode,
+ 					      LOG_INODE_ALL, 0, LLONG_MAX, ctx);
+ 			if (!ret &&
+-			    btrfs_must_commit_transaction(trans, dir_inode))
++			    btrfs_must_commit_transaction(trans, BTRFS_I(dir_inode)))
+ 				ret = 1;
+ 			if (!ret && ctx && ctx->log_new_dentries)
+ 				ret = log_new_dir_dentries(trans, root,
 -- 
 2.7.4
 

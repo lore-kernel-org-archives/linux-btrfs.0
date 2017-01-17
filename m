@@ -1,75 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f65.google.com ([209.85.215.65]:35099 "EHLO
-        mail-lf0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750760AbdALOA5 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 12 Jan 2017 09:00:57 -0500
-Received: by mail-lf0-f65.google.com with SMTP id v186so1935420lfa.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Jan 2017 06:00:56 -0800 (PST)
-From: Nikolay Borisov <n.borisov.lkml@gmail.com>
-To: dsterba@suse.com
-Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <n.borisov.lkml@gmail.com>
-Subject: [PATCH 00/24] tree-log inode vs btrfs_inode cleanups
-Date: Thu, 12 Jan 2017 16:00:26 +0200
-Message-Id: <1484229650-24554-1-git-send-email-n.borisov.lkml@gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:33499 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751115AbdAQQQk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 17 Jan 2017 11:16:40 -0500
+Date: Tue, 17 Jan 2017 17:15:50 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <n.borisov.lkml@gmail.com>
+Cc: dsterba@suse.com, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 00/24] tree-log inode vs btrfs_inode cleanups
+Message-ID: <20170117161550.GW12081@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1484229650-24554-1-git-send-email-n.borisov.lkml@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1484229650-24554-1-git-send-email-n.borisov.lkml@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Thu, Jan 12, 2017 at 04:00:26PM +0200, Nikolay Borisov wrote:
+> So here is a new set of patches cleaning up tree-log function 
+> w.r.t inode vs btrfs_inode. There are still some which remain 
+> but I didn't find compelling arguments to cleaning them up, so 
+> I've left them unchanged. This time there are some size shrinkage:
+> 
+>    text	   data	    bss	    dec	    hex	filename
+>    2530598	 174661	  28288	2733547	 29b5eb	fs/btrfs/btrfs.ko - upstream master
+> 
+>  	text	   data	    bss	    dec	    hex	filename
+>  	2530774	 174661	  28288	2733723	 29b69b	fs/btrfs/btrfs.ko - before tree-log cleanup
+> 
+>     text	   data	    bss	    dec	    hex	filename
+> 	2530163	 174661	  28288	2733112	 29b438	fs/btrfs/btrfs.ko - both series applied 
+> 
+> So the net result of the 2 series is 435 bytes and I assume there 
+> will be further reduction in size once further cleanups are made 
 
-So here is a new set of patches cleaning up tree-log function 
-w.r.t inode vs btrfs_inode. There are still some which remain 
-but I didn't find compelling arguments to cleaning them up, so 
-I've left them unchanged. This time there are some size shrinkage:
-
-   text	   data	    bss	    dec	    hex	filename
-   2530598	 174661	  28288	2733547	 29b5eb	fs/btrfs/btrfs.ko - upstream master
-
- 	text	   data	    bss	    dec	    hex	filename
- 	2530774	 174661	  28288	2733723	 29b69b	fs/btrfs/btrfs.ko - before tree-log cleanup
-
-    text	   data	    bss	    dec	    hex	filename
-	2530163	 174661	  28288	2733112	 29b438	fs/btrfs/btrfs.ko - both series applied 
-
-So the net result of the 2 series is 435 bytes and I assume there 
-will be further reduction in size once further cleanups are made 
-
-Nikolay Borisov (24):
-  btrfs: Make btrfs_must_commit_transaction take btrfs_inode
-  btrfs: Make btrfs_record_unlink_dir take btrfs_inode
-  btrfs: Make btrfs_record_snapshot_destroy take btrfs_inode
-  btrfs: Make btrfs_inode_in_log take btrfs_inode
-  btrfs: Make btrfs_log_new_name take btrfs_inode
-  btrfs: Make btrfs_del_dir_entries_in_log take btrfs_inode
-  btrfs: Make btrfs_del_inode_ref take btrfs_inode
-  btrfs: Make logged_inode_size take btrfs_inode
-  btrfs: Make btrfs_check_ref_name_override take btrfs_inode
-  btrfs: Make copy_items take btrfs_inode
-  btrfs: Make btrfs_log_all_xattrs take btrfs_inode
-  btrfs: Make btrfs_log_trailing_hole take btrfs_inode
-  btrfs: Make btrfs_get_logged_extents take btrfs_inode
-  btrfs: Make btrfs_log_changed_extents take btrfs_inode
-  btrfs: Make log_dir_items take btrfs_inode
-  btrfs: Make log_directory_changes take btrfs_inode
-  btrfs: Make log_new_dir_dentries take btrfs_inode
-  btrfs: Make btrfs_unlink_inode take btrfs_inode
-  btrfs: Make drop_one_dir_item take btrfs_inode
-  btrfs: Make __add_inode_ref take btrfs_inode
-  btrfs: Make log_inode_item take btrfs_inode
-  btrfs: Make btrfs_log_inode take btrfs_inode
-  btrfs: Make count_inode_extrefs take btrfs_inode
-  btrfs: Make count_inode_refs take btrfs_inode
-
- fs/btrfs/btrfs_inode.h  |  16 ++-
- fs/btrfs/ctree.h        |   2 +-
- fs/btrfs/file.c         |   2 +-
- fs/btrfs/inode.c        |  90 ++++++++-------
- fs/btrfs/ioctl.c        |   2 +-
- fs/btrfs/ordered-data.c |   4 +-
- fs/btrfs/ordered-data.h |   2 +-
- fs/btrfs/tree-log.c     | 288 +++++++++++++++++++++++-------------------------
- fs/btrfs/tree-log.h     |  10 +-
- 9 files changed, 201 insertions(+), 215 deletions(-)
-
--- 
-2.7.4
-
+Thanks. I was about to apply the series but patch 06/24 fails to apply
+on anytihing that I could use (master, cmason's integration or the
+cleanups-next branch). Can you please refresh it on top of master? The
+conflict looks like the patch tries to apply the same change twice to
+btrfs_del_dir_entries_in_log, so it would be better is you check.
+Thanks.

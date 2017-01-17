@@ -1,12 +1,13 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33556 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:49742 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751470AbdAQQQn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Jan 2017 11:16:43 -0500
-Date: Tue, 17 Jan 2017 17:16:19 +0100
-From: Michal Hocko <mhocko@kernel.org>
-To: "Theodore Ts'o" <tytso@mit.edu>
-Cc: Jan Kara <jack@suse.cz>, linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
+        id S1751186AbdAQR3g (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 17 Jan 2017 12:29:36 -0500
+Date: Tue, 17 Jan 2017 18:29:25 +0100
+From: Jan Kara <jack@suse.cz>
+To: Michal Hocko <mhocko@kernel.org>
+Cc: "Theodore Ts'o" <tytso@mit.edu>, Jan Kara <jack@suse.cz>,
+        linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
         Andrew Morton <akpm@linux-foundation.org>,
         Dave Chinner <david@fromorbit.com>, djwong@kernel.org,
         Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.cz>,
@@ -18,76 +19,42 @@ Cc: Jan Kara <jack@suse.cz>, linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
         linux-f2fs-devel@lists.sourceforge.net, linux-afs@lists.infradead.org,
         LKML <linux-kernel@vger.kernel.org>
 Subject: Re: [PATCH 8/8] Revert "ext4: fix wrong gfp type under transaction"
-Message-ID: <20170117161618.GT19699@dhcp22.suse.cz>
+Message-ID: <20170117172925.GA2486@quack2.suse.cz>
 References: <20170106141107.23953-1-mhocko@kernel.org>
  <20170106141107.23953-9-mhocko@kernel.org>
  <20170117025607.frrcdbduthhutrzj@thunk.org>
  <20170117082425.GD19699@dhcp22.suse.cz>
  <20170117151817.GR19699@dhcp22.suse.cz>
  <20170117155916.dcizr65bwa6behe7@thunk.org>
+ <20170117161618.GT19699@dhcp22.suse.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170117155916.dcizr65bwa6behe7@thunk.org>
+In-Reply-To: <20170117161618.GT19699@dhcp22.suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue 17-01-17 10:59:16, Theodore Ts'o wrote:
-> On Tue, Jan 17, 2017 at 04:18:17PM +0100, Michal Hocko wrote:
+On Tue 17-01-17 17:16:19, Michal Hocko wrote:
+> > > But before going to play with that I am really wondering whether we need
+> > > all this with no journal at all. AFAIU what Jack told me it is the
+> > > journal lock(s) which is the biggest problem from the reclaim recursion
+> > > point of view. What would cause a deadlock in no journal mode?
 > > 
-> > OK, so I've been staring into the code and AFAIU current->journal_info
-> > can contain my stored information. I could either hijack part of the
-> > word as the ref counting is only consuming low 12b. But that looks too
-> > ugly to live. Or I can allocate some placeholder.
+> > We still have the original problem for why we need GFP_NOFS even in
+> > ext2.  If we are in a writeback path, and we need to allocate memory,
+> > we don't want to recurse back into the file system's writeback path.
 > 
-> Yeah, I was looking at something similar.  Can you guarantee that the
-> context will only take one or two bits?  (Looks like it only needs one
-> bit ATM, even though at the moment you're storing the whole GFP mask,
-> correct?)
+> But we do not enter the writeback path from the direct reclaim. Or do
+> you mean something other than pageout()'s mapping->a_ops->writepage?
+> There is only try_to_release_page where we get back to the filesystems
+> but I do not see any NOFS protection in ext4_releasepage.
 
-No, I am just storing PF_MEMALLOC_NO{FS,IO} but I assume further changes
-might want to pull in more changes into the scope context.
+Maybe to expand a bit: These days, direct reclaim can call ->releasepage()
+callback, ->evict_inode() callback (and only for inodes with i_nlink > 0),
+shrinkers. That's it. So the recursion possibilities are rather more limited
+than they used to be several years ago and we likely do not need as much
+GFP_NOFS protection as we used to.
 
-> > But before going to play with that I am really wondering whether we need
-> > all this with no journal at all. AFAIU what Jack told me it is the
-> > journal lock(s) which is the biggest problem from the reclaim recursion
-> > point of view. What would cause a deadlock in no journal mode?
-> 
-> We still have the original problem for why we need GFP_NOFS even in
-> ext2.  If we are in a writeback path, and we need to allocate memory,
-> we don't want to recurse back into the file system's writeback path.
-
-But we do not enter the writeback path from the direct reclaim. Or do
-you mean something other than pageout()'s mapping->a_ops->writepage?
-There is only try_to_release_page where we get back to the filesystems
-but I do not see any NOFS protection in ext4_releasepage.
-
-> Certainly not for the same inode, and while we could make it work if
-> the mm was writing back another inode, or another superblock, there
-> are also stack depth considerations that would make this be a bad
-> idea.  So we do need to be able to assert GFP_NOFS even in no journal
-> mode, and for any file system including ext2, for that matter.
-> 
-> Because of the fact that we're going to have to play games with
-> current->journal_info, maybe this is something that I should take
-> responsibility for, and to go through the the ext4 tree after the main
-> patch series go through?
-
-How do you see a possibility that we would handle nojournal mode on
-top of "[PATCH 5/8] jbd2: mark the transaction context with the scope
-GFP_NOFS context" in a separate patch?
-
-But anyway, I agree that we should go with the API sooner rather than
-later.
-
->   Maybe you could use xfs and ext2 as sample
-> (simple) implementations?
-> 
-> My only ask is that the memalloc nofs context be a well defined N
-> bits, where N < 16, and I'll find some place to put them (probably
-> journal_info).
-
-I am pretty sure that we won't need more than a bit or two in a
-foreseeable future (I can think of GFP_NOWAIT being one candidate).
+								Honza
 -- 
-Michal Hocko
-SUSE Labs
+Jan Kara <jack@suse.com>
+SUSE Labs, CR

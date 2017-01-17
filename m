@@ -1,86 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtpq5.tb.mail.iss.as9143.net ([212.54.42.168]:44650 "EHLO
-        smtpq5.tb.mail.iss.as9143.net" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S938892AbdAEVYG (ORCPT
+Received: from mail6.webfaction.com ([74.55.86.74]:39788 "EHLO
+        smtp.webfaction.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751115AbdAQU0H (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 5 Jan 2017 16:24:06 -0500
-Received: from [212.54.42.117] (helo=lsmtp3.tb.mail.iss.as9143.net)
-        by smtpq5.tb.mail.iss.as9143.net with esmtp (Exim 4.86_2)
-        (envelope-from <laks@webminal.org>)
-        id 1cPFW0-0005dz-2D
-        for linux-btrfs@vger.kernel.org; Thu, 05 Jan 2017 22:24:04 +0100
-Received: from dhcp-077-251-197-105.chello.nl ([77.251.197.105] helo=webminal.org)
-        by lsmtp3.tb.mail.iss.as9143.net with esmtp (Exim 4.86_2)
-        (envelope-from <laks@webminal.org>)
-        id 1cPFVp-00024z-Q0
-        for linux-btrfs@vger.kernel.org; Thu, 05 Jan 2017 22:24:04 +0100
-Received: from localhost.localdomain (fedori [127.0.0.1])
-        by webminal.org (8.14.4/8.14.4) with ESMTP id v05JQkat011664
-        for <linux-btrfs@vger.kernel.org>; Thu, 5 Jan 2017 20:26:57 +0100
-Received: (from root@localhost)
-        by localhost.localdomain (8.14.4/8.14.4/Submit) id v05JQaif011633
-        for linux-btrfs@vger.kernel.org; Thu, 5 Jan 2017 20:26:36 +0100
-Date: Thu, 5 Jan 2017 20:26:36 +0100
-From: "Lakshmipathi.G" <Lakshmipathi.G@giis.co.in>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: fsck-tests: missing csum test script
-Message-ID: <20170105192636.GA11297@fedori>
+        Tue, 17 Jan 2017 15:26:07 -0500
+From: Christoph Groth <christoph@grothesque.org>
+To: Goldwyn Rodrigues <rgoldwyn@suse.de>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Unocorrectable errors with RAID1
+References: <87o9z7dzvd.fsf@grothesque.org>
+        <42eaf69b-c444-fc50-2128-3a1fbd18b335@suse.de>
+        <871sw2cbzb.fsf@grothesque.org>
+        <6f5ba97f-0c13-4ad1-fda3-a10db7024ef7@suse.de>
+Date: Tue, 17 Jan 2017 21:25:28 +0100
+In-Reply-To: <6f5ba97f-0c13-4ad1-fda3-a10db7024ef7@suse.de> (Goldwyn
+        Rodrigues's message of "Tue, 17 Jan 2017 05:32:44 -0600")
+Message-ID: <87lgu9cu2v.fsf@grothesque.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: multipart/signed; boundary="=-=-=";
+        micalg=pgp-sha512; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Lakshmipathi.G <Lakshmipathi.G@giis.co.in>
----
- tests/fsck-tests/027-missing-data-csum/test.sh | 39 ++++++++++++++++++++++++++
- 1 file changed, 39 insertions(+)
- create mode 100755 tests/fsck-tests/027-missing-data-csum/test.sh
+--=-=-=
+Content-Type: text/plain; format=flowed
 
-diff --git a/tests/fsck-tests/027-missing-data-csum/test.sh b/tests/fsck-tests/027-missing-data-csum/test.sh
-new file mode 100755
-index 0000000..6d1dc97
---- /dev/null
-+++ b/tests/fsck-tests/027-missing-data-csum/test.sh
-@@ -0,0 +1,39 @@
-+#!/bin/bash
-+
-+source $TOP/tests/common
-+
-+check_prereq btrfs-corrupt-block
-+check_prereq mkfs.btrfs
-+check_prereq btrfs
-+
-+setup_root_helper
-+prepare_test_dev 512M
-+
-+
-+# simulate missing csum error and repair using init-csum option
-+test_csum_corruption()
-+{
-+	run_check $SUDO_HELPER $TOP/mkfs.btrfs -f $TEST_DEV
-+
-+	run_check_mount_test_dev
-+
-+	export DATASET_SIZE=1
-+	generate_dataset small
-+
-+	run_check_umount_test_dev
-+
-+	# find bytenr
-+	bytenr=`$SUDO_HELPER $TOP/btrfs-debug-tree $TEST_DEV | \
-+	grep "EXTENT_CSUM EXTENT_CSUM" | \
-+	cut -f1 -d')' | awk '{print $6}'`
-+
-+	# corrupt csum bytenr
-+	run_check $SUDO_HELPER $TOP/btrfs-corrupt-block -C $bytenr $TEST_DEV
-+
-+	$SUDO_HELPER $TOP/btrfs check $TEST_DEV >& /dev/null && \
-+			_fail "btrfs check failed to detect missing csum."
-+	run_check $SUDO_HELPER $TOP/btrfs check --repair --init-csum $TEST_DEV
-+	run_check $SUDO_HELPER $TOP/btrfs check  $TEST_DEV
-+}
-+
-+test_csum_corruption
--- 
-2.7.4
+Goldwyn Rodrigues wrote:
+> On 01/17/2017 02:44 AM, Christoph Groth wrote:
+>> Goldwyn Rodrigues wrote:
+>> 
+>>> Would you be able to upload a btrfs-image for me to 
+>>> examine. This is a
+>>> core ctree error where most probably item size is incorrectly 
+>>> registered.
+>> 
+>> Sure, I can do that.  I'd like to use the -s option, will this 
+>> be fine? 
+>
+> Yes, I think that should be fine.
 
+Unfortunately, giving -s causes btrfs-image to segfault.  I tried 
+both btrfs-progs 4.7.3 and 4.4.  I also tried different 
+compression levels.
+
+Without -s it works, but since this file system contains the 
+complete digital life of our family, I would rather not share even 
+the file names.
+
+Any ideas on what could be done?  If you need help to debug the 
+problem with btrfs-image, please tell me what I should do.  I can 
+keep the broken file system around until an image can be created 
+at some later time.
+
+--=-=-=
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAEBCgAdFiEEUimQV/rXmWU8TwiKw/FH9ZgPNTUFAlh+fbgACgkQw/FH9ZgP
+NTWyTA/+Ms11j0/3Ts6k0gN6/b9RXPymm815Bjz2t+OJuXpRFyuSU66Pw06sveLz
+I1S71O0qVpDupAZ/n5wZNg8HaErZip3uNmfuDq2sIdAv3turXfr9h9wJt7RzQ7TC
+HPThvK5OIt44wIxkRjsi4Jq/mPkxyanwqBezivCf4NLpPcUux7xbMvCNTsL6Fo6f
+49j8GiDLrgaOeqb/0fw4w0VlSFU3yLx8mvTxGNeyOQ3RCeSIPkZr9znq5JEWpRZs
+v+UDadniLMWHp41j6eAikSJGk9Y2R9irsBmX7qn8FdaND2cAv0cF+cp/xpE0jj4G
+srYSkqSGjl4GknR1mxnLSi6Pl/g1kVTl2OxGVQ4jbyD7uzhs2Sm/uqQZZRSqP9cv
+E3dsD1Dj6jaUhuTd+sNjWprVlXgsC4Wlf3n7XsSE4Oi4SjPak5cQeXQ37I2XGqr1
+hxMliC38SKwZHEpIfMBpIIWmSNQ4dUCDk40ATQzQtrXfODBonr4hMpZ01U2DG7Pf
++ZS8EUtIlbc9pNSSozMpRcahW2ZXejTN9QdbneL9eMyPxJOmwEgsPcZ7bh2Mi7ov
+SzMvg0eAPl22PuZ8nV0fnbjiYYjaVzodN6AJ/GoEOGo/zK67nJF/njQdyTrmc/KQ
+51fFAbuO437MUy/5vGOI/c8ZzjFwE7OnDpZwKHjrXQgynOtF1T0=
+=4XNT
+-----END PGP SIGNATURE-----
+--=-=-=--

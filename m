@@ -1,196 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:59737 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1750787AbdAQBLH (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 Jan 2017 20:11:07 -0500
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-        by cn.fujitsu.com (Postfix) with ESMTP id 1168447AD1FF
-        for <linux-btrfs@vger.kernel.org>; Tue, 17 Jan 2017 09:10:55 +0800 (CST)
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 2/2] btrfs: replace: Use ref counts to avoid destroying target device when canceled
-Date: Tue, 17 Jan 2017 09:10:50 +0800
-Message-ID: <20170117011050.18843-2-quwenruo@cn.fujitsu.com>
-In-Reply-To: <20170117011050.18843-1-quwenruo@cn.fujitsu.com>
-References: <20170117011050.18843-1-quwenruo@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:48644 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750870AbdAQPHU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 17 Jan 2017 10:07:20 -0500
+Date: Tue, 17 Jan 2017 16:06:27 +0100
+From: David Sterba <dsterba@suse.cz>
+To: "Lakshmipathi.G" <Lakshmipathi.G@giis.co.in>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: fsck-tests: missing csum test script
+Message-ID: <20170117150627.GR12081@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170105192636.GA11297@fedori>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170105192636.GA11297@fedori>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When dev-replace and scrub are run at the same time, dev-replace can be
-canceled by scrub. It's quite common for btrfs/069.
+It's not clear from the test what's the purpose. There's one corrupted
+csum but the whole csum tree rebuild option is used. This is a pretty
+basic check that the --init-csum-tree works, so it should be mentioned
+somewhere in the test script.
 
-While in that case, target device can be destroyed at cancel time,
-leading to a user-after-free bug:
+On Thu, Jan 05, 2017 at 08:26:36PM +0100, Lakshmipathi.G wrote:
+> Signed-off-by: Lakshmipathi.G <Lakshmipathi.G@giis.co.in>
+> ---
+>  tests/fsck-tests/027-missing-data-csum/test.sh | 39 ++++++++++++++++++++++++++
+>  1 file changed, 39 insertions(+)
+>  create mode 100755 tests/fsck-tests/027-missing-data-csum/test.sh
+> 
+> diff --git a/tests/fsck-tests/027-missing-data-csum/test.sh b/tests/fsck-tests/027-missing-data-csum/test.sh
+> new file mode 100755
+> index 0000000..6d1dc97
+> --- /dev/null
+> +++ b/tests/fsck-tests/027-missing-data-csum/test.sh
+> @@ -0,0 +1,39 @@
+> +#!/bin/bash
+> +
+> +source $TOP/tests/common
+> +
+> +check_prereq btrfs-corrupt-block
+> +check_prereq mkfs.btrfs
+> +check_prereq btrfs
+> +
+> +setup_root_helper
+> +prepare_test_dev 512M
+> +
+> +
+> +# simulate missing csum error and repair using init-csum option
+> +test_csum_corruption()
+> +{
+> +	run_check $SUDO_HELPER $TOP/mkfs.btrfs -f $TEST_DEV
+> +
+> +	run_check_mount_test_dev
+> +
+> +	export DATASET_SIZE=1
+> +	generate_dataset small
+> +
+> +	run_check_umount_test_dev
+> +
+> +	# find bytenr
+> +	bytenr=`$SUDO_HELPER $TOP/btrfs-debug-tree $TEST_DEV | \
 
-     Process A (dev-replace)         |         Process B(scrub)
-----------------------------------------------------------------------
-                                     |(Any RW is OK)
-                                     |scrub_setup_recheck_block()
-                                     ||- btrfs_map_sblock()
-                                     |   Got a bbio with tgtdev
-btrfs_dev_replace_finishing()        |
-|- btrfs_destory_dev_replace_tgtdev()|
-   |- call_rcu(free_device)          |
-      |- __free_device()             |
-         |- kfree(device)            |
-                                     | Scrub worker:
-                                     | Access bbio->stripes[], which
-                                     | contains tgtdev.
-                                     | This triggers general protection.
+Please don't use btrfs-debug-tree, it's been obsoleted by the dump-tree
+subcommand. And you can use the '-t csum' option to dump just the csum
+tree.
 
-The bug is mostly obvious for RAID5/6 since raid56 choose to keep old
-rbio and rbio->bbio for later steal, this hugely enlarged the race
-window and makes it much easier to trigger the bug.
+> +	grep "EXTENT_CSUM EXTENT_CSUM" | \
+> +	cut -f1 -d')' | awk '{print $6}'`
 
-This patch introduces 'tgtdev_refs' and 'tgtdev_wait' for btrfs_device
-to wait for all its user released the target device.
+This can be simplified to one sed command.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- fs/btrfs/dev-replace.c |  7 ++++++-
- fs/btrfs/volumes.c     | 36 +++++++++++++++++++++++++++++++++++-
- fs/btrfs/volumes.h     | 10 ++++++++++
- 3 files changed, 51 insertions(+), 2 deletions(-)
+> +
+> +	# corrupt csum bytenr
+> +	run_check $SUDO_HELPER $TOP/btrfs-corrupt-block -C $bytenr $TEST_DEV
+> +
+> +	$SUDO_HELPER $TOP/btrfs check $TEST_DEV >& /dev/null && \
+> +			_fail "btrfs check failed to detect missing csum."
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 5de280b9ad73..794a6a0bedf2 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -558,7 +558,6 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
- 			  rcu_str_deref(src_device->name),
- 			  src_device->devid,
- 			  rcu_str_deref(tgt_device->name));
--	tgt_device->is_tgtdev_for_dev_replace = 0;
- 	tgt_device->devid = src_device->devid;
- 	src_device->devid = BTRFS_DEV_REPLACE_DEVID;
- 	memcpy(uuid_tmp, tgt_device->uuid, sizeof(uuid_tmp));
-@@ -579,6 +578,12 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
- 
- 	btrfs_dev_replace_unlock(dev_replace, 1);
- 
-+	/*
-+	 * Only change is_tgtdev_for_dev_replace flag after all its
-+	 * users get released.
-+	 */
-+	wait_target_device(tgt_device);
-+	tgt_device->is_tgtdev_for_dev_replace = 0;
- 	btrfs_rm_dev_replace_blocked(fs_info);
- 
- 	btrfs_rm_dev_replace_remove_srcdev(fs_info, src_device);
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index bb8592e1a364..74a6ee981b78 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2064,6 +2064,7 @@ void btrfs_destroy_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
- 	WARN_ON(!tgtdev);
- 	mutex_lock(&fs_info->fs_devices->device_list_mutex);
- 
-+	wait_target_device(tgtdev);
- 	btrfs_sysfs_rm_device_link(fs_info->fs_devices, tgtdev);
- 
- 	if (tgtdev->bdev)
-@@ -2598,6 +2599,8 @@ int btrfs_init_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
- 	device->is_tgtdev_for_dev_replace = 1;
- 	device->mode = FMODE_EXCL;
- 	device->dev_stats_valid = 1;
-+	atomic_set(&device->tgtdev_refs, 0);
-+	init_waitqueue_head(&device->tgtdev_wait);
- 	set_blocksize(device->bdev, 4096);
- 	device->fs_devices = fs_info->fs_devices;
- 	list_add(&device->dev_list, &fs_info->fs_devices->devices);
-@@ -2624,6 +2627,8 @@ void btrfs_init_dev_replace_tgtdev_for_resume(struct btrfs_fs_info *fs_info,
- 	tgtdev->sector_size = sectorsize;
- 	tgtdev->fs_info = fs_info;
- 	tgtdev->in_fs_metadata = 1;
-+	atomic_set(&tgtdev->tgtdev_refs, 0);
-+	init_waitqueue_head(&tgtdev->tgtdev_wait);
- }
- 
- static noinline int btrfs_update_device(struct btrfs_trans_handle *trans,
-@@ -5302,6 +5307,32 @@ static struct btrfs_bio *alloc_btrfs_bio(int total_stripes, int real_stripes)
- 	return bbio;
- }
- 
-+static void pin_bbio_target_device(struct btrfs_bio *bbio)
-+{
-+	int i;
-+
-+	for (i = 0; i < bbio->num_stripes; i++) {
-+		struct btrfs_device *device = bbio->stripes[i].dev;
-+
-+		if (device->is_tgtdev_for_dev_replace)
-+			atomic_inc(&device->tgtdev_refs);
-+	}
-+}
-+
-+static void unpin_bbio_target_device(struct btrfs_bio *bbio)
-+{
-+	int i;
-+
-+	for (i = 0; i < bbio->num_stripes; i++) {
-+		struct btrfs_device *device = bbio->stripes[i].dev;
-+
-+		if (device->is_tgtdev_for_dev_replace) {
-+			atomic_dec(&device->tgtdev_refs);
-+			wake_up(&device->tgtdev_wait);
-+		}
-+	}
-+}
-+
- void btrfs_get_bbio(struct btrfs_bio *bbio)
- {
- 	WARN_ON(!atomic_read(&bbio->refs));
-@@ -5312,8 +5343,10 @@ void btrfs_put_bbio(struct btrfs_bio *bbio)
- {
- 	if (!bbio)
- 		return;
--	if (atomic_dec_and_test(&bbio->refs))
-+	if (atomic_dec_and_test(&bbio->refs)) {
-+		unpin_bbio_target_device(bbio);
- 		kfree(bbio);
-+	}
- }
- 
- static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
-@@ -5868,6 +5901,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
- 		bbio->stripes[0].physical = physical_to_patch_in_first_stripe;
- 		bbio->mirror_num = map->num_stripes + 1;
- 	}
-+	pin_bbio_target_device(bbio);
- out:
- 	if (dev_replace_is_ongoing) {
- 		btrfs_dev_replace_clear_lock_blocking(dev_replace);
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 811328984702..1b4069dbe1c3 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -149,6 +149,10 @@ struct btrfs_device {
- 	/* Counter to record the change of device stats */
- 	atomic_t dev_stats_ccnt;
- 	atomic_t dev_stat_values[BTRFS_DEV_STAT_VALUES_MAX];
-+
-+	/* To ensure we wait this target device before destroying it */
-+	atomic_t tgtdev_refs;
-+	wait_queue_head_t tgtdev_wait;
- };
- 
- /*
-@@ -538,4 +542,10 @@ struct list_head *btrfs_get_fs_uuids(void);
- void btrfs_set_fs_info_ptr(struct btrfs_fs_info *fs_info);
- void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info);
- 
-+static inline void wait_target_device(struct btrfs_device *tgtdev)
-+{
-+	if (!tgtdev || !tgtdev->is_tgtdev_for_dev_replace)
-+		return;
-+	wait_event(tgtdev->tgtdev_wait, atomic_read(&tgtdev->tgtdev_refs) == 0);
-+}
- #endif
--- 
-2.11.0
+Here we want to capture the output from 'check' for analysis in case of
+problems.
 
-
-
+> +	run_check $SUDO_HELPER $TOP/btrfs check --repair --init-csum $TEST_DEV
+> +	run_check $SUDO_HELPER $TOP/btrfs check  $TEST_DEV
+> +}
+> +
+> +test_csum_corruption

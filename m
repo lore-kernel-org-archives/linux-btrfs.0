@@ -1,101 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55890 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751060AbdAQW5b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Jan 2017 17:57:31 -0500
+Received: from mail6.webfaction.com ([74.55.86.74]:50458 "EHLO
+        smtp.webfaction.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751549AbdAQXcV (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 17 Jan 2017 18:32:21 -0500
+From: Christoph Groth <christoph@grothesque.org>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Goldwyn Rodrigues <rgoldwyn@suse.de>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Subject: Re: Unocorrectable errors with RAID1
-To: Christoph Groth <christoph@grothesque.org>
 References: <87o9z7dzvd.fsf@grothesque.org>
- <42eaf69b-c444-fc50-2128-3a1fbd18b335@suse.de>
- <871sw2cbzb.fsf@grothesque.org>
- <6f5ba97f-0c13-4ad1-fda3-a10db7024ef7@suse.de>
- <87lgu9cu2v.fsf@grothesque.org>
-Cc: linux-btrfs@vger.kernel.org
-From: Goldwyn Rodrigues <rgoldwyn@suse.de>
-Message-ID: <e7412986-d0bd-d0e3-b268-d3aede1cc80b@suse.de>
-Date: Tue, 17 Jan 2017 16:57:21 -0600
+        <42eaf69b-c444-fc50-2128-3a1fbd18b335@suse.de>
+        <871sw2cbzb.fsf@grothesque.org>
+        <6f5ba97f-0c13-4ad1-fda3-a10db7024ef7@suse.de>
+        <87lgu9cu2v.fsf@grothesque.org>
+        <CAJCQCtTGUpVUZYB=Rz4Rif5Te2LqSUAdxvu3FLooEMdWO-nitw@mail.gmail.com>
+Date: Wed, 18 Jan 2017 00:10:03 +0100
+In-Reply-To: <CAJCQCtTGUpVUZYB=Rz4Rif5Te2LqSUAdxvu3FLooEMdWO-nitw@mail.gmail.com>
+        (Chris Murphy's message of "Tue, 17 Jan 2017 14:52:52 -0700")
+Message-ID: <877f5tcmgk.fsf@grothesque.org>
 MIME-Version: 1.0
-In-Reply-To: <87lgu9cu2v.fsf@grothesque.org>
-Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="MXHB42Wve4SVBXXTxCjVsWQkVwc1Frsph"
+Content-Type: multipart/signed; boundary="=-=-=";
+        micalg=pgp-sha512; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---MXHB42Wve4SVBXXTxCjVsWQkVwc1Frsph
-Content-Type: multipart/mixed; boundary="cIeuOT3xLBGgCjco6cCTHXQBCXCiaPAqV";
- protected-headers="v1"
-From: Goldwyn Rodrigues <rgoldwyn@suse.de>
-To: Christoph Groth <christoph@grothesque.org>
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <e7412986-d0bd-d0e3-b268-d3aede1cc80b@suse.de>
-Subject: Re: Unocorrectable errors with RAID1
-References: <87o9z7dzvd.fsf@grothesque.org>
- <42eaf69b-c444-fc50-2128-3a1fbd18b335@suse.de>
- <871sw2cbzb.fsf@grothesque.org>
- <6f5ba97f-0c13-4ad1-fda3-a10db7024ef7@suse.de>
- <87lgu9cu2v.fsf@grothesque.org>
-In-Reply-To: <87lgu9cu2v.fsf@grothesque.org>
+--=-=-=
+Content-Type: text/plain; format=flowed
 
---cIeuOT3xLBGgCjco6cCTHXQBCXCiaPAqV
-Content-Type: text/plain; charset=windows-1252
-Content-Transfer-Encoding: quoted-printable
+Chris Murphy wrote:
+> On Tue, Jan 17, 2017 at 1:25 PM, Christoph Groth
+> <christoph@grothesque.org> wrote:
+>> Any ideas on what could be done?  If you need help to debug the 
+>> problem with
+>> btrfs-image, please tell me what I should do.  I can keep the 
+>> broken file
+>> system around until an image can be created at some later time.
+>
+> Try 4.9, or even 4.8.5, tons of bugs have been fixed since 4.7.3
+> although I don't know off hand if this particular bug is 
+> fixed. I did
+> recently do a btrfs-image with btrfs-progs v4.9 with -s and did 
+> not
+> get a segfault.
 
+I compiled btrfs-image.static from btrfs-tools 4.9 (from git) and 
+started it from Debian testing's initramfs.  The exact command 
+that I use is:
 
+/mnt/btrfs-image.static -c3 -s /dev/sda2 /mnt/mim-s.bim
 
-On 01/17/2017 02:25 PM, Christoph Groth wrote:
-> Goldwyn Rodrigues wrote:
->> On 01/17/2017 02:44 AM, Christoph Groth wrote:
->>> Goldwyn Rodrigues wrote:
->>>
->>>> Would you be able to upload a btrfs-image for me to examine. This is=
- a
->>>> core ctree error where most probably item size is incorrectly
->>>> registered.
->>>
->>> Sure, I can do that.  I'd like to use the -s option, will this be fin=
-e?=20
->>
->> Yes, I think that should be fine.
->=20
-> Unfortunately, giving -s causes btrfs-image to segfault.  I tried both
-> btrfs-progs 4.7.3 and 4.4.  I also tried different compression levels.
->=20
-> Without -s it works, but since this file system contains the complete
-> digital life of our family, I would rather not share even the file name=
-s.
->=20
-> Any ideas on what could be done?  If you need help to debug the problem=
+It runs for a couple of seconds (enough to write 20263936 bytes of 
+output) and then quits with
 
-> with btrfs-image, please tell me what I should do.  I can keep the
-> broken file system around until an image can be created at some later t=
-ime.
+*** Error in `/mnt/btrfs-image.static`: double free or corruption 
+    (!prev): 0x00000000009f0940 ***
+====== Backtrace: ======
+[0x45fb97]
+[0x465442]
+[0x465c1e]
+[0x402694]
+[0x402dcb]
+[0x4031fe]
+[0x4050ff]
+[0x405783]
+[0x44cb73]
+[0x44cdfe]
+[0x400b2a]
 
-As Chris mentioned, try a later version. If you are familiar with git,
-you could even try the devel version.
+(I had to type the above off the other screen, but I double 
+checked that there are no errors.)
 
---=20
-Goldwyn
+The executable that I used can be downloaded from 
+http://groth.fr/btrfs-image.static
+Its md5sum is 48abbc82ac6d3c0cb88cba1e5edb85fd.
 
+I hope that this can help someone to see what's going on.
 
---cIeuOT3xLBGgCjco6cCTHXQBCXCiaPAqV--
-
---MXHB42Wve4SVBXXTxCjVsWQkVwc1Frsph
+--=-=-=
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
 
-iQEcBAEBAgAGBQJYfqFWAAoJEAE1niapr6PJLZ8IAJmDODi54ALG/axDxpPlWxa5
-zgQhdIGPQONwxQwbKjDh0HWCNvuulbFYJ4IsXmpEz1WTKsZ1m0fGRm7PIPLD3ruX
-LDz6PajqQ/rv6X7cYxqJFfR6nMKGDB3vKDvnyz7yJNZRWFhgVQubxtVx1t6bA/hW
-EyehzHu7S1DAzBGLdjUn8+8tSONrS3dCBX0yBrtimRdRQREKSWmxbtBPVmUQzr8d
-v21o5Iyk5CQ+d8BTjchPl7IXT/XN7bGT7HfRVVKqDlzXIzmlmBtnelWbCwl6ox5c
-zqeTS6OVAtpJs+ND42/VwwUQ1n54DygBHjV3lk5RxeavtDgTPLYezTVzxnTKqyI=
-=OiZO
+iQIzBAEBCgAdFiEEUimQV/rXmWU8TwiKw/FH9ZgPNTUFAlh+pEsACgkQw/FH9ZgP
+NTVUYA/+LFtHu6aR/7Pej85BoAByl5zWSWfetNNyrgLvCHDh4LzaL6v/w4DMHYI8
+ARxL2ifp35TwwWosdpMDBEBQ2jusVEJTIB+wN/mB6hDtflbIyqeGR/OY4Japp8Qs
+WYda944UVF1tj2PAXerrehN8/5nCKnmjKzj1IWmd3b94/ir6J++MHptCIPovTQC2
+gok7IYUodvhNwdlEY5fcwn5WHsdhZLwLC34l/+8kjMb6BOh4XO/GuG/Ta162bFBC
+wGCliUztHyA9CY362QW4iqBlB+YKBnLzfka8xXvYAUUc1CVtnTLaLsGZvJQe1jYQ
+F76j78jkU1kjl2n5ad3RQCxnntKqJVwN084S3jakpLYipw0te//bgpF9PM9UAH1j
+G7O0o3FDKJehpiWiNaiJUljmPm80w/+3EUnzG1kig8VvrsiBl3caWyo1r02EZP67
+ceslGU8npS69RhwUoKMFLp+1sA5885K4EGSWE2sqaZiww4QeQPJEhPLP2pzuWyH2
+BowNEMEb6Gr3VLrJOa+sYGl1wzg1z3GOMceretso7NWFpv0o9HSk6tMU+Uv0K/kT
+FfJRlmdznliudUjWBTaiDBaYBA1ivyjPkrmr4wKvTFefDQFDsnX9XD/iyiz7tO3k
+EEDqjblLsOg7bZ+MxxCV6J3xAod76ffAbYcndh4KtR1/NXVAf3Y=
+=DjHx
 -----END PGP SIGNATURE-----
-
---MXHB42Wve4SVBXXTxCjVsWQkVwc1Frsph--
+--=-=-=--

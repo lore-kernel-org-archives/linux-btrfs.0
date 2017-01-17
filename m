@@ -1,31 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:54908 "EHLO
-        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S935063AbdAHJwG (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 Jan 2017 04:52:06 -0500
-Date: Sun, 8 Jan 2017 01:52:05 -0800
-From: Christoph Hellwig <hch@infradead.org>
-To: "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc: mfasheh@versity.com, Christoph Hellwig <hch@infradead.org>,
-        xfs <linux-xfs@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v2] duperemove: test presence of dedupe ioctl
-Message-ID: <20170108095205.GA4203@infradead.org>
-References: <20170106070732.GA14020@birch.djwong.org>
+Received: from mail-pg0-f45.google.com ([74.125.83.45]:33205 "EHLO
+        mail-pg0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751303AbdAQQCE (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 17 Jan 2017 11:02:04 -0500
+Received: by mail-pg0-f45.google.com with SMTP id 204so25788885pge.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 Jan 2017 08:02:04 -0800 (PST)
+Subject: Re: [LSF/MM ATTEND] blk-mq I/O scheduling, Btrfs, VFS topics
+To: Omar Sandoval <osandov@osandov.com>, lsf-pc@lists.linux-foundation.org
+References: <20170114042442.GA4463@vader>
+Cc: linux-block@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org
+From: Jens Axboe <axboe@kernel.dk>
+Message-ID: <800fdb01-9fbe-aadc-4184-b6883dc1b49c@kernel.dk>
+Date: Tue, 17 Jan 2017 07:55:38 -0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170106070732.GA14020@birch.djwong.org>
+In-Reply-To: <20170114042442.GA4463@vader>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 05, 2017 at 11:07:32PM -0800, Darrick J. Wong wrote:
-> Since a zero-length dedupe operation is guaranteed to succeed, use that
-> to test whether or not this filesystem supports dedupe.
+On 01/13/2017 08:24 PM, Omar Sandoval wrote:
+> Hi,
 > 
-> Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+> I'd like to attend LSF/MM again this year to discuss topics in blk-mq,
+> Btrfs, and the VFS.
+> 
+> I've been working on the blk-mq I/O scheduling framework [1] with Jens.
+> Once that is finalized, the next step is a proper multiqueue scheduler.
+> I've put together a prototype with a few basic ideas [2], but there's
+> still work to be done. It's hard to say where exactly we'll be in time
+> for LSF/MM since things are moving pretty fast, but I'm sure there will
+> be something to discuss.
 
-Didn't you already get my:
+I'd be interested in joining that session too, for obvious reasons.
 
-Reviewed-by: Christoph Hellwig <hch@lst.de>
+-- 
+Jens Axboe
 
-earlier?  If not feel free to add it.

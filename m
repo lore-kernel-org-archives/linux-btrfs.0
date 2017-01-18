@@ -1,58 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail6.webfaction.com ([74.55.86.74]:56975 "EHLO
-        smtp.webfaction.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751484AbdAQXte (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:49290 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751095AbdARAmB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Jan 2017 18:49:34 -0500
-From: Christoph Groth <christoph@grothesque.org>
-To: Goldwyn Rodrigues <rgoldwyn@suse.de>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Unocorrectable errors with RAID1
-References: <87o9z7dzvd.fsf@grothesque.org>
-        <42eaf69b-c444-fc50-2128-3a1fbd18b335@suse.de>
-        <871sw2cbzb.fsf@grothesque.org>
-        <6f5ba97f-0c13-4ad1-fda3-a10db7024ef7@suse.de>
-        <87lgu9cu2v.fsf@grothesque.org>
-        <e7412986-d0bd-d0e3-b268-d3aede1cc80b@suse.de>
-Date: Wed, 18 Jan 2017 00:22:20 +0100
-In-Reply-To: <e7412986-d0bd-d0e3-b268-d3aede1cc80b@suse.de> (Goldwyn
-        Rodrigues's message of "Tue, 17 Jan 2017 16:57:21 -0600")
-Message-ID: <8737ghclw3.fsf@grothesque.org>
+        Tue, 17 Jan 2017 19:42:01 -0500
+Subject: Re: corruption: yet another one after deleting a ro snapshot
+To: Christoph Anton Mitterer <calestyo@scientia.net>,
+        <linux-btrfs@vger.kernel.org>
+References: <1484183243.10253.5.camel@scientia.net>
+ <a7b82ec9-bd8d-d6bb-27e7-3732b466ca06@cn.fujitsu.com>
+ <1484188092.29002.4.camel@scientia.net>
+ <25993bdf-d1fe-30df-7236-b9d5d6e5cfb2@cn.fujitsu.com>
+ <1484499869.17186.1.camel@scientia.net>
+ <4d7e21ed-a8f6-6c75-4a14-ff43201bd27b@cn.fujitsu.com>
+ <1484535383.7577.53.camel@scientia.net>
+ <657ea421-0058-b641-ef31-c7d371fa58ca@cn.fujitsu.com>
+ <1484542415.21166.1.camel@scientia.net>
+ <a0aad88a-e19e-e013-7533-4a5bf0783763@cn.fujitsu.com>
+ <1484604435.7086.22.camel@scientia.net>
+ <5c66c74f-3c6d-b296-32ea-9263848ea16f@cn.fujitsu.com>
+ <7A13A2CF-9D6F-40D7-9688-2A2460825428@scientia.net>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <cacc3a27-6fcb-9ba9-2959-099145c34bad@cn.fujitsu.com>
+Date: Wed, 18 Jan 2017 08:41:51 +0800
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="=-=-=";
-        micalg=pgp-sha512; protocol="application/pgp-signature"
+In-Reply-To: <7A13A2CF-9D6F-40D7-9688-2A2460825428@scientia.net>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---=-=-=
-Content-Type: text/plain; format=flowed
 
-Goldwyn Rodrigues wrote:
 
-> As Chris mentioned, try a later version. If you are familiar 
-> with git, you could even try the devel version.
+At 01/17/2017 06:39 PM, Christoph Anton Mitterer wrote:
+> Am 17. Januar 2017 09:53:19 MEZ schrieb Qu Wenruo <quwenruo@cn.fujitsu.com>:
+>> Just lowmem false alert, as extent-tree dump shows complete fine
+>> result.
+>>
+>> I'll CC you and adds your reported-by tag when there is any update on
+>> this case.
+>
+> Fine, just one thing left right more from my side on this issue:
+> Do you want me to leave the fs untouched until I could verify a lowmem mode fix?
+> Or is it ok to go on using it (and running backups on it)?
+>
+> Cheers,
+> Chris.
+>
+>
+Since we have your extent tree and root tree dump, I think we should be 
+able to build a image to reproduce the case.
 
-Looking at the commits in current devel (2f4a73f9a612876116) since 
-v4.9, there doesn't seem to be anything relevant, but I can retry, 
-if you think it's worth.
+So you're OK to go on using it.
+BTW, your fs is too large for us to really do some verification or other 
+work.
 
---=-=-=
-Content-Type: application/pgp-signature; name="signature.asc"
+Thanks,
+Qu
 
------BEGIN PGP SIGNATURE-----
 
-iQIzBAEBCgAdFiEEUimQV/rXmWU8TwiKw/FH9ZgPNTUFAlh+pywACgkQw/FH9ZgP
-NTWLvA/+P2c+DiQgi+ZsPdL4C0vMiKBsl16ogbN3JVFGHMygaR2pKvr/IsUUoVLF
-ZcldRP6Zv4W2AFEK2pQBdoowgWzwwhNTYgFizCptP22GSJH3W/WsN74+wFK5UYE9
-IYUvOpMsCKdBZLgWuBgAwJkKEYvpJ9GCuGmK4lO4LgC+JY2pRrtidd2QvIXXofnj
-4l5f0TZ2BSXQ1BswAEBnqNdeKjnY0aGzlWKEqjGzZ/lKoB0oQx4LiGW97JHpJjiE
-l021aIeCMng1gPO58m79C4WDnTaXkopwCxFpG5bZg2ZewT2biEPPYgXE7D0f2oPj
-a0ZSzjfOG6xRYUgfQPG7Y93S0wgGCu2ML+fFryYYDKkBuUQlnMV5UOM1CkzqczX3
-Hh25pzbY0ysqJTahq7aN8TqHQMQHHSWAUss4gxeQS19uhmz+ADcdWDQMB0DCtTuN
-jspO1J9d1cuXe7U91uxJDsoNczreMRByDJjxaCYdZ3BTaYx2sId2i2Odfi81fYFl
-+8tqyT1sdurZleoXJfxpnAyzlfNkpOLVY47QK0/3SPfGIMw15pvkt2Ggo9MeBjAd
-cUxUXQZjRuc5Ln+UOb8OYDMkrfUKM4rxNrvjWqMrsXMUsPwsIgbTRNtp0lQy4euD
-rAkbSuZzjT1Fso/MOLITEIYy03UYyGX6AY3sECS/Q24iYaYbE8I=
-=91WG
------END PGP SIGNATURE-----
---=-=-=--

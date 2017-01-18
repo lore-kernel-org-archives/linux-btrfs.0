@@ -1,31 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40148 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1758381AbdAKQSq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Jan 2017 11:18:46 -0500
-Date: Wed, 11 Jan 2017 17:18:42 +0100
-From: Michal Hocko <mhocko@kernel.org>
-To: David Sterba <dsterba@suse.cz>
-Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
-        Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: Re: [PATCH 1/2] etrfs: fix up misleading GFP_NOFS usage in
- btrfs_releasepage
-Message-ID: <20170111161842.GG16365@dhcp22.suse.cz>
-References: <20170109143903.32280-1-mhocko@kernel.org>
- <20170111135550.GJ12081@twin.jikos.cz>
+Received: from cn.fujitsu.com ([59.151.112.132]:42488 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1750712AbdARF0g (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 18 Jan 2017 00:26:36 -0500
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
+        by cn.fujitsu.com (Postfix) with ESMTP id B539B47B0CB2
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Jan 2017 13:21:09 +0800 (CST)
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs-progs: lowmem-check: Fix false alert on dropped leaf
+Date: Wed, 18 Jan 2017 13:21:07 +0800
+Message-ID: <20170118052107.7394-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170111135550.GJ12081@twin.jikos.cz>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed 11-01-17 14:55:50, David Sterba wrote:
-[...]
-> But otherwise looks ok to me, I'm going to merge the patch. Thanks.
+For btrfs-progs test case 021-partially-dropped-snapshot-case, if the
+first leaf is already dropped, btrfs check low-memory mode will report
+false alert:
 
-I have only now noticed typo in the subject. s@etrfs:@btrfs:@
+checking fs roots
+checksum verify failed on 29917184 found E4E3BDB6 wanted 00000000
+checksum verify failed on 29917184 found E4E3BDB6 wanted 00000000
+checksum verify failed on 29917184 found E4E3BDB6 wanted 00000000
+checksum verify failed on 29917184 found E4E3BDB6 wanted 00000000
 
+This is caused by we are calling check_fs_first_inode() function,
+unlike the rest part of check_fs_root_v2(), it doesn't have enough check
+on dropping progress, and caused the false alert.
+
+Fix it by checking dropping progress before searching slot.
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ cmds-check.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/cmds-check.c b/cmds-check.c
+index 1dba2985..25247fd9 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -4939,11 +4939,18 @@ static int check_fs_first_inode(struct btrfs_root *root, unsigned int ext_ref)
+ 	int err = 0;
+ 	int ret;
+ 
+-	btrfs_init_path(&path);
+ 	key.objectid = BTRFS_FIRST_FREE_OBJECTID;
+ 	key.type = BTRFS_INODE_ITEM_KEY;
+ 	key.offset = 0;
+ 
++	/* For root being dropped, we don't need to check first inode */
++	if (btrfs_root_refs(&root->root_item) == 0 &&
++	    btrfs_disk_key_objectid(&root->root_item.drop_progress) >=
++	    key.objectid)
++		return 0;
++
++	btrfs_init_path(&path);
++
+ 	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
+ 	if (ret < 0)
+ 		goto out;
 -- 
-Michal Hocko
-SUSE Labs
+2.11.0
+
+
+

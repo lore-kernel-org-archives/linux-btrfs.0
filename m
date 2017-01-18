@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:16807 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:60706 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751196AbdARDJ2 (ORCPT
+        with ESMTP id S1751183AbdARC6n (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Jan 2017 22:09:28 -0500
+        Tue, 17 Jan 2017 21:58:43 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <dsterba@suse.cz>, Goldwyn Rodrigues <rgoldwyn@suse.de>
-Subject: [PATCH v3] btrfs-progs: Fix disable backtrace assert error
-Date: Wed, 18 Jan 2017 11:04:25 +0800
-Message-ID: <20170118030425.28065-1-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v2] btrfs-progs: Fix disable backtrace assert error
+Date: Wed, 18 Jan 2017 10:57:04 +0800
+Message-ID: <20170118025704.27592-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -24,9 +24,13 @@ Such behavior makes us easier to pass value wrong, and in fact it did
 cause us to pass wrong condition for ASSERT().
 
 Instead of passing different conditions for ASSERT/WARN_ON/BUG_ON()
-manually, this patch will use ASSERT() to implement the resting
+manually, this patch will use BUG_ON() to implement the resting
 ASSERT/WARN_ON/BUG(), so we don't need to pass 3 different conditions
 but only one.
+
+And to further info the review for the fact that the condition should be
+different, rename "assert_trace" to "bugon_trace", as unlike assert, we
+will only trigger the bug when condition is true.
 
 Also, move WARN_ON() out of the ifdef branch, as it's completely the
 same for both branches.
@@ -40,9 +44,6 @@ v2:
   Keep ASSERT() outputing meaningful error string, use ASSERT() to
   implement BUG_ON() so only the abused BUG_ON() output is affected.
   Suggested by David.
-v3:
-  Update commit message, since we use ASSERT() instead of BUG_ON() as
-  main assert function now.
 ---
  kerncompat.h | 13 +++++--------
  1 file changed, 5 insertions(+), 8 deletions(-)

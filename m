@@ -1,76 +1,125 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:43131 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1750720AbdAXKGV (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Jan 2017 05:06:21 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1cVxzN-0004d1-Og
-        for linux-btrfs@vger.kernel.org; Tue, 24 Jan 2017 11:06:09 +0100
+Received: from mx2.suse.de ([195.135.220.15]:49162 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751517AbdARCON (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 17 Jan 2017 21:14:13 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id C6955AC0D
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Jan 2017 01:56:48 +0000 (UTC)
+From: jeffm@suse.com
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs rescue chunk-recover segfaults
-Date: Tue, 24 Jan 2017 10:05:39 +0000 (UTC)
-Message-ID: <pan$5491e$d66176cb$30506251$23903084@cox.net>
-References: <ef832bd4-bf83-50da-cdbe-07050cf9aff4@gmx.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Cc: Jeff Mahoney <jeffm@suse.com>
+Subject: [PATCH 2/2] btrfs-progs: quota: Add -W option to rescan to wait without starting rescan
+Date: Tue, 17 Jan 2017 20:56:40 -0500
+Message-Id: <1484704600-16079-2-git-send-email-jeffm@suse.com>
+In-Reply-To: <1484704600-16079-1-git-send-email-jeffm@suse.com>
+References: <1484704600-16079-1-git-send-email-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Simon Waid posted on Mon, 23 Jan 2017 09:42:28 +0100 as excerpted:
+From: Jeff Mahoney <jeffm@suse.com>
 
+This patch adds a new -W option to wait for a rescan without starting a
+new operation.  This is useful for things like xfstests where we want
+do to do a "btrfs quota enable" and not continue until the subsequent
+rescan has finished.
 
-> I have a btrfs raid5 array that has become unmountable.
+In addition to documenting the new option in the man page, I've cleaned
+up the rescan entry to document the -w option a bit better.
 
-[As a list regular and btrfs user myself, not a dev, but I try to help 
-with replies where I can in ordered to allow the devs and real experts to 
-put their time to better use where I can't help.]
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ Documentation/btrfs-quota.asciidoc | 10 +++++++---
+ cmds-quota.c                       | 21 +++++++++++++++------
+ 2 files changed, 22 insertions(+), 9 deletions(-)
 
-As stated on the btrfs wiki and in the mkfs.btrfs manpage, btrfs raid56 
-hasn't stabilized and is now known to have critical defects as originally 
-implemented, that make it unfit for the purposes most people normally use 
-parity-raid for.  It's not recommended except for testing with purely 
-sacrificial data that might potentially be eaten by the test.
-
-Thus, anyone on btrfs raid56 mode should only been testing with 
-effectively throw-away data, either because it's backed up and can be 
-easily retrieved from that backup, or because it really /is/ throw-away 
-data, making the damage from losing that testing filesystem minimal.
-
-As such, if you're done with testing, the fastest and most efficient way 
-back to production is to forget about the broken filesystem, and blow it 
-away with a mkfs to a new filesystem, either some other btrfs mode or 
-something other than the still maturing btrfs entirely, your choice.  
-Then you can restore from backups if the data was worth having them.
-
-Tho of course blowing it away does mean it can't be used as a lab 
-specimen to perhaps help find and fix some of the problems that do affect 
-raid56 mode at this time.
-
-Qu Wenruo in particular, and others, have been gradually working thru at 
-least some of the raid56 mode bugs, tho it's still possible the current 
-code is beyond hope and may need entirely rewritten to properly 
-stabilize.  If you don't have to get the space the filesystem was taking 
-directly back in service and can build and work with the newest code 
-possibly including patches they ask you to apply, you may be able to use 
-your deployment as a lab specimen to help them test their newest recovery 
-code and possibly help fix additional bugs in the process.
-
-However, even then, don't expect that you'll necessarily recover most of 
-what was on the filesystem, as raid56 mode really is seriously bugged 
-ATM, and it's quite possible that the data has already been wiped out by 
-those bugs.  Mostly, you're simply continuing to use the filesystem as an 
-in-the-wild test deployment gone bad, now testing diagnostics and 
-possible recovery, not necessarily with a good chance of recovering the 
-data, but that's OK, since btrfs raid56 mode was never out of unstable 
-testing-only mode in the first place, so any data put on it always was 
-effectively sacrificial data, known to be potentially eaten by the 
-testing itself.
-
+diff --git a/Documentation/btrfs-quota.asciidoc b/Documentation/btrfs-quota.asciidoc
+index 33c3bfd..7b29a97 100644
+--- a/Documentation/btrfs-quota.asciidoc
++++ b/Documentation/btrfs-quota.asciidoc
+@@ -222,15 +222,19 @@ Disable subvolume quota support for a filesystem.
+ *enable* <path>::
+ Enable subvolume quota support for a filesystem.
+ 
+-*rescan* [-s] <path>::
++*rescan* [-s|-w|-W] <path>::
+ Trash all qgroup numbers and scan the metadata again with the current config.
+ +
+ `Options`
+ +
+ -s::::
+-show status of a running rescan operation.
++Show status of a running rescan operation.
++
+ -w::::
+-wait for rescan operation to finish(can be already in progress).
++Start rescan operation and wait until it has finished before exiting.  If a rescan is already running, wait until it finishes and then exit without starting a new one.
++
++-W::::
++Wait for rescan operation to finish and then exit.  If a rescan is not already running, exit silently.
+ 
+ EXIT STATUS
+ -----------
+diff --git a/cmds-quota.c b/cmds-quota.c
+index f9b422d..a6df839 100644
+--- a/cmds-quota.c
++++ b/cmds-quota.c
+@@ -121,14 +121,20 @@ static int cmd_quota_rescan(int argc, char **argv)
+ 	int wait_for_completion = 0;
+ 
+ 	while (1) {
+-		int c = getopt(argc, argv, "sw");
++		int c = getopt(argc, argv, "swW");
+ 		if (c < 0)
+ 			break;
+ 		switch (c) {
+ 		case 's':
+ 			ioctlnum = BTRFS_IOC_QUOTA_RESCAN_STATUS;
+ 			break;
++		case 'W':
++			ioctlnum = 0;
++			wait_for_completion = 1;
++			break;
+ 		case 'w':
++			/* Reset it in case the user did both -W and -w */
++			ioctlnum = BTRFS_IOC_QUOTA_RESCAN;
+ 			wait_for_completion = 1;
+ 			break;
+ 		default:
+@@ -136,8 +142,9 @@ static int cmd_quota_rescan(int argc, char **argv)
+ 		}
+ 	}
+ 
+-	if (ioctlnum != BTRFS_IOC_QUOTA_RESCAN && wait_for_completion) {
+-		error("switch -w cannot be used with -s");
++	if (ioctlnum == BTRFS_IOC_QUOTA_RESCAN_STATUS && wait_for_completion) {
++		error("switch -%c cannot be used with -s",
++		      ioctlnum ? 'w' : 'W');
+ 		return 1;
+ 	}
+ 
+@@ -151,8 +158,10 @@ static int cmd_quota_rescan(int argc, char **argv)
+ 	if (fd < 0)
+ 		return 1;
+ 
+-	ret = ioctl(fd, ioctlnum, &args);
+-	e = errno;
++	if (ioctlnum) {
++		ret = ioctl(fd, ioctlnum, &args);
++		e = errno;
++	}
+ 
+ 	if (ioctlnum == BTRFS_IOC_QUOTA_RESCAN_STATUS) {
+ 		close_file_or_dir(fd, dirstream);
+@@ -169,7 +178,7 @@ static int cmd_quota_rescan(int argc, char **argv)
+ 		return 0;
+ 	}
+ 
+-	if (ret == 0) {
++	if (ioctlnum == BTRFS_IOC_QUOTA_RESCAN && ret == 0) {
+ 		printf("quota rescan started\n");
+ 		fflush(stdout);
+ 	} else if (ret < 0 && (!wait_for_completion || e != EINPROGRESS)) {
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+2.7.1
 

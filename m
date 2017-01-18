@@ -1,58 +1,159 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:49290 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:64910 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751095AbdARAmB (ORCPT
+        with ESMTP id S1751130AbdARArk (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Jan 2017 19:42:01 -0500
-Subject: Re: corruption: yet another one after deleting a ro snapshot
-To: Christoph Anton Mitterer <calestyo@scientia.net>,
-        <linux-btrfs@vger.kernel.org>
-References: <1484183243.10253.5.camel@scientia.net>
- <a7b82ec9-bd8d-d6bb-27e7-3732b466ca06@cn.fujitsu.com>
- <1484188092.29002.4.camel@scientia.net>
- <25993bdf-d1fe-30df-7236-b9d5d6e5cfb2@cn.fujitsu.com>
- <1484499869.17186.1.camel@scientia.net>
- <4d7e21ed-a8f6-6c75-4a14-ff43201bd27b@cn.fujitsu.com>
- <1484535383.7577.53.camel@scientia.net>
- <657ea421-0058-b641-ef31-c7d371fa58ca@cn.fujitsu.com>
- <1484542415.21166.1.camel@scientia.net>
- <a0aad88a-e19e-e013-7533-4a5bf0783763@cn.fujitsu.com>
- <1484604435.7086.22.camel@scientia.net>
- <5c66c74f-3c6d-b296-32ea-9263848ea16f@cn.fujitsu.com>
- <7A13A2CF-9D6F-40D7-9688-2A2460825428@scientia.net>
+        Tue, 17 Jan 2017 19:47:40 -0500
+Subject: Re: [PATCH 2/2] btrfs: replace: Use ref counts to avoid destroying
+ target device when canceled
+To: Josef Bacik <jbacik@fb.com>
+References: <20170117011050.18843-1-quwenruo@cn.fujitsu.com>
+ <20170117011050.18843-2-quwenruo@cn.fujitsu.com>
+ <1484693221.27996.0@smtp.office365.com>
+CC: <linux-btrfs@vger.kernel.org>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <cacc3a27-6fcb-9ba9-2959-099145c34bad@cn.fujitsu.com>
-Date: Wed, 18 Jan 2017 08:41:51 +0800
+Message-ID: <89653bd2-d10f-dc45-b262-af4f48d7fc2d@cn.fujitsu.com>
+Date: Wed, 18 Jan 2017 08:46:40 +0800
 MIME-Version: 1.0
-In-Reply-To: <7A13A2CF-9D6F-40D7-9688-2A2460825428@scientia.net>
+In-Reply-To: <1484693221.27996.0@smtp.office365.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-At 01/17/2017 06:39 PM, Christoph Anton Mitterer wrote:
-> Am 17. Januar 2017 09:53:19 MEZ schrieb Qu Wenruo <quwenruo@cn.fujitsu.com>:
->> Just lowmem false alert, as extent-tree dump shows complete fine
->> result.
+At 01/18/2017 06:47 AM, Josef Bacik wrote:
+> On Mon, Jan 16, 2017 at 5:10 PM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>> When dev-replace and scrub are run at the same time, dev-replace can be
+>> canceled by scrub. It's quite common for btrfs/069.
 >>
->> I'll CC you and adds your reported-by tag when there is any update on
->> this case.
+>> While in that case, target device can be destroyed at cancel time,
+>> leading to a user-after-free bug:
+>>
+>>      Process A (dev-replace)         |         Process B(scrub)
+>> ----------------------------------------------------------------------
+>>                                      |(Any RW is OK)
+>>                                      |scrub_setup_recheck_block()
+>>                                      ||- btrfs_map_sblock()
+>>                                      |   Got a bbio with tgtdev
+>> btrfs_dev_replace_finishing()        |
+>> |- btrfs_destory_dev_replace_tgtdev()|
+>>    |- call_rcu(free_device)          |
+>>       |- __free_device()             |
+>>          |- kfree(device)            |
+>>                                      | Scrub worker:
+>>                                      | Access bbio->stripes[], which
+>>                                      | contains tgtdev.
+>>                                      | This triggers general protection.
+>>
+>> The bug is mostly obvious for RAID5/6 since raid56 choose to keep old
+>> rbio and rbio->bbio for later steal, this hugely enlarged the race
+>> window and makes it much easier to trigger the bug.
+>>
+>> This patch introduces 'tgtdev_refs' and 'tgtdev_wait' for btrfs_device
+>> to wait for all its user released the target device.
+>>
+>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>> ---
+>>  fs/btrfs/dev-replace.c |  7 ++++++-
+>>  fs/btrfs/volumes.c     | 36 +++++++++++++++++++++++++++++++++++-
+>>  fs/btrfs/volumes.h     | 10 ++++++++++
+>>  3 files changed, 51 insertions(+), 2 deletions(-)
+>>
+>> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+>> index 5de280b9ad73..794a6a0bedf2 100644
+>> --- a/fs/btrfs/dev-replace.c
+>> +++ b/fs/btrfs/dev-replace.c
+>> @@ -558,7 +558,6 @@ static int btrfs_dev_replace_finishing(struct
+>> btrfs_fs_info *fs_info,
+>>                rcu_str_deref(src_device->name),
+>>                src_device->devid,
+>>                rcu_str_deref(tgt_device->name));
+>> -    tgt_device->is_tgtdev_for_dev_replace = 0;
+>>      tgt_device->devid = src_device->devid;
+>>      src_device->devid = BTRFS_DEV_REPLACE_DEVID;
+>>      memcpy(uuid_tmp, tgt_device->uuid, sizeof(uuid_tmp));
+>> @@ -579,6 +578,12 @@ static int btrfs_dev_replace_finishing(struct
+>> btrfs_fs_info *fs_info,
+>>
+>>      btrfs_dev_replace_unlock(dev_replace, 1);
+>>
+>> +    /*
+>> +     * Only change is_tgtdev_for_dev_replace flag after all its
+>> +     * users get released.
+>> +     */
+>> +    wait_target_device(tgt_device);
+>> +    tgt_device->is_tgtdev_for_dev_replace = 0;
+>>      btrfs_rm_dev_replace_blocked(fs_info);
+>>
+>>      btrfs_rm_dev_replace_remove_srcdev(fs_info, src_device);
+>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>> index bb8592e1a364..74a6ee981b78 100644
+>> --- a/fs/btrfs/volumes.c
+>> +++ b/fs/btrfs/volumes.c
+>> @@ -2064,6 +2064,7 @@ void btrfs_destroy_dev_replace_tgtdev(struct
+>> btrfs_fs_info *fs_info,
+>>      WARN_ON(!tgtdev);
+>>      mutex_lock(&fs_info->fs_devices->device_list_mutex);
+>>
+>> +    wait_target_device(tgtdev);
+>>      btrfs_sysfs_rm_device_link(fs_info->fs_devices, tgtdev);
+>>
+>>      if (tgtdev->bdev)
+>> @@ -2598,6 +2599,8 @@ int btrfs_init_dev_replace_tgtdev(struct
+>> btrfs_fs_info *fs_info,
+>>      device->is_tgtdev_for_dev_replace = 1;
+>>      device->mode = FMODE_EXCL;
+>>      device->dev_stats_valid = 1;
+>> +    atomic_set(&device->tgtdev_refs, 0);
+>> +    init_waitqueue_head(&device->tgtdev_wait);
+>>      set_blocksize(device->bdev, 4096);
+>>      device->fs_devices = fs_info->fs_devices;
+>>      list_add(&device->dev_list, &fs_info->fs_devices->devices);
+>> @@ -2624,6 +2627,8 @@ void
+>> btrfs_init_dev_replace_tgtdev_for_resume(struct btrfs_fs_info *fs_info,
+>>      tgtdev->sector_size = sectorsize;
+>>      tgtdev->fs_info = fs_info;
+>>      tgtdev->in_fs_metadata = 1;
+>> +    atomic_set(&tgtdev->tgtdev_refs, 0);
+>> +    init_waitqueue_head(&tgtdev->tgtdev_wait);
+>>  }
+>>
+>>  static noinline int btrfs_update_device(struct btrfs_trans_handle
+>> *trans,
+>> @@ -5302,6 +5307,32 @@ static struct btrfs_bio *alloc_btrfs_bio(int
+>> total_stripes, int real_stripes)
+>>      return bbio;
+>>  }
+>>
+>> +static void pin_bbio_target_device(struct btrfs_bio *bbio)
+>> +{
+>> +    int i;
+>> +
+>> +    for (i = 0; i < bbio->num_stripes; i++) {
+>> +        struct btrfs_device *device = bbio->stripes[i].dev;
+>> +
+>> +        if (device->is_tgtdev_for_dev_replace)
+>> +            atomic_inc(&device->tgtdev_refs);
+>> +    }
+>> +}
 >
-> Fine, just one thing left right more from my side on this issue:
-> Do you want me to leave the fs untouched until I could verify a lowmem mode fix?
-> Or is it ok to go on using it (and running backups on it)?
+> Can we just do this at the map time?  So when we add a new stripe we go
+> ahead and take the ref then, and the same at complete time?  Thanks,
 >
-> Cheers,
-> Chris.
->
->
-Since we have your extent tree and root tree dump, I think we should be 
-able to build a image to reproduce the case.
+> Josef
 
-So you're OK to go on using it.
-BTW, your fs is too large for us to really do some verification or other 
-work.
+Thanks for the review.
+
+But I'm not quite sure what you mean here.
+
+This pin_bbio_target_device() is called inside the dev_replace lock 
+protection, so it's called at map time.
+
+And we must call it after patching mirror inside __btrfs_map_block(), so 
+I can't find a better timing to call it.
+
+Would you please give me some hint?
 
 Thanks,
 Qu

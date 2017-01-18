@@ -1,97 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49161 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:54819 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751518AbdARCOM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Jan 2017 21:14:12 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id A71A7AB1D
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Jan 2017 01:56:48 +0000 (UTC)
-From: jeffm@suse.com
-To: linux-btrfs@vger.kernel.org
-Cc: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH 1/2] btrfs-progs: quota: fix printing during wait mode
-Date: Tue, 17 Jan 2017 20:56:39 -0500
-Message-Id: <1484704600-16079-1-git-send-email-jeffm@suse.com>
+        id S1756015AbdARLih (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 18 Jan 2017 06:38:37 -0500
+Subject: Re: [PATCH v3] btrfs-progs: Fix disable backtrace assert error
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+References: <20170118030425.28065-1-quwenruo@cn.fujitsu.com>
+Cc: dsterba@suse.cz
+From: Goldwyn Rodrigues <rgoldwyn@suse.de>
+Message-ID: <765a9beb-3d39-8b86-eff1-84eb85f2d0a2@suse.de>
+Date: Wed, 18 Jan 2017 05:38:31 -0600
+MIME-Version: 1.0
+In-Reply-To: <20170118030425.28065-1-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Jeff Mahoney <jeffm@suse.com>
 
-If we call "btrfs quota rescan -w", it will attempt to start the rescan
-operation, wait for it, and then print the "quota rescan started" message.
-The wait could last an arbitrary amount of time, so printing it after
-the wait isn't very helpful.
 
-This patch reworks how we print the rescan started message as well as the
-printing of the messages, including adding an error message for status
-query failures (which could be EPERM/EFAULT/ENOMEM, not just no rescan
-in progress) and wait failures.
+On 01/17/2017 09:04 PM, Qu Wenruo wrote:
+> Due to commit 00e769d04c2c83029d6c71(btrfs-progs: Correct value printed
+> by assertions/BUG_ON/WARN_ON), which changed the assert_trace()
+> parameter, the condition passed to assert/WARN_ON/BUG_ON are logical
+> notted for backtrace enabled and disabled case.
+> 
+> Such behavior makes us easier to pass value wrong, and in fact it did
+> cause us to pass wrong condition for ASSERT().
+> 
+> Instead of passing different conditions for ASSERT/WARN_ON/BUG_ON()
+> manually, this patch will use ASSERT() to implement the resting
+> ASSERT/WARN_ON/BUG(), so we don't need to pass 3 different conditions
+> but only one.
+> 
+> Also, move WARN_ON() out of the ifdef branch, as it's completely the
+> same for both branches.
+> 
+> Cc: Goldwyn Rodrigues <rgoldwyn@suse.de>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+> Sorry for late update, being digging the dev-replace/scrub bug
+> 
+> v2:
+>   Keep ASSERT() outputing meaningful error string, use ASSERT() to
+>   implement BUG_ON() so only the abused BUG_ON() output is affected.
+>   Suggested by David.
+> v3:
+>   Update commit message, since we use ASSERT() instead of BUG_ON() as
+>   main assert function now.
+> ---
+>  kerncompat.h | 13 +++++--------
+>  1 file changed, 5 insertions(+), 8 deletions(-)
+> 
+> diff --git a/kerncompat.h b/kerncompat.h
+> index 19ed3fc0..fe23774e 100644
+> --- a/kerncompat.h
+> +++ b/kerncompat.h
+> @@ -291,18 +291,15 @@ static inline void assert_trace(const char *assertion, const char *filename,
+>  	abort();
+>  	exit(1);
+>  }
+> -
+> -#define BUG_ON(c) assert_trace(#c, __FILE__, __func__, __LINE__, (long)(c))
+> -#define WARN_ON(c) warning_trace(#c, __FILE__, __func__, __LINE__, (long)(c))
+>  #define	ASSERT(c) assert_trace(#c, __FILE__, __func__, __LINE__, (long)!(c))
+> -#define BUG() assert_trace(NULL, __FILE__, __func__, __LINE__, 1)
+>  #else
+> -#define BUG_ON(c) assert(!(c))
+> -#define WARN_ON(c) warning_trace(#c, __FILE__, __func__, __LINE__, (long)(c))
+> -#define ASSERT(c) assert(!(c))
+> -#define BUG() assert(0)
+> +#define ASSERT(c) assert(c)
+>  #endif
+>  
+> +#define BUG_ON(c) ASSERT(!(c))
 
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
----
- cmds-quota.c | 40 +++++++++++++++++++++++++++-------------
- 1 file changed, 27 insertions(+), 13 deletions(-)
+The problem with this is that you are killing the value printed as a
+part of the trace for BUG_ON(). The main reason why commit
+00e769d04c2c83029d6c71 was written. Please be careful with your notting
+especially when the values are being printed.
 
-diff --git a/cmds-quota.c b/cmds-quota.c
-index 75c032b..f9b422d 100644
---- a/cmds-quota.c
-+++ b/cmds-quota.c
-@@ -154,28 +154,42 @@ static int cmd_quota_rescan(int argc, char **argv)
- 	ret = ioctl(fd, ioctlnum, &args);
- 	e = errno;
- 
--	if (wait_for_completion && (ret == 0 || e == EINPROGRESS)) {
--		ret = ioctl(fd, BTRFS_IOC_QUOTA_RESCAN_WAIT, &args);
--		e = errno;
--	}
--	close_file_or_dir(fd, dirstream);
--
--	if (ioctlnum == BTRFS_IOC_QUOTA_RESCAN) {
-+	if (ioctlnum == BTRFS_IOC_QUOTA_RESCAN_STATUS) {
-+		close_file_or_dir(fd, dirstream);
- 		if (ret < 0) {
--			error("quota rescan failed: %s", strerror(e));
-+			error("could not obtain quota rescan status: %s",
-+			      strerror(e));
- 			return 1;
--		}  else {
--			printf("quota rescan started\n");
- 		}
--	} else {
--		if (!args.flags) {
-+		if (!args.flags)
- 			printf("no rescan operation in progress\n");
--		} else {
-+		else
- 			printf("rescan operation running (current key %lld)\n",
- 				args.progress);
-+		return 0;
-+	}
-+
-+	if (ret == 0) {
-+		printf("quota rescan started\n");
-+		fflush(stdout);
-+	} else if (ret < 0 && (!wait_for_completion || e != EINPROGRESS)) {
-+		error("quota rescan failed: %s", strerror(e));
-+		close_file_or_dir(fd, dirstream);
-+		return 1;
-+	}
-+
-+	if (wait_for_completion) {
-+		ret = ioctl(fd, BTRFS_IOC_QUOTA_RESCAN_WAIT, &args);
-+		e = errno;
-+		if (ret < 0) {
-+			error("quota rescan wait failed: %s",
-+			      strerror(e));
-+			close_file_or_dir(fd, dirstream);
-+			return 1;
- 		}
- 	}
- 
-+	close_file_or_dir(fd, dirstream);
- 	return 0;
- }
- 
+
+> +#define BUG() BUG_ON(1)
+> +#define WARN_ON(c) warning_trace(#c, __FILE__, __func__, __LINE__, (long)(c))
+> +
+>  #define container_of(ptr, type, member) ({                      \
+>          const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
+>  	        (type *)( (char *)__mptr - offsetof(type,member) );})
+> 
+
 -- 
-2.7.1
-
+Goldwyn

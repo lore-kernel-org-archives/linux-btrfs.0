@@ -1,95 +1,151 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f54.google.com ([74.125.82.54]:38239 "EHLO
-        mail-wm0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751585AbdARSVG (ORCPT
+Received: from mail6.webfaction.com ([74.55.86.74]:41051 "EHLO
+        smtp.webfaction.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752654AbdARUME (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Jan 2017 13:21:06 -0500
-Received: by mail-wm0-f54.google.com with SMTP id r144so38749486wme.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Jan 2017 10:21:05 -0800 (PST)
-Received: from localhost ([108.63.177.210])
-        by smtp.gmail.com with ESMTPSA id f67sm46993593wmd.13.2017.01.18.10.21.02
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Wed, 18 Jan 2017 10:21:03 -0800 (PST)
-Content-Type: text/plain; charset="utf-8"
+        Wed, 18 Jan 2017 15:12:04 -0500
+From: Christoph Groth <christoph@grothesque.org>
+To: Goldwyn Rodrigues <rgoldwyn@suse.de>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: gdb log of crashed "btrfs-image -s"
+References: <87o9z7dzvd.fsf@grothesque.org>
+        <42eaf69b-c444-fc50-2128-3a1fbd18b335@suse.de>
+        <871sw2cbzb.fsf@grothesque.org>
+        <6f5ba97f-0c13-4ad1-fda3-a10db7024ef7@suse.de>
+        <87lgu9cu2v.fsf@grothesque.org>
+        <CAJCQCtTGUpVUZYB=Rz4Rif5Te2LqSUAdxvu3FLooEMdWO-nitw@mail.gmail.com>
+        <877f5tcmgk.fsf@grothesque.org> <87wpdsc03i.fsf_-_@grothesque.org>
+        <ab4eb6a1-f634-6a8d-b260-1a7abf09f6f1@suse.de>
+Date: Wed, 18 Jan 2017 21:11:04 +0100
+In-Reply-To: <ab4eb6a1-f634-6a8d-b260-1a7abf09f6f1@suse.de> (Goldwyn
+        Rodrigues's message of "Wed, 18 Jan 2017 05:49:50 -0600")
+Message-ID: <87fukgcenb.fsf@grothesque.org>
 MIME-Version: 1.0
-From: Steven Hum <sdothum@gmail.com>
-To: linux-btrfs@vger.kernel.org
-References: <148475784092.5560.1270748127213800815@luna>
-In-Reply-To: <148475784092.5560.1270748127213800815@luna>
-Message-ID: <148476361856.4724.1672841945552712109@luna>
-Subject: Re: Cannot mount volume after balance crash (skip_balance mount also failed)
-Date: Wed, 18 Jan 2017 13:20:18 -0500
+Content-Type: multipart/signed; boundary="==-=-=";
+        micalg=pgp-sha512; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Attempted to mount vol with skip_balance option. This also resulted in
-the system hanging. dmesg output can be found at url
+--==-=-=
+Content-Type: multipart/mixed; boundary="=-=-="
 
-http://cwillu.com:8080/108.63.177.210/2
+--=-=-=
+Content-Type: text/plain; format=flowed
 
-which looks similar (to me).
+Goldwyn Rodrigues wrote:
+> Thanks Christoph for the backtrace. I am unable to reproduce it, 
+> but looking at your backtrace, I found a bug. Would you be able 
+> to give it a try and check if it fixes the problem?
 
-Is there any further recourse I might consider or is the fs effectively
-DOA in spite of passing btrfs check?
+I applied your patch to v4.9, and compiled the static binaries. 
+Unfortunately, it still segfaults. (Perhaps your fix is correct, 
+and there's a second problem?)  I attach a new backtrace.  Do let 
+me know if I can help in another way.
 
-Regards,
-Steven
 
-Quoting Steven Hum (2017-01-18 11:44:00)
-> Added 2 drives to my RAID10, then ran btrfs balance. The system appears
-> to have crashed after several hours (I was ssh'd into that server at the
-> time on my local network). When I rebooted the Arch system, I ran btrfs
-> check and no errors were reported.
->
-> However, attempting to mount the vol hangs the system. Trying to mount
-> the system in recovery mode also hangs the system.
->
->     ─────  uname -a                                                                                                                             ~
-> Linux luna 4.8.13-1-ARCH #1 SMP PREEMPT Fri Dec 9 07:24:34 CET 2016 x86_64 GNU/Linux
->     ─────     btrfs --version                                                                                                                   ~
-> btrfs-progs v4.9
->     ─────     btrfs fi show                                                                                                                     ~
-> Label: 'Archlinux'  uuid: e5ee12ac-7fb3-4e73-b9b2-a5cfb35145ae
->         Total devices 1 FS bytes used 66.41GiB
->         devid    1 size 111.24GiB used 111.24GiB path /dev/sda2
->
-> Label: 'Share'  uuid: 9102bb33-49ad-4baf-a88d-1c7622bff938
->         Total devices 6 FS bytes used 4.20TiB
->         devid    1 size 2.73TiB used 1.90TiB path /dev/sdc
->         devid    2 size 2.73TiB used 1.90TiB path /dev/sdd
->         devid    3 size 2.73TiB used 1.90TiB path /dev/sde
->         devid    4 size 2.73TiB used 1.90TiB path /dev/sdb
->         devid    5 size 2.73TiB used 440.34GiB path /dev/sdf
->         devid    6 size 2.73TiB used 440.34GiB path /dev/sdg
->
-> The dmesg log when attempting to mount the vol can be found at url
->
-> http://cwillu.com:8080/108.63.177.210/1
->
-> Any ideas what can be done to be able to mount the volume and complete
-> the balancing?
->
-> Regards,
-> Steven
->
->
-> --
-> "Truth or die."
->
-> Steven Hum
-> 417 Mayfair Av
-> Ottawa, ON K1Y 0K4
-> email sdothum@gmail.com
-> tel 613.237.9058
->
+--=-=-=
+Content-Type: application/octet-stream
+Content-Disposition: attachment; filename=btrfs-image2.log
+Content-Transfer-Encoding: base64
 
---
-"Truth or die."
+cm9vdEB4dWJ1bnR1On4jIGdkYiAvbW50L2J0cmZzLWltYWdlLnN0YXRpYyAKR05VIGdkYiAoVWJ1
+bnR1IDcuMTEtMHVidW50dTEpIDcuMTEKQ29weXJpZ2h0IChDKSAyMDE2IEZyZWUgU29mdHdhcmUg
+Rm91bmRhdGlvbiwgSW5jLgpMaWNlbnNlIEdQTHYzKzogR05VIEdQTCB2ZXJzaW9uIDMgb3IgbGF0
+ZXIgPGh0dHA6Ly9nbnUub3JnL2xpY2Vuc2VzL2dwbC5odG1sPgpUaGlzIGlzIGZyZWUgc29mdHdh
+cmU6IHlvdSBhcmUgZnJlZSB0byBjaGFuZ2UgYW5kIHJlZGlzdHJpYnV0ZSBpdC4KVGhlcmUgaXMg
+Tk8gV0FSUkFOVFksIHRvIHRoZSBleHRlbnQgcGVybWl0dGVkIGJ5IGxhdy4gIFR5cGUgInNob3cg
+Y29weWluZyIKYW5kICJzaG93IHdhcnJhbnR5IiBmb3IgZGV0YWlscy4KVGhpcyBHREIgd2FzIGNv
+bmZpZ3VyZWQgYXMgIng4Nl82NC1saW51eC1nbnUiLgpUeXBlICJzaG93IGNvbmZpZ3VyYXRpb24i
+IGZvciBjb25maWd1cmF0aW9uIGRldGFpbHMuCkZvciBidWcgcmVwb3J0aW5nIGluc3RydWN0aW9u
+cywgcGxlYXNlIHNlZToKPGh0dHA6Ly93d3cuZ251Lm9yZy9zb2Z0d2FyZS9nZGIvYnVncy8+LgpG
+aW5kIHRoZSBHREIgbWFudWFsIGFuZCBvdGhlciBkb2N1bWVudGF0aW9uIHJlc291cmNlcyBvbmxp
+bmUgYXQ6CjxodHRwOi8vd3d3LmdudS5vcmcvc29mdHdhcmUvZ2RiL2RvY3VtZW50YXRpb24vPi4K
+Rm9yIGhlbHAsIHR5cGUgImhlbHAiLgpUeXBlICJhcHJvcG9zIHdvcmQiIHRvIHNlYXJjaCBmb3Ig
+Y29tbWFuZHMgcmVsYXRlZCB0byAid29yZCIuLi4KUmVhZGluZyBzeW1ib2xzIGZyb20gL21udC9i
+dHJmcy1pbWFnZS5zdGF0aWMuLi5kb25lLgooZ2RiKSBydW4gLXMgLWMzIC9kZXYvc2RhMiAvbW50
+L21pbS5iaW0KU3RhcnRpbmcgcHJvZ3JhbTogL21udC9idHJmcy1pbWFnZS5zdGF0aWMgLXMgLWMz
+IC9kZXYvc2RhMiAvbW50L21pbS5iaW0KW05ldyBMV1AgMjMzNF0KW05ldyBMV1AgMjMzNV0KW05l
+dyBMV1AgMjMzNl0KW05ldyBMV1AgMjMzN10KKioqIEVycm9yIGluIGAvbW50L2J0cmZzLWltYWdl
+LnN0YXRpYyc6IGRvdWJsZSBmcmVlIG9yIGNvcnJ1cHRpb24gKG91dCk6IDB4MDAwMDAwMDAwMDc3
+MmY3MCAqKioKPT09PT09PSBCYWNrdHJhY2U6ID09PT09PT09PQpbMHg0NWZiYTddClsweDQ2NTQ1
+Ml0KWzB4NDY1YzJlXQpbMHg0MDI2OTRdClsweDQwMmRjZV0KWzB4NDAzMjAxXQpbMHg0MDUxMDJd
+ClsweDQwNTc4Nl0KWzB4NDRjYjgzXQpbMHg0NGNlMGVdClsweDQwMGIyYV0KPT09PT09PSBNZW1v
+cnkgbWFwOiA9PT09PT09PQowMDQwMDAwMC0wMDUyMTAwMCByLXhwIDAwMDAwMDAwIDA4OjIxIDY4
+OSAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgL21udC9idHJmcy1pbWFnZS5zdGF0aWMK
+MDA3MjEwMDAtMDA3MjgwMDAgcnctcCAwMDEyMTAwMCAwODoyMSA2ODkgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgIC9tbnQvYnRyZnMtaW1hZ2Uuc3RhdGljCjAwNzI4MDAwLTAwN2U0MDAw
+IHJ3LXAgMDAwMDAwMDAgMDA6MDAgMCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBb
+aGVhcF0KN2ZmZmUwMDAwMDAwLTdmZmZlMDE3ZTAwMCBydy1wIDAwMDAwMDAwIDAwOjAwIDAgCjdm
+ZmZlMDE3ZTAwMC03ZmZmZTQwMDAwMDAgLS0tcCAwMDAwMDAwMCAwMDowMCAwIAo3ZmZmZTQwMDAw
+MDAtN2ZmZmU0MDI1MDAwIHJ3LXAgMDAwMDAwMDAgMDA6MDAgMCAKN2ZmZmU0MDI1MDAwLTdmZmZl
+ODAwMDAwMCAtLS1wIDAwMDAwMDAwIDAwOjAwIDAgCjdmZmZlODAwMDAwMC03ZmZmZTgxYTYwMDAg
+cnctcCAwMDAwMDAwMCAwMDowMCAwIAo3ZmZmZTgxYTYwMDAtN2ZmZmVjMDAwMDAwIC0tLXAgMDAw
+MDAwMDAgMDA6MDAgMCAKN2ZmZmVjMDAwMDAwLTdmZmZlYzE3YzAwMCBydy1wIDAwMDAwMDAwIDAw
+OjAwIDAgCjdmZmZlYzE3YzAwMC03ZmZmZjAwMDAwMDAgLS0tcCAwMDAwMDAwMCAwMDowMCAwIAo3
+ZmZmZjAwMDAwMDAtN2ZmZmYwMTlhMDAwIHJ3LXAgMDAwMDAwMDAgMDA6MDAgMCAKN2ZmZmYwMTlh
+MDAwLTdmZmZmNDAwMDAwMCAtLS1wIDAwMDAwMDAwIDAwOjAwIDAgCjdmZmZmNWZmNjAwMC03ZmZm
+ZjVmZjcwMDAgcnctcCAwMDAwMDAwMCAwMDowMCAwIAo3ZmZmZjVmZjcwMDAtN2ZmZmY1ZmY4MDAw
+IC0tLXAgMDAwMDAwMDAgMDA6MDAgMCAKN2ZmZmY1ZmY4MDAwLTdmZmZmNjdmODAwMCBydy1wIDAw
+MDAwMDAwIDAwOjAwIDAgCjdmZmZmNjdmODAwMC03ZmZmZjY3ZjkwMDAgLS0tcCAwMDAwMDAwMCAw
+MDowMCAwIAo3ZmZmZjY3ZjkwMDAtN2ZmZmY2ZmY5MDAwIHJ3LXAgMDAwMDAwMDAgMDA6MDAgMCAK
+N2ZmZmY2ZmY5MDAwLTdmZmZmNmZmYTAwMCAtLS1wIDAwMDAwMDAwIDAwOjAwIDAgCjdmZmZmNmZm
+YTAwMC03ZmZmZjc3ZmEwMDAgcnctcCAwMDAwMDAwMCAwMDowMCAwIAo3ZmZmZjc3ZmEwMDAtN2Zm
+ZmY3N2ZiMDAwIC0tLXAgMDAwMDAwMDAgMDA6MDAgMCAKN2ZmZmY3N2ZiMDAwLTdmZmZmN2ZmYjAw
+MCBydy1wIDAwMDAwMDAwIDAwOjAwIDAgCjdmZmZmN2ZmYjAwMC03ZmZmZjdmZmQwMDAgci0tcCAw
+MDAwMDAwMCAwMDowMCAwICAgICAgICAgICAgICAgICAgICAgICAgICBbdnZhcl0KN2ZmZmY3ZmZk
+MDAwLTdmZmZmN2ZmZjAwMCByLXhwIDAwMDAwMDAwIDAwOjAwIDAgICAgICAgICAgICAgICAgICAg
+ICAgICAgIFt2ZHNvXQo3ZmZmZmZmZGUwMDAtN2ZmZmZmZmZmMDAwIHJ3LXAgMDAwMDAwMDAgMDA6
+MDAgMCAgICAgICAgICAgICAgICAgICAgICAgICAgW3N0YWNrXQpmZmZmZmZmZmZmNjAwMDAwLWZm
+ZmZmZmZmZmY2MDEwMDAgci14cCAwMDAwMDAwMCAwMDowMCAwICAgICAgICAgICAgICAgICAgW3Zz
+eXNjYWxsXQoKVGhyZWFkIDEgImJ0cmZzLWltYWdlLnN0YSIgcmVjZWl2ZWQgc2lnbmFsIFNJR0FC
+UlQsIEFib3J0ZWQuCjB4MDAwMDAwMDAwMDQ1MjFlZSBpbiByYWlzZSAoKQooZ2RiKSBidAojMCAg
+MHgwMDAwMDAwMDAwNDUyMWVlIGluIHJhaXNlICgpCiMxICAweDAwMDAwMDAwMDA0NTIzYmEgaW4g
+YWJvcnQgKCkKIzIgIDB4MDAwMDAwMDAwMDQ1ZmJhYyBpbiBfX2xpYmNfbWVzc2FnZSAoKQojMyAg
+MHgwMDAwMDAwMDAwNDY1NDUyIGluIG1hbGxvY19wcmludGVyciAoKQojNCAgMHgwMDAwMDAwMDAw
+NDY1YzJlIGluIF9pbnRfZnJlZSAoKQojNSAgMHgwMDAwMDAwMDAwNDAyNjk0IGluIHNhbml0aXpl
+X2lub2RlX3JlZiAobWQ9bWRAZW50cnk9MHg3ZmZmZmZmZmRlMDAsIGViPWViQGVudHJ5PTB4Nzcx
+ZWUwLCBzbG90PXNsb3RAZW50cnk9MTYsIGV4dD1leHRAZW50cnk9MCkgYXQgaW1hZ2UvbWFpbi5j
+OjUyMgojNiAgMHgwMDAwMDAwMDAwNDAyZGNlIGluIHNhbml0aXplX25hbWUgKHNsb3Q9MTYsIGtl
+eT08c3ludGhldGljIHBvaW50ZXI+LCBzcmM9MHg3NjRjZjAsIGRzdD0weDc2YmVkMCAiNFwyNDYi
+LCA8aW5jb21wbGV0ZSBzZXF1ZW5jZSBcMzY3XDI2MT4sIG1kPTB4N2ZmZmZmZmZkZTAwKQogICAg
+YXQgaW1hZ2UvbWFpbi5jOjU2MQojNyAgemVyb19pdGVtcyAoc3JjPTB4NzY0Y2YwLCBkc3Q9MHg3
+NmJlZDAgIjRcMjQ2IiwgPGluY29tcGxldGUgc2VxdWVuY2UgXDM2N1wyNjE+LCBtZD08b3B0aW1p
+emVkIG91dD4pIGF0IGltYWdlL21haW4uYzo2MDIKIzggIGNvcHlfYnVmZmVyIChzcmM9MHg3NjRj
+ZjAsIGRzdD0weDc2YmVkMCAiNFwyNDYiLCA8aW5jb21wbGV0ZSBzZXF1ZW5jZSBcMzY3XDI2MT4s
+IG1kPTxvcHRpbWl6ZWQgb3V0PikgYXQgaW1hZ2UvbWFpbi5jOjY0NQojOSAgZmx1c2hfcGVuZGlu
+ZyAobWQ9bWRAZW50cnk9MHg3ZmZmZmZmZmRlMDAsIGRvbmU9ZG9uZUBlbnRyeT0wKSBhdCBpbWFn
+ZS9tYWluLmM6OTgzCiMxMCAweDAwMDAwMDAwMDA0MDMyMDEgaW4gYWRkX2V4dGVudCAoc3RhcnQ9
+c3RhcnRAZW50cnk9MTkyNTg5ODI0LCBzaXplPXNpemVAZW50cnk9NDA5NiwgbWQ9bWRAZW50cnk9
+MHg3ZmZmZmZmZmRlMDAsIGRhdGE9ZGF0YUBlbnRyeT0wKSBhdCBpbWFnZS9tYWluLmM6MTAyNQoj
+MTEgMHgwMDAwMDAwMDAwNDA1MTAyIGluIGNvcHlfZnJvbV9leHRlbnRfdHJlZSAocGF0aD0weDdm
+ZmZmZmZmZTNkMCwgbWV0YWR1bXA9MHg3ZmZmZmZmZmRlMDApIGF0IGltYWdlL21haW4uYzoxMjgw
+CiMxMiBjcmVhdGVfbWV0YWR1bXAgKGlucHV0PWlucHV0QGVudHJ5PTB4N2ZmZmZmZmZlODdmICIv
+ZGV2L3NkYTIiLCBvdXQ9b3V0QGVudHJ5PTB4NzMxYmUwLCBudW1fdGhyZWFkcz1udW1fdGhyZWFk
+c0BlbnRyeT00LCBjb21wcmVzc19sZXZlbD1jb21wcmVzc19sZXZlbEBlbnRyeT0zLCAKICAgIHNh
+bml0aXplPXNhbml0aXplQGVudHJ5PTEsIHdhbGtfdHJlZXM9d2Fsa190cmVlc0BlbnRyeT0wKSBh
+dCBpbWFnZS9tYWluLmM6MTM3MAojMTMgMHgwMDAwMDAwMDAwNDA1Nzg2IGluIG1haW4gKGFyZ2M9
+PG9wdGltaXplZCBvdXQ+LCBhcmd2PTB4N2ZmZmZmZmZlNjE4KSBhdCBpbWFnZS9tYWluLmM6Mjg1
+NQoK
+--=-=-=--
 
-Steven Hum
-417 Mayfair Av
-Ottawa, ON K1Y 0K4
-email sdothum@gmail.com
-tel 613.237.9058
+--==-=-=
+Content-Type: application/pgp-signature; name="signature.asc"
 
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAEBCgAdFiEEUimQV/rXmWU8TwiKw/FH9ZgPNTUFAlh/y9gACgkQw/FH9ZgP
+NTV8mA/+J2zwV6xitu2jSLJCOzEj8ZA9nu9rlL32IRwgaPDc2caKnmLIAOysundP
+4xEnRom6YW1LPql5S+HeA0Gya7xCt9qIyRgFfC/vb4kk2QLtdldp4zS4FYtszDzd
+WfntX7xXHakwGIsjCiiZ0y6qSijRtz1/BVbF0qkLP6FlXSRf/P75Ro5mV9gvdRea
+H0mFhl3dKC72Ucxo3a3fiXwztEgKOjak9BM2A1XhQBEyANUWRoq+ajsAudWTkuyA
+JMgx2lDWBxgUS6vllVVeZgqFYyn4JX1Sk1FsIY4+1o7+B14iPyumH2iAx04qHxl+
+of6Qah+hsL/nSxPohmUgonVkkO0YY33kmfSpqoBKMksoEfRYX+U6XVjapoB2faF/
+hjK0uhGdsp5sF7QOm/qVj+E/HDUGWTfFnPU6cuRi+ExJEJJm1wp/0tNcM9lW1OVh
+YVG/LhOmJ3ttndBZEWnFuL/ccS2SxiYx7ngG2o4WGm2TTXrSHWMTiKMa1LE2UGdT
+Es1zlmxgJ6MYPo/fHzZjofnJ5/+GsgdQyWzF0OltIHakHOjQJR++JIRiCrayNTm3
+CecJ0c9n6YQTtl5ZT1bG63y1QqsFDcB5/wFJ3h5PiJpsTT557Y69FuP3dy4npy43
+iGBAGXcfXRYiZrvk7h5dNnvijGufSkwmgJXqgCl099Zr+WCnmy0=
+=4qpb
+-----END PGP SIGNATURE-----
+--==-=-=--

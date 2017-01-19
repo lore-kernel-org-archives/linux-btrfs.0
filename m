@@ -1,66 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from len.romanrm.net ([195.154.117.182]:35834 "EHLO len.romanrm.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754187AbdASSe1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Jan 2017 13:34:27 -0500
-Date: Thu, 19 Jan 2017 23:23:40 +0500
-From: Roman Mamedov <rm@romanrm.net>
-To: "Alejandro R. Mosteo" <alejandro@mosteo.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: dup vs raid1 in single disk
-Message-ID: <20170119232340.64327c09@natsu>
-In-Reply-To: <CACNDjuw3GqkCggUqim==Y+xj=bnL93wwdx26denvQaD4tFf7yw@mail.gmail.com>
-References: <CACNDjuzntG5Saq5HHNeDUmq-=28riKAerkO=CD=zAW-QofbKSg@mail.gmail.com>
-        <CACNDjuw3GqkCggUqim==Y+xj=bnL93wwdx26denvQaD4tFf7yw@mail.gmail.com>
+Received: from mail-yw0-f196.google.com ([209.85.161.196]:33014 "EHLO
+        mail-yw0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754408AbdASTTL (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Jan 2017 14:19:11 -0500
+Received: by mail-yw0-f196.google.com with SMTP id u68so5736245ywg.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2017 11:18:06 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+In-Reply-To: <pan$356c$39bebeff$a6d8a6ee$dcbb0048@cox.net>
+References: <cd74d77f-bba5-6301-f0dc-6b2323adebdb@hawaii.edu>
+ <CAJCQCtRYz9Gcqfc44Je9oqjXx-H-N8nbXp0TuzZcE6SN+ZCm8A@mail.gmail.com> <pan$356c$39bebeff$a6d8a6ee$dcbb0048@cox.net>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Thu, 19 Jan 2017 12:18:04 -0700
+Message-ID: <CAJCQCtQvaG0OmprEBR-W1cVFh-4t2sEXmr=M0kgD4RME7_H9uA@mail.gmail.com>
+Subject: Re: Raid 1 recovery
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 19 Jan 2017 17:39:37 +0100
-"Alejandro R. Mosteo" <alejandro@mosteo.com> wrote:
+On Thu, Jan 19, 2017 at 12:15 AM, Duncan <1i5t5.duncan@cox.net> wrote:
+> Chris Murphy posted on Wed, 18 Jan 2017 14:30:28 -0700 as excerpted:
+>
+>> On Wed, Jan 18, 2017 at 2:07 PM, Jon <jmoroney@hawaii.edu> wrote:
+>>> So, I had a raid 1 btrfs system setup on my laptop. Recently I upgraded
+>>> the drives and wanted to get my data back. I figured I could just plug
+>>> in one drive, but I found that the volume simply would not mount. I
+>>> tried the other drive alone and got the same thing. Plugging in both at
+>>> the same time and the volume mounted without issue.
+>>
+>> Requires mount option degraded.
+>>
+>> If this is a boot volume, this is difficult because the current udev
+>> rule prevents a mount attempt so long as all devices for a Btrfs volume
+>> aren't present.
+>
+> OK, so I've known about this from the list for some time, but what is the
+> status with regard to udev/systemd (has a bug/issue been filed, results,
+> link?), and what are the alternatives, both for upstream, and for a dev,
+> either trying to be proactive, or currently facing a refusal to boot due
+> to the issue?
 
-> I was wondering, from a point of view of data safety, if there is any
-> difference between using dup or making a raid1 from two partitions in
-> the same disk. This is thinking on having some protection against the
-> typical aging HDD that starts to have bad sectors.
+If the udev rule isn't there, there's a chance that there's a mount
+failure with any multiple device setup if one member device is late to
+the party. If the udev rule is removed and if rootflags=degraded, now
+whenever there's a late device, there's always a degraded boot and the
+drive late to the party is out of sync. And we have no fast resync
+like mdadm with write intent bitmaps, so it requires a complete volume
+scrub (initiated manually) to avoid corruption, as soon as the volume
+is made whole.
 
-RAID1 will write slower compared to DUP, as any optimization to make RAID1
-devices work in parallel will cause a total performance disaster for you as
-you will start trying to write to both partitions at the same time, turning
-all linear writes into random ones, which are about two orders of magnitude
-slower than linear on spinning hard drives. DUP shouldn't have this issue, but
-still it will be twice slower than single, since you are writing everything
-twice.
+Now maybe the udev rule could be made smarter, I don't really know. If
+it's multiple device you'd want a rule that just waits for say, 30
+seconds or a minute or something sane, whatever that'd be. That way
+normal operation just delays things a bit to make sure all member
+drives are available at the same time, so that the mount command
+(without degraded option) works. And the only failure case is when
+there is in fact a bad drive. Someone willing to take the risk could
+use such a udev rule along with rootflags=degraded, but this is asking
+for trouble.
 
-You could consider DUP data for when a disk is already known to be getting bad
-sectors from time to time -- but then it's a fringe exercise to try and keep
-using such disk in the first place. Yeah with DUP data DUP metadata you can
-likely have some more life out of such disk as a throwaway storage space for
-non-essential data, at half capacity, but is it worth the effort, as it's
-likely to start failing progressively worse over time.
+What's really needed is a daemon or other service that manages the
+pool status. And that includes dealing with degradedness and resyncs
+automatically.
 
-In all other cases the performance and storage space penalty of DUP within a
-single device are way too great (and gained redundancy is too low) compared
-to a proper system of single profile data + backups, or a RAID5/6 system (not
-Btrfs-based) + backups.
 
-> On a related note, I see this caveat about dup in the manpage:
-> 
-> "For example, a SSD drive can remap the blocks internally to a single
-> copy thus deduplicating them. This negates the purpose of increased
-> redunancy (sic) and just wastes space"
-
-That ability is vastly overestimated in the man page. There is no miracle
-content-addressable storage system working at 500 MB/sec speeds all within a
-little cheap controller on SSDs. Likely most of what it can do, is just
-compress simple stuff, such as runs of zeroes or other repeating byte
-sequences.
-
-And the DUP mode is still useful on SSDs, for cases when one copy of the DUP
-gets corrupted in-flight due to a bad controller or RAM or cable, you could
-then restore that block from its good-CRC DUP copy.
 
 -- 
-With respect,
-Roman
+Chris Murphy

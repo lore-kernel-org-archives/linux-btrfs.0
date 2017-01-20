@@ -1,27 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:34587 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1751177AbdAUEsj (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Jan 2017 23:48:39 -0500
-Date: Fri, 20 Jan 2017 20:47:24 -0800
-From: Chris Mason <clm@fb.com>
-To: David Sterba <dsterba@suse.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PULL] Btrfs fixes for 4.10
-Message-ID: <20170121044723.GA81342@clm-mbp.thefacebook.com>
-References: <cover.1484923236.git.dsterba@suse.com>
+Received: from mx2.suse.de ([195.135.220.15]:54376 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751917AbdATS0D (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 20 Jan 2017 13:26:03 -0500
+Date: Fri, 20 Jan 2017 19:24:50 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: raid56: Remove unused variant in lock_stripe_add
+Message-ID: <20170120182450.GG11951@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170116022306.32446-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; format=flowed
-In-Reply-To: <cover.1484923236.git.dsterba@suse.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170116022306.32446-1-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 20, 2017 at 03:42:50PM +0100, David Sterba wrote:
->Hi,
->
->a few more fixes, please pull. Thanks.
+On Mon, Jan 16, 2017 at 10:23:06AM +0800, Qu Wenruo wrote:
+> Variant 'walk' in lock_stripe_add() is never used.
+> Remove it.
+> 
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-Great, thanks Dave, rolling tests.
-
--chris
+Added to 4.11 queue, thaks. Changelog and subject edited.

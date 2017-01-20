@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f176.google.com ([209.85.161.176]:33016 "EHLO
-        mail-yw0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752633AbdATPT4 (ORCPT
+Received: from mail-yw0-f172.google.com ([209.85.161.172]:36451 "EHLO
+        mail-yw0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752481AbdATSEr (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Jan 2017 10:19:56 -0500
-Received: by mail-yw0-f176.google.com with SMTP id u68so51524579ywg.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Jan 2017 07:19:46 -0800 (PST)
+        Fri, 20 Jan 2017 13:04:47 -0500
+Received: by mail-yw0-f172.google.com with SMTP id v200so96543595ywc.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Jan 2017 10:04:46 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <6ee63ff7-6a0c-7828-0751-5769d59bb85f@cn.fujitsu.com>
+In-Reply-To: <CAJCQCtTdfD6=xWttk5D4JqLpzG9ZMxb-c=GopZPPNsLP6eHHpw@mail.gmail.com>
 References: <CAJCQCtQ-WkNShYNGi9hk8s7M_RdLGHV3Jw0zArt_W-uzYQ9BAg@mail.gmail.com>
- <6ee63ff7-6a0c-7828-0751-5769d59bb85f@cn.fujitsu.com>
+ <6ee63ff7-6a0c-7828-0751-5769d59bb85f@cn.fujitsu.com> <CAJCQCtTdfD6=xWttk5D4JqLpzG9ZMxb-c=GopZPPNsLP6eHHpw@mail.gmail.com>
 From: Chris Murphy <chris@colorremedies.com>
-Date: Fri, 20 Jan 2017 08:10:58 -0700
-Message-ID: <CAJCQCtTdfD6=xWttk5D4JqLpzG9ZMxb-c=GopZPPNsLP6eHHpw@mail.gmail.com>
+Date: Fri, 20 Jan 2017 11:04:45 -0700
+Message-ID: <CAJCQCtSM=2eDNXuDGEJiEZ1mmY_wotvqAfHBWKq2OQ26xsy4sQ@mail.gmail.com>
 Subject: Re: btrfs check lowmem vs original
 To: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
@@ -20,41 +20,23 @@ Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 19, 2017 at 10:45 PM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+For sanitizing the debug tree I tried this backwards method:
 
->> Another file system, 15 minutes old with two mounts in its whole
->> lifetime, and only written with kernel 4.10-rc3 has over 30 lines of
->> varying numbers:
->>
->> ERROR: root 257 EXTENT DATA[150134 11317248] prealloc shouln't have
->> datasum
->>
->> That file system should have no preallocated extents (It's a clean
->> installation of Fedora Rawhide, using only rsync)
->
->
-> btrfs-debug-tree will help to make sure what is wrong.
+# btrfs-image -c5 -t4 -s /dev/mapper/brick1 > btrfsimage_30f4724a.bin
+# lvcreate -V 603440807936b -T vg/thintastic -n btr1
+# btrfs-image -r btrfsimage_30f4724a.bin /dev/vg/btr1
+# btrfs inspect-internal dump-tree /dev/vg/btr1 > btrfsdebugtree_30f4724a.log
 
-6b187fa6.logs.tar.gz 20M
-https://drive.google.com/open?id=0B_2Asp8DGjJ9SlRvZ2plNXVmTUU
+But I see by default, -r makes modifications to the chunk tree, so
+maybe it's not a useful debug tree? Anyway, the two btrfs checks
+(original and lowmem) and the debug tree are here:
 
+30f4724a-first.logs.tar 254MiB
+https://drive.google.com/open?id=0B_2Asp8DGjJ9QmZOV3pNS212Yk0
 
-That's the small recent one, generic content. The others are bigger,
-and I should probably sanitize the filenames from debug-tree but can't
-find in the archives how to do that. Is btrfs-image useful for this?
+There are 4 more file systems, 2 are single device, 2 are two device
+(raid1) fs's. I'm not sure how to use this indirect btrfs-image
+approach with raid1.
 
 
-
-
-> That's why lowmem mode is still not the default option.
->
-> The problem os original mode is, if you're checking a TB level fs and only 2
-> or 4G ram, then it's quite possible you ran out of memory and won't be able
-> to check the fs forever, more several than annoying.
-
-Fair enough.
-
-
-
--- 
 Chris Murphy

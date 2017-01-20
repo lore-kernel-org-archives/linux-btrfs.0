@@ -1,68 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:44573 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751409AbdATIF6 (ORCPT
+Received: from nm.newmedia-net.de ([217.113.179.122]:35411 "EHLO
+        webmail.newmedia-net.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751555AbdATJpg (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Jan 2017 03:05:58 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1cUUCd-0001Pz-D0
-        for linux-btrfs@vger.kernel.org; Fri, 20 Jan 2017 09:05:43 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs recovery
-Date: Fri, 20 Jan 2017 08:05:33 +0000 (UTC)
-Message-ID: <pan$70181$45383b8f$72c6c22$19cae0fb@cox.net>
+        Fri, 20 Jan 2017 04:45:36 -0500
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 References: <7473ea27-9716-33fb-ecec-2ec52fac3820@dd-wrt.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+ <70489b24-1f36-d4b6-7bbe-63a39a7425d0@cn.fujitsu.com>
+From: Sebastian Gottschall <s.gottschall@dd-wrt.com>
+Message-ID: <8c0ff896-553f-921b-13fa-8f96f52c9c8e@dd-wrt.com>
+Date: Fri, 20 Jan 2017 10:45:32 +0100
+MIME-Version: 1.0
+In-Reply-To: <70489b24-1f36-d4b6-7bbe-63a39a7425d0@cn.fujitsu.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Subject: Re: btrfs recovery
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sebastian Gottschall posted on Thu, 19 Jan 2017 11:06:19 +0100 as
-excerpted:
+Am 20.01.2017 um 02:08 schrieb Qu Wenruo:
+>
+>
+> At 01/19/2017 06:06 PM, Sebastian Gottschall wrote:
+>> Hello
+>>
+>> I have a question. after a power outage my system was turning into a
+>> unrecoverable state using btrfs (kernel 4.9)
+>> since im running --init-extent-tree now for 3 days i'm asking how long
+>> this process normally takes and why it outputs millions of lines like
+>
+> --init-extent-tree will trash *ALL* current extent tree, and *REBUILD* 
+> them from fs-tree.
+>
+> This can takes a long time depending on the size of the fs, and how 
+> many shared extents there are (snapshots and reflinks all counts).
+its about 1,8 tb. so not a great size, but millions of files. its a 
+build server
+>
+> Such a huge operation should only be used if you're sure only extent 
+> tree is corrupted, and other tree are all OK.
+since operations like zero-log doesnt help and scrub cancles after 5 
+seconds with error (can't remember the exact error right now)
+i'm sure there is something corrupt in it
+>
+> Or you'll just totally screw your fs further, especially when 
+> interrupted.
+running since 4 days now and for sure i wont interrupt it now at this state
+>
+>>
+>> Backref 1562890240 root 262 owner 483059214 offset 0 num_refs 0 not
+>> found in extent tree
+>> Incorrect local backref count on 1562890240 root 262 owner 483059214
+>> offset 0 found 1 wanted 0 back 0x23b0211d0
+>> backpointer mismatch on [1562890240 4096]
+>
+> This is common, since --init-extent-tree trash all extent tree, so 
+> every tree-block/data extent will trigger such output
+>
+>> adding new data backref on 1562890240 root 262 owner 483059214 offset 0
+>> found 1
+>> Repaired extent references for 1562890240
+>
+> But as you see, it repaired the extent tree by adding back 
+> EXTENT_ITEM/METADATA_ITEM into extent tree, so far it works.
+>
+> If you see such output with all the same bytenr, then things goes 
+> really wrong and maybe a dead loop.
+they are all incremental. so looks okay then. i just dont know where the 
+end is
+>
+> Personally speaking, normal problem like failed to mount should not 
+> need --init-extent-tree.
+>
+> Especially, extent-tree corruption normally is not really related to 
+> mount failure, but sudden remount to RO and kernel wanring.
+initially i was able to mount the fs, but it turned to be ro only.
+>
+> Thanks,
+> Qu
+>
+>>
+>> please avoid typical answers like "potential dangerous operation" since
+>> all repair options are declared as potenial dangerous.
+>>
+>>
+>> Sebastian
+>>
+>
+>
+>
 
-> I have a question. after a power outage my system was turning into a
-> unrecoverable state using btrfs (kernel 4.9)
-> since im running --init-extent-tree now for 3 days i'm asking how long
-> this process normally takes
-
-QW has the better direct answer for you, but...
-
-This is just a note to remind you, in general questions like "how long" 
-can be better answered if we know the size of your filesystem, the mode 
-(how many devices and what duplication mode for data and metadata) and 
-something about how you use it -- how many subvolumes and snapshots you 
-have, whether you have quotas enabled, etc.
-
-Normally output from commands like btrfs fi usage can answer most of the 
-filesystem size and mode stuff, but of course that command requires a 
-mount, and you're doing an unmounted check ATM.  However, btrfs fi show 
-should still work and give us basic information like file size and number 
-of devices, and you can fill in the blanks from there.
-
-You did mention the kernel version (4.9) however, something that a lot of 
-reports miss, and you're current, so kudos for that. =:^)
-
-As to your question, assuming a terabyte scale filesystem, as QW 
-suggested, a full extent tree rebuild is a big job and could indeed take 
-awhile (days).
-
->From a practical perspective...
-
-Given the state of btrfs as a still stabilizing and maturing filesystem, 
-having backups for any data you value more than the time and hassle 
-necessary to do the backup is even more a given than on a fully stable 
-filesystem, which means, given the time for an extent tree rebuild on 
-that size of a filesystem, unless you're doing the rebuild specifically 
-to get the experience or test the code, as a practical matter it's 
-probably simply easier to restore from that backup if you valued the data 
-enough to have one, or simply scrap the filesystem and start over if you 
-considered the data worth less than the time and hassle of a backup, and 
-thus didn't have one.
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Mit freundlichen Grüssen / Regards
+
+Sebastian Gottschall / CTO
+
+NewMedia-NET GmbH - DD-WRT
+Firmensitz:  Berliner Ring 101, 64625 Bensheim
+Registergericht: Amtsgericht Darmstadt, HRB 25473
+Geschäftsführer: Peter Steinhäuser, Christian Scheele
+http://www.dd-wrt.com
+email: s.gottschall@dd-wrt.com
+Tel.: +496251-582650 / Fax: +496251-5826565
 

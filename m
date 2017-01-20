@@ -1,117 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:19042 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751118AbdATCuY (ORCPT
+Received: from mail-yb0-f178.google.com ([209.85.213.178]:35720 "EHLO
+        mail-yb0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751216AbdATEjC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Jan 2017 21:50:24 -0500
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-        by cn.fujitsu.com (Postfix) with ESMTP id 80DEB47B0CB4
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Jan 2017 10:50:12 +0800 (CST)
-To: btrfs <linux-btrfs@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Subject: [RFC] btrfs-progs: btrfs-corrupt-block refactor
-Message-ID: <2987570c-aeb2-e497-ee9f-c32b8a0fb3ff@cn.fujitsu.com>
-Date: Fri, 20 Jan 2017 10:50:10 +0800
+        Thu, 19 Jan 2017 23:39:02 -0500
+Received: by mail-yb0-f178.google.com with SMTP id l23so42794204ybj.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2017 20:38:27 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"; format=flowed
+From: Chris Murphy <chris@colorremedies.com>
+Date: Thu, 19 Jan 2017 21:38:26 -0700
+Message-ID: <CAJCQCtQ-WkNShYNGi9hk8s7M_RdLGHV3Jw0zArt_W-uzYQ9BAg@mail.gmail.com>
+Subject: btrfs check lowmem vs original
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is the RFC proposal for refactor btrfs-corrupt-block.
+All of my Btrfs file systems, including new ones, have errors
+according to lowmem mode, and no errors reported at all for original
+mode. So which is correct? If lowmem mode is correct, then there are
+obviously kernel bugs that are causing problems right away, even on
+minutes old file systems.
 
-Just as Lakshmipathi and xfstests guys commented in btrfs ML, we need 
-btrfs-corrupt-block to either craft a test case, or for later RAID56 
-corruption test case.
+I can't tell from the output whether these are serious errors or minor
+errors either, because the output from check is totally
+incomprehensible. Further the usage summary at the end, extent bytes,
+and fs bytes, etc. are different, sometimes by an order of magnitude,
+between lowmem and original.
 
-However the current situation of btrfs-corrupt-block has several 
-problems, and those problems prevents us from using it:
+Errors like this:
 
-1) Bad arranged options
-    Quite a lot of combination makes no sense.
-    And quite a lot of function covers each other.
+ERROR: block group[46200258560 1073741824] used 1073741824 but extent
+items used 1144422400
+ERROR: block group[85928706048 1073741824] used 1073741824 but extent
+items used 0
+ERROR: block group[178270502912 1073741824] used 1073741824 but extent
+items used 1083211776
+ERROR: block group[360806612992 1073741824] used 1073479680 but extent
+items used 1074769920
+ERROR: extent[366498091008, 134217728] referencer count mismatch
+(root: 818, owner: 73782, offset: 134217728) wanted: 4, have: 26
 
-    This is quite frustrating when someone want to use it.
+One file system has over 100 lines (exactly the same thing, no difference)
 
-2) No documentation
+ERROR: data extent[16913485824 7577600] backref lost
 
-3) No longer default installed/compiled
-    This is OK if such tool is only used to corrupt things.
+Another file system, 15 minutes old with two mounts in its whole
+lifetime, and only written with kernel 4.10-rc3 has over 30 lines of
+varying numbers:
 
-    But if the long term objective is to provide a tool to modify the fs
-    offline at will, that's not a good idea.
+ERROR: root 257 EXTENT DATA[150134 11317248] prealloc shouln't have datasum
 
+That file system should have no preallocated extents (It's a clean
+installation of Fedora Rawhide, using only rsync)
 
-So here I want to refactor the current btrfs-corrupt-block to archive 
-the following objective:
+Again, zero errors with original mode; but all file systems of all
+ages have errors with lowmem. This is kindof annoying to say the
+least, it's like we're adding dice to the check and repair situation
+on Btrfs which is already incredibly more complicated and unhelpful
+than any other file system.
 
-1) Logical layer divided parameters  <<MAIN PART>>
-    The current idea is like:
-
-    btrfs-corrupt-block <dest> <options>
-    <dest> is one of
-      "item" "data" "leaf" "node" (with more to come)
-
-    "item"/"leaf"/"node" common options are:
-      "--nocow":
-         Don't do CoW, but overwrite (default)
-      "--cow":
-         Do normal tree block CoW
-      "--pattern DATA"
-         The pattern to fill, default to 0xcd
-
-
-    "item" options are:
-      "--root NUMBER|ROOTID":
-         Mandatory
-      "--key (OBJID,TYPE,OFFSET)":
-         Mandatory
-      "--field FIELD"
-         Optional, default to corrupt all fields of the item
-      "--delete"
-         Optional, if specified, the item will be deleted.
-         Conflicts with "--field"
+btrfs-progs 4.9.
+kernels vary from 4.4 to 4.10-rc4, but one fs is only a month old
+having used 4.7 and 4.8 kernels; and another one just 4.10-rc3 as I
+said.
 
 
-    "leaf" options are:
-      "--bytenr BYTENR" or "--key" with "--root"
-         Mandatory to locate the leaf
-      "--field FIELD"
-         Optional, default to corrupt all fields of the leaf header
-         With --key, can also be used to corrupt certain item field
-      NOTE: No delete is provided. Please use "node" "--delete" to
-            delete a leaf.
-            Or use "--filed ALL" with "--pattern 0x00" to wipe the
-            leaf header.
-
-    "node" options are:
-      "--bytenr BYTENR" or "--key" "--root" and "--level"
-         Mandatory to locate the node
-      "--field FIELD"
-         Optional, default to corrupt all fields of the node header
-         With --key, can also be used to corrupt certain nodeptr filed
-      "--delete"
-         Optional, Only works with "--key" "--root" "--level".
-         Delete the nodeptr.
-
-    "data" options are:
-      "--bytenr BYTENR"
-         Mandatory, logical address
-      "--length LENGTH"
-         Optional, default to sectorsize of the fs
-      "--mirror"
-         Optional, default to all mirror
-
-     May add "raid56" destination for raid56 tests later.
-
-2) Better documentation
-    Both asciidoc doc and better help string
-
-3) Better error string
-    At least the same level we do in other btrfs commands
-
-Any advice and idea are welcomed.
-
-Thanks,
-Qu
-
-
+-- 
+Chris Murphy

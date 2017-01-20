@@ -1,165 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f53.google.com ([209.85.214.53]:35521 "EHLO
-        mail-it0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932065AbdASUDS (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Jan 2017 15:03:18 -0500
-Received: by mail-it0-f53.google.com with SMTP id 203so4913383ith.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2017 12:02:22 -0800 (PST)
-Subject: Re: dup vs raid1 in single disk
-To: Roman Mamedov <rm@romanrm.net>,
-        "Alejandro R. Mosteo" <alejandro@mosteo.com>
-References: <CACNDjuzntG5Saq5HHNeDUmq-=28riKAerkO=CD=zAW-QofbKSg@mail.gmail.com>
- <CACNDjuw3GqkCggUqim==Y+xj=bnL93wwdx26denvQaD4tFf7yw@mail.gmail.com>
- <20170119232340.64327c09@natsu>
-Cc: linux-btrfs@vger.kernel.org
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <6f06bd6b-67c9-533b-9bf5-89cff8b892da@gmail.com>
-Date: Thu, 19 Jan 2017 15:02:14 -0500
+Received: from trent.utfs.org ([94.185.90.103]:50780 "EHLO trent.utfs.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753818AbdATAOS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Jan 2017 19:14:18 -0500
+Date: Thu, 19 Jan 2017 16:05:43 -0800 (PST)
+From: Christian Kujau <lists@nerdbynature.de>
+To: linux-btrfs@vger.kernel.org
+cc: linux-kernel@vger.kernel.org
+Subject: btrfs_alloc_tree_block: Faulting instruction address: 0xc02d4584
+Message-ID: <alpine.DEB.2.20.999.1701191554340.3270@trent.utfs.org>
 MIME-Version: 1.0
-In-Reply-To: <20170119232340.64327c09@natsu>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-01-19 13:23, Roman Mamedov wrote:
-> On Thu, 19 Jan 2017 17:39:37 +0100
-> "Alejandro R. Mosteo" <alejandro@mosteo.com> wrote:
->
->> I was wondering, from a point of view of data safety, if there is any
->> difference between using dup or making a raid1 from two partitions in
->> the same disk. This is thinking on having some protection against the
->> typical aging HDD that starts to have bad sectors.
->
-> RAID1 will write slower compared to DUP, as any optimization to make RAID1
-> devices work in parallel will cause a total performance disaster for you as
-> you will start trying to write to both partitions at the same time, turning
-> all linear writes into random ones, which are about two orders of magnitude
-> slower than linear on spinning hard drives. DUP shouldn't have this issue, but
-> still it will be twice slower than single, since you are writing everything
-> twice.
-As of right now, there will actually be near zero impact on write 
-performance (or at least, it's way less than the theoretical 50%) 
-because there really isn't any optimization to speak of in the 
-multi-device code.  That will hopefully change over time, but it's not 
-likely to do so any time in the future since nobody appears to be 
-working on multi-device write performance.
->
-> You could consider DUP data for when a disk is already known to be getting bad
-> sectors from time to time -- but then it's a fringe exercise to try and keep
-> using such disk in the first place. Yeah with DUP data DUP metadata you can
-> likely have some more life out of such disk as a throwaway storage space for
-> non-essential data, at half capacity, but is it worth the effort, as it's
-> likely to start failing progressively worse over time.
->
-> In all other cases the performance and storage space penalty of DUP within a
-> single device are way too great (and gained redundancy is too low) compared
-> to a proper system of single profile data + backups, or a RAID5/6 system (not
-> Btrfs-based) + backups.
-That really depends on your usage.  In my case, I run DUP data on single 
-disks regularly.  I still do backups of course, but the performance is 
-worth far less for me (especially in the cases where I'm using NVMe 
-SSD's which have performance measured in thousands of MB/s for both 
-reads and writes) than the ability to recover from transient data 
-corruption without needing to go to a backup.
+Hi,
 
-As long as /home and any other write heavy directories are on a separate 
-partition, I would actually advocate using DUP data on your root 
-filesystem if you can afford the space simply because it's a whole lot 
-easier to recover other data if the root filesystem still works.  Most 
-of the root filesystem except some stuff under /var follows a WORM 
-access pattern, and even the stuff that doesn't in /var is usually not 
-performance critical, so the write performance penalty won't have 
-anywhere near as much impact on how well the system runs as you might think.
+after upgrading this powerpc32 box from 4.10-rc2 to -rc4, the message 
+below occured a few hours after boot. Full dmesg and .config:
 
-There's also the fact that you're writing more metadata than data most 
-of the time unless you're dealing with really big files, and metadata is 
-already DUP mode (unless you are using an SSD), so the performance hit 
-isn't 50%, it's actually a bit more than half the ratio of data writes 
-to metadata writes.
->
->> On a related note, I see this caveat about dup in the manpage:
->>
->> "For example, a SSD drive can remap the blocks internally to a single
->> copy thus deduplicating them. This negates the purpose of increased
->> redunancy (sic) and just wastes space"
->
-> That ability is vastly overestimated in the man page. There is no miracle
-> content-addressable storage system working at 500 MB/sec speeds all within a
-> little cheap controller on SSDs. Likely most of what it can do, is just
-> compress simple stuff, such as runs of zeroes or other repeating byte
-> sequences.
-Most of those that do in-line compression don't implement it in 
-firmware, they implement it in hardware, and even DEFLATE can get 500 
-MB/second speeds if properly implemented in hardware.  The firmware may 
-control how the hardware works, but it's usually hardware doing heavy 
-lifting in that case, and getting a good ASIC made that can hit the 
-required performance point for a reasonable compression algorithm like 
-LZ4 or Snappy is insanely cheap once you've gotten past the VLSI work.
->
-> And the DUP mode is still useful on SSDs, for cases when one copy of the DUP
-> gets corrupted in-flight due to a bad controller or RAM or cable, you could
-> then restore that block from its good-CRC DUP copy.
-The only window of time during which bad RAM could result in only one 
-copy of a block being bad is after the first copy is written but before 
-the second is, which is usually an insanely small amount of time.  As 
-far as the cabling, the window for errors resulting in a single bad copy 
-of a block is pretty much the same as for RAM, and if they're 
-persistently bad, you're more likely to lose data for other reasons.
+  http://nerdbynature.de/bits/4.10-rc4/
 
-That said, I do still feel that DUP mode has value on SSD's.  The 
-primary arguments against it are:
-1. It wears out the SSD faster.
-2. The blocks are likely to end up in the same erase block, and 
-therefore there will be no benefit.
+Any ideas?
 
-The first argument is accurate, but not usually an issue for most 
-people.  Average life expectancy for a decent SSD is well over 10 years, 
-which is more than twice the usual life expectancy for a consumer hard 
-drive.  Putting it in further perspective, the 575GB SSD's have been 
-running essentially 24/7 for the past year and a half (13112 hours 
-powered on now), and have seen just short of 25.7TB of writes over that 
-time.  This equates to roughly 2GB/hour, which is well within typical 
-desktop usage.  It also means they've seen more than 44.5 times their 
-total capacity in writes.  Despite this, the wear-out indicators all 
-show that I can still expect at least 9 years more of run-time on these. 
-  Normalizing that, that means I'm likely to see between 8 and 12 years 
-of life on these.  Equivalent stats for the HDD's I used to use (NAS 
-rated Seagate drives) gave me a roughly 3-5 year life expectancy, less 
-than half that of the SSD.  In both cases however, you're talking well 
-beyond the typical life expectancy of anything short of a server or a 
-tight-embedded system, and worrying about a 4-year versus 8-year life 
-expectancy on your storage device is kind of pointless when you need to 
-upgrade the rest of the system in 3 years.
+Thanks,
+Christian.
 
-As far as the second argument against it, that one is partially correct, 
-but ignores an important factor that many people who don't do hardware 
-design (and some who do) don't often consider.  The close temporal 
-proximity of the writes for each copy are likely to mean they end up in 
-the same erase block on the SSD (especially if the SSD has a large write 
-cache).  However, that doesn't mean that one getting corrupted due to 
-device failure is guaranteed to corrupt the other.  The reason for this 
-is exactly the same reason that single word errors in RAM are 
-exponentially more common than losing a whole chip or the whole memory 
-module: The primary error source is environmental noise (EMI, cosmic 
-rays, quantum interference, background radiation, etc), not system 
-failure.  In other words, you're far more likely to lose a single cell 
-(which is usually not more than a single byte in the MLC flash that gets 
-used in most modern SSD's) in the erase block than the whole erase 
-block.  In that event, you obviously have only got corruption in the 
-particular filesystem block that that particular cell was storing data for.
 
-There's also a third argument for not using DUP on SSD's however:
-The SSD already does most of the data integrity work itself.
-This is only true of good SSD's, but many do have some degree of 
-built-in erasure coding in the firmware which can handle losing large 
-chunks of an erase block and still return the data safely.  This is part 
-of the reason that you almost never see nice power-of-two sizes for 
-flash Storage despite flash chips being made that way them,selves (the 
-other part is the spare blocks).  Depending on the degree of protection 
-provided by this erasure coding, it can actually cancel out my argument 
-against argument 2.  In all practicality though, that requires you to 
-actually trust the SSD manufacturer to have implemented things properly 
-for it to be a valid counter-argument, and most people who would care 
-enough about data integrity to use BTRFS for that reason are not likely 
-to trust the storage device that much.
+Faulting instruction address: 0xc02d4584
+Oops: Kernel access of bad area, sig: 11 [#1]
+PowerMac
+Modules linked in: ecb xt_tcpudp iptable_filter ip_tables x_tables 
+nfnetlink_log nfnetlink sha256_generic twofish_generic twofish_common 
+usb_storage therm_adt746x loop i2c_powermac arc4 firewire_sbp2 b43 
+rng_core ssb bcma mac80211 cfg80211 ecryptfs [last unloaded: nbd]
+CPU: 0 PID: 1395 Comm: btrfs-transacti Tainted: G        W       
+4.10.0-rc4-00001-gab8184b #1
+task: ee7162e0 task.stack: ee9cc000
+NIP: c02d4584 LR: c02d4574 CTR: c00d0df0
+REGS: ee9cdaa0 TRAP: 0300   Tainted: G        W        
+(4.10.0-rc4-00001-gab8184b)
+MSR: 00009032 <EE,ME,IR,DR,RI>
+  CR: 24422248  XER: 00000000
+DAR: 10581054 DSISR: 42000000 
+GPR00: c02d4574 ee9cdb50 ee71d4b8 10581050 00000001 dbc88118 00000000 00000020 
+GPR08: 00001205 00000004 00000000 00000000 24422444 00000000 00000000 000093c3 
+GPR16: fffff000 00000001 00000000 00000000 00000000 ee260800 00000000 00000000 
+GPR24: 00000000 00000001 ee9cdc1b eef5c1a0 00001000 ee470000 dbc88118 ee470170 
+NIP [c02d4584] btrfs_alloc_tree_block+0x18c/0x5c4
+LR [c02d4574] btrfs_alloc_tree_block+0x17c/0x5c4
+Call Trace:
+[ee9cdb50] [c02d4574] btrfs_alloc_tree_block+0x17c/0x5c4 (unreliable)
+[ee9cdbf0] [c02b86d4] __btrfs_cow_block+0x110/0x638
+[ee9cdc70] [c02b8d74] btrfs_cow_block+0xdc/0x1b0
+[ee9cdca0] [c02bc48c] btrfs_search_slot+0x1c0/0x904
+[ee9cdd10] [c02dc680] btrfs_lookup_inode+0x3c/0x124
+[ee9cdd50] [c02ec204] btrfs_update_inode_item+0x4c/0x10c
+[ee9cdd80] [c02d05e4] cache_save_setup+0xc0/0x400
+[ee9cdde0] [c02d4d54] btrfs_start_dirty_block_groups+0x184/0x47c
+[ee9cde50] [c02e7e84] btrfs_commit_transaction+0x148/0xac4
+[ee9cdeb0] [c02e313c] transaction_kthread+0x1d0/0x1ec
+[ee9cdf00] [c004f1fc] kthread+0xf8/0x124
+[ee9cdf40] [c0011480] ret_from_kernel_thread+0x5c/0x64
+--- interrupt: 0 at   (null)
+    LR =   (null)
+Instruction dump:
+4800b3ed 7f838040 7c7e1b78 419d0430 806300d4 81db0000 81fb0004 4bdfe2b9 
+39200004 7ee6bb78 38630050 7fc5f378 <7dc91d2c> 7de01d2c 809501cf 807501cb 
+---[ end trace 937683537ecd986b ]---
+
+
+
+-- 
+BOFH excuse #342:
+
+HTTPD Error 4004 : very old Intel cpu - insufficient processing power

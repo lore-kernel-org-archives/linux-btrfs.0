@@ -1,175 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:12485 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751377AbdATH76 (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:44573 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1751409AbdATIF6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Jan 2017 02:59:58 -0500
-Subject: Re: [PATCH] btrfs-progs: lowmem-check: Fix wrong extent tree
- iteration
-To: Christoph Anton Mitterer <calestyo@scientia.net>
-References: <20170118084838.27102-1-quwenruo@cn.fujitsu.com>
- <1484845829.6821.5.camel@scientia.net>
-CC: <linux-btrfs@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <f63d9d82-750b-8ecc-c71a-3601468b47c9@cn.fujitsu.com>
-Date: Fri, 20 Jan 2017 15:58:47 +0800
-MIME-Version: 1.0
-In-Reply-To: <1484845829.6821.5.camel@scientia.net>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+        Fri, 20 Jan 2017 03:05:58 -0500
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1cUUCd-0001Pz-D0
+        for linux-btrfs@vger.kernel.org; Fri, 20 Jan 2017 09:05:43 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: btrfs recovery
+Date: Fri, 20 Jan 2017 08:05:33 +0000 (UTC)
+Message-ID: <pan$70181$45383b8f$72c6c22$19cae0fb@cox.net>
+References: <7473ea27-9716-33fb-ecec-2ec52fac3820@dd-wrt.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Sebastian Gottschall posted on Thu, 19 Jan 2017 11:06:19 +0100 as
+excerpted:
 
+> I have a question. after a power outage my system was turning into a
+> unrecoverable state using btrfs (kernel 4.9)
+> since im running --init-extent-tree now for 3 days i'm asking how long
+> this process normally takes
 
-At 01/20/2017 01:10 AM, Christoph Anton Mitterer wrote:
-> Hey Qu.
->
->
-> On Wed, 2017-01-18 at 16:48 +0800, Qu Wenruo wrote:
->> To Christoph,
->>
->> Would you please try this patch, and to see if it suppress the block
->> group
->> warning?
-> I did another round of fsck in both modes (original/lomem), first
-> WITHOUT your patch, then WITH it... both on progs version 4.9... no
-> further RW mount between these 4 runs:
->
->
-> btrfs-progs v4.9 WITHOUT patch:
-> *******************************
-> # btrfs check /dev/nbd0 ; echo $?
-> checking extents
-> checking free space cache
-> checking fs roots
-> checking csums
-> checking root refs
-> Checking filesystem on /dev/nbd0
-> UUID: 326d292d-f97b-43ca-b1e8-c722d3474719
-> found 7469206884352 bytes used err is 0
-> total csum bytes: 7281779252
-> total tree bytes: 10837262336
-> total fs tree bytes: 2011906048
-> total extent tree bytes: 1015349248
-> btree space waste bytes: 922444044
-> file data blocks allocated: 7458369622016
->  referenced 7579485159424
-> 0
->
-> # btrfs check --mode=lowmem /dev/nbd0 ; echo $?
-> checking extents
-> ERROR: block group[74117545984 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[239473786880 1073741824] used 1073741824 but extent items used 1207959552
-> ERROR: block group[500393050112 1073741824] used 1073741824 but extent items used 1207959552
-> ERROR: block group[581997428736 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[626557714432 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[668433645568 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[948680261632 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[982503129088 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[1039411445760 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[1054443831296 1073741824] used 1073741824 but extent items used 1207959552
-> ERROR: block group[1190809042944 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[1279392743424 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[1481256206336 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[1620842643456 1073741824] used 1073741824 but extent items used 1207959552
-> ERROR: block group[1914511032320 1073741824] used 1073741824 but extent items used 1207959552
-> ERROR: block group[3055361720320 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[3216422993920 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[3670615785472 1073741824] used 1073741824 but extent items used 1207959552
-> ERROR: block group[3801612288000 1073741824] used 1073741824 but extent items used 1207959552
-> ERROR: block group[3828455833600 1073741824] used 1073741824 but extent items used 1207959552
-> ERROR: block group[4250973241344 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[4261710659584 1073741824] used 1073741824 but extent items used 1074266112
-> ERROR: block group[4392707162112 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[4558063403008 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[4607455526912 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[4635372814336 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[4640204652544 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[4642352136192 1073741824] used 1073741824 but extent items used 1207959552
-> ERROR: block group[4681006841856 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[5063795802112 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[5171169984512 1073741824] used 1073741824 but extent items used 1207959552
-> ERROR: block group[5216267141120 1073741824] used 1073741824 but extent items used 1207959552
-> ERROR: block group[5290355326976 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[5445511020544 1073741824] used 1073741824 but extent items used 1074266112
-> ERROR: block group[6084387405824 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[6104788500480 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[6878956355584 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[6997067956224 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[7702516334592 1073741824] used 1073741824 but extent items used 0
-> ERROR: block group[8051482427392 1073741824] used 1073741824 but extent items used 1084751872
-> ERROR: block group[8116980678656 1073741824] used 1073217536 but extent items used 0
-> ERROR: errors found in extent allocation tree or chunk allocation
-> checking free space cache
-> checking fs roots
-> Checking filesystem on /dev/nbd0
-> UUID: 326d292d-f97b-43ca-b1e8-c722d3474719
-> found 7469206884352 bytes used err is -5
-> total csum bytes: 7281779252
-> total tree bytes: 10837262336
-> total fs tree bytes: 2011906048
-> total extent tree bytes: 1015349248
-> btree space waste bytes: 922444044
-> file data blocks allocated: 7458369622016
->  referenced 7579485159424
-> 1
->
->
-> => so the problem still shows up when unpatched
->
->
-> btrfs-progs v4.9 WITH patch:
-> ****************************
-> # btrfs check /dev/nbd0 ; echo $?
-> checking extents
-> checking free space cache
-> checking fs roots
-> checking csums
-> checking root refs
-> Checking filesystem on /dev/nbd0
-> UUID: 326d292d-f97b-43ca-b1e8-c722d3474719
-> found 7469206884352 bytes used err is 0
-> total csum bytes: 7281779252
-> total tree bytes: 10837262336
-> total fs tree bytes: 2011906048
-> total extent tree bytes: 1015349248
-> btree space waste bytes: 922444044
-> file data blocks allocated: 7458369622016
->  referenced 7579485159424
-> 0
->
-> # btrfs check --mode=lowmem /dev/nbd0 ; echo $?
-> checking extents
-> checking free space cache
-> checking fs roots
-> Checking filesystem on /dev/nbd0
-> UUID: 326d292d-f97b-43ca-b1e8-c722d3474719
-> found 7469206884352 bytes used err is -5
-> total csum bytes: 7281779252
-> total tree bytes: 10837262336
-> total fs tree bytes: 2011906048
-> total extent tree bytes: 1015349248
-> btree space waste bytes: 922444044
-> file data blocks allocated: 7458369622016
->  referenced 7579485159424
-> 1
->
-> => so the original mode output is identical, but while lowmem mode no
-> longer prints so many errors there's now a:
->> found 7469206884352 bytes used err is -5
-> and exit code 1
+QW has the better direct answer for you, but...
 
-Nice to hear that, although the -5 error seems to be caught incorrectly.
+This is just a note to remind you, in general questions like "how long" 
+can be better answered if we know the size of your filesystem, the mode 
+(how many devices and what duplication mode for data and metadata) and 
+something about how you use it -- how many subvolumes and snapshots you 
+have, whether you have quotas enabled, etc.
 
-I'll locate the problem and then send the patch.
+Normally output from commands like btrfs fi usage can answer most of the 
+filesystem size and mode stuff, but of course that command requires a 
+mount, and you're doing an unmounted check ATM.  However, btrfs fi show 
+should still work and give us basic information like file size and number 
+of devices, and you can fill in the blanks from there.
 
-Thanks for your testing!
-Qu
+You did mention the kernel version (4.9) however, something that a lot of 
+reports miss, and you're current, so kudos for that. =:^)
 
->
->
-> Cheers,
-> Chris.
->
+As to your question, assuming a terabyte scale filesystem, as QW 
+suggested, a full extent tree rebuild is a big job and could indeed take 
+awhile (days).
 
+>From a practical perspective...
+
+Given the state of btrfs as a still stabilizing and maturing filesystem, 
+having backups for any data you value more than the time and hassle 
+necessary to do the backup is even more a given than on a fully stable 
+filesystem, which means, given the time for an extent tree rebuild on 
+that size of a filesystem, unless you're doing the rebuild specifically 
+to get the experience or test the code, as a practical matter it's 
+probably simply easier to restore from that backup if you valued the data 
+enough to have one, or simply scrap the filesystem and start over if you 
+considered the data worth less than the time and hassle of a backup, and 
+thus didn't have one.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

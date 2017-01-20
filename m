@@ -1,79 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:30886 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:19042 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1753752AbdATBIx (ORCPT
+        with ESMTP id S1751118AbdATCuY (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Jan 2017 20:08:53 -0500
-Subject: Re: btrfs recovery
-To: Sebastian Gottschall <s.gottschall@dd-wrt.com>,
-        <linux-btrfs@vger.kernel.org>
-References: <7473ea27-9716-33fb-ecec-2ec52fac3820@dd-wrt.com>
+        Thu, 19 Jan 2017 21:50:24 -0500
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
+        by cn.fujitsu.com (Postfix) with ESMTP id 80DEB47B0CB4
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Jan 2017 10:50:12 +0800 (CST)
+To: btrfs <linux-btrfs@vger.kernel.org>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <70489b24-1f36-d4b6-7bbe-63a39a7425d0@cn.fujitsu.com>
-Date: Fri, 20 Jan 2017 09:08:43 +0800
+Subject: [RFC] btrfs-progs: btrfs-corrupt-block refactor
+Message-ID: <2987570c-aeb2-e497-ee9f-c32b8a0fb3ff@cn.fujitsu.com>
+Date: Fri, 20 Jan 2017 10:50:10 +0800
 MIME-Version: 1.0
-In-Reply-To: <7473ea27-9716-33fb-ecec-2ec52fac3820@dd-wrt.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is the RFC proposal for refactor btrfs-corrupt-block.
+
+Just as Lakshmipathi and xfstests guys commented in btrfs ML, we need 
+btrfs-corrupt-block to either craft a test case, or for later RAID56 
+corruption test case.
+
+However the current situation of btrfs-corrupt-block has several 
+problems, and those problems prevents us from using it:
+
+1) Bad arranged options
+    Quite a lot of combination makes no sense.
+    And quite a lot of function covers each other.
+
+    This is quite frustrating when someone want to use it.
+
+2) No documentation
+
+3) No longer default installed/compiled
+    This is OK if such tool is only used to corrupt things.
+
+    But if the long term objective is to provide a tool to modify the fs
+    offline at will, that's not a good idea.
 
 
-At 01/19/2017 06:06 PM, Sebastian Gottschall wrote:
-> Hello
->
-> I have a question. after a power outage my system was turning into a
-> unrecoverable state using btrfs (kernel 4.9)
-> since im running --init-extent-tree now for 3 days i'm asking how long
-> this process normally takes and why it outputs millions of lines like
+So here I want to refactor the current btrfs-corrupt-block to archive 
+the following objective:
 
---init-extent-tree will trash *ALL* current extent tree, and *REBUILD* 
-them from fs-tree.
+1) Logical layer divided parameters  <<MAIN PART>>
+    The current idea is like:
 
-This can takes a long time depending on the size of the fs, and how many 
-shared extents there are (snapshots and reflinks all counts).
+    btrfs-corrupt-block <dest> <options>
+    <dest> is one of
+      "item" "data" "leaf" "node" (with more to come)
 
-Such a huge operation should only be used if you're sure only extent 
-tree is corrupted, and other tree are all OK.
-
-Or you'll just totally screw your fs further, especially when interrupted.
-
->
-> Backref 1562890240 root 262 owner 483059214 offset 0 num_refs 0 not
-> found in extent tree
-> Incorrect local backref count on 1562890240 root 262 owner 483059214
-> offset 0 found 1 wanted 0 back 0x23b0211d0
-> backpointer mismatch on [1562890240 4096]
-
-This is common, since --init-extent-tree trash all extent tree, so every 
-tree-block/data extent will trigger such output
-
-> adding new data backref on 1562890240 root 262 owner 483059214 offset 0
-> found 1
-> Repaired extent references for 1562890240
-
-But as you see, it repaired the extent tree by adding back 
-EXTENT_ITEM/METADATA_ITEM into extent tree, so far it works.
-
-If you see such output with all the same bytenr, then things goes really 
-wrong and maybe a dead loop.
+    "item"/"leaf"/"node" common options are:
+      "--nocow":
+         Don't do CoW, but overwrite (default)
+      "--cow":
+         Do normal tree block CoW
+      "--pattern DATA"
+         The pattern to fill, default to 0xcd
 
 
-Personally speaking, normal problem like failed to mount should not need 
---init-extent-tree.
+    "item" options are:
+      "--root NUMBER|ROOTID":
+         Mandatory
+      "--key (OBJID,TYPE,OFFSET)":
+         Mandatory
+      "--field FIELD"
+         Optional, default to corrupt all fields of the item
+      "--delete"
+         Optional, if specified, the item will be deleted.
+         Conflicts with "--field"
 
-Especially, extent-tree corruption normally is not really related to 
-mount failure, but sudden remount to RO and kernel wanring.
+
+    "leaf" options are:
+      "--bytenr BYTENR" or "--key" with "--root"
+         Mandatory to locate the leaf
+      "--field FIELD"
+         Optional, default to corrupt all fields of the leaf header
+         With --key, can also be used to corrupt certain item field
+      NOTE: No delete is provided. Please use "node" "--delete" to
+            delete a leaf.
+            Or use "--filed ALL" with "--pattern 0x00" to wipe the
+            leaf header.
+
+    "node" options are:
+      "--bytenr BYTENR" or "--key" "--root" and "--level"
+         Mandatory to locate the node
+      "--field FIELD"
+         Optional, default to corrupt all fields of the node header
+         With --key, can also be used to corrupt certain nodeptr filed
+      "--delete"
+         Optional, Only works with "--key" "--root" "--level".
+         Delete the nodeptr.
+
+    "data" options are:
+      "--bytenr BYTENR"
+         Mandatory, logical address
+      "--length LENGTH"
+         Optional, default to sectorsize of the fs
+      "--mirror"
+         Optional, default to all mirror
+
+     May add "raid56" destination for raid56 tests later.
+
+2) Better documentation
+    Both asciidoc doc and better help string
+
+3) Better error string
+    At least the same level we do in other btrfs commands
+
+Any advice and idea are welcomed.
 
 Thanks,
 Qu
-
->
-> please avoid typical answers like "potential dangerous operation" since
-> all repair options are declared as potenial dangerous.
->
->
-> Sebastian
->
 
 

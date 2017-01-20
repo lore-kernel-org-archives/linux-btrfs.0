@@ -1,77 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from trent.utfs.org ([94.185.90.103]:50780 "EHLO trent.utfs.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753818AbdATAOS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Jan 2017 19:14:18 -0500
-Date: Thu, 19 Jan 2017 16:05:43 -0800 (PST)
-From: Christian Kujau <lists@nerdbynature.de>
-To: linux-btrfs@vger.kernel.org
-cc: linux-kernel@vger.kernel.org
-Subject: btrfs_alloc_tree_block: Faulting instruction address: 0xc02d4584
-Message-ID: <alpine.DEB.2.20.999.1701191554340.3270@trent.utfs.org>
+Received: from cn.fujitsu.com ([59.151.112.132]:30886 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1753752AbdATBIx (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Jan 2017 20:08:53 -0500
+Subject: Re: btrfs recovery
+To: Sebastian Gottschall <s.gottschall@dd-wrt.com>,
+        <linux-btrfs@vger.kernel.org>
+References: <7473ea27-9716-33fb-ecec-2ec52fac3820@dd-wrt.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <70489b24-1f36-d4b6-7bbe-63a39a7425d0@cn.fujitsu.com>
+Date: Fri, 20 Jan 2017 09:08:43 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+In-Reply-To: <7473ea27-9716-33fb-ecec-2ec52fac3820@dd-wrt.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
 
-after upgrading this powerpc32 box from 4.10-rc2 to -rc4, the message 
-below occured a few hours after boot. Full dmesg and .config:
 
-  http://nerdbynature.de/bits/4.10-rc4/
+At 01/19/2017 06:06 PM, Sebastian Gottschall wrote:
+> Hello
+>
+> I have a question. after a power outage my system was turning into a
+> unrecoverable state using btrfs (kernel 4.9)
+> since im running --init-extent-tree now for 3 days i'm asking how long
+> this process normally takes and why it outputs millions of lines like
 
-Any ideas?
+--init-extent-tree will trash *ALL* current extent tree, and *REBUILD* 
+them from fs-tree.
+
+This can takes a long time depending on the size of the fs, and how many 
+shared extents there are (snapshots and reflinks all counts).
+
+Such a huge operation should only be used if you're sure only extent 
+tree is corrupted, and other tree are all OK.
+
+Or you'll just totally screw your fs further, especially when interrupted.
+
+>
+> Backref 1562890240 root 262 owner 483059214 offset 0 num_refs 0 not
+> found in extent tree
+> Incorrect local backref count on 1562890240 root 262 owner 483059214
+> offset 0 found 1 wanted 0 back 0x23b0211d0
+> backpointer mismatch on [1562890240 4096]
+
+This is common, since --init-extent-tree trash all extent tree, so every 
+tree-block/data extent will trigger such output
+
+> adding new data backref on 1562890240 root 262 owner 483059214 offset 0
+> found 1
+> Repaired extent references for 1562890240
+
+But as you see, it repaired the extent tree by adding back 
+EXTENT_ITEM/METADATA_ITEM into extent tree, so far it works.
+
+If you see such output with all the same bytenr, then things goes really 
+wrong and maybe a dead loop.
+
+
+Personally speaking, normal problem like failed to mount should not need 
+--init-extent-tree.
+
+Especially, extent-tree corruption normally is not really related to 
+mount failure, but sudden remount to RO and kernel wanring.
 
 Thanks,
-Christian.
+Qu
+
+>
+> please avoid typical answers like "potential dangerous operation" since
+> all repair options are declared as potenial dangerous.
+>
+>
+> Sebastian
+>
 
 
-Faulting instruction address: 0xc02d4584
-Oops: Kernel access of bad area, sig: 11 [#1]
-PowerMac
-Modules linked in: ecb xt_tcpudp iptable_filter ip_tables x_tables 
-nfnetlink_log nfnetlink sha256_generic twofish_generic twofish_common 
-usb_storage therm_adt746x loop i2c_powermac arc4 firewire_sbp2 b43 
-rng_core ssb bcma mac80211 cfg80211 ecryptfs [last unloaded: nbd]
-CPU: 0 PID: 1395 Comm: btrfs-transacti Tainted: G        W       
-4.10.0-rc4-00001-gab8184b #1
-task: ee7162e0 task.stack: ee9cc000
-NIP: c02d4584 LR: c02d4574 CTR: c00d0df0
-REGS: ee9cdaa0 TRAP: 0300   Tainted: G        W        
-(4.10.0-rc4-00001-gab8184b)
-MSR: 00009032 <EE,ME,IR,DR,RI>
-  CR: 24422248  XER: 00000000
-DAR: 10581054 DSISR: 42000000 
-GPR00: c02d4574 ee9cdb50 ee71d4b8 10581050 00000001 dbc88118 00000000 00000020 
-GPR08: 00001205 00000004 00000000 00000000 24422444 00000000 00000000 000093c3 
-GPR16: fffff000 00000001 00000000 00000000 00000000 ee260800 00000000 00000000 
-GPR24: 00000000 00000001 ee9cdc1b eef5c1a0 00001000 ee470000 dbc88118 ee470170 
-NIP [c02d4584] btrfs_alloc_tree_block+0x18c/0x5c4
-LR [c02d4574] btrfs_alloc_tree_block+0x17c/0x5c4
-Call Trace:
-[ee9cdb50] [c02d4574] btrfs_alloc_tree_block+0x17c/0x5c4 (unreliable)
-[ee9cdbf0] [c02b86d4] __btrfs_cow_block+0x110/0x638
-[ee9cdc70] [c02b8d74] btrfs_cow_block+0xdc/0x1b0
-[ee9cdca0] [c02bc48c] btrfs_search_slot+0x1c0/0x904
-[ee9cdd10] [c02dc680] btrfs_lookup_inode+0x3c/0x124
-[ee9cdd50] [c02ec204] btrfs_update_inode_item+0x4c/0x10c
-[ee9cdd80] [c02d05e4] cache_save_setup+0xc0/0x400
-[ee9cdde0] [c02d4d54] btrfs_start_dirty_block_groups+0x184/0x47c
-[ee9cde50] [c02e7e84] btrfs_commit_transaction+0x148/0xac4
-[ee9cdeb0] [c02e313c] transaction_kthread+0x1d0/0x1ec
-[ee9cdf00] [c004f1fc] kthread+0xf8/0x124
-[ee9cdf40] [c0011480] ret_from_kernel_thread+0x5c/0x64
---- interrupt: 0 at   (null)
-    LR =   (null)
-Instruction dump:
-4800b3ed 7f838040 7c7e1b78 419d0430 806300d4 81db0000 81fb0004 4bdfe2b9 
-39200004 7ee6bb78 38630050 7fc5f378 <7dc91d2c> 7de01d2c 809501cf 807501cb 
----[ end trace 937683537ecd986b ]---
-
-
-
--- 
-BOFH excuse #342:
-
-HTTPD Error 4004 : very old Intel cpu - insufficient processing power

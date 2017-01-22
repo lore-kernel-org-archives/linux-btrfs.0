@@ -1,89 +1,155 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:60856 "EHLO
-        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750714AbdAVWjK (ORCPT
+Received: from mailgw-01.dd24.net ([193.46.215.41]:47361 "EHLO
+        mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750704AbdAVW4w (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 22 Jan 2017 17:39:10 -0500
-Date: Sun, 22 Jan 2017 22:39:06 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Christoph Anton Mitterer <calestyo@scientia.net>
-Cc: Jan Vales <jan@jvales.net>, linux-btrfs@vger.kernel.org
+        Sun, 22 Jan 2017 17:56:52 -0500
+Message-ID: <1485125808.6187.41.camel@scientia.net>
 Subject: Re: RAID56 status?
-Message-ID: <20170122223906.GA24076@carfax.org.uk>
+From: Christoph Anton Mitterer <calestyo@scientia.net>
+To: Hugo Mills <hugo@carfax.org.uk>
+Cc: linux-btrfs@vger.kernel.org
+Date: Sun, 22 Jan 2017 23:56:48 +0100
+In-Reply-To: <20170122223906.GA24076@carfax.org.uk>
 References: <d69f5a19-baa8-ff56-609e-4ee01be8a103@jvales.net>
- <1485124549.6187.36.camel@scientia.net>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="x+6KMIRAuhnl3hBn"
-In-Reply-To: <1485124549.6187.36.camel@scientia.net>
+         <1485124549.6187.36.camel@scientia.net>
+         <20170122223906.GA24076@carfax.org.uk>
+Content-Type: multipart/signed; micalg="sha-512";
+        protocol="application/x-pkcs7-signature";
+        boundary="=-1cgsD8OkPRsDGL8BaFIi"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---x+6KMIRAuhnl3hBn
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+--=-1cgsD8OkPRsDGL8BaFIi
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+On Sun, 2017-01-22 at 22:39 +0000, Hugo Mills wrote:
+> =C2=A0=C2=A0=C2=A0It's still all valid. Nothing's changed.
+>=20
+> =C2=A0=C2=A0=C2=A0How would you like it to be updated? "Nope, still broke=
+n"?
 
-On Sun, Jan 22, 2017 at 11:35:49PM +0100, Christoph Anton Mitterer wrote:
-> On Sun, 2017-01-22 at 22:22 +0100, Jan Vales wrote:
-> > Therefore my question: whats the status of raid5/6 is in btrfs?
-> > Is it somehow "production"-ready by now?
-> AFAIK, what's on the - apparently already no longer updated -
-> https://btrfs.wiki.kernel.org/index.php/Status still applies, and
-> RAID56 is not yet usable for anything near production.
+The kernel version mentioned there is 4.7... so noone (at least
+endusers) really knows whether it's just no longer maintainer or still
+up-to-date with nothing changed... :(
 
-   It's still all valid. Nothing's changed.
 
-   How would you like it to be updated? "Nope, still broken"?
+Cherrs,
+Chris
+--=-1cgsD8OkPRsDGL8BaFIi
+Content-Type: application/x-pkcs7-signature; name="smime.p7s"
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Transfer-Encoding: base64
 
-   Hugo.
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEmow
+ggXiMIIDyqADAgECAhBctkhuRwyYxn/2gNtkSuKNMA0GCSqGSIb3DQEBCwUAMH0xCzAJBgNVBAYT
+AklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0
+aWZpY2F0ZSBTaWduaW5nMSkwJwYDVQQDEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
+eTAeFw0xNTEyMTYwMTAwMDVaFw0zMDEyMTYwMTAwMDVaMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQK
+Ew1TdGFydENvbSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
+eTEjMCEGA1UEAxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0EwggEiMA0GCSqGSIb3DQEBAQUA
+A4IBDwAwggEKAoIBAQDuD1CMlQkjhKz1UGqP1jeiTiH9MgllRz6vOPrVG/eE0H/J4QQLV/PeL8RT
+4xc44bEzsoJu0IhwnEchb+TxE/qw88w7hxODuw3N8Faxix6a1jp83+RWvZHZf78+O+3GYBpekZfT
+Oe9A/FoTXbcgwZfLTMQodn+ckNnX31M/1M2f2/7VA7QBlvihontyHQOlIlryQXnGI0UMCD21oopK
+tW48ckv0wUVg8irBKGMeD65gTON/Fsw/ZBbBqadoD1jt85FIM1ql24WUBEBwO1d0ykCKOIbgcqes
+3fbcjQpruUNMBbIu1MMIRMqwjx/M7IvSKcS7VYRWl0/K2byzWvBAHh/1AgMBAAGjggFkMIIBYDAO
+BgNVHQ8BAf8EBAMCAQYwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMBIGA1UdEwEB/wQI
+MAYBAf8CAQAwMgYDVR0fBCswKTAnoCWgI4YhaHR0cDovL2NybC5zdGFydHNzbC5jb20vc2ZzY2Eu
+Y3JsMGYGCCsGAQUFBwEBBFowWDAkBggrBgEFBQcwAYYYaHR0cDovL29jc3Auc3RhcnRzc2wuY29t
+MDAGCCsGAQUFBzAChiRodHRwOi8vYWlhLnN0YXJ0c3NsLmNvbS9jZXJ0cy9jYS5jcnQwHQYDVR0O
+BBYEFJmXqxg1OotZRUOYsnJxyPT7Cc8WMB8GA1UdIwQYMBaAFE4L7xqkQFulF2mHMMo0aEPQQa7y
+MD8GA1UdIAQ4MDYwNAYEVR0gADAsMCoGCCsGAQUFBwIBFh5odHRwOi8vd3d3LnN0YXJ0c3NsLmNv
+bS9wb2xpY3kwDQYJKoZIhvcNAQELBQADggIBAJlBQQTO9iT1TjA0eEO7V/1AbBvMAfibjAgofxmJ
+01jBmHKg0pbTjWInTTYoxb3LBgz3mfjvvS1PjnIfb29MyVm0G/PSHjgq7Ews1dEJMPC9XTuxPf2c
++MWLkynBlotW542JprW+iTWfZafyUtzIKW1hk0YASJ8zSSj8D++9yR+0UhkbvlECJkdi1+et0EaI
+7HIX6ccj1rfcFFflWX/fPT64dn9jpg9s0nuJug4WsVkEK236WndZoMHrZmgF7CIyZ3T0muqYwkAS
+DDcRt9A21o/Mc+D8Q6GVmKRGB3gEKvOtsioHZEqJv6CdAm3a6gloo5pX3RL1eCzc8Lzfs4T0ISZj
+r8xNMbTGlsuHaFH+stDewKsfnpo4N64OtAGrzmVfFFsMIRENRHsVlSEe/6LVpBpjn00+7bqEN3qe
+qSxIOraYJ12mJ08G4YnP2U1fadHIaS50O5ZXqAivoBl9pi/6CBNc5wIMlkXMyFZ0sLsI+9ErFDu9
+OJhX7iWCo69X0ydlzXj08+2K1PKyr+g6/vTPHur63JotNrhyoWEJyWEjBLA4QmJXfGpB5u+bCwNf
+sFpcYAlkiFt1Rs2vemgSBy3q4DHDbPKvr1YImZNRSHP+TX9NP94JRkmqcyD/qaN7u2JV1pRAlwG0
+npyrn6ZQM1QHV+iFbwQ4VqLMWk//QVo/rZy1MIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwcz1F+2kRA
+DzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjEp
+MCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMTGlN0YXJ0
+Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIzNlowejEL
+MAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAfBgNVBAMM
+GENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50
+aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqeP2vwE3Cp
+YosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjrFe0zmZWZ
+0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ0+c1NYFQ
+T6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJnmiiId9e
+0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7r2NVLkpo
+Gbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA0BtydQC0
+mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS7XEGOuCU
+09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6a1rkhJl7
+1rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8bxPJiX2/
+VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/MAsGA1Ud
+DwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAdBgNVHQ4E
+FgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI9PsJzxYw
+bwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5jb20wOQYI
+KwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQyLmNydDA4
+BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50Mi5jcmww
+IAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6Ly93d3cu
+c3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcBAgQwLDAq
+BggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3DQEBCwUA
+A4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7SG3MQkyO
+kvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndjZIHMfSkn
+hdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9RS51K1gt
+H4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11Yeq6UTW/
+JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwc
+z1F+2kRADzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20g
+THRkLjEpMCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMT
+GlN0YXJ0Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIz
+NlowejELMAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAf
+BgNVBAMMGENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9A
+c2NpZW50aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqe
+P2vwE3CpYosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjr
+Fe0zmZWZ0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ
+0+c1NYFQT6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJ
+nmiiId9e0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7
+r2NVLkpoGbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA
+0BtydQC0mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS
+7XEGOuCU09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6
+a1rkhJl71rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8
+bxPJiX2/VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/
+MAsGA1UdDwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAd
+BgNVHQ4EFgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI
+9PsJzxYwbwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5j
+b20wOQYIKwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQy
+LmNydDA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50
+Mi5jcmwwIAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6
+Ly93d3cuc3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcB
+AgQwLDAqBggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3
+DQEBCwUAA4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7
+SG3MQkyOkvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndj
+ZIHMfSknhdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9
+RS51K1gtH4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11
+Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
+MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
+cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
+QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
+SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwMTIyMjI1NjQ4WjBPBgkqhkiG9w0BCQQxQgRAt3+F
+rCbMrcUG3SOHbiCea1L9Byu1gT3ZR3ceSWSn6GLJL2cOmfuKR68aSDMQhNfO0I7gLlGI0axPfMIj
+D62bgjCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
+bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
+AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
+DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
+VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
+Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAQ8ZG
+MSGzFMIfF8wrcOMdk6jPJgdPZeXBKfysXxdBuyNPXyMsTaFSOdASifwkrAruJkIr6QLDgPmCxU8g
+PM6LyM0DX/H/p0ORLYi1zzrtizzrFaIRmSrh56YQDZi/ADtgzogklV8HafFWmyDwz9OJTVprxxO6
+5JiWMsgMkfzrVjHO20iE5wu6t+TuNvDYhLszecqRazlZ5bkJpPlnBbOSXoA5jD59lZiJZVgBUIWL
+z2+EB/wMpn8l3F1JRuUPXwCEyr051hJGiFQ3j604uiLir2JdIKIsHrC715i8iGgp4gFrTx3/k9nm
+cqlKzSPmZT2SSbUvB5gfC45umTkcZlHpWD9Jk4v/bxtKWzZ1y5dFQEzkTq35axhs0mQYik+lnJUa
+QiKa3h3bIgrDrlVyrKOV7LsHznC5k2T0dZnxx8FvVICoVEG3VlD4zcGV9eV2Imy03s5NXAEjKiYI
+ykW57tzEOc1oh0caV+cUkDPX3QRVfCzb6+vadN+W3mimPdY4+obM4vcMo8nr+ZVSm40GcuOqH2ak
+Hz0jFQkzu4ugenwRjgY5oFHQYoyPK7TrwlSAw9InDm+5bee3wOM662UwfQtch7Vrk5Zxw1/SX2p3
+RsSEfTzq79FduBKFo9iwp7Y7s4TBOETzKcwpLkhBi0HLummSUNm3VGwDwjq4tAjrbh4NjfkAAAAA
+AAA=
 
-- -- 
-Hugo Mills             | I went to a fight once, and an ice hockey match
-hugo@... carfax.org.uk | broke out.
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
 
-iQIcBAEBAgAGBQJYhTRUAAoJEFheFHXiqx3kwI4P/3HqTR5Y3w3Po/t+F7BFFIAT
-zBwKb0Fk/kk4YE6igSrR69qT/nPOHleYFCmcp+XDW6bDqKwrzVOWHJtiy3oDvhGK
-hQoJqbgJ69LCI3nPxHi83VUDmgbFKA6WFU3d/F3L4k4UfbElv6Jz0UXo16hKZTzK
-xVSh468MP7HvMGoZriWLMeS+It/y08Ojpx14sG60zCpgGEdT6czyLBPspYg1XupP
-n2Q9nWPyjQnJ2c6YD+4JLYC0HhIMxAV74BXr4l7cmf1iWDB6064Q/DYhsejvJnuD
-i9K0r5iHHjOc9yCGVdusVCXHBXiyBQrzDTls0jSxMN1hDmYaKo6knif2BZ7w7MfY
-vqwgQJA+4XFkmcpPJccEfrqcup23RX+Gj61yEweuQnSGWTCv21WsASfwaUl49dFS
-lxpX6+WsWuUZRh5Nvwt2hkRtoFhl2N2rdi0NEQfcUzj6qZD7Yg3jRNHNBZW0O8Dp
-s8VtnDqXPDQatQsSAHLoTE2M8yXRoBg6asll+TBIQTvycXJ0TrEtvKxbxmZAUTqQ
-yafn1wh8KFwhRuKygHhDyOn91iPKiq7vNuPCXKV0uM2oJE+0FaA2TfPXAQQkk74b
-tQl2MJbIoqIRjJtQjtX+3aqQARkYno50fJJLqj03IDNuY48/sHEEkxeR+9Rjl2Xy
-OK6tyMZL1nvPE3GYnUUP
-=jn+E
------END PGP SIGNATURE-----
+--=-1cgsD8OkPRsDGL8BaFIi--
 
---x+6KMIRAuhnl3hBn
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJYhTSKAAoJEFheFHXiqx3k0bIP/1RK17p6v+OtrRqvNcNDrStO
-Zx0bQ1gyZOekoBNw6gOMGH880v6tBtSH7omNYqNNnGhf5Nxn7O0OvtzZhm48xZGb
-96NVE+YOqAuNfPZHpGVGxAoNBqMiB24VGUrRWS0vJdk56exvNF7Iv9ykmah67roK
-2iY3NY8UCFqdptLCFHGXnnh9hyqz5h4VEzf3iCwNktJ1cdbMLbcWIWj1r/xfmY6t
-0tg20oiiUZnT/xK8MqQTjJeIFngm+TMhN5AWxqFk8oz9GVRUIH/6Br+SOOvja4id
-kbA2sworaQg1WTV19YXXFZnE+t5SyHzfTqPzJfWMJwsjxGefh8kt3EjhbhUd+NLm
-YdqyO73X5JaPEMKS3PkAJhiH96w4gbM38gAJNQvZiWski5vtwZAkZMfN7Anj1t5K
-MAWLD50tOTXQ21daR4c2tvkCmHwPj8u+ow2x1c9Z9h1RXcRPyXgqgcqUw8TX5e5V
-xQRmeM0oP0I9aW1u+3gh2P/UuoCFsjxgP4ai0C4+xjbKZ/yQUY5BrZRRZ0bzrSrj
-FbnboPm/Vs/bke510Rg4WT0/R/Po03ge5ETjPyMwlgl6hQkfa5lSnWeLZb5vuChM
-5XZrYO5GdbujzVF31fwH+2iF45Rpap6ja+CbevNxrvg5ulJl65rP9inUSu8Pbs0Z
-cC1CcM8Ady+UthXM6XFR
-=B6RW
------END PGP SIGNATURE-----
-
---x+6KMIRAuhnl3hBn--

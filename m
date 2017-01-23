@@ -1,175 +1,217 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:51153 "EHLO
-        mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750732AbdAWRx1 (ORCPT
+Received: from aquinas.techsquare.com ([75.125.237.226]:34004 "EHLO
+        techsquare.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1750950AbdAWUEB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 23 Jan 2017 12:53:27 -0500
-Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
-        by mailgw-01.dd24.net (Postfix) with ESMTP id 67D5C5FDCB
-        for <linux-btrfs@vger.kernel.org>; Mon, 23 Jan 2017 17:53:24 +0000 (UTC)
-Received: from mailgw-01.dd24.net ([192.168.1.35])
-        by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10235)
-        with ESMTP id ncOs-NOBoaf9 for <linux-btrfs@vger.kernel.org>;
-        Mon, 23 Jan 2017 17:53:22 +0000 (UTC)
-Received: from heisenberg.fritz.box (ppp-82-135-80-153.dynamic.mnet-online.de [82.135.80.153])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by mailgw-01.dd24.net (Postfix) with ESMTPSA
-        for <linux-btrfs@vger.kernel.org>; Mon, 23 Jan 2017 17:53:22 +0000 (UTC)
-Message-ID: <1485194001.21584.1.camel@scientia.net>
-Subject: Re: RAID56 status?
-From: Christoph Anton Mitterer <calestyo@scientia.net>
+        Mon, 23 Jan 2017 15:04:01 -0500
+Received: from 30-31-213.dynamic.csail.mit.edu ([128.30.31.213])
+        by techsquare.com with esmtpsa (TLS1.0:DHE_RSA_AES_128_CBC_SHA1:16)
+        (Exim 4.71)
+        (envelope-from <matt@techsquare.com>)
+        id 1cVkqL-0007Bm-CK
+        for linux-btrfs@vger.kernel.org; Mon, 23 Jan 2017 15:04:00 -0500
 To: linux-btrfs@vger.kernel.org
-Date: Mon, 23 Jan 2017 18:53:21 +0100
-In-Reply-To: <d7d3d966-c67f-28cc-0036-9b38756ed9a2@cn.fujitsu.com>
-References: <d69f5a19-baa8-ff56-609e-4ee01be8a103@jvales.net>
-         <1485124549.6187.36.camel@scientia.net>
-         <20170122223906.GA24076@carfax.org.uk>
-         <3e9fe326-7638-bc78-4fe8-f6f6851769d7@jvales.net>
-         <35d49fbd-102c-3e54-4e40-5f71fb88d2da@cn.fujitsu.com>
-         <CALqCWCXNoKqAJR=7c4wzOvVjSBxNRMsUYMvkfRMcVk14dkp27Q@mail.gmail.com>
-         <d7d3d966-c67f-28cc-0036-9b38756ed9a2@cn.fujitsu.com>
-Content-Type: multipart/signed; micalg="sha-512";
-        protocol="application/x-pkcs7-signature";
-        boundary="=-iZCdheP4oORkLfNbJ15U"
-Mime-Version: 1.0
+From: Matt McKinnon <matt@techsquare.com>
+Message-ID: <83c1a49a-b2ea-c7b6-151d-cbd15b6c9c93@techsquare.com>
+Date: Mon, 23 Jan 2017 15:03:55 -0500
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8; format=flowed
+Subject: Hard crash on 4.9.5
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Wondering what to do about this error which says 'reboot needed'.  Has 
+happened a three times in the past week:
 
---=-iZCdheP4oORkLfNbJ15U
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-
-Just wondered... is there any larger known RAID56 deployment? I mean
-something with real-world production systems and ideally many different
- IO scenarios, failures, pulling disks randomly and perhaps even so
-many disks that it's also likely to hit something like silent data
-corruption (on the disk level)?
-
-Has CM already migrated all of Facebook's storage to btrfs RAID56?! ;-)
-Well at least facebook.com seems till online ;-P *kidding*
-
-I mean the good thing in having such a massive production-like
-environment - especially when it's not just one homogeneous usage
-pattern - is that it would help to build up quite some trust into the
-code (once the already known bugs are fixed).
-
-
-
-Cheers,
-Chris.
---=-iZCdheP4oORkLfNbJ15U
-Content-Type: application/x-pkcs7-signature; name="smime.p7s"
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Transfer-Encoding: base64
-
-MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEmow
-ggXiMIIDyqADAgECAhBctkhuRwyYxn/2gNtkSuKNMA0GCSqGSIb3DQEBCwUAMH0xCzAJBgNVBAYT
-AklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0
-aWZpY2F0ZSBTaWduaW5nMSkwJwYDVQQDEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
-eTAeFw0xNTEyMTYwMTAwMDVaFw0zMDEyMTYwMTAwMDVaMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQK
-Ew1TdGFydENvbSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
-eTEjMCEGA1UEAxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0EwggEiMA0GCSqGSIb3DQEBAQUA
-A4IBDwAwggEKAoIBAQDuD1CMlQkjhKz1UGqP1jeiTiH9MgllRz6vOPrVG/eE0H/J4QQLV/PeL8RT
-4xc44bEzsoJu0IhwnEchb+TxE/qw88w7hxODuw3N8Faxix6a1jp83+RWvZHZf78+O+3GYBpekZfT
-Oe9A/FoTXbcgwZfLTMQodn+ckNnX31M/1M2f2/7VA7QBlvihontyHQOlIlryQXnGI0UMCD21oopK
-tW48ckv0wUVg8irBKGMeD65gTON/Fsw/ZBbBqadoD1jt85FIM1ql24WUBEBwO1d0ykCKOIbgcqes
-3fbcjQpruUNMBbIu1MMIRMqwjx/M7IvSKcS7VYRWl0/K2byzWvBAHh/1AgMBAAGjggFkMIIBYDAO
-BgNVHQ8BAf8EBAMCAQYwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMBIGA1UdEwEB/wQI
-MAYBAf8CAQAwMgYDVR0fBCswKTAnoCWgI4YhaHR0cDovL2NybC5zdGFydHNzbC5jb20vc2ZzY2Eu
-Y3JsMGYGCCsGAQUFBwEBBFowWDAkBggrBgEFBQcwAYYYaHR0cDovL29jc3Auc3RhcnRzc2wuY29t
-MDAGCCsGAQUFBzAChiRodHRwOi8vYWlhLnN0YXJ0c3NsLmNvbS9jZXJ0cy9jYS5jcnQwHQYDVR0O
-BBYEFJmXqxg1OotZRUOYsnJxyPT7Cc8WMB8GA1UdIwQYMBaAFE4L7xqkQFulF2mHMMo0aEPQQa7y
-MD8GA1UdIAQ4MDYwNAYEVR0gADAsMCoGCCsGAQUFBwIBFh5odHRwOi8vd3d3LnN0YXJ0c3NsLmNv
-bS9wb2xpY3kwDQYJKoZIhvcNAQELBQADggIBAJlBQQTO9iT1TjA0eEO7V/1AbBvMAfibjAgofxmJ
-01jBmHKg0pbTjWInTTYoxb3LBgz3mfjvvS1PjnIfb29MyVm0G/PSHjgq7Ews1dEJMPC9XTuxPf2c
-+MWLkynBlotW542JprW+iTWfZafyUtzIKW1hk0YASJ8zSSj8D++9yR+0UhkbvlECJkdi1+et0EaI
-7HIX6ccj1rfcFFflWX/fPT64dn9jpg9s0nuJug4WsVkEK236WndZoMHrZmgF7CIyZ3T0muqYwkAS
-DDcRt9A21o/Mc+D8Q6GVmKRGB3gEKvOtsioHZEqJv6CdAm3a6gloo5pX3RL1eCzc8Lzfs4T0ISZj
-r8xNMbTGlsuHaFH+stDewKsfnpo4N64OtAGrzmVfFFsMIRENRHsVlSEe/6LVpBpjn00+7bqEN3qe
-qSxIOraYJ12mJ08G4YnP2U1fadHIaS50O5ZXqAivoBl9pi/6CBNc5wIMlkXMyFZ0sLsI+9ErFDu9
-OJhX7iWCo69X0ydlzXj08+2K1PKyr+g6/vTPHur63JotNrhyoWEJyWEjBLA4QmJXfGpB5u+bCwNf
-sFpcYAlkiFt1Rs2vemgSBy3q4DHDbPKvr1YImZNRSHP+TX9NP94JRkmqcyD/qaN7u2JV1pRAlwG0
-npyrn6ZQM1QHV+iFbwQ4VqLMWk//QVo/rZy1MIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwcz1F+2kRA
-DzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjEp
-MCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMTGlN0YXJ0
-Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIzNlowejEL
-MAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAfBgNVBAMM
-GENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50
-aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqeP2vwE3Cp
-YosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjrFe0zmZWZ
-0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ0+c1NYFQ
-T6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJnmiiId9e
-0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7r2NVLkpo
-Gbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA0BtydQC0
-mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS7XEGOuCU
-09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6a1rkhJl7
-1rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8bxPJiX2/
-VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/MAsGA1Ud
-DwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAdBgNVHQ4E
-FgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI9PsJzxYw
-bwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5jb20wOQYI
-KwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQyLmNydDA4
-BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50Mi5jcmww
-IAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6Ly93d3cu
-c3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcBAgQwLDAq
-BggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3DQEBCwUA
-A4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7SG3MQkyO
-kvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndjZIHMfSkn
-hdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9RS51K1gt
-H4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11Yeq6UTW/
-JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwc
-z1F+2kRADzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20g
-THRkLjEpMCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMT
-GlN0YXJ0Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIz
-NlowejELMAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAf
-BgNVBAMMGENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9A
-c2NpZW50aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqe
-P2vwE3CpYosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjr
-Fe0zmZWZ0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ
-0+c1NYFQT6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJ
-nmiiId9e0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7
-r2NVLkpoGbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA
-0BtydQC0mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS
-7XEGOuCU09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6
-a1rkhJl71rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8
-bxPJiX2/VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/
-MAsGA1UdDwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAd
-BgNVHQ4EFgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI
-9PsJzxYwbwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5j
-b20wOQYIKwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQy
-LmNydDA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50
-Mi5jcmwwIAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6
-Ly93d3cuc3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcB
-AgQwLDAqBggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3
-DQEBCwUAA4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7
-SG3MQkyOkvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndj
-ZIHMfSknhdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9
-RS51K1gtH4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11
-Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
-MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
-cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
-QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
-SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwMTIzMTc1MzIxWjBPBgkqhkiG9w0BCQQxQgRAN5V6
-3meFsoan8kADw5scgXzHwUcqvHSCX400hRjg0HHYy5ji8YM0J1EfxLBs9VZZxvgk0VfZriOoO38J
-5IDXZzCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
-bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
-AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
-DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
-VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
-Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAZkeT
-0tnzddoADAiv8sqK7RkeoNY1re8okGzUNBkmBuMNJESk3bXh8qlXToOnI3fdVSTRbHuMfJ9pq10M
-GKtbM81xx5Og6MkOq3CqzQnOlAur5SG1XO/epaVm0p6bCT+5v8zuDKLeLrtmHVLf2eSCVVxyRq3R
-Pm54J4hkfv0rWIyAVPZdXBxPEqfj8+lySwYcJKYf0QrEw5ksAD1tK0wCt4XGiAw8JUdoqt9VqWJH
-JxQFSyOCWhplLs2GggG5e/h9XI7D0f2DB0WAOvKZ4sN6MNe+KKigko8RhVPPWKuI5+R/NpAG29zc
-zI2FbHRJVDs/frV1n4nx/pB9boC9q4XZ+QM55mkyw/UQdYGCM95Bg/mRNTUkB4lzG/5TfnUBCC/V
-KO65A5vETl/ujBMMBVAR2XOuBH10//ot3Wnn8vtLqKjZhhjG8AIVxbMWIxKJgdsfFcaX5sawxWn+
-OLIUKnYiu3SaYFBGlDm+mFoceO8Lo+OwT3fP/Lz61VWGJQiA6MCREGBwaR+50tpK9XuMF91gmWvB
-KlqV4RFF+XNu6mDJ52b95bZIZMRcs29fRUAWeaZQs2oQDJOsQ4kJaejs2knzGhPQO+j7DGlujU8P
-CHG3oe1EvwnZ44zYfjYnMFiCy24Ovb0GeE4boRxtKqrPwz564mn4nyacAFVqgMxTswRbKa8AAAAA
-AAA=
-
-
---=-iZCdheP4oORkLfNbJ15U--
-
+Jan 23 14:16:17 my_machine kernel: [ 2568.595648] BTRFS error (device 
+sda1): err add delayed dir index item(index: 23810) into the deletion 
+tree of the delayed node(root id: 257, inode id: 2661433, errno: -17)
+Jan 23 14:16:17 my_machine kernel: [ 2568.611010] ------------[ cut here 
+]------------
+Jan 23 14:16:17 my_machine kernel: [ 2568.615628] kernel BUG at 
+fs/btrfs/delayed-inode.c:1557!
+Jan 23 14:16:17 my_machine kernel: [ 2568.620942] invalid opcode: 0000 
+[#1] SMP
+Jan 23 14:16:17 my_machine kernel: [ 2568.624960] Modules linked in: ufs 
+qnx4 hfsplus hfs minix ntfs msdos jfs xfs ipt_REJECT nf_rej
+ect_ipv4 xt_tcpudp nf_conntrack_ipv4 nf_defrag_ipv4 xt_conntrack 
+nf_conntrack iptable_filter ip_tables x_tables ipmi_devintf nfsd au
+th_rpcgss nfs_acl nfs lockd grace sunrpc fscache intel_rapl sb_edac 
+edac_core x86_pkg_temp_thermal intel_powerclamp coretemp kvm_int
+el kvm irqbypass crct10dif_pclmul crc32_pclmul ghash_clmulni_intel 
+aesni_intel aes_x86_64 lrw gf128mul glue_helper ablk_helper crypt
+d dm_multipath joydev mei_me mei lpc_ich ioatdma wmi ipmi_si 
+ipmi_msghandler btrfs shpchp mac_hid lp parport ses enclosure scsi_tran
+sport_sas raid10 raid456 async_raid6_recov async_memcpy async_pq 
+async_xor async_tx xor raid6_pq libcrc32c igb hid_generic i2c_algo_
+bit raid1 dca usbhid ahci raid0 ptp megaraid_sas multipath
+Jan 23 14:16:17 my_machine kernel: [ 2568.697150]  hid libahci pps_core 
+linear dm_mirror dm_region_hash dm_log
+Jan 23 14:16:17 my_machine kernel: [ 2568.702689] CPU: 0 PID: 2440 Comm: 
+nfsd Tainted: G        W       4.9.5-custom #1
+Jan 23 14:16:17 my_machine kernel: [ 2568.710166] Hardware name: 
+Supermicro X9DRH-7TF/7F/iTF/iF/X9DRH-7TF/7F/iTF/iF, BIOS 3.0b 04/28
+/2014
+Jan 23 14:16:17 my_machine kernel: [ 2568.719207] task: ffff95a42addab80 
+task.stack: ffffb9da85330000
+Jan 23 14:16:17 my_machine kernel: [ 2568.725124] RIP: 
+0010:[<ffffffffc0567ee6>]  [<ffffffffc0567ee6>] 
+btrfs_delete_delayed_dir_inde
+x+0x286/0x290 [btrfs]
+Jan 23 14:16:17 my_machine kernel: [ 2568.735604] RSP: 
+0018:ffffb9da85333be0  EFLAGS: 00010286
+Jan 23 14:16:17 my_machine kernel: [ 2568.740917] RAX: 0000000000000000 
+RBX: ffff95a3b104b690 RCX: 0000000000000000
+Jan 23 14:16:17 my_machine kernel: [ 2568.748048] RDX: 0000000000000001 
+RSI: ffff95a42fc0dcc8 RDI: ffff95a42fc0dcc8
+Jan 23 14:16:17 my_machine kernel: [ 2568.755171] RBP: ffffb9da85333c48 
+R08: 0000000000000491 R09: 0000000000000000
+Jan 23 14:16:17 my_machine kernel: [ 2568.762297] R10: 0000000000000005 
+R11: 0000000000000006 R12: ffff95a3b104b6d8
+Jan 23 14:16:17 my_machine kernel: [ 2568.769429] R13: 0000000000005d02 
+R14: ffff95a82953d800 R15: 00000000ffffffef
+Jan 23 14:16:17 my_machine kernel: [ 2568.776555] FS: 
+0000000000000000(0000) GS:ffff95a42fc00000(0000) knlGS:0000000000000000
+Jan 23 14:16:17 my_machine kernel: [ 2568.784639] CS:  0010 DS: 0000 ES: 
+0000 CR0: 0000000080050033
+Jan 23 14:16:17 my_machine kernel: [ 2568.790377] CR2: 00007f12ea376000 
+CR3: 00000003e1e07000 CR4: 00000000001406f0
+Jan 23 14:16:17 my_machine kernel: [ 2568.797503] Stack:
+Jan 23 14:16:17 my_machine kernel: [ 2568.799524]  ffffffff9b7fe5f2 
+ffff95a3b104b560 0000000000040000 ffff95a3f96b3e80
+Jan 23 14:16:17 my_machine kernel: [ 2568.806983]  ffff95a3f96b3e80 
+39ff95a814eeeb68 600000000000289c 0000000000005d02
+Jan 23 14:16:17 my_machine kernel: [ 2568.814436]  ffff95a3f7457c40 
+ffff95a3bcb74138 ffff95a814eeeb68 0000000000289c39
+Jan 23 14:16:17 my_machine kernel: [ 2568.821891] Call Trace:
+Jan 23 14:16:17 my_machine kernel: [ 2568.824343]  [<ffffffff9b7fe5f2>] 
+? mutex_lock+0x12/0x2f
+Jan 23 14:16:17 my_machine kernel: [ 2568.829671]  [<ffffffffc0513488>] 
+__btrfs_unlink_inode+0x198/0x4c0 [btrfs]
+Jan 23 14:16:17 my_machine kernel: [ 2568.836555]  [<ffffffffc0516dec>] 
+btrfs_unlink_inode+0x1c/0x40 [btrfs]
+Jan 23 14:16:17 my_machine kernel: [ 2568.843086]  [<ffffffffc0516e7b>] 
+btrfs_unlink+0x6b/0xb0 [btrfs]
+Jan 23 14:16:17 my_machine kernel: [ 2568.849091]  [<ffffffff9b21ea9a>] 
+vfs_unlink+0xda/0x190
+Jan 23 14:16:17 my_machine kernel: [ 2568.854315]  [<ffffffff9b21ac83>] 
+? lookup_one_len+0xd3/0x130
+Jan 23 14:16:17 my_machine kernel: [ 2568.860075]  [<ffffffffc09160ae>] 
+nfsd_unlink+0x16e/0x210 [nfsd]
+Jan 23 14:16:17 my_machine kernel: [ 2568.866084]  [<ffffffffc091d63c>] 
+nfsd3_proc_remove+0x7c/0x110 [nfsd]
+Jan 23 14:16:17 my_machine kernel: [ 2568.872529]  [<ffffffffc09102a8>] 
+nfsd_dispatch+0xb8/0x1f0 [nfsd]
+Jan 23 14:16:17 my_machine kernel: [ 2568.878641]  [<ffffffffc064e68f>] 
+svc_process_common+0x43f/0x700 [sunrpc]
+Jan 23 14:16:17 my_machine kernel: [ 2568.885432]  [<ffffffffc064f80c>] 
+svc_process+0xfc/0x1c0 [sunrpc]
+Jan 23 14:16:17 my_machine kernel: [ 2568.891528]  [<ffffffffc090fd00>] 
+nfsd+0xf0/0x160 [nfsd]
+Jan 23 14:16:17 my_machine kernel: [ 2568.896838]  [<ffffffffc090fc10>] 
+? nfsd_destroy+0x60/0x60 [nfsd]
+Jan 23 14:16:17 my_machine kernel: [ 2568.902931]  [<ffffffff9b09cd4a>] 
+kthread+0xca/0xe0
+Jan 23 14:16:17 my_machine kernel: [ 2568.907807]  [<ffffffff9b09cc80>] 
+? kthread_park+0x60/0x60
+Jan 23 14:16:17 my_machine kernel: [ 2568.913296]  [<ffffffff9b801075>] 
+ret_from_fork+0x25/0x30
+Jan 23 14:16:17 my_machine kernel: [ 2568.918693] Code: ff ff 48 8b 43 
+10 49 8b be f0 01 00 00 45 89 f9 4c 8b 03 4c 89 ea 48 c7 c6 f
+0 8f 59 c0 48 8b 88 48 03 00 00 31 c0 e8 ba 36 f7 ff <0f> 0b 0f 1f 84 00 
+00 00 00 00 0f 1f 44 00 00 55 48 89 e5 53 48
+Jan 23 14:16:17 my_machine kernel: [ 2568.938651] RIP 
+[<ffffffffc0567ee6>] btrfs_delete_delayed_dir_index+0x286/0x290 [btrfs]
+Jan 23 14:16:17 my_machine kernel: [ 2568.946773]  RSP <ffffb9da85333be0>
+Jan 23 14:16:17 my_machine kernel: [ 2568.996481] ---[ end trace 
+e8c95b69e4ef5f70 ]---
+Jan 23 14:16:19 my_machine kernel: [ 2570.503671] BUG: unable to handle 
+kernel NULL pointer dereference at 0000000000000246
+Jan 23 14:16:19 my_machine kernel: [ 2570.511551] IP: 
+[<ffffffff9b0c0ecb>] __wake_up_common+0x2b/0x90
+Jan 23 14:16:19 my_machine kernel: [ 2570.517498] PGD 46a002067
+Jan 23 14:16:19 my_machine kernel: [ 2570.520036] PUD 45af9c067
+Jan 23 14:16:19 my_machine kernel: [ 2570.522748] PMD 0
+Jan 23 14:16:19 my_machine kernel: [ 2570.523284]
+Jan 23 14:23:50 riperton kernel: [ 3021.853513]  [<ffffffff9b18407f>] 
+queued_spin_lock_slowpath+0xb/0xf
+Jan 23 14:23:50 riperton kernel: [ 3021.859776]  [<ffffffff9b800b80>] 
+_raw_spin_lock+0x20/0x30
+Jan 23 14:23:50 riperton kernel: [ 3021.865261]  [<ffffffff9b27c0bd>] 
+pid_revalidate+0x4d/0xf0
+Jan 23 14:23:50 riperton kernel: [ 3021.870747]  [<ffffffff9b21a74b>] 
+lookup_fast+0x29b/0x2c0
+Jan 23 14:23:50 riperton kernel: [ 3021.876147]  [<ffffffff9b21d7c2>] 
+path_openat+0x172/0x1370
+Jan 23 14:16:19 my_machine kernel: [ 2570.524789] Oops: 0000 [#2] SMP
+Jan 23 14:16:19 my_machine kernel: [ 2570.527932] Modules linked in: ufs 
+qnx4 hfsplus hfs minix ntfs msdos jfs xfs ipt_REJECT nf_reject_ipv4 
+xt_tcpudp nf_conntrack_ipv4 nf_defrag_ipv4 xt_conntrack nf_conntrack 
+iptable_filter ip_tables x_tables ipmi_devintf nfsd auth_rpcgss nfs_acl 
+nfs lockd grace sunrpc fscache intel_rapl sb_edac edac_core 
+x86_pkg_temp_thermal intel_powerclamp coretemp kvm_intel kvm irqbypass 
+crct10dif_pclmul crc32_pclmul ghash_clmulni_intel aesni_intel aes_x86_64 
+lrw gf128mul glue_helper ablk_helper cryptd dm_multipath joydev mei_me 
+mei lpc_ich ioatdma wmi ipmi_si ipmi_msghandler btrfs shpchp mac_hid lp 
+parport ses enclosure scsi_transport_sas raid10 raid456 
+async_raid6_recov async_memcpy async_pq async_xor async_tx xor raid6_pq 
+libcrc32c igb hid_generic i2c_algo_bit raid1 dca usbhid ahci raid0 ptp 
+megaraid_sas multipath
+Jan 23 14:16:19 my_machine kernel: [ 2570.600135]  hid libahci pps_core 
+linear dm_mirror dm_region_hash dm_log
+Jan 23 14:16:19 my_machine kernel: [ 2570.605651] CPU: 2 PID: 2440 Comm: 
+nfsd Tainted: G      D W       4.9.5-custom #1
+Jan 23 14:16:19 my_machine kernel: [ 2570.613128] Hardware name: 
+Supermicro X9DRH-7TF/7F/iTF/iF/X9DRH-7TF/7F/iTF/iF, BIOS 3.0b 04/28/2014
+Jan 23 14:16:19 my_machine kernel: [ 2570.622168] task: ffff95a42addab80 
+task.stack: ffffb9da85330000
+Jan 23 14:16:19 my_machine kernel: [ 2570.628085] RIP: 
+0010:[<ffffffff9b0c0ecb>]  [<ffffffff9b0c0ecb>] __wake_up_common+0x2b/0x90
+Jan 23 14:16:19 my_machine kernel: [ 2570.636451] RSP: 
+0018:ffffb9da85333e58  EFLAGS: 00010082
+Jan 23 14:16:19 my_machine kernel: [ 2570.641762] RAX: 0000000000000282 
+RBX: ffffb9da85333f18 RCX: 0000000000000000
+Jan 23 14:16:19 my_machine kernel: [ 2570.648897] RDX: 0000000000000246 
+RSI: 0000000000000003 RDI: ffffb9da85333f18
+Jan 23 14:16:19 my_machine kernel: [ 2570.656028] RBP: ffffb9da85333e90 
+R08: 0000000000000000 R09: ffff95a429c7ba00
+Jan 23 14:16:19 my_machine kernel: [ 2570.663162] R10: 000002567df4f057 
+R11: 0000000000000001 R12: ffffb9da85333f20
+Jan 23 14:16:19 my_machine kernel: [ 2570.670295] R13: 0000000000000282 
+R14: 0000000000000000 R15: 0000000000000003
+Jan 23 14:16:19 my_machine kernel: [ 2570.677427] FS: 
+0000000000000000(0000) GS:ffff95a42fd00000(0000) knlGS:0000000000000000
+Jan 23 14:16:19 my_machine kernel: [ 2570.685513] CS:  0010 DS: 0000 ES: 
+0000 CR0: 0000000080050033
+Jan 23 14:16:19 my_machine kernel: [ 2570.691261] CR2: 0000000000000246 
+CR3: 000000045a400000 CR4: 00000000001406e0
+Jan 23 14:16:19 my_machine kernel: [ 2570.698393] Stack:
+Jan 23 14:16:19 my_machine kernel: [ 2570.700411]  0000000100000246 
+0000000000000000 ffffb9da85333f18 ffffb9da85333f10
+Jan 23 14:16:19 my_machine kernel: [ 2570.707865]  0000000000000282 
+ffff95a42addab80 0000000000000000 ffffb9da85333ea0
+Jan 23 14:16:19 my_machine kernel: [ 2570.715326]  ffffffff9b0c0f43 
+ffffb9da85333ec8 ffffffff9b0c1967 ffff95a42addb2a8
+Jan 23 14:16:19 my_machine kernel: [ 2570.722797] Call Trace:
+Jan 23 14:16:19 my_machine kernel: [ 2570.725267]  [<ffffffff9b0c0f43>] 
+__wake_up_locked+0x13/0x20
+Jan 23 14:16:19 my_machine kernel: [ 2570.730923]  [<ffffffff9b0c1967>] 
+complete+0x37/0x50
+Jan 23 14:16:19 my_machine kernel: [ 2570.735892]  [<ffffffff9b07a74f>] 
+mm_release+0xbf/0x140
+Jan 23 14:16:19 my_machine kernel: [ 2570.741113]  [<ffffffff9b08168a>] 
+do_exit+0x13a/0xad0
+Jan 23 14:16:19 my_machine kernel: [ 2570.746169]  [<ffffffff9b802627>] 
+rewind_stack_do_exit+0x17/0x20
+Jan 23 14:16:19 my_machine kernel: [ 2570.752170] Code: 0f 1f 44 00 00 
+55 48 89 e5 41 57 41 89 f7 41 56 41 89 ce 41 55 41 54 4c 8d 67 08 53 48 
+83 ec 10 89 55 cc 48 8b 57 08 4c 89 45 d0 <48> 8b 0a 49 39 d4 48 8d 42 
+e8 4c 8d 69 e8 75 08 eb 38 4c 89 e8
+Jan 23 14:16:19 my_machine kernel: [ 2570.772172] RIP 
+[<ffffffff9b0c0ecb>] __wake_up_common+0x2b/0x90
+Jan 23 14:16:19 my_machine kernel: [ 2570.778196]  RSP <ffffb9da85333e58>
+Jan 23 14:16:19 my_machine kernel: [ 2570.781680] CR2: 0000000000000246
+Jan 23 14:16:19 my_machine kernel: [ 2570.784993] ---[ end trace 
+e8c95b69e4ef5f71 ]---
+Jan 23 14:16:19 my_machine kernel: [ 2570.794692] Fixing recursive fault 
+but reboot is needed!

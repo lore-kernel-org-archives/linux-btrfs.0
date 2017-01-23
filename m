@@ -1,100 +1,133 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38493 "EHLO mx2.suse.de"
+Received: from mout.gmx.net ([212.227.17.22]:51955 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750703AbdAWMLZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 23 Jan 2017 07:11:25 -0500
-Subject: Re: gdb log of crashed "btrfs-image -s"
-To: Christoph Groth <christoph@grothesque.org>
-References: <87o9z7dzvd.fsf@grothesque.org>
- <42eaf69b-c444-fc50-2128-3a1fbd18b335@suse.de>
- <871sw2cbzb.fsf@grothesque.org>
- <6f5ba97f-0c13-4ad1-fda3-a10db7024ef7@suse.de>
- <87lgu9cu2v.fsf@grothesque.org>
- <CAJCQCtTGUpVUZYB=Rz4Rif5Te2LqSUAdxvu3FLooEMdWO-nitw@mail.gmail.com>
- <877f5tcmgk.fsf@grothesque.org> <87wpdsc03i.fsf_-_@grothesque.org>
- <ab4eb6a1-f634-6a8d-b260-1a7abf09f6f1@suse.de>
- <87fukgcenb.fsf@grothesque.org>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Goldwyn Rodrigues <rgoldwyn@suse.de>
-Message-ID: <6e996667-04f7-6688-563d-aacded918945@suse.de>
-Date: Mon, 23 Jan 2017 06:09:53 -0600
+        id S1750703AbdAWNQB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 23 Jan 2017 08:16:01 -0500
+Received: from [10.0.0.4] ([178.190.95.118]) by mail.gmx.com (mrgmx101
+ [212.227.17.168]) with ESMTPSA (Nemesis) id 0Lwnem-1cTiey2AG0-016S5R for
+ <linux-btrfs@vger.kernel.org>; Mon, 23 Jan 2017 14:15:56 +0100
+To: linux-btrfs@vger.kernel.org
+From: Simon Waid <simon_waid@gmx.net>
+Subject: RAID5: btrfs rescue chunk-recover segfaults.
+Message-ID: <55a30f16-3793-ebac-68a5-d377b023a91e@gmx.net>
+Date: Mon, 23 Jan 2017 14:15:55 +0100
 MIME-Version: 1.0
-In-Reply-To: <87fukgcenb.fsf@grothesque.org>
-Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="oHlq506UPN54Qfxe8Uk2U7t6jP6HaWNHt"
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---oHlq506UPN54Qfxe8Uk2U7t6jP6HaWNHt
-Content-Type: multipart/mixed; boundary="Knif1wGe4JpFOjlmTeLNL9R37b3nb1w9S";
- protected-headers="v1"
-From: Goldwyn Rodrigues <rgoldwyn@suse.de>
-To: Christoph Groth <christoph@grothesque.org>
-Cc: Chris Murphy <lists@colorremedies.com>,
- Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-ID: <6e996667-04f7-6688-563d-aacded918945@suse.de>
-Subject: Re: gdb log of crashed "btrfs-image -s"
-References: <87o9z7dzvd.fsf@grothesque.org>
- <42eaf69b-c444-fc50-2128-3a1fbd18b335@suse.de>
- <871sw2cbzb.fsf@grothesque.org>
- <6f5ba97f-0c13-4ad1-fda3-a10db7024ef7@suse.de>
- <87lgu9cu2v.fsf@grothesque.org>
- <CAJCQCtTGUpVUZYB=Rz4Rif5Te2LqSUAdxvu3FLooEMdWO-nitw@mail.gmail.com>
- <877f5tcmgk.fsf@grothesque.org> <87wpdsc03i.fsf_-_@grothesque.org>
- <ab4eb6a1-f634-6a8d-b260-1a7abf09f6f1@suse.de>
- <87fukgcenb.fsf@grothesque.org>
-In-Reply-To: <87fukgcenb.fsf@grothesque.org>
+Dear all,
 
---Knif1wGe4JpFOjlmTeLNL9R37b3nb1w9S
-Content-Type: text/plain; charset=windows-1252
-Content-Transfer-Encoding: quoted-printable
+I have a btrfs raid5 array that has become unmountable. When trying to
+mount dmesg containes the following:
+
+[ 5686.334384] BTRFS info (device sdb): disk space caching is enabled
+[ 5688.377244] BTRFS info (device sdb): bdev /dev/sdb errs: wr 2517, rd
+77, flush 0, corrupt 0, gen 0
+[ 5688.377254] BTRFS info (device sdb): bdev /dev/sdc errs: wr 0, rd 0,
+flush 0, corrupt 10, gen 0
+[ 5688.377261] BTRFS info (device sdb): bdev /dev/sdd1 errs: wr 0, rd 0,
+flush 0, corrupt 5, gen 0
+[ 5688.377268] BTRFS info (device sdb): bdev /dev/sde errs: wr 21, rd
+8807, flush 0, corrupt 0, gen 0
+[ 5688.744249] BTRFS error (device sdb): parent transid verify failed on
+16227387371520 wanted 88711 found 88395
+[ 5689.533817] BTRFS error (device sdb): parent transid verify failed on
+16227388260352 wanted 88711 found 88395
+[ 5689.609355] BTRFS error (device sdb): parent transid verify failed on
+16227415158784 wanted 88711 found 88397
+[ 5689.627715] BTRFS error (device sdb): parent transid verify failed on
+16227415158784 wanted 88711 found 88397
+[ 5689.627731] BTRFS error (device sdb): failed to read block groups: -5
+[ 5689.675017] BTRFS error (device sdb): open_ctree failed
+
+I tried to recover from the problem using:
+
+btrfs rescue chunk-recover -v /dev/sdb
+
+The command runs for a few minutes. Then it segfaults. I used gdb to
+debug. This is the backtrace:
+
+Starting program: btrfs-progs/btrfs rescue chunk-recover -v /dev/sdb
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+All Devices:
+     Device: id = 4, name = /dev/sde
+     Device: id = 1, name = /dev/sdd1
+     Device: id = 2, name = /dev/sdc
+     Device: id = 3, name = /dev/sdb
+
+[New Thread 0x7ffff6f6e700 (LWP 8155)]
+[New Thread 0x7ffff676d700 (LWP 8156)]
+[New Thread 0x7ffff5f6c700 (LWP 8157)]
+[New Thread 0x7ffff576b700 (LWP 8158)]
+Scanning: 24603734016 in dev0, 32581337088 in dev1, 37911248896 in dev2,
+32217350144 in dev3
+Thread 2 "btrfs" received signal SIGSEGV, Segmentation fault.
+[Switching to Thread 0x7ffff6f6e700 (LWP 8155)]
+btrfs_new_device_extent_record (leaf=leaf@entry=0x7ffff00008c0,
+key=key@entry=0x7ffff6f6dc90, slot=slot@entry=12)
+     at cmds-check.c:6656
+6656        rec->chunk_objecteid =
+(gdb) backtrace
+#0  btrfs_new_device_extent_record (leaf=leaf@entry=0x7ffff00008c0,
+key=key@entry=0x7ffff6f6dc90, slot=slot@entry=12)
+     at cmds-check.c:6656
+#1  0x00000000004370d2 in process_device_extent_item (slot=12,
+key=0x7ffff6f6dc90, leaf=0x7ffff00008c0,
+     devext_cache=0x7fffffffe410) at chunk-recover.c:332
+#2  extract_metadata_record (rc=rc@entry=0x7fffffffe3c0,
+leaf=leaf@entry=0x7ffff00008c0) at chunk-recover.c:727
+#3  0x000000000043759b in scan_one_device (dev_scan_struct=0x6ae420) at
+chunk-recover.c:807
+#4  0x00007ffff733f6ba in start_thread (arg=0x7ffff6f6e700) at
+pthread_create.c:333
+#5  0x00007ffff707582d in clone () at
+../sysdeps/unix/sysv/linux/x86_64/clone.S:109
+
+Information about the system:
+
+uname -a: Linux 4.10.0-041000rc4-generic #201701152031 SMP Mon Jan 16
+01:33:39 UTC 2017 x86_64 x86_64 x86_64 GNU/Linux
+btrfs-progs --version: v4.9 (from
+git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git)
+sudo btrfs fi show
+Label: none  uuid: a27cc0cf-1665-43ba-8c63-bf236d31fcd2
+     Total devices 4 FS bytes used 6.51TiB
+     devid    1 size 2.73TiB used 2.73TiB path /dev/sdd1
+     devid    2 size 7.28TiB used 2.73TiB path /dev/sdc
+     devid    3 size 3.64TiB used 3.56TiB path /dev/sdb
+     devid    4 size 1.82TiB used 1.46TiB path /dev/sde
+btrfs fi df wont work as the filesystem is not mountable.
+
+Any help would be appreciated!
+
+Best regards,
+Simon
+
+
+PS: I'd also like to mention how the raid array became unmountable.
+
+The system I was running at that time was:
+Kernel: 4.8.0-34 generic #36~16.04.1 Ubuntu SMP
+btrfs-progs --version: v4.4
+
+- I issued a replace command on disk 2. During the replace, disc 4 was
+disconnected. I noticed it and rebooted the system just a few second
+after the event. After the reboot, the replace continued and eventually
+finished. However, dmesg would showed errors like: parent transid verify
+failed on 16227387371520 wanted 88711 found 88395.
+
+- I issued a resize command on the new drive to free additional space:
+btrfs resize 2:max, which completed without errors.
+
+- I issued a balance without any filters in the hope it would correct
+the "parent transid verify failed" errors. The balance started normally.
+However, after about one hour, I saw that no I/O would happen and lots
+of errors appeared in dmesg. I tried to reboot but the command had no
+effect, so disconnected the PC from the power supply.
+
+I have attached the dmesg for the resize and balance operations.
 
 
 
-On 01/18/2017 02:11 PM, Christoph Groth wrote:
-> Goldwyn Rodrigues wrote:
->> Thanks Christoph for the backtrace. I am unable to reproduce it, but
->> looking at your backtrace, I found a bug. Would you be able to give it=
-
->> a try and check if it fixes the problem?
->=20
-> I applied your patch to v4.9, and compiled the static binaries.
-> Unfortunately, it still segfaults. (Perhaps your fix is correct, and
-> there's a second problem?)  I attach a new backtrace.  Do let me know i=
-f
-> I can help in another way.
-
-I looked hard, and could not find the reason of a failure here. The
-bakctrace of the new one is a little different than previous one, but I
-am not sure why it crashes. Until I have a reproduction scneario, I may
-not be able to fix this. How about a core? However, a core will have
-values which you are trying to mask with sanitize.
-
-
---=20
-Goldwyn
-
-
---Knif1wGe4JpFOjlmTeLNL9R37b3nb1w9S--
-
---oHlq506UPN54Qfxe8Uk2U7t6jP6HaWNHt
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQEcBAEBAgAGBQJYhfKaAAoJEAE1niapr6PJOO8H/37LCx7sqSySRiATr2vkRPyf
-iw6m0iXrXZmbXiZNaTum5EDbcR9H+J3tiwQS5PZHxnz9ym5ZQxInRQ9fq5ARURvR
-62XB+bZxQSyAUwenhzOmWDv8J9cxCMzN5ElgnP5+VLivQXsM624jrq+xXgxNmG+j
-2R6YrPwtGyhelD9Mr8+4JQ2fPC+7jjLfVTKIeFVKN04m/X4EN0u8Lh1MS4X8FoKd
-jZEenFBp9zRD/IT2aem3bVr/xPwADNr1le2kCGN3u44tJOWmHdzXcFR02PzsSbx3
-PBusQkMEiHZn7PyT0VItZyishhUWbkObQJMOEjiPbMESkM4OkGN6t44jeQQVnhw=
-=lFq3
------END PGP SIGNATURE-----
-
---oHlq506UPN54Qfxe8Uk2U7t6jP6HaWNHt--

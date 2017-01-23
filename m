@@ -1,48 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:63175 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.18]:53643 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750867AbdAWImg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 23 Jan 2017 03:42:36 -0500
-Received: from [10.0.0.4] ([178.190.95.118]) by mail.gmx.com (mrgmx103
- [212.227.17.168]) with ESMTPSA (Nemesis) id 0M2L60-1cCgJF0HlU-00s6ts for
- <linux-btrfs@vger.kernel.org>; Mon, 23 Jan 2017 09:42:29 +0100
+        id S1750795AbdAWI5e (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 23 Jan 2017 03:57:34 -0500
+Received: from [10.0.0.4] ([178.190.95.118]) by mail.gmx.com (mrgmx001
+ [212.227.17.190]) with ESMTPSA (Nemesis) id 0Md3Eg-1cnfWS0VRy-00ICHg for
+ <linux-btrfs@vger.kernel.org>; Mon, 23 Jan 2017 09:57:30 +0100
 To: linux-btrfs@vger.kernel.org
 From: Simon Waid <simon_waid@gmx.net>
-Subject: btrfs rescue chunk-recover segfaults
-Message-ID: <ef832bd4-bf83-50da-cdbe-07050cf9aff4@gmx.net>
-Date: Mon, 23 Jan 2017 09:42:28 +0100
+Subject: RAID5: btrfs rescue chunk-recover segfaults.
+Message-ID: <6d9e7586-09a3-c5ed-f99f-ebd8f01ec1c4@gmx.net>
+Date: Mon, 23 Jan 2017 09:57:29 +0100
 MIME-Version: 1.0
 Content-Type: multipart/mixed;
- boundary="------------64BF893544336004B809EBE2"
+ boundary="------------D0A43057AD8A42D7B9A0294C"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a multi-part message in MIME format.
---------------64BF893544336004B809EBE2
-Content-Type: text/plain; charset=utf-8; format=flowed
+--------------D0A43057AD8A42D7B9A0294C
+Content-Type: text/plain; charset=utf-8
 Content-Transfer-Encoding: 7bit
 
 Dear all,
 
-I have a btrfs raid5 array that has become unmountable. When trying to 
+I have a btrfs raid5 array that has become unmountable. When trying to
 mount dmesg containes the following:
 
 [ 5686.334384] BTRFS info (device sdb): disk space caching is enabled
-[ 5688.377244] BTRFS info (device sdb): bdev /dev/sdb errs: wr 2517, rd 
+[ 5688.377244] BTRFS info (device sdb): bdev /dev/sdb errs: wr 2517, rd
 77, flush 0, corrupt 0, gen 0
-[ 5688.377254] BTRFS info (device sdb): bdev /dev/sdc errs: wr 0, rd 0, 
+[ 5688.377254] BTRFS info (device sdb): bdev /dev/sdc errs: wr 0, rd 0,
 flush 0, corrupt 10, gen 0
-[ 5688.377261] BTRFS info (device sdb): bdev /dev/sdd1 errs: wr 0, rd 0, 
+[ 5688.377261] BTRFS info (device sdb): bdev /dev/sdd1 errs: wr 0, rd 0,
 flush 0, corrupt 5, gen 0
-[ 5688.377268] BTRFS info (device sdb): bdev /dev/sde errs: wr 21, rd 
+[ 5688.377268] BTRFS info (device sdb): bdev /dev/sde errs: wr 21, rd
 8807, flush 0, corrupt 0, gen 0
-[ 5688.744249] BTRFS error (device sdb): parent transid verify failed on 
+[ 5688.744249] BTRFS error (device sdb): parent transid verify failed on
 16227387371520 wanted 88711 found 88395
-[ 5689.533817] BTRFS error (device sdb): parent transid verify failed on 
+[ 5689.533817] BTRFS error (device sdb): parent transid verify failed on
 16227388260352 wanted 88711 found 88395
-[ 5689.609355] BTRFS error (device sdb): parent transid verify failed on 
+[ 5689.609355] BTRFS error (device sdb): parent transid verify failed on
 16227415158784 wanted 88711 found 88397
-[ 5689.627715] BTRFS error (device sdb): parent transid verify failed on 
+[ 5689.627715] BTRFS error (device sdb): parent transid verify failed on
 16227415158784 wanted 88711 found 88397
 [ 5689.627731] BTRFS error (device sdb): failed to read block groups: -5
 [ 5689.675017] BTRFS error (device sdb): open_ctree failed
@@ -51,7 +51,7 @@ I tried to recover from the problem using:
 
 btrfs rescue chunk-recover -v /dev/sdb
 
-The command runs for a few minutes. Then it segfaults. I used gdb to 
+The command runs for a few minutes. Then it segfaults. I used gdb to
 debug. This is the backtrace:
 
 Starting program: btrfs-progs/btrfs rescue chunk-recover -v /dev/sdb
@@ -67,35 +67,35 @@ All Devices:
 [New Thread 0x7ffff676d700 (LWP 8156)]
 [New Thread 0x7ffff5f6c700 (LWP 8157)]
 [New Thread 0x7ffff576b700 (LWP 8158)]
-Scanning: 24603734016 in dev0, 32581337088 in dev1, 37911248896 in dev2, 
+Scanning: 24603734016 in dev0, 32581337088 in dev1, 37911248896 in dev2,
 32217350144 in dev3
 Thread 2 "btrfs" received signal SIGSEGV, Segmentation fault.
 [Switching to Thread 0x7ffff6f6e700 (LWP 8155)]
-btrfs_new_device_extent_record (leaf=leaf@entry=0x7ffff00008c0, 
+btrfs_new_device_extent_record (leaf=leaf@entry=0x7ffff00008c0,
 key=key@entry=0x7ffff6f6dc90, slot=slot@entry=12)
      at cmds-check.c:6656
 6656        rec->chunk_objecteid =
 (gdb) backtrace
-#0  btrfs_new_device_extent_record (leaf=leaf@entry=0x7ffff00008c0, 
+#0  btrfs_new_device_extent_record (leaf=leaf@entry=0x7ffff00008c0,
 key=key@entry=0x7ffff6f6dc90, slot=slot@entry=12)
      at cmds-check.c:6656
-#1  0x00000000004370d2 in process_device_extent_item (slot=12, 
+#1  0x00000000004370d2 in process_device_extent_item (slot=12,
 key=0x7ffff6f6dc90, leaf=0x7ffff00008c0,
      devext_cache=0x7fffffffe410) at chunk-recover.c:332
-#2  extract_metadata_record (rc=rc@entry=0x7fffffffe3c0, 
+#2  extract_metadata_record (rc=rc@entry=0x7fffffffe3c0,
 leaf=leaf@entry=0x7ffff00008c0) at chunk-recover.c:727
-#3  0x000000000043759b in scan_one_device (dev_scan_struct=0x6ae420) at 
+#3  0x000000000043759b in scan_one_device (dev_scan_struct=0x6ae420) at
 chunk-recover.c:807
-#4  0x00007ffff733f6ba in start_thread (arg=0x7ffff6f6e700) at 
+#4  0x00007ffff733f6ba in start_thread (arg=0x7ffff6f6e700) at
 pthread_create.c:333
-#5  0x00007ffff707582d in clone () at 
+#5  0x00007ffff707582d in clone () at
 ../sysdeps/unix/sysv/linux/x86_64/clone.S:109
 
 Information about the system:
 
-uname -a: Linux 4.10.0-041000rc4-generic #201701152031 SMP Mon Jan 16 
+uname -a: Linux 4.10.0-041000rc4-generic #201701152031 SMP Mon Jan 16
 01:33:39 UTC 2017 x86_64 x86_64 x86_64 GNU/Linux
-btrfs-progs --version: v4.9 (from 
+btrfs-progs --version: v4.9 (from
 git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git)
 sudo btrfs fi show
 Label: none  uuid: a27cc0cf-1665-43ba-8c63-bf236d31fcd2
@@ -118,22 +118,25 @@ The system I was running at that time was:
 Kernel: 4.8.0-34 generic #36~16.04.1 Ubuntu SMP
 btrfs-progs --version: v4.4
 
-I issued a replace command on disk 2. During the replace, disc 4 was 
-disconnected. I noticed it and rebooted the system just a few second 
-after the event. After the reboot, the replace continued and eventually 
-finished. However, dmesg would showed errors like: parent transid verify 
-failed on 16227387371520 wanted 88711 found 88395
+- I issued a replace command on disk 2. During the replace, disc 4 was
+disconnected. I noticed it and rebooted the system just a few second
+after the event. After the reboot, the replace continued and eventually
+finished. However, dmesg would showed errors like: parent transid verify
+failed on 16227387371520 wanted 88711 found 88395.
 
-After the replace, issued a resize command on the new drive to free 
-additional space: btrfs resize 2:max, which completed without errors. 
-Now, I issued a btrfs balance without any filters in the hope it would 
-correct the "parent transid verify failed" errors. The balance started 
-normally. However, after about one hour, I saw that I/O had become zero 
-and lots of errors appeared in dmesg. I tried to issue a reboot  had no 
-effect, so disconnected the PC from the power supply. I have attached 
-the dmesg for the resize and balance operations.
+- I issued a resize command on the new drive to free additional space:
+btrfs resize 2:max, which completed without errors.
 
---------------64BF893544336004B809EBE2
+- I issued a balance without any filters in the hope it would correct
+the "parent transid verify failed" errors. The balance started normally.
+However, after about one hour, I saw that no I/O would happen and lots
+of errors appeared in dmesg. I tried to reboot but the command had no
+effect, so disconnected the PC from the power supply.
+
+I have attached the dmesg for the resize and balance operations.
+
+
+--------------D0A43057AD8A42D7B9A0294C
 Content-Type: application/zip;
  name="kern_btrfs.log.zip"
 Content-Transfer-Encoding: base64
@@ -948,4 +951,4 @@ dcof+VF6p3Zfyj9wt9Wp3ZfvDd9tIXljvTltqNFmJPuPUouqnGhhq4qDuPXebcGReFl17yy4
 ygPTSFTn86ReM/mTgsoVrCm7z38+k/9/UEsBAh4DFAAAAAgAFEs3SqC9d8SeqQAAY9cGAA4A
 GAAAAAAAAQAAALSBAAAAAGtlcm5fYnRyZnMubG9nVVQFAAPHvYVYdXgLAAEE6AMAAAToAwAA
 UEsFBgAAAAABAAEAVAAAAOapAAAAAA==
---------------64BF893544336004B809EBE2--
+--------------D0A43057AD8A42D7B9A0294C--

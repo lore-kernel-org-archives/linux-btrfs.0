@@ -1,15 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:18859 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1750916AbdAWJPP (ORCPT
+        with ESMTP id S1750947AbdAWJPQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 23 Jan 2017 04:15:15 -0500
+        Mon, 23 Jan 2017 04:15:16 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: <calestyo@scientia.net>, <chris@colorremedies.com>, <dsterba@suse.cz>
-Subject: [PATCH 8/9] btrfs-progs: fsck-tests: Add new test case for partly written prealloc extent
-Date: Mon, 23 Jan 2017 17:13:58 +0800
-Message-ID: <20170123091359.21390-10-quwenruo@cn.fujitsu.com>
+CC: <calestyo@scientia.net>, <chris@colorremedies.com>, <dsterba@suse.cz>,
+        Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+Subject: [PATCH 9/9] btrfs-progs: fsck: Fix lowmem mode override to allow it skip repair work
+Date: Mon, 23 Jan 2017 17:13:59 +0800
+Message-ID: <20170123091359.21390-11-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20170123091359.21390-1-quwenruo@cn.fujitsu.com>
 References: <20170123091359.21390-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,45 +18,82 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a bug found in lowmem mode, which reports false alert for partly
-written prealloc extent.
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 
-Reported-by: Chris Murphy <chris@colorremedies.com>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Current common.local doesn't handle lowmem mode well.
+It passes "--mode=lowmem" alone with "--repair", making it unable to
+check lowmem mode.
+
+It's caused by the following bugs:
+
+1) Wrong variable in test/common.local
+   We should check TEST_ARGS_CHECK, not TEST_CHECK, which is not defined
+   so we never return 1.
+
+2) Wrong parameter passed to _cmd_spec() in test/common
+   This prevents us from grepping the correct parameters.
+
+Fix it.
+
+Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 ---
- tests/fsck-tests/020-extent-ref-cases/test.sh | 15 +++++++++++++++
- 1 file changed, 15 insertions(+)
+ tests/common       | 8 ++++----
+ tests/common.local | 2 +-
+ 2 files changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/tests/fsck-tests/020-extent-ref-cases/test.sh b/tests/fsck-tests/020-extent-ref-cases/test.sh
-index 5dc5e55d..91340671 100755
---- a/tests/fsck-tests/020-extent-ref-cases/test.sh
-+++ b/tests/fsck-tests/020-extent-ref-cases/test.sh
-@@ -18,6 +18,7 @@
- source $TOP/tests/common
- 
- check_prereq btrfs
-+check_global_prereq xfs_io
- 
- for img in *.img *.raw.xz
- do
-@@ -28,3 +29,17 @@ do
- 	run_check $TOP/btrfs check "$image"
- 	rm -f "$image"
- done
-+
-+# Extra test case for partly written prealloc extents.
-+test_prealloc_written()
-+{
-+	run_check $SUDO_HELPER $TOP/mkfs.btrfs -f $TEST_DEV
-+
-+	run_check_mount_test_dev
-+	xfs_io -f -c "falloc 0 128k" -c "syncfs" $TEST_MNT/tmpfile
-+	xfs_io -c "pwrite 0 64k" $TEST_MNT/tmpfile
-+
-+	run_check_umount_test_dev
-+
-+	run_check $TOP/btrfs check $TEST_DEV
-+}
+diff --git a/tests/common b/tests/common
+index 51c2e267..7ad436e3 100644
+--- a/tests/common
++++ b/tests/common
+@@ -106,7 +106,7 @@ run_check()
+ 	ins=$(_get_spec_ins "$@")
+ 	spec=$(($ins-1))
+ 	cmd=$(eval echo "\${$spec}")
+-	spec=$(_cmd_spec "$cmd")
++	spec=$(_cmd_spec "${@:$spec}")
+ 	set -- "${@:1:$(($ins-1))}" $spec "${@: $ins}"
+ 	echo "############### $@" >> "$RESULTS" 2>&1
+ 	if [[ $TEST_LOG =~ tty ]]; then echo "CMD: $@" > /dev/tty; fi
+@@ -128,7 +128,7 @@ run_check_stdout()
+ 	ins=$(_get_spec_ins "$@")
+ 	spec=$(($ins-1))
+ 	cmd=$(eval echo "\${$spec}")
+-	spec=$(_cmd_spec "$cmd")
++	spec=$(_cmd_spec "${@:$spec}")
+ 	set -- "${@:1:$(($ins-1))}" $spec "${@: $ins}"
+ 	echo "############### $@" >> "$RESULTS" 2>&1
+ 	if [[ $TEST_LOG =~ tty ]]; then echo "CMD(stdout): $@" > /dev/tty; fi
+@@ -152,7 +152,7 @@ run_mayfail()
+ 	ins=$(_get_spec_ins "$@")
+ 	spec=$(($ins-1))
+ 	cmd=$(eval echo "\${$spec}")
+-	spec=$(_cmd_spec "$cmd")
++	spec=$(_cmd_spec "${@:$spec}")
+ 	set -- "${@:1:$(($ins-1))}" $spec "${@: $ins}"
+ 	echo "############### $@" >> "$RESULTS" 2>&1
+ 	if [[ $TEST_LOG =~ tty ]]; then echo "CMD(mayfail): $@" > /dev/tty; fi
+@@ -188,7 +188,7 @@ run_mustfail()
+ 	ins=$(_get_spec_ins "$@")
+ 	spec=$(($ins-1))
+ 	cmd=$(eval echo "\${$spec}")
+-	spec=$(_cmd_spec "$cmd")
++	spec=$(_cmd_spec "${@:$spec}")
+ 	set -- "${@:1:$(($ins-1))}" $spec "${@: $ins}"
+ 	echo "############### $@" >> "$RESULTS" 2>&1
+ 	if [[ $TEST_LOG =~ tty ]]; then echo "CMD(mustfail): $@" > /dev/tty; fi
+diff --git a/tests/common.local b/tests/common.local
+index 9f567c27..4f56bb08 100644
+--- a/tests/common.local
++++ b/tests/common.local
+@@ -17,7 +17,7 @@ TEST_ARGS_CHECK=--mode=lowmem
+ # break tests
+ _skip_spec()
+ {
+-	if echo "$TEST_CHECK" | grep -q 'mode=lowmem' &&
++	if echo "$TEST_ARGS_CHECK" | grep -q 'mode=lowmem' &&
+ 	   echo "$@" | grep -q -- '--repair'; then
+ 		return 0
+ 	fi
 -- 
 2.11.0
 

@@ -1,15 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:18859 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751013AbdAWJPW (ORCPT
+        with ESMTP id S1750742AbdAWJPO (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 23 Jan 2017 04:15:22 -0500
+        Mon, 23 Jan 2017 04:15:14 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: <calestyo@scientia.net>, <chris@colorremedies.com>, <dsterba@suse.cz>
-Subject: [PATCH 7/9] btrfs-progs: fsck-tests: Make 013 compatible with lowmem mode
-Date: Mon, 23 Jan 2017 17:13:56 +0800
-Message-ID: <20170123091359.21390-8-quwenruo@cn.fujitsu.com>
+CC: <calestyo@scientia.net>, <chris@colorremedies.com>, <dsterba@suse.cz>,
+        Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+Subject: [PATCH 8/8] btrfs-progs: fsck: Fix lowmem mode override to allow it skip repair work
+Date: Mon, 23 Jan 2017 17:13:57 +0800
+Message-ID: <20170123091359.21390-9-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20170123091359.21390-1-quwenruo@cn.fujitsu.com>
 References: <20170123091359.21390-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,32 +18,82 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-fsck-tests/013-extent-tree-rebuild uses "--init-extent-tree", which
-implies "--repair".
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 
-But the test script doesn't specify "--repair" for lowmem mode test to
-detect it.
+Current common.local doesn't handle lowmem mode well.
+It passes "--mode=lowmem" alone with "--repair", making it unable to
+check lowmem mode.
 
-Add it so lowmem mode test can be happy with it.
+It's caused by the following bugs:
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+1) Wrong variable in test/common.local
+   We should check TEST_ARGS_CHECK, not TEST_CHECK, which is not defined
+   so we never return 1.
+
+2) Wrong parameter passed to _cmd_spec() in test/common
+   This prevents us from grepping the correct parameters.
+
+Fix it.
+
+Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 ---
- tests/fsck-tests/013-extent-tree-rebuild/test.sh | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ tests/common       | 8 ++++----
+ tests/common.local | 2 +-
+ 2 files changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/tests/fsck-tests/013-extent-tree-rebuild/test.sh b/tests/fsck-tests/013-extent-tree-rebuild/test.sh
-index 37bdcd9c..08c1e50e 100755
---- a/tests/fsck-tests/013-extent-tree-rebuild/test.sh
-+++ b/tests/fsck-tests/013-extent-tree-rebuild/test.sh
-@@ -36,7 +36,7 @@ test_extent_tree_rebuild()
- 
- 	$SUDO_HELPER $TOP/btrfs check $TEST_DEV >& /dev/null && \
- 			_fail "btrfs check should detect failure"
--	run_check $SUDO_HELPER $TOP/btrfs check --init-extent-tree $TEST_DEV
-+	run_check $SUDO_HELPER $TOP/btrfs check --repair --init-extent-tree $TEST_DEV
- 	run_check $SUDO_HELPER $TOP/btrfs check $TEST_DEV
- }
- 
+diff --git a/tests/common b/tests/common
+index 51c2e267..7ad436e3 100644
+--- a/tests/common
++++ b/tests/common
+@@ -106,7 +106,7 @@ run_check()
+ 	ins=$(_get_spec_ins "$@")
+ 	spec=$(($ins-1))
+ 	cmd=$(eval echo "\${$spec}")
+-	spec=$(_cmd_spec "$cmd")
++	spec=$(_cmd_spec "${@:$spec}")
+ 	set -- "${@:1:$(($ins-1))}" $spec "${@: $ins}"
+ 	echo "############### $@" >> "$RESULTS" 2>&1
+ 	if [[ $TEST_LOG =~ tty ]]; then echo "CMD: $@" > /dev/tty; fi
+@@ -128,7 +128,7 @@ run_check_stdout()
+ 	ins=$(_get_spec_ins "$@")
+ 	spec=$(($ins-1))
+ 	cmd=$(eval echo "\${$spec}")
+-	spec=$(_cmd_spec "$cmd")
++	spec=$(_cmd_spec "${@:$spec}")
+ 	set -- "${@:1:$(($ins-1))}" $spec "${@: $ins}"
+ 	echo "############### $@" >> "$RESULTS" 2>&1
+ 	if [[ $TEST_LOG =~ tty ]]; then echo "CMD(stdout): $@" > /dev/tty; fi
+@@ -152,7 +152,7 @@ run_mayfail()
+ 	ins=$(_get_spec_ins "$@")
+ 	spec=$(($ins-1))
+ 	cmd=$(eval echo "\${$spec}")
+-	spec=$(_cmd_spec "$cmd")
++	spec=$(_cmd_spec "${@:$spec}")
+ 	set -- "${@:1:$(($ins-1))}" $spec "${@: $ins}"
+ 	echo "############### $@" >> "$RESULTS" 2>&1
+ 	if [[ $TEST_LOG =~ tty ]]; then echo "CMD(mayfail): $@" > /dev/tty; fi
+@@ -188,7 +188,7 @@ run_mustfail()
+ 	ins=$(_get_spec_ins "$@")
+ 	spec=$(($ins-1))
+ 	cmd=$(eval echo "\${$spec}")
+-	spec=$(_cmd_spec "$cmd")
++	spec=$(_cmd_spec "${@:$spec}")
+ 	set -- "${@:1:$(($ins-1))}" $spec "${@: $ins}"
+ 	echo "############### $@" >> "$RESULTS" 2>&1
+ 	if [[ $TEST_LOG =~ tty ]]; then echo "CMD(mustfail): $@" > /dev/tty; fi
+diff --git a/tests/common.local b/tests/common.local
+index 9f567c27..4f56bb08 100644
+--- a/tests/common.local
++++ b/tests/common.local
+@@ -17,7 +17,7 @@ TEST_ARGS_CHECK=--mode=lowmem
+ # break tests
+ _skip_spec()
+ {
+-	if echo "$TEST_CHECK" | grep -q 'mode=lowmem' &&
++	if echo "$TEST_ARGS_CHECK" | grep -q 'mode=lowmem' &&
+ 	   echo "$@" | grep -q -- '--repair'; then
+ 		return 0
+ 	fi
 -- 
 2.11.0
 

@@ -1,47 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.linuxsystems.it ([79.7.78.67]:56414 "EHLO
-        mail.linuxsystems.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750841AbdAXOqF (ORCPT
+Received: from mail-pg0-f42.google.com ([74.125.83.42]:34516 "EHLO
+        mail-pg0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751009AbdAXRte (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Jan 2017 09:46:05 -0500
-From: =?iso-8859-1?Q?Niccol=F2_Belli?= <darkbasic@linuxsystems.it>
-To: Christoph Anton Mitterer <calestyo@scientia.net>
-Cc: <linux-btrfs@vger.kernel.org>
-Subject: Re: RAID56 =?iso-8859-1?Q?status=3F?=
-Date: Tue, 24 Jan 2017 15:36:25 +0100
+        Tue, 24 Jan 2017 12:49:34 -0500
+Received: by mail-pg0-f42.google.com with SMTP id 14so56644336pgg.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Jan 2017 09:49:34 -0800 (PST)
+Date: Tue, 24 Jan 2017 09:49:07 -0800
+From: Omar Sandoval <osandov@osandov.com>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>, agruenba@redhat.com
+Subject: Re: read-only fs, kernel 4.9.0, fs/btrfs/delayed-inode.c:1170
+ __btrfs_run_delayed_items,
+Message-ID: <20170124174907.GA27340@vader>
+References: <CAJCQCtT73Zh2F13tg3v4UZC3+rdTMhgC==Ag3LZQ-RZMTpisOg@mail.gmail.com>
+ <CAJCQCtSZyfHdmsaVdEM7iQiKfK-s4Qqs4ORZrE1MCpWCgeCWbw@mail.gmail.com>
+ <CAJCQCtQz5fhYymEgFuxuiactZpWeUSEeCCXFCAEmLTTA6AOZLQ@mail.gmail.com>
+ <20170123213109.GA11778@vader.DHCP.thefacebook.com>
+ <CAJCQCtSVXRXvGmnmfFt5yn_L33a8eCCuuFANxTOyWLrJeqrK9g@mail.gmail.com>
+ <CAJCQCtRip_D7BPhCJDVP53LRoQoEcVrvCf7eyGK9sa8qv23BNQ@mail.gmail.com>
+ <20170123220448.GB11778@vader.DHCP.thefacebook.com>
+ <CAJCQCtQNgvu72GUBpvJtnAH-Sj-fd566HwDpeuGjaPmdtrUO3g@mail.gmail.com>
+ <20170124000524.GC11778@vader.DHCP.thefacebook.com>
+ <CAJCQCtSHx8cEanC7e71akLiRKzi+Rt96CSAoK11Ngud9=n1U-Q@mail.gmail.com>
 MIME-Version: 1.0
-Message-ID: <efc45c00-50ac-4717-a4a6-cf3729bec252@linuxsystems.it>
-In-Reply-To: <1485214302.21584.5.camel@scientia.net>
-References: <d69f5a19-baa8-ff56-609e-4ee01be8a103@jvales.net>
- <1485124549.6187.36.camel@scientia.net>
- <20170122223906.GA24076@carfax.org.uk>
- <3e9fe326-7638-bc78-4fe8-f6f6851769d7@jvales.net>
- <35d49fbd-102c-3e54-4e40-5f71fb88d2da@cn.fujitsu.com>
- <CALqCWCXNoKqAJR=7c4wzOvVjSBxNRMsUYMvkfRMcVk14dkp27Q@mail.gmail.com>
- <d7d3d966-c67f-28cc-0036-9b38756ed9a2@cn.fujitsu.com>
- <1485194001.21584.1.camel@scientia.net>
- <20170123231809.GA9114@clm-mbp.masoncoding.com>
- <1485214302.21584.5.camel@scientia.net>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAJCQCtSHx8cEanC7e71akLiRKzi+Rt96CSAoK11Ngud9=n1U-Q@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-+1
+On Mon, Jan 23, 2017 at 08:51:24PM -0700, Chris Murphy wrote:
+> On Mon, Jan 23, 2017 at 5:05 PM, Omar Sandoval <osandov@osandov.com> wrote:
+> > Thanks! Hmm, okay, so it's coming from btrfs_update_delayed_inode()...
+> > That's probably us failing btrfs_lookup_inode(), but just to make sure,
+> > could you apply the updated diff at the same link as before
+> > (https://gist.github.com/osandov/9f223bda27f3e1cd1ab9c1bd634c51a4)? If
+> > that's the case, I'm even more confused about what xattrs have to do
+> > with it.
+> 
+> [   35.015363] __btrfs_update_delayed_inode(): inode is missing
 
-On martedì 24 gennaio 2017 00:31:42 CET, Christoph Anton Mitterer wrote:
-> On Mon, 2017-01-23 at 18:18 -0500, Chris Mason wrote:
->> We've been focusing on the single-drive use cases internally.  This
->> year 
->> that's changing as we ramp up more users in different places.  
->> Performance/stability work and raid5/6 are the top of my list right
->> now.
-> +1
->
-> Would be nice to get some feedback on what happens behind the scenes...
->  actually I think a regular btrfs development blog could be generally a
-> nice thing :)
->
-> Cheers,
-> Chris.
->
+Okay, like I expected...
 
+> [   35.015372] btrfs_update_delayed_inode(ino=2) -> -2
+
+Wtf? Inode numbers should be >=256. I updated the diff a third time to
+catch where that came from. If we're lucky, the backtrace should have
+the exact culprit. If we're unlucky, there might be memory corruption
+involved.
+
+> osandov-9f223b_2-dmesg.log
+> https://drive.google.com/open?id=0B_2Asp8DGjJ9UnNSRXpualprWHM
+> 
+> 
+> -- 
+> Chris Murphy

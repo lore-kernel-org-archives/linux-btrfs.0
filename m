@@ -1,26 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35670 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44213 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752875AbdAZIlS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 26 Jan 2017 03:41:18 -0500
-Date: Thu, 26 Jan 2017 09:40:59 +0100
+        id S1750748AbdAXQmc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 24 Jan 2017 11:42:32 -0500
+Date: Tue, 24 Jan 2017 17:42:13 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Dan Carpenter <dan.carpenter@oracle.com>
-Cc: Chris Mason <clm@fb.com>, Nikolay Borisov <n.borisov.lkml@gmail.com>,
-        Josef Bacik <jbacik@fb.com>, kernel-janitors@vger.kernel.org,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [patch] btrfs: white space cleanup in btrfs_log_inode()
-Message-ID: <20170126084059.GB11951@suse.cz>
+To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH v3 1/2] btrfs-progs: qgroup: add sync option to 'qgroup
+ show'
+Message-ID: <20170124164213.GX11951@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20170125151126.GA27572@mwanda>
+References: <201612070307.AA00021@WIN-5MHF4RKU941.jp.fujitsu.com>
+ <201612150429.AA00024@WIN-5MHF4RKU941.jp.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170125151126.GA27572@mwanda>
+In-Reply-To: <201612150429.AA00024@WIN-5MHF4RKU941.jp.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 25, 2017 at 06:11:26PM +0300, Dan Carpenter wrote:
-> We accidentally deleted a new line in commit 0921910aa6fe ("btrfs: Make
-> btrfs_log_inode take btrfs_inode")
+On Thu, Dec 15, 2016 at 01:29:28PM +0900, Tsutomu Itoh wrote:
+> The 'qgroup show' command does not synchronize filesystem.
+> Therefore, 'qgroup show' may not display the correct value unless
+> synchronized with 'filesystem sync' command etc.
+> 
+> So add the '--sync' option so that we can choose whether or not
+> to synchronize when executing the command.
+> 
+> Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 
-Thanks, I've folded the change to the patch that introduced it.
+1 and 2 applied, thanks.

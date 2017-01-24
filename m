@@ -1,70 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-001b2d01.pphosted.com ([148.163.158.5]:49437 "EHLO
+Received: from mx0b-001b2d01.pphosted.com ([148.163.158.5]:57966 "EHLO
         mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1750794AbdAXL1W (ORCPT
+        by vger.kernel.org with ESMTP id S1750831AbdAXJBz (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Jan 2017 06:27:22 -0500
+        Tue, 24 Jan 2017 04:01:55 -0500
 Received: from pps.filterd (m0098420.ppops.net [127.0.0.1])
-        by mx0b-001b2d01.pphosted.com (8.16.0.20/8.16.0.20) with SMTP id v0OBO1uB144479
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Jan 2017 06:27:21 -0500
-Received: from e38.co.us.ibm.com (e38.co.us.ibm.com [32.97.110.159])
-        by mx0b-001b2d01.pphosted.com with ESMTP id 28612wkvu0-1
+        by mx0b-001b2d01.pphosted.com (8.16.0.20/8.16.0.20) with SMTP id v0O8wcIj068595
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Jan 2017 04:01:54 -0500
+Received: from e06smtp14.uk.ibm.com (e06smtp14.uk.ibm.com [195.75.94.110])
+        by mx0b-001b2d01.pphosted.com with ESMTP id 28612we5bw-1
         (version=TLSv1.2 cipher=AES256-SHA bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Jan 2017 06:27:21 -0500
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Jan 2017 04:01:54 -0500
 Received: from localhost
-        by e38.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+        by e06smtp14.uk.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
         for <linux-btrfs@vger.kernel.org> from <borntraeger@de.ibm.com>;
-        Tue, 24 Jan 2017 04:27:19 -0700
-Subject: Re: [PATCH 0/1] btrfs lockdep annotation
-To: fdmanana@gmail.com
+        Tue, 24 Jan 2017 09:01:53 -0000
+From: Christian Borntraeger <borntraeger@de.ibm.com>
+To: Chris Mason <clm@fb.com>
+Cc: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Christian Borntraeger <borntraeger@de.ibm.com>
+Subject: [PATCH 2/2] btrfs: add lockdep annotation for btrfs_log_inode
+Date: Tue, 24 Jan 2017 10:01:47 +0100
+In-Reply-To: <1485248507-6079-1-git-send-email-borntraeger@de.ibm.com>
 References: <20161126134638.GA79987@clm-mbp.masoncoding.com>
  <1485248507-6079-1-git-send-email-borntraeger@de.ibm.com>
- <CAL3q7H4Y08K4fgBe3k3r_P+YikN_z=3H1H+T6zMYJ+pAS99wzw@mail.gmail.com>
-Cc: Chris Mason <clm@fb.com>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-From: Christian Borntraeger <borntraeger@de.ibm.com>
-Date: Tue, 24 Jan 2017 12:27:14 +0100
-MIME-Version: 1.0
-In-Reply-To: <CAL3q7H4Y08K4fgBe3k3r_P+YikN_z=3H1H+T6zMYJ+pAS99wzw@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
-Message-Id: <73669801-4a2e-485e-1251-da8723666e22@de.ibm.com>
+Message-Id: <1485248507-6079-2-git-send-email-borntraeger@de.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 01/24/2017 11:22 AM, Filipe Manana wrote:
-> On Tue, Jan 24, 2017 at 9:01 AM, Christian Borntraeger
-> <borntraeger@de.ibm.com> wrote:
->> Chris,
->>
->> since my bug report about this did not result in any fix and since
-> 
-> It was fixed and the fix landed in 4.10-rc4:
+Add a proper subclass to get rid of the following lockdep
+error.
 
-Thanks, I missed that last pull.
+ [ INFO: possible recursive locking detected ]
+ 4.9.0+ #279 Not tainted
+ ---------------------------------------------
+ vim/4801 is trying to acquire lock:
+  (&ei->log_mutex){+.+...}, at: [<000003ff82057592>]
+btrfs_log_inode+0x182/0xfa8 [btrfs]
 
-> 
-> https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=781feef7e6befafd4d9787d1f7ada1f9ccd504e4
-> 
->> this disables lockdep before the the code that I want to debug runs
->> here is my attempt to fix it.
->> Please double check if the subclass looks right. It seems to work
->> for me but I do not know enough about btrfs to decide if this is
->> right or not.
->>
->> Christian Borntraeger ():
->>   btrfs: add lockdep annotation for btrfs_log_inode
->>
->>  fs/btrfs/tree-log.c    | 2 +-
->>
->> --
->> 2.7.4
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
-> 
+  (&ei->log_mutex){+.+...}, at: [<000003ff82057592>]
+btrfs_log_inode+0x182/0xfa8 [btrfs]
+
+  Possible unsafe locking scenario:
+        CPU0
+        ----
+   lock(&ei->log_mutex);
+   lock(&ei->log_mutex);
+
+                                 *** DEADLOCK ***
+  May be due to missing lock nesting notation
+ 3 locks held by vim/4801:
+  #0:  (&sb->s_type->i_mutex_key#15){+.+.+.}, at: [<000003ff81fc274c>]
+btrfs_sync_file+0x204/0x728 [btrfs]
+  #1:  (sb_internal#2){.+.+..}, at: [<000003ff81fa38e0>]
+start_transaction+0x318/0x770 [btrfs]
+  #2:  (&ei->log_mutex){+.+...}, at: [<000003ff82057592>]
+
+[...]
+ Call Trace:
+ ([<0000000000115ffc>] show_trace+0xe4/0x108)
+  [<00000000001160f8>] show_stack+0x68/0xe0
+  [<0000000000652d52>] dump_stack+0x9a/0xd8
+  [<0000000000209bb0>] __lock_acquire+0xac8/0x1bd0
+  [<000000000020b3c6>] lock_acquire+0x106/0x4a0
+  [<0000000000a1fb36>] mutex_lock_nested+0xa6/0x428
+  [<000003ff82057592>] btrfs_log_inode+0x182/0xfa8 [btrfs]
+  [<000003ff82057c76>] btrfs_log_inode+0x866/0xfa8 [btrfs]
+  [<000003ff81ffe278>] btrfs_log_inode_parent+0x218/0x988 [btrfs]
+  [<000003ff81ffffaa>] btrfs_log_dentry_safe+0x7a/0xa0 [btrfs]
+  [<000003ff81fc29b6>] btrfs_sync_file+0x46e/0x728 [btrfs]
+  [<000000000044aeee>] do_fsync+0x5e/0x90
+  [<000000000044b2ba>] SyS_fsync+0x32/0x40
+  [<0000000000a26786>] system_call+0xd6/0x288
+
+Signed-off-by: Christian Borntraeger <borntraeger@de.ibm.com>
+---
+ fs/btrfs/tree-log.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 3d33c4e..a3ec717 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -4648,7 +4648,7 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+ 		return ret;
+ 	}
+ 
+-	mutex_lock(&BTRFS_I(inode)->log_mutex);
++	mutex_lock_nested(&BTRFS_I(inode)->log_mutex, inode_only);
+ 
+ 	/*
+ 	 * a brute force approach to making sure we get the most uptodate
+-- 
+2.7.4
 

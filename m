@@ -1,110 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:57440 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751328AbdAXAjq (ORCPT
+Received: from mail-yw0-f193.google.com ([209.85.161.193]:35642 "EHLO
+        mail-yw0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750703AbdAXDvZ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 23 Jan 2017 19:39:46 -0500
-Subject: Re: btrfs recovery
-To: Sebastian Gottschall <s.gottschall@dd-wrt.com>,
-        <linux-btrfs@vger.kernel.org>, Duncan <1i5t5.duncan@cox.net>
-References: <7473ea27-9716-33fb-ecec-2ec52fac3820@dd-wrt.com>
- <70489b24-1f36-d4b6-7bbe-63a39a7425d0@cn.fujitsu.com>
- <adcb818c-20b1-7544-8ec4-bf8eed8290c3@dd-wrt.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <12c1c9de-45bc-8594-4295-5bb28f9455b3@cn.fujitsu.com>
-Date: Tue, 24 Jan 2017 08:39:36 +0800
+        Mon, 23 Jan 2017 22:51:25 -0500
+Received: by mail-yw0-f193.google.com with SMTP id 17so19391922ywk.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 23 Jan 2017 19:51:25 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <adcb818c-20b1-7544-8ec4-bf8eed8290c3@dd-wrt.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <20170124000524.GC11778@vader.DHCP.thefacebook.com>
+References: <CAJCQCtRhgxqtrpnsibOPqkMA75Cf=ryRAeTb0Gf-ygy=gjD_Yg@mail.gmail.com>
+ <CAJCQCtT73Zh2F13tg3v4UZC3+rdTMhgC==Ag3LZQ-RZMTpisOg@mail.gmail.com>
+ <CAJCQCtSZyfHdmsaVdEM7iQiKfK-s4Qqs4ORZrE1MCpWCgeCWbw@mail.gmail.com>
+ <CAJCQCtQz5fhYymEgFuxuiactZpWeUSEeCCXFCAEmLTTA6AOZLQ@mail.gmail.com>
+ <20170123213109.GA11778@vader.DHCP.thefacebook.com> <CAJCQCtSVXRXvGmnmfFt5yn_L33a8eCCuuFANxTOyWLrJeqrK9g@mail.gmail.com>
+ <CAJCQCtRip_D7BPhCJDVP53LRoQoEcVrvCf7eyGK9sa8qv23BNQ@mail.gmail.com>
+ <20170123220448.GB11778@vader.DHCP.thefacebook.com> <CAJCQCtQNgvu72GUBpvJtnAH-Sj-fd566HwDpeuGjaPmdtrUO3g@mail.gmail.com>
+ <20170124000524.GC11778@vader.DHCP.thefacebook.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Mon, 23 Jan 2017 20:51:24 -0700
+Message-ID: <CAJCQCtSHx8cEanC7e71akLiRKzi+Rt96CSAoK11Ngud9=n1U-Q@mail.gmail.com>
+Subject: Re: read-only fs, kernel 4.9.0, fs/btrfs/delayed-inode.c:1170 __btrfs_run_delayed_items,
+To: Omar Sandoval <osandov@osandov.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>, agruenba@redhat.com
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Mon, Jan 23, 2017 at 5:05 PM, Omar Sandoval <osandov@osandov.com> wrote:
+> Thanks! Hmm, okay, so it's coming from btrfs_update_delayed_inode()...
+> That's probably us failing btrfs_lookup_inode(), but just to make sure,
+> could you apply the updated diff at the same link as before
+> (https://gist.github.com/osandov/9f223bda27f3e1cd1ab9c1bd634c51a4)? If
+> that's the case, I'm even more confused about what xattrs have to do
+> with it.
+
+[   35.015363] __btrfs_update_delayed_inode(): inode is missing
+[   35.015372] btrfs_update_delayed_inode(ino=2) -> -2
 
 
-At 01/23/2017 07:15 PM, Sebastian Gottschall wrote:
-> Hello again
->
-> by the way. the init-extent-tree is still running (now almost 7 days).
-> is there any chance to find out how long it will take at the end?
->
-> Sebastian
-
-I think it may encounters a dead loop.
-
-If its output doesn't loop(from a large scale), then you could try wait.
-
-But at the point trying --init-extent-tree, your chance to recover your 
-fs is quite low then.
-Sorry for that.
-
-Thanks,
-Qu
-
->
-> Am 20.01.2017 um 02:08 schrieb Qu Wenruo:
->>
->>
->> At 01/19/2017 06:06 PM, Sebastian Gottschall wrote:
->>> Hello
->>>
->>> I have a question. after a power outage my system was turning into a
->>> unrecoverable state using btrfs (kernel 4.9)
->>> since im running --init-extent-tree now for 3 days i'm asking how long
->>> this process normally takes and why it outputs millions of lines like
->>
->> --init-extent-tree will trash *ALL* current extent tree, and *REBUILD*
->> them from fs-tree.
->>
->> This can takes a long time depending on the size of the fs, and how
->> many shared extents there are (snapshots and reflinks all counts).
->>
->> Such a huge operation should only be used if you're sure only extent
->> tree is corrupted, and other tree are all OK.
->>
->> Or you'll just totally screw your fs further, especially when
->> interrupted.
->>
->>>
->>> Backref 1562890240 root 262 owner 483059214 offset 0 num_refs 0 not
->>> found in extent tree
->>> Incorrect local backref count on 1562890240 root 262 owner 483059214
->>> offset 0 found 1 wanted 0 back 0x23b0211d0
->>> backpointer mismatch on [1562890240 4096]
->>
->> This is common, since --init-extent-tree trash all extent tree, so
->> every tree-block/data extent will trigger such output
->>
->>> adding new data backref on 1562890240 root 262 owner 483059214 offset 0
->>> found 1
->>> Repaired extent references for 1562890240
->>
->> But as you see, it repaired the extent tree by adding back
->> EXTENT_ITEM/METADATA_ITEM into extent tree, so far it works.
->>
->> If you see such output with all the same bytenr, then things goes
->> really wrong and maybe a dead loop.
->>
->>
->> Personally speaking, normal problem like failed to mount should not
->> need --init-extent-tree.
->>
->> Especially, extent-tree corruption normally is not really related to
->> mount failure, but sudden remount to RO and kernel wanring.
->>
->> Thanks,
->> Qu
->>
->>>
->>> please avoid typical answers like "potential dangerous operation" since
->>> all repair options are declared as potenial dangerous.
->>>
->>>
->>> Sebastian
->>>
->>
->>
->>
->
->
+osandov-9f223b_2-dmesg.log
+https://drive.google.com/open?id=0B_2Asp8DGjJ9UnNSRXpualprWHM
 
 
+-- 
+Chris Murphy

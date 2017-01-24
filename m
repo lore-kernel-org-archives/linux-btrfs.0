@@ -1,48 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f175.google.com ([209.85.192.175]:33606 "EHLO
-        mail-pf0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751142AbdAXULK (ORCPT
+Received: from mail-yb0-f193.google.com ([209.85.213.193]:35135 "EHLO
+        mail-yb0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750715AbdAXUNt (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Jan 2017 15:11:10 -0500
-Received: by mail-pf0-f175.google.com with SMTP id y143so52326050pfb.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Jan 2017 12:11:10 -0800 (PST)
-Date: Tue, 24 Jan 2017 12:10:38 -0800
-From: Omar Sandoval <osandov@osandov.com>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>, agruenba@redhat.com
-Subject: Re: read-only fs, kernel 4.9.0, fs/btrfs/delayed-inode.c:1170
- __btrfs_run_delayed_items,
-Message-ID: <20170124201038.GB2853@vader>
-References: <CAJCQCtRip_D7BPhCJDVP53LRoQoEcVrvCf7eyGK9sa8qv23BNQ@mail.gmail.com>
- <20170123220448.GB11778@vader.DHCP.thefacebook.com>
- <CAJCQCtQNgvu72GUBpvJtnAH-Sj-fd566HwDpeuGjaPmdtrUO3g@mail.gmail.com>
- <20170124000524.GC11778@vader.DHCP.thefacebook.com>
- <CAJCQCtSHx8cEanC7e71akLiRKzi+Rt96CSAoK11Ngud9=n1U-Q@mail.gmail.com>
- <20170124174907.GA27340@vader>
- <CAJCQCtQVYdc9JK_B=XCrTBE6YYjqz23D3rEmRLoJUbM7gQVQSQ@mail.gmail.com>
- <20170124185644.GA2853@vader>
- <CAJCQCtTcanEcoPGwLxBcLUjzgt5MZYdDMpEvk1vgX3ZVPizHvg@mail.gmail.com>
- <CAJCQCtQvt=xYtAGwPXk1Vhb7pmVNCbpFOg+W3Eh=-L9LSJkbaw@mail.gmail.com>
+        Tue, 24 Jan 2017 15:13:49 -0500
+Received: by mail-yb0-f193.google.com with SMTP id j82so7942131ybg.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Jan 2017 12:13:48 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
 In-Reply-To: <CAJCQCtQvt=xYtAGwPXk1Vhb7pmVNCbpFOg+W3Eh=-L9LSJkbaw@mail.gmail.com>
+References: <CAJCQCtQz5fhYymEgFuxuiactZpWeUSEeCCXFCAEmLTTA6AOZLQ@mail.gmail.com>
+ <20170123213109.GA11778@vader.DHCP.thefacebook.com> <CAJCQCtSVXRXvGmnmfFt5yn_L33a8eCCuuFANxTOyWLrJeqrK9g@mail.gmail.com>
+ <CAJCQCtRip_D7BPhCJDVP53LRoQoEcVrvCf7eyGK9sa8qv23BNQ@mail.gmail.com>
+ <20170123220448.GB11778@vader.DHCP.thefacebook.com> <CAJCQCtQNgvu72GUBpvJtnAH-Sj-fd566HwDpeuGjaPmdtrUO3g@mail.gmail.com>
+ <20170124000524.GC11778@vader.DHCP.thefacebook.com> <CAJCQCtSHx8cEanC7e71akLiRKzi+Rt96CSAoK11Ngud9=n1U-Q@mail.gmail.com>
+ <20170124174907.GA27340@vader> <CAJCQCtQVYdc9JK_B=XCrTBE6YYjqz23D3rEmRLoJUbM7gQVQSQ@mail.gmail.com>
+ <20170124185644.GA2853@vader> <CAJCQCtTcanEcoPGwLxBcLUjzgt5MZYdDMpEvk1vgX3ZVPizHvg@mail.gmail.com>
+ <CAJCQCtQvt=xYtAGwPXk1Vhb7pmVNCbpFOg+W3Eh=-L9LSJkbaw@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Tue, 24 Jan 2017 13:13:47 -0700
+Message-ID: <CAJCQCtQjQtP5XCbdphLX1BTU382xn0b05oSF5D-WCw9E6U5yqA@mail.gmail.com>
+Subject: Re: read-only fs, kernel 4.9.0, fs/btrfs/delayed-inode.c:1170 __btrfs_run_delayed_items,
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Omar Sandoval <osandov@osandov.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>, agruenba@redhat.com
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 24, 2017 at 12:19:29PM -0700, Chris Murphy wrote:
-> I can reproduce it on another laptop with Fedora 25. I haven't tried
-> to reproduce it in a VM. In this case, it's a single partition Btrfs
-> volume, completely stock, and is about 5 weeks old, no crashes or
-> forced shutdowns. The HP uses a Samsung NVMe SSD, whereas on this
-> Macbook Pro it's a Samsung SATA SSD.
-> 
-> dmesg
-> https://drive.google.com/open?id=0B_2Asp8DGjJ9cjhSRUJxc1k3NVE
-> 
-> 
-> Chris Murphy
+OK I've reproduced it in a virt-manager VM with Fedora Rawhide from a
+week old ISO, which is using btrfs-progs 4.9 and kernel 4.10-rc3.
 
-Hm, still no luck, maybe it's a Server vs Workstation thing? I'll try
-installing Workstation. In the meantime, I noticed that in both of the
-traces, systemd-tmpfiles was the process that tripped the WARN_ONCE().
-Could you dump the contents of /{etc,run,usr/lib}/tmpfiles.d somewhere?
+Get this though. The problem doesn't happen with boot param selinux=0,
+either in the VM or one of the laptops. Whereas the problem happens
+still with enforcing=0. So this could be an selinux xattr that's
+involved.
+
+Chris Murphy

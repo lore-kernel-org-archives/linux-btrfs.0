@@ -1,118 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f169.google.com ([209.85.192.169]:33838 "EHLO
-        mail-pf0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750835AbdAXAFw (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:57440 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751328AbdAXAjq (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 23 Jan 2017 19:05:52 -0500
-Received: by mail-pf0-f169.google.com with SMTP id e4so44860160pfg.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 23 Jan 2017 16:05:51 -0800 (PST)
-Date: Mon, 23 Jan 2017 16:05:24 -0800
-From: Omar Sandoval <osandov@osandov.com>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>, agruenba@redhat.com
-Subject: Re: read-only fs, kernel 4.9.0, fs/btrfs/delayed-inode.c:1170
- __btrfs_run_delayed_items,
-Message-ID: <20170124000524.GC11778@vader.DHCP.thefacebook.com>
-References: <CAJCQCtRhgxqtrpnsibOPqkMA75Cf=ryRAeTb0Gf-ygy=gjD_Yg@mail.gmail.com>
- <CAJCQCtT73Zh2F13tg3v4UZC3+rdTMhgC==Ag3LZQ-RZMTpisOg@mail.gmail.com>
- <CAJCQCtSZyfHdmsaVdEM7iQiKfK-s4Qqs4ORZrE1MCpWCgeCWbw@mail.gmail.com>
- <CAJCQCtQz5fhYymEgFuxuiactZpWeUSEeCCXFCAEmLTTA6AOZLQ@mail.gmail.com>
- <20170123213109.GA11778@vader.DHCP.thefacebook.com>
- <CAJCQCtSVXRXvGmnmfFt5yn_L33a8eCCuuFANxTOyWLrJeqrK9g@mail.gmail.com>
- <CAJCQCtRip_D7BPhCJDVP53LRoQoEcVrvCf7eyGK9sa8qv23BNQ@mail.gmail.com>
- <20170123220448.GB11778@vader.DHCP.thefacebook.com>
- <CAJCQCtQNgvu72GUBpvJtnAH-Sj-fd566HwDpeuGjaPmdtrUO3g@mail.gmail.com>
+        Mon, 23 Jan 2017 19:39:46 -0500
+Subject: Re: btrfs recovery
+To: Sebastian Gottschall <s.gottschall@dd-wrt.com>,
+        <linux-btrfs@vger.kernel.org>, Duncan <1i5t5.duncan@cox.net>
+References: <7473ea27-9716-33fb-ecec-2ec52fac3820@dd-wrt.com>
+ <70489b24-1f36-d4b6-7bbe-63a39a7425d0@cn.fujitsu.com>
+ <adcb818c-20b1-7544-8ec4-bf8eed8290c3@dd-wrt.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <12c1c9de-45bc-8594-4295-5bb28f9455b3@cn.fujitsu.com>
+Date: Tue, 24 Jan 2017 08:39:36 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAJCQCtQNgvu72GUBpvJtnAH-Sj-fd566HwDpeuGjaPmdtrUO3g@mail.gmail.com>
+In-Reply-To: <adcb818c-20b1-7544-8ec4-bf8eed8290c3@dd-wrt.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 23, 2017 at 04:48:54PM -0700, Chris Murphy wrote:
-> On Mon, Jan 23, 2017 at 3:04 PM, Omar Sandoval <osandov@osandov.com> wrote:
-> > On Mon, Jan 23, 2017 at 02:55:21PM -0700, Chris Murphy wrote:
-> >> On Mon, Jan 23, 2017 at 2:50 PM, Chris Murphy
-> >> > I haven't found the commit for that patch, so maybe it's something
-> >> > with the combination of that patch and the previous commit.
-> >>
-> >> I think that's provably not the case based on the bisect log, because
-> >> I hit the problem with kernel that has only the commit, as well as the
-> >> commit plus the updated patch. So the patch neither causes nor fixes
-> >> the problem I'm experiencing.
-> >>
-> >> If it's useful the btrfs-image is here; mentioned in a previous
-> >> thread, this image mounts find, btrfs check --mode=original has no
-> >> complaints, but btrfs check --mode=lowmem has complaints. There's no
-> >> problem using the parent subvolume as rootfs. Only snapshots of that
-> >> subvolume result in the problem.
-> >> https://drive.google.com/open?id=0B_2Asp8DGjJ9ZmNxdEw1RDBPcTA
-> >
-> > What I meant to ask was if there were false positives/false negatives in
-> > booting from the subvolume that would lead you to doubt the results of
-> > the git bisect, but it sounds like it's 100% reproducible for you?
-> 
-> OH I see. Yes. It happens within 60 seconds, during startup or shortly
-> after gnome-shell login. So it's really clear that it definitely
-> happens or does not happen. But it requires two things to be true:
-> kernel version 4.9 or higher *and* a normal rw snapshot is used as
-> rootfs. If either of those things is not true, then the problem
-> doesn't happen.
-> 
-> I've also tried building a 4.9 kernel with CONFIG_BTRFS_DEBUG and
-> CONFIG_BTRFS_FS_CHECK_INTEGRITY with check_int, but the results are
-> the same - no additional debug info shown by dmesg.
-> 
-> 
-> > I'll take a look at the image. In the meantime, could you try booting
-> > with https://gist.github.com/osandov/9f223bda27f3e1cd1ab9c1bd634c51a4
-> > applied on top of 4.9 so we can hopefully narrow it down? It'd also be
-> > great to know if it always fails the same way or if it varies.
-> 
-> Appears to always fail the same way.
-> 
-> [chris@f25h ~]$ dmesg | grep -i btrfs
-> [    2.705333] Btrfs loaded, crc32c=crc32c-intel
-> [    2.705905] BTRFS: device label fedora devid 1 transid 113458 /dev/nvme0n1p4
-> [    2.764563] BTRFS: device label fedora devid 2 transid 113458 /dev/nvme0n1p6
-> [    3.990957] BTRFS info (device nvme0n1p6): disk space caching is enabled
-> [    3.990988] BTRFS info (device nvme0n1p6): has skinny extents
-> [    4.010618] BTRFS info (device nvme0n1p6): detected SSD devices,
-> enabling SSD mode
-> [    4.551046] BTRFS info (device nvme0n1p6): disk space caching is enabled
-> [   13.906182] btrfs_update_delayed_inode() -> -2
-> [   13.906261] WARNING: CPU: 0 PID: 488 at
-> fs/btrfs/delayed-inode.c:1179 __btrfs_run_delayed_items+0x1b7/0x660
-> [btrfs]
-> [   13.906266] BTRFS: Transaction aborted (error -2)
-> [   13.906460]  tpm_tis acpi_thermal_rel lis3lv02d tpm_tis_core
-> input_polldev acpi_pad wmi nfs_acl hp_wireless tpm lockd grace sunrpc
-> btrfs i915 xor raid6_pq i2c_algo_bit drm_kms_helper drm crc32c_intel
-> nvme serio_raw nvme_core i2c_hid video fjes
-> [   13.906635]  [<ffffffffc05417a0>] ?
-> __btrfs_release_delayed_node+0x70/0x1c0 [btrfs]
-> [   13.906690]  [<ffffffffc0542467>]
-> __btrfs_run_delayed_items+0x1b7/0x660 [btrfs]
-> [   13.906743]  [<ffffffffc0542fd3>] btrfs_run_delayed_items+0x13/0x20 [btrfs]
-> [   13.906793]  [<ffffffffc04e502a>]
-> btrfs_commit_transaction+0x23a/0xa20 [btrfs]
-> [   13.906853]  [<ffffffffc050345c>] ?
-> btrfs_wait_ordered_range+0x7c/0x100 [btrfs]
-> [   13.906910]  [<ffffffffc04fe07b>] btrfs_sync_file+0x2fb/0x3e0 [btrfs]
-> [   13.906970] BTRFS: error (device nvme0n1p6) in
-> __btrfs_run_delayed_items:1179: errno=-2 No such entry
-> [   13.906976] BTRFS info (device nvme0n1p6): forced readonly
-> [   13.906982] BTRFS warning (device nvme0n1p6): Skipping commit of
-> aborted transaction.
-> [   13.906989] BTRFS: error (device nvme0n1p6) in
-> cleanup_transaction:1850: errno=-2 No such entry
-> [   13.907943] BTRFS info (device nvme0n1p6): delayed_refs has NO entry
-> 
-> Complete dmesg tags/v4.9 + osandov/9f223b
-> https://drive.google.com/open?id=0B_2Asp8DGjJ9N1g5Wm9lVHpGWG8
 
-Thanks! Hmm, okay, so it's coming from btrfs_update_delayed_inode()...
-That's probably us failing btrfs_lookup_inode(), but just to make sure,
-could you apply the updated diff at the same link as before
-(https://gist.github.com/osandov/9f223bda27f3e1cd1ab9c1bd634c51a4)? If
-that's the case, I'm even more confused about what xattrs have to do
-with it.
+
+At 01/23/2017 07:15 PM, Sebastian Gottschall wrote:
+> Hello again
+>
+> by the way. the init-extent-tree is still running (now almost 7 days).
+> is there any chance to find out how long it will take at the end?
+>
+> Sebastian
+
+I think it may encounters a dead loop.
+
+If its output doesn't loop(from a large scale), then you could try wait.
+
+But at the point trying --init-extent-tree, your chance to recover your 
+fs is quite low then.
+Sorry for that.
+
+Thanks,
+Qu
+
+>
+> Am 20.01.2017 um 02:08 schrieb Qu Wenruo:
+>>
+>>
+>> At 01/19/2017 06:06 PM, Sebastian Gottschall wrote:
+>>> Hello
+>>>
+>>> I have a question. after a power outage my system was turning into a
+>>> unrecoverable state using btrfs (kernel 4.9)
+>>> since im running --init-extent-tree now for 3 days i'm asking how long
+>>> this process normally takes and why it outputs millions of lines like
+>>
+>> --init-extent-tree will trash *ALL* current extent tree, and *REBUILD*
+>> them from fs-tree.
+>>
+>> This can takes a long time depending on the size of the fs, and how
+>> many shared extents there are (snapshots and reflinks all counts).
+>>
+>> Such a huge operation should only be used if you're sure only extent
+>> tree is corrupted, and other tree are all OK.
+>>
+>> Or you'll just totally screw your fs further, especially when
+>> interrupted.
+>>
+>>>
+>>> Backref 1562890240 root 262 owner 483059214 offset 0 num_refs 0 not
+>>> found in extent tree
+>>> Incorrect local backref count on 1562890240 root 262 owner 483059214
+>>> offset 0 found 1 wanted 0 back 0x23b0211d0
+>>> backpointer mismatch on [1562890240 4096]
+>>
+>> This is common, since --init-extent-tree trash all extent tree, so
+>> every tree-block/data extent will trigger such output
+>>
+>>> adding new data backref on 1562890240 root 262 owner 483059214 offset 0
+>>> found 1
+>>> Repaired extent references for 1562890240
+>>
+>> But as you see, it repaired the extent tree by adding back
+>> EXTENT_ITEM/METADATA_ITEM into extent tree, so far it works.
+>>
+>> If you see such output with all the same bytenr, then things goes
+>> really wrong and maybe a dead loop.
+>>
+>>
+>> Personally speaking, normal problem like failed to mount should not
+>> need --init-extent-tree.
+>>
+>> Especially, extent-tree corruption normally is not really related to
+>> mount failure, but sudden remount to RO and kernel wanring.
+>>
+>> Thanks,
+>> Qu
+>>
+>>>
+>>> please avoid typical answers like "potential dangerous operation" since
+>>> all repair options are declared as potenial dangerous.
+>>>
+>>>
+>>> Sebastian
+>>>
+>>
+>>
+>>
+>
+>
+
+

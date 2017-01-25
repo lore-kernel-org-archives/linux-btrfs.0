@@ -1,67 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52787 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753416AbdAZRnr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 26 Jan 2017 12:43:47 -0500
-Date: Thu, 26 Jan 2017 18:28:07 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, linux-btrfs@vger.kernel.org,
-        cmason@fb.com, Josef Bacik <jbacik@fb.com>, dsterba@suse.com
-Subject: Re: [PATCH] Btrfs: fix wrong argument for btrfs_lookup_ordered_range
-Message-ID: <20170126172807.GH11951@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1485302331-20167-1-git-send-email-bo.li.liu@oracle.com>
- <10463170.nZChnp8t2y@localhost.localdomain>
- <20170125150618.GA25499@dhcp-amer-vpn-adc-anyconnect-10-154-187-238.vpn.oracle.com>
+Received: from mail-pg0-f47.google.com ([74.125.83.47]:34779 "EHLO
+        mail-pg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750984AbdAYCjL (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 24 Jan 2017 21:39:11 -0500
+Received: by mail-pg0-f47.google.com with SMTP id 14so59991348pgg.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Jan 2017 18:39:11 -0800 (PST)
+Date: Tue, 24 Jan 2017 18:38:44 -0800
+From: Omar Sandoval <osandov@osandov.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Chris Murphy <lists@colorremedies.com>, kernel-team@fb.com,
+        Andreas Gruenbacher <agruenba@redhat.com>
+Subject: Re: [PATCH] Btrfs: disable xattr operations on subvolume directories
+Message-ID: <20170125023844.GA11245@vader>
+References: <c96f9f4d14c7a40913a39856ca8f065d37113372.1485311744.git.osandov@fb.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170125150618.GA25499@dhcp-amer-vpn-adc-anyconnect-10-154-187-238.vpn.oracle.com>
+In-Reply-To: <c96f9f4d14c7a40913a39856ca8f065d37113372.1485311744.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 25, 2017 at 07:06:18AM -0800, Liu Bo wrote:
-> On Wed, Jan 25, 2017 at 01:49:09PM +0530, Chandan Rajendra wrote:
-> > On Tuesday, January 24, 2017 03:58:51 PM Liu Bo wrote:
-> > > Commit "d0b7da88 Btrfs: btrfs_page_mkwrite: Reserve space in sectorsized units"
-> > > did this, but btrfs_lookup_ordered_range expects a 'length' rather than a
-> > > 'page_end'.
-> > > 
-> > > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> > > ---
-> > > Is this a candidate for stable?
-> > > 
-> > >  fs/btrfs/inode.c | 2 +-
-> > >  1 file changed, 1 insertion(+), 1 deletion(-)
-> > > 
-> > > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> > > index 4e02426..366cf0b 100644
-> > > --- a/fs/btrfs/inode.c
-> > > +++ b/fs/btrfs/inode.c
-> > > @@ -9023,7 +9023,7 @@ int btrfs_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
-> > >  	 * we can't set the delalloc bits if there are pending ordered
-> > >  	 * extents.  Drop our locks and wait for them to finish
-> > >  	 */
-> > > -	ordered = btrfs_lookup_ordered_range(inode, page_start, page_end);
-> > > +	ordered = btrfs_lookup_ordered_range(inode, page_start, PAGE_SIZE);
-> > >  	if (ordered) {
-> > >  		unlock_extent_cached(io_tree, page_start, page_end,
-> > >  				     &cached_state, GFP_NOFS);
-> > > 
-> > 
-> > Thanks for fixing this,
-> > Reviewed-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-> > 
-> > As for the question about whether this commit should be merged into the stable
-> > trees ... I am not sure about that since I don't notice any sort of filesystem
-> > corruption that can be caused by the current code i.e. With the existing code,
-> > apart from any ordered extents that map the page in question, we are most
-> > likely to be *unnecessarily* starting i/o on ordered extents that don't map
-> > the file offset range covered by the page. Chris, Josef or David, Please let
-> > us know your thoughts on this.
+On Tue, Jan 24, 2017 at 06:38:02PM -0800, Omar Sandoval wrote:
+> From: Omar Sandoval <osandov@fb.com>
 > 
-> It could be a performance regression which causes fault writes have
-> unnecessary waits instead of a real corruption.
+> When you snapshot a subvolume containing a subvolume, you get a
+> placeholder read-only directory where the subvolume would be. These
+> directory inodes have ->i_ops set to btrfs_dir_ro_inode_operations.
+> Previously, this didn't include the xattr operation callbacks. The
+> conversion to xattr_handlers missed this case, leading to bogus attempts
+> to set xattrs on these inodes. This manifested itself as failures when
+> running delayed inodes.
+> 
+> To fix this, clear the IOP_XATTR in ->i_opflags on these inodes.
+> 
+> Fixes: 6c6ef9f26e59 ("xattr: Stop calling {get,set,remove}xattr inode operations")
+> Cc: Andreas Gruenbacher <agruenba@redhat.com>
+> Reported-by: Chris Murphy <lists@colorremedies.com>
+> Signed-off-by: Omar Sandoval <osandov@fb.com>
+> ---
+> Applies to v4.10-rc4. Chris, this fixes the issue for me, could you please test
+> it out? Andreas, does this make sense? I'll try to cook up an xfstest for this.
+> 
+>  fs/btrfs/inode.c | 7 +++++--
+>  1 file changed, 5 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 4e024260ad71..3dacf0786428 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -3835,10 +3835,12 @@ static int btrfs_read_locked_inode(struct inode *inode)
+>  		break;
+>  	case S_IFDIR:
+>  		inode->i_fop = &btrfs_dir_file_operations;
+> -		if (root == fs_info->tree_root)
+> +		if (root == fs_info->tree_root) {
+>  			inode->i_op = &btrfs_dir_ro_inode_operations;
+> -		else
+> +			inode->i_opflags &= ~IOP_XATTR;
+> +		} else {
+>  			inode->i_op = &btrfs_dir_inode_operations;
+> +		}
+>  		break;
+>  	case S_IFLNK:
+>  		inode->i_op = &btrfs_symlink_inode_operations;
+> @@ -5710,6 +5712,7 @@ static struct inode *new_simple_dir(struct super_block *s,
+>  
+>  	inode->i_ino = BTRFS_EMPTY_SUBVOL_DIR_OBJECTID;
+>  	inode->i_op = &btrfs_dir_ro_inode_operations;
+> +	inode->i_opflags &= ~IOP_XATTR;
+>  	inode->i_fop = &simple_dir_operations;
+>  	inode->i_mode = S_IFDIR | S_IRUGO | S_IWUSR | S_IXUGO;
+>  	inode->i_mtime = current_time(inode);
+> -- 
+> 2.11.0
+> 
 
-Does not seem to be urgent for stable, but I'll consider it next time
-doing a stable round updates.
+Forgot to cc stable, but 4.9 needs this.

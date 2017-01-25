@@ -1,86 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from metis.ext.4.pengutronix.de ([92.198.50.35]:49247 "EHLO
-        metis.ext.4.pengutronix.de" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751558AbdAYPtT (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:39344 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750858AbdAYQVJ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 25 Jan 2017 10:49:19 -0500
-Subject: Re: NULL pointer dereference in btrfs_async_reclaim_metadata_space
-To: bo.li.liu@oracle.com
-References: <29d12d8d-30f6-f0d4-847e-d11edf7aa9f5@pengutronix.de>
- <20170125154325.GA13419@dhcp-amer-vpn-adc-anyconnect-10-154-187-238.vpn.oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-From: Marc Kleine-Budde <mkl@pengutronix.de>
-Message-ID: <0981ebaa-1f22-6586-a450-c0e6f689901e@pengutronix.de>
-Date: Wed, 25 Jan 2017 16:47:19 +0100
+        Wed, 25 Jan 2017 11:21:09 -0500
+Date: Wed, 25 Jan 2017 08:20:41 -0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Cc: Matt McKinnon <matt@techsquare.com>, linux-btrfs@vger.kernel.org
+Subject: Re: Hard crash on 4.9.5
+Message-ID: <20170125162041.GB13419@dhcp-amer-vpn-adc-anyconnect-10-154-187-238.vpn.oracle.com>
+Reply-To: bo.li.liu@oracle.com
+References: <83c1a49a-b2ea-c7b6-151d-cbd15b6c9c93@techsquare.com>
+ <b1779afa-a3c0-b86a-f3bb-f2b469bd6c9b@mendix.com>
 MIME-Version: 1.0
-In-Reply-To: <20170125154325.GA13419@dhcp-amer-vpn-adc-anyconnect-10-154-187-238.vpn.oracle.com>
-Content-Type: multipart/signed; micalg=pgp-sha512;
- protocol="application/pgp-signature";
- boundary="SIdoN441tn5WcM2mSE19l2cF45p1kw183"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <b1779afa-a3c0-b86a-f3bb-f2b469bd6c9b@mendix.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---SIdoN441tn5WcM2mSE19l2cF45p1kw183
-Content-Type: multipart/mixed; boundary="E8IhMVbGriJ8rOr9wjVoFe9XhNFmpNS1g";
- protected-headers="v1"
-From: Marc Kleine-Budde <mkl@pengutronix.de>
-To: bo.li.liu@oracle.com
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <0981ebaa-1f22-6586-a450-c0e6f689901e@pengutronix.de>
-Subject: Re: NULL pointer dereference in btrfs_async_reclaim_metadata_space
-References: <29d12d8d-30f6-f0d4-847e-d11edf7aa9f5@pengutronix.de>
- <20170125154325.GA13419@dhcp-amer-vpn-adc-anyconnect-10-154-187-238.vpn.oracle.com>
-In-Reply-To: <20170125154325.GA13419@dhcp-amer-vpn-adc-anyconnect-10-154-187-238.vpn.oracle.com>
+On Mon, Jan 23, 2017 at 09:27:22PM +0100, Hans van Kranenburg wrote:
+> On 01/23/2017 09:03 PM, Matt McKinnon wrote:
+> > Wondering what to do about this error which says 'reboot needed'.  Has
+> > happened a three times in the past week:
+> > 
+> > Jan 23 14:16:17 my_machine kernel: [ 2568.595648] BTRFS error (device
+> > sda1): err add delayed dir index item(index: 23810) into the deletion
+> > tree of the delayed node(root id: 257, inode id: 2661433, errno: -17)
+> > Jan 23 14:16:17 my_machine kernel: [ 2568.611010] ------------[ cut here
+> > ]------------
+> > Jan 23 14:16:17 my_machine kernel: [ 2568.615628] kernel BUG at
+> > fs/btrfs/delayed-inode.c:1557!
+> > Jan 23 14:16:17 my_machine kernel: [ 2568.620942] invalid opcode: 0000
+> > [#1] SMP
+> > [...]
+> 
+> The purpose of the code involved is that if you create a directory or
+> file and quickly remove it again, the filesystem doesn't need to do two
+> disk writes, it can just erase it again from its memory before writing
+> anything to disk.
+> 
+> ---- 8< more ----
+> 
+> This is when the functionality was added:
+> 
+> https://git.kernel.org/cgit/linux/kernel/git/stable/linux-stable.git/commit/?id=16cdcec736cd214350cdb591bf1091f8beedefa0
+> 
+> If you look for "err add delayed dir" in the source code of that commit
+> message, you see where the error message is constructed
+> 
+> errno: -17, just after it called __btrfs_add_delayed_insertion_item
+> 
+> __btrfs_add_delayed_insertion_item calls __btrfs_add_delayed_item, and
+> the only non-0 return in that function is: return -EEXIST, which is -17
+> 
+> I think this means you added a file or directory, and the kernel code
+> tried to add adding the file twice to the list of additions, which it
+> has no way to deal with except making the whole kernel crash.
+> 
 
---E8IhMVbGriJ8rOr9wjVoFe9XhNFmpNS1g
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+This was happening while doing unlink, so I think it encounters a twice
+deletion somehow.
 
-On 01/25/2017 04:43 PM, Liu Bo wrote:
-> On Wed, Jan 25, 2017 at 10:31:32AM +0100, Marc Kleine-Budde wrote:
->> Hello,
->>
->> I'm using debian's latest 4.9 Kernel on a 32bit armhf SMP board. The
->> filesystem is in raid1 mode using two harddrives. After the system
->> crashed (for yet unknown reason) the mounting of the raid1 failed
->> with the following backtrace:
->=20
-> Since this was happening at mount stage, it seems like our fs_root is
-> not set up yet, could you please try this debugging one?
+Thanks,
 
-Since this is my production system, I've mounted the FS in the mean time
-on an amd64 (debian kernel v4.8.15-2) and it worked without problems.
+-liubo
 
-I'll try to compile a kernel with your patch for the affected systemm
-though.
-
-Marc
-
---=20
-Pengutronix e.K.                  | Marc Kleine-Budde           |
-Industrial Linux Solutions        | Phone: +49-231-2826-924     |
-Vertretung West/Dortmund          | Fax:   +49-5121-206917-5555 |
-Amtsgericht Hildesheim, HRA 2686  | http://www.pengutronix.de   |
-
-
---E8IhMVbGriJ8rOr9wjVoFe9XhNFmpNS1g--
-
---SIdoN441tn5WcM2mSE19l2cF45p1kw183
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCgAdFiEES2FAuYbJvAGobdVQPTuqJaypJWoFAliIyIcACgkQPTuqJayp
-JWozMgf9ENej4VGWa7xJgHP10Q9zctu1E/PlVD7doomLbERtJ4N/cIxoxeFrQqTb
-Xq/TM6DrwKlNP/bsUMlNgw5/PbxFyT2V+joezpA8Nf1XdjRjLeUfxGOK7W8m6m21
-ohpdIdWU+8j+FXfx+KbBCZdWW3nusX8HoI/ngf/vgaMpAB5OS55PrFKsD6/rRVzJ
-q6JFfk1O7miewrnRndTYg9V4M7AiLhkxpKFLNYx3r2phF685OModbTFIALilCFEw
-cUTYChItIGEV87pjJyOW4zNqQceheg24UjIgPs8ENwOqY5iLhQYUDaWPPipc7mQi
-M46oi8/HuriW7mFdEv1kv/ZpluSX2w==
-=yYtK
------END PGP SIGNATURE-----
-
---SIdoN441tn5WcM2mSE19l2cF45p1kw183--
+> ---- >8 ----
+> 
+> A while ago someone reported this on IRC, running a 4.8.13 kernel.
+> (that's when I looked up the above info). I can also find it in Oct 2016
+> in my IRC logs, but without any info on kernel version.
+> 
+> Anyway, it seems to point to something that's going wrong with changes
+> that are *not* on disk *yet*, and the crash is preventing .
+> 
+> -- 
+> Hans van Kranenburg
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

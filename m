@@ -1,83 +1,136 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:39344 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750858AbdAYQVJ (ORCPT
+Received: from mail-qt0-f177.google.com ([209.85.216.177]:35459 "EHLO
+        mail-qt0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751029AbdAYQvj (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 25 Jan 2017 11:21:09 -0500
-Date: Wed, 25 Jan 2017 08:20:41 -0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Cc: Matt McKinnon <matt@techsquare.com>, linux-btrfs@vger.kernel.org
-Subject: Re: Hard crash on 4.9.5
-Message-ID: <20170125162041.GB13419@dhcp-amer-vpn-adc-anyconnect-10-154-187-238.vpn.oracle.com>
-Reply-To: bo.li.liu@oracle.com
-References: <83c1a49a-b2ea-c7b6-151d-cbd15b6c9c93@techsquare.com>
- <b1779afa-a3c0-b86a-f3bb-f2b469bd6c9b@mendix.com>
+        Wed, 25 Jan 2017 11:51:39 -0500
+Received: by mail-qt0-f177.google.com with SMTP id x49so26192717qtc.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 25 Jan 2017 08:51:39 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <b1779afa-a3c0-b86a-f3bb-f2b469bd6c9b@mendix.com>
+From: Seamus Connor <seamushc@gmail.com>
+Date: Wed, 25 Jan 2017 09:51:17 -0700
+Message-ID: <CAE1699BtC+T3uVopV0++PY7g_T=SURuALNJtwYOdFTQi7jcjSg@mail.gmail.com>
+Subject: Potential BTRFS receive bug
+To: linux-btrfs@vger.kernel.org
+Content-Type: multipart/mixed; boundary=001a11488ab8ce23620546ee0bb2
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 23, 2017 at 09:27:22PM +0100, Hans van Kranenburg wrote:
-> On 01/23/2017 09:03 PM, Matt McKinnon wrote:
-> > Wondering what to do about this error which says 'reboot needed'.  Has
-> > happened a three times in the past week:
-> > 
-> > Jan 23 14:16:17 my_machine kernel: [ 2568.595648] BTRFS error (device
-> > sda1): err add delayed dir index item(index: 23810) into the deletion
-> > tree of the delayed node(root id: 257, inode id: 2661433, errno: -17)
-> > Jan 23 14:16:17 my_machine kernel: [ 2568.611010] ------------[ cut here
-> > ]------------
-> > Jan 23 14:16:17 my_machine kernel: [ 2568.615628] kernel BUG at
-> > fs/btrfs/delayed-inode.c:1557!
-> > Jan 23 14:16:17 my_machine kernel: [ 2568.620942] invalid opcode: 0000
-> > [#1] SMP
-> > [...]
-> 
-> The purpose of the code involved is that if you create a directory or
-> file and quickly remove it again, the filesystem doesn't need to do two
-> disk writes, it can just erase it again from its memory before writing
-> anything to disk.
-> 
-> ---- 8< more ----
-> 
-> This is when the functionality was added:
-> 
-> https://git.kernel.org/cgit/linux/kernel/git/stable/linux-stable.git/commit/?id=16cdcec736cd214350cdb591bf1091f8beedefa0
-> 
-> If you look for "err add delayed dir" in the source code of that commit
-> message, you see where the error message is constructed
-> 
-> errno: -17, just after it called __btrfs_add_delayed_insertion_item
-> 
-> __btrfs_add_delayed_insertion_item calls __btrfs_add_delayed_item, and
-> the only non-0 return in that function is: return -EEXIST, which is -17
-> 
-> I think this means you added a file or directory, and the kernel code
-> tried to add adding the file twice to the list of additions, which it
-> has no way to deal with except making the whole kernel crash.
-> 
+--001a11488ab8ce23620546ee0bb2
+Content-Type: text/plain; charset=UTF-8
 
-This was happening while doing unlink, so I think it encounters a twice
-deletion somehow.
+Hello,
+
+In evaluating btrfs for my use case, I stumbled on what appears to be a bug.
+Originally, I created two lvm logical volumes on the same physical device each
+with a btrfs file system.  I then cloned the linux kernel into the first one,
+then attempted to do a btrfs send/receive to "backup" the first filesystem. It
+was my intent to continue on and experiment with incremental backups using
+btrfs.  However, the first time I ran the 'receive' command it failed with the
+following error:
+
+mkfile o25030-9-0
+rename o25030-9-0 -> linux/drivers/clk/clk-axi-clkgen.c
+ERROR: rename o25030-9-0 -> linux/drivers/clk/clk-axi-clkgen.c failed:
+No space left on device
+
+If I manually delete the subvolume create above, and re-run the transfer,
+things seem fine.  Further, this doesn't happen every time, but it does happen
+frequently.
+
+I created the filesystems with these commands:
+
+# lvcreate -n test-btrfs2 -L50G storage /dev/sdc1
+# mkfs.btrfs -f /dev/storage/test-btrfs2
+# pvs
+  PV         VG      Fmt  Attr PSize   PFree
+  /dev/sda3  storage lvm2 a--  463.52g 147.52g
+  /dev/sdb1  storage lvm2 a--  465.76g      0
+  /dev/sdc1  storage lvm2 a--  476.94g  99.99g
+# lvs
+  LV          VG      Attr       LSize   Pool Origin Data%  Meta%
+Move Log Cpy%Sync Convert
+  btrfs       storage -wi-ao---- 742.70g
+  slow        storage -wi-ao---- 300.00g
+  swap        storage -wi-ao----  16.00g
+  test-btrfs  storage -wi-a-----  50.00g
+  test-btrfs2 storage -wi-ao----  50.00g
+
+# mount /dev/storage/test-btrfs2 btrfs2
+which results in mount options on my system:
+/dev/mapper/storage-test--btrfs2 on /home/sconnor/tmp/btrfs2 type
+btrfs (rw,relatime,ssd,space_cache,subvolid=5,subvol=/)
+
+# btrfs --version
+btrfs-progs v4.9
+# uname -a
+Linux pylon 4.8.13-1-ARCH #1 SMP PREEMPT Fri Dec 9 07:24:34 CET 2016
+x86_64 GNU/Linux
+
+
+Attached is a script which reproduces this issue within 30-60 seconds on my
+system.  I found that it was unnecessary to re-do the send step, so I am only
+testing on one FS as below.  If it isn't obvious, the script attached
+is not very
+good, and requires things to be setup manually before execution.
+
+I can share snap_1.bs.gz, and the btrfs receive log file file upon request.
 
 Thanks,
+Seamus
 
--liubo
+--001a11488ab8ce23620546ee0bb2
+Content-Type: application/x-sh; name="test.sh"
+Content-Disposition: attachment; filename="test.sh"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_iyd6o7nf0
 
-> ---- >8 ----
-> 
-> A while ago someone reported this on IRC, running a 4.8.13 kernel.
-> (that's when I looked up the above info). I can also find it in Oct 2016
-> in my IRC logs, but without any info on kernel version.
-> 
-> Anyway, it seems to point to something that's going wrong with changes
-> that are *not* on disk *yet*, and the crash is preventing .
-> 
-> -- 
-> Hans van Kranenburg
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+IyEvYmluL2Jhc2gKCiMgIEluIGV2YWx1YXRpbmcgYnRyZnMgZm9yIG15IHVzZSBjYXNlLCBJIHN0
+dW1ibGVkIG9uIHdoYXQgYXBwZWFycyB0byBiZSBhIGJ1Zy4KIyAgT3JpZ2luYWxseSwgSSBjcmVh
+dGVkIHR3byBsdm0gbG9naWNhbCB2b2x1bWVzIG9uIHRoZSBzYW1lIHBoeXNpY2FsIGRldmljZSBl
+YWNoCiMgIHdpdGggYSBidHJmcyBmaWxlIHN5c3RlbS4gIEkgdGhlbiBjbG9uZWQgdGhlIGxpbnV4
+IGtlcm5lbCBpbnRvIHRoZSBmaXJzdCBvbmUsCiMgIHRoZW4gYXR0ZW1wdGVkIHRvIGRvIGEgYnRy
+ZnMgc2VuZC9yZWNlaXZlIHRvICJiYWNrdXAiIHRoZSBmaXJzdCBmaWxlc3lzdGVtLiBJdAojICB3
+YXMgbXkgaW50ZW50IHRvIGNvbnRpbnVlIG9uIGFuZCBleHBlcmltZW50IHdpdGggaW5jcmVtZW50
+YWwgYmFja3VwcyB1c2luZwojICBidHJmcy4gIEhvd2V2ZXIsIHRoZSBmaXJzdCB0aW1lIEkgcmFu
+IHRoZSAncmVjZWl2ZScgY29tbWFuZCBpdCBmYWlsZWQgd2l0aCB0aGUKIyAgZm9sbG93aW5nIGVy
+cm9yOgojICAKIyAgbWtmaWxlIG8yNTAzMC05LTAKIyAgcmVuYW1lIG8yNTAzMC05LTAgLT4gbGlu
+dXgvZHJpdmVycy9jbGsvY2xrLWF4aS1jbGtnZW4uYwojICBFUlJPUjogcmVuYW1lIG8yNTAzMC05
+LTAgLT4gbGludXgvZHJpdmVycy9jbGsvY2xrLWF4aS1jbGtnZW4uYyBmYWlsZWQ6IE5vIHNwYWNl
+IGxlZnQgb24gZGV2aWNlCiMgIAojICBJZiBJIG1hbnVhbGx5IGRlbGV0ZSB0aGUgc3Vidm9sdW1l
+IGNyZWF0ZSBhYm92ZSwgYW5kIHJlLXJ1biB0aGUgdHJhbnNmZXIsCiMgIHRoaW5ncyBzZWVtIGZp
+bmUuICBGdXJ0aGVyLCB0aGlzIGRvZXNuJ3QgaGFwcGVuIGV2ZXJ5IHRpbWUsIGJ1dCBpdCBkb2Vz
+IGhhcHBlbgojICBmcmVxdWVudGx5LgojICAKIyAgSSBjcmVhdGVkIHRoZSBmaWxlc3lzdGVtcyBs
+aWtlIHNvOgojICAKIyAgIyBsdmNyZWF0ZSAtbiB0ZXN0LWJ0cmZzMiAtTDUwRyBzdG9yYWdlIC9k
+ZXYvc2RjMSAKIyAgIyBta2ZzLmJ0cmZzIC1mIC9kZXYvc3RvcmFnZS90ZXN0LWJ0cmZzMgojICAj
+IHB2cwojICAgIFBWICAgICAgICAgVkcgICAgICBGbXQgIEF0dHIgUFNpemUgICBQRnJlZSAgCiMg
+ICAgL2Rldi9zZGEzICBzdG9yYWdlIGx2bTIgYS0tICA0NjMuNTJnIDE0Ny41MmcKIyAgICAvZGV2
+L3NkYjEgIHN0b3JhZ2UgbHZtMiBhLS0gIDQ2NS43NmcgICAgICAwIAojICAgIC9kZXYvc2RjMSAg
+c3RvcmFnZSBsdm0yIGEtLSAgNDc2Ljk0ZyAgOTkuOTlnCiMgICMgbHZzCiMgICAgTFYgICAgICAg
+ICAgVkcgICAgICBBdHRyICAgICAgIExTaXplICAgUG9vbCBPcmlnaW4gRGF0YSUgIE1ldGElICBN
+b3ZlIExvZyBDcHklU3luYyBDb252ZXJ0CiMgICAgYnRyZnMgICAgICAgc3RvcmFnZSAtd2ktYW8t
+LS0tIDc0Mi43MGcgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgCiMgICAgc2xvdyAgICAgICAgc3RvcmFnZSAtd2ktYW8tLS0tIDMwMC4wMGcgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiMgICAgc3dhcCAg
+ICAgICAgc3RvcmFnZSAtd2ktYW8tLS0tICAxNi4wMGcgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgCiMgICAgdGVzdC1idHJmcyAgc3RvcmFnZSAtd2kt
+YS0tLS0tICA1MC4wMGcgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgCiMgICAgdGVzdC1idHJmczIgc3RvcmFnZSAtd2ktYW8tLS0tICA1MC4wMGcgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiMgIAojICAj
+IG1vdW50IC9kZXYvc3RvcmFnZS90ZXN0LWJ0cmZzMiBidHJmczIKIyAgd2hpY2ggcmVzdWx0cyBp
+biBhIG1vdW50IGxpa2UgbGlrZSBzbyBvbiBteSBzeXN0ZW06IAojICAvZGV2L21hcHBlci9zdG9y
+YWdlLXRlc3QtLWJ0cmZzMiBvbiAvaG9tZS9zY29ubm9yL3RtcC9idHJmczIgdHlwZSBidHJmcyAo
+cncscmVsYXRpbWUsc3NkLHNwYWNlX2NhY2hlLHN1YnZvbGlkPTUsc3Vidm9sPS8pCiMgIAojICBC
+ZWxvdyBpcyBhIHNjcmlwdCB3aGljaCByZXByb2R1Y2VzIHRoaXMgaXNzdWUgd2l0aGluIDMwLTYw
+IHNlY29uZHMgb24gbXkKIyAgc3lzdGVtLiAgSSBmb3VuZCB0aGF0IGl0IHdhcyB1bm5lY2Vzc2Fy
+eSB0byByZS1kbyB0aGUgc2VuZCBzdGVwLCBzbyBJIGFtIG9ubHkKIyAgdGVzdGluZyBvbiBvbmUg
+RlMgYXMgYmVsb3cuICBJZiBpdCBpc24ndCBvYnZpb3VzLCB0aGUgc2NyaXB0IGJlbG93IGlzIG5v
+dCB2ZXJ5CiMgIGdvb2QsIGFuZCByZXF1aXJlcyB0aGluZ3MgdG8gYmUgc2V0dXAganVzdCBzbywg
+YW5kIHRoZSBmaWxlc3lzdGVtIG11c3QgYmUKIyAgcHJlLW1vdW50ZWQgYmVmb3JlIGl0IGJlZ2lu
+cy4KCnNldCAtZXgKClRFU1RfRElSPS9ob21lL3Njb25ub3IvdG1wLwpURVNUX01OVF9QT0lOVD0k
+VEVTVF9ESVIvYnRyZnMyClRFU1RfUEFSVD0vZGV2L3N0b3JhZ2UvdGVzdC1idHJmczIKTE9HPS9o
+b21lL3Njb25ub3Ivc2NyYXRjaC9yZWNlaXZlX2xvZy50eHQKCndoaWxlIHRydWUKZG8KICAgIHVt
+b3VudCAkVEVTVF9NTlRfUE9JTlQKICAgIG1rZnMuYnRyZnMgLWYgJFRFU1RfUEFSVAogICAgbW91
+bnQgJFRFU1RfUEFSVCAkVEVTVF9NTlRfUE9JTlQKICAgIHpjYXQgJFRFU1RfRElSL3NuYXBfMS5i
+cy5neiB8IGJ0cmZzIHJlY2VpdmUgLXZ2ICRURVNUX0RJUi9idHJmczIvIDI+ICRMT0cKZG9uZQoK
+--001a11488ab8ce23620546ee0bb2--

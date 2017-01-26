@@ -1,64 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yb0-f195.google.com ([209.85.213.195]:35667 "EHLO
-        mail-yb0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752457AbdAYXHP (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 25 Jan 2017 18:07:15 -0500
-Received: by mail-yb0-f195.google.com with SMTP id j82so11410617ybg.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 Jan 2017 15:07:15 -0800 (PST)
+Received: from mout.gmx.net ([212.227.15.19]:50845 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752829AbdAZIIe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 26 Jan 2017 03:08:34 -0500
+Subject: Re: btrfs rescue chunk-recover segfaults
+To: Duncan <1i5t5.duncan@cox.net>
+References: <ef832bd4-bf83-50da-cdbe-07050cf9aff4@gmx.net>
+ <pan$5491e$d66176cb$30506251$23903084@cox.net>
+Cc: linux-btrfs@vger.kernel.org
+From: Simon Waid <simon_waid@gmx.net>
+Message-ID: <e8185d01-fbc0-7276-36e0-05e5a28814a4@gmx.net>
+Date: Thu, 26 Jan 2017 09:08:26 +0100
 MIME-Version: 1.0
-In-Reply-To: <20170125225814.GA15621@vader>
-References: <CAJCQCtQvt=xYtAGwPXk1Vhb7pmVNCbpFOg+W3Eh=-L9LSJkbaw@mail.gmail.com>
- <20170124201038.GB2853@vader> <CAJCQCtQm4RoN6zGEWDFTn9CigTaMM8Mxepc=UJhNhWCavp9U-A@mail.gmail.com>
- <20170124202723.GD2853@vader> <CAJCQCtQ-h++dwSRGtNp6RZXJjo0T63ouYwwM8PnasqGAyJCB=A@mail.gmail.com>
- <CAJCQCtQbHNyiK0L8MGk+2UO6ajGPBvowg6bg2EZPXpE3XySvWA@mail.gmail.com>
- <20170124225052.GA10425@vader> <CAJCQCtQ4tmCB4OBw1Jx43yunxMChRwKmcUVb1xSLr0KHwKSe-A@mail.gmail.com>
- <20170125044253.GA18885@vader> <CAJCQCtQiVAYDZM9WeucFgJANbQhb_G5fTE-2Jpo3fc3Ch_RPhQ@mail.gmail.com>
- <20170125225814.GA15621@vader>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Wed, 25 Jan 2017 16:07:09 -0700
-Message-ID: <CAJCQCtQi5DQ=N0AukLMey5L4-v0mSXtgft9g0bUH1Hap+8ZjcA@mail.gmail.com>
-Subject: Re: read-only fs, kernel 4.9.0, fs/btrfs/delayed-inode.c:1170 __btrfs_run_delayed_items,
-To: Omar Sandoval <osandov@osandov.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>, agruenba@redhat.com
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <pan$5491e$d66176cb$30506251$23903084@cox.net>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 25, 2017 at 3:58 PM, Omar Sandoval <osandov@osandov.com> wrote:
-> On Wed, Jan 25, 2017 at 03:55:33PM -0700, Chris Murphy wrote:
->> On Tue, Jan 24, 2017 at 9:42 PM, Omar Sandoval <osandov@osandov.com> wrote:
->> > On Tue, Jan 24, 2017 at 07:53:06PM -0700, Chris Murphy wrote:
->> >> On Tue, Jan 24, 2017 at 3:50 PM, Omar Sandoval <osandov@osandov.com> wrote:
->> >>
->> >> > Got this to repro after installing systemd-container. It's happening on
->> >> > lsetxattr() to set the SELinux context on /var/lib/machines, which is a
->> >> > subvolume. Looking into it now. Thanks for all of the help, Chris.
->> >>
->> >> Aha! So the snapshot part was a goose chase, it has nothing to do with
->> >> that, really. Because I'm taking a snapshot of root, the nested
->> >> /var/lib/machines subvolume is not in that snapshot, so now it has to
->> >> be created by systemd at next boot and the proper selinux label set on
->> >> it.
->> >>
->> >> It means there's something different about subvolumes and directories
->> >> when it comes to xattrs, and the xattr patch I found in bisect is
->> >> exposing the difference, hence things getting tripped up.
->> >
->> > The snapshots were actually the key -- the error was because setxattr()
->> > was being allowed on the read-only directory created in the place of the
->> > /var/lib/machines subvolume. Not sure if you saw the patch I sent up,
->> > but this should fix it: https://patchwork.kernel.org/patch/9536307/
->>
->> Got it.
->>
->> I couldn't get it to apply to 4.9, but it goes on 4.10-rc5 and the
->> problem is fixed.
+
+
+Am 24.01.2017 um 11:05 schrieb Duncan:
+> Simon Waid posted on Mon, 23 Jan 2017 09:42:28 +0100 as excerpted:
 >
-> Sweet, can I add your tested-by?
+>
+>> I have a btrfs raid5 array that has become unmountable.
+> [As a list regular and btrfs user myself, not a dev, but I try to help
+> with replies where I can in ordered to allow the devs and real experts to
+> put their time to better use where I can't help.]
+>
+> As stated on the btrfs wiki and in the mkfs.btrfs manpage, btrfs raid56
+> hasn't stabilized and is now known to have critical defects as originally
+> implemented, that make it unfit for the purposes most people normally use
+> parity-raid for.  It's not recommended except for testing with purely
+> sacrificial data that might potentially be eaten by the test.
+>
+> Thus, anyone on btrfs raid56 mode should only been testing with
+> effectively throw-away data, either because it's backed up and can be
+> easily retrieved from that backup, or because it really /is/ throw-away
+> data, making the damage from losing that testing filesystem minimal.
+>
+> As such, if you're done with testing, the fastest and most efficient way
+> back to production is to forget about the broken filesystem, and blow it
+> away with a mkfs to a new filesystem, either some other btrfs mode or
+> something other than the still maturing btrfs entirely, your choice.
+> Then you can restore from backups if the data was worth having them.
+>
+> Tho of course blowing it away does mean it can't be used as a lab
+> specimen to perhaps help find and fix some of the problems that do affect
+> raid56 mode at this time.
+>
+> Qu Wenruo in particular, and others, have been gradually working thru at
+> least some of the raid56 mode bugs, tho it's still possible the current
+> code is beyond hope and may need entirely rewritten to properly
+> stabilize.  If you don't have to get the space the filesystem was taking
+> directly back in service and can build and work with the newest code
+> possibly including patches they ask you to apply, you may be able to use
+> your deployment as a lab specimen to help them test their newest recovery
+> code and possibly help fix additional bugs in the process.
+>
+> However, even then, don't expect that you'll necessarily recover most of
+> what was on the filesystem, as raid56 mode really is seriously bugged
+> ATM, and it's quite possible that the data has already been wiped out by
+> those bugs.  Mostly, you're simply continuing to use the filesystem as an
+> in-the-wild test deployment gone bad, now testing diagnostics and
+> possible recovery, not necessarily with a good chance of recovering the
+> data, but that's OK, since btrfs raid56 mode was never out of unstable
+> testing-only mode in the first place, so any data put on it always was
+> effectively sacrificial data, known to be potentially eaten by the
+> testing itself.
+>
+Thank you Ducan for the information.
 
-Yep!
-
--- 
-Chris Murphy
+Before wiping the filesystem, is there anything I should do to help 
+fixing the segfault in chunk-recover?

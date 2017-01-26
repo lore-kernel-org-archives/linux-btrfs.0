@@ -1,72 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f53.google.com ([74.125.83.53]:33336 "EHLO
-        mail-pg0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751927AbdAYXrB (ORCPT
+Received: from mail-pg0-f47.google.com ([74.125.83.47]:35620 "EHLO
+        mail-pg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752061AbdAZBHU (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 25 Jan 2017 18:47:01 -0500
-Received: by mail-pg0-f53.google.com with SMTP id 204so68333050pge.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 Jan 2017 15:47:01 -0800 (PST)
-Date: Wed, 25 Jan 2017 15:46:33 -0800
+        Wed, 25 Jan 2017 20:07:20 -0500
+Received: by mail-pg0-f47.google.com with SMTP id 194so68679469pgd.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 25 Jan 2017 17:07:20 -0800 (PST)
 From: Omar Sandoval <osandov@osandov.com>
-To: Andreas Gruenbacher <agruenba@redhat.com>
-Cc: linux-btrfs@vger.kernel.org, Chris Murphy <lists@colorremedies.com>,
+To: linux-btrfs@vger.kernel.org
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Andreas Gruenbacher <agruenba@redhat.com>, stable@vger.kernel.org,
         kernel-team@fb.com
-Subject: Re: [PATCH] Btrfs: disable xattr operations on subvolume directories
-Message-ID: <20170125234633.GA19099@vader>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAHc6FU50-m5v4X-n+_=HK8Bu1gYEO=1R7nrgAhhY+Mk54mFYrg@mail.gmail.com>
- <CAHc6FU7ubp4-A-oF+0nuKf27QJMeG_UtQx0pjdL7uVS+UwX6uw@mail.gmail.com>
+Subject: [PATCH v2 0/3] Btrfs: disable xattr operations on subvolume directories
+Date: Wed, 25 Jan 2017 17:06:37 -0800
+Message-Id: <cover.1485392101.git.osandov@fb.com>
+In-Reply-To: <c96f9f4d14c7a40913a39856ca8f065d37113372.1485311744.git.osandov@fb.com>
+References: <c96f9f4d14c7a40913a39856ca8f065d37113372.1485311744.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 25, 2017 at 01:28:21PM +0100, Andreas Gruenbacher wrote:
-> Omar,
-> 
-> On Wed, Jan 25, 2017 at 3:38 AM, Omar Sandoval <osandov@osandov.com> wrote:
-> > From: Omar Sandoval <osandov@fb.com>
-> >
-> > When you snapshot a subvolume containing a subvolume, you get a
-> > placeholder read-only directory where the subvolume would be. These
-> > directory inodes have ->i_ops set to btrfs_dir_ro_inode_operations.
-> > Previously, this didn't include the xattr operation callbacks. The
-> > conversion to xattr_handlers missed this case, leading to bogus attempts
-> > to set xattrs on these inodes. This manifested itself as failures when
-> > running delayed inodes.
-> >
-> > To fix this, clear the IOP_XATTR in ->i_opflags on these inodes.
-> >
-> > Fixes: 6c6ef9f26e59 ("xattr: Stop calling {get,set,remove}xattr inode operations")
-> > Cc: Andreas Gruenbacher <agruenba@redhat.com>
-> > Reported-by: Chris Murphy <lists@colorremedies.com>
-> > Signed-off-by: Omar Sandoval <osandov@fb.com>
-> > ---
-> > Applies to v4.10-rc4. Chris, this fixes the issue for me, could you please test
-> > it out? Andreas, does this make sense? I'll try to cook up an xfstest for this.
-> 
-> this change looks good.
-> 
-> Are those directories really read-only though? They have the S_IWUSR
-> permission set, and an update_time iop.
+From: Omar Sandoval <osandov@fb.com>
 
-Hm, so these inodes don't have an on-disk [mca]time, it's only in
-memory. ->update_time() just updates the in-memory time stamp, which is
-kind of weird. Not sure why these even have S_IWUSR; they don't have a
-->create() iop either. 0555 really makes more sense here. I wonder if
-anyone would care if we made that change...
+This series is based on v4.10-rc4. It should probably go in for v4.10
+and to stable for v4.9.x.
 
-> Also, the get_acl and set_acl iops seem dead: they were not called
-> before because the xattr iops were not defined in
-> btrfs_dir_ro_inode_operations, and they are not called now because
-> IOP_XATTR is cleared. Could you please check that as well?
+Changes from v1:
 
-Yeah, those shouldn't be there, either. I'll get rid of them in v2.
+- Added patch 1 to remove an obsolete place where we use
+  btrfs_dir_ro_inode_operations since the fix in patch 2 concerns
+  btrfs_dir_ro_inode_operations.
+- Added patch 3. It's mostly a cleanup, but I can't convince myself that
+  there aren't any in-kernel callers that will change ACLs directly.
+  Let's get this in just to be safe.
 
-On Wed, Jan 25, 2017 at 01:29:51PM +0100, Andreas Gruenbacher wrote:
-> On Wed, Jan 25, 2017 at 3:38 AM, Omar Sandoval <osandov@osandov.com> wrote:
-> > Forgot to cc stable, but 4.9 needs this.
-> 
-> Huh, stable not CCed again?
+There are some more followup cleanups to do here, but let's get this fix
+in first.
 
-I was hoping Dave would add it when he applied it, but since I'm going
-to send out a v2, I'll just do it then.
+Omar Sandoval (3):
+  Btrfs: remove old tree_root case in btrfs_read_locked_inode()
+  Btrfs: disable xattr operations on subvolume directories
+  Btrfs: remove ->{get,set}_acl() from btrfs_dir_ro_inode_operations
+
+ fs/btrfs/inode.c | 8 ++------
+ 1 file changed, 2 insertions(+), 6 deletions(-)
+
+-- 
+2.11.0
+

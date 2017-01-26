@@ -1,49 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f170.google.com ([209.85.192.170]:33370 "EHLO
-        mail-pf0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752380AbdAZBHd (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:30441 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751886AbdAZBQs (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 25 Jan 2017 20:07:33 -0500
-Received: by mail-pf0-f170.google.com with SMTP id y143so61956211pfb.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 Jan 2017 17:07:33 -0800 (PST)
-From: Omar Sandoval <osandov@osandov.com>
+        Wed, 25 Jan 2017 20:16:48 -0500
+From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Andreas Gruenbacher <agruenba@redhat.com>, stable@vger.kernel.org,
-        kernel-team@fb.com
-Subject: [PATCH v2 3/3] Btrfs: remove ->{get,set}_acl() from btrfs_dir_ro_inode_operations
-Date: Wed, 25 Jan 2017 17:06:40 -0800
-Message-Id: <14d5cbf62169b1ac773028fa3ce0da246b968134.1485392101.git.osandov@fb.com>
-In-Reply-To: <c96f9f4d14c7a40913a39856ca8f065d37113372.1485311744.git.osandov@fb.com>
-References: <c96f9f4d14c7a40913a39856ca8f065d37113372.1485311744.git.osandov@fb.com>
-In-Reply-To: <cover.1485392101.git.osandov@fb.com>
-References: <cover.1485392101.git.osandov@fb.com>
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] Btrfs: cleanup unused cached_state in __extent_writepage_io
+Date: Wed, 25 Jan 2017 17:15:54 -0800
+Message-Id: <1485393354-14139-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Omar Sandoval <osandov@fb.com>
+@cached_state is no more required in __extent_writepage_io, also remove the
+goto label.
 
-Subvolume directory inodes can't have ACLs.
-
-Cc: <stable@vger.kernel.org> # 4.9.x
-Signed-off-by: Omar Sandoval <osandov@fb.com>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/inode.c | 2 --
- 1 file changed, 2 deletions(-)
+ fs/btrfs/extent_io.c | 9 +--------
+ 1 file changed, 1 insertion(+), 8 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 924f3583a04d..1b21a63ed328 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -10577,8 +10577,6 @@ static const struct inode_operations btrfs_dir_inode_operations = {
- static const struct inode_operations btrfs_dir_ro_inode_operations = {
- 	.lookup		= btrfs_lookup,
- 	.permission	= btrfs_permission,
--	.get_acl	= btrfs_get_acl,
--	.set_acl	= btrfs_set_acl,
- 	.update_time	= btrfs_update_time,
- };
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 4ac383a..d5f3edb 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3330,7 +3330,6 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
+ 	u64 block_start;
+ 	u64 iosize;
+ 	sector_t sector;
+-	struct extent_state *cached_state = NULL;
+ 	struct extent_map *em;
+ 	struct block_device *bdev;
+ 	size_t pg_offset = 0;
+@@ -3351,8 +3350,7 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
+ 
+ 			update_nr_written(page, wbc, nr_written);
+ 			unlock_page(page);
+-			ret = 1;
+-			goto done_unlocked;
++			return 1;
+ 		}
+ 	}
+ 
+@@ -3454,11 +3452,6 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
+ 	}
+ done:
+ 	*nr_ret = nr;
+-
+-done_unlocked:
+-
+-	/* drop our reference on any cached states */
+-	free_extent_state(cached_state);
+ 	return ret;
+ }
  
 -- 
-2.11.0
+1.8.3.1
 

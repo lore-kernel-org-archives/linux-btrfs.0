@@ -1,90 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47254 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932254AbdA0O1F (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 27 Jan 2017 09:27:05 -0500
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com
-Subject: Btrfs progs release 4.9.1
-Date: Fri, 27 Jan 2017 15:25:45 +0100
-Message-Id: <20170127142545.19038-1-dsterba@suse.com>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:33459 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1752436AbdAZXq1 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 26 Jan 2017 18:46:27 -0500
+Subject: Re: [PATCH v2 0/3] Btrfs: disable xattr operations on subvolume
+ directories
+To: Omar Sandoval <osandov@osandov.com>, <linux-btrfs@vger.kernel.org>
+References: <c96f9f4d14c7a40913a39856ca8f065d37113372.1485311744.git.osandov@fb.com>
+ <cover.1485392101.git.osandov@fb.com>
+CC: Chris Murphy <lists@colorremedies.com>,
+        Andreas Gruenbacher <agruenba@redhat.com>, <stable@vger.kernel.org>,
+        <kernel-team@fb.com>
+From: Chris Mason <clm@fb.com>
+Message-ID: <dcadede8-59ec-7ed8-12e7-9d3f9a71e37d@fb.com>
+Date: Thu, 26 Jan 2017 18:45:54 -0500
+MIME-Version: 1.0
+In-Reply-To: <cover.1485392101.git.osandov@fb.com>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On 01/25/2017 08:06 PM, Omar Sandoval wrote:
+> From: Omar Sandoval <osandov@fb.com>
+>
+> This series is based on v4.10-rc4. It should probably go in for v4.10
+> and to stable for v4.9.x.
 
-btrfs-progs version 4.9.1 have been released.
+Thanks Omar, I've got this queued on top of Dave's pull.
 
-Changes:
-* check:
-  * use correct inode number for lost+found files
-  * lowmem mode: fix false alert on dropped leaf
-* size reports: negative numbers might appear in size reports during device
-  deletes (previously in EiB units)
-* mkfs: print device being trimmed
-* defrag: v1 ioctl support dropped
-* quota: print message before starting to wait for rescan
-* qgroup show: new option to sync before printing the stats
-* other:
-  * corrupt-block enhancements
-  * backtrace and co. cleanups
-  * doc fixes
-
-Changes since rc1:
-* change name of one test directory, duplicate numbers
-
-Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
-
-Shortlog:
-
-David Sterba (18):
-      btrfs-progs: make negative number pretty printing optional
-      btrfs-progs: enable negative numbers for unallocated device space
-      btrfs-progs: mkfs: print device name while trimming
-      btrfs-progs: defrag: force using v2 defrag ioctl and make default 32M threshold actually work
-      btrfs-progs: defrag: remove v1 ioctl support
-      btrfs-progs: qgroups show: clean up errno passing
-      btrfs-progs: qgroup show: refine error messages
-      btrfs-progs: tests: 005-qgroup-show
-      btrfs-progs: kerncompat: add separate trace print for BUG_ON
-      btrfs-progs: kerncompat: pass exact condition value from ASSERT
-      btrfs-progs: kerncompat: disconnect assert and warning messages
-      btrfs-progs: kerncompat: simplify warning_trace
-      btrfs-progs: qgroup show: do not error if sync fails
-      btrfs-progs: tests: add variable quotation to cli-tests
-      btrfs-progs: tests: use built binaries for 004-send-parent-multi-subvol
-      btrfs-progs: mkfs/convert: separate the convert part from make_btrfs
-      btrfs-progs: update CHANGES for v4.9.1
-      Btrfs progs v4.9.1
-
-Esteve Fernandez (1):
-      btrfs-progs: docs: fix typo in btrfs-subvolume
-
-Goldwyn Rodrigues (2):
-      btrfs-progs: check: get the highest inode for lost+found
-      btrfs-progs: sanitize - Use correct source for memcpy
-
-Jeff Mahoney (1):
-      btrfs-progs: quota: fix printing during wait mode
-
-Lakshmipathi.G (2):
-      btrfs-progs: corrupt-block: Include inode nlink field
-      btrfs-progs: corrupt-block: Include more inode fields
-
-Nicholas D Steeves (1):
-      btrfs-progs: Fix spelling/typos in user-facing strings
-
-Qu Wenruo (2):
-      btrfs-progs: check: fix false alert on dropped leaf in lowmem mode
-      btrfs-progs: Fix disable backtrace assert error
-
-Tsutomu Itoh (3):
-      btrfs-progs: qgroup: add sync option to 'qgroup show'
-      btrfs-progs: qgroup: change the value of sort option
-      btrfs-progs: tests: add test for --sync option of qgroup show
-
-Zygo Blaxell (1):
-      btrfs-progs: utils: negative numbers are more plausible than sizes over 8 EiB
-
+-chris

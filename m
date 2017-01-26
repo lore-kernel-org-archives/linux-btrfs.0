@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:43353 "EHLO
+Received: from mailgw-02.dd24.net ([193.46.215.43]:49635 "EHLO
         mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751137AbdAYElq (ORCPT
+        with ESMTP id S1752453AbdAZCum (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Jan 2017 23:41:46 -0500
-Message-ID: <1485319211.12065.15.camel@scientia.net>
+        Wed, 25 Jan 2017 21:50:42 -0500
+Message-ID: <1485399036.23328.7.camel@scientia.net>
 Subject: Re: [PATCH 0/9] Lowmem mode fsck fixes with fsck-tests framework
  update
 From: Christoph Anton Mitterer <calestyo@scientia.net>
 To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 Cc: chris@colorremedies.com, dsterba@suse.cz
-Date: Wed, 25 Jan 2017 05:40:11 +0100
+Date: Thu, 26 Jan 2017 03:50:36 +0100
 In-Reply-To: <8d21a04e-7035-5b5d-5b58-9ac0d7f93f02@cn.fujitsu.com>
 References: <20170123091359.21390-1-quwenruo@cn.fujitsu.com>
          <1485276845.12065.1.camel@scientia.net>
@@ -19,43 +19,190 @@ References: <20170123091359.21390-1-quwenruo@cn.fujitsu.com>
          <8d21a04e-7035-5b5d-5b58-9ac0d7f93f02@cn.fujitsu.com>
 Content-Type: multipart/signed; micalg="sha-512";
         protocol="application/x-pkcs7-signature";
-        boundary="=-1oo22TLY8MozhkjakZCh"
+        boundary="=-Z4GKOfLIuQZ01sUuiGJQ"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-1oo22TLY8MozhkjakZCh
+--=-Z4GKOfLIuQZ01sUuiGJQ
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
 On Wed, 2017-01-25 at 12:16 +0800, Qu Wenruo wrote:
-> New patches are out now.
->=20
-> Although I just updated=C2=A0
-> 0001-btrfs-progs-lowmem-check-Fix-wrong-block-group-check.patch to
-> fix=C2=A0
-> all similar bugs.
->=20
-> You could get it from github:
 > https://github.com/adam900710/btrfs-progs/tree/lowmem_fixes
 
-Sure, will take a while, though (hopefully get it done tomorrow)
+Just finished trying your new patches.
+
+Same game as last time, applied to 4.9, no RW mount between the runs.
 
 
-> Unfortunately, I didn't find the cause of the remaining error of
-> that=C2=A0
-> missing csum.
-> And considering the size of your fs, btrfs-image is not possible, so
-> I'm=C2=A0
-> afraid you need to test the patches every time it updates.
+btrfs-progs v4.9 WITHOUT patch:
+*******************************
+# btrfs check /dev/nbd0 ; echo $?
+checking extents
+checking free space cache
+checking fs roots
+checking csums
+checking root refs
+Checking filesystem on /dev/nbd0
+UUID: 326d292d-f97b-43ca-b1e8-c722d3474719
+found 7519512838144 bytes used err is 0
+total csum bytes: 7330834320
+total tree bytes: 10902437888
+total fs tree bytes: 2019704832
+total extent tree bytes: 1020149760
+btree space waste bytes: 925714197
+file data blocks allocated: 7509228494848
+=C2=A0referenced 7630551511040
+0
 
-No worries :-)
+
+# btrfs check --mode=3Dlowmem /dev/nbd0 ; echo $?
+checking extents
+ERROR: block group[74117545984 1073741824] used 1073741824 but extent items=
+ used 0
+ERROR: block group[239473786880 1073741824] used 1073741824 but extent item=
+s used 1207959552
+ERROR: block group[500393050112 1073741824] used 1073741824 but extent item=
+s used 1207959552
+ERROR: block group[581997428736 1073741824] used 1073741824 but extent item=
+s used 0
+ERROR: block group[626557714432 1073741824] used 1073741824 but extent item=
+s used 0
+ERROR: block group[668433645568 1073741824] used 1073741824 but extent item=
+s used 0
+ERROR: block group[948680261632 1073741824] used 1073741824 but extent item=
+s used 0
+ERROR: block group[982503129088 1073741824] used 1073741824 but extent item=
+s used 0
+ERROR: block group[1039411445760 1073741824] used 1073741824 but extent ite=
+ms used 0
+ERROR: block group[1054443831296 1073741824] used 1073741824 but extent ite=
+ms used 1207959552
+ERROR: block group[1190809042944 1073741824] used 1073741824 but extent ite=
+ms used 0
+ERROR: block group[1279392743424 1073741824] used 1073741824 but extent ite=
+ms used 0
+ERROR: block group[1481256206336 1073741824] used 1073741824 but extent ite=
+ms used 0
+ERROR: block group[1620842643456 1073741824] used 1073741824 but extent ite=
+ms used 1207959552
+ERROR: block group[1914511032320 1073741824] used 1073741824 but extent ite=
+ms used 1207959552
+ERROR: block group[3055361720320 1073741824] used 1073741824 but extent ite=
+ms used 0
+ERROR: block group[3216422993920 1073741824] used 1073741824 but extent ite=
+ms used 0
+ERROR: block group[3670615785472 1073741824] used 1073741824 but extent ite=
+ms used 1207959552
+ERROR: block group[3801612288000 1073741824] used 1073741824 but extent ite=
+ms used 1207959552
+ERROR: block group[3828455833600 1073741824] used 1073741824 but extent ite=
+ms used 1207959552
+ERROR: block group[4250973241344 1073741824] used 1073741824 but extent ite=
+ms used 0
+ERROR: block group[4261710659584 1073741824] used 1073741824 but extent ite=
+ms used 1074266112
+ERROR: block group[4392707162112 1073741824] used 1073741824 but extent ite=
+ms used 0
+ERROR: block group[4558063403008 1073741824] used 1073741824 but extent ite=
+ms used 0
+ERROR: block group[4607455526912 1073741824] used 1073741824 but extent ite=
+ms used 0
+ERROR: block group[4635372814336 1073741824] used 1073741824 but extent ite=
+ms used 0
+ERROR: block group[4640204652544 1073741824] used 1073741824 but extent ite=
+ms used 0
+ERROR: block group[4642352136192 1073741824] used 1073741824 but extent ite=
+ms used 1207959552
+ERROR: block group[4681006841856 1073741824] used 1073741824 but extent ite=
+ms used 0
+ERROR: block group[5063795802112 1073741824] used 1073741824 but extent ite=
+ms used 0
+ERROR: block group[5171169984512 1073741824] used 1073741824 but extent ite=
+ms used 1207959552
+ERROR: block group[5216267141120 1073741824] used 1073741824 but extent ite=
+ms used 1207959552
+ERROR: block group[5290355326976 1073741824] used 1073741824 but extent ite=
+ms used 0
+ERROR: block group[5445511020544 1073741824] used 1073741824 but extent ite=
+ms used 1074266112
+ERROR: block group[6084387405824 1073741824] used 1073741824 but extent ite=
+ms used 0
+ERROR: block group[6104788500480 1073741824] used 1073741824 but extent ite=
+ms used 0
+ERROR: block group[6878956355584 1073741824] used 1073741824 but extent ite=
+ms used 0
+ERROR: block group[6997067956224 1073741824] used 1073741824 but extent ite=
+ms used 0
+ERROR: block group[7702516334592 1073741824] used 1073741824 but extent ite=
+ms used 0
+ERROR: block group[8051482427392 1073741824] used 1073741824 but extent ite=
+ms used 1084751872
+ERROR: block group[8116980678656 1073741824] used 1073741824 but extent ite=
+ms used 0
+ERROR: errors found in extent allocation tree or chunk allocation
+checking free space cache
+checking fs roots
+Checking filesystem on /dev/nbd0
+UUID: 326d292d-f97b-43ca-b1e8-c722d3474719
+found 7519512838144 bytes used err is -5
+total csum bytes: 7330834320
+total tree bytes: 10902437888
+total fs tree bytes: 2019704832
+total extent tree bytes: 1020149760
+btree space waste bytes: 925714197
+file data blocks allocated: 7509228494848
+=C2=A0referenced 7630551511040
+1
+
+btrfs-progs v4.9 WITH patches:
+******************************
+# btrfs check /dev/nbd0 ; echo $?
+checking extents
+checking free space cache
+checking fs roots
+checking csums
+checking root refs
+Checking filesystem on /dev/nbd0
+UUID: 326d292d-f97b-43ca-b1e8-c722d3474719
+found 7519512838144 bytes used, no error found
+total csum bytes: 7330834320
+total tree bytes: 10902437888
+total fs tree bytes: 2019704832
+total extent tree bytes: 1020149760
+btree space waste bytes: 925714197
+file data blocks allocated: 7509228494848
+=C2=A0referenced 7630551511040
+0
+
+# btrfs check --mode=3Dlowmem /dev/nbd0 ; echo $?
+checking extents
+checking free space cache
+checking fs roots
+ERROR: root 6031 EXTENT_DATA[277 524288] datasum missing
+ERROR: errors found in fs roots
+Checking filesystem on /dev/nbd0
+UUID: 326d292d-f97b-43ca-b1e8-c722d3474719
+found 7519512838144 bytes used, error(s) found
+total csum bytes: 7330834320
+total tree bytes: 10902437888
+total fs tree bytes: 2019704832
+total extent tree bytes: 1020149760
+btree space waste bytes: 925714197
+file data blocks allocated: 7509228494848
+=C2=A0referenced 7630551511040
+1
+
+=3D> so unfortunately what seems to be the very same error than before
+
+Just tell me if you find something new :)
 
 
 Cheers,
 Chris.
---=-1oo22TLY8MozhkjakZCh
+--=-Z4GKOfLIuQZ01sUuiGJQ
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -147,25 +294,25 @@ Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
 MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
 cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
 QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
-SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwMTI1MDQ0MDExWjBPBgkqhkiG9w0BCQQxQgRARah0
-shbDNfL4heNWO+UT7G2rUURKvgMM+FjR6mDf5Jyk4t8/qWk207FFUQhfVpA4bRW9sKSWiCAiz8Ym
-xgUU0zCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
+SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwMTI2MDI1MDM2WjBPBgkqhkiG9w0BCQQxQgRAfQlZ
+mc9gy3vI/cLX3AA3FS+UqTxeoxhauLDEm0/d9dwwIihlOxHBqD3CS94LWmHpEOytlUhcT0TSbFCd
+uajZlDCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
 bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
 AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
 DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
 VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
-Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAbSQG
-/YMFTvNCD6yUIFdj78PWTFRSJBBr3R+xaJToY4bXdAgfWnOCFPa8B33u+nxsL6Txf4OP+EwftMZr
-5f85/D7pHSEX5HZt3oRWJXhwq6+8YQqIZ/F6xrf719/V4fedwV+fMr2eLsl0XZrf4LjPIY0Kexvs
-3f8rxx9DYmiEwjI23ksGbq9PCpzeeahkxMa9Kccnbcik30NfdixYBgG7GLRwn/hTxec8pvQdwjbo
-IgqZCy+K7r5yJ+XEpETwzu5yUMhCxLaN6FQdwdNnuZtOZ50VHANk3Q0G+PUlWDDQXnX6VqBLzM87
-7vHvJoHZGvjThbc1cW7t2iXHsxJMD9IfLLAE+vEezxJqN+ij6b1EqxiM83Ufw2laoDTJEe/8HIIw
-AECJQkpQf1cVQk4hS4KpYHIeBAAUoT4WxRRWHPeqwDE0tlsxQNFnlKdGUzfLK/tbV8k7+kMVaBns
-Q7KKf45yk948AL528UrYy+V1utvQHk3t10Eqm7mum2dvv1eJTxTz8Xu5RMmWmsUcFaiUcN1nWMZl
-0A7SKZcALzbGZ8aXDuZCeFb8Bo59yao58ot6XZA5emsK9Lh0rlOtH0kRsxmI+uUU97KfdJwFuvBA
-93CqHkc33I1Dm+DEKzLzxjVGodXV70dNhwGBR0Jnmjfc4B317d1SWxuSBcx9KvM5iorwL1IAAAAA
+Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIABmSO
+DhOsgY1oN/5YjMdnQWWSeDfjMRT1UBEH1jMr5G3gvGlCXzZzE4ttN/YVThaLJsQ/tWxljFC4R9Or
+J7qKnCG9VAKGG71ClsmZji2wWZdAiifLnPkIxl0JU8JlYbuvtNJfZso2ml6hekxrftYPAlXZVTUq
+1tg6C2Ggv4LTWMSlyTwVaf3CPOy1DbHFoDuvAllINiY/arle31qbeOIeHr5ry6GDglmaVpPwUq+E
+PUX8f0s5VQpYpyyeuFPXVKM8Vg/VfzeCifOpKbt2zxviQiPvI7aIAgMB+fPeHm5SIHYgLYZfd985
+L6G8aSfly6as2nN23hecyyGHuRApBoDod/x1YklQE/FdlLgdOfsMHpfDc86OJBL/wjoTyJ6CPP4i
+AEWfiPUDiOx+fnuxj/Jr3cIoyPgv4SNwAgqUnHHQ/hHwF0iTeurXI9JIIzVw6AeOEmjz/dMHvd3U
+8u29HX5Idf0jQTibYMLzYjEj2+G4iY6kRpJy1+NvRLZzFNvjxL4LnjUO4yhY5bj+0bGmq0YgeoRu
+oVjKdaFmWgfs1btsJh39cFjMJ0ukhAIMgLF2Z21bVdxIHviD+vcyGS/dzMDBXf/a5yKudtg5XEYA
+YqUdnL310sUsqIK4zXXz8w1zdEmCRA6GfDvIffjpMRZiXE0POY0/HR3RwnMdzhIuCXngvtEAAAAA
 AAA=
 
 
---=-1oo22TLY8MozhkjakZCh--
+--=-Z4GKOfLIuQZ01sUuiGJQ--
 

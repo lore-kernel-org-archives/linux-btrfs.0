@@ -1,122 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from kiara-balancer-1.wellbehavedsoftware.com ([138.201.134.108]:55460
-        "EHLO kiara-balancer-1.wellbehavedsoftware.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1753415AbdAZRrA (ORCPT
+Received: from Galois.linutronix.de ([146.0.238.70]:50031 "EHLO
+        Galois.linutronix.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754012AbdAZRrv (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 26 Jan 2017 12:47:00 -0500
-Subject: Re: Announcing btrfs-dedupe 1.1.0
-To: Robert Krig <robert.krig@render-wahnsinn.de>, linux-btrfs@vger.kernel.org
-References: <b81e1e04-394b-06a8-d4cb-acfe436a8423@pharaoh.uk>
- <08ac7d06-367e-a2ec-dc15-ee71aa3dada2@render-wahnsinn.de>
- <18c395fe-3f32-9433-622e-e2ba5148bb2e@pharaoh.uk>
- <aaa3a289-940b-a799-421e-f4bb17cdabea@render-wahnsinn.de>
-From: James Pharaoh <james@pharaoh.uk>
-Message-ID: <2856fd95-d771-3081-4a45-b900fcf6b3f0@pharaoh.uk>
-Date: Thu, 26 Jan 2017 18:44:53 +0100
+        Thu, 26 Jan 2017 12:47:51 -0500
+Date: Thu, 26 Jan 2017 18:09:04 +0100
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+To: Mike Galbraith <umgwanakikbuti@gmail.com>, linux-btrfs@vger.kernel.org,
+        David Sterba <dsterba@suse.com>, Josef Bacik <jbacik@fb.com>,
+        Chris Mason <clm@fb.com>
+Cc: LKML <linux-kernel@vger.kernel.org>,
+        linux-rt-users <linux-rt-users@vger.kernel.org>,
+        Peter Zijlstra <peterz@infradead.org>,
+        Thomas Gleixner <tglx@linutronix.de>
+Subject: Re: [btrfs/rt] lockdep false positive
+Message-ID: <20170126170903.ikq7iequ4g5mhszo@linutronix.de>
+References: <1485074793.4467.49.camel@gmail.com>
+ <1485107114.4467.73.camel@gmail.com>
+ <20170125170209.h6tqr6zgaq6ojmco@linutronix.de>
+ <1485368989.5150.60.camel@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <aaa3a289-940b-a799-421e-f4bb17cdabea@render-wahnsinn.de>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <1485368989.5150.60.camel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Yeah, ok, can you create an account on my souce tracker and create an 
-issue for this please?
+On 2017-01-25 19:29:49 [+0100], Mike Galbraith wrote:
+> On Wed, 2017-01-25 at 18:02 +0100, Sebastian Andrzej Siewior wrote:
+> 
+> > > [  341.960794]        CPU0
+> > > [  341.960795]        ----
+> > > [  341.960795]   lock(btrfs-tree-00);
+> > > [  341.960795]   lock(btrfs-tree-00);
+> > > [  341.960796] 
+> > > [  341.960796]  *** DEADLOCK ***
+> > > [  341.960796]
+> > > [  341.960796]  May be due to missing lock nesting notation
+> > > [  341.960796]
+> > > [  341.960796] 6 locks held by kworker/u8:9/2039:
+> > > [  341.960797]  #0:  ("%s-%s""btrfs", name){.+.+..}, at: [] process_one_work+0x171/0x700
+> > > [  341.960812]  #1:  ((&work->normal_work)){+.+...}, at: [] process_one_work+0x171/0x700
+> > > [  341.960815]  #2:  (sb_internal){.+.+..}, at: [] start_transaction+0x2a7/0x5a0 [btrfs]
+> > > [  341.960825]  #3:  (btrfs-tree-02){+.+...}, at: [] btrfs_clear_lock_blocking_rw+0x55/0x100 [btrfs]
+> > > [  341.960835]  #4:  (btrfs-tree-01){+.+...}, at: [] btrfs_clear_lock_blocking_rw+0x55/0x100 [btrfs]
+> > > [  341.960854]  #5:  (btrfs-tree-00){+.+...}, at: [] btrfs_clear_lock_blocking_rw+0x55/0x100 [btrfs]
+> > > 
+> > > Attempting to describe RT rwlock semantics to lockdep prevents this.
+> > 
+> > and this is what I don't get. I stumbled upon this myself [0] but didn't
+> > fully understand the problem (assuming this is the same problem colored
+> > differently).
+> 
+> Yeah, [0] looks like it, though I haven't met an 'fs' variant, my
+> encounters were always either 'tree' or 'csum' flavors.
+> 
+> > With your explanation I am not sure if I get what is happening. If btrfs
+> > is taking here read-locks on random locks then it may deadlock if
+> > another btrfs-thread is doing the same and need each other's locks.
+> 
+> I don't know if a real RT deadlock is possible.  I haven't met one,
+> only variants of this bogus recursion gripe.
+>  
+> > If btrfs takes locks recursively which it already holds (in the same
+> > context / process) then it shouldn't be visible here because lockdep
+> > does not account this on -RT.
+> 
+> If what lockdep gripes about were true, we would never see the splat,
+> we'd zip straight through that (illusion) recursive read_lock() with
+> lockdep being none the wiser. 
+> 
+> > If btrfs takes the locks in a special order for instance only ascending
+> > according to inode's number then it shouldn't deadlock.
+> 
+> No idea.  Locking fancy enough to require dynamic key assignment to
+> appease lockdep is too fancy for me.
 
-https://gitlab.wellbehavedsoftware.com/well-behaved-software/btrfs-dedupe
+yup, for me, too. As long as nobody from the btrfs camp explains how
+that locking workings and if it is safe I am not feeling comfortable to
+shut up lockdep here.
 
-I am fairly sure I can fix this without too much difficulty. ;-)
+> 	-Mike
 
-James
-
-On 26/01/17 18:16, Robert Krig wrote:
-> I've tried your binaries, which also seem to work fine on Debian
-> Stretch. (At least using the latest ubuntu xenial binary).
->
-> I've only run into one little issue, btrfs-dedupe will abort with
-> "Serialization error: invalid value: Path contains invalid UTF-8
-> characters at line 0 column 0" if I run it on some large top level
-> directories. Unfortunately it doesn't list which directory it has a
-> problem with. Wouldn't it be better if btrfs-dedupe simply ignores
-> directories it has a problem with, and continues with the rest?
->
->
-> On 13.01.2017 20:08, James Pharaoh wrote:
->> Did you try the binaries? I can build binaries for other platforms if
->> you let me know what you are interested in.
->>
->> In any case, you'll need to install rust:
->>
->> https://www.rust-lang.org/install.html
->>
->> Which will tell you to do this on Linux, and presumably all unix
->> platforms:
->>
->> curl https://sh.rustup.rs -sSf | sh
->>
->> You can either log in and out or reload your profile to get the
->> installed software in your PATH:
->>
->> source ~/.profile
->>
->> Then you can checkout btrfs-dedupe, eg from my gitlab public https,
->> I'll assume you have git installed:
->>
->> git clone
->> https://gitlab.wellbehavedsoftware.com/well-behaved-software/btrfs-dedupe.git
->>
->> Then cd in and build using cargo:
->>
->> cd btrfs-dedupe
->> cargo build --release
->>
->> There is basically just one binary which will end up in
->> target/release/btrfs-dedupe.
->>
->> I'll add these instructions to the README later.
->>
->> James
->>
->> On 13/01/17 13:56, Robert Krig wrote:
->>> Hi, could you include some build instructions for people that are
->>> unfamiliar with compiling rust code?
->>>
->>>
->>> On 08.01.2017 17:57, James Pharaoh wrote:
->>>> Hi everyone,
->>>>
->>>> I'm pleased to announce a new version of my btrfs-dedupe tool, written
->>>> in rust, available here:
->>>>
->>>> http://btrfs-dedupe.com/
->>>>
->>>> Binary packages built on ubuntu (probably will work elsewhere, but
->>>> haven't tried this), are available at:
->>>>
->>>> https://dist.wellbehavedsoftware.com/btrfs-dedupe/
->>>>
->>>> This version is considered ready for production use. It maintains a
->>>> compressed database of the filesystem state, and it tracks file
->>>> metadata, hashes file contents, and the extent-map contents, in order
->>>> to work out what needs to be deduplicated.
->>>>
->>>> This is a whole-file deduplication tool, similar to bedup, but since
->>>> it is written in Rust, and designed to work with the dedupe ioctl, I
->>>> think it's more suitable for production use.
->>>>
->>>> As normal for open source, this comes without any warranty etc, but
->>>> the only updates are performed via the defragment and deduplication
->>>> ioctls, and so assuming they work correctly then this should not cause
->>>> any corruption.
->>>>
->>>> Please feel free to contact me with any questions/problems.
->>>> --
->>>> To unsubscribe from this list: send the line "unsubscribe
->>>> linux-btrfs" in
->>>> the body of a message to majordomo@vger.kernel.org
->>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+Sebastian

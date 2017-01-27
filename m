@@ -1,46 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:50138 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751132AbdA0VLy (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 27 Jan 2017 16:11:54 -0500
-Date: Fri, 27 Jan 2017 14:37:29 -0500
-From: Chris Mason <clm@fb.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [GIT PULL] Btrfs
-Message-ID: <20170127193728.GA50013@clm-mbp.thefacebook.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Received: from mx2.suse.de ([195.135.220.15]:47254 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S932254AbdA0O1F (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 27 Jan 2017 09:27:05 -0500
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: clm@fb.com
+Subject: Btrfs progs release 4.9.1
+Date: Fri, 27 Jan 2017 15:25:45 +0100
+Message-Id: <20170127142545.19038-1-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
+Hi,
 
-My for-linus-4.10 branch:
+btrfs-progs version 4.9.1 have been released.
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.10
+Changes:
+* check:
+  * use correct inode number for lost+found files
+  * lowmem mode: fix false alert on dropped leaf
+* size reports: negative numbers might appear in size reports during device
+  deletes (previously in EiB units)
+* mkfs: print device being trimmed
+* defrag: v1 ioctl support dropped
+* quota: print message before starting to wait for rescan
+* qgroup show: new option to sync before printing the stats
+* other:
+  * corrupt-block enhancements
+  * backtrace and co. cleanups
+  * doc fixes
 
-Has some fixes that we've collected from the list.  We still have one 
-more pending to nail down a regression in lzo compression, but I wanted 
-to get this batch out the door.
+Changes since rc1:
+* change name of one test directory, duplicate numbers
 
-Omar Sandoval (3) commits (+2/-6):
-     Btrfs: remove ->{get, set}_acl() from btrfs_dir_ro_inode_operations (+0/-2)
-     Btrfs: remove old tree_root case in btrfs_read_locked_inode() (+1/-4)
-     Btrfs: disable xattr operations on subvolume directories (+1/-0)
+Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
+Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
 
-Liu Bo (1) commits (+12/-1):
-     Btrfs: fix truncate down when no_holes feature is enabled
+Shortlog:
 
-Chandan Rajendra (1) commits (+2/-2):
-     Btrfs: Fix deadlock between direct IO and fast fsync
+David Sterba (18):
+      btrfs-progs: make negative number pretty printing optional
+      btrfs-progs: enable negative numbers for unallocated device space
+      btrfs-progs: mkfs: print device name while trimming
+      btrfs-progs: defrag: force using v2 defrag ioctl and make default 32M threshold actually work
+      btrfs-progs: defrag: remove v1 ioctl support
+      btrfs-progs: qgroups show: clean up errno passing
+      btrfs-progs: qgroup show: refine error messages
+      btrfs-progs: tests: 005-qgroup-show
+      btrfs-progs: kerncompat: add separate trace print for BUG_ON
+      btrfs-progs: kerncompat: pass exact condition value from ASSERT
+      btrfs-progs: kerncompat: disconnect assert and warning messages
+      btrfs-progs: kerncompat: simplify warning_trace
+      btrfs-progs: qgroup show: do not error if sync fails
+      btrfs-progs: tests: add variable quotation to cli-tests
+      btrfs-progs: tests: use built binaries for 004-send-parent-multi-subvol
+      btrfs-progs: mkfs/convert: separate the convert part from make_btrfs
+      btrfs-progs: update CHANGES for v4.9.1
+      Btrfs progs v4.9.1
 
-Wang Xiaoguang (1) commits (+1/-0):
-     btrfs: fix false enospc error when truncating heavily reflinked file
+Esteve Fernandez (1):
+      btrfs-progs: docs: fix typo in btrfs-subvolume
 
-Total: (6) commits (+17/-9)
+Goldwyn Rodrigues (2):
+      btrfs-progs: check: get the highest inode for lost+found
+      btrfs-progs: sanitize - Use correct source for memcpy
 
-  fs/btrfs/inode.c | 26 +++++++++++++++++---------
-  1 file changed, 17 insertions(+), 9 deletions(-)
+Jeff Mahoney (1):
+      btrfs-progs: quota: fix printing during wait mode
+
+Lakshmipathi.G (2):
+      btrfs-progs: corrupt-block: Include inode nlink field
+      btrfs-progs: corrupt-block: Include more inode fields
+
+Nicholas D Steeves (1):
+      btrfs-progs: Fix spelling/typos in user-facing strings
+
+Qu Wenruo (2):
+      btrfs-progs: check: fix false alert on dropped leaf in lowmem mode
+      btrfs-progs: Fix disable backtrace assert error
+
+Tsutomu Itoh (3):
+      btrfs-progs: qgroup: add sync option to 'qgroup show'
+      btrfs-progs: qgroup: change the value of sort option
+      btrfs-progs: tests: add test for --sync option of qgroup show
+
+Zygo Blaxell (1):
+      btrfs-progs: utils: negative numbers are more plausible than sizes over 8 EiB
+

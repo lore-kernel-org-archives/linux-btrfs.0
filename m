@@ -1,89 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f67.google.com ([74.125.82.67]:34385 "EHLO
-        mail-wm0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752626AbdAZSzy (ORCPT
+Received: from mail-wm0-f50.google.com ([74.125.82.50]:36761 "EHLO
+        mail-wm0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932544AbdA0L3p (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 26 Jan 2017 13:55:54 -0500
-Message-ID: <1485453708.4239.17.camel@gmail.com>
-Subject: Re: [btrfs/rt] lockdep false positive
-From: Mike Galbraith <umgwanakikbuti@gmail.com>
-To: Sebastian Andrzej Siewior <bigeasy@linutronix.de>,
-        linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>,
-        Josef Bacik <jbacik@fb.com>, Chris Mason <clm@fb.com>
-Cc: LKML <linux-kernel@vger.kernel.org>,
-        linux-rt-users <linux-rt-users@vger.kernel.org>,
-        Peter Zijlstra <peterz@infradead.org>,
-        Thomas Gleixner <tglx@linutronix.de>
-Date: Thu, 26 Jan 2017 19:01:48 +0100
-In-Reply-To: <20170126170903.ikq7iequ4g5mhszo@linutronix.de>
-References: <1485074793.4467.49.camel@gmail.com>
-         <1485107114.4467.73.camel@gmail.com>
-         <20170125170209.h6tqr6zgaq6ojmco@linutronix.de>
-         <1485368989.5150.60.camel@gmail.com>
-         <20170126170903.ikq7iequ4g5mhszo@linutronix.de>
-Content-Type: text/plain; charset="us-ascii"
-Mime-Version: 1.0
+        Fri, 27 Jan 2017 06:29:45 -0500
+Received: by mail-wm0-f50.google.com with SMTP id c85so112413378wmi.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 27 Jan 2017 03:29:39 -0800 (PST)
+Subject: Re: btrfs recovery
+References: <961e2f81-40e6-cced-f14a-7af7effe1e5e@googlemail.com>
+ <20170126092559.GD24076@carfax.org.uk>
+ <24f6cfb2-d008-af12-ad94-4a4da1be1ee2@googlemail.com>
+ <9c38e493-e4aa-a718-c6a8-d400bcff0df8@googlemail.com>
+To: Hugo Mills <hugo@carfax.org.uk>
+Cc: linux-btrfs@vger.kernel.org
+From: Oliver Freyermuth <o.freyermuth@googlemail.com>
+Message-ID: <2c02d0b6-859d-f66f-e259-748db131d38d@googlemail.com>
+Date: Fri, 27 Jan 2017 12:01:43 +0100
+MIME-Version: 1.0
+In-Reply-To: <9c38e493-e4aa-a718-c6a8-d400bcff0df8@googlemail.com>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2017-01-26 at 18:09 +0100, Sebastian Andrzej Siewior wrote:
-> On 2017-01-25 19:29:49 [+0100], Mike Galbraith wrote:
-> > On Wed, 2017-01-25 at 18:02 +0100, Sebastian Andrzej Siewior wrote:
-> > 
-> > > > [  341.960794]        CPU0
-> > > > [  341.960795]        ----
-> > > > [  341.960795]   lock(btrfs-tree-00);
-> > > > [  341.960795]   lock(btrfs-tree-00);
-> > > > [  341.960796] 
-> > > > [  341.960796]  *** DEADLOCK ***
-> > > > [  341.960796]
-> > > > [  341.960796]  May be due to missing lock nesting notation
-> > > > [  341.960796]
-> > > > [  341.960796] 6 locks held by kworker/u8:9/2039:
-> > > > [  341.960797]  #0:  ("%s-%s""btrfs", name){.+.+..}, at: [] process_one_work+0x171/0x700
-> > > > [  341.960812]  #1:  ((&work->normal_work)){+.+...}, at: [] process_one_work+0x171/0x700
-> > > > [  341.960815]  #2:  (sb_internal){.+.+..}, at: [] start_transaction+0x2a7/0x5a0 [btrfs]
-> > > > [  341.960825]  #3:  (btrfs-tree-02){+.+...}, at: [] btrfs_clear_lock_blocking_rw+0x55/0x100 [btrfs]
-> > > > [  341.960835]  #4:  (btrfs-tree-01){+.+...}, at: [] btrfs_clear_lock_blocking_rw+0x55/0x100 [btrfs]
-> > > > [  341.960854]  #5:  (btrfs-tree-00){+.+...}, at: [] btrfs_clear_lock_blocking_rw+0x55/0x100 [btrfs]
-> > > > 
-> > > > Attempting to describe RT rwlock semantics to lockdep prevents this.
-> > > 
-> > > and this is what I don't get. I stumbled upon this myself [0] but didn't
-> > > fully understand the problem (assuming this is the same problem colored
-> > > differently).
-> > 
-> > Yeah, [0] looks like it, though I haven't met an 'fs' variant, my
-> > encounters were always either 'tree' or 'csum' flavors.
-> > 
-> > > With your explanation I am not sure if I get what is happening. If btrfs
-> > > is taking here read-locks on random locks then it may deadlock if
-> > > another btrfs-thread is doing the same and need each other's locks.
-> > 
-> > I don't know if a real RT deadlock is possible.  I haven't met one,
-> > only variants of this bogus recursion gripe.
-> >  
-> > > If btrfs takes locks recursively which it already holds (in the same
-> > > context / process) then it shouldn't be visible here because lockdep
-> > > does not account this on -RT.
-> > 
-> > If what lockdep gripes about were true, we would never see the splat,
-> > we'd zip straight through that (illusion) recursive read_lock() with
-> > lockdep being none the wiser. 
-> > 
-> > > If btrfs takes the locks in a special order for instance only ascending
-> > > according to inode's number then it shouldn't deadlock.
-> > 
-> > No idea.  Locking fancy enough to require dynamic key assignment to
-> > appease lockdep is too fancy for me.
+> I'm also running 'memtester 12G' right now, which at least tests 2/3 of the memory. I'll leave that running for a day or so, but of course it will not provide a clear answer... 
+
+A small update: while the online memtester is without any errors still, I checked old syslogs from the machine and found something intriguing. 
+Jan 16 10:03:11 xxx kernel: Corrupted low memory at ffff880000009000 (9000 phys) = 00098d39
+Jan 16 10:18:33 xxx kernel: Corrupted low memory at ffff880000009000 (9000 phys) = 00099795
+Jan 16 17:35:48 xxx kernel: Corrupted low memory at ffff880000009000 (9000 phys) = 000dd64e
+This seems to be consistently happening from time to time (I have low memory corruption checking compiled in). 
+The numbers always consistently increase, and after a reboot, start fresh from a small number again. 
+
+I suppose this is a BIOS bug and it's storing some counter in low memory. I am unsure whether this could have triggered the BTRFS corruption, 
+nor do I know what to do about it (are there kernel quirks for that?). 
+The vendor does not provide any updates, as usual. 
+
+If someone could confirm whether this might cause corruption for btrfs (and maybe direct me to the correct place to ask for a kernel quirk for this device - do I ask on MM, or somewhere else?), that would be much appreciated. 
+
+>>    We can probably talk you through fixing this by hand with a decent
+>> hex editor. I've done it before...
+>>
+> That would be nice! Is it fine via the mailing list? 
+> Potentially, the instructions could be helpful for future reference, and "real" IRC is not accessible from my current location. 
 > 
-> yup, for me, too. As long as nobody from the btrfs camp explains how
-> that locking workings and if it is safe I am not feeling comfortable to
-> shut up lockdep here.
+> Do you have suggestions for a decent hexeditor for this job? Until now, I have been mainly using emacs, 
+> classic hexedit (http://rigaux.org/hexedit.html), or okteta (beware, it's graphical!), but of course these were made for a few MiB of files and are not so well suited for a block device. 
+> 
+> The first thing to do would then probably just be to jump to the offset where 0xd89500014da12000 is written (can I get that via inspect-internal, or do I have to search for it?), fix that to read 
+> 0x00a800014da12000
+> (if I understood correctly) and then probably adapt a checksum? 
+> 
+Additionally, I found that "btrfs restore" works on this broken FS. I will take an external backup of the content within the next 24 hours using that, then I am ready to try anything you suggeest. 
 
-Works for me.  What we're talking about is an obvious false positive in
-one and only one contrived situation.  It's annoying/sub-optimal, but
-happily has no (known) impact other than testing, and that's trivial to
-remedy.
-
-	-Mike
+Cheers and thanks!
+	Oliver

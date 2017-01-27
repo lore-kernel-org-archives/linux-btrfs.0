@@ -1,64 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from alt32.smtp-out.videotron.ca ([24.53.0.21]:29003 "EHLO
-        alt32.smtp-out.videotron.ca" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S932975AbdA0RDR (ORCPT
+Received: from mail-ua0-f172.google.com ([209.85.217.172]:34558 "EHLO
+        mail-ua0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751144AbdA0TOn (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 27 Jan 2017 12:03:17 -0500
+        Fri, 27 Jan 2017 14:14:43 -0500
+Received: by mail-ua0-f172.google.com with SMTP id 35so212062430uak.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 27 Jan 2017 11:14:38 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8;
- format=flowed
-Date: Fri, 27 Jan 2017 11:47:59 -0500
-From: Hans Deragon <hans@deragon.biz>
-To: linux-btrfs@vger.kernel.org
-Cc: Adam Borowski <kilobyte@angband.pl>
-Subject: Re: raid1:  cannot add disk to replace faulty because can only
- mount fs as read-only.
-In-Reply-To: <W75Sc6PDCBok7W75TcCgc7@videotron.ca>
-References: <54678ac94c95687e00485d41fa5b5bc9@server1.deragon.biz>
- <W75Sc6PDCBok7W75TcCgc7@videotron.ca>
-Message-ID: <51114ea93a0f76a5ff6621e4d8983944@server1.deragon.biz>
+From: MegaBrutal <megabrutal@gmail.com>
+Date: Fri, 27 Jan 2017 19:45:00 +0100
+Message-ID: <CAE8gLhk=Gf7Qejs6zit+hGdFNeNSPexJZ=jgCY1CADt6xoNHhA@mail.gmail.com>
+Subject: File system is oddly full after kernel upgrade, balance doesn't help
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-01-24 14:48, Adam Borowski wrote:
+Hi,
 
-> On Tue, Jan 24, 2017 at 01:57:24PM -0500, Hans Deragon wrote:
-> 
->> If I remove 'ro' from the option, I cannot get the filesystem mounted 
->> because of the following error: BTRFS: missing devices(1) exceeds the 
->> limit(0), writeable mount is not allowed So I am stuck. I can only 
->> mount the filesystem as read-only, which prevents me to add a disk.
-> 
-> A known problem: you get only one shot at fixing the filesystem, but 
-> that's
-> not because of some damage but because the check whether the fs is in a
-> shape is good enough to mount is oversimplistic.
-> 
-> Here's a patch, if you apply it and recompile, you'll be able to mount
-> degraded rw.
-> 
-> Note that it removes a safety harness: here, the harness got tangled up 
-> and
-> keeps you from recovering when it shouldn't, but it _has_ valid uses 
-> that.
-> 
-> Meow!
+Not sure if it caused by the upgrade, but I only encountered this
+problem after I upgraded to Ubuntu Yakkety, which comes with a 4.8
+kernel.
+Linux vmhost 4.8.0-34-generic #36-Ubuntu SMP Wed Dec 21 17:24:18 UTC
+2016 x86_64 x86_64 x86_64 GNU/Linux
 
-Greetings,
+This is the 2nd file system which showed these symptoms, so I thought
+it's more than happenstance. I don't remember what I did with the
+first one, but I somehow managed to fix it with balance, if I remember
+correctly, but it doesn't help with this one.
 
-Ok, that solution will solve my problem in the short run, i.e. getting 
-my raid1 up again.
+FS state before any attempts to fix:
+Filesystem                             1M-blocks   Used Available Use%
+Mounted on
+/dev/mapper/vmdata--vg-lxc--curlybrace      1024   1024         0 100%
+/tmp/mnt/curlybrace
 
-However, as a user, I am seeking for an easy, no maintenance raid 
-solution.  I wish that if a drive fails, the btrfs filesystem still 
-mounts rw and leaves the OS running, but warns the user of the failing 
-disk and easily allow the addition of a new drive to reintroduce 
-redundancy.  Are there any plans within the btrfs community to implement 
-such a feature?  In a year from now, when the other drive will fail, 
-will I hit again this problem, i.e. my OS failing to start, booting into 
-a terminal, and cannot reintroduce a new drive without recompiling the 
-kernel?
+Resized LV, run „btrfs filesystem resize max /tmp/mnt/curlybrace”:
+/dev/mapper/vmdata--vg-lxc--curlybrace      2048   1303         0 100%
+/tmp/mnt/curlybrace
 
-Best regards,
-Hans Deragon
+Notice how the usage magically jumped up to 1303 MB, and despite the
+FS size is 2048 MB, the usage is still displayed as 100%.
 
+Tried full balance (other options with -dusage had no result):
+root@vmhost:~# btrfs balance start -v /tmp/mnt/curlybrace
+Dumping filters: flags 0x7, state 0x0, force is off
+  DATA (flags 0x0): balancing
+  METADATA (flags 0x0): balancing
+  SYSTEM (flags 0x0): balancing
+WARNING:
+
+    Full balance without filters requested. This operation is very
+    intense and takes potentially very long. It is recommended to
+    use the balance filters to narrow down the balanced data.
+    Use 'btrfs balance start --full-balance' option to skip this
+    warning. The operation will start in 10 seconds.
+    Use Ctrl-C to stop it.
+10 9 8 7 6 5 4 3 2 1
+Starting balance without any filters.
+ERROR: error during balancing '/tmp/mnt/curlybrace': No space left on device
+There may be more info in syslog - try dmesg | tail
+
+No space left on device? How?
+
+But it changed the situation:
+/dev/mapper/vmdata--vg-lxc--curlybrace      2048   1302       190  88%
+/tmp/mnt/curlybrace
+
+This is still not acceptable. I need to recover at least 50% free
+space (since I increased the FS to the double).
+
+A 2nd balance attempt resulted in this:
+/dev/mapper/vmdata--vg-lxc--curlybrace      2048   1302       162  89%
+/tmp/mnt/curlybrace
+
+So... it became slightly worse.
+
+What's going on? How can I fix the file system to show real data?
+
+
+Regards,
+MegaBrutal

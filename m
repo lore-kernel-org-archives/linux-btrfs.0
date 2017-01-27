@@ -1,71 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:18415 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755099AbdA0Qev (ORCPT
+Received: from alt32.smtp-out.videotron.ca ([24.53.0.21]:29003 "EHLO
+        alt32.smtp-out.videotron.ca" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S932975AbdA0RDR (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 27 Jan 2017 11:34:51 -0500
-Date: Fri, 27 Jan 2017 08:31:41 -0800
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: Amir Goldstein <amir73il@gmail.com>
-Cc: Miklos Szeredi <miklos@szeredi.hu>,
-        "Michael Kerrisk (man-pages)" <mtk.manpages@gmail.com>,
-        Jan Kara <jack@suse.com>, Al Viro <viro@zeniv.linux.org.uk>,
-        "linux-unionfs@vger.kernel.org" <linux-unionfs@vger.kernel.org>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        Christoph Hellwig <hch@lst.de>, mfasheh@versity.com,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [RFC][PATCH v2 4/4] vfs: wrap write f_ops with
- file_{start,end}_write()
-Message-ID: <20170127163141.GG2584@birch.djwong.org>
-References: <1485174742-15866-2-git-send-email-amir73il@gmail.com>
- <1485200596-14057-1-git-send-email-amir73il@gmail.com>
- <CAJfpegsL3P-2k=dSWP9XiWKZA3Ywbo0a8TSQ_uS9RkJjqRywRQ@mail.gmail.com>
- <CAOQ4uxhKFgp3Qhm_TnLrkzSzGkxa4iiOzZ+sejVXLXcCqGPEYg@mail.gmail.com>
- <CAOQ4uxiVvhkqg5dUjRvvXr1d9K46Wp8yoXg4+abShdH0ae71NA@mail.gmail.com>
+        Fri, 27 Jan 2017 12:03:17 -0500
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAOQ4uxiVvhkqg5dUjRvvXr1d9K46Wp8yoXg4+abShdH0ae71NA@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8;
+ format=flowed
+Date: Fri, 27 Jan 2017 11:47:59 -0500
+From: Hans Deragon <hans@deragon.biz>
+To: linux-btrfs@vger.kernel.org
+Cc: Adam Borowski <kilobyte@angband.pl>
+Subject: Re: raid1:  cannot add disk to replace faulty because can only
+ mount fs as read-only.
+In-Reply-To: <W75Sc6PDCBok7W75TcCgc7@videotron.ca>
+References: <54678ac94c95687e00485d41fa5b5bc9@server1.deragon.biz>
+ <W75Sc6PDCBok7W75TcCgc7@videotron.ca>
+Message-ID: <51114ea93a0f76a5ff6621e4d8983944@server1.deragon.biz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[adding mfasheh & btrfs list to cc]
+On 2017-01-24 14:48, Adam Borowski wrote:
 
-On Fri, Jan 27, 2017 at 06:20:12PM +0200, Amir Goldstein wrote:
-> On Fri, Jan 27, 2017 at 1:50 PM, Amir Goldstein <amir73il@gmail.com> wrote:
-> > On Fri, Jan 27, 2017 at 1:09 PM, Miklos Szeredi <miklos@szeredi.hu> wrote:
-> >> On Mon, Jan 23, 2017 at 8:43 PM, Amir Goldstein <amir73il@gmail.com> wrote:
-> >>> Before calling write f_ops, call file_start_write() instead
-> >>> of sb_start_write().
-> >>>
-> >>> This ensures freeze protection for both overlay and upper fs
-> >>> when file is open from an overlayfs mount.
-> >>>
-> >>> Replace {sb,file}_start_write() for {copy,clone}_file_range() and
-> >>> for fallocate().
-> >>>
-> >>> For dedup_file_range() there is no need for mnt_want_write_file().
-> >>> File is already open for write, so we already have mnt_want_write()
-> >>> and we only need file_start_write().
-> >>
-> >> Being opened for write is not verified if capable(CAP_SYS_ADMIN).
-> >> Ugly special case, don't ask me why it's done...
-> >>
-> >
-> > Christoph, Darrick, is that by design?
+> On Tue, Jan 24, 2017 at 01:57:24PM -0500, Hans Deragon wrote:
 > 
-> Anyway, whether is makes sense or not, that's a legacy from
-> BTRFS_IOC_FILE_EXTENT_SAME, we probably have to live with.
+>> If I remove 'ro' from the option, I cannot get the filesystem mounted 
+>> because of the following error: BTRFS: missing devices(1) exceeds the 
+>> limit(0), writeable mount is not allowed So I am stuck. I can only 
+>> mount the filesystem as read-only, which prevents me to add a disk.
 > 
-> Michael, I recon man page needs updating.
+> A known problem: you get only one shot at fixing the filesystem, but 
+> that's
+> not because of some damage but because the check whether the fs is in a
+> shape is good enough to mount is oversimplistic.
 > 
-> I'll remove this hunk from the patch.
+> Here's a patch, if you apply it and recompile, you'll be able to mount
+> degraded rw.
+> 
+> Note that it removes a safety harness: here, the harness got tangled up 
+> and
+> keeps you from recovering when it shouldn't, but it _has_ valid uses 
+> that.
+> 
+> Meow!
 
-I /think/ that behavior (CAP_SYS_ADMIN not requiring destfd to be open
-for writes in order to dedupe) was intentional; it seems to date back to
-the original ioctl in 2013.  My guess of the justification is that we're
-not really writing to dest, so if the admin comes along with an O_RDONLY
-destfd it's ok?
+Greetings,
 
-<shrug> Let's see if we get any bites from the btrfs developers. :)
+Ok, that solution will solve my problem in the short run, i.e. getting 
+my raid1 up again.
 
---D
+However, as a user, I am seeking for an easy, no maintenance raid 
+solution.  I wish that if a drive fails, the btrfs filesystem still 
+mounts rw and leaves the OS running, but warns the user of the failing 
+disk and easily allow the addition of a new drive to reintroduce 
+redundancy.  Are there any plans within the btrfs community to implement 
+such a feature?  In a year from now, when the other drive will fail, 
+will I hit again this problem, i.e. my OS failing to start, booting into 
+a terminal, and cannot reintroduce a new drive without recompiling the 
+kernel?
+
+Best regards,
+Hans Deragon
+

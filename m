@@ -1,98 +1,157 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f48.google.com ([74.125.82.48]:36654 "EHLO
-        mail-wm0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750893AbdA1RQx (ORCPT
+Received: from mail-ua0-f175.google.com ([209.85.217.175]:33665 "EHLO
+        mail-ua0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751565AbdA1SWw (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 28 Jan 2017 12:16:53 -0500
-Received: by mail-wm0-f48.google.com with SMTP id c85so158076387wmi.1
-        for <linux-btrfs@vger.kernel.org>; Sat, 28 Jan 2017 09:16:52 -0800 (PST)
-Received: from ?IPv6:2a01:5c0:13:d671:6d3b:20e0:5697:6617? ([2a01:5c0:13:d671:6d3b:20e0:5697:6617])
-        by smtp.googlemail.com with ESMTPSA id o42sm13642564wrb.18.2017.01.28.08.46.25
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Sat, 28 Jan 2017 08:46:25 -0800 (PST)
-Subject: Re: btrfs recovery
-References: <961e2f81-40e6-cced-f14a-7af7effe1e5e@googlemail.com>
- <20170126092559.GD24076@carfax.org.uk>
- <24f6cfb2-d008-af12-ad94-4a4da1be1ee2@googlemail.com>
- <9c38e493-e4aa-a718-c6a8-d400bcff0df8@googlemail.com>
- <2c02d0b6-859d-f66f-e259-748db131d38d@googlemail.com>
- <304177d4-cc35-9bfc-816c-85ff3501dc50@gmail.com>
- <pan$cc953$ec4078b0$696ed46d$9618e10e@cox.net>
-To: linux-btrfs@vger.kernel.org
-From: Oliver Freyermuth <o.freyermuth@googlemail.com>
-Message-ID: <ad929c7d-8781-6c9f-382c-b2fbdfad5f2c@googlemail.com>
-Date: Sat, 28 Jan 2017 17:46:24 +0100
+        Sat, 28 Jan 2017 13:22:52 -0500
+Received: by mail-ua0-f175.google.com with SMTP id i68so225867747uad.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 28 Jan 2017 10:22:51 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <pan$cc953$ec4078b0$696ed46d$9618e10e@cox.net>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <pan$bea71$c88f268f$3fe2f55a$caf61eb5@cox.net>
+References: <CAE8gLhk=Gf7Qejs6zit+hGdFNeNSPexJZ=jgCY1CADt6xoNHhA@mail.gmail.com>
+ <pan$bea71$c88f268f$3fe2f55a$caf61eb5@cox.net>
+From: MegaBrutal <megabrutal@gmail.com>
+Date: Sat, 28 Jan 2017 19:15:01 +0100
+Message-ID: <CAE8gLhkjgOzRgJXKL=az8Mw8njCg+m6d0zyH8WmDPNx_-Wp9Ow@mail.gmail.com>
+Subject: Re: File system is oddly full after kernel upgrade, balance doesn't help
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Duncan, 
+Hello,
 
-thanks for your extensive reply! 
+Of course I can't retrieve the data from before the balance, but here
+is the data from now:
 
-Am 28.01.2017 um 06:00 schrieb Duncan:
-> All three options apparently default to 64K (as that's what I see here 
-> and I don't believe I've changed them), but can be changed.  See the 
-> kernel options help and where it points for more.
-> 
-Indeed, I have here:
-CONFIG_DEFAULT_MMAP_MIN_ADDR=4096
-(still at default)
-CONFIG_X86_CHECK_BIOS_CORRUPTION=y
-CONFIG_X86_BOOTPARAM_MEMORY_CORRUPTION_CHECK=y
-The last option sets the default value for the bootparam,
-so my kernel boots with checks on even without the bootparam explicitly set. 
+root@vmhost:~# btrfs fi show /tmp/mnt/curlybrace
+Label: 'curlybrace'  uuid: f471bfca-51c4-4e44-ac72-c6cd9ccaf535
+    Total devices 1 FS bytes used 752.38MiB
+    devid    1 size 2.00GiB used 1.90GiB path
+/dev/mapper/vmdata--vg-lxc--curlybrace
 
-I have now increased 
-CONFIG_X86_RESERVE_LOW=640
-which was previously indeed set to 64, and rebooted successfully. 
+root@vmhost:~# btrfs fi df /tmp/mnt/curlybrace
+Data, single: total=773.62MiB, used=714.82MiB
+System, DUP: total=8.00MiB, used=16.00KiB
+Metadata, DUP: total=577.50MiB, used=37.55MiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+root@vmhost:~# btrfs fi usage /tmp/mnt/curlybrace
+Overall:
+    Device size:           2.00GiB
+    Device allocated:           1.90GiB
+    Device unallocated:         103.38MiB
+    Device missing:             0.00B
+    Used:             789.94MiB
+    Free (estimated):         162.18MiB    (min: 110.50MiB)
+    Data ratio:                  1.00
+    Metadata ratio:              2.00
+    Global reserve:         512.00MiB    (used: 0.00B)
 
-I have also tried to set:
-memory_corruption_check_size=640
-as kernel parameter. Sadly, the system froze before it could produce any output on screen, or write anything to PMEM.  
-So I am now running with the default of checking the first 64k, but hope I am more safe since I use CONFIG_X86_RESERVE_LOW=640 now. 
+Data,single: Size:773.62MiB, Used:714.82MiB
+   /dev/mapper/vmdata--vg-lxc--curlybrace     773.62MiB
 
-> Meanwhile, since the defaults cover it, no quirk should be necessary (tho 
-> I might increase the reserve and test coverage area to the maximum 640K 
-> and run for awhile to be sure it's not going above the 64K default), but 
-> were it outside the default 64K coverage area, I would probably file it 
-> as a bug (my usual method for confirmed bugs), and mark it initially as 
-> an arch-x86 bug, tho they may switch it to something else, later.  But 
-> the devs would probably suggest further debugging, possibly giving you 
-> debug patches to try, etc, to nail down the specific device, before 
-> setting up a quirk for it.  Because the problem could be an expansion 
-> card or something, not the mobo/factory-default-machine, too, and it'd be 
-> a shame to setup a quirk for the wrong hardware.
-I have another funny addition. I have access to a machine with exact same hardware configuration, and I am pretty sure it has the same firmware version, of course maybe slightly differently configured. 
-That one is running openSUSE 13.1 with standard kernel. 
-They use:
-CONFIG_X86_CHECK_BIOS_CORRUPTION=y
-CONFIG_X86_BOOTPARAM_MEMORY_CORRUPTION_CHECK=y
-CONFIG_X86_RESERVE_LOW=64
-That machine does *NOT* produce the corruption-messages in syslog. 
+Metadata,DUP: Size:577.50MiB, Used:37.55MiB
+   /dev/mapper/vmdata--vg-lxc--curlybrace       1.13GiB
 
-The obvious differences are the kernel version (I run 4.9, that machine has 3.12.57-44-default),
-and the fact that my machine was booted via UEFI, while the openSUSE machine booted classically via BIOS (i.e. CSM of the UEFI). 
-Even the GPU is the same. That machine uses nvidia binary, while I use nouveau by now, but indeed I find in old syslogs the same corruption messages from the time I still used the binary blob. 
+System,DUP: Size:8.00MiB, Used:16.00KiB
+   /dev/mapper/vmdata--vg-lxc--curlybrace      16.00MiB
 
-So my hunch is that it is related to me booting via EFI, but of course it might be a firmware bug triggered by some kernel-firmware-interaction change between 3.12 and 4.9,
-or something in the firmware configuration. 
+Unallocated:
+   /dev/mapper/vmdata--vg-lxc--curlybrace     103.38MiB
 
-> Btrfs restore is a very useful tool.  It has gotten me out of a few 
-> "changes since the last backup weren't valuable enough to have updated 
-> the backup yet when the risk was theoretical, so nothing serious, but now 
-> that it's no longer theory only, it'd still be useful to be able to save 
-> the current version, if it's not /too/ much trouble" type situations, 
-> myself. =:^)
-> 
-> Just don't count on restore to save your *** and always treat what it can 
-> often bring to current as a pleasant surprise, and having it fail won't 
-> be a down side, while having it work, if it does, will always be up side. 
-> =:^)
-> 
-I'll keep that in mind, and I think that in the future, before trying any "btrfs check" (or even repair)
-I will always try restore first if my backup was not fresh enough :-). 
 
+So... if I sum the data, metadata, and the global reserve, I see why
+only ~170 MB is left. I have no idea, however, why the global reserve
+sneaked up to 512 MB for such a small file system, and how could I
+resolve this situation. Any ideas?
+
+
+MegaBrutal
+
+
+
+2017-01-28 7:46 GMT+01:00 Duncan <1i5t5.duncan@cox.net>:
+> MegaBrutal posted on Fri, 27 Jan 2017 19:45:00 +0100 as excerpted:
+>
+>> Hi,
+>>
+>> Not sure if it caused by the upgrade, but I only encountered this
+>> problem after I upgraded to Ubuntu Yakkety, which comes with a 4.8
+>> kernel.
+>> Linux vmhost 4.8.0-34-generic #36-Ubuntu SMP Wed Dec 21 17:24:18 UTC
+>> 2016 x86_64 x86_64 x86_64 GNU/Linux
+>>
+>> This is the 2nd file system which showed these symptoms, so I thought
+>> it's more than happenstance. I don't remember what I did with the first
+>> one, but I somehow managed to fix it with balance, if I remember
+>> correctly, but it doesn't help with this one.
+>>
+>> FS state before any attempts to fix:
+>> Filesystem      1M-blocks   Used Available Use% Mounted on
+>> [...]curlybrace      1024   1024         0 100% /tmp/mnt/curlybrace
+>>
+>> Resized LV, run „btrfs filesystem resize max /tmp/mnt/curlybrace”:
+>> [...]curlybrace      2048   1303         0 100% /tmp/mnt/curlybrace
+>>
+>> Notice how the usage magically jumped up to 1303 MB, and despite the FS
+>> size is 2048 MB, the usage is still displayed as 100%.
+>>
+>> Tried full balance (other options with -dusage had no result):
+>> root@vmhost:~# btrfs balance start -v /tmp/mnt/curlybrace
+>
+>> Starting balance without any filters.
+>> ERROR: error during balancing '/tmp/mnt/curlybrace':
+>> No space left on device
+>
+>> No space left on device? How?
+>>
+>> But it changed the situation:
+>> [...]curlybrace      2048   1302       190  88% /tmp/mnt/curlybrace
+>>
+>> This is still not acceptable. I need to recover at least 50% free space
+>> (since I increased the FS to the double).
+>>
+>> A 2nd balance attempt resulted in this:
+>> [...]curlybrace      2048   1302       162  89% /tmp/mnt/curlybrace
+>>
+>> So... it became slightly worse.
+>>
+>> What's going on? How can I fix the file system to show real data?
+>
+> Something seems off, yes, but...
+>
+> https://btrfs.wiki.kernel.org/index.php/FAQ
+>
+> Reading the whole thing will likely be useful, but especially 1.3/1.4 and
+> 4.6-4.9 discussing the problem of space usage, reporting, and (primarily
+> in some of the other space related FAQs beyond the specific ones above)
+> how to try and fix it when space runes out, on btrfs.
+>
+> If you read them before, read them again, because you didn't post the
+> btrfs free-space reports covered in 4.7, instead posting what appears to
+> be the standard (non-btrfs) df report, which for all the reasons
+> explained in the FAQ, is at best only an estimate on btrfs.  That
+> estimate is obviously behaving unexpectedly in your case, but without the
+> btrfs specific reports, it's nigh impossible to even guess with any
+> chance at accuracy what's going on, or how to fix it.
+>
+> A WAG would be that part of the problem might be that you were into
+> global reserve before the resize, so after the filesystem got more space
+> to use, the first thing it did was unload that global reserve usage,
+> thereby immediately upping apparent usage.  That might explain that
+> initial jump in usage after the resize.  But that's just a WAG.  Without
+> at least btrfs filesystem usage, or btrfs filesystem df plus btrfs
+> filesystem show, from before the resize, after, and before and after the
+> balances, a WAG is what it remains.  And again, without those reports,
+> there's no way to say whether balance can be expected to help, or not.
+>
+> --
+> Duncan - List replies preferred.   No HTML msgs.
+> "Every nonfree program has a lord, a master --
+> and if you use the program, he is your master."  Richard Stallman
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

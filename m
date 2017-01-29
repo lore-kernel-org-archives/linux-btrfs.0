@@ -1,196 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from syrinx.knorrie.org ([82.94.188.77]:50009 "EHLO
-        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751568AbdA2UOX (ORCPT
+Received: from tartarus.angband.pl ([89.206.35.136]:57174 "EHLO
+        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751498AbdA2URd (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 29 Jan 2017 15:14:23 -0500
-Subject: Re: btrfs recovery
-To: Oliver Freyermuth <o.freyermuth@googlemail.com>,
-        Hugo Mills <hugo@carfax.org.uk>
-References: <961e2f81-40e6-cced-f14a-7af7effe1e5e@googlemail.com>
- <20170126092559.GD24076@carfax.org.uk>
- <24f6cfb2-d008-af12-ad94-4a4da1be1ee2@googlemail.com>
- <9c38e493-e4aa-a718-c6a8-d400bcff0df8@googlemail.com>
- <3255da6a-c4a6-c464-7bc7-56fcff281937@googlemail.com>
- <42184069-91dd-9e32-5b41-f13f95960e86@mendix.com>
- <dab6c1c7-ebfc-5578-d9f4-ae3001b9efbf@googlemail.com>
- <0ab48f84-7e37-02aa-1de9-612fac3f02da@mendix.com>
- <58d4a6a0-fba9-79ca-9077-1c708b7a65a3@googlemail.com>
- <53a7797d-05b1-16f3-42f3-e6e9509cce4f@mendix.com>
- <5f96c780-0ac3-ab61-581c-4d52e4a8ce02@googlemail.com>
+        Sun, 29 Jan 2017 15:17:33 -0500
+Date: Sun, 29 Jan 2017 21:16:50 +0100
+From: Adam Borowski <kilobyte@angband.pl>
+To: Subscription Account <4subsacct+btrfs@gmail.com>
 Cc: linux-btrfs@vger.kernel.org
-From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Message-ID: <ed673969-c6f6-1a9c-3ee4-e6c59144714e@mendix.com>
-Date: Sun, 29 Jan 2017 21:13:23 +0100
+Subject: Re: Raid1 won't mount degraded
+Message-ID: <20170129201650.wvpzaz45r5uzsvrb@angband.pl>
+References: <CAHMMHbe4Py0JBxOQ7Z7Vv4r0UQ4ZJPKjKUXZqNo+Pdi6L_gAaw@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <5f96c780-0ac3-ab61-581c-4d52e4a8ce02@googlemail.com>
-Content-Type: text/plain; charset=windows-1252
+Content-Type: multipart/mixed; boundary="rej55rvgrewqtyls"
+In-Reply-To: <CAHMMHbe4Py0JBxOQ7Z7Vv4r0UQ4ZJPKjKUXZqNo+Pdi6L_gAaw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 01/29/2017 08:52 PM, Oliver Freyermuth wrote:
-> Am 29.01.2017 um 20:28 schrieb Hans van Kranenburg:
->> On 01/29/2017 08:09 PM, Oliver Freyermuth wrote:
->>>> [..whaaa.. text.. see previous message..]
->>> Wow - this nice python toolset really makes it easy, bigmomma holding your hands ;-) . 
 
-Well, bigmomma is a nickname of someone on IRC that I helped with a
-similar issue a few weeks ago, also a quite bizarre case of a random
-collection of bytes ending up into a leaf metadata page. While doing
-that I started this branch, adding some code for extra data structures
-and to write changed values back.
+--rej55rvgrewqtyls
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-So far the python-btrfs project focused on only working with filesystems
-that are already online and mounted and correctly working.
+On Sun, Jan 29, 2017 at 08:12:56AM -0500, Subscription Account wrote:
+> I had to remove one disk from raid 1 and I rebooted the system and was
+> able to mount in degraded mode. Then I powered off the system added a
+> new disk and when I am trying to mount the btrfs filesystem in
+> degraded mode it will no longer mount it read-write. I can mount
+> read-only though.
+> 
+> [ 2506.816795] BTRFS: missing devices(1) exceeds the limit(0),
+> writeable mount is not allowed
+> 
+> In the read-only mode I am not able to add a new device or replace :(.
+> Please help.
 
-So doing the simple chunk tree lookup we needed to find the location to
-dd was already not possible with it now.
+A known problem; you can mount rw degraded only once, if you don't fix the
+degradation somehow (by adding a device or converting down), you can't mount
+rw again.
 
-The code hacked together already for putting the metadata page into
-objects with nice attributes is waiting in an experimental branch for
-later, when I'm going to have a look at working with unmounted
-filesystems and how to interface to the C code for doing tree plumbing. :)
+If you know how to build a kernel, here's a crude patch.
 
->>> Indeed, I get exactly the same output you did show in your example, which almost matches my manual change, apart from one bit here:
->>> -00001fb0  d9 4f 00 00 00 00 00 00  00 20 a1 4d 01 00 95 d8
->>> +00001fb0  d9 4f 00 00 00 00 00 00  00 20 a1 4d 00 00 00 00
->>> I do not understand this change from 01 to 00, is this some parity information which python-btrfs fixed up automatically?
->>>
->>> Trusting the output, I did:
->>> dd if=mblock_first_fixed of=/dev/sdb1 bs=1 seek=43417600 count=16384
->>> dd if=mblock_first_fixed of=/dev/sdb1 bs=1 seek=1117159424 count=16384
->>> and re-ran "btrfs-debug-tree -b 35028992 /dev/sdb1" to confirm, item 243 is now:
->>> ...
->>>         key (5547032576 EXTENT_ITEM 204800) block 596426752 (36403) gen 20441
->>>         key (5561905152 EXTENT_ITEM 184320) block 596443136 (36404) gen 20441
->>> =>      key (1302405120 EXTENT_ITEM 303104) block 596459520 (36405) gen 20441
->>>         key (5726711808 EXTENT_ITEM 524288) block 596475904 (36406) gen 20441
->>>         key (5820571648 EXTENT_ITEM 524288) block 350322688 (21382) gen 20427
->>
->> Ehm, oh yes, that was obviously a mistake in what I showed. The
->> 0xffffffff cuts off too much..
->>
->>>>> 0xd89500014da12000 & 0xffffffff
->> 1302405120L
->>
->> This is better...
->>
->>>>> 0xd89500014da12000 & 0xffffffffff
->> 5597372416L
->>
->> ...which is the value Hugo also mentioned to likely be the value that
->> has to be there, since it nicely fits in between the surrounding keys.
-> Understood!
-> Now the diff matches exactly what I would done:
-> -00001fb0  d9 4f 00 00 00 00 00 00  00 20 a1 4d 01 00 95 d8
-> -00001fc0  4c 00 a0 04 00 00 00 00  00 00 40 8d 23 00 00 00
-> +00001fb0  d9 4f 00 00 00 00 00 00  00 20 a1 4d 01 00 00 00
-> +00001fc0  a8 00 a0 04 00 00 00 00  00 00 40 8d 23 00 00 00
-> 
-> It's really nice that python-btrfs takes over all the checksumming stuff. 
-> 
-> Writing things back and re-running "btrfs-debug-tree -b 35028992 /dev/sdb1", I find:
-> 
->         key (5547032576 EXTENT_ITEM 204800) block 596426752 (36403) gen 20441
->         key (5561905152 EXTENT_ITEM 184320) block 596443136 (36404) gen 20441
-> =>      key (5597372416 EXTENT_ITEM 303104) block 596459520 (36405) gen 20441
->         key (5726711808 EXTENT_ITEM 524288) block 596475904 (36406) gen 20441
->         key (5820571648 EXTENT_ITEM 524288) block 350322688 (21382) gen 20427
-> 
-> This matches the surroundings much better. 
 
-Yes, good.
-
->>> ...
->>> Sadly, trying to mount, I still get:
->>> [190422.147717] BTRFS info (device sdb1): use lzo compression
->>> [190422.147846] BTRFS info (device sdb1): disk space caching is enabled
->>> [190422.229227] BTRFS critical (device sdb1): corrupt node, bad key order: block=35028992, root=1, slot=242
->>> [190422.241635] BTRFS critical (device sdb1): corrupt node, bad key order: block=35028992, root=1, slot=242
->>> [190422.241644] BTRFS error (device sdb1): failed to read block groups: -5
->>> [190422.254824] BTRFS error (device sdb1): open_ctree failed
->>> The notable difference is that previously, the message was:
->>> corrupt node, bad key order: block=35028992, root=1, slot=243
->>> So does this tell me that also item 242 was corrupted?
->>
->> No, I was just going too fast.
->>
->> A nice extra excercise is to look up the block at 596459520, which this
->> item points to, and then see which object is the first one in the part
->> of the tree stored in that page. It should be (5597372416 EXTENT_ITEM
->> 303104) I guess.
->>
-> That indeed matches your expectation, i.e.:
-> # btrfs-debug-tree -b 596459520 /dev/sdb1
-> contains:
->         item 0 key (5597372416 EXTENT_ITEM 303104) itemoff 16230 itemsize 53
-> 
-> So all looks well! 
-
-Yay.
-
-> And now the final good news:
-> I can mount, no error messages in the syslog are shown! 
-> 
-> 
-> Finally, just to make sure there are no other issues, I ran a btrfs check in readonly mode:
->  # btrfs check --readonly /dev/sdb1
-> Checking filesystem on /dev/sdb1
-> UUID: cfd16c65-7f3b-4f5e-9029-971f2433d7ab
-> checking extents
-> checking free space cache
-> checking fs roots
-> invalid location in dir item 120
-> root 5 inode 177542 errors 2000, link count wrong
->         unresolved ref dir 117670 index 29695 namelen 20 name 2016-07-12_10_26.jpg filetype 1 errors 1, no dir item
-> root 5 inode 18446744073709551361 errors 2001, no inode item, link count wrong
->         unresolved ref dir 117670 index 0 namelen 20 name 2016-07-12_10_26.jpg filetype 1 errors 6, no dir index, no inode ref
-> found 127774183424 bytes used err is 1
-> total csum bytes: 124401728
-> total tree bytes: 346046464
-> total fs tree bytes: 163315712
-> total extent tree bytes: 35667968
-> btree space waste bytes: 53986463
-> file data blocks allocated: 177184325632
->  referenced 130490667008
-> 
-> These errors are unrelated and likely caused by an earlier hard poweroff sometime last year. 
-> 
-> Nevertheless, since I'll now try to use this FS (let's see how long it keeps stable), I ran repair:
-> # btrfs check --repair /dev/sdb1
-> enabling repair mode
-> Checking filesystem on /dev/sdb1
-> UUID: cfd16c65-7f3b-4f5e-9029-971f2433d7ab
-> checking extents
-> Fixed 0 roots.
-> checking free space cache
-> cache and super generation don't match, space cache will be invalidated
-> checking fs roots
-> invalid location in dir item 120
-> Trying to rebuild inode:18446744073709551361
-> Failed to reset nlink for inode 18446744073709551361: No such file or directory
->         unresolved ref dir 117670 index 0 namelen 20 name 2016-07-12_10_26.jpg filetype 1 errors 6, no dir index, no inode ref
-> checking csums
-> checking root refs
-> found 127774183424 bytes used err is 0
-> total csum bytes: 124401728
-> total tree bytes: 346046464
-> total fs tree bytes: 163315712
-> total extent tree bytes: 35667968
-> btree space waste bytes: 53986463
-> file data blocks allocated: 177184325632
->  referenced 130490667008
-> 
-> It still mounts, and now:
-> [193339.299305] BTRFS info (device sdb1): use lzo compression
-> [193339.299308] BTRFS info (device sdb1): disk space caching is enabled
-> [193339.653980] BTRFS info (device sdb1): checking UUID tree
-> 
-> I guess this all is fine :-) . 
-> 
-> So all in all, I have to say a great thanks for all this support - it really was a good educational experience, and I am pretty sure this functionality of python-btrfs will be of help to others, too! 
-
-Have fun,
-
+Meow
 -- 
-Hans van Kranenburg
+Autotools hint: to do a zx-spectrum build on a pdp11 host, type:
+  ./configure --host=zx-spectrum --build=pdp11
+
+--rej55rvgrewqtyls
+Content-Type: text/x-diff; charset=us-ascii
+Content-Disposition: attachment; filename="0001-NOT-FOR-MERGING-btrfs-make-too-many-missing-devices-.patch"
+
+>From 1367d3da6b0189797f6090b11d8716a1cc136593 Mon Sep 17 00:00:00 2001
+From: Adam Borowski <kilobyte@angband.pl>
+Date: Mon, 23 Jan 2017 19:03:20 +0100
+Subject: [PATCH] [NOT-FOR-MERGING] btrfs: make "too many missing devices"
+ check non-fatal
+
+It breaks degraded mounts of multi-device filesystems that have any single
+blocks, which are naturally created if it has been mounted degraded before.
+Obviously, any further device loss will result in data loss, but the user
+has already specified -odegraded so that's understood.
+
+For a real fix, we'd want to check whether any of single blocks are missing,
+as that would allow telling apart broken JBOD filesystems from bona-fide
+degraded RAIDs.
+
+(This patch is for the benefit of folks who'd have to recreate a filesystem
+just because it got degraded.)
+---
+ fs/btrfs/disk-io.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 18004169552c..1b25b9e24662 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3060,10 +3060,9 @@ int open_ctree(struct super_block *sb,
+ 	     fs_info->num_tolerated_disk_barrier_failures &&
+ 	    !(sb->s_flags & MS_RDONLY)) {
+ 		btrfs_warn(fs_info,
+-"missing devices (%llu) exceeds the limit (%d), writeable mount is not allowed",
++"missing devices (%llu) exceeds the limit (%d), add more or risk data loss",
+ 			fs_info->fs_devices->missing_devices,
+ 			fs_info->num_tolerated_disk_barrier_failures);
+-		goto fail_sysfs;
+ 	}
+ 
+ 	fs_info->cleaner_kthread = kthread_run(cleaner_kthread, tree_root,
+-- 
+2.11.0
+
+
+--rej55rvgrewqtyls--

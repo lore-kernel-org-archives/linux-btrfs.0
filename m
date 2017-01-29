@@ -1,50 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from p3nlsmtpcp01-04.prod.phx3.secureserver.net ([184.168.200.145]:58932
-        "EHLO p3nlsmtpcp01-04.prod.phx3.secureserver.net"
+Received: from p3nlsmtpcp01-03.prod.phx3.secureserver.net ([184.168.200.142]:44498
+        "EHLO p3nlsmtpcp01-03.prod.phx3.secureserver.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753026AbdA3MrZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 30 Jan 2017 07:47:25 -0500
-Received: from mail-ua0-f175.google.com ([209.85.217.175]:34946)
+        id S1750982AbdA2Oqb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 29 Jan 2017 09:46:31 -0500
+Received: from [117.222.161.181] (port=49682 helo=giis.co.in)
         by p3plcpnl0639.prod.phx3.secureserver.net with esmtpsa (TLSv1.2:ECDHE-RSA-AES128-GCM-SHA256:128)
         (Exim 4.87)
-        (envelope-from <lakshmipathi.g@giis.co.in>)
-        id 1cYBDK-0006UN-Nh
-        for linux-btrfs@vger.kernel.org; Mon, 30 Jan 2017 05:37:42 -0700
-Received: by mail-ua0-f175.google.com with SMTP id y9so250112118uae.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 Jan 2017 04:37:42 -0800 (PST)
+        (envelope-from <Lakshmipathi.G@giis.co.in>)
+        id 1cXqiy-00006o-Gp
+        for linux-btrfs@vger.kernel.org; Sun, 29 Jan 2017 07:45:01 -0700
+Date: Sun, 29 Jan 2017 20:14:55 +0530
+From: "Lakshmipathi.G" <Lakshmipathi.G@giis.co.in>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs-progs: cli-tests: Convert non-raid filesystem to raid
+Message-ID: <20170129144455.GA12174@giis.co.in>
 MIME-Version: 1.0
-In-Reply-To: <006ecc84-52fb-2b09-0e47-317fa018e9f9@mendix.com>
-References: <20170130015416.GA5619@giis.co.in> <006ecc84-52fb-2b09-0e47-317fa018e9f9@mendix.com>
-From: "Lakshmipathi.G" <lakshmipathi.g@giis.co.in>
-Date: Mon, 30 Jan 2017 18:07:01 +0530
-Message-ID: <CAKuJGC_x8S-RhnXA+1oVL3zsDkjMaHxixgajxmxvuRw6BZNUHA@mail.gmail.com>
-Subject: Re: Fresh Raid-1 setup, dump-tree shows invalid owner id
-To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Cc: btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->
-> Yes, the owner is the number of the tree.
->
-> DATA_RELOC_TREE is -9, but then unsigned 64 bits.
->
->>>> -9 + 2**64
-> 18446744073709551607L
->
-> So the result is a number that's close to the max or 64 bits.
->
-> You can find those numbers in the kernel source in
->   include/uapi/linux/btrfs_tree.h
->
-> e.g.:
->
-> #define BTRFS_DATA_RELOC_TREE_OBJECTID -9ULL
->
+Simple script to verify non-raid filesystem conversion.
 
-Thanks for the details. This owner number looked different from other
-owner ids, so wanted to check on the same, now understood.
+Signed-off-by: Lakshmipathi.G <Lakshmipathi.G@giis.co.in>
+---
+ tests/cli-tests/005-convert-btrfs-to-raid/test.sh | 32 +++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
+ create mode 100755 tests/cli-tests/005-convert-btrfs-to-raid/test.sh
 
-Cheers.
-Lakshmipathi.G
+diff --git a/tests/cli-tests/005-convert-btrfs-to-raid/test.sh b/tests/cli-tests/005-convert-btrfs-to-raid/test.sh
+new file mode 100755
+index 0000000..96772de
+--- /dev/null
++++ b/tests/cli-tests/005-convert-btrfs-to-raid/test.sh
+@@ -0,0 +1,32 @@
++#!/bin/bash
++#
++# convert non-raid btrfs to raid
++
++source $TOP/tests/common
++
++check_prereq mkfs.btrfs
++check_prereq btrfs
++
++setup_root_helper
++prepare_test_dev 1g
++run_check truncate -s1g img
++
++run_check $TOP/mkfs.btrfs -f $IMAGE
++run_check_mount_test_dev
++
++loopdev=$(run_check_stdout $SUDO_HELPER losetup --partscan --find --show img)
++
++run_check $SUDO_HELPER $TOP/btrfs device add $loopdev $TEST_MNT
++run_check $SUDO_HELPER $TOP/btrfs balance start -dconvert=raid1 -mconvert=raid1 $TEST_MNT
++
++run_check_stdout $SUDO_HELPER $TOP/btrfs filesystem show $loopdev | grep "Total devices 2" -q
++if [ $? -ne 0 ]; then
++	run_check $SUDO_HELPER losetup -d $loopdev
++	rm -f img
++        _fail "Conversion from non-raid filesystem to raid failed."
++fi
++run_check_umount_test_dev
++
++# cleanup
++run_check $SUDO_HELPER losetup -d $loopdev
++rm -f img
+-- 
+2.7.4
+

@@ -1,81 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:31760 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752558AbdA3UZ0 (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:25920 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754303AbdA3UZa (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 30 Jan 2017 15:25:26 -0500
+        Mon, 30 Jan 2017 15:25:30 -0500
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] Btrfs: remove unused trans in read_block_for_search
-Date: Mon, 30 Jan 2017 12:23:42 -0800
-Message-Id: <1485807822-16386-1-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH] Btrfs: pass delayed_refs directly to btrfs_find_delayed_ref_head
+Date: Mon, 30 Jan 2017 12:24:37 -0800
+Message-Id: <1485807877-16883-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-@trans is not used at all, this removes it.
+All we need is @delayed_refs, all callers have get it ahead of calling
+btrfs_find_delayed_ref_head since lock needs to be acquired firstly, there is
+no reason to deference it again inside the function.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/ctree.c | 17 ++++++++---------
- 1 file changed, 8 insertions(+), 9 deletions(-)
+ fs/btrfs/backref.c     | 2 +-
+ fs/btrfs/delayed-ref.c | 5 +----
+ fs/btrfs/delayed-ref.h | 3 ++-
+ fs/btrfs/extent-tree.c | 6 +++---
+ 4 files changed, 7 insertions(+), 9 deletions(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index a426dc8..dd8014a 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -2437,10 +2437,9 @@ noinline void btrfs_unlock_up_safe(struct btrfs_path *path, int level)
-  * reada.  -EAGAIN is returned and the search must be repeated.
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index 8299601..db70659 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -1284,7 +1284,7 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
+ 		 */
+ 		delayed_refs = &trans->transaction->delayed_refs;
+ 		spin_lock(&delayed_refs->lock);
+-		head = btrfs_find_delayed_ref_head(trans, bytenr);
++		head = btrfs_find_delayed_ref_head(delayed_refs, bytenr);
+ 		if (head) {
+ 			if (!mutex_trylock(&head->mutex)) {
+ 				atomic_inc(&head->node.refs);
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index ef724a5..aebb48c 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -911,11 +911,8 @@ int btrfs_add_delayed_extent_op(struct btrfs_fs_info *fs_info,
+  * the head node if any where found, or NULL if not.
   */
- static int
--read_block_for_search(struct btrfs_trans_handle *trans,
--		       struct btrfs_root *root, struct btrfs_path *p,
--		       struct extent_buffer **eb_ret, int level, int slot,
--		       struct btrfs_key *key, u64 time_seq)
-+read_block_for_search(struct btrfs_root *root, struct btrfs_path *p,
-+		      struct extent_buffer **eb_ret, int level, int slot,
-+		      struct btrfs_key *key, u64 time_seq)
+ struct btrfs_delayed_ref_head *
+-btrfs_find_delayed_ref_head(struct btrfs_trans_handle *trans, u64 bytenr)
++btrfs_find_delayed_ref_head(struct btrfs_delayed_ref_root *delayed_refs, u64 bytenr)
  {
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 	u64 blocknr;
-@@ -2870,8 +2869,8 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root
- 				goto done;
- 			}
+-	struct btrfs_delayed_ref_root *delayed_refs;
+-
+-	delayed_refs = &trans->transaction->delayed_refs;
+ 	return find_ref_head(&delayed_refs->href_root, bytenr, 0);
+ }
  
--			err = read_block_for_search(trans, root, p,
--						    &b, level, slot, key, 0);
-+			err = read_block_for_search(root, p, &b, level,
-+						    slot, key, 0);
- 			if (err == -EAGAIN)
- 				goto again;
- 			if (err) {
-@@ -3014,7 +3013,7 @@ int btrfs_search_old_slot(struct btrfs_root *root, struct btrfs_key *key,
- 				goto done;
- 			}
+diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+index 50947b5..22ca93b 100644
+--- a/fs/btrfs/delayed-ref.h
++++ b/fs/btrfs/delayed-ref.h
+@@ -262,7 +262,8 @@ void btrfs_merge_delayed_refs(struct btrfs_trans_handle *trans,
+ 			      struct btrfs_delayed_ref_head *head);
  
--			err = read_block_for_search(NULL, root, p, &b, level,
-+			err = read_block_for_search(root, p, &b, level,
- 						    slot, key, time_seq);
- 			if (err == -EAGAIN)
- 				goto again;
-@@ -5784,7 +5783,7 @@ int btrfs_next_old_leaf(struct btrfs_root *root, struct btrfs_path *path,
+ struct btrfs_delayed_ref_head *
+-btrfs_find_delayed_ref_head(struct btrfs_trans_handle *trans, u64 bytenr);
++btrfs_find_delayed_ref_head(struct btrfs_delayed_ref_root *delayed_refs,
++			    u64 bytenr);
+ int btrfs_delayed_ref_lock(struct btrfs_trans_handle *trans,
+ 			   struct btrfs_delayed_ref_head *head);
+ static inline void btrfs_delayed_ref_unlock(struct btrfs_delayed_ref_head *head)
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index e97302f..ed254b8 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -888,7 +888,7 @@ int btrfs_lookup_extent_info(struct btrfs_trans_handle *trans,
  
- 		next = c;
- 		next_rw_lock = path->locks[level];
--		ret = read_block_for_search(NULL, root, path, &next, level,
-+		ret = read_block_for_search(root, path, &next, level,
- 					    slot, &key, 0);
- 		if (ret == -EAGAIN)
- 			goto again;
-@@ -5834,7 +5833,7 @@ int btrfs_next_old_leaf(struct btrfs_root *root, struct btrfs_path *path,
- 		if (!level)
- 			break;
+ 	delayed_refs = &trans->transaction->delayed_refs;
+ 	spin_lock(&delayed_refs->lock);
+-	head = btrfs_find_delayed_ref_head(trans, bytenr);
++	head = btrfs_find_delayed_ref_head(delayed_refs, bytenr);
+ 	if (head) {
+ 		if (!mutex_trylock(&head->mutex)) {
+ 			atomic_inc(&head->node.refs);
+@@ -3038,7 +3038,7 @@ static noinline int check_delayed_ref(struct btrfs_trans_handle *trans,
  
--		ret = read_block_for_search(NULL, root, path, &next, level,
-+		ret = read_block_for_search(root, path, &next, level,
- 					    0, &key, 0);
- 		if (ret == -EAGAIN)
- 			goto again;
+ 	delayed_refs = &trans->transaction->delayed_refs;
+ 	spin_lock(&delayed_refs->lock);
+-	head = btrfs_find_delayed_ref_head(trans, bytenr);
++	head = btrfs_find_delayed_ref_head(delayed_refs, bytenr);
+ 	if (!head) {
+ 		spin_unlock(&delayed_refs->lock);
+ 		return 0;
+@@ -7092,7 +7092,7 @@ static noinline int check_ref_cleanup(struct btrfs_trans_handle *trans,
+ 
+ 	delayed_refs = &trans->transaction->delayed_refs;
+ 	spin_lock(&delayed_refs->lock);
+-	head = btrfs_find_delayed_ref_head(trans, bytenr);
++	head = btrfs_find_delayed_ref_head(delayed_refs, bytenr);
+ 	if (!head)
+ 		goto out_delayed_unlock;
+ 
 -- 
 2.5.5
 

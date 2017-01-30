@@ -1,80 +1,154 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from umail2.aei.mpg.de ([194.94.224.8]:42095 "EHLO umail2.aei.mpg.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754386AbdA3VtJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 30 Jan 2017 16:49:09 -0500
-Received: from mailgate.aei.mpg.de (mailgate.aei.mpg.de [194.94.224.5])
-        by umail2.aei.mpg.de (Postfix) with ESMTP id 5E34B1BA66FD
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 Jan 2017 22:40:03 +0100 (CET)
-Received: from mailgate.aei.mpg.de (localhost [127.0.0.1])
-        by localhost (Postfix) with SMTP id 5195F406ADE
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 Jan 2017 22:40:03 +0100 (CET)
-Received: from intranet.aei.uni-hannover.de (ahin1.aei.uni-hannover.de [130.75.117.40])
-        by mailgate.aei.mpg.de (Postfix) with ESMTP id 14006406ADB
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 Jan 2017 22:40:01 +0100 (CET)
-Subject: Re: btrfs recovery
+Received: from mail-vk0-f65.google.com ([209.85.213.65]:36219 "EHLO
+        mail-vk0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751235AbdA3WY7 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 30 Jan 2017 17:24:59 -0500
+Received: by mail-vk0-f65.google.com with SMTP id n19so27644946vkd.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 30 Jan 2017 14:24:59 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <014c7da2-0129-caee-00d8-12f2af628efc@mendix.com>
 References: <5e29c839-6519-acb2-c094-54600a6c0102@aei.mpg.de>
  <CAJCQCtTqBaG5AhtbokOkfREStK8XC+ZAsQ-aNOtYe2Y2Nv-4jA@mail.gmail.com>
- <5742ef43-0400-e0c9-c0b7-c8d3c8299f9f@aei.mpg.de>
- <CAJCQCtSO+vUxOL6FHOdgLqOLSm6C6U4YfUga=K-h7fhBDCaXng@mail.gmail.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Michael Born <Michael.Born@aei.mpg.de>
-Message-ID: <c8a7f4a3-f758-c78c-2525-fd36f4347fc5@aei.mpg.de>
-Date: Mon, 30 Jan 2017 22:40:00 +0100
-MIME-Version: 1.0
-In-Reply-To: <CAJCQCtSO+vUxOL6FHOdgLqOLSm6C6U4YfUga=K-h7fhBDCaXng@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+ <5742ef43-0400-e0c9-c0b7-c8d3c8299f9f@aei.mpg.de> <014c7da2-0129-caee-00d8-12f2af628efc@mendix.com>
+From: GWB <gwb@2realms.com>
+Date: Mon, 30 Jan 2017 16:24:17 -0600
+Message-ID: <CAP8EXU310iKo-exrYk3Hm4tyUQSL+KYEYEV4h8zifiwxmse7uA@mail.gmail.com>
+Subject: Re: btrfs recovery
+To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Cc: Michael Born <Michael.Born@aei.mpg.de>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am 30.01.2017 um 22:20 schrieb Chris Murphy:
-> On Mon, Jan 30, 2017 at 2:07 PM, Michael Born <Michael.Born@aei.mpg.de> wrote:
+<<
+Hi btrfs experts.
+
+Hereby I apply for the stupidity of the month award.
+>>
+
+I have no doubt that I will will mount a serious challenge to you for
+that title, so you haven't won yet.
+
+Why not dd the image back onto the original partition (or another
+partition identical in size) and see if that is readable?
+
+My limited experience with btrfs (I am not an expert) is that read
+only snapshots work well in this situation, but the initial hurdle is
+using dd to get the image back onto a partition.  So I wonder if you
+could dd the image back onto the original media (the hd sdd), then
+make a read only snapshot, and then send the snapshot with btrfs send
+to another storage medium.  With any luck, the machine might boot, and
+you might find other snapshots which you may be able to turn into read
+only snaps for btrfs send.
+
+This has worked for me on Ubuntu 14 for quite some time, but luckily I
+have not had to restore the image file sent from btrfs send yet.  I
+say luckily, because I realise now that the image created from btrfs
+send should be tested, but so far no catastrophic failures with my
+root partition have occurred (knock on wood).
+
+dd is (like dumpfs, ddrescue, and the bsd variations) good for what it
+tries to do, but not so great on for some file systems for more
+intricate uses.  But why not try:
+
+dd if=imagefile.dd of=/dev/sdaX
+
+and see if it boots?  If it does not, then perhaps you have another
+shot at the one time mount for btrfs rw if that works.
+
+Or is your root partition now running fine under Suse 14.2, and you
+are just looking to recover a file files from the image?  If so, you
+might try to dd from the image to a partition of original size as the
+previous root, then adjust with gparted or fpart, and see if it is
+readable.
+
+So instead of trying to restore a btrfs file structure, why not just
+restore a partition with dd that happens to contain a btrfs file
+structure, and then adjust the partition size to match the original?
+btrfs cares about the tree structures, etc.  dd does not.
+
+What you did is not unusual, and can work fine with a number of file
+structures, but the potential for disaster with dd is also great.  The
+only thing I know of in btrfs that does a similar thing is:
+
+btrfs send -f btrfs-send-image-file /mount/read-write-snapshot
+
+Chances are, of course, good that without having current backups dd
+could potentially ruin the rest of your file system set up, so maybe
+transfer the image over to another machine that is expendable and test
+this out.  I use btrfs on root and zfs for data, and make lots of
+snapshots and send them to incremental backups (mostly zfs, but btrfs
+works nicely with Ubuntu on root, with the occasional balance
+problem).
+
+If dd did it, dd might be able to fix it.  Do that first before you
+try to restore btrfs file structures.
+
+Or is this a terrible idea?  Someone else on the list should say so if
+they know otherwise.
+
+Gordon
+
+
+On Mon, Jan 30, 2017 at 3:16 PM, Hans van Kranenburg
+<hans.van.kranenburg@mendix.com> wrote:
+> On 01/30/2017 10:07 PM, Michael Born wrote:
+>>
+>>
+>> Am 30.01.2017 um 21:51 schrieb Chris Murphy:
+>>> On Mon, Jan 30, 2017 at 1:02 PM, Michael Born <Michael.Born@aei.mpg.de> wrote:
+>>>> Hi btrfs experts.
+>>>>
+>>>> Hereby I apply for the stupidity of the month award.
+>>>
+>>> There's still another day :-D
+>>>
+>>>
+>>>
+>>>>
+>>>> Before switching from Suse 13.2 to 42.2, I copied my / partition with dd
+>>>> to an image file - while the system was online/running.
+>>>> Now, I can't mount the image.
+>>>
+>>> That won't ever work for any file system. It must be unmounted.
+>>
+>> I could mount and copy the data out of my /home image.dd (encrypted
+>> xfs). That was also online while dd-ing it.
+>>
+>>>> Could you give me some instructions how to repair the file system or
+>>>> extract some files from it?
+>>>
+>>> Not possible. The file system was being modified while dd was
+>>> happening, so the image you've taken is inconsistent.
+>>
 >> The files I'm interested in (fstab, NetworkManager.conf, ...) didn't
 >> change for months. Why would they change in the moment I copy their
 >> blocks with dd?
-> 
-> They didn't change. The file system changed. While dd is reading, it
-> might be minutes between capturing different parts of the file system,
-> and each superblock is in different locations on the disk,
-> guaranteeing that if the dd takes more than 30 seconds, your dd image
-> has different generation super blocks. Btrfs notices this at mount
-> time and will refuse to mount because the file system is inconsistent.
-> 
-> It is certainly possible to fix this, but it's likely to be really,
-> really tedious. The existing tools don't take this use case into
-> account.
-> 
-> Maybe btfs-find-root can come up with some suggestions and you can use
-> btrfs restore -t with the bytenr from find root, to see if you can get
-> this old data, ignoring the changes that don't affect the old data.
-> 
-> What you do with this is btrfs-find-root and see what it comes up
-> with. And work with the most recent (highest) generation going
-> backward, plugging in the bytenr into btrfs restore with -t option.
-> You'll also want to use the dry run to see if you're getting what you
-> want. It's best to use the exact path if you know it, this takes much
-> less time for it to search all files in a given tree. If you don't
-> know the exact path, but you know part of a file name, then you'll
-> need to use the regex option; or just let it dump everything it can
-> from the image and go dumpster diving...
-
-I really want to try the "btrfs-find-root / btrfs restore -t" method.
-But, btrfs-find-root gives me just the 3 lines output and then nothing
-for 16 hours.
-I think, I saw a similar report that the tool just doesn't report back
-in the mailing list archive (btrfs-find-root duration? Markus Binsteiner
-Sat, 10 Dec 2016 16:12:25 -0800)
-
-./btrfs-find-root /dev/loop0
-Couldn't read tree root
-Superblock thinks the generation is 550114
-Superblock thinks the level is 1
-
-Hans, also thank you for the explanation even though I'm not sure, I
-understand.
-I would be happy with older parts of the tree which then have lower
-numbers than the 550112.
-
-Michael
-
-
+>
+> The metadata of btrfs is organized in a bunch of tree structures. The
+> top of the trees (the smallest parts, trees are upside-down here /\ )
+> and the superblock get modified quite often. Every time a tree gets
+> modified, the new modified parts are written as a modified copy in
+> unused space.
+>
+> So even if the files themselves do not change... if you miss those new
+> writes which are being done in space that your dd already left behind...
+> you end up with old and new parts of trees all over the place.
+>
+> In other words, a big puzzle with parts that do not connect with each
+> other any more.
+>
+> And that's exactly what you see in all the errors. E.g. "parent transid
+> verify failed on 32869482496 wanted 550112 found 550121" <- a part of a
+> tree points to another part, but suddenly something else is found which
+> should not be there. In this case wanted 550112 found 550121 means it's
+> bumping into something "from the future". Whaaa..
+>
+> --
+> Hans van Kranenburg
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

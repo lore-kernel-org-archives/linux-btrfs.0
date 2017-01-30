@@ -1,63 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:58667 "EHLO mx2.suse.de"
+Received: from p3nlsmtpcp01-02.prod.phx3.secureserver.net ([184.168.200.140]:37902
+        "EHLO p3nlsmtpcp01-02.prod.phx3.secureserver.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S965863AbdAIL2d (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 9 Jan 2017 06:28:33 -0500
-Date: Mon, 9 Jan 2017 12:28:15 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Joseph Salisbury <joseph.salisbury@canonical.com>
-Cc: luke@dashjr.org, luke-jr+git@utopios.org, jbacik@fb.com, dsterba@suse.com,
-        stable@vger.kernel.org, linux-kernel@vger.kernel.org, clm@fb.com,
-        linux-btrfs@vger.kernel.org, 1619918@bugs.launchpad.net
-Subject: Re: [Regression 4.7-rc1] btrfs: bugfix: handle
- FS_IOC32_{GETFLAGS,SETFLAGS,GETVERSION} in btrfs_ioctl
-Message-ID: <20170109112815.GE12081@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <a555bec3-f0c8-b973-52e0-02bc2e3b5b29@canonical.com>
+        id S1751722AbdA3Bz2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 29 Jan 2017 20:55:28 -0500
+Received: from [117.207.97.46] (port=55824 helo=giis.co.in)
+        by p3plcpnl0639.prod.phx3.secureserver.net with esmtpsa (TLSv1.2:ECDHE-RSA-AES128-GCM-SHA256:128)
+        (Exim 4.87)
+        (envelope-from <lakshmipathi.g@giis.co.in>)
+        id 1cY1Ao-0005Ee-8n
+        for linux-btrfs@vger.kernel.org; Sun, 29 Jan 2017 18:54:26 -0700
+Date: Mon, 30 Jan 2017 07:24:16 +0530
+From: "Lakshmipathi.G" <lakshmipathi.g@giis.co.in>
+To: linux-btrfs@vger.kernel.org
+Subject: Fresh Raid-1 setup, dump-tree shows invalid owner id
+Message-ID: <20170130015416.GA5619@giis.co.in>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <a555bec3-f0c8-b973-52e0-02bc2e3b5b29@canonical.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 06, 2017 at 12:22:34PM -0500, Joseph Salisbury wrote:
-> A kernel bug report was opened against Ubuntu [0].  This bug was fixed
-> by the following commit in v4.7-rc1:
-> 
-> commit 4c63c2454eff996c5e27991221106eb511f7db38
-> 
-> Author: Luke Dashjr <luke@dashjr.org>
-> Date:   Thu Oct 29 08:22:21 2015 +0000
-> 
->     btrfs: bugfix: handle FS_IOC32_{GETFLAGS,SETFLAGS,GETVERSION} in
-> btrfs_ioctl
-> 
-> 
-> However, this commit introduced a new regression.  With this commit
-> applied, "btrfs fi show" no longer works and the btrfs snapshot
-> functionality breaks.
+After creating raid1:
+$./mkfs.btrfs -f -d raid1 -m raid1 /dev/sda6 /dev/sda7
 
-A plain 32bit kernel with 32bit userspace works fine. The bug seems to
-be on a 64bit kernel with 32bit userspace and the CONFIG_COMPAT compiled
-in. Strace does not show anything special:
+and using
+$./btrfs inspect-internal dump-tree /dev/sda6  #./btrfs-debug-tree /dev/sda6
 
-stat64("subv1", 0xffc64fcc)             = -1 ENOENT (No such file or directory)
-statfs64(".", 84, {f_type=BTRFS_SUPER_MAGIC, f_bsize=4096, f_blocks=5110784, f_bfree=4076143, f_bavail=4010951, f_files=0, f_ffree=0, f_fsid={val=[
-4260464218, 2297804334]}, f_namelen=255, f_frsize=4096, f_flags=ST_VALID|ST_RELATIME}) = 0
-stat64(".", {st_mode=S_IFDIR|0700, st_size=228, ...}) = 0
-stat64(".", {st_mode=S_IFDIR|0700, st_size=228, ...}) = 0
-open(".", O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_DIRECTORY|O_CLOEXEC) = 3
-fstat64(3, {st_mode=S_IFDIR|0700, st_size=228, ...}) = 0
-fstat64(1, {st_mode=S_IFCHR|0620, st_rdev=makedev(136, 1), ...}) = 0
-write(1, "Create subvolume './subv1'\n", 27) = 27
-ioctl(3, BTRFS_IOC_SUBVOL_CREATE, {fd=0, name="subv1"}) = -1 ENOTTY (Inappropriate ioctl for device)
+shows possible wrong value for 'owner'? 
+--
+checksum tree key (CSUM_TREE ROOT_ITEM 0) 
+leaf 29425664 items 0 free space 16283 generation 4 owner 7
+fs uuid 94fee00b-00aa-4d69-b947-347f743117f2
+chunk uuid 6477561c-cbca-45e4-980d-56727a8dc9d9
+data reloc tree key (DATA_RELOC_TREE ROOT_ITEM 0) 
+leaf 29442048 items 2 free space 16061 generation 4 owner 18446744073709551607 <<< owner id?
+fs uuid 94fee00b-00aa-4d69-b947-347f743117f2
+chunk uuid 6477561c-cbca-45e4-980d-56727a8dc9d9
+--
 
-The value of BTRFS_IOC_SUBVOL_CREATE is same on 32bit and 64bit kernels.
-As it returns ENOTTY, the value is not recognized. A candidate function
-is btrfs_compat_ioctl that checks for just the IOC32 numbers and returns
--ENOIOCTLCMD otherwise.
+or is that expected output?
 
-The callchain in fs/compat_ioctl.c:ioctl cheks for the specific callback
-first, if it retunrs -ENOIOCTLCMD then goes to the normal ioctl
-callback, so there's always a point we reach the handler of
-BTRFS_IOC_SUBVOL_CREATE. So I don't see how it could happen.
+Cheers.
+Lakshmipathi.G

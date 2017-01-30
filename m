@@ -1,56 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:44888 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751283AbdAMWBZ (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:31760 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752558AbdA3UZ0 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 13 Jan 2017 17:01:25 -0500
-Date: Fri, 13 Jan 2017 17:01:20 -0500
-From: Chris Mason <clm@fb.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        LKML <linux-kernel@vger.kernel.org>
-Subject: [GIT PULL] Btrfs fixes
-Message-ID: <20170113220120.2z6z3set2n4u2k5x@floor.thefacebook.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+        Mon, 30 Jan 2017 15:25:26 -0500
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] Btrfs: remove unused trans in read_block_for_search
+Date: Mon, 30 Jan 2017 12:23:42 -0800
+Message-Id: <1485807822-16386-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
+@trans is not used at all, this removes it.
 
-Dave Sterba queued up a few fixes for btrfs.  I have them in my
-for-linus-4.10 branch:
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/ctree.c | 17 ++++++++---------
+ 1 file changed, 8 insertions(+), 9 deletions(-)
 
-These are all over the place.  The tracepoint part of the pull fixes a
-crash and adds a little more information to two tracepoints, while the
-rest are good old fashioned fixes.
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index a426dc8..dd8014a 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -2437,10 +2437,9 @@ noinline void btrfs_unlock_up_safe(struct btrfs_path *path, int level)
+  * reada.  -EAGAIN is returned and the search must be repeated.
+  */
+ static int
+-read_block_for_search(struct btrfs_trans_handle *trans,
+-		       struct btrfs_root *root, struct btrfs_path *p,
+-		       struct extent_buffer **eb_ret, int level, int slot,
+-		       struct btrfs_key *key, u64 time_seq)
++read_block_for_search(struct btrfs_root *root, struct btrfs_path *p,
++		      struct extent_buffer **eb_ret, int level, int slot,
++		      struct btrfs_key *key, u64 time_seq)
+ {
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	u64 blocknr;
+@@ -2870,8 +2869,8 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root
+ 				goto done;
+ 			}
+ 
+-			err = read_block_for_search(trans, root, p,
+-						    &b, level, slot, key, 0);
++			err = read_block_for_search(root, p, &b, level,
++						    slot, key, 0);
+ 			if (err == -EAGAIN)
+ 				goto again;
+ 			if (err) {
+@@ -3014,7 +3013,7 @@ int btrfs_search_old_slot(struct btrfs_root *root, struct btrfs_key *key,
+ 				goto done;
+ 			}
+ 
+-			err = read_block_for_search(NULL, root, p, &b, level,
++			err = read_block_for_search(root, p, &b, level,
+ 						    slot, key, time_seq);
+ 			if (err == -EAGAIN)
+ 				goto again;
+@@ -5784,7 +5783,7 @@ int btrfs_next_old_leaf(struct btrfs_root *root, struct btrfs_path *path,
+ 
+ 		next = c;
+ 		next_rw_lock = path->locks[level];
+-		ret = read_block_for_search(NULL, root, path, &next, level,
++		ret = read_block_for_search(root, path, &next, level,
+ 					    slot, &key, 0);
+ 		if (ret == -EAGAIN)
+ 			goto again;
+@@ -5834,7 +5833,7 @@ int btrfs_next_old_leaf(struct btrfs_root *root, struct btrfs_path *path,
+ 		if (!level)
+ 			break;
+ 
+-		ret = read_block_for_search(NULL, root, path, &next, level,
++		ret = read_block_for_search(root, path, &next, level,
+ 					    0, &key, 0);
+ 		if (ret == -EAGAIN)
+ 			goto again;
+-- 
+2.5.5
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.10
-
-Liu Bo (5) commits (+34/-11):
-    Btrfs: adjust outstanding_extents counter properly when dio write is split (+9/-2)
-    Btrfs: add truncated_len for ordered extent tracepoints (+4/-0)
-    Btrfs: use down_read_nested to make lockdep silent (+2/-1)
-    Btrfs: add 'inode' for extent map tracepoint (+9/-5)
-    Btrfs: fix lockdep warning about log_mutex (+10/-3)
-
-David Sterba (2) commits (+80/-69):
-    btrfs: fix crash when tracepoint arguments are freed by wq callbacks (+24/-13)
-    btrfs: make tracepoint format strings more compact (+56/-56)
-
-Jeff Mahoney (2) commits (+4/-1):
-    btrfs: fix locking when we put back a delayed ref that's too new (+1/-1)
-    btrfs: fix error handling when run_delayed_extent_op fails (+3/-0)
-
-Pan Bian (1) commits (+1/-3):
-    btrfs: return the actual error value from  from btrfs_uuid_tree_iterate
-
-Total: (10) commits (+119/-84)
-
- fs/btrfs/async-thread.c      |  15 +++--
- fs/btrfs/extent-tree.c       |   8 ++-
- fs/btrfs/inode.c             |  13 +++-
- fs/btrfs/tree-log.c          |  13 +++-
- fs/btrfs/uuid-tree.c         |   4 +-
- include/trace/events/btrfs.h | 146 +++++++++++++++++++++++--------------------
- 6 files changed, 117 insertions(+), 82 deletions(-)

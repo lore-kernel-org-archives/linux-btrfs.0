@@ -1,132 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:24242 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752925AbdA3UME (ORCPT
+Received: from aserp1050.oracle.com ([141.146.126.70]:40199 "EHLO
+        aserp1050.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751235AbdA3VCZ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 30 Jan 2017 15:12:04 -0500
-Date: Mon, 30 Jan 2017 12:09:00 -0800
+        Mon, 30 Jan 2017 16:02:25 -0500
+Received: from aserp1040.oracle.com (aserp1040.oracle.com [141.146.126.69])
+        by aserp1050.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v0UKMm2V005147
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Mon, 30 Jan 2017 20:22:49 GMT
+Date: Mon, 30 Jan 2017 12:21:00 -0800
 From: Liu Bo <bo.li.liu@oracle.com>
-To: takafumi-sslab <takafumi.kubota1012@sslab.ics.keio.ac.jp>
-Cc: linux-btrfs@vger.kernel.org, clm@fb.com, jbacik@fb.com, dsterba@suse.com,
-        linux-kernel@vger.kernel.org, fdmanana@suse.com, naota@elisp.net
-Subject: Re: [PATCH] Btrfs: add another missing end_page_writeback on
- submit_extent_page failure
-Message-ID: <20170130200858.GA10490@localhost.localdomain>
+To: fdmanana@kernel.org
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix leak of subvolume writers counter
+Message-ID: <20170130202100.GB10490@localhost.localdomain>
 Reply-To: bo.li.liu@oracle.com
-References: <1481870510-44290-1-git-send-email-takafumi.kubota1012@sslab.ics.keio.ac.jp>
- <20161222062044.GC11373@localhost.localdomain>
- <a90bf4a2-ca72-26c2-10f3-d38a3106dc6a@sslab.ics.keio.ac.jp>
+References: <1485583614-26225-1-git-send-email-fdmanana@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <a90bf4a2-ca72-26c2-10f3-d38a3106dc6a@sslab.ics.keio.ac.jp>
+In-Reply-To: <1485583614-26225-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 13, 2017 at 03:12:31PM +0900, takafumi-sslab wrote:
-> Thanks for your replying.
+On Sat, Jan 28, 2017 at 06:06:54AM +0000, fdmanana@kernel.org wrote:
+> From: Robbie Ko <robbieko@synology.com>
 > 
-> I understand this bug is more complicated than I expected.
-> I classify error cases under submit_extent_page() below
+> When falling back from a nocow write to a regular cow write, we were
+> leaking the subvolume writers counter in 2 situations, preventing
+> snapshot creation from ever completing in the future, as it waits
+> for that counter to go down to zero before the snapshot creation
+> starts.
 > 
-> A: ENOMEM error at btrfs_bio_alloc() in submit_extent_page()
-> I first assumed this case and sent the mail.
-> When bio_ret is NULL, submit_extent_page() calls btrfs_bio_alloc().
-> Then, btrfs_bio_alloc() may fail and submit_extent_page() returns -ENOMEM.
-> In this case, bio_endio() is not called and the page's writeback bit
-> remains.
-> So, there is a need to call end_page_writeback() in the error handling.
-> 
-> B: errors under submit_one_bio() of submit_extent_page()
-> Errors that occur under submit_one_bio() handles at bio_endio(), and
-> bio_endio() would call end_page_writeback().
-> 
-> Therefore, as you mentioned in the last mail, simply adding
-> end_page_writeback() like my last email and commit 55e3bd2e0c2e1 can
-> conflict in the case of B.
-> To avoid such conflict, one easy solution is adding PageWriteback() check
-> too.
-> 
-> How do you think of this solution?
+> In run_delalloc_nocow, maybe not release subv_writers conter,
+> will lead to create snapshot hang.
 
-(sorry for the late reply.)
-
-I think its caller, "__extent_writepage", has covered the above case
-by setting page writeback again.
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
 Thanks,
 
 -liubo
 > 
-> Sincerely,
+> Signed-off-by: Robbie Ko <robbieko@synology.com>
+> Reviewed-by: Filipe Manana <fdmanana@suse.com>
+> [Improved changelog and subject]
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+>  fs/btrfs/inode.c | 10 ++++++++--
+>  1 file changed, 8 insertions(+), 2 deletions(-)
 > 
-> On 2016/12/22 15:20, Liu Bo wrote:
-> > On Fri, Dec 16, 2016 at 03:41:50PM +0900, Takafumi Kubota wrote:
-> > > This is actually inspired by Filipe's patch(55e3bd2e0c2e1).
-> > > 
-> > > When submit_extent_page() in __extent_writepage_io() fails,
-> > > Btrfs misses clearing a writeback bit of the failed page.
-> > > This causes the false under-writeback page.
-> > > Then, another sync task hangs in filemap_fdatawait_range(),
-> > > because it waits the false under-writeback page.
-> > > 
-> > > CPU0                            CPU1
-> > > 
-> > > __extent_writepage_io()
-> > >    ret = submit_extent_page() // fail
-> > > 
-> > >    if (ret)
-> > >      SetPageError(page)
-> > >      // miss clearing the writeback bit
-> > > 
-> > >                                  sync()
-> > >                                    ...
-> > >                                    filemap_fdatawait_range()
-> > >                                      wait_on_page_writeback(page);
-> > >                                      // wait the false under-writeback page
-> > > 
-> > > Signed-off-by: Takafumi Kubota <takafumi.kubota1012@sslab.ics.keio.ac.jp>
-> > > ---
-> > >   fs/btrfs/extent_io.c | 4 +++-
-> > >   1 file changed, 3 insertions(+), 1 deletion(-)
-> > > 
-> > > diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> > > index 1e67723..ef9793b 100644
-> > > --- a/fs/btrfs/extent_io.c
-> > > +++ b/fs/btrfs/extent_io.c
-> > > @@ -3443,8 +3443,10 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
-> > >   					 bdev->bio, max_nr,
-> > >   					 end_bio_extent_writepage,
-> > >   					 0, 0, 0, false);
-> > > -		if (ret)
-> > > +		if (ret) {
-> > >   			SetPageError(page);
-> > > +			end_page_writeback(page);
-> > > +		}
-> > OK...this could be complex as we don't know which part in
-> > submit_extent_page gets the error, if the page has been added into bio
-> > and bio_end would call end_page_writepage(page) as well, so whichever
-> > comes later, the BUG() in end_page_writeback() would complain.
-> > 
-> > Looks like commit 55e3bd2e0c2e1 also has the same problem although I
-> > gave it my reviewed-by.
-> > 
-> > Thanks,
-> > 
-> > -liubo
-> > 
-> > >   		cur = cur + iosize;
-> > >   		pg_offset += iosize;
-> > > -- 
-> > > 1.9.3
-> > > 
-> > > --
-> > > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> > > the body of a message to majordomo@vger.kernel.org
-> > > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index a713d9d..7221d66 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -1404,10 +1404,16 @@ static noinline int run_delalloc_nocow(struct inode *inode,
+>  			 * either valid or do not exist.
+>  			 */
+>  			if (csum_exist_in_range(fs_info, disk_bytenr,
+> -						num_bytes))
+> +						num_bytes)) {
+> +				if (!nolock)
+> +					btrfs_end_write_no_snapshoting(root);
+>  				goto out_check;
+> -			if (!btrfs_inc_nocow_writers(fs_info, disk_bytenr))
+> +			}
+> +			if (!btrfs_inc_nocow_writers(fs_info, disk_bytenr)) {
+> +				if (!nolock)
+> +					btrfs_end_write_no_snapshoting(root);
+>  				goto out_check;
+> +			}
+>  			nocow = 1;
+>  		} else if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
+>  			extent_end = found_key.offset +
 > -- 
-> Keio University
-> System Software Laboratory
-> Takafumi Kubota
-> takafumi.kubota1012@sslab.ics.keio.jp
+> 2.7.0.rc3
 > 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

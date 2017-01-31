@@ -1,15 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:26584 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:50794 "EHLO
         aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752668AbdA3U1H (ORCPT
+        with ESMTP id S1750740AbdAaPvR (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 30 Jan 2017 15:27:07 -0500
+        Tue, 31 Jan 2017 10:51:17 -0500
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] Btrfs: create a helper to create em for IO
-Date: Mon, 30 Jan 2017 12:25:52 -0800
-Message-Id: <1485807952-17604-1-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH v2] Btrfs: create a helper to create em for IO
+Date: Tue, 31 Jan 2017 07:50:22 -0800
+Message-Id: <1485877822-28919-1-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1485807952-17604-1-git-send-email-bo.li.liu@oracle.com>
+References: <1485807952-17604-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -18,14 +20,17 @@ this merges them into a single helper.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/inode.c | 187 +++++++++++++++++++++----------------------------------
- 1 file changed, 72 insertions(+), 115 deletions(-)
+v2: - undo the function declaration style change.
+    - fix errors by checkpatch.pl
+    
+ fs/btrfs/inode.c | 189 ++++++++++++++++++++++---------------------------------
+ 1 file changed, 74 insertions(+), 115 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 3d3753a..5e28355 100644
+index f2b281a..fab42df 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -108,11 +108,10 @@ static noinline int cow_file_range(struct inode *inode,
+@@ -108,11 +108,11 @@ static noinline int cow_file_range(struct inode *inode,
  				   u64 start, u64 end, u64 delalloc_end,
  				   int *page_started, unsigned long *nr_written,
  				   int unlock, struct btrfs_dedupe_hash *hash);
@@ -34,14 +39,15 @@ index 3d3753a..5e28355 100644
 -					   u64 block_start, u64 block_len,
 -					   u64 orig_block_len, u64 ram_bytes,
 -					   int type);
-+static struct extent_map *
-+create_io_em(struct inode *inode, u64 start, u64 len, u64 orig_start,
-+	     u64 block_start, u64 block_len, u64 orig_block_len,
-+	     u64 ram_bytes, int compress_type, int type);
++static struct extent_map *create_io_em(struct inode *inode, u64 start, u64 len,
++				       u64 orig_start, u64 block_start,
++				       u64 block_len, u64 orig_block_len,
++				       u64 ram_bytes, int compress_type,
++				       int type);
  
  static int btrfs_dirty_inode(struct inode *inode);
  
-@@ -690,7 +689,6 @@ static noinline void submit_compressed_extents(struct inode *inode,
+@@ -690,7 +690,6 @@ static noinline void submit_compressed_extents(struct inode *inode,
  	struct btrfs_key ins;
  	struct extent_map *em;
  	struct btrfs_root *root = BTRFS_I(inode)->root;
@@ -49,7 +55,7 @@ index 3d3753a..5e28355 100644
  	struct extent_io_tree *io_tree;
  	int ret = 0;
  
-@@ -778,46 +776,19 @@ static noinline void submit_compressed_extents(struct inode *inode,
+@@ -778,46 +777,19 @@ static noinline void submit_compressed_extents(struct inode *inode,
  		 * here we're doing allocation and writeback of the
  		 * compressed pages
  		 */
@@ -108,7 +114,7 @@ index 3d3753a..5e28355 100644
  
  		ret = btrfs_add_ordered_extent_compress(inode,
  						async_extent->start,
-@@ -952,7 +923,6 @@ static noinline int cow_file_range(struct inode *inode,
+@@ -952,7 +924,6 @@ static noinline int cow_file_range(struct inode *inode,
  	u64 blocksize = fs_info->sectorsize;
  	struct btrfs_key ins;
  	struct extent_map *em;
@@ -116,7 +122,7 @@ index 3d3753a..5e28355 100644
  	int ret = 0;
  
  	if (btrfs_is_free_space_inode(inode)) {
-@@ -1008,39 +978,18 @@ static noinline int cow_file_range(struct inode *inode,
+@@ -1008,39 +979,18 @@ static noinline int cow_file_range(struct inode *inode,
  		if (ret < 0)
  			goto out_unlock;
  
@@ -166,7 +172,7 @@ index 3d3753a..5e28355 100644
  
  		cur_alloc_size = ins.offset;
  		ret = btrfs_add_ordered_extent(inode, start, ins.objectid,
-@@ -1254,6 +1203,7 @@ static noinline int run_delalloc_nocow(struct inode *inode,
+@@ -1255,6 +1205,7 @@ static noinline int run_delalloc_nocow(struct inode *inode,
  	struct btrfs_path *path;
  	struct btrfs_file_extent_item *fi;
  	struct btrfs_key found_key;
@@ -174,7 +180,7 @@ index 3d3753a..5e28355 100644
  	u64 cow_start;
  	u64 cur_offset;
  	u64 extent_end;
-@@ -1434,35 +1384,27 @@ static noinline int run_delalloc_nocow(struct inode *inode,
+@@ -1455,35 +1406,28 @@ static noinline int run_delalloc_nocow(struct inode *inode,
  		}
  
  		if (extent_type == BTRFS_FILE_EXTENT_PREALLOC) {
@@ -208,7 +214,8 @@ index 3d3753a..5e28355 100644
 -						em->start + em->len - 1, 0);
 +			u64 orig_start = found_key.offset - extent_offset;
 +
-+			em = create_io_em(inode, cur_offset, num_bytes, orig_start,
++			em = create_io_em(inode, cur_offset, num_bytes,
++					  orig_start,
 +					  disk_bytenr, /* block_start */
 +					  num_bytes, /* block_len */
 +					  disk_num_bytes, /* orig_block_len */
@@ -230,7 +237,7 @@ index 3d3753a..5e28355 100644
  			type = BTRFS_ORDERED_PREALLOC;
  		} else {
  			type = BTRFS_ORDERED_NOCOW;
-@@ -7192,9 +7134,11 @@ static struct extent_map *btrfs_create_dio_extent(struct inode *inode,
+@@ -7217,9 +7161,11 @@ static struct extent_map *btrfs_create_dio_extent(struct inode *inode,
  
  	down_read(&BTRFS_I(inode)->dio_sem);
  	if (type != BTRFS_ORDERED_NOCOW) {
@@ -245,7 +252,7 @@ index 3d3753a..5e28355 100644
  		if (IS_ERR(em))
  			goto out;
  	}
-@@ -7531,17 +7475,23 @@ static int lock_extent_direct(struct inode *inode, u64 lockstart, u64 lockend,
+@@ -7563,17 +7509,23 @@ static int lock_extent_direct(struct inode *inode, u64 lockstart, u64 lockend,
  	return ret;
  }
  
@@ -274,7 +281,7 @@ index 3d3753a..5e28355 100644
  	em_tree = &BTRFS_I(inode)->extent_tree;
  	em = alloc_extent_map();
  	if (!em)
-@@ -7549,8 +7499,6 @@ static struct extent_map *create_pinned_em(struct inode *inode, u64 start,
+@@ -7581,8 +7533,6 @@ static struct extent_map *create_pinned_em(struct inode *inode, u64 start,
  
  	em->start = start;
  	em->orig_start = orig_start;
@@ -283,7 +290,7 @@ index 3d3753a..5e28355 100644
  	em->len = len;
  	em->block_len = block_len;
  	em->block_start = block_start;
-@@ -7561,6 +7509,10 @@ static struct extent_map *create_pinned_em(struct inode *inode, u64 start,
+@@ -7593,6 +7543,10 @@ static struct extent_map *create_pinned_em(struct inode *inode, u64 start,
  	set_bit(EXTENT_FLAG_PINNED, &em->flags);
  	if (type == BTRFS_ORDERED_PREALLOC)
  		set_bit(EXTENT_FLAG_FILLING, &em->flags);
@@ -294,7 +301,7 @@ index 3d3753a..5e28355 100644
  
  	do {
  		btrfs_drop_extent_cache(inode, em->start,
-@@ -7568,6 +7520,10 @@ static struct extent_map *create_pinned_em(struct inode *inode, u64 start,
+@@ -7600,6 +7554,10 @@ static struct extent_map *create_pinned_em(struct inode *inode, u64 start,
  		write_lock(&em_tree->lock);
  		ret = add_extent_mapping(em_tree, em, 1);
  		write_unlock(&em_tree->lock);
@@ -305,7 +312,7 @@ index 3d3753a..5e28355 100644
  	} while (ret == -EEXIST);
  
  	if (ret) {
-@@ -7575,6 +7531,7 @@ static struct extent_map *create_pinned_em(struct inode *inode, u64 start,
+@@ -7607,6 +7565,7 @@ static struct extent_map *create_pinned_em(struct inode *inode, u64 start,
  		return ERR_PTR(ret);
  	}
  

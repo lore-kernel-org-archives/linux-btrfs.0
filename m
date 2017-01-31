@@ -1,83 +1,137 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:55085 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1750764AbdAaE6j (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 30 Jan 2017 23:58:39 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1cYQWV-00043I-Nj
-        for linux-btrfs@vger.kernel.org; Tue, 31 Jan 2017 05:58:31 +0100
+Received: from vsrv.kern.pm ([138.201.172.171]:43628 "EHLO vsrv.kern.pm"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750873AbdAaHe0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 31 Jan 2017 02:34:26 -0500
+Received: from authenticated-user
+        by vsrv.kern.pm with esmtpsa (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128)
+        (Exim 4.86_2)
+        (envelope-from <pkern@debian.org>)
+        id 1cYSvn-0001PM-Mi
+        for linux-btrfs@vger.kernel.org; Tue, 31 Jan 2017 08:32:47 +0100
+Subject: Re: Battling an issue with btrfs quota
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs recovery
-Date: Tue, 31 Jan 2017 04:58:26 +0000 (UTC)
-Message-ID: <pan$dc869$86af3c32$d85f3e93$f334f454@cox.net>
-References: <961e2f81-40e6-cced-f14a-7af7effe1e5e@googlemail.com>
-        <20170126092559.GD24076@carfax.org.uk>
-        <24f6cfb2-d008-af12-ad94-4a4da1be1ee2@googlemail.com>
-        <9c38e493-e4aa-a718-c6a8-d400bcff0df8@googlemail.com>
-        <2c02d0b6-859d-f66f-e259-748db131d38d@googlemail.com>
-        <304177d4-cc35-9bfc-816c-85ff3501dc50@gmail.com>
-        <pan$cc953$ec4078b0$696ed46d$9618e10e@cox.net>
-        <ad929c7d-8781-6c9f-382c-b2fbdfad5f2c@googlemail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+References: <168f5009-d525-d5ce-3a04-631339c49ec8@debian.org>
+From: Philipp Kern <pkern@debian.org>
+Message-ID: <0518f878-5827-611f-d4ed-0e56cb938141@debian.org>
+Date: Tue, 31 Jan 2017 08:32:46 +0100
+MIME-Version: 1.0
+In-Reply-To: <168f5009-d525-d5ce-3a04-631339c49ec8@debian.org>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="3X7KWqBXEW1oKJS4WeRV7Wdvl2D7HrJk2"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Oliver Freyermuth posted on Sat, 28 Jan 2017 17:46:24 +0100 as excerpted:
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--3X7KWqBXEW1oKJS4WeRV7Wdvl2D7HrJk2
+Content-Type: multipart/mixed; boundary="ETL9u81btR5OXBhLf7hIVUF0hGsxI9oiS";
+ protected-headers="v1"
+From: Philipp Kern <pkern@debian.org>
+To: linux-btrfs@vger.kernel.org
+Message-ID: <0518f878-5827-611f-d4ed-0e56cb938141@debian.org>
+Subject: Re: Battling an issue with btrfs quota
+References: <168f5009-d525-d5ce-3a04-631339c49ec8@debian.org>
+In-Reply-To: <168f5009-d525-d5ce-3a04-631339c49ec8@debian.org>
 
->> Just don't count on restore to save your *** and always treat what it
->> can often bring to current as a pleasant surprise, and having it fail
->> won't be a down side, while having it work, if it does, will always be
->> up side.
->> =:^)
->> 
-> I'll keep that in mind, and I think that in the future, before trying
-> any "btrfs check" (or even repair)
-> I will always try restore first if my backup was not fresh enough :-).
+--ETL9u81btR5OXBhLf7hIVUF0hGsxI9oiS
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 
-That's a wise idea, as long as you have the resources to actually be able 
-to write the files somewhere (as people running btrfs really should, 
-because it's /not/ fully stable yet).
+On 01/31/2017 01:15 AM, Philipp Kern wrote:
+[...]
+>>   149 0            0 RW   [btrfs-transacti]
+>=20
+> So there's always a running btrfs-transaction. The kernel messages star=
+t
+> off like this:
+[...]
 
-One of the great things about restore is that all the writing it does is 
-to the destination filesystem -- it doesn't attempt to actually write or 
-repair anything on the filesystem it's trying to restore /from/, so it's 
-far lower risk than anything that /does/ actually attempt to write to or 
-repair the potentially damaged filesystem.
+At it turns out, it also OOMs the complete machine after 2h while
+consuming the available 4 GB RAM (w/o swap):
 
-That makes it /extremely/ useful as a "first, to the extent possibke, 
-make sure the backups are safely freshened" tool. =:^)
+> [rootfs ]# [ 6347.417391] Out of memory: Kill process 228 (sh) score 0 =
+or sacrifice child
+> [ 6347.450652] Killed process 228 (sh) total-vm:6724kB, anon-rss:112kB,=
+ file-rss:1624kB, shmem-rss:0kB
+> [ 6347.500015] Kernel panic - not syncing: Out of memory and no killabl=
+e processes...
+> [ 6347.500015]=20
+> [ 6347.544684] CPU: 0 PID: 149 Comm: btrfs-transacti Not tainted 4.9.6-=
+1-ARCH #1
+> [ 6347.580157] Hardware name: HP ProLiant MicroServer Gen8, BIOS J06 07=
+/16/2015
+> [ 6347.614874]  ffffc90000d77738 ffffffff81305440 ffffc90000d77800 ffff=
+ffff81930520
+> [ 6347.651089]  ffffc90000d777c0 ffffffff8117eed5 0000000000000008 ffff=
+c90000d777d0
+> [ 6347.687037]  ffffc90000d77768 0000000009689dbd 0000000000000003 ffff=
+8801032adcc0
+> [ 6347.723589] Call Trace:
+> [ 6347.735614]  [<ffffffff81305440>] dump_stack+0x63/0x83
+> [ 6347.760845]  [<ffffffff8117eed5>] panic+0xe4/0x22d
+> [ 6347.784187]  [<ffffffff81185e23>] out_of_memory+0x333/0x480
+> [ 6347.811209]  [<ffffffff8118b4c6>] __alloc_pages_nodemask+0xda6/0xe80=
+
+> [ 6347.842223]  [<ffffffff811df1e5>] alloc_pages_current+0x95/0x140
+> [ 6347.871859]  [<ffffffff81181634>] __page_cache_alloc+0xc4/0xe0
+> [ 6347.900582]  [<ffffffff81181737>] pagecache_get_page+0xe7/0x290
+> [ 6347.929238]  [<ffffffffa01fa4a3>] alloc_extent_buffer+0x113/0x480 [b=
+trfs]
+> [ 6347.962291]  [<ffffffffa01cb670>] read_tree_block+0x20/0x60 [btrfs]
+> [ 6347.992642]  [<ffffffffa01a9488>] read_block_for_search.isra.16+0x13=
+8/0x300 [btrfs]
+> [ 6348.030866]  [<ffffffffa01ab72e>] btrfs_search_slot+0x3be/0x9b0 [btr=
+fs]
+> [ 6348.063286]  [<ffffffffa023e816>] find_parent_nodes+0x116/0x14b0 [bt=
+rfs]
+> [ 6348.096113]  [<ffffffffa023fc6e>] __btrfs_find_all_roots+0xbe/0x130 =
+[btrfs]
+> [ 6348.131093]  [<ffffffffa023fd55>] btrfs_find_all_roots+0x55/0x70 [bt=
+rfs]
+> [ 6348.164002]  [<ffffffffa0243a78>] btrfs_qgroup_prepare_account_exten=
+ts+0x58/0xa0 [btrfs]
+> [ 6348.203555]  [<ffffffffa01d4344>] btrfs_commit_transaction.part.12+0=
+x3e4/0xa90 [btrfs]
+> [ 6348.241927]  [<ffffffff810c4200>] ? wake_atomic_t_function+0x60/0x60=
+
+> [ 6348.273073]  [<ffffffffa01d4a2b>] btrfs_commit_transaction+0x3b/0x70=
+ [btrfs]
+> [ 6348.307196]  [<ffffffffa01cedcb>] transaction_kthread+0x1ab/0x1e0 [b=
+trfs]
+> [ 6348.340041]  [<ffffffffa01cec20>] ? btrfs_cleanup_transaction+0x570/=
+0x570 [btrfs]
+> [ 6348.376634]  [<ffffffff8109e8f9>] kthread+0xd9/0xf0
+> [ 6348.400423]  [<ffffffff8102d752>] ? __switch_to+0x2d2/0x630
+> [ 6348.428162]  [<ffffffff8109e820>] ? kthread_park+0x60/0x60
+> [ 6348.455055]  [<ffffffff8160a995>] ret_from_fork+0x25/0x30
+> [ 6348.481684] Kernel Offset: disabled
+> [ 6348.505391] ---[ end Kernel panic - not syncing: Out of memory and n=
+o killable processes...
+> [ 6348.505391]=20
+> Killed
+
+Kind regards
+Philipp Kern
 
 
-Meanwhile, FWIW, restore can also be used as a sort of undelete tool.  
-Remember, btrfs is COW and writes any changes to a new location.  The old 
-location tends to stick around, not any more referenced by anything 
-"live", but still there until some other change happens to overwrite it.
- 
-Just like undelete on a more conventional filesystem, therefore, as long 
-as you notice the problem before the old location has been overwritten 
-again, it's often possible to recover it, altho the mechanisms involved 
-are rather different on btrfs.  Basically, you use btrfs-find-root to get 
-a list of old roots, then point restore at them using the -t option.  
-There's a page on the wiki that goes into some detail in a more desperate 
-"restore anything" context, but here, once you found a root that looked 
-promising, you'd use restore's regex option to restore /just/ the file 
-you're interested in, as it existed at the time that root was written.
+--ETL9u81btR5OXBhLf7hIVUF0hGsxI9oiS--
 
-There's actually a btrfs-undelete script on github that turns the 
-otherwise multiple manual steps into a nice, smooth, undelete operation.  
-Or at least it's supposed to.  I've never actually used it, tho I have 
-examined the script out of curiosity to see what it did and how, and it /
-looks/ like it should work.  I've kept that trick (and knowledge of where 
-to look for the script) filed away in the back of my head in case I need 
-it someday. =:^)
+--3X7KWqBXEW1oKJS4WeRV7Wdvl2D7HrJk2
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
+-----BEGIN PGP SIGNATURE-----
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+iQFFBAEBCAAvFiEEPzuChCNsw7gPxr3/RG4lRTXQVuwFAliQPZ4RHHBrZXJuQGRl
+Ymlhbi5vcmcACgkQRG4lRTXQVuxK5wf5AQQWDZP/s85j0abtUHWY5++zg/ZZPgsC
+mfTE06dKAFfprqyJcv0Sndegyhzw555UE9RWMqJ4jy4CSdOiTD30XFjoeJGzftYm
+H+8vy5vCsbHtfssi25u9CBiHAq0HFDElDRsUqM7U3jVZdwMzOrPartiyidoqvyrS
+8d4VJOLA/fXCQMKHSHdyV/ErpU1Z6mn+VJG6zePriNLCd1dQhzXxyeHCi5dRUuSm
+FqXIac5KbPMpI2O0C5jsP9mFuxmv3HR5ruhdmt4mKZzMvKwEvRfH/Uj8qI/+wVIE
+66c9YQR6D+vUqU2AxPHrX58RCbIB49gTJ4o5txiUOw8n4Db6WJNZeg==
+=vaL6
+-----END PGP SIGNATURE-----
 
+--3X7KWqBXEW1oKJS4WeRV7Wdvl2D7HrJk2--

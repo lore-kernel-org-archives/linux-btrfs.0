@@ -1,102 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:50844 "EHLO
+Received: from [195.159.176.226] ([195.159.176.226]:55085 "EHLO
         blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1750764AbdAaEa4 (ORCPT
+        with ESMTP id S1750764AbdAaE6j (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 30 Jan 2017 23:30:56 -0500
+        Mon, 30 Jan 2017 23:58:39 -0500
 Received: from list by blaine.gmane.org with local (Exim 4.84_2)
         (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1cYQ5f-0000jO-Bi
-        for linux-btrfs@vger.kernel.org; Tue, 31 Jan 2017 05:30:47 +0100
+        id 1cYQWV-00043I-Nj
+        for linux-btrfs@vger.kernel.org; Tue, 31 Jan 2017 05:58:31 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: btrfs recovery
-Date: Tue, 31 Jan 2017 04:30:41 +0000 (UTC)
-Message-ID: <pan$99dce$133426d5$ab6dac5$a744519@cox.net>
-References: <5e29c839-6519-acb2-c094-54600a6c0102@aei.mpg.de>
-        <CAJCQCtTqBaG5AhtbokOkfREStK8XC+ZAsQ-aNOtYe2Y2Nv-4jA@mail.gmail.com>
-        <5742ef43-0400-e0c9-c0b7-c8d3c8299f9f@aei.mpg.de>
+Date: Tue, 31 Jan 2017 04:58:26 +0000 (UTC)
+Message-ID: <pan$dc869$86af3c32$d85f3e93$f334f454@cox.net>
+References: <961e2f81-40e6-cced-f14a-7af7effe1e5e@googlemail.com>
+        <20170126092559.GD24076@carfax.org.uk>
+        <24f6cfb2-d008-af12-ad94-4a4da1be1ee2@googlemail.com>
+        <9c38e493-e4aa-a718-c6a8-d400bcff0df8@googlemail.com>
+        <2c02d0b6-859d-f66f-e259-748db131d38d@googlemail.com>
+        <304177d4-cc35-9bfc-816c-85ff3501dc50@gmail.com>
+        <pan$cc953$ec4078b0$696ed46d$9618e10e@cox.net>
+        <ad929c7d-8781-6c9f-382c-b2fbdfad5f2c@googlemail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Michael Born posted on Mon, 30 Jan 2017 22:07:00 +0100 as excerpted:
+Oliver Freyermuth posted on Sat, 28 Jan 2017 17:46:24 +0100 as excerpted:
 
-> Am 30.01.2017 um 21:51 schrieb Chris Murphy:
->> On Mon, Jan 30, 2017 at 1:02 PM, Michael Born <Michael.Born@aei.mpg.de>
->> wrote:
->>> Hi btrfs experts.
->>>
->>> Hereby I apply for the stupidity of the month award.
+>> Just don't count on restore to save your *** and always treat what it
+>> can often bring to current as a pleasant surprise, and having it fail
+>> won't be a down side, while having it work, if it does, will always be
+>> up side.
+>> =:^)
 >> 
->> There's still another day :-D
->> 
->> 
->>> Before switching from Suse 13.2 to 42.2, I copied my / partition with
->>> dd to an image file - while the system was online/running.
->>> Now, I can't mount the image.
->> 
->> That won't ever work for any file system. It must be unmounted.
-> 
-> I could mount and copy the data out of my /home image.dd (encrypted
-> xfs). That was also online while dd-ing it.
+> I'll keep that in mind, and I think that in the future, before trying
+> any "btrfs check" (or even repair)
+> I will always try restore first if my backup was not fresh enough :-).
 
-There's another angle with btrfs that makes block device image copies 
-such as that a big problem, even if the dd was done with the filesystem 
-unmounted.  This hasn't yet been mentioned in this thread, that I've 
-seen, anyway.
+That's a wise idea, as long as you have the resources to actually be able 
+to write the files somewhere (as people running btrfs really should, 
+because it's /not/ fully stable yet).
 
-* Btrfs takes the filesystem UUID, universally unique ID, at face value, 
-considering it *UNIQUE* and actually identifying the various components 
-of a possibly multi-device filesystem by the UUID.  Again, this is 
-because btrfs, unlike normal filesystems, can be composed of multiple 
-devices, so btrfs needs a way to detect what devices form parts of what 
-filesystems, and it does this by tracking the UUID and considering 
-anything with that UUID (which is supposed to be unique to that 
-filesystem, remember, it actually _says_ "unique" in the label, after 
-all) to be part of that filesystem.
+One of the great things about restore is that all the writing it does is 
+to the destination filesystem -- it doesn't attempt to actually write or 
+repair anything on the filesystem it's trying to restore /from/, so it's 
+far lower risk than anything that /does/ actually attempt to write to or 
+repair the potentially damaged filesystem.
 
-Now you dd the block device somewhere else, making another copy, and 
-btrfs suddenly has more devices that have UUIDs saying they belong to 
-this filesystem than it should!
-
-That has actually triggered corruption in some cases, because btrfs gets 
-mixed up and writes changes to the wrong device, because after all, it 
-*HAS* to be part of the same filesystem, because it has the same 
-universally *unique* ID.
-
-Only the supposedly "unique" ID isn't so "unique" any more, because 
-someone copied the block device, and now there's two copies of the 
-filesystem claiming to be the same one!  "Unique" is no longer "unique" 
-and it has created the all too predictable problems as a result.
+That makes it /extremely/ useful as a "first, to the extent possibke, 
+make sure the backups are safely freshened" tool. =:^)
 
 
-There are ways to work around the problem.  Basically, don't let btrfs 
-see both copies at the same time, and *definitely* don't let it see both 
-copies when one is mounted or an attempt is being made to mount it.
+Meanwhile, FWIW, restore can also be used as a sort of undelete tool.  
+Remember, btrfs is COW and writes any changes to a new location.  The old 
+location tends to stick around, not any more referenced by anything 
+"live", but still there until some other change happens to overwrite it.
+ 
+Just like undelete on a more conventional filesystem, therefore, as long 
+as you notice the problem before the old location has been overwritten 
+again, it's often possible to recover it, altho the mechanisms involved 
+are rather different on btrfs.  Basically, you use btrfs-find-root to get 
+a list of old roots, then point restore at them using the -t option.  
+There's a page on the wiki that goes into some detail in a more desperate 
+"restore anything" context, but here, once you found a root that looked 
+promising, you'd use restore's regex option to restore /just/ the file 
+you're interested in, as it existed at the time that root was written.
 
-(Btrfs "sees" a new device when btrfs device scan is run.  Unfortunately 
-for this case, udev tends to run btrfs device scan automatically whenever 
-it detects a new device that seems to have btrfs on it.  So it can be 
-rather difficult to keep btrfs from seeing it, because udev tends to 
-monitor for new devices and see it right away, and tell btrfs about it 
-when it does.  But it's possible to avoid damage if you're careful to 
-only dd the unmounted filesystem device(s) and to safely hide one copy 
-before attempting to mount the other.)
+There's actually a btrfs-undelete script on github that turns the 
+otherwise multiple manual steps into a nice, smooth, undelete operation.  
+Or at least it's supposed to.  I've never actually used it, tho I have 
+examined the script out of curiosity to see what it did and how, and it /
+looks/ like it should work.  I've kept that trick (and knowledge of where 
+to look for the script) filed away in the back of my head in case I need 
+it someday. =:^)
 
-
-Of course that wasn't the case here.  With the dd of a live-mounted btrfs 
-device, it's quite possible that btrfs detected and started writing to 
-the dd-destination device instead of the original at some point, screwing 
-things up even more than they would have been for a normal filesystem 
-live-mounted dd.
-
-In turn, it's quite possible that's why the old xfs /home still mounted, 
-but the btrfs / didn't, because the xfs, while potentially damaged a bit, 
-didn't suffer the abuse of writes to the wrong device that btrfs may well 
-have suffered, due to the non-uniqueness of the supposedly universally 
-unique IDs and the very confused btrfs that may well have caused.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

@@ -1,61 +1,223 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:53675 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1750925AbdBBACa (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Feb 2017 19:02:30 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1cZ4r0-0004r1-VD
-        for linux-btrfs@vger.kernel.org; Thu, 02 Feb 2017 01:02:22 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs receive leaves new subvolume modifiable during operation
-Date: Thu, 2 Feb 2017 00:02:16 +0000 (UTC)
-Message-ID: <pan$5f1de$80937cf$9c306858$cafb9e40@cox.net>
-References: <1485905578.6441.20.camel@gmail.com>
-        <pan$4ecd$16bc5e8e$14657c4$261368ad@cox.net>
-        <4edfd08e-8d7f-d8d7-bdea-0589b46e4d2b@gmail.com>
-        <7ead5d42-9c00-b2df-3fbf-5b8f287760f6@cobb.uk.net>
-        <pan$16525$cf7fe24b$7c044b9$74b32f27@cox.net>
-        <5c503d69-aaed-680f-de30-75a7323bc753@cobb.uk.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from cn.fujitsu.com ([59.151.112.132]:12394 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751052AbdBBAXy (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Feb 2017 19:23:54 -0500
+Subject: Re: [PATCH 2/2] btrfs: replace: Use ref counts to avoid destroying
+ target device when canceled
+To: <fdmanana@gmail.com>
+References: <20170117011050.18843-1-quwenruo@cn.fujitsu.com>
+ <20170117011050.18843-2-quwenruo@cn.fujitsu.com>
+ <CAL3q7H5F0J0dnGPjqKamh5v8DdZnOHAhQFM9cUbjRkF3_1PciA@mail.gmail.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <a7c94846-f301-c43a-ca2e-6e0ab626b39f@cn.fujitsu.com>
+Date: Thu, 2 Feb 2017 08:23:47 +0800
+MIME-Version: 1.0
+In-Reply-To: <CAL3q7H5F0J0dnGPjqKamh5v8DdZnOHAhQFM9cUbjRkF3_1PciA@mail.gmail.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Graham Cobb posted on Wed, 01 Feb 2017 22:51:34 +0000 as excerpted:
 
->> [C]ouldn't the entire problem be eliminated by properly
->> setting the permissions on a directory/subvol upstream of the received
->> snapshot?
-> 
-> I (honestly) don't know. But even if that does work, it is clearly only
-> a workround for the bug. Where in the documentation does it warn the
-> system manager about the problem? Where does it tell them that they had
-> better make sure they only receive into a directory tree which does not
-> allow users read or execute access (not just not write access!)? What if
-> part of the point of the backup strategy is that user's have read access
-> to these snapshots so they can restore their own files?
-> 
-> The possibility of a knowledgeable system manager being able to
-> workround the problem by limiting how they use it doesn't stop it being
-> a bug.
 
-If it's a workaround, then many of the Linux procedures we as admins and 
-users use every day are equally workarounds.  Setting 007 perms on a dir 
-that doesn't have anything immediately security vulnerable in it, simply 
-to keep other users from even potentially seeing or being able to write 
-to something N layers down the subdir tree, is standard practice.
+At 02/02/2017 06:37 AM, Filipe Manana wrote:
+> On Tue, Jan 17, 2017 at 1:10 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>> When dev-replace and scrub are run at the same time, dev-replace can be
+>> canceled by scrub. It's quite common for btrfs/069.
+>>
+>> While in that case, target device can be destroyed at cancel time,
+>> leading to a user-after-free bug:
+>>
+>>      Process A (dev-replace)         |         Process B(scrub)
+>> ----------------------------------------------------------------------
+>>                                      |(Any RW is OK)
+>>                                      |scrub_setup_recheck_block()
+>>                                      ||- btrfs_map_sblock()
+>>                                      |   Got a bbio with tgtdev
+>> btrfs_dev_replace_finishing()        |
+>> |- btrfs_destory_dev_replace_tgtdev()|
+>>    |- call_rcu(free_device)          |
+>>       |- __free_device()             |
+>>          |- kfree(device)            |
+>>                                      | Scrub worker:
+>>                                      | Access bbio->stripes[], which
+>>                                      | contains tgtdev.
+>>                                      | This triggers general protection.
+>>
+>> The bug is mostly obvious for RAID5/6 since raid56 choose to keep old
+>> rbio and rbio->bbio for later steal, this hugely enlarged the race
+>> window and makes it much easier to trigger the bug.
+>>
+>> This patch introduces 'tgtdev_refs' and 'tgtdev_wait' for btrfs_device
+>> to wait for all its user released the target device.
+>>
+>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>
+> I haven't read the patch, but seeing it's a fix for the issue you
+> reported in the thread with the subject "v4.9-rc7 scrub kernel panic",
+> could you please include the dmesg trace in the changelog? This helps
+> people figuring out if there's a fix for an issue they're hitting...
+> (I just hit it today for example).
 
-Which is my point.  This is no different than standard security practice, 
-that an admin should be familiar with and using without even having to 
-think about it.  Btrfs is simply making the same assumptions that 
-everyone else does, that an admin knows what they are doing and sets the 
-upstream permissions with that in mind.  If they don't, how is that 
-btrfs' fault?
+No problem, I'll update it with backtrace.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Thanks,
+Qu
+>
+> Thanks.
+>
+>> ---
+>>  fs/btrfs/dev-replace.c |  7 ++++++-
+>>  fs/btrfs/volumes.c     | 36 +++++++++++++++++++++++++++++++++++-
+>>  fs/btrfs/volumes.h     | 10 ++++++++++
+>>  3 files changed, 51 insertions(+), 2 deletions(-)
+>>
+>> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+>> index 5de280b9ad73..794a6a0bedf2 100644
+>> --- a/fs/btrfs/dev-replace.c
+>> +++ b/fs/btrfs/dev-replace.c
+>> @@ -558,7 +558,6 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+>>                           rcu_str_deref(src_device->name),
+>>                           src_device->devid,
+>>                           rcu_str_deref(tgt_device->name));
+>> -       tgt_device->is_tgtdev_for_dev_replace = 0;
+>>         tgt_device->devid = src_device->devid;
+>>         src_device->devid = BTRFS_DEV_REPLACE_DEVID;
+>>         memcpy(uuid_tmp, tgt_device->uuid, sizeof(uuid_tmp));
+>> @@ -579,6 +578,12 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+>>
+>>         btrfs_dev_replace_unlock(dev_replace, 1);
+>>
+>> +       /*
+>> +        * Only change is_tgtdev_for_dev_replace flag after all its
+>> +        * users get released.
+>> +        */
+>> +       wait_target_device(tgt_device);
+>> +       tgt_device->is_tgtdev_for_dev_replace = 0;
+>>         btrfs_rm_dev_replace_blocked(fs_info);
+>>
+>>         btrfs_rm_dev_replace_remove_srcdev(fs_info, src_device);
+>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>> index bb8592e1a364..74a6ee981b78 100644
+>> --- a/fs/btrfs/volumes.c
+>> +++ b/fs/btrfs/volumes.c
+>> @@ -2064,6 +2064,7 @@ void btrfs_destroy_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
+>>         WARN_ON(!tgtdev);
+>>         mutex_lock(&fs_info->fs_devices->device_list_mutex);
+>>
+>> +       wait_target_device(tgtdev);
+>>         btrfs_sysfs_rm_device_link(fs_info->fs_devices, tgtdev);
+>>
+>>         if (tgtdev->bdev)
+>> @@ -2598,6 +2599,8 @@ int btrfs_init_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
+>>         device->is_tgtdev_for_dev_replace = 1;
+>>         device->mode = FMODE_EXCL;
+>>         device->dev_stats_valid = 1;
+>> +       atomic_set(&device->tgtdev_refs, 0);
+>> +       init_waitqueue_head(&device->tgtdev_wait);
+>>         set_blocksize(device->bdev, 4096);
+>>         device->fs_devices = fs_info->fs_devices;
+>>         list_add(&device->dev_list, &fs_info->fs_devices->devices);
+>> @@ -2624,6 +2627,8 @@ void btrfs_init_dev_replace_tgtdev_for_resume(struct btrfs_fs_info *fs_info,
+>>         tgtdev->sector_size = sectorsize;
+>>         tgtdev->fs_info = fs_info;
+>>         tgtdev->in_fs_metadata = 1;
+>> +       atomic_set(&tgtdev->tgtdev_refs, 0);
+>> +       init_waitqueue_head(&tgtdev->tgtdev_wait);
+>>  }
+>>
+>>  static noinline int btrfs_update_device(struct btrfs_trans_handle *trans,
+>> @@ -5302,6 +5307,32 @@ static struct btrfs_bio *alloc_btrfs_bio(int total_stripes, int real_stripes)
+>>         return bbio;
+>>  }
+>>
+>> +static void pin_bbio_target_device(struct btrfs_bio *bbio)
+>> +{
+>> +       int i;
+>> +
+>> +       for (i = 0; i < bbio->num_stripes; i++) {
+>> +               struct btrfs_device *device = bbio->stripes[i].dev;
+>> +
+>> +               if (device->is_tgtdev_for_dev_replace)
+>> +                       atomic_inc(&device->tgtdev_refs);
+>> +       }
+>> +}
+>> +
+>> +static void unpin_bbio_target_device(struct btrfs_bio *bbio)
+>> +{
+>> +       int i;
+>> +
+>> +       for (i = 0; i < bbio->num_stripes; i++) {
+>> +               struct btrfs_device *device = bbio->stripes[i].dev;
+>> +
+>> +               if (device->is_tgtdev_for_dev_replace) {
+>> +                       atomic_dec(&device->tgtdev_refs);
+>> +                       wake_up(&device->tgtdev_wait);
+>> +               }
+>> +       }
+>> +}
+>> +
+>>  void btrfs_get_bbio(struct btrfs_bio *bbio)
+>>  {
+>>         WARN_ON(!atomic_read(&bbio->refs));
+>> @@ -5312,8 +5343,10 @@ void btrfs_put_bbio(struct btrfs_bio *bbio)
+>>  {
+>>         if (!bbio)
+>>                 return;
+>> -       if (atomic_dec_and_test(&bbio->refs))
+>> +       if (atomic_dec_and_test(&bbio->refs)) {
+>> +               unpin_bbio_target_device(bbio);
+>>                 kfree(bbio);
+>> +       }
+>>  }
+>>
+>>  static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
+>> @@ -5868,6 +5901,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
+>>                 bbio->stripes[0].physical = physical_to_patch_in_first_stripe;
+>>                 bbio->mirror_num = map->num_stripes + 1;
+>>         }
+>> +       pin_bbio_target_device(bbio);
+>>  out:
+>>         if (dev_replace_is_ongoing) {
+>>                 btrfs_dev_replace_clear_lock_blocking(dev_replace);
+>> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+>> index 811328984702..1b4069dbe1c3 100644
+>> --- a/fs/btrfs/volumes.h
+>> +++ b/fs/btrfs/volumes.h
+>> @@ -149,6 +149,10 @@ struct btrfs_device {
+>>         /* Counter to record the change of device stats */
+>>         atomic_t dev_stats_ccnt;
+>>         atomic_t dev_stat_values[BTRFS_DEV_STAT_VALUES_MAX];
+>> +
+>> +       /* To ensure we wait this target device before destroying it */
+>> +       atomic_t tgtdev_refs;
+>> +       wait_queue_head_t tgtdev_wait;
+>>  };
+>>
+>>  /*
+>> @@ -538,4 +542,10 @@ struct list_head *btrfs_get_fs_uuids(void);
+>>  void btrfs_set_fs_info_ptr(struct btrfs_fs_info *fs_info);
+>>  void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info);
+>>
+>> +static inline void wait_target_device(struct btrfs_device *tgtdev)
+>> +{
+>> +       if (!tgtdev || !tgtdev->is_tgtdev_for_dev_replace)
+>> +               return;
+>> +       wait_event(tgtdev->tgtdev_wait, atomic_read(&tgtdev->tgtdev_refs) == 0);
+>> +}
+>>  #endif
+>> --
+>> 2.11.0
+>>
+>>
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>
+>
+
 

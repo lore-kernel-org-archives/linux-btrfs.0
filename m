@@ -1,21 +1,23 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:38396 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:57200 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751849AbdBAXBf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 1 Feb 2017 18:01:35 -0500
+        id S1751783AbdBBR4j (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 2 Feb 2017 12:56:39 -0500
 Received: from mail.kernel.org (localhost [127.0.0.1])
-        by mail.kernel.org (Postfix) with ESMTP id 737C2202F2
-        for <linux-btrfs@vger.kernel.org>; Wed,  1 Feb 2017 23:01:33 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTP id 0FF832026C
+        for <linux-btrfs@vger.kernel.org>; Thu,  2 Feb 2017 17:56:38 +0000 (UTC)
 Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id A6C5A200E6
-        for <linux-btrfs@vger.kernel.org>; Wed,  1 Feb 2017 23:01:31 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 5A05C20268
+        for <linux-btrfs@vger.kernel.org>; Thu,  2 Feb 2017 17:56:36 +0000 (UTC)
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix assertion failure when freeing block groups at close_ctree()
-Date: Wed,  1 Feb 2017 23:01:28 +0000
-Message-Id: <1485990088-6840-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH v2] Btrfs: fix assertion failure when freeing block groups at close_ctree()
+Date: Thu,  2 Feb 2017 17:56:33 +0000
+Message-Id: <1486058193-25490-1-git-send-email-fdmanana@kernel.org>
+In-Reply-To: <1485990088-6840-1-git-send-email-fdmanana@kernel.org>
+References: <1485990088-6840-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -26,7 +28,8 @@ any running worker kthreads to finish and shutdown the workqueues. This
 behaviour is racy and it triggers an assertion failure when freeing block
 groups because while we are doing it we can have for example a block group
 caching kthread running, and in that case the block group's reference
-count is greater than 1, leading to an assertion failure:
+count can still be greater than 1 by the time we assert its reference count
+is 1, leading to an assertion failure:
 
 [19041.198004] assertion failed: atomic_read(&block_group->count) == 1, file: fs/btrfs/extent-tree.c, line: 9799
 [19041.200584] ------------[ cut here ]------------
@@ -80,13 +83,35 @@ worker kthreads to complete and shutdown the workqueues.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/disk-io.c | 9 +++++++--
- 1 file changed, 7 insertions(+), 2 deletions(-)
+
+v2: Make error path of open_ctree() also stop all workers before freeing
+    the block groups. Assert that when freeing block groups, no block
+    group can be in the caching started state.
+
+ fs/btrfs/disk-io.c     | 6 +++---
+ fs/btrfs/extent-tree.c | 9 ++++++---
+ 2 files changed, 9 insertions(+), 6 deletions(-)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 066d9b9..a90e40e 100644
+index 066d9b9..bf54d7d 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
+@@ -3263,7 +3263,6 @@ int open_ctree(struct super_block *sb,
+ 
+ fail_block_groups:
+ 	btrfs_put_block_group_cache(fs_info);
+-	btrfs_free_block_groups(fs_info);
+ 
+ fail_tree_roots:
+ 	free_root_pointers(fs_info, 1);
+@@ -3271,6 +3270,7 @@ int open_ctree(struct super_block *sb,
+ 
+ fail_sb_buffer:
+ 	btrfs_stop_all_workers(fs_info);
++	btrfs_free_block_groups(fs_info);
+ fail_alloc:
+ fail_iput:
+ 	btrfs_mapping_tree_free(&fs_info->mapping_tree);
 @@ -3985,8 +3985,6 @@ void close_ctree(struct btrfs_fs_info *fs_info)
  
  	btrfs_put_block_group_cache(fs_info);
@@ -96,20 +121,49 @@ index 066d9b9..a90e40e 100644
  	/*
  	 * we must make sure there is not any read request to
  	 * submit after we stopping all workers.
-@@ -3994,6 +3992,13 @@ void close_ctree(struct btrfs_fs_info *fs_info)
+@@ -3994,6 +3992,8 @@ void close_ctree(struct btrfs_fs_info *fs_info)
  	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
  	btrfs_stop_all_workers(fs_info);
  
-+	/*
-+	 * Free block groups only after stopping all workers, since we could
-+	 * have block group caching kthreads running, and therefore they could
-+	 * race with us if we freed the block groups before stopping them.
-+	 */
 +	btrfs_free_block_groups(fs_info);
 +
  	clear_bit(BTRFS_FS_OPEN, &fs_info->flags);
  	free_root_pointers(fs_info, 1);
  
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index dcd2e79..4d5120b 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -9742,6 +9742,11 @@ void btrfs_put_block_group_cache(struct btrfs_fs_info *info)
+ 	}
+ }
+ 
++/*
++ * Must be called only after stopping all workers, since we could have block
++ * group caching kthreads running, and therefore they could race with us if we
++ * freed the block groups before stopping them.
++ */
+ int btrfs_free_block_groups(struct btrfs_fs_info *info)
+ {
+ 	struct btrfs_block_group_cache *block_group;
+@@ -9781,9 +9786,6 @@ int btrfs_free_block_groups(struct btrfs_fs_info *info)
+ 		list_del(&block_group->list);
+ 		up_write(&block_group->space_info->groups_sem);
+ 
+-		if (block_group->cached == BTRFS_CACHE_STARTED)
+-			wait_block_group_cache_done(block_group);
+-
+ 		/*
+ 		 * We haven't cached this block group, which means we could
+ 		 * possibly have excluded extents on this block group.
+@@ -9793,6 +9795,7 @@ int btrfs_free_block_groups(struct btrfs_fs_info *info)
+ 			free_excluded_extents(info, block_group);
+ 
+ 		btrfs_remove_free_space_cache(block_group);
++		ASSERT(block_group->cached != BTRFS_CACHE_STARTED);
+ 		ASSERT(list_empty(&block_group->dirty_list));
+ 		ASSERT(list_empty(&block_group->io_list));
+ 		ASSERT(list_empty(&block_group->bg_list));
 -- 
 2.7.0.rc3
 

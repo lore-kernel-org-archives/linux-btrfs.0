@@ -1,80 +1,151 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f194.google.com ([209.85.223.194]:33360 "EHLO
-        mail-io0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752026AbdBCTiR (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Feb 2017 14:38:17 -0500
-Received: by mail-io0-f194.google.com with SMTP id 101so3261441iom.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 03 Feb 2017 11:38:17 -0800 (PST)
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Cc: g.btrfs@cobb.uk.net, "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Subject: [PATCH v2] btrfs-progs: better document btrfs receive security
-Date: Fri,  3 Feb 2017 14:38:05 -0500
-Message-Id: <20170203193805.96977-1-ahferroin7@gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:45491 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752254AbdBBRgD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 2 Feb 2017 12:36:03 -0500
+From: Jan Kara <jack@suse.cz>
+To: <linux-fsdevel@vger.kernel.org>
+Cc: Christoph Hellwig <hch@infradead.org>, linux-block@vger.kernel.org,
+        Jan Kara <jack@suse.cz>, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org
+Subject: [PATCH 08/24] btrfs: Convert to separately allocated bdi
+Date: Thu,  2 Feb 2017 18:34:06 +0100
+Message-Id: <20170202173422.3240-9-jack@suse.cz>
+In-Reply-To: <20170202173422.3240-1-jack@suse.cz>
+References: <20170202173422.3240-1-jack@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This adds some extra documentation to the btrfs-receive manpage that
-explains some of the security related aspects of btrfs-receive.  The
-first part covers the fact that the subvolume being received is writable
-until the receive finishes, and the second covers the current lack of
-sanity checking of the send stream.
+Allocate struct backing_dev_info separately instead of embedding it
+inside superblock. This unifies handling of bdi among users.
 
-Signed-off-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
-Suggested-by: Graham Cobb <g.btrfs@cobb.uk.net>
-
+CC: Chris Mason <clm@fb.com>
+CC: Josef Bacik <jbacik@fb.com>
+CC: David Sterba <dsterba@suse.com>
+CC: linux-btrfs@vger.kernel.org
+Signed-off-by: Jan Kara <jack@suse.cz>
 ---
-Chages since v1:
-    * Updated the description based on suggestions from Graham Cobb.
+ fs/btrfs/ctree.h   |  1 -
+ fs/btrfs/disk-io.c | 36 +++++++-----------------------------
+ fs/btrfs/super.c   |  7 +++++++
+ 3 files changed, 14 insertions(+), 30 deletions(-)
 
-Inspired by a recent thread on the ML.
-
-This could probably be more thorough, but I felt it was more important
-to get it documented as quickly as possible, and this should cover the
-basic info that most people will care about.
-
- Documentation/btrfs-receive.asciidoc | 20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
-
-diff --git a/Documentation/btrfs-receive.asciidoc b/Documentation/btrfs-receive.asciidoc
-index a6838e5e..1ada396f 100644
---- a/Documentation/btrfs-receive.asciidoc
-+++ b/Documentation/btrfs-receive.asciidoc
-@@ -31,7 +31,7 @@ the stream, and print the stream metadata, one operation per line.
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 6a823719b6c5..1dc06f66dfcf 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -801,7 +801,6 @@ struct btrfs_fs_info {
+ 	struct btrfs_super_block *super_for_commit;
+ 	struct super_block *sb;
+ 	struct inode *btree_inode;
+-	struct backing_dev_info bdi;
+ 	struct mutex tree_log_mutex;
+ 	struct mutex transaction_kthread_mutex;
+ 	struct mutex cleaner_mutex;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 37a31b12bb0c..b25723e729c0 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1810,21 +1810,6 @@ static int btrfs_congested_fn(void *congested_data, int bdi_bits)
+ 	return ret;
+ }
  
- 3. default subvolume has changed or you didn't mount the filesystem at the toplevel subvolume
+-static int setup_bdi(struct btrfs_fs_info *info, struct backing_dev_info *bdi)
+-{
+-	int err;
+-
+-	err = bdi_setup_and_register(bdi, "btrfs");
+-	if (err)
+-		return err;
+-
+-	bdi->ra_pages = VM_MAX_READAHEAD * 1024 / PAGE_SIZE;
+-	bdi->congested_fn	= btrfs_congested_fn;
+-	bdi->congested_data	= info;
+-	bdi->capabilities |= BDI_CAP_CGROUP_WRITEBACK;
+-	return 0;
+-}
+-
+ /*
+  * called by the kthread helper functions to finally call the bio end_io
+  * functions.  This is where read checksum verification actually happens
+@@ -2598,16 +2583,10 @@ int open_ctree(struct super_block *sb,
+ 		goto fail;
+ 	}
  
--A subvolume is made read-only after the receiving process finishes succesfully.
-+A subvolume is made read-only after the receiving process finishes succesfully (see BUGS below).
+-	ret = setup_bdi(fs_info, &fs_info->bdi);
+-	if (ret) {
+-		err = ret;
+-		goto fail_srcu;
+-	}
+-
+ 	ret = percpu_counter_init(&fs_info->dirty_metadata_bytes, 0, GFP_KERNEL);
+ 	if (ret) {
+ 		err = ret;
+-		goto fail_bdi;
++		goto fail_srcu;
+ 	}
+ 	fs_info->dirty_metadata_batch = PAGE_SIZE *
+ 					(1 + ilog2(nr_cpu_ids));
+@@ -2715,7 +2694,6 @@ int open_ctree(struct super_block *sb,
  
- `Options`
+ 	sb->s_blocksize = 4096;
+ 	sb->s_blocksize_bits = blksize_bits(4096);
+-	sb->s_bdi = &fs_info->bdi;
  
-@@ -68,6 +68,26 @@ dump the stream metadata, one line per operation
- +
- Does not require the 'path' parameter. The filesystem chanded.
+ 	btrfs_init_btree_inode(fs_info);
  
-+BUGS
-+----
-+*btrfs receive* sets the subvolume read-only after it completes
-+successfully.  However, while the receive is in progress, users who have
-+write access to files or directories in the receiving 'path' can add,
-+remove, or modify files, in which case the resulting read-only subvolume
-+will not be an exact copy of the sent subvolume.
+@@ -2912,9 +2890,12 @@ int open_ctree(struct super_block *sb,
+ 		goto fail_sb_buffer;
+ 	}
+ 
+-	fs_info->bdi.ra_pages *= btrfs_super_num_devices(disk_super);
+-	fs_info->bdi.ra_pages = max(fs_info->bdi.ra_pages,
+-				    SZ_4M / PAGE_SIZE);
++	sb->s_bdi->congested_fn = btrfs_congested_fn;
++	sb->s_bdi->congested_data = fs_info;
++	sb->s_bdi->capabilities |= BDI_CAP_CGROUP_WRITEBACK;
++	sb->s_bdi->ra_pages = VM_MAX_READAHEAD * 1024 / PAGE_SIZE;
++	sb->s_bdi->ra_pages *= btrfs_super_num_devices(disk_super);
++	sb->s_bdi->ra_pages = max(sb->s_bdi->ra_pages, SZ_4M / PAGE_SIZE);
+ 
+ 	sb->s_blocksize = sectorsize;
+ 	sb->s_blocksize_bits = blksize_bits(sectorsize);
+@@ -3282,8 +3263,6 @@ int open_ctree(struct super_block *sb,
+ 	percpu_counter_destroy(&fs_info->delalloc_bytes);
+ fail_dirty_metadata_bytes:
+ 	percpu_counter_destroy(&fs_info->dirty_metadata_bytes);
+-fail_bdi:
+-	bdi_destroy(&fs_info->bdi);
+ fail_srcu:
+ 	cleanup_srcu_struct(&fs_info->subvol_srcu);
+ fail:
+@@ -4010,7 +3989,6 @@ void close_ctree(struct btrfs_fs_info *fs_info)
+ 	percpu_counter_destroy(&fs_info->dirty_metadata_bytes);
+ 	percpu_counter_destroy(&fs_info->delalloc_bytes);
+ 	percpu_counter_destroy(&fs_info->bio_counter);
+-	bdi_destroy(&fs_info->bdi);
+ 	cleanup_srcu_struct(&fs_info->subvol_srcu);
+ 
+ 	btrfs_free_stripe_hash_table(fs_info);
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index b5ae7d3d1896..08ef08b63132 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1133,6 +1133,13 @@ static int btrfs_fill_super(struct super_block *sb,
+ #endif
+ 	sb->s_flags |= MS_I_VERSION;
+ 	sb->s_iflags |= SB_I_CGROUPWB;
 +
-+If the intention is to create an exact copy, the receiving 'path'
-+should be protected from access by users until the receive operation
-+has completed and the subvolume is set to read-only.
++	err = super_setup_bdi(sb);
++	if (err) {
++		btrfs_err(fs_info, "super_setup_bdi failed");
++		return err;
++	}
 +
-+Additionally, receive does not currently do a very good job of validating
-+that an incremental send streams actually makes sense, and it is thus
-+possible for a specially crafted send stream to create a subvolume with
-+reflinks to arbitrary files in the same filesystem.  Because of this,
-+users are advised to not use *btrfs receive* on send streams from
-+untrusted sources, and to protect trusted streams when sending them
-+across untrusted networks.
-+
- EXIT STATUS
- -----------
- *btrfs receive* returns a zero exit status if it succeeds. Non zero is
+ 	err = open_ctree(sb, fs_devices, (char *)data);
+ 	if (err) {
+ 		btrfs_err(fs_info, "open_ctree failed");
 -- 
-2.11.0
+2.10.2
+

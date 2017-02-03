@@ -1,78 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f68.google.com ([209.85.214.68]:33469 "EHLO
-        mail-it0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751308AbdBBPGy (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Feb 2017 10:06:54 -0500
-Received: by mail-it0-f68.google.com with SMTP id e137so6054247itc.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 02 Feb 2017 07:06:53 -0800 (PST)
-Subject: Re: raid1: cannot add disk to replace faulty because can only mount
- fs as read-only.
-To: Adam Borowski <kilobyte@angband.pl>
-References: <W75Sc6PDCBok7W75TcCgc7@videotron.ca>
- <51114ea93a0f76a5ff6621e4d8983944@server1.deragon.biz>
- <fab34ac1-03c0-76ea-eac2-ef4a210a48de@gmail.com>
- <07bba687-64c3-6713-6f6a-c8da183cbd3d@gmail.com>
- <YAvBcoM9EImXYYAvCcegSf@videotron.ca>
- <a5262907-06f2-2c6f-d23a-2703b10429b7@deragon.biz>
- <pan$be2e$8a233bb0$f63eb0cb$d3413db@cox.net>
- <20170201115530.l2ce5afcqld2kzi4@angband.pl>
- <pan$27de1$6045e2b1$7cc1684e$e9aac1ad@cox.net>
- <7cb699fd-44a7-d8eb-e492-c448f67b0eac@gmail.com>
- <20170202142521.nfiy73ye6bi5smjv@angband.pl>
-Cc: linux-btrfs@vger.kernel.org
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <c1c37876-68ce-8674-782e-1268631f9c2c@gmail.com>
-Date: Thu, 2 Feb 2017 10:06:46 -0500
-MIME-Version: 1.0
-In-Reply-To: <20170202142521.nfiy73ye6bi5smjv@angband.pl>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Received: from [195.159.176.226] ([195.159.176.226]:45391 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1752371AbdBCJPR (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Feb 2017 04:15:17 -0500
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1cZZxR-0006V6-6Y
+        for linux-btrfs@vger.kernel.org; Fri, 03 Feb 2017 10:15:05 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: btrfs receive leaves new subvolume modifiable during operation
+Date: Fri, 3 Feb 2017 09:14:59 +0000 (UTC)
+Message-ID: <pan$e2f8a$ba778439$cd53e97c$382283f9@cox.net>
+References: <1485905578.6441.20.camel@gmail.com>
+        <pan$4ecd$16bc5e8e$14657c4$261368ad@cox.net>
+        <4edfd08e-8d7f-d8d7-bdea-0589b46e4d2b@gmail.com>
+        <7ead5d42-9c00-b2df-3fbf-5b8f287760f6@cobb.uk.net>
+        <pan$16525$cf7fe24b$7c044b9$74b32f27@cox.net>
+        <5c503d69-aaed-680f-de30-75a7323bc753@cobb.uk.net>
+        <pan$5f1de$80937cf$9c306858$cafb9e40@cox.net>
+        <1b69d1a8-c08b-c9f3-c95b-1d7d71c7d642@cobb.uk.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-02-02 09:25, Adam Borowski wrote:
-> On Thu, Feb 02, 2017 at 07:49:50AM -0500, Austin S. Hemmelgarn wrote:
->> This is a severe bug that makes a not all that uncommon (albeit bad) use
->> case fail completely.  The fix had no dependencies itself and
->
-> I don't see what's bad in mounting a RAID degraded.  Yeah, it provides no
-> redundancy but that's no worse than using a single disk from the start.
-> And most people not doing storage/server farm don't have a stack of spare
-> disks at hand, so getting a replacement might take a while.
-Running degraded is bad. Period.  If you don't have a disk on hand to 
-replace the failed one (and if you care about redundancy, you should 
-have at least one spare on hand), you should be converting to a single 
-disk, not continuing to run in degraded mode until you get a new disk. 
-The moment you start talking about running degraded long enough that you 
-will be _booting_ the system with the array degraded, you need to be 
-converting to a single disk.  This is of course impractical for 
-something like a hardware array or an LVM volume, but it's _trivial_ 
-with BTRFS, and protects you from all kinds of bad situations that can't 
-happen with a single disk but can completely destroy the filesystem if 
-it's a degraded array.  Running a single disk is not exactly the same as 
-running a degraded array, it's actually marginally safer (even if you 
-aren't using dup profile for metadata) because there are fewer moving 
-parts to go wrong.  It's also exponentially more efficient.
->
-> Being able to continue to run when a disk fails is the whole point of RAID
-> -- despite what some folks think, RAIDs are not for backups but for uptime.
-> And if your uptime goes to hell because the moment a disk fails you need to
-> drop everything and replace the disk immediately, why would you use RAID?
-Because just replacing a disk and rebuilding the array is almost always 
-much cheaper in terms of time than rebuilding the system from a backup. 
-IOW, even if you have to drop everything and replace the disk 
-immediately, it's still less time consuming than restoring from a 
-backup.  It also has the advantage that you don't lose any data.
->
->>> I /thought/ the immediate benefit was obvious enough that it
->>> would be mainline-merged by now, not hoovered-up into some long-term
->>> project with no real hint as to /when/ it might be merged.  Oh, well...
->> I think (although I'm not sure about it) that this:
->> http://www.spinics.net/lists/linux-btrfs/msg47283.html
->> is the first posting of the patch series.
->
-> Is there a more recent version somewhere?  Mechanically rebasing+resolving
-> conflicts doesn't work, I'd need to do a more involved refresh, which would
-> be a waste of time if it's already done by someone with an actual clue about
-> this code.
-There may be, but I haven't looked very far.  Qu would probably be the 
-person to ask.
+Graham Cobb posted on Thu, 02 Feb 2017 10:52:26 +0000 as excerpted:
+
+> On 02/02/17 00:02, Duncan wrote:
+>> If it's a workaround, then many of the Linux procedures we as admins
+>> and users use every day are equally workarounds.  Setting 007 perms on
+>> a dir that doesn't have anything immediately security vulnerable in it,
+>> simply to keep other users from even potentially seeing or being able
+>> to write to something N layers down the subdir tree, is standard
+>> practice.
+> 
+> No. There is no need to normally place a read-only snapshot below a
+> no-execute directory just to prevent write access to it. That is not
+> part of the admin's expectation.
+> 
+>> Which is my point.  This is no different than standard security
+>> practice,
+>> that an admin should be familiar with and using without even having to
+>> think about it.  Btrfs is simply making the same assumptions that
+>> everyone else does, that an admin knows what they are doing and sets
+>> the upstream permissions with that in mind.  If they don't, how is that
+>> btrfs' fault?
+> 
+> Because btrfs intends the receive snapshot to be read-only. That is the
+> expectation of the sysadmin.
+
+Read-only *after* completion, yes.  But a sysadmin that believes really 
+setting something read-only and then trying to write to it from 
+userspace, which is what btrfs does until the receive is done, should 
+work, doesn't understand the meaning of read-only.
+
+Meanwhile, Austin said most of what I'd say, probably better than I'd say 
+it, so I won't repeat it here, but I agree with him.
+
+> Even though it is security-related, I agree it isn't the highest
+> priority btrfs bug. It can probably wait until receive is being worked
+> on for other reasons. But if it isn't going to be fixed any time soon,
+> it should be documented in the Wiki and the man page, with the suggested
+> workround for anyone who needs to make sure the receive won't be
+> tampered with.
+
+One thing I was going to say in the previous post and forgot, is that not 
+withstanding all the technical reasons, I do agree that documenting it in 
+the manpage, etc, would be a good idea.  In that I agree with both you 
+and Austin. =:^)
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

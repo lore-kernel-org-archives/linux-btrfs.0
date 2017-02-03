@@ -1,66 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from syrinx.knorrie.org ([82.94.188.77]:41393 "EHLO
-        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751958AbdBCOq5 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Feb 2017 09:46:57 -0500
-Subject: Re: Btrfs Heatmap - v4 ... colors!!
-To: Timofey Titovets <nefelim4ag@gmail.com>
-References: <33090601-0b56-7360-a256-aa5c27339d99@mendix.com>
- <20170118003838.GA4136@comcast.net>
- <c8f2ebd7-9073-c2e7-5966-5207895c59b7@mendix.com>
- <CAGqmi76w8dqcEEPamB+oe7brXEcwV1iKT8XUdf_65pWMPkb3qw@mail.gmail.com>
- <48c8c404-9490-49b0-9eaf-c16621ff45c8@mendix.com>
- <CAGqmi76pqhK1kx5mOH8=D2z90beZhkmPWj=4kLxO7aQD_jbHsw@mail.gmail.com>
- <160ddbc9-fb38-56e6-cffe-650f9eb5c535@mendix.com>
- <CAGqmi75eLTyQ6t4MWU6FdE=vSUy4OjfdEUg5Omx0fNQBWNsAwA@mail.gmail.com>
-Cc: Tim Walberg <twalberg@comcast.net>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Message-ID: <e0e66efa-847d-8c2e-f394-1e9a480ab778@mendix.com>
-Date: Fri, 3 Feb 2017 15:46:54 +0100
+Received: from zaphod.cobb.me.uk ([213.138.97.131]:38700 "EHLO
+        zaphod.cobb.me.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750956AbdBCPo7 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Feb 2017 10:44:59 -0500
+Subject: Re: btrfs receive leaves new subvolume modifiable during operation
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>, linux-btrfs@vger.kernel.org
+References: <1485905578.6441.20.camel@gmail.com>
+ <pan$4ecd$16bc5e8e$14657c4$261368ad@cox.net>
+ <4edfd08e-8d7f-d8d7-bdea-0589b46e4d2b@gmail.com>
+ <7ead5d42-9c00-b2df-3fbf-5b8f287760f6@cobb.uk.net>
+ <pan$16525$cf7fe24b$7c044b9$74b32f27@cox.net>
+ <5c503d69-aaed-680f-de30-75a7323bc753@cobb.uk.net>
+ <pan$5f1de$80937cf$9c306858$cafb9e40@cox.net>
+ <1b69d1a8-c08b-c9f3-c95b-1d7d71c7d642@cobb.uk.net>
+ <pan$e2f8a$ba778439$cd53e97c$382283f9@cox.net>
+ <092c2028-f132-83b1-5f10-d84d374a8bb3@gmail.com>
+From: Graham Cobb <g.btrfs@cobb.uk.net>
+Message-ID: <a85af6d8-fdcd-1039-3c0e-a4486ff0bb0a@cobb.uk.net>
+Date: Fri, 3 Feb 2017 15:44:53 +0000
 MIME-Version: 1.0
-In-Reply-To: <CAGqmi75eLTyQ6t4MWU6FdE=vSUy4OjfdEUg5Omx0fNQBWNsAwA@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <092c2028-f132-83b1-5f10-d84d374a8bb3@gmail.com>
+Content-Type: multipart/mixed;
+ boundary="------------51BC90FC5258C1F7A2CBF0E3"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02/03/2017 03:36 PM, Timofey Titovets wrote:
-> 
-> ➜  python-btrfs git:(master) ✗ tar -vxf python-btrfs-5-1-any.pkg.tar.xz
-> .PKGINFO
-> .BUILDINFO
-> .MTREE
-> usr/
-> usr/lib/
-> usr/lib/python3.6/
-> usr/lib/python3.6/site-packages/
-> usr/lib/python3.6/site-packages/btrfs-5-py3.6.egg-info/
-> usr/lib/python3.6/site-packages/btrfs/
-> usr/lib/python3.6/site-packages/btrfs/__pycache__/
-> usr/lib/python3.6/site-packages/btrfs/utils.py
-> usr/lib/python3.6/site-packages/btrfs/ioctl.py
-> usr/lib/python3.6/site-packages/btrfs/ctree.py
-> usr/lib/python3.6/site-packages/btrfs/crc32c.py
-> usr/lib/python3.6/site-packages/btrfs/__init__.py
-> usr/lib/python3.6/site-packages/btrfs/__pycache__/utils.cpython-36.pyc
-> usr/lib/python3.6/site-packages/btrfs/__pycache__/ioctl.cpython-36.pyc
-> usr/lib/python3.6/site-packages/btrfs/__pycache__/ctree.cpython-36.pyc
-> usr/lib/python3.6/site-packages/btrfs/__pycache__/crc32c.cpython-36.pyc
-> usr/lib/python3.6/site-packages/btrfs/__pycache__/__init__.cpython-36.pyc
-> usr/lib/python3.6/site-packages/btrfs-5-py3.6.egg-info/installed-files.txt
-> usr/lib/python3.6/site-packages/btrfs-5-py3.6.egg-info/PKG-INFO
-> usr/lib/python3.6/site-packages/btrfs-5-py3.6.egg-info/dependency_links.txt
-> usr/lib/python3.6/site-packages/btrfs-5-py3.6.egg-info/top_level.txt
-> usr/lib/python3.6/site-packages/btrfs-5-py3.6.egg-info/SOURCES.txt
-> 
-> I think it's building automaticaly by:
-> PIP_CONFIG_FILE=/dev/null pip install --isolated --root="$pkgdir"
-> --ignore-installed --no-deps btrfs
-> 
+This is a multi-part message in MIME format.
+--------------51BC90FC5258C1F7A2CBF0E3
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 7bit
 
-Even better :-)
+On 03/02/17 12:44, Austin S. Hemmelgarn wrote:
+> I can look at making a patch for this, but it may be next week before I
+> have time (I'm not great at multi-tasking when it comes to software
+> development, and I'm in the middle of helping to fix a bug in Ansible
+> right now).
 
-Thanks,
+That would be great, Austin! It is about 15 years since I last submitted
+a patch under kernel development patch rules and things have changed a
+fair bit in that time. So if you are set up to do it that sounds good.
 
--- 
-Hans van Kranenburg
+As a starting point, I have created a suggested text (patch attached).
+
+
+
+
+
+--------------51BC90FC5258C1F7A2CBF0E3
+Content-Type: text/plain; charset=UTF-8;
+ name="btrfs-receive-rw-window"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment;
+ filename="btrfs-receive-rw-window"
+
+ZGlmZiAtLWdpdCBhL0RvY3VtZW50YXRpb24vYnRyZnMtcmVjZWl2ZS5hc2NpaWRvYyBiL0Rv
+Y3VtZW50YXRpb24vYnRyZnMtcmVjZWl2ZS5hc2NpaWRvYwppbmRleCA2YmU0YWE2Li5kYjUy
+NWQ5IDEwMDY0NAotLS0gYS9Eb2N1bWVudGF0aW9uL2J0cmZzLXJlY2VpdmUuYXNjaWlkb2MK
+KysrIGIvRG9jdW1lbnRhdGlvbi9idHJmcy1yZWNlaXZlLmFzY2lpZG9jCkBAIC0zMSw3ICsz
+MSw3IEBAIHRoZSBzdHJlYW0sIGFuZCBwcmludCB0aGUgc3RyZWFtIG1ldGFkYXRhLCBvbmUg
+b3BlcmF0aW9uIHBlciBsaW5lLgogCiAzLiBkZWZhdWx0IHN1YnZvbHVtZSBoYXMgY2hhbmdl
+ZCBvciB5b3UgZGlkbid0IG1vdW50IHRoZSBmaWxlc3lzdGVtIGF0IHRoZSB0b3BsZXZlbCBz
+dWJ2b2x1bWUKIAotQSBzdWJ2b2x1bWUgaXMgbWFkZSByZWFkLW9ubHkgYWZ0ZXIgdGhlIHJl
+Y2VpdmluZyBwcm9jZXNzIGZpbmlzaGVzIHN1Y2Nlc2Z1bGx5LgorQSBzdWJ2b2x1bWUgaXMg
+bWFkZSByZWFkLW9ubHkgYWZ0ZXIgdGhlIHJlY2VpdmluZyBwcm9jZXNzIGZpbmlzaGVzIHN1
+Y2Nlc2Z1bGx5IChzZWUgQlVHUyBiZWxvdykuCiAKIGBPcHRpb25zYAogCkBAIC03Myw2ICs3
+MywxNiBAQCBFWElUIFNUQVRVUwogKmJ0cmZzIHJlY2VpdmUqIHJldHVybnMgYSB6ZXJvIGV4
+aXQgc3RhdHVzIGlmIGl0IHN1Y2NlZWRzLiBOb24gemVybyBpcwogcmV0dXJuZWQgaW4gY2Fz
+ZSBvZiBmYWlsdXJlLgogCitCVUdTCistLS0tCisqYnRyZnMgcmVjZWl2ZSogc2V0cyB0aGUg
+c3Vidm9sdW1lIHJlYWQtb25seSBhZnRlciBpdCBjb21wbGV0ZXMgc3VjY2Vzc2Z1bGx5Lgor
+SG93ZXZlciwgd2hpbGUgdGhlIHJlY2VpdmUgaXMgaW4gcHJvZ3Jlc3MsIHVzZXJzIHdobyBo
+YXZlIHdyaXRlIGFjY2VzcyB0byBmaWxlcworb3IgZGlyZWN0b3JpZXMgaW4gdGhlIHJlY2Vp
+dmluZyAncGF0aCcgY2FuIGFkZCwgcmVtb3ZlIG9yIG1vZGlmeSBmaWxlcywgaW4gd2hpY2gK
+K2Nhc2UgdGhlIHJlc3VsdGluZyByZWFkLW9ubHkgc3Vidm9sdW1lIHdpbGwgbm90IGJlIGEg
+Y29weSBvZiB0aGUgc2VuZGluZyBzdWJ2b2x1bWUuCisKK0lmIHRoZSBpbnRlbnRpb24gaXMg
+dG8gY3JlYXRlIGFuIGV4YWN0IGNvcHksIHRoZSByZWNlaXZpbmcgJ3BhdGgnIHNob3VsZCBi
+ZSBwcm90ZWN0ZWQKK2Zyb20gYWNjZXNzIGJ5IHVzZXJzIHVudGlsIHRoZSByZWNlaXZlIGhh
+cyBjb21wbGV0ZWQgYW5kIHRoZSBzdWJ2b2x1bWUgc2V0IHRvIHJlYWQtb25seS4KKwogQVZB
+SUxBQklMSVRZCiAtLS0tLS0tLS0tLS0KICpidHJmcyogaXMgcGFydCBvZiBidHJmcy1wcm9n
+cy4K
+--------------51BC90FC5258C1F7A2CBF0E3--

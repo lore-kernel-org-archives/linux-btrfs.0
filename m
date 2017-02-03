@@ -1,79 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41446 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:40445 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753129AbdBGHRb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 7 Feb 2017 02:17:31 -0500
-Date: Tue, 7 Feb 2017 08:17:25 +0100
-From: Michal Hocko <mhocko@kernel.org>
-To: Dave Chinner <david@fromorbit.com>
-Cc: "Darrick J. Wong" <darrick.wong@oracle.com>,
-        Matthew Wilcox <willy@infradead.org>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        linux-fsdevel@vger.kernel.org, linux-mm@kvack.org, djwong@kernel.org,
-        "Theodore Ts'o" <tytso@mit.edu>, Chris Mason <clm@fb.com>,
-        David Sterba <dsterba@suse.cz>, Jan Kara <jack@suse.cz>,
-        ceph-devel@vger.kernel.org, cluster-devel@redhat.com,
-        linux-nfs@vger.kernel.org, logfs@logfs.org, linux-xfs@vger.kernel.org,
-        linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-mtd@lists.infradead.org, reiserfs-devel@vger.kernel.org,
-        linux-ntfs-dev@lists.sourceforge.net,
-        linux-f2fs-devel@lists.sourceforge.net, linux-afs@lists.infradead.org,
-        LKML <linux-kernel@vger.kernel.org>
-Subject: Re: [PATCH 4/6] xfs: use memalloc_nofs_{save,restore} instead of
- memalloc_noio*
-Message-ID: <20170207071724.GA3022@dhcp22.suse.cz>
-References: <20170206140718.16222-1-mhocko@kernel.org>
- <20170206140718.16222-5-mhocko@kernel.org>
- <20170206153923.GL2267@bombadil.infradead.org>
- <20170206174415.GA20731@dhcp22.suse.cz>
- <20170206183237.GE3580@birch.djwong.org>
- <20170206184743.GB20731@dhcp22.suse.cz>
- <20170206225150.GB12125@dastard>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170206225150.GB12125@dastard>
+        id S1750878AbdBCQPn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 3 Feb 2017 11:15:43 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 5DFFFAC46
+        for <linux-btrfs@vger.kernel.org>; Fri,  3 Feb 2017 16:15:42 +0000 (UTC)
+From: Goldwyn Rodrigues <rgoldwyn@suse.de>
+To: linux-btrfs@vger.kernel.org
+Cc: Goldwyn Rodrigues <rgoldwyn@suse.com>
+Subject: [PATCH] btrfs-progs: Remove unused function arg in delete_extent_records
+Date: Fri,  3 Feb 2017 10:15:32 -0600
+Message-Id: <20170203161532.6111-1-rgoldwyn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue 07-02-17 09:51:50, Dave Chinner wrote:
-> On Mon, Feb 06, 2017 at 07:47:43PM +0100, Michal Hocko wrote:
-> > On Mon 06-02-17 10:32:37, Darrick J. Wong wrote:
-[...]
-> > > I prefer to keep the "...yet we are likely to be under GFP_NOFS..."
-> > > wording of the old comment because it captures the uncertainty of
-> > > whether or not we actually are already under NOFS.  If someone actually
-> > > has audited this code well enough to know for sure then yes let's change
-> > > the comment, but I haven't gone that far.
-> > 
-> > I believe we can drop the memalloc_nofs_save then as well because either
-> > we are called from a potentially dangerous context and thus we are in
-> > the nofs scope we we do not need the protection at all.
-> 
-> No, absolutely not. "Belief" is not a sufficient justification for
-> removing low level deadlock avoidance infrastructure. This code
-> needs to remain in _xfs_buf_map_pages() until a full audit of the
-> caller paths is done and we're 100% certain that there are no
-> lurking deadlocks.
+From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-Exactly. I was actually refering to "If someone actually has audited
-this code" above... So I definitely do not want to justify anything
-based on the belief
+new_len is not used in delete_extent_records().
 
-> For example, I'm pretty sure we can call into _xfs_buf_map_pages()
-> outside of a transaction context but with an inode ILOCK held
-> exclusively. If we then recurse into memory reclaim and try to run a
-> transaction during reclaim, we have an inverted ILOCK vs transaction
-> locking order. i.e. we are not allowed to call xfs_trans_reserve()
-> with an ILOCK held as that can deadlock the log:  log full, locked
-> inode pins tail of log, inode cannot be flushed because ILOCK is
-> held by caller waiting for log space to become available....
-> 
-> i.e. there are certain situations where holding a ILOCK is a
-> deadlock vector. See xfs_lock_inodes() for an example of the lengths
-> we go to avoid ILOCK based log deadlocks like this...
+Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+---
+ cmds-check.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-Thanks for the reference. This is really helpful!
-
+diff --git a/cmds-check.c b/cmds-check.c
+index 84e1d99..9fb85e4 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -7969,7 +7969,7 @@ out:
+ static int delete_extent_records(struct btrfs_trans_handle *trans,
+ 				 struct btrfs_root *root,
+ 				 struct btrfs_path *path,
+-				 u64 bytenr, u64 new_len)
++				 u64 bytenr)
+ {
+ 	struct btrfs_key key;
+ 	struct btrfs_key found_key;
+@@ -8975,7 +8975,7 @@ static int fixup_extent_refs(struct btrfs_fs_info *info,
+ 
+ 	/* step two, delete all the existing records */
+ 	ret = delete_extent_records(trans, info->extent_root, &path,
+-				    rec->start, rec->max_size);
++				    rec->start);
+ 
+ 	if (ret < 0)
+ 		goto out;
 -- 
-Michal Hocko
-SUSE Labs
+2.10.2
+

@@ -1,11 +1,12 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:28500 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:5627 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1750808AbdBBCNC (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Feb 2017 21:13:02 -0500
+        with ESMTP id S1752230AbdBCGUx (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Feb 2017 01:20:53 -0500
 Subject: Re: [PATCH 0/9] Lowmem mode fsck fixes with fsck-tests framework
  update
-To: Christoph Anton Mitterer <christoph.anton.mitterer@lmu.de>
+To: Christoph Anton Mitterer <christoph.anton.mitterer@lmu.de>,
+        btrfs <linux-btrfs@vger.kernel.org>
 References: <20170123091359.21390-1-quwenruo@cn.fujitsu.com>
  <1485276845.12065.1.camel@scientia.net>
  <35be430d-1210-9b33-3b18-c22127cc64a7@cn.fujitsu.com>
@@ -19,63 +20,58 @@ References: <20170123091359.21390-1-quwenruo@cn.fujitsu.com>
  <0715efbc-44cd-5f84-9870-938dd80b7ae3@cn.fujitsu.com>
  <1485986636.6573.13.camel@lmu.de>
  <3c464199-27df-1a81-f309-8491c368ff13@cn.fujitsu.com>
-CC: <linux-btrfs@vger.kernel.org>
+ <97d42767-4ae4-a97e-2625-5028300fff67@cn.fujitsu.com>
+ <1486098502.7443.3.camel@lmu.de>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <97d42767-4ae4-a97e-2625-5028300fff67@cn.fujitsu.com>
-Date: Thu, 2 Feb 2017 10:12:57 +0800
+Message-ID: <06e4296b-4512-1669-5bff-834d130ce701@cn.fujitsu.com>
+Date: Fri, 3 Feb 2017 14:20:39 +0800
 MIME-Version: 1.0
-In-Reply-To: <3c464199-27df-1a81-f309-8491c368ff13@cn.fujitsu.com>
+In-Reply-To: <1486098502.7443.3.camel@lmu.de>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-At 02/02/2017 08:25 AM, Qu Wenruo wrote:
-> Thanks for your test.
+At 02/03/2017 01:08 PM, Christoph Anton Mitterer wrote:
+> Hey Qu.
 >
-> At 02/02/2017 06:03 AM, Christoph Anton Mitterer wrote:
->> On Wed, 2017-02-01 at 09:06 +0800, Qu Wenruo wrote:
->>> https://github.com/adam900710/btrfs-progs/tree/lowmem_fixes
->>>
->>> Which is also rebased to latest v4.9.1.
->>
->> Same game as last time, applied to 4.9, no RW mount between the runs.
->>
->>
-[snipped]
->> => same as
->> before
->>
->> # btrfs check --mode=lowmem /dev/nbd0 ; echo $?
->> checking extents
->> checking free space cache
->> checking fs roots
->> ERROR: errors found in fs roots
->> Checking filesystem on /dev/nbd0
->> UUID: 326d292d-f97b-43ca-b1e8-c722d3474719
->> found 7519512838144 bytes used, error(s) found
->> total csum bytes: 7330834320
->> total tree bytes: 10902437888
->> total fs tree bytes: 2019704832
->> total extent tree bytes: 1020149760
->> btree space waste bytes: 925714197
->> file data blocks allocated: 7509228494848
->>  referenced 7630551511040
->> 1
->>
->> => Unfortunately :-(
+> I'm sending this off-list for privacy reasons of the contained file-
+> names / hash sums.
+> It doesn't contained anything particularly secret, nevertheless, please
+>  try to avoid spreading it too far around and delete it once you don't
+> need it anymore :)
 >
+> On Thu, 2017-02-02 at 10:12 +0800, Qu Wenruo wrote:
+>> Would you please to check the latest lowmem_tests branch?
+>> https://github.com/adam900710/btrfs-progs/tree/lowmem_tests
+>
+> Invocation was as usual:
+> # btrfs check --mode=lowmem /dev/nbd0 ; echo $?
+>
+> stdout/err output in the attachment
 
-Would you please to check the latest lowmem_tests branch?
-https://github.com/adam900710/btrfs-progs/tree/lowmem_tests
+Great thanks for that!
 
-This time I added several debug output to catch the whole path where the 
-silent error happens, to help us to solve the problem.
+Although I made a mistake in the debug patch, the output info is still 
+good enough for me to catch the bug in inline extent check.
 
-Sorry for the extra trouble.
+I also added missing error message output for other places I found, and 
+updated the branch, the name remains as "lowmem_tests"
+
+Please try it.
 
 Thanks,
 Qu
+
+>
+>
+>> Sorry for the extra trouble.
+> No worries :)
+>
+>
+> Cheers,
+> Chris.
+>
 
 

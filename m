@@ -1,63 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33690 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751233AbdBHSao (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 8 Feb 2017 13:30:44 -0500
-Date: Wed, 8 Feb 2017 19:30:13 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: takafumi-sslab <takafumi.kubota1012@sslab.ics.keio.ac.jp>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: add another missing end_page_writeback on
- submit_extent_page failure
-Message-ID: <20170208183013.GC16928@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170130200858.GA10490@localhost.localdomain>
- <83e8f70a-e8e2-2800-00e1-807401188e4d@sslab.ics.keio.ac.jp>
- <20170201161932.GA19291@localhost.localdomain>
- <b8fa6a68-72a8-b745-b71c-c25d89a7a911@sslab.ics.keio.ac.jp>
- <20170206033527.GA23573@localhost.localdomain>
- <fe79b315-196c-b981-5151-9c8cc1901632@sslab.ics.keio.ac.jp>
- <20170206162654.GA15505@localhost.localdomain>
- <20170206163407.GB15505@localhost.localdomain>
- <588a59ec-d535-50a0-b6a6-948f1771b1d6@sslab.ics.keio.ac.jp>
- <20170207201450.GA19766@dhcp-adc-twvpn-3-vpnpool-10-154-98-84.vpn.oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170207201450.GA19766@dhcp-adc-twvpn-3-vpnpool-10-154-98-84.vpn.oracle.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:35163 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751831AbdBCBuR (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Feb 2017 20:50:17 -0500
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH 1/2] Btrfs: create helper for processing bits on contiguous pages
+Date: Thu,  2 Feb 2017 17:49:22 -0800
+Message-Id: <1486086563-25543-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Feb 07, 2017 at 12:14:51PM -0800, Liu Bo wrote:
-> > +				end_page_writeback(page);
-> > +		}
-> > 
-> >  		cur = cur + iosize;
-> >  		pg_offset += iosize;
-> > @@ -3767,7 +3770,8 @@ static noinline_for_stack int write_one_eb(struct
-> > extent_buffer *eb,
-> >  		epd->bio_flags = bio_flags;
-> >  		if (ret) {
-> >  			set_btree_ioerr(p);
-> > -			end_page_writeback(p);
-> > +			if (PageWriteback(p))
-> > +				end_page_writeback(p);
-> >  			if (atomic_sub_and_test(num_pages - i, &eb->io_pages))
-> >  				end_extent_buffer_writeback(eb);
-> >  			ret = -EIO;
-> > 
-> > ---
-> > 
-> 
-> Looks good, could you please make a comment for the if statement in your
-> commit log so that others could know why we put it?
+This introduces a new helper which can be used to process pages bits.
 
-Thank you both. Please resend v2 so I can add it to 4.11 queue.
-> 
-> Since you've got a reproducer, baking it into a fstests case is also
-> welcome.
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/extent_io.c | 37 ++++++++++++++++++++++---------------
+ 1 file changed, 22 insertions(+), 15 deletions(-)
 
-AFAICS the reproducer needs a kernel patch so the memory allocation
-fails reliably, this is not suitable for fstests. We don't have an easy
-way to inject allocation failures easily, but some reduced steps to
-reprroduce could be added to the changelog.
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index d5f3edb..2ef2d05 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1726,28 +1726,22 @@ STATIC u64 find_lock_delalloc_range(struct inode *inode,
+ 	return found;
+ }
+ 
+-void extent_clear_unlock_delalloc(struct inode *inode, u64 start, u64 end,
+-				 u64 delalloc_end, struct page *locked_page,
+-				 unsigned clear_bits,
+-				 unsigned long page_ops)
++static void __process_pages_contig(struct address_space *mapping,
++				   struct page *locked_page,
++				   pgoff_t start_index, pgoff_t end_index,
++				   unsigned long page_ops)
+ {
+-	struct extent_io_tree *tree = &BTRFS_I(inode)->io_tree;
+-	int ret;
++	unsigned long nr_pages = end_index - start_index + 1;
++	pgoff_t index = start_index;
+ 	struct page *pages[16];
+-	unsigned long index = start >> PAGE_SHIFT;
+-	unsigned long end_index = end >> PAGE_SHIFT;
+-	unsigned long nr_pages = end_index - index + 1;
++	unsigned ret;
+ 	int i;
+ 
+-	clear_extent_bit(tree, start, end, clear_bits, 1, 0, NULL, GFP_NOFS);
+-	if (page_ops == 0)
+-		return;
+-
+ 	if ((page_ops & PAGE_SET_ERROR) && nr_pages > 0)
+-		mapping_set_error(inode->i_mapping, -EIO);
++		mapping_set_error(mapping, -EIO);
+ 
+ 	while (nr_pages > 0) {
+-		ret = find_get_pages_contig(inode->i_mapping, index,
++		ret = find_get_pages_contig(mapping, index,
+ 				     min_t(unsigned long,
+ 				     nr_pages, ARRAY_SIZE(pages)), pages);
+ 		for (i = 0; i < ret; i++) {
+@@ -1777,6 +1771,19 @@ void extent_clear_unlock_delalloc(struct inode *inode, u64 start, u64 end,
+ 	}
+ }
+ 
++void extent_clear_unlock_delalloc(struct inode *inode, u64 start, u64 end,
++				 u64 delalloc_end, struct page *locked_page,
++				 unsigned clear_bits,
++				 unsigned long page_ops)
++{
++	clear_extent_bit(&BTRFS_I(inode)->io_tree, start, end, clear_bits, 1, 0,
++			 NULL, GFP_NOFS);
++
++	__process_pages_contig(inode->i_mapping, locked_page,
++			       start >> PAGE_SHIFT, end >> PAGE_SHIFT,
++			       page_ops);
++}
++
+ /*
+  * count the number of bytes in the tree that have a given bit(s)
+  * set.  This can be fairly slow, except for EXTENT_DIRTY which is
+-- 
+2.5.5
+

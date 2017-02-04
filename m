@@ -1,69 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from capsec.org ([46.4.123.73]:37712 "EHLO mail.capsec.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753300AbdBDBrT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 3 Feb 2017 20:47:19 -0500
-Mime-Version: 1.0
-Date: Sat, 04 Feb 2017 01:47:46 +0000
-Content-Type: text/plain; charset="utf-8"
-Message-ID: <f9e2b226440e4f6e17e61ce86eecc7eb@88cbed2449cf>
-From: "Jorg Bornschein" <jb@capsec.org>
+Received: from mail-ua0-f194.google.com ([209.85.217.194]:34765 "EHLO
+        mail-ua0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753332AbdBDCzq (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Feb 2017 21:55:46 -0500
+Received: by mail-ua0-f194.google.com with SMTP id i68so3025985uad.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 03 Feb 2017 18:55:45 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <f9e2b226440e4f6e17e61ce86eecc7eb@88cbed2449cf>
+References: <507c32d4-929c-b691-6196-103c8cb9addb@suse.com>
+ <80d3e5ce55ddc7e454cce96e67e2ea64@88cbed2449cf> <8999d95dac21ea8e2908c5012e50c59b@88cbed2449cf>
+ <fce777cb-027f-532b-76ab-24a1e5c2cf7c@suse.de> <f9e2b226440e4f6e17e61ce86eecc7eb@88cbed2449cf>
+From: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>
+Date: Sat, 4 Feb 2017 08:25:04 +0530
+Message-ID: <CAKuJGC-3pmzOWmaUZx-xav9W1zp+m=1PLhunKDm2Cw80c+6-Fg@mail.gmail.com>
 Subject: Re: Very slow balance / btrfs-transaction
-To: "Goldwyn Rodrigues" <rgoldwyn@suse.de>, linux-btrfs@vger.kernel.org
-In-Reply-To: <fce777cb-027f-532b-76ab-24a1e5c2cf7c@suse.de>
-References: <fce777cb-027f-532b-76ab-24a1e5c2cf7c@suse.de>
- <507c32d4-929c-b691-6196-103c8cb9addb@suse.com>
- <80d3e5ce55ddc7e454cce96e67e2ea64@88cbed2449cf>
- <8999d95dac21ea8e2908c5012e50c59b@88cbed2449cf>
+To: Jorg Bornschein <jb@capsec.org>
+Cc: Goldwyn Rodrigues <rgoldwyn@suse.de>, btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-February 4, 2017 1:07 AM, "Goldwyn Rodrigues" <rgoldwyn@suse.de> wrote:
+>Should quota support generally be disabled during balances?
 
-> On 02/03/2017 06:30 PM, Jorg Bornschein wrote:
-> 
->> February 3, 2017 11:26 PM, "Goldwyn Rodrigues" <rgoldwyn@suse.com> wrote:
->> 
->> Hi,
->> 
->> I'm currently running a balance (without any filters) on a 4 drives raid1 filesystem. The array
->> contains 3 3TB drives and one 6TB drive; I'm running the rebalance because the 6TB drive recently
->> replaced a 2TB drive.
->> 
->> I know that balance is not supposed to be a fast operation, but this one is now running for ~6 days
->> and it managed to balance ~18% (754 out of about 4250 chunks balanced (755 considered), 82% left)
->> -- so I expect it to take another ~4 weeks.
->> 
->> That seems excessively slow for ~8TiB of data.
->> 
->> Is this expected behavior? In case it's not: Is there anything I can do to help debug it?
->>> Do you have quotas enabled?
->> 
->> I might have activated it when playing with "snapper" -- I remember using some quota command
->> without knowing what it does.
->> 
->> How can I check its active? Shall I just disable it wit "btrfs quota disable"?
-> 
-> To check your quota limits:
-> # btrfs qgroup show <mountpoint>
-> 
-> To disable
-> # btrfs quota disable <mountpoint>
-> 
-> Yes, please check if disabling quotas makes a difference in execution
-> time of btrfs balance.
+If this true and quota impacts balance throughput, at-least there
+should an alert message like "Running Balance with quota will affect
+performance" or similar before starting.
 
-
-Quata support was indeed active -- and it warned me that the qroup data was inconsistent. 
-
-Disabling quotas had an immediate impact on balance throughput -- it's *much* faster now! 
->From a quick glance at iostat I would guess it's at least a factor 100 faster.
-
-
-Should quota support generally be disabled during balances? Or did I somehow push my fs into a weired state where it triggered a slow-path?
-
-
-
-Thanks!   
-   
-   j
+----
+Cheers,
+Lakshmipathi.G

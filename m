@@ -1,31 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ua0-f194.google.com ([209.85.217.194]:34765 "EHLO
-        mail-ua0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753332AbdBDCzq (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Feb 2017 21:55:46 -0500
-Received: by mail-ua0-f194.google.com with SMTP id i68so3025985uad.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 03 Feb 2017 18:55:45 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <f9e2b226440e4f6e17e61ce86eecc7eb@88cbed2449cf>
-References: <507c32d4-929c-b691-6196-103c8cb9addb@suse.com>
- <80d3e5ce55ddc7e454cce96e67e2ea64@88cbed2449cf> <8999d95dac21ea8e2908c5012e50c59b@88cbed2449cf>
- <fce777cb-027f-532b-76ab-24a1e5c2cf7c@suse.de> <f9e2b226440e4f6e17e61ce86eecc7eb@88cbed2449cf>
-From: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>
-Date: Sat, 4 Feb 2017 08:25:04 +0530
-Message-ID: <CAKuJGC-3pmzOWmaUZx-xav9W1zp+m=1PLhunKDm2Cw80c+6-Fg@mail.gmail.com>
-Subject: Re: Very slow balance / btrfs-transaction
-To: Jorg Bornschein <jb@capsec.org>
-Cc: Goldwyn Rodrigues <rgoldwyn@suse.de>, btrfs <linux-btrfs@vger.kernel.org>
+Received: from [195.159.176.226] ([195.159.176.226]:38090 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1753925AbdBDICP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 4 Feb 2017 03:02:15 -0500
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1cZvIL-0005FZ-B1
+        for linux-btrfs@vger.kernel.org; Sat, 04 Feb 2017 09:02:05 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: btrfs_drop_snapshot "IO failure" after RAID controller reset
+Date: Sat, 4 Feb 2017 08:01:58 +0000 (UTC)
+Message-ID: <pan$e7a94$d628e922$db901c46$34e93f33@cox.net>
+References: <20170203101652.6AE60121A@mail.linux-ag.de>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->Should quota support generally be disabled during balances?
+Juergen 'Louis' Fluk posted on Fri, 03 Feb 2017 11:16:51 +0100 as
+excerpted:
 
-If this true and quota impacts balance throughput, at-least there
-should an alert message like "Running Balance with quota will affect
-performance" or similar before starting.
+> The server is running kernel 3.19.0-79-generic (ubuntu 14.04),
+> btrfs-tools 3.12-1ubuntu0.1.
+> Does it make sense to use newer kernel and/or tools to recover?
 
-----
-Cheers,
-Lakshmipathi.G
+I'm not a dev, just a list regular and btrfs user, but I can answer this 
+part. =:^)
+
+General list policy is that btrfs is still under heavy development and 
+stabilization, not fully stable and mature.  And we're focused on forward 
+development, not history.  As such, staying /relatively/ current is 
+strongly recommended.  For the kernel, we best support the last two 
+kernel release series in one of two tracks, current or LTS.  On the LTS 
+track, that's 4.4 and 4.1.  On the current track, 4.9 is out and 4.10 is 
+getting close, so it's currently 4.9 and 4.8, but will soon be 4.10 and 
+4.9.
+
+For the btrfs userspace (btrfs-progs), during normal operation it's the 
+kernel doing most of the work, with userspace simply calling the kernel 
+to do it, so userspace doesn't matter quite so much as long as it 
+supports the features you are using.  However, once something goes wrong 
+and you're trying to recover, userspace code gets its workout, so that's 
+when you need newer userspace.  However, get /too/ far out of date and 
+the commands have changed enough that someone, either user side or helper 
+side, has to translate between old form and new form, making things 
+harder.  As a result, given that the kernel and userspace releases are 
+version-synced, with similar versions developed with the same problems 
+being worked on at the time, a good rule of thumb is use a userspace 
+similar in version to your kernel space and it won't get too outdated.
+
+Now we recognize that some distros support btrfs on older code, and 
+that's fine, but that's their support, not ours, and they're best 
+positioned to give it, since we don't track what patches they may have 
+backported and what not, all we see is the old version number and think 
+how many bugs have been fixed since then.  So your best bet if you want 
+to stay with an older distro supported kernel is to actually use that 
+distro support.
+
+Meanwhile, while kernel 3.19 isn't /too/ far back from the oldest LTS 
+supported 4.1, the 3.12 userspace is positively /ancient/ /history/!  
+Consider that it wasn't until 3.12 or 3.14 (I've forgotten exacty) that 
+the experimental, might eat your kids, level label, was stripped from 
+btrfs, and we went to heavy development but stabilizing, and you see just 
+how bad 3.12 looks... it was basically still experimental level!
+
+So definitely, for this list, trying with something newer, at /least/ 4.1 
+LTS and preferably at least 4.4 LTS as it has been out for quite awhile 
+now, should be one of the first things to try.  If the problem's still 
+there with that, then at least your posted logs, etc, will still have at 
+least /some/ relevance to current development, not simply look like 
+artifacts from ancient history.
+
+Or as I said, try your distro, as they're best positioned to support the 
+longer term stuff they offer.
+
+Meanwhile, a standard point/question I make/ask when people post with 
+such stale^H^Hble software, is whether they're actually sure they chose 
+the best filesystem for their needs.  As I said, btrfs is still under 
+heavy development, stabilizing and maturing, and there are still critical 
+bugs showing up from time to time, as well as continuing development 
+challenges where existing features stil don't work as well as we'd like.  
+By contrast, people generally choose to run such stale^H^Hble distros for 
+their long-term stable support.  That would seem to be enough of a mis-
+match that it's worth asking yourself whether perhaps you need to 
+reevaluate your choices and maybe change one or the other.  If you need 
+stable and mature, btrfs isn't likely to be an appropriate choice.  OTOH, 
+if you like the new features and can live with a bit less predictability 
+in terms of known and tested stability, then btrfs may be correct, but it 
+would be the older "stable" distro that may be inappropriate to your 
+needs.  They just don't seem to be a particularly good match, at least 
+for the general case.  That isn't to say it's the /wrong/ choice for your 
+particular use-case, but it's worth considering a reevaluation to be 
+sure, if you haven't asked yourself that sort of questions, recently.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

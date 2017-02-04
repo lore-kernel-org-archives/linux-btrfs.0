@@ -1,86 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:52321 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751053AbdBDVLD (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 4 Feb 2017 16:11:03 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1ca7bi-0003nN-0A
-        for linux-btrfs@vger.kernel.org; Sat, 04 Feb 2017 22:10:54 +0100
-To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77@gmail.com>
-Subject: Re: Very slow balance / btrfs-transaction
-Date: Sat, 4 Feb 2017 22:10:51 +0100
-Message-ID: <20170204221051.664ada65@jupiter.sol.kaishome.de>
-References: <fce777cb-027f-532b-76ab-24a1e5c2cf7c@suse.de>
-        <507c32d4-929c-b691-6196-103c8cb9addb@suse.com>
-        <80d3e5ce55ddc7e454cce96e67e2ea64@88cbed2449cf>
-        <8999d95dac21ea8e2908c5012e50c59b@88cbed2449cf>
-        <1f5f66cfa8eca19b7e612e3b4745d788@85337f6d4fa4>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Received: from syrinx.knorrie.org ([82.94.188.77]:36425 "EHLO
+        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751239AbdBDXhW (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 4 Feb 2017 18:37:22 -0500
+Received: from [IPv6:2001:980:4a41:fb::12] (unknown [IPv6:2001:980:4a41:fb::12])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by syrinx.knorrie.org (Postfix) with ESMTPSA id 096E360016
+        for <linux-btrfs@vger.kernel.org>; Sun,  5 Feb 2017 00:37:19 +0100 (CET)
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Subject: [RFC] python-btrfs: getting arch dependent ioctl handling right
+Message-ID: <be2d182a-6b8e-158f-6653-611c1d1896d7@mendix.com>
+Date: Sun, 5 Feb 2017 00:37:18 +0100
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Sat, 04 Feb 2017 20:50:03 +0000
-schrieb "Jorg Bornschein" <jb@capsec.org>:
+Hi,
 
-> February 4, 2017 1:07 AM, "Goldwyn Rodrigues" <rgoldwyn@suse.de>
-> wrote:
-> 
-> > Yes, please check if disabling quotas makes a difference in
-> > execution time of btrfs balance.  
-> 
-> Just FYI: With quotas disabled it took ~20h to finish the balance
-> instead of the projected >30 days. Therefore, in my case, there was a
-> speedup of factor ~35.
-> 
-> 
-> and thanks for the quick reply! (and for btrfs general!)
-> 
-> 
-> BTW: I'm wondering how much sense it makes to activate the underlying
-> bcache for my raid1 fs again. I guess btrfs chooses randomly (or
-> based predicted of disk latency?) which copy of a given extend to
-> load?
+since I'd like to have my python btrfs library work correctly for users
+with other systems than amd64, I have been looking at IOCTL number
+generation a bit.
 
-As far as I know, it uses PID modulo only currently, no round-robin,
-no random value. There are no performance optimizations going into btrfs
-yet because there're still a lot of ongoing feature implementations.
+I just made something up in a branch, which follows the same way in
+which the IOC defines in kernel source are done:
 
-I think there were patches to include a rotator value in the stripe
-selection. They don't apply to the current kernel. I tried it once and
-didn't see any subjective difference for normal desktop workloads. But
-that's probably because I use RAID1 for metadata only.
+https://github.com/knorrie/python-btrfs/commits/ioctl
 
-MDRAID uses stripe selection based on latency and other measurements
-(like head position). It would be nice if btrfs implemented similar
-functionality. This would also be helpful for selecting a disk if
-there're more disks than stripesets (for example, I have 3 disks in my
-btrfs array). This could write new blocks to the most idle disk always.
-I think this wasn't covered by the above mentioned patch. Currently,
-selection is based only on the disk with most free space.
+The only other hardware than amd64 I have is a raspberry pi, which
+doesn't even seem to fall into the category having exceptions to the
+defaults...
 
-> I guess that would mean the effective cache size would only be
-> half of the actual cache-set size (+-additional overhead)? Or does
-> btrfs try a deterministically determined copy of each extend first? 
+So, my question is:
 
-I'm currently using 500GB bcache, it helps a lot during system start -
-and probably also while using using the system. I think that bcache
-mostly caches metadata access which should improve a lot of btrfs
-performance issues. The downside of RAID1 profile is, that probably
-every second access is a cache-miss unless it has already been cached.
-Thus, it's only half-effective as it could be.
+1. am I still doing it wrong, or is this going into the right direction?
 
-I'm using write-back bcache caching, and RAID0 for data (I do daily
-backups with borgbackup, I can easily recover broken files). So
-writing with bcache is not such an issue for me. The cache is big
-enough that double metadata writes are no problem.
+2. can you please test this branch if you have access to any of 'alpha',
+'mips', 'powerpc', 'sparc', 'parisc' which runs a btrfs filesystem and
+let me know if this makes it possible to use the library (e.g. run some
+examples from the examples/ dir)
 
+3. I also understand that there are difficulties for users who user 32
+bit userland with a 64 bit kernel.
+ - What is the exact technical reason for this?
+ - What's the general opinion about this usecase? (needs to work, or,
+"doctor, if I push here it hurts; well, don't push there"...)
+
+Thanks,
 
 -- 
-Regards,
-Kai
-
-Replies to list-only preferred.
-
+Hans van Kranenburg

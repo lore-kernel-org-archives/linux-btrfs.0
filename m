@@ -1,77 +1,332 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:49165 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751344AbdBEMI2 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Feb 2017 07:08:28 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1caLcA-0003QE-4R
-        for linux-btrfs@vger.kernel.org; Sun, 05 Feb 2017 13:08:18 +0100
+Received: from mail-ua0-f195.google.com ([209.85.217.195]:36858 "EHLO
+        mail-ua0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751101AbdBEOHD (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Feb 2017 09:07:03 -0500
+Received: by mail-ua0-f195.google.com with SMTP id f2so5138166uaf.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 05 Feb 2017 06:07:03 -0800 (PST)
+MIME-Version: 1.0
+From: =?UTF-8?Q?Fran=C3=A7ois=2DXavier_Thomas?= <fx.thomas@gmail.com>
+Date: Sun, 5 Feb 2017 15:07:01 +0100
+Message-ID: <CAEwRaO74NZ0MgFt6Yc_Wr+ODSfZGeOiL4zmVLJvDZ9b+9uoHDQ@mail.gmail.com>
+Subject: Btrfs crash following unhandled kernel paging request
 To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77@gmail.com>
-Subject: Re: btrfs receive leaves new subvolume modifiable during operation
-Date: Sun, 5 Feb 2017 13:08:17 +0100
-Message-ID: <20170205130817.57a67173@jupiter.sol.kaishome.de>
-References: <1485905578.6441.20.camel@gmail.com>
-        <pan$4ecd$16bc5e8e$14657c4$261368ad@cox.net>
-        <4edfd08e-8d7f-d8d7-bdea-0589b46e4d2b@gmail.com>
-        <7ead5d42-9c00-b2df-3fbf-5b8f287760f6@cobb.uk.net>
-        <pan$16525$cf7fe24b$7c044b9$74b32f27@cox.net>
-        <5c503d69-aaed-680f-de30-75a7323bc753@cobb.uk.net>
-        <pan$5f1de$80937cf$9c306858$cafb9e40@cox.net>
-        <1b69d1a8-c08b-c9f3-c95b-1d7d71c7d642@cobb.uk.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: multipart/mixed; boundary=94eb2c0b66e672d0d00547c907e6
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Thu, 2 Feb 2017 10:52:26 +0000
-schrieb Graham Cobb <g.btrfs@cobb.uk.net>:
+--94eb2c0b66e672d0d00547c907e6
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
 
-> On 02/02/17 00:02, Duncan wrote:
-> > If it's a workaround, then many of the Linux procedures we as
-> > admins and users use every day are equally workarounds.  Setting
-> > 007 perms on a dir that doesn't have anything immediately security
-> > vulnerable in it, simply to keep other users from even potentially
-> > seeing or being able to write to something N layers down the subdir
-> > tree, is standard practice.  
-> 
-> No. There is no need to normally place a read-only snapshot below a
-> no-execute directory just to prevent write access to it. That is not
-> part of the admin's expectation.
+Hello everyone,
 
-Wrong. If you tend to not be in control of the permissions below a
-mountpoint, you prevent access to it by restricting permissions on a
-parent directory of the mountpoint. It's that easy and it always has
-been. That is standard practice. While your backup is running, you have
-no control of it - thus use this standard practice!
+Apologies if this is the wrong place, this is my first time posting here.
 
-If you want to make selective or general access to the backups,
-snapshot them to a different location later. You should really learn
-how to work with scratch locations for a backup. The receiver is such a
-scratch location and should be handled like it.
+I just had a crash on one of my Btrfs filesystems, that happened to
+prevent it from mounting afterwards. I'd like to help preventing it
+from occuring again, or at least to write it there so that other
+people know about it.
 
-Scratch directories for backup locations are not a bug and not a
-workaround. It's just how you should handle it and how it works. By
-definition, the target directory cannot be read-only while the backup
-is running - so by definition you need other means to protect it.
+Before anybody asks: backups of important files are fine and working.
+Also of note is that this filesystem is mostly a small (3TB RAID1)
+archival filesystem that seldom sees a lot of heavy writes.
 
-That in turn defines all your current locations for snapshot as scratch
-locations. Put your final snapshots somewhere else if you want your
-users access these after successful finishing a backup. You never want
-people to access in-transit or partial backups. In-transit and partial
-always goes to the scratch directory. Only then, after success of the
-backup, a backup should be made available in a final directory.
+A small summary of the events as I understand them from various logs
+and graphs :
 
-Maybe your design of your backup is wrong, and not how btrfs handles
-that? Using scratch locations is a design you should really really
-always use for backups. Every sophisticated admin would agree that this
-should be best practice.
+* At 00:00 Snapper kicked in and did its thing on the crashed filesystem.
+* At 00:00, another Btrfs filesystem started being replicated
+(send/receive) on the crashed filesystem.
+* Around the same time, approx. 00:00, a few automatic archival
+processes started writing heavily to the disk, which was normal and
+usually lasts for a few minutes.
+* At 00:01, when the transaction finally comitted (from another
+process) the entire kernel just locked right away with an unhandled
+page request.
 
+The crash is summarized in the first log file, along with a prior
+warning that could be related.
 
--- 
-Regards,
-Kai
+When I noticed this later, I rebooted and tried to mount, which
+resulted in the second log file. Since the error appeared to be
+log-related and I didn't care (much) about it, I used `btrfs recover
+zero-log` on the filesystem.
 
-Replies to list-only preferred.
+Once I did that, the filesystem was able to be mounted again and
+seemed to work fine... aside from writing at the root. Writing files
+anywhere else worked fine, but writing a file at the root caused the
+error in the second log file and put the filesystem in read-only mode.
 
+The third log file contains the output of btrfsck on that filesystem.
+
+Since there were few errors I decided to try `btrfs check --repair` :
+the filesystem seems to be working properly again. A scrub is in
+progress, I'll report back if anything is wrong.
+
+Here is some system info :
+
+# uname -a
+Linux miyu 4.9.6-1-ARCH #1 SMP PREEMPT Thu Jan 26 09:22:26 CET 2017
+x86_64 GNU/Linux
+
+# btrfs --version
+btrfs-progs v4.9
+
+# btrfs fi show
+Label: 'root'  uuid: e1a079fa-bccf-4864-ac1d-0690281867e3
+    Total devices 1 FS bytes used 24.88GiB
+    devid    1 size 55.90GiB used 55.90GiB path /dev/sda
+
+Label: 'tank'  uuid: 837bd543-818b-4361-a5ac-8e56a4279ff9
+    Total devices 2 FS bytes used 1.81TiB
+    devid    1 size 2.73TiB used 1.85TiB path /dev/sdb
+    devid    2 size 2.73TiB used 1.85TiB path /dev/sdc
+
+Now, I have a few questions :
+
+1) As I understand it, the log is expendable in case of an error like
+this, and the goal of Btrfs (or any journaled filesystem) is that the
+rest of the filesystem is fine. This wasn't the case here, could this
+be a bug?
+
+2) Do the various recovery commands (btrfs check, btrfs recover) need
+to be run for all the disks in the filesystem, or just one of them?
+
+3) What do you recommend I do with this filesystem? Should I destroy
+it and recreate a new one then copy all data?
+
+Do not hesitate if you want more information, I can definitely provide this=
+.
+
+Cheers,
+Fran=C3=A7ois-Xavier Thomas
+
+--94eb2c0b66e672d0d00547c907e6
+Content-Type: text/x-log; charset=US-ASCII; name="20170205_btrfs_crash_log_1.log"
+Content-Disposition: attachment; filename="20170205_btrfs_crash_log_1.log"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_iysolcmx0
+
+LS0tLS0tLS0tLS0tWyBjdXQgaGVyZSBdLS0tLS0tLS0tLS0tCldBUk5JTkc6IENQVTogMyBQSUQ6
+IDYyOTAgYXQgZnMvYnRyZnMvdHJhbnNhY3Rpb24uYzozMjAgcmVjb3JkX3Jvb3RfaW5fdHJhbnMr
+MHgxMGMvMHgxMjAgW2J0cmZzXQpNb2R1bGVzIGxpbmtlZCBpbjogbWNyeXB0ZCBzaGEyNTZfc3Nz
+ZTMgc2hhMjU2X2dlbmVyaWMgaG1hYyBkcmJnIGFuc2lfY3Bybmcgc2VxaXYgeGZybTZfbW9kZV90
+dW5uZWwgeGZybTRfbW9kZV90dW5uZWwgY3RyIGdjbSB1bml4X2RpYWcgc2N0cF9kaWFnIHNjdHAg
+bGliY3JjMzJjIGNyYzMyY19nZW5lcmljIGRjY3BfZAogaXA2dF9ydCBoY2lfdWFydCBtZWkgc25k
+X3NvY19ydDU2NDUgYnRiY20gc2hwY2hwIHNuZF9oZGFfY29yZSBzbmRfc29jX3J0NTY0MCBzbmRf
+c29jX3JsNjIzMSBzbmRfc29jX3NzdF9tYXRjaCBidHFjYSBwYXJwb3J0X3BjIGJ0aW50ZWwgc25k
+X2h3ZGVwIHRoZXJtYWwgZmFuIG5mX2Nvbm50cmFja19pcHY2IG5mX2RlZgogYnRyZnMgaGlkX2xv
+Z2l0ZWNoX2hpZHBwIHhvciBoaWRfbG9naXRlY2hfZGogdXNiaGlkIGhpZCByYWlkNl9wcSBzZF9t
+b2Qgc2VyaW9fcmF3IGF0a2JkIGxpYnBzMiBhaGNpIGxpYmFoY2kgY3JjMzJjX2ludGVsIGxpYmF0
+YSB4aGNpX3BjaSB4aGNpX2hjZCBzY3NpX21vZCB1c2Jjb3JlIHVzYl9jb21tb24gaTgwNDIgcwpD
+UFU6IDMgUElEOiA2MjkwIENvbW06IG1ic3luYyBOb3QgdGFpbnRlZCA0LjkuNi0xLUFSQ0ggIzEK
+SGFyZHdhcmUgbmFtZTogVG8gQmUgRmlsbGVkIEJ5IE8uRS5NLiBUbyBCZSBGaWxsZWQgQnkgTy5F
+Lk0uL1EyOTAwLUlUWCwgQklPUyBQMS4wMCAwNy8yNC8yMDE0CiBmZmZmYzkwMDAzOWVmYjkwIGZm
+ZmZmZmZmODEzMDU0NDAgMDAwMDAwMDAwMDAwMDAwMCAwMDAwMDAwMDAwMDAwMDAwCiBmZmZmYzkw
+MDAzOWVmYmQwIGZmZmZmZmZmODEwN2ViMGIgMDAwMDAxNDAwMDAwMDIwMiBmZmZmODgwMTM3YTBh
+ODAwCiBmZmZmODgwMTM3YzhkZGMwIDAwMDAwMDAwMDAwMDAwMDAgZmZmZjg4MDEzN2M4ZGRjMCAw
+MDAwMDAwMDAwMDAwMDAxCkNhbGwgVHJhY2U6CiBbPGZmZmZmZmZmODEzMDU0NDA+XSBkdW1wX3N0
+YWNrKzB4NjMvMHg4MwogWzxmZmZmZmZmZjgxMDdlYjBiPl0gX193YXJuKzB4Y2IvMHhmMAogWzxm
+ZmZmZmZmZjgxMDdlYzNkPl0gd2Fybl9zbG93cGF0aF9udWxsKzB4MWQvMHgyMAogWzxmZmZmZmZm
+ZmEwNDBjNmRjPl0gcmVjb3JkX3Jvb3RfaW5fdHJhbnMrMHgxMGMvMHgxMjAgW2J0cmZzXQogWzxm
+ZmZmZmZmZmEwNDBkOGM2Pl0gYnRyZnNfcmVjb3JkX3Jvb3RfaW5fdHJhbnMrMHg0Ni8weDcwIFti
+dHJmc10KIFs8ZmZmZmZmZmZhMDQwZmFmYT5dIHN0YXJ0X3RyYW5zYWN0aW9uKzB4OWEvMHg0YTAg
+W2J0cmZzXQogWzxmZmZmZmZmZmEwNDBmZjE4Pl0gYnRyZnNfc3RhcnRfdHJhbnNhY3Rpb24rMHgx
+OC8weDIwIFtidHJmc10KIFs8ZmZmZmZmZmZhMDQyMDkwYT5dIGJ0cmZzX2NyZWF0ZSsweDRhLzB4
+MjAwIFtidHJmc10KIFs8ZmZmZmZmZmY4MTIyYWE5ZD5dID8gZF9zcGxpY2VfYWxpYXMrMHgxMmQv
+MHg0MDAKIFs8ZmZmZmZmZmY4MTIyMGZlMT5dIHBhdGhfb3BlbmF0KzB4YTgxLzB4MTE3MAogWzxm
+ZmZmZmZmZjgxMjIyOGExPl0gZG9fZmlscF9vcGVuKzB4OTEvMHgxMDAKIFs8ZmZmZmZmZmY4MTIz
+MDkxMj5dID8gX19hbGxvY19mZCsweGIyLzB4MTYwCiBbPGZmZmZmZmZmODEyMTBhOTc+XSBkb19z
+eXNfb3BlbisweDE0Ny8weDIxMAogWzxmZmZmZmZmZjgxMjEwYjdlPl0gU3lTX29wZW4rMHgxZS8w
+eDIwCiBbPGZmZmZmZmZmODE2MGE3Mzc+XSBlbnRyeV9TWVNDQUxMXzY0X2Zhc3RwYXRoKzB4MWEv
+MHhhOQotLS1bIGVuZCB0cmFjZSA2MWQ3OTg5NTZmMjExZjE5IF0tLS0KCkFib3V0IDEgbWludXRl
+IGxhdGVyOgo9PT09PT09PT09PT09PT09PT09PT0KCkJVRzogdW5hYmxlIHRvIGhhbmRsZSBrZXJu
+ZWwgcGFnaW5nIHJlcXVlc3QgYXQgMDAwMDAwMDAwMDJhNjFiZApJUDogWzxmZmZmZmZmZjgxMWIy
+ZjdmPl0gbGlzdF9scnVfZGVsKzB4ZGYvMHgxMzAKUEdEIDEyNTAwMjA2NwpQVUQgMTIxNWFiMDY3
+ClBNRCAwCgpPb3BzOiAwMDAyIFsjMV0gUFJFRU1QVCBTTVAKTW9kdWxlcyBsaW5rZWQgaW46IG1j
+cnlwdGQgc2hhMjU2X3Nzc2UzIHNoYTI1Nl9nZW5lcmljIGhtYWMgZHJiZyBhbnNpX2Nwcm5nIHNl
+cWl2IHhmcm02X21vZGVfdHVubmVsIHhmcm00X21vZGVfdHVubmVsIGN0ciBnY20gdW5peF9kaWFn
+IHNjdHBfZGlhZyBzY3RwIGxpYmNyYzMyYyBjcmMzMmNfZ2VuZXJpYyBkY2NwX2QKIGlwNnRfcnQg
+aGNpX3VhcnQgbWVpIHNuZF9zb2NfcnQ1NjQ1IGJ0YmNtIHNocGNocCBzbmRfaGRhX2NvcmUgc25k
+X3NvY19ydDU2NDAgc25kX3NvY19ybDYyMzEgc25kX3NvY19zc3RfbWF0Y2ggYnRxY2EgcGFycG9y
+dF9wYyBidGludGVsIHNuZF9od2RlcCB0aGVybWFsIGZhbiBuZl9jb25udHJhY2tfaXB2NiBuZl9k
+ZWYKIGJ0cmZzIGhpZF9sb2dpdGVjaF9oaWRwcCB4b3IgaGlkX2xvZ2l0ZWNoX2RqIHVzYmhpZCBo
+aWQgcmFpZDZfcHEgc2RfbW9kIHNlcmlvX3JhdyBhdGtiZCBsaWJwczIgYWhjaSBsaWJhaGNpIGNy
+YzMyY19pbnRlbCBsaWJhdGEgeGhjaV9wY2kgeGhjaV9oY2Qgc2NzaV9tb2QgdXNiY29yZSB1c2Jf
+Y29tbW9uIGk4MDQyIHMKQ1BVOiAwIFBJRDogNjI5MCBDb21tOiBtYnN5bmMgVGFpbnRlZDogRyAg
+ICAgICAgVyAgICAgICA0LjkuNi0xLUFSQ0ggIzEKSGFyZHdhcmUgbmFtZTogVG8gQmUgRmlsbGVk
+IEJ5IE8uRS5NLiBUbyBCZSBGaWxsZWQgQnkgTy5FLk0uL1EyOTAwLUlUWCwgQklPUyBQMS4wMCAw
+Ny8yNC8yMDE0CnRhc2s6IGZmZmY4ODAwYTViYmNlMDAgdGFzay5zdGFjazogZmZmZmM5MDAwMzll
+YzAwMApSSVA6IDAwMTA6WzxmZmZmZmZmZjgxMWIyZjdmPl0gIFs8ZmZmZmZmZmY4MTFiMmY3Zj5d
+IGxpc3RfbHJ1X2RlbCsweGRmLzB4MTMwClJTUDogMDAxODpmZmZmYzkwMDAzOWVmOWQwICBFRkxB
+R1M6IDAwMDEwMDQ2ClJBWDogZmZmZjg4MDEzYTA0ZmU0OCBSQlg6IGZmZmY4ODAwMzcxMWEwMDgg
+UkNYOiAwMDAwMDAwMDAwMmE2MWI1ClJEWDogMDAwMDAwMDAwMDAwMDAwMCBSU0k6IGZmZmY4ODAw
+MzcxMWEwMDggUkRJOiBmZmZmODgwMTNhMDRmZTQwClJCUDogZmZmZmM5MDAwMzllZjlmMCBSMDg6
+IDAwMDAwMDAwMDAwMDAwMTggUjA5OiBmZmZmODgwMDM3MTFhMGY4ClIxMDogMDAwMDAwMDAwMDAw
+MDA0MCBSMTE6IDAwMDAwMDAwMDAwMDAwMDEgUjEyOiBmZmZmODgwMTNhMDRmZTQwClIxMzogZmZm
+Zjg4MDBiNzExYTAwOCBSMTQ6IDAwMDAwMDAwMDAwMDAwMDAgUjE1OiAwMDAwMDAwMDAwMDAwMDAw
+CkZTOiAgMDAwMDdmNGRjMWQ3N2I0MCgwMDAwKSBHUzpmZmZmODgwMTNmYzAwMDAwKDAwMDApIGtu
+bEdTOjAwMDAwMDAwMDAwMDAwMDAKQ1M6ICAwMDEwIERTOiAwMDAwIEVTOiAwMDAwIENSMDogMDAw
+MDAwMDA4MDA1MDAzMwpDUjI6IDAwMDAwMDAwMDAyYTYxYmQgQ1IzOiAwMDAwMDAwMTIxNzJkMDAw
+IENSNDogMDAwMDAwMDAwMDEwMDZmMApTdGFjazoKIGZmZmY4ODAxMzdmN2U5NjggZmZmZmVhMDAw
+NGRjOTM4MCAwMDAwMDAwMDAwMDAwMDAwIGZmZmZjOTAwMDM5ZWZhYTAKIGZmZmZjOTAwMDM5ZWZh
+MzggZmZmZmZmZmY4MTE3ZmM2NyBmZmZmODgwMDM3MTE5ZmYwIGZmZmY4ODAwMzcxMWEwZjgKIDAw
+MDAwMDAwOTRlZGFmYTAgZmZmZmVhMDAwNGRjOTM4MCBmZmZmODgwMTM3ZjdlOTgwIDAwMDAwMDAw
+MDAwMDAwMDAKQ2FsbCBUcmFjZToKIFs8ZmZmZmZmZmY4MTE3ZmM2Nz5dIHBhZ2VfY2FjaGVfdHJl
+ZV9pbnNlcnQrMHhiNy8weGYwCiBbPGZmZmZmZmZmODExN2ZkNzU+XSBfX2FkZF90b19wYWdlX2Nh
+Y2hlX2xvY2tlZCsweGQ1LzB4MjYwCiBbPGZmZmZmZmZmODExN2ZmNmU+XSBhZGRfdG9fcGFnZV9j
+YWNoZV9scnUrMHg0ZS8weGUwCiBbPGZmZmZmZmZmODExODE3Nzk+XSBwYWdlY2FjaGVfZ2V0X3Bh
+Z2UrMHgxMjkvMHgyOTAKIFs8ZmZmZmZmZmZhMDQzNTRhMz5dIGFsbG9jX2V4dGVudF9idWZmZXIr
+MHgxMTMvMHg0ODAgW2J0cmZzXQogWzxmZmZmZmZmZmEwNDA2NjcwPl0gcmVhZF90cmVlX2Jsb2Nr
+KzB4MjAvMHg2MCBbYnRyZnNdCiBbPGZmZmZmZmZmYTA0NzljNTM+XSBmaW5kX3BhcmVudF9ub2Rl
+cysweDU1My8weDE0YjAgW2J0cmZzXQogWzxmZmZmZmZmZmEwNDdhYzZlPl0gX19idHJmc19maW5k
+X2FsbF9yb290cysweGJlLzB4MTMwIFtidHJmc10KIFs8ZmZmZmZmZmZhMDQ3YWQ1NT5dIGJ0cmZz
+X2ZpbmRfYWxsX3Jvb3RzKzB4NTUvMHg3MCBbYnRyZnNdCiBbPGZmZmZmZmZmYTA0N2VhNzg+XSBi
+dHJmc19xZ3JvdXBfcHJlcGFyZV9hY2NvdW50X2V4dGVudHMrMHg1OC8weGEwIFtidHJmc10KIFs8
+ZmZmZmZmZmZhMDQwZjM0ND5dIGJ0cmZzX2NvbW1pdF90cmFuc2FjdGlvbi5wYXJ0LjEyKzB4M2U0
+LzB4YTkwIFtidHJmc10KIFs8ZmZmZmZmZmY4MTBjNDIwMD5dID8gd2FrZV9hdG9taWNfdF9mdW5j
+dGlvbisweDYwLzB4NjAKIFs8ZmZmZmZmZmZhMDQwZmEyYj5dIGJ0cmZzX2NvbW1pdF90cmFuc2Fj
+dGlvbisweDNiLzB4NzAgW2J0cmZzXQogWzxmZmZmZmZmZmEwNDI4MzA0Pl0gYnRyZnNfc3luY19m
+aWxlKzB4MzA0LzB4M2YwIFtidHJmc10KIFs8ZmZmZmZmZmY4MTI0NjA4Yj5dIHZmc19mc3luY19y
+YW5nZSsweDRiLzB4YjAKIFs8ZmZmZmZmZmY4MTI0NjE0ZD5dIGRvX2ZzeW5jKzB4M2QvMHg3MAog
+WzxmZmZmZmZmZjgxMjQ2NDAzPl0gU3lTX2ZkYXRhc3luYysweDEzLzB4MjAKIFs8ZmZmZmZmZmY4
+MTYwYTczNz5dIGVudHJ5X1NZU0NBTExfNjRfZmFzdHBhdGgrMHgxYS8weGE5CkNvZGU6IDRjIDBm
+IDQ1IGVhIDQ5IDhiIDQ1IDM4IDQ4IDg1IGMwIDc0IGI1IDQ4IDYzIDkwIGU4IDAyIDAwIDAwIDQ5
+IDhkIDQ0IDI0IDA4IDg1IGQyIDc4IDA0IDQ4IDhiIDA0IGQxIDQ4IDhiIDBiIDQ4IDhiIDUzIDA4
+IDRjIDg5IGU3IDw0OD4gODkgNTEgMDggNDggODkgMGEgNDggODkgMWIgNDggODkgNWIgMDggNDgg
+ClJJUCAgWzxmZmZmZmZmZjgxMWIyZjdmPl0gbGlzdF9scnVfZGVsKzB4ZGYvMHgxMzAK
+--94eb2c0b66e672d0d00547c907e6
+Content-Type: text/x-log; charset=US-ASCII; name="20170205_btrfs_crash_log_3.log"
+Content-Disposition: attachment; filename="20170205_btrfs_crash_log_3.log"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_iysolcny1
+
+IyBidHJmcyBjaGVjayAtLXByb2dyZXNzIC9kZXYvc2RjCkNoZWNraW5nIGZpbGVzeXN0ZW0gb24g
+L2Rldi9zZGMKVVVJRDogODM3YmQ1NDMtODE4Yi00MzYxLWE1YWMtOGU1NmE0Mjc5ZmY5CnJlZiBt
+aXNtYXRjaCBvbiBbMTYyODE3OTkwNjU2MCAxNjM4NF0gZXh0ZW50IGl0ZW0gMCwgZm91bmQgMQpC
+YWNrcmVmIDE2MjgxNzk5MDY1NjAgcGFyZW50IDUgcm9vdCA1IG5vdCBmb3VuZCBpbiBleHRlbnQg
+dHJlZQpiYWNrcG9pbnRlciBtaXNtYXRjaCBvbiBbMTYyODE3OTkwNjU2MCAxNjM4NF0KcmVmIG1p
+c21hdGNoIG9uIFsxNjc3NDQ2NzU4NDAwIDE2Mzg0XSBleHRlbnQgaXRlbSAxLCBmb3VuZCAwCkJh
+Y2tyZWYgMTY3NzQ0Njc1ODQwMCByb290IDUgbm90IHJlZmVyZW5jZWQgYmFjayAweDJlNWVkMzAK
+SW5jb3JyZWN0IGdsb2JhbCBiYWNrcmVmIGNvdW50IG9uIDE2Nzc0NDY3NTg0MDAgZm91bmQgMSB3
+YW50ZWQgMApiYWNrcG9pbnRlciBtaXNtYXRjaCBvbiBbMTY3NzQ0Njc1ODQwMCAxNjM4NF0Kb3du
+ZXIgcmVmIGNoZWNrIGZhaWxlZCBbMTY3NzQ0Njc1ODQwMCAxNjM4NF0KCmNoZWNraW5nIGZyZWUg
+c3BhY2UgY2FjaGUgW29dCnJvb3QgNSByb290IGRpciAyNTYgbm90IGZvdW5kCmNoZWNraW5nIGZz
+IHJvb3RzIFsuXQpmb3VuZCAxOTk0MTc5Mjc2OTM1IGJ5dGVzIHVzZWQgZXJyIGlzIDEKdG90YWwg
+Y3N1bSBieXRlczogMTk0MTIwNzg2NAp0b3RhbCB0cmVlIGJ5dGVzOiA1NjAxODY5ODI0CnRvdGFs
+IGZzIHRyZWUgYnl0ZXM6IDI4NTU3MzEyMDAKdG90YWwgZXh0ZW50IHRyZWUgYnl0ZXM6IDU5ODgz
+NTIwMApidHJlZSBzcGFjZSB3YXN0ZSBieXRlczogOTQyNzAzMjE1CmZpbGUgZGF0YSBibG9ja3Mg
+YWxsb2NhdGVkOiAxMDg2Mjk1ODg5NTEwNAogcmVmZXJlbmNlZCAyNTk4OTcxMTU4NTI4CmJ0cmZz
+IGNoZWNrIC0tcHJvZ3Jlc3MgL2Rldi9zZGMgIDYzMi4zMXMgdXNlciAxNTQuODFzIHN5c3RlbSAz
+NiUgY3B1IDM1OjQ4LjQ3IHRvdGFsCg==
+--94eb2c0b66e672d0d00547c907e6
+Content-Type: text/x-log; charset=US-ASCII; name="20170205_btrfs_crash_log_2.log"
+Content-Disposition: attachment; filename="20170205_btrfs_crash_log_2.log"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_iysolcoc2
+
+LS0tLS0tLS0tLS0tWyBjdXQgaGVyZSBdLS0tLS0tLS0tLS0tCldBUk5JTkc6IENQVTogMCBQSUQ6
+IDM1NCBhdCBmcy9idHJmcy9leHRlbnQtdHJlZS5jOjY5NTIgX19idHJmc19mcmVlX2V4dGVudC5p
+c3JhLjMzKzB4N2Q2LzB4Y2EwIFtidHJmc10KTW9kdWxlcyBsaW5rZWQgaW46IGFyYzQgaVRDT193
+ZHQgaVRDT192ZW5kb3Jfc3VwcG9ydCBpd2xtdm0gaW50ZWxfcmFwbCBzbmRfaGRhX2NvZGVjX2hk
+bWkgbWFjODAyMTEgaW50ZWxfc29jX2R0c19pb3NmIGludGVsX3Bvd2VyY2xhbXAgY29yZXRlbXAg
+cHBkZXYgaXdsd2lmaSBrdm1faW50ZWwgc25kX2hkYV9jb2RlY18KIHJma2lsbF9ncGlvIHNuZF90
+aW1lciBpcHRfUkVKRUNUIG5mX3JlamVjdF9pcHY0IHNuZCByZmtpbGwgY3JjMTYgdHBtX3RpcyBl
+dmRldiB0cG1fdGlzX2NvcmUgaTJjX2Rlc2lnbndhcmVfcGxhdGZvcm0geHRfY29tbWVudCBzcGlf
+cHhhMnh4X3BsYXRmb3JtIHRwbSBtYWNfaGlkIGkyY19kZXNpZ253YXJlX2NvcmUgc28KIHN5c2Nv
+cHlhcmVhIHN5c2ZpbGxyZWN0IHN5c2ltZ2JsdCBmYl9zeXNfZm9wcyBkcm0KQ1BVOiAwIFBJRDog
+MzU0IENvbW06IG1vdW50IE5vdCB0YWludGVkIDQuOS42LTEtQVJDSCAjMQpIYXJkd2FyZSBuYW1l
+OiBUbyBCZSBGaWxsZWQgQnkgTy5FLk0uIFRvIEJlIEZpbGxlZCBCeSBPLkUuTS4vUTI5MDAtSVRY
+LCBCSU9TIFAxLjAwIDA3LzI0LzIwMTQKIGZmZmZjOTAwMDA5NGI3NDAgZmZmZmZmZmY4MTMwNTQ0
+MCAwMDAwMDAwMDAwMDAwMDAwIDAwMDAwMDAwMDAwMDAwMDAKIGZmZmZjOTAwMDA5NGI3ODAgZmZm
+ZmZmZmY4MTA3ZWIwYiAwMDAwMWIyOGEwM2RmYjljIDAwMDAwMTdiMTcxNWMwMDAKIDAwMDAwMDAw
+ZmZmZmZmZmUgZmZmZjg4MDEzN2QxMDFlMCBmZmZmODgwMTM4YjczZDkwIDAwMDAwMDAwMDAwMDAw
+MDAKQ2FsbCBUcmFjZToKIFs8ZmZmZmZmZmY4MTMwNTQ0MD5dIGR1bXBfc3RhY2srMHg2My8weDgz
+CiBbPGZmZmZmZmZmODEwN2ViMGI+XSBfX3dhcm4rMHhjYi8weGYwCiBbPGZmZmZmZmZmODEwN2Vj
+M2Q+XSB3YXJuX3Nsb3dwYXRoX251bGwrMHgxZC8weDIwCiBbPGZmZmZmZmZmYTAzZTRlNDY+XSBf
+X2J0cmZzX2ZyZWVfZXh0ZW50LmlzcmEuMzMrMHg3ZDYvMHhjYTAgW2J0cmZzXQogWzxmZmZmZmZm
+ZmEwM2RmMzgxPl0gPyBibG9ja19ncm91cF9jYWNoZV90cmVlX3NlYXJjaCsweGMxLzB4ZTAgW2J0
+cmZzXQogWzxmZmZmZmZmZmEwM2U0MzAxPl0gPyB1cGRhdGVfYmxvY2tfZ3JvdXAuaXNyYS4zMisw
+eGQxLzB4NDQwIFtidHJmc10KIFs8ZmZmZmZmZmZhMDQ1N2M4Mz5dID8gYnRyZnNfbWVyZ2VfZGVs
+YXllZF9yZWZzKzB4OTMvMHg2MDAgW2J0cmZzXQogWzxmZmZmZmZmZmEwM2U5NzI0Pl0gX19idHJm
+c19ydW5fZGVsYXllZF9yZWZzKzB4YTc0LzB4MTNhMCBbYnRyZnNdCiBbPGZmZmZmZmZmYTAzZWQx
+OTU+XSBidHJmc19ydW5fZGVsYXllZF9yZWZzKzB4YTUvMHgyYjAgW2J0cmZzXQogWzxmZmZmZmZm
+ZmEwNDA0YTE5Pl0gYnRyZnNfY29tbWl0X3RyYW5zYWN0aW9uKzB4MjkvMHg3MCBbYnRyZnNdCiBb
+PGZmZmZmZmZmYTA0NGU2OGM+XSBidHJmc19yZWNvdmVyX2xvZ190cmVlcysweDNkYy8weDQ2MCBb
+YnRyZnNdCiBbPGZmZmZmZmZmYTA0NDhmOTA+XSA/IHJlcGxheV9vbmVfZGlyX2l0ZW0rMHgxOTAv
+MHgxOTAgW2J0cmZzXQogWzxmZmZmZmZmZmEwNDAxNGRhPl0gb3Blbl9jdHJlZSsweDIzOWEvMHgy
+NDkwIFtidHJmc10KIFs8ZmZmZmZmZmZhMDNkMzY5YT5dIGJ0cmZzX21vdW50KzB4ZGVhLzB4ZjUw
+IFtidHJmc10KIFs8ZmZmZmZmZmY4MTMxYjA4ZD5dID8gZmluZF9uZXh0X3plcm9fYml0KzB4MWQv
+MHgyMAogWzxmZmZmZmZmZjgxMWE5MjYwPl0gPyBwY3B1X25leHRfdW5wb3ArMHg0MC8weDUwCiBb
+PGZmZmZmZmZmODEyMTYzYTg+XSBtb3VudF9mcysweDM4LzB4MTUwCiBbPGZmZmZmZmZmODEyMzI4
+MGU+XSA/IGFsbG9jX3Zmc21udCsweDE5ZS8weDIzMAogWzxmZmZmZmZmZjgxMjMyOTA3Pl0gdmZz
+X2tlcm5fbW91bnQrMHg2Ny8weDExMAogWzxmZmZmZmZmZmEwM2QyYTY3Pl0gYnRyZnNfbW91bnQr
+MHgxYjcvMHhmNTAgW2J0cmZzXQogWzxmZmZmZmZmZjgxMzFiMDhkPl0gPyBmaW5kX25leHRfemVy
+b19iaXQrMHgxZC8weDIwCiBbPGZmZmZmZmZmODEyMTYzYTg+XSBtb3VudF9mcysweDM4LzB4MTUw
+CiBbPGZmZmZmZmZmODEyMzI4MGU+XSA/IGFsbG9jX3Zmc21udCsweDE5ZS8weDIzMAogWzxmZmZm
+ZmZmZjgxMjMyOTA3Pl0gdmZzX2tlcm5fbW91bnQrMHg2Ny8weDExMAogWzxmZmZmZmZmZjgxMjM1
+MDVkPl0gZG9fbW91bnQrMHgxZGQvMHhjNjAKIFs8ZmZmZmZmZmY4MTIwZTczND5dID8gX19jaGVj
+a19vYmplY3Rfc2l6ZSsweDU0LzB4MWQ2CiBbPGZmZmZmZmZmODEyMzVlMTM+XSBTeVNfbW91bnQr
+MHg4My8weGQwCiBbPGZmZmZmZmZmODE2MGE3Mzc+XSBlbnRyeV9TWVNDQUxMXzY0X2Zhc3RwYXRo
+KzB4MWEvMHhhOQotLS1bIGVuZCB0cmFjZSAwZmQ1ODY0NGI0ZDUwY2RiIF0tLS0KQlRSRlMgaW5m
+byAoZGV2aWNlIHNkYyk6IGxlYWYgMTYyNzg1NzQzNjY3MiB0b3RhbCBwdHJzIDEwOCBmcmVlIHNw
+YWNlIDc3NjkKICAgICAgICBpdGVtIDAga2V5ICgxNjI4MTc4MzMzNjk2IDE2OCAxNjM4NCkgaXRl
+bW9mZiAxNjIzMiBpdGVtc2l6ZSA1MQogICAgICAgICAgICAgICAgZXh0ZW50IHJlZnMgMSBnZW4g
+MzI4NzQxIGZsYWdzIDIKICAgICAgICAgICAgICAgIHRyZWUgYmxvY2sga2V5ICgxODQ0Njc0NDA3
+MzcwOTU1MTYwNiAxMjggMjE3NjIzMjIyNjgxNikgbGV2ZWwgMAogICAgICAgICAgICAgICAgdHJl
+ZSBibG9jayBiYWNrcmVmIHJvb3QgNwogICAgICAgIC4uLm1vcmUgaXRlbXMuLi4KQlRSRlMgZXJy
+b3IgKGRldmljZSBzZGMpOiB1bmFibGUgdG8gZmluZCByZWYgYnl0ZSBuciAxNjI4MTc5OTA2NTYw
+IHBhcmVudCAwIHJvb3QgNSAgb3duZXIgMiBvZmZzZXQgMAotLS0tLS0tLS0tLS1bIGN1dCBoZXJl
+IF0tLS0tLS0tLS0tLS0KV0FSTklORzogQ1BVOiAwIFBJRDogMzU0IGF0IGZzL2J0cmZzL2V4dGVu
+dC10cmVlLmM6Njk1OCBfX2J0cmZzX2ZyZWVfZXh0ZW50LmlzcmEuMzMrMHg5OTUvMHhjYTAgW2J0
+cmZzXQpCVFJGUzogVHJhbnNhY3Rpb24gYWJvcnRlZCAoZXJyb3IgLTIpCk1vZHVsZXMgbGlua2Vk
+IGluOiBhcmM0IGlUQ09fd2R0IGlUQ09fdmVuZG9yX3N1cHBvcnQgaXdsbXZtIGludGVsX3JhcGwg
+c25kX2hkYV9jb2RlY19oZG1pIG1hYzgwMjExIGludGVsX3NvY19kdHNfaW9zZiBpbnRlbF9wb3dl
+cmNsYW1wIGNvcmV0ZW1wIHBwZGV2IGl3bHdpZmkga3ZtX2ludGVsIHNuZF9oZGFfY29kZWNfCiBy
+ZmtpbGxfZ3BpbyBzbmRfdGltZXIgaXB0X1JFSkVDVCBuZl9yZWplY3RfaXB2NCBzbmQgcmZraWxs
+IGNyYzE2IHRwbV90aXMgZXZkZXYgdHBtX3Rpc19jb3JlIGkyY19kZXNpZ253YXJlX3BsYXRmb3Jt
+IHh0X2NvbW1lbnQgc3BpX3B4YTJ4eF9wbGF0Zm9ybSB0cG0gbWFjX2hpZCBpMmNfZGVzaWdud2Fy
+ZV9jb3JlIHNvCiBzeXNjb3B5YXJlYSBzeXNmaWxscmVjdCBzeXNpbWdibHQgZmJfc3lzX2ZvcHMg
+ZHJtCkNQVTogMCBQSUQ6IDM1NCBDb21tOiBtb3VudCBUYWludGVkOiBHICAgICAgICBXICAgICAg
+IDQuOS42LTEtQVJDSCAjMQpIYXJkd2FyZSBuYW1lOiBUbyBCZSBGaWxsZWQgQnkgTy5FLk0uIFRv
+IEJlIEZpbGxlZCBCeSBPLkUuTS4vUTI5MDAtSVRYLCBCSU9TIFAxLjAwIDA3LzI0LzIwMTQKIGZm
+ZmZjOTAwMDA5NGI2ZTggZmZmZmZmZmY4MTMwNTQ0MCBmZmZmYzkwMDAwOTRiNzM4IDAwMDAwMDAw
+MDAwMDAwMDAKIGZmZmZjOTAwMDA5NGI3MjggZmZmZmZmZmY4MTA3ZWIwYiAwMDAwMWIyZTAwMDAw
+MDAyIDAwMDAwMTdiMTcxNWMwMDAKIDAwMDAwMDAwZmZmZmZmZmUgZmZmZjg4MDEzN2QxMDFlMCBm
+ZmZmODgwMTM4YjczZDkwIDAwMDAwMDAwMDAwMDAwMDAKQ2FsbCBUcmFjZToKIFs8ZmZmZmZmZmY4
+MTMwNTQ0MD5dIGR1bXBfc3RhY2srMHg2My8weDgzCiBbPGZmZmZmZmZmODEwN2ViMGI+XSBfX3dh
+cm4rMHhjYi8weGYwCiBbPGZmZmZmZmZmODEwN2ViOGY+XSB3YXJuX3Nsb3dwYXRoX2ZtdCsweDVm
+LzB4ODAKIFs8ZmZmZmZmZmZhMDNlNTAwNT5dIF9fYnRyZnNfZnJlZV9leHRlbnQuaXNyYS4zMysw
+eDk5NS8weGNhMCBbYnRyZnNdCiBbPGZmZmZmZmZmYTAzZGYzODE+XSA/IGJsb2NrX2dyb3VwX2Nh
+Y2hlX3RyZWVfc2VhcmNoKzB4YzEvMHhlMCBbYnRyZnNdCiBbPGZmZmZmZmZmYTAzZTQzMDE+XSA/
+IHVwZGF0ZV9ibG9ja19ncm91cC5pc3JhLjMyKzB4ZDEvMHg0NDAgW2J0cmZzXQogWzxmZmZmZmZm
+ZmEwNDU3YzgzPl0gPyBidHJmc19tZXJnZV9kZWxheWVkX3JlZnMrMHg5My8weDYwMCBbYnRyZnNd
+CiBbPGZmZmZmZmZmYTAzZTk3MjQ+XSBfX2J0cmZzX3J1bl9kZWxheWVkX3JlZnMrMHhhNzQvMHgx
+M2EwIFtidHJmc10KIFs8ZmZmZmZmZmZhMDNlZDE5NT5dIGJ0cmZzX3J1bl9kZWxheWVkX3JlZnMr
+MHhhNS8weDJiMCBbYnRyZnNdCiBbPGZmZmZmZmZmYTA0MDRhMTk+XSBidHJmc19jb21taXRfdHJh
+bnNhY3Rpb24rMHgyOS8weDcwIFtidHJmc10KIFs8ZmZmZmZmZmZhMDQ0ZTY4Yz5dIGJ0cmZzX3Jl
+Y292ZXJfbG9nX3RyZWVzKzB4M2RjLzB4NDYwIFtidHJmc10KIFs8ZmZmZmZmZmZhMDQ0OGY5MD5d
+ID8gcmVwbGF5X29uZV9kaXJfaXRlbSsweDE5MC8weDE5MCBbYnRyZnNdCiBbPGZmZmZmZmZmYTA0
+MDE0ZGE+XSBvcGVuX2N0cmVlKzB4MjM5YS8weDI0OTAgW2J0cmZzXQogWzxmZmZmZmZmZmEwM2Qz
+NjlhPl0gYnRyZnNfbW91bnQrMHhkZWEvMHhmNTAgW2J0cmZzXQogWzxmZmZmZmZmZjgxMzFiMDhk
+Pl0gPyBmaW5kX25leHRfemVyb19iaXQrMHgxZC8weDIwCiBbPGZmZmZmZmZmODExYTkyNjA+XSA/
+IHBjcHVfbmV4dF91bnBvcCsweDQwLzB4NTAKIFs8ZmZmZmZmZmY4MTIxNjNhOD5dIG1vdW50X2Zz
+KzB4MzgvMHgxNTAKIFs8ZmZmZmZmZmY4MTIzMjgwZT5dID8gYWxsb2NfdmZzbW50KzB4MTllLzB4
+MjMwCiBbPGZmZmZmZmZmODEyMzI5MDc+XSB2ZnNfa2Vybl9tb3VudCsweDY3LzB4MTEwCiBbPGZm
+ZmZmZmZmYTAzZDJhNjc+XSBidHJmc19tb3VudCsweDFiNy8weGY1MCBbYnRyZnNdCiBbPGZmZmZm
+ZmZmODEzMWIwOGQ+XSA/IGZpbmRfbmV4dF96ZXJvX2JpdCsweDFkLzB4MjAKIFs8ZmZmZmZmZmY4
+MTIxNjNhOD5dIG1vdW50X2ZzKzB4MzgvMHgxNTAKIFs8ZmZmZmZmZmY4MTIzMjgwZT5dID8gYWxs
+b2NfdmZzbW50KzB4MTllLzB4MjMwCiBbPGZmZmZmZmZmODEyMzI5MDc+XSB2ZnNfa2Vybl9tb3Vu
+dCsweDY3LzB4MTEwCiBbPGZmZmZmZmZmODEyMzUwNWQ+XSBkb19tb3VudCsweDFkZC8weGM2MAog
+WzxmZmZmZmZmZjgxMjBlNzM0Pl0gPyBfX2NoZWNrX29iamVjdF9zaXplKzB4NTQvMHgxZDYKIFs8
+ZmZmZmZmZmY4MTIzNWUxMz5dIFN5U19tb3VudCsweDgzLzB4ZDAKIFs8ZmZmZmZmZmY4MTYwYTcz
+Nz5dIGVudHJ5X1NZU0NBTExfNjRfZmFzdHBhdGgrMHgxYS8weGE5Ci0tLVsgZW5kIHRyYWNlIDBm
+ZDU4NjQ0YjRkNTBjZGMgXS0tLQpCVFJGUzogZXJyb3IgKGRldmljZSBzZGMpIGluIF9fYnRyZnNf
+ZnJlZV9leHRlbnQ6Njk1ODogZXJybm89LTIgTm8gc3VjaCBlbnRyeQpCVFJGUzogZXJyb3IgKGRl
+dmljZSBzZGMpIGluIGJ0cmZzX3J1bl9kZWxheWVkX3JlZnM6Mjk2NzogZXJybm89LTIgTm8gc3Vj
+aCBlbnRyeQpCVFJGUzogZXJyb3IgKGRldmljZSBzZGMpIGluIGJ0cmZzX3JlcGxheV9sb2c6MjUw
+NjogZXJybm89LTIgTm8gc3VjaCBlbnRyeSAoRmFpbGVkIHRvIHJlY292ZXIgbG9nIHRyZWUpCkJU
+UkZTIGVycm9yIChkZXZpY2Ugc2RjKTogY2xlYW5lciB0cmFuc2FjdGlvbiBhdHRhY2ggcmV0dXJu
+ZWQgLTMwCkJUUkZTIGVycm9yIChkZXZpY2Ugc2RjKTogb3Blbl9jdHJlZSBmYWlsZWQK
+--94eb2c0b66e672d0d00547c907e6--

@@ -1,207 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:17393 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:11354 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1750902AbdBOBj0 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 14 Feb 2017 20:39:26 -0500
+        with ESMTP id S1750879AbdBFFro (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Feb 2017 00:47:44 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: <bo.li.liu@oracle.com>, <fdmanana@gmail.com>
-Subject: [PATCH v3] btrfs: relocation: Enhance kernel error output for relocation
-Date: Wed, 15 Feb 2017 09:39:05 +0800
-Message-ID: <20170215013905.17677-1-quwenruo@cn.fujitsu.com>
+CC: <calestyo@scientia.net>, <chris@colorremedies.com>, <dsterba@suse.cz>
+Subject: [PATCH v2 01/12] btrfs-progs: lowmem check: Fix several bugs related to afterward search
+Date: Mon, 6 Feb 2017 13:47:24 +0800
+Message-ID: <20170206054735.5227-2-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20170206054735.5227-1-quwenruo@cn.fujitsu.com>
+References: <20170206054735.5227-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When balance(relocation) fails, btrfs-progs will report like:
+Since btrfs_search_slot() can points to the slot which is beyond the
+leaves' capacity, we should pay extra attention when doing afterward
+search.
 
-ERROR: error during balancing '/mnt/scratch': Input/output error
-There may be more info in syslog - try dmesg | tail
+While for lowmem check, several places uses afterward search:
+1) Block group item used space check
+2) Device item used space check
+3) Data extent backref check.
 
-However kernel can't provide may useful info in many cases to locate the
-problem.
+In the following case for block group item check, btrfs lowmem mode
+check will skip the block group and report false alert:
 
-This patch will add error messages in relocation to help user and
-developer to locate the problem.
+leaf 29405184 items 37 free space 1273 generation 11 owner 2
+...
+        item 36 key (77594624 EXTENT_ITEM 2097152)
+                extent refs 1 gen 8 flags DATA
+                extent data backref root 5 objectid 265 offset 0 count 1
+leaf 29409280 items 43 free space 670 generation 11 owner 2
+        item 0 key (96468992 EXTENT_ITEM 2097152)
+                extent refs 1 gen 8 flags DATA
+                extent data backref root 5 objectid 274 offset 0 count 1
+        item 1 key (96468992 BLOCK_GROUP_ITEM 33554432)
+                block group used 2265088 chunk_objectid 256 flags DATA
 
+When checking block group item, we will search key(96468992 0 0) to
+start from the first item in the block group.
+
+While search_slot() will point to leaf 29405184, slot 37 which is beyond
+leaf capacity.
+
+And when reading key from slot 37, uninitialized data can be read out
+and cause us to exit block group item check, leading to false alert.
+
+Fix it by checking path.slot[0] before reading out the key.
+
+Reported-by: Christoph Anton Mitterer <calestyo@scientia.net>
+Reported-by: Chris Murphy <chris@colorremedies.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
-v2:
-  Fix typo where 'err' and 'ret' are used wrong.
-v3:
-  Add space between error number and parenthesis of error string
-  Fix gramma errors.
----
- fs/btrfs/relocation.c | 61 +++++++++++++++++++++++++++++++++++++++++++++++----
- 1 file changed, 57 insertions(+), 4 deletions(-)
+ cmds-check.c | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 379711048fb0..6de5800e17bc 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -4011,6 +4011,8 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
- 					rc->block_rsv, rc->block_rsv->size,
- 					BTRFS_RESERVE_FLUSH_ALL);
- 		if (ret) {
-+			btrfs_err(fs_info, "failed to reserve space: %d (%s)",
-+				  ret, btrfs_decode_error(ret));
- 			err = ret;
+diff --git a/cmds-check.c b/cmds-check.c
+index 37e5ff18..699753fb 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -10591,6 +10591,8 @@ static int check_extent_data_backref(struct btrfs_fs_info *fs_info,
+ 		leaf = path.nodes[0];
+ 		slot = path.slots[0];
+ 
++		if (slot >= btrfs_header_nritems(leaf))
++			goto next;
+ 		btrfs_item_key_to_cpu(leaf, &key, slot);
+ 		if (key.objectid != objectid || key.type != BTRFS_EXTENT_DATA_KEY)
  			break;
- 		}
-@@ -4019,6 +4021,9 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
- 		if (IS_ERR(trans)) {
- 			err = PTR_ERR(trans);
- 			trans = NULL;
-+			btrfs_err(fs_info,
-+				"failed to start transaction: %d (%s)",
-+				  err, btrfs_decode_error(err));
+@@ -10606,6 +10608,7 @@ static int check_extent_data_backref(struct btrfs_fs_info *fs_info,
+ 		    offset)
+ 			found_count++;
+ 
++next:
+ 		ret = btrfs_next_item(root, &path);
+ 		if (ret)
  			break;
- 		}
- restart:
-@@ -4028,8 +4033,12 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
- 		}
+@@ -10878,8 +10881,10 @@ static int check_dev_item(struct btrfs_fs_info *fs_info,
  
- 		ret = find_next_extent(rc, path, &key);
--		if (ret < 0)
-+		if (ret < 0) {
-+			btrfs_err(fs_info,
-+				"failed to find next extent: %d (%s)",
-+				  ret, btrfs_decode_error(ret));
- 			err = ret;
-+		}
- 		if (ret != 0)
+ 	/* Iterate dev_extents to calculate the used space of a device */
+ 	while (1) {
+-		btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
++		if (path.slots[0] >= btrfs_header_nritems(path.nodes[0]))
++			goto next;
+ 
++		btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
+ 		if (key.objectid > dev_id)
  			break;
- 
-@@ -4081,9 +4090,17 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
- 
- 		if (flags & BTRFS_EXTENT_FLAG_TREE_BLOCK) {
- 			ret = add_tree_block(rc, &key, path, &blocks);
-+			if (ret < 0)
-+				btrfs_err(fs_info,
-+					"failed to record tree block: %d (%s)",
-+					  ret, btrfs_decode_error(ret));
- 		} else if (rc->stage == UPDATE_DATA_PTRS &&
- 			   (flags & BTRFS_EXTENT_FLAG_DATA)) {
- 			ret = add_data_references(rc, &key, path, &blocks);
-+			if (ret < 0)
-+				btrfs_err(fs_info,
-+					"failed to record data extent: %d (%s)",
-+					  ret, btrfs_decode_error(ret));
- 		} else {
- 			btrfs_release_path(path);
- 			ret = 0;
-@@ -4103,6 +4120,9 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
- 				rc->backref_cache.last_trans = trans->transid - 1;
- 
- 				if (ret != -EAGAIN) {
-+					btrfs_err(fs_info,
-+				"failed to relocate tree blocks: %d (%s)",
-+						  ret, btrfs_decode_error(ret));
- 					err = ret;
- 					break;
- 				}
-@@ -4121,6 +4141,9 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
- 			ret = relocate_data_extent(rc->data_inode,
- 						   &key, &rc->cluster);
- 			if (ret < 0) {
-+				btrfs_err(fs_info,
-+				"failed to relocate data extent: %d (%s)",
-+					  ret, btrfs_decode_error(ret));
- 				err = ret;
- 				break;
- 			}
-@@ -4147,8 +4170,12 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
- 	if (!err) {
- 		ret = relocate_file_extent_cluster(rc->data_inode,
- 						   &rc->cluster);
--		if (ret < 0)
-+		if (ret < 0) {
-+			btrfs_err(fs_info,
-+			"failed to relocate file extent cluster: %d (%s)",
-+				  ret, btrfs_decode_error(ret));
- 			err = ret;
-+		}
- 	}
- 
- 	rc->create_reloc_tree = 0;
-@@ -4158,6 +4185,10 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
- 	btrfs_block_rsv_release(fs_info, rc->block_rsv, (u64)-1);
- 
- 	err = prepare_to_merge(rc, err);
-+	if (err < 0)
-+		btrfs_err(fs_info,
-+		"failed to prepare merging of relocation trees: %d (%s)",
-+			  err, btrfs_decode_error(err));
- 
- 	merge_reloc_roots(rc);
- 
-@@ -4336,6 +4367,9 @@ int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start)
- 
- 	ret = btrfs_inc_block_group_ro(extent_root, rc->block_group);
- 	if (ret) {
-+		btrfs_err(fs_info,
-+			"failed to set block group read-only: %d (%s)",
-+			  ret, btrfs_decode_error(ret));
- 		err = ret;
- 		goto out;
- 	}
-@@ -4351,10 +4385,19 @@ int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start)
- 					path);
- 	btrfs_free_path(path);
- 
--	if (!IS_ERR(inode))
-+	if (!IS_ERR(inode)) {
- 		ret = delete_block_group_cache(fs_info, rc->block_group, inode, 0);
--	else
-+		if (ret < 0)
-+			btrfs_err(fs_info,
-+				"failed to delete block group cache: %d (%s)",
-+				  ret, btrfs_decode_error(ret));
-+	} else {
- 		ret = PTR_ERR(inode);
-+		if (ret < 0 && ret != -ENOENT)
-+			btrfs_err(fs_info,
-+				"failed to lookup free space inode: %d (%s)",
-+				  ret, btrfs_decode_error(ret));
-+	}
- 
- 	if (ret && ret != -ENOENT) {
- 		err = ret;
-@@ -4364,6 +4407,8 @@ int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start)
- 	rc->data_inode = create_reloc_inode(fs_info, rc->block_group);
- 	if (IS_ERR(rc->data_inode)) {
- 		err = PTR_ERR(rc->data_inode);
-+		btrfs_err(fs_info, "failed to create relocation inode: %d (%s)",
-+			  err, btrfs_decode_error(err));
- 		rc->data_inode = NULL;
- 		goto out;
- 	}
-@@ -4394,6 +4439,9 @@ int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start)
- 			ret = btrfs_wait_ordered_range(rc->data_inode, 0,
- 						       (u64)-1);
- 			if (ret) {
-+				btrfs_err(fs_info,
-+					"failed to wait ordered range: %d (%s)",
-+					  ret, btrfs_decode_error(ret));
- 				err = ret;
- 				goto out;
- 			}
-@@ -4407,6 +4455,11 @@ int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start)
- 	WARN_ON(rc->block_group->reserved > 0);
- 	WARN_ON(btrfs_block_group_used(&rc->block_group->item) > 0);
- out:
-+	if (err < 0)
-+		btrfs_err(fs_info,
-+			  "failed to relocate block group %llu: %d (%s)",
-+			  rc->block_group->key.objectid, err,
-+			  btrfs_decode_error(err));
- 	if (err && rw)
- 		btrfs_dec_block_group_ro(rc->block_group);
- 	iput(rc->data_inode);
+ 		if (key.type != BTRFS_DEV_EXTENT_KEY || key.objectid != dev_id)
+@@ -10976,6 +10981,11 @@ static int check_block_group_item(struct btrfs_fs_info *fs_info,
+ 	/* Iterate extent tree to account used space */
+ 	while (1) {
+ 		leaf = path.nodes[0];
++
++		/* Search slot can point to the last item beyond leaf nritems */
++		if (path.slots[0] >= btrfs_header_nritems(leaf))
++			goto next;
++
+ 		btrfs_item_key_to_cpu(leaf, &extent_key, path.slots[0]);
+ 		if (extent_key.objectid >= bg_key.objectid + bg_key.offset)
+ 			break;
 -- 
-2.11.1
+2.11.0
 
 
 

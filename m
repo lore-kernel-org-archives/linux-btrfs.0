@@ -1,84 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-34.italiaonline.it ([212.48.25.162]:42021 "EHLO libero.it"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751640AbdBFUtB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 6 Feb 2017 15:49:01 -0500
-Reply-To: kreijack@inwind.it
-Subject: Re: How to dump/find parity of RAID-5 file?
-References: <20170203104406.GA3670@giis.co.in>
-To: "Lakshmipathi.G" <lakshmipathi.g@giis.co.in>, linux-btrfs@vger.kernel.org
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Message-ID: <15ae32eb-195a-712c-2746-cf7528b728a2@inwind.it>
-Date: Mon, 6 Feb 2017 21:40:47 +0100
-MIME-Version: 1.0
-In-Reply-To: <20170203104406.GA3670@giis.co.in>
-Content-Type: text/plain; charset=windows-1252
+Received: from [195.159.176.226] ([195.159.176.226]:34607 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1751172AbdBFVkq (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Feb 2017 16:40:46 -0500
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1car1a-0001lN-GL
+        for linux-btrfs@vger.kernel.org; Mon, 06 Feb 2017 22:40:38 +0100
+To: linux-btrfs@vger.kernel.org
+From: Kai Krakow <hurikhan77@gmail.com>
+Subject: Re: btrfs receive leaves new subvolume modifiable during operation
+Date: Mon, 6 Feb 2017 22:40:36 +0100
+Message-ID: <20170206224036.23a7b52b@jupiter.sol.kaishome.de>
+References: <1485905578.6441.20.camel@gmail.com>
+        <pan$4ecd$16bc5e8e$14657c4$261368ad@cox.net>
+        <4edfd08e-8d7f-d8d7-bdea-0589b46e4d2b@gmail.com>
+        <7ead5d42-9c00-b2df-3fbf-5b8f287760f6@cobb.uk.net>
+        <20170205125458.252c68df@jupiter.sol.kaishome.de>
+        <a3190ae7-94cc-84b1-bb89-77b1020239b8@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-02-03 11:44, Lakshmipathi.G wrote:
-> Hi.
-> 
-> Came across this thread https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg55161.html 
-> Exploring possibility of adding test-scripts around these area using dump-tree & corrupt-block.But
-> unable to figure-out how to get parity of file or find its location.  dump-tree output gave,
-> 
->     item 5 key (FIRST_CHUNK_TREE CHUNK_ITEM 145096704) itemoff 15557 itemsize 144
->         length 134217728 owner 2 stripe_len 65536 type DATA|RAID5
->         io_align 65536 io_width 65536 sector_size 4096
->         num_stripes 3 sub_stripes 0
->             stripe 0 devid 3 offset 63111168                 # Is this parity?Seems empty?
->             dev_uuid f62df114-186c-4e48-8152-9ed15aa078b4
->             stripe 1 devid 2 offset 63111168                 # Contains file data-stripe-1
->             dev_uuid c0aeaab0-e57e-4f7a-9356-db1878876d9f
->             stripe 2 devid 1 offset 83034112                 # Contains file data-stripe-2
->             dev_uuid 637b3666-9d8f-4ec4-9969-53b0b933b9b1
-> thanks.
+Am Mon, 6 Feb 2017 07:30:31 -0500
+schrieb "Austin S. Hemmelgarn" <ahferroin7@gmail.com>:
 
-IIRC, the parity is spread across the disk stripes of the chunk.
+> > How about mounting the receiver below a directory only traversable
+> > by root (chmod og-rwx)? Backups shouldn't be directly accessible by
+> > ordinary users anyway.  
+> There are perfectly legitimate reasons to have backups directly 
+> accessible by users.  If you're running automated backups for _their_ 
+> systems _they_ absolutely should have at least read access to the 
+> backups _once they're stable_.
 
-So first you have to find the logical-offset [LO] where the the file begins. Then you have to map this offset to the chunk which holds the data. The chunk has the following info:
-- chunk start [CS], chunk length [CL]
-- for each stripe:
-	where the stripe starts
+This is not what I tried to explain. The OPs question mixes the
+creation process with later access. The creation process, however,
+should always be isolated. See below, you're even agreeing. ;-)
 
-If you subtract the chunk-start from the logical-offset [ CO == LO-CS], you will find the offset where the data belongs in the chunk.
+> This is not a common case, but it is
+> a perfectly legitimate one.  In the same way, if you're storing
+> backups for your users (in this case you absolutely should not be4
+> using send/receive for other reasons), then the use case dictates
+> that they have some way to access them.
 
-As stated above, the PARITY is spread across the chunk stripes. So (supposing that the stripe size is 64K, the raid level is 5, the disks are three), 
+I don't deny that. But the OP should understand to properly isolate
+both operations from each other. This is best practice, this is how it
+should be done.
 
-- the first 64k of stripe 0, is data [0..64K)
-- the first 64k of stripe 1, is data [64..128K)
-- the first 64k of stripe 2 is parity, 
+> > If you want a backup becoming accessible, you can later snapshot it
+> > to an accessible location after send/receive finished without
+> > errors.
+> >
+> > An in-transit backup, however, should always be protected from
+> > possible disruptive access. This is an issue with any backup
+> > software. So place the receive within an inaccessible directory.
+> > This is not something the backup process should directly bother
+> > with for simplicity.  
 
-- the 2nd 64k of stripe 0 is parity, 
-- the 2nd 64k of stripe 1, is data [128..196K)
-- the 2nd 64k of stripe 2, is data [192..256K)
+> I agree on this point however.  Doing a backup directly into the
+> final persistent storage location is never a good idea.  It makes
+> error handling more complicated, it makes handling of multi-tier
+> storage more complicated (and usually less efficient), and it makes
+> security more difficult.
 
-- the 3rd 64k of stripe 0, is data [256..320K)
-- the 3rd 64k of stripe 1 is parity, 
-- the 3rd 64k of stripe 2, is data [320..384K)
-and so on,
+Agreed. It complicates a lot of things. In conclusion: If done right,
+the original request isn't a problem, neither is anything wrong by
+design. It's a question of isolation of operations.
 
-To find the data, You have to compare the CO to the data [...) range.
+This is simply one of the most basic principles of a safe and secure
+backup.
 
-If you look to an my old patch (unfinished :-( ), you can find some example to dump the different stripe
+Personally, if I use rsync for backups, I always rsync to a scratch
+location only accessible by the backup process. This scratch area may
+even be incomplete, inconsistent or broken in other ways. Only when
+rsync successfully finished, the scratch area will be snapshot to its
+final destination - which is accessible by its users/owners. This also
+has the benefit of the snapshots being self-contained deltas which can
+be removed without rewriting or reorganizing partial or complete backup
+history. That's a plus-point for backup safety, performance, and
+retention policies.
 
-[BTRFS-PROGS][PATCH][V2] Add two new commands: 'btrfs insp physical-find' and 'btrfs insp physical-dump'
+Currently, I'm using borgbackup for my personal backups. It has a
+similar approach by using checkpoints for resuming a partial backup.
+Only a successful backup process creates the final checkpoint. The
+intermediate checkpoints can be thrown away at any time later. It
+currently stores a backup history of 95.8 TB (multiple months) on a 3 TB
+hard disk. Unfortunately, I don't yet sync this to an offsite location.
+My most important data (photos, mental work like programming) is stored
+in a different location through other means (Git, cloud sync).
 
+For customers, I prefer to use a local cache where the backup is
+stored, then it will be synced offsite using deduplication algorithms
+to reduce transfer overhead. A second, different backup software stores
+another local copy for fast recovery in case of disaster. There's only
+need to sync back from offsite storage in case of total local data
+loss. And there's a backup for the backup. If one doesn't work, there's
+always the other.
 
+In all cases, the intermediate storage is protected from tampering by
+the user, or even completely blocked to be accessed by the user. Only
+final and clean snapshots are made available.
 
-
-
-
-> Cheers.
-> Lakshmipathi.G
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
+Also, error handling and cleanup is easy because errors don't leak or
+propagate into the final storage. You simply can clean caches,
+intermediate checkpoints, or scratch/staging areas. You can even loose
+it for whatever reason (hardware problems, storage errors etc). The
+only downside would be that the next backups takes longer to complete.
 
 -- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+Regards,
+Kai
+
+Replies to list-only preferred.
+

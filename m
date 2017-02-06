@@ -1,83 +1,121 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:44381 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1750932AbdBFE1H (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Feb 2017 23:27:07 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1caatH-0002Kp-3K
-        for linux-btrfs@vger.kernel.org; Mon, 06 Feb 2017 05:26:59 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Is it possible to have metadata-only device with no data?
-Date: Mon, 6 Feb 2017 04:26:52 +0000 (UTC)
-Message-ID: <pan$76944$e15dabff$cb6ce271$3ab68bb5@cox.net>
-References: <14453691486330921@web21h.yandex.ru>
-        <0dbbe15a-59f7-ef0e-1ed6-83fec7ef165a@mendix.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from cn.fujitsu.com ([59.151.112.132]:60909 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1750924AbdBFFrr (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Feb 2017 00:47:47 -0500
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <calestyo@scientia.net>, <chris@colorremedies.com>, <dsterba@suse.cz>
+Subject: [PATCH v2 00/12] Variant lowmem mode fixes
+Date: Mon, 6 Feb 2017 13:47:23 +0800
+Message-ID: <20170206054735.5227-1-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hans van Kranenburg posted on Sun, 05 Feb 2017 22:55:42 +0100 as
-excerpted:
+Patches can be fetch from github:
+https://github.com/adam900710/btrfs-progs/tree/lowmem_fixes
 
-> On 02/05/2017 10:42 PM, Alexander Tomokhov wrote:
->> Is it possible, having two drives to do raid1 for metadata but keep
->> data on a single drive only?
-> 
-> Nope.
-> 
-> Would be a really nice feature though... Putting metadata on SSD and
-> bulk data on HDD...
 
-FWIW, it's on the list to be implemented in the future, but there's a lot 
-more things on that list than devs working on btrfs, and the feature 
-development and stabilization trend is that features often take much 
-longer than anticipated, particularly to properly stabilize (to the level 
-of the rest of btrfs, which is in general stabilizing but not yet fully 
-stable, so stabilization is relative, here), which has slowed down the 
-pipeline of new features due to the devs having their hands full 
-stabilizing currently done but not yet properly stabilized features.
+Thanks for reports from Chris Murphy and Christoph Anton Mitterer,
+several new bugs are exposed for lowmem mode fsck.
 
-So if they're not working on it yet, chances are it's going to be at 
-/least/ three years to usably stable, and realistically, they may not 
-even start working on it until perhaps 5-7 years out, so it could easily 
-be another decade out for such a feature to properly stabilize.
+Special thank to Christoph, who did rounds of test during the patch
+development.
 
-And given that the practical forecast horizon for free software is around 
-five years, because enough unexpected happens in that time to make trying 
-to predict in any worthwhile detail further out pretty much a fool's 
-errand, effectively, it's at or outside the prediction horizon, so in 
-practice, there's no telling /when/ it might be implemented and then 
-stabilized enough to use, only that it /is/ on the list for "someday".
+The following bugs are fixed in lowmem mode:
 
-Meanwhile, FWIW, my feature of choice, N-way-mirroring, has long been 
-scheduled for "right after raid56 mode".  Well, raid56 mode first wasn't 
-introduced until long after originally scheduled (3.6 or earlier), then 
-when it was it was runtime-only, the maintenance and recovery tools 
-weren't there yet, then something like two years later they were ready so 
-it was in theory feature-complete (in 3.19) but not yet stabilized, then 
-in the stabilization process, some serious implementation bugs were found 
-such that it can't yet be recommended and may yet require a full 
-rewrite... so I'm still waiting for N-way-mirroring, which was supposed 
-to follow shortly after raid56 mode.
+1) Block group used space false alert
+   If a BLOCK_GROUP_ITEM or its first EXTENT/METADATA_ITEM is located at
+   the first slot of a leaf, search_slot() used by lowmem mode can
+   point to previous leaf, with path->slots[0] beyond valid leaf slots.
 
-And given that raid56 mode might now take another couple years to 
-stabilize (and it could be longer than that), I'm not expecting N-way-
-mirroring for another three years or so, so even it could well be five 
-years out to usable stability.  And it has long been at least in the 
-known queue for after raid56 mode, and hasn't really been even started 
-yet, so features on the list, but not yet actually on the queue, again, 
-who knows, but five years out at least is a reasonable bet, and that's 
-prediction horizon, so indeed, there's no way to really even predict, at 
-this point.
+   This makes us to read out uninitialized data, and can abort block
+   group used space check loop, causing a false alert.
 
-But I do know all about waiting, by now.  I've learned, and am continuing 
-to learn, all about patience! =:^]
+   Fix it with a test case image inside fsck-tests/020/extent-ref-cases
+   Also fix all possible backward search.
+   Reported by Christoph.
+
+2) Partly written prealloc extent false alert
+   If a prealloc extent gets partily written, lowmem mode will report
+   prealloc extent shouldn't have csum.
+
+   Lowmem mode passed wrong variable to csum checking code, causing it
+   to check the whole range of the prealloc extent, making the bug
+   happens.
+
+   Fix it with a test case inside fsck-tests/020/extent-ref-cases.
+   Reported by Chirs Murphy And Christoph.
+
+3) Extent item size false alert.
+   Under certain case, btrfs lowmem mode check reports data backref
+   lost.
+   It's because newly introduced extent item size check aborts normal
+   check routine.
+
+   It can happen if a data/metadata extent item has no inline ref.
+
+   Fix it, test case already submitted before and merged, but due to
+   fsck-tests framework bugs, it never get called for lowmem mode.
+
+4) Compressed inline data extent
+   The extra check on inline data extent length doesn't take compression
+   into consideration and will cause false alert without outputting any
+   error message.
+
+   Fix it and add correct error message output for it.
+   Also fix all possible silent error.
+   Reported by Christoph.
+
+5) fsck-tests Lowmem mode override fixes
+   Allow lowmem mode override to get called for all tests, and allow
+   them all to pass lowmem mode except fsck-tests/006, which is a
+   original repair mode bug.
+
+Lu Fengqi (1):
+  btrfs-progs: fsck: Fix lowmem mode override to allow it skip repair
+    work
+
+Qu Wenruo (10):
+  btrfs-progs: lowmem check: Fix several bugs related to afterward
+    search
+  btrfs-progs: check: Output verbose error when fsck found a bug in any
+    tree
+  btrfs-progs: lowmem check: Fix false alert in checking data extent
+    csums
+  btrfs-progs: lowmem check: Fix extent item size false alert
+  btrfs-progs: lowmem check: Fix false alert on inline compressed extent
+  btrfs-progs: lowmem check: Fix silent error if first inode item
+    missing
+  btrfs-progs: tests: Move fsck-tests/015 to fuzz tests
+  btrfs-progs: fsck-test: Add test image for lowmem mode block group
+    false alert
+  btrfs-progs: fsck-test: Make 013 compatible with lowmem mode
+  btrfs-progs: fsck-test: Add new test case for file extent false alerts
+
+Su Yue (1):
+  btrfs-progs: cmds-check.c: walk_down_tree_v2 break cause of leaf
+    process
+
+ cmds-check.c                                       | 172 +++++++++++++++------
+ tests/common                                       |   8 +-
+ tests/common.local                                 |   2 +-
+ tests/fsck-tests/013-extent-tree-rebuild/test.sh   |   2 +-
+ .../block_group_item_false_alert.raw.xz            | Bin 0 -> 47792 bytes
+ tests/fsck-tests/020-extent-ref-cases/test.sh      |  15 +-
+ tests/fsck-tests/025-file-extents/test.sh          |  42 +++++
+ .../images}/bko-97171-btrfs-image.raw.txt          |   0
+ .../images}/bko-97171-btrfs-image.raw.xz           | Bin
+ 9 files changed, 187 insertions(+), 54 deletions(-)
+ create mode 100644 tests/fsck-tests/020-extent-ref-cases/block_group_item_false_alert.raw.xz
+ create mode 100755 tests/fsck-tests/025-file-extents/test.sh
+ rename tests/{fsck-tests/015-check-bad-memory-access => fuzz-tests/images}/bko-97171-btrfs-image.raw.txt (100%)
+ rename tests/{fsck-tests/015-check-bad-memory-access => fuzz-tests/images}/bko-97171-btrfs-image.raw.xz (100%)
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+2.11.0
+
+
 

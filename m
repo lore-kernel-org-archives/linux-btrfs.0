@@ -1,10 +1,10 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f196.google.com ([209.85.192.196]:33155 "EHLO
-        mail-pf0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750909AbdBFFuX (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Feb 2017 00:50:23 -0500
-Received: by mail-pf0-f196.google.com with SMTP id e4so6112164pfg.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 05 Feb 2017 21:50:22 -0800 (PST)
+Received: from mail-pf0-f195.google.com ([209.85.192.195]:32831 "EHLO
+        mail-pf0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750942AbdBFJgi (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Feb 2017 04:36:38 -0500
+Received: by mail-pf0-f195.google.com with SMTP id e4so6543967pfg.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 06 Feb 2017 01:36:38 -0800 (PST)
 Subject: Re: [PATCH] Btrfs: add another missing end_page_writeback on
  submit_extent_page failure
 To: bo.li.liu@oracle.com
@@ -18,63 +18,104 @@ References: <1481870510-44290-1-git-send-email-takafumi.kubota1012@sslab.ics.kei
  <20170206033527.GA23573@localhost.localdomain>
 Cc: linux-btrfs@vger.kernel.org
 From: takafumi-sslab <takafumi.kubota1012@sslab.ics.keio.ac.jp>
-Message-ID: <fe79b315-196c-b981-5151-9c8cc1901632@sslab.ics.keio.ac.jp>
-Date: Mon, 6 Feb 2017 14:50:18 +0900
+Message-ID: <29194247-19cc-2f4c-be03-e1df7916e9e6@sslab.ics.keio.ac.jp>
+Date: Mon, 6 Feb 2017 18:36:34 +0900
 MIME-Version: 1.0
 In-Reply-To: <20170206033527.GA23573@localhost.localdomain>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I am sorry for forggeting to write the reproducing steps.
+
+I injects the ftrace's logging code and the fault to the Linux kerenl 
+v4.10-rc7.
+The diff is too long for pasting here.
+So, I put the repository of the kernel here.
+https://github.com/tk1012/linux-for-reproduce-btrfs-failure.git
+
+And the steps to reproduce are:
+	
+	$ git clone https://github.com/tk1012/linux-for-reproduce-btrfs-failure.git
+	
+	$ make menuconfig # enable these configs
+	- CONFIG_FAILSLAB
+	- CONFIG_FAULT_INJECTION_DEBUG_FS
+	- CONFIG_FTRACE
+	
+	$ make && make install
+
+Then, I run the below reproducer.
+And, you can see the ftrace log like:
+	
+	$ cat /sys/kernel/debug/tracing/trace > ~/ftrace_log
+	
+FYI, you can use the kernel config here.
+https://github.com/tk1012/linux-for-reproduce-btrfs-failure/blob/master/minconfig
+
+----------
+
+#!/bin/bash
+
+set -xe
+
+echo 128000 > /sys/kernel/debug/tracing/buffer_size_kb
+
+echo N > /sys/kernel/debug/failk9/task-filter
+echo N > /sys/kernel/debug/failk9/ignore-gfp-wait
+echo 100 > /sys/kernel/debug/failk9/probability
+echo 1 > /sys/kernel/debug/failk9/interval
+
+directory=/mnt/btrfs
+mkdir -p ${directory}
+
+truncate -s 100G btrfs.img
+mkfs.btrfs btrfs.img
+mount btrfs.img ${directory}
+
+for i in `seq 1 1 100`; do
+  echo 1 > /sys/kernel/debug/failk9/times
+  bash -c "echo 1 > /proc/self/make-it-fail && dd if=/dev/zero 
+of=${directory}/text_txt bs=1M count=10 2> /dev/null"
+  sync # never return
+done
+
+umount ${directory}
 
 
-On 2017/02/06 12:35, Liu Bo wrote:
-> a) __extent_writepage has handled the case when nr == 0.
+----------
 
-Yes, I agree this.
 
-> b) when nr == 1, the page is marked with writeback bit and added into a
->     bio, thus we have bio_end to deal with page bits.
-
-However, I don't think this is always correct,
-because, as I said before as the Error A, when (bio_ret == NULL or 
-*bio_ret == NULL) and btrfs_bio_alloc() fails, the page is not added 
-into a bio.
-Thus, bio_end does not deal with the page's bit, and the writeback bit 
-remains with nr == 1.
-
-To confirm this, I inject a fault to mimic the fail of btrfs_bio_alloc().
-I can reproduce the hang at the kernel ver4.10-rc7 that commit id is 
-d5adbfcd5f7bcc6fa58a41c5c5ada0e5c826ce2c
-and  Ftrace log messages are like below
-
-a.out-2867  : __extent_writepage: call __extent_writepage_io: 
-page:0xffffea000006d200(writeback:0), nr:0, logged at just previous to 
-line 3523 of extent_io.c
-a.out-2867  : __extent_writepage_io: call submit_extent_page: 
-page:0xffffea000006d200(writeback:1), nr:0, bio_ret:0xffffc90003bd7d40, 
-*bio_ret: (null), logged at just previous to line 3443 of extent_io.c
-a.out-2867  : submit_extent_page.isra.53: Mimic Error A: 
-btrfs_bio_alloc() fails and submit_extent_page() return -ENOMEM, logged 
-at just previous to line 2807 of extent_io.c
-a.out-2867  : __extent_writepage_io: after call submit_extent_page: 
-page:0xffffea000006d200(writeback:1), nr:0, bio_ret:0xffffc90003bd7d40, 
-*bio_ret: (null), logged at just next to line 3447 of extent_io.c
-a.out-2867  : __extent_writepage_io: nr == 1: 
-page:0xffffea000006d200(writeback:1), nr:1, bio_ret:0xffffc90003de7d40, 
-logged at just next to line 3456 of extent_io.c //nr == 1 and the 
-writeback bit remains
-a.out-2867  : __extent_writepage: after call __extent_writepage_io: 
-page:0xffffea000006d200(writeback:1), nr:1, logged at just next to line 
-3524 of extent_io.c // __extent_writepage does not handle, because nr == 1
-...
-sync-2868   : __filemap_fdatawait_range: wait_on_page_writeback: 
-page:0xffffea000006d200, logged at just previous to line 404 of 
-mm/filemap.c // Then, sync hangs
 
 Sincerely,
-
 -takafumi
+
+On 2017/02/06 12:35, Liu Bo wrote:
+> On Sat, Feb 04, 2017 at 09:42:17PM +0900, takafumi-sslab wrote:
+>>
+>>> (But it could be changed after subpagesize block patchset, and there is
+>>> more work rather than just adding a end_page_writeback, e.g. writepage
+>>> endio also needs to be updated).
+>>
+>> Ok... the discussion become complicated.
+>> So, let me make this clear.
+>>
+>> you think
+>> a) this is a bug;
+>> we need to clear the writeback bit in the error handling if the bit remains.
+>>
+>> b) however, the way of fixing this bug has some concerns.　( and now we
+>> discuss the best solution )
+>>
+>> Is my understanding correct?
+>
+> Sorry for making you confused even more, to clarify it, I don't think
+> the bug could exist in the current btrfs because blocksize is equal to
+> PAGE_SIZE so that @nr in __extent_writepage could only be 0 or 1.
+>
+> a) __extent_writepage has handled the case when nr == 0.
+> b) when nr == 1, the page is marked with writeback bit and added into a
+>    bio, thus we have bio_end to deal with page bits.
 >
 > So I don't think the patch is necessary for now.
 >
@@ -85,9 +126,11 @@ Sincerely,
 >
 > -liubo
 >
+>>
 >> Sincerely,
 >>
 >> -takafumi
+>>>
 >>> Thanks,
 >>>
 >>> -liubo
@@ -142,34 +185,34 @@ Sincerely,
 >>>>>>>> CPU0                            CPU1
 >>>>>>>>
 >>>>>>>> __extent_writepage_io()
->>>>>>>>       ret = submit_extent_page() // fail
+>>>>>>>>      ret = submit_extent_page() // fail
 >>>>>>>>
->>>>>>>>       if (ret)
->>>>>>>>         SetPageError(page)
->>>>>>>>         // miss clearing the writeback bit
+>>>>>>>>      if (ret)
+>>>>>>>>        SetPageError(page)
+>>>>>>>>        // miss clearing the writeback bit
 >>>>>>>>
->>>>>>>>                                     sync()
->>>>>>>>                                       ...
->>>>>>>>                                       filemap_fdatawait_range()
->>>>>>>>                                         wait_on_page_writeback(page);
->>>>>>>>                                         // wait the false under-writeback page
+>>>>>>>>                                    sync()
+>>>>>>>>                                      ...
+>>>>>>>>                                      filemap_fdatawait_range()
+>>>>>>>>                                        wait_on_page_writeback(page);
+>>>>>>>>                                        // wait the false under-writeback page
 >>>>>>>>
 >>>>>>>> Signed-off-by: Takafumi Kubota <takafumi.kubota1012@sslab.ics.keio.ac.jp>
 >>>>>>>> ---
->>>>>>>>      fs/btrfs/extent_io.c | 4 +++-
->>>>>>>>      1 file changed, 3 insertions(+), 1 deletion(-)
+>>>>>>>>     fs/btrfs/extent_io.c | 4 +++-
+>>>>>>>>     1 file changed, 3 insertions(+), 1 deletion(-)
 >>>>>>>>
 >>>>>>>> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
 >>>>>>>> index 1e67723..ef9793b 100644
 >>>>>>>> --- a/fs/btrfs/extent_io.c
 >>>>>>>> +++ b/fs/btrfs/extent_io.c
 >>>>>>>> @@ -3443,8 +3443,10 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
->>>>>>>>      					 bdev->bio, max_nr,
->>>>>>>>      					 end_bio_extent_writepage,
->>>>>>>>      					 0, 0, 0, false);
+>>>>>>>>     					 bdev->bio, max_nr,
+>>>>>>>>     					 end_bio_extent_writepage,
+>>>>>>>>     					 0, 0, 0, false);
 >>>>>>>> -		if (ret)
 >>>>>>>> +		if (ret) {
->>>>>>>>      			SetPageError(page);
+>>>>>>>>     			SetPageError(page);
 >>>>>>>> +			end_page_writeback(page);
 >>>>>>>> +		}
 >>>>>>> OK...this could be complex as we don't know which part in
@@ -184,28 +227,29 @@ Sincerely,
 >>>>>>>
 >>>>>>> -liubo
 >>>>>>>
->>>>>>>>      		cur = cur + iosize;
->>>>>>>>      		pg_offset += iosize;
->>>>>>>> -- 
+>>>>>>>>     		cur = cur + iosize;
+>>>>>>>>     		pg_offset += iosize;
+>>>>>>>> --
 >>>>>>>> 1.9.3
 >>>>>>>>
 >>>>>>>> --
 >>>>>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 >>>>>>>> the body of a message to majordomo@vger.kernel.org
 >>>>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>>>> -- 
+>>>>>> --
 >>>>>> Keio University
 >>>>>> System Software Laboratory
 >>>>>> Takafumi Kubota
 >>>>>> takafumi.kubota1012@sslab.ics.keio.jp
 >>>>>>
->>>> -- 
+>>>> --
 >>>> Keio University
 >>>> System Software Laboratory
 >>>> Takafumi Kubota
 >>>> takafumi.kubota1012@sslab.ics.keio.jp
 >>>>
->> -- 
+>>
+>> --
 >> Keio University
 >> System Software Laboratory
 >> Takafumi Kubota
@@ -217,4 +261,3 @@ Keio University
 System Software Laboratory
 Takafumi Kubota
 takafumi.kubota1012@sslab.ics.keio.jp
-

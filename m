@@ -1,121 +1,134 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:60909 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:32644 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1750924AbdBFFrr (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Feb 2017 00:47:47 -0500
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+        with ESMTP id S1750994AbdBFIv0 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Feb 2017 03:51:26 -0500
+Subject: Re: [PATCH v2 12/12] btrfs-progs: cmds-check.c: walk_down_tree_v2
+ break cause of leaf process
 To: <linux-btrfs@vger.kernel.org>
-CC: <calestyo@scientia.net>, <chris@colorremedies.com>, <dsterba@suse.cz>
-Subject: [PATCH v2 00/12] Variant lowmem mode fixes
-Date: Mon, 6 Feb 2017 13:47:23 +0800
-Message-ID: <20170206054735.5227-1-quwenruo@cn.fujitsu.com>
+References: <20170206054735.5227-1-quwenruo@cn.fujitsu.com>
+ <20170206054735.5227-13-quwenruo@cn.fujitsu.com>
+CC: <calestyo@scientia.net>, <chris@colorremedies.com>, <dsterba@suse.cz>,
+        Su Yue <suy.fnst@cn.fujitsu.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <8a286695-13ec-2baf-2d79-5467286cb626@cn.fujitsu.com>
+Date: Mon, 6 Feb 2017 16:51:11 +0800
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <20170206054735.5227-13-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Patches can be fetch from github:
-https://github.com/adam900710/btrfs-progs/tree/lowmem_fixes
 
 
-Thanks for reports from Chris Murphy and Christoph Anton Mitterer,
-several new bugs are exposed for lowmem mode fsck.
+At 02/06/2017 01:47 PM, Qu Wenruo wrote:
+> From: Su Yue <suy.fnst@cn.fujitsu.com>
+>
+> In lowmem mode, 'walk_down_tree_v2' returns negative values wheather
+> the error is fatal or not. It causes the loop where 'walk_down_tree_v2'
+> is to break even the error is tolerated and then subsequent nodes process
+> will be skipped.
+>
+> Fix it by redefining meanings of values 'walk_down_tree_v2' returns.
+> Do a similar fix for 'process_one_leaf_v2'.
+>
+> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
+> ---
+>  cmds-check.c | 37 ++++++++++++++++++++++---------------
+>  1 file changed, 22 insertions(+), 15 deletions(-)
+>
+> diff --git a/cmds-check.c b/cmds-check.c
+> index 7d273623..fae18e00 100644
+> --- a/cmds-check.c
+> +++ b/cmds-check.c
+> @@ -1868,6 +1868,11 @@ static int update_nodes_refs(struct btrfs_root *root, u64 bytenr,
+>  static int check_inode_item(struct btrfs_root *root, struct btrfs_path *path,
+>  			    unsigned int ext_ref);
+>
+> +/*
+> + * Returns >0  Found error, not fatal, should continue process
+> + * Returns <0  Fata error, must exit the whole check
+> + * returns 0   No error is found
+> + */
+>  static int process_one_leaf_v2(struct btrfs_root *root, struct btrfs_path *path,
+>  			       struct node_refs *nrefs, int *level, int ext_ref)
+>  {
+> @@ -1937,13 +1942,8 @@ again:
+>  	}
+>  out:
+>  	err &= ~LAST_ITEM;
+> -	/*
+> -	 * Convert any error bitmap to -EIO, as we should avoid
+> -	 * mixing positive and negative return value to represent
+> -	 * error
+> -	 */
+>  	if (err && !ret)
+> -		ret = -EIO;
+> +		ret = err;
+>  	return ret;
+>  }
+>
+> @@ -2213,6 +2213,11 @@ out:
+>  static int check_inode_item(struct btrfs_root *root, struct btrfs_path *path,
+>  			    unsigned int ext_ref);
+>
+> +/*
+> + * Returns >0  Found error, should continue
+> + * Returns 0   No error is found
+> + * Returns <0  Fatal error, must exit the whole check
+> + */
+>  static int walk_down_tree_v2(struct btrfs_root *root, struct btrfs_path *path,
+>  			     int *level, struct node_refs *nrefs, int ext_ref)
+>  {
+> @@ -5028,8 +5033,9 @@ static int check_fs_root_v2(struct btrfs_root *root, unsigned int ext_ref)
+>  	struct btrfs_path path;
+>  	struct node_refs nrefs;
+>  	struct btrfs_root_item *root_item = &root->root_item;
+> -	int ret, wret;
+> +	int ret;
+>  	int level;
+> +	int err = 0;
+>
+>  	/*
+>  	 * We need to manually check the first inode item(256)
+> @@ -5063,16 +5069,17 @@ static int check_fs_root_v2(struct btrfs_root *root, unsigned int ext_ref)
+>  	}
+>
+>  	while (1) {
+> -		wret = walk_down_tree_v2(root, &path, &level, &nrefs, ext_ref);
+> -		if (wret < 0)
+> -			ret = wret;
+> -		if (wret != 0)
+> +		ret = walk_down_tree_v2(root, &path, &level, &nrefs, ext_ref);
+> +		err |= !!ret;
+> +
+> +		/* if ret is negative, walk shall stop */
+> +		if (ret < 0) {
+> +			ret = err;
+>  			break;
+> +		}
+>
+> -		wret = walk_up_tree_v2(root, &path, &level);
+> -		if (wret < 0)
+> -			ret = wret;
+> -		if (wret != 0)
+> +		ret = walk_up_tree_v2(root, &path, &level);
+> +		if (ret != 0)
+>  			break;
 
-Special thank to Christoph, who did rounds of test during the patch
-development.
+Here @ret can be 1, to indicate a normal traversal end.
 
-The following bugs are fixed in lowmem mode:
+In that case we need to change @ret to 0, as it's a normal end.
 
-1) Block group used space false alert
-   If a BLOCK_GROUP_ITEM or its first EXTENT/METADATA_ITEM is located at
-   the first slot of a leaf, search_slot() used by lowmem mode can
-   point to previous leaf, with path->slots[0] beyond valid leaf slots.
+Or it will be caught as error.
 
-   This makes us to read out uninitialized data, and can abort block
-   group used space check loop, causing a false alert.
+Updated in github repo.
 
-   Fix it with a test case image inside fsck-tests/020/extent-ref-cases
-   Also fix all possible backward search.
-   Reported by Christoph.
+Thanks,
+Qu
 
-2) Partly written prealloc extent false alert
-   If a prealloc extent gets partily written, lowmem mode will report
-   prealloc extent shouldn't have csum.
-
-   Lowmem mode passed wrong variable to csum checking code, causing it
-   to check the whole range of the prealloc extent, making the bug
-   happens.
-
-   Fix it with a test case inside fsck-tests/020/extent-ref-cases.
-   Reported by Chirs Murphy And Christoph.
-
-3) Extent item size false alert.
-   Under certain case, btrfs lowmem mode check reports data backref
-   lost.
-   It's because newly introduced extent item size check aborts normal
-   check routine.
-
-   It can happen if a data/metadata extent item has no inline ref.
-
-   Fix it, test case already submitted before and merged, but due to
-   fsck-tests framework bugs, it never get called for lowmem mode.
-
-4) Compressed inline data extent
-   The extra check on inline data extent length doesn't take compression
-   into consideration and will cause false alert without outputting any
-   error message.
-
-   Fix it and add correct error message output for it.
-   Also fix all possible silent error.
-   Reported by Christoph.
-
-5) fsck-tests Lowmem mode override fixes
-   Allow lowmem mode override to get called for all tests, and allow
-   them all to pass lowmem mode except fsck-tests/006, which is a
-   original repair mode bug.
-
-Lu Fengqi (1):
-  btrfs-progs: fsck: Fix lowmem mode override to allow it skip repair
-    work
-
-Qu Wenruo (10):
-  btrfs-progs: lowmem check: Fix several bugs related to afterward
-    search
-  btrfs-progs: check: Output verbose error when fsck found a bug in any
-    tree
-  btrfs-progs: lowmem check: Fix false alert in checking data extent
-    csums
-  btrfs-progs: lowmem check: Fix extent item size false alert
-  btrfs-progs: lowmem check: Fix false alert on inline compressed extent
-  btrfs-progs: lowmem check: Fix silent error if first inode item
-    missing
-  btrfs-progs: tests: Move fsck-tests/015 to fuzz tests
-  btrfs-progs: fsck-test: Add test image for lowmem mode block group
-    false alert
-  btrfs-progs: fsck-test: Make 013 compatible with lowmem mode
-  btrfs-progs: fsck-test: Add new test case for file extent false alerts
-
-Su Yue (1):
-  btrfs-progs: cmds-check.c: walk_down_tree_v2 break cause of leaf
-    process
-
- cmds-check.c                                       | 172 +++++++++++++++------
- tests/common                                       |   8 +-
- tests/common.local                                 |   2 +-
- tests/fsck-tests/013-extent-tree-rebuild/test.sh   |   2 +-
- .../block_group_item_false_alert.raw.xz            | Bin 0 -> 47792 bytes
- tests/fsck-tests/020-extent-ref-cases/test.sh      |  15 +-
- tests/fsck-tests/025-file-extents/test.sh          |  42 +++++
- .../images}/bko-97171-btrfs-image.raw.txt          |   0
- .../images}/bko-97171-btrfs-image.raw.xz           | Bin
- 9 files changed, 187 insertions(+), 54 deletions(-)
- create mode 100644 tests/fsck-tests/020-extent-ref-cases/block_group_item_false_alert.raw.xz
- create mode 100755 tests/fsck-tests/025-file-extents/test.sh
- rename tests/{fsck-tests/015-check-bad-memory-access => fuzz-tests/images}/bko-97171-btrfs-image.raw.txt (100%)
- rename tests/{fsck-tests/015-check-bad-memory-access => fuzz-tests/images}/bko-97171-btrfs-image.raw.xz (100%)
-
--- 
-2.11.0
-
+>  	}
+>
+>
 
 

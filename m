@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:11354 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:59299 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751108AbdBFFrt (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Feb 2017 00:47:49 -0500
+        with ESMTP id S1750924AbdBFFrw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Feb 2017 00:47:52 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <calestyo@scientia.net>, <chris@colorremedies.com>, <dsterba@suse.cz>
-Subject: [PATCH v2 04/12] btrfs-progs: lowmem check: Fix extent item size false alert
-Date: Mon, 6 Feb 2017 13:47:27 +0800
-Message-ID: <20170206054735.5227-5-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v2 05/12] btrfs-progs: lowmem check: Fix false alert on inline compressed extent
+Date: Mon, 6 Feb 2017 13:47:28 +0800
+Message-ID: <20170206054735.5227-6-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20170206054735.5227-1-quwenruo@cn.fujitsu.com>
 References: <20170206054735.5227-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -16,59 +16,58 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If one extent item has no inline ref, btrfs lowmem mode check can give
-false alert without outputting any error message.
+Old lowmem check doesn't check if the inline extent is compressed and
+always check extent numbytes against inline item size.
 
-The problem is lowmem mode always assume that extent item has inline
-refs, and when it encounters such case it flags the extent item has
-wrong size, but doesn't output the error message.
+And when it finds the extent numbytes mismatch with inline item size it
+doesn't output any error message, just return error silently, making it
+quite hard to debug.
 
-Although we already have such image submitted, at the commit time due to
-another bug in cmds-check return value, it doesn't detect it until that
-bug is fixed.
+Fix it by only checking extent numbytes against inline item size when
+the extent is not compressed, and output error message.
 
+Reported-by: Christoph Anton Mitterer <calestyo@scientia.net>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- cmds-check.c | 14 ++++++++++----
- 1 file changed, 10 insertions(+), 4 deletions(-)
+ cmds-check.c | 17 ++++++++++++++---
+ 1 file changed, 14 insertions(+), 3 deletions(-)
 
 diff --git a/cmds-check.c b/cmds-check.c
-index e99e3c36..eb146432 100644
+index eb146432..cf5a08ce 100644
 --- a/cmds-check.c
 +++ b/cmds-check.c
-@@ -10761,13 +10761,20 @@ static int check_extent_item(struct btrfs_fs_info *fs_info,
+@@ -4715,17 +4715,28 @@ static int check_file_extent(struct btrfs_root *root, struct btrfs_key *fkey,
+ 
+ 	fi = btrfs_item_ptr(node, slot, struct btrfs_file_extent_item);
+ 
++	/* Check inline extent */
+ 	extent_type = btrfs_file_extent_type(node, fi);
+-	/* Skip if file extent is inline */
+ 	if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
+ 		struct btrfs_item *e = btrfs_item_nr(slot);
+ 		u32 item_inline_len;
+ 
+ 		item_inline_len = btrfs_file_extent_inline_item_len(node, e);
+ 		extent_num_bytes = btrfs_file_extent_inline_len(node, slot, fi);
+-		if (extent_num_bytes == 0 ||
+-		    extent_num_bytes != item_inline_len)
++		compressed = btrfs_file_extent_compression(node, fi);
++		if (extent_num_bytes == 0) {
++			error(
++		"root %llu EXTENT_DATA[%llu %llu] has empty inline extent",
++				root->objectid, fkey->objectid, fkey->offset);
+ 			err |= FILE_EXTENT_ERROR;
++		}
++		if (!compressed && extent_num_bytes != item_inline_len) {
++			error(
++		"root %llu EXTENT_DATA[%llu %llu] wrong inline size, have: %llu, expect: %u",
++				root->objectid, fkey->objectid, fkey->offset,
++				extent_num_bytes, item_inline_len);
++			err |= FILE_EXTENT_ERROR;
++		}
+ 		*size += extent_num_bytes;
+ 		return err;
  	}
- 	end = (unsigned long)ei + item_size;
- 
--	if (ptr >= end) {
-+next:
-+	/* Reached extent item end normally */
-+	if (ptr == end)
-+		goto out;
-+
-+	/* Beyond extent item end, wrong item size */
-+	if (ptr > end) {
- 		err |= ITEM_SIZE_MISMATCH;
-+		error("extent item at bytenr %llu slot %d has wrong size",
-+			eb->start, slot);
- 		goto out;
- 	}
- 
- 	/* Now check every backref in this extent item */
--next:
- 	iref = (struct btrfs_extent_inline_ref *)ptr;
- 	type = btrfs_extent_inline_ref_type(eb, iref);
- 	offset = btrfs_extent_inline_ref_offset(eb, iref);
-@@ -10804,8 +10811,7 @@ next:
- 	}
- 
- 	ptr += btrfs_extent_inline_ref_size(type);
--	if (ptr < end)
--		goto next;
-+	goto next;
- 
- out:
- 	return err;
 -- 
 2.11.0
 

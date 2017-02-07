@@ -1,67 +1,141 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:40774 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754537AbdBPAO2 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Feb 2017 19:14:28 -0500
-Date: Wed, 15 Feb 2017 16:12:28 -0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: David Sterba <dsterba@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 29/29] btrfs: remove unused parameter from
- adjust_slots_upwards
-Message-ID: <20170216001228.GP19427@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <cover.1486977711.git.dsterba@suse.com>
- <3b7ce86c208631f625555daf477c7d18604db297.1486977712.git.dsterba@suse.com>
+Received: from mx2.suse.de ([195.135.220.15]:55329 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751395AbdBGAiD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 6 Feb 2017 19:38:03 -0500
+Subject: Re: [Regression 4.7-rc1] btrfs: bugfix: handle
+ FS_IOC32_{GETFLAGS,SETFLAGS,GETVERSION} in btrfs_ioctl
+To: dsterba@suse.cz, Joseph Salisbury <joseph.salisbury@canonical.com>,
+        luke@dashjr.org, luke-jr+git@utopios.org, jbacik@fb.com,
+        dsterba@suse.com, stable@vger.kernel.org, linux-kernel@vger.kernel.org,
+        clm@fb.com, linux-btrfs@vger.kernel.org, 1619918@bugs.launchpad.net
+References: <a555bec3-f0c8-b973-52e0-02bc2e3b5b29@canonical.com>
+ <20170109112815.GE12081@twin.jikos.cz>
+From: Jeff Mahoney <jeffm@suse.com>
+Message-ID: <f0e0fba1-a142-15f5-9ea7-718766d3b072@suse.com>
+Date: Mon, 6 Feb 2017 19:37:53 -0500
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <3b7ce86c208631f625555daf477c7d18604db297.1486977712.git.dsterba@suse.com>
+In-Reply-To: <20170109112815.GE12081@twin.jikos.cz>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="vVwu1GOUaNo84OS3b5UU9A3tlwc3q5Ejm"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 13, 2017 at 10:34:50AM +0100, David Sterba wrote:
-> Never used.
-> 
-Looks good.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--vVwu1GOUaNo84OS3b5UU9A3tlwc3q5Ejm
+Content-Type: multipart/mixed; boundary="tdV0v4ulx0GXQKSjJmjCSOHuRHTdouX8K";
+ protected-headers="v1"
+From: Jeff Mahoney <jeffm@suse.com>
+To: dsterba@suse.cz, Joseph Salisbury <joseph.salisbury@canonical.com>,
+ luke@dashjr.org, luke-jr+git@utopios.org, jbacik@fb.com, dsterba@suse.com,
+ stable@vger.kernel.org, linux-kernel@vger.kernel.org, clm@fb.com,
+ linux-btrfs@vger.kernel.org, 1619918@bugs.launchpad.net
+Message-ID: <f0e0fba1-a142-15f5-9ea7-718766d3b072@suse.com>
+Subject: Re: [Regression 4.7-rc1] btrfs: bugfix: handle
+ FS_IOC32_{GETFLAGS,SETFLAGS,GETVERSION} in btrfs_ioctl
+References: <a555bec3-f0c8-b973-52e0-02bc2e3b5b29@canonical.com>
+ <20170109112815.GE12081@twin.jikos.cz>
+In-Reply-To: <20170109112815.GE12081@twin.jikos.cz>
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+--tdV0v4ulx0GXQKSjJmjCSOHuRHTdouX8K
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-Thanks,
+On 1/9/17 6:28 AM, David Sterba wrote:
+> On Fri, Jan 06, 2017 at 12:22:34PM -0500, Joseph Salisbury wrote:
+>> A kernel bug report was opened against Ubuntu [0].  This bug was fixed=
 
--liubo
-> Signed-off-by: David Sterba <dsterba@suse.com>
-> ---
->  fs/btrfs/qgroup.c | 5 ++---
->  1 file changed, 2 insertions(+), 3 deletions(-)
-> 
-> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-> index 6d106e623604..4ef513a392a7 100644
-> --- a/fs/btrfs/qgroup.c
-> +++ b/fs/btrfs/qgroup.c
-> @@ -1589,8 +1589,7 @@ int btrfs_qgroup_trace_leaf_items(struct btrfs_trans_handle *trans,
->   * If we increment the root nodes slot counter past the number of
->   * elements, 1 is returned to signal completion of the search.
->   */
-> -static int adjust_slots_upwards(struct btrfs_root *root,
-> -				struct btrfs_path *path, int root_level)
-> +static int adjust_slots_upwards(struct btrfs_path *path, int root_level)
->  {
->  	int level = 0;
->  	int nr, slot;
-> @@ -1731,7 +1730,7 @@ int btrfs_qgroup_trace_subtree(struct btrfs_trans_handle *trans,
->  				goto out;
->  
->  			/* Nonzero return here means we completed our search */
-> -			ret = adjust_slots_upwards(root, path, root_level);
-> +			ret = adjust_slots_upwards(path, root_level);
->  			if (ret)
->  				break;
->  
-> -- 
-> 2.10.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>> by the following commit in v4.7-rc1:
+>>
+>> commit 4c63c2454eff996c5e27991221106eb511f7db38
+>>
+>> Author: Luke Dashjr <luke@dashjr.org>
+>> Date:   Thu Oct 29 08:22:21 2015 +0000
+>>
+>>     btrfs: bugfix: handle FS_IOC32_{GETFLAGS,SETFLAGS,GETVERSION} in
+>> btrfs_ioctl
+>>
+>>
+>> However, this commit introduced a new regression.  With this commit
+>> applied, "btrfs fi show" no longer works and the btrfs snapshot
+>> functionality breaks.
+>=20
+> A plain 32bit kernel with 32bit userspace works fine. The bug seems to
+> be on a 64bit kernel with 32bit userspace and the CONFIG_COMPAT compile=
+d
+> in. Strace does not show anything special:
+>=20
+> stat64("subv1", 0xffc64fcc)             =3D -1 ENOENT (No such file or =
+directory)
+> statfs64(".", 84, {f_type=3DBTRFS_SUPER_MAGIC, f_bsize=3D4096, f_blocks=
+=3D5110784, f_bfree=3D4076143, f_bavail=3D4010951, f_files=3D0, f_ffree=3D=
+0, f_fsid=3D{val=3D[
+> 4260464218, 2297804334]}, f_namelen=3D255, f_frsize=3D4096, f_flags=3DS=
+T_VALID|ST_RELATIME}) =3D 0
+> stat64(".", {st_mode=3DS_IFDIR|0700, st_size=3D228, ...}) =3D 0
+> stat64(".", {st_mode=3DS_IFDIR|0700, st_size=3D228, ...}) =3D 0
+> open(".", O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_DIRECTORY|O_CLOEXEC) =3D 3
+> fstat64(3, {st_mode=3DS_IFDIR|0700, st_size=3D228, ...}) =3D 0
+> fstat64(1, {st_mode=3DS_IFCHR|0620, st_rdev=3Dmakedev(136, 1), ...}) =3D=
+ 0
+> write(1, "Create subvolume './subv1'\n", 27) =3D 27
+> ioctl(3, BTRFS_IOC_SUBVOL_CREATE, {fd=3D0, name=3D"subv1"}) =3D -1 ENOT=
+TY (Inappropriate ioctl for device)
+>=20
+> The value of BTRFS_IOC_SUBVOL_CREATE is same on 32bit and 64bit kernels=
+=2E
+> As it returns ENOTTY, the value is not recognized. A candidate function=
+
+> is btrfs_compat_ioctl that checks for just the IOC32 numbers and return=
+s
+> -ENOIOCTLCMD otherwise.
+>=20
+> The callchain in fs/compat_ioctl.c:ioctl cheks for the specific callbac=
+k
+> first, if it retunrs -ENOIOCTLCMD then goes to the normal ioctl
+> callback, so there's always a point we reach the handler of
+> BTRFS_IOC_SUBVOL_CREATE. So I don't see how it could happen.
+
+I got a minute to look at this today.  It doesn't fallback to the normal
+ioctl handler.  Since we have ->unlocked_ioctl defined, it checks the
+hard-coded compat tables and then fails with -ENOTTY.
+
+Fortunately, the fix is simple.  The default stanza of that switch
+statement in btrfs_compat_ioctl needs to be removed.  Then it just
+works.  I'll post a fix momentarily.
+
+-Jeff
+
+--=20
+Jeff Mahoney
+SUSE Labs
+
+
+--tdV0v4ulx0GXQKSjJmjCSOHuRHTdouX8K--
+
+--vVwu1GOUaNo84OS3b5UU9A3tlwc3q5Ejm
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG/MacGPG2 v2
+
+iQIVAwUBWJkW4h57S2MheeWyAQhOtA/+LtARwzgiU/x2RzIVYtAVvM4ze5WMwoNc
+cS9kM5PSHyF93YJQP/i3mxT+8O3PbswPG+Kd0RZO3UonQxSYb8evvMb50/RG4Ow0
+j7SirUD/KGHtmygpQke12mJLSrDkATAhaRH6rmye45dd2FpxtvIQBWkQXGRdzPeB
+cANkRkG2YHylI0io2BNusH7YwPCC3HykaUAeC7oDiMVvhHBUOludnEl5j2r4K1Ey
+V/3Ju5j+TeIWywk9B7RUnxqYJYPNKH5fmypVBds2KuCx3MyOctu10sDOyTJjQ7p+
+A+FVeMno47WtswIOrlUw/2cdfHF866C+guuCx3Jl/RlwG3p/6W9gTDhGdXYEtmiY
+QCSSF1Manl7tJcm9TUZitzuIqu0m/L1VfsBgyrwr5qoQNu3F6HfL6vwJt2h3wFHK
+Yz4YdpLNB6rbUMWiotdO3UpzoiOzQ3J40NJckbr653bYvNYR6vvejC4DUcmRoor+
+ugYPB2O47kvDyGP44x2J9BZfYnd0xr/Rh1KKw9Lg50lNCBcM6QasMXVN3vXIluce
+AgAi30pzuXC8ebDoaJknL/acm+vmWcDSUAv5HPwMzteQdT+lyXAKLZW5lpy0yPA+
+nzY+hCIBEIYPq04BvNtBoQQ0Gxigc37horGGhb49TmJaJ/Lek/ugBzZ5XfdHLJBk
+Qfx2eoHUWF4=
+=UTgq
+-----END PGP SIGNATURE-----
+
+--vVwu1GOUaNo84OS3b5UU9A3tlwc3q5Ejm--

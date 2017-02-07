@@ -1,22 +1,22 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:26970 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:42602 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752035AbdBGI0g (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Feb 2017 03:26:36 -0500
+        with ESMTP id S1752739AbdBGI1v (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Feb 2017 03:27:51 -0500
 Subject: Re: btrfs/125 deadlock using nospace_cache or space_cache=v2
 To: Anand Jain <anand.jain@oracle.com>, btrfs <linux-btrfs@vger.kernel.org>
 References: <0daf31e9-d666-5044-f9a9-fcf54576a144@cn.fujitsu.com>
  <7ecb7b66-72d1-2bbd-b6f4-91550f2e1ab3@oracle.com>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <f4c97521-0d28-93ec-6c92-98af6b1bb9dd@cn.fujitsu.com>
-Date: Tue, 7 Feb 2017 16:26:29 +0800
+Message-ID: <10374300-598a-34e9-8701-496f5e295279@cn.fujitsu.com>
+Date: Tue, 7 Feb 2017 16:27:42 +0800
 MIME-Version: 1.0
 In-Reply-To: <7ecb7b66-72d1-2bbd-b6f4-91550f2e1ab3@oracle.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Anand,
+
 
 At 02/07/2017 04:02 PM, Anand Jain wrote:
 >
@@ -25,6 +25,12 @@ At 02/07/2017 04:02 PM, Anand Jain wrote:
 >  I don't think I have seen this before, I don't know the reason
 >  why I wrote this, may be to test encryption, however it was all
 >  with default options.
+
+Forgot to mention, thanks for the test case.
+Or we will never find it.
+
+Thanks,
+Qu
 >
 >  But now I could reproduce and, looks like balance fails to
 >  start with IO error though the mount is successful.
@@ -45,11 +51,6 @@ At 02/07/2017 04:02 PM, Anand Jain wrote:
 >
 >  This must be fixed. For debugging if I add a sync before previous
 >  unmount, the problem isn't reproduced. just fyi. Strange.
-
-Thanks for the extra info, this seems to be a clue to dig further.
-
-Thanks,
-Qu
 >
 > -------
 > diff --git a/tests/btrfs/125 b/tests/btrfs/125

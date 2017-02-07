@@ -1,57 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from zaphod.cobb.me.uk ([213.138.97.131]:56291 "EHLO
-        zaphod.cobb.me.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751669AbdBFW4J (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Feb 2017 17:56:09 -0500
-Received: from black.home.cobb.me.uk (unknown [192.168.0.205])
-        by zaphod.cobb.me.uk (Postfix) with ESMTP id DEF1E9B6E9
-        for <linux-btrfs@vger.kernel.org>; Mon,  6 Feb 2017 22:56:04 +0000 (GMT)
-Received: from [192.168.0.211] (novatech.home.cobb.me.uk [192.168.0.211])
-        by black.home.cobb.me.uk (Postfix) with ESMTPS id BC8E25FBB3
-        for <linux-btrfs@vger.kernel.org>; Mon,  6 Feb 2017 22:56:04 +0000 (GMT)
-From: Graham Cobb <g.btrfs@cobb.uk.net>
-Subject: Re: btrfs receive leaves new subvolume modifiable during operation
-To: linux-btrfs@vger.kernel.org
-References: <1485905578.6441.20.camel@gmail.com>
- <pan$4ecd$16bc5e8e$14657c4$261368ad@cox.net>
- <4edfd08e-8d7f-d8d7-bdea-0589b46e4d2b@gmail.com>
- <7ead5d42-9c00-b2df-3fbf-5b8f287760f6@cobb.uk.net>
- <pan$16525$cf7fe24b$7c044b9$74b32f27@cox.net>
- <5c503d69-aaed-680f-de30-75a7323bc753@cobb.uk.net>
- <pan$5f1de$80937cf$9c306858$cafb9e40@cox.net>
- <1b69d1a8-c08b-c9f3-c95b-1d7d71c7d642@cobb.uk.net>
- <20170205130817.57a67173@jupiter.sol.kaishome.de>
-Message-ID: <89444bcf-4b37-9055-4fa2-3ba00859debe@cobb.uk.net>
-Date: Mon, 6 Feb 2017 22:56:04 +0000
+Received: from cn.fujitsu.com ([59.151.112.132]:34591 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1752534AbdBGAWf (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Feb 2017 19:22:35 -0500
+Subject: Re: Very slow balance / btrfs-transaction
+To: Goldwyn Rodrigues <rgoldwyn@suse.de>, Jorg Bornschein <jb@capsec.org>,
+        <linux-btrfs@vger.kernel.org>
+References: <fce777cb-027f-532b-76ab-24a1e5c2cf7c@suse.de>
+ <507c32d4-929c-b691-6196-103c8cb9addb@suse.com>
+ <80d3e5ce55ddc7e454cce96e67e2ea64@88cbed2449cf>
+ <8999d95dac21ea8e2908c5012e50c59b@88cbed2449cf>
+ <f9e2b226440e4f6e17e61ce86eecc7eb@88cbed2449cf>
+ <57259b63-2f26-0da4-16f6-5fbd781daeb0@cn.fujitsu.com>
+ <4200a425-890f-b283-b43b-e5911b1c6d8c@suse.de>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <3c9ce5e2-6bc0-96d3-1d99-75f96e03afd1@cn.fujitsu.com>
+Date: Tue, 7 Feb 2017 08:22:29 +0800
 MIME-Version: 1.0
-In-Reply-To: <20170205130817.57a67173@jupiter.sol.kaishome.de>
-Content-Type: text/plain; charset=windows-1252
+In-Reply-To: <4200a425-890f-b283-b43b-e5911b1c6d8c@suse.de>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/02/17 12:08, Kai Krakow wrote:
-> Wrong. If you tend to not be in control of the permissions below a
-> mountpoint, you prevent access to it by restricting permissions on a
-> parent directory of the mountpoint. It's that easy and it always has
-> been. That is standard practice. While your backup is running, you have
-> no control of it - thus use this standard practice!
 
-Sorry, you are missing the point. This isn't about backups, it is about
-snapshots.
 
-To the sysadmin who is not a developer and does not know how receive is
-actually implemented, send/receive appears to work exactly like taking a
-readonly snapshot, but between two different disks. That is the mental
-model they have of the process.
+At 02/07/2017 12:09 AM, Goldwyn Rodrigues wrote:
+>
+> Hi Qu,
+>
+> On 02/05/2017 07:45 PM, Qu Wenruo wrote:
+>>
+>>
+>> At 02/04/2017 09:47 AM, Jorg Bornschein wrote:
+>>> February 4, 2017 1:07 AM, "Goldwyn Rodrigues" <rgoldwyn@suse.de> wrote:
+>
+> <snipped>
+>
+>>>
+>>>
+>>> Quata support was indeed active -- and it warned me that the qroup
+>>> data was inconsistent.
+>>>
+>>> Disabling quotas had an immediate impact on balance throughput -- it's
+>>> *much* faster now!
+>>> From a quick glance at iostat I would guess it's at least a factor 100
+>>> faster.
+>>>
+>>>
+>>> Should quota support generally be disabled during balances? Or did I
+>>> somehow push my fs into a weired state where it triggered a slow-path?
+>>>
+>>>
+>>>
+>>> Thanks!
+>>>
+>>>    j
+>>
+>> Would you please provide the kernel version?
+>>
+>> v4.9 introduced a bad fix for qgroup balance, which doesn't completely
+>> fix qgroup bytes leaking, but also hugely slow down the balance process:
+>>
+>> commit 62b99540a1d91e46422f0e04de50fc723812c421
+>> Author: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>> Date:   Mon Aug 15 10:36:51 2016 +0800
+>>
+>>     btrfs: relocation: Fix leaking qgroups numbers on data extents
+>>
+>> Sorry for that.
+>>
+>> And in v4.10, a better method is applied to fix the byte leaking
+>> problem, and should be a little faster than previous one.
+>>
+>> commit 824d8dff8846533c9f1f9b1eabb0c03959e989ca
+>> Author: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>> Date:   Tue Oct 18 09:31:29 2016 +0800
+>>
+>>     btrfs: qgroup: Fix qgroup data leaking by using subtree tracing
+>>
+>>
+>> However, using balance with qgroup is still slower than balance without
+>> qgroup, the root fix needs us to rework current backref iteration.
+>>
+>
+> This patch has made the btrfs balance performance worse. The balance
+> task has become more CPU intensive compared to earlier and takes longer
+> to complete, besides hogging resources. While correctness is important,
+> we need to figure out how this can be made more efficient.
+>
+The cause is already known.
 
-Taking a snapshot does not require hiding the target: it either works or
-it doesn't, and it cannot be interfered with. The sysadmin's natural
-expectation is that send/receive works the same way.
+It's find_parent_node() which takes most of the time to find all 
+referencer of an extent.
 
-You may say, from your position of knowledge about how it is
-implemented, that is an unrealistic expectation but it is a natural and
-common expectation. I very firmly believe that 80% of ordinary btrfs
-sysadmins would be surprised by this behaviour.
+And it's also the cause for FIEMAP softlockup (fixed in recent release 
+by early quit).
 
-But, in any case, we can all agree that this unexpected behaviour needs
-to be documented.
+The biggest problem is, current find_parent_node() uses list to iterate, 
+which is quite slow especially it's done in a loop.
+In real world find_parent_node() is about O(n^3).
+We can either improve find_parent_node() by using rb_tree, or introduce 
+some cache for find_parent_node().
+
+
+IIRC SUSE guys(maybe Jeff?) are working on it with the first method, but 
+I didn't hear anything about it recently.
+
+Thanks,
+Qu
+
+

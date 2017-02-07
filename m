@@ -1,110 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:34591 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:32941 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752534AbdBGAWf (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Feb 2017 19:22:35 -0500
-Subject: Re: Very slow balance / btrfs-transaction
-To: Goldwyn Rodrigues <rgoldwyn@suse.de>, Jorg Bornschein <jb@capsec.org>,
-        <linux-btrfs@vger.kernel.org>
-References: <fce777cb-027f-532b-76ab-24a1e5c2cf7c@suse.de>
- <507c32d4-929c-b691-6196-103c8cb9addb@suse.com>
- <80d3e5ce55ddc7e454cce96e67e2ea64@88cbed2449cf>
- <8999d95dac21ea8e2908c5012e50c59b@88cbed2449cf>
- <f9e2b226440e4f6e17e61ce86eecc7eb@88cbed2449cf>
- <57259b63-2f26-0da4-16f6-5fbd781daeb0@cn.fujitsu.com>
- <4200a425-890f-b283-b43b-e5911b1c6d8c@suse.de>
+        with ESMTP id S1752918AbdBGGKH (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Feb 2017 01:10:07 -0500
+To: btrfs <linux-btrfs@vger.kernel.org>, Anand Jain <anand.jain@oracle.com>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <3c9ce5e2-6bc0-96d3-1d99-75f96e03afd1@cn.fujitsu.com>
-Date: Tue, 7 Feb 2017 08:22:29 +0800
+Subject: btrfs/125 deadlock using nospace_cache or space_cache=v2
+Message-ID: <0daf31e9-d666-5044-f9a9-fcf54576a144@cn.fujitsu.com>
+Date: Tue, 7 Feb 2017 14:09:52 +0800
 MIME-Version: 1.0
-In-Reply-To: <4200a425-890f-b283-b43b-e5911b1c6d8c@suse.de>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi Anand,
+
+I found that btrfs/125 test case can only pass if we enabled space cache.
+
+If using nospace_cache or space_cache=v2 mount option, it will get 
+blocked forever with the following callstack(the only blocked process):
+
+[11382.046978] btrfs           D11128  6705   6057 0x00000000
+[11382.047356] Call Trace:
+[11382.047668]  __schedule+0x2d4/0xae0
+[11382.047956]  schedule+0x3d/0x90
+[11382.048283]  btrfs_start_ordered_extent+0x160/0x200 [btrfs]
+[11382.048630]  ? wake_atomic_t_function+0x60/0x60
+[11382.048958]  btrfs_wait_ordered_range+0x113/0x210 [btrfs]
+[11382.049360]  btrfs_relocate_block_group+0x260/0x2b0 [btrfs]
+[11382.049703]  btrfs_relocate_chunk+0x51/0xf0 [btrfs]
+[11382.050073]  btrfs_balance+0xaa9/0x1610 [btrfs]
+[11382.050404]  ? btrfs_ioctl_balance+0x3a0/0x3b0 [btrfs]
+[11382.050739]  btrfs_ioctl_balance+0x3a0/0x3b0 [btrfs]
+[11382.051109]  btrfs_ioctl+0xbe7/0x27f0 [btrfs]
+[11382.051430]  ? trace_hardirqs_on+0xd/0x10
+[11382.051747]  ? free_object+0x74/0xa0
+[11382.052084]  ? debug_object_free+0xf2/0x130
+[11382.052413]  do_vfs_ioctl+0x94/0x710
+[11382.052750]  ? enqueue_hrtimer+0x160/0x160
+[11382.053090]  ? do_nanosleep+0x71/0x130
+[11382.053431]  SyS_ioctl+0x79/0x90
+[11382.053735]  entry_SYSCALL_64_fastpath+0x18/0xad
+[11382.054570] RIP: 0033:0x7f397d7a6787
+
+I also found in the test case, we only have 3 continuous data extents,
+whose sizes are 1M, 68.5M and 31.5M respectively.
+
+Original data block group:
+0       1M                     64M    69.5M                  101M   128M
+| Ext A |     Extent B(68.5M)         |    Extent C(31.5M)   |
 
 
-At 02/07/2017 12:09 AM, Goldwyn Rodrigues wrote:
->
-> Hi Qu,
->
-> On 02/05/2017 07:45 PM, Qu Wenruo wrote:
->>
->>
->> At 02/04/2017 09:47 AM, Jorg Bornschein wrote:
->>> February 4, 2017 1:07 AM, "Goldwyn Rodrigues" <rgoldwyn@suse.de> wrote:
->
-> <snipped>
->
->>>
->>>
->>> Quata support was indeed active -- and it warned me that the qroup
->>> data was inconsistent.
->>>
->>> Disabling quotas had an immediate impact on balance throughput -- it's
->>> *much* faster now!
->>> From a quick glance at iostat I would guess it's at least a factor 100
->>> faster.
->>>
->>>
->>> Should quota support generally be disabled during balances? Or did I
->>> somehow push my fs into a weired state where it triggered a slow-path?
->>>
->>>
->>>
->>> Thanks!
->>>
->>>    j
->>
->> Would you please provide the kernel version?
->>
->> v4.9 introduced a bad fix for qgroup balance, which doesn't completely
->> fix qgroup bytes leaking, but also hugely slow down the balance process:
->>
->> commit 62b99540a1d91e46422f0e04de50fc723812c421
->> Author: Qu Wenruo <quwenruo@cn.fujitsu.com>
->> Date:   Mon Aug 15 10:36:51 2016 +0800
->>
->>     btrfs: relocation: Fix leaking qgroups numbers on data extents
->>
->> Sorry for that.
->>
->> And in v4.10, a better method is applied to fix the byte leaking
->> problem, and should be a little faster than previous one.
->>
->> commit 824d8dff8846533c9f1f9b1eabb0c03959e989ca
->> Author: Qu Wenruo <quwenruo@cn.fujitsu.com>
->> Date:   Tue Oct 18 09:31:29 2016 +0800
->>
->>     btrfs: qgroup: Fix qgroup data leaking by using subtree tracing
->>
->>
->> However, using balance with qgroup is still slower than balance without
->> qgroup, the root fix needs us to rework current backref iteration.
->>
->
-> This patch has made the btrfs balance performance worse. The balance
-> task has become more CPU intensive compared to earlier and takes longer
-> to complete, besides hogging resources. While correctness is important,
-> we need to figure out how this can be made more efficient.
->
-The cause is already known.
+While relocation write them in 4 extents:
+0~1M            :same as Extent A.         (1st)
+1M~68.3438M     :smaller than Extent B     (2nd)
+68.3438M~69.5M  :tail part of Extent B     (3rd)
+69.5M~ 101M     :same as Extent C.         (4th)
 
-It's find_parent_node() which takes most of the time to find all 
-referencer of an extent.
+However only ordered extent of (3rd) and (4th) get finished.
+While ordered extent of (1st) and (2nd) never reached finish_ordered_io().
 
-And it's also the cause for FIEMAP softlockup (fixed in recent release 
-by early quit).
+So relocation will wait for no one to finish the these two ordered 
+extent, and get blocked.
 
-The biggest problem is, current find_parent_node() uses list to iterate, 
-which is quite slow especially it's done in a loop.
-In real world find_parent_node() is about O(n^3).
-We can either improve find_parent_node() by using rb_tree, or introduce 
-some cache for find_parent_node().
-
-
-IIRC SUSE guys(maybe Jeff?) are working on it with the first method, but 
-I didn't hear anything about it recently.
+Did you experienced the same bug submitting the test case?
+Is there any known fix for it?
 
 Thanks,
 Qu

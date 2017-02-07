@@ -1,96 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:48974 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1754207AbdBGVhX (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Feb 2017 16:37:23 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1cbDQJ-0000PK-43
-        for linux-btrfs@vger.kernel.org; Tue, 07 Feb 2017 22:35:39 +0100
-To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77@gmail.com>
+Received: from syrinx.knorrie.org ([82.94.188.77]:59046 "EHLO
+        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932313AbdBGWI0 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Feb 2017 17:08:26 -0500
 Subject: Re: BTRFS for OLTP Databases
-Date: Tue, 7 Feb 2017 22:35:38 +0100
-Message-ID: <20170207223538.3c37c840@jupiter.sol.kaishome.de>
+To: Peter Zaitsev <pz@percona.com>
 References: <CA+RUij3aW1ZYyJPNRLzckwOCCmoWa15Eu4h142jB_-qKc49hBw@mail.gmail.com>
-        <20170207140058.GA4249@carfax.org.uk>
-        <CA+RUij02VMTa-L59AD9B3G+g_dS3HO7-Ttsz-qWgJtMyf58sPQ@mail.gmail.com>
-        <20170207213614.5fd40981@jupiter.sol.kaishome.de>
-        <7c1a67ce-a62c-36e1-d228-9a1e15e4d16c@gmail.com>
-        <7204f2cf-bcb4-c943-b6d2-f9eb4b5b29cf@bouton.name>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+ <579c53e4-f993-dd85-b5a4-76a0b201b899@suse.com>
+ <CA+RUij2QOP=bJos8p6NswZqSdbhwZ7frTdaLtZaiGBc4vKajCg@mail.gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Message-ID: <03f972ec-67f3-f6f5-c8d7-b281b626a753@mendix.com>
+Date: Tue, 7 Feb 2017 23:08:21 +0100
+MIME-Version: 1.0
+In-Reply-To: <CA+RUij2QOP=bJos8p6NswZqSdbhwZ7frTdaLtZaiGBc4vKajCg@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Tue, 7 Feb 2017 22:25:29 +0100
-schrieb Lionel Bouton <lionel-subscription@bouton.name>:
-
-> Le 07/02/2017 à 21:47, Austin S. Hemmelgarn a écrit :
-> > On 2017-02-07 15:36, Kai Krakow wrote:  
-> >> Am Tue, 7 Feb 2017 09:13:25 -0500
-> >> schrieb Peter Zaitsev <pz@percona.com>:
-> >>  
->  [...]  
-> >>
-> >> Out of curiosity, I see one problem here:
-> >>
-> >> If you're doing snapshots of the live database, each snapshot
-> >> leaves the database files like killing the database in-flight.
-> >> Like shutting the system down in the middle of writing data.
-> >>
-> >> This is because I think there's no API for user space to subscribe
-> >> to events like a snapshot - unlike e.g. the VSS API (volume
-> >> snapshot service) in Windows. You should put the database into
-> >> frozen state to prepare it for a hotcopy before creating the
-> >> snapshot, then ensure all data is flushed before continuing.  
-> > Correct.  
-> >>
-> >> I think I've read that btrfs snapshots do not guarantee single
-> >> point in time snapshots - the snapshot may be smeared across a
-> >> longer period of time while the kernel is still writing data. So
-> >> parts of your writes may still end up in the snapshot after
-> >> issuing the snapshot command, instead of in the working copy as
-> >> expected.  
-> > Also correct AFAICT, and this needs to be better documented (for
-> > most people, the term snapshot implies atomicity of the
-> > operation).  
+On 02/07/2017 07:59 PM, Peter Zaitsev wrote:
 > 
-> Atomicity can be a relative term. If the snapshot atomicity is
-> relative to barriers but not relative to individual writes between
-> barriers then AFAICT it's fine because the filesystem doesn't make
-> any promise it won't keep even in the context of its snapshots.
-> Consider a power loss : the filesystems atomicity guarantees can't go
-> beyond what the hardware guarantees which means not all current in fly
-> write will reach the disk and partial writes can happen. Modern
-> filesystems will remain consistent though and if an application using
-> them makes uses of f*sync it can provide its own guarantees too. The
-> same should apply to snapshots : all the writes in fly can complete or
-> not on disk before the snapshot what matters is that both the snapshot
-> and these writes will be completed after the next barrier (and any
-> robust application will ignore all the in fly writes it finds in the
-> snapshot if they were part of a batch that should be atomically
-> commited).
+> So far the most frustating for me was periodic stalls for many seconds
+>  (running sysbench workload).  What was the most puzzling  I get this
+> even if I run workload at the  50% or less of the full load  -  Ie
+> database can handle 1000 transactions/sec and I only inject 500/sec
+> and I still have those stalls.
 > 
-> This is why AFAIK PostgreSQL or MySQL with their default ACID
-> compliant configuration will recover from a BTRFS snapshot in the
-> same way they recover from a power loss.
+> This is where it looks to me like some work is being delayed and when
+> it requires stall for a few seconds to catch up.    I wonder  if there
+> are some configuration options available to play with.
 
-This is what I meant in my other reply. But this is also why it should
-be documented. Wrongly implying that snapshots are single point in time
-snapshots is a wrong assumption with possibly horrible side effects one
-wouldn't expect.
+What happens during these stalls? Do you mean a 'stall' like it seems
+nothing is happening at all, or a 'stall' during which something is so
+busy that something else cannot continue?
 
-Taking a snapshot is like a power loss - even tho there is no power
-loss. So the database has to be properly configured. It is simply short
-sighted if you don't think about this fact. The documentation should
-really point that fact out.
+Is there some kernel thread doing a lot of cpu? What does the
+/proc/<pid>/stack show?
 
+Is it huge write spikes with not many writes in between, or do you
+generate enough action to be writing to disk all the time?
+
+If the stalls show the behaviour of huge disk-write spikes, during which
+applications seem to be blocked from continuing to write more, and if
+during that time you see btrfs-transaction active in the kernel, aaaand,
+if your test is doing a lot of writes all over the place (not only
+simply appending table files sequentially, but changing a lot and
+touching a lot of metadata) and you're pushing it, it might be space
+cache related.
+
+I think the /proc/<pid>/stack of the btrfs-transaction will show you
+something related to free space cache in this case.
+
+In this case, it might be interesting to test the free space tree
+(instead of the default free space cache):
+
+http://events.linuxfoundation.org/sites/events/files/slides/vault2016_0.pdf
+
+Using free space tree helped me a lot on write-heavy filesystems (like a
+backup server with concurrent rsync data streaming in, also doing
+snapshotting) from having incoming traffic drop to the ground every time
+there was a transaction commit.
 
 -- 
-Regards,
-Kai
-
-Replies to list-only preferred.
-
-
+Hans van Kranenburg

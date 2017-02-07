@@ -1,92 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:50770 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1753798AbdBGVUp (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Feb 2017 16:20:45 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1cbDAF-0005Zw-QQ
-        for linux-btrfs@vger.kernel.org; Tue, 07 Feb 2017 22:19:03 +0100
-To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77@gmail.com>
+Received: from ns.bouton.name ([109.74.195.142]:60510 "EHLO mail.bouton.name"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753201AbdBGV1J (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 7 Feb 2017 16:27:09 -0500
 Subject: Re: BTRFS for OLTP Databases
-Date: Tue, 7 Feb 2017 22:14:35 +0100
-Message-ID: <20170207221435.38377988@jupiter.sol.kaishome.de>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>, linux-btrfs@vger.kernel.org
 References: <CA+RUij3aW1ZYyJPNRLzckwOCCmoWa15Eu4h142jB_-qKc49hBw@mail.gmail.com>
-        <20170207140058.GA4249@carfax.org.uk>
-        <CA+RUij02VMTa-L59AD9B3G+g_dS3HO7-Ttsz-qWgJtMyf58sPQ@mail.gmail.com>
-        <CAGqmi759eH6QT3Qx_S47_hWKajhwnc0UxyaLhayMEZ4D+bnvGQ@mail.gmail.com>
-        <62994104-e9b2-6544-1f3b-bf37df4275f9@gmail.com>
-        <CAGqmi772WF8KqMWUowtG2_8uS7KTu3u4vJkNbhTHams_x13jWg@mail.gmail.com>
-        <716741d9-deef-ebc1-b418-da9f8d23d791@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+ <20170207140058.GA4249@carfax.org.uk>
+ <CA+RUij02VMTa-L59AD9B3G+g_dS3HO7-Ttsz-qWgJtMyf58sPQ@mail.gmail.com>
+ <20170207213614.5fd40981@jupiter.sol.kaishome.de>
+ <7c1a67ce-a62c-36e1-d228-9a1e15e4d16c@gmail.com>
+From: Lionel Bouton <lionel-subscription@bouton.name>
+Message-ID: <7204f2cf-bcb4-c943-b6d2-f9eb4b5b29cf@bouton.name>
+Date: Tue, 7 Feb 2017 22:25:29 +0100
+MIME-Version: 1.0
+In-Reply-To: <7c1a67ce-a62c-36e1-d228-9a1e15e4d16c@gmail.com>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Tue, 7 Feb 2017 10:43:11 -0500
-schrieb "Austin S. Hemmelgarn" <ahferroin7@gmail.com>:
+Le 07/02/2017 à 21:47, Austin S. Hemmelgarn a écrit :
+> On 2017-02-07 15:36, Kai Krakow wrote:
+>> Am Tue, 7 Feb 2017 09:13:25 -0500
+>> schrieb Peter Zaitsev <pz@percona.com>:
+>>
+>>> Hi Hugo,
+>>>
+>>> For the use case I'm looking for I'm interested in having snapshot(s)
+>>> open at all time.  Imagine  for example snapshot being created every
+>>> hour and several of these snapshots  kept at all time providing quick
+>>> recovery points to the state of 1,2,3 hours ago.  In  such case (as I
+>>> think you also describe)  nodatacow  does not provide any advantage.
+>>
+>> Out of curiosity, I see one problem here:
+>>
+>> If you're doing snapshots of the live database, each snapshot leaves
+>> the database files like killing the database in-flight. Like shutting
+>> the system down in the middle of writing data.
+>>
+>> This is because I think there's no API for user space to subscribe to
+>> events like a snapshot - unlike e.g. the VSS API (volume snapshot
+>> service) in Windows. You should put the database into frozen state to
+>> prepare it for a hotcopy before creating the snapshot, then ensure all
+>> data is flushed before continuing.
+> Correct.
+>>
+>> I think I've read that btrfs snapshots do not guarantee single point in
+>> time snapshots - the snapshot may be smeared across a longer period of
+>> time while the kernel is still writing data. So parts of your writes
+>> may still end up in the snapshot after issuing the snapshot command,
+>> instead of in the working copy as expected.
+> Also correct AFAICT, and this needs to be better documented (for most
+> people, the term snapshot implies atomicity of the operation).
 
-> > I mean that:
-> > You have a 128MB extent, you rewrite random 4k sectors, btrfs will
-> > not split 128MB extent, and not free up data, (i don't know
-> > internal algo, so i can't predict when this will hapen), and after
-> > some time, btrfs will rebuild extents, and split 128 MB exten to
-> > several more smaller. But when you use compression, allocator
-> > rebuilding extents much early (i think, it's because btrfs also
-> > operates with that like 128kb extent, even if it's a continuos
-> > 128MB chunk of data). 
-> The allocator has absolutely nothing to do with this, it's a function
-> of the COW operation.  Unless you're using nodatacow, that 128MB
-> extent will get split the moment the data hits the storage device
-> (either on the next commit cycle (at most 30 seconds with the default
-> commit cycle), or when fdatasync is called, whichever is sooner).  In
-> the case of compression, it's still one extent (although on disk it
-> will be less than 128MB) and will be split at _exactly_ the same time
-> under _exactly_ the same circumstances as an uncompressed extent.
-> IOW, it has absolutely nothing to do with the extent handling either.
+Atomicity can be a relative term. If the snapshot atomicity is relative
+to barriers but not relative to individual writes between barriers then
+AFAICT it's fine because the filesystem doesn't make any promise it
+won't keep even in the context of its snapshots.
+Consider a power loss : the filesystems atomicity guarantees can't go
+beyond what the hardware guarantees which means not all current in fly
+write will reach the disk and partial writes can happen. Modern
+filesystems will remain consistent though and if an application using
+them makes uses of f*sync it can provide its own guarantees too. The
+same should apply to snapshots : all the writes in fly can complete or
+not on disk before the snapshot what matters is that both the snapshot
+and these writes will be completed after the next barrier (and any
+robust application will ignore all the in fly writes it finds in the
+snapshot if they were part of a batch that should be atomically commited).
 
-I don't think that btrfs splits extents which are part of the snapshot.
-The extent in a snapshot will stay intact when writing to this extent
-in another snapshot. Of course, in the just written snapshot, the
-extent will be represented as a split extent mapping to the original
-extents data blocks plus the new data in the middle (thus resulting in
-three extents). This is also why small random writes without autodefrag
-result in a vast amount of small extents bringing the fs performance to
-a crawl.
+This is why AFAIK PostgreSQL or MySQL with their default ACID compliant
+configuration will recover from a BTRFS snapshot in the same way they
+recover from a power loss.
 
-Do that multiple times on multiple snapshots, delete some of the
-original snapshots, and you're left with slack space, data blocks being
-inaccessible and won't be reclaimed into free space (because they
-are still part of the original extent), and which can only be
-reclaimed by a defrag operation - which would of course unshares data.
-
-Thus, if any of the above mentioned small extents is still shared with
-an extent originally much bigger, then it will still occupy its
-original space on the filesystem - even when its associated
-snapshot/subvolume no longer exists. Only when the last remaining
-tiny block of such an extent gets rewritten and the reference counter
-decreases to zero, the extent is given up and freed.
-
-To work around this, you can currently only unshare and recombine by
-doing defrag and dedupe on all snapshots. This will reclaim space
-sitting in parts of the original extents no longer referenced by a
-snapshot visible from the VFS layer.
-
-This is for performance reasons because btrfs is extent based.
-
-As far as I know, ZFS on the other side, works different. It uses block
-based storage for the snapshot feature and can easily throw away unused
-blocks. Only a second layer on top maps this back into extents. The
-underlying infrastructure, however, is block based storage, which also
-enables the volume pool to create block devices on the fly out of ZFS
-storage space.
-
-PS: All above given the fact I understood it right. ;-)
-
--- 
-Regards,
-Kai
-
-Replies to list-only preferred.
-
+Lionel

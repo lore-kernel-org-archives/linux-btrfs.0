@@ -1,75 +1,153 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f45.google.com ([209.85.214.45]:34595 "EHLO
-        mail-it0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755006AbdBGPnQ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Feb 2017 10:43:16 -0500
-Received: by mail-it0-f45.google.com with SMTP id k200so28077187itb.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 07 Feb 2017 07:43:16 -0800 (PST)
-Subject: Re: BTRFS for OLTP Databases
-To: Timofey Titovets <nefelim4ag@gmail.com>
-References: <CA+RUij3aW1ZYyJPNRLzckwOCCmoWa15Eu4h142jB_-qKc49hBw@mail.gmail.com>
- <20170207140058.GA4249@carfax.org.uk>
- <CA+RUij02VMTa-L59AD9B3G+g_dS3HO7-Ttsz-qWgJtMyf58sPQ@mail.gmail.com>
- <CAGqmi759eH6QT3Qx_S47_hWKajhwnc0UxyaLhayMEZ4D+bnvGQ@mail.gmail.com>
- <62994104-e9b2-6544-1f3b-bf37df4275f9@gmail.com>
- <CAGqmi772WF8KqMWUowtG2_8uS7KTu3u4vJkNbhTHams_x13jWg@mail.gmail.com>
-Cc: Peter Zaitsev <pz@percona.com>, Hugo Mills <hugo@carfax.org.uk>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <716741d9-deef-ebc1-b418-da9f8d23d791@gmail.com>
-Date: Tue, 7 Feb 2017 10:43:11 -0500
+Received: from mail-io0-f195.google.com ([209.85.223.195]:35759 "EHLO
+        mail-io0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754079AbdBGPzV (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Feb 2017 10:55:21 -0500
+Received: by mail-io0-f195.google.com with SMTP id m98so13185632iod.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 07 Feb 2017 07:55:20 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CAGqmi772WF8KqMWUowtG2_8uS7KTu3u4vJkNbhTHams_x13jWg@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <3c9ce5e2-6bc0-96d3-1d99-75f96e03afd1@cn.fujitsu.com>
+References: <fce777cb-027f-532b-76ab-24a1e5c2cf7c@suse.de> <507c32d4-929c-b691-6196-103c8cb9addb@suse.com>
+ <80d3e5ce55ddc7e454cce96e67e2ea64@88cbed2449cf> <8999d95dac21ea8e2908c5012e50c59b@88cbed2449cf>
+ <f9e2b226440e4f6e17e61ce86eecc7eb@88cbed2449cf> <57259b63-2f26-0da4-16f6-5fbd781daeb0@cn.fujitsu.com>
+ <4200a425-890f-b283-b43b-e5911b1c6d8c@suse.de> <3c9ce5e2-6bc0-96d3-1d99-75f96e03afd1@cn.fujitsu.com>
+From: Filipe Manana <fdmanana@gmail.com>
+Date: Tue, 7 Feb 2017 15:55:19 +0000
+Message-ID: <CAL3q7H6n9MVz7187GCn-oT0_5fLAxhsgJPA0fjrdvVMQ+4HqTw@mail.gmail.com>
+Subject: Re: Very slow balance / btrfs-transaction
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Goldwyn Rodrigues <rgoldwyn@suse.de>, Jorg Bornschein <jb@capsec.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-02-07 10:20, Timofey Titovets wrote:
->>> I think that you have a problem with extent bookkeeping (if i
->>> understand how btrfs manage extents).
->>> So for deal with it, try enable compression, as compression will force
->>> all extents to be fragmented with size ~128kb.
+On Tue, Feb 7, 2017 at 12:22 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>
+>
+> At 02/07/2017 12:09 AM, Goldwyn Rodrigues wrote:
 >>
->> No, it will compress everything in chunks of 128kB, but it will not fragment
->> things any more than they already would have been (it may actually _reduce_
->> fragmentation because there is less data being stored on disk).  This
->> representation is a bug in the FIEMAP ioctl, it doesn't understand the way
->> BTRFS represents things properly.  IIRC, there was a patch to fix this, but
->> I don't remember what happened with it.
 >>
->> That said, in-line compression can help significantly, especially if you
->> have slow storage devices.
+>> Hi Qu,
+>>
+>> On 02/05/2017 07:45 PM, Qu Wenruo wrote:
+>>>
+>>>
+>>>
+>>> At 02/04/2017 09:47 AM, Jorg Bornschein wrote:
+>>>>
+>>>> February 4, 2017 1:07 AM, "Goldwyn Rodrigues" <rgoldwyn@suse.de> wrote:
+>>
+>>
+>> <snipped>
+>>
+>>>>
+>>>>
+>>>> Quata support was indeed active -- and it warned me that the qroup
+>>>> data was inconsistent.
+>>>>
+>>>> Disabling quotas had an immediate impact on balance throughput -- it's
+>>>> *much* faster now!
+>>>> From a quick glance at iostat I would guess it's at least a factor 100
+>>>> faster.
+>>>>
+>>>>
+>>>> Should quota support generally be disabled during balances? Or did I
+>>>> somehow push my fs into a weired state where it triggered a slow-path?
+>>>>
+>>>>
+>>>>
+>>>> Thanks!
+>>>>
+>>>>    j
+>>>
+>>>
+>>> Would you please provide the kernel version?
+>>>
+>>> v4.9 introduced a bad fix for qgroup balance, which doesn't completely
+>>> fix qgroup bytes leaking, but also hugely slow down the balance process:
+>>>
+>>> commit 62b99540a1d91e46422f0e04de50fc723812c421
+>>> Author: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>>> Date:   Mon Aug 15 10:36:51 2016 +0800
+>>>
+>>>     btrfs: relocation: Fix leaking qgroups numbers on data extents
+>>>
+>>> Sorry for that.
+>>>
+>>> And in v4.10, a better method is applied to fix the byte leaking
+>>> problem, and should be a little faster than previous one.
+>>>
+>>> commit 824d8dff8846533c9f1f9b1eabb0c03959e989ca
+>>> Author: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>>> Date:   Tue Oct 18 09:31:29 2016 +0800
+>>>
+>>>     btrfs: qgroup: Fix qgroup data leaking by using subtree tracing
+>>>
+>>>
+>>> However, using balance with qgroup is still slower than balance without
+>>> qgroup, the root fix needs us to rework current backref iteration.
+>>>
+>>
+>> This patch has made the btrfs balance performance worse. The balance
+>> task has become more CPU intensive compared to earlier and takes longer
+>> to complete, besides hogging resources. While correctness is important,
+>> we need to figure out how this can be made more efficient.
+>>
+> The cause is already known.
 >
+> It's find_parent_node() which takes most of the time to find all referencer
+> of an extent.
 >
-> I mean that:
-> You have a 128MB extent, you rewrite random 4k sectors, btrfs will not
-> split 128MB extent, and not free up data, (i don't know internal algo,
-> so i can't predict when this will hapen), and after some time, btrfs
-> will rebuild extents, and split 128 MB exten to several more smaller.
-> But when you use compression, allocator rebuilding extents much early
-> (i think, it's because btrfs also operates with that like 128kb
-> extent, even if it's a continuos 128MB chunk of data).
+> And it's also the cause for FIEMAP softlockup (fixed in recent release by
+> early quit).
 >
-The allocator has absolutely nothing to do with this, it's a function of 
-the COW operation.  Unless you're using nodatacow, that 128MB extent 
-will get split the moment the data hits the storage device (either on 
-the next commit cycle (at most 30 seconds with the default commit 
-cycle), or when fdatasync is called, whichever is sooner).  In the case 
-of compression, it's still one extent (although on disk it will be less 
-than 128MB) and will be split at _exactly_ the same time under _exactly_ 
-the same circumstances as an uncompressed extent.  IOW, it has 
-absolutely nothing to do with the extent handling either.
+> The biggest problem is, current find_parent_node() uses list to iterate,
+> which is quite slow especially it's done in a loop.
+> In real world find_parent_node() is about O(n^3).
+> We can either improve find_parent_node() by using rb_tree, or introduce some
+> cache for find_parent_node().
 
-The difference arises in that compressed data effectively has a on-media 
-block size of 128k, not 16k (the current default block size) or 4k (the 
-old default).  This means that the smallest fragment possible for a file 
-with in-line compression enabled is 128k, while for a file without it 
-it's equal to the filesystem block size.  A larger minimum fragment size 
-means that the maximum number of fragments a given file can have is 
-smaller (8 times smaller in fact than without compression when using the 
-current default block size), which means that there will be less 
-fragmentation.
+Even if anyone is able to reduce that function's complexity from
+O(n^3) down to lets say O(n^2) or O(n log n) for example, the current
+implementation of qgroups will always be a problem. The real problem
+is that this more recent rework of qgroups does all this accounting
+inside the critical section of a transaction - blocking any other
+tasks that want to start a new transaction or attempt to join the
+current transaction. Not to mention that on systems with small amounts
+of memory (2Gb or 4Gb from what I've seen from user reports) we also
+OOM due this allocation of struct btrfs_qgroup_extent_record per
+delayed data reference head, that are used for that accounting phase
+in the critical section of a transaction commit.
 
-Some rather complex and tedious math indicates that this is not the 
-_only_ thing improving performance when using in-line compression, but 
-it's probably the biggest thing doing so for the workload being discussed.
+Let's face it and be realistic, even if someone manages to make
+find_parent_node() much much better, like O(n) for example, it will
+always be a problem due to the reasons mentioned before. Many extents
+touched per transaction and many subvolumes/snapshots, will always
+expose that root problem - doing the accounting in the transaction
+commit critical section.
+
+>
+>
+> IIRC SUSE guys(maybe Jeff?) are working on it with the first method, but I
+> didn't hear anything about it recently.
+>
+> Thanks,
+> Qu
+>
+>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
+-- 
+Filipe David Manana,
+
+"People will forget what you said,
+ people will forget what you did,
+ but people will never forget how you made them feel."

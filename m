@@ -1,64 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:36795 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1754031AbdBGTri (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Feb 2017 14:47:38 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1cbBje-0007Az-En
-        for linux-btrfs@vger.kernel.org; Tue, 07 Feb 2017 20:47:30 +0100
-To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77@gmail.com>
-Subject: Re: Very slow balance / btrfs-transaction
-Date: Tue, 7 Feb 2017 20:47:27 +0100
-Message-ID: <20170207204727.1bcd9b45@jupiter.sol.kaishome.de>
-References: <fce777cb-027f-532b-76ab-24a1e5c2cf7c@suse.de>
-        <507c32d4-929c-b691-6196-103c8cb9addb@suse.com>
-        <80d3e5ce55ddc7e454cce96e67e2ea64@88cbed2449cf>
-        <8999d95dac21ea8e2908c5012e50c59b@88cbed2449cf>
-        <1f5f66cfa8eca19b7e612e3b4745d788@85337f6d4fa4>
-        <20170204221051.664ada65@jupiter.sol.kaishome.de>
-        <403247fe-376f-27d7-bbd5-d8acd260a8ad@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Received: from mail-it0-f65.google.com ([209.85.214.65]:32870 "EHLO
+        mail-it0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932098AbdBGTuK (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Feb 2017 14:50:10 -0500
+Received: by mail-it0-f65.google.com with SMTP id e137so13352798itc.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 07 Feb 2017 11:50:10 -0800 (PST)
+Subject: Re: BTRFS for OLTP Databases
+To: Peter Zaitsev <pz@percona.com>, Hugo Mills <hugo@carfax.org.uk>,
+        linux-btrfs@vger.kernel.org
+References: <CA+RUij3aW1ZYyJPNRLzckwOCCmoWa15Eu4h142jB_-qKc49hBw@mail.gmail.com>
+ <20170207140058.GA4249@carfax.org.uk>
+ <CA+RUij3LJeFR1pz9QDOkMEVbh1cws5Rv2KPep3ghVAimJy7aLA@mail.gmail.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <91c8a758-23b6-edf1-74b0-2d87acbb2560@gmail.com>
+Date: Tue, 7 Feb 2017 14:50:04 -0500
+MIME-Version: 1.0
+In-Reply-To: <CA+RUij3LJeFR1pz9QDOkMEVbh1cws5Rv2KPep3ghVAimJy7aLA@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Mon, 6 Feb 2017 08:19:37 -0500
-schrieb "Austin S. Hemmelgarn" <ahferroin7@gmail.com>:
-
-> > MDRAID uses stripe selection based on latency and other measurements
-> > (like head position). It would be nice if btrfs implemented similar
-> > functionality. This would also be helpful for selecting a disk if
-> > there're more disks than stripesets (for example, I have 3 disks in
-> > my btrfs array). This could write new blocks to the most idle disk
-> > always. I think this wasn't covered by the above mentioned patch.
-> > Currently, selection is based only on the disk with most free
-> > space.  
-> You're confusing read selection and write selection.  MDADM and
-> DM-RAID both use a load-balancing read selection algorithm that takes
-> latency and other factors into account.  However, they use a
-> round-robin write selection algorithm that only cares about the
-> position of the block in the virtual device modulo the number of
-> physical devices.
-
-Thanks for clearing that point.
-
-> As an example, say you have a 3 disk RAID10 array set up using MDADM 
-> (this is functionally the same as a 3-disk raid1 mode BTRFS
-> filesystem). Every third block starting from block 0 will be on disks
-> 1 and 2, every third block starting from block 1 will be on disks 3
-> and 1, and every third block starting from block 2 will be on disks 2
-> and 3.  No latency measurements are taken, literally nothing is
-> factored in except the block's position in the virtual device.
-
-I didn't know MDADM can use RAID10 on odd amounts of disks...
-Nice. I'll keep that in mind. :-)
-
-
--- 
-Regards,
-Kai
-
-Replies to list-only preferred.
+On 2017-02-07 14:31, Peter Zaitsev wrote:
+> Hi Hugo,
+>
+> As I re-read it closely (and also other comments in the thread) I know
+> understand there is a difference how nodatacow works even if snapshot are
+> in place.
+>
+> On autodefrag I wonder is there some more detailed documentation about how
+> autodefrag works.
+>
+> The manual  https://btrfs.wiki.kernel.org/index.php/Mount_options    has
+> very general statement.
+>
+> What does "detect random IO" really means  ? It also talks about
+>  defragmenting the file - is i really about the whole file which is
+> triggered for defrag or is defrag locally ?      Ie I would understand what
+> as writes happen the  1MB block is checked and if it is more than X
+> fragments it is defragmented or something like that.
+I don't know the exact algorithm, but I'm pretty sure it's similar to 
+what bcache uses to bypass the cache device for sequential I/O.  In 
+essence, it's going to trigger for database usage.
+>
+> Also does autodefrag works with nodatacow (ie with snapshot)  or are these
+> exclusive ?
+I'm not sure about this one.  I would assume based on the fact that many 
+other things don't work with nodatacow and that regular defrag doesn't 
+work on files which are currently mapped as executable code that it does 
+not, but I could be completely wrong about this too.
+>
+>
+>>
+>>    There's another approach which might be worth testing, which is to
+>> use autodefrag. This will increase data write I/O, because where you
+>> have one or more small writes in a region, it will also read and write
+>> the data in a small neghbourhood around those writes, so the
+>> fragmentation is reduced. This will improve subsequent read
+>> performance.
+>>
+>>    I could also suggest getting the latest kernel you can -- 16.04 is
+>> already getting on for a year old, and there may be performance
+>> improvements in upstream kernels which affect your workload. There's
+>> an Ubuntu kernel PPA you can use to get the new kernels without too
+>> much pain.
+>>
+>>
+>>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
 

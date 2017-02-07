@@ -1,74 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f65.google.com ([209.85.214.65]:32870 "EHLO
-        mail-it0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932098AbdBGTuK (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Feb 2017 14:50:10 -0500
-Received: by mail-it0-f65.google.com with SMTP id e137so13352798itc.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 07 Feb 2017 11:50:10 -0800 (PST)
+Received: from mail-it0-f67.google.com ([209.85.214.67]:36002 "EHLO
+        mail-it0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752885AbdBGTzQ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Feb 2017 14:55:16 -0500
+Received: by mail-it0-f67.google.com with SMTP id f200so13464396itf.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 07 Feb 2017 11:54:21 -0800 (PST)
 Subject: Re: BTRFS for OLTP Databases
-To: Peter Zaitsev <pz@percona.com>, Hugo Mills <hugo@carfax.org.uk>,
-        linux-btrfs@vger.kernel.org
+To: Peter Zaitsev <pz@percona.com>
 References: <CA+RUij3aW1ZYyJPNRLzckwOCCmoWa15Eu4h142jB_-qKc49hBw@mail.gmail.com>
- <20170207140058.GA4249@carfax.org.uk>
- <CA+RUij3LJeFR1pz9QDOkMEVbh1cws5Rv2KPep3ghVAimJy7aLA@mail.gmail.com>
+ <579c53e4-f993-dd85-b5a4-76a0b201b899@suse.com>
+ <CA+RUij2QOP=bJos8p6NswZqSdbhwZ7frTdaLtZaiGBc4vKajCg@mail.gmail.com>
+Cc: Jeff Mahoney <jeffm@suse.com>, linux-btrfs@vger.kernel.org
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <91c8a758-23b6-edf1-74b0-2d87acbb2560@gmail.com>
-Date: Tue, 7 Feb 2017 14:50:04 -0500
+Message-ID: <fb3187d8-16f5-9a84-d0ce-d048f1ac5cc7@gmail.com>
+Date: Tue, 7 Feb 2017 14:54:16 -0500
 MIME-Version: 1.0
-In-Reply-To: <CA+RUij3LJeFR1pz9QDOkMEVbh1cws5Rv2KPep3ghVAimJy7aLA@mail.gmail.com>
+In-Reply-To: <CA+RUij2QOP=bJos8p6NswZqSdbhwZ7frTdaLtZaiGBc4vKajCg@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-02-07 14:31, Peter Zaitsev wrote:
-> Hi Hugo,
+On 2017-02-07 13:59, Peter Zaitsev wrote:
+> Jeff,
 >
-> As I re-read it closely (and also other comments in the thread) I know
-> understand there is a difference how nodatacow works even if snapshot are
-> in place.
+> Thank you very much for explanations. Indeed it was not clear in the
+> documentation - I read it simply as "if you have snapshots enabled
+> nodatacow makes no difference"
 >
-> On autodefrag I wonder is there some more detailed documentation about how
-> autodefrag works.
+> I will rebuild the database in this mode from scratch and see how
+> performance changes.
 >
-> The manual  https://btrfs.wiki.kernel.org/index.php/Mount_options    has
-> very general statement.
+> So far the most frustating for me was periodic stalls for many seconds
+>  (running sysbench workload).  What was the most puzzling  I get this
+> even if I run workload at the  50% or less of the full load  -  Ie
+> database can handle 1000 transactions/sec and I only inject 500/sec
+> and I still have those stalls.
 >
-> What does "detect random IO" really means  ? It also talks about
->  defragmenting the file - is i really about the whole file which is
-> triggered for defrag or is defrag locally ?      Ie I would understand what
-> as writes happen the  1MB block is checked and if it is more than X
-> fragments it is defragmented or something like that.
-I don't know the exact algorithm, but I'm pretty sure it's similar to 
-what bcache uses to bypass the cache device for sequential I/O.  In 
-essence, it's going to trigger for database usage.
+> This is where it looks to me like some work is being delayed and when
+> it requires stall for a few seconds to catch up.    I wonder  if there
+> are some configuration options available to play with.
 >
-> Also does autodefrag works with nodatacow (ie with snapshot)  or are these
-> exclusive ?
-I'm not sure about this one.  I would assume based on the fact that many 
-other things don't work with nodatacow and that regular defrag doesn't 
-work on files which are currently mapped as executable code that it does 
-not, but I could be completely wrong about this too.
+> So far I found BTRFS rather  "zero configuration" which is great if it
+> works but it is also great to have more levers to pull if you're
+> having some troubles.
+It's worth keeping in mind that there is more to the storage stack than 
+just the filesystem, and BTRFS tends to be more sensitive to the 
+behavior of other components in the stack than most other filesystems 
+are.  The stalls you're describing sound more like a symptom of the 
+brain-dead writeback buffering defaults used by the VFS layer than they 
+do an issue with BTRFS (although BTRFS tends to be a  bit more heavily 
+impacted by this than most other filesystems).  Try fiddling with the 
+/proc/sys/vm/dirty_* sysctls (there is some pretty good documentation in 
+Documentation/sysctl/vm.txt in the kernel source) and see if that helps. 
+  The default values it uses are at most 20% of RAM, which is an insane 
+amount of data to buffer before starting writeback when you're talking 
+about systems with 16GB of RAM.
 >
 >
+> On Tue, Feb 7, 2017 at 1:27 PM, Jeff Mahoney <jeffm@suse.com> wrote:
+>> On 2/7/17 8:53 AM, Peter Zaitsev wrote:
+>>> Hi,
+>>>
+>>> I have tried BTRFS from Ubuntu 16.04 LTS   for write intensive OLTP MySQL
+>>> Workload.
+>>>
+>>> It did not go very well ranging from multi-seconds stalls where no
+>>> transactions are completed to the finally kernel OOPS with "no space left
+>>> on device" error message and filesystem going read only.
+>>>
+>>> I'm complete newbie in BTRFS so  I assume  I'm doing something wrong.
+>>>
+>>> Do you have any advice on how BTRFS should be tuned for OLTP workload
+>>> (large files having a lot of random writes)  ?    Or is this the case where
+>>> one should simply stay away from BTRFS and use something else ?
+>>>
+>>> One item recommended in some places is "nodatacow"  this however defeats
+>>> the main purpose I'm looking at BTRFS -  I am interested in "free"
+>>> snapshots which look very attractive to use for database recovery scenarios
+>>> allow instant rollback to the previous state.
+>>>
 >>
->>    There's another approach which might be worth testing, which is to
->> use autodefrag. This will increase data write I/O, because where you
->> have one or more small writes in a region, it will also read and write
->> the data in a small neghbourhood around those writes, so the
->> fragmentation is reduced. This will improve subsequent read
->> performance.
+>> Hi Peter -
 >>
->>    I could also suggest getting the latest kernel you can -- 16.04 is
->> already getting on for a year old, and there may be performance
->> improvements in upstream kernels which affect your workload. There's
->> an Ubuntu kernel PPA you can use to get the new kernels without too
->> much pain.
+>> There seems to be some misunderstanding around how nodatacow works.
+>> Nodatacow doesn't prohibit snapshot use.  Snapshots are still allowed
+>> and, of course, will cause CoW to happen when a write occurs, but only
+>> on the first write.  Subsequent writes will not CoW again.  This does
+>> mean you don't get CRC protection for data, though.  Since most
+>> databases do this internally, that is probably no great loss.  You will
+>> get fragmentation, but that's true of any random-write workload on btrfs.
 >>
+>> Timothy's comment about how extents are accounted is more-or-less
+>> correct.  The file extents in the file system trees reference data
+>> extents in the extent tree.  When portions of the data extent are
+>> unreferenced, they're not necessarily released.  A balance operation
+>> will usually split the data extents so that the unused space is released.
 >>
+>> As for the Oopses with ENOSPC, that's something we'd want to look into
+>> if it can be reproduced with a more recent kernel.  We shouldn't be
+>> getting ENOSPC anywhere sensitive anymore.
 >>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>> -Jeff
+>>
+>> --
+>> Jeff Mahoney
+>> SUSE Labs
+>>
+>
+>
 >
 

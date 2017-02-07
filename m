@@ -1,153 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f195.google.com ([209.85.223.195]:35759 "EHLO
-        mail-io0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754079AbdBGPzV (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Feb 2017 10:55:21 -0500
-Received: by mail-io0-f195.google.com with SMTP id m98so13185632iod.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 07 Feb 2017 07:55:20 -0800 (PST)
+Received: from ns.bouton.name ([109.74.195.142]:37372 "EHLO mail.bouton.name"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754472AbdBGQ2t (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 7 Feb 2017 11:28:49 -0500
+Subject: Re: BTRFS for OLTP Databases
+To: Peter Zaitsev <pz@percona.com>, Hugo Mills <hugo@carfax.org.uk>,
+        linux-btrfs@vger.kernel.org
+References: <CA+RUij3aW1ZYyJPNRLzckwOCCmoWa15Eu4h142jB_-qKc49hBw@mail.gmail.com>
+ <20170207140058.GA4249@carfax.org.uk>
+ <CA+RUij02VMTa-L59AD9B3G+g_dS3HO7-Ttsz-qWgJtMyf58sPQ@mail.gmail.com>
+From: Lionel Bouton <lionel-subscription@bouton.name>
+Message-ID: <3508c89f-f7e4-f5db-5587-ab9e1e758b8b@bouton.name>
+Date: Tue, 7 Feb 2017 17:22:20 +0100
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <3c9ce5e2-6bc0-96d3-1d99-75f96e03afd1@cn.fujitsu.com>
-References: <fce777cb-027f-532b-76ab-24a1e5c2cf7c@suse.de> <507c32d4-929c-b691-6196-103c8cb9addb@suse.com>
- <80d3e5ce55ddc7e454cce96e67e2ea64@88cbed2449cf> <8999d95dac21ea8e2908c5012e50c59b@88cbed2449cf>
- <f9e2b226440e4f6e17e61ce86eecc7eb@88cbed2449cf> <57259b63-2f26-0da4-16f6-5fbd781daeb0@cn.fujitsu.com>
- <4200a425-890f-b283-b43b-e5911b1c6d8c@suse.de> <3c9ce5e2-6bc0-96d3-1d99-75f96e03afd1@cn.fujitsu.com>
-From: Filipe Manana <fdmanana@gmail.com>
-Date: Tue, 7 Feb 2017 15:55:19 +0000
-Message-ID: <CAL3q7H6n9MVz7187GCn-oT0_5fLAxhsgJPA0fjrdvVMQ+4HqTw@mail.gmail.com>
-Subject: Re: Very slow balance / btrfs-transaction
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: Goldwyn Rodrigues <rgoldwyn@suse.de>, Jorg Bornschein <jb@capsec.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <CA+RUij02VMTa-L59AD9B3G+g_dS3HO7-Ttsz-qWgJtMyf58sPQ@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Feb 7, 2017 at 12:22 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
->
->
-> At 02/07/2017 12:09 AM, Goldwyn Rodrigues wrote:
->>
->>
->> Hi Qu,
->>
->> On 02/05/2017 07:45 PM, Qu Wenruo wrote:
->>>
->>>
->>>
->>> At 02/04/2017 09:47 AM, Jorg Bornschein wrote:
->>>>
->>>> February 4, 2017 1:07 AM, "Goldwyn Rodrigues" <rgoldwyn@suse.de> wrote:
->>
->>
->> <snipped>
->>
->>>>
->>>>
->>>> Quata support was indeed active -- and it warned me that the qroup
->>>> data was inconsistent.
->>>>
->>>> Disabling quotas had an immediate impact on balance throughput -- it's
->>>> *much* faster now!
->>>> From a quick glance at iostat I would guess it's at least a factor 100
->>>> faster.
->>>>
->>>>
->>>> Should quota support generally be disabled during balances? Or did I
->>>> somehow push my fs into a weired state where it triggered a slow-path?
->>>>
->>>>
->>>>
->>>> Thanks!
->>>>
->>>>    j
->>>
->>>
->>> Would you please provide the kernel version?
->>>
->>> v4.9 introduced a bad fix for qgroup balance, which doesn't completely
->>> fix qgroup bytes leaking, but also hugely slow down the balance process:
->>>
->>> commit 62b99540a1d91e46422f0e04de50fc723812c421
->>> Author: Qu Wenruo <quwenruo@cn.fujitsu.com>
->>> Date:   Mon Aug 15 10:36:51 2016 +0800
->>>
->>>     btrfs: relocation: Fix leaking qgroups numbers on data extents
->>>
->>> Sorry for that.
->>>
->>> And in v4.10, a better method is applied to fix the byte leaking
->>> problem, and should be a little faster than previous one.
->>>
->>> commit 824d8dff8846533c9f1f9b1eabb0c03959e989ca
->>> Author: Qu Wenruo <quwenruo@cn.fujitsu.com>
->>> Date:   Tue Oct 18 09:31:29 2016 +0800
->>>
->>>     btrfs: qgroup: Fix qgroup data leaking by using subtree tracing
->>>
->>>
->>> However, using balance with qgroup is still slower than balance without
->>> qgroup, the root fix needs us to rework current backref iteration.
->>>
->>
->> This patch has made the btrfs balance performance worse. The balance
->> task has become more CPU intensive compared to earlier and takes longer
->> to complete, besides hogging resources. While correctness is important,
->> we need to figure out how this can be made more efficient.
->>
-> The cause is already known.
->
-> It's find_parent_node() which takes most of the time to find all referencer
-> of an extent.
->
-> And it's also the cause for FIEMAP softlockup (fixed in recent release by
-> early quit).
->
-> The biggest problem is, current find_parent_node() uses list to iterate,
-> which is quite slow especially it's done in a loop.
-> In real world find_parent_node() is about O(n^3).
-> We can either improve find_parent_node() by using rb_tree, or introduce some
-> cache for find_parent_node().
+Hi Peter,
 
-Even if anyone is able to reduce that function's complexity from
-O(n^3) down to lets say O(n^2) or O(n log n) for example, the current
-implementation of qgroups will always be a problem. The real problem
-is that this more recent rework of qgroups does all this accounting
-inside the critical section of a transaction - blocking any other
-tasks that want to start a new transaction or attempt to join the
-current transaction. Not to mention that on systems with small amounts
-of memory (2Gb or 4Gb from what I've seen from user reports) we also
-OOM due this allocation of struct btrfs_qgroup_extent_record per
-delayed data reference head, that are used for that accounting phase
-in the critical section of a transaction commit.
-
-Let's face it and be realistic, even if someone manages to make
-find_parent_node() much much better, like O(n) for example, it will
-always be a problem due to the reasons mentioned before. Many extents
-touched per transaction and many subvolumes/snapshots, will always
-expose that root problem - doing the accounting in the transaction
-commit critical section.
-
+Le 07/02/2017 à 15:13, Peter Zaitsev a écrit :
+> Hi Hugo,
 >
+> For the use case I'm looking for I'm interested in having snapshot(s)
+> open at all time.  Imagine  for example snapshot being created every
+> hour and several of these snapshots  kept at all time providing quick
+> recovery points to the state of 1,2,3 hours ago.  In  such case (as I
+> think you also describe)  nodatacow  does not provide any advantage.
 >
-> IIRC SUSE guys(maybe Jeff?) are working on it with the first method, but I
-> didn't hear anything about it recently.
->
-> Thanks,
-> Qu
->
->
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> I have not seen autodefrag helping much but I will try again.     Is
+> there any autodefrag documentation available about how is it expected
+> to work and if it can be tuned in any way
 
+There's not much that can be done if the same file is modified in 2
+different subvolumes (typically the original and a R/W snapshot). You
+either break the reflink around the modification to limit the amount of
+fragmentation (which will use disk space and write I/O) or get
+fragmentation on at least one subvolume (which will add seeks).
+So the only options are either to flatten the files (which can be done
+incrementally by defragmenting them on both sides when they change) or
+only defragment the most used volume (especially if the other is a
+relatively short-lived snapshot where performance won't degrade much
+until it is removed and won't matter much).
 
+I just modified our defragmenter scheduler to be aware of multiple
+subvolumes and support ignoring some of them. The previous version (not
+tagged, sorry) was battle tested on a Ceph cluster and was designed for
+it. Autodefrag didn't work with Ceph with our workload (latency went
+through the roof, OSDs were timing out requests, ...) and our scheduler
+with some simple Ceph BTRFS related tunings gave us even better
+performance than XFS (which is usually the recommended choice with
+current Ceph versions).
 
--- 
-Filipe David Manana,
+The current version is probably still rough around the edges as it is
+brand new (most of the work was done last Sunday) and only running on a
+backup server with a situation not much different from yours : a large
+PostgreSQL slave (>50GB) which is snapshoted hourly and daily, with a
+daily snapshot used to start a PostgreSQL instance for "tests on real
+data" purposes + a copy of a <10TB NFS server with similar snapshots in
+place. All of this is on a single RAID10 13-14TB BTRFS.
+In our case using autodefrag on this slowly degraded performance to the
+point where off-site backups became slow enough to warrant preventive
+measures.
+The current scheduler looks for the mountpoints of top BTRFS volumes (so
+you have to mount the top volume somewhere), and defragments them avoiding :
+- read-only snapshots,
+- all data below configurable subdirs (including read-write subvolumes
+even if they are mounted elsewhere), see README.md for instructions.
 
-"People will forget what you said,
- people will forget what you did,
- but people will never forget how you made them feel."
+It slowly walks all files eligible for defragmentation and in parallel
+detects writes to the same filesystem, including writes to read-write
+subvolumes mounted elsewhere to trigger defragmentation. The scheduler
+uses an estimated "cost" for each file to prioritize defragmentation
+tasks and with default settings tries to keep I/O activity low enough
+that it doesn't slow down other tasks too much. However it defragments
+files whole, which might put some strain for huge ibdata* files if you
+didn't switch to file per table. In our case defragmenting 1GB files is
+OK and doesn't have a major impact.
+
+We are already seeing better performance (our total daily backup time is
+below worrying levels again) and the scheduler didn't even finish
+walking the whole filesystem (there are approximately 8 millions files
+and it is configured to evaluate them over a week). This is probably
+because it follows the most write-active files (which are in the
+PostgreSQL slave directory) and defragmented most of them early.
+
+Note that it is tuned for filesystems using ~2TB 7200rpm drives (there
+are some options that will adapt it to subsystems with more I/O
+capacity). Using drives with different capacities shouldn't need tuning,
+but it probably will not work well on SSD (it should be configured to
+speed up significantly).
+
+See https://github.com/jtek/ceph-utils you want btrfs-defrag-scheduler.rb
+
+Some parameters are available (start it with --help). You should
+probably start it with --verbose at least until you are comfortable with
+it to get a list of which files are defragmented and many debug messages
+you probably want to ignore (or you'll probably have to read the Ruby
+code to fully understand what they mean).
+
+I don't provide any warranty for it but the worst I believe can happen
+is no performance improvements or performance degradation until you stop
+it. If you don't blacklist read-write snapshots with the .no-defrag file
+(see README.md) defragmentation will probably eat more disk space than
+usual. Space usage will go up rapidly during defragmentation if you have
+snapshots, it is supposed to go down after all snapshots referring to
+fragmented files are removed and replaced by new snapshots (where
+fragmentation should be more stable).
+
+Best regards,
+
+Lionel

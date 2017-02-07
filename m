@@ -1,58 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:54728 "EHLO
+Received: from [195.159.176.226] ([195.159.176.226]:50770 "EHLO
         blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1755396AbdBGVFf (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Feb 2017 16:05:35 -0500
+        with ESMTP id S1753798AbdBGVUp (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Feb 2017 16:20:45 -0500
 Received: from list by blaine.gmane.org with local (Exim 4.84_2)
         (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1cbCvm-0006H9-8U
-        for linux-btrfs@vger.kernel.org; Tue, 07 Feb 2017 22:04:06 +0100
+        id 1cbDAF-0005Zw-QQ
+        for linux-btrfs@vger.kernel.org; Tue, 07 Feb 2017 22:19:03 +0100
 To: linux-btrfs@vger.kernel.org
 From: Kai Krakow <hurikhan77@gmail.com>
 Subject: Re: BTRFS for OLTP Databases
-Date: Tue, 7 Feb 2017 21:54:08 +0100
-Message-ID: <20170207215408.65030acd@jupiter.sol.kaishome.de>
+Date: Tue, 7 Feb 2017 22:14:35 +0100
+Message-ID: <20170207221435.38377988@jupiter.sol.kaishome.de>
 References: <CA+RUij3aW1ZYyJPNRLzckwOCCmoWa15Eu4h142jB_-qKc49hBw@mail.gmail.com>
         <20170207140058.GA4249@carfax.org.uk>
-        <CA+RUij3LJeFR1pz9QDOkMEVbh1cws5Rv2KPep3ghVAimJy7aLA@mail.gmail.com>
-        <91c8a758-23b6-edf1-74b0-2d87acbb2560@gmail.com>
-        <20170207211941.3310d7a8@jupiter.sol.kaishome.de>
-        <6d7eac16-773e-bf6c-a6be-d3950f9b2325@gmail.com>
+        <CA+RUij02VMTa-L59AD9B3G+g_dS3HO7-Ttsz-qWgJtMyf58sPQ@mail.gmail.com>
+        <CAGqmi759eH6QT3Qx_S47_hWKajhwnc0UxyaLhayMEZ4D+bnvGQ@mail.gmail.com>
+        <62994104-e9b2-6544-1f3b-bf37df4275f9@gmail.com>
+        <CAGqmi772WF8KqMWUowtG2_8uS7KTu3u4vJkNbhTHams_x13jWg@mail.gmail.com>
+        <716741d9-deef-ebc1-b418-da9f8d23d791@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Tue, 7 Feb 2017 15:27:34 -0500
+Am Tue, 7 Feb 2017 10:43:11 -0500
 schrieb "Austin S. Hemmelgarn" <ahferroin7@gmail.com>:
 
-> >> I'm not sure about this one.  I would assume based on the fact that
-> >> many other things don't work with nodatacow and that regular defrag
-> >> doesn't work on files which are currently mapped as executable code
-> >> that it does not, but I could be completely wrong about this too.  
-> >
-> > Technically, there's nothing that prevents autodefrag to work for
-> > nodatacow files. The question is: is it really necessary? Standard
-> > file systems also have no autodefrag, it's not an issue there
-> > because they are essentially nodatacow. Simply defrag the database
-> > file once and you're done. Transactional MySQL uses huge data
-> > files, probably preallocated. It should simply work with
-> > nodatacow.  
-> The thing is, I don't have enough knowledge of how defrag is
-> implemented in BTRFS to say for certain that ti doesn't use COW
-> semantics somewhere (and I would actually expect it to do so, since
-> that in theory makes many things _much_ easier to handle), and if it
-> uses COW somewhere, then it by definition doesn't work on NOCOW files.
+> > I mean that:
+> > You have a 128MB extent, you rewrite random 4k sectors, btrfs will
+> > not split 128MB extent, and not free up data, (i don't know
+> > internal algo, so i can't predict when this will hapen), and after
+> > some time, btrfs will rebuild extents, and split 128 MB exten to
+> > several more smaller. But when you use compression, allocator
+> > rebuilding extents much early (i think, it's because btrfs also
+> > operates with that like 128kb extent, even if it's a continuos
+> > 128MB chunk of data). 
+> The allocator has absolutely nothing to do with this, it's a function
+> of the COW operation.  Unless you're using nodatacow, that 128MB
+> extent will get split the moment the data hits the storage device
+> (either on the next commit cycle (at most 30 seconds with the default
+> commit cycle), or when fdatasync is called, whichever is sooner).  In
+> the case of compression, it's still one extent (although on disk it
+> will be less than 128MB) and will be split at _exactly_ the same time
+> under _exactly_ the same circumstances as an uncompressed extent.
+> IOW, it has absolutely nothing to do with the extent handling either.
 
-A dev would be needed on this. But from a non-dev point of view, the
-defrag operation itself is CoW: Blocks are rewritten to another
-location in contiguous order. Only metadata CoW should be needed for
-this operation.
+I don't think that btrfs splits extents which are part of the snapshot.
+The extent in a snapshot will stay intact when writing to this extent
+in another snapshot. Of course, in the just written snapshot, the
+extent will be represented as a split extent mapping to the original
+extents data blocks plus the new data in the middle (thus resulting in
+three extents). This is also why small random writes without autodefrag
+result in a vast amount of small extents bringing the fs performance to
+a crawl.
 
-It should be nothing else than writing to a nodatacow snapshot... Just
-that the snapshot is more or less implicit and temporary.
+Do that multiple times on multiple snapshots, delete some of the
+original snapshots, and you're left with slack space, data blocks being
+inaccessible and won't be reclaimed into free space (because they
+are still part of the original extent), and which can only be
+reclaimed by a defrag operation - which would of course unshares data.
 
-Hmm? *curious*
+Thus, if any of the above mentioned small extents is still shared with
+an extent originally much bigger, then it will still occupy its
+original space on the filesystem - even when its associated
+snapshot/subvolume no longer exists. Only when the last remaining
+tiny block of such an extent gets rewritten and the reference counter
+decreases to zero, the extent is given up and freed.
+
+To work around this, you can currently only unshare and recombine by
+doing defrag and dedupe on all snapshots. This will reclaim space
+sitting in parts of the original extents no longer referenced by a
+snapshot visible from the VFS layer.
+
+This is for performance reasons because btrfs is extent based.
+
+As far as I know, ZFS on the other side, works different. It uses block
+based storage for the snapshot feature and can easily throw away unused
+blocks. Only a second layer on top maps this back into extents. The
+underlying infrastructure, however, is block based storage, which also
+enables the volume pool to create block devices on the fly out of ZFS
+storage space.
+
+PS: All above given the fact I understood it right. ;-)
 
 -- 
 Regards,

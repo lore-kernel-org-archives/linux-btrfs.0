@@ -1,88 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f53.google.com ([209.85.215.53]:36654 "EHLO
-        mail-lf0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754088AbdBGPBg (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Feb 2017 10:01:36 -0500
-Received: by mail-lf0-f53.google.com with SMTP id z134so64504446lff.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 07 Feb 2017 07:01:35 -0800 (PST)
+Received: from azure.uno.uk.net ([95.172.254.11]:60831 "EHLO azure.uno.uk.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754773AbdBGPDV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 7 Feb 2017 10:03:21 -0500
+Received: from ty.sabi.co.uk ([95.172.230.208]:56812)
+        by azure.uno.uk.net with esmtpsa (TLSv1:DHE-RSA-AES128-SHA:128)
+        (Exim 4.87)
+        (envelope-from <pg@btrfs.list.sabi.co.uk>)
+        id 1cb78d-0000LQ-SS
+        for linux-btrfs@vger.kernel.org; Tue, 07 Feb 2017 14:52:59 +0000
+Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
+        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
+        id 1cb73B-0004fI-If
+        for <linux-btrfs@vger.kernel.org>; Tue, 07 Feb 2017 14:47:21 +0000
 MIME-Version: 1.0
-In-Reply-To: <CA+RUij02VMTa-L59AD9B3G+g_dS3HO7-Ttsz-qWgJtMyf58sPQ@mail.gmail.com>
-References: <CA+RUij3aW1ZYyJPNRLzckwOCCmoWa15Eu4h142jB_-qKc49hBw@mail.gmail.com>
- <20170207140058.GA4249@carfax.org.uk> <CA+RUij02VMTa-L59AD9B3G+g_dS3HO7-Ttsz-qWgJtMyf58sPQ@mail.gmail.com>
-From: Timofey Titovets <nefelim4ag@gmail.com>
-Date: Tue, 7 Feb 2017 18:00:53 +0300
-Message-ID: <CAGqmi759eH6QT3Qx_S47_hWKajhwnc0UxyaLhayMEZ4D+bnvGQ@mail.gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Message-ID: <22681.56823.806106.671731@tree.ty.sabi.co.uk>
+Date: Tue, 7 Feb 2017 14:47:19 +0000
+To: linux-btrfs@vger.kernel.org
 Subject: Re: BTRFS for OLTP Databases
-To: Peter Zaitsev <pz@percona.com>
-Cc: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <CA+RUij3aW1ZYyJPNRLzckwOCCmoWa15Eu4h142jB_-qKc49hBw@mail.gmail.com>
+References: <CA+RUij3aW1ZYyJPNRLzckwOCCmoWa15Eu4h142jB_-qKc49hBw@mail.gmail.com>
+From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2017-02-07 17:13 GMT+03:00 Peter Zaitsev <pz@percona.com>:
-> Hi Hugo,
->
-> For the use case I'm looking for I'm interested in having snapshot(s)
-> open at all time.  Imagine  for example snapshot being created every
-> hour and several of these snapshots  kept at all time providing quick
-> recovery points to the state of 1,2,3 hours ago.  In  such case (as I
-> think you also describe)  nodatacow  does not provide any advantage.
->
-> I have not seen autodefrag helping much but I will try again.     Is
-> there any autodefrag documentation available about how is it expected
-> to work and if it can be tuned in any way
->
-> I noticed remounting already fragmented filesystem with autodefrag
-> and putting workload  which does more fragmentation does not seem to
-> improve over time
->
->
->
->>    Well, nodatacow will still allow snapshots to work, but it also
->> allows the data to fragment. Each snapshot made will cause subsequent
->> writes to shared areas to be CoWed once (and then it reverts to
->> unshared and nodatacow again).
->>
->>    There's another approach which might be worth testing, which is to
->> use autodefrag. This will increase data write I/O, because where you
->> have one or more small writes in a region, it will also read and write
->> the data in a small neghbourhood around those writes, so the
->> fragmentation is reduced. This will improve subsequent read
->> performance.
->>
->>    I could also suggest getting the latest kernel you can -- 16.04 is
->> already getting on for a year old, and there may be performance
->> improvements in upstream kernels which affect your workload. There's
->> an Ubuntu kernel PPA you can use to get the new kernels without too
->> much pain.
->
->
->
->
->
->
->
-> --
-> Peter Zaitsev, CEO, Percona
-> Tel: +1 888 401 3401 ext 7360   Skype:  peter_zaitsev
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> I have tried BTRFS from Ubuntu 16.04 LTS for write intensive
+> OLTP MySQL Workload.
 
-I think that you have a problem with extent bookkeeping (if i
-understand how btrfs manage extents).
-So for deal with it, try enable compression, as compression will force
-all extents to be fragmented with size ~128kb.
+This has a lot of interesting and mostly agreeable information:
 
-I did have a similar problem with MySQL (Zabbix as a workload, i.e.
-most time load are random write), and i fix it, by enabling
-compression. (I use debian with latest kernel from backports)
-At now it just works with stable speed under stable load.
+https://blog.pgaddict.com/posts/friends-dont-let-friends-use-btrfs-for-oltp
 
-P.S.
-(And i also use your percona MySQL some time, it's cool).
+The main target of Btrfs is where one wants checksums and
+occasional snapshot for backup (rather than rollback) and
+applications do whole-file rewrites or appends.
 
--- 
-Have a nice day,
-Timofey.
+> It did not go very well ranging from multi-seconds stalls
+> where no transactions are completed
+
+That usually is more because of the "clever" design and defaults
+of the Linux page cache and block IO subsystem, which are
+astutely pessimized for every workload, but especially for
+read-modify-write ones, never mind for RMW workloads on
+copy-on-write filesystems.
+
+That most OS designs are pessimized for anything like a "write
+intensive OLTP" workload is not new, M Stonebraker complained
+about that 35 years ago, and nothing much has changed:
+
+  http://www.sabi.co.uk/blog/anno05-4th.html?051012d#051012d
+
+> to the finally kernel OOPS with "no space left on device"
+> error message and filesystem going read only.
+
+That's because Btrfs has a a two-level allocator, where space is
+allocated in 1GiB chunks (distinct as to data and metadata) and
+then in 16KiB nodes, and this makes it far more likely for free
+space fragmentation to occur. Therefore Btrfs has a free space
+compactor ('btrfs balance') that must be used the more often the
+more updates happen.
+
+> interested in "free" snapshots which look very attractive
+
+The general problem is that it is pretty much impossible to have
+read-modify-write rollbacks for cheap, because the writes in
+general are scattered (that is their time coherence is very
+different from their spatial coherence). That means either heavy
+spatial fragmentation or huge write amplification.
+
+The 'snapshot' type of DM/LVM2 device delivers heavy spatial
+fragmentation, Btrfs does a balance of both. Another commenter
+has mentioned the use of 'nodatacow' to prevent RMW resulting in
+huge write-amplification.
+
+> to use for database recovery scenarios allow instant rollback
+> to the previous state.
+
+You may be more interested in NILFS2 for that, but there are
+significant tradeoffs there too, and NILFS2 requires a free
+space compactor too, plus since NILFS2 gives up on short-term
+spatial coherence, the compactor also needs to compact data
+space.

@@ -1,114 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ns.bouton.name ([109.74.195.142]:37372 "EHLO mail.bouton.name"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754472AbdBGQ2t (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 7 Feb 2017 11:28:49 -0500
-Subject: Re: BTRFS for OLTP Databases
-To: Peter Zaitsev <pz@percona.com>, Hugo Mills <hugo@carfax.org.uk>,
-        linux-btrfs@vger.kernel.org
-References: <CA+RUij3aW1ZYyJPNRLzckwOCCmoWa15Eu4h142jB_-qKc49hBw@mail.gmail.com>
- <20170207140058.GA4249@carfax.org.uk>
- <CA+RUij02VMTa-L59AD9B3G+g_dS3HO7-Ttsz-qWgJtMyf58sPQ@mail.gmail.com>
-From: Lionel Bouton <lionel-subscription@bouton.name>
-Message-ID: <3508c89f-f7e4-f5db-5587-ab9e1e758b8b@bouton.name>
-Date: Tue, 7 Feb 2017 17:22:20 +0100
+Received: from mail-lf0-f41.google.com ([209.85.215.41]:33637 "EHLO
+        mail-lf0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755341AbdBGQoY (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Feb 2017 11:44:24 -0500
+Received: by mail-lf0-f41.google.com with SMTP id x1so66418375lff.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 07 Feb 2017 08:44:24 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CA+RUij02VMTa-L59AD9B3G+g_dS3HO7-Ttsz-qWgJtMyf58sPQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+From: Vasco Visser <vasco.visser@gmail.com>
+Date: Tue, 7 Feb 2017 17:44:02 +0100
+Message-ID: <CALg=eG_C-Xkw+TTHpNq9y_euza81TPTd+YN10_V=9WSprN0BPw@mail.gmail.com>
+Subject: understanding disk space usage
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Peter,
+Hello,
 
-Le 07/02/2017 à 15:13, Peter Zaitsev a écrit :
-> Hi Hugo,
->
-> For the use case I'm looking for I'm interested in having snapshot(s)
-> open at all time.  Imagine  for example snapshot being created every
-> hour and several of these snapshots  kept at all time providing quick
-> recovery points to the state of 1,2,3 hours ago.  In  such case (as I
-> think you also describe)  nodatacow  does not provide any advantage.
->
-> I have not seen autodefrag helping much but I will try again.     Is
-> there any autodefrag documentation available about how is it expected
-> to work and if it can be tuned in any way
+My system is or seems to be running out of disk space but I can't find
+out how or why. Might be a BTRFS peculiarity, hence posting on this
+list. Most indicators seem to suggest I'm filling up, but I can't
+trace the disk usage to files on the FS.
 
-There's not much that can be done if the same file is modified in 2
-different subvolumes (typically the original and a R/W snapshot). You
-either break the reflink around the modification to limit the amount of
-fragmentation (which will use disk space and write I/O) or get
-fragmentation on at least one subvolume (which will add seeks).
-So the only options are either to flatten the files (which can be done
-incrementally by defragmenting them on both sides when they change) or
-only defragment the most used volume (especially if the other is a
-relatively short-lived snapshot where performance won't degrade much
-until it is removed and won't matter much).
+The issue is on my root filesystem on a 28GiB ssd partition (commands
+below issued when booted into single user mode):
 
-I just modified our defragmenter scheduler to be aware of multiple
-subvolumes and support ignoring some of them. The previous version (not
-tagged, sorry) was battle tested on a Ceph cluster and was designed for
-it. Autodefrag didn't work with Ceph with our workload (latency went
-through the roof, OSDs were timing out requests, ...) and our scheduler
-with some simple Ceph BTRFS related tunings gave us even better
-performance than XFS (which is usually the recommended choice with
-current Ceph versions).
 
-The current version is probably still rough around the edges as it is
-brand new (most of the work was done last Sunday) and only running on a
-backup server with a situation not much different from yours : a large
-PostgreSQL slave (>50GB) which is snapshoted hourly and daily, with a
-daily snapshot used to start a PostgreSQL instance for "tests on real
-data" purposes + a copy of a <10TB NFS server with similar snapshots in
-place. All of this is on a single RAID10 13-14TB BTRFS.
-In our case using autodefrag on this slowly degraded performance to the
-point where off-site backups became slow enough to warrant preventive
-measures.
-The current scheduler looks for the mountpoints of top BTRFS volumes (so
-you have to mount the top volume somewhere), and defragments them avoiding :
-- read-only snapshots,
-- all data below configurable subdirs (including read-write subvolumes
-even if they are mounted elsewhere), see README.md for instructions.
+$ df -h
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/sda3              28G   26G  2.1G  93% /
 
-It slowly walks all files eligible for defragmentation and in parallel
-detects writes to the same filesystem, including writes to read-write
-subvolumes mounted elsewhere to trigger defragmentation. The scheduler
-uses an estimated "cost" for each file to prioritize defragmentation
-tasks and with default settings tries to keep I/O activity low enough
-that it doesn't slow down other tasks too much. However it defragments
-files whole, which might put some strain for huge ibdata* files if you
-didn't switch to file per table. In our case defragmenting 1GB files is
-OK and doesn't have a major impact.
 
-We are already seeing better performance (our total daily backup time is
-below worrying levels again) and the scheduler didn't even finish
-walking the whole filesystem (there are approximately 8 millions files
-and it is configured to evaluate them over a week). This is probably
-because it follows the most write-active files (which are in the
-PostgreSQL slave directory) and defragmented most of them early.
+$ btrfs --version
+btrfs-progs v4.4
 
-Note that it is tuned for filesystems using ~2TB 7200rpm drives (there
-are some options that will adapt it to subsystems with more I/O
-capacity). Using drives with different capacities shouldn't need tuning,
-but it probably will not work well on SSD (it should be configured to
-speed up significantly).
 
-See https://github.com/jtek/ceph-utils you want btrfs-defrag-scheduler.rb
+$ btrfs fi usage /
+Overall:
+    Device size:  27.94GiB
+    Device allocated:  27.94GiB
+    Device unallocated:   1.00MiB
+    Device missing:     0.00B
+    Used:  25.03GiB
+    Free (estimated):   2.37GiB (min: 2.37GiB)
+    Data ratio:      1.00
+    Metadata ratio:      1.00
+    Global reserve: 256.00MiB (used: 0.00B)
+Data,single: Size:26.69GiB, Used:24.32GiB
+   /dev/sda3  26.69GiB
+Metadata,single: Size:1.22GiB, Used:731.45MiB
+   /dev/sda3   1.22GiB
+System,single: Size:32.00MiB, Used:16.00KiB
+   /dev/sda3  32.00MiB
+Unallocated:
+   /dev/sda3   1.00MiB
 
-Some parameters are available (start it with --help). You should
-probably start it with --verbose at least until you are comfortable with
-it to get a list of which files are defragmented and many debug messages
-you probably want to ignore (or you'll probably have to read the Ruby
-code to fully understand what they mean).
 
-I don't provide any warranty for it but the worst I believe can happen
-is no performance improvements or performance degradation until you stop
-it. If you don't blacklist read-write snapshots with the .no-defrag file
-(see README.md) defragmentation will probably eat more disk space than
-usual. Space usage will go up rapidly during defragmentation if you have
-snapshots, it is supposed to go down after all snapshots referring to
-fragmented files are removed and replaced by new snapshots (where
-fragmentation should be more stable).
+$ btrfs fi df /
+Data, single: total=26.69GiB, used=24.32GiB
+System, single: total=32.00MiB, used=16.00KiB
+Metadata, single: total=1.22GiB, used=731.48MiB
+GlobalReserve, single: total=256.00MiB, used=0.00B
 
-Best regards,
 
-Lionel
+However:
+$ mount -o bind / /mnt
+$ sudo du -hs /mnt
+9.3G /mnt
+
+
+Try to balance:
+$ btrfs balance start /
+ERROR: error during balancing '/': No space left on device
+
+
+Am I really filling up? What can explain the huge discrepancy with the
+output of du (no open file descriptors on deleted files can explain
+this in single user mode) and the FS stats?
+
+Any advice on possible causes and how to proceed?
+
+
+--
+Vasco

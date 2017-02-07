@@ -1,178 +1,186 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:50426 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751038AbdBBTER (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Feb 2017 14:04:17 -0500
-Date: Thu, 2 Feb 2017 11:04:12 -0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: fdmanana@kernel.org
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] Btrfs: fix assertion failure when freeing block
- groups at close_ctree()
-Message-ID: <20170202190411.GD6550@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1485990088-6840-1-git-send-email-fdmanana@kernel.org>
- <1486058193-25490-1-git-send-email-fdmanana@kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1486058193-25490-1-git-send-email-fdmanana@kernel.org>
+Received: from mail.kernel.org ([198.145.29.136]:48124 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754210AbdBGRDI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 7 Feb 2017 12:03:08 -0500
+Received: from mail.kernel.org (localhost [127.0.0.1])
+        by mail.kernel.org (Postfix) with ESMTP id 8D46A20320
+        for <linux-btrfs@vger.kernel.org>; Tue,  7 Feb 2017 17:03:01 +0000 (UTC)
+Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id CD80520306
+        for <linux-btrfs@vger.kernel.org>; Tue,  7 Feb 2017 17:02:59 +0000 (UTC)
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: fix use-after-free due to wrong order of destroying work queues
+Date: Tue,  7 Feb 2017 17:02:53 +0000
+Message-Id: <1486486973-5667-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 02, 2017 at 05:56:33PM +0000, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> At close_ctree() we free the block groups and then only after we wait for
-> any running worker kthreads to finish and shutdown the workqueues. This
-> behaviour is racy and it triggers an assertion failure when freeing block
-> groups because while we are doing it we can have for example a block group
-> caching kthread running, and in that case the block group's reference
-> count can still be greater than 1 by the time we assert its reference count
-> is 1, leading to an assertion failure:
-> 
-> [19041.198004] assertion failed: atomic_read(&block_group->count) == 1, file: fs/btrfs/extent-tree.c, line: 9799
-> [19041.200584] ------------[ cut here ]------------
-> [19041.201692] kernel BUG at fs/btrfs/ctree.h:3418!
-> [19041.202830] invalid opcode: 0000 [#1] PREEMPT SMP
-> [19041.203929] Modules linked in: btrfs xor raid6_pq dm_flakey dm_mod crc32c_generic ppdev sg psmouse acpi_cpufreq pcspkr parport_pc evdev tpm_tis parport tpm_tis_core i2c_piix4 i2c_core tpm serio_raw processor button loop autofs4 ext4 crc16 jbd2 mbcache sr_mod cdrom sd_mod ata_generic virtio_scsi ata_piix virtio_pci libata virtio_ring virtio e1000 scsi_mod floppy [last unloaded: btrfs]
-> [19041.208082] CPU: 6 PID: 29051 Comm: umount Not tainted 4.9.0-rc7-btrfs-next-36+ #1
-> [19041.208082] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.9.1-0-gb3ef39f-prebuilt.qemu-project.org 04/01/2014
-> [19041.208082] task: ffff88015f028980 task.stack: ffffc9000ad34000
-> [19041.208082] RIP: 0010:[<ffffffffa03e319e>]  [<ffffffffa03e319e>] assfail.constprop.41+0x1c/0x1e [btrfs]
-> [19041.208082] RSP: 0018:ffffc9000ad37d60  EFLAGS: 00010286
-> [19041.208082] RAX: 0000000000000061 RBX: ffff88015ecb4000 RCX: 0000000000000001
-> [19041.208082] RDX: ffff88023f392fb8 RSI: ffffffff817ef7ba RDI: 00000000ffffffff
-> [19041.208082] RBP: ffffc9000ad37d60 R08: 0000000000000001 R09: 0000000000000000
-> [19041.208082] R10: ffffc9000ad37cb0 R11: ffffffff82f2b66d R12: ffff88023431d170
-> [19041.208082] R13: ffff88015ecb40c0 R14: ffff88023431d000 R15: ffff88015ecb4100
-> [19041.208082] FS:  00007f44f3d42840(0000) GS:ffff88023f380000(0000) knlGS:0000000000000000
-> [19041.208082] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-> [19041.208082] CR2: 00007f65d623b000 CR3: 00000002166f2000 CR4: 00000000000006e0
-> [19041.208082] Stack:
-> [19041.208082]  ffffc9000ad37d98 ffffffffa035989f ffff88015ecb4000 ffff88015ecb5630
-> [19041.208082]  ffff88014f6be000 0000000000000000 00007ffcf0ba6a10 ffffc9000ad37df8
-> [19041.208082]  ffffffffa0368cd4 ffff88014e9658e0 ffffc9000ad37e08 ffffffff811a634d
-> [19041.208082] Call Trace:
-> [19041.208082]  [<ffffffffa035989f>] btrfs_free_block_groups+0x17f/0x392 [btrfs]
-> [19041.208082]  [<ffffffffa0368cd4>] close_ctree+0x1c5/0x2e1 [btrfs]
-> [19041.208082]  [<ffffffff811a634d>] ? evict_inodes+0x132/0x141
-> [19041.208082]  [<ffffffffa034356d>] btrfs_put_super+0x15/0x17 [btrfs]
-> [19041.208082]  [<ffffffff8118fc32>] generic_shutdown_super+0x6a/0xeb
-> [19041.208082]  [<ffffffff8119004f>] kill_anon_super+0x12/0x1c
-> [19041.208082]  [<ffffffffa0343370>] btrfs_kill_super+0x16/0x21 [btrfs]
-> [19041.208082]  [<ffffffff8118fad1>] deactivate_locked_super+0x3b/0x68
-> [19041.208082]  [<ffffffff8118fb34>] deactivate_super+0x36/0x39
-> [19041.208082]  [<ffffffff811a9946>] cleanup_mnt+0x58/0x76
-> [19041.208082]  [<ffffffff811a99a2>] __cleanup_mnt+0x12/0x14
-> [19041.208082]  [<ffffffff81071573>] task_work_run+0x6f/0x95
-> [19041.208082]  [<ffffffff81001897>] prepare_exit_to_usermode+0xa3/0xc1
-> [19041.208082]  [<ffffffff81001a23>] syscall_return_slowpath+0x16e/0x1d2
-> [19041.208082]  [<ffffffff814c607d>] entry_SYSCALL_64_fastpath+0xab/0xad
-> [19041.208082] Code: c7 ae a0 3e a0 48 89 e5 e8 4e 74 d4 e0 0f 0b 55 89 f1 48 c7 c2 0b a4 3e a0 48 89 fe 48 c7 c7 a4 a6 3e a0 48 89 e5 e8 30 74 d4 e0 <0f> 0b 55 31 d2 48 89 e5 e8 d5 b9 f7 ff 5d c3 48 63 f6 55 31 c9
-> [19041.208082] RIP  [<ffffffffa03e319e>] assfail.constprop.41+0x1c/0x1e [btrfs]
-> [19041.208082]  RSP <ffffc9000ad37d60>
-> [19041.279264] ---[ end trace 23330586f16f064d ]---
-> 
-> This started happening as of kernel 4.8, since commit f3bca8028bd9
-> ("Btrfs: add ASSERT for block group's memory leak") introduced these
-> assertions.
-> 
-> So fix this by freeing the block groups only after waiting for all
-> worker kthreads to complete and shutdown the workqueues.
+From: Filipe Manana <fdmanana@suse.com>
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+Before we destroy all work queues (and wait for their tasks to complete)
+we were destroying the work queues used for metadata I/O operations, which
+can result in a use-after-free problem because most tasks from all work
+queues do metadata I/O operations. For example, the tasks from the caching
+workers work queue (fs_info->caching_workers), which is destroyed only
+after the work queue used for metadata reads (fs_info->endio_meta_workers)
+is destroyed, do metadata reads, which result in attempts to queue tasks
+into the later work queue, triggering a use-after-free with a trace like
+the following:
 
-Thanks,
+[23114.613543] general protection fault: 0000 [#1] PREEMPT SMP
+[23114.614442] Modules linked in: dm_thin_pool dm_persistent_data dm_bio_prison dm_bufio libcrc32c btrfs xor raid6_pq dm_flakey dm_mod crc32c_generic
+acpi_cpufreq tpm_tis tpm_tis_core tpm ppdev parport_pc parport i2c_piix4 processor sg evdev i2c_core psmouse pcspkr serio_raw button loop autofs4 ext4 crc16
+jbd2 mbcache sr_mod cdrom sd_mod ata_generic virtio_scsi ata_piix virtio_pci libata virtio_ring virtio e1000 scsi_mod floppy [last unloaded: scsi_debug]
+[23114.616932] CPU: 9 PID: 4537 Comm: kworker/u32:8 Not tainted 4.9.0-rc7-btrfs-next-36+ #1
+[23114.616932] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.9.1-0-gb3ef39f-prebuilt.qemu-project.org 04/01/2014
+[23114.616932] Workqueue: btrfs-cache btrfs_cache_helper [btrfs]
+[23114.616932] task: ffff880221d45780 task.stack: ffffc9000bc50000
+[23114.616932] RIP: 0010:[<ffffffffa037c1bf>]  [<ffffffffa037c1bf>] btrfs_queue_work+0x2c/0x190 [btrfs]
+[23114.616932] RSP: 0018:ffff88023f443d60  EFLAGS: 00010246
+[23114.616932] RAX: 0000000000000000 RBX: 6b6b6b6b6b6b6b6b RCX: 0000000000000102
+[23114.616932] RDX: ffffffffa0419000 RSI: ffff88011df534f0 RDI: ffff880101f01c00
+[23114.616932] RBP: ffff88023f443d80 R08: 00000000000f7000 R09: 000000000000ffff
+[23114.616932] R10: ffff88023f443d48 R11: 0000000000001000 R12: ffff88011df534f0
+[23114.616932] R13: ffff880135963868 R14: 0000000000001000 R15: 0000000000001000
+[23114.616932] FS:  0000000000000000(0000) GS:ffff88023f440000(0000) knlGS:0000000000000000
+[23114.616932] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[23114.616932] CR2: 00007f0fb9f8e520 CR3: 0000000001a0b000 CR4: 00000000000006e0
+[23114.616932] Stack:
+[23114.616932]  ffff880101f01c00 ffff88011df534f0 ffff880135963868 0000000000001000
+[23114.616932]  ffff88023f443da0 ffffffffa03470af ffff880149b37200 ffff880135963868
+[23114.616932]  ffff88023f443db8 ffffffff8125293c ffff880149b37200 ffff88023f443de0
+[23114.616932] Call Trace:
+[23114.616932]  <IRQ> [23114.616932]  [<ffffffffa03470af>] end_workqueue_bio+0xd5/0xda [btrfs]
+[23114.616932]  [<ffffffff8125293c>] bio_endio+0x54/0x57
+[23114.616932]  [<ffffffffa0377929>] btrfs_end_bio+0xf7/0x106 [btrfs]
+[23114.616932]  [<ffffffff8125293c>] bio_endio+0x54/0x57
+[23114.616932]  [<ffffffff8125955f>] blk_update_request+0x21a/0x30f
+[23114.616932]  [<ffffffffa0022316>] scsi_end_request+0x31/0x182 [scsi_mod]
+[23114.616932]  [<ffffffffa00235fc>] scsi_io_completion+0x1ce/0x4c8 [scsi_mod]
+[23114.616932]  [<ffffffffa001ba9d>] scsi_finish_command+0x104/0x10d [scsi_mod]
+[23114.616932]  [<ffffffffa002311f>] scsi_softirq_done+0x101/0x10a [scsi_mod]
+[23114.616932]  [<ffffffff8125fbd9>] blk_done_softirq+0x82/0x8d
+[23114.616932]  [<ffffffff814c8a4b>] __do_softirq+0x1ab/0x412
+[23114.616932]  [<ffffffff8105b01d>] irq_exit+0x49/0x99
+[23114.616932]  [<ffffffff81035135>] smp_call_function_single_interrupt+0x24/0x26
+[23114.616932]  [<ffffffff814c7ec9>] call_function_single_interrupt+0x89/0x90
+[23114.616932]  <EOI> [23114.616932]  [<ffffffffa0023262>] ? scsi_request_fn+0x13a/0x2a1 [scsi_mod]
+[23114.616932]  [<ffffffff814c5966>] ? _raw_spin_unlock_irq+0x2c/0x4a
+[23114.616932]  [<ffffffff814c596c>] ? _raw_spin_unlock_irq+0x32/0x4a
+[23114.616932]  [<ffffffff814c5966>] ? _raw_spin_unlock_irq+0x2c/0x4a
+[23114.616932]  [<ffffffffa0023262>] scsi_request_fn+0x13a/0x2a1 [scsi_mod]
+[23114.616932]  [<ffffffff8125590e>] __blk_run_queue_uncond+0x22/0x2b
+[23114.616932]  [<ffffffff81255930>] __blk_run_queue+0x19/0x1b
+[23114.616932]  [<ffffffff8125ab01>] blk_queue_bio+0x268/0x282
+[23114.616932]  [<ffffffff81258f44>] generic_make_request+0xbd/0x160
+[23114.616932]  [<ffffffff812590e7>] submit_bio+0x100/0x11d
+[23114.616932]  [<ffffffff81298603>] ? __this_cpu_preempt_check+0x13/0x15
+[23114.616932]  [<ffffffff812a1805>] ? __percpu_counter_add+0x8e/0xa7
+[23114.616932]  [<ffffffffa03bfd47>] btrfsic_submit_bio+0x1a/0x1d [btrfs]
+[23114.616932]  [<ffffffffa0377db2>] btrfs_map_bio+0x1f4/0x26d [btrfs]
+[23114.616932]  [<ffffffffa0348a33>] btree_submit_bio_hook+0x74/0xbf [btrfs]
+[23114.616932]  [<ffffffffa03489bf>] ? btrfs_wq_submit_bio+0x160/0x160 [btrfs]
+[23114.616932]  [<ffffffffa03697a9>] submit_one_bio+0x6b/0x89 [btrfs]
+[23114.616932]  [<ffffffffa036f5be>] read_extent_buffer_pages+0x170/0x1ec [btrfs]
+[23114.616932]  [<ffffffffa03471fa>] ? free_root_pointers+0x64/0x64 [btrfs]
+[23114.616932]  [<ffffffffa0348adf>] readahead_tree_block+0x3f/0x4c [btrfs]
+[23114.616932]  [<ffffffffa032e115>] read_block_for_search.isra.20+0x1ce/0x23d [btrfs]
+[23114.616932]  [<ffffffffa032fab8>] btrfs_search_slot+0x65f/0x774 [btrfs]
+[23114.616932]  [<ffffffffa036eff1>] ? free_extent_buffer+0x73/0x7e [btrfs]
+[23114.616932]  [<ffffffffa0331ba4>] btrfs_next_old_leaf+0xa1/0x33c [btrfs]
+[23114.616932]  [<ffffffffa0331e4f>] btrfs_next_leaf+0x10/0x12 [btrfs]
+[23114.616932]  [<ffffffffa0336aa6>] caching_thread+0x22d/0x416 [btrfs]
+[23114.616932]  [<ffffffffa037bce9>] btrfs_scrubparity_helper+0x187/0x3b6 [btrfs]
+[23114.616932]  [<ffffffffa037c036>] btrfs_cache_helper+0xe/0x10 [btrfs]
+[23114.616932]  [<ffffffff8106cf96>] process_one_work+0x273/0x4e4
+[23114.616932]  [<ffffffff8106d6db>] worker_thread+0x1eb/0x2ca
+[23114.616932]  [<ffffffff8106d4f0>] ? rescuer_thread+0x2b6/0x2b6
+[23114.616932]  [<ffffffff81072a81>] kthread+0xd5/0xdd
+[23114.616932]  [<ffffffff810729ac>] ? __kthread_unpark+0x5a/0x5a
+[23114.616932]  [<ffffffff814c6257>] ret_from_fork+0x27/0x40
+[23114.616932] Code: 1f 44 00 00 55 48 89 e5 41 56 41 55 41 54 53 49 89 f4 48 8b 46 70 a8 04 74 09 48 8b 5f 08 48 85 db 75 03 48 8b 1f 49 89 5c 24 68 <83> 7b
+64 ff 74 04 f0 ff 43 58 49 83 7c 24 08 00 74 2c 4c 8d 6b
+[23114.616932] RIP  [<ffffffffa037c1bf>] btrfs_queue_work+0x2c/0x190 [btrfs]
+[23114.616932]  RSP <ffff88023f443d60>
+[23114.689493] ---[ end trace 6e48b6bc707ca34b ]---
+[23114.690166] Kernel panic - not syncing: Fatal exception in interrupt
+[23114.691283] Kernel Offset: disabled
+[23114.691918] ---[ end Kernel panic - not syncing: Fatal exception in interrupt
 
--liubo
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> ---
-> 
-> v2: Make error path of open_ctree() also stop all workers before freeing
->     the block groups. Assert that when freeing block groups, no block
->     group can be in the caching started state.
-> 
->  fs/btrfs/disk-io.c     | 6 +++---
->  fs/btrfs/extent-tree.c | 9 ++++++---
->  2 files changed, 9 insertions(+), 6 deletions(-)
-> 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 066d9b9..bf54d7d 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -3263,7 +3263,6 @@ int open_ctree(struct super_block *sb,
->  
->  fail_block_groups:
->  	btrfs_put_block_group_cache(fs_info);
-> -	btrfs_free_block_groups(fs_info);
->  
->  fail_tree_roots:
->  	free_root_pointers(fs_info, 1);
-> @@ -3271,6 +3270,7 @@ int open_ctree(struct super_block *sb,
->  
->  fail_sb_buffer:
->  	btrfs_stop_all_workers(fs_info);
-> +	btrfs_free_block_groups(fs_info);
->  fail_alloc:
->  fail_iput:
->  	btrfs_mapping_tree_free(&fs_info->mapping_tree);
-> @@ -3985,8 +3985,6 @@ void close_ctree(struct btrfs_fs_info *fs_info)
->  
->  	btrfs_put_block_group_cache(fs_info);
->  
-> -	btrfs_free_block_groups(fs_info);
-> -
->  	/*
->  	 * we must make sure there is not any read request to
->  	 * submit after we stopping all workers.
-> @@ -3994,6 +3992,8 @@ void close_ctree(struct btrfs_fs_info *fs_info)
->  	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
->  	btrfs_stop_all_workers(fs_info);
->  
-> +	btrfs_free_block_groups(fs_info);
-> +
->  	clear_bit(BTRFS_FS_OPEN, &fs_info->flags);
->  	free_root_pointers(fs_info, 1);
->  
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index dcd2e79..4d5120b 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -9742,6 +9742,11 @@ void btrfs_put_block_group_cache(struct btrfs_fs_info *info)
->  	}
->  }
->  
-> +/*
-> + * Must be called only after stopping all workers, since we could have block
-> + * group caching kthreads running, and therefore they could race with us if we
-> + * freed the block groups before stopping them.
-> + */
->  int btrfs_free_block_groups(struct btrfs_fs_info *info)
->  {
->  	struct btrfs_block_group_cache *block_group;
-> @@ -9781,9 +9786,6 @@ int btrfs_free_block_groups(struct btrfs_fs_info *info)
->  		list_del(&block_group->list);
->  		up_write(&block_group->space_info->groups_sem);
->  
-> -		if (block_group->cached == BTRFS_CACHE_STARTED)
-> -			wait_block_group_cache_done(block_group);
-> -
->  		/*
->  		 * We haven't cached this block group, which means we could
->  		 * possibly have excluded extents on this block group.
-> @@ -9793,6 +9795,7 @@ int btrfs_free_block_groups(struct btrfs_fs_info *info)
->  			free_excluded_extents(info, block_group);
->  
->  		btrfs_remove_free_space_cache(block_group);
-> +		ASSERT(block_group->cached != BTRFS_CACHE_STARTED);
->  		ASSERT(list_empty(&block_group->dirty_list));
->  		ASSERT(list_empty(&block_group->io_list));
->  		ASSERT(list_empty(&block_group->bg_list));
-> -- 
-> 2.7.0.rc3
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+The following diagram shows the sequence of operations that lead to the
+use-after-free problem from the above trace:
+
+        CPU 1                               CPU 2                                     CPU 3
+
+                                       caching_thread()
+ close_ctree()
+   btrfs_stop_all_workers()
+     btrfs_destroy_workqueue(
+      fs_info->endio_meta_workers)
+
+                                         btrfs_search_slot()
+                                          read_block_for_search()
+                                           readahead_tree_block()
+                                            read_extent_buffer_pages()
+                                             submit_one_bio()
+                                              btree_submit_bio_hook()
+                                               btrfs_bio_wq_end_io()
+                                                --> sets the bio's
+                                                    bi_end_io callback
+                                                    to end_workqueue_bio()
+                                               --> bio is submitted
+                                                                                  bio completes
+                                                                                  and its bi_end_io callback
+                                                                                  is invoked
+                                                                                   --> end_workqueue_bio()
+                                                                                       --> attempts to queue
+                                                                                           a task on fs_info->endio_meta_workers
+
+     btrfs_destroy_workqueue(
+      fs_info->caching_workers)
+
+So fix this by destroying the queues used for metadata I/O tasks only
+after destroying all the other queues.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/disk-io.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index bf54d7d..8c7e19f 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2207,11 +2207,9 @@ static void btrfs_stop_all_workers(struct btrfs_fs_info *fs_info)
+ 	btrfs_destroy_workqueue(fs_info->delalloc_workers);
+ 	btrfs_destroy_workqueue(fs_info->workers);
+ 	btrfs_destroy_workqueue(fs_info->endio_workers);
+-	btrfs_destroy_workqueue(fs_info->endio_meta_workers);
+ 	btrfs_destroy_workqueue(fs_info->endio_raid56_workers);
+ 	btrfs_destroy_workqueue(fs_info->endio_repair_workers);
+ 	btrfs_destroy_workqueue(fs_info->rmw_workers);
+-	btrfs_destroy_workqueue(fs_info->endio_meta_write_workers);
+ 	btrfs_destroy_workqueue(fs_info->endio_write_workers);
+ 	btrfs_destroy_workqueue(fs_info->endio_freespace_worker);
+ 	btrfs_destroy_workqueue(fs_info->submit_workers);
+@@ -2221,6 +2219,13 @@ static void btrfs_stop_all_workers(struct btrfs_fs_info *fs_info)
+ 	btrfs_destroy_workqueue(fs_info->flush_workers);
+ 	btrfs_destroy_workqueue(fs_info->qgroup_rescan_workers);
+ 	btrfs_destroy_workqueue(fs_info->extent_workers);
++	/*
++	 * Now that all other work queues are destroyed, we can safely destroy
++	 * the queues used for metadata I/O, since tasks from those other work
++	 * queues can do metadata I/O operations.
++	 */
++	btrfs_destroy_workqueue(fs_info->endio_meta_workers);
++	btrfs_destroy_workqueue(fs_info->endio_meta_write_workers);
+ }
+ 
+ static void free_root_extent_buffers(struct btrfs_root *root)
+-- 
+2.7.0.rc3
+

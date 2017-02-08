@@ -1,50 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from okda.pipebreaker.pl ([176.56.236.173]:57242 "EHLO
-        okda.pipebreaker.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751809AbdBHSoo (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Feb 2017 13:44:44 -0500
-Received: from 185-6-29-55-rev.logitus.pl ([185.6.29.55] helo=mother.pipebreaker.pl)
-        by okda.pipebreaker.pl with esmtps (TLSv1.2:ECDHE-RSA-AES256-GCM-SHA384:256)
-        (Exim 4.87_1)
-        (envelope-from <zdzichu@mother.pipebreaker.pl>)
-        id 1cbSb6-000bz5-Bn
-        for linux-btrfs@vger.kernel.org; Wed, 08 Feb 2017 14:47:48 +0100
-Date: Wed, 8 Feb 2017 14:46:47 +0100
-From: Tomasz Torcz <tomek@pipebreaker.pl>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: raid1: cannot add disk to replace faulty because can only mount
- fs as read-only.
-Message-ID: <20170208134647.GA86702@mother.pipebreaker.pl>
-References: <YAvBcoM9EImXYYAvCcegSf@videotron.ca>
- <a5262907-06f2-2c6f-d23a-2703b10429b7@deragon.biz>
- <pan$be2e$8a233bb0$f63eb0cb$d3413db@cox.net>
- <20170201115530.l2ce5afcqld2kzi4@angband.pl>
- <pan$27de1$6045e2b1$7cc1684e$e9aac1ad@cox.net>
- <7cb699fd-44a7-d8eb-e492-c448f67b0eac@gmail.com>
- <20170202142521.nfiy73ye6bi5smjv@angband.pl>
- <ZIyPcL4cW36fIZIyQcB9Hs@videotron.ca>
- <6e26ee22-3d67-d2aa-22b7-c03f9ffc18f2@deragon.biz>
- <6e4b9b4f-d4df-5679-5645-a52dbc15b424@gmail.com>
+Received: from mail.webx.cz ([109.123.222.201]:48770 "EHLO mail.webx.cz"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751688AbdBHSps (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 8 Feb 2017 13:45:48 -0500
+Received: from localhost (localhost [127.0.0.1])
+        by mail.webx.cz (Postfix) with ESMTP id 463E342840
+        for <linux-btrfs@vger.kernel.org>; Wed,  8 Feb 2017 19:38:07 +0100 (CET)
+Received: from mail.webx.cz ([127.0.0.1])
+        by localhost (mail1.webx.cz [127.0.0.1]) (amavisd-new, port 10042)
+        with LMTP id vkbe19eAgJ3w for <linux-btrfs@vger.kernel.org>;
+        Wed,  8 Feb 2017 19:38:07 +0100 (CET)
+Received: from libor-nb.localnet (unknown [77.48.255.132])
+        (using TLSv1 with cipher DHE-RSA-AES256-SHA (256/256 bits))
+        (No client certificate requested)
+        by mail.webx.cz (Postfix) with ESMTPSA id 235634283E
+        for <linux-btrfs@vger.kernel.org>; Wed,  8 Feb 2017 19:38:07 +0100 (CET)
+From: Libor =?utf-8?B?S2xlcMOhxI0=?= <libor.klepac@bcom.cz>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: BTRFS and cyrus mail server
+Date: Wed, 08 Feb 2017 19:38:06 +0100
+Message-ID: <24389268.gAX5gEpECb@libor-nb>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <6e4b9b4f-d4df-5679-5645-a52dbc15b424@gmail.com>
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Feb 08, 2017 at 07:50:22AM -0500, Austin S. Hemmelgarn wrote:
->  It is exponentially safer in BTRFS
-> to run single data single metadata than half raid1 data half raid1 metadata.
+Hello,
+inspired by recent discussion on BTRFS vs. databases i wanted to ask on 
+suitability of BTRFS for hosting a Cyrus imap server spool. I haven't found 
+any recent article on this topic.
 
-  Why?
- 
-> To convert to profiles _designed_ for a single device and then convert back
-> to raid1 when I got another disk.  The issue you've stumbled across is only
-> partial motivation for this, the bigger motivation is that running half a 2
-> disk array is more risky than running a single disk by itself.
+I'm preparing migration of our mailserver to Debian Stretch, ie. kernel 4.9 
+for now. We are using XFS for storage now. I will migrate using imapsync to 
+new server. Both are virtual machines running on vmware on Dell hardware.
+Disks are on battery backed hw raid controllers over vmfs.
 
-  Again, why?  What's the difference?  What causes increased risk?
+I'm considering using BTRFS, but I'm little concerned because of reading this 
+mailing list ;)
 
--- 
-Tomasz Torcz                Only gods can safely risk perfection,
-xmpp: zdzichubg@chrome.pl     it's a dangerous thing for a man.  -- Alia
+I'm interested in using:
+ - compression (emails should compress well - right?)
+ - maybe deduplication (cyrus does it by hardlinking of same content messages 
+now) later
+ - snapshots for history
+ - send/receive for offisite backup
+ - what about data inlining, should it be turned off?
+
+Our Cyrus pool consist of ~520GB of data in ~2,5million files, ~2000 
+mailboxes.
+We have message size limit of ~25MB, so emails are not bigger than that.
+There are however bigger files, these are per mailbox caches/index files of 
+cyrus (some of them are around 300MB) - and these are also files which are 
+most modified.
+Rest of files (messages) are usualy just writen once.
+
+-----------
+I started using btrfs on backup server as a storage for 4 backuppc run in 
+containers (backups are then send away with btrbk), year ago.
+After switching off data inlining i'm satisfied, everything works (send/
+receive is sometime slow, but i guess it's because of sata disks on receive 
+side).
+
+
+Thanks for you opinions,
+
+Libor
 

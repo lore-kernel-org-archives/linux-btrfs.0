@@ -1,82 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f195.google.com ([209.85.223.195]:36131 "EHLO
-        mail-io0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751714AbdBHNQr (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Feb 2017 08:16:47 -0500
-Received: by mail-io0-f195.google.com with SMTP id q20so15781579ioi.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 08 Feb 2017 05:16:01 -0800 (PST)
-Subject: Re: BTRFS for OLTP Databases
-To: Martin Raiber <martin@urbackup.org>, Peter Zaitsev <pz@percona.com>,
-        linux-btrfs@vger.kernel.org
-References: <CA+RUij3aW1ZYyJPNRLzckwOCCmoWa15Eu4h142jB_-qKc49hBw@mail.gmail.com>
- <20170207140058.GA4249@carfax.org.uk>
- <CA+RUij3yQ83HQzN8VfzAaku6+HTcXEz+iqu5nV1=UVX6Gc4ddw@mail.gmail.com>
- <0102015a1da5be24-3fd02799-c4e0-461b-92d2-82131016432e-000000@eu-west-1.amazonses.com>
+Received: from mail-io0-f175.google.com ([209.85.223.175]:34007 "EHLO
+        mail-io0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933224AbdBHN0q (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Feb 2017 08:26:46 -0500
+Received: by mail-io0-f175.google.com with SMTP id l66so115629529ioi.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 08 Feb 2017 05:26:41 -0800 (PST)
+Subject: Re: user_subvol_rm_allowed? Is there a
+ user_subvol_create_deny|allowed?
+To: Nicholas D Steeves <nsteeves@gmail.com>, linux-btrfs@vger.kernel.org
+References: <20170208014931.GA22397@DigitalMercury.dynalias.net>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <f96d3dff-97ad-561d-c7ef-cf9b51189bc1@gmail.com>
-Date: Wed, 8 Feb 2017 08:08:37 -0500
+Message-ID: <7a6a1e4a-c68a-af78-58ce-c81d90ec4c06@gmail.com>
+Date: Wed, 8 Feb 2017 07:26:12 -0500
 MIME-Version: 1.0
-In-Reply-To: <0102015a1da5be24-3fd02799-c4e0-461b-92d2-82131016432e-000000@eu-west-1.amazonses.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <20170208014931.GA22397@DigitalMercury.dynalias.net>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-02-08 07:14, Martin Raiber wrote:
-> Hi,
+On 2017-02-07 20:49, Nicholas D Steeves wrote:
+> Dear btrfs community,
 >
-> On 08.02.2017 03:11 Peter Zaitsev wrote:
->> Out of curiosity, I see one problem here:
->> If you're doing snapshots of the live database, each snapshot leaves
->> the database files like killing the database in-flight. Like shutting
->> the system down in the middle of writing data.
->>
->> This is because I think there's no API for user space to subscribe to
->> events like a snapshot - unlike e.g. the VSS API (volume snapshot
->> service) in Windows. You should put the database into frozen state to
->> prepare it for a hotcopy before creating the snapshot, then ensure all
->> data is flushed before continuing.
->>
->> I think I've read that btrfs snapshots do not guarantee single point in
->> time snapshots - the snapshot may be smeared across a longer period of
->> time while the kernel is still writing data. So parts of your writes
->> may still end up in the snapshot after issuing the snapshot command,
->> instead of in the working copy as expected.
->>
->> How is this going to be addressed? Is there some snapshot aware API to
->> let user space subscribe to such events and do proper preparation? Is
->> this planned? LVM could be a user of such an API, too. I think this
->> could have nice enterprise-grade value for Linux.
->>
->> XFS has xfs_freeze and xfs_thaw for this, to prepare LVM snapshots. But
->> still, also this needs to be integrated with MySQL to properly work. I
->> once (years ago) researched on this but gave up on my plans when I
->> planned database backups for our web server infrastructure. We moved to
->> creating SQL dumps instead, although there're binlogs which can be used
->> to recover to a clean and stable transactional state after taking
->> snapshots. But I simply didn't want to fiddle around with properly
->> cleaning up binlogs which accumulate horribly much space usage over
->> time. The cleanup process requires to create a cold copy or dump of the
->> complete database from time to time, only then it's safe to remove all
->> binlogs up to that point in time.
+> Please accept my apologies in advance if I missed something in recent
+> btrfs development; my MUA tells me I'm ~1500 unread messages
+> out-of-date. :/
 >
-> little bit off topic, but I for one would be on board with such an
-> effort. It "just" needs coordination between the backup
-> software/snapshot tools, the backed up software and the various snapshot
-> providers. If you look at the Windows VSS API, this would be a
-> relatively large undertaking if all the corner cases are taken into
-> account, like e.g. a database having the database log on a separate
-> volume from the data, dependencies between different components etc.
+> I recently read about "mount -t btrfs -o user_subvol_rm_allowed" while
+> doing reading up on LXC handling of snapshots with the btrfs backend.
+> Is this mount option per-subvolume, or per volume?
+AFAIK, it's per-volume.
 >
-> You'll know more about this, but databases usually fsync quite often in
-> their default configuration, so btrfs snapshots shouldn't be much behind
-> the properly snapshotted state, so I see the advantages more with
-> usability and taking care of corner cases automatically.
-Just my perspective, but BTRFS (and XFS, and OCFS2) already provide 
-reflinking to userspace, and therefore it's fully possible to implement 
-this in userspace.  Having a version of the fsfreeze (the generic form 
-of xfs_freeze) stuff that worked on individual sub-trees would be nice 
-from a practical perspective, but implementing it would not be easy by 
-any means, and would be essentially necessary for a VSS-like API.  In 
-the meantime though, it is fully possible for the application software 
-to implement this itself without needing anything more from the kernel.
+> Also, what mechanisms to restrict a user's ability to create an
+> arbitrarily large number of snapshots?  Is there a
+> user_subvol_create_deny|allowed?  What I've read about the inverse
+> correlation between number of subvols to performance, a potentially
+> hostile user could cause an IO denial of service or potentially even
+> trigger an ENOSPC.
+Currently, there is nothing that restricts this ability.  This is one of 
+a handful of outstanding issues that I'd love to see fixed, but don't 
+have the time, patience, or background to fix it myself.
+>
+> From what I gather, the following will reproduce the hypothetical
+> issue related to my question:
+>
+> # as root
+> btrfs sub create /some/dir/subvol
+> chown some-user /some/dir/subvol
+>
+> # as some-user
+> cd /home/dir/subvol
+> cp -ar --reflink=always /some/big/files ./
+> COUNT=1
+> while [ 0 -lt 1 ]; do
+>   btrfs sub snap ./ ./snapshot-$COUNT
+>   COUNT=COUNT+1
+>   sleep 2   # --maybe unnecessary
+> done
+>
+fWIW, this will cause all kinds of other issues too.  It will however 
+slow down exponentially over time as a result of these issues though. 
+The two biggest are:
+1. Performance for large directories is horrendous, and roughly 
+exponentially (with a small exponent near 1) proportionate to the 
+inverse of the number of directory entries.  Past a few thousand 
+entries, directory operations (especially stat() and readdir()) start to 
+take long enough for a normal person to notice the latency.
+2. Overall filesystem performance with lots of snapshots is horrendous 
+too, and this also scales exponentially proportionate to the inverse of 
+the number of snapshots and the total amount of data in each.  This will 
+start being an issue much sooner than 1, somewhere around 300-400 
+snapshots most of the time.
 

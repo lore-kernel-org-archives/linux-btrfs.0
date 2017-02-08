@@ -1,71 +1,163 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f49.google.com ([209.85.214.49]:38322 "EHLO
-        mail-it0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932147AbdBHMVG (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Feb 2017 07:21:06 -0500
-Received: by mail-it0-f49.google.com with SMTP id c7so101403108itd.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 08 Feb 2017 04:21:06 -0800 (PST)
-Received: from [191.9.206.254] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
-        by smtp.gmail.com with ESMTPSA id v68sm11155474ioi.20.2017.02.08.04.12.19
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Wed, 08 Feb 2017 04:12:20 -0800 (PST)
+Received: from a4-2.smtp-out.eu-west-1.amazonses.com ([54.240.4.2]:33288 "EHLO
+        a4-2.smtp-out.eu-west-1.amazonses.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1753414AbdBHMVj (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 8 Feb 2017 07:21:39 -0500
 Subject: Re: BTRFS for OLTP Databases
-To: linux-btrfs@vger.kernel.org
+To: Peter Zaitsev <pz@percona.com>, linux-btrfs@vger.kernel.org
 References: <CA+RUij3aW1ZYyJPNRLzckwOCCmoWa15Eu4h142jB_-qKc49hBw@mail.gmail.com>
  <20170207140058.GA4249@carfax.org.uk>
- <CA+RUij3LJeFR1pz9QDOkMEVbh1cws5Rv2KPep3ghVAimJy7aLA@mail.gmail.com>
- <91c8a758-23b6-edf1-74b0-2d87acbb2560@gmail.com>
- <20170207211941.3310d7a8@jupiter.sol.kaishome.de>
- <6d7eac16-773e-bf6c-a6be-d3950f9b2325@gmail.com>
- <20170207215408.65030acd@jupiter.sol.kaishome.de>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <50cd6718-b0f6-90f2-b9b4-b60228c131e3@gmail.com>
-Date: Wed, 8 Feb 2017 07:12:14 -0500
+ <CA+RUij3yQ83HQzN8VfzAaku6+HTcXEz+iqu5nV1=UVX6Gc4ddw@mail.gmail.com>
+From: Martin Raiber <martin@urbackup.org>
+Message-ID: <0102015a1da5be24-3fd02799-c4e0-461b-92d2-82131016432e-000000@eu-west-1.amazonses.com>
+Date: Wed, 8 Feb 2017 12:14:45 +0000
 MIME-Version: 1.0
-In-Reply-To: <20170207215408.65030acd@jupiter.sol.kaishome.de>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+In-Reply-To: <CA+RUij3yQ83HQzN8VfzAaku6+HTcXEz+iqu5nV1=UVX6Gc4ddw@mail.gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-256; boundary="------------ms040107010808050208030301"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-02-07 15:54, Kai Krakow wrote:
-> Am Tue, 7 Feb 2017 15:27:34 -0500
-> schrieb "Austin S. Hemmelgarn" <ahferroin7@gmail.com>:
+This is a cryptographically signed message in MIME format.
+
+--------------ms040107010808050208030301
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+Hi,
+
+On 08.02.2017 03:11 Peter Zaitsev wrote:
+> Out of curiosity, I see one problem here:
+> If you're doing snapshots of the live database, each snapshot leaves
+> the database files like killing the database in-flight. Like shutting
+> the system down in the middle of writing data.
 >
->>>> I'm not sure about this one.  I would assume based on the fact that
->>>> many other things don't work with nodatacow and that regular defrag
->>>> doesn't work on files which are currently mapped as executable code
->>>> that it does not, but I could be completely wrong about this too.
->>>
->>> Technically, there's nothing that prevents autodefrag to work for
->>> nodatacow files. The question is: is it really necessary? Standard
->>> file systems also have no autodefrag, it's not an issue there
->>> because they are essentially nodatacow. Simply defrag the database
->>> file once and you're done. Transactional MySQL uses huge data
->>> files, probably preallocated. It should simply work with
->>> nodatacow.
->> The thing is, I don't have enough knowledge of how defrag is
->> implemented in BTRFS to say for certain that ti doesn't use COW
->> semantics somewhere (and I would actually expect it to do so, since
->> that in theory makes many things _much_ easier to handle), and if it
->> uses COW somewhere, then it by definition doesn't work on NOCOW files.
+> This is because I think there's no API for user space to subscribe to
+> events like a snapshot - unlike e.g. the VSS API (volume snapshot
+> service) in Windows. You should put the database into frozen state to
+> prepare it for a hotcopy before creating the snapshot, then ensure all
+> data is flushed before continuing.
 >
-> A dev would be needed on this. But from a non-dev point of view, the
-> defrag operation itself is CoW: Blocks are rewritten to another
-> location in contiguous order. Only metadata CoW should be needed for
-> this operation.
+> I think I've read that btrfs snapshots do not guarantee single point in=
+
+> time snapshots - the snapshot may be smeared across a longer period of
+> time while the kernel is still writing data. So parts of your writes
+> may still end up in the snapshot after issuing the snapshot command,
+> instead of in the working copy as expected.
 >
-> It should be nothing else than writing to a nodatacow snapshot... Just
-> that the snapshot is more or less implicit and temporary.
+> How is this going to be addressed? Is there some snapshot aware API to
+> let user space subscribe to such events and do proper preparation? Is
+> this planned? LVM could be a user of such an API, too. I think this
+> could have nice enterprise-grade value for Linux.
 >
-> Hmm? *curious*
->
-The gimmicky part though is that the file has to remain accessible 
-throughout the entire operation, and the defrad can't lose changes that 
-occur while the file is being defragmented.  In many filesystems (NTFS 
-on Windows for example), a defrag functions similarly to a pvmove 
-operation in LVM, as each extent gets moved, writes to that region get 
-indirected to the new location and treat the areas that were written to 
-as having been moved already.  The thing is, on BTRFS that would result 
-in extents getting split, which means COW is probably involved at some 
-level in the data path too.
+> XFS has xfs_freeze and xfs_thaw for this, to prepare LVM snapshots. But=
+
+> still, also this needs to be integrated with MySQL to properly work. I
+> once (years ago) researched on this but gave up on my plans when I
+> planned database backups for our web server infrastructure. We moved to=
+
+> creating SQL dumps instead, although there're binlogs which can be used=
+
+> to recover to a clean and stable transactional state after taking
+> snapshots. But I simply didn't want to fiddle around with properly
+> cleaning up binlogs which accumulate horribly much space usage over
+> time. The cleanup process requires to create a cold copy or dump of the=
+
+> complete database from time to time, only then it's safe to remove all
+> binlogs up to that point in time.
+
+little bit off topic, but I for one would be on board with such an
+effort. It "just" needs coordination between the backup
+software/snapshot tools, the backed up software and the various snapshot
+providers. If you look at the Windows VSS API, this would be a
+relatively large undertaking if all the corner cases are taken into
+account, like e.g. a database having the database log on a separate
+volume from the data, dependencies between different components etc.
+
+You'll know more about this, but databases usually fsync quite often in
+their default configuration, so btrfs snapshots shouldn't be much behind
+the properly snapshotted state, so I see the advantages more with
+usability and taking care of corner cases automatically.
+
+Regards,
+Martin Raiber
+
+
+--------------ms040107010808050208030301
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgEFADCABgkqhkiG9w0BBwEAAKCC
+CuQwggT6MIID4qADAgECAhBuZlYKQ9u25a8FBnl/zd+MMA0GCSqGSIb3DQEBCwUAMHUxCzAJ
+BgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBD
+ZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20gQ2xhc3MgMSBDbGll
+bnQgQ0EwHhcNMTYwOTE5MTMxNzAyWhcNMTcwOTE5MTMxNzAyWjBCMRwwGgYDVQQDDBNtYXJ0
+aW5AdXJiYWNrdXAub3JnMSIwIAYJKoZIhvcNAQkBFhNtYXJ0aW5AdXJiYWNrdXAub3JnMIIB
+IjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAw/FqcYQTj3z2wO8ASP8j0Jvb4AbMNgB9
+iv2PLMtAMzYmuW7w2VfUcXwWgM4Fkg6Nm33VhOK+Vryd2bj+jGNhm+DmbMZCfki/NrhdcHKH
+AT7i1NL1lps8X3xJ7N0eJpghht9Wx5OAUfGv18HDD3yBUzqW4x7OaGoKqM0DwyUm9O/rUU6D
+ugxVONmgprREB1JyJBAV8lgYbY0EEUFS1JECuxNcJQEY+G8EpUNCsZxc8nvROyRD72Aztuy2
+qQj4Rs+FzQNCplzmvXot7W0T2KAH9gKb25Q5Lv0sFQEux1stcJc6KKNea21UufblNMLApQ2Z
+cSNWwDF5R+YpUFW8HiBOmwIDAQABo4IBtzCCAbMwDgYDVR0PAQH/BAQDAgSwMB0GA1UdJQQW
+MBQGCCsGAQUFBwMCBggrBgEFBQcDBDAJBgNVHRMEAjAAMB0GA1UdDgQWBBTKwa9D/4YV1XsZ
+6affm7Wv4ykzdTAfBgNVHSMEGDAWgBQkgWw5Yb5JD4+3G0YrySi1J0htaDBvBggrBgEFBQcB
+AQRjMGEwJAYIKwYBBQUHMAGGGGh0dHA6Ly9vY3NwLnN0YXJ0c3NsLmNvbTA5BggrBgEFBQcw
+AoYtaHR0cDovL2FpYS5zdGFydHNzbC5jb20vY2VydHMvc2NhLmNsaWVudDEuY3J0MDgGA1Ud
+HwQxMC8wLaAroCmGJ2h0dHA6Ly9jcmwuc3RhcnRzc2wuY29tL3NjYS1jbGllbnQxLmNybDAe
+BgNVHREEFzAVgRNtYXJ0aW5AdXJiYWNrdXAub3JnMCMGA1UdEgQcMBqGGGh0dHA6Ly93d3cu
+c3RhcnRzc2wuY29tLzBHBgNVHSAEQDA+MDwGCysGAQQBgbU3AQIFMC0wKwYIKwYBBQUHAgEW
+H2h0dHBzOi8vd3d3LnN0YXJ0c3NsLmNvbS9wb2xpY3kwDQYJKoZIhvcNAQELBQADggEBADMT
+EdZtz2a7sT3FDGszfzlAfmwVamtLbG5+O6NC5xc1n9AtWa7LdRPsQzgIROT/e84D+uTPAo1c
+F6rEJ7oSqhgxJcAWgGN1G0KyEzSaFs+nLvfFN1LeaYQjElnmw87z6LGLvjOnfu01M0Atj+DR
+DB3NyRoAn2/5yXHJKP7/mlUSXV/fiplcvP+TJbYJwrL7QDETySua89BU0oH3vtidOm8rlWzl
+cZ4ug+kXzMMwjcwSIFb/P6LDZm3FMCNbg8sBt59+V5+Duk8y6aOcQ0GdGrIXMNs+oIKL5iQW
+sP9+c55K9mJVl4+3J4sTcyT/L2EOXxEZY+zEhnJAds9dQJXkKfswggXiMIIDyqADAgECAhBr
+p4p9CteI1lEK+Vnk57ThMA0GCSqGSIb3DQEBCwUAMH0xCzAJBgNVBAYTAklMMRYwFAYDVQQK
+Ew1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0aWZpY2F0ZSBT
+aWduaW5nMSkwJwYDVQQDEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTAeFw0x
+NTEyMTYwMTAwMDVaFw0zMDEyMTYwMTAwMDVaMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1T
+dGFydENvbSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
+eTEjMCEGA1UEAxMaU3RhcnRDb20gQ2xhc3MgMSBDbGllbnQgQ0EwggEiMA0GCSqGSIb3DQEB
+AQUAA4IBDwAwggEKAoIBAQC9fdr3w6J9g/Zbgv3bW1+uHht1wLUZr5gkrLtXedg17AkefMyU
+GwrQdvwObhajcVmnKVxhrUwkZPXRAwZZosRHfEIi5FH7x6SV/8Sp5lZEuiMnvMFG2MzLA84J
+6Ws5T4NfXZ0qn4TPgnr3X2vPVS51M7Ua9nIJgn8jvTra4eyyQzxvuA/GZwKg7VQfDCmCS+kI
+CslYYWgXOMt2xlsSslxLce0CGWRsT8EpMyt1iDflSjXZIsE7m1uTyHaKZspMLyIyz6mySu8j
+8BWWHpChNNeTrFuhVfrOAyDPFJVUvKZCLKBhibTLloyy+LatoWELrjdI4a8StZY8+dIR9t4A
+PXGzAgMBAAGjggFkMIIBYDAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0lBBYwFAYIKwYBBQUHAwIG
+CCsGAQUFBwMEMBIGA1UdEwEB/wQIMAYBAf8CAQAwMgYDVR0fBCswKTAnoCWgI4YhaHR0cDov
+L2NybC5zdGFydHNzbC5jb20vc2ZzY2EuY3JsMGYGCCsGAQUFBwEBBFowWDAkBggrBgEFBQcw
+AYYYaHR0cDovL29jc3Auc3RhcnRzc2wuY29tMDAGCCsGAQUFBzAChiRodHRwOi8vYWlhLnN0
+YXJ0c3NsLmNvbS9jZXJ0cy9jYS5jcnQwHQYDVR0OBBYEFCSBbDlhvkkPj7cbRivJKLUnSG1o
+MB8GA1UdIwQYMBaAFE4L7xqkQFulF2mHMMo0aEPQQa7yMD8GA1UdIAQ4MDYwNAYEVR0gADAs
+MCoGCCsGAQUFBwIBFh5odHRwOi8vd3d3LnN0YXJ0c3NsLmNvbS9wb2xpY3kwDQYJKoZIhvcN
+AQELBQADggIBAIvj94fsAYuErQ8BAluc4SMnIwS9NPBwAm5SH9uh2NCXTq7im61g7F1LIiNI
+/+wq37fUuaMbz4g7VarKQTgf8ubs0p7NZWcIe7Bvem2AWaXBsxsaRTYw5kG3DN8pd1hSEUuF
+oTa7DmNeFe8tiK1BrL3rbA/m48jp4AiFXgvxprJrW7izsyetOrRHPbkW4Y07v29MdhaPv3u1
+JELyszXqOzjIYo4sWlC8iDQXwgSW/ntvWy2n4LuiaozlCfXl149tKeqvwlvrla2Yklue/quW
+p9j9ou4T/OY0CXMuY+B8wNK0ohd2D4ShgFlMSjzAFRoHGKF81snTr2d1A7Ew02oF6UQyCkC2
+aNNsK5cWOojBar5c7HplX9aHYUCZouxIeU28SONJAxnATgR4cJ2jrpmYSz/kliUJ46S6UpVD
+o/ebn9c6PaM/XtDYCCaM/7XX6wc3s++sbQ7CtCn1Ax7df6ufQbwyO0V+oFa9H0KAsjHMzcwk
+3EV2B2NLatidKE/m7G+rB9m+FlVgIiSp0mGlg43QO9Kh1+JqvTCIzv2bJJkmPMLQJNuKKwHN
+L8F4GGp6jbAV+WL+LDeGfVcq8DHS3LrD+xyYEXQBiqZEdiPVOMxLDSUCXsDO0uCWpaNQ8j6y
+6S9p0xE/Ga0peVLadVHhqf9nXqKaxnr358VgfrxzUIrvOaOjMYIDzDCCA8gCAQEwgYkwdTEL
+MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29t
+IENlcnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAxIENs
+aWVudCBDQQIQbmZWCkPbtuWvBQZ5f83fjDANBglghkgBZQMEAgEFAKCCAhMwGAYJKoZIhvcN
+AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwMjA4MTIxNDQxWjAvBgkqhkiG
+9w0BCQQxIgQgqxVP6qnB+r28Ty2bnOKDCH+JLrEM2IYY1iGtOahR3Q0wbAYJKoZIhvcNAQkP
+MV8wXTALBglghkgBZQMEASowCwYJYIZIAWUDBAECMAoGCCqGSIb3DQMHMA4GCCqGSIb3DQMC
+AgIAgDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggqhkiG9w0DAgIBKDCBmgYJKwYBBAGC
+NxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
+VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRD
+b20gQ2xhc3MgMSBDbGllbnQgQ0ECEG5mVgpD27blrwUGeX/N34wwgZwGCyqGSIb3DQEJEAIL
+MYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYDVQQL
+EyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
+Q2xhc3MgMSBDbGllbnQgQ0ECEG5mVgpD27blrwUGeX/N34wwDQYJKoZIhvcNAQEBBQAEggEA
+qRk2SvWS2b0L+nNrFS8rURhKDneqiifLTKGrTALUybZUmNWCDHsIkp8AV7w+vUNy+3xuy8jz
+7/tWB10v26zCTXzZ3UghhSlSugSuNzggh2F9mGvFtvqZZ07GDX/P/99mWK6iGkIKwm+C2UK5
+X/MEFZwdUpAU7alSC7Avi1P4TGt2UOqRRBWtSvnFX3xffX3h5ZnCBcQHpH0vnaqXM8sfVwFW
+BBmSLtDq2T9SUXcm/oz2R8iuZY6rGwK2c2PvJKkoudsZ4AB6AFO6AMgkLSKbg1WjTM4BpmrY
+AxuLNKcQ7wtxiK775SC6+NSO0dKkG4kIKbYHYiu0vzRrYQ4X0oTW6QAAAAAAAA==
+--------------ms040107010808050208030301--

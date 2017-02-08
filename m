@@ -1,103 +1,235 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f65.google.com ([209.85.214.65]:34254 "EHLO
-        mail-it0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752923AbdBHNmY (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Feb 2017 08:42:24 -0500
-Received: by mail-it0-f65.google.com with SMTP id o185so15480949itb.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 08 Feb 2017 05:40:53 -0800 (PST)
-Subject: Re: BTRFS for OLTP Databases
-To: Martin Raiber <martin@urbackup.org>, Peter Zaitsev <pz@percona.com>,
-        linux-btrfs@vger.kernel.org
-References: <CA+RUij3aW1ZYyJPNRLzckwOCCmoWa15Eu4h142jB_-qKc49hBw@mail.gmail.com>
- <20170207140058.GA4249@carfax.org.uk>
- <CA+RUij3yQ83HQzN8VfzAaku6+HTcXEz+iqu5nV1=UVX6Gc4ddw@mail.gmail.com>
- <0102015a1da5be24-3fd02799-c4e0-461b-92d2-82131016432e-000000@eu-west-1.amazonses.com>
- <f96d3dff-97ad-561d-c7ef-cf9b51189bc1@gmail.com>
- <0102015a1de76a82-da5513d7-1cd8-4eff-9e0a-e34aac752e1f-000000@eu-west-1.amazonses.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <f24de2b5-a4c1-a729-2f46-90a1911ef168@gmail.com>
-Date: Wed, 8 Feb 2017 08:32:11 -0500
+Received: from mail-io0-f195.google.com ([209.85.223.195]:33845 "EHLO
+        mail-io0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932489AbdBHOGU (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Feb 2017 09:06:20 -0500
+Received: by mail-io0-f195.google.com with SMTP id c80so15942280iod.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 08 Feb 2017 06:04:57 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <0102015a1de76a82-da5513d7-1cd8-4eff-9e0a-e34aac752e1f-000000@eu-west-1.amazonses.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <8e2d5864-16e0-a92d-9237-ed8001543b06@cn.fujitsu.com>
+References: <fce777cb-027f-532b-76ab-24a1e5c2cf7c@suse.de> <507c32d4-929c-b691-6196-103c8cb9addb@suse.com>
+ <80d3e5ce55ddc7e454cce96e67e2ea64@88cbed2449cf> <8999d95dac21ea8e2908c5012e50c59b@88cbed2449cf>
+ <f9e2b226440e4f6e17e61ce86eecc7eb@88cbed2449cf> <57259b63-2f26-0da4-16f6-5fbd781daeb0@cn.fujitsu.com>
+ <4200a425-890f-b283-b43b-e5911b1c6d8c@suse.de> <3c9ce5e2-6bc0-96d3-1d99-75f96e03afd1@cn.fujitsu.com>
+ <CAL3q7H6n9MVz7187GCn-oT0_5fLAxhsgJPA0fjrdvVMQ+4HqTw@mail.gmail.com> <8e2d5864-16e0-a92d-9237-ed8001543b06@cn.fujitsu.com>
+From: Filipe Manana <fdmanana@gmail.com>
+Date: Wed, 8 Feb 2017 13:56:21 +0000
+Message-ID: <CAL3q7H4z1S1xCv10VGutEGJWF+ROQB0-pc9nPWAdqFyue08S9g@mail.gmail.com>
+Subject: Re: Very slow balance / btrfs-transaction
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Goldwyn Rodrigues <rgoldwyn@suse.de>, Jorg Bornschein <jb@capsec.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-02-08 08:26, Martin Raiber wrote:
-> On 08.02.2017 14:08 Austin S. Hemmelgarn wrote:
->> On 2017-02-08 07:14, Martin Raiber wrote:
->>> Hi,
->>>
->>> On 08.02.2017 03:11 Peter Zaitsev wrote:
->>>> Out of curiosity, I see one problem here:
->>>> If you're doing snapshots of the live database, each snapshot leaves
->>>> the database files like killing the database in-flight. Like shutting
->>>> the system down in the middle of writing data.
->>>>
->>>> This is because I think there's no API for user space to subscribe to
->>>> events like a snapshot - unlike e.g. the VSS API (volume snapshot
->>>> service) in Windows. You should put the database into frozen state to
->>>> prepare it for a hotcopy before creating the snapshot, then ensure all
->>>> data is flushed before continuing.
->>>>
->>>> I think I've read that btrfs snapshots do not guarantee single point in
->>>> time snapshots - the snapshot may be smeared across a longer period of
->>>> time while the kernel is still writing data. So parts of your writes
->>>> may still end up in the snapshot after issuing the snapshot command,
->>>> instead of in the working copy as expected.
->>>>
->>>> How is this going to be addressed? Is there some snapshot aware API to
->>>> let user space subscribe to such events and do proper preparation? Is
->>>> this planned? LVM could be a user of such an API, too. I think this
->>>> could have nice enterprise-grade value for Linux.
->>>>
->>>> XFS has xfs_freeze and xfs_thaw for this, to prepare LVM snapshots. But
->>>> still, also this needs to be integrated with MySQL to properly work. I
->>>> once (years ago) researched on this but gave up on my plans when I
->>>> planned database backups for our web server infrastructure. We moved to
->>>> creating SQL dumps instead, although there're binlogs which can be used
->>>> to recover to a clean and stable transactional state after taking
->>>> snapshots. But I simply didn't want to fiddle around with properly
->>>> cleaning up binlogs which accumulate horribly much space usage over
->>>> time. The cleanup process requires to create a cold copy or dump of the
->>>> complete database from time to time, only then it's safe to remove all
->>>> binlogs up to that point in time.
->>>
->>> little bit off topic, but I for one would be on board with such an
->>> effort. It "just" needs coordination between the backup
->>> software/snapshot tools, the backed up software and the various snapshot
->>> providers. If you look at the Windows VSS API, this would be a
->>> relatively large undertaking if all the corner cases are taken into
->>> account, like e.g. a database having the database log on a separate
->>> volume from the data, dependencies between different components etc.
->>>
->>> You'll know more about this, but databases usually fsync quite often in
->>> their default configuration, so btrfs snapshots shouldn't be much behind
->>> the properly snapshotted state, so I see the advantages more with
->>> usability and taking care of corner cases automatically.
->> Just my perspective, but BTRFS (and XFS, and OCFS2) already provide
->> reflinking to userspace, and therefore it's fully possible to
->> implement this in userspace.  Having a version of the fsfreeze (the
->> generic form of xfs_freeze) stuff that worked on individual sub-trees
->> would be nice from a practical perspective, but implementing it would
->> not be easy by any means, and would be essentially necessary for a
->> VSS-like API.  In the meantime though, it is fully possible for the
->> application software to implement this itself without needing anything
->> more from the kernel.
+On Wed, Feb 8, 2017 at 12:39 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
 >
-> VSS snapshots whole volumes, not individual files (so comparable to an
-> LVM snapshot). The sub-folder freeze would be something useful in some
-> situations, but duplicating the files+extends might also take too long
-> in a lot of situations. You are correct that the kernel features are
-> there and what is missing is a user-space daemon, plus a protocol that
-> facilitates/coordinates the backups/snapshots.
 >
-> Sending a FIFREEZE ioctl, taking a snapshot and then thawing it does not
-> really help in some situations as e.g. MySQL InnoDB uses O_DIRECT and
-> manages its on buffer pool which won't get the FIFREEZE and flush, but
-> as said, the default configuration is to flush/fsync on every commit.
-OK, there's part of the misunderstanding.  You can't FIFREEZE a BTRFS 
-filesystem and then take a snapshot in it, because the snapshot requires 
-writing to the filesystem (which the FIFREEZE would prevent, so a script 
-that tried to do this would deadlock).  A new version of the FIFREEZE 
-ioctl would be needed that operates on subvolumes.
+> At 02/07/2017 11:55 PM, Filipe Manana wrote:
+>>
+>> On Tue, Feb 7, 2017 at 12:22 AM, Qu Wenruo <quwenruo@cn.fujitsu.com>
+>> wrote:
+>>>
+>>>
+>>>
+>>> At 02/07/2017 12:09 AM, Goldwyn Rodrigues wrote:
+>>>>
+>>>>
+>>>>
+>>>> Hi Qu,
+>>>>
+>>>> On 02/05/2017 07:45 PM, Qu Wenruo wrote:
+>>>>>
+>>>>>
+>>>>>
+>>>>>
+>>>>> At 02/04/2017 09:47 AM, Jorg Bornschein wrote:
+>>>>>>
+>>>>>>
+>>>>>> February 4, 2017 1:07 AM, "Goldwyn Rodrigues" <rgoldwyn@suse.de>
+>>>>>> wrote:
+>>>>
+>>>>
+>>>>
+>>>> <snipped>
+>>>>
+>>>>>>
+>>>>>>
+>>>>>> Quata support was indeed active -- and it warned me that the qroup
+>>>>>> data was inconsistent.
+>>>>>>
+>>>>>> Disabling quotas had an immediate impact on balance throughput -- it's
+>>>>>> *much* faster now!
+>>>>>> From a quick glance at iostat I would guess it's at least a factor 100
+>>>>>> faster.
+>>>>>>
+>>>>>>
+>>>>>> Should quota support generally be disabled during balances? Or did I
+>>>>>> somehow push my fs into a weired state where it triggered a slow-path?
+>>>>>>
+>>>>>>
+>>>>>>
+>>>>>> Thanks!
+>>>>>>
+>>>>>>    j
+>>>>>
+>>>>>
+>>>>>
+>>>>> Would you please provide the kernel version?
+>>>>>
+>>>>> v4.9 introduced a bad fix for qgroup balance, which doesn't completely
+>>>>> fix qgroup bytes leaking, but also hugely slow down the balance
+>>>>> process:
+>>>>>
+>>>>> commit 62b99540a1d91e46422f0e04de50fc723812c421
+>>>>> Author: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>>>>> Date:   Mon Aug 15 10:36:51 2016 +0800
+>>>>>
+>>>>>     btrfs: relocation: Fix leaking qgroups numbers on data extents
+>>>>>
+>>>>> Sorry for that.
+>>>>>
+>>>>> And in v4.10, a better method is applied to fix the byte leaking
+>>>>> problem, and should be a little faster than previous one.
+>>>>>
+>>>>> commit 824d8dff8846533c9f1f9b1eabb0c03959e989ca
+>>>>> Author: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>>>>> Date:   Tue Oct 18 09:31:29 2016 +0800
+>>>>>
+>>>>>     btrfs: qgroup: Fix qgroup data leaking by using subtree tracing
+>>>>>
+>>>>>
+>>>>> However, using balance with qgroup is still slower than balance without
+>>>>> qgroup, the root fix needs us to rework current backref iteration.
+>>>>>
+>>>>
+>>>> This patch has made the btrfs balance performance worse. The balance
+>>>> task has become more CPU intensive compared to earlier and takes longer
+>>>> to complete, besides hogging resources. While correctness is important,
+>>>> we need to figure out how this can be made more efficient.
+>>>>
+>>> The cause is already known.
+>>>
+>>> It's find_parent_node() which takes most of the time to find all
+>>> referencer
+>>> of an extent.
+>>>
+>>> And it's also the cause for FIEMAP softlockup (fixed in recent release by
+>>> early quit).
+>>>
+>>> The biggest problem is, current find_parent_node() uses list to iterate,
+>>> which is quite slow especially it's done in a loop.
+>>> In real world find_parent_node() is about O(n^3).
+>>> We can either improve find_parent_node() by using rb_tree, or introduce
+>>> some
+>>> cache for find_parent_node().
+>>
+>>
+>> Even if anyone is able to reduce that function's complexity from
+>> O(n^3) down to lets say O(n^2) or O(n log n) for example, the current
+>> implementation of qgroups will always be a problem. The real problem
+>> is that this more recent rework of qgroups does all this accounting
+>> inside the critical section of a transaction - blocking any other
+>> tasks that want to start a new transaction or attempt to join the
+>> current transaction. Not to mention that on systems with small amounts
+>> of memory (2Gb or 4Gb from what I've seen from user reports) we also
+>> OOM due this allocation of struct btrfs_qgroup_extent_record per
+>> delayed data reference head, that are used for that accounting phase
+>> in the critical section of a transaction commit.
+>>
+>> Let's face it and be realistic, even if someone manages to make
+>> find_parent_node() much much better, like O(n) for example, it will
+>> always be a problem due to the reasons mentioned before. Many extents
+>> touched per transaction and many subvolumes/snapshots, will always
+>> expose that root problem - doing the accounting in the transaction
+>> commit critical section.
+>
+>
+> You must accept the fact that we must call find_parent_node() at least twice
+> to get correct owner modification for each touched extent.
+> Or qgroup number will never be correct.
+>
+> One for old_roots by searching commit root, and one for new_roots by
+> searching current root.
+>
+> You can call find_parent_node() as many time as you like, but that's just
+> wasting your CPU time.
+>
+> Only the final find_parent_node() will determine new_roots for that extent,
+> and there is no better timing than commit_transaction().
+
+You're missing my point.
+
+My point is not about needing to call find_parent_nodes() nor how many
+times to call it, or whether it's needed or not. My point is about
+doing expensive things inside the critical section of a transaction
+commit, which leads not only to low performance but getting a system
+becoming unresponsive and with too high latency - and this is not
+theory or speculation, there are upstream reports about this as well
+as several in suse's bugzilla, all caused when qgroups are enabled on
+4.2+ kernels (when the last qgroups major changes landed).
+
+Judging from that code and from your reply to this and other threads
+it seems you didn't understand the consequences of doing all that
+accounting stuff inside the critical section of a transaction commit.
+
+Forget find_parent_nodes() for a moment, yes it has problems, but it's
+not what I'm trying to make you understand. Just look at
+btrfs_qgroup_account_extents(), called within the critical section -
+it iterates all elements of a red black tree, and each element
+corresponds to some data extent allocated in the current transaction -
+if we have thousands, tens of thousands, or more, even if whatever the
+loop calls had an awesome complexity of O(1) or O(log N) it would
+still be bad, exactly because it's blocking future transactions to
+start and tasks from joining the current transaction. CPU time and
+memory consumption (used for those struct btrfs_qgroup_extent_record)
+are also concerns, but to a smaller extent imo.
+
+>
+> Or you can wasting more time calling find_parent_node() every time you
+> touched a extent, saving one find_parent_node() in commit_transaction() with
+> the cost of more find_parent_node() in other place.
+> Is that what you want?
+>
+> I can move the find_parent_node() for old_roots out of commit_transaction().
+> But that will only reduce 50% of the time spent on commit_transaction().
+>
+> Compared to O(n^3) find_parent_node(), that's not the determining fact even.
+>
+> Thanks,
+> Qu
+>
+>
+>>
+>>>
+>>>
+>>> IIRC SUSE guys(maybe Jeff?) are working on it with the first method, but
+>>> I
+>>> didn't hear anything about it recently.
+>>>
+>>> Thanks,
+>>> Qu
+>>>
+>>>
+>>>
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+>>
+>>
+>>
+>
+>
+
+
+
+-- 
+Filipe David Manana,
+
+"People will forget what you said,
+ people will forget what you did,
+ but people will never forget how you made them feel."

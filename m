@@ -1,141 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ua0-f172.google.com ([209.85.217.172]:35842 "EHLO
-        mail-ua0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751820AbdBHCL7 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Feb 2017 21:11:59 -0500
-Received: by mail-ua0-f172.google.com with SMTP id 96so99302027uaq.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 07 Feb 2017 18:11:59 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <20170207140058.GA4249@carfax.org.uk>
-References: <CA+RUij3aW1ZYyJPNRLzckwOCCmoWa15Eu4h142jB_-qKc49hBw@mail.gmail.com>
- <20170207140058.GA4249@carfax.org.uk>
-From: Peter Zaitsev <pz@percona.com>
-Date: Tue, 7 Feb 2017 21:11:57 -0500
-Message-ID: <CA+RUij3yQ83HQzN8VfzAaku6+HTcXEz+iqu5nV1=UVX6Gc4ddw@mail.gmail.com>
-Subject: Re: BTRFS for OLTP Databases
+Received: from alt22.smtp-out.videotron.ca ([70.80.0.73]:37993 "EHLO
+        alt22.smtp-out.videotron.ca" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751946AbdBHDh0 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 7 Feb 2017 22:37:26 -0500
+Received: from [192.168.1.226] (wifi.deragon.biz [192.168.1.1])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by smtp.localdomain (Postfix) with ESMTPSA id 7391D180433
+        for <linux-btrfs@vger.kernel.org>; Tue,  7 Feb 2017 22:21:40 -0500 (EST)
+Subject: Re: raid1: cannot add disk to replace faulty because can only mount
+ fs as read-only.
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+References: <W75Sc6PDCBok7W75TcCgc7@videotron.ca>
+ <51114ea93a0f76a5ff6621e4d8983944@server1.deragon.biz>
+ <fab34ac1-03c0-76ea-eac2-ef4a210a48de@gmail.com>
+ <07bba687-64c3-6713-6f6a-c8da183cbd3d@gmail.com>
+ <YAvBcoM9EImXYYAvCcegSf@videotron.ca>
+ <a5262907-06f2-2c6f-d23a-2703b10429b7@deragon.biz>
+ <pan$be2e$8a233bb0$f63eb0cb$d3413db@cox.net>
+ <20170201115530.l2ce5afcqld2kzi4@angband.pl>
+ <pan$27de1$6045e2b1$7cc1684e$e9aac1ad@cox.net>
+ <7cb699fd-44a7-d8eb-e492-c448f67b0eac@gmail.com>
+ <20170202142521.nfiy73ye6bi5smjv@angband.pl>
+ <ZIyPcL4cW36fIZIyQcB9Hs@videotron.ca>
+From: Hans Deragon <hans@deragon.biz>
+Message-ID: <6e26ee22-3d67-d2aa-22b7-c03f9ffc18f2@deragon.biz>
+Date: Tue, 7 Feb 2017 22:21:40 -0500
+MIME-Version: 1.0
+In-Reply-To: <ZIyPcL4cW36fIZIyQcB9Hs@videotron.ca>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Kai,
+Greetings,
 
-I guess your message did not make it to me as I'm not subscribed to the list.
-
-I totally understand what the the snapshot is "crash consistent"  -
-consistent to the state of the disk you would find if you shut down
-the power with no notice,
-for many applications it is a problem however it is fine for many
-databases which already need to be able to recover correctly from
-power loss
-
-for MySQL this works well for Innodb storage engine it does not work for MyISAM
-
-The great of such "uncoordinated" snapshot is what it is instant and
-have very little production impact -  if you want to "freeze" multiple
-filesystems or
-even worse flush MyISAM table it can take a lot of time and can be
-unacceptable for many 24/7 workloads.
-
-Or are you saying BTRFS snapshots do not provide this kind of consistency ?
-
-> Hi Hugo,
->
-> For the use case I'm looking for I'm interested in having snapshot(s)
-> open at all time.  Imagine  for example snapshot being created every
-> hour and several of these snapshots  kept at all time providing quick
-> recovery points to the state of 1,2,3 hours ago.  In  such case (as I
-> think you also describe)  nodatacow  does not provide any advantage.
-
-Out of curiosity, I see one problem here:
-
-If you're doing snapshots of the live database, each snapshot leaves
-the database files like killing the database in-flight. Like shutting
-the system down in the middle of writing data.
-
-This is because I think there's no API for user space to subscribe to
-events like a snapshot - unlike e.g. the VSS API (volume snapshot
-service) in Windows. You should put the database into frozen state to
-prepare it for a hotcopy before creating the snapshot, then ensure all
-data is flushed before continuing.
-
-I think I've read that btrfs snapshots do not guarantee single point in
-time snapshots - the snapshot may be smeared across a longer period of
-time while the kernel is still writing data. So parts of your writes
-may still end up in the snapshot after issuing the snapshot command,
-instead of in the working copy as expected.
-
-How is this going to be addressed? Is there some snapshot aware API to
-let user space subscribe to such events and do proper preparation? Is
-this planned? LVM could be a user of such an API, too. I think this
-could have nice enterprise-grade value for Linux.
-
-XFS has xfs_freeze and xfs_thaw for this, to prepare LVM snapshots. But
-still, also this needs to be integrated with MySQL to properly work. I
-once (years ago) researched on this but gave up on my plans when I
-planned database backups for our web server infrastructure. We moved to
-creating SQL dumps instead, although there're binlogs which can be used
-to recover to a clean and stable transactional state after taking
-snapshots. But I simply didn't want to fiddle around with properly
-cleaning up binlogs which accumulate horribly much space usage over
-time. The cleanup process requires to create a cold copy or dump of the
-complete database from time to time, only then it's safe to remove all
-binlogs up to that point in time.
-
--- 
-Regards,
-Kai
-
-On Tue, Feb 7, 2017 at 9:00 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> On Tue, Feb 07, 2017 at 08:53:35AM -0500, Peter Zaitsev wrote:
->> Hi,
+On 2017-02-02 10:06, Austin S. Hemmelgarn wrote:
+> On 2017-02-02 09:25, Adam Borowski wrote:
+>> On Thu, Feb 02, 2017 at 07:49:50AM -0500, Austin S. Hemmelgarn wrote:
+>>> This is a severe bug that makes a not all that uncommon (albeit bad) use
+>>> case fail completely.  The fix had no dependencies itself and
 >>
->> I have tried BTRFS from Ubuntu 16.04 LTS   for write intensive OLTP MySQL
->> Workload.
+>> I don't see what's bad in mounting a RAID degraded.  Yeah, it provides no
+>> redundancy but that's no worse than using a single disk from the start.
+>> And most people not doing storage/server farm don't have a stack of spare
+>> disks at hand, so getting a replacement might take a while.
+> Running degraded is bad. Period.  If you don't have a disk on hand to
+> replace the failed one (and if you care about redundancy, you should
+> have at least one spare on hand), you should be converting to a single
+> disk, not continuing to run in degraded mode until you get a new disk.
+> The moment you start talking about running degraded long enough that you
+> will be _booting_ the system with the array degraded, you need to be
+> converting to a single disk.  This is of course impractical for
+> something like a hardware array or an LVM volume, but it's _trivial_
+> with BTRFS, and protects you from all kinds of bad situations that can't
+> happen with a single disk but can completely destroy the filesystem if
+> it's a degraded array.  Running a single disk is not exactly the same as
+> running a degraded array, it's actually marginally safer (even if you
+> aren't using dup profile for metadata) because there are fewer moving
+> parts to go wrong.  It's also exponentially more efficient.
 >>
->> It did not go very well ranging from multi-seconds stalls where no
->> transactions are completed to the finally kernel OOPS with "no space left
->> on device" error message and filesystem going read only.
->>
->> I'm complete newbie in BTRFS so  I assume  I'm doing something wrong.
->>
->> Do you have any advice on how BTRFS should be tuned for OLTP workload
->> (large files having a lot of random writes)  ?    Or is this the case where
->> one should simply stay away from BTRFS and use something else ?
->>
->> One item recommended in some places is "nodatacow"  this however defeats
->> the main purpose I'm looking at BTRFS -  I am interested in "free"
->> snapshots which look very attractive to use for database recovery scenarios
->> allow instant rollback to the previous state.
->
->    Well, nodatacow will still allow snapshots to work, but it also
-> allows the data to fragment. Each snapshot made will cause subsequent
-> writes to shared areas to be CoWed once (and then it reverts to
-> unshared and nodatacow again).
->
->    There's another approach which might be worth testing, which is to
-> use autodefrag. This will increase data write I/O, because where you
-> have one or more small writes in a region, it will also read and write
-> the data in a small neghbourhood around those writes, so the
-> fragmentation is reduced. This will improve subsequent read
-> performance.
->
->    I could also suggest getting the latest kernel you can -- 16.04 is
-> already getting on for a year old, and there may be performance
-> improvements in upstream kernels which affect your workload. There's
-> an Ubuntu kernel PPA you can use to get the new kernels without too
-> much pain.
->
->    Hugo.
->
-> --
-> Hugo Mills             | I don't care about "it works on my machine". We are
-> hugo@... carfax.org.uk | not shipping your machine.
-> http://carfax.org.uk/  |
-> PGP: E2AB1DE4          |
+>> Being able to continue to run when a disk fails is the whole point of
+>> RAID
+>> -- despite what some folks think, RAIDs are not for backups but for
+>> uptime.
+>> And if your uptime goes to hell because the moment a disk fails you
+>> need to
+>> drop everything and replace the disk immediately, why would you use RAID?
+> Because just replacing a disk and rebuilding the array is almost always
+> much cheaper in terms of time than rebuilding the system from a backup.
+> IOW, even if you have to drop everything and replace the disk
+> immediately, it's still less time consuming than restoring from a
+> backup.  It also has the advantage that you don't lose any data.
 
+We disagree on letting people run degraded, which I support, you not.  I
+respect your opinion.  However, I have to ask who decides these rules?
+Obviously, not me since I am a simple btrfs home user.
 
+Since Oracle is funding btrfs development, is that Oracle's official
+stand on how to handle a failed disk?  Who decides of btrfs's roadmap?
+I have no clue who is who on this mailing list and who influences the
+features of btrfs.
 
--- 
-Peter Zaitsev, CEO, Percona
-Tel: +1 888 401 3401 ext 7360   Skype:  peter_zaitsev
+Oracle is obviously using raid systems internally.  How do the operators
+of these raid systems feel about this "not let the system run in
+degraded mode"?
+
+As a home user, I do not want to have a disk always available.  This is
+paying a disk very expensively when the raid system can run easily for
+two years without disk failure.  I want to buy the new disk (asap, of
+course) once one died.  At that moment, the cost of a drive would have
+fallen drastically.  Yes, I can live with running my home system (which
+has backups) for a day or two, in degraded rw mode until I purchase and
+can install a new disk.  Chances are low that both disks will quit at
+around the same time.
+
+Simply because I cannot run in degraded mode and cannot add a disk to my
+current degraded raid1, despite having my replacement disk in my hands,
+I must resort to switch to mdadm or zfs.
+
+Having a policy that limits user's options for the sake that they are
+too stupid to understand the implications is wrong.  Its ok for
+applications, but not at the operating system; there should be a way to
+force this.  A
+--yes-i-know-what-i-am-doing-now-please-mount-rw-degraded-so-i-can-install-the-new-disk
+parameter must be implemented.  Currently, it is like disallowing root
+to run mkfs over an existing filesystem because people could erase data
+by mistake.  Let people do what they want and let them live with the
+consequences.
+
+hdparm has a --yes-i-know-what-i-am-doing flag.  btrfs needs one.
+
+Whoever decides about btrfs features to add, please consider this one.
+
+Best regards,
+Hans Deragon

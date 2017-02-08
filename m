@@ -1,157 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f54.google.com ([209.85.215.54]:36005 "EHLO
-        mail-lf0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752924AbdBHKWn (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Feb 2017 05:22:43 -0500
-Received: by mail-lf0-f54.google.com with SMTP id z134so79142723lff.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 08 Feb 2017 02:22:42 -0800 (PST)
+Received: from mail-it0-f49.google.com ([209.85.214.49]:38322 "EHLO
+        mail-it0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932147AbdBHMVG (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Feb 2017 07:21:06 -0500
+Received: by mail-it0-f49.google.com with SMTP id c7so101403108itd.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 08 Feb 2017 04:21:06 -0800 (PST)
+Received: from [191.9.206.254] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
+        by smtp.gmail.com with ESMTPSA id v68sm11155474ioi.20.2017.02.08.04.12.19
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Wed, 08 Feb 2017 04:12:20 -0800 (PST)
+Subject: Re: BTRFS for OLTP Databases
+To: linux-btrfs@vger.kernel.org
+References: <CA+RUij3aW1ZYyJPNRLzckwOCCmoWa15Eu4h142jB_-qKc49hBw@mail.gmail.com>
+ <20170207140058.GA4249@carfax.org.uk>
+ <CA+RUij3LJeFR1pz9QDOkMEVbh1cws5Rv2KPep3ghVAimJy7aLA@mail.gmail.com>
+ <91c8a758-23b6-edf1-74b0-2d87acbb2560@gmail.com>
+ <20170207211941.3310d7a8@jupiter.sol.kaishome.de>
+ <6d7eac16-773e-bf6c-a6be-d3950f9b2325@gmail.com>
+ <20170207215408.65030acd@jupiter.sol.kaishome.de>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <50cd6718-b0f6-90f2-b9b4-b60228c131e3@gmail.com>
+Date: Wed, 8 Feb 2017 07:12:14 -0500
 MIME-Version: 1.0
-In-Reply-To: <7912da41-d58a-d57f-47cd-508bc709a761@cn.fujitsu.com>
-References: <CALg=eG_C-Xkw+TTHpNq9y_euza81TPTd+YN10_V=9WSprN0BPw@mail.gmail.com>
- <7912da41-d58a-d57f-47cd-508bc709a761@cn.fujitsu.com>
-From: Vasco Visser <vasco.visser@gmail.com>
-Date: Wed, 8 Feb 2017 10:55:55 +0100
-Message-ID: <CALg=eG-2wMSjsBq6E68xqAiazC6rhnPB2OUoq2jAjtZe4vA9uQ@mail.gmail.com>
-Subject: Re: understanding disk space usage
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <20170207215408.65030acd@jupiter.sol.kaishome.de>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thank you for the explanation. What I would still like to know is how
-to relate the chunk level abstraction to the file level abstraction.
-According to the btrfs output there is 2G of data space is available
-and 24G of data space is being used. Does this mean 24G of data used
-in files? How do I know which files take up most space? du seems
-pretty useless as it reports only 9G of files on the volume.
-
---
-Vasco
-
-
-On Wed, Feb 8, 2017 at 4:48 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+On 2017-02-07 15:54, Kai Krakow wrote:
+> Am Tue, 7 Feb 2017 15:27:34 -0500
+> schrieb "Austin S. Hemmelgarn" <ahferroin7@gmail.com>:
 >
+>>>> I'm not sure about this one.  I would assume based on the fact that
+>>>> many other things don't work with nodatacow and that regular defrag
+>>>> doesn't work on files which are currently mapped as executable code
+>>>> that it does not, but I could be completely wrong about this too.
+>>>
+>>> Technically, there's nothing that prevents autodefrag to work for
+>>> nodatacow files. The question is: is it really necessary? Standard
+>>> file systems also have no autodefrag, it's not an issue there
+>>> because they are essentially nodatacow. Simply defrag the database
+>>> file once and you're done. Transactional MySQL uses huge data
+>>> files, probably preallocated. It should simply work with
+>>> nodatacow.
+>> The thing is, I don't have enough knowledge of how defrag is
+>> implemented in BTRFS to say for certain that ti doesn't use COW
+>> semantics somewhere (and I would actually expect it to do so, since
+>> that in theory makes many things _much_ easier to handle), and if it
+>> uses COW somewhere, then it by definition doesn't work on NOCOW files.
 >
-> At 02/08/2017 12:44 AM, Vasco Visser wrote:
->>
->> Hello,
->>
->> My system is or seems to be running out of disk space but I can't find
->> out how or why. Might be a BTRFS peculiarity, hence posting on this
->> list. Most indicators seem to suggest I'm filling up, but I can't
->> trace the disk usage to files on the FS.
->>
->> The issue is on my root filesystem on a 28GiB ssd partition (commands
->> below issued when booted into single user mode):
->>
->>
->> $ df -h
->> Filesystem            Size  Used Avail Use% Mounted on
->> /dev/sda3              28G   26G  2.1G  93% /
->>
->>
->> $ btrfs --version
->> btrfs-progs v4.4
->>
->>
->> $ btrfs fi usage /
->> Overall:
->>     Device size:  27.94GiB
->>     Device allocated:  27.94GiB
->>     Device unallocated:   1.00MiB
+> A dev would be needed on this. But from a non-dev point of view, the
+> defrag operation itself is CoW: Blocks are rewritten to another
+> location in contiguous order. Only metadata CoW should be needed for
+> this operation.
 >
+> It should be nothing else than writing to a nodatacow snapshot... Just
+> that the snapshot is more or less implicit and temporary.
 >
-> So from chunk level, your fs is already full.
+> Hmm? *curious*
 >
-> And balance won't success since there is no unallocated space at all.
-> The first 1M of btrfs is always reserved and won't be allocated, and 1M is
-> too small for btrfs to allocate a chunk.
->
->>     Device missing:     0.00B
->>     Used:  25.03GiB
->>     Free (estimated):   2.37GiB (min: 2.37GiB)
->>     Data ratio:      1.00
->>     Metadata ratio:      1.00
->>     Global reserve: 256.00MiB (used: 0.00B)
->> Data,single: Size:26.69GiB, Used:24.32GiB
->
->
-> You still have 2G data space, so you can still write things.
->
->>    /dev/sda3  26.69GiB
->> Metadata,single: Size:1.22GiB, Used:731.45MiB
->
->
-> Metadata has has less space when considering "Global reserve".
-> In fact the used space would be 987M.
->
-> But it's still OK for normal write.
->
->>    /dev/sda3   1.22GiB
->> System,single: Size:32.00MiB, Used:16.00KiB
->>    /dev/sda3  32.00MiB
->
->
-> System chunk can hardly be used up.
->
->> Unallocated:
->>    /dev/sda3   1.00MiB
->>
->>
->> $ btrfs fi df /
->> Data, single: total=26.69GiB, used=24.32GiB
->> System, single: total=32.00MiB, used=16.00KiB
->> Metadata, single: total=1.22GiB, used=731.48MiB
->> GlobalReserve, single: total=256.00MiB, used=0.00B
->>
->>
->> However:
->> $ mount -o bind / /mnt
->> $ sudo du -hs /mnt
->> 9.3G /mnt
->>
->>
->> Try to balance:
->> $ btrfs balance start /
->> ERROR: error during balancing '/': No space left on device
->>
->>
->> Am I really filling up? What can explain the huge discrepancy with the
->> output of du (no open file descriptors on deleted files can explain
->> this in single user mode) and the FS stats?
->
->
-> Just don't believe the vanilla df output for btrfs.
->
-> For btrfs, unlike other fs like ext4/xfs, which allocates chunk dynamically
-> and has different metadata/data profile, we can only get a clear view of the
-> fs from both chunk level(allocated/unallocated) and extent
-> level(total/used).
->
-> In your case, your fs doesn't have any unallocated space, this make balance
-> unable to work at all.
->
-> And your data/metadata usage is quite high, although both has small
-> available space left, the fs should be writable for some time, but not long.
->
-> To proceed, add a larger device to current fs, and do a balance or just
-> delete the 28G partition then btrfs will handle the rest well.
->
-> Thanks,
-> Qu
->
->>
->> Any advice on possible causes and how to proceed?
->>
->>
->> --
->> Vasco
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
->>
->
->
+The gimmicky part though is that the file has to remain accessible 
+throughout the entire operation, and the defrad can't lose changes that 
+occur while the file is being defragmented.  In many filesystems (NTFS 
+on Windows for example), a defrag functions similarly to a pvmove 
+operation in LVM, as each extent gets moved, writes to that region get 
+indirected to the new location and treat the areas that were written to 
+as having been moved already.  The thing is, on BTRFS that would result 
+in extents getting split, which means COW is probably involved at some 
+level in the data path too.

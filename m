@@ -1,75 +1,181 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f178.google.com ([209.85.216.178]:36659 "EHLO
-        mail-qt0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754240AbdBHAqL (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Feb 2017 19:46:11 -0500
-Received: by mail-qt0-f178.google.com with SMTP id k15so151801268qtg.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 07 Feb 2017 16:45:59 -0800 (PST)
+Received: from cn.fujitsu.com ([59.151.112.132]:8994 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1754048AbdBHAqM (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Feb 2017 19:46:12 -0500
+Subject: Re: Very slow balance / btrfs-transaction
+To: <fdmanana@gmail.com>
+References: <fce777cb-027f-532b-76ab-24a1e5c2cf7c@suse.de>
+ <507c32d4-929c-b691-6196-103c8cb9addb@suse.com>
+ <80d3e5ce55ddc7e454cce96e67e2ea64@88cbed2449cf>
+ <8999d95dac21ea8e2908c5012e50c59b@88cbed2449cf>
+ <f9e2b226440e4f6e17e61ce86eecc7eb@88cbed2449cf>
+ <57259b63-2f26-0da4-16f6-5fbd781daeb0@cn.fujitsu.com>
+ <4200a425-890f-b283-b43b-e5911b1c6d8c@suse.de>
+ <3c9ce5e2-6bc0-96d3-1d99-75f96e03afd1@cn.fujitsu.com>
+ <CAL3q7H6n9MVz7187GCn-oT0_5fLAxhsgJPA0fjrdvVMQ+4HqTw@mail.gmail.com>
+CC: Goldwyn Rodrigues <rgoldwyn@suse.de>, Jorg Bornschein <jb@capsec.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <8e2d5864-16e0-a92d-9237-ed8001543b06@cn.fujitsu.com>
+Date: Wed, 8 Feb 2017 08:39:40 +0800
 MIME-Version: 1.0
-In-Reply-To: <20170207232818.35b6bfcb@jupiter.sol.kaishome.de>
-References: <CACNDjuzntG5Saq5HHNeDUmq-=28riKAerkO=CD=zAW-QofbKSg@mail.gmail.com>
- <CACNDjuw3GqkCggUqim==Y+xj=bnL93wwdx26denvQaD4tFf7yw@mail.gmail.com>
- <20170119232340.64327c09@natsu> <6f06bd6b-67c9-533b-9bf5-89cff8b892da@gmail.com>
- <20170207232818.35b6bfcb@jupiter.sol.kaishome.de>
-From: Dan Mons <dmons@cuttingedge.com.au>
-Date: Wed, 8 Feb 2017 10:39:08 +1000
-Message-ID: <CACa6Tycw2EOw1djakR=xfRPhxw8fzAk-UnpRk=fVfErnbPa8fw@mail.gmail.com>
-Subject: Re: dup vs raid1 in single disk
-To: Kai Krakow <hurikhan77@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <CAL3q7H6n9MVz7187GCn-oT0_5fLAxhsgJPA0fjrdvVMQ+4HqTw@mail.gmail.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 8 February 2017 at 08:28, Kai Krakow <hurikhan77@gmail.com> wrote:
-> I still thinks it's a myth... The overhead of managing inline
-> deduplication is just way too high to implement it without jumping
-> through expensive hoops. Most workloads have almost zero deduplication
-> potential. And even when, their temporal occurrence is spaced so far
-> that an inline deduplicator won't catch it.
+
+
+At 02/07/2017 11:55 PM, Filipe Manana wrote:
+> On Tue, Feb 7, 2017 at 12:22 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>>
+>>
+>> At 02/07/2017 12:09 AM, Goldwyn Rodrigues wrote:
+>>>
+>>>
+>>> Hi Qu,
+>>>
+>>> On 02/05/2017 07:45 PM, Qu Wenruo wrote:
+>>>>
+>>>>
+>>>>
+>>>> At 02/04/2017 09:47 AM, Jorg Bornschein wrote:
+>>>>>
+>>>>> February 4, 2017 1:07 AM, "Goldwyn Rodrigues" <rgoldwyn@suse.de> wrote:
+>>>
+>>>
+>>> <snipped>
+>>>
+>>>>>
+>>>>>
+>>>>> Quata support was indeed active -- and it warned me that the qroup
+>>>>> data was inconsistent.
+>>>>>
+>>>>> Disabling quotas had an immediate impact on balance throughput -- it's
+>>>>> *much* faster now!
+>>>>> From a quick glance at iostat I would guess it's at least a factor 100
+>>>>> faster.
+>>>>>
+>>>>>
+>>>>> Should quota support generally be disabled during balances? Or did I
+>>>>> somehow push my fs into a weired state where it triggered a slow-path?
+>>>>>
+>>>>>
+>>>>>
+>>>>> Thanks!
+>>>>>
+>>>>>    j
+>>>>
+>>>>
+>>>> Would you please provide the kernel version?
+>>>>
+>>>> v4.9 introduced a bad fix for qgroup balance, which doesn't completely
+>>>> fix qgroup bytes leaking, but also hugely slow down the balance process:
+>>>>
+>>>> commit 62b99540a1d91e46422f0e04de50fc723812c421
+>>>> Author: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>>>> Date:   Mon Aug 15 10:36:51 2016 +0800
+>>>>
+>>>>     btrfs: relocation: Fix leaking qgroups numbers on data extents
+>>>>
+>>>> Sorry for that.
+>>>>
+>>>> And in v4.10, a better method is applied to fix the byte leaking
+>>>> problem, and should be a little faster than previous one.
+>>>>
+>>>> commit 824d8dff8846533c9f1f9b1eabb0c03959e989ca
+>>>> Author: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>>>> Date:   Tue Oct 18 09:31:29 2016 +0800
+>>>>
+>>>>     btrfs: qgroup: Fix qgroup data leaking by using subtree tracing
+>>>>
+>>>>
+>>>> However, using balance with qgroup is still slower than balance without
+>>>> qgroup, the root fix needs us to rework current backref iteration.
+>>>>
+>>>
+>>> This patch has made the btrfs balance performance worse. The balance
+>>> task has become more CPU intensive compared to earlier and takes longer
+>>> to complete, besides hogging resources. While correctness is important,
+>>> we need to figure out how this can be made more efficient.
+>>>
+>> The cause is already known.
+>>
+>> It's find_parent_node() which takes most of the time to find all referencer
+>> of an extent.
+>>
+>> And it's also the cause for FIEMAP softlockup (fixed in recent release by
+>> early quit).
+>>
+>> The biggest problem is, current find_parent_node() uses list to iterate,
+>> which is quite slow especially it's done in a loop.
+>> In real world find_parent_node() is about O(n^3).
+>> We can either improve find_parent_node() by using rb_tree, or introduce some
+>> cache for find_parent_node().
 >
-> If it would be all so easy, btrfs would already have it working in
-> mainline. I don't even remember that those patches is still being
-> worked on.
+> Even if anyone is able to reduce that function's complexity from
+> O(n^3) down to lets say O(n^2) or O(n log n) for example, the current
+> implementation of qgroups will always be a problem. The real problem
+> is that this more recent rework of qgroups does all this accounting
+> inside the critical section of a transaction - blocking any other
+> tasks that want to start a new transaction or attempt to join the
+> current transaction. Not to mention that on systems with small amounts
+> of memory (2Gb or 4Gb from what I've seen from user reports) we also
+> OOM due this allocation of struct btrfs_qgroup_extent_record per
+> delayed data reference head, that are used for that accounting phase
+> in the critical section of a transaction commit.
 >
-> With this in mind, I think dup metadata is still a good think to have
-> even on SSD and I would always force to enable it.
+> Let's face it and be realistic, even if someone manages to make
+> find_parent_node() much much better, like O(n) for example, it will
+> always be a problem due to the reasons mentioned before. Many extents
+> touched per transaction and many subvolumes/snapshots, will always
+> expose that root problem - doing the accounting in the transaction
+> commit critical section.
+
+You must accept the fact that we must call find_parent_node() at least 
+twice to get correct owner modification for each touched extent.
+Or qgroup number will never be correct.
+
+One for old_roots by searching commit root, and one for new_roots by 
+searching current root.
+
+You can call find_parent_node() as many time as you like, but that's 
+just wasting your CPU time.
+
+Only the final find_parent_node() will determine new_roots for that 
+extent, and there is no better timing than commit_transaction().
+
+Or you can wasting more time calling find_parent_node() every time you 
+touched a extent, saving one find_parent_node() in commit_transaction() 
+with the cost of more find_parent_node() in other place.
+Is that what you want?
+
+I can move the find_parent_node() for old_roots out of commit_transaction().
+But that will only reduce 50% of the time spent on commit_transaction().
+
+Compared to O(n^3) find_parent_node(), that's not the determining fact even.
+
+Thanks,
+Qu
+
 >
-> Potential for deduplication is only when using snapshots (which already
-> are deduplicated when taken) or when handling user data on a file
-> server in a multi-user environment. Users tend to copy their files all
-> over the place - multiple directories of multiple gigabytes. Potential
-> is also where you're working with client machine backups or vm images.
-> I regularly see deduplication efficiency of 30-60% in such scenarios -
-> file servers mostly which I'm handling. But due to temporally far
-> spaced occurrence of duplicate blocks, only offline or nearline
-> deduplication works here.
+>>
+>>
+>> IIRC SUSE guys(maybe Jeff?) are working on it with the first method, but I
+>> didn't hear anything about it recently.
+>>
+>> Thanks,
+>> Qu
+>>
+>>
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>
+>
 
-I'm a sysadmin by trade, managing many PB of storage for a media
-company.  Our primary storage are Oracle ZFS appliances, and all of
-our secondary/nearline storage is Linux+BtrFS.
 
-ZFS's inline deduplication is awful.  It consumes enormous amounts of
-RAM that is orders of magnitude more valuable as ARC/Cache, and
-becomes immediately useless whenever a storage node is rebooted
-(necessary to apply mandatory security patches) and the in-memory
-tables are lost (meaning cold data is rarely re-examined, and the
-inline dedup becomes less efficient).
-
-Conversely, I use  "dupremove" as a one-shot/offline deduplication
-tool on all of our BtrFS storage.  I can be set as a cron job to be
-done outside of business hours, and use an SQLite database to store
-the necessary dedup hash information on disk, rather than in RAM.
->From the point of view of someone who manages large amounts of long
-term centralised storage, this is a far superior way to deal with
-deduplication, as it offers more flexibility and far better
-space-saving ratios at a lower memory cost.
-
-We trialled ZFS dedup for a few months, and decided to turn it off, as
-there was far less benefit to ZFS using all that RAM for dedup than
-there was for it to be cache.  I've been requesting Oracle offer a
-similar offline dedup tool for their ZFS appliance for a very long
-time, and if BtrFS ever did offer inline dedup, I wouldn't bother
-using it for all of the reasons above.
-
--Dan

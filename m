@@ -1,163 +1,143 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from a4-2.smtp-out.eu-west-1.amazonses.com ([54.240.4.2]:33288 "EHLO
-        a4-2.smtp-out.eu-west-1.amazonses.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1753414AbdBHMVj (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 8 Feb 2017 07:21:39 -0500
-Subject: Re: BTRFS for OLTP Databases
-To: Peter Zaitsev <pz@percona.com>, linux-btrfs@vger.kernel.org
-References: <CA+RUij3aW1ZYyJPNRLzckwOCCmoWa15Eu4h142jB_-qKc49hBw@mail.gmail.com>
- <20170207140058.GA4249@carfax.org.uk>
- <CA+RUij3yQ83HQzN8VfzAaku6+HTcXEz+iqu5nV1=UVX6Gc4ddw@mail.gmail.com>
-From: Martin Raiber <martin@urbackup.org>
-Message-ID: <0102015a1da5be24-3fd02799-c4e0-461b-92d2-82131016432e-000000@eu-west-1.amazonses.com>
-Date: Wed, 8 Feb 2017 12:14:45 +0000
+Received: from mail-it0-f47.google.com ([209.85.214.47]:37247 "EHLO
+        mail-it0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751714AbdBHMvO (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Feb 2017 07:51:14 -0500
+Received: by mail-it0-f47.google.com with SMTP id r185so102179423ita.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 08 Feb 2017 04:50:28 -0800 (PST)
+Subject: Re: raid1: cannot add disk to replace faulty because can only mount
+ fs as read-only.
+To: Hans Deragon <hans@deragon.biz>, linux-btrfs@vger.kernel.org
+References: <W75Sc6PDCBok7W75TcCgc7@videotron.ca>
+ <51114ea93a0f76a5ff6621e4d8983944@server1.deragon.biz>
+ <fab34ac1-03c0-76ea-eac2-ef4a210a48de@gmail.com>
+ <07bba687-64c3-6713-6f6a-c8da183cbd3d@gmail.com>
+ <YAvBcoM9EImXYYAvCcegSf@videotron.ca>
+ <a5262907-06f2-2c6f-d23a-2703b10429b7@deragon.biz>
+ <pan$be2e$8a233bb0$f63eb0cb$d3413db@cox.net>
+ <20170201115530.l2ce5afcqld2kzi4@angband.pl>
+ <pan$27de1$6045e2b1$7cc1684e$e9aac1ad@cox.net>
+ <7cb699fd-44a7-d8eb-e492-c448f67b0eac@gmail.com>
+ <20170202142521.nfiy73ye6bi5smjv@angband.pl>
+ <ZIyPcL4cW36fIZIyQcB9Hs@videotron.ca>
+ <6e26ee22-3d67-d2aa-22b7-c03f9ffc18f2@deragon.biz>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <6e4b9b4f-d4df-5679-5645-a52dbc15b424@gmail.com>
+Date: Wed, 8 Feb 2017 07:50:22 -0500
 MIME-Version: 1.0
-In-Reply-To: <CA+RUij3yQ83HQzN8VfzAaku6+HTcXEz+iqu5nV1=UVX6Gc4ddw@mail.gmail.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-256; boundary="------------ms040107010808050208030301"
+In-Reply-To: <6e26ee22-3d67-d2aa-22b7-c03f9ffc18f2@deragon.biz>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a cryptographically signed message in MIME format.
-
---------------ms040107010808050208030301
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
-
-Hi,
-
-On 08.02.2017 03:11 Peter Zaitsev wrote:
-> Out of curiosity, I see one problem here:
-> If you're doing snapshots of the live database, each snapshot leaves
-> the database files like killing the database in-flight. Like shutting
-> the system down in the middle of writing data.
+On 2017-02-07 22:21, Hans Deragon wrote:
+> Greetings,
 >
-> This is because I think there's no API for user space to subscribe to
-> events like a snapshot - unlike e.g. the VSS API (volume snapshot
-> service) in Windows. You should put the database into frozen state to
-> prepare it for a hotcopy before creating the snapshot, then ensure all
-> data is flushed before continuing.
+> On 2017-02-02 10:06, Austin S. Hemmelgarn wrote:
+>> On 2017-02-02 09:25, Adam Borowski wrote:
+>>> On Thu, Feb 02, 2017 at 07:49:50AM -0500, Austin S. Hemmelgarn wrote:
+>>>> This is a severe bug that makes a not all that uncommon (albeit bad) use
+>>>> case fail completely.  The fix had no dependencies itself and
+>>>
+>>> I don't see what's bad in mounting a RAID degraded.  Yeah, it provides no
+>>> redundancy but that's no worse than using a single disk from the start.
+>>> And most people not doing storage/server farm don't have a stack of spare
+>>> disks at hand, so getting a replacement might take a while.
+>> Running degraded is bad. Period.  If you don't have a disk on hand to
+>> replace the failed one (and if you care about redundancy, you should
+>> have at least one spare on hand), you should be converting to a single
+>> disk, not continuing to run in degraded mode until you get a new disk.
+>> The moment you start talking about running degraded long enough that you
+>> will be _booting_ the system with the array degraded, you need to be
+>> converting to a single disk.  This is of course impractical for
+>> something like a hardware array or an LVM volume, but it's _trivial_
+>> with BTRFS, and protects you from all kinds of bad situations that can't
+>> happen with a single disk but can completely destroy the filesystem if
+>> it's a degraded array.  Running a single disk is not exactly the same as
+>> running a degraded array, it's actually marginally safer (even if you
+>> aren't using dup profile for metadata) because there are fewer moving
+>> parts to go wrong.  It's also exponentially more efficient.
+>>>
+>>> Being able to continue to run when a disk fails is the whole point of
+>>> RAID
+>>> -- despite what some folks think, RAIDs are not for backups but for
+>>> uptime.
+>>> And if your uptime goes to hell because the moment a disk fails you
+>>> need to
+>>> drop everything and replace the disk immediately, why would you use RAID?
+>> Because just replacing a disk and rebuilding the array is almost always
+>> much cheaper in terms of time than rebuilding the system from a backup.
+>> IOW, even if you have to drop everything and replace the disk
+>> immediately, it's still less time consuming than restoring from a
+>> backup.  It also has the advantage that you don't lose any data.
 >
-> I think I've read that btrfs snapshots do not guarantee single point in=
-
-> time snapshots - the snapshot may be smeared across a longer period of
-> time while the kernel is still writing data. So parts of your writes
-> may still end up in the snapshot after issuing the snapshot command,
-> instead of in the working copy as expected.
+> We disagree on letting people run degraded, which I support, you not.  I
+> respect your opinion.  However, I have to ask who decides these rules?
+> Obviously, not me since I am a simple btrfs home user.
+This is a pretty typical stance among seasoned system administrators. 
+It's worth pointing out that I'm not saying you shouldn't run with a 
+single disk for an extended period of time, I'm saying you should 
+_convert_ to single disk profiles until you can get a replacement, and 
+then convert back to raid profiles once you have the replacement.  It is 
+exponentially safer in BTRFS to run single data single metadata than 
+half raid1 data half raid1 metadata.  This is one of the big reasons 
+that I've avoided MD over the years, it's functionally impossible to do 
+this with MD arrays.
 >
-> How is this going to be addressed? Is there some snapshot aware API to
-> let user space subscribe to such events and do proper preparation? Is
-> this planned? LVM could be a user of such an API, too. I think this
-> could have nice enterprise-grade value for Linux.
+> Since Oracle is funding btrfs development, is that Oracle's official
+> stand on how to handle a failed disk?  Who decides of btrfs's roadmap?
+> I have no clue who is who on this mailing list and who influences the
+> features of btrfs.
 >
-> XFS has xfs_freeze and xfs_thaw for this, to prepare LVM snapshots. But=
-
-> still, also this needs to be integrated with MySQL to properly work. I
-> once (years ago) researched on this but gave up on my plans when I
-> planned database backups for our web server infrastructure. We moved to=
-
-> creating SQL dumps instead, although there're binlogs which can be used=
-
-> to recover to a clean and stable transactional state after taking
-> snapshots. But I simply didn't want to fiddle around with properly
-> cleaning up binlogs which accumulate horribly much space usage over
-> time. The cleanup process requires to create a cold copy or dump of the=
-
-> complete database from time to time, only then it's safe to remove all
-> binlogs up to that point in time.
-
-little bit off topic, but I for one would be on board with such an
-effort. It "just" needs coordination between the backup
-software/snapshot tools, the backed up software and the various snapshot
-providers. If you look at the Windows VSS API, this would be a
-relatively large undertaking if all the corner cases are taken into
-account, like e.g. a database having the database log on a separate
-volume from the data, dependencies between different components etc.
-
-You'll know more about this, but databases usually fsync quite often in
-their default configuration, so btrfs snapshots shouldn't be much behind
-the properly snapshotted state, so I see the advantages more with
-usability and taking care of corner cases automatically.
-
-Regards,
-Martin Raiber
-
-
---------------ms040107010808050208030301
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
-
-MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgEFADCABgkqhkiG9w0BBwEAAKCC
-CuQwggT6MIID4qADAgECAhBuZlYKQ9u25a8FBnl/zd+MMA0GCSqGSIb3DQEBCwUAMHUxCzAJ
-BgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBD
-ZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20gQ2xhc3MgMSBDbGll
-bnQgQ0EwHhcNMTYwOTE5MTMxNzAyWhcNMTcwOTE5MTMxNzAyWjBCMRwwGgYDVQQDDBNtYXJ0
-aW5AdXJiYWNrdXAub3JnMSIwIAYJKoZIhvcNAQkBFhNtYXJ0aW5AdXJiYWNrdXAub3JnMIIB
-IjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAw/FqcYQTj3z2wO8ASP8j0Jvb4AbMNgB9
-iv2PLMtAMzYmuW7w2VfUcXwWgM4Fkg6Nm33VhOK+Vryd2bj+jGNhm+DmbMZCfki/NrhdcHKH
-AT7i1NL1lps8X3xJ7N0eJpghht9Wx5OAUfGv18HDD3yBUzqW4x7OaGoKqM0DwyUm9O/rUU6D
-ugxVONmgprREB1JyJBAV8lgYbY0EEUFS1JECuxNcJQEY+G8EpUNCsZxc8nvROyRD72Aztuy2
-qQj4Rs+FzQNCplzmvXot7W0T2KAH9gKb25Q5Lv0sFQEux1stcJc6KKNea21UufblNMLApQ2Z
-cSNWwDF5R+YpUFW8HiBOmwIDAQABo4IBtzCCAbMwDgYDVR0PAQH/BAQDAgSwMB0GA1UdJQQW
-MBQGCCsGAQUFBwMCBggrBgEFBQcDBDAJBgNVHRMEAjAAMB0GA1UdDgQWBBTKwa9D/4YV1XsZ
-6affm7Wv4ykzdTAfBgNVHSMEGDAWgBQkgWw5Yb5JD4+3G0YrySi1J0htaDBvBggrBgEFBQcB
-AQRjMGEwJAYIKwYBBQUHMAGGGGh0dHA6Ly9vY3NwLnN0YXJ0c3NsLmNvbTA5BggrBgEFBQcw
-AoYtaHR0cDovL2FpYS5zdGFydHNzbC5jb20vY2VydHMvc2NhLmNsaWVudDEuY3J0MDgGA1Ud
-HwQxMC8wLaAroCmGJ2h0dHA6Ly9jcmwuc3RhcnRzc2wuY29tL3NjYS1jbGllbnQxLmNybDAe
-BgNVHREEFzAVgRNtYXJ0aW5AdXJiYWNrdXAub3JnMCMGA1UdEgQcMBqGGGh0dHA6Ly93d3cu
-c3RhcnRzc2wuY29tLzBHBgNVHSAEQDA+MDwGCysGAQQBgbU3AQIFMC0wKwYIKwYBBQUHAgEW
-H2h0dHBzOi8vd3d3LnN0YXJ0c3NsLmNvbS9wb2xpY3kwDQYJKoZIhvcNAQELBQADggEBADMT
-EdZtz2a7sT3FDGszfzlAfmwVamtLbG5+O6NC5xc1n9AtWa7LdRPsQzgIROT/e84D+uTPAo1c
-F6rEJ7oSqhgxJcAWgGN1G0KyEzSaFs+nLvfFN1LeaYQjElnmw87z6LGLvjOnfu01M0Atj+DR
-DB3NyRoAn2/5yXHJKP7/mlUSXV/fiplcvP+TJbYJwrL7QDETySua89BU0oH3vtidOm8rlWzl
-cZ4ug+kXzMMwjcwSIFb/P6LDZm3FMCNbg8sBt59+V5+Duk8y6aOcQ0GdGrIXMNs+oIKL5iQW
-sP9+c55K9mJVl4+3J4sTcyT/L2EOXxEZY+zEhnJAds9dQJXkKfswggXiMIIDyqADAgECAhBr
-p4p9CteI1lEK+Vnk57ThMA0GCSqGSIb3DQEBCwUAMH0xCzAJBgNVBAYTAklMMRYwFAYDVQQK
-Ew1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0aWZpY2F0ZSBT
-aWduaW5nMSkwJwYDVQQDEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTAeFw0x
-NTEyMTYwMTAwMDVaFw0zMDEyMTYwMTAwMDVaMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1T
-dGFydENvbSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
-eTEjMCEGA1UEAxMaU3RhcnRDb20gQ2xhc3MgMSBDbGllbnQgQ0EwggEiMA0GCSqGSIb3DQEB
-AQUAA4IBDwAwggEKAoIBAQC9fdr3w6J9g/Zbgv3bW1+uHht1wLUZr5gkrLtXedg17AkefMyU
-GwrQdvwObhajcVmnKVxhrUwkZPXRAwZZosRHfEIi5FH7x6SV/8Sp5lZEuiMnvMFG2MzLA84J
-6Ws5T4NfXZ0qn4TPgnr3X2vPVS51M7Ua9nIJgn8jvTra4eyyQzxvuA/GZwKg7VQfDCmCS+kI
-CslYYWgXOMt2xlsSslxLce0CGWRsT8EpMyt1iDflSjXZIsE7m1uTyHaKZspMLyIyz6mySu8j
-8BWWHpChNNeTrFuhVfrOAyDPFJVUvKZCLKBhibTLloyy+LatoWELrjdI4a8StZY8+dIR9t4A
-PXGzAgMBAAGjggFkMIIBYDAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0lBBYwFAYIKwYBBQUHAwIG
-CCsGAQUFBwMEMBIGA1UdEwEB/wQIMAYBAf8CAQAwMgYDVR0fBCswKTAnoCWgI4YhaHR0cDov
-L2NybC5zdGFydHNzbC5jb20vc2ZzY2EuY3JsMGYGCCsGAQUFBwEBBFowWDAkBggrBgEFBQcw
-AYYYaHR0cDovL29jc3Auc3RhcnRzc2wuY29tMDAGCCsGAQUFBzAChiRodHRwOi8vYWlhLnN0
-YXJ0c3NsLmNvbS9jZXJ0cy9jYS5jcnQwHQYDVR0OBBYEFCSBbDlhvkkPj7cbRivJKLUnSG1o
-MB8GA1UdIwQYMBaAFE4L7xqkQFulF2mHMMo0aEPQQa7yMD8GA1UdIAQ4MDYwNAYEVR0gADAs
-MCoGCCsGAQUFBwIBFh5odHRwOi8vd3d3LnN0YXJ0c3NsLmNvbS9wb2xpY3kwDQYJKoZIhvcN
-AQELBQADggIBAIvj94fsAYuErQ8BAluc4SMnIwS9NPBwAm5SH9uh2NCXTq7im61g7F1LIiNI
-/+wq37fUuaMbz4g7VarKQTgf8ubs0p7NZWcIe7Bvem2AWaXBsxsaRTYw5kG3DN8pd1hSEUuF
-oTa7DmNeFe8tiK1BrL3rbA/m48jp4AiFXgvxprJrW7izsyetOrRHPbkW4Y07v29MdhaPv3u1
-JELyszXqOzjIYo4sWlC8iDQXwgSW/ntvWy2n4LuiaozlCfXl149tKeqvwlvrla2Yklue/quW
-p9j9ou4T/OY0CXMuY+B8wNK0ohd2D4ShgFlMSjzAFRoHGKF81snTr2d1A7Ew02oF6UQyCkC2
-aNNsK5cWOojBar5c7HplX9aHYUCZouxIeU28SONJAxnATgR4cJ2jrpmYSz/kliUJ46S6UpVD
-o/ebn9c6PaM/XtDYCCaM/7XX6wc3s++sbQ7CtCn1Ax7df6ufQbwyO0V+oFa9H0KAsjHMzcwk
-3EV2B2NLatidKE/m7G+rB9m+FlVgIiSp0mGlg43QO9Kh1+JqvTCIzv2bJJkmPMLQJNuKKwHN
-L8F4GGp6jbAV+WL+LDeGfVcq8DHS3LrD+xyYEXQBiqZEdiPVOMxLDSUCXsDO0uCWpaNQ8j6y
-6S9p0xE/Ga0peVLadVHhqf9nXqKaxnr358VgfrxzUIrvOaOjMYIDzDCCA8gCAQEwgYkwdTEL
-MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29t
-IENlcnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAxIENs
-aWVudCBDQQIQbmZWCkPbtuWvBQZ5f83fjDANBglghkgBZQMEAgEFAKCCAhMwGAYJKoZIhvcN
-AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwMjA4MTIxNDQxWjAvBgkqhkiG
-9w0BCQQxIgQgqxVP6qnB+r28Ty2bnOKDCH+JLrEM2IYY1iGtOahR3Q0wbAYJKoZIhvcNAQkP
-MV8wXTALBglghkgBZQMEASowCwYJYIZIAWUDBAECMAoGCCqGSIb3DQMHMA4GCCqGSIb3DQMC
-AgIAgDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggqhkiG9w0DAgIBKDCBmgYJKwYBBAGC
-NxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
-VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRD
-b20gQ2xhc3MgMSBDbGllbnQgQ0ECEG5mVgpD27blrwUGeX/N34wwgZwGCyqGSIb3DQEJEAIL
-MYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYDVQQL
-EyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
-Q2xhc3MgMSBDbGllbnQgQ0ECEG5mVgpD27blrwUGeX/N34wwDQYJKoZIhvcNAQEBBQAEggEA
-qRk2SvWS2b0L+nNrFS8rURhKDneqiifLTKGrTALUybZUmNWCDHsIkp8AV7w+vUNy+3xuy8jz
-7/tWB10v26zCTXzZ3UghhSlSugSuNzggh2F9mGvFtvqZZ07GDX/P/99mWK6iGkIKwm+C2UK5
-X/MEFZwdUpAU7alSC7Avi1P4TGt2UOqRRBWtSvnFX3xffX3h5ZnCBcQHpH0vnaqXM8sfVwFW
-BBmSLtDq2T9SUXcm/oz2R8iuZY6rGwK2c2PvJKkoudsZ4AB6AFO6AMgkLSKbg1WjTM4BpmrY
-AxuLNKcQ7wtxiK775SC6+NSO0dKkG4kIKbYHYiu0vzRrYQ4X0oTW6QAAAAAAAA==
---------------ms040107010808050208030301--
+> Oracle is obviously using raid systems internally.  How do the operators
+> of these raid systems feel about this "not let the system run in
+> degraded mode"?
+They replace the disks immediately, so it's irrelevant to them.  Oracle 
+isn't the sole source of funding (I'm actually not even sure they are 
+anymore CLM works for Facebook now last I knew), but you have to 
+understand that it has been developed primarily as an _enterprise_ 
+filesystem.  This means that certain perfectly reasonable assumptions 
+are made about the conditions under which it will be used.
+>
+> As a home user, I do not want to have a disk always available.  This is
+> paying a disk very expensively when the raid system can run easily for
+> two years without disk failure.  I want to buy the new disk (asap, of
+> course) once one died.  At that moment, the cost of a drive would have
+> fallen drastically.  Yes, I can live with running my home system (which
+> has backups) for a day or two, in degraded rw mode until I purchase and
+> can install a new disk.  Chances are low that both disks will quit at
+> around the same time.
+You're missing my point.  I have zero issue with running with one disk 
+when the other fails.  I have issue with not telling the FS that it 
+won't have another disk for a while.  IOW, in that situation, I would run:
+btrfs balance start -dconvert=single -mconvert=dup /whatever
+To convert to profiles _designed_ for a single device and then convert 
+back to raid1 when I got another disk.  The issue you've stumbled across 
+is only partial motivation for this, the bigger motivation is that 
+running half a 2 disk array is more risky than running a single disk by 
+itself.
+>
+> Simply because I cannot run in degraded mode and cannot add a disk to my
+> current degraded raid1, despite having my replacement disk in my hands,
+> I must resort to switch to mdadm or zfs.
+Both MDADM and ZFS still have the issue that it is more dangerous to run 
+half a 2 disk RAID1 array than a single disk.  That doesn't change just 
+because the software handles things a bit differently.
+>
+> Having a policy that limits user's options for the sake that they are
+> too stupid to understand the implications is wrong.  Its ok for
+> applications, but not at the operating system; there should be a way to
+> force this.  A
+> --yes-i-know-what-i-am-doing-now-please-mount-rw-degraded-so-i-can-install-the-new-disk
+> parameter must be implemented.  Currently, it is like disallowing root
+> to run mkfs over an existing filesystem because people could erase data
+> by mistake.  Let people do what they want and let them live with the
+> consequences.
+A patch exists to fix the particular issue you encountered.  Trust me, I 
+wish it had been merged like it should have been too, then we could just 
+tell people in this situation to upgrade their kernel instead of telling 
+them to rebuild it with a patch.
+>
+> hdparm has a --yes-i-know-what-i-am-doing flag.  btrfs needs one.
+>
+> Whoever decides about btrfs features to add, please consider this one.

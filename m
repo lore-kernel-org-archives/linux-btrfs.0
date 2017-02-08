@@ -1,108 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from net.its-24.pl ([5.63.185.56]:42736 "EHLO adrb.pl"
-        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1751532AbdBEUtH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 5 Feb 2017 15:49:07 -0500
-From: Adrian Brzezinski <linux-btrfs@adrb.pl>
+Received: from azure.uno.uk.net ([95.172.254.11]:36693 "EHLO azure.uno.uk.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751921AbdBHRDg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 8 Feb 2017 12:03:36 -0500
+Received: from ty.sabi.co.uk ([95.172.230.208]:38448)
+        by azure.uno.uk.net with esmtpsa (TLSv1:DHE-RSA-AES128-SHA:128)
+        (Exim 4.87)
+        (envelope-from <pg@btrfs.list.sabi.co.uk>)
+        id 1cbTbT-0006zC-SE
+        for linux-btrfs@vger.kernel.org; Wed, 08 Feb 2017 14:52:15 +0000
+Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
+        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
+        id 1cbTVy-00083C-FY
+        for <linux-btrfs@vger.kernel.org>; Wed, 08 Feb 2017 14:46:34 +0000
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Message-ID: <22683.12104.679173.639568@tree.ty.sabi.co.uk>
+Date: Wed, 8 Feb 2017 14:46:32 +0000
 To: linux-btrfs@vger.kernel.org
-Cc: Adrian Brzezinski <linux-btrfs@adrb.pl>
-Subject: [PATCH] btrfs: query for extent compressed size
-Date: Sun,  5 Feb 2017 22:09:09 +0100
-Message-Id: <1486328949-32600-1-git-send-email-linux-btrfs@adrb.pl>
+Subject: Re: understanding disk space usage
+In-Reply-To: <7912da41-d58a-d57f-47cd-508bc709a761@cn.fujitsu.com>
+References: <CALg=eG_C-Xkw+TTHpNq9y_euza81TPTd+YN10_V=9WSprN0BPw@mail.gmail.com>
+        <7912da41-d58a-d57f-47cd-508bc709a761@cn.fujitsu.com>
+From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Simple patch which allows you to query with FIEMAP ioctl for
-disk blocks allocated per extent. It's done when you set new FIEMAP flag :
+>> My system is or seems to be running out of disk space but I
+>> can't find out how or why. [ ... ]
+>> Filesystem            Size  Used Avail Use% Mounted on
+>> /dev/sda3              28G   26G  2.1G  93% /
+[ ... ]
+> So from chunk level, your fs is already full.  And balance
+> won't success since there is no unallocated space at all.
 
-* FIEMAP_FLAG_ONDISK
-If this flag is set, fe_length returns size of blocks allocated on the disk,
-rather than actual data length contained in extent.
+To add to this, 28GiB is a bit too small for Btrfs, because at
+that point chunk size is 1GiB. I have the habit of sizing
+partitions to an exact number of GiB, and that means that most
+of 1GiB will never be used by Btrfs because there is a small
+amount of space allocated that is smaller than 1GiB and thus
+there will be eventually just less than 1GiB unallocated.
+Unfortunately the chunk size is not manually settable.
 
-Here is also userspace POC code:
+Example here from 'btrfs fi usage':
 
-https://github.com/adrb/public/blob/master/linux/tools/fiemap.c
+Overall:
+    Device size:                  88.00GiB
+    Device allocated:             86.06GiB
+    Device unallocated:            1.94GiB
+    Device missing:                  0.00B
+    Used:                         80.11GiB
+    Free (estimated):              6.26GiB      (min: 5.30GiB)
 
-Signed-off-by: Adrian Brzezinski <linux-btrfs@adrb.pl>
----
- Documentation/filesystems/fiemap.txt | 7 +++++++
- fs/btrfs/extent_io.c                 | 9 ++++++++-
- fs/btrfs/inode.c                     | 2 +-
- include/uapi/linux/fiemap.h          | 6 +++++-
- 4 files changed, 21 insertions(+), 3 deletions(-)
+That means that I should 'btrfs balance' now, because of the
+1.94GiB "unallocated", 0.94GiB will never be allocated, and that
+leaves just 1GiB "unallocated" which is the minimum for running
+'btrfs balance'. I have just done so and this is the result:
 
-diff --git a/Documentation/filesystems/fiemap.txt b/Documentation/filesystems/fiemap.txt
-index f6d9c99..8d3d94e 100644
---- a/Documentation/filesystems/fiemap.txt
-+++ b/Documentation/filesystems/fiemap.txt
-@@ -58,6 +58,13 @@ If this flag is set, the kernel will sync the file before mapping extents.
- If this flag is set, the extents returned will describe the inodes
- extended attribute lookup tree, instead of its data tree.
- 
-+* FIEMAP_FLAG_ONDISK
-+If this flag is set, fe_length returns size of blocks allocated on the disk,
-+rather than actual data length contained in extent.
-+
-+For example, if extent have the FIEMAP_EXTENT_ENCODED flag set and
-+the data are compressed, then actual data size contained by extent
-+differs from blocks allocated on disk.
- 
- Extent Mapping
- --------------
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 4ac383a..68e92e3 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4488,10 +4488,17 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 		if (!test_bit(EXTENT_FLAG_COMPRESSED, &em->flags))
- 			offset_in_extent = em_start - em->start;
- 		em_end = extent_map_end(em);
--		em_len = em_end - em_start;
- 		disko = 0;
- 		flags = 0;
- 
-+		if (fieinfo->fi_flags & FIEMAP_FLAG_ONDISK &&
-+		    em->block_start != EXTENT_MAP_INLINE &&
-+		    em->block_len != (u64)-1) {
-+
-+			em_len = em->block_len;
-+		} else
-+			em_len = em_end - em_start;
-+
- 		/*
- 		 * bump off for our next call to get_extent
- 		 */
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 1e861a0..64ca53a 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -8744,7 +8744,7 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
- 	return ret;
- }
- 
--#define BTRFS_FIEMAP_FLAGS	(FIEMAP_FLAG_SYNC)
-+#define BTRFS_FIEMAP_FLAGS	(FIEMAP_FLAG_SYNC|FIEMAP_FLAG_ONDISK)
- 
- static int btrfs_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 		__u64 start, __u64 len)
-diff --git a/include/uapi/linux/fiemap.h b/include/uapi/linux/fiemap.h
-index 0c51d61..0652bd2 100644
---- a/include/uapi/linux/fiemap.h
-+++ b/include/uapi/linux/fiemap.h
-@@ -41,8 +41,12 @@ struct fiemap {
- #define FIEMAP_FLAG_SYNC	0x00000001 /* sync file data before map */
- #define FIEMAP_FLAG_XATTR	0x00000002 /* map extended attribute tree */
- #define FIEMAP_FLAG_CACHE	0x00000004 /* request caching of the extents */
-+#define FIEMAP_FLAG_ONDISK	0x00000008 /* return size of blocks allocated
-+					    * on disk, rather than actual
-+					    * data length in extent */
- 
--#define FIEMAP_FLAGS_COMPAT	(FIEMAP_FLAG_SYNC | FIEMAP_FLAG_XATTR)
-+#define FIEMAP_FLAGS_COMPAT	(FIEMAP_FLAG_SYNC | FIEMAP_FLAG_XATTR | \
-+				 FIEMAP_FLAG_ONDISK)
- 
- #define FIEMAP_EXTENT_LAST		0x00000001 /* Last extent in file. */
- #define FIEMAP_EXTENT_UNKNOWN		0x00000002 /* Data location unknown. */
--- 
-2.1.4
+Overall:
+    Device size:                  88.00GiB
+    Device allocated:             82.03GiB
+    Device unallocated:            5.97GiB
+    Device missing:                  0.00B
+    Used:                         80.11GiB
+    Free (estimated):              6.26GiB      (min: 3.28GiB)
 
+At some point I had decided to use 'mixedbg' allocation to
+reduce this problem and hopefully improve locality, but that
+means that metadata and data need to have the same profile, and
+I really want metadata to be 'dup' because of checksumming,
+and I don't want data to be 'dup' too.
+
+> [ ... ] To proceed, add a larger device to current fs, and do
+> a balance or just delete the 28G partition then btrfs will
+> handle the rest well.
+
+Usually for this I use a USB stick, with a 1-3GiB partition plus
+a bit extra because of that extra bit of space.
+
+https://btrfs.wiki.kernel.org/index.php/FAQ#How_much_free_space_do_I_have.3F
+https://btrfs.wiki.kernel.org/index.php/FAQ#Help.21_Btrfs_claims_I.27m_out_of_space.2C_but_it_looks_like_I_should_have_lots_left.21
+marc.merlins.org/perso/btrfs/post_2014-05-04_Fixing-Btrfs-Filesystem-Full-Problems.html
+
+Unfortunately if it is a single device volume and metadata is
+'dup' to remove the extra temporary device one has first to
+convert the metadata to 'single' and then back to 'dup' after
+removal.
+
+There are also some additional reasons why space used (rather
+than allocated) may be larger than expected, in special but not
+wholly infrequent cases. My impression is that the Btrfs design
+trades space for performance and reliability.

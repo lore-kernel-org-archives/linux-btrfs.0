@@ -1,143 +1,228 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f47.google.com ([209.85.214.47]:37247 "EHLO
-        mail-it0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751714AbdBHMvO (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Feb 2017 07:51:14 -0500
-Received: by mail-it0-f47.google.com with SMTP id r185so102179423ita.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 08 Feb 2017 04:50:28 -0800 (PST)
-Subject: Re: raid1: cannot add disk to replace faulty because can only mount
- fs as read-only.
-To: Hans Deragon <hans@deragon.biz>, linux-btrfs@vger.kernel.org
-References: <W75Sc6PDCBok7W75TcCgc7@videotron.ca>
- <51114ea93a0f76a5ff6621e4d8983944@server1.deragon.biz>
- <fab34ac1-03c0-76ea-eac2-ef4a210a48de@gmail.com>
- <07bba687-64c3-6713-6f6a-c8da183cbd3d@gmail.com>
- <YAvBcoM9EImXYYAvCcegSf@videotron.ca>
- <a5262907-06f2-2c6f-d23a-2703b10429b7@deragon.biz>
- <pan$be2e$8a233bb0$f63eb0cb$d3413db@cox.net>
- <20170201115530.l2ce5afcqld2kzi4@angband.pl>
- <pan$27de1$6045e2b1$7cc1684e$e9aac1ad@cox.net>
- <7cb699fd-44a7-d8eb-e492-c448f67b0eac@gmail.com>
- <20170202142521.nfiy73ye6bi5smjv@angband.pl>
- <ZIyPcL4cW36fIZIyQcB9Hs@videotron.ca>
- <6e26ee22-3d67-d2aa-22b7-c03f9ffc18f2@deragon.biz>
+Received: from mail-io0-f181.google.com ([209.85.223.181]:33902 "EHLO
+        mail-io0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932516AbdBHNNL (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Feb 2017 08:13:11 -0500
+Received: by mail-io0-f181.google.com with SMTP id l66so115326558ioi.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 08 Feb 2017 05:12:07 -0800 (PST)
+Subject: Re: dup vs raid1 in single disk
+To: Kai Krakow <hurikhan77@gmail.com>, linux-btrfs@vger.kernel.org
+References: <CACNDjuzntG5Saq5HHNeDUmq-=28riKAerkO=CD=zAW-QofbKSg@mail.gmail.com>
+ <CACNDjuw3GqkCggUqim==Y+xj=bnL93wwdx26denvQaD4tFf7yw@mail.gmail.com>
+ <20170119232340.64327c09@natsu>
+ <6f06bd6b-67c9-533b-9bf5-89cff8b892da@gmail.com>
+ <20170207232818.35b6bfcb@jupiter.sol.kaishome.de>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <6e4b9b4f-d4df-5679-5645-a52dbc15b424@gmail.com>
-Date: Wed, 8 Feb 2017 07:50:22 -0500
+Message-ID: <7d2f85e3-aaf2-5097-ba7b-bff274e4d7aa@gmail.com>
+Date: Wed, 8 Feb 2017 08:02:36 -0500
 MIME-Version: 1.0
-In-Reply-To: <6e26ee22-3d67-d2aa-22b7-c03f9ffc18f2@deragon.biz>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <20170207232818.35b6bfcb@jupiter.sol.kaishome.de>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-02-07 22:21, Hans Deragon wrote:
-> Greetings,
+On 2017-02-07 17:28, Kai Krakow wrote:
+> Am Thu, 19 Jan 2017 15:02:14 -0500
+> schrieb "Austin S. Hemmelgarn" <ahferroin7@gmail.com>:
 >
-> On 2017-02-02 10:06, Austin S. Hemmelgarn wrote:
->> On 2017-02-02 09:25, Adam Borowski wrote:
->>> On Thu, Feb 02, 2017 at 07:49:50AM -0500, Austin S. Hemmelgarn wrote:
->>>> This is a severe bug that makes a not all that uncommon (albeit bad) use
->>>> case fail completely.  The fix had no dependencies itself and
+>> On 2017-01-19 13:23, Roman Mamedov wrote:
+>>> On Thu, 19 Jan 2017 17:39:37 +0100
+>>> "Alejandro R. Mosteo" <alejandro@mosteo.com> wrote:
 >>>
->>> I don't see what's bad in mounting a RAID degraded.  Yeah, it provides no
->>> redundancy but that's no worse than using a single disk from the start.
->>> And most people not doing storage/server farm don't have a stack of spare
->>> disks at hand, so getting a replacement might take a while.
->> Running degraded is bad. Period.  If you don't have a disk on hand to
->> replace the failed one (and if you care about redundancy, you should
->> have at least one spare on hand), you should be converting to a single
->> disk, not continuing to run in degraded mode until you get a new disk.
->> The moment you start talking about running degraded long enough that you
->> will be _booting_ the system with the array degraded, you need to be
->> converting to a single disk.  This is of course impractical for
->> something like a hardware array or an LVM volume, but it's _trivial_
->> with BTRFS, and protects you from all kinds of bad situations that can't
->> happen with a single disk but can completely destroy the filesystem if
->> it's a degraded array.  Running a single disk is not exactly the same as
->> running a degraded array, it's actually marginally safer (even if you
->> aren't using dup profile for metadata) because there are fewer moving
->> parts to go wrong.  It's also exponentially more efficient.
+>>>> I was wondering, from a point of view of data safety, if there is
+>>>> any difference between using dup or making a raid1 from two
+>>>> partitions in the same disk. This is thinking on having some
+>>>> protection against the typical aging HDD that starts to have bad
+>>>> sectors.
 >>>
->>> Being able to continue to run when a disk fails is the whole point of
->>> RAID
->>> -- despite what some folks think, RAIDs are not for backups but for
->>> uptime.
->>> And if your uptime goes to hell because the moment a disk fails you
->>> need to
->>> drop everything and replace the disk immediately, why would you use RAID?
->> Because just replacing a disk and rebuilding the array is almost always
->> much cheaper in terms of time than rebuilding the system from a backup.
->> IOW, even if you have to drop everything and replace the disk
->> immediately, it's still less time consuming than restoring from a
->> backup.  It also has the advantage that you don't lose any data.
+>>> RAID1 will write slower compared to DUP, as any optimization to
+>>> make RAID1 devices work in parallel will cause a total performance
+>>> disaster for you as you will start trying to write to both
+>>> partitions at the same time, turning all linear writes into random
+>>> ones, which are about two orders of magnitude slower than linear on
+>>> spinning hard drives. DUP shouldn't have this issue, but still it
+>>> will be twice slower than single, since you are writing everything
+>>> twice.
+>> As of right now, there will actually be near zero impact on write
+>> performance (or at least, it's way less than the theoretical 50%)
+>> because there really isn't any optimization to speak of in the
+>> multi-device code.  That will hopefully change over time, but it's
+>> not likely to do so any time in the future since nobody appears to be
+>> working on multi-device write performance.
 >
-> We disagree on letting people run degraded, which I support, you not.  I
-> respect your opinion.  However, I have to ask who decides these rules?
-> Obviously, not me since I am a simple btrfs home user.
-This is a pretty typical stance among seasoned system administrators. 
-It's worth pointing out that I'm not saying you shouldn't run with a 
-single disk for an extended period of time, I'm saying you should 
-_convert_ to single disk profiles until you can get a replacement, and 
-then convert back to raid profiles once you have the replacement.  It is 
-exponentially safer in BTRFS to run single data single metadata than 
-half raid1 data half raid1 metadata.  This is one of the big reasons 
-that I've avoided MD over the years, it's functionally impossible to do 
-this with MD arrays.
+> I think that's only true if you don't account the seek overhead. In
+> single device RAID1 mode you will always seek half of the device while
+> writing data, and even when reading between odd and even PIDs. In
+> contrast, DUP mode doesn't guarantee your seeks to be shorter but from
+> a statistical point of view, on the average it should be shorter. So it
+> should yield better performance (tho I wouldn't expect it to be
+> observable, depending on your workload).
 >
-> Since Oracle is funding btrfs development, is that Oracle's official
-> stand on how to handle a failed disk?  Who decides of btrfs's roadmap?
-> I have no clue who is who on this mailing list and who influences the
-> features of btrfs.
+> So, on devices having no seek overhead (aka SSD), it is probably true
+> (minus bus bandwidth considerations). For HDD I'd prefer DUP.
 >
-> Oracle is obviously using raid systems internally.  How do the operators
-> of these raid systems feel about this "not let the system run in
-> degraded mode"?
-They replace the disks immediately, so it's irrelevant to them.  Oracle 
-isn't the sole source of funding (I'm actually not even sure they are 
-anymore CLM works for Facebook now last I knew), but you have to 
-understand that it has been developed primarily as an _enterprise_ 
-filesystem.  This means that certain perfectly reasonable assumptions 
-are made about the conditions under which it will be used.
+> From data safety point of view: It's more likely that adjacent
+> and nearby sectors are bad. So DUP imposes a higher risk of written
+> data being written to only bad sectors - which means data loss or even
+> file system loss (if metadata hits this problem).
 >
-> As a home user, I do not want to have a disk always available.  This is
-> paying a disk very expensively when the raid system can run easily for
-> two years without disk failure.  I want to buy the new disk (asap, of
-> course) once one died.  At that moment, the cost of a drive would have
-> fallen drastically.  Yes, I can live with running my home system (which
-> has backups) for a day or two, in degraded rw mode until I purchase and
-> can install a new disk.  Chances are low that both disks will quit at
-> around the same time.
-You're missing my point.  I have zero issue with running with one disk 
-when the other fails.  I have issue with not telling the FS that it 
-won't have another disk for a while.  IOW, in that situation, I would run:
-btrfs balance start -dconvert=single -mconvert=dup /whatever
-To convert to profiles _designed_ for a single device and then convert 
-back to raid1 when I got another disk.  The issue you've stumbled across 
-is only partial motivation for this, the bigger motivation is that 
-running half a 2 disk array is more risky than running a single disk by 
-itself.
+> To be realistic: I wouldn't trade space usage for duplicate data on an
+> already failing disk, no matter if it's DUP or RAID1. HDD disk space is
+> cheap, and using such a scenario is just waste of performance AND
+> space - no matter what. I don't understand the purpose of this. It just
+> results in fake safety.
 >
-> Simply because I cannot run in degraded mode and cannot add a disk to my
-> current degraded raid1, despite having my replacement disk in my hands,
-> I must resort to switch to mdadm or zfs.
-Both MDADM and ZFS still have the issue that it is more dangerous to run 
-half a 2 disk RAID1 array than a single disk.  That doesn't change just 
-because the software handles things a bit differently.
+> Better get two separate devices half the size. There's a better chance
+> of getting a better cost/space ratio anyways, plus better performance
+> and safety.
 >
-> Having a policy that limits user's options for the sake that they are
-> too stupid to understand the implications is wrong.  Its ok for
-> applications, but not at the operating system; there should be a way to
-> force this.  A
-> --yes-i-know-what-i-am-doing-now-please-mount-rw-degraded-so-i-can-install-the-new-disk
-> parameter must be implemented.  Currently, it is like disallowing root
-> to run mkfs over an existing filesystem because people could erase data
-> by mistake.  Let people do what they want and let them live with the
-> consequences.
-A patch exists to fix the particular issue you encountered.  Trust me, I 
-wish it had been merged like it should have been too, then we could just 
-tell people in this situation to upgrade their kernel instead of telling 
-them to rebuild it with a patch.
+>> There's also the fact that you're writing more metadata than data
+>> most of the time unless you're dealing with really big files, and
+>> metadata is already DUP mode (unless you are using an SSD), so the
+>> performance hit isn't 50%, it's actually a bit more than half the
+>> ratio of data writes to metadata writes.
+>>>
+>>>> On a related note, I see this caveat about dup in the manpage:
+>>>>
+>>>> "For example, a SSD drive can remap the blocks internally to a
+>>>> single copy thus deduplicating them. This negates the purpose of
+>>>> increased redunancy (sic) and just wastes space"
+>>>
+>>> That ability is vastly overestimated in the man page. There is no
+>>> miracle content-addressable storage system working at 500 MB/sec
+>>> speeds all within a little cheap controller on SSDs. Likely most of
+>>> what it can do, is just compress simple stuff, such as runs of
+>>> zeroes or other repeating byte sequences.
+>> Most of those that do in-line compression don't implement it in
+>> firmware, they implement it in hardware, and even DEFLATE can get 500
+>> MB/second speeds if properly implemented in hardware.  The firmware
+>> may control how the hardware works, but it's usually hardware doing
+>> heavy lifting in that case, and getting a good ASIC made that can hit
+>> the required performance point for a reasonable compression algorithm
+>> like LZ4 or Snappy is insanely cheap once you've gotten past the VLSI
+>> work.
 >
-> hdparm has a --yes-i-know-what-i-am-doing flag.  btrfs needs one.
+> I still thinks it's a myth... The overhead of managing inline
+> deduplication is just way too high to implement it without jumping
+> through expensive hoops. Most workloads have almost zero deduplication
+> potential. And even when, their temporal occurrence is spaced so far
+> that an inline deduplicator won't catch it.
+Just like the proposed implementation in BTRFS, it's not complete 
+deduplication.  In fact, the only devices I've ever seen that do this 
+appear to implement it just like what was proposed for BTRFS, just with 
+a much smaller cache.  They were also insanely expensive.
 >
-> Whoever decides about btrfs features to add, please consider this one.
+> If it would be all so easy, btrfs would already have it working in
+> mainline. I don't even remember that those patches is still being
+> worked on.
+>
+> With this in mind, I think dup metadata is still a good think to have
+> even on SSD and I would always force to enable it.
+Agreed.
+>
+> Potential for deduplication is only when using snapshots (which already
+> are deduplicated when taken) or when handling user data on a file
+> server in a multi-user environment. Users tend to copy their files all
+> over the place - multiple directories of multiple gigabytes. Potential
+> is also where you're working with client machine backups or vm images.
+> I regularly see deduplication efficiency of 30-60% in such scenarios -
+> file servers mostly which I'm handling. But due to temporally far
+> spaced occurrence of duplicate blocks, only offline or nearline
+> deduplication works here.
+>
+>>> And the DUP mode is still useful on SSDs, for cases when one copy
+>>> of the DUP gets corrupted in-flight due to a bad controller or RAM
+>>> or cable, you could then restore that block from its good-CRC DUP
+>>> copy.
+>> The only window of time during which bad RAM could result in only one
+>> copy of a block being bad is after the first copy is written but
+>> before the second is, which is usually an insanely small amount of
+>> time.  As far as the cabling, the window for errors resulting in a
+>> single bad copy of a block is pretty much the same as for RAM, and if
+>> they're persistently bad, you're more likely to lose data for other
+>> reasons.
+>
+> It depends on the design of the software. You're true if this memory
+> block is simply a single block throughout its lifetime in RAM before
+> written to storage. But if it is already handled as duplicate block in
+> memory, odds are different. I hope btrfs is doing this right... ;-)
+It's pretty debatable whether or not handling things as duplicates in 
+RAM is correct or not.  Memory has higher error rates than most storage 
+media, but it also is much more reasonable to expect it to have good 
+EDAC mechanisms that most storage media.
+>
+>> That said, I do still feel that DUP mode has value on SSD's.  The
+>> primary arguments against it are:
+>> 1. It wears out the SSD faster.
+>
+> I don't think this is a huge factor, even more when looking at TBW
+> capabilities of modern SSDs. And prices are low enough to better swap
+> early than waiting for the disaster hitting you. Instead, you can still
+> use the old SSD for archival storage (but this has drawbacks, don't
+> leave them without power for months or years!) or as a shock resistent
+> USB mobile drive on the go.
+>
+>> 2. The blocks are likely to end up in the same erase block, and
+>> therefore there will be no benefit.
+>
+> Oh, this is probably a point to really think about... Would ssd_spread
+> help here?
+Not really, the ssd* mount options affect the chunk allocator only last 
+I knew.
+>
+>> The first argument is accurate, but not usually an issue for most
+>> people.  Average life expectancy for a decent SSD is well over 10
+>> years, which is more than twice the usual life expectancy for a
+>> consumer hard drive.
+>
+> Well, my first SSD (128 GB) was worn (according to SMART) after only 12
+> months. Bigger drives wear much slower. I now have a 500 GB SSD and
+> looking at SMART it projects to serve me well for the next 3-4 years
+> or longer. But it will be worn out then. But I'm pretty sure I'll get a
+> new drive until then - for performance and space reasons. My high usage
+> pattern probably results from using the drives for bcache in write-back
+> mode. Btrfs as the bcache user does it's own job (because of CoW) of
+> pressing much more data through bcache than normal expectations.
+FWIW, the quote I gave (which I didn't properly qualify for some 
+reason...) Is with respect to the 2 Crucial MX200 SSD's I have in my 
+home server system, which is primarily running BOINC apps most of the 
+time.  Some brands are of course better than others (Kingston drives for 
+example seem to have paradoxically short life spans in my experience).
+>
+>> As far as the second argument against it, that one is partially
+>> correct, but ignores an important factor that many people who don't
+>> do hardware design (and some who do) don't often consider.  The close
+>> temporal proximity of the writes for each copy are likely to mean
+>> they end up in the same erase block on the SSD (especially if the SSD
+>> has a large write cache).
+>
+> Deja vu...
+>
+>>  However, that doesn't mean that one
+>> getting corrupted due to device failure is guaranteed to corrupt the
+>> other.  The reason for this is exactly the same reason that single
+>> word errors in RAM are exponentially more common than losing a whole
+>> chip or the whole memory module: The primary error source is
+>> environmental noise (EMI, cosmic rays, quantum interference,
+>> background radiation, etc), not system failure.  In other words,
+>> you're far more likely to lose a single cell (which is usually not
+>> more than a single byte in the MLC flash that gets used in most
+>> modern SSD's) in the erase block than the whole erase block.  In that
+>> event, you obviously have only got corruption in the particular
+>> filesystem block that that particular cell was storing data for.
+>
+> Sounds reasonable...
+>
+>> There's also a third argument for not using DUP on SSD's however:
+>> The SSD already does most of the data integrity work itself.
+>
+> DUP is really not for integrity but for consistency. If one copy of the
+> block becomes damaged for perfectly reasonable instructions sent by the
+> OS (from the drive firmware perspective), that block has perfect data
+> integrity. But if it was the single copy of a metadata block, your FS
+> is probably toast now. In DUP mode you still have the other copy for
+> consistent filesystem structures. With this copy, the OS can now restore
+> filesystem integrity (which is levels above block level integrity).
+>
+That's still data integrity from the filesystem and userspace's perspective.
+

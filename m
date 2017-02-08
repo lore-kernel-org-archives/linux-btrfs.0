@@ -1,181 +1,254 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:8994 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1754048AbdBHAqM (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Feb 2017 19:46:12 -0500
-Subject: Re: Very slow balance / btrfs-transaction
-To: <fdmanana@gmail.com>
-References: <fce777cb-027f-532b-76ab-24a1e5c2cf7c@suse.de>
- <507c32d4-929c-b691-6196-103c8cb9addb@suse.com>
- <80d3e5ce55ddc7e454cce96e67e2ea64@88cbed2449cf>
- <8999d95dac21ea8e2908c5012e50c59b@88cbed2449cf>
- <f9e2b226440e4f6e17e61ce86eecc7eb@88cbed2449cf>
- <57259b63-2f26-0da4-16f6-5fbd781daeb0@cn.fujitsu.com>
- <4200a425-890f-b283-b43b-e5911b1c6d8c@suse.de>
- <3c9ce5e2-6bc0-96d3-1d99-75f96e03afd1@cn.fujitsu.com>
- <CAL3q7H6n9MVz7187GCn-oT0_5fLAxhsgJPA0fjrdvVMQ+4HqTw@mail.gmail.com>
-CC: Goldwyn Rodrigues <rgoldwyn@suse.de>, Jorg Bornschein <jb@capsec.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <8e2d5864-16e0-a92d-9237-ed8001543b06@cn.fujitsu.com>
-Date: Wed, 8 Feb 2017 08:39:40 +0800
+Received: from mail-ua0-f172.google.com ([209.85.217.172]:34471 "EHLO
+        mail-ua0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932077AbdBHB2T (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Feb 2017 20:28:19 -0500
+Received: by mail-ua0-f172.google.com with SMTP id 35so98662424uak.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 07 Feb 2017 17:28:19 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CAL3q7H6n9MVz7187GCn-oT0_5fLAxhsgJPA0fjrdvVMQ+4HqTw@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+From: Peter Zaitsev <pz@percona.com>
+Date: Tue, 7 Feb 2017 20:28:17 -0500
+Message-ID: <CA+RUij17gdN-iyVvQpDJXqshby-4=JOsGT5OAgzQai+H=r3L2w@mail.gmail.com>
+Subject: Troubleshooting crash due to running out of space issues
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I'm running BTRFS on Ubuntu 16.04  - I was testing intensive database
+IO which ends up with pretty fragmented data file:
+
+root@blinky:/var/lib/mysql/sbtest# filefrag sbtest1.ibd
+
+sbtest1.ibd: 13415923 extents found
+
+This is 500G device which is some 60% full:
+
+/dev/nvme0n1                500107608 308009444 189718556  62% /mnt/data/mysql
+
+root@blinky:/# btrfs fi show Label: none uuid:
+2a396366-e3c9-4d14-b4cc-3d8992bd1c6b Total devices 1 FS bytes used
+293.24GiB devid 1 size 476.94GiB used 476.94GiB path /dev/nvme0n1
 
 
-At 02/07/2017 11:55 PM, Filipe Manana wrote:
-> On Tue, Feb 7, 2017 at 12:22 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
->>
->>
->> At 02/07/2017 12:09 AM, Goldwyn Rodrigues wrote:
->>>
->>>
->>> Hi Qu,
->>>
->>> On 02/05/2017 07:45 PM, Qu Wenruo wrote:
->>>>
->>>>
->>>>
->>>> At 02/04/2017 09:47 AM, Jorg Bornschein wrote:
->>>>>
->>>>> February 4, 2017 1:07 AM, "Goldwyn Rodrigues" <rgoldwyn@suse.de> wrote:
->>>
->>>
->>> <snipped>
->>>
->>>>>
->>>>>
->>>>> Quata support was indeed active -- and it warned me that the qroup
->>>>> data was inconsistent.
->>>>>
->>>>> Disabling quotas had an immediate impact on balance throughput -- it's
->>>>> *much* faster now!
->>>>> From a quick glance at iostat I would guess it's at least a factor 100
->>>>> faster.
->>>>>
->>>>>
->>>>> Should quota support generally be disabled during balances? Or did I
->>>>> somehow push my fs into a weired state where it triggered a slow-path?
->>>>>
->>>>>
->>>>>
->>>>> Thanks!
->>>>>
->>>>>    j
->>>>
->>>>
->>>> Would you please provide the kernel version?
->>>>
->>>> v4.9 introduced a bad fix for qgroup balance, which doesn't completely
->>>> fix qgroup bytes leaking, but also hugely slow down the balance process:
->>>>
->>>> commit 62b99540a1d91e46422f0e04de50fc723812c421
->>>> Author: Qu Wenruo <quwenruo@cn.fujitsu.com>
->>>> Date:   Mon Aug 15 10:36:51 2016 +0800
->>>>
->>>>     btrfs: relocation: Fix leaking qgroups numbers on data extents
->>>>
->>>> Sorry for that.
->>>>
->>>> And in v4.10, a better method is applied to fix the byte leaking
->>>> problem, and should be a little faster than previous one.
->>>>
->>>> commit 824d8dff8846533c9f1f9b1eabb0c03959e989ca
->>>> Author: Qu Wenruo <quwenruo@cn.fujitsu.com>
->>>> Date:   Tue Oct 18 09:31:29 2016 +0800
->>>>
->>>>     btrfs: qgroup: Fix qgroup data leaking by using subtree tracing
->>>>
->>>>
->>>> However, using balance with qgroup is still slower than balance without
->>>> qgroup, the root fix needs us to rework current backref iteration.
->>>>
->>>
->>> This patch has made the btrfs balance performance worse. The balance
->>> task has become more CPU intensive compared to earlier and takes longer
->>> to complete, besides hogging resources. While correctness is important,
->>> we need to figure out how this can be made more efficient.
->>>
->> The cause is already known.
->>
->> It's find_parent_node() which takes most of the time to find all referencer
->> of an extent.
->>
->> And it's also the cause for FIEMAP softlockup (fixed in recent release by
->> early quit).
->>
->> The biggest problem is, current find_parent_node() uses list to iterate,
->> which is quite slow especially it's done in a loop.
->> In real world find_parent_node() is about O(n^3).
->> We can either improve find_parent_node() by using rb_tree, or introduce some
->> cache for find_parent_node().
->
-> Even if anyone is able to reduce that function's complexity from
-> O(n^3) down to lets say O(n^2) or O(n log n) for example, the current
-> implementation of qgroups will always be a problem. The real problem
-> is that this more recent rework of qgroups does all this accounting
-> inside the critical section of a transaction - blocking any other
-> tasks that want to start a new transaction or attempt to join the
-> current transaction. Not to mention that on systems with small amounts
-> of memory (2Gb or 4Gb from what I've seen from user reports) we also
-> OOM due this allocation of struct btrfs_qgroup_extent_record per
-> delayed data reference head, that are used for that accounting phase
-> in the critical section of a transaction commit.
->
-> Let's face it and be realistic, even if someone manages to make
-> find_parent_node() much much better, like O(n) for example, it will
-> always be a problem due to the reasons mentioned before. Many extents
-> touched per transaction and many subvolumes/snapshots, will always
-> expose that root problem - doing the accounting in the transaction
-> commit critical section.
+this file (sbtest1.ibd) takes some 250GB - majority of space
 
-You must accept the fact that we must call find_parent_node() at least 
-twice to get correct owner modification for each touched extent.
-Or qgroup number will never be correct.
+As I try to defrag this file with:
 
-One for old_roots by searching commit root, and one for new_roots by 
-searching current root.
+btrfs fi defrag sbtest1.ibd
 
-You can call find_parent_node() as many time as you like, but that's 
-just wasting your CPU time.
+I get either error of "no space available"   and file system goes to
+read only or filesystem completely breaks down and IO errors are
+reported.
 
-Only the final find_parent_node() will determine new_roots for that 
-extent, and there is no better timing than commit_transaction().
+Note during my experiments I have mounted this filesystem repeatedly
+with and without nodatacow and autodefrag   options, I assume these
+should not cause any file system dammage, do they ?
 
-Or you can wasting more time calling find_parent_node() every time you 
-touched a extent, saving one find_parent_node() in commit_transaction() 
-with the cost of more find_parent_node() in other place.
-Is that what you want?
+Here is the portion of the latest log:
 
-I can move the find_parent_node() for old_roots out of commit_transaction().
-But that will only reduce 50% of the time spent on commit_transaction().
+Feb  7 19:10:42 blinky kernel: [40722.055010] ------------[ cut here
+]------------
+Feb  7 19:10:42 blinky kernel: [40722.055060] WARNING: CPU: 12 PID:
+17002 at /build/linux-W6HB68/linux-4.4.0/fs/btrfs/extent-tree.c:6552
+__btrfs_free_extent.isr
+a.70+0x2e6/0xd30 [btrfs]()
+Feb  7 19:10:42 blinky kernel: [40722.055063] BTRFS: error (device
+nvme0n1) in __btrfs_free_extent:6552: errno=-28 No space left
+Feb  7 19:10:42 blinky kernel: [40722.055066] BTRFS info (device
+nvme0n1): forced readonly
+Feb  7 19:10:42 blinky kernel: [40722.055068] BTRFS: error (device
+nvme0n1) in btrfs_run_delayed_refs:2927: errno=-28 No space left
+Feb  7 19:10:42 blinky kernel: [40722.055086] BTRFS: Transaction
+aborted (error -28)
+Feb  7 19:10:42 blinky kernel: [40722.055087] Modules linked in:
+snd_hda_codec_hdmi nls_iso8859_1 intel_rapl x86_pkg_temp_thermal
+intel_powerclamp coretemp kvm
+snd_hda_codec_realtek irqbypass snd_hda_codec_generic serio_raw
+sb_edac snd_hda_intel edac_core snd_hda_codec snd_hda_core snd_hwdep
+snd_pcm input_leds snd_time
+r mei_me lpc_ich snd mei soundcore shpchp tpm_infineon mac_hid ib_iser
+rdma_cm iw_cm ib_cm ib_sa ib_mad ib_core ib_addr iscsi_tcp
+libiscsi_tcp libiscsi scsi_tra
+nsport_iscsi autofs4 btrfs raid10 raid456 async_raid6_recov
+async_memcpy async_pq async_xor async_tx xor raid6_pq libcrc32c raid1
+raid0 multipath linear hid_gen
+eric usbhid hid nouveau crct10dif_pclmul mxm_wmi crc32_pclmul video
+ghash_clmulni_intel i2c_algo_bit aesni_intel ttm aes_x86_64 lrw
+drm_kms_helper gf128mul glue
+_helper ablk_helper syscopyarea psmouse cryptd sysfillrect e1000e
+sysimgblt fb_sys_fops ahci libahci alx ptp drm mdio pps_core nvme fjes
+wmi
+Feb  7 19:10:42 blinky kernel: [40722.055180] CPU: 12 PID: 17002 Comm:
+btrfs-transacti Tainted: G        W       4.4.0-62-generic #83-Ubuntu
+Feb  7 19:10:42 blinky kernel: [40722.055181] Hardware name: Gigabyte
+Technology Co., Ltd. Default string/X99-Ultra Gaming-CF, BIOS F5
+08/29/2016
+Feb  7 19:10:42 blinky kernel: [40722.055183]  0000000000000286
+000000007c7f47a0 ffff880f1b4c7b00 ffffffff813f7c63
+Feb  7 19:10:42 blinky kernel: [40722.055185]  ffff880f1b4c7b48
+ffffffffc0392498 ffff880f1b4c7b38 ffffffff810812d2
+Feb  7 19:10:42 blinky kernel: [40722.055188]  0000007021b82000
+00000000ffffffe4 0000000000000000 ffff880fe62a4000
+Feb  7 19:10:42 blinky kernel: [40722.055190] Call Trace:
+Feb  7 19:10:42 blinky kernel: [40722.055197]  [<ffffffff813f7c63>]
+dump_stack+0x63/0x90
+Feb  7 19:10:42 blinky kernel: [40722.055202]  [<ffffffff810812d2>]
+warn_slowpath_common+0x82/0xc0
+Feb  7 19:10:42 blinky kernel: [40722.055205]  [<ffffffff8108136c>]
+warn_slowpath_fmt+0x5c/0x80
+Feb  7 19:10:42 blinky kernel: [40722.055219]  [<ffffffffc02f1ec6>]
+__btrfs_free_extent.isra.70+0x2e6/0xd30 [btrfs]
+Feb  7 19:10:42 blinky kernel: [40722.055232]  [<ffffffffc02f5e34>]
+__btrfs_run_delayed_refs+0x444/0x11f0 [btrfs]
+Feb  7 19:10:42 blinky kernel: [40722.055236]  [<ffffffff810ece94>] ?
+lock_timer_base.isra.22+0x54/0x70
+Feb  7 19:10:42 blinky kernel: [40722.055248]  [<ffffffffc02f9a8d>]
+btrfs_run_delayed_refs+0x7d/0x2a0 [btrfs]
+Feb  7 19:10:42 blinky kernel: [40722.055251]  [<ffffffff810ed018>] ?
+del_timer_sync+0x48/0x50
+Feb  7 19:10:42 blinky kernel: [40722.055266]  [<ffffffffc030ecbc>]
+btrfs_commit_transaction+0xac/0xa90 [btrfs]
+Feb  7 19:10:42 blinky kernel: [40722.055279]  [<ffffffffc030a2b9>]
+transaction_kthread+0x229/0x240 [btrfs]
+Feb  7 19:10:42 blinky kernel: [40722.055291]  [<ffffffffc030a090>] ?
+btrfs_cleanup_transaction+0x570/0x570 [btrfs]
+Feb  7 19:10:42 blinky kernel: [40722.055294]  [<ffffffff810a0ba8>]
+kthread+0xd8/0xf0
+Feb  7 19:10:42 blinky kernel: [40722.055296]  [<ffffffff810a0ad0>] ?
+kthread_create_on_node+0x1e0/0x1e0
+Feb  7 19:10:42 blinky kernel: [40722.055300]  [<ffffffff8183898f>]
+ret_from_fork+0x3f/0x70
+Feb  7 19:10:42 blinky kernel: [40722.055301]  [<ffffffff810a0ad0>] ?
+kthread_create_on_node+0x1e0/0x1e0
+Feb  7 19:10:42 blinky kernel: [40722.055303] ---[ end trace
+92a6418dcae8a352 ]---
+Feb  7 19:10:42 blinky kernel: [40722.055306] BTRFS: error (device
+nvme0n1) in __btrfs_free_extent:6552: errno=-28 No space left
+Feb  7 19:10:42 blinky kernel: [40722.055314] BTRFS: error (device
+nvme0n1) in btrfs_run_delayed_refs:2927: errno=-28 No space left
+Feb  7 19:10:42 blinky kernel: [40722.353231] pending csums is 482394112
+Feb  7 19:11:28 blinky kernel: [40768.119500] BTRFS error (device
+nvme0n1): parent transid verify failed on 249832390656 wanted 5084
+found 5065
+Feb  7 19:11:28 blinky kernel: [40768.119517] BTRFS info (device
+nvme0n1): no csum found for inode 554 start 34088566784
+Feb  7 19:11:28 blinky kernel: [40768.119675] BTRFS error (device
+nvme0n1): parent transid verify failed on 249832390656 wanted 5084
+found 5065
+Feb  7 19:11:28 blinky kernel: [40768.119682] BTRFS info (device
+nvme0n1): no csum found for inode 554 start 34088570880
+Feb  7 19:11:28 blinky kernel: [40768.119835] BTRFS error (device
+nvme0n1): parent transid verify failed on 249832390656 wanted 5084
+found 5065
+Feb  7 19:11:28 blinky kernel: [40768.119842] BTRFS info (device
+nvme0n1): no csum found for inode 554 start 34088574976
+Feb  7 19:11:28 blinky kernel: [40768.119996] BTRFS error (device
+nvme0n1): parent transid verify failed on 249832390656 wanted 5084
+found 5065
+Feb  7 19:11:28 blinky kernel: [40768.120006] BTRFS info (device
+nvme0n1): no csum found for inode 554 start 34088579072
+Feb  7 19:11:28 blinky kernel: [40768.120110] BTRFS warning (device
+nvme0n1): csum failed ino 554 off 34088566784 csum 1373278930 expected
+csum 0
+Feb  7 19:11:28 blinky kernel: [40768.120115] BTRFS warning (device
+nvme0n1): csum failed ino 554 off 34088570880 csum 4181088238 expected
+csum 0
+Feb  7 19:11:28 blinky kernel: [40768.120117] BTRFS warning (device
+nvme0n1): csum failed ino 554 off 34088574976 csum 3715803016 expected
+csum 0
+Feb  7 19:11:28 blinky kernel: [40768.120120] BTRFS warning (device
+nvme0n1): csum failed ino 554 off 34088579072 csum 1194440854 expected
+csum 0
+Feb  7 19:11:30 blinky kernel: [40770.940061] BTRFS error (device
+nvme0n1): parent transid verify failed on 249827934208 wanted 5084
+found 5065
+Feb  7 19:11:30 blinky kernel: [40770.940078] BTRFS info (device
+nvme0n1): no csum found for inode 554 start 34968256512
+Feb  7 19:11:30 blinky kernel: [40770.940235] BTRFS error (device
+nvme0n1): parent transid verify failed on 249827934208 wanted 5084
+found 5065
+Feb  7 19:11:30 blinky kernel: [40770.940243] BTRFS info (device
+nvme0n1): no csum found for inode 554 start 34968260608
+Feb  7 19:11:30 blinky kernel: [40770.940395] BTRFS error (device
+nvme0n1): parent transid verify failed on 249827934208 wanted 5084
+found 5065
+Feb  7 19:11:30 blinky kernel: [40770.940403] BTRFS info (device
+nvme0n1): no csum found for inode 554 start 34968264704
+Feb  7 19:11:30 blinky kernel: [40770.940558] BTRFS error (device
+nvme0n1): parent transid verify failed on 249827934208 wanted 5084
+found 5065
+Feb  7 19:11:30 blinky kernel: [40770.940566] BTRFS info (device
+nvme0n1): no csum found for inode 554 start 34968268800
+Feb  7 19:11:30 blinky kernel: [40770.940692] BTRFS warning (device
+nvme0n1): csum failed ino 554 off 34968256512 csum 3504832266 expected
+csum 0
+Feb  7 19:11:30 blinky kernel: [40770.940697] BTRFS warning (device
+nvme0n1): csum failed ino 554 off 34968260608 csum 3188344593 expected
+csum 0
+Feb  7 19:11:30 blinky kernel: [40770.940700] BTRFS warning (device
+nvme0n1): csum failed ino 554 off 34968264704 csum 3938983550 expected
+csum 0
+Feb  7 19:11:30 blinky kernel: [40770.940703] BTRFS warning (device
+nvme0n1): csum failed ino 554 off 34968268800 csum 238540766 expected
+csum 0
+Feb  7 19:11:34 blinky kernel: [40774.871386] BTRFS error (device
+nvme0n1): parent transid verify failed on 329898901504 wanted 5084
+found 5065
+Feb  7 19:11:34 blinky kernel: [40774.871403] BTRFS info (device
+nvme0n1): no csum found for inode 554 start 36158881792
+Feb  7 19:11:34 blinky kernel: [40774.871527] BTRFS error (device
+nvme0n1): parent transid verify failed on 329898901504 wanted 5084
+found 5065
+Feb  7 19:11:34 blinky kernel: [40774.871535] BTRFS info (device
+nvme0n1): no csum found for inode 554 start 36158885888
+Feb  7 19:11:34 blinky kernel: [40774.871655] BTRFS error (device
+nvme0n1): parent transid verify failed on 329898901504 wanted 5084
+found 5065
+Feb  7 19:11:34 blinky kernel: [40774.871662] BTRFS info (device
+nvme0n1): no csum found for inode 554 start 36158889984
+Feb  7 19:11:34 blinky kernel: [40774.871784] BTRFS error (device
+nvme0n1): parent transid verify failed on 329898901504 wanted 5084
+found 5065
+Feb  7 19:11:34 blinky kernel: [40774.871791] BTRFS info (device
+nvme0n1): no csum found for inode 554 start 36158894080
+Feb  7 19:11:34 blinky kernel: [40774.871886] BTRFS warning (device
+nvme0n1): csum failed ino 554 off 36158881792 csum 2472964550 expected
+csum 0
+Feb  7 19:11:34 blinky kernel: [40774.871890] BTRFS warning (device
+nvme0n1): csum failed ino 554 off 36158885888 csum 2540567641 expected
+csum 0
+Feb  7 19:11:34 blinky kernel: [40774.871894] BTRFS warning (device
+nvme0n1): csum failed ino 554 off 36158889984 csum 1718736600 expected
+csum 0
+Feb  7 19:11:34 blinky kernel: [40774.871896] BTRFS warning (device
+nvme0n1): csum failed ino 554 off 36158894080 csum 1541543398 expected
+csum 0
+Feb  7 19:11:36 blinky kernel: [40776.947022] BTRFS error (device
+nvme0n1): parent transid verify failed on 249831424000 wanted 5084
+found 5065
+Feb  7 19:11:36 blinky kernel: [40776.947037] BTRFS info (device
+nvme0n1): no csum found for inode 554 start 36834557952
 
-Compared to O(n^3) find_parent_node(), that's not the determining fact even.
+I have performed scrub before running defrag it did not find any errors.
 
-Thanks,
-Qu
+This is the test data which I can easily recreate but I'm generally
+interested what could be the cause of this and how to repair system in
+such condition.
 
->
->>
->>
->> IIRC SUSE guys(maybe Jeff?) are working on it with the first method, but I
->> didn't hear anything about it recently.
->>
->> Thanks,
->> Qu
->>
->>
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
->
+As I run file system check it seems to be OK:
 
+root@blinky:~# btrfsck /dev/nvme0n1 Checking filesystem on
+/dev/nvme0n1 UUID: 2a396366-e3c9-4d14-b4cc-3d8992bd1c6b checking
+extents checking free space cache checking fs roots checking csums
+checking root refs found 314622067165 bytes used err is 0 total csum
+bytes: 302861376 total tree bytes: 4492017664 total fs tree bytes:
+1496743936 total extent tree bytes: 2126643200 btree space waste
+bytes: 1389440305 file data blocks allocated: 345977790464 referenced
+288756027392
 
+Let me know if you have any ideas how to troubleshoot
+
+-- 
+Peter Zaitsev, CEO, Percona
+Tel: +1 888 401 3401 ext 7360   Skype:  peter_zaitsev

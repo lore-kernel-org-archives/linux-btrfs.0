@@ -1,55 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55411 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:59224 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751909AbdBGAjM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 6 Feb 2017 19:39:12 -0500
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Cc: Luke Dashjr <luke@dashjr.org>
-From: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH] btrfs: fix btrfs_compat_ioctl failures on non-compat ioctls
-Message-ID: <9407b764-fbf5-ff04-0d27-70d4e9821e37@suse.com>
-Date: Mon, 6 Feb 2017 19:39:09 -0500
+        id S1753374AbdBHRhv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 8 Feb 2017 12:37:51 -0500
+Date: Wed, 8 Feb 2017 17:17:59 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Jeff Mahoney <jeffm@suse.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, Luke Dashjr <luke@dashjr.org>
+Subject: Re: [PATCH] btrfs: fix btrfs_compat_ioctl failures on non-compat
+ ioctls
+Message-ID: <20170208161759.GI3366@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <9407b764-fbf5-ff04-0d27-70d4e9821e37@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <9407b764-fbf5-ff04-0d27-70d4e9821e37@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit 4c63c2454ef incorrectly assumed that returning -ENOIOCTLCMD would
-cause the native ioctl to be called.  The ->compat_ioctl callback is
-expected to handle all ioctls, not just compat variants.  As a result,
-when using 32-bit userspace on 64-bit kernels, everything except those
-three ioctls would return -ENOTTY.
+On Mon, Feb 06, 2017 at 07:39:09PM -0500, Jeff Mahoney wrote:
+> Commit 4c63c2454ef incorrectly assumed that returning -ENOIOCTLCMD would
+> cause the native ioctl to be called.  The ->compat_ioctl callback is
+> expected to handle all ioctls, not just compat variants.  As a result,
+> when using 32-bit userspace on 64-bit kernels, everything except those
+> three ioctls would return -ENOTTY.
+> 
+> Fixes: 4c63c2454ef ("btrfs: bugfix: handle FS_IOC32_{GETFLAGS,SETFLAGS,GETVERSION} in btrfs_ioctl")
+> Cc: stable@vger.kernel.org
+> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 
-Fixes: 4c63c2454ef ("btrfs: bugfix: handle FS_IOC32_{GETFLAGS,SETFLAGS,GETVERSION} in btrfs_ioctl")
-Cc: stable@vger.kernel.org
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
----
- fs/btrfs/ioctl.c |    6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
-
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -5653,6 +5653,10 @@ long btrfs_ioctl(struct file *file, unsi
- #ifdef CONFIG_COMPAT
- long btrfs_compat_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
- {
-+	/*
-+	 * These all access 32-bit values anyway so no further
-+	 * handling is necessary.
-+	 */
- 	switch (cmd) {
- 	case FS_IOC32_GETFLAGS:
- 		cmd = FS_IOC_GETFLAGS;
-@@ -5663,8 +5667,6 @@ long btrfs_compat_ioctl(struct file *fil
- 	case FS_IOC32_GETVERSION:
- 		cmd = FS_IOC_GETVERSION;
- 		break;
--	default:
--		return -ENOIOCTLCMD;
- 	}
- 
- 	return btrfs_ioctl(file, cmd, (unsigned long) compat_ptr(arg));
-
--- 
-Jeff Mahoney
-SUSE Labs
+Reviewed-by: David Sterba <dsterba@suse.com>

@@ -1,159 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34270 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751066AbdBHSm2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 8 Feb 2017 13:42:28 -0500
-Date: Wed, 8 Feb 2017 19:40:17 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
-Subject: Re: [PATCH v2] Btrfs: create a helper to create em for IO
-Message-ID: <20170208184017.GD16928@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1485807952-17604-1-git-send-email-bo.li.liu@oracle.com>
- <1485877822-28919-1-git-send-email-bo.li.liu@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1485877822-28919-1-git-send-email-bo.li.liu@oracle.com>
+Received: from mail-pg0-f65.google.com ([74.125.83.65]:35264 "EHLO
+        mail-pg0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751807AbdBIIbC (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Feb 2017 03:31:02 -0500
+Received: by mail-pg0-f65.google.com with SMTP id 204so17335491pge.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 09 Feb 2017 00:30:57 -0800 (PST)
+From: Takafumi Kubota <takafumi.kubota1012@sslab.ics.keio.ac.jp>
+To: linux-btrfs@vger.kernel.org
+Cc: clm@fb.com, jbacik@fb.com, dsterba@suse.com, linux-kernel@vger.kernel.org,
+        bo.li.liu@oracle.com, naota@elisp.net,
+        Takafumi Kubota <takafumi.kubota1012@sslab.ics.keio.ac.jp>,
+        David Sterba <dsterba@suse.cz>
+Subject: [PATCH v2] Btrfs: add another missing end_page_writeback on submit_extent_page failure
+Date: Thu,  9 Feb 2017 17:24:33 +0900
+Message-Id: <1486628673-30631-1-git-send-email-takafumi.kubota1012@sslab.ics.keio.ac.jp>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 31, 2017 at 07:50:22AM -0800, Liu Bo wrote:
-> We have similar codes to create and insert extent mapping around IO path,
-> this merges them into a single helper.
+If btrfs_bio_alloc fails in submit_extent_page, submit_extent_page returns
+without clearing the writeback bit of the failed page.
 
-Looks good, comments below.
+__extent_writepage_io, that is a caller of submit_extent_page,
+does not clear the remaining writeback bit anywhere.
+As a result, this will cause the hang at filemap_fdatawait_range,
+because it waits the writeback bit to be cleared from the failed page.
+So, we have to call end_page_writeback to clear the writeback bit.
 
-> +static struct extent_map *create_io_em(struct inode *inode, u64 start, u64 len,
-> +				       u64 orig_start, u64 block_start,
-> +				       u64 block_len, u64 orig_block_len,
-> +				       u64 ram_bytes, int compress_type,
-> +				       int type);
->  
->  static int btrfs_dirty_inode(struct inode *inode);
->  
-> @@ -690,7 +690,6 @@ static noinline void submit_compressed_extents(struct inode *inode,
->  	struct btrfs_key ins;
->  	struct extent_map *em;
->  	struct btrfs_root *root = BTRFS_I(inode)->root;
-> -	struct extent_map_tree *em_tree = &BTRFS_I(inode)->extent_tree;
->  	struct extent_io_tree *io_tree;
->  	int ret = 0;
->  
-> @@ -778,46 +777,19 @@ static noinline void submit_compressed_extents(struct inode *inode,
->  		 * here we're doing allocation and writeback of the
->  		 * compressed pages
->  		 */
-> -		btrfs_drop_extent_cache(inode, async_extent->start,
-> -					async_extent->start +
-> -					async_extent->ram_size - 1, 0);
-> -
-> -		em = alloc_extent_map();
-> -		if (!em) {
-> -			ret = -ENOMEM;
-> -			goto out_free_reserve;
-> -		}
-> -		em->start = async_extent->start;
-> -		em->len = async_extent->ram_size;
-> -		em->orig_start = em->start;
-> -		em->mod_start = em->start;
-> -		em->mod_len = em->len;
-> -
-> -		em->block_start = ins.objectid;
-> -		em->block_len = ins.offset;
-> -		em->orig_block_len = ins.offset;
-> -		em->ram_bytes = async_extent->ram_size;
-> -		em->bdev = fs_info->fs_devices->latest_bdev;
-> -		em->compress_type = async_extent->compress_type;
-> -		set_bit(EXTENT_FLAG_PINNED, &em->flags);
-> -		set_bit(EXTENT_FLAG_COMPRESSED, &em->flags);
-> -		em->generation = -1;
-> -
-> -		while (1) {
-> -			write_lock(&em_tree->lock);
-> -			ret = add_extent_mapping(em_tree, em, 1);
-> -			write_unlock(&em_tree->lock);
-> -			if (ret != -EEXIST) {
-> -				free_extent_map(em);
-> -				break;
-> -			}
-> -			btrfs_drop_extent_cache(inode, async_extent->start,
-> -						async_extent->start +
-> -						async_extent->ram_size - 1, 0);
-> -		}
-> -
-> -		if (ret)
-> +		em = create_io_em(inode, async_extent->start,
-> +				  async_extent->ram_size, /* len */
-> +				  async_extent->start, /* orig_start */
-> +				  ins.objectid, /* block_start */
-> +				  ins.offset, /* block_len */
-> +				  ins.offset, /* orig_block_len */
-> +				  async_extent->ram_size, /* ram_bytes */
-> +				  async_extent->compress_type,
-> +				  BTRFS_ORDERED_COMPRESSED);
-> +		if (IS_ERR(em))
-> +			/* ret value is not necessary due to void function */
->  			goto out_free_reserve;
-> +		free_extent_map(em);
->  
->  		ret = btrfs_add_ordered_extent_compress(inode,
->  						async_extent->start,
-> @@ -952,7 +924,6 @@ static noinline int cow_file_range(struct inode *inode,
->  	u64 blocksize = fs_info->sectorsize;
->  	struct btrfs_key ins;
->  	struct extent_map *em;
-> -	struct extent_map_tree *em_tree = &BTRFS_I(inode)->extent_tree;
->  	int ret = 0;
->  
->  	if (btrfs_is_free_space_inode(inode)) {
-> @@ -1008,39 +979,18 @@ static noinline int cow_file_range(struct inode *inode,
->  		if (ret < 0)
->  			goto out_unlock;
->  
-> -		em = alloc_extent_map();
-> -		if (!em) {
-> -			ret = -ENOMEM;
-> -			goto out_reserve;
-> -		}
-> -		em->start = start;
-> -		em->orig_start = em->start;
->  		ram_size = ins.offset;
-> -		em->len = ins.offset;
-> -		em->mod_start = em->start;
-> -		em->mod_len = em->len;
-> -
-> -		em->block_start = ins.objectid;
-> -		em->block_len = ins.offset;
-> -		em->orig_block_len = ins.offset;
-> -		em->ram_bytes = ram_size;
-> -		em->bdev = fs_info->fs_devices->latest_bdev;
-> -		set_bit(EXTENT_FLAG_PINNED, &em->flags);
-> -		em->generation = -1;
-> -
-> -		while (1) {
-> -			write_lock(&em_tree->lock);
-> -			ret = add_extent_mapping(em_tree, em, 1);
-> -			write_unlock(&em_tree->lock);
-> -			if (ret != -EEXIST) {
-> -				free_extent_map(em);
-> -				break;
-> -			}
-> -			btrfs_drop_extent_cache(inode, start,
-> -						start + ram_size - 1, 0);
-> -		}
-> -		if (ret)
-> +		em = create_io_em(inode, start, ins.offset, /* len */
-> +				  start, /* orig_start */
-> +				  ins.objectid, /* block_start */
-> +				  ins.offset, /* block_len */
-> +				  ins.offset, /* orig_block_len */
-> +				  ram_size, /* ram_bytes */
-> +				  BTRFS_COMPRESS_NONE, /* compress_type */
-> +				  0 /* type */);
+For reproducing the hang, we inject a fault like
 
-Here the type is 0, as was previously a result of kmem_cache_zalloc, but
-the value 0 also corresponds to BTRFS_ORDERED_IO_DONE. I suggest to add
-another symbolic value that would represent the intentions here and not
-reusing the existin value. A separate patch is fine, I'm adding this to
-the queue.
+   if (should_failtest()) { // I define should_failtest()
+        bio = NULL;
+   }
+   else {
+        bio = btrfs_bio_alloc(...);
+   }
+
+in submit_extent_page.
+
+We should also check whether page has the bit before end_page_writeback,
+to avoid the conflict against the other end_page_writeback in bio_endio.
+Thus, we add PageWriteback checks not only in __extent_writepage_io,
+but also in write_one_eb too, because it misses the check.
+
+Signed-off-by: Takafumi Kubota <takafumi.kubota1012@sslab.ics.keio.ac.jp>
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+Cc: David Sterba <dsterba@suse.cz>
+---
+ fs/btrfs/extent_io.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 4ac383a..aa1908a 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3445,8 +3445,11 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
+ 					 bdev, &epd->bio, max_nr,
+ 					 end_bio_extent_writepage,
+ 					 0, 0, 0, false);
+-		if (ret)
++		if (ret) {
+ 			SetPageError(page);
++			if (PageWriteback(page))
++				end_page_writeback(page);
++		}
+ 
+ 		cur = cur + iosize;
+ 		pg_offset += iosize;
+@@ -3767,7 +3770,8 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
+ 		epd->bio_flags = bio_flags;
+ 		if (ret) {
+ 			set_btree_ioerr(p);
+-			end_page_writeback(p);
++			if (PageWriteback(p))
++				end_page_writeback(p);
+ 			if (atomic_sub_and_test(num_pages - i, &eb->io_pages))
+ 				end_extent_buffer_writeback(eb);
+ 			ret = -EIO;
+-- 
+1.9.3
+

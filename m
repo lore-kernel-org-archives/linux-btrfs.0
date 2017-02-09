@@ -1,68 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1050.oracle.com ([141.146.126.70]:22147 "EHLO
-        aserp1050.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752168AbdBJS7A (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 10 Feb 2017 13:59:00 -0500
-Received: from aserp1040.oracle.com (aserp1040.oracle.com [141.146.126.69])
-        by aserp1050.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v1AFLecJ028750
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Feb 2017 15:21:40 GMT
-Date: Fri, 10 Feb 2017 07:19:06 -0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: David Sterba <dsterba@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: remove unused ulist members
-Message-ID: <20170210151906.GA30334@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <20170209154743.11186-1-dsterba@suse.com>
+Received: from mx2.suse.de ([195.135.220.15]:35772 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751693AbdBIND5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 9 Feb 2017 08:03:57 -0500
+Date: Thu, 9 Feb 2017 13:12:12 +0100
+From: Jan Kara <jack@suse.cz>
+To: "Dilger, Andreas" <andreas.dilger@intel.com>
+Cc: Jan Kara <jack@suse.cz>,
+        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+        "linux-block@vger.kernel.org" <linux-block@vger.kernel.org>,
+        "linux-nfs@vger.kernel.org" <linux-nfs@vger.kernel.org>,
+        "linux-nilfs@vger.kernel.org" <linux-nilfs@vger.kernel.org>,
+        "linux-cifs@vger.kernel.org" <linux-cifs@vger.kernel.org>,
+        "ecryptfs@vger.kernel.org" <ecryptfs@vger.kernel.org>,
+        "codalist@coda.cs.cmu.edu" <codalist@TELEMANN.coda.cs.cmu.edu>,
+        Christoph Hellwig <hch@infradead.org>,
+        "cluster-devel@redhat.com" <cluster-devel@redhat.com>,
+        "linux-mtd@lists.infradead.org" <linux-mtd@lists.infradead.org>,
+        "osd-dev@open-osd.org" <osd-dev@open-osd.org>,
+        "v9fs-developer@lists.sourceforge.net"
+        <v9fs-developer@lists.sourceforge.net>,
+        "ceph-devel@vger.kernel.org" <ceph-devel@vger.kernel.org>,
+        Petr Vandrovec <petr@vandrovec.name>,
+        "linux-afs@lists.infradead.org" <linux-afs@lists.infradead.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "lustre-devel@lists.lustre.org" <lustre-devel@lists.lustre.org>
+Subject: Re: [lustre-devel] [PATCH 04/24] fs: Provide infrastructure for
+ dynamic        BDIs in filesystems
+Message-ID: <20170209121212.GD16825@quack2.suse.cz>
+References: <20170202173422.3240-1-jack@suse.cz>
+ <20170202173422.3240-5-jack@suse.cz>
+ <C01BF300-AD67-4A3E-810F-AAB2EEB90B97@intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170209154743.11186-1-dsterba@suse.com>
+In-Reply-To: <C01BF300-AD67-4A3E-810F-AAB2EEB90B97@intel.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 09, 2017 at 04:47:43PM +0100, David Sterba wrote:
-> Commit "btrfs: ulist: Add ulist_del() function" (d4b804045924d7f8)
-> removed some debugging code but left the structure defintions.
+> > @@ -1249,6 +1254,50 @@ mount_fs(struct file_system_type *type, int flags, const char *name, void *data)
+> > }
+> > 
+> > /*
+> > + * Setup private BDI for given superblock. I gets automatically cleaned up
 > 
+> (typo) s/I/It/
+> 
+> Looks fine otherwise.
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+Thanks, fixed.
 
-> Signed-off-by: David Sterba <dsterba@suse.com>
-> ---
->  fs/btrfs/ulist.h | 7 -------
->  1 file changed, 7 deletions(-)
-> 
-> diff --git a/fs/btrfs/ulist.h b/fs/btrfs/ulist.h
-> index a01a2c45825f..007b22fff3f9 100644
-> --- a/fs/btrfs/ulist.h
-> +++ b/fs/btrfs/ulist.h
-> @@ -19,9 +19,6 @@
->   *
->   */
->  struct ulist_iterator {
-> -#ifdef CONFIG_BTRFS_DEBUG
-> -	int i;
-> -#endif
->  	struct list_head *cur_list;  /* hint to start search */
->  };
->  
-> @@ -32,10 +29,6 @@ struct ulist_node {
->  	u64 val;		/* value to store */
->  	u64 aux;		/* auxiliary value saved along with the val */
->  
-> -#ifdef CONFIG_BTRFS_DEBUG
-> -	int seqnum;		/* sequence number this node is added */
-> -#endif
-> -
->  	struct list_head list;  /* used to link node */
->  	struct rb_node rb_node;	/* used to speed up search */
->  };
-> -- 
-> 2.10.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+								Honza
+-- 
+Jan Kara <jack@suse.com>
+SUSE Labs, CR

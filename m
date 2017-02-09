@@ -1,97 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f193.google.com ([209.85.223.193]:34453 "EHLO
-        mail-io0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752484AbdBINAi (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Feb 2017 08:00:38 -0500
-Received: by mail-io0-f193.google.com with SMTP id c80so1966114iod.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 09 Feb 2017 05:00:37 -0800 (PST)
-Subject: Re: BTRFS and cyrus mail server
-To: Adam Borowski <kilobyte@angband.pl>
-References: <24389268.gAX5gEpECb@libor-nb>
- <e6da1740-cdb0-96ce-4f44-3b8fa32fd052@gmail.com>
- <20170209114904.dbr6irzbfxkr35xj@angband.pl>
-Cc: =?UTF-8?B?TGlib3IgS2xlcMOhxI0=?= <libor.klepac@bcom.cz>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Received: from mail-io0-f172.google.com ([209.85.223.172]:33017 "EHLO
+        mail-io0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751675AbdBINNM (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Feb 2017 08:13:12 -0500
+Received: by mail-io0-f172.google.com with SMTP id v96so16297463ioi.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 09 Feb 2017 05:13:12 -0800 (PST)
+Subject: Re: csum failed, checksum error, questions
+To: Ian Kelling <ian@iankelling.org>, linux-btrfs@vger.kernel.org
+References: <1486604538.3944846.875079560.7B23E81D@webmail.messagingengine.com>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <eccb1284-6779-da31-7ee7-4ad2fe586c5e@gmail.com>
-Date: Thu, 9 Feb 2017 07:53:13 -0500
+Message-ID: <b64f68b2-76c6-cbc5-36f2-7c3d6d044eef@gmail.com>
+Date: Thu, 9 Feb 2017 08:13:06 -0500
 MIME-Version: 1.0
-In-Reply-To: <20170209114904.dbr6irzbfxkr35xj@angband.pl>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+In-Reply-To: <1486604538.3944846.875079560.7B23E81D@webmail.messagingengine.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-02-09 06:49, Adam Borowski wrote:
-> On Wed, Feb 08, 2017 at 02:21:13PM -0500, Austin S. Hemmelgarn wrote:
->>>  - maybe deduplication (cyrus does it by hardlinking of same content messages
->>> now) later
->> Deduplication beyond what Cyrus does is probably not worth it.  In most
->> cases about 10% of an e-mail in text form is going to be duplicated if it's
->> not a copy of an existing message, and that 10% is generally spread
->> throughout the file (stuff like MIME headers and such), so you would
->> probably see near zero space savings for doing anything beyond what Cyrus
->> does while using an insanely larger amount of resources.
+On 2017-02-08 20:42, Ian Kelling wrote:
+> I had a file read fail repeatably, in syslog, lines like this
 >
-> The problem is: users in a company tend to send mails to a group, so a bunch
-> of people have plenty of identical mails... then every delivered mail has
-> slightly different headers prepended, usually of different length to make
-> sure that 20MB mail has its contents shifted by a single byte so you can't
-> dedupe blocks after the first.
-Unless it's multiple copies of the mail or multiple BCC's, the headers 
-will (with limited exception) be identical because they contain all the 
-same TO: and CC: lines.
+> kernel: BTRFS warning (device dm-5): csum failed ino 2241616 off
+> 51580928 csum 4redacted expected csum 2redacted
 >
->>>  - snapshots for history
->> Make sure you use a sane exponential thinning system.  Once you get past
->> about 300 snapshots, you'll start seeing some serious performance issues,
->> and even double digits might hurt performance at the scale you're talking
->> about.
+> I rmed the file.
 >
-> It's not anywhere that bad in my experience.  As far as I know, regular
-> POSIX operations are not affected by the number of reflinks, only stuff like
-> balance (greatly), dedupe, and, to a lesser extent, deletion of snapshots.
-> You don't want to hit 100k snapshots like I once did, but even then the
-> filesystem keeps working in regular operation.
-However, proper maintenance on a BTRFS filesystem is not just POSIX 
-operations.  IOW, if you want a manageable filesystem that doesn't take 
-forever to fix when something goes wrong, you want to avoid large 
-numbers of snapshots.
+> Another error more recently, 5 instances which look like this:
+> kernel: BTRFS warning (device dm-5): checksum error at logical
+> 16147043602432 on dev /dev/mapper/dev-name-redacted, sector 1177577896,
+> root 4679, inode 2241616, offset 51597312, length 4096, links 1 (path:
+> file/path/redacted)
+> kernel: BTRFS error (device dm-5): bdev /dev/mapper/dev-name-redacted
+> errs: wr 0, rd 0, flush 0, corrupt 5, gen 0
+> kernel: BTRFS error (device dm-5): unable to fixup (regular) error at
+> logical 16147043602432 on dev /dev/mapper/dev-name-redacted
 >
-> (Those snapshots were not deduped beyond natural reflinking from
-> snapshotting, every one having no more than a few hundreds links.  I now
-> realize that it'd probably explode had I tried coalescing identical
-> files between then.)
+> In this case, I think the file got rmed as well.
 >
->>>  - send/receive for offisite backup
->> This is up to you, but I would probably not use send-receive for off-site
->> backups.  Unless you're using reflinking, you can copy all the same
->> attributes that send-receive does using almost any other backup tool, and
->> other tools often have much better security built-in.  Send streams also
->> don't compress very well in my experience, so using send-receive has a
->> tendency to require more network resources.
+> I'm assuming this is a problem with the drive, not btrfs. Any opinions
+> on how likely catastrophic failure of the drive is?
+Just a few checksum errors is insufficient information to even give a 
+reasonable guess.  If you can post the output of 'smartctl -x', I can 
+show you what to look for there to see if the drive is likely to fail, 
+but even that isn't 100% reliable.
 >
-> I'd heartily recommend using _both_.  You use send-receive for that 3-hour
-> (or 1-hour!) backup, and rsync for dailies.  You do value your mails enough
-> to back them to two places, right?  Then you get to enjoy efficiency of
-> send-receive (statting everything takes ages!), while rsync helps with
-> paranoia about send-receive cloning potential filesystem errors.
+> Is rming the problematic file sufficient? How about if the subvolume
+> containing this bad file was previously snapshotted?
+If the file hasn't changed since the snapshot, then the extent with the 
+error in it is still in the snapshot.
 >
->>> Our Cyrus pool consist of ~520GB of data in ~2,5million files, ~2000
->>> mailboxes.
->>> We have message size limit of ~25MB, so emails are not bigger than that.
->>> There are however bigger files, these are per mailbox caches/index files of
->>> cyrus (some of them are around 300MB) - and these are also files which are
->>> most modified.
->> I would mark these files NOCOW for performance reasons (and because if
->> they're just caches and indexes, they should be pretty simple to
->> regenerate).
->
-> Using NOCOW with snapshots gets you the worst of both worlds: all the
-> downsides of CoW with no btrfs goodies.  NOCOW is useful only for "I wish I
-> had partitioned a traditional filesystem for this file, and I don't need to
-> snapshot it".
-However, if those really are just caches and/or indexes, then you 
-shouldn't need to snapshot them because the software can just rebuild 
-them if they get lost, and that's actually safer in many cases than 
-restoring backup copies.
+> Is there anything else besides "kernel: BTRFS (error|warning)" that I
+> should grep for my syslog to watch for filesystem/drive problems?
+> For example, is there anything in addition to error/warning like
+> "fatal" or "critical"?
+There isn't anything you should be grepping for, you should be using the 
+tools to check for errors.  Minimum standard monitoring that I would 
+recommend is:
+1. Checking SMART status for the drives on a regular basis (smartctl -H 
+is usually sufficient, though you may want to monitor the in-firmware 
+error logs as well, check man smartctl for more info than you'll 
+probably ever need about all this).  This isn't BTRFS specific, and it's 
+rather sad how few distros have this reasonably reliable and rather 
+trivial to implement hardware monitoring set up by default.
+2. Running scrub on the filesystem regularly.  This will validate 
+checksums on all files in the FS, so you'll know much sooner if a file 
+you only access infrequently.  Scrub will also automatically repair 
+corrupted blocks if at all possible.
+3. Monitoring the output of 'btrfs dev stats' for the filesystem.  This 
+will show you the values (per-device) of the various running error 
+counts BTRFS stores in the filesystem's metadata.  At least some of 
+these will be non-zero on your filesystem right now, but you can reset 
+them with the -z option.  If you see these start to go up consistently, 
+it usually means you have some bad sectors on the disk.  If you see them 
+suddenly jump to a much higher value, it's also generally a bad sign.
 
+In addition to those, there are a few other things you can check:
+1. Watch the filesystem mount options and make sure they don't change 
+unexpectedly.  If the mount options change without user intervention, 
+something is wrong.  The only realistic case this can happen is the 
+filesystem switching from writable to read-only, but it's not outside 
+the realm of possibility that a bug elsewhere could cause a different 
+change.
+2. Watch the kernel logs for link and storage controller errors.  While 
+BTRFS has better options for monitoring it's own errors, there really is 
+no better option for hardware errors involving these components.

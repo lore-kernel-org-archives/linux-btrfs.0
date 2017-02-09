@@ -1,82 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f54.google.com ([209.85.214.54]:35101 "EHLO
-        mail-it0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751525AbdBIMsj (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Feb 2017 07:48:39 -0500
-Received: by mail-it0-f54.google.com with SMTP id 203so124349522ith.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 09 Feb 2017 04:48:02 -0800 (PST)
-Received: from [191.9.206.254] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
-        by smtp.gmail.com with ESMTPSA id g76sm13081817ioj.36.2017.02.09.04.48.00
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Thu, 09 Feb 2017 04:48:00 -0800 (PST)
-Subject: Re: understanding disk space usage
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-References: <CALg=eG_C-Xkw+TTHpNq9y_euza81TPTd+YN10_V=9WSprN0BPw@mail.gmail.com>
- <7912da41-d58a-d57f-47cd-508bc709a761@cn.fujitsu.com>
- <22683.12104.679173.639568@tree.ty.sabi.co.uk>
- <171155ef-93c2-f438-3bbd-ca550381c80d@gmail.com>
- <22683.37260.208424.336485@tree.ty.sabi.co.uk>
+Received: from mail-io0-f193.google.com ([209.85.223.193]:34453 "EHLO
+        mail-io0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752484AbdBINAi (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Feb 2017 08:00:38 -0500
+Received: by mail-io0-f193.google.com with SMTP id c80so1966114iod.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 09 Feb 2017 05:00:37 -0800 (PST)
+Subject: Re: BTRFS and cyrus mail server
+To: Adam Borowski <kilobyte@angband.pl>
+References: <24389268.gAX5gEpECb@libor-nb>
+ <e6da1740-cdb0-96ce-4f44-3b8fa32fd052@gmail.com>
+ <20170209114904.dbr6irzbfxkr35xj@angband.pl>
+Cc: =?UTF-8?B?TGlib3IgS2xlcMOhxI0=?= <libor.klepac@bcom.cz>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <125c2b27-928e-5261-a0ce-1622b7a70a76@gmail.com>
-Date: Thu, 9 Feb 2017 07:47:56 -0500
+Message-ID: <eccb1284-6779-da31-7ee7-4ad2fe586c5e@gmail.com>
+Date: Thu, 9 Feb 2017 07:53:13 -0500
 MIME-Version: 1.0
-In-Reply-To: <22683.37260.208424.336485@tree.ty.sabi.co.uk>
+In-Reply-To: <20170209114904.dbr6irzbfxkr35xj@angband.pl>
 Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-02-08 16:45, Peter Grandi wrote:
-> [ ... ]
->> The issue isn't total size, it's the difference between total
->> size and the amount of data you want to store on it. and how
->> well you manage chunk usage. If you're balancing regularly to
->> compact chunks that are less than 50% full, [ ... ] BTRFS on
->> 16GB disk images before with absolutely zero issues, and have
->> a handful of fairly active 8GB BTRFS volumes [ ... ]
+On 2017-02-09 06:49, Adam Borowski wrote:
+> On Wed, Feb 08, 2017 at 02:21:13PM -0500, Austin S. Hemmelgarn wrote:
+>>>  - maybe deduplication (cyrus does it by hardlinking of same content messages
+>>> now) later
+>> Deduplication beyond what Cyrus does is probably not worth it.  In most
+>> cases about 10% of an e-mail in text form is going to be duplicated if it's
+>> not a copy of an existing message, and that 10% is generally spread
+>> throughout the file (stuff like MIME headers and such), so you would
+>> probably see near zero space savings for doing anything beyond what Cyrus
+>> does while using an insanely larger amount of resources.
 >
-> Unfortunately balance operations are quite expensive, especially
-> from inside VMs. On the other hand if the system is not much
-> disk constrained relatively frequent balances is a good idea
-> indeed. It is a bit like the advice in the other thread on OLTP
-> to run frequent data defrags, which are also quite expensive.
-That depends on how and when you do them.  A full balance isn't part of 
-regular maintenance, and should never be such.  Regular partial balances 
-done to clean up mostly empty chunks absolutely should be part of 
-regular maintenance, and are pretty inexpensive in terms of both time 
-and resource usage.  Balance with -dusage=20 -musage=20 should run in at 
-most a few seconds on most reasonably sized filesystems even on low-end 
-systems like a Raspberry Pi, and running that on an at least weekly 
-basis will significantly improve the chances that you don't encounter a 
-situation like this.
+> The problem is: users in a company tend to send mails to a group, so a bunch
+> of people have plenty of identical mails... then every delivered mail has
+> slightly different headers prepended, usually of different length to make
+> sure that 20MB mail has its contents shifted by a single byte so you can't
+> dedupe blocks after the first.
+Unless it's multiple copies of the mail or multiple BCC's, the headers 
+will (with limited exception) be identical because they contain all the 
+same TO: and CC: lines.
 >
-> Both combined are like running the compactor/cleaner on log
-> structured (another variants of "COW") filesystems like NILFS2:
-> running that frequently means tighter space use and better
-> locality, but is quite expensive too.
-If you run with autodefrag, then you should rarely if ever need to 
-actually run a full defrag operation unless you're storing lots of 
-database files, VM disk images, or similar stuff.  This goes double on 
-an SSD.
+>>>  - snapshots for history
+>> Make sure you use a sane exponential thinning system.  Once you get past
+>> about 300 snapshots, you'll start seeing some serious performance issues,
+>> and even double digits might hurt performance at the scale you're talking
+>> about.
 >
->>> [ ... ] My impression is that the Btrfs design trades space
->>> for performance and reliability.
+> It's not anywhere that bad in my experience.  As far as I know, regular
+> POSIX operations are not affected by the number of reflinks, only stuff like
+> balance (greatly), dedupe, and, to a lesser extent, deletion of snapshots.
+> You don't want to hit 100k snapshots like I once did, but even then the
+> filesystem keeps working in regular operation.
+However, proper maintenance on a BTRFS filesystem is not just POSIX 
+operations.  IOW, if you want a manageable filesystem that doesn't take 
+forever to fix when something goes wrong, you want to avoid large 
+numbers of snapshots.
 >
->> In general, yes, but a more accurate statement would be that
->> it offers a trade-off between space and convenience. [ ... ]
+> (Those snapshots were not deduped beyond natural reflinking from
+> snapshotting, every one having no more than a few hundreds links.  I now
+> realize that it'd probably explode had I tried coalescing identical
+> files between then.)
 >
-> It is not quite "convenience", it is overhead: whole-volume
-> operations like compacting, defragmenting (or fscking) tend to
-> cost significantly in IOPS and also in transfer rate, and on
-> flash SSDs they also consume lifetime.
-Overhead is the inverse of convenience.  By over-provisioning to a 
-greater degree, you're reducing the need to worry about those 
-'expensive' operations, reducing both resource overhead, and management 
-overhead.
+>>>  - send/receive for offisite backup
+>> This is up to you, but I would probably not use send-receive for off-site
+>> backups.  Unless you're using reflinking, you can copy all the same
+>> attributes that send-receive does using almost any other backup tool, and
+>> other tools often have much better security built-in.  Send streams also
+>> don't compress very well in my experience, so using send-receive has a
+>> tendency to require more network resources.
 >
-> Therefore personally I prefer to have quite a bit of unused
-> space in Btrfs or NILFS2, at a minimum around double at 10-20%
-> than the 5-10% that I think is the minimum advisable with
-> conventional designs.
-I can agree on this point, over-provisioning is mandatory to a much 
-greater degree on COW filesystems.
+> I'd heartily recommend using _both_.  You use send-receive for that 3-hour
+> (or 1-hour!) backup, and rsync for dailies.  You do value your mails enough
+> to back them to two places, right?  Then you get to enjoy efficiency of
+> send-receive (statting everything takes ages!), while rsync helps with
+> paranoia about send-receive cloning potential filesystem errors.
+>
+>>> Our Cyrus pool consist of ~520GB of data in ~2,5million files, ~2000
+>>> mailboxes.
+>>> We have message size limit of ~25MB, so emails are not bigger than that.
+>>> There are however bigger files, these are per mailbox caches/index files of
+>>> cyrus (some of them are around 300MB) - and these are also files which are
+>>> most modified.
+>> I would mark these files NOCOW for performance reasons (and because if
+>> they're just caches and indexes, they should be pretty simple to
+>> regenerate).
+>
+> Using NOCOW with snapshots gets you the worst of both worlds: all the
+> downsides of CoW with no btrfs goodies.  NOCOW is useful only for "I wish I
+> had partitioned a traditional filesystem for this file, and I don't need to
+> snapshot it".
+However, if those really are just caches and/or indexes, then you 
+shouldn't need to snapshot them because the software can just rebuild 
+them if they get lost, and that's actually safer in many cases than 
+restoring backup copies.
+

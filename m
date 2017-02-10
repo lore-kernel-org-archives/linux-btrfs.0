@@ -1,51 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp97.ord1c.emailsrvr.com ([108.166.43.97]:55280 "EHLO
-        smtp97.ord1c.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751950AbdBJOhz (ORCPT
+Received: from mail-it0-f50.google.com ([209.85.214.50]:37201 "EHLO
+        mail-it0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751460AbdBJRlb (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 10 Feb 2017 09:37:55 -0500
-Received: from smtp13.relay.ord1c.emailsrvr.com (localhost [127.0.0.1])
-        by smtp13.relay.ord1c.emailsrvr.com (SMTP Server) with ESMTP id 5DE11A0289
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Feb 2017 09:37:17 -0500 (EST)
-Received: by smtp13.relay.ord1c.emailsrvr.com (Authenticated sender: m.khalili-AT-rqc.ru) with ESMTPSA id 06AC4A0261
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Feb 2017 09:37:16 -0500 (EST)
-Subject: Re: partial quota rescan
-To: linux-btrfs@vger.kernel.org
-References: <f2600743-a0ac-3afe-0597-9081d3cb976e@rqc.ru>
-From: Marat Khalili <mkh@rqc.ru>
-Message-ID: <7f426cd3-2a10-dae6-3bdd-073f3480d003@rqc.ru>
-Date: Fri, 10 Feb 2017 17:37:15 +0300
+        Fri, 10 Feb 2017 12:41:31 -0500
+Received: by mail-it0-f50.google.com with SMTP id r185so37985254ita.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 10 Feb 2017 09:40:42 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <f2600743-a0ac-3afe-0597-9081d3cb976e@rqc.ru>
-Content-Type: text/plain; charset=utf-8; format=flowed
+From: John Hendy <jw.hendy@gmail.com>
+Date: Fri, 10 Feb 2017 11:40:41 -0600
+Message-ID: <CA+M2ft-sXH14tHK9rRv_T59dUC2KDzEMm5AyZwpgcK9KH0Uk7g@mail.gmail.com>
+Subject: proper syslinux settings for ext4 boot, dm-crypt + btrfs subvol root?
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Suddenly discovered undocumented (in man or anywhere) -i parameter of 
-'btrfs subvolume snapshot' that adds snapshot to qgroup without 
-invalidating statistics. Amazing!
+Greetings,
 
---
 
-With Best Regards,
-Marat Khalili
+I'm trying to utilize btrfs subvols to allow me to boot separate
+distros without having to create so many partitions. I'm on Arch Linux
+and not finding the wiki super helpful with specifics on dm-crypt/luks
+and btrfs.
 
-On 08/02/17 18:46, Marat Khalili wrote:
-> I'm using  trying to use qgroups to keep track of storage occupied by 
-> snapshots. I noticed that:
-> a) no two rescans can run in parallel, and there's no way to schedule 
-> another rescan while one is running;
-> b) seems like it's a whole-disk operation regardless of path specified 
-> in CLI.
->
-> I only just started to fill my new 24Tb btrfs volume using qgroups, 
-> but rescans already take a long time, and due to (a) above I each time 
-> have to wait for previous rescan to finish in my scripts. Can anything 
-> be done about it, like trashing and recomputing only statistics for 
-> specific qgroup?
->
-> Linux host 4.4.0-62-generic #83-Ubuntu SMP Wed Jan 18 14:10:15 UTC 
-> 2017 x86_64 x86_64 x86_64 GNU/Linux
-> btrfs-progs v4.4
->
+Requested info:
 
+$ uname -a
+Linux arch_zbook 4.9.8-1-ARCH #1 SMP PREEMPT Mon Feb 6 12:59:40 CET
+2017 x86_64 GNU/Linux
+
+$ btrfs --version
+btrfs-progs v4.9
+
+$ sudo btrfs fi show
+Label: 'bigD'  uuid: e1284231-c264-4944-807d-5fcb1832ce47
+Total devices 1 FS bytes used 1.27GiB
+devid    1 size 232.38GiB used 3.02GiB path /dev/mapper/btr
+
+$ btrfs fi df /mnt/btr/
+Data, single: total=2.01GiB, used=1.21GiB
+System, single: total=4.00MiB, used=16.00KiB
+Metadata, single: total=1.01GiB, used=56.45MiB
+GlobalReserve, single: total=16.00MiB, used=0.00B
+
+/dev/sdb1 is ext4 for /boot
+/dev/sdb2 is a luks/dm-crypt device which I've opened as /dev/mapper/btr
+
+I have a top level arch subvol with root and home undeneath. I'll
+create a similar set for an Ubuntu install I need for work, a separate
+shared data subvol, and then one for snapshots. I'm ignoring those and
+would just like to get arch linux working properly.
+
+Here's the setup I'm looking for once booted, with the /mnt/btf becoming /
+
+$ mount
+/dev/mapper/btr on /mnt/btr type btrfs
+(rw,relatime,ssd,space_cache,subvolid=259,subvol=/arch/root)
+/dev/mapper/btr on /mnt/btr/home type btrfs
+(rw,relatime,ssd,space_cache,subvolid=260,subvol=/arch/home)
+/dev/sdb1 on /mnt/btr/boot type ext4 (rw,relatime,data=ordered)
+
+My functioning syslinux.cfg:
+
+LABEL arch-ssd
+    MENU LABEL arch-ssd-uuid
+    LINUX ../vmlinuz-linux
+    APPEND luks.uuid=7101e83b-31c0-4cdf-bc07-678e00e19c32
+root=UUID=eb20c219-0df8-4051-bad2-39d57aed7b59 luks.allow-discards rw
+    INITRD ../intel-ucode.img,../initramfs-linux.img
+
+I tried this:
+
+LABEL arch-btrfs
+    MENU LABEL arch-btrfs-uuid
+    LINUX ../vmlinuz-linux
+    APPEND luks.uuid=bcacb6d5-2874-4652-a25d-88b0bf3bbce8
+root=UUID=e1284231-c264-4944-807d-5fcb1832ce47
+rootflags=subvol=/arch/root luks.allow-discards rw
+    INITRD ../intel-ucode.img,../initramfs-linux.img
+
+Current behavior is I successfully get a syslinux boot menu (at least
+after I disabled the 64bit default option), but selecting the above
+entry just refreshes the menu and I'm stuck there with an automatic
+countdown from 5sec and then back to 5sec when it hits 0. It's like it
+just keeps pointing at the /dev/sdb MBR or can't find something and
+thus tries again?
+
+Output of blkid:
+
+$ sudo blkid
+/dev/sda1: UUID="37441f68-9d76-45bc-b98c-996e68a3555c" TYPE="ext2"
+PARTUUID="81053e11-01"
+/dev/sda2: UUID="7101e83b-31c0-4cdf-bc07-678e00e19c32"
+TYPE="crypto_LUKS" PARTUUID="81053e11-02"
+/dev/sdb1: UUID="e046823f-c7bc-4ff0-8d76-307e6353d324" TYPE="ext4"
+PARTUUID="45dbad3a-01"
+/dev/sdb2: UUID="bcacb6d5-2874-4652-a25d-88b0bf3bbce8"
+TYPE="crypto_LUKS" PARTUUID="45dbad3a-02"
+/dev/mapper/luks-7101e83b-31c0-4cdf-bc07-678e00e19c32:
+UUID="eb20c219-0df8-4051-bad2-39d57aed7b59" TYPE="ext4"
+/dev/mapper/btr: LABEL="bigD"
+UUID="e1284231-c264-4944-807d-5fcb1832ce47"
+UUID_SUB="123f46c6-1b3a-4273-a84c-fa2c257652d0" TYPE="btrfs"
+
+Am I specifying the wrong uuid to use, incorrect subvol, other? I
+haven't been able to find anyone specifying a 2nd level subvol for the
+root in their kernel parameters and wondered if that's the issue. I
+just find "rootflags=subvol=__active" or similar in various google
+hits.
+
+Thanks for any suggestions; my apologies is asking about this to the
+btrfs list isn't correct. I wasn't sure if this should be directed at
+syslinux or here.
+
+
+Best regards,
+John

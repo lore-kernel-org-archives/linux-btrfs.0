@@ -1,119 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f50.google.com ([209.85.214.50]:37201 "EHLO
-        mail-it0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751460AbdBJRlb (ORCPT
+Received: from mail-yw0-f196.google.com ([209.85.161.196]:35495 "EHLO
+        mail-yw0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932080AbdBJULW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 10 Feb 2017 12:41:31 -0500
-Received: by mail-it0-f50.google.com with SMTP id r185so37985254ita.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Feb 2017 09:40:42 -0800 (PST)
+        Fri, 10 Feb 2017 15:11:22 -0500
+Received: by mail-yw0-f196.google.com with SMTP id l16so3327316ywb.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 10 Feb 2017 12:11:21 -0800 (PST)
 MIME-Version: 1.0
-From: John Hendy <jw.hendy@gmail.com>
-Date: Fri, 10 Feb 2017 11:40:41 -0600
-Message-ID: <CA+M2ft-sXH14tHK9rRv_T59dUC2KDzEMm5AyZwpgcK9KH0Uk7g@mail.gmail.com>
-Subject: proper syslinux settings for ext4 boot, dm-crypt + btrfs subvol root?
-To: linux-btrfs@vger.kernel.org
+In-Reply-To: <CA+M2ft-sXH14tHK9rRv_T59dUC2KDzEMm5AyZwpgcK9KH0Uk7g@mail.gmail.com>
+References: <CA+M2ft-sXH14tHK9rRv_T59dUC2KDzEMm5AyZwpgcK9KH0Uk7g@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Fri, 10 Feb 2017 13:03:30 -0700
+Message-ID: <CAJCQCtQKj0yJS3SUb1fLJfg9rAvA-kebndk53mc=oTP3rxr0xg@mail.gmail.com>
+Subject: Re: proper syslinux settings for ext4 boot, dm-crypt + btrfs subvol root?
+To: John Hendy <jw.hendy@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Greetings,
+This is not a Btrfs problem yet. Syslinux isn't even getting the
+kernel and initramfs loaded, otherwise you'd get a failure during
+boot. But instead you're at the bootloader still.
 
+One thing to realize is that syslinux only finds kernels and initramfs
+on the local file system. So assuming this syslinux is on /dev/sda1:
+UUID="37441f68... ext2 volume; then it can only load kernels and
+initramfs from that file system. So I'm not sure what the purpose of
+/dev/sdb1: UUID="e046823f ext4 is for, but if you use it for the boot
+volume, you have to use extlinux install extlinux there *and* you have
+to make sure the MBR has sdb1's active bit set *and* you have to make
+sure the firmware boot manager is pointed to /dev/sdb.
 
-I'm trying to utilize btrfs subvols to allow me to boot separate
-distros without having to create so many partitions. I'm on Arch Linux
-and not finding the wiki super helpful with specifics on dm-crypt/luks
-and btrfs.
+But I don't think that's necessary, mainly you just need a really big
+ext4 volume to hold all the distro kernels in one volume so that
+syslinux has access to them. If you want separate boot volumes for
+each distro then you have no choice but to use GRUB which can find and
+load kernel/initramfs on any drive, any volume, with pretty much any
+file system.
 
-Requested info:
+So the question is why won't that boot entry load the already working
+kernel and initramfs? I don't have a good explanation for that. What
+should happen if anything in APPEND is wrong, is you still get kernel
+and initramfs loading, but then end up at a dracut shell. Or maybe it
+crashes earlier due to some incompatibility by mixing kernel/initramfs
+with the wrong rootfs (different kernel versions for example since all
+the modules are version specific and those will be on Btrfs not on
+boot).
 
-$ uname -a
-Linux arch_zbook 4.9.8-1-ARCH #1 SMP PREEMPT Mon Feb 6 12:59:40 CET
-2017 x86_64 GNU/Linux
+I'd say you need some syslinux debug option set to find out what it's
+tripping up on, because there's not enough information without that.
+Maybe there's something in APPEND that it doesn't like, but I don't
+think syslinux parses that line, it just adds it to the kernel boot
+param line handed off to the kernel. But it's not even getting that
+far.
 
-$ btrfs --version
-btrfs-progs v4.9
+The UUID e1284231- is the correct one to use for Btrfs.
 
-$ sudo btrfs fi show
-Label: 'bigD'  uuid: e1284231-c264-4944-807d-5fcb1832ce47
-Total devices 1 FS bytes used 1.27GiB
-devid    1 size 232.38GiB used 3.02GiB path /dev/mapper/btr
+I have not tried a double nested subvolume. I think you're better off
+with directories at the top level for each distro, and then use
+subvolumes in those directories for root and home. Note that the
+Ubuntu and opensuse GUI installers will make this impossible, they
+will not install to a user defined subvolume, they insist on creating
+things at the top level. Fedora's installer will let you do this
+except for rootfs, it requires that it be a new subvolume which you
+can name but the UI won't let you stick it in a directory, or create
+nested subvolumes. You could troubleshoot your existing APPEND by
+using rootflags=subvolid= and specifying the ID of the arch/root
+subvolume. But I'm suspicious whether that's a problem. You could try
+removing the leading / because the path to the subvolume is really
+subvol=arch/root. Hmmm.
 
-$ btrfs fi df /mnt/btr/
-Data, single: total=2.01GiB, used=1.21GiB
-System, single: total=4.00MiB, used=16.00KiB
-Metadata, single: total=1.01GiB, used=56.45MiB
-GlobalReserve, single: total=16.00MiB, used=0.00B
+That's all I'm thinking of at the moment.
 
-/dev/sdb1 is ext4 for /boot
-/dev/sdb2 is a luks/dm-crypt device which I've opened as /dev/mapper/btr
-
-I have a top level arch subvol with root and home undeneath. I'll
-create a similar set for an Ubuntu install I need for work, a separate
-shared data subvol, and then one for snapshots. I'm ignoring those and
-would just like to get arch linux working properly.
-
-Here's the setup I'm looking for once booted, with the /mnt/btf becoming /
-
-$ mount
-/dev/mapper/btr on /mnt/btr type btrfs
-(rw,relatime,ssd,space_cache,subvolid=259,subvol=/arch/root)
-/dev/mapper/btr on /mnt/btr/home type btrfs
-(rw,relatime,ssd,space_cache,subvolid=260,subvol=/arch/home)
-/dev/sdb1 on /mnt/btr/boot type ext4 (rw,relatime,data=ordered)
-
-My functioning syslinux.cfg:
-
-LABEL arch-ssd
-    MENU LABEL arch-ssd-uuid
-    LINUX ../vmlinuz-linux
-    APPEND luks.uuid=7101e83b-31c0-4cdf-bc07-678e00e19c32
-root=UUID=eb20c219-0df8-4051-bad2-39d57aed7b59 luks.allow-discards rw
-    INITRD ../intel-ucode.img,../initramfs-linux.img
-
-I tried this:
-
-LABEL arch-btrfs
-    MENU LABEL arch-btrfs-uuid
-    LINUX ../vmlinuz-linux
-    APPEND luks.uuid=bcacb6d5-2874-4652-a25d-88b0bf3bbce8
-root=UUID=e1284231-c264-4944-807d-5fcb1832ce47
-rootflags=subvol=/arch/root luks.allow-discards rw
-    INITRD ../intel-ucode.img,../initramfs-linux.img
-
-Current behavior is I successfully get a syslinux boot menu (at least
-after I disabled the 64bit default option), but selecting the above
-entry just refreshes the menu and I'm stuck there with an automatic
-countdown from 5sec and then back to 5sec when it hits 0. It's like it
-just keeps pointing at the /dev/sdb MBR or can't find something and
-thus tries again?
-
-Output of blkid:
-
-$ sudo blkid
-/dev/sda1: UUID="37441f68-9d76-45bc-b98c-996e68a3555c" TYPE="ext2"
-PARTUUID="81053e11-01"
-/dev/sda2: UUID="7101e83b-31c0-4cdf-bc07-678e00e19c32"
-TYPE="crypto_LUKS" PARTUUID="81053e11-02"
-/dev/sdb1: UUID="e046823f-c7bc-4ff0-8d76-307e6353d324" TYPE="ext4"
-PARTUUID="45dbad3a-01"
-/dev/sdb2: UUID="bcacb6d5-2874-4652-a25d-88b0bf3bbce8"
-TYPE="crypto_LUKS" PARTUUID="45dbad3a-02"
-/dev/mapper/luks-7101e83b-31c0-4cdf-bc07-678e00e19c32:
-UUID="eb20c219-0df8-4051-bad2-39d57aed7b59" TYPE="ext4"
-/dev/mapper/btr: LABEL="bigD"
-UUID="e1284231-c264-4944-807d-5fcb1832ce47"
-UUID_SUB="123f46c6-1b3a-4273-a84c-fa2c257652d0" TYPE="btrfs"
-
-Am I specifying the wrong uuid to use, incorrect subvol, other? I
-haven't been able to find anyone specifying a 2nd level subvol for the
-root in their kernel parameters and wondered if that's the issue. I
-just find "rootflags=subvol=__active" or similar in various google
-hits.
-
-Thanks for any suggestions; my apologies is asking about this to the
-btrfs list isn't correct. I wasn't sure if this should be directed at
-syslinux or here.
-
-
-Best regards,
-John
+Chris Murphy

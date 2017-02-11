@@ -1,1396 +1,594 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:63418 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753395AbdBKKSt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 11 Feb 2017 05:18:49 -0500
-Received: from thetick.localnet ([93.181.44.247]) by mail.gmx.com (mrgmx002
- [212.227.17.190]) with ESMTPSA (Nemesis) id 0MAgvb-1cinMs2adv-00BpoI for
- <linux-btrfs@vger.kernel.org>; Sat, 11 Feb 2017 11:18:46 +0100
-From: Marc Joliet <marcec@gmx.de>
+Received: from mail-yw0-f195.google.com ([209.85.161.195]:36337 "EHLO
+        mail-yw0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750815AbdBKReZ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 11 Feb 2017 12:34:25 -0500
+Received: by mail-yw0-f195.google.com with SMTP id q71so4510322ywg.3
+        for <linux-btrfs@vger.kernel.org>; Sat, 11 Feb 2017 09:34:25 -0800 (PST)
+Received: from [192.168.1.128] (dhcp-7.rro232.fastlab.unca.edu. [152.18.145.7])
+        by smtp.gmail.com with ESMTPSA id h185sm2107978ywh.43.2017.02.11.09.34.23
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Sat, 11 Feb 2017 09:34:23 -0800 (PST)
+From: Kenneth Bogert <kbogert@unca.edu>
+Content-Type: multipart/mixed;
+ boundary="Apple-Mail=_83D61CF0-1B71-45E9-A811-F9F9ACF2FF87"
+Mime-Version: 1.0 (Mac OS X Mail 10.2 \(3259\))
+Subject: Subvolume corruption after restart on Raid1 array 
+Message-Id: <FD81BC09-DB74-45F5-87AD-574E98C80374@unca.edu>
+Date: Sat, 11 Feb 2017 12:34:22 -0500
 To: linux-btrfs@vger.kernel.org
-Subject: Re: [4.7.2] btrfs_run_delayed_refs:2963: errno=-17 Object already exists
-Date: Sat, 11 Feb 2017 11:18:39 +0100
-Message-ID: <2380483.tGrojfQH67@thetick>
-In-Reply-To: <20170211030139.7bff427e@jupiter.sol.kaishome.de>
-References: <20160828152908.6e1325b5@jupiter.sol.kaishome.de> <2314132.jQCgNOg6dG@thetick> <20170211030139.7bff427e@jupiter.sol.kaishome.de>
-MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart5153843.KHxGCnNXpU"; micalg="pgp-sha256"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart5153843.KHxGCnNXpU
+
+--Apple-Mail=_83D61CF0-1B71-45E9-A811-F9F9ACF2FF87
 Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain;
+	charset=utf-8
 
-On Saturday 11 February 2017 03:01:39 Kai Krakow wrote:
-> Am Fri, 10 Feb 2017 23:15:03 +0100
->=20
-> schrieb Marc Joliet <marcec@gmx.de>:
-> > # btrfs filesystem df /media/MARCEC_BACKUP/
-> > Data, single: total=3D851.00GiB, used=3D831.36GiB
-> > System, DUP: total=3D64.00MiB, used=3D120.00KiB
-> > Metadata, DUP: total=3D13.00GiB, used=3D10.38GiB
-> > Metadata, single: total=3D1.12GiB, used=3D0.00B
-> > GlobalReserve, single: total=3D512.00MiB, used=3D0.00B
-> >=20
-> > Hmm, I take it that the single metadata is a leftover from running
-> > --repair?
->=20
-> It's more probably a remnant of an incomplete balance operation or an=
+Hello all,
 
-> older mkfs version. I'd simply rebalance metadata to fix this.
->=20
-> I don't think that btrfs-repair would migrate missing metadata
-> duplicates back to single profile, it would more likely trigger
-> recreating the missing duplicates. But I'm not sure.
+I have been running a Rockstor 3.8.16-8 on an older Dell Optiplex for =
+about a month.  The system has four drives separated into two Raid1 =
+filesystems (=E2=80=9Cpools=E2=80=9D in Rockstor terminology).  A few =
+days ago I restarted it and noticed that the services (NFS, Samba, etc) =
+weren=E2=80=99t working.  Looking at dmesg, I saw:
 
-I'm fairly certain it's from the repair operation, the device didn't ha=
-ve any=20
-single metadata before (and it still didn't really, notice that used=3D=
-0.00B). =20
-So my best guess is that it was allocated during the --repair.
+kernel: BTRFS error (device sdb): parent transid verify failed on =
+1721409388544 wanted 19188 found 83121
 
-> If it is a result of the repair operation, that could be an
-> interesting clue. Could it explain "error -17" from your logs? But th=
-at
-> would mean the duplicates were already missing before the repair
-> operation and triggered that problem. So the question is, why are tho=
-se
-> duplicates missing in the first place as a result of normal operation=
-?
-> From your logs:
+and sure enough, one of the subvolumes on my main filesystem is =
+corrupted.  By corrupted I mean it can=E2=80=99t be accessed, deleted, =
+or even looked at:
 
-I certainly didn't create them myself, the device has always had metada=
-ta=3Ddup=20
-(you can check previous threads of mine, which also contain "btrfs fi d=
-f"=20
-output).  So I don't think it has anything to do with the failures.
+ls -l
+kernel: BTRFS error (device sdb): parent transid verify failed on =
+1721409388544 wanted 19188 found 83121
+kernel: BTRFS error (device sdb): parent transid verify failed on =
+1721409388544 wanted 19188 found 83121
+ls: cannot access /mnt2/Primary/Movies: Input/output error
 
-> ---8<--- snip
-> Feb 02 22:49:14 thetick kernel: BTRFS: device label MARCEC_BACKUP dev=
-id
-> 1 transid 283903 /dev/sdd2
-> Feb 02 22:49:19 thetick kernel: EXT4-fs (sdd1): mounted filesystem wi=
-th
-> ordered data mode. Opts: (null)
-> Feb 03 00:18:52 thetick kernel: BTRFS info (device sdd2): use zlib
-> compression Feb 03 00:18:52 thetick kernel: BTRFS info (device sdd2):=
+total 16
+drwxr-xr-x 1 root      root         100 Dec 29 02:00 .
+drwxr-xr-x 1 root      root         208 Jan  3 12:05 ..
+drwxr-x--- 1 kbogert   root         698 Feb  6 08:49 Documents
+drwxr-xrwx 1 root      root         916 Jan  3 12:54 Games
+drwxr-xrwx 1 xenserver xenserver   2904 Jan  3 12:54 ISO
+d????????? ? ?         ?              ?            ? Movies
+drwxr-xrwx 1 root      root      139430 Jan  3 12:53 Music
+drwxr-xrwx 1 root      root       82470 Jan  3 12:53 RawPhotos
+drwxr-xr-x 1 root      root          80 Jan  1 04:00 .snapshots
+drwxr-xrwx 1 root      root          72 Jan  3 13:07 VMs
 
-> disk space caching is enabled
-> Feb 03 00:18:52 thetick kernel: BTRFS info (device sdd2): has skinny
-> extents Feb 03 00:20:09 thetick kernel: BTRFS info (device sdd2): The=
+The input/output error is given for any operation on Movies.
 
-> free space cache file (3967375376384) is invalid. skip it
-> Feb 03 01:05:58 thetick kernel: ------------[ cut here ]------------
-> Feb 03 01:05:58 thetick kernel: WARNING: CPU: 1 PID: 26544 at
-> fs/btrfs/extent- tree.c:2967 btrfs_run_delayed_refs+0x26c/0x290
-> Feb 03 01:05:58 thetick kernel: BTRFS: Transaction aborted (error -17=
-)
-> --->8--- snap
->=20
-> "error -17" being "object already exists". My only theory would be th=
-is
-> has a direct connection to you finding the single metadata profile.
-> Like in "the kernel thinks the objects already exists when it really
-> didn't, and as a result the object is there only once now" aka "singl=
-e
-> metadata".
->=20
-> But I'm no dev and no expert on the internals.
+Luckily there has been no data loss that I am aware of.  As it turns out =
+I have a snapshot of the Movies subvolume taken a few days before the =
+incident.  I was able to simply cp -a all files off of the entire =
+filesystem, with no reported errors, and verified a handful of them.  =
+Note that the transid error in dmesg alternates between sdb and sda5 =
+after each startup.
 
-Again, I don't think it has anything to do with the single metadata.  A=
- "btrfs=20
-balance start -mprofile=3Dsingle" got rid of the (empty) single metadat=
-a blocks.
 
-What I *can* say is that the error seems to be transient.  For example,=
- I ran=20
-an rsync last night that failed with the same error as before.  After=20=
+SETUP DETAILS
 
-unmounting and mounting the FS again, I could run it to completion (and=
-=20
-verified some files).
+uname -a
+Linux ironmountain 4.8.7-1.el7.elrepo.x86_64 #1 SMP Thu Nov 10 20:47:24 =
+EST 2016 x86_64 x86_64 x86_64 GNU/Linux
 
-Anyway, here's the whole log since this morning.  I can't correlate ind=
-ividual=20
-stack traces to specific actions any more, but the rough order of actio=
-ns on=20
-my part (not counting unmount/mount cycles, those are easy enough to fi=
-nd):
+btrfs =E2=80=94version
+btrfs-progs v4.8.3
 
-=2D backups from the home server run, then
-=2D btrfs-cleaner drops old snapshots, after which
-=2D I run rsync (which fails), then
-=2D I run rsync again (which succeeds), then
-=2D I run "balance start -mprofile=3Dsingle", which succeeds (I might hav=
-e run=20
-this before rsync, I'm not sure), after which
-=2D I start backups on my laptop (which fails after I finally went to bed=
-, at=20
-about 3:58).
+btrfs dev scan
+kernel: BTRFS: device label Primary devid 1 transid 83461 /dev/sdb
+kernel: BTRFS: device label Primary devid 2 transid 83461 /dev/sda5
 
-After that I just try "btrbk -r run" a few times, which managed to tran=
-sfer=20
-the first two snapshots before failing.
+btrfs fi show /mnt2/Primary
+Label: 'Primary'  uuid: 21e09dd8-a54d-49ec-95cb-93fdd94f0c17
+	Total devices 2 FS bytes used 943.67GiB
+	devid    1 size 2.73TiB used 947.06GiB path /dev/sdb
+	devid    2 size 2.70TiB used 947.06GiB path /dev/sda5
 
-Feb 11 00:00:06 diefledermaus kernel: usb 1-1: new high-speed USB devic=
-e=20
-number 4 using ehci-pci
-Feb 11 00:00:06 diefledermaus kernel: usb 1-1: New USB device found,=20=
+btrfs dev usage /mnt2/Primary
+/dev/sda5, ID: 2
+   Device size:             2.70TiB
+   Device slack:              0.00B
+   Data,RAID1:            944.00GiB
+   Metadata,RAID1:          3.00GiB
+   System,RAID1:           64.00MiB
+   Unallocated:             1.77TiB
 
-idVendor=3D0480, idProduct=3Dd010
-Feb 11 00:00:06 diefledermaus kernel: usb 1-1: New USB device strings: =
-Mfr=3D1,=20
-Product=3D2, SerialNumber=3D3
-Feb 11 00:00:06 diefledermaus kernel: usb 1-1: Product: External USB 3.=
-0
-Feb 11 00:00:06 diefledermaus kernel: usb 1-1: Manufacturer: Toshiba
-Feb 11 00:00:06 diefledermaus kernel: usb 1-1: SerialNumber: 2013042102=
-0612
-Feb 11 00:00:07 diefledermaus kernel: usb-storage 1-1:1.0: USB Mass Sto=
-rage=20
-device detected
-Feb 11 00:00:07 diefledermaus kernel: usb-storage 1-1:1.0: Quirks match=
- for=20
-vid 0480 pid d010: 20000000
-Feb 11 00:00:07 diefledermaus kernel: scsi host6: usb-storage 1-1:1.0
-Feb 11 00:00:07 diefledermaus kernel: usbcore: registered new interface=
- driver=20
-usb-storage
-Feb 11 00:00:16 diefledermaus kernel: scsi 6:0:0:0: Direct-Access     T=
-oshiba =20
-External USB 3.0 0201 PQ: 0 ANSI: 6
-Feb 11 00:00:16 diefledermaus kernel: sd 6:0:0:0: Attached scsi generic=
- sg2=20
-type 0
-Feb 11 00:00:16 diefledermaus kernel: sd 6:0:0:0: [sdb] Very big device=
-.=20
-Trying to use READ CAPACITY(16).
-Feb 11 00:00:16 diefledermaus kernel: sd 6:0:0:0: [sdb] 732566645 4096-=
-byte=20
-logical blocks: (3.00 TB/2.73 TiB)
-Feb 11 00:00:16 diefledermaus kernel: sd 6:0:0:0: [sdb] Assuming Write =
-Enabled
-Feb 11 00:00:16 diefledermaus kernel: sd 6:0:0:0: [sdb] Assuming drive =
-cache:=20
-write back
-Feb 11 00:00:16 diefledermaus kernel:  sdb: sdb1 sdb2
-Feb 11 00:00:16 diefledermaus kernel: sd 6:0:0:0: [sdb] Attached SCSI d=
-isk
-Feb 11 00:00:16 diefledermaus kernel: BTRFS: device label MARCEC_BACKUP=
- devid=20
-1 transid 284246 /dev/sdb2
-Feb 11 00:00:16 diefledermaus kernel: BTRFS info (device sdb2): use zli=
-b=20
-compression
-Feb 11 00:00:16 diefledermaus kernel: BTRFS info (device sdb2): disk sp=
-ace=20
-caching is enabled
-Feb 11 00:00:16 diefledermaus kernel: BTRFS info (device sdb2): has ski=
-nny=20
-extents
-Feb 11 00:00:17 diefledermaus kernel: EXT4-fs (sdb1): mounted filesyste=
-m with=20
-ordered data mode. Opts: (null)
-Feb 11 00:01:21 diefledermaus kernel: BTRFS warning (device sdb2): bloc=
-k group=20
-3831010164736 has wrong amount of free space
-Feb 11 00:01:21 diefledermaus kernel: BTRFS warning (device sdb2): fail=
-ed to=20
-load free space cache for block group 3831010164736, rebuilding it now
-Feb 11 00:01:21 diefledermaus kernel: BTRFS warning (device sdb2): bloc=
-k group=20
-3831547035648 has wrong amount of free space
-Feb 11 00:01:21 diefledermaus kernel: BTRFS warning (device sdb2): fail=
-ed to=20
-load free space cache for block group 3831547035648, rebuilding it now
-Feb 11 00:01:21 diefledermaus kernel: BTRFS warning (device sdb2): bloc=
-k group=20
-3833694519296 has wrong amount of free space
-Feb 11 00:01:21 diefledermaus kernel: BTRFS warning (device sdb2): fail=
-ed to=20
-load free space cache for block group 3833694519296, rebuilding it now
-Feb 11 00:01:22 diefledermaus kernel: BTRFS warning (device sdb2): bloc=
-k group=20
-4649738305536 has wrong amount of free space
-Feb 11 00:01:22 diefledermaus kernel: BTRFS warning (device sdb2): fail=
-ed to=20
-load free space cache for block group 4649738305536, rebuilding it now
-Feb 11 00:01:27 diefledermaus kernel: BTRFS warning (device sdb2): bloc=
-k group=20
-4607325503488 has wrong amount of free space
-Feb 11 00:01:27 diefledermaus kernel: BTRFS warning (device sdb2): fail=
-ed to=20
-load free space cache for block group 4607325503488, rebuilding it now
-Feb 11 00:01:37 diefledermaus kernel: BTRFS warning (device sdb2): bloc=
-k group=20
-3832083906560 has wrong amount of free space                           =
-                                                                       =
-                                                 =20
-Feb 11 00:01:37 diefledermaus kernel: BTRFS warning (device sdb2): fail=
-ed to=20
-load free space cache for block group 3832083906560, rebuilding it now =
-                                                                       =
-                                                   =20
-Feb 11 00:01:37 diefledermaus kernel: BTRFS warning (device sdb2): bloc=
-k group=20
-3832620777472 has wrong amount of free space                           =
-                                                                       =
-                                                 =20
-Feb 11 00:01:37 diefledermaus kernel: BTRFS warning (device sdb2): fail=
-ed to=20
-load free space cache for block group 3832620777472, rebuilding it now =
-                                                                       =
-                                                   =20
-Feb 11 00:01:38 diefledermaus kernel: BTRFS warning (device sdb2): bloc=
-k group=20
-3833157648384 has wrong amount of free space                           =
-                                                                       =
-                                                 =20
-Feb 11 00:01:38 diefledermaus kernel: BTRFS warning (device sdb2): fail=
-ed to=20
-load free space cache for block group 3833157648384, rebuilding it now =
-                                                                       =
-                                                   =20
-Feb 11 00:03:06 diefledermaus kernel: BTRFS warning (device sdb2): bloc=
-k group=20
-3829936422912 has wrong amount of free space                           =
-                                                                       =
-                                                 =20
-Feb 11 00:03:06 diefledermaus kernel: BTRFS warning (device sdb2): fail=
-ed to=20
-load free space cache for block group 3829936422912, rebuilding it now =
-                                                                       =
-                                                   =20
-Feb 11 00:06:26 diefledermaus kernel: BTRFS warning (device sdb2): bloc=
-k group=20
-4735906086912 has wrong amount of free space                           =
-                                                                       =
-                                                 =20
-Feb 11 00:06:26 diefledermaus kernel: BTRFS warning (device sdb2): fail=
-ed to=20
-load free space cache for block group 4735906086912, rebuilding it now =
-                                                                       =
-                                                   =20
-Feb 11 00:06:53 diefledermaus kernel: BTRFS warning (device sdb2): bloc=
-k group=20
-4736442957824 has wrong amount of free space                           =
-                                                                       =
-                                                 =20
-Feb 11 00:06:53 diefledermaus kernel: BTRFS warning (device sdb2): fail=
-ed to=20
-load free space cache for block group 4736442957824, rebuilding it now =
-                                                                       =
-                                                   =20
-Feb 11 00:06:55 diefledermaus kernel: BTRFS warning (device sdb2): bloc=
-k group=20
-3830473293824 has wrong amount of free space                           =
-                                                                       =
-                                                 =20
-Feb 11 00:06:55 diefledermaus kernel: BTRFS warning (device sdb2): fail=
-ed to=20
-load free space cache for block group 3830473293824, rebuilding it now =
-                                                                       =
-                                                   =20
-Feb 11 00:07:11 diefledermaus kernel: BTRFS warning (device sdb2): bloc=
-k group=20
-4745066446848 has wrong amount of free space                           =
-                                                                       =
-                                                 =20
-Feb 11 00:07:11 diefledermaus kernel: BTRFS warning (device sdb2): fail=
-ed to=20
-load free space cache for block group 4745066446848, rebuilding it now =
-                                                                       =
-                                                   =20
-Feb 11 00:47:39 diefledermaus kernel: ------------[ cut here ]---------=
-=2D--                                                                    =
-                                                                       =
-                                                         =20
-Feb 11 00:47:39 diefledermaus kernel: WARNING: CPU: 1 PID: 8963 at=20
-fs/btrfs/extent-tree.c:2967 btrfs_run_delayed_refs+0x278/0x2b0         =
-                                                                       =
-                                                             =20
-Feb 11 00:47:39 diefledermaus kernel: BTRFS: error (device sdb2) in=20
-btrfs_run_delayed_refs:2967: errno=3D-17 Object already exists         =
-                                                                       =
-                                                              =20
-Feb 11 00:47:39 diefledermaus kernel: BTRFS info (device sdb2): forced=20=
+/dev/sdb, ID: 1
+   Device size:             2.73TiB
+   Device slack:              0.00B
+   Data,RAID1:            944.00GiB
+   Metadata,RAID1:          3.00GiB
+   System,RAID1:           64.00MiB
+   Unallocated:             1.80TiB
 
-readonly                                                               =
-                                                                       =
-                                                         =20
-Feb 11 00:47:39 diefledermaus kernel: BTRFS: Transaction aborted (error=
- -17)                                                                  =
-                                                                       =
-                                                         =20
-Feb 11 00:47:39 diefledermaus kernel: Modules linked in: usb_storage ms=
-r ctr=20
-ccm tun arc4 snd_hda_codec_idt snd_hda_codec_generic ath5k applesmc=20
-snd_hda_intel input_polldev snd_hda_codec mac80211 hwmon ath snd_hda_co=
-re=20
-snd_pcm cfg80211 sky2 rfkill snd_timer acpi_cpufreq video snd backlight=
-=20
-soundcore processor button sg sr_mod cdrom ata_generic pata_acpi uhci_h=
-cd ahci=20
-libahci ata_piix libata ehci_pci ehci_hcd                              =
-                                                                       =
-                             =20
-Feb 11 00:47:39 diefledermaus kernel: CPU: 1 PID: 8963 Comm: kworker/u4=
-:4 Not=20
-tainted 4.9.7-gentoo #1                                                =
-                                                                       =
-                                                  =20
-Feb 11 00:47:39 diefledermaus kernel: Hardware name: Apple Inc.=20
-Macmini2,1/Mac-F4208EAA, BIOS     MM21.88Z.009A.B00.0706281359 06/28/07=
-                                                                       =
-                                                                =20
-Feb 11 00:47:39 diefledermaus kernel: Workqueue: btrfs-extent-refs=20
-btrfs_extent_refs_helper                                               =
-                                                                       =
-                                                             =20
-Feb 11 00:47:39 diefledermaus kernel:  0000000000000000 ffffffff812cf8f=
-9=20
-ffffc900051a7d60 0000000000000000                                      =
-                                                                       =
-                                                       =20
-Feb 11 00:47:39 diefledermaus kernel:  ffffffff8104908a ffff88007edc63c=
-0=20
-ffffc900051a7db0 0000000000001732
-Feb 11 00:47:39 diefledermaus kernel:  ffff88008f47a1f8 ffff8800beac370=
-0=20
-0000000000000000 ffffffff810490fa
-Feb 11 00:47:39 diefledermaus kernel: Call Trace:
-Feb 11 00:47:39 diefledermaus kernel:  [<ffffffff812cf8f9>] ?=20
-dump_stack+0x46/0x5d
-Feb 11 00:47:39 diefledermaus kernel:  [<ffffffff8104908a>] ? __warn+0x=
-ba/0xe0
-Feb 11 00:47:39 diefledermaus kernel:  [<ffffffff810490fa>] ?=20
-warn_slowpath_fmt+0x4a/0x50
-Feb 11 00:47:39 diefledermaus kernel:  [<ffffffff81202188>] ?=20
-btrfs_run_delayed_refs+0x278/0x2b0
-Feb 11 00:47:39 diefledermaus kernel:  [<ffffffff81202244>] ?=20
-delayed_ref_async_start+0x84/0xa0
-Feb 11 00:47:39 diefledermaus kernel:  [<ffffffff8105ce76>] ?=20
-process_one_work+0x126/0x310
-Feb 11 00:47:39 diefledermaus kernel:  [<ffffffff8105d0a5>] ?=20
-worker_thread+0x45/0x450
-Feb 11 00:47:39 diefledermaus kernel:  [<ffffffff8105d060>] ?=20
-process_one_work+0x310/0x310
-Feb 11 00:47:39 diefledermaus kernel:  [<ffffffff81061c99>] ?=20
-kthread+0xb9/0xd0
-Feb 11 00:47:39 diefledermaus kernel:  [<ffffffff81061be0>] ?=20
-kthread_park+0x50/0x50
-Feb 11 00:47:39 diefledermaus kernel:  [<ffffffff814f6412>] ?=20
-ret_from_fork+0x22/0x30
-Feb 11 00:47:39 diefledermaus kernel: ---[ end trace ba59f5981cc5a675 ]=
-=2D--
-Feb 11 00:47:39 diefledermaus kernel: BTRFS: error (device sdb2) in=20
-btrfs_run_delayed_refs:2967: errno=3D-17 Object already exists
-Feb 11 01:07:43 diefledermaus kernel: BTRFS error (device sdb2): cleane=
-r=20
-transaction attach returned -30
-Feb 11 01:07:43 diefledermaus kernel: ------------[ cut here ]---------=
-=2D--
-Feb 11 01:07:43 diefledermaus kernel: WARNING: CPU: 0 PID: 9450 at=20
-fs/btrfs/extent-tree.c:134 btrfs_put_block_group+0x55/0x60
-Feb 11 01:07:43 diefledermaus kernel: Modules linked in: usb_storage ms=
-r ctr=20
-ccm tun arc4 snd_hda_codec_idt snd_hda_codec_generic ath5k applesmc=20
-snd_hda_intel input_polldev snd_hda_codec mac80211 hwmon ath snd_hda_co=
-re=20
-snd_pcm cfg80211 sky2 rfkill snd_timer acpi_cpufreq video snd backlight=
-=20
-soundcore processor button sg sr_mod cdrom ata_generic pata_acpi uhci_h=
-cd ahci=20
-libahci ata_piix libata ehci_pci ehci_hcd
-Feb 11 01:07:43 diefledermaus kernel: CPU: 0 PID: 9450 Comm: umount Tai=
-nted: G       =20
-W       4.9.7-gentoo #1
-Feb 11 01:07:43 diefledermaus kernel: Hardware name: Apple Inc.=20
-Macmini2,1/Mac-F4208EAA, BIOS     MM21.88Z.009A.B00.0706281359 06/28/07=
 
-Feb 11 01:07:43 diefledermaus kernel:  0000000000000000 ffffffff812cf8f=
-9=20
-0000000000000000 0000000000000000
-Feb 11 01:07:43 diefledermaus kernel:  ffffffff8104908a ffff88004203b20=
-0=20
-ffff88004203b200 ffff8800174160a0
-Feb 11 01:07:43 diefledermaus kernel:  ffff880017416000 ffff88001741609=
-0=20
-ffff8800371193f8 ffffffff811f9e05
-Feb 11 01:07:43 diefledermaus kernel: Call Trace:
-Feb 11 01:07:43 diefledermaus kernel:  [<ffffffff812cf8f9>] ?=20
-dump_stack+0x46/0x5d
-Feb 11 01:07:43 diefledermaus kernel:  [<ffffffff8104908a>] ? __warn+0x=
-ba/0xe0
-Feb 11 01:07:43 diefledermaus kernel:  [<ffffffff811f9e05>] ?=20
-btrfs_put_block_group+0x55/0x60
-Feb 11 01:07:43 diefledermaus kernel:  [<ffffffff81201295>] ?=20
-btrfs_free_block_groups+0xf5/0x420
-Feb 11 01:07:43 diefledermaus kernel:  [<ffffffff8121231b>] ?=20
-close_ctree+0xfb/0x320
-Feb 11 01:07:43 diefledermaus kernel:  [<ffffffff8111105f>] ?=20
-generic_shutdown_super+0x5f/0xe0
-Feb 11 01:07:43 diefledermaus kernel:  [<ffffffff811112e9>] ?=20
-kill_anon_super+0x9/0x20
-Feb 11 01:07:43 diefledermaus kernel:  [<ffffffff811e70ed>] ?=20
-btrfs_kill_super+0xd/0x90
-Feb 11 01:07:43 diefledermaus kernel:  [<ffffffff811114bf>] ?=20
-deactivate_locked_super+0x2f/0x60
-Feb 11 01:07:43 diefledermaus kernel:  [<ffffffff8112b006>] ?=20
-cleanup_mnt+0x36/0x80
-Feb 11 01:07:43 diefledermaus kernel:  [<ffffffff810605cd>] ?=20
-task_work_run+0x6d/0x90
-Feb 11 01:07:43 diefledermaus kernel:  [<ffffffff81000fe6>] ?=20
-exit_to_usermode_loop+0x66/0x70
-Feb 11 01:07:43 diefledermaus kernel:  [<ffffffff810012ee>] ?=20
-syscall_return_slowpath+0x4e/0x50
-Feb 11 01:07:43 diefledermaus kernel:  [<ffffffff814f625f>] ?=20
-entry_SYSCALL_64_fastpath+0x92/0x94
-Feb 11 01:07:43 diefledermaus kernel: ---[ end trace ba59f5981cc5a676 ]=
-=2D--
-Feb 11 01:07:43 diefledermaus kernel: ------------[ cut here ]---------=
-=2D--
-Feb 11 01:07:43 diefledermaus kernel: WARNING: CPU: 0 PID: 9450 at=20
-fs/btrfs/extent-tree.c:10045 btrfs_free_block_groups+0x28d/0x420
-Feb 11 01:07:43 diefledermaus kernel: Modules linked in: usb_storage ms=
-r ctr=20
-ccm tun arc4 snd_hda_codec_idt snd_hda_codec_generic ath5k applesmc=20
-snd_hda_intel input_polldev snd_hda_codec mac80211 hwmon ath snd_hda_co=
-re=20
-snd_pcm cfg80211 sky2 rfkill snd_timer acpi_cpufreq video snd backlight=
-=20
-soundcore processor button sg sr_mod cdrom ata_generic pata_acpi uhci_h=
-cd ahci=20
-libahci ata_piix libata ehci_pci ehci_hcd
-Feb 11 01:07:43 diefledermaus kernel: CPU: 0 PID: 9450 Comm: umount Tai=
-nted: G       =20
-W       4.9.7-gentoo #1
-Feb 11 01:07:43 diefledermaus kernel: Hardware name: Apple Inc.=20
-Macmini2,1/Mac-F4208EAA, BIOS     MM21.88Z.009A.B00.0706281359 06/28/07=
+btrfs fi df /mnt2/Primary
+Data, RAID1: total=3D944.00GiB, used=3D942.60GiB
+System, RAID1: total=3D64.00MiB, used=3D176.00KiB
+Metadata, RAID1: total=3D3.00GiB, used=3D1.07GiB
+GlobalReserve, single: total=3D512.00MiB, used=3D0.00B
 
-Feb 11 01:07:43 diefledermaus kernel:  0000000000000000 ffffffff812cf8f=
-9=20
-0000000000000000 0000000000000000
-Feb 11 01:07:43 diefledermaus kernel:  ffffffff8104908a ffff8800bbcc680=
-0=20
-0000000000000000 ffff8800bbcc6888
-Feb 11 01:07:43 diefledermaus kernel:  ffff880017416000 ffff8800bb6569f=
-8=20
-ffff880017416a70 ffffffff8120142d
-Feb 11 01:07:43 diefledermaus kernel: Call Trace:
-Feb 11 01:07:43 diefledermaus kernel:  [<ffffffff812cf8f9>] ?=20
-dump_stack+0x46/0x5d
-Feb 11 01:07:43 diefledermaus kernel:  [<ffffffff8104908a>] ? __warn+0x=
-ba/0xe0
-Feb 11 01:07:43 diefledermaus kernel:  [<ffffffff8120142d>] ?=20
-btrfs_free_block_groups+0x28d/0x420
-Feb 11 01:07:43 diefledermaus kernel:  [<ffffffff8121231b>] ?=20
-close_ctree+0xfb/0x320
-Feb 11 01:07:43 diefledermaus kernel:  [<ffffffff8111105f>] ?=20
-generic_shutdown_super+0x5f/0xe0
-Feb 11 01:07:43 diefledermaus kernel:  [<ffffffff811112e9>] ?=20
-kill_anon_super+0x9/0x20
-Feb 11 01:07:43 diefledermaus kernel:  [<ffffffff811e70ed>] ?=20
-btrfs_kill_super+0xd/0x90
-Feb 11 01:07:43 diefledermaus kernel:  [<ffffffff811114bf>] ?=20
-deactivate_locked_super+0x2f/0x60
-Feb 11 01:07:43 diefledermaus kernel:  [<ffffffff8112b006>] ?=20
-cleanup_mnt+0x36/0x80
-Feb 11 01:07:43 diefledermaus kernel:  [<ffffffff810605cd>] ?=20
-task_work_run+0x6d/0x90
-Feb 11 01:07:43 diefledermaus kernel:  [<ffffffff81000fe6>] ?=20
-exit_to_usermode_loop+0x66/0x70
-Feb 11 01:07:43 diefledermaus kernel:  [<ffffffff810012ee>] ?=20
-syscall_return_slowpath+0x4e/0x50
-Feb 11 01:07:43 diefledermaus kernel:  [<ffffffff814f625f>] ?=20
-entry_SYSCALL_64_fastpath+0x92/0x94
-Feb 11 01:07:43 diefledermaus kernel: ---[ end trace ba59f5981cc5a677 ]=
-=2D--
-Feb 11 01:07:43 diefledermaus kernel: BTRFS info (device sdb2): space_i=
-nfo 4=20
-has 2744418304 free, is not full
-Feb 11 01:07:43 diefledermaus kernel: BTRFS info (device sdb2): space_i=
-nfo=20
-total=3D15166603264, used=3D11214192640, pinned=3D0, reserved=3D32768, =
-may_use=3D0,=20
-readonly=3D1207959552
-Feb 11 01:07:57 diefledermaus kernel: BTRFS info (device sdb2): use zli=
-b=20
-compression
-Feb 11 01:07:57 diefledermaus kernel: BTRFS info (device sdb2): disk sp=
-ace=20
-caching is enabled
-Feb 11 01:07:57 diefledermaus kernel: BTRFS info (device sdb2): has ski=
-nny=20
-extents
-Feb 11 02:02:58 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757540306944 flags 4
-Feb 11 02:03:06 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757531918336 flags 4
-Feb 11 02:03:07 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757523529728 flags 4
-Feb 11 02:03:08 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757515141120 flags 4
-Feb 11 02:03:08 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757506752512 flags 4
-Feb 11 02:03:09 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757498363904 flags 4
-Feb 11 02:03:10 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757489975296 flags 4
-Feb 11 02:03:11 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757481586688 flags 4
-Feb 11 02:03:12 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757473198080 flags 4
-Feb 11 02:03:13 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757464809472 flags 4
-Feb 11 02:03:14 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757456420864 flags 4
-Feb 11 02:03:15 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757448032256 flags 4
-Feb 11 02:03:16 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757439643648 flags 4
-Feb 11 02:03:18 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757431255040 flags 4
-Feb 11 02:03:19 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757422866432 flags 4
-Feb 11 02:03:23 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757414477824 flags 4
-Feb 11 02:03:25 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757406089216 flags 4
-Feb 11 02:03:28 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757397700608 flags 4
-Feb 11 02:03:30 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757389312000 flags 4
-Feb 11 02:03:33 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757380923392 flags 4
-Feb 11 02:03:35 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757372534784 flags 4
-Feb 11 02:03:38 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757364146176 flags 4
-Feb 11 02:03:40 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757355757568 flags 4
-Feb 11 02:03:43 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757347368960 flags 4
-Feb 11 02:03:45 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757338980352 flags 4
-Feb 11 02:03:47 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757330591744 flags 4
-Feb 11 02:03:49 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757322203136 flags 4
-Feb 11 02:03:51 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757313814528 flags 4
-Feb 11 02:03:53 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757305425920 flags 4
-Feb 11 02:03:55 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757297037312 flags 4
-Feb 11 02:03:57 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757288648704 flags 4
-Feb 11 02:03:59 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757280260096 flags 4
-Feb 11 02:04:01 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757271871488 flags 4
-Feb 11 02:04:03 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757263482880 flags 4
-Feb 11 02:04:06 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757255094272 flags 4
-Feb 11 02:04:07 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757246705664 flags 4
-Feb 11 02:04:09 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757238317056 flags 4
-Feb 11 02:04:11 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757229928448 flags 4
-Feb 11 02:04:12 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757221539840 flags 4
-Feb 11 02:04:13 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757213151232 flags 4
-Feb 11 02:04:15 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757204762624 flags 4
-Feb 11 02:04:16 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757196374016 flags 4
-Feb 11 02:04:17 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757187985408 flags 4
-Feb 11 02:04:19 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757179596800 flags 4
-Feb 11 02:04:20 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757171208192 flags 4
-Feb 11 02:04:21 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757162819584 flags 4
-Feb 11 02:04:22 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757154430976 flags 4
-Feb 11 02:04:24 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757146042368 flags 4
-Feb 11 02:04:25 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757137653760 flags 4
-Feb 11 02:04:26 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757129265152 flags 4
-Feb 11 02:04:27 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757120876544 flags 4
-Feb 11 02:04:28 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757112487936 flags 4
-Feb 11 02:04:29 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757104099328 flags 4
-Feb 11 02:04:30 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757095710720 flags 4
-Feb 11 02:04:31 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757087322112 flags 4
-Feb 11 02:04:37 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757078933504 flags 4
-Feb 11 02:04:38 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757070544896 flags 4
-Feb 11 02:04:39 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757062156288 flags 4
-Feb 11 02:04:40 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757053767680 flags 4
-Feb 11 02:04:41 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757045379072 flags 4
-Feb 11 02:04:42 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757036990464 flags 4
-Feb 11 02:04:43 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757028601856 flags 4
-Feb 11 02:04:44 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757020213248 flags 4
-Feb 11 02:04:45 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757011824640 flags 4
-Feb 11 02:04:47 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4757003436032 flags 4
-Feb 11 02:04:47 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756995047424 flags 4
-Feb 11 02:04:48 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756986658816 flags 4
-Feb 11 02:04:49 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756978270208 flags 4
-Feb 11 02:04:50 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756969881600 flags 4
-Feb 11 02:04:50 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756961492992 flags 4
-Feb 11 02:04:51 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756953104384 flags 4
-Feb 11 02:04:52 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756944715776 flags 4
-Feb 11 02:04:53 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756936327168 flags 4
-Feb 11 02:04:53 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756927938560 flags 4
-Feb 11 02:04:54 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756919549952 flags 4
-Feb 11 02:04:55 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756911161344 flags 4
-Feb 11 02:04:57 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756902772736 flags 4
-Feb 11 02:04:58 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756894384128 flags 4
-Feb 11 02:04:58 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756885995520 flags 4
-Feb 11 02:05:00 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756877606912 flags 4
-Feb 11 02:05:01 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756869218304 flags 4
-Feb 11 02:05:03 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756860829696 flags 4
-Feb 11 02:05:04 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756852441088 flags 4
-Feb 11 02:05:04 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756844052480 flags 4
-Feb 11 02:05:05 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756835663872 flags 4
-Feb 11 02:05:06 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756827275264 flags 4
-Feb 11 02:05:06 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756818886656 flags 4
-Feb 11 02:05:07 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756810498048 flags 4
-Feb 11 02:05:08 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756802109440 flags 4
-Feb 11 02:05:09 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756793720832 flags 4
-Feb 11 02:05:09 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756785332224 flags 4
-Feb 11 02:05:10 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756776943616 flags 4
-Feb 11 02:05:11 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756768555008 flags 4
-Feb 11 02:05:13 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756760166400 flags 4
-Feb 11 02:05:13 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756751777792 flags 4
-Feb 11 02:05:14 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756743389184 flags 4
-Feb 11 02:05:15 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756735000576 flags 4
-Feb 11 02:05:15 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756726611968 flags 4
-Feb 11 02:05:16 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756718223360 flags 4
-Feb 11 02:05:17 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756709834752 flags 4
-Feb 11 02:05:20 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756701446144 flags 4
-Feb 11 02:05:20 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756693057536 flags 4
-Feb 11 02:05:22 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756684668928 flags 4
-Feb 11 02:05:23 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756676280320 flags 4
-Feb 11 02:05:24 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756667891712 flags 4
-Feb 11 02:05:26 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756659503104 flags 4
-Feb 11 02:05:27 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756651114496 flags 4
-Feb 11 02:05:45 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756642725888 flags 4
-Feb 11 02:05:46 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756634337280 flags 4
-Feb 11 02:05:48 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756625948672 flags 4
-Feb 11 02:05:49 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756617560064 flags 4
-Feb 11 02:05:51 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756609171456 flags 4
-Feb 11 02:05:52 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756600782848 flags 4
-Feb 11 02:05:54 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756592394240 flags 4
-Feb 11 02:05:56 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756584005632 flags 4
-Feb 11 02:05:58 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756575617024 flags 4
-Feb 11 02:05:59 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756567228416 flags 4
-Feb 11 02:06:01 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756558839808 flags 4
-Feb 11 02:06:02 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756550451200 flags 4
-Feb 11 02:06:04 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4756542062592 flags 4
-Feb 11 02:06:05 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4751164964864 flags 4
-Feb 11 02:06:07 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4751156576256 flags 4
-Feb 11 02:06:09 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4751148187648 flags 4
-Feb 11 02:06:10 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4751139799040 flags 4
-Feb 11 02:06:12 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4751131410432 flags 4
-Feb 11 02:06:13 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4751123021824 flags 4
-Feb 11 02:06:15 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4751114633216 flags 4
-Feb 11 02:06:17 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4751106244608 flags 4
-Feb 11 02:06:18 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4751097856000 flags 4
-Feb 11 02:06:20 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4751089467392 flags 4
-Feb 11 02:06:21 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4751081078784 flags 4
-Feb 11 02:06:22 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4751072690176 flags 4
-Feb 11 02:06:24 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4751064301568 flags 4
-Feb 11 02:06:25 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4751055912960 flags 4
-Feb 11 02:06:26 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4751047524352 flags 4
-Feb 11 02:06:27 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4751039135744 flags 4
-Feb 11 02:06:28 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4751030747136 flags 4
-Feb 11 02:06:29 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4751022358528 flags 4
-Feb 11 02:06:30 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4751013969920 flags 4
-Feb 11 02:06:32 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4751005581312 flags 4
-Feb 11 02:06:33 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4750997192704 flags 4
-Feb 11 02:06:34 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4750988804096 flags 4
-Feb 11 02:06:35 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4750980415488 flags 4
-Feb 11 02:06:36 diefledermaus kernel: BTRFS info (device sdb2): relocat=
-ing=20
-block group 4750972026880 flags 4
-Feb 11 02:27:34 diefledermaus kernel: ------------[ cut here ]---------=
-=2D--
-Feb 11 02:27:35 diefledermaus kernel: WARNING: CPU: 0 PID: 10268 at=20
-fs/btrfs/extent-tree.c:2967 btrfs_run_delayed_refs+0x278/0x2b0
-Feb 11 02:27:35 diefledermaus kernel: BTRFS: error (device sdb2) in=20
-btrfs_run_delayed_refs:2967: errno=3D-17 Object already exists
-Feb 11 02:27:35 diefledermaus kernel: BTRFS info (device sdb2): forced=20=
 
-readonly
-Feb 11 02:27:35 diefledermaus kernel: BTRFS: Transaction aborted (error=
- -17)
-Feb 11 02:27:35 diefledermaus kernel: Modules linked in: usb_storage ms=
-r ctr=20
-ccm tun arc4 snd_hda_codec_idt snd_hda_codec_generic ath5k applesmc=20
-snd_hda_intel input_polldev snd_hda_codec mac80211 hwmon ath snd_hda_co=
-re=20
-snd_pcm cfg80211 sky2 rfkill snd_timer acpi_cpufreq video snd backlight=
-=20
-soundcore processor button sg sr_mod cdrom ata_generic pata_acpi uhci_h=
-cd ahci=20
-libahci ata_piix libata ehci_pci ehci_hcd
-Feb 11 02:27:35 diefledermaus kernel: CPU: 0 PID: 10268 Comm: kworker/u=
-4:4=20
-Tainted: G        W       4.9.7-gentoo #1
-Feb 11 02:27:35 diefledermaus kernel: Hardware name: Apple Inc.=20
-Macmini2,1/Mac-F4208EAA, BIOS     MM21.88Z.009A.B00.0706281359 06/28/07=
+This server is very light use, however, I do have a number of VMs in the =
+VMs filesystem, exported over NFS, that are used by a Xenserver.  These =
+are not marked nocow, though I probably should have.  At the time of =
+restart no VMs were running.
 
-Feb 11 02:27:35 diefledermaus kernel: Workqueue: btrfs-extent-refs=20
-btrfs_extent_refs_helper
-Feb 11 02:27:35 diefledermaus kernel:  0000000000000000 ffffffff812cf8f=
-9=20
-ffffc90005fe3d60 0000000000000000
-Feb 11 02:27:35 diefledermaus kernel:  ffffffff8104908a ffff880052a738c=
-0=20
-ffffc90005fe3db0 00000000000001c2
-Feb 11 02:27:35 diefledermaus kernel:  ffff880019a0ea50 ffff8800bc583c0=
-0=20
-0000000000000000 ffffffff810490fa
-Feb 11 02:27:35 diefledermaus kernel: Call Trace:
-Feb 11 02:27:35 diefledermaus kernel:  [<ffffffff812cf8f9>] ?=20
-dump_stack+0x46/0x5d
-Feb 11 02:27:35 diefledermaus kernel:  [<ffffffff8104908a>] ? __warn+0x=
-ba/0xe0
-Feb 11 02:27:35 diefledermaus kernel:  [<ffffffff810490fa>] ?=20
-warn_slowpath_fmt+0x4a/0x50
-Feb 11 02:27:35 diefledermaus kernel:  [<ffffffff81202188>] ?=20
-btrfs_run_delayed_refs+0x278/0x2b0
-Feb 11 02:27:35 diefledermaus kernel:  [<ffffffff81202244>] ?=20
-delayed_ref_async_start+0x84/0xa0
-Feb 11 02:27:35 diefledermaus kernel:  [<ffffffff8105ce76>] ?=20
-process_one_work+0x126/0x310
-Feb 11 02:27:35 diefledermaus kernel:  [<ffffffff8105d0a5>] ?=20
-worker_thread+0x45/0x450
-Feb 11 02:27:35 diefledermaus kernel:  [<ffffffff8105d060>] ?=20
-process_one_work+0x310/0x310
-Feb 11 02:27:35 diefledermaus kernel:  [<ffffffff8105d060>] ?=20
-process_one_work+0x310/0x310
-Feb 11 02:27:35 diefledermaus kernel:  [<ffffffff81061c99>] ?=20
-kthread+0xb9/0xd0
-Feb 11 02:27:35 diefledermaus kernel:  [<ffffffff81061be0>] ?=20
-kthread_park+0x50/0x50
-Feb 11 02:27:35 diefledermaus kernel:  [<ffffffff814f6412>] ?=20
-ret_from_fork+0x22/0x30
-Feb 11 02:27:35 diefledermaus kernel: ---[ end trace ba59f5981cc5a678 ]=
-=2D--
-Feb 11 02:27:35 diefledermaus kernel: BTRFS: error (device sdb2) in=20
-btrfs_run_delayed_refs:2967: errno=3D-17 Object already exists
-Feb 11 02:29:09 diefledermaus kernel: BTRFS error (device sdb2): cleane=
-r=20
-transaction attach returned -30
-Feb 11 02:29:11 diefledermaus kernel: BTRFS info (device sdb2): use zli=
-b=20
-compression
-Feb 11 02:29:11 diefledermaus kernel: BTRFS info (device sdb2): disk sp=
-ace=20
-caching is enabled
-Feb 11 02:29:11 diefledermaus kernel: BTRFS info (device sdb2): has ski=
-nny=20
-extents
-Feb 11 02:54:20 diefledermaus kernel: ------------[ cut here ]---------=
-=2D--
-Feb 11 02:54:20 diefledermaus kernel: WARNING: CPU: 0 PID: 10382 at=20
-fs/btrfs/extent-tree.c:2967 btrfs_run_delayed_refs+0x278/0x2b0
-Feb 11 02:54:20 diefledermaus kernel: BTRFS: Transaction aborted (error=
- -17)
-Feb 11 02:54:20 diefledermaus kernel: Modules linked in: usb_storage ms=
-r ctr=20
-ccm tun arc4 snd_hda_codec_idt snd_hda_codec_generic ath5k applesmc=20
-snd_hda_intel input_polldev snd_hda_codec mac80211 hwmon ath snd_hda_co=
-re=20
-snd_pcm cfg80211 sky2 rfkill snd_timer acpi_cpufreq video snd backlight=
-=20
-soundcore processor button sg sr_mod cdrom ata_generic pata_acpi uhci_h=
-cd ahci=20
-libahci ata_piix libata ehci_pci ehci_hcd
-Feb 11 02:54:20 diefledermaus kernel: CPU: 0 PID: 10382 Comm: btrfs-cle=
-aner=20
-Tainted: G        W       4.9.7-gentoo #1
-Feb 11 02:54:20 diefledermaus kernel: Hardware name: Apple Inc.=20
-Macmini2,1/Mac-F4208EAA, BIOS     MM21.88Z.009A.B00.0706281359 06/28/07=
+I have deviated from Rockstor=E2=80=99s default setup a bit.  They take =
+an =E2=80=9Cappliance=E2=80=9D view and try to enforce btrfs partitions =
+that cover entire disks.  I installed Rockstor onto /dev/sda4, created =
+the Primary partition on /dev/sdb using Rockstor=E2=80=99s gui, then on =
+the command line added /dev/sda5 to it and converted to raid1.  As far =
+as I can tell Rockstor is just CentOS 7 with a few updated utilities and =
+a bunch of python scripts for providing a web interface to btrfs-progs.  =
+I have it setup to take monthly snapshots and do monthly scrubs, with =
+the exception of the Documents subvolume which takes daily snapshots.  =
+These are all readonly and go in the .snapshots directory.  Rockstor =
+automatically deletes old snapshots once a limit is reached (7 daily =
+snapshots, for instance).
 
-Feb 11 02:54:20 diefledermaus kernel:  0000000000000000 ffffffff812cf8f=
-9=20
-ffffc9000601bd28 0000000000000000
-Feb 11 02:54:20 diefledermaus kernel:  ffffffff8104908a ffff8800037f378=
-0=20
-ffffc9000601bd78 00000000000003a0
-Feb 11 02:54:20 diefledermaus kernel:  ffff88005b83d3b0 ffff8800225f19d=
-f=20
-ffff8800037f3780 ffffffff810490fa
-Feb 11 02:54:20 diefledermaus kernel: Call Trace:
-Feb 11 02:54:20 diefledermaus kernel:  [<ffffffff812cf8f9>] ?=20
-dump_stack+0x46/0x5d
-Feb 11 02:54:20 diefledermaus kernel:  [<ffffffff8104908a>] ? __warn+0x=
-ba/0xe0
-Feb 11 02:54:20 diefledermaus kernel:  [<ffffffff810490fa>] ?=20
-warn_slowpath_fmt+0x4a/0x50
-Feb 11 02:54:20 diefledermaus kernel:  [<ffffffff81202188>] ?=20
-btrfs_run_delayed_refs+0x278/0x2b0
-Feb 11 02:54:20 diefledermaus kernel:  [<ffffffff81215dda>] ?=20
-btrfs_should_end_transaction+0x3a/0x60
-Feb 11 02:54:20 diefledermaus kernel:  [<ffffffff81200787>] ?=20
-btrfs_drop_snapshot+0x417/0x7b0
-Feb 11 02:54:20 diefledermaus kernel:  [<ffffffff81217012>] ?=20
-btrfs_clean_one_deleted_snapshot+0xb2/0xe0
-Feb 11 02:54:20 diefledermaus kernel:  [<ffffffff8120e04f>] ?=20
-cleaner_kthread+0x13f/0x1b0
-Feb 11 02:54:20 diefledermaus kernel:  [<ffffffff8120df10>] ?=20
-btrfs_destroy_pinned_extent+0xc0/0xc0
-Feb 11 02:54:20 diefledermaus kernel:  [<ffffffff81061c99>] ?=20
-kthread+0xb9/0xd0
-Feb 11 02:54:20 diefledermaus kernel:  [<ffffffff8104b678>] ?=20
-do_exit+0x698/0xa70
-Feb 11 02:54:20 diefledermaus kernel:  [<ffffffff81061be0>] ?=20
-kthread_park+0x50/0x50
-Feb 11 02:54:20 diefledermaus kernel:  [<ffffffff814f6412>] ?=20
-ret_from_fork+0x22/0x30
-Feb 11 02:54:20 diefledermaus kernel: ---[ end trace ba59f5981cc5a679 ]=
-=2D--
-Feb 11 02:54:20 diefledermaus kernel: BTRFS: error (device sdb2) in=20
-btrfs_run_delayed_refs:2967: errno=3D-17 Object already exists
-Feb 11 02:54:20 diefledermaus kernel: BTRFS info (device sdb2): forced=20=
+Side note, btrfs-progs 4.8.3 apparently has problems with CentOS 7=E2=80=99=
+s glibc: https://github.com/rockstor/rockstor-core/issues/1608 .  I have =
+confirmed that bug in my own compiled version of 4.8.3, and that 4.9.1 =
+does not have it.
 
-readonly
-Feb 11 02:55:18 diefledermaus kernel: BTRFS error (device sdb2): cleane=
-r=20
-transaction attach returned -30
-Feb 11 02:55:21 diefledermaus kernel: BTRFS info (device sdb2): use zli=
-b=20
-compression
-Feb 11 02:55:21 diefledermaus kernel: BTRFS info (device sdb2): disk sp=
-ace=20
-caching is enabled
-Feb 11 02:55:21 diefledermaus kernel: BTRFS info (device sdb2): has ski=
-nny=20
-extents
-Feb 11 03:04:21 diefledermaus kernel: BTRFS info (device sdb2): use zli=
-b=20
-compression
-Feb 11 03:04:21 diefledermaus kernel: BTRFS info (device sdb2): disk sp=
-ace=20
-caching is enabled
-Feb 11 03:04:21 diefledermaus kernel: BTRFS info (device sdb2): has ski=
-nny=20
-extents
-Feb 11 03:30:30 diefledermaus kernel: ------------[ cut here ]---------=
-=2D--
-Feb 11 03:30:30 diefledermaus kernel: WARNING: CPU: 0 PID: 10620 at=20
-fs/btrfs/extent-tree.c:2967 btrfs_run_delayed_refs+0x278/0x2b0
-Feb 11 03:30:30 diefledermaus kernel: BTRFS: Transaction aborted (error=
- -17)
-Feb 11 03:30:30 diefledermaus kernel: Modules linked in: usb_storage ms=
-r ctr=20
-ccm tun arc4 snd_hda_codec_idt snd_hda_codec_generic ath5k applesmc=20
-snd_hda_intel input_polldev snd_hda_codec mac80211 hwmon ath snd_hda_co=
-re=20
-snd_pcm cfg80211 sky2 rfkill snd_timer acpi_cpufreq video snd backlight=
-=20
-soundcore processor button sg sr_mod cdrom ata_generic pata_acpi uhci_h=
-cd ahci=20
-libahci ata_piix libata ehci_pci ehci_hcd
-Feb 11 03:30:30 diefledermaus kernel: CPU: 0 PID: 10620 Comm: kworker/u=
-4:4=20
-Tainted: G        W       4.9.7-gentoo #1
-Feb 11 03:30:30 diefledermaus kernel: Hardware name: Apple Inc.=20
-Macmini2,1/Mac-F4208EAA, BIOS     MM21.88Z.009A.B00.0706281359 06/28/07=
 
-Feb 11 03:30:30 diefledermaus kernel: Workqueue: btrfs-extent-refs=20
-btrfs_extent_refs_helper
-Feb 11 03:30:30 diefledermaus kernel:  0000000000000000 ffffffff812cf8f=
-9=20
-ffffc9000645bd60 0000000000000000
-Feb 11 03:30:31 diefledermaus kernel:  ffffffff8104908a ffff8800b7bd5a0=
-0=20
-ffffc9000645bdb0 0000000000000020
-Feb 11 03:30:31 diefledermaus kernel:  ffff880003394898 ffff8800bc58350=
-0=20
-0000000000000000 ffffffff810490fa
-Feb 11 03:30:31 diefledermaus kernel: Call Trace:
-Feb 11 03:30:31 diefledermaus kernel:  [<ffffffff812cf8f9>] ?=20
-dump_stack+0x46/0x5d
-Feb 11 03:30:31 diefledermaus kernel:  [<ffffffff8104908a>] ? __warn+0x=
-ba/0xe0
-Feb 11 03:30:31 diefledermaus kernel:  [<ffffffff810490fa>] ?=20
-warn_slowpath_fmt+0x4a/0x50
-Feb 11 03:30:31 diefledermaus kernel:  [<ffffffff81202188>] ?=20
-btrfs_run_delayed_refs+0x278/0x2b0
-Feb 11 03:30:31 diefledermaus kernel:  [<ffffffff81202244>] ?=20
-delayed_ref_async_start+0x84/0xa0
-Feb 11 03:30:31 diefledermaus kernel:  [<ffffffff8105ce76>] ?=20
-process_one_work+0x126/0x310
-Feb 11 03:30:31 diefledermaus kernel:  [<ffffffff8105a893>] ?=20
-pwq_activate_delayed_work+0x33/0x60
-Feb 11 03:30:31 diefledermaus kernel:  [<ffffffff8105d0a5>] ?=20
-worker_thread+0x45/0x450
-Feb 11 03:30:31 diefledermaus kernel:  [<ffffffff8105d060>] ?=20
-process_one_work+0x310/0x310
-Feb 11 03:30:31 diefledermaus kernel:  [<ffffffff81061c99>] ?=20
-kthread+0xb9/0xd0
-Feb 11 03:30:31 diefledermaus kernel:  [<ffffffff81061be0>] ?=20
-kthread_park+0x50/0x50
-Feb 11 03:30:31 diefledermaus kernel:  [<ffffffff814f6412>] ?=20
-ret_from_fork+0x22/0x30
-Feb 11 03:30:31 diefledermaus kernel: ---[ end trace ba59f5981cc5a67a ]=
-=2D--
-Feb 11 03:30:31 diefledermaus kernel: BTRFS: error (device sdb2) in=20
-btrfs_run_delayed_refs:2967: errno=3D-17 Object already exists
-Feb 11 03:30:31 diefledermaus kernel: BTRFS info (device sdb2): forced=20=
+WHAT I=E2=80=99VE TRIED AND RESULTS
 
-readonly
-Feb 11 03:31:39 diefledermaus kernel: BTRFS error (device sdb2): cleane=
-r=20
-transaction attach returned -30
-Feb 11 03:31:41 diefledermaus kernel: BTRFS info (device sdb2): use zli=
-b=20
-compression
-Feb 11 03:31:41 diefledermaus kernel: BTRFS info (device sdb2): disk sp=
-ace=20
-caching is enabled
-Feb 11 03:31:41 diefledermaus kernel: BTRFS info (device sdb2): has ski=
-nny=20
-extents
-Feb 11 03:58:38 diefledermaus kernel: ------------[ cut here ]---------=
-=2D--
-Feb 11 03:58:38 diefledermaus kernel: WARNING: CPU: 0 PID: 11174 at=20
-fs/btrfs/extent-tree.c:2967 btrfs_run_delayed_refs+0x278/0x2b0
-Feb 11 03:58:38 diefledermaus kernel: BTRFS: Transaction aborted (error=
- -17)
-Feb 11 03:58:38 diefledermaus kernel: Modules linked in: usb_storage ms=
-r ctr=20
-ccm tun arc4 snd_hda_codec_idt snd_hda_codec_generic ath5k applesmc=20
-snd_hda_intel input_polldev snd_hda_codec mac80211 hwmon ath snd_hda_co=
-re=20
-snd_pcm cfg80211 sky2 rfkill snd_timer acpi_cpufreq video snd backlight=
-=20
-soundcore processor button sg sr_mod cdrom ata_generic pata_acpi uhci_h=
-cd ahci=20
-libahci ata_piix libata ehci_pci ehci_hcd
-Feb 11 03:58:38 diefledermaus kernel: CPU: 0 PID: 11174 Comm: btrfs Tai=
-nted: G       =20
-W       4.9.7-gentoo #1
-Feb 11 03:58:38 diefledermaus kernel: Hardware name: Apple Inc.=20
-Macmini2,1/Mac-F4208EAA, BIOS     MM21.88Z.009A.B00.0706281359 06/28/07=
+First off, I have created an image with btrfs-image that I can make =
+available (though large, I believe it was a few Gbs and the filesystem =
+is 3 TB)
 
-Feb 11 03:58:38 diefledermaus kernel:  0000000000000000 ffffffff812cf8f=
-9=20
-ffffc90006bfbb88 0000000000000000
-Feb 11 03:58:38 diefledermaus kernel:  ffffffff8104908a ffff880047adb1e=
-0=20
-ffffc90006bfbbd8 0000000000000000
-Feb 11 03:58:38 diefledermaus kernel:  ffff88000a6f8898 0000000000000a3=
-4=20
-ffff880023d59240 ffffffff810490fa
-Feb 11 03:58:38 diefledermaus kernel: Call Trace:
-Feb 11 03:58:38 diefledermaus kernel:  [<ffffffff812cf8f9>] ?=20
-dump_stack+0x46/0x5d
-Feb 11 03:58:38 diefledermaus kernel:  [<ffffffff8104908a>] ? __warn+0x=
-ba/0xe0
-Feb 11 03:58:38 diefledermaus kernel:  [<ffffffff810490fa>] ?=20
-warn_slowpath_fmt+0x4a/0x50
-Feb 11 03:58:38 diefledermaus kernel:  [<ffffffff81202188>] ?=20
-btrfs_run_delayed_refs+0x278/0x2b0
-Feb 11 03:58:38 diefledermaus kernel:  [<ffffffff812170eb>] ?=20
-btrfs_commit_transaction.part.25+0x5b/0x970
-Feb 11 03:58:38 diefledermaus kernel:  [<ffffffff8124c04d>] ?=20
-btrfs_mksubvol+0x45d/0x470
-Feb 11 03:58:38 diefledermaus kernel:  [<ffffffff810796b0>] ?=20
-wake_up_bit+0x20/0x20
-Feb 11 03:58:38 diefledermaus kernel:  [<ffffffff8124c1f5>] ?=20
-btrfs_ioctl_snap_create_transid+0x195/0x1a0
-Feb 11 03:58:38 diefledermaus kernel:  [<ffffffff8110bfcd>] ?=20
-__check_object_size+0x11d/0x1d2
-Feb 11 03:58:38 diefledermaus kernel:  [<ffffffff8124c38a>] ?=20
-btrfs_ioctl_snap_create_v2+0xfa/0x150
-Feb 11 03:58:38 diefledermaus kernel:  [<ffffffff8124f386>] ?=20
-btrfs_ioctl+0x656/0x22b0
-Feb 11 03:58:38 diefledermaus kernel:  [<ffffffff8111d7ad>] ?=20
-do_filp_open+0x8d/0xd0
-Feb 11 03:58:38 diefledermaus kernel:  [<ffffffff810ecf92>] ?=20
-handle_mm_fault+0xd42/0xdb0
-Feb 11 03:58:38 diefledermaus kernel:  [<ffffffff8110bfcd>] ?=20
-__check_object_size+0x11d/0x1d2
-Feb 11 03:58:38 diefledermaus kernel:  [<ffffffff8111f756>] ?=20
-do_vfs_ioctl+0x86/0x5c0
-Feb 11 03:58:38 diefledermaus kernel:  [<ffffffff8111fcc6>] ?=20
-SyS_ioctl+0x36/0x70
-Feb 11 03:58:38 diefledermaus kernel:  [<ffffffff814f61e0>] ?=20
-entry_SYSCALL_64_fastpath+0x13/0x94
-Feb 11 03:58:38 diefledermaus kernel: ---[ end trace ba59f5981cc5a67b ]=
-=2D--
-Feb 11 03:58:38 diefledermaus kernel: BTRFS: error (device sdb2) in=20
-btrfs_run_delayed_refs:2967: errno=3D-17 Object already exists
-Feb 11 03:58:39 diefledermaus kernel: BTRFS info (device sdb2): forced=20=
+* btrfs-zero-log=20
+	had no discernible effect.
 
-readonly
-Feb 11 09:47:57 diefledermaus kernel: BTRFS error (device sdb2): cleane=
-r=20
-transaction attach returned -30
-Feb 11 09:48:10 diefledermaus kernel: BTRFS info (device sdb2): use zli=
-b=20
-compression
-Feb 11 09:48:10 diefledermaus kernel: BTRFS info (device sdb2): disk sp=
-ace=20
-caching is enabled
-Feb 11 09:48:10 diefledermaus kernel: BTRFS info (device sdb2): has ski=
-nny=20
-extents
-Feb 11 10:06:46 diefledermaus kernel: ------------[ cut here ]---------=
-=2D--
-Feb 11 10:06:46 diefledermaus kernel: WARNING: CPU: 1 PID: 12677 at=20
-fs/btrfs/extent-tree.c:2967 btrfs_run_delayed_refs+0x278/0x2b0
-Feb 11 10:06:46 diefledermaus kernel: BTRFS: Transaction aborted (error=
- -17)
-Feb 11 10:06:46 diefledermaus kernel: Modules linked in: usb_storage ms=
-r ctr=20
-ccm tun arc4 snd_hda_codec_idt snd_hda_codec_generic ath5k applesmc=20
-snd_hda_intel input_polldev snd_hda_codec mac80211 hwmon ath snd_hda_co=
-re=20
-snd_pcm cfg80211 sky2 rfkill snd_timer acpi_cpufreq video snd backlight=
-=20
-soundcore processor button sg sr_mod cdrom ata_generic pata_acpi uhci_h=
-cd ahci=20
-libahci ata_piix libata ehci_pci ehci_hcd
-Feb 11 10:06:46 diefledermaus kernel: CPU: 1 PID: 12677 Comm: kworker/u=
-4:6=20
-Tainted: G        W       4.9.7-gentoo #1
-Feb 11 10:06:46 diefledermaus kernel: Hardware name: Apple Inc.=20
-Macmini2,1/Mac-F4208EAA, BIOS     MM21.88Z.009A.B00.0706281359 06/28/07=
 
-Feb 11 10:06:46 diefledermaus kernel: Workqueue: btrfs-extent-refs=20
-btrfs_extent_refs_helper
-Feb 11 10:06:46 diefledermaus kernel:  0000000000000000 ffffffff812cf8f=
-9=20
-ffffc90001c73d60 0000000000000000
-Feb 11 10:06:46 diefledermaus kernel:  ffffffff8104908a ffff8800258696e=
-0=20
-ffffc90001c73db0 0000000000000020
-Feb 11 10:06:46 diefledermaus kernel:  ffff8800214131f8 ffff880087de7f0=
-0=20
-0000000000000000 ffffffff810490fa
-Feb 11 10:06:46 diefledermaus kernel: Call Trace:
-Feb 11 10:06:46 diefledermaus kernel:  [<ffffffff812cf8f9>] ?=20
-dump_stack+0x46/0x5d
-Feb 11 10:06:46 diefledermaus kernel:  [<ffffffff8104908a>] ? __warn+0x=
-ba/0xe0
-Feb 11 10:06:46 diefledermaus kernel:  [<ffffffff810490fa>] ?=20
-warn_slowpath_fmt+0x4a/0x50
-Feb 11 10:06:46 diefledermaus kernel:  [<ffffffff81202188>] ?=20
-btrfs_run_delayed_refs+0x278/0x2b0
-Feb 11 10:06:46 diefledermaus kernel:  [<ffffffff81202244>] ?=20
-delayed_ref_async_start+0x84/0xa0
-Feb 11 10:06:46 diefledermaus kernel:  [<ffffffff8105ce76>] ?=20
-process_one_work+0x126/0x310
-Feb 11 10:06:46 diefledermaus kernel:  [<ffffffff8105d0a5>] ?=20
-worker_thread+0x45/0x450
-Feb 11 10:06:46 diefledermaus kernel:  [<ffffffff8105d060>] ?=20
-process_one_work+0x310/0x310
-Feb 11 10:06:46 diefledermaus kernel:  [<ffffffff81061c99>] ?=20
-kthread+0xb9/0xd0
-Feb 11 10:06:46 diefledermaus kernel:  [<ffffffff81061be0>] ?=20
-kthread_park+0x50/0x50
-Feb 11 10:06:46 diefledermaus kernel:  [<ffffffff814f6412>] ?=20
-ret_from_fork+0x22/0x30
-Feb 11 10:06:46 diefledermaus kernel: ---[ end trace ba59f5981cc5a67c ]=
-=2D--
-Feb 11 10:06:46 diefledermaus kernel: BTRFS: error (device sdb2) in=20
-btrfs_run_delayed_refs:2967: errno=3D-17 Object already exists
-Feb 11 10:06:46 diefledermaus kernel: BTRFS info (device sdb2): forced=20=
+* At this point, I compiled btrfs-progs 4.9.1.  The following commands =
+were run with this version:
 
-readonly
-Feb 11 10:18:06 diefledermaus kernel: BTRFS error (device sdb2): cleane=
-r=20
-transaction attach returned -30
-Feb 11 10:18:19 diefledermaus kernel: BTRFS info (device sdb2): use zli=
-b=20
-compression
-Feb 11 10:18:19 diefledermaus kernel: BTRFS info (device sdb2): disk sp=
-ace=20
-caching is enabled
-Feb 11 10:18:19 diefledermaus kernel: BTRFS info (device sdb2): has ski=
-nny=20
-extents
-Feb 11 10:24:09 diefledermaus kernel: BTRFS info (device sdb2): The fre=
-e space=20
-cache file (3833157648384) is invalid. skip it
 
-Greetings
-=2D-=20
-Marc Joliet
-=2D-
-"People who think they know everything really annoy those of us who kno=
-w we
-don't" - Bjarne Stroustrup
+* btrfs check
+	This exits in an assert fairly quickly:
+checking extents
+cmds-check.c:5406: check_owner_ref: BUG_ON `rec->is_root` triggered, =
+value 1
+/mnt/usb/btrfs-progs-bin/bin/btrfs[0x42139b]
+/mnt/usb/btrfs-progs-bin/bin/btrfs[0x421483]
+/mnt/usb/btrfs-progs-bin/bin/btrfs[0x430529]
+/mnt/usb/btrfs-progs-bin/bin/btrfs[0x43160c]
+/mnt/usb/btrfs-progs-bin/bin/btrfs[0x435d6f]
+/mnt/usb/btrfs-progs-bin/bin/btrfs[0x43ab71]
+/mnt/usb/btrfs-progs-bin/bin/btrfs[0x43b065]
+/mnt/usb/btrfs-progs-bin/bin/btrfs(cmd_check+0xbbc)[0x441b82]
+/mnt/usb/btrfs-progs-bin/bin/btrfs(main+0x12b)[0x40a734]
+/lib64/libc.so.6(__libc_start_main+0xf5)[0x7ffff6fa7b35]
+/mnt/usb/btrfs-progs-bin/bin/btrfs[0x40a179]
 
---nextPart5153843.KHxGCnNXpU
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
+Full backtrace is attached as btrfsck_debug.log=20
 
------BEGIN PGP SIGNATURE-----
+* btrfs check -mode lowmem
+	This outputs a large number of errors before finally =
+segfault=E2=80=99ing.  Full backtrace attached as =
+btrfsck_lowmem_debug.log
 
-iQIcBAABCAAGBQJYnuT/AAoJEL/Q5oYsiHj0/MoP/jf62QPfn7/XXEFXPdrOEull
-7ZENukqhUf6dJPXlRh6oqi3NCV80bZQPZWMHl77uH0klq7RJFtyg6kJT6XjII1n/
-ceyQpqIIFPQ3tXtRekDQb2TPhhUpYiuPpDcu6RpsGZEHpBzX4NyrZ5aFmFJP8bBU
-O6CpixlU9aOjvdM8Kk1y5oEiofaaWmSx15W7f5W7TgcZvcZ2wicIXD1reyTwh4nl
-m+x30gi40NMTuUtq9an2De/Ty/cWkirXjovtsEdHvpz/2cfr2CdcIJ33hAW+L2d/
-Pu7mwn8VNU58Dp6MzVMlYWq79FNzjvmm03KFzrMohWT+j5usPHInK6NWIULxbnJM
-bALdubHej9WJCI03Ro+Fk4WQxluOWFhRrUwfJ7BQdYVfWqtdprtXg9bFByemovR2
-AbK3KxDCTnXe1gdTg5B3+1MEnoJc+Nr/R9T7UQBcZS8kjAO4ukA4B7uWoalZREDW
-n3W0AEFtGkyPzBDQOBp7gB0NvFEz7DEYI1KfrHdoINrG8GTqAAyfFYnLnv82Tp10
-Lltq8nV58vSmVJbeqw+7RRPHG1cy4zGJQ/bJ7dflcyQhkBI9lTEakgd46Z8c74mD
-9SMntyZx3pVumvncI1HHh5DxiPMoIERL6a82tc9wwXNUh+J5KIAV1JFpUv2b5VIE
-NHqzgG9CXg8byxMulrAX
-=tyHi
------END PGP SIGNATURE-----
+* btrfs scrub
+	This completes with no errors.
 
---nextPart5153843.KHxGCnNXpU--
 
+* Memtest86 completed more than 6 passes with no errors (left it running =
+for a day)
+
+* No SMART errors, btrfs device stats shows no errors.  The drives the =
+filesystem is on are brand new.
+
+* I have tried to recreate the problem by installing Rockstor into a =
+number of VMs and redoing my steps, no such luck.
+
+
+The main Rockstor partition (btrfs), as well as the other Raid1 =
+partition on completely separate drives were not affected.  I can =
+provide any other logs requested.
+
+Help would be greatly appreciated!
+
+
+Kenneth Bogert
+
+
+--Apple-Mail=_83D61CF0-1B71-45E9-A811-F9F9ACF2FF87
+Content-Disposition: attachment;
+	filename=btrfsck_lowmem_debug.log
+Content-Type: application/octet-stream;
+	x-unix-mode=0644;
+	name="btrfsck_lowmem_debug.log"
+Content-Transfer-Encoding: 7bit
+
+Starting program: /mnt/usb/btrfs-progs-bin/bin/./btrfs check --mode lowmem /dev/sdb
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib64/libthread_db.so.1".
+
+checking extents
+ERROR: extent[920236044288, 94208] referencer count mismatch (root: 263, owner: 285, offset: 383730442240) wanted: 1, have: 0
+ERROR: bad extent[962529853440, 962529869824) type mismatch with chunk
+ERROR: block group[962127200256 1073741824] used 1073737728 but extent items used 1201360896
+ERROR: block group[1031920418816 1073741824] used 1073741824 but extent items used 1207959552
+ERROR: extent[1149865406464, 134217728] referencer count mismatch (root: 263, owner: 285, offset: 117903826944) wanted: 15, have: 0
+ERROR: extent[1184660193280, 134217728] referencer count mismatch (root: 263, owner: 285, offset: 82109140992) wanted: 12, have: 0
+ERROR: extent[1191627235328, 134217728] referencer count mismatch (root: 263, owner: 287, offset: 58824290304) wanted: 26, have: 78
+ERROR: extent[1314269351936, 36610048] referencer count mismatch (root: 263, owner: 287, offset: 42139648) wanted: 96, have: 157
+ERROR: extent[1342215913472, 32768] referencer count mismatch (root: 263, owner: 285, offset: 249278464) wanted: 1, have: 0
+parent transid verify failed on 1721409388544 wanted 19188 found 83121
+parent transid verify failed on 1721409388544 wanted 19188 found 83121
+parent transid verify failed on 1721409388544 wanted 19188 found 83121
+parent transid verify failed on 1721409388544 wanted 19188 found 83121
+Ignoring transid failure
+ERROR: extent[1362632900608, 134217728] referencer count mismatch (root: 260, owner: 635, offset: 0) wanted: 1, have: 0
+ERROR: extent[1362767118336, 134217728] referencer count mismatch (root: 260, owner: 635, offset: 134217728) wanted: 1, have: 0
+ERROR: extent[1362901336064, 64294912] referencer count mismatch (root: 260, owner: 635, offset: 268435456) wanted: 1, have: 0
+ERROR: extent[1363706642432, 45211648] referencer count mismatch (root: 260, owner: 615, offset: 134217728) wanted: 1, have: 0
+ERROR: extent[1363751854080, 45244416] referencer count mismatch (root: 260, owner: 618, offset: 45182976) wanted: 1, have: 0
+ERROR: extent[1363797098496, 25137152] referencer count mismatch (root: 260, owner: 619, offset: 0) wanted: 1, have: 0
+ERROR: extent[1363822235648, 42364928] referencer count mismatch (root: 260, owner: 620, offset: 0) wanted: 1, have: 0
+ERROR: extent[1363864600576, 16969728] referencer count mismatch (root: 260, owner: 621, offset: 0) wanted: 1, have: 0
+ERROR: extent[1363881570304, 36491264] referencer count mismatch (root: 260, owner: 622, offset: 0) wanted: 1, have: 0
+ERROR: extent[1363918061568, 134217728] referencer count mismatch (root: 260, owner: 623, offset: 0) wanted: 1, have: 0
+ERROR: extent[1364052279296, 134217728] referencer count mismatch (root: 260, owner: 623, offset: 134217728) wanted: 1, have: 0
+ERROR: extent[1364186497024, 61194240] referencer count mismatch (root: 260, owner: 623, offset: 268435456) wanted: 1, have: 0
+ERROR: extent[1364247691264, 134217728] referencer count mismatch (root: 260, owner: 623, offset: 329629696) wanted: 1, have: 0
+ERROR: extent[1364381908992, 19877888] referencer count mismatch (root: 260, owner: 625, offset: 0) wanted: 1, have: 0
+ERROR: extent[1364401786880, 42758144] referencer count mismatch (root: 260, owner: 626, offset: 0) wanted: 1, have: 0
+ERROR: extent[1364444545024, 18350080] referencer count mismatch (root: 260, owner: 627, offset: 0) wanted: 1, have: 0
+ERROR: extent[1364462895104, 1572864] referencer count mismatch (root: 260, owner: 627, offset: 18350080) wanted: 1, have: 0
+ERROR: extent[1364464467968, 120848384] referencer count mismatch (root: 260, owner: 623, offset: 463847424) wanted: 1, have: 0
+ERROR: extent[1364585316352, 26787840] referencer count mismatch (root: 260, owner: 627, offset: 19922944) wanted: 1, have: 0
+ERROR: extent[1364612104192, 17178624] referencer count mismatch (root: 260, owner: 628, offset: 0) wanted: 1, have: 0
+ERROR: extent[1364629282816, 18063360] referencer count mismatch (root: 260, owner: 629, offset: 0) wanted: 1, have: 0
+ERROR: extent[1364647346176, 18382848] referencer count mismatch (root: 260, owner: 630, offset: 0) wanted: 1, have: 0
+ERROR: extent[1364665729024, 36315136] referencer count mismatch (root: 260, owner: 633, offset: 0) wanted: 1, have: 0
+ERROR: extent[1364702044160, 18718720] referencer count mismatch (root: 260, owner: 634, offset: 0) wanted: 1, have: 0
+ERROR: extent[1364780384256, 134217728] referencer count mismatch (root: 260, owner: 608, offset: 0) wanted: 1, have: 0
+ERROR: extent[1364914601984, 131919872] referencer count mismatch (root: 260, owner: 609, offset: 0) wanted: 1, have: 0
+ERROR: extent[1365046521856, 17911808] referencer count mismatch (root: 260, owner: 608, offset: 134217728) wanted: 1, have: 0
+ERROR: extent[1365064433664, 134217728] referencer count mismatch (root: 260, owner: 609, offset: 131919872) wanted: 1, have: 0
+ERROR: extent[1365198651392, 524288] referencer count mismatch (root: 260, owner: 609, offset: 266137600) wanted: 1, have: 0
+ERROR: extent[1365199175680, 134217728] referencer count mismatch (root: 260, owner: 609, offset: 266661888) wanted: 1, have: 0
+ERROR: extent[1365333393408, 61112320] referencer count mismatch (root: 260, owner: 612, offset: 0) wanted: 1, have: 0
+ERROR: extent[1365394505728, 124956672] referencer count mismatch (root: 260, owner: 613, offset: 0) wanted: 1, have: 0
+ERROR: extent[1365519462400, 36802560] referencer count mismatch (root: 260, owner: 609, offset: 400879616) wanted: 1, have: 0
+ERROR: extent[1365556264960, 134217728] referencer count mismatch (root: 260, owner: 615, offset: 0) wanted: 1, have: 0
+ERROR: extent[1365690482688, 102158336] referencer count mismatch (root: 260, owner: 617, offset: 0) wanted: 1, have: 0
+ERROR: extent[1365792641024, 45182976] referencer count mismatch (root: 260, owner: 618, offset: 0) wanted: 1, have: 0
+ERROR: extent[1365837824000, 12677120] referencer count mismatch (root: 260, owner: 636, offset: 0) wanted: 1, have: 0
+ERROR: extent[1366576902144, 21778432] referencer count mismatch (root: 260, owner: 602, offset: 0) wanted: 1, have: 0
+ERROR: extent[1366598680576, 37376000] referencer count mismatch (root: 260, owner: 603, offset: 0) wanted: 1, have: 0
+ERROR: extent[1366636056576, 26660864] referencer count mismatch (root: 260, owner: 604, offset: 0) wanted: 1, have: 0
+ERROR: extent[1366662717440, 54575104] referencer count mismatch (root: 260, owner: 605, offset: 0) wanted: 1, have: 0
+ERROR: extent[1366717292544, 35958784] referencer count mismatch (root: 260, owner: 606, offset: 0) wanted: 1, have: 0
+ERROR: extent[1366753251328, 55410688] referencer count mismatch (root: 260, owner: 607, offset: 0) wanted: 1, have: 0
+ERROR: extent[1366808662016, 37933056] referencer count mismatch (root: 260, owner: 610, offset: 0) wanted: 1, have: 0
+ERROR: extent[1366846595072, 66609152] referencer count mismatch (root: 260, owner: 611, offset: 0) wanted: 1, have: 0
+ERROR: extent[1366913204224, 10575872] referencer count mismatch (root: 260, owner: 624, offset: 0) wanted: 1, have: 0
+ERROR: extent[1369064730624, 9703424] referencer count mismatch (root: 260, owner: 616, offset: 0) wanted: 1, have: 0
+ERROR: extent[1370136272896, 8892416] referencer count mismatch (root: 260, owner: 614, offset: 0) wanted: 1, have: 0
+ERROR: extent[1379804876800, 7684096] referencer count mismatch (root: 260, owner: 631, offset: 0) wanted: 1, have: 0
+ERROR: extent[1395916967936, 1855488] referencer count mismatch (root: 260, owner: 632, offset: 0) wanted: 1, have: 0
+ERROR: extent[1422762442752, 134217728] referencer count mismatch (root: 260, owner: 261, offset: 380166144) wanted: 1, have: 0
+ERROR: extent[1422896660480, 134217728] referencer count mismatch (root: 260, owner: 261, offset: 514383872) wanted: 1, have: 0
+ERROR: extent[1423030878208, 53112832] referencer count mismatch (root: 260, owner: 261, offset: 648601600) wanted: 1, have: 0
+ERROR: extent[1423836184576, 90234880] referencer count mismatch (root: 260, owner: 260, offset: 134217728) wanted: 1, have: 0
+ERROR: extent[1423926419456, 134217728] referencer count mismatch (root: 260, owner: 260, offset: 224452608) wanted: 1, have: 0
+ERROR: extent[1424060637184, 134217728] referencer count mismatch (root: 260, owner: 260, offset: 358670336) wanted: 1, have: 0
+ERROR: extent[1424194854912, 134217728] referencer count mismatch (root: 260, owner: 260, offset: 492888064) wanted: 1, have: 0
+ERROR: extent[1424329072640, 67043328] referencer count mismatch (root: 260, owner: 260, offset: 665370624) wanted: 1, have: 0
+ERROR: extent[1424396115968, 134217728] referencer count mismatch (root: 260, owner: 261, offset: 0) wanted: 1, have: 0
+ERROR: extent[1424530333696, 134217728] referencer count mismatch (root: 260, owner: 261, offset: 134217728) wanted: 1, have: 0
+ERROR: extent[1424664551424, 111730688] referencer count mismatch (root: 260, owner: 261, offset: 268435456) wanted: 1, have: 0
+ERROR: extent[1424776282112, 50331648] referencer count mismatch (root: 260, owner: 262, offset: 16777216) wanted: 1, have: 0
+ERROR: extent[1424826613760, 102400] referencer count mismatch (root: 260, owner: 262, offset: 67108864) wanted: 1, have: 0
+ERROR: extent[1424909926400, 134217728] referencer count mismatch (root: 260, owner: 258, offset: 535924736) wanted: 1, have: 0
+ERROR: extent[1425044144128, 64847872] referencer count mismatch (root: 260, owner: 258, offset: 670142464) wanted: 1, have: 0
+ERROR: extent[1425108992000, 134217728] referencer count mismatch (root: 260, owner: 259, offset: 50335744) wanted: 1, have: 0
+ERROR: extent[1425243209728, 134217728] referencer count mismatch (root: 260, owner: 259, offset: 184553472) wanted: 1, have: 0
+ERROR: extent[1425377427456, 134217728] referencer count mismatch (root: 260, owner: 259, offset: 318771200) wanted: 1, have: 0
+ERROR: extent[1425511645184, 107479040] referencer count mismatch (root: 260, owner: 259, offset: 452988928) wanted: 1, have: 0
+ERROR: extent[1425619124224, 134217728] referencer count mismatch (root: 260, owner: 259, offset: 560467968) wanted: 1, have: 0
+ERROR: extent[1425753341952, 134217728] referencer count mismatch (root: 260, owner: 260, offset: 0) wanted: 1, have: 0
+ERROR: extent[1425887559680, 52764672] referencer count mismatch (root: 260, owner: 259, offset: 694685696) wanted: 1, have: 0
+ERROR: extent[1425940324352, 36556800] referencer count mismatch (root: 260, owner: 260, offset: 627105792) wanted: 1, have: 0
+ERROR: extent[1425976881152, 1572864] referencer count mismatch (root: 260, owner: 260, offset: 663662592) wanted: 1, have: 0
+ERROR: extent[1425978454016, 45056] referencer count mismatch (root: 260, owner: 260, offset: 665235456) wanted: 1, have: 0
+ERROR: extent[1425978499072, 45056] referencer count mismatch (root: 260, owner: 260, offset: 665280512) wanted: 1, have: 0
+ERROR: extent[1425978544128, 45056] referencer count mismatch (root: 260, owner: 260, offset: 665325568) wanted: 1, have: 0
+ERROR: extent[1426425278464, 134217728] referencer count mismatch (root: 260, owner: 258, offset: 0) wanted: 1, have: 0
+ERROR: extent[1426559496192, 134217728] referencer count mismatch (root: 260, owner: 258, offset: 134217728) wanted: 1, have: 0
+ERROR: extent[1426693713920, 133271552] referencer count mismatch (root: 260, owner: 258, offset: 268435456) wanted: 1, have: 0
+ERROR: extent[1426826985472, 134217728] referencer count mismatch (root: 260, owner: 258, offset: 401707008) wanted: 1, have: 0
+ERROR: extent[1426961203200, 5767168] referencer count mismatch (root: 260, owner: 259, offset: 0) wanted: 1, have: 0
+ERROR: extent[1426966970368, 41947136] referencer count mismatch (root: 260, owner: 259, offset: 5767168) wanted: 1, have: 0
+ERROR: extent[1427008917504, 2621440] referencer count mismatch (root: 260, owner: 259, offset: 47714304) wanted: 1, have: 0
+ERROR: extent[1427011538944, 16777216] referencer count mismatch (root: 260, owner: 262, offset: 0) wanted: 1, have: 0
+ERROR: extent[1565151039488, 32792576] referencer count mismatch (root: 263, owner: 269, offset: 11210354688) wanted: 1, have: 2
+ERROR: extent[1567492001792, 72192000] referencer count mismatch (root: 263, owner: 270, offset: 10980872192) wanted: 1, have: 2
+ERROR: extent[1642516774912, 106496] referencer count mismatch (root: 263, owner: 285, offset: 6510891008) wanted: 1, have: 0
+ERROR: extent[1678035034112, 16814080] referencer count mismatch (root: 263, owner: 265, offset: 298381312) wanted: 9, have: 11
+ERROR: extent[1678051848192, 29622272] referencer count mismatch (root: 263, owner: 277, offset: 19943424) wanted: 6, have: 12
+ERROR: extent[1681014620160, 14217216] referencer count mismatch (root: 263, owner: 261, offset: 727629824) wanted: 1, have: 2
+ERROR: extent[1682221711360, 28377088] referencer count mismatch (root: 263, owner: 267, offset: 67256320) wanted: 1, have: 2
+ERROR: block group[1700861575168 1073741824] used 1073741824 but extent items used 0
+ERROR: extent [1719302012928 16384] referencer bytenr mismatch, wanted: 1719302012928, have: 1721409388544
+ERROR: extent [1719372939264 16384] referencer bytenr mismatch, wanted: 1719372939264, have: 1721409388544
+ERROR: extent [1719422746624 16384] referencer bytenr mismatch, wanted: 1719422746624, have: 1721409388544
+ERROR: extent [1719431282688 16384] referencer bytenr mismatch, wanted: 1719431282688, have: 1721409388544
+ERROR: extent [1719481237504 16384] referencer bytenr mismatch, wanted: 1719481237504, have: 1721409388544
+ERROR: extent [1719617585152 16384] referencer bytenr mismatch, wanted: 1719617585152, have: 1721409388544
+ERROR: extent [1719657889792 16384] referencer bytenr mismatch, wanted: 1719657889792, have: 1721409388544
+ERROR: extent [1719743889408 16384] referencer bytenr mismatch, wanted: 1719743889408, have: 1721409388544
+ERROR: extent [1719759962112 16384] referencer bytenr mismatch, wanted: 1719759962112, have: 1721409388544
+ERROR: extent [1719869472768 16384] referencer bytenr mismatch, wanted: 1719869472768, have: 1721409388544
+ERROR: extent [1719869489152 16384] referencer bytenr mismatch, wanted: 1719869489152, have: 1721409388544
+ERROR: extent [1719916314624 16384] referencer bytenr mismatch, wanted: 1719916314624, have: 1721409388544
+ERROR: extent [1719918362624 16384] referencer bytenr mismatch, wanted: 1719918362624, have: 1721409388544
+ERROR: extent [1719919640576 16384] referencer bytenr mismatch, wanted: 1719919640576, have: 1721409388544
+ERROR: extent [1721409404928 16384] referencer bytenr mismatch, wanted: 1721409404928, have: 1721409388544
+ERROR: extent [1721409421312 16384] referencer bytenr mismatch, wanted: 1721409421312, have: 1721409388544
+ERROR: extent [1721415778304 16384] referencer bytenr mismatch, wanted: 1721415778304, have: 1721409388544
+
+
+Program received signal SIGSEGV, Segmentation fault.
+0x00000000004229d4 in btrfs_header_bytenr (eb=0x0) at ctree.h:1982
+1982	ctree.h: No such file or directory.
+
+bt
+#0  0x00000000004229d4 in btrfs_header_bytenr (eb=0x0) at ctree.h:1982
+#1  0x000000000043c510 in check_tree_block_backref (fs_info=0x6f5400, root_id=260, bytenr=1721460621312, level=1) at cmds-check.c:10415
+#2  0x000000000043cf7f in check_extent_item (fs_info=0x6f5400, eb=0x777ac0, slot=73) at cmds-check.c:10748
+#3  0x000000000043e059 in check_leaf_items (root=0x6f58b0, eb=0x777ac0) at cmds-check.c:11188
+#4  0x000000000043e616 in traverse_tree_block (root=0x6f58b0, node=0x777ac0) at cmds-check.c:11369
+#5  0x000000000043e741 in traverse_tree_block (root=0x6f58b0, node=0x773a30) at cmds-check.c:11394
+#6  0x000000000043e741 in traverse_tree_block (root=0x6f58b0, node=0x71e500) at cmds-check.c:11394
+#7  0x000000000043e946 in check_chunks_and_extents_v2 (root=0x76ded0) at cmds-check.c:11450
+#8  0x0000000000441b71 in cmd_check (argc=4, argv=0x7fffffffe710) at cmds-check.c:12916
+#9  0x000000000040a734 in main (argc=4, argv=0x7fffffffe710) at btrfs.c:243
+
+bt full
+#0  0x00000000004229d4 in btrfs_header_bytenr (eb=0x0) at ctree.h:1982
+        h = 0x80
+#1  0x000000000043c510 in check_tree_block_backref (fs_info=0x6f5400, root_id=260, bytenr=1721460621312, level=1) at cmds-check.c:10415
+        root = 0x76ed10
+        key = {objectid = 256, type = 1 '\001', offset = 0}
+        path = {nodes = {0x78fe20, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, slots = {0, 0, 0, 0, 0, 0, 0, 0}, reada = 0 '\000', lowest_level = 1 '\001', search_for_split = 0 '\000', skip_check_block = 0 '\000'}
+        eb = 0x7f38c0
+        node = 0x0
+        nodesize = 16384
+        err = 0
+        ret = 1
+#2  0x000000000043cf7f in check_extent_item (fs_info=0x6f5400, eb=0x777ac0, slot=73) at cmds-check.c:10748
+        ei = 0x3649
+        iref = 0x3661
+        dref = 0x777ac0
+        end = 13930
+        ptr = 13921
+        type = 176
+        nodesize = 16384
+        item_size = 33
+        flags = 2
+        offset = 260
+        metadata = 1
+        level = 1
+        key = {objectid = 1721460621312, type = 169 '\251', offset = 1}
+        ret = 32767
+        err = 0
+#3  0x000000000043e059 in check_leaf_items (root=0x6f58b0, eb=0x777ac0) at cmds-check.c:11188
+        fs_info = 0x6f5400
+        key = {objectid = 1721460621312, type = 169 '\251', offset = 1}
+        slot = 73
+        type = 169
+        dref = 0x400000000000
+        ret = 0
+        err = 0
+#4  0x000000000043e616 in traverse_tree_block (root=0x6f58b0, node=0x777ac0) at cmds-check.c:11369
+        eb = 0x0
+        key = {objectid = 70373039137536, type = 0 '\000', offset = 16}
+        drop_key = {objectid = 1719154917376, type = 0 '\000', offset = 16140901064495886164}
+        level = 0
+        nr = 4338842
+        i = 32767
+        err = 0
+        ret = 0
+#5  0x000000000043e741 in traverse_tree_block (root=0x6f58b0, node=0x773a30) at cmds-check.c:11394
+        blocknr = 1719154917376
+        eb = 0x777ac0
+        key = {objectid = 1721451741184, type = 169 '\251', offset = 0}
+        drop_key = {objectid = 0, type = 0 '\000', offset = 0}
+        level = 1
+        nr = 244
+        i = 137
+        err = 16
+        ret = 0
+#6  0x000000000043e741 in traverse_tree_block (root=0x6f58b0, node=0x71e500) at cmds-check.c:11394
+        blocknr = 1897538420736
+        eb = 0x773a30
+        key = {objectid = 1719730520064, type = 169 '\251', offset = 0}
+        drop_key = {objectid = 0, type = 0 '\000', offset = 0}
+        level = 2
+        nr = 6
+        i = 3
+        err = 408
+        ret = 152
+#7  0x000000000043e946 in check_chunks_and_extents_v2 (root=0x76ded0) at cmds-check.c:11450
+        path = {nodes = {0x76f9a0, 0x71a470, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, slots = {0, 0, 0, 0, 0, 0, 0, 0}, reada = 0 '\000', lowest_level = 0 '\000', search_for_split = 0 '\000', skip_check_block = 0 '\000'}
+        key = {objectid = 2, type = 132 '\204', offset = 18446744073709551615}
+        root1 = 0x6f5650
+        cur_root = 0x6f58b0
+        err = 0
+        ret = 0
+#8  0x0000000000441b71 in cmd_check (argc=4, argv=0x7fffffffe710) at cmds-check.c:12916
+        root_cache = {root = {rb_node = 0x0}}
+        root = 0x76ded0
+        info = 0x6f5400
+        bytenr = 0
+        subvolid = 0
+        tree_root_bytenr = 0
+        chunk_root_bytenr = 0
+        uuidbuf = "21e09dd8-a54d-49ec-95cb-93fdd94f0c17"
+        ret = 0
+        err = 0
+        num = 140737488348592
+        init_csum_tree = 0
+        readonly = 0
+        clear_space_cache = 0
+        qgroup_report = 0
+        qgroups_repaired = 0
+        ctree_flags = 64
+#9  0x000000000040a734 in main (argc=4, argv=0x7fffffffe710) at btrfs.c:243
+        cmd = 0x6ec878
+        bname = 0x7fffffffe91f "btrfs"
+        ret = 0
+
+info locals
+cmd = 0x6ec878
+bname = 0x7fffffffe91f "btrfs"
+ret = 0
+
+--Apple-Mail=_83D61CF0-1B71-45E9-A811-F9F9ACF2FF87
+Content-Disposition: attachment;
+	filename=btrfsck_debug.log
+Content-Type: application/octet-stream;
+	x-unix-mode=0644;
+	name="btrfsck_debug.log"
+Content-Transfer-Encoding: 7bit
+
+Starting program: /mnt/usb/btrfs-progs-bin/bin/btrfs check /dev/sdb 2> /root/btrfsck_debug.out
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib64/libthread_db.so.1".
+
+Program received signal SIGABRT, Aborted.
+0x00007ffff6fbb1d7 in raise () from /lib64/libc.so.6
+Missing separate debuginfos, use: debuginfo-install glibc-2.17-157.el7_3.1.x86_64 libblkid-2.23.2-33.el7.x86_64 libgcc-4.8.5-11.el7.x86_64 libuuid-2.23.2-33.el7.x86_64 lzo-2.06-8.el7.x86_64 zlib-1.2.7-17.el7.x86_64
+
+bt
+#0  0x00007ffff6fbb1d7 in raise () from /lib64/libc.so.6
+#1  0x00007ffff6fbc8c8 in abort () from /lib64/libc.so.6
+#2  0x0000000000421488 in bugon_trace (assertion=0x4ba0c7 "rec->is_root", filename=0x4b8c11 "cmds-check.c", func=0x4bd2b0 <__func__.12564> "check_owner_ref", line=5406, val=1) at kerncompat.h:115
+#3  0x0000000000430529 in check_owner_ref (root=0x76ded0, rec=0x820270, buf=0xce9860) at cmds-check.c:5406
+#4  0x000000000043160c in check_block (root=0x76ded0, extent_cache=0x7fffffffe430, buf=0xce9860, flags=0) at cmds-check.c:5809
+#5  0x0000000000435d6f in run_next_block (root=0x76ded0, bits=0x76f9a0, bits_nr=1024, last=0x7fffffffe0a8, pending=0x7fffffffe410, seen=0x7fffffffe420, reada=0x7fffffffe400, nodes=0x7fffffffe3f0, extent_cache=0x7fffffffe430, 
+    chunk_cache=0x7fffffffe490, dev_cache=0x7fffffffe4a0, block_group_cache=0x7fffffffe470, dev_extent_cache=0x7fffffffe440, ri=0x76e3b0) at cmds-check.c:7655
+#6  0x000000000043ab71 in deal_root_from_list (list=0x7fffffffe120, root=0x76ded0, bits=0x76f9a0, bits_nr=1024, pending=0x7fffffffe410, seen=0x7fffffffe420, reada=0x7fffffffe400, nodes=0x7fffffffe3f0, extent_cache=0x7fffffffe430, 
+    chunk_cache=0x7fffffffe490, dev_cache=0x7fffffffe4a0, block_group_cache=0x7fffffffe470, dev_extent_cache=0x7fffffffe440) at cmds-check.c:9721
+#7  0x000000000043b065 in check_chunks_and_extents (root=0x76ded0) at cmds-check.c:9888
+#8  0x0000000000441b82 in cmd_check (argc=2, argv=0x7fffffffe740) at cmds-check.c:12918
+#9  0x000000000040a734 in main (argc=2, argv=0x7fffffffe740) at btrfs.c:243
+
+bt full
+#0  0x00007ffff6fbb1d7 in raise () from /lib64/libc.so.6
+No symbol table info available.
+#1  0x00007ffff6fbc8c8 in abort () from /lib64/libc.so.6
+No symbol table info available.
+#2  0x0000000000421488 in bugon_trace (assertion=0x4ba0c7 "rec->is_root", filename=0x4b8c11 "cmds-check.c", func=0x4bd2b0 <__func__.12564> "check_owner_ref", line=5406, val=1) at kerncompat.h:115
+No locals.
+#3  0x0000000000430529 in check_owner_ref (root=0x76ded0, rec=0x820270, buf=0xce9860) at cmds-check.c:5406
+        node = 0x820270
+        back = 0x73eb30
+        ref_root = 0x190cbfec000
+        key = {objectid = 140737488346496, type = 96 '`', offset = 14987979559889063576}
+        path = {nodes = {0xce9860, 0xceaa11, 0x1131, 0x7fffffffdd00, 0x459201 <btrfs_item_end+57>, 0x1131, 0xce9860, 0x1a0c}, slots = {-8928, 32767, 4559413, 0, -8960, 172, 13539424, 0}, reada = -96 '\240', lowest_level = 221 '\335', 
+          search_for_split = 255 '\377', skip_check_block = 255 '\377'}
+        parent = 0xff9b400000
+        level = 7
+        found = 0
+        ret = 148897960
+        __func__ = "check_owner_ref"
+#4  0x000000000043160c in check_block (root=0x76ded0, extent_cache=0x7fffffffe430, buf=0xce9860, flags=0) at cmds-check.c:5809
+        rec = 0x820270
+        cache = 0x8202a0
+        key = {objectid = 1094746275840, type = 168 '\250', offset = 20480}
+        status = BTRFS_TREE_BLOCK_CLEAN
+        ret = 0
+        level = 0
+#5  0x0000000000435d6f in run_next_block (root=0x76ded0, bits=0x76f9a0, bits_nr=1024, last=0x7fffffffe0a8, pending=0x7fffffffe410, seen=0x7fffffffe420, reada=0x7fffffffe400, nodes=0x7fffffffe3f0, extent_cache=0x7fffffffe430, 
+    chunk_cache=0x7fffffffe490, dev_cache=0x7fffffffe4a0, block_group_cache=0x7fffffffe470, dev_extent_cache=0x7fffffffe440, ri=0x76e3b0) at cmds-check.c:7655
+        buf = 0xce9860
+        rec = 0x820270
+        bytenr = 1721409388544
+        size = 16384
+        parent = 0
+        owner = 2
+        flags = 0
+        ptr = 0
+        gen = 0
+        ret = 0
+        i = 1
+        nritems = 173
+        key = {objectid = 0, type = 0 '\000', offset = 0}
+        cache = 0x8202a0
+        reada_bits = 0
+#6  0x000000000043ab71 in deal_root_from_list (list=0x7fffffffe120, root=0x76ded0, bits=0x76f9a0, bits_nr=1024, pending=0x7fffffffe410, seen=0x7fffffffe420, reada=0x7fffffffe400, nodes=0x7fffffffe3f0, extent_cache=0x7fffffffe430, 
+    chunk_cache=0x7fffffffe490, dev_cache=0x7fffffffe4a0, block_group_cache=0x7fffffffe470, dev_extent_cache=0x7fffffffe440) at cmds-check.c:9721
+        rec = 0x76e3b0
+        buf = 0xce9860
+        ret = 0
+        last = 1721409388544
+#7  0x000000000043b065 in check_chunks_and_extents (root=0x76ded0) at cmds-check.c:9888
+        dev_cache = {rb_node = 0x6fba90}
+        chunk_cache = {root = {rb_node = 0x7c70f0}}
+        block_group_cache = {tree = {root = {rb_node = 0x1abad10}}, block_groups = {next = 0x8aab70, prev = 0x619aa70}}
+        dev_extent_cache = {tree = {root = {rb_node = 0x61ac3e0}}, no_chunk_orphans = {next = 0x4451f50, prev = 0x61e57d0}, no_device_orphans = {next = 0x4451f60, prev = 0x61e57e0}}
+        extent_cache = {root = {rb_node = 0xaa4ee0}}
+        seen = {root = {rb_node = 0x6258810}}
+        pending = {root = {rb_node = 0x0}}
+        reada = {root = {rb_node = 0x0}}
+        nodes = {root = {rb_node = 0x0}}
+        excluded_extents = {state = {root = {rb_node = 0x0}}, cache = {root = {rb_node = 0x0}}, lru = {next = 0x7fffffffe3d0, prev = 0x7fffffffe3d0}, cache_size = 0}
+        corrupt_blocks = {root = {rb_node = 0x0}}
+        path = {nodes = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, slots = {0, 0, 0, 0, 0, 0, 0, 0}, reada = 0 '\000', lowest_level = 0 '\000', search_for_split = 0 '\000', skip_check_block = 0 '\000'}
+        key = {objectid = 0, type = 132 '\204', offset = 0}
+        found_key = {objectid = 18446744073709551607, type = 132 '\204', offset = 0}
+        ret = 1
+        err = 0
+        bits = 0x76f9a0
+        bits_nr = 1024
+        leaf = 0x7739b0
+        slot = 210
+        ri = {inode = {generation = 1, transid = 0, size = 3, nbytes = 16384, block_group = 0, nlink = 1, uid = 0, gid = 0, mode = 16877, rdev = 0, flags = 18446744071562067968, sequence = 0, reserved = {0, 0, 0, 0}, atime = {sec = 0, 
+              nsec = 0}, ctime = {sec = 0, nsec = 0}, mtime = {sec = 0, nsec = 0}, otime = {sec = 0, nsec = 0}}, generation = 8530, root_dirid = 256, bytenr = 1720076648448, byte_limit = 0, bytes_used = 16384, last_snapshot = 8523, 
+          flags = 0, refs = 1, drop_progress = {objectid = 0, type = 0 '\000', offset = 0}, drop_level = 0 '\000', level = 0 '\000', generation_v2 = 8530, uuid = '\000' <repeats 15 times>, parent_uuid = '\000' <repeats 15 times>, 
+          received_uuid = '\000' <repeats 15 times>, ctransid = 0, otransid = 0, stransid = 0, rtransid = 0, ctime = {sec = 0, nsec = 0}, otime = {sec = 0, nsec = 0}, stime = {sec = 0, nsec = 0}, rtime = {sec = 0, nsec = 0}, reserved = {
+            0, 0, 0, 0, 0, 0, 0, 0}}
+        dropping_trees = {next = 0x7fffffffe130, prev = 0x7fffffffe130}
+        normal_trees = {next = 0x76e3b0, prev = 0x76ebd0}
+        root1 = 0x6f5b10
+        objectid = 17
+        level_size = 16384
+        level = 0 '\000'
+#8  0x0000000000441b82 in cmd_check (argc=2, argv=0x7fffffffe740) at cmds-check.c:12918
+        root_cache = {root = {rb_node = 0x0}}
+        root = 0x76ded0
+        info = 0x6f5400
+        bytenr = 0
+        subvolid = 0
+        tree_root_bytenr = 0
+        chunk_root_bytenr = 0
+        uuidbuf = "21e09dd8-a54d-49ec-95cb-93fdd94f0c17"
+        ret = 0
+        err = 0
+        num = 140737488348640
+        init_csum_tree = 0
+        readonly = 0
+        clear_space_cache = 0
+        qgroup_report = 0
+        qgroups_repaired = 0
+        ctree_flags = 64
+#9  0x000000000040a734 in main (argc=2, argv=0x7fffffffe740) at btrfs.c:243
+        cmd = 0x6ec878
+        bname = 0x7fffffffe946 "btrfs"
+        ret = 0
+
+--Apple-Mail=_83D61CF0-1B71-45E9-A811-F9F9ACF2FF87--

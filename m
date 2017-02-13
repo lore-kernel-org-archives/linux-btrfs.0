@@ -1,111 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:17314 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:35027 "EHLO
         userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932927AbdBVRiy (ORCPT
+        with ESMTP id S1751352AbdBMXoY (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 22 Feb 2017 12:38:54 -0500
-Date: Wed, 22 Feb 2017 09:37:23 -0800
+        Mon, 13 Feb 2017 18:44:24 -0500
 From: Liu Bo <bo.li.liu@oracle.com>
-To: Filipe Manana <fdmanana@kernel.org>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: try harder to migrate items to left sibling
- before splitting a leaf
-Message-ID: <20170222173723.GA6018@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1487537799-17570-1-git-send-email-fdmanana@kernel.org>
- <20170222000756.GD32725@lim.localdomain>
- <CAL3q7H6H3zbvLPp0-7ttytM0yNCjz==Ra=K=s5wq6ThPGc7JVQ@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAL3q7H6H3zbvLPp0-7ttytM0yNCjz==Ra=K=s5wq6ThPGc7JVQ@mail.gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] Btrfs: fix if style in find_free_extent
+Date: Mon, 13 Feb 2017 15:43:29 -0800
+Message-Id: <1487029409-13562-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Feb 22, 2017 at 02:05:05PM +0000, Filipe Manana wrote:
-> On Wed, Feb 22, 2017 at 12:07 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
-> > On Sun, Feb 19, 2017 at 08:56:39PM +0000, fdmanana@kernel.org wrote:
-> >> From: Filipe Manana <fdmanana@suse.com>
-> >>
-> >> Before attempting to split a leaf we try to migrate items from the leaf to
-> >> its right and left siblings. We start by trying to move items into the
-> >> rigth sibling and, if the new item is meant to be inserted at the end of
-> >> our leaf, we try to free from our leaf an amount of bytes equal to the
-> >> number of bytes used by the new item, by setting the variable space_needed
-> >> to the byte size of that new item. However if we fail to move enough items
-> >> to the right sibling due to lack of space in that sibling, we then try
-> >> to move items into the left sibling, and in that case we try to free
-> >> an amount equal to the size of the new item from our leaf, when we need
-> >> only to free an amount corresponding to the size of the new item minus
-> >> the current free space of our leaf. So make sure that before we try to
-> >> move items to the left sibling we do set the variable space_needed with
-> >> a value corresponding to the new item's size minus the leaf's current
-> >> free space.
-> >>
-> >> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> >> ---
-> >>  fs/btrfs/ctree.c | 7 +++++++
-> >>  1 file changed, 7 insertions(+)
-> >>
-> >> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-> >> index a426dc8..1d66761 100644
-> >> --- a/fs/btrfs/ctree.c
-> >> +++ b/fs/btrfs/ctree.c
-> >> @@ -4160,6 +4160,9 @@ static noinline int push_for_double_split(struct btrfs_trans_handle *trans,
-> >>
-> >>       /* try to push all the items before our slot into the next leaf */
-> >>       slot = path->slots[0];
-> >> +     space_needed = data_size;
-> >> +     if (slot > 0)
-> >> +             space_needed -= btrfs_leaf_free_space(fs_info, path->nodes[0]);
-> >
-> > Good point.
-> >
-> >>       ret = push_leaf_left(trans, root, path, 1, space_needed, 0, slot);
-> >>       if (ret < 0)
-> >>               return ret;
-> >> @@ -4215,6 +4218,10 @@ static noinline int split_leaf(struct btrfs_trans_handle *trans,
-> >>               if (wret < 0)
-> >>                       return wret;
-> >>               if (wret) {
-> >> +                     space_needed = data_size;
-> >> +                     if (slot > 0)
-> >> +                             space_needed -= btrfs_leaf_free_space(fs_info,
-> >> +                                                                   l);
-> >
-> > Not sure if we need this, the above push_leaf_right() was called with
-> > @min_data_size == space_needed, thus if @wret == 1, no items have been moved in
-> > push_leaf_right() so that leaf 'l' remains unchanged.
-> 
-> That's exactly the point. If the item is meant to be appended and we
-> failed to move it into the right sibling, we want to try to move items
-> from the leaf into its left sibling with the goal of freeing
-> "new_item_size - leaf_free_space(l)" bytes from our leaf. Without this
-> new assignment, we try to free new_item_size bytes, which has higher
-> chances of not being successful at migrating items into the left
-> sibling (example, the left sibling has less than new_item_size bytes
-> free, but has at least "new_item_size - leaf_free_space(l)" bytes
-> free).
-> 
+This puts '&&' on the first line of if statement.
 
-I see, I missed that we didn't check (slot > 0) before
-push_leaf_right(), you may add
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/extent-tree.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 6832047..4cf332c 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -7789,8 +7789,8 @@ static noinline int find_free_extent(struct btrfs_root *orig_root,
+ 	}
+ 	up_read(&space_info->groups_sem);
+ 
+-	if ((loop == LOOP_CACHING_NOWAIT) && have_caching_bg
+-		&& !orig_have_caching_bg)
++	if ((loop == LOOP_CACHING_NOWAIT) && have_caching_bg &&
++	    !orig_have_caching_bg)
+ 		orig_have_caching_bg = true;
+ 
+ 	if (!ins->objectid && loop >= LOOP_CACHING_WAIT && have_caching_bg)
+-- 
+2.5.5
 
-Thanks,
-
--liubo
-> >
-> > Thanks,
-> >
-> > -liubo
-> >>                       wret = push_leaf_left(trans, root, path, space_needed,
-> >>                                             space_needed, 0, (u32)-1);
-> >>                       if (wret < 0)
-> >> --
-> >> 2.7.0.rc3
-> >>
-> >> --
-> >> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> >> the body of a message to majordomo@vger.kernel.org
-> >> More majordomo info at  http://vger.kernel.org/majordomo-info.html

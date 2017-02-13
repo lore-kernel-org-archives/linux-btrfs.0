@@ -1,132 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-34.italiaonline.it ([212.48.25.162]:56000 "EHLO libero.it"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751313AbdBMTVh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 13 Feb 2017 14:21:37 -0500
-Reply-To: kreijack@inwind.it
-Subject: Re: stat(2) returning device ID not existing in mountinfo
-References: <1474057691.16275.16.camel@xiaoka.com>
- <d5df5a17-fb7f-80a2-9308-66fe0e5335f3@suse.com>
-To: Jeff Mahoney <jeffm@suse.com>, linux-btrfs@vger.kernel.org
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Cc: Tomasz Sterna <tomek@xiaoka.com>,
-        Bernhard Voelker <mail@bernhard-voelker.de>
-Message-ID: <e18d2622-75b0-18c0-8e79-630bcee3a554@inwind.it>
-Date: Mon, 13 Feb 2017 20:21:34 +0100
+Received: from syrinx.knorrie.org ([82.94.188.77]:54374 "EHLO
+        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752199AbdBMUDX (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 13 Feb 2017 15:03:23 -0500
+Subject: Re: Root volume (ID 5) in deleting state
+To: =?UTF-8?B?TWFydGluIE1seW7DocWZ?= <nextsux@gmail.com>,
+        linux-btrfs@vger.kernel.org
+References: <ed8d7383-c75c-584e-4722-c889c6f19a46@gmail.com>
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Message-ID: <a103e413-d922-9c79-0075-1ce00a3cd7de@mendix.com>
+Date: Mon, 13 Feb 2017 21:03:18 +0100
 MIME-Version: 1.0
-In-Reply-To: <d5df5a17-fb7f-80a2-9308-66fe0e5335f3@suse.com>
+In-Reply-To: <ed8d7383-c75c-584e-4722-c889c6f19a46@gmail.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On 02/13/2017 12:26 PM, Martin Mlynář wrote:
+> 
+> I've currently run into strange problem with BTRFS. I'm using it as my
+> daily driver as root FS. Nothing complicated, just few subvolumes and
+> incremental backups using btrbk.
+> 
+> Now I've noticed that my btrfs root volume (absolute top, ID 5) is in
+> "deleting" state. As I've done some testing and googling it seems that
+> this should not be possible.
+> 
+> [...]
+> 
+> # btrfs sub list -ad /mnt/btrfs_root/
+> ID 5 gen 257505 top level 0 path <FS_TREE>/DELETED
 
-I want to highlight this bug another time.
+I have heard rumours that this is actually a bug in the output of sub
+list itself.
 
-I encountered this bug, when I was looking to a problem with find. I my machine find took an huge quantity of memory (up to 3GB) when used by updatedb.
+What's the version of your btrfs-progs? (output of `btrfs version`)
 
-	http://lists.gnu.org/archive/html/findutils-patches/2016-12/msg00000.html
+> # mount | grep btr
+> /dev/mapper/vg0-btrfsroot on / type btrfs
+> (rw,noatime,nodatasum,nodatacow,ssd,discard,space_cache,subvolid=1339,subvol=/rootfs)
+> 
+> /dev/mapper/vg0-btrfsroot on /mnt/btrfs_root type btrfs
+> (rw,noatime,nodatasum,nodatacow,ssd,discard,space_cache,subvolid=5,subvol=/)
 
-The root of the problem was a leak memory in find. What was strange however is that the findutils developers weren't unable to reproduce this bug. They find the leak, but not a so high memory usage.
+The rumour was that it had something to do with using space_cache=v2,
+which this example does not confirm.
 
-After some email, it was discovered that find (when used in updatedb) checks if the filesystem is changed during the tree walking. They checked the device-id returned by stat against the one returned by mountinfo.
+> # uname -a
+> Linux interceptor 4.9.6-1-ARCH #1 SMP PREEMPT Thu Jan 26 09:22:26 CET
+> 2017 x86_64 GNU/Linux
+> 
+> # btrfs fi show  /
+> Label: none  uuid: 859dec5c-850c-4660-ad99-bc87456aa309
+>     Total devices 1 FS bytes used 132.89GiB
+>     devid    1 size 200.00GiB used 200.00GiB path /dev/mapper/vg0-btrfsroot
 
-For btrfs these differ, and the check is repeat each time. Because the memory leak was per "filesystem check", using find on a btrfs filesystem caused a huge leak.
+As a side note, all of your disk space is allocated (200GiB of 200GiB).
 
-I hope that some btrfs developer could address this, because I suspect that a lot of tools compare the device id returned by /proc/self/mountinfo against the one returned by stat(2).
-
-
-BR
-G.Baroncelli
-
-
-
-
-On 2016-09-20 15:15, Jeff Mahoney wrote:
-> On 9/16/16 4:28 PM, Tomasz Sterna wrote:
->> Hi.
->>
->> I have spotted an issue with stat(2) call on files on btrfs.
->> It is giving me dev_t st_dev number that does not correspond to any
->> mounted filesystem in proc's mountinfo.
-> 
-> That's by design.  Your particular file system may only use one device
-> but, internally, btrfs uses virtualized storage that may be spread
-> across multiple devices.  To make things more complicated, snapshots
-> mean that:
-> 
-> sled1a:/mnt # btrfs sub list .
-> ID 257 gen 14 top level 5 path a
-> ID 258 gen 14 top level 5 path b
-> 
-> sled1a:/mnt # ls -laRi
-> .:
-> total 16
-> 256 drwxr-xr-x 1 root root   4 Sep 20 09:08 .
-> 256 drwxr-xr-x 1 root root 220 Sep 16 09:49 ..
-> 256 drwxr-xr-x 1 root root   8 Sep 14 10:24 a
-> 256 drwxr-xr-x 1 root root   8 Sep 14 10:24 b
-> 
-> ./a:
-> total 4112
-> 256 drwxr-xr-x 1 root root       8 Sep 14 10:24 .
-> 256 drwxr-xr-x 1 root root       4 Sep 20 09:08 ..
-> 257 -rw-r--r-- 1 root root 4194304 Sep 14 10:24 file
-> 
-> ./b:
-> total 4112
-> 256 drwxr-xr-x 1 root root       8 Sep 14 10:24 .
-> 256 drwxr-xr-x 1 root root       4 Sep 20 09:08 ..
-> 257 -rw-r--r-- 1 root root 4194304 Sep 14 10:24 file
-> 
-> Under normal circumstances those are two files with the same st_dev and
-> the same inode number.  That would normally correspond to a hard link,
-> but the files do not (necessarily) correspond to the same file.
-> 
-> ... but because we use anonymous device numbers for each subvolume, we
-> have different device numbers for each one.
-> 
-> sled1a:/mnt # stat --format "%n st_dev=%d" {a,b}/file
-> a/file st_dev=69
-> b/file st_dev=70
-> 
-> It's a pretty big usability wart that we don't consistently report the
-> device number.  We do it correctly in stat() but there are other places
-> in the code that assume that inode->i_sb->s_dev will work.  In the SUSE
-> kernels, we have patches that add a super_operation to report the
-> correct device number everywhere, but even that is a hack.
-> 
->> I already attempted a illinformed-patch in fs/btrfs/super.c:
->>
->> @@ -1127,6 +1127,7 @@ static int btrfs_fill_super(struct super_block *sb,
->>  		goto fail_close;
->>  	}
->>  
->> +	sb->s_dev = inode->i_sb->s_dev;
->>  	sb->s_root = d_make_root(inode);
->>  	if (!sb->s_root) {
->>  		err = -ENOMEM;
->>
->> but it didn't help.
-> 
-> It wouldn't.  That is assigning a variable to itself.
-> 
->> I would like to dig deeper and fix it, but first I have to ask:
->> - Which number is wrong?
->>   The one returned by stat() or the one in mountinfo?
-> 
-> The one in mountinfo, but then that means that the user only sees the
-> anonymous devices in mount(8), which isn't what we want either.
-> 
-> I'm afraid the correct fix is very involved and requires non-trivial
-> changes in the VFS layer as well.  It's on my long-term TODO list.  I
-> currently have some patches that do the magic with vfsmounts but it's
-> far from being usable.
-> 
-> -Jeff
-> 
-
+Even while there's still 70GiB of free space scattered around inside,
+this might lead to out-of-space issues, depending on how badly
+fragmented that free space is.
 
 -- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+Hans van Kranenburg

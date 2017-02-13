@@ -1,55 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35772 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751693AbdBIND5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 9 Feb 2017 08:03:57 -0500
-Date: Thu, 9 Feb 2017 13:12:12 +0100
-From: Jan Kara <jack@suse.cz>
-To: "Dilger, Andreas" <andreas.dilger@intel.com>
-Cc: Jan Kara <jack@suse.cz>,
-        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
-        "linux-block@vger.kernel.org" <linux-block@vger.kernel.org>,
-        "linux-nfs@vger.kernel.org" <linux-nfs@vger.kernel.org>,
-        "linux-nilfs@vger.kernel.org" <linux-nilfs@vger.kernel.org>,
-        "linux-cifs@vger.kernel.org" <linux-cifs@vger.kernel.org>,
-        "ecryptfs@vger.kernel.org" <ecryptfs@vger.kernel.org>,
-        "codalist@coda.cs.cmu.edu" <codalist@TELEMANN.coda.cs.cmu.edu>,
-        Christoph Hellwig <hch@infradead.org>,
-        "cluster-devel@redhat.com" <cluster-devel@redhat.com>,
-        "linux-mtd@lists.infradead.org" <linux-mtd@lists.infradead.org>,
-        "osd-dev@open-osd.org" <osd-dev@open-osd.org>,
-        "v9fs-developer@lists.sourceforge.net"
-        <v9fs-developer@lists.sourceforge.net>,
-        "ceph-devel@vger.kernel.org" <ceph-devel@vger.kernel.org>,
-        Petr Vandrovec <petr@vandrovec.name>,
-        "linux-afs@lists.infradead.org" <linux-afs@lists.infradead.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "lustre-devel@lists.lustre.org" <lustre-devel@lists.lustre.org>
-Subject: Re: [lustre-devel] [PATCH 04/24] fs: Provide infrastructure for
- dynamic        BDIs in filesystems
-Message-ID: <20170209121212.GD16825@quack2.suse.cz>
-References: <20170202173422.3240-1-jack@suse.cz>
- <20170202173422.3240-5-jack@suse.cz>
- <C01BF300-AD67-4A3E-810F-AAB2EEB90B97@intel.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <C01BF300-AD67-4A3E-810F-AAB2EEB90B97@intel.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:17518 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751310AbdBMXgK (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 13 Feb 2017 18:36:10 -0500
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] Btrfs: specify a new ordered extent type for create_io_em
+Date: Mon, 13 Feb 2017 15:35:09 -0800
+Message-Id: <1487028909-8694-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> > @@ -1249,6 +1254,50 @@ mount_fs(struct file_system_type *type, int flags, const char *name, void *data)
-> > }
-> > 
-> > /*
-> > + * Setup private BDI for given superblock. I gets automatically cleaned up
-> 
-> (typo) s/I/It/
-> 
-> Looks fine otherwise.
+As 0 refers to an existing type BTRFS_ORDERED_IO_DONE, this specifies a
+new type 'REGULAR' for regular IO.
 
-Thanks, fixed.
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+This fixes the problem in the patch
+"[PATCH] Btrfs: create a helper to create em for IO".
 
-								Honza
+ fs/btrfs/inode.c        | 8 ++++----
+ fs/btrfs/ordered-data.h | 2 ++
+ 2 files changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 5e28355..f75c914 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -986,7 +986,7 @@ static noinline int cow_file_range(struct inode *inode,
+ 				  ins.offset, /* orig_block_len */
+ 				  ram_size, /* ram_bytes */
+ 				  BTRFS_COMPRESS_NONE, /* compress_type */
+-				  0 /* type */);
++				  BTRFS_ORDERED_REGULAR /* type */);
+ 		if (IS_ERR(em))
+ 			goto out_reserve;
+ 		free_extent_map(em);
+@@ -7490,7 +7490,7 @@ static struct extent_map *create_io_em(struct inode *inode, u64 start, u64 len,
+ 	ASSERT(type == BTRFS_ORDERED_PREALLOC ||
+ 	       type == BTRFS_ORDERED_COMPRESSED ||
+ 	       type == BTRFS_ORDERED_NOCOW ||
+-	       type == 0);
++	       type == BTRFS_ORDERED_REGULAR);
+ 
+ 	em_tree = &BTRFS_I(inode)->extent_tree;
+ 	em = alloc_extent_map();
+@@ -7507,9 +7507,9 @@ static struct extent_map *create_io_em(struct inode *inode, u64 start, u64 len,
+ 	em->ram_bytes = ram_bytes;
+ 	em->generation = -1;
+ 	set_bit(EXTENT_FLAG_PINNED, &em->flags);
+-	if (type == BTRFS_ORDERED_PREALLOC)
++	if (type == BTRFS_ORDERED_PREALLOC) {
+ 		set_bit(EXTENT_FLAG_FILLING, &em->flags);
+-	else if (type == BTRFS_ORDERED_COMPRESSED) {
++	} else if (type == BTRFS_ORDERED_COMPRESSED) {
+ 		set_bit(EXTENT_FLAG_COMPRESSED, &em->flags);
+ 		em->compress_type = compress_type;
+ 	}
+diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
+index 5f2b0ca..db003761 100644
+--- a/fs/btrfs/ordered-data.h
++++ b/fs/btrfs/ordered-data.h
+@@ -75,6 +75,8 @@ struct btrfs_ordered_sum {
+ 				 * in the logging code. */
+ #define BTRFS_ORDERED_PENDING 11 /* We are waiting for this ordered extent to
+ 				  * complete in the current transaction. */
++#define BTRFS_ORDERED_REGULAR 12 /* Regular IO for COW */
++
+ struct btrfs_ordered_extent {
+ 	/* logical offset in the file */
+ 	u64 file_offset;
 -- 
-Jan Kara <jack@suse.com>
-SUSE Labs, CR
+2.5.5
+

@@ -1,56 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:17044 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752481AbdBNTGO (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 14 Feb 2017 14:06:14 -0500
-Date: Tue, 14 Feb 2017 11:05:18 -0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: use helper to get used bytes of space_info
-Message-ID: <20170214190518.GB31091@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1487029341-12911-1-git-send-email-bo.li.liu@oracle.com>
- <20170214155606.GO16928@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170214155606.GO16928@twin.jikos.cz>
+Received: from mx2.suse.de ([195.135.220.15]:37617 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750975AbdBMNue (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 13 Feb 2017 08:50:34 -0500
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org, clm@fb.com
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH 0/4] More GFP_NOFS removals
+Date: Mon, 13 Feb 2017 14:50:04 +0100
+Message-Id: <cover.1486993643.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Feb 14, 2017 at 04:56:06PM +0100, David Sterba wrote:
-> On Mon, Feb 13, 2017 at 03:42:21PM -0800, Liu Bo wrote:
-> > This uses a helper instead of open code around used byte of space_info
-> > everywhere.
-> > 
-> > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> 
-> Reviewed-by: David Sterba <dsterba@suse.com>
-> 
-> > ---
-> >  fs/btrfs/extent-tree.c | 42 ++++++++++++++++++++----------------------
-> >  1 file changed, 20 insertions(+), 22 deletions(-)
-> > 
-> > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> > index 097fa4a..b2b0b82 100644
-> > --- a/fs/btrfs/extent-tree.c
-> > +++ b/fs/btrfs/extent-tree.c
-> > @@ -4118,6 +4118,15 @@ u64 btrfs_get_alloc_profile(struct btrfs_root *root, int data)
-> >  	return ret;
-> >  }
-> >  
-> > +static u64 btrfs_space_info_used(struct btrfs_space_info *s_info,
-> > +				 bool may_used_included)
-> > +{
-> > +	ASSERT(s_info);
-> > +	return s_info->bytes_used + s_info->bytes_reserved +
-> > +		s_info->bytes_pinned + s_info->bytes_readonly +
-> > +		((may_used_included) ? s_info->bytes_may_use : 0);
-> 
-> I'd rename may_used_included to 'may_use_included' so it matches bytes_may_use.
+A few more conversions to less strict allocation flags, calls originating from
+an ioctl and with no chance of getting back with a lock already held. For 4.11.
 
-I agree, it sounds better.
 
-Thanks,
+The following changes since commit 2e94257a41fece589dc4bd737c70dc770e9040ef:
 
--liubo
+  btrfs: Better csum error message for data csum mismatch (2017-02-10 18:04:51 +0100)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git dev/less-nofs
+
+for you to fetch changes up to 8d310939a7d232fc71524fdf83f5a8fdbd5eb31c:
+
+  btrfs: use GFP_KERNEL in btrfs_add/del_qgroup_relation (2017-02-13 13:11:29 +0100)
+
+----------------------------------------------------------------
+David Sterba (4):
+      btrfs: use GFP_KERNEL in create_snapshot
+      btrfs: use GFP_KERNEL in btrfs_read_qgroup_config
+      btrfs: use GFP_KERNEL in btrfs_quota_enable
+      btrfs: use GFP_KERNEL in btrfs_add/del_qgroup_relation
+
+ fs/btrfs/ioctl.c  | 4 ++--
+ fs/btrfs/qgroup.c | 8 ++++----
+ 2 files changed, 6 insertions(+), 6 deletions(-)

@@ -1,103 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41581 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:41626 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752201AbdBMJeT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 13 Feb 2017 04:34:19 -0500
+        id S1752312AbdBMJep (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 13 Feb 2017 04:34:45 -0500
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id BFF0BAC53
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 Feb 2017 09:34:17 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 89C5DABD9
+        for <linux-btrfs@vger.kernel.org>; Mon, 13 Feb 2017 09:34:39 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 09/29] btrfs: remove unused parameter from btrfs_subvolume_release_metadata
-Date: Mon, 13 Feb 2017 10:33:49 +0100
-Message-Id: <90fed184def9887b599c7d09e8da49ee9d2f3130.1486977712.git.dsterba@suse.com>
+Subject: [PATCH 16/29] btrfs: remove unused parameter from add_pending_csums
+Date: Mon, 13 Feb 2017 10:34:10 +0100
+Message-Id: <9ceb2cc30952a3af639e31c4f51c380f3ce0ffad.1486977712.git.dsterba@suse.com>
 In-Reply-To: <cover.1486977711.git.dsterba@suse.com>
 References: <cover.1486977711.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Unused since qgroup refactoring that split data and metadata accounting,
-the btrfs_qgroup_free helper.
+Never used.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/ctree.h       |  3 +--
- fs/btrfs/extent-tree.c |  3 +--
- fs/btrfs/ioctl.c       | 11 ++++-------
- 3 files changed, 6 insertions(+), 11 deletions(-)
+ fs/btrfs/inode.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 1692ebb05955..0f5b85772023 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2703,8 +2703,7 @@ int btrfs_subvolume_reserve_metadata(struct btrfs_root *root,
- 				     int nitems,
- 				     u64 *qgroup_reserved, bool use_global_rsv);
- void btrfs_subvolume_release_metadata(struct btrfs_fs_info *fs_info,
--				      struct btrfs_block_rsv *rsv,
--				      u64 qgroup_reserved);
-+				      struct btrfs_block_rsv *rsv);
- int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes);
- void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes);
- int btrfs_delalloc_reserve_space(struct inode *inode, u64 start, u64 len);
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 9e8d6c2e7a64..b33e2c8325c8 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -5826,8 +5826,7 @@ int btrfs_subvolume_reserve_metadata(struct btrfs_root *root,
- }
- 
- void btrfs_subvolume_release_metadata(struct btrfs_fs_info *fs_info,
--				      struct btrfs_block_rsv *rsv,
--				      u64 qgroup_reserved)
-+				      struct btrfs_block_rsv *rsv)
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 7ed693294498..3ac7474f921d 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1961,8 +1961,7 @@ static int btrfs_submit_bio_hook(struct inode *inode, struct bio *bio,
+  * at IO completion time based on sums calculated at bio submission time.
+  */
+ static noinline int add_pending_csums(struct btrfs_trans_handle *trans,
+-			     struct inode *inode, u64 file_offset,
+-			     struct list_head *list)
++			     struct inode *inode, struct list_head *list)
  {
- 	btrfs_block_rsv_release(fs_info, rsv, (u64)-1);
- }
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 77f93a1e65c7..e8c7c313c113 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -487,8 +487,7 @@ static noinline int create_subvol(struct inode *dir,
- 	trans = btrfs_start_transaction(root, 0);
- 	if (IS_ERR(trans)) {
- 		ret = PTR_ERR(trans);
--		btrfs_subvolume_release_metadata(fs_info, &block_rsv,
--						 qgroup_reserved);
-+		btrfs_subvolume_release_metadata(fs_info, &block_rsv);
- 		goto fail_free;
- 	}
- 	trans->block_rsv = &block_rsv;
-@@ -613,7 +612,7 @@ static noinline int create_subvol(struct inode *dir,
- 	kfree(root_item);
- 	trans->block_rsv = NULL;
- 	trans->bytes_reserved = 0;
--	btrfs_subvolume_release_metadata(fs_info, &block_rsv, qgroup_reserved);
-+	btrfs_subvolume_release_metadata(fs_info, &block_rsv);
+ 	struct btrfs_ordered_sum *sum;
  
- 	if (async_transid) {
- 		*async_transid = trans->transid;
-@@ -753,9 +752,7 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
- 	d_instantiate(dentry, inode);
- 	ret = 0;
- fail:
--	btrfs_subvolume_release_metadata(fs_info,
--					 &pending_snapshot->block_rsv,
--					 pending_snapshot->qgroup_reserved);
-+	btrfs_subvolume_release_metadata(fs_info, &pending_snapshot->block_rsv);
- dec_and_free:
- 	if (atomic_dec_and_test(&root->will_be_snapshoted))
- 		wake_up_atomic_t(&root->will_be_snapshoted);
-@@ -2555,7 +2552,7 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
- 		err = ret;
- 	inode->i_flags |= S_DEAD;
- out_release:
--	btrfs_subvolume_release_metadata(fs_info, &block_rsv, qgroup_reserved);
-+	btrfs_subvolume_release_metadata(fs_info, &block_rsv);
- out_up_write:
- 	up_write(&fs_info->subvol_sem);
- 	if (err) {
+@@ -2956,8 +2955,7 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
+ 		goto out_unlock;
+ 	}
+ 
+-	add_pending_csums(trans, inode, ordered_extent->file_offset,
+-			  &ordered_extent->list);
++	add_pending_csums(trans, inode, &ordered_extent->list);
+ 
+ 	btrfs_ordered_update_i_size(inode, 0, ordered_extent);
+ 	ret = btrfs_update_inode_fallback(trans, root, inode);
 -- 
 2.10.1
 

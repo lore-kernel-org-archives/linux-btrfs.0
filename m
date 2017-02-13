@@ -1,53 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41778 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:41825 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752324AbdBMJer (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 13 Feb 2017 04:34:47 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id B75F0AC53
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 Feb 2017 09:34:45 +0000 (UTC)
+        id S1752382AbdBMJfB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 13 Feb 2017 04:35:01 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id DD01BAD22
+        for <linux-btrfs@vger.kernel.org>; Mon, 13 Feb 2017 09:34:54 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 18/29] btrfs: remove unused parameter from btrfs_fill_super
-Date: Mon, 13 Feb 2017 10:34:16 +0100
-Message-Id: <a644ec1f6d10a61e4f0f5fcb313cf9d0894e9876.1486977712.git.dsterba@suse.com>
+Subject: [PATCH 21/29] btrfs: remove unused parameter from create_snapshot
+Date: Mon, 13 Feb 2017 10:34:26 +0100
+Message-Id: <f4031b3ded1796ebf212a2b2c94e17344f625540.1486977712.git.dsterba@suse.com>
 In-Reply-To: <cover.1486977711.git.dsterba@suse.com>
 References: <cover.1486977711.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Never used for anything meaningful since we have our own superblock
-filler.
+The name parameters have never been used, as the name is passed via the
+dentry.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/super.c | 5 ++---
- 1 file changed, 2 insertions(+), 3 deletions(-)
+ fs/btrfs/ioctl.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 93ed29c2a38b..da687dc79cce 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1114,7 +1114,7 @@ static int get_default_subvol_objectid(struct btrfs_fs_info *fs_info, u64 *objec
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index e8c7c313c113..91188a2ac5a1 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -656,7 +656,7 @@ static void btrfs_wait_for_no_snapshoting_writes(struct btrfs_root *root)
+ }
  
- static int btrfs_fill_super(struct super_block *sb,
- 			    struct btrfs_fs_devices *fs_devices,
--			    void *data, int silent)
-+			    void *data)
+ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
+-			   struct dentry *dentry, char *name, int namelen,
++			   struct dentry *dentry,
+ 			   u64 *async_transid, bool readonly,
+ 			   struct btrfs_qgroup_inherit *inherit)
  {
- 	struct inode *inode;
- 	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
-@@ -1611,8 +1611,7 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
+@@ -871,7 +871,7 @@ static noinline int btrfs_mksubvol(const struct path *parent,
+ 		goto out_up_read;
+ 
+ 	if (snap_src) {
+-		error = create_snapshot(snap_src, dir, dentry, name, namelen,
++		error = create_snapshot(snap_src, dir, dentry,
+ 					async_transid, readonly, inherit);
  	} else {
- 		snprintf(s->s_id, sizeof(s->s_id), "%pg", bdev);
- 		btrfs_sb(s)->bdev_holder = fs_type;
--		error = btrfs_fill_super(s, fs_devices, data,
--					 flags & MS_SILENT ? 1 : 0);
-+		error = btrfs_fill_super(s, fs_devices, data);
- 	}
- 	if (error) {
- 		deactivate_locked_super(s);
+ 		error = create_subvol(dir, dentry, name, namelen,
 -- 
 2.10.1
 

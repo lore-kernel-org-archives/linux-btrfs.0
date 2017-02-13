@@ -1,50 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37621 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:37626 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752158AbdBMNuh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 13 Feb 2017 08:50:37 -0500
+        id S1751786AbdBMNup (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 13 Feb 2017 08:50:45 -0500
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 2E148AD51
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 Feb 2017 13:50:36 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 4D11AAD51
+        for <linux-btrfs@vger.kernel.org>; Mon, 13 Feb 2017 13:50:39 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 1/4] btrfs: use GFP_KERNEL in create_snapshot
-Date: Mon, 13 Feb 2017 14:50:07 +0100
-Message-Id: <831a051f04e79799adfa79e0884f5a6992c846f1.1486993643.git.dsterba@suse.com>
+Subject: [PATCH 2/4] btrfs: use GFP_KERNEL in btrfs_read_qgroup_config
+Date: Mon, 13 Feb 2017 14:50:10 +0100
+Message-Id: <908441dd1cc1b194326dae35c36715fc27d86bdf.1486993643.git.dsterba@suse.com>
 In-Reply-To: <cover.1486993643.git.dsterba@suse.com>
 References: <cover.1486993643.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We don't need to use GFP_NOFS here as this is called from ioctls an the
-only lock held is the subvol_sem, which is of a high level and protects
-creation/renames/deletion and is never held in the writeout paths.
+The qgroup config is read during mount, we do not have to use NOFS.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/ioctl.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/qgroup.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 77f93a1e65c7..f65ace58dd2c 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -670,12 +670,12 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
- 	if (!test_bit(BTRFS_ROOT_REF_COWS, &root->state))
- 		return -EINVAL;
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 8496dbf3f38b..cdd0a16bf469 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -319,7 +319,7 @@ int btrfs_read_qgroup_config(struct btrfs_fs_info *fs_info)
+ 	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags))
+ 		return 0;
  
--	pending_snapshot = kzalloc(sizeof(*pending_snapshot), GFP_NOFS);
-+	pending_snapshot = kzalloc(sizeof(*pending_snapshot), GFP_KERNEL);
- 	if (!pending_snapshot)
- 		return -ENOMEM;
- 
- 	pending_snapshot->root_item = kzalloc(sizeof(struct btrfs_root_item),
--			GFP_NOFS);
-+			GFP_KERNEL);
- 	pending_snapshot->path = btrfs_alloc_path();
- 	if (!pending_snapshot->root_item || !pending_snapshot->path) {
+-	fs_info->qgroup_ulist = ulist_alloc(GFP_NOFS);
++	fs_info->qgroup_ulist = ulist_alloc(GFP_KERNEL);
+ 	if (!fs_info->qgroup_ulist) {
  		ret = -ENOMEM;
+ 		goto out;
 -- 
 2.10.1
 

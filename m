@@ -1,53 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41626 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:41694 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752312AbdBMJep (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 13 Feb 2017 04:34:45 -0500
+        id S1752324AbdBMJes (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 13 Feb 2017 04:34:48 -0500
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 89C5DABD9
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 Feb 2017 09:34:39 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id A3AE7AD26
+        for <linux-btrfs@vger.kernel.org>; Mon, 13 Feb 2017 09:34:42 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 16/29] btrfs: remove unused parameter from add_pending_csums
-Date: Mon, 13 Feb 2017 10:34:10 +0100
-Message-Id: <9ceb2cc30952a3af639e31c4f51c380f3ce0ffad.1486977712.git.dsterba@suse.com>
+Subject: [PATCH 17/29] btrfs: remove unused parameter from extent_write_cache_pages
+Date: Mon, 13 Feb 2017 10:34:13 +0100
+Message-Id: <43296f2bae8942890fda6c428617fb474c812696.1486977712.git.dsterba@suse.com>
 In-Reply-To: <cover.1486977711.git.dsterba@suse.com>
 References: <cover.1486977711.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Never used.
+The 'tree' was used to call locking hook that does not exist anymore.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/inode.c | 6 ++----
+ fs/btrfs/extent_io.c | 6 ++----
  1 file changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 7ed693294498..3ac7474f921d 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1961,8 +1961,7 @@ static int btrfs_submit_bio_hook(struct inode *inode, struct bio *bio,
-  * at IO completion time based on sums calculated at bio submission time.
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index f683fa5a4b91..22a2f2fa62c7 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3916,8 +3916,7 @@ int btree_write_cache_pages(struct address_space *mapping,
+  * WB_SYNC_ALL then we were called for data integrity and we must wait for
+  * existing IO to complete.
   */
- static noinline int add_pending_csums(struct btrfs_trans_handle *trans,
--			     struct inode *inode, u64 file_offset,
--			     struct list_head *list)
-+			     struct inode *inode, struct list_head *list)
- {
- 	struct btrfs_ordered_sum *sum;
+-static int extent_write_cache_pages(struct extent_io_tree *tree,
+-			     struct address_space *mapping,
++static int extent_write_cache_pages(struct address_space *mapping,
+ 			     struct writeback_control *wbc,
+ 			     writepage_t writepage, void *data,
+ 			     void (*flush_fn)(void *))
+@@ -4158,8 +4157,7 @@ int extent_writepages(struct extent_io_tree *tree,
+ 		.bio_flags = 0,
+ 	};
  
-@@ -2956,8 +2955,7 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
- 		goto out_unlock;
- 	}
- 
--	add_pending_csums(trans, inode, ordered_extent->file_offset,
--			  &ordered_extent->list);
-+	add_pending_csums(trans, inode, &ordered_extent->list);
- 
- 	btrfs_ordered_update_i_size(inode, 0, ordered_extent);
- 	ret = btrfs_update_inode_fallback(trans, root, inode);
+-	ret = extent_write_cache_pages(tree, mapping, wbc,
+-				       __extent_writepage, &epd,
++	ret = extent_write_cache_pages(mapping, wbc, __extent_writepage, &epd,
+ 				       flush_write_bio);
+ 	flush_epd_write_bio(&epd);
+ 	return ret;
 -- 
 2.10.1
 

@@ -1,70 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:23483 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751507AbdBNCAs (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:42172 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751714AbdBNCNv (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 13 Feb 2017 21:00:48 -0500
-Date: Mon, 13 Feb 2017 17:59:53 -0800
+        Mon, 13 Feb 2017 21:13:51 -0500
+Date: Mon, 13 Feb 2017 18:11:56 -0800
 From: Liu Bo <bo.li.liu@oracle.com>
 To: David Sterba <dsterba@suse.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 05/29] btrfs: remove unused parameter from
- write_dev_supers
-Message-ID: <20170214015953.GB24037@localhost.localdomain>
+Subject: Re: [PATCH 11/29] btrfs: remove unused parameter from
+ btrfs_check_super_valid
+Message-ID: <20170214021156.GC24037@localhost.localdomain>
 Reply-To: bo.li.liu@oracle.com
 References: <cover.1486977711.git.dsterba@suse.com>
- <6a514256c5f13576cc002182224e39be8a2bc05e.1486977712.git.dsterba@suse.com>
+ <30b7866b2b154b6bbdf3959dfd4ecc754e78c208.1486977712.git.dsterba@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <6a514256c5f13576cc002182224e39be8a2bc05e.1486977712.git.dsterba@suse.com>
+In-Reply-To: <30b7866b2b154b6bbdf3959dfd4ecc754e78c208.1486977712.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 13, 2017 at 10:33:36AM +0100, David Sterba wrote:
-> The barriers are handled by the caller.
+On Mon, Feb 13, 2017 at 10:33:55AM +0100, David Sterba wrote:
+> None of the checks need to know the RO/RW status.
 >
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+OK...there was a readonly check, which lets us skip all checks,
+it was removed by the below commit, should we add the check back?
+
+commit 1104a8855109a4051d74977f819a13b4516aa11e
+Author: David Sterba <dsterba@suse.cz>
+Date:   Wed Mar 6 15:57:46 2013 +0100
+
+btrfs: enhance superblock checks
+
+The superblock checksum is not verified upon mount. <awkward silence>
+
+Add that check and also reorder existing checks to a more logical
+order.
+
+Current mkfs.btrfs does not calculate the correct checksum of
+super_block and thus a freshly created filesytem will fail to mount when
+this patch is applied.
+
+First transaction commit calculates correct superblock checksum and
+saves it to disk.
+
+Reproducer:
+$ mfks.btrfs /dev/sda
+$ mount /dev/sda /mnt
+$ btrfs scrub start /mnt
+$ sleep 5
+$ btrfs scrub status /mnt
+... super:2 ...
+
+Signed-off-by: David Sterba <dsterba@suse.cz>
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+Signed-off-by: Chris Mason <chris.mason@fusionio.com>
 
 Thanks,
 
 -liubo
+
 > Signed-off-by: David Sterba <dsterba@suse.com>
 > ---
->  fs/btrfs/disk-io.c | 6 +++---
->  1 file changed, 3 insertions(+), 3 deletions(-)
+>  fs/btrfs/disk-io.c | 8 +++-----
+>  1 file changed, 3 insertions(+), 5 deletions(-)
 > 
 > diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 48846d215e97..43e71457c193 100644
+> index 441a62cd0351..2b06f557c176 100644
 > --- a/fs/btrfs/disk-io.c
 > +++ b/fs/btrfs/disk-io.c
-> @@ -3410,7 +3410,7 @@ struct buffer_head *btrfs_read_dev_super(struct block_device *bdev)
->   */
->  static int write_dev_supers(struct btrfs_device *device,
->  			    struct btrfs_super_block *sb,
-> -			    int do_barriers, int wait, int max_mirrors)
-> +			    int wait, int max_mirrors)
+> @@ -64,8 +64,7 @@
+>  static const struct extent_io_ops btree_extent_io_ops;
+>  static void end_workqueue_fn(struct btrfs_work *work);
+>  static void free_fs_root(struct btrfs_root *root);
+> -static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
+> -				    int read_only);
+> +static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info);
+>  static void btrfs_destroy_ordered_extents(struct btrfs_root *root);
+>  static int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
+>  				      struct btrfs_fs_info *fs_info);
+> @@ -2801,7 +2800,7 @@ int open_ctree(struct super_block *sb,
+>  
+>  	memcpy(fs_info->fsid, fs_info->super_copy->fsid, BTRFS_FSID_SIZE);
+>  
+> -	ret = btrfs_check_super_valid(fs_info, sb->s_flags & MS_RDONLY);
+> +	ret = btrfs_check_super_valid(fs_info);
+>  	if (ret) {
+>  		btrfs_err(fs_info, "superblock contains fatal errors");
+>  		err = -EINVAL;
+> @@ -4115,8 +4114,7 @@ int btrfs_read_buffer(struct extent_buffer *buf, u64 parent_transid)
+>  	return btree_read_extent_buffer_pages(fs_info, buf, parent_transid);
+>  }
+>  
+> -static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
+> -			      int read_only)
+> +static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info)
 >  {
->  	struct buffer_head *bh;
->  	int i;
-> @@ -3752,7 +3752,7 @@ static int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors)
->  		flags = btrfs_super_flags(sb);
->  		btrfs_set_super_flags(sb, flags | BTRFS_HEADER_FLAG_WRITTEN);
->  
-> -		ret = write_dev_supers(dev, sb, do_barriers, 0, max_mirrors);
-> +		ret = write_dev_supers(dev, sb, 0, max_mirrors);
->  		if (ret)
->  			total_errors++;
->  	}
-> @@ -3775,7 +3775,7 @@ static int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors)
->  		if (!dev->in_fs_metadata || !dev->writeable)
->  			continue;
->  
-> -		ret = write_dev_supers(dev, sb, do_barriers, 1, max_mirrors);
-> +		ret = write_dev_supers(dev, sb, 1, max_mirrors);
->  		if (ret)
->  			total_errors++;
->  	}
+>  	struct btrfs_super_block *sb = fs_info->super_copy;
+>  	u64 nodesize = btrfs_super_nodesize(sb);
 > -- 
 > 2.10.1
 > 

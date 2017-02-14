@@ -1,86 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:20528 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:36259 "EHLO
         userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753126AbdBNTL0 (ORCPT
+        with ESMTP id S1751371AbdBNTgH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 14 Feb 2017 14:11:26 -0500
-Date: Tue, 14 Feb 2017 11:10:32 -0800
+        Tue, 14 Feb 2017 14:36:07 -0500
+Date: Tue, 14 Feb 2017 11:35:11 -0800
 From: Liu Bo <bo.li.liu@oracle.com>
 To: David Sterba <dsterba@suse.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 14/29] btrfs: remove unused parameter from
- submit_extent_page
-Message-ID: <20170214191031.GC31091@localhost.localdomain>
+Subject: Re: [PATCH 17/29] btrfs: remove unused parameter from
+ extent_write_cache_pages
+Message-ID: <20170214193511.GD31091@localhost.localdomain>
 Reply-To: bo.li.liu@oracle.com
 References: <cover.1486977711.git.dsterba@suse.com>
- <ac49126de7d3f5dbdea72584f46befd549d084f4.1486977712.git.dsterba@suse.com>
+ <43296f2bae8942890fda6c428617fb474c812696.1486977712.git.dsterba@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <ac49126de7d3f5dbdea72584f46befd549d084f4.1486977712.git.dsterba@suse.com>
+In-Reply-To: <43296f2bae8942890fda6c428617fb474c812696.1486977712.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 13, 2017 at 10:34:04AM +0100, David Sterba wrote:
-> This used to hold number of maximum pages to allocate, but this is now
-> limited by BIO_MAX_PAGES.
+On Mon, Feb 13, 2017 at 10:34:13AM +0100, David Sterba wrote:
+> The 'tree' was used to call locking hook that does not exist anymore.
 > 
 > Signed-off-by: David Sterba <dsterba@suse.com>
 > ---
->  fs/btrfs/extent_io.c | 7 +++----
->  1 file changed, 3 insertions(+), 4 deletions(-)
+>  fs/btrfs/extent_io.c | 6 ++----
+>  1 file changed, 2 insertions(+), 4 deletions(-)
 > 
 > diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index 9df6ed30de00..00f3be5c4f2d 100644
+> index f683fa5a4b91..22a2f2fa62c7 100644
 > --- a/fs/btrfs/extent_io.c
 > +++ b/fs/btrfs/extent_io.c
-> @@ -2759,7 +2759,6 @@ static int submit_extent_page(int op, int op_flags, struct extent_io_tree *tree,
->  			      size_t size, unsigned long offset,
->  			      struct block_device *bdev,
->  			      struct bio **bio_ret,
-> -			      unsigned long max_pages,
->  			      bio_end_io_t end_io_func,
->  			      int mirror_num,
->  			      unsigned long prev_bio_flags,
-> @@ -3063,7 +3062,7 @@ static int __do_readpage(struct extent_io_tree *tree,
->  		pnr -= page->index;
->  		ret = submit_extent_page(REQ_OP_READ, read_flags, tree, NULL,
->  					 page, sector, disk_io_size, pg_offset,
-> -					 bdev, bio, pnr,
-> +					 bdev, bio,
->  					 end_bio_extent_readpage, mirror_num,
->  					 *bio_flags,
->  					 this_bio_flag,
-
-@pnr is only used here, it can be removed, too.
-
-> @@ -3434,7 +3433,7 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
+> @@ -3916,8 +3916,7 @@ int btree_write_cache_pages(struct address_space *mapping,
+>   * WB_SYNC_ALL then we were called for data integrity and we must wait for
+>   * existing IO to complete.
+>   */
+> -static int extent_write_cache_pages(struct extent_io_tree *tree,
+> -			     struct address_space *mapping,
+> +static int extent_write_cache_pages(struct address_space *mapping,
+>  			     struct writeback_control *wbc,
+>  			     writepage_t writepage, void *data,
+>  			     void (*flush_fn)(void *))
+> @@ -4158,8 +4157,7 @@ int extent_writepages(struct extent_io_tree *tree,
+>  		.bio_flags = 0,
+>  	};
 >  
->  		ret = submit_extent_page(REQ_OP_WRITE, write_flags, tree, wbc,
->  					 page, sector, iosize, pg_offset,
-> -					 bdev, &epd->bio, max_nr,
-> +					 bdev, &epd->bio,
->  					 end_bio_extent_writepage,
->  					 0, 0, 0, false);
->  		if (ret) {
+> -	ret = extent_write_cache_pages(tree, mapping, wbc,
+> -				       __extent_writepage, &epd,
+> +	ret = extent_write_cache_pages(mapping, wbc, __extent_writepage, &epd,
+>  				       flush_write_bio);
 
-So does @max_nr.
-
-With removing those two,
-
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+Are we going to leave {btrfs,extent}_{read,write}pages untouched?
 
 Thanks,
 
 -liubo
-> @@ -3751,7 +3750,7 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
->  		set_page_writeback(p);
->  		ret = submit_extent_page(REQ_OP_WRITE, write_flags, tree, wbc,
->  					 p, offset >> 9, PAGE_SIZE, 0, bdev,
-> -					 &epd->bio, -1,
-> +					 &epd->bio,
->  					 end_bio_extent_buffer_writepage,
->  					 0, epd->bio_flags, bio_flags, false);
->  		epd->bio_flags = bio_flags;
+
+>  	flush_epd_write_bio(&epd);
+>  	return ret;
 > -- 
 > 2.10.1
 > 

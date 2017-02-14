@@ -1,68 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:23879 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751452AbdBNJ30 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 14 Feb 2017 04:29:26 -0500
+Received: from mx2.suse.de ([195.135.220.15]:59157 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752343AbdBNLpT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 14 Feb 2017 06:45:19 -0500
+Date: Tue, 14 Feb 2017 12:44:48 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH 2/7] btrfs: ulist: make the finalization function public
-To: David Sterba <dsterba@suse.com>, <linux-btrfs@vger.kernel.org>
+Message-ID: <20170214114448.GL16928@suse.cz>
+Reply-To: dsterba@suse.cz
 References: <cover.1486995885.git.dsterba@suse.com>
  <0e94449a7f999c37d1a69809d49857f0855bfdec.1486995885.git.dsterba@suse.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <50638123-8b6a-c102-47f4-57a176cca873@cn.fujitsu.com>
-Date: Tue, 14 Feb 2017 17:29:14 +0800
+ <50638123-8b6a-c102-47f4-57a176cca873@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <0e94449a7f999c37d1a69809d49857f0855bfdec.1486995885.git.dsterba@suse.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <50638123-8b6a-c102-47f4-57a176cca873@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Tue, Feb 14, 2017 at 05:29:14PM +0800, Qu Wenruo wrote:
+> 
+> 
+> At 02/13/2017 10:30 PM, David Sterba wrote:
+> > Make ulist_fini externally visible so the ulist API is complete.
+> 
+> Looks good to me.
+> 
+> While I'm not pretty sure if the name "ulist_fini" is good enough.
 
+> 
+> Maybe "ulist_finish" or "ulist_release" (just like release_path and 
+> free_path)?
 
-At 02/13/2017 10:30 PM, David Sterba wrote:
-> Make ulist_fini externally visible so the ulist API is complete.
-
-Looks good to me.
-
-While I'm not pretty sure if the name "ulist_fini" is good enough.
-
-Maybe "ulist_finish" or "ulist_release" (just like release_path and 
-free_path)?
-
-Thanks,
-Qu
->
-> Signed-off-by: David Sterba <dsterba@suse.com>
-> ---
->  fs/btrfs/ulist.c | 2 +-
->  fs/btrfs/ulist.h | 1 +
->  2 files changed, 2 insertions(+), 1 deletion(-)
->
-> diff --git a/fs/btrfs/ulist.c b/fs/btrfs/ulist.c
-> index b1434bb57e36..5deee56434fc 100644
-> --- a/fs/btrfs/ulist.c
-> +++ b/fs/btrfs/ulist.c
-> @@ -58,7 +58,7 @@ void ulist_init(struct ulist *ulist)
->   * This is useful in cases where the base 'struct ulist' has been statically
->   * allocated.
->   */
-> -static void ulist_fini(struct ulist *ulist)
-> +void ulist_fini(struct ulist *ulist)
->  {
->  	struct ulist_node *node;
->  	struct ulist_node *next;
-> diff --git a/fs/btrfs/ulist.h b/fs/btrfs/ulist.h
-> index 007b22fff3f9..1a4130443d7e 100644
-> --- a/fs/btrfs/ulist.h
-> +++ b/fs/btrfs/ulist.h
-> @@ -44,6 +44,7 @@ struct ulist {
->  };
->
->  void ulist_init(struct ulist *ulist);
-> +void ulist_fini(struct ulist *ulist);
->  void ulist_reinit(struct ulist *ulist);
->  struct ulist *ulist_alloc(gfp_t gfp_mask);
->  void ulist_free(struct ulist *ulist);
->
-
-
+Yeah, I don't like the name either, ulist_release sounds ok to me.

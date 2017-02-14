@@ -1,121 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:46447 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:23483 "EHLO
         aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751427AbdBNBKB (ORCPT
+        with ESMTP id S1751507AbdBNCAs (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 13 Feb 2017 20:10:01 -0500
-Date: Mon, 13 Feb 2017 17:09:02 -0800
+        Mon, 13 Feb 2017 21:00:48 -0500
+Date: Mon, 13 Feb 2017 17:59:53 -0800
 From: Liu Bo <bo.li.liu@oracle.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 01/29] btrfs: remove unused parameter from
- read_block_for_search
-Message-ID: <20170214010901.GA24037@localhost.localdomain>
+To: David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 05/29] btrfs: remove unused parameter from
+ write_dev_supers
+Message-ID: <20170214015953.GB24037@localhost.localdomain>
 Reply-To: bo.li.liu@oracle.com
 References: <cover.1486977711.git.dsterba@suse.com>
- <4d790a3ce2a6fbfc46dc469c851f70cacb63b035.1486977711.git.dsterba@suse.com>
- <20170214005943.GA16943@localhost.localdomain>
- <18e9de54-4032-a8ce-2053-5ec21f15b647@cn.fujitsu.com>
+ <6a514256c5f13576cc002182224e39be8a2bc05e.1486977712.git.dsterba@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <18e9de54-4032-a8ce-2053-5ec21f15b647@cn.fujitsu.com>
+In-Reply-To: <6a514256c5f13576cc002182224e39be8a2bc05e.1486977712.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Feb 14, 2017 at 09:03:49AM +0800, Qu Wenruo wrote:
-> 
-> 
-> At 02/14/2017 08:59 AM, Liu Bo wrote:
-> > On Mon, Feb 13, 2017 at 10:33:24AM +0100, David Sterba wrote:
-> > > Never used in that function.
-> > 
-> > There is already one,
-> > https://patchwork.kernel.org/patch/9546079/
-> 
-> Hi Liu,
-> 
-> That patch seems to remove @trans, while this is to remove @time_seq.
-> Or did I missed something?
+On Mon, Feb 13, 2017 at 10:33:36AM +0100, David Sterba wrote:
+> The barriers are handled by the caller.
+>
 
-Heh, my bad, thanks for spotting this.
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
 Thanks,
 
 -liubo
+> Signed-off-by: David Sterba <dsterba@suse.com>
+> ---
+>  fs/btrfs/disk-io.c | 6 +++---
+>  1 file changed, 3 insertions(+), 3 deletions(-)
 > 
-> Thanks,
-> Qu
-> > 
-> > Thanks,
-> > 
-> > -liubo
-> > > 
-> > > Signed-off-by: David Sterba <dsterba@suse.com>
-> > > ---
-> > >  fs/btrfs/ctree.c | 10 +++++-----
-> > >  1 file changed, 5 insertions(+), 5 deletions(-)
-> > > 
-> > > diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-> > > index fbeff20eb194..35e22349c139 100644
-> > > --- a/fs/btrfs/ctree.c
-> > > +++ b/fs/btrfs/ctree.c
-> > > @@ -2440,7 +2440,7 @@ noinline void btrfs_unlock_up_safe(struct btrfs_path *path, int level)
-> > >  static int
-> > >  read_block_for_search(struct btrfs_root *root, struct btrfs_path *p,
-> > >  		      struct extent_buffer **eb_ret, int level, int slot,
-> > > -		      const struct btrfs_key *key, u64 time_seq)
-> > > +		      const struct btrfs_key *key)
-> > >  {
-> > >  	struct btrfs_fs_info *fs_info = root->fs_info;
-> > >  	u64 blocknr;
-> > > @@ -2871,7 +2871,7 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root *root,
-> > >  			}
-> > > 
-> > >  			err = read_block_for_search(root, p, &b, level,
-> > > -						    slot, key, 0);
-> > > +						    slot, key);
-> > >  			if (err == -EAGAIN)
-> > >  				goto again;
-> > >  			if (err) {
-> > > @@ -3015,7 +3015,7 @@ int btrfs_search_old_slot(struct btrfs_root *root, const struct btrfs_key *key,
-> > >  			}
-> > > 
-> > >  			err = read_block_for_search(root, p, &b, level,
-> > > -						    slot, key, time_seq);
-> > > +						    slot, key);
-> > >  			if (err == -EAGAIN)
-> > >  				goto again;
-> > >  			if (err) {
-> > > @@ -5786,7 +5786,7 @@ int btrfs_next_old_leaf(struct btrfs_root *root, struct btrfs_path *path,
-> > >  		next = c;
-> > >  		next_rw_lock = path->locks[level];
-> > >  		ret = read_block_for_search(root, path, &next, level,
-> > > -					    slot, &key, 0);
-> > > +					    slot, &key);
-> > >  		if (ret == -EAGAIN)
-> > >  			goto again;
-> > > 
-> > > @@ -5836,7 +5836,7 @@ int btrfs_next_old_leaf(struct btrfs_root *root, struct btrfs_path *path,
-> > >  			break;
-> > > 
-> > >  		ret = read_block_for_search(root, path, &next, level,
-> > > -					    0, &key, 0);
-> > > +					    0, &key);
-> > >  		if (ret == -EAGAIN)
-> > >  			goto again;
-> > > 
-> > > --
-> > > 2.10.1
-> > > 
-> > > --
-> > > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> > > the body of a message to majordomo@vger.kernel.org
-> > > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> > 
-> > 
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 48846d215e97..43e71457c193 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -3410,7 +3410,7 @@ struct buffer_head *btrfs_read_dev_super(struct block_device *bdev)
+>   */
+>  static int write_dev_supers(struct btrfs_device *device,
+>  			    struct btrfs_super_block *sb,
+> -			    int do_barriers, int wait, int max_mirrors)
+> +			    int wait, int max_mirrors)
+>  {
+>  	struct buffer_head *bh;
+>  	int i;
+> @@ -3752,7 +3752,7 @@ static int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors)
+>  		flags = btrfs_super_flags(sb);
+>  		btrfs_set_super_flags(sb, flags | BTRFS_HEADER_FLAG_WRITTEN);
+>  
+> -		ret = write_dev_supers(dev, sb, do_barriers, 0, max_mirrors);
+> +		ret = write_dev_supers(dev, sb, 0, max_mirrors);
+>  		if (ret)
+>  			total_errors++;
+>  	}
+> @@ -3775,7 +3775,7 @@ static int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors)
+>  		if (!dev->in_fs_metadata || !dev->writeable)
+>  			continue;
+>  
+> -		ret = write_dev_supers(dev, sb, do_barriers, 1, max_mirrors);
+> +		ret = write_dev_supers(dev, sb, 1, max_mirrors);
+>  		if (ret)
+>  			total_errors++;
+>  	}
+> -- 
+> 2.10.1
 > 
-> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,281 +1,190 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:17685 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:6888 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1750902AbdBOBN7 (ORCPT
+        with ESMTP id S1750800AbdBOGl6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 14 Feb 2017 20:13:59 -0500
-Subject: Re: [PATCH v2] btrfs: relocation: Enhance kernel error output for
- relocation
-To: <fdmanana@gmail.com>
-References: <20170214005750.414-1-quwenruo@cn.fujitsu.com>
- <CAL3q7H4RQzJaBiELCyjQNBb=NQ8kq-064vLAcYOKeTe4qeQOcw@mail.gmail.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Liu Bo <bo.li.liu@oracle.com>
+        Wed, 15 Feb 2017 01:41:58 -0500
+Subject: Re: btrfs/125 deadlock using nospace_cache or space_cache=v2
+To: Anand Jain <anand.jain@oracle.com>, btrfs <linux-btrfs@vger.kernel.org>
+References: <0daf31e9-d666-5044-f9a9-fcf54576a144@cn.fujitsu.com>
+ <7ecb7b66-72d1-2bbd-b6f4-91550f2e1ab3@oracle.com>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <fb3968ca-7dd7-a5c5-cfe0-b70c2480bd4d@cn.fujitsu.com>
-Date: Wed, 15 Feb 2017 09:13:44 +0800
+Message-ID: <955bdf2a-6d44-01d1-a19d-10fad8f7760b@cn.fujitsu.com>
+Date: Wed, 15 Feb 2017 14:41:49 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAL3q7H4RQzJaBiELCyjQNBb=NQ8kq-064vLAcYOKeTe4qeQOcw@mail.gmail.com>
+In-Reply-To: <7ecb7b66-72d1-2bbd-b6f4-91550f2e1ab3@oracle.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+State updated:
+
+The deadlock seems to be caused by 2 bugs:
+
+1) Bad error handling in run_delalloc_nocow()
+    The direct cause is, btrfs_reloc_clone_csums() fails and return -EIO.
+    Then error handler will call extent_clear_unlock_delalloc() to
+    clear dirty flag and end writeback of the resting pages in the
+    extent.
+
+    However this makes the ordered extent not happy, as it just skips IO
+    of the remaining pages, which ordered extent relies on to finish.
+
+    This is quite easy to reproduce using the following modification:
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 1e861a0..b9d0bcb 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1497,8 +1497,11 @@ static noinline int run_delalloc_nocow(struct 
+inode *inode,
+
+                 if (root->root_key.objectid ==
+                     BTRFS_DATA_RELOC_TREE_OBJECTID) {
++                       ret = -EIO;
++                               /*
+                         ret = btrfs_reloc_clone_csums(inode, cur_offset,
+                                                       num_bytes);
++                                                     */
+                         if (ret) {
+                                 if (!nolock && nocow)
+ 
+btrfs_end_write_no_snapshoting(root);
 
 
-At 02/15/2017 04:34 AM, Filipe Manana wrote:
-> On Tue, Feb 14, 2017 at 12:57 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
->> When balance(relocation) fails, btrfs-progs will report like:
->>
->> ERROR: error during balancing '/mnt/scratch': Input/output error
->> There may be more info in syslog - try dmesg | tail
->>
->> However kernel can't provide may useful info in many cases to locate the
->> problem.
->>
->> This patch will add error messages in relocation to help user and
->> developer to locate the problem.
->>
->> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
->> ---
->> v2:
->>   Fix typo where 'err' and 'ret' are used wrong.
->> ---
->>  fs/btrfs/relocation.c | 60 +++++++++++++++++++++++++++++++++++++++++++++++----
->>  1 file changed, 56 insertions(+), 4 deletions(-)
->>
->> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
->> index 379711048fb0..d26809807c1b 100644
->> --- a/fs/btrfs/relocation.c
->> +++ b/fs/btrfs/relocation.c
->> @@ -4011,6 +4011,8 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
->>                                         rc->block_rsv, rc->block_rsv->size,
->>                                         BTRFS_RESERVE_FLUSH_ALL);
->>                 if (ret) {
->> +                       btrfs_err(fs_info, "failed to reserve space: %d(%s)",
->
-> Please leave a space between %d and the opening parenthesis (a common
-> style you follow but it's not correct in most western languages afaik,
-> and makes things harder to the eye).
->
+    Then any balance will cause btrfs to wait ordered extent which will
+    never finish, just like what we encountered.
 
-Thanks for pointing out my bad habit.
+2) RAID5/6 recover not working in some tree operation.
+    In fact, btrfs succeeded to mount the fs, so RAID5/6 recover code is
+    working, at least for some trees.
 
-I'll avoid such usage in later patches.
+    And btrfs succeeded in recovering all the data with correct checksum,
+    if using normal read(cat works here) before balance.
+
+    However it fails to read csum tree and causes run_delalloc_nocow() to
+    return -EIO, which leads to above bug.
+
+    So there is something related to RAID5/6 code, maybe readahead? which
+    contributes to this bug.
+
+I'll continue digging and keep the state updated if anyone is interested 
+in this bug.
 
 Thanks,
 Qu
->> +                                 ret, btrfs_decode_error(ret));
->>                         err = ret;
->>                         break;
->>                 }
->> @@ -4019,6 +4021,9 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
->>                 if (IS_ERR(trans)) {
->>                         err = PTR_ERR(trans);
->>                         trans = NULL;
->> +                       btrfs_err(fs_info,
->> +                                 "failed to start transaction: %d(%s)",
+
+
+At 02/07/2017 04:02 PM, Anand Jain wrote:
 >
-> Same, space before parenthesis missing.
+> Hi Qu,
 >
->> +                                 err, btrfs_decode_error(err));
->>                         break;
->>                 }
->>  restart:
->> @@ -4028,8 +4033,11 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
->>                 }
+>  I don't think I have seen this before, I don't know the reason
+>  why I wrote this, may be to test encryption, however it was all
+>  with default options.
+>
+>  But now I could reproduce and, looks like balance fails to
+>  start with IO error though the mount is successful.
+> ------------------
+> # tail -f ./results/btrfs/125.full
+>     intense and takes potentially very long. It is recommended to
+>     use the balance filters to narrow down the balanced data.
+>     Use 'btrfs balance start --full-balance' option to skip this
+>     warning. The operation will start in 10 seconds.
+>     Use Ctrl-C to stop it.
+> 10 9 8 7 6 5 4 3 2 1ERROR: error during balancing '/scratch':
+> Input/output error
+> There may be more info in syslog - try dmesg | tail
+>
+> Starting balance without any filters.
+> failed: '/root/bin/btrfs balance start /scratch'
+> --------------------
+>
+>  This must be fixed. For debugging if I add a sync before previous
+>  unmount, the problem isn't reproduced. just fyi. Strange.
+>
+> -------
+> diff --git a/tests/btrfs/125 b/tests/btrfs/125
+> index 91aa8d8c3f4d..4d4316ca9f6e 100755
+> --- a/tests/btrfs/125
+> +++ b/tests/btrfs/125
+> @@ -133,6 +133,7 @@ echo "-----Mount normal-----" >> $seqres.full
+>  echo
+>  echo "Mount normal and balance"
+>
+> +_run_btrfs_util_prog filesystem sync $SCRATCH_MNT
+>  _scratch_unmount
+>  _run_btrfs_util_prog device scan
+>  _scratch_mount >> $seqres.full 2>&1
+> ------
+>
+>  HTH.
+>
+> Thanks, Anand
+>
+>
+> On 02/07/17 14:09, Qu Wenruo wrote:
+>> Hi Anand,
 >>
->>                 ret = find_next_extent(rc, path, &key);
->> -               if (ret < 0)
->> +               if (ret < 0) {
->> +                       btrfs_err(fs_info, "failed to find next extent: %d(%s)",
->
-> Same, space before parenthesis missing.
->
->> +                                 ret, btrfs_decode_error(ret));
->>                         err = ret;
->> +               }
->>                 if (ret != 0)
->>                         break;
+>> I found that btrfs/125 test case can only pass if we enabled space cache.
 >>
->> @@ -4081,9 +4089,17 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
+>> If using nospace_cache or space_cache=v2 mount option, it will get
+>> blocked forever with the following callstack(the only blocked process):
 >>
->>                 if (flags & BTRFS_EXTENT_FLAG_TREE_BLOCK) {
->>                         ret = add_tree_block(rc, &key, path, &blocks);
->> +                       if (ret < 0)
->> +                               btrfs_err(fs_info,
->> +                                         "failed to record tree block: %d(%s)",
->> +                                         ret, btrfs_decode_error(ret));
->>                 } else if (rc->stage == UPDATE_DATA_PTRS &&
->>                            (flags & BTRFS_EXTENT_FLAG_DATA)) {
->>                         ret = add_data_references(rc, &key, path, &blocks);
->> +                       if (ret < 0)
->> +                               btrfs_err(fs_info,
->> +                                         "failed to record data extent: %d(%s)",
->
-> Same, space before parenthesis missing.
->
->> +                                         ret, btrfs_decode_error(ret));
->>                 } else {
->>                         btrfs_release_path(path);
->>                         ret = 0;
->> @@ -4103,6 +4119,9 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
->>                                 rc->backref_cache.last_trans = trans->transid - 1;
+>> [11382.046978] btrfs           D11128  6705   6057 0x00000000
+>> [11382.047356] Call Trace:
+>> [11382.047668]  __schedule+0x2d4/0xae0
+>> [11382.047956]  schedule+0x3d/0x90
+>> [11382.048283]  btrfs_start_ordered_extent+0x160/0x200 [btrfs]
+>> [11382.048630]  ? wake_atomic_t_function+0x60/0x60
+>> [11382.048958]  btrfs_wait_ordered_range+0x113/0x210 [btrfs]
+>> [11382.049360]  btrfs_relocate_block_group+0x260/0x2b0 [btrfs]
+>> [11382.049703]  btrfs_relocate_chunk+0x51/0xf0 [btrfs]
+>> [11382.050073]  btrfs_balance+0xaa9/0x1610 [btrfs]
+>> [11382.050404]  ? btrfs_ioctl_balance+0x3a0/0x3b0 [btrfs]
+>> [11382.050739]  btrfs_ioctl_balance+0x3a0/0x3b0 [btrfs]
+>> [11382.051109]  btrfs_ioctl+0xbe7/0x27f0 [btrfs]
+>> [11382.051430]  ? trace_hardirqs_on+0xd/0x10
+>> [11382.051747]  ? free_object+0x74/0xa0
+>> [11382.052084]  ? debug_object_free+0xf2/0x130
+>> [11382.052413]  do_vfs_ioctl+0x94/0x710
+>> [11382.052750]  ? enqueue_hrtimer+0x160/0x160
+>> [11382.053090]  ? do_nanosleep+0x71/0x130
+>> [11382.053431]  SyS_ioctl+0x79/0x90
+>> [11382.053735]  entry_SYSCALL_64_fastpath+0x18/0xad
+>> [11382.054570] RIP: 0033:0x7f397d7a6787
 >>
->>                                 if (ret != -EAGAIN) {
->> +                                       btrfs_err(fs_info,
->> +                                       "faild to relocate tree blocks: %d(%s)",
->
-> faild -> failed
->
-> Same, space before parenthesis missing.
->
->> +                                                 ret, btrfs_decode_error(ret));
->>                                         err = ret;
->>                                         break;
->>                                 }
->> @@ -4121,6 +4140,9 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
->>                         ret = relocate_data_extent(rc->data_inode,
->>                                                    &key, &rc->cluster);
->>                         if (ret < 0) {
->> +                               btrfs_err(fs_info,
->> +                               "failed to relocate data extent: %d(%s)",
->
-> Same, space before parenthesis missing.
->
->> +                                         ret, btrfs_decode_error(ret));
->>                                 err = ret;
->>                                 break;
->>                         }
->> @@ -4147,8 +4169,12 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
->>         if (!err) {
->>                 ret = relocate_file_extent_cluster(rc->data_inode,
->>                                                    &rc->cluster);
->> -               if (ret < 0)
->> +               if (ret < 0) {
->> +                       btrfs_err(fs_info,
->> +                       "failed to relocate file extent cluster: %d(%s)",
->
-> Same, space before parenthesis missing.
->
->> +                                 ret, btrfs_decode_error(ret));
->>                         err = ret;
->> +               }
->>         }
+>> I also found in the test case, we only have 3 continuous data extents,
+>> whose sizes are 1M, 68.5M and 31.5M respectively.
 >>
->>         rc->create_reloc_tree = 0;
->> @@ -4158,6 +4184,10 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
->>         btrfs_block_rsv_release(fs_info, rc->block_rsv, (u64)-1);
+>> Original data block group:
+>> 0       1M                     64M    69.5M                  101M   128M
+>> | Ext A |     Extent B(68.5M)         |    Extent C(31.5M)   |
 >>
->>         err = prepare_to_merge(rc, err);
->> +       if (err < 0)
->> +               btrfs_err(fs_info,
->> +                         "failed to preapre merge relocate trees: %d(%s)",
->
-> preapre -> prepare
->
-> Also, grammar errors, should be something like for example: "failed to
-> prepare merging of relocation trees".
->
->> +                         err, btrfs_decode_error(err));
 >>
->>         merge_reloc_roots(rc);
+>> While relocation write them in 4 extents:
+>> 0~1M            :same as Extent A.         (1st)
+>> 1M~68.3438M     :smaller than Extent B     (2nd)
+>> 68.3438M~69.5M  :tail part of Extent B     (3rd)
+>> 69.5M~ 101M     :same as Extent C.         (4th)
 >>
->> @@ -4336,6 +4366,9 @@ int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start)
+>> However only ordered extent of (3rd) and (4th) get finished.
+>> While ordered extent of (1st) and (2nd) never reached
+>> finish_ordered_io().
 >>
->>         ret = btrfs_inc_block_group_ro(extent_root, rc->block_group);
->>         if (ret) {
->> +               btrfs_err(fs_info,
->> +                       "failed to set block group read-only: %d(%s)",
->
-> Same, space before parenthesis missing.
->
->> +                         ret, btrfs_decode_error(ret));
->>                 err = ret;
->>                 goto out;
->>         }
->> @@ -4351,10 +4384,19 @@ int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start)
->>                                         path);
->>         btrfs_free_path(path);
+>> So relocation will wait for no one to finish the these two ordered
+>> extent, and get blocked.
 >>
->> -       if (!IS_ERR(inode))
->> +       if (!IS_ERR(inode)) {
->>                 ret = delete_block_group_cache(fs_info, rc->block_group, inode, 0);
->> -       else
->> +               if (ret < 0)
->> +                       btrfs_err(fs_info,
->> +                               "failed to delete block group cache: %d(%s)",
->
-> Same, space before parenthesis missing.
->
->> +                                 ret, btrfs_decode_error(ret));
->> +       } else {
->>                 ret = PTR_ERR(inode);
->> +               if (ret < 0 && ret != -ENOENT)
->> +                       btrfs_err(fs_info,
->> +                               "failed to lookup free space inode: %d(%s)",
->
-> Same, space before parenthesis missing.
->
->> +                                 ret, btrfs_decode_error(ret));
->> +       }
+>> Did you experienced the same bug submitting the test case?
+>> Is there any known fix for it?
 >>
->>         if (ret && ret != -ENOENT) {
->>                 err = ret;
->> @@ -4364,6 +4406,8 @@ int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start)
->>         rc->data_inode = create_reloc_inode(fs_info, rc->block_group);
->>         if (IS_ERR(rc->data_inode)) {
->>                 err = PTR_ERR(rc->data_inode);
->> +               btrfs_err(fs_info, "failed to create relocate inode: %d(%s)",
->
-> relocate -> relocation
->
->> +                         err, btrfs_decode_error(err));
->>                 rc->data_inode = NULL;
->>                 goto out;
->>         }
->> @@ -4394,6 +4438,9 @@ int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start)
->>                         ret = btrfs_wait_ordered_range(rc->data_inode, 0,
->>                                                        (u64)-1);
->>                         if (ret) {
->> +                               btrfs_err(fs_info,
->> +                                       "failed to wait ordered range: %d(%s)",
->
-> Same, space before parenthesis missing.
->
-> And grammar errors, should be something like: "failure waiting for
-> ordered range".
->
->> +                                         ret, btrfs_decode_error(ret));
->>                                 err = ret;
->>                                 goto out;
->>                         }
->> @@ -4407,6 +4454,11 @@ int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start)
->>         WARN_ON(rc->block_group->reserved > 0);
->>         WARN_ON(btrfs_block_group_used(&rc->block_group->item) > 0);
->>  out:
->> +       if (err < 0)
->> +               btrfs_err(fs_info,
->> +                         "failed to relocate block group %llu: %d(%s)",
->
-> Same, space before parenthesis missing.
->
-> Thanks.
->
->> +                         rc->block_group->key.objectid, err,
->> +                         btrfs_decode_error(err));
->>         if (err && rw)
->>                 btrfs_dec_block_group_ro(rc->block_group);
->>         iput(rc->data_inode);
->> --
->> 2.11.1
->>
+>> Thanks,
+>> Qu
 >>
 >>
 >> --
 >> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 >> the body of a message to majordomo@vger.kernel.org
 >> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
 >
 >
 

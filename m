@@ -1,27 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:39239 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751356AbdBOVdY (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:18812 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752371AbdBOVea (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Feb 2017 16:33:24 -0500
-Date: Wed, 15 Feb 2017 13:32:30 -0800
+        Wed, 15 Feb 2017 16:34:30 -0500
+Date: Wed, 15 Feb 2017 13:33:34 -0800
 From: Liu Bo <bo.li.liu@oracle.com>
 To: David Sterba <dsterba@suse.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 23/29] btrfs: remove unused parameter from
- __add_inline_refs
-Message-ID: <20170215213230.GL19427@localhost.localdomain>
+Subject: Re: [PATCH 27/29] btrfs: remove unused parameter from
+ cleanup_write_cache_enospc
+Message-ID: <20170215213334.GM19427@localhost.localdomain>
 Reply-To: bo.li.liu@oracle.com
 References: <cover.1486977711.git.dsterba@suse.com>
- <1b43e704d3dc38175012931ceea4268a7affb0d5.1486977712.git.dsterba@suse.com>
+ <35c2d3f7d37be07da35febae2a1fb71a677348f2.1486977712.git.dsterba@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1b43e704d3dc38175012931ceea4268a7affb0d5.1486977712.git.dsterba@suse.com>
+In-Reply-To: <35c2d3f7d37be07da35febae2a1fb71a677348f2.1486977712.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 13, 2017 at 10:34:31AM +0100, David Sterba wrote:
-> Never used.
+On Mon, Feb 13, 2017 at 10:34:44AM +0100, David Sterba wrote:
+> bitmap_list is unused since the io_ctl framework.
 > 
 Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
@@ -30,32 +30,32 @@ Thanks,
 -liubo
 > Signed-off-by: David Sterba <dsterba@suse.com>
 > ---
->  fs/btrfs/backref.c | 5 ++---
+>  fs/btrfs/free-space-cache.c | 5 ++---
 >  1 file changed, 2 insertions(+), 3 deletions(-)
 > 
-> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-> index db706595e631..7699e16784d3 100644
-> --- a/fs/btrfs/backref.c
-> +++ b/fs/btrfs/backref.c
-> @@ -956,8 +956,7 @@ static int __add_delayed_refs(struct btrfs_delayed_ref_head *head, u64 seq,
->  /*
->   * add all inline backrefs for bytenr to the list
->   */
-> -static int __add_inline_refs(struct btrfs_fs_info *fs_info,
-> -			     struct btrfs_path *path, u64 bytenr,
-> +static int __add_inline_refs(struct btrfs_path *path, u64 bytenr,
->  			     int *info_level, struct list_head *prefs,
->  			     struct ref_root *ref_tree,
->  			     u64 *total_refs, u64 inum)
-> @@ -1354,7 +1353,7 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
->  		if (key.objectid == bytenr &&
->  		    (key.type == BTRFS_EXTENT_ITEM_KEY ||
->  		     key.type == BTRFS_METADATA_ITEM_KEY)) {
-> -			ret = __add_inline_refs(fs_info, path, bytenr,
-> +			ret = __add_inline_refs(path, bytenr,
->  						&info_level, &prefs,
->  						ref_tree, &total_refs,
->  						inum);
+> diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+> index 437580e84d9d..0d02599d22bc 100644
+> --- a/fs/btrfs/free-space-cache.c
+> +++ b/fs/btrfs/free-space-cache.c
+> @@ -1128,8 +1128,7 @@ cleanup_bitmap_list(struct list_head *bitmap_list)
+>  static void noinline_for_stack
+>  cleanup_write_cache_enospc(struct inode *inode,
+>  			   struct btrfs_io_ctl *io_ctl,
+> -			   struct extent_state **cached_state,
+> -			   struct list_head *bitmap_list)
+> +			   struct extent_state **cached_state)
+>  {
+>  	io_ctl_drop_pages(io_ctl);
+>  	unlock_extent_cached(&BTRFS_I(inode)->io_tree, 0,
+> @@ -1365,7 +1364,7 @@ static int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
+>  	mutex_unlock(&ctl->cache_writeout_mutex);
+>  
+>  out_nospc:
+> -	cleanup_write_cache_enospc(inode, io_ctl, &cached_state, &bitmap_list);
+> +	cleanup_write_cache_enospc(inode, io_ctl, &cached_state);
+>  
+>  	if (block_group && (block_group->flags & BTRFS_BLOCK_GROUP_DATA))
+>  		up_write(&block_group->data_rwsem);
 > -- 
 > 2.10.1
 > 

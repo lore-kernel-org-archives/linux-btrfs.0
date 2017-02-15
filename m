@@ -1,28 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:48328 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752201AbdBOVYd (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:36696 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752111AbdBOV3e (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Feb 2017 16:24:33 -0500
-Date: Wed, 15 Feb 2017 13:23:37 -0800
+        Wed, 15 Feb 2017 16:29:34 -0500
+Date: Wed, 15 Feb 2017 13:27:40 -0800
 From: Liu Bo <bo.li.liu@oracle.com>
 To: David Sterba <dsterba@suse.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 16/29] btrfs: remove unused parameter from
- add_pending_csums
-Message-ID: <20170215212337.GG19427@localhost.localdomain>
+Subject: Re: [PATCH 18/29] btrfs: remove unused parameter from
+ btrfs_fill_super
+Message-ID: <20170215212740.GH19427@localhost.localdomain>
 Reply-To: bo.li.liu@oracle.com
 References: <cover.1486977711.git.dsterba@suse.com>
- <9ceb2cc30952a3af639e31c4f51c380f3ce0ffad.1486977712.git.dsterba@suse.com>
+ <a644ec1f6d10a61e4f0f5fcb313cf9d0894e9876.1486977712.git.dsterba@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <9ceb2cc30952a3af639e31c4f51c380f3ce0ffad.1486977712.git.dsterba@suse.com>
+In-Reply-To: <a644ec1f6d10a61e4f0f5fcb313cf9d0894e9876.1486977712.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 13, 2017 at 10:34:10AM +0100, David Sterba wrote:
-> Never used.
+On Mon, Feb 13, 2017 at 10:34:16AM +0100, David Sterba wrote:
+> Never used for anything meaningful since we have our own superblock
+> filler.
 > 
+Looks good.
+
 Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
 Thanks,
@@ -30,33 +33,32 @@ Thanks,
 -liubo
 > Signed-off-by: David Sterba <dsterba@suse.com>
 > ---
->  fs/btrfs/inode.c | 6 ++----
->  1 file changed, 2 insertions(+), 4 deletions(-)
+>  fs/btrfs/super.c | 5 ++---
+>  1 file changed, 2 insertions(+), 3 deletions(-)
 > 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 7ed693294498..3ac7474f921d 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -1961,8 +1961,7 @@ static int btrfs_submit_bio_hook(struct inode *inode, struct bio *bio,
->   * at IO completion time based on sums calculated at bio submission time.
->   */
->  static noinline int add_pending_csums(struct btrfs_trans_handle *trans,
-> -			     struct inode *inode, u64 file_offset,
-> -			     struct list_head *list)
-> +			     struct inode *inode, struct list_head *list)
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 93ed29c2a38b..da687dc79cce 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -1114,7 +1114,7 @@ static int get_default_subvol_objectid(struct btrfs_fs_info *fs_info, u64 *objec
+>  
+>  static int btrfs_fill_super(struct super_block *sb,
+>  			    struct btrfs_fs_devices *fs_devices,
+> -			    void *data, int silent)
+> +			    void *data)
 >  {
->  	struct btrfs_ordered_sum *sum;
->  
-> @@ -2956,8 +2955,7 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
->  		goto out_unlock;
+>  	struct inode *inode;
+>  	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
+> @@ -1611,8 +1611,7 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
+>  	} else {
+>  		snprintf(s->s_id, sizeof(s->s_id), "%pg", bdev);
+>  		btrfs_sb(s)->bdev_holder = fs_type;
+> -		error = btrfs_fill_super(s, fs_devices, data,
+> -					 flags & MS_SILENT ? 1 : 0);
+> +		error = btrfs_fill_super(s, fs_devices, data);
 >  	}
->  
-> -	add_pending_csums(trans, inode, ordered_extent->file_offset,
-> -			  &ordered_extent->list);
-> +	add_pending_csums(trans, inode, &ordered_extent->list);
->  
->  	btrfs_ordered_update_i_size(inode, 0, ordered_extent);
->  	ret = btrfs_update_inode_fallback(trans, root, inode);
+>  	if (error) {
+>  		deactivate_locked_super(s);
 > -- 
 > 2.10.1
 > 

@@ -1,70 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45241 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751480AbdBMJxn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 13 Feb 2017 04:53:43 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id C4F47AC53
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 Feb 2017 09:53:41 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs: make space cache inode readahead failure nonfatal
-Date: Mon, 13 Feb 2017 10:53:12 +0100
-Message-Id: <20170213095312.18495-1-dsterba@suse.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:26263 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751410AbdBOD1m (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 14 Feb 2017 22:27:42 -0500
+Subject: Re: [PATCH v2] Btrfs: fix btrfs_decompress_buf2page()
+To: Omar Sandoval <osandov@osandov.com>, Chris Mason <clm@fb.com>,
+        linux-btrfs@vger.kernel.org
+References: <35a7eac2a55a330a27639e0b38f8d052e6dbee8b.1486767707.git.osandov@fb.com>
+Cc: Liu Bo <bo.li.liu@oracle.com>, Christoph Hellwig <hch@lst.de>,
+        Pat Erley <pat-lkml@erley.org>, kernel-team@fb.com
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <cdac0f8a-2957-5346-66aa-b890162c2c6e@oracle.com>
+Date: Wed, 15 Feb 2017 11:32:06 +0800
+MIME-Version: 1.0
+In-Reply-To: <35a7eac2a55a330a27639e0b38f8d052e6dbee8b.1486767707.git.osandov@fb.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We do a readahead of the free space cache inode to speed things up but
-the failure is not fatal, like in other readahead cases. Proper reads
-would need to happen anyway and any errors would be caught there.
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/free-space-cache.c | 10 +++-------
- 1 file changed, 3 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 437580e84d9d..e96e981ef01e 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -286,14 +286,14 @@ int btrfs_truncate_free_space_cache(struct btrfs_root *root,
- 	return ret;
- }
- 
--static int readahead_cache(struct inode *inode)
-+static void readahead_cache(struct inode *inode)
- {
- 	struct file_ra_state *ra;
- 	unsigned long last_index;
- 
- 	ra = kzalloc(sizeof(*ra), GFP_NOFS);
- 	if (!ra)
--		return -ENOMEM;
-+		return;
- 
- 	file_ra_state_init(ra, inode->i_mapping);
- 	last_index = (i_size_read(inode) - 1) >> PAGE_SHIFT;
-@@ -301,8 +301,6 @@ static int readahead_cache(struct inode *inode)
- 	page_cache_sync_readahead(inode->i_mapping, ra, NULL, 0, last_index);
- 
- 	kfree(ra);
--
--	return 0;
- }
- 
- static int io_ctl_init(struct btrfs_io_ctl *io_ctl, struct inode *inode,
-@@ -730,9 +728,7 @@ static int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
- 	if (ret)
- 		return ret;
- 
--	ret = readahead_cache(inode);
--	if (ret)
--		goto out;
-+	readahead_cache(inode);
- 
- 	ret = io_ctl_prepare_pages(&io_ctl, inode, 1);
- 	if (ret)
--- 
-2.10.1
 
+On 02/11/17 07:03, Omar Sandoval wrote:
+> From: Omar Sandoval <osandov@fb.com>
+>
+> If btrfs_decompress_buf2page() is handed a bio with its page in the
+> middle of the working buffer, then we adjust the offset into the working
+> buffer. After we copy into the bio, we advance the iterator by the
+> number of bytes we copied. Then, we have some logic to handle the case
+> of discontiguous pages and adjust the offset into the working buffer
+> again. However, if we didn't advance the bio to a new page, we may enter
+> this case in error, essentially repeating the adjustment that we already
+> made when we entered the function. The end result is bogus data in the
+> bio.
+>
+> Previously, we only checked for this case when we advanced to a new
+> page, but the conversion to bio iterators changed that. This restores
+> the old, correct behavior.
+>
+> A case I saw when testing with zlib was:
+>
+>     buf_start = 42769
+>     total_out = 46865
+>     working_bytes = total_out - buf_start = 4096
+>     start_byte = 45056
+>
+> The condition (total_out > start_byte && buf_start < start_byte) is
+> true, so we adjust the offset:
+>
+>     buf_offset = start_byte - buf_start = 2287
+>     working_bytes -= buf_offset = 1809
+>     current_buf_start = buf_start = 42769
+>
+> Then, we copy
+>
+>     bytes = min(bvec.bv_len, PAGE_SIZE - buf_offset, working_bytes) = 1809
+>     buf_offset += bytes = 4096
+>     working_bytes -= bytes = 0
+>     current_buf_start += bytes = 44578
+>
+> After bio_advance(), we are still in the same page, so start_byte is the
+> same. Then, we check (total_out > start_byte && current_buf_start < start_byte),
+> which is true! So, we adjust the values again:
+>
+>     buf_offset = start_byte - buf_start = 2287
+>     working_bytes = total_out - start_byte = 1809
+>     current_buf_start = buf_start + buf_offset = 45056
+>
+> But note that working_bytes was already zero before this, so we should
+> have stopped copying.
+
+
+  Thanks Omar for nailing this down. How about a test case for this ?
+
+-Anand

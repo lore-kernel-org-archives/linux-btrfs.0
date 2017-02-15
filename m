@@ -1,116 +1,138 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-34.italiaonline.it ([212.48.25.162]:51207 "EHLO libero.it"
+Received: from smtp-34.italiaonline.it ([212.48.25.162]:49200 "EHLO libero.it"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751356AbdBOSZA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Feb 2017 13:25:00 -0500
+        id S1752141AbdBOSeK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 15 Feb 2017 13:34:10 -0500
+From: Goffredo Baroncelli <kreijack@libero.it>
+Subject: Re: stat(2) returning device ID not existing in mountinfo
 Reply-To: kreijack@inwind.it
-Subject: Re: How to dump/find parity of RAID-5 file?
-References: <20170203104406.GA3670@giis.co.in>
- <15ae32eb-195a-712c-2746-cf7528b728a2@inwind.it>
- <20170214200929.GB24702@giis.co.in>
-To: "Lakshmipathi.G" <lakshmipathi.g@giis.co.in>, linux-btrfs@vger.kernel.org
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Message-ID: <bfe89355-f549-7bda-ff0c-428c8b4ca4ed@inwind.it>
-Date: Wed, 15 Feb 2017 19:24:55 +0100
+References: <1474057691.16275.16.camel@xiaoka.com>
+ <d5df5a17-fb7f-80a2-9308-66fe0e5335f3@suse.com>
+To: Jeff Mahoney <jeffm@suse.com>, linux-btrfs@vger.kernel.org
+Cc: Tomasz Sterna <tomek@xiaoka.com>,
+        Bernhard Voelker <mail@bernhard-voelker.de>, findutils-patches@gnu.org
+Message-ID: <925b4337-2de3-32fc-624f-ed67dd0eb8f2@libero.it>
+Date: Wed, 15 Feb 2017 19:25:57 +0100
 MIME-Version: 1.0
-In-Reply-To: <20170214200929.GB24702@giis.co.in>
-Content-Type: text/plain; charset=windows-1252
+In-Reply-To: <d5df5a17-fb7f-80a2-9308-66fe0e5335f3@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-02-14 21:09, Lakshmipathi.G wrote:
-> On Mon, Feb 06, 2017 at 09:40:47PM +0100, Goffredo Baroncelli wrote:
->>
->> IIRC, the parity is spread across the disk stripes of the chunk.
->>
->> So first you have to find the logical-offset [LO] where the the file begins. Then you have to map this offset to the chunk which holds the data. The chunk has the following info:
->> - chunk start [CS], chunk length [CL]
->> - for each stripe:
->> 	where the stripe starts
->>
->> If you subtract the chunk-start from the logical-offset [ CO == LO-CS], you will find the offset where the data belongs in the chunk.
->>
->> As stated above, the PARITY is spread across the chunk stripes. So (supposing that the stripe size is 64K, the raid level is 5, the disks are three), 
->>
->> - the first 64k of stripe 0, is data [0..64K)
->> - the first 64k of stripe 1, is data [64..128K)
->> - the first 64k of stripe 2 is parity, 
->>
->> - the 2nd 64k of stripe 0 is parity, 
->> - the 2nd 64k of stripe 1, is data [128..196K)
->> - the 2nd 64k of stripe 2, is data [192..256K)
->>
->> - the 3rd 64k of stripe 0, is data [256..320K)
->> - the 3rd 64k of stripe 1 is parity, 
->> - the 3rd 64k of stripe 2, is data [320..384K)
->> and so on,
->>
->> To find the data, You have to compare the CO to the data [...) range.
->>
->> If you look to an my old patch (unfinished :-( ), you can find some example to dump the different stripe
->>
->> [BTRFS-PROGS][PATCH][V2] Add two new commands: 'btrfs insp physical-find' and 'btrfs insp physical-dump'
->>
->>
-> Sorry for the delay, I was offline. Thanks for the details. I can understood "partiy spread across the chunk stripes" part.
-> But unable to figure-out the first part regarding calculations.
-> 
-> Raid5 With 3-devices each 512MB. Create single 128KB file("print 'Ab'+'a'*65534+'aB'+'b'*65533"). 'debug-tree' shows chunk tree as:
-> 
-> 	item 5 key (FIRST_CHUNK_TREE CHUNK_ITEM 145096704) itemoff 15557 itemsize 144
-> 		length 134217728 owner 2 stripe_len 65536 type DATA|RAID5
-> 		io_align 65536 io_width 65536 sector_size 4096
-> 		num_stripes 3 sub_stripes 0
-> 			stripe 0 devid 3 offset 63111168
-> 			dev_uuid 9a2a18f1-6193-44b9-aafc-23d161d66110
-> 			stripe 1 devid 2 offset 63111168
-> 			dev_uuid e45ab907-c3a8-4dff-af9f-2ae5fd38ffd6
-> 			stripe 2 devid 1 offset 83034112
-> 			dev_uuid 428c04d9-37da-454a-b7b2-f6fe88580de2
-> and fs-tree shows:
-> 	item 13 key (145227776 EXTENT_ITEM 131072) itemoff 15788 itemsize 53
-> 		extent refs 1 gen 7 flags DATA
-> 		extent data backref root 5 objectid 257 offset 0 count 1
-> 
->>From above, I assume: 
-> LO=145227776  CS=145096704 and CL=134217728
-> CO=145227776 - 145096704  => CO = 131072
-> 
-> Quite confused from here :s  I'll look into your patches to understand more. I hope sometime in future we will 
-> have your finished patches :) 'physical-find' and 'physical-find' commands will be really useful for debugging/testing and 
-> learning purposes. thanks.
+(Resended because I don saw it in the mailing lists)
 
-The chunk-tree maps the logical address [145096704...145096704+134217728) [size=128MB] to the physical ones 
-	devid3 : [63111168..63111168+67108864) [size=64MB]
-	devid1 : [63111168..63111168+67108864) [size=64MB]
-	devid2 : [83034112..83034112+67108864) [size=64MB]
+-----
+Hi,
 
-So because the logical address is divided in pieces of 64k, interleaved by the parity, we know that:
-* first 128kb
-logical address [145096704      ..145096704+64k)   -> devid1, [63111168    ..63111168+64k)
-logical address [145096704+64k  ..145096704+2x64k) -> devid2, [83034112    ..83034112+64k)
-                parity:                            -> devid3, [63111168    ..63111168+64k)
-* second 128kb
-logical address [145096704+2x64k..145096704+3x64k) -> devid2, [83034112+64k..83034112+2x64k)
-logical address [145096704+3x64k..145096704+4x64k) -> devid3, [63111168+64k..63111168+2x64k)
-                parity:                            -> devid1, [63111168+64k..63111168+2x64k)
-And so on...
+I want to highlight this bug another time.
 
-(NB: 145096704+2x64k == 145227776)
+I encountered this bug, when I was looking to a problem with find. I my machine find took an huge quantity of memory (up to 3GB) when used by updatedb.
 
-The fs-tree, maps the file content [0..131072) [size=128k] to the logical address [145227776..145227776+131072) [size=128k]
+	http://lists.gnu.org/archive/html/findutils-patches/2016-12/msg00000.html
 
-So the file content is stored starting from the disk devid2, at 83034112+64k=83099648 (first 64k). The second 64k is placed in disk devid3 at 63111168+64k=63176704; the parity is stored at disk1, 63111168+64k = 63176704
+The root of the problem was a leak memory in find. What was strange however is that the findutils developers weren't unable to reproduce this bug. They find the leak, but not a so high memory usage.
+
+After some email, it was discovered that find (when used in updatedb) checks if the filesystem is changed during the tree walking. They checked the device-id returned by stat against the one returned by mountinfo.
+
+For btrfs these differ, and the check is repeat each time. Because the memory leak was per "filesystem check", using find on a btrfs filesystem caused a huge leak.
+
+I hope that some btrfs developer could address this, because I suspect that a lot of tools compare the device id returned by /proc/self/mountinfo against the one returned by stat(2).
 
 
 BR
 G.Baroncelli
 
+
+
+
+On 2016-09-20 15:15, Jeff Mahoney wrote:
+> On 9/16/16 4:28 PM, Tomasz Sterna wrote:
+>> Hi.
+>>
+>> I have spotted an issue with stat(2) call on files on btrfs.
+>> It is giving me dev_t st_dev number that does not correspond to any
+>> mounted filesystem in proc's mountinfo.
 > 
-> Cheers.
-> Lakshmipathi.G
+> That's by design.  Your particular file system may only use one device
+> but, internally, btrfs uses virtualized storage that may be spread
+> across multiple devices.  To make things more complicated, snapshots
+> mean that:
+> 
+> sled1a:/mnt # btrfs sub list .
+> ID 257 gen 14 top level 5 path a
+> ID 258 gen 14 top level 5 path b
+> 
+> sled1a:/mnt # ls -laRi
+> .:
+> total 16
+> 256 drwxr-xr-x 1 root root   4 Sep 20 09:08 .
+> 256 drwxr-xr-x 1 root root 220 Sep 16 09:49 ..
+> 256 drwxr-xr-x 1 root root   8 Sep 14 10:24 a
+> 256 drwxr-xr-x 1 root root   8 Sep 14 10:24 b
+> 
+> ./a:
+> total 4112
+> 256 drwxr-xr-x 1 root root       8 Sep 14 10:24 .
+> 256 drwxr-xr-x 1 root root       4 Sep 20 09:08 ..
+> 257 -rw-r--r-- 1 root root 4194304 Sep 14 10:24 file
+> 
+> ./b:
+> total 4112
+> 256 drwxr-xr-x 1 root root       8 Sep 14 10:24 .
+> 256 drwxr-xr-x 1 root root       4 Sep 20 09:08 ..
+> 257 -rw-r--r-- 1 root root 4194304 Sep 14 10:24 file
+> 
+> Under normal circumstances those are two files with the same st_dev and
+> the same inode number.  That would normally correspond to a hard link,
+> but the files do not (necessarily) correspond to the same file.
+> 
+> ... but because we use anonymous device numbers for each subvolume, we
+> have different device numbers for each one.
+> 
+> sled1a:/mnt # stat --format "%n st_dev=%d" {a,b}/file
+> a/file st_dev=69
+> b/file st_dev=70
+> 
+> It's a pretty big usability wart that we don't consistently report the
+> device number.  We do it correctly in stat() but there are other places
+> in the code that assume that inode->i_sb->s_dev will work.  In the SUSE
+> kernels, we have patches that add a super_operation to report the
+> correct device number everywhere, but even that is a hack.
+> 
+>> I already attempted a illinformed-patch in fs/btrfs/super.c:
+>>
+>> @@ -1127,6 +1127,7 @@ static int btrfs_fill_super(struct super_block *sb,
+>>  		goto fail_close;
+>>  	}
+>>  
+>> +	sb->s_dev = inode->i_sb->s_dev;
+>>  	sb->s_root = d_make_root(inode);
+>>  	if (!sb->s_root) {
+>>  		err = -ENOMEM;
+>>
+>> but it didn't help.
+> 
+> It wouldn't.  That is assigning a variable to itself.
+> 
+>> I would like to dig deeper and fix it, but first I have to ask:
+>> - Which number is wrong?
+>>   The one returned by stat() or the one in mountinfo?
+> 
+> The one in mountinfo, but then that means that the user only sees the
+> anonymous devices in mount(8), which isn't what we want either.
+> 
+> I'm afraid the correct fix is very involved and requires non-trivial
+> changes in the VFS layer as well.  It's on my long-term TODO list.  I
+> currently have some patches that do the magic with vfsmounts but it's
+> far from being usable.
+> 
+> -Jeff
 > 
 
+
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
 
 -- 
 gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>

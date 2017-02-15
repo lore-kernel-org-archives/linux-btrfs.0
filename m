@@ -1,82 +1,227 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1050.oracle.com ([141.146.126.70]:19411 "EHLO
-        aserp1050.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751030AbdB0RRg (ORCPT
+Received: from mail-it0-f67.google.com ([209.85.214.67]:33486 "EHLO
+        mail-it0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750820AbdBOP7g (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 27 Feb 2017 12:17:36 -0500
-Received: from aserp1040.oracle.com (aserp1040.oracle.com [141.146.126.69])
-        by aserp1050.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v1RFuGQF020911
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Feb 2017 15:56:16 GMT
-Date: Mon, 27 Feb 2017 07:53:48 -0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Dave Jones <davej@codemonkey.org.uk>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: assertion failed: last_size == new_size, file: fs/btrfs/inode.c
-Message-ID: <20170227155348.GB13488@lim.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <20170227001842.dhrmaw3t3k4hkuii@codemonkey.org.uk>
+        Wed, 15 Feb 2017 10:59:36 -0500
+Received: by mail-it0-f67.google.com with SMTP id e137so10199702itc.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Feb 2017 07:59:35 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170227001842.dhrmaw3t3k4hkuii@codemonkey.org.uk>
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <20170215084924.10587-1-quwenruo@cn.fujitsu.com>
+References: <20170215084924.10587-1-quwenruo@cn.fujitsu.com>
+From: Filipe Manana <fdmanana@gmail.com>
+Date: Wed, 15 Feb 2017 15:59:34 +0000
+Message-ID: <CAL3q7H4gTkwjRSNtexur6BMiKiU55CpeDnp45yScOn89dsw6_Q@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: Handle btrfs_reloc_clone_csums error correctly to
+ avoid deadlock
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Feb 26, 2017 at 07:18:42PM -0500, Dave Jones wrote:
-> Hitting this fairly frequently.. I'm not sure if this is the same bug I've
-> been hitting occasionally since 4.9. The assertion looks new to me at least.
+On Wed, Feb 15, 2017 at 8:49 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+> If run btrfs/125 with nospace_cache or space_cache=v2 mount option,
+> btrfs will block with the following backtrace:
 >
-
-It was recently introduced by my commit and used to catch data loss at truncate.
-
-Were you running the test with a mkfs.btrfs -O NO_HOLES?
-(We just queued a fix for the NO_HOLES case in btrfs-next.)
-
-Thanks,
-
--liubo
-> 	Dave
-> 
-> assertion failed: last_size == new_size, file: fs/btrfs/inode.c, line: 4619
-> ------------[ cut here ]------------
-> kernel BUG at fs/btrfs/ctree.h:3422!
-> invalid opcode: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
-> CPU: 3 PID: 15655 Comm: trinity-c25 Not tainted 4.10.0-think+ #9 
-> task: ffff8804fb128040 task.stack: ffffc90008534000
-> RIP: 0010:assfail.constprop.74+0x1c/0x1e [btrfs]
-> RSP: 0018:ffffc90008537c58 EFLAGS: 00010282
-> RAX: 000000000000004b RBX: 0000000000001000 RCX: 0000000000000001
-> RDX: 0000000000000000 RSI: ffffffff81cb4173 RDI: 00000000ffffffff
-> RBP: ffffc90008537c58 R08: 0000000000000000 R09: 0000000000000001
-> R10: 0000000000000000 R11: 0000000000000000 R12: ffff8804fe821348
-> R13: ffff88047eb5bb88 R14: ffff8804fe821348 R15: 0000000000000005
-> FS:  00007f99b77a6b40(0000) GS:ffff880507e00000(0000) knlGS:0000000000000000
-> CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-> CR2: 00007f99b77a9010 CR3: 000000048c4bf000 CR4: 00000000001406e0
 > Call Trace:
->  btrfs_truncate_inode_items+0xbee/0x11e0 [btrfs]
->  ? debug_smp_processor_id+0x17/0x20
->  btrfs_truncate+0x102/0x2a0 [btrfs]
->  btrfs_setattr+0x246/0x3b0 [btrfs]
->  notify_change+0x256/0x440
->  do_truncate+0x73/0xc0
->  do_sys_ftruncate.constprop.19+0x111/0x170
->  ? __this_cpu_preempt_check+0x13/0x20
->  SyS_ftruncate+0xe/0x10
->  do_syscall_64+0x66/0x1d0
->  entry_SYSCALL64_slow_path+0x25/0x25
-> RIP: 0033:0x7f99b70d00f9
-> RSP: 002b:00007ffd992b7768 EFLAGS: 00000246
->  ORIG_RAX: 000000000000004d
-> RAX: ffffffffffffffda RBX: 000000000000004d RCX: 00007f99b70d00f9
-> RDX: 0003680201d80849 RSI: 0000000000000d95 RDI: 0000000000000187
-> RBP: 00007f99b76f0000 R08: 0000000000000001 R09: 0000000000000fd7
-> R10: 0000000000000006 R11: 0000000000000246 R12: 0000000000000002
-> R13: 00007f99b76f0048 R14: 00007f99b77a6ad8 R15: 00007f99b76f0000
-> Code: 48 83 c4 18 5b 41 5c 41 5d 41 5e 41 5f 5d c3 55 89 f1 48 c7 c2 b1 f7 11 a0 48 89 fe 48 89 e5 48 c7 c7 f0 52 12 a0 e8 03 b7 0b e1 <0f> 0b 55 89 f1 48 c7 c2 a8 fa 11 a0 48 89 fe 48 89 e5 48 c7 c7 
-> RIP: assfail.constprop.74+0x1c/0x1e [btrfs] RSP: ffffc90008537c58
+>  __schedule+0x2d4/0xae0
+>  schedule+0x3d/0x90
+>  btrfs_start_ordered_extent+0x160/0x200 [btrfs]
+>  ? wake_atomic_t_function+0x60/0x60
+>  btrfs_run_ordered_extent_work+0x25/0x40 [btrfs]
+>  btrfs_scrubparity_helper+0x1c1/0x620 [btrfs]
+>  btrfs_flush_delalloc_helper+0xe/0x10 [btrfs]
+>  process_one_work+0x2af/0x720
+>  ? process_one_work+0x22b/0x720
+>  worker_thread+0x4b/0x4f0
+>  kthread+0x10f/0x150
+>  ? process_one_work+0x720/0x720
+>  ? kthread_create_on_node+0x40/0x40
+>  ret_from_fork+0x2e/0x40
+>
+> The direct cause is the error handler in run_delalloc_nocow() doesn't
+> handle error from btrfs_reloc_clone_csums() well.
+>
+> The related part call path will be:
+> __extent_writepage
+> |- writepage_delalloc()
+> |  |- run_delalloc_range()
+> |     |- run_delalloc_nocow()
+> |        |- btrfs_add_ordered_extent()
+> |        |  Now one ordered extent for file range, e.g [0, 1M) is inserted
+> |        |
+> |        |- btrfs_reloc_clone_csums()
+> |        |  Fails with -EIO, as RAID5/6 doesn't repair some csum tree
+> |        |  blocks
+> |        |
+> |        |- extent_clear_unlock_delalloc()
+> |           Error routine, unlock and clear page DIRTY, end page writeback
+> |           So the remaining 255 pages will not go through writeback
+> |
+> |- __extent_writepage_io()
+>    |- writepage_end_io_hook()
+>       |- btrfs_dev_test_ordered_pending()
+>          Reduce ordered_extent->bytes_left by 4K.
+>          Still have (1M - 4K) to finish.
+>
+> While the remaining 255 pages will not go through IO nor trigger
+> writepage_end_io_hook(), the ordered extent for [0, 1M) will
+> never finish, and blocking current transaction forever.
+>
+> Although the root cause is still in RAID5/6, it won't hurt to fix the
+> error routine first.
+>
+> This patch will cleanup the ordered extent in error routine, so at least
+> we won't cause deadlock.
+>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+>  fs/btrfs/extent_io.c    |  1 -
+>  fs/btrfs/inode.c        | 10 ++++++++--
+>  fs/btrfs/ordered-data.c | 25 +++++++++++++++++++++++++
+>  fs/btrfs/ordered-data.h | 10 ++++++++++
+>  4 files changed, 43 insertions(+), 3 deletions(-)
+>
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index 4ac383a3a649..a14d1b0840c5 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -3258,7 +3258,6 @@ static noinline_for_stack int writepage_delalloc(struct inode *inode,
+>                                                delalloc_end,
+>                                                &page_started,
+>                                                nr_written);
+> -               /* File system has been set read-only */
+>                 if (ret) {
+>                         SetPageError(page);
+>                         /* fill_delalloc should be return < 0 for error
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 1e861a063721..3c3ade58afd7 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -1052,8 +1052,11 @@ static noinline int cow_file_range(struct inode *inode,
+>                     BTRFS_DATA_RELOC_TREE_OBJECTID) {
+>                         ret = btrfs_reloc_clone_csums(inode, start,
+>                                                       cur_alloc_size);
+> -                       if (ret)
+> +                       if (ret) {
+> +                               btrfs_clean_ordered_extent(inode, start,
+> +                                                          ram_size);
+>                                 goto out_drop_extent_cache;
+> +                       }
+>                 }
+>
+>                 btrfs_dec_block_group_reservations(fs_info, ins.objectid);
+> @@ -1538,7 +1541,7 @@ static noinline int run_delalloc_nocow(struct inode *inode,
+>         if (!ret)
+>                 ret = err;
+>
+> -       if (ret && cur_offset < end)
+> +       if (ret && cur_offset < end) {
+>                 extent_clear_unlock_delalloc(inode, cur_offset, end, end,
+>                                              locked_page, EXTENT_LOCKED |
+>                                              EXTENT_DELALLOC | EXTENT_DEFRAG |
+> @@ -1546,6 +1549,9 @@ static noinline int run_delalloc_nocow(struct inode *inode,
+>                                              PAGE_CLEAR_DIRTY |
+>                                              PAGE_SET_WRITEBACK |
+>                                              PAGE_END_WRITEBACK);
+> +               btrfs_clean_ordered_extent(inode, cur_offset,
+> +                                          end - cur_offset + 1);
+
+So this is partially correct only.
+First here you can have 0, 1 or more ordered extents that were created
+in the while loop. So your new function must find and process all
+ordered extents within the delalloc range and not just the last one
+that was created.
+
+Also, for any created ordered extent, you want to set the bit
+BTRFS_ORDERED_IOERR on it before removing it, since there might be
+concurrent tasks waiting for it that do error handling (like an fsync,
+since when running delalloc the inode isn't locked).
+
+Look at the direct IO write path error handling and
+btrfs_endio_direct_write_update_ordered() for a very similar scenario.
+And the same problem happens in the cow case (inode.c:cow_file_range()).
+
+Thanks.
+
+> +       }
+>         btrfs_free_path(path);
+>         return ret;
+>  }
+> diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+> index 041c3326d109..dba1cf3464a7 100644
+> --- a/fs/btrfs/ordered-data.c
+> +++ b/fs/btrfs/ordered-data.c
+> @@ -650,6 +650,31 @@ void btrfs_remove_ordered_extent(struct inode *inode,
+>         wake_up(&entry->wait);
+>  }
+>
+> +void btrfs_clean_ordered_extent(struct inode *inode, u64 file_offset,
+> +                               u64 ram_len)
+> +{
+> +       struct btrfs_ordered_extent *entry;
+> +       struct btrfs_root *root = BTRFS_I(inode)->root;
+> +
+> +       entry = btrfs_lookup_ordered_range(inode, file_offset, ram_len);
+> +       if (!entry || entry->file_offset != file_offset ||
+> +           entry->len != ram_len)
+> +               goto not_found;
+> +
+> +       /* Same as btrfs_finish_ordered_io() */
+> +       btrfs_remove_ordered_extent(inode, entry);
+> +       btrfs_put_ordered_extent(entry);
+> +       btrfs_put_ordered_extent(entry);
+> +       return;
+> +
+> +not_found:
+> +       WARN_ON(1);
+> +       btrfs_err(root->fs_info,
+> +       "failed to find and clean ordered extent: root %llu ino %llu file_offset %llu len %llu",
+> +                 root->objectid, btrfs_ino(inode), file_offset, ram_len);
+> +       return;
+> +}
+> +
+>  static void btrfs_run_ordered_extent_work(struct btrfs_work *work)
+>  {
+>         struct btrfs_ordered_extent *ordered;
+> diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
+> index 5f2b0ca28705..7a989778aa89 100644
+> --- a/fs/btrfs/ordered-data.h
+> +++ b/fs/btrfs/ordered-data.h
+> @@ -163,6 +163,16 @@ btrfs_ordered_inode_tree_init(struct btrfs_ordered_inode_tree *t)
+>  void btrfs_put_ordered_extent(struct btrfs_ordered_extent *entry);
+>  void btrfs_remove_ordered_extent(struct inode *inode,
+>                                 struct btrfs_ordered_extent *entry);
+> +
+> +/*
+> + * Function to cleanup an allocated ordered extent in error routine.
+> + *
+> + * As error handler in run_delalloc_range() will clear all related pages
+> + * and skip their IO, we have no method to finish inserted ordered extent.
+> + * So we must use this function to clean it up.
+> + */
+> +void btrfs_clean_ordered_extent(struct inode *inode, u64 file_offset,
+> +                               u64 ram_len);
+>  int btrfs_dec_test_ordered_pending(struct inode *inode,
+>                                    struct btrfs_ordered_extent **cached,
+>                                    u64 file_offset, u64 io_size, int uptodate);
+> --
+> 2.11.1
+>
+>
+>
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
+-- 
+Filipe David Manana,
+
+"People will forget what you said,
+ people will forget what you did,
+ but people will never forget how you made them feel."

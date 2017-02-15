@@ -1,256 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from p3nlsmtpcp01-04.prod.phx3.secureserver.net ([184.168.200.145]:58486
-        "EHLO p3nlsmtpcp01-04.prod.phx3.secureserver.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750806AbdBOJEw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Feb 2017 04:04:52 -0500
-Date: Wed, 15 Feb 2017 14:33:38 +0530
-From: "Lakshmipathi.G" <Lakshmipathi.G@giis.co.in>
-To: linux-btrfs@vger.kernel.org, quwenruo@cn.fujitsu.com, kreijack@inwind.it
-Subject: [PATCH] btrfs-progs: RAID5:Inject data stripe corruption and verify
- scrub fixes it.
-Message-ID: <20170215090338.GA11666@giis.co.in>
+Received: from smtp-34.italiaonline.it ([212.48.25.162]:51207 "EHLO libero.it"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751356AbdBOSZA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 15 Feb 2017 13:25:00 -0500
+Reply-To: kreijack@inwind.it
+Subject: Re: How to dump/find parity of RAID-5 file?
+References: <20170203104406.GA3670@giis.co.in>
+ <15ae32eb-195a-712c-2746-cf7528b728a2@inwind.it>
+ <20170214200929.GB24702@giis.co.in>
+To: "Lakshmipathi.G" <lakshmipathi.g@giis.co.in>, linux-btrfs@vger.kernel.org
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Message-ID: <bfe89355-f549-7bda-ff0c-428c8b4ca4ed@inwind.it>
+Date: Wed, 15 Feb 2017 19:24:55 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170214200929.GB24702@giis.co.in>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Lakshmipathi.G <Lakshmipathi.G@giis.co.in>
----
- .../020-raid5-datastripe-corruption/test.sh        | 224 +++++++++++++++++++++
- 1 file changed, 224 insertions(+)
- create mode 100755 tests/misc-tests/020-raid5-datastripe-corruption/test.sh
+On 2017-02-14 21:09, Lakshmipathi.G wrote:
+> On Mon, Feb 06, 2017 at 09:40:47PM +0100, Goffredo Baroncelli wrote:
+>>
+>> IIRC, the parity is spread across the disk stripes of the chunk.
+>>
+>> So first you have to find the logical-offset [LO] where the the file begins. Then you have to map this offset to the chunk which holds the data. The chunk has the following info:
+>> - chunk start [CS], chunk length [CL]
+>> - for each stripe:
+>> 	where the stripe starts
+>>
+>> If you subtract the chunk-start from the logical-offset [ CO == LO-CS], you will find the offset where the data belongs in the chunk.
+>>
+>> As stated above, the PARITY is spread across the chunk stripes. So (supposing that the stripe size is 64K, the raid level is 5, the disks are three), 
+>>
+>> - the first 64k of stripe 0, is data [0..64K)
+>> - the first 64k of stripe 1, is data [64..128K)
+>> - the first 64k of stripe 2 is parity, 
+>>
+>> - the 2nd 64k of stripe 0 is parity, 
+>> - the 2nd 64k of stripe 1, is data [128..196K)
+>> - the 2nd 64k of stripe 2, is data [192..256K)
+>>
+>> - the 3rd 64k of stripe 0, is data [256..320K)
+>> - the 3rd 64k of stripe 1 is parity, 
+>> - the 3rd 64k of stripe 2, is data [320..384K)
+>> and so on,
+>>
+>> To find the data, You have to compare the CO to the data [...) range.
+>>
+>> If you look to an my old patch (unfinished :-( ), you can find some example to dump the different stripe
+>>
+>> [BTRFS-PROGS][PATCH][V2] Add two new commands: 'btrfs insp physical-find' and 'btrfs insp physical-dump'
+>>
+>>
+> Sorry for the delay, I was offline. Thanks for the details. I can understood "partiy spread across the chunk stripes" part.
+> But unable to figure-out the first part regarding calculations.
+> 
+> Raid5 With 3-devices each 512MB. Create single 128KB file("print 'Ab'+'a'*65534+'aB'+'b'*65533"). 'debug-tree' shows chunk tree as:
+> 
+> 	item 5 key (FIRST_CHUNK_TREE CHUNK_ITEM 145096704) itemoff 15557 itemsize 144
+> 		length 134217728 owner 2 stripe_len 65536 type DATA|RAID5
+> 		io_align 65536 io_width 65536 sector_size 4096
+> 		num_stripes 3 sub_stripes 0
+> 			stripe 0 devid 3 offset 63111168
+> 			dev_uuid 9a2a18f1-6193-44b9-aafc-23d161d66110
+> 			stripe 1 devid 2 offset 63111168
+> 			dev_uuid e45ab907-c3a8-4dff-af9f-2ae5fd38ffd6
+> 			stripe 2 devid 1 offset 83034112
+> 			dev_uuid 428c04d9-37da-454a-b7b2-f6fe88580de2
+> and fs-tree shows:
+> 	item 13 key (145227776 EXTENT_ITEM 131072) itemoff 15788 itemsize 53
+> 		extent refs 1 gen 7 flags DATA
+> 		extent data backref root 5 objectid 257 offset 0 count 1
+> 
+>>From above, I assume: 
+> LO=145227776  CS=145096704 and CL=134217728
+> CO=145227776 - 145096704  => CO = 131072
+> 
+> Quite confused from here :s  I'll look into your patches to understand more. I hope sometime in future we will 
+> have your finished patches :) 'physical-find' and 'physical-find' commands will be really useful for debugging/testing and 
+> learning purposes. thanks.
 
-diff --git a/tests/misc-tests/020-raid5-datastripe-corruption/test.sh b/tests/misc-tests/020-raid5-datastripe-corruption/test.sh
-new file mode 100755
-index 0000000..d04c430
---- /dev/null
-+++ b/tests/misc-tests/020-raid5-datastripe-corruption/test.sh
-@@ -0,0 +1,224 @@
-+#!/bin/bash
-+#
-+# Raid5: Inject data stripe corruption and fix them using scrub.
-+# 
-+# Script will perform the following:
-+# 1) Create Raid5 using 3 loopback devices.
-+# 2) Ensure file layout is created in a predictable manner. 
-+#    Each data stripe(64KB) should uniquely start with 'DNxxxx',   
-+#    where N represents the data stripe number.(ex:D0xxxx,D1xxxx etc)
-+# 3) Once file is created with specific layout, gather data stripe details 
-+#    like devicename, position and actual on-disk data.
-+# 4) Now use 'dd' to verify the data-stripe against its expected value
-+#    and inject corruption by zero'ing out contents.
-+# 5) After injecting corruption, running online-scrub is expected to fix 
-+#    the corrupted data stripe with the help of parity block and 
-+#    corresponding data stripe.
-+# 6) Finally, validate the data stripe has original un-corrupted value.
-+#
-+#  Note: This script doesn't handle parity block corruption.
-+
-+source $TOP/tests/common
-+
-+check_prereq btrfs
-+check_prereq mkfs.btrfs
-+
-+setup_root_helper
-+prepare_test_dev 512M
-+
-+ndevs=3
-+declare -a devs
-+device_name=""
-+stripe_offset=""
-+stripe_content=""
-+
-+LAYOUT_TMP=$(mktemp --tmpdir btrfs-progs-raid5-file.layoutXXXXXX)
-+STRIPEINFO_TMP=$(mktemp --tmpdir btrfs-progs-raid5-file.infoXXXXXX)
-+
-+prepare_devices()
-+{
-+	for i in `seq $ndevs`; do
-+		touch img$i
-+		chmod a+rw img$i
-+		truncate -s0 img$i
-+		truncate -s512M img$i
-+		devs[$i]=`run_check_stdout $SUDO_HELPER losetup --find --show img$i`
-+	done
-+}
-+
-+cleanup_devices()
-+{
-+	for dev in ${devs[@]}; do
-+		run_check $SUDO_HELPER losetup -d $dev
-+	done
-+	for i in `seq $ndevs`; do
-+		truncate -s0 img$i
-+	done
-+	run_check $SUDO_HELPER losetup --all
-+}
-+
-+test_do_mkfs()
-+{
-+	run_check $SUDO_HELPER $TOP/mkfs.btrfs -f	\
-+		$@
-+}
-+
-+test_mkfs_multi()
-+{
-+	test_do_mkfs $@ ${devs[@]}
-+}
-+
-+#$1 Filename
-+#$2 Expected no.of data stripes for the file.
-+create_layout(){
-+	fname=$1
-+	size=$(( $2 * 65536 ))
-+	n=0
-+	bs_value=1
-+	stripe=0
-+	while (( $n < $size ))
-+	do
-+		if [ $(( $n % 65536 )) -eq 0 ]; then
-+			val='D'$stripe
-+			echo -n $val
-+        		stripe=$(( $stripe+1 ))
-+			# ensure proper value		
-+			bs_value=`echo "${#val}"` 
-+        	else
-+			echo -n 'x'
-+			bs_value=1
-+		fi
-+        n=$(( $n+$bs_value ))
-+	done | dd of="$TEST_MNT"/$fname bs=$bs_value conv=notrunc &> /dev/null
-+}
-+
-+find_data_stripe_details(){
-+	for dev in ${devs[@]}; do
-+		echo $dev >> $LAYOUT_TMP
-+		$SUDO_HELPER cat $dev | hexdump -e '"%010_ad|" 16/1 "%_p" "|\n"' |
-+		grep -P 'D[0-9]+xx'  >> $LAYOUT_TMP
-+	done
-+}
-+
-+#Collect data stripe information in a readable manner.
-+save_data_stripe_details(){
-+	devname=""
-+	for entry in `cat $LAYOUT_TMP`; do  
-+		echo $entry | grep -q '^\/dev\/loop' > /dev/null
-+
-+		if [ $? -eq 0 ]; then
-+			devname=$entry	
-+		else
-+			echo $devname"|"$entry >> $STRIPEINFO_TMP
-+		fi
-+	done
-+	#Order by data stripe. D0 comes before D1.
-+	sort -t'|'  -k3 $STRIPEINFO_TMP -o $STRIPEINFO_TMP
-+}
-+
-+#Corrupt given data stripe
-+corrupt_data_stripe(){
-+
-+	data_stripe_num=$1
-+	data_stripe_entry="D"${data_stripe_num}"xxxx"
-+	stripe_entry=`grep "${data_stripe_entry}" $STRIPEINFO_TMP`
-+
-+	#Each entry will have format like "device|position|16-byte content"
-+	#Example: /dev/loop1|0063176704|D0xxxxxxxxxxxxxx|
-+	device_name=$(echo $stripe_entry | awk -F"|" '{print $1}')
-+	stripe_offset=$(echo $stripe_entry | awk -F"|" '{print $2}')
-+	#Remove leading zeros
-+	stripe_offset=$(echo $stripe_offset | sed 's/^0*//')
-+	stripe_content=$(echo $stripe_entry | awk -F"|" '{print $3}')
-+
-+	echo "Corrupting $device_name at position $stripe_offset \
-+	which has $stripe_content" >> "$RESULTS"
-+
-+	#verify the value at this position 
-+	original_value=$($SUDO_HELPER dd 2>/dev/null if=$device_name bs=1 \
-+	count=16 skip=$stripe_offset)
-+
-+	if [ $original_value != $stripe_content ];then
-+		 echo "$original_value != $stripe_content"
-+		_fail "Data stripe mismatch. Possible use of incorrect block."
-+	else
-+		echo "Found on-disk value: $original_value " >> "$RESULTS"
-+	fi
-+
-+	#Corrupt the given data stripe
-+	$SUDO_HELPER dd if=/dev/zero of=$device_name bs=1 count=4 \
-+	seek=$stripe_offset conv=notrunc &> /dev/null
-+
-+	#Fetch value again.
-+	corrupted_value=$($SUDO_HELPER dd 2>/dev/null if=$device_name \
-+	bs=1 count=16 skip=$stripe_offset)
-+
-+	if [ $corrupted_value == $original_value ];then
-+		 echo "original:$original_value corrupted:$corrupted_value"
-+		_fail "Corruption failed. Possible use of incorrect block."
-+	else
-+		echo "Corruption completed at $stripe_offset" >> "$RESULTS"
-+	fi
-+
-+# Corruption done.
-+}
-+
-+#Verify data stripe after scrub
-+verify_data_stripe(){
-+
-+	value_after_scrub=$($SUDO_HELPER dd 2>/dev/null if=$device_name bs=1 \
-+	count=16 skip=$stripe_offset)
-+	if [ $value_after_scrub != $stripe_content ];then
-+		_fail "Scrub failed to fix data stripe corruption."
-+	else
-+		echo "Scrub corrected value: $value_after_scrub" >> "$RESULTS"
-+	fi
-+}
-+
-+#$1 Filename
-+#$2 File with 'n' no.of data stripes
-+#$3 Data stripe to corrupt
-+test_raid5_datastripe_corruption(){
-+	filename=$1
-+	stripe_num=$2
-+	test_stripe=$3
-+
-+	prepare_devices
-+	dev1=${devs[1]}
-+	dev2=${devs[2]}
-+	dev3=${devs[3]}
-+
-+	test_mkfs_multi -d raid5 -m raid5
-+	run_check $SUDO_HELPER mount $dev1 $TEST_MNT
-+	create_layout $filename $stripe_num
-+	run_check $SUDO_HELPER umount "$TEST_MNT"
-+
-+	#Gather data stripe informations like specific device,offset 
-+	find_data_stripe_details
-+	save_data_stripe_details
-+	corrupt_data_stripe $test_stripe
-+
-+	#Mount the device and start scrub
-+	run_check $SUDO_HELPER mount $dev1 $TEST_MNT
-+	run_check $SUDO_HELPER btrfs scrub start $TEST_MNT
-+	#Introduce delay, hopefully scrubbing will be finished.
-+	sleep 10 
-+
-+	#Validate 
-+	verify_data_stripe
-+
-+	#cleanup
-+	run_check $SUDO_HELPER umount "$TEST_MNT"
-+	cleanup_devices
-+	rm -f $LAYOUT_TMP
-+	rm -f $STRIPEINFO_TMP
-+}
-+
-+
-+test_raid5_datastripe_corruption file128k.txt 2 1 #file with 2 stripe,corrupt 1st.
-+test_raid5_datastripe_corruption file192k.txt 3 2 #file with 3 stripe,corrupt 2nd.
-+test_raid5_datastripe_corruption file256k.txt 4 3
-+test_raid5_datastripe_corruption file512k.txt 8 6
-+test_raid5_datastripe_corruption file768k.txt 12 10
-+test_raid5_datastripe_corruption file1m.txt 16 14 #1MB file, corrupt 14th stripe.
-+test_raid5_datastripe_corruption file1m.txt 32 23 #2MB file, corrupt 23rd stripe
+The chunk-tree maps the logical address [145096704...145096704+134217728) [size=128MB] to the physical ones 
+	devid3 : [63111168..63111168+67108864) [size=64MB]
+	devid1 : [63111168..63111168+67108864) [size=64MB]
+	devid2 : [83034112..83034112+67108864) [size=64MB]
+
+So because the logical address is divided in pieces of 64k, interleaved by the parity, we know that:
+* first 128kb
+logical address [145096704      ..145096704+64k)   -> devid1, [63111168    ..63111168+64k)
+logical address [145096704+64k  ..145096704+2x64k) -> devid2, [83034112    ..83034112+64k)
+                parity:                            -> devid3, [63111168    ..63111168+64k)
+* second 128kb
+logical address [145096704+2x64k..145096704+3x64k) -> devid2, [83034112+64k..83034112+2x64k)
+logical address [145096704+3x64k..145096704+4x64k) -> devid3, [63111168+64k..63111168+2x64k)
+                parity:                            -> devid1, [63111168+64k..63111168+2x64k)
+And so on...
+
+(NB: 145096704+2x64k == 145227776)
+
+The fs-tree, maps the file content [0..131072) [size=128k] to the logical address [145227776..145227776+131072) [size=128k]
+
+So the file content is stored starting from the disk devid2, at 83034112+64k=83099648 (first 64k). The second 64k is placed in disk devid3 at 63111168+64k=63176704; the parity is stored at disk1, 63111168+64k = 63176704
+
+
+BR
+G.Baroncelli
+
+> 
+> Cheers.
+> Lakshmipathi.G
+> 
+
+
 -- 
-2.7.4
-
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

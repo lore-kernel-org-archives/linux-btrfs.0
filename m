@@ -1,58 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f44.google.com ([209.85.214.44]:33950 "EHLO
-        mail-it0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753010AbdBTRgm (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 20 Feb 2017 12:36:42 -0500
-Received: by mail-it0-f44.google.com with SMTP id k200so26292335itb.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 20 Feb 2017 09:36:41 -0800 (PST)
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <f1156c2d-20d1-eb7c-6d48-207d22a34512@suse.de>
-References: <f1156c2d-20d1-eb7c-6d48-207d22a34512@suse.de>
-From: Filipe Manana <fdmanana@gmail.com>
-Date: Mon, 20 Feb 2017 17:28:38 +0000
-Message-ID: <CAL3q7H4+7iTC1toTBitaMZ8sbbgXF92z6nUMDu-4NvvhMP5N-Q@mail.gmail.com>
-Subject: Re: Why is btrfs_run_delayed_refs() run multiple times
-To: Goldwyn Rodrigues <rgoldwyn@suse.de>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from mx2.suse.de ([195.135.220.15]:57380 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752245AbdBOV2l (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 15 Feb 2017 16:28:41 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 3D2DDAD55
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Feb 2017 21:28:40 +0000 (UTC)
+From: jeffm@suse.com
+To: linux-btrfs@vger.kernel.org
+Cc: Jeff Mahoney <jeffm@suse.com>
+Subject: [PATCH 0/8] btrfs: cleanup patches
+Date: Wed, 15 Feb 2017 16:28:26 -0500
+Message-Id: <1487194114-12786-1-git-send-email-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 20, 2017 at 5:08 PM, Goldwyn Rodrigues <rgoldwyn@suse.de> wrote:
-> Hi,
->
-> Why do we call btrfs_run_delayed_refs multiple times in a function? Some
-> of the examples are:
->
-> btrfs_commit_transaction()
-> commit_cowonly_roots()
->
-> Is it because one call can generate more delayed refs and hence we need
-> to run them again? Under what scenarios is this possible?
+From: Jeff Mahoney <jeffm@suse.com>
 
-All extents, for both data and metadata, are reference counted and
-have back references in the extent tree. Adding/updating/removing
-things to/in/from a tree implies COWing metadata extents (tree nodes
-and leaves), which implies generating more delayed references.
-Eventually this loop stops, as metadata extents are COWed only once
-per transaction or more times if writeback was triggered.
-So it's possible in all scenarios.
+Hi all -
 
->
-> --
-> Goldwyn
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Here's another around of cleanup patches.  The first 7 cleanup API
+blemishes with unused arguments and/or root -> fs_info conversion.  The
+last converts the pr_debug in btrfs_abort_transaction to use btrfs_debug.
 
+-Jeff
 
+Jeff Mahoney (8):
+  btrfs: pass fs_info to (more) routines that are only called with
+    extent_root
+  btrfs: flush_space always takes fs_info->fs_root
+  btrfs: convert btrfs_inc_block_group_ro to accept fs_info
+  btrfs: free-space-cache, clean up unnecessary root arguments
+  btrfs: btrfs_wait_cache_io_root doesn't use path argument
+  btrfs: btrfs_truncate_free_space_cache always allocates path
+  btrfs: drop unused extent_op arg from btrfs_add_delayed_data_ref
+  btrfs: use btrfs_debug instead of pr_debug in transaction abort
+
+ fs/btrfs/ctree.h            |   5 +-
+ fs/btrfs/delayed-ref.c      |   6 +-
+ fs/btrfs/delayed-ref.h      |   3 +-
+ fs/btrfs/extent-tree.c      | 144 ++++++++++++++++++++++----------------------
+ fs/btrfs/free-space-cache.c |  49 ++++++---------
+ fs/btrfs/free-space-cache.h |   7 +--
+ fs/btrfs/inode-map.c        |   2 +-
+ fs/btrfs/relocation.c       |   7 +--
+ fs/btrfs/scrub.c            |   2 +-
+ 9 files changed, 107 insertions(+), 118 deletions(-)
 
 -- 
-Filipe David Manana,
+2.7.1
 
-"People will forget what you said,
- people will forget what you did,
- but people will never forget how you made them feel."

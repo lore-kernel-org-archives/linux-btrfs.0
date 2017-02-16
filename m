@@ -1,26 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:17273 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752416AbdBPAJp (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:39735 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752786AbdBPALj (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Feb 2017 19:09:45 -0500
-Date: Wed, 15 Feb 2017 16:08:45 -0800
+        Wed, 15 Feb 2017 19:11:39 -0500
+Date: Wed, 15 Feb 2017 16:10:33 -0800
 From: Liu Bo <bo.li.liu@oracle.com>
 To: David Sterba <dsterba@suse.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 26/29] btrfs: remove unused parameter from __add_inode_ref
-Message-ID: <20170216000845.GN19427@localhost.localdomain>
+Subject: Re: [PATCH 25/29] btrfs: remove unused parameter from
+ clone_copy_inline_extent
+Message-ID: <20170216001033.GO19427@localhost.localdomain>
 Reply-To: bo.li.liu@oracle.com
 References: <cover.1486977711.git.dsterba@suse.com>
- <6ab7d2d469a0a929ce89feaf9bd8938dd3c1754f.1486977712.git.dsterba@suse.com>
+ <3f8bfd048583e3c93e834305b46152b05c76b70a.1486977712.git.dsterba@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <6ab7d2d469a0a929ce89feaf9bd8938dd3c1754f.1486977712.git.dsterba@suse.com>
+In-Reply-To: <3f8bfd048583e3c93e834305b46152b05c76b70a.1486977712.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 13, 2017 at 10:34:41AM +0100, David Sterba wrote:
-> Unused since the helper has been split, eb used in the caller.
+On Mon, Feb 13, 2017 at 10:34:38AM +0100, David Sterba wrote:
+> Never used.
 > 
 Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
@@ -29,30 +30,32 @@ Thanks,
 -liubo
 > Signed-off-by: David Sterba <dsterba@suse.com>
 > ---
->  fs/btrfs/tree-log.c | 3 +--
->  1 file changed, 1 insertion(+), 2 deletions(-)
+>  fs/btrfs/ioctl.c | 5 ++---
+>  1 file changed, 2 insertions(+), 3 deletions(-)
 > 
-> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-> index 62dd138018b5..3806853cde08 100644
-> --- a/fs/btrfs/tree-log.c
-> +++ b/fs/btrfs/tree-log.c
-> @@ -994,7 +994,6 @@ static inline int __add_inode_ref(struct btrfs_trans_handle *trans,
->  				  struct btrfs_root *log_root,
->  				  struct btrfs_inode *dir,
->  				  struct btrfs_inode *inode,
-> -				  struct extent_buffer *eb,
->  				  u64 inode_objectid, u64 parent_objectid,
->  				  u64 ref_index, char *name, int namelen,
->  				  int *search_done)
-> @@ -1310,7 +1309,7 @@ static noinline int add_inode_ref(struct btrfs_trans_handle *trans,
->  			if (!search_done) {
->  				ret = __add_inode_ref(trans, root, path, log,
->  						      BTRFS_I(dir),
-> -						      BTRFS_I(inode), eb,
-> +						      BTRFS_I(inode),
->  						      inode_objectid,
->  						      parent_objectid,
->  						      ref_index, name, namelen,
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 1f13f8416d29..b9e6f8a4f760 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -3383,8 +3383,7 @@ static void clone_update_extent_map(struct inode *inode,
+>   * data into the destination inode's inline extent if the later is greater then
+>   * the former.
+>   */
+> -static int clone_copy_inline_extent(struct inode *src,
+> -				    struct inode *dst,
+> +static int clone_copy_inline_extent(struct inode *dst,
+>  				    struct btrfs_trans_handle *trans,
+>  				    struct btrfs_path *path,
+>  				    struct btrfs_key *new_key,
+> @@ -3763,7 +3762,7 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
+>  				size -= skip + trim;
+>  				datal -= skip + trim;
+>  
+> -				ret = clone_copy_inline_extent(src, inode,
+> +				ret = clone_copy_inline_extent(inode,
+>  							       trans, path,
+>  							       &new_key,
+>  							       drop_start,
 > -- 
 > 2.10.1
 > 

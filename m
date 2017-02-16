@@ -1,140 +1,304 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:46373 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751583AbdBPJB6 (ORCPT
+Received: from mail-it0-f65.google.com ([209.85.214.65]:34044 "EHLO
+        mail-it0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750748AbdBPKQH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Feb 2017 04:01:58 -0500
+        Thu, 16 Feb 2017 05:16:07 -0500
+Received: by mail-it0-f65.google.com with SMTP id r141so3190013ita.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 16 Feb 2017 02:16:07 -0800 (PST)
+MIME-Version: 1.0
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <20170215024303.26907-1-quwenruo@cn.fujitsu.com>
+References: <20170215024303.26907-1-quwenruo@cn.fujitsu.com>
+From: Filipe Manana <fdmanana@gmail.com>
+Date: Thu, 16 Feb 2017 10:16:05 +0000
+Message-ID: <CAL3q7H6twXtyPcPi-Q7KZ3Q2p4m5OeWEkbr3syPLmfXbD-_FgQ@mail.gmail.com>
 Subject: Re: [PATCH v2] btrfs: qgroup: Move half of the qgroup accounting time
  out of commit trans
-To: Nikolay Borisov <n.borisov.lkml@gmail.com>, <linux-btrfs@vger.kernel.org>
-References: <20170215024303.26907-1-quwenruo@cn.fujitsu.com>
- <cc13d0b2-9355-e61b-04c4-49f354aada58@gmail.com>
- <f12289c2-7a2f-59d5-756a-5a6e7700b773@cn.fujitsu.com>
- <754d5182-6a5a-09bd-ebcd-4470ca95fdfd@gmail.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <fe11cf35-e0c5-ea9e-fa85-bce82571d5f2@cn.fujitsu.com>
-Date: Thu, 16 Feb 2017 17:01:42 +0800
-MIME-Version: 1.0
-In-Reply-To: <754d5182-6a5a-09bd-ebcd-4470ca95fdfd@gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Filipe Manana <fdmanana@suse.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-At 02/16/2017 04:56 PM, Nikolay Borisov wrote:
+On Wed, Feb 15, 2017 at 2:43 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+> Just as Filipe pointed out, the most time consuming parts of qgroup are
+> btrfs_qgroup_account_extents() and
+> btrfs_qgroup_prepare_account_extents().
+> Which both call btrfs_find_all_roots() to get old_roots and new_roots
+> ulist.
 >
+> What makes things worse is, we're calling that expensive
+> btrfs_find_all_roots() at transaction committing time with
+> TRANS_STATE_COMMIT_DOING, which will blocks all incoming transaction.
 >
-> On 16.02.2017 10:50, Qu Wenruo wrote:
->>
->>
->> At 02/16/2017 04:45 PM, Nikolay Borisov wrote:
->>> Just a minor nit.
->>>
->>> On 15.02.2017 04:43, Qu Wenruo wrote:
->>>> Just as Filipe pointed out, the most time consuming parts of qgroup are
->>>> btrfs_qgroup_account_extents() and
->>>> btrfs_qgroup_prepare_account_extents().
->>>> Which both call btrfs_find_all_roots() to get old_roots and new_roots
->>>> ulist.
->>>>
->>>> What makes things worse is, we're calling that expensive
->>>> btrfs_find_all_roots() at transaction committing time with
->>>> TRANS_STATE_COMMIT_DOING, which will blocks all incoming transaction.
->>>>
->>>> Such behavior is necessary for @new_roots search as current
->>>> btrfs_find_all_roots() can't do it correctly so we do call it just
->>>> before switch commit roots.
->>>>
->>>> However for @old_roots search, it's not necessary as such search is
->>>> based on commit_root, so it will always be correct and we can move it
->>>> out of transaction committing.
->>>>
->>>> This patch moves the @old_roots search part out of
->>>> commit_transaction(), so in theory we can half the time qgroup time
->>>> consumption at commit_transaction().
->>>>
->>>> But please note that, this won't speedup qgroup overall, the total time
->>>> consumption is still the same, just reduce the performance stall.
->>>>
->>>> Cc: Filipe Manana <fdmanana@suse.com>
->>>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
->>>> ---
->>>> v2:
->>>>   Update commit message to make it more clear.
->>>>   Don't call btrfs_find_all_roots() before insert qgroup extent record,
->>>>   so we can avoid wasting CPU for already inserted qgroup extent record.
->>>>
->>>> PS:
->>>> If and only if we have fixed and proved btrfs_find_all_roots() can
->>>> get correct result with current root, then we can move all
->>>> expensive btrfs_find_all_roots() out of transaction committing.
->>>>
->>>> However I strongly doubt if it's possible with current delayed ref,
->>>> and without such prove, move btrfs_find_all_roots() for @new_roots
->>>> out of transaction committing will just screw up qgroup accounting.
->>>>
->>>> ---
->>>>  fs/btrfs/delayed-ref.c | 20 ++++++++++++++++----
->>>>  fs/btrfs/qgroup.c      | 33 +++++++++++++++++++++++++++++----
->>>>  fs/btrfs/qgroup.h      | 33 ++++++++++++++++++++++++++++++---
->>>>  3 files changed, 75 insertions(+), 11 deletions(-)
->>>>
->>>> diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
->>>> index ef724a5fc30e..0ee927ef5a71 100644
->>>> --- a/fs/btrfs/delayed-ref.c
->>>> +++ b/fs/btrfs/delayed-ref.c
->>>> @@ -550,13 +550,14 @@ add_delayed_ref_head(struct btrfs_fs_info
->>>> *fs_info,
->>>>               struct btrfs_delayed_ref_node *ref,
->>>>               struct btrfs_qgroup_extent_record *qrecord,
->>>>               u64 bytenr, u64 num_bytes, u64 ref_root, u64 reserved,
->>>> -             int action, int is_data)
->>>> +             int action, int is_data, int *qrecord_inserted_ret)
->>>>  {
->>>>      struct btrfs_delayed_ref_head *existing;
->>>>      struct btrfs_delayed_ref_head *head_ref = NULL;
->>>>      struct btrfs_delayed_ref_root *delayed_refs;
->>>>      int count_mod = 1;
->>>>      int must_insert_reserved = 0;
->>>> +    int qrecord_inserted = 0;
->>>
->>> Why use an integer when you only require a boolean value? I doubt it
->>> will make much difference at asm level if you switch to bool but at
->>> least it will make it more apparent it's being used as a true|false
->>> variable. The same comment applies to other functions where you've used
->>> similar variable.
->>
->> In fact I didn't see the point to use bool in most case.
->> And we are using int as bool almost everywhere, just like
->> must_insert_reserved and is_data.
->>
->> Or is there some coding style documentation prohibiting us to use int as
->> bool?
+> Such behavior is necessary for @new_roots search as current
+> btrfs_find_all_roots() can't do it correctly so we do call it just
+> before switch commit roots.
 >
-> There most certainly isn't. It's just more of a personal preference so
-> that's why I don't have a very strong opinion on this. In this case then
-> it's better to use int for the sake of consistency.
-
-I'll keep it in mind if I'm going to create some new functions.
-
-Although this makes sense for readability, in this case I prefer 
-consistency more.
-
-Thanks,
-Qu
-
+> However for @old_roots search, it's not necessary as such search is
+> based on commit_root, so it will always be correct and we can move it
+> out of transaction committing.
 >
->>
->> Thanks,
->> Qu
->>
->>
+> This patch moves the @old_roots search part out of
+> commit_transaction(), so in theory we can half the time qgroup time
+> consumption at commit_transaction().
+>
+> But please note that, this won't speedup qgroup overall, the total time
+> consumption is still the same, just reduce the performance stall.
+>
+> Cc: Filipe Manana <fdmanana@suse.com>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+
+thanks
+
+> ---
+> v2:
+>   Update commit message to make it more clear.
+>   Don't call btrfs_find_all_roots() before insert qgroup extent record,
+>   so we can avoid wasting CPU for already inserted qgroup extent record.
+>
+> PS:
+> If and only if we have fixed and proved btrfs_find_all_roots() can
+> get correct result with current root, then we can move all
+> expensive btrfs_find_all_roots() out of transaction committing.
+>
+> However I strongly doubt if it's possible with current delayed ref,
+> and without such prove, move btrfs_find_all_roots() for @new_roots
+> out of transaction committing will just screw up qgroup accounting.
+>
+> ---
+>  fs/btrfs/delayed-ref.c | 20 ++++++++++++++++----
+>  fs/btrfs/qgroup.c      | 33 +++++++++++++++++++++++++++++----
+>  fs/btrfs/qgroup.h      | 33 ++++++++++++++++++++++++++++++---
+>  3 files changed, 75 insertions(+), 11 deletions(-)
+>
+> diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+> index ef724a5fc30e..0ee927ef5a71 100644
+> --- a/fs/btrfs/delayed-ref.c
+> +++ b/fs/btrfs/delayed-ref.c
+> @@ -550,13 +550,14 @@ add_delayed_ref_head(struct btrfs_fs_info *fs_info,
+>                      struct btrfs_delayed_ref_node *ref,
+>                      struct btrfs_qgroup_extent_record *qrecord,
+>                      u64 bytenr, u64 num_bytes, u64 ref_root, u64 reserved,
+> -                    int action, int is_data)
+> +                    int action, int is_data, int *qrecord_inserted_ret)
+>  {
+>         struct btrfs_delayed_ref_head *existing;
+>         struct btrfs_delayed_ref_head *head_ref = NULL;
+>         struct btrfs_delayed_ref_root *delayed_refs;
+>         int count_mod = 1;
+>         int must_insert_reserved = 0;
+> +       int qrecord_inserted = 0;
+>
+>         /* If reserved is provided, it must be a data extent. */
+>         BUG_ON(!is_data && reserved);
+> @@ -623,6 +624,8 @@ add_delayed_ref_head(struct btrfs_fs_info *fs_info,
+>                 if(btrfs_qgroup_trace_extent_nolock(fs_info,
+>                                         delayed_refs, qrecord))
+>                         kfree(qrecord);
+> +               else
+> +                       qrecord_inserted = 1;
+>         }
+>
+>         spin_lock_init(&head_ref->lock);
+> @@ -650,6 +653,8 @@ add_delayed_ref_head(struct btrfs_fs_info *fs_info,
+>                 atomic_inc(&delayed_refs->num_entries);
+>                 trans->delayed_ref_updates++;
+>         }
+> +       if (qrecord_inserted_ret)
+> +               *qrecord_inserted_ret = qrecord_inserted;
+>         return head_ref;
+>  }
+>
+> @@ -779,6 +784,7 @@ int btrfs_add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
+>         struct btrfs_delayed_ref_head *head_ref;
+>         struct btrfs_delayed_ref_root *delayed_refs;
+>         struct btrfs_qgroup_extent_record *record = NULL;
+> +       int qrecord_inserted;
+>
+>         BUG_ON(extent_op && extent_op->is_data);
+>         ref = kmem_cache_alloc(btrfs_delayed_tree_ref_cachep, GFP_NOFS);
+> @@ -806,12 +812,15 @@ int btrfs_add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
+>          * the spin lock
+>          */
+>         head_ref = add_delayed_ref_head(fs_info, trans, &head_ref->node, record,
+> -                                       bytenr, num_bytes, 0, 0, action, 0);
+> +                                       bytenr, num_bytes, 0, 0, action, 0,
+> +                                       &qrecord_inserted);
+>
+>         add_delayed_tree_ref(fs_info, trans, head_ref, &ref->node, bytenr,
+>                              num_bytes, parent, ref_root, level, action);
+>         spin_unlock(&delayed_refs->lock);
+>
+> +       if (qrecord_inserted)
+> +               return btrfs_qgroup_trace_extent_post(fs_info, record);
+>         return 0;
+>
+>  free_head_ref:
+> @@ -836,6 +845,7 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+>         struct btrfs_delayed_ref_head *head_ref;
+>         struct btrfs_delayed_ref_root *delayed_refs;
+>         struct btrfs_qgroup_extent_record *record = NULL;
+> +       int qrecord_inserted;
+>
+>         BUG_ON(extent_op && !extent_op->is_data);
+>         ref = kmem_cache_alloc(btrfs_delayed_data_ref_cachep, GFP_NOFS);
+> @@ -870,13 +880,15 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+>          */
+>         head_ref = add_delayed_ref_head(fs_info, trans, &head_ref->node, record,
+>                                         bytenr, num_bytes, ref_root, reserved,
+> -                                       action, 1);
+> +                                       action, 1, &qrecord_inserted);
+>
+>         add_delayed_data_ref(fs_info, trans, head_ref, &ref->node, bytenr,
+>                                    num_bytes, parent, ref_root, owner, offset,
+>                                    action);
+>         spin_unlock(&delayed_refs->lock);
+>
+> +       if (qrecord_inserted)
+> +               return btrfs_qgroup_trace_extent_post(fs_info, record);
+>         return 0;
+>  }
+>
+> @@ -899,7 +911,7 @@ int btrfs_add_delayed_extent_op(struct btrfs_fs_info *fs_info,
+>
+>         add_delayed_ref_head(fs_info, trans, &head_ref->node, NULL, bytenr,
+>                              num_bytes, 0, 0, BTRFS_UPDATE_DELAYED_HEAD,
+> -                            extent_op->is_data);
+> +                            extent_op->is_data, NULL);
+>
+>         spin_unlock(&delayed_refs->lock);
+>         return 0;
+> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+> index 662821f1252c..979e0e8a3d90 100644
+> --- a/fs/btrfs/qgroup.c
+> +++ b/fs/btrfs/qgroup.c
+> @@ -1446,8 +1446,9 @@ int btrfs_qgroup_prepare_account_extents(struct btrfs_trans_handle *trans,
+>         while (node) {
+>                 record = rb_entry(node, struct btrfs_qgroup_extent_record,
+>                                   node);
+> -               ret = btrfs_find_all_roots(NULL, fs_info, record->bytenr, 0,
+> -                                          &record->old_roots);
+> +               if (WARN_ON(!record->old_roots))
+> +                       ret = btrfs_find_all_roots(NULL, fs_info,
+> +                                       record->bytenr, 0, &record->old_roots);
+>                 if (ret < 0)
+>                         break;
+>                 if (qgroup_to_skip)
+> @@ -1486,6 +1487,28 @@ int btrfs_qgroup_trace_extent_nolock(struct btrfs_fs_info *fs_info,
+>         return 0;
+>  }
+>
+> +int btrfs_qgroup_trace_extent_post(struct btrfs_fs_info *fs_info,
+> +                                  struct btrfs_qgroup_extent_record *qrecord)
+> +{
+> +       struct ulist *old_root;
+> +       u64 bytenr = qrecord->bytenr;
+> +       int ret;
+> +
+> +       ret = btrfs_find_all_roots(NULL, fs_info, bytenr, 0, &old_root);
+> +       if (ret < 0)
+> +               return ret;
+> +
+> +       /*
+> +        * Here we don't need to get the lock of
+> +        * trans->transaction->delayed_refs, since inserted qrecord won't
+> +        * be deleted, only qrecord->node may be modified (new qrecord insert)
+> +        *
+> +        * So modifying qrecord->old_roots is safe here
+> +        */
+> +       qrecord->old_roots = old_root;
+> +       return 0;
+> +}
+> +
+>  int btrfs_qgroup_trace_extent(struct btrfs_trans_handle *trans,
+>                 struct btrfs_fs_info *fs_info, u64 bytenr, u64 num_bytes,
+>                 gfp_t gfp_flag)
+> @@ -1511,9 +1534,11 @@ int btrfs_qgroup_trace_extent(struct btrfs_trans_handle *trans,
+>         spin_lock(&delayed_refs->lock);
+>         ret = btrfs_qgroup_trace_extent_nolock(fs_info, delayed_refs, record);
+>         spin_unlock(&delayed_refs->lock);
+> -       if (ret > 0)
+> +       if (ret > 0) {
+>                 kfree(record);
+> -       return 0;
+> +               return 0;
+> +       }
+> +       return btrfs_qgroup_trace_extent_post(fs_info, record);
+>  }
+>
+>  int btrfs_qgroup_trace_leaf_items(struct btrfs_trans_handle *trans,
+> diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+> index 416ae8e1d23c..0b9da45f7d72 100644
+> --- a/fs/btrfs/qgroup.h
+> +++ b/fs/btrfs/qgroup.h
+> @@ -94,9 +94,10 @@ int btrfs_qgroup_prepare_account_extents(struct btrfs_trans_handle *trans,
+>                                          struct btrfs_fs_info *fs_info);
+>  /*
+>   * Inform qgroup to trace one dirty extent, its info is recorded in @record.
+> - * So qgroup can account it at commit trans time.
+> + * So qgroup can account it at transaction committing time.
+>   *
+> - * No lock version, caller must acquire delayed ref lock and allocate memory.
+> + * No lock version, caller must acquire delayed ref lock and allocated memory,
+> + * then call btrfs_qgroup_trace_extent_post() after exiting lock context.
+>   *
+>   * Return 0 for success insert
+>   * Return >0 for existing record, caller can free @record safely.
+> @@ -108,11 +109,37 @@ int btrfs_qgroup_trace_extent_nolock(
+>                 struct btrfs_qgroup_extent_record *record);
+>
+>  /*
+> + * Post handler after qgroup_trace_extent_nolock().
+> + *
+> + * NOTE: Current qgroup does the expensive backref walk at transaction
+> + * committing time with TRANS_STATE_COMMIT_DOING, this blocks incoming
+> + * new transaction.
+> + * This is designed to allow btrfs_find_all_roots() to get correct new_roots
+> + * result.
+> + *
+> + * However for old_roots there is no need to do backref walk at that time,
+> + * since we search commit roots to walk backref and result will always be
+> + * correct.
+> + *
+> + * Due to the nature of no lock version, we can't do backref there.
+> + * So we must call btrfs_qgroup_trace_extent_post() after exiting
+> + * spinlock context.
+> + *
+> + * TODO: If we can fix and prove btrfs_find_all_roots() can get correct result
+> + * using current root, then we can move all expensive backref walk out of
+> + * transaction committing, but not now as qgroup accounting will be wrong again.
+> + */
+> +int btrfs_qgroup_trace_extent_post(struct btrfs_fs_info *fs_info,
+> +                                  struct btrfs_qgroup_extent_record *qrecord);
+> +
+> +/*
+>   * Inform qgroup to trace one dirty extent, specified by @bytenr and
+>   * @num_bytes.
+>   * So qgroup can account it at commit trans time.
+>   *
+> - * Better encapsulated version.
+> + * Better encapsulated version, with memory allocation and backref walk for
+> + * commit roots.
+> + * So this can sleep.
+>   *
+>   * Return 0 if the operation is done.
+>   * Return <0 for error, like memory allocation failure or invalid parameter
 > --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 2.11.1
+>
 >
 >
 
 
+
+-- 
+Filipe David Manana,
+
+"People will forget what you said,
+ people will forget what you did,
+ but people will never forget how you made them feel."

@@ -1,39 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:55288 "EHLO
-        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754622AbdBPOHE (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Feb 2017 09:07:04 -0500
-Date: Thu, 16 Feb 2017 15:07:01 +0100
-From: Adam Borowski <kilobyte@angband.pl>
-To: Imran Geriskovan <imran.geriskovan@gmail.com>
+Received: from p3nlsmtpcp01-03.prod.phx3.secureserver.net ([184.168.200.142]:47686
+        "EHLO p3nlsmtpcp01-03.prod.phx3.secureserver.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S932082AbdBPPPg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 16 Feb 2017 10:15:36 -0500
+Date: Thu, 16 Feb 2017 20:44:09 +0530
+From: "Lakshmipathi.G" <lakshmipathi.g@giis.co.in>
+To: Goffredo Baroncelli <kreijack@inwind.it>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: 4.9/4.10 Experiences
-Message-ID: <20170216140701.ec66y43qajbjcmkm@angband.pl>
-References: <CAK5rZE42HLb6kxGWmLqhwBb8arjZDc8yr6H6FLKkWu5XMQMW6Q@mail.gmail.com>
- <CAK5rZE4=34O2d+Tz8=r=_u2tMsipB3OKh3c3YWukX-YzL1JCaA@mail.gmail.com>
+Subject: Re: How to dump/find parity of RAID-5 file?
+Message-ID: <20170216151409.GA10977@giis.co.in>
+References: <20170203104406.GA3670@giis.co.in>
+ <15ae32eb-195a-712c-2746-cf7528b728a2@inwind.it>
+ <20170214200929.GB24702@giis.co.in>
+ <bfe89355-f549-7bda-ff0c-428c8b4ca4ed@inwind.it>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <CAK5rZE4=34O2d+Tz8=r=_u2tMsipB3OKh3c3YWukX-YzL1JCaA@mail.gmail.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <bfe89355-f549-7bda-ff0c-428c8b4ca4ed@inwind.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 16, 2017 at 01:37:53PM +0200, Imran Geriskovan wrote:
-> What are your experiences for btrfs regarding 4.10 and 4.11 kernels?
-> I'm still on 4.8.x. I'd be happy to hear from anyone using 4.1x for
-> a very typical single disk setup. Are they reasonably stable/good
-> enough for this case?
+On Wed, Feb 15, 2017 at 07:24:55PM +0100, Goffredo Baroncelli wrote:
+> The chunk-tree maps the logical address [145096704...145096704+134217728) [size=128MB] to the physical ones 
+> 	devid3 : [63111168..63111168+67108864) [size=64MB]
+> 	devid1 : [63111168..63111168+67108864) [size=64MB]
+> 	devid2 : [83034112..83034112+67108864) [size=64MB]
+> 
+> So because the logical address is divided in pieces of 64k, interleaved by the parity, we know that:
+> * first 128kb
+> logical address [145096704      ..145096704+64k)   -> devid1, [63111168    ..63111168+64k)
+> logical address [145096704+64k  ..145096704+2x64k) -> devid2, [83034112    ..83034112+64k)
+>                 parity:                            -> devid3, [63111168    ..63111168+64k)
+> * second 128kb
+> logical address [145096704+2x64k..145096704+3x64k) -> devid2, [83034112+64k..83034112+2x64k)
+> logical address [145096704+3x64k..145096704+4x64k) -> devid3, [63111168+64k..63111168+2x64k)
+>                 parity:                            -> devid1, [63111168+64k..63111168+2x64k)
+> And so on...
+> 
+> (NB: 145096704+2x64k == 145227776)
+> 
+> The fs-tree, maps the file content [0..131072) [size=128k] to the logical address [145227776..145227776+131072) [size=128k]
+> 
+> So the file content is stored starting from the disk devid2, at 83034112+64k=83099648 (first 64k). The second 64k is placed in disk devid3 at 63111168+64k=63176704; the parity is stored at disk1, 63111168+64k = 63176704
+> 
+> 
+> BR
+> G.Baroncelli
+> 
 
-Somehow, not one disk has spontaneously burst into flame on 4.9 nor 4.10-rc
-for me yet, so I guess so.
+Thanks for the detailed example with exact numbers. Now understood the address mapping better. With this as a reference, I think
+it should be possible to access parity/data-stripes more sensible manner instead using expensive "cat /device/ | hexdump | grep"
+combination. thanks.
 
-Also, 4.9 is a LTS that's going to be maintained for 5½ years so it is
-supposed to be stable.  And there's no evidence it is not.  Experimental
-features continue to be in a bad shape, but you don't appear to be going to
-use them.
-
-
-Meow!
--- 
-Autotools hint: to do a zx-spectrum build on a pdp11 host, type:
-  ./configure --host=zx-spectrum --build=pdp11
+Cheers.
+Lakshmipathi.G

@@ -1,205 +1,111 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f66.google.com ([74.125.82.66]:36372 "EHLO
-        mail-wm0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S934351AbdBQOnz (ORCPT
+Received: from mail-wm0-f67.google.com ([74.125.82.67]:35249 "EHLO
+        mail-wm0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S934237AbdBQOn6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Feb 2017 09:43:55 -0500
-Received: by mail-wm0-f66.google.com with SMTP id r18so2935267wmd.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Feb 2017 06:43:54 -0800 (PST)
+        Fri, 17 Feb 2017 09:43:58 -0500
+Received: by mail-wm0-f67.google.com with SMTP id u63so2925322wmu.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Feb 2017 06:43:57 -0800 (PST)
 From: Nikolay Borisov <n.borisov.lkml@gmail.com>
 To: dsterba@suse.com
-Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 06/38] btrfs: make btrfs_is_free_space_inode take btrfs_inode
-Date: Fri, 17 Feb 2017 16:42:57 +0200
-Message-Id: <1487342609-20652-7-git-send-email-nborisov@suse.com>
+Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <n.borisov.lkml@gmail.com>,
+        Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 09/38] btrfs: Make calc_csum_metadata_size take btrfs_inode
+Date: Fri, 17 Feb 2017 16:43:00 +0200
+Message-Id: <1487342609-20652-10-git-send-email-nborisov@suse.com>
 In-Reply-To: <1487342609-20652-1-git-send-email-nborisov@suse.com>
 References: <1487342609-20652-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Nikolay Borisov <n.borisov.lkml@gmail.com>
+
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/btrfs_inode.h |  8 ++++----
- fs/btrfs/ctree.h       |  2 +-
- fs/btrfs/extent-tree.c |  4 ++--
- fs/btrfs/file-item.c   |  2 +-
- fs/btrfs/inode.c       | 22 +++++++++++-----------
- 5 files changed, 19 insertions(+), 19 deletions(-)
+ fs/btrfs/extent-tree.c | 27 ++++++++++++---------------
+ 1 file changed, 12 insertions(+), 15 deletions(-)
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 46d117b77bd2..36eca5464e1b 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -243,14 +243,14 @@ static inline void btrfs_i_size_write(struct btrfs_inode *inode, u64 size)
- 	inode->disk_i_size = size;
- }
- 
--static inline bool btrfs_is_free_space_inode(struct inode *inode)
-+static inline bool btrfs_is_free_space_inode(struct btrfs_inode *inode)
- {
--	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct btrfs_root *root = inode->root;
- 
- 	if (root == root->fs_info->tree_root &&
--	    btrfs_ino(BTRFS_I(inode)) != BTRFS_BTREE_INODE_OBJECTID)
-+	    btrfs_ino(inode) != BTRFS_BTREE_INODE_OBJECTID)
- 		return true;
--	if (BTRFS_I(inode)->location.objectid == BTRFS_FREE_INO_OBJECTID)
-+	if (inode->location.objectid == BTRFS_FREE_INO_OBJECTID)
- 		return true;
- 	return false;
- }
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 97f84a80b479..8ab0ce65a218 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3123,7 +3123,7 @@ static inline void btrfs_force_ra(struct address_space *mapping,
- }
- 
- struct inode *btrfs_lookup_dentry(struct inode *dir, struct dentry *dentry);
--int btrfs_set_inode_index(struct inode *dir, u64 *index);
-+int btrfs_set_inode_index(struct btrfs_inode *dir, u64 *index);
- int btrfs_unlink_inode(struct btrfs_trans_handle *trans,
- 		       struct btrfs_root *root,
- 		       struct btrfs_inode *dir, struct btrfs_inode *inode,
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 438c7312de33..883819c5abc0 100644
+index 74bfaf222973..781dfdf5556e 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -4148,7 +4148,7 @@ int btrfs_alloc_data_chunk_ondemand(struct inode *inode, u64 bytes)
- 	/* make sure bytes are sectorsize aligned */
- 	bytes = ALIGN(bytes, fs_info->sectorsize);
+@@ -5893,24 +5893,21 @@ static unsigned drop_outstanding_extent(struct btrfs_inode *inode, u64 num_bytes
+  *
+  * This must be called with BTRFS_I(inode)->lock held.
+  */
+-static u64 calc_csum_metadata_size(struct inode *inode, u64 num_bytes,
++static u64 calc_csum_metadata_size(struct btrfs_inode *inode, u64 num_bytes,
+ 				   int reserve)
+ {
+-	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
++	struct btrfs_fs_info *fs_info = btrfs_sb(inode->vfs_inode.i_sb);
+ 	u64 old_csums, num_csums;
  
--	if (btrfs_is_free_space_inode(inode)) {
-+	if (btrfs_is_free_space_inode(BTRFS_I(inode))) {
- 		need_commit = 0;
- 		ASSERT(current->journal_info);
- 	}
-@@ -5947,7 +5947,7 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
- 	 * If we have a transaction open (can happen if we call truncate_block
- 	 * from truncate), then we need FLUSH_LIMIT so we don't deadlock.
- 	 */
--	if (btrfs_is_free_space_inode(inode)) {
-+	if (btrfs_is_free_space_inode(BTRFS_I(inode))) {
- 		flush = BTRFS_RESERVE_NO_FLUSH;
- 		delalloc_lock = false;
- 	} else if (current->journal_info) {
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index e35df48b4383..71ed7f051685 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -214,7 +214,7 @@ static int __btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio,
- 	 * read from the commit root and sidestep a nasty deadlock
- 	 * between reading the free space cache and updating the csum tree.
- 	 */
--	if (btrfs_is_free_space_inode(inode)) {
-+	if (btrfs_is_free_space_inode(BTRFS_I(inode))) {
- 		path->search_commit_root = 1;
- 		path->skip_locking = 1;
- 	}
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 5d5e9474b09b..fcdff1023718 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -933,7 +933,7 @@ static noinline int cow_file_range(struct inode *inode,
- 	struct extent_map *em;
- 	int ret = 0;
- 
--	if (btrfs_is_free_space_inode(inode)) {
-+	if (btrfs_is_free_space_inode(BTRFS_I(inode))) {
- 		WARN_ON_ONCE(1);
- 		ret = -EINVAL;
- 		goto out_unlock;
-@@ -1231,7 +1231,7 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 		return -ENOMEM;
- 	}
- 
--	nolock = btrfs_is_free_space_inode(inode);
-+	nolock = btrfs_is_free_space_inode(BTRFS_I(inode));
- 
- 	cow_start = (u64)-1;
- 	cur_offset = start;
-@@ -1676,7 +1676,7 @@ static void btrfs_set_bit_hook(struct inode *inode,
- 	if (!(state->state & EXTENT_DELALLOC) && (*bits & EXTENT_DELALLOC)) {
- 		struct btrfs_root *root = BTRFS_I(inode)->root;
- 		u64 len = state->end + 1 - state->start;
--		bool do_list = !btrfs_is_free_space_inode(inode);
-+		bool do_list = !btrfs_is_free_space_inode(BTRFS_I(inode));
- 
- 		if (*bits & EXTENT_FIRST_DELALLOC) {
- 			*bits &= ~EXTENT_FIRST_DELALLOC;
-@@ -1726,7 +1726,7 @@ static void btrfs_clear_bit_hook(struct inode *inode,
- 	 */
- 	if ((state->state & EXTENT_DELALLOC) && (*bits & EXTENT_DELALLOC)) {
- 		struct btrfs_root *root = BTRFS_I(inode)->root;
--		bool do_list = !btrfs_is_free_space_inode(inode);
-+		bool do_list = !btrfs_is_free_space_inode(BTRFS_I(inode));
- 
- 		if (*bits & EXTENT_FIRST_DELALLOC) {
- 			*bits &= ~EXTENT_FIRST_DELALLOC;
-@@ -1860,7 +1860,7 @@ static int btrfs_submit_bio_hook(struct inode *inode, struct bio *bio,
- 
- 	skip_sum = BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM;
- 
--	if (btrfs_is_free_space_inode(inode))
-+	if (btrfs_is_free_space_inode(BTRFS_I(inode)))
- 		metadata = BTRFS_WQ_ENDIO_FREE_SPACE;
- 
- 	if (bio_op(bio) != REQ_OP_WRITE) {
-@@ -2799,7 +2799,7 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
- 	bool nolock;
- 	bool truncated = false;
- 
--	nolock = btrfs_is_free_space_inode(inode);
-+	nolock = btrfs_is_free_space_inode(BTRFS_I(inode));
- 
- 	if (test_bit(BTRFS_ORDERED_IOERR, &ordered_extent->flags)) {
- 		ret = -EIO;
-@@ -2999,7 +2999,7 @@ static int btrfs_writepage_end_io_hook(struct page *page, u64 start, u64 end,
- 					    end - start + 1, uptodate))
+-	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM &&
+-	    BTRFS_I(inode)->csum_bytes == 0)
++	if (inode->flags & BTRFS_INODE_NODATASUM && inode->csum_bytes == 0)
  		return 0;
  
--	if (btrfs_is_free_space_inode(inode)) {
-+	if (btrfs_is_free_space_inode(BTRFS_I(inode))) {
- 		wq = fs_info->endio_freespace_worker;
- 		func = btrfs_freespace_write_helper;
+-	old_csums = btrfs_csum_bytes_to_leaves(fs_info,
+-					       BTRFS_I(inode)->csum_bytes);
++	old_csums = btrfs_csum_bytes_to_leaves(fs_info, inode->csum_bytes);
+ 	if (reserve)
+-		BTRFS_I(inode)->csum_bytes += num_bytes;
++		inode->csum_bytes += num_bytes;
+ 	else
+-		BTRFS_I(inode)->csum_bytes -= num_bytes;
+-	num_csums = btrfs_csum_bytes_to_leaves(fs_info,
+-					       BTRFS_I(inode)->csum_bytes);
++		inode->csum_bytes -= num_bytes;
++	num_csums = btrfs_csum_bytes_to_leaves(fs_info, inode->csum_bytes);
+ 
+ 	/* No change, no need to reserve more */
+ 	if (old_csums == num_csums)
+@@ -5974,7 +5971,7 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+ 
+ 	/* We always want to reserve a slot for updating the inode. */
+ 	to_reserve = btrfs_calc_trans_metadata_size(fs_info, nr_extents + 1);
+-	to_reserve += calc_csum_metadata_size(inode, num_bytes, 1);
++	to_reserve += calc_csum_metadata_size(BTRFS_I(inode), num_bytes, 1);
+ 	csum_bytes = BTRFS_I(inode)->csum_bytes;
+ 	spin_unlock(&BTRFS_I(inode)->lock);
+ 
+@@ -6021,7 +6018,7 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+ 	 * so we can just reduce our inodes csum bytes and carry on.
+ 	 */
+ 	if (BTRFS_I(inode)->csum_bytes == csum_bytes) {
+-		calc_csum_metadata_size(inode, num_bytes, 0);
++		calc_csum_metadata_size(BTRFS_I(inode), num_bytes, 0);
  	} else {
-@@ -3871,7 +3871,7 @@ noinline int btrfs_update_inode(struct btrfs_trans_handle *trans,
- 	 * The data relocation inode should also be directly updated
- 	 * without delay
- 	 */
--	if (!btrfs_is_free_space_inode(inode)
-+	if (!btrfs_is_free_space_inode(BTRFS_I(inode))
- 	    && root->root_key.objectid != BTRFS_DATA_RELOC_TREE_OBJECTID
- 	    && !test_bit(BTRFS_FS_LOG_RECOVERING, &fs_info->flags)) {
- 		btrfs_update_root_times(trans, root);
-@@ -4325,7 +4325,7 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
- 	 * for non-free space inodes and ref cows, we want to back off from
- 	 * time to time
- 	 */
--	if (!btrfs_is_free_space_inode(inode) &&
-+	if (!btrfs_is_free_space_inode(BTRFS_I(inode)) &&
- 	    test_bit(BTRFS_ROOT_REF_COWS, &root->state))
- 		be_nice = 1;
+ 		u64 orig_csum_bytes = BTRFS_I(inode)->csum_bytes;
+ 		u64 bytes;
+@@ -6036,7 +6033,7 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+ 		 */
+ 		bytes = csum_bytes - BTRFS_I(inode)->csum_bytes;
+ 		BTRFS_I(inode)->csum_bytes = csum_bytes;
+-		to_free = calc_csum_metadata_size(inode, bytes, 0);
++		to_free = calc_csum_metadata_size(BTRFS_I(inode), bytes, 0);
  
-@@ -5179,7 +5179,7 @@ void btrfs_evict_inode(struct inode *inode)
- 	if (inode->i_nlink &&
- 	    ((btrfs_root_refs(&root->root_item) != 0 &&
- 	      root->root_key.objectid != BTRFS_ROOT_TREE_OBJECTID) ||
--	     btrfs_is_free_space_inode(inode)))
-+	     btrfs_is_free_space_inode(BTRFS_I(inode))))
- 		goto no_delete;
  
- 	if (is_bad_inode(inode)) {
-@@ -5896,7 +5896,7 @@ int btrfs_write_inode(struct inode *inode, struct writeback_control *wbc)
- 	if (test_bit(BTRFS_INODE_DUMMY, &BTRFS_I(inode)->runtime_flags))
- 		return 0;
+ 		/*
+@@ -6046,7 +6043,7 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+ 		 */
+ 		BTRFS_I(inode)->csum_bytes = csum_bytes - num_bytes;
+ 		bytes = csum_bytes - orig_csum_bytes;
+-		bytes = calc_csum_metadata_size(inode, bytes, 0);
++		bytes = calc_csum_metadata_size(BTRFS_I(inode), bytes, 0);
  
--	if (btrfs_fs_closing(root->fs_info) && btrfs_is_free_space_inode(inode))
-+	if (btrfs_fs_closing(root->fs_info) && btrfs_is_free_space_inode(BTRFS_I(inode)))
- 		nolock = true;
+ 		/*
+ 		 * Now reset ->csum_bytes to what it should be.  If bytes is
+@@ -6096,7 +6093,7 @@ void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes)
+ 	dropped = drop_outstanding_extent(BTRFS_I(inode), num_bytes);
  
- 	if (wbc->sync_mode == WB_SYNC_ALL) {
+ 	if (num_bytes)
+-		to_free = calc_csum_metadata_size(inode, num_bytes, 0);
++		to_free = calc_csum_metadata_size(BTRFS_I(inode), num_bytes, 0);
+ 	spin_unlock(&BTRFS_I(inode)->lock);
+ 	if (dropped > 0)
+ 		to_free += btrfs_calc_trans_metadata_size(fs_info, dropped);
 -- 
 2.7.4
 

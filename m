@@ -1,74 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f196.google.com ([209.85.128.196]:36565 "EHLO
-        mail-wr0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S934320AbdBQOoN (ORCPT
+Received: from mail-wr0-f193.google.com ([209.85.128.193]:35112 "EHLO
+        mail-wr0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S934530AbdBQOoN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Fri, 17 Feb 2017 09:44:13 -0500
-Received: by mail-wr0-f196.google.com with SMTP id z61so4717741wrc.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Feb 2017 06:44:08 -0800 (PST)
+Received: by mail-wr0-f193.google.com with SMTP id q39so5487494wrb.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Feb 2017 06:44:12 -0800 (PST)
 From: Nikolay Borisov <n.borisov.lkml@gmail.com>
 To: dsterba@suse.com
-Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <n.borisov.lkml@gmail.com>,
-        Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 15/38] btrfs: Make btrfs_requeue_inode_defrag take btrfs_inode
-Date: Fri, 17 Feb 2017 16:43:06 +0200
-Message-Id: <1487342609-20652-16-git-send-email-nborisov@suse.com>
+Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 25/38] btrfs: make check_compressed_csum take btrfs_inode
+Date: Fri, 17 Feb 2017 16:43:16 +0200
+Message-Id: <1487342609-20652-26-git-send-email-nborisov@suse.com>
 In-Reply-To: <1487342609-20652-1-git-send-email-nborisov@suse.com>
 References: <1487342609-20652-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Nikolay Borisov <n.borisov.lkml@gmail.com>
-
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/file.c | 10 +++++-----
+ fs/btrfs/compression.c | 10 +++++-----
  1 file changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 26ebb7608b92..18edcc74150c 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -194,10 +194,10 @@ int btrfs_add_inode_defrag(struct btrfs_trans_handle *trans,
-  * the same inode in the tree, we will merge them together (by
-  * __btrfs_add_inode_defrag()) and free the one that we want to requeue.
-  */
--static void btrfs_requeue_inode_defrag(struct inode *inode,
-+static void btrfs_requeue_inode_defrag(struct btrfs_inode *inode,
- 				       struct inode_defrag *defrag)
- {
--	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-+	struct btrfs_fs_info *fs_info = btrfs_sb(inode->vfs_inode.i_sb);
- 	int ret;
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index b8de71abfbd3..9f5e2e222e2a 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -100,7 +100,7 @@ static struct bio *compressed_bio_alloc(struct block_device *bdev,
+ 	return btrfs_bio_alloc(bdev, first_byte >> 9, BIO_MAX_PAGES, gfp_flags);
+ }
  
- 	if (!__need_auto_defrag(fs_info))
-@@ -208,7 +208,7 @@ static void btrfs_requeue_inode_defrag(struct inode *inode,
- 	 * them together.
- 	 */
- 	spin_lock(&fs_info->defrag_inodes_lock);
--	ret = __btrfs_add_inode_defrag(BTRFS_I(inode), defrag);
-+	ret = __btrfs_add_inode_defrag(inode, defrag);
- 	spin_unlock(&fs_info->defrag_inodes_lock);
- 	if (ret)
+-static int check_compressed_csum(struct inode *inode,
++static int check_compressed_csum(struct btrfs_inode *inode,
+ 				 struct compressed_bio *cb,
+ 				 u64 disk_start)
+ {
+@@ -111,7 +111,7 @@ static int check_compressed_csum(struct inode *inode,
+ 	u32 csum;
+ 	u32 *cb_sum = &cb->sums;
+ 
+-	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM)
++	if (inode->flags & BTRFS_INODE_NODATASUM)
+ 		return 0;
+ 
+ 	for (i = 0; i < cb->nr_pages; i++) {
+@@ -124,8 +124,8 @@ static int check_compressed_csum(struct inode *inode,
+ 		kunmap_atomic(kaddr);
+ 
+ 		if (csum != *cb_sum) {
+-			btrfs_print_data_csum_error(BTRFS_I(inode), disk_start, csum,
+-						    *cb_sum, cb->mirror_num);
++			btrfs_print_data_csum_error(inode, disk_start, csum, *cb_sum, 
++					cb->mirror_num);
+ 			ret = -EIO;
+ 			goto fail;
+ 		}
+@@ -165,7 +165,7 @@ static void end_compressed_bio_read(struct bio *bio)
  		goto out;
-@@ -334,7 +334,7 @@ static int __btrfs_run_defrag_inode(struct btrfs_fs_info *fs_info,
- 	 */
- 	if (num_defrag == BTRFS_DEFRAG_BATCH) {
- 		defrag->last_offset = range.start;
--		btrfs_requeue_inode_defrag(inode, defrag);
-+		btrfs_requeue_inode_defrag(BTRFS_I(inode), defrag);
- 	} else if (defrag->last_offset && !defrag->cycled) {
- 		/*
- 		 * we didn't fill our defrag batch, but
-@@ -343,7 +343,7 @@ static int __btrfs_run_defrag_inode(struct btrfs_fs_info *fs_info,
- 		 */
- 		defrag->last_offset = 0;
- 		defrag->cycled = 1;
--		btrfs_requeue_inode_defrag(inode, defrag);
-+		btrfs_requeue_inode_defrag(BTRFS_I(inode), defrag);
- 	} else {
- 		kmem_cache_free(btrfs_inode_defrag_cachep, defrag);
- 	}
+ 
+ 	inode = cb->inode;
+-	ret = check_compressed_csum(inode, cb,
++	ret = check_compressed_csum(BTRFS_I(inode), cb,
+ 				    (u64)bio->bi_iter.bi_sector << 9);
+ 	if (ret)
+ 		goto csum_failed;
 -- 
 2.7.4
 

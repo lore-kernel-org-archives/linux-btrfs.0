@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f193.google.com ([209.85.128.193]:33710 "EHLO
-        mail-wr0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S934526AbdBQOoP (ORCPT
+Received: from mail-wm0-f68.google.com ([74.125.82.68]:34231 "EHLO
+        mail-wm0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S934257AbdBQOoS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Feb 2017 09:44:15 -0500
-Received: by mail-wr0-f193.google.com with SMTP id i10so5520665wrb.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Feb 2017 06:44:14 -0800 (PST)
+        Fri, 17 Feb 2017 09:44:18 -0500
+Received: by mail-wm0-f68.google.com with SMTP id c85so2932563wmi.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Feb 2017 06:44:18 -0800 (PST)
 From: Nikolay Borisov <n.borisov.lkml@gmail.com>
 To: dsterba@suse.com
 Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 27/38] btrfs: make clean_io_failure take btrfs_inode
-Date: Fri, 17 Feb 2017 16:43:18 +0200
-Message-Id: <1487342609-20652-28-git-send-email-nborisov@suse.com>
+Subject: [PATCH 31/38] btrfs: Make check_parent_dirs_for_sync take btrfs_inode
+Date: Fri, 17 Feb 2017 16:43:22 +0200
+Message-Id: <1487342609-20652-32-git-send-email-nborisov@suse.com>
 In-Reply-To: <1487342609-20652-1-git-send-email-nborisov@suse.com>
 References: <1487342609-20652-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -19,118 +19,93 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/extent_io.c | 20 ++++++++++----------
- fs/btrfs/extent_io.h |  2 +-
- fs/btrfs/inode.c     |  4 ++--
- 3 files changed, 13 insertions(+), 13 deletions(-)
+ fs/btrfs/tree-log.c | 26 +++++++++++++-------------
+ 1 file changed, 13 insertions(+), 13 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index a405f63f7053..16860ab7cb5e 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2089,23 +2089,23 @@ int repair_eb_io_failure(struct btrfs_fs_info *fs_info,
-  * each time an IO finishes, we do a fast check in the IO failure tree
-  * to see if we need to process or clean up an io_failure_record
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 610fe04805b6..cc616d424b7a 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -5050,14 +5050,14 @@ static bool btrfs_must_commit_transaction(struct btrfs_trans_handle *trans,
+  * a full commit is required.
   */
--int clean_io_failure(struct inode *inode, u64 start, struct page *page,
-+int clean_io_failure(struct btrfs_inode *inode, u64 start, struct page *page,
- 		     unsigned int pg_offset)
+ static noinline int check_parent_dirs_for_sync(struct btrfs_trans_handle *trans,
+-					       struct inode *inode,
++					       struct btrfs_inode *inode,
+ 					       struct dentry *parent,
+ 					       struct super_block *sb,
+ 					       u64 last_committed)
  {
- 	u64 private;
- 	struct io_failure_record *failrec;
--	struct btrfs_fs_info *fs_info = BTRFS_I(inode)->root->fs_info;
-+	struct btrfs_fs_info *fs_info = inode->root->fs_info;
- 	struct extent_state *state;
- 	int num_copies;
- 	int ret;
+ 	int ret = 0;
+ 	struct dentry *old_parent = NULL;
+-	struct inode *orig_inode = inode;
++	struct btrfs_inode *orig_inode = inode;
  
- 	private = 0;
--	ret = count_range_bits(&BTRFS_I(inode)->io_failure_tree, &private,
-+	ret = count_range_bits(&inode->io_failure_tree, &private,
- 				(u64)-1, 1, EXTENT_DIRTY, 0);
- 	if (!ret)
- 		return 0;
+ 	/*
+ 	 * for regular files, if its inode is already on disk, we don't
+@@ -5065,15 +5065,15 @@ static noinline int check_parent_dirs_for_sync(struct btrfs_trans_handle *trans,
+ 	 * we can use the last_unlink_trans field to record renames
+ 	 * and other fun in this file.
+ 	 */
+-	if (S_ISREG(inode->i_mode) &&
+-	    BTRFS_I(inode)->generation <= last_committed &&
+-	    BTRFS_I(inode)->last_unlink_trans <= last_committed)
++	if (S_ISREG(inode->vfs_inode.i_mode) &&
++	    inode->generation <= last_committed &&
++	    inode->last_unlink_trans <= last_committed)
+ 			goto out;
  
--	ret = get_state_failrec(&BTRFS_I(inode)->io_failure_tree, start,
-+	ret = get_state_failrec(&inode->io_failure_tree, start,
- 			&failrec);
- 	if (ret)
- 		return 0;
-@@ -2122,25 +2122,25 @@ int clean_io_failure(struct inode *inode, u64 start, struct page *page,
- 	if (fs_info->sb->s_flags & MS_RDONLY)
- 		goto out;
- 
--	spin_lock(&BTRFS_I(inode)->io_tree.lock);
--	state = find_first_extent_bit_state(&BTRFS_I(inode)->io_tree,
-+	spin_lock(&inode->io_tree.lock);
-+	state = find_first_extent_bit_state(&inode->io_tree,
- 					    failrec->start,
- 					    EXTENT_LOCKED);
--	spin_unlock(&BTRFS_I(inode)->io_tree.lock);
-+	spin_unlock(&inode->io_tree.lock);
- 
- 	if (state && state->start <= failrec->start &&
- 	    state->end >= failrec->start + failrec->len - 1) {
- 		num_copies = btrfs_num_copies(fs_info, failrec->logical,
- 					      failrec->len);
- 		if (num_copies > 1)  {
--			repair_io_failure(BTRFS_I(inode), start, failrec->len,
-+			repair_io_failure(inode, start, failrec->len,
- 					  failrec->logical, page,
- 					  pg_offset, failrec->failed_mirror);
- 		}
+-	if (!S_ISDIR(inode->i_mode)) {
++	if (!S_ISDIR(inode->vfs_inode.i_mode)) {
+ 		if (!parent || d_really_is_negative(parent) || sb != parent->d_sb)
+ 			goto out;
+-		inode = d_inode(parent);
++		inode = BTRFS_I(d_inode(parent));
  	}
  
- out:
--	free_io_failure(BTRFS_I(inode), failrec);
-+	free_io_failure(inode, failrec);
+ 	while (1) {
+@@ -5084,10 +5084,10 @@ static noinline int check_parent_dirs_for_sync(struct btrfs_trans_handle *trans,
+ 		 * think this inode has already been logged.
+ 		 */
+ 		if (inode != orig_inode)
+-			BTRFS_I(inode)->logged_trans = trans->transid;
++			inode->logged_trans = trans->transid;
+ 		smp_mb();
  
- 	return 0;
- }
-@@ -2576,7 +2576,7 @@ static void end_bio_extent_readpage(struct bio *bio)
- 			if (ret)
- 				uptodate = 0;
- 			else
--				clean_io_failure(inode, start, page, 0);
-+				clean_io_failure(BTRFS_I(inode), start, page, 0);
+-		if (btrfs_must_commit_transaction(trans, BTRFS_I(inode))) {
++		if (btrfs_must_commit_transaction(trans, inode)) {
+ 			ret = 1;
+ 			break;
  		}
+@@ -5096,8 +5096,8 @@ static noinline int check_parent_dirs_for_sync(struct btrfs_trans_handle *trans,
+ 			break;
  
- 		if (likely(uptodate))
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index a3b13b4385bc..81c9f678ada5 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -456,7 +456,7 @@ struct btrfs_inode;
- int repair_io_failure(struct btrfs_inode *inode, u64 start, u64 length, u64 logical,
- 		      struct page *page, unsigned int pg_offset,
- 		      int mirror_num);
--int clean_io_failure(struct inode *inode, u64 start, struct page *page,
-+int clean_io_failure(struct btrfs_inode *inode, u64 start, struct page *page,
- 		     unsigned int pg_offset);
- void end_extent_writepage(struct page *page, int err, u64 start, u64 end);
- int repair_eb_io_failure(struct btrfs_fs_info *fs_info,
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index f71296933aec..a472d13a9ecb 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7907,7 +7907,7 @@ static void btrfs_retry_endio_nocsum(struct bio *bio)
+ 		if (IS_ROOT(parent)) {
+-			inode = d_inode(parent);
+-			if (btrfs_must_commit_transaction(trans, BTRFS_I(inode)))
++			inode = BTRFS_I(d_inode(parent));
++			if (btrfs_must_commit_transaction(trans, inode))
+ 				ret = 1;
+ 			break;
+ 		}
+@@ -5105,7 +5105,7 @@ static noinline int check_parent_dirs_for_sync(struct btrfs_trans_handle *trans,
+ 		parent = dget_parent(parent);
+ 		dput(old_parent);
+ 		old_parent = parent;
+-		inode = d_inode(parent);
++		inode = BTRFS_I(d_inode(parent));
  
- 	done->uptodate = 1;
- 	bio_for_each_segment_all(bvec, bio, i)
--		clean_io_failure(done->inode, done->start, bvec->bv_page, 0);
-+		clean_io_failure(BTRFS_I(done->inode), done->start, bvec->bv_page, 0);
- end:
- 	complete(&done->done);
- 	bio_put(bio);
-@@ -7993,7 +7993,7 @@ static void btrfs_retry_endio(struct bio *bio)
- 					bvec->bv_page, bvec->bv_offset,
- 					done->start, bvec->bv_len);
- 		if (!ret)
--			clean_io_failure(done->inode, done->start,
-+			clean_io_failure(BTRFS_I(done->inode), done->start,
- 					bvec->bv_page, bvec->bv_offset);
- 		else
- 			uptodate = 0;
+ 	}
+ 	dput(old_parent);
+@@ -5434,7 +5434,7 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+ 		goto end_no_trans;
+ 	}
+ 
+-	ret = check_parent_dirs_for_sync(trans, inode, parent,
++	ret = check_parent_dirs_for_sync(trans, BTRFS_I(inode), parent,
+ 					 sb, last_committed);
+ 	if (ret)
+ 		goto end_no_trans;
 -- 
 2.7.4
 

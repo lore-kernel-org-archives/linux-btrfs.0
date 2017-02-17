@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f196.google.com ([209.85.128.196]:34999 "EHLO
-        mail-wr0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S934311AbdBQOnz (ORCPT
+Received: from mail-wm0-f66.google.com ([74.125.82.66]:35199 "EHLO
+        mail-wm0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S934311AbdBQOnu (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Feb 2017 09:43:55 -0500
-Received: by mail-wr0-f196.google.com with SMTP id q39so5486632wrb.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Feb 2017 06:43:55 -0800 (PST)
+        Fri, 17 Feb 2017 09:43:50 -0500
+Received: by mail-wm0-f66.google.com with SMTP id u63so2924704wmu.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Feb 2017 06:43:50 -0800 (PST)
 From: Nikolay Borisov <n.borisov.lkml@gmail.com>
 To: dsterba@suse.com
 Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 07/38] btrfs: make btrfs_alloc_data_chunk_ondemand take btrfs_inode
-Date: Fri, 17 Feb 2017 16:42:58 +0200
-Message-Id: <1487342609-20652-8-git-send-email-nborisov@suse.com>
+Subject: [PATCH 02/38] btrfs: Make btrfs_insert_dir_item take btrfs_inode
+Date: Fri, 17 Feb 2017 16:42:53 +0200
+Message-Id: <1487342609-20652-3-git-send-email-nborisov@suse.com>
 In-Reply-To: <1487342609-20652-1-git-send-email-nborisov@suse.com>
 References: <1487342609-20652-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -20,71 +20,95 @@ List-ID: <linux-btrfs.vger.kernel.org>
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
  fs/btrfs/ctree.h       | 2 +-
- fs/btrfs/extent-tree.c | 8 ++++----
- fs/btrfs/file.c        | 2 +-
- 3 files changed, 6 insertions(+), 6 deletions(-)
+ fs/btrfs/dir-item.c    | 6 +++---
+ fs/btrfs/inode.c       | 2 +-
+ fs/btrfs/ioctl.c       | 2 +-
+ fs/btrfs/transaction.c | 2 +-
+ 5 files changed, 7 insertions(+), 7 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 8ab0ce65a218..76e661d00822 100644
+index ad23a73ac7e7..97f84a80b479 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -2687,7 +2687,7 @@ enum btrfs_flush_state {
- };
- 
- int btrfs_check_data_free_space(struct inode *inode, u64 start, u64 len);
--int btrfs_alloc_data_chunk_ondemand(struct inode *inode, u64 bytes);
-+int btrfs_alloc_data_chunk_ondemand(struct btrfs_inode *inode, u64 bytes);
- void btrfs_free_reserved_data_space(struct inode *inode, u64 start, u64 len);
- void btrfs_free_reserved_data_space_noquota(struct inode *inode, u64 start,
- 					    u64 len);
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 883819c5abc0..293ca5d34d44 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4135,10 +4135,10 @@ static u64 btrfs_space_info_used(struct btrfs_space_info *s_info,
- 		(may_use_included ? s_info->bytes_may_use : 0);
- }
- 
--int btrfs_alloc_data_chunk_ondemand(struct inode *inode, u64 bytes)
-+int btrfs_alloc_data_chunk_ondemand(struct btrfs_inode *inode, u64 bytes)
+@@ -2982,7 +2982,7 @@ int btrfs_check_dir_item_collision(struct btrfs_root *root, u64 dir,
+ 			  const char *name, int name_len);
+ int btrfs_insert_dir_item(struct btrfs_trans_handle *trans,
+ 			  struct btrfs_root *root, const char *name,
+-			  int name_len, struct inode *dir,
++			  int name_len, struct btrfs_inode *dir,
+ 			  struct btrfs_key *location, u8 type, u64 index);
+ struct btrfs_dir_item *btrfs_lookup_dir_item(struct btrfs_trans_handle *trans,
+ 					     struct btrfs_root *root,
+diff --git a/fs/btrfs/dir-item.c b/fs/btrfs/dir-item.c
+index 724504a2d7ac..34eff5d46eca 100644
+--- a/fs/btrfs/dir-item.c
++++ b/fs/btrfs/dir-item.c
+@@ -120,7 +120,7 @@ int btrfs_insert_xattr_item(struct btrfs_trans_handle *trans,
+  */
+ int btrfs_insert_dir_item(struct btrfs_trans_handle *trans, struct btrfs_root
+ 			  *root, const char *name, int name_len,
+-			  struct inode *dir, struct btrfs_key *location,
++			  struct btrfs_inode *dir, struct btrfs_key *location,
+ 			  u8 type, u64 index)
  {
- 	struct btrfs_space_info *data_sinfo;
--	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct btrfs_root *root = inode->root;
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 	u64 used;
  	int ret = 0;
-@@ -4148,7 +4148,7 @@ int btrfs_alloc_data_chunk_ondemand(struct inode *inode, u64 bytes)
- 	/* make sure bytes are sectorsize aligned */
- 	bytes = ALIGN(bytes, fs_info->sectorsize);
+@@ -133,7 +133,7 @@ int btrfs_insert_dir_item(struct btrfs_trans_handle *trans, struct btrfs_root
+ 	struct btrfs_disk_key disk_key;
+ 	u32 data_size;
  
--	if (btrfs_is_free_space_inode(BTRFS_I(inode))) {
-+	if (btrfs_is_free_space_inode(inode)) {
- 		need_commit = 0;
- 		ASSERT(current->journal_info);
+-	key.objectid = btrfs_ino(BTRFS_I(dir));
++	key.objectid = btrfs_ino(dir);
+ 	key.type = BTRFS_DIR_ITEM_KEY;
+ 	key.offset = btrfs_name_hash(name, name_len);
+ 
+@@ -174,7 +174,7 @@ int btrfs_insert_dir_item(struct btrfs_trans_handle *trans, struct btrfs_root
+ 	btrfs_release_path(path);
+ 
+ 	ret2 = btrfs_insert_delayed_dir_index(trans, root->fs_info, name,
+-			name_len, BTRFS_I(dir), &disk_key, type, index);
++					      name_len, dir, &disk_key, type, index);
+ out_free:
+ 	btrfs_free_path(path);
+ 	if (ret)
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 956df76dc235..f438257be5a0 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6275,7 +6275,7 @@ int btrfs_add_link(struct btrfs_trans_handle *trans,
+ 		return ret;
+ 
+ 	ret = btrfs_insert_dir_item(trans, root, name, name_len,
+-				    parent_inode, &key,
++				    BTRFS_I(parent_inode), &key,
+ 				    btrfs_inode_type(inode), index);
+ 	if (ret == -EEXIST || ret == -EOVERFLOW)
+ 		goto fail_dir_item;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 717f34f977d5..952762582b3d 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -587,7 +587,7 @@ static noinline int create_subvol(struct inode *dir,
  	}
-@@ -4281,7 +4281,7 @@ int btrfs_check_data_free_space(struct inode *inode, u64 start, u64 len)
- 	      round_down(start, fs_info->sectorsize);
- 	start = round_down(start, fs_info->sectorsize);
  
--	ret = btrfs_alloc_data_chunk_ondemand(inode, len);
-+	ret = btrfs_alloc_data_chunk_ondemand(BTRFS_I(inode), len);
- 	if (ret < 0)
- 		return ret;
+ 	ret = btrfs_insert_dir_item(trans, root,
+-				    name, namelen, dir, &key,
++				    name, namelen, BTRFS_I(dir), &key,
+ 				    BTRFS_FT_DIR, index);
+ 	if (ret) {
+ 		btrfs_abort_transaction(trans, ret);
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 6b3e0fc2fe7a..294563216dd3 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1644,7 +1644,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
  
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 18e5146df864..7cdaafff4764 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2747,7 +2747,7 @@ static long btrfs_fallocate(struct file *file, int mode,
- 	 *
- 	 * For qgroup space, it will be checked later.
- 	 */
--	ret = btrfs_alloc_data_chunk_ondemand(inode, alloc_end - alloc_start);
-+	ret = btrfs_alloc_data_chunk_ondemand(BTRFS_I(inode), alloc_end - alloc_start);
- 	if (ret < 0)
- 		return ret;
- 
+ 	ret = btrfs_insert_dir_item(trans, parent_root,
+ 				    dentry->d_name.name, dentry->d_name.len,
+-				    parent_inode, &key,
++				    BTRFS_I(parent_inode), &key,
+ 				    BTRFS_FT_DIR, index);
+ 	/* We have check then name at the beginning, so it is impossible. */
+ 	BUG_ON(ret == -EEXIST || ret == -EOVERFLOW);
 -- 
 2.7.4
 

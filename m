@@ -1,76 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:58542 "EHLO
+Received: from [195.159.176.226] ([195.159.176.226]:42081 "EHLO
         blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1756013AbdBQITi (ORCPT
+        with ESMTP id S1755663AbdBQI0d (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Feb 2017 03:19:38 -0500
+        Fri, 17 Feb 2017 03:26:33 -0500
 Received: from list by blaine.gmane.org with local (Exim 4.84_2)
         (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1cedlG-0001CD-Fy
-        for linux-btrfs@vger.kernel.org; Fri, 17 Feb 2017 09:19:26 +0100
+        id 1cedrx-0001cV-HQ
+        for linux-btrfs@vger.kernel.org; Fri, 17 Feb 2017 09:26:21 +0100
 To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77@gmail.com>
-Subject: Re: [4.7.2] btrfs_run_delayed_refs:2963: errno=-17 Object already
- exists
-Date: Fri, 17 Feb 2017 09:19:15 +0100
-Message-ID: <20170217091915.066488ef@jupiter.sol.kaishome.de>
-References: <20160828152908.6e1325b5@jupiter.sol.kaishome.de>
-        <20170211030139.7bff427e@jupiter.sol.kaishome.de>
-        <2380483.tGrojfQH67@thetick>
-        <2424977.zeESiHcezE@thetick>
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Opps.. Should be 4.9/4.10 Experiences
+Date: Fri, 17 Feb 2017 08:26:15 +0000 (UTC)
+Message-ID: <pan$1fe63$b02c9dfa$efbc9dc2$1ccd0342@cox.net>
+References: <CAK5rZE7mDy+8hkm74UVS81Xht=QxvNOmW=ZfYqpHmnqGZHbMbA@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
- boundary="Sig_/+.q+re_9Ax2/0JuG8Hor391"; protocol="application/pgp-signature"
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/+.q+re_9Ax2/0JuG8Hor391
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+Imran Geriskovan posted on Thu, 16 Feb 2017 13:42:09 +0200 as excerpted:
 
-Am Tue, 14 Feb 2017 13:52:48 +0100
-schrieb Marc Joliet <marcec@gmx.de>:
+> Opps.. I mean 4.9/4.10 Experiences
+> 
+> On 2/16/17, Imran Geriskovan <imran.geriskovan@gmail.com> wrote:
+>> What are your experiences for btrfs regarding 4.10 and 4.11 kernels?
+>> I'm still on 4.8.x. I'd be happy to hear from anyone using 4.1x for a
+>> very typical single disk setup. Are they reasonably stable/good enough
+>> for this case?
 
-> Hi again,
->=20
-> so, it seems that I've solved the problem:  After having to
-> umount/mount the FS several times to get btrfs-cleaner to finish, I
-> thought of the "failed to load free space [...], rebuilding it now"
-> type errors and decided to try the clear_cache mount option.  Since
-> then, my home server has been running its backups regularly again.
-> Furthermore, I was able back up my desktop again via send/recv (the
-> rsync based backup is still running, but I expect it to succeed).
-> The kernel log has also stayed clean.
->=20
-> Kai, I'd be curious whether clear_cache will help in your case, too,
-> if you haven't tried it already.
+I ran 4.9 and have been on 4.10 since before rc1.  Btrfs has been fine 
+here, tho there have been some late rc7/8 fixes.  I've had and still have 
+some 4.10 issues, but they're amdgpu, not btrfs related.  (Unfortunately, 
+between working long hours and being sick partly as a result, I've had 
+little time to report them, but booting with amdgpu.dpm=0 has let me 
+continue running 4.10-git, tho I don't know exactly why if I'm not going 
+to have time to report problems anyway.)
 
-The FS in question has been rebuilt from scratch. AFAIR it wasn't even
-mountable back then, or at it froze the system short after mounting.
-
-I needed the system back in usable state, so I had to recreate and
-restore the system.
-
-Next time, if it happens again (finger crossed it does not), I'll give
-it a try.
-
---=20
-Regards,
-Kai
-
-Replies to list-only preferred.
-
---Sig_/+.q+re_9Ax2/0JuG8Hor391
-Content-Type: application/pgp-signature
-Content-Description: Digitale Signatur von OpenPGP
-
------BEGIN PGP SIGNATURE-----
-
-iEYEARECAAYFAlimsgQACgkQ+D7cQ/kIzAVBZACeKmnPjDH2zS6He3rkMfPHeptt
-ecAAnjtX+QWmZvK7yt4UpmzsDjJPLHNJ
-=44I6
------END PGP SIGNATURE-----
-
---Sig_/+.q+re_9Ax2/0JuG8Hor391--
-
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

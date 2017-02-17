@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f65.google.com ([74.125.82.65]:35329 "EHLO
-        mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S934140AbdBQOoH (ORCPT
+Received: from mail-wr0-f194.google.com ([209.85.128.194]:35089 "EHLO
+        mail-wr0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S934530AbdBQOoK (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Feb 2017 09:44:07 -0500
-Received: by mail-wm0-f65.google.com with SMTP id u63so2926033wmu.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Feb 2017 06:44:06 -0800 (PST)
+        Fri, 17 Feb 2017 09:44:10 -0500
+Received: by mail-wr0-f194.google.com with SMTP id q39so5487299wrb.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Feb 2017 06:44:09 -0800 (PST)
 From: Nikolay Borisov <n.borisov.lkml@gmail.com>
 To: dsterba@suse.com
 Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <n.borisov.lkml@gmail.com>,
         Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 18/38] btrfs: Make fille_holes take btrfs_inode
-Date: Fri, 17 Feb 2017 16:43:09 +0200
-Message-Id: <1487342609-20652-19-git-send-email-nborisov@suse.com>
+Subject: [PATCH 22/38] btrfs: Make lock_and_cleanup_extent_if_need take btrfs_inode
+Date: Fri, 17 Feb 2017 16:43:13 +0200
+Message-Id: <1487342609-20652-23-git-send-email-nborisov@suse.com>
 In-Reply-To: <1487342609-20652-1-git-send-email-nborisov@suse.com>
 References: <1487342609-20652-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -22,116 +22,76 @@ From: Nikolay Borisov <n.borisov.lkml@gmail.com>
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/file.c | 30 ++++++++++++++----------------
- 1 file changed, 14 insertions(+), 16 deletions(-)
+ fs/btrfs/file.c | 21 ++++++++++-----------
+ 1 file changed, 10 insertions(+), 11 deletions(-)
 
 diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 53fedf3dcaef..e37b643205e1 100644
+index 8e223c78c8fe..2d534d6c5514 100644
 --- a/fs/btrfs/file.c
 +++ b/fs/btrfs/file.c
-@@ -2222,22 +2222,22 @@ static int hole_mergeable(struct btrfs_inode *inode, struct extent_buffer *leaf,
- 	return 0;
- }
- 
--static int fill_holes(struct btrfs_trans_handle *trans, struct inode *inode,
-+static int fill_holes(struct btrfs_trans_handle *trans, struct btrfs_inode *inode,
- 		      struct btrfs_path *path, u64 offset, u64 end)
+@@ -1415,13 +1415,13 @@ static noinline int prepare_pages(struct inode *inode, struct page **pages,
+  * the other < 0 number - Something wrong happens
+  */
+ static noinline int
+-lock_and_cleanup_extent_if_need(struct inode *inode, struct page **pages,
++lock_and_cleanup_extent_if_need(struct btrfs_inode *inode, struct page **pages,
+ 				size_t num_pages, loff_t pos,
+ 				size_t write_bytes,
+ 				u64 *lockstart, u64 *lockend,
+ 				struct extent_state **cached_state)
  {
 -	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
--	struct btrfs_root *root = BTRFS_I(inode)->root;
 +	struct btrfs_fs_info *fs_info = btrfs_sb(inode->vfs_inode.i_sb);
-+	struct btrfs_root *root = inode->root;
- 	struct extent_buffer *leaf;
- 	struct btrfs_file_extent_item *fi;
- 	struct extent_map *hole_em;
--	struct extent_map_tree *em_tree = &BTRFS_I(inode)->extent_tree;
-+	struct extent_map_tree *em_tree = &inode->extent_tree;
- 	struct btrfs_key key;
- 	int ret;
+ 	u64 start_pos;
+ 	u64 last_pos;
+ 	int i;
+@@ -1432,30 +1432,29 @@ lock_and_cleanup_extent_if_need(struct inode *inode, struct page **pages,
+ 		+ round_up(pos + write_bytes - start_pos,
+ 			   fs_info->sectorsize) - 1;
  
- 	if (btrfs_fs_incompat(fs_info, NO_HOLES))
- 		goto out;
+-	if (start_pos < inode->i_size) {
++	if (start_pos < inode->vfs_inode.i_size) {
+ 		struct btrfs_ordered_extent *ordered;
+-		lock_extent_bits(&BTRFS_I(inode)->io_tree,
+-				 start_pos, last_pos, cached_state);
+-		ordered = btrfs_lookup_ordered_range(BTRFS_I(inode), start_pos,
++		lock_extent_bits(&inode->io_tree, start_pos, last_pos, 
++				cached_state);
++		ordered = btrfs_lookup_ordered_range(inode, start_pos,
+ 						     last_pos - start_pos + 1);
+ 		if (ordered &&
+ 		    ordered->file_offset + ordered->len > start_pos &&
+ 		    ordered->file_offset <= last_pos) {
+-			unlock_extent_cached(&BTRFS_I(inode)->io_tree,
+-					     start_pos, last_pos,
++			unlock_extent_cached(&inode->io_tree, start_pos, last_pos,
+ 					     cached_state, GFP_NOFS);
+ 			for (i = 0; i < num_pages; i++) {
+ 				unlock_page(pages[i]);
+ 				put_page(pages[i]);
+ 			}
+-			btrfs_start_ordered_extent(inode, ordered, 1);
++			btrfs_start_ordered_extent(&inode->vfs_inode, ordered, 1);
+ 			btrfs_put_ordered_extent(ordered);
+ 			return -EAGAIN;
+ 		}
+ 		if (ordered)
+ 			btrfs_put_ordered_extent(ordered);
  
--	key.objectid = btrfs_ino(BTRFS_I(inode));
-+	key.objectid = btrfs_ino(inode);
- 	key.type = BTRFS_EXTENT_DATA_KEY;
- 	key.offset = offset;
- 
-@@ -2253,7 +2253,7 @@ static int fill_holes(struct btrfs_trans_handle *trans, struct inode *inode,
- 	}
- 
- 	leaf = path->nodes[0];
--	if (hole_mergeable(BTRFS_I(inode), leaf, path->slots[0]-1, offset, end)) {
-+	if (hole_mergeable(inode, leaf, path->slots[0]-1, offset, end)) {
- 		u64 num_bytes;
- 
- 		path->slots[0]--;
-@@ -2268,7 +2268,7 @@ static int fill_holes(struct btrfs_trans_handle *trans, struct inode *inode,
- 		goto out;
- 	}
- 
--	if (hole_mergeable(BTRFS_I(inode), leaf, path->slots[0], offset, end)) {
-+	if (hole_mergeable(inode, leaf, path->slots[0], offset, end)) {
- 		u64 num_bytes;
- 
- 		key.offset = offset;
-@@ -2285,7 +2285,7 @@ static int fill_holes(struct btrfs_trans_handle *trans, struct inode *inode,
- 	}
- 	btrfs_release_path(path);
- 
--	ret = btrfs_insert_file_extent(trans, root, btrfs_ino(BTRFS_I(inode)),
-+	ret = btrfs_insert_file_extent(trans, root, btrfs_ino(inode),
- 			offset, 0, 0, end - offset, 0, end - offset, 0, 0, 0);
- 	if (ret)
- 		return ret;
-@@ -2295,9 +2295,8 @@ static int fill_holes(struct btrfs_trans_handle *trans, struct inode *inode,
- 
- 	hole_em = alloc_extent_map();
- 	if (!hole_em) {
--		btrfs_drop_extent_cache(BTRFS_I(inode), offset, end - 1, 0);
--		set_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
--			&BTRFS_I(inode)->runtime_flags);
-+		btrfs_drop_extent_cache(inode, offset, end - 1, 0);
-+		set_bit(BTRFS_INODE_NEEDS_FULL_SYNC, &inode->runtime_flags);
- 	} else {
- 		hole_em->start = offset;
- 		hole_em->len = end - offset;
-@@ -2312,15 +2311,14 @@ static int fill_holes(struct btrfs_trans_handle *trans, struct inode *inode,
- 		hole_em->generation = trans->transid;
- 
- 		do {
--			btrfs_drop_extent_cache(BTRFS_I(inode), offset, end - 1, 0);
-+			btrfs_drop_extent_cache(inode, offset, end - 1, 0);
- 			write_lock(&em_tree->lock);
- 			ret = add_extent_mapping(em_tree, hole_em, 1);
- 			write_unlock(&em_tree->lock);
- 		} while (ret == -EEXIST);
- 		free_extent_map(hole_em);
+-		clear_extent_bit(&BTRFS_I(inode)->io_tree, start_pos,
++		clear_extent_bit(&inode->io_tree, start_pos,
+ 				  last_pos, EXTENT_DIRTY | EXTENT_DELALLOC |
+ 				  EXTENT_DO_ACCOUNTING | EXTENT_DEFRAG,
+ 				  0, 0, cached_state, GFP_NOFS);
+@@ -1623,7 +1622,7 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
  		if (ret)
--			set_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
--				&BTRFS_I(inode)->runtime_flags);
-+			set_bit(BTRFS_INODE_NEEDS_FULL_SYNC, &inode->runtime_flags);
- 	}
+ 			break;
  
- 	return 0;
-@@ -2550,7 +2548,7 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 		trans->block_rsv = &fs_info->trans_block_rsv;
- 
- 		if (cur_offset < drop_end && cur_offset < ino_size) {
--			ret = fill_holes(trans, inode, path, cur_offset,
-+			ret = fill_holes(trans, BTRFS_I(inode), path, cur_offset,
- 					 drop_end);
- 			if (ret) {
- 				/*
-@@ -2622,7 +2620,7 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 	 * cur_offset == drop_end).
- 	 */
- 	if (cur_offset < ino_size && cur_offset < drop_end) {
--		ret = fill_holes(trans, inode, path, cur_offset, drop_end);
-+		ret = fill_holes(trans, BTRFS_I(inode), path, cur_offset, drop_end);
- 		if (ret) {
- 			/* Same comment as above. */
- 			btrfs_abort_transaction(trans, ret);
+-		ret = lock_and_cleanup_extent_if_need(inode, pages, num_pages,
++		ret = lock_and_cleanup_extent_if_need(BTRFS_I(inode), pages, num_pages,
+ 						pos, write_bytes, &lockstart,
+ 						&lockend, &cached_state);
+ 		if (ret < 0) {
 -- 
 2.7.4
 

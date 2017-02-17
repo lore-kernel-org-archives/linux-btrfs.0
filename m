@@ -1,71 +1,167 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:57072 "EHLO mail.kernel.org"
+Received: from mx2.suse.de ([195.135.220.15]:46431 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1755276AbdBQTQM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Feb 2017 14:16:12 -0500
-Received: from mail.kernel.org (localhost [127.0.0.1])
-        by mail.kernel.org (Postfix) with ESMTP id C9FB320123
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Feb 2017 19:16:10 +0000 (UTC)
-Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 6B42C201FE
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Feb 2017 19:16:09 +0000 (UTC)
-From: fdmanana@kernel.org
+        id S934096AbdBQSGV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 17 Feb 2017 13:06:21 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id C6C9AABCC
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Feb 2017 18:06:18 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: remove unnecessary constraint when splitting a leaf
-Date: Fri, 17 Feb 2017 19:16:04 +0000
-Message-Id: <1487358964-9758-1-git-send-email-fdmanana@kernel.org>
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH 1/5] btrfs: merge length input and output parameter in compress_pages
+Date: Fri, 17 Feb 2017 19:05:49 +0100
+Message-Id: <e8c6df5ba73e58afec9bfbf333d95d26e1cb2756.1487354456.git.dsterba@suse.com>
+In-Reply-To: <cover.1487354456.git.dsterba@suse.com>
+References: <cover.1487354456.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+The length parameter is basically duplicated for input and output in the
+top level caller of the compress_pages chain. We can simply use one
+variable for that and reduce stack consumption. The compression
+implementation will sink the parameter to a local variable so everything
+works as before.
 
-If we want to append an item to a leaf we were trying to move off from the
-leaf into its neighbors an amount of space corresponding to the item's
-size. That amount of space is too much and can be reduced to the item's
-size minus the amount of free space in the leaf, like we do for all the
-other cases (item inserted at the beginning or somewhere in the middle of
-the leaf).
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/ctree.c | 12 +++++-------
- 1 file changed, 5 insertions(+), 7 deletions(-)
+ fs/btrfs/compression.c | 24 +++++++++++-------------
+ fs/btrfs/compression.h |  5 ++---
+ fs/btrfs/inode.c       |  2 +-
+ fs/btrfs/lzo.c         |  4 ++--
+ fs/btrfs/zlib.c        |  3 ++-
+ 5 files changed, 18 insertions(+), 20 deletions(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index a426dc8..86be619 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -4130,11 +4130,11 @@ static noinline int push_for_double_split(struct btrfs_trans_handle *trans,
- 	int progress = 0;
- 	int slot;
- 	u32 nritems;
--	int space_needed = data_size;
-+	int space_needed;
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index 903c32c9eb22..eca4704fba9d 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -911,27 +911,25 @@ static void free_workspaces(void)
+ }
  
- 	slot = path->slots[0];
--	if (slot < btrfs_header_nritems(path->nodes[0]))
--		space_needed -= btrfs_leaf_free_space(fs_info, path->nodes[0]);
-+	space_needed = data_size -
-+		btrfs_leaf_free_space(fs_info, path->nodes[0]);
+ /*
+- * given an address space and start/len, compress the bytes.
++ * Given an address space and start and length, compress the bytes into @pages
++ * that are allocated on demand.
+  *
+- * pages are allocated to hold the compressed result and stored
+- * in 'pages'
++ * @out_pages is used to return the number of pages allocated.  There
++ * may be pages allocated even if we return an error.
+  *
+- * out_pages is used to return the number of pages allocated.  There
+- * may be pages allocated even if we return an error
+- *
+- * total_in is used to return the number of bytes actually read.  It
+- * may be smaller then len if we had to exit early because we
++ * @total_in is used to return the number of bytes actually read.  It
++ * may be smaller than the input length if we had to exit early because we
+  * ran out of room in the pages array or because we cross the
+  * max_out threshold.
+  *
+- * total_out is used to return the total number of compressed bytes
++ * @total_out is an in/out parameter, must be set to the input length and will
++ * be also used to return the total number of compressed bytes
+  *
+- * max_out tells us the max number of bytes that we're allowed to
++ * @max_out tells us the max number of bytes that we're allowed to
+  * stuff into pages
+  */
+ int btrfs_compress_pages(int type, struct address_space *mapping,
+-			 u64 start, unsigned long len,
+-			 struct page **pages,
++			 u64 start, struct page **pages,
+ 			 unsigned long nr_dest_pages,
+ 			 unsigned long *out_pages,
+ 			 unsigned long *total_in,
+@@ -944,7 +942,7 @@ int btrfs_compress_pages(int type, struct address_space *mapping,
+ 	workspace = find_workspace(type);
  
- 	/*
- 	 * try to push all the items after our slot into the
-@@ -4205,11 +4205,9 @@ static noinline int split_leaf(struct btrfs_trans_handle *trans,
+ 	ret = btrfs_compress_op[type-1]->compress_pages(workspace, mapping,
+-						      start, len, pages,
++						      start, pages,
+ 						      nr_dest_pages, out_pages,
+ 						      total_in, total_out,
+ 						      max_out);
+diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
+index 09879579fbc8..2d53879e8519 100644
+--- a/fs/btrfs/compression.h
++++ b/fs/btrfs/compression.h
+@@ -23,8 +23,7 @@ void btrfs_init_compress(void);
+ void btrfs_exit_compress(void);
  
- 	/* first try to make some room by pushing left and right */
- 	if (data_size && path->nodes[1]) {
--		int space_needed = data_size;
+ int btrfs_compress_pages(int type, struct address_space *mapping,
+-			 u64 start, unsigned long len,
+-			 struct page **pages,
++			 u64 start, struct page **pages,
+ 			 unsigned long nr_dest_pages,
+ 			 unsigned long *out_pages,
+ 			 unsigned long *total_in,
+@@ -59,7 +58,7 @@ struct btrfs_compress_op {
+ 
+ 	int (*compress_pages)(struct list_head *workspace,
+ 			      struct address_space *mapping,
+-			      u64 start, unsigned long len,
++			      u64 start,
+ 			      struct page **pages,
+ 			      unsigned long nr_dest_pages,
+ 			      unsigned long *out_pages,
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index dae2734a725b..7b9cdc0a1b5c 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -516,7 +516,7 @@ static noinline void compress_file_range(struct inode *inode,
+ 		redirty = 1;
+ 		ret = btrfs_compress_pages(compress_type,
+ 					   inode->i_mapping, start,
+-					   total_compressed, pages,
++					   pages,
+ 					   nr_pages, &nr_pages_ret,
+ 					   &total_in,
+ 					   &total_compressed,
+diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
+index 45d26980caf9..dfa690d4ce86 100644
+--- a/fs/btrfs/lzo.c
++++ b/fs/btrfs/lzo.c
+@@ -86,7 +86,7 @@ static inline size_t read_compress_length(char *buf)
+ 
+ static int lzo_compress_pages(struct list_head *ws,
+ 			      struct address_space *mapping,
+-			      u64 start, unsigned long len,
++			      u64 start,
+ 			      struct page **pages,
+ 			      unsigned long nr_dest_pages,
+ 			      unsigned long *out_pages,
+@@ -102,7 +102,7 @@ static int lzo_compress_pages(struct list_head *ws,
+ 	struct page *in_page = NULL;
+ 	struct page *out_page = NULL;
+ 	unsigned long bytes_left;
 -
--		if (slot < btrfs_header_nritems(l))
--			space_needed -= btrfs_leaf_free_space(fs_info, l);
-+		int space_needed;
++	unsigned long len = *total_out;
+ 	size_t in_len;
+ 	size_t out_len;
+ 	char *buf;
+diff --git a/fs/btrfs/zlib.c b/fs/btrfs/zlib.c
+index da497f184ff4..42d76b7824c3 100644
+--- a/fs/btrfs/zlib.c
++++ b/fs/btrfs/zlib.c
+@@ -73,7 +73,7 @@ static struct list_head *zlib_alloc_workspace(void)
  
-+		space_needed = data_size - btrfs_leaf_free_space(fs_info, l);
- 		wret = push_leaf_right(trans, root, path, space_needed,
- 				       space_needed, 0, 0);
- 		if (wret < 0)
+ static int zlib_compress_pages(struct list_head *ws,
+ 			       struct address_space *mapping,
+-			       u64 start, unsigned long len,
++			       u64 start,
+ 			       struct page **pages,
+ 			       unsigned long nr_dest_pages,
+ 			       unsigned long *out_pages,
+@@ -89,6 +89,7 @@ static int zlib_compress_pages(struct list_head *ws,
+ 	struct page *in_page = NULL;
+ 	struct page *out_page = NULL;
+ 	unsigned long bytes_left;
++	unsigned long len = *total_out;
+ 
+ 	*out_pages = 0;
+ 	*total_out = 0;
 -- 
-2.7.0.rc3
+2.10.1
 

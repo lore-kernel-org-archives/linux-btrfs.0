@@ -1,42 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from p3nlsmtpcp01-01.prod.phx3.secureserver.net ([184.168.200.138]:43884
-        "EHLO p3nlsmtpcp01-01.prod.phx3.secureserver.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752662AbdBRCIZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Feb 2017 21:08:25 -0500
-Received: from [59.93.14.58] (port=59614 helo=giis.co.in)
-        by p3plcpnl0639.prod.phx3.secureserver.net with esmtpsa (TLSv1.2:ECDHE-RSA-AES128-GCM-SHA256:128)
-        (Exim 4.87)
-        (envelope-from <lakshmipathi.g@giis.co.in>)
-        id 1ceuQl-000569-BW
-        for linux-btrfs@vger.kernel.org; Fri, 17 Feb 2017 19:07:24 -0700
-Date: Sat, 18 Feb 2017 07:37:11 +0530
-From: "Lakshmipathi.G" <lakshmipathi.g@giis.co.in>
-To: linux-btrfs@vger.kernel.org
-Subject: Large no.of extents for a single small file with a fresh RAID5 setup
-Message-ID: <20170218020711.GA23608@giis.co.in>
+Received: from mail-lf0-f65.google.com ([209.85.215.65]:33169 "EHLO
+        mail-lf0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750742AbdBRGCy (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 18 Feb 2017 01:02:54 -0500
+Received: by mail-lf0-f65.google.com with SMTP id x1so5191829lff.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Feb 2017 22:02:23 -0800 (PST)
+Subject: Re: man filesystems(5) doesn't contain Btrfs
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <CAJCQCtSo7nrgU4jkr85vm+4S9iwyoLF_USjZ4DTbd__-a62qGg@mail.gmail.com>
+ <46520c5e-1c83-efaf-fc3f-a4af4810eb88@gmail.com>
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+Message-ID: <e571ef82-1846-4bbf-0b11-9b82e3e69e82@gmail.com>
+Date: Sat, 18 Feb 2017 09:02:21 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <46520c5e-1c83-efaf-fc3f-a4af4810eb88@gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+16.02.2017 23:47, Austin S. Hemmelgarn пишет:
+> On 2017-02-16 15:36, Chris Murphy wrote:
+>> Hi,
+>>
+>> This man page contains a list for pretty much every other file system,
+>> with a oneliner description: ext4, XFS is in there, and even NTFS, but
+>> not Btrfs.
+>>
+>> Also, /etc/filesystems doesn't contain Btrfs. Anyone know if either,
+>> or both, ought to contain an entry for Btrfs?
+>>
+> The man-page absolutely should.  Ideally, that should be kept in sync
+> with with the mount manpages, but I think they're in separate projects
+> (mount is util-linux IIRC, while filesystems(5) is part of the Linux
+> man-pages project).
+> 
+> As far as /etc/filesystems, that should be irrelevant.  Of the big
+> distros, only SUSE, Fedora/CentOS/OEL, and Gentoo use it (I checked
+> Arch, Gentoo, openSUSE, Fedora, Debian, and Ubuntu, which should cover
+> at least 80% of users since this is low enough level derivatives won't
+> be likely to change it), and all it does is dictate what order 'mount -t
+> auto' will try filesystem types in.  All the distros that have it have a
+> '*' on the last line, which means to check /proc/filesystems, and
+> therefore will automatically try BTRFS if there's a kernel module for it
+> (unless the module is blacklisted or prevented from being loaded on boot
+> automatically).
 
-With RAID5, using 3 loop-back devices each has 4GB. On a fresh setup, created a 2mb file.
-While checking no.of extents,it shows like:
 
-# ./btrfs-debugfs -f /mnt/file2m.txt 
-(257 0): ram 110592 disk 145227776 disk_size 114688
-(257 110592): ram 4096 disk 145461248 disk_size 4096
-(257 114688): ram 114688 disk 145342464 disk_size 118784
-(257 229376): ram 712704 disk 145620992 disk_size 716800
-(257 942080): ram 4096 disk 145096704 disk_size 4096
-(257 946176): ram 737280 disk 146407424 disk_size 741376
-(257 1683456): ram 413696 disk 147193856 disk_size 413696
-file: /mnt/file2m.txt extents 7 disk size 2113536 logical size 2097152 ratio 0.99
-
-Is this expected behaviour? Is there any mount option to minimize no.of extents for
-a smaller file?
-
-Cheers.
-Lakshmipathi.G
+Note that utils-linux does low-level device probe first and falls back
+to reading /{etc,proc}/filesystems only if low level probing fails
+(returns no recognized filesystem).

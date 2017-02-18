@@ -1,215 +1,232 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:34365 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:34364 "EHLO
         userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752577AbdBRB3V (ORCPT
+        with ESMTP id S1752448AbdBRB3V (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Fri, 17 Feb 2017 20:29:21 -0500
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH 3/7] Btrfs: introduce a function to get extra mirror from replace
-Date: Fri, 17 Feb 2017 17:28:17 -0800
-Message-Id: <1487381301-865-4-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH 4/7] Btrfs: handle operations for device replace separately
+Date: Fri, 17 Feb 2017 17:28:18 -0800
+Message-Id: <1487381301-865-5-git-send-email-bo.li.liu@oracle.com>
 In-Reply-To: <1487381301-865-1-git-send-email-bo.li.liu@oracle.com>
 References: <1487381301-865-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As the part of getting extra mirror in __btrfs_map_block is
-self-independent, this puts it into a separate function.
+Since this part is mostly self-independent, this moves it to a separate
+function.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/volumes.c | 161 +++++++++++++++++++++++++++++------------------------
- 1 file changed, 89 insertions(+), 72 deletions(-)
+ fs/btrfs/volumes.c | 179 +++++++++++++++++++++++++++++------------------------
+ 1 file changed, 98 insertions(+), 81 deletions(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 96228f3..f62efc7 100644
+index f62efc7..c434489 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -140,6 +140,11 @@ static int btrfs_relocate_sys_chunks(struct btrfs_fs_info *fs_info);
- static void __btrfs_reset_dev_stats(struct btrfs_device *dev);
- static void btrfs_dev_stat_print_on_error(struct btrfs_device *dev);
- static void btrfs_dev_stat_print_on_load(struct btrfs_device *device);
-+static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
-+			     enum btrfs_map_op op,
-+			     u64 logical, u64 *length,
-+			     struct btrfs_bio **bbio_ret,
-+			     int mirror_num, int need_raid_map);
- 
- DEFINE_MUTEX(uuid_mutex);
- static LIST_HEAD(fs_uuids);
-@@ -5463,6 +5468,83 @@ static int __btrfs_map_block_for_discard(struct btrfs_fs_info *fs_info,
+@@ -5545,6 +5545,100 @@ static int get_extra_mirror_from_replace(struct btrfs_fs_info *fs_info,
  	return ret;
  }
  
-+/*
-+ * In dev-replace case, for repair case (that's the only case where the mirror
-+ * is selected explicitly when calling btrfs_map_block), blocks left of the
-+ * left cursor can also be read from the target drive.
-+ *
-+ * For REQ_GET_READ_MIRRORS, the target drive is added as the last one to the
-+ * array of stripes.
-+ * For READ, it also needs to be supported using the same mirror number.
-+ *
-+ * If the requested block is not left of the left cursor, EIO is returned. This
-+ * can happen because btrfs_num_copies() returns one more in the dev-replace
-+ * case.
-+ */
-+static int get_extra_mirror_from_replace(struct btrfs_fs_info *fs_info,
-+					 u64 logical, u64 length,
-+					 u64 srcdev_devid, int *mirror_num,
-+					 u64 *physical)
++static void handle_ops_on_dev_replace(enum btrfs_map_op op,
++				      struct btrfs_bio **bbio_ret,
++				      struct btrfs_dev_replace *dev_replace,
++				      int *num_stripes_ret, int *max_errors_ret)
 +{
-+	struct btrfs_bio *bbio = NULL;
-+	int num_stripes;
-+	int index_srcdev = 0;
-+	int found = 0;
-+	u64 physical_of_found = 0;
++	struct btrfs_bio *bbio = *bbio_ret;
++	u64 srcdev_devid = dev_replace->srcdev->devid;
++	int tgtdev_indexes = 0;
++	int num_stripes = *num_stripes_ret;
++	int max_errors = *max_errors_ret;
 +	int i;
-+	int ret = 0;
 +
-+	ret = __btrfs_map_block(fs_info, BTRFS_MAP_GET_READ_MIRRORS,
-+				logical, &length, &bbio, 0, 0);
-+	if (ret) {
-+		ASSERT(bbio == NULL);
-+		return ret;
-+	}
-+
-+	num_stripes = bbio->num_stripes;
-+	if (*mirror_num > num_stripes) {
-+		/*
-+		 * BTRFS_MAP_GET_READ_MIRRORS does not contain this mirror,
-+		 * that means that the requested area is not left of the left
-+		 * cursor
-+		 */
-+		btrfs_put_bbio(bbio);
-+		return -EIO;
-+	}
-+
-+	/*
-+	 * process the rest of the function using the mirror_num of the source
-+	 * drive. Therefore look it up first.  At the end, patch the device
-+	 * pointer to the one of the target drive.
-+	 */
-+	for (i = 0; i < num_stripes; i++) {
-+		if (bbio->stripes[i].dev->devid != srcdev_devid)
-+			continue;
++	if (op == BTRFS_MAP_WRITE) {
++		int index_where_to_add;
 +
 +		/*
-+		 * In case of DUP, in order to keep it simple, only add the
-+		 * mirror with the lowest physical address
++		 * duplicate the write operations while the dev replace
++		 * procedure is running. Since the copying of the old disk to
++		 * the new disk takes place at run time while the filesystem is
++		 * mounted writable, the regular write operations to the old
++		 * disk have to be duplicated to go to the new disk as well.
++		 *
++		 * Note that device->missing is handled by the caller, and that
++		 * the write to the old disk is already set up in the stripes
++		 * array.
 +		 */
-+		if (found &&
-+		    physical_of_found <= bbio->stripes[i].physical)
-+			continue;
++		index_where_to_add = num_stripes;
++		for (i = 0; i < num_stripes; i++) {
++			if (bbio->stripes[i].dev->devid == srcdev_devid) {
++				/* write to new disk, too */
++				struct btrfs_bio_stripe *new =
++					bbio->stripes + index_where_to_add;
++				struct btrfs_bio_stripe *old =
++					bbio->stripes + i;
 +
-+		index_srcdev = i;
-+		found = 1;
-+		physical_of_found = bbio->stripes[i].physical;
++				new->physical = old->physical;
++				new->length = old->length;
++				new->dev = dev_replace->tgtdev;
++				bbio->tgtdev_map[i] = index_where_to_add;
++				index_where_to_add++;
++				max_errors++;
++				tgtdev_indexes++;
++			}
++		}
++		num_stripes = index_where_to_add;
++	} else if (op == BTRFS_MAP_GET_READ_MIRRORS) {
++		int index_srcdev = 0;
++		int found = 0;
++		u64 physical_of_found = 0;
++
++		/*
++		 * During the dev-replace procedure, the target drive can also
++		 * be used to read data in case it is needed to repair a corrupt
++		 * block elsewhere. This is possible if the requested area is
++		 * left of the left cursor. In this area, the target drive is a
++		 * full copy of the source drive.
++		 */
++		for (i = 0; i < num_stripes; i++) {
++			if (bbio->stripes[i].dev->devid == srcdev_devid) {
++				/*
++				 * In case of DUP, in order to keep it simple,
++				 * only add the mirror with the lowest physical
++				 * address
++				 */
++				if (found &&
++				    physical_of_found <=
++				     bbio->stripes[i].physical)
++					continue;
++				index_srcdev = i;
++				found = 1;
++				physical_of_found = bbio->stripes[i].physical;
++			}
++		}
++		if (found) {
++			struct btrfs_bio_stripe *tgtdev_stripe =
++				bbio->stripes + num_stripes;
++
++			tgtdev_stripe->physical = physical_of_found;
++			tgtdev_stripe->length =
++				bbio->stripes[index_srcdev].length;
++			tgtdev_stripe->dev = dev_replace->tgtdev;
++			bbio->tgtdev_map[index_srcdev] = num_stripes;
++
++			tgtdev_indexes++;
++			num_stripes++;
++		}
 +	}
 +
-+	btrfs_put_bbio(bbio);
-+
-+	ASSERT(found);
-+	if (!found)
-+		return -EIO;
-+
-+	*mirror_num = index_srcdev + 1;
-+	*physical = physical_of_found;
-+	return ret;
++	*num_stripes_ret = num_stripes;
++	*max_errors_ret = max_errors;
++	bbio->num_tgtdevs = tgtdev_indexes;
++	*bbio_ret = bbio;
 +}
 +
  static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
  			     enum btrfs_map_op op,
  			     u64 logical, u64 *length,
-@@ -5567,79 +5649,14 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
- 	if (dev_replace_is_ongoing && mirror_num == map->num_stripes + 1 &&
- 	    op != BTRFS_MAP_WRITE && op != BTRFS_MAP_GET_READ_MIRRORS &&
- 	    dev_replace->tgtdev != NULL) {
+@@ -5825,86 +5919,10 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
+ 	if (bbio->raid_map)
+ 		sort_parity_stripes(bbio, num_stripes);
+ 
+-	tgtdev_indexes = 0;
+-	if (dev_replace_is_ongoing && op == BTRFS_MAP_WRITE &&
+-	    dev_replace->tgtdev != NULL) {
+-		int index_where_to_add;
+-		u64 srcdev_devid = dev_replace->srcdev->devid;
+-
 -		/*
--		 * in dev-replace case, for repair case (that's the only
--		 * case where the mirror is selected explicitly when
--		 * calling btrfs_map_block), blocks left of the left cursor
--		 * can also be read from the target drive.
--		 * For REQ_GET_READ_MIRRORS, the target drive is added as
--		 * the last one to the array of stripes. For READ, it also
--		 * needs to be supported using the same mirror number.
--		 * If the requested block is not left of the left cursor,
--		 * EIO is returned. This can happen because btrfs_num_copies()
--		 * returns one more in the dev-replace case.
+-		 * duplicate the write operations while the dev replace
+-		 * procedure is running. Since the copying of the old disk
+-		 * to the new disk takes place at run time while the
+-		 * filesystem is mounted writable, the regular write
+-		 * operations to the old disk have to be duplicated to go
+-		 * to the new disk as well.
+-		 * Note that device->missing is handled by the caller, and
+-		 * that the write to the old disk is already set up in the
+-		 * stripes array.
 -		 */
--		u64 tmp_length = *length;
--		struct btrfs_bio *tmp_bbio = NULL;
--		int tmp_num_stripes;
+-		index_where_to_add = num_stripes;
+-		for (i = 0; i < num_stripes; i++) {
+-			if (bbio->stripes[i].dev->devid == srcdev_devid) {
+-				/* write to new disk, too */
+-				struct btrfs_bio_stripe *new =
+-					bbio->stripes + index_where_to_add;
+-				struct btrfs_bio_stripe *old =
+-					bbio->stripes + i;
+-
+-				new->physical = old->physical;
+-				new->length = old->length;
+-				new->dev = dev_replace->tgtdev;
+-				bbio->tgtdev_map[i] = index_where_to_add;
+-				index_where_to_add++;
+-				max_errors++;
+-				tgtdev_indexes++;
+-			}
+-		}
+-		num_stripes = index_where_to_add;
+-	} else if (dev_replace_is_ongoing &&
+-		   op == BTRFS_MAP_GET_READ_MIRRORS &&
+-		   dev_replace->tgtdev != NULL) {
 -		u64 srcdev_devid = dev_replace->srcdev->devid;
 -		int index_srcdev = 0;
 -		int found = 0;
 -		u64 physical_of_found = 0;
 -
--		ret = __btrfs_map_block(fs_info, BTRFS_MAP_GET_READ_MIRRORS,
--			     logical, &tmp_length, &tmp_bbio, 0, 0);
--		if (ret) {
--			WARN_ON(tmp_bbio != NULL);
--			goto out;
--		}
--
--		tmp_num_stripes = tmp_bbio->num_stripes;
--		if (mirror_num > tmp_num_stripes) {
--			/*
--			 * BTRFS_MAP_GET_READ_MIRRORS does not contain this
--			 * mirror, that means that the requested area
--			 * is not left of the left cursor
--			 */
--			ret = -EIO;
--			btrfs_put_bbio(tmp_bbio);
--			goto out;
--		}
--
 -		/*
--		 * process the rest of the function using the mirror_num
--		 * of the source drive. Therefore look it up first.
--		 * At the end, patch the device pointer to the one of the
--		 * target drive.
+-		 * During the dev-replace procedure, the target drive can
+-		 * also be used to read data in case it is needed to repair
+-		 * a corrupt block elsewhere. This is possible if the
+-		 * requested area is left of the left cursor. In this area,
+-		 * the target drive is a full copy of the source drive.
 -		 */
--		for (i = 0; i < tmp_num_stripes; i++) {
--			if (tmp_bbio->stripes[i].dev->devid != srcdev_devid)
--				continue;
--
--			/*
--			 * In case of DUP, in order to keep it simple, only add
--			 * the mirror with the lowest physical address
--			 */
--			if (found &&
--			    physical_of_found <= tmp_bbio->stripes[i].physical)
--				continue;
--
--			index_srcdev = i;
--			found = 1;
--			physical_of_found = tmp_bbio->stripes[i].physical;
+-		for (i = 0; i < num_stripes; i++) {
+-			if (bbio->stripes[i].dev->devid == srcdev_devid) {
+-				/*
+-				 * In case of DUP, in order to keep it
+-				 * simple, only add the mirror with the
+-				 * lowest physical address
+-				 */
+-				if (found &&
+-				    physical_of_found <=
+-				     bbio->stripes[i].physical)
+-					continue;
+-				index_srcdev = i;
+-				found = 1;
+-				physical_of_found = bbio->stripes[i].physical;
+-			}
 -		}
+-		if (found) {
+-			struct btrfs_bio_stripe *tgtdev_stripe =
+-				bbio->stripes + num_stripes;
 -
--		btrfs_put_bbio(tmp_bbio);
+-			tgtdev_stripe->physical = physical_of_found;
+-			tgtdev_stripe->length =
+-				bbio->stripes[index_srcdev].length;
+-			tgtdev_stripe->dev = dev_replace->tgtdev;
+-			bbio->tgtdev_map[index_srcdev] = num_stripes;
 -
--		if (!found) {
--			WARN_ON(1);
--			ret = -EIO;
-+		ret = get_extra_mirror_from_replace(fs_info, logical, *length,
-+						    dev_replace->srcdev->devid,
-+						    &mirror_num,
-+					    &physical_to_patch_in_first_stripe);
-+		if (ret)
- 			goto out;
+-			tgtdev_indexes++;
+-			num_stripes++;
 -		}
--
--		mirror_num = index_srcdev + 1;
--		patch_the_first_stripe_for_dev_replace = 1;
--		physical_to_patch_in_first_stripe = physical_of_found;
-+		else
-+			patch_the_first_stripe_for_dev_replace = 1;
- 	} else if (mirror_num > map->num_stripes) {
- 		mirror_num = 0;
++	if (dev_replace_is_ongoing && dev_replace->tgtdev != NULL &&
++	    (op == BTRFS_MAP_WRITE || op == BTRFS_MAP_GET_READ_MIRRORS)) {
++		handle_ops_on_dev_replace(op, &bbio, dev_replace, &num_stripes,
++					  &max_errors);
  	}
+ 
+ 	*bbio_ret = bbio;
+@@ -5912,7 +5930,6 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
+ 	bbio->num_stripes = num_stripes;
+ 	bbio->max_errors = max_errors;
+ 	bbio->mirror_num = mirror_num;
+-	bbio->num_tgtdevs = tgtdev_indexes;
+ 
+ 	/*
+ 	 * this is the case that REQ_READ && dev_replace_is_ongoing &&
 -- 
 2.5.5
 

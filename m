@@ -1,36 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:39705 "EHLO
-        cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1750742AbdBRHVn (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:34336 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752358AbdBRQne (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 18 Feb 2017 02:21:43 -0500
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
-Subject: high cpu usage due to btrfs_find_space_for_alloc and rb_next
-Message-ID: <02d3d58e-a254-eda5-a18a-36983d1e9f78@profihost.ag>
-Date: Sat, 18 Feb 2017 08:16:16 +0100
+        Sat, 18 Feb 2017 11:43:34 -0500
+Date: Sat, 18 Feb 2017 11:36:25 -0500
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: fix hole read corruption for compressed inline
+ extents
+Message-ID: <20170218163624.GC21290@hungrycats.org>
+References: <1480309392-4786-1-git-send-email-ce3g8jdj@umail.furryterror.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1480309392-4786-1-git-send-email-ce3g8jdj@umail.furryterror.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Ping?
 
-is there any chance to optimize btrfs_find_space_for_alloc / rb_next on
-big devices?
+This is still reproducible on 4.9.8.
 
-I've plenty of free space but most of the time there's only low I/O but
-high cpu usage. perf top shows:
-
-  60,41%  [kernel]                   [k] rb_next
-   9,74%  [kernel]                   [k] btrfs_find_space_for_alloc
-   5,55%  [kernel]                   [k] tree_search_offset.isra.25
-
-# btrfs filesystem df /backup/
-Data, single: total=14.85TiB, used=14.37TiB
-System, single: total=32.00MiB, used=2.27MiB
-Metadata, single: total=63.00GiB, used=54.87GiB
-GlobalReserve, single: total=512.00MiB, used=80.17MiB
-
---
-Stefan
+On Mon, Nov 28, 2016 at 12:03:12AM -0500, Zygo Blaxell wrote:
+> Commit c8b978188c ("Btrfs: Add zlib compression support") produces
+> data corruption when reading a file with a hole positioned after an
+> inline extent.  btrfs_get_extent will return uninitialized kernel memory
+> instead of zero bytes in the hole.
+> 
+> Commit 93c82d5750 ("Btrfs: zero page past end of inline file items")
+> fills the hole by memset to zero after *uncompressed* inline extents.
+> 
+> This patch provides the missing memset for holes after *compressed*
+> inline extents.
+> 
+> The offending holes appear in the wild and will appear during routine
+> data integrity audits (e.g. comparing backups against their originals).
+> They can also be created intentionally by fuzzing or crafting a filesystem
+> image.
+> 
+> Holes like these are not intended to occur in btrfs; however, I tested
+> tagged kernels between v3.5 and the present, and found that all of them
+> can create such holes.  Whether we like them or not, this kind of hole
+> is now part of the btrfs de-facto on-disk format, and we need to be able
+> to read such holes without an infoleak or wrong data.
+> 
+> An example of a hole leading to data corruption:
+> 
+>         item 61 key (606890 INODE_ITEM 0) itemoff 9662 itemsize 160
+>                 inode generation 50 transid 50 size 47424 nbytes 49141
+>                 block group 0 mode 100644 links 1 uid 0 gid 0
+>                 rdev 0 flags 0x0(none)
+>         item 62 key (606890 INODE_REF 603050) itemoff 9642 itemsize 20
+>                 inode ref index 3 namelen 10 name: DB_File.so
+>         item 63 key (606890 EXTENT_DATA 0) itemoff 8280 itemsize 1362
+>                 inline extent data size 1341 ram 4085 compress(zlib)
+>         item 64 key (606890 EXTENT_DATA 4096) itemoff 8227 itemsize 53
+>                 extent data disk byte 5367308288 nr 20480
+>                 extent data offset 0 nr 45056 ram 45056
+>                 extent compression(zlib)
+> 
+> Different data appears in userspace during each uncached read of the 10
+> bytes between offset 4085 and 4095.  The extent in item 63 is not long
+> enough to fill the first page of the file, so a memset is required to
+> fill the space between item 63 (ending at 4085) and item 64 (beginning
+> at 4096) with zero.
+> 
+> Signed-off-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+> 
+> ---
+>  fs/btrfs/inode.c | 6 ++++++
+>  1 file changed, 6 insertions(+)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 8e3a5a2..b1314d6 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -6803,6 +6803,12 @@ static noinline int uncompress_inline(struct btrfs_path *path,
+>  	max_size = min_t(unsigned long, PAGE_SIZE, max_size);
+>  	ret = btrfs_decompress(compress_type, tmp, page,
+>  			       extent_offset, inline_size, max_size);
+> +	WARN_ON(max_size > PAGE_SIZE);
+> +	if (max_size < PAGE_SIZE) {
+> +		char *map = kmap(page);
+> +		memset(map + max_size, 0, PAGE_SIZE - max_size);
+> +		kunmap(page);
+> +	}
+>  	kfree(tmp);
+>  	return ret;
+>  }
+> -- 
+> 2.1.4
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

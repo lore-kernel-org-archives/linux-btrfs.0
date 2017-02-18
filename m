@@ -1,205 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:12293 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751698AbdBMH0o (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:43301 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752754AbdBRB3X (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 13 Feb 2017 02:26:44 -0500
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-        by cn.fujitsu.com (Postfix) with ESMTP id DEA2846701AF
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 Feb 2017 15:26:29 +0800 (CST)
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs: relocation: Enhance kernel error output for relocation
-Date: Mon, 13 Feb 2017 15:26:27 +0800
-Message-ID: <20170213072627.18778-1-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+        Fri, 17 Feb 2017 20:29:23 -0500
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH 0/7] cleanup __btrfs_map_block
+Date: Fri, 17 Feb 2017 17:28:14 -0800
+Message-Id: <1487381301-865-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When balance(relocation) fails, btrfs-progs will report like:
+This is attempting to make __btrfs_map_block less scary :)
 
-ERROR: error during balancing '/mnt/scratch': Input/output error
-There may be more info in syslog - try dmesg | tail
+The major changes are
 
-However in some case, for example debugging btrfs/125 with small file
-size, kernel only have some recoverable csum error message and nothing
-useful at all.
+1) split operations for discard out of __btrfs_map_block and we don't copy
+discard operations for the target device of dev replace since they're not
+as important as writes.
 
-This patch will add error messages in relocation to help both end user to
-wipe out some obvious problems, like ENOSPC.
-And for developers, they can locate the problem to specific function just
-by kernel message.
+2) put dev replace stuff into helpers since they're basically
+self-independant.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- fs/btrfs/relocation.c | 60 +++++++++++++++++++++++++++++++++++++++++++++++----
- 1 file changed, 56 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 379711048fb0..c9474377a59c 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -4011,6 +4011,8 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
- 					rc->block_rsv, rc->block_rsv->size,
- 					BTRFS_RESERVE_FLUSH_ALL);
- 		if (ret) {
-+			btrfs_err(fs_info, "failed to reserve space: %d(%s)",
-+				  ret, btrfs_decode_error(ret));
- 			err = ret;
- 			break;
- 		}
-@@ -4019,6 +4021,9 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
- 		if (IS_ERR(trans)) {
- 			err = PTR_ERR(trans);
- 			trans = NULL;
-+			btrfs_err(fs_info,
-+				  "failed to start transaction: %d(%s)",
-+				  err, btrfs_decode_error(err));
- 			break;
- 		}
- restart:
-@@ -4028,8 +4033,11 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
- 		}
- 
- 		ret = find_next_extent(rc, path, &key);
--		if (ret < 0)
-+		if (ret < 0) {
-+			btrfs_err(fs_info, "failed to find next extent: %d(%s)",
-+				  ret, btrfs_decode_error(ret));
- 			err = ret;
-+		}
- 		if (ret != 0)
- 			break;
- 
-@@ -4081,9 +4089,17 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
- 
- 		if (flags & BTRFS_EXTENT_FLAG_TREE_BLOCK) {
- 			ret = add_tree_block(rc, &key, path, &blocks);
-+			if (ret < 0)
-+				btrfs_err(fs_info,
-+					  "failed to record tree block: %d(%s)",
-+					  ret, btrfs_decode_error(ret));
- 		} else if (rc->stage == UPDATE_DATA_PTRS &&
- 			   (flags & BTRFS_EXTENT_FLAG_DATA)) {
- 			ret = add_data_references(rc, &key, path, &blocks);
-+			if (ret < 0)
-+				btrfs_err(fs_info,
-+					  "failed to record data extent: %d(%s)",
-+					  ret, btrfs_decode_error(ret));
- 		} else {
- 			btrfs_release_path(path);
- 			ret = 0;
-@@ -4103,6 +4119,9 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
- 				rc->backref_cache.last_trans = trans->transid - 1;
- 
- 				if (ret != -EAGAIN) {
-+					btrfs_err(fs_info,
-+					"faild to relocate tree blocks: %d(%s)",
-+						  ret, btrfs_decode_error(ret));
- 					err = ret;
- 					break;
- 				}
-@@ -4121,6 +4140,9 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
- 			ret = relocate_data_extent(rc->data_inode,
- 						   &key, &rc->cluster);
- 			if (ret < 0) {
-+				btrfs_err(fs_info,
-+				"failed to relocate data extent: %d(%s)",
-+					  ret, btrfs_decode_error(ret));
- 				err = ret;
- 				break;
- 			}
-@@ -4147,8 +4169,12 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
- 	if (!err) {
- 		ret = relocate_file_extent_cluster(rc->data_inode,
- 						   &rc->cluster);
--		if (ret < 0)
-+		if (ret < 0) {
-+			btrfs_err(fs_info,
-+			"failed to relocate file extent cluster: %d(%s)",
-+				  ret, btrfs_decode_error(ret));
- 			err = ret;
-+		}
- 	}
- 
- 	rc->create_reloc_tree = 0;
-@@ -4158,6 +4184,10 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
- 	btrfs_block_rsv_release(fs_info, rc->block_rsv, (u64)-1);
- 
- 	err = prepare_to_merge(rc, err);
-+	if (err < 0)
-+		btrfs_err(fs_info,
-+			  "failed to preapre merge relocate trees: %d(%s)",
-+			  ret, btrfs_decode_error(ret));
- 
- 	merge_reloc_roots(rc);
- 
-@@ -4336,6 +4366,9 @@ int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start)
- 
- 	ret = btrfs_inc_block_group_ro(extent_root, rc->block_group);
- 	if (ret) {
-+		btrfs_err(fs_info,
-+			"failed to set block group read-only: %d(%s)",
-+			  err, btrfs_decode_error(err));
- 		err = ret;
- 		goto out;
- 	}
-@@ -4351,10 +4384,19 @@ int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start)
- 					path);
- 	btrfs_free_path(path);
- 
--	if (!IS_ERR(inode))
-+	if (!IS_ERR(inode)) {
- 		ret = delete_block_group_cache(fs_info, rc->block_group, inode, 0);
--	else
-+		if (ret < 0)
-+			btrfs_err(fs_info,
-+				"failed to delete block group cache: %d(%s)",
-+				  err, btrfs_decode_error(err));
-+	} else {
- 		ret = PTR_ERR(inode);
-+		if (ret < 0 && ret != -ENOENT)
-+			btrfs_err(fs_info,
-+				"failed to lookup free space inode: %d(%s)",
-+				  err, btrfs_decode_error(err));
-+	}
- 
- 	if (ret && ret != -ENOENT) {
- 		err = ret;
-@@ -4364,6 +4406,8 @@ int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start)
- 	rc->data_inode = create_reloc_inode(fs_info, rc->block_group);
- 	if (IS_ERR(rc->data_inode)) {
- 		err = PTR_ERR(rc->data_inode);
-+		btrfs_err(fs_info, "failed to create relocate inode: %d(%s)",
-+			  err, btrfs_decode_error(err));
- 		rc->data_inode = NULL;
- 		goto out;
- 	}
-@@ -4394,6 +4438,9 @@ int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start)
- 			ret = btrfs_wait_ordered_range(rc->data_inode, 0,
- 						       (u64)-1);
- 			if (ret) {
-+				btrfs_err(fs_info,
-+					"failed to wait ordered range: %d(%s)",
-+					  ret, btrfs_decode_error(ret));
- 				err = ret;
- 				goto out;
- 			}
-@@ -4407,6 +4454,11 @@ int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start)
- 	WARN_ON(rc->block_group->reserved > 0);
- 	WARN_ON(btrfs_block_group_used(&rc->block_group->item) > 0);
- out:
-+	if (err < 0)
-+		btrfs_err(fs_info,
-+			  "failed to relocate block group %llu: %d(%s)",
-+			  rc->block_group->key.objectid, ret,
-+			  btrfs_decode_error(ret));
- 	if (err && rw)
- 		btrfs_dec_block_group_ro(rc->block_group);
- 	iput(rc->data_inode);
+Liu Bo (7):
+  Btrfs: create a helper for getting chunk map
+  Btrfs: separate DISCARD from __btrfs_map_block
+  Btrfs: introduce a function to get extra mirror from replace
+  Btrfs: handle operations for device replace separately
+  Btrfs: do not add extra mirror when dev_replace target dev is not
+    available
+  Btrfs: helper for ops that requires full stripe
+  Btrfs: convert BUG_ON to WARN_ON
+
+ fs/btrfs/extent_io.c |   3 +-
+ fs/btrfs/volumes.c   | 824 +++++++++++++++++++++++++++------------------------
+ fs/btrfs/volumes.h   |   2 +-
+ 3 files changed, 445 insertions(+), 384 deletions(-)
+
 -- 
-2.11.1
-
-
+2.5.5
 

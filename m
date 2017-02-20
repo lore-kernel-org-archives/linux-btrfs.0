@@ -1,19 +1,20 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:43254 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:29187 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751833AbdBTDyv (ORCPT
+        with ESMTP id S1750939AbdBTG1H (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 19 Feb 2017 22:54:51 -0500
-Subject: Re: [PATCH 2/7] Btrfs: separate DISCARD from __btrfs_map_block
+        Mon, 20 Feb 2017 01:27:07 -0500
+Subject: Re: [PATCH 3/7] Btrfs: introduce a function to get extra mirror from
+ replace
 To: Liu Bo <bo.li.liu@oracle.com>, <linux-btrfs@vger.kernel.org>
 References: <1487381301-865-1-git-send-email-bo.li.liu@oracle.com>
- <1487381301-865-3-git-send-email-bo.li.liu@oracle.com>
+ <1487381301-865-4-git-send-email-bo.li.liu@oracle.com>
 CC: David Sterba <dsterba@suse.cz>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <1f27d01e-0599-5153-6c15-1eaef243838d@cn.fujitsu.com>
-Date: Mon, 20 Feb 2017 11:54:31 +0800
+Message-ID: <7ed1bfd8-d50e-14a0-bc2e-e0c83e98db60@cn.fujitsu.com>
+Date: Mon, 20 Feb 2017 14:26:58 +0800
 MIME-Version: 1.0
-In-Reply-To: <1487381301-865-3-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1487381301-865-4-git-send-email-bo.li.liu@oracle.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -21,448 +22,208 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 
 At 02/18/2017 09:28 AM, Liu Bo wrote:
-> Since DISCARD is not as important as an operation like write, we don't
-> copy it to target device during replace, and it makes __btrfs_map_block
-> less complex.
-
-Makes sense to me.
-
+> As the part of getting extra mirror in __btrfs_map_block is
+> self-independent, this puts it into a separate function.
 >
 > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> ---
->  fs/btrfs/volumes.c | 306 +++++++++++++++++++++++++++++++++--------------------
->  1 file changed, 192 insertions(+), 114 deletions(-)
->
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index c52b0fe..96228f3 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -5294,6 +5294,175 @@ void btrfs_put_bbio(struct btrfs_bio *bbio)
->  		kfree(bbio);
->  }
->
-> +/* can REQ_OP_DISCARD be sent with other REQ like REQ_OP_WRITE? */
-> +/*
-> + * Please note that, discard won't be sent to target device of device
-> + * replace.
-> + */
-> +static int __btrfs_map_block_for_discard(struct btrfs_fs_info *fs_info,
-> +					 u64 logical, u64 length,
-> +					 struct btrfs_bio **bbio_ret)
-> +{
-> +	struct extent_map_tree *em_tree = &fs_info->mapping_tree.map_tree;
-> +	struct extent_map *em;
-> +	struct map_lookup *map;
-> +	struct btrfs_bio *bbio;
-> +	u64 offset;
-> +	u64 stripe_nr;
-> +	u64 stripe_nr_end;
-> +	u64 stripe_end_offset;
-> +	u64 stripe_cnt;
-> +	u64 stripe_len;
-> +	u64 stripe_offset;
-> +	u64 num_stripes;
-> +	u32 stripe_index;
-> +	u32 factor = 0;
-> +	u32 sub_stripes = 0;
-> +	u64 stripes_per_dev = 0;
-> +	u32 remaining_stripes = 0;
-> +	u32 last_stripe = 0;
-> +	int ret = 0;
-> +	int i;
-> +
-> +	/* discard always return a bbio */
-> +	ASSERT(bbio_ret);
-> +
-> +	read_lock(&em_tree->lock);
-> +	em = lookup_extent_mapping(em_tree, logical, length);
-> +	read_unlock(&em_tree->lock);
 
-It seems that get_chunk_map() in previous patch can replace such 
-searching and error message.
+Looks good to me.
 
-> +
-> +	if (!em) {
-> +		btrfs_crit(fs_info, "unable to find logical %llu len %llu",
-> +			logical, length);
-> +		return -EINVAL;
-> +	}
-> +
-> +	if (em->start > logical || em->start + em->len < logical) {
-> +		btrfs_crit(fs_info,
-> +			   "found a bad mapping, wanted %Lu, found %Lu-%Lu",
-> +			   logical, em->start, em->start + em->len);
-> +		free_extent_map(em);
-> +		return -EINVAL;
-> +	}
-> +
-> +	map = em->map_lookup;
-> +	/* we don't discard raid56 yet */
-> +	if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
-> +		ret = -EOPNOTSUPP;
-> +		goto out;
-> +	}
-> +
-> +	offset = logical - em->start;
-> +	length = min_t(u64, em->len - offset, length);
-> +
-> +	stripe_len = map->stripe_len;
-> +	/*
-> +	 * stripe_nr counts the total number of stripes we have to stride
-> +	 * to get to this block
-> +	 */
-> +	stripe_nr = div64_u64(offset, stripe_len);
-> +	stripe_offset = stripe_nr * stripe_len;
-> +	ASSERT(offset >= stripe_offset);
-
-What about a DIV_ROUND_DOWN helper?
-Surprisingly we only have DIR_ROUND_UP, not not DIV_ROUND_DOWN.
-
-And if we're only going to support 64K stripe len, then round_down() is 
-good for current usage.
-
-> +
-> +	/* stripe_offset is the offset of this block in its stripe */
-> +	stripe_offset = offset - stripe_offset;
-
-This is a little confusing.
-What about using another variable called @stripe_start instead of using 
-the same variable @stripe_offset to temporarily store stripe start bytenr.
-
-I prefer to do it in one run without resuing @stripe_offset variable to 
-avoid confusion.
-
-> +
-> +	stripe_nr_end = ALIGN(offset + length, map->stripe_len);
-
-round_up() causes less confusion.
-
-And IIRC, ALIGN/round_up can only handle power of 2, this implies the 
-stripe_len must be power of 2, which is OK for now.
-If using ALIGN here, we can also use round_down() in previous stripe_nr.
+Reviewed-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
 Thanks,
 Qu
-
-> +	stripe_nr_end = div_u64(stripe_nr_end, map->stripe_len);
-> +	stripe_cnt = stripe_nr_end - stripe_nr;
-> +	stripe_end_offset = stripe_nr_end * map->stripe_len -
-> +			    (offset + length);
+> ---
+>  fs/btrfs/volumes.c | 161 +++++++++++++++++++++++++++++------------------------
+>  1 file changed, 89 insertions(+), 72 deletions(-)
+>
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 96228f3..f62efc7 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -140,6 +140,11 @@ static int btrfs_relocate_sys_chunks(struct btrfs_fs_info *fs_info);
+>  static void __btrfs_reset_dev_stats(struct btrfs_device *dev);
+>  static void btrfs_dev_stat_print_on_error(struct btrfs_device *dev);
+>  static void btrfs_dev_stat_print_on_load(struct btrfs_device *device);
+> +static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
+> +			     enum btrfs_map_op op,
+> +			     u64 logical, u64 *length,
+> +			     struct btrfs_bio **bbio_ret,
+> +			     int mirror_num, int need_raid_map);
+>
+>  DEFINE_MUTEX(uuid_mutex);
+>  static LIST_HEAD(fs_uuids);
+> @@ -5463,6 +5468,83 @@ static int __btrfs_map_block_for_discard(struct btrfs_fs_info *fs_info,
+>  	return ret;
+>  }
+>
+> +/*
+> + * In dev-replace case, for repair case (that's the only case where the mirror
+> + * is selected explicitly when calling btrfs_map_block), blocks left of the
+> + * left cursor can also be read from the target drive.
+> + *
+> + * For REQ_GET_READ_MIRRORS, the target drive is added as the last one to the
+> + * array of stripes.
+> + * For READ, it also needs to be supported using the same mirror number.
+> + *
+> + * If the requested block is not left of the left cursor, EIO is returned. This
+> + * can happen because btrfs_num_copies() returns one more in the dev-replace
+> + * case.
+> + */
+> +static int get_extra_mirror_from_replace(struct btrfs_fs_info *fs_info,
+> +					 u64 logical, u64 length,
+> +					 u64 srcdev_devid, int *mirror_num,
+> +					 u64 *physical)
+> +{
+> +	struct btrfs_bio *bbio = NULL;
+> +	int num_stripes;
+> +	int index_srcdev = 0;
+> +	int found = 0;
+> +	u64 physical_of_found = 0;
+> +	int i;
+> +	int ret = 0;
+> +
+> +	ret = __btrfs_map_block(fs_info, BTRFS_MAP_GET_READ_MIRRORS,
+> +				logical, &length, &bbio, 0, 0);
+> +	if (ret) {
+> +		ASSERT(bbio == NULL);
+> +		return ret;
+> +	}
+> +
+> +	num_stripes = bbio->num_stripes;
+> +	if (*mirror_num > num_stripes) {
+> +		/*
+> +		 * BTRFS_MAP_GET_READ_MIRRORS does not contain this mirror,
+> +		 * that means that the requested area is not left of the left
+> +		 * cursor
+> +		 */
+> +		btrfs_put_bbio(bbio);
+> +		return -EIO;
+> +	}
+> +
 > +	/*
-> +	 * after this, stripe_nr is the number of stripes on this
-> +	 * device we have to walk to find the data, and stripe_index is
-> +	 * the number of our device in the stripe array
+> +	 * process the rest of the function using the mirror_num of the source
+> +	 * drive. Therefore look it up first.  At the end, patch the device
+> +	 * pointer to the one of the target drive.
 > +	 */
-> +	num_stripes = 1;
-> +	stripe_index = 0;
-> +	if (map->type & (BTRFS_BLOCK_GROUP_RAID0 |
-> +			 BTRFS_BLOCK_GROUP_RAID10)) {
-> +		if (map->type & BTRFS_BLOCK_GROUP_RAID0)
-> +			sub_stripes = 1;
-> +		else
-> +			sub_stripes = map->sub_stripes;
-> +
-> +		factor = map->num_stripes / sub_stripes;
-> +		num_stripes = min_t(u64, map->num_stripes,
-> +				    sub_stripes * stripe_cnt);
-> +		stripe_nr = div_u64_rem(stripe_nr, factor, &stripe_index);
-> +		stripe_index *= sub_stripes;
-> +		stripes_per_dev = div_u64_rem(stripe_cnt, factor,
-> +					      &remaining_stripes);
-> +		div_u64_rem(stripe_nr_end - 1, factor, &last_stripe);
-> +		last_stripe *= sub_stripes;
-> +	} else if (map->type & (BTRFS_BLOCK_GROUP_RAID1 |
-> +				BTRFS_BLOCK_GROUP_DUP)) {
-> +		num_stripes = map->num_stripes;
-> +	} else {
-> +		stripe_nr = div_u64_rem(stripe_nr, map->num_stripes,
-> +					&stripe_index);
-> +	}
-> +
-> +	bbio = alloc_btrfs_bio(num_stripes, 0);
-> +	if (!bbio) {
-> +		ret = -ENOMEM;
-> +		goto out;
-> +	}
-> +
 > +	for (i = 0; i < num_stripes; i++) {
-> +		bbio->stripes[i].physical =
-> +			map->stripes[stripe_index].physical +
-> +			stripe_offset + stripe_nr * map->stripe_len;
-> +		bbio->stripes[i].dev = map->stripes[stripe_index].dev;
+> +		if (bbio->stripes[i].dev->devid != srcdev_devid)
+> +			continue;
 > +
-> +		if (map->type & (BTRFS_BLOCK_GROUP_RAID0 |
-> +				 BTRFS_BLOCK_GROUP_RAID10)) {
-> +			bbio->stripes[i].length = stripes_per_dev *
-> +				map->stripe_len;
+> +		/*
+> +		 * In case of DUP, in order to keep it simple, only add the
+> +		 * mirror with the lowest physical address
+> +		 */
+> +		if (found &&
+> +		    physical_of_found <= bbio->stripes[i].physical)
+> +			continue;
 > +
-> +			if (i / sub_stripes < remaining_stripes)
-> +				bbio->stripes[i].length +=
-> +					map->stripe_len;
-> +
-> +			/*
-> +			 * Special for the first stripe and
-> +			 * the last stripe:
-> +			 *
-> +			 * |-------|...|-------|
-> +			 *     |----------|
-> +			 *    off     end_off
-> +			 */
-> +			if (i < sub_stripes)
-> +				bbio->stripes[i].length -=
-> +					stripe_offset;
-> +
-> +			if (stripe_index >= last_stripe &&
-> +			    stripe_index <= (last_stripe +
-> +					     sub_stripes - 1))
-> +				bbio->stripes[i].length -=
-> +					stripe_end_offset;
-> +
-> +			if (i == sub_stripes - 1)
-> +				stripe_offset = 0;
-> +		} else {
-> +			bbio->stripes[i].length = length;
-> +		}
-> +
-> +		stripe_index++;
-> +		if (stripe_index == map->num_stripes) {
-> +			stripe_index = 0;
-> +			stripe_nr++;
-> +		}
+> +		index_srcdev = i;
+> +		found = 1;
+> +		physical_of_found = bbio->stripes[i].physical;
 > +	}
 > +
-> +	*bbio_ret = bbio;
-> +	bbio->map_type = map->type;
-> +	bbio->num_stripes = num_stripes;
-> +out:
-> +	free_extent_map(em);
+> +	btrfs_put_bbio(bbio);
+> +
+> +	ASSERT(found);
+> +	if (!found)
+> +		return -EIO;
+> +
+> +	*mirror_num = index_srcdev + 1;
+> +	*physical = physical_of_found;
 > +	return ret;
 > +}
 > +
 >  static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
 >  			     enum btrfs_map_op op,
 >  			     u64 logical, u64 *length,
-> @@ -5304,10 +5473,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
->  	struct map_lookup *map;
->  	u64 offset;
->  	u64 stripe_offset;
-> -	u64 stripe_end_offset;
->  	u64 stripe_nr;
-> -	u64 stripe_nr_orig;
-> -	u64 stripe_nr_end;
->  	u64 stripe_len;
->  	u32 stripe_index;
->  	int i;
-> @@ -5323,6 +5489,10 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
->  	u64 physical_to_patch_in_first_stripe = 0;
->  	u64 raid56_full_stripe_start = (u64)-1;
->
-> +	if (op == BTRFS_MAP_DISCARD)
-> +		return __btrfs_map_block_for_discard(fs_info, logical,
-> +						     *length, bbio_ret);
-> +
->  	em = get_chunk_map(fs_info, logical, *length);
->  	if (IS_ERR(em))
->  		return PTR_ERR(em);
-> @@ -5364,14 +5534,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
->  		raid56_full_stripe_start *= full_stripe_len;
->  	}
->
-> -	if (op == BTRFS_MAP_DISCARD) {
-> -		/* we don't discard raid56 yet */
-> -		if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
-> -			ret = -EOPNOTSUPP;
+> @@ -5567,79 +5649,14 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
+>  	if (dev_replace_is_ongoing && mirror_num == map->num_stripes + 1 &&
+>  	    op != BTRFS_MAP_WRITE && op != BTRFS_MAP_GET_READ_MIRRORS &&
+>  	    dev_replace->tgtdev != NULL) {
+> -		/*
+> -		 * in dev-replace case, for repair case (that's the only
+> -		 * case where the mirror is selected explicitly when
+> -		 * calling btrfs_map_block), blocks left of the left cursor
+> -		 * can also be read from the target drive.
+> -		 * For REQ_GET_READ_MIRRORS, the target drive is added as
+> -		 * the last one to the array of stripes. For READ, it also
+> -		 * needs to be supported using the same mirror number.
+> -		 * If the requested block is not left of the left cursor,
+> -		 * EIO is returned. This can happen because btrfs_num_copies()
+> -		 * returns one more in the dev-replace case.
+> -		 */
+> -		u64 tmp_length = *length;
+> -		struct btrfs_bio *tmp_bbio = NULL;
+> -		int tmp_num_stripes;
+> -		u64 srcdev_devid = dev_replace->srcdev->devid;
+> -		int index_srcdev = 0;
+> -		int found = 0;
+> -		u64 physical_of_found = 0;
+> -
+> -		ret = __btrfs_map_block(fs_info, BTRFS_MAP_GET_READ_MIRRORS,
+> -			     logical, &tmp_length, &tmp_bbio, 0, 0);
+> -		if (ret) {
+> -			WARN_ON(tmp_bbio != NULL);
 > -			goto out;
 > -		}
-> -		*length = min_t(u64, em->len - offset, *length);
-> -	} else if (map->type & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
-> +	if (map->type & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
->  		u64 max_len;
->  		/* For writes to RAID[56], allow a full stripeset across all disks.
->  		   For other RAID types and for RAID[56] reads, just allow a single
-> @@ -5402,8 +5565,8 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
->  		btrfs_dev_replace_set_lock_blocking(dev_replace);
->
->  	if (dev_replace_is_ongoing && mirror_num == map->num_stripes + 1 &&
-> -	    op != BTRFS_MAP_WRITE && op != BTRFS_MAP_DISCARD &&
-> -	    op != BTRFS_MAP_GET_READ_MIRRORS && dev_replace->tgtdev != NULL) {
-> +	    op != BTRFS_MAP_WRITE && op != BTRFS_MAP_GET_READ_MIRRORS &&
-> +	    dev_replace->tgtdev != NULL) {
->  		/*
->  		 * in dev-replace case, for repair case (that's the only
->  		 * case where the mirror is selected explicitly when
-> @@ -5483,24 +5646,13 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
->
->  	num_stripes = 1;
->  	stripe_index = 0;
-> -	stripe_nr_orig = stripe_nr;
-> -	stripe_nr_end = ALIGN(offset + *length, map->stripe_len);
-> -	stripe_nr_end = div_u64(stripe_nr_end, map->stripe_len);
-> -	stripe_end_offset = stripe_nr_end * map->stripe_len -
-> -			    (offset + *length);
 > -
->  	if (map->type & BTRFS_BLOCK_GROUP_RAID0) {
-> -		if (op == BTRFS_MAP_DISCARD)
-> -			num_stripes = min_t(u64, map->num_stripes,
-> -					    stripe_nr_end - stripe_nr_orig);
->  		stripe_nr = div_u64_rem(stripe_nr, map->num_stripes,
->  				&stripe_index);
-> -		if (op != BTRFS_MAP_WRITE && op != BTRFS_MAP_DISCARD &&
-> -		    op != BTRFS_MAP_GET_READ_MIRRORS)
-> +		if (op != BTRFS_MAP_WRITE && op != BTRFS_MAP_GET_READ_MIRRORS)
->  			mirror_num = 1;
->  	} else if (map->type & BTRFS_BLOCK_GROUP_RAID1) {
-> -		if (op == BTRFS_MAP_WRITE || op == BTRFS_MAP_DISCARD ||
-> -		    op == BTRFS_MAP_GET_READ_MIRRORS)
-> +		if (op == BTRFS_MAP_WRITE || op == BTRFS_MAP_GET_READ_MIRRORS)
->  			num_stripes = map->num_stripes;
->  		else if (mirror_num)
->  			stripe_index = mirror_num - 1;
-> @@ -5513,8 +5665,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
->  		}
->
->  	} else if (map->type & BTRFS_BLOCK_GROUP_DUP) {
-> -		if (op == BTRFS_MAP_WRITE || op == BTRFS_MAP_DISCARD ||
-> -		    op == BTRFS_MAP_GET_READ_MIRRORS) {
-> +		if (op == BTRFS_MAP_WRITE || op == BTRFS_MAP_GET_READ_MIRRORS) {
->  			num_stripes = map->num_stripes;
->  		} else if (mirror_num) {
->  			stripe_index = mirror_num - 1;
-> @@ -5530,10 +5681,6 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
->
->  		if (op == BTRFS_MAP_WRITE || op == BTRFS_MAP_GET_READ_MIRRORS)
->  			num_stripes = map->sub_stripes;
-> -		else if (op == BTRFS_MAP_DISCARD)
-> -			num_stripes = min_t(u64, map->sub_stripes *
-> -					    (stripe_nr_end - stripe_nr_orig),
-> -					    map->num_stripes);
->  		else if (mirror_num)
->  			stripe_index += mirror_num - 1;
->  		else {
-> @@ -5576,8 +5723,9 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
->  			/* We distribute the parity blocks across stripes */
->  			div_u64_rem(stripe_nr + stripe_index, map->num_stripes,
->  					&stripe_index);
-> -			if ((op != BTRFS_MAP_WRITE && op != BTRFS_MAP_DISCARD &&
-> -			    op != BTRFS_MAP_GET_READ_MIRRORS) && mirror_num <= 1)
-> +			if ((op != BTRFS_MAP_WRITE &&
-> +			     op != BTRFS_MAP_GET_READ_MIRRORS) &&
-> +			    mirror_num <= 1)
->  				mirror_num = 1;
->  		}
->  	} else {
-> @@ -5600,7 +5748,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
->
->  	num_alloc_stripes = num_stripes;
->  	if (dev_replace_is_ongoing) {
-> -		if (op == BTRFS_MAP_WRITE || op == BTRFS_MAP_DISCARD)
-> +		if (op == BTRFS_MAP_WRITE)
->  			num_alloc_stripes <<= 1;
->  		if (op == BTRFS_MAP_GET_READ_MIRRORS)
->  			num_alloc_stripes++;
-> @@ -5643,84 +5791,15 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
->  				RAID6_Q_STRIPE;
+> -		tmp_num_stripes = tmp_bbio->num_stripes;
+> -		if (mirror_num > tmp_num_stripes) {
+> -			/*
+> -			 * BTRFS_MAP_GET_READ_MIRRORS does not contain this
+> -			 * mirror, that means that the requested area
+> -			 * is not left of the left cursor
+> -			 */
+> -			ret = -EIO;
+> -			btrfs_put_bbio(tmp_bbio);
+> -			goto out;
+> -		}
+> -
+> -		/*
+> -		 * process the rest of the function using the mirror_num
+> -		 * of the source drive. Therefore look it up first.
+> -		 * At the end, patch the device pointer to the one of the
+> -		 * target drive.
+> -		 */
+> -		for (i = 0; i < tmp_num_stripes; i++) {
+> -			if (tmp_bbio->stripes[i].dev->devid != srcdev_devid)
+> -				continue;
+> -
+> -			/*
+> -			 * In case of DUP, in order to keep it simple, only add
+> -			 * the mirror with the lowest physical address
+> -			 */
+> -			if (found &&
+> -			    physical_of_found <= tmp_bbio->stripes[i].physical)
+> -				continue;
+> -
+> -			index_srcdev = i;
+> -			found = 1;
+> -			physical_of_found = tmp_bbio->stripes[i].physical;
+> -		}
+> -
+> -		btrfs_put_bbio(tmp_bbio);
+> -
+> -		if (!found) {
+> -			WARN_ON(1);
+> -			ret = -EIO;
+> +		ret = get_extra_mirror_from_replace(fs_info, logical, *length,
+> +						    dev_replace->srcdev->devid,
+> +						    &mirror_num,
+> +					    &physical_to_patch_in_first_stripe);
+> +		if (ret)
+>  			goto out;
+> -		}
+> -
+> -		mirror_num = index_srcdev + 1;
+> -		patch_the_first_stripe_for_dev_replace = 1;
+> -		physical_to_patch_in_first_stripe = physical_of_found;
+> +		else
+> +			patch_the_first_stripe_for_dev_replace = 1;
+>  	} else if (mirror_num > map->num_stripes) {
+>  		mirror_num = 0;
 >  	}
->
-> -	if (op == BTRFS_MAP_DISCARD) {
-> -		u32 factor = 0;
-> -		u32 sub_stripes = 0;
-> -		u64 stripes_per_dev = 0;
-> -		u32 remaining_stripes = 0;
-> -		u32 last_stripe = 0;
->
-> -		if (map->type &
-> -		    (BTRFS_BLOCK_GROUP_RAID0 | BTRFS_BLOCK_GROUP_RAID10)) {
-> -			if (map->type & BTRFS_BLOCK_GROUP_RAID0)
-> -				sub_stripes = 1;
-> -			else
-> -				sub_stripes = map->sub_stripes;
-> -
-> -			factor = map->num_stripes / sub_stripes;
-> -			stripes_per_dev = div_u64_rem(stripe_nr_end -
-> -						      stripe_nr_orig,
-> -						      factor,
-> -						      &remaining_stripes);
-> -			div_u64_rem(stripe_nr_end - 1, factor, &last_stripe);
-> -			last_stripe *= sub_stripes;
-> -		}
-> -
-> -		for (i = 0; i < num_stripes; i++) {
-> -			bbio->stripes[i].physical =
-> -				map->stripes[stripe_index].physical +
-> -				stripe_offset + stripe_nr * map->stripe_len;
-> -			bbio->stripes[i].dev = map->stripes[stripe_index].dev;
-> -
-> -			if (map->type & (BTRFS_BLOCK_GROUP_RAID0 |
-> -					 BTRFS_BLOCK_GROUP_RAID10)) {
-> -				bbio->stripes[i].length = stripes_per_dev *
-> -							  map->stripe_len;
-> -
-> -				if (i / sub_stripes < remaining_stripes)
-> -					bbio->stripes[i].length +=
-> -						map->stripe_len;
-> -
-> -				/*
-> -				 * Special for the first stripe and
-> -				 * the last stripe:
-> -				 *
-> -				 * |-------|...|-------|
-> -				 *     |----------|
-> -				 *    off     end_off
-> -				 */
-> -				if (i < sub_stripes)
-> -					bbio->stripes[i].length -=
-> -						stripe_offset;
-> -
-> -				if (stripe_index >= last_stripe &&
-> -				    stripe_index <= (last_stripe +
-> -						     sub_stripes - 1))
-> -					bbio->stripes[i].length -=
-> -						stripe_end_offset;
-> -
-> -				if (i == sub_stripes - 1)
-> -					stripe_offset = 0;
-> -			} else
-> -				bbio->stripes[i].length = *length;
-> -
-> -			stripe_index++;
-> -			if (stripe_index == map->num_stripes) {
-> -				/* This could only happen for RAID0/10 */
-> -				stripe_index = 0;
-> -				stripe_nr++;
-> -			}
-> -		}
-> -	} else {
-> -		for (i = 0; i < num_stripes; i++) {
-> -			bbio->stripes[i].physical =
-> -				map->stripes[stripe_index].physical +
-> -				stripe_offset +
-> -				stripe_nr * map->stripe_len;
-> -			bbio->stripes[i].dev =
-> -				map->stripes[stripe_index].dev;
-> -			stripe_index++;
-> -		}
-> +	for (i = 0; i < num_stripes; i++) {
-> +		bbio->stripes[i].physical =
-> +			map->stripes[stripe_index].physical +
-> +			stripe_offset +
-> +			stripe_nr * map->stripe_len;
-> +		bbio->stripes[i].dev =
-> +			map->stripes[stripe_index].dev;
-> +		stripe_index++;
->  	}
->
->  	if (op == BTRFS_MAP_WRITE || op == BTRFS_MAP_GET_READ_MIRRORS)
-> @@ -5730,8 +5809,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
->  		sort_parity_stripes(bbio, num_stripes);
->
->  	tgtdev_indexes = 0;
-> -	if (dev_replace_is_ongoing &&
-> -	   (op == BTRFS_MAP_WRITE || op == BTRFS_MAP_DISCARD) &&
-> +	if (dev_replace_is_ongoing && op == BTRFS_MAP_WRITE &&
->  	    dev_replace->tgtdev != NULL) {
->  		int index_where_to_add;
->  		u64 srcdev_devid = dev_replace->srcdev->devid;
 >
 
 

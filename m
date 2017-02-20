@@ -1,43 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44806 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44814 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751068AbdBTSZe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 20 Feb 2017 13:25:34 -0500
+        id S1751068AbdBTSZg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 20 Feb 2017 13:25:36 -0500
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 6CA31AAB2
-        for <linux-btrfs@vger.kernel.org>; Mon, 20 Feb 2017 18:25:32 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 564EFAAB2
+        for <linux-btrfs@vger.kernel.org>; Mon, 20 Feb 2017 18:25:35 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 1/3] btrfs: remove BUG_ON from __tree_mod_log_insert
-Date: Mon, 20 Feb 2017 19:25:01 +0100
-Message-Id: <f4837430011633a26eeb2c1410d20f1f954e2395.1487614974.git.dsterba@suse.com>
+Subject: [PATCH 2/3] btrfs: handle allocation error in update_dev_stat_item
+Date: Mon, 20 Feb 2017 19:25:04 +0100
+Message-Id: <b5cd1b62a67b7ee96ae495628aef097294f7797d.1487614974.git.dsterba@suse.com>
 In-Reply-To: <cover.1487614974.git.dsterba@suse.com>
 References: <cover.1487614974.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-All callers dereference the 'tm' parameter before it gets to this
-function, the NULL check does not make much sense here.
-
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/ctree.c | 2 --
- 1 file changed, 2 deletions(-)
+ fs/btrfs/volumes.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 1192bc7d2ee7..2c3c943bfcdc 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -453,8 +453,6 @@ __tree_mod_log_insert(struct btrfs_fs_info *fs_info, struct tree_mod_elem *tm)
- 	struct rb_node *parent = NULL;
- 	struct tree_mod_elem *cur;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 1fac98728814..64d6665f6eda 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -6954,7 +6954,8 @@ static int update_dev_stat_item(struct btrfs_trans_handle *trans,
+ 	key.offset = device->devid;
  
--	BUG_ON(!tm);
--
- 	tm->seq = btrfs_inc_tree_mod_seq(fs_info);
- 
- 	tm_root = &fs_info->tree_mod_log;
+ 	path = btrfs_alloc_path();
+-	BUG_ON(!path);
++	if (!path)
++		return -ENOMEM;
+ 	ret = btrfs_search_slot(trans, dev_root, &key, path, -1, 1);
+ 	if (ret < 0) {
+ 		btrfs_warn_in_rcu(fs_info,
 -- 
 2.10.1
 

@@ -1,179 +1,438 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from phd-imap.ethz.ch ([129.132.80.51]:58428 "EHLO phd-imap.ethz.ch"
+Received: from p3nlsmtpcp01-01.prod.phx3.secureserver.net ([184.168.200.138]:47356
+        "EHLO p3nlsmtpcp01-01.prod.phx3.secureserver.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752691AbdBTOUT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 20 Feb 2017 09:20:19 -0500
-Received: from localhost (phd-mailscan.ethz.ch [192.168.127.2])
-        by phd-imap.ethz.ch (Postfix) with ESMTP id 3vRlwB4LhkzXKr
-        for <linux-btrfs@vger.kernel.org>; Mon, 20 Feb 2017 15:13:14 +0100 (CET)
-Received: from phd-mxin.ethz.ch ([IPv6:::ffff:192.168.127.53])
-        by localhost (phd-mailscan.ethz.ch [::ffff:192.168.127.2]) (amavisd-new, port 10024)
-        with LMTP id wJxWNAT6-rJV for <linux-btrfs@vger.kernel.org>;
-        Mon, 20 Feb 2017 15:13:14 +0100 (CET)
-Received: from [192.33.96.28] (auror.ethz.ch [192.33.96.28])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        (Authenticated sender: schmid@phd-mxin.ethz.ch)
-        by phd-mxin.ethz.ch (Postfix) with ESMTPSA id 3vRlwB2ZnWzQ4l
-        for <linux-btrfs@vger.kernel.org>; Mon, 20 Feb 2017 15:13:14 +0100 (CET)
-To: linux-btrfs@vger.kernel.org
-From: Patrick Schmid <schmid@phys.ethz.ch>
-Subject: mount troubles after crash
-Message-ID: <756b50f6-5cd7-dd5c-f180-4f5347c7f8ee@phys.ethz.ch>
-Date: Mon, 20 Feb 2017 15:13:14 +0100
+        id S1751068AbdBTS2e (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 20 Feb 2017 13:28:34 -0500
+Date: Mon, 20 Feb 2017 23:57:19 +0530
+From: "Lakshmipathi.G" <Lakshmipathi.G@giis.co.in>
+To: quwenruo@cn.fujitsu.com, kreijack@inwind.it, linux-btrfs@vger.kernel.org
+Subject: [PATCH v3] btrfs-progs: RAID5: Inject data stripe corruption and
+ verify scrub fixes it and retains correct parity.
+Message-ID: <20170220182719.GA29904@giis.co.in>
 MIME-Version: 1.0
-Content-Type: multipart/mixed;
- boundary="------------ECA1B752E9CC296FA7CD95B3"
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a multi-part message in MIME format.
---------------ECA1B752E9CC296FA7CD95B3
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: 7bit
+Test script to create file with specific data-stripe layout.Computes stripe locations.
+Inject corruption into data-stripe and verify scrubbing process fixes corrupted block.
+It also validates the corresponding parity stripe.
 
-Hi togehter,
+Signed-off-by: Lakshmipathi.G <Lakshmipathi.G@giis.co.in>
+---
+ .../test.sh                                        | 402 +++++++++++++++++++++
+ 1 file changed, 402 insertions(+)
+ create mode 100755 tests/misc-tests/020-raid5-datastripe-corruption-parity-check/test.sh
 
-during a balance run, the server crash. after the crash i got the 
-attached error messages....
-
-Kernel: 4.9.11
-Btrfs-Tools: v4.9.1
-
-btrfs check --repair failed with:
-
-couldn't open RDWR because of unsupported option features (3).
-Open ctree failed
-
-
-is there a way to fix this 140TB filesystem?
-
-Regards Patrick
+diff --git a/tests/misc-tests/020-raid5-datastripe-corruption-parity-check/test.sh b/tests/misc-tests/020-raid5-datastripe-corruption-parity-check/test.sh
+new file mode 100755
+index 0000000..0129a75
+--- /dev/null
++++ b/tests/misc-tests/020-raid5-datastripe-corruption-parity-check/test.sh
+@@ -0,0 +1,402 @@
++#!/bin/bash
++#
++# Raid5: Inject data stripe corruption and fix them using scrub.
++# 
++# Script will perform the following:
++# 1) Create Raid5 using 3 loopback devices.
++# 2) Ensure file layout is created in a predictable manner. 
++#    Each data stripe(64KB) should uniquely start with 'DNxxxx',   
++#    where N represents the data stripe number.(ex:D0xxxx,D1xxxx etc)
++# 3) Once file is created with specific layout, check whether file 
++#    has single extent. At the moment, script wont handle multi-extent
++#    files.
++# 4) If file has single extent with the help of 'dump-tree' compute data and 
++#    parity stripe details like devicename, position and actual on-disk data.
++# 5) $STRIPEINFO_COMPLETE file will have all necessary data at this stage.
++# 6) Inject corruption into given data-stripe by zero'ing out its first 4 bytes.
++# 7) After injecting corruption, running online-scrub is expected to fix 
++#    the corrupted data stripe with the help of parity block and 
++#    corresponding data stripe. 
++# 8) If scrub successful, verify the data stripe has original un-corrupted value.
++# 9) If scrub successful, verify parity stripe is valid, otherwise its a parity bug.
++# 10) If no issues found, cleanup files and devices. Repeat the process for 
++#    different file size and data-stripe.
++#
++#  Note: This script corrupts only data-stripe blocks. 
++#  Known Limitations (will be addressed later):
++#         - Script expects even number of data-stripes in file.
++#         - Script expects the file to have single extent.
++
++source $TOP/tests/common
++
++check_prereq btrfs
++check_prereq mkfs.btrfs
++check_prereq btrfs-debugfs
++
++setup_root_helper
++prepare_test_dev 1024M
++
++ndevs=3
++declare -a devs
++declare -a parity_offsets
++stripe_entry=""
++device_name=""
++stripe_offset=""
++stripe_content=""
++
++#Complete stripe layout
++STRIPEINFO_COMPLETE=$(mktemp --tmpdir btrfs-progs-raid5-stripe-complete.infoXXXXXX)
++#dump-tree output file
++DUMPTREE_OUTPUT=$(mktemp --tmpdir btrfs-progs-raid5-tree-dump.infoXXXXXX)
++#tmp files
++STRIPEINFO_PARTIAL=$(mktemp --tmpdir btrfs-progs-raid5-stripe-partial.infoXXXXXX)
++STRIPE_TMP=$(mktemp --tmpdir btrfs-progs-raid5-stripetmp.infoXXXXXX)
++MULTI_EXTENT_CHECK=$(mktemp --tmpdir btrfs-progs-raid5-extent-check.infoXXXXXX)
++EXTENT_WITH_SIZE=$(mktemp --tmpdir btrfs-progs-raid5-extent-size.infoXXXXXX)
++PARITY_LOC1=$(mktemp --tmpdir btrfs-progs-raid5-parity-loc1.infoXXXXXX)
++PARITY_LOCATION=$(mktemp --tmpdir btrfs-progs-raid5-parity-locations.infoXXXXXX)
++
++
++prepare_devices()
++{
++	for i in `seq $ndevs`; do
++		touch img$i
++		chmod a+rw img$i
++		truncate -s0 img$i
++		truncate -s512M img$i
++		devs[$i]=`run_check_stdout $SUDO_HELPER losetup --find --show img$i`
++	done
++	truncate -s0 $STRIPE_TMP
++	truncate -s0 $STRIPEINFO_PARTIAL
++	truncate -s0 $STRIPEINFO_COMPLETE
++}
++
++cleanup_devices()
++{
++	for dev in ${devs[@]}; do
++		run_check $SUDO_HELPER losetup -d $dev
++	done
++	for i in `seq $ndevs`; do
++		truncate -s0 img$i
++	done
++	run_check $SUDO_HELPER losetup --all
++}
++
++test_do_mkfs()
++{
++	run_check $SUDO_HELPER $TOP/mkfs.btrfs -f	\
++		$@
++}
++
++test_mkfs_multi()
++{
++	test_do_mkfs $@ ${devs[@]}
++}
++
++#$1 Filename
++#$2 Expected no.of data stripes for the file.
++create_layout(){
++	fname=$1
++	size=$(( $2 * 65536 ))
++	n=0
++	bs_value=1
++	stripe=0
++	while (( $n < $size ))
++	do
++		if [ $(( $n % 65536 )) -eq 0 ]; then
++			val='D'$stripe
++			echo -n $val
++        		stripe=$(( $stripe+1 ))
++			# ensure proper value		
++			bs_value=`echo "${#val}"` 
++        	else
++			echo -n 'x'
++			bs_value=1
++		fi
++        n=$(( $n+$bs_value ))
++	done | dd of=/tmp/$fname bs=$bs_value conv=notrunc &> /dev/null
++	cp /tmp/$fname $TEST_MNT
++	rm -f /tmp/$fname
++}
++
++# $1,$2,$3 - available device offsets
++find_parity_device(){
++	parity_offsets[1]=$1
++	parity_offsets[2]=$2
++	parity_offsets[3]=$3
++	pdev=""
++
++	for dev in ${devs[@]}; do
++		grep $dev $STRIPEINFO_PARTIAL &>/dev/null
++		if [ $? -ne 0 ];then
++			pdev=$dev
++		fi
++	done
++	#find parity location
++	truncate -s0 $PARITY_LOC1 
++	truncate -s0 $PARITY_LOCATION
++	awk -F'|' '{print $2}' $STRIPEINFO_PARTIAL > $PARITY_LOC1
++
++	for addr in ${parity_offsets[@]}; do
++		echo $addr >> $PARITY_LOCATION
++	done
++	sort $PARITY_LOCATION -o $PARITY_LOCATION 
++	sort $PARITY_LOC1 -o $PARITY_LOC1
++
++	poffset=$(comm -23 $PARITY_LOCATION $PARITY_LOC1)
++	pdata=$($SUDO_HELPER dd 2>/dev/null if=$pdev bs=1 \
++		count=16 skip=$poffset | hexdump -e '16/1 "%02x" "\n"')
++	echo "$pdev|$poffset|$pdata" >> $STRIPEINFO_PARTIAL
++}
++
++# $1 - physical address
++# $2 - pattern/digit to search
++get_stripe_contents(){
++ 	pysical_addr=$1
++	search_digit=$2
++	
++	for dev in ${devs[@]}; do
++		stripe_data=$($SUDO_HELPER dd 2>/dev/null if=$dev bs=1 \
++		count=16 skip=$pysical_addr)
++		echo $stripe_data | grep -E "D${search_digit}xxx" &>/dev/null
++		if [ $? -eq 0 ]; then
++			touch $STRIPE_TMP
++			echo "$dev|$pysical_addr|$stripe_data" >> $STRIPE_TMP
++			return 42
++		fi
++	done
++}
++
++#$1 - logical addr
++#$2 - total stripes
++logical_to_pysical(){
++	logical_addr=$1
++	total_stripe=$2
++
++	chunk_startaddr=$(cat $DUMPTREE_OUTPUT | grep -A3 "FIRST_CHUNK_TREE CHUNK_ITEM" | \
++	grep -B1 "\ DATA|RAID" | grep "FIRST_CHUNK_TREE" | \
++	sed -n -r 's/.*CHUNK_ITEM (.*)\) itemoff .*/\1/p')
++	chunk_length=$(cat $DUMPTREE_OUTPUT | grep -A3 "FIRST_CHUNK_TREE CHUNK_ITEM"  | \
++	grep  "\ DATA|RAID" | sed -n -r 's/.*length (.*) owner .*/\1/p')
++
++
++	stripe1_start=$(cat $DUMPTREE_OUTPUT | \
++	grep -A10 "FIRST_CHUNK_TREE CHUNK_ITEM $chunk_startaddr" | grep "offset" | \
++	awk '{print $6}' | tail -n3 | head -n1)
++	stripe2_start=$(cat $DUMPTREE_OUTPUT | \
++	grep -A10 "FIRST_CHUNK_TREE CHUNK_ITEM $chunk_startaddr" | grep "offset" | \
++	awk '{print $6}' | tail -n2 | head -n1)
++	stripe3_start=$(cat $DUMPTREE_OUTPUT | \
++	grep -A10 "FIRST_CHUNK_TREE CHUNK_ITEM $chunk_startaddr" | grep "offset" | \
++	awk '{print $6}' | tail -n1 | head -n1)
++
++	#search_single_extent $logical_addr
++	chunk_offset=$(( $logical_addr - $chunk_startaddr ))
++	chunk_slot=$(( $chunk_offset / 131072 ))
++
++	ds1_pysical_addr=$(( $stripe1_start + $chunk_slot * 65536 )) 
++	ds2_pysical_addr=$(( $stripe2_start + $chunk_slot * 65536 ))
++	ds3_pysical_addr=$(( $stripe3_start + $chunk_slot * 65536 ))
++
++	d1=0
++	while (( $total_stripe > 1))
++	do
++			for addr in $ds1_pysical_addr $ds2_pysical_addr $ds3_pysical_addr; do
++				get_stripe_contents $addr $d1
++				fun_ret=$?
++				if [ $fun_ret == 42 ];then
++					break
++				fi
++			done
++			# Search 2nd data-stripe
++			d1=$(( $d1 + 1 ))
++			for addr in $ds1_pysical_addr $ds2_pysical_addr $ds3_pysical_addr; do
++				get_stripe_contents $addr $d1
++				fun_ret=$?
++				if [ $fun_ret == 42 ];then
++					break
++				fi
++			done
++			d1=$(( $d1 + 1 ))
++				#Find parity device 
++				uniq  $STRIPE_TMP > $STRIPEINFO_PARTIAL
++				find_parity_device $ds1_pysical_addr $ds2_pysical_addr $ds3_pysical_addr
++				cat $STRIPEINFO_PARTIAL >> $STRIPEINFO_COMPLETE
++				truncate -s0 $STRIPE_TMP
++				truncate -s0 $STRIPEINFO_PARTIAL
++		total_stripe=$(( $total_stripe - 2 ))
++		ds1_pysical_addr=$(( $ds1_pysical_addr +  65536 )) 
++		ds2_pysical_addr=$(( $ds2_pysical_addr +  65536 )) 
++		ds3_pysical_addr=$(( $ds3_pysical_addr +  65536 )) 
++	done
++}
++
++#$1 - Total no.of chunks
++#$2 - loop dev
++#$3 - filename
++gather_stripe_info(){
++	total_stripe=$1
++	loop_dev=$2
++	filename=$3
++
++	sleep 2
++	run_check_stdout $SUDO_HELPER $TOP/btrfs inspect-internal dump-tree $loop_dev > "$DUMPTREE_OUTPUT"
++	$TOP/btrfs-debugfs -f $TEST_MNT/$filename &> "$MULTI_EXTENT_CHECK"
++	cat $MULTI_EXTENT_CHECK | awk '{print $6 "-" $4}' | grep -v '[a-z]' > "$EXTENT_WITH_SIZE"
++	extents_count=$(cat $EXTENT_WITH_SIZE | wc -l)
++	
++	if [ $extents_count -ne 1 ];then
++		echo "File with multiple extents found."
++		for item in `cat $EXTENT_WITH_SIZE`;do
++			logical_addr=$(echo $item | awk -F'-' {'print $1'})
++			len=$(echo $item | awk -F'-' {'print $2'})
++			total_stripe=$(( $len / 65536  ))
++			echo "logical_addr is $logical_addr and leng=$len and total_stripe=$total_stripe";
++		done
++			_fail "Script doesnt handle multiple extents.Re-try again."
++	else 
++		echo "Single extent found." >> "$RESULTS"
++		logical_addr=$(awk -F'-' '{print $1}' $EXTENT_WITH_SIZE)
++		len=$(awk -F'-' '{print $2}' $EXTENT_WITH_SIZE)
++		total_stripe=$(( $len / 65536  ))
++		echo "logical_addr: $logical_addr length=$len \
++		total_stripe=$total_stripe" >> "$RESULTS"
++		logical_to_pysical $logical_addr $total_stripe
++	fi	
++}
++
++#Corrupt given data stripe
++corrupt_data_stripe(){
++
++	data_stripe_num=$1
++	data_stripe_entry="D"${data_stripe_num}"xxxx"
++	stripe_entry=$(grep "${data_stripe_entry}" $STRIPEINFO_COMPLETE)
++
++	#Each entry will have format like "device|position|16-byte content"
++	#Example: /dev/loop1|0063176704|D0xxxxxxxxxxxxxx|
++	device_name=$(echo $stripe_entry | awk -F"|" '{print $1}')
++	stripe_offset=$(echo $stripe_entry | awk -F"|" '{print $2}')
++	#Remove leading zeros
++	stripe_offset=$(echo $stripe_offset | sed 's/^0*//')
++	stripe_content=$(echo $stripe_entry | awk -F"|" '{print $3}')
++
++	echo "$data_stripe_entry: Corrupting $device_name at position $stripe_offset \
++	which has $stripe_content" >> "$RESULTS"
++
++	#verify the value at this position 
++	original_value=$($SUDO_HELPER dd 2>/dev/null if=$device_name bs=1 \
++	count=16 skip=$stripe_offset)
++
++	if [ $original_value != $stripe_content ];then
++		 echo "$original_value != $stripe_content"
++		_fail "Data stripe mismatch. Possible use of incorrect block."
++	else
++		echo "Found on-disk value: $original_value " >> "$RESULTS"
++	fi
++
++	#Corrupt the given data stripe
++	$SUDO_HELPER dd if=/dev/zero of=$device_name bs=1 count=4 \
++	seek=$stripe_offset conv=notrunc &> /dev/null
++
++	#Fetch value again.
++	corrupted_value=$($SUDO_HELPER dd 2>/dev/null if=$device_name \
++	bs=1 count=16 skip=$stripe_offset)
++
++	if [ $corrupted_value == $original_value ];then
++		 echo "original:$original_value corrupted:$corrupted_value"
++		_fail "Corruption failed. Possible use of incorrect block."
++	else
++		echo "Corruption completed at $stripe_offset" >> "$RESULTS"
++	fi
++}
++
++#Verify data stripe after scrub
++verify_data_stripe(){
++
++	value_after_scrub=$($SUDO_HELPER dd 2>/dev/null if=$device_name bs=1 \
++	count=16 skip=$stripe_offset)
++	if [ $value_after_scrub != $stripe_content ];then
++		echo  "Found on-disk value: $value_after_scrub" >> "$RESULTS"
++		_fail "Scrub failed to fix data stripe corruption."
++	else
++		echo "Scrub corrected value: $value_after_scrub" >> "$RESULTS"
++	fi
++}
++
++#Verify parity stripe count after scrub
++verify_parity_stripe(){
++	parity_stripe_entry=$(grep -A3 "$stripe_entry" $STRIPEINFO_COMPLETE | grep "10000000000")
++        parity_device_name=$(echo $parity_stripe_entry | awk -F"|" '{print $1}')
++        parity_stripe_offset=$(echo $parity_stripe_entry | awk -F"|" '{print $2}')
++
++	echo "Parity_stripe_entry:$parity_stripe_entry" >> "$RESULTS"
++
++        #Remove leading zeros
++        parity_stripe_offset=$(echo $parity_stripe_offset | sed 's/^0*//')
++        parity_stripe_content=$(echo $parity_stripe_entry | awk -F"|" '{print $3}')
++
++	#get current parity value 
++        parity_stripe_after_scrub=$($SUDO_HELPER dd 2>/dev/null if=$parity_device_name bs=1 \
++                count=16 skip=$parity_stripe_offset | hexdump -e '16/1 "%02x" "\n"')
++
++	echo "Parity: before=$parity_stripe_content after=$parity_stripe_after_scrub" >> "$RESULTS"
++	if [ "$parity_stripe_content" != "$parity_stripe_after_scrub" ];then
++		echo "Parity Mismatch: $parity_stripe_content $parity_stripe_after_scrub." >> "$RESULTS"
++		_fail "Scrub corrupted parity stripe."
++	else
++		echo "Parity stripe check passed." >> "$RESULTS"
++	fi
++}
++
++
++#$1 Filename
++#$2 File with 'n' no.of data stripes
++#$3 Data stripe to corrupt
++test_raid5_datastripe_corruption(){
++	filename=$1
++	stripe_num=$2
++	test_stripe=$3
++	echo "------------------RAID5 Corruption------------------" >> "$RESULTS"
++	echo "Filename=$filename Total Stripes=$stripe_num \
++	      Data Stripe to be corrupted=$test_stripe" >> "$RESULTS"
++	   	
++	prepare_devices
++	dev1=${devs[1]}
++	test_mkfs_multi -d raid5 -m raid5
++	run_check $SUDO_HELPER mount $dev1 $TEST_MNT
++	create_layout $filename $stripe_num
++	cd $TEST_MNT && sync && sync && echo "3" > /proc/sys/vm/drop_caches && cd - &> /dev/null
++
++	#Gather stripe info like specific device,offset,content
++	gather_stripe_info $stripe_num $dev1 $filename
++	run_check $SUDO_HELPER umount "$TEST_MNT"
++
++	#Inject corruption
++	corrupt_data_stripe $test_stripe
++
++	#Mount the device and start scrub
++	run_check $SUDO_HELPER mount $dev1 $TEST_MNT
++	run_check $SUDO_HELPER btrfs scrub start $TEST_MNT
++	#Introduce delay, hopefully scrubbing will be finished.
++	sleep 10 
++
++	#Validate 
++	verify_data_stripe
++	verify_parity_stripe
++
++	#cleanup
++	run_check $SUDO_HELPER umount "$TEST_MNT"
++	cleanup_devices
++	rm -rf $STRIPEINFO_COMPLETE $DUMPTREE_OUTPUT $STRIPEINFO_PARTIAL $STRIPE_TMP
++	rm -rf $MULTI_EXTENT_CHECK $EXTENT_WITH_SIZE $PARITY_LOC1 $PARITY_LOCATION
++}
++
++
++test_raid5_datastripe_corruption file128k.txt 2 1 #file with 2 stripe,corrupt 1st.
++test_raid5_datastripe_corruption file256k.txt 4 3
++test_raid5_datastripe_corruption file512k.txt 8 6
++test_raid5_datastripe_corruption file768k.txt 12 10
++test_raid5_datastripe_corruption file1m.txt 16 14 #1MB file, corrupt 14th stripe.
++test_raid5_datastripe_corruption file2m.txt 32 23 #2MB file, corrupt 23rd stripe
++test_raid5_datastripe_corruption file4m.txt 64 34 #4MB file
++test_raid5_datastripe_corruption file8m.txt 128 100 #8MB file
 -- 
-Patrick Schmid  <schmid@phys.ethz.ch>     support: +41 44 633 2668
-IT Services Group, HPT H 8                voice:   +41 44 633 3997
-Departement Physik, ETH Zurich
-CH-8093 Zurich, Switzerland
+2.7.4
 
---------------ECA1B752E9CC296FA7CD95B3
-Content-Type: text/plain; charset=UTF-8;
- name="after_crash.txt"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment;
- filename="after_crash.txt"
-
-RmViIDIwIDE0OjQyOjAxIHBoZC1ia3AtZ3cga2VybmVsOiBbIDYwMTEuNjIyMjA4XSBCVUc6
-IHVuYWJsZSB0byBoYW5kbGUga2VybmVsIHBhZ2luZyByZXF1ZXN0IGF0IGZmZmZmZmZmZmZm
-ZmZlMTAgCkZlYiAyMCAxNDo0MjowMSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2MDExLjYzMDAz
-M10gSVA6IFs8ZmZmZmZmZmZhMDkzZTFkYj5dIHFncm91cF9maXhfcmVsb2NhdGVkX2RhdGFf
-ZXh0ZW50cysweDJiLzB4MjkwIFtidHJmc10gCkZlYiAyMCAxNDo0MjowMSBwaGQtYmtwLWd3
-IGtlcm5lbDogWyA2MDExLjYzOTIyNF0gUEdEIDFjMGEwNjcgIApGZWIgMjAgMTQ6NDI6MDEg
-cGhkLWJrcC1ndyBrZXJuZWw6IFsgNjAxMS42NDE4NjRdIFBVRCAxYzBjMDY3ICAKRmViIDIw
-IDE0OjQyOjAxIHBoZC1ia3AtZ3cga2VybmVsOiBbIDYwMTEuNjQ0NzA4XSBQTUQgMCAgCkZl
-YiAyMCAxNDo0MjowMSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2MDExLjY0NTMwNl0gIApGZWIg
-MjAgMTQ6NDI6MDEgcGhkLWJrcC1ndyBrZXJuZWw6IFsgNjAxMS42NDY5ODNdIE9vcHM6IDAw
-MDAgWyMxXSBTTVAgCkZlYiAyMCAxNDo0MjowMSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2MDEx
-LjY1MDQ5NV0gTW9kdWxlcyBsaW5rZWQgaW46IG5mc3YzKEUpIGlwdF9SRUpFQ1QoRSkgbmZf
-cmVqZWN0X2lwdjQoRSkgeHRfdGNwdWRwKEUpIHh0X211bHRpcG9ydChFKSBpcHRhYmxlX2Zp
-bHRlcihFKSBpcF90YWJsZXMoRSkgeF90YWJsZXMoRSkgYXV0b2ZzNChFKSBpYl9pc2VyKEUp
-IHJkbWFfY20oRSkgaXdfY20oRSkgaWJfY20oRSkgaWJfY29yZShFKSBjb25maWdmcyhFKSBp
-c2NzaV90Y3AoRSkgbGliaXNjc2lfdGNwKEUpIGxpYmlzY3NpKEUpIHNjc2lfdHJhbnNwb3J0
-X2lzY3NpKEUpIG5mc2QoRSkgYXV0aF9ycGNnc3MoRSkgbmZzX2FjbChFKSBuZnMoRSkgbG9j
-a2QoRSkgZ3JhY2UoRSkgc3VucnBjKEUpIGZzY2FjaGUoRSkgYnRyZnMoRSkgeG9yKEUpIHJh
-aWQ2X3BxKEUpIHNiX2VkYWMoRSkgZWRhY19jb3JlKEUpIHg4Nl9wa2dfdGVtcF90aGVybWFs
-KEUpIGludGVsX3Bvd2VyY2xhbXAoRSkgY29yZXRlbXAoRSkgY3JjdDEwZGlmX3BjbG11bChF
-KSBjcmMzMl9wY2xtdWwoRSkgZ2hhc2hfY2xtdWxuaV9pbnRlbChFKSBhZXNuaV9pbnRlbChF
-KSBhZXNfeDg2XzY0KEUpIGxydyhFKSBnZjEyOG11bChFKSBnbHVlX2hlbHBlcihFKSBhYmxr
-X2hlbHBlcihFKSBjcnlwdGQoRSkgYm9uZGluZyhFKSBpcG1pX3NzaWYoRSkgbW91c2VkZXYo
-RSkgbHBjX2ljaChFKSB3bWkoRSkgbWVpX21lKEUpIG1laShFKSBpb2F0ZG1hKEUpIHNocGNo
-cChFKSB0cG1fdGlzKEUpIHRwbV90aXNfY29yZShFKSBpcG1pX3NpKEUpIGlwbWlfcG93ZXJv
-ZmYoRSkgdGNwX252KEUpIGlwbWlfZGV2aW50ZihFKSBpcG1pX21zZ2hhbmRsZXIoRSkgCkZl
-YiAyMCAxNDo0MjowMSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2MDExLjczMDI2NF0gIHNjaF9m
-cShFKSBoaWRfZ2VuZXJpYyhFKSBpZ2IoRSkgaXNjaShFKSBpeGdiZShFKSBpMmNfYWxnb19i
-aXQoRSkgbGlic2FzKEUpIGRjYShFKSBhaGNpKEUpIHVzYmhpZChFKSBwdHAoRSkgc2NzaV90
-cmFuc3BvcnRfc2FzKEUpIGFyY21zcihPRSkgbGliYWhjaShFKSBoaWQoRSkgbWRpbyhFKSBw
-cHNfY29yZShFKSAKRmViIDIwIDE0OjQyOjAxIHBoZC1ia3AtZ3cga2VybmVsOiBbIDYwMTEu
-NzQ3OTg1XSBDUFU6IDYgUElEOiA4NjM3NCBDb21tOiBtb3VudCBUYWludGVkOiBHICAgICAg
-ICAgICBPRSAgIDQuOS4xMS1zdGFibGUtYmxrbXEgIzQxIApGZWIgMjAgMTQ6NDI6MDEgcGhk
-LWJrcC1ndyBrZXJuZWw6IFsgNjAxMS43NTczODldIEhhcmR3YXJlIG5hbWU6IEludGVsIENv
-cnBvcmF0aW9uIFMyNjAwR1ovUzI2MDBHWiwgQklPUyBTRTVDNjAwLjg2Qi4wMi4wMy4wMDAz
-LjA0MTkyMDE0MTMzMyAwNC8xOS8yMDE0IApGZWIgMjAgMTQ6NDI6MDEgcGhkLWJrcC1ndyBr
-ZXJuZWw6IFsgNjAxMS43Njg5MzddIHRhc2s6IGZmZmY4ODAxMDMyMzAwMDAgdGFzay5zdGFj
-azogZmZmZmM5MDAyNjIzODAwMCAKRmViIDIwIDE0OjQyOjAxIHBoZC1ia3AtZ3cga2VybmVs
-OiBbIDYwMTEuNzc1NjAxXSBSSVA6IDAwMTA6WzxmZmZmZmZmZmEwOTNlMWRiPl0gIFs8ZmZm
-ZmZmZmZhMDkzZTFkYj5dIHFncm91cF9maXhfcmVsb2NhdGVkX2RhdGFfZXh0ZW50cysweDJi
-LzB4MjkwIFtidHJmc10gCkZlYiAyMCAxNDo0MjowMSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2
-MDExLjc4NzU3MV0gUlNQOiAwMDE4OmZmZmZjOTAwMjYyM2JhMDAgIEVGTEFHUzogMDAwMTAy
-NDYgCkZlYiAyMCAxNDo0MjowMSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2MDExLjc5MzU0Ml0g
-UkFYOiAwMDAwMDAwMDAwMDAwMDAwIFJCWDogZmZmZjg4MGI2YjYwYzAwMCBSQ1g6IDAwMDAw
-MDAwMDAwMDAwMDAgCkZlYiAyMCAxNDo0MjowMSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2MDEx
-LjgwMTU1OV0gUkRYOiBmZmZmODgwMTAzMjMwMDAwIFJTSTogZmZmZjg4MWYxOGUyZDAwMCBS
-REk6IGZmZmY4ODFmNDg1MzVmNDAgCkZlYiAyMCAxNDo0MjowMSBwaGQtYmtwLWd3IGtlcm5l
-bDogWyA2MDExLjgwOTU3Ml0gUkJQOiBmZmZmYzkwMDI2MjNiYTc4IFIwODogMDAwMDYwZTAw
-MDgwNzFkMCBSMDk6IGZmZmY4ODFmNDg1MzVmNDAgCkZlYiAyMCAxNDo0MjowMSBwaGQtYmtw
-LWd3IGtlcm5lbDogWyA2MDExLjgxNzU4OF0gUjEwOiAwMDAwMDAwMDljZDUwMDAxIFIxMTog
-ZmZmZjg4MGQ5Y2Q1MDhjMCBSMTI6IGZmZmY4ODFmZjU5YjU4MDAgCkZlYiAyMCAxNDo0Mjow
-MSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2MDExLjgyNTYwNF0gUjEzOiBmZmZmYzkwMDI2MjNi
-YWEwIFIxNDogMDAwMDAwMDAwMDAwMDAwMCBSMTU6IDAwMDAwMDAwMDAwMDAwMDAgCkZlYiAy
-MCAxNDo0MjowMSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2MDExLjgzMzYxOV0gRlM6ICAwMDAw
-N2ZiNjU3MGVlODgwKDAwMDApIEdTOmZmZmY4ODFmZmU0MDAwMDAoMDAwMCkga25sR1M6MDAw
-MDAwMDAwMDAwMDAwMCAKRmViIDIwIDE0OjQyOjAxIHBoZC1ia3AtZ3cga2VybmVsOiBbIDYw
-MTEuODQyNzMxXSBDUzogIDAwMTAgRFM6IDAwMDAgRVM6IDAwMDAgQ1IwOiAwMDAwMDAwMDgw
-MDUwMDMzIApGZWIgMjAgMTQ6NDI6MDEgcGhkLWJrcC1ndyBrZXJuZWw6IFsgNjAxMS44NDkx
-ODldIENSMjogZmZmZmZmZmZmZmZmZmUxMCBDUjM6IDAwMDAwMDBjOTNjOWQwMDAgQ1I0OiAw
-MDAwMDAwMDAwMDQwNmUwIApGZWIgMjAgMTQ6NDI6MDEgcGhkLWJrcC1ndyBrZXJuZWw6IFsg
-NjAxMS44NTcyMTFdIFN0YWNrOiAKRmViIDIwIDE0OjQyOjAxIHBoZC1ia3AtZ3cga2VybmVs
-OiBbIDYwMTEuODU5NDk4XSAgZmZmZjg4MWY0ODUzNWY0MCAwMDAwMDAwMDAwMDAwODAxIGZm
-ZmZjOTAwMjYyM2JhNjggZmZmZmZmZmZhMDhlYTY2YiAKRmViIDIwIDE0OjQyOjAxIHBoZC1i
-a3AtZ3cga2VybmVsOiBbIDYwMTEuODY3ODg0XSAgZmZmZjg4MWY0ODUzNWY0MCAwMDAwMDAw
-MDAwMDAwMDAwIGZmZmY4ODAxMDMyMzAwMDAgMDAwMDAwMDAwMDAwMDAwMCAKRmViIDIwIDE0
-OjQyOjAxIHBoZC1ia3AtZ3cga2VybmVsOiBbIDYwMTEuODc2MjY5XSAgZmZmZjg4MGRjNDg5
-YTFjMCBmZmZmODgxZmY1OWI1ODAwIGZmZmY4ODBkYzQ4OWExYzAgZmZmZjg4MWZmNTliNTgw
-MCAKRmViIDIwIDE0OjQyOjAxIHBoZC1ia3AtZ3cga2VybmVsOiBbIDYwMTEuODg0NjU1XSBD
-YWxsIFRyYWNlOiAKRmViIDIwIDE0OjQyOjAxIHBoZC1ia3AtZ3cga2VybmVsOiBbIDYwMTEu
-ODg3NDQ0XSAgWzxmZmZmZmZmZmEwOGVhNjZiPl0gPyBzdGFydF90cmFuc2FjdGlvbisweDli
-LzB4NGIwIFtidHJmc10gCkZlYiAyMCAxNDo0MjowMSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2
-MDExLjg5NDk4Nl0gIFs8ZmZmZmZmZmZhMDk0Mjk2OD5dIGJ0cmZzX3JlY292ZXJfcmVsb2Nh
-dGlvbisweDM3OC8weDQyMCBbYnRyZnNdIApGZWIgMjAgMTQ6NDI6MDEgcGhkLWJrcC1ndyBr
-ZXJuZWw6IFsgNjAxMS45MDMxMzZdICBbPGZmZmZmZmZmYTA4ZTZjYjc+XSBvcGVuX2N0cmVl
-KzB4MjJlNy8weDI3ZjAgW2J0cmZzXSAKRmViIDIwIDE0OjQyOjAxIHBoZC1ia3AtZ3cga2Vy
-bmVsOiBbIDYwMTEuOTEwMDg5XSAgWzxmZmZmZmZmZmEwOGJhODA0Pl0gYnRyZnNfbW91bnQr
-MHhjYTQvMHhlYzAgW2J0cmZzXSAKRmViIDIwIDE0OjQyOjAxIHBoZC1ia3AtZ3cga2VybmVs
-OiBbIDYwMTEuOTE2OTQyXSAgWzxmZmZmZmZmZjgxM2M4YzZlPl0gPyBmaW5kX25leHRfemVy
-b19iaXQrMHgxZS8weDIwIApGZWIgMjAgMTQ6NDI6MDEgcGhkLWJrcC1ndyBrZXJuZWw6IFsg
-NjAxMS45MjM3MDNdICBbPGZmZmZmZmZmODExYTljZWU+XSA/IHBjcHVfbmV4dF91bnBvcCsw
-eDNlLzB4NTAgCkZlYiAyMCAxNDo0MjowMSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2MDExLjkz
-MDE2NF0gIFs8ZmZmZmZmZmY4MTNjOGM0OT5dID8gZmluZF9uZXh0X2JpdCsweDE5LzB4MjAg
-CkZlYiAyMCAxNDo0MjowMSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2MDExLjkzNjQzMl0gIFs8
-ZmZmZmZmZmY4MTIxMzk5OT5dIG1vdW50X2ZzKzB4MzkvMHgxNjAgCkZlYiAyMCAxNDo0Mjow
-MSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2MDExLjk0MjExNF0gIFs8ZmZmZmZmZmY4MTFhYWY0
-NT5dID8gX19hbGxvY19wZXJjcHUrMHgxNS8weDIwIApGZWIgMjAgMTQ6NDI6MDEgcGhkLWJr
-cC1ndyBrZXJuZWw6IFsgNjAxMS45NDg0NzZdICBbPGZmZmZmZmZmODEyMmZhNDc+XSB2ZnNf
-a2Vybl9tb3VudCsweDY3LzB4MTEwIApGZWIgMjAgMTQ6NDI6MDEgcGhkLWJrcC1ndyBrZXJu
-ZWw6IFsgNjAxMS45NTQ3NDFdICBbPGZmZmZmZmZmYTA4YjljZWI+XSBidHJmc19tb3VudCsw
-eDE4Yi8weGVjMCBbYnRyZnNdIApGZWIgMjAgMTQ6NDI6MDEgcGhkLWJrcC1ndyBrZXJuZWw6
-IFsgNjAxMS45NjE1OTBdICBbPGZmZmZmZmZmODEzYzhjNmU+XSA/IGZpbmRfbmV4dF96ZXJv
-X2JpdCsweDFlLzB4MjAgCkZlYiAyMCAxNDo0MjowMSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2
-MDExLjk2ODM0Ml0gIFs8ZmZmZmZmZmY4MTIxMzk5OT5dIG1vdW50X2ZzKzB4MzkvMHgxNjAg
-CkZlYiAyMCAxNDo0MjowMSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2MDExLjk3NDAyNV0gIFs8
-ZmZmZmZmZmY4MTFhYWY0NT5dID8gX19hbGxvY19wZXJjcHUrMHgxNS8weDIwIApGZWIgMjAg
-MTQ6NDI6MDEgcGhkLWJrcC1ndyBrZXJuZWw6IFsgNjAxMS45ODAzODZdICBbPGZmZmZmZmZm
-ODEyMmZhNDc+XSB2ZnNfa2Vybl9tb3VudCsweDY3LzB4MTEwIApGZWIgMjAgMTQ6NDI6MDEg
-cGhkLWJrcC1ndyBrZXJuZWw6IFsgNjAxMS45ODY2NDRdICBbPGZmZmZmZmZmODEyMzIwOGI+
-XSBkb19tb3VudCsweDFiYi8weGM4MCAKRmViIDIwIDE0OjQyOjAxIHBoZC1ia3AtZ3cga2Vy
-bmVsOiBbIDYwMTEuOTkyNDIzXSAgWzxmZmZmZmZmZjgxMjMyZTUzPl0gU3lTX21vdW50KzB4
-ODMvMHhkMCAKRmViIDIwIDE0OjQyOjAxIHBoZC1ia3AtZ3cga2VybmVsOiBbIDYwMTEuOTk4
-MTA3XSAgWzxmZmZmZmZmZjgxN2M0MTdiPl0gZW50cnlfU1lTQ0FMTF82NF9mYXN0cGF0aCsw
-eDFlLzB4YWQgCkZlYiAyMCAxNDo0MjowMSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2MDEyLjAw
-NTM0M10gQ29kZTogNjYgNjYgNjYgNjYgOTAgNTUgNDggODkgZTUgNDEgNTcgNDEgNTYgNDEg
-NTUgNDEgNTQgNTMgNDggODMgZWMgNTAgNDggOGIgNDYgMDggNGMgOGIgNzYgMTAgNDggODkg
-N2QgYTggNDggOGIgOTggZjAgMDEgMDAgMDAgMzEgYzAgPDRkPiA4YiBhZSAxMCBmZSBmZiBm
-ZiA0OCA4YiA1MyAyMCA4MyBlMiA0MCA3NCAwOSA4MCBiZSBiMCAwNSAwMCAgCkZlYiAyMCAx
-NDo0MjowMSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2MDEyLjAyNzM3NV0gUklQICBbPGZmZmZm
-ZmZmYTA5M2UxZGI+XSBxZ3JvdXBfZml4X3JlbG9jYXRlZF9kYXRhX2V4dGVudHMrMHgyYi8w
-eDI5MCBbYnRyZnNdIApGZWIgMjAgMTQ6NDI6MDEgcGhkLWJrcC1ndyBrZXJuZWw6IFsgNjAx
-Mi4wMzY3MDJdICBSU1AgPGZmZmZjOTAwMjYyM2JhMDA+IApGZWIgMjAgMTQ6NDI6MDEgcGhk
-LWJrcC1ndyBrZXJuZWw6IFsgNjAxMi4wNDA2MzFdIENSMjogZmZmZmZmZmZmZmZmZmUxMCAK
-RmViIDIwIDE0OjQyOjAxIHBoZC1ia3AtZ3cga2VybmVsOiBbIDYwMTIuMDQ0NzU4XSAtLS1b
-XSBlbmQgdHJhY2UgYTI5N2JkMWVmOTVhMDA5MiBdLS0tIAo=
---------------ECA1B752E9CC296FA7CD95B3--

@@ -1,80 +1,179 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from p3nlsmtpcp01-03.prod.phx3.secureserver.net ([184.168.200.142]:48508
-        "EHLO p3nlsmtpcp01-03.prod.phx3.secureserver.net"
+Received: from phd-imap.ethz.ch ([129.132.80.51]:58428 "EHLO phd-imap.ethz.ch"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752888AbdBTOIw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 20 Feb 2017 09:08:52 -0500
-Date: Mon, 20 Feb 2017 19:37:37 +0530
-From: "Lakshmipathi.G" <lakshmipathi.g@giis.co.in>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Large no.of extents for a single small file with a fresh RAID5
- setup
-Message-ID: <20170220140737.GA27535@giis.co.in>
-References: <20170218020711.GA23608@giis.co.in>
- <678a9608-8f42-119c-7fd3-69fbae31bfab@cn.fujitsu.com>
+        id S1752691AbdBTOUT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 20 Feb 2017 09:20:19 -0500
+Received: from localhost (phd-mailscan.ethz.ch [192.168.127.2])
+        by phd-imap.ethz.ch (Postfix) with ESMTP id 3vRlwB4LhkzXKr
+        for <linux-btrfs@vger.kernel.org>; Mon, 20 Feb 2017 15:13:14 +0100 (CET)
+Received: from phd-mxin.ethz.ch ([IPv6:::ffff:192.168.127.53])
+        by localhost (phd-mailscan.ethz.ch [::ffff:192.168.127.2]) (amavisd-new, port 10024)
+        with LMTP id wJxWNAT6-rJV for <linux-btrfs@vger.kernel.org>;
+        Mon, 20 Feb 2017 15:13:14 +0100 (CET)
+Received: from [192.33.96.28] (auror.ethz.ch [192.33.96.28])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        (Authenticated sender: schmid@phd-mxin.ethz.ch)
+        by phd-mxin.ethz.ch (Postfix) with ESMTPSA id 3vRlwB2ZnWzQ4l
+        for <linux-btrfs@vger.kernel.org>; Mon, 20 Feb 2017 15:13:14 +0100 (CET)
+To: linux-btrfs@vger.kernel.org
+From: Patrick Schmid <schmid@phys.ethz.ch>
+Subject: mount troubles after crash
+Message-ID: <756b50f6-5cd7-dd5c-f180-4f5347c7f8ee@phys.ethz.ch>
+Date: Mon, 20 Feb 2017 15:13:14 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <678a9608-8f42-119c-7fd3-69fbae31bfab@cn.fujitsu.com>
+Content-Type: multipart/mixed;
+ boundary="------------ECA1B752E9CC296FA7CD95B3"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 20, 2017 at 03:53:15PM +0800, Qu Wenruo wrote:
-> 
-> 
-> At 02/18/2017 10:07 AM, Lakshmipathi.G wrote:
-> >Hi,
-> >
-> >With RAID5, using 3 loop-back devices each has 4GB. On a fresh setup, created a 2mb file.
-> >While checking no.of extents,it shows like:
-> >
-> ># ./btrfs-debugfs -f /mnt/file2m.txt
-> >(257 0): ram 110592 disk 145227776 disk_size 114688
-> >(257 110592): ram 4096 disk 145461248 disk_size 4096
-> >(257 114688): ram 114688 disk 145342464 disk_size 118784
-> >(257 229376): ram 712704 disk 145620992 disk_size 716800
-> >(257 942080): ram 4096 disk 145096704 disk_size 4096
-> >(257 946176): ram 737280 disk 146407424 disk_size 741376
-> >(257 1683456): ram 413696 disk 147193856 disk_size 413696
-> >file: /mnt/file2m.txt extents 7 disk size 2113536 logical size 2097152 ratio 0.99
-> >
-> >Is this expected behaviour? Is there any mount option to minimize no.of extents for
-> >a smaller file?
-> 
-> What mount option did you use?
-> Are you using compression?
+This is a multi-part message in MIME format.
+--------------ECA1B752E9CC296FA7CD95B3
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 7bit
 
-Used the default mount options (mount /dev/loop0 /mnt) and compression not enabled.
+Hi togehter,
 
-> How did you create the 2m file?
+during a balance run, the server crash. after the crash i got the 
+attached error messages....
 
-Yes,this is the problem. script invokes 'dd' with 'notrunc' for each
-byte. If the file is 1kb, 'dd' invoked 1024 times with notrunc.
-This seems to be creating the issue.
+Kernel: 4.9.11
+Btrfs-Tools: v4.9.1
 
-Tried using open-fd (exec FD<>/path/f, write finally close FD) method
-even this runs into possible sync and creates multiple extents.
+btrfs check --repair failed with:
 
-so finally found a simple trick, created the file outside btrfs then copy it
-into btrfs-mnt-pt :) this workaround helps to solve the script file-creation
-issue.
+couldn't open RDWR because of unsupported option features (3).
+Open ctree failed
 
-> 
-> This seems quite strange, if you go through normal buffered write without
-> compression, 2m can easily be embedded into one file extent.
-> 
-> And according to extent at offset 0, 112K, 224K, its data extent is larger
-> than its file extent, which means it goes through CoW.
-> 
-> Either you did fsync/sync between writes or you goes through Direct IO.
-> 
-> Anyway, the way you create the 2M file is quite important here now.
-> 
-> Thanks,
-> Qu
-> >
 
-thanks for the help.
+is there a way to fix this 140TB filesystem?
 
-Cheers.
-Lakshmipathi.G
+Regards Patrick
+-- 
+Patrick Schmid  <schmid@phys.ethz.ch>     support: +41 44 633 2668
+IT Services Group, HPT H 8                voice:   +41 44 633 3997
+Departement Physik, ETH Zurich
+CH-8093 Zurich, Switzerland
+
+--------------ECA1B752E9CC296FA7CD95B3
+Content-Type: text/plain; charset=UTF-8;
+ name="after_crash.txt"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment;
+ filename="after_crash.txt"
+
+RmViIDIwIDE0OjQyOjAxIHBoZC1ia3AtZ3cga2VybmVsOiBbIDYwMTEuNjIyMjA4XSBCVUc6
+IHVuYWJsZSB0byBoYW5kbGUga2VybmVsIHBhZ2luZyByZXF1ZXN0IGF0IGZmZmZmZmZmZmZm
+ZmZlMTAgCkZlYiAyMCAxNDo0MjowMSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2MDExLjYzMDAz
+M10gSVA6IFs8ZmZmZmZmZmZhMDkzZTFkYj5dIHFncm91cF9maXhfcmVsb2NhdGVkX2RhdGFf
+ZXh0ZW50cysweDJiLzB4MjkwIFtidHJmc10gCkZlYiAyMCAxNDo0MjowMSBwaGQtYmtwLWd3
+IGtlcm5lbDogWyA2MDExLjYzOTIyNF0gUEdEIDFjMGEwNjcgIApGZWIgMjAgMTQ6NDI6MDEg
+cGhkLWJrcC1ndyBrZXJuZWw6IFsgNjAxMS42NDE4NjRdIFBVRCAxYzBjMDY3ICAKRmViIDIw
+IDE0OjQyOjAxIHBoZC1ia3AtZ3cga2VybmVsOiBbIDYwMTEuNjQ0NzA4XSBQTUQgMCAgCkZl
+YiAyMCAxNDo0MjowMSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2MDExLjY0NTMwNl0gIApGZWIg
+MjAgMTQ6NDI6MDEgcGhkLWJrcC1ndyBrZXJuZWw6IFsgNjAxMS42NDY5ODNdIE9vcHM6IDAw
+MDAgWyMxXSBTTVAgCkZlYiAyMCAxNDo0MjowMSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2MDEx
+LjY1MDQ5NV0gTW9kdWxlcyBsaW5rZWQgaW46IG5mc3YzKEUpIGlwdF9SRUpFQ1QoRSkgbmZf
+cmVqZWN0X2lwdjQoRSkgeHRfdGNwdWRwKEUpIHh0X211bHRpcG9ydChFKSBpcHRhYmxlX2Zp
+bHRlcihFKSBpcF90YWJsZXMoRSkgeF90YWJsZXMoRSkgYXV0b2ZzNChFKSBpYl9pc2VyKEUp
+IHJkbWFfY20oRSkgaXdfY20oRSkgaWJfY20oRSkgaWJfY29yZShFKSBjb25maWdmcyhFKSBp
+c2NzaV90Y3AoRSkgbGliaXNjc2lfdGNwKEUpIGxpYmlzY3NpKEUpIHNjc2lfdHJhbnNwb3J0
+X2lzY3NpKEUpIG5mc2QoRSkgYXV0aF9ycGNnc3MoRSkgbmZzX2FjbChFKSBuZnMoRSkgbG9j
+a2QoRSkgZ3JhY2UoRSkgc3VucnBjKEUpIGZzY2FjaGUoRSkgYnRyZnMoRSkgeG9yKEUpIHJh
+aWQ2X3BxKEUpIHNiX2VkYWMoRSkgZWRhY19jb3JlKEUpIHg4Nl9wa2dfdGVtcF90aGVybWFs
+KEUpIGludGVsX3Bvd2VyY2xhbXAoRSkgY29yZXRlbXAoRSkgY3JjdDEwZGlmX3BjbG11bChF
+KSBjcmMzMl9wY2xtdWwoRSkgZ2hhc2hfY2xtdWxuaV9pbnRlbChFKSBhZXNuaV9pbnRlbChF
+KSBhZXNfeDg2XzY0KEUpIGxydyhFKSBnZjEyOG11bChFKSBnbHVlX2hlbHBlcihFKSBhYmxr
+X2hlbHBlcihFKSBjcnlwdGQoRSkgYm9uZGluZyhFKSBpcG1pX3NzaWYoRSkgbW91c2VkZXYo
+RSkgbHBjX2ljaChFKSB3bWkoRSkgbWVpX21lKEUpIG1laShFKSBpb2F0ZG1hKEUpIHNocGNo
+cChFKSB0cG1fdGlzKEUpIHRwbV90aXNfY29yZShFKSBpcG1pX3NpKEUpIGlwbWlfcG93ZXJv
+ZmYoRSkgdGNwX252KEUpIGlwbWlfZGV2aW50ZihFKSBpcG1pX21zZ2hhbmRsZXIoRSkgCkZl
+YiAyMCAxNDo0MjowMSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2MDExLjczMDI2NF0gIHNjaF9m
+cShFKSBoaWRfZ2VuZXJpYyhFKSBpZ2IoRSkgaXNjaShFKSBpeGdiZShFKSBpMmNfYWxnb19i
+aXQoRSkgbGlic2FzKEUpIGRjYShFKSBhaGNpKEUpIHVzYmhpZChFKSBwdHAoRSkgc2NzaV90
+cmFuc3BvcnRfc2FzKEUpIGFyY21zcihPRSkgbGliYWhjaShFKSBoaWQoRSkgbWRpbyhFKSBw
+cHNfY29yZShFKSAKRmViIDIwIDE0OjQyOjAxIHBoZC1ia3AtZ3cga2VybmVsOiBbIDYwMTEu
+NzQ3OTg1XSBDUFU6IDYgUElEOiA4NjM3NCBDb21tOiBtb3VudCBUYWludGVkOiBHICAgICAg
+ICAgICBPRSAgIDQuOS4xMS1zdGFibGUtYmxrbXEgIzQxIApGZWIgMjAgMTQ6NDI6MDEgcGhk
+LWJrcC1ndyBrZXJuZWw6IFsgNjAxMS43NTczODldIEhhcmR3YXJlIG5hbWU6IEludGVsIENv
+cnBvcmF0aW9uIFMyNjAwR1ovUzI2MDBHWiwgQklPUyBTRTVDNjAwLjg2Qi4wMi4wMy4wMDAz
+LjA0MTkyMDE0MTMzMyAwNC8xOS8yMDE0IApGZWIgMjAgMTQ6NDI6MDEgcGhkLWJrcC1ndyBr
+ZXJuZWw6IFsgNjAxMS43Njg5MzddIHRhc2s6IGZmZmY4ODAxMDMyMzAwMDAgdGFzay5zdGFj
+azogZmZmZmM5MDAyNjIzODAwMCAKRmViIDIwIDE0OjQyOjAxIHBoZC1ia3AtZ3cga2VybmVs
+OiBbIDYwMTEuNzc1NjAxXSBSSVA6IDAwMTA6WzxmZmZmZmZmZmEwOTNlMWRiPl0gIFs8ZmZm
+ZmZmZmZhMDkzZTFkYj5dIHFncm91cF9maXhfcmVsb2NhdGVkX2RhdGFfZXh0ZW50cysweDJi
+LzB4MjkwIFtidHJmc10gCkZlYiAyMCAxNDo0MjowMSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2
+MDExLjc4NzU3MV0gUlNQOiAwMDE4OmZmZmZjOTAwMjYyM2JhMDAgIEVGTEFHUzogMDAwMTAy
+NDYgCkZlYiAyMCAxNDo0MjowMSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2MDExLjc5MzU0Ml0g
+UkFYOiAwMDAwMDAwMDAwMDAwMDAwIFJCWDogZmZmZjg4MGI2YjYwYzAwMCBSQ1g6IDAwMDAw
+MDAwMDAwMDAwMDAgCkZlYiAyMCAxNDo0MjowMSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2MDEx
+LjgwMTU1OV0gUkRYOiBmZmZmODgwMTAzMjMwMDAwIFJTSTogZmZmZjg4MWYxOGUyZDAwMCBS
+REk6IGZmZmY4ODFmNDg1MzVmNDAgCkZlYiAyMCAxNDo0MjowMSBwaGQtYmtwLWd3IGtlcm5l
+bDogWyA2MDExLjgwOTU3Ml0gUkJQOiBmZmZmYzkwMDI2MjNiYTc4IFIwODogMDAwMDYwZTAw
+MDgwNzFkMCBSMDk6IGZmZmY4ODFmNDg1MzVmNDAgCkZlYiAyMCAxNDo0MjowMSBwaGQtYmtw
+LWd3IGtlcm5lbDogWyA2MDExLjgxNzU4OF0gUjEwOiAwMDAwMDAwMDljZDUwMDAxIFIxMTog
+ZmZmZjg4MGQ5Y2Q1MDhjMCBSMTI6IGZmZmY4ODFmZjU5YjU4MDAgCkZlYiAyMCAxNDo0Mjow
+MSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2MDExLjgyNTYwNF0gUjEzOiBmZmZmYzkwMDI2MjNi
+YWEwIFIxNDogMDAwMDAwMDAwMDAwMDAwMCBSMTU6IDAwMDAwMDAwMDAwMDAwMDAgCkZlYiAy
+MCAxNDo0MjowMSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2MDExLjgzMzYxOV0gRlM6ICAwMDAw
+N2ZiNjU3MGVlODgwKDAwMDApIEdTOmZmZmY4ODFmZmU0MDAwMDAoMDAwMCkga25sR1M6MDAw
+MDAwMDAwMDAwMDAwMCAKRmViIDIwIDE0OjQyOjAxIHBoZC1ia3AtZ3cga2VybmVsOiBbIDYw
+MTEuODQyNzMxXSBDUzogIDAwMTAgRFM6IDAwMDAgRVM6IDAwMDAgQ1IwOiAwMDAwMDAwMDgw
+MDUwMDMzIApGZWIgMjAgMTQ6NDI6MDEgcGhkLWJrcC1ndyBrZXJuZWw6IFsgNjAxMS44NDkx
+ODldIENSMjogZmZmZmZmZmZmZmZmZmUxMCBDUjM6IDAwMDAwMDBjOTNjOWQwMDAgQ1I0OiAw
+MDAwMDAwMDAwMDQwNmUwIApGZWIgMjAgMTQ6NDI6MDEgcGhkLWJrcC1ndyBrZXJuZWw6IFsg
+NjAxMS44NTcyMTFdIFN0YWNrOiAKRmViIDIwIDE0OjQyOjAxIHBoZC1ia3AtZ3cga2VybmVs
+OiBbIDYwMTEuODU5NDk4XSAgZmZmZjg4MWY0ODUzNWY0MCAwMDAwMDAwMDAwMDAwODAxIGZm
+ZmZjOTAwMjYyM2JhNjggZmZmZmZmZmZhMDhlYTY2YiAKRmViIDIwIDE0OjQyOjAxIHBoZC1i
+a3AtZ3cga2VybmVsOiBbIDYwMTEuODY3ODg0XSAgZmZmZjg4MWY0ODUzNWY0MCAwMDAwMDAw
+MDAwMDAwMDAwIGZmZmY4ODAxMDMyMzAwMDAgMDAwMDAwMDAwMDAwMDAwMCAKRmViIDIwIDE0
+OjQyOjAxIHBoZC1ia3AtZ3cga2VybmVsOiBbIDYwMTEuODc2MjY5XSAgZmZmZjg4MGRjNDg5
+YTFjMCBmZmZmODgxZmY1OWI1ODAwIGZmZmY4ODBkYzQ4OWExYzAgZmZmZjg4MWZmNTliNTgw
+MCAKRmViIDIwIDE0OjQyOjAxIHBoZC1ia3AtZ3cga2VybmVsOiBbIDYwMTEuODg0NjU1XSBD
+YWxsIFRyYWNlOiAKRmViIDIwIDE0OjQyOjAxIHBoZC1ia3AtZ3cga2VybmVsOiBbIDYwMTEu
+ODg3NDQ0XSAgWzxmZmZmZmZmZmEwOGVhNjZiPl0gPyBzdGFydF90cmFuc2FjdGlvbisweDli
+LzB4NGIwIFtidHJmc10gCkZlYiAyMCAxNDo0MjowMSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2
+MDExLjg5NDk4Nl0gIFs8ZmZmZmZmZmZhMDk0Mjk2OD5dIGJ0cmZzX3JlY292ZXJfcmVsb2Nh
+dGlvbisweDM3OC8weDQyMCBbYnRyZnNdIApGZWIgMjAgMTQ6NDI6MDEgcGhkLWJrcC1ndyBr
+ZXJuZWw6IFsgNjAxMS45MDMxMzZdICBbPGZmZmZmZmZmYTA4ZTZjYjc+XSBvcGVuX2N0cmVl
+KzB4MjJlNy8weDI3ZjAgW2J0cmZzXSAKRmViIDIwIDE0OjQyOjAxIHBoZC1ia3AtZ3cga2Vy
+bmVsOiBbIDYwMTEuOTEwMDg5XSAgWzxmZmZmZmZmZmEwOGJhODA0Pl0gYnRyZnNfbW91bnQr
+MHhjYTQvMHhlYzAgW2J0cmZzXSAKRmViIDIwIDE0OjQyOjAxIHBoZC1ia3AtZ3cga2VybmVs
+OiBbIDYwMTEuOTE2OTQyXSAgWzxmZmZmZmZmZjgxM2M4YzZlPl0gPyBmaW5kX25leHRfemVy
+b19iaXQrMHgxZS8weDIwIApGZWIgMjAgMTQ6NDI6MDEgcGhkLWJrcC1ndyBrZXJuZWw6IFsg
+NjAxMS45MjM3MDNdICBbPGZmZmZmZmZmODExYTljZWU+XSA/IHBjcHVfbmV4dF91bnBvcCsw
+eDNlLzB4NTAgCkZlYiAyMCAxNDo0MjowMSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2MDExLjkz
+MDE2NF0gIFs8ZmZmZmZmZmY4MTNjOGM0OT5dID8gZmluZF9uZXh0X2JpdCsweDE5LzB4MjAg
+CkZlYiAyMCAxNDo0MjowMSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2MDExLjkzNjQzMl0gIFs8
+ZmZmZmZmZmY4MTIxMzk5OT5dIG1vdW50X2ZzKzB4MzkvMHgxNjAgCkZlYiAyMCAxNDo0Mjow
+MSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2MDExLjk0MjExNF0gIFs8ZmZmZmZmZmY4MTFhYWY0
+NT5dID8gX19hbGxvY19wZXJjcHUrMHgxNS8weDIwIApGZWIgMjAgMTQ6NDI6MDEgcGhkLWJr
+cC1ndyBrZXJuZWw6IFsgNjAxMS45NDg0NzZdICBbPGZmZmZmZmZmODEyMmZhNDc+XSB2ZnNf
+a2Vybl9tb3VudCsweDY3LzB4MTEwIApGZWIgMjAgMTQ6NDI6MDEgcGhkLWJrcC1ndyBrZXJu
+ZWw6IFsgNjAxMS45NTQ3NDFdICBbPGZmZmZmZmZmYTA4YjljZWI+XSBidHJmc19tb3VudCsw
+eDE4Yi8weGVjMCBbYnRyZnNdIApGZWIgMjAgMTQ6NDI6MDEgcGhkLWJrcC1ndyBrZXJuZWw6
+IFsgNjAxMS45NjE1OTBdICBbPGZmZmZmZmZmODEzYzhjNmU+XSA/IGZpbmRfbmV4dF96ZXJv
+X2JpdCsweDFlLzB4MjAgCkZlYiAyMCAxNDo0MjowMSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2
+MDExLjk2ODM0Ml0gIFs8ZmZmZmZmZmY4MTIxMzk5OT5dIG1vdW50X2ZzKzB4MzkvMHgxNjAg
+CkZlYiAyMCAxNDo0MjowMSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2MDExLjk3NDAyNV0gIFs8
+ZmZmZmZmZmY4MTFhYWY0NT5dID8gX19hbGxvY19wZXJjcHUrMHgxNS8weDIwIApGZWIgMjAg
+MTQ6NDI6MDEgcGhkLWJrcC1ndyBrZXJuZWw6IFsgNjAxMS45ODAzODZdICBbPGZmZmZmZmZm
+ODEyMmZhNDc+XSB2ZnNfa2Vybl9tb3VudCsweDY3LzB4MTEwIApGZWIgMjAgMTQ6NDI6MDEg
+cGhkLWJrcC1ndyBrZXJuZWw6IFsgNjAxMS45ODY2NDRdICBbPGZmZmZmZmZmODEyMzIwOGI+
+XSBkb19tb3VudCsweDFiYi8weGM4MCAKRmViIDIwIDE0OjQyOjAxIHBoZC1ia3AtZ3cga2Vy
+bmVsOiBbIDYwMTEuOTkyNDIzXSAgWzxmZmZmZmZmZjgxMjMyZTUzPl0gU3lTX21vdW50KzB4
+ODMvMHhkMCAKRmViIDIwIDE0OjQyOjAxIHBoZC1ia3AtZ3cga2VybmVsOiBbIDYwMTEuOTk4
+MTA3XSAgWzxmZmZmZmZmZjgxN2M0MTdiPl0gZW50cnlfU1lTQ0FMTF82NF9mYXN0cGF0aCsw
+eDFlLzB4YWQgCkZlYiAyMCAxNDo0MjowMSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2MDEyLjAw
+NTM0M10gQ29kZTogNjYgNjYgNjYgNjYgOTAgNTUgNDggODkgZTUgNDEgNTcgNDEgNTYgNDEg
+NTUgNDEgNTQgNTMgNDggODMgZWMgNTAgNDggOGIgNDYgMDggNGMgOGIgNzYgMTAgNDggODkg
+N2QgYTggNDggOGIgOTggZjAgMDEgMDAgMDAgMzEgYzAgPDRkPiA4YiBhZSAxMCBmZSBmZiBm
+ZiA0OCA4YiA1MyAyMCA4MyBlMiA0MCA3NCAwOSA4MCBiZSBiMCAwNSAwMCAgCkZlYiAyMCAx
+NDo0MjowMSBwaGQtYmtwLWd3IGtlcm5lbDogWyA2MDEyLjAyNzM3NV0gUklQICBbPGZmZmZm
+ZmZmYTA5M2UxZGI+XSBxZ3JvdXBfZml4X3JlbG9jYXRlZF9kYXRhX2V4dGVudHMrMHgyYi8w
+eDI5MCBbYnRyZnNdIApGZWIgMjAgMTQ6NDI6MDEgcGhkLWJrcC1ndyBrZXJuZWw6IFsgNjAx
+Mi4wMzY3MDJdICBSU1AgPGZmZmZjOTAwMjYyM2JhMDA+IApGZWIgMjAgMTQ6NDI6MDEgcGhk
+LWJrcC1ndyBrZXJuZWw6IFsgNjAxMi4wNDA2MzFdIENSMjogZmZmZmZmZmZmZmZmZmUxMCAK
+RmViIDIwIDE0OjQyOjAxIHBoZC1ia3AtZ3cga2VybmVsOiBbIDYwMTIuMDQ0NzU4XSAtLS1b
+XSBlbmQgdHJhY2UgYTI5N2JkMWVmOTVhMDA5MiBdLS0tIAo=
+--------------ECA1B752E9CC296FA7CD95B3--

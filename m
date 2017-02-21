@@ -1,255 +1,397 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:46424 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751833AbdBTAkB (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:31415 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751334AbdBUWPE (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 19 Feb 2017 19:40:01 -0500
-Subject: Re: [PULL] Btrfs patches for 4.11, part 1
-To: David Sterba <dsterba@suse.com>, <clm@fb.com>
-References: <cover.1487333336.git.dsterba@suse.com>
-CC: <linux-btrfs@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <87501701-042d-2ac9-24f6-9755a08cb3b3@cn.fujitsu.com>
-Date: Mon, 20 Feb 2017 08:39:54 +0800
+        Tue, 21 Feb 2017 17:15:04 -0500
+Date: Tue, 21 Feb 2017 14:14:55 -0800
+From: "Darrick J. Wong" <darrick.wong@oracle.com>
+To: linux-xfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-ext4@vger.kernel.org
+Cc: linux-api@vger.kernel.org, linux-man@vger.kernel.org,
+        linux-btrfs@vger.kernel.org
+Subject: [PATCH] ioctl_getfsmap.2: document the GETFSMAP ioctl
+Message-ID: <20170221221455.GA5837@birch.djwong.org>
+References: <148738063792.29384.10681837280402457846.stgit@birch.djwong.org>
 MIME-Version: 1.0
-In-Reply-To: <cover.1487333336.git.dsterba@suse.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <148738063792.29384.10681837280402457846.stgit@birch.djwong.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Document the new GETFSMAP ioctl that returns the physical layout of a
+(disk-based) filesystem.  This time around the fs-specific parts have
+been moved to a separate section; I'll move move them into separate
+xfsprogs/e2fsprogs manpages when we get closer to landing the ioctl.
 
+Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+---
+ man2/ioctl_getfsmap.2 |  359 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 359 insertions(+)
+ create mode 100644 man2/ioctl_getfsmap.2
 
-At 02/17/2017 08:12 PM, David Sterba wrote:
-> Hi,
->
-> here's the first batch of patches for 4.11, I'd like to get it off my table.
-> Apart from the few top patches, the rest has been in next. This branch does not
-> conflict with Filipe's pull.
->
-> Good portion of the patches are cleanups, patch-per-change, so the total count
-> is high. The rest are the usual fixes.
->
-> As we don't have intrusive changes queued, I'm still expecting more cleanups
-> to come and will send 2nd part during the next week.
->
-> Thanks.
->
-> The following changes since commit 7089db84e356562f8ba737c29e472cc42d530dbc:
->
->   Linux 4.10-rc8 (2017-02-12 13:03:20 -0800)
->
-> are available in the git repository at:
->
->   git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-chris-4.11-part1
->
-> for you to fetch changes up to 71367b3fa7f56256029e7ed87862ef13386e1e7e:
->
->   btrfs: use btrfs_debug instead of pr_debug in transaction abort (2017-02-17 12:03:56 +0100)
->
-> ----------------------------------------------------------------
-> Anand Jain (3):
->       btrfs: use BTRFS_COMPRESS_NONE to specify no compression
->       btrfs: btrfs_defrag_root() doesn't defrag extent root tree
->       btrfs: consolidate auto defrag kick off policies
->
-> Colin Ian King (1):
->       btrfs: remove redundant inode null check
->
-> David Sterba (46):
->       btrfs: remove unused logic of limiting async delalloc pages
->       btrfs: add wrapper for counting BTRFS_MAX_EXTENT_SIZE
->       btrfs: fix over-80 lines introduced by previous cleanups
->       btrfs: remove unused ulist members
->       btrfs: use GFP_KERNEL in create_snapshot
->       btrfs: use GFP_KERNEL in btrfs_read_qgroup_config
->       btrfs: use GFP_KERNEL in btrfs_quota_enable
->       btrfs: use GFP_KERNEL in btrfs_add/del_qgroup_relation
->       btrfs: make space cache inode readahead failure nonfatal
->       btrfs: qgroups: make __del_qgroup_relation static
->       btrfs: ulist: make the finalization function public
->       btrfs: embed extent_changeset::range_changed to the structure
->       btrfs: check quota status earlier and don't do unnecessary frees
->       btrfs: remove unnecessary mutex lock in qgroup_account_snapshot
->       btrfs: qgroups: opencode qgroup_free helper
->       btrfs: remove pointless rcu protection from btrfs_qgroup_inherit
->       btrfs: ulist: rename ulist_fini to ulist_release
->       btrfs: remove unused parameter from read_block_for_search
->       btrfs: remove unused parameter from check_async_write
->       btrfs: remove unused parameter from clean_tree_block
->       btrfs: remove unused parameter from split_item
->       btrfs: remove unused parameter from write_dev_supers
->       btrfs: merge two superblock writing helpers
->       btrfs: remove unused parameter from __push_leaf_right
->       btrfs: remove unused parameter from __push_leaf_left
->       btrfs: remove unused parameter from btrfs_subvolume_release_metadata
->       btrfs: remove unused parameter from btrfs_prepare_extent_commit
->       btrfs: remove unused parameter from btrfs_check_super_valid
->       btrfs: remove unused parameter from tree_move_down
->       btrfs: remove unused parameter from tree_move_next_or_upnext
->       btrfs: remove unused parameter from submit_extent_page
->       btrfs: remove unused parameter from update_nr_written
->       btrfs: remove unused parameter from add_pending_csums
->       btrfs: remove unused parameter from extent_write_cache_pages
->       btrfs: remove unused parameter from btrfs_fill_super
->       btrfs: remove unused parameter from __btrfs_alloc_chunk
->       btrfs: remove unused parameter from init_first_rw_device
->       btrfs: remove unused parameter from create_snapshot
->       btrfs: remove unused parameters from scrub_setup_wr_ctx
->       btrfs: remove unused parameter from __add_inline_refs
->       btrfs: remove unused parameters from btrfs_cmp_data
->       btrfs: remove unused parameter from clone_copy_inline_extent
->       btrfs: remove unused parameter from __add_inode_ref
->       btrfs: remove unused parameter from cleanup_write_cache_enospc
->       btrfs: remove unused parameters from __btrfs_write_out_cache
->       btrfs: remove unused parameter from adjust_slots_upwards
->
-> Geliang Tang (1):
->       btrfs: use rb_entry() instead of container_of
->
-> Jeff Mahoney (8):
->       btrfs: drop unused extent_op arg from btrfs_add_delayed_data_ref
->       btrfs: allow unlink to exceed subvolume quota
->       btrfs: pass fs_info to (more) routines that are only called with extent_root
->       btrfs: flush_space always takes fs_info->fs_root
->       btrfs: convert btrfs_inc_block_group_ro to accept fs_info
->       btrfs: free-space-cache, clean up unnecessary root arguments
->       btrfs: btrfs_truncate_free_space_cache always allocates path
->       btrfs: use btrfs_debug instead of pr_debug in transaction abort
->
-> Liu Bo (16):
->       Btrfs: fix btrfs_ordered_update_i_size to update disk_i_size properly
->       Btrfs: fix comment in btrfs_page_mkwrite
->       Btrfs: clean up btrfs_ordered_update_i_size
->       Btrfs: fix another race between truncate and lockless dio write
->       Btrfs: fix wrong argument for btrfs_lookup_ordered_range
->       Btrfs: cleanup unused cached_state in __extent_writepage_io
->       Btrfs: remove unused trans in read_block_for_search
->       Btrfs: pass delayed_refs directly to btrfs_find_delayed_ref_head
->       Btrfs: kill trans in run_delalloc_nocow and btrfs_cross_ref_exist
->       Btrfs: create helper for processing bits on contiguous pages
->       btrfs: teach __process_pages_contig about PAGE_LOCK operation
->       Btrfs: use helper to simplify lock/unlock pages
->       Btrfs: try to avoid acquiring free space ctl's lock
->       Btrfs: use helper to get used bytes of space_info
->       Btrfs: create a helper to create em for IO
->       Btrfs: specify a new ordered extent type for create_io_em
->
-> Michal Hocko (2):
->       btrfs: fix up misleading GFP_NOFS usage in btrfs_releasepage
->       btrfs: drop gfp mask tweaking in try_release_extent_state
->
-> Nikolay Borisov (36):
->       btrfs: Make btrfs_ino take a struct btrfs_inode
->       btrfs: Make btrfs_get_delayed_node take btrfs_inode
->       btrfs: Make btrfs_get_or_create_delayed_node take btrfs_inode
->       btrfs: Make btrfs_delayed_inode_reserve_metadata take btrfs_inode
->       btrfs: Make btrfs_insert_delayed_dir_index take btrfs_inode
->       btrfs: Make btrfs_delete_delayed_dir_index take btrfs_inode
->       btrfs: Make btrfs_delayed_delete_inode_ref take btrfs_inode
->       btrfs: Make btrfs_kill_delayed_inode_items take btrfs_inode
->       btrfs: Make btrfs_remove_delayed_node take btrfs_inode
->       btrfs: Make btrfs_commit_inode_delayed_inode take btrfs_inode
->       btrfs: Make btrfs_commit_inode_delayed_items take btrfs_inode
->       btrfs: Make btrfs_inode_delayed_dir_index_count take btrfs_inode
->       btrfs: Make btrfs_must_commit_transaction take btrfs_inode
->       btrfs: Make btrfs_record_unlink_dir take btrfs_inode
->       btrfs: Make btrfs_record_snapshot_destroy take btrfs_inode
->       btrfs: Make btrfs_inode_in_log take btrfs_inode
->       btrfs: Make btrfs_log_new_name take btrfs_inode
->       btrfs: Make btrfs_del_dir_entries_in_log take btrfs_inode
->       btrfs: Make btrfs_del_inode_ref take btrfs_inode
->       btrfs: Make logged_inode_size take btrfs_inode
->       btrfs: Make btrfs_check_ref_name_override take btrfs_inode
->       btrfs: Make copy_items take btrfs_inode
->       btrfs: Make btrfs_log_all_xattrs take btrfs_inode
->       btrfs: Make btrfs_log_trailing_hole take btrfs_inode
->       btrfs: Make btrfs_get_logged_extents take btrfs_inode
->       btrfs: Make btrfs_log_changed_extents take btrfs_inode
->       btrfs: Make log_dir_items take btrfs_inode
->       btrfs: Make log_directory_changes take btrfs_inode
->       btrfs: Make log_new_dir_dentries take btrfs_inode
->       btrfs: Make btrfs_unlink_inode take btrfs_inode
->       btrfs: Make drop_one_dir_item take btrfs_inode
->       btrfs: Make __add_inode_ref take btrfs_inode
->       btrfs: Make log_inode_item take btrfs_inode
->       btrfs: Make btrfs_log_inode take btrfs_inode
->       btrfs: Make count_inode_extrefs take btrfs_inode
->       btrfs: Make count_inode_refs take btrfs_inode
->
-> Omar Sandoval (2):
->       Btrfs: constify struct btrfs_{,disk_}key wherever possible
->       Btrfs: refactor btrfs_extent_same() slightly
->
-> Qu Wenruo (4):
->       btrfs: Add WARN_ON for qgroup reserved underflow
-
-Hi David, this patch without the rest of that 10 patches set will only 
-cause extra warning for case like btrfs/017.
-
-So is there any idea on the rest of btrfs qgroup fixes?
-
-Thanks,
-Qu
-
->       btrfs: raid56: Remove unused variable in lock_stripe_add
->       btrfs: Better csum error message for data csum mismatch
->       btrfs: qgroup: Move half of the qgroup accounting time out of commit trans
->
-> Seraphime Kirkovski (2):
->       Btrfs: code cleanup min/max -> min_t/max_t
->       Btrfs: ACCESS_ONCE cleanup
->
-> Takafumi Kubota (1):
->       Btrfs: add another missing end_page_writeback on submit_extent_page failure
->
->  fs/btrfs/backref.c           |   7 +-
->  fs/btrfs/btrfs_inode.h       |  44 ++--
->  fs/btrfs/compression.c       |   6 +-
->  fs/btrfs/ctree.c             | 128 +++++-----
->  fs/btrfs/ctree.h             |  84 ++++---
->  fs/btrfs/delayed-inode.c     |  57 +++--
->  fs/btrfs/delayed-inode.h     |  16 +-
->  fs/btrfs/delayed-ref.c       |  31 ++-
->  fs/btrfs/delayed-ref.h       |   6 +-
->  fs/btrfs/dir-item.c          |   5 +-
->  fs/btrfs/disk-io.c           |  29 +--
->  fs/btrfs/disk-io.h           |   6 +-
->  fs/btrfs/export.c            |  13 +-
->  fs/btrfs/extent-tree.c       | 282 +++++++++++----------
->  fs/btrfs/extent_io.c         | 213 ++++++++--------
->  fs/btrfs/extent_io.h         |   5 +-
->  fs/btrfs/file-item.c         |   8 +-
->  fs/btrfs/file.c              |  17 +-
->  fs/btrfs/free-space-cache.c  |  65 ++---
->  fs/btrfs/free-space-cache.h  |   7 +-
->  fs/btrfs/free-space-tree.c   |   2 +-
->  fs/btrfs/inode-map.c         |   2 +-
->  fs/btrfs/inode.c             | 580 +++++++++++++++++++------------------------
->  fs/btrfs/ioctl.c             |  95 +++----
->  fs/btrfs/ordered-data.c      |  47 ++--
->  fs/btrfs/ordered-data.h      |   4 +-
->  fs/btrfs/props.c             |   4 +-
->  fs/btrfs/qgroup.c            | 163 +++++++-----
->  fs/btrfs/qgroup.h            |  36 ++-
->  fs/btrfs/raid56.c            |   2 -
->  fs/btrfs/relocation.c        |  25 +-
->  fs/btrfs/root-tree.c         |   6 +-
->  fs/btrfs/scrub.c             |  12 +-
->  fs/btrfs/super.c             |   7 +-
->  fs/btrfs/transaction.c       |  58 +++--
->  fs/btrfs/tree-log.c          | 299 +++++++++++-----------
->  fs/btrfs/tree-log.h          |  14 +-
->  fs/btrfs/ulist.c             |  10 +-
->  fs/btrfs/ulist.h             |   8 +-
->  fs/btrfs/volumes.c           |  18 +-
->  fs/btrfs/xattr.c             |  16 +-
->  include/trace/events/btrfs.h |   2 +-
->  42 files changed, 1199 insertions(+), 1240 deletions(-)
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
-
-
+diff --git a/man2/ioctl_getfsmap.2 b/man2/ioctl_getfsmap.2
+new file mode 100644
+index 0000000..7121d61
+--- /dev/null
++++ b/man2/ioctl_getfsmap.2
+@@ -0,0 +1,359 @@
++.\" Copyright (c) 2017, Oracle.  All rights reserved.
++.\"
++.\" %%%LICENSE_START(GPLv2+_DOC_FULL)
++.\" This is free documentation; you can redistribute it and/or
++.\" modify it under the terms of the GNU General Public License as
++.\" published by the Free Software Foundation; either version 2 of
++.\" the License, or (at your option) any later version.
++.\"
++.\" The GNU General Public License's references to "object code"
++.\" and "executables" are to be interpreted as the output of any
++.\" document formatting or typesetting system, including
++.\" intermediate and printed output.
++.\"
++.\" This manual is distributed in the hope that it will be useful,
++.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
++.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++.\" GNU General Public License for more details.
++.\"
++.\" You should have received a copy of the GNU General Public
++.\" License along with this manual; if not, see
++.\" <http://www.gnu.org/licenses/>.
++.\" %%%LICENSE_END
++.TH IOCTL-GETFSMAP 2 2017-02-10 "Linux" "Linux Programmer's Manual"
++.SH NAME
++ioctl_getfsmap \- retrieve the physical layout of the filesystem
++.SH SYNOPSIS
++.br
++.B #include <sys/ioctl.h>
++.br
++.B #include <linux/fs.h>
++.br
++.B #include <linux/fsmap.h>
++.sp
++.BI "int ioctl(int " fd ", GETFSMAP, struct fsmap_head * " arg );
++.SH DESCRIPTION
++This
++.BR ioctl (2)
++retrieves physical extent mappings for a filesystem.
++This information can be used to discover which files are mapped to a physical
++block, examine free space, or find known bad blocks, among other things.
++
++The sole argument to this ioctl should be a pointer to a single
++.BR "struct fsmap_head" ":"
++.in +4n
++.nf
++
++struct fsmap {
++	__u32		fmr_device;	/* device id */
++	__u32		fmr_flags;	/* mapping flags */
++	__u64		fmr_physical;	/* device offset of segment */
++	__u64		fmr_owner;	/* owner id */
++	__u64		fmr_offset;	/* file offset of segment */
++	__u64		fmr_length;	/* length of segment */
++	__u64		fmr_reserved[3];	/* must be zero */
++};
++
++struct fsmap_head {
++	__u32		fmh_iflags;	/* control flags */
++	__u32		fmh_oflags;	/* output flags */
++	__u32		fmh_count;	/* # of entries in array incl. input */
++	__u32		fmh_entries;	/* # of entries filled in (output). */
++	__u64		fmh_reserved[6];	/* must be zero */
++
++	struct fsmap	fmh_keys[2];	/* low and high keys for the mapping search */
++	struct fsmap	fmh_recs[];	/* returned records */
++};
++
++.fi
++.in
++The two
++.I fmh_keys
++array elements specify the lowest and highest reverse-mapping
++keys, respectively, for which userspace would like physical mapping
++information.
++A reverse mapping key consists of the tuple (device, block, owner, offset).
++The owner and offset fields are part of the key because some filesystems
++support sharing physical blocks between multiple files and
++therefore may return multiple mappings for a given physical block.
++.PP
++Filesystem mappings are copied into the
++.I fmh_recs
++array, which immediately follows the header data.
++.SS Fields of struct fsmap_head
++.PP
++The
++.I fmh_iflags
++field is a bitmask passed to the kernel to alter the output.
++There are no flags defined, so this value must be zero.
++
++.PP
++The
++.I fmh_oflags
++field is a bitmask of flags that concern all output mappings.
++If
++.B FMH_OF_DEV_T
++is set, then the
++.I fmr_device
++field represents a
++.B dev_t
++structure containing the major and minor numbers of the block device.
++
++.PP
++The
++.I fmh_count
++field contains the number of elements in the array being passed to the
++kernel.
++If this value is 0,
++.I fmh_entries
++will be set to the number of records that would have been returned had
++the array been large enough;
++no mapping information will be returned.
++
++.PP
++The
++.I fmh_entries
++field contains the number of elements in the
++.I fmh_recs
++array that contain useful information.
++
++.PP
++The
++.I fmh_reserved
++fields must be set to zero.
++
++.SS Keys
++.PP
++The two key records in
++.B fsmap_head.fmh_keys
++specify the lowest and highest extent records in the keyspace that the caller
++wants returned.
++A filesystem that can share blocks between files likely requires the tuple
++.RI "(" "device" ", " "physical" ", " "owner" ", " "offset" ", " "flags" ")"
++to uniquely index any filesystem mapping record.
++Classic non-sharing filesystems might be able to identify any record with only
++.RI "(" "device" ", " "physical" ", " "flags" ")."
++For example, if the low key is set to (0, 36864, 0, 0, 0), the filesystem will
++only return records for extents starting at or above 36KiB on disk.
++If the high key is set to (0, 1048576, 0, 0, 0), only records below 1MiB will
++be returned.
++By convention, the field
++.B fsmap_head.fmh_keys[0]
++must contain the low key and
++.B fsmap_head.fmh_keys[1]
++must contain the high key for the request.
++.PP
++For convenience, if
++.B fmr_length
++is set in the low key, it will be added to
++.IR fmr_block " or " fmr_offset
++as appropriate.
++The caller can take advantage of this subtlety to set up subsequent calls
++by copying
++.B fsmap_head.fmh_recs[fsmap_head.fmh_entries - 1]
++into the low key.
++The function
++.B fsmap_advance
++provides this functionality.
++
++.SS Fields of struct fsmap
++.PP
++The
++.I fmr_device
++field contains a 32-bit cookie to uniquely identify the underlying storage
++device.
++If the
++.B FMH_OF_DEV_T
++flag is set in the header's
++.I fmh_oflags
++field, this field contains a
++.B dev_t
++from which major and minor numbers can be extracted.
++If the flag is not set, this field contains a value that must be unique
++for each unique storage device.
++
++.PP
++The
++.I fmr_physical
++field contains the disk address of the extent in bytes.
++
++.PP
++The
++.I fmr_owner
++field contains the owner of the extent.
++This is an inode number unless
++.B FMR_OF_SPECIAL_OWNER
++is set in the
++.I fmr_flags
++field, in which case the value is determined by the filesystem.
++See the section below about special owner values for more details.
++
++.PP
++The
++.I fmr_offset
++field contains the logical address in the mapping record in bytes.
++This field has no meaning if the
++.BR FMR_OF_SPECIAL_OWNER " or " FMR_OF_EXTENT_MAP
++flags are set in
++.IR fmr_flags "."
++
++.PP
++The
++.I fmr_length
++field contains the length of the extent in bytes.
++
++.PP
++The
++.I fmr_flags
++field is a bitmask of extent state flags.
++The bits are:
++.RS 0.4i
++.TP
++.B FMR_OF_PREALLOC
++The extent is allocated but not yet written.
++.TP
++.B FMR_OF_ATTR_FORK
++This extent contains extended attribute data.
++.TP
++.B FMR_OF_EXTENT_MAP
++This extent contains extent map information for the owner.
++.TP
++.B FMR_OF_SHARED
++Parts of this extent may be shared.
++.TP
++.B FMR_OF_SPECIAL_OWNER
++The
++.I fmr_owner
++field contains a special value instead of an inode number.
++.TP
++.B FMR_OF_LAST
++This is the last record in the filesystem.
++.RE
++
++.PP
++The
++.I fmr_reserved
++field will be set to zero.
++
++.SS Special Owner Values
++The following special owner values are generic to all filesystems:
++.RS 0.4i
++.TP
++.B FMR_OWN_FREE
++Free space.
++.TP
++.B FMR_OWN_UNKNOWN
++This extent is in use but its owner is not known.
++.TP
++.B FMR_OWN_METADATA
++This extent is filesystem metadata.
++.RE
++
++XFS can return the following special owner values:
++.RS 0.4i
++.TP
++.B XFS_FMR_OWN_FREE
++Free space.
++.TP
++.B XFS_FMR_OWN_UNKNOWN
++This extent is in use but its owner is not known.
++.TP
++.B XFS_FMR_OWN_FS
++Static filesystem metadata which exists at a fixed address.
++These are the AG superblock, the AGF, the AGFL, and the AGI headers.
++.TP
++.B XFS_FMR_OWN_LOG
++The filesystem journal.
++.TP
++.B XFS_FMR_OWN_AG
++Allocation group metadata, such as the free space btrees and the
++reverse mapping btrees.
++.TP
++.B XFS_FMR_OWN_INOBT
++The inode and free inode btrees.
++.TP
++.B XFS_FMR_OWN_INODES
++Inode records.
++.TP
++.B XFS_FMR_OWN_REFC
++Reference count information.
++.TP
++.B XFS_FMR_OWN_COW
++This extent is being used to stage a copy-on-write.
++.TP
++.B XFS_FMR_OWN_DEFECTIVE:
++This extent has been marked defective either by the filesystem or the
++underlying device.
++.RE
++
++ext4 can return the following special owner values:
++.RS 0.4i
++.TP
++.B EXT4_FMR_OWN_FREE
++Free space.
++.TP
++.B EXT4_FMR_OWN_UNKNOWN
++This extent is in use but its owner is not known.
++.TP
++.B EXT4_FMR_OWN_FS
++Static filesystem metadata which exists at a fixed address.
++This is the superblock and the group descriptors.
++.TP
++.B EXT4_FMR_OWN_LOG
++The filesystem journal.
++.TP
++.B EXT4_FMR_OWN_INODES
++Inode records.
++.TP
++.B EXT4_FMR_OWN_BLKBM
++Block bitmap.
++.TP
++.B EXT4_FMR_OWN_INOBM
++Inode bitmap.
++.RE
++
++.SH RETURN VALUE
++On error, \-1 is returned, and
++.I errno
++is set to indicate the error.
++.PP
++.SH ERRORS
++Error codes can be one of, but are not limited to, the following:
++.TP
++.B EINVAL
++The array is not long enough, or a non-zero value was passed in one of the
++fields that must be zero.
++.TP
++.B EFAULT
++The pointer passed in was not mapped to a valid memory address.
++.TP
++.B EBADF
++.IR fd
++is not open for reading.
++.TP
++.B EPERM
++This query is not allowed.
++.TP
++.B EOPNOTSUPP
++The filesystem does not support this command.
++.TP
++.B EUCLEAN
++The filesystem metadata is corrupt and needs repair.
++.TP
++.B EBADMSG
++The filesystem has detected a checksum error in the metadata.
++.TP
++.B ENOMEM
++Insufficient memory to process the request.
++
++.SH EXAMPLE
++.TP
++Please see io/fsmap.c in the xfsprogs distribution for a sample program.
++
++.SH CONFORMING TO
++This API is Linux-specific.
++Not all filesystems support it.
++.fi
++.in
++.SH SEE ALSO
++.BR ioctl (2)

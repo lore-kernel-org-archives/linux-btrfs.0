@@ -1,40 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:48784 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751547AbdBUUN6 (ORCPT
+Received: from mail-it0-f68.google.com ([209.85.214.68]:33171 "EHLO
+        mail-it0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751754AbdBUXPA (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Feb 2017 15:13:58 -0500
-From: Liu Bo <bo.li.liu@oracle.com>
+        Tue, 21 Feb 2017 18:15:00 -0500
+Received: by mail-it0-f68.google.com with SMTP id e137so18457531itc.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Feb 2017 15:15:00 -0800 (PST)
+From: Nicholas D Steeves <nsteeves@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] Btrfs: use the correct type when creating cow dio extent
-Date: Tue, 21 Feb 2017 12:12:58 -0800
-Message-Id: <1487707978-25047-1-git-send-email-bo.li.liu@oracle.com>
+Cc: Nicholas D Steeves <nsteeves@gmail.com>
+Subject: [PATCH] btrfs-progs: docs: fix many typos, plus three edits for clarit
+Date: Tue, 21 Feb 2017 18:14:37 -0500
+Message-Id: <20170221231438.17539-1-nsteeves@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-'BTRFS_ORDERED_REGULAR' was introduced for the cow case in patch
-'Btrfs: specify a new ordered extent type for create_io_em',
-but it missed the directIO cow case.
+Hi David,
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/inode.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Please see attached a reasonably thorough patch for all the typos I
+could find in btrfs-progs documentation.  The three edits are very
+minor and look larger than they are because I had to reflow the
+paragraphs.  I'm confident in the quality of the work, with the
+exception of the following, where I'm not sure what to do:
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index d90b5b3..3060d5c 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7185,7 +7185,7 @@ static struct extent_map *btrfs_new_extent_direct(struct inode *inode,
- 
- 	em = btrfs_create_dio_extent(inode, start, ins.offset, start,
- 				     ins.objectid, ins.offset, ins.offset,
--				     ins.offset, 0);
-+				     ins.offset, BTRFS_ORDERED_REGULAR);
- 	btrfs_dec_block_group_reservations(fs_info, ins.objectid);
- 	if (IS_ERR(em))
- 		btrfs_free_reserved_extent(fs_info, ins.objectid,
+Documentation/btrfs-receive.asciidoc
+@@ -66,7 +66,7 @@ tell us where this filesystem is mounted.
+ --dump::
+ dump the stream metadata, one line per operation
+ +
+-Does not require the 'path' parameter. The filesystem chanded.
++Does not require the 'path' parameter. The filesystem changed.
+
+
+Sincerely,
+Nicholas
+
+Nicholas D Steeves (1):
+  btrfs-progs: docs: fix many typos, plus three edits for clarity
+
+ Documentation/btrfs-balance.asciidoc          |  2 +-
+ Documentation/btrfs-check.asciidoc            |  8 ++++----
+ Documentation/btrfs-device.asciidoc           |  6 +++---
+ Documentation/btrfs-filesystem.asciidoc       |  6 +++---
+ Documentation/btrfs-inspect-internal.asciidoc |  6 +++---
+ Documentation/btrfs-man5.asciidoc             | 15 ++++++++-------
+ Documentation/btrfs-quota.asciidoc            |  8 ++++----
+ Documentation/btrfs-receive.asciidoc          |  4 ++--
+ Documentation/btrfs-restore.asciidoc          |  2 +-
+ Documentation/btrfs-scrub.asciidoc            |  9 ++++-----
+ Documentation/btrfs-send.asciidoc             |  6 +++---
+ 11 files changed, 36 insertions(+), 36 deletions(-)
+
 -- 
-1.8.3.1
+2.11.0
 

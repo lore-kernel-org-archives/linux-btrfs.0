@@ -1,46 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f54.google.com ([209.85.214.54]:33065 "EHLO
-        mail-it0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750944AbdBWMeN (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 23 Feb 2017 07:34:13 -0500
-Received: by mail-it0-f54.google.com with SMTP id d9so3362071itc.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 23 Feb 2017 04:34:13 -0800 (PST)
+Received: from mail.gocept.net ([195.62.125.19]:52297 "EHLO mail.gocept.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751078AbdBWNTe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 23 Feb 2017 08:19:34 -0500
+From: Christian Theune <ct@flyingcircus.io>
+Message-Id: <3DCDD3DC-4201-4529-AACA-07A431AB4D6C@flyingcircus.io>
+Content-Type: multipart/signed;
+ boundary="Apple-Mail=_8C76D25A-A2E8-4CD2-9F36-E3173D63C6B6";
+ protocol="application/pgp-signature"; micalg=pgp-sha512
+Mime-Version: 1.0 (Mac OS X Mail 10.2 \(3259\))
 Subject: Re: Downgrading kernel 4.9 to 4.4 with space_cache=v2 enabled?
-To: Christian Theune <ct@flyingcircus.io>, linux-btrfs@vger.kernel.org
+Date: Thu, 23 Feb 2017 14:19:12 +0100
+In-Reply-To: <71958378-5AB4-4E66-8F54-60215141D1BB@flyingcircus.io>
+Cc: linux-btrfs@vger.kernel.org
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
 References: <BB064A3C-6F5C-4490-80A6-F42BEFAA945A@flyingcircus.io>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <029c96aa-9c1e-f12c-8b63-4e4485428c67@gmail.com>
-Date: Thu, 23 Feb 2017 07:34:06 -0500
-MIME-Version: 1.0
-In-Reply-To: <BB064A3C-6F5C-4490-80A6-F42BEFAA945A@flyingcircus.io>
-Content-Type: text/plain; charset=utf-8; format=flowed
+ <029c96aa-9c1e-f12c-8b63-4e4485428c67@gmail.com>
+ <71958378-5AB4-4E66-8F54-60215141D1BB@flyingcircus.io>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-02-23 05:51, Christian Theune wrote:
-> Hi,
->
-> not sure whether it’s possible, but we tried space_cache=v2 and obviously after working fine in staging it broke in production. Or rather: we upgraded from 4.4 to 4.9 and enabled the space_cache. Our production volume is around 50TiB usable (underlying HW Raid 6).
->
-> The machine crashes silently every 15 hours or so and takes _ages_ to reboot. It current is stuck trying to mount the local filesystems and I guess btrfs is doing something, but I don’t have shell access yet.
->
-> I’m wondering whether we can downgrade by booting back into 4.4 or will this break things even further? (We’ve had some unpleasant surprises with FS’ in the last months, so I thought I’d rather ask.)
-If it has a v2 free space cache and was mounted on a kernel newer than 
-(I think) 4.8, it almost certainly won't mount on a 4.4 kernel.  The 
-free-space-tree code got added in 4.5, and there was an incompatible 
-filesystem flag added more recently to mark filesystems which are 
-unaffected by a bug in the original implementation.  That flag gets set 
-automatically on kernels that include the code to fix the bug's effects 
-on the FS, which IIRC includes 4.9 kernels.
 
-That said, if you can get it to mount at all on the 4.9 kernel, you can 
-probably convert it back by mounting with -o clear_cache,space_cache=v1. 
-  I'm saying probably in this case because it may be more than just the 
-v2 space cache that's messed up, and if there's other corruption in the 
-FS, you'll still see issues.  If it's just the free space cache though, 
-adding those two options to the mount options (and removing 
-space_cache=v2) should let it mount much more quickly, and you should 
-see some above-average disk activity for a while, but afterwards you 
-should be able to mount it on the 4.4 kernel again.
+--Apple-Mail=_8C76D25A-A2E8-4CD2-9F36-E3173D63C6B6
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain;
+	charset=utf-8
 
+Hi,
+
+just for future reference if someone finds this thread: there is a bit =
+of output I=E2=80=99m seeing with this crashing kernel (unclear whether =
+related to btrfs or not):
+
+  31 | 02/23/2017 | 09:51:22 | OS Stop/Shutdown #0x4f | Run-time =
+critical stop | Asserted
+  32 | Linux kernel panic: Out of memo
+  33 | Linux kernel panic: ry and no k
+  34 | Linux kernel panic: illable pro
+  35 | Linux kernel panic: cesses...
+
+Cheers,
+Christian
+
+
+--
+Christian Theune =C2=B7 ct@flyingcircus.io =C2=B7 +49 345 219401 0
+Flying Circus Internet Operations GmbH =C2=B7 http://flyingcircus.io
+Forsterstra=C3=9Fe 29 =C2=B7 06112 Halle (Saale) =C2=B7 Deutschland
+HR Stendal HRB 21169 =C2=B7 Gesch=C3=A4ftsf=C3=BChrer: Christian. =
+Theune, Christian. Zagrodnick
+
+
+--Apple-Mail=_8C76D25A-A2E8-4CD2-9F36-E3173D63C6B6
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment;
+	filename=signature.asc
+Content-Type: application/pgp-signature;
+	name=signature.asc
+Content-Description: Message signed with OpenPGP
+
+-----BEGIN PGP SIGNATURE-----
+Comment: GPGTools - https://gpgtools.org
+
+iQEcBAEBCgAGBQJYruFQAAoJEKuh8lKpfGLOOWEH/2Bf0/RurQPvPyQ+Bx5vqIWS
+6d3lHCtD1ob9sx4DYGJq2xwvOAsTzjB4rljCiOiOyy3xquNCfq7xiI1UKD3z/5ih
+/bhIeb9mqb1g9kc6Xreyfo03TFx44KaPGmlLsV9zN2uG1QcxxNYpZVuwIMRHD5xH
+TNN8zHvKeJxX970fPt+N4NgVNihFxmSvZxW1pQEciedHq9dWKldazLDN76N3TR5Y
+3l7VzYmNGCXdLDiCNJHUsVJxl2556jNLIV+166dr7fl//oMjAZZkVGOgNY2QqTab
+e1UfpQbwjwy1J8I9PASrHYRiJTlQZNYtfw5OImDI2C91NDvDuel9mv4yBwclg+I=
+=4pSB
+-----END PGP SIGNATURE-----
+
+--Apple-Mail=_8C76D25A-A2E8-4CD2-9F36-E3173D63C6B6--

@@ -1,60 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:47115 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751207AbdBXAz6 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 23 Feb 2017 19:55:58 -0500
-Subject: Re: Downgrading kernel 4.9 to 4.4 with space_cache=v2 enabled?
-To: Christian Theune <ct@flyingcircus.io>, <linux-btrfs@vger.kernel.org>
-References: <BB064A3C-6F5C-4490-80A6-F42BEFAA945A@flyingcircus.io>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <fe942684-deb3-08f1-d4c1-ae25a912f799@cn.fujitsu.com>
-Date: Fri, 24 Feb 2017 08:54:52 +0800
+Received: from p3nlsmtpcp01-01.prod.phx3.secureserver.net ([184.168.200.138]:47276
+        "EHLO p3nlsmtpcp01-01.prod.phx3.secureserver.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751697AbdBXCdh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 23 Feb 2017 21:33:37 -0500
+Received: from [122.164.43.112] (port=58592 helo=giis.co.in)
+        by p3plcpnl0639.prod.phx3.secureserver.net with esmtpsa (TLSv1.2:ECDHE-RSA-AES128-GCM-SHA256:128)
+        (Exim 4.87)
+        (envelope-from <lakshmipathi.g@giis.co.in>)
+        id 1ch5gR-0005iH-F0
+        for linux-btrfs@vger.kernel.org; Thu, 23 Feb 2017 19:32:36 -0700
+Date: Fri, 24 Feb 2017 08:02:25 +0530
+From: "Lakshmipathi.G" <lakshmipathi.g@giis.co.in>
+To: linux-btrfs@vger.kernel.org
+Subject: List of corruption cases for scrub
+Message-ID: <20170224023225.GA4006@giis.co.in>
 MIME-Version: 1.0
-In-Reply-To: <BB064A3C-6F5C-4490-80A6-F42BEFAA945A@flyingcircus.io>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi.
 
+I tried to a create list of corruption test scenarios for scrubbing process with RAID5.
+Here's the list: https://btrfs.wiki.kernel.org/index.php/Scrub_corruption_cases
 
-At 02/23/2017 06:51 PM, Christian Theune wrote:
-> Hi,
->
-> not sure whether it’s possible, but we tried space_cache=v2 and obviously after working fine in staging it broke in production. Or rather: we upgraded from 4.4 to 4.9 and enabled the space_cache. Our production volume is around 50TiB usable (underlying HW Raid 6).
->
-> The machine crashes silently every 15 hours or so and takes _ages_ to reboot. It current is stuck trying to mount the local filesystems and I guess btrfs is doing something, but I don’t have shell access yet.
->
-> I’m wondering whether we can downgrade by booting back into 4.4 or will this break things even further? (We’ve had some unpleasant surprises with FS’ in the last months, so I thought I’d rather ask.)
+If similar list already exists in btrfs wiki, let me know, I'll move this data
+to there. Feel free to add/update/delete entries or suggest new corrupt ideas!
 
-You could use "btrfs check --clear-space-cache" to completely cleanup 
-space cache. Both v1(free space cache, file based) or v2(free space 
-tree) are supported.
-
-And specially for v2 space cache (space cache tree), "btrfs check 
---clear-space-cache" will also clear the ro_compat flag, so older kernel 
-should mount the fs without problem.
-
-In free-space-cache.c
-------
-         features = btrfs_super_compat_ro_flags(fs_info->super_copy);
-         features &= ~(BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE_VALID |
-                       BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE);
-         btrfs_set_super_compat_ro_flags(fs_info->super_copy, features);
-------
-
-Thanks,
-Qu
-
->
-> Kind regards,
-> Christian
->
-> --
-> Christian Theune · ct@flyingcircus.io · +49 345 219401 0
-> Flying Circus Internet Operations GmbH · http://flyingcircus.io
-> Forsterstraße 29 · 06112 Halle (Saale) · Deutschland
-> HR Stendal HRB 21169 · Geschäftsführer: Christian. Theune, Christian. Zagrodnick
->
-
-
+Cheers.
+Lakshmipathi.G

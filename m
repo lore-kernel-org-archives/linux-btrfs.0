@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:60453 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1750995AbdBXFwy (ORCPT
+        with ESMTP id S1751127AbdBXFyd (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 24 Feb 2017 00:52:54 -0500
+        Fri, 24 Feb 2017 00:54:33 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>, <dsterba@suse.cz>
-Subject: [PATCH v2 7/9] btrfs-progs: convert: Introduce function to read out btrfs reserved range
-Date: Fri, 24 Feb 2017 13:52:30 +0800
-Message-ID: <20170224055232.4140-8-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v2 8/9] btrfs-progs: convert: Introduce function to check if convert image is able to be rolled back
+Date: Fri, 24 Feb 2017 13:52:31 +0800
+Message-ID: <20170224055232.4140-9-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20170224055232.4140-1-quwenruo@cn.fujitsu.com>
 References: <20170224055232.4140-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -16,50 +16,214 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce a new function, read_reserved_ranges(), to allow later
-rollback to use these data to do rollback.
+Introduce a function, check_convert_image() to check if that image is
+rollback-able.
+
+This means all file extents excepts one in btrfs reserved ranges, must
+be mapped 1:1 on disk.
+
+1:1 mapped file extents must match the following condition:
+1) Their file_offset(key.offset) matches its disk_bytenr
+2) The corresponding chunk must be mapped 1:1 on disk
+   That's to say, it's a SINGLE chunk, and chunk logical matches with
+   stripe physical.
+
+Above 2 conditions ensured that file extent lies the exactly the same
+position as old filesystem.
+
+For data in reserved ranges of btrfs, they are relocated to new places,
+and in that case, we use btrfs_read_file() to read out the content for
+later rollback use.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- convert/main.c | 31 +++++++++++++++++++++++++++++++
- 1 file changed, 31 insertions(+)
+ convert/main.c | 179 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 179 insertions(+)
 
 diff --git a/convert/main.c b/convert/main.c
-index 08df0111..a58716b5 100644
+index a58716b5..2fa583a7 100644
 --- a/convert/main.c
 +++ b/convert/main.c
-@@ -2749,6 +2749,37 @@ fail:
- 	return -1;
+@@ -2780,6 +2780,185 @@ static int read_reserved_ranges(struct btrfs_root *root, u64 ino,
+ 	return ret;
  }
  
-+/*
-+ * Read out data of convert image which is in btrfs reserved range.
-+ *
-+ * So rollback can just use these data to overwrite these ranges of btrfs
-+ */
-+static int read_reserved_ranges(struct btrfs_root *root, u64 ino,
-+				u64 total_bytes, char *reserved_ranges[])
++static bool is_subset_of_reserved_ranges(u64 start, u64 len)
 +{
 +	int i;
-+	int ret = 0;
++	bool ret = false;
 +
 +	for (i = 0; i < ARRAY_SIZE(btrfs_reserved_ranges); i++) {
 +		struct simple_range *range = &btrfs_reserved_ranges[i];
 +
-+		if (range->start + range->len >= total_bytes)
-+			break;
-+		ret = btrfs_read_file(root, ino, range->start, range->len,
-+				      reserved_ranges[i]);
-+		if (ret < range->len) {
-+			error(
-+	"failed to read out data of convert image, offset=%llu len=%llu ret=%d",
-+			      range->start, range->len, ret);
-+			if (ret >= 0)
-+				ret = -EIO;
++		if (start >= range->start && start + len <= range_end(range)) {
++			ret = true;
 +			break;
 +		}
-+		ret = 0;
 +	}
++	return ret;
++}
++
++static bool is_chunk_direct_mapped(struct btrfs_fs_info *fs_info, u64 start)
++{
++	struct cache_extent *ce;
++	struct map_lookup *map;
++	bool ret = false;
++
++	ce = search_cache_extent(&fs_info->mapping_tree.cache_tree, start);
++	if (!ce)
++		goto out;
++	if (ce->start > start || ce->start + ce->size < start)
++		goto out;
++
++	map = container_of(ce, struct map_lookup, ce);
++
++	/* Not SINGLE chunk */
++	if (map->num_stripes != 1)
++		goto out;
++
++	/* Chunk's logical doesn't match with phisical, not 1:1 mapped */
++	if (map->ce.start != map->stripes[0].physical)
++		goto out;
++	ret = true;
++out:
++	return ret;
++}
++
++/*
++ * Iterate all file extents of the convert image.
++ *
++ * All file extents except ones in btrfs_reserved_ranges[] must be mapped 1:1
++ * on disk. (Means thier file_offset must match their on disk bytenr)
++ *
++ * File extents in reserved ranges can be relocated to other place, and in
++ * that case we will read them out for later use.
++ */
++static int check_image_file_extents(struct btrfs_root *image_root, u64 ino,
++				    u64 total_size, char *reserved_ranges[])
++{
++	struct btrfs_key key;
++	struct btrfs_path path;
++	struct btrfs_fs_info *fs_info = image_root->fs_info;
++	u64 checked_bytes = 0;
++	int ret;
++
++	key.objectid = ino;
++	key.offset = 0;
++	key.type = BTRFS_EXTENT_DATA_KEY;
++
++	btrfs_init_path(&path);
++	ret = btrfs_search_slot(NULL, image_root, &key, &path, 0, 0);
++	/*
++	 * It's possible that some fs doesn't store any(including sb)
++	 * data into 0~1M range, and NO_HOLES is enabled.
++	 *
++	 * So only needs to check ret < 0 case
++	 */
++	if (ret < 0) {
++		error("failed to iterate file extents at offset 0: %s",
++			strerror(-ret));
++		btrfs_release_path(&path);
++		return ret;
++	}
++
++	/* Loop from the first file extents */
++	while (1) {
++		struct btrfs_file_extent_item *fi;
++		struct extent_buffer *leaf = path.nodes[0];
++		u64 disk_bytenr;
++		u64 file_offset;
++		u64 ram_bytes;
++		int slot = path.slots[0];
++
++		if (slot >= btrfs_header_nritems(leaf))
++			goto next;
++		btrfs_item_key_to_cpu(leaf, &key, slot);
++
++		/*
++		 * Iteration is done, exit normally, we have extra check out of
++		 * the loop
++		 */
++		if (key.objectid != ino || key.type != BTRFS_EXTENT_DATA_KEY) {
++			ret = 0;
++			break;
++		}
++		file_offset = key.offset;
++		fi = btrfs_item_ptr(leaf, slot, struct btrfs_file_extent_item);
++		if (btrfs_file_extent_type(leaf, fi) != BTRFS_FILE_EXTENT_REG) {
++			ret = -EINVAL;
++			error(
++		"ino %llu offset %llu doesn't have a regular file extent",
++				ino, file_offset);
++			break;
++		}
++		if (btrfs_file_extent_compression(leaf, fi) ||
++		    btrfs_file_extent_encryption(leaf, fi) ||
++		    btrfs_file_extent_other_encoding(leaf, fi)) {
++			ret = -EINVAL;
++			error(
++			"ino %llu offset %llu doesn't have a plain file extent",
++				ino, file_offset);
++			break;
++		}
++
++		disk_bytenr = btrfs_file_extent_disk_bytenr(leaf, fi);
++		ram_bytes = btrfs_file_extent_ram_bytes(leaf, fi);
++
++		checked_bytes += ram_bytes;
++		/* Skip hole */
++		if (disk_bytenr == 0)
++			goto next;
++
++		/*
++		 * Most file extent must be 1:1 mapped, which means 2 things:
++		 * 1) File extent file offset == disk_bytenr
++		 * 2) That data chunk's logical == chunk's physical
++		 *
++		 * So file extent's file offset == physical position on disk.
++		 * 
++		 * And after rolling back btrfs reserved range, other part
++		 * remains what old fs used to be.
++		 */
++		if (file_offset != disk_bytenr ||
++		    !is_chunk_direct_mapped(fs_info, disk_bytenr)) {
++			/*
++			 * Only file extent in btrfs reserved ranges are allow
++			 * non-1:1 mapped
++			 */
++			if (!is_subset_of_reserved_ranges(file_offset,
++							ram_bytes)) {
++				ret = -EINVAL;
++				error(
++		"ino %llu offset %llu file extent should not be relocated",
++					ino, file_offset);
++				break;
++			}
++		}
++next:
++		ret = btrfs_next_item(image_root, &path);
++		if (ret) {
++			if (ret > 0)
++				ret = 0;
++			break;
++		}
++	}
++	btrfs_release_path(&path);
++	/*
++	 * For HOLES mode (without NO_HOLES), we must ensure file extents
++	 * cover the whole range of the image
++	 */
++	if (!ret && !btrfs_fs_incompat(fs_info, NO_HOLES)) {
++		if (checked_bytes != total_size) {
++			ret = -EINVAL;
++			error("inode %llu has some file extents not checked",
++				ino);
++		}
++	}
++
++	/* So far so good, read out old data located in btrfs reserved ranges */
++	ret = read_reserved_ranges(image_root, ino, total_size,
++				   reserved_ranges);
 +	return ret;
 +}
 +

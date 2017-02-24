@@ -1,303 +1,204 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:24324 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751259AbdBXCHW (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:31788 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751283AbdBXUS2 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 23 Feb 2017 21:07:22 -0500
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <fdmanana@kernel.org>, <linux-btrfs@vger.kernel.org>,
-        <bo.li.liu@oracle.com>
-Subject: [PATCH v4] btrfs: Handle delalloc error correctly to avoid ordered extent deadlock
-Date: Fri, 24 Feb 2017 10:06:46 +0800
-Message-ID: <20170224020646.12668-1-quwenruo@cn.fujitsu.com>
+        Fri, 24 Feb 2017 15:18:28 -0500
+Date: Fri, 24 Feb 2017 12:17:15 -0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: fdmanana@kernel.org
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix deadlock between dedup on same file and
+ starting writeback
+Message-ID: <20170224201715.GB18039@lim.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1487697292-10015-1-git-send-email-fdmanana@kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1487697292-10015-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If run btrfs/125 with nospace_cache or space_cache=v2 mount option,
-btrfs will block with the following backtrace:
+On Tue, Feb 21, 2017 at 05:14:52PM +0000, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> If we are deduping two ranges of the same file we need to make sure that
+> we lock all pages in ascending order, that is, lock first the pages from
+> the range with lower offset and then the pages from the other range, as
+> otherwise we can deadlock with a concurrent task that is starting delalloc
+> (writeback). Example trace:
+> 
+> [74073.052218] INFO: task kworker/u32:10:17997 blocked for more than 120 seconds.
+> [74073.053889]       Tainted: G        W       4.9.0-rc7-btrfs-next-36+ #1
+> [74073.055071] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> [74073.056696] kworker/u32:10  D    0 17997      2 0x00000000
+> [74073.058606] Workqueue: writeback wb_workfn (flush-btrfs-53176)
+> [74073.061370]  ffff880031e79858 ffff8802159d2580 ffff880237004580 ffff880031e79240
+> [74073.064784]  ffff88023f4978c0 ffffc9000817b638 ffffffff814c15e1 0000000000000000
+> [74073.068386]  ffff88023f4978d8 ffff88023f4978c0 000000000017b620 ffff880031e79240
+> [74073.071712] Call Trace:
+> [74073.072884]  [<ffffffff814c15e1>] ? __schedule+0x48f/0x6f4
+> [74073.075395]  [<ffffffff814c1c8b>] ? bit_wait+0x2f/0x2f
+> [74073.077511]  [<ffffffff814c18d2>] schedule+0x8c/0xa0
+> [74073.079440]  [<ffffffff814c4b36>] schedule_timeout+0x43/0xff
+> [74073.081637]  [<ffffffff8110953e>] ? time_hardirqs_on+0x9/0x14
+> [74073.083809]  [<ffffffff81095c67>] ? trace_hardirqs_on_caller+0x16/0x197
+> [74073.086314]  [<ffffffff810bde98>] ? timekeeping_get_ns+0x1e/0x32
+> [74073.100654]  [<ffffffff810be048>] ? ktime_get+0x41/0x52
+> [74073.102619]  [<ffffffff814c10f0>] io_schedule_timeout+0xa0/0x102
+> [74073.104771]  [<ffffffff814c10f0>] ? io_schedule_timeout+0xa0/0x102
+> [74073.106969]  [<ffffffff814c1ca6>] bit_wait_io+0x1b/0x39
+> [74073.108954]  [<ffffffff814c1fb8>] __wait_on_bit_lock+0x4f/0x99
+> [74073.110981]  [<ffffffff8112b692>] __lock_page+0x6b/0x6d
+> [74073.112833]  [<ffffffff8108ceb4>] ? autoremove_wake_function+0x3a/0x3a
+> [74073.115010]  [<ffffffffa031178b>] lock_page+0x2f/0x32 [btrfs]
+> [74073.116999]  [<ffffffffa0311d9f>] lock_delalloc_pages+0xc7/0x1a0 [btrfs]
+> [74073.119243]  [<ffffffffa0313d15>] find_lock_delalloc_range+0xc3/0x1a4 [btrfs]
+> [74073.121636]  [<ffffffffa0313e81>] writepage_delalloc.isra.31+0x8b/0x134 [btrfs]
+> [74073.124229]  [<ffffffffa0315d69>] __extent_writepage+0x1c1/0x2bf [btrfs]
+> [74073.126372]  [<ffffffffa03160f2>] extent_write_cache_pages.isra.30.constprop.49+0x28b/0x36c [btrfs]
+> [74073.129371]  [<ffffffffa03165b9>] extent_writepages+0x4b/0x5c [btrfs]
+> [74073.131440]  [<ffffffffa02fcb59>] ? insert_reserved_file_extent.constprop.42+0x261/0x261 [btrfs]
+> [74073.134303]  [<ffffffff811b4ce4>] ? writeback_sb_inodes+0xe0/0x4a1
+> [74073.136298]  [<ffffffffa02fab7f>] btrfs_writepages+0x28/0x2a [btrfs]
+> [74073.138248]  [<ffffffff81138200>] do_writepages+0x23/0x2c
+> [74073.139910]  [<ffffffff811b3cab>] __writeback_single_inode+0x105/0x6d2
+> [74073.142003]  [<ffffffff811b4e96>] writeback_sb_inodes+0x292/0x4a1
+> [74073.136298]  [<ffffffffa02fab7f>] btrfs_writepages+0x28/0x2a [btrfs]
+> [74073.138248]  [<ffffffff81138200>] do_writepages+0x23/0x2c
+> [74073.139910]  [<ffffffff811b3cab>] __writeback_single_inode+0x105/0x6d2
+> [74073.142003]  [<ffffffff811b4e96>] writeback_sb_inodes+0x292/0x4a1
+> [74073.143911]  [<ffffffff811b511b>] __writeback_inodes_wb+0x76/0xae
+> [74073.145787]  [<ffffffff811b53ca>] wb_writeback+0x1cc/0x4d7
+> [74073.147452]  [<ffffffff811b60cd>] wb_workfn+0x194/0x37d
+> [74073.149084]  [<ffffffff811b60cd>] ? wb_workfn+0x194/0x37d
+> [74073.150726]  [<ffffffff8106ce77>] ? process_one_work+0x154/0x4e4
+> [74073.152694]  [<ffffffff8106cf96>] process_one_work+0x273/0x4e4
+> [74073.154452]  [<ffffffff8106d6db>] worker_thread+0x1eb/0x2ca
+> [74073.156138]  [<ffffffff8106d4f0>] ? rescuer_thread+0x2b6/0x2b6
+> [74073.157837]  [<ffffffff81072a81>] kthread+0xd5/0xdd
+> [74073.159339]  [<ffffffff810729ac>] ? __kthread_unpark+0x5a/0x5a
+> [74073.161088]  [<ffffffff814c6257>] ret_from_fork+0x27/0x40
+> [74073.162680] INFO: lockdep is turned off.
+> [74073.163855] INFO: task do-dedup:30264 blocked for more than 120 seconds.
+> [74073.181180]       Tainted: G        W       4.9.0-rc7-btrfs-next-36+ #1
+> [74073.181180] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> [74073.185296] fdm-stress      D    0 30264  29974 0x00000000
+> [74073.186810]  ffff880089595118 ffff880211b8eac0 ffff880237030380 ffff880089594b00
+> [74073.188998]  ffff88023f2978c0 ffffc900063abb68 ffffffff814c15e1 0000000000000000
+> [74073.191070]  ffff88023f2978d8 ffff88023f2978c0 00000000003abb50 ffff880089594b00
+> [74073.193286] Call Trace:
+> [74073.193990]  [<ffffffff814c15e1>] ? __schedule+0x48f/0x6f4
+> [74073.195418]  [<ffffffff814c1c8b>] ? bit_wait+0x2f/0x2f
+> [74073.196796]  [<ffffffff814c18d2>] schedule+0x8c/0xa0
+> [74073.198163]  [<ffffffff814c4b36>] schedule_timeout+0x43/0xff
+> [74073.199621]  [<ffffffff81095df5>] ? trace_hardirqs_on+0xd/0xf
+> [74073.201100]  [<ffffffff810bde98>] ? timekeeping_get_ns+0x1e/0x32
+> [74073.202686]  [<ffffffff810be048>] ? ktime_get+0x41/0x52
+> [74073.204051]  [<ffffffff814c10f0>] io_schedule_timeout+0xa0/0x102
+> [74073.205585]  [<ffffffff814c10f0>] ? io_schedule_timeout+0xa0/0x102
+> [74073.207123]  [<ffffffff814c1ca6>] bit_wait_io+0x1b/0x39
+> [74073.208238]  [<ffffffff814c1fb8>] __wait_on_bit_lock+0x4f/0x99
+> [74073.208871]  [<ffffffff8112b692>] __lock_page+0x6b/0x6d
+> [74073.209430]  [<ffffffff8108ceb4>] ? autoremove_wake_function+0x3a/0x3a
+> [74073.210101]  [<ffffffff8112b800>] lock_page+0x2f/0x32
+> [74073.210636]  [<ffffffff8112c502>] pagecache_get_page+0x5e/0x153
+> [74073.211270]  [<ffffffffa03257eb>] gather_extent_pages+0x4e/0x109 [btrfs]
+> [74073.212166]  [<ffffffffa032a04c>] btrfs_dedupe_file_range+0x1e1/0x4dd [btrfs]
+> [74073.213257]  [<ffffffff8118d9b5>] vfs_dedupe_file_range+0x1c1/0x221
+> [74073.214086]  [<ffffffff8119e0c4>] do_vfs_ioctl+0x442/0x600
+> [74073.214767]  [<ffffffff811a7874>] ? rcu_read_unlock+0x5b/0x5d
+> [74073.215619]  [<ffffffff811a7953>] ? __fget+0x6b/0x77
+> [74073.216338]  [<ffffffff8119e2d9>] SyS_ioctl+0x57/0x79
+> [74073.217149]  [<ffffffff814c5fea>] entry_SYSCALL_64_fastpath+0x18/0xad
+> [74073.218102]  [<ffffffff81109552>] ? time_hardirqs_off+0x9/0x14
+> [74073.218968]  [<ffffffff810938ce>] ? trace_hardirqs_off_caller+0x1f/0xaa
+> [74073.219938] INFO: lockdep is turned off.
+> 
+> What happened was the following:
+> 
+>       CPU 1                                       CPU 2
+> 
+>                                              btrfs_dedupe_file_range()
+>                                                --> using same inode as source
+>                                                    and target
+>                                                --> src range is [768K, 1Mb[
+>                                                --> dst range is [0, 256K[
+>                                               btrfs_cmp_data_prepare()
+>                                                --> calls gather_extent_pages()
+>                                                    for range [768K, 1Mb[ and
+>                                                    locks all pages in that range
+> 
+>  do_writepages()
+>   btrfs_writepages()
+>    extent_writepages()
+>     extent_write_cache_pages()
+>      __extent_writepage()
+>       writepage_delalloc()
+>        find_lock_delalloc_range()
+>          --> finds range [0, 1Mb[
+>          lock_delalloc_pages()
+>           --> locks all pages in the
+>               range [0, 768K[
+>           --> tries to lock page at
+>               offset 768K
+>                 --> deadlock
+> 
+>                                                --> calls gather_extent_pages()
+>                                                    to lock pages in the range
+>                                                    [0, 256K[
+>                                                     --> deadlock, task at CPU 1
+>                                                         already locked that
+>                                                         range and it's trying
+>                                                         to lock the range we
+>                                                         locked previously
+> 
+> So fix this by making sure that during a dedup we always lock first the
+> pages from the range with lower offset.
 
-Call Trace:
- __schedule+0x2d4/0xae0
- schedule+0x3d/0x90
- btrfs_start_ordered_extent+0x160/0x200 [btrfs]
- ? wake_atomic_t_function+0x60/0x60
- btrfs_run_ordered_extent_work+0x25/0x40 [btrfs]
- btrfs_scrubparity_helper+0x1c1/0x620 [btrfs]
- btrfs_flush_delalloc_helper+0xe/0x10 [btrfs]
- process_one_work+0x2af/0x720
- ? process_one_work+0x22b/0x720
- worker_thread+0x4b/0x4f0
- kthread+0x10f/0x150
- ? process_one_work+0x720/0x720
- ? kthread_create_on_node+0x40/0x40
- ret_from_fork+0x2e/0x40
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
-The direct cause is the error handler in run_delalloc_nocow() doesn't
-handle error from btrfs_reloc_clone_csums() well.
+Thanks,
 
-The error handler of run_delalloc_nocow() will clear dirty and finish IO
-for the pages in that extent.
-However we have already inserted one ordered extent.
-And that ordered extent is relying on endio hooks to wait all its pages
-to finish, while only the first page will finish.
-
-This makes that ordered extent never finish, so blocking the file
-system.
-
-Although the root cause is still in RAID5/6, it won't hurt to fix the
-error routine first.
-
-This patch will slightly modify one existing function,
-btrfs_endio_direct_write_update_ordered() to handle free space inode,
-and skip releasing metadata, which will be handled by
-extent_clear_unlock_delalloc().
-
-And use it as base to implement one inline function,
-btrfs_cleanup_ordered_extents() to handle the error in
-run_delalloc_nocow() and cow_file_range().
-
-Also, extent_clear_unlock_delalloc() will handle all the metadata
-release, so btrfs_cleanup_ordered_extents() doesn't need to do it.
-
-For compression, it's calling writepage_end_io_hook() itself to handle
-its error, and any submitted ordered extent will have its bio submitted,
-so no need to worry about compression part.
-
-Suggested-by: Filipe Manana <fdmanana@suse.com>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
-v2:
-  Add BTRFS_ORDERED_SKIP_METADATA flag to avoid double reducing
-  outstanding extents, which is already done by
-  extent_clear_unlock_delalloc() with EXTENT_DO_ACCOUNT control bit
-v3:
-  Skip first page to avoid underflow ordered->bytes_left.
-  Fix range passed in cow_file_range() which doesn't cover the whole
-  extent.
-  Expend extent_clear_unlock_delalloc() range to allow them to handle
-  metadata release.
-v4:
-  Don't use extra bit to skip metadata freeing for ordered extent,
-  but only handle btrfs_reloc_clone_csums() error just before processing
-  next extent.
-  This makes error handle much easier for run_delalloc_nocow().
----
- fs/btrfs/extent_io.c |   1 -
- fs/btrfs/inode.c     | 112 +++++++++++++++++++++++++++++++++++++++++++--------
- 2 files changed, 96 insertions(+), 17 deletions(-)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 4ac383a3a649..a14d1b0840c5 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3258,7 +3258,6 @@ static noinline_for_stack int writepage_delalloc(struct inode *inode,
- 					       delalloc_end,
- 					       &page_started,
- 					       nr_written);
--		/* File system has been set read-only */
- 		if (ret) {
- 			SetPageError(page);
- 			/* fill_delalloc should be return < 0 for error
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 1e861a063721..b98a92807aa2 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -116,6 +116,34 @@ static struct extent_map *create_pinned_em(struct inode *inode, u64 start,
- 
- static int btrfs_dirty_inode(struct inode *inode);
- 
-+
-+static void __endio_write_update_ordered(struct inode *inode,
-+					 const u64 offset, const u64 bytes,
-+					 bool uptodate, bool cleanup);
-+static inline void btrfs_endio_direct_write_update_ordered(struct inode *inode,
-+							   const u64 offset,
-+							   const u64 bytes,
-+							   const int uptodate)
-+{
-+	return __endio_write_update_ordered(inode, offset, bytes, uptodate, false);
-+}
-+
-+/*
-+ * Cleanup all submitted ordered extent in specified range to handle error
-+ * in cow_file_range() and run_delalloc_nocow().
-+ * Compression handles error and ordered extent submission all by themselves,
-+ * so no need to call this function.
-+ *
-+ * NOTE: caller must ensure extent_clear_unlock_delalloc() in error handler
-+ * doesn't cover any range of submitted ordered extent.
-+ * Or we will double free metadata for submitted ordered extent.
-+ */
-+static inline void btrfs_cleanup_ordered_extents(struct inode *inode,
-+						 u64 offset, u64 bytes)
-+{
-+	return __endio_write_update_ordered(inode, offset, bytes, false, true);
-+}
-+
- #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
- void btrfs_test_inode_set_ops(struct inode *inode)
- {
-@@ -950,6 +978,7 @@ static noinline int cow_file_range(struct inode *inode,
- 	u64 disk_num_bytes;
- 	u64 cur_alloc_size;
- 	u64 blocksize = fs_info->sectorsize;
-+	u64 orig_start = start;
- 	struct btrfs_key ins;
- 	struct extent_map *em;
- 	struct extent_map_tree *em_tree = &BTRFS_I(inode)->extent_tree;
-@@ -1052,15 +1081,22 @@ static noinline int cow_file_range(struct inode *inode,
- 		    BTRFS_DATA_RELOC_TREE_OBJECTID) {
- 			ret = btrfs_reloc_clone_csums(inode, start,
- 						      cur_alloc_size);
-+			/*
-+			 * Only drop cache here, and process as normal.
-+			 *
-+			 * We must not allow extent_clear_unlock_delalloc()
-+			 * to free meta of this ordered extent, as its
-+			 * meta should be freed by btrfs_finish_ordered_io().
-+			 *
-+			 * So we must continue until processing next extent
-+			 */
- 			if (ret)
--				goto out_drop_extent_cache;
-+				btrfs_drop_extent_cache(inode, start,
-+						start + ram_size - 1, 0);
- 		}
- 
- 		btrfs_dec_block_group_reservations(fs_info, ins.objectid);
- 
--		if (disk_num_bytes < cur_alloc_size)
--			break;
--
- 		/* we're not doing compressed IO, don't unlock the first
- 		 * page (which the caller expects to stay locked), don't
- 		 * clear any dirty bits and don't set any writeback bits
-@@ -1076,10 +1112,21 @@ static noinline int cow_file_range(struct inode *inode,
- 					     delalloc_end, locked_page,
- 					     EXTENT_LOCKED | EXTENT_DELALLOC,
- 					     op);
--		disk_num_bytes -= cur_alloc_size;
-+		if (disk_num_bytes < cur_alloc_size)
-+			disk_num_bytes = 0;
-+		else
-+			disk_num_bytes -= cur_alloc_size;
- 		num_bytes -= cur_alloc_size;
- 		alloc_hint = ins.objectid + ins.offset;
- 		start += cur_alloc_size;
-+
-+		/*
-+		 * btrfs_reloc_clone_csums() error, now
-+		 * extent_clear_unlock_delalloc() in out_unlock() won't
-+		 * double free metadata of current oredered extent.
-+		 */
-+		if (ret)
-+			goto out_reserve;
- 	}
- out:
- 	return ret;
-@@ -1096,6 +1143,7 @@ static noinline int cow_file_range(struct inode *inode,
- 				     EXTENT_DELALLOC | EXTENT_DEFRAG,
- 				     PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
- 				     PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK);
-+	btrfs_cleanup_ordered_extents(inode, orig_start, end - orig_start + 1);
- 	goto out;
- }
- 
-@@ -1496,15 +1544,14 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 		BUG_ON(ret); /* -ENOMEM */
- 
- 		if (root->root_key.objectid ==
--		    BTRFS_DATA_RELOC_TREE_OBJECTID) {
-+		    BTRFS_DATA_RELOC_TREE_OBJECTID)
-+			/*
-+			 * Error handled later, as we must prevent
-+			 * extent_clear_unlock_delalloc() in error handler
-+			 * from freeing metadata of submitted ordered extent.
-+			 */
- 			ret = btrfs_reloc_clone_csums(inode, cur_offset,
- 						      num_bytes);
--			if (ret) {
--				if (!nolock && nocow)
--					btrfs_end_write_no_snapshoting(root);
--				goto error;
--			}
--		}
- 
- 		extent_clear_unlock_delalloc(inode, cur_offset,
- 					     cur_offset + num_bytes - 1, end,
-@@ -1516,6 +1563,14 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 		if (!nolock && nocow)
- 			btrfs_end_write_no_snapshoting(root);
- 		cur_offset = extent_end;
-+
-+		/*
-+		 * btrfs_reloc_clone_csums() error, now we're OK to call error
-+		 * handler, as metadata for submitted ordered extent will only
-+		 * be freed by btrfs_finish_ordered_io().
-+		 */
-+		if (ret)
-+			goto error;
- 		if (cur_offset > end)
- 			break;
- 	}
-@@ -1546,6 +1601,12 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 					     PAGE_CLEAR_DIRTY |
- 					     PAGE_SET_WRITEBACK |
- 					     PAGE_END_WRITEBACK);
-+	/*
-+	 * It's possible that last ordered extent covered the last part
-+	 * but failed. In that case we still need to clean them up.
-+	 */
-+	if (ret)
-+		btrfs_cleanup_ordered_extents(inode, start, end - start + 1);
- 	btrfs_free_path(path);
- 	return ret;
- }
-@@ -8185,17 +8246,36 @@ static void btrfs_endio_direct_read(struct bio *bio)
- 	bio_put(bio);
- }
- 
--static void btrfs_endio_direct_write_update_ordered(struct inode *inode,
--						    const u64 offset,
--						    const u64 bytes,
--						    const int uptodate)
-+static void __endio_write_update_ordered(struct inode *inode,
-+					 const u64 offset, const u64 bytes,
-+					 bool uptodate, bool cleanup)
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	struct btrfs_ordered_extent *ordered = NULL;
-+	struct btrfs_workqueue *wq;
-+	btrfs_work_func_t func;
- 	u64 ordered_offset = offset;
- 	u64 ordered_bytes = bytes;
- 	int ret;
- 
-+	if (btrfs_is_free_space_inode(inode)) {
-+		wq = fs_info->endio_freespace_worker;
-+		func = btrfs_freespace_write_helper;
-+	} else {
-+		wq = fs_info->endio_write_workers;
-+		func = btrfs_endio_write_helper;
-+	}
-+
-+	/*
-+	 * In cleanup case, the first page of the range will be handled
-+	 * by end_extent_writepage() under done tag of __extent_writepage().
-+	 *
-+	 * So we must skip first page, or we will underflow ordered->bytes_left
-+	 */
-+	if (cleanup) {
-+		ordered_offset += PAGE_SIZE;
-+		ordered_bytes -= PAGE_SIZE;
-+	}
- again:
- 	ret = btrfs_dec_test_first_ordered_pending(inode, &ordered,
- 						   &ordered_offset,
--- 
-2.11.1
-
-
-
+-liubo
+> 
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+>  fs/btrfs/ioctl.c | 14 ++++++++++++--
+>  1 file changed, 12 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 0c77cad..4284279 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -3047,11 +3047,21 @@ static int btrfs_cmp_data_prepare(struct inode *src, u64 loff,
+>  	cmp->src_pages = src_pgarr;
+>  	cmp->dst_pages = dst_pgarr;
+>  
+> -	ret = gather_extent_pages(src, cmp->src_pages, cmp->num_pages, loff);
+> +	/*
+> +	 * If deduping ranges in the same inode, locking rules make it mandatory
+> +	 * to always lock pages in ascending order to avoid deadlocks with
+> +	 * concurrent tasks (such as starting writeback/delalloc).
+> +	 */
+> +	if (src == dst && dst_loff < loff) {
+> +		swap(src_pgarr, dst_pgarr);
+> +		swap(loff, dst_loff);
+> +	}
+> +
+> +	ret = gather_extent_pages(src, src_pgarr, cmp->num_pages, loff);
+>  	if (ret)
+>  		goto out;
+>  
+> -	ret = gather_extent_pages(dst, cmp->dst_pages, cmp->num_pages, dst_loff);
+> +	ret = gather_extent_pages(dst, dst_pgarr, cmp->num_pages, dst_loff);
+>  
+>  out:
+>  	if (ret)
+> -- 
+> 2.7.0.rc3
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

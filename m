@@ -1,120 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from azure.uno.uk.net ([95.172.254.11]:51337 "EHLO azure.uno.uk.net"
+Received: from azure.uno.uk.net ([95.172.254.11]:51346 "EHLO azure.uno.uk.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751364AbdB0Xt4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 27 Feb 2017 18:49:56 -0500
-Received: from ty.sabi.co.uk ([95.172.230.208]:53470)
+        id S1751607AbdB0Xt6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 27 Feb 2017 18:49:58 -0500
+Received: from ty.sabi.co.uk ([95.172.230.208]:53510)
         by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
         (Exim 4.88)
         (envelope-from <pg@btrfs.list.sabi.co.uk>)
-        id 1ciTWI-001Sv5-VR
-        for linux-btrfs@vger.kernel.org; Mon, 27 Feb 2017 22:11:51 +0000
+        id 1ciTrT-001Tgb-OW
+        for linux-btrfs@vger.kernel.org; Mon, 27 Feb 2017 22:33:43 +0000
 Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
         by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
-        id 1ciTVx-0005Ry-Ra
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Feb 2017 22:11:29 +0000
+        id 1ciTqd-0005Zg-1W
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Feb 2017 22:32:51 +0000
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Message-ID: <22708.42001.499487.802133@tree.ty.sabi.co.uk>
-Date: Mon, 27 Feb 2017 22:11:29 +0000
+Message-ID: <22708.43280.792157.283517@tree.ty.sabi.co.uk>
+Date: Mon, 27 Feb 2017 22:32:48 +0000
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: Low IOOP Performance
-In-Reply-To: <22708.23290.349489.765780@tree.ty.sabi.co.uk>
+In-Reply-To: <22708.42001.499487.802133@tree.ty.sabi.co.uk>
 References: <CAAafysGxU9vaEs6actqX3ZFGkoXFvPFUAC1SjwtkZ97uuuFgJg@mail.gmail.com>
         <22708.23290.349489.765780@tree.ty.sabi.co.uk>
+        <22708.42001.499487.802133@tree.ty.sabi.co.uk>
 From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+>>> On Mon, 27 Feb 2017 22:11:29 +0000, pg@btrfs.list.sabi.co.UK (Peter Grandi) said:
+
+> [ ... ]
+>> I have a 6-device test setup at home and I tried various setups
+>> and I think I got rather better than that.
+
 [ ... ]
 
-> I have a 6-device test setup at home and I tried various setups
-> and I think I got rather better than that.
+> That's a range of 700-1300 4KiB random mixed-rw IOPS,
 
-* 'raid1' profile:
+Rerun with 1M blocksize:
 
-  soft#  btrfs fi df /mnt/sdb5                                                                                                        
-
-  Data, RAID1: total=273.00GiB, used=269.94GiB
-  System, RAID1: total=32.00MiB, used=56.00KiB
-  Metadata, RAID1: total=1.00GiB, used=510.70MiB
-  GlobalReserve, single: total=176.00MiB, used=0.00B
-
-  soft#  fio --directory=/mnt/sdb5 --runtime=30 --status-interval=10 blocks-randomish.fio | tail -3                                   
+  soft#  fio --directory=/mnt/sdb5 --runtime=30 --status-interval=10 --blocksize=1M blocks-randomish.fio | tail -3
   Run status group 0 (all jobs):
-     READ: io=105508KB, aggrb=3506KB/s, minb=266KB/s, maxb=311KB/s, mint=30009msec, maxt=30090msec
-    WRITE: io=100944KB, aggrb=3354KB/s, minb=256KB/s, maxb=296KB/s, mint=30009msec, maxt=30090msec
+     READ: io=2646.0MB, aggrb=89372KB/s, minb=7130KB/s, maxb=7776KB/s, mint=30081msec, maxt=30317msec
+    WRITE: io=2297.0MB, aggrb=77584KB/s, minb=6082KB/s, maxb=6796KB/s, mint=30081msec, maxt=30317msec
 
-* 'raid10' profile:
-
-  soft#  btrfs fi df /mnt/sdb6
-  Data, RAID10: total=276.00GiB, used=272.49GiB
-  System, RAID10: total=96.00MiB, used=48.00KiB
-  Metadata, RAID10: total=3.00GiB, used=512.06MiB
-  GlobalReserve, single: total=176.00MiB, used=0.00B
-
-  soft#  fio --directory=/mnt/sdb6 --runtime=30 --status-interval=10 blocks-randomish.fio | tail -3                                   
+  soft#  fio --directory=/mnt/sdb6 --runtime=30 --status-interval=10 --blocksize=1M blocks-randomish.fio | tail -3
   Run status group 0 (all jobs):
-     READ: io=89056KB, aggrb=2961KB/s, minb=225KB/s, maxb=271KB/s, mint=30009msec, maxt=30076msec
-    WRITE: io=85248KB, aggrb=2834KB/s, minb=212KB/s, maxb=261KB/s, mint=30009msec, maxt=30076msec
-
-* 'single' profile on MD RAID10:
-
-  soft#  btrfs fi df /mnt/md0
-  Data, single: total=278.01GiB, used=274.32GiB
-  System, single: total=4.00MiB, used=48.00KiB
-  Metadata, single: total=2.01GiB, used=615.73MiB
-  GlobalReserve, single: total=208.00MiB, used=0.00B
-
-  soft#  grep -A1 md0 /proc/mdstat 
-  md0 : active raid10 sdg1[6] sdb1[0] sdd1[2] sdf1[4] sdc1[1] sde1[3]
-	364904232 blocks super 1.0 8K chunks 2 near-copies [6/6] [UUUUUU]
-	
-  soft#  fio --directory=/mnt/md0 --runtime=30 --status-interval=10 blocks-randomish.fio | tail -3                                    
+     READ: io=2781.0MB, aggrb=94015KB/s, minb=5932KB/s, maxb=10290KB/s, mint=30121msec, maxt=30290msec
+    WRITE: io=2431.0MB, aggrb=82183KB/s, minb=4779KB/s, maxb=9102KB/s, mint=30121msec, maxt=30290msec
+  soft#  killall -9 fio                                                                                                               
+  fio: no process found
+    
+  soft#  fio --directory=/mnt/md0 --runtime=30 --status-interval=10 --blocksize=1M blocks-randomish.fio | tail -3
   Run status group 0 (all jobs):
-     READ: io=160928KB, aggrb=5357KB/s, minb=271KB/s, maxb=615KB/s, mint=30012msec, maxt=30038msec
-    WRITE: io=158892KB, aggrb=5289KB/s, minb=261KB/s, maxb=616KB/s, mint=30012msec, maxt=30038msec
+     READ: io=1504.0MB, aggrb=50402KB/s, minb=3931KB/s, maxb=4387KB/s, mint=30343msec, maxt=30556msec
+    WRITE: io=1194.0MB, aggrb=40013KB/s, minb=3158KB/s, maxb=3475KB/s, mint=30343msec, maxt=30556msec
 
-That's a range of 700-1300 4KiB random mixed-rw IOPS, quite
-reasonable for 6x 1TB 7200RPM SATA drives, each capable of
-100-120. It helps that the test file is just 100G, 10% of the
-total drive extent, so arm movement is limited.
+Interesting that Btrfs 'single' on MD RAID10 becomes rather
+slower (I guess low level of intrinsic parallelism).
 
-Not surprising that the much more mature MD RAID has an edge, a
-bit stranger that on this the 'raid1' profile seems a bit faster
-than the 'raid10' profile.
+For comparison, the same on a JFS on top of MD RAID10:
 
-The much smaller numbers seem to happen to me too (probably some
-misfeature of 'fio') with 'buffered=1', and the larger numbers
-for ZFSonLinux are "suspicious".
+  soft#  grep -A1 md40 /proc/mdstat 
+  md40 : active raid10 sdg4[5] sdd4[2] sdb4[0] sdf4[4] sdc4[1] sde4[3]
+	486538240 blocks super 1.0 512K chunks 3 near-copies [6/6] [UUUUUU]
 
-> It seems unlikely to me that you got that with a 10-device
-> mirror 'vdev', most likely you configured it as a stripe of 5x
-> 2-device mirror vdevs, that is RAID10.
+  soft#  fio --directory=/mnt/md40 --runtime=30 --status-interval=10 --blocksize=4K blocks-randomish.fio | grep -A2 '(all jobs)' | tail -3
+  Run status group 0 (all jobs):
+     READ: io=31408KB, aggrb=1039KB/s, minb=80KB/s, maxb=90KB/s, mint=30206msec, maxt=30227msec
+    WRITE: io=27800KB, aggrb=919KB/s, minb=70KB/s, maxb=81KB/s, mint=30206msec, maxt=30227msec
 
-Indeed I double checked the end of the attached lost and that
-was the case.
+  soft#  fio --directory=/mnt/md40 --runtime=30 --status-interval=10 --blocksize=1M blocks-randomish.fio | grep -A2 '(all jobs)' | tail -3
+  Run status group 0 (all jobs):
+     READ: io=2151.0MB, aggrb=72619KB/s, minb=5865KB/s, maxb=6383KB/s, mint=30134msec, maxt=30331msec
+    WRITE: io=1772.0MB, aggrb=59824KB/s, minb=4712KB/s, maxb=5365KB/s, mint=30134msec, maxt=30331msec
 
-My FIO config file:
-
-  # vim:set ft=ini:
-
-  [global]
-  filename=FIO-TEST
-  fallocate=keep
-  size=100G
-
-  buffered=0
-  ioengine=libaio
-  io_submit_mode=offload
-
-  iodepth=2
-  numjobs=12
-  blocksize=4K
-
-  kb_base=1024
-
-  [rand-mixed]
-
-  rw=randrw
-  stonewall
+XFS is usually better at multithreaded workloads within the same
+file (rather than across files).

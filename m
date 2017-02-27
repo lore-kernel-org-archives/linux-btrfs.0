@@ -1,111 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:20260 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:50398 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751633AbdB0HLC (ORCPT
+        with ESMTP id S1751678AbdB0HLN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 27 Feb 2017 02:11:02 -0500
+        Mon, 27 Feb 2017 02:11:13 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>, <dsterba@suse.com>, <clm@fb.com>
-Subject: [PATCH 0/9 PULL REQUEST] Qgroup fixes for 4.11
-Date: Mon, 27 Feb 2017 15:10:30 +0800
-Message-ID: <20170227071039.8335-1-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 4/9] btrfs: qgroup: Add quick exit for non-fs extents
+Date: Mon, 27 Feb 2017 15:10:34 +0800
+Message-ID: <20170227071039.8335-5-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20170227071039.8335-1-quwenruo@cn.fujitsu.com>
+References: <20170227071039.8335-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Pull request can be fetched from my github:
-https://github.com/adam900710/linux.git qgroup_fixes_for_4.11 
+For btrfs_qgroup_account_extent(), modify make it exit quicker for
+non-fs extents.
 
-The base is 6288d6eabc7505f42dda34a2c2962f91914be3a4.
-Author: Liu Bo <bo.li.liu@oracle.com>
-Date:   Tue Feb 21 12:12:58 2017 -0800
+This will also reduce the noise in trace_btrfs_qgroup_account_extent
+event.
 
-    Btrfs: use the correct type when creating cow dio extent
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ fs/btrfs/qgroup.c | 41 +++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 39 insertions(+), 2 deletions(-)
 
-These patches are already in mail list for almost 3 months.
-For example the tracepoint patch is last updated at 2016/12/09.
-
-With this patchset btrfs can pass all xfstest qgroup tests now.
-
-This pull request should be good for 4.11 as they are all bug fixes and
-has been delayed for several times.
-
-I don't know if these patchset will be delayed again if someone wants to
-cleanup something else, and cause rebase conflicts to delay such fixes.
-But I must say, that's very frustrating to see bug fixes just get dropped
-again and again just due to new cleanups and lack of reviewers.
-
-Despite all these pities, this pull request includes:
-1) Fix for inode_cache mount option
-   Although no one really cares inode_cache mount option, it will screw
-   qgroup for a long time.
-   Not only it will screw up qgroup test uses golden output, but also
-   new test cases use btrfsck to verify qgroup.
-
-2) Fix for btrfs/104 kernel warning
-   This is caused by quota enabling with dirty buffers not written to
-   disc.
-
-   Fixed by checking EXTENT_QGROUP_RESERVED flag other than just
-   decreasing qgroup->reserved.
-
-3) Fix qgroup underflow caused by freeing ranges not reserved by caller
-   Mainly exposed by Chandan on PPC64.
-
-   It's possible that buffered write is blocked by reserving metadata,
-   and in error path we will release reserved space for both data and
-   metadata.
-
-   However the reserved data can already be reserved by another process
-   writing the same page.
-
-   In that case, data reserved space can be freed by two process, one
-   for error path, one for normal write routine, causing underflow.
-
-   Fixed by checking if that data range is reserved by ourselves and
-   only free it if it's reserved by ourselves.
-
-Update since 2016/12/09:
-  Rebased to latest for-linux-4.11.
-
-  Add missing reviewed-by and tested-by tags.
-
-  Add more comment for btrfs_qgroup_reserve_data() for error handling.
-
-  Add more comment for qgroup_free_reserved_data() for later
-  enhancement (not function enhancement).
-
-Qu Wenruo (9):
-  btrfs: qgroup: Add trace point for qgroup reserved space
-  btrfs: qgroup: Re-arrange tracepoint timing to co-operate with
-    reserved space tracepoint
-  btrfs: qgroup: Fix qgroup corruption caused by inode_cache mount
-    option
-  btrfs: qgroup: Add quick exit for non-fs extents
-  btrfs: qgroup: Cleanup btrfs_qgroup_prepare_account_extents function
-  btrfs: qgroup: Return actually freed bytes for qgroup release or free
-    data
-  btrfs: qgroup: Fix qgroup reserved space underflow caused by buffered
-    write and quota enable
-  btrfs: qgroup: Introduce extent changeset for qgroup reserve functions
-  btrfs: qgroup: Fix qgroup reserved space underflow by only freeing
-    reserved ranges
-
- fs/btrfs/ctree.h             |  12 ++-
- fs/btrfs/extent-tree.c       |  31 +++---
- fs/btrfs/extent_io.h         |  14 ++-
- fs/btrfs/file.c              |  46 +++++----
- fs/btrfs/inode-map.c         |   6 +-
- fs/btrfs/inode.c             |  64 +++++++++----
- fs/btrfs/ioctl.c             |  11 ++-
- fs/btrfs/qgroup.c            | 221 ++++++++++++++++++++++++++++++++-----------
- fs/btrfs/qgroup.h            |  14 +--
- fs/btrfs/relocation.c        |  13 ++-
- fs/btrfs/transaction.c       |  21 ++--
- include/trace/events/btrfs.h |  43 +++++++++
- 12 files changed, 358 insertions(+), 138 deletions(-)
-
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index e46499cafdbf..bb25fb82b5c2 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1961,6 +1961,33 @@ static int qgroup_update_counters(struct btrfs_fs_info *fs_info,
+ 	return 0;
+ }
+ 
++/*
++ * Helper to check if the @roots is a list of fs tree roots
++ * Return 0 for definitely not a fs/subvol tree roots ulist
++ * Return 1 for possible fs/subvol tree roots ulist(including empty)
++ */
++static int maybe_fs_roots(struct ulist *roots)
++{
++	struct ulist_node *unode;
++	struct ulist_iterator uiter;
++
++	/* Empty one, still possible for fs roots */
++	if (!roots || roots->nnodes == 0)
++		return 1;
++
++	ULIST_ITER_INIT(&uiter);
++	unode = ulist_next(roots, &uiter);
++	if (!unode)
++		return 1;
++
++	/*
++	 * If it contains fs tree roots, then it must belongs to fs/subvol
++	 * trees.
++	 * If it contains non-fs tree, it won't be shared to fs/subvol trees.
++	 */
++	return is_fstree(unode->val);
++}
++
+ int
+ btrfs_qgroup_account_extent(struct btrfs_trans_handle *trans,
+ 			    struct btrfs_fs_info *fs_info,
+@@ -1977,10 +2004,20 @@ btrfs_qgroup_account_extent(struct btrfs_trans_handle *trans,
+ 	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags))
+ 		return 0;
+ 
+-	if (new_roots)
++	if (new_roots) {
++		if (!maybe_fs_roots(new_roots))
++			goto out_free;
+ 		nr_new_roots = new_roots->nnodes;
+-	if (old_roots)
++	}
++	if (old_roots) {
++		if (!maybe_fs_roots(old_roots))
++			goto out_free;
+ 		nr_old_roots = old_roots->nnodes;
++	}
++
++	/* Quick exit, either not fs tree roots, or won't affect any qgroup */
++	if (nr_old_roots == 0 && nr_new_roots == 0)
++		goto out_free;
+ 
+ 	BUG_ON(!fs_info->quota_root);
+ 
 -- 
 2.11.1
 

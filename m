@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:20260 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:50398 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751660AbdB0HLQ (ORCPT
+        with ESMTP id S1751540AbdB0HLX (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 27 Feb 2017 02:11:16 -0500
+        Mon, 27 Feb 2017 02:11:23 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>, <dsterba@suse.com>, <clm@fb.com>
-Subject: [PATCH 2/9] btrfs: qgroup: Re-arrange tracepoint timing to co-operate with reserved space tracepoint
-Date: Mon, 27 Feb 2017 15:10:32 +0800
-Message-ID: <20170227071039.8335-3-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 3/9] btrfs: qgroup: Fix qgroup corruption caused by inode_cache mount option
+Date: Mon, 27 Feb 2017 15:10:33 +0800
+Message-ID: <20170227071039.8335-4-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20170227071039.8335-1-quwenruo@cn.fujitsu.com>
 References: <20170227071039.8335-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -16,67 +16,92 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Newly introduced qgroup reserved space trace points are normally nested
-into several common qgroup operations.
+[BUG]
+The easist way to reproduce the bug is:
+------
+ # mkfs.btrfs -f $dev -n 16K
+ # mount $dev $mnt -o inode_cache
+ # btrfs quota enable $mnt
+ # btrfs quota rescan -w $mnt
+ # btrfs qgroup show $mnt
+qgroupid         rfer         excl
+--------         ----         ----
+0/5          32.00KiB     32.00KiB
+             ^^ Twice the correct value
+------
 
-While some other trace points are not well placed to co-operate with
-them, causing confusing output.
+And fstests/btrfs qgroup test group can easily detect them with
+inode_cache mount option.
+Although some of them are false alerts since old test cases are using
+fixed golden output.
+While new test cases will use "btrfs check" to detect qgroup mismatch.
 
-This patch re-arrange trace_btrfs_qgroup_release_data() and
-trace_btrfs_qgroup_free_delayed_ref() trace points so they are triggered
-before reserved space ones.
+[CAUSE]
+Inode_cache mount option will make commit_fs_roots() to call
+btrfs_save_ino_cache() to update fs/subvol trees, and generate new
+delayed refs.
+
+However we call btrfs_qgroup_prepare_account_extents() too early, before
+commit_fs_roots().
+This makes the "old_roots" for newly generated extents are always NULL.
+For freeing extent case, this makes both new_roots and old_roots to be
+empty, while correct old_roots should not be empty.
+This causing qgroup numbers not decreased correctly.
+
+[FIX]
+Modify the timing of calling btrfs_qgroup_prepare_account_extents() to
+just before btrfs_qgroup_account_extents(), and add needed delayed_refs
+handler.
+So qgroup can handle inode_map mount options correctly.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/qgroup.c | 10 +++++-----
- fs/btrfs/qgroup.h |  6 +-----
- 2 files changed, 6 insertions(+), 10 deletions(-)
+ fs/btrfs/transaction.c | 25 ++++++++++++++++++-------
+ 1 file changed, 18 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index b303d4794026..e46499cafdbf 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2895,14 +2895,14 @@ static int __btrfs_qgroup_release_data(struct inode *inode, u64 start, u64 len,
- 	if (ret < 0)
- 		goto out;
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 6b3e0fc2fe7a..1ff3ec797356 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -2130,13 +2130,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+ 		goto scrub_continue;
+ 	}
  
--	if (free) {
--		btrfs_qgroup_free_refroot(BTRFS_I(inode)->root->fs_info,
--				BTRFS_I(inode)->root->objectid,
--				changeset.bytes_changed);
-+	if (free)
- 		trace_op = QGROUP_FREE;
+-	/* Reocrd old roots for later qgroup accounting */
+-	ret = btrfs_qgroup_prepare_account_extents(trans, fs_info);
+-	if (ret) {
+-		mutex_unlock(&fs_info->reloc_mutex);
+-		goto scrub_continue;
 -	}
- 	trace_btrfs_qgroup_release_data(inode, start, len,
- 					changeset.bytes_changed, trace_op);
-+	if (free)
-+		btrfs_qgroup_free_refroot(BTRFS_I(inode)->root->fs_info,
-+				BTRFS_I(inode)->root->objectid,
-+				changeset.bytes_changed);
- out:
- 	ulist_release(&changeset.range_changed);
- 	return ret;
-diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index 26932a8a1993..92608edf0e89 100644
---- a/fs/btrfs/qgroup.h
-+++ b/fs/btrfs/qgroup.h
-@@ -186,15 +186,11 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
- 			 struct btrfs_qgroup_inherit *inherit);
- void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
- 			       u64 ref_root, u64 num_bytes);
--/*
-- * TODO: Add proper trace point for it, as btrfs_qgroup_free() is
-- * called by everywhere, can't provide good trace for delayed ref case.
-- */
- static inline void btrfs_qgroup_free_delayed_ref(struct btrfs_fs_info *fs_info,
- 						 u64 ref_root, u64 num_bytes)
- {
--	btrfs_qgroup_free_refroot(fs_info, ref_root, num_bytes);
- 	trace_btrfs_qgroup_free_delayed_ref(fs_info, ref_root, num_bytes);
-+	btrfs_qgroup_free_refroot(fs_info, ref_root, num_bytes);
- }
- void assert_qgroups_uptodate(struct btrfs_trans_handle *trans);
+-
+ 	/*
+ 	 * make sure none of the code above managed to slip in a
+ 	 * delayed item
+@@ -2179,6 +2172,24 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+ 	btrfs_free_log_root_tree(trans, fs_info);
  
+ 	/*
++	 * commit_fs_roots() can call btrfs_save_ino_cache(), which generates
++	 * new delayed refs. Must handle them or qgroup can be wrong.
++	 */
++	ret = btrfs_run_delayed_refs(trans, fs_info, (unsigned long)-1);
++	if (ret) {
++		mutex_unlock(&fs_info->tree_log_mutex);
++		mutex_unlock(&fs_info->reloc_mutex);
++		goto scrub_continue;
++	}
++
++	ret = btrfs_qgroup_prepare_account_extents(trans, fs_info);
++	if (ret) {
++		mutex_unlock(&fs_info->tree_log_mutex);
++		mutex_unlock(&fs_info->reloc_mutex);
++		goto scrub_continue;
++	}
++
++	/*
+ 	 * Since fs roots are all committed, we can get a quite accurate
+ 	 * new_roots. So let's do quota accounting.
+ 	 */
 -- 
 2.11.1
 

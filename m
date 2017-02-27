@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:20260 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751636AbdB0HLH (ORCPT
+        with ESMTP id S1751660AbdB0HLQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 27 Feb 2017 02:11:07 -0500
+        Mon, 27 Feb 2017 02:11:16 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>, <dsterba@suse.com>, <clm@fb.com>
-Subject: [PATCH 1/9] btrfs: qgroup: Add trace point for qgroup reserved space
-Date: Mon, 27 Feb 2017 15:10:31 +0800
-Message-ID: <20170227071039.8335-2-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 2/9] btrfs: qgroup: Re-arrange tracepoint timing to co-operate with reserved space tracepoint
+Date: Mon, 27 Feb 2017 15:10:32 +0800
+Message-ID: <20170227071039.8335-3-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20170227071039.8335-1-quwenruo@cn.fujitsu.com>
 References: <20170227071039.8335-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -16,141 +16,67 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce the following trace points:
-qgroup_update_reserve
-qgroup_meta_reserve
+Newly introduced qgroup reserved space trace points are normally nested
+into several common qgroup operations.
 
-These trace points are handy to trace qgroup reserve space related
-problems.
+While some other trace points are not well placed to co-operate with
+them, causing confusing output.
+
+This patch re-arrange trace_btrfs_qgroup_release_data() and
+trace_btrfs_qgroup_free_delayed_ref() trace points so they are triggered
+before reserved space ones.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/qgroup.c            | 15 +++++++++++++++
- include/trace/events/btrfs.h | 43 +++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 58 insertions(+)
+ fs/btrfs/qgroup.c | 10 +++++-----
+ fs/btrfs/qgroup.h |  6 +-----
+ 2 files changed, 6 insertions(+), 10 deletions(-)
 
 diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index a5da750c1087..b303d4794026 100644
+index b303d4794026..e46499cafdbf 100644
 --- a/fs/btrfs/qgroup.c
 +++ b/fs/btrfs/qgroup.c
-@@ -1075,6 +1075,8 @@ static int __qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
- 	qgroup->excl += sign * num_bytes;
- 	qgroup->excl_cmpr += sign * num_bytes;
- 	if (sign > 0) {
-+		trace_qgroup_update_reserve(fs_info, qgroup->qgroupid,
-+					    qgroup->reserved, -(s64)num_bytes);
- 		if (WARN_ON(qgroup->reserved < num_bytes))
- 			report_reserved_underflow(fs_info, qgroup, num_bytes);
- 		else
-@@ -1100,6 +1102,9 @@ static int __qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
- 		WARN_ON(sign < 0 && qgroup->excl < num_bytes);
- 		qgroup->excl += sign * num_bytes;
- 		if (sign > 0) {
-+			trace_qgroup_update_reserve(fs_info, qgroup->qgroupid,
-+						    qgroup->reserved,
-+						    -(s64)num_bytes);
- 			if (WARN_ON(qgroup->reserved < num_bytes))
- 				report_reserved_underflow(fs_info, qgroup,
- 							  num_bytes);
-@@ -2424,6 +2429,8 @@ static int qgroup_reserve(struct btrfs_root *root, u64 num_bytes, bool enforce)
- 
- 		qg = unode_aux_to_qgroup(unode);
- 
-+		trace_qgroup_update_reserve(fs_info, qg->qgroupid,
-+					    qg->reserved, num_bytes);
- 		qg->reserved += num_bytes;
- 	}
- 
-@@ -2469,6 +2476,8 @@ void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
- 
- 		qg = unode_aux_to_qgroup(unode);
- 
-+		trace_qgroup_update_reserve(fs_info, qg->qgroupid,
-+					    qg->reserved, -(s64)num_bytes);
- 		if (WARN_ON(qg->reserved < num_bytes))
- 			report_reserved_underflow(fs_info, qg, num_bytes);
- 		else
-@@ -2945,6 +2954,8 @@ int btrfs_qgroup_reserve_meta(struct btrfs_root *root, int num_bytes,
- 		return 0;
- 
- 	BUG_ON(num_bytes != round_down(num_bytes, fs_info->nodesize));
-+	trace_qgroup_meta_reserve(fs_info, root->objectid,
-+				  (s64)num_bytes);
- 	ret = qgroup_reserve(root, num_bytes, enforce);
+@@ -2895,14 +2895,14 @@ static int __btrfs_qgroup_release_data(struct inode *inode, u64 start, u64 len,
  	if (ret < 0)
- 		return ret;
-@@ -2964,6 +2975,8 @@ void btrfs_qgroup_free_meta_all(struct btrfs_root *root)
- 	reserved = atomic_xchg(&root->qgroup_meta_rsv, 0);
- 	if (reserved == 0)
- 		return;
-+	trace_qgroup_meta_reserve(root->fs_info, root->objectid,
-+				  -(s64)reserved);
- 	btrfs_qgroup_free_refroot(fs_info, root->objectid, reserved);
+ 		goto out;
+ 
+-	if (free) {
+-		btrfs_qgroup_free_refroot(BTRFS_I(inode)->root->fs_info,
+-				BTRFS_I(inode)->root->objectid,
+-				changeset.bytes_changed);
++	if (free)
+ 		trace_op = QGROUP_FREE;
+-	}
+ 	trace_btrfs_qgroup_release_data(inode, start, len,
+ 					changeset.bytes_changed, trace_op);
++	if (free)
++		btrfs_qgroup_free_refroot(BTRFS_I(inode)->root->fs_info,
++				BTRFS_I(inode)->root->objectid,
++				changeset.bytes_changed);
+ out:
+ 	ulist_release(&changeset.range_changed);
+ 	return ret;
+diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+index 26932a8a1993..92608edf0e89 100644
+--- a/fs/btrfs/qgroup.h
++++ b/fs/btrfs/qgroup.h
+@@ -186,15 +186,11 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
+ 			 struct btrfs_qgroup_inherit *inherit);
+ void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
+ 			       u64 ref_root, u64 num_bytes);
+-/*
+- * TODO: Add proper trace point for it, as btrfs_qgroup_free() is
+- * called by everywhere, can't provide good trace for delayed ref case.
+- */
+ static inline void btrfs_qgroup_free_delayed_ref(struct btrfs_fs_info *fs_info,
+ 						 u64 ref_root, u64 num_bytes)
+ {
+-	btrfs_qgroup_free_refroot(fs_info, ref_root, num_bytes);
+ 	trace_btrfs_qgroup_free_delayed_ref(fs_info, ref_root, num_bytes);
++	btrfs_qgroup_free_refroot(fs_info, ref_root, num_bytes);
  }
+ void assert_qgroups_uptodate(struct btrfs_trans_handle *trans);
  
-@@ -2978,6 +2991,8 @@ void btrfs_qgroup_free_meta(struct btrfs_root *root, int num_bytes)
- 	BUG_ON(num_bytes != round_down(num_bytes, fs_info->nodesize));
- 	WARN_ON(atomic_read(&root->qgroup_meta_rsv) < num_bytes);
- 	atomic_sub(num_bytes, &root->qgroup_meta_rsv);
-+	trace_qgroup_meta_reserve(root->fs_info, root->objectid,
-+				  -(s64)num_bytes);
- 	btrfs_qgroup_free_refroot(fs_info, root->objectid, num_bytes);
- }
- 
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index a3c3cab643a9..2d5799d8a4a2 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -1475,6 +1475,49 @@ TRACE_EVENT(qgroup_update_counters,
- 		  __entry->cur_new_count)
- );
- 
-+TRACE_EVENT(qgroup_update_reserve,
-+
-+	TP_PROTO(struct btrfs_fs_info *fs_info, u64 qgid, u64 cur_reserved,
-+		 s64 diff),
-+
-+	TP_ARGS(fs_info, qgid, cur_reserved, diff),
-+
-+	TP_STRUCT__entry_btrfs(
-+		__field(	u64,	qgid			)
-+		__field(	u64,	cur_reserved		)
-+		__field(	s64,	diff			)
-+	),
-+
-+	TP_fast_assign_btrfs(fs_info,
-+		__entry->qgid		= qgid;
-+		__entry->cur_reserved	= cur_reserved;
-+		__entry->diff		= diff;
-+	),
-+
-+	TP_printk_btrfs("qgid = %llu, cur_reserved = %llu, diff = %lld",
-+		__entry->qgid, __entry->cur_reserved, __entry->diff)
-+);
-+
-+TRACE_EVENT(qgroup_meta_reserve,
-+
-+	TP_PROTO(struct btrfs_fs_info *fs_info, u64 refroot, s64 diff),
-+
-+	TP_ARGS(fs_info, refroot, diff),
-+
-+	TP_STRUCT__entry_btrfs(
-+		__field(	u64,	refroot			)
-+		__field(	s64,	diff			)
-+	),
-+
-+	TP_fast_assign_btrfs(fs_info,
-+		__entry->refroot	= refroot;
-+		__entry->diff		= diff;
-+	),
-+
-+	TP_printk_btrfs("refroot = %llu, diff = %lld",
-+		__entry->refroot, __entry->diff)
-+);
-+
- #endif /* _TRACE_BTRFS_H */
- 
- /* This part must be outside protection */
 -- 
 2.11.1
 

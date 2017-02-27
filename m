@@ -1,157 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:64790 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751675AbdB0H0g (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 27 Feb 2017 02:26:36 -0500
-Subject: Re: [PATCH 0/3] introduce type based delalloc metadata reserve to fix
- some false enospc issues
-To: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
-        <linux-btrfs@vger.kernel.org>
-References: <1478853587-28717-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
- <310b5ef9-3e08-129d-66bf-500478e65424@profihost.ag>
- <2a3f8cb2-e4e9-e534-ee3d-ff5ad517e71a@gmx.com>
- <30979d9a-993c-c130-5b1b-09cfe5955409@profihost.ag>
- <c53cd7dc-e01a-1463-947d-f8d3721862f7@profihost.ag>
-CC: <clm@fb.com>, <jbacik@fb.com>, <dsterba@suse.com>,
-        <holger@applied-asynchrony.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <41588c56-58d7-a11d-de78-996285e86f6d@cn.fujitsu.com>
-Date: Mon, 27 Feb 2017 15:22:32 +0800
+Received: from p3nlsmtpcp01-01.prod.phx3.secureserver.net ([184.168.200.138]:59146
+        "EHLO p3nlsmtpcp01-01.prod.phx3.secureserver.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751620AbdB0LEh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 27 Feb 2017 06:04:37 -0500
+Date: Mon, 27 Feb 2017 16:31:38 +0530
+From: "Lakshmipathi.G" <lakshmipathi.g@giis.co.in>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: List of corruption cases for scrub
+Message-ID: <20170227110138.GA2667@giis.co.in>
+References: <20170224023225.GA4006@giis.co.in>
+ <e1ce9d74-57e8-8078-11fb-d2e4613428ea@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <c53cd7dc-e01a-1463-947d-f8d3721862f7@profihost.ag>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <e1ce9d74-57e8-8078-11fb-d2e4613428ea@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Mon, Feb 27, 2017 at 11:40:31AM +0800, Qu Wenruo wrote:
+> 
+> 
+> At 02/24/2017 10:32 AM, Lakshmipathi.G wrote:
+> >Hi.
+> >
+> >I tried to a create list of corruption test scenarios for scrubbing process with RAID5.
+> >Here's the list: https://btrfs.wiki.kernel.org/index.php/Scrub_corruption_cases
+> >
+> >If similar list already exists in btrfs wiki, let me know, I'll move this data
+> >to there. Feel free to add/update/delete entries or suggest new corrupt ideas!
+> 
+> What about adding testing result for latest kernel release?
+> 
+> Thanks,
+> Qu
 
+True, Ideally, the wiki should have list-corruption cases along with result for
+each latest kernel version.
 
-At 02/25/2017 04:23 PM, Stefan Priebe - Profihost AG wrote:
-> Dear Qu,
->
-> any news on your branch? I still don't see it merged anywhere.
->
-> Greets,
-> Stefan
+Planning to add more cases, gradually. For example, I think inode object
+with RAID5 can be replicated across drives. If thats correct, can scrub 
+fix those corruption too? cases like this may be more important than other
+to-do items like raid5 with features like snapshot/quota etc
 
-I just remember that Liu Bo has commented one of the patches, I'm afraid 
-I can only push these patches until I addressed his concern.
+I think it should be possible to add test-results for few cases but list has
+repeated-cases with different sizes,drives etc for these cases we need some
+kind of automated scripts.
 
-I'll start digging it as memory for this fix is quite blurred now.
+Hope to extend the cases first and then start updating results with manual or 
+automated tests.
 
-Thanks,
-Qu
->
-> Am 04.01.2017 um 17:13 schrieb Stefan Priebe - Profihost AG:
->> Hi Qu,
->>
->> Am 01.01.2017 um 10:32 schrieb Qu Wenruo:
->>> Hi Stefan,
->>>
->>> I'm trying to push it to for-next (will be v4.11), but no response yet.
->>>
->>> It would be quite nice for you to test the following git pull and give
->>> some feedback, so that we can merge it faster.
->>>
->>> https://mail-archive.com/linux-btrfs@vger.kernel.org/msg60418.html
->>
->> I'm also getting a notifier that wang's email does not exist anymore
->> (wangxg.fnst@cn.fujitsu.com).
->>
->> I would like to test that branch will need some time todo so. Last time
->> i tried 4.10-rc1 i had the same problems like this guy:
->> https://www.marc.info/?l=linux-btrfs&m=148338312525137&w=2
->>
->> Stefan
->>
->>> Thanks,
->>> Qu
->>>
->>> On 12/31/2016 03:31 PM, Stefan Priebe - Profihost AG wrote:
->>>> Any news on this series? I can't see it in 4.9 nor in 4.10-rc
->>>>
->>>> Stefan
->>>>
->>>> Am 11.11.2016 um 09:39 schrieb Wang Xiaoguang:
->>>>> When having compression enabled, Stefan Priebe ofen got enospc errors
->>>>> though fs still has much free space. Qu Wenruo also has submitted a
->>>>> fstests test case which can reproduce this bug steadily, please see
->>>>> url: https://patchwork.kernel.org/patch/9420527
->>>>>
->>>>> First patch[1/3] "btrfs: improve inode's outstanding_extents
->>>>> computation" is to
->>>>> fix outstanding_extents and reserved_extents account issues. This
->>>>> issue was revealed
->>>>> by modifying BTRFS_MAX_EXTENT_SIZE(128MB) to 64KB, When modifying
->>>>> BTRFS_MAX_EXTENT_SIZE(128MB) to 64KB, fsstress test often gets these
->>>>> warnings from
->>>>> btrfs_destroy_inode():
->>>>>         WARN_ON(BTRFS_I(inode)->outstanding_extents);
->>>>>         WARN_ON(BTRFS_I(inode)->reserved_extents);
->>>>> Please see this patch's commit message for detailed info, and this
->>>>> patch is
->>>>> necessary to patch2 and patch3.
->>>>>
->>>>> For false enospc, the root reasson is that for compression, its max
->>>>> extent size will
->>>>> be 128k, not 128MB. If we still use 128MB as max extent size to
->>>>> reserve metadata for
->>>>> compression, obviously it's not appropriate. In patch "btrfs:
->>>>> Introduce COMPRESS
->>>>> reserve type to fix false enospc for compression" commit message,
->>>>> we explain why false enospc error occurs, please see it for detailed
->>>>> info.
->>>>>
->>>>> To fix this issue, we introduce a new enum type:
->>>>>     enum btrfs_metadata_reserve_type {
->>>>>         BTRFS_RESERVE_NORMAL,
->>>>>             BTRFS_RESERVE_COMPRESS,
->>>>>     };
->>>>> For btrfs_delalloc_[reserve|release]_metadata() and
->>>>> btrfs_delalloc_[reserve|release]_space(), we introce a new
->>>>> btrfs_metadata_reserve_type
->>>>> argument, then if a path needs to go compression, we pass
->>>>> BTRFS_RESERVE_COMPRESS,
->>>>> otherwise pass BTRFS_RESERVE_NORMAL.
->>>>>
->>>>> With these patchs, Stefan no longer saw such false enospc errors, and
->>>>> Qu Wenruo's
->>>>> fstests test case will also pass. I have also run whole fstests
->>>>> multiple times,
->>>>> no regression occurs, thanks.
->>>>>
->>>>> Wang Xiaoguang (3):
->>>>>   btrfs: improve inode's outstanding_extents computation
->>>>>   btrfs: introduce type based delalloc metadata reserve
->>>>>   btrfs: Introduce COMPRESS reserve type to fix false enospc for
->>>>>     compression
->>>>>
->>>>>  fs/btrfs/ctree.h             |  36 +++++--
->>>>>  fs/btrfs/extent-tree.c       |  52 ++++++---
->>>>>  fs/btrfs/extent_io.c         |  61 ++++++++++-
->>>>>  fs/btrfs/extent_io.h         |   5 +
->>>>>  fs/btrfs/file.c              |  25 +++--
->>>>>  fs/btrfs/free-space-cache.c  |   6 +-
->>>>>  fs/btrfs/inode-map.c         |   6 +-
->>>>>  fs/btrfs/inode.c             | 246
->>>>> ++++++++++++++++++++++++++++++++++---------
->>>>>  fs/btrfs/ioctl.c             |  16 +--
->>>>>  fs/btrfs/relocation.c        |  14 ++-
->>>>>  fs/btrfs/tests/inode-tests.c |  15 +--
->>>>>  11 files changed, 381 insertions(+), 101 deletions(-)
->>>>>
->>>> --
->>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>>> the body of a message to majordomo@vger.kernel.org
->>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
-
-
+Cheers.
+Lakshmipathi.G

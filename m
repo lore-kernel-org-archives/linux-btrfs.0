@@ -1,107 +1,111 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:50398 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:20260 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751540AbdB0HLX (ORCPT
+        with ESMTP id S1751633AbdB0HLC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 27 Feb 2017 02:11:23 -0500
+        Mon, 27 Feb 2017 02:11:02 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>, <dsterba@suse.com>, <clm@fb.com>
-Subject: [PATCH 3/9] btrfs: qgroup: Fix qgroup corruption caused by inode_cache mount option
-Date: Mon, 27 Feb 2017 15:10:33 +0800
-Message-ID: <20170227071039.8335-4-quwenruo@cn.fujitsu.com>
-In-Reply-To: <20170227071039.8335-1-quwenruo@cn.fujitsu.com>
-References: <20170227071039.8335-1-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 0/9 PULL REQUEST] Qgroup fixes for 4.11
+Date: Mon, 27 Feb 2017 15:10:30 +0800
+Message-ID: <20170227071039.8335-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[BUG]
-The easist way to reproduce the bug is:
-------
- # mkfs.btrfs -f $dev -n 16K
- # mount $dev $mnt -o inode_cache
- # btrfs quota enable $mnt
- # btrfs quota rescan -w $mnt
- # btrfs qgroup show $mnt
-qgroupid         rfer         excl
---------         ----         ----
-0/5          32.00KiB     32.00KiB
-             ^^ Twice the correct value
-------
+Pull request can be fetched from my github:
+https://github.com/adam900710/linux.git qgroup_fixes_for_4.11 
 
-And fstests/btrfs qgroup test group can easily detect them with
-inode_cache mount option.
-Although some of them are false alerts since old test cases are using
-fixed golden output.
-While new test cases will use "btrfs check" to detect qgroup mismatch.
+The base is 6288d6eabc7505f42dda34a2c2962f91914be3a4.
+Author: Liu Bo <bo.li.liu@oracle.com>
+Date:   Tue Feb 21 12:12:58 2017 -0800
 
-[CAUSE]
-Inode_cache mount option will make commit_fs_roots() to call
-btrfs_save_ino_cache() to update fs/subvol trees, and generate new
-delayed refs.
+    Btrfs: use the correct type when creating cow dio extent
 
-However we call btrfs_qgroup_prepare_account_extents() too early, before
-commit_fs_roots().
-This makes the "old_roots" for newly generated extents are always NULL.
-For freeing extent case, this makes both new_roots and old_roots to be
-empty, while correct old_roots should not be empty.
-This causing qgroup numbers not decreased correctly.
+These patches are already in mail list for almost 3 months.
+For example the tracepoint patch is last updated at 2016/12/09.
 
-[FIX]
-Modify the timing of calling btrfs_qgroup_prepare_account_extents() to
-just before btrfs_qgroup_account_extents(), and add needed delayed_refs
-handler.
-So qgroup can handle inode_map mount options correctly.
+With this patchset btrfs can pass all xfstest qgroup tests now.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- fs/btrfs/transaction.c | 25 ++++++++++++++++++-------
- 1 file changed, 18 insertions(+), 7 deletions(-)
+This pull request should be good for 4.11 as they are all bug fixes and
+has been delayed for several times.
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 6b3e0fc2fe7a..1ff3ec797356 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -2130,13 +2130,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 		goto scrub_continue;
- 	}
- 
--	/* Reocrd old roots for later qgroup accounting */
--	ret = btrfs_qgroup_prepare_account_extents(trans, fs_info);
--	if (ret) {
--		mutex_unlock(&fs_info->reloc_mutex);
--		goto scrub_continue;
--	}
--
- 	/*
- 	 * make sure none of the code above managed to slip in a
- 	 * delayed item
-@@ -2179,6 +2172,24 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 	btrfs_free_log_root_tree(trans, fs_info);
- 
- 	/*
-+	 * commit_fs_roots() can call btrfs_save_ino_cache(), which generates
-+	 * new delayed refs. Must handle them or qgroup can be wrong.
-+	 */
-+	ret = btrfs_run_delayed_refs(trans, fs_info, (unsigned long)-1);
-+	if (ret) {
-+		mutex_unlock(&fs_info->tree_log_mutex);
-+		mutex_unlock(&fs_info->reloc_mutex);
-+		goto scrub_continue;
-+	}
-+
-+	ret = btrfs_qgroup_prepare_account_extents(trans, fs_info);
-+	if (ret) {
-+		mutex_unlock(&fs_info->tree_log_mutex);
-+		mutex_unlock(&fs_info->reloc_mutex);
-+		goto scrub_continue;
-+	}
-+
-+	/*
- 	 * Since fs roots are all committed, we can get a quite accurate
- 	 * new_roots. So let's do quota accounting.
- 	 */
+I don't know if these patchset will be delayed again if someone wants to
+cleanup something else, and cause rebase conflicts to delay such fixes.
+But I must say, that's very frustrating to see bug fixes just get dropped
+again and again just due to new cleanups and lack of reviewers.
+
+Despite all these pities, this pull request includes:
+1) Fix for inode_cache mount option
+   Although no one really cares inode_cache mount option, it will screw
+   qgroup for a long time.
+   Not only it will screw up qgroup test uses golden output, but also
+   new test cases use btrfsck to verify qgroup.
+
+2) Fix for btrfs/104 kernel warning
+   This is caused by quota enabling with dirty buffers not written to
+   disc.
+
+   Fixed by checking EXTENT_QGROUP_RESERVED flag other than just
+   decreasing qgroup->reserved.
+
+3) Fix qgroup underflow caused by freeing ranges not reserved by caller
+   Mainly exposed by Chandan on PPC64.
+
+   It's possible that buffered write is blocked by reserving metadata,
+   and in error path we will release reserved space for both data and
+   metadata.
+
+   However the reserved data can already be reserved by another process
+   writing the same page.
+
+   In that case, data reserved space can be freed by two process, one
+   for error path, one for normal write routine, causing underflow.
+
+   Fixed by checking if that data range is reserved by ourselves and
+   only free it if it's reserved by ourselves.
+
+Update since 2016/12/09:
+  Rebased to latest for-linux-4.11.
+
+  Add missing reviewed-by and tested-by tags.
+
+  Add more comment for btrfs_qgroup_reserve_data() for error handling.
+
+  Add more comment for qgroup_free_reserved_data() for later
+  enhancement (not function enhancement).
+
+Qu Wenruo (9):
+  btrfs: qgroup: Add trace point for qgroup reserved space
+  btrfs: qgroup: Re-arrange tracepoint timing to co-operate with
+    reserved space tracepoint
+  btrfs: qgroup: Fix qgroup corruption caused by inode_cache mount
+    option
+  btrfs: qgroup: Add quick exit for non-fs extents
+  btrfs: qgroup: Cleanup btrfs_qgroup_prepare_account_extents function
+  btrfs: qgroup: Return actually freed bytes for qgroup release or free
+    data
+  btrfs: qgroup: Fix qgroup reserved space underflow caused by buffered
+    write and quota enable
+  btrfs: qgroup: Introduce extent changeset for qgroup reserve functions
+  btrfs: qgroup: Fix qgroup reserved space underflow by only freeing
+    reserved ranges
+
+ fs/btrfs/ctree.h             |  12 ++-
+ fs/btrfs/extent-tree.c       |  31 +++---
+ fs/btrfs/extent_io.h         |  14 ++-
+ fs/btrfs/file.c              |  46 +++++----
+ fs/btrfs/inode-map.c         |   6 +-
+ fs/btrfs/inode.c             |  64 +++++++++----
+ fs/btrfs/ioctl.c             |  11 ++-
+ fs/btrfs/qgroup.c            | 221 ++++++++++++++++++++++++++++++++-----------
+ fs/btrfs/qgroup.h            |  14 +--
+ fs/btrfs/relocation.c        |  13 ++-
+ fs/btrfs/transaction.c       |  21 ++--
+ include/trace/events/btrfs.h |  43 +++++++++
+ 12 files changed, 358 insertions(+), 138 deletions(-)
+
 -- 
 2.11.1
 

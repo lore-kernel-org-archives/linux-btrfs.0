@@ -1,109 +1,158 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:6744 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:20260 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751710AbdBFBZb (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Feb 2017 20:25:31 -0500
-Subject: Re: [PATCH 0/9] Lowmem mode fsck fixes with fsck-tests framework
- update
-To: Christoph Anton Mitterer <calestyo@scientia.net>,
-        btrfs <linux-btrfs@vger.kernel.org>
-References: <20170123091359.21390-1-quwenruo@cn.fujitsu.com>
- <1485276845.12065.1.camel@scientia.net>
- <35be430d-1210-9b33-3b18-c22127cc64a7@cn.fujitsu.com>
- <1485305208.12065.9.camel@scientia.net>
- <8d21a04e-7035-5b5d-5b58-9ac0d7f93f02@cn.fujitsu.com>
- <1485399036.23328.7.camel@scientia.net>
- <bb42c075-fcbd-2248-8e9f-ea5d2a836273@cn.fujitsu.com>
- <1485473476.7613.12.camel@lmu.de>
- <7125b67b-1b7e-c191-290d-cf60e63ee93e@gmx.com>
- <1485745624.6333.1.camel@lmu.de>
- <0715efbc-44cd-5f84-9870-938dd80b7ae3@cn.fujitsu.com>
- <1485986636.6573.13.camel@lmu.de>
- <3c464199-27df-1a81-f309-8491c368ff13@cn.fujitsu.com>
- <97d42767-4ae4-a97e-2625-5028300fff67@cn.fujitsu.com>
- <1486098502.7443.3.camel@lmu.de>
- <06e4296b-4512-1669-5bff-834d130ce701@cn.fujitsu.com>
- <1486162890.6884.4.camel@scientia.net>
+        with ESMTP id S1751636AbdB0HLH (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 27 Feb 2017 02:11:07 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <5569b391-3025-289b-72a7-adbc648d9d31@cn.fujitsu.com>
-Date: Mon, 6 Feb 2017 09:25:18 +0800
+To: <linux-btrfs@vger.kernel.org>, <dsterba@suse.com>, <clm@fb.com>
+Subject: [PATCH 1/9] btrfs: qgroup: Add trace point for qgroup reserved space
+Date: Mon, 27 Feb 2017 15:10:31 +0800
+Message-ID: <20170227071039.8335-2-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20170227071039.8335-1-quwenruo@cn.fujitsu.com>
+References: <20170227071039.8335-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <1486162890.6884.4.camel@scientia.net>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Introduce the following trace points:
+qgroup_update_reserve
+qgroup_meta_reserve
 
+These trace points are handy to trace qgroup reserve space related
+problems.
 
-At 02/04/2017 07:01 AM, Christoph Anton Mitterer wrote:
-> Hey Qu
->
-> On Fri, 2017-02-03 at 14:20 +0800, Qu Wenruo wrote:
->> Great thanks for that!
-> You're welcome. :)
->
->
->> I also added missing error message output for other places I found,
->> and
->> updated the branch, the name remains as "lowmem_tests"
->>
->> Please try it.
-> # btrfs check /dev/nbd0 ; echo $?
-> checking extents
-> checking free space cache
-> checking fs roots
-> checking csums
-> checking root refs
-> Checking filesystem on /dev/nbd0
-> UUID: 326d292d-f97b-43ca-b1e8-c722d3474719
-> found 7519512838144 bytes used, no error found
-> total csum bytes: 7330834320
-> total tree bytes: 10902437888
-> total fs tree bytes: 2019704832
-> total extent tree bytes: 1020149760
-> btree space waste bytes: 925714197
-> file data blocks allocated: 7509228494848
->  referenced 7630551511040
-> 0
->
-> # btrfs check /dev/nbd0 ; echo $?
-> checking extents
-> checking free space cache
-> checking fs roots
-> checking csums
-> checking root refs
-> Checking filesystem on /dev/nbd0
-> UUID: 326d292d-f97b-43ca-b1e8-c722d3474719
-> found 7519512838144 bytes used, no error found
-> total csum bytes: 7330834320
-> total tree bytes: 10902437888
-> total fs tree bytes: 2019704832
-> total extent tree bytes: 1020149760
-> btree space waste bytes: 925714197
-> file data blocks allocated: 7509228494848
->  referenced 7630551511040
-> 0
->
-> => looks good this time :)
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ fs/btrfs/qgroup.c            | 15 +++++++++++++++
+ include/trace/events/btrfs.h | 43 +++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 58 insertions(+)
 
-Great!
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index a5da750c1087..b303d4794026 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1075,6 +1075,8 @@ static int __qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
+ 	qgroup->excl += sign * num_bytes;
+ 	qgroup->excl_cmpr += sign * num_bytes;
+ 	if (sign > 0) {
++		trace_qgroup_update_reserve(fs_info, qgroup->qgroupid,
++					    qgroup->reserved, -(s64)num_bytes);
+ 		if (WARN_ON(qgroup->reserved < num_bytes))
+ 			report_reserved_underflow(fs_info, qgroup, num_bytes);
+ 		else
+@@ -1100,6 +1102,9 @@ static int __qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
+ 		WARN_ON(sign < 0 && qgroup->excl < num_bytes);
+ 		qgroup->excl += sign * num_bytes;
+ 		if (sign > 0) {
++			trace_qgroup_update_reserve(fs_info, qgroup->qgroupid,
++						    qgroup->reserved,
++						    -(s64)num_bytes);
+ 			if (WARN_ON(qgroup->reserved < num_bytes))
+ 				report_reserved_underflow(fs_info, qgroup,
+ 							  num_bytes);
+@@ -2424,6 +2429,8 @@ static int qgroup_reserve(struct btrfs_root *root, u64 num_bytes, bool enforce)
+ 
+ 		qg = unode_aux_to_qgroup(unode);
+ 
++		trace_qgroup_update_reserve(fs_info, qg->qgroupid,
++					    qg->reserved, num_bytes);
+ 		qg->reserved += num_bytes;
+ 	}
+ 
+@@ -2469,6 +2476,8 @@ void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
+ 
+ 		qg = unode_aux_to_qgroup(unode);
+ 
++		trace_qgroup_update_reserve(fs_info, qg->qgroupid,
++					    qg->reserved, -(s64)num_bytes);
+ 		if (WARN_ON(qg->reserved < num_bytes))
+ 			report_reserved_underflow(fs_info, qg, num_bytes);
+ 		else
+@@ -2945,6 +2954,8 @@ int btrfs_qgroup_reserve_meta(struct btrfs_root *root, int num_bytes,
+ 		return 0;
+ 
+ 	BUG_ON(num_bytes != round_down(num_bytes, fs_info->nodesize));
++	trace_qgroup_meta_reserve(fs_info, root->objectid,
++				  (s64)num_bytes);
+ 	ret = qgroup_reserve(root, num_bytes, enforce);
+ 	if (ret < 0)
+ 		return ret;
+@@ -2964,6 +2975,8 @@ void btrfs_qgroup_free_meta_all(struct btrfs_root *root)
+ 	reserved = atomic_xchg(&root->qgroup_meta_rsv, 0);
+ 	if (reserved == 0)
+ 		return;
++	trace_qgroup_meta_reserve(root->fs_info, root->objectid,
++				  -(s64)reserved);
+ 	btrfs_qgroup_free_refroot(fs_info, root->objectid, reserved);
+ }
+ 
+@@ -2978,6 +2991,8 @@ void btrfs_qgroup_free_meta(struct btrfs_root *root, int num_bytes)
+ 	BUG_ON(num_bytes != round_down(num_bytes, fs_info->nodesize));
+ 	WARN_ON(atomic_read(&root->qgroup_meta_rsv) < num_bytes);
+ 	atomic_sub(num_bytes, &root->qgroup_meta_rsv);
++	trace_qgroup_meta_reserve(root->fs_info, root->objectid,
++				  -(s64)num_bytes);
+ 	btrfs_qgroup_free_refroot(fs_info, root->objectid, num_bytes);
+ }
+ 
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index a3c3cab643a9..2d5799d8a4a2 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -1475,6 +1475,49 @@ TRACE_EVENT(qgroup_update_counters,
+ 		  __entry->cur_new_count)
+ );
+ 
++TRACE_EVENT(qgroup_update_reserve,
++
++	TP_PROTO(struct btrfs_fs_info *fs_info, u64 qgid, u64 cur_reserved,
++		 s64 diff),
++
++	TP_ARGS(fs_info, qgid, cur_reserved, diff),
++
++	TP_STRUCT__entry_btrfs(
++		__field(	u64,	qgid			)
++		__field(	u64,	cur_reserved		)
++		__field(	s64,	diff			)
++	),
++
++	TP_fast_assign_btrfs(fs_info,
++		__entry->qgid		= qgid;
++		__entry->cur_reserved	= cur_reserved;
++		__entry->diff		= diff;
++	),
++
++	TP_printk_btrfs("qgid = %llu, cur_reserved = %llu, diff = %lld",
++		__entry->qgid, __entry->cur_reserved, __entry->diff)
++);
++
++TRACE_EVENT(qgroup_meta_reserve,
++
++	TP_PROTO(struct btrfs_fs_info *fs_info, u64 refroot, s64 diff),
++
++	TP_ARGS(fs_info, refroot, diff),
++
++	TP_STRUCT__entry_btrfs(
++		__field(	u64,	refroot			)
++		__field(	s64,	diff			)
++	),
++
++	TP_fast_assign_btrfs(fs_info,
++		__entry->refroot	= refroot;
++		__entry->diff		= diff;
++	),
++
++	TP_printk_btrfs("refroot = %llu, diff = %lld",
++		__entry->refroot, __entry->diff)
++);
++
+ #endif /* _TRACE_BTRFS_H */
+ 
+ /* This part must be outside protection */
+-- 
+2.11.1
 
->
->
-> btw: In your commit messages, please change my email to
-> calestyo@scientia.net everywhere... I accidentally used my university
-> address (christoph.anton.mitterer@lmu.de) sometimes when sending mail.
-
-Not a problem.
-
-I'll change the address and re-send the patchset to mail list.
-
-Thanks,
-Qu
-
->
-> Cheers,
-> Chris.
->
 
 

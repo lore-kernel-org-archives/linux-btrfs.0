@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:59369 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:20260 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751668AbdB0HLL (ORCPT
+        with ESMTP id S1751705AbdB0HLU (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 27 Feb 2017 02:11:11 -0500
+        Mon, 27 Feb 2017 02:11:20 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>, <dsterba@suse.com>, <clm@fb.com>
-Subject: [PATCH 6/9] btrfs: qgroup: Return actually freed bytes for qgroup release or free data
-Date: Mon, 27 Feb 2017 15:10:36 +0800
-Message-ID: <20170227071039.8335-7-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 7/9] btrfs: qgroup: Fix qgroup reserved space underflow caused by buffered write and quota enable
+Date: Mon, 27 Feb 2017 15:10:37 +0800
+Message-ID: <20170227071039.8335-8-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20170227071039.8335-1-quwenruo@cn.fujitsu.com>
 References: <20170227071039.8335-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -16,63 +16,89 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_qgroup_release/free_data() only returns 0 or minus error
-number(ENOMEM is the only possible error).
+[BUG]
+Under the following case, we can underflow qgroup reserved space.
 
-This is normally good enough, but sometimes we need the accurate byte
-number it freed/released.
+            Task A                |            Task B
+---------------------------------------------------------------
+ Quota disabled                   |
+ Buffered write                   |
+ |- btrfs_check_data_free_space() |
+ |  *NO* qgroup space is reserved |
+ |  since quota is *DISABLED*     |
+ |- All pages are copied to page  |
+    cache                         |
+                                  | Enable quota
+                                  | Quota scan finished
+                                  |
+                                  | Sync_fs
+                                  | |- run_delalloc_range
+                                  | |- Write pages
+                                  | |- btrfs_finish_ordered_io
+                                  |    |- insert_reserved_file_extent
+                                  |       |- btrfs_qgroup_release_data()
+                                  |          Since no qgroup space is
+                                             reserved in Task A, we
+                                             underflow qgroup reserved
+                                             space
+This can be detected by fstest btrfs/104.
 
-Change it to return actually released/freed bytenr number instead of 0
-for success.
-And slightly modify related extent_changeset structure, since in btrfs
-one none-hole data extent won't be larger than 128M, so "unsigned int"
-is large enough for the use case.
+[CAUSE]
+In insert_reserved_file_extent() we info qgroup to release the @ram_bytes
+size of qgroup reserved_space under all case.
+And btrfs_qgroup_release_data() will check if qgroup is enabled.
+
+However in above case, the buffered write happens before quota is
+enabled, so we don't havee reserved space for that range.
+
+[FIX]
+In insert_reserved_file_extent(), we info qgroup to release the acctual
+byte number it released.
+In above case, since we don't have reserved space, we info qgroup to
+release 0 byte, so the problem can be fixed.
+
+And thanks to the @reserved parameter introduced by qgroup rework, and
+previous patch to return release bytes, the fix can be as small as less
+than 10 lines.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/extent-tree.c | 2 +-
- fs/btrfs/extent_io.h   | 2 +-
- fs/btrfs/qgroup.c      | 1 +
- 3 files changed, 3 insertions(+), 2 deletions(-)
+ fs/btrfs/inode.c | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index c35b96633554..16b0d82dcd03 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4287,7 +4287,7 @@ int btrfs_check_data_free_space(struct inode *inode, u64 start, u64 len)
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index c38391e948d9..aabab731d38e 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2045,6 +2045,7 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
+ 	struct btrfs_path *path;
+ 	struct extent_buffer *leaf;
+ 	struct btrfs_key ins;
++	u64 qg_released;
+ 	int extent_inserted = 0;
+ 	int ret;
  
- 	/* Use new btrfs_qgroup_reserve_data to reserve precious data space. */
- 	ret = btrfs_qgroup_reserve_data(inode, start, len);
--	if (ret)
+@@ -2100,13 +2101,17 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
+ 	ins.objectid = disk_bytenr;
+ 	ins.offset = disk_num_bytes;
+ 	ins.type = BTRFS_EXTENT_ITEM_KEY;
+-	ret = btrfs_alloc_reserved_file_extent(trans, root->root_key.objectid,
+-			btrfs_ino(BTRFS_I(inode)), file_pos, ram_bytes, &ins);
++
+ 	/*
+ 	 * Release the reserved range from inode dirty range map, as it is
+ 	 * already moved into delayed_ref_head
+ 	 */
+-	btrfs_qgroup_release_data(inode, file_pos, ram_bytes);
++	ret = btrfs_qgroup_release_data(inode, file_pos, ram_bytes);
 +	if (ret < 0)
- 		btrfs_free_reserved_data_space_noquota(inode, start, len);
- 	return ret;
- }
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 270d03be290e..b6c3c2a588d4 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -190,7 +190,7 @@ struct extent_buffer {
-  */
- struct extent_changeset {
- 	/* How many bytes are set/cleared in this operation */
--	u64 bytes_changed;
-+	unsigned int bytes_changed;
- 
- 	/* Changed ranges */
- 	struct ulist range_changed;
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 4aabeb77d83c..4b0f4d2bd63c 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2923,6 +2923,7 @@ static int __btrfs_qgroup_release_data(struct inode *inode, u64 start, u64 len,
- 		btrfs_qgroup_free_refroot(BTRFS_I(inode)->root->fs_info,
- 				BTRFS_I(inode)->root->objectid,
- 				changeset.bytes_changed);
-+	ret = changeset.bytes_changed;
++		goto out;
++	qg_released = ret;
++	ret = btrfs_alloc_reserved_file_extent(trans, root->root_key.objectid,
++			btrfs_ino(BTRFS_I(inode)), file_pos, qg_released, &ins);
  out:
- 	ulist_release(&changeset.range_changed);
- 	return ret;
+ 	btrfs_free_path(path);
+ 
 -- 
 2.11.1
 

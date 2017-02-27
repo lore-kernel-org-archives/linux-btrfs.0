@@ -1,179 +1,120 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f66.google.com ([209.85.214.66]:36791 "EHLO
-        mail-it0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751588AbdB0ULO (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 27 Feb 2017 15:11:14 -0500
-Received: by mail-it0-f66.google.com with SMTP id w185so12849407ita.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Feb 2017 12:11:11 -0800 (PST)
-Subject: Re: Low IOOP Performance
-To: John Marrett <johnf@zioncluster.ca>
-References: <CAAafysGxU9vaEs6actqX3ZFGkoXFvPFUAC1SjwtkZ97uuuFgJg@mail.gmail.com>
- <22708.23290.349489.765780@tree.ty.sabi.co.uk>
- <CAAafysEG7qXF3ZRQPnOjALNCd0jLTHJKRi5ns8xrH4s-6eYgog@mail.gmail.com>
- <CAAafysFaDqC3O-s4Jj8M4gXsw8J5uGPRLD_SPwiU+UqndSzuXw@mail.gmail.com>
-Cc: Peter Grandi <pg@btrfs.list.sabi.co.uk>, bo.li.liu@oracle.com,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <c7bbe9f2-e942-8ad2-f7d3-2cad876d8b0d@gmail.com>
-Date: Mon, 27 Feb 2017 14:43:59 -0500
+Received: from azure.uno.uk.net ([95.172.254.11]:51337 "EHLO azure.uno.uk.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751364AbdB0Xt4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 27 Feb 2017 18:49:56 -0500
+Received: from ty.sabi.co.uk ([95.172.230.208]:53470)
+        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
+        (Exim 4.88)
+        (envelope-from <pg@btrfs.list.sabi.co.uk>)
+        id 1ciTWI-001Sv5-VR
+        for linux-btrfs@vger.kernel.org; Mon, 27 Feb 2017 22:11:51 +0000
+Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
+        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
+        id 1ciTVx-0005Ry-Ra
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Feb 2017 22:11:29 +0000
 MIME-Version: 1.0
-In-Reply-To: <CAAafysFaDqC3O-s4Jj8M4gXsw8J5uGPRLD_SPwiU+UqndSzuXw@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+Message-ID: <22708.42001.499487.802133@tree.ty.sabi.co.uk>
+Date: Mon, 27 Feb 2017 22:11:29 +0000
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Low IOOP Performance
+In-Reply-To: <22708.23290.349489.765780@tree.ty.sabi.co.uk>
+References: <CAAafysGxU9vaEs6actqX3ZFGkoXFvPFUAC1SjwtkZ97uuuFgJg@mail.gmail.com>
+        <22708.23290.349489.765780@tree.ty.sabi.co.uk>
+From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-02-27 14:15, John Marrett wrote:
-> Liubo correctly identified direct IO as a solution for my test
-> performance issues, with it in use I achieved 908 read and 305 write,
-> not quite as fast as ZFS but more than adequate for my needs. I then
-> applied Peter's recommendation of switching to raid10 and tripled
-> performance again up to 3000 read and 1000 write IOOPs.
->
-> I do not understand why the page cache had such a large negative
-> impact on performance, it seems like it should have no impact or help
-> slightly with caching rather than severely impact both read and write
-> IO. Is this expected behaviour and what is the real world impact on
-> applications that don't use direct IO?
-Generally yes, it is expected behavior, but it's not really all that 
-high impact for most things that don't use direct IO, since most things 
-that don't either:
-1. Care more about bulk streaming throughput than IOPS.
-2. Aren't performance sensitive enough for it to matter.
-3. Actually need the page cache for performance reasons (the Linux page 
-cache actually does pretty well for read-heavy workloads with consistent 
-access patterns).
+[ ... ]
 
-If you look, you should actually see lower bulk streaming throughput 
-with direct IO than without on most devices, especially when dealing 
-with ATA or USB disks, since the page cache functionally reduces the 
-number of IO requests that get sent to a device even if it's all new 
-data.  The read-ahead it does to achieve this though only works for 
-purely or mostly sequential workloads, so it ends up being detrimental 
-to random access or very sparsely sequential workloads, which in turn 
-are what usually care about IOPS over streaming throughput.
->
-> With regards to RAID10 my understanding is that I can't mix drive
-> sizes and use their full capacity on a RAID10 volume. My current
-> server runs a mixture of drive sizes and I am likely to need to do so
-> again in the future. Can I do this and still enjoy the performance
-> benefits of RAID 10?
-In theory, you should be fine.  BTRFS will use narrower stripes when it 
-has to, as long as it has at least 4 disks to put data on.  If you can 
-make sure you have even numbers of drives of each size (and ideally an 
-even total number of drives), you should get close to full utilization. 
-Keep in mind though that as the FS gets more and more full (and the 
-stripes therefore get narrower), you'll start to see odd, seemingly 
-arbitrary performance differences based on what your accessing.
+> I have a 6-device test setup at home and I tried various setups
+> and I think I got rather better than that.
 
-That said, if you can manage to just use an even number of identically 
-sized disks, you can get even more performance by running BTRFS in raid1 
-mode on top of two LVM or MD RAID0 volumes.  That will give you the same 
-data safety as BTRFS raid10 mode, but depending on the work load can 
-increase performance pretty significantly (I see about a 10-20% 
-difference currently, but I don't have any particularly write intensive 
-workloads).  Note that doing so will improve sequential access 
-performance more than random access, so it may not be worth the effort 
-in your case.
->
->>> a ten disk raid1 using 7.2k 3 TB SAS drives
->>
->> Those are really low IOPS-per-TB devices, but good choice for
->> SAS, as they will have SCT/ERC.
->
->
-> I don't expect the best IOOP performance from them, they are intended
-> for bulk data storage, however the results I had previously didn't
-> seem acceptable or normal.
->
->>
->> I strongly suspect that we have a different notion of "IOPS",
->> perhaps either logical vs. physical IOPS, or randomish vs.
->> sequentialish IOPS. I'll have a look at your attachments in more
->> detail.
->
->
-> I did not achieve 650 MB/s with random IO nor do I expect to, it was a
-> sequential write of 250 GB performed using dd with the conv=fsync
-> option to ensure that all writes were complete before reporting write
-> speed.
->
->>
->>> I created a zfs filesystem for comparison on another
->>> checksumming filesystem using the same layout and measured
->>> IOOP rates at 4315 read, 1449 write with sync enabled (without
->>> sync it's clearly just writing to RAM), sequential performance
->>> was comparable to btrfs.
->>
->> It seems unlikely to me that you got that with a 10-device
->> mirror 'vdev', most likely you configured it as a stripe of 5x
->> 2-device mirror vdevs, that is RAID10.
->
->
-> This is correct, it was a RAID10 across 5 mirrored volumes.
->
-> Thank you both very much for your help with my testing,
->
-> -JohnF
->
-> RAID1 Direct IO Test Results
->
-> johnf@altered-carbon:/btrfs/johnf$ fio --randrepeat=1
-> --ioengine=libaio --gtod_reduce=1 --name=test --filename=test --bs=4k
-> --iodepth=64 --size=1G --readwrite=randrw --rwmixread=75 --direct=1
-> test: (g=0): rw=randrw, bs=4K-4K/4K-4K/4K-4K, ioengine=libaio, iodepth=64
-> fio-2.2.10
-> Starting 1 process
-> test: Laying out IO file(s) (1 file(s) / 1024MB)
-> Jobs: 1 (f=1): [m(1)] [100.0% done] [8336KB/2732KB/0KB /s] [2084/683/0
-> iops] [eta 00m:00s]
-> test: (groupid=0, jobs=1): err= 0: pid=12270: Mon Feb 27 11:49:04 2017
->   read : io=784996KB, bw=3634.6KB/s, iops=908, runt=215981msec
->   write: io=263580KB, bw=1220.4KB/s, iops=305, runt=215981msec
->   cpu          : usr=1.50%, sys=8.18%, ctx=244134, majf=0, minf=116
->   IO depths    : 1=0.1%, 2=0.1%, 4=0.1%, 8=0.1%, 16=0.1%, 32=0.1%, >=64=100.0%
->      submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
->      complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.1%, >=64=0.0%
->      issued    : total=r=196249/w=65895/d=0, short=r=0/w=0/d=0, drop=r=0/w=0/d=0
->      latency   : target=0, window=0, percentile=100.00%, depth=64
->
-> Run status group 0 (all jobs):
->    READ: io=784996KB, aggrb=3634KB/s, minb=3634KB/s, maxb=3634KB/s,
-> mint=215981msec, maxt=215981msec
->   WRITE: io=263580KB, aggrb=1220KB/s, minb=1220KB/s, maxb=1220KB/s,
-> mint=215981msec, maxt=215981msec
->
->
-> RAID10 Direct IO Test Results
->
-> johnf@altered-carbon:/btrfs/johnf$ fio --randrepeat=1
-> --ioengine=libaio --gtod_reduce=1 --name=test --filename=test --bs=4k
-> --iodepth=64 --size=1G --readwrite=randrw --rwmixread=75 --ba=4k
-> --direct=1
-> test: (g=0): rw=randrw, bs=4K-4K/4K-4K/4K-4K, ioengine=libaio, iodepth=64
-> fio-2.2.10
-> Starting 1 process
-> test: Laying out IO file(s) (1 file(s) / 1024MB)
-> Jobs: 1 (f=1): [m(1)] [100.0% done] [16136KB/5312KB/0KB /s]
-> [4034/1328/0 iops] [eta 00m:00s]
-> test: (groupid=0, jobs=1): err= 0: pid=12644: Mon Feb 27 13:50:35 2017
->   read : io=784996KB, bw=12003KB/s, iops=3000, runt= 65401msec
->   write: io=263580KB, bw=4030.3KB/s, iops=1007, runt= 65401msec
->   cpu          : usr=3.66%, sys=19.54%, ctx=188302, majf=0, minf=22
->   IO depths    : 1=0.1%, 2=0.1%, 4=0.1%, 8=0.1%, 16=0.1%, 32=0.1%, >=64=100.0%
->      submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
->      complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.1%, >=64=0.0%
->      issued    : total=r=196249/w=65895/d=0, short=r=0/w=0/d=0, drop=r=0/w=0/d=0
->      latency   : target=0, window=0, percentile=100.00%, depth=64
->
-> Run status group 0 (all jobs):
->    READ: io=784996KB, aggrb=12002KB/s, minb=12002KB/s, maxb=12002KB/s,
-> mint=65401msec, maxt=65401msec
->   WRITE: io=263580KB, aggrb=4030KB/s, minb=4030KB/s, maxb=4030KB/s,
-> mint=65401msec, maxt=65401msec
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+* 'raid1' profile:
 
+  soft#  btrfs fi df /mnt/sdb5                                                                                                        
+
+  Data, RAID1: total=273.00GiB, used=269.94GiB
+  System, RAID1: total=32.00MiB, used=56.00KiB
+  Metadata, RAID1: total=1.00GiB, used=510.70MiB
+  GlobalReserve, single: total=176.00MiB, used=0.00B
+
+  soft#  fio --directory=/mnt/sdb5 --runtime=30 --status-interval=10 blocks-randomish.fio | tail -3                                   
+  Run status group 0 (all jobs):
+     READ: io=105508KB, aggrb=3506KB/s, minb=266KB/s, maxb=311KB/s, mint=30009msec, maxt=30090msec
+    WRITE: io=100944KB, aggrb=3354KB/s, minb=256KB/s, maxb=296KB/s, mint=30009msec, maxt=30090msec
+
+* 'raid10' profile:
+
+  soft#  btrfs fi df /mnt/sdb6
+  Data, RAID10: total=276.00GiB, used=272.49GiB
+  System, RAID10: total=96.00MiB, used=48.00KiB
+  Metadata, RAID10: total=3.00GiB, used=512.06MiB
+  GlobalReserve, single: total=176.00MiB, used=0.00B
+
+  soft#  fio --directory=/mnt/sdb6 --runtime=30 --status-interval=10 blocks-randomish.fio | tail -3                                   
+  Run status group 0 (all jobs):
+     READ: io=89056KB, aggrb=2961KB/s, minb=225KB/s, maxb=271KB/s, mint=30009msec, maxt=30076msec
+    WRITE: io=85248KB, aggrb=2834KB/s, minb=212KB/s, maxb=261KB/s, mint=30009msec, maxt=30076msec
+
+* 'single' profile on MD RAID10:
+
+  soft#  btrfs fi df /mnt/md0
+  Data, single: total=278.01GiB, used=274.32GiB
+  System, single: total=4.00MiB, used=48.00KiB
+  Metadata, single: total=2.01GiB, used=615.73MiB
+  GlobalReserve, single: total=208.00MiB, used=0.00B
+
+  soft#  grep -A1 md0 /proc/mdstat 
+  md0 : active raid10 sdg1[6] sdb1[0] sdd1[2] sdf1[4] sdc1[1] sde1[3]
+	364904232 blocks super 1.0 8K chunks 2 near-copies [6/6] [UUUUUU]
+	
+  soft#  fio --directory=/mnt/md0 --runtime=30 --status-interval=10 blocks-randomish.fio | tail -3                                    
+  Run status group 0 (all jobs):
+     READ: io=160928KB, aggrb=5357KB/s, minb=271KB/s, maxb=615KB/s, mint=30012msec, maxt=30038msec
+    WRITE: io=158892KB, aggrb=5289KB/s, minb=261KB/s, maxb=616KB/s, mint=30012msec, maxt=30038msec
+
+That's a range of 700-1300 4KiB random mixed-rw IOPS, quite
+reasonable for 6x 1TB 7200RPM SATA drives, each capable of
+100-120. It helps that the test file is just 100G, 10% of the
+total drive extent, so arm movement is limited.
+
+Not surprising that the much more mature MD RAID has an edge, a
+bit stranger that on this the 'raid1' profile seems a bit faster
+than the 'raid10' profile.
+
+The much smaller numbers seem to happen to me too (probably some
+misfeature of 'fio') with 'buffered=1', and the larger numbers
+for ZFSonLinux are "suspicious".
+
+> It seems unlikely to me that you got that with a 10-device
+> mirror 'vdev', most likely you configured it as a stripe of 5x
+> 2-device mirror vdevs, that is RAID10.
+
+Indeed I double checked the end of the attached lost and that
+was the case.
+
+My FIO config file:
+
+  # vim:set ft=ini:
+
+  [global]
+  filename=FIO-TEST
+  fallocate=keep
+  size=100G
+
+  buffered=0
+  ioengine=libaio
+  io_submit_mode=offload
+
+  iodepth=2
+  numjobs=12
+  blocksize=4K
+
+  kb_base=1024
+
+  [rand-mixed]
+
+  rw=randrw
+  stonewall

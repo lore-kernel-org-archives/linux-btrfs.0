@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:13402 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:35563 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751540AbdB1CbB (ORCPT
+        with ESMTP id S1751513AbdB1CsH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 27 Feb 2017 21:31:01 -0500
+        Mon, 27 Feb 2017 21:48:07 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <fdmanana@kernel.org>, <linux-btrfs@vger.kernel.org>,
         <bo.li.liu@oracle.com>
 Subject: [PATCH v5] btrfs: Handle delalloc error correctly to avoid ordered extent hang
-Date: Tue, 28 Feb 2017 10:28:38 +0800
-Message-ID: <20170228022838.19817-1-quwenruo@cn.fujitsu.com>
+Date: Tue, 28 Feb 2017 10:42:17 +0800
+Message-ID: <20170228024217.22873-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -127,7 +127,7 @@ v5:
  1 file changed, 97 insertions(+), 19 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 1e861a063721..410041f3b70a 100644
+index 1e861a063721..589114492743 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
 @@ -116,6 +116,35 @@ static struct extent_map *create_pinned_em(struct inode *inode, u64 start,
@@ -137,7 +137,7 @@ index 1e861a063721..410041f3b70a 100644
 +
 +static void __endio_write_update_ordered(struct inode *inode,
 +					 u64 offset, u64 bytes,
-+					 bool uptodate, bool cleanup)
++					 bool uptodate, bool cleanup);
 +
 +static inline void btrfs_endio_direct_write_update_ordered(struct inode *inode,
 +							   u64 offset,

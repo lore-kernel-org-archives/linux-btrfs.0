@@ -1,46 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54165 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752642AbdCAQNm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 1 Mar 2017 11:13:42 -0500
-Date: Wed, 1 Mar 2017 15:59:55 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Benedikt Morbach <benedikt.morbach@googlemail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: send-dump: add missing newlines
-Message-ID: <20170301145955.GE4662@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170222213246.29315-1-benedikt.morbach@googlemail.com>
-MIME-Version: 1.0
+Received: from vmicros1.altlinux.org ([194.107.17.57]:46254 "EHLO
+        vmicros1.altlinux.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751620AbdB1XNz (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 28 Feb 2017 18:13:55 -0500
+Date: Wed, 1 Mar 2017 02:12:50 +0300
+From: "Dmitry V. Levin" <ldv@altlinux.org>
+To: Chris Mason <clm@fb.com>
+Cc: Jeff Mahoney <jeffm@suse.com>, David Sterba <dsterba@suse.com>,
+        Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: [PATCH v3] btrfs: remove btrfs_err_str function from uapi/linux/btrfs.h
+Message-ID: <20170228231250.GA10156@altlinux.org>
+References: <20170215200259.GA1028@altlinux.org> <e5736c5a-1cef-58cb-a171-055e139e26e7@suse.com> <20170215225503.GA2947@altlinux.org>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170222213246.29315-1-benedikt.morbach@googlemail.com>
+In-Reply-To: <20170215225503.GA2947@altlinux.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Feb 22, 2017 at 10:32:46PM +0100, Benedikt Morbach wrote:
-> make sure to include newlines after commands that have only one
-> argument, such as 'unlink' or 'mkfile'
-> 
-> changes
-> 
->     unlink          ./baz.0/file_autimes          ./baz.0/                        atime=2017-02-22T11:59:16+0100 mtime=2017-02-22T11:59:16+0100 ctime=2017-02-22T11:59:16+0100
->     truncate        ./baz.0/file_a                  size=131072
->     chmod           ./baz.0/file_a                  mode=644
->     utimes          ./baz.0/file_a                  atime=2017-02-22T11:59:16+0100 mtime=2017-02-22T11:59:16+0100 ctime=2017-02-22T11:59:16+0100
->     mkfile          ./baz.0/o258-11-0rename          ./baz.0/o258-11-0               dest=./baz.0/file_b
->     utimes          ./baz.0/                        atime=2017-02-22T11:59:16+0100 mtime=2017-02-22T11:59:16+0100 ctime=2017-02-22T11:59:16+0100
-> 
-> to
-> 
->     unlink          ./baz.0/file_a
->     utimes          ./baz.0/                        atime=2017-02-22T11:59:16+0100 mtime=2017-02-22T11:59:16+0100 ctime=2017-02-22T11:59:16+0100
->     truncate        ./baz.0/file_a                  size=131072
->     chmod           ./baz.0/file_a                  mode=644
->     utimes          ./baz.0/file_a                  atime=2017-02-22T11:59:16+0100 mtime=2017-02-22T11:59:16+0100 ctime=2017-02-22T11:59:16+0100
->     mkfile          ./baz.0/o258-11-0
->     rename          ./baz.0/o258-11-0               dest=./baz.0/file_b
->     utimes          ./baz.0/                        atime=2017-02-22T11:59:16+0100 mtime=2017-02-22T11:59:16+0100 ctime=2017-02-22T11:59:16+0100
-> 
-> Signed-off-by: Benedikt Morbach <benedikt.morbach@googlemail.com>
+btrfs_err_str function is not called from anywhere and is replicated
+in the userspace headers for btrfs-progs.
 
-Applied, thanks.
+It's removal also fixes the following linux/btrfs.h userspace
+compilation error:
+
+/usr/include/linux/btrfs.h: In function 'btrfs_err_str':
+/usr/include/linux/btrfs.h:740:11: error: 'NULL' undeclared (first use in this function)
+    return NULL;
+
+Suggested-by: Jeff Mahoney <jeffm@suse.com>
+Signed-off-by: Dmitry V. Levin <ldv@altlinux.org>
+Reviewed-by: David Sterba <dsterba@suse.com>
+---
+v3: the patch seems to be lost, resending with updated list of addressees
+
+v2: remove btrfs_err_str rather than fix it
+
+ include/uapi/linux/btrfs.h | 27 ---------------------------
+ 1 file changed, 27 deletions(-)
+
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index db4c253..dcfc3a5 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -713,33 +713,6 @@ enum btrfs_err_code {
+ 	BTRFS_ERROR_DEV_ONLY_WRITABLE,
+ 	BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS
+ };
+-/* An error code to error string mapping for the kernel
+-*  error codes
+-*/
+-static inline char *btrfs_err_str(enum btrfs_err_code err_code)
+-{
+-	switch (err_code) {
+-		case BTRFS_ERROR_DEV_RAID1_MIN_NOT_MET:
+-			return "unable to go below two devices on raid1";
+-		case BTRFS_ERROR_DEV_RAID10_MIN_NOT_MET:
+-			return "unable to go below four devices on raid10";
+-		case BTRFS_ERROR_DEV_RAID5_MIN_NOT_MET:
+-			return "unable to go below two devices on raid5";
+-		case BTRFS_ERROR_DEV_RAID6_MIN_NOT_MET:
+-			return "unable to go below three devices on raid6";
+-		case BTRFS_ERROR_DEV_TGT_REPLACE:
+-			return "unable to remove the dev_replace target dev";
+-		case BTRFS_ERROR_DEV_MISSING_NOT_FOUND:
+-			return "no missing devices found to remove";
+-		case BTRFS_ERROR_DEV_ONLY_WRITABLE:
+-			return "unable to remove the only writeable device";
+-		case BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS:
+-			return "add/delete/balance/replace/resize operation "\
+-				"in progress";
+-		default:
+-			return NULL;
+-	}
+-}
+ 
+ #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
+ 				   struct btrfs_ioctl_vol_args)
+-- 
+ldv

@@ -1,311 +1,211 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from p3nlsmtpcp01-03.prod.phx3.secureserver.net ([184.168.200.142]:56486
-        "EHLO p3nlsmtpcp01-03.prod.phx3.secureserver.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933157AbdBPXCH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Feb 2017 18:02:07 -0500
-Date: Fri, 17 Feb 2017 04:30:55 +0530
-From: "Lakshmipathi.G" <Lakshmipathi.G@giis.co.in>
-To: quwenruo@cn.fujitsu.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] btrfs-progs: RAID5:Inject data stripe corruption and
- verify scrub fixes it.
-Message-ID: <20170216230055.GA23673@giis.co.in>
+Received: from aserp1050.oracle.com ([141.146.126.70]:34229 "EHLO
+        aserp1050.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751334AbdB1QdT (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 28 Feb 2017 11:33:19 -0500
+Date: Tue, 28 Feb 2017 08:31:50 -0800
+From: "Darrick J. Wong" <darrick.wong@oracle.com>
+To: Eryu Guan <eguan@redhat.com>
+Cc: linux-xfs@vger.kernel.org, "Darrick J. Wong" <djwong@djwong.org>,
+        fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 3/4] reflink: test adjacency of reflinked blocks
+Message-ID: <20170228163150.GA26275@birch.djwong.org>
+References: <148798515933.25833.2842247083803775089.stgit@birch.djwong.org>
+ <148798517790.25833.2585159479268361866.stgit@birch.djwong.org>
+ <20170228081502.GG16443@eguan.usersys.redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170228081502.GG16443@eguan.usersys.redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Test script to create file with specific data-stripe layout and pre-computed parity values.
-Inject corruption into data-stripe and verify scrubbing process fixes corrupted block.
-It also attempts to validate the corresponding parity block value.
+On Tue, Feb 28, 2017 at 04:15:02PM +0800, Eryu Guan wrote:
+> On Fri, Feb 24, 2017 at 05:12:57PM -0800, Darrick J. Wong wrote:
+> > From: Darrick J. Wong <darrick.wong@oracle.com>
+> > 
+> > If we reflink a file with N blocks to another file one block at a time,
+> > does the destination file end up with the same number of extents as the
+> > source file?  In other words, does the filesystem succeed at combining
+> > adjacent mappings into a maximal extents?
+> 
+> I'm not sure if this is a standard behavior and applies to btrfs too?
+> But btrfs is failing this test now:
+> 
+> +f1 (1) != f2 (32)
+> +s1 (1) != s2 (32)
+> 
+> Fix test or btrfs? I'm taking it if btrfs is the one to be fixed :)
 
-Signed-off-by: Lakshmipathi.G <Lakshmipathi.G@giis.co.in>
----
- .../020-raid5-datastripe-corruption/test.sh        | 275 +++++++++++++++++++++
- 1 file changed, 275 insertions(+)
- create mode 100755 tests/misc-tests/020-raid5-datastripe-corruption/test.sh
+btrfs has that weird behavior where it doesn't merge the adjacent
+extents at all (at least not according to FIEMAP) until you remount the
+filesystem.  After the remount it's fine, but... WTF? :)
 
-diff --git a/tests/misc-tests/020-raid5-datastripe-corruption/test.sh b/tests/misc-tests/020-raid5-datastripe-corruption/test.sh
-new file mode 100755
-index 0000000..3c743eb
---- /dev/null
-+++ b/tests/misc-tests/020-raid5-datastripe-corruption/test.sh
-@@ -0,0 +1,275 @@
-+#!/bin/bash
-+#
-+# Raid5: Inject data stripe corruption and fix them using scrub.
-+# 
-+# Script will perform the following:
-+# 1) Create Raid5 using 3 loopback devices.
-+# 2) Ensure file layout is created in a predictable manner. 
-+#    Each data stripe(64KB) should uniquely start with 'DNxxxx',   
-+#    where N represents the data stripe number.(ex:D0xxxx,D1xxxx etc)
-+# 3) Once file is created with specific layout, gather data stripe details 
-+#    like devicename, position and actual on-disk data.
-+# 4) Now use 'dd' to verify the data-stripe against its expected value.
-+# 5) At this stage, gather possible parity location for this specific data
-+#    stripe. The parity values is pre-computed for known data-stripes.
-+# 6) Inject corruption into given data-stripe by zero'ing out its first 4 bytes.
-+# 7) After injecting corruption, running online-scrub is expected to fix 
-+#    the corrupted data stripe with the help of parity block and 
-+#    corresponding data stripe. 
-+# 8) If scrub successful, verify the data stripe has original un-corrupted value.
-+# 9) If scrub successful, re-generate list of possible parity blocks, this
-+#    list must match one prepared in step 5. Otherwise report it as possible parity 
-+#    bug issue.
-+# 10) If no issues found, cleanup files and devices. Repeat the process for 
-+#    different file size and data-stripe.
-+#
-+#  Note: This script doesn't handle parity block corruption.
-+
-+source $TOP/tests/common
-+
-+check_prereq btrfs
-+check_prereq mkfs.btrfs
-+
-+setup_root_helper
-+prepare_test_dev 512M
-+
-+ndevs=3
-+declare -a devs
-+device_name=""
-+stripe_offset=""
-+stripe_content=""
-+known_parity_value="00010000000000000000000000000000"
-+
-+LAYOUT_TMP=$(mktemp --tmpdir btrfs-progs-raid5-file.layoutXXXXXX)
-+STRIPEINFO_TMP=$(mktemp --tmpdir btrfs-progs-raid5-file.infoXXXXXX)
-+PARITYINFO1_TMP=$(mktemp --tmpdir btrfs-progs-raid5-initial.parityXXXXXX)
-+PARITYINFO2_TMP=$(mktemp --tmpdir btrfs-progs-raid5-end.parityXXXXXX)
-+
-+prepare_devices()
-+{
-+	for i in `seq $ndevs`; do
-+		touch img$i
-+		chmod a+rw img$i
-+		truncate -s0 img$i
-+		truncate -s512M img$i
-+		devs[$i]=`run_check_stdout $SUDO_HELPER losetup --find --show img$i`
-+	done
-+}
-+
-+cleanup_devices()
-+{
-+	for dev in ${devs[@]}; do
-+		run_check $SUDO_HELPER losetup -d $dev
-+	done
-+	for i in `seq $ndevs`; do
-+		truncate -s0 img$i
-+	done
-+	run_check $SUDO_HELPER losetup --all
-+}
-+
-+test_do_mkfs()
-+{
-+	run_check $SUDO_HELPER $TOP/mkfs.btrfs -f	\
-+		$@
-+}
-+
-+test_mkfs_multi()
-+{
-+	test_do_mkfs $@ ${devs[@]}
-+}
-+
-+#$1 Filename
-+#$2 Expected no.of data stripes for the file.
-+create_layout(){
-+	fname=$1
-+	size=$(( $2 * 65536 ))
-+	n=0
-+	bs_value=1
-+	stripe=0
-+	while (( $n < $size ))
-+	do
-+		if [ $(( $n % 65536 )) -eq 0 ]; then
-+			val='D'$stripe
-+			echo -n $val
-+        		stripe=$(( $stripe+1 ))
-+			# ensure proper value		
-+			bs_value=`echo "${#val}"` 
-+        	else
-+			echo -n 'x'
-+			bs_value=1
-+		fi
-+        n=$(( $n+$bs_value ))
-+	done | dd of="$TEST_MNT"/$fname bs=$bs_value conv=notrunc &> /dev/null
-+}
-+
-+find_data_stripe_details(){
-+	for dev in ${devs[@]}; do
-+		echo $dev >> $LAYOUT_TMP
-+		$SUDO_HELPER cat $dev | hexdump -e '"%010_ad|" 16/1 "%_p" "|\n"' |
-+		grep -P 'D[0-9]+xx'  >> $LAYOUT_TMP
-+	done
-+}
-+#$1 - file to save possible parity locations
-+find_parity_stripe_count(){
-+	PARITY_COUNT=$1
-+	for dev in ${devs[@]}; do
-+		echo "Possible parity stripes locations on device: $dev" >> $PARITY_COUNT
-+		$SUDO_HELPER cat $dev | hexdump -e '"%010_ad|" 16/1 "%02X" "\n"' |
-+		grep $known_parity_value >> $PARITY_COUNT
-+	done
-+}
-+
-+#Collect data stripe information in a readable manner.
-+save_data_stripe_details(){
-+	devname=""
-+	for entry in `cat $LAYOUT_TMP`; do  
-+		echo $entry | grep -q '^\/dev\/loop' > /dev/null
-+
-+		if [ $? -eq 0 ]; then
-+			devname=$entry	
-+		else
-+			echo $devname"|"$entry >> $STRIPEINFO_TMP
-+		fi
-+	done
-+	#sorting is not mandatory
-+	sort -t'|' -n -k3 $STRIPEINFO_TMP -o $STRIPEINFO_TMP
-+}
-+#Setup current known parity value
-+#$1 - integer to identify data-stripe range
-+set_parity_value(){
-+	num_digits=$1
-+	case $num_digits in
-+	1) #parity for D0xxxx to D9xxxx
-+	  known_parity_value="00010000000000000000000000000000"
-+	  ;;
-+	2) #parity for D10xxx to D99xxx
-+	  known_parity_value="00000100000000000000000000000000"
-+	  ;;
-+	esac
-+}
-+
-+
-+#Corrupt given data stripe
-+corrupt_data_stripe(){
-+
-+	data_stripe_num=$1
-+	data_stripe_entry="D"${data_stripe_num}"xxxx"
-+	stripe_entry=`grep "${data_stripe_entry}" $STRIPEINFO_TMP`
-+
-+	#Each entry will have format like "device|position|16-byte content"
-+	#Example: /dev/loop1|0063176704|D0xxxxxxxxxxxxxx|
-+	device_name=$(echo $stripe_entry | awk -F"|" '{print $1}')
-+	stripe_offset=$(echo $stripe_entry | awk -F"|" '{print $2}')
-+	#Remove leading zeros
-+	stripe_offset=$(echo $stripe_offset | sed 's/^0*//')
-+	stripe_content=$(echo $stripe_entry | awk -F"|" '{print $3}')
-+
-+	echo "Corrupting $device_name at position $stripe_offset \
-+	which has $stripe_content" >> "$RESULTS"
-+
-+	#verify the value at this position 
-+	original_value=$($SUDO_HELPER dd 2>/dev/null if=$device_name bs=1 \
-+	count=16 skip=$stripe_offset)
-+
-+	if [ $original_value != $stripe_content ];then
-+		 echo "$original_value != $stripe_content"
-+		_fail "Data stripe mismatch. Possible use of incorrect block."
-+	else
-+		echo "Found on-disk value: $original_value " >> "$RESULTS"
-+	fi
-+	num_digits=$(echo $original_value | grep -o "[0-9]" | grep -c "")
-+	set_parity_value $num_digits
-+	find_parity_stripe_count $PARITYINFO1_TMP
-+
-+	#Corrupt the given data stripe
-+	$SUDO_HELPER dd if=/dev/zero of=$device_name bs=1 count=4 \
-+	seek=$stripe_offset conv=notrunc &> /dev/null
-+
-+	#Fetch value again.
-+	corrupted_value=$($SUDO_HELPER dd 2>/dev/null if=$device_name \
-+	bs=1 count=16 skip=$stripe_offset)
-+
-+	if [ $corrupted_value == $original_value ];then
-+		 echo "original:$original_value corrupted:$corrupted_value"
-+		_fail "Corruption failed. Possible use of incorrect block."
-+	else
-+		echo "Corruption completed at $stripe_offset" >> "$RESULTS"
-+	fi
-+}
-+
-+#Verify data stripe after scrub
-+verify_data_stripe(){
-+
-+	value_after_scrub=$($SUDO_HELPER dd 2>/dev/null if=$device_name bs=1 \
-+	count=16 skip=$stripe_offset)
-+	if [ $value_after_scrub != $stripe_content ];then
-+		echo  "Found on-disk value: $value_after_scrub" >> "$RESULTS"
-+		_fail "Scrub failed to fix data stripe corruption."
-+	else
-+		echo "Scrub corrected value: $value_after_scrub" >> "$RESULTS"
-+	fi
-+}
-+
-+#Verify parity stripe count after scrub
-+verify_parity_stripe(){
-+	find_parity_stripe_count $PARITYINFO2_TMP
-+	parity_stripe_count_before=$(md5sum $PARITYINFO1_TMP | cut -f1 -d' ')
-+	parity_stripe_count_after=$(md5sum $PARITYINFO2_TMP  | cut -f1 -d' ')
-+	if [ "$parity_stripe_count_before" != "$parity_stripe_count_after" ];then
-+		echo "Mismatch between $PARITYINFO1_TMP $PARITYINFO2_TMP, please check."
-+		diff $PARITYINFO1_TMP $PARITYINFO2_TMP
-+		_fail "Scrub corrupted parity stripe."
-+	else
-+		echo "Parity stripe check passed." >> "$RESULTS"
-+	fi
-+}
-+
-+
-+#$1 Filename
-+#$2 File with 'n' no.of data stripes
-+#$3 Data stripe to corrupt
-+test_raid5_datastripe_corruption(){
-+	filename=$1
-+	stripe_num=$2
-+	test_stripe=$3
-+
-+	prepare_devices
-+	dev1=${devs[1]}
-+	dev2=${devs[2]}
-+	dev3=${devs[3]}
-+
-+	test_mkfs_multi -d raid5 -m raid5
-+	run_check $SUDO_HELPER mount $dev1 $TEST_MNT
-+	create_layout $filename $stripe_num
-+	run_check $SUDO_HELPER umount "$TEST_MNT"
-+
-+	#Gather data stripe informations like specific device,offset 
-+	find_data_stripe_details
-+	save_data_stripe_details
-+	corrupt_data_stripe $test_stripe
-+
-+	#Mount the device and start scrub
-+	run_check $SUDO_HELPER mount $dev1 $TEST_MNT
-+	run_check $SUDO_HELPER btrfs scrub start $TEST_MNT
-+	#Introduce delay, hopefully scrubbing will be finished.
-+	sleep 10 
-+
-+	#Validate 
-+	verify_data_stripe
-+	verify_parity_stripe
-+
-+	#cleanup
-+	run_check $SUDO_HELPER umount "$TEST_MNT"
-+	cleanup_devices
-+	rm -f $LAYOUT_TMP
-+	rm -f $STRIPEINFO_TMP
-+}
-+
-+
-+test_raid5_datastripe_corruption file128k.txt 2 1 #file with 2 stripe,corrupt 1st.
-+test_raid5_datastripe_corruption file192k.txt 3 2 #file with 3 stripe,corrupt 2nd.
-+test_raid5_datastripe_corruption file256k.txt 4 3
-+test_raid5_datastripe_corruption file512k.txt 8 6
-+test_raid5_datastripe_corruption file768k.txt 12 10
-+test_raid5_datastripe_corruption file1m.txt 16 14 #1MB file, corrupt 14th stripe.
-+test_raid5_datastripe_corruption file2m.txt 32 23 #2MB file, corrupt 23rd stripe
--- 
-2.7.4
+So yes, the test is working as designed.  btrfs needs fixing, or I guess
+worst case we can _notrun it on btrfs.
 
+Snark aside, it was intended originally to make sure that XFS is
+properly merging the extent records together; then it occurred to me to
+rewrite it with fiemap and make it one of the generic reflink tests so
+that ocfs2 can get tested too.
+
+--D
+
+> 
+> Thanks,
+> Eryu
+> 
+> > 
+> > Signed-off-by: Darrick J. Wong <djwong@djwong.org>
+> > ---
+> >  tests/generic/930     |  106 +++++++++++++++++++++++++++++++++++++++++++++++++
+> >  tests/generic/930.out |   11 +++++
+> >  tests/generic/group   |    1 
+> >  3 files changed, 118 insertions(+)
+> >  create mode 100755 tests/generic/930
+> >  create mode 100644 tests/generic/930.out
+> > 
+> > 
+> > diff --git a/tests/generic/930 b/tests/generic/930
+> > new file mode 100755
+> > index 0000000..15d8cbf
+> > --- /dev/null
+> > +++ b/tests/generic/930
+> > @@ -0,0 +1,106 @@
+> > +#! /bin/bash
+> > +# FS QA Test No. 930
+> > +#
+> > +# Check that reflinking adjacent blocks in a file produces a single
+> > +# block mapping extent.
+> > +#
+> > +#-----------------------------------------------------------------------
+> > +# Copyright (c) 2017 Oracle, Inc.  All Rights Reserved.
+> > +#
+> > +# This program is free software; you can redistribute it and/or
+> > +# modify it under the terms of the GNU General Public License as
+> > +# published by the Free Software Foundation.
+> > +#
+> > +# This program is distributed in the hope that it would be useful,
+> > +# but WITHOUT ANY WARRANTY; without even the implied warranty of
+> > +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+> > +# GNU General Public License for more details.
+> > +#
+> > +# You should have received a copy of the GNU General Public License
+> > +# along with this program; if not, write the Free Software Foundation,
+> > +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+> > +#-----------------------------------------------------------------------
+> > +#
+> > +
+> > +seq=`basename $0`
+> > +seqres=$RESULT_DIR/$seq
+> > +echo "QA output created by $seq"
+> > +
+> > +here=`pwd`
+> > +tmp=/tmp/$$
+> > +status=1	# failure is the default!
+> > +trap "_cleanup; exit \$status" 0 1 2 3 7 15
+> > +
+> > +_cleanup()
+> > +{
+> > +	cd /
+> > +	rm -rf $tmp.*
+> > +	wait
+> > +}
+> > +
+> > +# get standard environment, filters and checks
+> > +. ./common/rc
+> > +. ./common/filter
+> > +. ./common/reflink
+> > +
+> > +# real QA test starts here
+> > +_supported_os Linux
+> > +_supported_fs generic
+> > +_require_scratch_reflink
+> > +_require_fiemap
+> > +
+> > +echo "Format and mount"
+> > +_scratch_mkfs > $seqres.full 2>&1
+> > +_scratch_mount >> $seqres.full 2>&1
+> > +
+> > +testdir=$SCRATCH_MNT/test-$seq
+> > +mkdir $testdir
+> > +
+> > +blocks=32
+> > +blksz=65536
+> > +sz=$((blocks * blksz))
+> > +
+> > +echo "Create the original files"
+> > +$XFS_IO_PROG -f -c "falloc 0 $sz" $testdir/file1 >> $seqres.full
+> > +_pwrite_byte 0x61 0 $sz $testdir/file1 >> $seqres.full
+> > +seq 0 $blksz $((sz - blksz)) | while read offset; do
+> > +	_reflink_range $testdir/file1 $offset $testdir/file2 $offset $blksz >> $seqres.full
+> > +done
+> > +
+> > +echo "Compare files"
+> > +md5sum $testdir/file1 | _filter_scratch
+> > +md5sum $testdir/file2 | _filter_scratch
+> > +
+> > +echo "Check extent counts"
+> > +f1=$(_count_extents $testdir/file1)
+> > +f2=$(_count_extents $testdir/file2)
+> > +s1=$($XFS_IO_PROG -c 'fiemap -v' $testdir/file1 | awk '{print $5}' | grep -c '0x.*[2367aAbBfF]...$')
+> > +s2=$($XFS_IO_PROG -c 'fiemap -v' $testdir/file2 | awk '{print $5}' | grep -c '0x.*[2367aAbBfF]...$')
+> > +
+> > +# Did the fs combine the extent mappings when we made f2?
+> > +test $f1 -eq $f2 || echo "f1 ($f1) != f2 ($f2)"
+> > +test $s1 -eq $s2 || echo "s1 ($s1) != s2 ($s2)"
+> > +test $f1 -eq $s1 || echo "f1 ($f1) != s1 ($f1)"
+> > +test $f2 -eq $s2 || echo "f2 ($f2) != s2 ($f2)"
+> > +
+> > +_scratch_cycle_mount
+> > +
+> > +echo "Compare files after remounting"
+> > +md5sum $testdir/file1 | _filter_scratch
+> > +md5sum $testdir/file2 | _filter_scratch
+> > +
+> > +echo "Check extent counts"
+> > +f1=$(_count_extents $testdir/file1)
+> > +f2=$(_count_extents $testdir/file2)
+> > +s1=$($XFS_IO_PROG -c 'fiemap -v' $testdir/file1 | awk '{print $5}' | grep -c '0x.*[2367aAbBfF]...$')
+> > +s2=$($XFS_IO_PROG -c 'fiemap -v' $testdir/file2 | awk '{print $5}' | grep -c '0x.*[2367aAbBfF]...$')
+> > +
+> > +# Are the mappings still combined?
+> > +test $f1 -eq $f2 || echo "f1 ($f1) != f2 ($f2)"
+> > +test $s1 -eq $s2 || echo "s1 ($s1) != s2 ($s2)"
+> > +test $f1 -eq $s1 || echo "f1 ($f1) != s1 ($f1)"
+> > +test $f2 -eq $s2 || echo "f2 ($f2) != s2 ($f2)"
+> > +
+> > +# success, all done
+> > +status=0
+> > +exit
+> > diff --git a/tests/generic/930.out b/tests/generic/930.out
+> > new file mode 100644
+> > index 0000000..556108a
+> > --- /dev/null
+> > +++ b/tests/generic/930.out
+> > @@ -0,0 +1,11 @@
+> > +QA output created by 930
+> > +Format and mount
+> > +Create the original files
+> > +Compare files
+> > +de89461b64701958984c95d1bfb0065a  SCRATCH_MNT/test-930/file1
+> > +de89461b64701958984c95d1bfb0065a  SCRATCH_MNT/test-930/file2
+> > +Check extent counts
+> > +Compare files after remounting
+> > +de89461b64701958984c95d1bfb0065a  SCRATCH_MNT/test-930/file1
+> > +de89461b64701958984c95d1bfb0065a  SCRATCH_MNT/test-930/file2
+> > +Check extent counts
+> > diff --git a/tests/generic/group b/tests/generic/group
+> > index d0bc47d..4b4df66 100644
+> > --- a/tests/generic/group
+> > +++ b/tests/generic/group
+> > @@ -411,3 +411,4 @@
+> >  406 auto quick dangerous
+> >  407 auto quick clone metadata
+> >  408 auto quick clone dedupe metadata
+> > +930 auto quick clone
+> > 
+> --
+> To unsubscribe from this list: send the line "unsubscribe fstests" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,46 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:47736 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751461AbdB0SLQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 27 Feb 2017 13:11:16 -0500
-Received: from mail.kernel.org (localhost [127.0.0.1])
-        by mail.kernel.org (Postfix) with ESMTP id 68206202F2
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Feb 2017 18:09:37 +0000 (UTC)
-Received: from mail-it0-f51.google.com (mail-it0-f51.google.com [209.85.214.51])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 142E8202EB
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Feb 2017 18:09:34 +0000 (UTC)
-Received: by mail-it0-f51.google.com with SMTP id h10so63251955ith.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Feb 2017 10:09:34 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <CAL3q7H6mannv6_v28440G70KRTUHOQQU6QKsRirSOFQiqKNe0g@mail.gmail.com>
-References: <20170224020646.12668-1-quwenruo@cn.fujitsu.com> <CAL3q7H6mannv6_v28440G70KRTUHOQQU6QKsRirSOFQiqKNe0g@mail.gmail.com>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Mon, 27 Feb 2017 18:09:32 +0000
-Message-ID: <CAL3q7H7ZNHSM3-F4q=UkKdA3dFGbWfF0DwQHHKoBXAEr_Fa3=g@mail.gmail.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:11487 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751392AbdB1BBM (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 27 Feb 2017 20:01:12 -0500
 Subject: Re: [PATCH v4] btrfs: Handle delalloc error correctly to avoid
  ordered extent deadlock
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+To: Filipe Manana <fdmanana@kernel.org>
+References: <20170224020646.12668-1-quwenruo@cn.fujitsu.com>
+ <CAL3q7H6mannv6_v28440G70KRTUHOQQU6QKsRirSOFQiqKNe0g@mail.gmail.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
         Liu Bo <bo.li.liu@oracle.com>
-Content-Type: text/plain; charset=UTF-8
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <7772e3df-7131-b144-f7b4-0b8e70da3867@cn.fujitsu.com>
+Date: Tue, 28 Feb 2017 09:00:29 +0800
+MIME-Version: 1.0
+In-Reply-To: <CAL3q7H6mannv6_v28440G70KRTUHOQQU6QKsRirSOFQiqKNe0g@mail.gmail.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 27, 2017 at 4:14 PM, Filipe Manana <fdmanana@kernel.org> wrote:
 
-Also, forgot to mention before, looking at the subject, the term
-deadlock is not correct, as it's a hang.
-A deadlock is when a task is trying to acquire a resource (typically a
-lock) that is already held by some other task that in turn it's trying
-to acquire the same resource as the former task.
 
+At 02/28/2017 12:14 AM, Filipe Manana wrote:
 > On Fri, Feb 24, 2017 at 2:06 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
 >> If run btrfs/125 with nospace_cache or space_cache=v2 mount option,
 >> btrfs will block with the following backtrace:
 >
 > Happens with btrfs/124 without any mount options too.
+
+Can't reproduce it with btrfs/124 though.
+
+Any extra info?
+
 >
 >>
 >> Call Trace:
@@ -77,6 +69,13 @@ to acquire the same resource as the former task.
 > This is a higher level problem independent of the raid level being
 > used. So this changelog gives the wrong idea that this happens only
 > with raid5/6.
+
+Indeed, not restricted to raid5/6 but any corruption in csum tree can 
+lead to such hang.
+Will update commit message.
+
+Although in my setup only btrfs/125 can trigger it.
+
 >
 >>
 >> This patch will slightly modify one existing function,
@@ -130,6 +129,9 @@ to acquire the same resource as the former task.
 >
 > This is unrelated to the problem you're solving. Should be an
 > independent and unrelated patch.
+
+OK, although not sure if it's appropriate to just remove one comment.
+
 >
 >>                 if (ret) {
 >>                         SetPageError(page);
@@ -149,8 +151,22 @@ to acquire the same resource as the former task.
 >
 > Offset and bytes are const, why not the booleans as well? It's
 > inconsistent and confusing.
+
+Old btrfs_endio_direct_write_update_ordered() uses const, while I didn't 
+see any point here.
+
+u64/bool/int parameter are passed by their value, so const makes no 
+sense here, we won't be able to modify the value anyway.
+
+It just restrict us to modify the parameter inside the function.
+
+I'll remove the const prefix in next update.
+
 > Also leaving a blank line before the declaration of next function
 > would make the code easier to the eyes.
+
+Forgot this, will add one.
+
 >
 >> +static inline void btrfs_endio_direct_write_update_ordered(struct inode *inode,
 >> +                                                          const u64 offset,
@@ -227,6 +243,16 @@ to acquire the same resource as the former task.
 > call extent_clear_unlock_delalloc() below.
 > However later on, we should still break if this condition is true,
 > otherwise this code is not equivalent to what we had before.
+
+The condition is still the same.
+
+I modify (disk_num_bytes < cur_alloc_size) branch from break to reduce 
+disk_num_bytes to 0.
+
+And the whole while loop checks (disk_num_bytes > 0) as condition, so 
+after setting disk_num_bytes to 0, the loop will end, just has the same 
+effort of calling break explicitly.
+
 >
 >>                 /* we're not doing compressed IO, don't unlock the first
 >>                  * page (which the caller expects to stay locked), don't
@@ -251,6 +277,9 @@ to acquire the same resource as the former task.
 >
 > in out_unlock() -> at out_lock label
 > (it's not a function, should not have the parenthesis following the name)
+
+Ok, I'll use 'label' not 'tag' for out_lock.
+
 >
 > oredered -> ordered
 >
@@ -261,6 +290,21 @@ to acquire the same resource as the former task.
 > Jumping to this label will make us decrement block group reservations
 > twice - i.e. btrfs_dec_block_group_reservations() is now called twice
 > instead of once, allowing for an underflow to happen.
+
+Right, btrfs_dec_block_group_reservations() is not using @start but 
+allocated extent key.
+
+The correct goto label should be out_unlock().
+
+
+However, when I wrote the v4 patch, I already wonder if it's possible 
+that we hit btrfs_reloc_clone_csums() error here.
+
+As relocation always uses file clusters to relocate block group, which 
+has PREALLOC flag so it will only hit run_dealloc_nocow().
+
+Or did I miss something?
+
 >
 > And btrfs_free_reserved_extent() will be called twice for the reserved
 > extent, once at the "out_reserve" label and once when the ordered
@@ -335,6 +379,21 @@ to acquire the same resource as the former task.
 > more ordered extents but failed somewhere before submitting bios for
 > them. I would just remove the comment, or the very least make it
 > understandable.
+
+I mean, we should not put btrfs_cleanup_ordered_extents() into previous 
+'if (ret && cur_offset < end)' branch.
+
+It can happen that we have already submitted, for example 4 ordered 
+extents already, while the fifth, which is also the last ordered extent, 
+failed with btrfs_reloc_clone_csum() error.
+
+In that case, our @cur_offset is the same as @end, and in that case, we 
+still need to cleanup all 5 ordered.
+
+Anyway, the comment doesn't make much sense unless one wants to move it 
+into 'if (ret && cur_offset < end)' branch.
+I'll delete it.
+
 >
 >> +       if (ret)
 >> +               btrfs_cleanup_ordered_extents(inode, start, end - start + 1);
@@ -370,6 +429,12 @@ to acquire the same resource as the former task.
 >> +       }
 >
 > What is going on here? wq and func are set but not used anywhere.
+
+btrfs_init_work() and btrfs_queue_work() modification not amended into 
+this commit while rebasing.
+
+Thanks for point this out.
+
 >
 >> +
 >> +       /*
@@ -377,10 +442,18 @@ to acquire the same resource as the former task.
 >> +        * by end_extent_writepage() under done tag of __extent_writepage().
 >
 > This sentence is confusing, "under done tag"?
+
+'Tag' seems confusing, I'll keep it in mind by using 'label'.
+
 > Just say:
 >
 > In cleanup case, the first page of the range will be handled by
 > end_extent_writepage() when called from __extent_writepage().
+
+I'll pick this.
+
+Thanks,
+Qu
 >
 > thanks
 >
@@ -399,3 +472,7 @@ to acquire the same resource as the former task.
 >>
 >>
 >>
+>
+>
+
+

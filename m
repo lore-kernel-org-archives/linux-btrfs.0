@@ -1,41 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([65.50.211.133]:53267 "EHLO
+Received: from bombadil.infradead.org ([65.50.211.133]:59567 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752168AbdCAPhN (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Mar 2017 10:37:13 -0500
-Date: Wed, 1 Mar 2017 07:36:48 -0800
+        with ESMTP id S1751945AbdCAPj4 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Mar 2017 10:39:56 -0500
+Date: Wed, 1 Mar 2017 07:38:57 -0800
 From: Christoph Hellwig <hch@infradead.org>
-To: Goldwyn Rodrigues <rgoldwyn@suse.de>
-Cc: jack@suse.com, hch@infradead.org, linux-fsdevel@vger.kernel.org,
-        linux-block@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
-        Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: Re: [PATCH 1/8] nowait aio: Introduce IOCB_FLAG_NOWAIT
-Message-ID: <20170301153647.GA30631@infradead.org>
+To: Matthew Wilcox <willy@infradead.org>
+Cc: Goldwyn Rodrigues <rgoldwyn@suse.de>, jack@suse.com, hch@infradead.org,
+        linux-fsdevel@vger.kernel.org, linux-block@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-xfs@vger.kernel.org, Goldwyn Rodrigues <rgoldwyn@suse.com>
+Subject: Re: [PATCH 3/8] nowait aio: return if direct write will trigger
+ writeback
+Message-ID: <20170301153857.GC30631@infradead.org>
 References: <20170228233610.25456-1-rgoldwyn@suse.de>
- <20170228233610.25456-2-rgoldwyn@suse.de>
+ <20170228233610.25456-4-rgoldwyn@suse.de>
+ <20170301034606.GK16328@bombadil.infradead.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170228233610.25456-2-rgoldwyn@suse.de>
+In-Reply-To: <20170301034606.GK16328@bombadil.infradead.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Feb 28, 2017 at 05:36:03PM -0600, Goldwyn Rodrigues wrote:
-> From: Goldwyn Rodrigues <rgoldwyn@suse.com>
+On Tue, Feb 28, 2017 at 07:46:06PM -0800, Matthew Wilcox wrote:
+> Ugh, this is pretty inefficient.  If that's all you want to know, then
+> using the radix tree directly will be far more efficient than spinning
+> up all the pagevec machinery only to discard the pages found.
 > 
-> This flag informs kernel to bail out if an AIO request will block
-> for reasons such as file allocations, or a writeback triggered,
-> or would block while allocating requests while performing
-> direct I/O.
+> But what's going to kick these pages out of cache?  Shouldn't we rather
+> find the pages, kick them out if clean, start writeback if not, and *then*
+> return -EAGAIN?
 > 
-> IOCB_FLAG_NOWAIT is translated to IOCB_NOWAIT for
-> iocb->ki_flags.
+> So maybe we want to spin up the pagevec machinery after all so we can
+> do that extra work?
 
-Given that we aren't validating aio_flags in older kernels we can't
-just add this flag as it will be a no-op in older kernels.  I think
-we will have to add IOCB_CMD_PREADV2/IOCB_CMD_WRITEV2 opcodes that
-properly validate all reserved fields or flags first.
-
-Once we do that I'd really prefer to use the same flags values
-as preadv2/pwritev2 so that we'll only need one set of flags over
-sync/async read/write ops.
+As pointed out in the last round of these patches I think we really
+need to pass a flags argument to filemap_write_and_wait_range to
+communicate the non-blocking nature and only return -EAGAIN if we'd
+block.  As a bonus that can indeed start to kick the pages out.

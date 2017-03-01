@@ -1,48 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([65.50.211.133]:49270 "EHLO
+Received: from bombadil.infradead.org ([65.50.211.133]:34123 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751917AbdCAPll (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Mar 2017 10:41:41 -0500
-Date: Wed, 1 Mar 2017 07:40:58 -0800
+        with ESMTP id S1753053AbdCAP4w (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Mar 2017 10:56:52 -0500
+Date: Wed, 1 Mar 2017 07:56:34 -0800
 From: Christoph Hellwig <hch@infradead.org>
 To: Goldwyn Rodrigues <rgoldwyn@suse.de>
 Cc: jack@suse.com, hch@infradead.org, linux-fsdevel@vger.kernel.org,
         linux-block@vger.kernel.org, linux-btrfs@vger.kernel.org,
         linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
         Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: Re: [PATCH 7/8] nowait aio: xfs
-Message-ID: <20170301154058.GD30631@infradead.org>
+Subject: Re: [PATCH 1/8] nowait aio: Introduce IOCB_FLAG_NOWAIT
+Message-ID: <20170301155634.GA9630@infradead.org>
 References: <20170228233610.25456-1-rgoldwyn@suse.de>
- <20170228233610.25456-8-rgoldwyn@suse.de>
+ <20170228233610.25456-2-rgoldwyn@suse.de>
+ <20170301153647.GA30631@infradead.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170228233610.25456-8-rgoldwyn@suse.de>
+In-Reply-To: <20170301153647.GA30631@infradead.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> @@ -528,12 +528,17 @@ xfs_file_dio_aio_write(
->  	    ((iocb->ki_pos + count) & mp->m_blockmask)) {
->  		unaligned_io = 1;
->  		iolock = XFS_IOLOCK_EXCL;
-> +		if (iocb->ki_flags & IOCB_NOWAIT)
-> +			return -EAGAIN;
+On Wed, Mar 01, 2017 at 07:36:48AM -0800, Christoph Hellwig wrote:
+> Given that we aren't validating aio_flags in older kernels we can't
+> just add this flag as it will be a no-op in older kernels.  I think
+> we will have to add IOCB_CMD_PREADV2/IOCB_CMD_WRITEV2 opcodes that
+> properly validate all reserved fields or flags first.
+> 
+> Once we do that I'd really prefer to use the same flags values
+> as preadv2/pwritev2 so that we'll only need one set of flags over
+> sync/async read/write ops.
 
-So all unaligned I/O will return -EAGAIN?  Why?  Also please explain
-that reason in a comment right here.
-
-> diff --git a/fs/xfs/xfs_iomap.c b/fs/xfs/xfs_iomap.c
-> index 1aa3abd..84f981a 100644
-> --- a/fs/xfs/xfs_iomap.c
-> +++ b/fs/xfs/xfs_iomap.c
-> @@ -1020,6 +1020,11 @@ xfs_file_iomap_begin(
->  	if ((flags & IOMAP_REPORT) ||
->  	    (xfs_is_reflink_inode(ip) &&
->  	     (flags & IOMAP_WRITE) && (flags & IOMAP_DIRECT))) {
-> +		/* Allocations due to reflinks */
-> +		if ((flags & IOMAP_NOWAIT) && !(flags & IOMAP_REPORT)) {
-> +			error = -EAGAIN;
-> +			goto out_unlock;
-> +		}
-
-FYI, this code looks very different in current Linus' tree - I think
-you're on some old kernel base.
+I just took another look and we do verify that
+aio_reserved1/aio_reserved2 must be zero.  So I think we can just
+stick RWF_* into aio_reserved1 and fix that problem that way.

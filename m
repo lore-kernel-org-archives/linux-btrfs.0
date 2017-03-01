@@ -1,65 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:33336 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751683AbdCABFv (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:38732 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751686AbdCABFv (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Tue, 28 Feb 2017 20:05:51 -0500
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH 1/2] Btrfs: fix unexpected file hole after disk errors
-Date: Tue, 28 Feb 2017 17:04:39 -0800
-Message-Id: <1488330280-22678-1-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH 2/2] Btrfs: remove start_pos
+Date: Tue, 28 Feb 2017 17:04:40 -0800
+Message-Id: <1488330280-22678-2-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1488330280-22678-1-git-send-email-bo.li.liu@oracle.com>
+References: <1488330280-22678-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs creates hole extents to cover any unwritten section right before
-doing buffer writes after commit 3ac0d7b96a26 ("btrfs: Change the expanding
-write sequence to fix snapshot related bug.").
-
-However, that takes the start position of the buffered write to compare
-against the current EOF, hole extents would be created only if (EOF <
-start).
-
-If the EOF is at the middle of the buffered write, no hole extents will be
-created and a file hole without a hole extent is left in this file.
-
-This bug was revealed by generic/019 in fstests.  'fsstress' in this test
-may create the above situation and the test then fails all requests
-including writes, so the buffer write which is supposed to cover the
-hole (without the hole extent) couldn't make it on disk.  Running fsck
-against such btrfs ends up with detecting file extent holes.
-
-Things could be more serious, some stale data would be exposed to
-userspace if files with this kind of hole are truncated to a position of
-the hole, because the on-disk inode size is beyond the last extent in the
-file.
-
-This fixes the bug by comparing the end position against the EOF.
+@pos, not aligned @start_pos, should be used to check whether the eof page
+needs to be marked as readonly, thus @start_pos can be removed.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/file.c | 5 ++---
- 1 file changed, 2 insertions(+), 3 deletions(-)
+ fs/btrfs/file.c | 7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
 
 diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index b5c5da2..0be837b 100644
+index 0be837b..ef88e6d 100644
 --- a/fs/btrfs/file.c
 +++ b/fs/btrfs/file.c
-@@ -1861,11 +1861,10 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
+@@ -1814,7 +1814,6 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
+ 	struct inode *inode = file_inode(file);
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+-	u64 start_pos;
+ 	u64 end_pos;
+ 	ssize_t num_written = 0;
+ 	bool sync = (file->f_flags & O_DSYNC) || IS_SYNC(file->f_mapping->host);
+@@ -1822,7 +1821,6 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
+ 	loff_t pos;
+ 	size_t count;
+ 	loff_t oldsize;
+-	int clean_page = 0;
+ 
+ 	inode_lock(inode);
+ 	err = generic_write_checks(iocb, from);
+@@ -1860,7 +1858,6 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
+ 
  	pos = iocb->ki_pos;
  	count = iov_iter_count(from);
- 	start_pos = round_down(pos, fs_info->sectorsize);
-+	end_pos = round_up(pos + count, fs_info->sectorsize);
+-	start_pos = round_down(pos, fs_info->sectorsize);
+ 	end_pos = round_up(pos + count, fs_info->sectorsize);
  	oldsize = i_size_read(inode);
--	if (start_pos > oldsize) {
-+	if (end_pos > oldsize) {
- 		/* Expand hole size to cover write data, preventing empty gap */
--		end_pos = round_up(pos + count,
--				   fs_info->sectorsize);
- 		err = btrfs_cont_expand(inode, oldsize, end_pos);
- 		if (err) {
+ 	if (end_pos > oldsize) {
+@@ -1870,8 +1867,6 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
  			inode_unlock(inode);
+ 			goto out;
+ 		}
+-		if (start_pos > round_up(oldsize, fs_info->sectorsize))
+-			clean_page = 1;
+ 	}
+ 
+ 	if (sync)
+@@ -1883,7 +1878,7 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
+ 		num_written = __btrfs_buffered_write(file, from, pos);
+ 		if (num_written > 0)
+ 			iocb->ki_pos = pos + num_written;
+-		if (clean_page)
++		if (oldsize < pos)
+ 			pagecache_isize_extended(inode, oldsize,
+ 						i_size_read(inode));
+ 	}
 -- 
 2.5.5
 

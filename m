@@ -1,30 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56107 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:54165 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752219AbdCAQ2g (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 1 Mar 2017 11:28:36 -0500
-Date: Wed, 1 Mar 2017 17:27:33 +0100
+        id S1752642AbdCAQNm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 1 Mar 2017 11:13:42 -0500
+Date: Wed, 1 Mar 2017 15:59:55 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: Benedikt Morbach <benedikt.morbach@googlemail.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3 10/12] btrfs-progs: fsck-test: Add new test case for
- file extent false alerts
-Message-ID: <20170301162733.GH4662@twin.jikos.cz>
+Subject: Re: [PATCH] btrfs-progs: send-dump: add missing newlines
+Message-ID: <20170301145955.GE4662@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20170221083438.25719-1-quwenruo@cn.fujitsu.com>
- <20170221083438.25719-11-quwenruo@cn.fujitsu.com>
+References: <20170222213246.29315-1-benedikt.morbach@googlemail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170221083438.25719-11-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20170222213246.29315-1-benedikt.morbach@googlemail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Feb 21, 2017 at 04:34:36PM +0800, Qu Wenruo wrote:
-> +check_global_prereq xfs_io
+On Wed, Feb 22, 2017 at 10:32:46PM +0100, Benedikt Morbach wrote:
+> make sure to include newlines after commands that have only one
+> argument, such as 'unlink' or 'mkfile'
+> 
+> changes
+> 
+>     unlink          ./baz.0/file_autimes          ./baz.0/                        atime=2017-02-22T11:59:16+0100 mtime=2017-02-22T11:59:16+0100 ctime=2017-02-22T11:59:16+0100
+>     truncate        ./baz.0/file_a                  size=131072
+>     chmod           ./baz.0/file_a                  mode=644
+>     utimes          ./baz.0/file_a                  atime=2017-02-22T11:59:16+0100 mtime=2017-02-22T11:59:16+0100 ctime=2017-02-22T11:59:16+0100
+>     mkfile          ./baz.0/o258-11-0rename          ./baz.0/o258-11-0               dest=./baz.0/file_b
+>     utimes          ./baz.0/                        atime=2017-02-22T11:59:16+0100 mtime=2017-02-22T11:59:16+0100 ctime=2017-02-22T11:59:16+0100
+> 
+> to
+> 
+>     unlink          ./baz.0/file_a
+>     utimes          ./baz.0/                        atime=2017-02-22T11:59:16+0100 mtime=2017-02-22T11:59:16+0100 ctime=2017-02-22T11:59:16+0100
+>     truncate        ./baz.0/file_a                  size=131072
+>     chmod           ./baz.0/file_a                  mode=644
+>     utimes          ./baz.0/file_a                  atime=2017-02-22T11:59:16+0100 mtime=2017-02-22T11:59:16+0100 ctime=2017-02-22T11:59:16+0100
+>     mkfile          ./baz.0/o258-11-0
+>     rename          ./baz.0/o258-11-0               dest=./baz.0/file_b
+>     utimes          ./baz.0/                        atime=2017-02-22T11:59:16+0100 mtime=2017-02-22T11:59:16+0100 ctime=2017-02-22T11:59:16+0100
+> 
+> Signed-off-by: Benedikt Morbach <benedikt.morbach@googlemail.com>
 
-> +	run_check xfs_io -c "pwrite 0 64K" "$TEST_MNT/file"
-
-> +	run_check xfs_io -f -c "pwrite 0 1K" "$TEST_MNT/file"
-
-I've converted this to dd as we don't want to depend on xfsprogs
-installed for the tests.
+Applied, thanks.

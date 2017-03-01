@@ -1,68 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:65098 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752010AbdCAIka (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 1 Mar 2017 03:40:30 -0500
-Received: from thetick.localnet ([93.181.44.247]) by mail.gmx.com (mrgmx101
- [212.227.17.168]) with ESMTPSA (Nemesis) id 0LoJDJ-1c7kzo2DYv-00gF4X for
- <linux-btrfs@vger.kernel.org>; Wed, 01 Mar 2017 09:24:01 +0100
-From: Marc Joliet <marcec@gmx.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: [4.7.2] btrfs_run_delayed_refs:2963: errno=-17 Object already exists
-Date: Wed, 01 Mar 2017 09:23:52 +0100
-Message-ID: <1975016.KbFk7ASZDg@thetick>
-In-Reply-To: <21888099.8VRa6s2ieu@thetick>
-References: <20160828152908.6e1325b5@jupiter.sol.kaishome.de> <20170217091915.066488ef@jupiter.sol.kaishome.de> <21888099.8VRa6s2ieu@thetick>
+Received: from cn.fujitsu.com ([59.151.112.132]:29823 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751102AbdCAJeN (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Mar 2017 04:34:13 -0500
+Subject: Re: [PATCH 2/2] Btrfs: remove start_pos
+To: Liu Bo <bo.li.liu@oracle.com>, <linux-btrfs@vger.kernel.org>
+References: <1488330280-22678-1-git-send-email-bo.li.liu@oracle.com>
+ <1488330280-22678-2-git-send-email-bo.li.liu@oracle.com>
+CC: David Sterba <dsterba@suse.cz>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <48a869a9-86fc-188f-58bf-8132138f94a2@cn.fujitsu.com>
+Date: Wed, 1 Mar 2017 16:48:20 +0800
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart7675624.aP76tQxyNN"; micalg="pgp-sha256"; protocol="application/pgp-signature"
+In-Reply-To: <1488330280-22678-2-git-send-email-bo.li.liu@oracle.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart7675624.aP76tQxyNN
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="utf-8"
 
-On Tuesday 28 February 2017 23:14:54 Marc Joliet wrote:
-> I think I'm at that point now myself, unless anybody has any other id=
-eas.
 
-For example, could the --init-extent-tree option to btrfs-check help, g=
-iven=20
-that I needed to pass -w to btrfs-image?
+At 03/01/2017 09:04 AM, Liu Bo wrote:
+> @pos, not aligned @start_pos, should be used to check whether the eof page
+> needs to be marked as readonly, thus @start_pos can be removed.
+>
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+>  fs/btrfs/file.c | 7 +------
+>  1 file changed, 1 insertion(+), 6 deletions(-)
+>
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index 0be837b..ef88e6d 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -1814,7 +1814,6 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
+>  	struct inode *inode = file_inode(file);
+>  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+>  	struct btrfs_root *root = BTRFS_I(inode)->root;
+> -	u64 start_pos;
+>  	u64 end_pos;
+>  	ssize_t num_written = 0;
+>  	bool sync = (file->f_flags & O_DSYNC) || IS_SYNC(file->f_mapping->host);
+> @@ -1822,7 +1821,6 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
+>  	loff_t pos;
+>  	size_t count;
+>  	loff_t oldsize;
+> -	int clean_page = 0;
+>
+>  	inode_lock(inode);
+>  	err = generic_write_checks(iocb, from);
+> @@ -1860,7 +1858,6 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
+>
+>  	pos = iocb->ki_pos;
+>  	count = iov_iter_count(from);
+> -	start_pos = round_down(pos, fs_info->sectorsize);
+>  	end_pos = round_up(pos + count, fs_info->sectorsize);
+>  	oldsize = i_size_read(inode);
+>  	if (end_pos > oldsize) {
+> @@ -1870,8 +1867,6 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
+>  			inode_unlock(inode);
+>  			goto out;
+>  		}
+> -		if (start_pos > round_up(oldsize, fs_info->sectorsize))
+> -			clean_page = 1;
+>  	}
+>
+>  	if (sync)
+> @@ -1883,7 +1878,7 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
+>  		num_written = __btrfs_buffered_write(file, from, pos);
+>  		if (num_written > 0)
+>  			iocb->ki_pos = pos + num_written;
+> -		if (clean_page)
+> +		if (oldsize < pos)
+>  			pagecache_isize_extended(inode, oldsize,
+>  						i_size_read(inode));
 
-Also, the image is complete, so I only need to find somewhere where I c=
-an=20
-upload a 9.4 GB file.
+Not familiar with page cache, so I can be totally wrong here.
 
-Greetings
-=2D-=20
-Marc Joliet
-=2D-
-"People who think they know everything really annoy those of us who kno=
-w we
-don't" - Bjarne Stroustrup
+But what will happen if @oldsize and @pos are in the same page?
 
---nextPart7675624.aP76tQxyNN
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
+For example:
+Page start                                    Page start + 4K
+|             |                |              |
+               old size         pos
 
------BEGIN PGP SIGNATURE-----
+Do we still need to call pagecache_iszie_extented() since we will dirty 
+that page anyway?
 
-iQIcBAABCAAGBQJYtoUYAAoJEL/Q5oYsiHj0whUP/0yBwaXuBlGndm0xPtXkITqT
-QkswRLZdJZMgFrJEf2G79gQ+LgOR3HVZnahh4zkrior5EEUK0uCOtRl0PrChCNN4
-UmN5J3M8U+YMjyrXZDhj+oaYCna1QdcxZGPWlZgeDeXjt/Piz0MXSgUWrfmlE+dC
-7N6hZdjOSdtT7yhOdgory7TFjID31TNsnmffHuzeDRnIW/7dUXbAh2QqN4Q+NMsh
-l6ewdpkFJaOmXL0xmk5nPoR4V2xCjoUs4Q72TqMGFl3biAlfcVZqE18+kS7U3j29
-81xvLkqIhjoHFHbQV7C6RGyl/y0ETTRINkC+3PgfkNyzzofFs0E2NnfQxfIhL4ui
-3Z+Wr2eYuwespYkZnKBl+XYD58pqTPQ0x9+7KjBp6yR6ixvho1Dpb4JWgztUA0yp
-elnvq+1bX03y31OWRXHA31O2dJffoMgSEaZJM/NM8UjfqjY+sAygqhN46/nZwYBy
-NsCJlXxtvgMlu7q2Q9NIgkUHAv3VjyKRQsRjbu1RZubrDusWOZYcOWngzmM8888E
-SXCBTSmCmtZ6QUYx2pluizpxPD4ahOghKrwEN9HQVB8rFofpVkWZzB9i3YnTF74y
-8EtC9RSF/RZgpNa+43e9467oPtJ+D/kqgghdZrAUyMJJNWwNXNbDRNddRXJSe0yi
-hCI5AOawzAXSEmhZFrHe
-=3iOw
------END PGP SIGNATURE-----
+Thanks,
+Qu
+>  	}
+>
 
---nextPart7675624.aP76tQxyNN--
 

@@ -1,152 +1,392 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from startkeylogger.hungrycats.org ([207.192.69.118]:55459 "EHLO
-        neville.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1750946AbdCHHWU (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:16403 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751648AbdCACUe (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 8 Mar 2017 02:22:20 -0500
-From: Zygo Blaxell <zblaxell@waya.furryterror.org>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: add missing memset while reading compressed inline extents
-Date: Tue,  7 Mar 2017 22:18:17 -0500
-Message-Id: <1488943097-20914-1-git-send-email-zblaxell@waya.furryterror.org>
+        Tue, 28 Feb 2017 21:20:34 -0500
+Date: Tue, 28 Feb 2017 18:19:56 -0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
+Subject: Re: [PATCH 1/7] Btrfs: create a helper for getting chunk map
+Message-ID: <20170301021955.GC9546@lim.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1487381301-865-1-git-send-email-bo.li.liu@oracle.com>
+ <1487381301-865-2-git-send-email-bo.li.liu@oracle.com>
+ <bb4ca745-c23a-aa12-0446-dde110f4e9c9@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <bb4ca745-c23a-aa12-0446-dde110f4e9c9@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+On Mon, Feb 20, 2017 at 11:20:33AM +0800, Qu Wenruo wrote:
+> 
+> 
+> At 02/18/2017 09:28 AM, Liu Bo wrote:
+> > We have similar code here and there, this merges them into a helper.
+> > 
+> > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> 
+> Looks good overall.
+> 
+> Although small nitpick inlined below.
 
-This is a story about 4 distinct (and very old) btrfs bugs.
+Thank you for going through this.
 
-Commit c8b978188c ("Btrfs: Add zlib compression support") added
-three data corruption bugs for inline extents (bugs #1-3).
+> > ---
+> >  fs/btrfs/extent_io.c |   3 +-
+> >  fs/btrfs/volumes.c   | 163 +++++++++++++++++----------------------------------
+> >  fs/btrfs/volumes.h   |   2 +-
+> >  3 files changed, 57 insertions(+), 111 deletions(-)
+> > 
+> > diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> > index 4ac383a..609ece1 100644
+> > --- a/fs/btrfs/extent_io.c
+> > +++ b/fs/btrfs/extent_io.c
+> > @@ -2007,14 +2007,13 @@ int repair_io_failure(struct inode *inode, u64 start, u64 length, u64 logical,
+> >  	u64 map_length = 0;
+> >  	u64 sector;
+> >  	struct btrfs_bio *bbio = NULL;
+> > -	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
+> >  	int ret;
+> > 
+> >  	ASSERT(!(fs_info->sb->s_flags & MS_RDONLY));
+> >  	BUG_ON(!mirror_num);
+> > 
+> >  	/* we can't repair anything in raid56 yet */
+> > -	if (btrfs_is_parity_mirror(map_tree, logical, length, mirror_num))
+> > +	if (btrfs_is_parity_mirror(fs_info, logical, length, mirror_num))
+> 
+> Not sure if such small parameter cleanup can be split into a separate patch.
+> At least it's less related to the get_chunk_map() helper.
+>
 
-Commit 93c82d5750 ("Btrfs: zero page past end of inline file items")
-fixed bug #1:  uncompressed inline extents followed by a hole and more
-extents could get non-zero data in the hole as they were read.  The fix
-was to add a memset in btrfs_get_extent to zero out the hole.
+But it's not a cleanup, it is get_chunk_map() that needs @fs_info.
 
-Commit 166ae5a418 ("btrfs: fix inline compressed read err corruption")
-fixed bug #2:  compressed inline extents which contained non-zero bytes
-might be replaced with zero bytes in some cases.  This patch removed an
-unhelpful memset from uncompress_inline, but the case where memset is
-required was missed.
+> >  		return 0;
+> > 
+> >  	bio = btrfs_io_bio_alloc(GFP_NOFS, 1);
+> > diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> > index 3c3c69c..c52b0fe 100644
+> > --- a/fs/btrfs/volumes.c
+> > +++ b/fs/btrfs/volumes.c
+> > @@ -2794,10 +2794,38 @@ static int btrfs_del_sys_chunk(struct btrfs_fs_info *fs_info,
+> >  	return ret;
+> >  }
+> > 
+> > +static struct extent_map *get_chunk_map(struct btrfs_fs_info *fs_info,
+> > +					u64 logical, u64 length)
+> > +{
+> > +	struct extent_map_tree *em_tree;
+> > +	struct extent_map *em;
+> > +
+> > +	em_tree = &fs_info->mapping_tree.map_tree;
+> > +	read_lock(&em_tree->lock);
+> > +	em = lookup_extent_mapping(em_tree, logical, length);
+> > +	read_unlock(&em_tree->lock);
+> > +
+> > +	if (!em) {
+> > +		btrfs_crit(fs_info, "unable to find logical %llu len %llu",
+> > +			logical, length);
+> 
+> Nice error message, would be quite helpful when we hit some bug later.
+> 
+> > +		return ERR_PTR(-EINVAL);
+> 
+> Normally I'd return -ENOENT, not sure what's the correct return here though.
+>
 
-There is also a memset in the decompression code, but this only covers
-decompressed data that is shorter than the ram_bytes from the extent
-ref record.  This memset doesn't cover the region between the end of the
-decompressed data and the end of the page.  It has also moved around a
-few times over the years, so there's no single patch to refer to.
+So I tried to be consistent with the error handling of other places of searching
+chunk mapping tree.
 
-This patch fixes bug #3:  compressed inline extents followed by a hole
-and more extents could get non-zero data in the hole as they were read
-(i.e. bug #3 is the same as bug #1, but s/uncompressed/compressed/).
-The fix is the same:  zero out the hole in the compressed case too,
-by putting a memset back in uncompress_inline, but this time with
-correct parameters.
+I think EINVAL makes sense here, either @logical or @length is not valid.
 
-The last and oldest bug, bug #0, is the cause of the offending inline
-extent/hole/extent pattern.  Bug #0 is a subtle and mostly-harmless quirk
-of behavior somewhere in the btrfs write code.  In a few special cases,
-an inline extent and hole are allowed to persist where they normally
-would be combined with later extents in the file.
+> > +	}
+> > +
+> > +	if (em->start > logical || em->start + em->len < logical) {
+> > +		btrfs_crit(fs_info,
+> > +			   "found a bad mapping, wanted %llu, found %llu-%llu",
+> > +			   logical, em->start, em->start + em->len);
+> 
+> Better outputting @length also.
+>
 
-A fast reproducer for bug #0 is presented below.  A few offending extents
-are also created in the wild during large rsync transfers with the -S
-flag.  A Linux kernel build (git checkout; make allyesconfig; make -j8)
-will produce a handful of offending files as well.  Once an offending
-file is created, it can present different content to userspace each
-time it is read.
+OK, I'll update it with @length.
 
-Bug #0 is at least 4 and possibly 8 years old.  I verified every vX.Y
-kernel back to v3.5 has this behavior.  There are fossil records of this
-bug's effects in commits all the way back to v2.6.32.  I have no reason
-to believe bug #0 wasn't present at the beginning of btrfs compression
-support in v2.6.29, but I can't easily test kernels that old to be sure.
+Thanks,
 
-It is not clear whether bug #0 is worth fixing.  A fix would likely
-require injecting extra reads into currently write-only paths, and most
-of the exceptional cases caused by bug #0 are already handled now.
+-liubo
 
-Whether we like them or not, bug #0's inline extents followed by holes
-are part of the btrfs de-facto disk format now, and we need to be able
-to read them without data corruption or an infoleak.  So enough about
-bug #0, let's get back to bug #3 (this patch).
-
-An example of on-disk structure leading to data corruption:
-
-        item 61 key (606890 INODE_ITEM 0) itemoff 9662 itemsize 160
-                inode generation 50 transid 50 size 47424 nbytes 49141
-                block group 0 mode 100644 links 1 uid 0 gid 0
-                rdev 0 flags 0x0(none)
-        item 62 key (606890 INODE_REF 603050) itemoff 9642 itemsize 20
-                inode ref index 3 namelen 10 name: DB_File.so
-        item 63 key (606890 EXTENT_DATA 0) itemoff 8280 itemsize 1362
-                inline extent data size 1341 ram 4085 compress(zlib)
-        item 64 key (606890 EXTENT_DATA 4096) itemoff 8227 itemsize 53
-                extent data disk byte 5367308288 nr 20480
-                extent data offset 0 nr 45056 ram 45056
-                extent compression(zlib)
-
-Different data appears in userspace during each read of the 11 bytes
-between 4085 and 4096.  The extent in item 63 is not long enough to
-fill the first page of the file, so a memset is required to fill the
-space between item 63 (ending at 4085) and item 64 (beginning at 4096)
-with zero.
-
-Here is a reproducer from Liu Bo:
-
-Using 'page_poison=on' kernel command line (or enable
-CONFIG_PAGE_POISONING) run the following:
-
-	# touch foo
-	# chattr +c foo
-	# xfs_io -f -c "pwrite -W 0 1000" foo
-	# xfs_io -f -c "falloc 4 8188" foo
-	# od -x foo
-	# echo 3 >/proc/sys/vm/drop_caches
-	# od -x foo
-
-This produce the following on my box:
-
-0000000 cdcd cdcd cdcd cdcd cdcd cdcd cdcd cdcd
-*
-0001740 cdcd cdcd cdcd cdcd 0000 0000 0000 0000
-0001760 0000 0000 0000 0000 0000 0000 0000 0000
-*
-0020000
-
-0000000 cdcd cdcd cdcd cdcd cdcd cdcd cdcd cdcd
-*
-0001740 cdcd cdcd cdcd cdcd 6c63 7400 635f 006d
-0001760 5f74 6f43 7400 435f 0053 5f74 7363 7400
-0002000 435f 0056 5f74 6164 7400 645f 0062 5f74
-(...)
-
-v2: I'm not able to contrive a test case where pg_offset != 0, but we
-might as well handle it anyway.
-
-Signed-off-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/inode.c | 6 ++++++
- 1 file changed, 6 insertions(+)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 25ac2cf..4d41a31 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6805,6 +6805,12 @@ static noinline int uncompress_inline(struct btrfs_path *path,
- 	max_size = min_t(unsigned long, PAGE_SIZE, max_size);
- 	ret = btrfs_decompress(compress_type, tmp, page,
- 			       extent_offset, inline_size, max_size);
-+	WARN_ON(max_size + pg_offset > PAGE_SIZE);
-+	if (max_size + pg_offset < PAGE_SIZE) {
-+		char *map = kmap(page);
-+		memset(map + pg_offset + max_size, 0, PAGE_SIZE - max_size - pg_offset);
-+		kunmap(page);
-+	}
- 	kfree(tmp);
- 	return ret;
- }
--- 
-2.1.4
-
+> Thanks,
+> Qu
+> 
+> > +		free_extent_map(em);
+> > +		return ERR_PTR(-EINVAL);
+> > +	}
+> > +
+> > +	/* callers are responsible for dropping em's ref. */
+> > +	return em;
+> > +}
+> > +
+> >  int btrfs_remove_chunk(struct btrfs_trans_handle *trans,
+> >  		       struct btrfs_fs_info *fs_info, u64 chunk_offset)
+> >  {
+> > -	struct extent_map_tree *em_tree;
+> >  	struct extent_map *em;
+> >  	struct map_lookup *map;
+> >  	u64 dev_extent_len = 0;
+> > @@ -2805,23 +2833,15 @@ int btrfs_remove_chunk(struct btrfs_trans_handle *trans,
+> >  	int i, ret = 0;
+> >  	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
+> > 
+> > -	em_tree = &fs_info->mapping_tree.map_tree;
+> > -
+> > -	read_lock(&em_tree->lock);
+> > -	em = lookup_extent_mapping(em_tree, chunk_offset, 1);
+> > -	read_unlock(&em_tree->lock);
+> > -
+> > -	if (!em || em->start > chunk_offset ||
+> > -	    em->start + em->len < chunk_offset) {
+> > +	em = get_chunk_map(fs_info, chunk_offset, 1);
+> > +	if (IS_ERR(em)) {
+> >  		/*
+> >  		 * This is a logic error, but we don't want to just rely on the
+> >  		 * user having built with ASSERT enabled, so if ASSERT doesn't
+> >  		 * do anything we still error out.
+> >  		 */
+> >  		ASSERT(0);
+> > -		if (em)
+> > -			free_extent_map(em);
+> > -		return -EINVAL;
+> > +		return PTR_ERR(em);
+> >  	}
+> >  	map = em->map_lookup;
+> >  	mutex_lock(&fs_info->chunk_mutex);
+> > @@ -4888,7 +4908,6 @@ int btrfs_finish_chunk_alloc(struct btrfs_trans_handle *trans,
+> >  	struct btrfs_device *device;
+> >  	struct btrfs_chunk *chunk;
+> >  	struct btrfs_stripe *stripe;
+> > -	struct extent_map_tree *em_tree;
+> >  	struct extent_map *em;
+> >  	struct map_lookup *map;
+> >  	size_t item_size;
+> > @@ -4897,24 +4916,9 @@ int btrfs_finish_chunk_alloc(struct btrfs_trans_handle *trans,
+> >  	int i = 0;
+> >  	int ret = 0;
+> > 
+> > -	em_tree = &fs_info->mapping_tree.map_tree;
+> > -	read_lock(&em_tree->lock);
+> > -	em = lookup_extent_mapping(em_tree, chunk_offset, chunk_size);
+> > -	read_unlock(&em_tree->lock);
+> > -
+> > -	if (!em) {
+> > -		btrfs_crit(fs_info, "unable to find logical %Lu len %Lu",
+> > -			   chunk_offset, chunk_size);
+> > -		return -EINVAL;
+> > -	}
+> > -
+> > -	if (em->start != chunk_offset || em->len != chunk_size) {
+> > -		btrfs_crit(fs_info,
+> > -			   "found a bad mapping, wanted %Lu-%Lu, found %Lu-%Lu",
+> > -			    chunk_offset, chunk_size, em->start, em->len);
+> > -		free_extent_map(em);
+> > -		return -EINVAL;
+> > -	}
+> > +	em = get_chunk_map(fs_info, chunk_offset, chunk_size);
+> > +	if (IS_ERR(em))
+> > +		return PTR_ERR(em);
+> > 
+> >  	map = em->map_lookup;
+> >  	item_size = btrfs_chunk_item_size(map->num_stripes);
+> > @@ -5057,15 +5061,12 @@ int btrfs_chunk_readonly(struct btrfs_fs_info *fs_info, u64 chunk_offset)
+> >  {
+> >  	struct extent_map *em;
+> >  	struct map_lookup *map;
+> > -	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
+> >  	int readonly = 0;
+> >  	int miss_ndevs = 0;
+> >  	int i;
+> > 
+> > -	read_lock(&map_tree->map_tree.lock);
+> > -	em = lookup_extent_mapping(&map_tree->map_tree, chunk_offset, 1);
+> > -	read_unlock(&map_tree->map_tree.lock);
+> > -	if (!em)
+> > +	em = get_chunk_map(fs_info, chunk_offset, 1);
+> > +	if (IS_ERR(em))
+> >  		return 1;
+> > 
+> >  	map = em->map_lookup;
+> > @@ -5119,34 +5120,19 @@ void btrfs_mapping_tree_free(struct btrfs_mapping_tree *tree)
+> > 
+> >  int btrfs_num_copies(struct btrfs_fs_info *fs_info, u64 logical, u64 len)
+> >  {
+> > -	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
+> >  	struct extent_map *em;
+> >  	struct map_lookup *map;
+> > -	struct extent_map_tree *em_tree = &map_tree->map_tree;
+> >  	int ret;
+> > 
+> > -	read_lock(&em_tree->lock);
+> > -	em = lookup_extent_mapping(em_tree, logical, len);
+> > -	read_unlock(&em_tree->lock);
+> > -
+> > -	/*
+> > -	 * We could return errors for these cases, but that could get ugly and
+> > -	 * we'd probably do the same thing which is just not do anything else
+> > -	 * and exit, so return 1 so the callers don't try to use other copies.
+> > -	 */
+> > -	if (!em) {
+> > -		btrfs_crit(fs_info, "No mapping for %Lu-%Lu", logical,
+> > -			    logical+len);
+> > -		return 1;
+> > -	}
+> > -
+> > -	if (em->start > logical || em->start + em->len < logical) {
+> > -		btrfs_crit(fs_info, "Invalid mapping for %Lu-%Lu, got %Lu-%Lu",
+> > -			   logical, logical+len, em->start,
+> > -			   em->start + em->len);
+> > -		free_extent_map(em);
+> > +	em = get_chunk_map(fs_info, logical, len);
+> > +	if (IS_ERR(em))
+> > +		/*
+> > +		 * We could return errors for these cases, but that could get
+> > +		 * ugly and we'd probably do the same thing which is just not do
+> > +		 * anything else and exit, so return 1 so the callers don't try
+> > +		 * to use other copies.
+> > +		 */
+> >  		return 1;
+> > -	}
+> > 
+> >  	map = em->map_lookup;
+> >  	if (map->type & (BTRFS_BLOCK_GROUP_DUP | BTRFS_BLOCK_GROUP_RAID1))
+> > @@ -5175,15 +5161,11 @@ unsigned long btrfs_full_stripe_len(struct btrfs_fs_info *fs_info,
+> >  {
+> >  	struct extent_map *em;
+> >  	struct map_lookup *map;
+> > -	struct extent_map_tree *em_tree = &map_tree->map_tree;
+> >  	unsigned long len = fs_info->sectorsize;
+> > 
+> > -	read_lock(&em_tree->lock);
+> > -	em = lookup_extent_mapping(em_tree, logical, len);
+> > -	read_unlock(&em_tree->lock);
+> > -	BUG_ON(!em);
+> > +	em = get_chunk_map(fs_info, logical, len);
+> > +	BUG_ON(IS_ERR(em));
+> > 
+> > -	BUG_ON(em->start > logical || em->start + em->len < logical);
+> >  	map = em->map_lookup;
+> >  	if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK)
+> >  		len = map->stripe_len * nr_data_stripes(map);
+> > @@ -5191,20 +5173,16 @@ unsigned long btrfs_full_stripe_len(struct btrfs_fs_info *fs_info,
+> >  	return len;
+> >  }
+> > 
+> > -int btrfs_is_parity_mirror(struct btrfs_mapping_tree *map_tree,
+> > +int btrfs_is_parity_mirror(struct btrfs_fs_info *fs_info,
+> >  			   u64 logical, u64 len, int mirror_num)
+> >  {
+> >  	struct extent_map *em;
+> >  	struct map_lookup *map;
+> > -	struct extent_map_tree *em_tree = &map_tree->map_tree;
+> >  	int ret = 0;
+> > 
+> > -	read_lock(&em_tree->lock);
+> > -	em = lookup_extent_mapping(em_tree, logical, len);
+> > -	read_unlock(&em_tree->lock);
+> > -	BUG_ON(!em);
+> > +	em = get_chunk_map(fs_info, logical, len);
+> > +	BUG_ON(IS_ERR(em));
+> > 
+> > -	BUG_ON(em->start > logical || em->start + em->len < logical);
+> >  	map = em->map_lookup;
+> >  	if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK)
+> >  		ret = 1;
+> > @@ -5324,8 +5302,6 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
+> >  {
+> >  	struct extent_map *em;
+> >  	struct map_lookup *map;
+> > -	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
+> > -	struct extent_map_tree *em_tree = &map_tree->map_tree;
+> >  	u64 offset;
+> >  	u64 stripe_offset;
+> >  	u64 stripe_end_offset;
+> > @@ -5347,23 +5323,9 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
+> >  	u64 physical_to_patch_in_first_stripe = 0;
+> >  	u64 raid56_full_stripe_start = (u64)-1;
+> > 
+> > -	read_lock(&em_tree->lock);
+> > -	em = lookup_extent_mapping(em_tree, logical, *length);
+> > -	read_unlock(&em_tree->lock);
+> > -
+> > -	if (!em) {
+> > -		btrfs_crit(fs_info, "unable to find logical %llu len %llu",
+> > -			logical, *length);
+> > -		return -EINVAL;
+> > -	}
+> > -
+> > -	if (em->start > logical || em->start + em->len < logical) {
+> > -		btrfs_crit(fs_info,
+> > -			   "found a bad mapping, wanted %Lu, found %Lu-%Lu",
+> > -			   logical, em->start, em->start + em->len);
+> > -		free_extent_map(em);
+> > -		return -EINVAL;
+> > -	}
+> > +	em = get_chunk_map(fs_info, logical, *length);
+> > +	if (IS_ERR(em))
+> > +		return PTR_ERR(em);
+> > 
+> >  	map = em->map_lookup;
+> >  	offset = logical - em->start;
+> > @@ -5899,8 +5861,6 @@ int btrfs_rmap_block(struct btrfs_fs_info *fs_info,
+> >  		     u64 chunk_start, u64 physical, u64 devid,
+> >  		     u64 **logical, int *naddrs, int *stripe_len)
+> >  {
+> > -	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
+> > -	struct extent_map_tree *em_tree = &map_tree->map_tree;
+> >  	struct extent_map *em;
+> >  	struct map_lookup *map;
+> >  	u64 *buf;
+> > @@ -5910,24 +5870,11 @@ int btrfs_rmap_block(struct btrfs_fs_info *fs_info,
+> >  	u64 rmap_len;
+> >  	int i, j, nr = 0;
+> > 
+> > -	read_lock(&em_tree->lock);
+> > -	em = lookup_extent_mapping(em_tree, chunk_start, 1);
+> > -	read_unlock(&em_tree->lock);
+> > -
+> > -	if (!em) {
+> > -		btrfs_err(fs_info, "couldn't find em for chunk %Lu",
+> > -			chunk_start);
+> > +	em = get_chunk_map(fs_info, chunk_start, 1);
+> > +	if (IS_ERR(em))
+> >  		return -EIO;
+> > -	}
+> > 
+> > -	if (em->start != chunk_start) {
+> > -		btrfs_err(fs_info, "bad chunk start, em=%Lu, wanted=%Lu",
+> > -		       em->start, chunk_start);
+> > -		free_extent_map(em);
+> > -		return -EIO;
+> > -	}
+> >  	map = em->map_lookup;
+> > -
+> >  	length = em->len;
+> >  	rmap_len = map->stripe_len;
+> > 
+> > diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+> > index 24ba6bc..bd5f6cd 100644
+> > --- a/fs/btrfs/volumes.h
+> > +++ b/fs/btrfs/volumes.h
+> > @@ -475,7 +475,7 @@ void btrfs_destroy_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
+> >  void btrfs_init_dev_replace_tgtdev_for_resume(struct btrfs_fs_info *fs_info,
+> >  					      struct btrfs_device *tgtdev);
+> >  void btrfs_scratch_superblocks(struct block_device *bdev, char *device_path);
+> > -int btrfs_is_parity_mirror(struct btrfs_mapping_tree *map_tree,
+> > +int btrfs_is_parity_mirror(struct btrfs_fs_info *fs_info,
+> >  			   u64 logical, u64 len, int mirror_num);
+> >  unsigned long btrfs_full_stripe_len(struct btrfs_fs_info *fs_info,
+> >  				    struct btrfs_mapping_tree *map_tree,
+> > 
+> 
+> 

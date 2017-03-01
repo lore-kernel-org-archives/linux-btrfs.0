@@ -1,23 +1,22 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:30234 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:42435 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1750743AbdCAFX1 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Mar 2017 00:23:27 -0500
+        with ESMTP id S1751769AbdCAFfj (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Mar 2017 00:35:39 -0500
 Subject: Re: [PATCH 1/2] Btrfs: fix unexpected file hole after disk errors
 To: Liu Bo <bo.li.liu@oracle.com>, <linux-btrfs@vger.kernel.org>
 References: <1488330280-22678-1-git-send-email-bo.li.liu@oracle.com>
 CC: David Sterba <dsterba@suse.cz>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <7701e7cb-02ef-76a6-344e-613d5240ff1c@cn.fujitsu.com>
-Date: Wed, 1 Mar 2017 13:22:21 +0800
+Message-ID: <4e9c24e7-1d44-47ec-4246-07171c2544f0@cn.fujitsu.com>
+Date: Wed, 1 Mar 2017 10:44:53 +0800
 MIME-Version: 1.0
 In-Reply-To: <1488330280-22678-1-git-send-email-bo.li.liu@oracle.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It seems that my previous mail doesn't reach mail list.
-So send again.
+
 
 At 03/01/2017 09:04 AM, Liu Bo wrote:
 > Btrfs creates hole extents to cover any unwritten section right before

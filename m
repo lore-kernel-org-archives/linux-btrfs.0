@@ -1,73 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33424 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:57808 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750707AbdC1MBG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Mar 2017 08:01:06 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id E1E70AE10
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Mar 2017 12:00:44 +0000 (UTC)
-Date: Tue, 28 Mar 2017 14:00:02 +0200
+        id S1751102AbdCAQnm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 1 Mar 2017 11:43:42 -0500
+Date: Wed, 1 Mar 2017 17:30:25 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Goldwyn Rodrigues <rgoldwyn@suse.de>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org,
-        Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: Re: [PATCH v5] qgroup: Retry after commit on getting EDQUOT
-Message-ID: <20170328120002.GX4781@twin.jikos.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v3 00/12] lowmem mode fixes
+Message-ID: <20170301163025.GI4662@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20170327172957.2518-1-rgoldwyn@suse.de>
- <20170327173647.GQ4781@twin.jikos.cz>
- <08d582e0-3670-ade4-3a2a-da72829d3da0@suse.de>
+References: <20170221083438.25719-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <08d582e0-3670-ade4-3a2a-da72829d3da0@suse.de>
+In-Reply-To: <20170221083438.25719-1-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 27, 2017 at 01:13:46PM -0500, Goldwyn Rodrigues wrote:
+On Tue, Feb 21, 2017 at 04:34:26PM +0800, Qu Wenruo wrote:
+> Patches can be fetch from github:
+> https://github.com/adam900710/btrfs-progs/tree/lowmem_fixes
+> 
+> Thanks for reports from Chris Murphy and Christoph Anton Mitterer,
+> several new bugs are exposed for lowmem mode fsck.
+> 
+> Special thank to Christoph, who did rounds of test during the patch
+> development.
+> 
+> The following bugs are fixed in lowmem mode:
+> 
+> 1) Block group used space false alert
+>    If a BLOCK_GROUP_ITEM or its first EXTENT/METADATA_ITEM is located at
+>    the first slot of a leaf, search_slot() used by lowmem mode can
+>    point to previous leaf, with path->slots[0] beyond valid leaf slots.
+> 
+>    This makes us to read out uninitialized data, and can abort block
+>    group used space check loop, causing a false alert.
+> 
+>    Fix it with a test case image inside fsck-tests/020/extent-ref-cases
+>    Also fix all possible backward search.
+>    Reported by Christoph.
+> 
+> 2) Partly written prealloc extent false alert
+>    If a prealloc extent gets partily written, lowmem mode will report
+>    prealloc extent shouldn't have csum.
+> 
+>    Lowmem mode passed wrong variable to csum checking code, causing it
+>    to check the whole range of the prealloc extent, making the bug
+>    happens.
+> 
+>    Fix it with a test case inside fsck-tests/020/extent-ref-cases.
+>    Reported by Chirs Murphy And Christoph.
+> 
+> 3) Extent item size false alert.
+>    Under certain case, btrfs lowmem mode check reports data backref
+>    lost.
+>    It's because newly introduced extent item size check aborts normal
+>    check routine.
+> 
+>    It can happen if a data/metadata extent item has no inline ref.
+> 
+>    Fix it, test case already submitted before and merged, but due to
+>    fsck-tests framework bugs, it never get called for lowmem mode.
+> 
+> 4) Compressed inline data extent
+>    The extra check on inline data extent length doesn't take compression
+>    into consideration and will cause false alert without outputting any
+>    error message.
+> 
+>    Fix it and add correct error message output for it.
+>    Also fix all possible silent error.
+>    Reported by Christoph.
+> 
+> 5) fsck-tests Lowmem mode override fixes
+>    Allow lowmem mode override to get called for all tests, and allow
+>    them all to pass lowmem mode except fsck-tests/006, which is a
+>    original repair mode bug.
 > 
 > 
-> On 03/27/2017 12:36 PM, David Sterba wrote:
-> > On Mon, Mar 27, 2017 at 12:29:57PM -0500, Goldwyn Rodrigues wrote:
-> >> From: Goldwyn Rodrigues <rgoldwyn@suse.com>
-> >>
-> >> We are facing the same problem with EDQUOT which was experienced with
-> >> ENOSPC. Not sure if we require a full ticketing system such as ENOSPC, but
-> >> here is a quick fix, which may be too big a hammer.
-> >>
-> >> Quotas are reserved during the start of an operation, incrementing
-> >> qg->reserved. However, it is written to disk in a commit_transaction
-> >> which could take as long as commit_interval. In the meantime there
-> >> could be deletions which are not accounted for because deletions are
-> >> accounted for only while committed (free_refroot). So, when we get
-> >> a EDQUOT flush the data to disk and try again.
-> >>
-> >> This fixes fstests btrfs/139.
-> >>
-> >> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
-> >> ---
-> >> Changes since v1:
-> >>  - Changed start_delalloc_roots() to start_delalloc_inode() to target
-> >>    the root in question only to reduce the amount of flush to be done.
-> >>  - Added wait_ordered_extents().
-> >>
-> >> Changes since v2:
-> >>   - Revised patch header
-> >>   - removed comment on combining conditions
-> >>   - removed test case, to be done in fstests
-> >>
-> >> Changes sinve v3:
-> >>   - testcase reinstated
-> >>   - return value checks
-> >>
-> >> Changes since v4:
-> >>  - removed testcase since btrfs/139 got incorporated in fstests
-> > 
-> > The point was to keep the test inside the changelog as well.
-> 
-> 
-> Yes, that was before we had btrfs/139 in fstest. I have put it in the
-> patch header. However, if you really want the test script back, I can
-> put it there. Let me know.
+> changelog:
+>   v2:
+>     More generic forward search bug fix, not restricted to block group
+>     item.
+>     Compressed inline extent false alert fix.
+>     Lowmem fsck-test enhance, to allow it really work.
+>     Fix walk_down_tree_v2() to continue after non-fatal errors detected
+>   v3:
+>     Update the last patch to make it works better for incoming lowmem
+>     mode repair patchset.
 
-I think the test steps are worth keeping in the changelog, even if
-there's a fstest.  I'll copy it from v4, patch added to 4.12 queue.
+Thanks for the fixes, applied with a few minor fixups in changelogs.

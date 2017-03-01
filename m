@@ -1,82 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:42435 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751769AbdCAFfj (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Mar 2017 00:35:39 -0500
-Subject: Re: [PATCH 1/2] Btrfs: fix unexpected file hole after disk errors
-To: Liu Bo <bo.li.liu@oracle.com>, <linux-btrfs@vger.kernel.org>
-References: <1488330280-22678-1-git-send-email-bo.li.liu@oracle.com>
-CC: David Sterba <dsterba@suse.cz>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <4e9c24e7-1d44-47ec-4246-07171c2544f0@cn.fujitsu.com>
-Date: Wed, 1 Mar 2017 10:44:53 +0800
+Received: from mout.gmx.net ([212.227.17.20]:65098 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752010AbdCAIka (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 1 Mar 2017 03:40:30 -0500
+Received: from thetick.localnet ([93.181.44.247]) by mail.gmx.com (mrgmx101
+ [212.227.17.168]) with ESMTPSA (Nemesis) id 0LoJDJ-1c7kzo2DYv-00gF4X for
+ <linux-btrfs@vger.kernel.org>; Wed, 01 Mar 2017 09:24:01 +0100
+From: Marc Joliet <marcec@gmx.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: [4.7.2] btrfs_run_delayed_refs:2963: errno=-17 Object already exists
+Date: Wed, 01 Mar 2017 09:23:52 +0100
+Message-ID: <1975016.KbFk7ASZDg@thetick>
+In-Reply-To: <21888099.8VRa6s2ieu@thetick>
+References: <20160828152908.6e1325b5@jupiter.sol.kaishome.de> <20170217091915.066488ef@jupiter.sol.kaishome.de> <21888099.8VRa6s2ieu@thetick>
 MIME-Version: 1.0
-In-Reply-To: <1488330280-22678-1-git-send-email-bo.li.liu@oracle.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: multipart/signed; boundary="nextPart7675624.aP76tQxyNN"; micalg="pgp-sha256"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+--nextPart7675624.aP76tQxyNN
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
 
+On Tuesday 28 February 2017 23:14:54 Marc Joliet wrote:
+> I think I'm at that point now myself, unless anybody has any other id=
+eas.
 
-At 03/01/2017 09:04 AM, Liu Bo wrote:
-> Btrfs creates hole extents to cover any unwritten section right before
-> doing buffer writes after commit 3ac0d7b96a26 ("btrfs: Change the expanding
-> write sequence to fix snapshot related bug.").
->
-> However, that takes the start position of the buffered write to compare
-> against the current EOF, hole extents would be created only if (EOF <
-> start).
->
-> If the EOF is at the middle of the buffered write, no hole extents will be
-> created and a file hole without a hole extent is left in this file.
->
-> This bug was revealed by generic/019 in fstests.  'fsstress' in this test
-> may create the above situation and the test then fails all requests
-> including writes, so the buffer write which is supposed to cover the
-> hole (without the hole extent) couldn't make it on disk.  Running fsck
-> against such btrfs ends up with detecting file extent holes.
->
-> Things could be more serious, some stale data would be exposed to
-> userspace if files with this kind of hole are truncated to a position of
-> the hole, because the on-disk inode size is beyond the last extent in the
-> file.
->
-> This fixes the bug by comparing the end position against the EOF.
->
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+For example, could the --init-extent-tree option to btrfs-check help, g=
+iven=20
+that I needed to pass -w to btrfs-image?
 
-Patch looks good to me.
-Reviewed-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Also, the image is complete, so I only need to find somewhere where I c=
+an=20
+upload a 9.4 GB file.
 
-> ---
->  fs/btrfs/file.c | 5 ++---
->  1 file changed, 2 insertions(+), 3 deletions(-)
->
-> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index b5c5da2..0be837b 100644
-> --- a/fs/btrfs/file.c
-> +++ b/fs/btrfs/file.c
-> @@ -1861,11 +1861,10 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
->  	pos = iocb->ki_pos;
->  	count = iov_iter_count(from);
->  	start_pos = round_down(pos, fs_info->sectorsize);
-> +	end_pos = round_up(pos + count, fs_info->sectorsize);
->  	oldsize = i_size_read(inode);
-> -	if (start_pos > oldsize) {
-> +	if (end_pos > oldsize) {
->  		/* Expand hole size to cover write data, preventing empty gap */
+Greetings
+=2D-=20
+Marc Joliet
+=2D-
+"People who think they know everything really annoy those of us who kno=
+w we
+don't" - Bjarne Stroustrup
 
-The comment still makes sense here, but it could be better to explain 
-why to insert the hole to cover the whole write range (in case write fails)
+--nextPart7675624.aP76tQxyNN
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
 
-Thanks,
-Qu
+-----BEGIN PGP SIGNATURE-----
 
-> -		end_pos = round_up(pos + count,
-> -				   fs_info->sectorsize);
->  		err = btrfs_cont_expand(inode, oldsize, end_pos);
->  		if (err) {
->  			inode_unlock(inode);
->
+iQIcBAABCAAGBQJYtoUYAAoJEL/Q5oYsiHj0whUP/0yBwaXuBlGndm0xPtXkITqT
+QkswRLZdJZMgFrJEf2G79gQ+LgOR3HVZnahh4zkrior5EEUK0uCOtRl0PrChCNN4
+UmN5J3M8U+YMjyrXZDhj+oaYCna1QdcxZGPWlZgeDeXjt/Piz0MXSgUWrfmlE+dC
+7N6hZdjOSdtT7yhOdgory7TFjID31TNsnmffHuzeDRnIW/7dUXbAh2QqN4Q+NMsh
+l6ewdpkFJaOmXL0xmk5nPoR4V2xCjoUs4Q72TqMGFl3biAlfcVZqE18+kS7U3j29
+81xvLkqIhjoHFHbQV7C6RGyl/y0ETTRINkC+3PgfkNyzzofFs0E2NnfQxfIhL4ui
+3Z+Wr2eYuwespYkZnKBl+XYD58pqTPQ0x9+7KjBp6yR6ixvho1Dpb4JWgztUA0yp
+elnvq+1bX03y31OWRXHA31O2dJffoMgSEaZJM/NM8UjfqjY+sAygqhN46/nZwYBy
+NsCJlXxtvgMlu7q2Q9NIgkUHAv3VjyKRQsRjbu1RZubrDusWOZYcOWngzmM8888E
+SXCBTSmCmtZ6QUYx2pluizpxPD4ahOghKrwEN9HQVB8rFofpVkWZzB9i3YnTF74y
+8EtC9RSF/RZgpNa+43e9467oPtJ+D/kqgghdZrAUyMJJNWwNXNbDRNddRXJSe0yi
+hCI5AOawzAXSEmhZFrHe
+=3iOw
+-----END PGP SIGNATURE-----
 
+--nextPart7675624.aP76tQxyNN--
 

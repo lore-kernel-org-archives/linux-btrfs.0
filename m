@@ -1,251 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39737 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1755707AbdC1MpW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Mar 2017 08:45:22 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 61376AE14
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Mar 2017 12:45:05 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs: track exclusive filesystem operation in flags
-Date: Tue, 28 Mar 2017 14:44:21 +0200
-Message-Id: <20170328124421.30585-1-dsterba@suse.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:23240 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751592AbdCADSG (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 28 Feb 2017 22:18:06 -0500
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
+        by cn.fujitsu.com (Postfix) with ESMTP id CCD5747C4EBF
+        for <linux-btrfs@vger.kernel.org>; Wed,  1 Mar 2017 11:13:09 +0800 (CST)
+From: Su Yue <suy.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <quwenruo@cn.fujitsu.com>
+Subject: [PATCH 00/20] Enable lowmem repair for fs/subvolume tree
+Date: Wed, 1 Mar 2017 11:13:43 +0800
+Message-ID: <20170301031403.23902-1-suy.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There are several operations, usually started from ioctls, that cannot
-run concurrently. The status is tracked in
-mutually_exclusive_operation_running as an atomic_t. We can easily track
-the status as one of the per-filesystem flag bits with same
-synchronization guarantees.
+It can be feched from my github:
+https://github.com/Damenly/btrfs-progs.git lowmem_repair
 
-The conversion replaces:
+This patchset can repair errors found in fs tree in lowmem mode.
 
-* atomic_xchg(..., 1)    ->   test_and_set_bit(FLAG, ...)
-* atomic_set(..., 0)     ->   clear_bit(FLAG, ...)
+This patchset request includes:
+1) Repair inode nbytes error.
+2) Repair dir isize error.
+3) Repair orpahan inode item.
+4) Repair dir item/index missing/mismatch.
+5) Repair inode ref missing/mismatch.
+6) Repair inode item missing.
+7) Repair inode nlink error.
+8) Punch file extent hole.
+9) Let test-fsck test cases which can be repaired in lowmem mode.
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/ctree.h       |  7 +++++--
- fs/btrfs/dev-replace.c |  5 ++---
- fs/btrfs/ioctl.c       | 33 +++++++++++++++------------------
- fs/btrfs/volumes.c     |  6 +++---
- 4 files changed, 25 insertions(+), 26 deletions(-)
+All cases have been tested except fsck-test/006 since it can't be
+repaired in original mode.
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 29b7fc28c607..2521752c4e4a 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -702,6 +702,11 @@ struct btrfs_delayed_root;
- #define BTRFS_FS_BTREE_ERR			11
- #define BTRFS_FS_LOG1_ERR			12
- #define BTRFS_FS_LOG2_ERR			13
-+/*
-+ * Indicate that a whole-filesystem exclusive operation is running
-+ * (device replace, resize, device add/delete, balance)
-+ */
-+#define BTRFS_FS_EXCL_OP			14
- 
- struct btrfs_fs_info {
- 	u8 fsid[BTRFS_FSID_SIZE];
-@@ -1067,8 +1072,6 @@ struct btrfs_fs_info {
- 	/* device replace state */
- 	struct btrfs_dev_replace dev_replace;
- 
--	atomic_t mutually_exclusive_operation_running;
--
- 	struct percpu_counter bio_counter;
- 	wait_queue_head_t replace_wait;
- 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index e653921f05d9..de7b2c897fe0 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -784,8 +784,7 @@ int btrfs_resume_dev_replace_async(struct btrfs_fs_info *fs_info)
- 	}
- 	btrfs_dev_replace_unlock(dev_replace, 1);
- 
--	WARN_ON(atomic_xchg(
--		&fs_info->mutually_exclusive_operation_running, 1));
-+	WARN_ON(test_and_set_bit(BTRFS_FS_EXCL_OP, &fs_info->flags));
- 	task = kthread_run(btrfs_dev_replace_kthread, fs_info, "btrfs-devrepl");
- 	return PTR_ERR_OR_ZERO(task);
- }
-@@ -814,7 +813,7 @@ static int btrfs_dev_replace_kthread(void *data)
- 			(unsigned int)progress);
- 	}
- 	btrfs_dev_replace_continue_on_mount(fs_info);
--	atomic_set(&fs_info->mutually_exclusive_operation_running, 0);
-+	clear_bit(BTRFS_FS_EXCL_OP, &fs_info->flags);
- 
- 	return 0;
- }
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index dabfc7ac48a6..a29dc3fd7152 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1504,7 +1504,7 @@ static noinline int btrfs_ioctl_resize(struct file *file,
- 	if (ret)
- 		return ret;
- 
--	if (atomic_xchg(&fs_info->mutually_exclusive_operation_running, 1)) {
-+	if (test_and_set_bit(BTRFS_FS_EXCL_OP, &fs_info->flags)) {
- 		mnt_drop_write_file(file);
- 		return BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS;
- 	}
-@@ -1619,7 +1619,7 @@ static noinline int btrfs_ioctl_resize(struct file *file,
- 	kfree(vol_args);
- out:
- 	mutex_unlock(&fs_info->volume_mutex);
--	atomic_set(&fs_info->mutually_exclusive_operation_running, 0);
-+	clear_bit(BTRFS_FS_EXCL_OP, &fs_info->flags);
- 	mnt_drop_write_file(file);
- 	return ret;
- }
-@@ -2661,7 +2661,7 @@ static long btrfs_ioctl_add_dev(struct btrfs_fs_info *fs_info, void __user *arg)
- 	if (!capable(CAP_SYS_ADMIN))
- 		return -EPERM;
- 
--	if (atomic_xchg(&fs_info->mutually_exclusive_operation_running, 1))
-+	if (test_and_set_bit(BTRFS_FS_EXCL_OP, &fs_info->flags))
- 		return BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS;
- 
- 	mutex_lock(&fs_info->volume_mutex);
-@@ -2680,7 +2680,7 @@ static long btrfs_ioctl_add_dev(struct btrfs_fs_info *fs_info, void __user *arg)
- 	kfree(vol_args);
- out:
- 	mutex_unlock(&fs_info->volume_mutex);
--	atomic_set(&fs_info->mutually_exclusive_operation_running, 0);
-+	clear_bit(BTRFS_FS_EXCL_OP, &fs_info->flags);
- 	return ret;
- }
- 
-@@ -2708,7 +2708,7 @@ static long btrfs_ioctl_rm_dev_v2(struct file *file, void __user *arg)
- 	if (vol_args->flags & ~BTRFS_VOL_ARG_V2_FLAGS_SUPPORTED)
- 		return -EOPNOTSUPP;
- 
--	if (atomic_xchg(&fs_info->mutually_exclusive_operation_running, 1)) {
-+	if (test_and_set_bit(BTRFS_FS_EXCL_OP, &fs_info->flags)) {
- 		ret = BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS;
- 		goto out;
- 	}
-@@ -2721,7 +2721,7 @@ static long btrfs_ioctl_rm_dev_v2(struct file *file, void __user *arg)
- 		ret = btrfs_rm_device(fs_info, vol_args->name, 0);
- 	}
- 	mutex_unlock(&fs_info->volume_mutex);
--	atomic_set(&fs_info->mutually_exclusive_operation_running, 0);
-+	clear_bit(BTRFS_FS_EXCL_OP, &fs_info->flags);
- 
- 	if (!ret) {
- 		if (vol_args->flags & BTRFS_DEVICE_SPEC_BY_ID)
-@@ -2752,7 +2752,7 @@ static long btrfs_ioctl_rm_dev(struct file *file, void __user *arg)
- 	if (ret)
- 		return ret;
- 
--	if (atomic_xchg(&fs_info->mutually_exclusive_operation_running, 1)) {
-+	if (test_and_set_bit(BTRFS_FS_EXCL_OP, &fs_info->flags)) {
- 		ret = BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS;
- 		goto out_drop_write;
- 	}
-@@ -2772,7 +2772,7 @@ static long btrfs_ioctl_rm_dev(struct file *file, void __user *arg)
- 		btrfs_info(fs_info, "disk deleted %s", vol_args->name);
- 	kfree(vol_args);
- out:
--	atomic_set(&fs_info->mutually_exclusive_operation_running, 0);
-+	clear_bit(BTRFS_FS_EXCL_OP, &fs_info->flags);
- out_drop_write:
- 	mnt_drop_write_file(file);
- 
-@@ -4442,13 +4442,11 @@ static long btrfs_ioctl_dev_replace(struct btrfs_fs_info *fs_info,
- 			ret = -EROFS;
- 			goto out;
- 		}
--		if (atomic_xchg(
--			&fs_info->mutually_exclusive_operation_running, 1)) {
-+		if (test_and_set_bit(BTRFS_FS_EXCL_OP, &fs_info->flags)) {
- 			ret = BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS;
- 		} else {
- 			ret = btrfs_dev_replace_by_ioctl(fs_info, p);
--			atomic_set(
--			 &fs_info->mutually_exclusive_operation_running, 0);
-+			clear_bit(BTRFS_FS_EXCL_OP, &fs_info->flags);
- 		}
- 		break;
- 	case BTRFS_IOCTL_DEV_REPLACE_CMD_STATUS:
-@@ -4643,7 +4641,7 @@ static long btrfs_ioctl_balance(struct file *file, void __user *arg)
- 		return ret;
- 
- again:
--	if (!atomic_xchg(&fs_info->mutually_exclusive_operation_running, 1)) {
-+	if (!test_and_set_bit(BTRFS_FS_EXCL_OP, &fs_info->flags)) {
- 		mutex_lock(&fs_info->volume_mutex);
- 		mutex_lock(&fs_info->balance_mutex);
- 		need_unlock = true;
-@@ -4689,7 +4687,7 @@ static long btrfs_ioctl_balance(struct file *file, void __user *arg)
- 	}
- 
- locked:
--	BUG_ON(!atomic_read(&fs_info->mutually_exclusive_operation_running));
-+	BUG_ON(!test_bit(BTRFS_FS_EXCL_OP, &fs_info->flags));
- 
- 	if (arg) {
- 		bargs = memdup_user(arg, sizeof(*bargs));
-@@ -4745,11 +4743,10 @@ static long btrfs_ioctl_balance(struct file *file, void __user *arg)
- 
- do_balance:
- 	/*
--	 * Ownership of bctl and mutually_exclusive_operation_running
-+	 * Ownership of bctl and filesystem flag BTRFS_FS_EXCL_OP
- 	 * goes to to btrfs_balance.  bctl is freed in __cancel_balance,
- 	 * or, if restriper was paused all the way until unmount, in
--	 * free_fs_info.  mutually_exclusive_operation_running is
--	 * cleared in __cancel_balance.
-+	 * free_fs_info.  The flag is cleared in __cancel_balance.
- 	 */
- 	need_unlock = false;
- 
-@@ -4769,7 +4766,7 @@ static long btrfs_ioctl_balance(struct file *file, void __user *arg)
- 	mutex_unlock(&fs_info->balance_mutex);
- 	mutex_unlock(&fs_info->volume_mutex);
- 	if (need_unlock)
--		atomic_set(&fs_info->mutually_exclusive_operation_running, 0);
-+		clear_bit(BTRFS_FS_EXCL_OP, &fs_info->flags);
- out:
- 	mnt_drop_write_file(file);
- 	return ret;
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 73d56eef5e60..91580cf471e4 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3736,7 +3736,7 @@ static void __cancel_balance(struct btrfs_fs_info *fs_info)
- 	if (ret)
- 		btrfs_handle_fs_error(fs_info, ret, NULL);
- 
--	atomic_set(&fs_info->mutually_exclusive_operation_running, 0);
-+	clear_bit(BTRFS_FS_EXCL_OP, &fs_info->flags);
- }
- 
- /* Non-zero return value signifies invalidity */
-@@ -3910,7 +3910,7 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
- 		__cancel_balance(fs_info);
- 	else {
- 		kfree(bctl);
--		atomic_set(&fs_info->mutually_exclusive_operation_running, 0);
-+		clear_bit(BTRFS_FS_EXCL_OP, &fs_info->flags);
- 	}
- 	return ret;
- }
-@@ -4000,7 +4000,7 @@ int btrfs_recover_balance(struct btrfs_fs_info *fs_info)
- 	btrfs_balance_sys(leaf, item, &disk_bargs);
- 	btrfs_disk_balance_args_to_cpu(&bctl->sys, &disk_bargs);
- 
--	WARN_ON(atomic_xchg(&fs_info->mutually_exclusive_operation_running, 1));
-+	WARN_ON(test_and_set_bit(BTRFS_FS_EXCL_OP, &fs_info->flags));
- 
- 	mutex_lock(&fs_info->volume_mutex);
- 	mutex_lock(&fs_info->balance_mutex);
+Qu Wenruo (1):
+  btrfs-progs: fsck-check: Allow fsck check test to repair in lowmem
+    mode for certain test cases
+
+Su Yue (19):
+  btrfs-progs: cmds-check.c: supports inode nbytes fix in lowmem
+  btrfs-progs: cmds-check.c: supports dir isize fix in lowmem
+  btrfs-progs: cmds-check.c: inode orphan item repair
+  btrfs-progs: cmds-check.c: change find_inode_ref's arg
+  btrfs-progs: cmds-check.c: modify check_fs_first_inode
+  btrfs-progs: cmds-check.c: change find_dir_index/item
+  btrfs-progs: cmds-check.c: introduce print_inode_ref
+  btrfs-progs: cmds-check.c: print_dir_item_err
+  btrfs-progs: cmds-check.c: introduce count_dir_isize
+  btrfs-progs: dir-item.c: modify btrfs_insert_dir_item
+  btrfs-progs: inode.c: alter btrfs_add_link
+  btrfs-progs: cmds-check.c: introduce __create_inode_item
+  btrfs-progs: cmds-check.c: repair_inode_item_missing
+  btrfs-progs: cmds-check.c: repair_fs_first_inode
+  btrfs-progs: cmds-check.c: introduce repair_ternary_lowmem
+  btrfs-progs: cmds-check.c: Introduce repair_dir_item
+  btrfs-progs: cmds-check.c: repair inode ref
+  btrfs-progs: cmds-check.c: repair nlinks lowmem
+  btrfs-progs: cmds-check.c: add punch_extent_hole
+
+ cmds-check.c                                       | 1677 +++++++++++++++-----
+ convert/main.c                                     |    2 +-
+ ctree.h                                            |    2 +-
+ dir-item.c                                         |   13 +-
+ inode.c                                            |   46 +-
+ tests/common.local                                 |   14 +-
+ .../fsck-tests/004-no-dir-index/.lowmem_repairable |    0
+ .../009-no-dir-item-or-index/.lowmem_repairable    |    0
+ .../010-no-rootdir-inode-item/.lowmem_repairable   |    0
+ .../011-no-inode-item/.lowmem_repairable           |    0
+ .../016-wrong-inode-nbytes/.lowmem_repairable      |    0
+ .../017-missing-all-file-extent/.lowmem_repairable |    0
+ 12 files changed, 1363 insertions(+), 391 deletions(-)
+ create mode 100644 tests/fsck-tests/004-no-dir-index/.lowmem_repairable
+ create mode 100644 tests/fsck-tests/009-no-dir-item-or-index/.lowmem_repairable
+ create mode 100644 tests/fsck-tests/010-no-rootdir-inode-item/.lowmem_repairable
+ create mode 100644 tests/fsck-tests/011-no-inode-item/.lowmem_repairable
+ create mode 100644 tests/fsck-tests/016-wrong-inode-nbytes/.lowmem_repairable
+ create mode 100644 tests/fsck-tests/017-missing-all-file-extent/.lowmem_repairable
+
 -- 
-2.12.0
+2.11.1
+
+
 

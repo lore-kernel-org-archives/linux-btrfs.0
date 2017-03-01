@@ -1,60 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:59854 "EHLO mx1.redhat.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751468AbdCAD1N (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Feb 2017 22:27:13 -0500
-Date: Wed, 1 Mar 2017 11:20:13 +0800
-From: Eryu Guan <eguan@redhat.com>
-To: "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc: linux-xfs@vger.kernel.org, "Darrick J. Wong" <djwong@djwong.org>,
-        fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 3/4] reflink: test adjacency of reflinked blocks
-Message-ID: <20170301032013.GA14226@eguan.usersys.redhat.com>
-References: <148798515933.25833.2842247083803775089.stgit@birch.djwong.org>
- <148798517790.25833.2585159479268361866.stgit@birch.djwong.org>
- <20170228081502.GG16443@eguan.usersys.redhat.com>
- <20170228163150.GA26275@birch.djwong.org>
+Received: from cn.fujitsu.com ([59.151.112.132]:30234 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1750743AbdCAFX1 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Mar 2017 00:23:27 -0500
+Subject: Re: [PATCH 1/2] Btrfs: fix unexpected file hole after disk errors
+To: Liu Bo <bo.li.liu@oracle.com>, <linux-btrfs@vger.kernel.org>
+References: <1488330280-22678-1-git-send-email-bo.li.liu@oracle.com>
+CC: David Sterba <dsterba@suse.cz>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <7701e7cb-02ef-76a6-344e-613d5240ff1c@cn.fujitsu.com>
+Date: Wed, 1 Mar 2017 13:22:21 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170228163150.GA26275@birch.djwong.org>
+In-Reply-To: <1488330280-22678-1-git-send-email-bo.li.liu@oracle.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Feb 28, 2017 at 08:31:50AM -0800, Darrick J. Wong wrote:
-> On Tue, Feb 28, 2017 at 04:15:02PM +0800, Eryu Guan wrote:
-> > On Fri, Feb 24, 2017 at 05:12:57PM -0800, Darrick J. Wong wrote:
-> > > From: Darrick J. Wong <darrick.wong@oracle.com>
-> > > 
-> > > If we reflink a file with N blocks to another file one block at a time,
-> > > does the destination file end up with the same number of extents as the
-> > > source file?  In other words, does the filesystem succeed at combining
-> > > adjacent mappings into a maximal extents?
-> > 
-> > I'm not sure if this is a standard behavior and applies to btrfs too?
-> > But btrfs is failing this test now:
-> > 
-> > +f1 (1) != f2 (32)
-> > +s1 (1) != s2 (32)
-> > 
-> > Fix test or btrfs? I'm taking it if btrfs is the one to be fixed :)
-> 
-> btrfs has that weird behavior where it doesn't merge the adjacent
-> extents at all (at least not according to FIEMAP) until you remount the
-> filesystem.  After the remount it's fine, but... WTF? :)
-> 
-> So yes, the test is working as designed.  btrfs needs fixing, or I guess
-> worst case we can _notrun it on btrfs.
+It seems that my previous mail doesn't reach mail list.
+So send again.
 
-Thanks for the explanation! I'll take it as it is at this moment then.
+At 03/01/2017 09:04 AM, Liu Bo wrote:
+> Btrfs creates hole extents to cover any unwritten section right before
+> doing buffer writes after commit 3ac0d7b96a26 ("btrfs: Change the expanding
+> write sequence to fix snapshot related bug.").
+>
+> However, that takes the start position of the buffered write to compare
+> against the current EOF, hole extents would be created only if (EOF <
+> start).
+>
+> If the EOF is at the middle of the buffered write, no hole extents will be
+> created and a file hole without a hole extent is left in this file.
+>
+> This bug was revealed by generic/019 in fstests.  'fsstress' in this test
+> may create the above situation and the test then fails all requests
+> including writes, so the buffer write which is supposed to cover the
+> hole (without the hole extent) couldn't make it on disk.  Running fsck
+> against such btrfs ends up with detecting file extent holes.
+>
+> Things could be more serious, some stale data would be exposed to
+> userspace if files with this kind of hole are truncated to a position of
+> the hole, because the on-disk inode size is beyond the last extent in the
+> file.
+>
+> This fixes the bug by comparing the end position against the EOF.
+>
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
-> 
-> Snark aside, it was intended originally to make sure that XFS is
-> properly merging the extent records together; then it occurred to me to
-> rewrite it with fiemap and make it one of the generic reflink tests so
-> that ocfs2 can get tested too.
+Patch looks good to me.
+Reviewed-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-Ah, that reminds me that I need to do testing with ocfs2 too, and test
-passed :)
+> ---
+>  fs/btrfs/file.c | 5 ++---
+>  1 file changed, 2 insertions(+), 3 deletions(-)
+>
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index b5c5da2..0be837b 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -1861,11 +1861,10 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
+>  	pos = iocb->ki_pos;
+>  	count = iov_iter_count(from);
+>  	start_pos = round_down(pos, fs_info->sectorsize);
+> +	end_pos = round_up(pos + count, fs_info->sectorsize);
+>  	oldsize = i_size_read(inode);
+> -	if (start_pos > oldsize) {
+> +	if (end_pos > oldsize) {
+>  		/* Expand hole size to cover write data, preventing empty gap */
+
+The comment still makes sense here, but it could be better to explain 
+why to insert the hole to cover the whole write range (in case write fails)
 
 Thanks,
-Eryu
+Qu
+
+> -		end_pos = round_up(pos + count,
+> -				   fs_info->sectorsize);
+>  		err = btrfs_cont_expand(inode, oldsize, end_pos);
+>  		if (err) {
+>  			inode_unlock(inode);
+>
+
+

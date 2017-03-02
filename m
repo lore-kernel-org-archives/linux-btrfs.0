@@ -1,113 +1,180 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38147 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752022AbdCKXDl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 11 Mar 2017 18:03:41 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 79D70AAB2
-        for <linux-btrfs@vger.kernel.org>; Sat, 11 Mar 2017 23:03:39 +0000 (UTC)
-From: Goldwyn Rodrigues <rgoldwyn@suse.de>
-To: linux-btrfs@vger.kernel.org
-Cc: Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH] qgroup: Change qgroup_meta_rsv to 64bit
-Date: Sat, 11 Mar 2017 17:03:26 -0600
-Message-Id: <20170311230326.12308-1-rgoldwyn@suse.de>
+Received: from userp1040.oracle.com ([156.151.31.81]:18224 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751229AbdCBWSs (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Mar 2017 17:18:48 -0500
+Date: Thu, 2 Mar 2017 14:18:21 -0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: fdmanana@kernel.org
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: Re: [PATCH] Btrfs: fix file corruption after cloning inline extents
+Message-ID: <20170302221821.GA26698@lim.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1436888088-8631-1-git-send-email-fdmanana@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1436888088-8631-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Goldwyn Rodrigues <rgoldwyn@suse.com>
+On Tue, Jul 14, 2015 at 04:34:48PM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> Using the clone ioctl (or extent_same ioctl, which calls the same extent
+> cloning function as well) we end up allowing copy an inline extent from
+> the source file into a non-zero offset of the destination file. This is
+> something not expected and that the btrfs code is not prepared to deal
+> with - all inline extents must be at a file offset equals to 0.
+>
 
-Using an int value is causing qg->reserved range checks to be triggered,
-and incorrect accounting.
+Somehow I failed to reproduce the BUG_ON with this case.
 
-This affects exclusive qgroups only.
+> For example, the following excerpt of a test case for fstests triggers
+> a crash/BUG_ON() on a write operation after an inline extent is cloned
+> into a non-zero offset:
+> 
+>   _scratch_mkfs >>$seqres.full 2>&1
+>   _scratch_mount
+> 
+>   # Create our test files. File foo has the same 2K of data at offset 4K
+>   # as file bar has at its offset 0.
+>   $XFS_IO_PROG -f -s -c "pwrite -S 0xaa 0 4K" \
+>       -c "pwrite -S 0xbb 4k 2K" \
+>       -c "pwrite -S 0xcc 8K 4K" \
+>       $SCRATCH_MNT/foo | _filter_xfs_io
+> 
+>   # File bar consists of a single inline extent (2K size).
+>   $XFS_IO_PROG -f -s -c "pwrite -S 0xbb 0 2K" \
+>      $SCRATCH_MNT/bar | _filter_xfs_io
+> 
+>   # Now call the clone ioctl to clone the extent of file bar into file
+>   # foo at its offset 4K. This made file foo have an inline extent at
+>   # offset 4K, something which the btrfs code can not deal with in future
+>   # IO operations because all inline extents are supposed to start at an
+>   # offset of 0, resulting in all sorts of chaos.
+>   # So here we validate that clone ioctl returns an EOPNOTSUPP, which is
+>   # what it returns for other cases dealing with inlined extents.
+>   $CLONER_PROG -s 0 -d $((4 * 1024)) -l $((2 * 1024)) \
+>       $SCRATCH_MNT/bar $SCRATCH_MNT/foo
+> 
+>   # Because of the inline extent at offset 4K, the following write made
+>   # the kernel crash with a BUG_ON().
+>   $XFS_IO_PROG -c "pwrite -S 0xdd 6K 2K" $SCRATCH_MNT/foo | _filter_xfs_io
+>
 
-TEST CASE:
+On 4.10, after allowing to clone an inline extent to dst file's offset greater
+than zero, I followed the test case manually and got these
 
-DEVICE=/dev/vdb
-MOUNTPOINT=/mnt
-SUBVOL=$MOUNTPOINT/tmp
+[root@localhost trinity]# /home/btrfs-progs/btrfs-debugfs -f /mnt/btrfs/foo 
+(257 0): ram 4096 disk 12648448 disk_size 4096
+(257 4096): ram 2048 disk 0 disk_size 2048 -- inline
+(257 8192): ram 4096 disk 12656640 disk_size 4096
+file: /mnt/btrfs/foo extents 3 disk size 10240 logical size 12288 ratio 1.20
 
-umount $SUBVOL
-umount $MOUNTPOINT
+[root@localhost trinity]# xfs_io -f -c "pwrite 6k 2k" /mnt/btrfs/foo 
+wrote 2048/2048 bytes at offset 6144
+2 KiB, 1 ops; 0.0000 sec (12.520 MiB/sec and 6410.2564 ops/sec)
 
-mkfs.btrfs -f $DEVICE
-mount /dev/vdb $MOUNTPOINT
-btrfs quota enable $MOUNTPOINT
-btrfs subvol create $SUBVOL
-umount $MOUNTPOINT
-mount /dev/vdb $MOUNTPOINT
-mount -o subvol=tmp $DEVICE $SUBVOL
-btrfs qgroup limit -e 3G $SUBVOL
+[root@localhost trinity]# sync
+[root@localhost trinity]# /home/btrfs-progs/btrfs-debugfs -f /mnt/btrfs/foo 
+(257 0): ram 4096 disk 12648448 disk_size 4096
+(257 4096): ram 4096 disk 12582912 disk_size 4096
+(257 8192): ram 4096 disk 12656640 disk_size 4096
+file: /mnt/btrfs/foo extents 3 disk size 12288 logical size 12288 ratio 1.00
 
-btrfs quota rescan /mnt -w
 
-for i in `seq 1 44000`; do
-  dd if=/dev/zero of=/mnt/tmp/test_$i bs=10k count=1
-  if [[ $? > 0 ]]; then
-     btrfs qgroup show -pcref $SUBVOL
-     exit 1
-  fi
-done
+Looks like we now are able to cope with these inline extents?
 
-Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
----
- fs/btrfs/ctree.h  |  2 +-
- fs/btrfs/qgroup.c | 10 +++++-----
- 2 files changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 29b7fc2..c411590 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1259,7 +1259,7 @@ struct btrfs_root {
- 	atomic_t will_be_snapshoted;
- 
- 	/* For qgroup metadata space reserve */
--	atomic_t qgroup_meta_rsv;
-+	atomic64_t qgroup_meta_rsv;
- };
- static inline u32 btrfs_inode_sectorsize(const struct inode *inode)
- {
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 6215264..130c0da 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2963,20 +2963,20 @@ int btrfs_qgroup_reserve_meta(struct btrfs_root *root, int num_bytes,
- 	ret = qgroup_reserve(root, num_bytes, enforce);
- 	if (ret < 0)
- 		return ret;
--	atomic_add(num_bytes, &root->qgroup_meta_rsv);
-+	atomic64_add(num_bytes, &root->qgroup_meta_rsv);
- 	return ret;
- }
- 
- void btrfs_qgroup_free_meta_all(struct btrfs_root *root)
- {
- 	struct btrfs_fs_info *fs_info = root->fs_info;
--	int reserved;
-+	long reserved;
- 
- 	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags) ||
- 	    !is_fstree(root->objectid))
- 		return;
- 
--	reserved = atomic_xchg(&root->qgroup_meta_rsv, 0);
-+	reserved = atomic64_xchg(&root->qgroup_meta_rsv, 0);
- 	if (reserved == 0)
- 		return;
- 	btrfs_qgroup_free_refroot(fs_info, root->objectid, reserved);
-@@ -2991,8 +2991,8 @@ void btrfs_qgroup_free_meta(struct btrfs_root *root, int num_bytes)
- 		return;
- 
- 	BUG_ON(num_bytes != round_down(num_bytes, fs_info->nodesize));
--	WARN_ON(atomic_read(&root->qgroup_meta_rsv) < num_bytes);
--	atomic_sub(num_bytes, &root->qgroup_meta_rsv);
-+	WARN_ON(atomic64_read(&root->qgroup_meta_rsv) < num_bytes);
-+	atomic64_sub(num_bytes, &root->qgroup_meta_rsv);
- 	btrfs_qgroup_free_refroot(fs_info, root->objectid, num_bytes);
- }
- 
--- 
-2.10.2
+Thanks,
 
+-liubo
+
+
+>   status=0
+>   exit
+> 
+> The stack trace of the BUG_ON() triggered by the last write is:
+> 
+>   [152154.035903] ------------[ cut here ]------------
+>   [152154.036424] kernel BUG at mm/page-writeback.c:2286!
+>   [152154.036424] invalid opcode: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
+>   [152154.036424] Modules linked in: btrfs dm_flakey dm_mod crc32c_generic xor raid6_pq nfsd auth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc loop fuse parport_pc acpi_cpu$
+>   [152154.036424] CPU: 2 PID: 17873 Comm: xfs_io Tainted: G        W       4.1.0-rc6-btrfs-next-11+ #2
+>   [152154.036424] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.8.1-0-g4adadbd-20150316_085822-nilsson.home.kraxel.org 04/01/2014
+>   [152154.036424] task: ffff880429f70990 ti: ffff880429efc000 task.ti: ffff880429efc000
+>   [152154.036424] RIP: 0010:[<ffffffff8111a9d5>]  [<ffffffff8111a9d5>] clear_page_dirty_for_io+0x1e/0x90
+>   [152154.036424] RSP: 0018:ffff880429effc68  EFLAGS: 00010246
+>   [152154.036424] RAX: 0200000000000806 RBX: ffffea0006a6d8f0 RCX: 0000000000000001
+>   [152154.036424] RDX: 0000000000000000 RSI: ffffffff81155d1b RDI: ffffea0006a6d8f0
+>   [152154.036424] RBP: ffff880429effc78 R08: ffff8801ce389fe0 R09: 0000000000000001
+>   [152154.036424] R10: 0000000000002000 R11: ffffffffffffffff R12: ffff8800200dce68
+>   [152154.036424] R13: 0000000000000000 R14: ffff8800200dcc88 R15: ffff8803d5736d80
+>   [152154.036424] FS:  00007fbf119f6700(0000) GS:ffff88043d280000(0000) knlGS:0000000000000000
+>   [152154.036424] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+>   [152154.036424] CR2: 0000000001bdc000 CR3: 00000003aa555000 CR4: 00000000000006e0
+>   [152154.036424] Stack:
+>   [152154.036424]  ffff8803d5736d80 0000000000000001 ffff880429effcd8 ffffffffa04e97c1
+>   [152154.036424]  ffff880429effd68 ffff880429effd60 0000000000000001 ffff8800200dc9c8
+>   [152154.036424]  0000000000000001 ffff8800200dcc88 0000000000000000 0000000000001000
+>   [152154.036424] Call Trace:
+>   [152154.036424]  [<ffffffffa04e97c1>] lock_and_cleanup_extent_if_need+0x147/0x18d [btrfs]
+>   [152154.036424]  [<ffffffffa04ea82c>] __btrfs_buffered_write+0x245/0x4c8 [btrfs]
+>   [152154.036424]  [<ffffffffa04ed14b>] ? btrfs_file_write_iter+0x150/0x3e0 [btrfs]
+>   [152154.036424]  [<ffffffffa04ed15a>] ? btrfs_file_write_iter+0x15f/0x3e0 [btrfs]
+>   [152154.036424]  [<ffffffffa04ed2c7>] btrfs_file_write_iter+0x2cc/0x3e0 [btrfs]
+>   [152154.036424]  [<ffffffff81165a4a>] __vfs_write+0x7c/0xa5
+>   [152154.036424]  [<ffffffff81165f89>] vfs_write+0xa0/0xe4
+>   [152154.036424]  [<ffffffff81166855>] SyS_pwrite64+0x64/0x82
+>   [152154.036424]  [<ffffffff81465197>] system_call_fastpath+0x12/0x6f
+>   [152154.036424] Code: 48 89 c7 e8 0f ff ff ff 5b 41 5c 5d c3 0f 1f 44 00 00 55 48 89 e5 41 54 53 48 89 fb e8 ae ef 00 00 49 89 c4 48 8b 03 a8 01 75 02 <0f> 0b 4d 85 e4 74 59 49 8b 3c 2$
+>   [152154.036424] RIP  [<ffffffff8111a9d5>] clear_page_dirty_for_io+0x1e/0x90
+>   [152154.036424]  RSP <ffff880429effc68>
+>   [152154.242621] ---[ end trace e3d3376b23a57041 ]---
+> 
+> Fix this by returning the error EOPNOTSUPP if an attempt to copy an
+> inline extent into a non-zero offset happens, just like what is done for
+> other scenarios that would require copying/splitting inline extents,
+> which were introduced by the following commits:
+> 
+>    00fdf13a2e9f ("Btrfs: fix a crash of clone with inline extents's split")
+>    3f9e3df8da3c ("btrfs: replace error code from btrfs_drop_extents")
+> 
+> Cc: stable@vger.kernel.org
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+>  fs/btrfs/ioctl.c | 14 ++++++++++++++
+>  1 file changed, 14 insertions(+)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index d389815..0770c91 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -3588,6 +3588,20 @@ process_slot:
+>  				u64 trim = 0;
+>  				u64 aligned_end = 0;
+>  
+> +				/*
+> +				 * Don't copy an inline extent into an offset
+> +				 * greater than zero. Having an inline extent
+> +				 * at such an offset results in chaos as btrfs
+> +				 * isn't prepared for such cases. Just skip
+> +				 * this case for the same reasons as commented
+> +				 * at btrfs_ioctl_clone().
+> +				 */
+> +				if (last_dest_end > 0) {
+> +					ret = -EOPNOTSUPP;
+> +					btrfs_end_transaction(trans, root);
+> +					goto out;
+> +				}
+> +
+>  				if (off > key.offset) {
+>  					skip = off - key.offset;
+>  					new_key.offset += skip;
+> -- 
+> 2.1.3
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

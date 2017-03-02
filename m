@@ -1,50 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([65.50.211.133]:59801 "EHLO
-        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753511AbdCAX3d (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Mar 2017 18:29:33 -0500
-Date: Wed, 1 Mar 2017 14:44:21 -0800
-From: Christoph Hellwig <hch@infradead.org>
-To: Goldwyn Rodrigues <rgoldwyn@suse.de>
-Cc: Christoph Hellwig <hch@infradead.org>, jack@suse.com,
-        linux-fsdevel@vger.kernel.org, linux-block@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-xfs@vger.kernel.org
-Subject: Re: [PATCH 1/8] nowait aio: Introduce IOCB_FLAG_NOWAIT
-Message-ID: <20170301224421.GA12768@infradead.org>
+Received: from mx2.suse.de ([195.135.220.15]:35952 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752171AbdCBLQU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 2 Mar 2017 06:16:20 -0500
+Date: Thu, 2 Mar 2017 11:38:45 +0100
+From: Jan Kara <jack@suse.cz>
+To: Christoph Hellwig <hch@infradead.org>
+Cc: Matthew Wilcox <willy@infradead.org>, Goldwyn Rodrigues <rgoldwyn@suse.de>,
+        jack@suse.com, linux-fsdevel@vger.kernel.org,
+        linux-block@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
+        Goldwyn Rodrigues <rgoldwyn@suse.com>
+Subject: Re: [PATCH 3/8] nowait aio: return if direct write will trigger
+ writeback
+Message-ID: <20170302103845.GB31792@quack2.suse.cz>
 References: <20170228233610.25456-1-rgoldwyn@suse.de>
- <20170228233610.25456-2-rgoldwyn@suse.de>
- <20170301153647.GA30631@infradead.org>
- <20170301155634.GA9630@infradead.org>
- <cc3fc6ee-c48d-1b51-59b7-1e322d10a561@suse.de>
+ <20170228233610.25456-4-rgoldwyn@suse.de>
+ <20170301034606.GK16328@bombadil.infradead.org>
+ <20170301153857.GC30631@infradead.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <cc3fc6ee-c48d-1b51-59b7-1e322d10a561@suse.de>
+In-Reply-To: <20170301153857.GC30631@infradead.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 01, 2017 at 10:57:17AM -0600, Goldwyn Rodrigues wrote:
-> RWF_* ? Isn't that kernel space flags? Or did you intend to say
-> IOCB_FLAG_*?
+On Wed 01-03-17 07:38:57, Christoph Hellwig wrote:
+> On Tue, Feb 28, 2017 at 07:46:06PM -0800, Matthew Wilcox wrote:
+> > Ugh, this is pretty inefficient.  If that's all you want to know, then
+> > using the radix tree directly will be far more efficient than spinning
+> > up all the pagevec machinery only to discard the pages found.
+> > 
+> > But what's going to kick these pages out of cache?  Shouldn't we rather
+> > find the pages, kick them out if clean, start writeback if not, and *then*
+> > return -EAGAIN?
+> > 
+> > So maybe we want to spin up the pagevec machinery after all so we can
+> > do that extra work?
+> 
+> As pointed out in the last round of these patches I think we really
+> need to pass a flags argument to filemap_write_and_wait_range to
+> communicate the non-blocking nature and only return -EAGAIN if we'd
+> block.  As a bonus that can indeed start to kick the pages out.
 
-No, they are the flags for preadv2/pwritev2.
+Aren't flags to filemap_write_and_wait_range() unnecessary complication?
+Realistically, most users wanting performance from AIO DIO so badly that
+they bother with this API won't have any pages to write / evict. If they do
+by some bad accident, they can fall back to standard "blocking" AIO DIO.
+So I don't see much value in teaching filemap_write_and_wait_range() about
+a non-blocking mode...
 
-> If yes, we maintain two flag fields? aio_reserved1 (perhaps
-> renamed to aio_flags2) and aio_flags?
+								Honza
 
-Yes - I'd call it aio_rw_flags or similar.
-
-> aio_reserved1 is also used to return key for the purpose of io_cancel,
-> but we should be able to fetch the flags before putting the key value
-> there. Still I am not comfortable using the same field for it because it
-> will be overwritten when io_submit returns.
-
-It's not - the key is a separate field.  It's just that the two are
-defined using a very strange macro switching around their positions
-based on the endiannes.
-
-> Which brings me to the next question: What is the purpose of aio_key?
-> Why is aio_key set to KIOCB_KEY (which is zero) every time? You are not
-> differentiating the request by setting all the iocb's key to zero.
-
-I don't know the history of this rather odd field.
+-- 
+Jan Kara <jack@suse.com>
+SUSE Labs, CR

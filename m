@@ -1,48 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from scorn.kernelslacker.org ([45.56.101.199]:36062 "EHLO
-        scorn.kernelslacker.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753312AbdCAVfC (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Mar 2017 16:35:02 -0500
-Date: Wed, 1 Mar 2017 15:03:19 -0500
-From: Dave Jones <davej@codemonkey.org.uk>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: assertion failed: last_size == new_size, file: fs/btrfs/inode.c
-Message-ID: <20170301200319.oqrftzsuj6u4nuuz@codemonkey.org.uk>
-References: <20170227001842.dhrmaw3t3k4hkuii@codemonkey.org.uk>
- <20170227155348.GB13488@lim.localdomain>
- <20170227162342.z6j4bvinnqppwjjm@codemonkey.org.uk>
- <20170301011201.GB9546@lim.localdomain>
+Received: from mail-yw0-f178.google.com ([209.85.161.178]:34803 "EHLO
+        mail-yw0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751700AbdCBAfp (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Mar 2017 19:35:45 -0500
+Received: by mail-yw0-f178.google.com with SMTP id p77so45988983ywg.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 01 Mar 2017 16:35:36 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170301011201.GB9546@lim.localdomain>
+In-Reply-To: <CAGqmi76oFUFtD1TDjns_BFujkRc8fHSpL6Wt5yYt3SX0QPf+5A@mail.gmail.com>
+References: <CAGqmi76oFUFtD1TDjns_BFujkRc8fHSpL6Wt5yYt3SX0QPf+5A@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Wed, 1 Mar 2017 17:35:35 -0700
+Message-ID: <CAJCQCtQV96DZDRXYXy4misjqrt_CQi+AmtC+o=-mTyv6N_POsQ@mail.gmail.com>
+Subject: Re: Please add more info to dmesg output on I/O error
+To: Timofey Titovets <nefelim4ag@gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Feb 28, 2017 at 05:12:01PM -0800, Liu Bo wrote:
- > On Mon, Feb 27, 2017 at 11:23:42AM -0500, Dave Jones wrote:
- > > On Mon, Feb 27, 2017 at 07:53:48AM -0800, Liu Bo wrote:
- > >  > On Sun, Feb 26, 2017 at 07:18:42PM -0500, Dave Jones wrote:
- > >  > > Hitting this fairly frequently.. I'm not sure if this is the same bug I've
- > >  > > been hitting occasionally since 4.9. The assertion looks new to me at least.
- > >  > >
- > >  > 
- > >  > It was recently introduced by my commit and used to catch data loss at truncate.
- > >  > 
- > >  > Were you running the test with a mkfs.btrfs -O NO_HOLES?
- > >  > (We just queued a fix for the NO_HOLES case in btrfs-next.)
- > > 
- > > No, a fs created with default mkfs.btrfs options.
- > 
- > I have this patch[1] to fix a bug which results in file hole extent, and this
- > bug could lead us to hit the assertion.
- > 
- > Would you try to run the test w/ it, please?
- > 
- > [1]: https://patchwork.kernel.org/patch/9597281/
+On Wed, Mar 1, 2017 at 9:04 AM, Timofey Titovets <nefelim4ag@gmail.com> wrote:
+> Hi, today i try move my FS from old HDD to new SSD
+> While processing i catch I/O error and device remove operation was canceled
+>
+> Dmesg:
+> [ 1015.010241] blk_update_request: I/O error, dev sda, sector 81353664
+> [ 1015.010246] BTRFS error (device sdb1): bdev /dev/sda1 errs: wr 0,
+> rd 23, flush 0, corrupt 0, gen 0
+> [ 1015.010282] ata5: EH complete
+> [ 1017.016721] ata5.00: exception Emask 0x0 SAct 0x10000 SErr 0x0 action 0x0
+> [ 1017.016730] ata5.00: irq_stat 0x40000008
+> [ 1017.016737] ata5.00: failed command: READ FPDMA QUEUED
+> [ 1017.016748] ata5.00: cmd 60/08:80:c0:5b:d9/00:00:04:00:00/40 tag 16
+> ncq dma 4096 in
+>                        res 41/40:00:c0:5b:d9/00:00:04:00:00/40 Emask
+> 0x409 (media error) <F>
+> [ 1017.016754] ata5.00: status: { DRDY ERR }
+> [ 1017.016757] ata5.00: error: { UNC }
+> [ 1017.029479] ata5.00: configured for UDMA/133
+> [ 1017.029506] sd 4:0:0:0: [sda] tag#16 UNKNOWN(0x2003) Result:
+> hostbyte=0x00 driverbyte=0x08
+> [ 1017.029511] sd 4:0:0:0: [sda] tag#16 Sense Key : 0x3 [current]
+> [ 1017.029516] sd 4:0:0:0: [sda] tag#16 ASC=0x11 ASCQ=0x4
+> [ 1017.029520] sd 4:0:0:0: [sda] tag#16 CDB: opcode=0x28 28 00 04 d9
+> 5b c0 00 00 08 00
 
-Made no difference. Still see the same trace & assertion.
+This is an error reported by the drive to libata. It's not a Btrfs
+error or bug. The UNC suggests it's an uncorrectable error, so whether
+Btrfs can compensate depends on whether there's redundancy for the
+affected sector(s).
 
-	Dave
 
+
+> At now, i fixed this problem by doing scrub FS and delete damaged
+> files, but scrub are slow, and if btrfs show me a more info on I/O
+> error, it's will be more helpful
+> i.e. something like i getting by scrub:
+> [ 1260.559180] BTRFS warning (device sdb1): i/o error at logical
+> 40569896960 on dev /dev/sda1, sector 81351616, root 309, inode 55135,
+> offset 71278592, length 4096, links 1 (path:
+> nefelim4ag/.config/skypeforlinux/Cache/data_3)
+
+That suggests the problem is with data, not metadata. What is the data
+and metadata profile?
+
+
+
+-- 
+Chris Murphy

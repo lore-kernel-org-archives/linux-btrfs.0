@@ -1,87 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f169.google.com ([209.85.223.169]:35710 "EHLO
-        mail-io0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751047AbdCBWYY (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Mar 2017 17:24:24 -0500
-Received: by mail-io0-f169.google.com with SMTP id z13so19179715iof.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 02 Mar 2017 14:22:37 -0800 (PST)
+Received: from azure.uno.uk.net ([95.172.254.11]:42393 "EHLO azure.uno.uk.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751153AbdCCAti (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 2 Mar 2017 19:49:38 -0500
+Received: from ty.sabi.co.uk ([95.172.230.208]:52492)
+        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
+        (Exim 4.88)
+        (envelope-from <pg@btrfs.list.sabi.co.uk>)
+        id 1cjbOK-0040vY-JW
+        for linux-btrfs@vger.kernel.org; Fri, 03 Mar 2017 00:48:16 +0000
+Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
+        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
+        id 1cjbNq-000638-OJ
+        for <linux-btrfs@vger.kernel.org>; Fri, 03 Mar 2017 00:47:46 +0000
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Message-ID: <22712.48434.400550.346157@tree.ty.sabi.co.uk>
+Date: Fri, 3 Mar 2017 00:47:46 +0000
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: raid1 degraded mount still produce single chunks, writeable mount
  not allowed
-To: Andrei Borzenkov <arvidjaar@gmail.com>, linux-btrfs@vger.kernel.org
+In-Reply-To: <pan$a4f49$5a6ddd0a$2183c48a$5df333ac@cox.net>
 References: <CAJCQCtQByC_pTnZhFFfHmxktN-Ga4W0TZ8wVRPxe_b18G+Kajw@mail.gmail.com>
- <pan$a4f49$5a6ddd0a$2183c48a$5df333ac@cox.net>
- <7247209c-cd17-d8c6-5f51-a77ff2d9242e@gmail.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <9c5b280f-bfd5-6c5a-0e35-7ec57f64276e@gmail.com>
-Date: Thu, 2 Mar 2017 12:58:24 -0500
-MIME-Version: 1.0
-In-Reply-To: <7247209c-cd17-d8c6-5f51-a77ff2d9242e@gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+        <pan$a4f49$5a6ddd0a$2183c48a$5df333ac@cox.net>
+From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-03-02 12:26, Andrei Borzenkov wrote:
-> 02.03.2017 16:41, Duncan пишет:
->> Chris Murphy posted on Wed, 01 Mar 2017 17:30:37 -0700 as excerpted:
->>
->>> [1717713.408675] BTRFS warning (device dm-8): missing devices (1)
->>> exceeds the limit (0), writeable mount is not allowed
->>> [1717713.446453] BTRFS error (device dm-8): open_ctree failed
->>>
->>> [chris@f25s ~]$ uname
->>> -r 4.9.8-200.fc25.x86_64
->>>
->>> I thought this was fixed. I'm still getting a one time degraded rw
->>> mount, after that it's no longer allowed, which really doesn't make any
->>> sense because those single chunks are on the drive I'm trying to mount.
->>> I don't understand what problem this proscription is trying to avoid. If
->>> it's OK to mount rw,degraded once, then it's OK to allow it twice. If
->>> it's not OK twice, it's not OK once.
->>
->> AFAIK, no, it hasn't been fixed, at least not in mainline, because the
->> patches to fix it got stuck in some long-running project patch queue
->> (IIRC, the one for on-degraded auto-device-replace), with no timeline
->> known to me on mainline merge.
->>
->> Meanwhile, the problem as I understand it is that at the first raid1
->> degraded writable mount, no single-mode chunks exist, but without the
->> second device, they are created.
->
-> Is not it the root cause? I would expect it to create degraded mirrored
-> chunks that will be synchronized when second device is added back.
-That's exactly what it should be doing, and AFAIK what the correct fix 
-for this should be, but in the interim just relaxing the degraded check 
-to be per-chunk makes things usable, and is arguably how it should have 
-been to begin with.
->
->  (It's not clear to me whether they are
->> created with the first write, that is, ignoring any space in existing
->> degraded raid1 chunks, or if that's used up first and the single-mode
->> chunks only created later, when a new chunk must be allocated to continue
->> writing as the old ones are full.)
->>
->> So the first degraded-writable mount is allowed, because no single-mode
->> chunks yet exist, while after such single-mode chunks are created, the
->> existing dumb algorithm won't allow further writable mounts, because it
->> sees single-mode chunks on a multi-device filesystem, and never mind that
->> all the single mode chunks are there, it simply doesn't check that and
->> won't allow writable mount because some /might/ be on the missing device.
->>
->> The patches stuck in queue would make btrfs more intelligent about that,
->> having it check each chunk as listed in the chunk tree, and if at least
->> one copy is available (as would be the case for single-mode chunks
->> created after the degraded mount), writable mount would still be
->> allowed.  But... that's stuck in a long running project queue with no
->> known timetable for merging... <grumble, grumble>... so the only way to
->> get it is to go find and merge them yourself, in your own build.
->>
->
-> Will it replicate single mode chunks when second device is added?
-Not automatically, you would need to convert them to raid1 (or whatever 
-other profile.  Even with the patch, this would still be needed, but at 
-least it would (technically) work sanely.  On that note, on most of my 
-systems, I have a startup script that calls balance with the appropriate 
-convert flags and the soft flag for every fixed (non-removable) BTRFS 
-volume on the system to clean up after this.  The actual balance call 
-takes no time at all unless there are actually chunks to convert, so it 
-normally has very little impact on boot times.
+> [ ... ] Meanwhile, the problem as I understand it is that at
+> the first raid1 degraded writable mount, no single-mode chunks
+> exist, but without the second device, they are created.  [
+> ... ]
+
+That does not make any sense, unless there is a fundamental
+mistake in the design of the 'raid1' profile, which this and
+other situations make me think is a possibility: that the
+category of "mirrored" 'raid1' chunk does not exist in the Btrfs
+chunk manager. That is, a chunk is either 'raid1' if it has a
+mirror, or if has no mirror it must be 'single'.
+
+If a member device of a 'raid1' profile multidevice volume
+disappears there will be "unmirrored" 'raid1' profile chunks and
+some code path must recognize them as such, but the logic of the
+code does not allow their creation. Question: how does the code
+know that a specific 'raid1' chunk is mirrored or not? The chunk
+must have a link (member, offset) to its mirror, do they?
+
+What makes me think that "unmirrored" 'raid1' profile chunks are
+"not a thing" is that it is impossible to remove explicitly a
+member device from a 'raid1' profile volume: first one has to
+'convert' to 'single', and then  the 'remove' copies back to the
+remaining devices the 'single' chunks that are on the explicitly
+'remove'd device. Which to me seems absurd.
+
+Going further in my speculation, I suspect that at the core of
+the Btrfs multidevice design there is a persistent "confusion"
+(to use en euphemism) between volumes having a profile, and
+merely chunks have a profile.
+
+My additional guess that the original design concept had
+multidevice volumes to be merely containers for chunks of
+whichever mixed profiles, so a subvolume could have 'raid1'
+profile metadata and 'raid0' profile data, and another could
+have 'raid10' profile metadata and data, but since handling this
+turned out to be too hard, this was compromised into volumes
+having all metadata chunks to have the same profile and all data
+of the same profile, which requires special-case handling of
+corner cases, like volumes being converted or missing member
+devices.
+
+So in the case of 'raid1', a volume with say a 'raid1' data
+profile should have all-'raid1' and fully mirrored profile
+chunks, and the lack of a member devices fails that aim in two
+ways.

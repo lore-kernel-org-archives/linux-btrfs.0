@@ -1,7 +1,7 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mga02.intel.com ([134.134.136.20]:7352 "EHLO mga02.intel.com"
+Received: from mga02.intel.com ([134.134.136.20]:25204 "EHLO mga02.intel.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751356AbdCCI5v (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1751369AbdCCI5v (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Fri, 3 Mar 2017 03:57:51 -0500
 From: Elena Reshetova <elena.reshetova@intel.com>
 To: linux-kernel@vger.kernel.org
@@ -11,9 +11,9 @@ Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
         Elena Reshetova <elena.reshetova@intel.com>,
         Hans Liljestrand <ishkamiel@gmail.com>,
         Kees Cook <keescook@chromium.org>, David Windsor <dwindsor@gmail.com>
-Subject: [PATCH 03/17] fs, btrfs: convert extent_map.refs from atomic_t to refcount_t
-Date: Fri,  3 Mar 2017 10:55:12 +0200
-Message-Id: <1488531326-21271-4-git-send-email-elena.reshetova@intel.com>
+Subject: [PATCH 04/17] fs, btrfs: convert btrfs_ordered_extent.refs from atomic_t to refcount_t
+Date: Fri,  3 Mar 2017 10:55:13 +0200
+Message-Id: <1488531326-21271-5-git-send-email-elena.reshetova@intel.com>
 In-Reply-To: <1488531326-21271-1-git-send-email-elena.reshetova@intel.com>
 References: <1488531326-21271-1-git-send-email-elena.reshetova@intel.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -30,138 +30,122 @@ Signed-off-by: Hans Liljestrand <ishkamiel@gmail.com>
 Signed-off-by: Kees Cook <keescook@chromium.org>
 Signed-off-by: David Windsor <dwindsor@gmail.com>
 ---
- fs/btrfs/extent_io.c         |  4 ++--
- fs/btrfs/extent_map.c        | 10 +++++-----
- fs/btrfs/extent_map.h        |  3 ++-
- fs/btrfs/tree-log.c          |  2 +-
- fs/btrfs/volumes.c           |  2 +-
+ fs/btrfs/ordered-data.c      | 18 +++++++++---------
+ fs/btrfs/ordered-data.h      |  2 +-
  include/trace/events/btrfs.h |  2 +-
- 6 files changed, 12 insertions(+), 11 deletions(-)
+ 3 files changed, 11 insertions(+), 11 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index c3abf84..3cf0b02 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2852,7 +2852,7 @@ __get_extent_map(struct inode *inode, struct page *page, size_t pg_offset,
- 		em = *em_cached;
- 		if (extent_map_in_tree(em) && start >= em->start &&
- 		    start < extent_map_end(em)) {
--			atomic_inc(&em->refs);
-+			refcount_inc(&em->refs);
- 			return em;
- 		}
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index da5399f..7b40e2e 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -212,7 +212,7 @@ static int __btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
+ 		set_bit(BTRFS_ORDERED_DIRECT, &entry->flags);
  
-@@ -2863,7 +2863,7 @@ __get_extent_map(struct inode *inode, struct page *page, size_t pg_offset,
- 	em = get_extent(BTRFS_I(inode), page, pg_offset, start, len, 0);
- 	if (em_cached && !IS_ERR_OR_NULL(em)) {
- 		BUG_ON(*em_cached);
--		atomic_inc(&em->refs);
-+		refcount_inc(&em->refs);
- 		*em_cached = em;
+ 	/* one ref for the tree */
+-	atomic_set(&entry->refs, 1);
++	refcount_set(&entry->refs, 1);
+ 	init_waitqueue_head(&entry->wait);
+ 	INIT_LIST_HEAD(&entry->list);
+ 	INIT_LIST_HEAD(&entry->root_extent_list);
+@@ -358,7 +358,7 @@ int btrfs_dec_test_first_ordered_pending(struct inode *inode,
+ out:
+ 	if (!ret && cached && entry) {
+ 		*cached = entry;
+-		atomic_inc(&entry->refs);
++		refcount_inc(&entry->refs);
  	}
- 	return em;
-diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index 26f9ac7..6985015 100644
---- a/fs/btrfs/extent_map.c
-+++ b/fs/btrfs/extent_map.c
-@@ -55,7 +55,7 @@ struct extent_map *alloc_extent_map(void)
- 	em->flags = 0;
- 	em->compress_type = BTRFS_COMPRESS_NONE;
- 	em->generation = 0;
--	atomic_set(&em->refs, 1);
-+	refcount_set(&em->refs, 1);
- 	INIT_LIST_HEAD(&em->list);
- 	return em;
+ 	spin_unlock_irqrestore(&tree->lock, flags);
+ 	return ret == 0;
+@@ -425,7 +425,7 @@ int btrfs_dec_test_ordered_pending(struct inode *inode,
+ out:
+ 	if (!ret && cached && entry) {
+ 		*cached = entry;
+-		atomic_inc(&entry->refs);
++		refcount_inc(&entry->refs);
+ 	}
+ 	spin_unlock_irqrestore(&tree->lock, flags);
+ 	return ret == 0;
+@@ -456,7 +456,7 @@ void btrfs_get_logged_extents(struct btrfs_inode *inode,
+ 		if (test_and_set_bit(BTRFS_ORDERED_LOGGED, &ordered->flags))
+ 			continue;
+ 		list_add(&ordered->log_list, logged_list);
+-		atomic_inc(&ordered->refs);
++		refcount_inc(&ordered->refs);
+ 	}
+ 	spin_unlock_irq(&tree->lock);
  }
-@@ -71,8 +71,8 @@ void free_extent_map(struct extent_map *em)
- {
- 	if (!em)
- 		return;
--	WARN_ON(atomic_read(&em->refs) == 0);
--	if (atomic_dec_and_test(&em->refs)) {
-+	WARN_ON(refcount_read(&em->refs) == 0);
-+	if (refcount_dec_and_test(&em->refs)) {
- 		WARN_ON(extent_map_in_tree(em));
- 		WARN_ON(!list_empty(&em->list));
- 		if (test_bit(EXTENT_FLAG_FS_MAPPING, &em->flags))
-@@ -322,7 +322,7 @@ static inline void setup_extent_mapping(struct extent_map_tree *tree,
- 					struct extent_map *em,
- 					int modified)
- {
--	atomic_inc(&em->refs);
-+	refcount_inc(&em->refs);
- 	em->mod_start = em->start;
- 	em->mod_len = em->len;
+@@ -565,7 +565,7 @@ void btrfs_put_ordered_extent(struct btrfs_ordered_extent *entry)
  
-@@ -381,7 +381,7 @@ __lookup_extent_mapping(struct extent_map_tree *tree,
- 	if (strict && !(end > em->start && start < extent_map_end(em)))
- 		return NULL;
+ 	trace_btrfs_ordered_extent_put(entry->inode, entry);
  
--	atomic_inc(&em->refs);
-+	refcount_inc(&em->refs);
- 	return em;
+-	if (atomic_dec_and_test(&entry->refs)) {
++	if (refcount_dec_and_test(&entry->refs)) {
+ 		ASSERT(list_empty(&entry->log_list));
+ 		ASSERT(list_empty(&entry->trans_list));
+ 		ASSERT(list_empty(&entry->root_extent_list));
+@@ -690,7 +690,7 @@ int btrfs_wait_ordered_extents(struct btrfs_root *root, int nr,
+ 
+ 		list_move_tail(&ordered->root_extent_list,
+ 			       &root->ordered_extents);
+-		atomic_inc(&ordered->refs);
++		refcount_inc(&ordered->refs);
+ 		spin_unlock(&root->ordered_extent_lock);
+ 
+ 		btrfs_init_work(&ordered->flush_work,
+@@ -870,7 +870,7 @@ struct btrfs_ordered_extent *btrfs_lookup_ordered_extent(struct inode *inode,
+ 	if (!offset_in_entry(entry, file_offset))
+ 		entry = NULL;
+ 	if (entry)
+-		atomic_inc(&entry->refs);
++		refcount_inc(&entry->refs);
+ out:
+ 	spin_unlock_irq(&tree->lock);
+ 	return entry;
+@@ -911,7 +911,7 @@ struct btrfs_ordered_extent *btrfs_lookup_ordered_range(
+ 	}
+ out:
+ 	if (entry)
+-		atomic_inc(&entry->refs);
++		refcount_inc(&entry->refs);
+ 	spin_unlock_irq(&tree->lock);
+ 	return entry;
  }
+@@ -948,7 +948,7 @@ btrfs_lookup_first_ordered_extent(struct inode *inode, u64 file_offset)
+ 		goto out;
  
-diff --git a/fs/btrfs/extent_map.h b/fs/btrfs/extent_map.h
-index eb8b8fa..a67b2de 100644
---- a/fs/btrfs/extent_map.h
-+++ b/fs/btrfs/extent_map.h
-@@ -2,6 +2,7 @@
- #define __EXTENTMAP__
+ 	entry = rb_entry(node, struct btrfs_ordered_extent, rb_node);
+-	atomic_inc(&entry->refs);
++	refcount_inc(&entry->refs);
+ out:
+ 	spin_unlock_irq(&tree->lock);
+ 	return entry;
+diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
+index 195c93b..e0c1d5b 100644
+--- a/fs/btrfs/ordered-data.h
++++ b/fs/btrfs/ordered-data.h
+@@ -113,7 +113,7 @@ struct btrfs_ordered_extent {
+ 	int compress_type;
  
- #include <linux/rbtree.h>
-+#include <linux/refcount.h>
- 
- #define EXTENT_MAP_LAST_BYTE ((u64)-4)
- #define EXTENT_MAP_HOLE ((u64)-3)
-@@ -41,7 +42,7 @@ struct extent_map {
- 		 */
- 		struct map_lookup *map_lookup;
- 	};
+ 	/* reference count */
 -	atomic_t refs;
 +	refcount_t refs;
- 	unsigned int compress_type;
- 	struct list_head list;
- };
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index a59674c..ccfe9fe 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -4196,7 +4196,7 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
- 		if (em->generation <= test_gen)
- 			continue;
- 		/* Need a ref to keep it from getting evicted from cache */
--		atomic_inc(&em->refs);
-+		refcount_inc(&em->refs);
- 		set_bit(EXTENT_FLAG_LOGGING, &em->flags);
- 		list_add_tail(&em->list, &extents);
- 		num++;
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index a8fd2e9..c23a383 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -4833,7 +4833,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 	ret = add_extent_mapping(em_tree, em, 0);
- 	if (!ret) {
- 		list_add_tail(&em->list, &trans->transaction->pending_chunks);
--		atomic_inc(&em->refs);
-+		refcount_inc(&em->refs);
- 	}
- 	write_unlock(&em_tree->lock);
- 	if (ret) {
+ 
+ 	/* the inode we belong to */
+ 	struct inode *inode;
 diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index a3c3cab..9dd29e8 100644
+index 9dd29e8..8f206263 100644
 --- a/include/trace/events/btrfs.h
 +++ b/include/trace/events/btrfs.h
-@@ -213,7 +213,7 @@ TRACE_EVENT_CONDITION(btrfs_get_extent,
- 		__entry->block_start	= map->block_start;
- 		__entry->block_len	= map->block_len;
- 		__entry->flags		= map->flags;
--		__entry->refs		= atomic_read(&map->refs);
-+		__entry->refs		= refcount_read(&map->refs);
- 		__entry->compress_type	= map->compress_type;
- 	),
- 
+@@ -275,7 +275,7 @@ DECLARE_EVENT_CLASS(btrfs__ordered_extent,
+ 		__entry->bytes_left	= ordered->bytes_left;
+ 		__entry->flags		= ordered->flags;
+ 		__entry->compress_type	= ordered->compress_type;
+-		__entry->refs		= atomic_read(&ordered->refs);
++		__entry->refs		= refcount_read(&ordered->refs);
+ 		__entry->root_objectid	=
+ 				BTRFS_I(inode)->root->root_key.objectid;
+ 		__entry->truncated_len	= ordered->truncated_len;
 -- 
 2.7.4
 

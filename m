@@ -1,7 +1,7 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mga02.intel.com ([134.134.136.20]:25204 "EHLO mga02.intel.com"
+Received: from mga02.intel.com ([134.134.136.20]:27392 "EHLO mga02.intel.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751369AbdCCI5v (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1751394AbdCCI5v (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Fri, 3 Mar 2017 03:57:51 -0500
 From: Elena Reshetova <elena.reshetova@intel.com>
 To: linux-kernel@vger.kernel.org
@@ -11,9 +11,9 @@ Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
         Elena Reshetova <elena.reshetova@intel.com>,
         Hans Liljestrand <ishkamiel@gmail.com>,
         Kees Cook <keescook@chromium.org>, David Windsor <dwindsor@gmail.com>
-Subject: [PATCH 04/17] fs, btrfs: convert btrfs_ordered_extent.refs from atomic_t to refcount_t
-Date: Fri,  3 Mar 2017 10:55:13 +0200
-Message-Id: <1488531326-21271-5-git-send-email-elena.reshetova@intel.com>
+Subject: [PATCH 05/17] fs, btrfs: convert btrfs_caching_control.count from atomic_t to refcount_t
+Date: Fri,  3 Mar 2017 10:55:14 +0200
+Message-Id: <1488531326-21271-6-git-send-email-elena.reshetova@intel.com>
 In-Reply-To: <1488531326-21271-1-git-send-email-elena.reshetova@intel.com>
 References: <1488531326-21271-1-git-send-email-elena.reshetova@intel.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -30,122 +30,88 @@ Signed-off-by: Hans Liljestrand <ishkamiel@gmail.com>
 Signed-off-by: Kees Cook <keescook@chromium.org>
 Signed-off-by: David Windsor <dwindsor@gmail.com>
 ---
- fs/btrfs/ordered-data.c      | 18 +++++++++---------
- fs/btrfs/ordered-data.h      |  2 +-
- include/trace/events/btrfs.h |  2 +-
- 3 files changed, 11 insertions(+), 11 deletions(-)
+ fs/btrfs/ctree.h       |  3 ++-
+ fs/btrfs/extent-tree.c | 12 ++++++------
+ 2 files changed, 8 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index da5399f..7b40e2e 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -212,7 +212,7 @@ static int __btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
- 		set_bit(BTRFS_ORDERED_DIRECT, &entry->flags);
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 00e3518..557af39 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -38,6 +38,7 @@
+ #include <linux/security.h>
+ #include <linux/sizes.h>
+ #include <linux/dynamic_debug.h>
++#include <linux/refcount.h>
+ #include "extent_io.h"
+ #include "extent_map.h"
+ #include "async-thread.h"
+@@ -517,7 +518,7 @@ struct btrfs_caching_control {
+ 	struct btrfs_work work;
+ 	struct btrfs_block_group_cache *block_group;
+ 	u64 progress;
+-	atomic_t count;
++	refcount_t count;
+ };
  
- 	/* one ref for the tree */
--	atomic_set(&entry->refs, 1);
-+	refcount_set(&entry->refs, 1);
- 	init_waitqueue_head(&entry->wait);
- 	INIT_LIST_HEAD(&entry->list);
- 	INIT_LIST_HEAD(&entry->root_extent_list);
-@@ -358,7 +358,7 @@ int btrfs_dec_test_first_ordered_pending(struct inode *inode,
- out:
- 	if (!ret && cached && entry) {
- 		*cached = entry;
--		atomic_inc(&entry->refs);
-+		refcount_inc(&entry->refs);
+ /* Once caching_thread() finds this much free space, it will wake up waiters. */
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 63ba295..796001b 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -315,14 +315,14 @@ get_caching_control(struct btrfs_block_group_cache *cache)
  	}
- 	spin_unlock_irqrestore(&tree->lock, flags);
- 	return ret == 0;
-@@ -425,7 +425,7 @@ int btrfs_dec_test_ordered_pending(struct inode *inode,
- out:
- 	if (!ret && cached && entry) {
- 		*cached = entry;
--		atomic_inc(&entry->refs);
-+		refcount_inc(&entry->refs);
- 	}
- 	spin_unlock_irqrestore(&tree->lock, flags);
- 	return ret == 0;
-@@ -456,7 +456,7 @@ void btrfs_get_logged_extents(struct btrfs_inode *inode,
- 		if (test_and_set_bit(BTRFS_ORDERED_LOGGED, &ordered->flags))
- 			continue;
- 		list_add(&ordered->log_list, logged_list);
--		atomic_inc(&ordered->refs);
-+		refcount_inc(&ordered->refs);
- 	}
- 	spin_unlock_irq(&tree->lock);
+ 
+ 	ctl = cache->caching_ctl;
+-	atomic_inc(&ctl->count);
++	refcount_inc(&ctl->count);
+ 	spin_unlock(&cache->lock);
+ 	return ctl;
  }
-@@ -565,7 +565,7 @@ void btrfs_put_ordered_extent(struct btrfs_ordered_extent *entry)
  
- 	trace_btrfs_ordered_extent_put(entry->inode, entry);
- 
--	if (atomic_dec_and_test(&entry->refs)) {
-+	if (refcount_dec_and_test(&entry->refs)) {
- 		ASSERT(list_empty(&entry->log_list));
- 		ASSERT(list_empty(&entry->trans_list));
- 		ASSERT(list_empty(&entry->root_extent_list));
-@@ -690,7 +690,7 @@ int btrfs_wait_ordered_extents(struct btrfs_root *root, int nr,
- 
- 		list_move_tail(&ordered->root_extent_list,
- 			       &root->ordered_extents);
--		atomic_inc(&ordered->refs);
-+		refcount_inc(&ordered->refs);
- 		spin_unlock(&root->ordered_extent_lock);
- 
- 		btrfs_init_work(&ordered->flush_work,
-@@ -870,7 +870,7 @@ struct btrfs_ordered_extent *btrfs_lookup_ordered_extent(struct inode *inode,
- 	if (!offset_in_entry(entry, file_offset))
- 		entry = NULL;
- 	if (entry)
--		atomic_inc(&entry->refs);
-+		refcount_inc(&entry->refs);
- out:
- 	spin_unlock_irq(&tree->lock);
- 	return entry;
-@@ -911,7 +911,7 @@ struct btrfs_ordered_extent *btrfs_lookup_ordered_range(
- 	}
- out:
- 	if (entry)
--		atomic_inc(&entry->refs);
-+		refcount_inc(&entry->refs);
- 	spin_unlock_irq(&tree->lock);
- 	return entry;
+ static void put_caching_control(struct btrfs_caching_control *ctl)
+ {
+-	if (atomic_dec_and_test(&ctl->count))
++	if (refcount_dec_and_test(&ctl->count))
+ 		kfree(ctl);
  }
-@@ -948,7 +948,7 @@ btrfs_lookup_first_ordered_extent(struct inode *inode, u64 file_offset)
- 		goto out;
  
- 	entry = rb_entry(node, struct btrfs_ordered_extent, rb_node);
--	atomic_inc(&entry->refs);
-+	refcount_inc(&entry->refs);
- out:
- 	spin_unlock_irq(&tree->lock);
- 	return entry;
-diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
-index 195c93b..e0c1d5b 100644
---- a/fs/btrfs/ordered-data.h
-+++ b/fs/btrfs/ordered-data.h
-@@ -113,7 +113,7 @@ struct btrfs_ordered_extent {
- 	int compress_type;
+@@ -598,7 +598,7 @@ static int cache_block_group(struct btrfs_block_group_cache *cache,
+ 	init_waitqueue_head(&caching_ctl->wait);
+ 	caching_ctl->block_group = cache;
+ 	caching_ctl->progress = cache->key.objectid;
+-	atomic_set(&caching_ctl->count, 1);
++	refcount_set(&caching_ctl->count, 1);
+ 	btrfs_init_work(&caching_ctl->work, btrfs_cache_helper,
+ 			caching_thread, NULL, NULL);
  
- 	/* reference count */
--	atomic_t refs;
-+	refcount_t refs;
+@@ -619,7 +619,7 @@ static int cache_block_group(struct btrfs_block_group_cache *cache,
+ 		struct btrfs_caching_control *ctl;
  
- 	/* the inode we belong to */
- 	struct inode *inode;
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index 9dd29e8..8f206263 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -275,7 +275,7 @@ DECLARE_EVENT_CLASS(btrfs__ordered_extent,
- 		__entry->bytes_left	= ordered->bytes_left;
- 		__entry->flags		= ordered->flags;
- 		__entry->compress_type	= ordered->compress_type;
--		__entry->refs		= atomic_read(&ordered->refs);
-+		__entry->refs		= refcount_read(&ordered->refs);
- 		__entry->root_objectid	=
- 				BTRFS_I(inode)->root->root_key.objectid;
- 		__entry->truncated_len	= ordered->truncated_len;
+ 		ctl = cache->caching_ctl;
+-		atomic_inc(&ctl->count);
++		refcount_inc(&ctl->count);
+ 		prepare_to_wait(&ctl->wait, &wait, TASK_UNINTERRUPTIBLE);
+ 		spin_unlock(&cache->lock);
+ 
+@@ -706,7 +706,7 @@ static int cache_block_group(struct btrfs_block_group_cache *cache,
+ 	}
+ 
+ 	down_write(&fs_info->commit_root_sem);
+-	atomic_inc(&caching_ctl->count);
++	refcount_inc(&caching_ctl->count);
+ 	list_add_tail(&caching_ctl->list, &fs_info->caching_block_groups);
+ 	up_write(&fs_info->commit_root_sem);
+ 
+@@ -10415,7 +10415,7 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
+ 				    &fs_info->caching_block_groups, list)
+ 				if (ctl->block_group == block_group) {
+ 					caching_ctl = ctl;
+-					atomic_inc(&caching_ctl->count);
++					refcount_inc(&caching_ctl->count);
+ 					break;
+ 				}
+ 		}
 -- 
 2.7.4
 

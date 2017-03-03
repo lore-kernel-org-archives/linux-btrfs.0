@@ -1,96 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f42.google.com ([209.85.214.42]:35909 "EHLO
-        mail-it0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751160AbdCCNFE (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Mar 2017 08:05:04 -0500
-Received: by mail-it0-f42.google.com with SMTP id h10so12146450ith.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 03 Mar 2017 05:05:03 -0800 (PST)
+Received: from mail-io0-f173.google.com ([209.85.223.173]:34867 "EHLO
+        mail-io0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751482AbdCCN1x (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Mar 2017 08:27:53 -0500
+Received: by mail-io0-f173.google.com with SMTP id z13so29987806iof.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 03 Mar 2017 05:27:30 -0800 (PST)
+Received: from [191.9.206.254] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
+        by smtp.gmail.com with ESMTPSA id j201sm804792ita.3.2017.03.03.04.19.11
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Fri, 03 Mar 2017 04:19:12 -0800 (PST)
 Subject: Re: raid1 degraded mount still produce single chunks, writeable mount
  not allowed
-To: Peter Grandi <pg@btrfs.list.sabi.co.UK>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: linux-btrfs@vger.kernel.org
 References: <CAJCQCtQByC_pTnZhFFfHmxktN-Ga4W0TZ8wVRPxe_b18G+Kajw@mail.gmail.com>
- <pan$a4f49$5a6ddd0a$2183c48a$5df333ac@cox.net>
- <22712.48434.400550.346157@tree.ty.sabi.co.uk>
+ <20170302103753.x35jhe7xgnwl6ee6@angband.pl>
+ <20170303065622.2a9a244e@jupiter.sol.kaishome.de>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <284e9d01-3e69-705e-dd88-ebe047e2e4b8@gmail.com>
-Date: Fri, 3 Mar 2017 07:38:36 -0500
+Message-ID: <88b27891-b3fc-eef6-d793-96fd32504818@gmail.com>
+Date: Fri, 3 Mar 2017 07:19:06 -0500
 MIME-Version: 1.0
-In-Reply-To: <22712.48434.400550.346157@tree.ty.sabi.co.uk>
+In-Reply-To: <20170303065622.2a9a244e@jupiter.sol.kaishome.de>
 Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-03-02 19:47, Peter Grandi wrote:
->> [ ... ] Meanwhile, the problem as I understand it is that at
->> the first raid1 degraded writable mount, no single-mode chunks
->> exist, but without the second device, they are created.  [
->> ... ]
+On 2017-03-03 00:56, Kai Krakow wrote:
+> Am Thu, 2 Mar 2017 11:37:53 +0100
+> schrieb Adam Borowski <kilobyte@angband.pl>:
 >
-> That does not make any sense, unless there is a fundamental
-> mistake in the design of the 'raid1' profile, which this and
-> other situations make me think is a possibility: that the
-> category of "mirrored" 'raid1' chunk does not exist in the Btrfs
-> chunk manager. That is, a chunk is either 'raid1' if it has a
-> mirror, or if has no mirror it must be 'single'.
+>> On Wed, Mar 01, 2017 at 05:30:37PM -0700, Chris Murphy wrote:
+>>> [1717713.408675] BTRFS warning (device dm-8): missing devices (1)
+>>> exceeds the limit (0), writeable mount is not allowed
+>>> [1717713.446453] BTRFS error (device dm-8): open_ctree failed
+>>>
+>>> [chris@f25s ~]$ uname -r
+>>> 4.9.8-200.fc25.x86_64
+>>>
+>>> I thought this was fixed. I'm still getting a one time degraded rw
+>>> mount, after that it's no longer allowed, which really doesn't make
+>>> any sense because those single chunks are on the drive I'm trying to
+>>> mount.
+>>
+>> Well, there's Qu's patch at:
+>> https://www.spinics.net/lists/linux-btrfs/msg47283.html
+>> but it doesn't apply cleanly nor is easy to rebase to current kernels.
+>>
+>>> I don't understand what problem this proscription is trying to
+>>> avoid. If it's OK to mount rw,degraded once, then it's OK to allow
+>>> it twice. If it's not OK twice, it's not OK once.
+>>
+>> Well, yeah.  The current check is naive and wrong.  It does have a
+>> purpose, just fails in this, very common, case.
 >
-> If a member device of a 'raid1' profile multidevice volume
-> disappears there will be "unmirrored" 'raid1' profile chunks and
-> some code path must recognize them as such, but the logic of the
-> code does not allow their creation. Question: how does the code
-> know that a specific 'raid1' chunk is mirrored or not? The chunk
-> must have a link (member, offset) to its mirror, do they?
+> I guess the reasoning behind this is: Creating any more chunks on this
+> drive will make raid1 chunks with only one copy. Adding another drive
+> later will not replay the copies without user interaction. Is that true?
 >
-> What makes me think that "unmirrored" 'raid1' profile chunks are
-> "not a thing" is that it is impossible to remove explicitly a
-> member device from a 'raid1' profile volume: first one has to
-> 'convert' to 'single', and then  the 'remove' copies back to the
-> remaining devices the 'single' chunks that are on the explicitly
-> 'remove'd device. Which to me seems absurd.
-It is, there should be a way to do this as a single operation.  The 
-reason this is currently the case though is a simple one, 'btrfs device 
-delete' is just a special instance of balance that prevents new chunks 
-being allocated on the device being removed and balances all the chunks 
-on that device so they end up on other devices.  It currently does no 
-profile conversion, but having that as an option would actually be 
-_very_ useful from a data safety perspective.
+> If yes, this may leave you with a mixed case of having a raid1 drive
+> with some chunks not mirrored and some mirrored. When the other drives
+> goes missing later, you are loosing data or even the whole filesystem
+> although you were left with the (wrong) imagination of having a
+> mirrored drive setup...
 >
-> Going further in my speculation, I suspect that at the core of
-> the Btrfs multidevice design there is a persistent "confusion"
-> (to use en euphemism) between volumes having a profile, and
-> merely chunks have a profile.
-There generally is.  The profile is entirely a property of the chunks 
-(each chunk literally has a bit of metadata that says what profile it 
-is), not the volume.  There's some metadata in the volume somewhere that 
-says what profile to use for new chunks of each type (I think), but that 
-doesn't dictate what chunk profiles there are on the volume.  This whole 
-arrangement is actually pretty important for fault tolerance in general, 
-since during a conversion you have _both_ profiles for that chunk type 
-at the same time on the same filesystem (new chunks will get allocated 
-with the new type though), and the kernel has to be able to handle a 
-partially converted FS.
+> Is this how it works?
 >
-> My additional guess that the original design concept had
-> multidevice volumes to be merely containers for chunks of
-> whichever mixed profiles, so a subvolume could have 'raid1'
-> profile metadata and 'raid0' profile data, and another could
-> have 'raid10' profile metadata and data, but since handling this
-> turned out to be too hard, this was compromised into volumes
-> having all metadata chunks to have the same profile and all data
-> of the same profile, which requires special-case handling of
-> corner cases, like volumes being converted or missing member
-> devices.
-Actually, the only bits missing that would be needed to do this are 
-stuff to segregate the data of given subvolumes completely form each 
-other (ie, make sure they can't be in the same chunks at all).  Doing 
-that is hard, so we don't have per-subvolume profiles yet.  It's fully 
-possible to have a mix of profiles on a given volume though.  Some old 
-versions of mkfs actually did this (you'd end up with a small single 
-profile chunk of each type on a FS that used different profiles), and 
-the filesystem is in exactly that state when converting between profiles 
-for a given chunk type.  New chunks will only be generated with one 
-profile, but you can have whatever other mix you want essentially (in 
-fact, one of the handful of regression tests I run when I'm checking 
-patches explicitly creates a filesystem with one data and one system 
-chunk of every profile and makes sure the kernel can still access it 
-correctly).
+> If yes, a real patch would also need to replay the missing copies after
+> adding a new drive.
+>
+The problem is that that would use some serious disk bandwidth without 
+user intervention.  The way from userspace to fix this is to scrub the 
+FS.  It would essentially be the same from kernel space, which means 
+that if you had a multi-TB FS and this happened, you'd be running at 
+below capacity in terms of bandwidth for quite some time.  If this were 
+to be implemented, it would have to be keyed off of the per-chunk 
+degraded check (so that _only_ the chunks that need it get touched), and 
+there would need to be a switch to disable it.

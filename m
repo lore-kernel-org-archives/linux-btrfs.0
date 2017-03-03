@@ -1,174 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:43835 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751137AbdCCBPD (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Mar 2017 20:15:03 -0500
-Subject: Re: [4.7.2] btrfs_run_delayed_refs:2963: errno=-17 Object already
- exists
-To: Marc Joliet <marcec@gmx.de>, <linux-btrfs@vger.kernel.org>
-References: <20160828152908.6e1325b5@jupiter.sol.kaishome.de>
- <63cf74bb-009a-b422-4390-7562395db31d@cn.fujitsu.com>
- <14737660.8idzxVKBRv@thetick> <1689223.KKWey1OxT2@thetick>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <e98d69c5-ac5e-d5b6-d7af-eb9c33975734@cn.fujitsu.com>
-Date: Fri, 3 Mar 2017 09:09:57 +0800
+Received: from mail-yw0-f175.google.com ([209.85.161.175]:33385 "EHLO
+        mail-yw0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751135AbdCCBPf (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Mar 2017 20:15:35 -0500
+Received: by mail-yw0-f175.google.com with SMTP id s15so48286861ywg.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 02 Mar 2017 17:15:30 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <1689223.KKWey1OxT2@thetick>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <22712.48434.400550.346157@tree.ty.sabi.co.uk>
+References: <CAJCQCtQByC_pTnZhFFfHmxktN-Ga4W0TZ8wVRPxe_b18G+Kajw@mail.gmail.com>
+ <pan$a4f49$5a6ddd0a$2183c48a$5df333ac@cox.net> <22712.48434.400550.346157@tree.ty.sabi.co.uk>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Thu, 2 Mar 2017 18:15:28 -0700
+Message-ID: <CAJCQCtSwBZKiZWA83dv_bvra1548eRtHJy7Gbqsbs_Hy56aSGw@mail.gmail.com>
+Subject: Re: raid1 degraded mount still produce single chunks, writeable mount
+ not allowed
+To: Peter Grandi <pg@btrfs.list.sabi.co.uk>
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+[1805985.267438] BTRFS info (device dm-6): allowing degraded mounts
+[1805985.267566] BTRFS info (device dm-6): disk space caching is enabled
+[1805985.267676] BTRFS info (device dm-6): has skinny extents
+[1805987.187857] BTRFS warning (device dm-6): missing devices (1)
+exceeds the limit (0), writeable mount is not allowed
+[1805987.228990] BTRFS error (device dm-6): open_ctree failed
+[chris@f25s ~]$ sudo mount -o noatime,degraded,ro /dev/mapper/sdb /mnt
+[chris@f25s ~]$ sudo btrfs fi df /mnt
+Data, RAID1: total=434.00GiB, used=432.46GiB
+Data, single: total=1.00GiB, used=1.66MiB
+System, RAID1: total=8.00MiB, used=48.00KiB
+System, single: total=32.00MiB, used=32.00KiB
+Metadata, RAID1: total=2.00GiB, used=729.17MiB
+Metadata, single: total=1.00GiB, used=0.00B
+GlobalReserve, single: total=495.02MiB, used=0.00B
+[chris@f25s ~]$
 
 
-At 03/02/2017 05:44 PM, Marc Joliet wrote:
-> On Wednesday 01 March 2017 19:14:07 Marc Joliet wrote:
->> In any
->> case, I started btrfs-check on the device itself.
->
-> OK, it's still running, but the output so far is:
->
-> # btrfs check --mode=lowmem --progress /dev/sdb2
-> Checking filesystem on /dev/sdb2
-> UUID: f97b3cda-15e8-418b-bb9b-235391ef2a38
-> ERROR: shared extent[3826242740224 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3826442825728 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3826744471552 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3827106349056 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3827141001216 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3827150958592 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3827251724288 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3827433795584 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3827536166912 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3827536183296 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3827621646336 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3828179406848 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3828267970560 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3828284530688 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3828714246144 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3828794187776 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3829161340928 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3829373693952 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3830252130304 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3830421159936 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3830439141376 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3830441398272 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3830785138688 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3831099297792 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3831128768512 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3831371513856 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3831535570944 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3831591952384 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3831799398400 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3831829250048 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3831829512192 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3832011440128 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3832011767808 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3832023920640 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3832024678400 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3832027316224 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3832028762112 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3832030236672 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3832030330880 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3832161079296 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3832164904960 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3832164945920 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3832613765120 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3833727565824 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3833914073088 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3833929310208 4096] lost its parent (parent:
-> 3827251183616, level: 0)
-> ERROR: shared extent[3833930141696 4096] lost its parent (parent:
-> 3827251183616, level: 0)
 
-The "shared extent lost its parent" is all about the same extent, 
-3827251183616.
+So the sequence is:
+1. mkfs.btrfs -d raid1 -m raid1 <devs 2x)
+2. fill it with a bunch of data over a few months, always mounted
+normally with default options
+3. physically remove 1 of 2 devices, and do a degraded mount. This
+mounts without error, and more stuff is added. Volume is umounted.
+4. Try to mount the same 1 of 2 devices, with degraded mount option,
+and I get the first error, "writeable mount is not allowed".
+5. Try to mount the same 1 of 2 devices, with degraded,ro option, and
+it mounts, and then I captured the 'btfs fi df' above.
 
-It would be nice if you could paste the output of btrfs-debug-tree -b 
-3827251183616 to check what tree it belongs to.
+So very clearly there are single chunks added during the degraded rw mount.
 
-> ERROR: extent[3837768077312, 24576] referencer count mismatch (root: 33174,
-> owner: 1277577, offset: 4767744) wanted: 1, have: 0
-> [snip many more referencer count mismatches]
-> ERROR: extent[3878247383040, 8192] referencer count mismatch (root: 33495,
-> owner: 2688918, offset: 3874816) wanted: 2, have: 3
+But does 1.66MiB of data in that single data chunk make sense? And
+does 0.00 MiB of metadata in that single metadata chunk make sense?
+I'm not sure, seems unlikely. Most of what happened in that subvolume
+since the previous snapshot was moving things around, reorganizing,
+not adding files. So, maybe 1.66MiB data added is possible? But
+definitely the metadata changes must be in the raid1 chunks, while the
+newly created single profile metadata chunk is left unused.
 
-That's a little dangerous now.
-
-Some *DATA* extent even lost its referencer now.
-
-For example, data extent at 3837768077312, length 24K exists on disk, 
-but no one is referring to it.
-
-At least the good news is, these just mean there is some extra space 
-taken on disk, but not vice verse.
-
-> ERROR: block group[3879328546816 1073741824] used 1072840704 but extent items
-> used 1129164800
-> ERROR: extent[3879516581888, 40960] referencer count mismatch (root: 33530,
-> owner: 1277577, offset: 23461888) wanted: 1, have: 0
-> [snip many more referencer count mismatches]
-> ERROR: extent[3951758860288, 16384] referencer count mismatch (root: 33189,
-> owner: 1277577, offset: 519880704) wanted: 1, have: 0
->
-> This is 56	lines of output, the unabridged output contains enough "referencer
-> count mismatches" to fill 1329 lines of output.  Could that be because there
-> are deleted snapshots that btrfs-cleaner hasn't been able to clean up?
-
-Ah, this makes sense.
-
-But normally cleaner should cleanup subvolume tree block and modify 
-extent tree.
-How did you stop btrfs-cleaner?
-
-Thanks,
-Qu
->
-> Greetings
->
+So I think there's more than one bug going on here, separate problems
+for data and metadata.
 
 
+Chris Murphy

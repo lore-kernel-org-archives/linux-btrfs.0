@@ -1,96 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mga11.intel.com ([192.55.52.93]:6290 "EHLO mga11.intel.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751333AbdCCJCY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 3 Mar 2017 04:02:24 -0500
-From: Elena Reshetova <elena.reshetova@intel.com>
-To: linux-kernel@vger.kernel.org
-Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        peterz@infradead.org, gregkh@linuxfoundation.org, jbacik@fb.com,
-        clm@fb.com, dsterba@suse.com,
-        Elena Reshetova <elena.reshetova@intel.com>
-Subject: [PATCH 00/17] fs, btrfs refcount conversions
-Date: Fri,  3 Mar 2017 10:55:09 +0200
-Message-Id: <1488531326-21271-1-git-send-email-elena.reshetova@intel.com>
+Received: from userp1050.oracle.com ([156.151.31.82]:22881 "EHLO
+        userp1050.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751394AbdCCKOb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Mar 2017 05:14:31 -0500
+Received: from userp1040.oracle.com (userp1040.oracle.com [156.151.31.81])
+        by userp1050.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v23AE8As021154
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 3 Mar 2017 10:14:08 GMT
+Subject: Re: raid1 degraded mount still produce single chunks, writeable mount
+ not allowed
+To: Duncan <1i5t5.duncan@cox.net>
+References: <CAJCQCtQByC_pTnZhFFfHmxktN-Ga4W0TZ8wVRPxe_b18G+Kajw@mail.gmail.com>
+ <pan$a4f49$5a6ddd0a$2183c48a$5df333ac@cox.net>
+From: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <84e27d38-a457-52cf-8565-e9a031d61e4a@oracle.com>
+Date: Fri, 3 Mar 2017 18:16:28 +0800
+MIME-Version: 1.0
+In-Reply-To: <pan$a4f49$5a6ddd0a$2183c48a$5df333ac@cox.net>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Now when new refcount_t type and API are finally merged
-(see include/linux/refcount.h), the following
-patches convert various refcounters in the btrfs filesystem from atomic_t
-to refcount_t. By doing this we prevent intentional or accidental
-underflows or overflows that can led to use-after-free vulnerabilities.
 
-The below patches are fully independent and can be cherry-picked separately.
-Since we convert all kernel subsystems in the same fashion, resulting
-in about 300 patches, we have to group them for sending at least in some
-fashion to be manageable. Please excuse the long cc list.
+> AFAIK, no, it hasn't been fixed, at least not in mainline, because the
+> patches to fix it got stuck in some long-running project patch queue
+> (IIRC, the one for on-degraded auto-device-replace), with no timeline
+> known to me on mainline merge.
+>
+> Meanwhile, the problem as I understand it is that at the first raid1
+> degraded writable mount, no single-mode chunks exist, but without the
+> second device, they are created.
 
-These patches have been tested with xfstests by running btrfs-related tests.
-btrfs debug was enabled, warns on refcount errors, too. No output related to
-refcount errors produced. However, the following errors were during the run:
- * tests btrfs/078, btrfs/114, btrfs/115, no errors anywhere in dmesg, but
- process hangs. They all seem to be around qgroup, sometimes error visible
- such as qgroup scan failed -4 before it blocks, but not always.
- * test btrfs/104 dmesg has additional error output:
- BTRFS warning (device vdc): qgroup 258 reserved space underflow, have: 0,
- to free: 4096
- I tried looking at the code on what causes the failure, but could not figure
- it out. It doesn't seem to be related to any refcount changes at least IMO.
 
-The above test failures are hard for me to understand and interpreted, but
-they don't seem to relate to refcount conversions.
+It might be an accidental feature introduced in the patch [1].
+RFC [2] (limited tested) tried to correct it. But, if the accidental
+feature works better than the traditional RAID1 approach then
+workaround fix [3] will help, however for the accidental feature
+I am not sure if it is would to support all the failures-recovery/
+FS-is-full cases.
 
-Elena Reshetova (17):
-  fs, btrfs: convert btrfs_bio.refs from atomic_t to refcount_t
-  fs, btrfs: convert btrfs_transaction.use_count from atomic_t to
-    refcount_t
-  fs, btrfs: convert extent_map.refs from atomic_t to refcount_t
-  fs, btrfs: convert btrfs_ordered_extent.refs from atomic_t to
-    refcount_t
-  fs, btrfs: convert btrfs_caching_control.count from atomic_t to
-    refcount_t
-  fs, btrfs: convert btrfs_delayed_ref_node.refs from atomic_t to
-    refcount_t
-  fs, btrfs: convert btrfs_delayed_node.refs from atomic_t to refcount_t
-  fs, btrfs: convert btrfs_delayed_item.refs from atomic_t to refcount_t
-  fs, btrfs: convert btrfs_root.refs from atomic_t to refcount_t
-  fs, btrfs: convert extent_state.refs from atomic_t to refcount_t
-  fs, btrfs: convert compressed_bio.pending_bios from atomic_t to
-    refcount_t
-  fs, btrfs: convert scrub_recover.refs from atomic_t to refcount_t
-  fs, btrfs: convert scrub_page.refs from atomic_t to refcount_t
-  fs, btrfs: convert scrub_block.refs from atomic_t to refcount_t
-  fs, btrfs: convert scrub_parity.refs from atomic_t to refcount_t
-  fs, btrfs: convert scrub_ctx.refs from atomic_t to refcount_t
-  fs, btrfs: convert btrfs_raid_bio.refs from atomic_t to refcount_t
+[1]
+   commit 95669976bd7d30ae265db938ecb46a6b7f8cb893
+   Btrfs: don't consider the missing device when allocating new chunks
 
- fs/btrfs/backref.c           |  2 +-
- fs/btrfs/compression.c       | 18 ++++++++---------
- fs/btrfs/ctree.h             |  5 +++--
- fs/btrfs/delayed-inode.c     | 46 ++++++++++++++++++++++----------------------
- fs/btrfs/delayed-inode.h     |  5 +++--
- fs/btrfs/delayed-ref.c       |  8 ++++----
- fs/btrfs/delayed-ref.h       |  8 +++++---
- fs/btrfs/disk-io.c           |  6 +++---
- fs/btrfs/disk-io.h           |  4 ++--
- fs/btrfs/extent-tree.c       | 20 +++++++++----------
- fs/btrfs/extent_io.c         | 18 ++++++++---------
- fs/btrfs/extent_io.h         |  3 ++-
- fs/btrfs/extent_map.c        | 10 +++++-----
- fs/btrfs/extent_map.h        |  3 ++-
- fs/btrfs/ordered-data.c      | 20 +++++++++----------
- fs/btrfs/ordered-data.h      |  2 +-
- fs/btrfs/raid56.c            | 19 +++++++++---------
- fs/btrfs/scrub.c             | 42 ++++++++++++++++++++--------------------
- fs/btrfs/transaction.c       | 20 +++++++++----------
- fs/btrfs/transaction.h       |  3 ++-
- fs/btrfs/tree-log.c          |  2 +-
- fs/btrfs/volumes.c           | 10 +++++-----
- fs/btrfs/volumes.h           |  2 +-
- include/trace/events/btrfs.h |  4 ++--
- 24 files changed, 143 insertions(+), 137 deletions(-)
+[2]
+   [PATCH 0/2] [RFC] btrfs: create degraded-RAID1 chunks
 
--- 
-2.7.4
+[3]
+   Patches 01/13 to 05/13 of the below patch set (which were needed
+   to test rest of the patches in the set).
+   [PATCH v6 00/13] Introduce device state 'failed', spare device and 
+auto replace.
 
+
+Hope this sheds some light on the long standing issue.
+
+Thanks, Anand

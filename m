@@ -1,75 +1,174 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from azure.uno.uk.net ([95.172.254.11]:42393 "EHLO azure.uno.uk.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751153AbdCCAti (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 2 Mar 2017 19:49:38 -0500
-Received: from ty.sabi.co.uk ([95.172.230.208]:52492)
-        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
-        (Exim 4.88)
-        (envelope-from <pg@btrfs.list.sabi.co.uk>)
-        id 1cjbOK-0040vY-JW
-        for linux-btrfs@vger.kernel.org; Fri, 03 Mar 2017 00:48:16 +0000
-Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
-        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
-        id 1cjbNq-000638-OJ
-        for <linux-btrfs@vger.kernel.org>; Fri, 03 Mar 2017 00:47:46 +0000
+Received: from cn.fujitsu.com ([59.151.112.132]:43835 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751137AbdCCBPD (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Mar 2017 20:15:03 -0500
+Subject: Re: [4.7.2] btrfs_run_delayed_refs:2963: errno=-17 Object already
+ exists
+To: Marc Joliet <marcec@gmx.de>, <linux-btrfs@vger.kernel.org>
+References: <20160828152908.6e1325b5@jupiter.sol.kaishome.de>
+ <63cf74bb-009a-b422-4390-7562395db31d@cn.fujitsu.com>
+ <14737660.8idzxVKBRv@thetick> <1689223.KKWey1OxT2@thetick>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <e98d69c5-ac5e-d5b6-d7af-eb9c33975734@cn.fujitsu.com>
+Date: Fri, 3 Mar 2017 09:09:57 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Message-ID: <22712.48434.400550.346157@tree.ty.sabi.co.uk>
-Date: Fri, 3 Mar 2017 00:47:46 +0000
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: raid1 degraded mount still produce single chunks, writeable mount
- not allowed
-In-Reply-To: <pan$a4f49$5a6ddd0a$2183c48a$5df333ac@cox.net>
-References: <CAJCQCtQByC_pTnZhFFfHmxktN-Ga4W0TZ8wVRPxe_b18G+Kajw@mail.gmail.com>
-        <pan$a4f49$5a6ddd0a$2183c48a$5df333ac@cox.net>
-From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
+In-Reply-To: <1689223.KKWey1OxT2@thetick>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> [ ... ] Meanwhile, the problem as I understand it is that at
-> the first raid1 degraded writable mount, no single-mode chunks
-> exist, but without the second device, they are created.  [
-> ... ]
 
-That does not make any sense, unless there is a fundamental
-mistake in the design of the 'raid1' profile, which this and
-other situations make me think is a possibility: that the
-category of "mirrored" 'raid1' chunk does not exist in the Btrfs
-chunk manager. That is, a chunk is either 'raid1' if it has a
-mirror, or if has no mirror it must be 'single'.
 
-If a member device of a 'raid1' profile multidevice volume
-disappears there will be "unmirrored" 'raid1' profile chunks and
-some code path must recognize them as such, but the logic of the
-code does not allow their creation. Question: how does the code
-know that a specific 'raid1' chunk is mirrored or not? The chunk
-must have a link (member, offset) to its mirror, do they?
+At 03/02/2017 05:44 PM, Marc Joliet wrote:
+> On Wednesday 01 March 2017 19:14:07 Marc Joliet wrote:
+>> In any
+>> case, I started btrfs-check on the device itself.
+>
+> OK, it's still running, but the output so far is:
+>
+> # btrfs check --mode=lowmem --progress /dev/sdb2
+> Checking filesystem on /dev/sdb2
+> UUID: f97b3cda-15e8-418b-bb9b-235391ef2a38
+> ERROR: shared extent[3826242740224 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3826442825728 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3826744471552 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3827106349056 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3827141001216 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3827150958592 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3827251724288 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3827433795584 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3827536166912 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3827536183296 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3827621646336 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3828179406848 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3828267970560 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3828284530688 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3828714246144 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3828794187776 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3829161340928 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3829373693952 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3830252130304 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3830421159936 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3830439141376 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3830441398272 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3830785138688 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3831099297792 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3831128768512 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3831371513856 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3831535570944 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3831591952384 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3831799398400 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3831829250048 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3831829512192 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3832011440128 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3832011767808 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3832023920640 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3832024678400 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3832027316224 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3832028762112 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3832030236672 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3832030330880 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3832161079296 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3832164904960 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3832164945920 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3832613765120 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3833727565824 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3833914073088 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3833929310208 4096] lost its parent (parent:
+> 3827251183616, level: 0)
+> ERROR: shared extent[3833930141696 4096] lost its parent (parent:
+> 3827251183616, level: 0)
 
-What makes me think that "unmirrored" 'raid1' profile chunks are
-"not a thing" is that it is impossible to remove explicitly a
-member device from a 'raid1' profile volume: first one has to
-'convert' to 'single', and then  the 'remove' copies back to the
-remaining devices the 'single' chunks that are on the explicitly
-'remove'd device. Which to me seems absurd.
+The "shared extent lost its parent" is all about the same extent, 
+3827251183616.
 
-Going further in my speculation, I suspect that at the core of
-the Btrfs multidevice design there is a persistent "confusion"
-(to use en euphemism) between volumes having a profile, and
-merely chunks have a profile.
+It would be nice if you could paste the output of btrfs-debug-tree -b 
+3827251183616 to check what tree it belongs to.
 
-My additional guess that the original design concept had
-multidevice volumes to be merely containers for chunks of
-whichever mixed profiles, so a subvolume could have 'raid1'
-profile metadata and 'raid0' profile data, and another could
-have 'raid10' profile metadata and data, but since handling this
-turned out to be too hard, this was compromised into volumes
-having all metadata chunks to have the same profile and all data
-of the same profile, which requires special-case handling of
-corner cases, like volumes being converted or missing member
-devices.
+> ERROR: extent[3837768077312, 24576] referencer count mismatch (root: 33174,
+> owner: 1277577, offset: 4767744) wanted: 1, have: 0
+> [snip many more referencer count mismatches]
+> ERROR: extent[3878247383040, 8192] referencer count mismatch (root: 33495,
+> owner: 2688918, offset: 3874816) wanted: 2, have: 3
 
-So in the case of 'raid1', a volume with say a 'raid1' data
-profile should have all-'raid1' and fully mirrored profile
-chunks, and the lack of a member devices fails that aim in two
-ways.
+That's a little dangerous now.
+
+Some *DATA* extent even lost its referencer now.
+
+For example, data extent at 3837768077312, length 24K exists on disk, 
+but no one is referring to it.
+
+At least the good news is, these just mean there is some extra space 
+taken on disk, but not vice verse.
+
+> ERROR: block group[3879328546816 1073741824] used 1072840704 but extent items
+> used 1129164800
+> ERROR: extent[3879516581888, 40960] referencer count mismatch (root: 33530,
+> owner: 1277577, offset: 23461888) wanted: 1, have: 0
+> [snip many more referencer count mismatches]
+> ERROR: extent[3951758860288, 16384] referencer count mismatch (root: 33189,
+> owner: 1277577, offset: 519880704) wanted: 1, have: 0
+>
+> This is 56	lines of output, the unabridged output contains enough "referencer
+> count mismatches" to fill 1329 lines of output.  Could that be because there
+> are deleted snapshots that btrfs-cleaner hasn't been able to clean up?
+
+Ah, this makes sense.
+
+But normally cleaner should cleanup subvolume tree block and modify 
+extent tree.
+How did you stop btrfs-cleaner?
+
+Thanks,
+Qu
+>
+> Greetings
+>
+
+

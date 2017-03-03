@@ -1,137 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fieldses.org ([173.255.197.46]:50260 "EHLO fieldses.org"
+Received: from mx2.suse.de ([195.135.220.15]:52413 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751963AbdCCWha (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 3 Mar 2017 17:37:30 -0500
-Date: Fri, 3 Mar 2017 17:36:49 -0500
-To: Jeff Layton <jlayton@redhat.com>
-Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-nfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org
+        id S1752087AbdCCXzP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 3 Mar 2017 18:55:15 -0500
+From: NeilBrown <neil@brown.name>
+To: Jeff Layton <jlayton@redhat.com>, linux-fsdevel@vger.kernel.org
+Date: Sat, 04 Mar 2017 10:55:04 +1100
+Cc: linux-kernel@vger.kernel.org, linux-nfs@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-xfs@vger.kernel.org
 Subject: Re: [RFC PATCH v1 11/30] fs: new API for handling i_version
-Message-ID: <20170303223649.GH13877@fieldses.org>
-References: <1482339827-7882-1-git-send-email-jlayton@redhat.com>
- <1482339827-7882-12-git-send-email-jlayton@redhat.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
 In-Reply-To: <1482339827-7882-12-git-send-email-jlayton@redhat.com>
-From: bfields@fieldses.org (J. Bruce Fields)
+References: <1482339827-7882-1-git-send-email-jlayton@redhat.com> <1482339827-7882-12-git-send-email-jlayton@redhat.com>
+Message-ID: <8737etncfb.fsf@notabene.neil.brown.name>
+MIME-Version: 1.0
+Content-Type: multipart/signed; boundary="=-=-=";
+        micalg=pgp-sha256; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The patch ordering is a little annoying as I'd like to be able to be
-able to verify the implementation at the same time these new interfaces
-are added, but, I don't know, I don't have a better idea.
+--=-=-=
+Content-Type: text/plain
 
-Anyway, various nits:
+On Wed, Dec 21 2016, Jeff Layton wrote:
 
-On Wed, Dec 21, 2016 at 12:03:28PM -0500, Jeff Layton wrote:
 > We already have inode_inc_iversion. Add inode_set_iversion,
 > inode_get_iversion, inode_cmp_iversion and inode_iversion_need_inc.
-> 
-> These should encompass how i_version is currently accessed and
-> manipulated so that we can later change the implementation.
-> 
-> Signed-off-by: Jeff Layton <jlayton@redhat.com>
-> ---
->  include/linux/fs.h | 109 ++++++++++++++++++++++++++++++++++++++++++++++++++---
->  1 file changed, 104 insertions(+), 5 deletions(-)
-> 
-> diff --git a/include/linux/fs.h b/include/linux/fs.h
-> index 2ba074328894..075c915fe2b1 100644
-> --- a/include/linux/fs.h
-> +++ b/include/linux/fs.h
-> @@ -1962,18 +1962,117 @@ static inline void inode_dec_link_count(struct inode *inode)
->  }
->  
->  /**
-> + * inode_set_iversion - set i_version to a particular value
-> + * @inode: inode to set
-> + * @new: new i_version value to set
-> + *
-> + * Set the inode's i_version. Should generally be called when initializing
-> + * a new inode.
-> + */
-> +static inline void
-> +inode_set_iversion(struct inode *inode, const u64 new)
-> +{
-> +	inode->i_version = new;
-> +}
-> +
-> +/**
-> + * inode_inc_iversion_locked - increment i_version while protected
-> + * @inode: inode to be updated
-> + *
-> + * Increment the i_version field in the inode. This version is usable
-> + * when there is some other sort of lock in play that would prevent
-> + * concurrent accessors.
-> + */
-> +static inline void
-> +inode_inc_iversion_locked(struct inode *inode)
-> +{
-> +	inode->i_version++;
-> +}
-> +
-> +/**
-> + * inode_set_iversion_read - set i_version to a particular value and flag
-> + * 			     set flag to indicate that it has been viewed
 
-s/flag set flag/set flag/.
+This list of added interfaces is incomplete.
+And some of these interfaces could really use some justification up
+front.
 
-> + * @inode: inode to set
-> + * @new: new i_version value to set
-> + *
-> + * Set the inode's i_version, and flag the inode as if it has been viewed.
-> + * Should generally be called when initializinga new inode in memory from
-> + * from disk.
+You later add a "force" parameter to inode_inc_version.
+Why not do that up front here?
 
-s/from from/from/.
-
-> + */
-> +static inline void
-> +inode_set_iversion_read(struct inode *inode, const u64 new)
-> +{
-> +	inode_set_iversion(inode, new);
-> +}
-> +
-> +/**
->   * inode_inc_iversion - increments i_version
->   * @inode: inode that need to be updated
->   *
->   * Every time the inode is modified, the i_version field will be incremented.
-> - * The filesystem has to be mounted with i_version flag
-> + * The filesystem has to be mounted with MS_I_VERSION flag.
-
-I'm not sure why that comment's there.  Filesystems can choose to
-increment i_version without requiring the mount option if they want,
-can't they?
-
-> + */
-> +static inline bool
-
-Document what the return value means?
-
-> +inode_inc_iversion(struct inode *inode)
-> +{
-> +	spin_lock(&inode->i_lock);
-> +	inode_inc_iversion_locked(inode);
-> +	spin_unlock(&inode->i_lock);
-> +	return true;
-> +}
-> +
-> +/**
-> + * inode_get_iversion_raw - read i_version without "perturbing" it
-> + * @inode: inode from which i_version should be read
-> + *
-> + * Read the inode i_version counter for an inode without registering it as a
-> + * read. Should typically be used by local filesystems that need to store an
-> + * i_version on disk.
-> + */
-> +static inline u64
-> +inode_get_iversion_raw(const struct inode *inode)
-> +{
-> +	return inode->i_version;
-> +}
 > +
 > +/**
 > + * inode_get_iversion - read i_version for later use
@@ -139,61 +41,37 @@ Document what the return value means?
 > + *
 > + * Read the inode i_version counter. This should be used by callers that wish
 > + * to store the returned i_version for later comparison.
-
-I'm not sure what "for later comparison" means.  This is the "read"
-operation that actually flags the i_version as read, which you'd use
-(for example) to implement NFS getattr?  I wonder if there's a better
-way to say that.
-
 > + */
 > +static inline u64
 > +inode_get_iversion(const struct inode *inode)
 > +{
 > +	return inode_get_iversion_raw(inode);
 > +}
-> +
-> +/**
-> + * inode_cmp_iversion - check whether the i_version counter has changed
-> + * @inode: inode to check
-> + * @old: old value to check against its i_version
-> + *
-> + * Compare an i_version counter with a previous one. Returns 0 if they are
-> + * the same or non-zero if they are different.
 
-Does this flag the i_version as read?  What's it for?  (OK, I guess I'll
-find out after a few more patches...).
+I don't understand why this can use the _raw version rather than the
+_read version.
+Surely you need to know about any changes after this read.
 
---b.
+Thanks,
+NeilBrown
 
->   */
-> +static inline s64
-> +inode_cmp_iversion(const struct inode *inode, const u64 old)
-> +{
-> +	return (s64)inode->i_version - (s64)old;
-> +}
->  
-> -static inline void inode_inc_iversion(struct inode *inode)
-> +/**
-> + * inode_iversion_need_inc - is the i_version in need of being incremented?
-> + * @inode: inode to check
-> + *
-> + * Returns whether the inode->i_version counter needs incrementing on the next
-> + * change.
-> + */
-> +static inline bool
-> +inode_iversion_need_inc(struct inode *inode)
->  {
-> -       spin_lock(&inode->i_lock);
-> -       inode->i_version++;
-> -       spin_unlock(&inode->i_lock);
-> +	return true;
->  }
->  
->  enum file_time_flags {
-> -- 
-> 2.7.4
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-nfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--=-=-=
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAEBCAAdFiEEG8Yp69OQ2HB7X0l6Oeye3VZigbkFAli6AlgACgkQOeye3VZi
+gbmgpA/+Jvdv8FSZ8uY3DCx8phipNwrzX0yRr3pH2isCbNyBSDo8humzA+046YnM
+AQUakqeUzXzJKkXL5kiYjyoRyQ2JecSfHHETQeUrhlMAAnROdU/mvkeLBcg8mCf1
+qTI+QxHLKmBzGbnS5vsGkX/1sOk+adlnz9bhKWB6q14zTeANs4oapsqZZgwNWeFl
+VJ29tbL+VCzXfJ3yedgK7en2WQw/5VOP6gkoqeTrhXldy1PvF8en77oOnEScXnIp
+Q0h90vZxQfbIx2WFNdNh2z2CELl/fq8WC6tpVGoDsXEe1oHTa9jmHc1hTXSZogk4
+IbCCUt8D3gy7FLINO4eoe4GSz4w2rtibdyJ6+kKs2TCjwaYCUS9TCYm803WXAVoT
+IgNJhaNKez42Yszb5Q1m/FKnKviMWlP9iBVHi8tNBex4QtA+crnbZCUfeiJozkJj
+owMOc9ckIjndcgydGwCpvovjnFACrSmiomfyVdbMIyVYPyiKlL461rRMU1mSSqum
+jgcxIlJBSz+xL2T2KnkQp8dX1AG8STQDSr3rTUwlm3WUAHVoRsHteqO2I+1eTh3Q
+VEBCilylvv/s2pE93YxoC6DegVVjWvdmdIDRIKhInCH01Nd34YvOxrK22D3ifJnt
+qJRRFy5TfKFhuQhwzsTfaPLMO+L+G3uEN6GcL2XXUpGYXob0I7I=
+=UjhU
+-----END PGP SIGNATURE-----
+--=-=-=--

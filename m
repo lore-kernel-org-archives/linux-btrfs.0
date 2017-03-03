@@ -1,61 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:53059 "EHLO
-        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751494AbdCCLxf (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Mar 2017 06:53:35 -0500
-Received: from kilobyte by tartarus.angband.pl with local (Exim 4.88)
-        (envelope-from <kilobyte@angband.pl>)
-        id 1cjkD3-0002PK-TE
-        for linux-btrfs@vger.kernel.org; Fri, 03 Mar 2017 11:13:13 +0100
-Date: Fri, 3 Mar 2017 11:13:13 +0100
-From: Adam Borowski <kilobyte@angband.pl>
+Received: from mout.gmx.net ([212.227.17.21]:57484 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751545AbdCCL4I (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 3 Mar 2017 06:56:08 -0500
+Received: from thetick.localnet ([93.181.44.247]) by mail.gmx.com (mrgmx103
+ [212.227.17.168]) with ESMTPSA (Nemesis) id 0Me8ws-1cwKZ11eFa-00Psjp for
+ <linux-btrfs@vger.kernel.org>; Fri, 03 Mar 2017 12:54:13 +0100
+From: Marc Joliet <marcec@gmx.de>
 To: linux-btrfs@vger.kernel.org
-Subject: Re: raid1 degraded mount still produce single chunks, writeable
- mount not allowed
-Message-ID: <20170303101313.x4qlv4ddhal6vffl@angband.pl>
-References: <CAJCQCtQByC_pTnZhFFfHmxktN-Ga4W0TZ8wVRPxe_b18G+Kajw@mail.gmail.com>
- <20170302103753.x35jhe7xgnwl6ee6@angband.pl>
- <20170303065622.2a9a244e@jupiter.sol.kaishome.de>
+Subject: Re: [4.7.2] btrfs_run_delayed_refs:2963: errno=-17 Object already exists
+Date: Fri, 03 Mar 2017 12:54:07 +0100
+Message-ID: <12726616.JRxLSmG3MF@thetick>
+In-Reply-To: <905fd8af-b3b5-343a-09b1-c2f569e8dd19@cn.fujitsu.com>
+References: <20160828152908.6e1325b5@jupiter.sol.kaishome.de> <1714469.dJ89oe0hXx@thetick> <905fd8af-b3b5-343a-09b1-c2f569e8dd19@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <20170303065622.2a9a244e@jupiter.sol.kaishome.de>
+Content-Type: multipart/signed; boundary="nextPart2424428.HGbY5iTYG0"; micalg="pgp-sha256"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 03, 2017 at 06:56:22AM +0100, Kai Krakow wrote:
-> > > I don't understand what problem this proscription is trying to
-> > > avoid. If it's OK to mount rw,degraded once, then it's OK to allow
-> > > it twice. If it's not OK twice, it's not OK once.  
-> > 
-> > Well, yeah.  The current check is naive and wrong.  It does have a
-> > purpose, just fails in this, very common, case.
-> 
-> I guess the reasoning behind this is: Creating any more chunks on this
-> drive will make raid1 chunks with only one copy. Adding another drive
-> later will not replay the copies without user interaction. Is that true?
-> 
-> If yes, this may leave you with a mixed case of having a raid1 drive
-> with some chunks not mirrored and some mirrored. When the other drives
-> goes missing later, you are loosing data or even the whole filesystem
-> although you were left with the (wrong) imagination of having a
-> mirrored drive setup...
+--nextPart2424428.HGbY5iTYG0
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
 
-Ie, you want a degraded mount to create degraded raid1 chunks rather than
-single ones?  Good idea, it would solve the most common case with least
-surprise to the user.
+On Friday 03 March 2017 09:00:10 Qu Wenruo wrote:
+> > FWIW, as per my later messages, after mounting with clear_cache and=
 
-But there are other scenarios where Qu's patch[-set] is needed.  For
-example, if you try to convert a single-disk filesystem to raid1, yet the
-new shiny disk you just added decides to remind you of words "infant
-mortality" halfway during conversion.
+> > letting
+> > btrfs-cleaner finish, btrfs-check did *not* print out those errors =
+after
+> > running again.  It's now about two weeks later that the file system=
+ is
+> > showing problems again.
+>=20
+> If btrfs-check didn't print out *any* error, then it should be mostly=
+=20
+> fine. (Unless there is some case we don't expose yet)
+>=20
+> The problem should be caused by kernel AFAIK.
 
-Or, if you have degraded raid1 chunks and something bad happens during
-recovery.  Having the required number of devices, despite passing the
-current bogus check, doesn't mean you can continue.  Qu's patch checks
-whether at least one copy of every chunk is present.
+So you think it could be a regression in 4.9?  Should I try 4.10?  Or i=
+s it=20
+more likely just an undiscovered bug?
 
--- 
-⢀⣴⠾⠻⢶⣦⠀ Meow!
-⣾⠁⢠⠒⠀⣿⡁
-⢿⡄⠘⠷⠚⠋⠀ Collisions shmolisions, let's see them find a collision or second
-⠈⠳⣄⠀⠀⠀⠀ preimage for double rot13!
+> > Oh, and just in case it's relevant, the file system was created wit=
+h
+> > btrfs-
+> > convert (a long time, maybe 1.5 years ago, though; it was originall=
+y
+> > ext4).
+>=20
+> Not sure if it's related.
+> But at least for that old convert, it's chunk layout is somewhat rare=
+=20
+> and sometimes even bug-prone.
+>=20
+> Did you balance the btrfs after convert? If so, it should be more lik=
+e a=20
+> traditional btrfs then.
+
+Yes, I'm fairly certain I did that, as that is what the btrfs wiki reco=
+mmends.
+
+> Personally speaking I don't think it is relative for your bug, but mu=
+ch=20
+> like a normal extent tree corruption seen in mail list.
+
+OK, so is there anything else I can do?
+
+Greetings
+=2D-=20
+Marc Joliet
+=2D-
+"People who think they know everything really annoy those of us who kno=
+w we
+don't" - Bjarne Stroustrup
+
+--nextPart2424428.HGbY5iTYG0
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAABCAAdFiEEax7Ya5gDQFOJHKGQv9DmhiyIePQFAli5WV8ACgkQv9DmhiyI
+ePQzwRAAqCm3x1WuHmS12MpVPMQEWTTW2GtLQfaLlhcjiQ20B3ewS7vkv3TPZkfp
+veVI9hXLdSRPtAwj4dAp8ePmQ3NgYIQb6Fd7lRJkSqPDQkuEkw776/oJNy3PY4Z4
+AVIjouP8G5q3F2SqF2pX1x35gmr72jel+V+kndHYBj/rXLMvCiDf2QKEShQr7UsU
+1xTATkX4rDvj2X73cSHTuUqjPsDgpldJbuNYhy8bSLtw7ZJZ0vMUEvBiTYVT/Nak
+Vz2LMuQfGQasfrxn1mDGlb04k7FXaMUlFVlrpXh1AsRai8wiHQMmV+zVVszCkvP/
+V76otnFQAus3VWkTWKVnaEbpwusFwegFFsFcMCUCeNqJrolcRMFrokap+/h5NFrE
+juvuIj2S7p3rffz716yBnQx4K/hA5a9Xm0VaoVzXw4ZWmC8DKbXD6gE+U9Gqyjq9
+HtWq1cRFSKNx3xqBszOi2F0wk0Ij9+Jz/cW1EqzpipPYrO1KDKfht0bSclc1ypRz
+QDCaK8saxAGiICn6C3b9OgEw8JXS/gWb9JKgn0IYlnQ2m4F6+zB0hr7tHuMpctcB
+hC3Kvv3yMSFGEwK/0jdkj70s3ZzNrBNOsX7m/0uoNKMARtiCan0GE0EPPWmkJ2Mr
+7UtbnSqbCrYApdrs+rX9RWxd0BUHYcelw8WrAibR2ncwUHUztwc=
+=I8m1
+-----END PGP SIGNATURE-----
+
+--nextPart2424428.HGbY5iTYG0--
+

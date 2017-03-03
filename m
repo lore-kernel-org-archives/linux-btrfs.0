@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mga02.intel.com ([134.134.136.20]:4403 "EHLO mga02.intel.com"
+Received: from mga02.intel.com ([134.134.136.20]:54958 "EHLO mga02.intel.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751384AbdCCJHf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 3 Mar 2017 04:07:35 -0500
+        id S1751733AbdCCKfQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 3 Mar 2017 05:35:16 -0500
 From: Elena Reshetova <elena.reshetova@intel.com>
 To: linux-kernel@vger.kernel.org
 Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
@@ -11,9 +11,9 @@ Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
         Elena Reshetova <elena.reshetova@intel.com>,
         Hans Liljestrand <ishkamiel@gmail.com>,
         Kees Cook <keescook@chromium.org>, David Windsor <dwindsor@gmail.com>
-Subject: [PATCH 10/17] fs, btrfs: convert extent_state.refs from atomic_t to refcount_t
-Date: Fri,  3 Mar 2017 10:55:19 +0200
-Message-Id: <1488531326-21271-11-git-send-email-elena.reshetova@intel.com>
+Subject: [PATCH 11/17] fs, btrfs: convert compressed_bio.pending_bios from atomic_t to refcount_t
+Date: Fri,  3 Mar 2017 10:55:20 +0200
+Message-Id: <1488531326-21271-12-git-send-email-elena.reshetova@intel.com>
 In-Reply-To: <1488531326-21271-1-git-send-email-elena.reshetova@intel.com>
 References: <1488531326-21271-1-git-send-email-elena.reshetova@intel.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -30,98 +30,94 @@ Signed-off-by: Hans Liljestrand <ishkamiel@gmail.com>
 Signed-off-by: Kees Cook <keescook@chromium.org>
 Signed-off-by: David Windsor <dwindsor@gmail.com>
 ---
- fs/btrfs/extent_io.c | 14 +++++++-------
- fs/btrfs/extent_io.h |  3 ++-
- 2 files changed, 9 insertions(+), 8 deletions(-)
+ fs/btrfs/compression.c | 18 +++++++++---------
+ 1 file changed, 9 insertions(+), 9 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 3cf0b02..0702be6 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -68,7 +68,7 @@ void btrfs_leak_debug_check(void)
- 		pr_err("BTRFS: state leak: start %llu end %llu state %u in tree %d refs %d\n",
- 		       state->start, state->end, state->state,
- 		       extent_state_in_tree(state),
--		       atomic_read(&state->refs));
-+		       refcount_read(&state->refs));
- 		list_del(&state->leak_list);
- 		kmem_cache_free(extent_state_cache, state);
- 	}
-@@ -238,7 +238,7 @@ static struct extent_state *alloc_extent_state(gfp_t mask)
- 	state->failrec = NULL;
- 	RB_CLEAR_NODE(&state->rb_node);
- 	btrfs_leak_debug_add(&state->leak_list, &states);
--	atomic_set(&state->refs, 1);
-+	refcount_set(&state->refs, 1);
- 	init_waitqueue_head(&state->wq);
- 	trace_alloc_extent_state(state, mask, _RET_IP_);
- 	return state;
-@@ -248,7 +248,7 @@ void free_extent_state(struct extent_state *state)
- {
- 	if (!state)
- 		return;
--	if (atomic_dec_and_test(&state->refs)) {
-+	if (refcount_dec_and_test(&state->refs)) {
- 		WARN_ON(extent_state_in_tree(state));
- 		btrfs_leak_debug_del(&state->leak_list);
- 		trace_free_extent_state(state, _RET_IP_);
-@@ -641,7 +641,7 @@ static int __clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 		if (cached && extent_state_in_tree(cached) &&
- 		    cached->start <= start && cached->end > start) {
- 			if (clear)
--				atomic_dec(&cached->refs);
-+				refcount_dec(&cached->refs);
- 			state = cached;
- 			goto hit_next;
- 		}
-@@ -793,7 +793,7 @@ static void wait_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index c7721a6..10e6b28 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -44,7 +44,7 @@
  
- 		if (state->state & bits) {
- 			start = state->start;
--			atomic_inc(&state->refs);
-+			refcount_inc(&state->refs);
- 			wait_on_state(tree, state);
- 			free_extent_state(state);
- 			goto again;
-@@ -834,7 +834,7 @@ static void cache_state_if_flags(struct extent_state *state,
- 	if (cached_ptr && !(*cached_ptr)) {
- 		if (!flags || (state->state & flags)) {
- 			*cached_ptr = state;
--			atomic_inc(&state->refs);
-+			refcount_inc(&state->refs);
- 		}
- 	}
- }
-@@ -1538,7 +1538,7 @@ static noinline u64 find_delalloc_range(struct extent_io_tree *tree,
- 		if (!found) {
- 			*start = state->start;
- 			*cached_state = state;
--			atomic_inc(&state->refs);
-+			refcount_inc(&state->refs);
- 		}
- 		found++;
- 		*end = state->end;
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index c16260c..9ea9338 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -2,6 +2,7 @@
- #define __EXTENTIO__
+ struct compressed_bio {
+ 	/* number of bios pending for this compressed extent */
+-	atomic_t pending_bios;
++	refcount_t pending_bios;
  
- #include <linux/rbtree.h>
-+#include <linux/refcount.h>
- #include "ulist.h"
+ 	/* the pages with the compressed data on them */
+ 	struct page **compressed_pages;
+@@ -161,7 +161,7 @@ static void end_compressed_bio_read(struct bio *bio)
+ 	/* if there are more bios still pending for this compressed
+ 	 * extent, just exit
+ 	 */
+-	if (!atomic_dec_and_test(&cb->pending_bios))
++	if (!refcount_dec_and_test(&cb->pending_bios))
+ 		goto out;
  
- /* bits for the extent state */
-@@ -134,7 +135,7 @@ struct extent_state {
+ 	inode = cb->inode;
+@@ -274,7 +274,7 @@ static void end_compressed_bio_write(struct bio *bio)
+ 	/* if there are more bios still pending for this compressed
+ 	 * extent, just exit
+ 	 */
+-	if (!atomic_dec_and_test(&cb->pending_bios))
++	if (!refcount_dec_and_test(&cb->pending_bios))
+ 		goto out;
  
- 	/* ADD NEW ELEMENTS AFTER THIS */
- 	wait_queue_head_t wq;
--	atomic_t refs;
-+	refcount_t refs;
- 	unsigned state;
+ 	/* ok, we're the last bio for this extent, step one is to
+@@ -342,7 +342,7 @@ int btrfs_submit_compressed_write(struct inode *inode, u64 start,
+ 	cb = kmalloc(compressed_bio_size(fs_info, compressed_len), GFP_NOFS);
+ 	if (!cb)
+ 		return -ENOMEM;
+-	atomic_set(&cb->pending_bios, 0);
++	refcount_set(&cb->pending_bios, 0);
+ 	cb->errors = 0;
+ 	cb->inode = inode;
+ 	cb->start = start;
+@@ -363,7 +363,7 @@ int btrfs_submit_compressed_write(struct inode *inode, u64 start,
+ 	bio_set_op_attrs(bio, REQ_OP_WRITE, 0);
+ 	bio->bi_private = cb;
+ 	bio->bi_end_io = end_compressed_bio_write;
+-	atomic_inc(&cb->pending_bios);
++	refcount_set(&cb->pending_bios, 1);
  
- 	struct io_failure_record *failrec;
+ 	/* create and submit bios for the compressed pages */
+ 	bytes_left = compressed_len;
+@@ -388,7 +388,7 @@ int btrfs_submit_compressed_write(struct inode *inode, u64 start,
+ 			 * we inc the count.  Otherwise, the cb might get
+ 			 * freed before we're done setting it up
+ 			 */
+-			atomic_inc(&cb->pending_bios);
++			refcount_inc(&cb->pending_bios);
+ 			ret = btrfs_bio_wq_end_io(fs_info, bio,
+ 						  BTRFS_WQ_ENDIO_DATA);
+ 			BUG_ON(ret); /* -ENOMEM */
+@@ -607,7 +607,7 @@ int btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+ 	if (!cb)
+ 		goto out;
+ 
+-	atomic_set(&cb->pending_bios, 0);
++	refcount_set(&cb->pending_bios, 0);
+ 	cb->errors = 0;
+ 	cb->inode = inode;
+ 	cb->mirror_num = mirror_num;
+@@ -656,7 +656,7 @@ int btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+ 	bio_set_op_attrs (comp_bio, REQ_OP_READ, 0);
+ 	comp_bio->bi_private = cb;
+ 	comp_bio->bi_end_io = end_compressed_bio_read;
+-	atomic_inc(&cb->pending_bios);
++	refcount_set(&cb->pending_bios, 1);
+ 
+ 	for (pg_index = 0; pg_index < nr_pages; pg_index++) {
+ 		page = cb->compressed_pages[pg_index];
+@@ -685,7 +685,7 @@ int btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+ 			 * we inc the count.  Otherwise, the cb might get
+ 			 * freed before we're done setting it up
+ 			 */
+-			atomic_inc(&cb->pending_bios);
++			refcount_inc(&cb->pending_bios);
+ 
+ 			if (!(BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM)) {
+ 				ret = btrfs_lookup_bio_sums(inode, comp_bio,
 -- 
 2.7.4
 

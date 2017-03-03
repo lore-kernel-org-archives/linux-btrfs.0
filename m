@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mga02.intel.com ([134.134.136.20]:25204 "EHLO mga02.intel.com"
+Received: from mga02.intel.com ([134.134.136.20]:27392 "EHLO mga02.intel.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751478AbdCCJCY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 3 Mar 2017 04:02:24 -0500
+        id S1751431AbdCCJCZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 3 Mar 2017 04:02:25 -0500
 From: Elena Reshetova <elena.reshetova@intel.com>
 To: linux-kernel@vger.kernel.org
 Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
@@ -11,9 +11,9 @@ Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
         Elena Reshetova <elena.reshetova@intel.com>,
         Hans Liljestrand <ishkamiel@gmail.com>,
         Kees Cook <keescook@chromium.org>, David Windsor <dwindsor@gmail.com>
-Subject: [PATCH 14/17] fs, btrfs: convert scrub_block.refs from atomic_t to refcount_t
-Date: Fri,  3 Mar 2017 10:55:23 +0200
-Message-Id: <1488531326-21271-15-git-send-email-elena.reshetova@intel.com>
+Subject: [PATCH 15/17] fs, btrfs: convert scrub_parity.refs from atomic_t to refcount_t
+Date: Fri,  3 Mar 2017 10:55:24 +0200
+Message-Id: <1488531326-21271-16-git-send-email-elena.reshetova@intel.com>
 In-Reply-To: <1488531326-21271-1-git-send-email-elena.reshetova@intel.com>
 References: <1488531326-21271-1-git-send-email-elena.reshetova@intel.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -30,55 +30,46 @@ Signed-off-by: Hans Liljestrand <ishkamiel@gmail.com>
 Signed-off-by: Kees Cook <keescook@chromium.org>
 Signed-off-by: David Windsor <dwindsor@gmail.com>
 ---
- fs/btrfs/scrub.c | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+ fs/btrfs/scrub.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 8299f64..08895d8 100644
+index 08895d8..4d15112 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -112,7 +112,7 @@ struct scrub_block {
- 	struct scrub_page	*pagev[SCRUB_MAX_PAGES_PER_BLOCK];
- 	int			page_count;
- 	atomic_t		outstanding_pages;
--	atomic_t		refs; /* free mem on transition to zero */
-+	refcount_t		refs; /* free mem on transition to zero */
- 	struct scrub_ctx	*sctx;
- 	struct scrub_parity	*sparity;
- 	struct {
-@@ -1998,12 +1998,12 @@ static int scrub_checksum_super(struct scrub_block *sblock)
+@@ -142,7 +142,7 @@ struct scrub_parity {
  
- static void scrub_block_get(struct scrub_block *sblock)
+ 	int			stripe_len;
+ 
+-	atomic_t		refs;
++	refcount_t		refs;
+ 
+ 	struct list_head	spages;
+ 
+@@ -2822,12 +2822,12 @@ static inline int scrub_calc_parity_bitmap_len(int nsectors)
+ 
+ static void scrub_parity_get(struct scrub_parity *sparity)
  {
--	atomic_inc(&sblock->refs);
-+	refcount_inc(&sblock->refs);
+-	atomic_inc(&sparity->refs);
++	refcount_inc(&sparity->refs);
  }
  
- static void scrub_block_put(struct scrub_block *sblock)
+ static void scrub_parity_put(struct scrub_parity *sparity)
  {
--	if (atomic_dec_and_test(&sblock->refs)) {
-+	if (refcount_dec_and_test(&sblock->refs)) {
- 		int i;
+-	if (!atomic_dec_and_test(&sparity->refs))
++	if (!refcount_dec_and_test(&sparity->refs))
+ 		return;
  
- 		if (sblock->sparity)
-@@ -2255,7 +2255,7 @@ static int scrub_pages(struct scrub_ctx *sctx, u64 logical, u64 len,
- 
- 	/* one ref inside this function, plus one for each page added to
- 	 * a bio later on */
--	atomic_set(&sblock->refs, 1);
-+	refcount_set(&sblock->refs, 1);
- 	sblock->sctx = sctx;
- 	sblock->no_io_error_seen = 1;
- 
-@@ -2555,7 +2555,7 @@ static int scrub_pages_for_parity(struct scrub_parity *sparity,
- 
- 	/* one ref inside this function, plus one for each page added to
- 	 * a bio later on */
--	atomic_set(&sblock->refs, 1);
-+	refcount_set(&sblock->refs, 1);
- 	sblock->sctx = sctx;
- 	sblock->no_io_error_seen = 1;
- 	sblock->sparity = sparity;
+ 	scrub_parity_check_and_repair(sparity);
+@@ -2879,7 +2879,7 @@ static noinline_for_stack int scrub_raid56_parity(struct scrub_ctx *sctx,
+ 	sparity->scrub_dev = sdev;
+ 	sparity->logic_start = logic_start;
+ 	sparity->logic_end = logic_end;
+-	atomic_set(&sparity->refs, 1);
++	refcount_set(&sparity->refs, 1);
+ 	INIT_LIST_HEAD(&sparity->spages);
+ 	sparity->dbitmap = sparity->bitmap;
+ 	sparity->ebitmap = (void *)sparity->bitmap + bitmap_len;
 -- 
 2.7.4
 

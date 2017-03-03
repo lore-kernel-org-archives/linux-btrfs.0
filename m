@@ -1,66 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from scorn.kernelslacker.org ([45.56.101.199]:44040 "EHLO
-        scorn.kernelslacker.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752009AbdCCSfT (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Mar 2017 13:35:19 -0500
-Date: Fri, 3 Mar 2017 13:04:39 -0500
-From: Dave Jones <davej@codemonkey.org.uk>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: assertion failed: last_size == new_size, file: fs/btrfs/inode.c
-Message-ID: <20170303180439.jqnr3q6dd2f7x5mn@codemonkey.org.uk>
-References: <20170227001842.dhrmaw3t3k4hkuii@codemonkey.org.uk>
- <20170227155348.GB13488@lim.localdomain>
- <20170227162342.z6j4bvinnqppwjjm@codemonkey.org.uk>
- <20170301011201.GB9546@lim.localdomain>
- <20170301200319.oqrftzsuj6u4nuuz@codemonkey.org.uk>
- <20170302155801.GA25834@localhost.localdomain>
- <20170303020432.GC26698@lim.localdomain>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170303020432.GC26698@lim.localdomain>
+Received: from [195.159.176.226] ([195.159.176.226]:43694 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1751882AbdCCUpR (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Mar 2017 15:45:17 -0500
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1cjtXD-0003pu-CV
+        for linux-btrfs@vger.kernel.org; Fri, 03 Mar 2017 21:10:39 +0100
+To: linux-btrfs@vger.kernel.org
+From: Kai Krakow <hurikhan77@gmail.com>
+Subject: Re: raid1 degraded mount still produce single chunks, writeable
+ mount not allowed
+Date: Fri, 3 Mar 2017 21:10:37 +0100
+Message-ID: <20170303211037.59abb4b7@jupiter.sol.kaishome.de>
+References: <CAJCQCtQByC_pTnZhFFfHmxktN-Ga4W0TZ8wVRPxe_b18G+Kajw@mail.gmail.com>
+        <20170302103753.x35jhe7xgnwl6ee6@angband.pl>
+        <20170303065622.2a9a244e@jupiter.sol.kaishome.de>
+        <88b27891-b3fc-eef6-d793-96fd32504818@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 02, 2017 at 06:04:33PM -0800, Liu Bo wrote:
- > On Thu, Mar 02, 2017 at 07:58:01AM -0800, Liu Bo wrote:
- > > On Wed, Mar 01, 2017 at 03:03:19PM -0500, Dave Jones wrote:
- > > > On Tue, Feb 28, 2017 at 05:12:01PM -0800, Liu Bo wrote:
- > > >  > On Mon, Feb 27, 2017 at 11:23:42AM -0500, Dave Jones wrote:
- > > >  > > On Mon, Feb 27, 2017 at 07:53:48AM -0800, Liu Bo wrote:
- > > >  > >  > On Sun, Feb 26, 2017 at 07:18:42PM -0500, Dave Jones wrote:
- > > >  > >  > > Hitting this fairly frequently.. I'm not sure if this is the same bug I've
- > > >  > >  > > been hitting occasionally since 4.9. The assertion looks new to me at least.
- > > >  > >  > >
- > > >  > >  > 
- > > >  > >  > It was recently introduced by my commit and used to catch data loss at truncate.
- > > >  > >  > 
- > > >  > >  > Were you running the test with a mkfs.btrfs -O NO_HOLES?
- > > >  > >  > (We just queued a fix for the NO_HOLES case in btrfs-next.)
- > > >  > > 
- > > >  > > No, a fs created with default mkfs.btrfs options.
- > > >  > 
- > > >  > I have this patch[1] to fix a bug which results in file hole extent, and this
- > > >  > bug could lead us to hit the assertion.
- > > >  > 
- > > >  > Would you try to run the test w/ it, please?
- > > >  > 
- > > >  > [1]: https://patchwork.kernel.org/patch/9597281/
- > > > 
- > > > Made no difference. Still see the same trace & assertion.
- > > 
- > > Some updates here, I've got it reproduced, somehow a corner case ends up
- > > with a inline file extent following by some pre-alloc extents, along the
- > > way, isize also got updated unexpectedly.  Will try to narrow it down.
- > >
- > 
- > I realized that btrfs now could tolerate files that mix inline extents with
- > regular extents, so we don't need this ASSERT() anymore, will send a patch to
- > remove it.
+Am Fri, 3 Mar 2017 07:19:06 -0500
+schrieb "Austin S. Hemmelgarn" <ahferroin7@gmail.com>:
 
-note that as well as the assertion trigger, it's always immediately
-followed by kernel BUG at fs/btrfs/ctree.h:3422!
+> On 2017-03-03 00:56, Kai Krakow wrote:
+> > Am Thu, 2 Mar 2017 11:37:53 +0100
+> > schrieb Adam Borowski <kilobyte@angband.pl>:
+> >  
+> >> On Wed, Mar 01, 2017 at 05:30:37PM -0700, Chris Murphy wrote:  
+>  [...]  
+> >>
+> >> Well, there's Qu's patch at:
+> >> https://www.spinics.net/lists/linux-btrfs/msg47283.html
+> >> but it doesn't apply cleanly nor is easy to rebase to current
+> >> kernels. 
+>  [...]  
+> >>
+> >> Well, yeah.  The current check is naive and wrong.  It does have a
+> >> purpose, just fails in this, very common, case.  
+> >
+> > I guess the reasoning behind this is: Creating any more chunks on
+> > this drive will make raid1 chunks with only one copy. Adding
+> > another drive later will not replay the copies without user
+> > interaction. Is that true?
+> >
+> > If yes, this may leave you with a mixed case of having a raid1 drive
+> > with some chunks not mirrored and some mirrored. When the other
+> > drives goes missing later, you are loosing data or even the whole
+> > filesystem although you were left with the (wrong) imagination of
+> > having a mirrored drive setup...
+> >
+> > Is this how it works?
+> >
+> > If yes, a real patch would also need to replay the missing copies
+> > after adding a new drive.
+> >  
+> The problem is that that would use some serious disk bandwidth
+> without user intervention.  The way from userspace to fix this is to
+> scrub the FS.  It would essentially be the same from kernel space,
+> which means that if you had a multi-TB FS and this happened, you'd be
+> running at below capacity in terms of bandwidth for quite some time.
+> If this were to be implemented, it would have to be keyed off of the
+> per-chunk degraded check (so that _only_ the chunks that need it get
+> touched), and there would need to be a switch to disable it.
 
-	Dave
+Well, I'd expect that a replaced drive would involve reduced bandwidth
+for a while. Every traditional RAID does this. The key solution there
+is that you can limit bandwidth and/or define priorities (BG rebuild
+rate).
+
+Btrfs OTOH could be a lot more smarter, only rebuilding chunks that are
+affected. The kernel can already do IO priorities and some sort of
+bandwidth limiting should also be possible. I think IO throttling is
+already implemented in the kernel somewhere (at least with 4.10) and
+also in btrfs. So the basics are there.
+
+In a RAID setup, performance should never have priority over redundancy
+by default.
+
+If performance is an important factor, I suggest working with SSD
+writeback caches. This is already possible with different kernel
+techniques like mdcache or bcache. Proper hardware controllers also
+support this in hardware. It's cheap to have a mirrored SSD
+writeback cache of 1TB or so if your setup already contains a multiple
+terabytes array. Such a setup has huge performance benefits in setups
+we deploy (tho, not btrfs related).
+
+Also, adding/replacing a drive is usually not a totally unplanned
+event. Except for hot spares, a missing drive will be replaced at the
+time you arrive on-site. If performance is a factor, this can be done
+the same time as manually starting the process. So why not should it be
+done automatically?
+
+-- 
+Regards,
+Kai
+
+Replies to list-only preferred.
 

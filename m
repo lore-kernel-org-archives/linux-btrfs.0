@@ -1,244 +1,235 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:53790 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752542AbdCFDCP (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Mar 2017 22:02:15 -0500
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <fdmanana@kernel.org>, <linux-btrfs@vger.kernel.org>
-CC: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v6 2/2] btrfs: Handle delalloc error correctly to avoid ordered extent hang
-Date: Mon, 6 Mar 2017 10:55:47 +0800
-Message-ID: <20170306025547.1858-2-quwenruo@cn.fujitsu.com>
-In-Reply-To: <20170306025547.1858-1-quwenruo@cn.fujitsu.com>
-References: <20170306025547.1858-1-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from userp1040.oracle.com ([156.151.31.81]:48724 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751560AbdCDCmb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Mar 2017 21:42:31 -0500
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] Btrfs: add file item tracepoint
+Date: Fri,  3 Mar 2017 18:41:27 -0800
+Message-Id: <1488595287-3247-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[BUG]
-If run_delalloc_range() returns error and there is already some ordered
-extents created, btrfs will be hanged with the following backtrace:
+While debugging truncate problems, I found that these tracepoints could
+help us quickly know what went wrong.
 
-Call Trace:
- __schedule+0x2d4/0xae0
- schedule+0x3d/0x90
- btrfs_start_ordered_extent+0x160/0x200 [btrfs]
- ? wake_atomic_t_function+0x60/0x60
- btrfs_run_ordered_extent_work+0x25/0x40 [btrfs]
- btrfs_scrubparity_helper+0x1c1/0x620 [btrfs]
- btrfs_flush_delalloc_helper+0xe/0x10 [btrfs]
- process_one_work+0x2af/0x720
- ? process_one_work+0x22b/0x720
- worker_thread+0x4b/0x4f0
- kthread+0x10f/0x150
- ? process_one_work+0x720/0x720
- ? kthread_create_on_node+0x40/0x40
- ret_from_fork+0x2e/0x40
+Two sets of tracepoints are created to track regular/prealloc file item
+and inline file item respectively, I put inline as a separate one since
+what inline file items cares about are way less than the regular one.
 
-[CAUSE]
+This adds four tracepoints:
+- btrfs_get_extent_show_fi_regular
+- btrfs_get_extent_show_fi_inline
+- btrfs_truncate_show_fi_regular
+- btrfs_truncate_show_fi_inline
 
-|<------------------ delalloc range --------------------------->|
-| OE 1 | OE 2 | ... | OE n |
-|<>|                       |<---------- cleanup range --------->|
- ||
- \_=> First page handled by end_extent_writepage() in __extent_writepage()
-
-The problem is caused by error handler of run_delalloc_range(), which
-doesn't handle any created ordered extents, leaving them waiting on
-btrfs_finish_ordered_io() to finish.
-
-However after run_delalloc_range() returns error, __extent_writepage()
-won't submit bio, so btrfs_writepage_end_io_hook() won't be triggered
-except the first page, and btrfs_finish_ordered_io() won't be triggered
-for created ordered extents either.
-
-So OE 2~n will hang forever, and if OE 1 is larger than one page, it
-will also hang.
-
-[FIX]
-Introduce btrfs_cleanup_ordered_extents() function to cleanup created
-ordered extents and finish them manually.
-
-The function is based on existing
-btrfs_endio_direct_write_update_ordered() function, and modify it to
-act just like btrfs_writepage_endio_hook() but handles specified range
-other than one page.
-
-After fix, delalloc error will be handled like:
-
-|<------------------ delalloc range --------------------------->|
-| OE 1 | OE 2 | ... | OE n |
-|<>|<--------  ----------->|<------ old error handler --------->|
- ||          ||
- ||          \_=> Cleaned up by cleanup_ordered_extents()
- \_=> First page handled by end_extent_writepage() in __extent_writepage()
-
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
-changelog:
-v2:
-  Add BTRFS_ORDERED_SKIP_METADATA flag to avoid double reducing
-  outstanding extents, which is already done by
-  extent_clear_unlock_delalloc() with EXTENT_DO_ACCOUNT control bit
-v3:
-  Skip first page to avoid underflow ordered->bytes_left.
-  Fix range passed in cow_file_range() which doesn't cover the whole
-  extent.
-  Expend extent_clear_unlock_delalloc() range to allow them to handle
-  metadata release.
-v4:
-  Don't use extra bit to skip metadata freeing for ordered extent,
-  but only handle btrfs_reloc_clone_csums() error just before processing
-  next extent.
-  This makes error handle much easier for run_delalloc_nocow().
-v5:
-  Variant gramma and comment fixes suggested by Filipe Manana
-  Enhanced commit message to focus on the generic error handler bug,
-  pointed out by Filipe Manana
-  Adding missing wq/func user in __endio_write_update_ordered(), pointed
-  out by Filipe Manana.
-  Enhanced commit message with ascii art to explain the bug more easily.
-  Fix a bug which can leads to corrupted extent allocation, exposed by
-  Filipe Manana.
-v6:
-  Split the metadata underflow fix to another patch.
-  Use better comment and btrfs_cleanup_ordered_extent() implementation
-  from Filipe Manana.
----
- fs/btrfs/inode.c | 62 ++++++++++++++++++++++++++++++++++++++++++--------------
- 1 file changed, 47 insertions(+), 15 deletions(-)
+ fs/btrfs/inode.c             |  15 +++++
+ include/trace/events/btrfs.h | 133 +++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 148 insertions(+)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 1d83d504f2e5..9b03eb9b27d0 100644
+index 5652f5f..8a26712 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -115,6 +115,30 @@ static struct extent_map *create_io_em(struct inode *inode, u64 start, u64 len,
- 				       u64 ram_bytes, int compress_type,
- 				       int type);
- 
-+static void __endio_write_update_ordered(struct inode *inode,
-+					 u64 offset, u64 bytes,
-+					 bool uptodate);
+@@ -4401,9 +4401,17 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
+ 			if (extent_type != BTRFS_FILE_EXTENT_INLINE) {
+ 				item_end +=
+ 				    btrfs_file_extent_num_bytes(leaf, fi);
 +
-+/*
-+ * Cleanup all submitted ordered extents in specified range to handle errors
-+ * from the fill_dellaloc() callback.
-+ *
-+ * NOTE: caller must ensure that when an error happens, it can not call
-+ * extent_clear_unlock_delalloc() to clear both the bits EXTENT_DO_ACCOUNTING
-+ * and EXTENT_DELALLOC simultaneously, because that causes the reserved metadata
-+ * to be released, which we want to happen only when finishing the ordered
-+ * extent (btrfs_finish_ordered_io()). Also note that the caller of the
-+ * fill_dealloc() callback already does proper cleanup for the first page of
-+ * the range, that is, it invokes the callback writepage_end_io_hook() for the
-+ * range of the first page.
-+ */
-+static inline void btrfs_cleanup_ordered_extents(struct inode *inode,
-+						 u64 offset, u64 bytes)
-+{
-+	return __endio_write_update_ordered(inode, offset + PAGE_SIZE,
-+					    bytes - PAGE_SIZE, false);
-+}
++				trace_btrfs_truncate_show_fi_regular(
++					BTRFS_I(inode), leaf, fi,
++					found_key.offset);
+ 			} else if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
+ 				item_end += btrfs_file_extent_inline_len(leaf,
+ 							 path->slots[0], fi);
 +
- static int btrfs_dirty_inode(struct inode *inode);
- 
- #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
-@@ -1536,6 +1560,8 @@ static int run_delalloc_range(struct inode *inode, struct page *locked_page,
- 		ret = cow_file_range_async(inode, locked_page, start, end,
- 					   page_started, nr_written);
++				trace_btrfs_truncate_show_fi_inline(
++					BTRFS_I(inode), leaf, fi, path->slots[0],
++					found_key.offset);
+ 			}
+ 			item_end--;
+ 		}
+@@ -6814,11 +6822,18 @@ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
+ 	    found_type == BTRFS_FILE_EXTENT_PREALLOC) {
+ 		extent_end = extent_start +
+ 		       btrfs_file_extent_num_bytes(leaf, item);
++
++		trace_btrfs_get_extent_show_fi_regular(inode, leaf, item,
++						       extent_start);
+ 	} else if (found_type == BTRFS_FILE_EXTENT_INLINE) {
+ 		size_t size;
+ 		size = btrfs_file_extent_inline_len(leaf, path->slots[0], item);
+ 		extent_end = ALIGN(extent_start + size,
+ 				   fs_info->sectorsize);
++
++		trace_btrfs_get_extent_show_fi_inline(inode, leaf, item,
++						      path->slots[0],
++						      extent_start);
  	}
-+	if (ret)
-+		btrfs_cleanup_ordered_extents(inode, start, end - start + 1);
- 	return ret;
- }
+ next:
+ 	if (start >= extent_end) {
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index a3c3cab..6353d0f 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -12,6 +12,7 @@ struct btrfs_root;
+ struct btrfs_fs_info;
+ struct btrfs_inode;
+ struct extent_map;
++struct btrfs_file_extent_item;
+ struct btrfs_ordered_extent;
+ struct btrfs_delayed_ref_node;
+ struct btrfs_delayed_tree_ref;
+@@ -54,6 +55,12 @@ struct btrfs_qgroup_extent_record;
+ 	      (obj >= BTRFS_ROOT_TREE_OBJECTID &&			\
+ 	       obj <= BTRFS_QUOTA_TREE_OBJECTID)) ? __show_root_type(obj) : "-"
  
-@@ -8142,17 +8168,26 @@ static void btrfs_endio_direct_read(struct bio *bio)
- 	bio_put(bio);
- }
- 
--static void btrfs_endio_direct_write_update_ordered(struct inode *inode,
--						    const u64 offset,
--						    const u64 bytes,
--						    const int uptodate)
-+static void __endio_write_update_ordered(struct inode *inode,
-+					 u64 offset, u64 bytes,
-+					 bool uptodate)
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	struct btrfs_ordered_extent *ordered = NULL;
-+	struct btrfs_workqueue *wq;
-+	btrfs_work_func_t func;
- 	u64 ordered_offset = offset;
- 	u64 ordered_bytes = bytes;
- 	int ret;
- 
-+	if (btrfs_is_free_space_inode(BTRFS_I(inode))) {
-+		wq = fs_info->endio_freespace_worker;
-+		func = btrfs_freespace_write_helper;
-+	} else {
-+		wq = fs_info->endio_write_workers;
-+		func = btrfs_endio_write_helper;
-+	}
++#define show_fi_type(type)						\
++	__print_symbolic(type,					\
++		 { BTRFS_FILE_EXTENT_INLINE,	"INLINE" },	\
++		 { BTRFS_FILE_EXTENT_REG,	"REG"	 },	\
++		 { BTRFS_FILE_EXTENT_PREALLOC,	"PREALLOC"})
 +
- again:
- 	ret = btrfs_dec_test_first_ordered_pending(inode, &ordered,
- 						   &ordered_offset,
-@@ -8161,9 +8196,8 @@ static void btrfs_endio_direct_write_update_ordered(struct inode *inode,
- 	if (!ret)
- 		goto out_test;
+ #define BTRFS_GROUP_FLAGS	\
+ 	{ BTRFS_BLOCK_GROUP_DATA,	"DATA"},	\
+ 	{ BTRFS_BLOCK_GROUP_SYSTEM,	"SYSTEM"},	\
+@@ -232,6 +239,132 @@ TRACE_EVENT_CONDITION(btrfs_get_extent,
+ 		  __entry->refs, __entry->compress_type)
+ );
  
--	btrfs_init_work(&ordered->work, btrfs_endio_write_helper,
--			finish_ordered_fn, NULL, NULL);
--	btrfs_queue_work(fs_info->endio_write_workers, &ordered->work);
-+	btrfs_init_work(&ordered->work, func, finish_ordered_fn, NULL, NULL);
-+	btrfs_queue_work(wq, &ordered->work);
- out_test:
- 	/*
- 	 * our bio might span multiple ordered extents.  If we haven't
-@@ -8181,10 +8215,8 @@ static void btrfs_endio_direct_write(struct bio *bio)
- 	struct btrfs_dio_private *dip = bio->bi_private;
- 	struct bio *dio_bio = dip->dio_bio;
- 
--	btrfs_endio_direct_write_update_ordered(dip->inode,
--						dip->logical_offset,
--						dip->bytes,
--						!bio->bi_error);
-+	__endio_write_update_ordered(dip->inode, dip->logical_offset,
-+				     dip->bytes, !bio->bi_error);
- 
- 	kfree(dip);
- 
-@@ -8545,10 +8577,10 @@ static void btrfs_submit_direct(struct bio *dio_bio, struct inode *inode,
- 		io_bio = NULL;
- 	} else {
- 		if (write)
--			btrfs_endio_direct_write_update_ordered(inode,
-+			__endio_write_update_ordered(inode,
- 						file_offset,
- 						dio_bio->bi_iter.bi_size,
--						0);
-+						false);
- 		else
- 			unlock_extent(&BTRFS_I(inode)->io_tree, file_offset,
- 			      file_offset + dio_bio->bi_iter.bi_size - 1);
-@@ -8683,11 +8715,11 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
- 			 */
- 			if (dio_data.unsubmitted_oe_range_start <
- 			    dio_data.unsubmitted_oe_range_end)
--				btrfs_endio_direct_write_update_ordered(inode,
-+				__endio_write_update_ordered(inode,
- 					dio_data.unsubmitted_oe_range_start,
- 					dio_data.unsubmitted_oe_range_end -
- 					dio_data.unsubmitted_oe_range_start,
--					0);
-+					false);
- 		} else if (ret >= 0 && (size_t)ret < count)
- 			btrfs_delalloc_release_space(inode, offset,
- 						     count - (size_t)ret);
++/* file extent item */
++DECLARE_EVENT_CLASS(btrfs__file_extent_item_regular,
++
++	TP_PROTO(struct btrfs_inode *bi, struct extent_buffer *l, struct btrfs_file_extent_item *fi, u64 start),
++
++	TP_ARGS(bi, l, fi, start),
++	
++	TP_STRUCT__entry_btrfs(
++		__field(	u64,	root_obj	)
++		__field(	u64,	ino		)
++		__field(	loff_t,	isize		)
++		__field(	u64,	disk_isize	)
++		__field(	u64,	num_bytes	)
++		__field(	u64,	ram_bytes	)
++		__field(	u64,	disk_bytenr	)
++		__field(	u64,	disk_num_bytes	)
++		__field(	u64,	extent_offset	)
++		__field(	u8,	extent_type	)
++		__field(	u8,	compression	)
++		__field(	u64,	extent_start	)
++		__field(	u64,	extent_end	)
++	),
++
++	TP_fast_assign_btrfs(bi->root->fs_info,
++		__entry->root_obj	= bi->root->objectid;
++		__entry->ino		= btrfs_ino(bi);
++		__entry->isize		= bi->vfs_inode.i_size;
++		__entry->disk_isize	= bi->disk_i_size;
++		__entry->num_bytes	= btrfs_file_extent_num_bytes(l, fi);
++		__entry->ram_bytes	= btrfs_file_extent_ram_bytes(l, fi);
++		__entry->disk_bytenr	= btrfs_file_extent_disk_bytenr(l, fi);
++		__entry->disk_num_bytes	= btrfs_file_extent_disk_num_bytes(l, fi);
++		__entry->extent_offset	= btrfs_file_extent_offset(l, fi);
++		__entry->extent_type	= btrfs_file_extent_type(l, fi);
++		__entry->compression	= btrfs_file_extent_compression(l, fi);
++		__entry->extent_start	= start;
++		__entry->extent_end	= (start + __entry->num_bytes);
++	),
++
++	TP_printk_btrfs(
++		"root %llu(%s) ino %llu sz 0x%llx disk_isz 0x%llx "
++		"file extent range [0x%llx 0x%llx] "
++		"(num_bytes 0x%llx ram_bytes 0x%llx disk_bytenr 0x%llx "
++		"disk_num_bytes 0x%llx extent_offset 0x%llx type (%s) "
++		"compression %u",
++		show_root_type(__entry->root_obj), __entry->ino,
++		__entry->isize,
++		__entry->disk_isize, __entry->extent_start,
++		__entry->extent_end, __entry->num_bytes, __entry->ram_bytes,
++		__entry->disk_bytenr, __entry->disk_num_bytes,
++		__entry->extent_offset, show_fi_type(__entry->extent_type),
++		__entry->compression)
++);
++
++DECLARE_EVENT_CLASS(
++	btrfs__file_extent_item_inline,
++
++	TP_PROTO(struct btrfs_inode *bi, struct extent_buffer *l, struct btrfs_file_extent_item *fi, int slot, u64 start),
++
++	TP_ARGS(bi, l, fi, slot,  start),
++	
++	TP_STRUCT__entry_btrfs(
++		__field(	u64,	root_obj	)
++		__field(	u64,	ino		)
++		__field(	loff_t,	isize		)
++		__field(	u64,	disk_isize	)
++		__field(	u8,	extent_type	)
++		__field(	u8,	compression	)
++		__field(	u64,	extent_start	)
++		__field(	u64,	extent_end	)
++	),
++
++	TP_fast_assign_btrfs(
++		bi->root->fs_info,
++		__entry->root_obj	= bi->root->objectid;
++		__entry->ino		= btrfs_ino(bi);
++		__entry->isize		= bi->vfs_inode.i_size;
++		__entry->disk_isize	= bi->disk_i_size;
++		__entry->extent_type	= btrfs_file_extent_type(l, fi);
++		__entry->compression	= btrfs_file_extent_compression(l, fi);
++		__entry->extent_start	= start;
++		__entry->extent_end	= (start + btrfs_file_extent_inline_len(l, slot, fi));
++	),
++
++	TP_printk_btrfs(
++		"root %llu(%s) ino %llu sz 0x%llx disk_isz 0x%llx "
++		"file extent range [0x%llx 0x%llx] "
++		"extent_type (%s) compression %u",
++		show_root_type(__entry->root_obj), __entry->ino, __entry->isize,
++		__entry->disk_isize, __entry->extent_start,
++		__entry->extent_end, show_fi_type(__entry->extent_type),
++		__entry->compression)
++);
++
++DEFINE_EVENT(
++	btrfs__file_extent_item_regular, btrfs_get_extent_show_fi_regular,
++
++	TP_PROTO(struct btrfs_inode *bi, struct extent_buffer *l, struct btrfs_file_extent_item *fi, u64 start),
++
++	TP_ARGS(bi, l, fi, start)
++);
++
++DEFINE_EVENT(
++	btrfs__file_extent_item_regular, btrfs_truncate_show_fi_regular,
++
++	TP_PROTO(struct btrfs_inode *bi, struct extent_buffer *l, struct btrfs_file_extent_item *fi, u64 start),
++
++	TP_ARGS(bi, l, fi, start)
++);
++
++DEFINE_EVENT(
++	btrfs__file_extent_item_inline, btrfs_get_extent_show_fi_inline,
++
++	TP_PROTO(struct btrfs_inode *bi, struct extent_buffer *l, struct btrfs_file_extent_item *fi, int slot, u64 start),
++
++	TP_ARGS(bi, l, fi, slot, start)
++);
++
++DEFINE_EVENT(
++	btrfs__file_extent_item_inline, btrfs_truncate_show_fi_inline,
++
++	TP_PROTO(struct btrfs_inode *bi, struct extent_buffer *l, struct btrfs_file_extent_item *fi, int slot, u64 start),
++
++	TP_ARGS(bi, l, fi, slot, start)
++);
++
+ #define show_ordered_flags(flags)					   \
+ 	__print_flags(flags, "|",					   \
+ 		{ (1 << BTRFS_ORDERED_IO_DONE), 	"IO_DONE" 	}, \
 -- 
-2.12.0
-
-
+2.5.5
 

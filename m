@@ -1,120 +1,127 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:35020 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750846AbdCPAOw (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Mar 2017 20:14:52 -0400
-Date: Wed, 15 Mar 2017 17:13:33 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: David Sterba <dsterba@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 4/4] btrfs: add dummy callback for readpage_io_failed and
- drop checks
-Message-ID: <20170316001332.GB7651@lim.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <cover.1487615195.git.dsterba@suse.com>
- <944371b69d2516a81dc182d6cf85e74583cf0ba4.1487615195.git.dsterba@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <944371b69d2516a81dc182d6cf85e74583cf0ba4.1487615195.git.dsterba@suse.com>
+Received: from mx2.suse.de ([195.135.220.15]:51753 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752220AbdCDSdf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 4 Mar 2017 13:33:35 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 76ACCAAB2
+        for <linux-btrfs@vger.kernel.org>; Sat,  4 Mar 2017 18:33:33 +0000 (UTC)
+From: Goldwyn Rodrigues <rgoldwyn@suse.de>
+To: linux-btrfs@vger.kernel.org
+Cc: Goldwyn Rodrigues <rgoldwyn@suse.com>
+Subject: [PATCH] btrfs: Change s_flags instead of returning -EBUSY
+Date: Sat,  4 Mar 2017 12:33:22 -0600
+Message-Id: <20170304183322.32346-1-rgoldwyn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 20, 2017 at 07:31:33PM +0100, David Sterba wrote:
-> Make extent_io_ops::readpage_io_failed_hook callback mandatory and
-> define a dummy function for btrfs_extent_io_ops. As the failed IO
-> callback is not performance critical, the branch vs extra trade off does
-> not hurt.
-> 
-> Signed-off-by: David Sterba <dsterba@suse.com>
-> ---
->  fs/btrfs/disk-io.c   | 2 +-
->  fs/btrfs/extent_io.c | 2 +-
->  fs/btrfs/extent_io.h | 2 +-
->  fs/btrfs/inode.c     | 7 +++++++
->  4 files changed, 10 insertions(+), 3 deletions(-)
-> 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 0715b6f3f686..fbf4921f4d60 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -4658,7 +4658,7 @@ static const struct extent_io_ops btree_extent_io_ops = {
->  	.readpage_end_io_hook = btree_readpage_end_io_hook,
->  	/* note we're sharing with inode.c for the merge bio hook */
->  	.merge_bio_hook = btrfs_merge_bio_hook,
-> +	.readpage_io_failed_hook = btree_io_failed_hook,
->  
->  	/* optional callbacks */
-> -	.readpage_io_failed_hook = btree_io_failed_hook,
->  };
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index f5cff93ab152..eaee7bb2ff7c 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -2578,7 +2578,7 @@ static void end_bio_extent_readpage(struct bio *bio)
->  		if (likely(uptodate))
->  			goto readpage_ok;
->  
-> -		if (tree->ops && tree->ops->readpage_io_failed_hook) {
-> +		if (tree->ops) {
->  			ret = tree->ops->readpage_io_failed_hook(page, mirror);
->  			if (!ret && !bio->bi_error)
->  				uptodate = 1;
-> diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-> index 5c5e2e6cfb9e..63c8cc970b1c 100644
-> --- a/fs/btrfs/extent_io.h
-> +++ b/fs/btrfs/extent_io.h
-> @@ -102,6 +102,7 @@ struct extent_io_ops {
->  	int (*merge_bio_hook)(struct page *page, unsigned long offset,
->  			      size_t size, struct bio *bio,
->  			      unsigned long bio_flags);
-> +	int (*readpage_io_failed_hook)(struct page *page, int failed_mirror);
->  
->  	/*
->  	 * Optional hooks, called if the pointer is not NULL
-> @@ -109,7 +110,6 @@ struct extent_io_ops {
->  	int (*fill_delalloc)(struct inode *inode, struct page *locked_page,
->  			     u64 start, u64 end, int *page_started,
->  			     unsigned long *nr_written);
-> -	int (*readpage_io_failed_hook)(struct page *page, int failed_mirror);
->  
->  	int (*writepage_start_hook)(struct page *page, u64 start, u64 end);
->  	void (*writepage_end_io_hook)(struct page *page, u64 start, u64 end,
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 72faf9b5616a..a74191fa3934 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -10503,6 +10503,12 @@ static int btrfs_tmpfile(struct inode *dir, struct dentry *dentry, umode_t mode)
->  
->  }
->  
-> +__attribute__((const))
-> +static int dummy_readpage_io_failed_hook(struct page *page, int failed_mirror)
-> +{
-> +	return 0;
-> +}
-> +
->  static const struct inode_operations btrfs_dir_inode_operations = {
->  	.getattr	= btrfs_getattr,
->  	.lookup		= btrfs_lookup,
-> @@ -10545,6 +10551,7 @@ static const struct extent_io_ops btrfs_extent_io_ops = {
->  	.submit_bio_hook = btrfs_submit_bio_hook,
->  	.readpage_end_io_hook = btrfs_readpage_end_io_hook,
->  	.merge_bio_hook = btrfs_merge_bio_hook,
-> +	.readpage_io_failed_hook = dummy_readpage_io_failed_hook,
+From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-This has made us not call bio_readpage_error() to correct corrupted data...
+The problem is with parallel mounting multiple subvolumes rw when the
+root filesystem is marked as read-only such as a boot sequence
+using systemd. Not all subvolumes will be mounted because some of
+them will return -EBUSY.
 
-Thanks,
+Here is a sample execution time.
+Root filesystem is mounted read-only so s->s_flags are set to MS_RDONLY
+flags is the parameter passed and s_flags is the one recorded in sb.
+btrfs_mount is called via vfs_kern_mount().
 
--liubo
->  
->  	/* optional callbacks */
->  	.fill_delalloc = run_delalloc_range,
-> -- 
-> 2.10.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Mount Thread 1				Mount Thread 2
+
+btrfs_mount(flags & ~MS_RDONLY)
+ check (flags ^ s_flags) & MS_RDONLY
+ returns -EBUSY				btrfs_mount(flags & ~MS_RDONLY)
+ 					check (flags ^ s_flags) & MS_RDONLY
+					 returns -EBUSY
+btrfs_mount(flags | MS_RDONLY)
+btrfs_remount(flags & ~MS_RDONLY)
+s->s_flags &= ~MS_RDONLY
+					btrfs_mount(flags | MS_RDONLY)
+					check (flags ^ s_flags) & MS_RDONLY)
+					 returns -EBUSY
+					 mount FAILS
+
+The -EBUSY was originally introduced in:
+4b82d6e ("Btrfs: Add mount into directory support")
+as a copy of (then) get_sb_dev().
+
+Later commit 0723a04 ("btrfs: allow mounting btrfs subvolumes
+with different ro/rw options") added the option of allowing
+subvolumes in rw/ro modes.
+
+This fix is instead of toggling the flags in remount, we set
+s_flags &= MS_RDONLY when we see a conflict in s_flags and passed parameter
+flags and let mount continue as it is. This will allow the first mount attempt
+to succeed, and we can get rid of the re-kern_mount() and remount sequence
+altogether.
+
+Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+---
+ fs/btrfs/super.c | 36 ++++++++++--------------------------
+ 1 file changed, 10 insertions(+), 26 deletions(-)
+
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index e9ae93e..978b4a6 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -67,8 +67,6 @@
+ static const struct super_operations btrfs_super_ops;
+ static struct file_system_type btrfs_fs_type;
+ 
+-static int btrfs_remount(struct super_block *sb, int *flags, char *data);
+-
+ const char *btrfs_decode_error(int errno)
+ {
+ 	char *errstr = "unknown";
+@@ -1379,28 +1377,6 @@ static struct dentry *mount_subvol(const char *subvol_name, u64 subvol_objectid,
+ 	}
+ 
+ 	mnt = vfs_kern_mount(&btrfs_fs_type, flags, device_name, newargs);
+-	if (PTR_ERR_OR_ZERO(mnt) == -EBUSY) {
+-		if (flags & MS_RDONLY) {
+-			mnt = vfs_kern_mount(&btrfs_fs_type, flags & ~MS_RDONLY,
+-					     device_name, newargs);
+-		} else {
+-			mnt = vfs_kern_mount(&btrfs_fs_type, flags | MS_RDONLY,
+-					     device_name, newargs);
+-			if (IS_ERR(mnt)) {
+-				root = ERR_CAST(mnt);
+-				mnt = NULL;
+-				goto out;
+-			}
+-
+-			down_write(&mnt->mnt_sb->s_umount);
+-			ret = btrfs_remount(mnt->mnt_sb, &flags, NULL);
+-			up_write(&mnt->mnt_sb->s_umount);
+-			if (ret < 0) {
+-				root = ERR_PTR(ret);
+-				goto out;
+-			}
+-		}
+-	}
+ 	if (IS_ERR(mnt)) {
+ 		root = ERR_CAST(mnt);
+ 		mnt = NULL;
+@@ -1606,8 +1582,16 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
+ 	if (s->s_root) {
+ 		btrfs_close_devices(fs_devices);
+ 		free_fs_info(fs_info);
+-		if ((flags ^ s->s_flags) & MS_RDONLY)
+-			error = -EBUSY;
++		/* If s_flags is MS_RDONLY and flags is rw (~MS_RDONLY)
++		 * we need to reset s_flags so that sb can be writable
++		 * since we can be called from mount_subvol().
++		 * The vfsmount manages to preserve the ro/rw flags
++		 * of the root/orignal mount.
++		 * In case of vice-versa, s_flags is already does not
++		 * have MS_RDONLY set, so don't bother.
++		 */
++		if ((s->s_flags & MS_RDONLY) && !(flags & MS_RDONLY))
++			s->s_flags &= ~MS_RDONLY;
+ 	} else {
+ 		snprintf(s->s_id, sizeof(s->s_id), "%pg", bdev);
+ 		btrfs_sb(s)->bdev_holder = fs_type;
+-- 
+2.10.2
+

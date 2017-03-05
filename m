@@ -1,69 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:57641 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752900AbdCBPqj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 2 Mar 2017 10:46:39 -0500
-Date: Thu, 2 Mar 2017 16:22:45 +0100
-From: Jan Kara <jack@suse.cz>
-To: Matthew Wilcox <willy@infradead.org>
-Cc: Jan Kara <jack@suse.cz>, Christoph Hellwig <hch@infradead.org>,
-        Goldwyn Rodrigues <rgoldwyn@suse.de>, jack@suse.com,
-        linux-fsdevel@vger.kernel.org, linux-block@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-xfs@vger.kernel.org, Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: Re: [PATCH 3/8] nowait aio: return if direct write will trigger
- writeback
-Message-ID: <20170302152245.GC23354@quack2.suse.cz>
+Received: from mail-wr0-f173.google.com ([209.85.128.173]:36400 "EHLO
+        mail-wr0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752380AbdCEO41 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Mar 2017 09:56:27 -0500
+Received: by mail-wr0-f173.google.com with SMTP id u108so100959819wrb.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 05 Mar 2017 06:56:26 -0800 (PST)
+Subject: Re: [PATCH 0/8 v2] Non-blocking AIO
+To: Goldwyn Rodrigues <rgoldwyn@suse.de>, jack@suse.com
 References: <20170228233610.25456-1-rgoldwyn@suse.de>
- <20170228233610.25456-4-rgoldwyn@suse.de>
- <20170301034606.GK16328@bombadil.infradead.org>
- <20170301153857.GC30631@infradead.org>
- <20170302103845.GB31792@quack2.suse.cz>
- <20170302141245.GO16328@bombadil.infradead.org>
+Cc: hch@infradead.org, linux-fsdevel@vger.kernel.org,
+        linux-block@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org
+From: Avi Kivity <avi@scylladb.com>
+Message-ID: <347d19cb-dbb8-1d4f-dfb5-d1dd820dd65d@scylladb.com>
+Date: Sun, 5 Mar 2017 16:56:21 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170302141245.GO16328@bombadil.infradead.org>
+In-Reply-To: <20170228233610.25456-1-rgoldwyn@suse.de>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu 02-03-17 06:12:45, Matthew Wilcox wrote:
-> On Thu, Mar 02, 2017 at 11:38:45AM +0100, Jan Kara wrote:
-> > On Wed 01-03-17 07:38:57, Christoph Hellwig wrote:
-> > > On Tue, Feb 28, 2017 at 07:46:06PM -0800, Matthew Wilcox wrote:
-> > > > But what's going to kick these pages out of cache?  Shouldn't we rather
-> > > > find the pages, kick them out if clean, start writeback if not, and *then*
-> > > > return -EAGAIN?
-> > > 
-> > > As pointed out in the last round of these patches I think we really
-> > > need to pass a flags argument to filemap_write_and_wait_range to
-> > > communicate the non-blocking nature and only return -EAGAIN if we'd
-> > > block.  As a bonus that can indeed start to kick the pages out.
-> > 
-> > Aren't flags to filemap_write_and_wait_range() unnecessary complication?
-> > Realistically, most users wanting performance from AIO DIO so badly that
-> > they bother with this API won't have any pages to write / evict. If they do
-> > by some bad accident, they can fall back to standard "blocking" AIO DIO.
-> > So I don't see much value in teaching filemap_write_and_wait_range() about
-> > a non-blocking mode...
-> 
-> That lets me execute a DoS against a user using this API.  All I have
-> to do is open the file they're using read-only and read a byte from it.
-> Page goes into page-cache, and they'll only get -EAGAIN from calling
-> this syscall until the page ages out.
 
-It will not be a DoS. This non-blocking AIO can always return EAGAIN when
-it feels like it and the caller is required to fall back to a blocking
-version in that case if he wants to guarantee forward progress. It is just
-a performance optimization which allows user (database) to submit IO from a
-computation thread instead of having to offload it to an IO thread...
 
-> Also, I don't understand why this is a flag.  Isn't the point of AIO to
-> be non-blocking?  Why isn't this just a change to how we do AIO?
+On 03/01/2017 01:36 AM, Goldwyn Rodrigues wrote:
+> This series adds nonblocking feature to asynchronous I/O writes.
+> io_submit() can be delayed because of a number of reason:
+>   - Block allocation for files
+>   - Data writebacks for direct I/O
+>   - Sleeping because of waiting to acquire i_rwsem
+>   - Congested block device
 
-Because this is an API change and the caller has to implement some handling
-to guarantee a forward progress of non-blocking IO...
+We've been hit by a few of these so this change is very welcome.
 
-								Honza
--- 
-Jan Kara <jack@suse.com>
-SUSE Labs, CR
+>
+> The goal of the patch series is to return -EAGAIN/-EWOULDBLOCK if
+> any of these conditions are met. This way userspace can push most
+> of the write()s to the kernel to the best of its ability to complete
+> and if it returns -EAGAIN, can defer it to another thread.
+>
+
+Is it not possible to push the iocb to a workqueue?  This will allow 
+existing userspace to work with the new functionality, unchanged. Any 
+userspace implementation would have to do the same thing, so it's not 
+like we're saving anything by pushing it there.
+
+> In order to enable this, IOCB_FLAG_NOWAIT is introduced in
+> uapi/linux/aio_abi.h which translates to IOCB_NOWAIT for struct iocb,
+> BIO_NOWAIT for bio and IOMAP_NOWAIT for iomap.
+>
+> This feature is provided for direct I/O of asynchronous I/O only. I have
+> tested it against xfs, ext4, and btrfs.
+>
+> Changes since v1:
+>   + Forwardported from 4.9.10
+>   + changed name from _NONBLOCKING to *_NOWAIT
+>   + filemap_range_has_page call moved to closer to (just before) calling filemap_write_and_wait_range().
+>   + BIO_NOWAIT limited to get_request()
+>   + XFS fixes
+> 	- included reflink
+> 	- use of xfs_ilock_nowait() instead of a XFS_IOLOCK_NONBLOCKING flag
+> 	- Translate the flag through IOMAP_NOWAIT (iomap) to check for
+> 	  block allocation for the file.
+>   + ext4 coding style
+

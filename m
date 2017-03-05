@@ -1,77 +1,133 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.domeneshop.no ([194.63.252.55]:53069 "EHLO
-        smtp.domeneshop.no" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752329AbdCEQel (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Mar 2017 11:34:41 -0500
-Received: from 244.79-160-162.customer.lyse.net ([79.160.162.244]:61413 helo=[10.0.0.10])
-        by smtp.domeneshop.no with esmtpsa (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128)
-        (Exim 4.84_2)
-        (envelope-from <waxhead@dirtcellar.net>)
-        id 1ckYzY-0007Ih-Kv
-        for linux-btrfs@vger.kernel.org; Sun, 05 Mar 2017 17:26:40 +0100
-To: linux-btrfs@vger.kernel.org
-Reply-To: waxhead@dirtcellar.net
-From: waxhead <waxhead@dirtcellar.net>
-Subject: Why do BTRFS (still) forgets what device to write to?
-Message-ID: <0fe88cf0-7c51-e2b1-e50a-33d141d1862c@dirtcellar.net>
-Date: Sun, 5 Mar 2017 17:26:36 +0100
+Received: from azure.uno.uk.net ([95.172.254.11]:59564 "EHLO azure.uno.uk.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751969AbdCETNg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 5 Mar 2017 14:13:36 -0500
+Received: from ty.sabi.co.uk ([95.172.230.208]:36116)
+        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
+        (Exim 4.88)
+        (envelope-from <pg@btrfs.list.sabi.co.uk>)
+        id 1ckbb1-001oYx-87
+        for linux-btrfs@vger.kernel.org; Sun, 05 Mar 2017 19:13:31 +0000
+Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
+        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
+        id 1ckbam-0001Ce-Vq
+        for <linux-btrfs@vger.kernel.org>; Sun, 05 Mar 2017 19:13:17 +0000
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+Message-ID: <22716.25419.146443.191478@tree.ty.sabi.co.uk>
+Date: Sun, 5 Mar 2017 19:13:15 +0000
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: raid1 degraded mount still produce single chunks, writeable mount
+ not allowed
+In-Reply-To: <284e9d01-3e69-705e-dd88-ebe047e2e4b8@gmail.com>
+References: <CAJCQCtQByC_pTnZhFFfHmxktN-Ga4W0TZ8wVRPxe_b18G+Kajw@mail.gmail.com>
+        <pan$a4f49$5a6ddd0a$2183c48a$5df333ac@cox.net>
+        <22712.48434.400550.346157@tree.ty.sabi.co.uk>
+        <284e9d01-3e69-705e-dd88-ebe047e2e4b8@gmail.com>
+From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I am doing some test on BTRFS with both data and metadata in raid1.
+>> What makes me think that "unmirrored" 'raid1' profile chunks
+>> are "not a thing" is that it is impossible to remove
+>> explicitly a member device from a 'raid1' profile volume:
+>> first one has to 'convert' to 'single', and then the 'remove'
+>> copies back to the remaining devices the 'single' chunks that
+>> are on the explicitly 'remove'd device. Which to me seems
+>> absurd.
 
-uname -a
-Linux daffy 4.9.0-1-amd64 #1 SMP Debian 4.9.6-3 (2017-01-28) x86_64 
-GNU/Linux
+> It is, there should be a way to do this as a single operation.
+> [ ... ] The reason this is currently the case though is a
+> simple one, 'btrfs device delete' is just a special instance
+> of balance [ ... ]  does no profile conversion, but having
+> that as an option would actually be _very_ useful from a data
+> safety perspective.
 
-btrfs--version
-btrfs-progs v4.7.3
+That seems to me an even more "confused" opinion: because
+removing a device to make it "missing" and removing it
+permanently should be very different operations.
 
+Consider the common case of a 3-member volume with a 'raid1'
+target profile: if the sysadm thinks that a drive should be
+replaced, the goal is to take it out *without* converting every
+chunk to 'single', because with 2-out-of-3 devices half of the
+chunks will still be fully mirrored.
 
-01. mkfs.btrfs /dev/sd[fgh]1
-02. mount /dev/sdf1 /btrfs_test/
-03. btrfs balance start -dconvert=raid1 /btrfs_test/
-04. copied a lots of 3-4MB files to it (about 40GB)...
-05. Started to compress some of the files to create one larger file...
-06. Pulled the (sata) plug on one of the drives... (sdf1)
-07. dmesg shows that the kernel is rejecting I/O to offline device + 
-[sdf] killing request]
-08. BTRS error (device sdf1) bdev /dev/sdf1 errs: wr 0, rd 1, flush 0, 
-corrupt 0, gen 0
-09. the previous line repeats - increasing rd count
-10. Reconnecting the sdf1 drive again makes it show up as sdi1
-11. btrfs fi sh /btrfs_test shows sd1 as the correct device id (1).
-12. Yet dmesg shows tons of errors like this: BTRFS error (device sdf1) 
-: bdev /dev/sdi1 errs wr 37182, rd 39851, flush 1, corrupt 0, gen 0....
-13. and the above line repeats increasing wr, and rd errors.
-14. BTRFS never seems to "get in tune again" while the filesystem is 
-mounted.
+Also, removing the device to be replaced should really not be
+the same thing as balancing the chunks, if there is space, to be
+'raid1' across remaining drives, because that's a completely
+different operation.
 
-The conclusion appears to be that the device ID is back again in the 
-btrfs pool so why does btrfs still try to write to the wrong device (or 
-does it?!).
+>> Going further in my speculation, I suspect that at the core of
+>> the Btrfs multidevice design there is a persistent "confusion"
+>> (to use en euphemism) between volumes having a profile, and
+>> merely chunks have a profile.
 
-The good thing here is that BTRFS does still work fine after a unmount 
-and mount again. Running a scrub on the filesystem cleans up tons of 
-errors , but no uncorrectable errors.
+> There generally is.  The profile is entirely a property of the
+> chunks (each chunk literally has a bit of metadata that says
+> what profile it is), not the volume.  There's some metadata in
+> the volume somewhere that says what profile to use for new
+> chunks of each type (I think),
 
-However it says total bytes scrubbed 94.21GB with 75 errors ... and 
-further down it says corrected errors: 72, uncorrectable errors: 0 , 
-unverified errors: 0
+That's the "target" profile for the volume.
 
-Why 75 vs 72 errors?! did it correct all or not?
+> but that doesn't dictate what chunk profiles there are on the
+> volume. [ ... ]
 
-I have recently lost 1x 5 device BTRFS filesystem as well as 2x 3 device 
-BTRFS filesystems set up in RAID1 (both data and medata) by toying 
-around with them. The 2x filesystems I lost was using all bad disks (all 
-3 of them) but the one mentioned here uses good (but old) 400GB drives 
-just for the record.
+But as that's the case then the current Btrfs logic for
+determining whether a volume is degraded or not is quite
+"confused" indeed.
 
-By lost I mean that mount does not recognize the filesystem, but BTRFS 
-fi sh does show that all devices are present. I did not make notes for 
-those filesystems , but it appears that RAID1 is a bit fragile.
+Because suppose there is again the simple case of a 3-device
+volume, where all existing chunks have 'raid1' profile and the
+volume's target profile is also 'raid1' and one device has gone
+offline: the volume cannot be said to be "degraded", unless a
+full examination of all chunks is made. Because it can well
+happen that in fact *none* of the chunks was mirrored to that
+device, for example, however unlikely. And viceversa. Even with
+3 devices some chunks may be temporarily "unmirrored" (even if
+for brief times hopefully).
 
-I don't need to recover anything. This is just a "toy system" for 
-playing around with btrfs and doing some tests.
+The average case is that half of the chunks will be fully
+mirrored across the two remaining devices and half will be
+"unmirrored".
+
+Now consider re-adding the third device: at that point the
+volume has got back all 3 devices, so it is not "degraded", but
+50% of the chunks in the volume will still be "unmirrored", even
+if eventually they will be mirrored on the newly added device.
+
+Note: possibilities get even more interesting with a 4-device
+volume with 'raid1' profile chunks, and similar case involving
+other profiles than 'raid1'.
+
+Therefore the current Btrfs logic for deciding whether a volume
+is "degraded" seems simply "confused" to me, because whether
+there are missing devices and some chunks are "unmirrored" is
+not quite the same thing.
+
+The same applies to the current logic that in a 2-device volume
+with a device missing new chunks are created as "single" profile
+instead of as "unmirrored" 'raid1' profile: another example of
+"confusion" between number of devices and chunk profile.
+
+Note: the best that can be said is that a volume has both a
+"target chunk profile" (one per data, metadata, system chunks)
+and a target number of member devices, and that a volume with a
+number of devices below the target *might* be degraded, and that
+whether a volume is in fact degraded is not either/or, but given
+by the percentage of chunks or stripes that are degraded. This
+is expecially made clear by the 'raid1' case where the chunk
+stripe length is always 2, but the number of target devices can
+be greater than 2. Management of devices and management of
+stripes are in Btrfs, unlike conventional RAID like Linux MD,
+rather different operations needing rather different, if
+related, logic.
+
+My impression is that because of "confusion" between number of
+devices in a volume and status of chunk profile there are some
+"surprising" behaviors in Btrfs, and that will take quite a bit
+to fix, most importantly for the Btrfs developer team to clear
+among themselves the semantics attaching to both. After 10 years
+of development that seems the right thing to do :-).

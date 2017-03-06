@@ -1,65 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f173.google.com ([209.85.128.173]:36400 "EHLO
-        mail-wr0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752380AbdCEO41 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Mar 2017 09:56:27 -0500
-Received: by mail-wr0-f173.google.com with SMTP id u108so100959819wrb.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 05 Mar 2017 06:56:26 -0800 (PST)
+Received: from mail-wm0-f54.google.com ([74.125.82.54]:35063 "EHLO
+        mail-wm0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752708AbdCFIkl (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Mar 2017 03:40:41 -0500
+Received: by mail-wm0-f54.google.com with SMTP id v186so57651841wmd.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 06 Mar 2017 00:40:40 -0800 (PST)
 Subject: Re: [PATCH 0/8 v2] Non-blocking AIO
-To: Goldwyn Rodrigues <rgoldwyn@suse.de>, jack@suse.com
+To: Jan Kara <jack@suse.cz>
 References: <20170228233610.25456-1-rgoldwyn@suse.de>
-Cc: hch@infradead.org, linux-fsdevel@vger.kernel.org,
-        linux-block@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org
+ <347d19cb-dbb8-1d4f-dfb5-d1dd820dd65d@scylladb.com>
+ <20170306082546.GA14932@quack2.suse.cz>
+Cc: Goldwyn Rodrigues <rgoldwyn@suse.de>, jack@suse.com, hch@infradead.org,
+        linux-fsdevel@vger.kernel.org, linux-block@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-xfs@vger.kernel.org
 From: Avi Kivity <avi@scylladb.com>
-Message-ID: <347d19cb-dbb8-1d4f-dfb5-d1dd820dd65d@scylladb.com>
-Date: Sun, 5 Mar 2017 16:56:21 +0200
+Message-ID: <f1df9ffe-6803-41b3-3ec0-cd96ae32b995@scylladb.com>
+Date: Mon, 6 Mar 2017 10:40:36 +0200
 MIME-Version: 1.0
-In-Reply-To: <20170228233610.25456-1-rgoldwyn@suse.de>
+In-Reply-To: <20170306082546.GA14932@quack2.suse.cz>
 Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 03/01/2017 01:36 AM, Goldwyn Rodrigues wrote:
-> This series adds nonblocking feature to asynchronous I/O writes.
-> io_submit() can be delayed because of a number of reason:
->   - Block allocation for files
->   - Data writebacks for direct I/O
->   - Sleeping because of waiting to acquire i_rwsem
->   - Congested block device
-
-We've been hit by a few of these so this change is very welcome.
-
->
-> The goal of the patch series is to return -EAGAIN/-EWOULDBLOCK if
-> any of these conditions are met. This way userspace can push most
-> of the write()s to the kernel to the best of its ability to complete
-> and if it returns -EAGAIN, can defer it to another thread.
+On 03/06/2017 10:25 AM, Jan Kara wrote:
+> On Sun 05-03-17 16:56:21, Avi Kivity wrote:
+>>> The goal of the patch series is to return -EAGAIN/-EWOULDBLOCK if
+>>> any of these conditions are met. This way userspace can push most
+>>> of the write()s to the kernel to the best of its ability to complete
+>>> and if it returns -EAGAIN, can defer it to another thread.
+>>>
+>> Is it not possible to push the iocb to a workqueue?  This will allow
+>> existing userspace to work with the new functionality, unchanged. Any
+>> userspace implementation would have to do the same thing, so it's not like
+>> we're saving anything by pushing it there.
+> That is not easy because until IO is fully submitted, you need some parts
+> of the context of the process which submits the IO (e.g. memory mappings,
+> but possibly also other credentials). So you would need to somehow transfer
+> this information to the workqueue.
 >
 
-Is it not possible to push the iocb to a workqueue?  This will allow 
-existing userspace to work with the new functionality, unchanged. Any 
-userspace implementation would have to do the same thing, so it's not 
-like we're saving anything by pushing it there.
 
-> In order to enable this, IOCB_FLAG_NOWAIT is introduced in
-> uapi/linux/aio_abi.h which translates to IOCB_NOWAIT for struct iocb,
-> BIO_NOWAIT for bio and IOMAP_NOWAIT for iomap.
->
-> This feature is provided for direct I/O of asynchronous I/O only. I have
-> tested it against xfs, ext4, and btrfs.
->
-> Changes since v1:
->   + Forwardported from 4.9.10
->   + changed name from _NONBLOCKING to *_NOWAIT
->   + filemap_range_has_page call moved to closer to (just before) calling filemap_write_and_wait_range().
->   + BIO_NOWAIT limited to get_request()
->   + XFS fixes
-> 	- included reflink
-> 	- use of xfs_ilock_nowait() instead of a XFS_IOLOCK_NONBLOCKING flag
-> 	- Translate the flag through IOMAP_NOWAIT (iomap) to check for
-> 	  block allocation for the file.
->   + ext4 coding style
+It's at least possible to pass the mm_struct to the workqueue, and I 
+imagine other process attributes.  But I appreciate the difficulty.
 
+It would be quite annoying to have to keep a large number of worker 
+threads active, just in case aio is not working.  Modern NVMes have 
+fairly deep queues, and at the worst case, you'll need one thread for 
+each I/O to keep everything busy.

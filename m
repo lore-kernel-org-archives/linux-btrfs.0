@@ -1,106 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:54028 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752442AbdCEXxq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 5 Mar 2017 18:53:46 -0500
-Received: from thetick.localnet ([93.181.44.247]) by mail.gmx.com (mrgmx003
- [212.227.17.190]) with ESMTPSA (Nemesis) id 0MH0eg-1cY0nc1Uuo-00Dkkr for
- <linux-btrfs@vger.kernel.org>; Mon, 06 Mar 2017 00:53:42 +0100
-From: Marc Joliet <marcec@gmx.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: [4.7.2] btrfs_run_delayed_refs:2963: errno=-17 Object already exists
-Date: Mon, 06 Mar 2017 00:53:40 +0100
-Message-ID: <2713353.CA3Dyp7XXF@thetick>
-In-Reply-To: <14737660.8idzxVKBRv@thetick>
-References: <20160828152908.6e1325b5@jupiter.sol.kaishome.de> <63cf74bb-009a-b422-4390-7562395db31d@cn.fujitsu.com> <14737660.8idzxVKBRv@thetick>
+Received: from cn.fujitsu.com ([59.151.112.132]:38679 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1752500AbdCFA17 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Mar 2017 19:27:59 -0500
+Subject: Re: [PATCH 00/17] fs, btrfs refcount conversions
+To: Elena Reshetova <elena.reshetova@intel.com>,
+        <linux-kernel@vger.kernel.org>
+References: <1488531326-21271-1-git-send-email-elena.reshetova@intel.com>
+CC: <linux-fsdevel@vger.kernel.org>, <linux-btrfs@vger.kernel.org>,
+        <peterz@infradead.org>, <gregkh@linuxfoundation.org>, <jbacik@fb.com>,
+        <clm@fb.com>, <dsterba@suse.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <e703ca39-fd38-7b1d-eb40-d7c9fee0df2c@cn.fujitsu.com>
+Date: Mon, 6 Mar 2017 08:27:24 +0800
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart27084655.57BtrpTxDt"; micalg="pgp-sha256"; protocol="application/pgp-signature"
+In-Reply-To: <1488531326-21271-1-git-send-email-elena.reshetova@intel.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart27084655.57BtrpTxDt
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="iso-8859-1"
 
-On Mittwoch, 1. M=E4rz 2017 19:14:07 CET you wrote:
->  In any
-> case, I started btrfs-check on the device itself.
 
-*Sigh*, I had to restart it, because I forgot to redirect to a file and qui=
-te=20
-frankly wasn't expecting this flood of output, but here's a summary of the=
-=20
-output after about 2 days:
+At 03/03/2017 04:55 PM, Elena Reshetova wrote:
+> Now when new refcount_t type and API are finally merged
+> (see include/linux/refcount.h), the following
+> patches convert various refcounters in the btrfs filesystem from atomic_t
+> to refcount_t. By doing this we prevent intentional or accidental
+> underflows or overflows that can led to use-after-free vulnerabilities.
+>
+> The below patches are fully independent and can be cherry-picked separately.
+> Since we convert all kernel subsystems in the same fashion, resulting
+> in about 300 patches, we have to group them for sending at least in some
+> fashion to be manageable. Please excuse the long cc list.
+>
+> These patches have been tested with xfstests by running btrfs-related tests.
+> btrfs debug was enabled, warns on refcount errors, too. No output related to
+> refcount errors produced. However, the following errors were during the run:
+>  * tests btrfs/078, btrfs/114, btrfs/115, no errors anywhere in dmesg, but
+>  process hangs. They all seem to be around qgroup, sometimes error visible
+>  such as qgroup scan failed -4 before it blocks, but not always.
 
-% wc -l btrfs_check_output_20170303.log=20
-1360252 btrfs_check_output_20170303.log
-% grep -v "backref lost" btrfs_check_output_20170303.log | grep -v "check \
-(leaf\|node\) failed" | grep -v "lost its parent" | grep -v "referencer cou=
-nt"=20
-checking extents
-ERROR: block group[3879328546816 1073741824] used 1072840704 but extent ite=
-ms=20
-used 1129164800
-ERROR: block group[4163870130176 1073741824] used 1072259072 but extent ite=
-ms=20
-used 0
-ERROR: block group[4223999672320 1073741824] used 1073664000 but extent ite=
-ms=20
-used 1074188288
-ERROR: block group[4278760505344 1073741824] used 1073377280 but extent ite=
-ms=20
-used 1073901568
-ERROR: block group[4406535782400 1073741824] used 1073627136 but extent ite=
-ms=20
-used 0
-ERROR: extent [3830028140544 4096] referencer bytenr mismatch, wanted:=20
-3830028140544, have: 3826183847936
-% tail btrfs_check_output_20170303.log=20
-ERROR: data extent[3924538445824 4096] backref lost
-ERROR: data extent[3933464903680 4096] backref lost
-ERROR: data extent[3924538531840 4096] backref lost
-ERROR: data extent[3839131480064 4096] backref lost
-ERROR: data extent[3834701750272 4096] backref lost
-ERROR: data extent[3873087918080 4096] backref lost
-ERROR: data extent[3873072283648 4096] backref lost
-ERROR: data extent[3873088090112 8192] backref lost
-ERROR: data extent[3873072287744 4096] backref lost
-ERROR: data extent[3856294449152 4096] backref lost
+-EINTR? That's strange.
 
-That's right, slowly approaching 1.5 million lines of btrfs-check output! =
-=20
-That's *way* more than I ran it the last time this error happened a few wee=
-ks=20
-ago.
+Any blocked process backtrace?
 
-Greetings
-=2D-=20
-Marc Joliet
-=2D-
-"People who think they know everything really annoy those of us who know we
-don't" - Bjarne Stroustrup
+>  * test btrfs/104 dmesg has additional error output:
+>  BTRFS warning (device vdc): qgroup 258 reserved space underflow, have: 0,
+>  to free: 4096
 
---nextPart27084655.57BtrpTxDt
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
+Known one, and fixes already sent to mail list while not merged yet:
+https://patchwork.kernel.org/patch/9592765/
 
------BEGIN PGP SIGNATURE-----
+Thanks,
+Qu
 
-iQIzBAABCAAdFiEEax7Ya5gDQFOJHKGQv9DmhiyIePQFAli8pQQACgkQv9DmhiyI
-ePTgVxAApZVIOyq7VZqI1fWHz0oqqlgYinASWeriENryEQiOcRAtrax6qOKDCpo7
-+sH/p+23IOHa+2G7wZl+ZqB7yjTkGDqsABNy8Mj23/4WbcJka/UxysJp1uZrzxpE
-8yAe2YvE9lANaxWDmok+BJGTYw6wVgKeTF2RB45ATZoQ5TfB9vZBfOanvZCfj1Dv
-zrvQ9nlFfpS7/Yqv/l9wFCrNLct/Disj4z489ID4TDAJBqfV+IKpL+JjXoOHrIwU
-1anUXsXrTBFg1V3JHdEu4JdkbFhvonVUDN5uMasVgSl5ZsgsDK8m4+SZQjHig9vC
-VwV2cxQ4a4G4i1yyF3synqqs4cynfdNj1t2FhDqD0Otfug+gWCYF6MjcAY5spw1g
-T2UOZz2DK7t9/VyYaEQhejbnBw3GQVpO/M0AI1qBQ1R2BgE6m4In9dfcbZ0ztENS
-YYO1SRN/BK7JLsqKTz6RHJpqu76GMmCCBILlUnut4Y2Tr/t3aesSczzBqmyZmPcW
-RUeD6cWe06fwhZvvm4848ju7dKs5guJ7Q6zEe3JpdvOqWWqCH3nSqz21rjpm5Uju
-P0zfEssRPkxS23XLRtTpgTV0w1nEUPUzlNXYzAdeKqaAunIO54jI4C3TRb+BSyFO
-ti7IKJ7tRm7m+0+sxIo++FprjSci24wQCJFdvDxYw8jp8ylU0rA=
-=+hxW
------END PGP SIGNATURE-----
+>  I tried looking at the code on what causes the failure, but could not figure
+>  it out. It doesn't seem to be related to any refcount changes at least IMO.
+>
+> The above test failures are hard for me to understand and interpreted, but
+> they don't seem to relate to refcount conversions.
+>
+> Elena Reshetova (17):
+>   fs, btrfs: convert btrfs_bio.refs from atomic_t to refcount_t
+>   fs, btrfs: convert btrfs_transaction.use_count from atomic_t to
+>     refcount_t
+>   fs, btrfs: convert extent_map.refs from atomic_t to refcount_t
+>   fs, btrfs: convert btrfs_ordered_extent.refs from atomic_t to
+>     refcount_t
+>   fs, btrfs: convert btrfs_caching_control.count from atomic_t to
+>     refcount_t
+>   fs, btrfs: convert btrfs_delayed_ref_node.refs from atomic_t to
+>     refcount_t
+>   fs, btrfs: convert btrfs_delayed_node.refs from atomic_t to refcount_t
+>   fs, btrfs: convert btrfs_delayed_item.refs from atomic_t to refcount_t
+>   fs, btrfs: convert btrfs_root.refs from atomic_t to refcount_t
+>   fs, btrfs: convert extent_state.refs from atomic_t to refcount_t
+>   fs, btrfs: convert compressed_bio.pending_bios from atomic_t to
+>     refcount_t
+>   fs, btrfs: convert scrub_recover.refs from atomic_t to refcount_t
+>   fs, btrfs: convert scrub_page.refs from atomic_t to refcount_t
+>   fs, btrfs: convert scrub_block.refs from atomic_t to refcount_t
+>   fs, btrfs: convert scrub_parity.refs from atomic_t to refcount_t
+>   fs, btrfs: convert scrub_ctx.refs from atomic_t to refcount_t
+>   fs, btrfs: convert btrfs_raid_bio.refs from atomic_t to refcount_t
+>
+>  fs/btrfs/backref.c           |  2 +-
+>  fs/btrfs/compression.c       | 18 ++++++++---------
+>  fs/btrfs/ctree.h             |  5 +++--
+>  fs/btrfs/delayed-inode.c     | 46 ++++++++++++++++++++++----------------------
+>  fs/btrfs/delayed-inode.h     |  5 +++--
+>  fs/btrfs/delayed-ref.c       |  8 ++++----
+>  fs/btrfs/delayed-ref.h       |  8 +++++---
+>  fs/btrfs/disk-io.c           |  6 +++---
+>  fs/btrfs/disk-io.h           |  4 ++--
+>  fs/btrfs/extent-tree.c       | 20 +++++++++----------
+>  fs/btrfs/extent_io.c         | 18 ++++++++---------
+>  fs/btrfs/extent_io.h         |  3 ++-
+>  fs/btrfs/extent_map.c        | 10 +++++-----
+>  fs/btrfs/extent_map.h        |  3 ++-
+>  fs/btrfs/ordered-data.c      | 20 +++++++++----------
+>  fs/btrfs/ordered-data.h      |  2 +-
+>  fs/btrfs/raid56.c            | 19 +++++++++---------
+>  fs/btrfs/scrub.c             | 42 ++++++++++++++++++++--------------------
+>  fs/btrfs/transaction.c       | 20 +++++++++----------
+>  fs/btrfs/transaction.h       |  3 ++-
+>  fs/btrfs/tree-log.c          |  2 +-
+>  fs/btrfs/volumes.c           | 10 +++++-----
+>  fs/btrfs/volumes.h           |  2 +-
+>  include/trace/events/btrfs.h |  4 ++--
+>  24 files changed, 143 insertions(+), 137 deletions(-)
+>
 
---nextPart27084655.57BtrpTxDt--
 

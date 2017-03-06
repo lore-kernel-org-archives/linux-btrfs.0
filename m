@@ -1,126 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:29707 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1753942AbdCFJ2i (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Mar 2017 04:28:38 -0500
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <lists@colorremedies.com>
-Subject: [PATCH v2 4/6] btrfs: Allow barrier_all_devices to do chunk level device check
-Date: Mon, 6 Mar 2017 16:58:53 +0800
-Message-ID: <20170306085855.11403-5-quwenruo@cn.fujitsu.com>
+Received: from demfloro.ru ([188.166.123.212]:34040 "EHLO demfloro.ru"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753037AbdCFTBT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 6 Mar 2017 14:01:19 -0500
+Received: from [2001:470:28:88::100] (helo=fire)
+        by demfloro.ru with esmtpsa (TLSv1.2:ECDHE-RSA-AES256-GCM-SHA384:256)
+        (Exim 4.88)
+        (envelope-from <demfloro@demfloro.ru>)
+        id 1ckxhI-0001RF-MO
+        for linux-btrfs@vger.kernel.org; Mon, 06 Mar 2017 18:49:29 +0000
+Date: Mon, 6 Mar 2017 21:49:16 +0300
+From: Dmitrii Tcvetkov <demfloro@demfloro.ru>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 0/6] Chunk level degradable check
+Message-ID: <20170306214916.23c6fd20@fire>
 In-Reply-To: <20170306085855.11403-1-quwenruo@cn.fujitsu.com>
 References: <20170306085855.11403-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The last user of num_tolerated_disk_barrier_failures is
-barrier_all_devices().
-But it's can be easily changed to new per-chunk degradable check
-framework.
+On Mon, 6 Mar 2017 16:58:49 +0800
+Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
 
-Now btrfs_device will have two extra members, representing send/wait
-error, set at write_dev_flush() time.
-With these 2 new members, btrfs_check_rw_degradable() can check if the
-fs is still OK when the fs is committed to disk.
+> Btrfs currently uses num_tolerated_disk_barrier_failures to do global
+> check for tolerated missing device.
+> 
+> Although the one-size-fit-all solution is quite safe, it's too strict
+> if data and metadata has different duplication level.
+> 
+> For example, if one use Single data and RAID1 metadata for 2 disks, it
+> means any missing device will make the fs unable to be degraded
+> mounted.
+> 
+> But in fact, some times all single chunks may be in the existing
+> device and in that case, we should allow it to be rw degraded mounted.
+> 
+> Such case can be easily reproduced using the following script:
+>  # mkfs.btrfs -f -m raid1 -d sing /dev/sdb /dev/sdc
+>  # wipefs -f /dev/sdc
+>  # mount /dev/sdb -o degraded,rw
+> 
+> If using btrfs-debug-tree to check /dev/sdb, one should find that the
+> data chunk is only in sdb, so in fact it should allow degraded mount.
+> 
+> This patchset will introduce a new per-chunk degradable check for
+> btrfs, allow above case to succeed, and it's quite small anyway.
+> 
+> And enhance kernel error message for missing device, at least kernel
+> can know what's making mount failed, other than meaningless
+> "failed to read system chunk/chunk tree -5".
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- fs/btrfs/disk-io.c | 15 +++++++--------
- fs/btrfs/volumes.c |  4 +++-
- fs/btrfs/volumes.h |  4 ++++
- 3 files changed, 14 insertions(+), 9 deletions(-)
+Hello,
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index c26b8a0b121c..f596bd130524 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3569,17 +3569,17 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
- {
- 	struct list_head *head;
- 	struct btrfs_device *dev;
--	int errors_send = 0;
--	int errors_wait = 0;
- 	int ret;
- 
- 	/* send down all the barriers */
- 	head = &info->fs_devices->devices;
- 	list_for_each_entry_rcu(dev, head, dev_list) {
-+		dev->err_wait = false;
-+		dev->err_send = false;
- 		if (dev->missing)
- 			continue;
- 		if (!dev->bdev) {
--			errors_send++;
-+			dev->err_send = true;
- 			continue;
- 		}
- 		if (!dev->in_fs_metadata || !dev->writeable)
-@@ -3587,7 +3587,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
- 
- 		ret = write_dev_flush(dev, 0);
- 		if (ret)
--			errors_send++;
-+			dev->err_send = true;
- 	}
- 
- 	/* wait for all the barriers */
-@@ -3595,7 +3595,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
- 		if (dev->missing)
- 			continue;
- 		if (!dev->bdev) {
--			errors_wait++;
-+			dev->err_wait = true;
- 			continue;
- 		}
- 		if (!dev->in_fs_metadata || !dev->writeable)
-@@ -3603,10 +3603,9 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
- 
- 		ret = write_dev_flush(dev, 1);
- 		if (ret)
--			errors_wait++;
-+			dev->err_wait = true;
- 	}
--	if (errors_send > info->num_tolerated_disk_barrier_failures ||
--	    errors_wait > info->num_tolerated_disk_barrier_failures)
-+	if (!btrfs_check_rw_degradable(info))
- 		return -EIO;
- 	return 0;
- }
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index dd9dd94d7043..729cbd0d2b60 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6796,7 +6796,9 @@ bool btrfs_check_rw_degradable(struct btrfs_fs_info *fs_info)
- 			btrfs_get_num_tolerated_disk_barrier_failures(
- 					map->type);
- 		for (i = 0; i < map->num_stripes; i++) {
--			if (map->stripes[i].dev->missing)
-+			if (map->stripes[i].dev->missing ||
-+			    map->stripes[i].dev->err_wait ||
-+			    map->stripes[i].dev->err_send)
- 				missing++;
- 		}
- 		if (missing > max_tolerated) {
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index db1b5ef479cf..112fccacdabc 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -75,6 +75,10 @@ struct btrfs_device {
- 	int can_discard;
- 	int is_tgtdev_for_dev_replace;
- 
-+	/* If this devices fails to send/wait dev flush */
-+	bool err_send;
-+	bool err_wait;
-+
- #ifdef __BTRFS_NEED_DEVICE_DATA_ORDERED
- 	seqcount_t data_seqcount;
- #endif
--- 
-2.12.0
+Tested the patchset for raid1 and raid10. Successfully allows
+degraded mount with single chunks on the filesystems without one drive.
 
-
-
+Feel free to add Tested-By: Dmitrii Tcvetkov <demfloro@demfloro.ru>

@@ -1,15 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:20450 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753330AbdCFTXD (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Mar 2017 14:23:03 -0500
-Date: Mon, 6 Mar 2017 11:21:28 -0800
-From: Liu Bo <bo.li.liu@oracle.com>
+Received: from mail-pg0-f51.google.com ([74.125.83.51]:32950 "EHLO
+        mail-pg0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753184AbdCFTZc (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Mar 2017 14:25:32 -0500
+Received: by mail-pg0-f51.google.com with SMTP id 25so69601293pgy.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 06 Mar 2017 11:23:44 -0800 (PST)
+Date: Mon, 6 Mar 2017 10:26:41 -0800
+From: Omar Sandoval <osandov@osandov.com>
 To: Goldwyn Rodrigues <rgoldwyn@suse.de>
 Cc: linux-btrfs@vger.kernel.org, Goldwyn Rodrigues <rgoldwyn@suse.com>
 Subject: Re: [PATCH] btrfs: Change s_flags instead of returning -EBUSY
-Message-ID: <20170306192128.GA13180@lim.localdomain>
-Reply-To: bo.li.liu@oracle.com
+Message-ID: <20170306182641.GB16893@vader.DHCP.thefacebook.com>
 References: <20170304183322.32346-1-rgoldwyn@suse.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
@@ -58,13 +59,6 @@ On Sat, Mar 04, 2017 at 12:33:22PM -0600, Goldwyn Rodrigues wrote:
 > flags and let mount continue as it is. This will allow the first mount attempt
 > to succeed, and we can get rid of the re-kern_mount() and remount sequence
 > altogether.
-
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
-
-Thanks,
-
--liubo
-
 > 
 > Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 > ---
@@ -120,6 +114,9 @@ Thanks,
 > -		if ((flags ^ s->s_flags) & MS_RDONLY)
 > -			error = -EBUSY;
 > +		/* If s_flags is MS_RDONLY and flags is rw (~MS_RDONLY)
+
+Blech, keep that gross comment style under net/.
+
 > +		 * we need to reset s_flags so that sb can be writable
 > +		 * since we can be called from mount_subvol().
 > +		 * The vfsmount manages to preserve the ro/rw flags
@@ -129,6 +126,11 @@ Thanks,
 > +		 */
 > +		if ((s->s_flags & MS_RDONLY) && !(flags & MS_RDONLY))
 > +			s->s_flags &= ~MS_RDONLY;
+
+Hm, this doesn't seem right. btrfs_remount() does a bunch of other
+important checks (e.g., BTRFS_FS_STATE_ERROR) that you're throwing away
+by doing it this way.
+
 >  	} else {
 >  		snprintf(s->s_id, sizeof(s->s_id), "%pg", bdev);
 >  		btrfs_sb(s)->bdev_holder = fs_type;

@@ -1,120 +1,138 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:14102 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752810AbdCFEJl (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Mar 2017 23:09:41 -0500
-Subject: Re: [PATCH 00/17] fs, btrfs refcount conversions
-To: Elena Reshetova <elena.reshetova@intel.com>,
-        <linux-kernel@vger.kernel.org>
-References: <1488531326-21271-1-git-send-email-elena.reshetova@intel.com>
-CC: <linux-fsdevel@vger.kernel.org>, <linux-btrfs@vger.kernel.org>,
-        <peterz@infradead.org>, <gregkh@linuxfoundation.org>, <jbacik@fb.com>,
-        <clm@fb.com>, <dsterba@suse.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <7849485b-89a5-485b-dfcb-e6c8f6ef0aa0@cn.fujitsu.com>
-Date: Mon, 6 Mar 2017 12:05:29 +0800
+Received: from mout.gmx.net ([212.227.17.21]:51198 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752930AbdCFLUr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 6 Mar 2017 06:20:47 -0500
+Received: from thetick.localnet ([93.181.44.247]) by mail.gmx.com (mrgmx103
+ [212.227.17.168]) with ESMTPSA (Nemesis) id 0LmrZY-1c46re1aXM-00h8fI for
+ <linux-btrfs@vger.kernel.org>; Mon, 06 Mar 2017 12:19:06 +0100
+From: Marc Joliet <marcec@gmx.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: [4.7.2] btrfs_run_delayed_refs:2963: errno=-17 Object already exists
+Date: Mon, 06 Mar 2017 12:18:59 +0100
+Message-ID: <3265560.KVp5lIrk4g@thetick>
+In-Reply-To: <2713353.CA3Dyp7XXF@thetick>
+References: <20160828152908.6e1325b5@jupiter.sol.kaishome.de> <14737660.8idzxVKBRv@thetick> <2713353.CA3Dyp7XXF@thetick>
 MIME-Version: 1.0
-In-Reply-To: <1488531326-21271-1-git-send-email-elena.reshetova@intel.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: multipart/signed; boundary="nextPart1667547.W5pzVBQUSF"; micalg="pgp-sha256"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+--nextPart1667547.W5pzVBQUSF
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="iso-8859-1"
 
+On Montag, 6. M=E4rz 2017 00:53:40 CET Marc Joliet wrote:
+> On Mittwoch, 1. M=E4rz 2017 19:14:07 CET you wrote:
+> >  In any
+> >=20
+> > case, I started btrfs-check on the device itself.
+>=20
+> *Sigh*, I had to restart it, because I forgot to redirect to a file and
+> quite frankly wasn't expecting this flood of output, but here's a summary
+> of the output after about 2 days:
+>=20
+[snip old output]
 
-At 03/03/2017 04:55 PM, Elena Reshetova wrote:
-> Now when new refcount_t type and API are finally merged
-> (see include/linux/refcount.h), the following
-> patches convert various refcounters in the btrfs filesystem from atomic_t
-> to refcount_t. By doing this we prevent intentional or accidental
-> underflows or overflows that can led to use-after-free vulnerabilities.
->
-> The below patches are fully independent and can be cherry-picked separately.
-> Since we convert all kernel subsystems in the same fashion, resulting
-> in about 300 patches, we have to group them for sending at least in some
-> fashion to be manageable. Please excuse the long cc list.
->
-> These patches have been tested with xfstests by running btrfs-related tests.
-> btrfs debug was enabled, warns on refcount errors, too. No output related to
-> refcount errors produced. However, the following errors were during the run:
->  * tests btrfs/078, btrfs/114, btrfs/115, no errors anywhere in dmesg, but
->  process hangs. They all seem to be around qgroup, sometimes error visible
->  such as qgroup scan failed -4 before it blocks, but not always.
+OK, it finished last night.  Here's the summary again:
 
-How reproducible of the hang?
+% wc -l btrfs_check_output_20170303.log=20
+3028222 btrfs_check_output_20170303.log
+% grep -v "backref lost" btrfs_check_output_20170303.log | grep -v "check \
+(leaf\|node\) failed" | grep -v "lost its parent" | grep -v "referencer cou=
+nt"=20
+checking extents
+ERROR: block group[3879328546816 1073741824] used 1072840704 but extent ite=
+ms=20
+used 1129164800
+ERROR: block group[4163870130176 1073741824] used 1072259072 but extent ite=
+ms=20
+used 0
+ERROR: block group[4223999672320 1073741824] used 1073664000 but extent ite=
+ms=20
+used 1074188288
+ERROR: block group[4278760505344 1073741824] used 1073377280 but extent ite=
+ms=20
+used 1073901568
+ERROR: block group[4406535782400 1073741824] used 1073627136 but extent ite=
+ms=20
+used 0
+ERROR: extent [3830028140544 4096] referencer bytenr mismatch, wanted:=20
+3830028140544, have: 3826183847936
+ERROR: errors found in extent allocation tree or chunk allocation
+checking free space cache
+checking fs roots
+Checking filesystem on /dev/sdb2
+UUID: f97b3cda-15e8-418b-bb9b-235391ef2a38
+found 892572778496 bytes used err is -5
+total csum bytes: 860790216
+total tree bytes: 36906336256
+total fs tree bytes: 34551476224
+total extent tree bytes: 1230610432
+btree space waste bytes: 7446885892
+file data blocks allocated: 16359581663232
+ referenced 2358137831424
 
-I also see the -EINTR output, but that seems to be designed for 
-btrfs/11[45].
+> That's right, slowly approaching 1.5 million lines of btrfs-check output!
+> That's *way* more than I ran it the last time this error happened a few
+> weeks ago.
 
-btrfs/078 is unrelated to qgroup, and all these three test pass in my 
-test environment, which is v4.11-rc1 with your patches applied.
+As can be seen above, that ballooned to over 3 million lines.  Since the=20
+output is 4.2 MB, even after XZ compression, I put it up on my Dropbox, jus=
+t=20
+in case it's interesting to anybody:
 
-I ran these 3 tests in a row with default and space_cache=v2 mount 
-options, and 5 times for each mount option, no hang at all.
+https://www.dropbox.com/s/h6ftqpygfr4vsks/btrfs_check_output_20170303.log.x=
+z?
+dl=3D0
 
-It would help much if more info can be provided, from blocked process 
-backtrace to test mount option to base commit.
+Since this is my backup drive, and the second time within a month that it h=
+ad=20
+problems like this, *and* I've got both the btrfs-image dump and btrfs-chec=
+k=20
+output, I'm going to go ahead and reformat, so that my three computers are=
+=20
+finally backed up again.
 
-Thanks,
-Qu
+Oh, and for what it's worth, I did test against a 4.8 kernel, and pretty mu=
+ch=20
+immediately got the "forced RO" error, just like with 4.9.  I didn't try=20
+anything older (or newer).
 
->  * test btrfs/104 dmesg has additional error output:
->  BTRFS warning (device vdc): qgroup 258 reserved space underflow, have: 0,
->  to free: 4096
->  I tried looking at the code on what causes the failure, but could not figure
->  it out. It doesn't seem to be related to any refcount changes at least IMO.
->
-> The above test failures are hard for me to understand and interpreted, but
-> they don't seem to relate to refcount conversions.
->
-> Elena Reshetova (17):
->   fs, btrfs: convert btrfs_bio.refs from atomic_t to refcount_t
->   fs, btrfs: convert btrfs_transaction.use_count from atomic_t to
->     refcount_t
->   fs, btrfs: convert extent_map.refs from atomic_t to refcount_t
->   fs, btrfs: convert btrfs_ordered_extent.refs from atomic_t to
->     refcount_t
->   fs, btrfs: convert btrfs_caching_control.count from atomic_t to
->     refcount_t
->   fs, btrfs: convert btrfs_delayed_ref_node.refs from atomic_t to
->     refcount_t
->   fs, btrfs: convert btrfs_delayed_node.refs from atomic_t to refcount_t
->   fs, btrfs: convert btrfs_delayed_item.refs from atomic_t to refcount_t
->   fs, btrfs: convert btrfs_root.refs from atomic_t to refcount_t
->   fs, btrfs: convert extent_state.refs from atomic_t to refcount_t
->   fs, btrfs: convert compressed_bio.pending_bios from atomic_t to
->     refcount_t
->   fs, btrfs: convert scrub_recover.refs from atomic_t to refcount_t
->   fs, btrfs: convert scrub_page.refs from atomic_t to refcount_t
->   fs, btrfs: convert scrub_block.refs from atomic_t to refcount_t
->   fs, btrfs: convert scrub_parity.refs from atomic_t to refcount_t
->   fs, btrfs: convert scrub_ctx.refs from atomic_t to refcount_t
->   fs, btrfs: convert btrfs_raid_bio.refs from atomic_t to refcount_t
->
->  fs/btrfs/backref.c           |  2 +-
->  fs/btrfs/compression.c       | 18 ++++++++---------
->  fs/btrfs/ctree.h             |  5 +++--
->  fs/btrfs/delayed-inode.c     | 46 ++++++++++++++++++++++----------------------
->  fs/btrfs/delayed-inode.h     |  5 +++--
->  fs/btrfs/delayed-ref.c       |  8 ++++----
->  fs/btrfs/delayed-ref.h       |  8 +++++---
->  fs/btrfs/disk-io.c           |  6 +++---
->  fs/btrfs/disk-io.h           |  4 ++--
->  fs/btrfs/extent-tree.c       | 20 +++++++++----------
->  fs/btrfs/extent_io.c         | 18 ++++++++---------
->  fs/btrfs/extent_io.h         |  3 ++-
->  fs/btrfs/extent_map.c        | 10 +++++-----
->  fs/btrfs/extent_map.h        |  3 ++-
->  fs/btrfs/ordered-data.c      | 20 +++++++++----------
->  fs/btrfs/ordered-data.h      |  2 +-
->  fs/btrfs/raid56.c            | 19 +++++++++---------
->  fs/btrfs/scrub.c             | 42 ++++++++++++++++++++--------------------
->  fs/btrfs/transaction.c       | 20 +++++++++----------
->  fs/btrfs/transaction.h       |  3 ++-
->  fs/btrfs/tree-log.c          |  2 +-
->  fs/btrfs/volumes.c           | 10 +++++-----
->  fs/btrfs/volumes.h           |  2 +-
->  include/trace/events/btrfs.h |  4 ++--
->  24 files changed, 143 insertions(+), 137 deletions(-)
->
+As a last step, I'll probably collect all information I have and post it to=
+=20
+bugzilla when I have a chance, since others might hit it, too (Kai did befo=
+re=20
+me, after all).
 
+Greetings
+=2D-=20
+Marc Joliet
+=2D-
+"People who think they know everything really annoy those of us who know we
+don't" - Bjarne Stroustrup
+
+--nextPart1667547.W5pzVBQUSF
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAABCAAdFiEEax7Ya5gDQFOJHKGQv9DmhiyIePQFAli9RaMACgkQv9DmhiyI
+ePRPeg//eszkdjlpsWRBXGHOHvQ9T/90j/fcrxWbt56/nwH0fZuJ3hTYqkOKJTpD
+3O6Honbp0nryDhgBFIUrdcUiqkhgmMtlP1mYdb+G6Y1k0ekdVmXiQcD5ZebyQ5cx
+6HOOQpTAxpCuRP+DlEH3Y4lH3LmSX8gpoun1/8b8nc52oB3h/6n/De2sA8/6wPn5
+biqPwtPY2a6WZ75i3qtCxLnI7YCHSd5aRp84yjSkgxEvVCfeaEY/4LmVXjC9mD3g
+aSyuB+JRlaHe00u1pVFQEc/IPgaNKu/uJeoUgQXuyqsobEWfNYYnzK3u0RehYLiX
+HqG52Y1Er+80u4cFk/m7tf0TET2GRT1PtEY+azsZQZltMgpZxpbrLwQIsJVllGec
+/Qv2kQ9uk3rMGuaio2u2pozMdtEMlUAnsK4gYio95VAXib307SOvV/nUsOLisNR7
++3uQE16Ek72y1Tzy2652dZcP2ai6baplJP3eQx1Tsqdl3AHbSXuRGie+zUpuBIni
+s1+dnPoYrhBjNxcIXd9Sdjit1FiRGY1m5AUneslTuaT74eV9eUxWxDyyD37Vd7O4
+TqZ96f76zjgNClSX/g8mXHxJ2ORsSjEe2NmV/p8PvwB478TeLTHOvgTDls4+z3hU
+hYZxMs68F+PsqU8+TNU0bdycwh6+xq3+S3Z2WMmJF5JPBwRdutg=
+=Uhy5
+-----END PGP SIGNATURE-----
+
+--nextPart1667547.W5pzVBQUSF--
 

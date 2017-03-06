@@ -1,213 +1,120 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:20618 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:14102 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752543AbdCFDgY (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Mar 2017 22:36:24 -0500
-Subject: Re: [PATCH v3] btrfs: relocation: Enhance kernel error output for
- relocation
-To: <linux-btrfs@vger.kernel.org>
-References: <20170215013905.17677-1-quwenruo@cn.fujitsu.com>
-CC: <bo.li.liu@oracle.com>, <fdmanana@gmail.com>
+        with ESMTP id S1752810AbdCFEJl (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Mar 2017 23:09:41 -0500
+Subject: Re: [PATCH 00/17] fs, btrfs refcount conversions
+To: Elena Reshetova <elena.reshetova@intel.com>,
+        <linux-kernel@vger.kernel.org>
+References: <1488531326-21271-1-git-send-email-elena.reshetova@intel.com>
+CC: <linux-fsdevel@vger.kernel.org>, <linux-btrfs@vger.kernel.org>,
+        <peterz@infradead.org>, <gregkh@linuxfoundation.org>, <jbacik@fb.com>,
+        <clm@fb.com>, <dsterba@suse.com>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <2c28e4a0-b3fd-cd88-4124-f2e937c2185a@cn.fujitsu.com>
-Date: Mon, 6 Mar 2017 11:36:06 +0800
+Message-ID: <7849485b-89a5-485b-dfcb-e6c8f6ef0aa0@cn.fujitsu.com>
+Date: Mon, 6 Mar 2017 12:05:29 +0800
 MIME-Version: 1.0
-In-Reply-To: <20170215013905.17677-1-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1488531326-21271-1-git-send-email-elena.reshetova@intel.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Any comment on this patch?
+
+
+At 03/03/2017 04:55 PM, Elena Reshetova wrote:
+> Now when new refcount_t type and API are finally merged
+> (see include/linux/refcount.h), the following
+> patches convert various refcounters in the btrfs filesystem from atomic_t
+> to refcount_t. By doing this we prevent intentional or accidental
+> underflows or overflows that can led to use-after-free vulnerabilities.
+>
+> The below patches are fully independent and can be cherry-picked separately.
+> Since we convert all kernel subsystems in the same fashion, resulting
+> in about 300 patches, we have to group them for sending at least in some
+> fashion to be manageable. Please excuse the long cc list.
+>
+> These patches have been tested with xfstests by running btrfs-related tests.
+> btrfs debug was enabled, warns on refcount errors, too. No output related to
+> refcount errors produced. However, the following errors were during the run:
+>  * tests btrfs/078, btrfs/114, btrfs/115, no errors anywhere in dmesg, but
+>  process hangs. They all seem to be around qgroup, sometimes error visible
+>  such as qgroup scan failed -4 before it blocks, but not always.
+
+How reproducible of the hang?
+
+I also see the -EINTR output, but that seems to be designed for 
+btrfs/11[45].
+
+btrfs/078 is unrelated to qgroup, and all these three test pass in my 
+test environment, which is v4.11-rc1 with your patches applied.
+
+I ran these 3 tests in a row with default and space_cache=v2 mount 
+options, and 5 times for each mount option, no hang at all.
+
+It would help much if more info can be provided, from blocked process 
+backtrace to test mount option to base commit.
 
 Thanks,
 Qu
 
-At 02/15/2017 09:39 AM, Qu Wenruo wrote:
-> When balance(relocation) fails, btrfs-progs will report like:
+>  * test btrfs/104 dmesg has additional error output:
+>  BTRFS warning (device vdc): qgroup 258 reserved space underflow, have: 0,
+>  to free: 4096
+>  I tried looking at the code on what causes the failure, but could not figure
+>  it out. It doesn't seem to be related to any refcount changes at least IMO.
 >
-> ERROR: error during balancing '/mnt/scratch': Input/output error
-> There may be more info in syslog - try dmesg | tail
+> The above test failures are hard for me to understand and interpreted, but
+> they don't seem to relate to refcount conversions.
 >
-> However kernel can't provide may useful info in many cases to locate the
-> problem.
+> Elena Reshetova (17):
+>   fs, btrfs: convert btrfs_bio.refs from atomic_t to refcount_t
+>   fs, btrfs: convert btrfs_transaction.use_count from atomic_t to
+>     refcount_t
+>   fs, btrfs: convert extent_map.refs from atomic_t to refcount_t
+>   fs, btrfs: convert btrfs_ordered_extent.refs from atomic_t to
+>     refcount_t
+>   fs, btrfs: convert btrfs_caching_control.count from atomic_t to
+>     refcount_t
+>   fs, btrfs: convert btrfs_delayed_ref_node.refs from atomic_t to
+>     refcount_t
+>   fs, btrfs: convert btrfs_delayed_node.refs from atomic_t to refcount_t
+>   fs, btrfs: convert btrfs_delayed_item.refs from atomic_t to refcount_t
+>   fs, btrfs: convert btrfs_root.refs from atomic_t to refcount_t
+>   fs, btrfs: convert extent_state.refs from atomic_t to refcount_t
+>   fs, btrfs: convert compressed_bio.pending_bios from atomic_t to
+>     refcount_t
+>   fs, btrfs: convert scrub_recover.refs from atomic_t to refcount_t
+>   fs, btrfs: convert scrub_page.refs from atomic_t to refcount_t
+>   fs, btrfs: convert scrub_block.refs from atomic_t to refcount_t
+>   fs, btrfs: convert scrub_parity.refs from atomic_t to refcount_t
+>   fs, btrfs: convert scrub_ctx.refs from atomic_t to refcount_t
+>   fs, btrfs: convert btrfs_raid_bio.refs from atomic_t to refcount_t
 >
-> This patch will add error messages in relocation to help user and
-> developer to locate the problem.
->
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> ---
-> v2:
->   Fix typo where 'err' and 'ret' are used wrong.
-> v3:
->   Add space between error number and parenthesis of error string
->   Fix gramma errors.
-> ---
->  fs/btrfs/relocation.c | 61 +++++++++++++++++++++++++++++++++++++++++++++++----
->  1 file changed, 57 insertions(+), 4 deletions(-)
->
-> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-> index 379711048fb0..6de5800e17bc 100644
-> --- a/fs/btrfs/relocation.c
-> +++ b/fs/btrfs/relocation.c
-> @@ -4011,6 +4011,8 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
->  					rc->block_rsv, rc->block_rsv->size,
->  					BTRFS_RESERVE_FLUSH_ALL);
->  		if (ret) {
-> +			btrfs_err(fs_info, "failed to reserve space: %d (%s)",
-> +				  ret, btrfs_decode_error(ret));
->  			err = ret;
->  			break;
->  		}
-> @@ -4019,6 +4021,9 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
->  		if (IS_ERR(trans)) {
->  			err = PTR_ERR(trans);
->  			trans = NULL;
-> +			btrfs_err(fs_info,
-> +				"failed to start transaction: %d (%s)",
-> +				  err, btrfs_decode_error(err));
->  			break;
->  		}
->  restart:
-> @@ -4028,8 +4033,12 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
->  		}
->
->  		ret = find_next_extent(rc, path, &key);
-> -		if (ret < 0)
-> +		if (ret < 0) {
-> +			btrfs_err(fs_info,
-> +				"failed to find next extent: %d (%s)",
-> +				  ret, btrfs_decode_error(ret));
->  			err = ret;
-> +		}
->  		if (ret != 0)
->  			break;
->
-> @@ -4081,9 +4090,17 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
->
->  		if (flags & BTRFS_EXTENT_FLAG_TREE_BLOCK) {
->  			ret = add_tree_block(rc, &key, path, &blocks);
-> +			if (ret < 0)
-> +				btrfs_err(fs_info,
-> +					"failed to record tree block: %d (%s)",
-> +					  ret, btrfs_decode_error(ret));
->  		} else if (rc->stage == UPDATE_DATA_PTRS &&
->  			   (flags & BTRFS_EXTENT_FLAG_DATA)) {
->  			ret = add_data_references(rc, &key, path, &blocks);
-> +			if (ret < 0)
-> +				btrfs_err(fs_info,
-> +					"failed to record data extent: %d (%s)",
-> +					  ret, btrfs_decode_error(ret));
->  		} else {
->  			btrfs_release_path(path);
->  			ret = 0;
-> @@ -4103,6 +4120,9 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
->  				rc->backref_cache.last_trans = trans->transid - 1;
->
->  				if (ret != -EAGAIN) {
-> +					btrfs_err(fs_info,
-> +				"failed to relocate tree blocks: %d (%s)",
-> +						  ret, btrfs_decode_error(ret));
->  					err = ret;
->  					break;
->  				}
-> @@ -4121,6 +4141,9 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
->  			ret = relocate_data_extent(rc->data_inode,
->  						   &key, &rc->cluster);
->  			if (ret < 0) {
-> +				btrfs_err(fs_info,
-> +				"failed to relocate data extent: %d (%s)",
-> +					  ret, btrfs_decode_error(ret));
->  				err = ret;
->  				break;
->  			}
-> @@ -4147,8 +4170,12 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
->  	if (!err) {
->  		ret = relocate_file_extent_cluster(rc->data_inode,
->  						   &rc->cluster);
-> -		if (ret < 0)
-> +		if (ret < 0) {
-> +			btrfs_err(fs_info,
-> +			"failed to relocate file extent cluster: %d (%s)",
-> +				  ret, btrfs_decode_error(ret));
->  			err = ret;
-> +		}
->  	}
->
->  	rc->create_reloc_tree = 0;
-> @@ -4158,6 +4185,10 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
->  	btrfs_block_rsv_release(fs_info, rc->block_rsv, (u64)-1);
->
->  	err = prepare_to_merge(rc, err);
-> +	if (err < 0)
-> +		btrfs_err(fs_info,
-> +		"failed to prepare merging of relocation trees: %d (%s)",
-> +			  err, btrfs_decode_error(err));
->
->  	merge_reloc_roots(rc);
->
-> @@ -4336,6 +4367,9 @@ int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start)
->
->  	ret = btrfs_inc_block_group_ro(extent_root, rc->block_group);
->  	if (ret) {
-> +		btrfs_err(fs_info,
-> +			"failed to set block group read-only: %d (%s)",
-> +			  ret, btrfs_decode_error(ret));
->  		err = ret;
->  		goto out;
->  	}
-> @@ -4351,10 +4385,19 @@ int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start)
->  					path);
->  	btrfs_free_path(path);
->
-> -	if (!IS_ERR(inode))
-> +	if (!IS_ERR(inode)) {
->  		ret = delete_block_group_cache(fs_info, rc->block_group, inode, 0);
-> -	else
-> +		if (ret < 0)
-> +			btrfs_err(fs_info,
-> +				"failed to delete block group cache: %d (%s)",
-> +				  ret, btrfs_decode_error(ret));
-> +	} else {
->  		ret = PTR_ERR(inode);
-> +		if (ret < 0 && ret != -ENOENT)
-> +			btrfs_err(fs_info,
-> +				"failed to lookup free space inode: %d (%s)",
-> +				  ret, btrfs_decode_error(ret));
-> +	}
->
->  	if (ret && ret != -ENOENT) {
->  		err = ret;
-> @@ -4364,6 +4407,8 @@ int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start)
->  	rc->data_inode = create_reloc_inode(fs_info, rc->block_group);
->  	if (IS_ERR(rc->data_inode)) {
->  		err = PTR_ERR(rc->data_inode);
-> +		btrfs_err(fs_info, "failed to create relocation inode: %d (%s)",
-> +			  err, btrfs_decode_error(err));
->  		rc->data_inode = NULL;
->  		goto out;
->  	}
-> @@ -4394,6 +4439,9 @@ int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start)
->  			ret = btrfs_wait_ordered_range(rc->data_inode, 0,
->  						       (u64)-1);
->  			if (ret) {
-> +				btrfs_err(fs_info,
-> +					"failed to wait ordered range: %d (%s)",
-> +					  ret, btrfs_decode_error(ret));
->  				err = ret;
->  				goto out;
->  			}
-> @@ -4407,6 +4455,11 @@ int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start)
->  	WARN_ON(rc->block_group->reserved > 0);
->  	WARN_ON(btrfs_block_group_used(&rc->block_group->item) > 0);
->  out:
-> +	if (err < 0)
-> +		btrfs_err(fs_info,
-> +			  "failed to relocate block group %llu: %d (%s)",
-> +			  rc->block_group->key.objectid, err,
-> +			  btrfs_decode_error(err));
->  	if (err && rw)
->  		btrfs_dec_block_group_ro(rc->block_group);
->  	iput(rc->data_inode);
+>  fs/btrfs/backref.c           |  2 +-
+>  fs/btrfs/compression.c       | 18 ++++++++---------
+>  fs/btrfs/ctree.h             |  5 +++--
+>  fs/btrfs/delayed-inode.c     | 46 ++++++++++++++++++++++----------------------
+>  fs/btrfs/delayed-inode.h     |  5 +++--
+>  fs/btrfs/delayed-ref.c       |  8 ++++----
+>  fs/btrfs/delayed-ref.h       |  8 +++++---
+>  fs/btrfs/disk-io.c           |  6 +++---
+>  fs/btrfs/disk-io.h           |  4 ++--
+>  fs/btrfs/extent-tree.c       | 20 +++++++++----------
+>  fs/btrfs/extent_io.c         | 18 ++++++++---------
+>  fs/btrfs/extent_io.h         |  3 ++-
+>  fs/btrfs/extent_map.c        | 10 +++++-----
+>  fs/btrfs/extent_map.h        |  3 ++-
+>  fs/btrfs/ordered-data.c      | 20 +++++++++----------
+>  fs/btrfs/ordered-data.h      |  2 +-
+>  fs/btrfs/raid56.c            | 19 +++++++++---------
+>  fs/btrfs/scrub.c             | 42 ++++++++++++++++++++--------------------
+>  fs/btrfs/transaction.c       | 20 +++++++++----------
+>  fs/btrfs/transaction.h       |  3 ++-
+>  fs/btrfs/tree-log.c          |  2 +-
+>  fs/btrfs/volumes.c           | 10 +++++-----
+>  fs/btrfs/volumes.h           |  2 +-
+>  include/trace/events/btrfs.h |  4 ++--
+>  24 files changed, 143 insertions(+), 137 deletions(-)
 >
 
 

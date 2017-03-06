@@ -1,279 +1,262 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1050.oracle.com ([156.151.31.82]:20504 "EHLO
-        userp1050.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933445AbdCHBWH (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Mar 2017 20:22:07 -0500
-Received: from userp1040.oracle.com (userp1040.oracle.com [156.151.31.81])
-        by userp1050.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v281L9xH013124
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 8 Mar 2017 01:21:09 GMT
-Date: Tue, 7 Mar 2017 17:19:41 -0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: fdmanana@kernel.org
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3] Btrfs: fix invalid attempt to free reserved space on
- failure to cow range
-Message-ID: <20170308011940.GK12408@lim.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1488919266-17006-1-git-send-email-fdmanana@kernel.org>
+Received: from mail.kernel.org ([198.145.29.136]:46530 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754152AbdCFX0U (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 6 Mar 2017 18:26:20 -0500
+Received: from mail.kernel.org (localhost [127.0.0.1])
+        by mail.kernel.org (Postfix) with ESMTP id 1138620212
+        for <linux-btrfs@vger.kernel.org>; Mon,  6 Mar 2017 23:18:30 +0000 (UTC)
+Received: from mail-io0-f172.google.com (mail-io0-f172.google.com [209.85.223.172])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id B5C92201FE
+        for <linux-btrfs@vger.kernel.org>; Mon,  6 Mar 2017 23:18:28 +0000 (UTC)
+Received: by mail-io0-f172.google.com with SMTP id z13so80536596iof.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 06 Mar 2017 15:18:28 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1488919266-17006-1-git-send-email-fdmanana@kernel.org>
+In-Reply-To: <20170306025547.1858-2-quwenruo@cn.fujitsu.com>
+References: <20170306025547.1858-1-quwenruo@cn.fujitsu.com> <20170306025547.1858-2-quwenruo@cn.fujitsu.com>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Mon, 6 Mar 2017 23:18:27 +0000
+Message-ID: <CAL3q7H7ckB-enqZSJJY2aSmR3-yKPOS3h-5k6nAAgS_twgRS4g@mail.gmail.com>
+Subject: Re: [PATCH v6 2/2] btrfs: Handle delalloc error correctly to avoid
+ ordered extent hang
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Filipe Manana <fdmanana@suse.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 07, 2017 at 08:41:06PM +0000, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> When attempting to COW a file range (we are starting writeback and doing
-> COW), if we manage to reserve an extent for the range we will write into
-> but fail after reserving it and before creating the respective ordered
-> extent, we end up in an error path where we attempt to decrement the
-> data space's bytes_may_use counter after we already did it while
-> reserving the extent, leading to a warning/trace like the following:
-> 
-> [  847.621524] ------------[ cut here ]------------
-> [  847.625441] WARNING: CPU: 5 PID: 4905 at fs/btrfs/extent-tree.c:4316 btrfs_free_reserved_data_space_noquota+0x60/0x9f [btrfs]
-> [  847.633704] Modules linked in: btrfs crc32c_generic xor raid6_pq acpi_cpufreq i2c_piix4 ppdev psmouse tpm_tis serio_raw pcspkr parport_pc tpm_tis_core i2c_core sg
-> [  847.644616] CPU: 5 PID: 4905 Comm: xfs_io Not tainted 4.10.0-rc8-btrfs-next-37+ #2
-> [  847.648601] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.9.1-0-gb3ef39f-prebuilt.qemu-project.org 04/01/2014
-> [  847.648601] Call Trace:
-> [  847.648601]  dump_stack+0x67/0x90
-> [  847.648601]  __warn+0xc2/0xdd
-> [  847.648601]  warn_slowpath_null+0x1d/0x1f
-> [  847.648601]  btrfs_free_reserved_data_space_noquota+0x60/0x9f [btrfs]
-> [  847.648601]  btrfs_clear_bit_hook+0x140/0x258 [btrfs]
-> [  847.648601]  clear_state_bit+0x87/0x128 [btrfs]
-> [  847.648601]  __clear_extent_bit+0x222/0x2b7 [btrfs]
-> [  847.648601]  clear_extent_bit+0x17/0x19 [btrfs]
-> [  847.648601]  extent_clear_unlock_delalloc+0x3b/0x6b [btrfs]
-> [  847.648601]  cow_file_range.isra.39+0x387/0x39a [btrfs]
-> [  847.648601]  run_delalloc_nocow+0x4d7/0x70e [btrfs]
-> [  847.648601]  ? arch_local_irq_save+0x9/0xc
-> [  847.648601]  run_delalloc_range+0xa7/0x2b5 [btrfs]
-> [  847.648601]  writepage_delalloc.isra.31+0xb9/0x15c [btrfs]
-> [  847.648601]  __extent_writepage+0x249/0x2e8 [btrfs]
-> [  847.648601]  extent_write_cache_pages.constprop.33+0x28b/0x36c [btrfs]
-> [  847.648601]  ? arch_local_irq_save+0x9/0xc
-> [  847.648601]  ? mark_lock+0x24/0x201
-> [  847.648601]  extent_writepages+0x4b/0x5c [btrfs]
-> [  847.648601]  ? btrfs_writepage_start_hook+0xed/0xed [btrfs]
-> [  847.648601]  btrfs_writepages+0x28/0x2a [btrfs]
-> [  847.648601]  do_writepages+0x23/0x2c
-> [  847.648601]  __filemap_fdatawrite_range+0x5a/0x61
-> [  847.648601]  filemap_fdatawrite_range+0x13/0x15
-> [  847.648601]  btrfs_fdatawrite_range+0x20/0x46 [btrfs]
-> [  847.648601]  start_ordered_ops+0x19/0x23 [btrfs]
-> [  847.648601]  btrfs_sync_file+0x136/0x42c [btrfs]
-> [  847.648601]  vfs_fsync_range+0x8c/0x9e
-> [  847.648601]  vfs_fsync+0x1c/0x1e
-> [  847.648601]  do_fsync+0x31/0x4a
-> [  847.648601]  SyS_fsync+0x10/0x14
-> [  847.648601]  entry_SYSCALL_64_fastpath+0x18/0xad
-> [  847.648601] RIP: 0033:0x7f5b05200800
-> [  847.648601] RSP: 002b:00007ffe204f71c8 EFLAGS: 00000246 ORIG_RAX: 000000000000004a
-> [  847.648601] RAX: ffffffffffffffda RBX: ffffffff8109637b RCX: 00007f5b05200800
-> [  847.648601] RDX: 00000000008bd0a0 RSI: 00000000008bd2e0 RDI: 0000000000000003
-> [  847.648601] RBP: ffffc90001d67f98 R08: 000000000000ffff R09: 000000000000001f
-> [  847.648601] R10: 00000000000001f6 R11: 0000000000000246 R12: 0000000000000046
-> [  847.648601] R13: ffffc90001d67f78 R14: 00007f5b054be740 R15: 00007f5b054be740
-> [  847.648601]  ? trace_hardirqs_off_caller+0x3f/0xaa
-> [  847.685787] ---[ end trace 2a4a3e15382508e8 ]---
-> 
-> So fix this by not attempting to decrement the data space info's
-> bytes_may_use counter if we already reserved the extent and an error
-> happened before creating the ordered extent. We are already correctly
-> freeing the reserved extent if an error happens, so there's no additional
-> measure needed.
+On Mon, Mar 6, 2017 at 2:55 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+> [BUG]
+> If run_delalloc_range() returns error and there is already some ordered
+> extents created, btrfs will be hanged with the following backtrace:
 >
+> Call Trace:
+>  __schedule+0x2d4/0xae0
+>  schedule+0x3d/0x90
+>  btrfs_start_ordered_extent+0x160/0x200 [btrfs]
+>  ? wake_atomic_t_function+0x60/0x60
+>  btrfs_run_ordered_extent_work+0x25/0x40 [btrfs]
+>  btrfs_scrubparity_helper+0x1c1/0x620 [btrfs]
+>  btrfs_flush_delalloc_helper+0xe/0x10 [btrfs]
+>  process_one_work+0x2af/0x720
+>  ? process_one_work+0x22b/0x720
+>  worker_thread+0x4b/0x4f0
+>  kthread+0x10f/0x150
+>  ? process_one_work+0x720/0x720
+>  ? kthread_create_on_node+0x40/0x40
+>  ret_from_fork+0x2e/0x40
+>
+> [CAUSE]
+>
+> |<------------------ delalloc range --------------------------->|
+> | OE 1 | OE 2 | ... | OE n |
+> |<>|                       |<---------- cleanup range --------->|
+>  ||
+>  \_=> First page handled by end_extent_writepage() in __extent_writepage()
+>
+> The problem is caused by error handler of run_delalloc_range(), which
+> doesn't handle any created ordered extents, leaving them waiting on
+> btrfs_finish_ordered_io() to finish.
+>
+> However after run_delalloc_range() returns error, __extent_writepage()
+> won't submit bio, so btrfs_writepage_end_io_hook() won't be triggered
+> except the first page, and btrfs_finish_ordered_io() won't be triggered
+> for created ordered extents either.
+>
+> So OE 2~n will hang forever, and if OE 1 is larger than one page, it
+> will also hang.
+>
+> [FIX]
+> Introduce btrfs_cleanup_ordered_extents() function to cleanup created
+> ordered extents and finish them manually.
+>
+> The function is based on existing
+> btrfs_endio_direct_write_update_ordered() function, and modify it to
+> act just like btrfs_writepage_endio_hook() but handles specified range
+> other than one page.
+>
+> After fix, delalloc error will be handled like:
+>
+> |<------------------ delalloc range --------------------------->|
+> | OE 1 | OE 2 | ... | OE n |
+> |<>|<--------  ----------->|<------ old error handler --------->|
+>  ||          ||
+>  ||          \_=> Cleaned up by cleanup_ordered_extents()
+>  \_=> First page handled by end_extent_writepage() in __extent_writepage()
+>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
-Thanks,
-
--liubo
+thanks
 
 > Signed-off-by: Filipe Manana <fdmanana@suse.com>
 > ---
-> 
-> V2: Removed previous dependence on a no longer needed cleanup patch and
->     rebased it on top of Qu's recent patchset that fixes hanging ordered
->     extents when errors happen.
-> 
-> V3: Simplified extent flags used for freeing reserved metadata and data.
-> 
->  fs/btrfs/extent_io.h |  4 +++-
->  fs/btrfs/inode.c     | 59 +++++++++++++++++++++++++++++++++++++---------------
->  2 files changed, 45 insertions(+), 18 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-> index 3e4fad4..48a30d0 100644
-> --- a/fs/btrfs/extent_io.h
-> +++ b/fs/btrfs/extent_io.h
-> @@ -14,7 +14,7 @@
->  #define EXTENT_DEFRAG		(1U << 6)
->  #define EXTENT_BOUNDARY		(1U << 9)
->  #define EXTENT_NODATASUM	(1U << 10)
-> -#define EXTENT_DO_ACCOUNTING	(1U << 11)
-> +#define EXTENT_CLEAR_META_RESV	(1U << 11)
->  #define EXTENT_FIRST_DELALLOC	(1U << 12)
->  #define EXTENT_NEED_WAIT	(1U << 13)
->  #define EXTENT_DAMAGED		(1U << 14)
-> @@ -22,6 +22,8 @@
->  #define EXTENT_QGROUP_RESERVED	(1U << 16)
->  #define EXTENT_CLEAR_DATA_RESV	(1U << 17)
->  #define EXTENT_IOBITS		(EXTENT_LOCKED | EXTENT_WRITEBACK)
-> +#define EXTENT_DO_ACCOUNTING    (EXTENT_CLEAR_META_RESV | \
-> +				 EXTENT_CLEAR_DATA_RESV)
->  #define EXTENT_CTLBITS		(EXTENT_DO_ACCOUNTING | EXTENT_FIRST_DELALLOC)
->  
->  /*
+> changelog:
+> v2:
+>   Add BTRFS_ORDERED_SKIP_METADATA flag to avoid double reducing
+>   outstanding extents, which is already done by
+>   extent_clear_unlock_delalloc() with EXTENT_DO_ACCOUNT control bit
+> v3:
+>   Skip first page to avoid underflow ordered->bytes_left.
+>   Fix range passed in cow_file_range() which doesn't cover the whole
+>   extent.
+>   Expend extent_clear_unlock_delalloc() range to allow them to handle
+>   metadata release.
+> v4:
+>   Don't use extra bit to skip metadata freeing for ordered extent,
+>   but only handle btrfs_reloc_clone_csums() error just before processing
+>   next extent.
+>   This makes error handle much easier for run_delalloc_nocow().
+> v5:
+>   Variant gramma and comment fixes suggested by Filipe Manana
+>   Enhanced commit message to focus on the generic error handler bug,
+>   pointed out by Filipe Manana
+>   Adding missing wq/func user in __endio_write_update_ordered(), pointed
+>   out by Filipe Manana.
+>   Enhanced commit message with ascii art to explain the bug more easily.
+>   Fix a bug which can leads to corrupted extent allocation, exposed by
+>   Filipe Manana.
+> v6:
+>   Split the metadata underflow fix to another patch.
+>   Use better comment and btrfs_cleanup_ordered_extent() implementation
+>   from Filipe Manana.
+> ---
+>  fs/btrfs/inode.c | 62 ++++++++++++++++++++++++++++++++++++++++++--------------
+>  1 file changed, 47 insertions(+), 15 deletions(-)
+>
 > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 9b03eb9b..c8ce47a 100644
+> index 1d83d504f2e5..9b03eb9b27d0 100644
 > --- a/fs/btrfs/inode.c
 > +++ b/fs/btrfs/inode.c
-> @@ -942,10 +942,13 @@ static noinline int cow_file_range(struct inode *inode,
->  	u64 num_bytes;
->  	unsigned long ram_size;
->  	u64 disk_num_bytes;
-> -	u64 cur_alloc_size;
-> +	u64 cur_alloc_size = 0;
->  	u64 blocksize = fs_info->sectorsize;
->  	struct btrfs_key ins;
->  	struct extent_map *em;
-> +	unsigned clear_bits;
-> +	unsigned long page_ops;
-> +	bool extent_reserved = false;
->  	int ret = 0;
->  
->  	if (btrfs_is_free_space_inode(BTRFS_I(inode))) {
-> @@ -990,14 +993,14 @@ static noinline int cow_file_range(struct inode *inode,
->  			start + num_bytes - 1, 0);
->  
->  	while (disk_num_bytes > 0) {
-> -		unsigned long op;
-> -
->  		cur_alloc_size = disk_num_bytes;
->  		ret = btrfs_reserve_extent(root, cur_alloc_size, cur_alloc_size,
->  					   fs_info->sectorsize, 0, alloc_hint,
->  					   &ins, 1, 1);
->  		if (ret < 0)
->  			goto out_unlock;
-> +		cur_alloc_size = ins.offset;
-> +		extent_reserved = true;
->  
->  		ram_size = ins.offset;
->  		em = create_io_em(inode, start, ins.offset, /* len */
-> @@ -1012,7 +1015,6 @@ static noinline int cow_file_range(struct inode *inode,
->  			goto out_reserve;
->  		free_extent_map(em);
->  
-> -		cur_alloc_size = ins.offset;
->  		ret = btrfs_add_ordered_extent(inode, start, ins.objectid,
->  					       ram_size, cur_alloc_size, 0);
->  		if (ret)
-> @@ -1047,14 +1049,14 @@ static noinline int cow_file_range(struct inode *inode,
->  		 * Do set the Private2 bit so we know this page was properly
->  		 * setup for writepage
->  		 */
-> -		op = unlock ? PAGE_UNLOCK : 0;
-> -		op |= PAGE_SET_PRIVATE2;
-> +		page_ops = unlock ? PAGE_UNLOCK : 0;
-> +		page_ops |= PAGE_SET_PRIVATE2;
->  
->  		extent_clear_unlock_delalloc(inode, start,
->  					     start + ram_size - 1,
->  					     delalloc_end, locked_page,
->  					     EXTENT_LOCKED | EXTENT_DELALLOC,
-> -					     op);
-> +					     page_ops);
->  		if (disk_num_bytes > cur_alloc_size)
->  			disk_num_bytes = 0;
->  		else
-> @@ -1062,6 +1064,7 @@ static noinline int cow_file_range(struct inode *inode,
->  		num_bytes -= cur_alloc_size;
->  		alloc_hint = ins.objectid + ins.offset;
->  		start += cur_alloc_size;
-> +		extent_reserved = false;
->  
->  		/*
->  		 * btrfs_reloc_clone_csums() error, since start is increased
-> @@ -1080,12 +1083,35 @@ static noinline int cow_file_range(struct inode *inode,
->  	btrfs_dec_block_group_reservations(fs_info, ins.objectid);
->  	btrfs_free_reserved_extent(fs_info, ins.objectid, ins.offset, 1);
->  out_unlock:
-> +	clear_bits = EXTENT_LOCKED | EXTENT_DELALLOC | EXTENT_DEFRAG |
-> +		EXTENT_CLEAR_META_RESV;
-> +	page_ops = PAGE_UNLOCK | PAGE_CLEAR_DIRTY | PAGE_SET_WRITEBACK |
-> +		PAGE_END_WRITEBACK;
-> +	/*
-> +	 * If we reserved an extent for our delalloc range (or a subrange) and
-> +	 * failed to create the respective ordered extent, then it means that
-> +	 * when we reserved the extent we decremented the extent's size from
-> +	 * the data space_info's bytes_may_use counter and incremented the
-> +	 * space_info's bytes_reserved counter by the same amount. We must make
-> +	 * sure extent_clear_unlock_delalloc() does not try to decrement again
-> +	 * the data space_info's bytes_may_use counter, therefore we do not pass
-> +	 * it the flag EXTENT_CLEAR_DATA_RESV.
-> +	 */
-> +	if (extent_reserved) {
-> +		extent_clear_unlock_delalloc(inode, start,
-> +					     start + cur_alloc_size,
-> +					     start + cur_alloc_size,
-> +					     locked_page,
-> +					     clear_bits,
-> +					     page_ops);
-> +		start += cur_alloc_size;
-> +		if (start >= end)
-> +			goto out;
-> +	}
->  	extent_clear_unlock_delalloc(inode, start, end, delalloc_end,
->  				     locked_page,
-> -				     EXTENT_LOCKED | EXTENT_DO_ACCOUNTING |
-> -				     EXTENT_DELALLOC | EXTENT_DEFRAG,
-> -				     PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
-> -				     PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK);
-> +				     clear_bits | EXTENT_CLEAR_DATA_RESV,
-> +				     page_ops);
->  	goto out;
+> @@ -115,6 +115,30 @@ static struct extent_map *create_io_em(struct inode *inode, u64 start, u64 len,
+>                                        u64 ram_bytes, int compress_type,
+>                                        int type);
+>
+> +static void __endio_write_update_ordered(struct inode *inode,
+> +                                        u64 offset, u64 bytes,
+> +                                        bool uptodate);
+> +
+> +/*
+> + * Cleanup all submitted ordered extents in specified range to handle errors
+> + * from the fill_dellaloc() callback.
+> + *
+> + * NOTE: caller must ensure that when an error happens, it can not call
+> + * extent_clear_unlock_delalloc() to clear both the bits EXTENT_DO_ACCOUNTING
+> + * and EXTENT_DELALLOC simultaneously, because that causes the reserved metadata
+> + * to be released, which we want to happen only when finishing the ordered
+> + * extent (btrfs_finish_ordered_io()). Also note that the caller of the
+> + * fill_dealloc() callback already does proper cleanup for the first page of
+> + * the range, that is, it invokes the callback writepage_end_io_hook() for the
+> + * range of the first page.
+> + */
+> +static inline void btrfs_cleanup_ordered_extents(struct inode *inode,
+> +                                                u64 offset, u64 bytes)
+> +{
+> +       return __endio_write_update_ordered(inode, offset + PAGE_SIZE,
+> +                                           bytes - PAGE_SIZE, false);
+> +}
+> +
+>  static int btrfs_dirty_inode(struct inode *inode);
+>
+>  #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+> @@ -1536,6 +1560,8 @@ static int run_delalloc_range(struct inode *inode, struct page *locked_page,
+>                 ret = cow_file_range_async(inode, locked_page, start, end,
+>                                            page_started, nr_written);
+>         }
+> +       if (ret)
+> +               btrfs_cleanup_ordered_extents(inode, start, end - start + 1);
+>         return ret;
 >  }
->  
-> @@ -1775,7 +1801,7 @@ static void btrfs_clear_bit_hook(struct btrfs_inode *inode,
->  
->  		if (*bits & EXTENT_FIRST_DELALLOC) {
->  			*bits &= ~EXTENT_FIRST_DELALLOC;
-> -		} else if (!(*bits & EXTENT_DO_ACCOUNTING)) {
-> +		} else if (!(*bits & EXTENT_CLEAR_META_RESV)) {
->  			spin_lock(&inode->lock);
->  			inode->outstanding_extents -= num_extents;
->  			spin_unlock(&inode->lock);
-> @@ -1786,7 +1812,7 @@ static void btrfs_clear_bit_hook(struct btrfs_inode *inode,
->  		 * don't need to call dellalloc_release_metadata if there is an
->  		 * error.
->  		 */
-> -		if (*bits & EXTENT_DO_ACCOUNTING &&
-> +		if (*bits & EXTENT_CLEAR_META_RESV &&
->  		    root != fs_info->tree_root)
->  			btrfs_delalloc_release_metadata(inode, len);
->  
-> @@ -1794,10 +1820,9 @@ static void btrfs_clear_bit_hook(struct btrfs_inode *inode,
->  		if (btrfs_is_testing(fs_info))
->  			return;
->  
-> -		if (root->root_key.objectid != BTRFS_DATA_RELOC_TREE_OBJECTID
-> -		    && do_list && !(state->state & EXTENT_NORESERVE)
-> -		    && (*bits & (EXTENT_DO_ACCOUNTING |
-> -		    EXTENT_CLEAR_DATA_RESV)))
-> +		if (root->root_key.objectid != BTRFS_DATA_RELOC_TREE_OBJECTID &&
-> +		    do_list && !(state->state & EXTENT_NORESERVE) &&
-> +		    (*bits & EXTENT_CLEAR_DATA_RESV))
->  			btrfs_free_reserved_data_space_noquota(
->  					&inode->vfs_inode,
->  					state->start, len);
-> -- 
-> 2.7.0.rc3
-> 
+>
+> @@ -8142,17 +8168,26 @@ static void btrfs_endio_direct_read(struct bio *bio)
+>         bio_put(bio);
+>  }
+>
+> -static void btrfs_endio_direct_write_update_ordered(struct inode *inode,
+> -                                                   const u64 offset,
+> -                                                   const u64 bytes,
+> -                                                   const int uptodate)
+> +static void __endio_write_update_ordered(struct inode *inode,
+> +                                        u64 offset, u64 bytes,
+> +                                        bool uptodate)
+>  {
+>         struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+>         struct btrfs_ordered_extent *ordered = NULL;
+> +       struct btrfs_workqueue *wq;
+> +       btrfs_work_func_t func;
+>         u64 ordered_offset = offset;
+>         u64 ordered_bytes = bytes;
+>         int ret;
+>
+> +       if (btrfs_is_free_space_inode(BTRFS_I(inode))) {
+> +               wq = fs_info->endio_freespace_worker;
+> +               func = btrfs_freespace_write_helper;
+> +       } else {
+> +               wq = fs_info->endio_write_workers;
+> +               func = btrfs_endio_write_helper;
+> +       }
+> +
+>  again:
+>         ret = btrfs_dec_test_first_ordered_pending(inode, &ordered,
+>                                                    &ordered_offset,
+> @@ -8161,9 +8196,8 @@ static void btrfs_endio_direct_write_update_ordered(struct inode *inode,
+>         if (!ret)
+>                 goto out_test;
+>
+> -       btrfs_init_work(&ordered->work, btrfs_endio_write_helper,
+> -                       finish_ordered_fn, NULL, NULL);
+> -       btrfs_queue_work(fs_info->endio_write_workers, &ordered->work);
+> +       btrfs_init_work(&ordered->work, func, finish_ordered_fn, NULL, NULL);
+> +       btrfs_queue_work(wq, &ordered->work);
+>  out_test:
+>         /*
+>          * our bio might span multiple ordered extents.  If we haven't
+> @@ -8181,10 +8215,8 @@ static void btrfs_endio_direct_write(struct bio *bio)
+>         struct btrfs_dio_private *dip = bio->bi_private;
+>         struct bio *dio_bio = dip->dio_bio;
+>
+> -       btrfs_endio_direct_write_update_ordered(dip->inode,
+> -                                               dip->logical_offset,
+> -                                               dip->bytes,
+> -                                               !bio->bi_error);
+> +       __endio_write_update_ordered(dip->inode, dip->logical_offset,
+> +                                    dip->bytes, !bio->bi_error);
+>
+>         kfree(dip);
+>
+> @@ -8545,10 +8577,10 @@ static void btrfs_submit_direct(struct bio *dio_bio, struct inode *inode,
+>                 io_bio = NULL;
+>         } else {
+>                 if (write)
+> -                       btrfs_endio_direct_write_update_ordered(inode,
+> +                       __endio_write_update_ordered(inode,
+>                                                 file_offset,
+>                                                 dio_bio->bi_iter.bi_size,
+> -                                               0);
+> +                                               false);
+>                 else
+>                         unlock_extent(&BTRFS_I(inode)->io_tree, file_offset,
+>                               file_offset + dio_bio->bi_iter.bi_size - 1);
+> @@ -8683,11 +8715,11 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
+>                          */
+>                         if (dio_data.unsubmitted_oe_range_start <
+>                             dio_data.unsubmitted_oe_range_end)
+> -                               btrfs_endio_direct_write_update_ordered(inode,
+> +                               __endio_write_update_ordered(inode,
+>                                         dio_data.unsubmitted_oe_range_start,
+>                                         dio_data.unsubmitted_oe_range_end -
+>                                         dio_data.unsubmitted_oe_range_start,
+> -                                       0);
+> +                                       false);
+>                 } else if (ret >= 0 && (size_t)ret < count)
+>                         btrfs_delalloc_release_space(inode, offset,
+>                                                      count - (size_t)ret);
 > --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 2.12.0
+>
+>
+>

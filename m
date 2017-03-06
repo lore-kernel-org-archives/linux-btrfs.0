@@ -1,26 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:64800 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751710AbdCFAqC (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Mar 2017 19:46:02 -0500
-Subject: Re: [PATCH] btrfs-progs: report I/O errors when closing the
+        with ESMTP id S1752509AbdCFAqF (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Mar 2017 19:46:05 -0500
+Subject: Re: [PATCH v2] btrfs-progs: report I/O errors when closing the
  filesystem
 To: Omar Sandoval <osandov@osandov.com>, <linux-btrfs@vger.kernel.org>,
         David Sterba <dsterba@suse.com>
 References: <d187bd863a7eacb2172b693a95c6a8b875e144c4.1488560213.git.osandov@fb.com>
+ <105e3aa192a47f3936c2ac47ad8d673745cccaea.1488560489.git.osandov@fb.com>
 CC: <kernel-team@fb.com>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <eee671a1-cbfb-be07-bc1c-b568da47f463@cn.fujitsu.com>
-Date: Mon, 6 Mar 2017 08:40:54 +0800
+Message-ID: <ab252cb5-b59e-d445-b69c-0dfe15c0861a@cn.fujitsu.com>
+Date: Mon, 6 Mar 2017 08:42:01 +0800
 MIME-Version: 1.0
-In-Reply-To: <d187bd863a7eacb2172b693a95c6a8b875e144c4.1488560213.git.osandov@fb.com>
+In-Reply-To: <105e3aa192a47f3936c2ac47ad8d673745cccaea.1488560489.git.osandov@fb.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-At 03/04/2017 12:59 AM, Omar Sandoval wrote:
+At 03/04/2017 01:02 AM, Omar Sandoval wrote:
 > From: Omar Sandoval <osandov@fb.com>
 >
 > If the final fsync() on the Btrfs device fails, we just swallow the
@@ -28,7 +29,18 @@ At 03/04/2017 12:59 AM, Omar Sandoval wrote:
 > generic/405, which checks that mkfs fails when it encounters EIO.
 >
 > Signed-off-by: Omar Sandoval <osandov@fb.com>
+
+Please ignore my comment on v1 patch, didn't see the v2 one.
+
+Looks good to me.
+
+Reviewed-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+
+Thanks,
+Qu
 > ---
+> Changes from v1: return -errno instead of -1
+>
 >  disk-io.c | 4 ++--
 >  volumes.c | 9 +++++++--
 >  2 files changed, 9 insertions(+), 4 deletions(-)
@@ -51,7 +63,7 @@ At 03/04/2017 12:59 AM, Omar Sandoval wrote:
 >
 >  int clean_tree_block(struct btrfs_trans_handle *trans, struct btrfs_root *root,
 > diff --git a/volumes.c b/volumes.c
-> index a0a85edd..89335d35 100644
+> index a0a85edd..f7d82d51 100644
 > --- a/volumes.c
 > +++ b/volumes.c
 > @@ -160,6 +160,7 @@ int btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
@@ -70,14 +82,7 @@ At 03/04/2017 12:59 AM, Omar Sandoval wrote:
 > +			if (fsync(device->fd) == -1) {
 > +				warning("fsync on device %llu failed: %s",
 > +					device->devid, strerror(errno));
-> +				ret = -1;
-
--1 is -EINVAL, better using -errno here.
-
-Despite of that, looks good.
-
-Thanks,
-Qu
+> +				ret = -errno;
 > +			}
 >  			if (posix_fadvise(device->fd, 0, 0, POSIX_FADV_DONTNEED))
 >  				fprintf(stderr, "Warning, could not drop caches\n");

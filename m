@@ -1,101 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f65.google.com ([74.125.82.65]:35732 "EHLO
-        mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752779AbdCFNqL (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Mar 2017 08:46:11 -0500
-From: Michal Hocko <mhocko@kernel.org>
-To: Andrew Morton <akpm@linux-foundation.org>, <linux-fsdevel@vger.kernel.org>
-Cc: <linux-mm@kvack.org>, Dave Chinner <david@fromorbit.com>,
-        djwong@kernel.org, "Theodore Ts'o" <tytso@mit.edu>,
-        Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.cz>,
-        Jan Kara <jack@suse.cz>, ceph-devel@vger.kernel.org,
-        cluster-devel@redhat.com, linux-nfs@vger.kernel.org, logfs@logfs.org,
-        linux-xfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-mtd@lists.infradead.org,
-        reiserfs-devel@vger.kernel.org, linux-ntfs-dev@lists.sourceforge.net,
+Received: from mail.linuxfoundation.org ([140.211.169.12]:55498 "EHLO
+        mail.linuxfoundation.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932519AbdCFWZy (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Mar 2017 17:25:54 -0500
+Date: Mon, 6 Mar 2017 13:22:14 -0800
+From: Andrew Morton <akpm@linux-foundation.org>
+To: Michal Hocko <mhocko@kernel.org>
+Cc: <linux-fsdevel@vger.kernel.org>, <linux-mm@kvack.org>,
+        Dave Chinner <david@fromorbit.com>, djwong@kernel.org,
+        "Theodore Ts'o" <tytso@mit.edu>, Chris Mason <clm@fb.com>,
+        David Sterba <dsterba@suse.cz>, Jan Kara <jack@suse.cz>,
+        ceph-devel@vger.kernel.org, cluster-devel@redhat.com,
+        linux-nfs@vger.kernel.org, logfs@logfs.org, linux-xfs@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-mtd@lists.infradead.org, reiserfs-devel@vger.kernel.org,
+        linux-ntfs-dev@lists.sourceforge.net,
         linux-f2fs-devel@lists.sourceforge.net, linux-afs@lists.infradead.org,
-        LKML <linux-kernel@vger.kernel.org>, Michal Hocko <mhocko@suse.com>
-Subject: [PATCH 6/7] jbd2: mark the transaction context with the scope GFP_NOFS context
-Date: Mon,  6 Mar 2017 14:14:07 +0100
-Message-Id: <20170306131408.9828-7-mhocko@kernel.org>
-In-Reply-To: <20170306131408.9828-1-mhocko@kernel.org>
+        LKML <linux-kernel@vger.kernel.org>, Michal Hocko <mhocko@suse.com>,
+        Vlastimil Babka <vbabka@suse.cz>
+Subject: Re: [PATCH 4/7] mm: introduce memalloc_nofs_{save,restore} API
+Message-Id: <20170306132214.1769368301d9e671e1bc68be@linux-foundation.org>
+In-Reply-To: <20170306131408.9828-5-mhocko@kernel.org>
 References: <20170306131408.9828-1-mhocko@kernel.org>
+        <20170306131408.9828-5-mhocko@kernel.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Michal Hocko <mhocko@suse.com>
+On Mon,  6 Mar 2017 14:14:05 +0100 Michal Hocko <mhocko@kernel.org> wrote:
 
-now that we have memalloc_nofs_{save,restore} api we can mark the whole
-transaction context as implicitly GFP_NOFS. All allocations will
-automatically inherit GFP_NOFS this way. This means that we do not have
-to mark any of those requests with GFP_NOFS and moreover all the
-ext4_kv[mz]alloc(GFP_NOFS) are also safe now because even the hardcoded
-GFP_KERNEL allocations deep inside the vmalloc will be NOFS now.
+> From: Michal Hocko <mhocko@suse.com>
+> 
+> GFP_NOFS context is used for the following 5 reasons currently
+> 	- to prevent from deadlocks when the lock held by the allocation
+> 	  context would be needed during the memory reclaim
+> 	- to prevent from stack overflows during the reclaim because
+> 	  the allocation is performed from a deep context already
+> 	- to prevent lockups when the allocation context depends on
+> 	  other reclaimers to make a forward progress indirectly
+> 	- just in case because this would be safe from the fs POV
+> 	- silence lockdep false positives
+> 
+> Unfortunately overuse of this allocation context brings some problems
+> to the MM. Memory reclaim is much weaker (especially during heavy FS
+> metadata workloads), OOM killer cannot be invoked because the MM layer
+> doesn't have enough information about how much memory is freeable by the
+> FS layer.
+> 
+> In many cases it is far from clear why the weaker context is even used
+> and so it might be used unnecessarily. We would like to get rid of
+> those as much as possible. One way to do that is to use the flag in
+> scopes rather than isolated cases. Such a scope is declared when really
+> necessary, tracked per task and all the allocation requests from within
+> the context will simply inherit the GFP_NOFS semantic.
+> 
+> Not only this is easier to understand and maintain because there are
+> much less problematic contexts than specific allocation requests, this
+> also helps code paths where FS layer interacts with other layers (e.g.
+> crypto, security modules, MM etc...) and there is no easy way to convey
+> the allocation context between the layers.
+> 
+> Introduce memalloc_nofs_{save,restore} API to control the scope
+> of GFP_NOFS allocation context. This is basically copying
+> memalloc_noio_{save,restore} API we have for other restricted allocation
+> context GFP_NOIO. The PF_MEMALLOC_NOFS flag already exists and it is
+> just an alias for PF_FSTRANS which has been xfs specific until recently.
+> There are no more PF_FSTRANS users anymore so let's just drop it.
+> 
+> PF_MEMALLOC_NOFS is now checked in the MM layer and drops __GFP_FS
+> implicitly same as PF_MEMALLOC_NOIO drops __GFP_IO. memalloc_noio_flags
+> is renamed to current_gfp_context because it now cares about both
+> PF_MEMALLOC_NOFS and PF_MEMALLOC_NOIO contexts. Xfs code paths preserve
+> their semantic. kmem_flags_convert() doesn't need to evaluate the flag
+> anymore.
+> 
+> This patch shouldn't introduce any functional changes.
+> 
+> Let's hope that filesystems will drop direct GFP_NOFS (resp. ~__GFP_FS)
+> usage as much as possible and only use a properly documented
+> memalloc_nofs_{save,restore} checkpoints where they are appropriate.
+> 
+> ....
+>
+> --- a/include/linux/gfp.h
+> +++ b/include/linux/gfp.h
+> @@ -210,8 +210,16 @@ struct vm_area_struct;
+>   *
+>   * GFP_NOIO will use direct reclaim to discard clean pages or slab pages
+>   *   that do not require the starting of any physical IO.
+> + *   Please try to avoid using this flag directly and instead use
+> + *   memalloc_noio_{save,restore} to mark the whole scope which cannot
+> + *   perform any IO with a short explanation why. All allocation requests
+> + *   will inherit GFP_NOIO implicitly.
+>   *
+>   * GFP_NOFS will use direct reclaim but will not use any filesystem interfaces.
+> + *   Please try to avoid using this flag directly and instead use
+> + *   memalloc_nofs_{save,restore} to mark the whole scope which cannot/shouldn't
+> + *   recurse into the FS layer with a short explanation why. All allocation
+> + *   requests will inherit GFP_NOFS implicitly.
 
-Reviewed-by: Jan Kara <jack@suse.cz>
-Signed-off-by: Michal Hocko <mhocko@suse.com>
----
- fs/jbd2/transaction.c | 12 ++++++++++++
- include/linux/jbd2.h  |  2 ++
- 2 files changed, 14 insertions(+)
-
-diff --git a/fs/jbd2/transaction.c b/fs/jbd2/transaction.c
-index 5e659ee08d6a..d8f09f34285f 100644
---- a/fs/jbd2/transaction.c
-+++ b/fs/jbd2/transaction.c
-@@ -29,6 +29,7 @@
- #include <linux/backing-dev.h>
- #include <linux/bug.h>
- #include <linux/module.h>
-+#include <linux/sched/mm.h>
- 
- #include <trace/events/jbd2.h>
- 
-@@ -388,6 +389,11 @@ static int start_this_handle(journal_t *journal, handle_t *handle,
- 
- 	rwsem_acquire_read(&journal->j_trans_commit_map, 0, 0, _THIS_IP_);
- 	jbd2_journal_free_transaction(new_transaction);
-+	/*
-+	 * Make sure that no allocations done while the transaction is
-+	 * open is going to recurse back to the fs layer.
-+	 */
-+	handle->saved_alloc_context = memalloc_nofs_save();
- 	return 0;
- }
- 
-@@ -466,6 +472,7 @@ handle_t *jbd2__journal_start(journal_t *journal, int nblocks, int rsv_blocks,
- 	trace_jbd2_handle_start(journal->j_fs_dev->bd_dev,
- 				handle->h_transaction->t_tid, type,
- 				line_no, nblocks);
-+
- 	return handle;
- }
- EXPORT_SYMBOL(jbd2__journal_start);
-@@ -1760,6 +1767,11 @@ int jbd2_journal_stop(handle_t *handle)
- 	if (handle->h_rsv_handle)
- 		jbd2_journal_free_reserved(handle->h_rsv_handle);
- free_and_exit:
-+	/*
-+	 * scope of th GFP_NOFS context is over here and so we can
-+	 * restore the original alloc context.
-+	 */
-+	memalloc_nofs_restore(handle->saved_alloc_context);
- 	jbd2_free_handle(handle);
- 	return err;
- }
-diff --git a/include/linux/jbd2.h b/include/linux/jbd2.h
-index dfaa1f4dcb0c..606b6bce3a5b 100644
---- a/include/linux/jbd2.h
-+++ b/include/linux/jbd2.h
-@@ -491,6 +491,8 @@ struct jbd2_journal_handle
- 
- 	unsigned long		h_start_jiffies;
- 	unsigned int		h_requested_credits;
-+
-+	unsigned int		saved_alloc_context;
- };
- 
- 
--- 
-2.11.0
+I wonder if these are worth a checkpatch rule.
 

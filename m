@@ -1,392 +1,158 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:16403 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:36209 "EHLO
         userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751648AbdCACUe (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Feb 2017 21:20:34 -0500
-Date: Tue, 28 Feb 2017 18:19:56 -0800
+        with ESMTP id S1753658AbdCFTvP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Mar 2017 14:51:15 -0500
+Date: Mon, 6 Mar 2017 11:49:22 -0800
 From: Liu Bo <bo.li.liu@oracle.com>
 To: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
-Subject: Re: [PATCH 1/7] Btrfs: create a helper for getting chunk map
-Message-ID: <20170301021955.GC9546@lim.localdomain>
+Subject: Re: [PATCH 2/7] Btrfs: separate DISCARD from __btrfs_map_block
+Message-ID: <20170306194922.GC13180@lim.localdomain>
 Reply-To: bo.li.liu@oracle.com
 References: <1487381301-865-1-git-send-email-bo.li.liu@oracle.com>
- <1487381301-865-2-git-send-email-bo.li.liu@oracle.com>
- <bb4ca745-c23a-aa12-0446-dde110f4e9c9@cn.fujitsu.com>
+ <1487381301-865-3-git-send-email-bo.li.liu@oracle.com>
+ <1f27d01e-0599-5153-6c15-1eaef243838d@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <bb4ca745-c23a-aa12-0446-dde110f4e9c9@cn.fujitsu.com>
+In-Reply-To: <1f27d01e-0599-5153-6c15-1eaef243838d@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 20, 2017 at 11:20:33AM +0800, Qu Wenruo wrote:
+On Mon, Feb 20, 2017 at 11:54:31AM +0800, Qu Wenruo wrote:
 > 
 > 
 > At 02/18/2017 09:28 AM, Liu Bo wrote:
-> > We have similar code here and there, this merges them into a helper.
+> > Since DISCARD is not as important as an operation like write, we don't
+> > copy it to target device during replace, and it makes __btrfs_map_block
+> > less complex.
+> 
+> Makes sense to me.
+> 
 > > 
 > > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> 
-> Looks good overall.
-> 
-> Although small nitpick inlined below.
-
-Thank you for going through this.
-
 > > ---
-> >  fs/btrfs/extent_io.c |   3 +-
-> >  fs/btrfs/volumes.c   | 163 +++++++++++++++++----------------------------------
-> >  fs/btrfs/volumes.h   |   2 +-
-> >  3 files changed, 57 insertions(+), 111 deletions(-)
+> >  fs/btrfs/volumes.c | 306 +++++++++++++++++++++++++++++++++--------------------
+> >  1 file changed, 192 insertions(+), 114 deletions(-)
 > > 
-> > diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> > index 4ac383a..609ece1 100644
-> > --- a/fs/btrfs/extent_io.c
-> > +++ b/fs/btrfs/extent_io.c
-> > @@ -2007,14 +2007,13 @@ int repair_io_failure(struct inode *inode, u64 start, u64 length, u64 logical,
-> >  	u64 map_length = 0;
-> >  	u64 sector;
-> >  	struct btrfs_bio *bbio = NULL;
-> > -	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
-> >  	int ret;
-> > 
-> >  	ASSERT(!(fs_info->sb->s_flags & MS_RDONLY));
-> >  	BUG_ON(!mirror_num);
-> > 
-> >  	/* we can't repair anything in raid56 yet */
-> > -	if (btrfs_is_parity_mirror(map_tree, logical, length, mirror_num))
-> > +	if (btrfs_is_parity_mirror(fs_info, logical, length, mirror_num))
-> 
-> Not sure if such small parameter cleanup can be split into a separate patch.
-> At least it's less related to the get_chunk_map() helper.
->
-
-But it's not a cleanup, it is get_chunk_map() that needs @fs_info.
-
-> >  		return 0;
-> > 
-> >  	bio = btrfs_io_bio_alloc(GFP_NOFS, 1);
 > > diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> > index 3c3c69c..c52b0fe 100644
+> > index c52b0fe..96228f3 100644
 > > --- a/fs/btrfs/volumes.c
 > > +++ b/fs/btrfs/volumes.c
-> > @@ -2794,10 +2794,38 @@ static int btrfs_del_sys_chunk(struct btrfs_fs_info *fs_info,
-> >  	return ret;
+> > @@ -5294,6 +5294,175 @@ void btrfs_put_bbio(struct btrfs_bio *bbio)
+> >  		kfree(bbio);
 > >  }
 > > 
-> > +static struct extent_map *get_chunk_map(struct btrfs_fs_info *fs_info,
-> > +					u64 logical, u64 length)
+> > +/* can REQ_OP_DISCARD be sent with other REQ like REQ_OP_WRITE? */
+> > +/*
+> > + * Please note that, discard won't be sent to target device of device
+> > + * replace.
+> > + */
+> > +static int __btrfs_map_block_for_discard(struct btrfs_fs_info *fs_info,
+> > +					 u64 logical, u64 length,
+> > +					 struct btrfs_bio **bbio_ret)
 > > +{
-> > +	struct extent_map_tree *em_tree;
+> > +	struct extent_map_tree *em_tree = &fs_info->mapping_tree.map_tree;
 > > +	struct extent_map *em;
+> > +	struct map_lookup *map;
+> > +	struct btrfs_bio *bbio;
+> > +	u64 offset;
+> > +	u64 stripe_nr;
+> > +	u64 stripe_nr_end;
+> > +	u64 stripe_end_offset;
+> > +	u64 stripe_cnt;
+> > +	u64 stripe_len;
+> > +	u64 stripe_offset;
+> > +	u64 num_stripes;
+> > +	u32 stripe_index;
+> > +	u32 factor = 0;
+> > +	u32 sub_stripes = 0;
+> > +	u64 stripes_per_dev = 0;
+> > +	u32 remaining_stripes = 0;
+> > +	u32 last_stripe = 0;
+> > +	int ret = 0;
+> > +	int i;
 > > +
-> > +	em_tree = &fs_info->mapping_tree.map_tree;
+> > +	/* discard always return a bbio */
+> > +	ASSERT(bbio_ret);
+> > +
 > > +	read_lock(&em_tree->lock);
 > > +	em = lookup_extent_mapping(em_tree, logical, length);
 > > +	read_unlock(&em_tree->lock);
+> 
+> It seems that get_chunk_map() in previous patch can replace such searching
+> and error message.
+>
+
+Yeah, I forgot to update with it.
+
 > > +
 > > +	if (!em) {
 > > +		btrfs_crit(fs_info, "unable to find logical %llu len %llu",
 > > +			logical, length);
-> 
-> Nice error message, would be quite helpful when we hit some bug later.
-> 
-> > +		return ERR_PTR(-EINVAL);
-> 
-> Normally I'd return -ENOENT, not sure what's the correct return here though.
->
-
-So I tried to be consistent with the error handling of other places of searching
-chunk mapping tree.
-
-I think EINVAL makes sense here, either @logical or @length is not valid.
-
+> > +		return -EINVAL;
 > > +	}
 > > +
 > > +	if (em->start > logical || em->start + em->len < logical) {
 > > +		btrfs_crit(fs_info,
-> > +			   "found a bad mapping, wanted %llu, found %llu-%llu",
+> > +			   "found a bad mapping, wanted %Lu, found %Lu-%Lu",
 > > +			   logical, em->start, em->start + em->len);
+> > +		free_extent_map(em);
+> > +		return -EINVAL;
+> > +	}
+> > +
+> > +	map = em->map_lookup;
+> > +	/* we don't discard raid56 yet */
+> > +	if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
+> > +		ret = -EOPNOTSUPP;
+> > +		goto out;
+> > +	}
+> > +
+> > +	offset = logical - em->start;
+> > +	length = min_t(u64, em->len - offset, length);
+> > +
+> > +	stripe_len = map->stripe_len;
+> > +	/*
+> > +	 * stripe_nr counts the total number of stripes we have to stride
+> > +	 * to get to this block
+> > +	 */
+> > +	stripe_nr = div64_u64(offset, stripe_len);
+> > +	stripe_offset = stripe_nr * stripe_len;
+> > +	ASSERT(offset >= stripe_offset);
 > 
-> Better outputting @length also.
+> What about a DIV_ROUND_DOWN helper?
+> Surprisingly we only have DIR_ROUND_UP, not not DIV_ROUND_DOWN.
+> 
+> And if we're only going to support 64K stripe len, then round_down() is good
+> for current usage.
+> 
+> > +
+> > +	/* stripe_offset is the offset of this block in its stripe */
+> > +	stripe_offset = offset - stripe_offset;
+> 
+> This is a little confusing.
+> What about using another variable called @stripe_start instead of using the
+> same variable @stripe_offset to temporarily store stripe start bytenr.
+> 
+> I prefer to do it in one run without resuing @stripe_offset variable to
+> avoid confusion.
+
+Right, I was trying to keep the check of (offset >= stripe_offset), but it's not
+necessary.
+
+> 
+> > +
+> > +	stripe_nr_end = ALIGN(offset + length, map->stripe_len);
+> 
+> round_up() causes less confusion.
+> 
+> And IIRC, ALIGN/round_up can only handle power of 2, this implies the
+> stripe_len must be power of 2, which is OK for now.
+> If using ALIGN here, we can also use round_down() in previous stripe_nr.
 >
 
-OK, I'll update it with @length.
+Good point.
 
 Thanks,
 
 -liubo
-
-> Thanks,
-> Qu
-> 
-> > +		free_extent_map(em);
-> > +		return ERR_PTR(-EINVAL);
-> > +	}
-> > +
-> > +	/* callers are responsible for dropping em's ref. */
-> > +	return em;
-> > +}
-> > +
-> >  int btrfs_remove_chunk(struct btrfs_trans_handle *trans,
-> >  		       struct btrfs_fs_info *fs_info, u64 chunk_offset)
-> >  {
-> > -	struct extent_map_tree *em_tree;
-> >  	struct extent_map *em;
-> >  	struct map_lookup *map;
-> >  	u64 dev_extent_len = 0;
-> > @@ -2805,23 +2833,15 @@ int btrfs_remove_chunk(struct btrfs_trans_handle *trans,
-> >  	int i, ret = 0;
-> >  	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
-> > 
-> > -	em_tree = &fs_info->mapping_tree.map_tree;
-> > -
-> > -	read_lock(&em_tree->lock);
-> > -	em = lookup_extent_mapping(em_tree, chunk_offset, 1);
-> > -	read_unlock(&em_tree->lock);
-> > -
-> > -	if (!em || em->start > chunk_offset ||
-> > -	    em->start + em->len < chunk_offset) {
-> > +	em = get_chunk_map(fs_info, chunk_offset, 1);
-> > +	if (IS_ERR(em)) {
-> >  		/*
-> >  		 * This is a logic error, but we don't want to just rely on the
-> >  		 * user having built with ASSERT enabled, so if ASSERT doesn't
-> >  		 * do anything we still error out.
-> >  		 */
-> >  		ASSERT(0);
-> > -		if (em)
-> > -			free_extent_map(em);
-> > -		return -EINVAL;
-> > +		return PTR_ERR(em);
-> >  	}
-> >  	map = em->map_lookup;
-> >  	mutex_lock(&fs_info->chunk_mutex);
-> > @@ -4888,7 +4908,6 @@ int btrfs_finish_chunk_alloc(struct btrfs_trans_handle *trans,
-> >  	struct btrfs_device *device;
-> >  	struct btrfs_chunk *chunk;
-> >  	struct btrfs_stripe *stripe;
-> > -	struct extent_map_tree *em_tree;
-> >  	struct extent_map *em;
-> >  	struct map_lookup *map;
-> >  	size_t item_size;
-> > @@ -4897,24 +4916,9 @@ int btrfs_finish_chunk_alloc(struct btrfs_trans_handle *trans,
-> >  	int i = 0;
-> >  	int ret = 0;
-> > 
-> > -	em_tree = &fs_info->mapping_tree.map_tree;
-> > -	read_lock(&em_tree->lock);
-> > -	em = lookup_extent_mapping(em_tree, chunk_offset, chunk_size);
-> > -	read_unlock(&em_tree->lock);
-> > -
-> > -	if (!em) {
-> > -		btrfs_crit(fs_info, "unable to find logical %Lu len %Lu",
-> > -			   chunk_offset, chunk_size);
-> > -		return -EINVAL;
-> > -	}
-> > -
-> > -	if (em->start != chunk_offset || em->len != chunk_size) {
-> > -		btrfs_crit(fs_info,
-> > -			   "found a bad mapping, wanted %Lu-%Lu, found %Lu-%Lu",
-> > -			    chunk_offset, chunk_size, em->start, em->len);
-> > -		free_extent_map(em);
-> > -		return -EINVAL;
-> > -	}
-> > +	em = get_chunk_map(fs_info, chunk_offset, chunk_size);
-> > +	if (IS_ERR(em))
-> > +		return PTR_ERR(em);
-> > 
-> >  	map = em->map_lookup;
-> >  	item_size = btrfs_chunk_item_size(map->num_stripes);
-> > @@ -5057,15 +5061,12 @@ int btrfs_chunk_readonly(struct btrfs_fs_info *fs_info, u64 chunk_offset)
-> >  {
-> >  	struct extent_map *em;
-> >  	struct map_lookup *map;
-> > -	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
-> >  	int readonly = 0;
-> >  	int miss_ndevs = 0;
-> >  	int i;
-> > 
-> > -	read_lock(&map_tree->map_tree.lock);
-> > -	em = lookup_extent_mapping(&map_tree->map_tree, chunk_offset, 1);
-> > -	read_unlock(&map_tree->map_tree.lock);
-> > -	if (!em)
-> > +	em = get_chunk_map(fs_info, chunk_offset, 1);
-> > +	if (IS_ERR(em))
-> >  		return 1;
-> > 
-> >  	map = em->map_lookup;
-> > @@ -5119,34 +5120,19 @@ void btrfs_mapping_tree_free(struct btrfs_mapping_tree *tree)
-> > 
-> >  int btrfs_num_copies(struct btrfs_fs_info *fs_info, u64 logical, u64 len)
-> >  {
-> > -	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
-> >  	struct extent_map *em;
-> >  	struct map_lookup *map;
-> > -	struct extent_map_tree *em_tree = &map_tree->map_tree;
-> >  	int ret;
-> > 
-> > -	read_lock(&em_tree->lock);
-> > -	em = lookup_extent_mapping(em_tree, logical, len);
-> > -	read_unlock(&em_tree->lock);
-> > -
-> > -	/*
-> > -	 * We could return errors for these cases, but that could get ugly and
-> > -	 * we'd probably do the same thing which is just not do anything else
-> > -	 * and exit, so return 1 so the callers don't try to use other copies.
-> > -	 */
-> > -	if (!em) {
-> > -		btrfs_crit(fs_info, "No mapping for %Lu-%Lu", logical,
-> > -			    logical+len);
-> > -		return 1;
-> > -	}
-> > -
-> > -	if (em->start > logical || em->start + em->len < logical) {
-> > -		btrfs_crit(fs_info, "Invalid mapping for %Lu-%Lu, got %Lu-%Lu",
-> > -			   logical, logical+len, em->start,
-> > -			   em->start + em->len);
-> > -		free_extent_map(em);
-> > +	em = get_chunk_map(fs_info, logical, len);
-> > +	if (IS_ERR(em))
-> > +		/*
-> > +		 * We could return errors for these cases, but that could get
-> > +		 * ugly and we'd probably do the same thing which is just not do
-> > +		 * anything else and exit, so return 1 so the callers don't try
-> > +		 * to use other copies.
-> > +		 */
-> >  		return 1;
-> > -	}
-> > 
-> >  	map = em->map_lookup;
-> >  	if (map->type & (BTRFS_BLOCK_GROUP_DUP | BTRFS_BLOCK_GROUP_RAID1))
-> > @@ -5175,15 +5161,11 @@ unsigned long btrfs_full_stripe_len(struct btrfs_fs_info *fs_info,
-> >  {
-> >  	struct extent_map *em;
-> >  	struct map_lookup *map;
-> > -	struct extent_map_tree *em_tree = &map_tree->map_tree;
-> >  	unsigned long len = fs_info->sectorsize;
-> > 
-> > -	read_lock(&em_tree->lock);
-> > -	em = lookup_extent_mapping(em_tree, logical, len);
-> > -	read_unlock(&em_tree->lock);
-> > -	BUG_ON(!em);
-> > +	em = get_chunk_map(fs_info, logical, len);
-> > +	BUG_ON(IS_ERR(em));
-> > 
-> > -	BUG_ON(em->start > logical || em->start + em->len < logical);
-> >  	map = em->map_lookup;
-> >  	if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK)
-> >  		len = map->stripe_len * nr_data_stripes(map);
-> > @@ -5191,20 +5173,16 @@ unsigned long btrfs_full_stripe_len(struct btrfs_fs_info *fs_info,
-> >  	return len;
-> >  }
-> > 
-> > -int btrfs_is_parity_mirror(struct btrfs_mapping_tree *map_tree,
-> > +int btrfs_is_parity_mirror(struct btrfs_fs_info *fs_info,
-> >  			   u64 logical, u64 len, int mirror_num)
-> >  {
-> >  	struct extent_map *em;
-> >  	struct map_lookup *map;
-> > -	struct extent_map_tree *em_tree = &map_tree->map_tree;
-> >  	int ret = 0;
-> > 
-> > -	read_lock(&em_tree->lock);
-> > -	em = lookup_extent_mapping(em_tree, logical, len);
-> > -	read_unlock(&em_tree->lock);
-> > -	BUG_ON(!em);
-> > +	em = get_chunk_map(fs_info, logical, len);
-> > +	BUG_ON(IS_ERR(em));
-> > 
-> > -	BUG_ON(em->start > logical || em->start + em->len < logical);
-> >  	map = em->map_lookup;
-> >  	if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK)
-> >  		ret = 1;
-> > @@ -5324,8 +5302,6 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
-> >  {
-> >  	struct extent_map *em;
-> >  	struct map_lookup *map;
-> > -	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
-> > -	struct extent_map_tree *em_tree = &map_tree->map_tree;
-> >  	u64 offset;
-> >  	u64 stripe_offset;
-> >  	u64 stripe_end_offset;
-> > @@ -5347,23 +5323,9 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
-> >  	u64 physical_to_patch_in_first_stripe = 0;
-> >  	u64 raid56_full_stripe_start = (u64)-1;
-> > 
-> > -	read_lock(&em_tree->lock);
-> > -	em = lookup_extent_mapping(em_tree, logical, *length);
-> > -	read_unlock(&em_tree->lock);
-> > -
-> > -	if (!em) {
-> > -		btrfs_crit(fs_info, "unable to find logical %llu len %llu",
-> > -			logical, *length);
-> > -		return -EINVAL;
-> > -	}
-> > -
-> > -	if (em->start > logical || em->start + em->len < logical) {
-> > -		btrfs_crit(fs_info,
-> > -			   "found a bad mapping, wanted %Lu, found %Lu-%Lu",
-> > -			   logical, em->start, em->start + em->len);
-> > -		free_extent_map(em);
-> > -		return -EINVAL;
-> > -	}
-> > +	em = get_chunk_map(fs_info, logical, *length);
-> > +	if (IS_ERR(em))
-> > +		return PTR_ERR(em);
-> > 
-> >  	map = em->map_lookup;
-> >  	offset = logical - em->start;
-> > @@ -5899,8 +5861,6 @@ int btrfs_rmap_block(struct btrfs_fs_info *fs_info,
-> >  		     u64 chunk_start, u64 physical, u64 devid,
-> >  		     u64 **logical, int *naddrs, int *stripe_len)
-> >  {
-> > -	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
-> > -	struct extent_map_tree *em_tree = &map_tree->map_tree;
-> >  	struct extent_map *em;
-> >  	struct map_lookup *map;
-> >  	u64 *buf;
-> > @@ -5910,24 +5870,11 @@ int btrfs_rmap_block(struct btrfs_fs_info *fs_info,
-> >  	u64 rmap_len;
-> >  	int i, j, nr = 0;
-> > 
-> > -	read_lock(&em_tree->lock);
-> > -	em = lookup_extent_mapping(em_tree, chunk_start, 1);
-> > -	read_unlock(&em_tree->lock);
-> > -
-> > -	if (!em) {
-> > -		btrfs_err(fs_info, "couldn't find em for chunk %Lu",
-> > -			chunk_start);
-> > +	em = get_chunk_map(fs_info, chunk_start, 1);
-> > +	if (IS_ERR(em))
-> >  		return -EIO;
-> > -	}
-> > 
-> > -	if (em->start != chunk_start) {
-> > -		btrfs_err(fs_info, "bad chunk start, em=%Lu, wanted=%Lu",
-> > -		       em->start, chunk_start);
-> > -		free_extent_map(em);
-> > -		return -EIO;
-> > -	}
-> >  	map = em->map_lookup;
-> > -
-> >  	length = em->len;
-> >  	rmap_len = map->stripe_len;
-> > 
-> > diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-> > index 24ba6bc..bd5f6cd 100644
-> > --- a/fs/btrfs/volumes.h
-> > +++ b/fs/btrfs/volumes.h
-> > @@ -475,7 +475,7 @@ void btrfs_destroy_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
-> >  void btrfs_init_dev_replace_tgtdev_for_resume(struct btrfs_fs_info *fs_info,
-> >  					      struct btrfs_device *tgtdev);
-> >  void btrfs_scratch_superblocks(struct block_device *bdev, char *device_path);
-> > -int btrfs_is_parity_mirror(struct btrfs_mapping_tree *map_tree,
-> > +int btrfs_is_parity_mirror(struct btrfs_fs_info *fs_info,
-> >  			   u64 logical, u64 len, int mirror_num);
-> >  unsigned long btrfs_full_stripe_len(struct btrfs_fs_info *fs_info,
-> >  				    struct btrfs_mapping_tree *map_tree,
-> > 
-> 
-> 

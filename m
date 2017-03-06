@@ -1,213 +1,211 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:48171 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751266AbdCPBuS (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Mar 2017 21:50:18 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-        by cn.fujitsu.com (Postfix) with ESMTP id CDD8749F9A79
-        for <linux-btrfs@vger.kernel.org>; Thu, 16 Mar 2017 09:50:03 +0800 (CST)
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v10 5/5] btrfs-progs: dedupe: introduce reconfigure subcommand
-Date: Thu, 16 Mar 2017 09:49:56 +0800
-Message-ID: <20170316014956.19916-6-quwenruo@cn.fujitsu.com>
-In-Reply-To: <20170316014956.19916-1-quwenruo@cn.fujitsu.com>
-References: <20170316014956.19916-1-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mail.kernel.org ([198.145.29.136]:47196 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754198AbdCFXc7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 6 Mar 2017 18:32:59 -0500
+Received: from mail.kernel.org (localhost [127.0.0.1])
+        by mail.kernel.org (Postfix) with ESMTP id 7554D20212
+        for <linux-btrfs@vger.kernel.org>; Mon,  6 Mar 2017 23:32:57 +0000 (UTC)
+Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 9C16820160
+        for <linux-btrfs@vger.kernel.org>; Mon,  6 Mar 2017 23:32:55 +0000 (UTC)
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/2] Btrfs: remove unused delalloc_end parameter
+Date: Mon,  6 Mar 2017 23:32:47 +0000
+Message-Id: <1488843167-8511-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce reconfigure subcommand to co-operate with new kernel ioctl
-modification.
+From: Filipe Manana <fdmanana@suse.com>
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+The delalloc_end parameter for extent_clear_unlock_delalloc() is never
+used, and only making the code for all callers longer and more complex.
+Just remove it.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- Documentation/btrfs-dedupe-inband.asciidoc |  7 +++
- cmds-dedupe-ib.c                           | 73 +++++++++++++++++++++++-------
- 2 files changed, 64 insertions(+), 16 deletions(-)
+ fs/btrfs/extent_io.c |  2 +-
+ fs/btrfs/extent_io.h |  2 +-
+ fs/btrfs/inode.c     | 32 +++++++++++++-------------------
+ 3 files changed, 15 insertions(+), 21 deletions(-)
 
-diff --git a/Documentation/btrfs-dedupe-inband.asciidoc b/Documentation/btrfs-dedupe-inband.asciidoc
-index df068c31..5fc4bb0d 100644
---- a/Documentation/btrfs-dedupe-inband.asciidoc
-+++ b/Documentation/btrfs-dedupe-inband.asciidoc
-@@ -86,6 +86,13 @@ And compression has higher priority than in-band de-duplication, means if
- compression and de-duplication is enabled at the same time, only compression
- will work.
- 
-+*reconfigure* [options] <path>::
-+Re-configure in-band de-duplication parameters of a filesystem.
-++
-+In-band de-duplication must be enbaled first before re-configuration.
-++
-+[Options] are the same with 'btrfs dedupe-inband enable'.
-+
- *status* <path>::
- Show current in-band de-duplication status of a filesystem.
- 
-diff --git a/cmds-dedupe-ib.c b/cmds-dedupe-ib.c
-index 5fd26009..397946fa 100644
---- a/cmds-dedupe-ib.c
-+++ b/cmds-dedupe-ib.c
-@@ -69,7 +69,6 @@ static const char * const cmd_dedupe_ib_enable_usage[] = {
- 	NULL
- };
- 
--
- #define report_fatal_parameter(dargs, old, member, type, err_val, fmt)	\
- if (dargs->member != old->member && dargs->member == (type)(err_val)) {	\
- 	error("unsupported dedupe "#member": %"#fmt"", old->member);	\
-@@ -92,6 +91,10 @@ static void report_parameter_error(struct btrfs_ioctl_dedupe_args *dargs,
- 		}
- 		report_option_parameter(dargs, old, flags, u8, -1, x);
- 	}
-+	if (dargs->status == 0 && old->cmd == BTRFS_DEDUPE_CTL_RECONF) {
-+		error("must enable dedupe before reconfiguration");
-+		return;
-+	}
- 	report_fatal_parameter(dargs, old, cmd, u16, -1, u);
- 	report_fatal_parameter(dargs, old, blocksize, u64, -1, llu);
- 	report_fatal_parameter(dargs, old, backend, u16, -1, u);
-@@ -102,14 +105,17 @@ static void report_parameter_error(struct btrfs_ioctl_dedupe_args *dargs,
- 	return;
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 28e8192..2cce08b 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1760,7 +1760,7 @@ static int __process_pages_contig(struct address_space *mapping,
  }
  
--static int cmd_dedupe_ib_enable(int argc, char **argv)
-+static int enable_reconfig_dedupe(int argc, char **argv, int reconf)
+ void extent_clear_unlock_delalloc(struct inode *inode, u64 start, u64 end,
+-				 u64 delalloc_end, struct page *locked_page,
++				 struct page *locked_page,
+ 				 unsigned clear_bits,
+ 				 unsigned long page_ops)
  {
- 	int ret;
- 	int fd = -1;
- 	char *path;
- 	u64 blocksize = BTRFS_DEDUPE_BLOCKSIZE_DEFAULT;
-+	int blocksize_set = 0;
- 	u16 hash_algo = BTRFS_DEDUPE_HASH_SHA256;
-+	int hash_algo_set = 0;
- 	u16 backend = BTRFS_DEDUPE_BACKEND_INMEMORY;
-+	int backend_set = 0;
- 	u64 limit_nr = 0;
- 	u64 limit_mem = 0;
- 	u64 sys_mem = 0;
-@@ -131,20 +137,22 @@ static int cmd_dedupe_ib_enable(int argc, char **argv)
- 			{ NULL, 0, NULL, 0}
- 		};
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index 3e4fad4..b12f4db 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -452,7 +452,7 @@ int map_private_extent_buffer(struct extent_buffer *eb, unsigned long offset,
+ void extent_range_clear_dirty_for_io(struct inode *inode, u64 start, u64 end);
+ void extent_range_redirty_for_io(struct inode *inode, u64 start, u64 end);
+ void extent_clear_unlock_delalloc(struct inode *inode, u64 start, u64 end,
+-				 u64 delalloc_end, struct page *locked_page,
++				 struct page *locked_page,
+ 				 unsigned bits_to_clear,
+ 				 unsigned long page_ops);
+ struct bio *
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index b2bc07a..07bee7d 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -106,7 +106,7 @@ static int btrfs_truncate(struct inode *inode);
+ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent);
+ static noinline int cow_file_range(struct inode *inode,
+ 				   struct page *locked_page,
+-				   u64 start, u64 end, u64 delalloc_end,
++				   u64 start, u64 end,
+ 				   int *page_started, unsigned long *nr_written,
+ 				   int unlock, struct btrfs_dedupe_hash *hash);
+ static struct extent_map *create_io_em(struct inode *inode, u64 start, u64 len,
+@@ -558,7 +558,7 @@ static noinline void compress_file_range(struct inode *inode,
+ 			 * we don't need to create any more async work items.
+ 			 * Unlock and free up our temp pages.
+ 			 */
+-			extent_clear_unlock_delalloc(inode, start, end, end,
++			extent_clear_unlock_delalloc(inode, start, end,
+ 						     NULL, clear_flags,
+ 						     PAGE_UNLOCK |
+ 						     PAGE_CLEAR_DIRTY |
+@@ -713,8 +713,6 @@ static noinline void submit_compressed_extents(struct inode *inode,
+ 					     async_extent->start,
+ 					     async_extent->start +
+ 					     async_extent->ram_size - 1,
+-					     async_extent->start +
+-					     async_extent->ram_size - 1,
+ 					     &page_started, &nr_written, 0,
+ 					     NULL);
  
--		c = getopt_long(argc, argv, "s:b:a:l:m:", long_options, NULL);
-+		c = getopt_long(argc, argv, "s:b:a:l:m:f", long_options, NULL);
- 		if (c < 0)
- 			break;
- 		switch (c) {
- 		case 's':
--			if (!strcasecmp("inmemory", optarg))
-+			if (!strcasecmp("inmemory", optarg)) {
- 				backend = BTRFS_DEDUPE_BACKEND_INMEMORY;
--			else {
-+				backend_set = 1;
-+			} else {
- 				error("unsupported dedupe backend: %s", optarg);
- 				exit(1);
- 			}
- 			break;
- 		case 'b':
- 			blocksize = parse_size(optarg);
-+			blocksize_set = 1;
- 			break;
- 		case 'a':
- 			if (strcmp("sha256", optarg)) {
-@@ -224,26 +232,40 @@ static int cmd_dedupe_ib_enable(int argc, char **argv)
- 		return 1;
+@@ -810,8 +808,6 @@ static noinline void submit_compressed_extents(struct inode *inode,
+ 		extent_clear_unlock_delalloc(inode, async_extent->start,
+ 				async_extent->start +
+ 				async_extent->ram_size - 1,
+-				async_extent->start +
+-				async_extent->ram_size - 1,
+ 				NULL, EXTENT_LOCKED | EXTENT_DELALLOC,
+ 				PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
+ 				PAGE_SET_WRITEBACK);
+@@ -831,7 +827,7 @@ static noinline void submit_compressed_extents(struct inode *inode,
+ 			tree->ops->writepage_end_io_hook(p, start, end,
+ 							 NULL, 0);
+ 			p->mapping = NULL;
+-			extent_clear_unlock_delalloc(inode, start, end, end,
++			extent_clear_unlock_delalloc(inode, start, end,
+ 						     NULL, 0,
+ 						     PAGE_END_WRITEBACK |
+ 						     PAGE_SET_ERROR);
+@@ -849,8 +845,6 @@ static noinline void submit_compressed_extents(struct inode *inode,
+ 	extent_clear_unlock_delalloc(inode, async_extent->start,
+ 				     async_extent->start +
+ 				     async_extent->ram_size - 1,
+-				     async_extent->start +
+-				     async_extent->ram_size - 1,
+ 				     NULL, EXTENT_LOCKED | EXTENT_DELALLOC |
+ 				     EXTENT_DEFRAG | EXTENT_DO_ACCOUNTING,
+ 				     PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
+@@ -908,7 +902,7 @@ static u64 get_extent_allocation_hint(struct inode *inode, u64 start,
+  */
+ static noinline int cow_file_range(struct inode *inode,
+ 				   struct page *locked_page,
+-				   u64 start, u64 end, u64 delalloc_end,
++				   u64 start, u64 end,
+ 				   int *page_started, unsigned long *nr_written,
+ 				   int unlock, struct btrfs_dedupe_hash *hash)
+ {
+@@ -942,7 +936,7 @@ static noinline int cow_file_range(struct inode *inode,
+ 					BTRFS_COMPRESS_NONE, NULL);
+ 		if (ret == 0) {
+ 			extent_clear_unlock_delalloc(inode, start, end,
+-				     delalloc_end, NULL,
++				     NULL,
+ 				     EXTENT_LOCKED | EXTENT_DELALLOC |
+ 				     EXTENT_DEFRAG, PAGE_UNLOCK |
+ 				     PAGE_CLEAR_DIRTY | PAGE_SET_WRITEBACK |
+@@ -1019,7 +1013,7 @@ static noinline int cow_file_range(struct inode *inode,
+ 
+ 		extent_clear_unlock_delalloc(inode, start,
+ 					     start + ram_size - 1,
+-					     delalloc_end, locked_page,
++					     locked_page,
+ 					     EXTENT_LOCKED | EXTENT_DELALLOC,
+ 					     op);
+ 		disk_num_bytes -= cur_alloc_size;
+@@ -1036,7 +1030,7 @@ static noinline int cow_file_range(struct inode *inode,
+ 	btrfs_dec_block_group_reservations(fs_info, ins.objectid);
+ 	btrfs_free_reserved_extent(fs_info, ins.objectid, ins.offset, 1);
+ out_unlock:
+-	extent_clear_unlock_delalloc(inode, start, end, delalloc_end,
++	extent_clear_unlock_delalloc(inode, start, end,
+ 				     locked_page,
+ 				     EXTENT_LOCKED | EXTENT_DO_ACCOUNTING |
+ 				     EXTENT_DELALLOC | EXTENT_DEFRAG,
+@@ -1212,7 +1206,7 @@ static noinline int run_delalloc_nocow(struct inode *inode,
+ 
+ 	path = btrfs_alloc_path();
+ 	if (!path) {
+-		extent_clear_unlock_delalloc(inode, start, end, end,
++		extent_clear_unlock_delalloc(inode, start, end,
+ 					     locked_page,
+ 					     EXTENT_LOCKED | EXTENT_DELALLOC |
+ 					     EXTENT_DO_ACCOUNTING |
+@@ -1366,7 +1360,7 @@ static noinline int run_delalloc_nocow(struct inode *inode,
+ 		if (cow_start != (u64)-1) {
+ 			ret = cow_file_range(inode, locked_page,
+ 					     cow_start, found_key.offset - 1,
+-					     end, page_started, nr_written, 1,
++					     page_started, nr_written, 1,
+ 					     NULL);
+ 			if (ret) {
+ 				if (!nolock && nocow)
+@@ -1425,7 +1419,7 @@ static noinline int run_delalloc_nocow(struct inode *inode,
+ 		}
+ 
+ 		extent_clear_unlock_delalloc(inode, cur_offset,
+-					     cur_offset + num_bytes - 1, end,
++					     cur_offset + num_bytes - 1,
+ 					     locked_page, EXTENT_LOCKED |
+ 					     EXTENT_DELALLOC |
+ 					     EXTENT_CLEAR_DATA_RESV,
+@@ -1445,7 +1439,7 @@ static noinline int run_delalloc_nocow(struct inode *inode,
  	}
- 	memset(&dargs, -1, sizeof(dargs));
--	dargs.cmd = BTRFS_DEDUPE_CTL_ENABLE;
--	dargs.blocksize = blocksize;
--	dargs.hash_algo = hash_algo;
--	dargs.limit_nr = limit_nr;
--	dargs.limit_mem = limit_mem;
--	dargs.backend = backend;
--	if (force)
--		dargs.flags |= BTRFS_DEDUPE_FLAG_FORCE;
--	else
--		dargs.flags = 0;
-+	if (reconf) {
-+		dargs.cmd = BTRFS_DEDUPE_CTL_RECONF;
-+		if (blocksize_set)
-+			dargs.blocksize = blocksize;
-+		if (hash_algo_set)
-+			dargs.hash_algo = hash_algo;
-+		if (backend_set)
-+			dargs.backend = backend;
-+		dargs.limit_nr = limit_nr;
-+		dargs.limit_mem = limit_mem;
-+	} else {
-+		dargs.cmd = BTRFS_DEDUPE_CTL_ENABLE;
-+		dargs.blocksize = blocksize;
-+		dargs.hash_algo = hash_algo;
-+		dargs.limit_nr = limit_nr;
-+		dargs.limit_mem = limit_mem;
-+		dargs.backend = backend;
-+		if (force)
-+			dargs.flags |= BTRFS_DEDUPE_FLAG_FORCE;
-+		else
-+			dargs.flags = 0;
-+	}
  
- 	memcpy(&backup, &dargs, sizeof(dargs));
- 	ret = ioctl(fd, BTRFS_IOC_DEDUPE_CTL, &dargs);
- 	if (ret < 0) {
--		error("failed to enable inband deduplication: %s",
-+		error("failed to (%s) inband deduplication: %s",
-+		      reconf ? "reconfigure" : "enable",
- 		      strerror(errno));
- 		report_parameter_error(&dargs, &backup);
- 		ret = 1;
- 		goto out;
- 	}
-+	report_parameter_error(&dargs, &backup);
- 	ret = 0;
- mem_check:
- 	if (!force && dargs.limit_mem > sys_mem / 4) {
-@@ -258,6 +280,10 @@ out:
- 	close_file_or_dir(fd, dirstream);
- 	return ret;
- }
-+static int cmd_dedupe_ib_enable(int argc, char **argv)
-+{
-+	return enable_reconfig_dedupe(argc, argv, 0);
-+}
+ 	if (cow_start != (u64)-1) {
+-		ret = cow_file_range(inode, locked_page, cow_start, end, end,
++		ret = cow_file_range(inode, locked_page, cow_start, end,
+ 				     page_started, nr_written, 1, NULL);
+ 		if (ret)
+ 			goto error;
+@@ -1453,7 +1447,7 @@ static noinline int run_delalloc_nocow(struct inode *inode,
  
- static const char * const cmd_dedupe_ib_disable_usage[] = {
- 	"btrfs dedupe disable <path>",
-@@ -378,6 +404,19 @@ out:
- 	return ret;
- }
- 
-+static int cmd_dedupe_ib_reconf(int argc, char **argv)
-+{
-+	return enable_reconfig_dedupe(argc, argv, 1);
-+}
-+
-+static const char * const cmd_dedupe_ib_reconf_usage[] = {
-+	"btrfs dedupe-inband reconfigure [options] <path>",
-+	"Reconfigure in-band(write time) de-duplication of a btrfs.",
-+	"",
-+	"Options are the same as 'btrfs dedupe-inband enable'",
-+	NULL
-+};
-+
- const struct cmd_group dedupe_ib_cmd_group = {
- 	dedupe_ib_cmd_group_usage, dedupe_ib_cmd_group_info, {
- 		{ "enable", cmd_dedupe_ib_enable, cmd_dedupe_ib_enable_usage,
-@@ -386,6 +425,8 @@ const struct cmd_group dedupe_ib_cmd_group = {
- 		  NULL, 0},
- 		{ "status", cmd_dedupe_ib_status, cmd_dedupe_ib_status_usage,
- 		  NULL, 0},
-+		{ "reconfigure", cmd_dedupe_ib_reconf,
-+		  cmd_dedupe_ib_reconf_usage, NULL, 0},
- 		NULL_CMD_STRUCT
- 	}
- };
+ error:
+ 	if (ret && cur_offset < end)
+-		extent_clear_unlock_delalloc(inode, cur_offset, end, end,
++		extent_clear_unlock_delalloc(inode, cur_offset, end,
+ 					     locked_page, EXTENT_LOCKED |
+ 					     EXTENT_DELALLOC | EXTENT_DEFRAG |
+ 					     EXTENT_DO_ACCOUNTING, PAGE_UNLOCK |
+@@ -1501,7 +1495,7 @@ static int run_delalloc_range(struct inode *inode, struct page *locked_page,
+ 		ret = run_delalloc_nocow(inode, locked_page, start, end,
+ 					 page_started, 0, nr_written);
+ 	} else if (!inode_need_compress(inode)) {
+-		ret = cow_file_range(inode, locked_page, start, end, end,
++		ret = cow_file_range(inode, locked_page, start, end,
+ 				      page_started, nr_written, 1, NULL);
+ 	} else {
+ 		set_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
 -- 
-2.12.0
-
-
+2.7.0.rc3
 

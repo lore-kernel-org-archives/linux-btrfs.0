@@ -1,21 +1,23 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:47390 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:38432 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932639AbdCGSg2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 7 Mar 2017 13:36:28 -0500
+        id S1756438AbdCHArz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 7 Mar 2017 19:47:55 -0500
 Received: from mail.kernel.org (localhost [127.0.0.1])
-        by mail.kernel.org (Postfix) with ESMTP id E100620411
-        for <linux-btrfs@vger.kernel.org>; Tue,  7 Mar 2017 18:36:15 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTP id E4F0120155
+        for <linux-btrfs@vger.kernel.org>; Wed,  8 Mar 2017 00:22:44 +0000 (UTC)
 Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 3A43820426
-        for <linux-btrfs@vger.kernel.org>; Tue,  7 Mar 2017 18:36:14 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 32D3520212
+        for <linux-btrfs@vger.kernel.org>; Wed,  8 Mar 2017 00:22:43 +0000 (UTC)
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] Btrfs: fix invalid attempt to free reserved space on failure to cow range
-Date: Tue,  7 Mar 2017 04:24:49 +0000
-Message-Id: <1488860689-6008-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH v3] Btrfs: fix invalid attempt to free reserved space on failure to cow range
+Date: Tue,  7 Mar 2017 20:34:11 +0000
+Message-Id: <1488918851-10411-1-git-send-email-fdmanana@kernel.org>
+In-Reply-To: <1488860689-6008-1-git-send-email-fdmanana@kernel.org>
+References: <1488860689-6008-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -89,28 +91,36 @@ V2: Removed previous dependence on a no longer needed cleanup patch and
     rebased it on top of Qu's recent patchset that fixes hanging ordered
     extents when errors happen.
 
+V3: Simplified extent flags used for freeing reserved metadata and data.
+
  fs/btrfs/extent_io.h |  4 +++-
- fs/btrfs/inode.c     | 56 ++++++++++++++++++++++++++++++++++++++--------------
- 2 files changed, 44 insertions(+), 16 deletions(-)
+ fs/btrfs/inode.c     | 59 +++++++++++++++++++++++++++++++++++++---------------
+ 2 files changed, 45 insertions(+), 18 deletions(-)
 
 diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 3e4fad4..d31313d 100644
+index 3e4fad4..48a30d0 100644
 --- a/fs/btrfs/extent_io.h
 +++ b/fs/btrfs/extent_io.h
-@@ -21,8 +21,10 @@
- #define EXTENT_NORESERVE	(1U << 15)
+@@ -14,7 +14,7 @@
+ #define EXTENT_DEFRAG		(1U << 6)
+ #define EXTENT_BOUNDARY		(1U << 9)
+ #define EXTENT_NODATASUM	(1U << 10)
+-#define EXTENT_DO_ACCOUNTING	(1U << 11)
++#define EXTENT_CLEAR_META_RESV	(1U << 11)
+ #define EXTENT_FIRST_DELALLOC	(1U << 12)
+ #define EXTENT_NEED_WAIT	(1U << 13)
+ #define EXTENT_DAMAGED		(1U << 14)
+@@ -22,6 +22,8 @@
  #define EXTENT_QGROUP_RESERVED	(1U << 16)
  #define EXTENT_CLEAR_DATA_RESV	(1U << 17)
-+#define EXTENT_SPACE_FREED	(1U << 18)
  #define EXTENT_IOBITS		(EXTENT_LOCKED | EXTENT_WRITEBACK)
--#define EXTENT_CTLBITS		(EXTENT_DO_ACCOUNTING | EXTENT_FIRST_DELALLOC)
-+#define EXTENT_CTLBITS		(EXTENT_DO_ACCOUNTING | EXTENT_FIRST_DELALLOC |\
-+				 EXTENT_SPACE_FREED)
++#define EXTENT_DO_ACCOUNTING    (EXTENT_CLEAR_META_RESV | \
++				 EXTENT_CLEAR_DATA_RESV)
+ #define EXTENT_CTLBITS		(EXTENT_DO_ACCOUNTING | EXTENT_FIRST_DELALLOC)
  
  /*
-  * flags for bio submission. The high bits indicate the compression
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 9b03eb9b..9714453 100644
+index 9b03eb9b..c8ce47a 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
 @@ -942,10 +942,13 @@ static noinline int cow_file_range(struct inode *inode,
@@ -183,8 +193,8 @@ index 9b03eb9b..9714453 100644
  	btrfs_dec_block_group_reservations(fs_info, ins.objectid);
  	btrfs_free_reserved_extent(fs_info, ins.objectid, ins.offset, 1);
  out_unlock:
-+	clear_bits = EXTENT_LOCKED | EXTENT_DO_ACCOUNTING | EXTENT_DELALLOC |
-+		EXTENT_DEFRAG;
++	clear_bits = EXTENT_LOCKED | EXTENT_DELALLOC | EXTENT_DEFRAG |
++		EXTENT_CLEAR_META_RESV;
 +	page_ops = PAGE_UNLOCK | PAGE_CLEAR_DIRTY | PAGE_SET_WRITEBACK |
 +		PAGE_END_WRITEBACK;
 +	/*
@@ -194,15 +204,15 @@ index 9b03eb9b..9714453 100644
 +	 * the data space_info's bytes_may_use counter and incremented the
 +	 * space_info's bytes_reserved counter by the same amount. We must make
 +	 * sure extent_clear_unlock_delalloc() does not try to decrement again
-+	 * the data space_info's bytes_may_use counter, therefore we pass it the
-+	 * flag EXTENT_SPACE_FREED.
++	 * the data space_info's bytes_may_use counter, therefore we do not pass
++	 * it the flag EXTENT_CLEAR_DATA_RESV.
 +	 */
 +	if (extent_reserved) {
 +		extent_clear_unlock_delalloc(inode, start,
 +					     start + cur_alloc_size,
 +					     start + cur_alloc_size,
 +					     locked_page,
-+					     clear_bits | EXTENT_SPACE_FREED,
++					     clear_bits,
 +					     page_ops);
 +		start += cur_alloc_size;
 +		if (start >= end)
@@ -214,12 +224,30 @@ index 9b03eb9b..9714453 100644
 -				     EXTENT_DELALLOC | EXTENT_DEFRAG,
 -				     PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
 -				     PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK);
-+				     clear_bits,
++				     clear_bits | EXTENT_CLEAR_DATA_RESV,
 +				     page_ops);
  	goto out;
  }
  
-@@ -1794,10 +1820,10 @@ static void btrfs_clear_bit_hook(struct btrfs_inode *inode,
+@@ -1775,7 +1801,7 @@ static void btrfs_clear_bit_hook(struct btrfs_inode *inode,
+ 
+ 		if (*bits & EXTENT_FIRST_DELALLOC) {
+ 			*bits &= ~EXTENT_FIRST_DELALLOC;
+-		} else if (!(*bits & EXTENT_DO_ACCOUNTING)) {
++		} else if (!(*bits & EXTENT_CLEAR_META_RESV)) {
+ 			spin_lock(&inode->lock);
+ 			inode->outstanding_extents -= num_extents;
+ 			spin_unlock(&inode->lock);
+@@ -1786,7 +1812,7 @@ static void btrfs_clear_bit_hook(struct btrfs_inode *inode,
+ 		 * don't need to call dellalloc_release_metadata if there is an
+ 		 * error.
+ 		 */
+-		if (*bits & EXTENT_DO_ACCOUNTING &&
++		if (*bits & EXTENT_CLEAR_META_RESV &&
+ 		    root != fs_info->tree_root)
+ 			btrfs_delalloc_release_metadata(inode, len);
+ 
+@@ -1794,10 +1820,9 @@ static void btrfs_clear_bit_hook(struct btrfs_inode *inode,
  		if (btrfs_is_testing(fs_info))
  			return;
  
@@ -229,8 +257,7 @@ index 9b03eb9b..9714453 100644
 -		    EXTENT_CLEAR_DATA_RESV)))
 +		if (root->root_key.objectid != BTRFS_DATA_RELOC_TREE_OBJECTID &&
 +		    do_list && !(state->state & EXTENT_NORESERVE) &&
-+		    (*bits & (EXTENT_DO_ACCOUNTING | EXTENT_CLEAR_DATA_RESV)) &&
-+		    !(*bits & EXTENT_SPACE_FREED))
++		    (*bits & EXTENT_CLEAR_DATA_RESV))
  			btrfs_free_reserved_data_space_noquota(
  					&inode->vfs_inode,
  					state->start, len);

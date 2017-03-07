@@ -1,102 +1,136 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:40541 "EHLO
-        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754332AbdCGExO (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Mar 2017 23:53:14 -0500
-Date: Tue, 7 Mar 2017 03:23:41 +0100
-From: Adam Borowski <kilobyte@angband.pl>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, lists@colorremedies.com
-Subject: Re: [PATCH v2 0/6] Chunk level degradable check
-Message-ID: <20170307022341.phpur3esp5fx5cmd@angband.pl>
+Received: from userp1050.oracle.com ([156.151.31.82]:45133 "EHLO
+        userp1050.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751994AbdCGFOJ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Mar 2017 00:14:09 -0500
+Received: from userp1040.oracle.com (userp1040.oracle.com [156.151.31.81])
+        by userp1050.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v274iM3A002284
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 7 Mar 2017 04:44:22 GMT
+Subject: Re: [PATCH v2 6/6] btrfs: Enhance missing device kernel message
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 References: <20170306085855.11403-1-quwenruo@cn.fujitsu.com>
- <20170307003643.a625476u7ltxjxxh@angband.pl>
- <c07e3381-5a6e-4de6-0d9e-4a397f07726c@cn.fujitsu.com>
+ <20170306085855.11403-7-quwenruo@cn.fujitsu.com>
+Cc: lists@colorremedies.com
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <9a8f6482-63d9-7079-7431-0fe1ad140918@oracle.com>
+Date: Tue, 7 Mar 2017 12:47:55 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <c07e3381-5a6e-4de6-0d9e-4a397f07726c@cn.fujitsu.com>
+In-Reply-To: <20170306085855.11403-7-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 07, 2017 at 09:35:56AM +0800, Qu Wenruo wrote:
-> At 03/07/2017 08:36 AM, Adam Borowski wrote:
-> > Not so for -draid5 -mraid1, unfortunately:
-> 
-> Unfortunately, for raid5 there are still unfixed bugs.
-> In fact, some raid5/6 bugs are already fixed, but still not merged yet.
-> 
-> > [/mnt/btr2/scratch]# btrfs fi us /mnt/vol1
-> > Data,RAID5: Size:2.02GiB, Used:1.21GiB
-> >    /dev/loop0	   1.01GiB
-> >    /dev/loop1	   1.01GiB
-> >    /dev/loop2	   1.01GiB
-
-> > [/mnt/btr2/scratch]# umount /mnt/vol1
-> > [/mnt/btr2/scratch]# losetup -D
-> > [/mnt/btr2/scratch]# losetup -f rb
-> > [/mnt/btr2/scratch]# losetup -f rc
-> 
-> So you're pulling out first device.
-> In theory, it should be completely OK for RAID5.
-> And the degradable check follows it.
-> 
-> > [/mnt/btr2/scratch]# mount -noatime,degraded /dev/loop0 /mnt/vol1
-> > [/mnt/btr2/scratch]# btrfs fi us /mnt/vol1
-> > Data,RAID5: Size:2.02GiB, Used:1.21GiB
-> >    /dev/loop0	   1.01GiB
-> >    /dev/loop0	   1.01GiB
-> >    /dev/loop1	   1.01GiB
-> 
-> Two loop0 shows up here, which should be detected as missing.
-> 
-> So it should be a btrfs-progs bug, and it'll be much easier to fix than
-> kernel.
-
-Alas, it's not merely a display bug, mounting is enough.
-
-> > Write something, mount degraded again.  Massive data corruption, both on
-> > plain reads and on scrub, unrecoverable.
-> 
-> Yep, same thing here.
-> And you'll be surprised that even 2 devices RAID5, which is the same as
-> RAID1(parity is the same as data), can still cause the problem.
-> 
-> So, RAID5/6 definitely has problem in degraded mode.
-> While I prefer to focus on normal RAID5/6 bug fix first, and until we solve
-> all RAID5/6 normal mode bugs with enough test cases covering them.
-
-Actually, turns out even the _first_ mount gets bad, even without writing a
-single data byte.  So it's not related to our single chunks bug.
-
-> > Obviously, this problem is somewhere with RAID5 rather than this patch set,
-> > but the safety check can't be removed before that is fixed.
-> 
-> Do we have *safety check* in original behavior?
-> 
-> At least v4.11-rc1, btrfs still allows us to mount raid5/6 degraded.
-> So the patchset itself is behaving just as old one.
-
-Right.  Thus, there's no regression.
-
-As it's a strict improvement over previous state (ie, fixes raid1 issues),
-Tested-by: Adam Borowski <kilobyte@angband.pl> (if you don't mind spamming
-commits with too many tags).
-
-> I'm completely fine to add a new patch to prohibit raid5/6 degraded mount,
-> but that would be a different enhancement though.
-
-Yeah.  I guess it's more in the "don't use RAID5, there be dragons" land.
 
 
-Thanks for these patches, they fix the #1 problem people have with RAID1.
+On 03/06/2017 04:58 PM, Qu Wenruo wrote:
+> For missing device, btrfs will just refuse to mount with almost
+> meaningless kernel message like:
+>
+>  BTRFS info (device vdb6): disk space caching is enabled
+>  BTRFS info (device vdb6): has skinny extents
+>  BTRFS error (device vdb6): failed to read the system array: -5
+>  BTRFS error (device vdb6): open_ctree failed
+>
+> This patch will add extra device missing output, making the result to:
+>
+>  BTRFS info (device vdb6): disk space caching is enabled
+>  BTRFS info (device vdb6): has skinny extents
+>  BTRFS warning (device vdb6): devid 2 uuid 80470722-cad2-4b90-b7c3-fee294552f1b is missing
+>  BTRFS error (device vdb6): failed to read the system array: -5
+>  BTRFS error (device vdb6): open_ctree failed
 
 
-[Apologies for that "✔" crap on some lines, my exit code on prompt thingy
-is very paste-unfriendly; I keep forgetting it so often that I'd better get
-rid of it...]
+Reviewed-by: Anand Jain <anand.jain@oracle.com>
 
--- 
-⢀⣴⠾⠻⢶⣦⠀ Meow!
-⣾⠁⢠⠒⠀⣿⡁
-⢿⡄⠘⠷⠚⠋⠀ Collisions shmolisions, let's see them find a collision or second
-⠈⠳⣄⠀⠀⠀⠀ preimage for double rot13!
+Thanks, Anand
+
+
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+>  fs/btrfs/volumes.c | 25 ++++++++++++++++++-------
+>  fs/btrfs/volumes.h |  2 ++
+>  2 files changed, 20 insertions(+), 7 deletions(-)
+>
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 72c78f096755..b33e96495934 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -6442,6 +6442,7 @@ static int read_one_chunk(struct btrfs_fs_info *fs_info, struct btrfs_key *key,
+>  		if (!map->stripes[i].dev &&
+>  		    !btrfs_test_opt(fs_info, DEGRADED)) {
+>  			free_extent_map(em);
+> +			btrfs_report_missing_device(fs_info, devid, uuid);
+>  			return -EIO;
+>  		}
+>  		if (!map->stripes[i].dev) {
+> @@ -6452,8 +6453,7 @@ static int read_one_chunk(struct btrfs_fs_info *fs_info, struct btrfs_key *key,
+>  				free_extent_map(em);
+>  				return -EIO;
+>  			}
+> -			btrfs_warn(fs_info, "devid %llu uuid %pU is missing",
+> -				   devid, uuid);
+> +			btrfs_report_missing_device(fs_info, devid, uuid);
+>  		}
+>  		map->stripes[i].dev->in_fs_metadata = 1;
+>  	}
+> @@ -6570,17 +6570,21 @@ static int read_one_dev(struct btrfs_fs_info *fs_info,
+>
+>  	device = btrfs_find_device(fs_info, devid, dev_uuid, fs_uuid);
+>  	if (!device) {
+> -		if (!btrfs_test_opt(fs_info, DEGRADED))
+> +		if (!btrfs_test_opt(fs_info, DEGRADED)) {
+> +			btrfs_report_missing_device(fs_info, devid, dev_uuid);
+>  			return -EIO;
+> +		}
+>
+>  		device = add_missing_dev(fs_devices, devid, dev_uuid);
+>  		if (!device)
+>  			return -ENOMEM;
+> -		btrfs_warn(fs_info, "devid %llu uuid %pU missing",
+> -				devid, dev_uuid);
+> +		btrfs_report_missing_device(fs_info, devid, dev_uuid);
+>  	} else {
+> -		if (!device->bdev && !btrfs_test_opt(fs_info, DEGRADED))
+> -			return -EIO;
+> +		if (!device->bdev) {
+> +			btrfs_report_missing_device(fs_info, devid, dev_uuid);
+> +			if (!btrfs_test_opt(fs_info, DEGRADED))
+> +				return -EIO;
+> +		}
+>
+>  		if(!device->bdev && !device->missing) {
+>  			/*
+> @@ -6591,6 +6595,7 @@ static int read_one_dev(struct btrfs_fs_info *fs_info,
+>  			 */
+>  			device->fs_devices->missing_devices++;
+>  			device->missing = 1;
+> +			btrfs_report_missing_device(fs_info, devid, dev_uuid);
+>  		}
+>
+>  		/* Move the device to its own fs_devices */
+> @@ -6748,6 +6753,12 @@ int btrfs_read_sys_array(struct btrfs_fs_info *fs_info)
+>  	return -EIO;
+>  }
+>
+> +void btrfs_report_missing_device(struct btrfs_fs_info *fs_info, u64 devid,
+> +				 u8 *uuid)
+> +{
+> +	btrfs_warn_rl(fs_info, "devid %llu uuid %pU is missing", devid, uuid);
+> +}
+> +
+>  /*
+>   * Check if all chunks in the fs is OK for read-write degraded mount
+>   *
+> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+> index 112fccacdabc..4f981b75958d 100644
+> --- a/fs/btrfs/volumes.h
+> +++ b/fs/btrfs/volumes.h
+> @@ -543,4 +543,6 @@ void btrfs_set_fs_info_ptr(struct btrfs_fs_info *fs_info);
+>  void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info);
+>
+>  bool btrfs_check_rw_degradable(struct btrfs_fs_info *fs_info);
+> +void btrfs_report_missing_device(struct btrfs_fs_info *fs_info, u64 devid,
+> +				 u8 *uuid);
+>  #endif
+>

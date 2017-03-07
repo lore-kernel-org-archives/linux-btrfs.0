@@ -1,43 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from syrinx.knorrie.org ([82.94.188.77]:49749 "EHLO
-        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755307AbdCGOMk (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Mar 2017 09:12:40 -0500
-Subject: Re: BTRFS critical: corrupt leaf, slot offset bad; then read-only
-To: Lukas Tribus <lukyt@gmx.net>, linux-btrfs@vger.kernel.org
-References: <7d3cccae-4761-4799-9ceb-2735519bee8f@gmx.net>
- <0d721199-9407-ff6b-7a31-4dc5dae08e7b@gmx.net>
- <1774ecd3-a28c-908a-ec3b-bc98db36f34e@mendix.com>
- <f805f57f-eecb-03da-e480-5aed4474cdf5@gmx.net>
- <c08d6121-6cb7-ad9a-5d71-cd93d2f49196@mendix.com>
- <03805d15-11d4-090b-f81a-c7368eddd752@gmx.net>
-From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Message-ID: <52a26261-b913-adb4-a926-41550d404dec@mendix.com>
-Date: Tue, 7 Mar 2017 15:12:35 +0100
+Received: from mail-wm0-f50.google.com ([74.125.82.50]:35866 "EHLO
+        mail-wm0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751949AbdCGRSA (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Mar 2017 12:18:00 -0500
+Received: by mail-wm0-f50.google.com with SMTP id n11so95382967wma.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 07 Mar 2017 09:16:41 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <03805d15-11d4-090b-f81a-c7368eddd752@gmx.net>
-Content-Type: text/plain; charset=utf-8
+From: Chad Walker <chad@chad-cat-lore-eddie.com>
+Date: Tue, 7 Mar 2017 11:16:39 -0600
+Message-ID: <CAOcw3LkKwnxgt0quH=A+wpm5zamQGUnnSGrCcboCYE_nuMgjww@mail.gmail.com>
+Subject: raid6 volume stuck in replace
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/05/2017 11:50 PM, Lukas Tribus wrote:
-> 
-> Am 24.02.2017 um 01:26 schrieb Hans van Kranenburg:
->>
->>> Once that is done, I would like to go over the "btrfs recovery" thread
->>> and see if it can
->>> be applied for my case as well. I will certainly need your help when
->>> that time comes...
->> We can take a stab at it.
-> 
-> I upgraded btrfs-tools to 4.8.1 as 4.4 didn't have btrfs
-> inspect-internal dump-tree.
-> But I cannot find anything about 5242107641856 in the dump-tree output.
-> 
-> What does that mean?
+Hi, I know that raid5/6 is experimental. I have a volume that I can
+mount read-only but not read-write that is stuck in a replace. I've
+put a bunch of info into this pastebin: http://pastebin.com/1SQuRGet
 
-I have no idea. It probably means it's gone. Did you use the filesystem
-read/write? Are the symptoms also gone?
+Since then I have updated to kernel 4.10.1 and btrfs-progs to 4.9.1,
+same issue. It seems that since it can mount it read-only, I should be
+able to fix the problem and get it mounted read-write.
 
--- 
-Hans van Kranenburg
+-chad

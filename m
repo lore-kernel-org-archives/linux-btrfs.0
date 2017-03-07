@@ -1,19 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1050.oracle.com ([141.146.126.70]:48650 "EHLO
-        aserp1050.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753929AbdCFT7u (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Mar 2017 14:59:50 -0500
-Received: from aserp1040.oracle.com (aserp1040.oracle.com [141.146.126.69])
-        by aserp1050.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v26JxeA2013585
+Received: from userp1050.oracle.com ([156.151.31.82]:36885 "EHLO
+        userp1050.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752233AbdCGCb7 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Mar 2017 21:31:59 -0500
+Received: from userp1040.oracle.com (userp1040.oracle.com [156.151.31.81])
+        by userp1050.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v272V6pQ009563
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 6 Mar 2017 19:59:40 GMT
-Date: Mon, 6 Mar 2017 11:57:58 -0800
+        for <linux-btrfs@vger.kernel.org>; Tue, 7 Mar 2017 02:31:06 GMT
+Date: Mon, 6 Mar 2017 18:29:29 -0800
 From: Liu Bo <bo.li.liu@oracle.com>
 To: Dave Jones <davej@codemonkey.org.uk>
 Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
         David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
 Subject: Re: assertion failed: page_ops & PAGE_LOCK
-Message-ID: <20170306195758.GD13180@lim.localdomain>
+Message-ID: <20170307022929.GA11113@lim.localdomain>
 Reply-To: bo.li.liu@oracle.com
 References: <20170305165917.2epbvdtulalrfxc3@codemonkey.org.uk>
 MIME-Version: 1.0
@@ -25,15 +25,31 @@ List-ID: <linux-btrfs.vger.kernel.org>
 On Sun, Mar 05, 2017 at 11:59:17AM -0500, Dave Jones wrote:
 > After commenting out the assertion that Liu bo pointed out was bogus,
 > my trinity runs last a little longer.. This is a new one I think..
+>
 
-I hit this once, haven't got enough info. to check what went wrong, but I'm
-working on it.
+Could you please try this patch?
 
 Thanks,
 
 -liubo
 
-> 
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 28e8192..8df7974 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1714,7 +1714,8 @@ static int __process_pages_contig(struct address_space *mapping,
+ 			 * can we find nothing at @index.
+ 			 */
+ 			ASSERT(page_ops & PAGE_LOCK);
+-			return ret;
++			err = -EAGAIN;
++			goto out;
+ 		}
+ 
+ 		for (i = 0; i < ret; i++) {
+
+
+
 > assertion failed: page_ops & PAGE_LOCK, file: fs/btrfs/extent_io.c, line: 1716
 > ------------[ cut here ]------------
 > kernel BUG at fs/btrfs/ctree.h:3423!

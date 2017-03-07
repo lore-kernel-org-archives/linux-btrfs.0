@@ -1,136 +1,180 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1050.oracle.com ([156.151.31.82]:45133 "EHLO
-        userp1050.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751994AbdCGFOJ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Mar 2017 00:14:09 -0500
-Received: from userp1040.oracle.com (userp1040.oracle.com [156.151.31.81])
-        by userp1050.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v274iM3A002284
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 7 Mar 2017 04:44:22 GMT
-Subject: Re: [PATCH v2 6/6] btrfs: Enhance missing device kernel message
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Received: from cn.fujitsu.com ([59.151.112.132]:20859 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1750718AbdCGFoh (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Mar 2017 00:44:37 -0500
+Subject: Re: [PATCH v2 4/6] btrfs: Allow barrier_all_devices to do chunk level
+ device check
+To: Anand Jain <anand.jain@oracle.com>
 References: <20170306085855.11403-1-quwenruo@cn.fujitsu.com>
- <20170306085855.11403-7-quwenruo@cn.fujitsu.com>
-Cc: lists@colorremedies.com
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <9a8f6482-63d9-7079-7431-0fe1ad140918@oracle.com>
-Date: Tue, 7 Mar 2017 12:47:55 +0800
+ <20170306085855.11403-5-quwenruo@cn.fujitsu.com>
+ <10be6a52-355d-d23f-b534-0bb279516a56@oracle.com>
+CC: <linux-btrfs@vger.kernel.org>, <lists@colorremedies.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <2194e420-62ff-8ee3-6311-d1cc397525fb@cn.fujitsu.com>
+Date: Tue, 7 Mar 2017 13:36:07 +0800
 MIME-Version: 1.0
-In-Reply-To: <20170306085855.11403-7-quwenruo@cn.fujitsu.com>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+In-Reply-To: <10be6a52-355d-d23f-b534-0bb279516a56@oracle.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 03/06/2017 04:58 PM, Qu Wenruo wrote:
-> For missing device, btrfs will just refuse to mount with almost
-> meaningless kernel message like:
+At 03/07/2017 12:48 PM, Anand Jain wrote:
 >
->  BTRFS info (device vdb6): disk space caching is enabled
->  BTRFS info (device vdb6): has skinny extents
->  BTRFS error (device vdb6): failed to read the system array: -5
->  BTRFS error (device vdb6): open_ctree failed
 >
-> This patch will add extra device missing output, making the result to:
+> On 03/06/2017 04:58 PM, Qu Wenruo wrote:
+>> The last user of num_tolerated_disk_barrier_failures is
+>> barrier_all_devices().
+>> But it's can be easily changed to new per-chunk degradable check
+>> framework.
+>>
+>> Now btrfs_device will have two extra members, representing send/wait
+>> error, set at write_dev_flush() time.
+>> With these 2 new members, btrfs_check_rw_degradable() can check if the
+>> fs is still OK when the fs is committed to disk.
 >
->  BTRFS info (device vdb6): disk space caching is enabled
->  BTRFS info (device vdb6): has skinny extents
->  BTRFS warning (device vdb6): devid 2 uuid 80470722-cad2-4b90-b7c3-fee294552f1b is missing
->  BTRFS error (device vdb6): failed to read the system array: -5
->  BTRFS error (device vdb6): open_ctree failed
+>  This logic isn't reentrant, earlier it was. How about using
+>  stack variable instead ?
+>
+> Thanks, Anand
+
+Thanks for the review.
+
+However I didn't quite get the point about the re-entrance and stack 
+variable here.
+
+1) About reentrancy
+In previous version, the err_* bits are still put into btrfs_devices 
+structure, just timing of resetting these bits are changes.
+
+So either way, it's not reentrant in theory.
+
+But that doesn't make a problem, as we have other things to protect when 
+calling write_all_supers(), the only caller of barrier_all_devices().
+
+So would you give me an example why we need to make it reentrant?
+
+2) About using stack variable?
+Did you mean build a array on stack to record which devices fails to 
+send/wait and use the array as check condition other than 
+btrfs_device->err_* and btrfs_device->missing ?
+
+The only problem is, it sounds more complex than needed.
+Despite the err_*, we also needs to check already missing devices, so I 
+prefer the easy way, just checking btrfs_device->err_* and 
+btrfs_device->missing.
+
+Any simple example to explain your suggestion here?
+
+Thanks,
+Qu
+
+>
+>
+>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>> ---
+>>  fs/btrfs/disk-io.c | 15 +++++++--------
+>>  fs/btrfs/volumes.c |  4 +++-
+>>  fs/btrfs/volumes.h |  4 ++++
+>>  3 files changed, 14 insertions(+), 9 deletions(-)
+>>
+>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+>> index c26b8a0b121c..f596bd130524 100644
+>> --- a/fs/btrfs/disk-io.c
+>> +++ b/fs/btrfs/disk-io.c
+>> @@ -3569,17 +3569,17 @@ static int barrier_all_devices(struct
+>> btrfs_fs_info *info)
+>>  {
+>>      struct list_head *head;
+>>      struct btrfs_device *dev;
+>> -    int errors_send = 0;
+>> -    int errors_wait = 0;
+>>      int ret;
+>>
+>>      /* send down all the barriers */
+>>      head = &info->fs_devices->devices;
+>>      list_for_each_entry_rcu(dev, head, dev_list) {
+>> +        dev->err_wait = false;
+>> +        dev->err_send = false;
+>>          if (dev->missing)
+>>              continue;
+>>          if (!dev->bdev) {
+>> -            errors_send++;
+>> +            dev->err_send = true;
+>>              continue;
+>>          }
+>>          if (!dev->in_fs_metadata || !dev->writeable)
+>> @@ -3587,7 +3587,7 @@ static int barrier_all_devices(struct
+>> btrfs_fs_info *info)
+>>
+>>          ret = write_dev_flush(dev, 0);
+>>          if (ret)
+>> -            errors_send++;
+>> +            dev->err_send = true;
+>>      }
+>>
+>>      /* wait for all the barriers */
+>> @@ -3595,7 +3595,7 @@ static int barrier_all_devices(struct
+>> btrfs_fs_info *info)
+>>          if (dev->missing)
+>>              continue;
+>>          if (!dev->bdev) {
+>> -            errors_wait++;
+>> +            dev->err_wait = true;
+>>              continue;
+>>          }
+>>          if (!dev->in_fs_metadata || !dev->writeable)
+>> @@ -3603,10 +3603,9 @@ static int barrier_all_devices(struct
+>> btrfs_fs_info *info)
+>>
+>>          ret = write_dev_flush(dev, 1);
+>>          if (ret)
+>> -            errors_wait++;
+>> +            dev->err_wait = true;
+>>      }
+>> -    if (errors_send > info->num_tolerated_disk_barrier_failures ||
+>> -        errors_wait > info->num_tolerated_disk_barrier_failures)
+>> +    if (!btrfs_check_rw_degradable(info))
+>>          return -EIO;
+>>      return 0;
+>>  }
+>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>> index dd9dd94d7043..729cbd0d2b60 100644
+>> --- a/fs/btrfs/volumes.c
+>> +++ b/fs/btrfs/volumes.c
+>> @@ -6796,7 +6796,9 @@ bool btrfs_check_rw_degradable(struct
+>> btrfs_fs_info *fs_info)
+>>              btrfs_get_num_tolerated_disk_barrier_failures(
+>>                      map->type);
+>>          for (i = 0; i < map->num_stripes; i++) {
+>> -            if (map->stripes[i].dev->missing)
+>> +            if (map->stripes[i].dev->missing ||
+>> +                map->stripes[i].dev->err_wait ||
+>> +                map->stripes[i].dev->err_send)
+>>                  missing++;
+>>          }
+>>          if (missing > max_tolerated) {
+>> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+>> index db1b5ef479cf..112fccacdabc 100644
+>> --- a/fs/btrfs/volumes.h
+>> +++ b/fs/btrfs/volumes.h
+>> @@ -75,6 +75,10 @@ struct btrfs_device {
+>>      int can_discard;
+>>      int is_tgtdev_for_dev_replace;
+>>
+>> +    /* If this devices fails to send/wait dev flush */
+>> +    bool err_send;
+>> +    bool err_wait;
+>
+>
+>
+>>  #ifdef __BTRFS_NEED_DEVICE_DATA_ORDERED
+>>      seqcount_t data_seqcount;
+>>  #endif
+>>
+>
+>
 
 
-Reviewed-by: Anand Jain <anand.jain@oracle.com>
-
-Thanks, Anand
-
-
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> ---
->  fs/btrfs/volumes.c | 25 ++++++++++++++++++-------
->  fs/btrfs/volumes.h |  2 ++
->  2 files changed, 20 insertions(+), 7 deletions(-)
->
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 72c78f096755..b33e96495934 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -6442,6 +6442,7 @@ static int read_one_chunk(struct btrfs_fs_info *fs_info, struct btrfs_key *key,
->  		if (!map->stripes[i].dev &&
->  		    !btrfs_test_opt(fs_info, DEGRADED)) {
->  			free_extent_map(em);
-> +			btrfs_report_missing_device(fs_info, devid, uuid);
->  			return -EIO;
->  		}
->  		if (!map->stripes[i].dev) {
-> @@ -6452,8 +6453,7 @@ static int read_one_chunk(struct btrfs_fs_info *fs_info, struct btrfs_key *key,
->  				free_extent_map(em);
->  				return -EIO;
->  			}
-> -			btrfs_warn(fs_info, "devid %llu uuid %pU is missing",
-> -				   devid, uuid);
-> +			btrfs_report_missing_device(fs_info, devid, uuid);
->  		}
->  		map->stripes[i].dev->in_fs_metadata = 1;
->  	}
-> @@ -6570,17 +6570,21 @@ static int read_one_dev(struct btrfs_fs_info *fs_info,
->
->  	device = btrfs_find_device(fs_info, devid, dev_uuid, fs_uuid);
->  	if (!device) {
-> -		if (!btrfs_test_opt(fs_info, DEGRADED))
-> +		if (!btrfs_test_opt(fs_info, DEGRADED)) {
-> +			btrfs_report_missing_device(fs_info, devid, dev_uuid);
->  			return -EIO;
-> +		}
->
->  		device = add_missing_dev(fs_devices, devid, dev_uuid);
->  		if (!device)
->  			return -ENOMEM;
-> -		btrfs_warn(fs_info, "devid %llu uuid %pU missing",
-> -				devid, dev_uuid);
-> +		btrfs_report_missing_device(fs_info, devid, dev_uuid);
->  	} else {
-> -		if (!device->bdev && !btrfs_test_opt(fs_info, DEGRADED))
-> -			return -EIO;
-> +		if (!device->bdev) {
-> +			btrfs_report_missing_device(fs_info, devid, dev_uuid);
-> +			if (!btrfs_test_opt(fs_info, DEGRADED))
-> +				return -EIO;
-> +		}
->
->  		if(!device->bdev && !device->missing) {
->  			/*
-> @@ -6591,6 +6595,7 @@ static int read_one_dev(struct btrfs_fs_info *fs_info,
->  			 */
->  			device->fs_devices->missing_devices++;
->  			device->missing = 1;
-> +			btrfs_report_missing_device(fs_info, devid, dev_uuid);
->  		}
->
->  		/* Move the device to its own fs_devices */
-> @@ -6748,6 +6753,12 @@ int btrfs_read_sys_array(struct btrfs_fs_info *fs_info)
->  	return -EIO;
->  }
->
-> +void btrfs_report_missing_device(struct btrfs_fs_info *fs_info, u64 devid,
-> +				 u8 *uuid)
-> +{
-> +	btrfs_warn_rl(fs_info, "devid %llu uuid %pU is missing", devid, uuid);
-> +}
-> +
->  /*
->   * Check if all chunks in the fs is OK for read-write degraded mount
->   *
-> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-> index 112fccacdabc..4f981b75958d 100644
-> --- a/fs/btrfs/volumes.h
-> +++ b/fs/btrfs/volumes.h
-> @@ -543,4 +543,6 @@ void btrfs_set_fs_info_ptr(struct btrfs_fs_info *fs_info);
->  void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info);
->
->  bool btrfs_check_rw_degradable(struct btrfs_fs_info *fs_info);
-> +void btrfs_report_missing_device(struct btrfs_fs_info *fs_info, u64 devid,
-> +				 u8 *uuid);
->  #endif
->

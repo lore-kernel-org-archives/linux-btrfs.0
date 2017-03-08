@@ -1,170 +1,245 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:25758 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S933550AbdCHC0U (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Mar 2017 21:26:20 -0500
+        with ESMTP id S933450AbdCHC0R (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Mar 2017 21:26:17 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>, <bo.li.liu@oracle.com>,
         <fdmanana@kernel.org>
-Subject: [PATCH v7 1/2] btrfs: Fix metadata underflow caused by btrfs_reloc_clone_csum error
-Date: Wed, 8 Mar 2017 10:25:51 +0800
-Message-ID: <20170308022552.14686-1-quwenruo@cn.fujitsu.com>
+CC: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH v7 2/2] btrfs: Handle delalloc error correctly to avoid ordered extent hang
+Date: Wed, 8 Mar 2017 10:25:52 +0800
+Message-ID: <20170308022552.14686-2-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20170308022552.14686-1-quwenruo@cn.fujitsu.com>
+References: <20170308022552.14686-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 [BUG]
-When btrfs_reloc_clone_csum() reports error, it can underflow metadata
-and leads to kernel assertion on outstanding extents in
-run_delalloc_nocow() and cow_file_range().
+If run_delalloc_range() returns error and there is already some ordered
+extents created, btrfs will be hanged with the following backtrace:
 
- BTRFS info (device vdb5): relocating block group 12582912 flags data
- BTRFS info (device vdb5): found 1 extents
- assertion failed: inode->outstanding_extents >= num_extents, file: fs/btrfs//extent-tree.c, line: 5858
-
-Currently, due to another bug blocking ordered extents, the bug is only
-reproducible under certain block group layout and using error injection.
-
-a) Create one data block group with one 4K extent in it.
-   To avoid the bug that hangs btrfs due to ordered extent which never
-   finishes
-b) Make btrfs_reloc_clone_csum() always fail
-c) Relocate that block group
+Call Trace:
+ __schedule+0x2d4/0xae0
+ schedule+0x3d/0x90
+ btrfs_start_ordered_extent+0x160/0x200 [btrfs]
+ ? wake_atomic_t_function+0x60/0x60
+ btrfs_run_ordered_extent_work+0x25/0x40 [btrfs]
+ btrfs_scrubparity_helper+0x1c1/0x620 [btrfs]
+ btrfs_flush_delalloc_helper+0xe/0x10 [btrfs]
+ process_one_work+0x2af/0x720
+ ? process_one_work+0x22b/0x720
+ worker_thread+0x4b/0x4f0
+ kthread+0x10f/0x150
+ ? process_one_work+0x720/0x720
+ ? kthread_create_on_node+0x40/0x40
+ ret_from_fork+0x2e/0x40
 
 [CAUSE]
-run_delalloc_nocow() and cow_file_range() handles error from
-btrfs_reloc_clone_csum() wrongly:
-
-(The ascii chart shows a more generic case of this bug other than the
-bug mentioned above)
 
 |<------------------ delalloc range --------------------------->|
 | OE 1 | OE 2 | ... | OE n |
-                    |<----------- cleanup range --------------->|
-|<-----------  ----------->|
-             \/
- btrfs_finish_ordered_io() range
+|<>|                       |<---------- cleanup range --------->|
+ ||
+ \_=> First page handled by end_extent_writepage() in __extent_writepage()
 
-So error handler, which calls extent_clear_unlock_delalloc() with
-EXTENT_DELALLOC and EXTENT_DO_ACCOUNT bits, and btrfs_finish_ordered_io()
-will both cover OE n, and free its metadata, causing metadata under flow.
+The problem is caused by error handler of run_delalloc_range(), which
+doesn't handle any created ordered extents, leaving them waiting on
+btrfs_finish_ordered_io() to finish.
 
-[Fix]
-The fix is to ensure after calling btrfs_add_ordered_extent(), we only
-call error handler after increasing the iteration offset, so that
-cleanup range won't cover any created ordered extent.
+However after run_delalloc_range() returns error, __extent_writepage()
+won't submit bio, so btrfs_writepage_end_io_hook() won't be triggered
+except the first page, and btrfs_finish_ordered_io() won't be triggered
+for created ordered extents either.
+
+So OE 2~n will hang forever, and if OE 1 is larger than one page, it
+will also hang.
+
+[FIX]
+Introduce btrfs_cleanup_ordered_extents() function to cleanup created
+ordered extents and finish them manually.
+
+The function is based on existing
+btrfs_endio_direct_write_update_ordered() function, and modify it to
+act just like btrfs_writepage_endio_hook() but handles specified range
+other than one page.
+
+After fix, delalloc error will be handled like:
 
 |<------------------ delalloc range --------------------------->|
 | OE 1 | OE 2 | ... | OE n |
-|<-----------  ----------->|<---------- cleanup range --------->|
-             \/
- btrfs_finish_ordered_io() range
+|<>|<--------  ----------->|<------ old error handler --------->|
+ ||          ||
+ ||          \_=> Cleaned up by cleanup_ordered_extents()
+ \_=> First page handled by end_extent_writepage() in __extent_writepage()
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
+v2:
+  Add BTRFS_ORDERED_SKIP_METADATA flag to avoid double reducing
+  outstanding extents, which is already done by
+  extent_clear_unlock_delalloc() with EXTENT_DO_ACCOUNT control bit
+v3:
+  Skip first page to avoid underflow ordered->bytes_left.
+  Fix range passed in cow_file_range() which doesn't cover the whole
+  extent.
+  Expend extent_clear_unlock_delalloc() range to allow them to handle
+  metadata release.
+v4:
+  Don't use extra bit to skip metadata freeing for ordered extent,
+  but only handle btrfs_reloc_clone_csums() error just before processing
+  next extent.
+  This makes error handle much easier for run_delalloc_nocow().
+v5:
+  Variant gramma and comment fixes suggested by Filipe Manana
+  Enhanced commit message to focus on the generic error handler bug,
+  pointed out by Filipe Manana
+  Adding missing wq/func user in __endio_write_update_ordered(), pointed
+  out by Filipe Manana.
+  Enhanced commit message with ascii art to explain the bug more easily.
+  Fix a bug which can leads to corrupted extent allocation, exposed by
+  Filipe Manana.
 v6:
-  New, split from v5 patch, as this is a separate bug.
+  Split the metadata underflow fix to another patch.
+  Use better comment and btrfs_cleanup_ordered_extent() implementation
+  from Filipe Manana.
 v7:
-  Fix a wrong operator pointed out by Liu Bo.
-  Test case will follow soon.
+  Add back const prefix
 ---
- fs/btrfs/inode.c | 51 +++++++++++++++++++++++++++++++++++++++------------
- 1 file changed, 39 insertions(+), 12 deletions(-)
+ fs/btrfs/inode.c | 63 ++++++++++++++++++++++++++++++++++++++++++--------------
+ 1 file changed, 48 insertions(+), 15 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index c40060cc481f..fe588bf30d02 100644
+index fe588bf30d02..d3bc68bbe0e7 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -998,15 +998,24 @@ static noinline int cow_file_range(struct inode *inode,
- 		    BTRFS_DATA_RELOC_TREE_OBJECTID) {
- 			ret = btrfs_reloc_clone_csums(inode, start,
- 						      cur_alloc_size);
-+			/*
-+			 * Only drop cache here, and process as normal.
-+			 *
-+			 * We must not allow extent_clear_unlock_delalloc()
-+			 * at out_unlock label to free meta of this ordered
-+			 * extent, as its meta should be freed by
-+			 * btrfs_finish_ordered_io().
-+			 *
-+			 * So we must continue until @start is increased to
-+			 * skip current ordered extent.
-+			 */
- 			if (ret)
--				goto out_drop_extent_cache;
-+				btrfs_drop_extent_cache(BTRFS_I(inode), start,
-+						start + ram_size - 1, 0);
- 		}
+@@ -115,6 +115,31 @@ static struct extent_map *create_io_em(struct inode *inode, u64 start, u64 len,
+ 				       u64 ram_bytes, int compress_type,
+ 				       int type);
  
- 		btrfs_dec_block_group_reservations(fs_info, ins.objectid);
- 
--		if (disk_num_bytes < cur_alloc_size)
--			break;
--
- 		/* we're not doing compressed IO, don't unlock the first
- 		 * page (which the caller expects to stay locked), don't
- 		 * clear any dirty bits and don't set any writeback bits
-@@ -1022,10 +1031,21 @@ static noinline int cow_file_range(struct inode *inode,
- 					     delalloc_end, locked_page,
- 					     EXTENT_LOCKED | EXTENT_DELALLOC,
- 					     op);
--		disk_num_bytes -= cur_alloc_size;
-+		if (disk_num_bytes < cur_alloc_size)
-+			disk_num_bytes = 0;
-+		else
-+			disk_num_bytes -= cur_alloc_size;
- 		num_bytes -= cur_alloc_size;
- 		alloc_hint = ins.objectid + ins.offset;
- 		start += cur_alloc_size;
++static void __endio_write_update_ordered(struct inode *inode,
++					 const u64 offset, const u64 bytes,
++					 const bool uptodate);
 +
-+		/*
-+		 * btrfs_reloc_clone_csums() error, since start is increased
-+		 * extent_clear_unlock_delalloc() at out_unlock label won't
-+		 * free metadata of current ordered extent, we're OK to exit.
-+		 */
-+		if (ret)
-+			goto out_unlock;
++/*
++ * Cleanup all submitted ordered extents in specified range to handle errors
++ * from the fill_dellaloc() callback.
++ *
++ * NOTE: caller must ensure that when an error happens, it can not call
++ * extent_clear_unlock_delalloc() to clear both the bits EXTENT_DO_ACCOUNTING
++ * and EXTENT_DELALLOC simultaneously, because that causes the reserved metadata
++ * to be released, which we want to happen only when finishing the ordered
++ * extent (btrfs_finish_ordered_io()). Also note that the caller of the
++ * fill_delalloc() callback already does proper cleanup for the first page of
++ * the range, that is, it invokes the callback writepage_end_io_hook() for the
++ * range of the first page.
++ */
++static inline void btrfs_cleanup_ordered_extents(struct inode *inode,
++						 const u64 offset,
++						 const u64 bytes)
++{
++	return __endio_write_update_ordered(inode, offset + PAGE_SIZE,
++					    bytes - PAGE_SIZE, false);
++}
++
+ static int btrfs_dirty_inode(struct inode *inode);
+ 
+ #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+@@ -1536,6 +1561,8 @@ static int run_delalloc_range(struct inode *inode, struct page *locked_page,
+ 		ret = cow_file_range_async(inode, locked_page, start, end,
+ 					   page_started, nr_written);
  	}
- out:
++	if (ret)
++		btrfs_cleanup_ordered_extents(inode, start, end - start + 1);
  	return ret;
-@@ -1414,15 +1434,14 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 		BUG_ON(ret); /* -ENOMEM */
+ }
  
- 		if (root->root_key.objectid ==
--		    BTRFS_DATA_RELOC_TREE_OBJECTID) {
-+		    BTRFS_DATA_RELOC_TREE_OBJECTID)
-+			/*
-+			 * Error handled later, as we must prevent
-+			 * extent_clear_unlock_delalloc() in error handler
-+			 * from freeing metadata of created ordered extent.
-+			 */
- 			ret = btrfs_reloc_clone_csums(inode, cur_offset,
- 						      num_bytes);
--			if (ret) {
--				if (!nolock && nocow)
--					btrfs_end_write_no_snapshoting(root);
--				goto error;
--			}
--		}
+@@ -8142,17 +8169,26 @@ static void btrfs_endio_direct_read(struct bio *bio)
+ 	bio_put(bio);
+ }
  
- 		extent_clear_unlock_delalloc(inode, cur_offset,
- 					     cur_offset + num_bytes - 1, end,
-@@ -1434,6 +1453,14 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 		if (!nolock && nocow)
- 			btrfs_end_write_no_snapshoting(root);
- 		cur_offset = extent_end;
+-static void btrfs_endio_direct_write_update_ordered(struct inode *inode,
+-						    const u64 offset,
+-						    const u64 bytes,
+-						    const int uptodate)
++static void __endio_write_update_ordered(struct inode *inode,
++					 const u64 offset, const u64 bytes,
++					 const bool uptodate)
+ {
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+ 	struct btrfs_ordered_extent *ordered = NULL;
++	struct btrfs_workqueue *wq;
++	btrfs_work_func_t func;
+ 	u64 ordered_offset = offset;
+ 	u64 ordered_bytes = bytes;
+ 	int ret;
+ 
++	if (btrfs_is_free_space_inode(BTRFS_I(inode))) {
++		wq = fs_info->endio_freespace_worker;
++		func = btrfs_freespace_write_helper;
++	} else {
++		wq = fs_info->endio_write_workers;
++		func = btrfs_endio_write_helper;
++	}
 +
-+		/*
-+		 * btrfs_reloc_clone_csums() error, now we're OK to call error
-+		 * handler, as metadata for created ordered extent will only
-+		 * be freed by btrfs_finish_ordered_io().
-+		 */
-+		if (ret)
-+			goto error;
- 		if (cur_offset > end)
- 			break;
- 	}
+ again:
+ 	ret = btrfs_dec_test_first_ordered_pending(inode, &ordered,
+ 						   &ordered_offset,
+@@ -8161,9 +8197,8 @@ static void btrfs_endio_direct_write_update_ordered(struct inode *inode,
+ 	if (!ret)
+ 		goto out_test;
+ 
+-	btrfs_init_work(&ordered->work, btrfs_endio_write_helper,
+-			finish_ordered_fn, NULL, NULL);
+-	btrfs_queue_work(fs_info->endio_write_workers, &ordered->work);
++	btrfs_init_work(&ordered->work, func, finish_ordered_fn, NULL, NULL);
++	btrfs_queue_work(wq, &ordered->work);
+ out_test:
+ 	/*
+ 	 * our bio might span multiple ordered extents.  If we haven't
+@@ -8181,10 +8216,8 @@ static void btrfs_endio_direct_write(struct bio *bio)
+ 	struct btrfs_dio_private *dip = bio->bi_private;
+ 	struct bio *dio_bio = dip->dio_bio;
+ 
+-	btrfs_endio_direct_write_update_ordered(dip->inode,
+-						dip->logical_offset,
+-						dip->bytes,
+-						!bio->bi_error);
++	__endio_write_update_ordered(dip->inode, dip->logical_offset,
++				     dip->bytes, !bio->bi_error);
+ 
+ 	kfree(dip);
+ 
+@@ -8545,10 +8578,10 @@ static void btrfs_submit_direct(struct bio *dio_bio, struct inode *inode,
+ 		io_bio = NULL;
+ 	} else {
+ 		if (write)
+-			btrfs_endio_direct_write_update_ordered(inode,
++			__endio_write_update_ordered(inode,
+ 						file_offset,
+ 						dio_bio->bi_iter.bi_size,
+-						0);
++						false);
+ 		else
+ 			unlock_extent(&BTRFS_I(inode)->io_tree, file_offset,
+ 			      file_offset + dio_bio->bi_iter.bi_size - 1);
+@@ -8683,11 +8716,11 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
+ 			 */
+ 			if (dio_data.unsubmitted_oe_range_start <
+ 			    dio_data.unsubmitted_oe_range_end)
+-				btrfs_endio_direct_write_update_ordered(inode,
++				__endio_write_update_ordered(inode,
+ 					dio_data.unsubmitted_oe_range_start,
+ 					dio_data.unsubmitted_oe_range_end -
+ 					dio_data.unsubmitted_oe_range_start,
+-					0);
++					false);
+ 		} else if (ret >= 0 && (size_t)ret < count)
+ 			btrfs_delalloc_release_space(inode, offset,
+ 						     count - (size_t)ret);
 -- 
 2.12.0
 

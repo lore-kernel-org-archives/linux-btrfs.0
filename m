@@ -1,42 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from vmicros1.altlinux.org ([194.107.17.57]:56862 "EHLO
-        vmicros1.altlinux.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751467AbdCBTxR (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Mar 2017 14:53:17 -0500
-Date: Thu, 2 Mar 2017 22:42:38 +0300
-From: "Dmitry V. Levin" <ldv@altlinux.org>
-To: David Sterba <dsterba@suse.com>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: [PATCH] MAINTAINERS: add btrfs file entries
-Message-ID: <20170302194237.GA6906@altlinux.org>
-References: <20170215200259.GA1028@altlinux.org> <e5736c5a-1cef-58cb-a171-055e139e26e7@suse.com> <20170215225503.GA2947@altlinux.org> <20170228231250.GA10156@altlinux.org> <20170301145434.GD4662@twin.jikos.cz> <20170302114212.GK4662@suse.cz> <20170302130117.GA2208@altlinux.org> <20170302185946.GL4662@suse.cz>
-Mime-Version: 1.0
+Received: from mx2.suse.de ([195.135.220.15]:45564 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751840AbdCHMUC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 8 Mar 2017 07:20:02 -0500
+Date: Wed, 8 Mar 2017 13:18:33 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Omar Sandoval <osandov@osandov.com>, linux-btrfs@vger.kernel.org,
+        David Sterba <dsterba@suse.com>, kernel-team@fb.com
+Subject: Re: [PATCH v2] btrfs-progs: report I/O errors when closing the
+ filesystem
+Message-ID: <20170308121833.GA4662@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <d187bd863a7eacb2172b693a95c6a8b875e144c4.1488560213.git.osandov@fb.com>
+ <105e3aa192a47f3936c2ac47ad8d673745cccaea.1488560489.git.osandov@fb.com>
+ <ab252cb5-b59e-d445-b69c-0dfe15c0861a@cn.fujitsu.com>
+MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170302185946.GL4662@suse.cz>
+In-Reply-To: <ab252cb5-b59e-d445-b69c-0dfe15c0861a@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add file entries for btrfs header files.
+On Mon, Mar 06, 2017 at 08:42:01AM +0800, Qu Wenruo wrote:
+> 
+> 
+> At 03/04/2017 01:02 AM, Omar Sandoval wrote:
+> > From: Omar Sandoval <osandov@fb.com>
+> >
+> > If the final fsync() on the Btrfs device fails, we just swallow the
+> > error and don't alert the user in any way. This was uncovered by xfstest
+> > generic/405, which checks that mkfs fails when it encounters EIO.
+> >
+> > Signed-off-by: Omar Sandoval <osandov@fb.com>
+> 
+> Please ignore my comment on v1 patch, didn't see the v2 one.
+> 
+> Looks good to me.
+> 
+> Reviewed-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-Signed-off-by: Dmitry V. Levin <ldv@altlinux.org>
-Acked-by: David Sterba <dsterba@suse.com>
----
- MAINTAINERS | 2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/MAINTAINERS b/MAINTAINERS
-index 0001835..04a758f 100644
---- a/MAINTAINERS
-+++ b/MAINTAINERS
-@@ -2904,6 +2904,8 @@ T:	git git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git
- S:	Maintained
- F:	Documentation/filesystems/btrfs.txt
- F:	fs/btrfs/
-+F:	include/linux/btrfs*
-+F:	include/uapi/linux/btrfs*
- 
- BTTV VIDEO4LINUX DRIVER
- M:	Mauro Carvalho Chehab <mchehab@s-opensource.com>
--- 
-ldv
+Applied, thanks.

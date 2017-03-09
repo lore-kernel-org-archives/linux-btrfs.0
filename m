@@ -1,96 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:44974 "EHLO
-        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751334AbdCGXYJ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Mar 2017 18:24:09 -0500
-From: Adam Borowski <kilobyte@angband.pl>
-To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        Liu Bo <bo.li.liu@oracle.com>
-Cc: Adam Borowski <kilobyte@angband.pl>
-Date: Tue,  7 Mar 2017 23:34:44 +0100
-Message-Id: <20170307223444.7526-1-kilobyte@angband.pl>
-In-Reply-To: <20170307203406.GC12408@lim.localdomain>
-References: <20170307203406.GC12408@lim.localdomain>
-Subject: [PATCH v2] btrfs: fix a bogus warning when converting only data or metadata
+Received: from mx2.suse.de ([195.135.220.15]:45217 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754526AbdCINzl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 9 Mar 2017 08:55:41 -0500
+From: David Sterba <dsterba@suse.com>
+To: clm@fb.com
+Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Subject: [PULL] Btrfs updates for 4.11-rc2
+Date: Thu,  9 Mar 2017 14:55:00 +0100
+Message-Id: <cover.1489067273.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If your filesystem has, eg, data:raid0 metadata:raid1, and you run "btrfs
-balance -dconvert=raid1", the meta.target field will be uninitialized.
-That's otherwise ok, as it's unused except for this warning.
+Hi,
 
-Thus, let's use the existing set of raid levels for the comparison.
+there's a regression fix for the assertion failure reported by Dave Jones, the
+rest of patches are minor updates. Please pull, thanks.
 
-As a side effect, non-convert balances will now nag about data>metadata.
+The following changes since commit e9f467d028cd7d8bee2a4d6c4fb806caf8cd580b:
 
-Signed-off-by: Adam Borowski <kilobyte@angband.pl>
----
-To reproduce:
-dd if=/dev/zero bs=1048576 count=1 seek=4095 of=ra
-dd if=/dev/zero bs=1048576 count=1 seek=4095 of=rb
-mkfs.btrfs ra rb     # defaults to -draid0 -mraid1
-losetup -f ra
-losetup -f rb
-mount /dev/loop0 /mnt/vol1
-btrfs balance start -dconvert=raid1 /mnt/vol1
+  Merge branch 'for-chris-4.11-part2' of git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux into for-linus-4.11 (2017-02-28 14:35:09 -0800)
 
+are available in the git repository at:
 
-On Tue, Mar 07, 2017 at 12:34:07PM -0800, Liu Bo wrote:
-> This looks good, but this also brings another side effect, @bctl would
-> also be kept in balance_item which will be used to resume balance in
-> case of crash, so it may see a different bctl->meta.target.
->
-> So would you please use local varibles for meta.target and data.target?
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-chris-4.11-rc2
 
-Okay.
+for you to fetch changes up to 94b5a2924fc0ec2bb2347ca31156be8fabe907c4:
 
-I'm not sure why storing a bogus value that came from userspace and was
-uninitialized there (0 in normal use) would be better, but here we go:
-v2 doesn't overwrite what we got anymore.
+  Btrfs: consistent usage of types in balance_args (2017-03-09 14:23:00 +0100)
 
-Unrelated: I wonder if the profiles in the warning message shouldn't be
-printk'ed as words (akin to ebce0e01), but we don't have a function to do
-that, have we?
+----------------------------------------------------------------
+Dmitry V. Levin (2):
+      btrfs: remove btrfs_err_str function from uapi/linux/btrfs.h
+      MAINTAINERS: add btrfs file entries for include directories
 
+Goldwyn Rodrigues (1):
+      btrfs: No need to check !(flags & MS_RDONLY) twice
 
-Meow!
+Hans van Kranenburg (1):
+      Btrfs: consistent usage of types in balance_args
 
- fs/btrfs/volumes.c | 12 +++++++++---
- 1 file changed, 9 insertions(+), 3 deletions(-)
+Liu Bo (2):
+      Btrfs: update comments in cache_save_setup
+      Btrfs: fix regression in lock_delalloc_pages
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 3645af2749f8..987f395ddec5 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3750,6 +3750,7 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
- 		  struct btrfs_ioctl_balance_args *bargs)
- {
- 	struct btrfs_fs_info *fs_info = bctl->fs_info;
-+	__u64 meta_target, data_target;
- 	u64 allowed;
- 	int mixed = 0;
- 	int ret;
-@@ -3846,11 +3847,16 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
- 		}
- 	} while (read_seqretry(&fs_info->profiles_lock, seq));
- 
--	if (btrfs_get_num_tolerated_disk_barrier_failures(bctl->meta.target) <
--		btrfs_get_num_tolerated_disk_barrier_failures(bctl->data.target)) {
-+	/* if we're not converting, the target field is uninitialized */
-+	meta_target = (bctl->meta.flags & BTRFS_BALANCE_ARGS_CONVERT) ?
-+		bctl->meta.target : fs_info->avail_metadata_alloc_bits;
-+	data_target = (bctl->data.flags & BTRFS_BALANCE_ARGS_CONVERT) ?
-+		bctl->data.target : fs_info->avail_data_alloc_bits;
-+	if (btrfs_get_num_tolerated_disk_barrier_failures(meta_target) <
-+		btrfs_get_num_tolerated_disk_barrier_failures(data_target)) {
- 		btrfs_warn(fs_info,
- 			   "metadata profile 0x%llx has lower redundancy than data profile 0x%llx",
--			   bctl->meta.target, bctl->data.target);
-+			   meta_target, data_target);
- 	}
- 
- 	ret = insert_balance_item(fs_info, bctl);
--- 
-2.11.0
-
+ MAINTAINERS                |  2 ++
+ fs/btrfs/extent-tree.c     |  3 ++-
+ fs/btrfs/extent_io.c       |  3 ++-
+ fs/btrfs/super.c           |  3 +--
+ include/uapi/linux/btrfs.h | 37 +++++--------------------------------
+ 5 files changed, 12 insertions(+), 36 deletions(-)

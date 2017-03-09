@@ -1,112 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:59392 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1750707AbdCIBvj (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Mar 2017 20:51:39 -0500
+        with ESMTP id S1754641AbdCIBvk (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Mar 2017 20:51:40 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>, <anand.jain@oracle.com>
-Subject: [PATCH v3.1 1/7] btrfs: Introduce a function to check if all chunks a OK for degraded rw mount
-Date: Thu, 9 Mar 2017 09:34:36 +0800
-Message-ID: <20170309013442.19957-2-quwenruo@cn.fujitsu.com>
-In-Reply-To: <20170309013442.19957-1-quwenruo@cn.fujitsu.com>
-References: <20170309013442.19957-1-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v3.1 0/7] Chunk level degradable check
+Date: Thu, 9 Mar 2017 09:34:35 +0800
+Message-ID: <20170309013442.19957-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce a new function, btrfs_check_rw_degradable(), to check if all
-chunks in btrfs is OK for degraded rw mount.
+Btrfs currently uses num_tolerated_disk_barrier_failures to do global
+check for tolerated missing device.
 
-It provides the new basis for accurate btrfs mount/remount and even
-runtime degraded mount check other than old one-size-fit-all method.
+Although the one-size-fit-all solution is quite safe, it's too strict
+if data and metadata has different duplication level.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
-Tested-by: Adam Borowski <kilobyte@angband.pl>
-Tested-by: Dmitrii Tcvetkov <demfloro@demfloro.ru>
----
- fs/btrfs/volumes.c | 55 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/volumes.h |  1 +
- 2 files changed, 56 insertions(+)
+For example, if one use Single data and RAID1 metadata for 2 disks, it
+means any missing device will make the fs unable to be degraded
+mounted.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 73d56eef5e60..83613955e3c2 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6765,6 +6765,61 @@ int btrfs_read_sys_array(struct btrfs_fs_info *fs_info)
- 	return -EIO;
- }
- 
-+/*
-+ * Check if all chunks in the fs is OK for read-write degraded mount
-+ *
-+ * Return true if the fs is OK to be mounted degraded read-write
-+ * Return false if the fs is not OK to be mounted degraded
-+ */
-+bool btrfs_check_rw_degradable(struct btrfs_fs_info *fs_info)
-+{
-+	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
-+	struct extent_map *em;
-+	u64 next_start = 0;
-+	bool ret = true;
-+
-+	read_lock(&map_tree->map_tree.lock);
-+	em = lookup_extent_mapping(&map_tree->map_tree, 0, (u64)-1);
-+	read_unlock(&map_tree->map_tree.lock);
-+	/* No chunk at all? Return false anyway */
-+	if (!em) {
-+		ret = false;
-+		goto out;
-+	}
-+	while (em) {
-+		struct map_lookup *map;
-+		int missing = 0;
-+		int max_tolerated;
-+		int i;
-+
-+		map = (struct map_lookup *) em->bdev;
-+		max_tolerated =
-+			btrfs_get_num_tolerated_disk_barrier_failures(
-+					map->type);
-+		for (i = 0; i < map->num_stripes; i++) {
-+			if (map->stripes[i].dev->missing)
-+				missing++;
-+		}
-+		if (missing > max_tolerated) {
-+			ret = false;
-+			btrfs_warn(fs_info,
-+	"chunk %llu missing %d devices, max tolerance is %d for writeble mount",
-+				   em->start, missing, max_tolerated);
-+			free_extent_map(em);
-+			goto out;
-+		}
-+		next_start = extent_map_end(em);
-+		free_extent_map(em);
-+
-+		read_lock(&map_tree->map_tree.lock);
-+		em = lookup_extent_mapping(&map_tree->map_tree, next_start,
-+					   (u64)(-1) - next_start);
-+		read_unlock(&map_tree->map_tree.lock);
-+	}
-+out:
-+	return ret;
-+}
-+
- int btrfs_read_chunk_tree(struct btrfs_fs_info *fs_info)
- {
- 	struct btrfs_root *root = fs_info->chunk_root;
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 59be81206dd7..db1b5ef479cf 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -538,4 +538,5 @@ struct list_head *btrfs_get_fs_uuids(void);
- void btrfs_set_fs_info_ptr(struct btrfs_fs_info *fs_info);
- void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info);
- 
-+bool btrfs_check_rw_degradable(struct btrfs_fs_info *fs_info);
- #endif
+But in fact, some times all single chunks may be in the existing
+device and in that case, we should allow it to be rw degraded mounted.
+
+Such case can be easily reproduced using the following script:
+ # mkfs.btrfs -f -m raid1 -d sing /dev/sdb /dev/sdc
+ # wipefs -f /dev/sdc
+ # mount /dev/sdb -o degraded,rw
+
+If using btrfs-debug-tree to check /dev/sdb, one should find that the
+data chunk is only in sdb, so in fact it should allow degraded mount.
+
+This patchset will introduce a new per-chunk degradable check for
+btrfs, allow above case to succeed, and it's quite small anyway.
+
+And enhance kernel error message for missing device, at least kernel
+can know what's making mount failed, other than meaningless
+"failed to read system chunk/chunk tree -5".
+
+v2:
+  Update after almost 2 years.
+  Add the last patch to enhance the kernel output, so user can know
+  it's missing devices prevent btrfs to mount.
+v3:
+  Remove one duplicated missing device output
+  Use the advice from Anand Jain, not to add new members in btrfs_device,
+  but use a new structure extra_rw_degrade_errors, to record error when
+  sending down/waiting device.
+v3.1:
+  Reduce the critical section in btrfs_check_rw_degradable(), follow other
+  caller to only acquire the lock when searching, as extent_map has
+  refcount to avoid concurrency already.
+  The modification itself won't affect the behavior, so tested-by tags are
+  added to each patch.
+
+
+Qu Wenruo (7):
+  btrfs: Introduce a function to check if all chunks a OK for degraded
+    rw mount
+  btrfs: Do chunk level rw degrade check at mount time
+  btrfs: Do chunk level degradation check for remount
+  btrfs: Introduce extra_rw_degrade_errors parameter for
+    btrfs_check_rw_degradable
+  btrfs: Allow barrier_all_devices to do chunk level device check
+  btrfs: Cleanup num_tolerated_disk_barrier_failures
+  btrfs: Enhance missing device kernel message
+
+ fs/btrfs/ctree.h   |   2 -
+ fs/btrfs/disk-io.c |  87 ++++++-----------------------
+ fs/btrfs/disk-io.h |   2 -
+ fs/btrfs/super.c   |   5 +-
+ fs/btrfs/volumes.c | 158 +++++++++++++++++++++++++++++++++++++++++++++--------
+ fs/btrfs/volumes.h |  37 +++++++++++++
+ 6 files changed, 190 insertions(+), 101 deletions(-)
+
 -- 
 2.12.0
 

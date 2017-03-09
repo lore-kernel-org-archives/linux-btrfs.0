@@ -1,161 +1,178 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-34.italiaonline.it ([212.48.25.162]:59304 "EHLO libero.it"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1754206AbdCHVRg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 8 Mar 2017 16:17:36 -0500
-Reply-To: kreijack@inwind.it
-Subject: Re: [PATCH v3 0/7] Chunk level degradable check
-References: <20170308024124.16899-1-quwenruo@cn.fujitsu.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, anand.jain@oracle.com,
-        kilobyte@angband.pl, demfloro@demfloro.ru
-From: Goffredo Baroncelli <kreijack@libero.it>
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <9110483f-e11e-ea7b-5ef0-fd87b6a84429@libero.it>
-Date: Wed, 8 Mar 2017 22:08:06 +0100
+Received: from cn.fujitsu.com ([59.151.112.132]:18205 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1754286AbdCIBnj (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Mar 2017 20:43:39 -0500
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>, <anand.jain@oracle.com>
+Subject: [PATCH v3.1 6/7] btrfs: Cleanup num_tolerated_disk_barrier_failures
+Date: Thu, 9 Mar 2017 09:34:41 +0800
+Message-ID: <20170309013442.19957-7-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20170309013442.19957-1-quwenruo@cn.fujitsu.com>
+References: <20170309013442.19957-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20170308024124.16899-1-quwenruo@cn.fujitsu.com>
-Content-Type: text/plain; charset=windows-1252
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Qu,
+As we use per-chunk degradable check, now the global
+num_tolerated_disk_barrier_failures is of no use.
 
-I made some tests (see table below). Basically I created a hybrid btrfs filesystem composed by a metadata "single" profile, and a data single/raid1/raid10/raid5/raid6 profile.
+So cleanup it.
 
-For each test case I tried to remove a disk (which could be used by data and or metadata), and then I checked if the filesystem was mountable.
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
+Tested-by: Adam Borowski <kilobyte@angband.pl>
+Tested-by: Dmitrii Tcvetkov <demfloro@demfloro.ru>
+---
+ fs/btrfs/ctree.h   |  2 --
+ fs/btrfs/disk-io.c | 54 ------------------------------------------------------
+ fs/btrfs/disk-io.h |  2 --
+ fs/btrfs/volumes.c | 17 -----------------
+ 4 files changed, 75 deletions(-)
 
-The results were alway the ones expected: when the number of the disks was insufficient, btrfs refused to mount the filesystem. Otherwise of the mount was fine with the correct info in dmesg (with the exception if I remove a disks with the system chunk of course). The hybrid profiles ensure that btrfs checks all the chunks.
-
-The only exception was for raid10. If I remove 2 disks the filesystem were always unmountable. I tried all the combinations and none was successful. But I suppose that some could be OK: i.e. the ones where I removed each half of raid1. This could be a possible future improvement.
-
-Finally a little suggestion: the message showed in dmesg is something like
-
-"chunk 20971520 missing 3 devices, max tolerance is 2 for writable mount"
-
-I suggest 
-
-"chunk 20971520 (RAID6/6 disks) missing 3 devices, max allowed 2 for a successful mount"
-
-1) "max tolerance is 2" is not very clear for me (but I have to admit my English is terrific :-) )
-2) the message seems to suggest that a non-writable mount could be allowed: is it the case ?
-3) add (if possible) the raid profile and the number of disks, this could help the diagnosis
-
-Anyway thanks for your effort on the multi-disk support.
-
-BR
-G.Baroncelli
-
-
-Test report:
-
-Data	Metadata	Nr disk	Test	     			ExRes	Res
-----    --------	-------	-------------------		-----	----
-SINGLE 	SINGLE 		4	Remove  mdata disk       	No 	Yes
-SINGLE 	SINGLE 		4	Remove  unused disk       	yes	Yes
-SINGLE 	SINGLE 		4	Remove  data disk       	No 	Yes
-					
-RAID1  	SINGLE 		4	Remove  mdata disk       	No 	yes
-RAID1  	SINGLE 		4	Remove  data disk       	Yes	yes
-RAID1  	SINGLE 		5	Remove  unused  disk       	yes	yes
-RAID1  	SINGLE 		5	Remove  data disk  (2)		No 	yes
-					
-RAID10 	SINGLE 		5	Remove  mdata disk       	No 	yes
-RAID10 	SINGLE 		5	Remove  data disk       	Yes	yes
-RAID10 	SINGLE 		5	Remove  data disk  (2)		No 	Yes (*)
-					
-RAID5  	SINGLE 		5	Remove  mdata disk       	No 	yes
-RAID5  	SINGLE 		5	Remove  data disk       	Yes	yes
-RAID5  	SINGLE 		5	Remove  data disk  (2)		No 	yes
-					
-RAID6  	SINGLE 		5	Remove  mdata disk       	No 	yes
-RAID6  	SINGLE 		5	Remove  data disk  		Yes	yes
-RAID6  	SINGLE 		5	Remove  data disk  (2)		Yes	yes
-RAID6  	SINGLE 		5	Remove  data disk  (3)		No 	yes
-					
-					
-Note:					
-ExRes: Expected result	      -> expectet mount success
-Res: Result		      -> test result
-Remove mdata disk             -> remove the disk which holds metadata					
-Remove  data disk             -> remove the disk which holds data 
-				 (and not metadata)					
-Remove  data disk (2)         -> remove 2 disks which hold data (and not
- 				 metadata) 
-Remove  data disk (3)         -> remove 3 disks which hold data (and not
- 				 metadata) 
-Removed unused disk           -> removed an unused disk					
-
-
-
-
-On 2017-03-08 03:41, Qu Wenruo wrote:
-> Btrfs currently uses num_tolerated_disk_barrier_failures to do global
-> check for tolerated missing device.
-> 
-> Although the one-size-fit-all solution is quite safe, it's too strict
-> if data and metadata has different duplication level.
-> 
-> For example, if one use Single data and RAID1 metadata for 2 disks, it
-> means any missing device will make the fs unable to be degraded
-> mounted.
-> 
-> But in fact, some times all single chunks may be in the existing
-> device and in that case, we should allow it to be rw degraded mounted.
-
-
-
-> 
-> Such case can be easily reproduced using the following script:
->  # mkfs.btrfs -f -m raid1 -d sing /dev/sdb /dev/sdc
->  # wipefs -f /dev/sdc
->  # mount /dev/sdb -o degraded,rw
-> 
-> If using btrfs-debug-tree to check /dev/sdb, one should find that the
-> data chunk is only in sdb, so in fact it should allow degraded mount.
-> 
-> This patchset will introduce a new per-chunk degradable check for
-> btrfs, allow above case to succeed, and it's quite small anyway.
-> 
-> And enhance kernel error message for missing device, at least kernel
-> can know what's making mount failed, other than meaningless
-> "failed to read system chunk/chunk tree -5".
-> 
-> v2:
->   Update after almost 2 years.
->   Add the last patch to enhance the kernel output, so user can know
->   it's missing devices prevent btrfs to mount.
-> v3:
->   Remove one duplicated missing device output
->   Use the advice from Anand Jain, not to add new members in btrfs_device,
->   but use a new structure extra_rw_degrade_errors, to record error when
->   sending down/waiting device.
-> 
-> Sorry Dmitrii Tcvetkov and Adam Borowski, I'm afraid I can't add your
-> tested-by tags in v3, as the 4th and 4th patches have quite a big change,
-> so you may need to retest the new patchset.
-> Sorry for the trouble.
-> 
-> Qu Wenruo (7):
->   btrfs: Introduce a function to check if all chunks a OK for degraded
->     rw mount
->   btrfs: Do chunk level rw degrade check at mount time
->   btrfs: Do chunk level degradation check for remount
->   btrfs: Introduce extra_rw_degrade_errors parameter for
->     btrfs_check_rw_degradable
->   btrfs: Allow barrier_all_devices to do chunk level device check
->   btrfs: Cleanup num_tolerated_disk_barrier_failures
->   btrfs: Enhance missing device kernel message
-> 
->  fs/btrfs/ctree.h   |   2 -
->  fs/btrfs/disk-io.c |  87 ++++++------------------------
->  fs/btrfs/disk-io.h |   2 -
->  fs/btrfs/super.c   |   5 +-
->  fs/btrfs/volumes.c | 156 ++++++++++++++++++++++++++++++++++++++++++++---------
->  fs/btrfs/volumes.h |  37 +++++++++++++
->  6 files changed, 188 insertions(+), 101 deletions(-)
-> 
-
-
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 29b7fc28c607..d688025c1ef0 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1062,8 +1062,6 @@ struct btrfs_fs_info {
+ 	/* next backup root to be overwritten */
+ 	int backup_root_index;
+ 
+-	int num_tolerated_disk_barrier_failures;
+-
+ 	/* device replace state */
+ 	struct btrfs_dev_replace dev_replace;
+ 
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 549045a3e15f..affd7aada057 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3646,60 +3646,6 @@ int btrfs_get_num_tolerated_disk_barrier_failures(u64 flags)
+ 	return min_tolerated;
+ }
+ 
+-int btrfs_calc_num_tolerated_disk_barrier_failures(
+-	struct btrfs_fs_info *fs_info)
+-{
+-	struct btrfs_ioctl_space_info space;
+-	struct btrfs_space_info *sinfo;
+-	u64 types[] = {BTRFS_BLOCK_GROUP_DATA,
+-		       BTRFS_BLOCK_GROUP_SYSTEM,
+-		       BTRFS_BLOCK_GROUP_METADATA,
+-		       BTRFS_BLOCK_GROUP_DATA | BTRFS_BLOCK_GROUP_METADATA};
+-	int i;
+-	int c;
+-	int num_tolerated_disk_barrier_failures =
+-		(int)fs_info->fs_devices->num_devices;
+-
+-	for (i = 0; i < ARRAY_SIZE(types); i++) {
+-		struct btrfs_space_info *tmp;
+-
+-		sinfo = NULL;
+-		rcu_read_lock();
+-		list_for_each_entry_rcu(tmp, &fs_info->space_info, list) {
+-			if (tmp->flags == types[i]) {
+-				sinfo = tmp;
+-				break;
+-			}
+-		}
+-		rcu_read_unlock();
+-
+-		if (!sinfo)
+-			continue;
+-
+-		down_read(&sinfo->groups_sem);
+-		for (c = 0; c < BTRFS_NR_RAID_TYPES; c++) {
+-			u64 flags;
+-
+-			if (list_empty(&sinfo->block_groups[c]))
+-				continue;
+-
+-			btrfs_get_block_group_info(&sinfo->block_groups[c],
+-						   &space);
+-			if (space.total_bytes == 0 || space.used_bytes == 0)
+-				continue;
+-			flags = space.flags;
+-
+-			num_tolerated_disk_barrier_failures = min(
+-				num_tolerated_disk_barrier_failures,
+-				btrfs_get_num_tolerated_disk_barrier_failures(
+-					flags));
+-		}
+-		up_read(&sinfo->groups_sem);
+-	}
+-
+-	return num_tolerated_disk_barrier_failures;
+-}
+-
+ int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors)
+ {
+ 	struct list_head *head;
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index 2e0ec29bfd69..4522d2f11909 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -142,8 +142,6 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
+ int btree_lock_page_hook(struct page *page, void *data,
+ 				void (*flush_fn)(void *));
+ int btrfs_get_num_tolerated_disk_barrier_failures(u64 flags);
+-int btrfs_calc_num_tolerated_disk_barrier_failures(
+-	struct btrfs_fs_info *fs_info);
+ int __init btrfs_end_io_wq_init(void);
+ void btrfs_end_io_wq_exit(void);
+ 
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 46cf676be15a..217cb149c5ff 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1973,9 +1973,6 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
+ 		free_fs_devices(cur_devices);
+ 	}
+ 
+-	fs_info->num_tolerated_disk_barrier_failures =
+-		btrfs_calc_num_tolerated_disk_barrier_failures(fs_info);
+-
+ out:
+ 	mutex_unlock(&uuid_mutex);
+ 	return ret;
+@@ -2474,8 +2471,6 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+ 				   "sysfs: failed to create fsid for sprout");
+ 	}
+ 
+-	fs_info->num_tolerated_disk_barrier_failures =
+-		btrfs_calc_num_tolerated_disk_barrier_failures(fs_info);
+ 	ret = btrfs_commit_transaction(trans);
+ 
+ 	if (seeding_dev) {
+@@ -3858,13 +3853,6 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
+ 			   bctl->meta.target, bctl->data.target);
+ 	}
+ 
+-	if (bctl->sys.flags & BTRFS_BALANCE_ARGS_CONVERT) {
+-		fs_info->num_tolerated_disk_barrier_failures = min(
+-			btrfs_calc_num_tolerated_disk_barrier_failures(fs_info),
+-			btrfs_get_num_tolerated_disk_barrier_failures(
+-				bctl->sys.target));
+-	}
+-
+ 	ret = insert_balance_item(fs_info, bctl);
+ 	if (ret && ret != -EEXIST)
+ 		goto out;
+@@ -3887,11 +3875,6 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
+ 	mutex_lock(&fs_info->balance_mutex);
+ 	atomic_dec(&fs_info->balance_running);
+ 
+-	if (bctl->sys.flags & BTRFS_BALANCE_ARGS_CONVERT) {
+-		fs_info->num_tolerated_disk_barrier_failures =
+-			btrfs_calc_num_tolerated_disk_barrier_failures(fs_info);
+-	}
+-
+ 	if (bargs) {
+ 		memset(bargs, 0, sizeof(*bargs));
+ 		update_ioctl_balance_args(fs_info, 0, bargs);
 -- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+2.12.0
+
+
+

@@ -1,13 +1,13 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:5669 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:45494 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1754641AbdCIBvx (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Mar 2017 20:51:53 -0500
+        with ESMTP id S1750788AbdCIEVP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Mar 2017 23:21:15 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>, <anand.jain@oracle.com>
-Subject: [PATCH v3.1 2/7] btrfs: Do chunk level rw degrade check at mount time
-Date: Thu, 9 Mar 2017 09:34:37 +0800
-Message-ID: <20170309013442.19957-3-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v3.1 7/7] btrfs: Enhance missing device kernel message
+Date: Thu, 9 Mar 2017 09:34:42 +0800
+Message-ID: <20170309013442.19957-8-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20170309013442.19957-1-quwenruo@cn.fujitsu.com>
 References: <20170309013442.19957-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -15,55 +15,105 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Now use the btrfs_check_rw_degradable() to do mount time degration check.
+For missing device, btrfs will just refuse to mount with almost
+meaningless kernel message like:
 
-With this patch, now we can mount with the following case:
- # mkfs.btrfs -f -m raid1 -d single /dev/sdb /dev/sdc
- # wipefs -a /dev/sdc
- # mount /dev/sdb /mnt/btrfs -o degraded
- As the single data chunk is only in sdb, so it's OK to mount as
- degraded, as missing one device is OK for RAID1.
+ BTRFS info (device vdb6): disk space caching is enabled
+ BTRFS info (device vdb6): has skinny extents
+ BTRFS error (device vdb6): failed to read the system array: -5
+ BTRFS error (device vdb6): open_ctree failed
 
-But still fail with the following case as expected:
- # mkfs.btrfs -f -m raid1 -d single /dev/sdb /dev/sdc
- # wipefs -a /dev/sdb
- # mount /dev/sdc /mnt/btrfs -o degraded
- As the data chunk is only in sdb, so it's not OK to mount it as
- degraded.
+This patch will add extra device missing output, making the result to:
 
-Reported-by: Zhao Lei <zhaolei@cn.fujitsu.com>
-Reported-by: Anand Jain <anand.jain@oracle.com>
+ BTRFS info (device vdb6): disk space caching is enabled
+ BTRFS info (device vdb6): has skinny extents
+ BTRFS warning (device vdb6): devid 2 uuid 80470722-cad2-4b90-b7c3-fee294552f1b is missing
+ BTRFS error (device vdb6): failed to read the system array: -5
+ BTRFS error (device vdb6): open_ctree failed
+
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Reviewed-by: Anand Jain <anand.jain@oracle.com>
 Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
 Tested-by: Adam Borowski <kilobyte@angband.pl>
 Tested-by: Dmitrii Tcvetkov <demfloro@demfloro.ru>
 ---
- fs/btrfs/disk-io.c | 11 +++--------
- 1 file changed, 3 insertions(+), 8 deletions(-)
+ fs/btrfs/volumes.c | 24 +++++++++++++++++-------
+ fs/btrfs/volumes.h |  2 ++
+ 2 files changed, 19 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 08b74daf35d0..3de89283d400 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3057,15 +3057,10 @@ int open_ctree(struct super_block *sb,
- 		btrfs_err(fs_info, "failed to read block groups: %d", ret);
- 		goto fail_sysfs;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 217cb149c5ff..38e0f1c00b56 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -6442,6 +6442,7 @@ static int read_one_chunk(struct btrfs_fs_info *fs_info, struct btrfs_key *key,
+ 		if (!map->stripes[i].dev &&
+ 		    !btrfs_test_opt(fs_info, DEGRADED)) {
+ 			free_extent_map(em);
++			btrfs_report_missing_device(fs_info, devid, uuid);
+ 			return -EIO;
+ 		}
+ 		if (!map->stripes[i].dev) {
+@@ -6452,8 +6453,7 @@ static int read_one_chunk(struct btrfs_fs_info *fs_info, struct btrfs_key *key,
+ 				free_extent_map(em);
+ 				return -EIO;
+ 			}
+-			btrfs_warn(fs_info, "devid %llu uuid %pU is missing",
+-				   devid, uuid);
++			btrfs_report_missing_device(fs_info, devid, uuid);
+ 		}
+ 		map->stripes[i].dev->in_fs_metadata = 1;
  	}
--	fs_info->num_tolerated_disk_barrier_failures =
--		btrfs_calc_num_tolerated_disk_barrier_failures(fs_info);
--	if (fs_info->fs_devices->missing_devices >
--	     fs_info->num_tolerated_disk_barrier_failures &&
--	    !(sb->s_flags & MS_RDONLY)) {
-+
-+	if (!(sb->s_flags & MS_RDONLY) && !btrfs_check_rw_degradable(fs_info)) {
- 		btrfs_warn(fs_info,
--"missing devices (%llu) exceeds the limit (%d), writeable mount is not allowed",
--			fs_info->fs_devices->missing_devices,
--			fs_info->num_tolerated_disk_barrier_failures);
-+		"writeable mount is not allowed due to too many missing devices");
- 		goto fail_sysfs;
- 	}
+@@ -6570,17 +6570,21 @@ static int read_one_dev(struct btrfs_fs_info *fs_info,
  
+ 	device = btrfs_find_device(fs_info, devid, dev_uuid, fs_uuid);
+ 	if (!device) {
+-		if (!btrfs_test_opt(fs_info, DEGRADED))
++		if (!btrfs_test_opt(fs_info, DEGRADED)) {
++			btrfs_report_missing_device(fs_info, devid, dev_uuid);
+ 			return -EIO;
++		}
+ 
+ 		device = add_missing_dev(fs_devices, devid, dev_uuid);
+ 		if (!device)
+ 			return -ENOMEM;
+-		btrfs_warn(fs_info, "devid %llu uuid %pU missing",
+-				devid, dev_uuid);
++		btrfs_report_missing_device(fs_info, devid, dev_uuid);
+ 	} else {
+-		if (!device->bdev && !btrfs_test_opt(fs_info, DEGRADED))
+-			return -EIO;
++		if (!device->bdev) {
++			btrfs_report_missing_device(fs_info, devid, dev_uuid);
++			if (!btrfs_test_opt(fs_info, DEGRADED))
++				return -EIO;
++		}
+ 
+ 		if(!device->bdev && !device->missing) {
+ 			/*
+@@ -6806,6 +6810,12 @@ static bool device_has_rw_degrade_error(struct extra_rw_degrade_errors *errors,
+ 	return ret;
+ }
+ 
++void btrfs_report_missing_device(struct btrfs_fs_info *fs_info, u64 devid,
++				 u8 *uuid)
++{
++	btrfs_warn_rl(fs_info, "devid %llu uuid %pU is missing", devid, uuid);
++}
++
+ /*
+  * Check if all chunks in the fs is OK for read-write degraded mount
+  *
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 67d7474e42a3..1f6ab55640da 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -573,4 +573,6 @@ void record_extra_rw_degrade_error(struct extra_rw_degrade_errors *errors,
+ 
+ bool btrfs_check_rw_degradable(struct btrfs_fs_info *fs_info,
+ 			       struct extra_rw_degrade_errors *errors);
++void btrfs_report_missing_device(struct btrfs_fs_info *fs_info, u64 devid,
++				 u8 *uuid);
+ #endif
 -- 
 2.12.0
 

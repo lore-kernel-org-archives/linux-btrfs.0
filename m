@@ -1,150 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:35671 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933050AbdCaLYZ (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:36677 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1754863AbdCIPkI (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 31 Mar 2017 07:24:25 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH 2/4 V2] btrfs: use blkdev_issue_flush to flush the device cache
-Date: Fri, 31 Mar 2017 19:29:12 +0800
-Message-Id: <20170331112912.32674-1-anand.jain@oracle.com>
+        Thu, 9 Mar 2017 10:40:08 -0500
+Subject: Re: [PATCH v3] btrfs: add missing memset while reading compressed
+ inline extents
+To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+        <linux-btrfs@vger.kernel.org>
+References: <1489025563-8071-1-git-send-email-ce3g8jdj@umail.furryterror.org>
+From: Chris Mason <clm@fb.com>
+Message-ID: <446e5250-2a96-5f46-737f-5c142bfc1471@fb.com>
+Date: Thu, 9 Mar 2017 10:39:49 -0500
+MIME-Version: 1.0
+In-Reply-To: <1489025563-8071-1-git-send-email-ce3g8jdj@umail.furryterror.org>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As of now we do alloc an empty bio and then use the flag REQ_PREFLUSH
-to flush the device cache, instead we can use blkdev_issue_flush()
-for this puspose.
 
-Also now no need to check the return when write_dev_flush() is called
-with wait = 0
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
-V2
-  Title of this patch is changed from
-   btrfs: communicate back ENOMEM when it occurs
-  And its entirely a new patch, which now use blkdev_issue_flush()
+On 03/08/2017 09:12 PM, Zygo Blaxell wrote:
+> This is a story about 4 distinct (and very old) btrfs bugs.
+>
 
- fs/btrfs/disk-io.c | 64 +++++++++++++++---------------------------------------
- fs/btrfs/volumes.h |  3 ++-
- 2 files changed, 19 insertions(+), 48 deletions(-)
+Really great write up.
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 9de35bca1f67..42bcf98794ec 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3498,67 +3498,39 @@ static int write_dev_supers(struct btrfs_device *device,
- 	return errors < i ? 0 : -1;
- }
- 
--/*
-- * endio for the write_dev_flush, this will wake anyone waiting
-- * for the barrier when it is done
-- */
--static void btrfs_end_empty_barrier(struct bio *bio)
-+static void btrfs_dev_issue_flush(struct work_struct *work)
- {
--	if (bio->bi_private)
--		complete(bio->bi_private);
--	bio_put(bio);
-+	int ret;
-+	struct btrfs_device *device;
-+
-+	device = container_of(work, struct btrfs_device, flush_work);
-+
-+	/* we are in the commit thread */
-+	ret = blkdev_issue_flush(device->bdev, GFP_NOFS, NULL);
-+	device->last_flush_error = ret;
-+	complete(&device->flush_wait);
- }
- 
- /*
-  * trigger flushes for one the devices.  If you pass wait == 0, the flushes are
-  * sent down.  With wait == 1, it waits for the previous flush.
-- *
-- * any device where the flush fails with eopnotsupp are flagged as not-barrier
-- * capable
-  */
- static int write_dev_flush(struct btrfs_device *device, int wait)
- {
--	struct bio *bio;
--	int ret = 0;
--
- 	if (wait) {
--		bio = device->flush_bio;
--		if (!bio)
--			return 0;
-+		int ret;
- 
- 		wait_for_completion(&device->flush_wait);
--
--		if (bio->bi_error) {
--			ret = bio->bi_error;
-+		ret = device->last_flush_error;
-+		if (ret)
- 			btrfs_dev_stat_inc_and_print(device,
--				BTRFS_DEV_STAT_FLUSH_ERRS);
--		}
--
--		/* drop the reference from the wait == 0 run */
--		bio_put(bio);
--		device->flush_bio = NULL;
--
-+					BTRFS_DEV_STAT_FLUSH_ERRS);
- 		return ret;
- 	}
- 
--	/*
--	 * one reference for us, and we leave it for the
--	 * caller
--	 */
--	device->flush_bio = NULL;
--	bio = btrfs_io_bio_alloc(GFP_NOFS, 0);
--	if (!bio)
--		return -ENOMEM;
--
--	bio->bi_end_io = btrfs_end_empty_barrier;
--	bio->bi_bdev = device->bdev;
--	bio->bi_opf = REQ_OP_WRITE | REQ_PREFLUSH;
- 	init_completion(&device->flush_wait);
--	bio->bi_private = &device->flush_wait;
--	device->flush_bio = bio;
--
--	bio_get(bio);
--	btrfsic_submit_bio(bio);
-+	INIT_WORK(&device->flush_work, btrfs_dev_issue_flush);
-+	schedule_work(&device->flush_work);
- 
- 	return 0;
- }
-@@ -3587,9 +3559,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
- 		if (!dev->in_fs_metadata || !dev->writeable)
- 			continue;
- 
--		ret = write_dev_flush(dev, 0);
--		if (ret)
--			errors_send++;
-+		write_dev_flush(dev, 0);
- 	}
- 
- 	/* wait for all the barriers */
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index fa0b79422695..1168b78c5f1d 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -123,8 +123,9 @@ struct btrfs_device {
- 	struct list_head resized_list;
- 
- 	/* for sending down flush barriers */
--	struct bio *flush_bio;
- 	struct completion flush_wait;
-+	struct work_struct flush_work;
-+	int last_flush_error;
- 
- 	/* per-device scrub information */
- 	struct scrub_ctx *scrub_device;
--- 
-2.10.0
+[ ... ]
 
+>
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 25ac2cf..4d41a31 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -6805,6 +6805,12 @@ static noinline int uncompress_inline(struct btrfs_path *path,
+>  	max_size = min_t(unsigned long, PAGE_SIZE, max_size);
+>  	ret = btrfs_decompress(compress_type, tmp, page,
+>  			       extent_offset, inline_size, max_size);
+> +	WARN_ON(max_size + pg_offset > PAGE_SIZE);
+
+Can you please drop this WARN_ON and make the math reflect any possible 
+pg_offset?  I do agree it shouldn't be happening, but its easy to 
+correct for and the WARN is likely to get lost.
+
+> +	if (max_size + pg_offset < PAGE_SIZE) {
+> +		char *map = kmap(page);
+> +		memset(map + pg_offset + max_size, 0, PAGE_SIZE - max_size - pg_offset);
+> +		kunmap(page);
+> +	}
+
+Both lzo and zlib have a memset to cover the gap between what they 
+actually decompress and the max_size that we pass here.  That's 
+important because ram_bytes may not be 100% accurate.
+
+Can you also please toss in a comment about how the decompression code 
+is responsible for the memset up to max_bytes?
+
+-chris

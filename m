@@ -1,78 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out1-smtp.messagingengine.com ([66.111.4.25]:47561 "EHLO
-        out1-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S933129AbdCKOzL (ORCPT
+Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:54535 "EHLO
+        cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S935322AbdCLUtf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 11 Mar 2017 09:55:11 -0500
-Received: from sam-laptop (unknown [88.97.13.253])
-        by mail.messagingengine.com (Postfix) with ESMTPA id C51957E41F
-        for <linux-btrfs@vger.kernel.org>; Sat, 11 Mar 2017 09:54:51 -0500 (EST)
-Message-ID: <1489244085.6022.8.camel@sent.com>
-Subject: btrfs send non-root
-From: Sam Bull <sam.hacking@sent.com>
-To: linux-btrfs@vger.kernel.org
-Date: Sat, 11 Mar 2017 14:54:45 +0000
-Content-Type: multipart/signed; micalg="pgp-sha1"; protocol="application/pgp-signature";
-        boundary="=-1GbKhSPVYYfxr7azJo1I"
-Mime-Version: 1.0
+        Sun, 12 Mar 2017 16:49:35 -0400
+To: quwenruo@cn.fujitsu.com,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        fdmanana@suse.com
+References: <20170308022552.14686-1-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v7 1/2] btrfs: Fix metadata underflow caused by
+ btrfs_reloc_clone_csum error
+From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
+Message-ID: <d4241168-4adf-6f36-af61-0487f7e74f91@profihost.ag>
+Date: Sun, 12 Mar 2017 21:49:31 +0100
+MIME-Version: 1.0
+In-Reply-To: <20170308022552.14686-1-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi Qu,
 
---=-1GbKhSPVYYfxr7azJo1I
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+while V5 was running fine against the openSUSE-42.2 kernel (based on v4.4).
 
-I'm getting an error when trying to send a subvolume. I only seem to be
-able to do this as root. The subvolume was created by the user account,
-and not root. Could anybody shed some light on why this is failing? Is
-there a way to get it working?
+V7 results in OOPS to me:
+BUG: unable to handle kernel NULL pointer dereference at 00000000000001f0
+IP: [<ffffffffc03dde23>] __endio_write_update_ordered+0x33/0x140 [btrfs]
+PGD 14e18d4067 PUD 14e1868067 PMD 0
+Oops: 0000 [#1] SMP
+Modules linked in: netconsole xt_multiport ipt_REJECT nf_reject_ipv4
+xt_set iptable_filter ip_tables x_tables ip_set_hash_net ip_set
+nfnetlink crc32_pclmul button loop btrfs xor usbhid raid6_pq ata_generic
+virtio_blk virtio_net uhci_hcd ehci_hcd i2c_piix4 usbcore virtio_pci
+i2c_core usb_common ata_piix floppy
+CPU: 0 PID: 0 Comm: swapper/0 Not tainted 4.4.52+112-ph #1
+Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS
+1.7.5-20140722_172050-sagunt 04/01/2014
+task: ffffffffb4e0f500 ti: ffffffffb4e00000 task.ti: ffffffffb4e00000
+RIP: 0010:[<ffffffffc03dde23>] [<ffffffffc03dde23>]
+__endio_write_update_ordered+0x33/0x140 [btrfs]
+RSP: 0018:ffff8814eae03cd8 EFLAGS: 00010086
+RAX: 0000000000000000 RBX: ffff8814e8fd5aa8 RCX: 0000000000000001
+RDX: 0000000000100000 RSI: 0000000000100000 RDI: ffff8814e45885c0
+RBP: ffff8814eae03d10 R08: ffff8814e8334000 R09: 000000018040003a
+R10: ffffea00507d8d00 R11: ffff88141f634080 R12: ffff8814e45885c0
+R13: ffff8814e125d700 R14: 0000000000100000 R15: ffff8800376c6a80
+FS: 0000000000000000(0000) GS:ffff8814eae00000(0000) knlGS:0000000000000000
+CS: 0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00000000000001f0 CR3: 00000014e34c9000 CR4: 00000000001406f0Stack:
+0000000000000000 0000000000100000 ffff8814e8fd5aa8 ffff8814e953f3c0
+ffff8814e125d700 0000000000100000 ffff8800376c6a80 ffff8814eae03d38
+ffffffffc03ddf67 ffff8814e86b6a80 ffff8814e8fd5aa8 0000000000000001
+Call Trace:
+[<ffffffffc03ddf67>] btrfs_endio_direct_write+0x37/0x60 [btrfs]
+[<ffffffffb438f2f7>] bio_endio+0x57/0x60
+[<ffffffffc04082c1>] btrfs_end_bio+0xa1/0x140 [btrfs]
+[<ffffffffb438f2f7>] bio_endio+0x57/0x60
+[<ffffffffb439763b>] blk_update_request+0x8b/0x330
+[<ffffffffb43a05ba>] blk_mq_end_request+0x1a/0x70
+[<ffffffffc039f30f>] virtblk_request_done+0x3f/0x70 [virtio_blk]
+[<ffffffffb43a0688>] __blk_mq_complete_request+0x78/0xe0
+[<ffffffffb43a070c>] blk_mq_complete_request+0x1c/0x20
+[<ffffffffc039f184>] virtblk_done+0x64/0xe0 [virtio_blk]
+[<ffffffffb446dd2a>] vring_interrupt+0x3a/0x90
+[<ffffffffb40d3fe9>] __handle_irq_event_percpu+0x89/0x1b0
+[<ffffffffb40d4133>] handle_irq_event_percpu+0x23/0x60
+[<ffffffffb40d41ab>] handle_irq_event+0x3b/0x60
+[<ffffffffb40d74ef>] handle_edge_irq+0x6f/0x150
+[<ffffffffb4007cad>] handle_irq+0x1d/0x30
+[<ffffffffb400750b>] do_IRQ+0x4b/0xd0
+[<ffffffffb46af8cc>] common_interrupt+0x8c/0x8c
+DWARF2 unwinder stuck at ret_from_intr+0x0/0x1b
+Leftover inexact backtrace:
+2017-03-12 20:33:08     <IRQ><EOI>
+2017-03-12 20:33:08      [<ffffffffb404ba46>] ? native_safe_halt+0x6/0x10
+[<ffffffffb400fa3e>] default_idle+0x1e/0xe0
+[<ffffffffb401021f>] arch_cpu_idle+0xf/0x20
+[<ffffffffb40c67eb>] default_idle_call+0x3b/0x40
+[<ffffffffb40c6a8a>] cpu_startup_entry+0x29a/0x370
+[<ffffffffb46a358c>] rest_init+0x7c/0x80
+[<ffffffffb4f67fa5>] start_kernel+0x490/0x49d
+[<ffffffffb4f67120>] ? early_idt_handler_array+0x120/0x120
+[<ffffffffb4f674b3>] x86_64_start_reservations+0x2a/0x2c
+[<ffffffffb4f675f0>] x86_64_start_kernel+0x13b/0x14a
+Code: e5 41 57 41 56 41 55 41 54 49 89 fc 53 48 83 ec 10 48 8b 87 70 fc
+ff ff 4c 8b 87 38 fe ff ff 48 c7 45 c8 00 00 00 00 48 89 75 d0 <48> 8b
+b8 f0 01 00 00 48 3b 47 28 49 8b 84 24 78 fc ff ff 0f 84
+RIP [<ffffffffc03dde23>] __endio_write_update_ordered+0x33/0x140 [btrfs]
+RSP <ffff8814eae03cd8>
+CR2: 00000000000001f0
+---[ end trace 7529a0652fd7873e ]---
+Kernel panic - not syncing: Fatal exception in interrupt
+Kernel Offset: 0x33000000 from 0xffffffff81000000 (relocation range:
+0xffffffff80000000-0xffffffffbfffffff)
 
-$ btrfs send /var/spool/backups/hacking/2017-03-10 > something
-ERROR: cannot open '/': Operation not permitted
-
-Also appears I cannot even use btrfs subvolume show:
-
-$ btrfs subvolume show /var/spool/backups/hacking/2017-03-10
-ERROR: can't perform the search - Operation not permitted
-ERROR: can't find 'var/spool/backups/hacking/2017-03-10'
-
-$ sudo btrfs subvolume show /var/spool/backups/hacking/2017-03-10
-/var/spool/backups/hacking/2017-03-10
-	Name:=C2=A0			2017-03-10
-	UUID:=C2=A0			c3a92646-bd6b-7a4f-ae10-
-8bd12e569772
-	Parent UUID:=C2=A0		38b66de9-84d3-4848-ae53-
-9a2fe861618c
-	Received UUID:=C2=A0		-
-	Creation time:=C2=A0		2017-03-10 19:11:22 +0000
-	Subvolume ID:=C2=A0		564
-	Generation:=C2=A0		753377
-	Gen at creation:=C2=A0	753377
-	Parent ID:=C2=A0		257
-	Top level ID:=C2=A0		257
-	Flags:=C2=A0			readonly
-	Snapshot(s):
-
-
-$ uname -a
-Linux sam-laptop 4.4.0-66-generic #87-Ubuntu SMP Fri Mar 3 15:29:05 UTC
-2017 x86_64 x86_64 x86_64 GNU/Linux
-
-$ btrfs --version
-btrfs-progs v4.4
---=-1GbKhSPVYYfxr7azJo1I
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
-Content-Transfer-Encoding: 7bit
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iEYEABECAAYFAljED7UACgkQX+kozZYmzivMjwCgzlqIbf4ZrVunKDSrN28ZTNnB
-5ZcAoIe+e0SX8HGH7QyfD3Bl2FZcXBem
-=MQS2
------END PGP SIGNATURE-----
-
---=-1GbKhSPVYYfxr7azJo1I--
-
+Greets,
+Stefan

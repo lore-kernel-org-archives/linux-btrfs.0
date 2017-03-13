@@ -1,88 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:58547 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:58920 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754412AbdCMRPn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 13 Mar 2017 13:15:43 -0400
-Date: Mon, 13 Mar 2017 18:15:04 +0100
+        id S1753258AbdCMRSX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 13 Mar 2017 13:18:23 -0400
+Date: Mon, 13 Mar 2017 18:17:45 +0100
 From: David Sterba <dsterba@suse.cz>
-To: "Lakshmipathi.G" <Lakshmipathi.G@giis.co.in>
-Cc: quwenruo@cn.fujitsu.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3] btrfs-progs: misc-tests: Superblock corruption and
+To: "Lakshmipathi.G" <lakshmipathi.g@giis.co.in>
+Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2] btrfs-progs: misc-tests: Superblock corruption and
  recovery using backup.
-Message-ID: <20170313171504.GN14605@twin.jikos.cz>
+Message-ID: <20170313171745.GO14605@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20170216223159.GA23242@giis.co.in>
+References: <20170215205024.GA2486@giis.co.in>
+ <f0b8ba50-4135-4bca-e5c4-0ff99d598e21@cn.fujitsu.com>
+ <20170216223341.GA23272@giis.co.in>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170216223159.GA23242@giis.co.in>
+In-Reply-To: <20170216223341.GA23272@giis.co.in>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Feb 17, 2017 at 04:01:59AM +0530, Lakshmipathi.G wrote:
-> Test script to recover damaged primary superblock using backup superblock.
+On Fri, Feb 17, 2017 at 04:03:41AM +0530, Lakshmipathi.G wrote:
+> On Thu, Feb 16, 2017 at 09:05:02AM +0800, Qu Wenruo wrote:
+> > 
+> > 
+> > At 02/16/2017 04:50 AM, Lakshmipathi.G wrote:
+> > >Signed-off-by: Lakshmipathi.G <Lakshmipathi.G@giis.co.in>
+> > 
+> > Looks good to me.
+> > 
+> > Reviewed by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> > 
+> > BTW, it would be better to have some commit message.
 > 
-> Signed-off-by: Lakshmipathi.G <Lakshmipathi.G@giis.co.in>
+> ok, sent the v3 patch with commit message.
 
-Thanks for the test, a few comments below.
-
-> ---
->  .../019-fix-superblock-corruption/test.sh          | 36 ++++++++++++++++++++++
->  1 file changed, 36 insertions(+)
->  create mode 100755 tests/misc-tests/019-fix-superblock-corruption/test.sh
-> 
-> diff --git a/tests/misc-tests/019-fix-superblock-corruption/test.sh b/tests/misc-tests/019-fix-superblock-corruption/test.sh
-> new file mode 100755
-> index 0000000..95815e4
-> --- /dev/null
-> +++ b/tests/misc-tests/019-fix-superblock-corruption/test.sh
-> @@ -0,0 +1,36 @@
-> +#!/bin/bash
-> +#
-> +# Corrupt primary superblock and restore it using backup superblock.
-> +#
-> +
-> +source $TOP/tests/common
-> +
-> +check_prereq btrfs-select-super
-> +check_prereq btrfs
-> +
-> +setup_root_helper
-> +prepare_test_dev 512M
-> +
-> +FIRST_SUPERBLOCK_OFFSET=65536
-> +
-> +test_superblock_restore()
-> +{
-> +	run_check $SUDO_HELPER $TOP/mkfs.btrfs -f $TEST_DEV
-> +
-> +	# Corrupt superblock checksum
-> +        dd if=/dev/zero of=$TEST_DEV seek=$FIRST_SUPERBLOCK_OFFSET bs=1 \
-> +        count=4  conv=notrunc &> /dev/null
-> +	# Run btrfs check to detect corruption
-> +	$TOP/btrfs check $TEST_DEV >& /dev/null && \
-> +		_fail "btrfs check should detect corruption"
-
-No run_check? In general all test output is desired and should be in the
-test log so you can use 'run_mayfail'. Also, please keep the entier
-output and don't redirect it to /dev/null .
-
-> +	# Copy backup superblock to primary
-> +	run_check $TOP/btrfs-select-super -s 1 $TEST_DEV
-> +
-> +	echo "Performing btrfs check" &>> $RESULTS
-
-Use _log for that
-
-> +	$TOP/btrfs check $TEST_DEV &>> $RESULTS
-
-Use run_check
-
-> +        if [ $? -ne 0 ]; then
-> +		_fail "Failed to fix superblock."
-
-And this would be unnecessary.
-
-I've added a section to tests/README.md to describe the common coding
-practices. Feel free to read/update/fix. Older tests could violate the
-recommendations so at least new tests are in line and we'll update the
-rest incrementally.
+It's not necessary if the Subject says it all, so the changelog does not
+simply repeat it.

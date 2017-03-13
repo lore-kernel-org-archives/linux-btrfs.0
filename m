@@ -1,172 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50861 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:53423 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933324AbdCJTb7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 10 Mar 2017 14:31:59 -0500
-Subject: Re: [PATCH] qgroup: Retry after commit on getting EDQUOT
-To: fdmanana@gmail.com
-References: <20170219133059.20939-1-rgoldwyn@suse.de>
- <CAL3q7H7U6xsL0_MN=is9P0A97fT+SzEq1tz-ei5r12tm2ztQmQ@mail.gmail.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Goldwyn Rodrigues <rgoldwyn@suse.com>
-From: Goldwyn Rodrigues <rgoldwyn@suse.de>
-Message-ID: <3ef77190-5daf-6cad-44ff-b6a7978886d7@suse.de>
-Date: Fri, 10 Mar 2017 13:31:31 -0600
+        id S1750925AbdCMQYf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 13 Mar 2017 12:24:35 -0400
+Date: Mon, 13 Mar 2017 17:23:56 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.com
+Subject: Re: [PATCH 2/2] btrfs-progs: dump-tree: Also output log root tree
+Message-ID: <20170313162356.GM14605@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170303041345.11760-1-quwenruo@cn.fujitsu.com>
+ <20170303041345.11760-2-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <CAL3q7H7U6xsL0_MN=is9P0A97fT+SzEq1tz-ei5r12tm2ztQmQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170303041345.11760-2-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Fri, Mar 03, 2017 at 12:13:45PM +0800, Qu Wenruo wrote:
+> In btrfs-dump-tree, we output any existing log tree, however we don't
+> output the log root tree, which records all root items for log trees.
+> 
+> This makes it confusing for any one who want to know where the log tree
+> comes from.
+> 
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-
-On 03/10/2017 10:06 AM, Filipe Manana wrote:
-> On Sun, Feb 19, 2017 at 1:30 PM, Goldwyn Rodrigues <rgoldwyn@suse.de> wrote:
->> From: Goldwyn Rodrigues <rgoldwyn@suse.com>
->>
->> We are facing the same problem with EDQUOT which was experienced with
->> ENOSPC. Not sure if we require a full ticketing system such as ENOSPC, but
->> here is a fix. Let me know if it is too big a hammer.
->>
->> Quotas are reserved during the start of an operation, incrementing
->> qg->reserved. However, it is written to disk in a commit_transaction
->> which could take as long as commit_interval. In the meantime there
->> could be deletions which are not accounted for because deletions are
->> accounted for only while committed (free_refroot). So, when we get
->> a EDQUOT flush the data to disk and try again.
->>
->> I combined the conditions of rfer and excl to reduce code lines, though
->> the condition looks uglier.
->>
->> Here is a sample script which shows this issue.
->>
->> DEVICE=/dev/vdb
->> MOUNTPOINT=/mnt
->> TESTVOL=$MOUNTPOINT/tmp
->> QUOTA=5
->> PROG=btrfs
->> DD_BS="4k"
->> DD_COUNT="256"
->> RUN_TIMES=5000
->>
->> mkfs.btrfs -f $DEVICE
->> mount -o commit=240 $DEVICE $MOUNTPOINT
->> $PROG subvolume create $TESTVOL
->> $PROG quota enable $TESTVOL
->> $PROG qgroup limit ${QUOTA}G $TESTVOL
->>
->> typeset -i DD_RUN_GOOD
->> typeset -i QUOTA
->>
->> function _check_cmd() {
->>         if [[ ${?} > 0 ]]; then
->>                 echo -n "$(date) E: Running previous command"
->>                 echo ${*}
->>                 echo "Without sync"
->>                 $PROG qgroup show -pcreFf ${TESTVOL}
->>                 echo "With sync"
->>                 $PROG qgroup show -pcreFf --sync ${TESTVOL}
->>                 exit 1
->>         fi
->> }
->>
->> while true; do
->> DD_RUN_GOOD=$RUN_TIMES
->>
->> while (( ${DD_RUN_GOOD} != 0 )); do
->>         dd if=/dev/zero of=${TESTVOL}/quotatest${DD_RUN_GOOD} bs=${DD_BS} count=${DD_COUNT}
->>         _check_cmd "dd if=/dev/zero of=${TESTVOL}/quotatest${DD_RUN_GOOD} bs=${DD_BS} count=${DD_COUNT}"
->>         DD_RUN_GOOD=(${DD_RUN_GOOD}-1)
->> done
->>
->> $PROG qgroup show -pcref $TESTVOL
->> echo "----------- Cleanup ---------- "
->> rm $TESTVOL/quotatest*
->>
->> done
->>
->> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
->> ---
->>  fs/btrfs/qgroup.c | 28 +++++++++++++++++-----------
->>  1 file changed, 17 insertions(+), 11 deletions(-)
->>
->> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
->> index 4700cac..9ace407 100644
->> --- a/fs/btrfs/qgroup.c
->> +++ b/fs/btrfs/qgroup.c
->> @@ -2093,6 +2093,7 @@ static int qgroup_reserve(struct btrfs_root *root, u64 num_bytes)
->>         struct btrfs_fs_info *fs_info = root->fs_info;
->>         u64 ref_root = root->root_key.objectid;
->>         int ret = 0;
->> +       int retried = 0;
->>         struct ulist_node *unode;
->>         struct ulist_iterator uiter;
->>
->> @@ -2101,7 +2102,7 @@ static int qgroup_reserve(struct btrfs_root *root, u64 num_bytes)
->>
->>         if (num_bytes == 0)
->>                 return 0;
->> -
->> +retry:
->>         spin_lock(&fs_info->qgroup_lock);
->>         quota_root = fs_info->quota_root;
->>         if (!quota_root)
->> @@ -2127,16 +2128,21 @@ static int qgroup_reserve(struct btrfs_root *root, u64 num_bytes)
->>
->>                 qg = u64_to_ptr(unode->aux);
->>
->> -               if ((qg->lim_flags & BTRFS_QGROUP_LIMIT_MAX_RFER) &&
->> -                   qg->reserved + (s64)qg->rfer + num_bytes >
->> -                   qg->max_rfer) {
->> -                       ret = -EDQUOT;
->> -                       goto out;
->> -               }
->> -
->> -               if ((qg->lim_flags & BTRFS_QGROUP_LIMIT_MAX_EXCL) &&
->> -                   qg->reserved + (s64)qg->excl + num_bytes >
->> -                   qg->max_excl) {
->> +               if (((qg->lim_flags & BTRFS_QGROUP_LIMIT_MAX_RFER) &&
->> +                     qg->reserved + (s64)qg->rfer + num_bytes > qg->max_rfer) ||
->> +                   ((qg->lim_flags & BTRFS_QGROUP_LIMIT_MAX_EXCL) &&
->> +                   qg->reserved + (s64)qg->excl + num_bytes > qg->max_excl)) {
->> +                       if (!retried && qg->reserved > 0) {
->> +                               struct btrfs_trans_handle *trans;
->> +                               spin_unlock(&fs_info->qgroup_lock);
->> +                               btrfs_start_delalloc_roots(fs_info, 0, -1);
-> 
-> Only seeing this now, because the thread was bumped.
-> 
-> But do you really need to flush delayed writes for all subvolumes?
-> Why isn't it enough to do it just for the subvolume we are attempting
-> to write to?
-> Just flushing the data for that subvolume (root) should be enough, as
-> we do when creating snapshots for example (ioctl.c:create_snapshot()).
-> 
-
-Yes, you're right. That will be much better and will reduce the amount
-of time taken in performing the flush. Thanks!
-
-> 
->> +                               trans = btrfs_join_transaction(root);
->> +                               if (IS_ERR(trans))
->> +                                       return PTR_ERR(trans);
->> +                               btrfs_commit_transaction(trans, root);
->> +                               retried++;
->> +                               goto retry;
->> +                       }
->>                         ret = -EDQUOT;
->>                         goto out;
->>                 }
->> --
->> 2.10.2
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
-> 
-
--- 
-Goldwyn
+What's the base of this patch or is there a patch that I've missed to
+apply? This fails on current devel, 4.10, 4.9.1 and I don't see patch
+1/2 in my mailbox or on patchwork. Please refresh and resend.

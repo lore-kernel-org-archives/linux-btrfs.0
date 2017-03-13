@@ -1,85 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:39438 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932892AbdCaLbx (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:49444 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751529AbdCMHiF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 31 Mar 2017 07:31:53 -0400
+        Mon, 13 Mar 2017 03:38:05 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH 4/4 V2] btrfs: cleanup barrier_all_devices() to check dev stat flush error
-Date: Fri, 31 Mar 2017 19:36:52 +0800
-Message-Id: <20170331113652.727-1-anand.jain@oracle.com>
-In-Reply-To: <20170313074214.24123-5-anand.jain@oracle.com>
-References: <20170313074214.24123-5-anand.jain@oracle.com>
+Cc: dsterba@suse.cz, quwenruo@cn.fujitsu.com
+Subject: [PATCH 3/4] btrfs: cleanup barrier_all_devices() unify dev error count
+Date: Mon, 13 Mar 2017 15:42:13 +0800
+Message-Id: <20170313074214.24123-4-anand.jain@oracle.com>
+In-Reply-To: <20170313074214.24123-1-anand.jain@oracle.com>
+References: <20170313074214.24123-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The objective of this patch is to cleanup barrier_all_devices()
-so that the error checking is in a separate loop independent of
-of the loop which submits and waits on the device flush requests.
+Now when counting number of error devices we don't need to count
+them separately once during send and wait, as because device error
+counted during send is more of static check.
 
-By doing this it helps to further develop patches which would tune
-the error-actions as needed.
+Also kindly note that as of now there is no code which would set
+dev->bdev = NULL unless device is missing. However I still kept
+bdev == NULL counted towards error device in view of future
+enhancements. And as the device_list_mutex is held when
+barrier_all_devices() is called, I don't expect a new bdev to null
+in between send and wait.
+
+Now in this process I also rename error_wait to dropouts.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- V2: Now the flush error return is saved and checked instead of the
- checkpoint of the dev_stat method earlier.
-
- fs/btrfs/disk-io.c | 32 ++++++++++++++++++++++++++++++--
- 1 file changed, 30 insertions(+), 2 deletions(-)
+ fs/btrfs/disk-io.c | 14 +++++---------
+ 1 file changed, 5 insertions(+), 9 deletions(-)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index f8f534a32c2f..b6d047250ce2 100644
+index ee3e601da511..5719e036048b 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -3535,6 +3535,23 @@ static int write_dev_flush(struct btrfs_device *device, int wait)
- 	return 0;
- }
- 
-+static int check_barrier_error(struct btrfs_fs_devices *fsdevs)
-+{
+@@ -3574,8 +3574,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ {
+ 	struct list_head *head;
+ 	struct btrfs_device *dev;
+-	int errors_send = 0;
+-	int errors_wait = 0;
 +	int dropouts = 0;
-+	struct btrfs_device *dev;
-+
-+	list_for_each_entry_rcu(dev, &fsdevs->devices, dev_list) {
-+		if (!dev->bdev || dev->last_flush_error)
+ 	int ret;
+ 
+ 	/* send down all the barriers */
+@@ -3583,10 +3582,8 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ 	list_for_each_entry_rcu(dev, head, dev_list) {
+ 		if (dev->missing)
+ 			continue;
+-		if (!dev->bdev) {
+-			errors_send++;
++		if (!dev->bdev)
+ 			continue;
+-		}
+ 		if (!dev->in_fs_metadata || !dev->writeable)
+ 			continue;
+ 
+@@ -3600,7 +3597,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ 		if (dev->missing)
+ 			continue;
+ 		if (!dev->bdev) {
+-			errors_wait++;
 +			dropouts++;
-+	}
-+
-+	if (dropouts >
-+		fsdevs->fs_info->num_tolerated_disk_barrier_failures)
-+		return -EIO;
-+
-+	return 0;
-+}
-+
- /*
-  * send an empty flush down to each device in parallel,
-  * then wait for them
-@@ -3572,8 +3589,19 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
- 		if (write_dev_flush(dev, 1))
- 			dropouts++;
+ 			continue;
+ 		}
+ 		if (!dev->in_fs_metadata || !dev->writeable)
+@@ -3608,10 +3605,9 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ 
+ 		ret = write_dev_flush(dev, 1);
+ 		if (ret)
+-			errors_wait++;
++			dropouts++;
  	}
--	if (dropouts > info->num_tolerated_disk_barrier_failures)
--		return -EIO;
-+
-+	/*
-+	 * A slight optimization, we check for dropouts here which avoids
-+	 * a dev list loop when disks are healthy.
-+	 */
-+	if (dropouts) {
-+		/*
-+		 * As we need holistic view of the failed disks, so
-+		 * error checking is pushed to a separate loop.
-+		 */
-+		return check_barrier_error(info->fs_devices);
-+	}
-+
+-	if (errors_send > info->num_tolerated_disk_barrier_failures ||
+-	    errors_wait > info->num_tolerated_disk_barrier_failures)
++	if (dropouts > info->num_tolerated_disk_barrier_failures)
+ 		return -EIO;
  	return 0;
  }
- 
 -- 
 2.10.0
 

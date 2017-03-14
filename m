@@ -1,75 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f48.google.com ([209.85.214.48]:38866 "EHLO
-        mail-it0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752832AbdCPOdr (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:65506 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1750783AbdCNF2j (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Mar 2017 10:33:47 -0400
-Received: by mail-it0-f48.google.com with SMTP id m27so45605070iti.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 16 Mar 2017 07:33:41 -0700 (PDT)
-Subject: Re: [PATCH 5/8] nowait aio: return on congested block device
-To: Goldwyn Rodrigues <rgoldwyn@suse.de>, linux-fsdevel@vger.kernel.org
-References: <20170315215107.5628-1-rgoldwyn@suse.de>
- <20170315215107.5628-6-rgoldwyn@suse.de>
-Cc: jack@suse.com, hch@infradead.org, linux-block@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-xfs@vger.kernel.org, sagi@grimberg.me, avi@scylladb.com,
-        linux-api@vger.kernel.org, willy@infradead.org,
-        Goldwyn Rodrigues <rgoldwyn@suse.com>
-From: Jens Axboe <axboe@kernel.dk>
-Message-ID: <eee4683d-9f44-434f-b97f-b0b24c7b3dab@kernel.dk>
-Date: Thu, 16 Mar 2017 08:33:38 -0600
+        Tue, 14 Mar 2017 01:28:39 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <dsterba@suse.cz>
+Subject: [PATCH 1/2] btrfs-progs: dump-tree: Fix duplicated output when using -t option
+Date: Tue, 14 Mar 2017 13:28:27 +0800
+Message-ID: <20170314052828.27155-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20170315215107.5628-6-rgoldwyn@suse.de>
-Content-Type: text/plain; charset=windows-1252
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/15/2017 03:51 PM, Goldwyn Rodrigues wrote:
-> diff --git a/block/blk-core.c b/block/blk-core.c
-> index 0eeb99e..2e5cba2 100644
-> --- a/block/blk-core.c
-> +++ b/block/blk-core.c
-> @@ -2014,7 +2019,7 @@ blk_qc_t generic_make_request(struct bio *bio)
->  	do {
->  		struct request_queue *q = bdev_get_queue(bio->bi_bdev);
->  
-> -		if (likely(blk_queue_enter(q, false) == 0)) {
-> +		if (likely(blk_queue_enter(q, bio_flagged(bio, BIO_NOWAIT)) == 0)) {
->  			struct bio_list hold;
->  			struct bio_list lower, same;
->  
-> @@ -2040,7 +2045,10 @@ blk_qc_t generic_make_request(struct bio *bio)
->  			bio_list_merge(&bio_list_on_stack, &same);
->  			bio_list_merge(&bio_list_on_stack, &hold);
->  		} else {
-> -			bio_io_error(bio);
-> +			if (unlikely(bio_flagged(bio, BIO_NOWAIT)))
-> +				bio_wouldblock_error(bio);
-> +			else
-> +				bio_io_error(bio);
+When using -t option to output trees not in root tree (chunk/root/log
+root), then we output the tree twice.
 
-This doesn't look right. What if the queue is dying, and BIO_NOWAIT just
-happened to be set?
+Fix it
 
-And you're missing wbt_wait() as well as a blocking point. Ditto in
-blk-mq.
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ cmds-inspect-dump-tree.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-> diff --git a/block/blk-mq.c b/block/blk-mq.c
-> index 159187a..942ce8c 100644
-> --- a/block/blk-mq.c
-> +++ b/block/blk-mq.c
-> @@ -1518,6 +1518,8 @@ static blk_qc_t blk_mq_make_request(struct request_queue *q, struct bio *bio)
->  	rq = blk_mq_sched_get_request(q, bio, bio->bi_opf, &data);
->  	if (unlikely(!rq)) {
->  		__wbt_done(q->rq_wb, wb_acct);
-> +		if (bio && bio_flagged(bio, BIO_NOWAIT))
-> +			bio_wouldblock_error(bio);
->  		return BLK_QC_T_NONE;
->  	}
->  
-
-This seems a little fragile now, since not both paths free the bio.
-
+diff --git a/cmds-inspect-dump-tree.c b/cmds-inspect-dump-tree.c
+index 6c6c0e5c..2c6bec7f 100644
+--- a/cmds-inspect-dump-tree.c
++++ b/cmds-inspect-dump-tree.c
+@@ -371,21 +371,21 @@ again:
+ 	if (tree_id && tree_id == BTRFS_ROOT_TREE_OBJECTID) {
+ 		if (!info->tree_root->node) {
+ 			error("cannot print root tree, invalid pointer");
+-			goto no_node;
++			goto close_root;
+ 		}
+ 		printf("root tree\n");
+ 		btrfs_print_tree(info->tree_root, info->tree_root->node, 1);
+-		goto no_node;
++		goto close_root;
+ 	}
+ 
+ 	if (tree_id && tree_id == BTRFS_CHUNK_TREE_OBJECTID) {
+ 		if (!info->chunk_root->node) {
+ 			error("cannot print chunk tree, invalid pointer");
+-			goto no_node;
++			goto close_root;
+ 		}
+ 		printf("chunk tree\n");
+ 		btrfs_print_tree(info->chunk_root, info->chunk_root->node, 1);
+-		goto no_node;
++		goto close_root;
+ 	}
+ 
+ 	key.offset = 0;
 -- 
-Jens Axboe
+2.12.0
+
+
 

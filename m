@@ -1,127 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:26520 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752210AbdCXWGE (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 24 Mar 2017 18:06:04 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH v2] Btrfs: bring back repair during read
-Date: Fri, 24 Mar 2017 15:04:50 -0700
-Message-Id: <1490393090-14360-1-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1490382804-25087-1-git-send-email-bo.li.liu@oracle.com>
-References: <1490382804-25087-1-git-send-email-bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:35976 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750771AbdCNM3E (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 14 Mar 2017 08:29:04 -0400
+Date: Tue, 14 Mar 2017 13:28:26 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Goldwyn Rodrigues <rgoldwyn@suse.de>
+Cc: linux-btrfs@vger.kernel.org, fdmanana@kernel.org,
+        Goldwyn Rodrigues <rgoldwyn@suse.com>
+Subject: Re: [PATCH v3] qgroup: Retry after commit on getting EDQUOT
+Message-ID: <20170314122826.GW14605@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170314102350.10565-1-rgoldwyn@suse.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170314102350.10565-1-rgoldwyn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit 20a7db8ab3f2 ("btrfs: add dummy callback for readpage_io_failed
-and drop checks") made a cleanup around readpage_io_failed_hook, and
-it was supposed to keep the original sematics, but it also
-unexpectedly disabled repair during read for dup, raid1 and raid10.
+On Tue, Mar 14, 2017 at 05:23:50AM -0500, Goldwyn Rodrigues wrote:
+> @@ -2402,6 +2404,19 @@ static int qgroup_reserve(struct btrfs_root *root, u64 num_bytes, bool enforce)
+>  		qg = unode_aux_to_qgroup(unode);
+>  
+>  		if (enforce && !qgroup_check_limits(qg, num_bytes)) {
+> +			if (!retried && qg->reserved > 0) {
+> +				struct btrfs_trans_handle *trans;
 
-This fixes the problem by letting data's inode call the generic
-readpage_io_failed callback by returning -EAGAIN from its
-readpage_io_failed_hook in order to notify end_bio_extent_readpage to
-do the rest.  We don't call it directly because the generic one takes
-an offset from end_bio_extent_readpage() to calculate the index in the
-checksum array and inode's readpage_io_failed_hook doesn't offer that
-offset.
+Newline here
 
-Cc: David Sterba <dsterba@suse.cz>
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
-v2: fix grammar typos and additional details about the change.
+> +				spin_unlock(&fs_info->qgroup_lock);
+> +				btrfs_start_delalloc_inodes(root, 0);
 
- fs/btrfs/extent_io.c | 46 ++++++++++++++++++++++++++++------------------
- fs/btrfs/inode.c     |  7 +++----
- 2 files changed, 31 insertions(+), 22 deletions(-)
+Do not ignore the return value, there seem to be some valid cases to
+handle.
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 28e8192..d39a11c 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2583,26 +2583,36 @@ static void end_bio_extent_readpage(struct bio *bio)
- 
- 		if (tree->ops) {
- 			ret = tree->ops->readpage_io_failed_hook(page, mirror);
--			if (!ret && !bio->bi_error)
--				uptodate = 1;
--		} else {
-+			if (ret == -EAGAIN) {
-+				/*
-+				 * Data inode's readpage_io_failed_hook() always
-+				 * returns -EAGAIN.
-+				 *
-+				 * The generic bio_readpage_error handles errors
-+				 * the following way: If possible, new read
-+				 * requests are created and submitted and will
-+				 * end up in end_bio_extent_readpage as well (if
-+				 * we're lucky, not in the !uptodate case). In
-+				 * that case it returns 0 and we just go on with
-+				 * the next page in our bio. If it can't handle
-+				 * the error it will return -EIO and we remain
-+				 * responsible for that page.
-+				 */
-+				ret = bio_readpage_error(bio, offset, page,
-+							 start, end, mirror);
-+				if (ret == 0) {
-+					uptodate = !bio->bi_error;
-+					offset += len;
-+					continue;
-+				}
-+			}
-+
- 			/*
--			 * The generic bio_readpage_error handles errors the
--			 * following way: If possible, new read requests are
--			 * created and submitted and will end up in
--			 * end_bio_extent_readpage as well (if we're lucky, not
--			 * in the !uptodate case). In that case it returns 0 and
--			 * we just go on with the next page in our bio. If it
--			 * can't handle the error it will return -EIO and we
--			 * remain responsible for that page.
-+			 * metadata's readpage_io_failed_hook() always returns
-+			 * -EIO and fixes nothing.  -EIO is also returned if
-+			 * data inode error could not be fixed.
- 			 */
--			ret = bio_readpage_error(bio, offset, page, start, end,
--						 mirror);
--			if (ret == 0) {
--				uptodate = !bio->bi_error;
--				offset += len;
--				continue;
--			}
-+			ASSERT(ret == -EIO);
- 		}
- readpage_ok:
- 		if (likely(uptodate)) {
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index c40060c..39a80a0 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -10508,10 +10508,9 @@ static int btrfs_tmpfile(struct inode *dir, struct dentry *dentry, umode_t mode)
- 
- }
- 
--__attribute__((const))
--static int dummy_readpage_io_failed_hook(struct page *page, int failed_mirror)
-+static int btrfs_readpage_io_failed_hook(struct page *page, int failed_mirror)
- {
--	return 0;
-+	return -EAGAIN;
- }
- 
- static const struct inode_operations btrfs_dir_inode_operations = {
-@@ -10556,7 +10555,7 @@ static const struct extent_io_ops btrfs_extent_io_ops = {
- 	.submit_bio_hook = btrfs_submit_bio_hook,
- 	.readpage_end_io_hook = btrfs_readpage_end_io_hook,
- 	.merge_bio_hook = btrfs_merge_bio_hook,
--	.readpage_io_failed_hook = dummy_readpage_io_failed_hook,
-+	.readpage_io_failed_hook = btrfs_readpage_io_failed_hook,
- 
- 	/* optional callbacks */
- 	.fill_delalloc = run_delalloc_range,
--- 
-2.5.5
+> +				btrfs_wait_ordered_extents(root, -1, 0,
+> +						(u64)-1);
+> +				trans = btrfs_join_transaction(root);
+> +				if (IS_ERR(trans))
+> +					return PTR_ERR(trans);
+> +				btrfs_commit_transaction(trans);
 
+Do not ignore return value from the commit.
+
+> +				retried++;
+> +				goto retry;
+> +			}
+>  			ret = -EDQUOT;
+>  			goto out;
+>  		}

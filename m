@@ -1,122 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:58662 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1750744AbdCNJJU (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 14 Mar 2017 05:09:20 -0400
-Subject: Re: [PATCH v7 1/2] btrfs: Fix metadata underflow caused by
- btrfs_reloc_clone_csum error
-To: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        <fdmanana@suse.com>
-References: <20170308022552.14686-1-quwenruo@cn.fujitsu.com>
- <d4241168-4adf-6f36-af61-0487f7e74f91@profihost.ag>
- <03d57894-e8df-1001-b57a-daa205037f1c@cn.fujitsu.com>
- <899cc443-07ab-eb7a-5658-f68d8b8b3ce7@profihost.ag>
- <9aced194-dcf2-dbda-143b-dbf4b582822e@cn.fujitsu.com>
- <a6594c2f-d842-71af-54e1-f1576441dff4@profihost.ag>
- <1378f60c-da05-de19-1a17-4e9576f3343b@cn.fujitsu.com>
- <d85e1e17-a88d-9b37-c9b7-506fc57f64aa@profihost.ag>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <41f2abe3-6fc5-0f4f-26b4-69a6724864d7@cn.fujitsu.com>
-Date: Tue, 14 Mar 2017 17:09:07 +0800
+Received: from mx2.suse.de ([195.135.220.15]:39480 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752720AbdCNRnO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 14 Mar 2017 13:43:14 -0400
+Date: Tue, 14 Mar 2017 18:42:36 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Benedikt Morbach <benedikt.morbach@googlemail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH/fstest] btrfs/139: correctly receive clones to mounted
+ subvol
+Message-ID: <20170314174236.GF14605@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170222230735.23437-1-benedikt.morbach@googlemail.com>
 MIME-Version: 1.0
-In-Reply-To: <d85e1e17-a88d-9b37-c9b7-506fc57f64aa@profihost.ag>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170222230735.23437-1-benedikt.morbach@googlemail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Thu, Feb 23, 2017 at 12:07:35AM +0100, Benedikt Morbach wrote:
+> clone needs to resolve the paths of the involved subvolumes in the target
+> fs from their UUIDs. When doing so it might need to strip the prefix
+> that is mounted as the root of the fs from those paths.
+> 
+> It didn't do so correctly when processing the source of "clone" commands
+> 
+> This is a regression test for
+>     btrfs-progs: receive: handle root subvol path in clone
+> ---
+> 
+> fstest for the patch mentioned above (see also https://mail-archive.com/linux-btrfs@vger.kernel.org/msg61848.html)
+> 
+> I thought I'd send this to linux-btrfs first as I'm not sure what the policy is
+> wrt submitting fstests aren't fixed upstream yet.
 
+Sending tests in advance is a common practice, failing test can be
+expected on older kernels or installed btrfs-progs. In this case it's
+not a kernel bug/feature test so I'm not entirely sure if fstests is the right
+testsuite. I have adated this test and added it to the btrfs-progs.
 
-At 03/14/2017 05:06 PM, Stefan Priebe - Profihost AG wrote:
-> Thanks Qu, removing BTRFS_I from the inode fixes this issue to me.
->
-> Greets,
-> Stefan
->
+> It's my first fstest and even though the other tests were helpful and it seems
+> to work, I still assume I've made a couple of mistakes here and there.
 
-Glad to hear that.
-
-And a small tip is, when compiling kernel(at least btrfs module), any 
-warning should be checked carefully.
-
-Such type mismatch will cause a warning and can help us to avoid such 
-problem.
-
-Thanks,
-Qu
->
-> Am 14.03.2017 um 03:50 schrieb Qu Wenruo:
->>
->>
->> At 03/13/2017 09:26 PM, Stefan Priebe - Profihost AG wrote:
->>>
->>> Am 13.03.2017 um 08:39 schrieb Qu Wenruo:
->>>>
->>>>
->>>> At 03/13/2017 03:26 PM, Stefan Priebe - Profihost AG wrote:
->>>>> Hi Qu,
->>>>>
->>>>> Am 13.03.2017 um 02:16 schrieb Qu Wenruo:
->>>>>
->>>>> But wasn't this part of the code identical in V5? Why does it only
->>>>> happen with V7?
->>>>
->>>> There are still difference, but just as you said, the related
->>>> part(checking if inode is free space cache inode) is identical across v5
->>>> and v7.
->>>
->>> But if i boot v7 it always happens. If i boot v5 it always works. Have
->>> done 5 repeatet tests.
->>
->> I rechecked the code change between v7 and v5.
->>
->> It turns out that, the code base may cause the problem.
->>
->> In v7, the base is v4.11-rc1, which introduced quite a lot of
->> btrfs_inode cleanup.
->>
->> One of the difference is the parameter for btrfs_is_free_space_inode().
->>
->> In v7, the parameter @inode changed from struct inode to struct
->> btrfs_inode.
->>
->> So in v7, we're passing BTRFS_I(inode) to btrfs_is_free_space_inode(),
->> other than plain inode.
->>
->> That's the most possible cause for me here.
->>
->> So would you please paste the final patch applied to your tree?
->> Git diff or git format-patch can both handle it.
->>
->> Thanks,
->> Qu
->>
->>>
->>>> I'm afraid that's a rare race leading to NULL btrfs_inode->root, which
->>>> could happen in both v5 and v7.
->>>>
->>>> What's the difference between SUSE and mainline kernel?
->>>
->>> A lot ;-) But i don't think anything related.
->>>
->>>> Maybe some mainline kernel commits have already fixed it?
->>>
->>> May be no idea. But i haven't found any reason why v5 works.
->>>
->>> Stefan
->>>
->>>>
->>>> Thanks,
->>>> Qu
->>>>>
->>
->>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
-
-
+IIRC fstests do not use the execution wrappers like run_check and there
+could be more. If you want to continue, please resend to
+fstests@vger.kernel.org, but as far as I'm concerned the test in
+btrfs-progs is almost done (the fssum utility needs to be added).

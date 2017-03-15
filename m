@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40231 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:40232 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753353AbdCOQD6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1751972AbdCOQD6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 15 Mar 2017 12:03:58 -0400
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 977E5ADD0
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Mar 2017 16:03:12 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id D64D9ADDA
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Mar 2017 16:03:15 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 5/7] btrfs: remove redundant parameter from reada_find_zone
-Date: Wed, 15 Mar 2017 17:02:36 +0100
-Message-Id: <ab9356d6b2db1095d1f09f9039e46df0099240d9.1489593696.git.dsterba@suse.com>
+Subject: [PATCH 6/7] btrfs: remove redundant parameter from reada_start_machine_dev
+Date: Wed, 15 Mar 2017 17:02:39 +0100
+Message-Id: <f8008e872818951e0f38474c6871e9e7e8a671ac.1489593696.git.dsterba@suse.com>
 In-Reply-To: <cover.1489593696.git.dsterba@suse.com>
 References: <cover.1489593696.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -21,35 +21,35 @@ We can read fs_info from dev.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/reada.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ fs/btrfs/reada.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
-index 5edf7328f67d..c1fc79cd4b2a 100644
+index c1fc79cd4b2a..91df381a60ce 100644
 --- a/fs/btrfs/reada.c
 +++ b/fs/btrfs/reada.c
-@@ -235,10 +235,10 @@ int btree_readahead_hook(struct extent_buffer *eb, int err)
- 	return ret;
+@@ -649,9 +649,9 @@ static int reada_pick_zone(struct btrfs_device *dev)
+ 	return 1;
  }
  
--static struct reada_zone *reada_find_zone(struct btrfs_fs_info *fs_info,
--					  struct btrfs_device *dev, u64 logical,
-+static struct reada_zone *reada_find_zone(struct btrfs_device *dev, u64 logical,
- 					  struct btrfs_bio *bbio)
+-static int reada_start_machine_dev(struct btrfs_fs_info *fs_info,
+-				   struct btrfs_device *dev)
++static int reada_start_machine_dev(struct btrfs_device *dev)
  {
 +	struct btrfs_fs_info *fs_info = dev->fs_info;
- 	int ret;
- 	struct reada_zone *zone;
- 	struct btrfs_block_group_cache *cache = NULL;
-@@ -372,7 +372,7 @@ static struct reada_extent *reada_find_extent(struct btrfs_fs_info *fs_info,
- 		 if (!dev->bdev)
- 			continue;
- 
--		zone = reada_find_zone(fs_info, dev, logical, bbio);
-+		zone = reada_find_zone(dev, logical, bbio);
- 		if (!zone)
- 			continue;
- 
+ 	struct reada_extent *re = NULL;
+ 	int mirror_num = 0;
+ 	struct extent_buffer *eb = NULL;
+@@ -763,8 +763,7 @@ static void __reada_start_machine(struct btrfs_fs_info *fs_info)
+ 		list_for_each_entry(device, &fs_devices->devices, dev_list) {
+ 			if (atomic_read(&device->reada_in_flight) <
+ 			    MAX_IN_FLIGHT)
+-				enqueued += reada_start_machine_dev(fs_info,
+-								    device);
++				enqueued += reada_start_machine_dev(device);
+ 		}
+ 		mutex_unlock(&fs_devices->device_list_mutex);
+ 		total += enqueued;
 -- 
 2.12.0
 

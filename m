@@ -1,174 +1,162 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:52409 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751054AbdCOH4L (ORCPT
+Received: from mail-wm0-f45.google.com ([74.125.82.45]:38363 "EHLO
+        mail-wm0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752567AbdCOQcJ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Mar 2017 03:56:11 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1co3mo-0006ZV-5D
-        for linux-btrfs@vger.kernel.org; Wed, 15 Mar 2017 08:55:58 +0100
+        Wed, 15 Mar 2017 12:32:09 -0400
+Received: by mail-wm0-f45.google.com with SMTP id t189so27460141wmt.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Mar 2017 09:31:32 -0700 (PDT)
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Home storage with btrfs
-Date: Wed, 15 Mar 2017 07:55:51 +0000 (UTC)
-Message-ID: <pan$744ff$2a46570b$8511eda6$b89335f6@cox.net>
-References: <CAD6NJSwaqHD+6KFRhxwHCyc_N72KuHzzOJRf2g-fuDqZo7PHDA@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Cc: Jeff Mahoney <jeffm@suse.com>
+From: Nikolay Borisov <n.borisov.lkml@gmail.com>
+Subject: possible deadlock between fsfreeze and asynchronous faults
+Message-ID: <440e7edc-ae54-dd15-f463-7c9ace03e22f@gmail.com>
+Date: Wed, 15 Mar 2017 18:31:29 +0200
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hérikz Nawarro posted on Mon, 13 Mar 2017 08:29:32 -0300 as excerpted:
+Hello, 
 
-> Today is safe to use btrfs for home storage? No raid, just secure
-> storage for some files and create snapshots from it.
+Here is a nother lockdep splat I got: 
+
+[ 1131.517411] ======================================================
+[ 1131.518059] [ INFO: possible circular locking dependency detected ]
+[ 1131.518059] 4.11.0-rc1-nbor #147 Tainted: G        W      
+[ 1131.518059] -------------------------------------------------------
+[ 1131.518059] xfs_io/2661 is trying to acquire lock:
+[ 1131.518059]  (sb_internal#2){++++.+}, at: [<ffffffff810a6a05>] percpu_down_write+0x25/0x120
+[ 1131.518059] 
+[ 1131.518059] but task is already holding lock:
+[ 1131.518059]  (sb_pagefaults){++++..}, at: [<ffffffff810a6a05>] percpu_down_write+0x25/0x120
+[ 1131.518059] 
+[ 1131.518059] which lock already depends on the new lock.
+[ 1131.518059] 
+[ 1131.518059] 
+[ 1131.518059] the existing dependency chain (in reverse order) is:
+[ 1131.518059] 
+[ 1131.518059] -> #4 (sb_pagefaults){++++..}:
+[ 1131.518059]        lock_acquire+0xc5/0x220
+[ 1131.518059]        __sb_start_write+0x119/0x1d0
+[ 1131.518059]        btrfs_page_mkwrite+0x51/0x420
+[ 1131.518059]        do_page_mkwrite+0x38/0xb0
+[ 1131.518059]        __handle_mm_fault+0x6b5/0xef0
+[ 1131.518059]        handle_mm_fault+0x175/0x300
+[ 1131.518059]        __do_page_fault+0x1e0/0x4d0
+[ 1131.518059]        trace_do_page_fault+0xaa/0x270
+[ 1131.518059]        do_async_page_fault+0x19/0x70
+[ 1131.518059]        async_page_fault+0x28/0x30
+[ 1131.518059] 
+[ 1131.518059] -> #3 (&mm->mmap_sem){++++++}:
+[ 1131.518059]        lock_acquire+0xc5/0x220
+[ 1131.518059]        down_read+0x47/0x70
+[ 1131.518059]        get_user_pages_unlocked+0x4f/0x1a0
+[ 1131.518059]        get_user_pages_fast+0x81/0x170
+[ 1131.518059]        iov_iter_get_pages+0xc1/0x300
+[ 1131.518059]        __blockdev_direct_IO+0x14f8/0x34e0
+[ 1131.518059]        btrfs_direct_IO+0x1e8/0x390
+[ 1131.518059]        generic_file_direct_write+0xb5/0x160
+[ 1131.518059]        btrfs_file_write_iter+0x26d/0x500
+[ 1131.518059]        aio_write+0xdb/0x190
+[ 1131.518059]        do_io_submit+0x5aa/0x830
+[ 1131.518059]        SyS_io_submit+0x10/0x20
+[ 1131.518059]        entry_SYSCALL_64_fastpath+0x23/0xc6
+[ 1131.518059] 
+[ 1131.518059] -> #2 (&ei->dio_sem){++++.+}:
+[ 1131.518059]        lock_acquire+0xc5/0x220
+[ 1131.518059]        down_write+0x44/0x80
+[ 1131.518059]        btrfs_log_changed_extents+0x7c/0x660
+[ 1131.518059]        btrfs_log_inode+0xb78/0xf50
+[ 1131.518059]        btrfs_log_inode_parent+0x2a9/0xa70
+[ 1131.518059]        btrfs_log_dentry_safe+0x74/0xa0
+[ 1131.518059]        btrfs_sync_file+0x321/0x4d0
+[ 1131.518059]        vfs_fsync_range+0x46/0xc0
+[ 1131.518059]        vfs_fsync+0x1c/0x20
+[ 1131.518059]        do_fsync+0x38/0x60
+[ 1131.518059]        SyS_fsync+0x10/0x20
+[ 1131.518059]        entry_SYSCALL_64_fastpath+0x23/0xc6
+[ 1131.518059] 
+[ 1131.518059] -> #1 (&ei->log_mutex){+.+...}:
+[ 1131.518059]        lock_acquire+0xc5/0x220
+[ 1131.518059]        __mutex_lock+0x7c/0x960
+[ 1131.518059]        mutex_lock_nested+0x1b/0x20
+[ 1131.518059]        btrfs_record_unlink_dir+0x3e/0xb0
+[ 1131.518059]        btrfs_unlink+0x72/0xf0
+[ 1131.518059]        vfs_unlink+0xbe/0x1b0
+[ 1131.518059]        do_unlinkat+0x244/0x280
+[ 1131.518059]        SyS_unlinkat+0x1d/0x30
+[ 1131.518059]        entry_SYSCALL_64_fastpath+0x23/0xc6
+[ 1131.518059] 
+[ 1131.518059] -> #0 (sb_internal#2){++++.+}:
+[ 1131.518059]        __lock_acquire+0x16f1/0x17c0
+[ 1131.518059]        lock_acquire+0xc5/0x220
+[ 1131.518059]        down_write+0x44/0x80
+[ 1131.518059]        percpu_down_write+0x25/0x120
+[ 1131.518059]        freeze_super+0xbf/0x1a0
+[ 1131.518059]        do_vfs_ioctl+0x598/0x770
+[ 1131.518059]        SyS_ioctl+0x4c/0x90
+[ 1131.518059]        entry_SYSCALL_64_fastpath+0x23/0xc6
+[ 1131.518059] 
+[ 1131.518059] other info that might help us debug this:
+[ 1131.518059] 
+[ 1131.518059] Chain exists of:
+[ 1131.518059]   sb_internal#2 --> &mm->mmap_sem --> sb_pagefaults
+[ 1131.518059] 
+[ 1131.518059]  Possible unsafe locking scenario:
+[ 1131.518059] 
+[ 1131.518059]        CPU0                    CPU1
+[ 1131.518059]        ----                    ----
+[ 1131.518059]   lock(sb_pagefaults);
+[ 1131.518059]                                lock(&mm->mmap_sem);
+[ 1131.518059]                                lock(sb_pagefaults);
+[ 1131.518059]   lock(sb_internal#2);
+[ 1131.518059] 
+[ 1131.518059]  *** DEADLOCK ***
+[ 1131.518059] 
+[ 1131.518059] 3 locks held by xfs_io/2661:
+[ 1131.518059]  #0:  (sb_writers#11){++++.+}, at: [<ffffffff810a6a05>] percpu_down_write+0x25/0x120
+[ 1131.518059]  #1:  (&type->s_umount_key#33){+++++.}, at: [<ffffffff811e0b83>] freeze_super+0x93/0x1a0
+[ 1131.518059]  #2:  (sb_pagefaults){++++..}, at: [<ffffffff810a6a05>] percpu_down_write+0x25/0x120
+[ 1131.518059] 
+[ 1131.518059] stack backtrace:
+[ 1131.518059] CPU: 0 PID: 2661 Comm: xfs_io Tainted: G        W       4.11.0-rc1-nbor #147
+[ 1131.518059] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS Ubuntu-1.8.2-1ubuntu1 04/01/2014
+[ 1131.518059] Call Trace:
+[ 1131.518059]  dump_stack+0x85/0xc9
+[ 1131.518059]  print_circular_bug+0x2ac/0x2ba
+[ 1131.518059]  __lock_acquire+0x16f1/0x17c0
+[ 1131.518059]  ? mark_held_locks+0x66/0x90
+[ 1131.518059]  ? _raw_spin_unlock_irqrestore+0x3f/0x70
+[ 1131.518059]  lock_acquire+0xc5/0x220
+[ 1131.518059]  ? percpu_down_write+0x25/0x120
+[ 1131.518059]  down_write+0x44/0x80
+[ 1131.518059]  ? percpu_down_write+0x25/0x120
+[ 1131.518059]  percpu_down_write+0x25/0x120
+[ 1131.518059]  freeze_super+0xbf/0x1a0
+[ 1131.518059]  ? ns_capable+0x49/0x80
+[ 1131.518059]  do_vfs_ioctl+0x598/0x770
+[ 1131.518059]  ? _copy_to_user+0x6f/0xb0
+[ 1131.518059]  ? entry_SYSCALL_64_fastpath+0x5/0xc6
+[ 1131.518059]  ? trace_hardirqs_on_caller+0x111/0x1e0
+[ 1131.518059]  SyS_ioctl+0x4c/0x90
+[ 1131.518059]  entry_SYSCALL_64_fastpath+0x23/0xc6
+[ 1131.518059] RIP: 0033:0x7f05d8cae357
+[ 1131.518059] RSP: 002b:00007ffca2c50c58 EFLAGS: 00000202 ORIG_RAX: 0000000000000010
+[ 1131.518059] RAX: ffffffffffffffda RBX: 0000000000000046 RCX: 00007f05d8cae357
+[ 1131.518059] RDX: 00007ffca2c50c64 RSI: ffffffffc0045877 RDI: 0000000000000003
+[ 1131.518059] RBP: 00007ffca2c50b20 R08: 000000000000ffff R09: 0000000000000001
+[ 1131.518059] R10: 000000000000053f R11: 0000000000000202 R12: 0000000000000009
+[ 1131.518059] R13: 0000000000000400 R14: 0000000000db1130 R15: 0000000000410aa0
 
 
-I'll echo the others... but with emphasis on a few caveats the others 
-mentioned but didn't give the emphasis I thought they deserved:
+The way I understand it is possible to deadlock if you get an asynchronous
+pagefault while the filesystem is in the middle of being frozen. In the 
+freeze path we have : sb_writers->sb_pagefaults->sb_internals locks aka the 
+different locks being acquired sb_wait_write invocations. And in the 
+do_async_page_fault call path (calltraces #4) we do take mmap_sem and in 
+btrfs_page_mkwrite we take sb_pagefaults. 
 
-1) Btrfs is, as I repeatedly put it in post after post, "stabilizing, but 
-not yet fully stable and mature."  In general, that means it's likely to 
-work quite or even very well for you (as it has done for us) if you don't 
-try the too unusual or get too cocky, but get too close to the edge and 
-you just might find yourself over that edge.  Don't worry too much, tho, 
-those edges are clearly marked if you're paying attention, and just by 
-asking here, you're already paying way more attention than too many we 
-see here... /after/ they've found themselves over the edge.  That's a 
-_very_ good sign. =:^)
 
-2) "Stabilizing, not fully stable and mature", means even more than ever, 
-if you value your data more than the time, hassle and resources necessary 
-to have backups, you HAVE them, tested and available for practical use 
-should it be necessary.
-
-Of course any sysadmin (and that's what you are for at least your own 
-systems if you're making this choice) worth the name will tell you the 
-value of the data is really defined by the number of backups it has, not 
-by any arbitrary claims to value absent those backups.  No backups, you 
-simply didn't value the data enough to have them, whatever claims of 
-value you might otherwise try to make.  Backups, you /did/ value the data.
-
-And of course the corollary to that first sysadmin's rule of backups is 
-that an untested as restorable backup isn't yet a backup, only a 
-potential backup, because the job isn't finished and it can't be properly 
-called a backup until you know you can restore from it if necessary.
-
-And lest anyone get the wrong idea, a snapshot is /not/ a backup for 
-purposes of the above rules.  It's on the same filesystem and hardware 
-media and if that goes down... you've lost it just the same.  And since 
-that filesystem is still stabilizing, you really must be even more 
-prepared for it to go down, even if the chances are still quite good it 
-won't.
-
-3) "Stabilizing, not fully stable and mature", also means that since the 
-current best-practices code is still a moving target, you better be 
-prepared to move with it.  The list-recommended kernels are the latest 
-two releases of either the current or (mainline) LTS kernel series.  On 
-the current track, 4.10 is out, so 4.10 and 4.9 are supported.  If you're 
-still on 4.8 or earlier and can't point to a very specific known reason, 
-you're behind.  On the LTS track, 4.9 is the latest LTS kernel as well, 
-with 4.4 the one before that.  4.1's the one before that but that's a 
-very long time ago in btrfs-development time, and while we'll generally 
-still /try/ to help, honestly, our memory and thus our effectiveness at 
-trying to help are going to be down dramatically from that of the 
-recommended series.
-
-If you prefer longer term "enterprise" or just Debian-stable distro 
-support, fine, but honestly, the sort of stability they target doesn't 
-have much in common with a still stabilizing btrfs, and the chances are 
-/extremely/ high that either one or the other isn't a good match for your 
-needs.   Either you want/need a more leading edge aka current distro 
-which btrfs as still stabilizing fits in well with, or you want/need the 
-stability of those longer term releases, and btrfs as still very actively 
-stabilizing sticks out like a sore thumb and you're very likely to be 
-better off on something that's actually considered stable, ext4 or xfs, 
-perhaps, or my longer term stability favorite, reiserfs (which tends to 
-be so stable in part because there's nobody screwing with it and messing 
-things up, any more, reference the period when the mainline kernel devs 
-switched the otherwise quite stable ext3 to the rather less stable 
-data=writeback mode, for instance).
-
-4) Keep the number of snapshots per subvolume under tight control as 
-already suggested.  A few hundred, NOT a few thousand.  Easy enough if 
-you do those snapshots manually, but easy enough to get thousands if 
-you're not paying attention to thin out the old ones and using an 
-automated tool such as snapper.
-
-5) Stay away from quotas.  Either you need the feature and thus need a 
-more mature filesystem where it's actually stable and does what it says 
-on the label, or you don't, in which case you'll save yourself a /lot/ of 
-headaches keeping them off.  Maybe someday...
-
-6) Stay away from raid56 mode.  It has known problems ATM and is simply 
-not ready.
-
-FWIW, single-device and raid1 mode are the best tested and most reliable 
-(within the single-device limitations for it, of course).  But even raid1 
-mode has some caveats about rebuilding that it might be wise to 
-familiarize yourself with /before/ they happen, if you're going to be 
-using it, of course.
-
-7) Keep your filesystem sizes manageable.  If it's going to take a week 
-to btrfs check --repair, it's likely to be faster restoring from those 
-backups (or simply doing a fresh mkfs and eating the lost data if it 
-wasn't worth keeping backups to restore from).
-
-I'm definitely on the low end here, but I have multiple independent btrfs 
-on (partitioned) SSD, with none of the filesystems over 50 GiB.  For 
-most, a more realistic size might be several hundred GiB to a TiB.  Above 
-that, particularly since above that's likely to the the far slower 
-spinning rust as opposed to the SSDs I'm using.  Yes, people use multi-TB 
-btrfs, and yes, it works for many of them, but yes too, I've seen people 
-posting maintenance times in the weeks and higher.  Is that really 
-practical for you?  Maybe; it's definitely NOT for me, tho.  (FWIW, full 
-balances, scrubs, checks, etc, on my btrfs', tend to take under a minute 
-per filesystem.  I remember hours for md-raid repair back in the day, and 
-it was acceptable then, but SSDs have spoiled me.  But days... even back 
-then I think I'd have perhaps done it once, but after that, finding 
-something or some way more efficient would have definitely been top of my 
-priority list!)
-
-Here is where quotas and thousands of snapshots will eat you alive, as 
-simply put, neither one scales out very well.  But disabling quotas and 
-keeping snapshots to 2-300 per subvolume will help *dramatically*.
-
-8) If your use-case involves multi-gig VMs or DBs, consider nocow for 
-them.  But do your research as nocow has some side-effects that make 
-choosing nocow less straightforward than you might expect.
-
-9) You may want to consider using the autodefrag mount option from the 
-start, so the very first things you copy onto the filesystem are done 
-with autodefrag.  In limited circumstances it may not be the right 
-choice, but for general-purpose use, I'd recommend it.
-
-10) Spend some time familiarizing yourself with the btrfs fi show/df/
-usage commands.  They reveal a lot about the filesystem if you know how 
-to read them, and posting their output is one of the first orders of 
-business on any trouble report here.  (Note that btrfs fi show is perhaps 
-the least informative of the three on its own, but is the only one that 
-can be run on an unmounted filesystem.  It and btrfs fi df (not normal 
-df, which is a bit quirky on btrfs) together provide about the same 
-information as btrfs fi usage does, so usage is the preferred report if 
-the filesystem is mountable.)
-
-Similarly of course for the subvolume/snapshot report commands if you use 
-those features.  My btrfs use-case doesn't (tho the feature is considered 
-stable enough I certainly would if needed, just keep the numbers 
-reasonable), so I don't personally know much about them.
-
-And if you've not already discovered it, https://btrfs.wiki.kernel.org  
-Spend some time reading up. =:^)
-
-That's the whirlwind tour.  If it hasn't scared you off, welcome aboard! 
-=:^)  If it has, that's fine; you can check back on btrfs in say five 
-years, when it should have matured quite a bit. Meanwhile, there's no 
-harm and for some quite some wisdom in sticking with something more 
-mature for the time being. =:^)
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Regards, 
+Nikolay 

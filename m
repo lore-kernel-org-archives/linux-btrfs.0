@@ -1,46 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:34128 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751487AbdCOSJr (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Mar 2017 14:09:47 -0400
-Date: Wed, 15 Mar 2017 11:08:54 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>
-Subject: Re: [PATCH v2 0/7] cleanup __btrfs_map_block
-Message-ID: <20170315180853.GA7651@lim.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1489523641-10345-1-git-send-email-bo.li.liu@oracle.com>
- <20170315130753.GG14605@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170315130753.GG14605@twin.jikos.cz>
+Received: from mx2.suse.de ([195.135.220.15]:53355 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751277AbdCOVvN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 15 Mar 2017 17:51:13 -0400
+From: Goldwyn Rodrigues <rgoldwyn@suse.de>
+To: linux-fsdevel@vger.kernel.org
+Cc: jack@suse.com, hch@infradead.org, linux-block@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-xfs@vger.kernel.org, sagi@grimberg.me, avi@scylladb.com,
+        axboe@kernel.dk, linux-api@vger.kernel.org, willy@infradead.org
+Subject: [PATCH 0/8 v3] No wait AIO
+Date: Wed, 15 Mar 2017 16:50:59 -0500
+Message-Id: <20170315215107.5628-1-rgoldwyn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 15, 2017 at 02:07:53PM +0100, David Sterba wrote:
-> On Tue, Mar 14, 2017 at 01:33:54PM -0700, Liu Bo wrote:
-> > This is attempting to make __btrfs_map_block less scary :)
-> > 
-> > The major changes are
-> > 
-> > 1) split operations for discard out of __btrfs_map_block and we don't copy
-> > discard operations for the target device of dev replace since they're not
-> > as important as writes.
-> > 
-> > 2) put dev replace stuff into helpers since they're basically
-> > self-independant.
-> 
-> Thank, I'm going to add the branch to 4.12 queue (right now the branch
-> is misc-next but it could change),
-> 
-> https://marc.info/?l=linux-btrfs&m=148741582021588
-> 
-> and fix that one too.
+Formerly known as non-blocking AIO.
 
-Oh, sorry about that, copy-and-paste...
+This series adds nonblocking feature to asynchronous I/O writes.
+io_submit() can be delayed because of a number of reason:
+ - Block allocation for files
+ - Data writebacks for direct I/O
+ - Sleeping because of waiting to acquire i_rwsem
+ - Congested block device
 
-Thanks,
+The goal of the patch series is to return -EAGAIN/-EWOULDBLOCK if
+any of these conditions are met. This way userspace can push most
+of the write()s to the kernel to the best of its ability to complete
+and if it returns -EAGAIN, can defer it to another thread.
 
--liubo
+In order to enable this, IOCB_RW_FLAG_NOWAIT is introduced in
+uapi/linux/aio_abi.h. If set for aio_rw_flags, it translates to
+IOCB_NOWAIT for struct iocb, BIO_NOWAIT for bio and IOMAP_NOWAIT for
+iomap. aio_rw_flags is a new flag replacing aio_reserved1. We could
+not use aio_flags because it is not currently checked for invalidity
+in the kernel.
+
+This feature is provided for direct I/O of asynchronous I/O only. I have
+tested it against xfs, ext4, and btrfs.
+
+Changes since v1:
+ + changed name from _NONBLOCKING to *_NOWAIT
+ + filemap_range_has_page call moved to closer to (just before) calling filemap_write_and_wait_range().
+ + BIO_NOWAIT limited to get_request()
+ + XFS fixes 
+	- included reflink 
+	- use of xfs_ilock_nowait() instead of a XFS_IOLOCK_NONBLOCKING flag
+	- Translate the flag through IOMAP_NOWAIT (iomap) to check for
+	  block allocation for the file.
+ + ext4 coding style
+
+Changes since v2:
+ + Using aio_reserved1 as aio_rw_flags instead of aio_flags
+ + blk-mq support
+ + xfs uptodate with kernel and reflink changes
+
+-- 
+Goldwyn
+
+

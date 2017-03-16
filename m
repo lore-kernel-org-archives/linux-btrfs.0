@@ -1,16 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:50374 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751259AbdCPBul (ORCPT
+        with ESMTP id S1751300AbdCPBun (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Mar 2017 21:50:41 -0400
+        Wed, 15 Mar 2017 21:50:43 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: <fstests@vger.kernel.org>, Filipe Manana <fdmanana@kernel.org>,
-        Liu Bo <bo.li.liu@oracle.com>
-Subject: [PATCH] fstests: generic: Test space allocation when there is only fragmented space
-Date: Thu, 16 Mar 2017 09:50:26 +0800
-Message-ID: <20170316015028.20020-3-quwenruo@cn.fujitsu.com>
+CC: <fstests@vger.kernel.org>
+Subject: [PATCH 1/3] fstests: btrfs: Add basic test for btrfs in-band de-duplication
+Date: Thu, 16 Mar 2017 09:50:25 +0800
+Message-ID: <20170316015028.20020-2-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20170316015028.20020-1-quwenruo@cn.fujitsu.com>
 References: <20170316015028.20020-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -18,55 +17,59 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This test case will test if file system works well when handling large
-write while available space are all fragmented.
+Add basic test for btrfs in-band de-duplication(inmemory backend), including:
+1) Enable
+3) Dedup rate
+4) File correctness
+5) Disable
 
-This can expose a bug in a btrfs unmerged patch, which wrongly modified
-the delayed allocation code, to exit before allocating all space, and
-cause hang when unmounting.
-
-The wrong patch is:
-[PATCH v6 1/2] btrfs: Fix metadata underflow caused by btrfs_reloc_clone_csum error
-
-The test case will:
-1) Fill small filesystem with page sized small files
-   All these files has a sequential number as file name
-2) Remove files with odd number as file name
-   This will free almost half of the space
-3) Try to write a file which takes 1/8 of the file system
-
-The method to create fragmented fs may not be generic enough, but should
-work for most extent based fs.
-Unless one file system will allocate extents from both end of its free
-space.
-
-Cc: Filipe Manana <fdmanana@kernel.org>
-Cc: Liu Bo <bo.li.liu@oracle.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- tests/generic/416     | 99 +++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/416.out |  3 ++
- tests/generic/group   |  1 +
- 3 files changed, 103 insertions(+)
- create mode 100755 tests/generic/416
- create mode 100644 tests/generic/416.out
+ common/defrag       |  13 ++++++
+ tests/btrfs/200     | 116 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/200.out |  22 ++++++++++
+ tests/btrfs/group   |   2 +
+ 4 files changed, 153 insertions(+)
+ create mode 100755 tests/btrfs/200
+ create mode 100644 tests/btrfs/200.out
 
-diff --git a/tests/generic/416 b/tests/generic/416
+diff --git a/common/defrag b/common/defrag
+index d279382f..0a41714f 100644
+--- a/common/defrag
++++ b/common/defrag
+@@ -59,6 +59,19 @@ _extent_count()
+ 	$XFS_IO_PROG -c "fiemap" $1 | tail -n +2 | grep -v hole | wc -l| $AWK_PROG '{print $1}'
+ }
+ 
++# Get the number of unique file extents
++# Unique file extents means they have different ondisk bytenr
++# Some filesystem supports reflinkat() or in-band de-dup can create
++# a file whose all file extents points to the same ondisk bytenr
++# this can be used to test if such reflinkat() or in-band de-dup works
++_extent_count_uniq()
++{
++	file=$1
++	$XFS_IO_PROG -c "fiemap" $file >> $seqres.full 2>&1
++	$XFS_IO_PROG -c "fiemap" $file | tail -n +2 | grep -v hole |\
++		$AWK_PROG '{print $3}' | sort | uniq | wc -l
++}
++
+ _check_extent_count()
+ {
+ 	min=$1
+diff --git a/tests/btrfs/200 b/tests/btrfs/200
 new file mode 100755
-index 0000000..925524b
+index 00000000..1b3e46fd
 --- /dev/null
-+++ b/tests/generic/416
-@@ -0,0 +1,99 @@
++++ b/tests/btrfs/200
+@@ -0,0 +1,116 @@
 +#! /bin/bash
-+# FS QA Test 416
++# FS QA Test 200
 +#
-+# Test fs behavior when large write request can't be met by one single extent
-+#
-+# Inspired by a bug in a btrfs fix, which doesn't get exposed by current test
-+# cases
++# Basic btrfs inband dedupe test for inmemory backend
 +#
 +#-----------------------------------------------------------------------
-+# Copyright (c) 2017 Fujitsu.  All Rights Reserved.
++# Copyright (c) 2016 Fujitsu.  All Rights Reserved.
 +#
 +# This program is free software; you can redistribute it and/or
 +# modify it under the terms of the GNU General Public License as
@@ -101,81 +104,128 @@ index 0000000..925524b
 +# get standard environment, filters and checks
 +. ./common/rc
 +. ./common/filter
++. ./common/defrag
 +
 +# remove previous $seqres.full before test
 +rm -f $seqres.full
 +
 +# real QA test starts here
 +
-+# Modify as appropriate.
-+_supported_fs generic
-+_supported_os IRIX Linux
++_supported_fs btrfs
++_supported_os Linux
 +_require_scratch
++_require_btrfs_command dedupe
++_require_btrfs_fs_feature dedupe
 +
-+fs_size=$((128 * 1024 * 1024))
-+page_size=$(get_page_size)
++# File size is twice the maximum file extent of btrfs
++# So even fallbacked to non-dedupe, it will have at least 2 extents
++file_size=256m
 +
-+# We will never reach this number though
-+nr_files=$(($fs_size / $page_size))
-+
-+# Use small fs to make the fill more faster
-+_scratch_mkfs_sized $fs_size >> $seqres.full 2>&1
-+
++_scratch_mkfs >> $seqres.full 2>&1
 +_scratch_mount
 +
-+fill_fs()
++do_dedupe_test()
 +{
-+	dir=$1
-+	for i in $(seq -w $nr_files); do
-+		# xfs_io can't return correct value when it hit ENOSPC, use
-+		# dd here to detect ENOSPC
-+		dd if=/dev/zero of=$SCRATCH_MNT/$i bs=$page_size count=1 \
-+			&> /dev/null
-+		if [ $? -ne 0 ]; then
-+			break
-+		fi
-+	done
++	dedupe_bs=$1
++
++	echo "Testing inmemory dedupe backend with block size $dedupe_bs"
++	_run_btrfs_util_prog dedupe enable -f -s inmemory -b $dedupe_bs \
++		$SCRATCH_MNT
++	# do sync write to ensure dedupe hash is added into dedupe pool
++	$XFS_IO_PROG -f -c "pwrite -b $dedupe_bs 0 $dedupe_bs" -c "fsync"\
++		$SCRATCH_MNT/initial_block | _filter_xfs_io
++
++	# do sync write to ensure we can get stable fiemap later
++	$XFS_IO_PROG -f -c "pwrite -b $dedupe_bs 0 $file_size" -c "fsync"\
++		$SCRATCH_MNT/real_file | _filter_xfs_io
++
++	# Test if real_file is de-duplicated
++	nr_uniq_extents=$(_extent_count_uniq $SCRATCH_MNT/real_file)
++	nr_total_extents=$(_extent_count $SCRATCH_MNT/real_file)
++	nr_deduped_extents=$(($nr_total_extents - $nr_uniq_extents))
++
++	echo "deduped/total: $nr_deduped_extents/$nr_total_extents" \
++		>> $seqres.full
++	# Allow a small amount of dedupe miss, as commit interval or
++	# memory pressure may break a dedupe_bs block and cause
++	# small extent which won't go through dedupe routine
++	_within_tolerance "number of deduped extents" $nr_deduped_extents \
++		$nr_total_extents 5% -v
++
++	# Also check the md5sum to ensure data is not corrupted
++	md5=$(_md5_checksum $SCRATCH_MNT/real_file)
++	echo "md5sum: $md5"
 +}
 +
-+fill_fs $SCRATCH_MNT
++# Test inmemory dedupe first, use 64K dedupe bs to keep compatibility
++# with 64K page size
++do_dedupe_test 64K
 +
-+# remount to sync every thing into fs, and drop all cache
-+_scratch_remount
++# Test 128K(default) dedupe bs
++do_dedupe_test 128K
 +
-+# remove all files with odd file names, which should free near half
-+# of the space
-+rm $SCRATCH_MNT/*[13579]
-+sync
++# Test 1M dedupe bs
++do_dedupe_test 1M
 +
-+# We should be able to write at least 1/8 of the whole fs size
-+# The number 1/8 is for btrfs, which only has about 47M for data.
-+# And half of the 47M is already taken up, so only 1/8 is safe here
-+$XFS_IO_PROG -f -c "pwrite 0 $(($fs_size / 8))" $SCRATCH_MNT/large_file | \
-+	_filter_xfs_io
++# Check dedupe disable
++_run_btrfs_util_prog dedupe disable $SCRATCH_MNT
 +
 +# success, all done
 +status=0
 +exit
-diff --git a/tests/generic/416.out b/tests/generic/416.out
++# Check dedupe disable
++_run_btrfs_util_prog dedupe disable $SCRATCH_MNT
++
++# success, all done
++status=0
++exit
+diff --git a/tests/btrfs/200.out b/tests/btrfs/200.out
 new file mode 100644
-index 0000000..8d2ffac
+index 00000000..e09e5733
 --- /dev/null
-+++ b/tests/generic/416.out
-@@ -0,0 +1,3 @@
-+QA output created by 416
-+wrote 16777216/16777216 bytes at offset 0
++++ b/tests/btrfs/200.out
+@@ -0,0 +1,22 @@
++QA output created by 200
++Testing inmemory dedupe backend with block size 64K
++wrote 65536/65536 bytes at offset 0
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-diff --git a/tests/generic/group b/tests/generic/group
-index b510d41..59f94f9 100644
---- a/tests/generic/group
-+++ b/tests/generic/group
-@@ -418,3 +418,4 @@
- 413 auto quick
- 414 auto quick clone
- 415 auto clone
-+416 auto enospc
++wrote 268435456/268435456 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++number of deduped extents is in range
++md5sum: a30e0f3f1b0884081de11d4357811c2e
++Testing inmemory dedupe backend with block size 128K
++wrote 131072/131072 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 268435456/268435456 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++number of deduped extents is in range
++md5sum: a30e0f3f1b0884081de11d4357811c2e
++Testing inmemory dedupe backend with block size 1M
++wrote 1048576/1048576 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 268435456/268435456 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++number of deduped extents is in range
++md5sum: a30e0f3f1b0884081de11d4357811c2e
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 76a1181e..bf001d3c 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -125,6 +125,7 @@
+ 120 auto quick snapshot metadata
+ 121 auto quick snapshot qgroup
+ 122 auto quick snapshot qgroup
++<<<<<<< HEAD
+ 123 auto quick qgroup
+ 124 auto replace
+ 125 auto replace
+@@ -141,3 +142,4 @@
+ 136 auto convert
+ 137 auto quick send
+ 138 auto compress
++200 auto ib-dedupe
 -- 
-2.9.3
+2.12.0
 
 
 

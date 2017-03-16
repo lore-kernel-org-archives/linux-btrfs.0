@@ -1,15 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:31031 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:50374 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751259AbdCPBui (ORCPT
+        with ESMTP id S1751259AbdCPBul (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Mar 2017 21:50:38 -0400
+        Wed, 15 Mar 2017 21:50:41 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: <fstests@vger.kernel.org>
-Subject: [PATCH 3/3] fstests: btrfs: Test inband dedupe with data balance.
-Date: Thu, 16 Mar 2017 09:50:28 +0800
-Message-ID: <20170316015028.20020-5-quwenruo@cn.fujitsu.com>
+CC: <fstests@vger.kernel.org>, Filipe Manana <fdmanana@kernel.org>,
+        Liu Bo <bo.li.liu@oracle.com>
+Subject: [PATCH] fstests: generic: Test space allocation when there is only fragmented space
+Date: Thu, 16 Mar 2017 09:50:26 +0800
+Message-ID: <20170316015028.20020-3-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20170316015028.20020-1-quwenruo@cn.fujitsu.com>
 References: <20170316015028.20020-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,38 +18,55 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs balance will reloate date extent, but its hash is removed too late
-at run_delayed_ref() time, which will cause extent ref increased
-during balance, cause either find_data_references() gives WARN_ON()
-or even run_delayed_refs() fails and cause transaction abort.
+This test case will test if file system works well when handling large
+write while available space are all fragmented.
 
-Add such concurrency test for inband dedupe and data balance.
+This can expose a bug in a btrfs unmerged patch, which wrongly modified
+the delayed allocation code, to exit before allocating all space, and
+cause hang when unmounting.
 
+The wrong patch is:
+[PATCH v6 1/2] btrfs: Fix metadata underflow caused by btrfs_reloc_clone_csum error
+
+The test case will:
+1) Fill small filesystem with page sized small files
+   All these files has a sequential number as file name
+2) Remove files with odd number as file name
+   This will free almost half of the space
+3) Try to write a file which takes 1/8 of the file system
+
+The method to create fragmented fs may not be generic enough, but should
+work for most extent based fs.
+Unless one file system will allocate extents from both end of its free
+space.
+
+Cc: Filipe Manana <fdmanana@kernel.org>
+Cc: Liu Bo <bo.li.liu@oracle.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- tests/btrfs/203     | 109 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/203.out |   3 ++
- tests/btrfs/group   |   1 +
- 3 files changed, 113 insertions(+)
- create mode 100755 tests/btrfs/203
- create mode 100644 tests/btrfs/203.out
+ tests/generic/416     | 99 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/416.out |  3 ++
+ tests/generic/group   |  1 +
+ 3 files changed, 103 insertions(+)
+ create mode 100755 tests/generic/416
+ create mode 100644 tests/generic/416.out
 
-diff --git a/tests/btrfs/203 b/tests/btrfs/203
+diff --git a/tests/generic/416 b/tests/generic/416
 new file mode 100755
-index 00000000..aea756cb
+index 0000000..925524b
 --- /dev/null
-+++ b/tests/btrfs/203
-@@ -0,0 +1,109 @@
++++ b/tests/generic/416
+@@ -0,0 +1,99 @@
 +#! /bin/bash
-+# FS QA Test 203
++# FS QA Test 416
 +#
-+# Btrfs inband dedupe with balance concurrency test
++# Test fs behavior when large write request can't be met by one single extent
 +#
-+# This can spot inband dedupe error which will increase delayed ref on
-+# an data extent inside RO block group
++# Inspired by a bug in a btrfs fix, which doesn't get exposed by current test
++# cases
 +#
 +#-----------------------------------------------------------------------
-+# Copyright (c) 2016 Fujitsu.  All Rights Reserved.
++# Copyright (c) 2017 Fujitsu.  All Rights Reserved.
 +#
 +# This program is free software; you can redistribute it and/or
 +# modify it under the terms of the GNU General Public License as
@@ -77,97 +95,87 @@ index 00000000..aea756cb
 +_cleanup()
 +{
 +	cd /
-+	kill $populate_pid &> /dev/null
-+	kill $balance_pid &> /dev/null
-+	wait
-+	# Check later comment for reason
-+	$BTRFS_UTIL_PROG balance cancel $SCRATCH_MNT &> /dev/null
 +	rm -f $tmp.*
 +}
 +
 +# get standard environment, filters and checks
 +. ./common/rc
 +. ./common/filter
-+. ./common/reflink
 +
 +# remove previous $seqres.full before test
 +rm -f $seqres.full
 +
 +# real QA test starts here
 +
-+_supported_fs btrfs
-+_supported_os Linux
++# Modify as appropriate.
++_supported_fs generic
++_supported_os IRIX Linux
 +_require_scratch
-+_require_cp_reflink
-+_require_btrfs_command dedupe
-+_require_btrfs_fs_feature dedupe
 +
-+dedupe_bs=128k
-+file_size_in_kilo=4096
-+init_file=$SCRATCH_MNT/foo
-+run_time=$((60 * $TIME_FACTOR))
++fs_size=$((128 * 1024 * 1024))
++page_size=$(get_page_size)
 +
-+_scratch_mkfs >> $seqres.full 2>&1
++# We will never reach this number though
++nr_files=$(($fs_size / $page_size))
++
++# Use small fs to make the fill more faster
++_scratch_mkfs_sized $fs_size >> $seqres.full 2>&1
++
 +_scratch_mount
 +
-+do_dedupe_balance_test()
++fill_fs()
 +{
-+	_run_btrfs_util_prog dedupe enable -b $dedupe_bs -s inmemory $SCRATCH_MNT
-+
-+	# create the initial file and fill hash pool
-+	$XFS_IO_PROG -f -c "pwrite -S 0x0 -b $dedupe_bs 0 $dedupe_bs" -c "fsync" \
-+		$init_file | _filter_xfs_io
-+
-+	_btrfs_stress_balance $SCRATCH_MNT >/dev/null 2>&1 &
-+	balance_pid=$!
-+
-+	# Populate fs with all 0 data, to trigger enough in-band dedupe work
-+	# to race with balance
-+	_populate_fs -n 5 -f 10000000 -d 1 -r $SCRATCH_MNT \
-+		-s $file_size_in_kilo &> /dev/null &
-+	populate_pid=$!
-+
-+	sleep $run_time
-+
-+	kill $populate_pid
-+	kill $balance_pid
-+	wait
-+
-+	# Sometimes even we killed $balance_pid and wait returned,
-+	# balance may still be running, use balance cancel to wait it.
-+	# As this is just a workaround, we don't want it pollute seqres
-+	# so call $BTRFS_UTIL_PROG directly
-+	$BTRFS_UTIL_PROG balance cancel $SCRATCH_MNT &> /dev/null
-+
-+	rm $SCRATCH_MNT/* -rf &> /dev/null
-+	_run_btrfs_util_prog dedupe disable $SCRATCH_MNT
++	dir=$1
++	for i in $(seq -w $nr_files); do
++		# xfs_io can't return correct value when it hit ENOSPC, use
++		# dd here to detect ENOSPC
++		dd if=/dev/zero of=$SCRATCH_MNT/$i bs=$page_size count=1 \
++			&> /dev/null
++		if [ $? -ne 0 ]; then
++			break
++		fi
++	done
 +}
 +
-+do_dedupe_balance_test
++fill_fs $SCRATCH_MNT
++
++# remount to sync every thing into fs, and drop all cache
++_scratch_remount
++
++# remove all files with odd file names, which should free near half
++# of the space
++rm $SCRATCH_MNT/*[13579]
++sync
++
++# We should be able to write at least 1/8 of the whole fs size
++# The number 1/8 is for btrfs, which only has about 47M for data.
++# And half of the 47M is already taken up, so only 1/8 is safe here
++$XFS_IO_PROG -f -c "pwrite 0 $(($fs_size / 8))" $SCRATCH_MNT/large_file | \
++	_filter_xfs_io
 +
 +# success, all done
 +status=0
 +exit
-diff --git a/tests/btrfs/203.out b/tests/btrfs/203.out
+diff --git a/tests/generic/416.out b/tests/generic/416.out
 new file mode 100644
-index 00000000..404394c3
+index 0000000..8d2ffac
 --- /dev/null
-+++ b/tests/btrfs/203.out
++++ b/tests/generic/416.out
 @@ -0,0 +1,3 @@
-+QA output created by 203
-+wrote 131072/131072 bytes at offset 0
++QA output created by 416
++wrote 16777216/16777216 bytes at offset 0
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index f87d995c..2ef7a498 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -144,3 +144,4 @@
- 138 auto compress
- 200 auto ib-dedupe
- 201 auto ib-dedupe
-+203 auto ib-dedupe balance
+diff --git a/tests/generic/group b/tests/generic/group
+index b510d41..59f94f9 100644
+--- a/tests/generic/group
++++ b/tests/generic/group
+@@ -418,3 +418,4 @@
+ 413 auto quick
+ 414 auto quick clone
+ 415 auto clone
++416 auto enospc
 -- 
-2.12.0
+2.9.3
 
 
 

@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:11610 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:64909 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752052AbdCPJJD (ORCPT
+        with ESMTP id S1751578AbdCPJJJ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Mar 2017 05:09:03 -0400
+        Thu, 16 Mar 2017 05:09:09 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <fstests@vger.kernel.org>
-Subject: [PATCH v2 3/3] fstests: btrfs: Test inband dedupe with data balance.
-Date: Thu, 16 Mar 2017 17:08:51 +0800
-Message-ID: <20170316090851.21608-4-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v2 1/3] fstests: btrfs: Add basic test for btrfs in-band de-duplication
+Date: Thu, 16 Mar 2017 17:08:49 +0800
+Message-ID: <20170316090851.21608-2-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20170316090851.21608-1-quwenruo@cn.fujitsu.com>
 References: <20170316090851.21608-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,35 +17,57 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs balance will reloate date extent, but its hash is removed too late
-at run_delayed_ref() time, which will cause extent ref increased
-during balance, cause either find_data_references() gives WARN_ON()
-or even run_delayed_refs() fails and cause transaction abort.
-
-Add such concurrency test for inband dedupe and data balance.
+Add basic test for btrfs in-band de-duplication(inmemory backend), including:
+1) Enable
+3) Dedup rate
+4) File correctness
+5) Disable
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- tests/btrfs/202     | 109 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/202.out |   3 ++
+ common/defrag       |  14 +++++++
+ tests/btrfs/200     | 110 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/200.out |  22 +++++++++++
  tests/btrfs/group   |   1 +
- 3 files changed, 113 insertions(+)
- create mode 100755 tests/btrfs/202
- create mode 100644 tests/btrfs/202.out
+ 4 files changed, 147 insertions(+)
+ create mode 100755 tests/btrfs/200
+ create mode 100644 tests/btrfs/200.out
 
-diff --git a/tests/btrfs/202 b/tests/btrfs/202
+diff --git a/common/defrag b/common/defrag
+index d279382..62b279c 100644
+--- a/common/defrag
++++ b/common/defrag
+@@ -59,6 +59,20 @@ _extent_count()
+ 	$XFS_IO_PROG -c "fiemap" $1 | tail -n +2 | grep -v hole | wc -l| $AWK_PROG '{print $1}'
+ }
+ 
++# Get the number of unique file extents
++# Unique file extents means they have different ondisk bytenr
++# Some filesystem supports reflinkat() or in-band de-dup can create
++# a file whose all file extents points to the same ondisk bytenr
++# this can be used to test if such reflinkat() or in-band de-dup works
++_extent_count_uniq()
++{
++	local file=$1
++
++	$XFS_IO_PROG -c "fiemap" $file >> $seqres.full 2>&1
++	$XFS_IO_PROG -c "fiemap" $file | tail -n +2 | grep -v hole |\
++		$AWK_PROG '{print $3}' | sort | uniq | wc -l
++}
++
+ _check_extent_count()
+ {
+ 	min=$1
+diff --git a/tests/btrfs/200 b/tests/btrfs/200
 new file mode 100755
-index 0000000..60bb924
+index 0000000..a23328c
 --- /dev/null
-+++ b/tests/btrfs/202
-@@ -0,0 +1,109 @@
++++ b/tests/btrfs/200
+@@ -0,0 +1,110 @@
 +#! /bin/bash
-+# FS QA Test 203
++# FS QA Test 200
 +#
-+# Btrfs inband dedupe with balance concurrency test
-+#
-+# This can spot inband dedupe error which will increase delayed ref on
-+# an data extent inside RO block group
++# Basic btrfs inband dedupe test for inmemory backend
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (c) 2017 Fujitsu.  All Rights Reserved.
@@ -77,18 +99,13 @@ index 0000000..60bb924
 +_cleanup()
 +{
 +	cd /
-+	kill $populate_pid &> /dev/null
-+	kill $balance_pid &> /dev/null
-+	wait
-+	# Check later comment for reason
-+	$BTRFS_UTIL_PROG balance cancel $SCRATCH_MNT &> /dev/null
 +	rm -f $tmp.*
 +}
 +
 +# get standard environment, filters and checks
 +. ./common/rc
 +. ./common/filter
-+. ./common/reflink
++. ./common/defrag
 +
 +# remove previous $seqres.full before test
 +rm -f $seqres.full
@@ -98,74 +115,102 @@ index 0000000..60bb924
 +_supported_fs btrfs
 +_supported_os Linux
 +_require_scratch
-+_require_cp_reflink
 +_require_btrfs_command dedupe
 +_require_btrfs_fs_feature dedupe
 +
-+dedupe_bs=128k
-+file_size_in_kilo=4096
-+init_file=$SCRATCH_MNT/foo
-+run_time=$((60 * $TIME_FACTOR))
++# File size is twice the maximum file extent of btrfs
++# So even fallbacked to non-dedupe, it will have at least 2 extents
++file_size=256m
 +
 +_scratch_mkfs >> $seqres.full 2>&1
 +_scratch_mount
 +
-+do_dedupe_balance_test()
++do_dedupe_test()
 +{
-+	_run_btrfs_util_prog dedupe enable -b $dedupe_bs -s inmemory $SCRATCH_MNT
++	dedupe_bs=$1
 +
-+	# create the initial file and fill hash pool
-+	$XFS_IO_PROG -f -c "pwrite -S 0x0 -b $dedupe_bs 0 $dedupe_bs" -c "fsync" \
-+		$init_file | _filter_xfs_io
++	echo "Testing inmemory dedupe backend with block size $dedupe_bs"
++	_run_btrfs_util_prog dedupe enable -f -s inmemory -b $dedupe_bs \
++		$SCRATCH_MNT
++	# do sync write to ensure dedupe hash is added into dedupe pool
++	$XFS_IO_PROG -f -c "pwrite -b $dedupe_bs 0 $dedupe_bs" -c "fsync"\
++		$SCRATCH_MNT/initial_block | _filter_xfs_io
 +
-+	_btrfs_stress_balance $SCRATCH_MNT >/dev/null 2>&1 &
-+	balance_pid=$!
++	# do sync write to ensure we can get stable fiemap later
++	$XFS_IO_PROG -f -c "pwrite -b $dedupe_bs 0 $file_size" -c "fsync"\
++		$SCRATCH_MNT/real_file | _filter_xfs_io
 +
-+	# Populate fs with all 0 data, to trigger enough in-band dedupe work
-+	# to race with balance
-+	_populate_fs -n 5 -f 10000000 -d 1 -r $SCRATCH_MNT \
-+		-s $file_size_in_kilo &> /dev/null &
-+	populate_pid=$!
++	# Test if real_file is de-duplicated
++	nr_uniq_extents=$(_extent_count_uniq $SCRATCH_MNT/real_file)
++	nr_total_extents=$(_extent_count $SCRATCH_MNT/real_file)
++	nr_deduped_extents=$(($nr_total_extents - $nr_uniq_extents))
 +
-+	sleep $run_time
++	echo "deduped/total: $nr_deduped_extents/$nr_total_extents" \
++		>> $seqres.full
++	# Allow a small amount of dedupe miss, as commit interval or
++	# memory pressure may break a dedupe_bs block and cause
++	# small extent which won't go through dedupe routine
++	_within_tolerance "number of deduped extents" $nr_deduped_extents \
++		$nr_total_extents 5% -v
 +
-+	kill $populate_pid
-+	kill $balance_pid
-+	wait
-+
-+	# Sometimes even we killed $balance_pid and wait returned,
-+	# balance may still be running, use balance cancel to wait it.
-+	# As this is just a workaround, we don't want it pollute seqres
-+	# so call $BTRFS_UTIL_PROG directly
-+	$BTRFS_UTIL_PROG balance cancel $SCRATCH_MNT &> /dev/null
-+
-+	rm $SCRATCH_MNT/* -rf &> /dev/null
-+	_run_btrfs_util_prog dedupe disable $SCRATCH_MNT
++	# Also check the md5sum to ensure data is not corrupted
++	md5=$(_md5_checksum $SCRATCH_MNT/real_file)
++	echo "md5sum: $md5"
 +}
 +
-+do_dedupe_balance_test
++# Test inmemory dedupe first, use 64K dedupe bs to keep compatibility
++# with 64K page size
++do_dedupe_test 64K
++
++# Test 128K(default) dedupe bs
++do_dedupe_test 128K
++
++# Test 1M dedupe bs
++do_dedupe_test 1M
++
++# Check dedupe disable
++_run_btrfs_util_prog dedupe disable $SCRATCH_MNT
 +
 +# success, all done
 +status=0
 +exit
-diff --git a/tests/btrfs/202.out b/tests/btrfs/202.out
+diff --git a/tests/btrfs/200.out b/tests/btrfs/200.out
 new file mode 100644
-index 0000000..ce03aa7
+index 0000000..e09e573
 --- /dev/null
-+++ b/tests/btrfs/202.out
-@@ -0,0 +1,3 @@
-+QA output created by 202
++++ b/tests/btrfs/200.out
+@@ -0,0 +1,22 @@
++QA output created by 200
++Testing inmemory dedupe backend with block size 64K
++wrote 65536/65536 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 268435456/268435456 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++number of deduped extents is in range
++md5sum: a30e0f3f1b0884081de11d4357811c2e
++Testing inmemory dedupe backend with block size 128K
 +wrote 131072/131072 bytes at offset 0
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 268435456/268435456 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++number of deduped extents is in range
++md5sum: a30e0f3f1b0884081de11d4357811c2e
++Testing inmemory dedupe backend with block size 1M
++wrote 1048576/1048576 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 268435456/268435456 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++number of deduped extents is in range
++md5sum: a30e0f3f1b0884081de11d4357811c2e
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 1856d7e..930057a 100644
+index 76a1181..4e49564 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -143,3 +143,4 @@
+@@ -141,3 +141,4 @@
+ 136 auto convert
+ 137 auto quick send
  138 auto compress
- 200 auto ib-dedupe
- 201 auto ib-dedupe
-+202 auto ib-dedupe balance
++200 auto ib-dedupe
 -- 
 2.9.3
 

@@ -1,118 +1,177 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:20007 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750914AbdCMHzW (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:64909 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751321AbdCPJJB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 13 Mar 2017 03:55:22 -0400
-Subject: Re: [PATCH v3.1 5/7] btrfs: Allow barrier_all_devices to do chunk
- level device check
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-References: <20170309013442.19957-1-quwenruo@cn.fujitsu.com>
- <20170309013442.19957-6-quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <d19e5374-9bd6-378c-edbc-04c3e16f4fac@oracle.com>
-Date: Mon, 13 Mar 2017 16:00:03 +0800
+        Thu, 16 Mar 2017 05:09:01 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <fstests@vger.kernel.org>
+Subject: [PATCH v2 2/3] fstests: btrfs: Add testcase for btrfs dedupe and metadata balance race test
+Date: Thu, 16 Mar 2017 17:08:50 +0800
+Message-ID: <20170316090851.21608-3-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20170316090851.21608-1-quwenruo@cn.fujitsu.com>
+References: <20170316090851.21608-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20170309013442.19957-6-quwenruo@cn.fujitsu.com>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Btrfs balance with inband dedupe enable/disable will expose a lot of
+hidden dedupe bug:
 
-Qu,
+1) Enable/disable race bug
+2) Btrfs dedupe tree balance corrupted delayed_ref
+3) Btrfs disable and balance will cause balance BUG_ON
 
-patch 4/4 added a cleanup for barrier_all_devices() and introduced
-a new function check_barrier_error() where integration with per chunk
-level device check will simplify.
+Reported-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ tests/btrfs/201     | 113 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/201.out |   2 +
+ tests/btrfs/group   |   1 +
+ 3 files changed, 116 insertions(+)
+ create mode 100755 tests/btrfs/201
+ create mode 100644 tests/btrfs/201.out
 
-  [PATCH 4/4] btrfs: cleanup barrier_all_devices() to check dev stat 
-flush error
+diff --git a/tests/btrfs/201 b/tests/btrfs/201
+new file mode 100755
+index 0000000..c5f6f23
+--- /dev/null
++++ b/tests/btrfs/201
+@@ -0,0 +1,113 @@
++#! /bin/bash
++# FS QA Test 201
++#
++# Btrfs inband dedup enable/disable race with metadata balance
++#
++# This tests will test the following bugs exposed in development:
++# 1) enable/disable race
++# 2) tree balance cause delayed ref corruption
++# 3) disable and balance cause BUG_ON
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2017 Fujitsu.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++	$KILLALL_PROG $FSSTRESS_PROG &> /dev/null
++	kill $trigger_pid &> /dev/null
++	kill $balance_pid &> /dev/null
++	wait
++
++	# See comment later
++	$BTRFS_UTIL_PROG balance cancel $SCRATCH_MNT &> /dev/null
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# remove previous $seqres.full before test
++rm -f $seqres.full
++
++# real QA test starts here
++
++_supported_fs btrfs
++_supported_os Linux
++_require_command "$KILLALL_PROG" killall
++_require_scratch
++_require_btrfs_command dedupe
++_require_btrfs_fs_feature dedupe
++
++# Use 64K dedupe size to keep compatibility for 64K page size
++dedupe_bs=64K
++
++_scratch_mkfs >> $seqres.full 2>&1
++_scratch_mount
++
++mkdir -p $SCRATCH_MNT/stressdir
++
++runtime=$((60 * $TIME_FACTOR))
++
++trigger_work()
++{
++	while true; do
++		_run_btrfs_util_prog dedupe enable -s inmemory \
++			-b $dedupe_bs $SCRATCH_MNT
++		sleep 1
++		_run_btrfs_util_prog dedupe disable $SCRATCH_MNT
++		sleep 1
++	done
++}
++
++# redirect all output, as error output like 'balance cancelled by user'
++# will populuate the golden output.
++_btrfs_stress_balance -m $SCRATCH_MNT &> /dev/null &
++balance_pid=$!
++
++$FSSTRESS_PROG $(_scale_fsstress_args -p 1 -n 10000000) $FSSTRESS_AVOID \
++	-d $SCRATCH_MNT/stressdir > /dev/null 2>&1 &
++
++trigger_work &
++trigger_pid=$!
++
++sleep $runtime
++$KILLALL_PROG $FSSTRESS_PROG &> /dev/null
++kill $trigger_pid &> /dev/null
++kill $balance_pid &> /dev/null
++wait
++
++# Manually stop balance as it's possible balance is still running for a short
++# time. And we don't want to populate $seqres.full, so call $BTRFS_UTIL_PROG
++# directly
++$BTRFS_UTIL_PROG balance cancel $SCRATCH_MNT &> /dev/null
++
++echo "Silence is golden"
++# success, all done
++status=0
++exit
+diff --git a/tests/btrfs/201.out b/tests/btrfs/201.out
+new file mode 100644
+index 0000000..5ac973f
+--- /dev/null
++++ b/tests/btrfs/201.out
+@@ -0,0 +1,2 @@
++QA output created by 201
++Silence is golden
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 4e49564..1856d7e 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -142,3 +142,4 @@
+ 137 auto quick send
+ 138 auto compress
+ 200 auto ib-dedupe
++201 auto ib-dedupe
+-- 
+2.9.3
 
-Thanks, Anand
 
 
-
-On 03/09/2017 09:34 AM, Qu Wenruo wrote:
-> The last user of num_tolerated_disk_barrier_failures is
-> barrier_all_devices().
-> But it's can be easily changed to new per-chunk degradable check
-> framework.
->
-> Now btrfs_device will have two extra members, representing send/wait
-> error, set at write_dev_flush() time.
-> With these 2 new members, btrfs_check_rw_degradable() can check if the
-> fs is still OK when the fs is committed to disk.
->
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
-> Tested-by: Adam Borowski <kilobyte@angband.pl>
-> Tested-by: Dmitrii Tcvetkov <demfloro@demfloro.ru>
-> ---
->  fs/btrfs/disk-io.c | 21 +++++++++++++--------
->  1 file changed, 13 insertions(+), 8 deletions(-)
->
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 658b8fab1d39..549045a3e15f 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -3570,17 +3570,20 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
->  {
->  	struct list_head *head;
->  	struct btrfs_device *dev;
-> -	int errors_send = 0;
-> -	int errors_wait = 0;
-> +	struct extra_rw_degrade_errors *errors;
->  	int ret;
->
-> +	errors = alloc_extra_rw_degrade_errors(info->fs_devices->num_devices);
-> +	if (!errors)
-> +		return -ENOMEM;
-> +
->  	/* send down all the barriers */
->  	head = &info->fs_devices->devices;
->  	list_for_each_entry_rcu(dev, head, dev_list) {
->  		if (dev->missing)
->  			continue;
->  		if (!dev->bdev) {
-> -			errors_send++;
-> +			record_extra_rw_degrade_error(errors, dev->devid);
->  			continue;
->  		}
->  		if (!dev->in_fs_metadata || !dev->writeable)
-> @@ -3588,7 +3591,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
->
->  		ret = write_dev_flush(dev, 0);
->  		if (ret)
-> -			errors_send++;
-> +			record_extra_rw_degrade_error(errors, dev->devid);
->  	}
->
->  	/* wait for all the barriers */
-> @@ -3596,7 +3599,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
->  		if (dev->missing)
->  			continue;
->  		if (!dev->bdev) {
-> -			errors_wait++;
-> +			record_extra_rw_degrade_error(errors, dev->devid);
->  			continue;
->  		}
->  		if (!dev->in_fs_metadata || !dev->writeable)
-> @@ -3604,11 +3607,13 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
->
->  		ret = write_dev_flush(dev, 1);
->  		if (ret)
-> -			errors_wait++;
-> +			record_extra_rw_degrade_error(errors, dev->devid);
->  	}
-> -	if (errors_send > info->num_tolerated_disk_barrier_failures ||
-> -	    errors_wait > info->num_tolerated_disk_barrier_failures)
-> +	if (!btrfs_check_rw_degradable(info, errors)) {
-> +		kfree(errors);
->  		return -EIO;
-> +	}
-> +	kfree(errors);
->  	return 0;
->  }
->
->

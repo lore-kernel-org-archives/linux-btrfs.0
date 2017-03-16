@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f195.google.com ([209.85.128.195]:36494 "EHLO
-        mail-wr0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755005AbdCPQMt (ORCPT
+Received: from mail-wr0-f196.google.com ([209.85.128.196]:34456 "EHLO
+        mail-wr0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755003AbdCPQKo (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Mar 2017 12:12:49 -0400
-Received: by mail-wr0-f195.google.com with SMTP id l37so6486834wrc.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 16 Mar 2017 09:12:48 -0700 (PDT)
+        Thu, 16 Mar 2017 12:10:44 -0400
+Received: by mail-wr0-f196.google.com with SMTP id u48so6511386wrc.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 16 Mar 2017 09:10:43 -0700 (PDT)
 From: ednadolski@gmail.com
 To: linux-btrfs@vger.kernel.org
 Cc: Edmund Nadolski <enadolski@suse.com>
-Subject: [PATCH v2 1/2] btrfs: provide enumeration for __merge_refs mode argument
-Date: Thu, 16 Mar 2017 10:04:33 -0600
-Message-Id: <20170316160434.8126-2-enadolski@suse.com>
+Subject: [PATCH v2 2/2] btrfs: replace hardcoded value with SEQ_LAST macro
+Date: Thu, 16 Mar 2017 10:04:34 -0600
+Message-Id: <20170316160434.8126-3-enadolski@suse.com>
 In-Reply-To: <20170316160434.8126-1-enadolski@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -19,78 +19,119 @@ References: <20170316160434.8126-1-enadolski@suse.com>
 
 From: Edmund Nadolski <enadolski@suse.com>
 
-Replace hardcoded numeric values for __merge_refs 'mode' argument
-with descriptive constants.
+Define the SEQ_LAST macro to replace (u64)-1 in places where said
+value triggers a special-case ref search behavior.
 
 Signed-off-by: Edmund Nadolski <enadolski@suse.com>
 Reviewed-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/backref.c | 23 +++++++++++++----------
- 1 file changed, 13 insertions(+), 10 deletions(-)
+ fs/btrfs/backref.c | 16 ++++++++--------
+ fs/btrfs/ctree.h   |  2 ++
+ fs/btrfs/qgroup.c  |  4 ++--
+ 3 files changed, 12 insertions(+), 10 deletions(-)
 
 diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 1163383..6ce7281 100644
+index 6ce7281..24865da 100644
 --- a/fs/btrfs/backref.c
 +++ b/fs/btrfs/backref.c
-@@ -26,6 +26,11 @@
- #include "delayed-ref.h"
- #include "locking.h"
+@@ -538,7 +538,7 @@ static int add_all_parents(struct btrfs_root *root, struct btrfs_path *path,
+ 	 * slot==nritems. In that case, go to the next leaf before we continue.
+ 	 */
+ 	if (path->slots[0] >= btrfs_header_nritems(path->nodes[0])) {
+-		if (time_seq == (u64)-1)
++		if (time_seq == SEQ_LAST)
+ 			ret = btrfs_next_leaf(root, path);
+ 		else
+ 			ret = btrfs_next_old_leaf(root, path, time_seq);
+@@ -582,7 +582,7 @@ static int add_all_parents(struct btrfs_root *root, struct btrfs_path *path,
+ 			eie = NULL;
+ 		}
+ next:
+-		if (time_seq == (u64)-1)
++		if (time_seq == SEQ_LAST)
+ 			ret = btrfs_next_item(root, path);
+ 		else
+ 			ret = btrfs_next_old_item(root, path, time_seq);
+@@ -634,7 +634,7 @@ static int __resolve_indirect_ref(struct btrfs_fs_info *fs_info,
  
-+enum merge_mode {
-+	MERGE_IDENTICAL_KEYS = 1,
-+	MERGE_IDENTICAL_PARENTS,
-+};
-+
- /* Just an arbitrary number so we can be sure this happened */
- #define BACKREF_FOUND_SHARED 6
+ 	if (path->search_commit_root)
+ 		root_level = btrfs_header_level(root->commit_root);
+-	else if (time_seq == (u64)-1)
++	else if (time_seq == SEQ_LAST)
+ 		root_level = btrfs_header_level(root->node);
+ 	else
+ 		root_level = btrfs_old_root_level(root, time_seq);
+@@ -645,7 +645,7 @@ static int __resolve_indirect_ref(struct btrfs_fs_info *fs_info,
+ 	}
  
-@@ -809,14 +814,12 @@ static int __add_missing_keys(struct btrfs_fs_info *fs_info,
- /*
-  * merge backrefs and adjust counts accordingly
+ 	path->lowest_level = level;
+-	if (time_seq == (u64)-1)
++	if (time_seq == SEQ_LAST)
+ 		ret = btrfs_search_slot(NULL, root, &ref->key_for_search, path,
+ 					0, 0);
+ 	else
+@@ -1199,7 +1199,7 @@ static int __add_keyed_refs(struct btrfs_fs_info *fs_info,
   *
-- * mode = 1: merge identical keys, if key is set
-- *    FIXME: if we add more keys in __add_prelim_ref, we can merge more here.
-- *           additionally, we could even add a key range for the blocks we
-- *           looked into to merge even more (-> replace unresolved refs by those
-- *           having a parent).
-- * mode = 2: merge identical parents
-+ *    FIXME: For MERGE_IDENTICAL_KEYS, if we add more keys in __add_prelim_ref
-+ *           then we can merge more here. Additionally, we could even add a key
-+ *           range for the blocks we looked into to merge even more (-> replace
-+ *           unresolved refs by those having a parent).
-  */
--static void __merge_refs(struct list_head *head, int mode)
-+static void __merge_refs(struct list_head *head, enum merge_mode mode)
- {
- 	struct __prelim_ref *pos1;
+  * NOTE: This can return values > 0
+  *
+- * If time_seq is set to (u64)-1, it will not search delayed_refs, and behave
++ * If time_seq is set to SEQ_LAST, it will not search delayed_refs, and behave
+  * much like trans == NULL case, the difference only lies in it will not
+  * commit root.
+  * The special case is for qgroup to search roots in commit_transaction().
+@@ -1246,7 +1246,7 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
+ 		path->skip_locking = 1;
+ 	}
  
-@@ -829,7 +832,7 @@ static void __merge_refs(struct list_head *head, int mode)
+-	if (time_seq == (u64)-1)
++	if (time_seq == SEQ_LAST)
+ 		path->skip_locking = 1;
  
- 			if (!ref_for_same_block(ref1, ref2))
- 				continue;
--			if (mode == 1) {
-+			if (mode == MERGE_IDENTICAL_KEYS) {
- 				if (!ref1->parent && ref2->parent)
- 					swap(ref1, ref2);
- 			} else {
-@@ -1374,7 +1377,7 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
- 	if (ret)
- 		goto out;
+ 	/*
+@@ -1276,9 +1276,9 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
  
--	__merge_refs(&prefs, 1);
-+	__merge_refs(&prefs, MERGE_IDENTICAL_KEYS);
+ #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+ 	if (trans && likely(trans->type != __TRANS_DUMMY) &&
+-	    time_seq != (u64)-1) {
++	    time_seq != SEQ_LAST) {
+ #else
+-	if (trans && time_seq != (u64)-1) {
++	if (trans && time_seq != SEQ_LAST) {
+ #endif
+ 		/*
+ 		 * look if there are updates for this ref queued and lock the
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 5da1385..19f6316 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -659,6 +659,8 @@ struct seq_list {
  
- 	ret = __resolve_indirect_refs(fs_info, path, time_seq, &prefs,
- 				      extent_item_pos, total_refs,
-@@ -1382,7 +1385,7 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
- 	if (ret)
- 		goto out;
+ #define SEQ_LIST_INIT(name)	{ .list = LIST_HEAD_INIT((name).list), .seq = 0 }
  
--	__merge_refs(&prefs, 2);
-+	__merge_refs(&prefs, MERGE_IDENTICAL_PARENTS);
- 
- 	while (!list_empty(&prefs)) {
- 		ref = list_first_entry(&prefs, struct __prelim_ref, list);
++#define SEQ_LAST	((u64)-1)
++
+ enum btrfs_orphan_cleanup_state {
+ 	ORPHAN_CLEANUP_STARTED	= 1,
+ 	ORPHAN_CLEANUP_DONE	= 2,
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index b1b691e..2ced786 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -2031,12 +2031,12 @@ int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans,
+ 					goto cleanup;
+ 			}
+ 			/*
+-			 * Use (u64)-1 as time_seq to do special search, which
++			 * Use SEQ_LAST as time_seq to do special search, which
+ 			 * doesn't lock tree or delayed_refs and search current
+ 			 * root. It's safe inside commit_transaction().
+ 			 */
+ 			ret = btrfs_find_all_roots(trans, fs_info,
+-					record->bytenr, (u64)-1, &new_roots);
++					record->bytenr, SEQ_LAST, &new_roots);
+ 			if (ret < 0)
+ 				goto cleanup;
+ 			if (qgroup_to_skip) {
 -- 
 2.10.2
 

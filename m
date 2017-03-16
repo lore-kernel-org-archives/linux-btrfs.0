@@ -1,15 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:22809 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:17474 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751366AbdCPH73 (ORCPT
+        with ESMTP id S1751459AbdCPH7d (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Mar 2017 03:59:29 -0400
+        Thu, 16 Mar 2017 03:59:33 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
+        by cn.fujitsu.com (Postfix) with ESMTP id F0A7349F9A79
+        for <linux-btrfs@vger.kernel.org>; Thu, 16 Mar 2017 15:59:12 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH v14.2 06/16] btrfs: dedupe: Introduce function to add hash into in-memory tree
-Date: Thu, 16 Mar 2017 15:58:44 +0800
-Message-ID: <20170316075854.15788-7-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v14.2 08/16] btrfs: delayed-ref: Add support for increasing data ref under spinlock
+Date: Thu, 16 Mar 2017 15:58:46 +0800
+Message-ID: <20170316075854.15788-9-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20170316075854.15788-1-quwenruo@cn.fujitsu.com>
 References: <20170316075854.15788-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,184 +19,91 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-
-Introduce static function inmem_add() to add hash into in-memory tree.
-And now we can implement the btrfs_dedupe_add() interface.
+For in-band dedupe, btrfs needs to increase data ref with delayed_ref
+locked, so add a new function btrfs_add_delayed_data_ref_lock() to
+increase extent ref with delayed_refs already locked.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 Reviewed-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/dedupe.c | 151 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 151 insertions(+)
+ fs/btrfs/delayed-ref.c | 31 ++++++++++++++++++++++++-------
+ fs/btrfs/delayed-ref.h |  9 +++++++++
+ 2 files changed, 33 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/dedupe.c b/fs/btrfs/dedupe.c
-index ae9146eb6bad..49f28d08d28d 100644
---- a/fs/btrfs/dedupe.c
-+++ b/fs/btrfs/dedupe.c
-@@ -32,6 +32,14 @@ struct inmem_hash {
- 	u8 hash[];
- };
- 
-+static inline struct inmem_hash *inmem_alloc_hash(u16 algo)
-+{
-+	if (WARN_ON(algo >= ARRAY_SIZE(btrfs_hash_sizes)))
-+		return NULL;
-+	return kzalloc(sizeof(struct inmem_hash) + btrfs_hash_sizes[algo],
-+			GFP_NOFS);
-+}
-+
- static int init_dedupe_info(struct btrfs_dedupe_info **ret_info,
- 			    struct btrfs_ioctl_dedupe_args *dargs)
- {
-@@ -183,3 +191,146 @@ int btrfs_dedupe_disable(struct btrfs_fs_info *fs_info)
- 	/* Place holder for bisect, will be implemented in later patches */
- 	return 0;
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index 6eb80952efb3..18111563eef1 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -832,6 +832,27 @@ int btrfs_add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
  }
-+
-+static int inmem_insert_hash(struct rb_root *root,
-+			     struct inmem_hash *hash, int hash_len)
+ 
+ /*
++ * Do real delayed data ref insert.
++ * Caller must hold delayed_refs->lock and allocation memory
++ * for dref,head_ref and record.
++ */
++void btrfs_add_delayed_data_ref_locked(struct btrfs_fs_info *fs_info,
++			struct btrfs_trans_handle *trans,
++			struct btrfs_delayed_data_ref *dref,
++			struct btrfs_delayed_ref_head *head_ref,
++			struct btrfs_qgroup_extent_record *qrecord,
++			u64 bytenr, u64 num_bytes, u64 parent, u64 ref_root,
++			u64 owner, u64 offset, u64 reserved, int action,
++			int *qrecord_inserted_ret)
 +{
-+	struct rb_node **p = &root->rb_node;
-+	struct rb_node *parent = NULL;
-+	struct inmem_hash *entry = NULL;
-+
-+	while (*p) {
-+		parent = *p;
-+		entry = rb_entry(parent, struct inmem_hash, hash_node);
-+		if (memcmp(hash->hash, entry->hash, hash_len) < 0)
-+			p = &(*p)->rb_left;
-+		else if (memcmp(hash->hash, entry->hash, hash_len) > 0)
-+			p = &(*p)->rb_right;
-+		else
-+			return 1;
-+	}
-+	rb_link_node(&hash->hash_node, parent, p);
-+	rb_insert_color(&hash->hash_node, root);
-+	return 0;
-+}
-+
-+static int inmem_insert_bytenr(struct rb_root *root,
-+			       struct inmem_hash *hash)
-+{
-+	struct rb_node **p = &root->rb_node;
-+	struct rb_node *parent = NULL;
-+	struct inmem_hash *entry = NULL;
-+
-+	while (*p) {
-+		parent = *p;
-+		entry = rb_entry(parent, struct inmem_hash, bytenr_node);
-+		if (hash->bytenr < entry->bytenr)
-+			p = &(*p)->rb_left;
-+		else if (hash->bytenr > entry->bytenr)
-+			p = &(*p)->rb_right;
-+		else
-+			return 1;
-+	}
-+	rb_link_node(&hash->bytenr_node, parent, p);
-+	rb_insert_color(&hash->bytenr_node, root);
-+	return 0;
-+}
-+
-+static void __inmem_del(struct btrfs_dedupe_info *dedupe_info,
-+			struct inmem_hash *hash)
-+{
-+	list_del(&hash->lru_list);
-+	rb_erase(&hash->hash_node, &dedupe_info->hash_root);
-+	rb_erase(&hash->bytenr_node, &dedupe_info->bytenr_root);
-+
-+	if (!WARN_ON(dedupe_info->current_nr == 0))
-+		dedupe_info->current_nr--;
-+
-+	kfree(hash);
++	head_ref = add_delayed_ref_head(fs_info, trans, &head_ref->node,
++			qrecord, bytenr, num_bytes, ref_root, reserved,
++			action, 1, qrecord_inserted_ret);
++	add_delayed_data_ref(fs_info, trans, head_ref, &dref->node, bytenr,
++			num_bytes, parent, ref_root, owner, offset, action);
 +}
 +
 +/*
-+ * Insert a hash into in-memory dedupe tree
-+ * Will remove exceeding last recent use hash.
-+ *
-+ * If the hash mathced with existing one, we won't insert it, to
-+ * save memory
-+ */
-+static int inmem_add(struct btrfs_dedupe_info *dedupe_info,
-+		     struct btrfs_dedupe_hash *hash)
-+{
-+	int ret = 0;
-+	u16 algo = dedupe_info->hash_algo;
-+	struct inmem_hash *ihash;
-+
-+	ihash = inmem_alloc_hash(algo);
-+
-+	if (!ihash)
-+		return -ENOMEM;
-+
-+	/* Copy the data out */
-+	ihash->bytenr = hash->bytenr;
-+	ihash->num_bytes = hash->num_bytes;
-+	memcpy(ihash->hash, hash->hash, btrfs_hash_sizes[algo]);
-+
-+	mutex_lock(&dedupe_info->lock);
-+
-+	ret = inmem_insert_bytenr(&dedupe_info->bytenr_root, ihash);
-+	if (ret > 0) {
-+		kfree(ihash);
-+		ret = 0;
-+		goto out;
-+	}
-+
-+	ret = inmem_insert_hash(&dedupe_info->hash_root, ihash,
-+				btrfs_hash_sizes[algo]);
-+	if (ret > 0) {
-+		/*
-+		 * We only keep one hash in tree to save memory, so if
-+		 * hash conflicts, free the one to insert.
-+		 */
-+		rb_erase(&ihash->bytenr_node, &dedupe_info->bytenr_root);
-+		kfree(ihash);
-+		ret = 0;
-+		goto out;
-+	}
-+
-+	list_add(&ihash->lru_list, &dedupe_info->lru_list);
-+	dedupe_info->current_nr++;
-+
-+	/* Remove the last dedupe hash if we exceed limit */
-+	while (dedupe_info->current_nr > dedupe_info->limit_nr) {
-+		struct inmem_hash *last;
-+
-+		last = list_entry(dedupe_info->lru_list.prev,
-+				  struct inmem_hash, lru_list);
-+		__inmem_del(dedupe_info, last);
-+	}
-+out:
-+	mutex_unlock(&dedupe_info->lock);
-+	return 0;
-+}
-+
-+int btrfs_dedupe_add(struct btrfs_trans_handle *trans,
-+		     struct btrfs_fs_info *fs_info,
-+		     struct btrfs_dedupe_hash *hash)
-+{
-+	struct btrfs_dedupe_info *dedupe_info = fs_info->dedupe_info;
-+
-+	if (!fs_info->dedupe_enabled || !hash)
-+		return 0;
-+
-+	if (WARN_ON(dedupe_info == NULL))
-+		return -EINVAL;
-+
-+	if (WARN_ON(!btrfs_dedupe_hash_hit(hash)))
-+		return -EINVAL;
-+
-+	/* ignore old hash */
-+	if (dedupe_info->blocksize != hash->num_bytes)
-+		return 0;
-+
-+	if (dedupe_info->backend == BTRFS_DEDUPE_BACKEND_INMEMORY)
-+		return inmem_add(dedupe_info, hash);
-+	return -EINVAL;
-+}
+  * add a delayed data ref. it's similar to btrfs_add_delayed_tree_ref.
+  */
+ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+@@ -876,13 +897,9 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+ 	 * insert both the head node and the new ref without dropping
+ 	 * the spin lock
+ 	 */
+-	head_ref = add_delayed_ref_head(fs_info, trans, &head_ref->node, record,
+-					bytenr, num_bytes, ref_root, reserved,
+-					action, 1, &qrecord_inserted);
+-
+-	add_delayed_data_ref(fs_info, trans, head_ref, &ref->node, bytenr,
+-				   num_bytes, parent, ref_root, owner, offset,
+-				   action);
++	btrfs_add_delayed_data_ref_locked(fs_info, trans, ref, head_ref, record,
++			bytenr, num_bytes, parent, ref_root, owner, offset,
++			reserved, action, &qrecord_inserted);
+ 	spin_unlock(&delayed_refs->lock);
+ 
+ 	if (qrecord_inserted)
+diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+index 0e537f98f1a1..94ee33a4d618 100644
+--- a/fs/btrfs/delayed-ref.h
++++ b/fs/btrfs/delayed-ref.h
+@@ -241,11 +241,20 @@ static inline void btrfs_put_delayed_ref(struct btrfs_delayed_ref_node *ref)
+ 	}
+ }
+ 
++struct btrfs_qgroup_extent_record;
+ int btrfs_add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
+ 			       struct btrfs_trans_handle *trans,
+ 			       u64 bytenr, u64 num_bytes, u64 parent,
+ 			       u64 ref_root, int level, int action,
+ 			       struct btrfs_delayed_extent_op *extent_op);
++void btrfs_add_delayed_data_ref_locked(struct btrfs_fs_info *fs_info,
++			struct btrfs_trans_handle *trans,
++			struct btrfs_delayed_data_ref *dref,
++			struct btrfs_delayed_ref_head *head_ref,
++			struct btrfs_qgroup_extent_record *qrecord,
++			u64 bytenr, u64 num_bytes, u64 parent, u64 ref_root,
++			u64 owner, u64 offset, u64 reserved, int action,
++			int *qrecord_inserted_ret);
+ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+ 			       struct btrfs_trans_handle *trans,
+ 			       u64 bytenr, u64 num_bytes,
 -- 
 2.12.0
 

@@ -1,111 +1,120 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:50780 "EHLO mx1.redhat.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1755004AbdCUIoT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Mar 2017 04:44:19 -0400
-Date: Tue, 21 Mar 2017 16:44:11 +0800
-From: Eryu Guan <eguan@redhat.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
-Subject: Re: [PATCH v2 3/3] fstests: btrfs: Test inband dedupe with data
- balance.
-Message-ID: <20170321084411.GX14226@eguan.usersys.redhat.com>
-References: <20170316090851.21608-1-quwenruo@cn.fujitsu.com>
- <20170316090851.21608-4-quwenruo@cn.fujitsu.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:35020 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750846AbdCPAOw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 15 Mar 2017 20:14:52 -0400
+Date: Wed, 15 Mar 2017 17:13:33 -0700
+From: Liu Bo <bo.li.liu@oracle.com>
+To: David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 4/4] btrfs: add dummy callback for readpage_io_failed and
+ drop checks
+Message-ID: <20170316001332.GB7651@lim.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <cover.1487615195.git.dsterba@suse.com>
+ <944371b69d2516a81dc182d6cf85e74583cf0ba4.1487615195.git.dsterba@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170316090851.21608-4-quwenruo@cn.fujitsu.com>
+In-Reply-To: <944371b69d2516a81dc182d6cf85e74583cf0ba4.1487615195.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 16, 2017 at 05:08:51PM +0800, Qu Wenruo wrote:
-> Btrfs balance will reloate date extent, but its hash is removed too late
-                     ^^^^^^^ relocate
-> at run_delayed_ref() time, which will cause extent ref increased
-> during balance, cause either find_data_references() gives WARN_ON()
-> or even run_delayed_refs() fails and cause transaction abort.
+On Mon, Feb 20, 2017 at 07:31:33PM +0100, David Sterba wrote:
+> Make extent_io_ops::readpage_io_failed_hook callback mandatory and
+> define a dummy function for btrfs_extent_io_ops. As the failed IO
+> callback is not performance critical, the branch vs extra trade off does
+> not hurt.
 > 
-> Add such concurrency test for inband dedupe and data balance.
-> 
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> Signed-off-by: David Sterba <dsterba@suse.com>
 > ---
->  tests/btrfs/202     | 109 ++++++++++++++++++++++++++++++++++++++++++++++++++++
->  tests/btrfs/202.out |   3 ++
->  tests/btrfs/group   |   1 +
->  3 files changed, 113 insertions(+)
->  create mode 100755 tests/btrfs/202
->  create mode 100644 tests/btrfs/202.out
+>  fs/btrfs/disk-io.c   | 2 +-
+>  fs/btrfs/extent_io.c | 2 +-
+>  fs/btrfs/extent_io.h | 2 +-
+>  fs/btrfs/inode.c     | 7 +++++++
+>  4 files changed, 10 insertions(+), 3 deletions(-)
 > 
-> diff --git a/tests/btrfs/202 b/tests/btrfs/202
-> new file mode 100755
-> index 0000000..60bb924
-> --- /dev/null
-> +++ b/tests/btrfs/202
-> @@ -0,0 +1,109 @@
-> +#! /bin/bash
-> +# FS QA Test 203
-> +#
-> +# Btrfs inband dedupe with balance concurrency test
-> +#
-> +# This can spot inband dedupe error which will increase delayed ref on
-> +# an data extent inside RO block group
-> +#
-> +#-----------------------------------------------------------------------
-> +# Copyright (c) 2017 Fujitsu.  All Rights Reserved.
-> +#
-> +# This program is free software; you can redistribute it and/or
-> +# modify it under the terms of the GNU General Public License as
-> +# published by the Free Software Foundation.
-> +#
-> +# This program is distributed in the hope that it would be useful,
-> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
-> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-> +# GNU General Public License for more details.
-> +#
-> +# You should have received a copy of the GNU General Public License
-> +# along with this program; if not, write the Free Software Foundation,
-> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-> +#-----------------------------------------------------------------------
-> +#
-> +
-> +seq=`basename $0`
-> +seqres=$RESULT_DIR/$seq
-> +echo "QA output created by $seq"
-> +
-> +here=`pwd`
-> +tmp=/tmp/$$
-> +status=1	# failure is the default!
-> +trap "_cleanup; exit \$status" 0 1 2 3 15
-> +
-> +_cleanup()
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 0715b6f3f686..fbf4921f4d60 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -4658,7 +4658,7 @@ static const struct extent_io_ops btree_extent_io_ops = {
+>  	.readpage_end_io_hook = btree_readpage_end_io_hook,
+>  	/* note we're sharing with inode.c for the merge bio hook */
+>  	.merge_bio_hook = btrfs_merge_bio_hook,
+> +	.readpage_io_failed_hook = btree_io_failed_hook,
+>  
+>  	/* optional callbacks */
+> -	.readpage_io_failed_hook = btree_io_failed_hook,
+>  };
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index f5cff93ab152..eaee7bb2ff7c 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -2578,7 +2578,7 @@ static void end_bio_extent_readpage(struct bio *bio)
+>  		if (likely(uptodate))
+>  			goto readpage_ok;
+>  
+> -		if (tree->ops && tree->ops->readpage_io_failed_hook) {
+> +		if (tree->ops) {
+>  			ret = tree->ops->readpage_io_failed_hook(page, mirror);
+>  			if (!ret && !bio->bi_error)
+>  				uptodate = 1;
+> diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+> index 5c5e2e6cfb9e..63c8cc970b1c 100644
+> --- a/fs/btrfs/extent_io.h
+> +++ b/fs/btrfs/extent_io.h
+> @@ -102,6 +102,7 @@ struct extent_io_ops {
+>  	int (*merge_bio_hook)(struct page *page, unsigned long offset,
+>  			      size_t size, struct bio *bio,
+>  			      unsigned long bio_flags);
+> +	int (*readpage_io_failed_hook)(struct page *page, int failed_mirror);
+>  
+>  	/*
+>  	 * Optional hooks, called if the pointer is not NULL
+> @@ -109,7 +110,6 @@ struct extent_io_ops {
+>  	int (*fill_delalloc)(struct inode *inode, struct page *locked_page,
+>  			     u64 start, u64 end, int *page_started,
+>  			     unsigned long *nr_written);
+> -	int (*readpage_io_failed_hook)(struct page *page, int failed_mirror);
+>  
+>  	int (*writepage_start_hook)(struct page *page, u64 start, u64 end);
+>  	void (*writepage_end_io_hook)(struct page *page, u64 start, u64 end,
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 72faf9b5616a..a74191fa3934 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -10503,6 +10503,12 @@ static int btrfs_tmpfile(struct inode *dir, struct dentry *dentry, umode_t mode)
+>  
+>  }
+>  
+> +__attribute__((const))
+> +static int dummy_readpage_io_failed_hook(struct page *page, int failed_mirror)
 > +{
-> +	cd /
-> +	kill $populate_pid &> /dev/null
-> +	kill $balance_pid &> /dev/null
-> +	wait
-> +	# Check later comment for reason
-> +	$BTRFS_UTIL_PROG balance cancel $SCRATCH_MNT &> /dev/null
-> +	rm -f $tmp.*
+> +	return 0;
+> +}
+> +
+>  static const struct inode_operations btrfs_dir_inode_operations = {
+>  	.getattr	= btrfs_getattr,
+>  	.lookup		= btrfs_lookup,
+> @@ -10545,6 +10551,7 @@ static const struct extent_io_ops btrfs_extent_io_ops = {
+>  	.submit_bio_hook = btrfs_submit_bio_hook,
+>  	.readpage_end_io_hook = btrfs_readpage_end_io_hook,
+>  	.merge_bio_hook = btrfs_merge_bio_hook,
+> +	.readpage_io_failed_hook = dummy_readpage_io_failed_hook,
 
-I sometimes saw "btrfs balance start" hold $SCRATCH_MNT from umounting
-and result in fs inconsistency after test. Some debug codes show that
-the "btrfs balance start $SCRATCH_MNT" is still running. If I add what
-btrfs/061 does:
-
-        while ps aux | grep "balance start" | grep -qv grep; do                                                                                                                                
-                sleep 1                                                                                                                                                                        
-        done
-
-test finishes fine. But btrfs-balance(8) says balance cancel should
-block and wait for the backgroud balance process to finish. Seems like a
-"balance cancel" bug?
-
-Otherwise these three patches look fine to me overall, except the wanted
-"dedupe feature check", and btrfs/200 is quick enough to fit in 'quick'
-group.
-
-I think the "dedupe feature check" should _notrun the tests if current
-btrfs has incompatible features set, e.g. compress and/or nodatacow.
+This has made us not call bio_readpage_error() to correct corrupted data...
 
 Thanks,
-Eryu
+
+-liubo
+>  
+>  	/* optional callbacks */
+>  	.fill_delalloc = run_delalloc_range,
+> -- 
+> 2.10.1
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

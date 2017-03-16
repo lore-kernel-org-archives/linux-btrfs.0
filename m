@@ -1,175 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:64909 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751321AbdCPJJB (ORCPT
+        with ESMTP id S1751321AbdCPJI5 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Mar 2017 05:09:01 -0400
+        Thu, 16 Mar 2017 05:08:57 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <fstests@vger.kernel.org>
-Subject: [PATCH v2 2/3] fstests: btrfs: Add testcase for btrfs dedupe and metadata balance race test
-Date: Thu, 16 Mar 2017 17:08:50 +0800
-Message-ID: <20170316090851.21608-3-quwenruo@cn.fujitsu.com>
-In-Reply-To: <20170316090851.21608-1-quwenruo@cn.fujitsu.com>
-References: <20170316090851.21608-1-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v2 0/3] Btrfs in-band de-duplication test cases
+Date: Thu, 16 Mar 2017 17:08:48 +0800
+Message-ID: <20170316090851.21608-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs balance with inband dedupe enable/disable will expose a lot of
-hidden dedupe bug:
+Btrfs in-band de-duplication test cases for in-memory backend, which covers
+the bugs exposed during the development.
 
-1) Enable/disable race bug
-2) Btrfs dedupe tree balance corrupted delayed_ref
-3) Btrfs disable and balance will cause balance BUG_ON
+v2:
+  Fix double disable and exit
+  Use $KILLALL_PROG
+  Use local variable in _count_extent_uniq()
+  Update date of the test cases
+  Move test case 203 to 202, to make up the numbering hole.
 
-Reported-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
+Qu Wenruo (3):
+  fstests: btrfs: Add basic test for btrfs in-band de-duplication
+  fstests: btrfs: Add testcase for btrfs dedupe and metadata balance
+    race test
+  fstests: btrfs: Test inband dedupe with data balance.
+
+ common/defrag       |  14 +++++++
+ tests/btrfs/200     | 110 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/200.out |  22 ++++++++++
  tests/btrfs/201     | 113 ++++++++++++++++++++++++++++++++++++++++++++++++++++
  tests/btrfs/201.out |   2 +
- tests/btrfs/group   |   1 +
- 3 files changed, 116 insertions(+)
+ tests/btrfs/202     | 109 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/202.out |   3 ++
+ tests/btrfs/group   |   3 ++
+ 8 files changed, 376 insertions(+)
+ create mode 100755 tests/btrfs/200
+ create mode 100644 tests/btrfs/200.out
  create mode 100755 tests/btrfs/201
  create mode 100644 tests/btrfs/201.out
+ create mode 100755 tests/btrfs/202
+ create mode 100644 tests/btrfs/202.out
 
-diff --git a/tests/btrfs/201 b/tests/btrfs/201
-new file mode 100755
-index 0000000..c5f6f23
---- /dev/null
-+++ b/tests/btrfs/201
-@@ -0,0 +1,113 @@
-+#! /bin/bash
-+# FS QA Test 201
-+#
-+# Btrfs inband dedup enable/disable race with metadata balance
-+#
-+# This tests will test the following bugs exposed in development:
-+# 1) enable/disable race
-+# 2) tree balance cause delayed ref corruption
-+# 3) disable and balance cause BUG_ON
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2017 Fujitsu.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	cd /
-+	rm -f $tmp.*
-+	$KILLALL_PROG $FSSTRESS_PROG &> /dev/null
-+	kill $trigger_pid &> /dev/null
-+	kill $balance_pid &> /dev/null
-+	wait
-+
-+	# See comment later
-+	$BTRFS_UTIL_PROG balance cancel $SCRATCH_MNT &> /dev/null
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# remove previous $seqres.full before test
-+rm -f $seqres.full
-+
-+# real QA test starts here
-+
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_command "$KILLALL_PROG" killall
-+_require_scratch
-+_require_btrfs_command dedupe
-+_require_btrfs_fs_feature dedupe
-+
-+# Use 64K dedupe size to keep compatibility for 64K page size
-+dedupe_bs=64K
-+
-+_scratch_mkfs >> $seqres.full 2>&1
-+_scratch_mount
-+
-+mkdir -p $SCRATCH_MNT/stressdir
-+
-+runtime=$((60 * $TIME_FACTOR))
-+
-+trigger_work()
-+{
-+	while true; do
-+		_run_btrfs_util_prog dedupe enable -s inmemory \
-+			-b $dedupe_bs $SCRATCH_MNT
-+		sleep 1
-+		_run_btrfs_util_prog dedupe disable $SCRATCH_MNT
-+		sleep 1
-+	done
-+}
-+
-+# redirect all output, as error output like 'balance cancelled by user'
-+# will populuate the golden output.
-+_btrfs_stress_balance -m $SCRATCH_MNT &> /dev/null &
-+balance_pid=$!
-+
-+$FSSTRESS_PROG $(_scale_fsstress_args -p 1 -n 10000000) $FSSTRESS_AVOID \
-+	-d $SCRATCH_MNT/stressdir > /dev/null 2>&1 &
-+
-+trigger_work &
-+trigger_pid=$!
-+
-+sleep $runtime
-+$KILLALL_PROG $FSSTRESS_PROG &> /dev/null
-+kill $trigger_pid &> /dev/null
-+kill $balance_pid &> /dev/null
-+wait
-+
-+# Manually stop balance as it's possible balance is still running for a short
-+# time. And we don't want to populate $seqres.full, so call $BTRFS_UTIL_PROG
-+# directly
-+$BTRFS_UTIL_PROG balance cancel $SCRATCH_MNT &> /dev/null
-+
-+echo "Silence is golden"
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/btrfs/201.out b/tests/btrfs/201.out
-new file mode 100644
-index 0000000..5ac973f
---- /dev/null
-+++ b/tests/btrfs/201.out
-@@ -0,0 +1,2 @@
-+QA output created by 201
-+Silence is golden
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 4e49564..1856d7e 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -142,3 +142,4 @@
- 137 auto quick send
- 138 auto compress
- 200 auto ib-dedupe
-+201 auto ib-dedupe
 -- 
 2.9.3
 

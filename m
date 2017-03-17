@@ -1,52 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f66.google.com ([209.85.214.66]:34293 "EHLO
-        mail-it0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750721AbdCXRal (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:36382 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751098AbdCQCHw (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 24 Mar 2017 13:30:41 -0400
-Received: by mail-it0-f66.google.com with SMTP id z70so1341193itb.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 24 Mar 2017 10:30:40 -0700 (PDT)
+        Thu, 16 Mar 2017 22:07:52 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <chris@colorremedies.com>
+Subject: [PATCH 1/2] btrfs-progs: lowmeme check: Fix false alert about backref lost for SHARED_DATA_REF
+Date: Fri, 17 Mar 2017 10:06:33 +0800
+Message-ID: <20170317020634.29287-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-From: Hirotaka Yamamoto <ymmt2005@gmail.com>
-Date: Sat, 25 Mar 2017 02:29:59 +0900
-Message-ID: <CAC4Rxrf_PQO7kFypB-mJ1xYV_zMbpZuzngGGvALY=TxwQ-JKVQ@mail.gmail.com>
-Subject: Re: [PATCH] fix inconsistent device between /proc/pid/maps and stat
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, satoru.takeuchi@gmail.com
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+In check_extent_data_item(), after checking extent item of one data
+extent, we search inlined data backref, then EXTENT_DATA_REF_KEY.
 
-2017-03-24 20:58 GMT+09:00 David Sterba <dsterba@suse.cz>:
-> On Tue, Mar 21, 2017 at 10:53:09AM +0900, Satoru Takeuchi wrote:
->> There have been some discussions about inconsistent device between /proc/pid/maps and stat(2).
->>
->> http://thr3ads.net/btrfs-devel/2011/05/2346176-RFC-PATCH-0-2-btrfs-vfs-Return-same-device-in-stat-2-and-proc-pid-maps
->> https://www.spinics.net/lists/linux-btrfs/msg09044.html
->> https://patchwork.kernel.org/patch/2825842/
->> https://patchwork.kernel.org/patch/2831525/
->>
->> It's important since it breaks user programs like lsof(8). There was a patche by Mark to fix this problem.
->> However, unfortunately, that patch is not merged so far.
->
-> And no variant of the get_map_dev will ever be merged. Reworking this
-> requires extensions to the superblock and subvolume structures, making
-> it more generic and suitable for VFS.
+But we didn't search SHARED_DATA_REF, so if the backref is
+SHARED_DATA_REF, then we will raise a false alert about backref lost.
 
-Aside from how to fix, yet I think fixing this is quite important.
+Fix by also checking SHARED_DATA_REF_KEY in check_extent_data_item().
 
-I have found the problem when I wanted to list processes using vulnerable
-shared libraries by, say, "lsof /lib/x86_64-linux-gnu/libcrypto.so.1.0.0".
+Reported-by: Chris Murphy <chris@colorremedies.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ cmds-check.c | 32 ++++++++++++++++++++++++--------
+ 1 file changed, 24 insertions(+), 8 deletions(-)
 
-As lsof did not report any process, I almost failed to restart processes
-that were using the library in reality after installing upgrades.
+diff --git a/cmds-check.c b/cmds-check.c
+index 5cc84690..17b7efbf 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -10229,10 +10229,8 @@ static int check_extent_data_item(struct btrfs_root *root,
+ 	dbref_key.offset = btrfs_file_extent_disk_num_bytes(eb, fi);
+ 
+ 	ret = btrfs_search_slot(NULL, extent_root, &dbref_key, &path, 0, 0);
+-	if (ret) {
+-		err |= BACKREF_MISSING;
+-		goto error;
+-	}
++	if (ret)
++		goto out;
+ 
+ 	leaf = path.nodes[0];
+ 	slot = path.slots[0];
+@@ -10273,11 +10271,10 @@ static int check_extent_data_item(struct btrfs_root *root,
+ 		ptr += btrfs_extent_inline_ref_size(type);
+ 	}
+ 
+-	/* Didn't found inlined data backref, try EXTENT_DATA_REF_KEY */
+ 	if (!found_dbackref) {
+ 		btrfs_release_path(&path);
+ 
+-		btrfs_init_path(&path);
++		/* Didn't find inlined data backref, try EXTENT_DATA_REF_KEY */
+ 		dbref_key.objectid = btrfs_file_extent_disk_bytenr(eb, fi);
+ 		dbref_key.type = BTRFS_EXTENT_DATA_REF_KEY;
+ 		dbref_key.offset = hash_extent_data_ref(root->objectid,
+@@ -10285,13 +10282,32 @@ static int check_extent_data_item(struct btrfs_root *root,
+ 
+ 		ret = btrfs_search_slot(NULL, root->fs_info->extent_root,
+ 					&dbref_key, &path, 0, 0);
+-		if (!ret)
++		if (!ret) {
+ 			found_dbackref = 1;
++			goto out;
++		}
++
++		btrfs_release_path(&path);
++
++		/*
++		 * Neither inlined nor EXTENT_DATA_REF found, try
++		 * SHARED_DATA_REF as last chance.
++		 */
++		dbref_key.objectid = disk_bytenr;
++		dbref_key.type = BTRFS_SHARED_DATA_REF_KEY;
++		dbref_key.offset = eb->start;
++
++		ret = btrfs_search_slot(NULL, root->fs_info->extent_root,
++					&dbref_key, &path, 0, 0);
++		if (!ret) {
++			found_dbackref = 1;
++			goto out;
++		}
+ 	}
+ 
++out:
+ 	if (!found_dbackref)
+ 		err |= BACKREF_MISSING;
+-error:
+ 	btrfs_release_path(&path);
+ 	if (err & BACKREF_MISSING) {
+ 		error("data extent[%llu %llu] backref lost",
+-- 
+2.12.0
 
-Leaving this problem would open a big security concern as btrfs is
-getting more popular.
 
-Satoru, thank you for the proposal, and good luck to further
-improvements!
 
-@ymmt2005

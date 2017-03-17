@@ -1,54 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f173.google.com ([209.85.216.173]:36591 "EHLO
-        mail-qt0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751065AbdCQTfP (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Mar 2017 15:35:15 -0400
-Received: by mail-qt0-f173.google.com with SMTP id r45so70832483qte.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Mar 2017 12:35:10 -0700 (PDT)
-Subject: Re: BTRFS Metadata Corruption Prevents Scrub and btrfs check
-To: John Marrett <johnf@zioncluster.ca>,
-        Peter Grandi <pg@btrfs.list.sabi.co.uk>
-References: <CAAafysHAZ_1-4rTqsY4cw0rkBgq3f_F29nM+=XsDEhNvR8CkJQ@mail.gmail.com>
- <22731.59878.724789.333618@tree.ty.sabi.co.uk>
- <CAAafysFBYkAe9pgmnky4-Rxd0r1Xau3rb2ueT0Yu+rjDT9+Atw@mail.gmail.com>
-Cc: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <e1e39916-e223-9ad6-cc3b-454b3560a8fb@gmail.com>
-Date: Fri, 17 Mar 2017 15:35:03 -0400
+Received: from mx1.redhat.com ([209.132.183.28]:39360 "EHLO mx1.redhat.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751236AbdCQT5F (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 17 Mar 2017 15:57:05 -0400
+Subject: Re: Thoughts on 'btrfs device stats' and security.
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <f0bd54bf-930b-c489-8bd3-e3b5a4cc965e@gmail.com>
+From: Eric Sandeen <sandeen@redhat.com>
+Message-ID: <feb89fc0-e7c6-53f5-5eaf-222b7a7a05b7@redhat.com>
+Date: Fri, 17 Mar 2017 12:01:50 -0700
 MIME-Version: 1.0
-In-Reply-To: <CAAafysFBYkAe9pgmnky4-Rxd0r1Xau3rb2ueT0Yu+rjDT9+Atw@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <f0bd54bf-930b-c489-8bd3-e3b5a4cc965e@gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-03-17 15:25, John Marrett wrote:
-> Peter,
->
->> Bad news. That means that probably the disk is damaged and
->> further issues may happen.
->
-> This system has a long history, I have had a dual drive failure in the
-> past, I managed to recover from that with ddrescue. I've subsequently
-> copied the contents of the drives to new disks and expanded them. This
-> corruption probably stems from issues in the past and not from issues
-> with the current drives.
-One quick tip on this particular note, when you replace a drive (or copy 
-to new larger drives), run:
-btrfs device stats -z
-To reset the error counters.  This way, you can be sure that the 
-counters count errors for the filesystem as it currently exists without 
-leftover counts from any previous drive configuration.
+On 3/17/17 11:25 AM, Austin S. Hemmelgarn wrote:
+> I'm currently working on a plugin for colllectd [1] to track per-device per-filesystem error rates for BTRFS volumes.  Overall, this is actually going quite well (I've got most of the secondary logic like matching filesystems to watch and parsing the data done already), but I've come across a rather nasty caveat on the actual data collection part.
+> 
+> As of right now, there are only two ways I can see to get this data:
+> 1. Parse the output of `btrfs device stats` for the filesystem.
+> 2. Make the same ioctl() call that `btrfs device stats` does and compose the data yourself.
+> 
+> In both cases, one of the following has to be the case:
+> 1. You're running as root.
+> 2. You're running SUID root.
+> 3. You're running with CAP_SYS_ADMIN (I'm not 100% certain that this is the correct capability, but it appears to be the case from my testing).
+> 
+> In other words, you have to reduce the overall security of your system to be able to get this data which is itself not security sensitive for most intents and purposes.
 
-Ideally, the tools would reset them when replacing a device on only that 
-device, but even if they did, that wouldn't help with simply copying the 
-filesystem to a new disk.
+As one datapoint, xfs stats are ugo+r -
 
-The other aspect to this is scrubbing regularly and monitoring both the 
-output of scrub and the error counters, so you know _when_ an error 
-happened, not just that it happened at some point in the past. 
-Personally, I would suggest checking the error counters at least daily, 
-possibly more frequently (it's not an expensive operation, and the 
-sooner you know about issues the better) and scrubbing at least monthly 
-(I scrub daily on most of my systems, but I don't store a large enough 
-amount of data for that to have a significant impact on performance).
+see /proc/fs/xfs/stat or /sys/fs/xfs/<device>/stats/stats
+
+-r--r--r--. 1 root root 4096 Mar 17 13:58 stats
+
+However, the stats_clear file is only writable by root
+
+--w-------. 1 root root 4096 Mar 17 13:58 stats_clear
+
+Stats & other info for ext4 are also ugo+r, other than
+an error trigger which is only writable by root, and
+for which a read is meaningless.
+
+/sys/fs/ext4/sda1/
+
+-r--r--r--. 1 root root 4096 Mar 17 14:00 delayed_allocation_blocks
+-r--r--r--. 1 root root 4096 Mar 17 14:00 errors_count
+-rw-r--r--. 1 root root 4096 Mar 17 14:00 err_ratelimit_burst
+-rw-r--r--. 1 root root 4096 Mar 17 14:00 err_ratelimit_interval_ms
+-rw-r--r--. 1 root root 4096 Mar 17 14:00 extent_max_zeroout_kb
+-r--r--r--. 1 root root 4096 Mar 17 14:00 first_error_time
+-rw-r--r--. 1 root root 4096 Mar 17 14:00 inode_goal
+-rw-r--r--. 1 root root 4096 Mar 17 14:00 inode_readahead_blks
+-r--r--r--. 1 root root 4096 Mar 17 14:00 last_error_time
+-r--r--r--. 1 root root 4096 Mar 17 14:00 lifetime_write_kbytes
+-r--r--r--. 1 root root 4096 Mar 17 14:00 max_writeback_mb_bump
+-rw-r--r--. 1 root root 4096 Mar 17 14:00 mb_group_prealloc
+-rw-r--r--. 1 root root 4096 Mar 17 14:00 mb_max_to_scan
+-rw-r--r--. 1 root root 4096 Mar 17 14:00 mb_min_to_scan
+-rw-r--r--. 1 root root 4096 Mar 17 14:00 mb_order2_req
+-rw-r--r--. 1 root root 4096 Mar 17 14:00 mb_stats
+-rw-r--r--. 1 root root 4096 Mar 17 14:00 mb_stream_req
+-rw-r--r--. 1 root root 4096 Mar 17 14:00 msg_ratelimit_burst
+-rw-r--r--. 1 root root 4096 Mar 17 14:00 msg_ratelimit_interval_ms
+-rw-r--r--. 1 root root 4096 Mar 17 14:00 reserved_clusters
+-r--r--r--. 1 root root 4096 Mar 17 14:00 session_write_kbytes
+--w-------. 1 root root 4096 Mar 17 14:00 trigger_fs_error
+-rw-r--r--. 1 root root 4096 Mar 17 14:00 warning_ratelimit_burst
+-rw-r--r--. 1 root root 4096 Mar 17 14:00 warning_ratelimit_interval_ms
+
+
+-Eric

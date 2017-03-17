@@ -1,75 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:39360 "EHLO mx1.redhat.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751236AbdCQT5F (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Mar 2017 15:57:05 -0400
-Subject: Re: Thoughts on 'btrfs device stats' and security.
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <f0bd54bf-930b-c489-8bd3-e3b5a4cc965e@gmail.com>
-From: Eric Sandeen <sandeen@redhat.com>
-Message-ID: <feb89fc0-e7c6-53f5-5eaf-222b7a7a05b7@redhat.com>
-Date: Fri, 17 Mar 2017 12:01:50 -0700
+Received: from mail-eopbgr50067.outbound.protection.outlook.com ([40.107.5.67]:35996
+        "EHLO EUR03-VE1-obe.outbound.protection.outlook.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751272AbdCQW1q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 17 Mar 2017 18:27:46 -0400
+In-Reply-To: 
+From: Luca Citi <lciti@essex.ac.uk>
+Subject: Re: Home storage with btrfs
+To: <linux-btrfs@vger.kernel.org>
+Message-ID: <5cdb9c38-db0c-2a24-5be3-6e00a92a244b@essex.ac.uk>
+Date: Fri, 17 Mar 2017 22:27:35 +0000
 MIME-Version: 1.0
-In-Reply-To: <f0bd54bf-930b-c489-8bd3-e3b5a4cc965e@gmail.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 3/17/17 11:25 AM, Austin S. Hemmelgarn wrote:
-> I'm currently working on a plugin for colllectd [1] to track per-device per-filesystem error rates for BTRFS volumes.  Overall, this is actually going quite well (I've got most of the secondary logic like matching filesystems to watch and parsing the data done already), but I've come across a rather nasty caveat on the actual data collection part.
-> 
-> As of right now, there are only two ways I can see to get this data:
-> 1. Parse the output of `btrfs device stats` for the filesystem.
-> 2. Make the same ioctl() call that `btrfs device stats` does and compose the data yourself.
-> 
-> In both cases, one of the following has to be the case:
-> 1. You're running as root.
-> 2. You're running SUID root.
-> 3. You're running with CAP_SYS_ADMIN (I'm not 100% certain that this is the correct capability, but it appears to be the case from my testing).
-> 
-> In other words, you have to reduce the overall security of your system to be able to get this data which is itself not security sensitive for most intents and purposes.
+I have had some troubles recently using btrfs with kernels >=4.8 when 
+using the cfq scheduler.
+Please see my post: http://www.spinics.net/lists/linux-btrfs/msg63599.html
+I have no problem with kernels < 4.8 or when using the deadline 
+scheduler (or none).
 
-As one datapoint, xfs stats are ugo+r -
+It is possible that the problem I see is a result of a major redesign 
+that happened in March 2016.
 
-see /proc/fs/xfs/stat or /sys/fs/xfs/<device>/stats/stats
+So, contrary to most people advising to use very recent kernels, I 
+suggest to try and strike a balance between a kernel that is recent 
+enough to have known bugs fixed but old enough that any recently 
+introduced change has been around for a while and tested.
 
--r--r--r--. 1 root root 4096 Mar 17 13:58 stats
+Regards,
+Luca
 
-However, the stats_clear file is only writable by root
-
---w-------. 1 root root 4096 Mar 17 13:58 stats_clear
-
-Stats & other info for ext4 are also ugo+r, other than
-an error trigger which is only writable by root, and
-for which a read is meaningless.
-
-/sys/fs/ext4/sda1/
-
--r--r--r--. 1 root root 4096 Mar 17 14:00 delayed_allocation_blocks
--r--r--r--. 1 root root 4096 Mar 17 14:00 errors_count
--rw-r--r--. 1 root root 4096 Mar 17 14:00 err_ratelimit_burst
--rw-r--r--. 1 root root 4096 Mar 17 14:00 err_ratelimit_interval_ms
--rw-r--r--. 1 root root 4096 Mar 17 14:00 extent_max_zeroout_kb
--r--r--r--. 1 root root 4096 Mar 17 14:00 first_error_time
--rw-r--r--. 1 root root 4096 Mar 17 14:00 inode_goal
--rw-r--r--. 1 root root 4096 Mar 17 14:00 inode_readahead_blks
--r--r--r--. 1 root root 4096 Mar 17 14:00 last_error_time
--r--r--r--. 1 root root 4096 Mar 17 14:00 lifetime_write_kbytes
--r--r--r--. 1 root root 4096 Mar 17 14:00 max_writeback_mb_bump
--rw-r--r--. 1 root root 4096 Mar 17 14:00 mb_group_prealloc
--rw-r--r--. 1 root root 4096 Mar 17 14:00 mb_max_to_scan
--rw-r--r--. 1 root root 4096 Mar 17 14:00 mb_min_to_scan
--rw-r--r--. 1 root root 4096 Mar 17 14:00 mb_order2_req
--rw-r--r--. 1 root root 4096 Mar 17 14:00 mb_stats
--rw-r--r--. 1 root root 4096 Mar 17 14:00 mb_stream_req
--rw-r--r--. 1 root root 4096 Mar 17 14:00 msg_ratelimit_burst
--rw-r--r--. 1 root root 4096 Mar 17 14:00 msg_ratelimit_interval_ms
--rw-r--r--. 1 root root 4096 Mar 17 14:00 reserved_clusters
--r--r--r--. 1 root root 4096 Mar 17 14:00 session_write_kbytes
---w-------. 1 root root 4096 Mar 17 14:00 trigger_fs_error
--rw-r--r--. 1 root root 4096 Mar 17 14:00 warning_ratelimit_burst
--rw-r--r--. 1 root root 4096 Mar 17 14:00 warning_ratelimit_interval_ms
-
-
--Eric

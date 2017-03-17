@@ -1,70 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f44.google.com ([209.85.214.44]:35225 "EHLO
-        mail-it0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751306AbdCQS1B (ORCPT
+Received: from mail-pf0-f170.google.com ([209.85.192.170]:33002 "EHLO
+        mail-pf0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751207AbdCQTZf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Mar 2017 14:27:01 -0400
-Received: by mail-it0-f44.google.com with SMTP id m27so31591701iti.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Mar 2017 11:26:51 -0700 (PDT)
-Received: from [191.9.206.254] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
-        by smtp.gmail.com with ESMTPSA id 65sm4727352iop.21.2017.03.17.11.25.52
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Fri, 17 Mar 2017 11:25:53 -0700 (PDT)
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Subject: Thoughts on 'btrfs device stats' and security.
-Message-ID: <f0bd54bf-930b-c489-8bd3-e3b5a4cc965e@gmail.com>
-Date: Fri, 17 Mar 2017 14:25:48 -0400
+        Fri, 17 Mar 2017 15:25:35 -0400
+Received: by mail-pf0-f170.google.com with SMTP id e129so2710541pfh.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Mar 2017 12:25:35 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <22731.59878.724789.333618@tree.ty.sabi.co.uk>
+References: <CAAafysHAZ_1-4rTqsY4cw0rkBgq3f_F29nM+=XsDEhNvR8CkJQ@mail.gmail.com>
+ <22731.59878.724789.333618@tree.ty.sabi.co.uk>
+From: John Marrett <johnf@zioncluster.ca>
+Date: Fri, 17 Mar 2017 15:25:34 -0400
+Message-ID: <CAAafysFBYkAe9pgmnky4-Rxd0r1Xau3rb2ueT0Yu+rjDT9+Atw@mail.gmail.com>
+Subject: Re: BTRFS Metadata Corruption Prevents Scrub and btrfs check
+To: Peter Grandi <pg@btrfs.list.sabi.co.uk>
+Cc: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'm currently working on a plugin for colllectd [1] to track per-device 
-per-filesystem error rates for BTRFS volumes.  Overall, this is actually 
-going quite well (I've got most of the secondary logic like matching 
-filesystems to watch and parsing the data done already), but I've come 
-across a rather nasty caveat on the actual data collection part.
+Peter,
 
-As of right now, there are only two ways I can see to get this data:
-1. Parse the output of `btrfs device stats` for the filesystem.
-2. Make the same ioctl() call that `btrfs device stats` does and compose 
-the data yourself.
+> Bad news. That means that probably the disk is damaged and
+> further issues may happen.
 
-In both cases, one of the following has to be the case:
-1. You're running as root.
-2. You're running SUID root.
-3. You're running with CAP_SYS_ADMIN (I'm not 100% certain that this is 
-the correct capability, but it appears to be the case from my testing).
+This system has a long history, I have had a dual drive failure in the
+past, I managed to recover from that with ddrescue. I've subsequently
+copied the contents of the drives to new disks and expanded them. This
+corruption probably stems from issues in the past and not from issues
+with the current drives.
 
-In other words, you have to reduce the overall security of your system 
-to be able to get this data which is itself not security sensitive for 
-most intents and purposes.
+>> Incorrect local backref count on 5165855678464 root 259 owner 1732872
+>> offset 0 found 0 wanted 1 back 0x3ba80f40
+>> Backref disk bytenr does not match extent record,
+>> bytenr=5165855678464, ref bytenr=7880454922968236032
+>> backpointer mismatch on [5165855678464 28672]
+>
+> "Better" news. In practice a single metadata leaf node is
+> corrupted in back references. You might be lucky and that might
+> be rebuildable, but I don't know enough about the somewhat
+> intricate Btrfs metadata trees to figure that out. Some metadata
+> is rebuildable from other metadata with a tree scan, some not.
 
-Looking at this from the perspective of actual data collection, there 
-are a handful of things that come to mind:
-* You already know either device names or device-id's, because the ioctl 
-is called per-device and uses one of those to identify the device to 
-return data for (I'm not sure from reading the code which), so this 
-aspect is by definition not sensitive data.
-* While there are theoretically attacks that this data could be useful 
-for, the only ones I can think of are largely pointless because they 
-require write access to the underlying storage and provide information 
-which would by definition already be available by other (more efficient 
-and less obtrusive) means if you had such access.
-* This is somewhat useful data for an admin who may not have root access 
-to retrieve.
-* The use of an ioctl makes it non-trivial to access this data.
-* We already expose allocation data through /sys/fs/btrfs (in the 
-per-filesystem `allocation` directory).
+How can I attempt to rebuild the metadata, with a treescan or otherwise?
 
-On this note, I'd like to propose that the error counters be exposed in 
-some way through sysfs so you don't have to parse the output of `btrfs 
-device stats` (and incur the fork()+exec() overhead) or fight with 
-ioctls.  I would offer to work on this myself, but I have exactly zero 
-experience with the kernel side of sysfs, very limited experience with 
-kernel coding in general, and I'm not likely to have much (if any) time 
-to work on this for quite a while.
+> In general metadata in Btrfs is fairly intricate and metadata
+> block loss is pretty fatal, that's why metadata should most
+> times be redundant as in 'dup' or 'raid1' or similar:
 
-[1] https://collectd.org/
+All the data and metadata on this system is in raid1 or raid10, in
+fact I discovered this issue while trying to change my balance form
+raid1 to raid10.
+
+johnf@carbon:~$ sudo btrfs fi df /
+Data, RAID10: total=1.13TiB, used=1.12TiB
+Data, RAID1: total=5.17TiB, used=5.16TiB
+System, RAID1: total=32.00MiB, used=864.00KiB
+Metadata, RAID10: total=3.09GiB, used=3.08GiB
+Metadata, RAID1: total=13.00GiB, used=10.16GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+Thanks for your help, much appreciated,
+
+-JohnF

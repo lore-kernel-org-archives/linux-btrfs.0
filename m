@@ -1,62 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ns.bouton.name ([109.74.195.142]:51004 "EHLO mail.bouton.name"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751061AbdCQORg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Mar 2017 10:17:36 -0400
-Subject: Re: help : "bad tree block start" -> btrfs forced readonly
-To: Roman Mamedov <rm@romanrm.net>
-References: <0ec911af-2932-72df-d9b3-bd27616e101e@bouton.name>
- <c704f24e-4ea2-43fe-909e-92ad98bf6d28@bouton.name>
- <4866fa5d-d9bc-653a-17d8-b555fc55491e@mendix.com>
- <2994d13d-c65c-0794-8a83-a68ff258f109@bouton.name>
- <20170317145107.21bb9b45@natsu>
- <74575358-1fee-404d-51e4-6fb51348c10f@bouton.name>
-Cc: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Lionel Bouton <lionel-subscription@bouton.name>
-Message-ID: <4bf87df3-0a4a-bd16-62f0-3bdfb76be1f3@bouton.name>
-Date: Fri, 17 Mar 2017 15:17:25 +0100
+Received: from mail-it0-f44.google.com ([209.85.214.44]:35225 "EHLO
+        mail-it0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751306AbdCQS1B (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 17 Mar 2017 14:27:01 -0400
+Received: by mail-it0-f44.google.com with SMTP id m27so31591701iti.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Mar 2017 11:26:51 -0700 (PDT)
+Received: from [191.9.206.254] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
+        by smtp.gmail.com with ESMTPSA id 65sm4727352iop.21.2017.03.17.11.25.52
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Fri, 17 Mar 2017 11:25:53 -0700 (PDT)
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Subject: Thoughts on 'btrfs device stats' and security.
+Message-ID: <f0bd54bf-930b-c489-8bd3-e3b5a4cc965e@gmail.com>
+Date: Fri, 17 Mar 2017 14:25:48 -0400
 MIME-Version: 1.0
-In-Reply-To: <74575358-1fee-404d-51e4-6fb51348c10f@bouton.name>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+I'm currently working on a plugin for colllectd [1] to track per-device 
+per-filesystem error rates for BTRFS volumes.  Overall, this is actually 
+going quite well (I've got most of the secondary logic like matching 
+filesystems to watch and parsing the data done already), but I've come 
+across a rather nasty caveat on the actual data collection part.
 
-some news from the coal mine...
+As of right now, there are only two ways I can see to get this data:
+1. Parse the output of `btrfs device stats` for the filesystem.
+2. Make the same ioctl() call that `btrfs device stats` does and compose 
+the data yourself.
 
-Le 17/03/2017 à 11:03, Lionel Bouton a écrit :
-> [...]
-> I'm considering trying to use a 4 week old snapshot of the device to
-> find out if it was corrupted or not instead. It will still be a pain if
-> it works but rsync for less than a month of data is at least an order of
-> magnitude faster than a full restore.
+In both cases, one of the following has to be the case:
+1. You're running as root.
+2. You're running SUID root.
+3. You're running with CAP_SYS_ADMIN (I'm not 100% certain that this is 
+the correct capability, but it appears to be the case from my testing).
 
-btrfs check -p /dev/sdb is running on this 4 week old snapshot. The
-extents check passed without any error, it is currently checking the
-free space (and it's just done while I was writing this and is doing fs
-roots).
+In other words, you have to reduce the overall security of your system 
+to be able to get this data which is itself not security sensitive for 
+most intents and purposes.
 
-I'm not sure of the list of checks it performs. I assume the free
-space^H... fs roots can't be much longer than the rest (on a ~13TB of
-20TB used filesystem with ~ 10 million files and half a dozen subvolumes).
-It took less than an hour to check extents. I'll give it another hour
-and stop it if its not done : it's already passing stages than the live
-data couldn't get to.
+Looking at this from the perspective of actual data collection, there 
+are a handful of things that come to mind:
+* You already know either device names or device-id's, because the ioctl 
+is called per-device and uses one of those to identify the device to 
+return data for (I'm not sure from reading the code which), so this 
+aspect is by definition not sensitive data.
+* While there are theoretically attacks that this data could be useful 
+for, the only ones I can think of are largely pointless because they 
+require write access to the underlying storage and provide information 
+which would by definition already be available by other (more efficient 
+and less obtrusive) means if you had such access.
+* This is somewhat useful data for an admin who may not have root access 
+to retrieve.
+* The use of an ioctl makes it non-trivial to access this data.
+* We already expose allocation data through /sys/fs/btrfs (in the 
+per-filesystem `allocation` directory).
 
-I may be wrong but I suspect Ceph is innocent of any wrong-doing here :
-I think there's a high probability that if Ceph could corrupt its data
-in our configuration the snapshot would have been corrupted too (most of
-its data is shared with the live data). I wonder if QEMU or the VM
-kernel managed to transform IO timeouts (which clearly happened below
-Ceph and were passed to the VM in many instances) into garbage reads
-which ended in garbage writes. If it isn't in QEMU and happened in the
-kernel this was with 4.1.15 so it might be a corrected kernel bug in
-either the block or fs layers. I'm not especially ecstatic at the
-prospect of testing this behavior again but I will automate more Ceph
-snapshots in the future (and the VM is now on 4.9.6).
+On this note, I'd like to propose that the error counters be exposed in 
+some way through sysfs so you don't have to parse the output of `btrfs 
+device stats` (and incur the fork()+exec() overhead) or fight with 
+ioctls.  I would offer to work on this myself, but I have exactly zero 
+experience with the kernel side of sysfs, very limited experience with 
+kernel coding in general, and I'm not likely to have much (if any) time 
+to work on this for quite a while.
 
-Best regards,
-
-Lionel
+[1] https://collectd.org/

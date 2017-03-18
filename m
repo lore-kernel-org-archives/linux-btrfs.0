@@ -1,298 +1,164 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1050.oracle.com ([156.151.31.82]:17592 "EHLO
-        userp1050.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751122AbdCRAGW (ORCPT
+Received: from aserp1050.oracle.com ([141.146.126.70]:31938 "EHLO
+        aserp1050.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751107AbdCRCFd (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Mar 2017 20:06:22 -0400
-Received: from userp1040.oracle.com (userp1040.oracle.com [156.151.31.81])
-        by userp1050.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v2HML5eH014284
+        Fri, 17 Mar 2017 22:05:33 -0400
+Received: from aserp1040.oracle.com (aserp1040.oracle.com [141.146.126.69])
+        by aserp1050.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v2I24o5G013666
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Mar 2017 22:21:05 GMT
-Date: Fri, 17 Mar 2017 15:19:19 -0700
+        for <linux-btrfs@vger.kernel.org>; Sat, 18 Mar 2017 02:04:50 GMT
+Date: Fri, 17 Mar 2017 19:03:04 -0700
 From: Liu Bo <bo.li.liu@oracle.com>
 To: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 3/5] btrfs: raid56: Use correct stolen pages to calculate
- P/Q
-Message-ID: <20170317221919.GA7719@lim.localdomain>
+Subject: Re: [PATCH 4/5] btrfs: raid56: Don't keep rbio for later steal
+Message-ID: <20170318020304.GB7719@lim.localdomain>
 Reply-To: bo.li.liu@oracle.com
 References: <20170203082023.3577-1-quwenruo@cn.fujitsu.com>
- <20170203082023.3577-4-quwenruo@cn.fujitsu.com>
- <20170316053614.GA8285@lim.localdomain>
- <f5b8d9a7-3972-faad-5b24-82b9c8c4c4b0@cn.fujitsu.com>
+ <20170203082023.3577-5-quwenruo@cn.fujitsu.com>
+ <20170317044407.GA24387@lim.localdomain>
+ <bfaf7a7e-2330-0419-9549-7c37f2b1f93d@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <f5b8d9a7-3972-faad-5b24-82b9c8c4c4b0@cn.fujitsu.com>
+In-Reply-To: <bfaf7a7e-2330-0419-9549-7c37f2b1f93d@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 17, 2017 at 02:31:08PM +0800, Qu Wenruo wrote:
+On Fri, Mar 17, 2017 at 01:28:45PM +0800, Qu Wenruo wrote:
 > 
 > 
-> At 03/16/2017 01:36 PM, Liu Bo wrote:
-> > On Fri, Feb 03, 2017 at 04:20:21PM +0800, Qu Wenruo wrote:
-> > > In the following situation, scrub will calculate wrong parity to
-> > > overwrite correct one:
+> At 03/17/2017 12:44 PM, Liu Bo wrote:
+> > On Fri, Feb 03, 2017 at 04:20:22PM +0800, Qu Wenruo wrote:
+> > > Before this patch, btrfs raid56 will keep raid56 rbio even all its IO is
+> > > done.
+> > > This may save some time allocating rbio, but it can cause deadly
+> > > use-after-free bug, for the following case:
 > > > 
-> > > RAID5 full stripe:
+> > > Original fs: 4 devices RAID5
 > > > 
-> > > Before
-> > > |     Dev 1      |     Dev  2     |     Dev 3     |
-> > > | Data stripe 1  | Data stripe 2  | Parity Stripe |
-> > > --------------------------------------------------- 0
-> > > | 0x0000 (Bad)   |     0xcdcd     |     0x0000    |
-> > > --------------------------------------------------- 4K
-> > > |     0xcdcd     |     0xcdcd     |     0x0000    |
-> > > ...
-> > > |     0xcdcd     |     0xcdcd     |     0x0000    |
-> > > --------------------------------------------------- 64K
+> > >        Process A                 |          Process B
+> > > --------------------------------------------------------------------------
+> > >                                  |  Start device replace
+> > >                                  |    Now the fs has 5 devices
+> > >                                  |    devid 0: replace device
+> > >                                  |    devid 1~4: old devices
+> > > btrfs_map_bio()                  |
+> > > |- __btrfs_map_block()           |
+> > > |    bbio has 5 stripes          |
+> > > |    including devid 0           |
+> > > |- raid56_parity_write()         |
+> > >                                  |
+> > > raid_write_end_io()              |
+> > > |- rbio_orig_end_io()            |
+> > >    |- unlock_stripe()            |
+> > >        Keeps the old rbio for    |
+> > >        later steal, which has    |
+> > >        stripe for devid 0        |
+> > >                                  |  Cancel device replace
+> > >                                  |    Now the fs has 4 devices
+> > >                                  |    devid 0 is freed
+> > > Some IO happens                  |
+> > > raid_write_end_io()              |
+> > > |- rbio_orig_end_io()            |
+> > >    |- unlock_stripe()            |
+> > >       |- steal_rbio()            |
+> > >            Use old rbio, whose   |
+> > >            bbio has freed devid 0|
+> > >            stripe                |
+> > > Any access to rbio->bbio will    |
+> > > cause general protection or NULL |
+> > > pointer dereference              |
 > > > 
-> > > After scrubbing dev3 only:
+> > > Such bug can already be triggered by fstests btrfs/069 for RAID5/6
+> > > profiles.
 > > > 
-> > > |     Dev 1      |     Dev  2     |     Dev 3     |
-> > > | Data stripe 1  | Data stripe 2  | Parity Stripe |
-> > > --------------------------------------------------- 0
-> > > | 0xcdcd (Good)  |     0xcdcd     | 0xcdcd (Bad)  |
-> > > --------------------------------------------------- 4K
-> > > |     0xcdcd     |     0xcdcd     |     0x0000    |
-> > > ...
-> > > |     0xcdcd     |     0xcdcd     |     0x0000    |
-> > > --------------------------------------------------- 64K
+> > > Fix it by not keeping old rbio in unlock_stripe(), so we just free the
+> > > finished rbio and rbio->bbio, so above problem wont' happen.
 > > > 
-> > > The calltrace of such corruption is as following:
-> > > 
-> > > scrub_bio_end_io_worker() get called for each extent read out
-> > > |- scriub_block_complete()
-> > >    |- Data extent csum mismatch
-> > >    |- scrub_handle_errored_block
-> > >       |- scrub_recheck_block()
-> > >          |- scrub_submit_raid56_bio_wait()
-> > >             |- raid56_parity_recover()
-> > > 
-> > > Now we have a rbio with correct data stripe 1 recovered.
-> > > Let's call it "good_rbio".
-> > > 
-> > > scrub_parity_check_and_repair()
-> > > |- raid56_parity_submit_scrub_rbio()
-> > >    |- lock_stripe_add()
-> > >    |  |- steal_rbio()
-> > >    |     |- Recovered data are steal from "good_rbio", stored into
-> > >    |        rbio->stripe_pages[]
-> > >    |        Now rbio->bio_pages[] are bad data read from disk.
 > > 
-> > At this point, we should have already known that whether
-> > rbio->bio_pages are corrupted because rbio->bio_pages are indexed from
-> > the list sparity->pages, and we only do scrub_parity_put after
-> > finishing the endio of reading all pages linked at sparity->pages.
-> > 
-> > Since the previous checksuming failure has made a recovery and we
-> > got the correct data on that rbio, instead of adding this corrupted
-> > page into the new rbio, it'd be fine to skip it and we use all
-> > rbio->stripe_pages which can be stolen from the previous good rbio.
+> > I don't think this is acceptable, keeping a cache is important for
+> > raid56 write performance, could you please fix it by checking if the
+> > device is missing?
 > 
-> Unfortunately, the rbio->bio_pages[] are pages stored in rbio->bio_list.
-> 
-> While we don't have good function to remove page from a bio, nor the
-> function to remove a bio from a bio_list (although it's quite easy to
-> implement), it will be quite a mess to do it in steal_rbio() or in btrfs.
+> Not possible, as it's keeping the btrfs_device pointer and never release it,
+> the stolen rbio can be kept forever until umount.
 >
 
-That's not what I was suggesting.
-
-This bug is about the case that we have corrupted data on one of the stripes,
-not corrupted parity.  So raid56 is a little bit different with raid1, for raid1
-we're good to go after writing back good copy to the position that has bad copy,
-while for raid56 we need to check/repair the parity after writing back good
-copy, however, the pages listed at sparity->pages have the original bad copy we
-read from the disk, not the good copy from re-checking all mirrors, the parity
-then ends up being corrupted by taking these bad copy's pages to do the xor.
-
-If the raid56 read rebuild was successful after scrub_handle_errored_block(),
-then we got all good data across this stripe, and they're cached in
-rbio->stripe_pages for any later read/write to steal from.  So the bug can be
-fixed by not adding these bad copy's pages into the new rbio.
-
-There is another case that we have a broken parity, then if all data copy are
-good, we're good to go directly check and repair anything wrong on parity
-without adding pages listed at sparity_pages to the new rbio, if there is some
-bad data, then we're not able to fix up the data or parity so eventually we get
-an unrecoverable error, meanwhile both ebitmap and dbitmap got updated
-respectively so that it won't update that horizonal stripe on disk.
-
-In a word, by the time we go check and repair parity, the raid56 stripe on disk
-should have correct data, there is no need to put pages into rbio.
-
-So my point of view is to remove the code of adding pages at sparity->pages to
-the rbio which is with operation BTRFS_RBIO_PARITY_SCRUB.
+steal_rbio() only takes pages from rbio->stripe_pages, so the cached
+rbio->bbio is not going to the next IO's rbio because the cached one
+got freed immediately in steal_rbio(), where could we dereference
+rbio->bbio?
 
 Thanks,
 
 -liubo
 
-> That's why I use new bad_on_disk_a/b other than directly stealing pages from
-> rbio->bio_pages[].
+> And I think the logical is very strange, if RAID5/6 is unstable, there is no
+> meaning to keep it fast.
+> 
+> Keep it stable first, and then consider the performance.
 > 
 > Thanks,
 > Qu
+> 
 > > 
 > > Thanks,
 > > 
 > > -liubo
 > > 
-> > >    |- async_scrub_parity()
-> > >       |- scrub_parity_work() (delayed_call to scrub_parity_work)
-> > > 
-> > > scrub_parity_work()
-> > > |- raid56_parity_scrub_stripe()
-> > >    |- validate_rbio_for_parity_scrub()
-> > >       |- finish_parity_scrub()
-> > >          |- Recalculate parity using *BAD* pages in rbio->bio_pages[]
-> > >             So good parity is overwritten with *BAD* one
-> > > 
-> > > The fix is to introduce 2 new members, bad_ondisk_a/b, to struct
-> > > btrfs_raid_bio, to info scrub code to use correct data pages to
-> > > re-calculate parity.
-> > > 
-> > > Reported-by: Goffredo Baroncelli <kreijack@inwind.it>
 > > > Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 > > > ---
-> > >  fs/btrfs/raid56.c | 62 +++++++++++++++++++++++++++++++++++++++++++++++++++----
-> > >  1 file changed, 58 insertions(+), 4 deletions(-)
+> > >  fs/btrfs/raid56.c | 18 +-----------------
+> > >  1 file changed, 1 insertion(+), 17 deletions(-)
 > > > 
 > > > diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-> > > index d2a9a1ee5361..453eefdcb591 100644
+> > > index 453eefdcb591..aba82b95ec73 100644
 > > > --- a/fs/btrfs/raid56.c
 > > > +++ b/fs/btrfs/raid56.c
-> > > @@ -133,6 +133,16 @@ struct btrfs_raid_bio {
-> > >  	/* second bad stripe (for raid6 use) */
-> > >  	int failb;
+> > > @@ -776,7 +776,6 @@ static noinline void unlock_stripe(struct btrfs_raid_bio *rbio)
+> > >  	int bucket;
+> > >  	struct btrfs_stripe_hash *h;
+> > >  	unsigned long flags;
+> > > -	int keep_cache = 0;
 > > > 
-> > > +	/*
-> > > +	 * For steal_rbio, we can steal recovered correct page,
-> > > +	 * but in finish_parity_scrub(), we still use bad on-disk
-> > > +	 * page to calculate parity.
-> > > +	 * Use these members to info finish_parity_scrub() to use
-> > > +	 * correct pages
-> > > +	 */
-> > > +	int bad_ondisk_a;
-> > > +	int bad_ondisk_b;
-> > > +
-> > >  	int scrubp;
-> > >  	/*
-> > >  	 * number of pages needed to represent the full
-> > > @@ -310,6 +320,12 @@ static void steal_rbio(struct btrfs_raid_bio *src, struct btrfs_raid_bio *dest)
-> > >  	if (!test_bit(RBIO_CACHE_READY_BIT, &src->flags))
-> > >  		return;
+> > >  	bucket = rbio_bucket(rbio);
+> > >  	h = rbio->fs_info->stripe_hash_table->table + bucket;
+> > > @@ -788,19 +787,6 @@ static noinline void unlock_stripe(struct btrfs_raid_bio *rbio)
+> > >  	spin_lock(&rbio->bio_list_lock);
 > > > 
-> > > +	/* Record recovered stripe number */
-> > > +	if (src->faila != -1)
-> > > +		dest->bad_ondisk_a = src->faila;
-> > > +	if (src->failb != -1)
-> > > +		dest->bad_ondisk_b = src->failb;
-> > > +
-> > >  	for (i = 0; i < dest->nr_pages; i++) {
-> > >  		s = src->stripe_pages[i];
-> > >  		if (!s || !PageUptodate(s)) {
-> > > @@ -999,6 +1015,8 @@ static struct btrfs_raid_bio *alloc_rbio(struct btrfs_fs_info *fs_info,
-> > >  	rbio->stripe_npages = stripe_npages;
-> > >  	rbio->faila = -1;
-> > >  	rbio->failb = -1;
-> > > +	rbio->bad_ondisk_a = -1;
-> > > +	rbio->bad_ondisk_b = -1;
-> > >  	atomic_set(&rbio->refs, 1);
-> > >  	atomic_set(&rbio->error, 0);
-> > >  	atomic_set(&rbio->stripes_pending, 0);
-> > > @@ -2261,6 +2279,9 @@ static int alloc_rbio_essential_pages(struct btrfs_raid_bio *rbio)
-> > >  	int bit;
-> > >  	int index;
-> > >  	struct page *page;
-> > > +	struct page *bio_page;
-> > > +	void *ptr;
-> > > +	void *bio_ptr;
+> > >  	if (!list_empty(&rbio->hash_list)) {
+> > > -		/*
+> > > -		 * if we're still cached and there is no other IO
+> > > -		 * to perform, just leave this rbio here for others
+> > > -		 * to steal from later
+> > > -		 */
+> > > -		if (list_empty(&rbio->plug_list) &&
+> > > -		    test_bit(RBIO_CACHE_BIT, &rbio->flags)) {
+> > > -			keep_cache = 1;
+> > > -			clear_bit(RBIO_RMW_LOCKED_BIT, &rbio->flags);
+> > > -			BUG_ON(!bio_list_empty(&rbio->bio_list));
+> > > -			goto done;
+> > > -		}
+> > > -
+> > >  		list_del_init(&rbio->hash_list);
+> > >  		atomic_dec(&rbio->refs);
 > > > 
-> > >  	for_each_set_bit(bit, rbio->dbitmap, rbio->stripe_npages) {
-> > >  		for (i = 0; i < rbio->real_stripes; i++) {
-> > > @@ -2271,6 +2292,23 @@ static int alloc_rbio_essential_pages(struct btrfs_raid_bio *rbio)
-> > >  			page = alloc_page(GFP_NOFS | __GFP_HIGHMEM);
-> > >  			if (!page)
-> > >  				return -ENOMEM;
-> > > +
-> > > +			/*
-> > > +			 * It's possible that only several pages need recover,
-> > > +			 * and rest are all good.
-> > > +			 * In that case we need to copy good bio pages into
-> > > +			 * stripe_pages[], as we will use stripe_pages[] other
-> > > +			 * than bio_pages[] in finish_parity_scrub().
-> > > +			 */
-> > > +			bio_page = page_in_rbio(rbio, i, bit, 0);
-> > > +			if ((i == rbio->bad_ondisk_a ||
-> > > +			     i == rbio->bad_ondisk_b) && bio_page) {
-> > > +				ptr = kmap(page);
-> > > +				bio_ptr = kmap(bio_page);
-> > > +				memcpy(ptr, bio_ptr, PAGE_SIZE);
-> > > +				kunmap(bio_page);
-> > > +				kunmap(page);
-> > > +			}
-> > >  			rbio->stripe_pages[index] = page;
+> > > @@ -848,13 +834,11 @@ static noinline void unlock_stripe(struct btrfs_raid_bio *rbio)
+> > >  			goto done_nolock;
 > > >  		}
 > > >  	}
-> > > @@ -2282,6 +2320,7 @@ static noinline void finish_parity_scrub(struct btrfs_raid_bio *rbio,
-> > >  {
-> > >  	struct btrfs_bio *bbio = rbio->bbio;
-> > >  	void *pointers[rbio->real_stripes];
-> > > +	struct page *mapped_pages[rbio->real_stripes];
-> > >  	DECLARE_BITMAP(pbitmap, rbio->stripe_npages);
-> > >  	int nr_data = rbio->nr_data;
-> > >  	int stripe;
-> > > @@ -2342,12 +2381,24 @@ static noinline void finish_parity_scrub(struct btrfs_raid_bio *rbio,
-> > >  		void *parity;
-> > >  		/* first collect one page from each data stripe */
-> > >  		for (stripe = 0; stripe < nr_data; stripe++) {
-> > > -			p = page_in_rbio(rbio, stripe, pagenr, 0);
-> > > +
-> > > +			/*
-> > > +			 * Use stolen recovered page other than bad
-> > > +			 * on disk pages
-> > > +			 */
-> > > +			if (stripe == rbio->bad_ondisk_a ||
-> > > +			    stripe == rbio->bad_ondisk_b)
-> > > +				p = rbio_stripe_page(rbio, stripe, pagenr);
-> > > +			else
-> > > +				p = page_in_rbio(rbio, stripe, pagenr, 0);
-> > >  			pointers[stripe] = kmap(p);
-> > > +			mapped_pages[stripe] = p;
-> > >  		}
+> > > -done:
+> > >  	spin_unlock(&rbio->bio_list_lock);
+> > >  	spin_unlock_irqrestore(&h->lock, flags);
 > > > 
-> > >  		/* then add the parity stripe */
-> > > -		pointers[stripe++] = kmap(p_page);
-> > > +		pointers[stripe] = kmap(p_page);
-> > > +		mapped_pages[stripe] = p_page;
-> > > +		stripe++;
+> > >  done_nolock:
+> > > -	if (!keep_cache)
+> > > -		remove_rbio_from_cache(rbio);
+> > > +	remove_rbio_from_cache(rbio);
+> > >  }
 > > > 
-> > >  		if (q_stripe != -1) {
-> > > 
-> > > @@ -2355,7 +2406,9 @@ static noinline void finish_parity_scrub(struct btrfs_raid_bio *rbio,
-> > >  			 * raid6, add the qstripe and call the
-> > >  			 * library function to fill in our p/q
-> > >  			 */
-> > > -			pointers[stripe++] = kmap(q_page);
-> > > +			pointers[stripe] = kmap(q_page);
-> > > +			mapped_pages[stripe] = q_page;
-> > > +			stripe++;
-> > > 
-> > >  			raid6_call.gen_syndrome(rbio->real_stripes, PAGE_SIZE,
-> > >  						pointers);
-> > > @@ -2375,8 +2428,9 @@ static noinline void finish_parity_scrub(struct btrfs_raid_bio *rbio,
-> > >  			bitmap_clear(rbio->dbitmap, pagenr, 1);
-> > >  		kunmap(p);
-> > > 
-> > > +		/* Free mapped pages */
-> > >  		for (stripe = 0; stripe < rbio->real_stripes; stripe++)
-> > > -			kunmap(page_in_rbio(rbio, stripe, pagenr, 0));
-> > > +			kunmap(mapped_pages[stripe]);
-> > >  	}
-> > > 
-> > >  	__free_page(p_page);
+> > >  static void __free_raid_bio(struct btrfs_raid_bio *rbio)
 > > > --
 > > > 2.11.0
 > > > 

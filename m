@@ -1,51 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from email.routify.me ([162.208.10.182]:50633 "EHLO
-        cartman.routify.me" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932967AbdCWRlw (ORCPT
+Received: from mail-wr0-f182.google.com ([209.85.128.182]:35372 "EHLO
+        mail-wr0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751651AbdCSPBB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 23 Mar 2017 13:41:52 -0400
-Date: Thu, 23 Mar 2017 10:41:47 -0700
-From: Sean Greenslade <sean@seangreenslade.com>
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
-Subject: Re: Cross-subvolume rename behavior
-Message-ID: <20170323174147.GA4354@coach>
-References: <20170323053723.GA32087@coach>
- <20170323100950.GI11714@carfax.org.uk>
- <8f7c4e4b-f311-27d7-f312-235dafbac30e@gmail.com>
+        Sun, 19 Mar 2017 11:01:01 -0400
+Received: by mail-wr0-f182.google.com with SMTP id g10so77964217wrg.2
+        for <linux-btrfs@vger.kernel.org>; Sun, 19 Mar 2017 08:01:00 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <8f7c4e4b-f311-27d7-f312-235dafbac30e@gmail.com>
+From: Ilan Schwarts <ilan84@gmail.com>
+Date: Sun, 19 Mar 2017 17:00:59 +0200
+Message-ID: <CAJUuSvHkhpFSf_5V_KDev4i2AosQcgZTUvuF57YMng2kGpGVaw@mail.gmail.com>
+Subject: 
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 23, 2017 at 07:23:40AM -0400, Austin S. Hemmelgarn wrote:
-> On 2017-03-23 06:09, Hugo Mills wrote:
-> >    Direct rename (using rename(2)) isn't possible across subvols,
-> > which is what the EXDEV result indicates. The solution is exactly what
-> > mv does, which is reflink-and-delete (which is cheaper than
-> > copy-and-delete, because no data is moved). In theory, you probably
-> > could implement rename across subvolumes in the FS, but it would just
-> > be moving the exact same operations from userspace to kernel space.
-> >
-> Doing so though would have the advantage that it theoretically could be made
-> (almost) atomic like a normal rename is, whereas the fallback in mv is
-> absolutely not atomic.
-> > 
-> >    I think that the solution here is for the sshfs stack to be fixed
-> > so that it passes the EXDEV up to the mv command properly, and passes
-> > the subsequent server-side copy (reflink) back down correctly.
-> 
-> This would be wonderful in theory, but it can't pass down the reflink,
-> because the SFTP protocol (which is what sshfs uses) doesn't even have the
-> concept of reflinks, so implementing this completely would require a
-> revision to the SFTP protocol, which I don't see as likely to happen.
+Hi,
+sorry if this is a newbie question. I am newbie.
 
-Thanks for the insights, Hugo and Austin. That's more or less what I was
-expecting, so I guess my next stop will be with the openssh folks.
-Though I was looking over the SFTP protocol, and none of the SSH_FX_*
-errors seem suitable for this purpose. This might require a workaround
-in sshfs...
+In my kernel driver, I get device id by converting struct inode struct
+to btrfs_inode, I use the code:
+struct btrfs_inode *btrfsInode;
+btrfsInode = BTRFS_I(inode);
 
---Sean
+I usually download kernel-headers rpm package, this is not enough. it
+fails to find the btrfs header files.
 
+I had to download them not via rpm package and declare:
+#include "/data/kernel/linux-4.1.21-x86_64/fs/btrfs/ctree.h"
+#include "/data/kernel/linux-4.1.21-x86_64/fs/btrfs/btrfs_inode.h"
+
+This is not good, why ctree.h and btrfs_inode.h are not in kernel headers?
+Is there another package i need to download in order to get them, in
+addition to kernel-headers? ?
+
+
+I see they are not provided in kernel-header package, e.g:
+https://rpmfind.net/linux/RPM/fedora/23/x86_64/k/kernel-headers-4.2.3-300.fc23.x86_64.html
+
+Thanks!

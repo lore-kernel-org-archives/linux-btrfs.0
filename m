@@ -1,92 +1,164 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f44.google.com ([209.85.214.44]:37445 "EHLO
-        mail-it0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750712AbdCRFls (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:40570 "EHLO
+        mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751972AbdCSRlw (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 18 Mar 2017 01:41:48 -0400
-Received: by mail-it0-f44.google.com with SMTP id g138so49088436itb.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Mar 2017 22:41:47 -0700 (PDT)
-Subject: Re: Thoughts on 'btrfs device stats' and security.
-To: Eric Sandeen <sandeen@redhat.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <f0bd54bf-930b-c489-8bd3-e3b5a4cc965e@gmail.com>
- <feb89fc0-e7c6-53f5-5eaf-222b7a7a05b7@redhat.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <4536836e-743a-cb21-4f2f-ebee5fc3c08d@gmail.com>
-Date: Fri, 17 Mar 2017 15:45:10 -0400
+        Sun, 19 Mar 2017 13:41:52 -0400
+From: Josef Bacik <jbacik@fb.com>
+To: Alex Lyakas <alex@zadarastorage.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "dsterba@suse.com" <dsterba@suse.com>
+Subject: Re: [PATCH RFC] btrfs: introduce a separate mutex for
+ caching_block_groups list
+Date: Sun, 19 Mar 2017 17:40:56 +0000
+Message-ID: <E0D26BFD-5CD7-45ED-A1AB-D2C22D0FCBCF@fb.com>
+References: <7D943753182E46848AC6B688BF365906@alyakaslap>
+In-Reply-To: <7D943753182E46848AC6B688BF365906@alyakaslap>
+Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
-In-Reply-To: <feb89fc0-e7c6-53f5-5eaf-222b7a7a05b7@redhat.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-03-17 15:01, Eric Sandeen wrote:
-> On 3/17/17 11:25 AM, Austin S. Hemmelgarn wrote:
->> I'm currently working on a plugin for colllectd [1] to track per-device per-filesystem error rates for BTRFS volumes.  Overall, this is actually going quite well (I've got most of the secondary logic like matching filesystems to watch and parsing the data done already), but I've come across a rather nasty caveat on the actual data collection part.
->>
->> As of right now, there are only two ways I can see to get this data:
->> 1. Parse the output of `btrfs device stats` for the filesystem.
->> 2. Make the same ioctl() call that `btrfs device stats` does and compose the data yourself.
->>
->> In both cases, one of the following has to be the case:
->> 1. You're running as root.
->> 2. You're running SUID root.
->> 3. You're running with CAP_SYS_ADMIN (I'm not 100% certain that this is the correct capability, but it appears to be the case from my testing).
->>
->> In other words, you have to reduce the overall security of your system to be able to get this data which is itself not security sensitive for most intents and purposes.
->
-> As one datapoint, xfs stats are ugo+r -
->
-> see /proc/fs/xfs/stat or /sys/fs/xfs/<device>/stats/stats
->
-> -r--r--r--. 1 root root 4096 Mar 17 13:58 stats
->
-> However, the stats_clear file is only writable by root
->
-> --w-------. 1 root root 4096 Mar 17 13:58 stats_clear
-That pretty much matches what I was thinking, albeit having one data 
-file and one clear file for each device in each filesystem since the 
-error counters are per-device per-filesystem, and there are multiple 
-reasons to reset the counters on only one (device, filesystem) pair at a 
-time.
+This sounds reasonable to me, I'll look at it more when I'm on the ground and can look at the code and see for sure.  Thanks,
 
-On that note, it would be kind of nice to get some more extended 
-performance stats like you can get from XFS and ext4, and sysfs is 
-probably the best place for those to go too, but that's obviously not as 
-important as the error counters being easily accessible.
->
-> Stats & other info for ext4 are also ugo+r, other than
-> an error trigger which is only writable by root, and
-> for which a read is meaningless.
->
-> /sys/fs/ext4/sda1/
->
-> -r--r--r--. 1 root root 4096 Mar 17 14:00 delayed_allocation_blocks
-> -r--r--r--. 1 root root 4096 Mar 17 14:00 errors_count
-> -rw-r--r--. 1 root root 4096 Mar 17 14:00 err_ratelimit_burst
-> -rw-r--r--. 1 root root 4096 Mar 17 14:00 err_ratelimit_interval_ms
-> -rw-r--r--. 1 root root 4096 Mar 17 14:00 extent_max_zeroout_kb
-> -r--r--r--. 1 root root 4096 Mar 17 14:00 first_error_time
-> -rw-r--r--. 1 root root 4096 Mar 17 14:00 inode_goal
-> -rw-r--r--. 1 root root 4096 Mar 17 14:00 inode_readahead_blks
-> -r--r--r--. 1 root root 4096 Mar 17 14:00 last_error_time
-> -r--r--r--. 1 root root 4096 Mar 17 14:00 lifetime_write_kbytes
-> -r--r--r--. 1 root root 4096 Mar 17 14:00 max_writeback_mb_bump
-> -rw-r--r--. 1 root root 4096 Mar 17 14:00 mb_group_prealloc
-> -rw-r--r--. 1 root root 4096 Mar 17 14:00 mb_max_to_scan
-> -rw-r--r--. 1 root root 4096 Mar 17 14:00 mb_min_to_scan
-> -rw-r--r--. 1 root root 4096 Mar 17 14:00 mb_order2_req
-> -rw-r--r--. 1 root root 4096 Mar 17 14:00 mb_stats
-> -rw-r--r--. 1 root root 4096 Mar 17 14:00 mb_stream_req
-> -rw-r--r--. 1 root root 4096 Mar 17 14:00 msg_ratelimit_burst
-> -rw-r--r--. 1 root root 4096 Mar 17 14:00 msg_ratelimit_interval_ms
-> -rw-r--r--. 1 root root 4096 Mar 17 14:00 reserved_clusters
-> -r--r--r--. 1 root root 4096 Mar 17 14:00 session_write_kbytes
-> --w-------. 1 root root 4096 Mar 17 14:00 trigger_fs_error
-> -rw-r--r--. 1 root root 4096 Mar 17 14:00 warning_ratelimit_burst
-> -rw-r--r--. 1 root root 4096 Mar 17 14:00 warning_ratelimit_interval_ms
->
->
-> -Eric
->
+Josef
 
+Sent from my iPhone
+
+> On Mar 19, 2017, at 1:19 PM, Alex Lyakas <alex@zadarastorage.com> wrote:
+> 
+> We have a commit_root_sem, which is a read-write semaphore that protects the commit roots.
+> But it is also used to protect the list of caching block groups.
+> 
+> As a result, while doing "slow" caching, the following issue is seen:
+> 
+> Some of the caching threads are scanning the extent tree with commit_root_sem
+> acquired in shared mode, with stack like:
+> [<ffffffffc0ad27b2>] read_extent_buffer_pages+0x2d2/0x300 [btrfs]
+> [<ffffffffc0a9fbe7>] btree_read_extent_buffer_pages.constprop.50+0xb7/0x1e0 [btrfs]
+> [<ffffffffc0aa1550>] read_tree_block+0x40/0x70 [btrfs]
+> [<ffffffffc0a7aa7c>] read_block_for_search.isra.33+0x12c/0x370 [btrfs]
+> [<ffffffffc0a7ce86>] btrfs_search_slot+0x3c6/0xb10 [btrfs]
+> [<ffffffffc0a975b9>] caching_thread+0x1b9/0x820 [btrfs]
+> [<ffffffffc0adfa36>] normal_work_helper+0xc6/0x340 [btrfs]
+> [<ffffffffc0adfd22>] btrfs_cache_helper+0x12/0x20 [btrfs]
+> 
+> IO requests that want to allocate space are waiting in cache_block_group()
+> to acquire the commit_root_sem in exclusive mode. But they only want to add
+> the caching control structure to the list of caching block-groups:
+> [<ffffffff817136c9>] schedule+0x29/0x70
+> [<ffffffff81716085>] rwsem_down_write_failed+0x145/0x320
+> [<ffffffff813a1ae3>] call_rwsem_down_write_failed+0x13/0x20
+> [<ffffffffc0a86d0b>] cache_block_group+0x25b/0x450 [btrfs]
+> [<ffffffffc0a94d36>] find_free_extent+0xd16/0xdb0 [btrfs]
+> [<ffffffffc0a94e7f>] btrfs_reserve_extent+0xaf/0x160 [btrfs]
+> 
+> Other caching threads want to continue their scanning, and for that they
+> are waiting to acquire commit_root_sem in shared mode. But since there are
+> IO threads that want the exclusive lock, the caching threads are unable
+> to continue the scanning, because (I presume) rw_semaphore guarantees some fairness:
+> [<ffffffff817136c9>] schedule+0x29/0x70
+> [<ffffffff81715ee5>] rwsem_down_read_failed+0xc5/0x120
+> [<ffffffff813a1ab4>] call_rwsem_down_read_failed+0x14/0x30
+> [<ffffffffc0a975a1>] caching_thread+0x1a1/0x820 [btrfs]
+> [<ffffffffc0adfa36>] normal_work_helper+0xc6/0x340 [btrfs]
+> [<ffffffffc0adfd22>] btrfs_cache_helper+0x12/0x20 [btrfs]
+> [<ffffffff8108bd56>] process_one_work+0x146/0x410
+> 
+> This causes slowness of the IO, especially when there are many block groups
+> that need to be scanned for free space. In some cases it takes minutes
+> until a single IO thread is able to allocate free space.
+> 
+> I don't see a deadlock here, because the caching threads that were able to acquire
+> the commit_root_sem will call rwsem_is_contended() and should give up the semaphore,
+> so that IO threads are able to acquire it in exclusive mode.
+> 
+> However, introducing a separate mutex that protects only the list of caching
+> block groups makes things move forward much faster.
+> 
+> This patch is based on kernel 3.18.
+> Unfortunately, I am not able to submit a patch based on one of the latest kernels, because
+> here btrfs is part of the larger system, and upgrading the kernel is a significant effort.
+> Hence marking the patch as RFC.
+> Hopefully, this patch still has some value to the community.
+> 
+> Signed-off-by: Alex Lyakas <alex@zadarastorage.com>
+> 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 42d11e7..74feacb 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -1490,6 +1490,8 @@ struct btrfs_fs_info {
+>    struct list_head trans_list;
+>    struct list_head dead_roots;
+>    struct list_head caching_block_groups;
+> +    /* protects the above list */
+> +    struct mutex caching_block_groups_mutex;
+> 
+>    spinlock_t delayed_iput_lock;
+>    struct list_head delayed_iputs;
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 5177954..130ec58 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -2229,6 +2229,7 @@ int open_ctree(struct super_block *sb,
+>    INIT_LIST_HEAD(&fs_info->delayed_iputs);
+>    INIT_LIST_HEAD(&fs_info->delalloc_roots);
+>    INIT_LIST_HEAD(&fs_info->caching_block_groups);
+> +    mutex_init(&fs_info->caching_block_groups_mutex);
+>    spin_lock_init(&fs_info->delalloc_root_lock);
+>    spin_lock_init(&fs_info->trans_lock);
+>    spin_lock_init(&fs_info->fs_roots_radix_lock);
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index a067065..906fb08 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -637,10 +637,10 @@ static int cache_block_group(struct btrfs_block_group_cache *cache,
+>        return 0;
+>    }
+> 
+> -    down_write(&fs_info->commit_root_sem);
+> +    mutex_lock(&fs_info->caching_block_groups_mutex);
+>    atomic_inc(&caching_ctl->count);
+>    list_add_tail(&caching_ctl->list, &fs_info->caching_block_groups);
+> -    up_write(&fs_info->commit_root_sem);
+> +    mutex_unlock(&fs_info->caching_block_groups_mutex);
+> 
+>    btrfs_get_block_group(cache);
+> 
+> @@ -5693,6 +5693,7 @@ void btrfs_prepare_extent_commit(struct btrfs_trans_handle *trans,
+> 
+>    down_write(&fs_info->commit_root_sem);
+> 
+> +    mutex_lock(&fs_info->caching_block_groups_mutex);
+>    list_for_each_entry_safe(caching_ctl, next,
+>                 &fs_info->caching_block_groups, list) {
+>        cache = caching_ctl->block_group;
+> @@ -5704,6 +5705,7 @@ void btrfs_prepare_extent_commit(struct btrfs_trans_handle *trans,
+>            cache->last_byte_to_unpin = caching_ctl->progress;
+>        }
+>    }
+> +    mutex_unlock(&fs_info->caching_block_groups_mutex);
+> 
+>    if (fs_info->pinned_extents == &fs_info->freed_extents[0])
+>        fs_info->pinned_extents = &fs_info->freed_extents[1];
+> @@ -8849,14 +8851,14 @@ int btrfs_free_block_groups(struct btrfs_fs_info *info)
+>    struct btrfs_caching_control *caching_ctl;
+>    struct rb_node *n;
+> 
+> -    down_write(&info->commit_root_sem);
+> +    mutex_lock(&info->caching_block_groups_mutex);
+>    while (!list_empty(&info->caching_block_groups)) {
+>        caching_ctl = list_entry(info->caching_block_groups.next,
+>                     struct btrfs_caching_control, list);
+>        list_del(&caching_ctl->list);
+>        put_caching_control(caching_ctl);
+>    }
+> -    up_write(&info->commit_root_sem);
+> +    mutex_unlock(&info->caching_block_groups_mutex);
+> 
+>    spin_lock(&info->unused_bgs_lock);
+>    while (!list_empty(&info->unused_bgs)) {
+> 
+> 
+> 

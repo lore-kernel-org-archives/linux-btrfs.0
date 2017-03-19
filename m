@@ -1,149 +1,169 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:52235 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1752733AbdCXFtU (ORCPT
+Received: from mail-wm0-f46.google.com ([74.125.82.46]:37584 "EHLO
+        mail-wm0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752327AbdCSRTE (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 24 Mar 2017 01:49:20 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1crI5x-0007MA-1y
-        for linux-btrfs@vger.kernel.org; Fri, 24 Mar 2017 06:49:05 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Bug: btrfs dev del missing fails where it shouldn't
-Date: Fri, 24 Mar 2017 05:48:45 +0000 (UTC)
-Message-ID: <pan$6d207$1e762e21$4d82ed9e$78bb3ca@cox.net>
-References: <63b13b68a616abf8f828d6725f792be4@webmail.pados.hu>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+        Sun, 19 Mar 2017 13:19:04 -0400
+Received: by mail-wm0-f46.google.com with SMTP id n11so48616322wma.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 19 Mar 2017 10:19:03 -0700 (PDT)
+Message-ID: <7D943753182E46848AC6B688BF365906@alyakaslap>
+From: "Alex Lyakas" <alex@zadarastorage.com>
+To: <linux-btrfs@vger.kernel.org>
+Cc: <jbacik@fb.com>, <dsterba@suse.com>
+Subject: [PATCH RFC] btrfs: introduce a separate mutex for caching_block_groups list
+Date: Sun, 19 Mar 2017 19:18:59 +0200
+MIME-Version: 1.0
+Content-Type: text/plain;
+        format=flowed;
+        charset="iso-8859-1";
+        reply-type=original
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Károly Pados posted on Thu, 23 Mar 2017 14:07:31 +0000 as excerpted:
+We have a commit_root_sem, which is a read-write semaphore that protects the 
+commit roots.
+But it is also used to protect the list of caching block groups.
 
-[ Kernel 4.9.13, progs 4.9.1:
+As a result, while doing "slow" caching, the following issue is seen:
 
-1) Mkfs.btrfs a two-device raid1 data/metadata btrfs and mount it.
+Some of the caching threads are scanning the extent tree with 
+commit_root_sem
+acquired in shared mode, with stack like:
+[<ffffffffc0ad27b2>] read_extent_buffer_pages+0x2d2/0x300 [btrfs]
+[<ffffffffc0a9fbe7>] btree_read_extent_buffer_pages.constprop.50+0xb7/0x1e0 
+[btrfs]
+[<ffffffffc0aa1550>] read_tree_block+0x40/0x70 [btrfs]
+[<ffffffffc0a7aa7c>] read_block_for_search.isra.33+0x12c/0x370 [btrfs]
+[<ffffffffc0a7ce86>] btrfs_search_slot+0x3c6/0xb10 [btrfs]
+[<ffffffffc0a975b9>] caching_thread+0x1b9/0x820 [btrfs]
+[<ffffffffc0adfa36>] normal_work_helper+0xc6/0x340 [btrfs]
+[<ffffffffc0adfd22>] btrfs_cache_helper+0x12/0x20 [btrfs]
 
-Don't put any data on it.
+IO requests that want to allocate space are waiting in cache_block_group()
+to acquire the commit_root_sem in exclusive mode. But they only want to add
+the caching control structure to the list of caching block-groups:
+[<ffffffff817136c9>] schedule+0x29/0x70
+[<ffffffff81716085>] rwsem_down_write_failed+0x145/0x320
+[<ffffffff813a1ae3>] call_rwsem_down_write_failed+0x13/0x20
+[<ffffffffc0a86d0b>] cache_block_group+0x25b/0x450 [btrfs]
+[<ffffffffc0a94d36>] find_free_extent+0xd16/0xdb0 [btrfs]
+[<ffffffffc0a94e7f>] btrfs_reserve_extent+0xaf/0x160 [btrfs]
 
-2) Remove a device physically or at the block level
+Other caching threads want to continue their scanning, and for that they
+are waiting to acquire commit_root_sem in shared mode. But since there are
+IO threads that want the exclusive lock, the caching threads are unable
+to continue the scanning, because (I presume) rw_semaphore guarantees some 
+fairness:
+[<ffffffff817136c9>] schedule+0x29/0x70
+[<ffffffff81715ee5>] rwsem_down_read_failed+0xc5/0x120
+[<ffffffff813a1ab4>] call_rwsem_down_read_failed+0x14/0x30
+[<ffffffffc0a975a1>] caching_thread+0x1a1/0x820 [btrfs]
+[<ffffffffc0adfa36>] normal_work_helper+0xc6/0x340 [btrfs]
+[<ffffffffc0adfd22>] btrfs_cache_helper+0x12/0x20 [btrfs]
+[<ffffffff8108bd56>] process_one_work+0x146/0x410
 
-3) Remount degraded and balance-convert data to single, metadata to dup. ]
+This causes slowness of the IO, especially when there are many block groups
+that need to be scanned for free space. In some cases it takes minutes
+until a single IO thread is able to allocate free space.
 
-> 4) Obviously the array still has a missing device, check this:
-> 
-> btrfs fi show Label: none  uuid: 55fa0da0-26b5-4a66-ba54-e9488e47cf6e
->         Total devices 2 FS bytes used 320.00KiB
->         devid    1 size 3.74GiB used 896.00MiB path /dev/sda
->         *** Some devices missing
-> 
-> 5) Try to remove missing device and see the error:
-> 
-> btrfs dev del missing /mnt/volatile
-> ERROR: error removing device 'missing':
-> no missing devices found to remove
-> 
-> 
-> Step 5) failed and can be replaced by:
-> 
-> btrfs dev del 2 /mnt/volatile/
-> [  402.828294] BTRFS info (device sdb): device deleted: id 2
+I don't see a deadlock here, because the caching threads that were able to 
+acquire
+the commit_root_sem will call rwsem_is_contended() and should give up the 
+semaphore,
+so that IO threads are able to acquire it in exclusive mode.
 
-> btrfs fi
-> show Label: none  uuid: [...]
->         Total devices 1 FS bytes used 320.00KiB
->         devid    1 size 3.74GiB used 896.00MiB path /dev/sda
-> 
-> Still, 'missing' should be working, and having to use the devid is a
-> PITA for both humans and scripts (the reason why 'missing' was added in
-> the first place).
+However, introducing a separate mutex that protects only the list of caching
+block groups makes things move forward much faster.
 
-btrfs dev del missing has had a bit of a history and is I believe broken 
-on newer kernels (tho I'm not entirely sure whether it's entirely broken, 
-or whether it still works in some specific cases, see why it couldn't be 
-expected to work in yours, below).  Obviously it's at least partially 
-broken on 4.9.  If you trace the delete-by-devid patches, you'll see the 
-history there and that they were actually introduced in part to work 
-around the broken delete missing feature.
+This patch is based on kernel 3.18.
+Unfortunately, I am not able to submit a patch based on one of the latest 
+kernels, because
+here btrfs is part of the larger system, and upgrading the kernel is a 
+significant effort.
+Hence marking the patch as RFC.
+Hopefully, this patch still has some value to the community.
 
-FWIW, the btrfs-device manpage, as of the progs-4.9 I still have 
-installed here, at least, doesn't even appear to list "missing" as an 
-option any longer.
+Signed-off-by: Alex Lyakas <alex@zadarastorage.com>
 
-The wiki does still discuss using missing, at least on the multiple-
-devices page, which obviously hasn't been updated in that regard recently 
-as it doesn't (on quick read at least) appear to mention using dev-id at 
-all, and it still uses delete instead of the newer remove (see below), 
-too.
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 42d11e7..74feacb 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1490,6 +1490,8 @@ struct btrfs_fs_info {
+     struct list_head trans_list;
+     struct list_head dead_roots;
+     struct list_head caching_block_groups;
++    /* protects the above list */
++    struct mutex caching_block_groups_mutex;
 
-But, even there, a close read says missing tells btrfs to delete the 
-first device described by the filesystem metadata that wasn't present 
-when the filesystem was mounted.  And since your case does a remount, not 
-a full unmount and clean mount, that "missing" device was present when 
-the filesystem was mounted, so attempting to delete missing /should/ be 
-expected to fail.
+     spinlock_t delayed_iput_lock;
+     struct list_head delayed_iputs;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 5177954..130ec58 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2229,6 +2229,7 @@ int open_ctree(struct super_block *sb,
+     INIT_LIST_HEAD(&fs_info->delayed_iputs);
+     INIT_LIST_HEAD(&fs_info->delalloc_roots);
+     INIT_LIST_HEAD(&fs_info->caching_block_groups);
++    mutex_init(&fs_info->caching_block_groups_mutex);
+     spin_lock_init(&fs_info->delalloc_root_lock);
+     spin_lock_init(&fs_info->trans_lock);
+     spin_lock_init(&fs_info->fs_roots_radix_lock);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index a067065..906fb08 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -637,10 +637,10 @@ static int cache_block_group(struct 
+btrfs_block_group_cache *cache,
+         return 0;
+     }
 
-Meanwhile, it's also worth noting that btrfs device delete is itself 
-deprecated and only maintained for backward compatibility, in favor of 
-btrfs device remove.  Apparently, some people believe that "remove" is 
-more technically correct, altho for me personally remove/delete are 
-synonyms and I can't really see a difference in correctness, here.
+-    down_write(&fs_info->commit_root_sem);
++    mutex_lock(&fs_info->caching_block_groups_mutex);
+     atomic_inc(&caching_ctl->count);
+     list_add_tail(&caching_ctl->list, &fs_info->caching_block_groups);
+-    up_write(&fs_info->commit_root_sem);
++    mutex_unlock(&fs_info->caching_block_groups_mutex);
 
-> (Probably unrelated question: In the last btrfs fi show you can see
-> 896MB is used on a 3.74GB filesystem. The filesystem was just created
-> however as described in the above steps, it is 100% empty with no prior
-> use or wear. So the brand-new formatted drive seems to be 23% full, is
-> this normal?)
+     btrfs_get_block_group(cache);
 
-This is actually the more interesting question for me and thus why I'm 
-replying.  The output is not an error, it's just not reporting what you 
-think it's reporting.
+@@ -5693,6 +5693,7 @@ void btrfs_prepare_extent_commit(struct 
+btrfs_trans_handle *trans,
 
-The first thing to note is that while you don't have a btrfs fi show from 
-immediately after the mkfs, before killing a device and doing the 
-balance, the two show outputs from before and after the btrfs dev delete 
-both show 896 MiB used for the remaining device (device level).
+     down_write(&fs_info->commit_root_sem);
 
-** But they both show only 320 KiB used at the filesystem level.
++    mutex_lock(&fs_info->caching_block_groups_mutex);
+     list_for_each_entry_safe(caching_ctl, next,
+                  &fs_info->caching_block_groups, list) {
+         cache = caching_ctl->block_group;
+@@ -5704,6 +5705,7 @@ void btrfs_prepare_extent_commit(struct 
+btrfs_trans_handle *trans,
+             cache->last_byte_to_unpin = caching_ctl->progress;
+         }
+     }
++    mutex_unlock(&fs_info->caching_block_groups_mutex);
 
-If you run the newer btrfs fi usage command (and it's dev counterpart, 
-btrfs dev usage), you'll get a more complete picture and a bit of a hint 
-as to what's actually going on.
+     if (fs_info->pinned_extents == &fs_info->freed_extents[0])
+         fs_info->pinned_extents = &fs_info->freed_extents[1];
+@@ -8849,14 +8851,14 @@ int btrfs_free_block_groups(struct btrfs_fs_info 
+*info)
+     struct btrfs_caching_control *caching_ctl;
+     struct rb_node *n;
 
-The key here is understanding that btrfs allocates space in two stages, 
-first to larger chunks, data or metadata, then as necessary from the 
-chunk to individual data extents or metadata blocks.  Data chunks are 
-nominally 1 GiB, while metadata chunks are 256 MiB, altho either one can 
-be larger or smaller than nominal under specific circumstances.
+-    down_write(&info->commit_root_sem);
++    mutex_lock(&info->caching_block_groups_mutex);
+     while (!list_empty(&info->caching_block_groups)) {
+         caching_ctl = list_entry(info->caching_block_groups.next,
+                      struct btrfs_caching_control, list);
+         list_del(&caching_ctl->list);
+         put_caching_control(caching_ctl);
+     }
+-    up_write(&info->commit_root_sem);
++    mutex_unlock(&info->caching_block_groups_mutex);
 
-What btrfs fi show is reporting in the per-device lines is the chunk 
-allocation.  If you take a look at the usage output, you should find that 
-the reported chunk allocations per device (in usage and df, size, not 
-used) totals equal the show output device line used.
+     spin_lock(&info->unused_bgs_lock);
+     while (!list_empty(&info->unused_bgs)) {
 
-Meanwhile, show does report the actual used space in the global line -- 
-compare it to the actual used space reported in df and (fi) usage.  (Even 
-an empty filesystem has some actual usage, 320 KiB in your case, actually 
-not too bad on a multi-TiB filesystem.)
 
-As you can see, show actually doesn't show much info at all, compared to 
-usage.  You basically have to combine the older show and df outputs to 
-get the information in usage, and even then, you're still missing a bit 
-of the detail that usage provides.
-
-But usage has two main drawbacks.  It can only be run on mounted 
-filesystems, and it's a relatively newer command that wasn't available in 
-earlier iterations.
-
-So particularly when a filesystem can't be mounted, show is sometimes all 
-the information we can get.  The other advantage of show is that on 
-systems where there's many btrfs, show will list them all, mounted and 
-unmounted both, if it's not told to list specific ones, which makes it 
-handy as a general multi-btrfs overview command.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
 

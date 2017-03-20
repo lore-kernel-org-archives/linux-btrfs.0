@@ -1,238 +1,323 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:41274 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751133AbdCRCOA (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:13321 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751123AbdCTEeH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Mar 2017 22:14:00 -0400
-Date: Fri, 17 Mar 2017 19:12:59 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 5/5] btrfs: replace: Use ref counts to avoid destroying
- target device when canceled
-Message-ID: <20170318021259.GC7719@lim.localdomain>
-Reply-To: bo.li.liu@oracle.com
+        Mon, 20 Mar 2017 00:34:07 -0400
+Subject: Re: [PATCH 3/5] btrfs: raid56: Use correct stolen pages to calculate
+ P/Q
+To: <bo.li.liu@oracle.com>
 References: <20170203082023.3577-1-quwenruo@cn.fujitsu.com>
- <20170203082023.3577-6-quwenruo@cn.fujitsu.com>
+ <20170203082023.3577-4-quwenruo@cn.fujitsu.com>
+ <20170316053614.GA8285@lim.localdomain>
+ <f5b8d9a7-3972-faad-5b24-82b9c8c4c4b0@cn.fujitsu.com>
+ <20170317221919.GA7719@lim.localdomain>
+CC: <linux-btrfs@vger.kernel.org>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <e64a198b-4148-bedf-b479-aa1d17e40cb1@cn.fujitsu.com>
+Date: Mon, 20 Mar 2017 12:33:56 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170203082023.3577-6-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20170317221919.GA7719@lim.localdomain>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Feb 03, 2017 at 04:20:23PM +0800, Qu Wenruo wrote:
-> When dev-replace and scrub are run at the same time, dev-replace can be
-> canceled by scrub. It's quite common for btrfs/069.
-> 
-> The backtrace would be like:
-> general protection fault: 0000 [#1] SMP
-> Workqueue: btrfs-endio-raid56 btrfs_endio_raid56_helper [btrfs]
-> RIP: 0010:[<ffffffff813a2fa8>]  [<ffffffff813a2fa8>] generic_make_request_checks+0x198/0x5a0
-> Call Trace:
->  [<ffffffff813a4cff>] ? generic_make_request+0xcf/0x290
->  [<ffffffff813a4c54>] generic_make_request+0x24/0x290
->  [<ffffffff813a4cff>] ? generic_make_request+0xcf/0x290
->  [<ffffffff813a4f2e>] submit_bio+0x6e/0x120
->  [<ffffffffa087279d>] ? page_in_rbio+0x4d/0x80 [btrfs]
->  [<ffffffffa08737d0>] ? rbio_orig_end_io+0x80/0x80 [btrfs]
->  [<ffffffffa0873e31>] finish_rmw+0x401/0x550 [btrfs]
->  [<ffffffffa0874fc6>] validate_rbio_for_rmw+0x36/0x40 [btrfs]
->  [<ffffffffa087504d>] raid_rmw_end_io+0x7d/0x90 [btrfs]
->  [<ffffffff8139c536>] bio_endio+0x56/0x60
->  [<ffffffffa07e6e5c>] end_workqueue_fn+0x3c/0x40 [btrfs]
->  [<ffffffffa08285bf>] btrfs_scrubparity_helper+0xef/0x610 [btrfs]
->  [<ffffffffa0828b9e>] btrfs_endio_raid56_helper+0xe/0x10 [btrfs]
->  [<ffffffff810ec8df>] process_one_work+0x2af/0x720
->  [<ffffffff810ec85b>] ? process_one_work+0x22b/0x720
->  [<ffffffff810ecd9b>] worker_thread+0x4b/0x4f0
->  [<ffffffff810ecd50>] ? process_one_work+0x720/0x720
->  [<ffffffff810ecd50>] ? process_one_work+0x720/0x720
->  [<ffffffff810f39d3>] kthread+0xf3/0x110
->  [<ffffffff810f38e0>] ? kthread_park+0x60/0x60
->  [<ffffffff81857647>] ret_from_fork+0x27/0x40
-> 
-> While in that case, target device can be destroyed at cancel time,
-> leading to a user-after-free bug:
-> 
->      Process A (dev-replace)         |         Process B(scrub)
-> ----------------------------------------------------------------------
->                                      |(Any RW is OK)
->                                      |scrub_setup_recheck_block()
->                                      ||- btrfs_map_sblock()
->                                      |   Got a bbio with tgtdev
-> btrfs_dev_replace_finishing()        |
-> |- btrfs_destory_dev_replace_tgtdev()|
->    |- call_rcu(free_device)          |
->       |- __free_device()             |
->          |- kfree(device)            |
->                                      | Scrub worker:
->                                      | Access bbio->stripes[], which
->                                      | contains tgtdev.
->                                      | This triggers general protection.
->
 
-We already have bio_counter to block device replace to avoid
-use-after-free problem, is there any particular reason of not using
-it?
+
+At 03/18/2017 06:19 AM, Liu Bo wrote:
+> On Fri, Mar 17, 2017 at 02:31:08PM +0800, Qu Wenruo wrote:
+>>
+>>
+>> At 03/16/2017 01:36 PM, Liu Bo wrote:
+>>> On Fri, Feb 03, 2017 at 04:20:21PM +0800, Qu Wenruo wrote:
+>>>> In the following situation, scrub will calculate wrong parity to
+>>>> overwrite correct one:
+>>>>
+>>>> RAID5 full stripe:
+>>>>
+>>>> Before
+>>>> |     Dev 1      |     Dev  2     |     Dev 3     |
+>>>> | Data stripe 1  | Data stripe 2  | Parity Stripe |
+>>>> --------------------------------------------------- 0
+>>>> | 0x0000 (Bad)   |     0xcdcd     |     0x0000    |
+>>>> --------------------------------------------------- 4K
+>>>> |     0xcdcd     |     0xcdcd     |     0x0000    |
+>>>> ...
+>>>> |     0xcdcd     |     0xcdcd     |     0x0000    |
+>>>> --------------------------------------------------- 64K
+>>>>
+>>>> After scrubbing dev3 only:
+>>>>
+>>>> |     Dev 1      |     Dev  2     |     Dev 3     |
+>>>> | Data stripe 1  | Data stripe 2  | Parity Stripe |
+>>>> --------------------------------------------------- 0
+>>>> | 0xcdcd (Good)  |     0xcdcd     | 0xcdcd (Bad)  |
+>>>> --------------------------------------------------- 4K
+>>>> |     0xcdcd     |     0xcdcd     |     0x0000    |
+>>>> ...
+>>>> |     0xcdcd     |     0xcdcd     |     0x0000    |
+>>>> --------------------------------------------------- 64K
+>>>>
+>>>> The calltrace of such corruption is as following:
+>>>>
+>>>> scrub_bio_end_io_worker() get called for each extent read out
+>>>> |- scriub_block_complete()
+>>>>    |- Data extent csum mismatch
+>>>>    |- scrub_handle_errored_block
+>>>>       |- scrub_recheck_block()
+>>>>          |- scrub_submit_raid56_bio_wait()
+>>>>             |- raid56_parity_recover()
+>>>>
+>>>> Now we have a rbio with correct data stripe 1 recovered.
+>>>> Let's call it "good_rbio".
+>>>>
+>>>> scrub_parity_check_and_repair()
+>>>> |- raid56_parity_submit_scrub_rbio()
+>>>>    |- lock_stripe_add()
+>>>>    |  |- steal_rbio()
+>>>>    |     |- Recovered data are steal from "good_rbio", stored into
+>>>>    |        rbio->stripe_pages[]
+>>>>    |        Now rbio->bio_pages[] are bad data read from disk.
+>>>
+>>> At this point, we should have already known that whether
+>>> rbio->bio_pages are corrupted because rbio->bio_pages are indexed from
+>>> the list sparity->pages, and we only do scrub_parity_put after
+>>> finishing the endio of reading all pages linked at sparity->pages.
+>>>
+>>> Since the previous checksuming failure has made a recovery and we
+>>> got the correct data on that rbio, instead of adding this corrupted
+>>> page into the new rbio, it'd be fine to skip it and we use all
+>>> rbio->stripe_pages which can be stolen from the previous good rbio.
+>>
+>> Unfortunately, the rbio->bio_pages[] are pages stored in rbio->bio_list.
+>>
+>> While we don't have good function to remove page from a bio, nor the
+>> function to remove a bio from a bio_list (although it's quite easy to
+>> implement), it will be quite a mess to do it in steal_rbio() or in btrfs.
+>>
+>
+> That's not what I was suggesting.
+>
+> This bug is about the case that we have corrupted data on one of the stripes,
+> not corrupted parity.  So raid56 is a little bit different with raid1, for raid1
+> we're good to go after writing back good copy to the position that has bad copy,
+> while for raid56 we need to check/repair the parity after writing back good
+> copy, however, the pages listed at sparity->pages have the original bad copy we
+> read from the disk, not the good copy from re-checking all mirrors, the parity
+> then ends up being corrupted by taking these bad copy's pages to do the xor.
+>
+> If the raid56 read rebuild was successful after scrub_handle_errored_block(),
+> then we got all good data across this stripe, and they're cached in
+> rbio->stripe_pages for any later read/write to steal from.  So the bug can be
+> fixed by not adding these bad copy's pages into the new rbio.
+>
+> There is another case that we have a broken parity, then if all data copy are
+> good, we're good to go directly check and repair anything wrong on parity
+> without adding pages listed at sparity_pages to the new rbio, if there is some
+> bad data, then we're not able to fix up the data or parity so eventually we get
+> an unrecoverable error, meanwhile both ebitmap and dbitmap got updated
+> respectively so that it won't update that horizonal stripe on disk.
+>
+> In a word, by the time we go check and repair parity, the raid56 stripe on disk
+> should have correct data, there is no need to put pages into rbio.
+>
+> So my point of view is to remove the code of adding pages at sparity->pages to
+> the rbio which is with operation BTRFS_RBIO_PARITY_SCRUB.
+
+Now I understand.
+
+Indeed at finish_parity_scrub() time, rbio->stripes_pages[] are 
+recovered correct pages.
+
+It's the added pages causing the bug.
+
+I'll use this method in next update.
 
 Thanks,
+Qu
+>
+> Thanks,
+>
+> -liubo
+>
+>> That's why I use new bad_on_disk_a/b other than directly stealing pages from
+>> rbio->bio_pages[].
+>>
+>> Thanks,
+>> Qu
+>>>
+>>> Thanks,
+>>>
+>>> -liubo
+>>>
+>>>>    |- async_scrub_parity()
+>>>>       |- scrub_parity_work() (delayed_call to scrub_parity_work)
+>>>>
+>>>> scrub_parity_work()
+>>>> |- raid56_parity_scrub_stripe()
+>>>>    |- validate_rbio_for_parity_scrub()
+>>>>       |- finish_parity_scrub()
+>>>>          |- Recalculate parity using *BAD* pages in rbio->bio_pages[]
+>>>>             So good parity is overwritten with *BAD* one
+>>>>
+>>>> The fix is to introduce 2 new members, bad_ondisk_a/b, to struct
+>>>> btrfs_raid_bio, to info scrub code to use correct data pages to
+>>>> re-calculate parity.
+>>>>
+>>>> Reported-by: Goffredo Baroncelli <kreijack@inwind.it>
+>>>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>>>> ---
+>>>>  fs/btrfs/raid56.c | 62 +++++++++++++++++++++++++++++++++++++++++++++++++++----
+>>>>  1 file changed, 58 insertions(+), 4 deletions(-)
+>>>>
+>>>> diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+>>>> index d2a9a1ee5361..453eefdcb591 100644
+>>>> --- a/fs/btrfs/raid56.c
+>>>> +++ b/fs/btrfs/raid56.c
+>>>> @@ -133,6 +133,16 @@ struct btrfs_raid_bio {
+>>>>  	/* second bad stripe (for raid6 use) */
+>>>>  	int failb;
+>>>>
+>>>> +	/*
+>>>> +	 * For steal_rbio, we can steal recovered correct page,
+>>>> +	 * but in finish_parity_scrub(), we still use bad on-disk
+>>>> +	 * page to calculate parity.
+>>>> +	 * Use these members to info finish_parity_scrub() to use
+>>>> +	 * correct pages
+>>>> +	 */
+>>>> +	int bad_ondisk_a;
+>>>> +	int bad_ondisk_b;
+>>>> +
+>>>>  	int scrubp;
+>>>>  	/*
+>>>>  	 * number of pages needed to represent the full
+>>>> @@ -310,6 +320,12 @@ static void steal_rbio(struct btrfs_raid_bio *src, struct btrfs_raid_bio *dest)
+>>>>  	if (!test_bit(RBIO_CACHE_READY_BIT, &src->flags))
+>>>>  		return;
+>>>>
+>>>> +	/* Record recovered stripe number */
+>>>> +	if (src->faila != -1)
+>>>> +		dest->bad_ondisk_a = src->faila;
+>>>> +	if (src->failb != -1)
+>>>> +		dest->bad_ondisk_b = src->failb;
+>>>> +
+>>>>  	for (i = 0; i < dest->nr_pages; i++) {
+>>>>  		s = src->stripe_pages[i];
+>>>>  		if (!s || !PageUptodate(s)) {
+>>>> @@ -999,6 +1015,8 @@ static struct btrfs_raid_bio *alloc_rbio(struct btrfs_fs_info *fs_info,
+>>>>  	rbio->stripe_npages = stripe_npages;
+>>>>  	rbio->faila = -1;
+>>>>  	rbio->failb = -1;
+>>>> +	rbio->bad_ondisk_a = -1;
+>>>> +	rbio->bad_ondisk_b = -1;
+>>>>  	atomic_set(&rbio->refs, 1);
+>>>>  	atomic_set(&rbio->error, 0);
+>>>>  	atomic_set(&rbio->stripes_pending, 0);
+>>>> @@ -2261,6 +2279,9 @@ static int alloc_rbio_essential_pages(struct btrfs_raid_bio *rbio)
+>>>>  	int bit;
+>>>>  	int index;
+>>>>  	struct page *page;
+>>>> +	struct page *bio_page;
+>>>> +	void *ptr;
+>>>> +	void *bio_ptr;
+>>>>
+>>>>  	for_each_set_bit(bit, rbio->dbitmap, rbio->stripe_npages) {
+>>>>  		for (i = 0; i < rbio->real_stripes; i++) {
+>>>> @@ -2271,6 +2292,23 @@ static int alloc_rbio_essential_pages(struct btrfs_raid_bio *rbio)
+>>>>  			page = alloc_page(GFP_NOFS | __GFP_HIGHMEM);
+>>>>  			if (!page)
+>>>>  				return -ENOMEM;
+>>>> +
+>>>> +			/*
+>>>> +			 * It's possible that only several pages need recover,
+>>>> +			 * and rest are all good.
+>>>> +			 * In that case we need to copy good bio pages into
+>>>> +			 * stripe_pages[], as we will use stripe_pages[] other
+>>>> +			 * than bio_pages[] in finish_parity_scrub().
+>>>> +			 */
+>>>> +			bio_page = page_in_rbio(rbio, i, bit, 0);
+>>>> +			if ((i == rbio->bad_ondisk_a ||
+>>>> +			     i == rbio->bad_ondisk_b) && bio_page) {
+>>>> +				ptr = kmap(page);
+>>>> +				bio_ptr = kmap(bio_page);
+>>>> +				memcpy(ptr, bio_ptr, PAGE_SIZE);
+>>>> +				kunmap(bio_page);
+>>>> +				kunmap(page);
+>>>> +			}
+>>>>  			rbio->stripe_pages[index] = page;
+>>>>  		}
+>>>>  	}
+>>>> @@ -2282,6 +2320,7 @@ static noinline void finish_parity_scrub(struct btrfs_raid_bio *rbio,
+>>>>  {
+>>>>  	struct btrfs_bio *bbio = rbio->bbio;
+>>>>  	void *pointers[rbio->real_stripes];
+>>>> +	struct page *mapped_pages[rbio->real_stripes];
+>>>>  	DECLARE_BITMAP(pbitmap, rbio->stripe_npages);
+>>>>  	int nr_data = rbio->nr_data;
+>>>>  	int stripe;
+>>>> @@ -2342,12 +2381,24 @@ static noinline void finish_parity_scrub(struct btrfs_raid_bio *rbio,
+>>>>  		void *parity;
+>>>>  		/* first collect one page from each data stripe */
+>>>>  		for (stripe = 0; stripe < nr_data; stripe++) {
+>>>> -			p = page_in_rbio(rbio, stripe, pagenr, 0);
+>>>> +
+>>>> +			/*
+>>>> +			 * Use stolen recovered page other than bad
+>>>> +			 * on disk pages
+>>>> +			 */
+>>>> +			if (stripe == rbio->bad_ondisk_a ||
+>>>> +			    stripe == rbio->bad_ondisk_b)
+>>>> +				p = rbio_stripe_page(rbio, stripe, pagenr);
+>>>> +			else
+>>>> +				p = page_in_rbio(rbio, stripe, pagenr, 0);
+>>>>  			pointers[stripe] = kmap(p);
+>>>> +			mapped_pages[stripe] = p;
+>>>>  		}
+>>>>
+>>>>  		/* then add the parity stripe */
+>>>> -		pointers[stripe++] = kmap(p_page);
+>>>> +		pointers[stripe] = kmap(p_page);
+>>>> +		mapped_pages[stripe] = p_page;
+>>>> +		stripe++;
+>>>>
+>>>>  		if (q_stripe != -1) {
+>>>>
+>>>> @@ -2355,7 +2406,9 @@ static noinline void finish_parity_scrub(struct btrfs_raid_bio *rbio,
+>>>>  			 * raid6, add the qstripe and call the
+>>>>  			 * library function to fill in our p/q
+>>>>  			 */
+>>>> -			pointers[stripe++] = kmap(q_page);
+>>>> +			pointers[stripe] = kmap(q_page);
+>>>> +			mapped_pages[stripe] = q_page;
+>>>> +			stripe++;
+>>>>
+>>>>  			raid6_call.gen_syndrome(rbio->real_stripes, PAGE_SIZE,
+>>>>  						pointers);
+>>>> @@ -2375,8 +2428,9 @@ static noinline void finish_parity_scrub(struct btrfs_raid_bio *rbio,
+>>>>  			bitmap_clear(rbio->dbitmap, pagenr, 1);
+>>>>  		kunmap(p);
+>>>>
+>>>> +		/* Free mapped pages */
+>>>>  		for (stripe = 0; stripe < rbio->real_stripes; stripe++)
+>>>> -			kunmap(page_in_rbio(rbio, stripe, pagenr, 0));
+>>>> +			kunmap(mapped_pages[stripe]);
+>>>>  	}
+>>>>
+>>>>  	__free_page(p_page);
+>>>> --
+>>>> 2.11.0
+>>>>
+>>>>
+>>>>
+>>>> --
+>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>>> the body of a message to majordomo@vger.kernel.org
+>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>
+>>>
+>>
+>>
+>
+>
 
--liubo
 
-> The bug is mostly obvious for RAID5/6 since raid56 choose to keep old
-> rbio and rbio->bbio for later steal, this hugely enlarged the race
-> window and makes it much easier to trigger the bug.
-> 
-> This patch introduces 'tgtdev_refs' and 'tgtdev_wait' for btrfs_device
-> to wait for all its user released the target device.
-> 
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> ---
->  fs/btrfs/dev-replace.c |  7 ++++++-
->  fs/btrfs/volumes.c     | 36 +++++++++++++++++++++++++++++++++++-
->  fs/btrfs/volumes.h     | 10 ++++++++++
->  3 files changed, 51 insertions(+), 2 deletions(-)
-> 
-> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-> index 5de280b9ad73..794a6a0bedf2 100644
-> --- a/fs/btrfs/dev-replace.c
-> +++ b/fs/btrfs/dev-replace.c
-> @@ -558,7 +558,6 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
->  			  rcu_str_deref(src_device->name),
->  			  src_device->devid,
->  			  rcu_str_deref(tgt_device->name));
-> -	tgt_device->is_tgtdev_for_dev_replace = 0;
->  	tgt_device->devid = src_device->devid;
->  	src_device->devid = BTRFS_DEV_REPLACE_DEVID;
->  	memcpy(uuid_tmp, tgt_device->uuid, sizeof(uuid_tmp));
-> @@ -579,6 +578,12 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
->  
->  	btrfs_dev_replace_unlock(dev_replace, 1);
->  
-> +	/*
-> +	 * Only change is_tgtdev_for_dev_replace flag after all its
-> +	 * users get released.
-> +	 */
-> +	wait_target_device(tgt_device);
-> +	tgt_device->is_tgtdev_for_dev_replace = 0;
->  	btrfs_rm_dev_replace_blocked(fs_info);
->  
->  	btrfs_rm_dev_replace_remove_srcdev(fs_info, src_device);
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 3c3c69c0eee4..84db9fb22b7d 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -2064,6 +2064,7 @@ void btrfs_destroy_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
->  	WARN_ON(!tgtdev);
->  	mutex_lock(&fs_info->fs_devices->device_list_mutex);
->  
-> +	wait_target_device(tgtdev);
->  	btrfs_sysfs_rm_device_link(fs_info->fs_devices, tgtdev);
->  
->  	if (tgtdev->bdev)
-> @@ -2598,6 +2599,8 @@ int btrfs_init_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
->  	device->is_tgtdev_for_dev_replace = 1;
->  	device->mode = FMODE_EXCL;
->  	device->dev_stats_valid = 1;
-> +	atomic_set(&device->tgtdev_refs, 0);
-> +	init_waitqueue_head(&device->tgtdev_wait);
->  	set_blocksize(device->bdev, 4096);
->  	device->fs_devices = fs_info->fs_devices;
->  	list_add(&device->dev_list, &fs_info->fs_devices->devices);
-> @@ -2624,6 +2627,8 @@ void btrfs_init_dev_replace_tgtdev_for_resume(struct btrfs_fs_info *fs_info,
->  	tgtdev->sector_size = sectorsize;
->  	tgtdev->fs_info = fs_info;
->  	tgtdev->in_fs_metadata = 1;
-> +	atomic_set(&tgtdev->tgtdev_refs, 0);
-> +	init_waitqueue_head(&tgtdev->tgtdev_wait);
->  }
->  
->  static noinline int btrfs_update_device(struct btrfs_trans_handle *trans,
-> @@ -5302,6 +5307,32 @@ static struct btrfs_bio *alloc_btrfs_bio(int total_stripes, int real_stripes)
->  	return bbio;
->  }
->  
-> +static void pin_bbio_target_device(struct btrfs_bio *bbio)
-> +{
-> +	int i;
-> +
-> +	for (i = 0; i < bbio->num_stripes; i++) {
-> +		struct btrfs_device *device = bbio->stripes[i].dev;
-> +
-> +		if (device->is_tgtdev_for_dev_replace)
-> +			atomic_inc(&device->tgtdev_refs);
-> +	}
-> +}
-> +
-> +static void unpin_bbio_target_device(struct btrfs_bio *bbio)
-> +{
-> +	int i;
-> +
-> +	for (i = 0; i < bbio->num_stripes; i++) {
-> +		struct btrfs_device *device = bbio->stripes[i].dev;
-> +
-> +		if (device->is_tgtdev_for_dev_replace) {
-> +			atomic_dec(&device->tgtdev_refs);
-> +			wake_up(&device->tgtdev_wait);
-> +		}
-> +	}
-> +}
-> +
->  void btrfs_get_bbio(struct btrfs_bio *bbio)
->  {
->  	WARN_ON(!atomic_read(&bbio->refs));
-> @@ -5312,8 +5343,10 @@ void btrfs_put_bbio(struct btrfs_bio *bbio)
->  {
->  	if (!bbio)
->  		return;
-> -	if (atomic_dec_and_test(&bbio->refs))
-> +	if (atomic_dec_and_test(&bbio->refs)) {
-> +		unpin_bbio_target_device(bbio);
->  		kfree(bbio);
-> +	}
->  }
->  
->  static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
-> @@ -5868,6 +5901,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
->  		bbio->stripes[0].physical = physical_to_patch_in_first_stripe;
->  		bbio->mirror_num = map->num_stripes + 1;
->  	}
-> +	pin_bbio_target_device(bbio);
->  out:
->  	if (dev_replace_is_ongoing) {
->  		btrfs_dev_replace_clear_lock_blocking(dev_replace);
-> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-> index 24ba6bc3ec34..702361182597 100644
-> --- a/fs/btrfs/volumes.h
-> +++ b/fs/btrfs/volumes.h
-> @@ -149,6 +149,10 @@ struct btrfs_device {
->  	/* Counter to record the change of device stats */
->  	atomic_t dev_stats_ccnt;
->  	atomic_t dev_stat_values[BTRFS_DEV_STAT_VALUES_MAX];
-> +
-> +	/* To ensure we wait this target device before destroying it */
-> +	atomic_t tgtdev_refs;
-> +	wait_queue_head_t tgtdev_wait;
->  };
->  
->  /*
-> @@ -538,4 +542,10 @@ struct list_head *btrfs_get_fs_uuids(void);
->  void btrfs_set_fs_info_ptr(struct btrfs_fs_info *fs_info);
->  void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info);
->  
-> +static inline void wait_target_device(struct btrfs_device *tgtdev)
-> +{
-> +	if (!tgtdev || !tgtdev->is_tgtdev_for_dev_replace)
-> +		return;
-> +	wait_event(tgtdev->tgtdev_wait, atomic_read(&tgtdev->tgtdev_refs) == 0);
-> +}
->  #endif
-> -- 
-> 2.11.0
-> 
-> 
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,164 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:40570 "EHLO
-        mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751972AbdCSRlw (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 19 Mar 2017 13:41:52 -0400
-From: Josef Bacik <jbacik@fb.com>
-To: Alex Lyakas <alex@zadarastorage.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "dsterba@suse.com" <dsterba@suse.com>
-Subject: Re: [PATCH RFC] btrfs: introduce a separate mutex for
- caching_block_groups list
-Date: Sun, 19 Mar 2017 17:40:56 +0000
-Message-ID: <E0D26BFD-5CD7-45ED-A1AB-D2C22D0FCBCF@fb.com>
-References: <7D943753182E46848AC6B688BF365906@alyakaslap>
-In-Reply-To: <7D943753182E46848AC6B688BF365906@alyakaslap>
-Content-Type: text/plain; charset="us-ascii"
+Received: from fieldses.org ([173.255.197.46]:40366 "EHLO fieldses.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753950AbdCTVoA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 20 Mar 2017 17:44:00 -0400
+Date: Mon, 20 Mar 2017 17:43:27 -0400
+To: Jeff Layton <jlayton@redhat.com>
+Cc: Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-nfs@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-xfs@vger.kernel.org
+Subject: Re: [RFC PATCH v1 00/30] fs: inode->i_version rework and optimization
+Message-ID: <20170320214327.GA5098@fieldses.org>
+References: <1482339827-7882-1-git-send-email-jlayton@redhat.com>
+ <20161222084549.GA8833@infradead.org>
+ <1482417724.3924.39.camel@redhat.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <1482417724.3924.39.camel@redhat.com>
+From: bfields@fieldses.org (J. Bruce Fields)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This sounds reasonable to me, I'll look at it more when I'm on the ground and can look at the code and see for sure.  Thanks,
+On Thu, Dec 22, 2016 at 09:42:04AM -0500, Jeff Layton wrote:
+> On Thu, 2016-12-22 at 00:45 -0800, Christoph Hellwig wrote:
+> > On Wed, Dec 21, 2016 at 12:03:17PM -0500, Jeff Layton wrote:
+> > > 
+> > > Only btrfs, ext4, and xfs implement it for data changes. Because of
+> > > this, these filesystems must log the inode to disk whenever the
+> > > i_version counter changes. That has a non-zero performance impact,
+> > > especially on write-heavy workloads, because we end up dirtying the
+> > > inode metadata on every write, not just when the times change. [1]
+> > 
+> > Do you have numbers to justify these changes?
+> 
+> I have numbers. As to whether they justify the changes, I'm not sure.
+> This helps a lot on a (admittedly nonsensical) 1-byte write workload. On
+> XFS, with this fio jobfile:
 
-Josef
+To me, the interesting question is whether this allows us to turn on
+i_version updates by default on xfs and ext4.
 
-Sent from my iPhone
+When Josef looked at doing that previously he withdrew the patch due to
+performance regressions.  I think the most useful thread started here:
 
-> On Mar 19, 2017, at 1:19 PM, Alex Lyakas <alex@zadarastorage.com> wrote:
+	http://lkml.kernel.org/r/1337092396-3272-1-git-send-email-josef@redhat.com
+
+Skimming quickly....  I think the regression was also in the small-write
+case.  So apparently that was thought to reveal a real problem?
+
+So if you've mostly eliminated that regression, then that's good
+motivation for your patches.  (Though I think in addition to comparing
+the patched and unpatched i_version case, we need to compare to the
+unpatched not-i_version case.  I'm not clear whether you did that.)
+
+--b.
+
 > 
-> We have a commit_root_sem, which is a read-write semaphore that protects the commit roots.
-> But it is also used to protect the list of caching block groups.
+> --------------------8<------------------
+> [global]
+> direct=0
+> size=2g
+> filesize=512m
+> bsrange=1-1
+> timeout=60
+> numjobs=1
+> directory=/mnt/scratch
 > 
-> As a result, while doing "slow" caching, the following issue is seen:
+> [f1]
+> filename=randwrite
+> rw=randwrite
+> --------------------8<------------------
 > 
-> Some of the caching threads are scanning the extent tree with commit_root_sem
-> acquired in shared mode, with stack like:
-> [<ffffffffc0ad27b2>] read_extent_buffer_pages+0x2d2/0x300 [btrfs]
-> [<ffffffffc0a9fbe7>] btree_read_extent_buffer_pages.constprop.50+0xb7/0x1e0 [btrfs]
-> [<ffffffffc0aa1550>] read_tree_block+0x40/0x70 [btrfs]
-> [<ffffffffc0a7aa7c>] read_block_for_search.isra.33+0x12c/0x370 [btrfs]
-> [<ffffffffc0a7ce86>] btrfs_search_slot+0x3c6/0xb10 [btrfs]
-> [<ffffffffc0a975b9>] caching_thread+0x1b9/0x820 [btrfs]
-> [<ffffffffc0adfa36>] normal_work_helper+0xc6/0x340 [btrfs]
-> [<ffffffffc0adfd22>] btrfs_cache_helper+0x12/0x20 [btrfs]
+> Unpatched kernel:
+>   WRITE: io=7707KB, aggrb=128KB/s, minb=128KB/s, maxb=128KB/s, mint=60000msec, maxt=60000msec
 > 
-> IO requests that want to allocate space are waiting in cache_block_group()
-> to acquire the commit_root_sem in exclusive mode. But they only want to add
-> the caching control structure to the list of caching block-groups:
-> [<ffffffff817136c9>] schedule+0x29/0x70
-> [<ffffffff81716085>] rwsem_down_write_failed+0x145/0x320
-> [<ffffffff813a1ae3>] call_rwsem_down_write_failed+0x13/0x20
-> [<ffffffffc0a86d0b>] cache_block_group+0x25b/0x450 [btrfs]
-> [<ffffffffc0a94d36>] find_free_extent+0xd16/0xdb0 [btrfs]
-> [<ffffffffc0a94e7f>] btrfs_reserve_extent+0xaf/0x160 [btrfs]
+> Patched kernel:
+>   WRITE: io=12701KB, aggrb=211KB/s, minb=211KB/s, maxb=211KB/s, mint=60000msec, maxt=60000msec
 > 
-> Other caching threads want to continue their scanning, and for that they
-> are waiting to acquire commit_root_sem in shared mode. But since there are
-> IO threads that want the exclusive lock, the caching threads are unable
-> to continue the scanning, because (I presume) rw_semaphore guarantees some fairness:
-> [<ffffffff817136c9>] schedule+0x29/0x70
-> [<ffffffff81715ee5>] rwsem_down_read_failed+0xc5/0x120
-> [<ffffffff813a1ab4>] call_rwsem_down_read_failed+0x14/0x30
-> [<ffffffffc0a975a1>] caching_thread+0x1a1/0x820 [btrfs]
-> [<ffffffffc0adfa36>] normal_work_helper+0xc6/0x340 [btrfs]
-> [<ffffffffc0adfd22>] btrfs_cache_helper+0x12/0x20 [btrfs]
-> [<ffffffff8108bd56>] process_one_work+0x146/0x410
+> So quite a difference there and it's pretty consistent across runs. If I
+> change the jobfile to have "direct=1" and "bsrange=4k-4k", then any
+> variation between the two doesn't seem to be significant (numbers vary
+> as much between runs on the same kernels and are roughly the same).
 > 
-> This causes slowness of the IO, especially when there are many block groups
-> that need to be scanned for free space. In some cases it takes minutes
-> until a single IO thread is able to allocate free space.
+> Playing with buffered I/O sizes between 1 byte and 4k shows that as the
+> I/O sizes get larger, this makes less difference (which is what I'd
+> expect).
 > 
-> I don't see a deadlock here, because the caching threads that were able to acquire
-> the commit_root_sem will call rwsem_is_contended() and should give up the semaphore,
-> so that IO threads are able to acquire it in exclusive mode.
+> Previous testing with ext4 shows roughly the same results. btrfs shows
+> some benefit here but significantly less than with ext4 or xfs. Not sure
+> why that is yet -- maybe CoW effects?
 > 
-> However, introducing a separate mutex that protects only the list of caching
-> block groups makes things move forward much faster.
+> That said, I don't have a great test rig for this. I'm using VMs with a
+> dedicated LVM volume that's on a random SSD I had laying around. It
+> could use testing on a wider set of configurations and workloads.
 > 
-> This patch is based on kernel 3.18.
-> Unfortunately, I am not able to submit a patch based on one of the latest kernels, because
-> here btrfs is part of the larger system, and upgrading the kernel is a significant effort.
-> Hence marking the patch as RFC.
-> Hopefully, this patch still has some value to the community.
+> I was also hoping that others may have workloads that they think might
+> be (postively or negatively) affected by these changes. If you can think
+> of any in particular, then I'm interested to hear about them.
 > 
-> Signed-off-by: Alex Lyakas <alex@zadarastorage.com>
-> 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 42d11e7..74feacb 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -1490,6 +1490,8 @@ struct btrfs_fs_info {
->    struct list_head trans_list;
->    struct list_head dead_roots;
->    struct list_head caching_block_groups;
-> +    /* protects the above list */
-> +    struct mutex caching_block_groups_mutex;
-> 
->    spinlock_t delayed_iput_lock;
->    struct list_head delayed_iputs;
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 5177954..130ec58 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -2229,6 +2229,7 @@ int open_ctree(struct super_block *sb,
->    INIT_LIST_HEAD(&fs_info->delayed_iputs);
->    INIT_LIST_HEAD(&fs_info->delalloc_roots);
->    INIT_LIST_HEAD(&fs_info->caching_block_groups);
-> +    mutex_init(&fs_info->caching_block_groups_mutex);
->    spin_lock_init(&fs_info->delalloc_root_lock);
->    spin_lock_init(&fs_info->trans_lock);
->    spin_lock_init(&fs_info->fs_roots_radix_lock);
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index a067065..906fb08 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -637,10 +637,10 @@ static int cache_block_group(struct btrfs_block_group_cache *cache,
->        return 0;
->    }
-> 
-> -    down_write(&fs_info->commit_root_sem);
-> +    mutex_lock(&fs_info->caching_block_groups_mutex);
->    atomic_inc(&caching_ctl->count);
->    list_add_tail(&caching_ctl->list, &fs_info->caching_block_groups);
-> -    up_write(&fs_info->commit_root_sem);
-> +    mutex_unlock(&fs_info->caching_block_groups_mutex);
-> 
->    btrfs_get_block_group(cache);
-> 
-> @@ -5693,6 +5693,7 @@ void btrfs_prepare_extent_commit(struct btrfs_trans_handle *trans,
-> 
->    down_write(&fs_info->commit_root_sem);
-> 
-> +    mutex_lock(&fs_info->caching_block_groups_mutex);
->    list_for_each_entry_safe(caching_ctl, next,
->                 &fs_info->caching_block_groups, list) {
->        cache = caching_ctl->block_group;
-> @@ -5704,6 +5705,7 @@ void btrfs_prepare_extent_commit(struct btrfs_trans_handle *trans,
->            cache->last_byte_to_unpin = caching_ctl->progress;
->        }
->    }
-> +    mutex_unlock(&fs_info->caching_block_groups_mutex);
-> 
->    if (fs_info->pinned_extents == &fs_info->freed_extents[0])
->        fs_info->pinned_extents = &fs_info->freed_extents[1];
-> @@ -8849,14 +8851,14 @@ int btrfs_free_block_groups(struct btrfs_fs_info *info)
->    struct btrfs_caching_control *caching_ctl;
->    struct rb_node *n;
-> 
-> -    down_write(&info->commit_root_sem);
-> +    mutex_lock(&info->caching_block_groups_mutex);
->    while (!list_empty(&info->caching_block_groups)) {
->        caching_ctl = list_entry(info->caching_block_groups.next,
->                     struct btrfs_caching_control, list);
->        list_del(&caching_ctl->list);
->        put_caching_control(caching_ctl);
->    }
-> -    up_write(&info->commit_root_sem);
-> +    mutex_unlock(&info->caching_block_groups_mutex);
-> 
->    spin_lock(&info->unused_bgs_lock);
->    while (!list_empty(&info->unused_bgs)) {
-> 
-> 
-> 
+> -- 
+> Jeff Layton <jlayton@redhat.com>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-nfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

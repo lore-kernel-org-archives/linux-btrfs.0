@@ -1,31 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:39428 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:39864 "EHLO
         aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754957AbdCTVAB (ORCPT
+        with ESMTP id S1755012AbdCTVAq (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 20 Mar 2017 17:00:01 -0400
-Date: Mon, 20 Mar 2017 13:58:31 -0700
+        Mon, 20 Mar 2017 17:00:46 -0400
+Date: Mon, 20 Mar 2017 14:00:00 -0700
 From: Liu Bo <bo.li.liu@oracle.com>
 To: David Sterba <dsterba@suse.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 3/7] btrfs: preallocate radix tree node for global
- readahead tree
-Message-ID: <20170320205831.GF5540@lim.localdomain>
+Subject: Re: [PATCH 4/7] btrfs: remove redundant parameter from
+ btree_readahead_hook
+Message-ID: <20170320210000.GG5540@lim.localdomain>
 Reply-To: bo.li.liu@oracle.com
 References: <cover.1489593696.git.dsterba@suse.com>
- <47dc4887b9954bd94e3926354ca85067a9fa86ff.1489593696.git.dsterba@suse.com>
+ <eec160ff8a025b4580b374a525e678c3457c1a6a.1489593696.git.dsterba@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <47dc4887b9954bd94e3926354ca85067a9fa86ff.1489593696.git.dsterba@suse.com>
+In-Reply-To: <eec160ff8a025b4580b374a525e678c3457c1a6a.1489593696.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 15, 2017 at 05:02:30PM +0100, David Sterba wrote:
-> We can preallocate the node so insertion does not have to do that under
-> the lock. The GFP flags for the global radix tree are initialized to
->  GFP_NOFS & ~__GFP_DIRECT_RECLAIM
-> but we can use GFP_KERNEL, because readahead is optional and not on any
-> critical writeout path.
+On Wed, Mar 15, 2017 at 05:02:33PM +0100, David Sterba wrote:
+> We can read fs_info from eb.
 Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
 Thanks,
@@ -34,55 +30,63 @@ Thanks,
 > 
 > Signed-off-by: David Sterba <dsterba@suse.com>
 > ---
->  fs/btrfs/disk-io.c | 2 +-
->  fs/btrfs/reada.c   | 7 +++++++
->  2 files changed, 8 insertions(+), 1 deletion(-)
+>  fs/btrfs/ctree.h   | 3 +--
+>  fs/btrfs/disk-io.c | 4 ++--
+>  fs/btrfs/reada.c   | 4 ++--
+>  3 files changed, 5 insertions(+), 6 deletions(-)
 > 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 29b7fc28c607..173fac68323a 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -3671,8 +3671,7 @@ struct reada_control *btrfs_reada_add(struct btrfs_root *root,
+>  			      struct btrfs_key *start, struct btrfs_key *end);
+>  int btrfs_reada_wait(void *handle);
+>  void btrfs_reada_detach(void *handle);
+> -int btree_readahead_hook(struct btrfs_fs_info *fs_info,
+> -			 struct extent_buffer *eb, int err);
+> +int btree_readahead_hook(struct extent_buffer *eb, int err);
+>  
+>  static inline int is_fstree(u64 rootid)
+>  {
 > diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 08b74daf35d0..1d4c30327247 100644
+> index 1d4c30327247..995b28179af9 100644
 > --- a/fs/btrfs/disk-io.c
 > +++ b/fs/btrfs/disk-io.c
-> @@ -2693,7 +2693,7 @@ int open_ctree(struct super_block *sb,
->  	fs_info->commit_interval = BTRFS_DEFAULT_COMMIT_INTERVAL;
->  	fs_info->avg_delayed_ref_runtime = NSEC_PER_SEC >> 6; /* div by 64 */
->  	/* readahead state */
-> -	INIT_RADIX_TREE(&fs_info->reada_tree, GFP_NOFS & ~__GFP_DIRECT_RECLAIM);
-> +	INIT_RADIX_TREE(&fs_info->reada_tree, GFP_KERNEL);
->  	spin_lock_init(&fs_info->reada_lock);
+> @@ -762,7 +762,7 @@ static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
+>  err:
+>  	if (reads_done &&
+>  	    test_and_clear_bit(EXTENT_BUFFER_READAHEAD, &eb->bflags))
+> -		btree_readahead_hook(fs_info, eb, ret);
+> +		btree_readahead_hook(eb, ret);
 >  
->  	fs_info->thread_pool_size = min_t(unsigned long,
+>  	if (ret) {
+>  		/*
+> @@ -787,7 +787,7 @@ static int btree_io_failed_hook(struct page *page, int failed_mirror)
+>  	eb->read_mirror = failed_mirror;
+>  	atomic_dec(&eb->io_pages);
+>  	if (test_and_clear_bit(EXTENT_BUFFER_READAHEAD, &eb->bflags))
+> -		btree_readahead_hook(eb->fs_info, eb, -EIO);
+> +		btree_readahead_hook(eb, -EIO);
+>  	return -EIO;	/* we fixed nothing */
+>  }
+>  
 > diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
-> index dd78af5d265d..4c5a9b241cab 100644
+> index 4c5a9b241cab..5edf7328f67d 100644
 > --- a/fs/btrfs/reada.c
 > +++ b/fs/btrfs/reada.c
-> @@ -391,6 +391,10 @@ static struct reada_extent *reada_find_extent(struct btrfs_fs_info *fs_info,
->  		goto error;
->  	}
+> @@ -209,9 +209,9 @@ static void __readahead_hook(struct btrfs_fs_info *fs_info,
+>  	return;
+>  }
 >  
-> +	ret = radix_tree_preload(GFP_KERNEL);
-> +	if (ret)
-> +		goto error;
-> +
->  	/* insert extent in reada_tree + all per-device trees, all or nothing */
->  	btrfs_dev_replace_lock(&fs_info->dev_replace, 0);
->  	spin_lock(&fs_info->reada_lock);
-> @@ -400,13 +404,16 @@ static struct reada_extent *reada_find_extent(struct btrfs_fs_info *fs_info,
->  		re_exist->refcnt++;
->  		spin_unlock(&fs_info->reada_lock);
->  		btrfs_dev_replace_unlock(&fs_info->dev_replace, 0);
-> +		radix_tree_preload_end();
->  		goto error;
->  	}
->  	if (ret) {
->  		spin_unlock(&fs_info->reada_lock);
->  		btrfs_dev_replace_unlock(&fs_info->dev_replace, 0);
-> +		radix_tree_preload_end();
->  		goto error;
->  	}
-> +	radix_tree_preload_end();
->  	prev_dev = NULL;
->  	dev_replace_is_ongoing = btrfs_dev_replace_is_ongoing(
->  			&fs_info->dev_replace);
+> -int btree_readahead_hook(struct btrfs_fs_info *fs_info,
+> -			 struct extent_buffer *eb, int err)
+> +int btree_readahead_hook(struct extent_buffer *eb, int err)
+>  {
+> +	struct btrfs_fs_info *fs_info = eb->fs_info;
+>  	int ret = 0;
+>  	struct reada_extent *re;
+>  
 > -- 
 > 2.12.0
 > 

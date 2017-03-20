@@ -1,165 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:31104 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:39428 "EHLO
         aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753210AbdCTUpd (ORCPT
+        with ESMTP id S1754957AbdCTVAB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 20 Mar 2017 16:45:33 -0400
-Date: Mon, 20 Mar 2017 13:44:09 -0700
+        Mon, 20 Mar 2017 17:00:01 -0400
+Date: Mon, 20 Mar 2017 13:58:31 -0700
 From: Liu Bo <bo.li.liu@oracle.com>
 To: David Sterba <dsterba@suse.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/7] btrfs: use simpler readahead zone lookups
-Message-ID: <20170320204408.GE5540@lim.localdomain>
+Subject: Re: [PATCH 3/7] btrfs: preallocate radix tree node for global
+ readahead tree
+Message-ID: <20170320205831.GF5540@lim.localdomain>
 Reply-To: bo.li.liu@oracle.com
 References: <cover.1489593696.git.dsterba@suse.com>
- <28edb65e1e98d9f815f3b64cdd2489d4be78e681.1489593696.git.dsterba@suse.com>
+ <47dc4887b9954bd94e3926354ca85067a9fa86ff.1489593696.git.dsterba@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <28edb65e1e98d9f815f3b64cdd2489d4be78e681.1489593696.git.dsterba@suse.com>
+In-Reply-To: <47dc4887b9954bd94e3926354ca85067a9fa86ff.1489593696.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 15, 2017 at 05:02:26PM +0100, David Sterba wrote:
-> No point using radix_tree_gang_lookup if we're looking up just one slot.
-> 
+On Wed, Mar 15, 2017 at 05:02:30PM +0100, David Sterba wrote:
+> We can preallocate the node so insertion does not have to do that under
+> the lock. The GFP flags for the global radix tree are initialized to
+>  GFP_NOFS & ~__GFP_DIRECT_RECLAIM
+> but we can use GFP_KERNEL, because readahead is optional and not on any
+> critical writeout path.
 Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
 Thanks,
 
 -liubo
+> 
 > Signed-off-by: David Sterba <dsterba@suse.com>
 > ---
->  fs/btrfs/reada.c | 52 ++++++++++++++++++++++------------------------------
->  1 file changed, 22 insertions(+), 30 deletions(-)
+>  fs/btrfs/disk-io.c | 2 +-
+>  fs/btrfs/reada.c   | 7 +++++++
+>  2 files changed, 8 insertions(+), 1 deletion(-)
 > 
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 08b74daf35d0..1d4c30327247 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -2693,7 +2693,7 @@ int open_ctree(struct super_block *sb,
+>  	fs_info->commit_interval = BTRFS_DEFAULT_COMMIT_INTERVAL;
+>  	fs_info->avg_delayed_ref_runtime = NSEC_PER_SEC >> 6; /* div by 64 */
+>  	/* readahead state */
+> -	INIT_RADIX_TREE(&fs_info->reada_tree, GFP_NOFS & ~__GFP_DIRECT_RECLAIM);
+> +	INIT_RADIX_TREE(&fs_info->reada_tree, GFP_KERNEL);
+>  	spin_lock_init(&fs_info->reada_lock);
+>  
+>  	fs_info->thread_pool_size = min_t(unsigned long,
 > diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
-> index fdae8ca79401..dd78af5d265d 100644
+> index dd78af5d265d..4c5a9b241cab 100644
 > --- a/fs/btrfs/reada.c
 > +++ b/fs/btrfs/reada.c
-> @@ -246,11 +246,9 @@ static struct reada_zone *reada_find_zone(struct btrfs_fs_info *fs_info,
->  	u64 end;
->  	int i;
->  
-> -	zone = NULL;
->  	spin_lock(&fs_info->reada_lock);
-> -	ret = radix_tree_gang_lookup(&dev->reada_zones, (void **)&zone,
-> -				     logical >> PAGE_SHIFT, 1);
-> -	if (ret == 1 && logical >= zone->start && logical <= zone->end) {
-> +	zone = radix_tree_lookup(&dev->reada_zones, logical >> PAGE_SHIFT);
-> +	if (zone && logical >= zone->start && logical <= zone->end) {
->  		kref_get(&zone->refcnt);
->  		spin_unlock(&fs_info->reada_lock);
->  		return zone;
-> @@ -297,9 +295,9 @@ static struct reada_zone *reada_find_zone(struct btrfs_fs_info *fs_info,
->  
->  	if (ret == -EEXIST) {
->  		kfree(zone);
-> -		ret = radix_tree_gang_lookup(&dev->reada_zones, (void **)&zone,
-> -					     logical >> PAGE_SHIFT, 1);
-> -		if (ret == 1 && logical >= zone->start && logical <= zone->end)
-> +		zone = radix_tree_lookup(&dev->reada_zones,
-> +				logical >> PAGE_SHIFT);
-> +		if (zone && logical >= zone->start && logical <= zone->end)
->  			kref_get(&zone->refcnt);
->  		else
->  			zone = NULL;
-> @@ -604,7 +602,6 @@ static int reada_pick_zone(struct btrfs_device *dev)
->  	u64 top_elems = 0;
->  	u64 top_locked_elems = 0;
->  	unsigned long index = 0;
-> -	int ret;
->  
->  	if (dev->reada_curr_zone) {
->  		reada_peer_zones_set_lock(dev->reada_curr_zone, 0);
-> @@ -615,9 +612,8 @@ static int reada_pick_zone(struct btrfs_device *dev)
->  	while (1) {
->  		struct reada_zone *zone;
->  
-> -		ret = radix_tree_gang_lookup(&dev->reada_zones,
-> -					     (void **)&zone, index, 1);
-> -		if (ret == 0)
-> +		zone = radix_tree_lookup(&dev->reada_zones, index);
-> +		if (!zone)
->  			break;
->  		index = (zone->end >> PAGE_SHIFT) + 1;
->  		if (zone->locked) {
-> @@ -669,19 +665,18 @@ static int reada_start_machine_dev(struct btrfs_fs_info *fs_info,
->  	 * a contiguous block of extents, we could also coagulate them or use
->  	 * plugging to speed things up
->  	 */
-> -	ret = radix_tree_gang_lookup(&dev->reada_extents, (void **)&re,
-> -				     dev->reada_next >> PAGE_SHIFT, 1);
-> -	if (ret == 0 || re->logical > dev->reada_curr_zone->end) {
-> +	re = radix_tree_lookup(&dev->reada_extents,
-> +			dev->reada_next >> PAGE_SHIFT);
-> +	if (!re || re->logical > dev->reada_curr_zone->end) {
->  		ret = reada_pick_zone(dev);
->  		if (!ret) {
->  			spin_unlock(&fs_info->reada_lock);
->  			return 0;
->  		}
-> -		re = NULL;
-> -		ret = radix_tree_gang_lookup(&dev->reada_extents, (void **)&re,
-> -					dev->reada_next >> PAGE_SHIFT, 1);
-> +		re = radix_tree_lookup(&dev->reada_extents,
-> +				dev->reada_next >> PAGE_SHIFT);
+> @@ -391,6 +391,10 @@ static struct reada_extent *reada_find_extent(struct btrfs_fs_info *fs_info,
+>  		goto error;
 >  	}
-> -	if (ret == 0) {
-> +	if (!re) {
->  		spin_unlock(&fs_info->reada_lock);
->  		return 0;
->  	}
-> @@ -809,7 +804,6 @@ static void dump_devs(struct btrfs_fs_info *fs_info, int all)
->  	struct btrfs_device *device;
->  	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
->  	unsigned long index;
-> -	int ret;
->  	int i;
->  	int j;
->  	int cnt;
-> @@ -821,9 +815,9 @@ static void dump_devs(struct btrfs_fs_info *fs_info, int all)
->  		index = 0;
->  		while (1) {
->  			struct reada_zone *zone;
-> -			ret = radix_tree_gang_lookup(&device->reada_zones,
-> -						     (void **)&zone, index, 1);
-> -			if (ret == 0)
+>  
+> +	ret = radix_tree_preload(GFP_KERNEL);
+> +	if (ret)
+> +		goto error;
 > +
-> +			zone = radix_tree_lookup(&device->reada_zones, index);
-> +			if (!zone)
->  				break;
->  			pr_debug("  zone %llu-%llu elems %llu locked %d devs",
->  				    zone->start, zone->end, zone->elems,
-> @@ -841,11 +835,10 @@ static void dump_devs(struct btrfs_fs_info *fs_info, int all)
->  		cnt = 0;
->  		index = 0;
->  		while (all) {
-> -			struct reada_extent *re = NULL;
-> +			struct reada_extent *re;
->  
-> -			ret = radix_tree_gang_lookup(&device->reada_extents,
-> -						     (void **)&re, index, 1);
-> -			if (ret == 0)
-> +			re = radix_tree_lookup(&device->reada_extents, index);
-> +			if (!re)
->  				break;
->  			pr_debug("  re: logical %llu size %u empty %d scheduled %d",
->  				re->logical, fs_info->nodesize,
-> @@ -870,11 +863,10 @@ static void dump_devs(struct btrfs_fs_info *fs_info, int all)
->  	index = 0;
->  	cnt = 0;
->  	while (all) {
-> -		struct reada_extent *re = NULL;
-> +		struct reada_extent *re;
->  
-> -		ret = radix_tree_gang_lookup(&fs_info->reada_tree, (void **)&re,
-> -					     index, 1);
-> -		if (ret == 0)
-> +		re = radix_tree_lookup(&fs_info->reada_tree, index);
-> +		if (!re)
->  			break;
->  		if (!re->scheduled) {
->  			index = (re->logical >> PAGE_SHIFT) + 1;
+>  	/* insert extent in reada_tree + all per-device trees, all or nothing */
+>  	btrfs_dev_replace_lock(&fs_info->dev_replace, 0);
+>  	spin_lock(&fs_info->reada_lock);
+> @@ -400,13 +404,16 @@ static struct reada_extent *reada_find_extent(struct btrfs_fs_info *fs_info,
+>  		re_exist->refcnt++;
+>  		spin_unlock(&fs_info->reada_lock);
+>  		btrfs_dev_replace_unlock(&fs_info->dev_replace, 0);
+> +		radix_tree_preload_end();
+>  		goto error;
+>  	}
+>  	if (ret) {
+>  		spin_unlock(&fs_info->reada_lock);
+>  		btrfs_dev_replace_unlock(&fs_info->dev_replace, 0);
+> +		radix_tree_preload_end();
+>  		goto error;
+>  	}
+> +	radix_tree_preload_end();
+>  	prev_dev = NULL;
+>  	dev_replace_is_ongoing = btrfs_dev_replace_is_ongoing(
+>  			&fs_info->dev_replace);
 > -- 
 > 2.12.0
 > 

@@ -1,87 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51981 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750785AbdCNKX7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 14 Mar 2017 06:23:59 -0400
-From: Goldwyn Rodrigues <rgoldwyn@suse.de>
-To: linux-btrfs@vger.kernel.org
-Cc: fdmanana@kernel.org, Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH v3] qgroup: Retry after commit on getting EDQUOT
-Date: Tue, 14 Mar 2017 05:23:50 -0500
-Message-Id: <20170314102350.10565-1-rgoldwyn@suse.de>
+Received: from cn.fujitsu.com ([59.151.112.132]:10655 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1754979AbdCUBF4 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 20 Mar 2017 21:05:56 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <dsterba@suse.cz>
+Subject: [PATCH] btrfs-progs: convert: Add missing return for HOLE mode when checking convert image
+Date: Tue, 21 Mar 2017 09:00:55 +0800
+Message-ID: <20170321010055.28530-1-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Goldwyn Rodrigues <rgoldwyn@suse.com>
+In check_convert_image(), for normal HOLE case, if the file extents are
+smaller than image size, we set ret to -EINVAL and print error message.
 
-We are facing the same problem with EDQUOT which was experienced with
-ENOSPC. Not sure if we require a full ticketing system such as ENOSPC, but
-here is a fix. Let me know if it is too big a hammer.
+But forget to return.
 
-Quotas are reserved during the start of an operation, incrementing
-qg->reserved. However, it is written to disk in a commit_transaction
-which could take as long as commit_interval. In the meantime there
-could be deletions which are not accounted for because deletions are
-accounted for only while committed (free_refroot). So, when we get
-a EDQUOT flush the data to disk and try again.
+This patch adds the missing return to fix it.
 
-Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
-Reviewed-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
+ convert/main.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-Changes since v1:
- - Changed start_delalloc_roots() to start_delalloc_inode() to target
-    the root in question only to reduce the amount of flush to be done.
- - Added wait_ordered_extents().
-
-Changes since v2:
- - Revised patch header
-   - removed comment on combining conditions
-   - removed test case, to be done in fstests
-
- fs/btrfs/qgroup.c | 15 +++++++++++++++
- 1 file changed, 15 insertions(+)
-
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index a5da750..6215264 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2367,6 +2367,7 @@ static int qgroup_reserve(struct btrfs_root *root, u64 num_bytes, bool enforce)
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 	u64 ref_root = root->root_key.objectid;
- 	int ret = 0;
-+	int retried = 0;
- 	struct ulist_node *unode;
- 	struct ulist_iterator uiter;
- 
-@@ -2376,6 +2377,7 @@ static int qgroup_reserve(struct btrfs_root *root, u64 num_bytes, bool enforce)
- 	if (num_bytes == 0)
- 		return 0;
- 
-+retry:
- 	spin_lock(&fs_info->qgroup_lock);
- 	quota_root = fs_info->quota_root;
- 	if (!quota_root)
-@@ -2402,6 +2404,19 @@ static int qgroup_reserve(struct btrfs_root *root, u64 num_bytes, bool enforce)
- 		qg = unode_aux_to_qgroup(unode);
- 
- 		if (enforce && !qgroup_check_limits(qg, num_bytes)) {
-+			if (!retried && qg->reserved > 0) {
-+				struct btrfs_trans_handle *trans;
-+				spin_unlock(&fs_info->qgroup_lock);
-+				btrfs_start_delalloc_inodes(root, 0);
-+				btrfs_wait_ordered_extents(root, -1, 0,
-+						(u64)-1);
-+				trans = btrfs_join_transaction(root);
-+				if (IS_ERR(trans))
-+					return PTR_ERR(trans);
-+				btrfs_commit_transaction(trans);
-+				retried++;
-+				goto retry;
-+			}
- 			ret = -EDQUOT;
- 			goto out;
+diff --git a/convert/main.c b/convert/main.c
+index 96358c62..c56382e9 100644
+--- a/convert/main.c
++++ b/convert/main.c
+@@ -1559,6 +1559,7 @@ next:
+ 			ret = -EINVAL;
+ 			error("inode %llu has some file extents not checked",
+ 				ino);
++			return ret;
  		}
+ 	}
+ 
 -- 
-2.10.2
+2.12.0
+
+
 

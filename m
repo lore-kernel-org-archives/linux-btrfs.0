@@ -1,89 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f170.google.com ([209.85.220.170]:35721 "EHLO
-        mail-qk0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1759666AbdCVTyG (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 22 Mar 2017 15:54:06 -0400
-Received: by mail-qk0-f170.google.com with SMTP id v127so164794362qkb.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Mar 2017 12:53:45 -0700 (PDT)
-Message-ID: <1490212422.3921.1.camel@redhat.com>
-Subject: Re: [RFC PATCH v1 00/30] fs: inode->i_version rework and
- optimization
-From: Jeff Layton <jlayton@redhat.com>
-To: Dave Chinner <david@fromorbit.com>
-Cc: "J. Bruce Fields" <bfields@fieldses.org>,
-        Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-nfs@vger.kernel.org,
-        linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-xfs@vger.kernel.org
-Date: Wed, 22 Mar 2017 15:53:42 -0400
-In-Reply-To: <20170321214518.GB17542@dastard>
-References: <1482339827-7882-1-git-send-email-jlayton@redhat.com>
-         <20161222084549.GA8833@infradead.org> <1482417724.3924.39.camel@redhat.com>
-         <20170320214327.GA5098@fieldses.org> <20170321134500.GA1318@infradead.org>
-         <20170321163011.GA16666@fieldses.org> <1490117004.2542.1.camel@redhat.com>
-         <20170321214518.GB17542@dastard>
-Content-Type: text/plain; charset="UTF-8"
+Received: from erza.pados.hu ([176.9.136.194]:49318 "EHLO erza.pados.hu"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751905AbdCWOgq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 23 Mar 2017 10:36:46 -0400
+Received: from localhost ([127.0.0.1] helo=webmail.pados.hu)
+        by erza with esmtpsa (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128)
+        (Exim 4.88)
+        (envelope-from <pados@pados.hu>)
+        id 1cr3On-0005F8-UB
+        for linux-btrfs@vger.kernel.org; Thu, 23 Mar 2017 15:07:34 +0100
 Mime-Version: 1.0
+Date: Thu, 23 Mar 2017 14:07:31 +0000
+Content-Type: text/plain; charset="utf-8"
+Message-ID: <63b13b68a616abf8f828d6725f792be4@webmail.pados.hu>
+From: "=?utf-8?B?S8Ohcm9seSBQYWRvcw==?=" <pados@pados.hu>
+Subject: Bug: btrfs dev del missing fails where it shouldn't
+To: linux-btrfs@vger.kernel.org
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 2017-03-22 at 08:45 +1100, Dave Chinner wrote:
-> On Tue, Mar 21, 2017 at 01:23:24PM -0400, Jeff Layton wrote:
-> > On Tue, 2017-03-21 at 12:30 -0400, J. Bruce Fields wrote:
-> > > - It's durable; the above comparison still works if there were reboots
-> > >   between the two i_version checks.
-> > > 	- I don't know how realistic this is--we may need to figure out
-> > > 	  if there's a weaker guarantee that's still useful.  Do
-> > > 	  filesystems actually make ctime/mtime/i_version changes
-> > > 	  atomically with the changes that caused them?  What if a
-> > > 	  change attribute is exposed to an NFS client but doesn't make
-> > > 	  it to disk, and then that value is reused after reboot?
-> > > 
-> > 
-> > Yeah, there could be atomicity there. If we bump i_version, we'll mark
-> > the inode dirty and I think that will end up with the new i_version at
-> > least being journalled before __mark_inode_dirty returns.
-> 
-> The change may be journalled, but it isn't guaranteed stable until
-> fsync is run on the inode.
-> 
-> NFS server operations commit the metadata changed by a modification
-> through ->commit_metadata or sync_inode_metadata() before the
-> response is sent back to the client, hence guaranteeing that
-> i_version changes through the NFS server are stable and durable.
-> 
-> This is not the case for normal operations done through the POSIX
-> API - the journalling is asynchronous and the only durability
-> guarantees are provided by fsync()....
-> 
+Summary: Trying to remove a missing device tells me there are no missing devices, but obviously there is one
+kernel: 4.9.13
+btrfs-progs: 4.9.1
 
-Ahh ok, I missed that...thanks.
+Steps to reproduce:
 
-I think we'll have a hard time making this fully atomic. We may end up
-having to settle for something less (and doing our best to warn users
-of that possibility).
+1) Create a raid1 array:
 
-One idea might be to tie the behavior to AT_FORCE/DONT_SYNC. In the
-don't sync case, allow the kernel to hand out the i_version without
-syncing it to disk. In the FORCE_SYNC case, do an fsync internally
-before returning.
+mkfs.btrfs -f -d raid1 -m raid1 /dev/sda /dev/sdb
+mkdir /mnt/volatile
+mount -t btrfs /dev/sda /mnt/volatile
 
-> > That said, I suppose it is possible for us to bump the counter, hand
-> > that new counter value out to a NFS client and then the box crashes
-> > before it makes it to the journal.
-> 
-> Yup, this has aways been a problem when you mix posix applications
-> running on the NFS server modifying the same files as the NFS
-> clients are accessing and requiring synchronisation.
-> 
-> > Not sure how big a problem that really is.
-> 
-> This coherency problem has always existed on the server side...
-> 
+2) Physically remove a device or simply issue:
 
-Yes. I don't think this patchset makes anything worse in this regard.
-We will need well-defined semantics here before i_version can be
-exposed to userland via statx however.
--- 
-Jeff Layton <jlayton@redhat.com>
+echo 1 > /sys/block/sdb/device/delete
+
+3) In preparation to remove the failed device, remount and rebalance:
+
+mount -t btrfs -o remount,degraded /dev/sda /mnt/volatile
+btrfs balance start -dconvert=single -mconvert=dup /mnt/volatile
+
+4) Obviously the array still has a missing device, check this:
+
+btrfs fi show
+Label: none  uuid: 55fa0da0-26b5-4a66-ba54-e9488e47cf6e
+        Total devices 2 FS bytes used 320.00KiB
+        devid    1 size 3.74GiB used 896.00MiB path /dev/sda
+        *** Some devices missing
+
+5) Try to remove missing device and see the error:
+
+btrfs dev del missing /mnt/volatile
+ERROR: error removing device 'missing': no missing devices found to remove
+
+
+Step 5) failed and can be replaced by:
+
+btrfs dev del 2 /mnt/volatile/
+[  402.828294] BTRFS info (device sdb): device deleted: id 2
+btrfs fi show
+Label: none  uuid: 55fa0da0-26b5-4a66-ba54-e9488e47cf6e
+        Total devices 1 FS bytes used 320.00KiB
+        devid    1 size 3.74GiB used 896.00MiB path /dev/sda
+
+Still, 'missing' should be working, and having to use the devid is a PITA for both humans and scripts (the reason why 'missing' was added in the first place).
+
+
+(Probably unrelated question: In the last btrfs fi show you can see 896MB is used on a 3.74GB filesystem. The filesystem was just created however as described in the above steps, it is 100% empty with no prior use or wear. So the brand-new formatted drive seems to be 23% full, is this normal?)

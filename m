@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:17129 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:46998 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S932226AbdCXCAo (ORCPT
+        with ESMTP id S932226AbdCXCAl (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 23 Mar 2017 22:00:44 -0400
+        Thu, 23 Mar 2017 22:00:41 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <bo.li.liu@oracle.com>
-Subject: [PATCH v2 2/5] btrfs: scrub: Fix RAID56 recovery race condition
-Date: Fri, 24 Mar 2017 10:00:24 +0800
-Message-ID: <20170324020027.21228-3-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v2 4/5] btrfs: dev-replace: Wait flighting bio before removing target device
+Date: Fri, 24 Mar 2017 10:00:26 +0800
+Message-ID: <20170324020027.21228-5-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20170324020027.21228-1-quwenruo@cn.fujitsu.com>
 References: <20170324020027.21228-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,101 +17,73 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When scrubbing a RAID5 which has recoverable data corruption (only one
-data stripe is corrupted), sometimes scrub will report more csum errors
-than expected. Sometimes even unrecoverable error will be reported.
+When dev replace is cancelled by running scrub, we will free target
+device without waiting flighting bios, causing the following NULL
+pointer deference or general protection.
 
-The problem can be easily reproduced by the following steps:
-1) Create a btrfs with RAID5 data profile with 3 devs
-2) Mount it with nospace_cache or space_cache=v2
-   To avoid extra data space usage.
-3) Create a 128K file and sync the fs, unmount it
-   Now the 128K file lies at the beginning of the data chunk
-4) Locate the physical bytenr of data chunk on dev3
-   Dev3 is the 1st data stripe.
-5) Corrupt the first 64K of the data chunk stripe on dev3
-6) Mount the fs and scrub it
+ BUG: unable to handle kernel NULL pointer dereference at 00000000000005e0
+ IP: generic_make_request_checks+0x4d/0x610
+ CPU: 1 PID: 11676 Comm: kworker/u4:14 Tainted: G  O    4.11.0-rc2 #72
+ Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.10.2-20170228_101828-anatol 04/01/2014
+ Workqueue: btrfs-endio-raid56 btrfs_endio_raid56_helper [btrfs]
+ task: ffff88002875b4c0 task.stack: ffffc90001334000
+ RIP: 0010:generic_make_request_checks+0x4d/0x610
+ Call Trace:
+  ? generic_make_request+0xc7/0x360
+  generic_make_request+0x24/0x360
+  ? generic_make_request+0xc7/0x360
+  submit_bio+0x64/0x120
+  ? page_in_rbio+0x4d/0x80 [btrfs]
+  ? rbio_orig_end_io+0x80/0x80 [btrfs]
+  finish_rmw+0x3f4/0x540 [btrfs]
+  validate_rbio_for_rmw+0x36/0x40 [btrfs]
+  raid_rmw_end_io+0x7a/0x90 [btrfs]
+  bio_endio+0x56/0x60
+  end_workqueue_fn+0x3c/0x40 [btrfs]
+  btrfs_scrubparity_helper+0xef/0x620 [btrfs]
+  btrfs_endio_raid56_helper+0xe/0x10 [btrfs]
+  process_one_work+0x2af/0x720
+  ? process_one_work+0x22b/0x720
+  worker_thread+0x4b/0x4f0
+  kthread+0x10f/0x150
+  ? process_one_work+0x720/0x720
+  ? kthread_create_on_node+0x40/0x40
+  ret_from_fork+0x2e/0x40
+ Code: 67 28 48 c7 c7 27 7f c9 81 e8 90 6c d4 ff e8 0b bb 54 00 41 c1 ec 09 48 8b 7b 08 45 85 e4 0f 85 be 00 00 00 48 8b 87 00 01 00 00 <4c> 8b b0 e0 05 00 00 4d 85 f6 0f 84 86 01 00 00 4c 8b af f0 00
+ RIP: generic_make_request_checks+0x4d/0x610 RSP: ffffc90001337bb8
 
-The correct csum error number should be 16(assuming using x86_64).
-Larger csum error number can be reported in a 1/3 chance.
-And unrecoverable error can also be reported in a 1/10 chance.
+In btrfs_dev_replace_finishing(), we will call
+btrfs_rm_dev_replace_blocked() to wait bios before destroying the target
+device when scrub is finished normally.
 
-The root cause of the problem is RAID5/6 recover code has race
-condition, due to the fact that full scrub is initiated per device.
+However when scrub is aborted, either due to error or canceled by scrub,
+we didn't wait bios, this can leads to use-after-free if there are bios
+holding the target device.
 
-While for other mirror based profiles, each mirror is independent with
-each other, so race won't cause any big problem.
+Fix it by also calling btrfs_rm_dev_replace_blocked() before calling
+btrfs_destroy_dev_replace_tgtdev().
 
-For example:
-        Corrupted       |       Correct          |      Correct        |
-|   Scrub dev3 (D1)     |    Scrub dev2 (D2)     |    Scrub dev1(P)    |
-------------------------------------------------------------------------
-Read out D1             |Read out D2             |Read full stripe     |
-Check csum              |Check csum              |Check parity         |
-Csum mismatch           |Csum match, continue    |Parity mismatch      |
-handle_errored_block    |                        |handle_errored_block |
- Read out full stripe   |                        | Read out full stripe|
- D1 csum error(err++)   |                        | D1 csum error(err++)|
- Recover D1             |                        | Recover D1          |
-
-So D1's csum error is accounted twice, just because
-handle_errored_block() doesn't have enough protect, and race can happen.
-
-On even worse case, for example D1's recovery code is re-writing
-D1/D2/P, and P's recovery code is just reading out full stripe, then we
-can cause unrecoverable error.
-
-This patch will use previously introduced lock_full_stripe() and
-unlock_full_stripe() to protect the whole scrub_handle_errored_block()
-function for RAID56 recovery.
-So no extra csum error nor unrecoverable error.
-
-Reported-by: Goffredo Baroncelli <kreijack@libero.it>
+Cc: Liu Bo <bo.li.liu@oracle.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/scrub.c | 15 +++++++++++++++
- 1 file changed, 15 insertions(+)
+ fs/btrfs/dev-replace.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 38b300ac4567..6832feece7a7 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -1065,6 +1065,7 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
- 	unsigned int have_csum;
- 	struct scrub_block *sblocks_for_recheck; /* holds one for each mirror */
- 	struct scrub_block *sblock_bad;
-+	int lock_ret;
- 	int ret;
- 	int mirror_index;
- 	int page_num;
-@@ -1094,6 +1095,17 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
- 	have_csum = sblock_to_check->pagev[0]->have_csum;
- 	dev = sblock_to_check->pagev[0]->dev;
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index e653921f05d9..b9d88136b5a9 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -546,8 +546,10 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+ 		mutex_unlock(&fs_info->chunk_mutex);
+ 		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+ 		mutex_unlock(&uuid_mutex);
++		btrfs_rm_dev_replace_blocked(fs_info);
+ 		if (tgt_device)
+ 			btrfs_destroy_dev_replace_tgtdev(fs_info, tgt_device);
++		btrfs_rm_dev_replace_unblocked(fs_info);
+ 		mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
  
-+	/*
-+	 * For RAID5/6 race can happen for different dev scrub thread.
-+	 * For data corruption, Parity and Data thread will both try
-+	 * to recovery the data.
-+	 * Race can lead to double added csum error, or even unrecoverable
-+	 * error.
-+	 */
-+	ret = lock_full_stripe(fs_info, logical, GFP_NOFS);
-+	if (ret < 0)
-+		return ret;
-+
- 	if (sctx->is_dev_replace && !is_metadata && !have_csum) {
- 		sblocks_for_recheck = NULL;
- 		goto nodatasum_case;
-@@ -1428,6 +1440,9 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
- 		kfree(sblocks_for_recheck);
- 	}
- 
-+	lock_ret = unlock_full_stripe(fs_info, logical);
-+	if (lock_ret < 0)
-+		return lock_ret;
- 	return 0;
- }
- 
+ 		return scrub_ret;
 -- 
 2.12.1
 

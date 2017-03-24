@@ -1,90 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53881 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:46179 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754960AbdCTRdi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 20 Mar 2017 13:33:38 -0400
-Date: Mon, 20 Mar 2017 18:33:12 +0100
-From: Jan Kara <jack@suse.cz>
-To: Goldwyn Rodrigues <rgoldwyn@suse.de>
-Cc: Dave Chinner <david@fromorbit.com>, Goldwyn Rodrigues <rgoldwyn@suse.com>,
-        linux-fsdevel@vger.kernel.org, jack@suse.com, hch@infradead.org,
-        linux-block@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
-        sagi@grimberg.me, avi@scylladb.com, axboe@kernel.dk,
-        linux-api@vger.kernel.org, willy@infradead.org
+        id S1752008AbdCXLcS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 24 Mar 2017 07:32:18 -0400
 Subject: Re: [PATCH 5/8] nowait aio: return on congested block device
-Message-ID: <20170320173312.GA10436@quack2.suse.cz>
+To: Jens Axboe <axboe@kernel.dk>, linux-fsdevel@vger.kernel.org
 References: <20170315215107.5628-1-rgoldwyn@suse.de>
  <20170315215107.5628-6-rgoldwyn@suse.de>
- <20170316213134.GV17542@dastard>
- <045e06ce-ac19-6293-a62b-8ac937f753ac@suse.de>
+ <eee4683d-9f44-434f-b97f-b0b24c7b3dab@kernel.dk>
+Cc: jack@suse.com, hch@infradead.org, linux-block@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-xfs@vger.kernel.org, sagi@grimberg.me, avi@scylladb.com,
+        linux-api@vger.kernel.org, willy@infradead.org,
+        Goldwyn Rodrigues <rgoldwyn@suse.com>
+From: Goldwyn Rodrigues <rgoldwyn@suse.de>
+Message-ID: <47d742e9-1343-ef5b-f7d4-29a6e22bef84@suse.de>
+Date: Fri, 24 Mar 2017 06:32:11 -0500
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <045e06ce-ac19-6293-a62b-8ac937f753ac@suse.de>
+In-Reply-To: <eee4683d-9f44-434f-b97f-b0b24c7b3dab@kernel.dk>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri 17-03-17 07:23:24, Goldwyn Rodrigues wrote:
-> On 03/16/2017 04:31 PM, Dave Chinner wrote:
-> > On Wed, Mar 15, 2017 at 04:51:04PM -0500, Goldwyn Rodrigues wrote:
-> >> From: Goldwyn Rodrigues <rgoldwyn@suse.com>
-> >>
-> >> A new flag BIO_NOWAIT is introduced to identify bio's
-> >> orignating from iocb with IOCB_NOWAIT. This flag indicates
-> >> to return immediately if a request cannot be made instead
-> >> of retrying.
-> > 
-> > So this makes a congested block device run the bio IO completion
-> > callback with an -EAGAIN error present? Are all the filesystem
-> > direct IO submission and completion routines OK with that? i.e. does
-> > such a congestion case cause filesystems to temporarily expose stale
-> > data to unprivileged users when the IO is requeued in this way?
-> > 
-> > e.g. filesystem does allocation without blocking, submits bio,
-> > device is congested, runs IO completion with error, so nothing
-> > written to allocated blocks, write gets queued, so other read
-> > comes in while the write is queued, reads data from uninitialised
-> > blocks that were allocated during the write....
-> > 
-> > Seems kinda problematic to me to have a undocumented design
-> > constraint (i.e a landmine) where we submit the AIO only to have it
-> > error out and then expect the filesystem to do something special and
-> > different /without blocking/ on EAGAIN.
+
+
+On 03/16/2017 09:33 AM, Jens Axboe wrote:
+> On 03/15/2017 03:51 PM, Goldwyn Rodrigues wrote:
+>> diff --git a/block/blk-core.c b/block/blk-core.c
+>> index 0eeb99e..2e5cba2 100644
+>> --- a/block/blk-core.c
+>> +++ b/block/blk-core.c
+>> @@ -2014,7 +2019,7 @@ blk_qc_t generic_make_request(struct bio *bio)
+>>  	do {
+>>  		struct request_queue *q = bdev_get_queue(bio->bi_bdev);
+>>  
+>> -		if (likely(blk_queue_enter(q, false) == 0)) {
+>> +		if (likely(blk_queue_enter(q, bio_flagged(bio, BIO_NOWAIT)) == 0)) {
+>>  			struct bio_list hold;
+>>  			struct bio_list lower, same;
+>>  
+>> @@ -2040,7 +2045,10 @@ blk_qc_t generic_make_request(struct bio *bio)
+>>  			bio_list_merge(&bio_list_on_stack, &same);
+>>  			bio_list_merge(&bio_list_on_stack, &hold);
+>>  		} else {
+>> -			bio_io_error(bio);
+>> +			if (unlikely(bio_flagged(bio, BIO_NOWAIT)))
+>> +				bio_wouldblock_error(bio);
+>> +			else
+>> +				bio_io_error(bio);
 > 
-> If the filesystems has to perform block allocation, we would return
-> -EAGAIN early enough. However, I agree there is a problem, since not all
-> filesystems know this. I worked on only three of them.
-
-So Dave has a good point about the missing documentation explaining the
-expectation from the filesystem. Other than that the filesystem is
-responsible for determining in its direct IO submission routine whether it
-can deal with NOWAIT direct IO without blocking (including backing out of
-block layer refuses to do the IO) and if not, just return with EAGAIN right
-away.
-
-Probably we should also have a feature flag in filesystem_type telling
-whether a particular filesystem knows about NOWAIT direct IO at all so that
-we don't have to add stub to each and every filesystem supporting direct IO
-that returns EAGAIN when NOWAIT is set (OTOH adding that stub won't be that
-hard either since there are not *that* many filesystems supporting direct
-IO). But one or the other has to be done.
-
-> > Why isn't the congestion check at a higher layer like we do for page
-> > cache readahead? i.e. using the bdi*congested() API at the time we
-> > are doing all the other filesystem blocking checks.
-> > 
+> This doesn't look right. What if the queue is dying, and BIO_NOWAIT just
+> happened to be set?
 > 
-> Yes, that may work better. We will have to call bdi_read_congested() on
-> a write path. (will have to comment that part of the code). Would it
-> encompass all possible waits in the block layer?
 
-Congestion mechanism is not really reliable. The bdi can show the device is
-not congested but block layer will still block you waiting for some
-resource. And for some of the stuff like tag allocation you cannot really
-do a reliable check in advance so I don't think congestion checks are
-really a viable alternative.
+Yes, I need to add a condition here to check for blk_queue_dying(). Thanks.
 
-								Honza
+> And you're missing wbt_wait() as well as a blocking point. Ditto in
+> blk-mq.
+
+wbt_wait() does not apply to WRITE_ODIRECT
+
+
+> 
+>> diff --git a/block/blk-mq.c b/block/blk-mq.c
+>> index 159187a..942ce8c 100644
+>> --- a/block/blk-mq.c
+>> +++ b/block/blk-mq.c
+>> @@ -1518,6 +1518,8 @@ static blk_qc_t blk_mq_make_request(struct request_queue *q, struct bio *bio)
+>>  	rq = blk_mq_sched_get_request(q, bio, bio->bi_opf, &data);
+>>  	if (unlikely(!rq)) {
+>>  		__wbt_done(q->rq_wb, wb_acct);
+>> +		if (bio && bio_flagged(bio, BIO_NOWAIT))
+>> +			bio_wouldblock_error(bio);
+>>  		return BLK_QC_T_NONE;
+>>  	}
+>>  
+> 
+> This seems a little fragile now, since not both paths free the bio.
+> 
+
+Direct I/O should free the bios in bio_dio_complete(). I am not sure why
+it would not free bio here originally, but IIRC, this path is for
+bio==NULL only. So, with this patch we would get a rq==NULL here and
+hence the bio_wouldblock_error() call.
+
 -- 
-Jan Kara <jack@suse.com>
-SUSE Labs, CR
+Goldwyn

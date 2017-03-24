@@ -1,49 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33870 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751344AbdC0RUQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 27 Mar 2017 13:20:16 -0400
-Date: Mon, 27 Mar 2017 19:18:17 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Denis Kirjanov <dkirjanov@cloudlinux.com>
-Cc: Jeff Mahoney <jeffm@suse.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, chris.mason@fusionio.com
-Subject: Re: __link_block_group uses GFP_KERNEL
-Message-ID: <20170327171817.GN4781@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <CABxMtgcGod=FvgHagua07bzPjc7cy_+v0hkbTvwH_7GggOh9Ow@mail.gmail.com>
- <a43bf7e1-36fe-cb49-d0ba-697ddaf1a14e@suse.com>
- <CABxMtgdx_aC53bL0XAZaTCX=8P6=J_+Z5jyUSS1GyES_5zw_qA@mail.gmail.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:46998 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S932502AbdCXCAm (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 23 Mar 2017 22:00:42 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <bo.li.liu@oracle.com>
+Subject: [PATCH v2 0/5] raid56: scrub related fixes
+Date: Fri, 24 Mar 2017 10:00:22 +0800
+Message-ID: <20170324020027.21228-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CABxMtgdx_aC53bL0XAZaTCX=8P6=J_+Z5jyUSS1GyES_5zw_qA@mail.gmail.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Mar 25, 2017 at 09:48:28AM +0300, Denis Kirjanov wrote:
-> On 3/25/17, Jeff Mahoney <jeffm@suse.com> wrote:
-> > On 3/24/17 5:02 AM, Denis Kirjanov wrote:
-> >> Hi guys,
-> >>
-> >> Looks like that current code does GFP_KERNEL allocation inside
-> >> __link_block_group.
-> >> the function invokes kobject_add and internally creates sysfs files
-> >> with the GFP_KERNEL flag set.
-> >
-> > Yep, that's a bug.
-> >
-> >> But since do_chunk_alloc executes insides the btrfs transaction it's
-> >> not allowed to sleep.
-> >
-> > It's allowed to sleep but isn't allowed to do reclaim that involves file
-> > system writeback.  Michal Hocko's allocation context idea would fix
-> > this, but it's not there yet, so we'll need to defer the kobject_add
-> > until we can use GFP_KERNEL.
-> 
-> Ok, I see. Can you point out to the initial patchset?
+This patchset can be fetched from my github repo:
+https://github.com/adam900710/linux.git raid56_fixes
 
-https://lwn.net/Articles/716323/
+It's based on v4.11-rc2, the last two patches get modified according to
+the advice from Liu Bo.
 
-Fixing this properly is a lot of work so we might need to add a
-temporary workaround, as Jeff suggests, to move calling into sysfs to a
-later time.
+The patchset fixes the following bugs:
+
+1) False alert or wrong csum error number when scrubbing RAID5/6
+   The bug itself won't cause any damage to fs, just pure race.
+
+2) Corrupted data stripe rebuild corrupts P/Q
+   So scrub makes one error into another, not really fixing anything
+
+3) Use-after-free caused by cancelling dev-replace 
+   This is quite a deadly bug, since cancelling dev-replace can
+   cause kernel panic.
+
+   Can be triggered by btrfs/069.
+
+v2:
+  Use bio_counter to protect rbio against dev-replace cancel, instead of
+  original btrfs_device refcount, which is too restrict and must disable
+  rbio cache, suggested by Liu Bo.
+
+Qu Wenruo (5):
+  btrfs: scrub: Introduce full stripe lock for RAID56
+  btrfs: scrub: Fix RAID56 recovery race condition
+  btrfs: scrub: Don't append on-disk pages for raid56 scrub
+  btrfs: dev-replace: Wait flighting bio before removing target device
+  btrfs: raid56: Use bio_counter to protect scrub
+
+ fs/btrfs/ctree.h       |   4 +
+ fs/btrfs/dev-replace.c |   2 +
+ fs/btrfs/extent-tree.c |   3 +
+ fs/btrfs/raid56.c      |   2 +
+ fs/btrfs/scrub.c       | 201 ++++++++++++++++++++++++++++++++++++++++++++++++-
+ 5 files changed, 208 insertions(+), 4 deletions(-)
+
+-- 
+2.12.1
+
+
+

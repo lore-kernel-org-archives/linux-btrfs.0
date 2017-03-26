@@ -1,34 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53773 "EHLO mx2.suse.de"
+Received: from smtp.gentoo.org ([140.211.166.183]:40864 "EHLO smtp.gentoo.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S935113AbdCXMNu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 24 Mar 2017 08:13:50 -0400
-Date: Fri, 24 Mar 2017 12:58:59 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Satoru Takeuchi <satoru.takeuchi@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, Mark Fasheh <mfasheh@suse.de>,
-        David Sterba <dsterba@suse.com>
-Subject: Re: [PATCH] fix inconsistent device between /proc/pid/maps and stat
-Message-ID: <20170324115859.GN14605@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <871strcs56.wl-satoru.takeuchi@gmail.com>
+        id S1751721AbdCZUha (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 26 Mar 2017 16:37:30 -0400
+Received: from mail-it0-f44.google.com (mail-it0-f44.google.com [209.85.214.44])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        (Authenticated sender: floppym)
+        by smtp.gentoo.org (Postfix) with ESMTPSA id 3A9EB341657
+        for <linux-btrfs@vger.kernel.org>; Sun, 26 Mar 2017 20:37:28 +0000 (UTC)
+Received: by mail-it0-f44.google.com with SMTP id y18so33835254itc.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 26 Mar 2017 13:37:28 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <871strcs56.wl-satoru.takeuchi@gmail.com>
+From: Mike Gilbert <floppym@gentoo.org>
+Date: Sun, 26 Mar 2017 16:37:05 -0400
+Message-ID: <CAJ0EP40B51rd1trLP=wMY+2=T4wPLUwYarBwf5Hi5RBABuJv6A@mail.gmail.com>
+Subject: Missing __error symbol in btrfs-progs-4.10
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 21, 2017 at 10:53:09AM +0900, Satoru Takeuchi wrote:
-> There have been some discussions about inconsistent device between /proc/pid/maps and stat(2).
-> 
-> http://thr3ads.net/btrfs-devel/2011/05/2346176-RFC-PATCH-0-2-btrfs-vfs-Return-same-device-in-stat-2-and-proc-pid-maps
-> https://www.spinics.net/lists/linux-btrfs/msg09044.html
-> https://patchwork.kernel.org/patch/2825842/
-> https://patchwork.kernel.org/patch/2831525/
-> 
-> It's important since it breaks user programs like lsof(8). There was a patche by Mark to fix this problem.
-> However, unfortunately, that patch is not merged so far.
+A Gentoo user reports that snapper broke after upgrading to btrfs-progs-4.10.
 
-And no variant of the get_map_dev will ever be merged. Reworking this
-requires extensions to the superblock and subvolume structures, making
-it more generic and suitable for VFS.
+snapper: symbol lookup error: /usr/lib64/libbtrfs.so.0: undefined
+symbol: __error
+
+https://bugs.gentoo.org/show_bug.cgi?id=613890
+
+It seems that the __error symbol is referenced, but not included in libbtrfs.
+
+Exporting this symbol seems like a bad idea, so I would suggest
+renaming it, or go back to inlining it in the headers.

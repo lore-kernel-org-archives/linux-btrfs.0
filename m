@@ -1,78 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f45.google.com ([209.85.214.45]:36917 "EHLO
-        mail-it0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1757011AbdCXOjq (ORCPT
+Received: from mail-yw0-f172.google.com ([209.85.161.172]:32769 "EHLO
+        mail-yw0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751368AbdCZN65 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 24 Mar 2017 10:39:46 -0400
-Received: by mail-it0-f45.google.com with SMTP id 190so2786649itm.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 24 Mar 2017 07:39:45 -0700 (PDT)
-Subject: Re: [PATCH 5/8] nowait aio: return on congested block device
-To: Goldwyn Rodrigues <rgoldwyn@suse.de>, linux-fsdevel@vger.kernel.org
-References: <20170315215107.5628-1-rgoldwyn@suse.de>
- <20170315215107.5628-6-rgoldwyn@suse.de>
- <eee4683d-9f44-434f-b97f-b0b24c7b3dab@kernel.dk>
- <47d742e9-1343-ef5b-f7d4-29a6e22bef84@suse.de>
-Cc: jack@suse.com, hch@infradead.org, linux-block@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-xfs@vger.kernel.org, sagi@grimberg.me, avi@scylladb.com,
-        linux-api@vger.kernel.org, willy@infradead.org,
-        Goldwyn Rodrigues <rgoldwyn@suse.com>
-From: Jens Axboe <axboe@kernel.dk>
-Message-ID: <65504798-90c0-6abe-30ea-2faf3824eed8@kernel.dk>
-Date: Fri, 24 Mar 2017 08:39:42 -0600
+        Sun, 26 Mar 2017 09:58:57 -0400
+Received: by mail-yw0-f172.google.com with SMTP id v76so16932408ywg.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 26 Mar 2017 06:58:22 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <47d742e9-1343-ef5b-f7d4-29a6e22bef84@suse.de>
-Content-Type: text/plain; charset=windows-1252
+From: Chris <coderight@gmail.com>
+Date: Sun, 26 Mar 2017 09:58:21 -0400
+Message-ID: <CAPaFLLTyWSkUOFTAhmfYMPEqWfCx7SxVNvhaHw9XwqD=NeGtEg@mail.gmail.com>
+Subject: btrfs-progs clean is incomplete
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/24/2017 05:32 AM, Goldwyn Rodrigues wrote:
-> 
-> 
-> On 03/16/2017 09:33 AM, Jens Axboe wrote:
->> On 03/15/2017 03:51 PM, Goldwyn Rodrigues wrote:
->>> diff --git a/block/blk-core.c b/block/blk-core.c
->>> index 0eeb99e..2e5cba2 100644
->>> --- a/block/blk-core.c
->>> +++ b/block/blk-core.c
->>> @@ -2014,7 +2019,7 @@ blk_qc_t generic_make_request(struct bio *bio)
->>>  	do {
->>>  		struct request_queue *q = bdev_get_queue(bio->bi_bdev);
->>>  
->>> -		if (likely(blk_queue_enter(q, false) == 0)) {
->>> +		if (likely(blk_queue_enter(q, bio_flagged(bio, BIO_NOWAIT)) == 0)) {
->>>  			struct bio_list hold;
->>>  			struct bio_list lower, same;
->>>  
->>> @@ -2040,7 +2045,10 @@ blk_qc_t generic_make_request(struct bio *bio)
->>>  			bio_list_merge(&bio_list_on_stack, &same);
->>>  			bio_list_merge(&bio_list_on_stack, &hold);
->>>  		} else {
->>> -			bio_io_error(bio);
->>> +			if (unlikely(bio_flagged(bio, BIO_NOWAIT)))
->>> +				bio_wouldblock_error(bio);
->>> +			else
->>> +				bio_io_error(bio);
->>
->> This doesn't look right. What if the queue is dying, and BIO_NOWAIT just
->> happened to be set?
->>
-> 
-> Yes, I need to add a condition here to check for blk_queue_dying(). Thanks.
-> 
->> And you're missing wbt_wait() as well as a blocking point. Ditto in
->> blk-mq.
-> 
-> wbt_wait() does not apply to WRITE_ODIRECT
+"make clean-all" leaves generated files under the "kernel-shared" directory.
 
-It doesn't _currently_ block for it, but that could change. It should
-have an explicit check.
+This causes problems when trying to build under the same tree when the
+absolute path changes.
 
-Additionally, the more weird assumptions you make, the more half assed
-this will be. The other assumption made here is that only direct IO
-would set nonblock. We have to assume that any IO can have NONBLOCK set,
-and not make any assumptions about the caller.
+For example if you mount the source tree in one location,
+generate/build, then mount it in a different location, clean-all,
+re-build, and an error appears. "No rule to make target
+'.../kerncompat.h', needed by 'kernel-shared/ulist.o'.  Stop."  This
+happens because the "kernel-shared/ulist.o.d" file was not cleaned and
+lists an incorrect path.
 
--- 
-Jens Axboe
-
+Chris

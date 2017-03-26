@@ -1,66 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from syrinx.knorrie.org ([82.94.188.77]:48402 "EHLO
-        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751164AbdCYXbc (ORCPT
+Received: from mail-it0-f43.google.com ([209.85.214.43]:37511 "EHLO
+        mail-it0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751263AbdCZDA4 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 25 Mar 2017 19:31:32 -0400
-Subject: Re: send snapshot from snapshot incremental
-To: =?UTF-8?Q?Jakob_Sch=c3=bcrz?= <wertstoffe@nurfuerspam.de>,
-        linux-btrfs@vger.kernel.org
-References: <p18jqd-a0m.ln1@aldebaran.xundeenergie.at>
-From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Message-ID: <b45f37ec-b8a4-64a0-9bdf-90f68376f0ce@mendix.com>
-Date: Sun, 26 Mar 2017 00:31:27 +0100
+        Sat, 25 Mar 2017 23:00:56 -0400
+Received: by mail-it0-f43.google.com with SMTP id 190so23335537itm.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 25 Mar 2017 20:00:22 -0700 (PDT)
+Received: from [192.168.0.23] ([98.4.97.1])
+        by smtp.gmail.com with ESMTPSA id e134sm3339337itc.23.2017.03.25.20.00.21
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
+        Sat, 25 Mar 2017 20:00:21 -0700 (PDT)
+Message-ID: <58D72EC4.9020101@gmail.com>
+Date: Sat, 25 Mar 2017 23:00:20 -0400
+From: "J. Hart" <jfhart085@gmail.com>
+Reply-To: jfhart085@gmail.com
 MIME-Version: 1.0
-In-Reply-To: <p18jqd-a0m.ln1@aldebaran.xundeenergie.at>
-Content-Type: text/plain; charset=utf-8
+To: linux-btrfs@vger.kernel.org
+Subject: backing up a file server with many subvolumes
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Jakob,
+I have a Btrfs filesystem on a backup server.  This filesystem has a 
+directory to hold backups for filesystems from remote machines.  In this 
+directory is a subdirectory for each machine.  Under each machine 
+subdirectory is one directory for each filesystem (ex /boot, /home, etc) 
+on that machine.  In each filesystem subdirectory are incremental 
+snapshot subvolumes for that filesystem.  The scheme is something like 
+this:
 
-On 03/25/2017 11:37 PM, Jakob Schürz wrote:
-> Hi there!
-> 
-> I asked one or two years ago for the ability of btrfs to use btrfs
-> send|receive with a parent-subvolume from a snapshot from a snapshot.
-> 
-> The thing is, if i take a snapshot from my system, transfer it with
-> btrfs send|receive  to an external HD on USB-Port, make some changes to
-> my system, which destroy my whole system, i can boot in the former taken
-> snapshot and work from there, as if nothing happened.
-> 
-> This part works.
-> 
-> BUT if i take a snapshot from the system, and want to transfer it to the
-> external HD, i can not set a parent subvolume, because there isn't any.
-> 
-> The problem was on my last question, there are missing
-> tansactional-numbers or something similar... I'm not a programmer, but i
-> use btrfs very extensive and wrote a fancy python-script and a
-> gnome-shell-extension and a fuse-filesystem to do enhanced and
-> userfriendly snapshots an backups with btrfs - also for non-programmer
-> users... something similar userfriendly as time-machine for apple does.
-> 
-> And one missing feature is the described problem above... booting into
-> an older snapshot and transfer a snapshot from this one lead to a full
-> transfer - even if there is a transferred snapshot on the external HD.
-> 
-> I hope, i described my problem understandable...
+<top>/backup/<machine>/<filesystem>/<many snapshot subvolumes>
 
-Yes, if you make a writable snapshot, and then start creating a readonly
-snapshot for send/receive from that, you actually start another
-"timeline" in which the parent relationship for the snapshots is
-replaced by the ID of the new writable one.
+I'd like to try to back up (duplicate) the file server filesystem 
+containing these snapshot subvolumes for each remote machine.  The 
+problem is that I don't think I can use send/receive to do this. "Btrfs 
+send" requires "read-only" snapshots, and snapshots are not recursive as 
+yet.  I think there are too many subvolumes which change too often to 
+make doing this without recursion practical.
 
-Send/receive also has a clone option, which lets you specify any other
-subvolume that is present on the local and the remote system as well,
-using the -c option. I'd recommend playing around and testing that
-option, to see if, for the first send, you can refer to the latest
-available snapshot of the previous "timeline". When getting this right,
-it should prevent sending all data that was already present in the old
-snapshot.
+Any thoughts would be most appreciated.
 
-HTH,
--- 
-Hans van Kranenburg
+J. Hart
+

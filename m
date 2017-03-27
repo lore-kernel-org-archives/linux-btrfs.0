@@ -1,76 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from azure.uno.uk.net ([95.172.254.11]:33128 "EHLO azure.uno.uk.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751465AbdCZUnT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 26 Mar 2017 16:43:19 -0400
-Received: from ty.sabi.co.uk ([95.172.230.208]:58134)
-        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
-        (Exim 4.88)
-        (envelope-from <pg@btrfs.for.sabi.co.uk>)
-        id 1csEiA-0019JV-Lf
-        for linux-btrfs@vger.kernel.org; Sun, 26 Mar 2017 21:24:26 +0100
-Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
-        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
-        id 1csES9-0007lL-KJ
-        for <linux-btrfs@vger.kernel.org>; Sun, 26 Mar 2017 21:07:53 +0100
+Received: from cn.fujitsu.com ([59.151.112.132]:40557 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751740AbdC0Am6 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 26 Mar 2017 20:42:58 -0400
+Subject: Re: Qgroups are not applied when snapshotting a subvol?
+To: Moritz Sichert <moritz+linux@sichert.me>, <linux-btrfs@vger.kernel.org>
+References: <4428fdc3-157a-a98e-8ca3-e3701c6c1c80@sichert.me>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <279513f7-5297-cf2f-aa94-35bef1f674aa@cn.fujitsu.com>
+Date: Mon, 27 Mar 2017 08:39:37 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Message-ID: <22744.8089.282234.241186@tree.ty.sabi.co.uk>
-Date: Sun, 26 Mar 2017 21:07:53 +0100
-To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: send snapshot from snapshot incremental
-In-Reply-To: <p18jqd-a0m.ln1@aldebaran.xundeenergie.at>
-References: <p18jqd-a0m.ln1@aldebaran.xundeenergie.at>
-From: pg@btrfs.for.sabi.co.UK (Peter Grandi)
+In-Reply-To: <4428fdc3-157a-a98e-8ca3-e3701c6c1c80@sichert.me>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[ ... ]
-> BUT if i take a snapshot from the system, and want to transfer
-> it to the external HD, i can not set a parent subvolume,
-> because there isn't any.
 
-Questions like this are based on incomplete understanding of
-'send' and 'receive', and on IRC user "darkling" explained it
-fairly well:
 
-> When you use -c, you're telling the FS that it can expect to
-> find a sent copy of that subvol on the receiving side, and
-> that anything shared with it can be sent by reference. OK, so
-> with -c on its own, you're telling the FS that "all the data
-> in this subvol already exists on the remote".
+At 03/26/2017 06:03 AM, Moritz Sichert wrote:
+> Hi,
+>
+> I tried to configure qgroups on a btrfs filesystem but was really surprised that when you snapshot a subvolume, the snapshot will not be assigned to the qgroup the subvolume was in.
+>
+> As an example consider the small terminal session in the attachment: I create a subvol A, assign it to qgroup 1/1 and set a limit of 5M on that qgroup. Then I write a file into A and eventually get "disk quota exceeded". Then I create a snapshot of A and call it B. B will not be assigned to 1/1 and writing a file into B confirms that no limits at all are imposed for B.
+>
+> I feel like I must be missing something here. Considering that creating a snapshot does not require root privileges this would mean that any user can just circumvent any quota and therefore make them useless.
+>
+> Is there a way to enforce quotas even when a user creates snapshots?
+>
 
-> So, when you send your subvol, *all* of the subvol's metadata
-> is sent, and where that metadata refers to an extent that's
-> shared with the -c subvol, the extent data isn't sent, because
-> it's known to be on the other end already, and can be shared
-> directly from there.
+Yes, there is always method to attach the subvolume/snapshot to 
+specified higher level qgroup.
 
-> OK. So, with -p, there's a "base" subvol. The send subvol and
-> the -p reference subvol are both snapshots of that base (at
-> different times). The -p reference subvol, as with -c, is
-> assumed to be on the remote FS. However, because it's known to
-> be an earlier version of the same data, you can be more
-> efficient in the sending by saying "start from the earlier
-> version, and modify it in this way to get the new version"
+Just use "btrfs subvolume snapshot -i 1/1".
 
-> So, with -p, not all of the metadata is sent, because you know
-> you've already got most of it on the remote in the form of the
-> earlier version.
+Thanks,
+Qu
 
-> So -p is "take this thing and apply these differences to it"
-> and -c is "build this thing from scratch, but you can share
-> some of the data with these sources"
+>
+> Moritz
+>
+>
 
-Also here some additional details:
 
-  http://logs.tvrrug.org.uk/logs/%23btrfs/2016-06-29.html#2016-06-29T22:39:59
-
-The requirement for read-only is because in that way it is
-pretty sure that the same stuff is on both origin and target
-volume.
-
-It may help to compare with RSYNC: it has to scan both the full
-origin and target trees, because it cannot be told that there is
-a parent tree that is the same on origin and target; but with
-option '--link-dest' it can do something similar to 'send -c'.

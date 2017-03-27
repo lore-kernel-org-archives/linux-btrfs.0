@@ -1,134 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33380 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44821 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753175AbdCOPRo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Mar 2017 11:17:44 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id B1F3DAC22
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Mar 2017 15:17:42 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs: remove unused qgroup members from btrfs_trans_handle
-Date: Wed, 15 Mar 2017 16:17:03 +0100
-Message-Id: <20170315151703.26930-1-dsterba@suse.com>
+        id S1753325AbdC0PXR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 27 Mar 2017 11:23:17 -0400
+Date: Mon, 27 Mar 2017 17:22:17 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Dan Carpenter <dan.carpenter@oracle.com>
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        kernel-janitors@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix an integer overflow check
+Message-ID: <20170327152217.GG4781@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170317205120.GE16505@mwanda>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170317205120.GE16505@mwanda>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The members have been effectively unused since "Btrfs: rework qgroup
-accounting" (fcebe4562dec83b3), there's no substitute for
-assert_qgroups_uptodate so it's removed as well.
+On Fri, Mar 17, 2017 at 11:51:20PM +0300, Dan Carpenter wrote:
+> This isn't super serious because you need CAP_ADMIN to run this code.
+> 
+> I added this integer overflow check last year but apparently I am
+> rubbish at writing integer overflow checks...  There are two issues.
+> First, access_ok() works on unsigned long type and not u64 so on 32 bit
+> systems the access_ok() could be checking a truncated size.  The other
+> issue is that we should be using a stricter limit so we don't overflow
+> the kzalloc() setting ctx->clone_roots later in the function after the
+> access_ok():
+> 
+> 	alloc_size = sizeof(struct clone_root) * (arg->clone_sources_count + 1);
+> 	sctx->clone_roots = kzalloc(alloc_size, GFP_KERNEL | __GFP_NOWARN);
+> 
+> Fixes: f5ecec3ce21f ("btrfs: send: silence an integer overflow warning")
+> Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/extent-tree.c       |  1 -
- fs/btrfs/qgroup.c            | 12 ------------
- fs/btrfs/qgroup.h            |  1 -
- fs/btrfs/tests/btrfs-tests.c |  1 -
- fs/btrfs/transaction.c       |  3 ---
- fs/btrfs/transaction.h       |  2 --
- 6 files changed, 20 deletions(-)
+Reviewed-by: David Sterba <dsterba@suse.com>
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index be5477676cc8..b5682abf6f68 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3003,7 +3003,6 @@ int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
- 		goto again;
- 	}
- out:
--	assert_qgroups_uptodate(trans);
- 	trans->can_flush_pending_bgs = can_flush_pending_bgs;
- 	return 0;
- }
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index a5da750c1087..2fa0b10d239f 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2487,18 +2487,6 @@ void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
- 	spin_unlock(&fs_info->qgroup_lock);
- }
- 
--void assert_qgroups_uptodate(struct btrfs_trans_handle *trans)
--{
--	if (list_empty(&trans->qgroup_ref_list) && !trans->delayed_ref_elem.seq)
--		return;
--	btrfs_err(trans->fs_info,
--		"qgroups not uptodate in trans handle %p:  list is%s empty, seq is %#x.%x",
--		trans, list_empty(&trans->qgroup_ref_list) ? "" : " not",
--		(u32)(trans->delayed_ref_elem.seq >> 32),
--		(u32)trans->delayed_ref_elem.seq);
--	BUG();
--}
--
- /*
-  * returns < 0 on error, 0 when more leafs are to be scanned.
-  * returns 1 when done.
-diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index 26932a8a1993..96fc56ebf55a 100644
---- a/fs/btrfs/qgroup.h
-+++ b/fs/btrfs/qgroup.h
-@@ -196,7 +196,6 @@ static inline void btrfs_qgroup_free_delayed_ref(struct btrfs_fs_info *fs_info,
- 	btrfs_qgroup_free_refroot(fs_info, ref_root, num_bytes);
- 	trace_btrfs_qgroup_free_delayed_ref(fs_info, ref_root, num_bytes);
- }
--void assert_qgroups_uptodate(struct btrfs_trans_handle *trans);
- 
- #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
- int btrfs_verify_qgroup_counts(struct btrfs_fs_info *fs_info, u64 qgroupid,
-diff --git a/fs/btrfs/tests/btrfs-tests.c b/fs/btrfs/tests/btrfs-tests.c
-index ea272432c930..b18ab8f327a5 100644
---- a/fs/btrfs/tests/btrfs-tests.c
-+++ b/fs/btrfs/tests/btrfs-tests.c
-@@ -237,7 +237,6 @@ void btrfs_init_dummy_trans(struct btrfs_trans_handle *trans)
- {
- 	memset(trans, 0, sizeof(*trans));
- 	trans->transid = 1;
--	INIT_LIST_HEAD(&trans->qgroup_ref_list);
- 	trans->type = __TRANS_DUMMY;
- }
- 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 61b807de3e16..9db3b4ca0264 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -572,7 +572,6 @@ start_transaction(struct btrfs_root *root, unsigned int num_items,
- 
- 	h->type = type;
- 	h->can_flush_pending_bgs = true;
--	INIT_LIST_HEAD(&h->qgroup_ref_list);
- 	INIT_LIST_HEAD(&h->new_bgs);
- 
- 	smp_mb();
-@@ -917,7 +916,6 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
- 		wake_up_process(info->transaction_kthread);
- 		err = -EIO;
- 	}
--	assert_qgroups_uptodate(trans);
- 
- 	kmem_cache_free(btrfs_trans_handle_cachep, trans);
- 	if (must_run_delayed_refs) {
-@@ -2223,7 +2221,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 
- 	switch_commit_roots(cur_trans, fs_info);
- 
--	assert_qgroups_uptodate(trans);
- 	ASSERT(list_empty(&cur_trans->dirty_bgs));
- 	ASSERT(list_empty(&cur_trans->io_bgs));
- 	update_super_roots(fs_info);
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index 5dfb5590fff6..2e560d2abdff 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -125,8 +125,6 @@ struct btrfs_trans_handle {
- 	unsigned int type;
- 	struct btrfs_root *root;
- 	struct btrfs_fs_info *fs_info;
--	struct seq_list delayed_ref_elem;
--	struct list_head qgroup_ref_list;
- 	struct list_head new_bgs;
- };
- 
--- 
-2.12.0
-
+I'll copy parts of the changelog and add as comments, it's not obvious
+what the check does.

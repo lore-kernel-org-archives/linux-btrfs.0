@@ -1,81 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:51893 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751740AbdC0DtZ (ORCPT
+Received: from smtp73.iad3a.emailsrvr.com ([173.203.187.73]:36184 "EHLO
+        smtp73.iad3a.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751574AbdC0GRI (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 26 Mar 2017 23:49:25 -0400
-Subject: Re: Qgroups are not applied when snapshotting a subvol?
-To: Andrei Borzenkov <arvidjaar@gmail.com>,
-        Moritz Sichert <moritz+linux@sichert.me>,
-        <linux-btrfs@vger.kernel.org>
-References: <4428fdc3-157a-a98e-8ca3-e3701c6c1c80@sichert.me>
- <279513f7-5297-cf2f-aa94-35bef1f674aa@cn.fujitsu.com>
- <2e816c46-7a6a-7db9-a2c3-663dc7d8e6c9@gmail.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <8c55c034-27cc-e8b5-5317-b388cc6492f4@cn.fujitsu.com>
-Date: Mon, 27 Mar 2017 11:46:04 +0800
+        Mon, 27 Mar 2017 02:17:08 -0400
+Received: from smtp10.relay.iad3a.emailsrvr.com (localhost [127.0.0.1])
+        by smtp10.relay.iad3a.emailsrvr.com (SMTP Server) with ESMTP id F1B755E4C
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Mar 2017 01:57:18 -0400 (EDT)
+Received: by smtp10.relay.iad3a.emailsrvr.com (Authenticated sender: m.khalili-AT-rqc.ru) with ESMTPSA id A886F6301
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Mar 2017 01:57:18 -0400 (EDT)
+Subject: Re: backing up a file server with many subvolumes
+To: linux-btrfs@vger.kernel.org
+References: <58D72EC4.9020101@gmail.com>
+From: Marat Khalili <mkh@rqc.ru>
+Message-ID: <59dccd7e-6cb6-ea66-3150-0ce85472e73a@rqc.ru>
+Date: Mon, 27 Mar 2017 08:57:17 +0300
 MIME-Version: 1.0
-In-Reply-To: <2e816c46-7a6a-7db9-a2c3-663dc7d8e6c9@gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <58D72EC4.9020101@gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Just some consideration, since I've faced similar but no exactly same 
+problem: use rsync, but create snapshots on target machine. Blind rsync 
+will destroy deduplication of your snapshots and take huge amount of 
+storage, so it's not a solution. But you can rsync --inline your 
+snapshots in chronological order to some folder and re-take snapshots of 
+that folder, thus recreating your snapshots structure on target. 
+Obviously, it can/should be automated.
 
 
-At 03/27/2017 11:26 AM, Andrei Borzenkov wrote:
-> 27.03.2017 03:39, Qu Wenruo пишет:
->>
->>
->> At 03/26/2017 06:03 AM, Moritz Sichert wrote:
->>> Hi,
->>>
->>> I tried to configure qgroups on a btrfs filesystem but was really
->>> surprised that when you snapshot a subvolume, the snapshot will not be
->>> assigned to the qgroup the subvolume was in.
->>>
->>> As an example consider the small terminal session in the attachment: I
->>> create a subvol A, assign it to qgroup 1/1 and set a limit of 5M on
->>> that qgroup. Then I write a file into A and eventually get "disk quota
->>> exceeded". Then I create a snapshot of A and call it B. B will not be
->>> assigned to 1/1 and writing a file into B confirms that no limits at
->>> all are imposed for B.
->>>
->>> I feel like I must be missing something here. Considering that
->>> creating a snapshot does not require root privileges this would mean
->>> that any user can just circumvent any quota and therefore make them
->>> useless.
->>>
->>> Is there a way to enforce quotas even when a user creates snapshots?
->>>
->>
->> Yes, there is always method to attach the subvolume/snapshot to
->> specified higher level qgroup.
->>
->> Just use "btrfs subvolume snapshot -i 1/1".
->>
+--
+
+With Best Regards,
+Marat Khalili
+
+On 26/03/17 06:00, J. Hart wrote:
+> I have a Btrfs filesystem on a backup server.  This filesystem has a 
+> directory to hold backups for filesystems from remote machines. In 
+> this directory is a subdirectory for each machine.  Under each machine 
+> subdirectory is one directory for each filesystem (ex /boot, /home, 
+> etc) on that machine.  In each filesystem subdirectory are incremental 
+> snapshot subvolumes for that filesystem.  The scheme is something like 
+> this:
 >
-> This requires cooperation from whoever creates subvolume, while the
-> question was - is it possible to enforce it, without need for explicit
-> option/action when snapshot is created.
+> <top>/backup/<machine>/<filesystem>/<many snapshot subvolumes>
 >
-> To reiterate - if user omits "-i 1/1" (s)he "escapes" from quota
-> enforcement.
-
-What if user really want to create a subvolume assigned another group?
-
-You're implying a *policy* that if source subvolume belongs to a higher 
-level qgroup, then snapshot created should also follow that higher level 
-qgroup.
-
-However kernel should only provide *mechanisim*, not *policy*.
-And btrfs does it, it provides method to do it, whether to do or not is 
-users responsibility.
-
-If you want to implement that policy, please do it in a higher level, 
-something like SUSE snapper, not in kernel.
-
-Thanks,
-
-Qu
-
+> I'd like to try to back up (duplicate) the file server filesystem 
+> containing these snapshot subvolumes for each remote machine.  The 
+> problem is that I don't think I can use send/receive to do this. 
+> "Btrfs send" requires "read-only" snapshots, and snapshots are not 
+> recursive as yet.  I think there are too many subvolumes which change 
+> too often to make doing this without recursion practical.
+>
+> Any thoughts would be most appreciated.
+>
+> J. Hart
+>
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 

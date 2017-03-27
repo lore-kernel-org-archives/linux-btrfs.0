@@ -1,40 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f48.google.com ([209.85.214.48]:38164 "EHLO
-        mail-it0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752432AbdC0MAr (ORCPT
+Received: from mail-it0-f47.google.com ([209.85.214.47]:34205 "EHLO
+        mail-it0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752619AbdC0MBd (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 27 Mar 2017 08:00:47 -0400
-Received: by mail-it0-f48.google.com with SMTP id y18so49558760itc.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Mar 2017 05:00:46 -0700 (PDT)
-Message-ID: <58D8FEEB.1080100@gmail.com>
-Date: Mon, 27 Mar 2017 08:00:43 -0400
-From: "J. Hart" <jfhart085@gmail.com>
-Reply-To: jfhart085@gmail.com
+        Mon, 27 Mar 2017 08:01:33 -0400
+Received: by mail-it0-f47.google.com with SMTP id y18so18390402itc.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Mar 2017 05:01:27 -0700 (PDT)
+Subject: Re: Qgroups are not applied when snapshotting a subvol?
+To: Moritz Sichert <moritz+linux@sichert.me>,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        Andrei Borzenkov <arvidjaar@gmail.com>, linux-btrfs@vger.kernel.org
+References: <4428fdc3-157a-a98e-8ca3-e3701c6c1c80@sichert.me>
+ <279513f7-5297-cf2f-aa94-35bef1f674aa@cn.fujitsu.com>
+ <2e816c46-7a6a-7db9-a2c3-663dc7d8e6c9@gmail.com>
+ <8c55c034-27cc-e8b5-5317-b388cc6492f4@cn.fujitsu.com>
+ <e57c6cc8-4943-a93a-f568-d3654d341b65@sichert.me>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <6e464739-5540-87ab-a46d-954a06086cba@gmail.com>
+Date: Mon, 27 Mar 2017 08:01:13 -0400
 MIME-Version: 1.0
-To: Marat Khalili <mkh@rqc.ru>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: backing up a file server with many subvolumes
-References: <58D72EC4.9020101@gmail.com> <59dccd7e-6cb6-ea66-3150-0ce85472e73a@rqc.ru>
-In-Reply-To: <59dccd7e-6cb6-ea66-3150-0ce85472e73a@rqc.ru>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+In-Reply-To: <e57c6cc8-4943-a93a-f568-d3654d341b65@sichert.me>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-That is a very interesting idea.  I'll try some experiments with this.
-
-Many Thanks for the assistance....:-)
-
-J. Hart
-
-
-On 03/27/2017 01:57 AM, Marat Khalili wrote:
-> Just some consideration, since I've faced similar but no exactly same 
-> problem: use rsync, but create snapshots on target machine. Blind 
-> rsync will destroy deduplication of your snapshots and take huge 
-> amount of storage, so it's not a solution. But you can rsync --inline 
-> your snapshots in chronological order to some folder and re-take 
-> snapshots of that folder, thus recreating your snapshots structure on 
-> target. Obviously, it can/should be automated.
+On 2017-03-27 07:02, Moritz Sichert wrote:
+> Am 27.03.2017 um 05:46 schrieb Qu Wenruo:
+>>
+>>
+>> At 03/27/2017 11:26 AM, Andrei Borzenkov wrote:
+>>> 27.03.2017 03:39, Qu Wenruo пишет:
+>>>>
+>>>>
+>>>> At 03/26/2017 06:03 AM, Moritz Sichert wrote:
+>>>>> Hi,
+>>>>>
+>>>>> I tried to configure qgroups on a btrfs filesystem but was really
+>>>>> surprised that when you snapshot a subvolume, the snapshot will not be
+>>>>> assigned to the qgroup the subvolume was in.
+>>>>>
+>>>>> As an example consider the small terminal session in the attachment: I
+>>>>> create a subvol A, assign it to qgroup 1/1 and set a limit of 5M on
+>>>>> that qgroup. Then I write a file into A and eventually get "disk quota
+>>>>> exceeded". Then I create a snapshot of A and call it B. B will not be
+>>>>> assigned to 1/1 and writing a file into B confirms that no limits at
+>>>>> all are imposed for B.
+>>>>>
+>>>>> I feel like I must be missing something here. Considering that
+>>>>> creating a snapshot does not require root privileges this would mean
+>>>>> that any user can just circumvent any quota and therefore make them
+>>>>> useless.
+>>>>>
+>>>>> Is there a way to enforce quotas even when a user creates snapshots?
+>>>>>
+>>>>
+>>>> Yes, there is always method to attach the subvolume/snapshot to
+>>>> specified higher level qgroup.
+>>>>
+>>>> Just use "btrfs subvolume snapshot -i 1/1".
+>>>>
+>>>
+>>> This requires cooperation from whoever creates subvolume, while the
+>>> question was - is it possible to enforce it, without need for explicit
+>>> option/action when snapshot is created.
+>>>
+>>> To reiterate - if user omits "-i 1/1" (s)he "escapes" from quota
+>>> enforcement.
+>>
+>> What if user really want to create a subvolume assigned another group?
+>>
+>> You're implying a *policy* that if source subvolume belongs to a higher level qgroup, then snapshot created should also follow that higher level qgroup.
+>>
+>> However kernel should only provide *mechanisim*, not *policy*.
+>> And btrfs does it, it provides method to do it, whether to do or not is users responsibility.
+>>
+>> If you want to implement that policy, please do it in a higher level, something like SUSE snapper, not in kernel.
 >
->
+> The problem is, I can't enforce the policy because *every user* can create snapshots. Even if I would restrict the btrfs executable so that only root can execute it, this doesn't help. As using the ioctl for btrfs is allowed for any user, they could just get the executable from somewhere else.
+To reiterate and reinforce this:
+If it is not possible to enforce new subvolumes counting for their 
+parent quota, and there is no option to prevent non-root (or 
+non-CAP_SYS_ADMIN) users from creating new subvolumes, then BTRFS 
+qgroups are useless on any system with shell access because a user can 
+trivially escape their quota restrictions (or hide from accounting) by 
+creating a new subvolume which is outside of their qgroup and storing 
+data there.
 
+Ideally, there should be an option to disable user subvolume creation 
+(it arguably should be the default, because of resource exhaustion 
+issues, but that's a separate argument), and there should be an option 
+in the kernel to force specific behavior.  Both cases are policy, but 
+they are policy that can only be concretely enforced _by the kernel_.

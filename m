@@ -1,77 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.gocept.net ([195.62.125.19]:36965 "EHLO mail.gocept.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752008AbdC0Mzt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 27 Mar 2017 08:55:49 -0400
-Received: from localhost (localhost [127.0.0.1])
-        by mail.gocept.net (Postfix) with ESMTP id A22C214C002A
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Mar 2017 14:55:46 +0200 (CEST)
-Received: from mail.gocept.net ([127.0.0.1])
-        by localhost (mail.gocept.net [127.0.0.1]) (amavisd-new, port 10024)
-        with ESMTP id f40maGEYPQT7 for <linux-btrfs@vger.kernel.org>;
-        Mon, 27 Mar 2017 14:55:46 +0200 (CEST)
-Received: from [IPv6:2003:a:b60:f100:50a:8066:6685:5534] (unknown [IPv6:2003:a:b60:f100:50a:8066:6685:5534])
-        (Authenticated sender: ct@flyingcircus.io)
-        by mail.gocept.net (Postfix) with ESMTPSA
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Mar 2017 14:55:46 +0200 (CEST)
-From: Christian Theune <ct@flyingcircus.io>
-Content-Type: multipart/signed;
- boundary="Apple-Mail=_0E0EFB06-6124-479C-AF09-12DA722E3EFF";
- protocol="application/pgp-signature"; micalg=pgp-sha512
-Mime-Version: 1.0 (Mac OS X Mail 10.2 \(3259\))
+Received: from frost.carfax.org.uk ([85.119.82.111]:35342 "EHLO
+        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752764AbdC0NH4 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 27 Mar 2017 09:07:56 -0400
+Date: Mon, 27 Mar 2017 13:07:30 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Christian Theune <ct@flyingcircus.io>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: Shrinking a device - performance?
-Date: Mon, 27 Mar 2017 14:55:44 +0200
-References: <BA9E63E9-0362-4DBD-8B7F-12CA97C4D127@flyingcircus.io>
-To: linux-btrfs@vger.kernel.org
-In-Reply-To: <BA9E63E9-0362-4DBD-8B7F-12CA97C4D127@flyingcircus.io>
-Message-Id: <22F72F83-D996-4EC5-9FA1-7270CF5786D6@flyingcircus.io>
+Message-ID: <20170327130730.GN11714@carfax.org.uk>
+References: <1CCB3887-A88C-41C1-A8EA-514146828A42@flyingcircus.io>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="BtmVPk+Smchi6n7w"
+In-Reply-To: <1CCB3887-A88C-41C1-A8EA-514146828A42@flyingcircus.io>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---Apple-Mail=_0E0EFB06-6124-479C-AF09-12DA722E3EFF
+--BtmVPk+Smchi6n7w
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain;
-	charset=utf-8
 
-
-> On Mar 27, 2017, at 1:51 PM, Christian Theune <ct@flyingcircus.io> =
-wrote:
->=20
+On Mon, Mar 27, 2017 at 01:17:26PM +0200, Christian Theune wrote:
 > Hi,
 >=20
-> (I hope I=E2=80=99m not double posting. My mail client was =
-misconfigured and I think I only managed to send the mail correctly this =
-time.)
+> I=E2=80=99m currently shrinking a device and it seems that the performanc=
+e of shrink is abysmal. I intended to shrink a ~22TiB filesystem down to 20=
+TiB. This is still using LVM underneath so that I can=E2=80=99t just remove=
+ a device from the filesystem but have to use the resize command.
+>=20
+> Label: 'backy'  uuid: 3d0b7511-4901-4554-96d4-e6f9627ea9a4
+>         Total devices 1 FS bytes used 18.21TiB
+>         devid    1 size 20.00TiB used 20.71TiB path /dev/mapper/vgsys-bac=
+ky
+>=20
+> This has been running since last Thursday, so roughly 3.5days now. The =
+=E2=80=9Cused=E2=80=9D number in devid1 has moved about 1TiB in this time. =
+The filesystem is seeing regular usage (read and write) and when I=E2=80=99=
+m suspending any application traffic I see about 1GiB of movement every now=
+ and then. Maybe once every 30 seconds or so.
+>=20
+> Does this sound fishy or normal to you?
 
-Turns out I did double post. Mea culpa.
+   On my hardware (consumer HDDs and SATA, RAID-1 over 6 devices), it
+takes about a minute to move 1 GiB of data. At that rate, it would
+take 1000 minutes (or about 16 hours) to move 1 TiB of data.
 
---
-Christian Theune =C2=B7 ct@flyingcircus.io =C2=B7 +49 345 219401 0
-Flying Circus Internet Operations GmbH =C2=B7 http://flyingcircus.io
-Forsterstra=C3=9Fe 29 =C2=B7 06112 Halle (Saale) =C2=B7 Deutschland
-HR Stendal HRB 21169 =C2=B7 Gesch=C3=A4ftsf=C3=BChrer: Christian. =
-Theune, Christian. Zagrodnick
+   However, there are cases where some items of data can take *much*
+longer to move. The biggest of these is when you have lots of
+snapshots. When that happens, some (but not all) of the metadata can
+take a very long time. In my case, with a couple of hundred snapshots,
+some metadata chunks take 4+ hours to move.
 
+   Hugo.
 
---Apple-Mail=_0E0EFB06-6124-479C-AF09-12DA722E3EFF
-Content-Transfer-Encoding: 7bit
-Content-Disposition: attachment;
-	filename=signature.asc
-Content-Type: application/pgp-signature;
-	name=signature.asc
-Content-Description: Message signed with OpenPGP
+--=20
+Hugo Mills             | Great films about cricket: Silly Point Break
+hugo@... carfax.org.uk |
+http://carfax.org.uk/  |
+PGP: E2AB1DE4          |
+
+--BtmVPk+Smchi6n7w
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
-Comment: GPGTools - https://gpgtools.org
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-iQEcBAEBCgAGBQJY2QvRAAoJEKuh8lKpfGLOz6AH/2bx9SVcVoXODrEueuK9sbfk
-CAmrWY8PBT/SmMgLM+yLQ4WvRRhDuhGUjb3LLaD7qyP728iOeaZBoDPyiBwVP4Hu
-Vlk4Teq00nL2Zi57kTh5may8AtvWSGiRFsoS7Hho0i82HEwlGb2guCc5jxzro2cT
-sbaa2j30A3GP6LQTfpze0dMZKFC17lNckOiYWiNHc4ybDzVZSTtN0oPG4+Y7tSjB
-t5rt6TP3g0+LNJKarMtQY35Ev2H3b7Lfa/KmN34+qbWp6gZ5LnnoVWYYIpcvzI1z
-aKKYBZMFbTsRZ1jdfrop9jYZ6rsFCDXojDFnxrob5qTCK4qpoTTqcnASSEldowA=
-=7ITV
+iQIcBAEBAgAGBQJY2Q6RAAoJEFheFHXiqx3kEQkP/0hnuGyNT/+5h1AiZV5UIHMa
+Iwjceo04CW09zzUX24hlWgUqlRYMEaVLLqIHvhmBJIzFNnHto8FmqAXBSpV/wqn0
+fLWl0m/Th6rSqH092ItbNMwfGNEGE4vqr29I8NAYrMn+ifYAmkRCJBzakTQa6pbN
+h+PzeRsniBZIbM98u7m0Gln9AqZkR9cZLiiuFJjfn+FUEc8UZamXtF5pfawVrG/D
+ll+Cw9v7nyFFs5dcRG5Ns6nMhQsxekn3CdHij3r+i5bpYOdOClOu7CwJUbNtFDVG
+Ts3icTA9ovrCDjFGATuf6eG2GT9O+R6QEuEt3ZiqwoD/lfhZu2yRQ55mubY2En/u
+hkORMZiYCKQyXqtBOwLeDQUNti+1yFlVUnDbmFvPr185lIxuAAaUL/huVyjteHWK
+MgqxBmujWofggUYJFpOru2nRGUx4zX23aDjCItwbT10iiatzM9vR9THxpRMiKRg6
+c9MyvgJY5dovrQTZwW3p88Z1coKYreA0z+zb/TLRkWrmW7Zbh4jcmhbrwrv2bGF7
+tjOW4EQ3G1XuMBrFEEVIsTqO1tTev/EMoVifN30QpWkMoJCz1fPyTUxjBWahxUJG
+ArDFivSJ53KYTfBFEM6aRNjLzeZSRZXqxW+ngGY0n9s4KJtoEgMvWxPd+XnNuRzT
+pMMv49xh2CdRLQIlyUNQ
+=S4O/
 -----END PGP SIGNATURE-----
 
---Apple-Mail=_0E0EFB06-6124-479C-AF09-12DA722E3EFF--
+--BtmVPk+Smchi6n7w--

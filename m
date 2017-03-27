@@ -1,76 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from thorus.sichert.me ([78.47.115.25]:43051 "EHLO thorus.sichert.me"
+Received: from mail.gocept.net ([195.62.125.19]:47686 "EHLO mail.gocept.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751652AbdC0LEL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 27 Mar 2017 07:04:11 -0400
-Subject: Re: Qgroups are not applied when snapshotting a subvol?
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        Andrei Borzenkov <arvidjaar@gmail.com>, linux-btrfs@vger.kernel.org
-References: <4428fdc3-157a-a98e-8ca3-e3701c6c1c80@sichert.me>
- <279513f7-5297-cf2f-aa94-35bef1f674aa@cn.fujitsu.com>
- <2e816c46-7a6a-7db9-a2c3-663dc7d8e6c9@gmail.com>
- <8c55c034-27cc-e8b5-5317-b388cc6492f4@cn.fujitsu.com>
-From: Moritz Sichert <moritz+linux@sichert.me>
-Message-ID: <e57c6cc8-4943-a93a-f568-d3654d341b65@sichert.me>
-Date: Mon, 27 Mar 2017 13:02:24 +0200
-MIME-Version: 1.0
-In-Reply-To: <8c55c034-27cc-e8b5-5317-b388cc6492f4@cn.fujitsu.com>
-Content-Type: text/plain; charset=utf-8
+        id S1752278AbdC0Ls6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 27 Mar 2017 07:48:58 -0400
+Received: from localhost (localhost [127.0.0.1])
+        by mail.gocept.net (Postfix) with ESMTP id 2ACCE14C0020
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Mar 2017 13:48:56 +0200 (CEST)
+Received: from mail.gocept.net ([127.0.0.1])
+        by localhost (mail.gocept.net [127.0.0.1]) (amavisd-new, port 10024)
+        with ESMTP id dcO8GcMi-NXf for <linux-btrfs@vger.kernel.org>;
+        Mon, 27 Mar 2017 13:48:55 +0200 (CEST)
+Received: from [IPv6:2003:a:b60:f100:50a:8066:6685:5534] (unknown [IPv6:2003:a:b60:f100:50a:8066:6685:5534])
+        (Authenticated sender: ct@flyingcircus.io)
+        by mail.gocept.net (Postfix) with ESMTPSA
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Mar 2017 13:48:55 +0200 (CEST)
+From: Christian Theune <ct@flyingcircus.io>
+Content-Type: multipart/signed;
+ boundary="Apple-Mail=_A3F478F4-6F68-469D-85E4-B93EA725EE6D";
+ protocol="application/pgp-signature"; micalg=pgp-sha512
+Mime-Version: 1.0 (Mac OS X Mail 10.2 \(3259\))
+Date: Mon, 27 Mar 2017 13:17:26 +0200
+Subject: Shrinking a device - performance?
+To: linux-btrfs@vger.kernel.org
+Message-Id: <1CCB3887-A88C-41C1-A8EA-514146828A42@flyingcircus.io>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am 27.03.2017 um 05:46 schrieb Qu Wenruo:
-> 
-> 
-> At 03/27/2017 11:26 AM, Andrei Borzenkov wrote:
->> 27.03.2017 03:39, Qu Wenruo пишет:
->>>
->>>
->>> At 03/26/2017 06:03 AM, Moritz Sichert wrote:
->>>> Hi,
->>>>
->>>> I tried to configure qgroups on a btrfs filesystem but was really
->>>> surprised that when you snapshot a subvolume, the snapshot will not be
->>>> assigned to the qgroup the subvolume was in.
->>>>
->>>> As an example consider the small terminal session in the attachment: I
->>>> create a subvol A, assign it to qgroup 1/1 and set a limit of 5M on
->>>> that qgroup. Then I write a file into A and eventually get "disk quota
->>>> exceeded". Then I create a snapshot of A and call it B. B will not be
->>>> assigned to 1/1 and writing a file into B confirms that no limits at
->>>> all are imposed for B.
->>>>
->>>> I feel like I must be missing something here. Considering that
->>>> creating a snapshot does not require root privileges this would mean
->>>> that any user can just circumvent any quota and therefore make them
->>>> useless.
->>>>
->>>> Is there a way to enforce quotas even when a user creates snapshots?
->>>>
->>>
->>> Yes, there is always method to attach the subvolume/snapshot to
->>> specified higher level qgroup.
->>>
->>> Just use "btrfs subvolume snapshot -i 1/1".
->>>
->>
->> This requires cooperation from whoever creates subvolume, while the
->> question was - is it possible to enforce it, without need for explicit
->> option/action when snapshot is created.
->>
->> To reiterate - if user omits "-i 1/1" (s)he "escapes" from quota
->> enforcement.
-> 
-> What if user really want to create a subvolume assigned another group?
-> 
-> You're implying a *policy* that if source subvolume belongs to a higher level qgroup, then snapshot created should also follow that higher level qgroup.
-> 
-> However kernel should only provide *mechanisim*, not *policy*.
-> And btrfs does it, it provides method to do it, whether to do or not is users responsibility.
-> 
-> If you want to implement that policy, please do it in a higher level, something like SUSE snapper, not in kernel.
 
-The problem is, I can't enforce the policy because *every user* can create snapshots. Even if I would restrict the btrfs executable so that only root can execute it, this doesn't help. As using the ioctl for btrfs is allowed for any user, they could just get the executable from somewhere else.
+--Apple-Mail=_A3F478F4-6F68-469D-85E4-B93EA725EE6D
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain;
+	charset=utf-8
+
+Hi,
+
+I=E2=80=99m currently shrinking a device and it seems that the =
+performance of shrink is abysmal. I intended to shrink a ~22TiB =
+filesystem down to 20TiB. This is still using LVM underneath so that I =
+can=E2=80=99t just remove a device from the filesystem but have to use =
+the resize command.
+
+Label: 'backy'  uuid: 3d0b7511-4901-4554-96d4-e6f9627ea9a4
+        Total devices 1 FS bytes used 18.21TiB
+        devid    1 size 20.00TiB used 20.71TiB path =
+/dev/mapper/vgsys-backy
+
+This has been running since last Thursday, so roughly 3.5days now. The =
+=E2=80=9Cused=E2=80=9D number in devid1 has moved about 1TiB in this =
+time. The filesystem is seeing regular usage (read and write) and when =
+I=E2=80=99m suspending any application traffic I see about 1GiB of =
+movement every now and then. Maybe once every 30 seconds or so.
+
+Does this sound fishy or normal to you?
+
+Kind regards,
+Christian
+
+--
+Christian Theune =C2=B7 ct@flyingcircus.io =C2=B7 +49 345 219401 0
+Flying Circus Internet Operations GmbH =C2=B7 http://flyingcircus.io
+Forsterstra=C3=9Fe 29 =C2=B7 06112 Halle (Saale) =C2=B7 Deutschland
+HR Stendal HRB 21169 =C2=B7 Gesch=C3=A4ftsf=C3=BChrer: Christian. =
+Theune, Christian. Zagrodnick
 
 
-Moritz
+--Apple-Mail=_A3F478F4-6F68-469D-85E4-B93EA725EE6D
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment;
+	filename=signature.asc
+Content-Type: application/pgp-signature;
+	name=signature.asc
+Content-Description: Message signed with OpenPGP
+
+-----BEGIN PGP SIGNATURE-----
+Comment: GPGTools - https://gpgtools.org
+
+iQEcBAEBCgAGBQJY2PwmAAoJEKuh8lKpfGLOEGwIAMgJ4zbvuNoSUa488TM8+0PO
+/8RMvjafvXqvi/OU7lT065EMMNIq9MFNWT29DvJobQoUKzY1Vd+cTBoRD+Hiflkw
+d4Q6+oKQSuDzDK8GN+KY7GArhxNbgplz/q9dt1eBTz+0nqnYYFi29Jw2WSYiVj0c
+uAbfirAOMu/fRMUWg0XKSkQDvxIVEZZrr+kBeIMt+/PAuaNBMVWhW2JAn+nTqMfw
+dZQRQuer0210IwqD2TkxLb9nhWCUnZf3/94ZCsVVI5DYxH5eDkfmOdZUvp/IFlzA
+SUa+b55h5OrGOikwdT1H8l/jQ78oFfWf6fQczahA3mRahn3sQlfMlypBT4+W6tA=
+=Tbb/
+-----END PGP SIGNATURE-----
+
+--Apple-Mail=_A3F478F4-6F68-469D-85E4-B93EA725EE6D--

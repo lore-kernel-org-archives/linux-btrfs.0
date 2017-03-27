@@ -1,93 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f47.google.com ([209.85.214.47]:34205 "EHLO
-        mail-it0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752619AbdC0MBd (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 27 Mar 2017 08:01:33 -0400
-Received: by mail-it0-f47.google.com with SMTP id y18so18390402itc.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Mar 2017 05:01:27 -0700 (PDT)
-Subject: Re: Qgroups are not applied when snapshotting a subvol?
-To: Moritz Sichert <moritz+linux@sichert.me>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        Andrei Borzenkov <arvidjaar@gmail.com>, linux-btrfs@vger.kernel.org
-References: <4428fdc3-157a-a98e-8ca3-e3701c6c1c80@sichert.me>
- <279513f7-5297-cf2f-aa94-35bef1f674aa@cn.fujitsu.com>
- <2e816c46-7a6a-7db9-a2c3-663dc7d8e6c9@gmail.com>
- <8c55c034-27cc-e8b5-5317-b388cc6492f4@cn.fujitsu.com>
- <e57c6cc8-4943-a93a-f568-d3654d341b65@sichert.me>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <6e464739-5540-87ab-a46d-954a06086cba@gmail.com>
-Date: Mon, 27 Mar 2017 08:01:13 -0400
-MIME-Version: 1.0
-In-Reply-To: <e57c6cc8-4943-a93a-f568-d3654d341b65@sichert.me>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Received: from mail.gocept.net ([195.62.125.19]:36965 "EHLO mail.gocept.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752008AbdC0Mzt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 27 Mar 2017 08:55:49 -0400
+Received: from localhost (localhost [127.0.0.1])
+        by mail.gocept.net (Postfix) with ESMTP id A22C214C002A
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Mar 2017 14:55:46 +0200 (CEST)
+Received: from mail.gocept.net ([127.0.0.1])
+        by localhost (mail.gocept.net [127.0.0.1]) (amavisd-new, port 10024)
+        with ESMTP id f40maGEYPQT7 for <linux-btrfs@vger.kernel.org>;
+        Mon, 27 Mar 2017 14:55:46 +0200 (CEST)
+Received: from [IPv6:2003:a:b60:f100:50a:8066:6685:5534] (unknown [IPv6:2003:a:b60:f100:50a:8066:6685:5534])
+        (Authenticated sender: ct@flyingcircus.io)
+        by mail.gocept.net (Postfix) with ESMTPSA
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Mar 2017 14:55:46 +0200 (CEST)
+From: Christian Theune <ct@flyingcircus.io>
+Content-Type: multipart/signed;
+ boundary="Apple-Mail=_0E0EFB06-6124-479C-AF09-12DA722E3EFF";
+ protocol="application/pgp-signature"; micalg=pgp-sha512
+Mime-Version: 1.0 (Mac OS X Mail 10.2 \(3259\))
+Subject: Re: Shrinking a device - performance?
+Date: Mon, 27 Mar 2017 14:55:44 +0200
+References: <BA9E63E9-0362-4DBD-8B7F-12CA97C4D127@flyingcircus.io>
+To: linux-btrfs@vger.kernel.org
+In-Reply-To: <BA9E63E9-0362-4DBD-8B7F-12CA97C4D127@flyingcircus.io>
+Message-Id: <22F72F83-D996-4EC5-9FA1-7270CF5786D6@flyingcircus.io>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-03-27 07:02, Moritz Sichert wrote:
-> Am 27.03.2017 um 05:46 schrieb Qu Wenruo:
->>
->>
->> At 03/27/2017 11:26 AM, Andrei Borzenkov wrote:
->>> 27.03.2017 03:39, Qu Wenruo пишет:
->>>>
->>>>
->>>> At 03/26/2017 06:03 AM, Moritz Sichert wrote:
->>>>> Hi,
->>>>>
->>>>> I tried to configure qgroups on a btrfs filesystem but was really
->>>>> surprised that when you snapshot a subvolume, the snapshot will not be
->>>>> assigned to the qgroup the subvolume was in.
->>>>>
->>>>> As an example consider the small terminal session in the attachment: I
->>>>> create a subvol A, assign it to qgroup 1/1 and set a limit of 5M on
->>>>> that qgroup. Then I write a file into A and eventually get "disk quota
->>>>> exceeded". Then I create a snapshot of A and call it B. B will not be
->>>>> assigned to 1/1 and writing a file into B confirms that no limits at
->>>>> all are imposed for B.
->>>>>
->>>>> I feel like I must be missing something here. Considering that
->>>>> creating a snapshot does not require root privileges this would mean
->>>>> that any user can just circumvent any quota and therefore make them
->>>>> useless.
->>>>>
->>>>> Is there a way to enforce quotas even when a user creates snapshots?
->>>>>
->>>>
->>>> Yes, there is always method to attach the subvolume/snapshot to
->>>> specified higher level qgroup.
->>>>
->>>> Just use "btrfs subvolume snapshot -i 1/1".
->>>>
->>>
->>> This requires cooperation from whoever creates subvolume, while the
->>> question was - is it possible to enforce it, without need for explicit
->>> option/action when snapshot is created.
->>>
->>> To reiterate - if user omits "-i 1/1" (s)he "escapes" from quota
->>> enforcement.
->>
->> What if user really want to create a subvolume assigned another group?
->>
->> You're implying a *policy* that if source subvolume belongs to a higher level qgroup, then snapshot created should also follow that higher level qgroup.
->>
->> However kernel should only provide *mechanisim*, not *policy*.
->> And btrfs does it, it provides method to do it, whether to do or not is users responsibility.
->>
->> If you want to implement that policy, please do it in a higher level, something like SUSE snapper, not in kernel.
->
-> The problem is, I can't enforce the policy because *every user* can create snapshots. Even if I would restrict the btrfs executable so that only root can execute it, this doesn't help. As using the ioctl for btrfs is allowed for any user, they could just get the executable from somewhere else.
-To reiterate and reinforce this:
-If it is not possible to enforce new subvolumes counting for their 
-parent quota, and there is no option to prevent non-root (or 
-non-CAP_SYS_ADMIN) users from creating new subvolumes, then BTRFS 
-qgroups are useless on any system with shell access because a user can 
-trivially escape their quota restrictions (or hide from accounting) by 
-creating a new subvolume which is outside of their qgroup and storing 
-data there.
 
-Ideally, there should be an option to disable user subvolume creation 
-(it arguably should be the default, because of resource exhaustion 
-issues, but that's a separate argument), and there should be an option 
-in the kernel to force specific behavior.  Both cases are policy, but 
-they are policy that can only be concretely enforced _by the kernel_.
+--Apple-Mail=_0E0EFB06-6124-479C-AF09-12DA722E3EFF
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain;
+	charset=utf-8
+
+
+> On Mar 27, 2017, at 1:51 PM, Christian Theune <ct@flyingcircus.io> =
+wrote:
+>=20
+> Hi,
+>=20
+> (I hope I=E2=80=99m not double posting. My mail client was =
+misconfigured and I think I only managed to send the mail correctly this =
+time.)
+
+Turns out I did double post. Mea culpa.
+
+--
+Christian Theune =C2=B7 ct@flyingcircus.io =C2=B7 +49 345 219401 0
+Flying Circus Internet Operations GmbH =C2=B7 http://flyingcircus.io
+Forsterstra=C3=9Fe 29 =C2=B7 06112 Halle (Saale) =C2=B7 Deutschland
+HR Stendal HRB 21169 =C2=B7 Gesch=C3=A4ftsf=C3=BChrer: Christian. =
+Theune, Christian. Zagrodnick
+
+
+--Apple-Mail=_0E0EFB06-6124-479C-AF09-12DA722E3EFF
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment;
+	filename=signature.asc
+Content-Type: application/pgp-signature;
+	name=signature.asc
+Content-Description: Message signed with OpenPGP
+
+-----BEGIN PGP SIGNATURE-----
+Comment: GPGTools - https://gpgtools.org
+
+iQEcBAEBCgAGBQJY2QvRAAoJEKuh8lKpfGLOz6AH/2bx9SVcVoXODrEueuK9sbfk
+CAmrWY8PBT/SmMgLM+yLQ4WvRRhDuhGUjb3LLaD7qyP728iOeaZBoDPyiBwVP4Hu
+Vlk4Teq00nL2Zi57kTh5may8AtvWSGiRFsoS7Hho0i82HEwlGb2guCc5jxzro2cT
+sbaa2j30A3GP6LQTfpze0dMZKFC17lNckOiYWiNHc4ybDzVZSTtN0oPG4+Y7tSjB
+t5rt6TP3g0+LNJKarMtQY35Ev2H3b7Lfa/KmN34+qbWp6gZ5LnnoVWYYIpcvzI1z
+aKKYBZMFbTsRZ1jdfrop9jYZ6rsFCDXojDFnxrob5qTCK4qpoTTqcnASSEldowA=
+=7ITV
+-----END PGP SIGNATURE-----
+
+--Apple-Mail=_0E0EFB06-6124-479C-AF09-12DA722E3EFF--

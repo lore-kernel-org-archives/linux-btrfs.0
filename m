@@ -1,42 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:53399 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1753033AbdCaVGH (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 31 Mar 2017 17:06:07 -0400
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [GIT PULL] Btrfs
-From: Chris Mason <clm@fb.com>
-Message-ID: <0e0a392d-6afa-ad0d-4f78-86ee9b95a75a@fb.com>
-Date: Fri, 31 Mar 2017 17:05:57 -0400
-MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Received: from mx2.suse.de ([195.135.220.15]:38159 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753066AbdC1Mgf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 28 Mar 2017 08:36:35 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 2235FAE17
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Mar 2017 12:35:45 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH] btrfs: sink GFP flags parameter to tree_mod_log_insert_move
+Date: Tue, 28 Mar 2017 14:35:01 +0200
+Message-Id: <20170328123501.22004-1-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
+All (1) callers pass the same value.
 
-We have 3 small fixes queued up in my for-linus-4.11 branch:
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/ctree.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.11
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 7dc8844037e0..d034d47c5470 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -567,7 +567,7 @@ tree_mod_log_insert_key(struct btrfs_fs_info *fs_info,
+ static noinline int
+ tree_mod_log_insert_move(struct btrfs_fs_info *fs_info,
+ 			 struct extent_buffer *eb, int dst_slot, int src_slot,
+-			 int nr_items, gfp_t flags)
++			 int nr_items)
+ {
+ 	struct tree_mod_elem *tm = NULL;
+ 	struct tree_mod_elem **tm_list = NULL;
+@@ -578,11 +578,11 @@ tree_mod_log_insert_move(struct btrfs_fs_info *fs_info,
+ 	if (!tree_mod_need_log(fs_info, eb))
+ 		return 0;
+ 
+-	tm_list = kcalloc(nr_items, sizeof(struct tree_mod_elem *), flags);
++	tm_list = kcalloc(nr_items, sizeof(struct tree_mod_elem *), GFP_NOFS);
+ 	if (!tm_list)
+ 		return -ENOMEM;
+ 
+-	tm = kzalloc(sizeof(*tm), flags);
++	tm = kzalloc(sizeof(*tm), GFP_NOFS);
+ 	if (!tm) {
+ 		ret = -ENOMEM;
+ 		goto free_tms;
+@@ -596,7 +596,7 @@ tree_mod_log_insert_move(struct btrfs_fs_info *fs_info,
+ 
+ 	for (i = 0; i + dst_slot < src_slot && i < nr_items; i++) {
+ 		tm_list[i] = alloc_tree_mod_elem(eb, i + dst_slot,
+-		    MOD_LOG_KEY_REMOVE_WHILE_MOVING, flags);
++		    MOD_LOG_KEY_REMOVE_WHILE_MOVING, GFP_NOFS);
+ 		if (!tm_list[i]) {
+ 			ret = -ENOMEM;
+ 			goto free_tms;
+@@ -873,7 +873,7 @@ tree_mod_log_eb_move(struct btrfs_fs_info *fs_info, struct extent_buffer *dst,
+ {
+ 	int ret;
+ 	ret = tree_mod_log_insert_move(fs_info, dst, dst_offset, src_offset,
+-				       nr_items, GFP_NOFS);
++				       nr_items);
+ 	BUG_ON(ret < 0);
+ }
+ 
+-- 
+2.12.0
 
-Goldwyn Rodrigues (1) commits (+7/-7):
-    btrfs: Change qgroup_meta_rsv to 64bit
-
-Dan Carpenter (1) commits (+6/-1):
-    Btrfs: fix an integer overflow check
-
-Liu Bo (1) commits (+31/-21):
-    Btrfs: bring back repair during read
-
-Total: (3) commits (+44/-29)
-
- fs/btrfs/ctree.h     |  2 +-
- fs/btrfs/disk-io.c   |  2 +-
- fs/btrfs/extent_io.c | 46 ++++++++++++++++++++++++++++------------------
- fs/btrfs/inode.c     |  6 +++---
- fs/btrfs/qgroup.c    | 10 +++++-----
- fs/btrfs/send.c      |  7 ++++++-
- 6 files changed, 44 insertions(+), 29 deletions(-)

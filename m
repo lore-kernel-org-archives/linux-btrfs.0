@@ -1,59 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f177.google.com ([209.85.216.177]:34440 "EHLO
-        mail-qt0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754664AbdC1IQr (ORCPT
+Received: from mail-it0-f52.google.com ([209.85.214.52]:34524 "EHLO
+        mail-it0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932099AbdC1Ld2 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Mar 2017 04:16:47 -0400
-Received: by mail-qt0-f177.google.com with SMTP id n21so57758785qta.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Mar 2017 01:16:46 -0700 (PDT)
+        Tue, 28 Mar 2017 07:33:28 -0400
+Received: by mail-it0-f52.google.com with SMTP id y18so26186281itc.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Mar 2017 04:33:27 -0700 (PDT)
+Subject: Re: Qgroups are not applied when snapshotting a subvol?
+To: Chris Murphy <lists@colorremedies.com>
+References: <4428fdc3-157a-a98e-8ca3-e3701c6c1c80@sichert.me>
+ <279513f7-5297-cf2f-aa94-35bef1f674aa@cn.fujitsu.com>
+ <2e816c46-7a6a-7db9-a2c3-663dc7d8e6c9@gmail.com>
+ <8c55c034-27cc-e8b5-5317-b388cc6492f4@cn.fujitsu.com>
+ <e57c6cc8-4943-a93a-f568-d3654d341b65@sichert.me>
+ <6e464739-5540-87ab-a46d-954a06086cba@gmail.com>
+ <CAJCQCtRikr0CaYRj1rQid-UPukNm6NXem_8QD_e-VZYoZ3HPWA@mail.gmail.com>
+Cc: Moritz Sichert <moritz+linux@sichert.me>,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        Andrei Borzenkov <arvidjaar@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <11740657-b2f9-36ab-9644-df2db29dd174@gmail.com>
+Date: Tue, 28 Mar 2017 07:24:21 -0400
 MIME-Version: 1.0
-In-Reply-To: <20170327171817.GN4781@twin.jikos.cz>
-References: <CABxMtgcGod=FvgHagua07bzPjc7cy_+v0hkbTvwH_7GggOh9Ow@mail.gmail.com>
- <a43bf7e1-36fe-cb49-d0ba-697ddaf1a14e@suse.com> <CABxMtgdx_aC53bL0XAZaTCX=8P6=J_+Z5jyUSS1GyES_5zw_qA@mail.gmail.com>
- <20170327171817.GN4781@twin.jikos.cz>
-From: Denis Kirjanov <dkirjanov@cloudlinux.com>
-Date: Tue, 28 Mar 2017 11:16:35 +0300
-Message-ID: <CABxMtgeihqoUWA=aqEXU9GYrydUufgpbZ6v5+BRYCdj9kiSUwQ@mail.gmail.com>
-Subject: Re: __link_block_group uses GFP_KERNEL
-To: dsterba@suse.cz, Denis Kirjanov <dkirjanov@cloudlinux.com>,
-        Jeff Mahoney <jeffm@suse.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, chris.mason@fusionio.com
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <CAJCQCtRikr0CaYRj1rQid-UPukNm6NXem_8QD_e-VZYoZ3HPWA@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 3/27/17, David Sterba <dsterba@suse.cz> wrote:
-> On Sat, Mar 25, 2017 at 09:48:28AM +0300, Denis Kirjanov wrote:
->> On 3/25/17, Jeff Mahoney <jeffm@suse.com> wrote:
->> > On 3/24/17 5:02 AM, Denis Kirjanov wrote:
->> >> Hi guys,
->> >>
->> >> Looks like that current code does GFP_KERNEL allocation inside
->> >> __link_block_group.
->> >> the function invokes kobject_add and internally creates sysfs files
->> >> with the GFP_KERNEL flag set.
->> >
->> > Yep, that's a bug.
->> >
->> >> But since do_chunk_alloc executes insides the btrfs transaction it's
->> >> not allowed to sleep.
->> >
->> > It's allowed to sleep but isn't allowed to do reclaim that involves
->> > file
->> > system writeback.  Michal Hocko's allocation context idea would fix
->> > this, but it's not there yet, so we'll need to defer the kobject_add
->> > until we can use GFP_KERNEL.
->>
->> Ok, I see. Can you point out to the initial patchset?
+On 2017-03-27 15:32, Chris Murphy wrote:
+> How about if qgroups are enabled, then non-root user is prevented from
+> creating new subvolumes?
 >
-> https://lwn.net/Articles/716323/
+> Or is there a way for a new nested subvolume to be included in its
+> parent's quota, rather than the new subvolume having a whole new quota
+> limit?
 >
-> Fixing this properly is a lot of work so we might need to add a
-> temporary workaround, as Jeff suggests, to move calling into sysfs to a
-> later time.
->
+> Tricky problem.
+The default should be to inherit the qgroup of the parent subvolume. 
+The organization of subvolumes is hierarchical, and sane people expect 
+things to behave as they look.  Taking another angle, on ZFS, 'nested' 
+(nested in quotes because ZFS' definition of 'nested' zvols is weird) 
+inherit their parent's quota and reservations (essentially reverse 
+quota), and they're not even inherently nested in the filesystem like 
+subvolumes are, so we're differing from the only other widely used 
+system that implements things in a similar manner.
 
-Care to send a patch?
-Or I can dig a bit.
+As far as the subvolume thing, there should be an option to disable user 
+creation of subvolumes, and ideally it should be on by default because:
+1. Users can't delete subvolumes by default.  This means they can create 
+but not destroy a resource by default, which means that a user can 
+pretty easily accidentally cause issues for the system as a whole.
+2. Correlating with 1, users being able to delete subvolumes by default 
+is not safe on multiple levels (easy accidental data loss, numerous 
+other issues), and thus user subvolume removal being off by default is 
+significantly safer.
 
-Thanks!

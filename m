@@ -1,429 +1,401 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1050.oracle.com ([141.146.126.70]:47093 "EHLO
-        aserp1050.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752189AbdCUHBG (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:46918 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1753889AbdC1GYs (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Mar 2017 03:01:06 -0400
-Received: from aserp1040.oracle.com (aserp1040.oracle.com [141.146.126.69])
-        by aserp1050.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v2L5lPVC022280
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2017 05:47:26 GMT
-Date: Mon, 20 Mar 2017 22:45:30 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 4/5] btrfs: raid56: Don't keep rbio for later steal
-Message-ID: <20170321054530.GL5540@lim.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <20170203082023.3577-1-quwenruo@cn.fujitsu.com>
- <20170203082023.3577-5-quwenruo@cn.fujitsu.com>
- <20170317044407.GA24387@lim.localdomain>
- <bfaf7a7e-2330-0419-9549-7c37f2b1f93d@cn.fujitsu.com>
- <20170318020304.GB7719@lim.localdomain>
- <c8fcddef-6bb6-57cc-2980-7a5b28018e2e@cn.fujitsu.com>
- <20170320202333.GB5540@lim.localdomain>
- <3d096455-0302-f34d-719d-b3445d2451a1@cn.fujitsu.com>
- <20170321020841.GK5540@lim.localdomain>
- <041f7b28-2bff-0414-b862-27a2cad4774c@cn.fujitsu.com>
+        Tue, 28 Mar 2017 02:24:48 -0400
+Subject: Re: [PATCH v2 1/5] btrfs: scrub: Introduce full stripe lock for
+ RAID56
+To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>, <bo.li.liu@oracle.com>
+References: <20170324020027.21228-1-quwenruo@cn.fujitsu.com>
+ <20170324020027.21228-2-quwenruo@cn.fujitsu.com>
+ <20170327163844.GI4781@twin.jikos.cz>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <78c59945-06c5-f834-b72b-5fa4878c61d6@cn.fujitsu.com>
+Date: Tue, 28 Mar 2017 14:24:35 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <041f7b28-2bff-0414-b862-27a2cad4774c@cn.fujitsu.com>
+In-Reply-To: <20170327163844.GI4781@twin.jikos.cz>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 21, 2017 at 10:23:56AM +0800, Qu Wenruo wrote:
-> 
-> 
-> At 03/21/2017 10:08 AM, Liu Bo wrote:
-> > On Tue, Mar 21, 2017 at 08:44:18AM +0800, Qu Wenruo wrote:
-> > > 
-> > > 
-> > > At 03/21/2017 04:23 AM, Liu Bo wrote:
-> > > > On Mon, Mar 20, 2017 at 02:21:48PM +0800, Qu Wenruo wrote:
-> > > > > 
-> > > > > 
-> > > > > At 03/18/2017 10:03 AM, Liu Bo wrote:
-> > > > > > On Fri, Mar 17, 2017 at 01:28:45PM +0800, Qu Wenruo wrote:
-> > > > > > > 
-> > > > > > > 
-> > > > > > > At 03/17/2017 12:44 PM, Liu Bo wrote:
-> > > > > > > > On Fri, Feb 03, 2017 at 04:20:22PM +0800, Qu Wenruo wrote:
-> > > > > > > > > Before this patch, btrfs raid56 will keep raid56 rbio even all its IO is
-> > > > > > > > > done.
-> > > > > > > > > This may save some time allocating rbio, but it can cause deadly
-> > > > > > > > > use-after-free bug, for the following case:
-> > > > > > > > > 
-> > > > > > > > > Original fs: 4 devices RAID5
-> > > > > > > > > 
-> > > > > > > > >        Process A                 |          Process B
-> > > > > > > > > --------------------------------------------------------------------------
-> > > > > > > > >                                  |  Start device replace
-> > > > > > > > >                                  |    Now the fs has 5 devices
-> > > > > > > > >                                  |    devid 0: replace device
-> > > > > > > > >                                  |    devid 1~4: old devices
-> > > > > > > > > btrfs_map_bio()                  |
-> > > > > > > > > |- __btrfs_map_block()           |
-> > > > > > > > > |    bbio has 5 stripes          |
-> > > > > > > > > |    including devid 0           |
-> > > > > > > > > |- raid56_parity_write()         |
-> > > > > > > > >                                  |
-> > > > > > > > > raid_write_end_io()              |
-> > > > > > > > > |- rbio_orig_end_io()            |
-> > > > > > > > >    |- unlock_stripe()            |
-> > > > > > > > >        Keeps the old rbio for    |
-> > > > > > > > >        later steal, which has    |
-> > > > > > > > >        stripe for devid 0        |
-> > > > > > > > >                                  |  Cancel device replace
-> > > > > > > > >                                  |    Now the fs has 4 devices
-> > > > > > > > >                                  |    devid 0 is freed
-> > > > > > > > > Some IO happens                  |
-> > > > > > > > > raid_write_end_io()              |
-> > > > > > > > > |- rbio_orig_end_io()            |
-> > > > > > > > >    |- unlock_stripe()            |
-> > > > > > > > >       |- steal_rbio()            |
-> > > > > > > > >            Use old rbio, whose   |
-> > > > > > > > >            bbio has freed devid 0|
-> > > > > > > > >            stripe                |
-> > > > > > > > > Any access to rbio->bbio will    |
-> > > > > > > > > cause general protection or NULL |
-> > > > > > > > > pointer dereference              |
-> > > > > > > > > 
-> > > > > > > > > Such bug can already be triggered by fstests btrfs/069 for RAID5/6
-> > > > > > > > > profiles.
-> > > > > > > > > 
-> > > > > > > > > Fix it by not keeping old rbio in unlock_stripe(), so we just free the
-> > > > > > > > > finished rbio and rbio->bbio, so above problem wont' happen.
-> > > > > > > > > 
-> > > > > > > > 
-> > > > > > > > I don't think this is acceptable, keeping a cache is important for
-> > > > > > > > raid56 write performance, could you please fix it by checking if the
-> > > > > > > > device is missing?
-> > > > > > > 
-> > > > > > > Not possible, as it's keeping the btrfs_device pointer and never release it,
-> > > > > > > the stolen rbio can be kept forever until umount.
-> > > > > > > 
-> > > > > > 
-> > > > > > steal_rbio() only takes pages from rbio->stripe_pages, so the cached
-> > > > > > rbio->bbio is not going to the next IO's rbio because the cached one
-> > > > > > got freed immediately in steal_rbio(), where could we dereference
-> > > > > > rbio->bbio?
-> > > > > 
-> > > > > Did you mean in unlock_stripe(), we still keep the rbio in cache, while
-> > > > > release its bbio?
-> > > > > 
-> > > > 
-> > > > I thought it was lock_stripe_add(), OK, so unlock_stripe() just caches
-> > > > the current rbio and doens't free it.  But the point about
-> > > > steal_rbio() still stands, steal_rbio() is supposed to take uptodate
-> > > > pages from the cached old rbio to the current processing rbio, but it
-> > > > doesn't touch the cached old rbio's bbio, nor uses the cached old rbio
-> > > > afterwards, instead it is the current processing rbio that would use
-> > > > its bbio for writing into target devices, but it has increased its own
-> > > > bio_counter.
-> > > > 
-> > > > > This sounds quite good but I'm afraid it may cause more problems.
-> > > > > 
-> > > > > Quite a lot of places are accessing rbio->bbio either for their btrfs
-> > > > > logical address or stripes or even stripe->dev.
-> > > > > 
-> > > > 
-> > > > I'm confused, could you please specify the call trace of general
-> > > > protection you got in the commit log?
-> > > 
-> > > The 4th and 5th patches are designed to fix the same problem.
-> > > 
-> > > If one applies 5th patch only and run btrfs/069, it will cause hang when
-> > > aborting replace, since btrfs_device of dev 0 is hold in bbio->stripes[] and
-> > > never get released.
-> > > 
-> > > The 4th patch is used to solve such hang.
-> > > 
-> > 
-> > OK, I see.
-> > 
-> > Firstly, the above commit log is misleading people a bit because it
-> > says that steal_rbio() dereferences the device of the cached rbio and
-> > that device has got free'd, but steal_rbio() actually doesn't.  Yes,
-> > the cached rbio holds a reference on the free'd device, but I think
-> > the below 'NULL pointer dereference' comes from writing back pages
-> > into target devices when doing RMW with the current rbio instead of
-> > the old cached one, right?
-> 
-> Yes, steal_bio() is not related to this problem, sorry for the confusion.
-> 
-> > 
-> > Secondly, if it is the current rio that ends up this 'NULL pointer
-> > dereference', it could hold a bio_counter and let the replace thread
-> > canceled by scrub wait for this bio_counter to be zero.  Although
-> > btrfs_dev_replace_finishing() has flushed delalloc IO and committed
-> > transaction, seems like scrub is an exception because it can continued
-> > after committing transaction.
-> 
-> If I understand it correctly, did you mean hold bio_counter when rbio holds
-> bbio?
+Thanks for the review first.
+
+At 03/28/2017 12:38 AM, David Sterba wrote:
+> On Fri, Mar 24, 2017 at 10:00:23AM +0800, Qu Wenruo wrote:
+>> Unlike mirror based profiles, RAID5/6 recovery needs to read out the
+>> whole full stripe.
+>>
+>> And if we don't do proper protect, it can easily cause race condition.
+>>
+>> Introduce 2 new functions: lock_full_stripe() and unlock_full_stripe()
+>> for RAID5/6.
+>> Which stores a rb_tree of mutex for full stripes, so scrub callers can
+>> use them to lock a full stripe to avoid race.
+>>
+>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>> ---
+>>  fs/btrfs/ctree.h       |   4 ++
+>>  fs/btrfs/extent-tree.c |   3 +
+>>  fs/btrfs/scrub.c       | 177 +++++++++++++++++++++++++++++++++++++++++++++++++
+>>  3 files changed, 184 insertions(+)
+>>
+>> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+>> index 29b7fc28c607..4d570e1040e6 100644
+>> --- a/fs/btrfs/ctree.h
+>> +++ b/fs/btrfs/ctree.h
+>> @@ -648,6 +648,10 @@ struct btrfs_block_group_cache {
+>>  	 * Protected by free_space_lock.
+>>  	 */
+>>  	int needs_free_space;
+>> +
+>> +	/* Scrub full stripe lock tree for RAID5/6 scrub */
+>> +	struct rb_root scrub_lock_root;
 >
+> The name scrub_lock_root is a bit confusing, it should better describe
+> what object the tree stores.
 
-We have bio_counter to prevent the race against a successful dev
-replace (such as btrfs_map_bio and btrfs_discard_extent), but for a
-canceled dev replace (either it's canceled by scrub or by 'btrfs
-replace cancel'), bio_counter could also be utilized to avoid the
-race.
+I'll encapsulate this rb_root and spinlock into a new structure called 
+full_stripe_locks_tree.
 
-Now that scrub, which does raid parity recover, is the only one
-without increasing bio_counter while accessing devices and stripes.
+I tried to rename them to other names, but "lock" and "root/tree" makes 
+it quite hard to name the spinlock.
+(name like "full_stripe_locks_root_lock" is just super stupid)
 
-> That's OK, but we still need the 4th patch, or it will block replace cancel
-> forever.
 >
-
-It is not the current code but patch 5 that needs patch 4 to avoid
-blocking replace threads.
-
-> > 
-> > Thirdly, it is possible that this canceled dev-replace could make
-> > fstrim get a 'general protection' or 'NULL pointer dereference' since
-> > it could access target devices and is not sychoronized by committing
-> > transaction.
-> 
-> So I'm using the refcount for btrfs_device to do full protection for it.
-> As long as btrfs_dev can only be freed when no on holds it, instead of no
-> bio pending for it, it should be safer.
+>> +	spinlock_t scrub_lock;
 >
+> And the lock could be named accordingly.
+>
+>>  };
+>>
+>>  /* delayed seq elem */
+>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+>> index be5477676cc8..db5d9f84535e 100644
+>> --- a/fs/btrfs/extent-tree.c
+>> +++ b/fs/btrfs/extent-tree.c
+>> @@ -131,6 +131,7 @@ void btrfs_put_block_group(struct btrfs_block_group_cache *cache)
+>>  	if (atomic_dec_and_test(&cache->count)) {
+>>  		WARN_ON(cache->pinned > 0);
+>>  		WARN_ON(cache->reserved > 0);
+>> +		WARN_ON(!RB_EMPTY_ROOT(&cache->scrub_lock_root));
+>>  		kfree(cache->free_space_ctl);
+>>  		kfree(cache);
+>>  	}
+>> @@ -9907,6 +9908,8 @@ btrfs_create_block_group_cache(struct btrfs_fs_info *fs_info,
+>>
+>>  	atomic_set(&cache->count, 1);
+>>  	spin_lock_init(&cache->lock);
+>> +	spin_lock_init(&cache->scrub_lock);
+>> +	cache->scrub_lock_root = RB_ROOT;
+>>  	init_rwsem(&cache->data_rwsem);
+>>  	INIT_LIST_HEAD(&cache->list);
+>>  	INIT_LIST_HEAD(&cache->cluster_list);
+>> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+>> index b0251eb1239f..38b300ac4567 100644
+>> --- a/fs/btrfs/scrub.c
+>> +++ b/fs/btrfs/scrub.c
+>> @@ -240,6 +240,13 @@ struct scrub_warning {
+>>  	struct btrfs_device	*dev;
+>>  };
+>>
+>> +struct scrub_full_stripe_lock {
+>> +	struct rb_node node;
+>> +	u64 logical;
+>> +	u64 refs;
+>> +	struct mutex mutex;
+>> +};
+>> +
+>>  static void scrub_pending_bio_inc(struct scrub_ctx *sctx);
+>>  static void scrub_pending_bio_dec(struct scrub_ctx *sctx);
+>>  static void scrub_pending_trans_workers_inc(struct scrub_ctx *sctx);
+>> @@ -349,6 +356,176 @@ static void scrub_blocked_if_needed(struct btrfs_fs_info *fs_info)
+>>  }
+>>
+>>  /*
+>> + * Caller must hold cache->scrub_root_lock.
+>> + *
+>> + * Return existing full stripe and increase it refs
+>> + * Or return NULL, and insert @fstripe_lock into the bg cache
+>> + */
+>> +static struct scrub_full_stripe_lock *
+>> +add_scrub_lock(struct btrfs_block_group_cache *cache,
+>> +	       struct scrub_full_stripe_lock *fstripe_lock)
+>
+> Please stick to the function prototype common in that file, ie. type and
+> name on the same line. The arguments can go below it.
 
-If increading bio_counter could fix the bug like other use-after-free dev-replace bugs, e.g.
-4245215d6a8d Btrfs, raid56: fix use-after-free problem in the final device replace procedure on raid56
-,
-I'd prefer it, a fix with keeping the benefit of caching rbio.
+Understood.
 
-> > 
-> > Please correct me if I'm wrong since I failed to reproduce it.
-> 
-> The bug is harder to trigger in v4.11-rc2 now.
-> 
-> I modified btrfs/069 to make it easier to trigger, but it's still quite hard
-> to reproduce it.
-> 
-> Even with modification, the possibility is still low, at about 10~20%.
-> 
-> Hopes the diff could help you to trigger it.
+>
+> The function name is also quite confusing.
 
-I'm using -n 2000 but no luck.
+What about insert_full_stripe_lock() ?
+
+>
+>> +{
+>> +	struct rb_node **p;
+>> +	struct rb_node *parent = NULL;
+>> +	struct scrub_full_stripe_lock *entry;
+>> +
+>> +	p = &cache->scrub_lock_root.rb_node;
+>> +	while (*p) {
+>> +		parent = *p;
+>> +		entry = rb_entry(parent, struct scrub_full_stripe_lock, node);
+>> +		if (fstripe_lock->logical < entry->logical) {
+>> +			p = &(*p)->rb_left;
+>> +		} else if (fstripe_lock->logical > entry->logical) {
+>> +			p = &(*p)->rb_right;
+>> +		} else {
+>> +			entry->refs++;
+>> +			return entry;
+>> +		}
+>> +	}
+>> +	/* Insert new one */
+>> +	rb_link_node(&fstripe_lock->node, parent, p);
+>> +	rb_insert_color(&fstripe_lock->node, &cache->scrub_lock_root);
+>> +
+>> +	return NULL
+>> +}
+>> +
+>> +static struct scrub_full_stripe_lock *
+>> +search_scrub_lock(struct btrfs_block_group_cache *cache, u64 bytenr)
+>
+> Same here.
+
+What about search_full_stripe_lock() ?
+
+>
+>> +{
+>> +	struct rb_node *node;
+>> +	struct scrub_full_stripe_lock *entry;
+>> +
+>> +	node = cache->scrub_lock_root.rb_node;
+>> +	while (node) {
+>> +		entry = rb_entry(node, struct scrub_full_stripe_lock, node);
+>> +		if (bytenr < entry->logical)
+>> +			node = node->rb_left;
+>> +		else if (bytenr > entry->logical)
+>> +			node = node->rb_right;
+>> +		else
+>> +			return entry;
+>> +	}
+>> +	return NULL;
+>> +}
+>> +
+>> +/*
+>> + * Helper to get full stripe logical from a normal bytenr.
+>> + * Thanks to the chaos of scrub structures, we need to get it all
+>> + * by ourselves, using btrfs_map_sblock().
+>> + */
+>> +static int get_full_stripe_logical(struct btrfs_fs_info *fs_info, u64 bytenr,
+>> +				   u64 *bytenr_ret)
+>> +{
+>> +	struct btrfs_bio *bbio = NULL;
+>> +	u64 len;
+>> +	int ret;
+>> +
+>> +	/* Just use map_sblock() to get full stripe logical */
+>> +	ret = btrfs_map_sblock(fs_info, BTRFS_MAP_GET_READ_MIRRORS, bytenr,
+>> +			       &len, &bbio, 0, 1);
+>> +	if (ret || !bbio || !bbio->raid_map)
+>> +		goto error;
+>> +	*bytenr_ret = bbio->raid_map[0];
+>> +	btrfs_put_bbio(bbio);
+>> +	return 0;
+>> +error:
+>> +	btrfs_put_bbio(bbio);
+>> +	if (ret)
+>> +		return ret;
+>> +	return -EIO;
+>> +}
+>> +
+>> +/*
+>> + * To lock a full stripe to avoid concurrency of recovery and read
+>> + * It's only used for profiles with parities(RAID5/6), for other profiles it
+>                                                ^ insert space please
+
+Old comments always have such problem.
+
+Will be gone.
+
+>
+>> + * does nothing
+>> + */
+>> +static int lock_full_stripe(struct btrfs_fs_info *fs_info, u64 bytenr,
+>> +			    gfp_t gfp_flags)
+>
+> I found only 1 user of the function, that passes GFP_NOFS to this
+> function. Do you plan to use it in other code with other flags? If not,
+> the argument can be dropped. And also the use of NOFS should be
+> evaluated if we couldn't use GFP_KERNEL instead.
+
+GFP_KERNEL will be the case.
+
+>
+>> +{
+>> +	struct btrfs_block_group_cache *bg_cache;
+>> +	struct scrub_full_stripe_lock *fstripe_lock;
+>> +	struct scrub_full_stripe_lock *existing;
+>> +	u64 fstripe_start;
+>> +	int ret = 0;
+>> +
+>> +	bg_cache = btrfs_lookup_block_group(fs_info, bytenr);
+>> +	if (!bg_cache)
+>> +		return -ENOENT;
+>> +
+>> +	/* Mirror based profiles don't need full stripe lock */
+>> +	if (!(bg_cache->flags & BTRFS_BLOCK_GROUP_RAID56_MASK))
+>> +		goto out;
+>> +
+>> +	ret = get_full_stripe_logical(fs_info, bytenr, &fstripe_start);
+>> +	if (ret < 0)
+>> +		goto out;
+>> +
+>> +	fstripe_lock = kmalloc(sizeof(*fstripe_lock), gfp_flags);
+>> +	if (!fstripe_lock) {
+>> +		ret = -ENOENT;
+>
+> The error code does not match the condition, why isn't it ENOMEM ? If
+> there's a reason why ENOENT is ok, please add a comment here or to the
+> function.
+>
+>> +		goto out;
+>> +	}
+>> +
+>> +	fstripe_lock->logical = fstripe_start;
+>> +	fstripe_lock->refs = 1;
+>> +	mutex_init(&fstripe_lock->mutex);
+>> +
+>> +	/* Now insert the full stripe lock */
+>> +	spin_lock(&bg_cache->scrub_lock);
+>> +	existing = add_scrub_lock(bg_cache, fstripe_lock);
+>> +	if (existing) {
+>> +		kfree(fstripe_lock);
+>
+> I don't like the speculative allocation and then free pattern, but it
+> does not seem we can avoid it. Please at least move the kfree call out
+> of the mutex/spinlock.
+
+Can be modified to use mutex other than spinlock, then we can allocate 
+memory when holding the mutex.
+
+Considering the main overhead would be verifying csum, mutex overhead 
+should not be a big problem.
+
+>
+>> +		fstripe_lock = existing;
+>> +	}
+>> +	spin_unlock(&bg_cache->scrub_lock);
+>> +	mutex_lock(&fstripe_lock->mutex);
+>
+> The function should be annotated that it leaves a mutex locked.
+
+I'll add comment for it at the comment of the function.
+
+>
+>> +
+>> +out:
+>> +	btrfs_put_block_group(bg_cache);
+>> +	return ret;
+>> +}
+>> +
+>> +static int unlock_full_stripe(struct btrfs_fs_info *fs_info, u64 bytenr)
+>> +{
+>> +	struct btrfs_block_group_cache *bg_cache;
+>> +	struct scrub_full_stripe_lock *fstripe_lock;
+>> +	u64 fstripe_start;
+>> +	int ret = 0;
+>> +
+>> +	bg_cache = btrfs_lookup_block_group(fs_info, bytenr);
+>> +	if (!bg_cache)
+>> +		return -ENOENT;
+>> +	if (!(bg_cache->flags & BTRFS_BLOCK_GROUP_RAID56_MASK))
+>> +		goto out;
+>> +
+>> +	ret = get_full_stripe_logical(fs_info, bytenr, &fstripe_start);
+>> +	if (ret < 0)
+>> +		goto out;
+>> +
+>> +	spin_lock(&bg_cache->scrub_lock);
+>> +	fstripe_lock = search_scrub_lock(bg_cache, fstripe_start);
+>> +	/* This is a deadly problem, we hold a mutex but can't unlock it */
+>
+> Not sure that it's deadly. Would be great to add comments why we can't
+> unlock it, as this function is supposed to pair with lock and if the
+> mutex is not unlocked, it must be handled by the caller somehow. I find
+> this semantic quite dangerous.
+
+I was too nervous about such error.
+
+If it happens with paired lock/unlock_full_stripe(), then memory is 
+corrupted either by hardware or other code.
+Then it's nothing we can do much.
+
+And if it's caused by unpaired lock/unlock_full_stripe(), then normal 
+warning should be enough at unlock_full_stripe() to info developer there 
+is a wild unlock.
+
+So the comment is over-reacted.
+
+>
+>> +	if (WARN_ON(!fstripe_lock)) {
+>
+> Is the WARN_ON necessary? I know it helps debugging, but users also tend
+> to panic when they see stacktraces in the log. Is there a better way to
+> report it?
+
+The warning can only happen if we have wild unlock. Although it's less a 
+problem than wild locked mutex, such warning helps us to expose such 
+problem at QA time before it hitting end users.
+
+And if we have ensured lock and unlock are paired, I don't think it will 
+cause anything wrong.
+
+>
+>> +		ret = -ENOENT;
+>> +		goto unlock;
+>> +	}
+>> +
+>> +	mutex_unlock(&fstripe_lock->mutex);
+>
+> I don't like to see a mutex being freed inside a spinlock section,
+
+Will be modified.
+
+>
+>> +	if (!WARN_ON(fstripe_lock->refs == 0))
+>
+> So here it's unexpected refcount, that's worth a warning and also some
+> human readable error message. Please move the WARN_ON on a separate line
+> as it's harder to read when mixed with the if statement.
+
+OK, while personally I found such trick quite handy :(
 
 Thanks,
+Qu
 
--liubo
+>
+>> +		fstripe_lock->refs--;
+>> +	if (fstripe_lock->refs == 0) {
+>> +		rb_erase(&fstripe_lock->node, &bg_cache->scrub_lock_root);
+>> +		kfree(fstripe_lock);
+>
+> Move kfree out of all locks if possible.
+>
+>> +	}
+>> +unlock:
+>> +	spin_unlock(&bg_cache->scrub_lock);
+>> +out:
+>> +	btrfs_put_block_group(bg_cache);
+>> +	return ret;
+>> +}
+>> +
+>> +/*
+>>   * used for workers that require transaction commits (i.e., for the
+>>   * NOCOW case)
+>>   */
+>
+>
 
-> 
-> Thanks,
-> Qu
-> 
-> diff --git a/tests/btrfs/069 b/tests/btrfs/069
-> index d939cd8..f9ff945 100755
-> --- a/tests/btrfs/069
-> +++ b/tests/btrfs/069
-> @@ -74,7 +74,7 @@ run_test()
->         _scratch_mount >>$seqres.full 2>&1
->         SCRATCH_DEV_POOL=$saved_scratch_dev_pool
-> 
-> -       args=`_scale_fsstress_args -p 20 -n 100 $FSSTRESS_AVOID -d
-> $SCRATCH_MNT/stressdir`
-> +       args=`_scale_fsstress_args -p 20 -n 1000 $FSSTRESS_AVOID -d
-> $SCRATCH_MNT/stressdir`
->         echo "Run fsstress $args" >>$seqres.full
->         $FSSTRESS_PROG $args >/dev/null 2>&1 &
->         fsstress_pid=$!
-> @@ -115,9 +115,10 @@ run_test()
->  }
-> 
->  echo "Silence is golden"
-> -for t in "${_btrfs_profile_configs[@]}"; do
-> -       run_test "$t"
-> -done
-> +#for t in "${_btrfs_profile_configs[@]}"; do
-> +#      run_test "$t"
-> +#done
-> +run_test "-d raid5 -m raid5"
-> 
->  status=0
->  exit
-> 
-> > 
-> > Thanks,
-> > 
-> > -liubo
-> > 
-> > > And the kernel NULL pointer access is like this when running modified
-> > > btrfs/069 (only run on RAID5, and improve the duration of fsstress):
-> > > 
-> > > [  884.877421] BUG: unable to handle kernel NULL pointer dereference at
-> > > 00000000000005e0
-> > > [  884.878206] IP: generic_make_request_checks+0x4d/0x610
-> > > [  884.878541] PGD 2d45a067
-> > > [  884.878542] PUD 3ba0e067
-> > > [  884.878857] PMD 0
-> > > [  884.879189]
-> > > [  884.879899] Oops: 0000 [#1] SMP
-> > > [  884.880207] Modules linked in: btrfs(O) ext4 jbd2 mbcache xor raid6_pq
-> > > netconsole xfs [last unloaded: btrfs]
-> > > [  884.880845] CPU: 1 PID: 11676 Comm: kworker/u4:14 Tainted: G  O
-> > > 4.11.0-rc2 #72
-> > > [  884.881455] Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS
-> > > 1.10.2-20170228_101828-anatol 04/01/2014
-> > > [  884.882119] Workqueue: btrfs-endio-raid56 btrfs_endio_raid56_helper
-> > > [btrfs]
-> > > [  884.883089] task: ffff88002875b4c0 task.stack: ffffc90001334000
-> > > [  884.883527] RIP: 0010:generic_make_request_checks+0x4d/0x610
-> > > [  884.883855] RSP: 0018:ffffc90001337bb8 EFLAGS: 00010283
-> > > [  884.884186] RAX: 0000000000000000 RBX: ffff8800126503e8 RCX:
-> > > 0000000000218800
-> > > [  884.884539] RDX: 0000000000000040 RSI: 0000000000000001 RDI:
-> > > ffff88003d8116c0
-> > > [  884.884897] RBP: ffffc90001337c18 R08: 0000000000000001 R09:
-> > > 0000000000000001
-> > > [  884.885778] R10: 0000000000000000 R11: 00000000000162b9 R12:
-> > > 0000000000000040
-> > > [  884.886346] R13: ffff8800126503e8 R14: 00000000ffffffff R15:
-> > > 0000000000000010
-> > > [  884.887146] FS:  0000000000000000(0000) GS:ffff88003e400000(0000)
-> > > knlGS:0000000000000000
-> > > [  884.888457] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-> > > [  884.888792] CR2: 00000000000005e0 CR3: 000000003ad30000 CR4:
-> > > 00000000000006e0
-> > > [  884.889212] Call Trace:
-> > > [  884.889526]  ? generic_make_request+0xc7/0x360
-> > > [  884.889841]  generic_make_request+0x24/0x360
-> > > [  884.890163]  ? generic_make_request+0xc7/0x360
-> > > [  884.890486]  submit_bio+0x64/0x120
-> > > [  884.890828]  ? page_in_rbio+0x4d/0x80 [btrfs]
-> > > [  884.891206]  ? rbio_orig_end_io+0x80/0x80 [btrfs]
-> > > [  884.891543]  finish_rmw+0x3f4/0x540 [btrfs]
-> > > [  884.891875]  validate_rbio_for_rmw+0x36/0x40 [btrfs]
-> > > [  884.892213]  raid_rmw_end_io+0x7a/0x90 [btrfs]
-> > > [  884.892565]  bio_endio+0x56/0x60
-> > > [  884.892891]  end_workqueue_fn+0x3c/0x40 [btrfs]
-> > > [  884.893265]  btrfs_scrubparity_helper+0xef/0x620 [btrfs]
-> > > [  884.893698]  btrfs_endio_raid56_helper+0xe/0x10 [btrfs]
-> > > [  884.894101]  process_one_work+0x2af/0x720
-> > > [  884.894837]  ? process_one_work+0x22b/0x720
-> > > [  884.895278]  worker_thread+0x4b/0x4f0
-> > > [  884.895760]  kthread+0x10f/0x150
-> > > [  884.896106]  ? process_one_work+0x720/0x720
-> > > [  884.896448]  ? kthread_create_on_node+0x40/0x40
-> > > [  884.896803]  ret_from_fork+0x2e/0x40
-> > > [  884.897148] Code: 67 28 48 c7 c7 27 7f c9 81 e8 90 6c d4 ff e8 0b bb 54
-> > > 00 41 c1 ec 09 48 8b 7b 08 45 85 e4 0f 85 be 00 00 00 48 8b 87 00 01 00 00
-> > > <4c> 8b b0 e0 05 00 00 4d 85 f6 0f 84 86 01 00 00 4c 8b af f0 00
-> > > [  884.898449] RIP: generic_make_request_checks+0x4d/0x610 RSP:
-> > > ffffc90001337bb8
-> > > [  884.899223] CR2: 00000000000005e0
-> > > [  884.900223] ---[ end trace 307e118b57a9995e ]---
-> > > 
-> > > Thanks,
-> > > Qu
-> > > 
-> > > > 
-> > > > I wonder if patch 4 and 5 are fixing the same use-after-free problem?
-> > > > 
-> > > > Thanks,
-> > > > 
-> > > > -liubo
-> > > > 
-> > > > > Thanks,
-> > > > > Qu
-> > > > > 
-> > > > > 
-> > > > > > 
-> > > > > > Thanks,
-> > > > > > 
-> > > > > > -liubo
-> > > > > > 
-> > > > > > > And I think the logical is very strange, if RAID5/6 is unstable, there is no
-> > > > > > > meaning to keep it fast.
-> > > > > > > 
-> > > > > > > Keep it stable first, and then consider the performance.
-> > > > > > > 
-> > > > > > > Thanks,
-> > > > > > > Qu
-> > > > > > > 
-> > > > > > > > 
-> > > > > > > > Thanks,
-> > > > > > > > 
-> > > > > > > > -liubo
-> > > > > > > > 
-> > > > > > > > > Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> > > > > > > > > ---
-> > > > > > > > >  fs/btrfs/raid56.c | 18 +-----------------
-> > > > > > > > >  1 file changed, 1 insertion(+), 17 deletions(-)
-> > > > > > > > > 
-> > > > > > > > > diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-> > > > > > > > > index 453eefdcb591..aba82b95ec73 100644
-> > > > > > > > > --- a/fs/btrfs/raid56.c
-> > > > > > > > > +++ b/fs/btrfs/raid56.c
-> > > > > > > > > @@ -776,7 +776,6 @@ static noinline void unlock_stripe(struct btrfs_raid_bio *rbio)
-> > > > > > > > >  	int bucket;
-> > > > > > > > >  	struct btrfs_stripe_hash *h;
-> > > > > > > > >  	unsigned long flags;
-> > > > > > > > > -	int keep_cache = 0;
-> > > > > > > > > 
-> > > > > > > > >  	bucket = rbio_bucket(rbio);
-> > > > > > > > >  	h = rbio->fs_info->stripe_hash_table->table + bucket;
-> > > > > > > > > @@ -788,19 +787,6 @@ static noinline void unlock_stripe(struct btrfs_raid_bio *rbio)
-> > > > > > > > >  	spin_lock(&rbio->bio_list_lock);
-> > > > > > > > > 
-> > > > > > > > >  	if (!list_empty(&rbio->hash_list)) {
-> > > > > > > > > -		/*
-> > > > > > > > > -		 * if we're still cached and there is no other IO
-> > > > > > > > > -		 * to perform, just leave this rbio here for others
-> > > > > > > > > -		 * to steal from later
-> > > > > > > > > -		 */
-> > > > > > > > > -		if (list_empty(&rbio->plug_list) &&
-> > > > > > > > > -		    test_bit(RBIO_CACHE_BIT, &rbio->flags)) {
-> > > > > > > > > -			keep_cache = 1;
-> > > > > > > > > -			clear_bit(RBIO_RMW_LOCKED_BIT, &rbio->flags);
-> > > > > > > > > -			BUG_ON(!bio_list_empty(&rbio->bio_list));
-> > > > > > > > > -			goto done;
-> > > > > > > > > -		}
-> > > > > > > > > -
-> > > > > > > > >  		list_del_init(&rbio->hash_list);
-> > > > > > > > >  		atomic_dec(&rbio->refs);
-> > > > > > > > > 
-> > > > > > > > > @@ -848,13 +834,11 @@ static noinline void unlock_stripe(struct btrfs_raid_bio *rbio)
-> > > > > > > > >  			goto done_nolock;
-> > > > > > > > >  		}
-> > > > > > > > >  	}
-> > > > > > > > > -done:
-> > > > > > > > >  	spin_unlock(&rbio->bio_list_lock);
-> > > > > > > > >  	spin_unlock_irqrestore(&h->lock, flags);
-> > > > > > > > > 
-> > > > > > > > >  done_nolock:
-> > > > > > > > > -	if (!keep_cache)
-> > > > > > > > > -		remove_rbio_from_cache(rbio);
-> > > > > > > > > +	remove_rbio_from_cache(rbio);
-> > > > > > > > >  }
-> > > > > > > > > 
-> > > > > > > > >  static void __free_raid_bio(struct btrfs_raid_bio *rbio)
-> > > > > > > > > --
-> > > > > > > > > 2.11.0
-> > > > > > > > > 
-> > > > > > > > > 
-> > > > > > > > > 
-> > > > > > > > > --
-> > > > > > > > > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> > > > > > > > > the body of a message to majordomo@vger.kernel.org
-> > > > > > > > > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> > > > > > > > 
-> > > > > > > > 
-> > > > > > > 
-> > > > > > > 
-> > > > > > 
-> > > > > > 
-> > > > > 
-> > > > > 
-> > > > 
-> > > > 
-> > > 
-> > > 
-> > 
-> > 
-> 
-> 
+

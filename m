@@ -1,82 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fieldses.org ([173.255.197.46]:59126 "EHLO fieldses.org"
+Received: from azure.uno.uk.net ([95.172.254.11]:45813 "EHLO azure.uno.uk.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933356AbdC3QMc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Mar 2017 12:12:32 -0400
-Date: Thu, 30 Mar 2017 12:12:31 -0400
-From: "J. Bruce Fields" <bfields@fieldses.org>
-To: Jeff Layton <jlayton@redhat.com>
-Cc: Jan Kara <jack@suse.cz>, Christoph Hellwig <hch@infradead.org>,
-        linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-nfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org
-Subject: Re: [RFC PATCH v1 00/30] fs: inode->i_version rework and optimization
-Message-ID: <20170330161231.GA9824@fieldses.org>
-References: <20170320214327.GA5098@fieldses.org>
- <20170321134500.GA1318@infradead.org>
- <20170321163011.GA16666@fieldses.org>
- <1490117004.2542.1.camel@redhat.com>
- <20170321183006.GD17872@fieldses.org>
- <1490122013.2593.1.camel@redhat.com>
- <20170329111507.GA18467@quack2.suse.cz>
- <1490810071.2678.6.camel@redhat.com>
- <20170330064724.GA21542@quack2.suse.cz>
- <1490872308.2694.1.camel@redhat.com>
+        id S1754345AbdC3QN4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 30 Mar 2017 12:13:56 -0400
+Received: from ty.sabi.co.uk ([95.172.230.208]:58342)
+        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
+        (Exim 4.88)
+        (envelope-from <pg@btrfs.list.sabi.co.uk>)
+        id 1ctchu-001MrX-Kx
+        for linux-btrfs@vger.kernel.org; Thu, 30 Mar 2017 17:13:54 +0100
+Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
+        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
+        id 1cstr2-000066-W8
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Mar 2017 17:20:21 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1490872308.2694.1.camel@redhat.com>
+Content-Type: text/plain; charset=utf-8
+Message-ID: <22746.36163.53277.838361@tree.ty.sabi.co.uk>
+Date: Tue, 28 Mar 2017 17:20:19 +0100
+To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Shrinking a device - performance?
+In-Reply-To: <3A880E2C-ADB9-4BCB-915C-14C9464C798C@gmail.com>
+References: <1CCB3887-A88C-41C1-A8EA-514146828A42@flyingcircus.io>
+        <20170327130730.GN11714@carfax.org.uk>
+        <3558CE2F-0B8F-437B-966C-11C1392B81F2@flyingcircus.io>
+        <20170327194847.5c0c5545@natsu>
+        <4E13254F-FDE8-47F7-A495-53BFED814C81@flyingcircus.io>
+        <22746.30348.324000.636753@tree.ty.sabi.co.uk>
+        <2F3BCD5B-2E3D-47BB-869B-19018380B1C5@gmail.com>
+        <22746.31754.811416.532986@tree.ty.sabi.co.uk>
+        <3A880E2C-ADB9-4BCB-915C-14C9464C798C@gmail.com>
+From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 30, 2017 at 07:11:48AM -0400, Jeff Layton wrote:
-> On Thu, 2017-03-30 at 08:47 +0200, Jan Kara wrote:
-> > Hum, so are we fine if i_version just changes (increases) for all inodes
-> > after a server crash? If I understand its use right, it would mean
-> > invalidation of all client's caches but that is not such a big deal given
-> > how frequent server crashes should be, right?
+> I’ve glazed over on “Not only that …” … can you make youtube
+> video of that :)) [ ... ]  It’s because I’m special :*
 
-Even if it's rare, it may be really painful when all your clients are
-forced to throw out and repopulate their caches after a crash.  But,
-yes, maybe we can live with it.
+Well played again, that's a fairly credible impersonation of a
+node.js/mongodb developer :-).
 
-> > Because if above is acceptable we could make reported i_version to be a sum
-> > of "superblock crash counter" and "inode i_version". We increment
-> > "superblock crash counter" whenever we detect unclean filesystem shutdown.
-> > That way after a crash we are guaranteed each inode will report new
-> > i_version (the sum would probably have to look like "superblock crash
-> > counter" * 65536 + "inode i_version" so that we avoid reusing possible
-> > i_version numbers we gave away but did not write to disk but still...).
-> > Thoughts?
+> On a real note thank’s [ ... ] to much of open source stuff is
+> based on short comments :/
 
-How hard is this for filesystems to support?  Do they need an on-disk
-format change to keep track of the crash counter?  Maybe not, maybe the
-high bits of the i_version counters are all they need.
+Yes... In part that's because the "sw engineering" aspect of
+programming takes a lot of time that unpaid volunteers sometimes
+cannot afford to take, in part though I have noticed sometimes
+free sw authors who do get paid to do free sw act as if they had
+a policy of obfuscation to protect their turf/jobs.
 
-> That does sound like a good idea. This is a 64 bit value, so we should
-> be able to carve out some upper bits for a crash counter without risking
-> wrapping.
-> 
-> The other constraint here is that we'd like any later version of the
-> counter to be larger than any earlier value that was handed out. I think
-> this idea would still satisfy that.
-
-I guess we just want to have some back-of-the-envelope estimates of
-maximum number of i_version increments possible between crashes and
-maximum number of crashes possible over lifetime of a filesystem, to
-decide how to split up the bits.
-
-I wonder if we could get away with using the new crash counter only for
-*new* values of the i_version?  After a crash, use the on disk i_version
-as is, and put off using the new crash counter until the next time the
-file's modified.
-
-That would still eliminate the risk of accidental reuse of an old
-i_version value.  It still leaves some cases where the client could fail
-to notice an update indefinitely.  All these cases I think have to
-assume that a writer made some changes that it failed to ever sync, so
-as long as we care only about close-to-open semantics perhaps those
-cases don't matter.
-
-I wonder if repeated crashes can lead to any odd corner cases.
-
---b.
+Regardless, mailing lists, IRC channel logs, wikis, personal
+blogs, search engines allow a mosaic of lore to form, which
+in part remedies the situation, and here we are :-).

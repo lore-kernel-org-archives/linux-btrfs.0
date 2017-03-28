@@ -1,68 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:33867 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753130AbdC1SlJ (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:38247 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1752679AbdC1WPh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Mar 2017 14:41:09 -0400
-Date: Tue, 28 Mar 2017 11:40:10 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>
-Subject: Re: [PATCH v2] Btrfs: fix unexpected file hole after disk errors
-Message-ID: <20170328184010.GB4385@lim.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1488330280-22678-1-git-send-email-bo.li.liu@oracle.com>
- <1488831810-26684-1-git-send-email-bo.li.liu@oracle.com>
- <20170328125006.GY4781@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170328125006.GY4781@twin.jikos.cz>
+        Tue, 28 Mar 2017 18:15:37 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1cszOV-0001dN-9v
+        for linux-btrfs@vger.kernel.org; Wed, 29 Mar 2017 00:15:15 +0200
+To: linux-btrfs@vger.kernel.org
+From: =?UTF-8?Q?Jakob_Sch=c3=bcrz?= <wertstoffe@nurfuerspam.de>
+Subject: Re: send snapshot from snapshot incremental
+Date: Wed, 29 Mar 2017 00:01:55 +0200
+Message-ID: <j33rqd-nkh.ln1@aldebaran.xundeenergie.at>
+References: <p18jqd-a0m.ln1@aldebaran.xundeenergie.at>
+ <22744.8089.282234.241186@tree.ty.sabi.co.uk>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <22744.8089.282234.241186@tree.ty.sabi.co.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 28, 2017 at 02:50:06PM +0200, David Sterba wrote:
-> On Mon, Mar 06, 2017 at 12:23:30PM -0800, Liu Bo wrote:
-> > Btrfs creates hole extents to cover any unwritten section right before
-> > doing buffer writes after commit 3ac0d7b96a26 ("btrfs: Change the expanding
-> > write sequence to fix snapshot related bug.").
-> > 
-> > However, that takes the start position of the buffered write to compare
-> > against the current EOF, hole extents would be created only if (EOF <
-> > start).
-> > 
-> > If the EOF is at the middle of the buffered write, no hole extents will be
-> > created and a file hole without a hole extent is left in this file.
-> > 
-> > This bug was revealed by generic/019 in fstests.  'fsstress' in this test
-> > may create the above situation and the test then fails all requests
-> > including writes, so the buffer write which is supposed to cover the
-> > hole (without the hole extent) couldn't make it on disk.  Running fsck
-> > against such btrfs ends up with detecting file extent holes.
-> > 
-> > Things could be more serious, some stale data would be exposed to
-> > userspace if files with this kind of hole are truncated to a position of
-> > the hole, because the on-disk inode size is beyond the last extent in the
-> > file.
-> > 
-> > This fixes the bug by comparing the end position against the EOF.
+Thanks for that explanation.
+
+I'm sure, i didn't understand the -c option... and my english is pretty
+good enough for the most things I need to know in Linux-things... but
+not for this. :-(
+
+Am 2017-03-26 um 22:07 schrieb Peter Grandi:
+> [ ... ]
+>> BUT if i take a snapshot from the system, and want to transfer
+>> it to the external HD, i can not set a parent subvolume,
+>> because there isn't any.
 > 
-> Is the test reliable? As I read it, it should be possible to craft the
-> file extents and trigger the bug. And verify the fix.
+> Questions like this are based on incomplete understanding of
+> 'send' and 'receive', and on IRC user "darkling" explained it
+> fairly well:
+> 
+>> When you use -c, you're telling the FS that it can expect to
+>> find a sent copy of that subvol on the receiving side, and
+>> that anything shared with it can be sent by reference. OK, so
+>> with -c on its own, you're telling the FS that "all the data
+>> in this subvol already exists on the remote".
+> 
+>> So, when you send your subvol, *all* of the subvol's metadata
+>> is sent, and where that metadata refers to an extent that's
+>> shared with the -c subvol, the extent data isn't sent, because
+>> it's known to be on the other end already, and can be shared
+>> directly from there.
+> 
+>> OK. So, with -p, there's a "base" subvol. The send subvol and
+>> the -p reference subvol are both snapshots of that base (at
+>> different times). The -p reference subvol, as with -c, is
+>> assumed to be on the remote FS. However, because it's known to
+>> be an earlier version of the same data, you can be more
+>> efficient in the sending by saying "start from the earlier
+>> version, and modify it in this way to get the new version"
+> 
+>> So, with -p, not all of the metadata is sent, because you know
+>> you've already got most of it on the remote in the form of the
+>> earlier version.
+> 
+>> So -p is "take this thing and apply these differences to it"
+>> and -c is "build this thing from scratch, but you can share
+>> some of the data with these sources"
+> 
+> Also here some additional details:
+> 
+>   http://logs.tvrrug.org.uk/logs/%23btrfs/2016-06-29.html#2016-06-29T22:39:59
+> 
+> The requirement for read-only is because in that way it is
+> pretty sure that the same stuff is on both origin and target
+> volume.
+> 
+> It may help to compare with RSYNC: it has to scan both the full
+> origin and target trees, because it cannot be told that there is
+> a parent tree that is the same on origin and target; but with
+> option '--link-dest' it can do something similar to 'send -c'.
 
-It's not, running generic/019 by 10 times could produces a btrfsck
-error once on my box.
+There is Subvolume A on the send- and the receive-side.
+There is also Subvolume AA on the send-side from A.
+The parent-ID from send-AA is the ID from A.
+The received-ID from A on received-side A is the ID from A.
 
-Actually I think we don't need this patch any more since we're going
-to remove hole extents.
+To send the AA, i use the command
+btrfs send -p A AA|btrfs receive /path/to/receiveFS/
 
-I made a mistake when writing the above 'more serious' part, in fact
-truncating to a hole doesn't end up stale data as we don't have any
-file extent that points to the hole and reading the hole part should
-get all zero, thus there's no serious problem.
+The received-ID from AA on received-side A is the ID from AA.
 
-It was another bug about setting disk isize to zero accidentally and
-data was lost, which has been fixed.
 
-Thanks,
+Now i take a snapshot from AA on the send-side -> Called AAA
 
--liubo
+If i try to send AAA to the receiving FS with
+btrfs send -p AA AAA|btrfs receive /path/to/receiveFS/
+no parent snapshot is found.
+I should better take the -c Option.
+
+btrfs send -c AA AAA|btrfs receive /path/to/receiveFS/
+
+Am I right?
+(Sorry, cannot test it now, i do not have my external Drive here)
+I might remember, that this didn't work in the past...
+
+Best regards
+
+Jakob
+

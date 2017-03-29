@@ -1,99 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:42856 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932348AbdC2RzP (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:35377 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932294AbdC2SBf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 29 Mar 2017 13:55:15 -0400
+        Wed, 29 Mar 2017 14:01:35 -0400
+Date: Wed, 29 Mar 2017 11:00:35 -0700
 From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH v2] Btrfs: enable repair during read for raid56 profile
-Date: Wed, 29 Mar 2017 10:53:58 -0700
-Message-Id: <1490810038-18488-1-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1490382815-25248-1-git-send-email-bo.li.liu@oracle.com>
-References: <1490382815-25248-1-git-send-email-bo.li.liu@oracle.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH v3 3/5] btrfs: scrub: Don't append on-disk pages for
+ raid56 scrub
+Message-ID: <20170329180035.GB8328@lim.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <20170329013322.1323-1-quwenruo@cn.fujitsu.com>
+ <20170329013322.1323-4-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170329013322.1323-4-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Now that scrub can fix data errors with the help of parity for raid56
-profile, repair during read is able to as well.
+On Wed, Mar 29, 2017 at 09:33:20AM +0800, Qu Wenruo wrote:
+> In the following situation, scrub will calculate wrong parity to
+> overwrite correct one:
+> 
+> RAID5 full stripe:
+> 
+> Before
+> |     Dev 1      |     Dev  2     |     Dev 3     |
+> | Data stripe 1  | Data stripe 2  | Parity Stripe |
+> --------------------------------------------------- 0
+> | 0x0000 (Bad)   |     0xcdcd     |     0x0000    |
+> --------------------------------------------------- 4K
+> |     0xcdcd     |     0xcdcd     |     0x0000    |
+> ...
+> |     0xcdcd     |     0xcdcd     |     0x0000    |
+> --------------------------------------------------- 64K
+> 
+> After scrubbing dev3 only:
+> 
+> |     Dev 1      |     Dev  2     |     Dev 3     |
+> | Data stripe 1  | Data stripe 2  | Parity Stripe |
+> --------------------------------------------------- 0
+> | 0xcdcd (Good)  |     0xcdcd     | 0xcdcd (Bad)  |
+> --------------------------------------------------- 4K
+> |     0xcdcd     |     0xcdcd     |     0x0000    |
+> ...
+> |     0xcdcd     |     0xcdcd     |     0x0000    |
+> --------------------------------------------------- 64K
+> 
+> The reason is after raid56 read rebuild rbio->stripe_pages are all
+> correct recovered (0xcd for data stripes).
+> 
+> However when we check and repair parity, in
+> scrub_parity_check_and_repair(), we will appending pages in
+> sparity->spages list to rbio->bio_pages[], which contains old on-disk
+> data.
+>
 
-Although the mirror num in raid56 scenario has different meanings, i.e.
-0 or 1: read data directly
-> 1:    do recover with parity,
-it could be fit into how we repair bad block during read.
+s/appending/append/
 
-The trick is to use BTRFS_MAP_READ instead of BTRFS_MAP_WRITE to get the
-device and position on it.
+> And when we submit parity data to disk, we calculate parity using
+> rbio->bio_pages[] first, if rbio->bio_pages[] not found, then fallback
+> to rbio->stripe_pages[].
+>
 
-Cc: David Sterba <dsterba@suse.cz>
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
-v2: Fix typo and add comments for why BTRFS_MAP_READ is used.
+*is not found
 
- fs/btrfs/extent_io.c | 40 +++++++++++++++++++++++++++-------------
- 1 file changed, 27 insertions(+), 13 deletions(-)
+> The patch fix it by not appending pages from sparity->spages.
+> So finish_parity_scrub() will use rbio->stripe_pages[] which is correct.
+>
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index d39a11c..7241f94 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2009,10 +2009,6 @@ int repair_io_failure(struct btrfs_inode *inode, u64 start, u64 length,
- 	ASSERT(!(fs_info->sb->s_flags & MS_RDONLY));
- 	BUG_ON(!mirror_num);
- 
--	/* we can't repair anything in raid56 yet */
--	if (btrfs_is_parity_mirror(map_tree, logical, length, mirror_num))
--		return 0;
--
- 	bio = btrfs_io_bio_alloc(GFP_NOFS, 1);
- 	if (!bio)
- 		return -EIO;
-@@ -2025,17 +2021,35 @@ int repair_io_failure(struct btrfs_inode *inode, u64 start, u64 length,
- 	 * read repair operation.
- 	 */
- 	btrfs_bio_counter_inc_blocked(fs_info);
--	ret = btrfs_map_block(fs_info, BTRFS_MAP_WRITE, logical,
--			      &map_length, &bbio, mirror_num);
--	if (ret) {
--		btrfs_bio_counter_dec(fs_info);
--		bio_put(bio);
--		return -EIO;
-+	if (btrfs_is_parity_mirror(map_tree, logical, length, mirror_num)) {
-+		/*
-+		 * Note that we don't use BTRFS_MAP_WRITE because it's supposed
-+		 * to update all raid stripes, but here we just want to correct
-+		 * bad stripe, thus BTRFS_MAP_READ is abused to only get the bad
-+		 * stripe's dev and sector.
-+		 */
-+		ret = btrfs_map_block(fs_info, BTRFS_MAP_READ, logical,
-+				      &map_length, &bbio, 0);
-+		if (ret) {
-+			btrfs_bio_counter_dec(fs_info);
-+			bio_put(bio);
-+			return -EIO;
-+		}
-+		ASSERT(bbio->mirror_num == 1);
-+	} else {
-+		ret = btrfs_map_block(fs_info, BTRFS_MAP_WRITE, logical,
-+				      &map_length, &bbio, mirror_num);
-+		if (ret) {
-+			btrfs_bio_counter_dec(fs_info);
-+			bio_put(bio);
-+			return -EIO;
-+		}
-+		BUG_ON(mirror_num != bbio->mirror_num);
- 	}
--	BUG_ON(mirror_num != bbio->mirror_num);
--	sector = bbio->stripes[mirror_num-1].physical >> 9;
-+
-+	sector = bbio->stripes[bbio->mirror_num - 1].physical >> 9;
- 	bio->bi_iter.bi_sector = sector;
--	dev = bbio->stripes[mirror_num-1].dev;
-+	dev = bbio->stripes[bbio->mirror_num - 1].dev;
- 	btrfs_put_bbio(bbio);
- 	if (!dev || !dev->bdev || !dev->writeable) {
- 		btrfs_bio_counter_dec(fs_info);
--- 
-2.5.5
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
+Thanks,
+
+-liubo
+
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+>  fs/btrfs/scrub.c | 4 ----
+>  1 file changed, 4 deletions(-)
+> 
+> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+> index f92d2512f4f3..2fd259dbf4db 100644
+> --- a/fs/btrfs/scrub.c
+> +++ b/fs/btrfs/scrub.c
+> @@ -2991,7 +2991,6 @@ static void scrub_parity_check_and_repair(struct scrub_parity *sparity)
+>  	struct btrfs_fs_info *fs_info = sctx->fs_info;
+>  	struct bio *bio;
+>  	struct btrfs_raid_bio *rbio;
+> -	struct scrub_page *spage;
+>  	struct btrfs_bio *bbio = NULL;
+>  	u64 length;
+>  	int ret;
+> @@ -3021,9 +3020,6 @@ static void scrub_parity_check_and_repair(struct scrub_parity *sparity)
+>  	if (!rbio)
+>  		goto rbio_out;
+>  
+> -	list_for_each_entry(spage, &sparity->spages, list)
+> -		raid56_add_scrub_pages(rbio, spage->page, spage->logical);
+> -
+>  	scrub_pending_bio_inc(sctx);
+>  	raid56_parity_submit_scrub_rbio(rbio);
+>  	return;
+> -- 
+> 2.12.1
+> 
+> 
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,153 +1,128 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33812 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1756037AbdC2K4b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 29 Mar 2017 06:56:31 -0400
-From: Jan Kara <jack@suse.cz>
-To: <linux-fsdevel@vger.kernel.org>
-Cc: linux-block@vger.kernel.org, Christoph Hellwig <hch@infradead.org>,
-        Jan Kara <jack@suse.cz>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org
-Subject: [PATCH 08/25] btrfs: Convert to separately allocated bdi
-Date: Wed, 29 Mar 2017 12:56:06 +0200
-Message-Id: <20170329105623.18241-9-jack@suse.cz>
-In-Reply-To: <20170329105623.18241-1-jack@suse.cz>
-References: <20170329105623.18241-1-jack@suse.cz>
+Received: from userp1040.oracle.com ([156.151.31.81]:30131 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751717AbdC2RxP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 29 Mar 2017 13:53:15 -0400
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH v3] Btrfs: bring back repair during read
+Date: Wed, 29 Mar 2017 10:51:59 -0700
+Message-Id: <1490809919-17425-1-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1490393090-14360-1-git-send-email-bo.li.liu@oracle.com>
+References: <1490393090-14360-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Allocate struct backing_dev_info separately instead of embedding it
-inside superblock. This unifies handling of bdi among users.
+Commit 20a7db8ab3f2 ("btrfs: add dummy callback for readpage_io_failed
+and drop checks") made a cleanup around readpage_io_failed_hook, and
+it was supposed to keep the original sematics, but it also
+unexpectedly disabled repair during read for dup, raid1 and raid10.
 
-CC: Chris Mason <clm@fb.com>
-CC: Josef Bacik <jbacik@fb.com>
-CC: David Sterba <dsterba@suse.com>
-CC: linux-btrfs@vger.kernel.org
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+This fixes the problem by letting data's inode call the generic
+readpage_io_failed callback by returning -EAGAIN from its
+readpage_io_failed_hook in order to notify end_bio_extent_readpage to
+do the rest.  We don't call it directly because the generic one takes
+an offset from end_bio_extent_readpage() to calculate the index in the
+checksum array and inode's readpage_io_failed_hook doesn't offer that
+offset.
+
+Cc: David Sterba <dsterba@suse.cz>
 Reviewed-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Jan Kara <jack@suse.cz>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/ctree.h   |  1 -
- fs/btrfs/disk-io.c | 36 +++++++-----------------------------
- fs/btrfs/super.c   |  7 +++++++
- 3 files changed, 14 insertions(+), 30 deletions(-)
+v2: fix grammar typos and additional details about the change.
+v3: add back const attribute.
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 29b7fc28c607..f6019ce20035 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -810,7 +810,6 @@ struct btrfs_fs_info {
- 	struct btrfs_super_block *super_for_commit;
- 	struct super_block *sb;
- 	struct inode *btree_inode;
--	struct backing_dev_info bdi;
- 	struct mutex tree_log_mutex;
- 	struct mutex transaction_kthread_mutex;
- 	struct mutex cleaner_mutex;
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 08b74daf35d0..a7d8c342f604 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1808,21 +1808,6 @@ static int btrfs_congested_fn(void *congested_data, int bdi_bits)
- 	return ret;
+ fs/btrfs/extent_io.c | 46 ++++++++++++++++++++++++++++------------------
+ fs/btrfs/inode.c     |  6 +++---
+ 2 files changed, 31 insertions(+), 21 deletions(-)
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 28e8192..d39a11c 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2583,26 +2583,36 @@ static void end_bio_extent_readpage(struct bio *bio)
+ 
+ 		if (tree->ops) {
+ 			ret = tree->ops->readpage_io_failed_hook(page, mirror);
+-			if (!ret && !bio->bi_error)
+-				uptodate = 1;
+-		} else {
++			if (ret == -EAGAIN) {
++				/*
++				 * Data inode's readpage_io_failed_hook() always
++				 * returns -EAGAIN.
++				 *
++				 * The generic bio_readpage_error handles errors
++				 * the following way: If possible, new read
++				 * requests are created and submitted and will
++				 * end up in end_bio_extent_readpage as well (if
++				 * we're lucky, not in the !uptodate case). In
++				 * that case it returns 0 and we just go on with
++				 * the next page in our bio. If it can't handle
++				 * the error it will return -EIO and we remain
++				 * responsible for that page.
++				 */
++				ret = bio_readpage_error(bio, offset, page,
++							 start, end, mirror);
++				if (ret == 0) {
++					uptodate = !bio->bi_error;
++					offset += len;
++					continue;
++				}
++			}
++
+ 			/*
+-			 * The generic bio_readpage_error handles errors the
+-			 * following way: If possible, new read requests are
+-			 * created and submitted and will end up in
+-			 * end_bio_extent_readpage as well (if we're lucky, not
+-			 * in the !uptodate case). In that case it returns 0 and
+-			 * we just go on with the next page in our bio. If it
+-			 * can't handle the error it will return -EIO and we
+-			 * remain responsible for that page.
++			 * metadata's readpage_io_failed_hook() always returns
++			 * -EIO and fixes nothing.  -EIO is also returned if
++			 * data inode error could not be fixed.
+ 			 */
+-			ret = bio_readpage_error(bio, offset, page, start, end,
+-						 mirror);
+-			if (ret == 0) {
+-				uptodate = !bio->bi_error;
+-				offset += len;
+-				continue;
+-			}
++			ASSERT(ret == -EIO);
+ 		}
+ readpage_ok:
+ 		if (likely(uptodate)) {
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index c40060c..4296cae 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -10509,9 +10509,9 @@ static int btrfs_tmpfile(struct inode *dir, struct dentry *dentry, umode_t mode)
  }
  
--static int setup_bdi(struct btrfs_fs_info *info, struct backing_dev_info *bdi)
--{
--	int err;
--
--	err = bdi_setup_and_register(bdi, "btrfs");
--	if (err)
--		return err;
--
--	bdi->ra_pages = VM_MAX_READAHEAD * 1024 / PAGE_SIZE;
--	bdi->congested_fn	= btrfs_congested_fn;
--	bdi->congested_data	= info;
--	bdi->capabilities |= BDI_CAP_CGROUP_WRITEBACK;
+ __attribute__((const))
+-static int dummy_readpage_io_failed_hook(struct page *page, int failed_mirror)
++static int btrfs_readpage_io_failed_hook(struct page *page, int failed_mirror)
+ {
 -	return 0;
--}
--
- /*
-  * called by the kthread helper functions to finally call the bio end_io
-  * functions.  This is where read checksum verification actually happens
-@@ -2601,16 +2586,10 @@ int open_ctree(struct super_block *sb,
- 		goto fail;
- 	}
++	return -EAGAIN;
+ }
  
--	ret = setup_bdi(fs_info, &fs_info->bdi);
--	if (ret) {
--		err = ret;
--		goto fail_srcu;
--	}
--
- 	ret = percpu_counter_init(&fs_info->dirty_metadata_bytes, 0, GFP_KERNEL);
- 	if (ret) {
- 		err = ret;
--		goto fail_bdi;
-+		goto fail_srcu;
- 	}
- 	fs_info->dirty_metadata_batch = PAGE_SIZE *
- 					(1 + ilog2(nr_cpu_ids));
-@@ -2718,7 +2697,6 @@ int open_ctree(struct super_block *sb,
+ static const struct inode_operations btrfs_dir_inode_operations = {
+@@ -10556,7 +10556,7 @@ static const struct extent_io_ops btrfs_extent_io_ops = {
+ 	.submit_bio_hook = btrfs_submit_bio_hook,
+ 	.readpage_end_io_hook = btrfs_readpage_end_io_hook,
+ 	.merge_bio_hook = btrfs_merge_bio_hook,
+-	.readpage_io_failed_hook = dummy_readpage_io_failed_hook,
++	.readpage_io_failed_hook = btrfs_readpage_io_failed_hook,
  
- 	sb->s_blocksize = 4096;
- 	sb->s_blocksize_bits = blksize_bits(4096);
--	sb->s_bdi = &fs_info->bdi;
- 
- 	btrfs_init_btree_inode(fs_info);
- 
-@@ -2915,9 +2893,12 @@ int open_ctree(struct super_block *sb,
- 		goto fail_sb_buffer;
- 	}
- 
--	fs_info->bdi.ra_pages *= btrfs_super_num_devices(disk_super);
--	fs_info->bdi.ra_pages = max(fs_info->bdi.ra_pages,
--				    SZ_4M / PAGE_SIZE);
-+	sb->s_bdi->congested_fn = btrfs_congested_fn;
-+	sb->s_bdi->congested_data = fs_info;
-+	sb->s_bdi->capabilities |= BDI_CAP_CGROUP_WRITEBACK;
-+	sb->s_bdi->ra_pages = VM_MAX_READAHEAD * 1024 / PAGE_SIZE;
-+	sb->s_bdi->ra_pages *= btrfs_super_num_devices(disk_super);
-+	sb->s_bdi->ra_pages = max(sb->s_bdi->ra_pages, SZ_4M / PAGE_SIZE);
- 
- 	sb->s_blocksize = sectorsize;
- 	sb->s_blocksize_bits = blksize_bits(sectorsize);
-@@ -3285,8 +3266,6 @@ int open_ctree(struct super_block *sb,
- 	percpu_counter_destroy(&fs_info->delalloc_bytes);
- fail_dirty_metadata_bytes:
- 	percpu_counter_destroy(&fs_info->dirty_metadata_bytes);
--fail_bdi:
--	bdi_destroy(&fs_info->bdi);
- fail_srcu:
- 	cleanup_srcu_struct(&fs_info->subvol_srcu);
- fail:
-@@ -4007,7 +3986,6 @@ void close_ctree(struct btrfs_fs_info *fs_info)
- 	percpu_counter_destroy(&fs_info->dirty_metadata_bytes);
- 	percpu_counter_destroy(&fs_info->delalloc_bytes);
- 	percpu_counter_destroy(&fs_info->bio_counter);
--	bdi_destroy(&fs_info->bdi);
- 	cleanup_srcu_struct(&fs_info->subvol_srcu);
- 
- 	btrfs_free_stripe_hash_table(fs_info);
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index da687dc79cce..e0a7503ab31e 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1133,6 +1133,13 @@ static int btrfs_fill_super(struct super_block *sb,
- #endif
- 	sb->s_flags |= MS_I_VERSION;
- 	sb->s_iflags |= SB_I_CGROUPWB;
-+
-+	err = super_setup_bdi(sb);
-+	if (err) {
-+		btrfs_err(fs_info, "super_setup_bdi failed");
-+		return err;
-+	}
-+
- 	err = open_ctree(sb, fs_devices, (char *)data);
- 	if (err) {
- 		btrfs_err(fs_info, "open_ctree failed");
+ 	/* optional callbacks */
+ 	.fill_delalloc = run_delalloc_range,
 -- 
-2.10.2
+2.5.5
 

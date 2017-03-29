@@ -1,401 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:46918 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:33269 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1753889AbdC1GYs (ORCPT
+        with ESMTP id S932748AbdC2BeG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Mar 2017 02:24:48 -0400
-Subject: Re: [PATCH v2 1/5] btrfs: scrub: Introduce full stripe lock for
- RAID56
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>, <bo.li.liu@oracle.com>
-References: <20170324020027.21228-1-quwenruo@cn.fujitsu.com>
- <20170324020027.21228-2-quwenruo@cn.fujitsu.com>
- <20170327163844.GI4781@twin.jikos.cz>
+        Tue, 28 Mar 2017 21:34:06 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <78c59945-06c5-f834-b72b-5fa4878c61d6@cn.fujitsu.com>
-Date: Tue, 28 Mar 2017 14:24:35 +0800
+To: <linux-btrfs@vger.kernel.org>
+CC: <dsterba@suse.cz>
+Subject: [PATCH v3 0/5] raid56: scrub related fixes
+Date: Wed, 29 Mar 2017 09:33:17 +0800
+Message-ID: <20170329013322.1323-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20170327163844.GI4781@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for the review first.
+This patchset can be fetched from my github repo:
+https://github.com/adam900710/linux.git raid56_fixes
 
-At 03/28/2017 12:38 AM, David Sterba wrote:
-> On Fri, Mar 24, 2017 at 10:00:23AM +0800, Qu Wenruo wrote:
->> Unlike mirror based profiles, RAID5/6 recovery needs to read out the
->> whole full stripe.
->>
->> And if we don't do proper protect, it can easily cause race condition.
->>
->> Introduce 2 new functions: lock_full_stripe() and unlock_full_stripe()
->> for RAID5/6.
->> Which stores a rb_tree of mutex for full stripes, so scrub callers can
->> use them to lock a full stripe to avoid race.
->>
->> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
->> ---
->>  fs/btrfs/ctree.h       |   4 ++
->>  fs/btrfs/extent-tree.c |   3 +
->>  fs/btrfs/scrub.c       | 177 +++++++++++++++++++++++++++++++++++++++++++++++++
->>  3 files changed, 184 insertions(+)
->>
->> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
->> index 29b7fc28c607..4d570e1040e6 100644
->> --- a/fs/btrfs/ctree.h
->> +++ b/fs/btrfs/ctree.h
->> @@ -648,6 +648,10 @@ struct btrfs_block_group_cache {
->>  	 * Protected by free_space_lock.
->>  	 */
->>  	int needs_free_space;
->> +
->> +	/* Scrub full stripe lock tree for RAID5/6 scrub */
->> +	struct rb_root scrub_lock_root;
->
-> The name scrub_lock_root is a bit confusing, it should better describe
-> what object the tree stores.
+It's based on v4.11-rc2, the last two patches get modified according to
+the advice from Liu Bo.
 
-I'll encapsulate this rb_root and spinlock into a new structure called 
-full_stripe_locks_tree.
+The patchset fixes the following bugs:
 
-I tried to rename them to other names, but "lock" and "root/tree" makes 
-it quite hard to name the spinlock.
-(name like "full_stripe_locks_root_lock" is just super stupid)
+1) False alert or wrong csum error number when scrubbing RAID5/6
+   The bug itself won't cause any damage to fs, just pure race.
 
->
->> +	spinlock_t scrub_lock;
->
-> And the lock could be named accordingly.
->
->>  };
->>
->>  /* delayed seq elem */
->> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
->> index be5477676cc8..db5d9f84535e 100644
->> --- a/fs/btrfs/extent-tree.c
->> +++ b/fs/btrfs/extent-tree.c
->> @@ -131,6 +131,7 @@ void btrfs_put_block_group(struct btrfs_block_group_cache *cache)
->>  	if (atomic_dec_and_test(&cache->count)) {
->>  		WARN_ON(cache->pinned > 0);
->>  		WARN_ON(cache->reserved > 0);
->> +		WARN_ON(!RB_EMPTY_ROOT(&cache->scrub_lock_root));
->>  		kfree(cache->free_space_ctl);
->>  		kfree(cache);
->>  	}
->> @@ -9907,6 +9908,8 @@ btrfs_create_block_group_cache(struct btrfs_fs_info *fs_info,
->>
->>  	atomic_set(&cache->count, 1);
->>  	spin_lock_init(&cache->lock);
->> +	spin_lock_init(&cache->scrub_lock);
->> +	cache->scrub_lock_root = RB_ROOT;
->>  	init_rwsem(&cache->data_rwsem);
->>  	INIT_LIST_HEAD(&cache->list);
->>  	INIT_LIST_HEAD(&cache->cluster_list);
->> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
->> index b0251eb1239f..38b300ac4567 100644
->> --- a/fs/btrfs/scrub.c
->> +++ b/fs/btrfs/scrub.c
->> @@ -240,6 +240,13 @@ struct scrub_warning {
->>  	struct btrfs_device	*dev;
->>  };
->>
->> +struct scrub_full_stripe_lock {
->> +	struct rb_node node;
->> +	u64 logical;
->> +	u64 refs;
->> +	struct mutex mutex;
->> +};
->> +
->>  static void scrub_pending_bio_inc(struct scrub_ctx *sctx);
->>  static void scrub_pending_bio_dec(struct scrub_ctx *sctx);
->>  static void scrub_pending_trans_workers_inc(struct scrub_ctx *sctx);
->> @@ -349,6 +356,176 @@ static void scrub_blocked_if_needed(struct btrfs_fs_info *fs_info)
->>  }
->>
->>  /*
->> + * Caller must hold cache->scrub_root_lock.
->> + *
->> + * Return existing full stripe and increase it refs
->> + * Or return NULL, and insert @fstripe_lock into the bg cache
->> + */
->> +static struct scrub_full_stripe_lock *
->> +add_scrub_lock(struct btrfs_block_group_cache *cache,
->> +	       struct scrub_full_stripe_lock *fstripe_lock)
->
-> Please stick to the function prototype common in that file, ie. type and
-> name on the same line. The arguments can go below it.
+   This can be triggered by running scrub for 64K corrupted data stripe,
+   Normally it will report 16 csum error recovered, but sometimes it
+   will report more than 16 csum error recovered, under rare case, even
+   unrecoverable error an be reported.
 
-Understood.
+2) Corrupted data stripe rebuild corrupts P/Q
+   So scrub makes one error into another, not really fixing anything
 
->
-> The function name is also quite confusing.
+   Since kernel scrub doesn't report parity error, so either offline
+   scrub or manual check is needed to expose such error.
 
-What about insert_full_stripe_lock() ?
+3) Use-after-free caused by cancelling dev-replace 
+   This is quite a deadly bug, since cancelling dev-replace can
+   cause kernel panic.
 
->
->> +{
->> +	struct rb_node **p;
->> +	struct rb_node *parent = NULL;
->> +	struct scrub_full_stripe_lock *entry;
->> +
->> +	p = &cache->scrub_lock_root.rb_node;
->> +	while (*p) {
->> +		parent = *p;
->> +		entry = rb_entry(parent, struct scrub_full_stripe_lock, node);
->> +		if (fstripe_lock->logical < entry->logical) {
->> +			p = &(*p)->rb_left;
->> +		} else if (fstripe_lock->logical > entry->logical) {
->> +			p = &(*p)->rb_right;
->> +		} else {
->> +			entry->refs++;
->> +			return entry;
->> +		}
->> +	}
->> +	/* Insert new one */
->> +	rb_link_node(&fstripe_lock->node, parent, p);
->> +	rb_insert_color(&fstripe_lock->node, &cache->scrub_lock_root);
->> +
->> +	return NULL
->> +}
->> +
->> +static struct scrub_full_stripe_lock *
->> +search_scrub_lock(struct btrfs_block_group_cache *cache, u64 bytenr)
->
-> Same here.
+   Can be triggered by btrfs/069.
 
-What about search_full_stripe_lock() ?
+v2:
+  Use bio_counter to protect rbio against dev-replace cancel, instead of
+  original btrfs_device refcount, which is too restrict and must disable
+  rbio cache, suggested by Liu Bo.
 
->
->> +{
->> +	struct rb_node *node;
->> +	struct scrub_full_stripe_lock *entry;
->> +
->> +	node = cache->scrub_lock_root.rb_node;
->> +	while (node) {
->> +		entry = rb_entry(node, struct scrub_full_stripe_lock, node);
->> +		if (bytenr < entry->logical)
->> +			node = node->rb_left;
->> +		else if (bytenr > entry->logical)
->> +			node = node->rb_right;
->> +		else
->> +			return entry;
->> +	}
->> +	return NULL;
->> +}
->> +
->> +/*
->> + * Helper to get full stripe logical from a normal bytenr.
->> + * Thanks to the chaos of scrub structures, we need to get it all
->> + * by ourselves, using btrfs_map_sblock().
->> + */
->> +static int get_full_stripe_logical(struct btrfs_fs_info *fs_info, u64 bytenr,
->> +				   u64 *bytenr_ret)
->> +{
->> +	struct btrfs_bio *bbio = NULL;
->> +	u64 len;
->> +	int ret;
->> +
->> +	/* Just use map_sblock() to get full stripe logical */
->> +	ret = btrfs_map_sblock(fs_info, BTRFS_MAP_GET_READ_MIRRORS, bytenr,
->> +			       &len, &bbio, 0, 1);
->> +	if (ret || !bbio || !bbio->raid_map)
->> +		goto error;
->> +	*bytenr_ret = bbio->raid_map[0];
->> +	btrfs_put_bbio(bbio);
->> +	return 0;
->> +error:
->> +	btrfs_put_bbio(bbio);
->> +	if (ret)
->> +		return ret;
->> +	return -EIO;
->> +}
->> +
->> +/*
->> + * To lock a full stripe to avoid concurrency of recovery and read
->> + * It's only used for profiles with parities(RAID5/6), for other profiles it
->                                                ^ insert space please
+v3:
+  Add fix for another possible use-after-free when rechecking recovered
+  full stripe
+  Squashing two patches as they are fixing the same problem, to make
+  bisect easier.
+  Use mutex other than spinlock to protect full stripe locks tree, this
+  allow us to allocate memory inside the critical section on demand.
+  Encapsulate rb_root and mutex into btrfs_full_stripe_locks_tree.
+  Rename scrub_full_stripe_lock to full_stripe_lock inside scrub.c.
+  Rename related function to have unified naming.
+  Code style change to follow the existing scrub code style.
 
-Old comments always have such problem.
+Qu Wenruo (5):
+  btrfs: scrub: Introduce full stripe lock for RAID56
+  btrfs: scrub: Fix RAID56 recovery race condition
+  btrfs: scrub: Don't append on-disk pages for raid56 scrub
+  btrfs: Wait flighting bio before freeing target device for raid56
+  btrfs: Prevent scrub recheck from racing with dev replace
 
-Will be gone.
+ fs/btrfs/ctree.h       |  17 ++++
+ fs/btrfs/dev-replace.c |   2 +
+ fs/btrfs/extent-tree.c |   2 +
+ fs/btrfs/raid56.c      |  14 +++
+ fs/btrfs/scrub.c       | 248 +++++++++++++++++++++++++++++++++++++++++++++++--
+ 5 files changed, 275 insertions(+), 8 deletions(-)
 
->
->> + * does nothing
->> + */
->> +static int lock_full_stripe(struct btrfs_fs_info *fs_info, u64 bytenr,
->> +			    gfp_t gfp_flags)
->
-> I found only 1 user of the function, that passes GFP_NOFS to this
-> function. Do you plan to use it in other code with other flags? If not,
-> the argument can be dropped. And also the use of NOFS should be
-> evaluated if we couldn't use GFP_KERNEL instead.
+-- 
+2.12.1
 
-GFP_KERNEL will be the case.
-
->
->> +{
->> +	struct btrfs_block_group_cache *bg_cache;
->> +	struct scrub_full_stripe_lock *fstripe_lock;
->> +	struct scrub_full_stripe_lock *existing;
->> +	u64 fstripe_start;
->> +	int ret = 0;
->> +
->> +	bg_cache = btrfs_lookup_block_group(fs_info, bytenr);
->> +	if (!bg_cache)
->> +		return -ENOENT;
->> +
->> +	/* Mirror based profiles don't need full stripe lock */
->> +	if (!(bg_cache->flags & BTRFS_BLOCK_GROUP_RAID56_MASK))
->> +		goto out;
->> +
->> +	ret = get_full_stripe_logical(fs_info, bytenr, &fstripe_start);
->> +	if (ret < 0)
->> +		goto out;
->> +
->> +	fstripe_lock = kmalloc(sizeof(*fstripe_lock), gfp_flags);
->> +	if (!fstripe_lock) {
->> +		ret = -ENOENT;
->
-> The error code does not match the condition, why isn't it ENOMEM ? If
-> there's a reason why ENOENT is ok, please add a comment here or to the
-> function.
->
->> +		goto out;
->> +	}
->> +
->> +	fstripe_lock->logical = fstripe_start;
->> +	fstripe_lock->refs = 1;
->> +	mutex_init(&fstripe_lock->mutex);
->> +
->> +	/* Now insert the full stripe lock */
->> +	spin_lock(&bg_cache->scrub_lock);
->> +	existing = add_scrub_lock(bg_cache, fstripe_lock);
->> +	if (existing) {
->> +		kfree(fstripe_lock);
->
-> I don't like the speculative allocation and then free pattern, but it
-> does not seem we can avoid it. Please at least move the kfree call out
-> of the mutex/spinlock.
-
-Can be modified to use mutex other than spinlock, then we can allocate 
-memory when holding the mutex.
-
-Considering the main overhead would be verifying csum, mutex overhead 
-should not be a big problem.
-
->
->> +		fstripe_lock = existing;
->> +	}
->> +	spin_unlock(&bg_cache->scrub_lock);
->> +	mutex_lock(&fstripe_lock->mutex);
->
-> The function should be annotated that it leaves a mutex locked.
-
-I'll add comment for it at the comment of the function.
-
->
->> +
->> +out:
->> +	btrfs_put_block_group(bg_cache);
->> +	return ret;
->> +}
->> +
->> +static int unlock_full_stripe(struct btrfs_fs_info *fs_info, u64 bytenr)
->> +{
->> +	struct btrfs_block_group_cache *bg_cache;
->> +	struct scrub_full_stripe_lock *fstripe_lock;
->> +	u64 fstripe_start;
->> +	int ret = 0;
->> +
->> +	bg_cache = btrfs_lookup_block_group(fs_info, bytenr);
->> +	if (!bg_cache)
->> +		return -ENOENT;
->> +	if (!(bg_cache->flags & BTRFS_BLOCK_GROUP_RAID56_MASK))
->> +		goto out;
->> +
->> +	ret = get_full_stripe_logical(fs_info, bytenr, &fstripe_start);
->> +	if (ret < 0)
->> +		goto out;
->> +
->> +	spin_lock(&bg_cache->scrub_lock);
->> +	fstripe_lock = search_scrub_lock(bg_cache, fstripe_start);
->> +	/* This is a deadly problem, we hold a mutex but can't unlock it */
->
-> Not sure that it's deadly. Would be great to add comments why we can't
-> unlock it, as this function is supposed to pair with lock and if the
-> mutex is not unlocked, it must be handled by the caller somehow. I find
-> this semantic quite dangerous.
-
-I was too nervous about such error.
-
-If it happens with paired lock/unlock_full_stripe(), then memory is 
-corrupted either by hardware or other code.
-Then it's nothing we can do much.
-
-And if it's caused by unpaired lock/unlock_full_stripe(), then normal 
-warning should be enough at unlock_full_stripe() to info developer there 
-is a wild unlock.
-
-So the comment is over-reacted.
-
->
->> +	if (WARN_ON(!fstripe_lock)) {
->
-> Is the WARN_ON necessary? I know it helps debugging, but users also tend
-> to panic when they see stacktraces in the log. Is there a better way to
-> report it?
-
-The warning can only happen if we have wild unlock. Although it's less a 
-problem than wild locked mutex, such warning helps us to expose such 
-problem at QA time before it hitting end users.
-
-And if we have ensured lock and unlock are paired, I don't think it will 
-cause anything wrong.
-
->
->> +		ret = -ENOENT;
->> +		goto unlock;
->> +	}
->> +
->> +	mutex_unlock(&fstripe_lock->mutex);
->
-> I don't like to see a mutex being freed inside a spinlock section,
-
-Will be modified.
-
->
->> +	if (!WARN_ON(fstripe_lock->refs == 0))
->
-> So here it's unexpected refcount, that's worth a warning and also some
-> human readable error message. Please move the WARN_ON on a separate line
-> as it's harder to read when mixed with the if statement.
-
-OK, while personally I found such trick quite handy :(
-
-Thanks,
-Qu
-
->
->> +		fstripe_lock->refs--;
->> +	if (fstripe_lock->refs == 0) {
->> +		rb_erase(&fstripe_lock->node, &bg_cache->scrub_lock_root);
->> +		kfree(fstripe_lock);
->
-> Move kfree out of all locks if possible.
->
->> +	}
->> +unlock:
->> +	spin_unlock(&bg_cache->scrub_lock);
->> +out:
->> +	btrfs_put_block_group(bg_cache);
->> +	return ret;
->> +}
->> +
->> +/*
->>   * used for workers that require transaction commits (i.e., for the
->>   * NOCOW case)
->>   */
->
->
 
 

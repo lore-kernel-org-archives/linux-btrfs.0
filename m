@@ -1,54 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:35806 "EHLO
-        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752457AbdC2TnB (ORCPT
+Received: from mail-vk0-f47.google.com ([209.85.213.47]:35725 "EHLO
+        mail-vk0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932938AbdC2V1c (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 29 Mar 2017 15:43:01 -0400
-Date: Wed, 29 Mar 2017 21:42:51 +0200
-From: Adam Borowski <kilobyte@angband.pl>
-To: Christoph Anton Mitterer <calestyo@scientia.net>
-Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] btrfs: warn about RAID5/6 being experimental at
- mount time
-Message-ID: <20170329194251.n72zt6dejbezrqhp@angband.pl>
-References: <20170329043940.23655-1-kilobyte@angband.pl>
- <1490815652.16829.3.camel@scientia.net>
+        Wed, 29 Mar 2017 17:27:32 -0400
+Received: by mail-vk0-f47.google.com with SMTP id r69so33565681vke.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 29 Mar 2017 14:27:31 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <1490815652.16829.3.camel@scientia.net>
+From: Tim Cuthbertson <ratcheer@gmail.com>
+Date: Wed, 29 Mar 2017 16:27:30 -0500
+Message-ID: <CAAKzf7ngoK27K=7gtUJR83QoPOwLAxQNK9NcOunNDX0-ijQ5_w@mail.gmail.com>
+Subject: Confusion about snapshots containers
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 29, 2017 at 09:27:32PM +0200, Christoph Anton Mitterer wrote:
-> On Wed, 2017-03-29 at 06:39 +0200, Adam Borowski wrote:
-> > Too many people come complaining about losing their data -- and indeed,
-> > there's no warning outside a wiki and the mailing list tribal knowledge. 
-> > Message severity chosen for consistency with XFS -- "alert" makes dmesg
-> > produce nice red background which should get the point across.
-> 
-> Wouldn't it be much better to disallow:
-> - creation
-> AND
-> - mounting
-> of btrfs unless some special swtich like:
-> --yes-i-know-this-is-still-extremely-experimental
-> is given for the time being?
+I have recently switched from multiple partitions with multiple
+btrfs's to a flat layout. I will try to keep my question concise.
 
-I have no preference here.
+I am confused as to whether a snapshots container should be a normal
+directory or a mountable subvolume. I do not understand how it can be
+a normal directory while being at the same level as, for example, a
+rootfs subvolume. This is with the understanding that the rootfs is
+NOT at the btrfs top level.
 
-> Normal users typically don't look at any such kernel log messages - and
-> expert users (who do) anyway know, that it's still unstable.
+Which should it be, a normal directory or a mountable subvolume
+directly under btrfs top level? If either way can work, what are the
+pros and cons of each?
 
-My previous attempt here was https://patchwork.kernel.org/patch/9450035/
-in btrfs-progs.  This time I'm submitting a kernel variant, as it won't be
-out of sync if you use a modern kernel on a 10 years old RHEL userland.
+Thank you
 
-I can revive that -progs patch, and fix code issues (ie, printing the
-message during parsing); I'd like to hear whether kernel or -progs is
-better.  We can even do both.
-
--- 
-⢀⣴⠾⠻⢶⣦⠀ Meow!
-⣾⠁⢠⠒⠀⣿⡁
-⢿⡄⠘⠷⠚⠋⠀ Collisions shmolisions, let's see them find a collision or second
-⠈⠳⣄⠀⠀⠀⠀ preimage for double rot13!
+Tim Cuthbertson

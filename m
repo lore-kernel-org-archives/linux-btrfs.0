@@ -1,123 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:16391 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752316AbdC2SJX (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:54983 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S932748AbdC2BeJ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 29 Mar 2017 14:09:23 -0400
-Date: Wed, 29 Mar 2017 11:08:20 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH v3 5/5] btrfs: Prevent scrub recheck from racing with dev
- replace
-Message-ID: <20170329180820.GD8328@lim.localdomain>
-Reply-To: bo.li.liu@oracle.com
+        Tue, 28 Mar 2017 21:34:09 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <dsterba@suse.cz>
+Subject: [PATCH v3 3/5] btrfs: scrub: Don't append on-disk pages for raid56 scrub
+Date: Wed, 29 Mar 2017 09:33:20 +0800
+Message-ID: <20170329013322.1323-4-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20170329013322.1323-1-quwenruo@cn.fujitsu.com>
 References: <20170329013322.1323-1-quwenruo@cn.fujitsu.com>
- <20170329013322.1323-6-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170329013322.1323-6-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 29, 2017 at 09:33:22AM +0800, Qu Wenruo wrote:
-> scrub_setup_recheck_block() calls btrfs_map_sblock() and then access
-> bbio without protection of bio_counter.
->
+In the following situation, scrub will calculate wrong parity to
+overwrite correct one:
 
-s/access/accesses/
+RAID5 full stripe:
 
-> This can leads to use-after-free if racing with dev replace cancel.
->
+Before
+|     Dev 1      |     Dev  2     |     Dev 3     |
+| Data stripe 1  | Data stripe 2  | Parity Stripe |
+--------------------------------------------------- 0
+| 0x0000 (Bad)   |     0xcdcd     |     0x0000    |
+--------------------------------------------------- 4K
+|     0xcdcd     |     0xcdcd     |     0x0000    |
+...
+|     0xcdcd     |     0xcdcd     |     0x0000    |
+--------------------------------------------------- 64K
 
-s/leads/lead/
+After scrubbing dev3 only:
 
-> Fix it by increasing bio_counter before calling btrfs_map_sblock() and
-> decrease the bio_counter when corresponding recover is finished.
->
+|     Dev 1      |     Dev  2     |     Dev 3     |
+| Data stripe 1  | Data stripe 2  | Parity Stripe |
+--------------------------------------------------- 0
+| 0xcdcd (Good)  |     0xcdcd     | 0xcdcd (Bad)  |
+--------------------------------------------------- 4K
+|     0xcdcd     |     0xcdcd     |     0x0000    |
+...
+|     0xcdcd     |     0xcdcd     |     0x0000    |
+--------------------------------------------------- 64K
 
-*decreasing
+The reason is after raid56 read rebuild rbio->stripe_pages are all
+correct recovered (0xcd for data stripes).
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+However when we check and repair parity, in
+scrub_parity_check_and_repair(), we will appending pages in
+sparity->spages list to rbio->bio_pages[], which contains old on-disk
+data.
 
-Thanks,
+And when we submit parity data to disk, we calculate parity using
+rbio->bio_pages[] first, if rbio->bio_pages[] not found, then fallback
+to rbio->stripe_pages[].
 
--liubo
+The patch fix it by not appending pages from sparity->spages.
+So finish_parity_scrub() will use rbio->stripe_pages[] which is correct.
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ fs/btrfs/scrub.c | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index f92d2512f4f3..2fd259dbf4db 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -2991,7 +2991,6 @@ static void scrub_parity_check_and_repair(struct scrub_parity *sparity)
+ 	struct btrfs_fs_info *fs_info = sctx->fs_info;
+ 	struct bio *bio;
+ 	struct btrfs_raid_bio *rbio;
+-	struct scrub_page *spage;
+ 	struct btrfs_bio *bbio = NULL;
+ 	u64 length;
+ 	int ret;
+@@ -3021,9 +3020,6 @@ static void scrub_parity_check_and_repair(struct scrub_parity *sparity)
+ 	if (!rbio)
+ 		goto rbio_out;
+ 
+-	list_for_each_entry(spage, &sparity->spages, list)
+-		raid56_add_scrub_pages(rbio, spage->page, spage->logical);
+-
+ 	scrub_pending_bio_inc(sctx);
+ 	raid56_parity_submit_scrub_rbio(rbio);
+ 	return;
+-- 
+2.12.1
 
 
-> Cc: Liu Bo <bo.li.liu@oracle.com>
-> Reported-by: Liu Bo <bo.li.liu@oracle.com>
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> ---
->  fs/btrfs/scrub.c | 13 +++++++++----
->  1 file changed, 9 insertions(+), 4 deletions(-)
-> 
-> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-> index b8c49074d1b3..84b077c993c0 100644
-> --- a/fs/btrfs/scrub.c
-> +++ b/fs/btrfs/scrub.c
-> @@ -1072,9 +1072,11 @@ static inline void scrub_get_recover(struct scrub_recover *recover)
->  	atomic_inc(&recover->refs);
->  }
->  
-> -static inline void scrub_put_recover(struct scrub_recover *recover)
-> +static inline void scrub_put_recover(struct btrfs_fs_info *fs_info,
-> +				     struct scrub_recover *recover)
->  {
->  	if (atomic_dec_and_test(&recover->refs)) {
-> +		btrfs_bio_counter_dec(fs_info);
->  		btrfs_put_bbio(recover->bbio);
->  		kfree(recover);
->  	}
-> @@ -1464,7 +1466,7 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
->  				sblock->pagev[page_index]->sblock = NULL;
->  				recover = sblock->pagev[page_index]->recover;
->  				if (recover) {
-> -					scrub_put_recover(recover);
-> +					scrub_put_recover(fs_info, recover);
->  					sblock->pagev[page_index]->recover =
->  									NULL;
->  				}
-> @@ -1556,16 +1558,19 @@ static int scrub_setup_recheck_block(struct scrub_block *original_sblock,
->  		 * with a length of PAGE_SIZE, each returned stripe
->  		 * represents one mirror
->  		 */
-> +		btrfs_bio_counter_inc_blocked(fs_info);
->  		ret = btrfs_map_sblock(fs_info, BTRFS_MAP_GET_READ_MIRRORS,
->  				logical, &mapped_length, &bbio, 0, 1);
->  		if (ret || !bbio || mapped_length < sublen) {
->  			btrfs_put_bbio(bbio);
-> +			btrfs_bio_counter_dec(fs_info);
->  			return -EIO;
->  		}
->  
->  		recover = kzalloc(sizeof(struct scrub_recover), GFP_NOFS);
->  		if (!recover) {
->  			btrfs_put_bbio(bbio);
-> +			btrfs_bio_counter_dec(fs_info);
->  			return -ENOMEM;
->  		}
->  
-> @@ -1591,7 +1596,7 @@ static int scrub_setup_recheck_block(struct scrub_block *original_sblock,
->  				spin_lock(&sctx->stat_lock);
->  				sctx->stat.malloc_errors++;
->  				spin_unlock(&sctx->stat_lock);
-> -				scrub_put_recover(recover);
-> +				scrub_put_recover(fs_info, recover);
->  				return -ENOMEM;
->  			}
->  			scrub_page_get(page);
-> @@ -1633,7 +1638,7 @@ static int scrub_setup_recheck_block(struct scrub_block *original_sblock,
->  			scrub_get_recover(recover);
->  			page->recover = recover;
->  		}
-> -		scrub_put_recover(recover);
-> +		scrub_put_recover(fs_info, recover);
->  		length -= sublen;
->  		logical += sublen;
->  		page_index++;
-> -- 
-> 2.12.1
-> 
-> 
-> 
+

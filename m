@@ -1,84 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:25915 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S934642AbdCaBWC (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:42856 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932348AbdC2RzP (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Mar 2017 21:22:02 -0400
-Subject: Re: [PATCH v2] Btrfs: fix wrong failed mirror_num of read-repair on
- raid56
-To: Liu Bo <bo.li.liu@oracle.com>, <linux-btrfs@vger.kernel.org>
-CC: David Sterba <dsterba@suse.cz>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <3796308a-9f99-37d8-7721-b411497c2b46@cn.fujitsu.com>
-Date: Fri, 31 Mar 2017 09:21:58 +0800
-MIME-Version: 1.0
-In-Reply-To: <4c277733-5c11-43cc-4e7d-294948ebde90@cn.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+        Wed, 29 Mar 2017 13:55:15 -0400
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH v2] Btrfs: enable repair during read for raid56 profile
+Date: Wed, 29 Mar 2017 10:53:58 -0700
+Message-Id: <1490810038-18488-1-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1490382815-25248-1-git-send-email-bo.li.liu@oracle.com>
+References: <1490382815-25248-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-References: <4c277733-5c11-43cc-4e7d-294948ebde90@cn.fujitsu.com>
 
+Now that scrub can fix data errors with the help of parity for raid56
+profile, repair during read is able to as well.
 
+Although the mirror num in raid56 scenario has different meanings, i.e.
+0 or 1: read data directly
+> 1:    do recover with parity,
+it could be fit into how we repair bad block during read.
 
-At 03/31/2017 09:14 AM, Qu Wenruo wrote:
->
->
-> At 03/30/2017 01:54 AM, Liu Bo wrote:
->> In raid56 scenario, after trying parity recovery, we didn't set
->> mirror_num for btrfs_bio with failed mirror_num, hence
->> end_bio_extent_readpage() will report a random mirror_num in dmesg
->> log.
->>
->> Cc: David Sterba <dsterba@suse.cz>
->> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
->
-> Tested-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
->
-> The test case is btrfs/125, with compress=lzo.
->
-> Even with ordered_extent error handler enhancement, compress=lzo mount
-> option will cause test case to fail due to mismatch csum.
->
-> With these patches applied, btrfs/125 passws without error.
->
-> Thanks,
-> Qu
+The trick is to use BTRFS_MAP_READ instead of BTRFS_MAP_WRITE to get the
+device and position on it.
 
-Errr, sorry wrong patch, it should be previous patch "Btrfs: enable 
-repair during read for raid56 profile".
+Cc: David Sterba <dsterba@suse.cz>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+v2: Fix typo and add comments for why BTRFS_MAP_READ is used.
 
-Thanks,
-Qu
->> ---
->> v2: Set mirror_num inside raid56_parity_recover so that all callers
->> can get a correct mirror_num if they need.
->>
->>  fs/btrfs/raid56.c | 5 +++++
->>  1 file changed, 5 insertions(+)
->>
->> diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
->> index 1571bf2..a333acc 100644
->> --- a/fs/btrfs/raid56.c
->> +++ b/fs/btrfs/raid56.c
->> @@ -2118,6 +2118,11 @@ int raid56_parity_recover(struct btrfs_fs_info
->> *fs_info, struct bio *bio,
->>      struct btrfs_raid_bio *rbio;
->>      int ret;
->>
->> +    if (generic_io) {
->> +        ASSERT(bbio->mirror_num == mirror_num);
->> +        btrfs_io_bio(bio)->mirror_num = mirror_num;
->> +    }
->> +
->>      rbio = alloc_rbio(fs_info, bbio, stripe_len);
->>      if (IS_ERR(rbio)) {
->>          if (generic_io)
->>
->
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+ fs/btrfs/extent_io.c | 40 +++++++++++++++++++++++++++-------------
+ 1 file changed, 27 insertions(+), 13 deletions(-)
 
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index d39a11c..7241f94 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2009,10 +2009,6 @@ int repair_io_failure(struct btrfs_inode *inode, u64 start, u64 length,
+ 	ASSERT(!(fs_info->sb->s_flags & MS_RDONLY));
+ 	BUG_ON(!mirror_num);
+ 
+-	/* we can't repair anything in raid56 yet */
+-	if (btrfs_is_parity_mirror(map_tree, logical, length, mirror_num))
+-		return 0;
+-
+ 	bio = btrfs_io_bio_alloc(GFP_NOFS, 1);
+ 	if (!bio)
+ 		return -EIO;
+@@ -2025,17 +2021,35 @@ int repair_io_failure(struct btrfs_inode *inode, u64 start, u64 length,
+ 	 * read repair operation.
+ 	 */
+ 	btrfs_bio_counter_inc_blocked(fs_info);
+-	ret = btrfs_map_block(fs_info, BTRFS_MAP_WRITE, logical,
+-			      &map_length, &bbio, mirror_num);
+-	if (ret) {
+-		btrfs_bio_counter_dec(fs_info);
+-		bio_put(bio);
+-		return -EIO;
++	if (btrfs_is_parity_mirror(map_tree, logical, length, mirror_num)) {
++		/*
++		 * Note that we don't use BTRFS_MAP_WRITE because it's supposed
++		 * to update all raid stripes, but here we just want to correct
++		 * bad stripe, thus BTRFS_MAP_READ is abused to only get the bad
++		 * stripe's dev and sector.
++		 */
++		ret = btrfs_map_block(fs_info, BTRFS_MAP_READ, logical,
++				      &map_length, &bbio, 0);
++		if (ret) {
++			btrfs_bio_counter_dec(fs_info);
++			bio_put(bio);
++			return -EIO;
++		}
++		ASSERT(bbio->mirror_num == 1);
++	} else {
++		ret = btrfs_map_block(fs_info, BTRFS_MAP_WRITE, logical,
++				      &map_length, &bbio, mirror_num);
++		if (ret) {
++			btrfs_bio_counter_dec(fs_info);
++			bio_put(bio);
++			return -EIO;
++		}
++		BUG_ON(mirror_num != bbio->mirror_num);
+ 	}
+-	BUG_ON(mirror_num != bbio->mirror_num);
+-	sector = bbio->stripes[mirror_num-1].physical >> 9;
++
++	sector = bbio->stripes[bbio->mirror_num - 1].physical >> 9;
+ 	bio->bi_iter.bi_sector = sector;
+-	dev = bbio->stripes[mirror_num-1].dev;
++	dev = bbio->stripes[bbio->mirror_num - 1].dev;
+ 	btrfs_put_bbio(bbio);
+ 	if (!dev || !dev->bdev || !dev->writeable) {
+ 		btrfs_bio_counter_dec(fs_info);
+-- 
+2.5.5
 

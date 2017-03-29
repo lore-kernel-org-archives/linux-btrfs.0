@@ -1,24 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:16652 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:43643 "EHLO
         aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751398AbdCXXtM (ORCPT
+        with ESMTP id S932180AbdC2R43 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 24 Mar 2017 19:49:12 -0400
+        Wed, 29 Mar 2017 13:56:29 -0400
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] Btrfs: set scrub page's io_error if failing to submit io
-Date: Fri, 24 Mar 2017 16:48:00 -0700
-Message-Id: <1490399280-2624-1-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH v2] Btrfs: set scrub page's io_error if failing to submit io
+Date: Wed, 29 Mar 2017 10:55:16 -0700
+Message-Id: <1490810116-19216-1-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1490399280-2624-1-git-send-email-bo.li.liu@oracle.com>
+References: <1490399280-2624-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Otherwise, we may later skip this page when repairing bad copy from
-good copy.
+Scrub repairs data by the unit called scrub_block, which may contains
+several pages.  Scrub always tries to look up a good copy of a whole
+block, but if there's no such copy, it tries to do repair page by page.
+
+If we don't set page's io_error when checking this bad copy, in the last
+step, we may skip this page when repairing bad copy from good copy.
 
 Cc: David Sterba <dsterba@suse.cz>
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
+v2: Put more details in changelog.
+
  fs/btrfs/scrub.c | 8 ++++++--
  1 file changed, 6 insertions(+), 2 deletions(-)
 

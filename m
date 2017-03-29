@@ -1,80 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:40105 "EHLO
-        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932352AbdC1WwN (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:28027 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S932571AbdC2Azq (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Mar 2017 18:52:13 -0400
-Date: Tue, 28 Mar 2017 22:51:52 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: "J. Hart" <jfhart085@gmail.com>
-Cc: Jakob =?iso-8859-1?Q?Sch=FCrz?= <wertstoffe@nurfuerspam.de>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: send snapshot from snapshot incremental
-Message-ID: <20170328225152.GQ11714@carfax.org.uk>
-References: <p18jqd-a0m.ln1@aldebaran.xundeenergie.at>
- <22744.8089.282234.241186@tree.ty.sabi.co.uk>
- <j33rqd-nkh.ln1@aldebaran.xundeenergie.at>
- <58DAE659.90504@gmail.com>
+        Tue, 28 Mar 2017 20:55:46 -0400
+Subject: Re: How to test in-bound dedupe
+To: Jitendra <jkhasdev@gmail.com>
+References: <20170328175215.GA14991@jitendra-HP-ProBook>
+CC: <linux-btrfs@vger.kernel.org>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <42e616fe-666b-ab97-06e7-849fbe5c7290@cn.fujitsu.com>
+Date: Wed, 29 Mar 2017 08:55:36 +0800
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="CVXKxAdNG2kQIXaJ"
-In-Reply-To: <58DAE659.90504@gmail.com>
+In-Reply-To: <20170328175215.GA14991@jitendra-HP-ProBook>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---CVXKxAdNG2kQIXaJ
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
 
-On Tue, Mar 28, 2017 at 06:40:25PM -0400, J. Hart wrote:
-> Don't be embarrassed.....
-> I'm a native speaker and still have trouble with most explanations.....:-)
+At 03/29/2017 01:52 AM, Jitendra wrote:
+> Hi Qu/All,
+>
+> I am looking into in-memory in-bound dedup. I have cloned your git tree
+> from
+> following urls.
+>
+> Linux Tree: https://github.com/adam900710/linux.git wang_dedupe_latest
+> btrfs-progs: https://git@github.com:adam900710/btrfs-progs.git
+> dedupe_20170316
+>
+> Then run the follwoing test
+> https://btrfs.wiki.kernel.org/index.php/User_notes_on_dedupe.
 
-   You should try writing them. ;)
+Thanks for having interest in in-band dedupe.
 
-   Hugo ("darkling").
+>
+> Is there any stuff that needs to be tested for it? if something, then
+> please
+> point out me.
 
->=20
-> On 03/28/2017 06:01 PM, Jakob Sch=FCrz wrote:
-> >Thanks for that explanation.
-> >
-> >I'm sure, i didn't understand the -c option... and my english is pretty
-> >good enough for the most things I need to know in Linux-things... but
-> >not for this. :-(
-> >
-> >
->=20
+Please note that, CONFIG_BTRFS_DEBUG must be set, or inband dedupe ioctl 
+will still be hidden.
 
---=20
-Hugo Mills             | What's a Nazg=FBl like you doing in a place like t=
-his?
-hugo@... carfax.org.uk |
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |                                                Ill=
-iad
+Basically, you could try all xfstests with inband dedupe enabled.
+While it's not officially supported yet, you could modify _scratch_mount 
+and _test_mount to always enable dedupe just after mount.
 
---CVXKxAdNG2kQIXaJ
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+>
+> My goal is to understand in-memory dedup and try to participate in on-disk
+> de-dup.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+On-disk dedupe backend is not provided yet, although planned and not 
+hard to implement.
 
-iQIcBAEBAgAGBQJY2ukIAAoJEFheFHXiqx3kt2sP/2Whe2Z8Vpi3P7VLLYpVZ8Xc
-p1++8ll7sr0/zGrPWe/ooyqi5iKndBQpVrPQ6MQ2D5lO4JhoJt70D5Jdv9dtkFtd
-35qrmAl9JlMvlVkhi0M+VDH3ex+zoNRq5qYdB3IqHibavPJgNmmgMm0O1Z8fby4v
-Qzc9Gu7IfvWd48SvKa5qocD5i/daS93vZkR7nxE9K4UWybN1XTvWWgFUlJ/WFUsU
-UH40YIiPLfun5a5cmciB1KaxXZxqoaBaWJrq4xAlB/zNRWoB7MoUVxi8RJdzderW
-jSBbP5KiSCH9PrZjr4qPgaPLIxgWlyCmOb2aeoLplgfw1sesFZ3sNFA45a41YUJQ
-aD5uaSKeV8Ayr4BPpXJC1E+09EgFRSqWyQjXx3lAAzgVlMFiKPNIobnKI8MN0H1U
-VJ8uH1gayr+ocz0Co2p/Uh6jkRKzaJB3YN95hmA+bVX4/uE13dZyTm632kpJcxcI
-zJFDN3ee3QMWEpToZP+kMqWwiDMAl31FArdhpriklKkSEze983xa3ooS4A8AhmYg
-ecMSPv3/eghAZytosjuplU5HjZKq8XMp5W9n00HeJ3d3DtODObf93+c73eYPLI62
-Xc7ZwHqnQGbYKE/vlGhumHM47StFr5jYS2vJc6DNhmJjFm2Ozt5UmWDQzszZfAIe
-oVHlH+UI7iRSttXrV5PY
-=Walc
------END PGP SIGNATURE-----
+Our plan is to add on-disk dedupe backend after in-memory dedupe is 
+merged and tested.
 
---CVXKxAdNG2kQIXaJ--
+
+And about understanding current dedupe algorithm, it should not be that 
+hard to understand, while the really hard part is from kernel itself.
+
+Tons of facilities is involved in fs, from memory management to VFS to 
+page cache to delayed allocation.
+
+Thanks,
+Qu
+>
+> ---
+> Jitendra
+>
+>
+
+

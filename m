@@ -1,168 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from startkeylogger.hungrycats.org ([207.192.69.118]:60579 "EHLO
-        neville.hungrycats.org" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S934115AbdCJVpu (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 10 Mar 2017 16:45:50 -0500
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Received: from mga03.intel.com ([134.134.136.65]:48117 "EHLO mga03.intel.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753643AbdC2Hif (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 29 Mar 2017 03:38:35 -0400
+Date: Wed, 29 Mar 2017 15:36:54 +0800
+From: kernel test robot <xiaolong.ye@intel.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v4] btrfs: add missing memset while reading compressed inline extents
-Date: Fri, 10 Mar 2017 16:45:44 -0500
-Message-Id: <1489182344-29818-1-git-send-email-ce3g8jdj@umail.furryterror.org>
+Cc: lkp@01.org, "Huang, Ying" <ying.huang@intel.com>,
+        Philip Li <philip.li@intel.com>
+Subject: [LKP] [btrfs] "fio: pid=2214, got signal=7" error showed in fio test
+ for btrfs
+Message-ID: <20170329073654.GK17604@yexl-desktop>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="l06SQqiZYCi8rTKz"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a story about 4 distinct (and very old) btrfs bugs.
 
-Commit c8b978188c ("Btrfs: Add zlib compression support") added
-three data corruption bugs for inline extents (bugs #1-3).
+--l06SQqiZYCi8rTKz
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Commit 93c82d5750 ("Btrfs: zero page past end of inline file items")
-fixed bug #1:  uncompressed inline extents followed by a hole and more
-extents could get non-zero data in the hole as they were read.  The fix
-was to add a memset in btrfs_get_extent to zero out the hole.
+Hi,
 
-Commit 166ae5a418 ("btrfs: fix inline compressed read err corruption")
-fixed bug #2:  compressed inline extents which contained non-zero bytes
-might be replaced with zero bytes in some cases.  This patch removed an
-unhelpful memset from uncompress_inline, but the case where memset is
-required was missed.
+We detected below error messages in fio pmem test for btrfs.
 
-There is also a memset in the decompression code, but this only covers
-decompressed data that is shorter than the ram_bytes from the extent
-ref record.  This memset doesn't cover the region between the end of the
-decompressed data and the end of the page.  It has also moved around a
-few times over the years, so there's no single patch to refer to.
+machine: Intel(R) Xeon(R) CPU E5-2695 v3 @ 2.30GHz with 256G memory
+kernel: v4.10 
+test parameters:
 
-This patch fixes bug #3:  compressed inline extents followed by a hole
-and more extents could get non-zero data in the hole as they were read
-(i.e. bug #3 is the same as bug #1, but s/uncompressed/compressed/).
-The fix is the same:  zero out the hole in the compressed case too,
-by putting a memset back in uncompress_inline, but this time with
-correct parameters.
+[global]
+bs=2M
+ioengine=mmap
+iodepth=32
+size=7669584457
+direct=0
+runtime=200
+invalidate=1
+fallocate=posix
+group_reporting
 
-The last and oldest bug, bug #0, is the cause of the offending inline
-extent/hole/extent pattern.  Bug #0 is a subtle and mostly-harmless quirk
-of behavior somewhere in the btrfs write code.  In a few special cases,
-an inline extent and hole are allowed to persist where they normally
-would be combined with later extents in the file.
+time_based
 
-A fast reproducer for bug #0 is presented below.  A few offending extents
-are also created in the wild during large rsync transfers with the -S
-flag.  A Linux kernel build (git checkout; make allyesconfig; make -j8)
-will produce a handful of offending files as well.  Once an offending
-file is created, it can present different content to userspace each
-time it is read.
+[task_0]
+rw=write
+directory=/fs/pmem0
+numjobs=14
 
-Bug #0 is at least 4 and possibly 8 years old.  I verified every vX.Y
-kernel back to v3.5 has this behavior.  There are fossil records of this
-bug's effects in commits all the way back to v2.6.32.  I have no reason
-to believe bug #0 wasn't present at the beginning of btrfs compression
-support in v2.6.29, but I can't easily test kernels that old to be sure.
+[task_1]
+rw=write
+directory=/fs/pmem1
+numjobs=14
 
-It is not clear whether bug #0 is worth fixing.  A fix would likely
-require injecting extra reads into currently write-only paths, and most
-of the exceptional cases caused by bug #0 are already handled now.
 
-Whether we like them or not, bug #0's inline extents followed by holes
-are part of the btrfs de-facto disk format now, and we need to be able
-to read them without data corruption or an infoleak.  So enough about
-bug #0, let's get back to bug #3 (this patch).
+==> /tmp/stderr <==
+fio: pid=2214, got signal=7
+fio: pid=2215, got signal=7
+fio: pid=2217, got signal=7
+fio: pid=2220, got signal=7
+fio: pid=2222, got signal=7
+fio: pid=2224, got signal=7
+fio: pid=2225, got signal=7
+fio: pid=2227, got signal=7
+fio: pid=2216, got signal=7
+fio: pid=2218, got signal=7
+fio: pid=2219, got signal=7
+fio: pid=2221, got signal=7
+fio: pid=2223, got signal=7
+fio: pid=2226, got signal=7
+fio: pid=2200, got signal=7
+fio: pid=2201, got signal=7
+fio: pid=2203, got signal=7
+fio: pid=2204, got signal=7
+fio: pid=2205, got signal=7
+fio: pid=2208, got signal=7
+fio: pid=2209, got signal=7
+fio: pid=2210, got signal=7
+fio: pid=2211, got signal=7
+fio: pid=2212, got signal=7
+fio: pid=2213, got signal=7
+fio: pid=2202, got signal=7
+fio: pid=2206, got signal=7
+fio: pid=2207, got signal=7
+fio: file hash not empty on exit
 
-An example of on-disk structure leading to data corruption found in
-the wild:
+while fio test is ok for ext4 with the same test parameters.
+Attached reproduce.sh may help reproduce the problem.
 
-        item 61 key (606890 INODE_ITEM 0) itemoff 9662 itemsize 160
-                inode generation 50 transid 50 size 47424 nbytes 49141
-                block group 0 mode 100644 links 1 uid 0 gid 0
-                rdev 0 flags 0x0(none)
-        item 62 key (606890 INODE_REF 603050) itemoff 9642 itemsize 20
-                inode ref index 3 namelen 10 name: DB_File.so
-        item 63 key (606890 EXTENT_DATA 0) itemoff 8280 itemsize 1362
-                inline extent data size 1341 ram 4085 compress(zlib)
-        item 64 key (606890 EXTENT_DATA 4096) itemoff 8227 itemsize 53
-                extent data disk byte 5367308288 nr 20480
-                extent data offset 0 nr 45056 ram 45056
-                extent compression(zlib)
+Thanks,
+Xiaolong
 
-Different data appears in userspace during each read of the 11 bytes
-between 4085 and 4096.  The extent in item 63 is not long enough to
-fill the first page of the file, so a memset is required to fill the
-space between item 63 (ending at 4085) and item 64 (beginning at 4096)
-with zero.
+--l06SQqiZYCi8rTKz
+Content-Type: application/x-sh
+Content-Disposition: attachment; filename="reproduce.sh"
+Content-Transfer-Encoding: quoted-printable
 
-Here is a reproducer from Liu Bo, which demonstrates another method
-of creating the same inline extent and hole pattern:
-
-Using 'page_poison=on' kernel command line (or enable
-CONFIG_PAGE_POISONING) run the following:
-
-	# touch foo
-	# chattr +c foo
-	# xfs_io -f -c "pwrite -W 0 1000" foo
-	# xfs_io -f -c "falloc 4 8188" foo
-	# od -x foo
-	# echo 3 >/proc/sys/vm/drop_caches
-	# od -x foo
-
-This produce the following on my box:
-
-Correct output:  file contains 1000 data bytes followed
-by zeros:
-
-	0000000 cdcd cdcd cdcd cdcd cdcd cdcd cdcd cdcd
-	*
-	0001740 cdcd cdcd cdcd cdcd 0000 0000 0000 0000
-	0001760 0000 0000 0000 0000 0000 0000 0000 0000
-	*
-	0020000
-
-Actual output:  the data after the first 1000 bytes
-will be different each run:
-
-	0000000 cdcd cdcd cdcd cdcd cdcd cdcd cdcd cdcd
-	*
-	0001740 cdcd cdcd cdcd cdcd 6c63 7400 635f 006d
-	0001760 5f74 6f43 7400 435f 0053 5f74 7363 7400
-	0002000 435f 0056 5f74 6164 7400 645f 0062 5f74
-	(...)
-
-Signed-off-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
----
-
-v4: remove WARN_ON.  Put in the comment about decompression code
-    filling in zeros up to the end of max_size, and why we need a
-    memset here.
-
- fs/btrfs/inode.c | 14 ++++++++++++++
- 1 file changed, 14 insertions(+)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 25ac2cf..f41ef5d 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6805,6 +6805,20 @@ static noinline int uncompress_inline(struct btrfs_path *path,
- 	max_size = min_t(unsigned long, PAGE_SIZE, max_size);
- 	ret = btrfs_decompress(compress_type, tmp, page,
- 			       extent_offset, inline_size, max_size);
-+
-+	/*
-+	 * decompression code contains a memset to fill in any space between the end
-+	 * of the uncompressed data and the end of max_size in case the decompressed
-+	 * data ends up shorter than ram_bytes.  That doesn't cover the hole between
-+	 * the end of an inline extent and the beginning of the next block, so we
-+	 * cover that region here.
-+	 */
-+
-+	if (max_size + pg_offset < PAGE_SIZE) {
-+		char *map = kmap(page);
-+		memset(map + pg_offset + max_size, 0, PAGE_SIZE - max_size - pg_offset);
-+		kunmap(page);
-+	}
- 	kfree(tmp);
- 	return ret;
- }
--- 
-2.1.4
-
+modprobe nd_e820=0Admsetup remove_all=0Awipefs -a --force /dev/pmem0=0Awipe=
+fs -a --force /dev/pmem1=0Amkfs -t btrfs /dev/pmem1=0Amkfs -t btrfs /dev/pm=
+em0=0Amkdir -p /fs/pmem0=0Amount -t btrfs /dev/pmem0 /fs/pmem0=0Amkdir -p /=
+fs/pmem1=0Amount -t btrfs /dev/pmem1 /fs/pmem1=0A=0Afor file in /sys/device=
+s/system/cpu/cpu*/cpufreq/scaling_governor=0Ado=0A	echo performance > $file=
+=0Adone=0A=0Aecho '=0A[global]=0Abs=3D2M=0Aioengine=3Dmmap=0Aiodepth=3D32=
+=0Asize=3D7669584457=0Adirect=3D0=0Aruntime=3D200=0Ainvalidate=3D1=0Afalloc=
+ate=3Dposix=0Agroup_reporting=0A=0Atime_based=0A=0A[task_0]=0Arw=3Dwrite=0A=
+directory=3D/fs/pmem0=0Anumjobs=3D14=0A=0A[task_1]=0Arw=3Dwrite=0Adirectory=
+=3D/fs/pmem1=0Anumjobs=3D14' | fio --output-format=3Djson -=0A
+--l06SQqiZYCi8rTKz--

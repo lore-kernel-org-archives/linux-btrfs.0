@@ -1,43 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f176.google.com ([209.85.216.176]:35137 "EHLO
-        mail-qt0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755445AbdC2MLu (ORCPT
+Received: from mail-wr0-f177.google.com ([209.85.128.177]:36516 "EHLO
+        mail-wr0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932074AbdC2MYi (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 29 Mar 2017 08:11:50 -0400
-Received: by mail-qt0-f176.google.com with SMTP id x35so10330278qtc.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 29 Mar 2017 05:11:49 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <j33rqd-nkh.ln1@aldebaran.xundeenergie.at>
-References: <p18jqd-a0m.ln1@aldebaran.xundeenergie.at> <22744.8089.282234.241186@tree.ty.sabi.co.uk>
- <j33rqd-nkh.ln1@aldebaran.xundeenergie.at>
-From: Andrei Borzenkov <arvidjaar@gmail.com>
-Date: Wed, 29 Mar 2017 15:11:48 +0300
-Message-ID: <CAA91j0WkPi5dM8unAY7-rnAnuc4qWu4Qr7tUEf6MWxpPTO3jGg@mail.gmail.com>
+        Wed, 29 Mar 2017 08:24:38 -0400
+Received: by mail-wr0-f177.google.com with SMTP id w11so12708894wrc.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 29 Mar 2017 05:24:36 -0700 (PDT)
 Subject: Re: send snapshot from snapshot incremental
-To: =?UTF-8?Q?Jakob_Sch=C3=BCrz?= <wertstoffe@nurfuerspam.de>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+From: Giuseppe Della Bianca <g.dellabianca@gestiware.it>
+To: wertstoffe@nurfuerspam.de
+Cc: linux-btrfs@vger.kernel.org
+In-Reply-To: <j33rqd-nkh.ln1@aldebaran.xundeenergie.at>
+Content-Type: text/plain; charset="UTF-8"
+Date: Wed, 29 Mar 2017 14:24:40 +0200
+Message-ID: <1490790280.3490.22.camel@localhost>
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 29, 2017 at 1:01 AM, Jakob Schürz <wertstoffe@nurfuerspam.de> wrote:
->
-> There is Subvolume A on the send- and the receive-side.
-> There is also Subvolume AA on the send-side from A.
-> The parent-ID from send-AA is the ID from A.
-> The received-ID from A on received-side A is the ID from A.
->
-> To send the AA, i use the command
-> btrfs send -p A AA|btrfs receive /path/to/receiveFS/
->
-> The received-ID from AA on received-side A is the ID from AA.
->
->
-> Now i take a snapshot from AA on the send-side -> Called AAA
->
-> If i try to send AAA to the receiving FS with
-> btrfs send -p AA AAA|btrfs receive /path/to/receiveFS/
-> no parent snapshot is found.
+Hi.
 
-I cannot reproduce it. Please show exact command invocations, ideally
-starting with creation of A.
+>Jakob Schürz Tue, 28 Mar 2017 15:16:28 -0700
+
+>Thanks for that explanation. 
+
+>I'm sure, i didn't understand the -c option... and my english is pretty
+>good enough for the most things I need to know in Linux-things... but
+>not for this. :-(
+]zac[
+
+In one of my scripts I use this method:
+
+subvolume            X
+readonly snapshot    X1
+readonly snapshot    X2
+readonly snapshot    X3
+....
+
+send 1           btrfs send       X1
+send 2           btrfs send -p X1 X2
+send 3           btrfs send -p X2 X3
+....
+
+
+Any other sequence does not work, in the receive subvolume there must be the full parent (X1 then X2 then ...).
+
+
+Gdb
+
+
+https://sourceforge.net/projects/btrfsmanage/
+
+
+
+
+

@@ -1,156 +1,153 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33832 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:33812 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1756045AbdC2K4c (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 29 Mar 2017 06:56:32 -0400
+        id S1756037AbdC2K4b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 29 Mar 2017 06:56:31 -0400
 From: Jan Kara <jack@suse.cz>
 To: <linux-fsdevel@vger.kernel.org>
 Cc: linux-block@vger.kernel.org, Christoph Hellwig <hch@infradead.org>,
-        Jan Kara <jack@suse.cz>, linux-mtd@lists.infradead.org,
-        linux-nfs@vger.kernel.org, Petr Vandrovec <petr@vandrovec.name>,
-        linux-nilfs@vger.kernel.org, cluster-devel@redhat.com,
-        osd-dev@open-osd.org, codalist@TELEMANN.coda.cs.cmu.edu,
-        linux-afs@lists.infradead.org, ecryptfs@vger.kernel.org,
-        linux-cifs@vger.kernel.org, ceph-devel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, v9fs-developer@lists.sourceforge.net,
-        lustre-devel@lists.lustre.org
-Subject: [PATCH 04/25] fs: Provide infrastructure for dynamic BDIs in filesystems
-Date: Wed, 29 Mar 2017 12:56:02 +0200
-Message-Id: <20170329105623.18241-5-jack@suse.cz>
+        Jan Kara <jack@suse.cz>, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org
+Subject: [PATCH 08/25] btrfs: Convert to separately allocated bdi
+Date: Wed, 29 Mar 2017 12:56:06 +0200
+Message-Id: <20170329105623.18241-9-jack@suse.cz>
 In-Reply-To: <20170329105623.18241-1-jack@suse.cz>
 References: <20170329105623.18241-1-jack@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Provide helper functions for setting up dynamically allocated
-backing_dev_info structures for filesystems and cleaning them up on
-superblock destruction.
+Allocate struct backing_dev_info separately instead of embedding it
+inside superblock. This unifies handling of bdi among users.
 
-CC: linux-mtd@lists.infradead.org
-CC: linux-nfs@vger.kernel.org
-CC: Petr Vandrovec <petr@vandrovec.name>
-CC: linux-nilfs@vger.kernel.org
-CC: cluster-devel@redhat.com
-CC: osd-dev@open-osd.org
-CC: codalist@coda.cs.cmu.edu
-CC: linux-afs@lists.infradead.org
-CC: ecryptfs@vger.kernel.org
-CC: linux-cifs@vger.kernel.org
-CC: ceph-devel@vger.kernel.org
+CC: Chris Mason <clm@fb.com>
+CC: Josef Bacik <jbacik@fb.com>
+CC: David Sterba <dsterba@suse.com>
 CC: linux-btrfs@vger.kernel.org
-CC: v9fs-developer@lists.sourceforge.net
-CC: lustre-devel@lists.lustre.org
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Jan Kara <jack@suse.cz>
 ---
- fs/super.c                       | 49 ++++++++++++++++++++++++++++++++++++++++
- include/linux/backing-dev-defs.h |  2 +-
- include/linux/fs.h               |  6 +++++
- 3 files changed, 56 insertions(+), 1 deletion(-)
+ fs/btrfs/ctree.h   |  1 -
+ fs/btrfs/disk-io.c | 36 +++++++-----------------------------
+ fs/btrfs/super.c   |  7 +++++++
+ 3 files changed, 14 insertions(+), 30 deletions(-)
 
-diff --git a/fs/super.c b/fs/super.c
-index b8b6a086c03b..0f51a437c269 100644
---- a/fs/super.c
-+++ b/fs/super.c
-@@ -446,6 +446,11 @@ void generic_shutdown_super(struct super_block *sb)
- 	hlist_del_init(&sb->s_instances);
- 	spin_unlock(&sb_lock);
- 	up_write(&sb->s_umount);
-+	if (sb->s_iflags & SB_I_DYNBDI) {
-+		bdi_put(sb->s_bdi);
-+		sb->s_bdi = &noop_backing_dev_info;
-+		sb->s_iflags &= ~SB_I_DYNBDI;
-+	}
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 29b7fc28c607..f6019ce20035 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -810,7 +810,6 @@ struct btrfs_fs_info {
+ 	struct btrfs_super_block *super_for_commit;
+ 	struct super_block *sb;
+ 	struct inode *btree_inode;
+-	struct backing_dev_info bdi;
+ 	struct mutex tree_log_mutex;
+ 	struct mutex transaction_kthread_mutex;
+ 	struct mutex cleaner_mutex;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 08b74daf35d0..a7d8c342f604 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1808,21 +1808,6 @@ static int btrfs_congested_fn(void *congested_data, int bdi_bits)
+ 	return ret;
  }
  
- EXPORT_SYMBOL(generic_shutdown_super);
-@@ -1256,6 +1261,50 @@ mount_fs(struct file_system_type *type, int flags, const char *name, void *data)
- }
- 
+-static int setup_bdi(struct btrfs_fs_info *info, struct backing_dev_info *bdi)
+-{
+-	int err;
+-
+-	err = bdi_setup_and_register(bdi, "btrfs");
+-	if (err)
+-		return err;
+-
+-	bdi->ra_pages = VM_MAX_READAHEAD * 1024 / PAGE_SIZE;
+-	bdi->congested_fn	= btrfs_congested_fn;
+-	bdi->congested_data	= info;
+-	bdi->capabilities |= BDI_CAP_CGROUP_WRITEBACK;
+-	return 0;
+-}
+-
  /*
-+ * Setup private BDI for given superblock. It gets automatically cleaned up
-+ * in generic_shutdown_super().
-+ */
-+int super_setup_bdi_name(struct super_block *sb, char *fmt, ...)
-+{
-+	struct backing_dev_info *bdi;
-+	int err;
-+	va_list args;
+  * called by the kthread helper functions to finally call the bio end_io
+  * functions.  This is where read checksum verification actually happens
+@@ -2601,16 +2586,10 @@ int open_ctree(struct super_block *sb,
+ 		goto fail;
+ 	}
+ 
+-	ret = setup_bdi(fs_info, &fs_info->bdi);
+-	if (ret) {
+-		err = ret;
+-		goto fail_srcu;
+-	}
+-
+ 	ret = percpu_counter_init(&fs_info->dirty_metadata_bytes, 0, GFP_KERNEL);
+ 	if (ret) {
+ 		err = ret;
+-		goto fail_bdi;
++		goto fail_srcu;
+ 	}
+ 	fs_info->dirty_metadata_batch = PAGE_SIZE *
+ 					(1 + ilog2(nr_cpu_ids));
+@@ -2718,7 +2697,6 @@ int open_ctree(struct super_block *sb,
+ 
+ 	sb->s_blocksize = 4096;
+ 	sb->s_blocksize_bits = blksize_bits(4096);
+-	sb->s_bdi = &fs_info->bdi;
+ 
+ 	btrfs_init_btree_inode(fs_info);
+ 
+@@ -2915,9 +2893,12 @@ int open_ctree(struct super_block *sb,
+ 		goto fail_sb_buffer;
+ 	}
+ 
+-	fs_info->bdi.ra_pages *= btrfs_super_num_devices(disk_super);
+-	fs_info->bdi.ra_pages = max(fs_info->bdi.ra_pages,
+-				    SZ_4M / PAGE_SIZE);
++	sb->s_bdi->congested_fn = btrfs_congested_fn;
++	sb->s_bdi->congested_data = fs_info;
++	sb->s_bdi->capabilities |= BDI_CAP_CGROUP_WRITEBACK;
++	sb->s_bdi->ra_pages = VM_MAX_READAHEAD * 1024 / PAGE_SIZE;
++	sb->s_bdi->ra_pages *= btrfs_super_num_devices(disk_super);
++	sb->s_bdi->ra_pages = max(sb->s_bdi->ra_pages, SZ_4M / PAGE_SIZE);
+ 
+ 	sb->s_blocksize = sectorsize;
+ 	sb->s_blocksize_bits = blksize_bits(sectorsize);
+@@ -3285,8 +3266,6 @@ int open_ctree(struct super_block *sb,
+ 	percpu_counter_destroy(&fs_info->delalloc_bytes);
+ fail_dirty_metadata_bytes:
+ 	percpu_counter_destroy(&fs_info->dirty_metadata_bytes);
+-fail_bdi:
+-	bdi_destroy(&fs_info->bdi);
+ fail_srcu:
+ 	cleanup_srcu_struct(&fs_info->subvol_srcu);
+ fail:
+@@ -4007,7 +3986,6 @@ void close_ctree(struct btrfs_fs_info *fs_info)
+ 	percpu_counter_destroy(&fs_info->dirty_metadata_bytes);
+ 	percpu_counter_destroy(&fs_info->delalloc_bytes);
+ 	percpu_counter_destroy(&fs_info->bio_counter);
+-	bdi_destroy(&fs_info->bdi);
+ 	cleanup_srcu_struct(&fs_info->subvol_srcu);
+ 
+ 	btrfs_free_stripe_hash_table(fs_info);
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index da687dc79cce..e0a7503ab31e 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1133,6 +1133,13 @@ static int btrfs_fill_super(struct super_block *sb,
+ #endif
+ 	sb->s_flags |= MS_I_VERSION;
+ 	sb->s_iflags |= SB_I_CGROUPWB;
 +
-+	bdi = bdi_alloc(GFP_KERNEL);
-+	if (!bdi)
-+		return -ENOMEM;
-+
-+	bdi->name = sb->s_type->name;
-+
-+	va_start(args, fmt);
-+	err = bdi_register_va(bdi, NULL, fmt, args);
-+	va_end(args);
++	err = super_setup_bdi(sb);
 +	if (err) {
-+		bdi_put(bdi);
++		btrfs_err(fs_info, "super_setup_bdi failed");
 +		return err;
 +	}
-+	WARN_ON(sb->s_bdi != &noop_backing_dev_info);
-+	sb->s_bdi = bdi;
-+	sb->s_iflags |= SB_I_DYNBDI;
 +
-+	return 0;
-+}
-+EXPORT_SYMBOL(super_setup_bdi_name);
-+
-+/*
-+ * Setup private BDI for given superblock. I gets automatically cleaned up
-+ * in generic_shutdown_super().
-+ */
-+int super_setup_bdi(struct super_block *sb)
-+{
-+	static atomic_long_t bdi_seq = ATOMIC_LONG_INIT(0);
-+
-+	return super_setup_bdi_name(sb, "%.28s-%ld", sb->s_type->name,
-+				    atomic_long_inc_return(&bdi_seq));
-+}
-+EXPORT_SYMBOL(super_setup_bdi);
-+
-+/*
-  * This is an internal function, please use sb_end_{write,pagefault,intwrite}
-  * instead.
-  */
-diff --git a/include/linux/backing-dev-defs.h b/include/linux/backing-dev-defs.h
-index e66d4722db8e..866c433e7d32 100644
---- a/include/linux/backing-dev-defs.h
-+++ b/include/linux/backing-dev-defs.h
-@@ -146,7 +146,7 @@ struct backing_dev_info {
- 	congested_fn *congested_fn; /* Function pointer if device is md/dm */
- 	void *congested_data;	/* Pointer to aux data for congested func */
- 
--	char *name;
-+	const char *name;
- 
- 	struct kref refcnt;	/* Reference counter for the structure */
- 	unsigned int capabilities; /* Device capabilities */
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 7251f7bb45e8..98cf14ea78c0 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -1272,6 +1272,9 @@ struct mm_struct;
- /* sb->s_iflags to limit user namespace mounts */
- #define SB_I_USERNS_VISIBLE		0x00000010 /* fstype already mounted */
- 
-+/* Temporary flag until all filesystems are converted to dynamic bdis */
-+#define SB_I_DYNBDI	0x00000100
-+
- /* Possible states of 'frozen' field */
- enum {
- 	SB_UNFROZEN = 0,		/* FS is unfrozen */
-@@ -2121,6 +2124,9 @@ extern int vfs_ustat(dev_t, struct kstatfs *);
- extern int freeze_super(struct super_block *super);
- extern int thaw_super(struct super_block *super);
- extern bool our_mnt(struct vfsmount *mnt);
-+extern __printf(2, 3)
-+int super_setup_bdi_name(struct super_block *sb, char *fmt, ...);
-+extern int super_setup_bdi(struct super_block *sb);
- 
- extern int current_umask(void);
- 
+ 	err = open_ctree(sb, fs_devices, (char *)data);
+ 	if (err) {
+ 		btrfs_err(fs_info, "open_ctree failed");
 -- 
 2.10.2
 

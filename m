@@ -1,36 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from zlom.siedziba.pl ([83.144.122.22]:46356 "EHLO zlom.siedziba.pl"
+Received: from mx2.suse.de ([195.135.220.15]:34128 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933206AbdC3PJO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Mar 2017 11:09:14 -0400
-Subject: Re: Shrinking a device - performance?
-To: Peter Grandi <pg@btrfs.for.sabi.co.UK>,
-        Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-References: <1CCB3887-A88C-41C1-A8EA-514146828A42@flyingcircus.io>
- <20170327130730.GN11714@carfax.org.uk>
- <3558CE2F-0B8F-437B-966C-11C1392B81F2@flyingcircus.io>
- <20170327194847.5c0c5545@natsu>
- <4E13254F-FDE8-47F7-A495-53BFED814C81@flyingcircus.io>
- <22746.30348.324000.636753@tree.ty.sabi.co.uk>
-From: =?UTF-8?Q?Piotr_Paw=c5=82ow?= <pp@siedziba.pl>
-Message-ID: <b0f6b00e-4c70-72d1-8683-c05bb72a0968@siedziba.pl>
-Date: Thu, 30 Mar 2017 17:00:19 +0200
+        id S933356AbdC3Pw4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 30 Mar 2017 11:52:56 -0400
+Date: Thu, 30 Mar 2017 17:52:11 +0200
+From: David Sterba <dsterba@suse.cz>
+To: "Lakshmipathi.G" <Lakshmipathi.G@giis.co.in>
+Cc: quwenruo@cn.fujitsu.com, dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v3] btrfs-progs: fsck-tests: verify 'btrfs check
+ --repair' fixes corrupted nlink field
+Message-ID: <20170330155211.GK4781@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170202080502.GA6676@giis.co.in>
 MIME-Version: 1.0
-In-Reply-To: <22746.30348.324000.636753@tree.ty.sabi.co.uk>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170202080502.GA6676@giis.co.in>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> As a general consideration, shrinking a large filetree online
-> in-place is an amazingly risky, difficult, slow operation and
-> should be a last desperate resort (as apparently in this case),
-> regardless of the filesystem type, and expecting otherwise is
-> "optimistic".
+On Thu, Feb 02, 2017 at 01:35:02PM +0530, Lakshmipathi.G wrote:
+> Signed-off-by: Lakshmipathi.G <Lakshmipathi.G@giis.co.in>
+> ---
+>  tests/fsck-tests/026-check-inode-link/test.sh | 30 +++++++++++++++++++++++++++
+>  1 file changed, 30 insertions(+)
+>  create mode 100755 tests/fsck-tests/026-check-inode-link/test.sh
+> 
+> diff --git a/tests/fsck-tests/026-check-inode-link/test.sh b/tests/fsck-tests/026-check-inode-link/test.sh
+> new file mode 100755
+> index 0000000..6822ee2
+> --- /dev/null
+> +++ b/tests/fsck-tests/026-check-inode-link/test.sh
+> @@ -0,0 +1,30 @@
+> +#!/bin/bash
+> +# verify that 'btrfs check --repair' fixes corrupted inode nlink field
+> +
+> +source $TOP/tests/common
+> +
+> +check_prereq btrfs-corrupt-block
+> +check_prereq mkfs.btrfs
+> +
+> +setup_root_helper
+> +prepare_test_dev 512M
 
-The way btrfs is designed I'd actually expect shrinking to be fast in
-most cases. It could probably be done by moving whole chunks at near
-platter speed, instead of extent-by-extent as it is done now, as long as
-there is enough free space. There was a discussion about it already:
-http://www.spinics.net/lists/linux-btrfs/msg38608.html. It just hasn't
-been implemented yet.
+Please use default size unless you really need 512M for the test
+purposes.
 
+> +
+> +test_inode_nlink_field()
+> +{
+> +	run_check $SUDO_HELPER $TOP/mkfs.btrfs -f $TEST_DEV
+> +
+> +	run_check_mount_test_dev
+> +	run_check $SUDO_HELPER touch $TEST_MNT/test_nlink.txt
+> +
+> +	# find inode_number
+> +	inode_number=`stat -c%i $TEST_MNT/test_nlink.txt`
+> +	run_check_umount_test_dev
+> +
+> +	# corrupt nlink field of inode object
+> +        run_check $SUDO_HELPER $TOP/btrfs-corrupt-block -i $inode_number \
+> +		-f nlink $TEST_DEV
+> +
+> +	check_image $TEST_DEV
+
+The wrapper runs a pre-check that must detect errors, then runs --repair
+and then again a plain check. Is this intended here?
+
+I think we should try to mount the fixed image again and read the file
+or check link count.
+
+Please add shell quotation around all variables.

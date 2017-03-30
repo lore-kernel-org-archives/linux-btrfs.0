@@ -1,127 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:41883 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1754495AbdC3DYt (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 29 Mar 2017 23:24:49 -0400
-Subject: Re: [PATCH v3 2/5] btrfs: scrub: Fix RAID56 recovery race condition
-To: <bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:45379 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751030AbdC3Kce (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 30 Mar 2017 06:32:34 -0400
+Date: Thu, 30 Mar 2017 12:31:49 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: bo.li.liu@oracle.com, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v3 1/5] btrfs: scrub: Introduce full stripe lock for
+ RAID56
+Message-ID: <20170330103149.GF4781@suse.cz>
+Reply-To: dsterba@suse.cz
 References: <20170329013322.1323-1-quwenruo@cn.fujitsu.com>
- <20170329013322.1323-3-quwenruo@cn.fujitsu.com>
- <20170330005117.GB15452@lim.localdomain>
-CC: <linux-btrfs@vger.kernel.org>, <dsterba@suse.cz>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <51ccf118-fad4-26da-5a26-95c48bcf945c@cn.fujitsu.com>
-Date: Thu, 30 Mar 2017 11:24:43 +0800
+ <20170329013322.1323-2-quwenruo@cn.fujitsu.com>
+ <20170330003444.GA15452@lim.localdomain>
+ <1a67dcaf-f1b5-a9bf-673a-2a364bd94d89@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20170330005117.GB15452@lim.localdomain>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1a67dcaf-f1b5-a9bf-673a-2a364bd94d89@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Thu, Mar 30, 2017 at 09:03:21AM +0800, Qu Wenruo wrote:
+> >> +static int lock_full_stripe(struct btrfs_fs_info *fs_info, u64 bytenr)
+> >> +{
+> >> +	struct btrfs_block_group_cache *bg_cache;
+> >> +	struct btrfs_full_stripe_locks_tree *locks_root;
+> >> +	struct full_stripe_lock *existing;
+> >> +	u64 fstripe_start;
+> >> +	int ret = 0;
+> >> +
+> >> +	bg_cache = btrfs_lookup_block_group(fs_info, bytenr);
+> >> +	if (!bg_cache)
+> >> +		return -ENOENT;
+> >> +
+> >
+> > When starting to scrub a chunk, we've already increased a ref for block group,
+> > could you please put a ASSERT to catch it?
+> 
+> Personally I prefer WARN_ON() than ASSERT().
+> 
+> ASSERT() always panic the modules and forces us to reset the system. 
+> Wiping out any possibility to check the system.
 
+I think the sematnics of WARN_ON and ASSERT are different, so it should
+be decided case by case which one to use. Assert is good for 'never
+happens' or catch errors at development time (wrong API use, invariant
+condition that must always match).
 
-At 03/30/2017 08:51 AM, Liu Bo wrote:
-> On Wed, Mar 29, 2017 at 09:33:19AM +0800, Qu Wenruo wrote:
-> [...]
->>
->> Reported-by: Goffredo Baroncelli <kreijack@libero.it>
->> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
->> ---
->>  fs/btrfs/scrub.c | 14 ++++++++++++++
->>  1 file changed, 14 insertions(+)
->>
->> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
->> index ab33b9a8aac2..f92d2512f4f3 100644
->> --- a/fs/btrfs/scrub.c
->> +++ b/fs/btrfs/scrub.c
->> @@ -1129,6 +1129,17 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
->>  	have_csum = sblock_to_check->pagev[0]->have_csum;
->>  	dev = sblock_to_check->pagev[0]->dev;
->>
->> +	/*
->> +	 * For RAID5/6 race can happen for different dev scrub thread.
->> +	 * For data corruption, Parity and Data thread will both try
->> +	 * to recovery the data.
->> +	 * Race can lead to double added csum error, or even unrecoverable
->> +	 * error.
->> +	 */
->> +	ret = lock_full_stripe(fs_info, logical);
->> +	if (ret < 0)
->> +		return ret;
->> +
->
-> Firstly, sctx->stat needs to be set with errors before returning errors.
+Also the asserts are gone if the config option is unset, while WARN_ON
+will stay in some form (verbose or not). Both are suitable for catching
+problems, but the warning is for less critical errors so we want to know
+when it happens but still can continue.
 
-Right.
-
-I'll update malloc_errors for ret == -ENOMEM case and 
-uncorrectable_errors for ret == -ENOENT case.
-
->
-> Secondly, I think the critical section starts right before re-checking the
-> failed mirror, doesn't it?  If so, we could get the benefit from
-> sblock_bad->page since the page->recover can tell if this is a raid56 profile so
-> that we may save a searching for block group.
-
-It's true we can save a block group search, but that's relying on 
-bbio->flags.
-
-I prefer to make lock/unlock_full_stripe() to be as independent as 
-possible, so such modification is not favoured.
-
-
-Although I'm looking forward better scrub structure which allow us to 
-get block group cache easier.
-If we can get bg_cache easier in such context, then 
-lock/unlock_full_stripe() have no need to search bg_cache by themselves.
-
-But for now, I prefer to trade a little performance for more independent 
-code.
-
->
->>  	if (sctx->is_dev_replace && !is_metadata && !have_csum) {
->>  		sblocks_for_recheck = NULL;
->>  		goto nodatasum_case;
->> @@ -1463,6 +1474,9 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
->>  		kfree(sblocks_for_recheck);
->>  	}
->>
->> +	ret = unlock_full_stripe(fs_info, logical);
->> +	if (ret < 0)
->> +		return ret;
->
-> Seems that the callers of scrub_handle_errored_block doesn't care about @ret.
->
-> And could you please put a 'locked' flag after taking the lock succesfully?
-> Otherwise every raid profile has to check block group for raid flag.
-
-I'm OK to introduce a bool as new paramter for lock/unlock_full_stripe() 
-as a shortcut to avoid bg search at unlock.
-
-But the true fix would be scrub structure cleanup to make us accessing 
-bg_cache without hassle.
-
-Thanks for the review,
-Qu
-
->
-> Thanks,
->
-> -liubo
->>  	return 0;
->>  }
->>
->> --
->> 2.12.1
->>
->>
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
-
-
+The above case looks like a candidate for ASSERT as the refcounts must
+be correct, continuing with the warning could lead to other unspecified
+problems.

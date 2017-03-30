@@ -1,130 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from azure.uno.uk.net ([95.172.254.11]:45814 "EHLO azure.uno.uk.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933780AbdC3QN5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Mar 2017 12:13:57 -0400
-Received: from ty.sabi.co.uk ([95.172.230.208]:58344)
-        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
-        (Exim 4.88)
-        (envelope-from <pg@btrfs.list.sabi.co.uk>)
-        id 1ctchv-001Mrf-5Z
-        for linux-btrfs@vger.kernel.org; Thu, 30 Mar 2017 17:13:55 +0100
-Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
-        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
-        id 1ctcQY-0007JK-3i
-        for <linux-btrfs@vger.kernel.org>; Thu, 30 Mar 2017 16:55:58 +0100
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Message-ID: <22749.10893.729399.275210@tree.ty.sabi.co.uk>
-Date: Thu, 30 Mar 2017 16:55:57 +0100
-To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Shrinking a device - performance?
-In-Reply-To: <43e29da2-1d1b-1680-f262-1c95575645d8@gmail.com>
-References: <1CCB3887-A88C-41C1-A8EA-514146828A42@flyingcircus.io>
-        <20170327130730.GN11714@carfax.org.uk>
-        <3558CE2F-0B8F-437B-966C-11C1392B81F2@flyingcircus.io>
-        <20170327194847.5c0c5545@natsu>
-        <4E13254F-FDE8-47F7-A495-53BFED814C81@flyingcircus.io>
-        <22746.30348.324000.636753@tree.ty.sabi.co.uk>
-        <43e29da2-1d1b-1680-f262-1c95575645d8@gmail.com>
-From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
+Received: from mail-qt0-f175.google.com ([209.85.216.175]:35540 "EHLO
+        mail-qt0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S934138AbdC3Sfh (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 30 Mar 2017 14:35:37 -0400
+Received: by mail-qt0-f175.google.com with SMTP id x35so46959929qtc.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 30 Mar 2017 11:35:36 -0700 (PDT)
+Message-ID: <1490898932.2667.1.camel@redhat.com>
+Subject: Re: [RFC PATCH v1 00/30] fs: inode->i_version rework and
+ optimization
+From: Jeff Layton <jlayton@redhat.com>
+To: "J. Bruce Fields" <bfields@fieldses.org>
+Cc: Jan Kara <jack@suse.cz>, Christoph Hellwig <hch@infradead.org>,
+        linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-nfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org
+Date: Thu, 30 Mar 2017 14:35:32 -0400
+In-Reply-To: <20170330161231.GA9824@fieldses.org>
+References: <20170320214327.GA5098@fieldses.org>
+         <20170321134500.GA1318@infradead.org> <20170321163011.GA16666@fieldses.org>
+         <1490117004.2542.1.camel@redhat.com> <20170321183006.GD17872@fieldses.org>
+         <1490122013.2593.1.camel@redhat.com>
+         <20170329111507.GA18467@quack2.suse.cz>
+         <1490810071.2678.6.camel@redhat.com>
+         <20170330064724.GA21542@quack2.suse.cz>
+         <1490872308.2694.1.camel@redhat.com> <20170330161231.GA9824@fieldses.org>
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->> My guess is that very complex risky slow operations like that are
->> provided by "clever" filesystem developers for "marketing" purposes,
->> to win box-ticking competitions. That applies to those system
->> developers who do know better; I suspect that even some filesystem
->> developers are "optimistic" as to what they can actually achieve.
+On Thu, 2017-03-30 at 12:12 -0400, J. Bruce Fields wrote:
+> On Thu, Mar 30, 2017 at 07:11:48AM -0400, Jeff Layton wrote:
+> > On Thu, 2017-03-30 at 08:47 +0200, Jan Kara wrote:
+> > > Hum, so are we fine if i_version just changes (increases) for all inodes
+> > > after a server crash? If I understand its use right, it would mean
+> > > invalidation of all client's caches but that is not such a big deal given
+> > > how frequent server crashes should be, right?
+> 
+> Even if it's rare, it may be really painful when all your clients are
+> forced to throw out and repopulate their caches after a crash.  But,
+> yes, maybe we can live with it.
+> 
 
-> There are cases where there really is no other sane option. Not
-> everyone has the kind of budget needed for proper HA setups,
+Yeah, assuming that normal reboots wouldn't cause this, then I don't see
+it as being too bad.
 
-Thnaks for letting me know, that must have never occurred to me, just as
-it must have never occurred to me that some people expect extremely
-advanced features that imply big-budget high-IOPS high-reliability
-storage to be fast and reliable on small-budget storage too :-)
+> > > Because if above is acceptable we could make reported i_version to be a sum
+> > > of "superblock crash counter" and "inode i_version". We increment
+> > > "superblock crash counter" whenever we detect unclean filesystem shutdown.
+> > > That way after a crash we are guaranteed each inode will report new
+> > > i_version (the sum would probably have to look like "superblock crash
+> > > counter" * 65536 + "inode i_version" so that we avoid reusing possible
+> > > i_version numbers we gave away but did not write to disk but still...).
+> > > Thoughts?
+> 
+> How hard is this for filesystems to support?  Do they need an on-disk
+> format change to keep track of the crash counter?  Maybe not, maybe the
+> high bits of the i_version counters are all they need.
+> 
 
-> and if you need maximal uptime and as a result have to reprovision the
-> system online, then you pretty much need a filesystem that supports
-> online shrinking.
+Yeah, I imagine we'd need a on-disk change for this unless there's
+something already present that we could use in place of a crash counter.
 
-That's a bigger topic than we can address here. The topic used to be
-known in one related domain as "Very Large Databases", which were
-defined as databases so large and critical that they the time needed for
-maintenance and backup were too slow for taking them them offline etc.;
-that is a topics that has largely vanished for discussion, I guess
-because most management just don't want to hear it :-).
+> > That does sound like a good idea. This is a 64 bit value, so we should
+> > be able to carve out some upper bits for a crash counter without risking
+> > wrapping.
+> > 
+> > The other constraint here is that we'd like any later version of the
+> > counter to be larger than any earlier value that was handed out. I think
+> > this idea would still satisfy that.
+> 
+> I guess we just want to have some back-of-the-envelope estimates of
+> maximum number of i_version increments possible between crashes and
+> maximum number of crashes possible over lifetime of a filesystem, to
+> decide how to split up the bits.
+> 
+> I wonder if we could get away with using the new crash counter only for
+> *new* values of the i_version?  After a crash, use the on disk i_version
+> as is, and put off using the new crash counter until the next time the
+> file's modified.
+> 
 
-> Also, it's not really all that slow on most filesystem, BTRFS is just
-> hurt by it's comparatively poor performance, and the COW metadata
-> updates that are needed.
+That sounds difficult to get right. Suppose I have an inode that has not
+been updated in a long time. Someone writes to it and then queries the
+i_version. How do I know whether there were crashes since the last time
+I updated it? Or am I misunderstanding what you're proposing here?
 
-Btrfs in realistic situations has pretty good speed *and* performance,
-and COW actually helps, as it often results in less head repositioning
-than update-in-place. What makes it a bit slower with metadata is having
-'dup' by default to recover from especially damaging bitflips in
-metadata, but then that does not impact performance, only speed.
+> That would still eliminate the risk of accidental reuse of an old
+> i_version value.  It still leaves some cases where the client could fail
+> to notice an update indefinitely.  All these cases I think have to
+> assume that a writer made some changes that it failed to ever sync, so
+> as long as we care only about close-to-open semantics perhaps those
+> cases don't matter.
+> 
+> I wonder if repeated crashes can lead to any odd corner cases.
+> 
 
->> That feature set is arguably not appropriate for VM images, but
->> lots of people know better :-).
-
-> That depends on a lot of factors.  I have no issues personally running
-> small VM images on BTRFS, but I'm also running on decent SSD's
-> (>500MB/s read and write speeds), using sparse files, and keeping on
-> top of managing them. [ ... ]
-
-Having (relatively) big-budget high-IOPS storage for high-IOPS workloads
-helps, that must have never occurred to me either :-).
-
->> XFS and 'ext4' are essentially equivalent, except for the fixed-size
->> inode table limitation of 'ext4' (and XFS reportedly has finer
->> grained locking). Btrfs is nearly as good as either on most workloads
->> is single-device mode [ ... ]
-
-> No, if you look at actual data, [ ... ]
-
-Well, I have looked at actual data in many published but often poorly
-made "benchmarks", and to me they seem they seem quite equivalent
-indeed, within somewhat differently shaped performance envelopes, so the
-results depend on the testing point within that envelope. I have been
-done my own simplistic actual data gathering, most recently here:
-
-  http://www.sabi.co.uk/blog/17-one.html?170302#170302
-  http://www.sabi.co.uk/blog/17-one.html?170228#170228
-
-and however simplistic they are fairly informative (and for writes they
-point a finger at a layer below the filesystem type).
-
-[ ... ]
-
->> "Flexibility" in filesystems, especially on rotating disk
->> storage with extremely anisotropic performance envelopes, is
->> very expensive, but of course lots of people know better :-).
-
-> Time is not free,
-
-Your time seems especially and uniquely precious as you "waste"
-as little as possible editing your replies into readability.
-
-> and humans generally prefer to minimize the amount of time they have
-> to work on things. This is why ZFS is so popular, it handles most
-> errors correctly by itself and usually requires very little human
-> intervention for maintenance.
-
-That seems to me a pretty illusion, as it does not contain any magical
-AI, just pretty ordinary and limited error correction for trivial cases.
-
-> 'Flexibility' in a filesystem costs some time on a regular basis, but
-> can save a huge amount of time in the long run.
-
-Like everything else. The difficulty is having flexibility at scale with
-challenging workloads. "An engineer can do  for a nickel what  any damn
-fool can do for a dollar" :-).
-
-> To look at it another way, I have a home server system running BTRFS
-> on top of LVM. [ ... ]
-
-But usually home servers have "unchallenging" workloads, and it is
-relatively easy to overbudget their storage, because the total absolute
-cost is "affordable".
+-- 
+Jeff Layton <jlayton@redhat.com>

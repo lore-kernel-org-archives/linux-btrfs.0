@@ -1,18 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:13217 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:15660 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S932097AbdC3GV3 (ORCPT
+        with ESMTP id S932197AbdC3GV3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Thu, 30 Mar 2017 02:21:29 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-        by cn.fujitsu.com (Postfix) with ESMTP id D658149F9A82
-        for <linux-btrfs@vger.kernel.org>; Thu, 30 Mar 2017 14:21:22 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id 6F87349F9A97
+        for <linux-btrfs@vger.kernel.org>; Thu, 30 Mar 2017 14:21:23 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: Su Yue <suy.fnst@cn.fujitsu.com>
-Subject: [PATCH v3 08/19] btrfs-progs: csum: Introduce function to read out data csums
-Date: Thu, 30 Mar 2017 14:21:04 +0800
-Message-ID: <20170330062116.14379-9-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v3 09/19] btrfs-progs: scrub: Introduce structures to support fsck scrub for RAID56
+Date: Thu, 30 Mar 2017 14:21:05 +0800
+Message-ID: <20170330062116.14379-10-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20170330062116.14379-1-quwenruo@cn.fujitsu.com>
 References: <20170330062116.14379-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -20,40 +19,40 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce a new function: btrfs_read_data_csums(), to read out csums
-for sectors in range.
+Introuduce new local structures, scrub_full_stripe and scrub_stripe, for
+incoming offline RAID56 scrub support.
 
-This is quite useful for read out data csum so we don't need to do it
-using open code.
+For pure stripe/mirror based profiles, like raid0/1/10/dup/single, we
+will follow the original bytenr and mirror number based iteration, so
+they don't need any extra structures for these profiles.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 ---
- Makefile |   2 +-
- csum.c   | 136 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- ctree.h  |   4 ++
- 3 files changed, 141 insertions(+), 1 deletion(-)
- create mode 100644 csum.c
+ Makefile |   3 +-
+ scrub.c  | 121 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 123 insertions(+), 1 deletion(-)
+ create mode 100644 scrub.c
 
 diff --git a/Makefile b/Makefile
-index 89dd8d5d..24c3057b 100644
+index 24c3057b..2486606e 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -95,7 +95,7 @@ objects = ctree.o disk-io.o kernel-lib/radix-tree.o extent-tree.o print-tree.o \
+@@ -95,7 +95,8 @@ objects = ctree.o disk-io.o kernel-lib/radix-tree.o extent-tree.o print-tree.o \
  	  qgroup.o free-space-cache.o kernel-lib/list_sort.o props.o \
  	  kernel-shared/ulist.o qgroup-verify.o backref.o string-table.o task-utils.o \
  	  inode.o file.o find-root.o free-space-tree.o help.o send-dump.o \
--	  fsfeatures.o messages.o kernel-lib/tables.o kernel-lib/raid56.o
-+	  fsfeatures.o messages.o kernel-lib/tables.o kernel-lib/raid56.o csum.o
+-	  fsfeatures.o messages.o kernel-lib/tables.o kernel-lib/raid56.o csum.o
++	  fsfeatures.o messages.o kernel-lib/tables.o kernel-lib/raid56.o csum.o\
++	  scrub.o
  cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
  	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
  	       cmds-quota.o cmds-qgroup.o cmds-replace.o cmds-check.o \
-diff --git a/csum.c b/csum.c
+diff --git a/scrub.c b/scrub.c
 new file mode 100644
-index 00000000..2c886bf4
+index 00000000..1dcdc8df
 --- /dev/null
-+++ b/csum.c
-@@ -0,0 +1,136 @@
++++ b/scrub.c
+@@ -0,0 +1,121 @@
 +/*
 + * Copyright (C) 2017 Fujitsu.  All rights reserved.
 + *
@@ -72,137 +71,109 @@ index 00000000..2c886bf4
 + * Boston, MA 021110-1307, USA.
 + */
 +
-+#include "kerncompat.h"
-+#include "kernel-lib/bitops.h"
++/*
++ * Main part to implement offline(unmounted) btrfs scrub
++ */
++
++#include <unistd.h>
 +#include "ctree.h"
++#include "volumes.h"
++#include "disk-io.h"
 +#include "utils.h"
 +
 +/*
-+ * TODO:
-+ * 1) Add write support for csum
-+ *    So we can write new data extents and add csum into csum tree
-+ *
-+ * Get csums of range[@start, @start + len).
-+ *
-+ * @start:    Start offset, shall be aligned to sectorsize.
-+ * @len:      Length, shall be aligned to sectorsize.
-+ * @csum_ret: The size of csum_ret shall be @len / sectorsize * csum_size.
-+ * @bit_map:  Every bit corresponds to the offset have csum or not.
-+ *            The size in byte of bit_map should be
-+ *            round_up(csum_ret's size/csum_size, BITS_PER_BYTE).
-+ *
-+ * Returns 0  means success
-+ * Returns >0 means on error
-+ * Returns <0 means on fatal error
++ * For parity based profile(RAID56)
++ * Mirror/stripe based on won't need this. They are iterated by bytenr and
++ * mirror number.
 + */
++struct scrub_stripe {
++	/* For P/Q logical start will be BTRFS_RAID5/6_P/Q_STRIPE */
++	u64 logical;
 +
-+int btrfs_read_data_csums(struct btrfs_fs_info *fs_info, u64 start, u64 len,
-+			  void *csum_ret, unsigned long *bitmap_ret)
++	/* Device is missing */
++	unsigned int dev_missing:1;
 +
++	/* Any tree/data csum mismatches */
++	unsigned int csum_mismatch:1;
++
++	/* Some data doesn't have csum(nodatasum) */
++	unsigned int csum_missing:1;
++
++	char *data;
++};
++
++/*
++ * RAID56 full stripe(data stripes + P/Q)
++ */
++struct scrub_full_stripe {
++	u64 logical_start;
++	u64 logical_len;
++	u64 bg_type;
++	u32 nr_stripes;
++	u32 stripe_len;
++
++	/* Read error stripes */
++	u32 err_read_stripes;
++
++	/* Missing devices */
++	u32 err_missing_devs;
++
++	/* Csum error data stripes */
++	u32 err_csum_dstripes;
++
++	/* Missing csum data stripes */
++	u32 missing_csum_dstripes;
++
++	/* currupted stripe index */
++	int corrupted_index[2];
++
++	int nr_corrupted_stripes;
++
++	/* Already recovered once? */
++	unsigned int recovered:1;
++
++	struct scrub_stripe stripes[];
++};
++
++static void free_full_stripe(struct scrub_full_stripe *fstripe)
 +{
-+	struct btrfs_path path;
-+	struct btrfs_key key;
-+	struct btrfs_root *csum_root = fs_info->csum_root;
-+	u32 item_offset;
-+	u32 item_size;
-+	u32 final_offset;
-+	u32 final_len;
-+	u32 sectorsize = fs_info->tree_root->sectorsize;
-+	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
-+	u64 cur_start;
-+	u64 cur_end;
-+	int found = 0;
-+	int ret;
++	int i;
 +
-+	ASSERT(IS_ALIGNED(start, sectorsize));
-+	ASSERT(IS_ALIGNED(len, sectorsize));
-+	ASSERT(csum_ret);
-+	ASSERT(bitmap_ret);
++	for (i = 0; i < fstripe->nr_stripes; i++)
++		free(fstripe->stripes[i].data);
++	free(fstripe);
++}
 +
-+	memset(bitmap_ret, 0, round_up(len / sectorsize, BITS_PER_BYTE));
-+	btrfs_init_path(&path);
++static struct scrub_full_stripe *alloc_full_stripe(int nr_stripes,
++						    u32 stripe_len)
++{
++	struct scrub_full_stripe *ret;
++	int size = sizeof(*ret) + sizeof(unsigned long *) +
++		nr_stripes * sizeof(struct scrub_stripe);
++	int i;
 +
-+	key.objectid = BTRFS_EXTENT_CSUM_OBJECTID;
-+	key.type = BTRFS_EXTENT_CSUM_KEY;
-+	key.offset = start;
++	ret = malloc(size);
++	if (!ret)
++		return NULL;
 +
-+	ret = btrfs_search_slot(NULL, csum_root, &key, &path, 0, 0);
-+	if (ret < 0)
-+		goto out;
-+	if (ret > 0) {
-+		ret = btrfs_previous_item(csum_root, &path,
-+					  BTRFS_EXTENT_CSUM_OBJECTID,
-+					  BTRFS_EXTENT_CSUM_KEY);
-+		if (ret < 0)
-+			goto out;
-+	}
-+	/* The csum tree may be empty. */
-+	if (!btrfs_header_nritems(path.nodes[0]))
-+		goto next;
++	memset(ret, 0, size);
++	ret->nr_stripes = nr_stripes;
++	ret->stripe_len = stripe_len;
++	ret->corrupted_index[0] = -1;
++	ret->corrupted_index[1] = -1;
 +
-+	while (1) {
-+		btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
++	/* Alloc data memory for each stripe */
++	for (i = 0; i < nr_stripes; i++) {
++		struct scrub_stripe *stripe = &ret->stripes[i];
 +
-+		if (!IS_ALIGNED(key.offset, sectorsize)) {
-+			error("csum item bytenr %llu is not aligned to %u",
-+			      key.offset, sectorsize);
-+			ret = -EIO;
-+			break;
++		stripe->data = malloc(stripe_len);
++		if (!stripe->data) {
++			free_full_stripe(ret);
++			return NULL;
 +		}
-+		/* exceeds end */
-+		if (key.offset >= start + len)
-+			break;
-+
-+		item_offset = btrfs_item_ptr_offset(path.nodes[0],
-+						    path.slots[0]);
-+		item_size = btrfs_item_size_nr(path.nodes[0], path.slots[0]);
-+
-+		if (key.offset + item_size / csum_size * sectorsize < start)
-+			goto next;
-+
-+		/* get start of the extent */
-+		cur_start = max(start, key.offset);
-+		/* get end of the extent */
-+		cur_end = min(start + len, key.offset + item_size / csum_size *
-+			      sectorsize);
-+
-+		final_offset = (cur_start - key.offset) / sectorsize *
-+			csum_size + item_offset;
-+		final_len = (cur_end - cur_start) / sectorsize * csum_size;
-+		read_extent_buffer(path.nodes[0],
-+				   (csum_ret + (cur_start - start) /
-+				    sectorsize * csum_size),
-+				   final_offset, final_len);
-+
-+		for (u32 i = 0; i != final_len / csum_size; i++)
-+			set_bit(i + (cur_start - start) / sectorsize,
-+				bitmap_ret);
-+
-+		found = 1;
-+next:
-+		ret = btrfs_next_item(csum_root, &path);
-+		if (ret)
-+			break;
 +	}
-+out:
-+	if (ret >= 0)
-+		ret = !found;
-+	btrfs_release_path(&path);
 +	return ret;
 +}
-diff --git a/ctree.h b/ctree.h
-index 13cf3b00..9c999b1f 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -2779,4 +2779,8 @@ int btrfs_punch_hole(struct btrfs_trans_handle *trans,
- int btrfs_read_file(struct btrfs_root *root, u64 ino, u64 start, int len,
- 		    char *dest);
- 
-+/* csum.c */
-+int btrfs_read_data_csums(struct btrfs_fs_info *fs_info, u64 start, u64 len,
-+			  void *csum_ret, unsigned long *bitmap_ret);
-+
- #endif
 -- 
 2.12.1
 

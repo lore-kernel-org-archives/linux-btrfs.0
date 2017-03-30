@@ -1,111 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:33269 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S932701AbdC2BeF (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Mar 2017 21:34:05 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <dsterba@suse.cz>
-Subject: [PATCH v3 2/5] btrfs: scrub: Fix RAID56 recovery race condition
-Date: Wed, 29 Mar 2017 09:33:19 +0800
-Message-ID: <20170329013322.1323-3-quwenruo@cn.fujitsu.com>
-In-Reply-To: <20170329013322.1323-1-quwenruo@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:40370 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S932913AbdC3QxN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 30 Mar 2017 12:53:13 -0400
+Date: Thu, 30 Mar 2017 18:52:28 +0200
+From: David Sterba <dsterba@ds.suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH v3 0/5] raid56: scrub related fixes
+Message-ID: <20170330165228.GA22556@ds.suse.cz>
 References: <20170329013322.1323-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170329013322.1323-1-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When scrubbing a RAID5 which has recoverable data corruption (only one
-data stripe is corrupted), sometimes scrub will report more csum errors
-than expected. Sometimes even unrecoverable error will be reported.
+On Wed, Mar 29, 2017 at 09:33:17AM +0800, Qu Wenruo wrote:
+> This patchset can be fetched from my github repo:
+> https://github.com/adam900710/linux.git raid56_fixes
+> 
+> It's based on v4.11-rc2, the last two patches get modified according to
+> the advice from Liu Bo.
+> 
+> The patchset fixes the following bugs:
+> 
+> 1) False alert or wrong csum error number when scrubbing RAID5/6
+>    The bug itself won't cause any damage to fs, just pure race.
+> 
+>    This can be triggered by running scrub for 64K corrupted data stripe,
+>    Normally it will report 16 csum error recovered, but sometimes it
+>    will report more than 16 csum error recovered, under rare case, even
+>    unrecoverable error an be reported.
+> 
+> 2) Corrupted data stripe rebuild corrupts P/Q
+>    So scrub makes one error into another, not really fixing anything
+> 
+>    Since kernel scrub doesn't report parity error, so either offline
+>    scrub or manual check is needed to expose such error.
+> 
+> 3) Use-after-free caused by cancelling dev-replace 
+>    This is quite a deadly bug, since cancelling dev-replace can
+>    cause kernel panic.
+> 
+>    Can be triggered by btrfs/069.
+> 
+> v2:
+>   Use bio_counter to protect rbio against dev-replace cancel, instead of
+>   original btrfs_device refcount, which is too restrict and must disable
+>   rbio cache, suggested by Liu Bo.
+> 
+> v3:
+>   Add fix for another possible use-after-free when rechecking recovered
+>   full stripe
+>   Squashing two patches as they are fixing the same problem, to make
+>   bisect easier.
+>   Use mutex other than spinlock to protect full stripe locks tree, this
+>   allow us to allocate memory inside the critical section on demand.
+>   Encapsulate rb_root and mutex into btrfs_full_stripe_locks_tree.
+>   Rename scrub_full_stripe_lock to full_stripe_lock inside scrub.c.
+>   Rename related function to have unified naming.
+>   Code style change to follow the existing scrub code style.
+> 
+> Qu Wenruo (5):
+>   btrfs: scrub: Introduce full stripe lock for RAID56
+>   btrfs: scrub: Fix RAID56 recovery race condition
+>   btrfs: scrub: Don't append on-disk pages for raid56 scrub
+>   btrfs: Wait flighting bio before freeing target device for raid56
+>   btrfs: Prevent scrub recheck from racing with dev replace
 
-The problem can be easily reproduced by the following steps:
-1) Create a btrfs with RAID5 data profile with 3 devs
-2) Mount it with nospace_cache or space_cache=v2
-   To avoid extra data space usage.
-3) Create a 128K file and sync the fs, unmount it
-   Now the 128K file lies at the beginning of the data chunk
-4) Locate the physical bytenr of data chunk on dev3
-   Dev3 is the 1st data stripe.
-5) Corrupt the first 64K of the data chunk stripe on dev3
-6) Mount the fs and scrub it
-
-The correct csum error number should be 16(assuming using x86_64).
-Larger csum error number can be reported in a 1/3 chance.
-And unrecoverable error can also be reported in a 1/10 chance.
-
-The root cause of the problem is RAID5/6 recover code has race
-condition, due to the fact that full scrub is initiated per device.
-
-While for other mirror based profiles, each mirror is independent with
-each other, so race won't cause any big problem.
-
-For example:
-        Corrupted       |       Correct          |      Correct        |
-|   Scrub dev3 (D1)     |    Scrub dev2 (D2)     |    Scrub dev1(P)    |
-------------------------------------------------------------------------
-Read out D1             |Read out D2             |Read full stripe     |
-Check csum              |Check csum              |Check parity         |
-Csum mismatch           |Csum match, continue    |Parity mismatch      |
-handle_errored_block    |                        |handle_errored_block |
- Read out full stripe   |                        | Read out full stripe|
- D1 csum error(err++)   |                        | D1 csum error(err++)|
- Recover D1             |                        | Recover D1          |
-
-So D1's csum error is accounted twice, just because
-handle_errored_block() doesn't have enough protect, and race can happen.
-
-On even worse case, for example D1's recovery code is re-writing
-D1/D2/P, and P's recovery code is just reading out full stripe, then we
-can cause unrecoverable error.
-
-This patch will use previously introduced lock_full_stripe() and
-unlock_full_stripe() to protect the whole scrub_handle_errored_block()
-function for RAID56 recovery.
-So no extra csum error nor unrecoverable error.
-
-Reported-by: Goffredo Baroncelli <kreijack@libero.it>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- fs/btrfs/scrub.c | 14 ++++++++++++++
- 1 file changed, 14 insertions(+)
-
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index ab33b9a8aac2..f92d2512f4f3 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -1129,6 +1129,17 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
- 	have_csum = sblock_to_check->pagev[0]->have_csum;
- 	dev = sblock_to_check->pagev[0]->dev;
- 
-+	/*
-+	 * For RAID5/6 race can happen for different dev scrub thread.
-+	 * For data corruption, Parity and Data thread will both try
-+	 * to recovery the data.
-+	 * Race can lead to double added csum error, or even unrecoverable
-+	 * error.
-+	 */
-+	ret = lock_full_stripe(fs_info, logical);
-+	if (ret < 0)
-+		return ret;
-+
- 	if (sctx->is_dev_replace && !is_metadata && !have_csum) {
- 		sblocks_for_recheck = NULL;
- 		goto nodatasum_case;
-@@ -1463,6 +1474,9 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
- 		kfree(sblocks_for_recheck);
- 	}
- 
-+	ret = unlock_full_stripe(fs_info, logical);
-+	if (ret < 0)
-+		return ret;
- 	return 0;
- }
- 
--- 
-2.12.1
-
-
-
+As Liu Bo reviewed 3-5 and otherwise look good to me, I'm going to add
+them to 4.12 queue, and will fix the typos myself. Please update 1 and 2
+and resend.

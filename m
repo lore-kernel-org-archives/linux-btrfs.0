@@ -1,154 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:15660 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1754569AbdC3GVY (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Mar 2017 02:21:24 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-        by cn.fujitsu.com (Postfix) with ESMTP id DC07647EE21B
-        for <linux-btrfs@vger.kernel.org>; Thu, 30 Mar 2017 14:21:18 +0800 (CST)
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v3 00/19] Btrfs-progs offline scrub
-Date: Thu, 30 Mar 2017 14:20:56 +0800
-Message-ID: <20170330062116.14379-1-quwenruo@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:45370 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1755546AbdC3Grd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 30 Mar 2017 02:47:33 -0400
+Date: Thu, 30 Mar 2017 08:47:24 +0200
+From: Jan Kara <jack@suse.cz>
+To: Jeff Layton <jlayton@redhat.com>
+Cc: Jan Kara <jack@suse.cz>, "J. Bruce Fields" <bfields@fieldses.org>,
+        Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-nfs@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-xfs@vger.kernel.org
+Subject: Re: [RFC PATCH v1 00/30] fs: inode->i_version rework and optimization
+Message-ID: <20170330064724.GA21542@quack2.suse.cz>
+References: <20161222084549.GA8833@infradead.org>
+ <1482417724.3924.39.camel@redhat.com>
+ <20170320214327.GA5098@fieldses.org>
+ <20170321134500.GA1318@infradead.org>
+ <20170321163011.GA16666@fieldses.org>
+ <1490117004.2542.1.camel@redhat.com>
+ <20170321183006.GD17872@fieldses.org>
+ <1490122013.2593.1.camel@redhat.com>
+ <20170329111507.GA18467@quack2.suse.cz>
+ <1490810071.2678.6.camel@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1490810071.2678.6.camel@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For any one who wants to try it, it can be get from my repo:
-https://github.com/adam900710/btrfs-progs/tree/offline_scrub
+On Wed 29-03-17 13:54:31, Jeff Layton wrote:
+> On Wed, 2017-03-29 at 13:15 +0200, Jan Kara wrote:
+> > On Tue 21-03-17 14:46:53, Jeff Layton wrote:
+> > > On Tue, 2017-03-21 at 14:30 -0400, J. Bruce Fields wrote:
+> > > > On Tue, Mar 21, 2017 at 01:23:24PM -0400, Jeff Layton wrote:
+> > > > > On Tue, 2017-03-21 at 12:30 -0400, J. Bruce Fields wrote:
+> > > > > > - It's durable; the above comparison still works if there were reboots
+> > > > > >   between the two i_version checks.
+> > > > > > 	- I don't know how realistic this is--we may need to figure out
+> > > > > > 	  if there's a weaker guarantee that's still useful.  Do
+> > > > > > 	  filesystems actually make ctime/mtime/i_version changes
+> > > > > > 	  atomically with the changes that caused them?  What if a
+> > > > > > 	  change attribute is exposed to an NFS client but doesn't make
+> > > > > > 	  it to disk, and then that value is reused after reboot?
+> > > > > > 
+> > > > > 
+> > > > > Yeah, there could be atomicity there. If we bump i_version, we'll mark
+> > > > > the inode dirty and I think that will end up with the new i_version at
+> > > > > least being journalled before __mark_inode_dirty returns.
+> > > > 
+> > > > So you think the filesystem can provide the atomicity?  In more detail:
+> > > > 
+> > > 
+> > > Sorry, I hit send too quickly. That should have read:
+> > > 
+> > > "Yeah, there could be atomicity issues there."
+> > > 
+> > > I think providing that level of atomicity may be difficult, though
+> > > maybe there's some way to make the querying of i_version block until
+> > > the inode update has been journalled?
+> > 
+> > Just to complement what Dave said from ext4 side - similarly as with XFS
+> > ext4 doesn't guarantee atomicity unless fsync() has completed on the file.
+> > Until that you can see arbitrary combination of data & i_version after the
+> > crash. We do take care to keep data and metadata in sync only when there
+> > are security implications to that (like exposing uninitialized disk blocks)
+> > and if not, we are as lazy as we can to improve performance...
+> > 
+> > 
+> 
+> Yeah, I think what we'll have to do here is ensure that those
+> filesystems do an fsync prior to reporting the i_version getattr
+> codepath. It's not pretty, but I don't see a real alternative.
 
-Several reports on kernel scrub screwing up good data stripes are in ML
-for sometime.
+Hum, so are we fine if i_version just changes (increases) for all inodes
+after a server crash? If I understand its use right, it would mean
+invalidation of all client's caches but that is not such a big deal given
+how frequent server crashes should be, right?
 
-And since kernel scrub won't account P/Q corruption, it makes us quite
-hard to detect error like kernel screwing up P/Q when scrubbing.
+Because if above is acceptable we could make reported i_version to be a sum
+of "superblock crash counter" and "inode i_version". We increment
+"superblock crash counter" whenever we detect unclean filesystem shutdown.
+That way after a crash we are guaranteed each inode will report new
+i_version (the sum would probably have to look like "superblock crash
+counter" * 65536 + "inode i_version" so that we avoid reusing possible
+i_version numbers we gave away but did not write to disk but still...).
+Thoughts?
 
-To get a comparable tool for kernel scrub, we need a user-space tool to
-act as benchmark to compare their different behaviors.
-
-So here is the patchset for user-space scrub.
-
-Which can do:
-
-1) All mirror/backup check for non-parity based stripe
-   Which means for RAID1/DUP/RAID10, we can really check all mirrors
-   other than the 1st good mirror.
-
-   Current "--check-data-csum" option will be finally replaced by
-   offline scrub.
-   As it doesn't really check all mirrors, if it hits a good copy, then
-   resting copies will just be ignored.
-
-2) Comprehensive RAID5/6 full stripe check
-   It will take full use of btrfs csum(both tree and data).
-   It will only recover the full stripe if all recovered data matches
-   with its csum.
-
-In fact, it can already expose several btrfs kernel bug.
-As it's the main tool I'm using when developing the kernel fixes.
-
-For example, after screwing up a data stripe, kernel did repairs data
-using parity, but recovered full stripe has wrong parity.
-Need to scrub again to fix it.
-
-And this patchset also introduced new btrfs_map_block() function, which is
-more flex than current btrfs_map_block(), and has a unified interface
-for all profiles, not just an array of physical addresses.
-
-Check the 6th and 7th patch for details.
-
-They are already used in RAID5/6 scrub, but can also be used for other
-profiles too.
-
-The to-do list has been shortened, since RAID6 and new check logical is
-introduced.
-1) Repair support
-   In fact, current tool can already report recoverability, repair is
-   easy to implement.
-
-2) Test cases
-   Need to make the infrastructure able to handle multi-device first.
-
-3) Make btrfsck able to handle RAID5 with missing device
-   Now it doesn't even open RAID5 btrfs with missing device, even though
-   scrub should be able to handle it.
-
-Changelog:
-V0.8 RFC:
-   Initial RFC patchset
-
-v1:
-   First formal patchset.
-   RAID6 recovery support added, mainly copied from kernel radi6 lib.
-   Cleaner recovery logical.
-
-v2:
-   More comments in both code and commit message, suggested by David.
-   File re-arrangement, no check/ dir, raid56.ch moved to kernel-lib,
-   Suggested by David
-
-v3:
-  Put "--offline" option to scrub, other than put it in fsck.
-  Use bitmap to read multiple csums in one run, to improve performance.
-  Add --progress/--no-progress option, to tell user we're not just
-  wasting CPU and IO.
-
-Qu Wenruo (19):
-  btrfs-progs: raid56: Introduce raid56 header for later recovery usage
-  btrfs-progs: raid56: Introduce tables for RAID6 recovery
-  btrfs-progs: raid56: Allow raid6 to recover 2 data stripes
-  btrfs-progs: raid56: Allow raid6 to recover data and p
-  btrfs-progs: Introduce wrapper to recover raid56 data
-  btrfs-progs: Introduce new btrfs_map_block function which returns more
-    unified result.
-  btrfs-progs: Allow __btrfs_map_block_v2 to remove unrelated stripes
-  btrfs-progs: csum: Introduce function to read out data csums
-  btrfs-progs: scrub: Introduce structures to support fsck scrub for
-    RAID56
-  btrfs-progs: scrub: Introduce function to scrub mirror based tree
-    block
-  btrfs-progs: scrub: Introduce function to scrub mirror based data
-    blocks
-  btrfs-progs: scrub: Introduce function to scrub one extent
-  btrfs-progs: scrub: Introduce function to scrub one data stripe
-  btrfs-progs: scrub: Introduce function to verify parities
-  btrfs-progs: extent-tree: Introduce function to check if there is any
-    extent in given range.
-  btrfs-progs: scrub: Introduce function to recover data parity
-  btrfs-progs: scrub: Introduce a function to scrub one full stripe
-  btrfs-progs: scrub: Introduce function to check a whole block group
-  btrfs-progs: scrub: Introduce offline scrub function
-
- .gitignore                         |    2 +
- Documentation/btrfs-scrub.asciidoc |    9 +
- Makefile                           |   21 +-
- cmds-scrub.c                       |  114 +++-
- csum.c                             |  136 +++++
- ctree.h                            |   11 +
- disk-io.c                          |    4 +-
- disk-io.h                          |    6 +-
- extent-tree.c                      |   60 +++
- kernel-lib/mktables.c              |  148 +++++
- kernel-lib/raid56.c                |  359 +++++++++++++
- kernel-lib/raid56.h                |   58 ++
- raid56.c                           |  172 ------
- scrub.c                            | 1040 ++++++++++++++++++++++++++++++++++++
- utils.h                            |    6 +
- volumes.c                          |  283 ++++++++++
- volumes.h                          |   78 +++
- 17 files changed, 2319 insertions(+), 188 deletions(-)
- create mode 100644 csum.c
- create mode 100644 kernel-lib/mktables.c
- create mode 100644 kernel-lib/raid56.c
- create mode 100644 kernel-lib/raid56.h
- delete mode 100644 raid56.c
- create mode 100644 scrub.c
-
+								Honza
 -- 
-2.12.1
-
-
-
+Jan Kara <jack@suse.com>
+SUSE Labs, CR

@@ -1,35 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from zlom.siedziba.pl ([83.144.122.22]:53436 "EHLO zlom.siedziba.pl"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S934944AbdC3WNl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Mar 2017 18:13:41 -0400
-From: =?UTF-8?Q?Piotr_Paw=c5=82ow?= <pp@siedziba.pl>
-Subject: Re: Shrinking a device - performance?
-To: Peter Grandi <pg@btrfs.list.sabi.co.UK>,
-        Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-References: <1CCB3887-A88C-41C1-A8EA-514146828A42@flyingcircus.io>
- <20170327130730.GN11714@carfax.org.uk>
- <3558CE2F-0B8F-437B-966C-11C1392B81F2@flyingcircus.io>
- <20170327194847.5c0c5545@natsu>
- <4E13254F-FDE8-47F7-A495-53BFED814C81@flyingcircus.io>
- <22746.30348.324000.636753@tree.ty.sabi.co.uk>
- <b0f6b00e-4c70-72d1-8683-c05bb72a0968@siedziba.pl>
- <22749.11946.474065.536986@tree.ty.sabi.co.uk>
-Message-ID: <67132222-17c3-b198-70c1-c3ae0c1cb8e7@siedziba.pl>
-Date: Fri, 31 Mar 2017 00:13:04 +0200
+Received: from syrinx.knorrie.org ([82.94.188.77]:38072 "EHLO
+        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932201AbdC3WkK (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 30 Mar 2017 18:40:10 -0400
+Received: from [IPv6:2001:980:4a41:fb::12] (unknown [IPv6:2001:980:4a41:fb::12])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by syrinx.knorrie.org (Postfix) with ESMTPSA id 9290960012
+        for <linux-btrfs@vger.kernel.org>; Fri, 31 Mar 2017 00:40:06 +0200 (CEST)
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Subject: Bug: misleading free space tree messages when mounting ro
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <87ec1249-b0b8-643b-9031-ebc9aae5f80a@mendix.com>
+Date: Fri, 31 Mar 2017 00:40:04 +0200
 MIME-Version: 1.0
-In-Reply-To: <22749.11946.474065.536986@tree.ty.sabi.co.uk>
-Content-Type: text/plain; charset=windows-1252
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> The proposed "move whole chunks" implementation helps only if
-> there are enough unallocated chunks "below the line". If regular
-> 'balance' is done on the filesystem there will be some, but that
-> just spreads the cost of the 'balance' across time, it does not
-> by itself make a «risky, difficult, slow operation» any less so,
-> just spreads the risk, difficulty, slowness across time.
+Today I wanted to convert a filesystem to free space tree, because it's
+great. But, the filesystem is the root fs, so I could not just umount
+and mount it.
 
-Isn't that too pessimistic? Most of my filesystems have 90+% of free
-space unallocated, even those I never run balance on. For me it wouldn't
-just spread the cost, it would reduce it considerably.
+I wanted to try to get the conversion done during boot, so I started
+messing around with initramfs and grub.
+
+When trying this and doing things like update initramfs, edit grub
+settings with rootflags=space_cache=v2 etc, the filesystem *seemed* to
+start using the free space tree, but was actually not. Mount output and
+dmesg output says: "enabling free space tree", "using free space tree"
+etc, but it actually never created the free space tree.
+
+After trying some things, I realized that when doing a readonly mount
+the first time, it would be quite understandable that the filesystem
+would not do a free space conversion on a readonly target. So, after
+using rw instead of ro once in the grub line, it actually happened.
+
+However, when mounting with space_cache=v2 the first time, in
+combination with readonly, the messages are quite misleading:
+
+It's easily reproducable with a small test fs:
+
+-# mount -o ro,space_cache=v2 /dev/sdx /mnt/btrfs
+
+BTRFS info (device sdx): enabling free space tree
+BTRFS info (device sdx): using free space tree
+
+mount says:
+
+/dev/sdx on /mnt/btrfs type btrfs
+(ro,relatime,ssd,space_cache=v2,subvolid=5,subvol=/)
+
+but:
+
+-# ./show_tree_keys.py 10 /mnt/btrfs/
+Traceback (most recent call last):
+  File "./show_tree_keys.py", line 13, in <module>
+    for header, _ in btrfs.ioctl.search_v2(fs.fd, tree):
+  File "/home/knorrie/src/git/python-btrfs/examples/btrfs/ioctl.py",
+line 265, in search_v2
+    fcntl.ioctl(fd, IOC_TREE_SEARCH_V2, buf)
+FileNotFoundError: [Errno 2] No such file or directory
+
+Nope, no FST. Not even close.
+
+When mounting rw,space_cache=v2, it actually happens:
+
+BTRFS info (device sdx): creating free space tree
+BTRFS info (device sdx): setting 1 ro feature flag
+BTRFS info (device sdx): setting 2 ro feature flag
+
+Well... there it is:
+
+-# ./show_tree_keys.py 10 /mnt/btrfs/
+(20971520 FREE_SPACE_INFO 8388608)
+(20971520 FREE_SPACE_EXTENT 16384)
+(21004288 FREE_SPACE_EXTENT 8355840)
+(29360128 FREE_SPACE_INFO 1073741824)
+(29360128 FREE_SPACE_EXTENT 49152)
+(29507584 FREE_SPACE_EXTENT 114688)
+(29638656 FREE_SPACE_EXTENT 98304)
+(29769728 FREE_SPACE_EXTENT 49152)
+(29835264 FREE_SPACE_EXTENT 16384)
+(29868032 FREE_SPACE_EXTENT 1073233920)
+(1103101952 FREE_SPACE_INFO 2147483648)
+(1103101952 FREE_SPACE_EXTENT 2147483648)
+
+
+So: it would be better to print something in dmesg about "not creating
+free space tree, ignoring space_cache=v2 because mounting read only",
+instead of keeping the mount option active and printing those messages.
+
+And, of course not displaying the option as active afterwards.
+
+Moo,
+
+-- 
+Hans van Kranenburg

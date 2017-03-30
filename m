@@ -1,33 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from iodev.co.uk ([82.211.30.53]:58160 "EHLO iodev.co.uk"
+Received: from fieldses.org ([173.255.197.46]:59126 "EHLO fieldses.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933482AbdC3PxX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Mar 2017 11:53:23 -0400
-Date: Thu, 30 Mar 2017 12:46:40 -0300
-From: Ismael Luceno <ismael@iodev.co.uk>
-To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [v4] btrfs: add missing memset while reading compressed inline
- extents
-Message-ID: <20170330154639.GB21626@pirotess.Home>
-References: <1489182344-29818-1-git-send-email-ce3g8jdj@umail.furryterror.org>
+        id S933356AbdC3QMc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 30 Mar 2017 12:12:32 -0400
+Date: Thu, 30 Mar 2017 12:12:31 -0400
+From: "J. Bruce Fields" <bfields@fieldses.org>
+To: Jeff Layton <jlayton@redhat.com>
+Cc: Jan Kara <jack@suse.cz>, Christoph Hellwig <hch@infradead.org>,
+        linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-nfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org
+Subject: Re: [RFC PATCH v1 00/30] fs: inode->i_version rework and optimization
+Message-ID: <20170330161231.GA9824@fieldses.org>
+References: <20170320214327.GA5098@fieldses.org>
+ <20170321134500.GA1318@infradead.org>
+ <20170321163011.GA16666@fieldses.org>
+ <1490117004.2542.1.camel@redhat.com>
+ <20170321183006.GD17872@fieldses.org>
+ <1490122013.2593.1.camel@redhat.com>
+ <20170329111507.GA18467@quack2.suse.cz>
+ <1490810071.2678.6.camel@redhat.com>
+ <20170330064724.GA21542@quack2.suse.cz>
+ <1490872308.2694.1.camel@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1489182344-29818-1-git-send-email-ce3g8jdj@umail.furryterror.org>
+In-Reply-To: <1490872308.2694.1.camel@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/Mar/2017 16:45, Zygo Blaxell wrote:
-> This is a story about 4 distinct (and very old) btrfs bugs.
+On Thu, Mar 30, 2017 at 07:11:48AM -0400, Jeff Layton wrote:
+> On Thu, 2017-03-30 at 08:47 +0200, Jan Kara wrote:
+> > Hum, so are we fine if i_version just changes (increases) for all inodes
+> > after a server crash? If I understand its use right, it would mean
+> > invalidation of all client's caches but that is not such a big deal given
+> > how frequent server crashes should be, right?
+
+Even if it's rare, it may be really painful when all your clients are
+forced to throw out and repopulate their caches after a crash.  But,
+yes, maybe we can live with it.
+
+> > Because if above is acceptable we could make reported i_version to be a sum
+> > of "superblock crash counter" and "inode i_version". We increment
+> > "superblock crash counter" whenever we detect unclean filesystem shutdown.
+> > That way after a crash we are guaranteed each inode will report new
+> > i_version (the sum would probably have to look like "superblock crash
+> > counter" * 65536 + "inode i_version" so that we avoid reusing possible
+> > i_version numbers we gave away but did not write to disk but still...).
+> > Thoughts?
+
+How hard is this for filesystems to support?  Do they need an on-disk
+format change to keep track of the crash counter?  Maybe not, maybe the
+high bits of the i_version counters are all they need.
+
+> That does sound like a good idea. This is a 64 bit value, so we should
+> be able to carve out some upper bits for a crash counter without risking
+> wrapping.
 > 
-<...>
+> The other constraint here is that we'd like any later version of the
+> counter to be larger than any earlier value that was handed out. I think
+> this idea would still satisfy that.
 
-Tested-by: Ismael Luceno <ismael@iodev.co.uk>
+I guess we just want to have some back-of-the-envelope estimates of
+maximum number of i_version increments possible between crashes and
+maximum number of crashes possible over lifetime of a filesystem, to
+decide how to split up the bits.
 
-I encountered the issue in the wild; it caused frequent segfaults
-at ld.so after some hours of operation, as well as integrity check
-failures. A quick inspection revealed corruption in the ELF headers,
-with garbage where there should be zeros.
+I wonder if we could get away with using the new crash counter only for
+*new* values of the i_version?  After a crash, use the on disk i_version
+as is, and put off using the new crash counter until the next time the
+file's modified.
 
-I managed to reproduce the issue right away by enabling page poisoning,
-and the problem effectively goes away when applying the patch.
+That would still eliminate the risk of accidental reuse of an old
+i_version value.  It still leaves some cases where the client could fail
+to notice an update indefinitely.  All these cases I think have to
+assume that a writer made some changes that it failed to ever sync, so
+as long as we care only about close-to-open semantics perhaps those
+cases don't matter.
+
+I wonder if repeated crashes can lead to any odd corner cases.
+
+--b.

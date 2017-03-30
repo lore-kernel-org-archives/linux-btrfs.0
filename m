@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:15660 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:13217 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S932616AbdC3GVf (ORCPT
+        with ESMTP id S932097AbdC3GVe (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Mar 2017 02:21:35 -0400
+        Thu, 30 Mar 2017 02:21:34 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-        by cn.fujitsu.com (Postfix) with ESMTP id 6744647EE219
-        for <linux-btrfs@vger.kernel.org>; Thu, 30 Mar 2017 14:21:30 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id 20A2847EE21E
+        for <linux-btrfs@vger.kernel.org>; Thu, 30 Mar 2017 14:21:31 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Su <suy.fnst@cn.fujitsu.com>
-Subject: [PATCH v3 19/19] btrfs-progs: fsck: Introduce offline scrub function
-Date: Thu, 30 Mar 2017 14:21:15 +0800
-Message-ID: <20170330062116.14379-20-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v3 19/19] btrfs-progs: scrub: Introduce offline scrub function
+Date: Thu, 30 Mar 2017 14:21:16 +0800
+Message-ID: <20170330062116.14379-21-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20170330062116.14379-1-quwenruo@cn.fujitsu.com>
 References: <20170330062116.14379-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -20,10 +20,10 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Now, btrfs check has a kernel scrub equivalent.
-A new option, --scrub is added for "btrfs check".
+Now, btrfs-progs has a kernel scrub equivalent.
+A new option, --offline is added to "btrfs scrub start".
 
-If --scrub is given, btrfs check will just act like kernel scrub, to
+If --offline is given, btrfs scrub will just act like kernel scrub, to
 check every copy of extent and do a report on corrupted data and if it's
 recoverable.
 
@@ -40,18 +40,21 @@ The advantage compare to kernel scrub is:
    While in btrfs-progs, no page, (almost) no memory size limit, we're
    can focus on the scrub, and make things easier.
 
+New offline scrub can detect and report P/Q corruption with
+recoverability report, while kernel will only report data stripe error.
+
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Signed-off-by: Su <suy.fnst@cn.fujitsu.com>
 ---
  Documentation/btrfs-scrub.asciidoc |   9 +++
- cmds-scrub.c                       | 111 +++++++++++++++++++++++++++++++++++--
+ cmds-scrub.c                       | 114 +++++++++++++++++++++++++++++++++++--
  ctree.h                            |   5 ++
- scrub.c                            |  69 +++++++++++++++++++++++
+ scrub.c                            |  69 ++++++++++++++++++++++
  utils.h                            |   6 ++
- 5 files changed, 196 insertions(+), 4 deletions(-)
+ 5 files changed, 199 insertions(+), 4 deletions(-)
 
 diff --git a/Documentation/btrfs-scrub.asciidoc b/Documentation/btrfs-scrub.asciidoc
-index eb90a1c4..f590474d 100644
+index eb90a1c4..49527c2a 100644
 --- a/Documentation/btrfs-scrub.asciidoc
 +++ b/Documentation/btrfs-scrub.asciidoc
 @@ -78,6 +78,15 @@ set IO priority classdata (see `ionice`(1) manpage)
@@ -62,7 +65,7 @@ index eb90a1c4..f590474d 100644
 +Do offline scrub.
 +NOTE: it's experimental and repair is not supported yet.
 +--progress::::
-+Show progress status while doing offline scrub.
++Show progress status while doing offline scrub. (Default)
 +NOTE: it's only useful with option --offline.
 +--no-progress::::
 +Don't show progress status while doing offline scrub.
@@ -71,7 +74,7 @@ index eb90a1c4..f590474d 100644
  *status* [-d] <path>|<device>::
  Show status of a running scrub for the filesystem identified by 'path' or
 diff --git a/cmds-scrub.c b/cmds-scrub.c
-index 5388fdcf..961e2776 100644
+index 5388fdcf..7dc2dfcf 100644
 --- a/cmds-scrub.c
 +++ b/cmds-scrub.c
 @@ -36,12 +36,14 @@
@@ -246,7 +249,7 @@ index 5388fdcf..961e2776 100644
  
  	if (err)
  		return 1;
-@@ -1563,7 +1663,7 @@ out:
+@@ -1563,9 +1663,10 @@ out:
  }
  
  static const char * const cmd_scrub_start_usage[] = {
@@ -254,17 +257,22 @@ index 5388fdcf..961e2776 100644
 +	"btrfs scrub start [-BdqrRf] [-c ioprio_class -n ioprio_classdata] [--offline] [--progress][no-progress] <path>|<device>",
  	"Start a new scrub. If a scrub is already running, the new one fails.",
  	"",
++	"Online (kernel) scrub options:",
  	"-B     do not background",
-@@ -1574,6 +1674,9 @@ static const char * const cmd_scrub_start_usage[] = {
- 	"-c     set ioprio class (see ionice(1) manpage)",
+ 	"-d     stats per device (-B only)",
+ 	"-q     be quiet",
+@@ -1575,6 +1676,11 @@ static const char * const cmd_scrub_start_usage[] = {
  	"-n     set ioprio classdata (see ionice(1) manpage)",
  	"-f     force starting new scrub even if a scrub is already running",
-+	"--offline     start an offline scrub, not support other options",
-+	"--progress    show progress status, only work with option --offline",
-+	"--no-progress do not show progress status, only work only with option --offline",
  	"       this is useful when scrub stats record file is damaged",
++	"",
++	"Offline scrub options:",
++	"--offline     start an offline scrub, not support other options",
++	"--progress    show progress status (default), only work with option --offline",
++	"--no-progress do not show progress status, only work only with option --offline",
  	NULL
  };
+ 
 diff --git a/ctree.h b/ctree.h
 index d3ddf752..328e9dca 100644
 --- a/ctree.h
@@ -280,7 +288,7 @@ index d3ddf752..328e9dca 100644
 +
  #endif
 diff --git a/scrub.c b/scrub.c
-index 99eff5dc..68edc776 100644
+index b68d501f..100e9a4b 100644
 --- a/scrub.c
 +++ b/scrub.c
 @@ -25,6 +25,7 @@

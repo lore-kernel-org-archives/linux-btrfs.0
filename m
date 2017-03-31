@@ -1,82 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:33190 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754088AbdCHRAW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 8 Mar 2017 12:00:22 -0500
-Received: from mail.kernel.org (localhost [127.0.0.1])
-        by mail.kernel.org (Postfix) with ESMTP id 2F824204B0
-        for <linux-btrfs@vger.kernel.org>; Wed,  8 Mar 2017 17:00:20 +0000 (UTC)
-Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 0EAF3204D6
-        for <linux-btrfs@vger.kernel.org>; Wed,  8 Mar 2017 17:00:16 +0000 (UTC)
-From: fdmanana@kernel.org
+Received: from userp1040.oracle.com ([156.151.31.81]:32468 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933026AbdCaL2J (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 31 Mar 2017 07:28:09 -0400
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix incorrect space accounting after failure to insert inline extent
-Date: Wed,  8 Mar 2017 17:00:12 +0000
-Message-Id: <1488992412-25310-1-git-send-email-fdmanana@kernel.org>
+Cc: dsterba@suse.cz
+Subject: [PATCH 3/4 V2] btrfs: cleanup barrier_all_devices() unify dev error count
+Date: Fri, 31 Mar 2017 19:33:10 +0800
+Message-Id: <20170331113310.462-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+Now when counting number of error devices we don't need to count
+them separately once during send and wait, as because device error
+counted during send is more of static check.
 
-When using compression, if we fail to insert an inline extent we
-incorrectly end up attempting to free the reserved data space twice,
-once through extent_clear_unlock_delalloc(), because we pass it the
-flag EXTENT_DO_ACCOUNTING, and once through a direct call to
-btrfs_free_reserved_data_space_noquota(). This results in a trace
-like the following:
+Also kindly note that as of now there is no code which would set
+dev->bdev = NULL unless device is missing. However I still kept
+bdev == NULL counted towards error device in view of future
+enhancements. And as the device_list_mutex is held when
+barrier_all_devices() is called, I don't expect a new bdev to null
+in between send and wait.
 
-[  834.576240] ------------[ cut here ]------------
-[  834.576825] WARNING: CPU: 2 PID: 486 at fs/btrfs/extent-tree.c:4316 btrfs_free_reserved_data_space_noquota+0x60/0x9f [btrfs]
-[  834.579501] Modules linked in: btrfs crc32c_generic xor raid6_pq ppdev i2c_piix4 acpi_cpufreq psmouse tpm_tis parport_pc pcspkr serio_raw tpm_tis_core sg parport evdev i2c_core tpm button loop autofs4 ext4 crc16 jbd2 mbcache sr_mod cdrom sd_mod ata_generic virtio_scsi ata_piix virtio_pci libata virtio_ring virtio scsi_mod e1000 floppy [last unloaded: btrfs]
-[  834.592116] CPU: 2 PID: 486 Comm: kworker/u32:4 Not tainted 4.10.0-rc8-btrfs-next-37+ #2
-[  834.593316] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.9.1-0-gb3ef39f-prebuilt.qemu-project.org 04/01/2014
-[  834.595273] Workqueue: btrfs-delalloc btrfs_delalloc_helper [btrfs]
-[  834.596103] Call Trace:
-[  834.596103]  dump_stack+0x67/0x90
-[  834.596103]  __warn+0xc2/0xdd
-[  834.596103]  warn_slowpath_null+0x1d/0x1f
-[  834.596103]  btrfs_free_reserved_data_space_noquota+0x60/0x9f [btrfs]
-[  834.596103]  compress_file_range.constprop.42+0x2fa/0x3fc [btrfs]
-[  834.596103]  ? submit_compressed_extents+0x3a7/0x3a7 [btrfs]
-[  834.596103]  async_cow_start+0x32/0x4d [btrfs]
-[  834.596103]  btrfs_scrubparity_helper+0x187/0x3e7 [btrfs]
-[  834.596103]  btrfs_delalloc_helper+0xe/0x10 [btrfs]
-[  834.596103]  process_one_work+0x273/0x4e4
-[  834.596103]  worker_thread+0x1eb/0x2ca
-[  834.596103]  ? rescuer_thread+0x2b6/0x2b6
-[  834.596103]  kthread+0x100/0x108
-[  834.596103]  ? __list_del_entry+0x22/0x22
-[  834.596103]  ret_from_fork+0x2e/0x40
-[  834.611656] ---[ end trace 719902fe6bdef08f ]---
+Now in this process I also rename error_wait to dropouts.
 
-So fix this by not calling directly btrfs_free_reserved_data_space_noquota()
-if an error happened.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/inode.c | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
+ V2: As the write_dev_flush with wait=0 is always successful,
+ from the previous patch, ret is now removed.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 2d0d7c6..7058ae4 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -590,8 +590,10 @@ static noinline void compress_file_range(struct inode *inode,
- 						     PAGE_SET_WRITEBACK |
- 						     page_error_op |
- 						     PAGE_END_WRITEBACK);
--			btrfs_free_reserved_data_space_noquota(inode, start,
--						end - start + 1);
-+			if (ret == 0)
-+				btrfs_free_reserved_data_space_noquota(inode,
-+							       start,
-+							       end - start + 1);
- 			goto free_pages_out;
+ fs/btrfs/disk-io.c | 18 ++++++------------
+ 1 file changed, 6 insertions(+), 12 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 42bcf98794ec..f8f534a32c2f 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3543,19 +3543,15 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ {
+ 	struct list_head *head;
+ 	struct btrfs_device *dev;
+-	int errors_send = 0;
+-	int errors_wait = 0;
+-	int ret;
++	int dropouts = 0;
+ 
+ 	/* send down all the barriers */
+ 	head = &info->fs_devices->devices;
+ 	list_for_each_entry_rcu(dev, head, dev_list) {
+ 		if (dev->missing)
+ 			continue;
+-		if (!dev->bdev) {
+-			errors_send++;
++		if (!dev->bdev)
+ 			continue;
+-		}
+ 		if (!dev->in_fs_metadata || !dev->writeable)
+ 			continue;
+ 
+@@ -3567,18 +3563,16 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ 		if (dev->missing)
+ 			continue;
+ 		if (!dev->bdev) {
+-			errors_wait++;
++			dropouts++;
+ 			continue;
  		}
+ 		if (!dev->in_fs_metadata || !dev->writeable)
+ 			continue;
+ 
+-		ret = write_dev_flush(dev, 1);
+-		if (ret)
+-			errors_wait++;
++		if (write_dev_flush(dev, 1))
++			dropouts++;
  	}
+-	if (errors_send > info->num_tolerated_disk_barrier_failures ||
+-	    errors_wait > info->num_tolerated_disk_barrier_failures)
++	if (dropouts > info->num_tolerated_disk_barrier_failures)
+ 		return -EIO;
+ 	return 0;
+ }
 -- 
-2.7.0.rc3
+2.10.0
 

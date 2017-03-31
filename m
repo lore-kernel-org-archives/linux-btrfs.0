@@ -1,45 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33861 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933119AbdCaPfC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 31 Mar 2017 11:35:02 -0400
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com
-Subject: Btrfs progs release 4.10.2
-Date: Fri, 31 Mar 2017 17:34:15 +0200
-Message-Id: <20170331153415.2287-1-dsterba@suse.com>
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:53399 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1753033AbdCaVGH (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 31 Mar 2017 17:06:07 -0400
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: [GIT PULL] Btrfs
+From: Chris Mason <clm@fb.com>
+Message-ID: <0e0a392d-6afa-ad0d-4f78-86ee9b95a75a@fb.com>
+Date: Fri, 31 Mar 2017 17:05:57 -0400
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Hi Linus,
 
-btrfs-progs version 4.10.2 have been released.  More build breakages fixed and
-some minor updates.
+We have 3 small fixes queued up in my for-linus-4.11 branch:
 
-Changes:
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.11
 
- * check: lowmem mode fix for false alert about lost backrefs
- * convert: minor bugfix
- * library: fix build, misisng symbols, added tests
+Goldwyn Rodrigues (1) commits (+7/-7):
+    btrfs: Change qgroup_meta_rsv to 64bit
 
-Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
+Dan Carpenter (1) commits (+6/-1):
+    Btrfs: fix an integer overflow check
 
-Shortlog:
+Liu Bo (1) commits (+31/-21):
+    Btrfs: bring back repair during read
 
-David Sterba (4):
-      btrfs-progs: library-test: add all exported headers
-      btrfs-progs: add prefix to message helpers
-      btrfs-progs: update CHANGES for v4.10.2
-      Btrfs progs v4.10.2
+Total: (3) commits (+44/-29)
 
-Qu Wenruo (4):
-      btrfs-progs: Cleanup kernel-shared dir when execute make clean
-      btrfs-progs: convert: Add missing return for HOLE mode when checking convert image
-      btrfs-progs: check: lowmem, fix false alert about backref lost for SHARED_DATA_REF
-      btrfs-progs: tests: Add SHARED_DATA_REF test image for check lowmem mode
-
-Sergei Trofimovich (1):
-      btrfs-progs: fix missing __error symbol in libbtrfs.so.0
-
+ fs/btrfs/ctree.h     |  2 +-
+ fs/btrfs/disk-io.c   |  2 +-
+ fs/btrfs/extent_io.c | 46 ++++++++++++++++++++++++++++------------------
+ fs/btrfs/inode.c     |  6 +++---
+ fs/btrfs/qgroup.c    | 10 +++++-----
+ fs/btrfs/send.c      |  7 ++++++-
+ 6 files changed, 44 insertions(+), 29 deletions(-)

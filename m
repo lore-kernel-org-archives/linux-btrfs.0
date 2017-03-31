@@ -1,176 +1,245 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:27097 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:18930 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S933345AbdCaAZQ (ORCPT
+        with ESMTP id S934681AbdCaB3c (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Mar 2017 20:25:16 -0400
-Subject: Re: [PATCH v4 2/5] btrfs: scrub: Fix RAID56 recovery race condition
+        Thu, 30 Mar 2017 21:29:32 -0400
+Subject: Re: [PATCH v4 1/5] btrfs: scrub: Introduce full stripe lock for
+ RAID56
 To: <bo.li.liu@oracle.com>
 References: <20170330063251.16872-1-quwenruo@cn.fujitsu.com>
- <20170330063251.16872-3-quwenruo@cn.fujitsu.com>
- <20170330170558.GB8963@lim.localdomain>
+ <20170330063251.16872-2-quwenruo@cn.fujitsu.com>
+ <20170330164920.GA8963@lim.localdomain>
 CC: <linux-btrfs@vger.kernel.org>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <0173d7aa-d89f-0d01-4239-8178f2a97300@cn.fujitsu.com>
-Date: Fri, 31 Mar 2017 08:25:06 +0800
+Message-ID: <07d4e7f2-875f-54e9-05b6-27f74822bee5@cn.fujitsu.com>
+Date: Fri, 31 Mar 2017 09:29:20 +0800
 MIME-Version: 1.0
-In-Reply-To: <20170330170558.GB8963@lim.localdomain>
+In-Reply-To: <20170330164920.GA8963@lim.localdomain>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-At 03/31/2017 01:05 AM, Liu Bo wrote:
-> On Thu, Mar 30, 2017 at 02:32:48PM +0800, Qu Wenruo wrote:
->> When scrubbing a RAID5 which has recoverable data corruption (only one
->> data stripe is corrupted), sometimes scrub will report more csum errors
->> than expected. Sometimes even unrecoverable error will be reported.
+At 03/31/2017 12:49 AM, Liu Bo wrote:
+> On Thu, Mar 30, 2017 at 02:32:47PM +0800, Qu Wenruo wrote:
+>> Unlike mirror based profiles, RAID5/6 recovery needs to read out the
+>> whole full stripe.
 >>
->> The problem can be easily reproduced by the following steps:
->> 1) Create a btrfs with RAID5 data profile with 3 devs
->> 2) Mount it with nospace_cache or space_cache=v2
->>    To avoid extra data space usage.
->> 3) Create a 128K file and sync the fs, unmount it
->>    Now the 128K file lies at the beginning of the data chunk
->> 4) Locate the physical bytenr of data chunk on dev3
->>    Dev3 is the 1st data stripe.
->> 5) Corrupt the first 64K of the data chunk stripe on dev3
->> 6) Mount the fs and scrub it
+>> And if we don't do proper protect, it can easily cause race condition.
 >>
->> The correct csum error number should be 16(assuming using x86_64).
->> Larger csum error number can be reported in a 1/3 chance.
->> And unrecoverable error can also be reported in a 1/10 chance.
+>> Introduce 2 new functions: lock_full_stripe() and unlock_full_stripe()
+>> for RAID5/6.
+>> Which stores a rb_tree of mutex for full stripes, so scrub callers can
+>> use them to lock a full stripe to avoid race.
 >>
->> The root cause of the problem is RAID5/6 recover code has race
->> condition, due to the fact that full scrub is initiated per device.
->>
->> While for other mirror based profiles, each mirror is independent with
->> each other, so race won't cause any big problem.
->>
->> For example:
->>         Corrupted       |       Correct          |      Correct        |
->> |   Scrub dev3 (D1)     |    Scrub dev2 (D2)     |    Scrub dev1(P)    |
->> ------------------------------------------------------------------------
->> Read out D1             |Read out D2             |Read full stripe     |
->> Check csum              |Check csum              |Check parity         |
->> Csum mismatch           |Csum match, continue    |Parity mismatch      |
->> handle_errored_block    |                        |handle_errored_block |
->>  Read out full stripe   |                        | Read out full stripe|
->>  D1 csum error(err++)   |                        | D1 csum error(err++)|
->>  Recover D1             |                        | Recover D1          |
->>
->> So D1's csum error is accounted twice, just because
->> handle_errored_block() doesn't have enough protect, and race can happen.
->>
->> On even worse case, for example D1's recovery code is re-writing
->> D1/D2/P, and P's recovery code is just reading out full stripe, then we
->> can cause unrecoverable error.
->>
->> This patch will use previously introduced lock_full_stripe() and
->> unlock_full_stripe() to protect the whole scrub_handle_errored_block()
->> function for RAID56 recovery.
->> So no extra csum error nor unrecoverable error.
->>
->> Reported-by: Goffredo Baroncelli <kreijack@libero.it>
 >> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>> Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 >> ---
->>  fs/btrfs/scrub.c | 23 +++++++++++++++++++++++
->>  1 file changed, 23 insertions(+)
+>>  fs/btrfs/ctree.h       |  17 ++++
+>>  fs/btrfs/extent-tree.c |  11 +++
+>>  fs/btrfs/scrub.c       | 217 +++++++++++++++++++++++++++++++++++++++++++++++++
+>>  3 files changed, 245 insertions(+)
 >>
+>> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+>> index 29b7fc28c607..9fe56da21fed 100644
+>> --- a/fs/btrfs/ctree.h
+>> +++ b/fs/btrfs/ctree.h
+>> @@ -538,6 +538,14 @@ struct btrfs_io_ctl {
+>>  	unsigned check_crcs:1;
+>>  };
+>>
+>> +/*
+>> + * Tree to record all locked full stripes of a RAID5/6 block group
+>> + */
+>> +struct btrfs_full_stripe_locks_tree {
+>> +	struct rb_root root;
+>> +	struct mutex lock;
+>> +};
+>> +
+>>  struct btrfs_block_group_cache {
+>>  	struct btrfs_key key;
+>>  	struct btrfs_block_group_item item;
+>> @@ -648,6 +656,9 @@ struct btrfs_block_group_cache {
+>>  	 * Protected by free_space_lock.
+>>  	 */
+>>  	int needs_free_space;
+>> +
+>> +	/* Record locked full stripes for RAID5/6 block group */
+>> +	struct btrfs_full_stripe_locks_tree full_stripe_locks_root;
+>>  };
+>>
+>>  /* delayed seq elem */
+>> @@ -3647,6 +3658,12 @@ int btrfs_scrub_cancel_dev(struct btrfs_fs_info *info,
+>>  			   struct btrfs_device *dev);
+>>  int btrfs_scrub_progress(struct btrfs_fs_info *fs_info, u64 devid,
+>>  			 struct btrfs_scrub_progress *progress);
+>> +static inline void btrfs_init_full_stripe_locks_tree(
+>> +			struct btrfs_full_stripe_locks_tree *locks_root)
+>> +{
+>> +	locks_root->root = RB_ROOT;
+>> +	mutex_init(&locks_root->lock);
+>> +}
+>>
+>>  /* dev-replace.c */
+>>  void btrfs_bio_counter_inc_blocked(struct btrfs_fs_info *fs_info);
+>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+>> index be5477676cc8..5f51ce81f484 100644
+>> --- a/fs/btrfs/extent-tree.c
+>> +++ b/fs/btrfs/extent-tree.c
+>> @@ -131,6 +131,16 @@ void btrfs_put_block_group(struct btrfs_block_group_cache *cache)
+>>  	if (atomic_dec_and_test(&cache->count)) {
+>>  		WARN_ON(cache->pinned > 0);
+>>  		WARN_ON(cache->reserved > 0);
+>> +
+>> +		/*
+>> +		 * If not empty, someone is still holding mutex of
+>> +		 * full_stripe_lock, which can only be released by caller.
+>> +		 * And it will definitely cause use-after-free when caller
+>> +		 * tries to release full stripe lock.
+>> +		 *
+>> +		 * No better way to resolve, but only to warn.
+>> +		 */
+>> +		WARN_ON(!RB_EMPTY_ROOT(&cache->full_stripe_locks_root.root));
+>>  		kfree(cache->free_space_ctl);
+>>  		kfree(cache);
+>>  	}
+>> @@ -9917,6 +9927,7 @@ btrfs_create_block_group_cache(struct btrfs_fs_info *fs_info,
+>>  	btrfs_init_free_space_ctl(cache);
+>>  	atomic_set(&cache->trimming, 0);
+>>  	mutex_init(&cache->free_space_lock);
+>> +	btrfs_init_full_stripe_locks_tree(&cache->full_stripe_locks_root);
+>>
+>>  	return cache;
+>>  }
 >> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
->> index 5fc99a92b4ff..4bbefc96485d 100644
+>> index b0251eb1239f..5fc99a92b4ff 100644
 >> --- a/fs/btrfs/scrub.c
 >> +++ b/fs/btrfs/scrub.c
->> @@ -1109,6 +1109,7 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
->>  	int mirror_index;
->>  	int page_num;
->>  	int success;
->> +	bool full_stripe_locked;
->>  	static DEFINE_RATELIMIT_STATE(_rs, DEFAULT_RATELIMIT_INTERVAL,
->>  				      DEFAULT_RATELIMIT_BURST);
+>> @@ -240,6 +240,13 @@ struct scrub_warning {
+>>  	struct btrfs_device	*dev;
+>>  };
 >>
->> @@ -1134,6 +1135,25 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
->>  	have_csum = sblock_to_check->pagev[0]->have_csum;
->>  	dev = sblock_to_check->pagev[0]->dev;
+>> +struct full_stripe_lock {
+>> +	struct rb_node node;
+>> +	u64 logical;
+>> +	u64 refs;
+>> +	struct mutex mutex;
+>> +};
+>> +
+>>  static void scrub_pending_bio_inc(struct scrub_ctx *sctx);
+>>  static void scrub_pending_bio_dec(struct scrub_ctx *sctx);
+>>  static void scrub_pending_trans_workers_inc(struct scrub_ctx *sctx);
+>> @@ -349,6 +356,216 @@ static void scrub_blocked_if_needed(struct btrfs_fs_info *fs_info)
+>>  }
 >>
->> +	/*
->> +	 * For RAID5/6 race can happen for different dev scrub thread.
->> +	 * For data corruption, Parity and Data thread will both try
->> +	 * to recovery the data.
->> +	 * Race can lead to double added csum error, or even unrecoverable
->> +	 * error.
->> +	 */
->> +	ret = lock_full_stripe(fs_info, logical, &full_stripe_locked);
->> +	if (ret < 0) {
->> +		spin_lock(&sctx->stat_lock);
->> +		/* Either malloc failure or bg_cache not found */
->> +		if (ret == -ENOMEM)
->> +			sctx->stat.malloc_errors++;
+>>  /*
+>> + * Insert new full stripe lock into full stripe locks tree
+>> + *
+>> + * Return pointer to existing or newly inserted full_stripe_lock structure if
+>> + * everything works well.
+>> + * Return ERR_PTR(-ENOMEM) if we failed to allocate memory
+>> + *
+>> + * NOTE: caller must hold full_stripe_locks_root->lock before calling this
+>> + * function
+>> + */
+>> +static struct full_stripe_lock *insert_full_stripe_lock(
+>> +		struct btrfs_full_stripe_locks_tree *locks_root,
+>> +		u64 fstripe_logical)
+>> +{
+>> +	struct rb_node **p;
+>> +	struct rb_node *parent = NULL;
+>> +	struct full_stripe_lock *entry;
+>> +	struct full_stripe_lock *ret;
+>> +
+>> +	WARN_ON(!mutex_is_locked(&locks_root->lock));
+>> +
+>> +	p = &locks_root->root.rb_node;
+>> +	while (*p) {
+>> +		parent = *p;
+>> +		entry = rb_entry(parent, struct full_stripe_lock, node);
+>> +		if (fstripe_logical < entry->logical) {
+>> +			p = &(*p)->rb_left;
+>> +		} else if (fstripe_logical > entry->logical) {
+>> +			p = &(*p)->rb_right;
+>> +		} else {
+>> +			entry->refs++;
+>> +			return entry;
+>> +		}
+>> +	}
+>> +
+>> +	/* Insert new lock */
+>> +	ret = kmalloc(sizeof(*ret), GFP_KERNEL);
+>> +	if (!ret)
+>> +		return ERR_PTR(-ENOMEM);
+>> +	ret->logical = fstripe_logical;
+>> +	ret->refs = 1;
+>> +	mutex_init(&ret->mutex);
+>> +
+>> +	rb_link_node(&ret->node, parent, p);
+>> +	rb_insert_color(&ret->node, &locks_root->root);
+>> +	return ret;
+>> +}
+>> +
+>> +/*
+>> + * Search for a full stripe lock of a block group
+>> + *
+>> + * Return pointer to existing full stripe lock if found
+>> + * Return NULL if not found
+>> + */
+>> +static struct full_stripe_lock *search_full_stripe_lock(
+>> +		struct btrfs_full_stripe_locks_tree *locks_root,
+>> +		u64 fstripe_logical)
+>> +{
+>> +	struct rb_node *node;
+>> +	struct full_stripe_lock *entry;
+>> +
+>> +	WARN_ON(!mutex_is_locked(&locks_root->lock));
+>> +
+>> +	node = locks_root->root.rb_node;
+>> +	while (node) {
+>> +		entry = rb_entry(node, struct full_stripe_lock, node);
+>> +		if (fstripe_logical < entry->logical)
+>> +			node = node->rb_left;
+>> +		else if (fstripe_logical > entry->logical)
+>> +			node = node->rb_right;
 >> +		else
->> +			sctx->stat.uncorrectable_errors++;
+>> +			return entry;
+>> +	}
+>> +	return NULL;
+>> +}
+>> +
+>> +/*
+>> + * Helper to get full stripe logical from a normal bytenr.
+>> + *
+>> + * Caller must ensure @cache is a RAID56 block group.
+>> + */
+>> +static u64 get_full_stripe_logical(struct btrfs_block_group_cache *cache,
+>> +				   u64 bytenr)
+>> +{
+>> +	u64 ret;
+>> +
+>> +	/*
+>> +	 * round_down() can only handle power of 2, while RAID56 full
+>> +	 * stripe len can be 64KiB * n, so need manual round down.
+>> +	 */
+>> +	ret = (bytenr - cache->key.objectid) / cache->full_stripe_len *
+>> +	      cache->full_stripe_len + cache->key.objectid;
 >
-> Other places in scrub_handle_errored_block() also set read_errors and
-> uncorrectable_errors, why the above is an exception?
+> Can you please use div_u64 instead?  '/' would cause building errors.
 
-Because we didn't even read out anything, so I don't think we need to 
-update read_errors here.
-
-Even uncorrectable_errors here doesn't even look good to me.
-Such -ENOENT error is unrelated to on-disk data, but runtime error which 
-freed the block group cache (maybe block group itself).
-
-It is more like an assert for -ENOENT case.
-
-However we don't have good enough states for this, I use 
-uncorrectable_error as fallback.
-
-It would very nice if we have more appropriate member for this case.
-
->
-> I'm fine with putting a bool into lock_full_stripe(), but it's easier
-> to tell whether locking is successful by setting the flag after
-> locking.
-
-In fact, I prefer to make such bool internal, hidden from callers but 
-only affects the behavior of lock/unlock_full_stripe().
-
-Caller should only care that lock must be paired with unlock, and block 
-group must exist, and don't forget to handle error.
-
-Other than that, everything else should be handled by 
-lock/unlock_full_stripe() internally, user won't need to bother.
+No problem, but I'm still curious about under which arch/compiler it 
+would cause build error?
 
 Thanks,
 Qu
-
+>
+> Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 >
 > Thanks,
 >
 > -liubo
->
->> +		spin_unlock(&sctx->stat_lock);
->> +		return ret;
->> +	}
->> +
->>  	if (sctx->is_dev_replace && !is_metadata && !have_csum) {
->>  		sblocks_for_recheck = NULL;
->>  		goto nodatasum_case;
->> @@ -1468,6 +1488,9 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
->>  		kfree(sblocks_for_recheck);
->>  	}
->>
->> +	ret = unlock_full_stripe(fs_info, logical, full_stripe_locked);
->> +	if (ret < 0)
->> +		return ret;
->>  	return 0;
->>  }
->>
->> --
->> 2.12.1
->>
->>
->>
 >
 >
 

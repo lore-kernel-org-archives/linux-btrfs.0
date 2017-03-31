@@ -1,177 +1,188 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from azure.uno.uk.net ([95.172.254.11]:51835 "EHLO azure.uno.uk.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932927AbdCaMhd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 31 Mar 2017 08:37:33 -0400
-Received: from ty.sabi.co.uk ([95.172.230.208]:57492)
-        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
-        (Exim 4.88)
-        (envelope-from <pg@btrfs.list.sabi.co.uk>)
-        id 1ctvo2-003Fn8-6Y
-        for linux-btrfs@vger.kernel.org; Fri, 31 Mar 2017 13:37:30 +0100
-Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
-        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
-        id 1ctvnw-0006s1-DJ
-        for <linux-btrfs@vger.kernel.org>; Fri, 31 Mar 2017 13:37:24 +0100
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Message-ID: <22750.19844.32252.497948@tree.ty.sabi.co.uk>
-Date: Fri, 31 Mar 2017 13:37:24 +0100
-To: linux-btrfs@vger.kernel.org
+Received: from mail-qt0-f180.google.com ([209.85.216.180]:36556 "EHLO
+        mail-qt0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751297AbdCaMl6 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 31 Mar 2017 08:41:58 -0400
+Received: by mail-qt0-f180.google.com with SMTP id r45so63880772qte.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 31 Mar 2017 05:41:57 -0700 (PDT)
 Subject: Re: Shrinking a device - performance?
-In-Reply-To: <pan$76dc7$170a959f$9df83808$fddf3918@cox.net>
+To: Peter Grandi <pg@btrfs.list.sabi.co.UK>,
+        Linux fs Btrfs <linux-btrfs@vger.kernel.org>
 References: <1CCB3887-A88C-41C1-A8EA-514146828A42@flyingcircus.io>
-        <20170327130730.GN11714@carfax.org.uk>
-        <3558CE2F-0B8F-437B-966C-11C1392B81F2@flyingcircus.io>
-        <20170327194847.5c0c5545@natsu>
-        <4E13254F-FDE8-47F7-A495-53BFED814C81@flyingcircus.io>
-        <22746.30348.324000.636753@tree.ty.sabi.co.uk>
-        <b0f6b00e-4c70-72d1-8683-c05bb72a0968@siedziba.pl>
-        <22749.11946.474065.536986@tree.ty.sabi.co.uk>
-        <67132222-17c3-b198-70c1-c3ae0c1cb8e7@siedziba.pl>
-        <CAP8EXU2ufgLWL+kgKtaLjqHDBGV1OB8GWy+efCJf4Knb0DaEPQ@mail.gmail.com>
-        <pan$5c23$ddaeadec$128532fd$8595ddc4@cox.net>
-        <pan$76dc7$170a959f$9df83808$fddf3918@cox.net>
-From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
+ <20170327130730.GN11714@carfax.org.uk>
+ <3558CE2F-0B8F-437B-966C-11C1392B81F2@flyingcircus.io>
+ <20170327194847.5c0c5545@natsu>
+ <4E13254F-FDE8-47F7-A495-53BFED814C81@flyingcircus.io>
+ <22746.30348.324000.636753@tree.ty.sabi.co.uk>
+ <43e29da2-1d1b-1680-f262-1c95575645d8@gmail.com>
+ <22749.10893.729399.275210@tree.ty.sabi.co.uk>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <d2f4af84-739e-d43c-0978-8bbe74e8a277@gmail.com>
+Date: Fri, 31 Mar 2017 08:41:49 -0400
+MIME-Version: 1.0
+In-Reply-To: <22749.10893.729399.275210@tree.ty.sabi.co.uk>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->> [ ... ] CentOS, Redhat, and Oracle seem to take the position
->> that very large data subvolumes using btrfs should work
->> fine. But I would be curious what the rest of the list thinks
->> about 20 TiB in one volume/subvolume.
-
-> To be sure I'm a biased voice here, as I have multiple
-> independent btrfs on multiple partitions here, with no btrfs
-> over 100 GiB in size, and that's on ssd so maintenance
-> commands normally return in minutes or even seconds,
-
-That's a bit extreme I think, as there are downsides to have
-many too small volumes too.
-
-> not the hours to days or even weeks it takes on multi-TB btrfs
-> on spinning rust.
-
-Or months :-).
-
-> But FWIW... 1) Don't put all your data eggs in one basket,
-> especially when that basket isn't yet entirely stable and
-> mature.
-
-Really good point here.
-
-> A mantra commonly repeated on this list is that btrfs is still
-> stabilizing,
-
-My impression is that most 4.x and later versions are very
-reliable for "base" functionality, that is excluding
-multi-device, compression, qgroups, ... Put another way, what
-scratches the Facebook itches works well :-).
-
-> [ ... ] the time/cost/hassle-factor of the backup, and being
-> practically prepared to use them, is even *MORE* important
-> than it is on fully mature and stable filesystems.
-
-Indeed, or at least *different* filesystems. I backup JFS
-filesystems to XFS ones, and Btrfs filesystems to NILFS2 ones,
-for example.
-
-> 2) Don't make your filesystems so large that any maintenance
-> on them, including both filesystem maintenance like btrfs
-> balance/scrub/check/ whatever, and normal backup and restore
-> operations, takes impractically long,
-
-As per my preceding post, that's the big deal, but so many
-people "know better" :-).
-
-> where "impractically" can be reasonably defined as so long it
-> discourages you from doing them in the first place and/or so
-> long that it's going to cause unwarranted downtime.
-
-That's the "Very Large DataBase" level of trouble.
-
-> Some years ago, before I started using btrfs and while I was
-> using mdraid, I learned this one the hard way. I had a bunch
-> of rather large mdraids setup, [ ... ]
-
-I have recently seen another much "funnier" example: people who
-"know better" and follow every cool trend decide to consolidate
-their server farm on VMs, backed by a storage server with a
-largish single pool of storage holding the virtual disk images
-of all the server VMs. They look like geniuses until the storage
-pool system crashes, and a minimal integrity check on restart
-takes two days during which the whole organization is without
-access to any email, files, databases, ...
-
-> [ ... ] And there was a good chance it was /not/ active and
-> mounted at the time of the crash and thus didn't need
-> repaired, saving that time entirely! =:^)
-
-As to that I have switched to using 'autofs' to mount volumes
-only on access, using a simple script that turns '/etc/fstab'
-into an automounter dynamic map, which means that most of the
-time most volumes on my (home) systems are not mounted:
-
-  http://www.sabi.co.uk/blog/anno06-3rd.html?060928#060928
-
-> Eventually I arranged things so I could keep root mounted
-> read-only unless I was updating it, and that's still the way I
-> run it today.
-
-The ancient way, instead of having '/' RO and '/var' RW, to have
-'/' RW and '/usr' RO (so for example it could be shared across
-many systems via NFS etc.), and while both are good ideas, I
-prefer the ancient way. But then some people who know better are
-moving to merge '/' with '/usr' without understanding what's the
-history and the advantages.
-
-> [ ... ] If it's multiple TBs, chances are it's going to be
-> faster to simply blow away and recreate from backup, than it
-> is to try to repair... [ ... ]
-
-Or to shrink or defragment or dedup etc., except on very high
-IOPS-per-TB storage.
-
-> [ ... ] how much simpler it would have been had they had an
-> independent btrfs of say a TB or two for each system they were
-> backing up.
-
-That is the general alternative to a single large pool/volume:
-sharding/chunking of filetrees, sometimes, like with Lustre or
-Ceph etc. with a "metafilesystem" layer on top.
-
-Done manually my suggestion is to do the sharding per-week (or
-other suitable period) rather than per-system, in a circular
-"crop rotation" scheme. So that once a volume has been filled,
-it becomes read-only and can even be unmounted until it needs
-to be reused:
-
-  http://www.sabi.co.uk/blog/12-fou.html?121218b#121218b
-
-Then there is the problem that "a TB or two" is less easy with
-increasing disk capacities, but then I think that disks with a
-capacity larger than 1TB are not suitable for ordinary
-workloads, and more for tape-cartridge like usage.
-
-> What would they have done had the btrfs gone bad and needed
-> repaired? [ ... ]
-
-In most cases I have seen of designs aimed at achieving the
-lowest cost and highest flexibility "low IOPS single poool" at
-the expense of scalability and maintainability, the "clever"
-designer had been promoted or had wisely moved to another job
-while the storage system was still mostly empty so the problems
-had not yet happened.
-
-[ ... ]
-
-> But like I said I'm biased.  By hard experience, yes, and
-> getting the sizes for the partitions wrong can be a hassle
-> until you get to know your use-case and size them correctly,
-> but it's a definite bias.
-
-Yes, I am very pleased that this post shares this and many
-other insights from the wisdom of the ancients, not everybody
-knows better :-).
-
-[ ... ]
+On 2017-03-30 11:55, Peter Grandi wrote:
+>>> My guess is that very complex risky slow operations like that are
+>>> provided by "clever" filesystem developers for "marketing" purposes,
+>>> to win box-ticking competitions. That applies to those system
+>>> developers who do know better; I suspect that even some filesystem
+>>> developers are "optimistic" as to what they can actually achieve.
+>
+>> There are cases where there really is no other sane option. Not
+>> everyone has the kind of budget needed for proper HA setups,
+>
+> Thnaks for letting me know, that must have never occurred to me, just as
+> it must have never occurred to me that some people expect extremely
+> advanced features that imply big-budget high-IOPS high-reliability
+> storage to be fast and reliable on small-budget storage too :-)
+You're missing my point (or intentionally ignoring it).  Those types of 
+operations are implemented because there are use cases that actually 
+need them, not because some developer thought it would be cool.  The one 
+possible counter-example of this is XFS, which doesn't support shrinking 
+the filesystem at all, but that was a conscious decision because their 
+target use case (very large scale data storage) does not need that 
+feature and not implementing it allows them to make certain other parts 
+of the filesystem faster.
+>
+>> and if you need maximal uptime and as a result have to reprovision the
+>> system online, then you pretty much need a filesystem that supports
+>> online shrinking.
+>
+> That's a bigger topic than we can address here. The topic used to be
+> known in one related domain as "Very Large Databases", which were
+> defined as databases so large and critical that they the time needed for
+> maintenance and backup were too slow for taking them them offline etc.;
+> that is a topics that has largely vanished for discussion, I guess
+> because most management just don't want to hear it :-).
+No, it's mostly vanished because of changes in best current practice. 
+That was a topic in an era where the only platform that could handle 
+high-availability was VMS, and software wasn't routinely written to 
+handle things like load balancing.  As a result, people ran a single 
+system which hosted the database, and if that went down, everything went 
+down.  By contrast, it's rare these days outside of small companies to 
+see singly hosted databases that aren't specific to the local system, 
+and once you start parallelizing on the system level, backup and 
+maintenance times generally go down.
+>
+>> Also, it's not really all that slow on most filesystem, BTRFS is just
+>> hurt by it's comparatively poor performance, and the COW metadata
+>> updates that are needed.
+>
+> Btrfs in realistic situations has pretty good speed *and* performance,
+> and COW actually helps, as it often results in less head repositioning
+> than update-in-place. What makes it a bit slower with metadata is having
+> 'dup' by default to recover from especially damaging bitflips in
+> metadata, but then that does not impact performance, only speed.
+I and numerous other people have done benchmarks running single metadata 
+and single data profiles on BTRFS, and it consistently performs worse 
+than XFS and ext4 even under those circumstances.  It's not horrible 
+performance (it's better for example than trying the same workload on 
+NTFS on Windows), but it's still not what most people would call 'high' 
+performance or speed.
+>
+>>> That feature set is arguably not appropriate for VM images, but
+>>> lots of people know better :-).
+>
+>> That depends on a lot of factors.  I have no issues personally running
+>> small VM images on BTRFS, but I'm also running on decent SSD's
+>> (>500MB/s read and write speeds), using sparse files, and keeping on
+>> top of managing them. [ ... ]
+>
+> Having (relatively) big-budget high-IOPS storage for high-IOPS workloads
+> helps, that must have never occurred to me either :-).
+It's not big budget, the SSD's in question are at best mid-range 
+consumer SSD's that cost only marginally more than a decent hard drive, 
+and they really don't get all that great performance in terms of IOPS 
+because they're all on the same cheap SATA controller.  The point I was 
+trying to make (which I should have been clearer about) is that they 
+have good bulk throughput, which means that the OS can do much more 
+aggressive writeback caching, which in turn means that COW and 
+fragmentation have less impact.
+>
+>>> XFS and 'ext4' are essentially equivalent, except for the fixed-size
+>>> inode table limitation of 'ext4' (and XFS reportedly has finer
+>>> grained locking). Btrfs is nearly as good as either on most workloads
+>>> is single-device mode [ ... ]
+>
+>> No, if you look at actual data, [ ... ]
+>
+> Well, I have looked at actual data in many published but often poorly
+> made "benchmarks", and to me they seem they seem quite equivalent
+> indeed, within somewhat differently shaped performance envelopes, so the
+> results depend on the testing point within that envelope. I have been
+> done my own simplistic actual data gathering, most recently here:
+>
+>   http://www.sabi.co.uk/blog/17-one.html?170302#170302
+>   http://www.sabi.co.uk/blog/17-one.html?170228#170228
+>
+> and however simplistic they are fairly informative (and for writes they
+> point a finger at a layer below the filesystem type).
+In terms of performance, yes they are roughly equivalent.  Performance 
+isn't all that matters though, and once you get that point, ext4 and XFS 
+are significantly different in what they offer.
+>
+> [ ... ]
+>
+>>> "Flexibility" in filesystems, especially on rotating disk
+>>> storage with extremely anisotropic performance envelopes, is
+>>> very expensive, but of course lots of people know better :-).
+>
+>> Time is not free,
+>
+> Your time seems especially and uniquely precious as you "waste"
+> as little as possible editing your replies into readability.
+>
+>> and humans generally prefer to minimize the amount of time they have
+>> to work on things. This is why ZFS is so popular, it handles most
+>> errors correctly by itself and usually requires very little human
+>> intervention for maintenance.
+>
+> That seems to me a pretty illusion, as it does not contain any magical
+> AI, just pretty ordinary and limited error correction for trivial cases.
+On average, trivial cases account for most errors in any computer.  So, 
+by definition, to handle most errors correctly, you can get by with just 
+handling all 'trivial' cases correctly.  By handling all trivial cases 
+correctly, ZFS is doing far better than any other current filesystem or 
+storage stack can even begin to claim.  It's been doing this since 
+before most modern Linux distributions made their first release too, so 
+compared to just about anything else people are using these days, it's 
+got a pretty solid track record.  Anyone trying to claim it's the best 
+option in any case is obviously either a zealot or being paid, but for 
+many cases, it really is one of the top options.
+>
+>> 'Flexibility' in a filesystem costs some time on a regular basis, but
+>> can save a huge amount of time in the long run.
+>
+> Like everything else. The difficulty is having flexibility at scale with
+> challenging workloads. "An engineer can do  for a nickel what  any damn
+> fool can do for a dollar" :-).
+>
+>> To look at it another way, I have a home server system running BTRFS
+>> on top of LVM. [ ... ]
+>
+> But usually home servers have "unchallenging" workloads, and it is
+> relatively easy to overbudget their storage, because the total absolute
+> cost is "affordable".
+OK, so running
+    * Almost a dozen statically allocated VM's with a variety of 
+differing workloads including web-servers, a local mail server, DHCP and 
+DNS for the network, a VPN server, and 3 different file sharing 
+protocols (which see rather regular use) among other things
+   * On average between 4 and 10 transient VM's running regression 
+testing on kernel patches (including automation of almost everything but 
+selecting patches)
+   * A BOINC client
+   * GlusterFS (both client and storage node)
+   * Network security monitoring (Nagios plus a handful of custom scripts)
+   * Cloud storage software
+All on the same system is an 'unchallenging' workload.  Given the fact 
+that it's only got 32G of RAM and a cheap quad-core Xeon, that's a 
+pretty damn challenging workload by most people standards.  I call it a 
+home server because I run it out of my house, not because it's some 
+trivial dinky little file server that could run just fine on something 
+like a Raspberry Pi.

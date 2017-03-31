@@ -1,112 +1,150 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:17807 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751422AbdCMHwv (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:35671 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933050AbdCaLYZ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 13 Mar 2017 03:52:51 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-        by cn.fujitsu.com (Postfix) with ESMTP id EC5ED48A294B
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 Mar 2017 15:52:45 +0800 (CST)
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2 3/9] btrfs: qgroup: Fix qgroup corruption caused by inode_cache mount option
-Date: Mon, 13 Mar 2017 15:52:10 +0800
-Message-ID: <20170313075216.5125-4-quwenruo@cn.fujitsu.com>
-In-Reply-To: <20170313075216.5125-1-quwenruo@cn.fujitsu.com>
-References: <20170313075216.5125-1-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+        Fri, 31 Mar 2017 07:24:25 -0400
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH 2/4 V2] btrfs: use blkdev_issue_flush to flush the device cache
+Date: Fri, 31 Mar 2017 19:29:12 +0800
+Message-Id: <20170331112912.32674-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[BUG]
-The easist way to reproduce the bug is:
-------
- # mkfs.btrfs -f $dev -n 16K
- # mount $dev $mnt -o inode_cache
- # btrfs quota enable $mnt
- # btrfs quota rescan -w $mnt
- # btrfs qgroup show $mnt
-qgroupid         rfer         excl
---------         ----         ----
-0/5          32.00KiB     32.00KiB
-             ^^ Twice the correct value
-------
+As of now we do alloc an empty bio and then use the flag REQ_PREFLUSH
+to flush the device cache, instead we can use blkdev_issue_flush()
+for this puspose.
 
-And fstests/btrfs qgroup test group can easily detect them with
-inode_cache mount option.
-Although some of them are false alerts since old test cases are using
-fixed golden output.
-While new test cases will use "btrfs check" to detect qgroup mismatch.
+Also now no need to check the return when write_dev_flush() is called
+with wait = 0
 
-[CAUSE]
-Inode_cache mount option will make commit_fs_roots() to call
-btrfs_save_ino_cache() to update fs/subvol trees, and generate new
-delayed refs.
-
-However we call btrfs_qgroup_prepare_account_extents() too early, before
-commit_fs_roots().
-This makes the "old_roots" for newly generated extents are always NULL.
-For freeing extent case, this makes both new_roots and old_roots to be
-empty, while correct old_roots should not be empty.
-This causing qgroup numbers not decreased correctly.
-
-[FIX]
-Modify the timing of calling btrfs_qgroup_prepare_account_extents() to
-just before btrfs_qgroup_account_extents(), and add needed delayed_refs
-handler.
-So qgroup can handle inode_map mount options correctly.
-
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/transaction.c | 25 ++++++++++++++++++-------
- 1 file changed, 18 insertions(+), 7 deletions(-)
+V2
+  Title of this patch is changed from
+   btrfs: communicate back ENOMEM when it occurs
+  And its entirely a new patch, which now use blkdev_issue_flush()
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 61b807de3e16..894c4980c15c 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -2130,13 +2130,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 		goto scrub_continue;
+ fs/btrfs/disk-io.c | 64 +++++++++++++++---------------------------------------
+ fs/btrfs/volumes.h |  3 ++-
+ 2 files changed, 19 insertions(+), 48 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 9de35bca1f67..42bcf98794ec 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3498,67 +3498,39 @@ static int write_dev_supers(struct btrfs_device *device,
+ 	return errors < i ? 0 : -1;
+ }
+ 
+-/*
+- * endio for the write_dev_flush, this will wake anyone waiting
+- * for the barrier when it is done
+- */
+-static void btrfs_end_empty_barrier(struct bio *bio)
++static void btrfs_dev_issue_flush(struct work_struct *work)
+ {
+-	if (bio->bi_private)
+-		complete(bio->bi_private);
+-	bio_put(bio);
++	int ret;
++	struct btrfs_device *device;
++
++	device = container_of(work, struct btrfs_device, flush_work);
++
++	/* we are in the commit thread */
++	ret = blkdev_issue_flush(device->bdev, GFP_NOFS, NULL);
++	device->last_flush_error = ret;
++	complete(&device->flush_wait);
+ }
+ 
+ /*
+  * trigger flushes for one the devices.  If you pass wait == 0, the flushes are
+  * sent down.  With wait == 1, it waits for the previous flush.
+- *
+- * any device where the flush fails with eopnotsupp are flagged as not-barrier
+- * capable
+  */
+ static int write_dev_flush(struct btrfs_device *device, int wait)
+ {
+-	struct bio *bio;
+-	int ret = 0;
+-
+ 	if (wait) {
+-		bio = device->flush_bio;
+-		if (!bio)
+-			return 0;
++		int ret;
+ 
+ 		wait_for_completion(&device->flush_wait);
+-
+-		if (bio->bi_error) {
+-			ret = bio->bi_error;
++		ret = device->last_flush_error;
++		if (ret)
+ 			btrfs_dev_stat_inc_and_print(device,
+-				BTRFS_DEV_STAT_FLUSH_ERRS);
+-		}
+-
+-		/* drop the reference from the wait == 0 run */
+-		bio_put(bio);
+-		device->flush_bio = NULL;
+-
++					BTRFS_DEV_STAT_FLUSH_ERRS);
+ 		return ret;
  	}
  
--	/* Reocrd old roots for later qgroup accounting */
--	ret = btrfs_qgroup_prepare_account_extents(trans, fs_info);
--	if (ret) {
--		mutex_unlock(&fs_info->reloc_mutex);
--		goto scrub_continue;
--	}
+-	/*
+-	 * one reference for us, and we leave it for the
+-	 * caller
+-	 */
+-	device->flush_bio = NULL;
+-	bio = btrfs_io_bio_alloc(GFP_NOFS, 0);
+-	if (!bio)
+-		return -ENOMEM;
 -
- 	/*
- 	 * make sure none of the code above managed to slip in a
- 	 * delayed item
-@@ -2179,6 +2172,24 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 	btrfs_free_log_root_tree(trans, fs_info);
+-	bio->bi_end_io = btrfs_end_empty_barrier;
+-	bio->bi_bdev = device->bdev;
+-	bio->bi_opf = REQ_OP_WRITE | REQ_PREFLUSH;
+ 	init_completion(&device->flush_wait);
+-	bio->bi_private = &device->flush_wait;
+-	device->flush_bio = bio;
+-
+-	bio_get(bio);
+-	btrfsic_submit_bio(bio);
++	INIT_WORK(&device->flush_work, btrfs_dev_issue_flush);
++	schedule_work(&device->flush_work);
  
- 	/*
-+	 * commit_fs_roots() can call btrfs_save_ino_cache(), which generates
-+	 * new delayed refs. Must handle them or qgroup can be wrong.
-+	 */
-+	ret = btrfs_run_delayed_refs(trans, fs_info, (unsigned long)-1);
-+	if (ret) {
-+		mutex_unlock(&fs_info->tree_log_mutex);
-+		mutex_unlock(&fs_info->reloc_mutex);
-+		goto scrub_continue;
-+	}
-+
-+	ret = btrfs_qgroup_prepare_account_extents(trans, fs_info);
-+	if (ret) {
-+		mutex_unlock(&fs_info->tree_log_mutex);
-+		mutex_unlock(&fs_info->reloc_mutex);
-+		goto scrub_continue;
-+	}
-+
-+	/*
- 	 * Since fs roots are all committed, we can get a quite accurate
- 	 * new_roots. So let's do quota accounting.
- 	 */
+ 	return 0;
+ }
+@@ -3587,9 +3559,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ 		if (!dev->in_fs_metadata || !dev->writeable)
+ 			continue;
+ 
+-		ret = write_dev_flush(dev, 0);
+-		if (ret)
+-			errors_send++;
++		write_dev_flush(dev, 0);
+ 	}
+ 
+ 	/* wait for all the barriers */
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index fa0b79422695..1168b78c5f1d 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -123,8 +123,9 @@ struct btrfs_device {
+ 	struct list_head resized_list;
+ 
+ 	/* for sending down flush barriers */
+-	struct bio *flush_bio;
+ 	struct completion flush_wait;
++	struct work_struct flush_work;
++	int last_flush_error;
+ 
+ 	/* per-device scrub information */
+ 	struct scrub_ctx *scrub_device;
 -- 
-2.12.0
-
-
+2.10.0
 

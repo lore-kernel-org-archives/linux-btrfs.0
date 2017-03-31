@@ -1,74 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40370 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932913AbdC3QxN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Mar 2017 12:53:13 -0400
-Date: Thu, 30 Mar 2017 18:52:28 +0200
-From: David Sterba <dsterba@ds.suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH v3 0/5] raid56: scrub related fixes
-Message-ID: <20170330165228.GA22556@ds.suse.cz>
+Received: from cn.fujitsu.com ([59.151.112.132]:38646 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1750820AbdCaCDd (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 30 Mar 2017 22:03:33 -0400
+Subject: Re: [PATCH v3 1/5] btrfs: scrub: Introduce full stripe lock for
+ RAID56
+To: <dsterba@suse.cz>, <bo.li.liu@oracle.com>, <linux-btrfs@vger.kernel.org>
 References: <20170329013322.1323-1-quwenruo@cn.fujitsu.com>
+ <20170329013322.1323-2-quwenruo@cn.fujitsu.com>
+ <20170330003444.GA15452@lim.localdomain>
+ <1a67dcaf-f1b5-a9bf-673a-2a364bd94d89@cn.fujitsu.com>
+ <20170330103149.GF4781@suse.cz>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <b3ba9d44-9ceb-729c-5b31-89c44db7ee12@cn.fujitsu.com>
+Date: Fri, 31 Mar 2017 10:03:28 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170329013322.1323-1-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20170330103149.GF4781@suse.cz>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 29, 2017 at 09:33:17AM +0800, Qu Wenruo wrote:
-> This patchset can be fetched from my github repo:
-> https://github.com/adam900710/linux.git raid56_fixes
-> 
-> It's based on v4.11-rc2, the last two patches get modified according to
-> the advice from Liu Bo.
-> 
-> The patchset fixes the following bugs:
-> 
-> 1) False alert or wrong csum error number when scrubbing RAID5/6
->    The bug itself won't cause any damage to fs, just pure race.
-> 
->    This can be triggered by running scrub for 64K corrupted data stripe,
->    Normally it will report 16 csum error recovered, but sometimes it
->    will report more than 16 csum error recovered, under rare case, even
->    unrecoverable error an be reported.
-> 
-> 2) Corrupted data stripe rebuild corrupts P/Q
->    So scrub makes one error into another, not really fixing anything
-> 
->    Since kernel scrub doesn't report parity error, so either offline
->    scrub or manual check is needed to expose such error.
-> 
-> 3) Use-after-free caused by cancelling dev-replace 
->    This is quite a deadly bug, since cancelling dev-replace can
->    cause kernel panic.
-> 
->    Can be triggered by btrfs/069.
-> 
-> v2:
->   Use bio_counter to protect rbio against dev-replace cancel, instead of
->   original btrfs_device refcount, which is too restrict and must disable
->   rbio cache, suggested by Liu Bo.
-> 
-> v3:
->   Add fix for another possible use-after-free when rechecking recovered
->   full stripe
->   Squashing two patches as they are fixing the same problem, to make
->   bisect easier.
->   Use mutex other than spinlock to protect full stripe locks tree, this
->   allow us to allocate memory inside the critical section on demand.
->   Encapsulate rb_root and mutex into btrfs_full_stripe_locks_tree.
->   Rename scrub_full_stripe_lock to full_stripe_lock inside scrub.c.
->   Rename related function to have unified naming.
->   Code style change to follow the existing scrub code style.
-> 
-> Qu Wenruo (5):
->   btrfs: scrub: Introduce full stripe lock for RAID56
->   btrfs: scrub: Fix RAID56 recovery race condition
->   btrfs: scrub: Don't append on-disk pages for raid56 scrub
->   btrfs: Wait flighting bio before freeing target device for raid56
->   btrfs: Prevent scrub recheck from racing with dev replace
 
-As Liu Bo reviewed 3-5 and otherwise look good to me, I'm going to add
-them to 4.12 queue, and will fix the typos myself. Please update 1 and 2
-and resend.
+
+At 03/30/2017 06:31 PM, David Sterba wrote:
+> On Thu, Mar 30, 2017 at 09:03:21AM +0800, Qu Wenruo wrote:
+>>>> +static int lock_full_stripe(struct btrfs_fs_info *fs_info, u64 bytenr)
+>>>> +{
+>>>> +	struct btrfs_block_group_cache *bg_cache;
+>>>> +	struct btrfs_full_stripe_locks_tree *locks_root;
+>>>> +	struct full_stripe_lock *existing;
+>>>> +	u64 fstripe_start;
+>>>> +	int ret = 0;
+>>>> +
+>>>> +	bg_cache = btrfs_lookup_block_group(fs_info, bytenr);
+>>>> +	if (!bg_cache)
+>>>> +		return -ENOENT;
+>>>> +
+>>>
+>>> When starting to scrub a chunk, we've already increased a ref for block group,
+>>> could you please put a ASSERT to catch it?
+>>
+>> Personally I prefer WARN_ON() than ASSERT().
+>>
+>> ASSERT() always panic the modules and forces us to reset the system.
+>> Wiping out any possibility to check the system.
+>
+> I think the sematnics of WARN_ON and ASSERT are different, so it should
+> be decided case by case which one to use. Assert is good for 'never
+> happens' or catch errors at development time (wrong API use, invariant
+> condition that must always match).
+>
+> Also the asserts are gone if the config option is unset, while WARN_ON
+> will stay in some form (verbose or not). Both are suitable for catching
+> problems, but the warning is for less critical errors so we want to know
+> when it happens but still can continue.
+>
+> The above case looks like a candidate for ASSERT as the refcounts must
+> be correct, continuing with the warning could lead to other unspecified
+> problems.
+
+I'm OK to use ASSERT() here, but current ASSERT() in btrfs can hide real 
+problem if CONFIG_BTRFS_ASSERT is not set.
+
+When CONFIG_BTRFS_ASSERT is not set, ASSERT() just does thing, and 
+*continue* executing.
+
+This forces us to build a fallback method.
+
+For above case, if we simply do "ASSERT(bg_cache);" then for 
+BTRFS_CONFIG_ASSERT not set case (which is quite common for most 
+distributions) we will cause NULL pointer deference.
+
+So here, we still need to do bg_cache return value check, but just 
+change "WARN_ON(1);" to "ASSERT(0);" like:
+------
+	bg_cache = btrfs_lookup_block_group(fs_info, bytenr);
+	if (!bg_cache) {
+		ASSERT(0); /* WARN_ON(1); */
+		return -ENOENT;
+	}
+------
+
+Can we make ASSERT() really catch problem no matter kernel config?
+Current ASSERT() behavior is in fact forcing us to consider both 
+situation, which makes it less handy.
+
+Thanks,
+Qu
+
+

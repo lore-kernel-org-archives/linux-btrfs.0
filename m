@@ -1,51 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:55163 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751361AbdCaFiz (ORCPT
+Received: from smtp65.iad3a.emailsrvr.com ([173.203.187.65]:41316 "EHLO
+        smtp65.iad3a.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1750777AbdCaHFZ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 31 Mar 2017 01:38:55 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1ctpGm-00075J-Bg
-        for linux-btrfs@vger.kernel.org; Fri, 31 Mar 2017 07:38:44 +0200
+        Fri, 31 Mar 2017 03:05:25 -0400
+Received: from smtp1.relay.iad3a.emailsrvr.com (localhost [127.0.0.1])
+        by smtp1.relay.iad3a.emailsrvr.com (SMTP Server) with ESMTP id 4935A5C16
+        for <linux-btrfs@vger.kernel.org>; Fri, 31 Mar 2017 03:05:23 -0400 (EDT)
+Received: by smtp1.relay.iad3a.emailsrvr.com (Authenticated sender: m.khalili-AT-rqc.ru) with ESMTPSA id E51645B9A
+        for <linux-btrfs@vger.kernel.org>; Fri, 31 Mar 2017 03:05:22 -0400 (EDT)
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Shrinking a device - performance?
-Date: Fri, 31 Mar 2017 05:38:36 +0000 (UTC)
-Message-ID: <pan$76dc7$170a959f$9df83808$fddf3918@cox.net>
-References: <1CCB3887-A88C-41C1-A8EA-514146828A42@flyingcircus.io>
-        <20170327130730.GN11714@carfax.org.uk>
-        <3558CE2F-0B8F-437B-966C-11C1392B81F2@flyingcircus.io>
-        <20170327194847.5c0c5545@natsu>
-        <4E13254F-FDE8-47F7-A495-53BFED814C81@flyingcircus.io>
-        <22746.30348.324000.636753@tree.ty.sabi.co.uk>
-        <b0f6b00e-4c70-72d1-8683-c05bb72a0968@siedziba.pl>
-        <22749.11946.474065.536986@tree.ty.sabi.co.uk>
-        <67132222-17c3-b198-70c1-c3ae0c1cb8e7@siedziba.pl>
-        <CAP8EXU2ufgLWL+kgKtaLjqHDBGV1OB8GWy+efCJf4Knb0DaEPQ@mail.gmail.com>
-        <pan$5c23$ddaeadec$128532fd$8595ddc4@cox.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+From: Marat Khalili <mkh@rqc.ru>
+Subject: Do different btrfs volumes compete for CPU?
+Message-ID: <43a14754-1047-552e-78a9-6503dfc0d121@rqc.ru>
+Date: Fri, 31 Mar 2017 10:05:20 +0300
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Duncan posted on Fri, 31 Mar 2017 05:26:39 +0000 as excerpted:
+Approximately 16 hours ago I've run a script that deleted >~100 
+snapshots and started quota rescan on a large USB-connected btrfs volume 
+(5.4 of 22 TB occupied now). Quota rescan only completed just now, with 
+100% load from [btrfs-transacti] throughout this period, which is 
+probably ~ok depending on your view on things.
 
-> Compare that to the current thread where someone's trying to do a resize
-> of a 20+ TB btrfs and it was looking to take a week, due to the massive
-> size and the slow speed of balance on his highly reflinked filesystem on
-> spinning rust.
+What worries me is innocent process using _another_, SATA-connected 
+btrfs volume that hung right after I started my script and took >30 
+minutes to be sigkilled. There's nothing interesting in the kernel log, 
+and attempts to attach strace to the process output nothing, but I of 
+course suspect that it freezed on disk operation.
 
-Heh, /this/ thread.  =:^)  I obviously lost track of the thread I was 
-replying to.
+I wonder:
+1) Can there be a contention for CPU or some mutexes between kernel 
+btrfs threads belonging to different volumes?
+2) If yes, can anything be done about it other than mounting volumes 
+from (different) VMs?
 
-Which in a way makes the reply even more forceful, as it's obviously 
-generically targeted, not just at this thread.  Even if I were so devious 
-as to arrange that deliberately (I'm not and I didn't, FWIW, but of 
-course if you suspect that than this assurance won't mean much either).
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+> $ uname -a; btrfs --version
+> Linux host 4.4.0-66-generic #87-Ubuntu SMP Fri Mar 3 15:29:05 UTC 2017 
+> x86_64 x86_64 x86_64 GNU/Linux
+> btrfs-progs v4.4
+
+--
+
+With Best Regards,
+Marat Khalili
 

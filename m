@@ -1,128 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:30131 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751717AbdC2RxP (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 29 Mar 2017 13:53:15 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:33861 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S933119AbdCaPfC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 31 Mar 2017 11:35:02 -0400
+From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH v3] Btrfs: bring back repair during read
-Date: Wed, 29 Mar 2017 10:51:59 -0700
-Message-Id: <1490809919-17425-1-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1490393090-14360-1-git-send-email-bo.li.liu@oracle.com>
-References: <1490393090-14360-1-git-send-email-bo.li.liu@oracle.com>
+Cc: clm@fb.com
+Subject: Btrfs progs release 4.10.2
+Date: Fri, 31 Mar 2017 17:34:15 +0200
+Message-Id: <20170331153415.2287-1-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit 20a7db8ab3f2 ("btrfs: add dummy callback for readpage_io_failed
-and drop checks") made a cleanup around readpage_io_failed_hook, and
-it was supposed to keep the original sematics, but it also
-unexpectedly disabled repair during read for dup, raid1 and raid10.
+Hi,
 
-This fixes the problem by letting data's inode call the generic
-readpage_io_failed callback by returning -EAGAIN from its
-readpage_io_failed_hook in order to notify end_bio_extent_readpage to
-do the rest.  We don't call it directly because the generic one takes
-an offset from end_bio_extent_readpage() to calculate the index in the
-checksum array and inode's readpage_io_failed_hook doesn't offer that
-offset.
+btrfs-progs version 4.10.2 have been released.  More build breakages fixed and
+some minor updates.
 
-Cc: David Sterba <dsterba@suse.cz>
-Reviewed-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
-v2: fix grammar typos and additional details about the change.
-v3: add back const attribute.
+Changes:
 
- fs/btrfs/extent_io.c | 46 ++++++++++++++++++++++++++++------------------
- fs/btrfs/inode.c     |  6 +++---
- 2 files changed, 31 insertions(+), 21 deletions(-)
+ * check: lowmem mode fix for false alert about lost backrefs
+ * convert: minor bugfix
+ * library: fix build, misisng symbols, added tests
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 28e8192..d39a11c 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2583,26 +2583,36 @@ static void end_bio_extent_readpage(struct bio *bio)
- 
- 		if (tree->ops) {
- 			ret = tree->ops->readpage_io_failed_hook(page, mirror);
--			if (!ret && !bio->bi_error)
--				uptodate = 1;
--		} else {
-+			if (ret == -EAGAIN) {
-+				/*
-+				 * Data inode's readpage_io_failed_hook() always
-+				 * returns -EAGAIN.
-+				 *
-+				 * The generic bio_readpage_error handles errors
-+				 * the following way: If possible, new read
-+				 * requests are created and submitted and will
-+				 * end up in end_bio_extent_readpage as well (if
-+				 * we're lucky, not in the !uptodate case). In
-+				 * that case it returns 0 and we just go on with
-+				 * the next page in our bio. If it can't handle
-+				 * the error it will return -EIO and we remain
-+				 * responsible for that page.
-+				 */
-+				ret = bio_readpage_error(bio, offset, page,
-+							 start, end, mirror);
-+				if (ret == 0) {
-+					uptodate = !bio->bi_error;
-+					offset += len;
-+					continue;
-+				}
-+			}
-+
- 			/*
--			 * The generic bio_readpage_error handles errors the
--			 * following way: If possible, new read requests are
--			 * created and submitted and will end up in
--			 * end_bio_extent_readpage as well (if we're lucky, not
--			 * in the !uptodate case). In that case it returns 0 and
--			 * we just go on with the next page in our bio. If it
--			 * can't handle the error it will return -EIO and we
--			 * remain responsible for that page.
-+			 * metadata's readpage_io_failed_hook() always returns
-+			 * -EIO and fixes nothing.  -EIO is also returned if
-+			 * data inode error could not be fixed.
- 			 */
--			ret = bio_readpage_error(bio, offset, page, start, end,
--						 mirror);
--			if (ret == 0) {
--				uptodate = !bio->bi_error;
--				offset += len;
--				continue;
--			}
-+			ASSERT(ret == -EIO);
- 		}
- readpage_ok:
- 		if (likely(uptodate)) {
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index c40060c..4296cae 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -10509,9 +10509,9 @@ static int btrfs_tmpfile(struct inode *dir, struct dentry *dentry, umode_t mode)
- }
- 
- __attribute__((const))
--static int dummy_readpage_io_failed_hook(struct page *page, int failed_mirror)
-+static int btrfs_readpage_io_failed_hook(struct page *page, int failed_mirror)
- {
--	return 0;
-+	return -EAGAIN;
- }
- 
- static const struct inode_operations btrfs_dir_inode_operations = {
-@@ -10556,7 +10556,7 @@ static const struct extent_io_ops btrfs_extent_io_ops = {
- 	.submit_bio_hook = btrfs_submit_bio_hook,
- 	.readpage_end_io_hook = btrfs_readpage_end_io_hook,
- 	.merge_bio_hook = btrfs_merge_bio_hook,
--	.readpage_io_failed_hook = dummy_readpage_io_failed_hook,
-+	.readpage_io_failed_hook = btrfs_readpage_io_failed_hook,
- 
- 	/* optional callbacks */
- 	.fill_delalloc = run_delalloc_range,
--- 
-2.5.5
+Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
+Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
+
+Shortlog:
+
+David Sterba (4):
+      btrfs-progs: library-test: add all exported headers
+      btrfs-progs: add prefix to message helpers
+      btrfs-progs: update CHANGES for v4.10.2
+      Btrfs progs v4.10.2
+
+Qu Wenruo (4):
+      btrfs-progs: Cleanup kernel-shared dir when execute make clean
+      btrfs-progs: convert: Add missing return for HOLE mode when checking convert image
+      btrfs-progs: check: lowmem, fix false alert about backref lost for SHARED_DATA_REF
+      btrfs-progs: tests: Add SHARED_DATA_REF test image for check lowmem mode
+
+Sergei Trofimovich (1):
+      btrfs-progs: fix missing __error symbol in libbtrfs.so.0
 

@@ -1,58 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from syrinx.knorrie.org ([82.94.188.77]:38538 "EHLO
+Received: from syrinx.knorrie.org ([82.94.188.77]:38828 "EHLO
         syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932294AbdC3XBa (ORCPT
+        with ESMTP id S933149AbdCaQAM (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Mar 2017 19:01:30 -0400
-Received: from [IPv6:2001:980:4a41:fb::12] (unknown [IPv6:2001:980:4a41:fb::12])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by syrinx.knorrie.org (Postfix) with ESMTPSA id 8B88560012
-        for <linux-btrfs@vger.kernel.org>; Fri, 31 Mar 2017 01:01:28 +0200 (CEST)
+        Fri, 31 Mar 2017 12:00:12 -0400
+Subject: Re: [PATCH] btrfs: drop the nossd flag when remounting with -o ssd
+To: Adam Borowski <kilobyte@angband.pl>, David Sterba <dsterba@suse.com>,
+        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        linux-btrfs@vger.kernel.org
+References: <0939c5df-3abd-ec68-16ef-538ad04251aa@mendix.com>
+ <20170331151904.4091-1-kilobyte@angband.pl>
 From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Subject: Cosmetics bug: remounting ssd does not clear nossd
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <0939c5df-3abd-ec68-16ef-538ad04251aa@mendix.com>
-Date: Fri, 31 Mar 2017 01:01:28 +0200
+Message-ID: <b289c1a8-d0d4-c147-ca65-7c954f05a7e5@mendix.com>
+Date: Fri, 31 Mar 2017 18:00:08 +0200
 MIME-Version: 1.0
+In-Reply-To: <20170331151904.4091-1-kilobyte@angband.pl>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If I have a filesystem that shows this...
+On 03/31/2017 05:19 PM, Adam Borowski wrote:
+> The opposite case was already handled right in the very next switch entry.
+> 
+> Reported-by: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+> Signed-off-by: Adam Borowski <kilobyte@angband.pl>
+> ---
+> Not sure if setting NOSSD should also disable SSD_SPREAD, there's currently
+> no way to disable that option once set.
+> 
+>  fs/btrfs/super.c | 2 ++
+>  1 file changed, 2 insertions(+)
+> 
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 06bd9b332e18..7342399951ad 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -549,11 +549,13 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+>  		case Opt_ssd:
+>  			btrfs_set_and_info(info, SSD,
+>  					   "use ssd allocation scheme");
+> +			btrfs_clear_opt(info->mount_opt, NOSSD);
+>  			break;
+>  		case Opt_ssd_spread:
+>  			btrfs_set_and_info(info, SSD_SPREAD,
+>  					   "use spread ssd allocation scheme");
+>  			btrfs_set_opt(info->mount_opt, SSD);
+> +			btrfs_clear_opt(info->mount_opt, NOSSD);
+>  			break;
+>  		case Opt_nossd:
+>  			btrfs_set_and_info(info, NOSSD,
 
-rw,relatime,ssd,space_cache=v2,subvolid=5,subvol=/
+How did you test this?
 
-...and then I do this...
+This was also my first thought, but here's a weird thing:
 
--# mount -o remount,nossd /mnt/btrfs/
+-# mount -o nossd /dev/sdx /mnt/btrfs/
 
-...then it shows...
-
-rw,relatime,nossd,space_cache=v2,subvolid=5,subvol=/
-
-...but when I do this...
+BTRFS info (device sdx): not using ssd allocation scheme
 
 -# mount -o remount,ssd /mnt/btrfs/
 
-...it ends up with a rotational identity crisis:
+BTRFS info (device sdx): use ssd allocation scheme
 
-rw,relatime,nossd,ssd,space_cache=v2,subvolid=5,subvol=/
-            ^^^^^ ^^^
+-# mount -o remount,nossd /mnt/btrfs/
 
-The only thing the nossd option does when mounting first time is
-preventing that ssd gets enabled automatically. When doing nossd with
-remount, it clears out the ssd flag, but telling it to ssd again does
-not clear the nossd flag.
+BTRFS info (device sdx): use ssd allocation scheme
 
-The actual kernel code which changes behaviour based on these options
-only ever checks for SSD, never for NOSSD.
+That means that the case Opt_nossd: is never reached when doing this?
 
-So, the situation does not lead to any wrong behaviour right now, but
-it's confusing, and it could be a source of bugs in the future, when
-anything would test for NOSSD explicitely and make a decision based on
-the result.
+And... what should be the result of doing:
+-# mount -o remount,nossd,ssd /mnt/btrfs/
 
-Moo,
+I guess it should be that the last one in the sequence wins?
+
+The fact that nossd,ssd,ssd_spread are different options complicates the
+whole thing, compared to e.g. autodefrag, noautodefrag.
+
 -- 
 Hans van Kranenburg

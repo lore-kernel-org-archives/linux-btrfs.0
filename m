@@ -1,109 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:56026 "EHLO
+Received: from [195.159.176.226] ([195.159.176.226]:39435 "EHLO
         blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751974AbdDBAOW (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Apr 2017 20:14:22 -0400
+        with ESMTP id S1752015AbdDBA7j (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Apr 2017 20:59:39 -0400
 Received: from list by blaine.gmane.org with local (Exim 4.84_2)
         (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1cuT9l-0001Pa-MA
-        for linux-btrfs@vger.kernel.org; Sun, 02 Apr 2017 02:14:09 +0200
+        id 1cuTra-0000fE-Bz
+        for linux-btrfs@vger.kernel.org; Sun, 02 Apr 2017 02:59:26 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: mix ssd and hdd in single volume
-Date: Sun, 2 Apr 2017 00:13:59 +0000 (UTC)
-Message-ID: <pan$dda3$b8e27938$5de5fd9$136342b5@cox.net>
-References: <CAEgruXvAEBfpQaAxCi42Vq6v8w7v1dqthpn9TpE3FDDHoTWRcw@mail.gmail.com>
+Subject: Re: Is btrfs-convert able to deal with sparse files in a ext4
+ filesystem?
+Date: Sun, 2 Apr 2017 00:59:18 +0000 (UTC)
+Message-ID: <pan$df213$fa344dca$8529fcec$34b89ea9@cox.net>
+References: <CADN-S7MzE=6x25DK0XOPzfBGCEpTjdUSokBkuCPGhCvCURzLPg@mail.gmail.com>
+        <20170401191357.GA25721@coach>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-UGlee posted on Sat, 01 Apr 2017 14:06:11 +0800 as excerpted:
+Sean Greenslade posted on Sat, 01 Apr 2017 12:13:57 -0700 as excerpted:
 
-> We are working on a small NAS server for home user. The product is
-> equipped with a small fast SSD (around 60-120GB) and a large HDD (2T to
-> 4T).
+> On Sat, Apr 01, 2017 at 11:48:50AM +0200, Kai Herlemann wrote:
+
+>> I have on my ext4 filesystem some sparse files, mostly images from ext4
+>> filesystems.
+>> Is btrfs-convert (4.9.1) able to deal with sparse files or can that
+>> cause any problems?
 > 
-> We have two choices:
-> 
-> 1. using bcache to accelerate io operation 2. combining SSD and HDD into
-> a single btrfs volume.
-> 
-> Bcache is certainly designed for our purpose. But bcache requires
-> complex configuration and can only start from clean disk. Also in our
-> test in Ubuntu 16.04, data inconsistence was observed at least once,
-> resulting total HDD data lost.
-> 
-> So we wonder if simply putting SSD and HDD into a single btrfs volume,
-> in whatever mode, the general read operation (mostly readdir and
-> getxattr) will also be significantly faster than a single HDD without
-> SSD.
+> From personal experience, I would recommend not using btrfs-convert on
+> ext4 partitions.
 
-At present, bcache, or possibly the lvmcache alternative, are the only 
-recommended way of creating a single btrfs out of a mixed-size ssd/hdd 
-multi-volume.
+While I'd be extremely surprised if btrfs-convert didn't work on sparse 
+files, since if it didn't it wouldn't be a general-purpose converter and 
+thus wouldn't be suited to the purpose...
 
-The problem is that while they've been considered, there's no present 
-method of telling btrfs to use the smaller ssd for hotter content.  The 
-btrfs chunk allocator simply doesn't have that option at present.
+I must agree, tho on general principles, with Sean here, btrfs-convert 
+isn't something I'd either use myself or recommend to others.  Consider:
 
-Which would leave you with the choice of single, raid1 or raid0 modes.  
-Raid1 requires two copies on separate devices which would mean the extra 
-space on the larger hdd would be wasted/unusable, and the read-mode 
-mirror choice algorithm is purely even/odd PID-based so on single reads 
-you'd have a 50% chance of fast ssd reads, 50% chance slow hdd.  With 
-single mode the allocator allocates to the device with the most space 
-available first, so until the free space equalized between the two, all 
-chunks would end up on the larger/slower hdd.  And raid0 would allocate 
-evenly (allocate-wide policy) to both, again wasting the extra space on 
-the larger device while only giving you overall about the same speed as 
-two hdds would give you, tho less predictably you'd get the full speed of 
-the ssd.
+1) Btrfs is considered on this list to be stabilizing, not fully stable 
+and mature.  While in general (that is, even on stable and mature 
+filesystems) the real value of your data can be defined by whether you 
+care enough about it to have backups of that data -- if you don't, you 
+self-evidently care less about that data than the time, resources and 
+hassle you're saving by NOT doing the backup[1] -- on a still stabilizing 
+filesystem such as btrfs, that applies even more strongly.  If you don't 
+have a backup and aren't ready to use it if necessary, you really ARE 
+declaring that data to be of less value than the time/hassle/resource 
+cost of doing it.
 
-The default two-device setup, FWIW, is raid1-mode metadata for safety, 
-single-mode data.  
+2) It follows from #1 that (assuming you consider the data of reasonable 
+value) you have backups, and are prepared to restore from them.  Which 
+means you have the /space/ for that backup.
 
-As you can see, none of those are ideal from a fast-small-ssd as cache to 
-a large-slow-hdd perspective, thus the recommendation of bcache or 
-lvmcache if that's what you want/need.
+3) Which means there's very little reason to use a converter such as 
+btrfs-convert, because you can just do a straightforward blow away the 
+filesystem and restore from backup (or from the primaries or a secondary 
+backup if it /is/ your backup).
 
-The other alternative, of course, is separate filesystems, using a 
-combination of symlinks, partitioning and bind-mounts, to arrange for 
-frequently accessed and performance-critical stuff such as root and /home 
-to be on the smaller/faster ssd, while the larger/slower hdd is used for 
-stuff like a user's multimedia partition/filesystem.  That's actually 
-what I've done here and I'm *very* happy with the result, but it's the 
-type of solution that must either be customized per-installation, or 
-perhaps be setup by a special-purpose distro installer designed with that 
-sort of use-case target in mind.  It's /not/ the sort of thing you can do 
-in a NAS product and expect mass-market users to actually read and 
-understand the docs in ordered to use the product in an optimal way.
+4) In fact, since an in-place convert is almost certainly going to take 
+more time than a blow-away and restore from backup, and the end result is 
+pretty well guaranteed to be less optimally arranged in the new native 
+format than a freshly created filesystem with data equally freshly copied 
+over from backups or primary sources, there are pretty big reasons *NOT* 
+to do an in-place convert.
+
+5) And if you don't have current backups, then by creating a brand new 
+btrfs in new space and copying over from your existing ext4, you 
+"magically" create that recommended backup, since that ext4 can then be 
+used as a backup for your new btrfs.  Of course you'll eventually need to 
+update that backup, but meanwhile, it'll be a useful backup, should it be 
+needed, while you're settling in on the new btrfs.  =:^)
 
 
-Meanwhile, since you appear to be designing a mass-market product, it's 
-worth mentioning that btrfs is considered, certainly by its devs and 
-users on this list, to be "still stabilizing, not fully stable and 
-mature."  As such, making and having backups at the ready for any data 
-considered to be more valuable than the time and resources necessary to 
-make those backups is strongly recommended, even more so than when the 
-filesystem is considered stable and mature (tho certainly the rule 
-applies even then, but try telling that to a mass-market user...).
+Meanwhile, it can be noted that plain old cp has the -a/--archive option 
+that makes using it for making and restoring backups easier, and it also 
+has a --sparse option.  Back on reiserfs, I used to use the 
+--sparse=always option for my backups here, without issue, tho on btrfs I 
+use the compress (actually compress=lzo] mount option, which should 
+compress sparse areas of files even if the files don't get created 
+specifically as sparse files, so I don't worry about it on btrfs.
 
-Additionally, since btrfs /is/ still stabilizing, we recommend that users 
-run relatively new kernels, we best support the latest kernels in either 
-of the current kernel series (thus 4.10 and 4.9 at present) or the 
-mainline LTS series (thus 4.9 and 4.4 at present), and further recommend 
-that users at least loosely follow the list in ordered to keep up with 
-current btrfs developments and possible issues they may confront.
+Tho if those ext4 images are to be actively used by VMs or are otherwise 
+actively written to, on btrfs I'd consider using the nocow attribute for 
+them, and it disables btrfs compression, so I'd consider sparse copying 
+for them.  But that's an entirely different topic worthy of its own 
+thread if your use-case requires it and you still have questions on it 
+after doing your own research...
 
-That doesn't sound like a particularly good choice for a mass-market NAS 
-product to me.  Of course there's rockstor and others out there already 
-shipping such products, but they're risking their reputation and the 
-safety of their customer's data in the process, altho there's certainly a 
-few customers out there with the time, desire and technical know-how to 
-ensure the recommended backups and following current kernel and list, and 
-that's exactly the sort of people you'll find already here.  But that's 
-not sufficiently mass-market to appeal to most vendors.
+---
+[1] Backup:  Note that a backup that hasn't been tested to be actually 
+restorable isn't yet a backup, only a potential backup, as the job of 
+making a backup isn't complete until that backup has been tested to be 
+restorable.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

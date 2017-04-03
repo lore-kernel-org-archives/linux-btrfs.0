@@ -1,62 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:50958 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:32261 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751280AbdDCDBu (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Apr 2017 23:01:50 -0400
+        with ESMTP id S1751785AbdDCHJb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Apr 2017 03:09:31 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>, <fstests@vger.kernel.org>
-Subject: [PATCH] fstests: btrfs: Check if btrfs will create inline-then-regular file extents
-Date: Mon, 3 Apr 2017 11:01:39 +0800
-Message-ID: <20170403030139.7677-1-quwenruo@cn.fujitsu.com>
+Subject: [PATCH] fstests: generic: Check if cycle mount and sleep can affect fiemap result
+Date: Mon, 3 Apr 2017 15:09:23 +0800
+Message-ID: <20170403070923.18518-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs allows inline file extent if and only if
-1) It's at offset 0
-2) It's smaller than min(max_inline, page_size)
-   Although we don't specify if the size is before compression or after
-   compression.
-   At least according to current behavior, we are only limiting the size
-   after compression.
-3) It's the only file extent
-   So that if we append existing inline extent, it should be converted
-   to regular file extents.
+As long as we don't modify the on-disk data, fiemap result should always
+be constant.
 
-However several users in btrfs mail list have reported invalid inline
-file extent, which only meets the first two condition, but with regular
-file extents follows.
+Operation like cycle mount and sleep should not affect fiemap result.
+While unfortunately, btrfs doesn't follow that behavior.
 
-The bug is here for a long long time, so long that we have modified
-kernel and btrfs-progs to accept such case, but it's still not designed
-behavior, and must be detected and fixed.
+Btrfs fiemap sometimes return merged result, while after cycle mount, it
+returns split result. Furthermore after a snap, btrfs returns merged
+result again.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- tests/btrfs/140     | 124 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/140.out |   2 +
- tests/btrfs/group   |   1 +
- 3 files changed, 127 insertions(+)
- create mode 100755 tests/btrfs/140
- create mode 100644 tests/btrfs/140.out
+ tests/generic/422     | 127 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/422.out |   2 +
+ tests/generic/group   |   1 +
+ 3 files changed, 130 insertions(+)
+ create mode 100755 tests/generic/422
+ create mode 100644 tests/generic/422.out
 
-diff --git a/tests/btrfs/140 b/tests/btrfs/140
+diff --git a/tests/generic/422 b/tests/generic/422
 new file mode 100755
-index 0000000..139df76
+index 0000000..4ca4476
 --- /dev/null
-+++ b/tests/btrfs/140
-@@ -0,0 +1,124 @@
++++ b/tests/generic/422
+@@ -0,0 +1,127 @@
 +#! /bin/bash
-+# FS QA Test 140
++# FS QA Test 422
 +#
-+# Check if btrfs will create inline-then-regular file layout.
-+#
-+# Btrfs only allows inline file extent if file is small enough, and any
-+# incoming write enlarges the file beyong max_inline should replace inline
-+# extents with regular extents.
-+# This is a long standing bug, so fsck won't detect it and kernel will allow
-+# normal read on it, but should be avoided.
++# Test if a file system returns constant fiemap result after remount and
++# fiemap.
++# Unfortunately, btrfs doesn't follow this behavior.
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (c) 2017 Fujitsu.  All Rights Reserved.
@@ -101,93 +88,100 @@ index 0000000..139df76
 +# real QA test starts here
 +
 +# Modify as appropriate.
-+_supported_fs btrfs
-+_supported_os Linux
++_supported_fs generic
++_supported_os IRIX Linux
 +_require_scratch
-+_require_btrfs_command inspect-internal dump-tree
 +
-+inline_size=2048
-+page_size=$(get_page_size)
-+src_subv="$SCRATCH_MNT/src"
-+dst_subv="$SCRATCH_MNT/dst"
-+runtime=$(($LOAD_FACTOR * 8))	#The possibility is over 80%, just in case
-+corrupted=0
++block_size=$((64 * 1024))
++block_count=32
++dst=$SCRATCH_MNT/file
++sleeptime=3
++
++# It's almost 100% for btrfs to trigger inconstant fiemap result 
++# just in case
++runtime=$((2 * $LOAD_FACTOR))
++
++# record fiemap as checkpoint, and output the hash of fiemap result
++# to stdout
++fiemap_checkpoint()
++{
++	local number=$1
++	local message=$2
++
++	echo "=== $message ===" >> $seqres.full
++	$XFS_IO_PROG -c "fiemap -v" $dst > ${tmp}.cp$number
++	cat ${tmp}.cp${number} >> $seqres.full
++
++	md5sum ${tmp}.cp${number} | cut -d ' ' -f 1
++}
 +
 +do_test()
 +{
-+	local ret
-+	_scratch_mkfs > /dev/null >&1
++	local number=$1
 +
-+	# specify max_inline and compress explicitly to create
-+	# inlined compressed extent
-+	_scratch_mount "-o max_inline=$inline_size,compress"
-+	
-+	# Subvolume id=257
-+	_run_btrfs_util_prog subvolume create $src_subv
++	# Use 16 times of file size to ensure we have enough space
++	_scratch_mkfs_sized $((16 * $block_size * $block_count)) \
++		> /dev/null 2>&1
++	_scratch_mount 
 +
-+	# Page sized data will be compressed to quite small size,
-+	# which is about 50 bytes for 4K, 100 bytes for 64K,
-+	# far smaller than $inline_size, causing a inlined compressed
-+	# file extent
-+	xfs_io -f -c "pwrite 0 $page_size" $src_subv/file > /dev/null
-+	sync
++	echo "====== Loop $number ======" >> $seqres.full
++	touch $dst
++	# Xfsprogs 4.9.0 still has a bug that xfs_io "open" with O_SYNC command
++	# doesn't work well with "pwrite", although it gets fixed in v4.10.0,
++	# use dd here to avoid it won't hurt for non-xfs developers
++	dd if=/dev/zero of=$dst bs=$block_size count=$block_count oflag=dsync \
++		status=none 2>&1
 +
-+	# Subvolume id=258
-+	_run_btrfs_util_prog subvolume snapshot $src_subv $dst_subv
-+	
-+	# Append another page to file in snapshot, since its offset is not
-+	# 0, it will cause regular extent, and should convert inline extent
-+	# to regular too.
-+	xfs_io -c "pwrite $page_size $page_size" $dst_subv/file > /dev/null
++	hash1=$(fiemap_checkpoint 1 "Fiemap just after dsync write")
++
++	# Sleep should not modify fiemap result
++	sleep $sleeptime
++
++	hash2=$(fiemap_checkpoint 2 "Fiemap after dsync write and sleep")
++
++	# cycle mount should not modify fiemap result
++	_scratch_cycle_mount
++
++	hash3=$(fiemap_checkpoint 3 "Fiemap after cycle mount")
++
++	# Sleep should not modify fiemap result
++	sleep $sleeptime
++
++	hash4=$(fiemap_checkpoint 4 "Fiemap after cycle mount and sleep")
++
 +	_scratch_unmount
 +
-+	# Fsck won't report inline-then-regular as error, as it's so long
-+	# standing that we have no choice but to accept.
-+	# So here we use dump-tree to catch inline extent of $dst_subv, and
-+	# we need piping stdout, call btrfs-progs directly
-+	$BTRFS_UTIL_PROG inspect-internal dump-tree -t 258 $SCRATCH_DEV \
-+		> $tmp.dump_tree
-+	if [[ $(cat $tmp.dump_tree | grep inline) ]]; then
-+		cat $tmp.dump_tree >> $seqres.full
-+		echo "Invalid inline file extent detected"
-+		return 1
++	if [ $hash1 != $hash2 -o $hash2 != $hash3 -o $hash3 != $hash4 ]; then
++		echo "Inconstant fiemap result detected"
 +	fi
-+	return 0
++	echo >> $seqres.full
 +}
 +
 +for i in $(seq 1 $runtime); do
-+	do_test
-+	if [ $? -ne 0 ]; then
-+		corrupted=$(($corrupted + 1))
-+	fi
++	do_test $i
 +done
 +
-+if [ $corrupted -ne 0 ]; then
-+	echo "Corruption possibility: $corrupted/$runtime" >> $seqres.full
-+fi
-+
 +echo "Silence is golden"
-+
 +# success, all done
 +status=0
 +exit
-diff --git a/tests/btrfs/140.out b/tests/btrfs/140.out
+diff --git a/tests/generic/422.out b/tests/generic/422.out
 new file mode 100644
-index 0000000..24e90bc
+index 0000000..f70693f
 --- /dev/null
-+++ b/tests/btrfs/140.out
++++ b/tests/generic/422.out
 @@ -0,0 +1,2 @@
-+QA output created by 140
++QA output created by 422
 +Silence is golden
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 641d826..e4c76e3 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -142,3 +142,4 @@
- 137 auto quick send
- 138 auto compress
- 139 auto qgroup
-+140 auto
+diff --git a/tests/generic/group b/tests/generic/group
+index 3c7c5e4..86d2325 100644
+--- a/tests/generic/group
++++ b/tests/generic/group
+@@ -424,3 +424,4 @@
+ 419 auto quick encrypt
+ 420 auto quick punch
+ 421 auto quick encrypt dangerous
++422 auto
 -- 
 2.9.3
 

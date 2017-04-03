@@ -1,104 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.mailbox.org ([80.241.60.215]:33948 "EHLO mx2.mailbox.org"
+Received: from mx1.mailbox.org ([80.241.60.212]:54959 "EHLO mx1.mailbox.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751441AbdDCUVT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1751535AbdDCUVT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Mon, 3 Apr 2017 16:21:19 -0400
 From: Christian Brauner <christian.brauner@ubuntu.com>
 To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
 Cc: Christian Brauner <christian.brauner@ubuntu.com>
-Subject: [PATCH 1/2 v2] btrfs-progs: fix btrfs send & receive with -e flag
-Date: Mon,  3 Apr 2017 22:21:07 +0200
-Message-Id: <20170403202108.14859-2-christian.brauner@ubuntu.com>
+Subject: [PATCH 2/2 v2] tests: use receive -e to terminate on end marker
+Date: Mon,  3 Apr 2017 22:21:08 +0200
+Message-Id: <20170403202108.14859-3-christian.brauner@ubuntu.com>
 In-Reply-To: <20170403202108.14859-1-christian.brauner@ubuntu.com>
 References: <20170403202108.14859-1-christian.brauner@ubuntu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The old check here tried to ensure that empty streams are not considered valid.
-The old check however, will always fail when only one run through the while(1)
-loop is needed and honor_end_cmd is set. So this:
-
-btrfs send /some/subvol | btrfs receive -e /some/
-
-will consistently fail because -e causes honor_cmd_to be set and
-btrfs_read_and_process_send_stream() to correctly return 1. So the command will
-be successful but btrfs receive will error out because the send - receive
-concluded in one run through the while(1) loop.
-
-If we want to exclude empty streams we need a way to tell the difference between
-btrfs_read_and_process_send_stream() returning 1 because read_buf() did not
-detect any data and read_and_process_cmd() returning 1 because honor_end_cmd was
-set. Without introducing too many changes the best way to me seems to have
-btrfs_read_and_process_send_stream() return -ENODATA in the first case. The rest
-stays the same. We can then check for -ENODATA in do_receive() and report a
-proper error in this case. This should also be backwards compatible to previous
-versions of btrfs receive. They will fail on empty streams because a negative
-value is returned. The only thing that they will lack is a nice error message.
-
 Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 ---
-Changelog: 2017-04-03
-	- no changes
----
- cmds-receive.c | 13 +++++--------
- send-stream.c  |  2 +-
- 2 files changed, 6 insertions(+), 9 deletions(-)
+ tests/misc-tests/018-recv-end-of-stream/test.sh | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/cmds-receive.c b/cmds-receive.c
-index 6cf22637..b59f00e4 100644
---- a/cmds-receive.c
-+++ b/cmds-receive.c
-@@ -1091,7 +1091,6 @@ static int do_receive(struct btrfs_receive *rctx, const char *tomnt,
- 	char *dest_dir_full_path;
- 	char root_subvol_path[PATH_MAX];
- 	int end = 0;
--	int count;
+diff --git a/tests/misc-tests/018-recv-end-of-stream/test.sh b/tests/misc-tests/018-recv-end-of-stream/test.sh
+index d39683e9..90655929 100755
+--- a/tests/misc-tests/018-recv-end-of-stream/test.sh
++++ b/tests/misc-tests/018-recv-end-of-stream/test.sh
+@@ -34,7 +34,7 @@ test_full_empty_stream() {
  
- 	dest_dir_full_path = realpath(tomnt, NULL);
- 	if (!dest_dir_full_path) {
-@@ -1186,7 +1185,6 @@ static int do_receive(struct btrfs_receive *rctx, const char *tomnt,
- 	if (ret < 0)
- 		goto out;
+ 	run_check $TOP/mkfs.btrfs -f $TEST_DEV
+ 	run_check_mount_test_dev
+-	run_check $SUDO_HELPER $TOP/btrfs receive -v -f "$str" "$TEST_MNT"
++	run_check $SUDO_HELPER $TOP/btrfs receive -e -v -f "$str" "$TEST_MNT"
+ 	run_check_umount_test_dev
  
--	count = 0;
- 	while (!end) {
- 		if (rctx->cached_capabilities_len) {
- 			if (g_verbose >= 3)
-@@ -1200,16 +1198,15 @@ static int do_receive(struct btrfs_receive *rctx, const char *tomnt,
- 							 rctx,
- 							 rctx->honor_end_cmd,
- 							 max_errors);
--		if (ret < 0)
--			goto out;
--		/* Empty stream is invalid */
--		if (ret && count == 0) {
-+		if (ret < 0 && ret == -ENODATA) {
-+			/* Empty stream is invalid */
- 			error("empty stream is not considered valid");
- 			ret = -EINVAL;
- 			goto out;
-+		} else if (ret < 0) {
-+			goto out;
- 		}
--		count++;
--		if (ret)
-+		if (ret > 0)
- 			end = 1;
+ 	run_check rm -f -- "$str"
+@@ -65,7 +65,7 @@ test_full_simple_stream() {
  
- 		close_inode_for_write(rctx);
-diff --git a/send-stream.c b/send-stream.c
-index 5a028cd9..78f2571a 100644
---- a/send-stream.c
-+++ b/send-stream.c
-@@ -492,7 +492,7 @@ int btrfs_read_and_process_send_stream(int fd,
- 	if (ret < 0)
- 		goto out;
- 	if (ret) {
--		ret = 1;
-+		ret = -ENODATA;
- 		goto out;
- 	}
+ 	run_check $TOP/mkfs.btrfs -f $TEST_DEV
+ 	run_check_mount_test_dev
+-	run_check $SUDO_HELPER $TOP/btrfs receive -v -f "$str" "$TEST_MNT"
++	run_check $SUDO_HELPER $TOP/btrfs receive -e -v -f "$str" "$TEST_MNT"
+ 	run_check_umount_test_dev
  
+ 	run_check rm -f -- "$str"
+@@ -96,8 +96,8 @@ test_incr_empty_stream() {
+ 
+ 	run_check $TOP/mkfs.btrfs -f $TEST_DEV
+ 	run_check_mount_test_dev
+-	run_check $SUDO_HELPER $TOP/btrfs receive -v -f "$fstr" "$TEST_MNT"
+-	run_check $SUDO_HELPER $TOP/btrfs receive -v -f "$istr" "$TEST_MNT"
++	run_check $SUDO_HELPER $TOP/btrfs receive -e -v -f "$fstr" "$TEST_MNT"
++	run_check $SUDO_HELPER $TOP/btrfs receive -e -v -f "$istr" "$TEST_MNT"
+ 	run_check_umount_test_dev
+ 
+ 	run_check rm -f -- "$fstr" "$istr"
+@@ -136,8 +136,8 @@ test_incr_simple_stream() {
+ 
+ 	run_check $TOP/mkfs.btrfs -f $TEST_DEV
+ 	run_check_mount_test_dev
+-	run_check $SUDO_HELPER $TOP/btrfs receive -v -f "$fstr" "$TEST_MNT"
+-	run_check $SUDO_HELPER $TOP/btrfs receive -v -f "$istr" "$TEST_MNT"
++	run_check $SUDO_HELPER $TOP/btrfs receive -e -v -f "$fstr" "$TEST_MNT"
++	run_check $SUDO_HELPER $TOP/btrfs receive -e -v -f "$istr" "$TEST_MNT"
+ 	run_check_umount_test_dev
+ 
+ 	run_check rm -f -- "$fstr" "$istr"
 -- 
 2.11.0
 

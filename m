@@ -1,189 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:32261 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751785AbdDCHJb (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Apr 2017 03:09:31 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>, <fstests@vger.kernel.org>
-Subject: [PATCH] fstests: generic: Check if cycle mount and sleep can affect fiemap result
-Date: Mon, 3 Apr 2017 15:09:23 +0800
-Message-ID: <20170403070923.18518-1-quwenruo@cn.fujitsu.com>
+Received: from smtp145.dfw.emailsrvr.com ([67.192.241.145]:60996 "EHLO
+        smtp145.dfw.emailsrvr.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751329AbdDCICE (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Apr 2017 04:02:04 -0400
+Subject: Re: Do different btrfs volumes compete for CPU?
+To: Peter Grandi <pg@btrfs.list.sabi.co.UK>, linux-btrfs@vger.kernel.org
+References: <43a14754-1047-552e-78a9-6503dfc0d121@rqc.ru>
+ <pan$8edd9$3260f40b$e8e8873f$59ccb7af@cox.net>
+ <ef8ec943-6d26-d7e9-d4ac-05e2ce7a8532@rqc.ru>
+ <22751.32343.177176.307907@tree.ty.sabi.co.uk>
+From: Marat Khalili <mkh@rqc.ru>
+Message-ID: <07258eab-5a2a-f028-48fb-60906b689cfa@rqc.ru>
+Date: Mon, 3 Apr 2017 11:02:00 +0300
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <22751.32343.177176.307907@tree.ty.sabi.co.uk>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As long as we don't modify the on-disk data, fiemap result should always
-be constant.
+On 01/04/17 13:17, Peter Grandi wrote:
+> That "USB-connected is a rather bad idea. On the IRC channel
+> #Btrfs whenever someone reports odd things happening I ask "is
+> that USB?" and usually it is and then we say "good luck!" :-).
+You're right, but USB/eSATA arrays are dirt cheap in comparison with 
+similar-performance SAN/NAS etc. things, that we unfortunately cannot 
+really afford here.
 
-Operation like cycle mount and sleep should not affect fiemap result.
-While unfortunately, btrfs doesn't follow that behavior.
+Just a bit of a back-story: I tried to use eSATA and ext4 first, but 
+observed silent data corruption and irrecoverable kernel hangs -- 
+apparently, SATA is not really designed for external use. That's when I 
+switched to both USB and, coincidently, btrfs, and stability became 
+orders of magnitude better even on re-purposed consumer-grade PC (Z77 
+chipset, 3rd gen. i5) with horribly outdated kernel. Now I'm rebuilding 
+same configuration on server-grade hardware (C610 chipset, 40 io-channel 
+Xeon) and modern kernel, and thus would be very surprised to find 
+problems in USB throughput.
 
-Btrfs fiemap sometimes return merged result, while after cycle mount, it
-returns split result. Furthermore after a snap, btrfs returns merged
-result again.
+> As written that question is meaningless: despite the current
+> mania for "threads"/"threadlets" a filesystem driver is a
+> library, not a set of processes (all those '[btrfs-*]'
+> threadlets are somewhat misguided ways to do background
+> stuff).
+But these threadlets, misguided as the are, do exist, don't they?
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- tests/generic/422     | 127 ++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/422.out |   2 +
- tests/generic/group   |   1 +
- 3 files changed, 130 insertions(+)
- create mode 100755 tests/generic/422
- create mode 100644 tests/generic/422.out
+> * Qgroups are famously system CPU intensive, even if less so
+>    than in earlier releases, especially with subvolumes, so the
+>    16 hours CPU is both absurd and expected. I think that qgroups
+>    are still effectively unusable.
+I understand that qgroups is very much work in progress, but (correct me 
+if I'm wrong) right now it's the only way to estimate real usage of 
+subvolume and its snapshots. For instance, if I have dozen 1TB 
+subvolumes each having ~50 snapshots and suddenly run out of space on a 
+24TB volume, how do I find the culprit without qgroups? Keeping eye on 
+storage use is essential for any real life use of snapshots, and they 
+are too convenient as backup de-duplication tool to give up.
 
-diff --git a/tests/generic/422 b/tests/generic/422
-new file mode 100755
-index 0000000..4ca4476
---- /dev/null
-+++ b/tests/generic/422
-@@ -0,0 +1,127 @@
-+#! /bin/bash
-+# FS QA Test 422
-+#
-+# Test if a file system returns constant fiemap result after remount and
-+# fiemap.
-+# Unfortunately, btrfs doesn't follow this behavior.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2017 Fujitsu.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	cd /
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# remove previous $seqres.full before test
-+rm -f $seqres.full
-+
-+# real QA test starts here
-+
-+# Modify as appropriate.
-+_supported_fs generic
-+_supported_os IRIX Linux
-+_require_scratch
-+
-+block_size=$((64 * 1024))
-+block_count=32
-+dst=$SCRATCH_MNT/file
-+sleeptime=3
-+
-+# It's almost 100% for btrfs to trigger inconstant fiemap result 
-+# just in case
-+runtime=$((2 * $LOAD_FACTOR))
-+
-+# record fiemap as checkpoint, and output the hash of fiemap result
-+# to stdout
-+fiemap_checkpoint()
-+{
-+	local number=$1
-+	local message=$2
-+
-+	echo "=== $message ===" >> $seqres.full
-+	$XFS_IO_PROG -c "fiemap -v" $dst > ${tmp}.cp$number
-+	cat ${tmp}.cp${number} >> $seqres.full
-+
-+	md5sum ${tmp}.cp${number} | cut -d ' ' -f 1
-+}
-+
-+do_test()
-+{
-+	local number=$1
-+
-+	# Use 16 times of file size to ensure we have enough space
-+	_scratch_mkfs_sized $((16 * $block_size * $block_count)) \
-+		> /dev/null 2>&1
-+	_scratch_mount 
-+
-+	echo "====== Loop $number ======" >> $seqres.full
-+	touch $dst
-+	# Xfsprogs 4.9.0 still has a bug that xfs_io "open" with O_SYNC command
-+	# doesn't work well with "pwrite", although it gets fixed in v4.10.0,
-+	# use dd here to avoid it won't hurt for non-xfs developers
-+	dd if=/dev/zero of=$dst bs=$block_size count=$block_count oflag=dsync \
-+		status=none 2>&1
-+
-+	hash1=$(fiemap_checkpoint 1 "Fiemap just after dsync write")
-+
-+	# Sleep should not modify fiemap result
-+	sleep $sleeptime
-+
-+	hash2=$(fiemap_checkpoint 2 "Fiemap after dsync write and sleep")
-+
-+	# cycle mount should not modify fiemap result
-+	_scratch_cycle_mount
-+
-+	hash3=$(fiemap_checkpoint 3 "Fiemap after cycle mount")
-+
-+	# Sleep should not modify fiemap result
-+	sleep $sleeptime
-+
-+	hash4=$(fiemap_checkpoint 4 "Fiemap after cycle mount and sleep")
-+
-+	_scratch_unmount
-+
-+	if [ $hash1 != $hash2 -o $hash2 != $hash3 -o $hash3 != $hash4 ]; then
-+		echo "Inconstant fiemap result detected"
-+	fi
-+	echo >> $seqres.full
-+}
-+
-+for i in $(seq 1 $runtime); do
-+	do_test $i
-+done
-+
-+echo "Silence is golden"
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/generic/422.out b/tests/generic/422.out
-new file mode 100644
-index 0000000..f70693f
---- /dev/null
-+++ b/tests/generic/422.out
-@@ -0,0 +1,2 @@
-+QA output created by 422
-+Silence is golden
-diff --git a/tests/generic/group b/tests/generic/group
-index 3c7c5e4..86d2325 100644
---- a/tests/generic/group
-+++ b/tests/generic/group
-@@ -424,3 +424,4 @@
- 419 auto quick encrypt
- 420 auto quick punch
- 421 auto quick encrypt dangerous
-+422 auto
--- 
-2.9.3
+Just a stray thought:  btrfs seem to lack object type in between of 
+volume and subvolume, that would keep track of storage use by several 
+subvolumes+their snapshots, allow snapshotting/transferring multiple 
+subvolumes at once etc. Some kind of super-subvolume (supervolume?) that 
+is hierarchical. With increasing use of subvolumes/snapshots within a 
+single system installation, and multiple system installations (belonging 
+to different users) in one volume due to liberal use of LXC and similar 
+technologies this will become more and more of a pressing problem.
 
+> * The scheduler gives excessive priority to kernel threads, so
+>    they can crowd out user processes. When for whatever reason
+>    the system CPU percentage rises everything else usually
+>    suffers.
+I thought it was clear, but probably needs spelling out: while 1 core 
+was completely occupied with [btrfs-transacti] thread, 5 more were 
+mostly idle serving occasional network requests without any problems. 
+And only a process that used storage intensively died. Fortunately or 
+not, it's the only data point so far -- smaller snapshot cullings do not 
+cause problems.
 
+> Only Intel/AMD USB chipsets and a few others are fairly
+> reliable, and for mass storage only with USB3 with UASPI, which
+> is basically SATA-over-USB (more precisely SCSI-command-set over
+> USB). Your system-side card seems to be recent enough to do
+> UASPI, but probably the peripheral-side chipset isn't. Things
+> are so bad with third-party chipsets that even several types of
+> add-on SATA and SAS cards are too buggy.
+Thank you very much for this hint. The card is indeed unknown factor 
+here and I'll keep a close eye on it. The chip is ASM1142, not Intel/AMD 
+sadly but quite popular nevertheless.
+
+--
+
+With Best Regards,
+Marat Khalili
 

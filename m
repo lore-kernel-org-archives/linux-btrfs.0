@@ -1,102 +1,120 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:23508 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751342AbdDCUql (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Apr 2017 16:46:41 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] Btrfs: switch to div64_u64 if with a u64 divisor
-Date: Mon,  3 Apr 2017 13:45:24 -0700
-Message-Id: <1491252324-3544-1-git-send-email-bo.li.liu@oracle.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:30275 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1750992AbdDCAsR (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Apr 2017 20:48:17 -0400
+Subject: Re: [PATCH v4 1/5] btrfs: scrub: Introduce full stripe lock for
+ RAID56
+To: <bo.li.liu@oracle.com>
+References: <20170330063251.16872-1-quwenruo@cn.fujitsu.com>
+ <20170330063251.16872-2-quwenruo@cn.fujitsu.com>
+ <20170330164920.GA8963@lim.localdomain>
+ <07d4e7f2-875f-54e9-05b6-27f74822bee5@cn.fujitsu.com>
+ <20170331173409.GA30413@lim.localdomain>
+CC: <linux-btrfs@vger.kernel.org>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <aa2a9b31-670d-4d7f-630f-85d9845d1faa@cn.fujitsu.com>
+Date: Mon, 3 Apr 2017 08:48:13 +0800
+MIME-Version: 1.0
+In-Reply-To: <20170331173409.GA30413@lim.localdomain>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is fixing code pieces where we use div_u64 when passing a u64 divisor.
 
-Cc: David Sterba <dsterba@suse.cz>
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/dev-replace.c | 2 +-
- fs/btrfs/scrub.c       | 4 ++--
- fs/btrfs/volumes.c     | 8 ++++----
- 3 files changed, 7 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index e653921..9fa83d7 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -665,7 +665,7 @@ void btrfs_dev_replace_status(struct btrfs_fs_info *fs_info,
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_STARTED:
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_SUSPENDED:
- 		srcdev = dev_replace->srcdev;
--		args->status.progress_1000 = div_u64(dev_replace->cursor_left,
-+		args->status.progress_1000 = div64_u64(dev_replace->cursor_left,
- 			div_u64(btrfs_device_get_total_bytes(srcdev), 1000));
- 		break;
- 	}
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 8a5f059..b9525ca 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -2760,7 +2760,7 @@ static int get_raid56_logic_offset(u64 physical, int num,
- 	for (i = 0; i < nr_data_stripes(map); i++) {
- 		*offset = last_offset + i * map->stripe_len;
- 
--		stripe_nr = div_u64(*offset, map->stripe_len);
-+		stripe_nr = div64_u64(*offset, map->stripe_len);
- 		stripe_nr = div_u64(stripe_nr, nr_data_stripes(map));
- 
- 		/* Work out the disk rotation on this stripe-set */
-@@ -3174,7 +3174,7 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 
- 	physical = map->stripes[num].physical;
- 	offset = 0;
--	nstripes = div_u64(length, map->stripe_len);
-+	nstripes = div64_u64(length, map->stripe_len);
- 	if (map->type & BTRFS_BLOCK_GROUP_RAID0) {
- 		offset = map->stripe_len * num;
- 		increment = map->stripe_len * map->num_stripes;
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index cd0794e..09f987c 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -4785,7 +4785,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 	stripe_size = div_u64(stripe_size, dev_stripes);
- 
- 	/* align to BTRFS_STRIPE_LEN */
--	stripe_size = div_u64(stripe_size, raid_stripe_len);
-+	stripe_size = div64_u64(stripe_size, raid_stripe_len);
- 	stripe_size *= raid_stripe_len;
- 
- 	map = kmalloc(map_lookup_size(num_stripes), GFP_NOFS);
-@@ -5521,7 +5521,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
- 	stripe_index = 0;
- 	stripe_nr_orig = stripe_nr;
- 	stripe_nr_end = ALIGN(offset + *length, map->stripe_len);
--	stripe_nr_end = div_u64(stripe_nr_end, map->stripe_len);
-+	stripe_nr_end = div64_u64(stripe_nr_end, map->stripe_len);
- 	stripe_end_offset = stripe_nr_end * map->stripe_len -
- 			    (offset + *length);
- 
-@@ -5587,7 +5587,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
- 		    (op == BTRFS_MAP_WRITE || op == BTRFS_MAP_GET_READ_MIRRORS ||
- 		     mirror_num > 1)) {
- 			/* push stripe_nr back to the start of the full stripe */
--			stripe_nr = div_u64(raid56_full_stripe_start,
-+			stripe_nr = div64_u64(raid56_full_stripe_start,
- 					stripe_len * nr_data_stripes(map));
- 
- 			/* RAID[56] write or recovery. Return all stripes */
-@@ -5949,7 +5949,7 @@ int btrfs_rmap_block(struct btrfs_fs_info *fs_info,
- 			continue;
- 
- 		stripe_nr = physical - map->stripes[i].physical;
--		stripe_nr = div_u64(stripe_nr, map->stripe_len);
-+		stripe_nr = div64_u64(stripe_nr, map->stripe_len);
- 
- 		if (map->type & BTRFS_BLOCK_GROUP_RAID10) {
- 			stripe_nr = stripe_nr * map->num_stripes + i;
--- 
-2.5.5
+At 04/01/2017 01:34 AM, Liu Bo wrote:
+> On Fri, Mar 31, 2017 at 09:29:20AM +0800, Qu Wenruo wrote:
+>>
+>>
+>> At 03/31/2017 12:49 AM, Liu Bo wrote:
+>>> On Thu, Mar 30, 2017 at 02:32:47PM +0800, Qu Wenruo wrote:
+>>>> Unlike mirror based profiles, RAID5/6 recovery needs to read out the
+>>>> whole full stripe.
+>>>>
+>>>> And if we don't do proper protect, it can easily cause race condition.
+>>>>
+>>>> Introduce 2 new functions: lock_full_stripe() and unlock_full_stripe()
+>>>> for RAID5/6.
+>>>> Which stores a rb_tree of mutex for full stripes, so scrub callers can
+>>>> use them to lock a full stripe to avoid race.
+>>>>
+>>>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>>>> Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+>>>> ---
+>>>>  fs/btrfs/ctree.h       |  17 ++++
+>>>>  fs/btrfs/extent-tree.c |  11 +++
+>>>>  fs/btrfs/scrub.c       | 217 +++++++++++++++++++++++++++++++++++++++++++++++++
+>>>>  3 files changed, 245 insertions(+)
+>>>>
+>>>> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+>>>> index 29b7fc28c607..9fe56da21fed 100644
+>>>> --- a/fs/btrfs/ctree.h
+>>>> +++ b/fs/btrfs/ctree.h
+> [...]
+>>>> +/*
+>>>> + * Helper to get full stripe logical from a normal bytenr.
+>>>> + *
+>>>> + * Caller must ensure @cache is a RAID56 block group.
+>>>> + */
+>>>> +static u64 get_full_stripe_logical(struct btrfs_block_group_cache *cache,
+>>>> +				   u64 bytenr)
+>>>> +{
+>>>> +	u64 ret;
+>>>> +
+>>>> +	/*
+>>>> +	 * round_down() can only handle power of 2, while RAID56 full
+>>>> +	 * stripe len can be 64KiB * n, so need manual round down.
+>>>> +	 */
+>>>> +	ret = (bytenr - cache->key.objectid) / cache->full_stripe_len *
+>>>> +	      cache->full_stripe_len + cache->key.objectid;
+>>>
+>>> Can you please use div_u64 instead?  '/' would cause building errors.
+>>
+>> No problem, but I'm still curious about under which arch/compiler it would
+>> cause build error?
+>>
+>
+> Sorry, it should be div64_u64 since cache->full_stripe_len is (unsigend long).
+
+In theory, yes we should use div64_u64.
+
+But I strongly doubt if we can overflow u32 in full_stripe_len context.
+
+For current fixed 64K stripe len, we need 65536 data stripes, which 
+should make chunk_item larger than any node size.
+IIRC years ago, we have introduced extra chunk item and super array size 
+check to avoid such case.
+
+So we should be safe to use div_u64.
+
+Anyway, I'll add extra check before calling div, and still use div64_u64 
+just in case.
+
+Thanks for pointing this out,
+Qu
+
+>
+> Building errors might not be true, it's from my memory.
+> But in runtime, it could end up with 'divide error'.
+>
+> Thanks,
+>
+> -liubo
+>
+>> Thanks,
+>> Qu
+>>>
+>>> Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+>>>
+>>> Thanks,
+>>>
+>>> -liubo
+>>>
+>>>
+>>
+>>
+>
+>
+
 

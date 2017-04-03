@@ -1,112 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.mailbox.org ([80.241.60.212]:35099 "EHLO mx1.mailbox.org"
+Received: from mx2.suse.de ([195.135.220.15]:59707 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751515AbdDCQHx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 3 Apr 2017 12:07:53 -0400
-Date: Mon, 3 Apr 2017 18:07:48 +0200
-From: Christian Brauner <christian.brauner@canonical.com>
-To: Christian Brauner <christian.brauner@ubuntu.com>
-Cc: linux-btrfs@vger.kernel.org
+        id S1752701AbdDCQrO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 3 Apr 2017 12:47:14 -0400
+Date: Mon, 3 Apr 2017 18:46:29 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Christian Brauner <christian.brauner@canonical.com>
+Cc: Christian Brauner <christian.brauner@ubuntu.com>,
+        linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] btrfs-progs: fix btrfs send & receive with -e flag
-Message-ID: <20170403160748.cv6ugtmqpsce5uaz@mailbox.org>
+Message-ID: <20170403164629.GY4781@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170324150057.1752-1-christian.brauner@ubuntu.com>
+ <20170403160748.cv6ugtmqpsce5uaz@mailbox.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <20170324150057.1752-1-christian.brauner@ubuntu.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170403160748.cv6ugtmqpsce5uaz@mailbox.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi guys,
+On Mon, Apr 03, 2017 at 06:07:48PM +0200, Christian Brauner wrote:
+> Hi guys,
+> 
+> Friendly ping. Just checking in on this patch since I haven't heard back so far
+> and this is a blocker in some scenarios where we're using btrfs.
 
-Friendly ping. Just checking in on this patch since I haven't heard back so far
-and this is a blocker in some scenarios where we're using btrfs.
-
-Thanks!
-Christian
-
-On Fri, Mar 24, 2017 at 04:00:57PM +0100, Christian Brauner wrote:
-> The old check here tried to ensure that empty streams are not considered valid.
-> The old check however, will always fail when only one run through the while(1)
-> loop is needed and honor_end_cmd is set. So this:
-> 
-> btrfs send /some/subvol | btrfs receive -e /some/
-> 
-> will consistently fail because -e causes honor_cmd_to be set and
-> btrfs_read_and_process_send_stream() to correctly return 1. So the command will
-> be successful but btrfs receive will error out because the send - receive
-> concluded in one run through the while(1) loop.
-> 
-> If we want to exclude empty streams we need a way to tell the difference between
-> btrfs_read_and_process_send_stream() returning 1 because read_buf() did not
-> detect any data and read_and_process_cmd() returning 1 because honor_end_cmd was
-> set. Without introducing too many changes the best way to me seems to have
-> btrfs_read_and_process_send_stream() return -ENODATA in the first case. The rest
-> stays the same. We can then check for -ENODATA in do_receive() and report a
-> proper error in this case. This should also be backwards compatible to previous
-> versions of btrfs receive. They will fail on empty streams because a negative
-> value is returned. The only thing that they will lack is a nice error message.
-> 
-> Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
-> ---
->  cmds-receive.c | 13 +++++--------
->  send-stream.c  |  2 +-
->  2 files changed, 6 insertions(+), 9 deletions(-)
-> 
-> diff --git a/cmds-receive.c b/cmds-receive.c
-> index 6cf22637..b59f00e4 100644
-> --- a/cmds-receive.c
-> +++ b/cmds-receive.c
-> @@ -1091,7 +1091,6 @@ static int do_receive(struct btrfs_receive *rctx, const char *tomnt,
->  	char *dest_dir_full_path;
->  	char root_subvol_path[PATH_MAX];
->  	int end = 0;
-> -	int count;
->  
->  	dest_dir_full_path = realpath(tomnt, NULL);
->  	if (!dest_dir_full_path) {
-> @@ -1186,7 +1185,6 @@ static int do_receive(struct btrfs_receive *rctx, const char *tomnt,
->  	if (ret < 0)
->  		goto out;
->  
-> -	count = 0;
->  	while (!end) {
->  		if (rctx->cached_capabilities_len) {
->  			if (g_verbose >= 3)
-> @@ -1200,16 +1198,15 @@ static int do_receive(struct btrfs_receive *rctx, const char *tomnt,
->  							 rctx,
->  							 rctx->honor_end_cmd,
->  							 max_errors);
-> -		if (ret < 0)
-> -			goto out;
-> -		/* Empty stream is invalid */
-> -		if (ret && count == 0) {
-> +		if (ret < 0 && ret == -ENODATA) {
-> +			/* Empty stream is invalid */
->  			error("empty stream is not considered valid");
->  			ret = -EINVAL;
->  			goto out;
-> +		} else if (ret < 0) {
-> +			goto out;
->  		}
-> -		count++;
-> -		if (ret)
-> +		if (ret > 0)
->  			end = 1;
->  
->  		close_inode_for_write(rctx);
-> diff --git a/send-stream.c b/send-stream.c
-> index 5a028cd9..78f2571a 100644
-> --- a/send-stream.c
-> +++ b/send-stream.c
-> @@ -492,7 +492,7 @@ int btrfs_read_and_process_send_stream(int fd,
->  	if (ret < 0)
->  		goto out;
->  	if (ret) {
-> -		ret = 1;
-> +		ret = -ENODATA;
->  		goto out;
->  	}
->  
-> -- 
-> 2.11.0
-> 
-
+the test misc/018-recv-end-of-stream fails after your patch, so this
+would need to be updated, other the patch looks good.

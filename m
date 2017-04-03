@@ -1,88 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:57976 "EHLO mx1.redhat.com"
+Received: from mx2.suse.de ([195.135.220.15]:45865 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932371AbdDEKUS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 5 Apr 2017 06:20:18 -0400
-Date: Wed, 5 Apr 2017 18:20:16 +0800
-From: Eryu Guan <eguan@redhat.com>
-To: Filipe Manana <fdmanana@kernel.org>
-Cc: fstests@vger.kernel.org,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Filipe Manana <fdmanana@suse.com>, hch@lst.de
-Subject: Re: [PATCH] generic: test for number of bytes used by files after
- buffered writes
-Message-ID: <20170405102016.GX22845@eguan.usersys.redhat.com>
-References: <1491272615-3795-1-git-send-email-fdmanana@kernel.org>
- <20170405094600.GW22845@eguan.usersys.redhat.com>
- <CAL3q7H4PN51XpGJc+EsHN+oaRT=fMnWxfe+Z1RH2G0+a8NgZcg@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAL3q7H4PN51XpGJc+EsHN+oaRT=fMnWxfe+Z1RH2G0+a8NgZcg@mail.gmail.com>
+        id S1752017AbdDCSxO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 3 Apr 2017 14:53:14 -0400
+From: Goldwyn Rodrigues <rgoldwyn@suse.de>
+To: linux-fsdevel@vger.kernel.org
+Cc: jack@suse.com, hch@infradead.org, linux-block@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-xfs@vger.kernel.org, sagi@grimberg.me, avi@scylladb.com,
+        axboe@kernel.dk, linux-api@vger.kernel.org, willy@infradead.org,
+        tom.leiming@gmail.com
+Subject: [PATCH 0/8 v4] No wait AIO
+Date: Mon,  3 Apr 2017 13:52:59 -0500
+Message-Id: <20170403185307.6243-1-rgoldwyn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 05, 2017 at 11:13:56AM +0100, Filipe Manana wrote:
-> On Wed, Apr 5, 2017 at 10:46 AM, Eryu Guan <eguan@redhat.com> wrote:
-> > On Tue, Apr 04, 2017 at 03:23:35AM +0100, fdmanana@kernel.org wrote:
-> >> From: Filipe Manana <fdmanana@suse.com>
-> >>
-> >> Test that a filesystem's implementation of the stat(2) system call
-> >> reports correct values for the number of blocks allocated for a file
-> >> when there are delayed allocations.
-> >>
-> >> This test is motivated by a bug in btrfs which is fixed by the following
-> >> path for the linux kernel:
-> >>
-> >>  "Btrfs: fix reported number of inode blocks"
-> >>
-> >> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-...
-> >
-> >> +_require_xfs_io_command "falloc"
-> >
-> > This has some problems with the "-k" flag. NFSv4.2 supports fallocate(2)
-> > but not KEEP_SIZE flag, so test fails with NFSv4.2 mount.
-> >
-> >      XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> >     +fallocate: Operation not supported
-> >      wrote 65536/65536 bytes at offset 0
-> >
-> > We met the same issue before with generic/071.
-> > http://www.spinics.net/lists/fstests/msg03527.html
-> >
-> > So I have two options now, one is the method proposed by Eric in above
-> > thread, run falloc command with $param.
-> >
-> > common/rc::_require_xfs_io_command
-> > -               testio=`$XFS_IO_PROG -F -f -c "falloc 0 1m" $testfile 2>&1`
-> > +               testio=`$XFS_IO_PROG -F -f -c "falloc $param 0 1m" $testfile 2>&1`
-> >
-> > tests/generic/422:
-> > -_require_xfs_io_command "falloc"
-> > +_require_xfs_io_command "falloc" "-k"
-> >
-> >
-> > The other is requiring "falloc -k" in the test:
-> >
-> > common/rc::_require_xfs_io_command
-> > -       "falloc" )
-> > -               testio=`$XFS_IO_PROG -F -f -c "falloc 0 1m" $testfile 2>&1`
-> > +       falloc* )
-> > +               testio=`$XFS_IO_PROG -F -f -c "$command 0 1m" $testfile 2>&1`
-> >
-> > tests/generic/422:
-> > -_require_xfs_io_command "falloc"
-> > +_require_xfs_io_command "falloc -k"
-> >
-> > I slightly prefer the second way, as it doesn't change the default
-> > behavior and makes falloc a special-case.
-> > (_require_xfs_io_command "<cmd>" "<param>" behaves the same as other
-> > commands).
-> 
-> Ok, do you prefer the changes to common/rc in a separate patch or can
-> they be folded in v2 for this test?
+Formerly known as non-blocking AIO.
 
-A separate patch would be good, as it fixes a separate & long standing
-issue. Thanks!
+This series adds nonblocking feature to asynchronous I/O writes.
+io_submit() can be delayed because of a number of reason:
+ - Block allocation for files
+ - Data writebacks for direct I/O
+ - Sleeping because of waiting to acquire i_rwsem
+ - Congested block device
 
-Eryu
+The goal of the patch series is to return -EAGAIN/-EWOULDBLOCK if
+any of these conditions are met. This way userspace can push most
+of the write()s to the kernel to the best of its ability to complete
+and if it returns -EAGAIN, can defer it to another thread.
+
+In order to enable this, IOCB_RW_FLAG_NOWAIT is introduced in
+uapi/linux/aio_abi.h. If set for aio_rw_flags, it translates to
+IOCB_NOWAIT for struct iocb, BIO_NOWAIT for bio and IOMAP_NOWAIT for
+iomap. aio_rw_flags is a new flag replacing aio_reserved1. We could
+not use aio_flags because it is not currently checked for invalidity
+in the kernel.
+
+This feature is provided for direct I/O of asynchronous I/O only. I have
+tested it against xfs, ext4, and btrfs while I intend to add more filesystems.
+Same with QUEUE_FLAG_NOWAIT, which is currently set for sd and virtio devices.
+This is primarily to block md/dm devices which may wait in places such as
+recovery/sync/suspend. In the future, I intend to add support to
+these devices as well. Applications will have to check supportability
+by sending a async direct write and any other error besides -EAGAIN
+would mean it is not supported.
+
+Changes since v1:
+ + changed name from _NONBLOCKING to *_NOWAIT
+ + filemap_range_has_page call moved to closer to (just before) calling filemap_write_and_wait_range().
+ + BIO_NOWAIT limited to get_request()
+ + XFS fixes 
+	- included reflink 
+	- use of xfs_ilock_nowait() instead of a XFS_IOLOCK_NONBLOCKING flag
+	- Translate the flag through IOMAP_NOWAIT (iomap) to check for
+	  block allocation for the file.
+ + ext4 coding style
+
+Changes since v2:
+ + Using aio_reserved1 as aio_rw_flags instead of aio_flags
+ + blk-mq support
+ + xfs uptodate with kernel and reflink changes
+
+ Changes since v3:
+  + Added FS_NOWAIT, which is set if the filesystem supports NOWAIT feature.
+  + Checks in generic_make_request() to make sure BIO_NOWAIT comes in
+    for async direct writes only.
+  + Added QUEUE_FLAG_NOWAIT, which is set if the device supports BIO_NOWAIT.
+    This is added (rather not set) to block devices such as dm/md currently.
+
+-- 
+Goldwyn
+
+

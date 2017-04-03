@@ -1,65 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:42832 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S967882AbdDSRXn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Apr 2017 13:23:43 -0400
-Date: Wed, 19 Apr 2017 19:23:38 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Evan Danaher <github@edanaher.net>
-Cc: Noah Massey <noah.massey@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs-progs: send-dump: always print a space after path
-Message-ID: <20170419172338.GF22319@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170411000904.GF2455@edanaher.net>
- <CADfjVrg793+_eb21OpX0ps5Fat6a=2SxED87meuMabXQjSyT=A@mail.gmail.com>
- <20170411134902.GG2455@edanaher.net>
+Received: from mx1.mailbox.org ([80.241.60.212]:35099 "EHLO mx1.mailbox.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751515AbdDCQHx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 3 Apr 2017 12:07:53 -0400
+Date: Mon, 3 Apr 2017 18:07:48 +0200
+From: Christian Brauner <christian.brauner@canonical.com>
+To: Christian Brauner <christian.brauner@ubuntu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: fix btrfs send & receive with -e flag
+Message-ID: <20170403160748.cv6ugtmqpsce5uaz@mailbox.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170411134902.GG2455@edanaher.net>
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20170324150057.1752-1-christian.brauner@ubuntu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 11, 2017 at 09:49:02AM -0400, Evan Danaher wrote:
-> Thanks for catching that!  I overthought this and managed to convince
-> myself that it was correct as it stood.
+Hi guys,
+
+Friendly ping. Just checking in on this patch since I haven't heard back so far
+and this is a blocker in some scenarios where we're using btrfs.
+
+Thanks!
+Christian
+
+On Fri, Mar 24, 2017 at 04:00:57PM +0100, Christian Brauner wrote:
+> The old check here tried to ensure that empty streams are not considered valid.
+> The old check however, will always fail when only one run through the while(1)
+> loop is needed and honor_end_cmd is set. So this:
 > 
-> Should I re-send the whole patch with that change?  This is my first
-> attempt at contributing to a project managed in the Linux kernel style,
-> so I'm not sure about the process; documentation that I've found around
-> responding to feedback seems to be more about social issues than the
-> mechanics of what to actually do...
+> btrfs send /some/subvol | btrfs receive -e /some/
+> 
+> will consistently fail because -e causes honor_cmd_to be set and
+> btrfs_read_and_process_send_stream() to correctly return 1. So the command will
+> be successful but btrfs receive will error out because the send - receive
+> concluded in one run through the while(1) loop.
+> 
+> If we want to exclude empty streams we need a way to tell the difference between
+> btrfs_read_and_process_send_stream() returning 1 because read_buf() did not
+> detect any data and read_and_process_cmd() returning 1 because honor_end_cmd was
+> set. Without introducing too many changes the best way to me seems to have
+> btrfs_read_and_process_send_stream() return -ENODATA in the first case. The rest
+> stays the same. We can then check for -ENODATA in do_receive() and report a
+> proper error in this case. This should also be backwards compatible to previous
+> versions of btrfs receive. They will fail on empty streams because a negative
+> value is returned. The only thing that they will lack is a nice error message.
+> 
+> Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
+> ---
+>  cmds-receive.c | 13 +++++--------
+>  send-stream.c  |  2 +-
+>  2 files changed, 6 insertions(+), 9 deletions(-)
+> 
+> diff --git a/cmds-receive.c b/cmds-receive.c
+> index 6cf22637..b59f00e4 100644
+> --- a/cmds-receive.c
+> +++ b/cmds-receive.c
+> @@ -1091,7 +1091,6 @@ static int do_receive(struct btrfs_receive *rctx, const char *tomnt,
+>  	char *dest_dir_full_path;
+>  	char root_subvol_path[PATH_MAX];
+>  	int end = 0;
+> -	int count;
+>  
+>  	dest_dir_full_path = realpath(tomnt, NULL);
+>  	if (!dest_dir_full_path) {
+> @@ -1186,7 +1185,6 @@ static int do_receive(struct btrfs_receive *rctx, const char *tomnt,
+>  	if (ret < 0)
+>  		goto out;
+>  
+> -	count = 0;
+>  	while (!end) {
+>  		if (rctx->cached_capabilities_len) {
+>  			if (g_verbose >= 3)
+> @@ -1200,16 +1198,15 @@ static int do_receive(struct btrfs_receive *rctx, const char *tomnt,
+>  							 rctx,
+>  							 rctx->honor_end_cmd,
+>  							 max_errors);
+> -		if (ret < 0)
+> -			goto out;
+> -		/* Empty stream is invalid */
+> -		if (ret && count == 0) {
+> +		if (ret < 0 && ret == -ENODATA) {
+> +			/* Empty stream is invalid */
+>  			error("empty stream is not considered valid");
+>  			ret = -EINVAL;
+>  			goto out;
+> +		} else if (ret < 0) {
+> +			goto out;
+>  		}
+> -		count++;
+> -		if (ret)
+> +		if (ret > 0)
+>  			end = 1;
+>  
+>  		close_inode_for_write(rctx);
+> diff --git a/send-stream.c b/send-stream.c
+> index 5a028cd9..78f2571a 100644
+> --- a/send-stream.c
+> +++ b/send-stream.c
+> @@ -492,7 +492,7 @@ int btrfs_read_and_process_send_stream(int fd,
+>  	if (ret < 0)
+>  		goto out;
+>  	if (ret) {
+> -		ret = 1;
+> +		ret = -ENODATA;
+>  		goto out;
+>  	}
+>  
+> -- 
+> 2.11.0
+> 
 
-Here's some howto
-https://btrfs.wiki.kernel.org/index.php/Developer%27s_FAQ
-
-Depends on what you take from the 'linux kernel style'. We stick to good
-changelogs, signed-off-by lines and patches that do one thing at a time.
-The interactions experience differs across the subsystems, the btrfs
-community is friendly.
-
-Patches from strangers are apprecated as they usually do the extra step
-and also try to fix the problem they encounter. The patch does not need
-to be perfect, small things I fix myself. If it's not obvious it's
-better to do another iteration, eg. when the change needs to be
-retested.
-
-> On Tue, Apr 11, 2017 at 09:24:56AM -0400, Noah Massey wrote:
-> > On Mon, Apr 10, 2017 at 8:09 PM, Evan Danaher <github@edanaher.net> wrote:
-> > > I was shocked to discover that 'btrfs receive --dump' doesn't print a
-> > > space after long filenames, so it runs together into the metadata; for
-> > > example:
-> > >
-> > > truncate        ./20-00-03/this-name-is-32-characters-longsize=0
-> > >
-> > > This is a trivial patch to add a single space unconditionally, so the
-> > > result is the following:
-> > >
-> > > truncate        ./20-00-03/this-name-is-32-characters-long size=0
-> > >
-> > > I suppose this is technically a breaking change, but it seems unlikely
-> > > to me that anyone would depend on the existing behavior given how
-> > > unfriendly it is.
-
-Agreed, the output needs to be fixed, backward compatibility is not an
-issue here.

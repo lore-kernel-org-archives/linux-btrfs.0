@@ -1,79 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from syrinx.knorrie.org ([82.94.188.77]:35546 "EHLO
-        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752962AbdDCOom (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Apr 2017 10:44:42 -0400
-Subject: Re: Need some help: "BTRFS critical (device sda): corrupt leaf, slot
- offset bad: block"
-To: Robert Krig <robert.krig@render-wahnsinn.de>, linux-btrfs@vger.kernel.org
-References: <635a5ca8-9fa5-6cd4-21b5-97f9f3db93d3@render-wahnsinn.de>
- <c304c651-88fc-4699-3518-c4e83095d9c0@mendix.com>
- <98a478cf-20f9-981f-6da5-4186a10be303@render-wahnsinn.de>
-From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Message-ID: <b863d020-8d6c-f0af-5c62-b84bb752bd59@mendix.com>
-Date: Mon, 3 Apr 2017 16:44:30 +0200
+Received: from 67-129-172-163.rev.cloud.scaleway.com ([163.172.129.67]:52296
+        "EHLO mail1.sd85.net" rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1753946AbdDCPgZ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Apr 2017 11:36:25 -0400
+To: linux-btrfs@vger.kernel.org
+From: Brian B <brian@sd85.net>
+Subject: BTRFS corruption after hardware issues
+Message-ID: <f0753ae9-6842-d180-49db-435d6993dafc@sd85.net>
+Date: Mon, 3 Apr 2017 11:26:33 -0400
 MIME-Version: 1.0
-In-Reply-To: <98a478cf-20f9-981f-6da5-4186a10be303@render-wahnsinn.de>
-Content-Type: text/plain; charset=utf-8
+Content-Type: multipart/signed; micalg=pgp-sha512;
+ protocol="application/pgp-signature";
+ boundary="qVHl64m6MqooBPSRS0d62lRettPie8xef"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04/03/2017 04:20 PM, Robert Krig wrote:
-> 
-> 
-> On 03.04.2017 16:08, Hans van Kranenburg wrote:
->> On 04/03/2017 12:11 PM, Robert Krig wrote:
->> The corruption is at item 157. Can you attach all of the output, or
->> pastebin it?
->>
-> 
-> I've attached the entire log of btrfs-debug-tree. This was generated
-> with btrfs-progs 4.7.3
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--qVHl64m6MqooBPSRS0d62lRettPie8xef
+Content-Type: multipart/mixed; boundary="JbdSFdj7bodhI4uu9AMfTbIOXQgUWHgAo";
+ protected-headers="v1"
+From: Brian B <brian@sd85.net>
+To: linux-btrfs@vger.kernel.org
+Message-ID: <f0753ae9-6842-d180-49db-435d6993dafc@sd85.net>
+Subject: BTRFS corruption after hardware issues
 
-Meuh,
+--JbdSFdj7bodhI4uu9AMfTbIOXQgUWHgAo
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 
-item 156 key (23416298414080 EXTENT_ITEM 4096) itemoff 8643 itemsize 53
-item 157 key (23416298418176 EXTENT_ITEM 4096) itemoff 8590 itemsize 53
+I had a stick of memory go bad in my server, and after removing it my
+BTRFS filesystem seems to be damaged.
 
-8590 + 53 = 8643.
+If I mount the volume rw and try to use the volume, most actions will
+hang, and I get btrfs-transactio related errors in the logs.
 
-I don't get what's invalid about that.
+'btrfsck --repair' seems to sit in a loop, printing the same messages
+about attempting to repair a dozen or so inodes over and over again.
 
-"incorrect offsets 8590 1258314415"
+I can mount the volume with '-o ro,recovery', but some folders are
+missing from the current live volume.  It looks like some of the nodes
+are still there, just orphaned or something.  For instance, from btrfsck:=
 
-if (btrfs_item_offset_nr(buf, i) !=
-    btrfs_item_end_nr(buf, i + 1)) {
-    ret = BTRFS_TREE_BLOCK_INVALID_OFFSETS;
-    fprintf(stderr, "incorrect offsets %u %u\n",
-        btrfs_item_offset_nr(buf, i),
-        btrfs_item_end_nr(buf, i + 1));
-    goto fail;
-}
 
-Ah, ok, so the corruption is in item 158, but it's reported as
-corruption in item 157.
 
-There's no really simple tool right now to fix this manually. We can
-also try to dd 16kiB of metadata from disk, fix it, and write it back.
-We've been doing that before, it's a bit of work, but it can succeed.
-Here's more instructions:
+root 551 inode 102353 errors 2001, no inode item, link count wrong
+        unresolved ref dir 261 index 0 namelen 5 name dir1 filetype 2
+errors 6, no dir index, no inode ref
 
-https://www.spinics.net/lists/linux-btrfs/msg62459.html
 
-So, if you're the adventurous type...
+So is there some way I can mount that as a root, or re-link it to the
+rest of the tree somehow?
 
-But then again, if this is really memory failure, there might be other
-errors all around the fs, which you didn't hit while reading back the
-data yet.
 
-Also note that btrfs does not protect you against this, also not for
-data in files that gets corrupted in memory before it's written out
-(which contains the checksum step).
+--JbdSFdj7bodhI4uu9AMfTbIOXQgUWHgAo--
 
-> If it makes a difference, I can try it again with the newest version of
-> btrfs-progs?
+--qVHl64m6MqooBPSRS0d62lRettPie8xef
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
-No, that code hasn't been touched in over 5 years.
+-----BEGIN PGP SIGNATURE-----
 
--- 
-Hans van Kranenburg
+iQIcBAEBCgAGBQJY4mmpAAoJEOrm+yJI9jqLjYgQAM4tfX7Xfdhu+C5uAvEDfGNx
+W76jMklX3VUgs3V0iyR2uJtNxlkIjkFneJEFyxlxqmRSWa+cq52bQ/8LHqQb9qPD
+4BZxOZ6OQe7+TqaQpRcgYEFRRl8JGZBbAuJ8PXNNotDz6D4qZojeiLljOrjtYeKJ
+wWdIjfZWfZUyg0GG4TvT5lreiIKpQLZh3S51IKSOxTOeMIAYky2yrDmkqsoO4m/n
+nUo1ZkhcWDuwKDa0b6/LIFw1L/Fg+KXPIgyIAmzzE+X+SOEoRUsW7SPOk999lbMq
+FvAf+5xz8RFea9eXmkT3uUGjt6bjTo1qnjDOhqKuMoBML3fanHd3RIUrrEWWuLDq
+zA23glq6VXdv/GVI2YmJXSaARQs6kQniZYnXsH0RvwlqJKZq1/QNpmWsjZ3WtzXH
+CbskjfIagEbpoAGveU1GBIlQs3vqnGMqaoL6ZsS+luA/JJcsNJwN3akp64TiItVY
+cpwam8kzkw9qq45AzYMIqQCf+f5X2j3VJOmvl8MTS1N3NEovr+IRlpLX7p5hoNgQ
+VHghGaDQ39Z6LiDkq9g5QrLjTiRexQNthu6gKpsIiJw2ChiaOt7X1k8kJdgyNpyL
+G8zosqhNXhUhGe3LA1fzWCf+XXlc+DHq0WseAJB84B/T3oEi/t7ratOXsaxnATB2
+eNBBO5R2hWzLH71ICR07
+=rHH/
+-----END PGP SIGNATURE-----
+
+--qVHl64m6MqooBPSRS0d62lRettPie8xef--

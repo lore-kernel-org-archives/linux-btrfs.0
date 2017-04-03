@@ -1,54 +1,195 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:22833 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:50958 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751188AbdDCBEb (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Apr 2017 21:04:31 -0400
-Subject: Re: Is btrfs-convert able to deal with sparse files in a ext4
- filesystem?
-To: Kai Herlemann <btrfs@linux.kai-herlemann.de>,
-        <linux-btrfs@vger.kernel.org>
-References: <CADN-S7MzE=6x25DK0XOPzfBGCEpTjdUSokBkuCPGhCvCURzLPg@mail.gmail.com>
+        with ESMTP id S1751280AbdDCDBu (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Apr 2017 23:01:50 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <fde235e9-ce7e-c44c-a62d-46b7c08d8c2b@cn.fujitsu.com>
-Date: Mon, 3 Apr 2017 09:04:27 +0800
+To: <linux-btrfs@vger.kernel.org>, <fstests@vger.kernel.org>
+Subject: [PATCH] fstests: btrfs: Check if btrfs will create inline-then-regular file extents
+Date: Mon, 3 Apr 2017 11:01:39 +0800
+Message-ID: <20170403030139.7677-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <CADN-S7MzE=6x25DK0XOPzfBGCEpTjdUSokBkuCPGhCvCURzLPg@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Btrfs allows inline file extent if and only if
+1) It's at offset 0
+2) It's smaller than min(max_inline, page_size)
+   Although we don't specify if the size is before compression or after
+   compression.
+   At least according to current behavior, we are only limiting the size
+   after compression.
+3) It's the only file extent
+   So that if we append existing inline extent, it should be converted
+   to regular file extents.
 
+However several users in btrfs mail list have reported invalid inline
+file extent, which only meets the first two condition, but with regular
+file extents follows.
 
-At 04/01/2017 05:48 PM, Kai Herlemann wrote:
-> Hi,
-> I have on my ext4 filesystem some sparse files, mostly images from
-> ext4 filesystems.
-> Is btrfs-convert (4.9.1) able to deal with sparse files or can that
-> cause any problems?
+The bug is here for a long long time, so long that we have modified
+kernel and btrfs-progs to accept such case, but it's still not designed
+behavior, and must be detected and fixed.
 
-AFAIK, btrfs convert can handle it well, not matter if it's sparse or not.
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ tests/btrfs/140     | 124 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/140.out |   2 +
+ tests/btrfs/group   |   1 +
+ 3 files changed, 127 insertions(+)
+ create mode 100755 tests/btrfs/140
+ create mode 100644 tests/btrfs/140.out
 
-Secondly, it's strongly recommended to use latest btrfs-convert, which 
-is 4.10.2.
+diff --git a/tests/btrfs/140 b/tests/btrfs/140
+new file mode 100755
+index 0000000..139df76
+--- /dev/null
++++ b/tests/btrfs/140
+@@ -0,0 +1,124 @@
++#! /bin/bash
++# FS QA Test 140
++#
++# Check if btrfs will create inline-then-regular file layout.
++#
++# Btrfs only allows inline file extent if file is small enough, and any
++# incoming write enlarges the file beyong max_inline should replace inline
++# extents with regular extents.
++# This is a long standing bug, so fsck won't detect it and kernel will allow
++# normal read on it, but should be avoided.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2017 Fujitsu.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# remove previous $seqres.full before test
++rm -f $seqres.full
++
++# real QA test starts here
++
++# Modify as appropriate.
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++_require_btrfs_command inspect-internal dump-tree
++
++inline_size=2048
++page_size=$(get_page_size)
++src_subv="$SCRATCH_MNT/src"
++dst_subv="$SCRATCH_MNT/dst"
++runtime=$(($LOAD_FACTOR * 8))	#The possibility is over 80%, just in case
++corrupted=0
++
++do_test()
++{
++	local ret
++	_scratch_mkfs > /dev/null >&1
++
++	# specify max_inline and compress explicitly to create
++	# inlined compressed extent
++	_scratch_mount "-o max_inline=$inline_size,compress"
++	
++	# Subvolume id=257
++	_run_btrfs_util_prog subvolume create $src_subv
++
++	# Page sized data will be compressed to quite small size,
++	# which is about 50 bytes for 4K, 100 bytes for 64K,
++	# far smaller than $inline_size, causing a inlined compressed
++	# file extent
++	xfs_io -f -c "pwrite 0 $page_size" $src_subv/file > /dev/null
++	sync
++
++	# Subvolume id=258
++	_run_btrfs_util_prog subvolume snapshot $src_subv $dst_subv
++	
++	# Append another page to file in snapshot, since its offset is not
++	# 0, it will cause regular extent, and should convert inline extent
++	# to regular too.
++	xfs_io -c "pwrite $page_size $page_size" $dst_subv/file > /dev/null
++	_scratch_unmount
++
++	# Fsck won't report inline-then-regular as error, as it's so long
++	# standing that we have no choice but to accept.
++	# So here we use dump-tree to catch inline extent of $dst_subv, and
++	# we need piping stdout, call btrfs-progs directly
++	$BTRFS_UTIL_PROG inspect-internal dump-tree -t 258 $SCRATCH_DEV \
++		> $tmp.dump_tree
++	if [[ $(cat $tmp.dump_tree | grep inline) ]]; then
++		cat $tmp.dump_tree >> $seqres.full
++		echo "Invalid inline file extent detected"
++		return 1
++	fi
++	return 0
++}
++
++for i in $(seq 1 $runtime); do
++	do_test
++	if [ $? -ne 0 ]; then
++		corrupted=$(($corrupted + 1))
++	fi
++done
++
++if [ $corrupted -ne 0 ]; then
++	echo "Corruption possibility: $corrupted/$runtime" >> $seqres.full
++fi
++
++echo "Silence is golden"
++
++# success, all done
++status=0
++exit
+diff --git a/tests/btrfs/140.out b/tests/btrfs/140.out
+new file mode 100644
+index 0000000..24e90bc
+--- /dev/null
++++ b/tests/btrfs/140.out
+@@ -0,0 +1,2 @@
++QA output created by 140
++Silence is golden
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 641d826..e4c76e3 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -142,3 +142,4 @@
+ 137 auto quick send
+ 138 auto compress
+ 139 auto qgroup
++140 auto
+-- 
+2.9.3
 
-Although the convert part is not changed in recent release, but the 
-rollback part (which rolls converted btrfs back to ext*) under goes a 
-large modification to co-operate with convert.
-
-Without that modification, rollback is not functional, which is fine if 
-you don't want to rollback to ext*, but just in case.
-
-Thanks,
-Qu
-
->
-> Thanks in advance,
-> Kai
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
 
 

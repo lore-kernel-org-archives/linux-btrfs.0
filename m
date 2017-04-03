@@ -1,49 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f44.google.com ([209.85.214.44]:35000 "EHLO
-        mail-it0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752141AbdDCMXa (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Apr 2017 08:23:30 -0400
-Received: by mail-it0-f44.google.com with SMTP id y18so45104854itc.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 03 Apr 2017 05:23:30 -0700 (PDT)
-Subject: Re: mix ssd and hdd in single volume
-To: matianfu@gmail.com, linux-btrfs@vger.kernel.org
-References: <CAEgruXvAEBfpQaAxCi42Vq6v8w7v1dqthpn9TpE3FDDHoTWRcw@mail.gmail.com>
+Received: from mail-it0-f49.google.com ([209.85.214.49]:34909 "EHLO
+        mail-it0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751841AbdDCMcc (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Apr 2017 08:32:32 -0400
+Received: by mail-it0-f49.google.com with SMTP id y18so45239790itc.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 03 Apr 2017 05:32:31 -0700 (PDT)
+Subject: Re: Is btrfs-convert able to deal with sparse files in a ext4
+ filesystem?
+To: Kai Herlemann <btrfs@linux.kai-herlemann.de>, linux-btrfs@vger.kernel.org
+References: <CADN-S7MzE=6x25DK0XOPzfBGCEpTjdUSokBkuCPGhCvCURzLPg@mail.gmail.com>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <d35eb3bd-02f7-c6be-e3de-2ebbb911a378@gmail.com>
-Date: Mon, 3 Apr 2017 08:23:24 -0400
+Message-ID: <145e6e59-42d6-ca9b-1bfa-5f0249e930be@gmail.com>
+Date: Mon, 3 Apr 2017 08:32:25 -0400
 MIME-Version: 1.0
-In-Reply-To: <CAEgruXvAEBfpQaAxCi42Vq6v8w7v1dqthpn9TpE3FDDHoTWRcw@mail.gmail.com>
+In-Reply-To: <CADN-S7MzE=6x25DK0XOPzfBGCEpTjdUSokBkuCPGhCvCURzLPg@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-04-01 02:06, UGlee wrote:
-> We are working on a small NAS server for home user. The product is
-> equipped with a small fast SSD (around 60-120GB) and a large HDD (2T
-> to 4T).
->
-> We have two choices:
->
-> 1. using bcache to accelerate io operation
-> 2. combining SSD and HDD into a single btrfs volume.
->
-> Bcache is certainly designed for our purpose. But bcache requires
-> complex configuration and can only start from clean disk. Also in our
-> test in Ubuntu 16.04, data inconsistence was observed at least once,
-> resulting total HDD data lost.
->
-> So we wonder if simply putting SSD and HDD into a single btrfs volume,
-> in whatever mode, the general read operation (mostly readdir and
-> getxattr) will also be significantly faster than a single HDD without
-> SSD.
+On 2017-04-01 05:48, Kai Herlemann wrote:
+> Hi,
+> I have on my ext4 filesystem some sparse files, mostly images from
+> ext4 filesystems.
+> Is btrfs-convert (4.9.1) able to deal with sparse files or can that
+> cause any problems?
+I would tend to agree with some of the other people who have commented 
+here, but with a slight twist:
+If you just want to test BTRFS short-term, then in-place conversion is 
+fine.  The moment you decide to keep using BTRFS for production systems, 
+you should be creating new filesystems instead of doing in-place conversion.
 
-Have you tried dm-cache?  The general idea is similar to bcache, but 
-it's been much more reliable in my experience, and it's possible to add 
-it to an existing device without any need for reprovisioning  (although 
-the existing device can't have any pending writes, otherwise you might 
-get some data corruption).
-
-Additionally, given what you've said, write-through mode should cover 
-what you need in terms of performance, and may be more reliable on 
-bcache than writeback mode.
+There are a couple of reasons for this:
+1. In-place conversion will give you an inherently sub-optimal on-disk 
+data layout.  You'll need some extra work to remedy this, and because of 
+that extra work, it will generally not be any quicker to convert 
+in-place than to create a new filesystem.  You can of course choose not 
+to fix this, but performance will likely suffer. (This can also be 
+slightly mitigated by making sure to defragment the filesystem before 
+conversion).
+2. Slightly related to 1, btrfs-convert can leave behind artifacts from 
+the conversion itself that may cause issues later.
+3. Tying in with both 1 and 2, there's very little testing done on 
+converted filesystems.  You are therefore by definition more likely to 
+run into bugs or other issues.
+4. In-place conversion is inherently risky.  If something goes wrong, 
+you're going to have to restore from a backup anyway.
 

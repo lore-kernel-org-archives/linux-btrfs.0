@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45940 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:45977 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752226AbdDCSxp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 3 Apr 2017 14:53:45 -0400
+        id S1752577AbdDCSyD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 3 Apr 2017 14:54:03 -0400
 From: Goldwyn Rodrigues <rgoldwyn@suse.de>
 To: linux-fsdevel@vger.kernel.org
 Cc: jack@suse.com, hch@infradead.org, linux-block@vger.kernel.org,
@@ -10,9 +10,9 @@ Cc: jack@suse.com, hch@infradead.org, linux-block@vger.kernel.org,
         linux-xfs@vger.kernel.org, sagi@grimberg.me, avi@scylladb.com,
         axboe@kernel.dk, linux-api@vger.kernel.org, willy@infradead.org,
         tom.leiming@gmail.com, Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH 3/8] nowait aio: return if direct write will trigger writeback
-Date: Mon,  3 Apr 2017 13:53:02 -0500
-Message-Id: <20170403185307.6243-4-rgoldwyn@suse.de>
+Subject: [PATCH 6/8] nowait aio: ext4
+Date: Mon,  3 Apr 2017 13:53:05 -0500
+Message-Id: <20170403185307.6243-7-rgoldwyn@suse.de>
 In-Reply-To: <20170403185307.6243-1-rgoldwyn@suse.de>
 References: <20170403185307.6243-1-rgoldwyn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -20,109 +20,134 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-Find out if the write will trigger a wait due to writeback. If yes,
-return -EAGAIN.
-
-This introduces a new function filemap_range_has_page() which
-returns true if the file's mapping has a page within the range
-mentioned.
-
-Return -EINVAL for buffered AIO: there are multiple causes of
-delay such as page locks, dirty throttling logic, page loading
-from disk etc. which cannot be taken care of.
+Return EAGAIN if any of the following checks fail for direct I/O:
+ + i_rwsem is lockable
+ + Writing beyond end of file (will trigger allocation)
+ + Blocks are not allocated at the write location
 ---
- include/linux/fs.h |  2 ++
- mm/filemap.c       | 50 +++++++++++++++++++++++++++++++++++++++++++++++---
- 2 files changed, 49 insertions(+), 3 deletions(-)
+ fs/ext4/file.c  | 48 +++++++++++++++++++++++++++++++-----------------
+ fs/ext4/super.c |  6 +++---
+ 2 files changed, 34 insertions(+), 20 deletions(-)
 
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 802cfe2..4721136 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -2515,6 +2515,8 @@ extern int filemap_fdatawait(struct address_space *);
- extern void filemap_fdatawait_keep_errors(struct address_space *);
- extern int filemap_fdatawait_range(struct address_space *, loff_t lstart,
- 				   loff_t lend);
-+extern int filemap_range_has_page(struct address_space *, loff_t lstart,
-+				   loff_t lend);
- extern int filemap_write_and_wait(struct address_space *mapping);
- extern int filemap_write_and_wait_range(struct address_space *mapping,
- 				        loff_t lstart, loff_t lend);
-diff --git a/mm/filemap.c b/mm/filemap.c
-index e08f3b9..c020e23 100644
---- a/mm/filemap.c
-+++ b/mm/filemap.c
-@@ -376,6 +376,39 @@ int filemap_flush(struct address_space *mapping)
+diff --git a/fs/ext4/file.c b/fs/ext4/file.c
+index 8210c1f..e223b9f 100644
+--- a/fs/ext4/file.c
++++ b/fs/ext4/file.c
+@@ -127,27 +127,22 @@ ext4_unaligned_aio(struct inode *inode, struct iov_iter *from, loff_t pos)
+ 	return 0;
  }
- EXPORT_SYMBOL(filemap_flush);
  
-+/**
-+ * filemap_range_has_page - check if a page exists in range.
-+ * @mapping:		address space structure to wait for
-+ * @start_byte:		offset in bytes where the range starts
-+ * @end_byte:		offset in bytes where the range ends (inclusive)
-+ *
-+ * Find at least one page in the range supplied, usually used to check if
-+ * direct writing in this range will trigger a writeback.
-+ */
-+int filemap_range_has_page(struct address_space *mapping,
-+				loff_t start_byte, loff_t end_byte)
-+{
-+	pgoff_t index = start_byte >> PAGE_SHIFT;
-+	pgoff_t end = end_byte >> PAGE_SHIFT;
-+	struct pagevec pvec;
-+	int ret;
-+
-+	if (end_byte < start_byte)
-+		return 0;
-+
-+	if (mapping->nrpages == 0)
-+		return 0;
-+
-+	pagevec_init(&pvec, 0);
-+	ret = pagevec_lookup(&pvec, mapping, index, 1);
-+	if (!ret)
-+		return 0;
-+	ret = (pvec.pages[0]->index <= end);
-+	pagevec_release(&pvec);
-+	return ret;
-+}
-+EXPORT_SYMBOL(filemap_range_has_page);
-+
- static int __filemap_fdatawait_range(struct address_space *mapping,
- 				     loff_t start_byte, loff_t end_byte)
+-/* Is IO overwriting allocated and initialized blocks? */
+-static bool ext4_overwrite_io(struct inode *inode, loff_t pos, loff_t len)
++/* Are IO blocks allocated */
++static bool ext4_blocks_mapped(struct inode *inode, loff_t pos, loff_t len,
++				struct ext4_map_blocks *map)
  {
-@@ -2640,6 +2673,9 @@ inline ssize_t generic_write_checks(struct kiocb *iocb, struct iov_iter *from)
+-	struct ext4_map_blocks map;
+ 	unsigned int blkbits = inode->i_blkbits;
+ 	int err, blklen;
  
- 	pos = iocb->ki_pos;
+ 	if (pos + len > i_size_read(inode))
+ 		return false;
  
-+	if ((iocb->ki_flags & IOCB_NOWAIT) && !(iocb->ki_flags & IOCB_DIRECT))
-+		return -EINVAL;
-+
- 	if (limit != RLIM_INFINITY) {
- 		if (iocb->ki_pos >= limit) {
- 			send_sig(SIGXFSZ, current, 0);
-@@ -2709,9 +2745,17 @@ generic_file_direct_write(struct kiocb *iocb, struct iov_iter *from)
- 	write_len = iov_iter_count(from);
- 	end = (pos + write_len - 1) >> PAGE_SHIFT;
+-	map.m_lblk = pos >> blkbits;
+-	map.m_len = EXT4_MAX_BLOCKS(len, pos, blkbits);
+-	blklen = map.m_len;
++	map->m_lblk = pos >> blkbits;
++	map->m_len = EXT4_MAX_BLOCKS(len, pos, blkbits);
++	blklen = map->m_len;
  
--	written = filemap_write_and_wait_range(mapping, pos, pos + write_len - 1);
--	if (written)
--		goto out;
-+	if (iocb->ki_flags & IOCB_NOWAIT) {
-+		/* If there are pages to writeback, return */
-+		if (filemap_range_has_page(inode->i_mapping, pos,
-+					   pos + iov_iter_count(from)))
+-	err = ext4_map_blocks(NULL, inode, &map, 0);
+-	/*
+-	 * 'err==len' means that all of the blocks have been preallocated,
+-	 * regardless of whether they have been initialized or not. To exclude
+-	 * unwritten extents, we need to check m_flags.
+-	 */
+-	return err == blklen && (map.m_flags & EXT4_MAP_MAPPED);
++	err = ext4_map_blocks(NULL, inode, map, 0);
++	return err == blklen;
+ }
+ 
+ static ssize_t ext4_write_checks(struct kiocb *iocb, struct iov_iter *from)
+@@ -204,6 +199,7 @@ ext4_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
+ {
+ 	struct inode *inode = file_inode(iocb->ki_filp);
+ 	int o_direct = iocb->ki_flags & IOCB_DIRECT;
++	int nowait = iocb->ki_flags & IOCB_NOWAIT;
+ 	int unaligned_aio = 0;
+ 	int overwrite = 0;
+ 	ssize_t ret;
+@@ -216,7 +212,13 @@ ext4_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
+ 		return ext4_dax_write_iter(iocb, from);
+ #endif
+ 
+-	inode_lock(inode);
++	if (o_direct && nowait) {
++		if (!inode_trylock(inode))
 +			return -EAGAIN;
 +	} else {
-+		written = filemap_write_and_wait_range(mapping, pos,
-+							pos + write_len - 1);
-+		if (written)
++		inode_lock(inode);
++	}
++
+ 	ret = ext4_write_checks(iocb, from);
+ 	if (ret <= 0)
+ 		goto out;
+@@ -235,9 +237,21 @@ ext4_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
+ 
+ 	iocb->private = &overwrite;
+ 	/* Check whether we do a DIO overwrite or not */
+-	if (o_direct && ext4_should_dioread_nolock(inode) && !unaligned_aio &&
+-	    ext4_overwrite_io(inode, iocb->ki_pos, iov_iter_count(from)))
+-		overwrite = 1;
++	if (o_direct && !unaligned_aio) {
++		struct ext4_map_blocks map;
++		if (ext4_blocks_mapped(inode, iocb->ki_pos,
++				      iov_iter_count(from), &map)) {
++	 		/* To exclude unwritten extents, we need to check
++			 * m_flags.
++			 */
++			if (ext4_should_dioread_nolock(inode) &&
++			    (map.m_flags & EXT4_MAP_MAPPED))
++				overwrite = 1;
++		} else if (iocb->ki_flags & IOCB_NOWAIT) {
++			ret = -EAGAIN;
 +			goto out;
++		}
 +	}
  
- 	/*
- 	 * After a write we want buffered reads to be sure to go to disk to get
+ 	ret = __generic_file_write_iter(iocb, from);
+ 	inode_unlock(inode);
+diff --git a/fs/ext4/super.c b/fs/ext4/super.c
+index a9448db..e1d424a 100644
+--- a/fs/ext4/super.c
++++ b/fs/ext4/super.c
+@@ -117,7 +117,7 @@ static struct file_system_type ext2_fs_type = {
+ 	.name		= "ext2",
+ 	.mount		= ext4_mount,
+ 	.kill_sb	= kill_block_super,
+-	.fs_flags	= FS_REQUIRES_DEV,
++	.fs_flags	= FS_REQUIRES_DEV | FS_NOWAIT,
+ };
+ MODULE_ALIAS_FS("ext2");
+ MODULE_ALIAS("ext2");
+@@ -132,7 +132,7 @@ static struct file_system_type ext3_fs_type = {
+ 	.name		= "ext3",
+ 	.mount		= ext4_mount,
+ 	.kill_sb	= kill_block_super,
+-	.fs_flags	= FS_REQUIRES_DEV,
++	.fs_flags	= FS_REQUIRES_DEV | FS_NOWAIT,
+ };
+ MODULE_ALIAS_FS("ext3");
+ MODULE_ALIAS("ext3");
+@@ -5623,7 +5623,7 @@ static struct file_system_type ext4_fs_type = {
+ 	.name		= "ext4",
+ 	.mount		= ext4_mount,
+ 	.kill_sb	= kill_block_super,
+-	.fs_flags	= FS_REQUIRES_DEV,
++	.fs_flags	= FS_REQUIRES_DEV | FS_NOWAIT,
+ };
+ MODULE_ALIAS_FS("ext4");
+ 
 -- 
 2.10.2
 

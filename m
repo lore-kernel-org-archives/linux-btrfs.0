@@ -1,51 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45919 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752288AbdDCSxn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 3 Apr 2017 14:53:43 -0400
-From: Goldwyn Rodrigues <rgoldwyn@suse.de>
-To: linux-fsdevel@vger.kernel.org
-Cc: jack@suse.com, hch@infradead.org, linux-block@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-xfs@vger.kernel.org, sagi@grimberg.me, avi@scylladb.com,
-        axboe@kernel.dk, linux-api@vger.kernel.org, willy@infradead.org,
-        tom.leiming@gmail.com, Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH 2/8] nowait aio: Return if cannot get hold of i_rwsem
-Date: Mon,  3 Apr 2017 13:53:01 -0500
-Message-Id: <20170403185307.6243-3-rgoldwyn@suse.de>
-In-Reply-To: <20170403185307.6243-1-rgoldwyn@suse.de>
+Received: from bombadil.infradead.org ([65.50.211.133]:43934 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752518AbdDDGs2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Apr 2017 02:48:28 -0400
+Date: Mon, 3 Apr 2017 23:48:27 -0700
+From: Christoph Hellwig <hch@infradead.org>
+To: Goldwyn Rodrigues <rgoldwyn@suse.de>
+Cc: linux-fsdevel@vger.kernel.org, jack@suse.com, hch@infradead.org,
+        linux-block@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
+        sagi@grimberg.me, avi@scylladb.com, axboe@kernel.dk,
+        linux-api@vger.kernel.org, willy@infradead.org, tom.leiming@gmail.com,
+        Goldwyn Rodrigues <rgoldwyn@suse.com>
+Subject: Re: [PATCH 1/8] nowait aio: Introduce IOCB_RW_FLAG_NOWAIT
+Message-ID: <20170404064827.GB21942@infradead.org>
 References: <20170403185307.6243-1-rgoldwyn@suse.de>
+ <20170403185307.6243-2-rgoldwyn@suse.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170403185307.6243-2-rgoldwyn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Goldwyn Rodrigues <rgoldwyn@suse.com>
+On Mon, Apr 03, 2017 at 01:53:00PM -0500, Goldwyn Rodrigues wrote:
+> From: Goldwyn Rodrigues <rgoldwyn@suse.com>
+> 
+> This flag informs kernel to bail out if an AIO request will block
+> for reasons such as file allocations, or a writeback triggered,
+> or would block while allocating requests while performing
+> direct I/O.
+> 
+> Unfortunately, aio_flags is not checked for validity, which would
+> break existing applications which have it set to anything besides zero
+> or IOCB_FLAG_RESFD. So, we are using aio_reserved1 and renaming it
+> to aio_rw_flags.
+> 
+> IOCB_RW_FLAG_NOWAIT is translated to IOCB_NOWAIT for
+> iocb->ki_flags.
 
-A failure to lock i_rwsem would mean there is I/O being performed
-by another thread. So, let's bail.
-
-Reviewed-by: Christoph Hellwig <hch@lst.de>
----
- mm/filemap.c | 7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
-
-diff --git a/mm/filemap.c b/mm/filemap.c
-index 1694623..e08f3b9 100644
---- a/mm/filemap.c
-+++ b/mm/filemap.c
-@@ -2982,7 +2982,12 @@ ssize_t generic_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
- 	struct inode *inode = file->f_mapping->host;
- 	ssize_t ret;
- 
--	inode_lock(inode);
-+	if (!inode_trylock(inode)) {
-+		/* Don't sleep on inode rwsem */
-+		if (iocb->ki_flags & IOCB_NOWAIT)
-+			return -EAGAIN;
-+		inode_lock(inode);
-+	}
- 	ret = generic_write_checks(iocb, from);
- 	if (ret > 0)
- 		ret = __generic_file_write_iter(iocb, from);
--- 
-2.10.2
-
+Please make this a flag in the RWF_* namespace, and as a preparation
+support the existing RWF_* flags for aio.

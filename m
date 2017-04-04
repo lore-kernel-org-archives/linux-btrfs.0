@@ -1,89 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 67-129-172-163.rev.cloud.scaleway.com ([163.172.129.67]:51344
-        "EHLO mail1.sd85.net" rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1753503AbdDDN3S (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Apr 2017 09:29:18 -0400
-Subject: Re: Need some help: "BTRFS critical (device sda): corrupt leaf, slot
- offset bad: block"
-To: Robert Krig <robert.krig@render-wahnsinn.de>,
+Received: from frost.carfax.org.uk ([85.119.82.111]:45683 "EHLO
+        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753376AbdDDNs7 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Apr 2017 09:48:59 -0400
+Date: Tue, 4 Apr 2017 13:48:55 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Brian B <brian@sd85.net>
+Cc: Robert Krig <robert.krig@render-wahnsinn.de>,
         Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
         linux-btrfs@vger.kernel.org
+Subject: Re: Need some help: "BTRFS critical (device sda): corrupt leaf, slot
+ offset bad: block"
+Message-ID: <20170404134855.GB11512@carfax.org.uk>
 References: <635a5ca8-9fa5-6cd4-21b5-97f9f3db93d3@render-wahnsinn.de>
  <c304c651-88fc-4699-3518-c4e83095d9c0@mendix.com>
  <98a478cf-20f9-981f-6da5-4186a10be303@render-wahnsinn.de>
  <7f94b6b9-f18d-14dd-4a20-1793ce08df8a@render-wahnsinn.de>
  <36448783-672c-5e88-cdda-9a8679c4b4ad@render-wahnsinn.de>
-From: Brian B <brian@sd85.net>
-Message-ID: <0eda9836-a4ee-b666-2a05-b4bb26746b1a@sd85.net>
-Date: Tue, 4 Apr 2017 09:29:11 -0400
+ <0eda9836-a4ee-b666-2a05-b4bb26746b1a@sd85.net>
 MIME-Version: 1.0
-In-Reply-To: <36448783-672c-5e88-cdda-9a8679c4b4ad@render-wahnsinn.de>
-Content-Type: multipart/signed; micalg=pgp-sha512;
- protocol="application/pgp-signature";
- boundary="xABvVlUDxcN5bxETG04FuJLqCT4I5PJC0"
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="8P1HSweYDcXXzwPJ"
+In-Reply-To: <0eda9836-a4ee-b666-2a05-b4bb26746b1a@sd85.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---xABvVlUDxcN5bxETG04FuJLqCT4I5PJC0
-Content-Type: multipart/mixed; boundary="gKLjNk341sCFmXodWRCU3DRJb4RASHSan";
- protected-headers="v1"
-From: Brian B <brian@sd85.net>
-To: Robert Krig <robert.krig@render-wahnsinn.de>,
- Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
- linux-btrfs@vger.kernel.org
-Message-ID: <0eda9836-a4ee-b666-2a05-b4bb26746b1a@sd85.net>
-Subject: Re: Need some help: "BTRFS critical (device sda): corrupt leaf, slot
- offset bad: block"
-References: <635a5ca8-9fa5-6cd4-21b5-97f9f3db93d3@render-wahnsinn.de>
- <c304c651-88fc-4699-3518-c4e83095d9c0@mendix.com>
- <98a478cf-20f9-981f-6da5-4186a10be303@render-wahnsinn.de>
- <7f94b6b9-f18d-14dd-4a20-1793ce08df8a@render-wahnsinn.de>
- <36448783-672c-5e88-cdda-9a8679c4b4ad@render-wahnsinn.de>
-In-Reply-To: <36448783-672c-5e88-cdda-9a8679c4b4ad@render-wahnsinn.de>
 
---gKLjNk341sCFmXodWRCU3DRJb4RASHSan
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+--8P1HSweYDcXXzwPJ
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-On 04/04/2017 12:02 AM, Robert Krig wrote:
-> My storage array is BTRFS Raid1 with 4x8TB Drives.
-> Wouldn't it be possible to simply disconnect two of those drives, mount=
+On Tue, Apr 04, 2017 at 09:29:11AM -0400, Brian B wrote:
+> On 04/04/2017 12:02 AM, Robert Krig wrote:
+> > My storage array is BTRFS Raid1 with 4x8TB Drives.
+> > Wouldn't it be possible to simply disconnect two of those drives, mount
+> > with -o degraded and still have access (even if read-only) to all my data?
+> Just jumping on this point: my understanding of BTRFS "RAID1" is that
+> each file (block?) is randomly assigned to two disks of the array (no
 
-> with -o degraded and still have access (even if read-only) to all my da=
-ta?
-Just jumping on this point: my understanding of BTRFS "RAID1" is that
-each file (block?) is randomly assigned to two disks of the array (no
-matter how many disks are in the array).  So if you remove two disks,
-you will probably have files that were "assigned" to both of those
-disks, and will be missing.
+   Arbitrarily assigned, rather than randomly assigned (there is a
+deterministic algorithm for it, but it's wise not to rely on the exact
+behaviour of that algorithm, because there are a number of factors
+that can alter its behaviour).
 
-In short, you can't remove more than one disk of a BTRFS RAID1 and still
-have all of your data.
+> matter how many disks are in the array).  So if you remove two disks,
+> you will probably have files that were "assigned" to both of those
+> disks, and will be missing.
+> 
+> In short, you can't remove more than one disk of a BTRFS RAID1 and still
+> have all of your data.
 
+   Indeed.
 
---gKLjNk341sCFmXodWRCU3DRJb4RASHSan--
+   Hugo.
 
---xABvVlUDxcN5bxETG04FuJLqCT4I5PJC0
+-- 
+Hugo Mills             | Some days, it's just not worth gnawing through the
+hugo@... carfax.org.uk | straps
+http://carfax.org.uk/  |
+PGP: E2AB1DE4          |
+
+--8P1HSweYDcXXzwPJ
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-iQIcBAEBCgAGBQJY45+nAAoJEOrm+yJI9jqLatgQAL7YG95fthE5BBCdfw5nBzsu
-bEoVb34nTx3akkkjVaijq/ky1e114wfSHWlofnwh38ZFE7yS7m6L47IOcvwtfxmY
-6qzK5l0T7aeOXEt1/CKnzvMnM2BNrKLU9KYW+rbRwm42HoUQ3/t8BYX0wg05+NM/
-1OK+FK0ozlOJnm+Ve89dTSq2qzlpRq4w/wlBmVNScIlclNvSoK35mRSeZekdGXiG
-95OQQYRSEmcw4mQoD4/gjIYf0iwaT5giPzH4t0oEyx0pKfU4jzfpbSseNgvphTJs
-4lWsHDo0uswhm7TYMoQWZaHi3IHorQD1g2ZZtn7HeYz1H31YXsy7iSbLwSYf0Db4
-heCF9cTOzOV/bGHtt/E3XRg5Lx8wp53x2JEVU9szjYNLeB+e3EyTf8f6rPXPqapQ
-CoTNJ8AHA5yh6lJNbSSXq7NURxAHWBMDmFurLh/qSP47Ga927VAjYM24etzTBdyW
-c7RWJ4NMQZStzc/CfZTe1qVSJwp9l1SZPNazlkn78RElrIgb9of2K8/q/aT1jFZU
-arZucFPvPYWt0c/063D4LZ9KTMKxBi+WTTxv6CcLMHkpPvqQNAANon3pPaX7Tv1e
-ImpdyoHf5mOcD2phfePhy7ZVblu3WXYG0vhi5iBLPrqNJPTBJQ3uCCAd1rLT65Jm
-jR1dt0RojykeVkjRLLFe
-=Lhpl
+iQIcBAEBAgAGBQJY46RHAAoJEFheFHXiqx3kvh4QALAh2pWhv+Cr6GvjCicChwTt
+ULsFJEJpN24qi9IyQN2K+RRqsmD7dLs2XvJs6JT6lqxp+WaOfYt+sRVj2+93pZ3B
+CJNwjq0f46Ht1oLqDz7Jy0ICtKDAu6IgwVRM8n180Nd6+hDtRM9EanxUdwpYoU33
+/O7VW33qU1WLaK+YR569F7bmbYgo5x5wWLtdQ6i+HccQht0sVEdH+XCwFHDC/aDB
+W1y8EN03//Ko0aBj+rqJJG45JO76UWB2Pjj0ZJNJJ3qQTb34qvxX1cjVIq2UWHS8
+mdzVZFjJ/lP0F/YG6wwzX6dVxc3FMB+zzrAcK7tuUMN4X+nK3LtgwFM9dXTYlqxY
+6+fPEiLpO0mmpBY8ZJ+fSPcClcDPps8t9obChgunRyeKp5QDjbrctp3P6f15BRZp
+YbuOb+LEjGqtfc+qaE1ZhVJwTmpS4VuoAYx5EoNe1F6JBgrnZZOg0wsMljskxpzj
+C1KhjxC/SptIboBK0Lu2QC2ub83tkVX3zcrGv1htp8kX6eW9Edc8tyaviSmC88jj
+Joo10P6+XCJdNQfMrXfI29Upi7Z3YbVNiJA+Gkkdk1JtQLs9hr0KBx1NmUNnwaww
+FuF5jW7tKIxmzijmMuupBDS+9OxkSlwX1S1U/EQ74roySIyFEDvd3F/xeZm3LI64
+La3uz40o7JK0jToJMN0N
+=O1Ot
 -----END PGP SIGNATURE-----
 
---xABvVlUDxcN5bxETG04FuJLqCT4I5PJC0--
+--8P1HSweYDcXXzwPJ--

@@ -1,71 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:42306 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1755421AbdDEOJu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 5 Apr 2017 10:09:50 -0400
-Date: Wed, 5 Apr 2017 16:09:05 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH v2] btrfs: check if the device is flush capable
-Message-ID: <20170405140904.GI4781@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170404104144.9414-1-anand.jain@oracle.com>
- <20170405034834.20503-1-anand.jain@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170405034834.20503-1-anand.jain@oracle.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:40459 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753720AbdDDKgp (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Apr 2017 06:36:45 -0400
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH] btrfs: check if the device is flush capable
+Date: Tue,  4 Apr 2017 18:41:44 +0800
+Message-Id: <20170404104144.9414-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 05, 2017 at 11:48:34AM +0800, Anand Jain wrote:
-> The blkdev_issue_flush() will check if the write cache is enabled
-> before submitting the flush. This will add a code to fail fast if
-> its not.
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
-> v1:
->   This patch will replace
->   [PATCH] btrfs: delete unused member nobarriers
-> 
-> v2:
->   - This patch will now _not_ replace the below patch and this patch
->   should be applied on top of it.
->     [PATCH] btrfs: delete unused member nobarriers
->   That's because, Q wc flag is not static, so we can't save its
->   state into nobarries.
+blkdev_issue_flush() or the empty buffer with the flag REQ_PREFLUSH
+will never return BIO_EOPNOTSUPP as of now, however it should rather
+or it may in future. So for now the BTRFS to have least affected by
+this change at the blk layer, we can check if the device is flush
+capable.
 
-Now I'm confused what's the last version of the device flush patches,
-please, this one is marked as V2 and has the same subject, yet does
-something completely different. Please resend the relevant patches in a
-series, we might need another round of review afterward.
+In this process, I rename the unused nobarrier member as flushable,
+which the below patch made it redundant.
 
->   - commit log is updated.
-> 
->  fs/btrfs/disk-io.c | 5 +++++
->  1 file changed, 5 insertions(+)
-> 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index b6d047250ce2..bb5816c7f5c4 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -3517,6 +3517,11 @@ static void btrfs_dev_issue_flush(struct work_struct *work)
->   */
->  static int write_dev_flush(struct btrfs_device *device, int wait)
->  {
-> +	struct request_queue *q = bdev_get_queue(device->bdev);
-> +
-> +	if (!test_bit(QUEUE_FLAG_WC, &q->queue_flags))
-> +		return 0;
-> +
->  	if (wait) {
->  		int ret;
->  
-> -- 
-> 2.10.0
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Per commit b25de9d6da49b1a8760a89672283128aa8c78345
+   block: remove BIO_EOPNOTSUPP
+
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+v1:
+  This patch will replace
+  [PATCH] btrfs: delete unused member nobarriers
+
+
+ fs/btrfs/disk-io.c | 2 +-
+ fs/btrfs/volumes.c | 6 ++++++
+ fs/btrfs/volumes.h | 2 +-
+ 3 files changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 3c476b118440..6c15f5685d25 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3517,7 +3517,7 @@ static void btrfs_dev_issue_flush(struct work_struct *work)
+  */
+ static int write_dev_flush(struct btrfs_device *device, int wait)
+ {
+-	if (device->nobarriers)
++	if (!device->flushable)
+ 		return 0;
+ 
+ 	if (wait) {
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 4de5b2d549bd..3c5142d66260 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1010,6 +1010,8 @@ static int __btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
+ 			device->can_discard = 1;
+ 		if (!blk_queue_nonrot(q))
+ 			fs_devices->rotating = 1;
++		if (test_bit(QUEUE_FLAG_WC, &q->queue_flags))
++			device->flushable = true;
+ 
+ 		device->bdev = bdev;
+ 		device->in_fs_metadata = 0;
+@@ -2377,6 +2379,8 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+ 	q = bdev_get_queue(bdev);
+ 	if (blk_queue_discard(q))
+ 		device->can_discard = 1;
++	if (test_bit(QUEUE_FLAG_WC, &q->queue_flags))
++		device->flushable = true;
+ 	device->writeable = 1;
+ 	device->generation = trans->transid;
+ 	device->io_width = fs_info->sectorsize;
+@@ -2580,6 +2584,8 @@ int btrfs_init_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
+ 	q = bdev_get_queue(bdev);
+ 	if (blk_queue_discard(q))
+ 		device->can_discard = 1;
++	if (test_bit(QUEUE_FLAG_WC, &q->queue_flags))
++		device->flushable = true;
+ 	mutex_lock(&fs_info->fs_devices->device_list_mutex);
+ 	device->writeable = 1;
+ 	device->generation = 0;
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 0df50bc65578..bbaf5238b6ca 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -123,7 +123,7 @@ struct btrfs_device {
+ 	struct list_head resized_list;
+ 
+ 	/* for sending down flush barriers */
+-	int nobarriers;
++	bool flushable;
+ 	struct completion flush_wait;
+ 	struct work_struct flush_work;
+ 	int last_flush_error;
+-- 
+2.10.0
+

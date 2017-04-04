@@ -1,111 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:34215 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752529AbdDKBoM (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 Apr 2017 21:44:12 -0400
-Subject: Re: [PATCH v2 8/9] btrfs: qgroup: Introduce extent changeset for
- qgroup reserve functions
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-References: <20170313075216.5125-1-quwenruo@cn.fujitsu.com>
- <20170313075216.5125-9-quwenruo@cn.fujitsu.com>
- <20170407120025.GT4781@twin.jikos.cz>
- <e97cbe28-1333-22bc-357b-570b4e865ec5@cn.fujitsu.com>
- <20170410140025.GZ4781@suse.cz> <20170410141430.GA4781@suse.cz>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <0645fb36-be0b-c598-78be-36484589da7a@cn.fujitsu.com>
-Date: Tue, 11 Apr 2017 09:44:03 +0800
-MIME-Version: 1.0
-In-Reply-To: <20170410141430.GA4781@suse.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Received: from mail.kernel.org ([198.145.29.136]:48208 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753075AbdDDOJe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 4 Apr 2017 10:09:34 -0400
+Received: from mail.kernel.org (localhost [127.0.0.1])
+        by mail.kernel.org (Postfix) with ESMTP id 1652F20120
+        for <linux-btrfs@vger.kernel.org>; Tue,  4 Apr 2017 14:09:33 +0000 (UTC)
+Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 9578720117
+        for <linux-btrfs@vger.kernel.org>; Tue,  4 Apr 2017 14:09:31 +0000 (UTC)
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: fix extent map leak during fallocate error path
+Date: Tue,  4 Apr 2017 03:20:36 +0100
+Message-Id: <1491272436-11127-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Filipe Manana <fdmanana@suse.com>
 
+If the call to btrfs_qgroup_reserve_data() failed, we were leaking an
+extent map structure. The failure can happen either due to an -ENOMEM
+condition or, when quotas are enabled, due to -EDQUOT for example.
 
-At 04/10/2017 10:14 PM, David Sterba wrote:
-> On Mon, Apr 10, 2017 at 04:00:25PM +0200, David Sterba wrote:
->> On Mon, Apr 10, 2017 at 09:25:18AM +0800, Qu Wenruo wrote:
->>>
->>>
->>> At 04/07/2017 08:00 PM, David Sterba wrote:
->>>> On Mon, Mar 13, 2017 at 03:52:15PM +0800, Qu Wenruo wrote:
->>>>> @@ -3355,12 +3355,14 @@ static int cache_save_setup(struct btrfs_block_group_cache *block_group,
->>>>>   	struct btrfs_fs_info *fs_info = block_group->fs_info;
->>>>>   	struct btrfs_root *root = fs_info->tree_root;
->>>>>   	struct inode *inode = NULL;
->>>>> +	struct extent_changeset data_reserved;
->>>>
->>>> Size of this structure is 40 bytes, and it's being added to many
->>>> functions. This will be noticeable on the stack consumption.
->>>>
->>>> -extent-tree.c:btrfs_check_data_free_space              40 static
->>>> -extent-tree.c:cache_save_setup                         96 static
->>>> +extent-tree.c:btrfs_check_data_free_space              48 static
->>>> +extent-tree.c:cache_save_setup                         136 static
->>>> -file.c:__btrfs_buffered_write                          192 static
->>>> +file.c:__btrfs_buffered_write                          232 static
->>>> -file.c:btrfs_fallocate                                 208 static
->>>> +file.c:btrfs_fallocate                                 248 static
->>>> -inode-map.c:btrfs_save_ino_cache                       112 static
->>>> +inode-map.c:btrfs_save_ino_cache                       152 static
->>>> -inode.c:btrfs_direct_IO                                128 static
->>>> +inode.c:btrfs_direct_IO                                176 static
->>>> -inode.c:btrfs_writepage_fixup_worker                   88 static
->>>> +inode.c:btrfs_writepage_fixup_worker                   128 static
->>>> -inode.c:btrfs_truncate_block                           136 static
->>>> +inode.c:btrfs_truncate_block                           176 static
->>>> -inode.c:btrfs_page_mkwrite                             112 static
->>>> +inode.c:btrfs_page_mkwrite                             152 static
->>>> +ioctl.c:cluster_pages_for_defrag                       200 static
->>>> -ioctl.c:btrfs_defrag_file                              312 static
->>>> +ioctl.c:btrfs_defrag_file                              232 static
->>>> -qgroup.c:btrfs_qgroup_reserve_data                     136 static
->>>> +qgroup.c:btrfs_qgroup_reserve_data                     128 static
->>>> -relocation.c:prealloc_file_extent_cluster              152 static
->>>> +relocation.c:prealloc_file_extent_cluster              192 static
->>>>
->>>> There are generic functions so this will affect non-qgroup workloads as
->>>> well. So there need to be a dynamic allocation (which would add another
->>>> point of failure), or reworked in another way.
->>>
->>> Well, I'll try to rework this to allocate extent_changeset inside
->>> btrfs_qgroup_reserve_data(), so that callers only need extra 8 bytes
->>> stack space, and no need to introduce extra error handlers.
->>
->> So this still requires the dynamic allocation, on various call paths,
->> that's what I object against most at the moment.
-> 
-> I get that we cannot easily avoid using the extent_changeset, so we'll
-> end up one way or another, the stack conservation has slight preference.
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/file.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-Yes, I understand dynamic allocation can complicate the error handler.
-
-But the allocation inside btrfs_qgroup_reserve_data() could reduce the 
-impact. And bring less compact to qgroup disabled case.
-(So btrfs_qgroup_reserve_data() accepts struct extent_changeset ** other 
-than struct extent_changeset *)
-
-The code to be modified should be at the same level as current patch.
-Mostly change extent_changeset_release() to extent_changeset_free().
-
-
-So overall the impact is not that huge, unless current error handlers 
-already have some problems.
-
-Personally speaking I'm OK either way.
-
-Do I need to build a temporary branch/patchset for your evaluation?
-
-Thanks,
-Qu
-
-
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
-
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 48dfb8e..56304c4 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2856,8 +2856,10 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 			}
+ 			ret = btrfs_qgroup_reserve_data(inode, cur_offset,
+ 					last_byte - cur_offset);
+-			if (ret < 0)
++			if (ret < 0) {
++				free_extent_map(em);
+ 				break;
++			}
+ 		} else {
+ 			/*
+ 			 * Do not need to reserve unwritten extent for this
+-- 
+2.7.0.rc3
 

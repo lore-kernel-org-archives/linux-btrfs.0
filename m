@@ -1,255 +1,118 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:52038 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752969AbdDEBlG (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Apr 2017 21:41:06 -0400
-Subject: Re: [PATCH] fstests: btrfs: Check if btrfs will create
- inline-then-regular file extents
-To: Eryu Guan <eguan@redhat.com>
-References: <20170403030139.7677-1-quwenruo@cn.fujitsu.com>
- <20170405012723.GR22845@eguan.usersys.redhat.com>
-CC: <linux-btrfs@vger.kernel.org>, <fstests@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <8917565b-8586-7ef8-36da-4884f587d658@cn.fujitsu.com>
-Date: Wed, 5 Apr 2017 09:40:51 +0800
+Received: from mx2.suse.de ([195.135.220.15]:44655 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751004AbdDEBoP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 4 Apr 2017 21:44:15 -0400
+From: NeilBrown <neil@brown.name>
+To: "J. Bruce Fields" <bfields@fieldses.org>, Jeff Layton <jlayton@redhat.com>
+Date: Wed, 05 Apr 2017 11:43:32 +1000
+Cc: Jan Kara <jack@suse.cz>, Christoph Hellwig <hch@infradead.org>,
+        linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-nfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org
+Subject: Re: [RFC PATCH v1 00/30] fs: inode->i_version rework and optimization
+In-Reply-To: <20170404183138.GC14303@fieldses.org>
+References: <20170321163011.GA16666@fieldses.org> <1490117004.2542.1.camel@redhat.com> <20170321183006.GD17872@fieldses.org> <1490122013.2593.1.camel@redhat.com> <20170329111507.GA18467@quack2.suse.cz> <1490810071.2678.6.camel@redhat.com> <20170330064724.GA21542@quack2.suse.cz> <1490872308.2694.1.camel@redhat.com> <20170330161231.GA9824@fieldses.org> <1490898932.2667.1.camel@redhat.com> <20170404183138.GC14303@fieldses.org>
+Message-ID: <878tnfiq7v.fsf@notabene.neil.brown.name>
 MIME-Version: 1.0
-In-Reply-To: <20170405012723.GR22845@eguan.usersys.redhat.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: multipart/signed; boundary="=-=-=";
+        micalg=pgp-sha256; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+--=-=-=
+Content-Type: text/plain
+Content-Transfer-Encoding: quoted-printable
 
+On Tue, Apr 04 2017, J. Bruce Fields wrote:
 
-At 04/05/2017 09:27 AM, Eryu Guan wrote:
-> On Mon, Apr 03, 2017 at 11:01:39AM +0800, Qu Wenruo wrote:
->> Btrfs allows inline file extent if and only if
->> 1) It's at offset 0
->> 2) It's smaller than min(max_inline, page_size)
->>    Although we don't specify if the size is before compression or after
->>    compression.
->>    At least according to current behavior, we are only limiting the size
->>    after compression.
->> 3) It's the only file extent
->>    So that if we append existing inline extent, it should be converted
->>    to regular file extents.
->>
->> However several users in btrfs mail list have reported invalid inline
->> file extent, which only meets the first two condition, but with regular
->> file extents follows.
->>
->> The bug is here for a long long time, so long that we have modified
->> kernel and btrfs-progs to accept such case, but it's still not designed
->> behavior, and must be detected and fixed.
->>
->> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> On Thu, Mar 30, 2017 at 02:35:32PM -0400, Jeff Layton wrote:
+>> On Thu, 2017-03-30 at 12:12 -0400, J. Bruce Fields wrote:
+>> > On Thu, Mar 30, 2017 at 07:11:48AM -0400, Jeff Layton wrote:
+>> > > On Thu, 2017-03-30 at 08:47 +0200, Jan Kara wrote:
+>> > > > Because if above is acceptable we could make reported i_version to=
+ be a sum
+>> > > > of "superblock crash counter" and "inode i_version". We increment
+>> > > > "superblock crash counter" whenever we detect unclean filesystem s=
+hutdown.
+>> > > > That way after a crash we are guaranteed each inode will report new
+>> > > > i_version (the sum would probably have to look like "superblock cr=
+ash
+>> > > > counter" * 65536 + "inode i_version" so that we avoid reusing poss=
+ible
+>> > > > i_version numbers we gave away but did not write to disk but still=
+...).
+>> > > > Thoughts?
+>> >=20
+>> > How hard is this for filesystems to support?  Do they need an on-disk
+>> > format change to keep track of the crash counter?  Maybe not, maybe the
+>> > high bits of the i_version counters are all they need.
+>> >=20
+>>=20
+>> Yeah, I imagine we'd need a on-disk change for this unless there's
+>> something already present that we could use in place of a crash counter.
 >
-> Better to have btrfs developers review this too to see if it's a valid
-> test. Some comments inline from fstests perspective of view.
->
->> ---
->>  tests/btrfs/140     | 124 ++++++++++++++++++++++++++++++++++++++++++++++++++++
->>  tests/btrfs/140.out |   2 +
->>  tests/btrfs/group   |   1 +
->>  3 files changed, 127 insertions(+)
->>  create mode 100755 tests/btrfs/140
->>  create mode 100644 tests/btrfs/140.out
->>
->> diff --git a/tests/btrfs/140 b/tests/btrfs/140
->> new file mode 100755
->> index 0000000..139df76
->> --- /dev/null
->> +++ b/tests/btrfs/140
->> @@ -0,0 +1,124 @@
->> +#! /bin/bash
->> +# FS QA Test 140
->> +#
->> +# Check if btrfs will create inline-then-regular file layout.
->> +#
->> +# Btrfs only allows inline file extent if file is small enough, and any
->> +# incoming write enlarges the file beyong max_inline should replace inline
->> +# extents with regular extents.
->> +# This is a long standing bug, so fsck won't detect it and kernel will allow
->> +# normal read on it, but should be avoided.
->> +#
->> +#-----------------------------------------------------------------------
->> +# Copyright (c) 2017 Fujitsu.  All Rights Reserved.
->> +#
->> +# This program is free software; you can redistribute it and/or
->> +# modify it under the terms of the GNU General Public License as
->> +# published by the Free Software Foundation.
->> +#
->> +# This program is distributed in the hope that it would be useful,
->> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
->> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
->> +# GNU General Public License for more details.
->> +#
->> +# You should have received a copy of the GNU General Public License
->> +# along with this program; if not, write the Free Software Foundation,
->> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
->> +#-----------------------------------------------------------------------
->> +#
->> +
->> +seq=`basename $0`
->> +seqres=$RESULT_DIR/$seq
->> +echo "QA output created by $seq"
->> +
->> +here=`pwd`
->> +tmp=/tmp/$$
->> +status=1	# failure is the default!
->> +trap "_cleanup; exit \$status" 0 1 2 3 15
->> +
->> +_cleanup()
->> +{
->> +	cd /
->> +	rm -f $tmp.*
->> +}
->> +
->> +# get standard environment, filters and checks
->> +. ./common/rc
->> +. ./common/filter
->> +
->> +# remove previous $seqres.full before test
->> +rm -f $seqres.full
->> +
->> +# real QA test starts here
->> +
->> +# Modify as appropriate.
->> +_supported_fs btrfs
->> +_supported_os Linux
->> +_require_scratch
->> +_require_btrfs_command inspect-internal dump-tree
->> +
->> +inline_size=2048
->> +page_size=$(get_page_size)
->> +src_subv="$SCRATCH_MNT/src"
->> +dst_subv="$SCRATCH_MNT/dst"
->> +runtime=$(($LOAD_FACTOR * 8))	#The possibility is over 80%, just in case
->
-> This confused me a bit, I thought test would run for $runtime seconds
-> and wanted to suggest s/LOAD_FACTOR/TIME_FACTOR, but runtime is really a
-> loop counter. Mind renaming it to something more obvious, like
-> loop_count?
->
->> +corrupted=0
->> +
->> +do_test()
->> +{
->> +	local ret
->> +	_scratch_mkfs > /dev/null >&1
->                                  ^^^^ meant 2>&1 ?
->> +
->> +	# specify max_inline and compress explicitly to create
->> +	# inlined compressed extent
->> +	_scratch_mount "-o max_inline=$inline_size,compress"
->> +	
->
-> Whitespace issue in above line.
->
->> +	# Subvolume id=257
->> +	_run_btrfs_util_prog subvolume create $src_subv
->> +
->> +	# Page sized data will be compressed to quite small size,
->> +	# which is about 50 bytes for 4K, 100 bytes for 64K,
->> +	# far smaller than $inline_size, causing a inlined compressed
->> +	# file extent
->> +	xfs_io -f -c "pwrite 0 $page_size" $src_subv/file > /dev/null
->> +	sync
->
-> $XFS_IO_PROG and use '-c fsync' to sync the file.
+> We could consider using the current time instead.  So, put the current
+> time (or time of last boot, or this inode's ctime, or something) in the
+> high bits of the change attribute, and keep the low bits as a counter.
 
-What about syncfs? As I don't want log tree of btrfs to get involved in 
-this case.
+This is a very different proposal.
+I don't think Jan was suggesting that the i_version be split into two
+bit fields, one the change-counter and one the crash-counter.
+Rather, the crash-counter was multiplied by a large-number and added to
+the change-counter with the expectation that while not ever
+change-counter landed on disk, at least 1 in every large-number would.
+So after each crash we effectively add large-number to the
+change-counter, and can be sure that number hasn't been used already.
 
->
->> +
->> +	# Subvolume id=258
->> +	_run_btrfs_util_prog subvolume snapshot $src_subv $dst_subv
->> +	
->
-> Whitespace issue.
->
->> +	# Append another page to file in snapshot, since its offset is not
->> +	# 0, it will cause regular extent, and should convert inline extent
->> +	# to regular too.
->> +	xfs_io -c "pwrite $page_size $page_size" $dst_subv/file > /dev/null
->
-> $XFS_IO_PROG
->
->> +	_scratch_unmount
->> +
->> +	# Fsck won't report inline-then-regular as error, as it's so long
->> +	# standing that we have no choice but to accept.
->> +	# So here we use dump-tree to catch inline extent of $dst_subv, and
->> +	# we need piping stdout, call btrfs-progs directly
->> +	$BTRFS_UTIL_PROG inspect-internal dump-tree -t 258 $SCRATCH_DEV \
->> +		> $tmp.dump_tree
->> +	if [[ $(cat $tmp.dump_tree | grep inline) ]]; then
->
-> if grep -q inline $tmp.dump_tree; then
->
->> +		cat $tmp.dump_tree >> $seqres.full
->> +		echo "Invalid inline file extent detected"
->> +		return 1
->> +	fi
->> +	return 0
->> +}
->> +
->> +for i in $(seq 1 $runtime); do
->> +	do_test
->> +	if [ $? -ne 0 ]; then
->> +		corrupted=$(($corrupted + 1))
->> +	fi
->> +done
->> +
->> +if [ $corrupted -ne 0 ]; then
->> +	echo "Corruption possibility: $corrupted/$runtime" >> $seqres.full
->> +fi
->
-> Hmm, I don't think $corrupted is needed, just echo the message to
-> $seqres.full unconditionally would be fine.
+To store the crash-counter in each inode (which does appeal) you would
+need to be able to remove it before adding the new crash counter, and
+that requires bit-fields.  Maybe there are enough bits.
 
-I'll update the test case.
+If you want to ensure read-only files can remain cached over a crash,
+then you would have to mark a file in some way on stable storage
+*before* allowing any change.
+e.g. you could use the lsb.  Odd i_versions might have been changed
+recently and crash-count*large-number needs to be added.
+Even i_versions have not been changed recently and nothing need be
+added.
 
-Thanks for the review,
-Qu
+If you want to change a file with an even i_version, you subtract
+  crash-count*large-number
+to the i_version, then set lsb.  This is written to stable storage before
+the change.
 
->
-> Thanks,
-> Eryu
->
->> +
->> +echo "Silence is golden"
->> +
->> +# success, all done
->> +status=0
->> +exit
->> diff --git a/tests/btrfs/140.out b/tests/btrfs/140.out
->> new file mode 100644
->> index 0000000..24e90bc
->> --- /dev/null
->> +++ b/tests/btrfs/140.out
->> @@ -0,0 +1,2 @@
->> +QA output created by 140
->> +Silence is golden
->> diff --git a/tests/btrfs/group b/tests/btrfs/group
->> index 641d826..e4c76e3 100644
->> --- a/tests/btrfs/group
->> +++ b/tests/btrfs/group
->> @@ -142,3 +142,4 @@
->>  137 auto quick send
->>  138 auto compress
->>  139 auto qgroup
->> +140 auto
->> --
->> 2.9.3
->>
->>
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe fstests" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
+If a file has not been changed for a while, you can add
+  crash-count*large-number
+and clear lsb.
 
+The lsb of the i_version would be for internal use only.  It would not
+be visible outside the filesystem.
 
+It feels a bit clunky, but I think it would work and is the best
+combination of Jan's idea and your requirement.
+The biggest cost would be switching to 'odd' before an changes, and the
+unknown is when does it make sense to switch to 'even'.
+
+NeilBrown
+
+--=-=-=
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAEBCAAdFiEEG8Yp69OQ2HB7X0l6Oeye3VZigbkFAljkS8QACgkQOeye3VZi
+gbkEew/+LjFJkps8C1ykYzvNTJnQz71/KAMlwAirXb191+tJhCrnBGiZi0N5TISN
+vteNSIVsKg2qZnoSPHprjNTDC3zUMf8dwBmPGh8p0RkR8pirj0FaZr71rQPv1WFN
+BaKj1BKrznHIMsp0/IAEGWcuMxGX4l0ufuYEcHclkahnzP2zb1fNKQf0wEQ2AquY
+TdQwa8crm/dZqNUDBdFACSLjCyHJW6TcSfDztsiSkB2xf9+DRakm3jtxnFwWgseg
+OEkDfVwQGaBIL6tJ14ojg4QrK+Jh/2+QdN24+agiS0pfbp89AC4WjCscjsHOhABB
+gqyjHVN7kLIGGhLfUabZ0qERSYbsk6uTHT9AA0QzomFMJSrME2Iz5zTBeRPVknr5
+FW4ShOaWdl+YMes6MDDLp6suCC1i0GZIVQrH+L5TFzwCCSRAjsTHNMP0b+V0tytG
+GnVYX+fec1GS3pcQTP2CX8ukiVyKhlfZMYhX3L+v/0uZXMszOqNV2WwSQBSz3yKv
+qoa0HhkBdq9h9SgycsTGMg2t+GBNLRNyI2XKYuQ3zLW1bX62e+tAFCzx++2QnuYd
+IQMWjuw1EpJIqQctzAQYF7zXZG13jVjACO3dTvSXStXcmmzc9aMNO6m7JIhhFIBT
+mBnvC+5xXW8oI/oxQmN/+O7zZIvFmQRouQ9DAUVMM9SDX28O+jo=
+=ZdEy
+-----END PGP SIGNATURE-----
+--=-=-=--

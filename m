@@ -1,52 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:18718 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751833AbdDCUrI (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Apr 2017 16:47:08 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] Btrfs: cleanup submit_one_bio
-Date: Mon,  3 Apr 2017 13:45:47 -0700
-Message-Id: <1491252347-3827-1-git-send-email-bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:53457 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753454AbdDELzZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 5 Apr 2017 07:55:25 -0400
+Date: Wed, 5 Apr 2017 13:54:39 +0200
+From: David Sterba <dsterba@suse.cz>
+To: fdmanana@kernel.org
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix extent map leak during fallocate error path
+Message-ID: <20170405115439.GA4781@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1491272436-11127-1-git-send-email-fdmanana@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1491272436-11127-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-@bio_offset is passed into submit_bio_hook and is used at
-btrfs_wq_submit_bio(), but only dio code makes use of @bio_offset, so
-remove other dead code.
+On Tue, Apr 04, 2017 at 03:20:36AM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> If the call to btrfs_qgroup_reserve_data() failed, we were leaking an
+> extent map structure. The failure can happen either due to an -ENOMEM
+> condition or, when quotas are enabled, due to -EDQUOT for example.
+> 
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-Cc: David Sterba <dsterba@suse.cz>
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/extent_io.c | 7 +------
- 1 file changed, 1 insertion(+), 6 deletions(-)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 7b5139d..79f38e6a 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2746,19 +2746,14 @@ static int __must_check submit_one_bio(struct bio *bio, int mirror_num,
- 				       unsigned long bio_flags)
- {
- 	int ret = 0;
--	struct bio_vec *bvec = bio->bi_io_vec + bio->bi_vcnt - 1;
--	struct page *page = bvec->bv_page;
- 	struct extent_io_tree *tree = bio->bi_private;
--	u64 start;
--
--	start = page_offset(page) + bvec->bv_offset;
- 
- 	bio->bi_private = NULL;
- 	bio_get(bio);
- 
- 	if (tree->ops)
- 		ret = tree->ops->submit_bio_hook(page->mapping->host, bio,
--					   mirror_num, bio_flags, start);
-+					   mirror_num, bio_flags, 0);
- 	else
- 		btrfsic_submit_bio(bio);
- 
--- 
-2.5.5
-
+Reviewed-by: David Sterba <dsterba@suse.com>

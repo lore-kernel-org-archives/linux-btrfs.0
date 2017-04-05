@@ -1,281 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:17741 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751094AbdDECmy (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Apr 2017 22:42:54 -0400
-Subject: Re: [PATCH] fstests: generic: Check if cycle mount and sleep can
- affect fiemap result
-To: Eryu Guan <eguan@redhat.com>
-References: <20170403070923.18518-1-quwenruo@cn.fujitsu.com>
- <20170405023526.GS22845@eguan.usersys.redhat.com>
-CC: <linux-btrfs@vger.kernel.org>, <fstests@vger.kernel.org>,
-        <linux-ext4@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <30a56575-ce59-a16b-c353-be1ecb6bb327@cn.fujitsu.com>
-Date: Wed, 5 Apr 2017 10:42:45 +0800
+Received: from mail.render-wahnsinn.de ([188.40.36.198]:40398 "EHLO
+        mail.render-wahnsinn.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751891AbdDEGHZ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Apr 2017 02:07:25 -0400
+Received: from localhost (localhost.localdomain [127.0.0.1])
+        by mail.render-wahnsinn.de (Postfix) with ESMTP id 0F7D8226E4E
+        for <linux-btrfs@vger.kernel.org>; Wed,  5 Apr 2017 08:06:23 +0200 (CEST)
+Received: from mail.render-wahnsinn.de ([127.0.0.1])
+        by localhost (mail.render-wahnsinn.de [127.0.0.1]) (amavisd-new, port 10024)
+        with LMTP id Pgt9UhuJBMS5 for <linux-btrfs@vger.kernel.org>;
+        Wed,  5 Apr 2017 08:06:10 +0200 (CEST)
+Received: from [192.168.2.61] (x590d0cc4.dyn.telefonica.de [89.13.12.196])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.render-wahnsinn.de (Postfix) with ESMTPSA id 8EDC5226D6E
+        for <linux-btrfs@vger.kernel.org>; Wed,  5 Apr 2017 08:06:09 +0200 (CEST)
+Subject: Re: Need some help: "BTRFS critical (device sda): corrupt leaf, slot
+ offset bad: block"
+References: <635a5ca8-9fa5-6cd4-21b5-97f9f3db93d3@render-wahnsinn.de>
+ <c304c651-88fc-4699-3518-c4e83095d9c0@mendix.com>
+ <98a478cf-20f9-981f-6da5-4186a10be303@render-wahnsinn.de>
+ <7f94b6b9-f18d-14dd-4a20-1793ce08df8a@render-wahnsinn.de>
+ <36448783-672c-5e88-cdda-9a8679c4b4ad@render-wahnsinn.de>
+ <CAJCQCtRHgQrpijWgNigYZJsM-UxSpVfs0DWk2rbwmdPCeB+Qug@mail.gmail.com>
+ <CAJCQCtQ6ern7jJ92Z3yhzEOYW_s9iNnh6LD+tJz9m-y-nKjL9Q@mail.gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: Robert Krig <robert.krig@render-wahnsinn.de>
+Message-ID: <79afeed3-d743-6951-aab1-6846b2accccb@render-wahnsinn.de>
+Date: Wed, 5 Apr 2017 08:07:08 +0200
 MIME-Version: 1.0
-In-Reply-To: <20170405023526.GS22845@eguan.usersys.redhat.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <CAJCQCtQ6ern7jJ92Z3yhzEOYW_s9iNnh6LD+tJz9m-y-nKjL9Q@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
+To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-At 04/05/2017 10:35 AM, Eryu Guan wrote:
-> On Mon, Apr 03, 2017 at 03:09:23PM +0800, Qu Wenruo wrote:
->> As long as we don't modify the on-disk data, fiemap result should always
->> be constant.
->>
->> Operation like cycle mount and sleep should not affect fiemap result.
->> While unfortunately, btrfs doesn't follow that behavior.
->>
->> Btrfs fiemap sometimes return merged result, while after cycle mount, it
->> returns split result. Furthermore after a snap, btrfs returns merged
->> result again.
->>
->> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+On 04.04.2017 18:55, Chris Murphy wrote:
+> On Tue, Apr 4, 2017 at 10:52 AM, Chris Murphy <lists@colorremedies.com> wrote:
 >
-> Test fails with ext3/2 when driving with ext4 driver, fiemap changed
-> after umount/mount cycle, then changed back to original result after
-> sleeping some time. An ext4 bug? (cc'ed linux-ext4 list.)
-
-It's good to know this test case can already detect hidden bug of other fs.
-
 >
-> === Fiemap after dsync write and sleep ===
-> /vda6/file:
->  EXT: FILE-OFFSET      BLOCK-RANGE      TOTAL FLAGS
->    0: [0..127]:        12288..12415       128 0x1000
->    1: [128..255]:      12160..12287       128 0x1000
->    2: [256..511]:      16384..16639       256 0x1000
->    3: [512..2047]:     16896..18431      1536 0x1000
->    4: [2048..4095]:    19456..21503      2048 0x1001
-> === Fiemap after cycle mount ===
-> /vda6/file:
->  EXT: FILE-OFFSET      BLOCK-RANGE      TOTAL FLAGS
->    0: [0..95]:         12288..12383        96 0x1000
->    1: [96..127]:       12384..12415        32 0x1000
->
-> [0-127] was split to two extents
->
->    2: [128..255]:      12160..12287       128 0x1000
->    3: [256..511]:      16384..16639       256 0x1000
->    4: [512..2047]:     16896..18431      1536 0x1000
->    5: [2048..4095]:    19456..21503      2048 0x1001
-> === Fiemap after cycle mount and sleep ===
-> /vda6/file:
->  EXT: FILE-OFFSET      BLOCK-RANGE      TOTAL FLAGS
->    0: [0..127]:        12288..12415       128 0x1000
->    1: [128..255]:      12160..12287       128 0x1000
->    2: [256..511]:      16384..16639       256 0x1000
->    3: [512..2047]:     16896..18431      1536 0x1000
->    4: [2048..4095]:    19456..21503      2048 0x1001
->
->> ---
->>  tests/generic/422     | 127 ++++++++++++++++++++++++++++++++++++++++++++++++++
->>  tests/generic/422.out |   2 +
->>  tests/generic/group   |   1 +
->>  3 files changed, 130 insertions(+)
->>  create mode 100755 tests/generic/422
->>  create mode 100644 tests/generic/422.out
->>
->> diff --git a/tests/generic/422 b/tests/generic/422
->> new file mode 100755
->> index 0000000..4ca4476
->> --- /dev/null
->> +++ b/tests/generic/422
->> @@ -0,0 +1,127 @@
->> +#! /bin/bash
->> +# FS QA Test 422
->> +#
->> +# Test if a file system returns constant fiemap result after remount and
->> +# fiemap.
->> +# Unfortunately, btrfs doesn't follow this behavior.
->> +#
->> +#-----------------------------------------------------------------------
->> +# Copyright (c) 2017 Fujitsu.  All Rights Reserved.
->> +#
->> +# This program is free software; you can redistribute it and/or
->> +# modify it under the terms of the GNU General Public License as
->> +# published by the Free Software Foundation.
->> +#
->> +# This program is distributed in the hope that it would be useful,
->> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
->> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
->> +# GNU General Public License for more details.
->> +#
->> +# You should have received a copy of the GNU General Public License
->> +# along with this program; if not, write the Free Software Foundation,
->> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
->> +#-----------------------------------------------------------------------
->> +#
->> +
->> +seq=`basename $0`
->> +seqres=$RESULT_DIR/$seq
->> +echo "QA output created by $seq"
->> +
->> +here=`pwd`
->> +tmp=/tmp/$$
->> +status=1	# failure is the default!
->> +trap "_cleanup; exit \$status" 0 1 2 3 15
->> +
->> +_cleanup()
->> +{
->> +	cd /
->> +	rm -f $tmp.*
->> +}
->> +
->> +# get standard environment, filters and checks
->> +. ./common/rc
->> +. ./common/filter
->> +
->> +# remove previous $seqres.full before test
->> +rm -f $seqres.full
->> +
->> +# real QA test starts here
->> +
->> +# Modify as appropriate.
->> +_supported_fs generic
->> +_supported_os IRIX Linux
->> +_require_scratch
->
-> Need _require_fiemap
->
->> +
->> +block_size=$((64 * 1024))
->> +block_count=32
->> +dst=$SCRATCH_MNT/file
->> +sleeptime=3
->> +
->> +# It's almost 100% for btrfs to trigger inconstant fiemap result
->
-> Trailing whitespace in above line.
->
->> +# just in case
->> +runtime=$((2 * $LOAD_FACTOR))
->
-> I don't think this loop is necessary, as the comments state, it's almost
-> 100% reproducible for btrfs (and for ext2/3 in my testing).
-
-In fact, the uncertainty lies in the time of sleep.
-
-In my test environment, if only sleeps for 1 second, the fiemap result 
-won't change for btrfs. (although cycle mount still changes the fiemap 
-result)
-
-So it's better to keep the runtime (will be renamed to loop_counts in 
-next version), just as stated, in case.
-
->
->> +
->> +# record fiemap as checkpoint, and output the hash of fiemap result
->> +# to stdout
->> +fiemap_checkpoint()
->> +{
->> +	local number=$1
->> +	local message=$2
->> +
->> +	echo "=== $message ===" >> $seqres.full
->> +	$XFS_IO_PROG -c "fiemap -v" $dst > ${tmp}.cp$number
->> +	cat ${tmp}.cp${number} >> $seqres.full
->> +
->> +	md5sum ${tmp}.cp${number} | cut -d ' ' -f 1
->> +}
->> +
->> +do_test()
->> +{
->> +	local number=$1
->> +
->> +	# Use 16 times of file size to ensure we have enough space
->> +	_scratch_mkfs_sized $((16 * $block_size * $block_count)) \
->
-> Use _require_fs_space for required space. Not all filesystems have
-> _scratch_mkfs_sized support so this could potentially reduce the
-> filesystem coverage.
-
-As most tester won't use a disk smaller than 32M as SCRATCH_DEV, I'm OK 
-to remove it.
-
-Thanks,
-Qu
->
->> +		> /dev/null 2>&1
->> +	_scratch_mount
->
-> Trailing whitespace issue.
->
-> Thanks,
-> Eryu
->
->> +
->> +	echo "====== Loop $number ======" >> $seqres.full
->> +	touch $dst
->> +	# Xfsprogs 4.9.0 still has a bug that xfs_io "open" with O_SYNC command
->> +	# doesn't work well with "pwrite", although it gets fixed in v4.10.0,
->> +	# use dd here to avoid it won't hurt for non-xfs developers
->> +	dd if=/dev/zero of=$dst bs=$block_size count=$block_count oflag=dsync \
->> +		status=none 2>&1
->> +
->> +	hash1=$(fiemap_checkpoint 1 "Fiemap just after dsync write")
->> +
->> +	# Sleep should not modify fiemap result
->> +	sleep $sleeptime
->> +
->> +	hash2=$(fiemap_checkpoint 2 "Fiemap after dsync write and sleep")
->> +
->> +	# cycle mount should not modify fiemap result
->> +	_scratch_cycle_mount
->> +
->> +	hash3=$(fiemap_checkpoint 3 "Fiemap after cycle mount")
->> +
->> +	# Sleep should not modify fiemap result
->> +	sleep $sleeptime
->> +
->> +	hash4=$(fiemap_checkpoint 4 "Fiemap after cycle mount and sleep")
->> +
->> +	_scratch_unmount
->> +
->> +	if [ $hash1 != $hash2 -o $hash2 != $hash3 -o $hash3 != $hash4 ]; then
->> +		echo "Inconstant fiemap result detected"
->> +	fi
->> +	echo >> $seqres.full
->> +}
->> +
->> +for i in $(seq 1 $runtime); do
->> +	do_test $i
->> +done
->> +
->> +echo "Silence is golden"
->> +# success, all done
->> +status=0
->> +exit
->> diff --git a/tests/generic/422.out b/tests/generic/422.out
->> new file mode 100644
->> index 0000000..f70693f
->> --- /dev/null
->> +++ b/tests/generic/422.out
->> @@ -0,0 +1,2 @@
->> +QA output created by 422
->> +Silence is golden
->> diff --git a/tests/generic/group b/tests/generic/group
->> index 3c7c5e4..86d2325 100644
->> --- a/tests/generic/group
->> +++ b/tests/generic/group
->> @@ -424,3 +424,4 @@
->>  419 auto quick encrypt
->>  420 auto quick punch
->>  421 auto quick encrypt dangerous
->> +422 auto
->> --
->> 2.9.3
->>
->>
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe fstests" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+>> Mounting -o ro,degraded is probably permitted by the file system, but
+>> chunks of the file system and certainly your data, will be missing. So
+>> it's just a matter of time before copying data off will fail.
+> ** Context here is, more than 1 device missing.
 >
 
+Thanks you guys for all your help and input.
 
+I've ordered two new drives to backup all my data. I have a cloud backup
+in place, but 13TB takes a while to upload :-)
+I think I'm gonna abandon btrfs as the main fs for my home server. I'm
+just gonna set up a separate LVM volume for storing snapshots and
+backups, since I use btrfs on all my single disk machines.
+Thanks again everyone.

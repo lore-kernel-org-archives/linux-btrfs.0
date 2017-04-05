@@ -1,57 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.render-wahnsinn.de ([188.40.36.198]:40398 "EHLO
-        mail.render-wahnsinn.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751891AbdDEGHZ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Apr 2017 02:07:25 -0400
-Received: from localhost (localhost.localdomain [127.0.0.1])
-        by mail.render-wahnsinn.de (Postfix) with ESMTP id 0F7D8226E4E
-        for <linux-btrfs@vger.kernel.org>; Wed,  5 Apr 2017 08:06:23 +0200 (CEST)
-Received: from mail.render-wahnsinn.de ([127.0.0.1])
-        by localhost (mail.render-wahnsinn.de [127.0.0.1]) (amavisd-new, port 10024)
-        with LMTP id Pgt9UhuJBMS5 for <linux-btrfs@vger.kernel.org>;
-        Wed,  5 Apr 2017 08:06:10 +0200 (CEST)
-Received: from [192.168.2.61] (x590d0cc4.dyn.telefonica.de [89.13.12.196])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.render-wahnsinn.de (Postfix) with ESMTPSA id 8EDC5226D6E
-        for <linux-btrfs@vger.kernel.org>; Wed,  5 Apr 2017 08:06:09 +0200 (CEST)
-Subject: Re: Need some help: "BTRFS critical (device sda): corrupt leaf, slot
- offset bad: block"
-References: <635a5ca8-9fa5-6cd4-21b5-97f9f3db93d3@render-wahnsinn.de>
- <c304c651-88fc-4699-3518-c4e83095d9c0@mendix.com>
- <98a478cf-20f9-981f-6da5-4186a10be303@render-wahnsinn.de>
- <7f94b6b9-f18d-14dd-4a20-1793ce08df8a@render-wahnsinn.de>
- <36448783-672c-5e88-cdda-9a8679c4b4ad@render-wahnsinn.de>
- <CAJCQCtRHgQrpijWgNigYZJsM-UxSpVfs0DWk2rbwmdPCeB+Qug@mail.gmail.com>
- <CAJCQCtQ6ern7jJ92Z3yhzEOYW_s9iNnh6LD+tJz9m-y-nKjL9Q@mail.gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Robert Krig <robert.krig@render-wahnsinn.de>
-Message-ID: <79afeed3-d743-6951-aab1-6846b2accccb@render-wahnsinn.de>
-Date: Wed, 5 Apr 2017 08:07:08 +0200
+Received: from smtp73.iad3a.emailsrvr.com ([173.203.187.73]:44057 "EHLO
+        smtp73.iad3a.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1753149AbdDEHEe (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 5 Apr 2017 03:04:34 -0400
+Received: from smtp10.relay.iad3a.emailsrvr.com (localhost [127.0.0.1])
+        by smtp10.relay.iad3a.emailsrvr.com (SMTP Server) with ESMTP id EFBF062CC
+        for <linux-btrfs@vger.kernel.org>; Wed,  5 Apr 2017 03:04:33 -0400 (EDT)
+Received: by smtp10.relay.iad3a.emailsrvr.com (Authenticated sender: m.khalili-AT-rqc.ru) with ESMTPSA id A0E155E4D
+        for <linux-btrfs@vger.kernel.org>; Wed,  5 Apr 2017 03:04:33 -0400 (EDT)
+Subject: Re: Do different btrfs volumes compete for CPU?
+To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+References: <43a14754-1047-552e-78a9-6503dfc0d121@rqc.ru>
+ <pan$8edd9$3260f40b$e8e8873f$59ccb7af@cox.net>
+ <ef8ec943-6d26-d7e9-d4ac-05e2ce7a8532@rqc.ru>
+ <22751.32343.177176.307907@tree.ty.sabi.co.uk>
+ <07258eab-5a2a-f028-48fb-60906b689cfa@rqc.ru>
+ <22755.55691.456250.585931@tree.ty.sabi.co.uk>
+From: Marat Khalili <mkh@rqc.ru>
+Message-ID: <e4849b22-8311-f5f7-fa2e-2a56b1b78aa5@rqc.ru>
+Date: Wed, 5 Apr 2017 10:04:32 +0300
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtQ6ern7jJ92Z3yhzEOYW_s9iNnh6LD+tJz9m-y-nKjL9Q@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
-To: unlisted-recipients:; (no To-header on input)
+In-Reply-To: <22755.55691.456250.585931@tree.ty.sabi.co.uk>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 04/04/17 20:36, Peter Grandi wrote:
+> SATA works for external use, eSATA works well, but what really
+> matters is the chipset of the adapter card.
+eSATA might be sound electrically, but mechanically it is awful. Try to 
+run it for months in a crowded server room, and inevitably you'll get 
+disconnections and data corruption. Tried different cables, brackets -- 
+same result. If you ever used eSATA connector, you'd feel it.
 
+> In my experience JMicron is not so good, Marvell a bit better,
+> best is to use a recent motherboard chipset with a SATA-eSATA
+> internal cable and bracket.
+That's exactly what I used to use: internal controller of Z77 chipset + 
+bracket(s).
 
-On 04.04.2017 18:55, Chris Murphy wrote:
-> On Tue, Apr 4, 2017 at 10:52 AM, Chris Murphy <lists@colorremedies.com> wrote:
->
->
->> Mounting -o ro,degraded is probably permitted by the file system, but
->> chunks of the file system and certainly your data, will be missing. So
->> it's just a matter of time before copying data off will fail.
-> ** Context here is, more than 1 device missing.
->
+> But that does not change the fact that it is a library and work
+> is initiated by user requests which are not per-subvolume, but
+> in effect per-volume.
+That's the answer I was looking for.
 
-Thanks you guys for all your help and input.
+> It is a way to do so and not a very good way. There is no
+> obviously good way to define "real usage" in the presence of
+> hard-links and reflinking, and qgroups use just one way to
+> define it. A similar problem happens with processes in the
+> presence of shared pages, multiple mapped shared libraries etc.
+No need to over-generalize. There's an obvious good way to define "real 
+usage" of a subvolume and its snapshots as long as it don't share any 
+data with other subvolumes, as is often the case. If it does share, two 
+figures -- exclusive and referenced, like in qgroups -- are sufficient 
+for most tasks.
 
-I've ordered two new drives to backup all my data. I have a cloud backup
-in place, but 13TB takes a while to upload :-)
-I think I'm gonna abandon btrfs as the main fs for my home server. I'm
-just gonna set up a separate LVM volume for storing snapshots and
-backups, since I use btrfs on all my single disk machines.
-Thanks again everyone.
+> The problem is that
+> both hard-links and ref-linking create really significant
+> ambiguities as to used space. Plus the same problem would happen
+> with directories instead of subvolumes and hard-links instead of
+> reflinked snapshots.
+You're right, although with hard-links there's at least remote chance to 
+estimate storage use with usermode scripts.
+
+> ASMedia USB3 chipsets are fairly reliable at the least the card
+> ones on the system side. The ones on the disk side I don't know
+> much about.
+This is getting increasingly off-topic, but our mainstay are CFI 5-disk 
+DAS boxes (8253JDGG to be exact) filled with WD Red-s in RAID5 
+configuration. They are no longer produced and getting harder and harder 
+to source, but showed themselves as very reliable. According to lsusb 
+they contain JMicron JMS567 SATA 6Gb/s bridge.
+
+--
+
+With Best Regards,
+Marat Khalili

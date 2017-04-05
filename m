@@ -1,60 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:23564 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751342AbdDCUqs (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Apr 2017 16:46:48 -0400
+Received: from userp1040.oracle.com ([156.151.31.81]:31293 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933894AbdDEVFk (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Apr 2017 17:05:40 -0400
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] Btrfs: update scrub_parity to use u64 stripe_len
-Date: Mon,  3 Apr 2017 13:45:33 -0700
-Message-Id: <1491252333-3667-1-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH] Btrfs: fix invalid dereference in btrfs_retry_endio
+Date: Wed,  5 Apr 2017 14:04:19 -0700
+Message-Id: <1491426259-27838-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit 3d8da6781760 ("Btrfs: fix divide error upon chunk's stripe_len")
-changed stripe_len in struct map_lookup to u64, but didn't update
-stripe_len in struct scrub_parity.
+When doing directIO repair, we have this oops
 
-This updates the type and switches to div64_u64_rem to match u64 divisor.
+[ 1458.532816] general protection fault: 0000 [#1] SMP
+...
+[ 1458.536291] Workqueue: btrfs-endio-repair btrfs_endio_repair_helper [btrfs]
+[ 1458.536893] task: ffff88082a42d100 task.stack: ffffc90002b3c000
+[ 1458.537499] RIP: 0010:btrfs_retry_endio+0x7e/0x1a0 [btrfs]
+...
+[ 1458.543261] Call Trace:
+[ 1458.543958]  ? rcu_read_lock_sched_held+0xc4/0xd0
+[ 1458.544374]  bio_endio+0xed/0x100
+[ 1458.544750]  end_workqueue_fn+0x3c/0x40 [btrfs]
+[ 1458.545257]  normal_work_helper+0x9f/0x900 [btrfs]
+[ 1458.545762]  btrfs_endio_repair_helper+0x12/0x20 [btrfs]
+[ 1458.546224]  process_one_work+0x34d/0xb70
+[ 1458.546570]  ? process_one_work+0x29e/0xb70
+[ 1458.546938]  worker_thread+0x1cf/0x960
+[ 1458.547263]  ? process_one_work+0xb70/0xb70
+[ 1458.547624]  kthread+0x17d/0x180
+[ 1458.547909]  ? kthread_create_on_node+0x70/0x70
+[ 1458.548300]  ret_from_fork+0x31/0x40
+
+It turns out that btrfs_retry_endio is trying to get inode from a directIO
+page.
+
+This fixes the problem by using the preservd inode pointer, done->inode.
+btrfs_retry_endio_nocsum has the same problem, and it's fixed as well.
+
+Also cleanup unused @start(which is too trivial for a separate patch).
 
 Cc: David Sterba <dsterba@suse.cz>
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/scrub.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ fs/btrfs/inode.c | 14 ++++----------
+ 1 file changed, 4 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index b9525ca..fab351c 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -140,7 +140,7 @@ struct scrub_parity {
- 
- 	int			nsectors;
- 
--	int			stripe_len;
-+	u64			stripe_len;
- 
- 	atomic_t		refs;
- 
-@@ -2449,7 +2449,7 @@ static inline void __scrub_mark_bitmap(struct scrub_parity *sparity,
- 				       unsigned long *bitmap,
- 				       u64 start, u64 len)
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 3ec5a05..8e71ed7 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -7910,7 +7910,6 @@ struct btrfs_retry_complete {
+ static void btrfs_retry_endio_nocsum(struct bio *bio)
  {
--	u32 offset;
-+	u64 offset;
- 	int nsectors;
- 	int sectorsize = sparity->sctx->fs_info->sectorsize;
+ 	struct btrfs_retry_complete *done = bio->bi_private;
+-	struct inode *inode;
+ 	struct bio_vec *bvec;
+ 	int i;
  
-@@ -2461,7 +2461,7 @@ static inline void __scrub_mark_bitmap(struct scrub_parity *sparity,
- 	}
+@@ -7918,12 +7917,12 @@ static void btrfs_retry_endio_nocsum(struct bio *bio)
+ 		goto end;
  
- 	start -= sparity->logic_start;
--	start = div_u64_rem(start, sparity->stripe_len, &offset);
-+	start = div64_u64_rem(start, sparity->stripe_len, &offset);
- 	offset /= sectorsize;
- 	nsectors = (int)len / sectorsize;
+ 	ASSERT(bio->bi_vcnt == 1);
+-	inode = bio->bi_io_vec->bv_page->mapping->host;
+-	ASSERT(bio->bi_io_vec->bv_len == btrfs_inode_sectorsize(inode));
++	ASSERT(bio->bi_io_vec->bv_len == btrfs_inode_sectorsize(done->inode));
  
+ 	done->uptodate = 1;
+ 	bio_for_each_segment_all(bvec, bio, i)
+-	clean_io_failure(BTRFS_I(done->inode), done->start, bvec->bv_page, 0);
++		clean_io_failure(BTRFS_I(done->inode), done->start,
++				 bvec->bv_page, 0);
+ end:
+ 	complete(&done->done);
+ 	bio_put(bio);
+@@ -7986,9 +7985,7 @@ static void btrfs_retry_endio(struct bio *bio)
+ {
+ 	struct btrfs_retry_complete *done = bio->bi_private;
+ 	struct btrfs_io_bio *io_bio = btrfs_io_bio(bio);
+-	struct inode *inode;
+ 	struct bio_vec *bvec;
+-	u64 start;
+ 	int uptodate;
+ 	int ret;
+ 	int i;
+@@ -7998,11 +7995,8 @@ static void btrfs_retry_endio(struct bio *bio)
+ 
+ 	uptodate = 1;
+ 
+-	start = done->start;
+-
+ 	ASSERT(bio->bi_vcnt == 1);
+-	inode = bio->bi_io_vec->bv_page->mapping->host;
+-	ASSERT(bio->bi_io_vec->bv_len == btrfs_inode_sectorsize(inode));
++	ASSERT(bio->bi_io_vec->bv_len == btrfs_inode_sectorsize(done->inode));
+ 
+ 	bio_for_each_segment_all(bvec, bio, i) {
+ 		ret = __readpage_endio_check(done->inode, io_bio, i,
 -- 
 2.5.5
 

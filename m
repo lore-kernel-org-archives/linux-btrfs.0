@@ -1,53 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:40856 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754007AbdDFDRz (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Apr 2017 23:17:55 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH v4 7/7] btrfs: check if the device is flush capable
-Date: Thu,  6 Apr 2017 11:22:53 +0800
-Message-Id: <20170406032253.14631-8-anand.jain@oracle.com>
-In-Reply-To: <20170406032253.14631-1-anand.jain@oracle.com>
-References: <20170406032253.14631-1-anand.jain@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:41713 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753522AbdDEOG6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 5 Apr 2017 10:06:58 -0400
+Date: Wed, 5 Apr 2017 16:06:13 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz, clm@fb.com
+Subject: Re: [PATCH] btrfs: check if the device is flush capable
+Message-ID: <20170405140612.GH4781@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170404104144.9414-1-anand.jain@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170404104144.9414-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The blkdev_issue_flush() will check if the write cache is enabled
-before submitting the flush. This will add a code to fail fast if
-its not.
+On Tue, Apr 04, 2017 at 06:41:44PM +0800, Anand Jain wrote:
+> blkdev_issue_flush() or the empty buffer with the flag REQ_PREFLUSH
+> will never return BIO_EOPNOTSUPP as of now, however it should rather
+> or it may in future. So for now the BTRFS to have least affected by
+> this change at the blk layer, we can check if the device is flush
+> capable.
+> 
+> In this process, I rename the unused nobarrier member as flushable,
+> which the below patch made it redundant.
+> 
+> Per commit b25de9d6da49b1a8760a89672283128aa8c78345
+>    block: remove BIO_EOPNOTSUPP
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
-v2: This patch will now _not_ replace the below patch and this patch
-  should be applied on top of it.
-    [PATCH] btrfs: delete unused member nobarriers
-  That's because, Q write cache flag is not static, so we can't save
-  its state into nobarries.
-  - commit log is updated.
-v3: no change
-v4: no change
+So up to now, dev->nobarriers was always 0 and thus write_dev_flush
+always sent down the empty bio with PREFLUSH. Depending on the actual
+device flush capabilities, it either kept the flush bit or removed it in
+the generic_make_request_checks, and then proceeded to
+generic_make_request.
 
- fs/btrfs/disk-io.c | 5 +++++
- 1 file changed, 5 insertions(+)
+In short, we always sent the flush bio. What your patch changes is that
+this will happen only for devices that have the flush capability,
+determined by the queue bit.
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index b6d047250ce2..bb5816c7f5c4 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3517,6 +3517,11 @@ static void btrfs_dev_issue_flush(struct work_struct *work)
-  */
- static int write_dev_flush(struct btrfs_device *device, int wait)
- {
-+	struct request_queue *q = bdev_get_queue(device->bdev);
-+
-+	if (!test_bit(QUEUE_FLAG_WC, &q->queue_flags))
-+		return 0;
-+
- 	if (wait) {
- 		int ret;
- 
--- 
-2.10.0
-
+This change does not seem to contradict the commit
+387125fc722a8ed432066b85a552917343bdafca that brought the
+dev->nobarriers, so regarding metadata ordering and superblock flushes,
+all seem ok. But this could use some doublechecking.

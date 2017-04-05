@@ -1,32 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:57624 "EHLO mx1.redhat.com"
+Received: from mx2.suse.de ([195.135.220.15]:58061 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753477AbdDEKxq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 5 Apr 2017 06:53:46 -0400
-From: David Howells <dhowells@redhat.com>
-In-Reply-To: <20170405103809.GY22845@eguan.usersys.redhat.com>
-References: <20170405103809.GY22845@eguan.usersys.redhat.com> <149132130900.18980.537296385250153410.stgit@warthog.procyon.org.uk> <149132131706.18980.7074156386090748482.stgit@warthog.procyon.org.uk>
-To: linux-btrfs@vger.kernel.org
-Cc: dhowells@redhat.com, linux-xfs@vger.kernel.org, hch@infradead.org,
+        id S1755138AbdDEMaz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 5 Apr 2017 08:30:55 -0400
+Date: Wed, 5 Apr 2017 14:30:09 +0200
+From: David Sterba <dsterba@suse.cz>
+To: David Howells <dhowells@redhat.com>
+Cc: linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org, hch@infradead.org,
         amir73il@gmail.com, david@fromorbit.com, fstests@vger.kernel.org,
         linux-fsdevel@vger.kernel.org, Eryu Guan <eguan@redhat.com>
-Subject: Does btrfs get nlink on directories wrong? -- was Re: [PATCH 2/4] xfstests: Add first statx test [ver #5]
+Subject: Re: Does btrfs get nlink on directories wrong? -- was Re: [PATCH
+ 2/4] xfstests: Add first statx test [ver #5]
+Message-ID: <20170405123008.GB4781@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170405103809.GY22845@eguan.usersys.redhat.com>
+ <149132130900.18980.537296385250153410.stgit@warthog.procyon.org.uk>
+ <149132131706.18980.7074156386090748482.stgit@warthog.procyon.org.uk>
+ <2600.1491389621@warthog.procyon.org.uk>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Date: Wed, 05 Apr 2017 11:53:41 +0100
-Message-ID: <2600.1491389621@warthog.procyon.org.uk>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <2600.1491389621@warthog.procyon.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've added a test to xfstests that exercises the new statx syscall.  However,
-it fails on btrfs:
+On Wed, Apr 05, 2017 at 11:53:41AM +0100, David Howells wrote:
+> I've added a test to xfstests that exercises the new statx syscall.  However,
+> it fails on btrfs:
+> 
+>      Test statx on a directory
+>     +[!] stx_nlink differs, 1 != 2
+>     +Failed
+>     +stat_test failed
+> 
+> because a new directory it creates has an nlink of 1, not 2.  Is this a case
+> of my making an incorrect assumption or is it an fs bug?
 
-     Test statx on a directory
-    +[!] stx_nlink differs, 1 != 2
-    +Failed
-    +stat_test failed
+Afaik nlink == 1 means that there's no accounting of subdirectories, and
+it's a valid value. The 'find' utility can use nlink to optimize
+directory traversal but otherwise I'm not aware of other usage.
 
-because a new directory it creates has an nlink of 1, not 2.  Is this a case
-of my making an incorrect assumption or is it an fs bug?
-
-David
+All directories in btrfs have nlink == 1.

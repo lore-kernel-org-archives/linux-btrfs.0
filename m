@@ -1,50 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34992 "EHLO mx2.suse.de"
+Received: from mx1.redhat.com ([209.132.183.28]:57624 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753386AbdDJPOI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 Apr 2017 11:14:08 -0400
-Date: Mon, 10 Apr 2017 17:13:59 +0200
-From: Jan Kara <jack@suse.cz>
-To: Christoph Hellwig <hch@infradead.org>
-Cc: Jan Kara <jack@suse.cz>, Goldwyn Rodrigues <rgoldwyn@suse.de>,
-        linux-fsdevel@vger.kernel.org, jack@suse.com,
-        linux-block@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
-        sagi@grimberg.me, avi@scylladb.com, axboe@kernel.dk,
-        linux-api@vger.kernel.org, willy@infradead.org, tom.leiming@gmail.com,
-        Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: Re: [PATCH 6/8] nowait aio: ext4
-Message-ID: <20170410151359.GH3224@quack2.suse.cz>
-References: <20170403185307.6243-1-rgoldwyn@suse.de>
- <20170403185307.6243-7-rgoldwyn@suse.de>
- <20170404075853.GB28522@quack2.suse.cz>
- <20170404084122.GA10252@infradead.org>
- <d6dac6ec-c71c-0082-972f-61e7299ed418@suse.de>
- <20170410074539.GA18250@infradead.org>
- <20170410123750.GE3224@quack2.suse.cz>
- <20170410143943.GA2930@infradead.org>
+        id S1753477AbdDEKxq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 5 Apr 2017 06:53:46 -0400
+From: David Howells <dhowells@redhat.com>
+In-Reply-To: <20170405103809.GY22845@eguan.usersys.redhat.com>
+References: <20170405103809.GY22845@eguan.usersys.redhat.com> <149132130900.18980.537296385250153410.stgit@warthog.procyon.org.uk> <149132131706.18980.7074156386090748482.stgit@warthog.procyon.org.uk>
+To: linux-btrfs@vger.kernel.org
+Cc: dhowells@redhat.com, linux-xfs@vger.kernel.org, hch@infradead.org,
+        amir73il@gmail.com, david@fromorbit.com, fstests@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, Eryu Guan <eguan@redhat.com>
+Subject: Does btrfs get nlink on directories wrong? -- was Re: [PATCH 2/4] xfstests: Add first statx test [ver #5]
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170410143943.GA2930@infradead.org>
+Content-Type: text/plain; charset="us-ascii"
+Date: Wed, 05 Apr 2017 11:53:41 +0100
+Message-ID: <2600.1491389621@warthog.procyon.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon 10-04-17 07:39:43, Christoph Hellwig wrote:
-> On Mon, Apr 10, 2017 at 02:37:50PM +0200, Jan Kara wrote:
-> > I don't understand here. Do you want that all filesystems support NOWAIT
-> > direct IO?
-> 
-> No.  Per-file_system_type is way to coarse grained.  All feature flag
-> needs to be per-file_operation at least for cases like ext4 with our
-> without extents (or journal) XFS v4 vs v5, different NFS versions, etc.
+I've added a test to xfstests that exercises the new statx syscall.  However,
+it fails on btrfs:
 
-Ah, I see your point now. Thanks for patience. I think we could make this
-work by making generic_file_write/read_iter() refuse NOWAIT IO with
-EOPNOTSUPP and then only modify those few filesystems that implement their
-own iter helpers and will not initially support NOWAIT IO. Sounds easy
-enough.
+     Test statx on a directory
+    +[!] stx_nlink differs, 1 != 2
+    +Failed
+    +stat_test failed
 
-								Honza
--- 
-Jan Kara <jack@suse.com>
-SUSE Labs, CR
+because a new directory it creates has an nlink of 1, not 2.  Is this a case
+of my making an incorrect assumption or is it an fs bug?
+
+David

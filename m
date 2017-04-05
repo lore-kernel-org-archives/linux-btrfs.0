@@ -1,50 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49446 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:34310 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752401AbdDLSbw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Apr 2017 14:31:52 -0400
-Subject: Re: [PATCH 5/9] nowait aio: return on congested block device
-To: Christoph Hellwig <hch@infradead.org>
-References: <20170411142619.27205-1-rgoldwyn@suse.de>
- <20170411142619.27205-6-rgoldwyn@suse.de>
- <20170412083625.GB22363@infradead.org>
-Cc: linux-fsdevel@vger.kernel.org, jack@suse.com, linux-block@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-xfs@vger.kernel.org, sagi@grimberg.me, avi@scylladb.com,
-        axboe@kernel.dk, linux-api@vger.kernel.org, willy@infradead.org,
-        tom.leiming@gmail.com, Goldwyn Rodrigues <rgoldwyn@suse.com>
-From: Goldwyn Rodrigues <rgoldwyn@suse.de>
-Message-ID: <7fba3538-8c91-20e5-63f1-6e063caaaffb@suse.de>
-Date: Wed, 12 Apr 2017 13:31:43 -0500
+        id S1755214AbdDENIJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 5 Apr 2017 09:08:09 -0400
+Date: Wed, 5 Apr 2017 15:07:24 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
+Subject: Re: [PATCH] Btrfs: switch to div64_u64 if with a u64 divisor
+Message-ID: <20170405130724.GF4781@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1491252324-3544-1-git-send-email-bo.li.liu@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <20170412083625.GB22363@infradead.org>
-Content-Type: text/plain; charset=windows-1252
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1491252324-3544-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 04/12/2017 03:36 AM, Christoph Hellwig wrote:
-> As mentioned last time around, this should be a REQ_NOWAIT flag so
-> that it can be easily passed dow? n to the request layer.
+On Mon, Apr 03, 2017 at 01:45:24PM -0700, Liu Bo wrote:
+> This is fixing code pieces where we use div_u64 when passing a u64 divisor.
 > 
->> +static inline void bio_wouldblock_error(struct bio *bio)
->> +{
->> +	bio->bi_error = -EAGAIN;
->> +	bio_endio(bio);
->> +}
-> 
-> Please skip this helper..
+> Cc: David Sterba <dsterba@suse.cz>
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
-Why? It is being called three times?
-I am incorporating all the rest of the comments, besides this one. Thanks.
-
-> 
->> +#define QUEUE_FLAG_NOWAIT      28	/* queue supports BIO_NOWAIT */
-> 
-> Please make the flag name a little more descriptive, this sounds like
-> it will never wait.
-> 
-
--- 
-Goldwyn
+Reviewed-by: David Sterba <dsterba@suse.com>

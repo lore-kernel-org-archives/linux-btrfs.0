@@ -1,358 +1,192 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f194.google.com ([209.85.223.194]:35094 "EHLO
-        mail-io0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1756175AbdDGJV1 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Apr 2017 05:21:27 -0400
-Received: by mail-io0-f194.google.com with SMTP id f103so6938173ioi.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 07 Apr 2017 02:21:27 -0700 (PDT)
+Received: from cn.fujitsu.com ([59.151.112.132]:4392 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751043AbdDECOs (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Apr 2017 22:14:48 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>, <fstests@vger.kernel.org>,
+        <eguan@redhat.com>
+Subject: [PATCH] fstests: btrfs: Check if btrfs will create inline-then-regular file extents
+Date: Wed, 5 Apr 2017 10:14:28 +0800
+Message-ID: <20170405021428.14742-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <57fac5dc-9272-21c9-ef66-ea521cc1fcca@cn.fujitsu.com>
-References: <1488943097-20914-1-git-send-email-zblaxell@waya.furryterror.org>
- <CAL3q7H4T29nKOBR5DJC47C-hx-Bcgas1sHeLc4aC8GVDK005MQ@mail.gmail.com>
- <20170309020509.GA31830@hungrycats.org> <9c106d93-9dd8-5377-dba3-d0b41c6b144e@cn.fujitsu.com>
- <CAL3q7H6BRA2rKERSLRKcNgrysmufhPj_7hCPGWn36i+yNNgdwg@mail.gmail.com> <57fac5dc-9272-21c9-ef66-ea521cc1fcca@cn.fujitsu.com>
-From: Filipe Manana <fdmanana@gmail.com>
-Date: Fri, 7 Apr 2017 10:21:25 +0100
-Message-ID: <CAL3q7H4toj5pk4viaUx9vTMCeEAwJoJvuXhw8zZxfeCQ_Hy4Jw@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: add missing memset while reading compressed inline extents
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 7, 2017 at 2:07 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
->
->
-> At 04/07/2017 12:07 AM, Filipe Manana wrote:
->>
->> On Wed, Mar 22, 2017 at 2:37 AM, Qu Wenruo <quwenruo@cn.fujitsu.com>
->> wrote:
->>>
->>>
->>>
->>> At 03/09/2017 10:05 AM, Zygo Blaxell wrote:
->>>>
->>>>
->>>> On Wed, Mar 08, 2017 at 10:27:33AM +0000, Filipe Manana wrote:
->>>>>
->>>>>
->>>>> On Wed, Mar 8, 2017 at 3:18 AM, Zygo Blaxell
->>>>> <zblaxell@waya.furryterror.org> wrote:
->>>>>>
->>>>>>
->>>>>> From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
->>>>>>
->>>>>> This is a story about 4 distinct (and very old) btrfs bugs.
->>>>>>
->>>>>> Commit c8b978188c ("Btrfs: Add zlib compression support") added
->>>>>> three data corruption bugs for inline extents (bugs #1-3).
->>>>>>
->>>>>> Commit 93c82d5750 ("Btrfs: zero page past end of inline file items")
->>>>>> fixed bug #1:  uncompressed inline extents followed by a hole and more
->>>>>> extents could get non-zero data in the hole as they were read.  The
->>>>>> fix
->>>>>> was to add a memset in btrfs_get_extent to zero out the hole.
->>>>>>
->>>>>> Commit 166ae5a418 ("btrfs: fix inline compressed read err corruption")
->>>>>> fixed bug #2:  compressed inline extents which contained non-zero
->>>>>> bytes
->>>>>> might be replaced with zero bytes in some cases.  This patch removed
->>>>>> an
->>>>>> unhelpful memset from uncompress_inline, but the case where memset is
->>>>>> required was missed.
->>>>>>
->>>>>> There is also a memset in the decompression code, but this only covers
->>>>>> decompressed data that is shorter than the ram_bytes from the extent
->>>>>> ref record.  This memset doesn't cover the region between the end of
->>>>>> the
->>>>>> decompressed data and the end of the page.  It has also moved around a
->>>>>> few times over the years, so there's no single patch to refer to.
->>>>>>
->>>>>> This patch fixes bug #3:  compressed inline extents followed by a hole
->>>>>> and more extents could get non-zero data in the hole as they were read
->>>>>> (i.e. bug #3 is the same as bug #1, but s/uncompressed/compressed/).
->>>>>> The fix is the same:  zero out the hole in the compressed case too,
->>>>>> by putting a memset back in uncompress_inline, but this time with
->>>>>> correct parameters.
->>>>>>
->>>>>> The last and oldest bug, bug #0, is the cause of the offending inline
->>>>>> extent/hole/extent pattern.  Bug #0 is a subtle and mostly-harmless
->>>>>> quirk
->>>>>> of behavior somewhere in the btrfs write code.  In a few special
->>>>>> cases,
->>>>>> an inline extent and hole are allowed to persist where they normally
->>>>>> would be combined with later extents in the file.
->>>>>>
->>>>>> A fast reproducer for bug #0 is presented below.  A few offending
->>>>>> extents
->>>>>> are also created in the wild during large rsync transfers with the -S
->>>>>> flag.  A Linux kernel build (git checkout; make allyesconfig; make
->>>>>> -j8)
->>>>>> will produce a handful of offending files as well.  Once an offending
->>>>>> file is created, it can present different content to userspace each
->>>>>> time it is read.
->>>>>>
->>>>>> Bug #0 is at least 4 and possibly 8 years old.  I verified every vX.Y
->>>>>> kernel back to v3.5 has this behavior.  There are fossil records of
->>>>>> this
->>>>>> bug's effects in commits all the way back to v2.6.32.  I have no
->>>>>> reason
->>>>>> to believe bug #0 wasn't present at the beginning of btrfs compression
->>>>>> support in v2.6.29, but I can't easily test kernels that old to be
->>>>>> sure.
->>>>>>
->>>>>> It is not clear whether bug #0 is worth fixing.  A fix would likely
->>>>>> require injecting extra reads into currently write-only paths, and
->>>>>> most
->>>>>> of the exceptional cases caused by bug #0 are already handled now.
->>>>>>
->>>>>> Whether we like them or not, bug #0's inline extents followed by holes
->>>>>> are part of the btrfs de-facto disk format now, and we need to be able
->>>>>> to read them without data corruption or an infoleak.  So enough about
->>>>>> bug #0, let's get back to bug #3 (this patch).
->>>>>>
->>>>>> An example of on-disk structure leading to data corruption:
->>>>>>
->>>>>>         item 61 key (606890 INODE_ITEM 0) itemoff 9662 itemsize 160
->>>>>>                 inode generation 50 transid 50 size 47424 nbytes 49141
->>>>>>                 block group 0 mode 100644 links 1 uid 0 gid 0
->>>>>>                 rdev 0 flags 0x0(none)
->>>>>>         item 62 key (606890 INODE_REF 603050) itemoff 9642 itemsize 20
->>>>>>                 inode ref index 3 namelen 10 name: DB_File.so
->>>>>>         item 63 key (606890 EXTENT_DATA 0) itemoff 8280 itemsize 1362
->>>>>>                 inline extent data size 1341 ram 4085 compress(zlib)
->>>>>>         item 64 key (606890 EXTENT_DATA 4096) itemoff 8227 itemsize 53
->>>>>>                 extent data disk byte 5367308288 nr 20480
->>>>>>                 extent data offset 0 nr 45056 ram 45056
->>>>>>                 extent compression(zlib)
->>>>>
->>>>>
->>>>>
->>>>> So this case is actually different from the reproducer below, because
->>>>> once a file has prealloc extents, future writes will never be
->>>>> compressed. That is, the extent at offset 4096 can not have compressed
->>>>> content using steps like the reproducer below. I can only imagine that
->>>>> after an falloc to create the extent at 4K, we cloned some compressed
->>>>> extent from some other file into that offset.
->>>>
->>>>
->>>>
->>>> The above comes from one of my captures of the bug appearing in the
->>>> wild,
->>>> not the reproducer from Liu Bo.  I'll make that clearer.
->>>
->>>
->>>
->>> In fact, I found that btrfs/137 with compress=lzo seems to trigger such
->>> "inline-then-regular" case in a very high possibility.
->>>
->>> If abort the test just after populating the fs, I found the possibility
->>> to
->>> have inline-then-regular extent layout is over 70%.
->>
->>
->> 100%, as explained in your fstests patch thread.
->>
->>>
->>> Although in btrfs/137 case, it's "inline-then-hole", not completely
->>> "inline-then-regular".
->>
->>
->> A hole is a regular extent with a disk byte number of 0.
->>
->>>
->>> Hopes such reproducer can help to trace down the root cause.
->>
->>
->> Completely different case because the compressed inline extent
->> represents 4096 bytes of data. The issue from this thread requires the
->> uncompressed data size to be less than 4096 bytes.
->
->
-> The problem is all about inline-then-regluar layout.
->
-> Which should not happen in the very beginning, and if we really follow the
-> standard that inline extent should be the *only* extent of an inode, then
-> the fix itself is not needed.
->
-> But the truth is, we didn't fix inline-then-regular as until recent we
-> didn't have a method to reproduce it, but mostly catch them in the wild.
->
-> Yes, we can fix kernel and allow us to read out correct data just as the
-> patch does.
+Btrfs allows inline file extent if and only if
+1) It's at offset 0
+2) It's smaller than min(max_inline, page_size)
+   Although we don't specify if the size is before compression or after
+   compression.
+   At least according to current behavior, we are only limiting the size
+   after compression.
+3) It's the only file extent
+   So that if we append existing inline extent, it should be converted
+   to regular file extents.
 
-You need to read replies much more carefully.
-What I said is that for the case you identified, this patch (Zygo's
-patch) is not needed to solve any problem, because the inline extent
-represents exactly 4096 bytes of data. So what you identified is not
-even proven to be a problem (at least yet).
+However several users in btrfs mail list have reported invalid inline
+file extent, which only meets the first two condition, but with regular
+file extents follows.
 
-> But we should also fix the root cause. Just because we can handle
-> inline-then-regular doesn't mean it should exist.
+The bug is here for a long long time, so long that we have modified
+kernel and btrfs-progs to accept such case, but it's still not designed
+behavior, and must be detected and fixed.
 
-The problem is different. There's a problem when the inline extent
-represents data with a size smaller than 4096. In that case there's no
-extent item representing the hole in the range
-[inline_extent_data_size, 4096[. That's what caused the problem.
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ tests/btrfs/140     | 120 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/140.out |   2 +
+ tests/btrfs/group   |   1 +
+ 3 files changed, 123 insertions(+)
+ create mode 100755 tests/btrfs/140
+ create mode 100644 tests/btrfs/140.out
 
-
-
-
-
->
-> Thanks,
-> Qu
->
->
->>
->> thanks
->>
->>>
->>> Thanks,
->>> Qu
->>>
->>>
->>>>
->>>> The "in-the-wild" cases come from an assortment of programs that do
->>>> write(<4K), seek(>4K), write.  99.999% (5 nines) of the time, that
->>>> results
->>>> in a single non-inline extent, but the rest of the time the inline
->>>> extent
->>>> persists.
->>>>
->>>> None of that changes what happens _after_ the inline extent and hole
->>>> are created and persisted on disk.  That's all I want to fix here.
->>>>
->>>>>> Different data appears in userspace during each read of the 11 bytes
->>>>>> between 4085 and 4096.  The extent in item 63 is not long enough to
->>>>>> fill the first page of the file, so a memset is required to fill the
->>>>>> space between item 63 (ending at 4085) and item 64 (beginning at 4096)
->>>>>> with zero.
->>>>>>
->>>>>> Here is a reproducer from Liu Bo:
->>>>>>
->>>>>> Using 'page_poison=on' kernel command line (or enable
->>>>>> CONFIG_PAGE_POISONING) run the following:
->>>>>>
->>>>>>         # touch foo
->>>>>>         # chattr +c foo
->>>>>>         # xfs_io -f -c "pwrite -W 0 1000" foo
->>>>>>         # xfs_io -f -c "falloc 4 8188" foo
->>>>>>         # od -x foo
->>>>>>         # echo 3 >/proc/sys/vm/drop_caches
->>>>>>         # od -x foo
->>>>>>
->>>>>> This produce the following on my box:
->>>>>>
->>>>>> 0000000 cdcd cdcd cdcd cdcd cdcd cdcd cdcd cdcd
->>>>>> *
->>>>>> 0001740 cdcd cdcd cdcd cdcd 0000 0000 0000 0000
->>>>>> 0001760 0000 0000 0000 0000 0000 0000 0000 0000
->>>>>> *
->>>>>> 0020000
->>>>>
->>>>>
->>>>>
->>>>> For the sake of organization and making it easier to understand, it
->>>>> would help mention that the above hex dump is the expected (correct)
->>>>> output of od, while the one below is the incorrect one due the bug.
->>>>>
->>>>>>
->>>>>> 0000000 cdcd cdcd cdcd cdcd cdcd cdcd cdcd cdcd
->>>>>> *
->>>>>> 0001740 cdcd cdcd cdcd cdcd 6c63 7400 635f 006d
->>>>>> 0001760 5f74 6f43 7400 435f 0053 5f74 7363 7400
->>>>>> 0002000 435f 0056 5f74 6164 7400 645f 0062 5f74
->>>>>> (...)
->>>>>>
->>>>>> v2: I'm not able to contrive a test case where pg_offset != 0, but we
->>>>>> might as well handle it anyway.
->>>>>
->>>>>
->>>>>
->>>>> Versioning information should go after the --- below, so that it
->>>>> doesn't appear in the changelog after the patch is picked (it's
->>>>> irrelevant information).
->>>>
->>>>
->>>>
->>>> Will do.
->>>>
->>>>> Also, if the above example reproduces the problem, why not make a
->>>>> fstests test case with it?
->>>>
->>>>
->>>>
->>>> ...beeeecause I'd have to finally have to stop putting off cloning
->>>> xfstests and figuring out how it works?  ;)
->>>>
->>>>>> Signed-off-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
->>>>>> Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
->>>>>> ---
->>>>>>  fs/btrfs/inode.c | 6 ++++++
->>>>>>  1 file changed, 6 insertions(+)
->>>>>>
->>>>>> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
->>>>>> index 25ac2cf..4d41a31 100644
->>>>>> --- a/fs/btrfs/inode.c
->>>>>> +++ b/fs/btrfs/inode.c
->>>>>> @@ -6805,6 +6805,12 @@ static noinline int uncompress_inline(struct
->>>>>> btrfs_path *path,
->>>>>>         max_size = min_t(unsigned long, PAGE_SIZE, max_size);
->>>>>>         ret = btrfs_decompress(compress_type, tmp, page,
->>>>>>                                extent_offset, inline_size, max_size);
->>>>>> +       WARN_ON(max_size + pg_offset > PAGE_SIZE);
->>>>>> +       if (max_size + pg_offset < PAGE_SIZE) {
->>>>>> +               char *map = kmap(page);
->>>>>> +               memset(map + pg_offset + max_size, 0, PAGE_SIZE -
->>>>>> max_size - pg_offset);
->>>>>> +               kunmap(page);
->>>>>> +       }
->>>>>>         kfree(tmp);
->>>>>>         return ret;
->>>>>>  }
->>>>>> --
->>>>>> 2.1.4
->>>>>>
->>>>>> --
->>>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
->>>>>> in
->>>>>> the body of a message to majordomo@vger.kernel.org
->>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>>>
->>>>>
->>>>>
->>>>>
->>>>>
->>>>> --
->>>>> Filipe David Manana,
->>>>>
->>>>> "People will forget what you said,
->>>>>  people will forget what you did,
->>>>>  but people will never forget how you made them feel."
->>>>
->>>>
->>>> --
->>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
->>>> in
->>>> the body of a message to majordomo@vger.kernel.org
->>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>>
->>>>
->>>
->>>
->>
->>
->>
->
->
-
-
-
+diff --git a/tests/btrfs/140 b/tests/btrfs/140
+new file mode 100755
+index 0000000..55f81f2
+--- /dev/null
++++ b/tests/btrfs/140
+@@ -0,0 +1,120 @@
++#! /bin/bash
++# FS QA Test 140
++#
++# Check if btrfs will create inline-then-regular file layout.
++#
++# Btrfs only allows inline file extent if file is small enough, and any
++# incoming write enlarges the file beyong max_inline should replace inline
++# extents with regular extents.
++# This is a long standing bug, so fsck won't detect it and kernel will allow
++# normal read on it, but should be avoided.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2017 Fujitsu.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# remove previous $seqres.full before test
++rm -f $seqres.full
++
++# real QA test starts here
++
++# Modify as appropriate.
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++_require_btrfs_command inspect-internal dump-tree
++
++inline_size=2048
++page_size=$(get_page_size)
++src_subv="$SCRATCH_MNT/src"
++dst_subv="$SCRATCH_MNT/dst"
++loop_counts=$(($LOAD_FACTOR * 4)) #The possibility is over 80%, just in case
++
++do_test()
++{
++	local ret
++	_scratch_mkfs > /dev/null 2>&1
++
++	# specify max_inline and compress explicitly to create
++	# inlined compressed extent
++	_scratch_mount "-o max_inline=$inline_size,compress"
++
++	# Subvolume id=257
++	_run_btrfs_util_prog subvolume create $src_subv
++
++	# Page sized data will be compressed to quite small size,
++	# which is about 50 bytes for 4K, 100 bytes for 64K,
++	# far smaller than $inline_size, causing a inlined compressed
++	# file extent
++	$XFS_IO_PROG -f -c "pwrite 0 $page_size" -c "fsync" $src_subv/file \
++		> /dev/null
++
++	# Subvolume id=258
++	_run_btrfs_util_prog subvolume snapshot $src_subv $dst_subv
++
++	# Append another page to file in snapshot, since its offset is not
++	# 0, it will cause regular extent, and should convert inline extent
++	# to regular too.
++	$XFS_IO_PROG -c "pwrite $page_size $page_size" $dst_subv/file > /dev/null
++	_scratch_unmount
++
++	# Fsck won't report inline-then-regular as error, as it's so long
++	# standing that we have no choice but to accept.
++	# So here we use dump-tree to catch inline extent of $dst_subv, and
++	# we need piping stdout, call btrfs-progs directly
++	$BTRFS_UTIL_PROG inspect-internal dump-tree -t 258 $SCRATCH_DEV \
++		> $tmp.dump_tree
++	if grep -q inline $tmp.dump_tree; then
++		cat $tmp.dump_tree >> $seqres.full
++		echo "Invalid inline file extent detected"
++		return 1
++	fi
++	return 0
++}
++
++for i in $(seq 1 $loop_counts); do
++	do_test
++	if [ $? -ne 0 ]; then
++		corrupted=$(($corrupted + 1))
++	fi
++done
++
++echo "Corruption possibility: $corrupted/$loop_counts" >> $seqres.full
++echo "Silence is golden"
++
++# success, all done
++status=0
++exit
+diff --git a/tests/btrfs/140.out b/tests/btrfs/140.out
+new file mode 100644
+index 0000000..24e90bc
+--- /dev/null
++++ b/tests/btrfs/140.out
+@@ -0,0 +1,2 @@
++QA output created by 140
++Silence is golden
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 641d826..e4c76e3 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -142,3 +142,4 @@
+ 137 auto quick send
+ 138 auto compress
+ 139 auto qgroup
++140 auto
 -- 
-Filipe David Manana,
+2.9.3
 
-“Whether you think you can, or you think you can't — you're right.”
+
+

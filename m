@@ -1,95 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:44942 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932691AbdDGJNP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 7 Apr 2017 05:13:15 -0400
+Received: from aserp1040.oracle.com ([141.146.126.69]:28527 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753351AbdDFWzE (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Apr 2017 18:55:04 -0400
+Date: Thu, 6 Apr 2017 15:54:15 -0700
+From: "Darrick J. Wong" <darrick.wong@oracle.com>
+To: Christoph Hellwig <hch@infradead.org>
+Cc: Goldwyn Rodrigues <rgoldwyn@suse.de>, linux-fsdevel@vger.kernel.org,
+        jack@suse.com, linux-block@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-xfs@vger.kernel.org, sagi@grimberg.me, avi@scylladb.com,
+        axboe@kernel.dk, linux-api@vger.kernel.org, willy@infradead.org,
+        tom.leiming@gmail.com, Goldwyn Rodrigues <rgoldwyn@suse.com>
+Subject: Re: [PATCH 7/8] nowait aio: xfs
+Message-ID: <20170406225415.GC4864@birch.djwong.org>
+References: <20170403185307.6243-1-rgoldwyn@suse.de>
+ <20170403185307.6243-8-rgoldwyn@suse.de>
+ <20170404065211.GD21942@infradead.org>
 MIME-Version: 1.0
-In-Reply-To: <20170407085117.GS22845@eguan.usersys.redhat.com>
-References: <1491287671-23097-1-git-send-email-fdmanana@kernel.org> <20170407085117.GS22845@eguan.usersys.redhat.com>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Fri, 7 Apr 2017 10:13:09 +0100
-Message-ID: <CAL3q7H7SN5stPdFDD87kUBtLhJkA2E5dHJ+Cf0m601WeyA9H+A@mail.gmail.com>
-Subject: Re: [PATCH 1/3] common/rc: test that xfs_io's falloc command supports
- specific flags
-To: Eryu Guan <eguan@redhat.com>
-Cc: fstests@vger.kernel.org,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Filipe Manana <fdmanana@suse.com>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170404065211.GD21942@infradead.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 7, 2017 at 9:51 AM, Eryu Guan <eguan@redhat.com> wrote:
-> On Tue, Apr 04, 2017 at 07:34:29AM +0100, fdmanana@kernel.org wrote:
->> From: Filipe Manana <fdmanana@suse.com>
->>
->> For example NFS 4.2 supports fallocate but it does not support its
->> KEEP_SIZE flag, so we want to skip tests that use fallocate with that
->> flag on filesystems that don't support it.
->>
->> Suggested-by: Eryu Guan <eguan@redhat.com>
->> Signed-off-by: Filipe Manana <fdmanana@suse.com>
->> ---
->>  common/rc | 4 ++--
->>  1 file changed, 2 insertions(+), 2 deletions(-)
->>
->> diff --git a/common/rc b/common/rc
->> index e1ab2c6..3d0f089 100644
->> --- a/common/rc
->> +++ b/common/rc
->> @@ -2021,8 +2021,8 @@ _require_xfs_io_command()
->>       "chproj")
->>               testio=`$XFS_IO_PROG -F -f -c "chproj 0" $testfile 2>&1`
->>               ;;
->> -     "falloc" )
->> -             testio=`$XFS_IO_PROG -F -f -c "falloc 0 1m" $testfile 2>&1`
->> +     "falloc*" )
->> +             testio=`$XFS_IO_PROG -F -f -c "$command 0 1m" $testfile 2>&1`
->
-> Sorry, I was wrong about this. It would break the subsequent
-> $XFS_IO_PROG -c "help $command" | grep ... command if another $param is
-> specified.
+On Mon, Apr 03, 2017 at 11:52:11PM -0700, Christoph Hellwig wrote:
+> > +	if (unaligned_io) {
+> > +		/* If we are going to wait for other DIO to finish, bail */
+> > +		if ((iocb->ki_flags & IOCB_NOWAIT) &&
+> > +		     atomic_read(&inode->i_dio_count))
+> > +			return -EAGAIN;
+> >  		inode_dio_wait(inode);
+> 
+> This checks i_dio_count twice in the nowait case, I think it should be:
+> 
+> 	if (iocb->ki_flags & IOCB_NOWAIT) {
+> 		if (atomic_read(&inode->i_dio_count))
+> 			return -EAGAIN;
+> 	} else {
+> 		inode_dio_wait(inode);
+> 	}
+> 
+> >  	if ((flags & (IOMAP_WRITE | IOMAP_ZERO)) && xfs_is_reflink_inode(ip)) {
+> >  		if (flags & IOMAP_DIRECT) {
+> > +			/* A reflinked inode will result in CoW alloc */
+> > +			if (flags & IOMAP_NOWAIT) {
+> > +				error = -EAGAIN;
+> > +				goto out_unlock;
+> > +			}
+> 
+> This is a bit pessimistic - just because the inode has any shared
+> extents we could still write into unshared ones.  For now I think this
+> pessimistic check is fine, but the comment should be corrected.
 
-Yeah I had noticed that because the following won't cause the return anymore:
+Consider what happens in both _reflink_{allocate,reserve}_cow.  If there
+is already an existing reservation in the CoW fork then we'll have to
+CoW and therefore can't satisfy the NOWAIT flag.  If there isn't already
+anything in the CoW fork, then we have to see if there are shared blocks
+by calling _reflink_trim_around_shared.  That performs a refcountbt
+lookup, which involves locking the AGF, so we also can't satisfy NOWAIT.
 
-test -z "$param" && return
+IOWs, I think this hunk has to move outside the IOMAP_DIRECT check to
+cover both write-to-reflinked-file cases.
 
-> Seems adding $param to falloc command is the right way, as
-> what Darrick did to fiemap in his new test.
->
-> -               testio=`$XFS_IO_PROG -F -f -c "falloc 0 1m" $testfile 2>&1`
-> +               testio=`$XFS_IO_PROG -F -f -c "falloc $param 0 1m" $testfile 2>&1`
+--D
 
-But in that case grepping the help output, at the very end of the
-function, will fail for falloc since its help output fails to match
-the grep pattern (as highlighted in the thread you pointed before).
-So that grep pattern would have to change as well.
-
->
-> Do you mind me updating these three patches accordingly? Or can you send
-> out new version if you like?
-
-Sure, fell free to update it as you feel it's the best way.
-
-Thanks!
-
->
-> Thanks! And sorry again!
->
-> Eryu
->
-> P.S. I'm thinking of converting all the case switches (except the
-> default one) in _require_xfs_io_command() to actually run the $command
-> with $param, and doing other cleanups, but that won't block this patch
-> and I can do it in another patch.
->
->>               ;;
->>       "fpunch" | "fcollapse" | "zero" | "fzero" | "finsert" | "funshare")
->>               testio=`$XFS_IO_PROG -F -f -c "pwrite 0 20k" -c "fsync" \
->> --
->> 2.7.0.rc3
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe fstests" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-xfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,29 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53652 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1750758AbdDROEO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 18 Apr 2017 10:04:14 -0400
-Date: Tue, 18 Apr 2017 16:04:10 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH v4 7/7] btrfs: check if the device is flush capable
-Message-ID: <20170418140410.GW4781@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Received: from userp1040.oracle.com ([156.151.31.81]:40855 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753807AbdDFDSA (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Apr 2017 23:18:00 -0400
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH v4 6/7] btrfs: delete unused member nobarriers
+Date: Thu,  6 Apr 2017 11:22:52 +0800
+Message-Id: <20170406032253.14631-7-anand.jain@oracle.com>
+In-Reply-To: <20170406032253.14631-1-anand.jain@oracle.com>
 References: <20170406032253.14631-1-anand.jain@oracle.com>
- <20170406032253.14631-8-anand.jain@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170406032253.14631-8-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 06, 2017 at 11:22:53AM +0800, Anand Jain wrote:
-> The blkdev_issue_flush() will check if the write cache is enabled
-> before submitting the flush. This will add a code to fail fast if
-> its not.
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
+The last consumer of nobarriers is removed by the commit [1] and sync
+won't fail with EOPNOTSUPP anymore. Thus, now when write cache is write
+through it just return success without actually transpiring such a
+request to the block device/lun.
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+[1]
+commit b25de9d6da49b1a8760a89672283128aa8c78345
+block: remove BIO_EOPNOTSUPP
+
+And, as the device/lun write cache state may change dynamically saving
+such as state won't help either. So deleting the member nobarriers.
+
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+v2: add commit log. ref of last consumer.
+v3: nochange
+v4: nochange
+
+ fs/btrfs/disk-io.c | 3 ---
+ fs/btrfs/volumes.h | 1 -
+ 2 files changed, 4 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 3c476b118440..b6d047250ce2 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3517,9 +3517,6 @@ static void btrfs_dev_issue_flush(struct work_struct *work)
+  */
+ static int write_dev_flush(struct btrfs_device *device, int wait)
+ {
+-	if (device->nobarriers)
+-		return 0;
+-
+ 	if (wait) {
+ 		int ret;
+ 
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 0df50bc65578..1168b78c5f1d 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -123,7 +123,6 @@ struct btrfs_device {
+ 	struct list_head resized_list;
+ 
+ 	/* for sending down flush barriers */
+-	int nobarriers;
+ 	struct completion flush_wait;
+ 	struct work_struct flush_work;
+ 	int last_flush_error;
+-- 
+2.10.0
+

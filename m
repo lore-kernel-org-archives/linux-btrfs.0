@@ -1,25 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f196.google.com ([209.85.223.196]:35160 "EHLO
-        mail-io0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753608AbdDEQZi (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Apr 2017 12:25:38 -0400
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <CAL3q7H4Qh1bU5pyOQgzmi5D2NcawW3e9333w5qHv49ugzPn-eA@mail.gmail.com>
-References: <20170405021428.14742-1-quwenruo@cn.fujitsu.com> <CAL3q7H4Qh1bU5pyOQgzmi5D2NcawW3e9333w5qHv49ugzPn-eA@mail.gmail.com>
-From: Filipe Manana <fdmanana@gmail.com>
-Date: Wed, 5 Apr 2017 17:25:36 +0100
-Message-ID: <CAL3q7H4n4ORQ4Jxgkzr7d0ZD911vN-kyvFJKzPY5KH3oUj3uew@mail.gmail.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:11401 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S933226AbdDFAcn (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Apr 2017 20:32:43 -0400
 Subject: Re: [PATCH] fstests: btrfs: Check if btrfs will create
  inline-then-regular file extents
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        fstests@vger.kernel.org, Eryu Guan <eguan@redhat.com>
-Content-Type: text/plain; charset=UTF-8
+To: <fdmanana@gmail.com>
+References: <20170405021428.14742-1-quwenruo@cn.fujitsu.com>
+ <CAL3q7H4Qh1bU5pyOQgzmi5D2NcawW3e9333w5qHv49ugzPn-eA@mail.gmail.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        <fstests@vger.kernel.org>, Eryu Guan <eguan@redhat.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <654f0fea-8220-ac0f-7f19-0b7d2ddf07c2@cn.fujitsu.com>
+Date: Thu, 6 Apr 2017 08:32:39 +0800
+MIME-Version: 1.0
+In-Reply-To: <CAL3q7H4Qh1bU5pyOQgzmi5D2NcawW3e9333w5qHv49ugzPn-eA@mail.gmail.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 5, 2017 at 5:00 PM, Filipe Manana <fdmanana@gmail.com> wrote:
+
+
+At 04/06/2017 12:00 AM, Filipe Manana wrote:
 > On Wed, Apr 5, 2017 at 3:14 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
 >> Btrfs allows inline file extent if and only if
 >> 1) It's at offset 0
@@ -165,6 +167,14 @@ On Wed, Apr 5, 2017 at 5:00 PM, Filipe Manana <fdmanana@gmail.com> wrote:
 > I don't understand the last sentence of the comment. Need piping
 > stdout? What pipe, to where? And call btrfs-progs directly where, what
 > does it mean?
+
+Redirect　to a file without populating stdout.
+
+Directly means calling $BTRFS_UTIL_PROG other than the 
+_run_btrfs_util_progs wrapper.
+
+Thanks,
+Qu
 >
 >> +       $BTRFS_UTIL_PROG inspect-internal dump-tree -t 258 $SCRATCH_DEV \
 >> +               > $tmp.dump_tree
@@ -185,20 +195,6 @@ On Wed, Apr 5, 2017 at 5:00 PM, Filipe Manana <fdmanana@gmail.com> wrote:
 >
 > I.e., no need to create a second subvolume/snapshot. The file in the
 > default subvolume will have the issue.
-
-Even simpler:
-
-1) Create the file with the data that results in the inline extent
-2) fsync the file or call sync
-3) Do the second write to the file
-4) fsync the file, call sync or unmount the fs
-
-No need for creation of any snapshot/subvolume.
-Basically what you had here is a shorter version of btrfs/137 forced
-with mount option -o compress.
-
-thanks
-
 >
 >> +
 >> +for i in $(seq 1 $loop_counts); do
@@ -248,14 +244,5 @@ thanks
 >
 >
 >
-> --
-> Filipe David Manana,
->
-> “Whether you think you can, or you think you can't — you're right.”
 
 
-
--- 
-Filipe David Manana,
-
-“Whether you think you can, or you think you can't — you're right.”

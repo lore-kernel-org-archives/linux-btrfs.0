@@ -1,85 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f172.google.com ([209.85.223.172]:33648 "EHLO
-        mail-io0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933161AbdDGNuV (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Apr 2017 09:50:21 -0400
-Received: by mail-io0-f172.google.com with SMTP id t68so16087905iof.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 07 Apr 2017 06:50:21 -0700 (PDT)
-Subject: Re: Volume appears full but TB's of space available
-To: John Petrini <jpetrini@coredial.com>
-References: <CAD4AmV5UPAKOohdMvGGbb7FV+EaToMg-kRX2rTJFB3NmwD0iwQ@mail.gmail.com>
- <CAD4AmV7jYAoUnr4BkGDtMx_sNN++wWsBFA3McLXq285UM7y5fw@mail.gmail.com>
- <CAJCQCtQhcYYSoLoVE3i10De8V_CM9yGnMh4uzGsAZAczPfXerQ@mail.gmail.com>
- <CAD4AmV5PmFHW5Hm-K50g1e3ahWjkD8=d-FtOaBpcvDNO4u+M=g@mail.gmail.com>
- <CAJCQCtRyia+r7Qdwwzwoyw+aoxvav86d2HHyKpQkDD6guHp3iA@mail.gmail.com>
- <CAD4AmV68i-nUqzYMxc-QHuDAx8P=K4Jr4JrZdW=vFFyC0PK1+A@mail.gmail.com>
- <d531fd79-c08a-0ba1-ae51-5503bc56b121@gmail.com>
- <CAD4AmV7-tFesnWbYR=geRVcFedgb4zcfKeVXuEVNnNtJN0qg1w@mail.gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <56b58b49-a4ab-56f9-25e5-94d64699da83@gmail.com>
-Date: Fri, 7 Apr 2017 09:50:16 -0400
+Received: from mail-dispatcher03.hrz.tu-darmstadt.de ([130.83.156.242]:45870
+        "EHLO lnx141.hrz.tu-darmstadt.de" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S933873AbdDGOzF (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 7 Apr 2017 10:55:05 -0400
+Received: from lnx500.hrz.tu-darmstadt.de (lnx500.hrz.tu-darmstadt.de [130.83.156.225])
+        by lnx141.hrz.tu-darmstadt.de (8.14.4/8.13.8) with ESMTP id v37EI2iJ016153
+        for <linux-btrfs@vger.kernel.org>; Fri, 7 Apr 2017 16:18:02 +0200
+        (envelope-from Markus.Baier@bcs.tu-darmstadt.de)
+Received: from smtp.tu-darmstadt.de (lnx504.hrz.tu-darmstadt.de [130.83.156.233])
+        by lnx500.hrz.tu-darmstadt.de (8.14.4/8.14.4/HRZ/PMX) with ESMTP id v37EHAQG005305
+        for <linux-btrfs@vger.kernel.org>; Fri, 7 Apr 2017 16:17:10 +0200
+        (envelope-from Markus.Baier@bcs.tu-darmstadt.de)
+Received: from [130.83.213.42] (helo=PROMETHEUS.bcs.e-technik.tu-darmstadt.de)
+        by smtp.tu-darmstadt.de with esmtpsa (TLSv1:AES128-SHA:128)
+        (Exim 4.69)
+        (envelope-from <Markus.Baier@bcs.tu-darmstadt.de>)
+        id 1cwUhK-00069o-MS
+        for linux-btrfs@vger.kernel.org; Fri, 07 Apr 2017 16:17:10 +0200
+From: Markus Baier <Markus.Baier@bcs.tu-darmstadt.de>
+Subject: During a btrfs balance nearly all quotas of the subvolumes became
+ exceeded
+To: linux-btrfs@vger.kernel.org
+Message-ID: <9221e88f-4a4b-de8f-e1dc-aff90c732ded@bcs.tu-darmstadt.de>
+Date: Fri, 7 Apr 2017 16:17:10 +0200
 MIME-Version: 1.0
-In-Reply-To: <CAD4AmV7-tFesnWbYR=geRVcFedgb4zcfKeVXuEVNnNtJN0qg1w@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-04-07 09:28, John Petrini wrote:
-> Hi Austin,
->
-> Thanks for taking to time to provide all of this great information!
-Glad I could help.
->
-> You've got me curious about RAID1. If I were to convert the array to
-> RAID1 could it then sustain a multi drive failure? Or in other words
-> do I actually end up with mirrored pairs or can a chunk still be
-> mirrored to any disk in the array? Are there performance implications
-> to using RAID1 vs RAID10?
->
-For raid10, your data is stored as 2 replicas striped at or below the 
-filesystem-block level across all the disks in the array.  Because of 
-how the data striping is done currently, you're functionally guaranteed 
-to lose data if you lose more than one disk in raid10 mode.  This 
-theoretically could be improved so that partial losses could be 
-recovered, but doing so with the current implementation would be 
-extremely complicated, and as such is not a high priority (although 
-patches would almost certainly be welcome).
+Hello btrfs-list,
 
-For raid1, your data is stored as 2 replicas with each entirely on one 
-disk, but individual chunks (the higher level allocation in BTRFS) are 
-distributed in a round-robin fashion among the disks, so any given 
-filesystem block is on exactly 2 disks.  With the current 
-implementation, for any reasonably utilized filesystem, you will lose 
-data if you lose 2 or more disks in raid1 mode.  That said, there are 
-plans (still currently vaporware in favor of getting raid5/6 working) to 
-add arbitrary replication levels to BTRFS, so once that hits, you could 
-set things to have as many replicas as you want.
+today a strange behaviour appered during the btrfs balance process.
 
-In effect, both can currently only sustain one disk failure, but losing 
-2 disks in raid10 will probably corrupt files (currently, it will 
-functionally kill the FS, although with a bit of theoretically simple 
-work this could be changed), while losing 2 disks in raid1 mode will 
-usually just make files disappear unless they are larger than the data 
-chunk size (usually between 1-5GB depending on the size of the FS), so 
-if you're just storing small files, you'll have an easier time 
-quantifying data loss with raid1 than raid10.  Both modes have the 
-possibility of completely losing the FS if the lost disks happen to take 
-out the System chunk.
+I started a btrfs balance operation on the /home subvolume
+that contains, as childs, all the subvolumes for the home directories
+of the users, every subvolume with it's own quota.
 
-As for performance, raid10 mode in BTRFS gets better performance, but 
-you can get even better performance than that by running BTRFS in raid1 
-mode on top of 2 LVM or MD raid0 volumes.  Such a configuration provides 
-the same effective data safety as BTRFS raid10, but can get anywhere 
-from 5-30% better performance depending on the workload.
+A short time after the start of the balance process no user
+was able to write into his homedirectory anymore.
+All users got the "your disc quota exceeded" message.
 
-If you care about both performance and data safety, I would suggest 
-using BTRFS raid1 mode on top of LVM or MD RAID0 together with having 
-good backups and good monitoring.  Statistically speaking, catastrophic 
-hardware failures are rare, and you'll usually have more than enough 
-warning that a device is failing before it actually does, so provided 
-you keep on top of monitoring and replace disks that are showing signs 
-of impending failure as soon as possible, you will be no worse off in 
-terms of data integrity than running ext4 or XFS on top of a LVM or MD 
-RAID10 volume.
+The I checked the qgroups and got the following result:
+
+btrfs qgroup show -r /home/
+qgroupid        rfer        excl     max_rfer
+--------        ----        ----     --------
+0/5	    16.00KiB    16.00KiB    none
+0/257	    16.00KiB    16.00KiB    none
+0/258	    16.00EiB    16.00EiB    200.00GiB
+0/259	    16.00EiB    16.00EiB    200.00GiB
+0/260	    16.00EiB    16.00EiB    200.00GiB
+0/261	    16.00EiB    16.00EiB    200.00GiB
+0/267	    28.00KiB    28.00KiB    200.00GiB
+....
+1/1	    16.00EiB    16.00EiB    900.00GiB
+
+For most of the subvolumes btrfs calculated 16.00EiB
+(I think this is the maximum possible size of the filesystem)
+as the amount of used space.
+A few subvolumes, all of them are nearly empty like the 0/267,
+were not afected and showed the normal size of 28.00KiB
+
+I was able to fix the problem with the:
+btrfs quota rescan /home
+command.
+But my question is, is this a already known bug and what can
+I do to prevent this problem during the next balance run?
+
+uname -a
+Linux condor-control 4.4.39-gentoo #1 SMP Fri Jan 27 19:16:30 CET 2017
+x86_64 Intel Core Processor (Hasswell, no TSX) GenuineIntel GNU/Linux
+
+btrfs --version
+btrfs-progs v4.6.1
+
+btrfs fi show
+Label: none    uuid: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+     Total devices 1 FS bytes used 3.03GiB
+     devid    1 size 31.98GiB used 6.12GiB path /dev/vda2
+
+Label: none    uuid: yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy
+     Total devices 1 FS bytes used 106.33GiB
+     devid    1 size 1024.00GiB used 108.06GiB path /dev/vda2
+
+
+Thanks,
+Markus

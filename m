@@ -1,117 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f42.google.com ([209.85.214.42]:36394 "EHLO
-        mail-it0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755917AbdDGArh (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Apr 2017 20:47:37 -0400
-Received: by mail-it0-f42.google.com with SMTP id 19so15372115itj.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 06 Apr 2017 17:47:32 -0700 (PDT)
+Received: from cn.fujitsu.com ([59.151.112.132]:5461 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1752666AbdDGAs3 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Apr 2017 20:48:29 -0400
+Subject: Re: [PATCH] fstests: generic: Check if cycle mount and sleep can
+ affect fiemap result
+To: Eric Sandeen <sandeen@sandeen.net>, "Theodore Ts'o" <tytso@mit.edu>,
+        Eryu Guan <eguan@redhat.com>
+References: <20170403070923.18518-1-quwenruo@cn.fujitsu.com>
+ <20170405023526.GS22845@eguan.usersys.redhat.com>
+ <20170406162616.zsnbgx6vy2fgugmq@thunk.org>
+ <36663e81-9520-0c52-5e72-1d54ddbfb0b7@sandeen.net>
+CC: <linux-btrfs@vger.kernel.org>, <fstests@vger.kernel.org>,
+        <linux-ext4@vger.kernel.org>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <519beb0e-f82c-91dc-4eae-7c61e9ee69fa@cn.fujitsu.com>
+Date: Fri, 7 Apr 2017 08:48:20 +0800
 MIME-Version: 1.0
-From: John Petrini <jpetrini@coredial.com>
-Date: Thu, 6 Apr 2017 20:47:31 -0400
-Message-ID: <CAD4AmV5UPAKOohdMvGGbb7FV+EaToMg-kRX2rTJFB3NmwD0iwQ@mail.gmail.com>
-Subject: Volume appears full but TB's of space available
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <36663e81-9520-0c52-5e72-1d54ddbfb0b7@sandeen.net>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello List,
 
-I have a volume that appears to be full despite having multiple
-Terabytes of free space available. Just yesterday I ran a re-balance
-but it didn't change anything. I've just added two more disks to the
-array and am currently in the process of another re-balance but the
-available space has not increased.
 
-Currently I can still write to the volume (I haven't tried any large
-writes) so I'm not sure if this is just a reporting issue or if writes
-will eventually fail.
+At 04/07/2017 12:28 AM, Eric Sandeen wrote:
+> On 4/6/17 11:26 AM, Theodore Ts'o wrote:
+>> On Wed, Apr 05, 2017 at 10:35:26AM +0800, Eryu Guan wrote:
+>>>
+>>> Test fails with ext3/2 when driving with ext4 driver, fiemap changed
+>>> after umount/mount cycle, then changed back to original result after
+>>> sleeping some time. An ext4 bug? (cc'ed linux-ext4 list.)
+>>
+>> I haven't had time to look at this, but I'm not sure this test is a
+>> reasonable one on the face of it.
+>>
+>> A file system may choose to optimize a file's extent tree for whatever
+>> reason it wants, whenever it wants, including on an unmount --- and
+>> that would not be an invalid thing to do.  So to have an xfstests that
+>> causes a test failure if a file system were to, say, do some cleanup
+>> at mount or unmount time, or when the file is next opened, to merge
+>> adjacent extents together (and hence change what is returned by
+>> FIEMAP) might be strange, or even weird --- but is this any of user
+>> space's business?  Or anything we want to enforce as wrong wrong wrong
+>> by xfstests?
+>
+> I had the same question.  If the exact behavior isn't defined anywhere,
+> I don't know what we can be testing, TBH.
 
-Any help is appreciated. Here's the details:
+For unmount cleanup, it's acceptable.
 
-uname -a
-Linux yuengling.johnpetrini.com 4.4.0-66-generic #87-Ubuntu SMP Fri
-Mar 3 15:29:05 UTC 2017 x86_64 x86_64 x86_64 GNU/Linux
+But if we're getting different result even we didn't modify the fs 
+during the same mount duration, fiemap still changes, then it's at least 
+anti-instinct.
 
-btrfs --version
-btrfs-progs v4.4
+And unfortunately, btrfs and ext3 shares the same problem here:
 
-sudo btrfs fi df /mnt/storage-array/
-Data, RAID10: total=10.72TiB, used=10.72TiB
-System, RAID0: total=128.00MiB, used=944.00KiB
-Metadata, RAID10: total=14.00GiB, used=12.63GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
+=== Fiemap after cycle mount ===
+/mnt/scratch/file:
+  EXT: FILE-OFFSET      BLOCK-RANGE      TOTAL FLAGS
+    0: [0..95]:         139264..139359      96 0x1000
+    1: [96..127]:       139360..139391      32 0x1000
+    2: [128..511]:      138112..138495     384 0x1000
+    3: [512..1023]:     138752..139263     512 0x1000
+    4: [1024..2047]:    143360..144383    1024 0x1000
+    5: [2048..4095]:    145408..147455    2048 0x1001
+=== Fiemap after cycle mount and sleep ===
+/mnt/scratch/file:
+  EXT: FILE-OFFSET      BLOCK-RANGE      TOTAL FLAGS
+    0: [0..127]:        139264..139391     128 0x1000
+    1: [128..511]:      138112..138495     384 0x1000
+    2: [512..1023]:     138752..139263     512 0x1000
+    3: [1024..2047]:    143360..144383    1024 0x1000
+    4: [2048..4095]:    145408..147455    2048 0x1001
 
-sudo btrfs fi show /mnt/storage-array/
-Label: none  uuid: e113ab87-7869-4ec7-9508-95691f455018
-Total devices 10 FS bytes used 10.73TiB
-devid    1 size 4.55TiB used 2.65TiB path /dev/sdj
-devid    2 size 4.55TiB used 2.65TiB path /dev/sdk
-devid    3 size 3.64TiB used 2.65TiB path /dev/sdd
-devid    4 size 3.64TiB used 2.65TiB path /dev/sdf
-devid    5 size 3.64TiB used 2.65TiB path /dev/sdg
-devid    6 size 3.64TiB used 2.65TiB path /dev/sde
-devid    7 size 3.64TiB used 2.65TiB path /dev/sdb
-devid    8 size 3.64TiB used 2.65TiB path /dev/sdc
-devid    9 size 9.10TiB used 149.00GiB path /dev/sdh
-devid   10 size 9.10TiB used 149.00GiB path /dev/sdi
+I was using the same excuse just as you guys, until I found btrfs is 
+merging extent maps at read time, which causes the problem.
+That's why the 2nd fiemap in btrfs returns merged result.
 
-sudo btrfs fi usage /mnt/storage-array/
-Overall:
-    Device size:   49.12TiB
-    Device allocated:   21.47TiB
-    Device unallocated:   27.65TiB
-    Device missing:      0.00B
-    Used:   21.45TiB
-    Free (estimated):   13.83TiB (min: 13.83TiB)
-    Data ratio:       2.00
-    Metadata ratio:       2.00
-    Global reserve:  512.00MiB (used: 0.00B)
+We fix btrfs by caching fiemap extent result before calling 
+fiemap_fill_next_extent(), and try to merge with cached result.
+Which fixes the problem quite easy.
 
-Data,RAID10: Size:10.72TiB, Used:10.71TiB
-   /dev/sdb    1.32TiB
-   /dev/sdc    1.32TiB
-   /dev/sdd    1.32TiB
-   /dev/sde    1.32TiB
-   /dev/sdf    1.32TiB
-   /dev/sdg    1.32TiB
-   /dev/sdh   72.00GiB
-   /dev/sdi   72.00GiB
-   /dev/sdj    1.32TiB
-   /dev/sdk    1.32TiB
+Thanks,
+Qu
+>
+> -Eric
+>
+>> 		       		   	   - Ted
+>
+>
 
-Metadata,RAID10: Size:14.00GiB, Used:12.63GiB
-   /dev/sdb    1.75GiB
-   /dev/sdc    1.75GiB
-   /dev/sdd    1.75GiB
-   /dev/sde    1.75GiB
-   /dev/sdf    1.75GiB
-   /dev/sdg    1.75GiB
-   /dev/sdj    1.75GiB
-   /dev/sdk    1.75GiB
 
-System,RAID0: Size:128.00MiB, Used:944.00KiB
-   /dev/sdb   16.00MiB
-   /dev/sdc   16.00MiB
-   /dev/sdd   16.00MiB
-   /dev/sde   16.00MiB
-   /dev/sdf   16.00MiB
-   /dev/sdg   16.00MiB
-   /dev/sdj   16.00MiB
-   /dev/sdk   16.00MiB
-
-Unallocated:
-   /dev/sdb    2.31TiB
-   /dev/sdc    2.31TiB
-   /dev/sdd    2.31TiB
-   /dev/sde    2.31TiB
-   /dev/sdf    2.31TiB
-   /dev/sdg    2.31TiB
-   /dev/sdh    9.03TiB
-   /dev/sdi    9.03TiB
-   /dev/sdj    3.22TiB
-   /dev/sdk    3.22TiB
-
-Thank You,
-
-John Petrini

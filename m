@@ -1,48 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from sandeen.net ([63.231.237.45]:38038 "EHLO sandeen.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751169AbdDFQ2D (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 6 Apr 2017 12:28:03 -0400
-Subject: Re: [PATCH] fstests: generic: Check if cycle mount and sleep can
- affect fiemap result
-To: "Theodore Ts'o" <tytso@mit.edu>, Eryu Guan <eguan@redhat.com>
-References: <20170403070923.18518-1-quwenruo@cn.fujitsu.com>
- <20170405023526.GS22845@eguan.usersys.redhat.com>
- <20170406162616.zsnbgx6vy2fgugmq@thunk.org>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org,
-        fstests@vger.kernel.org, linux-ext4@vger.kernel.org
-From: Eric Sandeen <sandeen@sandeen.net>
-Message-ID: <36663e81-9520-0c52-5e72-1d54ddbfb0b7@sandeen.net>
-Date: Thu, 6 Apr 2017 11:28:01 -0500
-MIME-Version: 1.0
-In-Reply-To: <20170406162616.zsnbgx6vy2fgugmq@thunk.org>
-Content-Type: text/plain; charset=windows-1252
+Received: from [195.159.176.226] ([195.159.176.226]:43053 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1752437AbdDGASR (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Apr 2017 20:18:17 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1cwHbK-0006RR-6A
+        for linux-btrfs@vger.kernel.org; Fri, 07 Apr 2017 02:18:06 +0200
+To: linux-btrfs@vger.kernel.org
+From: Martin <m_btrfs@ml1.co.uk>
+Subject: Re: Do different btrfs volumes compete for CPU?
+Date: Fri, 07 Apr 2017 01:17:59 +0100
+Message-ID: <oc6lrh$k7k$1@blaine.gmane.org>
+References: <43a14754-1047-552e-78a9-6503dfc0d121@rqc.ru> <pan$8edd9$3260f40b$e8e8873f$59ccb7af@cox.net> <ef8ec943-6d26-d7e9-d4ac-05e2ce7a8532@rqc.ru> <22751.32343.177176.307907@tree.ty.sabi.co.uk> <07258eab-5a2a-f028-48fb-60906b689cfa@rqc.ru> <22755.55691.456250.585931@tree.ty.sabi.co.uk> <e4849b22-8311-f5f7-fa2e-2a56b1b78aa5@rqc.ru>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <e4849b22-8311-f5f7-fa2e-2a56b1b78aa5@rqc.ru>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 4/6/17 11:26 AM, Theodore Ts'o wrote:
-> On Wed, Apr 05, 2017 at 10:35:26AM +0800, Eryu Guan wrote:
->>
->> Test fails with ext3/2 when driving with ext4 driver, fiemap changed
->> after umount/mount cycle, then changed back to original result after
->> sleeping some time. An ext4 bug? (cc'ed linux-ext4 list.)
-> 
-> I haven't had time to look at this, but I'm not sure this test is a
-> reasonable one on the face of it.
-> 
-> A file system may choose to optimize a file's extent tree for whatever
-> reason it wants, whenever it wants, including on an unmount --- and
-> that would not be an invalid thing to do.  So to have an xfstests that
-> causes a test failure if a file system were to, say, do some cleanup
-> at mount or unmount time, or when the file is next opened, to merge
-> adjacent extents together (and hence change what is returned by
-> FIEMAP) might be strange, or even weird --- but is this any of user
-> space's business?  Or anything we want to enforce as wrong wrong wrong
-> by xfstests?
+On 05/04/17 08:04, Marat Khalili wrote:
+> On 04/04/17 20:36, Peter Grandi wrote:
+>> SATA works for external use, eSATA works well, but what really
+>> matters is the chipset of the adapter card.
+> eSATA might be sound electrically, but mechanically it is awful. Try to
+> run it for months in a crowded server room, and inevitably you'll get
+> disconnections and data corruption. Tried different cables, brackets --
+> same result. If you ever used eSATA connector, you'd feel it.
 
-I had the same question.  If the exact behavior isn't defined anywhere,
-I don't know what we can be testing, TBH.
+Been using eSATA here for multiple disk packs continuously connected for
+a few years now for 48TB of data (not enough room in the host for the
+disks).
 
--Eric
+Never suffered am eSATA disconnect.
 
-> 		       		   	   - Ted
+Had the usual cooling fan fails and HDD fails due to old age.
+
+
+All just a case of ensuring undisturbed clean cabling and a good UPS?...
+
+(BTRFS spanning four disks per external pack has worked well also.)
+
+Good luck,
+Martin
+
+

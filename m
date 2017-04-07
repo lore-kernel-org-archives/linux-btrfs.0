@@ -1,55 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:39896 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753446AbdDDKfN (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Apr 2017 06:35:13 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH] btrfs: use q which is already obtained from bdev_get_queue
-Date: Tue,  4 Apr 2017 18:40:19 +0800
-Message-Id: <20170404104019.9270-1-anand.jain@oracle.com>
+Received: from mx1.redhat.com ([209.132.183.28]:34840 "EHLO mx1.redhat.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1756090AbdDGIvU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 7 Apr 2017 04:51:20 -0400
+Date: Fri, 7 Apr 2017 16:51:18 +0800
+From: Eryu Guan <eguan@redhat.com>
+To: fdmanana@kernel.org
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        Filipe Manana <fdmanana@suse.com>
+Subject: Re: [PATCH 1/3] common/rc: test that xfs_io's falloc command
+ supports specific flags
+Message-ID: <20170407085117.GS22845@eguan.usersys.redhat.com>
+References: <1491287671-23097-1-git-send-email-fdmanana@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1491287671-23097-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We have already assigned q from bdev_get_queue() so use it.
-And rearrange the code for better view.
+On Tue, Apr 04, 2017 at 07:34:29AM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> For example NFS 4.2 supports fallocate but it does not support its
+> KEEP_SIZE flag, so we want to skip tests that use fallocate with that
+> flag on filesystems that don't support it.
+> 
+> Suggested-by: Eryu Guan <eguan@redhat.com>
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+>  common/rc | 4 ++--
+>  1 file changed, 2 insertions(+), 2 deletions(-)
+> 
+> diff --git a/common/rc b/common/rc
+> index e1ab2c6..3d0f089 100644
+> --- a/common/rc
+> +++ b/common/rc
+> @@ -2021,8 +2021,8 @@ _require_xfs_io_command()
+>  	"chproj")
+>  		testio=`$XFS_IO_PROG -F -f -c "chproj 0" $testfile 2>&1`
+>  		;;
+> -	"falloc" )
+> -		testio=`$XFS_IO_PROG -F -f -c "falloc 0 1m" $testfile 2>&1`
+> +	"falloc*" )
+> +		testio=`$XFS_IO_PROG -F -f -c "$command 0 1m" $testfile 2>&1`
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- fs/btrfs/volumes.c | 7 +++----
- 1 file changed, 3 insertions(+), 4 deletions(-)
+Sorry, I was wrong about this. It would break the subsequent
+$XFS_IO_PROG -c "help $command" | grep ... command if another $param is
+specified. Seems adding $param to falloc command is the right way, as
+what Darrick did to fiemap in his new test.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 1563ae03079b..4de5b2d549bd 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1008,14 +1008,13 @@ static int __btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
- 		q = bdev_get_queue(bdev);
- 		if (blk_queue_discard(q))
- 			device->can_discard = 1;
-+		if (!blk_queue_nonrot(q))
-+			fs_devices->rotating = 1;
- 
- 		device->bdev = bdev;
- 		device->in_fs_metadata = 0;
- 		device->mode = flags;
- 
--		if (!blk_queue_nonrot(bdev_get_queue(bdev)))
--			fs_devices->rotating = 1;
--
- 		fs_devices->open_devices++;
- 		if (device->writeable &&
- 		    device->devid != BTRFS_DEV_REPLACE_DEVID) {
-@@ -2417,7 +2416,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
- 	fs_info->free_chunk_space += device->total_bytes;
- 	spin_unlock(&fs_info->free_chunk_lock);
- 
--	if (!blk_queue_nonrot(bdev_get_queue(bdev)))
-+	if (!blk_queue_nonrot(q))
- 		fs_info->fs_devices->rotating = 1;
- 
- 	tmp = btrfs_super_total_bytes(fs_info->super_copy);
--- 
-2.10.0
+-               testio=`$XFS_IO_PROG -F -f -c "falloc 0 1m" $testfile 2>&1`
++               testio=`$XFS_IO_PROG -F -f -c "falloc $param 0 1m" $testfile 2>&1`
 
+Do you mind me updating these three patches accordingly? Or can you send
+out new version if you like?
+
+Thanks! And sorry again!
+
+Eryu
+
+P.S. I'm thinking of converting all the case switches (except the
+default one) in _require_xfs_io_command() to actually run the $command
+with $param, and doing other cleanups, but that won't block this patch
+and I can do it in another patch.
+
+>  		;;
+>  	"fpunch" | "fcollapse" | "zero" | "fzero" | "finsert" | "funshare")
+>  		testio=`$XFS_IO_PROG -F -f -c "pwrite 0 20k" -c "fsync" \
+> -- 
+> 2.7.0.rc3
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe fstests" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

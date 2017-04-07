@@ -1,47 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:43053 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1752437AbdDGASR (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Apr 2017 20:18:17 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1cwHbK-0006RR-6A
-        for linux-btrfs@vger.kernel.org; Fri, 07 Apr 2017 02:18:06 +0200
+Received: from mail-it0-f42.google.com ([209.85.214.42]:36394 "EHLO
+        mail-it0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755917AbdDGArh (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Apr 2017 20:47:37 -0400
+Received: by mail-it0-f42.google.com with SMTP id 19so15372115itj.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 06 Apr 2017 17:47:32 -0700 (PDT)
+MIME-Version: 1.0
+From: John Petrini <jpetrini@coredial.com>
+Date: Thu, 6 Apr 2017 20:47:31 -0400
+Message-ID: <CAD4AmV5UPAKOohdMvGGbb7FV+EaToMg-kRX2rTJFB3NmwD0iwQ@mail.gmail.com>
+Subject: Volume appears full but TB's of space available
 To: linux-btrfs@vger.kernel.org
-From: Martin <m_btrfs@ml1.co.uk>
-Subject: Re: Do different btrfs volumes compete for CPU?
-Date: Fri, 07 Apr 2017 01:17:59 +0100
-Message-ID: <oc6lrh$k7k$1@blaine.gmane.org>
-References: <43a14754-1047-552e-78a9-6503dfc0d121@rqc.ru> <pan$8edd9$3260f40b$e8e8873f$59ccb7af@cox.net> <ef8ec943-6d26-d7e9-d4ac-05e2ce7a8532@rqc.ru> <22751.32343.177176.307907@tree.ty.sabi.co.uk> <07258eab-5a2a-f028-48fb-60906b689cfa@rqc.ru> <22755.55691.456250.585931@tree.ty.sabi.co.uk> <e4849b22-8311-f5f7-fa2e-2a56b1b78aa5@rqc.ru>
-Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-In-Reply-To: <e4849b22-8311-f5f7-fa2e-2a56b1b78aa5@rqc.ru>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/04/17 08:04, Marat Khalili wrote:
-> On 04/04/17 20:36, Peter Grandi wrote:
->> SATA works for external use, eSATA works well, but what really
->> matters is the chipset of the adapter card.
-> eSATA might be sound electrically, but mechanically it is awful. Try to
-> run it for months in a crowded server room, and inevitably you'll get
-> disconnections and data corruption. Tried different cables, brackets --
-> same result. If you ever used eSATA connector, you'd feel it.
+Hello List,
 
-Been using eSATA here for multiple disk packs continuously connected for
-a few years now for 48TB of data (not enough room in the host for the
-disks).
+I have a volume that appears to be full despite having multiple
+Terabytes of free space available. Just yesterday I ran a re-balance
+but it didn't change anything. I've just added two more disks to the
+array and am currently in the process of another re-balance but the
+available space has not increased.
 
-Never suffered am eSATA disconnect.
+Currently I can still write to the volume (I haven't tried any large
+writes) so I'm not sure if this is just a reporting issue or if writes
+will eventually fail.
 
-Had the usual cooling fan fails and HDD fails due to old age.
+Any help is appreciated. Here's the details:
 
+uname -a
+Linux yuengling.johnpetrini.com 4.4.0-66-generic #87-Ubuntu SMP Fri
+Mar 3 15:29:05 UTC 2017 x86_64 x86_64 x86_64 GNU/Linux
 
-All just a case of ensuring undisturbed clean cabling and a good UPS?...
+btrfs --version
+btrfs-progs v4.4
 
-(BTRFS spanning four disks per external pack has worked well also.)
+sudo btrfs fi df /mnt/storage-array/
+Data, RAID10: total=10.72TiB, used=10.72TiB
+System, RAID0: total=128.00MiB, used=944.00KiB
+Metadata, RAID10: total=14.00GiB, used=12.63GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
 
-Good luck,
-Martin
+sudo btrfs fi show /mnt/storage-array/
+Label: none  uuid: e113ab87-7869-4ec7-9508-95691f455018
+Total devices 10 FS bytes used 10.73TiB
+devid    1 size 4.55TiB used 2.65TiB path /dev/sdj
+devid    2 size 4.55TiB used 2.65TiB path /dev/sdk
+devid    3 size 3.64TiB used 2.65TiB path /dev/sdd
+devid    4 size 3.64TiB used 2.65TiB path /dev/sdf
+devid    5 size 3.64TiB used 2.65TiB path /dev/sdg
+devid    6 size 3.64TiB used 2.65TiB path /dev/sde
+devid    7 size 3.64TiB used 2.65TiB path /dev/sdb
+devid    8 size 3.64TiB used 2.65TiB path /dev/sdc
+devid    9 size 9.10TiB used 149.00GiB path /dev/sdh
+devid   10 size 9.10TiB used 149.00GiB path /dev/sdi
 
+sudo btrfs fi usage /mnt/storage-array/
+Overall:
+    Device size:   49.12TiB
+    Device allocated:   21.47TiB
+    Device unallocated:   27.65TiB
+    Device missing:      0.00B
+    Used:   21.45TiB
+    Free (estimated):   13.83TiB (min: 13.83TiB)
+    Data ratio:       2.00
+    Metadata ratio:       2.00
+    Global reserve:  512.00MiB (used: 0.00B)
 
+Data,RAID10: Size:10.72TiB, Used:10.71TiB
+   /dev/sdb    1.32TiB
+   /dev/sdc    1.32TiB
+   /dev/sdd    1.32TiB
+   /dev/sde    1.32TiB
+   /dev/sdf    1.32TiB
+   /dev/sdg    1.32TiB
+   /dev/sdh   72.00GiB
+   /dev/sdi   72.00GiB
+   /dev/sdj    1.32TiB
+   /dev/sdk    1.32TiB
+
+Metadata,RAID10: Size:14.00GiB, Used:12.63GiB
+   /dev/sdb    1.75GiB
+   /dev/sdc    1.75GiB
+   /dev/sdd    1.75GiB
+   /dev/sde    1.75GiB
+   /dev/sdf    1.75GiB
+   /dev/sdg    1.75GiB
+   /dev/sdj    1.75GiB
+   /dev/sdk    1.75GiB
+
+System,RAID0: Size:128.00MiB, Used:944.00KiB
+   /dev/sdb   16.00MiB
+   /dev/sdc   16.00MiB
+   /dev/sdd   16.00MiB
+   /dev/sde   16.00MiB
+   /dev/sdf   16.00MiB
+   /dev/sdg   16.00MiB
+   /dev/sdj   16.00MiB
+   /dev/sdk   16.00MiB
+
+Unallocated:
+   /dev/sdb    2.31TiB
+   /dev/sdc    2.31TiB
+   /dev/sdd    2.31TiB
+   /dev/sde    2.31TiB
+   /dev/sdf    2.31TiB
+   /dev/sdg    2.31TiB
+   /dev/sdh    9.03TiB
+   /dev/sdi    9.03TiB
+   /dev/sdj    3.22TiB
+   /dev/sdk    3.22TiB
+
+Thank You,
+
+John Petrini

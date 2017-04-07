@@ -1,93 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:57450 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1752060AbdDGDMg (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Apr 2017 23:12:36 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1cwKK2-0004Cu-Ez
-        for linux-btrfs@vger.kernel.org; Fri, 07 Apr 2017 05:12:26 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: mix ssd and hdd in single volume
-Date: Fri, 7 Apr 2017 03:12:12 +0000 (UTC)
-Message-ID: <pan$cdd2e$cc55a257$d0ed8ef2$bf00097b@cox.net>
-References: <CAEgruXvAEBfpQaAxCi42Vq6v8w7v1dqthpn9TpE3FDDHoTWRcw@mail.gmail.com>
-        <pan$dda3$b8e27938$5de5fd9$136342b5@cox.net>
-        <c3b00962-6ab2-d289-be77-2586bf57cd6f@rqc.ru>
-        <20170403134107.30e923d8@natsu>
-Mime-Version: 1.0
+Received: from mail-it0-f52.google.com ([209.85.214.52]:38883 "EHLO
+        mail-it0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751645AbdDGDZd (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Apr 2017 23:25:33 -0400
+Received: by mail-it0-f52.google.com with SMTP id y18so36898020itc.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 06 Apr 2017 20:25:33 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <CAJCQCtRyia+r7Qdwwzwoyw+aoxvav86d2HHyKpQkDD6guHp3iA@mail.gmail.com>
+References: <CAD4AmV5UPAKOohdMvGGbb7FV+EaToMg-kRX2rTJFB3NmwD0iwQ@mail.gmail.com>
+ <CAD4AmV7jYAoUnr4BkGDtMx_sNN++wWsBFA3McLXq285UM7y5fw@mail.gmail.com>
+ <CAJCQCtQhcYYSoLoVE3i10De8V_CM9yGnMh4uzGsAZAczPfXerQ@mail.gmail.com>
+ <CAD4AmV5PmFHW5Hm-K50g1e3ahWjkD8=d-FtOaBpcvDNO4u+M=g@mail.gmail.com> <CAJCQCtRyia+r7Qdwwzwoyw+aoxvav86d2HHyKpQkDD6guHp3iA@mail.gmail.com>
+From: John Petrini <jpetrini@coredial.com>
+Date: Thu, 6 Apr 2017 23:25:32 -0400
+Message-ID: <CAD4AmV68i-nUqzYMxc-QHuDAx8P=K4Jr4JrZdW=vFFyC0PK1+A@mail.gmail.com>
+Subject: Re: Volume appears full but TB's of space available
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Roman Mamedov posted on Mon, 03 Apr 2017 13:41:07 +0500 as excerpted:
+Interesting. That's the first time I'm hearing this. If that's the
+case I feel like it's a stretch to call it RAID10 at all. It sounds a
+lot more like basic replication similar to Ceph only Ceph understands
+failure domains and therefore can be configured to handle device
+failure (albeit at a higher level)
 
-> On Mon, 3 Apr 2017 11:30:44 +0300 Marat Khalili <mkh@rqc.ru> wrote:
-> 
->> You may want to look here: https://www.synology.com/en-global/dsm/Btrfs
->> . Somebody forgot to tell Synology, which already supports btrfs in all
->> hardware-capable devices. I think Rubicon has been crossed in
->> 'mass-market NAS[es]', for good or not.
-> 
-> AFAIR Synology did not come to this list asking for (any kind of) advice
-> prior to implementing that (else they would have gotten the same kind of
-> post from Duncan and others)[.]  I don't remember seeing them actively
-> contribute improvements or fixes especially for the RAID5 or RAID6
-> features (which they ADVERTISE on that page as a fully working part of
-> their product).
+I do of course keep backups but I chose RAID10 for the mix of
+performance and reliability. It doesn't seems worth it losing 50% of
+my usable space for the performance gain alone.
 
-> That doesn't seem honest to end users or playing nicely with the
-> upstream developers. What the upstream gets instead is just those
-> end-users coming here one by one some years later, asking how to fix
-> a broken Btrfs RAID5 on an embedded box running some 3.10 or 3.14
-> kernel.
+Thank you for letting me know about this. Knowing that I think I may
+have to reconsider my choice here. I've really been enjoying the
+flexibility of BTRS which is why I switched to it in the first place
+but with experimental RAID5/6 and what you've just told me I'm
+beginning to doubt that it's the right choice.
 
-And of course then the user gets the real state of btrfs and of btrfs 
-raid56 mode, particularly back that far, explained to them.  Along with 
-that we'll explain that any data on it is in all likelihood lost data, 
-with little to no chance at recovery.
+What's more concerning is that I haven't found a good way to monitor
+BTRFS. I might be able to accept that the array can only handle a
+single drive failure if I was confident that I could detect it but so
+far I haven't found a good solution for this.
+___
 
-And we'll point out that if there was serious value in the data, they 
-would have investigated the state of the filesystem before they put that 
-data on it, and of course, as I've already said, they'd have had backups 
-for anything that was of more value than the time/resources/hassle of 
-doing those backups.
+John Petrini
 
-And if they're lucky, that NAS will have /been/ the backup, and they'll 
-still have the actual working copy at least, and can make another backup 
-ASAP just in case that working copy dies too.
+NOC Systems Administrator   //   CoreDial, LLC   //   coredial.com
+//
+Hillcrest I, 751 Arbor Way, Suite 150, Blue Bell PA, 19422
+P: 215.297.4400 x232   //   F: 215.297.4401   //   E: jpetrini@coredial.com
 
-But if they're unlucky...
 
-Of course the user will then blame the manufacturer, but by that time the 
-warranty will be up, and even if not, while they /might/ get their money 
-back, that won't get their data back.
+Interested in sponsoring PartnerConnex 2017? Learn more.
 
-And the manufacturer will get a bad name, but by then having taken the 
-money and run they'll be on to something else or perhaps be bought out by 
-someone bigger or be out of business.
+The information transmitted is intended only for the person or entity
+to which it is addressed and may contain confidential and/or
+privileged material. Any review, retransmission,  dissemination or
+other use of, or taking of any action in reliance upon, this
+information by persons or entities other than the intended recipient
+is prohibited. If you received this in error, please contact the
+sender and delete the material from any computer.
 
-And all the user will be able to do is chalk it up to experience, and 
-mourn the loss of their kids' baby pictures/videos or their wedding 
-videos, or whatever.  If they're /really/ lucky, they'll have put them on 
-facebook or youtube or whatever, and can retrieve at least those, from 
-there.
 
-Meanwhile, the user, having been once burned, may never use the by then 
-much improved btrfs, or even worse, never trust anything Linux, again.
-
-Oh, well.  The best we can do here is warn those that /do/ value their 
-data enough to do their research first, so they /do/ have those backups 
-or at least use something a bit more mature than btrfs raid56 mode.  Of 
-course and continue to work on full btrfs stabilization.  And I like to 
-think we're reasonably good at those warnings, anyway.  The 
-stabilization, too, but that takes time and patience, plus coder skill, 
-the last of which which I personally don't have, so I just pitch in where 
-I can, answering questions, etc.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+On Thu, Apr 6, 2017 at 10:42 PM, Chris Murphy <lists@colorremedies.com> wrote:
+> On Thu, Apr 6, 2017 at 7:31 PM, John Petrini <jpetrini@coredial.com> wrote:
+>> Hi Chris,
+>>
+>> I've followed your advice and converted the system chunk to raid10. I
+>> hadn't noticed it was raid0 and it's scary to think that I've been
+>> running this array for three months like that. Thank you for saving me
+>> a lot of pain down the road!
+>
+> For what it's worth, it is imperative to keep frequent backups with
+> Btrfs raid10, it is in some ways more like raid0+1. It can only
+> tolerate the loss of a single device. It will continue to function
+> with 2+ devices in a very deceptive degraded state, until it
+> inevitably hits dual missing chunks of metadata or data, and then it
+> will faceplant. And then you'll be looking at a scrape operation.
+>
+> It's not like raid10 where you can lose one of each mirrored pair.
+> Btrfs raid10 mirrors chunks, not drives. So your metadata and data are
+> all distributed across all of the drives, and that in effect means you
+> can only lose 1 drive. If you lose a 2nd drive, some amount of
+> metadata and data will have been lost.
+>
+>
+> --
+> Chris Murphy

@@ -1,94 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:5461 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752666AbdDGAs3 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Apr 2017 20:48:29 -0400
-Subject: Re: [PATCH] fstests: generic: Check if cycle mount and sleep can
- affect fiemap result
-To: Eric Sandeen <sandeen@sandeen.net>, "Theodore Ts'o" <tytso@mit.edu>,
-        Eryu Guan <eguan@redhat.com>
-References: <20170403070923.18518-1-quwenruo@cn.fujitsu.com>
- <20170405023526.GS22845@eguan.usersys.redhat.com>
- <20170406162616.zsnbgx6vy2fgugmq@thunk.org>
- <36663e81-9520-0c52-5e72-1d54ddbfb0b7@sandeen.net>
-CC: <linux-btrfs@vger.kernel.org>, <fstests@vger.kernel.org>,
-        <linux-ext4@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <519beb0e-f82c-91dc-4eae-7c61e9ee69fa@cn.fujitsu.com>
-Date: Fri, 7 Apr 2017 08:48:20 +0800
+Received: from mail-it0-f43.google.com ([209.85.214.43]:34046 "EHLO
+        mail-it0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932109AbdDGBPy (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Apr 2017 21:15:54 -0400
+Received: by mail-it0-f43.google.com with SMTP id y18so1814667itc.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 06 Apr 2017 18:15:54 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <36663e81-9520-0c52-5e72-1d54ddbfb0b7@sandeen.net>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <CAD4AmV5UPAKOohdMvGGbb7FV+EaToMg-kRX2rTJFB3NmwD0iwQ@mail.gmail.com>
+References: <CAD4AmV5UPAKOohdMvGGbb7FV+EaToMg-kRX2rTJFB3NmwD0iwQ@mail.gmail.com>
+From: John Petrini <jpetrini@coredial.com>
+Date: Thu, 6 Apr 2017 21:15:52 -0400
+Message-ID: <CAD4AmV7jYAoUnr4BkGDtMx_sNN++wWsBFA3McLXq285UM7y5fw@mail.gmail.com>
+Subject: Re: Volume appears full but TB's of space available
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Okay so I came across this bug report:
+https://bugzilla.redhat.com/show_bug.cgi?id=1243986
 
+It looks like I'm just misinterpreting the output of btrfs fi df. What
+should I be looking at to determine the actual free space? Is Free
+(estimated):   13.83TiB (min: 13.83TiB) the proper metric?
 
-At 04/07/2017 12:28 AM, Eric Sandeen wrote:
-> On 4/6/17 11:26 AM, Theodore Ts'o wrote:
->> On Wed, Apr 05, 2017 at 10:35:26AM +0800, Eryu Guan wrote:
->>>
->>> Test fails with ext3/2 when driving with ext4 driver, fiemap changed
->>> after umount/mount cycle, then changed back to original result after
->>> sleeping some time. An ext4 bug? (cc'ed linux-ext4 list.)
->>
->> I haven't had time to look at this, but I'm not sure this test is a
->> reasonable one on the face of it.
->>
->> A file system may choose to optimize a file's extent tree for whatever
->> reason it wants, whenever it wants, including on an unmount --- and
->> that would not be an invalid thing to do.  So to have an xfstests that
->> causes a test failure if a file system were to, say, do some cleanup
->> at mount or unmount time, or when the file is next opened, to merge
->> adjacent extents together (and hence change what is returned by
->> FIEMAP) might be strange, or even weird --- but is this any of user
->> space's business?  Or anything we want to enforce as wrong wrong wrong
->> by xfstests?
->
-> I had the same question.  If the exact behavior isn't defined anywhere,
-> I don't know what we can be testing, TBH.
+Simply running df does not seem to report the usage properly
 
-For unmount cleanup, it's acceptable.
+/dev/sdj                      25T   11T  5.9T  65% /mnt/storage-array
 
-But if we're getting different result even we didn't modify the fs 
-during the same mount duration, fiemap still changes, then it's at least 
-anti-instinct.
+Thank you,
 
-And unfortunately, btrfs and ext3 shares the same problem here:
-
-=== Fiemap after cycle mount ===
-/mnt/scratch/file:
-  EXT: FILE-OFFSET      BLOCK-RANGE      TOTAL FLAGS
-    0: [0..95]:         139264..139359      96 0x1000
-    1: [96..127]:       139360..139391      32 0x1000
-    2: [128..511]:      138112..138495     384 0x1000
-    3: [512..1023]:     138752..139263     512 0x1000
-    4: [1024..2047]:    143360..144383    1024 0x1000
-    5: [2048..4095]:    145408..147455    2048 0x1001
-=== Fiemap after cycle mount and sleep ===
-/mnt/scratch/file:
-  EXT: FILE-OFFSET      BLOCK-RANGE      TOTAL FLAGS
-    0: [0..127]:        139264..139391     128 0x1000
-    1: [128..511]:      138112..138495     384 0x1000
-    2: [512..1023]:     138752..139263     512 0x1000
-    3: [1024..2047]:    143360..144383    1024 0x1000
-    4: [2048..4095]:    145408..147455    2048 0x1001
-
-I was using the same excuse just as you guys, until I found btrfs is 
-merging extent maps at read time, which causes the problem.
-That's why the 2nd fiemap in btrfs returns merged result.
-
-We fix btrfs by caching fiemap extent result before calling 
-fiemap_fill_next_extent(), and try to merge with cached result.
-Which fixes the problem quite easy.
-
-Thanks,
-Qu
->
-> -Eric
->
->> 		       		   	   - Ted
->
->
-
-
+John Petrini

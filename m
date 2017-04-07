@@ -1,53 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f50.google.com ([209.85.214.50]:36081 "EHLO
-        mail-it0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932075AbdDGRL5 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Apr 2017 13:11:57 -0400
-Received: by mail-it0-f50.google.com with SMTP id 19so27137223itj.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 07 Apr 2017 10:11:57 -0700 (PDT)
-Subject: Re: Volume appears full but TB's of space available
-To: John Petrini <jpetrini@coredial.com>
-References: <CAD4AmV5UPAKOohdMvGGbb7FV+EaToMg-kRX2rTJFB3NmwD0iwQ@mail.gmail.com>
- <CAD4AmV7jYAoUnr4BkGDtMx_sNN++wWsBFA3McLXq285UM7y5fw@mail.gmail.com>
- <CAJCQCtQhcYYSoLoVE3i10De8V_CM9yGnMh4uzGsAZAczPfXerQ@mail.gmail.com>
- <CAD4AmV5PmFHW5Hm-K50g1e3ahWjkD8=d-FtOaBpcvDNO4u+M=g@mail.gmail.com>
- <CAJCQCtRyia+r7Qdwwzwoyw+aoxvav86d2HHyKpQkDD6guHp3iA@mail.gmail.com>
- <CAD4AmV68i-nUqzYMxc-QHuDAx8P=K4Jr4JrZdW=vFFyC0PK1+A@mail.gmail.com>
- <d531fd79-c08a-0ba1-ae51-5503bc56b121@gmail.com>
- <CAD4AmV7-tFesnWbYR=geRVcFedgb4zcfKeVXuEVNnNtJN0qg1w@mail.gmail.com>
- <56b58b49-a4ab-56f9-25e5-94d64699da83@gmail.com>
- <CAJCQCtQqomcKRn-J8bJchVng=D4od346p18CKvjYp86zKSZysA@mail.gmail.com>
- <12332db1-c52a-f483-e2e7-e23e508e6066@gmail.com>
- <CAD4AmV6HTJS7BvduLjetj3K2KWqiBoBs3zS1Ca0axAvTK8WJtw@mail.gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <27d219e4-2f44-bfdc-06e3-d86db1349183@gmail.com>
-Date: Fri, 7 Apr 2017 13:11:53 -0400
+Received: from mailout-afa67.mailout.artfiles.de ([212.72.176.67]:54913 "EHLO
+        mailout-afa67.mailout.artfiles.de" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1755484AbdDGSYc (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 7 Apr 2017 14:24:32 -0400
+Received: from [209.85.218.48] (helo=mail-oi0-f48.google.com)
+        auth=smtp_senderkonto@kai-herlemann.de
+        by mailout.artfiles.de with esmtpsa (TLS1.2:RSA_AES_128_CBC_SHA1:128)
+        (Exim 4.80.1)
+        id 1cwYYf-0005ol-9K
+        for linux-btrfs@vger.kernel.org; Fri, 07 Apr 2017 20:24:29 +0200
+Received: by mail-oi0-f48.google.com with SMTP id r203so95100536oib.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 07 Apr 2017 11:24:29 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAD4AmV6HTJS7BvduLjetj3K2KWqiBoBs3zS1Ca0axAvTK8WJtw@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <CADN-S7MzE=6x25DK0XOPzfBGCEpTjdUSokBkuCPGhCvCURzLPg@mail.gmail.com>
+References: <CADN-S7MzE=6x25DK0XOPzfBGCEpTjdUSokBkuCPGhCvCURzLPg@mail.gmail.com>
+From: Kai Herlemann <btrfs@linux.kai-herlemann.de>
+Date: Fri, 7 Apr 2017 20:24:26 +0200
+Message-ID: <CADN-S7N2gT57Q-iVfQj8SNh95F5NMmUAwsVNGM5a+GzjdA16hQ@mail.gmail.com>
+Subject: Re: Is btrfs-convert able to deal with sparse files in a ext4 filesystem?
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-04-07 13:05, John Petrini wrote:
-> The use case actually is not Ceph, I was just drawing a comparison
-> between Ceph's object replication strategy vs BTRF's chunk mirroring.
-That's actually a really good comparison that I hadn't thought of 
-before.  From what I can tell from my limited understanding of how Ceph 
-works, the general principals are pretty similar, except that BTRFS 
-doesn't understand or implement failure domains (although having CRUSH 
-implemented in BTRFS for chunk placement would be a killer feature IMO).
->
-> I do find the conversation interesting however as I work with Ceph
-> quite a lot but have always gone with the default XFS filesystem for
-> on OSD's.
->
- From a stability perspective, I would normally go with XFS still for 
-the OSD's.  Most of the data integrity features provided by BTRFS are 
-also implemented in Ceph, so you don't gain much other than flexibility 
-currently by using BTRFS instead of XFS.  The one advantage BTRFS has in 
-my experience over XFS for something like this is that it seems (with 
-recent versions at least) to be more likely to survive a power-failure 
-without any serious data loss than XFS is, but that's not really a 
-common concern in Ceph's primary use case.
+Hi @all who answered,
+thank for your help and please excuse my late answer. I didn't see
+your answers because of misconfiguration of my GMail filter for that
+list.
+The filesystem contains backups of some other filesystems (it's on a
+external storage which is mirrored by RAID 1). So, if the filesystem
+get lost, there are still the source partitions of the backups. But
+you're right, I have to have actually more space purposes like using
+btrfs-convert, which needs a backup, but can't/want afford that at the
+moment because I'm student.
+
+As far as I remember, I used in the past btrfs-convert to convert the
+ext4 root partition of my laptop. It didn't really work with old
+versions of btrfs-progs (I rollbacked it then or imported a backup),
+but it worked with 4.4 or so.
+Nevertheless, I won't use btrfs-convert after your warnings, and will
+create a new filesystem and copy the data from ext4 to btrfs when I
+have enough space.
+
+Thank you all,
+Kai

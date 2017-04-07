@@ -1,89 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-dispatcher03.hrz.tu-darmstadt.de ([130.83.156.242]:45870
-        "EHLO lnx141.hrz.tu-darmstadt.de" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S933873AbdDGOzF (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 7 Apr 2017 10:55:05 -0400
-Received: from lnx500.hrz.tu-darmstadt.de (lnx500.hrz.tu-darmstadt.de [130.83.156.225])
-        by lnx141.hrz.tu-darmstadt.de (8.14.4/8.13.8) with ESMTP id v37EI2iJ016153
-        for <linux-btrfs@vger.kernel.org>; Fri, 7 Apr 2017 16:18:02 +0200
-        (envelope-from Markus.Baier@bcs.tu-darmstadt.de)
-Received: from smtp.tu-darmstadt.de (lnx504.hrz.tu-darmstadt.de [130.83.156.233])
-        by lnx500.hrz.tu-darmstadt.de (8.14.4/8.14.4/HRZ/PMX) with ESMTP id v37EHAQG005305
-        for <linux-btrfs@vger.kernel.org>; Fri, 7 Apr 2017 16:17:10 +0200
-        (envelope-from Markus.Baier@bcs.tu-darmstadt.de)
-Received: from [130.83.213.42] (helo=PROMETHEUS.bcs.e-technik.tu-darmstadt.de)
-        by smtp.tu-darmstadt.de with esmtpsa (TLSv1:AES128-SHA:128)
-        (Exim 4.69)
-        (envelope-from <Markus.Baier@bcs.tu-darmstadt.de>)
-        id 1cwUhK-00069o-MS
-        for linux-btrfs@vger.kernel.org; Fri, 07 Apr 2017 16:17:10 +0200
-From: Markus Baier <Markus.Baier@bcs.tu-darmstadt.de>
-Subject: During a btrfs balance nearly all quotas of the subvolumes became
- exceeded
-To: linux-btrfs@vger.kernel.org
-Message-ID: <9221e88f-4a4b-de8f-e1dc-aff90c732ded@bcs.tu-darmstadt.de>
-Date: Fri, 7 Apr 2017 16:17:10 +0200
+Received: from userp1040.oracle.com ([156.151.31.81]:18515 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755116AbdDGPmi (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Apr 2017 11:42:38 -0400
+Date: Fri, 7 Apr 2017 08:42:25 -0700
+From: "Darrick J. Wong" <darrick.wong@oracle.com>
+To: Eryu Guan <eguan@redhat.com>
+Cc: Eric Sandeen <sandeen@sandeen.net>, "Theodore Ts'o" <tytso@mit.edu>,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org,
+        fstests@vger.kernel.org, linux-ext4@vger.kernel.org
+Subject: Re: [PATCH] fstests: generic: Check if cycle mount and sleep can
+ affect fiemap result
+Message-ID: <20170407154225.GG10881@birch.djwong.org>
+References: <20170403070923.18518-1-quwenruo@cn.fujitsu.com>
+ <20170405023526.GS22845@eguan.usersys.redhat.com>
+ <20170406162616.zsnbgx6vy2fgugmq@thunk.org>
+ <36663e81-9520-0c52-5e72-1d54ddbfb0b7@sandeen.net>
+ <20170407050258.GO22845@eguan.usersys.redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170407050258.GO22845@eguan.usersys.redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello btrfs-list,
+On Fri, Apr 07, 2017 at 01:02:58PM +0800, Eryu Guan wrote:
+> On Thu, Apr 06, 2017 at 11:28:01AM -0500, Eric Sandeen wrote:
+> > On 4/6/17 11:26 AM, Theodore Ts'o wrote:
+> > > On Wed, Apr 05, 2017 at 10:35:26AM +0800, Eryu Guan wrote:
+> > >>
+> > >> Test fails with ext3/2 when driving with ext4 driver, fiemap changed
+> > >> after umount/mount cycle, then changed back to original result after
+> > >> sleeping some time. An ext4 bug? (cc'ed linux-ext4 list.)
+> > > 
+> > > I haven't had time to look at this, but I'm not sure this test is a
+> > > reasonable one on the face of it.
+> > > 
+> > > A file system may choose to optimize a file's extent tree for whatever
+> > > reason it wants, whenever it wants, including on an unmount --- and
+> > > that would not be an invalid thing to do.  So to have an xfstests that
+> > > causes a test failure if a file system were to, say, do some cleanup
+> > > at mount or unmount time, or when the file is next opened, to merge
+> > > adjacent extents together (and hence change what is returned by
+> > > FIEMAP) might be strange, or even weird --- but is this any of user
+> > > space's business?  Or anything we want to enforce as wrong wrong wrong
+> > > by xfstests?
+> 
+> So I was asking for a review from ext4 side instead of queuing it for
+> next xfstests update :)
 
-today a strange behaviour appered during the btrfs balance process.
+In general FIEMAP can return pretty much whatever it wants, which
+usually means that it won't report extents larger than the underlying
+block mapping extents, though as we've seen it can split a single
+on-disk extent into multiple FIEMAP records for the purpose of reporting
+sharedness.
 
-I started a btrfs balance operation on the /home subvolume
-that contains, as childs, all the subvolumes for the home directories
-of the users, every subvolume with it's own quota.
+For ext3 I'm wondering if it's the case that the first time we FIEMAP an
+indirect map file we see a possibly-merged version of whatever's in the
+particular leaf node we land in; then that information gets cached &
+merged with other records in the extent status tree, such that
+subsequent FIEMAP calls see longer extents than the first time around.
 
-A short time after the start of the balance process no user
-was able to write into his homedirectory anymore.
-All users got the "your disc quota exceeded" message.
+> > I had the same question.  If the exact behavior isn't defined anywhere,
+> > I don't know what we can be testing, TBH.
+> 
+> Agreed, I was about to ask for the expected behavior today if there was
+> no new review comments on this patch.
 
-The I checked the qgroups and got the following result:
+I think the expected behavior is that any behavior is expected. :(
 
-btrfs qgroup show -r /home/
-qgroupid        rfer        excl     max_rfer
---------        ----        ----     --------
-0/5	    16.00KiB    16.00KiB    none
-0/257	    16.00KiB    16.00KiB    none
-0/258	    16.00EiB    16.00EiB    200.00GiB
-0/259	    16.00EiB    16.00EiB    200.00GiB
-0/260	    16.00EiB    16.00EiB    200.00GiB
-0/261	    16.00EiB    16.00EiB    200.00GiB
-0/267	    28.00KiB    28.00KiB    200.00GiB
-....
-1/1	    16.00EiB    16.00EiB    900.00GiB
+--D
 
-For most of the subvolumes btrfs calculated 16.00EiB
-(I think this is the maximum possible size of the filesystem)
-as the amount of used space.
-A few subvolumes, all of them are nearly empty like the 0/267,
-were not afected and showed the normal size of 28.00KiB
-
-I was able to fix the problem with the:
-btrfs quota rescan /home
-command.
-But my question is, is this a already known bug and what can
-I do to prevent this problem during the next balance run?
-
-uname -a
-Linux condor-control 4.4.39-gentoo #1 SMP Fri Jan 27 19:16:30 CET 2017
-x86_64 Intel Core Processor (Hasswell, no TSX) GenuineIntel GNU/Linux
-
-btrfs --version
-btrfs-progs v4.6.1
-
-btrfs fi show
-Label: none    uuid: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-     Total devices 1 FS bytes used 3.03GiB
-     devid    1 size 31.98GiB used 6.12GiB path /dev/vda2
-
-Label: none    uuid: yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy
-     Total devices 1 FS bytes used 106.33GiB
-     devid    1 size 1024.00GiB used 108.06GiB path /dev/vda2
-
-
-Thanks,
-Markus
+> 
+> Thanks for the comments and review!
+> 
+> Eryu
+> --
+> To unsubscribe from this list: send the line "unsubscribe fstests" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

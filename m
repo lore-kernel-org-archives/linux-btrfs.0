@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f65.google.com ([74.125.83.65]:35778 "EHLO
-        mail-pg0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S934004AbdDHA6u (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Apr 2017 20:58:50 -0400
+Received: from mail-pg0-f68.google.com ([74.125.83.68]:32826 "EHLO
+        mail-pg0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933518AbdDHA6b (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Apr 2017 20:58:31 -0400
 From: Deepa Dinamani <deepa.kernel@gmail.com>
 To: linux-kernel@vger.kernel.org, akpm@linux-foundation.org
 Cc: tglx@linutronix.de, viro@zeniv.linux.org.uk, gregkh@linuxfoundation.org,
@@ -19,45 +19,56 @@ Cc: tglx@linutronix.de, viro@zeniv.linux.org.uk, gregkh@linuxfoundation.org,
         linux-security-module@vger.kernel.org, lustre-devel@lists.lustre.org,
         netdev@vger.kernel.org, samba-technical@lists.samba.org,
         y2038@lists.linaro.org
-Subject: [PATCH 10/12] apparmorfs: Replace CURRENT_TIME with current_time()
-Date: Fri,  7 Apr 2017 17:57:08 -0700
-Message-Id: <1491613030-11599-11-git-send-email-deepa.kernel@gmail.com>
+Subject: [PATCH 01/12] fs: f2fs: Use ktime_get_real_seconds for sit_info times
+Date: Fri,  7 Apr 2017 17:56:59 -0700
+Message-Id: <1491613030-11599-2-git-send-email-deepa.kernel@gmail.com>
 In-Reply-To: <1491613030-11599-1-git-send-email-deepa.kernel@gmail.com>
 References: <1491613030-11599-1-git-send-email-deepa.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-CURRENT_TIME macro is not y2038 safe on 32 bit systems.
+CURRENT_TIME_SEC is not y2038 safe.
 
-The patch replaces all the uses of CURRENT_TIME by
-current_time().
-
-This is also in preparation for the patch that transitions
-vfs timestamps to use 64 bit time and hence make them
-y2038 safe. current_time() is also planned to be transitioned
-to y2038 safe behavior along with this change.
-
-CURRENT_TIME macro will be deleted before merging the
-aforementioned change.
+Replace use of CURRENT_TIME_SEC with ktime_get_real_seconds
+in segment timestamps used by GC algorithm including the
+segment mtime timestamps.
 
 Signed-off-by: Deepa Dinamani <deepa.kernel@gmail.com>
+Reviewed-by: Arnd Bergmann <arnd@arndb.de>
 ---
- security/apparmor/apparmorfs.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/f2fs/segment.c | 2 +-
+ fs/f2fs/segment.h | 5 +++--
+ 2 files changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/security/apparmor/apparmorfs.c b/security/apparmor/apparmorfs.c
-index be0b498..4f6ac9d 100644
---- a/security/apparmor/apparmorfs.c
-+++ b/security/apparmor/apparmorfs.c
-@@ -1357,7 +1357,7 @@ static int aa_mk_null_file(struct dentry *parent)
+diff --git a/fs/f2fs/segment.c b/fs/f2fs/segment.c
+index 010324c..0531500 100644
+--- a/fs/f2fs/segment.c
++++ b/fs/f2fs/segment.c
+@@ -2678,7 +2678,7 @@ static int build_sit_info(struct f2fs_sb_info *sbi)
+ 	sit_i->dirty_sentries = 0;
+ 	sit_i->sents_per_block = SIT_ENTRY_PER_BLOCK;
+ 	sit_i->elapsed_time = le64_to_cpu(sbi->ckpt->elapsed_time);
+-	sit_i->mounted_time = CURRENT_TIME_SEC.tv_sec;
++	sit_i->mounted_time = ktime_get_real_seconds();
+ 	mutex_init(&sit_i->sentry_lock);
+ 	return 0;
+ }
+diff --git a/fs/f2fs/segment.h b/fs/f2fs/segment.h
+index 57e36c1..156afc3 100644
+--- a/fs/f2fs/segment.h
++++ b/fs/f2fs/segment.h
+@@ -692,8 +692,9 @@ static inline void set_to_next_sit(struct sit_info *sit_i, unsigned int start)
+ static inline unsigned long long get_mtime(struct f2fs_sb_info *sbi)
+ {
+ 	struct sit_info *sit_i = SIT_I(sbi);
+-	return sit_i->elapsed_time + CURRENT_TIME_SEC.tv_sec -
+-						sit_i->mounted_time;
++	time64_t now = ktime_get_real_seconds();
++
++	return sit_i->elapsed_time + now - sit_i->mounted_time;
+ }
  
- 	inode->i_ino = get_next_ino();
- 	inode->i_mode = S_IFCHR | S_IRUGO | S_IWUGO;
--	inode->i_atime = inode->i_mtime = inode->i_ctime = CURRENT_TIME;
-+	inode->i_atime = inode->i_mtime = inode->i_ctime = current_time(inode);
- 	init_special_inode(inode, S_IFCHR | S_IRUGO | S_IWUGO,
- 			   MKDEV(MEM_MAJOR, 3));
- 	d_instantiate(dentry, inode);
+ static inline void set_summary(struct f2fs_summary *sum, nid_t nid,
 -- 
 2.7.4
 

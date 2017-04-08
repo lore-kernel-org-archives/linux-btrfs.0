@@ -1,161 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from azure.uno.uk.net ([95.172.254.11]:46480 "EHLO azure.uno.uk.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752103AbdDGX5I (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 7 Apr 2017 19:57:08 -0400
-Received: from ty.sabi.co.uk ([95.172.230.208]:36602)
-        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
-        (Exim 4.88)
-        (envelope-from <pg@btrfs.list.sabi.co.uk>)
-        id 1cwdkY-002IQm-Al
-        for linux-btrfs@vger.kernel.org; Sat, 08 Apr 2017 00:57:06 +0100
-Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
-        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
-        id 1cwdkM-0007KF-Ss
-        for <linux-btrfs@vger.kernel.org>; Sat, 08 Apr 2017 00:56:54 +0100
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Message-ID: <22760.10054.539993.564874@tree.ty.sabi.co.uk>
-Date: Sat, 8 Apr 2017 00:56:54 +0100
-To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs filesystem keeps allocating new chunks for no apparent reason
-In-Reply-To: <5b642448-951e-5b5e-1343-0299a950089c@mendix.com>
-References: <572D0C8B.8010404@mendix.com>
-        <89a684c7-364e-f409-5348-bc0077fd438c@cn.fujitsu.com>
-        <5b642448-951e-5b5e-1343-0299a950089c@mendix.com>
-From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
+Received: from [195.159.176.226] ([195.159.176.226]:46099 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1751189AbdDHFMe (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 8 Apr 2017 01:12:34 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1cwifd-0003A3-3G
+        for linux-btrfs@vger.kernel.org; Sat, 08 Apr 2017 07:12:21 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Volume appears full but TB's of space available
+Date: Sat, 8 Apr 2017 05:12:08 +0000 (UTC)
+Message-ID: <pan$2e792$2cb39d1$9f52bd61$285d9133@cox.net>
+References: <CAD4AmV5UPAKOohdMvGGbb7FV+EaToMg-kRX2rTJFB3NmwD0iwQ@mail.gmail.com>
+        <CAD4AmV7jYAoUnr4BkGDtMx_sNN++wWsBFA3McLXq285UM7y5fw@mail.gmail.com>
+        <CAJCQCtQhcYYSoLoVE3i10De8V_CM9yGnMh4uzGsAZAczPfXerQ@mail.gmail.com>
+        <CAD4AmV5PmFHW5Hm-K50g1e3ahWjkD8=d-FtOaBpcvDNO4u+M=g@mail.gmail.com>
+        <CAJCQCtRyia+r7Qdwwzwoyw+aoxvav86d2HHyKpQkDD6guHp3iA@mail.gmail.com>
+        <CAD4AmV68i-nUqzYMxc-QHuDAx8P=K4Jr4JrZdW=vFFyC0PK1+A@mail.gmail.com>
+        <d531fd79-c08a-0ba1-ae51-5503bc56b121@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[ ... ]
->>> I've got a mostly inactive btrfs filesystem inside a virtual
->>> machine somewhere that shows interesting behaviour: while no
->>> interesting disk activity is going on, btrfs keeps
->>> allocating new chunks, a GiB at a time.
-[ ... ]
-> Because the allocator keeps walking forward every file that is
-> created and then removed leaves a blank spot behind.
+Austin S. Hemmelgarn posted on Fri, 07 Apr 2017 07:41:22 -0400 as
+excerpted:
 
-That is a typical "log-structured" filesystem behaviour, not
-really surprised that Btrfs is doing something like that being
-COW. NILFS2 works like that and it requires a compactor (which
-does the requivalent of 'balance' and 'defrag'). It is all about
-tradeoffs.
+> 2. Results from 'btrfs scrub'.  This is somewhat tricky because scrub is
+> either asynchronous or blocks for a _long_ time.  The simplest option
+> I've found is to fire off an asynchronous scrub to run during down-time,
+> and then schedule recurring checks with 'btrfs scrub status'.  On the
+> plus side, 'btrfs scrub status' already returns non-zero if the scrub
+> found errors.
 
-With Btrfs I figured out that fairly frequent 'balance' is
-really quite important, even with low percent values like
-"usage=50", and usually even 'usage=90' does not take a long
-time (while the default takes often a long time, I suspect
-needlessly).
+This is (one place) where my "keep it small enough to be in-practice-
+manageable" comes in.
 
->> From the exact moment I did mount -o remount,nossd on this
->> filesystem, the problem vanished.
+I always run my scrubs with -B (don't background, always, because I've 
+scripted it), and they normally come back within a minute. =:^)
 
-Haha. Indeed. So it switches from "COW" to more like "log
-structured" with the 'ssd' option. F2FS can switch like that
-too, with some tunables IIIRC. Except that modern flash SSDs
-already do the "log structured" bit internally, so doing in in
-Btrfs does not really help that much.
+But that's because I'm running multiple btrfs pair-device raid1 on a pair 
+of partitioned SSDs, with each independent btrfs built on a partition 
+from each ssd, with all partitions under 50 GiB.  So scrubs takes less 
+than a minute to run (on the under 1 GiB /var/log, it returns effectively 
+immediately, as soon as I hit enter on the command), but that's not 
+entirely surprising at the sizes of the ssd-based btrfs' I am running.
 
->> And even I saw some early prototypes inside the codes to
->> allow btrfs do allocation smaller extent than required.
->> (E.g. caller needs 2M extent, but btrfs returns 2 1M extents)
+When scrubs (and balances, and checks) come back in a minute or so, it 
+makes maintenance /so/ much less of a hassle. =:^)
 
-I am surprised that this is not already there, but it is a
-terrible fix to a big mistake. The big mistake, that nearly all
-filesystem designers do, is to assume that contiguous allocation
-must bew done by writing contiguous large blocks or extents.
+And the generally single-purpose and relatively small size of each 
+filesystem means I can, for instance, keep / (with all the system libs, 
+bins, manpages, and the installed-package database, among other things) 
+mounted read-only by default, and keep the updates partition (gentoo so 
+that's the gentoo and overlay trees, the sources and binpkg cache, ccache 
+cache, etc) and (large non-ssd/non-btrfs) media partitions unmounted by 
+default.
 
-This big mistake was behind the stupid idea of the BSD FFS to
-raise the block size from 512B to 4096B plus 512B "tails", and
-endless stupid proposals to raise page and block sizes that get
-done all the time, and is behind the stupid idea of doing
-"delayed allocation", so large extents can be written in one go.
+Which in turn means when something /does/ go wrong, as long as it wasn't 
+a physical device, there's much less data at risk, because most of it was 
+probably either unmounted, or mounted read-only.
 
-The ancient and tried and obvious idea is to preallocate space
-ahead of it being written, so that a file physical size may be
-larger than its logical length, and by how much it depends on
-some adaptive logic, or hinting from the application (if the
-file size if known in advance it can be to preallocate the whole
-file).
+Which in turn means I don't have to worry about scrub/check or other 
+repair on those filesystems at all, only the ones that were actually 
+mounted writable.  And as mentioned, those scrub and check fast enough 
+that I can literally wait at the terminal for command completion. =:^)
 
-> [ ... ] So, this is why putting your /var/log, /var/lib/mailman and
-> /var/spool on btrfs is a terrible idea. [ ... ]
+Of course my setup's what most would call partitioned to the extreme, but 
+it does have its advantages, and it works well for me, which after all is 
+the important thing for /my/ setup.
 
-That is just the old "writing a file slowly" issue, and many if
-not most filesystems have this issue:
+But the more generic point remains, if you setup multi-TB filesystems 
+that take days or weeks for a maintenance command to complete, running 
+those maintenance commands isn't going to be something done as often as 
+one arguably should, and rebuilding from a filesystem or device failure 
+is going to take far longer than one would like, as well.  We've seen the 
+reports here.  If that's what you're doing, strongly consider breaking 
+your filesystems down to something rather more manageable, say a couple 
+TiB each.  Broken along natural usage lines, it can save a lot on the  
+caffeine and headache pills when something does go wrong.
 
-  http://www.sabi.co.uk/blog/15-one.html?150203#150203
+Unless of course like one poster here, you're handling double-digit-TB 
+super-collider data files.  Those tend to be a bit difficult to store on 
+sub-double-digit-TB filesystems.  =:^)  But that's the other extreme from 
+what I've done here, and he actually has a good /reason/ for /his/
+double-digit- or even triple-digit-TB filesystems.  There's not much to 
+be done about his use-case, and indeed, AFAIK he decided btrfs simply 
+isn't stable and mature enough for that use-case yet, tho I believe he's 
+using it for some other, more minor and less gargantuan use-cases.
 
-and as that post shows it was already reported for Btrfs here:
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-  http://kreijack.blogspot.co.uk/2014/06/btrfs-and-systemd-journal.html
-
-> [ ... ] The fun thing is that this might work, but because of
-> the pattern we end up with, a large write apparently fails
-> (the files downloaded when doing apt-get update by daily cron)
-> which causes a new chunk allocation. This is clearly visible
-> in the videos. Directly after that, the new chunk gets filled
-> with the same pattern, because the extent allocator now
-> continues there and next day same thing happens again etc... [
-> ... ]
-
-The general problem is that filesystems have a very difficult
-job especially on rotating media and cannot avoid large
-important degenerate corner case by using any adaptive logic.
-
-Only predictive logic can avoid them, and since psychic code is
-not possible yet, "predictive" means hints from applications and
-users, and application developers and users are usually not
-going to give them, or give them wrong.
-
-Consider the "slow writing" corner case, common to logging or
-downloads, that you mention: the filesystem logic cannot do well
-in the general case because it cannot predict how large the
-final file will be, or what the rate of writing will be.
-
-However if the applications or users hint the total final size
-or at least a suitable allocation size things are going to be
-good. But it is already difficult to expect applications to give
-absolutely necessary 'fsync's, so explicit file size or access
-pattern hints are a bit of an illusion. It is the ancient
-'O_PONIES' issue in one of its many forms.
-
-Fortunately it possible and even easy to do much better
-*synthetic* hinting than most library and kernels do today:
-
-  http://www.sabi.co.uk/blog/anno05-4th.html?051012d#051012d
-  http://www.sabi.co.uk/blog/anno05-4th.html?051011b#051011b
-  http://www.sabi.co.uk/blog/anno05-4th.html?051011#051011
-  http://www.sabi.co.uk/blog/anno05-4th.html?051010#051010
-
-But that has not happened because it is no developer's itch to
-fix. I was instead partially impressed that recently the
-'vm_cluster' implementation was "fixed", after only one or two
-decades from being first reported:
-
-  http://sabi.co.uk/blog/anno05-3rd.html?050923#050923
-  https://lwn.net/Articles/716296/
-  https://lkml.org/lkml/2001/1/30/160
-
-And still the author(s) of the fix don't see to be persuaded by
-many decades of research on paging that show that read-ahead on
-fault is in the general case a stupid idea (at least for what
-are called in Linux "anonymous" pages).
-
-I have found over time that reports and discussions like this
-are mostly pointless: some decades ago I pointed out to L McVoy
-when he was a developer at Sun that tools like 'cp' and 'tar'
-have *totally predictable* access patterns and (almost always)
-file sizes are know in advance, so they could trivially do
-access patterns hinting and preallocation. Yet it is decades
-later and most such tools don't. "because can't be bothered to
-read papers", "because boring", "because not my itch".
-For another example someone has finally started looking into
-writeback errors: https://lwn.net/Articles/718734/ that usually
-don't get reported, but then how many developers check the
-return code of 'close'(2)?
-I wonder sometimes how M Stonebraker feels about having written
-in "Operating System Support for Database Management" entirely
-obvious things and it having been steadfastly ignored since 1981
-by most kernel and filesystem authors.

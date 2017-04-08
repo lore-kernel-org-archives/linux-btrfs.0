@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f68.google.com ([74.125.83.68]:32826 "EHLO
+Received: from mail-pg0-f68.google.com ([74.125.83.68]:35787 "EHLO
         mail-pg0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933518AbdDHA6b (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Apr 2017 20:58:31 -0400
+        with ESMTP id S934017AbdDHA6w (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Apr 2017 20:58:52 -0400
 From: Deepa Dinamani <deepa.kernel@gmail.com>
 To: linux-kernel@vger.kernel.org, akpm@linux-foundation.org
 Cc: tglx@linutronix.de, viro@zeniv.linux.org.uk, gregkh@linuxfoundation.org,
@@ -19,56 +19,41 @@ Cc: tglx@linutronix.de, viro@zeniv.linux.org.uk, gregkh@linuxfoundation.org,
         linux-security-module@vger.kernel.org, lustre-devel@lists.lustre.org,
         netdev@vger.kernel.org, samba-technical@lists.samba.org,
         y2038@lists.linaro.org
-Subject: [PATCH 01/12] fs: f2fs: Use ktime_get_real_seconds for sit_info times
-Date: Fri,  7 Apr 2017 17:56:59 -0700
-Message-Id: <1491613030-11599-2-git-send-email-deepa.kernel@gmail.com>
+Subject: [PATCH 11/12] time: Delete CURRENT_TIME_SEC and CURRENT_TIME
+Date: Fri,  7 Apr 2017 17:57:09 -0700
+Message-Id: <1491613030-11599-12-git-send-email-deepa.kernel@gmail.com>
 In-Reply-To: <1491613030-11599-1-git-send-email-deepa.kernel@gmail.com>
 References: <1491613030-11599-1-git-send-email-deepa.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-CURRENT_TIME_SEC is not y2038 safe.
-
-Replace use of CURRENT_TIME_SEC with ktime_get_real_seconds
-in segment timestamps used by GC algorithm including the
-segment mtime timestamps.
+All uses of CURRENT_TIME_SEC and CURRENT_TIME macros have
+been replaced by other time functions. These macros are
+also not y2038 safe.
+And, all their use cases can be fulfilled by y2038 safe
+ktime_get_* variants.
 
 Signed-off-by: Deepa Dinamani <deepa.kernel@gmail.com>
+Acked-by: John Stultz <john.stultz@linaro.org>
 Reviewed-by: Arnd Bergmann <arnd@arndb.de>
 ---
- fs/f2fs/segment.c | 2 +-
- fs/f2fs/segment.h | 5 +++--
- 2 files changed, 4 insertions(+), 3 deletions(-)
+ include/linux/time.h | 3 ---
+ 1 file changed, 3 deletions(-)
 
-diff --git a/fs/f2fs/segment.c b/fs/f2fs/segment.c
-index 010324c..0531500 100644
---- a/fs/f2fs/segment.c
-+++ b/fs/f2fs/segment.c
-@@ -2678,7 +2678,7 @@ static int build_sit_info(struct f2fs_sb_info *sbi)
- 	sit_i->dirty_sentries = 0;
- 	sit_i->sents_per_block = SIT_ENTRY_PER_BLOCK;
- 	sit_i->elapsed_time = le64_to_cpu(sbi->ckpt->elapsed_time);
--	sit_i->mounted_time = CURRENT_TIME_SEC.tv_sec;
-+	sit_i->mounted_time = ktime_get_real_seconds();
- 	mutex_init(&sit_i->sentry_lock);
- 	return 0;
- }
-diff --git a/fs/f2fs/segment.h b/fs/f2fs/segment.h
-index 57e36c1..156afc3 100644
---- a/fs/f2fs/segment.h
-+++ b/fs/f2fs/segment.h
-@@ -692,8 +692,9 @@ static inline void set_to_next_sit(struct sit_info *sit_i, unsigned int start)
- static inline unsigned long long get_mtime(struct f2fs_sb_info *sbi)
- {
- 	struct sit_info *sit_i = SIT_I(sbi);
--	return sit_i->elapsed_time + CURRENT_TIME_SEC.tv_sec -
--						sit_i->mounted_time;
-+	time64_t now = ktime_get_real_seconds();
-+
-+	return sit_i->elapsed_time + now - sit_i->mounted_time;
+diff --git a/include/linux/time.h b/include/linux/time.h
+index 23f0f5c..c0543f5 100644
+--- a/include/linux/time.h
++++ b/include/linux/time.h
+@@ -151,9 +151,6 @@ static inline bool timespec_inject_offset_valid(const struct timespec *ts)
+ 	return true;
  }
  
- static inline void set_summary(struct f2fs_summary *sum, nid_t nid,
+-#define CURRENT_TIME		(current_kernel_time())
+-#define CURRENT_TIME_SEC	((struct timespec) { get_seconds(), 0 })
+-
+ /* Some architectures do not supply their own clocksource.
+  * This is mainly the case in architectures that get their
+  * inter-tick times by reading the counter on their interval
 -- 
 2.7.4
 

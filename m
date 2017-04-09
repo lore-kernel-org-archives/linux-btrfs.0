@@ -1,58 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from syrinx.knorrie.org ([82.94.188.77]:48064 "EHLO
+Received: from syrinx.knorrie.org ([82.94.188.77]:49110 "EHLO
         syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752524AbdDIUPV (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Apr 2017 16:15:21 -0400
+        with ESMTP id S1752569AbdDIUsX (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Apr 2017 16:48:23 -0400
 Subject: Re: About free space fragmentation, metadata write amplification and
  (no)ssd
-To: Chris Murphy <lists@colorremedies.com>
+To: Kai Krakow <hurikhan77@gmail.com>, linux-btrfs@vger.kernel.org
 References: <5e11b988-05ea-c468-21ef-589c71058436@mendix.com>
- <CAJCQCtScqmKRHZpv3aaN8DjSFU0My4sjsvr=_c9Ch7BOfc3wVw@mail.gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+ <22761.23640.216570.125948@tree.ty.sabi.co.uk>
+ <e3e2c13c-8f5d-2848-a3f6-759259d84d9d@mendix.com>
+ <20170409051424.28a086cb@jupiter.sol.kaishome.de>
 From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Message-ID: <9d228917-1095-9ba0-62ed-ea214b6790e1@mendix.com>
-Date: Sun, 9 Apr 2017 22:15:17 +0200
+Message-ID: <3aee0cac-ec4d-52f1-f872-8bc9e3874670@mendix.com>
+Date: Sun, 9 Apr 2017 22:48:20 +0200
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtScqmKRHZpv3aaN8DjSFU0My4sjsvr=_c9Ch7BOfc3wVw@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20170409051424.28a086cb@jupiter.sol.kaishome.de>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04/09/2017 08:10 PM, Chris Murphy wrote:
-> On Sat, Apr 8, 2017 at 2:19 PM, Hans van Kranenburg
-> <hans.van.kranenburg@mendix.com> wrote:
->> After changing to nossd, another thing happened. The expiry process,
->> which normally takes about 1.5 hour to remove ~2500 subvolumes (keeping
->> it queued up to a 100 orphans all the time), suddenly took the entire
->> rest of the day, not being done before the nightly backups had to start
->> again at 10PM...
+On 04/09/2017 05:14 AM, Kai Krakow wrote:
+> Am Sun, 9 Apr 2017 02:21:19 +0200
+> schrieb Hans van Kranenburg <hans.van.kranenburg@mendix.com>:
 > 
-> Is this 'btrfs sub del' with 100 subvolumes listed? What happens if
-> the delete command is issued with all 2500 at once? Deleting snapshots
-> is definitely expensive, and deleting them one at a time is more
-> expensive in total time than deleting them in one whack. But I've
-> never deleted 100 or more at once.
+>> [...]
+>> The fundamental functionality of doing the cow snapshots, moo, and the
+>> related subvolume removal on filesystem trees is so awesome. I have no
+>> idea how we would have been able to continue this type of backup
+>> system when btrfs was not available. Hardlinks and rm -rf was a total
+>> dead end road.
+> 
+> I'm absolutely no expert with arrays of sizes that you use but I also
+> stopped using the hardlink-and-remove approach: It was slow to manage
+> (rsync works slow for it, rm works slow for it) and it was error-probe
+> (due to the nature of hardlinks). I used btrfs with snapshots and rsync
+> for a while in my personal testbed, and experienced great slowness over
+> time: rsync started to become slower and slower, full backup took 4
+> hours with huge %IO usage, maintaining the backup history was also slow
+> (removing backups took a while), rebalancing was needed due to huge
+> wasted space.
 
-It doesn't really matter how many, because it stil cleans only one at a
-time, in the order that they were submitted.
+Did you debug why it was slow?
 
-(And this also means that if you delete 1000 snapshots of the same huge
-subvolume, it will do all the inefficient backref walking 1000 times etc.)
+> I used rsync with --inplace and --no-whole-file to waste
+> as few space as possible.
 
-Doing a subvolume delete (or multiple) on the command line will only
-append them to this list, besides removing some tree items so that it's
-not visible anymore as normal subvolume. The list of subvolume ids
-queued for cleaning can be found in tree 1 with keys of
-(ORPHAN_OBJECTID, ORPHAN_ITEM_KEY, <subvolid>)
+Most of the files on the remotes I backup do not change. There can be
+new extra files, or files can be removed, but they don't change in place.
 
-The 100 is a bit of an arbitrarily chosen number that makes sure it'll
-be working full speed all the time, and also give me a somewhat
-acceptable time to wait for finishing when interrupting it.
+Files that change much, together with --inplace cause extra reflinking
+of data, which at first seems to save space, but also makes backref
+walking slower and causes more fragmentation and more places in the
+trees that needs to change when doing balance and subvolume delete. So
+that might have been one of the reasons for the increasing slowness.
 
-Here's some more and a snippet of example code (at the end of the commit
-message) which looks almost 100% like what I have in my backup expiry code:
+And, of course always make sure *everything* runs with noatime on the
+remotes, or you'll be unnecessary trashing all metadata all the time.
 
-https://github.com/knorrie/python-btrfs/commit/9d697ba7d4782afbb070bf057aa4ff3e3aa51be0
+Aaaaand, if you get a new 128MiB extent with shiny new data on day 1,
+and then the remote changes 75% of it before doing backup of day 2, then
+25% of the file as seen in day 2 backup might reflink to parts of the
+old 128MiB extent of day 1. But, if you expire backup of day 1, that
+128MiB extent just stays there, with 75% of it still keeping disk space
+occupied, but not reachable from any file on your filesystem! And
+balance doesn't fix that.
+
+I have an explicit --whole-file in the rsync command because of this.
+Some of the remotes do actually have changing files, which are
+postgresql dumps in sqlformat compressed with gzip --rsyncable. Rsync
+can combine the data of the day before and new fragments from the
+remote, but I'd rather have it write out 1 new complete file again.
+
+> What I first found was an adaptive rebalancer script which I still use
+> for the main filesystem:
+> 
+> https://www.spinics.net/lists/linux-btrfs/msg52076.html
+> (thanks to Lionel)
+> 
+> It works pretty well and has no such big IO overhead due to the
+> adaptive multi-pass approach.
+
+It looks that it sets a target amount of unallocated space it wants to
+have, and then starts doing balance with dusage=0, 1, 2, 3, etc until
+that target is reached. That's a nice way yes.
 
 -- 
 Hans van Kranenburg

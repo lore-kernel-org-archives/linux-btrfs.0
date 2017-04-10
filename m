@@ -1,62 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f194.google.com ([209.85.223.194]:36633 "EHLO
-        mail-io0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752856AbdDJMun (ORCPT
+Received: from bombadil.infradead.org ([65.50.211.133]:45313 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752912AbdDJOjo (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 Apr 2017 08:50:43 -0400
-Subject: Re: [PATCH] btrfs: scrub: use do_div() for 64-by-32 division
-To: Adam Borowski <kilobyte@angband.pl>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
-        linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, Icenowy Zheng <icenowy@aosc.io>,
-        Fabio Estevam <festevam@gmail.com>
-References: <CAOMZO5B9J15qvrsjOb-e5gk47gA=+2p2yLNLhswG+H3S0L7LXg@mail.gmail.com>
- <20170408210737.5456-1-kilobyte@angband.pl>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <7179b0c7-0951-b5f3-6835-2f005ea743e1@gmail.com>
-Date: Mon, 10 Apr 2017 08:50:37 -0400
+        Mon, 10 Apr 2017 10:39:44 -0400
+Date: Mon, 10 Apr 2017 07:39:43 -0700
+From: Christoph Hellwig <hch@infradead.org>
+To: Jan Kara <jack@suse.cz>
+Cc: Christoph Hellwig <hch@infradead.org>,
+        Goldwyn Rodrigues <rgoldwyn@suse.de>, linux-fsdevel@vger.kernel.org,
+        jack@suse.com, linux-block@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-xfs@vger.kernel.org, sagi@grimberg.me, avi@scylladb.com,
+        axboe@kernel.dk, linux-api@vger.kernel.org, willy@infradead.org,
+        tom.leiming@gmail.com, Goldwyn Rodrigues <rgoldwyn@suse.com>
+Subject: Re: [PATCH 6/8] nowait aio: ext4
+Message-ID: <20170410143943.GA2930@infradead.org>
+References: <20170403185307.6243-1-rgoldwyn@suse.de>
+ <20170403185307.6243-7-rgoldwyn@suse.de>
+ <20170404075853.GB28522@quack2.suse.cz>
+ <20170404084122.GA10252@infradead.org>
+ <d6dac6ec-c71c-0082-972f-61e7299ed418@suse.de>
+ <20170410074539.GA18250@infradead.org>
+ <20170410123750.GE3224@quack2.suse.cz>
 MIME-Version: 1.0
-In-Reply-To: <20170408210737.5456-1-kilobyte@angband.pl>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170410123750.GE3224@quack2.suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-04-08 17:07, Adam Borowski wrote:
-> Unbreaks ARM and possibly other 32-bit architectures.
->
-> Fixes: 7d0ef8b4d: Btrfs: update scrub_parity to use u64 stripe_len
-> Reported-by: Icenowy Zheng <icenowy@aosc.io>
-> Signed-off-by: Adam Borowski <kilobyte@angband.pl>
-> ---
-> You'd probably want to squash this with Liu's commit, to be nice to future
-> bisects.
->
-> Tested on amd64 where all is fine, and on arm (Odroid-U2) where scrub
-> sometimes works, but, like most operations, randomly dies with some badness
-> that doesn't look related: io_schedule, kunmap_high.  That badness wasn't
-> there in 4.11-rc5, needs investigating, but since it's not connected to our
-> issue at hand, I consider this patch sort-of tested.
->
->  fs/btrfs/scrub.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
->
-> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-> index b6fe1cd08048..95372e3679f3 100644
-> --- a/fs/btrfs/scrub.c
-> +++ b/fs/btrfs/scrub.c
-> @@ -2407,7 +2407,7 @@ static inline void __scrub_mark_bitmap(struct scrub_parity *sparity,
->
->  	start -= sparity->logic_start;
->  	start = div64_u64_rem(start, sparity->stripe_len, &offset);
-> -	offset /= sectorsize;
-> +	do_div(offset, sectorsize);
->  	nsectors = (int)len / sectorsize;
->
->  	if (offset + nsectors <= sparity->nsectors) {
->
-Also fixes things on:
-32-bit MIPS (eb and el variants)
-32-bit SPARC
-32-bit PPC
+On Mon, Apr 10, 2017 at 02:37:50PM +0200, Jan Kara wrote:
+> I don't understand here. Do you want that all filesystems support NOWAIT
+> direct IO?
 
-You can add my Tested-by if you want.
+No.  Per-file_system_type is way to coarse grained.  All feature flag
+needs to be per-file_operation at least for cases like ext4 with our
+without extents (or journal) XFS v4 vs v5, different NFS versions, etc.
+
+For RWF_* each file operation simply declares if the feature is
+supported not by rejecting unknown ones.  FIEMAP does the same as do
+a few other interfaces.

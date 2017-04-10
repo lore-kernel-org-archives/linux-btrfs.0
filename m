@@ -1,103 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38103 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754473AbdDJPej (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 Apr 2017 11:34:39 -0400
-Date: Mon, 10 Apr 2017 17:34:37 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Josef Bacik <josef@toxicpanda.com>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, Chris Mason <clm@fb.com>,
-        btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: About the behavior of inline extent
-Message-ID: <20170410153437.GB4781@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <f9dc56cc-720e-0df1-f6c7-790e93276ee0@cn.fujitsu.com>
- <68B899DF-1EFE-4463-A3F8-BD03E0B811DC@toxicpanda.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <68B899DF-1EFE-4463-A3F8-BD03E0B811DC@toxicpanda.com>
+Received: from [195.159.176.226] ([195.159.176.226]:40717 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S932993AbdDJQyS (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 10 Apr 2017 12:54:18 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1cxcZo-0008Ua-Sc
+        for linux-btrfs@vger.kernel.org; Mon, 10 Apr 2017 18:54:04 +0200
+To: linux-btrfs@vger.kernel.org
+From: Kai Krakow <hurikhan77@gmail.com>
+Subject: Re: btrfs filesystem keeps allocating new chunks for no apparent
+ reason
+Date: Mon, 10 Apr 2017 18:53:58 +0200
+Message-ID: <20170410185358.389c61e0@jupiter.sol.kaishome.de>
+References: <572D0C8B.8010404@mendix.com>
+ <89a684c7-364e-f409-5348-bc0077fd438c@cn.fujitsu.com>
+ <5b642448-951e-5b5e-1343-0299a950089c@mendix.com>
+ <51778c0f-2720-1c2d-aba2-e22e5f4d3a3a@mendix.com>
+ <4532f6ee-2a6e-412a-7230-edb76735d55f@mendix.com>
+ <07a7f59e-64e0-4d09-5d32-01bc933fe38d@gmail.com>
+ <20170410144533.664fc304@jupiter.sol.kaishome.de>
+ <5488ea5a-b41c-5987-e664-ec17cf2d5e01@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 10, 2017 at 10:17:52AM -0400, Josef Bacik wrote:
-> 
-> > On Apr 9, 2017, at 11:27 PM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
-> > 
-> > Hi,
-> > 
-> > Recent btrfs/137 test case makes me wonder what's the designed behavior of btrfs inline data extent.
-> > 
-> > The current behavior in fact is quite a chaos.
-> > We need a standard of how inline extent should behave.
-> > 
-> > 1) max_inline limit
-> >   The problem of current max_inline is, it's never clear what it is
-> >   limiting.
-> > 
-> >   For example, we don't allow page sized inline extent if not
-> >   compressed.
-> >   But we allow page sized inline extent if it's compressed.
-> >   Is it just limiting size after compression?
-> >   What if we really want to limit size before compression?
-> > 
-> 
-> max_inline is for the actual space on disk.  Compression takes up less
-> space, therefore you can fit bigger actual data into the inline area.
+Am Mon, 10 Apr 2017 08:51:38 -0400
+schrieb "Austin S. Hemmelgarn" <ahferroin7@gmail.com>:
 
-But in practice the other limits apply so we never inline file larger
-than sectorsize. So the percieved behaviour is more like it's limit of
-the file size, not the actual storage.
+> On 2017-04-10 08:45, Kai Krakow wrote:
+> > Am Mon, 10 Apr 2017 08:39:23 -0400
+> > schrieb "Austin S. Hemmelgarn" <ahferroin7@gmail.com>:
+> >  
+> >> They've been running BTRFS
+> >> with LZO compression, the SSD allocator, atime disabled, and mtime
+> >> updates deferred (lazytime mount option) the whole time, so it may
+> >> be a slightly different use case than the OP from this thread.  
+> >
+> > Does btrfs really support lazytime now?
+> >  
+> It appears to, I do see fewer writes with it than without it.  At the 
+> very least, if it doesn't, then nothing complains about it.
 
-> > 2) inline extent condition
-> >   Is inline extent allowed if we have following regular extent?
-> > 
-> >   For plain extent, prealloc can cause regular extent to co-exist with
-> >   inlined one.
-> >   While normal write will only convert inlined extent to regular one.
-> > 
-> >   While for compressed extent, it can co-exist with regular extent, by
-> >   # xfs_io -f -c "pwrite 0 4k" -c sync -c "pwrite 4k 16k" /mnt/btrfs/file
-> > 
-> >   So which is the correct behavior?
-> >   Personally I think we should not allow co-exist, as it's already
-> >   causing a lot of fixes for it, that's to say neither current
-> >   behavior is correct.
-> 
-> Historically we didn't have [inline][regular] because inline was
-> always < block size, so any change to the inline extent to extend it
-> resulted in a regular extent.  Obviously that changed with fallocate,
-> so it is perfectly reasonable to have [inline][regular extent]
+Did you put it in /etc/fstab only for the rootfs? If yes, it probably
+has no effect. You would need to give it as rootflags on the kernel
+cmdline.
 
-I'm not sure it's perfectly reasonable, makes things confusing. Does all
-the extent handling code expect another extent after an inline?
 
-In my understanding, more from the user's perspective, is that inline
-extent covers entire file smaller than some limit, otherwise it's all
-regular extents.
+-- 
+Regards,
+Kai
 
-> > 3) inline extent and fallocate
-> >   For inline extent, as long as we are calling fallocate inside the
-> >   page size, only the isize is expanded.
-> > 
-> >   Only beyond page size, we get prealloc extents.
-> >   (However inlined extent is still here, not converted)
-> > 
-> >   What's the designed behavior? Convert inline to regular or just
-> >   leave it as is?
-> 
-> Leave it.
-
-"Convert."
-
-> fallocate doesn't change anything about existing regular
-> extents.  Calling fallocate on a range completely inside of a regular
-> extent does nothing, why would this change with an inline extent?
-
-Because this leads to unexpected extent layout, contradicting what we've
-told users for a long time.  Inline + regular does not bring anything
-special anyway.
-
-> Now
-> past the inline extent you get a new extent, exactly the same behavior
-> as a regular extent.  Thanks,
+Replies to list-only preferred.
 

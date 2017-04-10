@@ -1,68 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:45240 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:19625 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1750705AbdDJAwr (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Apr 2017 20:52:47 -0400
-Subject: Re: mount btrfs takes 30 minutes, btrfs check runs out of memory
-To: Graham Cobb <g.btrfs@cobb.uk.net>, btrfs <linux-btrfs@vger.kernel.org>
-References: <CAJ3TwYQXqUZiKhYc5rciTmvGX1RLkHnkQb5SSYAJ7AD+kbudag@mail.gmail.com>
- <126f9f09-4e28-3c12-5384-63032e17942f@cn.fujitsu.com>
- <CAJ3TwYRXwDVVfT0TRRiM9dEw-7TvY8qG=WvMYKczZOv6wkFWAQ@mail.gmail.com>
- <fd718727-9b54-ba58-5f39-63066181d13e@cn.fujitsu.com>
- <CAJ3TwYSTnQfj=qmBLtnmtXQKexMMD4x=9Gk3p3anf4uF+G26kw@mail.gmail.com>
- <CAJ3TwYTnMPVwkrZEU-=Q_Nq+9Bn0vM3z+EFC8RP=RTyaufSoqw@mail.gmail.com>
- <5cc93522-1bd2-bdc1-d5da-a11d5e4816a7@cn.fujitsu.com>
- <CAJ3TwYRpc_R-wVur0T6+Uy_aPVXTGpvp_ag1Ar9K2HoB0H1ySQ@mail.gmail.com>
- <799054c4-b4f5-2dc0-4f70-4345159d9078@cn.fujitsu.com>
- <CAJ3TwYRH8JVkuv2Hu7FYb+BSwKGrq1spx079zwOF_FO1y=9NFA@mail.gmail.com>
- <e51aaa6e-a4b9-c187-84fa-c57799865b0e@cn.fujitsu.com>
- <CAJ3TwYS6UTkWf=PNku3RG7hPrXMKz3yhk2WqCRLix4v_VwgrmA@mail.gmail.com>
- <36291cd0-64bc-8708-9e23-0aac30539785@cn.fujitsu.com>
- <CAJ3TwYQ47SVpbO1Pb-TWjhaTCCpMFFmijwTgmV8=7+1_a6_3Ww@mail.gmail.com>
- <e8d681cb-aa1b-6395-f968-38e8425ed8fb@cn.fujitsu.com>
- <5790EEAC.4090008@cobb.uk.net>
+        with ESMTP id S1751209AbdDJCID (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Apr 2017 22:08:03 -0400
+Subject: Re: [PATCH] fstests: generic: Check if cycle mount and sleep can
+ affect fiemap result
+To: Eric Sandeen <sandeen@sandeen.net>,
+        "Darrick J. Wong" <darrick.wong@oracle.com>,
+        Eryu Guan <eguan@redhat.com>
+References: <20170403070923.18518-1-quwenruo@cn.fujitsu.com>
+ <20170405023526.GS22845@eguan.usersys.redhat.com>
+ <20170406162616.zsnbgx6vy2fgugmq@thunk.org>
+ <36663e81-9520-0c52-5e72-1d54ddbfb0b7@sandeen.net>
+ <20170407050258.GO22845@eguan.usersys.redhat.com>
+ <20170407154225.GG10881@birch.djwong.org>
+ <d6e81d34-fda4-d242-01bd-270436177771@sandeen.net>
+CC: "Theodore Ts'o" <tytso@mit.edu>, <linux-btrfs@vger.kernel.org>,
+        <fstests@vger.kernel.org>, <linux-ext4@vger.kernel.org>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <986cc45e-baed-1101-44a9-6fa37f9c6db0@cn.fujitsu.com>
-Date: Mon, 10 Apr 2017 08:52:42 +0800
+Message-ID: <e1d76075-1244-f671-b5e7-1e8851d4f0c1@cn.fujitsu.com>
+Date: Mon, 10 Apr 2017 10:07:54 +0800
 MIME-Version: 1.0
-In-Reply-To: <5790EEAC.4090008@cobb.uk.net>
+In-Reply-To: <d6e81d34-fda4-d242-01bd-270436177771@sandeen.net>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-At 07/21/2016 11:47 PM, Graham Cobb wrote:
-> On 21/07/16 09:19, Qu Wenruo wrote:
->> We don't usually get such large extent tree dump from a real world use
->> case.
+At 04/07/2017 11:48 PM, Eric Sandeen wrote:
+> On 4/7/17 10:42 AM, Darrick J. Wong wrote:
+>> On Fri, Apr 07, 2017 at 01:02:58PM +0800, Eryu Guan wrote:
+>>> On Thu, Apr 06, 2017 at 11:28:01AM -0500, Eric Sandeen wrote:
+>>>> On 4/6/17 11:26 AM, Theodore Ts'o wrote:
+>>>>> On Wed, Apr 05, 2017 at 10:35:26AM +0800, Eryu Guan wrote:
+>>>>>>
+>>>>>> Test fails with ext3/2 when driving with ext4 driver, fiemap changed
+>>>>>> after umount/mount cycle, then changed back to original result after
+>>>>>> sleeping some time. An ext4 bug? (cc'ed linux-ext4 list.)
+>>>>>
+>>>>> I haven't had time to look at this, but I'm not sure this test is a
+>>>>> reasonable one on the face of it.
+>>>>>
+>>>>> A file system may choose to optimize a file's extent tree for whatever
+>>>>> reason it wants, whenever it wants, including on an unmount --- and
+>>>>> that would not be an invalid thing to do.  So to have an xfstests that
+>>>>> causes a test failure if a file system were to, say, do some cleanup
+>>>>> at mount or unmount time, or when the file is next opened, to merge
+>>>>> adjacent extents together (and hence change what is returned by
+>>>>> FIEMAP) might be strange, or even weird --- but is this any of user
+>>>>> space's business?  Or anything we want to enforce as wrong wrong wrong
+>>>>> by xfstests?
+>>>
+>>> So I was asking for a review from ext4 side instead of queuing it for
+>>> next xfstests update :)
+>>
+>> In general FIEMAP can return pretty much whatever it wants, which
+>> usually means that it won't report extents larger than the underlying
+>> block mapping extents, though as we've seen it can split a single
+>> on-disk extent into multiple FIEMAP records for the purpose of reporting
+>> sharedness.
+>>
+>> For ext3 I'm wondering if it's the case that the first time we FIEMAP an
+>> indirect map file we see a possibly-merged version of whatever's in the
+>> particular leaf node we land in; then that information gets cached &
+>> merged with other records in the extent status tree, such that
+>> subsequent FIEMAP calls see longer extents than the first time around.
+>>
+>>>> I had the same question.  If the exact behavior isn't defined anywhere,
+>>>> I don't know what we can be testing, TBH.
+>>>
+>>> Agreed, I was about to ask for the expected behavior today if there was
+>>> no new review comments on this patch.
+>>
+>> I think the expected behavior is that any behavior is expected. :(
 >
-> Let us know if you want some more :-)
->
-> I have a heavily used single disk BTRFS filesystem with about 3.7TB in
-> use and about 9 million extents.  I am happy to provide an extent dump
-> if it is useful to you.  Particularly if you don't need me to actually
-> unmount it (i.e. you can live with some inconsistencies).
+> I suppose that if any particular filesystem wants to enforce stricter
+> rules for its own fiemap interface, that could be done in a
+> filesystem-specific test...
 
-Btrfs-debug-tree can dump fs on-line. But I'm not sure if the result is 
-consistent.
+Well, then some test cases need to be moved from generic to filesystem 
+specified test, and some filsystems will have similar test cases.
+I think it's a hell for maintainer to keep all these test cases consistent.
 
+This is not the first time Btrfs failed to pass reflink and fiemap test 
+designed for xfs though.
+Btrfs does skip some generic test case originally designed for xfs, like 
+generic/372.
 
-BTW, for the original problem (slow mount and fsck OOM), although we 
-have no progress to handle slow mount but use defrag to reduce the 
-number of extents, for fsck OOM, the lowmem mode now can handle all the 
-trees.
+But most of the time, xfs and btrfs can get consistent result.
 
-So now lowmem mode should not cause OOM now, but it may take much longer 
-time if you have multiple snapshots.
-It would be nice if you could try it, especially to see if the lowmem 
-mode really lives up to its name.
+And for btrfs side, we already have such fix now:
+https://patchwork.kernel.org/patch/9668721/
+
+It's OK that any fs can have either own fiemap behavior, but if it's a 
+not big fix and the behavior itself is somewhat wired, why not joining 
+the common behavior?
 
 Thanks,
 Qu
 
 >
->
+> -Eric
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org

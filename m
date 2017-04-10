@@ -1,52 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40305 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753228AbdDLKZQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Apr 2017 06:25:16 -0400
-From: Jan Kara <jack@suse.cz>
-To: Jens Axboe <axboe@kernel.dk>
-Cc: <linux-block@vger.kernel.org>, <linux-fsdevel@vger.kernel.org>,
-        Jan Kara <jack@suse.cz>, linux-mtd@lists.infradead.org,
-        linux-nfs@vger.kernel.org, Petr Vandrovec <petr@vandrovec.name>,
-        linux-nilfs@vger.kernel.org, cluster-devel@redhat.com,
-        osd-dev@open-osd.org, codalist@TELEMANN.coda.cs.cmu.edu,
-        linux-afs@lists.infradead.org, ecryptfs@vger.kernel.org,
-        linux-cifs@vger.kernel.org, ceph-devel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, v9fs-developer@lists.sourceforge.net,
-        lustre-devel@lists.lustre.org
-Subject: [PATCH 0/25 v3] fs: Convert all embedded bdis into separate ones
-Date: Wed, 12 Apr 2017 12:24:24 +0200
-Message-Id: <20170412102449.16901-1-jack@suse.cz>
+Received: from userp1040.oracle.com ([156.151.31.81]:37735 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751780AbdDJSoe (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 10 Apr 2017 14:44:34 -0400
+Date: Mon, 10 Apr 2017 11:41:56 -0700
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Adam Borowski <kilobyte@angband.pl>
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>, linux-arm-kernel@lists.infradead.org,
+        linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        Icenowy Zheng <icenowy@aosc.io>, Fabio Estevam <festevam@gmail.com>
+Subject: Re: [PATCH] btrfs: scrub: use do_div() for 64-by-32 division
+Message-ID: <20170410184155.GC15214@lim.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <CAOMZO5B9J15qvrsjOb-e5gk47gA=+2p2yLNLhswG+H3S0L7LXg@mail.gmail.com>
+ <20170408210737.5456-1-kilobyte@angband.pl>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170408210737.5456-1-kilobyte@angband.pl>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On Sat, Apr 08, 2017 at 11:07:37PM +0200, Adam Borowski wrote:
+> Unbreaks ARM and possibly other 32-bit architectures.
+>
 
-this is the third revision of the patch series which converts all embedded
-occurences of struct backing_dev_info to use standalone dynamically allocated
-structures. This makes bdi handling unified across all bdi users and generally
-removes some boilerplate code from filesystems setting up their own bdi. It
-also allows us to remove some code from generic bdi implementation.
+Thanks a lot for the fix.
 
-The patches were only compile-tested for most filesystems (I've tested
-mounting only for NFS & btrfs) so fs maintainers please have a look whether
-the changes look sound to you.
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
-This series is based on top of bdi fixes that were merged into linux-block
-git tree into for-next branch. I have pushed out the result as a branch to
+Thanks,
 
-git://git.kernel.org/pub/scm/linux/kernel/git/jack/linux-fs.git bdi
+-liubo
 
-Since all patches got reviewed by Christoph, can you please pick them up Jens?
-Thanks!
-
-Changes since v2:
-* Added Reviewed-by tags from Christoph
-
-Changes since v1:
-* Added some acks
-* Added further FUSE cleanup patch
-* Added removal of unused argument to bdi_register()
-* Fixed up some compilation failures spotted by 0-day testing
-
-								Honza
+> Fixes: 7d0ef8b4d: Btrfs: update scrub_parity to use u64 stripe_len
+> Reported-by: Icenowy Zheng <icenowy@aosc.io>
+> Signed-off-by: Adam Borowski <kilobyte@angband.pl>
+> ---
+> You'd probably want to squash this with Liu's commit, to be nice to future
+> bisects.
+> 
+> Tested on amd64 where all is fine, and on arm (Odroid-U2) where scrub
+> sometimes works, but, like most operations, randomly dies with some badness
+> that doesn't look related: io_schedule, kunmap_high.  That badness wasn't
+> there in 4.11-rc5, needs investigating, but since it's not connected to our
+> issue at hand, I consider this patch sort-of tested.
+> 
+>  fs/btrfs/scrub.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+> index b6fe1cd08048..95372e3679f3 100644
+> --- a/fs/btrfs/scrub.c
+> +++ b/fs/btrfs/scrub.c
+> @@ -2407,7 +2407,7 @@ static inline void __scrub_mark_bitmap(struct scrub_parity *sparity,
+>  
+>  	start -= sparity->logic_start;
+>  	start = div64_u64_rem(start, sparity->stripe_len, &offset);
+> -	offset /= sectorsize;
+> +	do_div(offset, sectorsize);
+>  	nsectors = (int)len / sectorsize;
+>  
+>  	if (offset + nsectors <= sparity->nsectors) {
+> -- 
+> 2.11.0
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

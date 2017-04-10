@@ -1,112 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:19625 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751209AbdDJCID (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Apr 2017 22:08:03 -0400
-Subject: Re: [PATCH] fstests: generic: Check if cycle mount and sleep can
- affect fiemap result
-To: Eric Sandeen <sandeen@sandeen.net>,
-        "Darrick J. Wong" <darrick.wong@oracle.com>,
-        Eryu Guan <eguan@redhat.com>
-References: <20170403070923.18518-1-quwenruo@cn.fujitsu.com>
- <20170405023526.GS22845@eguan.usersys.redhat.com>
- <20170406162616.zsnbgx6vy2fgugmq@thunk.org>
- <36663e81-9520-0c52-5e72-1d54ddbfb0b7@sandeen.net>
- <20170407050258.GO22845@eguan.usersys.redhat.com>
- <20170407154225.GG10881@birch.djwong.org>
- <d6e81d34-fda4-d242-01bd-270436177771@sandeen.net>
-CC: "Theodore Ts'o" <tytso@mit.edu>, <linux-btrfs@vger.kernel.org>,
-        <fstests@vger.kernel.org>, <linux-ext4@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <e1d76075-1244-f671-b5e7-1e8851d4f0c1@cn.fujitsu.com>
-Date: Mon, 10 Apr 2017 10:07:54 +0800
-MIME-Version: 1.0
-In-Reply-To: <d6e81d34-fda4-d242-01bd-270436177771@sandeen.net>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Received: from [195.159.176.226] ([195.159.176.226]:46328 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1751173AbdDJCjM (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Apr 2017 22:39:12 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1cxPEO-0003SC-NM
+        for linux-btrfs@vger.kernel.org; Mon, 10 Apr 2017 04:39:04 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: BTRFS not mountable, recover won't work
+Date: Mon, 10 Apr 2017 02:38:59 +0000 (UTC)
+Message-ID: <pan$7c27b$c263c2d$90d3ff1f$9c677070@cox.net>
+References: <1491758260.15056.2.camel@campus.tu-berlin.de>
+        <CAJCQCtRqidKACy7SAEzpEGLK1PbWQZgbesaLhLEVntMPz9aG5g@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Chris Murphy posted on Sun, 09 Apr 2017 15:25:18 -0600 as excerpted:
 
-
-At 04/07/2017 11:48 PM, Eric Sandeen wrote:
-> On 4/7/17 10:42 AM, Darrick J. Wong wrote:
->> On Fri, Apr 07, 2017 at 01:02:58PM +0800, Eryu Guan wrote:
->>> On Thu, Apr 06, 2017 at 11:28:01AM -0500, Eric Sandeen wrote:
->>>> On 4/6/17 11:26 AM, Theodore Ts'o wrote:
->>>>> On Wed, Apr 05, 2017 at 10:35:26AM +0800, Eryu Guan wrote:
->>>>>>
->>>>>> Test fails with ext3/2 when driving with ext4 driver, fiemap changed
->>>>>> after umount/mount cycle, then changed back to original result after
->>>>>> sleeping some time. An ext4 bug? (cc'ed linux-ext4 list.)
->>>>>
->>>>> I haven't had time to look at this, but I'm not sure this test is a
->>>>> reasonable one on the face of it.
->>>>>
->>>>> A file system may choose to optimize a file's extent tree for whatever
->>>>> reason it wants, whenever it wants, including on an unmount --- and
->>>>> that would not be an invalid thing to do.  So to have an xfstests that
->>>>> causes a test failure if a file system were to, say, do some cleanup
->>>>> at mount or unmount time, or when the file is next opened, to merge
->>>>> adjacent extents together (and hence change what is returned by
->>>>> FIEMAP) might be strange, or even weird --- but is this any of user
->>>>> space's business?  Or anything we want to enforce as wrong wrong wrong
->>>>> by xfstests?
->>>
->>> So I was asking for a review from ext4 side instead of queuing it for
->>> next xfstests update :)
+> On Sun, Apr 9, 2017 at 11:17 AM, Malte Eggers
+> <m.eggers@campus.tu-berlin.de> wrote:
+>> Hi,
 >>
->> In general FIEMAP can return pretty much whatever it wants, which
->> usually means that it won't report extents larger than the underlying
->> block mapping extents, though as we've seen it can split a single
->> on-disk extent into multiple FIEMAP records for the purpose of reporting
->> sharedness.
->>
->> For ext3 I'm wondering if it's the case that the first time we FIEMAP an
->> indirect map file we see a possibly-merged version of whatever's in the
->> particular leaf node we land in; then that information gets cached &
->> merged with other records in the extent status tree, such that
->> subsequent FIEMAP calls see longer extents than the first time around.
->>
->>>> I had the same question.  If the exact behavior isn't defined anywhere,
->>>> I don't know what we can be testing, TBH.
->>>
->>> Agreed, I was about to ask for the expected behavior today if there was
->>> no new review comments on this patch.
->>
->> I think the expected behavior is that any behavior is expected. :(
->
-> I suppose that if any particular filesystem wants to enforce stricter
-> rules for its own fiemap interface, that could be done in a
-> filesystem-specific test...
+>> After suspending and waking up my laptop with the external hard drive
+>> connected, I could no longer access the files on it. So I unmounted and
+>> remounted it, only to discover that I could no longer mount it.
 
-Well, then some test cases need to be moved from generic to filesystem 
-specified test, and some filsystems will have similar test cases.
-I think it's a hell for maintainer to keep all these test cases consistent.
+This is the only message from the thread I'm seeing ATM, so I'll reply 
+here.  Agreed with C Murphy on the btrfs stuff, but my reply is on a 
+different tangent.
 
-This is not the first time Btrfs failed to pass reflink and fiemap test 
-designed for xfs though.
-Btrfs does skip some generic test case originally designed for xfs, like 
-generic/372.
+If your external hard drive is USB (not ESATA or other non-USB, couldn't 
+tell from the context CM quoted, which may or may not have been the 
+entire post), you are likely running into a known issue... with an 
+available solution. =:^)
 
-But most of the time, xfs and btrfs can get consistent result.
+FWIW I found out about this when I had a laptop with two USB-connected 
+CompactFlash slots, one of which was designed for effectively permanent 
+installation (the CF didn't stick out when inserted), the other for 
+temporary use (it stuck out and was thus easier to remove, but also easy 
+to damage either it or the slot if it was left inserted during 
+transport).  But the permanent one wouldn't stay mounted over suspend... 
+until I found out about this and changed the kernel option.  Looks like 
+you might be hitting the same issue.
 
-And for btrfs side, we already have such fix now:
-https://patchwork.kernel.org/patch/9668721/
+The official Linux kernel documentation describing the problem and 
+optional solution is:
 
-It's OK that any fs can have either own fiemap behavior, but if it's a 
-not big fix and the behavior itself is somewhat wired, why not joining 
-the common behavior?
+$KERNEL_DIR/Documentation/usb/persist.txt 
 
-Thanks,
-Qu
+Read that first.  But that only explains the problem and gives you a way 
+to deal with it on a per-USB-device basis by writing to the appropriate 
+sysfs file.  There's also a kernel option that lets you change the 
+default:
 
->
-> -Eric
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
+CONFIG_USB_DEFAULT_PERSIST
 
+In the kernel config that's found under:
+
+Device Drivers
+	USB support
+		Support for Host-side USB
+			Enable USB persist by default
+
+If you use a distro-built kernel, you may want to at least check whether 
+they enabled that option or not.
+
+If you build your own kernel, you may of course set that option as you 
+wish. =:^)
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

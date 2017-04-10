@@ -1,63 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:45199 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751209AbdDJD2D (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Apr 2017 23:28:03 -0400
-To: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
-        Josef Bacik <jbacik@fb.com>, btrfs <linux-btrfs@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Subject: About the behavior of inline extent
-Message-ID: <f9dc56cc-720e-0df1-f6c7-790e93276ee0@cn.fujitsu.com>
-Date: Mon, 10 Apr 2017 11:27:55 +0800
+Received: from mail.tu-berlin.de ([130.149.7.33]:32678 "EHLO mail.tu-berlin.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752530AbdDJHz7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 10 Apr 2017 03:55:59 -0400
+Message-ID: <1491810948.1899.1.camel@campus.tu-berlin.de>
+Subject: Re: BTRFS not mountable, recover won't work
+From: Malte Eggers <m.eggers@campus.tu-berlin.de>
+To: Chris Murphy <lists@colorremedies.com>
+CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Mon, 10 Apr 2017 09:55:48 +0200
+In-Reply-To: <CAJCQCtRqidKACy7SAEzpEGLK1PbWQZgbesaLhLEVntMPz9aG5g@mail.gmail.com>
+References: <1491758260.15056.2.camel@campus.tu-berlin.de>
+         <CAJCQCtRqidKACy7SAEzpEGLK1PbWQZgbesaLhLEVntMPz9aG5g@mail.gmail.com>
+Content-Type: text/plain; charset="UTF-8"
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Sun, 2017-04-09 at 15:25 -0600, Chris Murphy wrote:
+> On Sun, Apr 9, 2017 at 11:17 AM, Malte Eggers
+> <m.eggers@campus.tu-berlin.de> wrote:
+> > Hi,
+> > 
+> > After suspending and waking up my laptop with the external hard
+> > drive
+> > connected, I could no longer access the files on it. So I unmounted
+> > and
+> > remounted it, only to discover that I could no longer mount it.
+> 
+> What kernel and btrfs-progs version? Anything older than 4.9 of
+> either
+> and I'd try something newer as a first step. This sounds to me like
+> something dropped the ball: either fs freeze didn't happen (unlikely)
+> or the drive lied about fsync succeeding, or FUA if supported, and
+> dropped the data once power was cut to the drive. I'd check if there
+> are firmware updates for the drive.
+> 
+> Curious about:
+> 
+> btrfs rescue super -v <dev>
+> btrfs check <dev>
+> 
 
-Recent btrfs/137 test case makes me wonder what's the designed behavior 
-of btrfs inline data extent.
+Kernel version: 4.9.0-2-amd64
+BTRFS version: v4.9.1
 
-The current behavior in fact is quite a chaos.
-We need a standard of how inline extent should behave.
+btrfs rescue super -v <dev> and btrfs check <dev> both result in the
+same error:
+parent transid verify failed on 108806144 wanted 32139 found 32104
+parent transid verify failed on 108806144 wanted 32139 found 32104
+parent transid verify failed on 108806144 wanted 32139 found 32104
+parent transid verify failed on 108806144 wanted 32139 found 32104
+Ignoring transid failure
+volumes.c:1645: btrfs_chunk_readonly: BUG_ON `!ce` triggered, value 1
+btrfs(+0x530d5)[0x560ede5090d5]
+btrfs(btrfs_chunk_readonly+0x5a)[0x560ede50b3b3]
+btrfs(btrfs_read_block_groups+0x1dc)[0x560ede500b0c]
+btrfs(btrfs_setup_all_roots+0x336)[0x560ede4fc158]
+btrfs(+0x4654c)[0x560ede4fc54c]
+btrfs(open_ctree_fs_info+0xd7)[0x560ede4fc673]
+btrfs(open_ctree+0x47)[0x560ede4fc6f2]
+btrfs(btrfs_recover_superblocks+0x325)[0x560ede4ef051]
+btrfs(main+0x12f)[0x560ede4cda6b]
+/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf1)[0x7f5e9f69f2b1]
+btrfs(_start+0x2a)[0x560ede4cdaaa]
+Aborted
 
-1) max_inline limit
-    The problem of current max_inline is, it's never clear what it is
-    limiting.
+I tried using the hard drive on my raspberry pi with raspbian and
+kernel version 4.4, it doesn't give me a backtrace, but instead this:
+https://pastebin.com/tUxSdysM
 
-    For example, we don't allow page sized inline extent if not
-    compressed.
-    But we allow page sized inline extent if it's compressed.
-    Is it just limiting size after compression?
-    What if we really want to limit size before compression?
-
-2) inline extent condition
-    Is inline extent allowed if we have following regular extent?
-
-    For plain extent, prealloc can cause regular extent to co-exist with
-    inlined one.
-    While normal write will only convert inlined extent to regular one.
-
-    While for compressed extent, it can co-exist with regular extent, by
-    # xfs_io -f -c "pwrite 0 4k" -c sync -c "pwrite 4k 16k" /mnt/btrfs/file
-
-    So which is the correct behavior?
-    Personally I think we should not allow co-exist, as it's already
-    causing a lot of fixes for it, that's to say neither current
-    behavior is correct.
-
-3) inline extent and fallocate
-    For inline extent, as long as we are calling fallocate inside the
-    page size, only the isize is expanded.
-
-    Only beyond page size, we get prealloc extents.
-    (However inlined extent is still here, not converted)
-
-    What's the designed behavior? Convert inline to regular or just
-    leave it as is?
-
-Thanks,
-Qu
-
-
+Which doesn't look like what is described in https://btrfs.wiki.kernel.
+org/index.php/Restore and restoring specifying any of the blocks
+doesn't work either.

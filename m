@@ -1,40 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f172.google.com ([209.85.223.172]:36299 "EHLO
-        mail-io0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752750AbdDJMvt (ORCPT
+Received: from mail-qk0-f182.google.com ([209.85.220.182]:35157 "EHLO
+        mail-qk0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752518AbdDJOR5 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 Apr 2017 08:51:49 -0400
-Received: by mail-io0-f172.google.com with SMTP id l7so93532040ioe.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Apr 2017 05:51:49 -0700 (PDT)
-Subject: Re: btrfs filesystem keeps allocating new chunks for no apparent
- reason
-To: Kai Krakow <hurikhan77@gmail.com>, linux-btrfs@vger.kernel.org
-References: <572D0C8B.8010404@mendix.com>
- <89a684c7-364e-f409-5348-bc0077fd438c@cn.fujitsu.com>
- <5b642448-951e-5b5e-1343-0299a950089c@mendix.com>
- <51778c0f-2720-1c2d-aba2-e22e5f4d3a3a@mendix.com>
- <4532f6ee-2a6e-412a-7230-edb76735d55f@mendix.com>
- <07a7f59e-64e0-4d09-5d32-01bc933fe38d@gmail.com>
- <20170410144533.664fc304@jupiter.sol.kaishome.de>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <5488ea5a-b41c-5987-e664-ec17cf2d5e01@gmail.com>
-Date: Mon, 10 Apr 2017 08:51:38 -0400
-MIME-Version: 1.0
-In-Reply-To: <20170410144533.664fc304@jupiter.sol.kaishome.de>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+        Mon, 10 Apr 2017 10:17:57 -0400
+Received: by mail-qk0-f182.google.com with SMTP id f133so95827314qke.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Apr 2017 07:17:57 -0700 (PDT)
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 10.2 \(3259\))
+Subject: Re: About the behavior of inline extent
+From: Josef Bacik <josef@toxicpanda.com>
+In-Reply-To: <f9dc56cc-720e-0df1-f6c7-790e93276ee0@cn.fujitsu.com>
+Date: Mon, 10 Apr 2017 10:17:52 -0400
+Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
+        btrfs <linux-btrfs@vger.kernel.org>
+Message-Id: <68B899DF-1EFE-4463-A3F8-BD03E0B811DC@toxicpanda.com>
+References: <f9dc56cc-720e-0df1-f6c7-790e93276ee0@cn.fujitsu.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-04-10 08:45, Kai Krakow wrote:
-> Am Mon, 10 Apr 2017 08:39:23 -0400
-> schrieb "Austin S. Hemmelgarn" <ahferroin7@gmail.com>:
->
->> They've been running BTRFS
->> with LZO compression, the SSD allocator, atime disabled, and mtime
->> updates deferred (lazytime mount option) the whole time, so it may be
->> a slightly different use case than the OP from this thread.
->
-> Does btrfs really support lazytime now?
->
-It appears to, I do see fewer writes with it than without it.  At the 
-very least, if it doesn't, then nothing complains about it.
+
+> On Apr 9, 2017, at 11:27 PM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+> 
+> Hi,
+> 
+> Recent btrfs/137 test case makes me wonder what's the designed behavior of btrfs inline data extent.
+> 
+> The current behavior in fact is quite a chaos.
+> We need a standard of how inline extent should behave.
+> 
+> 1) max_inline limit
+>   The problem of current max_inline is, it's never clear what it is
+>   limiting.
+> 
+>   For example, we don't allow page sized inline extent if not
+>   compressed.
+>   But we allow page sized inline extent if it's compressed.
+>   Is it just limiting size after compression?
+>   What if we really want to limit size before compression?
+> 
+
+max_inline is for the actual space on disk.  Compression takes up less space, therefore you can fit bigger actual data into the inline area.
+
+> 2) inline extent condition
+>   Is inline extent allowed if we have following regular extent?
+> 
+>   For plain extent, prealloc can cause regular extent to co-exist with
+>   inlined one.
+>   While normal write will only convert inlined extent to regular one.
+> 
+>   While for compressed extent, it can co-exist with regular extent, by
+>   # xfs_io -f -c "pwrite 0 4k" -c sync -c "pwrite 4k 16k" /mnt/btrfs/file
+> 
+>   So which is the correct behavior?
+>   Personally I think we should not allow co-exist, as it's already
+>   causing a lot of fixes for it, that's to say neither current
+>   behavior is correct.
+> 
+
+Historically we didn't have [inline][regular] because inline was always < block size, so any change to the inline extent to extend it resulted in a regular extent.  Obviously that changed with fallocate, so it is perfectly reasonable to have [inline][regular extent]
+
+> 3) inline extent and fallocate
+>   For inline extent, as long as we are calling fallocate inside the
+>   page size, only the isize is expanded.
+> 
+>   Only beyond page size, we get prealloc extents.
+>   (However inlined extent is still here, not converted)
+> 
+>   What's the designed behavior? Convert inline to regular or just
+>   leave it as is?
+
+Leave it.  fallocate doesn't change anything about existing regular extents.  Calling fallocate on a range completely inside of a regular extent does nothing, why would this change with an inline extent?  Now past the inline extent you get a new extent, exactly the same behavior as a regular extent.  Thanks,
+
+Josef
+

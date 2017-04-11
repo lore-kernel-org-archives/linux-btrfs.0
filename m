@@ -1,107 +1,111 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f182.google.com ([209.85.223.182]:35598 "EHLO
-        mail-io0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751848AbdDKPkl (ORCPT
+Received: from tartarus.angband.pl ([89.206.35.136]:37024 "EHLO
+        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752151AbdDKQPE (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Apr 2017 11:40:41 -0400
-Received: by mail-io0-f182.google.com with SMTP id r16so5829887ioi.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Apr 2017 08:40:41 -0700 (PDT)
-Received: from [191.9.206.254] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
-        by smtp.gmail.com with ESMTPSA id g69sm1041441itg.17.2017.04.11.08.40.37
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 11 Apr 2017 08:40:38 -0700 (PDT)
-To: BTRFS ML <linux-btrfs@vger.kernel.org>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Subject: BTRFS as a GlusterFS storage back-end, and what I've learned from
- using it as such.
-Message-ID: <7e63733a-6ab5-d92d-f9b2-f129ebd81f36@gmail.com>
-Date: Tue, 11 Apr 2017 11:40:33 -0400
+        Tue, 11 Apr 2017 12:15:04 -0400
+Date: Tue, 11 Apr 2017 18:15:02 +0200
+From: Adam Borowski <kilobyte@angband.pl>
+To: Marc Haber <mh+linux-btrfs@zugschlus.de>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs won't mount any more
+Message-ID: <20170411161502.ol4tjl3agqnlerab@angband.pl>
+References: <20170411071531.GK3699@torres.zugschlus.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20170411071531.GK3699@torres.zugschlus.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-About a year ago now, I decided to set up a small storage cluster to 
-store backups (and partially replace Dropbox for my usage, but that's a 
-separate story).  I ended up using GlusterFS as the clustering software 
-itself, and BTRFS as the back-end storage.
+On Tue, Apr 11, 2017 at 09:15:31AM +0200, Marc Haber wrote:
+> I have wrecked another btrfs file system, probably for good this time.
+> 
+> It's a 80 GB filesystem from 2015, in my secondary notebook, on an
+> encrypted SSD. The btrfs holds the root filesystem and the rest of the
+> system as well.
+> 
+> I have a cronjob that makes snapshots of the system directories daily,
+> and of /home every ten minutes. A second cronjob cleans up old snapshots
+> so that the number of snapshots present is about between 400 and 600.
+> This is the key feature that made me decide for btrfs in the first
+> place.
+> 
+> Last week (I was on kernel 4.10.8 with Debian unstable), I was forced to
+> promote the secondary laptop to the primary one which resulted in
+> serious work being done on the first time. Over time, the filesystem
+> filled up without me noticing and was finally 100% full.
 
-GlusterFS itself is actually a pretty easy workload as far as cluster 
-software goes.  It does some processing prior to actually storing the 
-data (a significant amount in fact), but the actual on-device storage on 
-any given node is pretty simple.  You have the full directory structure 
-for the whole volume, and whatever files happen to be on that node are 
-located within that tree exactly like they are in the GlusterFS volume. 
-Beyond the basic data, gluster only stores 2-4 xattrs per-file (which 
-are used to track synchronization, and also for it's internal data 
-scrubbing), and a directory called .glusterfs in the top of the back-end 
-storage location for the volume which contains the data required to 
-figure out which node a file is on.  Overall, the access patterns mostly 
-mirror whatever is using the Gluster volume, or are reduced to slow 
-streaming writes (when writing files and the back-end nodes are 
-computationally limited instead of I/O limited), with the addition of 
-some serious metadata operations in the .glusterfs directory (lots of 
-stat calls there, together with large numbers of small files).
+CoW and log-structured filesystems in general tend to take 100% full
+conditions far worse than traditional filesystems, but it still should
+result only in performance degradation and/or metadata-vs-data issues rather
+than a fatal error.  So if this is the cause, you obviously hit a bug.
+ 
+> I then cleaned up about four gigs by deleting a couple of redundant ISO
+> images and some snapshots that were not due for regular deletion yet. I
+> then started a btrfs balance / -d50, unfortunately without stopping the
+> snapshot-making cronjob. This resulted in the notebook becoming
+> unuseable for extended periods of time, without even being able to log
+> in. After running for some 30 hours, the notebook ran out of battery
+> (don't ask, stupid me).
 
-As far as overall performance, BTRFS is actually on par for this usage 
-with both ext4 and XFS (at least, on my hardware it is), and I actually 
-see more SSD friendly access patterns when using BTRFS in this case than 
-any other FS I tried.
+Ouch, this is generally harmless unless your disk lies about barriers. 
+Btrfs absolutely depends on them, and tends to suffer catastrophic
+corruption if writes were reordered when they shouldn't.
 
-After some serious experimentation with various configurations for this 
-during the past few months, I've noticed a handful of other things:
+Even in such a case, using an older root would help, although that
+possibility is almost certainly gone now.
 
-1. The 'ssd' mount option does not actually improve performance on these 
-SSD's.  To a certain extent, this actually surprised me at first, but 
-having seen Hans' e-mail and what he found about this option, it 
-actually makes sense, since erase-blocks on these devices are 4MB, not 
-2MB, and the drives have a very good FTL (so they will aggregate all the 
-little writes properly).
+> After rebooting, the btrfs balance proceeded immediately after mounting
+> the root fs. System unuseable again. After a day, I finally had a root
+> shell and was able to issue a btrfs cancel /. Unfortunately, the system
+> didn't care about that command and happily continued to balance. After
+> some more 30 hours, I lost patience and resetted the system.
 
-Given this, I'm beginning to wonder if it actually makes sense to not 
-automatically enable this on mount when dealing with certain types of 
-storage (for example, most SATA and SAS SSD's have reasonably good 
-FTL's, so I would expect them to have similar behavior).  Extrapolating 
-further, it might instead make sense to just never automatically enable 
-this, and expose the value this option is manipulating as a mount option 
-as there are other circumstances where setting specific values could 
-improve performance (for example, if you're on hardware RAID6, setting 
-this to the stripe size would probably improve performance on many 
-cheaper controllers).
+Mounting with -o skip_balance may help.
 
-2. Up to a certain point, running a single larger BTRFS volume with 
-multiple sub-volumes is more computationally efficient than running 
-multiple smaller BTRFS volumes.  More specifically, there is lower load 
-on the system and lower CPU utilization by BTRFS itself without much 
-noticeable difference in performance (in my tests it was about 0.5-1% 
-performance difference, YMMV).  To a certain extent this makes some 
-sense, but the turnover point was actually a lot higher than I expected 
-(with this workload, the turnover point was around half a terabyte).
+> To be able to keep control of the system and to monitor operations from
+> remote, I installed a fresh copy of Debian unstable with the same 4.10.8
+> kernel on an USB stick and booted the notebook from the stick. I brought
+> up the system and tried to mount the btrfs. The mount process quickly
+> went up to 100 % CPU usage and stayed that way until I went to bed last
+> night. This morning, the machine had dropped off the network (couldn't
+> ping the default gateway any more despite the network looked fine), and
+> spewed kernel oopses of about 80 lines (too long to scroll back even)
+> every few seconds.
+> 
+> I will try to tweak kernel.printk tonight so that I get my console back
+> and see whether the oopses are also in journal, dmesg or syslog so that
+> I can copypaste them. I also have a reasonably current backup of the
+> filesystem so nuking it from orbit is an option, I would however hate
+> losing my snapshots.
+> 
+> Is it worthwhile to save information about the borked filesystem, or
+> does the btrfs community just dont care about a heavily snapshotted two
+> years old filesystem?
 
-I believe this to be a side-effect of how we use per-filesystem 
-worker-pools.  In essence, we can schedule parallel access better when 
-it's all through the same worker pool than we can when using multiple 
-worker pools.  Having realized this, I think it might be interesting to 
-see if using a worker-pool per physical device (or at least what the 
-system sees as a physical device) might make more sense in terms of 
-performance than our current method of using a pool per-filesystem.
+Two years old is not much, the format nor its use hasn't changed noticeably
+since then.  You run the very latest upstream stable kernel, with its almost
+freshest version (4.10.9 was tagged Saturday).  400-600 snapshots is nothing
+remarkable, it's the usual range.  The only thing differing from the most
+typical usage is your snapshot frequency, and even that is nothing
+frightening.
 
-3. On these SSD's, running a single partition in dup mode is actually 
-marginally more efficient than running 2 partitions in raid1 mode.  I 
-was actually somewhat surprised by this, and I haven't been able to find 
-a clear explanation as to why (I suspect caching may have something to 
-do with it, but I'm not 100% certain about that),  but some limited 
-testing with other SSD's seems to indicate that it's the case for most 
-SSD's, with the difference being smaller on smaller and faster devices. 
-On a traditional hard disk, it's significantly more efficient, but 
-that's generally to be expected.
+Thus, a failure like yours in mainstream use is certainly interesting.
 
-4. Depending on other factors, compression can actually slow you down 
-pretty significantly.  In the particular case I saw this happen (all 
-cores completely utilized by userspace software), LZO compression 
-actually caused around 5-10% performance degradation compared to no 
-compression.  This is somewhat obvious once it's explained, but it's not 
-exactly intuitive  and as such it's probably worth documenting in the 
-man pages that compression won't always make things better.  I may send 
-a patch to add this at some point in the near future.
+However, I have a piece of advice for now: could you make a copy of the
+filesystem?  80GB is _nothing_: it's way below the accuracy of du -h on a
+modern HDD, and not a burden for a typical SSD.  Being able to investigate
+it from a bigger machine would be convenient, and having a copy would let
+you use dangerous rescue methods without any risk.  And debugging oopses on
+a laptop with no working serial or netconsole sucks; if you have no other
+machine at hand then running the victim kernel in qemu-kvm might offer a
+poor-man's console.
+
+For advice for your specific case, we can't do much without seeing the
+actual error messages.
+
+-- 
+⢀⣴⠾⠻⢶⣦⠀ Meow!
+⣾⠁⢠⠒⠀⣿⡁
+⢿⡄⠘⠷⠚⠋⠀ Collisions shmolisions, let's see them find a collision or second
+⠈⠳⣄⠀⠀⠀⠀ preimage for double rot13!

@@ -1,58 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f175.google.com ([209.85.223.175]:33906 "EHLO
-        mail-io0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751995AbdDKPLv (ORCPT
+Received: from mail-io0-f182.google.com ([209.85.223.182]:35598 "EHLO
+        mail-io0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751848AbdDKPkl (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Apr 2017 11:11:51 -0400
-Received: by mail-io0-f175.google.com with SMTP id a103so5776625ioj.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Apr 2017 08:11:50 -0700 (PDT)
-Received: from [192.168.0.23] ([98.4.97.1])
-        by smtp.gmail.com with ESMTPSA id c91sm8055017iod.18.2017.04.11.08.11.46
+        Tue, 11 Apr 2017 11:40:41 -0400
+Received: by mail-io0-f182.google.com with SMTP id r16so5829887ioi.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Apr 2017 08:40:41 -0700 (PDT)
+Received: from [191.9.206.254] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
+        by smtp.gmail.com with ESMTPSA id g69sm1041441itg.17.2017.04.11.08.40.37
         for <linux-btrfs@vger.kernel.org>
-        (version=TLS1 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
-        Tue, 11 Apr 2017 08:11:46 -0700 (PDT)
-Message-ID: <58ECF232.6010500@gmail.com>
-Date: Tue, 11 Apr 2017 11:11:46 -0400
-From: "J. Hart" <jfhart085@gmail.com>
-Reply-To: jfhart085@gmail.com
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Tue, 11 Apr 2017 08:40:38 -0700 (PDT)
+To: BTRFS ML <linux-btrfs@vger.kernel.org>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Subject: BTRFS as a GlusterFS storage back-end, and what I've learned from
+ using it as such.
+Message-ID: <7e63733a-6ab5-d92d-f9b2-f129ebd81f36@gmail.com>
+Date: Tue, 11 Apr 2017 11:40:33 -0400
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Unexpected: send/receive much slower than rsync ?
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'm trying to update from an old snapshot of a directory to a new one 
-using send/receive. It seems a great deal slower than I was expecting, 
-perhaps much slower than rsync and has been running for hours. 
-Everything looks ok with how I set up the snapshots, and there are no 
-error messages, but I don't think it should be running this long. The 
-directory structure is rather complex, so that may have something to do 
-with it. It contains reflinked incremental backups of root file systems 
-from a number of machines. It should not actually be very large due to 
-the reflinks.
+About a year ago now, I decided to set up a small storage cluster to 
+store backups (and partially replace Dropbox for my usage, but that's a 
+separate story).  I ended up using GlusterFS as the clustering software 
+itself, and BTRFS as the back-end storage.
 
-Sending the old version of the snapshot for the directory did not seem 
-to take this long, and I expected the "send -p <old> <new>" to be much 
-faster than that.
+GlusterFS itself is actually a pretty easy workload as far as cluster 
+software goes.  It does some processing prior to actually storing the 
+data (a significant amount in fact), but the actual on-device storage on 
+any given node is pretty simple.  You have the full directory structure 
+for the whole volume, and whatever files happen to be on that node are 
+located within that tree exactly like they are in the GlusterFS volume. 
+Beyond the basic data, gluster only stores 2-4 xattrs per-file (which 
+are used to track synchronization, and also for it's internal data 
+scrubbing), and a directory called .glusterfs in the top of the back-end 
+storage location for the volume which contains the data required to 
+figure out which node a file is on.  Overall, the access patterns mostly 
+mirror whatever is using the Gluster volume, or are reduced to slow 
+streaming writes (when writing files and the back-end nodes are 
+computationally limited instead of I/O limited), with the addition of 
+some serious metadata operations in the .glusterfs directory (lots of 
+stat calls there, together with large numbers of small files).
 
-I tried running the "send" and "receive" with "-vv" to get more detail 
-on what was happening.
+As far as overall performance, BTRFS is actually on par for this usage 
+with both ext4 and XFS (at least, on my hardware it is), and I actually 
+see more SSD friendly access patterns when using BTRFS in this case than 
+any other FS I tried.
 
-I had thought that btrfs send/receive purely dealt with block/extent 
-level changes.
+After some serious experimentation with various configurations for this 
+during the past few months, I've noticed a handful of other things:
 
-I could be mistaken, but it seems that btrfs receive actually does a 
-great deal of manipulation at the level of individual files, and rather 
-less efficiently than rsync at that. I am not sure whether it is using 
-system calls to do this, or actual shell commands themselves. I see 
-quite a bit of what looks like file level manipulation in the verbose 
-output. It is indeed very fast for simple directory trees even with very 
-large files. However, it seems to be far slower than rsync with 
-moderately complex directory trees, even if no large files are present.
+1. The 'ssd' mount option does not actually improve performance on these 
+SSD's.  To a certain extent, this actually surprised me at first, but 
+having seen Hans' e-mail and what he found about this option, it 
+actually makes sense, since erase-blocks on these devices are 4MB, not 
+2MB, and the drives have a very good FTL (so they will aggregate all the 
+little writes properly).
 
-I hope I'm overlooking something, and that this is not actually the 
-case. Any ideas on this ?
+Given this, I'm beginning to wonder if it actually makes sense to not 
+automatically enable this on mount when dealing with certain types of 
+storage (for example, most SATA and SAS SSD's have reasonably good 
+FTL's, so I would expect them to have similar behavior).  Extrapolating 
+further, it might instead make sense to just never automatically enable 
+this, and expose the value this option is manipulating as a mount option 
+as there are other circumstances where setting specific values could 
+improve performance (for example, if you're on hardware RAID6, setting 
+this to the stripe size would probably improve performance on many 
+cheaper controllers).
 
-J. Hart
+2. Up to a certain point, running a single larger BTRFS volume with 
+multiple sub-volumes is more computationally efficient than running 
+multiple smaller BTRFS volumes.  More specifically, there is lower load 
+on the system and lower CPU utilization by BTRFS itself without much 
+noticeable difference in performance (in my tests it was about 0.5-1% 
+performance difference, YMMV).  To a certain extent this makes some 
+sense, but the turnover point was actually a lot higher than I expected 
+(with this workload, the turnover point was around half a terabyte).
 
+I believe this to be a side-effect of how we use per-filesystem 
+worker-pools.  In essence, we can schedule parallel access better when 
+it's all through the same worker pool than we can when using multiple 
+worker pools.  Having realized this, I think it might be interesting to 
+see if using a worker-pool per physical device (or at least what the 
+system sees as a physical device) might make more sense in terms of 
+performance than our current method of using a pool per-filesystem.
+
+3. On these SSD's, running a single partition in dup mode is actually 
+marginally more efficient than running 2 partitions in raid1 mode.  I 
+was actually somewhat surprised by this, and I haven't been able to find 
+a clear explanation as to why (I suspect caching may have something to 
+do with it, but I'm not 100% certain about that),  but some limited 
+testing with other SSD's seems to indicate that it's the case for most 
+SSD's, with the difference being smaller on smaller and faster devices. 
+On a traditional hard disk, it's significantly more efficient, but 
+that's generally to be expected.
+
+4. Depending on other factors, compression can actually slow you down 
+pretty significantly.  In the particular case I saw this happen (all 
+cores completely utilized by userspace software), LZO compression 
+actually caused around 5-10% performance degradation compared to no 
+compression.  This is somewhat obvious once it's explained, but it's not 
+exactly intuitive  and as such it's probably worth documenting in the 
+man pages that compression won't always make things better.  I may send 
+a patch to add this at some point in the near future.

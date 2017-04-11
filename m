@@ -1,39 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:35911 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1754741AbdDNS3M (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Apr 2017 14:29:12 -0400
-Date: Fri, 14 Apr 2017 11:28:37 -0700
-From: Chris Mason <clm@fb.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [GIT PULL] Btrfs
-Message-ID: <20170414182832.GA52628@clm-mbp.thefacebook.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; format=flowed
+Received: from mx2.suse.de ([195.135.220.15]:37247 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751645AbdDKQ7e (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 11 Apr 2017 12:59:34 -0400
+From: David Sterba <dsterba@suse.com>
+To: clm@fb.com
+Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Subject: [PULL] Btrfs fixes for 4.11-rc7
+Date: Tue, 11 Apr 2017 18:59:31 +0200
+Message-Id: <cover.1491929895.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus
+there are some fixes for crashes or use-after-free and one fix to the mount
+options handling (user-visible behaviour). Please pull to 4.11, thanks.
 
-Dave Sterba collected a few more fixes for the last rc:
+----------------------------------------------------------------
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.11
+The following changes since commit 41a75a6eb2bf4e75e0d93862171bebb3ca4efec7:
 
-These aren't marked for stable, but I'm putting them in with a batch 
-were testing/sending by hand for this release.
+  Merge branch 'for-chris-4.11-rc5' of git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux into for-linus-4.11 (2017-03-29 13:10:25 -0700)
 
-Liu Bo (3) commits (+11/-13):
-    Btrfs: fix invalid dereference in btrfs_retry_endio (+4/-10)
-    Btrfs: fix potential use-after-free for cloned bio (+1/-1)
-    Btrfs: fix segmentation fault when doing dio read (+6/-2)
+are available in the git repository at:
 
-Adam Borowski (1) commits (+3/-0):
-    btrfs: drop the nossd flag when remounting with -o ssd
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-chris-4.11-rc7
 
-Total: (4) commits (+14/-13)
+for you to fetch changes up to a967efb30b3afa3d858edd6a17f544f9e9e46eea:
+
+  Btrfs: fix potential use-after-free for cloned bio (2017-04-11 18:49:56 +0200)
+
+----------------------------------------------------------------
+Adam Borowski (1):
+      btrfs: drop the nossd flag when remounting with -o ssd
+
+Liu Bo (3):
+      Btrfs: fix invalid dereference in btrfs_retry_endio
+      Btrfs: fix segmentation fault when doing dio read
+      Btrfs: fix potential use-after-free for cloned bio
 
  fs/btrfs/inode.c   | 22 ++++++++++------------
  fs/btrfs/super.c   |  3 +++

@@ -1,55 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36600 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753088AbdDLNmw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Apr 2017 09:42:52 -0400
-Date: Wed, 12 Apr 2017 15:42:45 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Deepa Dinamani <deepa.kernel@gmail.com>
-Cc: linux-kernel@vger.kernel.org, akpm@linux-foundation.org,
-        tglx@linutronix.de, viro@zeniv.linux.org.uk,
-        gregkh@linuxfoundation.org, andreas.dilger@intel.com, arnd@arndb.de,
-        bfields@fieldses.org, clm@fb.com, davem@davemloft.net,
-        dsterba@suse.com, dushistov@mail.ru, eparis@redhat.com,
-        jaegeuk@kernel.org, jbacik@fb.com, jlayton@poochiereds.net,
-        john.stultz@linaro.org, jsimmons@infradead.org, mingo@redhat.com,
-        oleg.drokin@intel.com, paul@paul-moore.com, rostedt@goodmis.org,
-        yuchao0@huawei.com, ceph-devel@vger.kernel.org,
-        devel@driverdev.osuosl.org, linux-audit@redhat.com,
-        linux-btrfs@vger.kernel.org, linux-cifs@vger.kernel.org,
-        linux-f2fs-devel@lists.sourceforge.net, linux-fsdevel@vger.kernel.org,
-        linux-mtd@lists.infradead.org, linux-security-module@vger.kernel.org,
-        lustre-devel@lists.lustre.org, netdev@vger.kernel.org,
-        samba-technical@lists.samba.org, y2038@lists.linaro.org
-Subject: Re: [PATCH 07/12] fs: btrfs: Use ktime_get_real_ts for root ctime
-Message-ID: <20170412134245.GK4781@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1491613030-11599-1-git-send-email-deepa.kernel@gmail.com>
- <1491613030-11599-8-git-send-email-deepa.kernel@gmail.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:38576 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752010AbdDKI53 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 11 Apr 2017 04:57:29 -0400
+Date: Tue, 11 Apr 2017 11:57:15 +0300
+From: Dan Carpenter <dan.carpenter@oracle.com>
+To: Chris Mason <clm@fb.com>
+Cc: Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org, kernel-janitors@vger.kernel.org
+Subject: [PATCH] Btrfs: remove some dead code
+Message-ID: <20170411085715.GA24157@mwanda>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1491613030-11599-8-git-send-email-deepa.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 07, 2017 at 05:57:05PM -0700, Deepa Dinamani wrote:
-> btrfs_root_item maintains the ctime for root updates.
-> This is not part of vfs_inode.
-> 
-> Since current_time() uses struct inode* as an argument
-> as Linus suggested, this cannot be used to update root
-> times unless, we modify the signature to use inode.
-> 
-> Since btrfs uses nanosecond time granularity, it can also
-> use ktime_get_real_ts directly to obtain timestamp for
-> the root. It is necessary to use the timespec time api
-> here because the same btrfs_set_stack_timespec_*() apis
-> are used for vfs inode times as well. These can be
-> transitioned to using timespec64 when btrfs internally
-> changes to use timespec64 as well.
-> 
-> Signed-off-by: Deepa Dinamani <deepa.kernel@gmail.com>
-> Acked-by: David Sterba <dsterba@suse.com>
-> Reviewed-by: Arnd Bergmann <arnd@arndb.de>
+btrfs_get_extent() never returns NULL pointers, so this code introduces
+a static checker warning.
 
-I'm going to add the patch to my 4.12 queue and will let Andrew know.
+The btrfs_get_extent() is a bit complex, but trust me that it doesn't
+return NULLs and also if it did we would trigger the BUG_ON(!em) before
+the last return statement.
+
+Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
+
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 315fbbf84fa2..1519d29dec01 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2397,13 +2397,8 @@ static int find_first_non_hole(struct inode *inode, u64 *start, u64 *len)
+ 	int ret = 0;
+ 
+ 	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, *start, *len, 0);
+-	if (IS_ERR_OR_NULL(em)) {
+-		if (!em)
+-			ret = -ENOMEM;
+-		else
+-			ret = PTR_ERR(em);
+-		return ret;
+-	}
++	if (IS_ERR(em))
++		return PTR_ERR(em);
+ 
+ 	/* Hole or vacuum extent(only exists in no-hole mode) */
+ 	if (em->block_start == EXTENT_MAP_HOLE) {
+@@ -2893,11 +2888,8 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 	while (1) {
+ 		em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, cur_offset,
+ 				      alloc_end - cur_offset, 0);
+-		if (IS_ERR_OR_NULL(em)) {
+-			if (!em)
+-				ret = -ENOMEM;
+-			else
+-				ret = PTR_ERR(em);
++		if (IS_ERR(em)) {
++			ret = PTR_ERR(em);
+ 			break;
+ 		}
+ 		last_byte = min(extent_map_end(em), alloc_end);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index df937f8c71df..dc5f9002593d 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6866,7 +6866,6 @@ static noinline int uncompress_inline(struct btrfs_path *path,
+  *
+  * This also copies inline extents directly into the page.
+  */
+-
+ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
+ 		struct page *page,
+ 	    size_t pg_offset, u64 start, u64 len,
+@@ -7175,19 +7174,17 @@ struct extent_map *btrfs_get_extent_fiemap(struct btrfs_inode *inode,
+ 	em = btrfs_get_extent(inode, page, pg_offset, start, len, create);
+ 	if (IS_ERR(em))
+ 		return em;
+-	if (em) {
+-		/*
+-		 * if our em maps to
+-		 * -  a hole or
+-		 * -  a pre-alloc extent,
+-		 * there might actually be delalloc bytes behind it.
+-		 */
+-		if (em->block_start != EXTENT_MAP_HOLE &&
+-		    !test_bit(EXTENT_FLAG_PREALLOC, &em->flags))
+-			return em;
+-		else
+-			hole_em = em;
+-	}
++	/*
++	 * if our em maps to
++	 * -  a hole or
++	 * -  a pre-alloc extent,
++	 * there might actually be delalloc bytes behind it.
++	 */
++	if (em->block_start != EXTENT_MAP_HOLE &&
++	    !test_bit(EXTENT_FLAG_PREALLOC, &em->flags))
++		return em;
++	else
++		hole_em = em;
+ 
+ 	/* check to see if we've wrapped (len == -1 or similar) */
+ 	end = start + len;

@@ -1,91 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38334 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S937042AbdDSPVs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Apr 2017 11:21:48 -0400
-Subject: Re: [PATCH 5/8] nowait aio: return on congested block device
-To: Christoph Hellwig <hch@infradead.org>
-References: <20170414120257.8932-1-rgoldwyn@suse.de>
- <20170414120257.8932-6-rgoldwyn@suse.de>
- <20170419064505.GD20053@infradead.org>
-Cc: linux-fsdevel@vger.kernel.org, jack@suse.com, linux-block@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-xfs@vger.kernel.org, sagi@grimberg.me, avi@scylladb.com,
-        axboe@kernel.dk, linux-api@vger.kernel.org, willy@infradead.org,
-        tom.leiming@gmail.com, Goldwyn Rodrigues <rgoldwyn@suse.com>
-From: Goldwyn Rodrigues <rgoldwyn@suse.de>
-Message-ID: <d3467259-675a-2723-7cf9-d4f2f067d634@suse.de>
-Date: Wed, 19 Apr 2017 10:21:39 -0500
+Received: from edanaher.xen.prgmr.com ([71.19.155.118]:49315 "EHLO
+        gahlpo.edanaher.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751648AbdDKASl (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 10 Apr 2017 20:18:41 -0400
+Received: from chileh.lan (c-50-176-252-71.hsd1.ma.comcast.net [50.176.252.71])
+        by gahlpo.edanaher.net (Postfix) with ESMTPSA id 81B645C791
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Apr 2017 17:09:06 -0700 (PDT)
+Received: from edanaher by chileh.lan with local (Exim 4.89)
+        (envelope-from <github@edanaher.net>)
+        id 1cxjMm-0008On-VO
+        for linux-btrfs@vger.kernel.org; Tue, 11 Apr 2017 00:09:04 +0000
+Date: Mon, 10 Apr 2017 20:09:04 -0400
+From: Evan Danaher <github@edanaher.net>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs-progs: send-dump: always print a space after path
+Message-ID: <20170411000904.GF2455@edanaher.net>
 MIME-Version: 1.0
-In-Reply-To: <20170419064505.GD20053@infradead.org>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I was shocked to discover that 'btrfs receive --dump' doesn't print a
+space after long filenames, so it runs together into the metadata; for
+example:
+
+truncate        ./20-00-03/this-name-is-32-characters-longsize=0
+
+This is a trivial patch to add a single space unconditionally, so the
+result is the following:
+
+truncate        ./20-00-03/this-name-is-32-characters-long size=0
+
+I suppose this is technically a breaking change, but it seems unlikely
+to me that anyone would depend on the existing behavior given how
+unfriendly it is.
 
 
-On 04/19/2017 01:45 AM, Christoph Hellwig wrote:
-> 
->> +	if (bio->bi_opf & REQ_NOWAIT) {
->> +		if (!blk_queue_nowait(q)) {
->> +			err = -EOPNOTSUPP;
->> +			goto end_io;
->> +		}
->> +		if (!(bio->bi_opf & REQ_SYNC)) {
-> 
-> I don't understand this check at all..
-
-It is to ensure at the block layer that NOWAIT comes only for DIRECT
-calls only. I should probably change it to REQ_SYNC | REQ_IDLE.
-
-> 
->> +			if (unlikely(!blk_queue_dying(q) && (bio->bi_opf & REQ_NOWAIT)))
-> 
-> Please break lines after 80 characters.
-> 
->> @@ -119,6 +119,9 @@ struct request *blk_mq_sched_get_request(struct request_queue *q,
->>  	if (likely(!data->hctx))
->>  		data->hctx = blk_mq_map_queue(q, data->ctx->cpu);
->>  
->> +	if (bio && (bio->bi_opf & REQ_NOWAIT))
->> +		data->flags |= BLK_MQ_REQ_NOWAIT;
-> 
-> Check the op flag again here.
-> 
->> +++ b/block/blk-mq.c
->> @@ -1538,6 +1538,8 @@ static blk_qc_t blk_mq_make_request(struct request_queue *q, struct bio *bio)
->>  	rq = blk_mq_sched_get_request(q, bio, bio->bi_opf, &data);
->>  	if (unlikely(!rq)) {
->>  		__wbt_done(q->rq_wb, wb_acct);
->> +		if (bio && (bio->bi_opf & REQ_NOWAIT))
->> +			bio_wouldblock_error(bio);
-> 
-> bio iѕ dereferences unconditionally above, so you can do the same.
-> 
->> @@ -1662,6 +1664,8 @@ static blk_qc_t blk_sq_make_request(struct request_queue *q, struct bio *bio)
->>  	rq = blk_mq_sched_get_request(q, bio, bio->bi_opf, &data);
->>  	if (unlikely(!rq)) {
->>  		__wbt_done(q->rq_wb, wb_acct);
->> +		if (bio && (bio->bi_opf & REQ_NOWAIT))
->> +			bio_wouldblock_error(bio);
-> 
-> Same here.  Although blk_sq_make_request is gone anyway in the current
-> block tree..
-> 
->> +	/* Request queue supports BIO_NOWAIT */
->> +	queue_flag_set_unlocked(QUEUE_FLAG_NOWAIT, q);
-> 
-> BIO_NOWAIT is gone.  And the comment would not be needed if the
-> flag had a more descriptive name, e.g. QUEUE_FLAG_NOWAIT_SUPPORT.
-> 
-> And I think all request based drivers should set the flag implicitly
-> as ->queuecommand can't sleep, and ->queue_rq only when it's always
-> offloaded to a workqueue when the BLK_MQ_F_BLOCKING flag is set.
-> 
-
-Yes, Do we have a central point (like a probe() function call?) where
-this can be done?
-
-
--- 
-Goldwyn
+Signed-off-by: Evan Danaher <github@edanaher.net>
+---
+diff --git a/send-dump.c b/send-dump.c
+index 67f7977..493389f 100644
+--- a/send-dump.c
++++ b/send-dump.c
+@@ -116,9 +116,10 @@ static int __print_dump(int subvol, void *user, const char *path,
+                putchar('\n');
+                return 0;
+        }
+-       /* Short paths ale aligned to 32 chars */
+-       while (ret++ < 32)
++       /* Short paths are aligned to 32 chars; longer paths get a single space */
++       do {
+                putchar(' ');
++       } while (ret++ < 32);
+        va_start(args, fmt);
+        /* Operation specified ones */
+        vprintf(fmt, args);
+---

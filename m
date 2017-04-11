@@ -1,87 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from torres.zugschlus.de ([85.214.131.164]:39256 "EHLO
-        torres.zugschlus.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752733AbdDKHeK (ORCPT
+Received: from tartarus.angband.pl ([89.206.35.136]:58243 "EHLO
+        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751619AbdDKJzz (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Apr 2017 03:34:10 -0400
-Received: from mh by torres.zugschlus.de with local (Exim 4.84_2)
-        (envelope-from <mh+linux-btrfs@zugschlus.de>)
-        id 1cxq1U-0000rS-0T
-        for linux-btrfs@vger.kernel.org; Tue, 11 Apr 2017 09:15:32 +0200
-Date: Tue, 11 Apr 2017 09:15:31 +0200
-From: Marc Haber <mh+linux-btrfs@zugschlus.de>
+        Tue, 11 Apr 2017 05:55:55 -0400
+Received: from kilobyte by tartarus.angband.pl with local (Exim 4.88)
+        (envelope-from <kilobyte@angband.pl>)
+        id 1cxsWe-0001oc-QH
+        for linux-btrfs@vger.kernel.org; Tue, 11 Apr 2017 11:55:52 +0200
+Date: Tue, 11 Apr 2017 11:55:52 +0200
+From: Adam Borowski <kilobyte@angband.pl>
 To: linux-btrfs@vger.kernel.org
-Subject: btrfs won't mount any more
-Message-ID: <20170411071531.GK3699@torres.zugschlus.de>
+Subject: Re: btrfs filesystem keeps allocating new chunks for no apparent
+ reason
+Message-ID: <20170411095552.o5b4wysjqlbp57xa@angband.pl>
+References: <4532f6ee-2a6e-412a-7230-edb76735d55f@mendix.com>
+ <07a7f59e-64e0-4d09-5d32-01bc933fe38d@gmail.com>
+ <20170410144533.664fc304@jupiter.sol.kaishome.de>
+ <5488ea5a-b41c-5987-e664-ec17cf2d5e01@gmail.com>
+ <20170410184444.08ced097@jupiter.sol.local>
+ <20170410185437.235b3b86@jupiter.sol.kaishome.de>
+ <7ea65b63-d399-c049-d466-681c1df2d025@gmail.com>
+ <20170410201842.216893be@jupiter.sol.kaishome.de>
+ <ce3ddbc7-da26-9fc7-e783-e9d566009ae8@gmail.com>
+ <20170411060119.65b34774@jupiter.sol.kaishome.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20170411060119.65b34774@jupiter.sol.kaishome.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Tue, Apr 11, 2017 at 06:01:19AM +0200, Kai Krakow wrote:
+> Yes, I know all this. But I don't see why you still want noatime or
+> relatime if you use lazytime, except for super-optimizing. Lazytime
+> gives you POSIX conformity for a problem that the other options only
+> tried to solve.
 
-I have wrecked another btrfs file system, probably for good this time.
+(Besides lazytime also working on mtime, and, technically, ctime.)
 
-It's a 80 GB filesystem from 2015, in my secondary notebook, on an
-encrypted SSD. The btrfs holds the root filesystem and the rest of the
-system as well.
+First: atime, in any form, murders snapshots.  On any filesystem that has
+them, not just btrfs -- I've tested zfs and LVM snapshots, there's also
+qcow2/vdi and so on.  On all of them, every single read-everything operation
+costs you 5% disk space.  For a _read_ operation!
 
-I have a cronjob that makes snapshots of the system directories daily,
-and of /home every ten minutes. A second cronjob cleans up old snapshots
-so that the number of snapshots present is about between 400 and 600.
-This is the key feature that made me decide for btrfs in the first
-place.
+I've tested /usr-y mix of files, for consistency with the guy who mentioned
+this problem first.  Your mileage will vary depending on whether you store
+100GB disk images or a news spool.
 
-Last week (I was on kernel 4.10.8 with Debian unstable), I was forced to
-promote the secondary laptop to the primary one which resulted in
-serious work being done on the first time. Over time, the filesystem
-filled up without me noticing and was finally 100% full.
+Read-everything is quite rare, but most systems have at least one
+stat-everything cronjob.  That touches only diratime, but that's still
+1-in-11 inodes (remarkably consistent: I've checked a few machines with
+drastically different purposes, and somehow the min was 10, max 12).
 
-I then cleaned up about four gigs by deleting a couple of redundant ISO
-images and some snapshots that were not due for regular deletion yet. I
-then started a btrfs balance / -d50, unfortunately without stopping the
-snapshot-making cronjob. This resulted in the notebook becoming
-unuseable for extended periods of time, without even being able to log
-in. After running for some 30 hours, the notebook ran out of battery
-(don't ask, stupid me).
-
-After rebooting, the btrfs balance proceeded immediately after mounting
-the root fs. System unuseable again. After a day, I finally had a root
-shell and was able to issue a btrfs cancel /. Unfortunately, the system
-didn't care about that command and happily continued to balance. After
-some more 30 hours, I lost patience and resetted the system.
-
-To be able to keep control of the system and to monitor operations from
-remote, I installed a fresh copy of Debian unstable with the same 4.10.8
-kernel on an USB stick and booted the notebook from the stick. I brought
-up the system and tried to mount the btrfs. The mount process quickly
-went up to 100 % CPU usage and stayed that way until I went to bed last
-night. This morning, the machine had dropped off the network (couldn't
-ping the default gateway any more despite the network looked fine), and
-spewed kernel oopses of about 80 lines (too long to scroll back even)
-every few seconds.
-
-I will try to tweak kernel.printk tonight so that I get my console back
-and see whether the oopses are also in journal, dmesg or syslog so that
-I can copypaste them. I also have a reasonably current backup of the
-filesystem so nuking it from orbit is an option, I would however hate
-losing my snapshots.
-
-Is it worthwhile to save information about the borked filesystem, or
-does the btrfs community just dont care about a heavily snapshotted two
-years old filesystem?
-
-I would like to hear comments and opinions about what has happened here
-and how to avoid things like that in the future. Do more recently
-created btrfs filesystems have safeguards against damage that may occur
-when a filesystem fills up?
-
-Greetings
-Marc
+And no, marking snapshots as ro doesn't help: reading the live version still
+breaks CoW.
 
 
+Second: atime murders media with limited write endurance.  Modern SSD can
+cope well, but I for one work a lot with SD and eMMC.  Every single SoC
+image I've seen uses noatime for this reason.
+
+
+Third: relatime/lazytime don't eliminate the performance cost.  They fix
+only frequently read files -- if you have a big filesystem where you read a
+lot but individual files tend to be read rarely, relatime is as bad as
+strictatime, and lazytime actually worse.  Both will do an unnecessary write
+of all inodes.
+
+
+Four: why?  Beside being POSIXLY_CORRECT, what do you actually gain from
+atime?  I can think only of:
+* new mail notification with mbox.  Just patch the mail reader to manually
+  futimens(..., {UTIME_NOW,UTIME_OMIT}), it has no extra cost on !noatime
+  mounts.  I've personally did so for mutt, the updated version will ship
+  in Debian stretch; you can patch other mail readers although they tend
+  to be rarely used in conjunction with shell access (and thus they have
+  no need for atime at all).
+* Debian's popcon's "vote" field.  Use "inst", and there's no gain from
+  popcon for you personally.
+* some intrusion detection forensics (broken by open(..., O_NOATIME))
+
+
+Conclusion: death to atime!
 -- 
------------------------------------------------------------------------------
-Marc Haber         | "I don't trust Computers. They | Mailadresse im Header
-Leimen, Germany    |  lose things."    Winona Ryder | Fon: *49 6224 1600402
-Nordisch by Nature |  How to make an American Quilt | Fax: *49 6224 1600421
+⢀⣴⠾⠻⢶⣦⠀ Meow!
+⣾⠁⢠⠒⠀⣿⡁
+⢿⡄⠘⠷⠚⠋⠀ Collisions shmolisions, let's see them find a collision or second
+⠈⠳⣄⠀⠀⠀⠀ preimage for double rot13!

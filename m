@@ -1,95 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from syrinx.knorrie.org ([82.94.188.77]:34948 "EHLO
-        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751555AbdDLR0B (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:33367 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1754419AbdDLWtB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Apr 2017 13:26:01 -0400
-Subject: Re: Btrfs disk layout question
-To: Amin Hassani <ahassani@chromium.org>, linux-btrfs@vger.kernel.org
-References: <CACh0r45KQb+wLCbRP50WUfe8Loa=zF-Y13n2MhgUbRKi=UT8bw@mail.gmail.com>
-From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Message-ID: <03a83bfc-27b9-7cc3-c103-1e5caa858431@mendix.com>
-Date: Wed, 12 Apr 2017 19:25:59 +0200
-MIME-Version: 1.0
-In-Reply-To: <CACh0r45KQb+wLCbRP50WUfe8Loa=zF-Y13n2MhgUbRKi=UT8bw@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+        Wed, 12 Apr 2017 18:49:01 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1cyR4H-0000e9-GL
+        for linux-btrfs@vger.kernel.org; Thu, 13 Apr 2017 00:48:53 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: BTRFS as a GlusterFS storage back-end, and what I've learned from
+ using it as such.
+Date: Wed, 12 Apr 2017 22:48:45 +0000 (UTC)
+Message-ID: <pan$ea378$cb1a6397$cb89db25$92b1a470@cox.net>
+References: <7e63733a-6ab5-d92d-f9b2-f129ebd81f36@gmail.com>
+        <e31fb17b-3331-b168-e96a-72398ea8af62@cn.fujitsu.com>
+        <45e228aa-c650-98a6-f23a-095eb690a181@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04/11/2017 09:15 PM, Amin Hassani wrote:
-> 
-> I am working on a project with Btrfs and I was wondering if there is
-> any way to see the disk layout of the btrfs image. Let's assume I have
-> a read-only btrfs image with compression on and only using one disk
-> (no raid or anything).
+Austin S. Hemmelgarn posted on Wed, 12 Apr 2017 07:18:44 -0400 as
+excerpted:
 
-> Is it possible to get a set of offset-lengths
-> for each file or metadata parts of the image.
+> On 2017-04-12 01:49, Qu Wenruo wrote:
+>>
+>> At 04/11/2017 11:40 PM, Austin S. Hemmelgarn wrote:
+>>>
+>>> 4. Depending on other factors, compression can actually slow you down
+>>> pretty significantly.  In the particular case I saw this happen (all
+>>> cores completely utilized by userspace software), LZO compression
+>>> actually caused around 5-10% performance degradation compared to no
+>>> compression.  This is somewhat obvious once it's explained, but it's
+>>> not exactly intuitive  and as such it's probably worth documenting in
+>>> the man pages that compression won't always make things better.  I may
+>>> send a patch to add this at some point in the near future.
+>>
+>> This seems interesting.
+>> Maybe it's CPU limiting the performance?
 
-These are two very different things, and it's unclear to me what you
-actually want.
+> In this case, I'm pretty certain that that's the cause.  I've only ever
+> seen this happen though when the CPU was under either full or more than
+> full load (so pretty much full utilization of all the cores), and it
+> gets worse as the CPU load increases.
 
-Do you want:
+This seems blatantly obvious to me, no explanation needed, at least 
+assuming people understand what compression is and does.  It certainly 
+doesn't seem btrfs specific to me.
 
-1. a layout of physical disk space, and then for each range see if it's
-used for data, metadata or not used?
+Which makes my wonder if I'm missing something that would seem to 
+counteract the obvious, but doesn't in this case.
 
-2. a list of files and how they're split up (or not) in one or multiple
-extents, and how long those are?
+Compression at its most basic can be described as a tradeoff of CPU 
+cycles to decrease data size (by tracking and eliminating internal 
+redundancy), and thus transfer time of the data.
 
-Remember that multiple files can reuse part of each others data in
-btrfs. So if you follow the files, and you have reflinked copies or
-subvolume snapshots, then you see actual disk usage multiple times.
+In conditions where the bottleneck is (seek and) transfer time, as on hdds 
+with mostly idle CPUs, compression therefore tends to be a pretty big 
+performance boost because the lower size of the compressed data means 
+fewer seeks and lower transfer time, and because that's where the 
+bottleneck is, making it more efficient increases the performance of the 
+entire thing.
 
-> I know there is an
-> unfinished documentation for On-disk Formant in here:
-> https://btrfs.wiki.kernel.org/index.php/On-disk_Format
-> But it is not complete and does not show what I am looking for. Is
-> there any other documentation on this? Is there any public API that I
-> can use to get this information.
+But the context here is SSDs, with 0 seek time and fast transfer speeds, 
+and already 100% utilized CPUs, so the bottleneck is the 100% utilized 
+CPUs and the increased CPU cycles necessary for the compression/
+decompression simply increases the CPU bottleneck.
 
-...
+So far from a mystery, this seems so basic to me that the simplest 
+dunderhead should get it, at least as long as they aren't /so/ simple 
+they can't understand the tradeoff inherent in the simplest compression 
+basics.
 
-> For example can I iterate on all
-> files starting from the root node and get all offset-lengths? This way
-> any part that doesn't come can be assumed as metadata. I don't really
-> care what is inside the metadata, I just want to know their
-> offset-lengths in the file system.
+But that's not the implication of the discussion quoted above, and the 
+participants are both what I'd consider far more qualified to understand 
+and deal with this sort of thing than I, so I /gotta/ be missing 
+something that despite my correct ultimate conclusion, means I haven't 
+reached it using a correct logic train, and that there /must/ be some 
+logic steps in there that I've left out that would intuitively switch the 
+logic, making this a rather less intuitive conclusion than I'm thinking.
 
-No, that's not how it works.
+So what am I missing?
 
-To learn more about how btrfs organizes data internally, you need a good
-understanding of these concepts:
-
-* how btrfs allocates "chunks" (often 256MiB or 1GiB size) of raw disk
-space and dedicate them to either data or metadata.
-* how btrfs uses a "virtual address space" and how that maps back from
-(dev tree) and forth (chunk tree) to raw physical disk space on either
-of the disks that is attached to the filesystem.
-* how btrfs stores the administration of exactly with part in that
-virtual address space is in use (extent tree).
-* how btrfs stores files and directories, and how it does so for
-multiple directory trees (subvolumes), (the fs tree and all 256 <= trees
-<= -256).
-* how files in these file trees reference data from data extents.
-* how extents reference back to which (can be multiple!) files they're
-used in.
-
-IOW, there are likely multiple levels of indirection that you need to
-follow to find things out.
-
-Currently there's no perfect tutorial that explains exactly all those
-things in a nice way.
-
-The btrfs wiki can help with this, the btrfs-heatmap tool which was
-already meantioned is nice to play around with, and get a better
-understanding of all address space and usage.
-
-If you know exactly what the end result would be, then it's probably
-possible to build something that uses the SEARCH IOCTL with which you
-can search in all metadata (containing info of above mentioned trees) of
-a live filesystem. At least for C and for python there's enough example
-code around to do so.
+Or is it simply that the tradeoff between CPU usage and data size and 
+minimum transit time isn't as simple and basic for most people as I'm 
+assuming here, such that it isn't obviously giving more work to an 
+already bottlenecked CPU, reducing the performance when it /is/ the CPU 
+that's bottlenecked?
 
 -- 
-Hans van Kranenburg
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

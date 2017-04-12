@@ -1,33 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35416 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:49446 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754183AbdDLNgO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Apr 2017 09:36:14 -0400
-Date: Wed, 12 Apr 2017 15:36:05 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Dan Carpenter <dan.carpenter@oracle.com>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        kernel-janitors@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: remove some dead code
-Message-ID: <20170412133605.GJ4781@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170411085715.GA24157@mwanda>
+        id S1752401AbdDLSbw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Apr 2017 14:31:52 -0400
+Subject: Re: [PATCH 5/9] nowait aio: return on congested block device
+To: Christoph Hellwig <hch@infradead.org>
+References: <20170411142619.27205-1-rgoldwyn@suse.de>
+ <20170411142619.27205-6-rgoldwyn@suse.de>
+ <20170412083625.GB22363@infradead.org>
+Cc: linux-fsdevel@vger.kernel.org, jack@suse.com, linux-block@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-xfs@vger.kernel.org, sagi@grimberg.me, avi@scylladb.com,
+        axboe@kernel.dk, linux-api@vger.kernel.org, willy@infradead.org,
+        tom.leiming@gmail.com, Goldwyn Rodrigues <rgoldwyn@suse.com>
+From: Goldwyn Rodrigues <rgoldwyn@suse.de>
+Message-ID: <7fba3538-8c91-20e5-63f1-6e063caaaffb@suse.de>
+Date: Wed, 12 Apr 2017 13:31:43 -0500
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170411085715.GA24157@mwanda>
+In-Reply-To: <20170412083625.GB22363@infradead.org>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 11, 2017 at 11:57:15AM +0300, Dan Carpenter wrote:
-> btrfs_get_extent() never returns NULL pointers, so this code introduces
-> a static checker warning.
-> 
-> The btrfs_get_extent() is a bit complex, but trust me that it doesn't
-> return NULLs and also if it did we would trigger the BUG_ON(!em) before
-> the last return statement.
-> 
-> Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
 
-Added to 4.12, thanks. I've updated the subject line so it reflects what
-the patch does.
+
+On 04/12/2017 03:36 AM, Christoph Hellwig wrote:
+> As mentioned last time around, this should be a REQ_NOWAIT flag so
+> that it can be easily passed dow? n to the request layer.
+> 
+>> +static inline void bio_wouldblock_error(struct bio *bio)
+>> +{
+>> +	bio->bi_error = -EAGAIN;
+>> +	bio_endio(bio);
+>> +}
+> 
+> Please skip this helper..
+
+Why? It is being called three times?
+I am incorporating all the rest of the comments, besides this one. Thanks.
+
+> 
+>> +#define QUEUE_FLAG_NOWAIT      28	/* queue supports BIO_NOWAIT */
+> 
+> Please make the flag name a little more descriptive, this sounds like
+> it will never wait.
+> 
+
+-- 
+Goldwyn

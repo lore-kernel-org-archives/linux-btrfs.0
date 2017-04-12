@@ -1,52 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f50.google.com ([209.85.218.50]:32857 "EHLO
-        mail-oi0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752731AbdDLQu1 (ORCPT
+Received: from mail-io0-f169.google.com ([209.85.223.169]:33514 "EHLO
+        mail-io0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751088AbdDLQ4o (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Apr 2017 12:50:27 -0400
-Received: by mail-oi0-f50.google.com with SMTP id b187so38803327oif.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Apr 2017 09:50:27 -0700 (PDT)
+        Wed, 12 Apr 2017 12:56:44 -0400
+Received: by mail-io0-f169.google.com with SMTP id k87so31842926ioi.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Apr 2017 09:56:44 -0700 (PDT)
+Subject: Re: Btrfs disk layout question
+To: Andrei Borzenkov <arvidjaar@gmail.com>,
+        Chris Murphy <lists@colorremedies.com>,
+        Adam Borowski <kilobyte@angband.pl>
+References: <CACh0r45KQb+wLCbRP50WUfe8Loa=zF-Y13n2MhgUbRKi=UT8bw@mail.gmail.com>
+ <20170411210023.vfqck3h6nepdow3z@angband.pl>
+ <CAJCQCtTyNUx-P2aPNBE0x2W01qUfrBcHyA-46frM4X+suKMxrw@mail.gmail.com>
+ <fdb571b4-0069-b124-8a22-7de09346bee7@gmail.com>
+ <ec5a00c8-5eb8-b7fa-c1e5-5eb72cb3512c@gmail.com>
+Cc: Amin Hassani <ahassani@chromium.org>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <8bc0e7b3-8df9-0def-de34-1a774d361f35@gmail.com>
+Date: Wed, 12 Apr 2017 12:56:34 -0400
 MIME-Version: 1.0
 In-Reply-To: <ec5a00c8-5eb8-b7fa-c1e5-5eb72cb3512c@gmail.com>
-References: <CACh0r45KQb+wLCbRP50WUfe8Loa=zF-Y13n2MhgUbRKi=UT8bw@mail.gmail.com>
- <20170411210023.vfqck3h6nepdow3z@angband.pl> <CAJCQCtTyNUx-P2aPNBE0x2W01qUfrBcHyA-46frM4X+suKMxrw@mail.gmail.com>
- <fdb571b4-0069-b124-8a22-7de09346bee7@gmail.com> <ec5a00c8-5eb8-b7fa-c1e5-5eb72cb3512c@gmail.com>
-From: Amin Hassani <ahassani@google.com>
-Date: Wed, 12 Apr 2017 09:50:06 -0700
-Message-ID: <CACC_xWBakrLnAgJ7i+wJcyJ21X9oNYO4T2Og_yCHWaLHra170A@mail.gmail.com>
-Subject: Re: Btrfs disk layout question
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Chris Murphy <lists@colorremedies.com>,
-        Adam Borowski <kilobyte@angband.pl>,
-        Amin Hassani <ahassani@chromium.org>,
-        Andrei Borzenkov <arvidjaar@gmail.com>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, Thanks for responses.
-
-I actually need the physical addresses. FIEMAP I believe (and I
-tested) gives logical address which as Andrei mentioned is useless.
-I'm assuming btfs-debug-tree gives the physical addresses right? I
-also need to know the compression method used on each extent and I
-don't think I can get that with the fiemap stuff. It seems that fiemap
-capability is not implemented in Btrfs as I'm looking at the Btrfs
-implementation and based on documentation of fiemap:
-
-"File systems wishing to support fiemap must implement a ->fiemap
-callback on their inode_operations structure. The fs ->fiemap call is
-responsible for
-defining its set of supported fiemap flags, and calling a helper function on
-each discovered extent:"
-
-Thanks,
-Amin.
-
-
-
-On Wed, Apr 12, 2017 at 9:44 AM, Andrei Borzenkov <arvidjaar@gmail.com> wrote:
+On 2017-04-12 12:44, Andrei Borzenkov wrote:
 > 12.04.2017 14:20, Austin S. Hemmelgarn пишет:
 >> On 2017-04-12 00:18, Chris Murphy wrote:
 >>> On Tue, Apr 11, 2017 at 3:00 PM, Adam Borowski <kilobyte@angband.pl>
@@ -75,8 +55,9 @@ On Wed, Apr 12, 2017 at 9:44 AM, Andrei Borzenkov <arvidjaar@gmail.com> wrote:
 > Could you give pointer to this tool? I use filefrag on bootinfoscript to
 > display physical disk offset of files of interest to bootloader. I was
 > not aware it shows logical offset which makes it kinda pointless.
-
-
-
--- 
-Amin Hassani.
+>
+Looking again, I think I was thinking of `btrfs inspect-internal 
+logical-resolve`, which actually is more like a reverse fiemap (you give 
+it a logical address, and it spits out paths to all the files that 
+include that logical address), so such a tool may not actually exist (at 
+least, not in the standard tools).

@@ -1,97 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:33367 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1754419AbdDLWtB (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:48732 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1752765AbdDMAmt (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Apr 2017 18:49:01 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1cyR4H-0000e9-GL
-        for linux-btrfs@vger.kernel.org; Thu, 13 Apr 2017 00:48:53 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: BTRFS as a GlusterFS storage back-end, and what I've learned from
- using it as such.
-Date: Wed, 12 Apr 2017 22:48:45 +0000 (UTC)
-Message-ID: <pan$ea378$cb1a6397$cb89db25$92b1a470@cox.net>
-References: <7e63733a-6ab5-d92d-f9b2-f129ebd81f36@gmail.com>
-        <e31fb17b-3331-b168-e96a-72398ea8af62@cn.fujitsu.com>
-        <45e228aa-c650-98a6-f23a-095eb690a181@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+        Wed, 12 Apr 2017 20:42:49 -0400
+Subject: Re: [PATCH] fstests: introduce btrfs-map-logical
+To: <dsterba@suse.cz>, Liu Bo <bo.li.liu@oracle.com>,
+        <fstests@vger.kernel.org>, <linux-btrfs@vger.kernel.org>
+References: <1491960463-28680-1-git-send-email-bo.li.liu@oracle.com>
+ <5d7f7d05-b7af-5d8d-93f6-0db2db4ade85@cn.fujitsu.com>
+ <20170412123201.GG4781@twin.jikos.cz> <20170412125222.GI4781@twin.jikos.cz>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <2842eab0-6295-d81d-6c7e-da52d4e00755@cn.fujitsu.com>
+Date: Thu, 13 Apr 2017 08:42:43 +0800
+MIME-Version: 1.0
+In-Reply-To: <20170412125222.GI4781@twin.jikos.cz>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Austin S. Hemmelgarn posted on Wed, 12 Apr 2017 07:18:44 -0400 as
-excerpted:
 
-> On 2017-04-12 01:49, Qu Wenruo wrote:
->>
->> At 04/11/2017 11:40 PM, Austin S. Hemmelgarn wrote:
+
+At 04/12/2017 08:52 PM, David Sterba wrote:
+> On Wed, Apr 12, 2017 at 02:32:02PM +0200, David Sterba wrote:
+>> On Wed, Apr 12, 2017 at 09:35:00AM +0800, Qu Wenruo wrote:
 >>>
->>> 4. Depending on other factors, compression can actually slow you down
->>> pretty significantly.  In the particular case I saw this happen (all
->>> cores completely utilized by userspace software), LZO compression
->>> actually caused around 5-10% performance degradation compared to no
->>> compression.  This is somewhat obvious once it's explained, but it's
->>> not exactly intuitive  and as such it's probably worth documenting in
->>> the man pages that compression won't always make things better.  I may
->>> send a patch to add this at some point in the near future.
+>>>
+>>> At 04/12/2017 09:27 AM, Liu Bo wrote:
+>>>> A typical use case of 'btrfs-map-logical' is to translate btrfs logical
+>>>> address to physical address on each disk.
+>>>
+>>> Could we avoid usage of btrfs-map-logical here?
 >>
->> This seems interesting.
->> Maybe it's CPU limiting the performance?
+>> Agreed.
+>>
+>>> I understand that we need to do corruption so that we can test if the
+>>> repair works, but I'm not sure if the output format will change, or if
+>>> the program will get replace by "btrfs inspect-internal" group.
+>>
+>> In the long-term it will be repleaced, but there's no ETA.
+> 
+> Possibly, if fstests maintainer agrees, we can add btrfs-map-logical to
+> fstests. It's small and uses headers from libbtrfs, so this would become
+> a new dependency but I believe is still bearable.
+> 
+> I'm not sure if we should export all debuging functionality in 'btrfs'
+> as this is typically something that a user will never want, not even in
+> the emergency environments. There's an overlap in the information to be
+> exported but I'd be more inclined to satisfy user needs than testsuite
+> needs. So an independent tool would give us more freedom on both sides.
+> 
+I'm working on the new btrfs-corrupt-block equivalent, considering the 
+demand to corrupt on-disk data for recovery test, I could provide tool 
+with fundamental corruption support.
 
-> In this case, I'm pretty certain that that's the cause.  I've only ever
-> seen this happen though when the CPU was under either full or more than
-> full load (so pretty much full utilization of all the cores), and it
-> gets worse as the CPU load increases.
+Which could corrupt on-disk data, either specified by (root, inode, 
+offset, length) or just (logical address, length).
+And support to corrupt given mirror or even P/Q for RAID56.
+(With btrfs_map_block_v2 from offline scrub)
 
-This seems blatantly obvious to me, no explanation needed, at least 
-assuming people understand what compression is and does.  It certainly 
-doesn't seem btrfs specific to me.
+I'm not sure if I should just replace btrfs-corrupt-block or add a new 
+individual prog or add a btrfs subcommand group which is disabled by 
+default?
 
-Which makes my wonder if I'm missing something that would seem to 
-counteract the obvious, but doesn't in this case.
+Thanks,
+Qu
 
-Compression at its most basic can be described as a tradeoff of CPU 
-cycles to decrease data size (by tracking and eliminating internal 
-redundancy), and thus transfer time of the data.
-
-In conditions where the bottleneck is (seek and) transfer time, as on hdds 
-with mostly idle CPUs, compression therefore tends to be a pretty big 
-performance boost because the lower size of the compressed data means 
-fewer seeks and lower transfer time, and because that's where the 
-bottleneck is, making it more efficient increases the performance of the 
-entire thing.
-
-But the context here is SSDs, with 0 seek time and fast transfer speeds, 
-and already 100% utilized CPUs, so the bottleneck is the 100% utilized 
-CPUs and the increased CPU cycles necessary for the compression/
-decompression simply increases the CPU bottleneck.
-
-So far from a mystery, this seems so basic to me that the simplest 
-dunderhead should get it, at least as long as they aren't /so/ simple 
-they can't understand the tradeoff inherent in the simplest compression 
-basics.
-
-But that's not the implication of the discussion quoted above, and the 
-participants are both what I'd consider far more qualified to understand 
-and deal with this sort of thing than I, so I /gotta/ be missing 
-something that despite my correct ultimate conclusion, means I haven't 
-reached it using a correct logic train, and that there /must/ be some 
-logic steps in there that I've left out that would intuitively switch the 
-logic, making this a rather less intuitive conclusion than I'm thinking.
-
-So what am I missing?
-
-Or is it simply that the tradeoff between CPU usage and data size and 
-minimum transit time isn't as simple and basic for most people as I'm 
-assuming here, such that it isn't obviously giving more work to an 
-already bottlenecked CPU, reducing the performance when it /is/ the CPU 
-that's bottlenecked?
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
 

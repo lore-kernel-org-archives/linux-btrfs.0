@@ -1,69 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:48732 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752765AbdDMAmt (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:43411 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1752134AbdDMBPO (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Apr 2017 20:42:49 -0400
-Subject: Re: [PATCH] fstests: introduce btrfs-map-logical
-To: <dsterba@suse.cz>, Liu Bo <bo.li.liu@oracle.com>,
-        <fstests@vger.kernel.org>, <linux-btrfs@vger.kernel.org>
-References: <1491960463-28680-1-git-send-email-bo.li.liu@oracle.com>
- <5d7f7d05-b7af-5d8d-93f6-0db2db4ade85@cn.fujitsu.com>
- <20170412123201.GG4781@twin.jikos.cz> <20170412125222.GI4781@twin.jikos.cz>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <2842eab0-6295-d81d-6c7e-da52d4e00755@cn.fujitsu.com>
-Date: Thu, 13 Apr 2017 08:42:43 +0800
-MIME-Version: 1.0
-In-Reply-To: <20170412125222.GI4781@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+        Wed, 12 Apr 2017 21:15:14 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1cyTLl-0003D5-7p
+        for linux-btrfs@vger.kernel.org; Thu, 13 Apr 2017 03:15:05 +0200
+To: linux-btrfs@vger.kernel.org
+From: =?UTF-8?Q?Jakob_Sch=c3=bcrz?= <wertstoffe@nurfuerspam.de>
+Subject: Re: send snapshot from snapshot incremental
+Date: Thu, 13 Apr 2017 03:14:21 +0200
+Message-ID: <d003sd-127.ln1@aldebaran.xundeenergie.at>
+References: <p18jqd-a0m.ln1@aldebaran.xundeenergie.at>
+ <22744.8089.282234.241186@tree.ty.sabi.co.uk>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <22744.8089.282234.241186@tree.ty.sabi.co.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-At 04/12/2017 08:52 PM, David Sterba wrote:
-> On Wed, Apr 12, 2017 at 02:32:02PM +0200, David Sterba wrote:
->> On Wed, Apr 12, 2017 at 09:35:00AM +0800, Qu Wenruo wrote:
->>>
->>>
->>> At 04/12/2017 09:27 AM, Liu Bo wrote:
->>>> A typical use case of 'btrfs-map-logical' is to translate btrfs logical
->>>> address to physical address on each disk.
->>>
->>> Could we avoid usage of btrfs-map-logical here?
->>
->> Agreed.
->>
->>> I understand that we need to do corruption so that we can test if the
->>> repair works, but I'm not sure if the output format will change, or if
->>> the program will get replace by "btrfs inspect-internal" group.
->>
->> In the long-term it will be repleaced, but there's no ETA.
+Am 2017-03-26 um 22:07 schrieb Peter Grandi:
+> [ ... ]
+>> BUT if i take a snapshot from the system, and want to transfer
+>> it to the external HD, i can not set a parent subvolume,
+>> because there isn't any.
 > 
-> Possibly, if fstests maintainer agrees, we can add btrfs-map-logical to
-> fstests. It's small and uses headers from libbtrfs, so this would become
-> a new dependency but I believe is still bearable.
+> Questions like this are based on incomplete understanding of
+> 'send' and 'receive', and on IRC user "darkling" explained it
+> fairly well:
 > 
-> I'm not sure if we should export all debuging functionality in 'btrfs'
-> as this is typically something that a user will never want, not even in
-> the emergency environments. There's an overlap in the information to be
-> exported but I'd be more inclined to satisfy user needs than testsuite
-> needs. So an independent tool would give us more freedom on both sides.
+>> When you use -c, you're telling the FS that it can expect to
+>> find a sent copy of that subvol on the receiving side, and
+>> that anything shared with it can be sent by reference. OK, so
+>> with -c on its own, you're telling the FS that "all the data
+>> in this subvol already exists on the remote".
 > 
-I'm working on the new btrfs-corrupt-block equivalent, considering the 
-demand to corrupt on-disk data for recovery test, I could provide tool 
-with fundamental corruption support.
+>> So, when you send your subvol, *all* of the subvol's metadata
+>> is sent, and where that metadata refers to an extent that's
+>> shared with the -c subvol, the extent data isn't sent, because
+>> it's known to be on the other end already, and can be shared
+>> directly from there.
+> 
+>> OK. So, with -p, there's a "base" subvol. The send subvol and
+>> the -p reference subvol are both snapshots of that base (at
+>> different times). The -p reference subvol, as with -c, is
+>> assumed to be on the remote FS. However, because it's known to
+>> be an earlier version of the same data, you can be more
+>> efficient in the sending by saying "start from the earlier
+>> version, and modify it in this way to get the new version"
+> 
+>> So, with -p, not all of the metadata is sent, because you know
+>> you've already got most of it on the remote in the form of the
+>> earlier version.
+> 
+>> So -p is "take this thing and apply these differences to it"
+>> and -c is "build this thing from scratch, but you can share
+>> some of the data with these sources"
+> 
 
-Which could corrupt on-disk data, either specified by (root, inode, 
-offset, length) or just (logical address, length).
-And support to corrupt given mirror or even P/Q for RAID56.
-(With btrfs_map_block_v2 from offline scrub)
+For now, I think i got it... (maybe).
 
-I'm not sure if I should just replace btrfs-corrupt-block or add a new 
-individual prog or add a btrfs subcommand group which is disabled by 
-default?
+I put the following logic into my script:
+1) Search for all Subvolumes on local and remote side, where the
+Received-UUID on the remote side is the same as the UUID on the local side
+2) Take the parent-UUID from the Snapshot i want to transfer and search
+in the list from 1) which snapshot (from the local side) has the same
+parent UUID.
+3) Take the younges Snapshot from 2) ans set it as parent for the btrfs
+send-command
+4) Search for snapshot local and remote, wich have the same name|path
+ans "basename" as the snapshot i want to transfer
+	basename means, my system-subvolume is called @debian
+	it contains one subvolume @debian/var/spool
+	the snapshotnames are @debian_$TIMESTAMP and
+	@debian_$TIMESTAMP/var/spool
+	The basename is @debian and @debian/var/spool
+5) set all of the snapshots with the same basename as the snapshot to be
+transferred as clones for btrfs send.
 
-Thanks,
-Qu
+The final command involves the youngest "sister" from the snapshot i
+want to transfer, which is on both sides, set as "parent", and a bunch
+of snapshots wich are older (or even younger - is this a problem???)
+than the snapshot i want to transfer wich contain modified and the same
+data, set as clones
 
+If there is no parent (In case of transferring a snapshot of a
+snapshot...) then there are clones of this snapshot, so not all of the
+data is to be sent again (and consumes the double space on the backup-media)
+If there are no parents AND clones (similar snapshots), the subvolume
+seems to be totally new, and the whole must be transferred.
+If there is a parent and clones, both of them are used to minimize the
+data for the transfer, and use as much as possible from the existing
+data/metadata on the backup-media to build the new snapshot there
+
+To use all of the similar snapshots (get by the snapshotname) as clones
+seems to fasten the transfer in comparison to only use the parent (this
+seems slower). Could this be, or is this only a "feeling?
+
+Thanks for all your advices. This helped me a lot!!
+
+regards Jakob
 

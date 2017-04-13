@@ -1,21 +1,23 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:48308 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:46672 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752827AbdDDOLZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 4 Apr 2017 10:11:25 -0400
+        id S1754914AbdDMP1p (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 13 Apr 2017 11:27:45 -0400
 Received: from mail.kernel.org (localhost [127.0.0.1])
-        by mail.kernel.org (Postfix) with ESMTP id BACDF20121
-        for <linux-btrfs@vger.kernel.org>; Tue,  4 Apr 2017 14:11:18 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTP id 7772C2038E
+        for <linux-btrfs@vger.kernel.org>; Thu, 13 Apr 2017 15:27:42 +0000 (UTC)
 Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-SHA256 (128/128 bits))
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 5CD2720120
-        for <linux-btrfs@vger.kernel.org>; Tue,  4 Apr 2017 14:11:16 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id C494C20376
+        for <linux-btrfs@vger.kernel.org>; Thu, 13 Apr 2017 15:27:39 +0000 (UTC)
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix reported number of inode blocks
-Date: Tue,  4 Apr 2017 03:22:22 +0100
-Message-Id: <1491272542-1434-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH v2] Btrfs: fix reported number of inode blocks
+Date: Thu, 13 Apr 2017 16:27:36 +0100
+Message-Id: <20170413152736.27616-1-fdmanana@kernel.org>
+In-Reply-To: <1491272542-1434-1-git-send-email-fdmanana@kernel.org>
+References: <1491272542-1434-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -102,26 +104,17 @@ be addressed later by a different patch.
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
 
-This applies on top of the following patches:
+V2: Fixed a performance regression for write append worloads, reported
+    at lkml by the intel test robots (fs_mark test).
 
-  btrfs: Fix metadata underflow caused by btrfs_reloc_clone_csum error
-  btrfs: Handle delalloc error correctly to avoid ordered extent hang
-  Btrfs: fix invalid attempt to free reserved space on failure to cow range
-  Btrfs: fix incorrect space accounting after failure to insert inline extent
-
-All in my integration-4.12 branch:
-
-https://git.kernel.org/pub/scm/linux/kernel/git/fdmanana/linux.git/log/?h=integration-4.12
-
-
- fs/btrfs/btrfs_inode.h |  7 ++++
+ fs/btrfs/btrfs_inode.h |  7 ++++++
  fs/btrfs/extent_io.h   |  1 +
- fs/btrfs/file.c        | 95 +++++++++++++++++++++++++++++++++++++-------------
- fs/btrfs/inode.c       | 53 ++++++++++++++++++++++++----
- 4 files changed, 125 insertions(+), 31 deletions(-)
+ fs/btrfs/file.c        | 62 ++++++++++++++++++++++++++++++++++++++++++----
+ fs/btrfs/inode.c       | 67 ++++++++++++++++++++++++++++++++++++++++----------
+ 4 files changed, 119 insertions(+), 18 deletions(-)
 
 diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 0c6baab..b8622e4 100644
+index 0c6baaba0651..b8622e4d1744 100644
 --- a/fs/btrfs/btrfs_inode.h
 +++ b/fs/btrfs/btrfs_inode.h
 @@ -125,6 +125,13 @@ struct btrfs_inode {
@@ -139,7 +132,7 @@ index 0c6baab..b8622e4 100644
  	 * it needs COW.
  	 */
 diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 48a30d0..d5ff51b 100644
+index 48a30d0e71fb..d5ff51b973a4 100644
 --- a/fs/btrfs/extent_io.h
 +++ b/fs/btrfs/extent_io.h
 @@ -21,6 +21,7 @@
@@ -151,10 +144,10 @@ index 48a30d0..d5ff51b 100644
  #define EXTENT_DO_ACCOUNTING    (EXTENT_CLEAR_META_RESV | \
  				 EXTENT_CLEAR_DATA_RESV)
 diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 56304c4..e8ec520 100644
+index 56304c400db5..f7d022bc7998 100644
 --- a/fs/btrfs/file.c
 +++ b/fs/btrfs/file.c
-@@ -1404,15 +1404,53 @@ static noinline int prepare_pages(struct inode *inode, struct page **pages,
+@@ -1404,6 +1404,47 @@ static noinline int prepare_pages(struct inode *inode, struct page **pages,
  
  }
  
@@ -202,126 +195,45 @@ index 56304c4..e8ec520 100644
  /*
   * This function locks the extent and properly waits for data=ordered extents
   * to finish before allowing the pages to be modified if need.
-  *
-- * The return value:
-- * 1 - the extent is locked
-- * 0 - the extent is not locked, and everything is OK
-- * -EAGAIN - need re-prepare the pages
-- * the other < 0 number - Something wrong happens
-+ * Returns 0 on success and negative error otherwise. If -EAGAIN is returned,
-+ * the caller needs to prepare the pages again.
-  */
- static noinline int
- lock_and_cleanup_extent_if_need(struct btrfs_inode *inode, struct page **pages,
-@@ -1426,16 +1464,18 @@ lock_and_cleanup_extent_if_need(struct btrfs_inode *inode, struct page **pages,
- 	u64 last_pos;
- 	int i;
- 	int ret = 0;
-+	u64 isize = i_size_read(&inode->vfs_inode);
- 
- 	start_pos = round_down(pos, fs_info->sectorsize);
- 	last_pos = start_pos
+@@ -1432,8 +1473,11 @@ lock_and_cleanup_extent_if_need(struct btrfs_inode *inode, struct page **pages,
  		+ round_up(pos + write_bytes - start_pos,
  			   fs_info->sectorsize) - 1;
  
 -	if (start_pos < inode->vfs_inode.i_size) {
-+	lock_extent_bits(&inode->io_tree, start_pos, last_pos, cached_state);
-+
-+	if (start_pos < isize) {
++	if (start_pos < inode->vfs_inode.i_size ||
++	    (inode->flags & BTRFS_INODE_PREALLOC)) {
  		struct btrfs_ordered_extent *ordered;
--		lock_extent_bits(&inode->io_tree, start_pos, last_pos,
--				cached_state);
++		unsigned int clear_bits;
 +
+ 		lock_extent_bits(&inode->io_tree, start_pos, last_pos,
+ 				cached_state);
  		ordered = btrfs_lookup_ordered_range(inode, start_pos,
- 						     last_pos - start_pos + 1);
- 		if (ordered &&
-@@ -1454,16 +1494,26 @@ lock_and_cleanup_extent_if_need(struct btrfs_inode *inode, struct page **pages,
+@@ -1454,11 +1498,19 @@ lock_and_cleanup_extent_if_need(struct btrfs_inode *inode, struct page **pages,
  		}
  		if (ordered)
  			btrfs_put_ordered_extent(ordered);
-+	}
- 
-+	ret = btrfs_find_new_delalloc_bytes(inode, start_pos,
-+					    last_pos - start_pos + 1,
-+					    cached_state);
-+	if (ret) {
+-
++		ret = btrfs_find_new_delalloc_bytes(inode, start_pos,
++						    last_pos - start_pos + 1,
++						    cached_state);
++		clear_bits = EXTENT_DIRTY | EXTENT_DELALLOC |
++			EXTENT_DO_ACCOUNTING | EXTENT_DEFRAG;
++		if (ret)
++			clear_bits |= EXTENT_DELALLOC_NEW | EXTENT_LOCKED;
  		clear_extent_bit(&inode->io_tree, start_pos,
 -				  last_pos, EXTENT_DIRTY | EXTENT_DELALLOC |
 -				  EXTENT_DO_ACCOUNTING | EXTENT_DEFRAG,
 -				  0, 0, cached_state, GFP_NOFS);
--		*lockstart = start_pos;
--		*lockend = last_pos;
--		ret = 1;
-+				 last_pos, EXTENT_DIRTY | EXTENT_DELALLOC |
-+				 EXTENT_DELALLOC_NEW | EXTENT_DO_ACCOUNTING |
-+				 EXTENT_DEFRAG | EXTENT_LOCKED,
-+				 1, 0, cached_state, GFP_NOFS);
-+		return ret;
- 	}
- 
-+	if (start_pos < isize)
-+		clear_extent_bit(&inode->io_tree, start_pos,
-+				 last_pos, EXTENT_DIRTY | EXTENT_DELALLOC |
-+				 EXTENT_DO_ACCOUNTING | EXTENT_DEFRAG,
-+				 0, 0, cached_state, GFP_NOFS);
-+
- 	for (i = 0; i < num_pages; i++) {
- 		if (clear_page_dirty_for_io(pages[i]))
- 			account_page_redirty(pages[i]);
-@@ -1471,7 +1521,10 @@ lock_and_cleanup_extent_if_need(struct btrfs_inode *inode, struct page **pages,
- 		WARN_ON(!PageLocked(pages[i]));
- 	}
- 
--	return ret;
-+	*lockstart = start_pos;
-+	*lockend = last_pos;
-+
-+	return 0;
- }
- 
- static noinline int check_can_nocow(struct btrfs_inode *inode, loff_t pos,
-@@ -1537,7 +1590,6 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
- 	int ret = 0;
- 	bool only_release_metadata = false;
- 	bool force_page_uptodate = false;
--	bool need_unlock;
- 
- 	nrptrs = min(DIV_ROUND_UP(iov_iter_count(i), PAGE_SIZE),
- 			PAGE_SIZE / (sizeof(struct page *)));
-@@ -1613,7 +1665,6 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
- 		}
- 
- 		release_bytes = reserve_bytes;
--		need_unlock = false;
- again:
- 		/*
- 		 * This is going to setup the pages array with the number of
-@@ -1633,9 +1684,6 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
- 			if (ret == -EAGAIN)
- 				goto again;
- 			break;
--		} else if (ret > 0) {
--			need_unlock = true;
--			ret = 0;
- 		}
- 
- 		copied = btrfs_copy_from_user(pos, write_bytes, pages, i);
-@@ -1699,10 +1747,9 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
- 		if (copied > 0)
- 			ret = btrfs_dirty_pages(inode, pages, dirty_pages,
- 						pos, copied, NULL);
--		if (need_unlock)
--			unlock_extent_cached(&BTRFS_I(inode)->io_tree,
--					     lockstart, lockend, &cached_state,
--					     GFP_NOFS);
-+		unlock_extent_cached(&BTRFS_I(inode)->io_tree,
-+				     lockstart, lockend, &cached_state,
-+				     GFP_NOFS);
- 		if (ret) {
- 			btrfs_drop_pages(pages, num_pages);
- 			break;
++				 last_pos, clear_bits,
++				 (clear_bits & EXTENT_LOCKED) ? 1 : 0,
++				 0, cached_state, GFP_NOFS);
++		if (ret)
++			return ret;
+ 		*lockstart = start_pos;
+ 		*lockend = last_pos;
+ 		ret = 1;
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 7058ae4..aa33783 100644
+index 7058ae4e87a7..ce2d2cd9e505 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
 @@ -572,7 +572,7 @@ static noinline void compress_file_range(struct inode *inode,
@@ -390,44 +302,79 @@ index 7058ae4..aa33783 100644
  }
  
  /*
-@@ -2967,10 +2985,17 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
- 						logical_len, logical_len,
- 						compress_type, 0, 0,
- 						BTRFS_FILE_EXTENT_REG);
--		if (!ret)
-+		if (!ret) {
-+			clear_extent_bit(&BTRFS_I(inode)->io_tree,
-+					 ordered_extent->file_offset,
-+					 ordered_extent->file_offset +
-+					 ordered_extent->len - 1,
-+					 EXTENT_DELALLOC_NEW, 0, 0,
-+					 &cached_state, GFP_NOFS);
- 			btrfs_release_delalloc_bytes(fs_info,
- 						     ordered_extent->start,
- 						     ordered_extent->disk_len);
-+		}
- 	}
- 	unpin_extent_cache(&BTRFS_I(inode)->extent_tree,
- 			   ordered_extent->file_offset, ordered_extent->len,
-@@ -2994,6 +3019,17 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
- 			     ordered_extent->file_offset +
- 			     ordered_extent->len - 1, &cached_state, GFP_NOFS);
- out:
-+	if (ret &&
-+	    !test_bit(BTRFS_ORDERED_NOCOW, &ordered_extent->flags) &&
+@@ -2872,6 +2890,13 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
+ 	u64 logical_len = ordered_extent->len;
+ 	bool nolock;
+ 	bool truncated = false;
++	bool range_locked = false;
++	bool clear_new_delalloc_bytes = false;
++
++	if (!test_bit(BTRFS_ORDERED_NOCOW, &ordered_extent->flags) &&
 +	    !test_bit(BTRFS_ORDERED_PREALLOC, &ordered_extent->flags) &&
 +	    !test_bit(BTRFS_ORDERED_DIRECT, &ordered_extent->flags))
++		clear_new_delalloc_bytes = true;
+ 
+ 	nolock = btrfs_is_free_space_inode(BTRFS_I(inode));
+ 
+@@ -2920,6 +2945,7 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
+ 		goto out;
+ 	}
+ 
++	range_locked = true;
+ 	lock_extent_bits(io_tree, ordered_extent->file_offset,
+ 			 ordered_extent->file_offset + ordered_extent->len - 1,
+ 			 &cached_state);
+@@ -2945,7 +2971,7 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
+ 	if (IS_ERR(trans)) {
+ 		ret = PTR_ERR(trans);
+ 		trans = NULL;
+-		goto out_unlock;
++		goto out;
+ 	}
+ 
+ 	trans->block_rsv = &fs_info->delalloc_block_rsv;
+@@ -2977,7 +3003,7 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
+ 			   trans->transid);
+ 	if (ret < 0) {
+ 		btrfs_abort_transaction(trans, ret);
+-		goto out_unlock;
++		goto out;
+ 	}
+ 
+ 	add_pending_csums(trans, inode, &ordered_extent->list);
+@@ -2986,14 +3012,26 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
+ 	ret = btrfs_update_inode_fallback(trans, root, inode);
+ 	if (ret) { /* -ENOMEM or corruption */
+ 		btrfs_abort_transaction(trans, ret);
+-		goto out_unlock;
++		goto out;
+ 	}
+ 	ret = 0;
+-out_unlock:
+-	unlock_extent_cached(io_tree, ordered_extent->file_offset,
+-			     ordered_extent->file_offset +
+-			     ordered_extent->len - 1, &cached_state, GFP_NOFS);
+ out:
++	if (range_locked || clear_new_delalloc_bytes) {
++		unsigned int clear_bits = 0;
++
++		if (range_locked)
++			clear_bits |= EXTENT_LOCKED;
++		if (clear_new_delalloc_bytes)
++			clear_bits |= EXTENT_DELALLOC_NEW;
 +		clear_extent_bit(&BTRFS_I(inode)->io_tree,
 +				 ordered_extent->file_offset,
 +				 ordered_extent->file_offset +
 +				 ordered_extent->len - 1,
-+				 EXTENT_DELALLOC_NEW, 0, 0,
-+				 &cached_state, GFP_NOFS);
++				 clear_bits,
++				 (clear_bits & EXTENT_LOCKED) ? 1 : 0,
++				 0, &cached_state, GFP_NOFS);
++	}
 +
  	if (root != fs_info->tree_root)
  		btrfs_delalloc_release_metadata(BTRFS_I(inode),
  				ordered_extent->len);
-@@ -8894,6 +8930,7 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
+@@ -8894,6 +8932,7 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
  		if (!inode_evicting)
  			clear_extent_bit(tree, start, end,
  					 EXTENT_DIRTY | EXTENT_DELALLOC |
@@ -435,7 +382,7 @@ index 7058ae4..aa33783 100644
  					 EXTENT_LOCKED | EXTENT_DO_ACCOUNTING |
  					 EXTENT_DEFRAG, 1, 0, &cached_state,
  					 GFP_NOFS);
-@@ -8951,8 +8988,8 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
+@@ -8951,8 +8990,8 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
  	if (!inode_evicting) {
  		clear_extent_bit(tree, page_start, page_end,
  				 EXTENT_LOCKED | EXTENT_DIRTY |
@@ -446,7 +393,7 @@ index 7058ae4..aa33783 100644
  				 &cached_state, GFP_NOFS);
  
  		__btrfs_releasepage(page, GFP_NOFS);
-@@ -9323,6 +9360,7 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
+@@ -9323,6 +9362,7 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
  	ei->last_sub_trans = 0;
  	ei->logged_trans = 0;
  	ei->delalloc_bytes = 0;
@@ -454,7 +401,7 @@ index 7058ae4..aa33783 100644
  	ei->defrag_bytes = 0;
  	ei->disk_i_size = 0;
  	ei->flags = 0;
-@@ -9388,6 +9426,7 @@ void btrfs_destroy_inode(struct inode *inode)
+@@ -9388,6 +9428,7 @@ void btrfs_destroy_inode(struct inode *inode)
  	WARN_ON(BTRFS_I(inode)->outstanding_extents);
  	WARN_ON(BTRFS_I(inode)->reserved_extents);
  	WARN_ON(BTRFS_I(inode)->delalloc_bytes);
@@ -462,7 +409,7 @@ index 7058ae4..aa33783 100644
  	WARN_ON(BTRFS_I(inode)->csum_bytes);
  	WARN_ON(BTRFS_I(inode)->defrag_bytes);
  
-@@ -9511,7 +9550,7 @@ static int btrfs_getattr(struct vfsmount *mnt,
+@@ -9511,7 +9552,7 @@ static int btrfs_getattr(struct vfsmount *mnt,
  	stat->dev = BTRFS_I(inode)->root->anon_dev;
  
  	spin_lock(&BTRFS_I(inode)->lock);
@@ -472,5 +419,5 @@ index 7058ae4..aa33783 100644
  	stat->blocks = (ALIGN(inode_get_bytes(inode), blocksize) +
  			ALIGN(delalloc_bytes, blocksize)) >> 9;
 -- 
-2.7.0.rc3
+2.11.0
 

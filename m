@@ -1,156 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:37821 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1753309AbdDNDrk (ORCPT
+Received: from mail-pg0-f53.google.com ([74.125.83.53]:33263 "EHLO
+        mail-pg0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751405AbdDNELM (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Apr 2017 23:47:40 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1cysCp-00073h-JH
-        for linux-btrfs@vger.kernel.org; Fri, 14 Apr 2017 05:47:31 +0200
+        Fri, 14 Apr 2017 00:11:12 -0400
+Received: by mail-pg0-f53.google.com with SMTP id x125so39148803pgb.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 13 Apr 2017 21:11:11 -0700 (PDT)
+MIME-Version: 1.0
+From: Alexandru Guzu <alexguzu@gmail.com>
+Date: Fri, 14 Apr 2017 00:11:10 -0400
+Message-ID: <CAPktuGu9HqL=0VS+apM9r6CSRbxBcZzX5=HmF1K_51wYHyRbiw@mail.gmail.com>
+Subject: Remounting read-write after error is not allowed
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Encountered kernel bug#72811. Advice on recovery?
-Date: Fri, 14 Apr 2017 03:47:18 +0000 (UTC)
-Message-ID: <pan$29c2d$faf1fff7$a4518780$dbb0b61@cox.net>
-References: <CAFKQ2Bs9-=serb7F-PHDVNQ-X2AXcWPG5jBs9xKXTKkTQ59O7Q@mail.gmail.com>
-Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Ank Ular posted on Thu, 13 Apr 2017 14:49:41 -0400 as excerpted:
+Hello,
 
-> I've encountered kernel bug#72811 "If a raid5 array gets into degraded
-> mode, gets modified, and the missing drive re-added, the filesystem
-> loses state".
+I am not sure how to better summarize this but I'll give a more
+detailed description.
 
-> The array normally consists of 22 devices with data and meta in raid6.
-> Physically, the devices are split 16 devices in a NORCO DS-24 cage and
-> the remaining devices are in the server itself. All the devices are SATA
-> III.
+I am using btrfs tools v4.4, I setup up a btrfs partition on an
+external USB2 drive and I started to play with it.
+The partition was about HALF full when I decided to run duperemove on
+it. This took a while but it eventually hung.
 
-> I don't have issues with the above tools not being ready for for raid56.
-> Despite the mass quantities, none of the data involved it irretrievable,
-> irreplaceable or of earth shattering importance on any level. This is a
-> purely personal setup.
+the logs around the hung say something like:
 
-> As such, I'm not bothered by the 'not ready for prime time status' of
-> raid56. This bug however, is really really nasty bad. Once a drive is
-> out of sync, if should never be automatically re-added back.
+    usb 1-1.1: USB disconnect, device number 3
+    usb 1-1.5: USB disconnect, device number 5
+    ...
+    BTRFS error (device sdg2): bdev /dev/sdg2 errs: wr 0, rd 1, flush
+0, corrupt 0, gen 0
+    ...
+    Call Trace:
+    [<ffffffffc03d031f>] btrfs_ioctl+0x25bf/0x28b0 [btrfs]
+    [<ffffffff814fbf53>] ? tty_insert_flip_string_fixed_flag+0x83/0xe0
+    [<ffffffff810c3bd4>] ? __wake_up+0x44/0x50
+    [<ffffffff814f0db1>] ? tty_write_unlock+0x31/0x40
+    [<ffffffff814fae16>] ? tty_ldisc_deref+0x16/0x20
+    [<ffffffff81222caf>] do_vfs_ioctl+0x29f/0x490
+    [<ffffffff8120f099>] ? vfs_write+0x149/0x1a0
+    [<ffffffff8120df8f>] ? do_sys_open+0x1bf/0x2a0
+    [<ffffffff81222f19>] SyS_ioctl+0x79/0x90
+    [<ffffffff8183c672>] entry_SYSCALL_64_fastpath+0x16/0x71
+    ...
+    usb-storage 1-1.5:1.0: USB Mass Storage device detected
+    ...
+    sd 7:0:0:0: [sdh] Attached SCSI disk
+    EXT4-fs (sdh1): recovery complete
+    EXT4-fs (sdh1): mounted filesystem with ordered data mode. Opts: (null)
+    BTRFS error (device sdg2): bdev /dev/sdh2 errs: wr 0, rd 5, flush
+0, corrupt 0, gen 0
+    ...
+    BTRFS warning (device sdg2): error -5 while searching for
+dev_stats item for device /dev/sdh2
+    BTRFS warning (device sdg2): Skipping commit of aborted transaction.
+    ...
+    BTRFS: error (device sdg2) in cleanup_transaction:1746: errno=-5 IO failure
+    BTRFS info (device sdg2): forced readonly
 
-> I mention all this because I KNOW someone is going to go off on how I
-> should have back ups of everything and how I should not run raid56 and
-> how I should run mirrored instead etc. Been there. Done that. I have the
-> same canned lecture for people running data centers for businesses.
-> 
-> I am not a business. This is my personal hobby. The risk does not bother
-> me. I don't mind running this setup because I think real life runtimes
-> can contribute to the general betterment of btrfs for everyone. I'm not
-> in any particular hurry. My income is completely independent from this.
+More complete logs at:
+pastebin.com/LqyWQamy
 
-> The potential problem is controlling what happens once I mount the
-> degraded array in read/write mode to delete copied data and perform
-> device reduction. I have no clue how to or even if this can be done
-> safely.
-> 
-> The alternative is to continue to run this array in read only degraded
-> mode until I can accumulate sufficient funds for a second chassis and
-> approximately 20 more drives.This probably won't be until Jan 2018.
-> 
-> Is such a recovery strategy even possible? While I would expect a
-> strategy involving 'btrfs restore' to be possible for raid0, raid1,
-> raid10 configure arrays, I don't know that such a strategy will work for
-> raid56.
-> 
-> As I see it, the key here to to be able to safely delete copied files
-> and to safely reduce the number of devices in the array.
+Basically the device can only be mounted as read-only, but no files
+are accessible.
 
-OK, I'm one of the ones that's going to "go off" on you, but FWIW, I 
-expect pretty much everyone else would pretty much agree.  At least you 
-do have backups. =:^)
+- Doing an `ls` on a folder gives "Input/output error".
 
-I don't think you appreciate just how bad raid56 is ATM.  There are just 
-too many REALLY serious bugs like the one you mention with it, and it's 
-actively NEGATIVELY recommended here as a result.  It's bad enough with 
-even current kernels, and the problems are well known enough to the devs, 
-that there's really not a whole lot to test ATM...
+- doing a `btrfs check` without --repair gives:
 
-Well, unless you're REALLY into building kernels with a whole slew of pre-
-merge patches and reporting back the results to the dev working on it, as 
-there /are/ a significant number of raid56 patches floating around in a 
-pre-merge state here on the list.  Some of them may be in btrfs-next 
-already, but I don't believe all of them are.
+    Checking filesystem on /dev/sdh2
+    UUID: 227fbb6c-ae72-4b81-8e65-942a0ddc6ef7
+    checking extents
+    checking free space cache
+    checking fs roots
+    checking csums
+    checking root refs
+    found 247566471406 bytes used err is 0
+    total csum bytes: 241513756
+    total tree bytes: 366084096
+    total fs tree bytes: 90259456
+    total extent tree bytes: 10010624
+    btree space waste bytes: 35406538
+    file data blocks allocated: 23837459185664
+     referenced 252963553280
 
-The problem with that is, despite how willing you may be, you obviously 
-aren't running them now.  So you obviously didn't know the current 
-really /really/ bad state.  If you're /willing/ to run them and have the 
-skills to do that sort of patching, etc, including possibly ones that 
-won't fix problems, only help further trace them down, then either 
-followup with the dev working on it (which I've not tracked specifically 
-so I can't tell you who) if he posts a reply, or go looking on the list 
-for raid56 patches and get ahold of the dev posting them.
+So I guess no errors.
 
-You'll need to get the opinion of the dev as to whether with the patches 
-it's worth running yet or not.  I'm not sure if he's thru patching the 
-worst of the known issues, or if there's more to go.
+I can only mount it as read-only, and when I do a SCRUB it finishes in
+0 seconds saying it was ABORTED.
 
-One of the big problems is that in the current state, the repair tools, 
-scrub, etc, can actively make the problem MUCH worse.  They're simply 
-broken.  Normal raid56 runtime has been working for quite awhile, so it's 
-no surprise that has worked for you.  And under specific circumstances, 
-pulling a drive and replacing it can work too.  But the problem is, those 
-circumstances are precisely the type that people test, but not the type 
-that tends to actually happen in the real world.
+I have no issue accessing the other EXT4 partition or dd-ing the btrfs
+partition to /dev/null, so I doubt it is a disk issue.
 
-So effectively, raid56 mode is little more dependable than raid0 mode.  
-While you /may/ be able to recover, it's uncertain enough that it's 
-better to just treat the array as a raid0, and consider that you may well 
-lose everything on it with pretty much any problem at all.  As such, it's 
-simply irresponsible to recommend that anyone use it /as/ raid56, which 
-is why it's actively NEGATIVELY recommended ATM.  Meanwhile, people that 
-want raid0s... tend to configure raid0s, not raid5s or raid6s.
+I have not tried btrfs-zero-log because I do not see those kernel errors.
+All I see when I mount it is lots of messages such as:
+bdev /dev/sdh2 errs: wr 20, rd 28049, flush 0, corrupt 0, gen 0
 
-FWIW, I /think/ at least /some/ of the patches have been reviewed and 
-cleared for, hopefully, 4.12.  For sure they're not going to make 4.11.  
-And I'm not sure all of them will make 4.12, and even if they do, while 
-they're certainly a beginning, I'm honestly not sure if they fix the 
-known problems well enough yet to slack off on the negativity a bit or 
-not.
+I have not tried btrfs check --repair because I do not fully
+understand the output of btrfs check.
 
+Now, I have backups of the data, but I was wondering if and how can
+BTRFS recover from this type of failure that can be quite common
+(pulled plug).
 
-Meanwhile...  what to do with the current array?
-
-If you are up to patching, get those patches applied and work with the 
-dev to see what you can do.
-
-If you want to risk it and aren't up for the level of pre-release 
-patching I've described above, yeah, running it read-only until early 
-next year should basically maintain state (assuming no hardware actually 
-fails, that's the risk part), and with a bit of luck getting those 
-patches merged, raid56 may actually be stabilizing a bit by then.  One 
-can hope. =:^)
-
-Meanwhile, the good thing about btrfs restore is that it's read-only for 
-the filesystem you're trying to recover files from.  If there's enough 
-damage that the read-only mount won't let you access all the files and 
-you want to try restore, while I don't know its raid56 status, unlike 
-scrub and some of the other tools, it's not going to hurt things further.
-
-Of course that's going to require quite some space to do all files, space 
-you apparently don't have ATM.  What you /may/ find useful, however, is 
-using the array read-only for what it gives you, if it's most of them, 
-and restoring a few damaged files using btrfs restore.  The regex filters 
-should allow you to do that, tho it may take a bit of fiddling to get the 
-format correct.  (AFAIK they're a bit more complex than ordinary regex.)
-
-Of course you also have the just blow it all away and restore from 
-backups option, because you /do/ have backups. =:^)  But based on your 
-post I'm guessing that's too easy for you, something I can understand as 
-I've been there myself, wanting to do it the hard way to learn.  =:^)
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Thanks.
+- Alex.

@@ -1,51 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f175.google.com ([209.85.223.175]:35934 "EHLO
-        mail-io0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1037683AbdDUKJt (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:27591 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750764AbdDNBNM (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 Apr 2017 06:09:49 -0400
-Received: by mail-io0-f175.google.com with SMTP id o22so123939091iod.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Apr 2017 03:09:48 -0700 (PDT)
-Received: from ircssh-2.c.rugged-nimbus-611.internal (80.60.198.104.bc.googleusercontent.com. [104.198.60.80])
-        by smtp.gmail.com with ESMTPSA id f19sm379221itf.19.2017.04.21.03.09.47
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Fri, 21 Apr 2017 03:09:47 -0700 (PDT)
-Date: Fri, 21 Apr 2017 10:09:46 +0000
-From: Sargun Dhillon <sargun@sargun.me>
+        Thu, 13 Apr 2017 21:13:12 -0400
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v3E1DAtv019482
+        (version=TLSv1 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Apr 2017 01:13:11 GMT
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserv0021.oracle.com (8.13.8/8.14.4) with ESMTP id v3E1DA0h014889
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Apr 2017 01:13:10 GMT
+Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id v3E1DAuQ008984
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Apr 2017 01:13:10 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: allow processes with cap_sys_resource to exceed quota
-Message-ID: <20170421100943.GA2942@ircssh-2.c.rugged-nimbus-611.internal>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Subject: [PATCH] Btrfs: tolerate errors if we have retried successfully
+Date: Thu, 13 Apr 2017 18:11:56 -0700
+Message-Id: <1492132316-3076-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch allows processes with CAP_SYS_RESOURCE to exceed the qgroup
-limit. It's useful for administrative programs, such as log rotation,
-that may need to temporarily use more disk space in order to free up
-a greater amount of overall disk space without yielding more disk
-space to the rest of userland.
+With raid1 profile, dio read isn't tolerating IO errors if read length is
+less than the stripe length (64K).
 
-Signed-off-by: Sargun Dhillon <sargun@sargun.me>
+This fixes the problem by setting bio's error to 0 if a good copy has been
+found.
+
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/qgroup.c | 3 +++
- 1 file changed, 3 insertions(+)
+ fs/btrfs/inode.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index a59801d..b0af39c 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2349,6 +2349,9 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 632b616..4e1398e 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -8113,8 +8113,11 @@ static void btrfs_endio_direct_read(struct bio *bio)
+ 	struct btrfs_io_bio *io_bio = btrfs_io_bio(bio);
+ 	int err = bio->bi_error;
  
- static bool qgroup_check_limits(const struct btrfs_qgroup *qg, u64 num_bytes)
- {
-+	if (capable(CAP_SYS_RESOURCE))
-+		return true;
-+
- 	if ((qg->lim_flags & BTRFS_QGROUP_LIMIT_MAX_RFER) &&
- 	    qg->reserved + (s64)qg->rfer + num_bytes > qg->max_rfer)
- 		return false;
+-	if (dip->flags & BTRFS_DIO_ORIG_BIO_SUBMITTED)
++	if (dip->flags & BTRFS_DIO_ORIG_BIO_SUBMITTED) {
+ 		err = btrfs_subio_endio_read(inode, io_bio, err);
++		if (!err)
++			bio->bi_error = 0;
++	}
+ 
+ 	unlock_extent(&BTRFS_I(inode)->io_tree, dip->logical_offset,
+ 		      dip->logical_offset + dip->bytes - 1);
 -- 
-2.9.3
+2.5.5
 

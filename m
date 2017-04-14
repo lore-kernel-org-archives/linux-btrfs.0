@@ -1,34 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f42.google.com ([209.85.215.42]:36304 "EHLO
-        mail-lf0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751350AbdDNLCd (ORCPT
+Received: from mail-lf0-f52.google.com ([209.85.215.52]:34719 "EHLO
+        mail-lf0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751528AbdDNLEY (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Apr 2017 07:02:33 -0400
-Received: by mail-lf0-f42.google.com with SMTP id s141so40848576lfe.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Apr 2017 04:02:32 -0700 (PDT)
+        Fri, 14 Apr 2017 07:04:24 -0400
+Received: by mail-lf0-f52.google.com with SMTP id t144so40997659lff.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Apr 2017 04:04:23 -0700 (PDT)
 MIME-Version: 1.0
 From: Imran Geriskovan <imran.geriskovan@gmail.com>
-Date: Fri, 14 Apr 2017 13:02:31 +0200
-Message-ID: <CAK5rZE4ko_xFr_Zv=bmZ4tR9X59jXaqFnTv16_ynEO0+E5uzeg@mail.gmail.com>
-Subject: Btrfs/SSD
+Date: Fri, 14 Apr 2017 13:04:22 +0200
+Message-ID: <CAK5rZE49VDzjC1pFJzE1yD-zWLLTP=Qt7v6HcP4mwVUi8jU1Tw@mail.gmail.com>
+Subject: Intel XPoint Tech / Optane SSDs
 To: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
-Sometime ago we had some discussion about SSDs.
-Within the limits of unknown/undocumented device infos,
-we loosely had covered data retension capability/disk age/life time
-interrelations, (in?)effectiveness of btrfs dup on SSDs, etc..
+Well, this may the follow up for the Btrfs/SSD discussion.
 
-Now, as time passed and with some accumulated experience on SSDs
-I think we again can have a status check/update on them if you
-can share your experiences and best practices.
+Probably nobody here had his hands on these Optane SSDs (or is it?)
 
-So if you have something to share about SSDs (it may or may not be
-directly related with btrfs) I'm sure everybody here will be happy to
-hear it.
+Anyway, what are your expectations/projections about
+memory/storage hybrid tech?
 
-Regard,
+XPoint and/or any other tech will make memory and storage
+eventually to converge.
+
+With regard to this, how would the meaning of "FileSystem" be
+affected in general? How would Btrfs be affected in particular?
+
+Regards,
 Imran

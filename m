@@ -1,128 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:35197 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751280AbdDCCN5 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Apr 2017 22:13:57 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <bo.li.liu@oracle.com>
-Subject: [PATCH v5 2/2] btrfs: scrub: Fix RAID56 recovery race condition
-Date: Mon, 3 Apr 2017 10:13:47 +0800
-Message-ID: <20170403021347.4958-2-quwenruo@cn.fujitsu.com>
-In-Reply-To: <20170403021347.4958-1-quwenruo@cn.fujitsu.com>
-References: <20170403021347.4958-1-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mx2.suse.de ([195.135.220.15]:57851 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1750784AbdDNMDC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 14 Apr 2017 08:03:02 -0400
+From: Goldwyn Rodrigues <rgoldwyn@suse.de>
+To: linux-fsdevel@vger.kernel.org
+Cc: jack@suse.com, hch@infradead.org, linux-block@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-xfs@vger.kernel.org, sagi@grimberg.me, avi@scylladb.com,
+        axboe@kernel.dk, linux-api@vger.kernel.org, willy@infradead.org,
+        tom.leiming@gmail.com
+Subject: [PATCH 0/8 v6] No wait AIO
+Date: Fri, 14 Apr 2017 07:02:49 -0500
+Message-Id: <20170414120257.8932-1-rgoldwyn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When scrubbing a RAID5 which has recoverable data corruption (only one
-data stripe is corrupted), sometimes scrub will report more csum errors
-than expected. Sometimes even unrecoverable error will be reported.
+Formerly known as non-blocking AIO.
 
-The problem can be easily reproduced by the following steps:
-1) Create a btrfs with RAID5 data profile with 3 devs
-2) Mount it with nospace_cache or space_cache=v2
-   To avoid extra data space usage.
-3) Create a 128K file and sync the fs, unmount it
-   Now the 128K file lies at the beginning of the data chunk
-4) Locate the physical bytenr of data chunk on dev3
-   Dev3 is the 1st data stripe.
-5) Corrupt the first 64K of the data chunk stripe on dev3
-6) Mount the fs and scrub it
+This series adds nonblocking feature to asynchronous I/O writes.
+io_submit() can be delayed because of a number of reason:
+ - Block allocation for files
+ - Data writebacks for direct I/O
+ - Sleeping because of waiting to acquire i_rwsem
+ - Congested block device
 
-The correct csum error number should be 16(assuming using x86_64).
-Larger csum error number can be reported in a 1/3 chance.
-And unrecoverable error can also be reported in a 1/10 chance.
+The goal of the patch series is to return -EAGAIN/-EWOULDBLOCK if
+any of these conditions are met. This way userspace can push most
+of the write()s to the kernel to the best of its ability to complete
+and if it returns -EAGAIN, can defer it to another thread.
 
-The root cause of the problem is RAID5/6 recover code has race
-condition, due to the fact that full scrub is initiated per device.
+In order to enable this, IOCB_RW_FLAG_NOWAIT is introduced in
+uapi/linux/aio_abi.h. If set for aio_rw_flags, it translates to
+IOCB_NOWAIT for struct iocb, BIO_NOWAIT for bio and IOMAP_NOWAIT for
+iomap. aio_rw_flags is a new flag replacing aio_reserved1. We could
+not use aio_flags because it is not currently checked for invalidity
+in the kernel.
 
-While for other mirror based profiles, each mirror is independent with
-each other, so race won't cause any big problem.
+This feature is provided for direct I/O of asynchronous I/O only. I have
+tested it against xfs, ext4, and btrfs while I intend to add more filesystems.
+Same with QUEUE_FLAG_NOWAIT, which is currently set for sd and virtio devices.
+This is primarily to block md/dm devices which may wait in places such as
+recovery/sync/suspend. In the future, I intend to add support to
+these devices as well. Applications will have to check supportability
+by sending a async direct write and any other error besides -EAGAIN
+would mean it is not supported.
 
-For example:
-        Corrupted       |       Correct          |      Correct        |
-|   Scrub dev3 (D1)     |    Scrub dev2 (D2)     |    Scrub dev1(P)    |
-------------------------------------------------------------------------
-Read out D1             |Read out D2             |Read full stripe     |
-Check csum              |Check csum              |Check parity         |
-Csum mismatch           |Csum match, continue    |Parity mismatch      |
-handle_errored_block    |                        |handle_errored_block |
- Read out full stripe   |                        | Read out full stripe|
- D1 csum error(err++)   |                        | D1 csum error(err++)|
- Recover D1             |                        | Recover D1          |
+Changes since v1:
+ + changed name from _NONBLOCKING to *_NOWAIT
+ + filemap_range_has_page call moved to closer to (just before) calling filemap_write_and_wait_range().
+ + BIO_NOWAIT limited to get_request()
+ + XFS fixes 
+	- included reflink 
+	- use of xfs_ilock_nowait() instead of a XFS_IOLOCK_NONBLOCKING flag
+	- Translate the flag through IOMAP_NOWAIT (iomap) to check for
+	  block allocation for the file.
+ + ext4 coding style
 
-So D1's csum error is accounted twice, just because
-handle_errored_block() doesn't have enough protect, and race can happen.
+Changes since v2:
+ + Using aio_reserved1 as aio_rw_flags instead of aio_flags
+ + blk-mq support
+ + xfs uptodate with kernel and reflink changes
 
-On even worse case, for example D1's recovery code is re-writing
-D1/D2/P, and P's recovery code is just reading out full stripe, then we
-can cause unrecoverable error.
+ Changes since v3:
+  + Added FS_NOWAIT, which is set if the filesystem supports NOWAIT feature.
+  + Checks in generic_make_request() to make sure BIO_NOWAIT comes in
+    for async direct writes only.
+  + Added QUEUE_FLAG_NOWAIT, which is set if the device supports BIO_NOWAIT.
+    This is added (rather not set) to block devices such as dm/md currently.
 
-This patch will use previously introduced lock_full_stripe() and
-unlock_full_stripe() to protect the whole scrub_handle_errored_block()
-function for RAID56 recovery.
-So no extra csum error nor unrecoverable error.
+ Changes since v4:
+  + Ported AIO code to use RWF_* flags. Check for RWF_* flags in
+    generic_file_write_iter().
+  + Changed IOCB_RW_FLAGS_NOWAIT to RWF_NOWAIT.
 
-Reported-by: Goffredo Baroncelli <kreijack@libero.it>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
-v5:
-  None
----
- fs/btrfs/scrub.c | 22 ++++++++++++++++++++++
- 1 file changed, 22 insertions(+)
+ Changes since v5:
+  + BIO_NOWAIT to REQ_NOWAIT
+  + Common helper for RWF flags.
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 12a127ad448f..61b1af67380c 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -1115,6 +1115,7 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
- 	int mirror_index;
- 	int page_num;
- 	int success;
-+	bool full_stripe_locked;
- 	static DEFINE_RATELIMIT_STATE(_rs, DEFAULT_RATELIMIT_INTERVAL,
- 				      DEFAULT_RATELIMIT_BURST);
- 
-@@ -1140,6 +1141,24 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
- 	have_csum = sblock_to_check->pagev[0]->have_csum;
- 	dev = sblock_to_check->pagev[0]->dev;
- 
-+	/*
-+	 * For RAID5/6 race can happen for different dev scrub thread.
-+	 * For data corruption, Parity and Data thread will both try
-+	 * to recovery the data.
-+	 * Race can lead to double added csum error, or even unrecoverable
-+	 * error.
-+	 */
-+	ret = lock_full_stripe(fs_info, logical, &full_stripe_locked);
-+	if (ret < 0) {
-+		spin_lock(&sctx->stat_lock);
-+		if (ret == -ENOMEM)
-+			sctx->stat.malloc_errors++;
-+		sctx->stat.read_errors++;
-+		sctx->stat.uncorrectable_errors++;
-+		spin_unlock(&sctx->stat_lock);
-+		return ret;
-+	}
-+
- 	if (sctx->is_dev_replace && !is_metadata && !have_csum) {
- 		sblocks_for_recheck = NULL;
- 		goto nodatasum_case;
-@@ -1474,6 +1493,9 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
- 		kfree(sblocks_for_recheck);
- 	}
- 
-+	ret = unlock_full_stripe(fs_info, logical, full_stripe_locked);
-+	if (ret < 0)
-+		return ret;
- 	return 0;
- }
- 
 -- 
-2.12.1
-
+Goldwyn
 
 

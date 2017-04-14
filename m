@@ -1,102 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:59074 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932595AbdDFQIC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 6 Apr 2017 12:08:02 -0400
-Received: from mail.kernel.org (localhost [127.0.0.1])
-        by mail.kernel.org (Postfix) with ESMTP id 7C5112022D
-        for <linux-btrfs@vger.kernel.org>; Thu,  6 Apr 2017 16:08:00 +0000 (UTC)
-Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 157E2201EF
-        for <linux-btrfs@vger.kernel.org>; Thu,  6 Apr 2017 16:07:58 +0000 (UTC)
-From: fdmanana@kernel.org
+Received: from aserp1040.oracle.com ([141.146.126.69]:34311 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751083AbdDNBNH (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 13 Apr 2017 21:13:07 -0400
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v3E1D6wF013038
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Apr 2017 01:13:06 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v3E1D6RQ013045
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Apr 2017 01:13:06 GMT
+Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
+        by aserv0121.oracle.com (8.13.8/8.13.8) with ESMTP id v3E1D37a002650
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Apr 2017 01:13:05 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: send, fix file hole not being preserved due to inline extent
-Date: Thu,  6 Apr 2017 17:07:56 +0100
-Message-Id: <1491494876-14433-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH] Btrfs: skip checksum verification if IO error occurs
+Date: Thu, 13 Apr 2017 18:11:48 -0700
+Message-Id: <1492132308-2959-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+Currently dio read also goes to verify checksum if -EIO has been returned,
+although it usually fails on checksum, it's not necessary at all, we could
+directly check if there is another copy to read.
 
-Normally we don't have inline extents followed by regular extents, but
-there's currently at least one harmless case where this happens. For
-example, when the page size is 4Kb and compression is enabled:
+And with this, the behavior of dio read is now consistent with that of
+buffered read.
 
-  $ mkfs.btrfs -f /dev/sdb
-  $ mount -o compress /dev/sdb /mnt
-  $ xfs_io -f -c "pwrite -S 0xaa 0 4K" -c "fsync" /mnt/foobar
-  $ xfs_io -c "pwrite -S 0xbb 8K 4K" -c "fsync" /mnt/foobar
-
-In this case we get a compressed inline extent, representing 4Kb of
-data, followed by a hole extent and then a regular data extent. The
-inline extent was not expanded/converted to a regular extent exactly
-because it represents 4Kb of data. This does not cause any apparent
-problem (such as the issue solved by commit e1699d2d7bf6
-("btrfs: add missing memset while reading compressed inline extents"))
-except trigger an unexpected case in the incremental send code path
-that makes us issue an operation to write a hole when it's not needed,
-resulting in more writes at the receiver and wasting space at the
-receiver.
-
-So teach the incremental send code to deal with this particular case.
-
-The issue can be currently triggered by running fstests btrfs/137 with
-compression enabled (MOUNT_OPTIONS="-o compress" ./check btrfs/137).
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/send.c | 23 +++++++++++++++++++++--
- 1 file changed, 21 insertions(+), 2 deletions(-)
+ fs/btrfs/inode.c | 15 +++++++++------
+ 1 file changed, 9 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 456c890..f66095a 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -5184,13 +5184,19 @@ static int is_extent_unchanged(struct send_ctx *sctx,
- 	while (key.offset < ekey->offset + left_len) {
- 		ei = btrfs_item_ptr(eb, slot, struct btrfs_file_extent_item);
- 		right_type = btrfs_file_extent_type(eb, ei);
--		if (right_type != BTRFS_FILE_EXTENT_REG) {
-+		if (right_type != BTRFS_FILE_EXTENT_REG &&
-+		    right_type != BTRFS_FILE_EXTENT_INLINE) {
- 			ret = 0;
- 			goto out;
- 		}
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 5e71f1e..632b616 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -8030,6 +8030,7 @@ static int __btrfs_subio_endio_read(struct inode *inode,
+ 	unsigned int pgoff;
+ 	int csum_pos;
+ 	int i;
++	int uptodate = !!(err == 0);
+ 	int ret;
  
- 		right_disknr = btrfs_file_extent_disk_bytenr(eb, ei);
--		right_len = btrfs_file_extent_num_bytes(eb, ei);
-+		if (right_type == BTRFS_FILE_EXTENT_INLINE) {
-+			right_len = btrfs_file_extent_inline_len(eb, slot, ei);
-+			right_len = PAGE_ALIGN(right_len);
-+		} else {
-+			right_len = btrfs_file_extent_num_bytes(eb, ei);
+ 	fs_info = BTRFS_I(inode)->root->fs_info;
+@@ -8044,12 +8045,14 @@ static int __btrfs_subio_endio_read(struct inode *inode,
+ 
+ 		pgoff = bvec->bv_offset;
+ next_block:
+-		csum_pos = BTRFS_BYTES_TO_BLKS(fs_info, offset);
+-		ret = __readpage_endio_check(inode, io_bio, csum_pos,
+-					bvec->bv_page, pgoff, start,
+-					sectorsize);
+-		if (likely(!ret))
+-			goto next;
++		if (uptodate) {
++			csum_pos = BTRFS_BYTES_TO_BLKS(fs_info, offset);
++			ret = __readpage_endio_check(inode, io_bio, csum_pos,
++						     bvec->bv_page, pgoff,
++						     start, sectorsize);
++			if (likely(!ret))
++				goto next;
 +		}
- 		right_offset = btrfs_file_extent_offset(eb, ei);
- 		right_gen = btrfs_file_extent_generation(eb, ei);
- 
-@@ -5204,6 +5210,19 @@ static int is_extent_unchanged(struct send_ctx *sctx,
- 			goto out;
- 		}
- 
-+		/*
-+		 * We just wanted to see if when we have an inline extent, what
-+		 * follows it is a regular extent (wanted to check the above
-+		 * condition for inline extents too). This should normally not
-+		 * happen but it's possible for example when we have an inline
-+		 * compressed extent representing data with a size matching
-+		 * the page size (currently the same as sector size).
-+		 */
-+		if (right_type == BTRFS_FILE_EXTENT_INLINE) {
-+			ret = 0;
-+			goto out;
-+		}
-+
- 		left_offset_fixed = left_offset;
- 		if (key.offset < ekey->offset) {
- 			/* Fix the right offset for 2a and 7. */
+ try_again:
+ 		done.uptodate = 0;
+ 		done.start = start;
 -- 
-2.7.0.rc3
+2.5.5
 

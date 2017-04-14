@@ -1,140 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:44363 "EHLO
-        mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752052AbdDNTl5 (ORCPT
+Received: from mail-pg0-f48.google.com ([74.125.83.48]:36003 "EHLO
+        mail-pg0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752152AbdDNTvW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Apr 2017 15:41:57 -0400
-Received: from merkaba.localnet (ppp-93-104-46-226.dynamic.mnet-online.de [93.104.46.226])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by mail.lichtvoll.de (Postfix) with ESMTPSA id 7573A1A1
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Apr 2017 21:35:25 +0200 (CEST)
-From: Martin Steigerwald <martin@lichtvoll.de>
-To: linux-btrfs@vger.kernel.org
-Subject: [4.9] btrfs check --repair looping over file extent discount errors
-Date: Fri, 14 Apr 2017 21:35:24 +0200
-Message-ID: <1603810.ePCDQapENk@merkaba>
+        Fri, 14 Apr 2017 15:51:22 -0400
+Received: by mail-pg0-f48.google.com with SMTP id g2so46868157pge.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Apr 2017 12:51:21 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <CAJCQCtRbkt=o6doBd0ZG0XZfrhP4pBQsPCp573LiZU2RSZvuVQ@mail.gmail.com>
+References: <CAPktuGu9HqL=0VS+apM9r6CSRbxBcZzX5=HmF1K_51wYHyRbiw@mail.gmail.com>
+ <CAJCQCtRbkt=o6doBd0ZG0XZfrhP4pBQsPCp573LiZU2RSZvuVQ@mail.gmail.com>
+From: Alexandru Guzu <alexguzu@gmail.com>
+Date: Fri, 14 Apr 2017 15:51:20 -0400
+Message-ID: <CAPktuGsM6=yA8bjv-a5zWKdxm9jb7roUTNA+Mw-D0jJ_HRauDw@mail.gmail.com>
+Subject: Re: Remounting read-write after error is not allowed
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Thanks for the reply.
 
-backup harddisk connected via eSATA. Hard kernel hang, mouse pointer freezing 
-two times seemingly after finishing /home backup and creating new snapshot on 
-source BTRFS SSD RAID 1 for / in order to backup it. I did scrubbed / and it 
-appears to be okay, but I didn´t run btrfs check on it. Anyway deleting that 
-subvolume works and I as I suspected an issue with the backup disk I started 
-with that one.
+I mounted it ro:
+    $ sudo btrfs fi show /mnt
+    Segmentation fault (core dumped)
 
-I got
+dmesg says:
+...
+kernel BUG at /build/linux-wXdoVv/linux-4.4.0/fs/btrfs/ctree.c:5205!
+...
+RIP: 0010:[<ffffffffc0371b98>]  [<ffffffffc0371b98>]
+btrfs_search_forward+0x268/0x350 [btrfs]
+...
+Call Trace:
+    [<ffffffffc03cabb2>] search_ioctl+0xf2/0x1c0 [btrfs]
+    [<ffffffff811afc4c>] ? zone_statistics+0x7c/0xa0
+    [<ffffffffc03cacf2>] btrfs_ioctl_tree_search+0x72/0xc0 [btrfs]
+    [<ffffffffc03ce1b5>] btrfs_ioctl+0x455/0x28b0 [btrfs]
+    [<ffffffff8120274b>] ? mem_cgroup_try_charge+0x6b/0x1e0
+    [<ffffffff811c1a5d>] ? handle_mm_fault+0xcad/0x1820
+    [<ffffffff81222caf>] do_vfs_ioctl+0x29f/0x490
+    [<ffffffff8106b544>] ? __do_page_fault+0x1b4/0x400
+    [<ffffffff81222f19>] SyS_ioctl+0x79/0x90
+    [<ffffffff8183c672>] entry_SYSCALL_64_fastpath+0x16/0x71
+...
 
-merkaba:~> btrfs --version
-btrfs-progs v4.9.1
+full dmesg output is at:
+pastebin.com/bhsEJiJN
 
-merkaba:~> cat /proc/version
-Linux version 4.9.20-tp520-btrfstrim+ (martin@merkaba) (gcc version 6.3.0 
-20170321 (Debian 6.3.0-11) ) #6 SMP PREEMPT Mon Apr 3 11:42:17 CEST 2017
+$ sudo btrfs fi df /mnt
+Data, single: total=236.01GiB, used=230.35GiB
+System, DUP: total=8.00MiB, used=48.00KiB
+System, single: total=4.00MiB, used=0.00B
+Metadata, DUP: total=1.00GiB, used=349.11MiB
+Metadata, single: total=8.00MiB, used=0.00B
+GlobalReserve, single: total=128.00MiB, used=0.00B
 
-merkaba:~> btrfs fi sh feenwald
-Label: 'feenwald'  uuid: […]
-        Total devices 1 FS bytes used 1.26TiB
-        devid    1 size 2.73TiB used 1.27TiB path /dev/sdc1
+I downloaded and compiled the current btrfs v4.10.1-9-gbd0ab27.
 
-on Debian unstable on ThinkPad T520 connected via eSATA port on Minidock.
+sudo ./btrfs check /dev/sdh2
+    Checking filesystem on /dev/sdh2
+    UUID: 227fbb6c-ae72-4b81-8e65-942a0ddc6ef7
+    checking extents
+    checking free space cache
+    checking fs roots
+    checking csums
+    checking root refs
+    found 247628603392 bytes used, no error found
+    total csum bytes: 241513756
+    total tree bytes: 366084096
+    total fs tree bytes: 90259456
+    total extent tree bytes: 10010624
+    btree space waste bytes: 35406538
+    file data blocks allocated: 23837459185664
+     referenced 252963553280
 
+and with lowmem mode (again no errors found):
+./btrfs check /dev/sdh2 --mode=lowmem
+    Checking filesystem on /dev/sdh2
+    UUID: 227fbb6c-ae72-4b81-8e65-942a0ddc6ef7
+    checking extents
+    checking free space cache
+    checking fs roots
+    checking csums
+    checking root refs
+    found 247738298368 bytes used, no error found
+    total csum bytes: 241513756
+    total tree bytes: 366084096
+    total fs tree bytes: 90259456
+    total extent tree bytes: 10010624
+    btree space waste bytes: 35406538
+    file data blocks allocated: 23837459185664
+     referenced 252963553280
 
-I am now running btrfs check --repair on it after without --repair the command 
-reported file extent discount errors and it appears to loop on the same file 
-extent discount errors for ages. Any advice?
+maybe there is some hint in that segmentation fault?
+Also, I compiled from
+git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git but I
+did not get version 4.10.1 instead of 4.10.2
 
-I do have another backup harddisk with BTRFS that worked fine today, so I do 
-not need to recover that drive immediately. I may let it run for a little more 
-time, but then will abort the repair process as I really think its looping 
-just over and over and over the same issues again. At some time I may just 
-copy all the stuff that is on that harddisk, but not on the other one over to 
-the other one and mkfs.btrfs the filesystem again, but I´d rather like to know 
-whats happening here.
+Regards,
 
-Here is output:
-
-merkaba:~> btrfs check --repair /dev/sdc1
-enabling repair mode
-Checking filesystem on /dev/sdc1
-[… UUID ommited …]
-checking extents
-Fixed 0 roots.
-checking free space cache
-cache and super generation don't match, space cache will be invalidated
-checking fs roots
-root 257 inode 4979842 errors 100, file extent discount
-Found file extent holes:
-        start: 0, len: 78798848
-root 257 inode 4980212 errors 100, file extent discount
-Found file extent holes:
-        start: 0, len: 143360
-root 257 inode 4980214 errors 100, file extent discount
-Found file extent holes:
-        start: 0, len: 4227072
-root 257 inode 4979842 errors 100, file extent discount
-Found file extent holes:
-        start: 0, len: 78798848
-root 257 inode 4980212 errors 100, file extent discount
-Found file extent holes:
-        start: 0, len: 143360
-root 257 inode 4980214 errors 100, file extent discount
-Found file extent holes:
-        start: 0, len: 4227072
-root 257 inode 4979842 errors 100, file extent discount
-Found file extent holes:
-        start: 0, len: 78798848
-root 257 inode 4980212 errors 100, file extent discount
-Found file extent holes:
-        start: 0, len: 143360
-root 257 inode 4980214 errors 100, file extent discount
-Found file extent holes:
-        start: 0, len: 4227072
-root 257 inode 4979842 errors 100, file extent discount
-Found file extent holes:
-        start: 0, len: 78798848
-root 257 inode 4980212 errors 100, file extent discount
-Found file extent holes:
-        start: 0, len: 143360
-root 257 inode 4980214 errors 100, file extent discount
-Found file extent holes:
-        start: 0, len: 4227072
-[… hours later …]
-root 257 inode 4979842 errors 100, file extent discount
-Found file extent holes:
-        start: 0, len: 78798848
-root 257 inode 4980212 errors 100, file extent discount
-Found file extent holes:
-        start: 0, len: 143360
-root 257 inode 4980214 errors 100, file extent discount
-Found file extent holes:
-        start: 0, len: 4227072
-root 257 inode 4979842 errors 100, file extent discount
-Found file extent holes:
-        start: 0, len: 78798848
-root 257 inode 4980212 errors 100, file extent discount
-Found file extent holes:
-        start: 0, len: 143360
-root 257 inode 4980214 errors 100, file extent discount
-Found file extent holes:
-        start: 0, len: 4227072
-root 257 inode 4979842 errors 100, file extent discount
-Found file extent holes:
-        start: 0, len: 78798848
-root 257 inode 4980212 errors 100, file extent discount
-Found file extent holes:
-        start: 0, len: 143360
-root 257 inode 4980214 errors 100, file extent discount
-Found file extent holes:
-        start: 0, len: 4227072
-
-This basically seems to go on like this forever.
-
-Thanks,
--- 
-Martin
+On Fri, Apr 14, 2017 at 1:17 PM, Chris Murphy <lists@colorremedies.com> wrote:
+> Can you ro mount it and:
+>
+> btrfs fi show /mnt
+> btrfs fi df /mnt
+>
+> And then next update the btrfs-progs to something newer like 4.9.2 or
+> 4.10.2 and then do another 'btrfs check' without repair. And then
+> separately do it again with --mode=lowmem and post both sets of
+> results?
+>
+>
+> Chris Murphy

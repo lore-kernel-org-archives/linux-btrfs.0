@@ -1,116 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f48.google.com ([74.125.83.48]:36003 "EHLO
-        mail-pg0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752152AbdDNTvW (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:35075 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1751463AbdDOBlo (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Apr 2017 15:51:22 -0400
-Received: by mail-pg0-f48.google.com with SMTP id g2so46868157pge.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Apr 2017 12:51:21 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CAJCQCtRbkt=o6doBd0ZG0XZfrhP4pBQsPCp573LiZU2RSZvuVQ@mail.gmail.com>
-References: <CAPktuGu9HqL=0VS+apM9r6CSRbxBcZzX5=HmF1K_51wYHyRbiw@mail.gmail.com>
- <CAJCQCtRbkt=o6doBd0ZG0XZfrhP4pBQsPCp573LiZU2RSZvuVQ@mail.gmail.com>
-From: Alexandru Guzu <alexguzu@gmail.com>
-Date: Fri, 14 Apr 2017 15:51:20 -0400
-Message-ID: <CAPktuGsM6=yA8bjv-a5zWKdxm9jb7roUTNA+Mw-D0jJ_HRauDw@mail.gmail.com>
-Subject: Re: Remounting read-write after error is not allowed
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+        Fri, 14 Apr 2017 21:41:44 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1czCiW-0003sk-0W
+        for linux-btrfs@vger.kernel.org; Sat, 15 Apr 2017 03:41:36 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Encountered kernel bug#72811. Advice on recovery?
+Date: Sat, 15 Apr 2017 01:41:28 +0000 (UTC)
+Message-ID: <pan$5f10d$2c1e5c86$a2062192$8e2ab6b@cox.net>
+References: <CAFKQ2Bs9-=serb7F-PHDVNQ-X2AXcWPG5jBs9xKXTKkTQ59O7Q@mail.gmail.com>
+        <pan$29c2d$faf1fff7$a4518780$dbb0b61@cox.net>
+        <CAN05THTcoQ6zLrDaVmoZ=pUQ3oMxU8EvYrz8TcUGOAo6a=5qHw@mail.gmail.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for the reply.
+ronnie sahlberg posted on Fri, 14 Apr 2017 09:56:30 -0700 as excerpted:
 
-I mounted it ro:
-    $ sudo btrfs fi show /mnt
-    Segmentation fault (core dumped)
+> On Thu, Apr 13, 2017 at 8:47 PM, Duncan <1i5t5.duncan@cox.net> wrote:
+>> Ank Ular posted on Thu, 13 Apr 2017 14:49:41 -0400 as excerpted:
+> ...
+>> OK, I'm one of the ones that's going to "go off" on you, but FWIW, I
+>> expect pretty much everyone else would pretty much agree.  At least you
+>> do have backups. =:^)
+>>
+>> I don't think you appreciate just how bad raid56 is ATM.  There are
+>> just too many REALLY serious bugs like the one you mention with it, and
+>> it's actively NEGATIVELY recommended here as a result.  It's bad enough
+>> with even current kernels, and the problems are well known enough to
+>> the devs,
+>> that there's really not a whole lot to test ATM...
+> 
+> Can we please hide the ability to even create any new raid56 filesystems
+> behind a new flag :
+> 
+> --i-accept-total-data-loss
+> 
+> to make sure that folks are prepared for how risky it currently is. That
+> should be an easy patch to the userland utilities.
 
-dmesg says:
-...
-kernel BUG at /build/linux-wXdoVv/linux-4.4.0/fs/btrfs/ctree.c:5205!
-...
-RIP: 0010:[<ffffffffc0371b98>]  [<ffffffffc0371b98>]
-btrfs_search_forward+0x268/0x350 [btrfs]
-...
-Call Trace:
-    [<ffffffffc03cabb2>] search_ioctl+0xf2/0x1c0 [btrfs]
-    [<ffffffff811afc4c>] ? zone_statistics+0x7c/0xa0
-    [<ffffffffc03cacf2>] btrfs_ioctl_tree_search+0x72/0xc0 [btrfs]
-    [<ffffffffc03ce1b5>] btrfs_ioctl+0x455/0x28b0 [btrfs]
-    [<ffffffff8120274b>] ? mem_cgroup_try_charge+0x6b/0x1e0
-    [<ffffffff811c1a5d>] ? handle_mm_fault+0xcad/0x1820
-    [<ffffffff81222caf>] do_vfs_ioctl+0x29f/0x490
-    [<ffffffff8106b544>] ? __do_page_fault+0x1b4/0x400
-    [<ffffffff81222f19>] SyS_ioctl+0x79/0x90
-    [<ffffffff8183c672>] entry_SYSCALL_64_fastpath+0x16/0x71
-...
+The biggest problem with such a flag in general is that people often use 
+a kernel and userland that are /vastly/ out of sync, version-wise.  Were 
+such a flag to be introduced, people would still be seeing it five years 
+or more after it no longer applied to the kernel they're using (because 
+the kernel's what actually does the work in many cases, including scrub).
 
-full dmesg output is at:
-pastebin.com/bhsEJiJN
+Even making such a warning conditional on kernel version is problematic, 
+because many distros backport major blocks of code, including perhaps 
+btrfs fixes, and the nominally 3.14 or whatever kernel may actually be 
+running btrfs and other fixes from 4.14 or later, by the time they 
+actually drop support for whatever LTS distro version and quit backporting 
+fixes.
 
-$ sudo btrfs fi df /mnt
-Data, single: total=236.01GiB, used=230.35GiB
-System, DUP: total=8.00MiB, used=48.00KiB
-System, single: total=4.00MiB, used=0.00B
-Metadata, DUP: total=1.00GiB, used=349.11MiB
-Metadata, single: total=8.00MiB, used=0.00B
-GlobalReserve, single: total=128.00MiB, used=0.00B
+Besides which, if the patch was submitted now, the earliest it could 
+really hit btrfs-progs would be 4.12, and by the time people actually get 
+that in their distro they may well be on 4.13 or 4.15 or whatever, and 
+the patches fixing raid56 mode to actually work may already be in place.
 
-I downloaded and compiled the current btrfs v4.10.1-9-gbd0ab27.
+The only place such a warning really works is on the wiki at
+https://btrfs.wiki.kernel.org , because that's really the only place that 
+can be updated to current status in a realistic timeframe.  And there's 
+already a feature maturity matrix there, with raid56 mode marked 
+appropriately, last I checked.
 
-sudo ./btrfs check /dev/sdh2
-    Checking filesystem on /dev/sdh2
-    UUID: 227fbb6c-ae72-4b81-8e65-942a0ddc6ef7
-    checking extents
-    checking free space cache
-    checking fs roots
-    checking csums
-    checking root refs
-    found 247628603392 bytes used, no error found
-    total csum bytes: 241513756
-    total tree bytes: 366084096
-    total fs tree bytes: 90259456
-    total extent tree bytes: 10010624
-    btree space waste bytes: 35406538
-    file data blocks allocated: 23837459185664
-     referenced 252963553280
+Meanwhile, it can be argued that admins (and anyone making the choice of 
+filesystem and device layout they're going to run is an admin of those 
+systems, even if they're just running them at home for their own use) who 
+don't care enough about the safety of their data to actually research the 
+stability of the filesystem and filesystem features they plan to use... 
+really don't value that data very highly in the first place.  And the 
+status is out there both on this list and on the wiki, so even a trivial 
+google should find it without issue.
 
-and with lowmem mode (again no errors found):
-./btrfs check /dev/sdh2 --mode=lowmem
-    Checking filesystem on /dev/sdh2
-    UUID: 227fbb6c-ae72-4b81-8e65-942a0ddc6ef7
-    checking extents
-    checking free space cache
-    checking fs roots
-    checking csums
-    checking root refs
-    found 247738298368 bytes used, no error found
-    total csum bytes: 241513756
-    total tree bytes: 366084096
-    total fs tree bytes: 90259456
-    total extent tree bytes: 10010624
-    btree space waste bytes: 35406538
-    file data blocks allocated: 23837459185664
-     referenced 252963553280
+Indeed:  https://www.google.com/search?q=btrfs+raid56+stability
 
-maybe there is some hint in that segmentation fault?
-Also, I compiled from
-git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git but I
-did not get version 4.10.1 instead of 4.10.2
 
-Regards,
 
-On Fri, Apr 14, 2017 at 1:17 PM, Chris Murphy <lists@colorremedies.com> wrote:
-> Can you ro mount it and:
->
-> btrfs fi show /mnt
-> btrfs fi df /mnt
->
-> And then next update the btrfs-progs to something newer like 4.9.2 or
-> 4.10.2 and then do another 'btrfs check' without repair. And then
-> separately do it again with --mode=lowmem and post both sets of
-> results?
->
->
-> Chris Murphy
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

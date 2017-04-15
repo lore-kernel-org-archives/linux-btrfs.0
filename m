@@ -1,40 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([65.50.211.133]:34020 "EHLO
-        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1171094AbdDXPAZ (ORCPT
+Received: from mail-oi0-f65.google.com ([209.85.218.65]:34641 "EHLO
+        mail-oi0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752091AbdDOK3B (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Apr 2017 11:00:25 -0400
-Date: Mon, 24 Apr 2017 08:00:19 -0700
-From: Christoph Hellwig <hch@infradead.org>
-To: Jeff Layton <jlayton@redhat.com>
-Cc: fstests@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-ext4@vger.kernel.org, linux-cifs@vger.kernel.org,
-        linux-mm@kvack.org, jfs-discussion@lists.sourceforge.net,
-        linux-xfs@vger.kernel.org, cluster-devel@redhat.com,
-        linux-f2fs-devel@lists.sourceforge.net,
-        v9fs-developer@lists.sourceforge.net, osd-dev@open-osd.org,
-        linux-nilfs@vger.kernel.org, linux-block@vger.kernel.org,
-        dhowells@redhat.com, akpm@linux-foundation.org, hch@infradead.org,
-        ross.zwisler@linux.intel.com, mawilcox@microsoft.com, jack@suse.com,
-        viro@zeniv.linux.org.uk, corbet@lwn.net, neilb@suse.de, clm@fb.com,
-        tytso@mit.edu, axboe@kernel.dk
-Subject: Re: [RFC xfstests PATCH] xfstests: add a writeback error handling
- test
-Message-ID: <20170424150019.GA3288@infradead.org>
-References: <20170424134551.10301-1-jlayton@redhat.com>
+        Sat, 15 Apr 2017 06:29:01 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170424134551.10301-1-jlayton@redhat.com>
+In-Reply-To: <CABeXuvoKmvbo_n3XQ0Y+iWGz88Jr3TwbPA7GiR3pia9407ANLw@mail.gmail.com>
+References: <1491613030-11599-1-git-send-email-deepa.kernel@gmail.com>
+ <1491613030-11599-7-git-send-email-deepa.kernel@gmail.com>
+ <CAHC9VhTYWeKL+BAb6F3tfwzs7OKUEA8ANM=V05sfoiahNNX=9w@mail.gmail.com> <CABeXuvoKmvbo_n3XQ0Y+iWGz88Jr3TwbPA7GiR3pia9407ANLw@mail.gmail.com>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Sat, 15 Apr 2017 10:29:00 +0000
+Message-ID: <CAK8P3a3w_3JKxW6kz-V9roxzf9RwbVgHaK8XjO5OOktVvZ_Sog@mail.gmail.com>
+Subject: Re: [PATCH 06/12] audit: Use timespec64 to represent audit timestamps
+To: Deepa Dinamani <deepa.kernel@gmail.com>
+Cc: Paul Moore <paul@paul-moore.com>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        Greg KH <gregkh@linuxfoundation.org>,
+        "Dilger, Andreas" <andreas.dilger@intel.com>,
+        "J. Bruce Fields" <bfields@fieldses.org>, Chris Mason <clm@fb.com>,
+        "David S. Miller" <davem@davemloft.net>,
+        David Sterba <dsterba@suse.com>, Evgeniy Dushistov <dushistov@mail.ru>,
+        Eric Paris <eparis@redhat.com>, Jaegeuk Kim <jaegeuk@kernel.org>,
+        Josef Bacik <jbacik@fb.com>, Jeff Layton <jlayton@poochiereds.net>,
+        John Stultz <john.stultz@linaro.org>,
+        James Simmons <jsimmons@infradead.org>, Ingo Molnar <mingo@redhat.com>,
+        "Drokin, Oleg" <oleg.drokin@intel.com>,
+        Steven Rostedt <rostedt@goodmis.org>, yuchao0@huawei.com,
+        ceph-devel <ceph-devel@vger.kernel.org>, devel@driverdev.osuosl.org,
+        linux-audit@redhat.com, linux-btrfs <linux-btrfs@vger.kernel.org>,
+        linux-cifs@vger.kernel.org,
+        "Linux F2FS DEV, Mailing List"
+        <linux-f2fs-devel@lists.sourceforge.net>,
+        Linux FS-devel Mailing List <linux-fsdevel@vger.kernel.org>,
+        linux-mtd <linux-mtd@lists.infradead.org>,
+        LSM List <linux-security-module@vger.kernel.org>,
+        Lustre Development List <lustre-devel@lists.lustre.org>,
+        Linux Network Devel Mailing List <netdev@vger.kernel.org>,
+        samba-technical@lists.samba.org,
+        y2038 Mailman List <y2038@lists.linaro.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 24, 2017 at 09:45:51AM -0400, Jeff Layton wrote:
-> With the patch series above, ext4 now passes. xfs and btrfs end up in
-> r/o mode after the test. xfs returns -EIO at that point though, and
-> btrfs returns -EROFS. What behavior we actually want there, I'm not
-> certain. We might be able to mitigate that by putting the journals on a
-> separate device?
+On Sat, Apr 8, 2017 at 5:58 PM, Deepa Dinamani <deepa.kernel@gmail.com> wrote:
+>> I have no problem merging this patch into audit/next for v4.12, would
+>> you prefer me to do that so at least this patch is merged?
+>
+> This would be fine.
+> But, I think whoever takes the last 2 deletion patches should also take them.
+> I'm not sure how that part works out.
+>
+>> It would probably make life a small bit easier for us in the audit
+>> world too as it would reduce the potential merge conflict.  However,
+>> that's a relatively small thing to worry about.
 
-This looks like XFS shut down because of a permanent write error from
-dm-error.  Which seems like the expected behavior.
+As Andrew has picked the remaining patches up into -mm, this will work
+out fine: any patches picked up by the respective maintainers for v4.12
+should arrive as git pull requests before the -mm patches get applied
+at a later stage of the merge window.
+
+     Arnd

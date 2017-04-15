@@ -1,63 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f172.google.com ([209.85.161.172]:36529 "EHLO
-        mail-yw0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751364AbdDOUfR (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:56930 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1754704AbdDOX24 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 15 Apr 2017 16:35:17 -0400
-Received: by mail-yw0-f172.google.com with SMTP id j9so44995794ywj.3
-        for <linux-btrfs@vger.kernel.org>; Sat, 15 Apr 2017 13:35:17 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20170415185049.ig65w5pi22d42ajm@angband.pl>
-References: <CAJCQCtTU6M1c-B1thYtTBidyEpM9AWPMSPU=NGxj3QHnqTM7+A@mail.gmail.com>
- <20170415183156.mmgm6t4rygm2mt3j@angband.pl> <CAJCQCtR3ZcyauCnJhDNp6rSFvnRWcNy2UsWJsbPJEyR+4tsiEA@mail.gmail.com>
- <20170415185049.ig65w5pi22d42ajm@angband.pl>
-From: Chris Murphy <chris@colorremedies.com>
-Date: Sat, 15 Apr 2017 14:35:16 -0600
-Message-ID: <CAJCQCtTyGHUFVsXcK35N3fA_xjb04UGo+j7UFaf2_Aj6pFs0_Q@mail.gmail.com>
-Subject: Re: remount and conflicting ssd options?
-To: Adam Borowski <kilobyte@angband.pl>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+        Sat, 15 Apr 2017 19:28:56 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1czX7X-0006WA-L1
+        for linux-btrfs@vger.kernel.org; Sun, 16 Apr 2017 01:28:47 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Encountered kernel bug#72811. Advice on recovery?
+Date: Sat, 15 Apr 2017 23:28:41 +0000 (UTC)
+Message-ID: <pan$d0dc1$421200a9$82cb8142$e5992927@cox.net>
+References: <CAFKQ2Bs9-=serb7F-PHDVNQ-X2AXcWPG5jBs9xKXTKkTQ59O7Q@mail.gmail.com>
+        <pan$29c2d$faf1fff7$a4518780$dbb0b61@cox.net>
+        <CAN05THTcoQ6zLrDaVmoZ=pUQ3oMxU8EvYrz8TcUGOAo6a=5qHw@mail.gmail.com>
+        <pan$5f10d$2c1e5c86$a2062192$8e2ab6b@cox.net>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Apr 15, 2017 at 12:50 PM, Adam Borowski <kilobyte@angband.pl> wrote:
-> On Sat, Apr 15, 2017 at 12:41:14PM -0600, Chris Murphy wrote:
->> On Sat, Apr 15, 2017 at 12:31 PM, Adam Borowski <kilobyte@angband.pl> wrote:
->> > On Sat, Apr 15, 2017 at 12:17:25PM -0600, Chris Murphy wrote:
->> >> Then later I tried
->> >>
->> >> mount -o remount,ssd
->> >>
->> >> To go back to regular ssd option, but nothing happens, mount still
->> >> shows ssd_spread.
->> >
->> > ssd_spread implies ssd.
->>
->> OK so it's possible to remount from ssd to ssd_spread but not back to
->> ssd? If I trust the mount output, it's only possible to transition
->> from ssd to ssd_spread, but not from ssd_spread to ssd.
->
-> Yeah.  This is a very minor problem (workaround: remount with nossd then
-> ssd), but in the light of Hans van Kranenburg's findings, it'd be a bad idea
-> to introduce new mount options the kernel would need to keep recognizing
-> forever, as the effect of those options needs some rethinking anyways.
+Duncan posted on Sat, 15 Apr 2017 01:41:28 +0000 as excerpted:
 
-Yeah it's confusing aside from the mount behavior.
+> Besides which, if the patch was submitted now, the earliest it could
+> really hit btrfs-progs would be 4.12,
 
-I have a performance test based on doing a bunch of system updates
-(~100 rpm packages), and even with the same mount options, back to
-back tests are sufficiently inconsistent that I can't tell which of
-the allocator options is better. So the allocation options must be
-about something other than time based performance.
-
-I can't tell what is a slow ssd these days so I'm not sure what ssd vs
-ssd_spread really mean. Plus then on spinning rust people have
-reported better performance with ssd rather than the default of nossd.
-While others who are using iSCSI end up with ssd by default and worse
-results than with nossd.
+Well, maybe 3.11.x...
 
 
 
 -- 
-Chris Murphy
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

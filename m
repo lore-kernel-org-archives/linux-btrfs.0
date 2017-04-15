@@ -1,172 +1,123 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f67.google.com ([74.125.83.67]:34451 "EHLO
-        mail-pg0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751604AbdDRNvo (ORCPT
+Received: from syrinx.knorrie.org ([82.94.188.77]:33656 "EHLO
+        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751616AbdDOTMW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 18 Apr 2017 09:51:44 -0400
-Received: by mail-pg0-f67.google.com with SMTP id o123so33697607pga.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Apr 2017 06:51:44 -0700 (PDT)
+        Sat, 15 Apr 2017 15:12:22 -0400
+Subject: Re: [PATCH] btrfs: drop the nossd flag when remounting with -o ssd
+To: dsterba@suse.cz, Adam Borowski <kilobyte@angband.pl>,
+        David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org
+References: <0939c5df-3abd-ec68-16ef-538ad04251aa@mendix.com>
+ <20170331151904.4091-1-kilobyte@angband.pl>
+ <b289c1a8-d0d4-c147-ca65-7c954f05a7e5@mendix.com>
+ <20170331171016.GN4781@twin.jikos.cz>
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Message-ID: <81bd0c72-32bb-560c-1129-33d4f13255c5@mendix.com>
+Date: Sat, 15 Apr 2017 21:12:20 +0200
 MIME-Version: 1.0
-In-Reply-To: <20170417181557.GB3856@lim.localdomain>
-References: <CAPktuGu9HqL=0VS+apM9r6CSRbxBcZzX5=HmF1K_51wYHyRbiw@mail.gmail.com>
- <CAJCQCtRbkt=o6doBd0ZG0XZfrhP4pBQsPCp573LiZU2RSZvuVQ@mail.gmail.com>
- <CAPktuGsM6=yA8bjv-a5zWKdxm9jb7roUTNA+Mw-D0jJ_HRauDw@mail.gmail.com>
- <CAPktuGu-9KefV6poy0Qe8h54kB8pQ5n_kDUh4KXi5LSd9_bLvg@mail.gmail.com> <20170417181557.GB3856@lim.localdomain>
-From: Alexandru Guzu <alexguzu@gmail.com>
-Date: Tue, 18 Apr 2017 09:51:43 -0400
-Message-ID: <CAPktuGvAFBZCdVvPCgRdb=v=t5aArLBcXQE-5Dkd+MLuXyBMXA@mail.gmail.com>
-Subject: Re: Remounting read-write after error is not allowed
-To: bo.li.liu@oracle.com
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <20170331171016.GN4781@twin.jikos.cz>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-So you think this might be a bug in the Kernel? In fact I wanted to
-try with a newer kernel, but could no longer reproduce the issue.
-In addition, I did a scrub on the partition and there were no errors.
-So wither there was some transient disk issue that affected only that
-partition, or there is a strange bug in the kernel.
+On 03/31/2017 07:10 PM, David Sterba wrote:
+> On Fri, Mar 31, 2017 at 06:00:08PM +0200, Hans van Kranenburg wrote:
+>> On 03/31/2017 05:19 PM, Adam Borowski wrote:
+>>> The opposite case was already handled right in the very next switch entry.
+>>>
+>>> Reported-by: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+>>> Signed-off-by: Adam Borowski <kilobyte@angband.pl>
+>>> ---
+>>> Not sure if setting NOSSD should also disable SSD_SPREAD, there's currently
+>>> no way to disable that option once set.
+> 
+> Missing inverse of ssd_spread is probably unintentional, as we once
+> added all complementary no* options, this one was forgotten.
+> 
+> And yes, nossd should turn off ssd and ssd_spread, as ssd_spread without
+> ssd does not nothing anyway.
 
-I'll see if I can reproduce the issue again.
+ssd_spread is tested exactly one time, in free-space-cache.c in
+btrfs_find_space_cluster
 
-On Mon, Apr 17, 2017 at 2:15 PM, Liu Bo <bo.li.liu@oracle.com> wrote:
-> On Mon, Apr 17, 2017 at 02:00:45PM -0400, Alexandru Guzu wrote:
->> Not sure if anyone is looking into that segfault, but I have an update.
->> I disconnected the USB drive for a while and today I reconnected it
->> and it auto-mounted with no issue.
+As far as I can quickly find out, that code is reached regardless of
+which other options are set.
+
+So, it *does* something anyway if ssd is not set. And I think it
+prevents all writes from being split into multiple extents.
+
+So, nossd,ssd_spread (no ssd) is right now something that you can end up
+with (when the patch here is not applied) when playing with -o remount.
+
+> 
+>>>
+>>>  fs/btrfs/super.c | 2 ++
+>>>  1 file changed, 2 insertions(+)
+>>>
+>>> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+>>> index 06bd9b332e18..7342399951ad 100644
+>>> --- a/fs/btrfs/super.c
+>>> +++ b/fs/btrfs/super.c
+>>> @@ -549,11 +549,13 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+>>>  		case Opt_ssd:
+>>>  			btrfs_set_and_info(info, SSD,
+>>>  					   "use ssd allocation scheme");
+>>> +			btrfs_clear_opt(info->mount_opt, NOSSD);
+>>>  			break;
+>>>  		case Opt_ssd_spread:
+>>>  			btrfs_set_and_info(info, SSD_SPREAD,
+>>>  					   "use spread ssd allocation scheme");
+>>>  			btrfs_set_opt(info->mount_opt, SSD);
+>>> +			btrfs_clear_opt(info->mount_opt, NOSSD);
+>>>  			break;
+>>>  		case Opt_nossd:
+>>>  			btrfs_set_and_info(info, NOSSD,
 >>
->> What is interesting is that the drive letter changed to what is was
->> before when it was working.
->> Remember that in my first email, the drive encounters an error as
->> /dev/sdg2, and it reconnected as /dev/sdh2
+>> How did you test this?
 >>
->> I was getting errors when it was assigned /dev/sdh2, but now it mounts
->> just fine when it is assigned /dev/sdg2
+>> This was also my first thought, but here's a weird thing:
 >>
->> sudo btrfs fi show
->> Label: 'USB-data'  uuid: 227fbb6c-ae72-4b81-8e65-942a0ddc6ef7
->>     Total devices 1 FS bytes used 230.72GiB
->>     devid    1 size 447.13GiB used 238.04GiB path /dev/sdg2
+>> -# mount -o nossd /dev/sdx /mnt/btrfs/
 >>
+>> BTRFS info (device sdx): not using ssd allocation scheme
 >>
->> is BTRFS really so sensitive to drive letter changes?
->> The USB driver is automounted as such:
+>> -# mount -o remount,ssd /mnt/btrfs/
 >>
->> /dev/sdg2 on /media/alex/USB-data1 type btrfs
->> (rw,nosuid,nodev,relatime,space_cache,subvolid=5,subvol=/,uhelper=udisks2)
+>> BTRFS info (device sdx): use ssd allocation scheme
 >>
->
-> I don't think it's because of the changed drive letter, it was hitting the
-> BUG_ON in kernel code btrfs_search_forward() and showed that somehow your btrfs
-> had failed to read the metadata out of the drive (either because the underlying
-> drive is not available for reading or because metadata checksum check is
-> failing).
->
-> That BUG_ON had gotten fixed in a later version, you may want to try the latest
-> btrfs.
->
->
-> Thanks,
->
-> -liubo
->
->> > Thanks for the reply.
->> >
->> > I mounted it ro:
->> >     $ sudo btrfs fi show /mnt
->> >     Segmentation fault (core dumped)
->> >
->> > dmesg says:
->> > ...
->> > kernel BUG at /build/linux-wXdoVv/linux-4.4.0/fs/btrfs/ctree.c:5205!
->> > ...
->> > RIP: 0010:[<ffffffffc0371b98>]  [<ffffffffc0371b98>]
->> > btrfs_search_forward+0x268/0x350 [btrfs]
->> > ...
->> > Call Trace:
->> >     [<ffffffffc03cabb2>] search_ioctl+0xf2/0x1c0 [btrfs]
->> >     [<ffffffff811afc4c>] ? zone_statistics+0x7c/0xa0
->> >     [<ffffffffc03cacf2>] btrfs_ioctl_tree_search+0x72/0xc0 [btrfs]
->> >     [<ffffffffc03ce1b5>] btrfs_ioctl+0x455/0x28b0 [btrfs]
->> >     [<ffffffff8120274b>] ? mem_cgroup_try_charge+0x6b/0x1e0
->> >     [<ffffffff811c1a5d>] ? handle_mm_fault+0xcad/0x1820
->> >     [<ffffffff81222caf>] do_vfs_ioctl+0x29f/0x490
->> >     [<ffffffff8106b544>] ? __do_page_fault+0x1b4/0x400
->> >     [<ffffffff81222f19>] SyS_ioctl+0x79/0x90
->> >     [<ffffffff8183c672>] entry_SYSCALL_64_fastpath+0x16/0x71
->> > ...
->> >
->> > full dmesg output is at:
->> > pastebin.com/bhsEJiJN
->> >
->> > $ sudo btrfs fi df /mnt
->> > Data, single: total=236.01GiB, used=230.35GiB
->> > System, DUP: total=8.00MiB, used=48.00KiB
->> > System, single: total=4.00MiB, used=0.00B
->> > Metadata, DUP: total=1.00GiB, used=349.11MiB
->> > Metadata, single: total=8.00MiB, used=0.00B
->> > GlobalReserve, single: total=128.00MiB, used=0.00B
->> >
->> > I downloaded and compiled the current btrfs v4.10.1-9-gbd0ab27.
->> >
->> > sudo ./btrfs check /dev/sdh2
->> >     Checking filesystem on /dev/sdh2
->> >     UUID: 227fbb6c-ae72-4b81-8e65-942a0ddc6ef7
->> >     checking extents
->> >     checking free space cache
->> >     checking fs roots
->> >     checking csums
->> >     checking root refs
->> >     found 247628603392 bytes used, no error found
->> >     total csum bytes: 241513756
->> >     total tree bytes: 366084096
->> >     total fs tree bytes: 90259456
->> >     total extent tree bytes: 10010624
->> >     btree space waste bytes: 35406538
->> >     file data blocks allocated: 23837459185664
->> >      referenced 252963553280
->> >
->> > and with lowmem mode (again no errors found):
->> > ./btrfs check /dev/sdh2 --mode=lowmem
->> >     Checking filesystem on /dev/sdh2
->> >     UUID: 227fbb6c-ae72-4b81-8e65-942a0ddc6ef7
->> >     checking extents
->> >     checking free space cache
->> >     checking fs roots
->> >     checking csums
->> >     checking root refs
->> >     found 247738298368 bytes used, no error found
->> >     total csum bytes: 241513756
->> >     total tree bytes: 366084096
->> >     total fs tree bytes: 90259456
->> >     total extent tree bytes: 10010624
->> >     btree space waste bytes: 35406538
->> >     file data blocks allocated: 23837459185664
->> >      referenced 252963553280
->> >
->> > maybe there is some hint in that segmentation fault?
->> > Also, I compiled from
->> > git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git but I
->> > did not get version 4.10.1 instead of 4.10.2
->> >
->> > Regards,
->> >
->> > On Fri, Apr 14, 2017 at 1:17 PM, Chris Murphy <lists@colorremedies.com> wrote:
->> >> Can you ro mount it and:
->> >>
->> >> btrfs fi show /mnt
->> >> btrfs fi df /mnt
->> >>
->> >> And then next update the btrfs-progs to something newer like 4.9.2 or
->> >> 4.10.2 and then do another 'btrfs check' without repair. And then
->> >> separately do it again with --mode=lowmem and post both sets of
->> >> results?
->> >>
->> >>
->> >> Chris Murphy
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>> -# mount -o remount,nossd /mnt/btrfs/
+>>
+>> BTRFS info (device sdx): use ssd allocation scheme
+>>
+>> That means that the case Opt_nossd: is never reached when doing this?
+>>
+>> And... what should be the result of doing:
+>> -# mount -o remount,nossd,ssd /mnt/btrfs/
+>>
+>> I guess it should be that the last one in the sequence wins?
+> 
+> The last one wins.
+> 
+>> The fact that nossd,ssd,ssd_spread are different options complicates the
+>> whole thing, compared to e.g. autodefrag, noautodefrag.
+> 
+> I think the the ssd flags reflect the autodetection of ssd, unlike
+> autodefrag and others.
+> 
+> The ssd options says "enable the ssd mode", but it could be also
+> auto-detected if the non-rotational device is detected.
+> 
+> nossd says, "do not do the autodetection, even if it's a non-rot
+> device, also disable all ssd modes".
+> 
+> The manual page is not entirely clear about that, I'll update it.
+> 
+> So Adam's patch needs to be updated so NOSSD also disables SSD_SPREAD.
+> Adding the 'nossd_spread' would be good to have, even if it might be
+> just a marginal usecase.
+> 
+
+
+-- 
+Hans van Kranenburg

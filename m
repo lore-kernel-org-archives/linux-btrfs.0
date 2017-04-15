@@ -1,42 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44795 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S937649AbdDSPnE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Apr 2017 11:43:04 -0400
-Date: Wed, 19 Apr 2017 17:43:00 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: docs: Fix newlines for man btrfstune
-Message-ID: <20170419154300.GD22319@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170416172002.19261-1-hans.van.kranenburg@mendix.com>
+Received: from p3nlsmtpcp01-02.prod.phx3.secureserver.net ([184.168.200.140]:54368
+        "EHLO p3nlsmtpcp01-02.prod.phx3.secureserver.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751295AbdDOKOP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 15 Apr 2017 06:14:15 -0400
+Date: Sat, 15 Apr 2017 15:43:08 +0530
+From: "Lakshmipathi.G" <Lakshmipathi.G@giis.co.in>
+To: dsterba@suse.cz, quwenruo@cn.fujitsu.com, linux-btrfs@vger.kernel.org
+Subject: [PATCH v4] btrfs-progs: misc-tests: Superblock corruption and
+ recovery using backup
+Message-ID: <20170415101308.GA7614@giis.co.in>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170416172002.19261-1-hans.van.kranenburg@mendix.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Apr 16, 2017 at 07:20:02PM +0200, Hans van Kranenburg wrote:
-> A bunch of newlines were missing, which resulted in only -S and -r to
-> show as option after xmlto is used to convert the documentation to a man
-> page.
-> 
-> The rest of the options would end up being appended to the explanation
-> of -r.
-> 
-> Signed-off-by: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Signed-off-by: Lakshmipathi.G <Lakshmipathi.G@giis.co.in>
+---
+ .../020-fix-superblock-corruption/test.sh          | 35 ++++++++++++++++++++++
+ 1 file changed, 35 insertions(+)
+ create mode 100755 tests/misc-tests/020-fix-superblock-corruption/test.sh
 
-Applied, thanks.
+diff --git a/tests/misc-tests/020-fix-superblock-corruption/test.sh b/tests/misc-tests/020-fix-superblock-corruption/test.sh
+new file mode 100755
+index 0000000..0faebad
+--- /dev/null
++++ b/tests/misc-tests/020-fix-superblock-corruption/test.sh
+@@ -0,0 +1,35 @@
++#!/bin/bash
++#
++# Corrupt primary superblock and restore it using backup superblock.
++#
++
++source $TOP/tests/common
++
++check_prereq btrfs-select-super
++check_prereq btrfs
++
++setup_root_helper
++prepare_test_dev
++
++FIRST_SUPERBLOCK_OFFSET=65536
++
++test_superblock_restore()
++{
++	run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f "$TEST_DEV"
++
++	# Corrupt superblock checksum
++        run_check $SUDO_HELPER dd if=/dev/zero of="$TEST_DEV" \
++	seek="$FIRST_SUPERBLOCK_OFFSET" bs=1 count=4 conv=notrunc
++
++	# Run btrfs check to detect corruption
++	run_mayfail "$TOP/btrfs" check "$TEST_DEV" && \
++		_fail "btrfs check should detect corruption"
++
++	# Copy backup superblock to primary
++	run_check "$TOP/btrfs-select-super" -s 1 "$TEST_DEV"
++
++	#Performing btrfs check
++	run_check "$TOP/btrfs" check "$TEST_DEV"
++}
++
++test_superblock_restore
+-- 
+2.7.4
 
-> ---
-> 
-> By the way, I have no idea why -r was showing up in the first place, because
-> it also had no newline before it.
-> 
-> I'm no asciidoc expert, but with consistent newlines, at least for me the
-> resulting man page does contain all options nicely listed.
-
-IIRC if the :: section is one paragraph, then the newline does not need
-to be there, while if there are more glued together with a +, then the
-newline before next :: must be added.

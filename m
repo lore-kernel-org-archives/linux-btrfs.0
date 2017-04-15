@@ -1,39 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f52.google.com ([209.85.215.52]:36628 "EHLO
-        mail-lf0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751751AbdDOGO3 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 15 Apr 2017 02:14:29 -0400
-Received: by mail-lf0-f52.google.com with SMTP id s141so48398701lfe.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Apr 2017 23:14:28 -0700 (PDT)
-Subject: Re: Btrfs disk layout question
-To: Chris Murphy <lists@colorremedies.com>,
-        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-References: <CACh0r45KQb+wLCbRP50WUfe8Loa=zF-Y13n2MhgUbRKi=UT8bw@mail.gmail.com>
- <20170411210023.vfqck3h6nepdow3z@angband.pl>
- <CAJCQCtTyNUx-P2aPNBE0x2W01qUfrBcHyA-46frM4X+suKMxrw@mail.gmail.com>
- <fdb571b4-0069-b124-8a22-7de09346bee7@gmail.com>
- <ec5a00c8-5eb8-b7fa-c1e5-5eb72cb3512c@gmail.com>
- <8bc0e7b3-8df9-0def-de34-1a774d361f35@gmail.com>
- <CAJCQCtTJ-G9_18KSkt-YqL5y+ORRVXACfj80Azq579CSGzKacA@mail.gmail.com>
-Cc: Adam Borowski <kilobyte@angband.pl>, Amin Hassani <ahassani@chromium.org>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Andrei Borzenkov <arvidjaar@gmail.com>
-Message-ID: <552552ec-6366-04f2-482f-d93d166081e1@gmail.com>
-Date: Sat, 15 Apr 2017 09:14:25 +0300
+Received: from p3nlsmtpcp01-02.prod.phx3.secureserver.net ([184.168.200.140]:53112
+        "EHLO p3nlsmtpcp01-02.prod.phx3.secureserver.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751565AbdDOJKc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 15 Apr 2017 05:10:32 -0400
+Date: Sat, 15 Apr 2017 14:39:21 +0530
+From: "Lakshmipathi.G" <lakshmipathi.g@giis.co.in>
+To: David Sterba <dsterba@suse.cz>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v3] btrfs-progs: fsck-tests: verify 'btrfs check
+ --repair' fixes corrupted nlink field
+Message-ID: <20170415090921.GA5677@giis.co.in>
+References: <20170202080502.GA6676@giis.co.in>
+ <20170330155211.GK4781@twin.jikos.cz>
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtTJ-G9_18KSkt-YqL5y+ORRVXACfj80Azq579CSGzKacA@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170330155211.GK4781@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-12.04.2017 20:21, Chris Murphy пишет:
-> btrfs-map-logical is the tool that will convert logical to physical
-> and also give what device it's on; but the device notation is copy 1
-> and copy 2, so you have to infer what device that is, it's not
-> explicit.
+On Thu, Mar 30, 2017 at 05:52:11PM +0200, David Sterba wrote:
+> On Thu, Feb 02, 2017 at 01:35:02PM +0530, Lakshmipathi.G wrote:
+> > Signed-off-by: Lakshmipathi.G <Lakshmipathi.G@giis.co.in>
+> > ---
+> >  tests/fsck-tests/026-check-inode-link/test.sh | 30 +++++++++++++++++++++++++++
+> >  1 file changed, 30 insertions(+)
+> >  create mode 100755 tests/fsck-tests/026-check-inode-link/test.sh
+> > 
+> > diff --git a/tests/fsck-tests/026-check-inode-link/test.sh b/tests/fsck-tests/026-check-inode-link/test.sh
+> > new file mode 100755
+> > index 0000000..6822ee2
+> > --- /dev/null
+> > +++ b/tests/fsck-tests/026-check-inode-link/test.sh
+> > @@ -0,0 +1,30 @@
+> > +#!/bin/bash
+> > +# verify that 'btrfs check --repair' fixes corrupted inode nlink field
+> > +
+> > +source $TOP/tests/common
+> > +
+> > +check_prereq btrfs-corrupt-block
+> > +check_prereq mkfs.btrfs
+> > +
+> > +setup_root_helper
+> > +prepare_test_dev 512M
 > 
+> Please use default size unless you really need 512M for the test
+> purposes.
+> 
+> > +
+> > +test_inode_nlink_field()
+> > +{
+> > +	run_check $SUDO_HELPER $TOP/mkfs.btrfs -f $TEST_DEV
+> > +
+> > +	run_check_mount_test_dev
+> > +	run_check $SUDO_HELPER touch $TEST_MNT/test_nlink.txt
+> > +
+> > +	# find inode_number
+> > +	inode_number=`stat -c%i $TEST_MNT/test_nlink.txt`
+> > +	run_check_umount_test_dev
+> > +
+> > +	# corrupt nlink field of inode object
+> > +        run_check $SUDO_HELPER $TOP/btrfs-corrupt-block -i $inode_number \
+> > +		-f nlink $TEST_DEV
+> > +
+> > +	check_image $TEST_DEV
+> 
+> The wrapper runs a pre-check that must detect errors, then runs --repair
+> and then again a plain check. Is this intended here?
+> 
+Yes its intentional. The test should fail, if its unable to detect the corruption.
+This is to ensure btrfs-corrupt-block -f nlink works as expected.
+> I think we should try to mount the fixed image again and read the file
+> or check link count.
+> 
+Right, I missed the verification part, will added this and change prepare_test_dev 
+to default size.
+> Please add shell quotation around all variables.
+Now quotation is added.
 
-Actually I just checked with btrfsprogs 4.5.3 on RAID5 and it does print
-OS device name for each data chunk. It does not show checksum chunk for
-RAID56 though.
+Cheers.
+Lakshmipathi.G

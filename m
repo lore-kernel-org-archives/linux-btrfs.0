@@ -1,70 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:53297 "EHLO
-        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754649AbdDOXc0 (ORCPT
+Received: from syrinx.knorrie.org ([82.94.188.77]:41276 "EHLO
+        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754686AbdDPAlm (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 15 Apr 2017 19:32:26 -0400
-Date: Sat, 15 Apr 2017 23:32:24 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Encountered kernel bug#72811. Advice on recovery?
-Message-ID: <20170415233224.GD21462@carfax.org.uk>
-References: <CAFKQ2Bs9-=serb7F-PHDVNQ-X2AXcWPG5jBs9xKXTKkTQ59O7Q@mail.gmail.com>
- <pan$29c2d$faf1fff7$a4518780$dbb0b61@cox.net>
- <CAN05THTcoQ6zLrDaVmoZ=pUQ3oMxU8EvYrz8TcUGOAo6a=5qHw@mail.gmail.com>
- <pan$5f10d$2c1e5c86$a2062192$8e2ab6b@cox.net>
- <pan$d0dc1$421200a9$82cb8142$e5992927@cox.net>
+        Sat, 15 Apr 2017 20:41:42 -0400
+Subject: Re: remount and conflicting ssd options?
+To: Chris Murphy <chris@colorremedies.com>,
+        Adam Borowski <kilobyte@angband.pl>
+References: <CAJCQCtTU6M1c-B1thYtTBidyEpM9AWPMSPU=NGxj3QHnqTM7+A@mail.gmail.com>
+ <20170415183156.mmgm6t4rygm2mt3j@angband.pl>
+ <CAJCQCtR3ZcyauCnJhDNp6rSFvnRWcNy2UsWJsbPJEyR+4tsiEA@mail.gmail.com>
+ <20170415185049.ig65w5pi22d42ajm@angband.pl>
+ <CAJCQCtTyGHUFVsXcK35N3fA_xjb04UGo+j7UFaf2_Aj6pFs0_Q@mail.gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Message-ID: <b3d118de-b4ec-ef74-e8b4-bc8aaed8dd62@mendix.com>
+Date: Sun, 16 Apr 2017 02:41:39 +0200
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="0IvGJv3f9h+YhkrH"
-In-Reply-To: <pan$d0dc1$421200a9$82cb8142$e5992927@cox.net>
+In-Reply-To: <CAJCQCtTyGHUFVsXcK35N3fA_xjb04UGo+j7UFaf2_Aj6pFs0_Q@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---0IvGJv3f9h+YhkrH
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Sat, Apr 15, 2017 at 11:28:41PM +0000, Duncan wrote:
-> Duncan posted on Sat, 15 Apr 2017 01:41:28 +0000 as excerpted:
+On 04/15/2017 10:35 PM, Chris Murphy wrote:
+> On Sat, Apr 15, 2017 at 12:50 PM, Adam Borowski <kilobyte@angband.pl> wrote:
+>> On Sat, Apr 15, 2017 at 12:41:14PM -0600, Chris Murphy wrote:
+>>> On Sat, Apr 15, 2017 at 12:31 PM, Adam Borowski <kilobyte@angband.pl> wrote:
+>>>> On Sat, Apr 15, 2017 at 12:17:25PM -0600, Chris Murphy wrote:
+>>>>> Then later I tried
+>>>>>
+>>>>> mount -o remount,ssd
+>>>>>
+>>>>> To go back to regular ssd option, but nothing happens, mount still
+>>>>> shows ssd_spread.
+>>>>
+>>>> ssd_spread implies ssd.
+>>>
+>>> OK so it's possible to remount from ssd to ssd_spread but not back to
+>>> ssd? If I trust the mount output, it's only possible to transition
+>>> from ssd to ssd_spread, but not from ssd_spread to ssd.
+>>
+>> Yeah.  This is a very minor problem (workaround: remount with nossd then
+>> ssd), but in the light of Hans van Kranenburg's findings, it'd be a bad idea
+>> to introduce new mount options the kernel would need to keep recognizing
+>> forever, as the effect of those options needs some rethinking anyways.
 > 
-> > Besides which, if the patch was submitted now, the earliest it could
-> > really hit btrfs-progs would be 4.12,
+> Yeah it's confusing aside from the mount behavior.
 > 
-> Well, maybe 3.11.x...
+> I have a performance test based on doing a bunch of system updates
+> (~100 rpm packages), and even with the same mount options, back to
+> back tests are sufficiently inconsistent that I can't tell which of
+> the allocator options is better.
 
-   Can I borrow your time machine? Would last Wednesday be OK?
+Do you run the test with exact the same starting point (all bits on disk
+in the same place, drop caches), or do you run it over and over again
+while the filesystem is deepening its own grave every time?
 
-   Hugo.
+> So the allocation options must be
+> about something other than time based performance.
+
+They're about the size of free space fragments that are (re)used.
+Switching allocator policy on the same fs rapidly might give weird
+results because some fragmented free space that was left behind by the
+previous test might suddenly show up as delicious supper for the next.
+
+> I can't tell what is a slow ssd these days so I'm not sure what ssd vs
+> ssd_spread really mean.
+
+afaikrn:
+ssd = ignore 'small' free space fragments ('small' being something I
+haven't figured out yet)
+ssd_spread = do not split up a write in multiple extents
+
+> Plus then on spinning rust people have
+> reported better performance with ssd rather than the default of nossd.
+> While others who are using iSCSI end up with ssd by default and worse
+> results than with nossd.
+
+<rant:)>So far we learned that the options were designed for the types
+of SSD that you would be able to buy 10 years ago, that they cause
+changes in write behaviour and that they tend to forget to take
+(recursive-exploding) cow overhead for metadata writes into account.</rant>
 
 -- 
-Hugo Mills             | We teach people management skills by examining
-hugo@... carfax.org.uk | characters in Shakespeare. You could look at
-http://carfax.org.uk/  | Claudius's crisis management techniques, for
-PGP: E2AB1DE4          | example.       Richard Smith-Jones, Slings and Arrows
-
---0IvGJv3f9h+YhkrH
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJY8q2HAAoJEFheFHXiqx3kxjkP/1IKpZLgIi2dQcg/1BezEiCo
-Dep2TOPwG6EJO5YBMgXZW8CHAUEOODH3lTFlr/vZDhiPr+glmrx7iNbsqSYT7Rxj
-zx0t52sZR1kV/jRD77Nr02o4lJ7OsOVxOVzWKus4pMmi5BmysdnPRjqVXYQCLk0s
-W1WBQfBZoRqRRGlyG4KRihPPWwUZPIFjUrPJDgcVGTI+2lAg3Xs7792TAvsbLxBz
-m3uiyTVT5iWvmSl12vzzE6WLz07MWQJLsqgrgtlZ7xcDMM9WWcGGX+JREJsoqSIw
-nMi0KbWOZ1Yg6gkcDSt69iIAS+yTnQh4tOt/S6N8xnJ/ifbYS+OjrAX1Moy2d5Ns
-GwaYa/QJY1O7gSpqF815vE6UE7pe44bhjt3U2+Jl9ktXMmfbDanAeNW261egKdvN
-6LnqKlU0bi4sZHKwVXMA6h4+rg3CYLq0OYVAPsxv2ANug7fo51pmipVuedKmwHLk
-aA8ofcDi7hpy7UmLGBxtBiLO3eVftTw62vhZ4oLWdtvxe969pLBxk70rcJhRBpe6
-y8byJQUl2wow9uyDd3u6WW4gTWBU6T0UMq5ozLPh7M0h+jADHVI4WoJRjAyOqf5M
-sCO4AmlG/eSx/dogAsdAPo2ETAwtonRdZ09fsNUd8Cv9d4rSl989BwPm9TjFiR4p
-esrT8epxyB6GedEpjx7r
-=5mUP
------END PGP SIGNATURE-----
-
---0IvGJv3f9h+YhkrH--
+Hans van Kranenburg

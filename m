@@ -1,162 +1,141 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:48021 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1756334AbdDQSRJ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Apr 2017 14:17:09 -0400
-Date: Mon, 17 Apr 2017 11:15:57 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Alexandru Guzu <alexguzu@gmail.com>
+Received: from rin.romanrm.net ([91.121.86.59]:59440 "EHLO rin.romanrm.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1756684AbdDQSY1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 17 Apr 2017 14:24:27 -0400
+Date: Mon, 17 Apr 2017 23:24:19 +0500
+From: Roman Mamedov <rm@romanrm.net>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
 Cc: Chris Murphy <lists@colorremedies.com>,
+        Imran Geriskovan <imran.geriskovan@gmail.com>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Remounting read-write after error is not allowed
-Message-ID: <20170417181557.GB3856@lim.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <CAPktuGu9HqL=0VS+apM9r6CSRbxBcZzX5=HmF1K_51wYHyRbiw@mail.gmail.com>
- <CAJCQCtRbkt=o6doBd0ZG0XZfrhP4pBQsPCp573LiZU2RSZvuVQ@mail.gmail.com>
- <CAPktuGsM6=yA8bjv-a5zWKdxm9jb7roUTNA+Mw-D0jJ_HRauDw@mail.gmail.com>
- <CAPktuGu-9KefV6poy0Qe8h54kB8pQ5n_kDUh4KXi5LSd9_bLvg@mail.gmail.com>
+Subject: Re: Btrfs/SSD
+Message-ID: <20170417232419.04474015@natsu>
+In-Reply-To: <8f046fa5-a458-9db8-b616-907afd34383b@gmail.com>
+References: <CAK5rZE4ko_xFr_Zv=bmZ4tR9X59jXaqFnTv16_ynEO0+E5uzeg@mail.gmail.com>
+ <f5cb15a5-5566-b366-ebda-c3101fa96eec@gmail.com>
+ <CAJCQCtS=xqcWMqiRxC_uoqTRUaW6aMwayoqjtMqq6XhcCJNVRg@mail.gmail.com>
+ <8f046fa5-a458-9db8-b616-907afd34383b@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAPktuGu-9KefV6poy0Qe8h54kB8pQ5n_kDUh4KXi5LSd9_bLvg@mail.gmail.com>
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 17, 2017 at 02:00:45PM -0400, Alexandru Guzu wrote:
-> Not sure if anyone is looking into that segfault, but I have an update.
-> I disconnected the USB drive for a while and today I reconnected it
-> and it auto-mounted with no issue.
-> 
-> What is interesting is that the drive letter changed to what is was
-> before when it was working.
-> Remember that in my first email, the drive encounters an error as
-> /dev/sdg2, and it reconnected as /dev/sdh2
-> 
-> I was getting errors when it was assigned /dev/sdh2, but now it mounts
-> just fine when it is assigned /dev/sdg2
-> 
-> sudo btrfs fi show
-> Label: 'USB-data'  uuid: 227fbb6c-ae72-4b81-8e65-942a0ddc6ef7
->     Total devices 1 FS bytes used 230.72GiB
->     devid    1 size 447.13GiB used 238.04GiB path /dev/sdg2
-> 
-> 
-> is BTRFS really so sensitive to drive letter changes?
-> The USB driver is automounted as such:
-> 
-> /dev/sdg2 on /media/alex/USB-data1 type btrfs
-> (rw,nosuid,nodev,relatime,space_cache,subvolid=5,subvol=/,uhelper=udisks2)
->
+On Mon, 17 Apr 2017 07:53:04 -0400
+"Austin S. Hemmelgarn" <ahferroin7@gmail.com> wrote:
 
-I don't think it's because of the changed drive letter, it was hitting the
-BUG_ON in kernel code btrfs_search_forward() and showed that somehow your btrfs
-had failed to read the metadata out of the drive (either because the underlying
-drive is not available for reading or because metadata checksum check is
-failing).
+> General info (not BTRFS specific):
+> * Based on SMART attributes and other factors, current life expectancy 
+> for light usage (normal desktop usage) appears to be somewhere around 
+> 8-12 years depending on specifics of usage (assuming the same workload, 
+> F2FS is at the very top of the range, BTRFS and NILFS2 are on the upper 
+> end, XFS is roughly in the middle, ext4 and NTFS are on the low end 
+> (tested using Windows 7's NTFS driver), and FAT32 is an outlier at the 
+> bottom of the barrel).
 
-That BUG_ON had gotten fixed in a later version, you may want to try the latest
-btrfs.
+Life expectancy for an SSD is defined not in years, but in TBW (terabytes
+written), and AFAICT that's not "from host", but "to flash" (some SSDs will
+show you both values in two separate SMART attributes out of the box, on some
+it can be unlocked). Filesystem may come into play only by the amount of write
+amplification they cause (how much "to flash" is greater than "from host").
+Do you have any test data to show that FSes are ranked in that order by WA
+they cause, or is it all about "general feel" and how they are branded (F2FS
+says so, so it must be the best)
+
+> * Queued DISCARD support is still missing in most consumer SATA SSD's, 
+> which in turn makes the trade-off on those between performance and 
+> lifetime much sharper.
+
+My choice was to make a script to run from crontab, using "fstrim" on all
+mounted SSDs nightly, and aside from that all FSes are mounted with
+"nodiscard". Best of the both worlds, and no interference with actual IO
+operation.
+
+> * Modern (2015 and newer) SSD's seem to have better handling in the FTL 
+> for the journaling behavior of filesystems like ext4 and XFS.  I'm not 
+> sure if this is actually a result of the FTL being better, or some 
+> change in the hardware.
+
+Again, what makes you think this, did you observe the write amplification
+readings and now those are demonstrably lower than on "2014 and older" SSDs?
+So, by how much, and which models did you compare?
+
+> * In my personal experience, Intel, Samsung, and Crucial appear to be 
+> the best name brands (in relative order of quality).  I have personally 
+> had bad experiences with SanDisk and Kingston SSD's, but I don't have 
+> anything beyond circumstantial evidence indicating that it was anything 
+> but bad luck on both counts.
+
+Why not think in terms not of "name brands" but platforms, i.e. a controller
+model + flash combination. For instance Intel have been using some other
+companies' controllers in their SSDs. Kingston uses tons of various
+controllers (Sandforce/Phison/Marvell/more?) depending on the model and range.
+
+> * Files with NOCOW and filesystems with 'nodatacow' set will both hurt 
+> performance for BTRFS on SSD's, and appear to reduce the lifetime of the 
+> SSD.
+
+"Appear to"? Just... what. So how many SSDs did you have fail under nocow?
+
+Or maybe can we get serious in a technical discussion? Did you by any chance
+mean cause more writes to the SSD and more "to flash" writes (resulting in a
+higher WA). If so, then by how much, and what was your test scenario comparing
+the same usage with and without nocow?
+
+> * Compression should help performance and device lifetime most of the 
+> time, unless your CPU is fully utilized on a regular basis (in which 
+> case it will hurt performance, but still improve device lifetimes).
+
+Days are long gone since the end user had to ever think about device lifetimes
+with SSDs. Refer to endurance studies such as 
+http://techreport.com/review/27909/the-ssd-endurance-experiment-theyre-all-dead
+http://ssdendurancetest.com/
+https://3dnews.ru/938764/
+It has been demonstrated that all SSDs on the market tend to overshoot even
+their rated TBW by several times, as a result it will take any user literally
+dozens of years to wear out the flash no matter which filesystem or what
+settings used. And most certainly it's not worth it changing anything
+significant in your workflow (such as enabling compression if it's otherwise
+inconvenient or not needed) just to save the SSD lifetime.
+
+On Mon, 17 Apr 2017 13:13:39 -0400
+"Austin S. Hemmelgarn" <ahferroin7@gmail.com> wrote:
+
+> > What is a high end SSD these days? Built-in NVMe?
+> One with a good FTL in the firmware.  At minimum, the good Samsung EVO 
+> drives, the high quality Intel ones
+
+As opposed to bad Samsung EVO drives and low-quality Intel ones?
+
+> and the Crucial MX series, but 
+> probably some others.  My choice of words here probably wasn't the best 
+> though.
+
+Again, which controller? Crucial does not manufacture SSD controllers on their
+own, they just pack and brand stuff manufactured by someone else. So if you
+meant Marvell based SSDs, then that's many brands, not just Crucial.
+
+> For a normal filesystem or BTRFS with nodatacow or NOCOW, the block gets 
+> rewritten in-place.  This means that cheap FTL's will rewrite that erase 
+> block in-place (which won't hurt performance but will impact device 
+> lifetime), and good ones will rewrite into a free block somewhere else 
+> but may not free that original block for quite some time (which is bad 
+> for performance but slightly better for device lifetime).
+
+> Overall, this boils down to the fact that most FTL's get slower if they 
+> can't wear-level the device properly, and in-place rewrites make it 
+> harder for them to do proper wear-leveling.
+
+"Cheap FTL" in your description would be an USB flash stick, or maybe an old
+CompactFlash card. Even the 2010 era mass market SandForce controllers will do
+none of the stupid shit you describe.
+
+Sorry but with your superficial understanding of the topic (and confidently
+sounding verbose posts) all you do is spreading common SSD myths and
+misconceptions, i.e. just being downright harmful to whoever reads this
+discussion or discovers it later.
 
 
-Thanks,
-
--liubo
-
-> > Thanks for the reply.
-> >
-> > I mounted it ro:
-> >     $ sudo btrfs fi show /mnt
-> >     Segmentation fault (core dumped)
-> >
-> > dmesg says:
-> > ...
-> > kernel BUG at /build/linux-wXdoVv/linux-4.4.0/fs/btrfs/ctree.c:5205!
-> > ...
-> > RIP: 0010:[<ffffffffc0371b98>]  [<ffffffffc0371b98>]
-> > btrfs_search_forward+0x268/0x350 [btrfs]
-> > ...
-> > Call Trace:
-> >     [<ffffffffc03cabb2>] search_ioctl+0xf2/0x1c0 [btrfs]
-> >     [<ffffffff811afc4c>] ? zone_statistics+0x7c/0xa0
-> >     [<ffffffffc03cacf2>] btrfs_ioctl_tree_search+0x72/0xc0 [btrfs]
-> >     [<ffffffffc03ce1b5>] btrfs_ioctl+0x455/0x28b0 [btrfs]
-> >     [<ffffffff8120274b>] ? mem_cgroup_try_charge+0x6b/0x1e0
-> >     [<ffffffff811c1a5d>] ? handle_mm_fault+0xcad/0x1820
-> >     [<ffffffff81222caf>] do_vfs_ioctl+0x29f/0x490
-> >     [<ffffffff8106b544>] ? __do_page_fault+0x1b4/0x400
-> >     [<ffffffff81222f19>] SyS_ioctl+0x79/0x90
-> >     [<ffffffff8183c672>] entry_SYSCALL_64_fastpath+0x16/0x71
-> > ...
-> >
-> > full dmesg output is at:
-> > pastebin.com/bhsEJiJN
-> >
-> > $ sudo btrfs fi df /mnt
-> > Data, single: total=236.01GiB, used=230.35GiB
-> > System, DUP: total=8.00MiB, used=48.00KiB
-> > System, single: total=4.00MiB, used=0.00B
-> > Metadata, DUP: total=1.00GiB, used=349.11MiB
-> > Metadata, single: total=8.00MiB, used=0.00B
-> > GlobalReserve, single: total=128.00MiB, used=0.00B
-> >
-> > I downloaded and compiled the current btrfs v4.10.1-9-gbd0ab27.
-> >
-> > sudo ./btrfs check /dev/sdh2
-> >     Checking filesystem on /dev/sdh2
-> >     UUID: 227fbb6c-ae72-4b81-8e65-942a0ddc6ef7
-> >     checking extents
-> >     checking free space cache
-> >     checking fs roots
-> >     checking csums
-> >     checking root refs
-> >     found 247628603392 bytes used, no error found
-> >     total csum bytes: 241513756
-> >     total tree bytes: 366084096
-> >     total fs tree bytes: 90259456
-> >     total extent tree bytes: 10010624
-> >     btree space waste bytes: 35406538
-> >     file data blocks allocated: 23837459185664
-> >      referenced 252963553280
-> >
-> > and with lowmem mode (again no errors found):
-> > ./btrfs check /dev/sdh2 --mode=lowmem
-> >     Checking filesystem on /dev/sdh2
-> >     UUID: 227fbb6c-ae72-4b81-8e65-942a0ddc6ef7
-> >     checking extents
-> >     checking free space cache
-> >     checking fs roots
-> >     checking csums
-> >     checking root refs
-> >     found 247738298368 bytes used, no error found
-> >     total csum bytes: 241513756
-> >     total tree bytes: 366084096
-> >     total fs tree bytes: 90259456
-> >     total extent tree bytes: 10010624
-> >     btree space waste bytes: 35406538
-> >     file data blocks allocated: 23837459185664
-> >      referenced 252963553280
-> >
-> > maybe there is some hint in that segmentation fault?
-> > Also, I compiled from
-> > git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git but I
-> > did not get version 4.10.1 instead of 4.10.2
-> >
-> > Regards,
-> >
-> > On Fri, Apr 14, 2017 at 1:17 PM, Chris Murphy <lists@colorremedies.com> wrote:
-> >> Can you ro mount it and:
-> >>
-> >> btrfs fi show /mnt
-> >> btrfs fi df /mnt
-> >>
-> >> And then next update the btrfs-progs to something newer like 4.9.2 or
-> >> 4.10.2 and then do another 'btrfs check' without repair. And then
-> >> separately do it again with --mode=lowmem and post both sets of
-> >> results?
-> >>
-> >>
-> >> Chris Murphy
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-- 
+With respect,
+Roman

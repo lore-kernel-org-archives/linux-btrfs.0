@@ -1,35 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from synology.com ([59.124.61.242]:43325 "EHLO synology.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1757095AbdDQBfJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 16 Apr 2017 21:35:09 -0400
-Received: from _ (localhost [127.0.0.1])
-        (Authenticated sender: robbieko@synology.com)
-        by synology.com (Postfix) with ESMTPA id 8D349167200D5
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Apr 2017 09:27:27 +0800 (CST)
+Received: from cn.fujitsu.com ([59.151.112.132]:62053 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S932464AbdDQD0t (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 16 Apr 2017 23:26:49 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>, <dsterba@suse.cz>
+Subject: [PATCH 0/9] Introduce btrfs-modify prog to make corruption easier
+Date: Mon, 17 Apr 2017 11:26:33 +0800
+Message-ID: <20170417032642.30770-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII;
- format=flowed
-Date: Mon, 17 Apr 2017 09:27:27 +0800
-From: robbieko <robbieko@synology.com>
-To: linux-btrfs@vger.kernel.org
-Subject: Extent map generation question
-Message-ID: <403da5505e0324c61d117b21fddb5e19@synology.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Introduce a new command, btrfs-modify, which is not part of 'btrfs', but
+an independent command, bring minimal impact to existing btrfs commands.
 
-I have a question in the function "clone_update_extent_map".
+Btrfs-modify is designed to provides better documentation than current
+btrfs-corrupt-block with better subcommand division to reduce confusing
+or conflicting options.
 
-If em->generation is set -1, stands for we can't ignore it in
-incremental fsync.
+Btrfs-modify paired with offline-scrub patchset (not merged yet) could
+provide a full suite for test case writers to do corruption and recovery
+verification.
 
-Why em->generation is set -1 when there is a path exists, and the 
-generation is always -1.
-It can not set to trans-> transid ?
+Qu Wenruo (9):
+  btrfs-progs: Introduce new btrfs_map_block function which returns more
+    unified result.
+  btrfs-progs: Allow __btrfs_map_block_v2 to remove unrelated stripes
+  btrfs-progs: Export commands processing code to commands.c from
+    btrfs.c
+  btrfs-progs: help: Unbind short help description from btrfs
+  btrfs-progs: utils: Introduce new function arg_strtou32
+  btrfs-progs: Introduce btrfs-modify tool to modify btrfs internal
+    structures
+  btrfs-progs: modify: Add support to corrupt specified mirror
+  btrfs-progs: modify: Introduce option to specify range by root,ino and
+    offset
+  btrfs-progs: modify: Introduce option to specify the pattern to fill
+    mirror
 
-Thanks.
-Robbie Ko
+ .gitignore                          |   1 +
+ Documentation/Makefile.in           |   1 +
+ Documentation/btrfs-modify.asciidoc |  64 +++++
+ Makefile                            |  14 +-
+ btrfs.c                             | 116 +--------
+ commands.c                          | 127 ++++++++++
+ commands.h                          |   4 +
+ help.c                              |  14 +-
+ help.h                              |   3 +-
+ modify/main.c                       | 110 +++++++++
+ modify/mirror.c                     | 472 ++++++++++++++++++++++++++++++++++++
+ modify/modify_commands.h            |  25 ++
+ utils-lib.c                         |  15 ++
+ utils.h                             |   1 +
+ volumes.c                           | 283 +++++++++++++++++++++
+ volumes.h                           |  78 ++++++
+ 16 files changed, 1213 insertions(+), 115 deletions(-)
+ create mode 100644 Documentation/btrfs-modify.asciidoc
+ create mode 100644 commands.c
+ create mode 100644 modify/main.c
+ create mode 100644 modify/mirror.c
+ create mode 100644 modify/modify_commands.h
+
+-- 
+2.12.2
+
 
 

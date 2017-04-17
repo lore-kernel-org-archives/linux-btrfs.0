@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:24203 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:62053 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S932467AbdDQD0u (ORCPT
+        with ESMTP id S932539AbdDQD0v (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 16 Apr 2017 23:26:50 -0400
+        Sun, 16 Apr 2017 23:26:51 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>, <dsterba@suse.cz>
-Subject: [PATCH 2/9] btrfs-progs: Allow __btrfs_map_block_v2 to remove unrelated stripes
-Date: Mon, 17 Apr 2017 11:26:35 +0800
-Message-ID: <20170417032642.30770-3-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 3/9] btrfs-progs: Export commands processing code to commands.c from btrfs.c
+Date: Mon, 17 Apr 2017 11:26:36 +0800
+Message-ID: <20170417032642.30770-4-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20170417032642.30770-1-quwenruo@cn.fujitsu.com>
 References: <20170417032642.30770-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -16,156 +16,293 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For READ, caller normally hopes to get what they request, other than
-full stripe map.
-
-In this case, we should remove unrelated stripe map, just like the
-following case:
-               32K               96K
-               |<-request range->|
-         0              64k           128K
-RAID0:   |    Data 1    |   Data 2    |
-              disk1         disk2
-Before this patch, we return the full stripe:
-Stripe 0: Logical 0, Physical X, Len 64K, Dev disk1
-Stripe 1: Logical 64k, Physical Y, Len 64K, Dev disk2
-
-After this patch, we limit the stripe result to the request range:
-Stripe 0: Logical 32K, Physical X+32K, Len 32K, Dev disk1
-Stripe 1: Logical 64k, Physical Y, Len 32K, Dev disk2
-
-And if it's a RAID5/6 stripe, we just handle it like RAID0, ignoring
-parities.
-
-This should make caller easier to use.
+This allow us to the command group facility for other progs other than
+btrfs command.
+And since it's not bond to 'btrfs' command, move it to commands.c.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- volumes.c | 104 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 103 insertions(+), 1 deletion(-)
+ Makefile   |   2 +-
+ btrfs.c    | 104 --------------------------------------------------
+ commands.c | 127 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ commands.h |   4 ++
+ 4 files changed, 132 insertions(+), 105 deletions(-)
+ create mode 100644 commands.c
 
-diff --git a/volumes.c b/volumes.c
-index 29611bf7..5c40d153 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -1736,6 +1736,108 @@ static int fill_full_map_block(struct map_lookup *map, u64 start, u64 length,
- 	return 0;
- }
+diff --git a/Makefile b/Makefile
+index 81598df1..f405c1ec 100644
+--- a/Makefile
++++ b/Makefile
+@@ -95,7 +95,7 @@ objects = ctree.o disk-io.o kernel-lib/radix-tree.o extent-tree.o print-tree.o \
+ 	  qgroup.o raid56.o free-space-cache.o kernel-lib/list_sort.o props.o \
+ 	  kernel-shared/ulist.o qgroup-verify.o backref.o string-table.o task-utils.o \
+ 	  inode.o file.o find-root.o free-space-tree.o help.o send-dump.o \
+-	  fsfeatures.o
++	  fsfeatures.o commands.o
+ cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
+ 	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
+ 	       cmds-quota.o cmds-qgroup.o cmds-replace.o cmds-check.o \
+diff --git a/btrfs.c b/btrfs.c
+index 9214ae6e..f096e780 100644
+--- a/btrfs.c
++++ b/btrfs.c
+@@ -32,110 +32,6 @@ static const char * const btrfs_cmd_group_usage[] = {
+ static const char btrfs_cmd_group_info[] =
+ 	"Use --help as an argument for information on a specific group or command.";
  
-+static void del_one_stripe(struct btrfs_map_block *map_block, int i)
-+{
-+	int cur_nr = map_block->num_stripes;
-+	int size_left = (cur_nr - 1 - i) * sizeof(struct btrfs_map_stripe);
+-static inline const char *skip_prefix(const char *str, const char *prefix)
+-{
+-	size_t len = strlen(prefix);
+-	return strncmp(str, prefix, len) ? NULL : str + len;
+-}
+-
+-static int parse_one_token(const char *arg, const struct cmd_group *grp,
+-			   const struct cmd_struct **cmd_ret)
+-{
+-	const struct cmd_struct *cmd = grp->commands;
+-	const struct cmd_struct *abbrev_cmd = NULL, *ambiguous_cmd = NULL;
+-
+-	for (; cmd->token; cmd++) {
+-		const char *rest;
+-
+-		rest = skip_prefix(arg, cmd->token);
+-		if (!rest) {
+-			if (!prefixcmp(cmd->token, arg)) {
+-				if (abbrev_cmd) {
+-					/*
+-					 * If this is abbreviated, it is
+-					 * ambiguous. So when there is no
+-					 * exact match later, we need to
+-					 * error out.
+-					 */
+-					ambiguous_cmd = abbrev_cmd;
+-				}
+-				abbrev_cmd = cmd;
+-			}
+-			continue;
+-		}
+-		if (*rest)
+-			continue;
+-
+-		*cmd_ret = cmd;
+-		return 0;
+-	}
+-
+-	if (ambiguous_cmd)
+-		return -2;
+-
+-	if (abbrev_cmd) {
+-		*cmd_ret = abbrev_cmd;
+-		return 0;
+-	}
+-
+-	return -1;
+-}
+-
+-static const struct cmd_struct *
+-parse_command_token(const char *arg, const struct cmd_group *grp)
+-{
+-	const struct cmd_struct *cmd = NULL;
+-
+-	switch(parse_one_token(arg, grp, &cmd)) {
+-	case -1:
+-		help_unknown_token(arg, grp);
+-	case -2:
+-		help_ambiguous_token(arg, grp);
+-	}
+-
+-	return cmd;
+-}
+-
+-static void handle_help_options_next_level(const struct cmd_struct *cmd,
+-		int argc, char **argv)
+-{
+-	if (argc < 2)
+-		return;
+-
+-	if (!strcmp(argv[1], "--help")) {
+-		if (cmd->next) {
+-			argc--;
+-			argv++;
+-			help_command_group(cmd->next, argc, argv);
+-		} else {
+-			usage_command(cmd, 1, 0);
+-		}
+-
+-		exit(0);
+-	}
+-}
+-
+-int handle_command_group(const struct cmd_group *grp, int argc,
+-			 char **argv)
+-
+-{
+-	const struct cmd_struct *cmd;
+-
+-	argc--;
+-	argv++;
+-	if (argc < 1) {
+-		usage_command_group(grp, 0, 0);
+-		exit(1);
+-	}
+-
+-	cmd = parse_command_token(argv[0], grp);
+-
+-	handle_help_options_next_level(cmd, argc, argv);
+-
+-	fixup_argv0(argv, cmd->token);
+-	return cmd->fn(argc, argv);
+-}
+-
+ static const struct cmd_group btrfs_cmd_group;
+ 
+ static const char * const cmd_help_usage[] = {
+diff --git a/commands.c b/commands.c
+new file mode 100644
+index 00000000..dc016e97
+--- /dev/null
++++ b/commands.c
+@@ -0,0 +1,127 @@
++/*
++ * Copyright (C) 2017 Fujitsu.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
 +
-+	memmove(&map_block->stripes[i], &map_block->stripes[i + 1], size_left);
-+	map_block->num_stripes--;
++#include "commands.h"
++#include "utils.h"
++#include "help.h"
++
++static inline const char *skip_prefix(const char *str, const char *prefix)
++{
++	size_t len = strlen(prefix);
++	return strncmp(str, prefix, len) ? NULL : str + len;
 +}
 +
-+static void remove_unrelated_stripes(struct map_lookup *map,
-+				     int rw, u64 start, u64 length,
-+				     struct btrfs_map_block *map_block)
++static int parse_one_token(const char *arg, const struct cmd_group *grp,
++			   const struct cmd_struct **cmd_ret)
 +{
-+	int i = 0;
-+	/*
-+	 * RAID5/6 write must use full stripe.
-+	 * No need to do anything.
-+	 */
-+	if (map->type & (BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6) &&
-+	    rw == WRITE)
++	const struct cmd_struct *cmd = grp->commands;
++	const struct cmd_struct *abbrev_cmd = NULL, *ambiguous_cmd = NULL;
++
++	for (; cmd->token; cmd++) {
++		const char *rest;
++
++		rest = skip_prefix(arg, cmd->token);
++		if (!rest) {
++			if (!prefixcmp(cmd->token, arg)) {
++				if (abbrev_cmd) {
++					/*
++					 * If this is abbreviated, it is
++					 * ambiguous. So when there is no
++					 * exact match later, we need to
++					 * error out.
++					 */
++					ambiguous_cmd = abbrev_cmd;
++				}
++				abbrev_cmd = cmd;
++			}
++			continue;
++		}
++		if (*rest)
++			continue;
++
++		*cmd_ret = cmd;
++		return 0;
++	}
++
++	if (ambiguous_cmd)
++		return -2;
++
++	if (abbrev_cmd) {
++		*cmd_ret = abbrev_cmd;
++		return 0;
++	}
++
++	return -1;
++}
++
++const struct cmd_struct *
++parse_command_token(const char *arg, const struct cmd_group *grp)
++{
++	const struct cmd_struct *cmd = NULL;
++
++	switch(parse_one_token(arg, grp, &cmd)) {
++	case -1:
++		help_unknown_token(arg, grp);
++	case -2:
++		help_ambiguous_token(arg, grp);
++	}
++
++	return cmd;
++}
++
++void handle_help_options_next_level(const struct cmd_struct *cmd,
++				    int argc, char **argv)
++{
++	if (argc < 2)
 +		return;
 +
-+	/*
-+	 * For RAID0/1/10/DUP, whatever read/write, we can remove unrelated
-+	 * stripes without causing anything wrong.
-+	 * RAID5/6 READ is just like RAID0, we don't care parity unless we need
-+	 * to recovery.
-+	 * For recovery, rw should be set to WRITE.
-+	 */
-+	while (i < map_block->num_stripes) {
-+		struct btrfs_map_stripe *stripe;
-+		u64 orig_logical; /* Original stripe logical start */
-+		u64 orig_end; /* Original stripe logical end */
-+
-+		stripe = &map_block->stripes[i];
-+
-+		/*
-+		 * For READ, we don't really care parity
-+		 */
-+		if (stripe->logical == BTRFS_RAID5_P_STRIPE ||
-+		    stripe->logical == BTRFS_RAID6_Q_STRIPE) {
-+			del_one_stripe(map_block, i);
-+			continue;
++	if (!strcmp(argv[1], "--help")) {
++		if (cmd->next) {
++			argc--;
++			argv++;
++			help_command_group(cmd->next, argc, argv);
++		} else {
++			usage_command(cmd, 1, 0);
 +		}
-+		/* Completely unrelated stripe */
-+		if (stripe->logical >= start + length ||
-+		    stripe->logical + stripe->length <= start) {
-+			del_one_stripe(map_block, i);
-+			continue;
-+		}
-+		/* Covered stripe, modify its logical and physical */
-+		orig_logical = stripe->logical;
-+		orig_end = stripe->logical + stripe->length;
-+		if (start + length <= orig_end) {
-+			/*
-+			 * |<--range-->|
-+			 *   |  stripe   |
-+			 * Or
-+			 *     |<range>|
-+			 *   |  stripe   |
-+			 */
-+			stripe->logical = max(orig_logical, start);
-+			stripe->length = start + length - stripe->logical;
-+			stripe->physical += stripe->logical - orig_logical;
-+		} else if (start >= orig_logical) {
-+			/*
-+			 *     |<-range--->|
-+			 * |  stripe     |
-+			 * Or
-+			 *     |<range>|
-+			 * |  stripe     |
-+			 */
-+			stripe->logical = start;
-+			stripe->length = min(orig_end, start + length) -
-+					 stripe->logical;
-+			stripe->physical += stripe->logical - orig_logical;
-+		}
-+		/*
-+		 * Remaining case:
-+		 * |<----range----->|
-+		 *   | stripe |
-+		 * No need to do any modification
-+		 */
-+		i++;
-+	}
 +
-+	/* Recaculate map_block size */
-+	map_block->start = 0;
-+	map_block->length = 0;
-+	for (i = 0; i < map_block->num_stripes; i++) {
-+		struct btrfs_map_stripe *stripe;
-+
-+		stripe = &map_block->stripes[i];
-+		if (stripe->logical > map_block->start)
-+			map_block->start = stripe->logical;
-+		if (stripe->logical + stripe->length >
-+		    map_block->start + map_block->length)
-+			map_block->length = stripe->logical + stripe->length -
-+					    map_block->start;
++		exit(0);
 +	}
 +}
 +
- int __btrfs_map_block_v2(struct btrfs_fs_info *fs_info, int rw, u64 logical,
- 			 u64 length, struct btrfs_map_block **map_ret)
- {
-@@ -1771,7 +1873,7 @@ int __btrfs_map_block_v2(struct btrfs_fs_info *fs_info, int rw, u64 logical,
- 		free(map_block);
- 		return ret;
- 	}
--	/* TODO: Remove unrelated map_stripes for READ operation */
-+	remove_unrelated_stripes(map, rw, logical, length, map_block);
++int handle_command_group(const struct cmd_group *grp, int argc,
++			 char **argv)
++{
++	const struct cmd_struct *cmd;
++
++	argc--;
++	argv++;
++	if (argc < 1) {
++		usage_command_group(grp, 0, 0);
++		exit(1);
++	}
++
++	cmd = parse_command_token(argv[0], grp);
++
++	handle_help_options_next_level(cmd, argc, argv);
++
++	fixup_argv0(argv, cmd->token);
++	return cmd->fn(argc, argv);
++}
+diff --git a/commands.h b/commands.h
+index 01bf387e..5e109537 100644
+--- a/commands.h
++++ b/commands.h
+@@ -111,4 +111,8 @@ int cmd_dump_super(int argc, char **argv);
+ int cmd_debug_tree(int argc, char **argv);
+ int cmd_rescue(int argc, char **argv);
  
- 	*map_ret = map_block;
- 	return 0;
++const struct cmd_struct *
++parse_command_token(const char *arg, const struct cmd_group *grp);
++void handle_help_options_next_level(const struct cmd_struct *cmd,
++				    int argc, char **argv);
+ #endif
 -- 
 2.12.2
 

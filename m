@@ -1,141 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from rin.romanrm.net ([91.121.86.59]:59440 "EHLO rin.romanrm.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1756684AbdDQSY1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Apr 2017 14:24:27 -0400
-Date: Mon, 17 Apr 2017 23:24:19 +0500
-From: Roman Mamedov <rm@romanrm.net>
+Received: from mail-yw0-f175.google.com ([209.85.161.175]:34109 "EHLO
+        mail-yw0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753999AbdDQSeT (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 17 Apr 2017 14:34:19 -0400
+Received: by mail-yw0-f175.google.com with SMTP id k13so59598487ywk.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Apr 2017 11:34:19 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <8f046fa5-a458-9db8-b616-907afd34383b@gmail.com>
+References: <CAK5rZE4ko_xFr_Zv=bmZ4tR9X59jXaqFnTv16_ynEO0+E5uzeg@mail.gmail.com>
+ <f5cb15a5-5566-b366-ebda-c3101fa96eec@gmail.com> <CAJCQCtS=xqcWMqiRxC_uoqTRUaW6aMwayoqjtMqq6XhcCJNVRg@mail.gmail.com>
+ <8f046fa5-a458-9db8-b616-907afd34383b@gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Mon, 17 Apr 2017 12:34:17 -0600
+Message-ID: <CAJCQCtTCd7BEwQN4k9n0Jm6ZQTnCS738ctEUnKDb2eENhe21Sg@mail.gmail.com>
+Subject: Re: Btrfs/SSD
 To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
 Cc: Chris Murphy <lists@colorremedies.com>,
         Imran Geriskovan <imran.geriskovan@gmail.com>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Btrfs/SSD
-Message-ID: <20170417232419.04474015@natsu>
-In-Reply-To: <8f046fa5-a458-9db8-b616-907afd34383b@gmail.com>
-References: <CAK5rZE4ko_xFr_Zv=bmZ4tR9X59jXaqFnTv16_ynEO0+E5uzeg@mail.gmail.com>
- <f5cb15a5-5566-b366-ebda-c3101fa96eec@gmail.com>
- <CAJCQCtS=xqcWMqiRxC_uoqTRUaW6aMwayoqjtMqq6XhcCJNVRg@mail.gmail.com>
- <8f046fa5-a458-9db8-b616-907afd34383b@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 17 Apr 2017 07:53:04 -0400
-"Austin S. Hemmelgarn" <ahferroin7@gmail.com> wrote:
+On Mon, Apr 17, 2017 at 11:13 AM, Austin S. Hemmelgarn
+<ahferroin7@gmail.com> wrote:
 
-> General info (not BTRFS specific):
-> * Based on SMART attributes and other factors, current life expectancy 
-> for light usage (normal desktop usage) appears to be somewhere around 
-> 8-12 years depending on specifics of usage (assuming the same workload, 
-> F2FS is at the very top of the range, BTRFS and NILFS2 are on the upper 
-> end, XFS is roughly in the middle, ext4 and NTFS are on the low end 
-> (tested using Windows 7's NTFS driver), and FAT32 is an outlier at the 
-> bottom of the barrel).
+>> What is a high end SSD these days? Built-in NVMe?
+>
+> One with a good FTL in the firmware.  At minimum, the good Samsung EVO
+> drives, the high quality Intel ones, and the Crucial MX series, but probably
+> some others.  My choice of words here probably wasn't the best though.
 
-Life expectancy for an SSD is defined not in years, but in TBW (terabytes
-written), and AFAICT that's not "from host", but "to flash" (some SSDs will
-show you both values in two separate SMART attributes out of the box, on some
-it can be unlocked). Filesystem may come into play only by the amount of write
-amplification they cause (how much "to flash" is greater than "from host").
-Do you have any test data to show that FSes are ranked in that order by WA
-they cause, or is it all about "general feel" and how they are branded (F2FS
-says so, so it must be the best)
+It's a confusing market that sorta defies figuring out what we've got.
 
-> * Queued DISCARD support is still missing in most consumer SATA SSD's, 
-> which in turn makes the trade-off on those between performance and 
-> lifetime much sharper.
+I have a Samsung EVO SATA SSD in one laptop, but then I have a Samsung
+EVO+ SD Card in an Intel NUC. They use that same EVO branding on an
+$11 SD Card.
 
-My choice was to make a script to run from crontab, using "fstrim" on all
-mounted SSDs nightly, and aside from that all FSes are mounted with
-"nodiscard". Best of the both worlds, and no interference with actual IO
-operation.
+And then there's the Samsung Electronics Co Ltd NVMe SSD Controller
+SM951/PM951 in another laptop.
 
-> * Modern (2015 and newer) SSD's seem to have better handling in the FTL 
-> for the journaling behavior of filesystems like ext4 and XFS.  I'm not 
-> sure if this is actually a result of the FTL being better, or some 
-> change in the hardware.
 
-Again, what makes you think this, did you observe the write amplification
-readings and now those are demonstrably lower than on "2014 and older" SSDs?
-So, by how much, and which models did you compare?
+>> So long as this file is not reflinked or snapshot, filefrag shows a
+>> pile of mostly 4096 byte blocks, thousands. But as they're pretty much
+>> all continuous, the file fragmentation (extent count) is usually never
+>> higher than 12. It meanders between 1 and 12 extents for its life.
+>>
+>> Except on the system using ssd_spread mount option. That one has a
+>> journal file that is +C, is not being snapshot, but has over 3000
+>> extents per filefrag and btrfs-progs/debugfs. Really weird.
+>
+> Given how the 'ssd' mount option behaves and the frequency that most systemd
+> instances write to their journals, that's actually reasonably expected.  We
+> look for big chunks of free space to write into and then align to 2M
+> regardless of the actual size of the write, which in turn means that files
+> like the systemd journal which see lots of small (relatively speaking)
+> writes will have way more extents than they should until you defragment
+> them.
 
-> * In my personal experience, Intel, Samsung, and Crucial appear to be 
-> the best name brands (in relative order of quality).  I have personally 
-> had bad experiences with SanDisk and Kingston SSD's, but I don't have 
-> anything beyond circumstantial evidence indicating that it was anything 
-> but bad luck on both counts.
+Nope. The first paragraph applies to NVMe machine with ssd mount
+option. Few fragments.
 
-Why not think in terms not of "name brands" but platforms, i.e. a controller
-model + flash combination. For instance Intel have been using some other
-companies' controllers in their SSDs. Kingston uses tons of various
-controllers (Sandforce/Phison/Marvell/more?) depending on the model and range.
+The second paragraph applies to SD Card machine with ssd_spread mount
+option. Many fragments.
 
-> * Files with NOCOW and filesystems with 'nodatacow' set will both hurt 
-> performance for BTRFS on SSD's, and appear to reduce the lifetime of the 
-> SSD.
+These are different versions of systemd-journald so I can't completely
+rule out a difference in write behavior.
 
-"Appear to"? Just... what. So how many SSDs did you have fail under nocow?
 
-Or maybe can we get serious in a technical discussion? Did you by any chance
-mean cause more writes to the SSD and more "to flash" writes (resulting in a
-higher WA). If so, then by how much, and what was your test scenario comparing
-the same usage with and without nocow?
+>> Now, systemd aside, there are databases that behave this same way
+>> where there's a small section contantly being overwritten, and one or
+>> more sections that grow the data base file from within and at the end.
+>> If this is made cow, the file will absolutely fragment a ton. And
+>> especially if the changes are mostly 4KiB block sizes that then are
+>> fsync'd.
+>>
+>> It's almost like we need these things to not fsync at all, and just
+>> rely on the filesystem commit time...
+>
+> Essentially yes, but that causes all kinds of other problems.
 
-> * Compression should help performance and device lifetime most of the 
-> time, unless your CPU is fully utilized on a regular basis (in which 
-> case it will hurt performance, but still improve device lifetimes).
-
-Days are long gone since the end user had to ever think about device lifetimes
-with SSDs. Refer to endurance studies such as 
-http://techreport.com/review/27909/the-ssd-endurance-experiment-theyre-all-dead
-http://ssdendurancetest.com/
-https://3dnews.ru/938764/
-It has been demonstrated that all SSDs on the market tend to overshoot even
-their rated TBW by several times, as a result it will take any user literally
-dozens of years to wear out the flash no matter which filesystem or what
-settings used. And most certainly it's not worth it changing anything
-significant in your workflow (such as enabling compression if it's otherwise
-inconvenient or not needed) just to save the SSD lifetime.
-
-On Mon, 17 Apr 2017 13:13:39 -0400
-"Austin S. Hemmelgarn" <ahferroin7@gmail.com> wrote:
-
-> > What is a high end SSD these days? Built-in NVMe?
-> One with a good FTL in the firmware.  At minimum, the good Samsung EVO 
-> drives, the high quality Intel ones
-
-As opposed to bad Samsung EVO drives and low-quality Intel ones?
-
-> and the Crucial MX series, but 
-> probably some others.  My choice of words here probably wasn't the best 
-> though.
-
-Again, which controller? Crucial does not manufacture SSD controllers on their
-own, they just pack and brand stuff manufactured by someone else. So if you
-meant Marvell based SSDs, then that's many brands, not just Crucial.
-
-> For a normal filesystem or BTRFS with nodatacow or NOCOW, the block gets 
-> rewritten in-place.  This means that cheap FTL's will rewrite that erase 
-> block in-place (which won't hurt performance but will impact device 
-> lifetime), and good ones will rewrite into a free block somewhere else 
-> but may not free that original block for quite some time (which is bad 
-> for performance but slightly better for device lifetime).
-
-> Overall, this boils down to the fact that most FTL's get slower if they 
-> can't wear-level the device properly, and in-place rewrites make it 
-> harder for them to do proper wear-leveling.
-
-"Cheap FTL" in your description would be an USB flash stick, or maybe an old
-CompactFlash card. Even the 2010 era mass market SandForce controllers will do
-none of the stupid shit you describe.
-
-Sorry but with your superficial understanding of the topic (and confidently
-sounding verbose posts) all you do is spreading common SSD myths and
-misconceptions, i.e. just being downright harmful to whoever reads this
-discussion or discovers it later.
-
+Drat.
 
 -- 
-With respect,
-Roman
+Chris Murphy

@@ -1,100 +1,162 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f173.google.com ([209.85.161.173]:34435 "EHLO
-        mail-yw0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1756136AbdDQSP7 (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:48021 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1756334AbdDQSRJ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Apr 2017 14:15:59 -0400
-Received: by mail-yw0-f173.google.com with SMTP id k13so59379701ywk.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Apr 2017 11:15:59 -0700 (PDT)
+        Mon, 17 Apr 2017 14:17:09 -0400
+Date: Mon, 17 Apr 2017 11:15:57 -0700
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Alexandru Guzu <alexguzu@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Remounting read-write after error is not allowed
+Message-ID: <20170417181557.GB3856@lim.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <CAPktuGu9HqL=0VS+apM9r6CSRbxBcZzX5=HmF1K_51wYHyRbiw@mail.gmail.com>
+ <CAJCQCtRbkt=o6doBd0ZG0XZfrhP4pBQsPCp573LiZU2RSZvuVQ@mail.gmail.com>
+ <CAPktuGsM6=yA8bjv-a5zWKdxm9jb7roUTNA+Mw-D0jJ_HRauDw@mail.gmail.com>
+ <CAPktuGu-9KefV6poy0Qe8h54kB8pQ5n_kDUh4KXi5LSd9_bLvg@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <20170417180707.GA3856@lim.localdomain>
-References: <CAJCQCtTnjNqhSNa9TypsJqvnKeh6H9dKJ9VU8_CHPuzu+zNxsA@mail.gmail.com>
- <20170417180707.GA3856@lim.localdomain>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Mon, 17 Apr 2017 12:15:58 -0600
-Message-ID: <CAJCQCtQhLnVTp8FdGxDHx8RS3GMEV2Qc_97BTcQk8dZ-jZt7vA@mail.gmail.com>
-Subject: Re: compressing nocow files
-To: bo.li.liu@oracle.com, Austin S Hemmelgarn <ahferroin7@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAPktuGu-9KefV6poy0Qe8h54kB8pQ5n_kDUh4KXi5LSd9_bLvg@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 17, 2017 at 12:07 PM, Liu Bo <bo.li.liu@oracle.com> wrote:
-> On Mon, Apr 17, 2017 at 11:36:17AM -0600, Chris Murphy wrote:
->> HI,
->>
->>
->> /dev/nvme0n1p8 on / type btrfs
->> (rw,relatime,seclabel,ssd,space_cache,subvolid=258,subvol=/root)
->>
->> I've got a test folder with +C set and then copied a test file into it.
->>
->> $ lsattr
->> ----------------C--
->> ./system@2547b430ecdc441c9cf82569eeb22065-0000000000000001-00054c3c31bec567.journal
->>
->> So now it's inherited +C. Next check fragments and compression.
->>
->> $ sudo ~/Applications/btrfs-debugfs -f
->> system@2547b430ecdc441c9cf82569eeb22065-0000000000000001-00054c3c31bec567.journal
->> (290662 0): ram 100663296 disk 17200840704 disk_size 100663296
->> file: system@2547b430ecdc441c9cf82569eeb22065-0000000000000001-00054c3c31bec567.journal
->> extents 1 disk size 100663296 logical size 100663296 ratio 1.00
->>
->>
->> Try to compress it.
->>
->> $ sudo btrfs fi defrag -c
->> system@2547b430ecdc441c9cf82569eeb22065-0000000000000001-00054c3c31bec567.journal
->>
->> Check again.
->>
->> [snip faux fragments]
->> file: system@2547b430ecdc441c9cf82569eeb22065-0000000000000001-00054c3c31bec567.journal
->> extents 768 disk size 21504000 logical size 100663296 ratio 4.68
->>
->> It's compressed! OK??
->>
->> OK delete that file, and add +c to the temp folder.
->>
->> $ lsattr
->> --------c-------C-- ./temp
->>
->> Copy another test file into temp.
->>
->> $ lsattr
->> --------c-------C--
->> ./system@2547b430ecdc441c9cf82569eeb22065-000000000002eb9f-00054d4ebb44b135.journal
->>
->> $ sudo ~/Applications/btrfs-debugfs -f
->> system@2547b430ecdc441c9cf82569eeb22065-000000000002eb9f-00054d4ebb44b135.journal
->> (290739 0): ram 83886080 disk 21764243456 disk_size 83886080
->> file: system@2547b430ecdc441c9cf82569eeb22065-000000000002eb9f-00054d4ebb44b135.journal
->> extents 1 disk size 83886080 logical size 83886080 ratio 1.00
->>
->> Not compressed. Hmmm. So somehow btrfs fi defrag -c will force
->> compression even on nocow files? I've also done this without -c
->> option, with a Btrfs mounted using compress option; and the file does
->> compress also. I thought nocow files were always no compress, but it
->> seems there's exceptions.
->>
+On Mon, Apr 17, 2017 at 02:00:45PM -0400, Alexandru Guzu wrote:
+> Not sure if anyone is looking into that segfault, but I have an update.
+> I disconnected the USB drive for a while and today I reconnected it
+> and it auto-mounted with no issue.
+> 
+> What is interesting is that the drive letter changed to what is was
+> before when it was working.
+> Remember that in my first email, the drive encounters an error as
+> /dev/sdg2, and it reconnected as /dev/sdh2
+> 
+> I was getting errors when it was assigned /dev/sdh2, but now it mounts
+> just fine when it is assigned /dev/sdg2
+> 
+> sudo btrfs fi show
+> Label: 'USB-data'  uuid: 227fbb6c-ae72-4b81-8e65-942a0ddc6ef7
+>     Total devices 1 FS bytes used 230.72GiB
+>     devid    1 size 447.13GiB used 238.04GiB path /dev/sdg2
+> 
+> 
+> is BTRFS really so sensitive to drive letter changes?
+> The USB driver is automounted as such:
+> 
+> /dev/sdg2 on /media/alex/USB-data1 type btrfs
+> (rw,nosuid,nodev,relatime,space_cache,subvolid=5,subvol=/,uhelper=udisks2)
 >
-> Good catch.
->
-> Btrfs defragment depends on COW to do the job, thus nocow inode are forced to
-> COW when processing defraged range, and the compress also depends on COW, so
-> btrfs filesystem defrag -c becomes an exception.
->
-> Speaking of which, this exception seems to be not harmful other than confusing
-> users.
 
-No in fact it might be a benefit. Recent versions of systemd-journald
-defragment, but are highly compressible files with a lot of slack
-space in them. So defragment on SSD is just increasing write
-amplification. If the defragment ioctl supports passing compression
-request, maybe that's an optimization systemd-journald can leverage
-for much smaller files.
+I don't think it's because of the changed drive letter, it was hitting the
+BUG_ON in kernel code btrfs_search_forward() and showed that somehow your btrfs
+had failed to read the metadata out of the drive (either because the underlying
+drive is not available for reading or because metadata checksum check is
+failing).
 
--- 
-Chris Murphy
+That BUG_ON had gotten fixed in a later version, you may want to try the latest
+btrfs.
+
+
+Thanks,
+
+-liubo
+
+> > Thanks for the reply.
+> >
+> > I mounted it ro:
+> >     $ sudo btrfs fi show /mnt
+> >     Segmentation fault (core dumped)
+> >
+> > dmesg says:
+> > ...
+> > kernel BUG at /build/linux-wXdoVv/linux-4.4.0/fs/btrfs/ctree.c:5205!
+> > ...
+> > RIP: 0010:[<ffffffffc0371b98>]  [<ffffffffc0371b98>]
+> > btrfs_search_forward+0x268/0x350 [btrfs]
+> > ...
+> > Call Trace:
+> >     [<ffffffffc03cabb2>] search_ioctl+0xf2/0x1c0 [btrfs]
+> >     [<ffffffff811afc4c>] ? zone_statistics+0x7c/0xa0
+> >     [<ffffffffc03cacf2>] btrfs_ioctl_tree_search+0x72/0xc0 [btrfs]
+> >     [<ffffffffc03ce1b5>] btrfs_ioctl+0x455/0x28b0 [btrfs]
+> >     [<ffffffff8120274b>] ? mem_cgroup_try_charge+0x6b/0x1e0
+> >     [<ffffffff811c1a5d>] ? handle_mm_fault+0xcad/0x1820
+> >     [<ffffffff81222caf>] do_vfs_ioctl+0x29f/0x490
+> >     [<ffffffff8106b544>] ? __do_page_fault+0x1b4/0x400
+> >     [<ffffffff81222f19>] SyS_ioctl+0x79/0x90
+> >     [<ffffffff8183c672>] entry_SYSCALL_64_fastpath+0x16/0x71
+> > ...
+> >
+> > full dmesg output is at:
+> > pastebin.com/bhsEJiJN
+> >
+> > $ sudo btrfs fi df /mnt
+> > Data, single: total=236.01GiB, used=230.35GiB
+> > System, DUP: total=8.00MiB, used=48.00KiB
+> > System, single: total=4.00MiB, used=0.00B
+> > Metadata, DUP: total=1.00GiB, used=349.11MiB
+> > Metadata, single: total=8.00MiB, used=0.00B
+> > GlobalReserve, single: total=128.00MiB, used=0.00B
+> >
+> > I downloaded and compiled the current btrfs v4.10.1-9-gbd0ab27.
+> >
+> > sudo ./btrfs check /dev/sdh2
+> >     Checking filesystem on /dev/sdh2
+> >     UUID: 227fbb6c-ae72-4b81-8e65-942a0ddc6ef7
+> >     checking extents
+> >     checking free space cache
+> >     checking fs roots
+> >     checking csums
+> >     checking root refs
+> >     found 247628603392 bytes used, no error found
+> >     total csum bytes: 241513756
+> >     total tree bytes: 366084096
+> >     total fs tree bytes: 90259456
+> >     total extent tree bytes: 10010624
+> >     btree space waste bytes: 35406538
+> >     file data blocks allocated: 23837459185664
+> >      referenced 252963553280
+> >
+> > and with lowmem mode (again no errors found):
+> > ./btrfs check /dev/sdh2 --mode=lowmem
+> >     Checking filesystem on /dev/sdh2
+> >     UUID: 227fbb6c-ae72-4b81-8e65-942a0ddc6ef7
+> >     checking extents
+> >     checking free space cache
+> >     checking fs roots
+> >     checking csums
+> >     checking root refs
+> >     found 247738298368 bytes used, no error found
+> >     total csum bytes: 241513756
+> >     total tree bytes: 366084096
+> >     total fs tree bytes: 90259456
+> >     total extent tree bytes: 10010624
+> >     btree space waste bytes: 35406538
+> >     file data blocks allocated: 23837459185664
+> >      referenced 252963553280
+> >
+> > maybe there is some hint in that segmentation fault?
+> > Also, I compiled from
+> > git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git but I
+> > did not get version 4.10.1 instead of 4.10.2
+> >
+> > Regards,
+> >
+> > On Fri, Apr 14, 2017 at 1:17 PM, Chris Murphy <lists@colorremedies.com> wrote:
+> >> Can you ro mount it and:
+> >>
+> >> btrfs fi show /mnt
+> >> btrfs fi df /mnt
+> >>
+> >> And then next update the btrfs-progs to something newer like 4.9.2 or
+> >> 4.10.2 and then do another 'btrfs check' without repair. And then
+> >> separately do it again with --mode=lowmem and post both sets of
+> >> results?
+> >>
+> >>
+> >> Chris Murphy
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

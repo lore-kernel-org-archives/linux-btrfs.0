@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f171.google.com ([209.85.223.171]:33839 "EHLO
-        mail-io0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752671AbdDQSGP (ORCPT
+Received: from mail-io0-f178.google.com ([209.85.223.178]:35157 "EHLO
+        mail-io0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753734AbdDQSGV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Apr 2017 14:06:15 -0400
-Received: by mail-io0-f171.google.com with SMTP id a103so162732230ioj.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Apr 2017 11:06:14 -0700 (PDT)
+        Mon, 17 Apr 2017 14:06:21 -0400
+Received: by mail-io0-f178.google.com with SMTP id r16so158815610ioi.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Apr 2017 11:06:21 -0700 (PDT)
 Subject: Re: compressing nocow files
 To: Chris Murphy <lists@colorremedies.com>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 References: <CAJCQCtTnjNqhSNa9TypsJqvnKeh6H9dKJ9VU8_CHPuzu+zNxsA@mail.gmail.com>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <fa30d6db-7149-d801-c581-ecfd17487b80@gmail.com>
-Date: Mon, 17 Apr 2017 14:06:05 -0400
+Message-ID: <42bb6e6f-2d1d-8028-e3e9-d4d44c4b4221@gmail.com>
+Date: Mon, 17 Apr 2017 14:06:12 -0400
 MIME-Version: 1.0
 In-Reply-To: <CAJCQCtTnjNqhSNa9TypsJqvnKeh6H9dKJ9VU8_CHPuzu+zNxsA@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8; format=flowed

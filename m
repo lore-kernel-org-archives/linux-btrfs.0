@@ -1,71 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:62053 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S932464AbdDQD0t (ORCPT
+Received: from mail-io0-f181.google.com ([209.85.223.181]:33284 "EHLO
+        mail-io0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752861AbdDQLxN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 16 Apr 2017 23:26:49 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>, <dsterba@suse.cz>
-Subject: [PATCH 0/9] Introduce btrfs-modify prog to make corruption easier
-Date: Mon, 17 Apr 2017 11:26:33 +0800
-Message-ID: <20170417032642.30770-1-quwenruo@cn.fujitsu.com>
+        Mon, 17 Apr 2017 07:53:13 -0400
+Received: by mail-io0-f181.google.com with SMTP id k87so128146951ioi.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Apr 2017 04:53:13 -0700 (PDT)
+Subject: Re: Btrfs/SSD
+To: Imran Geriskovan <imran.geriskovan@gmail.com>, linux-btrfs@vger.kernel.org
+References: <CAK5rZE4ko_xFr_Zv=bmZ4tR9X59jXaqFnTv16_ynEO0+E5uzeg@mail.gmail.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <f5cb15a5-5566-b366-ebda-c3101fa96eec@gmail.com>
+Date: Mon, 17 Apr 2017 07:53:04 -0400
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <CAK5rZE4ko_xFr_Zv=bmZ4tR9X59jXaqFnTv16_ynEO0+E5uzeg@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce a new command, btrfs-modify, which is not part of 'btrfs', but
-an independent command, bring minimal impact to existing btrfs commands.
+On 2017-04-14 07:02, Imran Geriskovan wrote:
+> Hi,
+> Sometime ago we had some discussion about SSDs.
+> Within the limits of unknown/undocumented device infos,
+> we loosely had covered data retension capability/disk age/life time
+> interrelations, (in?)effectiveness of btrfs dup on SSDs, etc..
+>
+> Now, as time passed and with some accumulated experience on SSDs
+> I think we again can have a status check/update on them if you
+> can share your experiences and best practices.
+>
+> So if you have something to share about SSDs (it may or may not be
+> directly related with btrfs) I'm sure everybody here will be happy to
+> hear it.
 
-Btrfs-modify is designed to provides better documentation than current
-btrfs-corrupt-block with better subcommand division to reduce confusing
-or conflicting options.
+General info (not BTRFS specific):
+* Based on SMART attributes and other factors, current life expectancy 
+for light usage (normal desktop usage) appears to be somewhere around 
+8-12 years depending on specifics of usage (assuming the same workload, 
+F2FS is at the very top of the range, BTRFS and NILFS2 are on the upper 
+end, XFS is roughly in the middle, ext4 and NTFS are on the low end 
+(tested using Windows 7's NTFS driver), and FAT32 is an outlier at the 
+bottom of the barrel).
+* Queued DISCARD support is still missing in most consumer SATA SSD's, 
+which in turn makes the trade-off on those between performance and 
+lifetime much sharper.
+* Modern (2015 and newer) SSD's seem to have better handling in the FTL 
+for the journaling behavior of filesystems like ext4 and XFS.  I'm not 
+sure if this is actually a result of the FTL being better, or some 
+change in the hardware.
+* In my personal experience, Intel, Samsung, and Crucial appear to be 
+the best name brands (in relative order of quality).  I have personally 
+had bad experiences with SanDisk and Kingston SSD's, but I don't have 
+anything beyond circumstantial evidence indicating that it was anything 
+but bad luck on both counts.
 
-Btrfs-modify paired with offline-scrub patchset (not merged yet) could
-provide a full suite for test case writers to do corruption and recovery
-verification.
-
-Qu Wenruo (9):
-  btrfs-progs: Introduce new btrfs_map_block function which returns more
-    unified result.
-  btrfs-progs: Allow __btrfs_map_block_v2 to remove unrelated stripes
-  btrfs-progs: Export commands processing code to commands.c from
-    btrfs.c
-  btrfs-progs: help: Unbind short help description from btrfs
-  btrfs-progs: utils: Introduce new function arg_strtou32
-  btrfs-progs: Introduce btrfs-modify tool to modify btrfs internal
-    structures
-  btrfs-progs: modify: Add support to corrupt specified mirror
-  btrfs-progs: modify: Introduce option to specify range by root,ino and
-    offset
-  btrfs-progs: modify: Introduce option to specify the pattern to fill
-    mirror
-
- .gitignore                          |   1 +
- Documentation/Makefile.in           |   1 +
- Documentation/btrfs-modify.asciidoc |  64 +++++
- Makefile                            |  14 +-
- btrfs.c                             | 116 +--------
- commands.c                          | 127 ++++++++++
- commands.h                          |   4 +
- help.c                              |  14 +-
- help.h                              |   3 +-
- modify/main.c                       | 110 +++++++++
- modify/mirror.c                     | 472 ++++++++++++++++++++++++++++++++++++
- modify/modify_commands.h            |  25 ++
- utils-lib.c                         |  15 ++
- utils.h                             |   1 +
- volumes.c                           | 283 +++++++++++++++++++++
- volumes.h                           |  78 ++++++
- 16 files changed, 1213 insertions(+), 115 deletions(-)
- create mode 100644 Documentation/btrfs-modify.asciidoc
- create mode 100644 commands.c
- create mode 100644 modify/main.c
- create mode 100644 modify/mirror.c
- create mode 100644 modify/modify_commands.h
-
--- 
-2.12.2
-
-
-
+Regarding BTRFS specifically:
+* Given my recently newfound understanding of what the 'ssd' mount 
+option actually does, I'm inclined to recommend that people who are 
+using high-end SSD's _NOT_ use it as it will heavily increase 
+fragmentation and will likely have near zero impact on actual device 
+lifetime (but may _hurt_ performance).  It will still probably help with 
+mid and low-end SSD's.
+* Files with NOCOW and filesystems with 'nodatacow' set will both hurt 
+performance for BTRFS on SSD's, and appear to reduce the lifetime of the 
+SSD.
+* Compression should help performance and device lifetime most of the 
+time, unless your CPU is fully utilized on a regular basis (in which 
+case it will hurt performance, but still improve device lifetimes).

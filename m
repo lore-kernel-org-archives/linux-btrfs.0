@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:24203 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:62053 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S932464AbdDQD0v (ORCPT
+        with ESMTP id S932558AbdDQD0w (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 16 Apr 2017 23:26:51 -0400
+        Sun, 16 Apr 2017 23:26:52 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>, <dsterba@suse.cz>
-Subject: [PATCH 4/9] btrfs-progs: help: Unbind short help description from btrfs
-Date: Mon, 17 Apr 2017 11:26:37 +0800
-Message-ID: <20170417032642.30770-5-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 5/9] btrfs-progs: utils: Introduce new function arg_strtou32
+Date: Mon, 17 Apr 2017 11:26:38 +0800
+Message-ID: <20170417032642.30770-6-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20170417032642.30770-1-quwenruo@cn.fujitsu.com>
 References: <20170417032642.30770-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -16,95 +16,53 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-usage_command_group_short() always binds its description to 'btrfs',
-making us unable to this function in other progs.
-
-This patch makes the short description independent, so callers need to
-pass the short description by themselves.
+This function is just calling arg_strtou64() and then do extra
+UINT32_MAX check.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- btrfs.c | 12 +++++++++++-
- help.c  | 14 +++++++-------
- help.h  |  3 ++-
- 3 files changed, 20 insertions(+), 9 deletions(-)
+ utils-lib.c | 15 +++++++++++++++
+ utils.h     |  1 +
+ 2 files changed, 16 insertions(+)
 
-diff --git a/btrfs.c b/btrfs.c
-index f096e780..b3686c4b 100644
---- a/btrfs.c
-+++ b/btrfs.c
-@@ -24,6 +24,15 @@
- #include "utils.h"
- #include "help.h"
+diff --git a/utils-lib.c b/utils-lib.c
+index 044f93fc..544f6750 100644
+--- a/utils-lib.c
++++ b/utils-lib.c
+@@ -44,6 +44,21 @@ u64 arg_strtou64(const char *str)
+ }
  
-+static const char * const btrfs_short_desc[] = {
-+	"For an overview of a given command use 'btrfs command --help'",
-+	"or 'btrfs [command...] --help --full' to print all available options.",
-+	"Any command name can be shortened as far as it stays unambiguous,",
-+	"however it is recommended to use full command names in scripts.",
-+	"All command groups have their manual page named 'btrfs-<group>'.",
-+	NULL
-+};
+ /*
++ * u32 version of arg_strtou*()
++ */
++u32 arg_strtou32(const char *str)
++{
++	u64 tmp;
 +
- static const char * const btrfs_cmd_group_usage[] = {
- 	"btrfs [--help] [--version] <group> [<group>...] <command> [<args>]",
- 	NULL
-@@ -126,7 +135,8 @@ int main(int argc, char **argv)
- 			if (!prefixcmp(argv[0], "--"))
- 				argv[0] += 2;
- 		} else {
--			usage_command_group_short(&btrfs_cmd_group);
-+			usage_command_group_short(&btrfs_cmd_group,
-+						  btrfs_short_desc);
- 			exit(1);
- 		}
- 	}
-diff --git a/help.c b/help.c
-index 19b0d357..13c45ffd 100644
---- a/help.c
-+++ b/help.c
-@@ -262,7 +262,8 @@ static void usage_command_group_internal(const struct cmd_group *grp, int full,
- 	}
- }
- 
--void usage_command_group_short(const struct cmd_group *grp)
-+void usage_command_group_short(const struct cmd_group *grp,
-+			       const char * const *short_desc)
- {
- 	const char * const *usagestr = grp->usagestr;
- 	FILE *outf = stdout;
-@@ -298,12 +299,11 @@ void usage_command_group_short(const struct cmd_group *grp)
- 		fprintf(outf, "  %-16s  %s\n", cmd->token, cmd->usagestr[1]);
- 	}
- 
--	fputc('\n', outf);
--	fprintf(stderr, "For an overview of a given command use 'btrfs command --help'\n");
--	fprintf(stderr, "or 'btrfs [command...] --help --full' to print all available options.\n");
--	fprintf(stderr, "Any command name can be shortened as far as it stays unambiguous,\n");
--	fprintf(stderr, "however it is recommended to use full command names in scripts.\n");
--	fprintf(stderr, "All command groups have their manual page named 'btrfs-<group>'.\n");
-+	if (short_desc) {
-+		fputc('\n', outf);
-+		while (*short_desc && **short_desc)
-+			fprintf(outf, "%s\n", *short_desc++);
++	tmp = arg_strtou64(str);
++	if (tmp >= UINT32_MAX) {
++		fprintf(stderr, "ERROR: %s is too large.\n", str);
++		exit(1);
 +	}
- }
- 
- void usage_command_group(const struct cmd_group *grp, int full, int err)
-diff --git a/help.h b/help.h
-index 7458e745..9b190fb1 100644
---- a/help.h
-+++ b/help.h
-@@ -58,7 +58,8 @@ struct cmd_group;
- void usage(const char * const *usagestr) __attribute__((noreturn));
- void usage_command(const struct cmd_struct *cmd, int full, int err);
- void usage_command_group(const struct cmd_group *grp, int all, int err);
--void usage_command_group_short(const struct cmd_group *grp);
-+void usage_command_group_short(const struct cmd_group *grp,
-+			       const char * const *short_desc);
- 
- void help_unknown_token(const char *arg, const struct cmd_group *grp) __attribute__((noreturn));
- void help_ambiguous_token(const char *arg, const struct cmd_group *grp) __attribute__((noreturn));
++	return (u32)tmp;
++}
++
++/*
+  * For a given:
+  * - file or directory return the containing tree root id
+  * - subvolume return its own tree id
+diff --git a/utils.h b/utils.h
+index 24d0a200..f6deb26c 100644
+--- a/utils.h
++++ b/utils.h
+@@ -94,6 +94,7 @@ const char *pretty_size_mode(u64 size, unsigned mode);
+ u64 parse_size(char *s);
+ u64 parse_qgroupid(const char *p);
+ u64 arg_strtou64(const char *str);
++u32 arg_strtou32(const char *str);
+ int arg_copy_path(char *dest, const char *src, int destlen);
+ int open_file_or_dir(const char *fname, DIR **dirstream);
+ int open_file_or_dir3(const char *fname, DIR **dirstream, int open_flags);
 -- 
 2.12.2
 

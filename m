@@ -1,112 +1,127 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:34182 "EHLO
-        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752766AbdDRMU4 (ORCPT
+Received: from mail-io0-f180.google.com ([209.85.223.180]:34036 "EHLO
+        mail-io0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752776AbdDRM0v (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 18 Apr 2017 08:20:56 -0400
-Date: Tue, 18 Apr 2017 12:20:52 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Imran Geriskovan <imran.geriskovan@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+        Tue, 18 Apr 2017 08:26:51 -0400
+Received: by mail-io0-f180.google.com with SMTP id a103so189132774ioj.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Apr 2017 05:26:50 -0700 (PDT)
 Subject: Re: Btrfs/SSD
-Message-ID: <20170418122052.GI21462@carfax.org.uk>
+To: Imran Geriskovan <imran.geriskovan@gmail.com>, linux-btrfs@vger.kernel.org
 References: <CAK5rZE4ko_xFr_Zv=bmZ4tR9X59jXaqFnTv16_ynEO0+E5uzeg@mail.gmail.com>
  <f5cb15a5-5566-b366-ebda-c3101fa96eec@gmail.com>
  <CAJCQCtS=xqcWMqiRxC_uoqTRUaW6aMwayoqjtMqq6XhcCJNVRg@mail.gmail.com>
  <8f046fa5-a458-9db8-b616-907afd34383b@gmail.com>
- <CAJCQCtTCd7BEwQN4k9n0Jm6ZQTnCS738ctEUnKDb2eENhe21Sg@mail.gmail.com>
- <18a01a39-9c2d-8a7a-7fba-1cd150976605@gmail.com>
- <CAJCQCtQn8kOrQBXc=xX8MbZnFnLQjECvEuc1zx0=5cAvGNLrJg@mail.gmail.com>
- <82484ebd-12e2-c3fe-2ae7-a4cfb3711f10@gmail.com>
+ <20170417232419.04474015@natsu>
+ <CAK5rZE548XNECYL5PaEqT01-tvpKbnyfKvf0ZekpcLwqsZ_V6w@mail.gmail.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <340c087e-f0ba-36e8-a94a-50b0dbd3a810@gmail.com>
+Date: Tue, 18 Apr 2017 08:26:41 -0400
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="TKDEsImF70pdVIl+"
-In-Reply-To: <82484ebd-12e2-c3fe-2ae7-a4cfb3711f10@gmail.com>
+In-Reply-To: <CAK5rZE548XNECYL5PaEqT01-tvpKbnyfKvf0ZekpcLwqsZ_V6w@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 2017-04-17 15:22, Imran Geriskovan wrote:
+> On 4/17/17, Roman Mamedov <rm@romanrm.net> wrote:
+>> "Austin S. Hemmelgarn" <ahferroin7@gmail.com> wrote:
+>
+>>> * Compression should help performance and device lifetime most of the
+>>> time, unless your CPU is fully utilized on a regular basis (in which
+>>> case it will hurt performance, but still improve device lifetimes).
+>
+>> Days are long gone since the end user had to ever think about device lifetimes
+>> with SSDs. Refer to endurance studies such as
+>> It has been demonstrated that all SSDs on the market tend to overshoot even
+>> their rated TBW by several times, as a result it will take any user literally
+>> dozens of years to wear out the flash no matter which filesystem or what
+>> settings used. And most certainly it's not worth it changing anything
+>> significant in your workflow (such as enabling compression if it's
+>> otherwise inconvenient or not needed) just to save the SSD lifetime.
+>
+> Going over the thread following questions come to my mind:
+>
+> - What exactly does btrfs ssd option does relative to plain mode?
+Assuming I understand what it does correctly, it prioritizes writing 
+into larger, 2MB aligned chunks of free-space, whereas normal mode goes 
+for 64k alignment.
+>
+> - Most(all?) SSDs employ wear leveling. Isn't it? That is they are
+> constrantly remapping their blocks under the hood. So isn't it
+> meaningless to speak of some kind of a block forging/fragmentation/etc..
+> affect of any writing pattern?
+Because making one big I/O request to fetch a file is faster than a 
+bunch of small ones.  If your file is all in one extent in the 
+filesystem, it takes less work to copy to memory than if you're pulling 
+form a dozen places on the device.  This doesn't have much impact on 
+light workloads, but when you're looking at heavy server workloads, it's 
+big.
+>
+> - If it is so, Doesn't it mean that there is no better ssd usage strategy
+> other than minimizing the total bytes written? That is whatever we do,
+> if it contributes to this fact it is good, otherwise bad. Are all other things
+> are beyond any user control? Is there a recommended setting?
+As a general strategy, yes, that appears to be the case.  ON a specific 
+SSD, it may not be.  For example, on the Crucial MX300's I have in most 
+of my systems, the 'ssd' mount option actually makes things slower by 
+anywhere from 2-10%.
+>
+> - How about "data retension" experiences? It is known that
+> new ssds can hold data safely for longer period. As they age
+> that margin gets shorter. As an extreme case if I write into a new
+> ssd and shelve it, can i get back my data back after 5 years?
+> How about a file written 5 years ago and never touched again although
+> rest of the ssd is in active use during that period?
+>
+> - Yes may be lifetimes getting irrelevant. However TBW has
+> still direct relation with data retension capability.
+> Knowing that writing more data to a ssd can reduce the
+> "life time of your data" is something strange.
+Explaining this and your comment above requires a bit of understanding 
+of how flash memory actually works.  The general structure of a single 
+cell is that of a field-effect transistor (almost always a MOSFET) with 
+a floating gate which consists of a bit of material electrically 
+isolated from the rest of the transistor.  Data is stored by trapping 
+electrons on this floating gate, but getting them there requires a 
+strong enough current to break through the insulating layer that keeps 
+it isolated from the rest of the transistor.  This process breaks down 
+the insulating layer over time, making it easier for the electrons 
+trapped in the floating gate to leak back into the rest of the 
+transistor, thus losing data.
 
---TKDEsImF70pdVIl+
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Aside from the write-based degradation of the insulating layer, there 
+are other things that can cause it to break down or for the electrons to 
+leak out, including very high temperatures (we're talking industrial 
+temperatures here, not the type you're likely to see in most consumer 
+electronics), strong electromagnetic fields (again, we're talking 
+_really_ strong here, not stuff you're likely to see in most consumer 
+electronics), cosmic background radiation, and even noise from other 
+nearby cells being rewritten (known as a read disturb error, only an 
+issue in NAND flash (but that's what all SSD's are these days)).
+>
+> - But someone can come and say: Hey don't worry about
+> "data retension years". Because your ssd will already be dead
+> before data retension becomes a problem for you... Which is
+> relieving.. :)) Anyway what are your opinions?
+On this in particular, my opinion is that that claim is bogus unless you 
+have an SSD designed to brick itself after a fixed period of time.  That 
+statement is about the same as saying that you don't need to worry about 
+uncorrectable errors in ECC RAM because you'll lose entire chips before 
+they ever happen.  In both cases, you should indeed be worrying more 
+about catastrophic failure, but that's because it will have a bigger 
+impact and is absolutely unavoidable (it will eventually happen, and 
+there's not really anything you can do to prevent it from happening), 
+but that does not mean you shouldn't worry about other failure modes, 
+especially ones that still have a significant impact (and losing data in 
+a persistent storage device generally qualifies as a significant impact).
 
-On Tue, Apr 18, 2017 at 07:31:34AM -0400, Austin S. Hemmelgarn wrote:
-> On 2017-04-17 15:39, Chris Murphy wrote:
-> >On Mon, Apr 17, 2017 at 1:26 PM, Austin S. Hemmelgarn
-> ><ahferroin7@gmail.com> wrote:
-> >>On 2017-04-17 14:34, Chris Murphy wrote:
-[...]
-> >>>>>It's almost like we need these things to not fsync at all, and just
-> >>>>>rely on the filesystem commit time...
-> >>>>
-> >>>>
-> >>>>Essentially yes, but that causes all kinds of other problems.
-> >>>
-> >>>
-> >>>Drat.
-> >>>
-> >>Admittedly most of the problems are use-case specific (you can't afford to
-> >>lose transactions in a financial database  for example, so it functionally
-> >>has to call fsync after each transaction), but most of it stems from the
-> >>fact that BTRFS is doing a lot of the same stuff that much of the 'problem'
-> >>software is doing itself internally.
-> >>
-> >
-> >Seems like the old way of doing things, and the staleness of the
-> >internet, have colluded to create a lot of nervousness and misuse of
-> >fsync. The very fact Btrfs needs a log tree to deal with fsync's in a
-> >semi-sane way...
-> Except that BTRFS is somewhat unusual.  Prior to this, the only
-> 'mainstream' filesystem that provided most of these features was
-> ZFS, and that does a good enough job that this doesn't matter.
-> 
-> For something like a database though, where you need ACID
-> guarantees, you pretty much have to have COW semantics internally,
-> and you have to force things to stable storage after each
-> transaction that actually modifies data.  Looking at it another way,
-> most database storage formats are essentially record-oriented
-> filesystems (as opposed to block-oriented filesystems that most
-> people think of).  This is part of why you see such similar access
-> patterns in databases and VM disk images (even if the VM isn't
-> running database software), they are essentially doing the same
-> things at a low level.
+This study by CMU [1] may be of particular interest, especially since it 
+particularly worries about data retention rates, not device lifetime, 
+and seems to indicate that the opposite of the above statement is in 
+fact true if you don't do prophylactic rewrites.  Note that this has 
+little to no bearing on my argument above (I stand by that argument 
+irrespective of this study).
 
-   I remember thinking, when I was learning about the internals of
-btrfs, that it looked an awful lot like the high-level description of
-the internals of Oracle which I'd just been learning about. Most of
-the same pieces, doing mostly the same kinds operations to achieve the
-same effective results.
-
-   Hugo.
-
--- 
-Hugo Mills             | Don't worry, he's not drunk. He's like that all the
-hugo@... carfax.org.uk | time.
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |                                           A.H. Deakin
-
---TKDEsImF70pdVIl+
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJY9gSkAAoJEFheFHXiqx3kQcUP/jciMY9KDwI5UgFduHl1fRps
-VoQs+T5PsNscAtAkN5+AGkYcvdb3PQvzQzq1xHAfDA+0rvHL4iFT9/1n0fLEw37O
-y12nl6xFpvpg1JzVhxJLLiYSpuky2I020O+ZaCwMIM+DWHhdroiDZKiIqzQjqA2Z
-x09PcrF0jl57noOT0Bt/wezs2FCOhjupk20ysLn8kWYMMha7r/XG5b6cO1nZtY6U
-v4ecSZJQyI+ncBVgIbcTKEPZhFSlYVbiLiMUeWz62DH3d7aWWDyF3+F/lI95TRMv
-4iUfsKAO5Fe852FjLNCmPC/YEz7QYtzi+4wB4sG3E91OhpFXa3BGsX93+MahoAo2
-33ysEpk8z8uWDILF6A2LiJeOwUFODzOqJ3hSVPc4hQOiS9l3UTp6us6HSNq6/9kj
-2Fb0/q/VyfnDaKecp2N8jmRIavjm+qHmEdfJ6kSEEQMw02CO26tYJ0rQEZ7wdd8O
-VOo14JAFhC0XLILPmSkAyr/9SQd5yJZCdP9B5qsWOl1Z+LKsbKPxCnOLpSyYGVIR
-wCcqf1Fed6dmMJiNgiiC9xy90kJSAXFdTx/fBc8O06AqfpC3J1/ivQI6NNu8Dq4G
-ILvWAbno6AQhD4PbhmdnC5w0h6RHjDtDK0BKhwNUPtMzcXq+FiD/5j2FjJQ2V9q6
-XrJX2yN1fqaOAG6LjFzZ
-=/nrA
------END PGP SIGNATURE-----
-
---TKDEsImF70pdVIl+--
+[1] 
+https://users.ece.cmu.edu/~omutlu/pub/flash-memory-data-retention_hpca15.pdf

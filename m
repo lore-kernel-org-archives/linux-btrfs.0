@@ -1,85 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f52.google.com ([209.85.215.52]:35281 "EHLO
-        mail-lf0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752819AbdDRNCo (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:34345 "EHLO
+        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755912AbdDRNPI (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 18 Apr 2017 09:02:44 -0400
-Received: by mail-lf0-f52.google.com with SMTP id 75so80560860lfs.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Apr 2017 06:02:43 -0700 (PDT)
+        Tue, 18 Apr 2017 09:15:08 -0400
+Date: Tue, 18 Apr 2017 13:15:06 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Werner Braun <wb@o3-software.de>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs check --check-data-csum malfunctioning?
+Message-ID: <20170418131506.GJ21462@carfax.org.uk>
+References: <4b1b08de-9012-fb2a-eca1-a8adfdbf8e7b@o3-software.de>
 MIME-Version: 1.0
-In-Reply-To: <f5cb15a5-5566-b366-ebda-c3101fa96eec@gmail.com>
-References: <CAK5rZE4ko_xFr_Zv=bmZ4tR9X59jXaqFnTv16_ynEO0+E5uzeg@mail.gmail.com>
- <f5cb15a5-5566-b366-ebda-c3101fa96eec@gmail.com>
-From: Imran Geriskovan <imran.geriskovan@gmail.com>
-Date: Tue, 18 Apr 2017 15:02:42 +0200
-Message-ID: <CAK5rZE7WHeTknmQdjX7vianEj4RmdLU+ocTLhbAxYenRjLegaA@mail.gmail.com>
-Subject: Re: Btrfs/SSD
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="tAmVnWIZ6lqEAvSf"
+In-Reply-To: <4b1b08de-9012-fb2a-eca1-a8adfdbf8e7b@o3-software.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 4/17/17, Austin S. Hemmelgarn <ahferroin7@gmail.com> wrote:
-> Regarding BTRFS specifically:
-> * Given my recently newfound understanding of what the 'ssd' mount
-> option actually does, I'm inclined to recommend that people who are
-> using high-end SSD's _NOT_ use it as it will heavily increase
-> fragmentation and will likely have near zero impact on actual device
-> lifetime (but may _hurt_ performance).  It will still probably help with
-> mid and low-end SSD's.
 
-I'm trying to have a proper understanding of what "fragmentation" really
-means for an ssd and interrelation with wear-leveling.
+--tAmVnWIZ6lqEAvSf
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Before continuing lets remember:
-Pages cannot be erased individually, only whole blocks can be erased.
-The size of a NAND-flash page size can vary, and most drive have pages
-of size 2 KB, 4 KB, 8 KB or 16 KB. Most SSDs have blocks of 128 or 256
-pages, which means that the size of a block can vary between 256 KB
-and 4 MB.
-codecapsule.com/.../coding-for-ssds-part-2-architecture-of-an-ssd-and-benchmarking/
+On Tue, Apr 18, 2017 at 02:41:49PM +0200, Werner Braun wrote:
+> Hi,
+> 
+> i have a WD WD40EZRX with strange beaviour off btrfs check vs. btrfs scrub
+> 
+> running btrfs check --check-data-csum returns no errors on the disk
+> 
+> running btrfs scrub on the disk finds tons of errors
+> 
+> i could clear the disk and send it to anyone intrested in ;-)
 
-Lets continue:
-Since block sizes are between 256k-4MB, data smaller than this will
-"probably" will not be fragmented in a reasonably empty and trimmed
-drive. And for a brand new ssd we may speak of contiguous series
-of blocks.
+   Do you have anything likely to be writing with O_DIRECT during the
+scrub? Specifically, databases and VMs. Possibly some kinds of
+torrent/distributed downloads.
 
-However, as drive is used more and more and as wear leveling kicking in
-(ie. blocks are remapped) the meaning of "contiguous blocks" will erode.
-So any file bigger than a block size will be written to blocks physically apart
-no matter what their block addresses says. But my guess is that accessing
-device blocks -contiguous or not- are constant time operations. So it would
-not contribute performance issues. Right? Comments?
+   Hugo.
 
-So your the feeling about fragmentation/performance is probably related
-with if the file is spread into less or more blocks. If # of blocks used
-is higher than necessary (ie. no empty blocks can be found. Instead
-lots of partially empty blocks have to be used increasing the total
-# of blocks involved) then we will notice performance loss.
+-- 
+Hugo Mills             | In event of Last Trump, please form an orderly queue
+hugo@... carfax.org.uk | and await judgement.
+http://carfax.org.uk/  |
+PGP: E2AB1DE4          |     Unofficial notice in Cambridge University Library
 
-Additionally if the filesystem will gonna try something to reduce
-the fragmentation for the blocks, it should precisely know where
-those blocks are located. Then how about ssd block informations?
-Are they available and do filesystems use it?
+--tAmVnWIZ6lqEAvSf
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-Anyway if you can provide some more details about your experiences
-on this we can probably have better view on the issue.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
+iQIcBAEBAgAGBQJY9hFaAAoJEFheFHXiqx3knLsP/1YX80HmxU/9Pep8ESvTezgU
+fXeUuDb9sjiudkAEvJaPNm0XxdV/6aObe4OUfG4klCdMiEibTbp/vGR59Weq8zYZ
+N5uTr3D08DiFS/7zCg1rfwnOyGKX6VRcEyv5TZ23pbQfXpXHQRMIgyymukoc8owy
+dE9dqoBrXFpIFrCd0U3zASnK3YB7GZAIbC8OOtYuBS7Na/kvbpalS1IbBRTmxw1r
+5UkqHIaZEbY554Hu9dCD3Q297hQ5jmzyRcCyefBD3K0LVlbqNK75sd52cL9O9RjJ
+Pztc+8+u7Uq0V+XPgMuNUD+n7n5dSHMXcLDDO+Tmc6ckIOKZ4HDG2dILEVy5I8Vy
+LUlPOzavqs3UGm1Ahv51GWDOy75pLSXNX9vM/FNzN83Lf828PhB14DhKWSULusCs
+ktLvtmkQ57tWvsY8qSdcx4/MxG/kDUwZ/IxsCX04621lUcEm53iZPONNxsdFXO0a
+euAUlajt3UOspIAMbqDzX5nBgOXkJnCDgrh9AL4ot/6OCzL2jAvpljnjrk13We13
+cUOVJt6m0pw9Bn+tKHrTKFIp7PpP56Sjinc/Y+uwzJ7I0VkUzwCwT+pKXMMyr/vb
+x9wf6vq2X47dWs6srQBaKdOmedbb2w5aTR93rz0XqhXqf3S2yPD0jrHuew6HK3W9
+PR3+qSsA8z1xaRlxpaD0
+=gSra
+-----END PGP SIGNATURE-----
 
-> * Files with NOCOW and filesystems with 'nodatacow' set will both hurt
-> performance for BTRFS on SSD's, and appear to reduce the lifetime of the
-> SSD.
-
-This and other experinces tell us it is still possible to "forge some
-blocks of ssd". How could this be possible if there is wear-leveling?
-
-Two alternatives comes to mind:
-
-- If there is no empty (trimmed) blocks left on the ssd, it will have no
-chance other than forging the block. How about its reserve blocks?
-Are they exhausted too? Or are they only used as bad block replacements?
-
-- No proper wear-levelling is accually done by the drive.
-
-Comments?
+--tAmVnWIZ6lqEAvSf--

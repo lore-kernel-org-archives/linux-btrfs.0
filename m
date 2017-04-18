@@ -1,47 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from www44.your-server.de ([213.133.104.44]:47049 "EHLO
-        www44.your-server.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752911AbdDRNBn (ORCPT
+Received: from mail-lf0-f52.google.com ([209.85.215.52]:35281 "EHLO
+        mail-lf0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752819AbdDRNCo (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 18 Apr 2017 09:01:43 -0400
-Received: from [78.47.166.52] (helo=sslproxy04.your-server.de)
-        by www44.your-server.de with esmtpsa (TLSv1.2:DHE-RSA-AES256-GCM-SHA384:256)
-        (Exim 4.85_2)
-        (envelope-from <wb@o3-software.de>)
-        id 1d0SS5-00058Y-N0
-        for linux-btrfs@vger.kernel.org; Tue, 18 Apr 2017 14:41:49 +0200
-Received: from [2a00:12d0:aa03:a601:4223:8bc9:212e:c191] (helo=wb17.fritz.box)
-        by sslproxy04.your-server.de with esmtpsa (TLSv1.2:DHE-RSA-AES256-SHA:256)
-        (Exim 4.84_2)
-        (envelope-from <wb@o3-software.de>)
-        id 1d0SS5-0006IF-G7
-        for linux-btrfs@vger.kernel.org; Tue, 18 Apr 2017 14:41:49 +0200
-To: linux-btrfs@vger.kernel.org
-From: Werner Braun <wb@o3-software.de>
-Subject: btrfs check --check-data-csum malfunctioning?
-Message-ID: <4b1b08de-9012-fb2a-eca1-a8adfdbf8e7b@o3-software.de>
-Date: Tue, 18 Apr 2017 14:41:49 +0200
+        Tue, 18 Apr 2017 09:02:44 -0400
+Received: by mail-lf0-f52.google.com with SMTP id 75so80560860lfs.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Apr 2017 06:02:43 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <f5cb15a5-5566-b366-ebda-c3101fa96eec@gmail.com>
+References: <CAK5rZE4ko_xFr_Zv=bmZ4tR9X59jXaqFnTv16_ynEO0+E5uzeg@mail.gmail.com>
+ <f5cb15a5-5566-b366-ebda-c3101fa96eec@gmail.com>
+From: Imran Geriskovan <imran.geriskovan@gmail.com>
+Date: Tue, 18 Apr 2017 15:02:42 +0200
+Message-ID: <CAK5rZE7WHeTknmQdjX7vianEj4RmdLU+ocTLhbAxYenRjLegaA@mail.gmail.com>
+Subject: Re: Btrfs/SSD
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On 4/17/17, Austin S. Hemmelgarn <ahferroin7@gmail.com> wrote:
+> Regarding BTRFS specifically:
+> * Given my recently newfound understanding of what the 'ssd' mount
+> option actually does, I'm inclined to recommend that people who are
+> using high-end SSD's _NOT_ use it as it will heavily increase
+> fragmentation and will likely have near zero impact on actual device
+> lifetime (but may _hurt_ performance).  It will still probably help with
+> mid and low-end SSD's.
 
-i have a WD WD40EZRX with strange beaviour off btrfs check vs. btrfs scrub
+I'm trying to have a proper understanding of what "fragmentation" really
+means for an ssd and interrelation with wear-leveling.
 
-running btrfs check --check-data-csum returns no errors on the disk
+Before continuing lets remember:
+Pages cannot be erased individually, only whole blocks can be erased.
+The size of a NAND-flash page size can vary, and most drive have pages
+of size 2 KB, 4 KB, 8 KB or 16 KB. Most SSDs have blocks of 128 or 256
+pages, which means that the size of a block can vary between 256 KB
+and 4 MB.
+codecapsule.com/.../coding-for-ssds-part-2-architecture-of-an-ssd-and-benchmarking/
 
-running btrfs scrub on the disk finds tons of errors
+Lets continue:
+Since block sizes are between 256k-4MB, data smaller than this will
+"probably" will not be fragmented in a reasonably empty and trimmed
+drive. And for a brand new ssd we may speak of contiguous series
+of blocks.
 
-i could clear the disk and send it to anyone intrested in ;-)
+However, as drive is used more and more and as wear leveling kicking in
+(ie. blocks are remapped) the meaning of "contiguous blocks" will erode.
+So any file bigger than a block size will be written to blocks physically apart
+no matter what their block addresses says. But my guess is that accessing
+device blocks -contiguous or not- are constant time operations. So it would
+not contribute performance issues. Right? Comments?
+
+So your the feeling about fragmentation/performance is probably related
+with if the file is spread into less or more blocks. If # of blocks used
+is higher than necessary (ie. no empty blocks can be found. Instead
+lots of partially empty blocks have to be used increasing the total
+# of blocks involved) then we will notice performance loss.
+
+Additionally if the filesystem will gonna try something to reduce
+the fragmentation for the blocks, it should precisely know where
+those blocks are located. Then how about ssd block informations?
+Are they available and do filesystems use it?
+
+Anyway if you can provide some more details about your experiences
+on this we can probably have better view on the issue.
 
 
--- 
-Werner Braun
-+49 178 145 8768
+> * Files with NOCOW and filesystems with 'nodatacow' set will both hurt
+> performance for BTRFS on SSD's, and appear to reduce the lifetime of the
+> SSD.
 
-O³ Software GmbH & Co. KG * Franziusallee 73 * 24148 Kiel * Germany
-Sitz der Gesellschaft Kiel * HR Amtsgericht Kiel HRA 6418 KI
-Persönlich haftende Gesellschafterin: O³ Software GmbH
-HR Amtsgericht Kiel HRB 10335 KI * Geschäftsführer Werner Braun
+This and other experinces tell us it is still possible to "forge some
+blocks of ssd". How could this be possible if there is wear-leveling?
+
+Two alternatives comes to mind:
+
+- If there is no empty (trimmed) blocks left on the ssd, it will have no
+chance other than forging the block. How about its reserve blocks?
+Are they exhausted too? Or are they only used as bad block replacements?
+
+- No proper wear-levelling is accually done by the drive.
+
+Comments?

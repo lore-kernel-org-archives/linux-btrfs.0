@@ -1,58 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f169.google.com ([209.85.161.169]:33390 "EHLO
-        mail-yw0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S968544AbdDSRj7 (ORCPT
+Received: from mail-yb0-f173.google.com ([209.85.213.173]:33441 "EHLO
+        mail-yb0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S966537AbdDSSKf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Apr 2017 13:39:59 -0400
-Received: by mail-yw0-f169.google.com with SMTP id 203so14904370ywe.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2017 10:39:58 -0700 (PDT)
+        Wed, 19 Apr 2017 14:10:35 -0400
+Received: by mail-yb0-f173.google.com with SMTP id 81so11319727ybp.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2017 11:10:35 -0700 (PDT)
 MIME-Version: 1.0
+In-Reply-To: <1af861c8-c4b6-5c8f-a7c1-d17f17f202b4@mendix.com>
+References: <CAK5rZE4ko_xFr_Zv=bmZ4tR9X59jXaqFnTv16_ynEO0+E5uzeg@mail.gmail.com>
+ <f5cb15a5-5566-b366-ebda-c3101fa96eec@gmail.com> <CAJCQCtS=xqcWMqiRxC_uoqTRUaW6aMwayoqjtMqq6XhcCJNVRg@mail.gmail.com>
+ <8f046fa5-a458-9db8-b616-907afd34383b@gmail.com> <20170417232419.04474015@natsu>
+ <CAK5rZE548XNECYL5PaEqT01-tvpKbnyfKvf0ZekpcLwqsZ_V6w@mail.gmail.com> <1af861c8-c4b6-5c8f-a7c1-d17f17f202b4@mendix.com>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Wed, 19 Apr 2017 11:39:47 -0600
-Message-ID: <CAJCQCtTbp2qkSHNyRNYm41civm+V_gsGkRBNHe+_7sgW+1fgjg@mail.gmail.com>
-Subject: Reporting and monitoring storage events (blog)
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Wed, 19 Apr 2017 12:10:33 -0600
+Message-ID: <CAJCQCtR6U3yjkgwxNGL7G93cVtmPynYOJCixMxh88gBJ+4Z1Hg@mail.gmail.com>
+Subject: Re: Btrfs/SSD
+To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Cc: Imran Geriskovan <imran.geriskovan@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-http://www-rhstorage.rhcloud.com/blog/vpodzime/reporting-and-monitoring-storage-events
+On Mon, Apr 17, 2017 at 4:55 PM, Hans van Kranenburg
+<hans.van.kranenburg@mendix.com> wrote:
+> On 04/17/2017 09:22 PM, Imran Geriskovan wrote:
+>> [...]
+>>
+>> Going over the thread following questions come to my mind:
+>>
+>> - What exactly does btrfs ssd option does relative to plain mode?
+>
+> There's quite an amount of information in the the very recent threads:
+> - "About free space fragmentation, metadata write amplification and (no)ssd"
+> - "BTRFS as a GlusterFS storage back-end, and what I've learned from
+> using it as such."
+> - "btrfs filesystem keeps allocating new chunks for no apparent reason"
+> - ... and a few more
+>
+> I suspect there will be some "summary" mails at some point, but for now,
+> I'd recommend crawling through these threads first.
+>
+> And now for your instant satisfaction, a short visual guide to the
+> difference, which shows actual btrfs behaviour instead of our guesswork
+> around it (taken from the second mail thread just mentioned):
+>
+> -o ssd:
+>
+> https://syrinx.knorrie.org/~knorrie/btrfs/keep/2017-01-19-noautodefrag-ichiban.mp4
+>
+> -o nossd:
+>
+> https://syrinx.knorrie.org/~knorrie/btrfs/keep/2017-04-08-ichiban-walk-nossd.mp4
 
-I think the most useful part of this would be standardized messaging.
-For the exact same defect state on disk (data corruption), I get two
-different formatted messages depending on whether it's found passively
-by reading the file, or with a scrub.
+I'm uncertain from these if the option affects both metadata and data
+writes, or just data. The latter makes some sense, if you think a
+given data write event contains related files and thus increases the
+chance when those files are deleted of having a mostly freed up erase
+block. That way wear leveling is doing less work. For metadata writes
+it makes less sense to me, and is inconsistent with what I've seen
+from metadata chunk allocation. Pretty much anything means dozens or
+more 16K nodes are being COWd. e.g. a 2KiB write to systemd journal,
+even preallocated, means adding an EXTENT DATA item, one of maybe 200
+per node, which means that whole node must be COWd, and whatever its
+parent is must be written (ROOT ITEM I think) and then tree root, and
+then super block. I see generally 30 16K nodes modified in about 4
+minutes with average logging. Even if it's 1 change per 4 minutes, and
+all 30 nodes get written to one 2MB block, and then that block isn't
+ever written to again, the metadata chunk would be growing and I don't
+see that. For weeks or months I see a 512MB metadata chunk and it
+doesn't ever get bigger than this.
 
-(this is 2x disk raid 1)
-
-read file:
-[256914.773712] BTRFS warning (device dm-6): csum failed ino 257 off 0
-csum 3734069121 expected csum 1334657141
-[256914.774594] BTRFS warning (device dm-6): csum failed ino 257 off 0
-csum 3734069121 expected csum 1334657141
-[256914.775892] BTRFS info (device dm-6): read error corrected: ino
-257 off 0 (dev /dev/mapper/VG-b1 sector 2155520)
-
-scrub volume:
-
-
-[257313.636610] BTRFS warning (device dm-6): checksum error at logical
-1103626240 on dev /dev/mapper/VG-b1, sector 2155520, root 5, inode
-257, offset 0, length 4096, links 1 (path:
-openSUSE-Tumbleweed-NET-x86_64-Current.iso)
-[257313.636865] BTRFS error (device dm-6): bdev /dev/mapper/VG-b1
-errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
-[257313.637737] BTRFS error (device dm-6): fixed up error at logical
-1103626240 on dev /dev/mapper/VG-b1
-
-
-Reading means there's a warning, scrubbing means there's an error? So
-even the log level is different for the same problem?
-
-And then the ambiguous "read error corrected" vs "fixed up error" -
-the second one is more clear that the fix is pushed to a device "fixed
-error on device" rather than just an in memory correction. But still,
-they're different messages for the same problem and the auto healing.
+Anyway, I think ssd mount option still sounds plausibly useful. What
+I'm skeptical of on SSD is defragmenting without compression, and also
+nocow.
 
 
 -- 

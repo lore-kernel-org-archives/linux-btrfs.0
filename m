@@ -1,27 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53861 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S943270AbdDTLwl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 20 Apr 2017 07:52:41 -0400
-Date: Thu, 20 Apr 2017 13:52:36 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH v2 1/2] btrfs-progs: dump-super: check array_size in
- print_sys_chunk_array
-Message-ID: <20170420115236.GJ22319@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170420080757.1895-1-lufq.fnst@cn.fujitsu.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:44591 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S934549AbdDSTgl (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 19 Apr 2017 15:36:41 -0400
+Date: Wed, 19 Apr 2017 12:35:27 -0700
+From: Liu Bo <bo.li.liu@oracle.com>
+To: fdmanana@kernel.org
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: send, fix file hole not being preserved due to
+ inline extent
+Message-ID: <20170419193526.GA15096@lim.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1491494876-14433-1-git-send-email-fdmanana@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170420080757.1895-1-lufq.fnst@cn.fujitsu.com>
+In-Reply-To: <1491494876-14433-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 20, 2017 at 04:07:56PM +0800, Lu Fengqi wrote:
-> Without validation of array_size, the dump-super may lead to a bad
-> memory access.
+On Thu, Apr 06, 2017 at 05:07:56PM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
 > 
-> Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+> Normally we don't have inline extents followed by regular extents, but
+> there's currently at least one harmless case where this happens. For
+> example, when the page size is 4Kb and compression is enabled:
+> 
+>   $ mkfs.btrfs -f /dev/sdb
+>   $ mount -o compress /dev/sdb /mnt
+>   $ xfs_io -f -c "pwrite -S 0xaa 0 4K" -c "fsync" /mnt/foobar
+>   $ xfs_io -c "pwrite -S 0xbb 8K 4K" -c "fsync" /mnt/foobar
+> 
+> In this case we get a compressed inline extent, representing 4Kb of
+> data, followed by a hole extent and then a regular data extent. The
+> inline extent was not expanded/converted to a regular extent exactly
+> because it represents 4Kb of data. This does not cause any apparent
+> problem (such as the issue solved by commit e1699d2d7bf6
+> ("btrfs: add missing memset while reading compressed inline extents"))
+> except trigger an unexpected case in the incremental send code path
+> that makes us issue an operation to write a hole when it's not needed,
+> resulting in more writes at the receiver and wasting space at the
+> receiver.
+> 
+> So teach the incremental send code to deal with this particular case.
+> 
+> The issue can be currently triggered by running fstests btrfs/137 with
+> compression enabled (MOUNT_OPTIONS="-o compress" ./check btrfs/137).
+> 
 
-1-2 applied, thanks.
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+
+Thanks,
+
+-liubo
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+>  fs/btrfs/send.c | 23 +++++++++++++++++++++--
+>  1 file changed, 21 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+> index 456c890..f66095a 100644
+> --- a/fs/btrfs/send.c
+> +++ b/fs/btrfs/send.c
+> @@ -5184,13 +5184,19 @@ static int is_extent_unchanged(struct send_ctx *sctx,
+>  	while (key.offset < ekey->offset + left_len) {
+>  		ei = btrfs_item_ptr(eb, slot, struct btrfs_file_extent_item);
+>  		right_type = btrfs_file_extent_type(eb, ei);
+> -		if (right_type != BTRFS_FILE_EXTENT_REG) {
+> +		if (right_type != BTRFS_FILE_EXTENT_REG &&
+> +		    right_type != BTRFS_FILE_EXTENT_INLINE) {
+>  			ret = 0;
+>  			goto out;
+>  		}
+>  
+>  		right_disknr = btrfs_file_extent_disk_bytenr(eb, ei);
+> -		right_len = btrfs_file_extent_num_bytes(eb, ei);
+> +		if (right_type == BTRFS_FILE_EXTENT_INLINE) {
+> +			right_len = btrfs_file_extent_inline_len(eb, slot, ei);
+> +			right_len = PAGE_ALIGN(right_len);
+> +		} else {
+> +			right_len = btrfs_file_extent_num_bytes(eb, ei);
+> +		}
+>  		right_offset = btrfs_file_extent_offset(eb, ei);
+>  		right_gen = btrfs_file_extent_generation(eb, ei);
+>  
+> @@ -5204,6 +5210,19 @@ static int is_extent_unchanged(struct send_ctx *sctx,
+>  			goto out;
+>  		}
+>  
+> +		/*
+> +		 * We just wanted to see if when we have an inline extent, what
+> +		 * follows it is a regular extent (wanted to check the above
+> +		 * condition for inline extents too). This should normally not
+> +		 * happen but it's possible for example when we have an inline
+> +		 * compressed extent representing data with a size matching
+> +		 * the page size (currently the same as sector size).
+> +		 */
+> +		if (right_type == BTRFS_FILE_EXTENT_INLINE) {
+> +			ret = 0;
+> +			goto out;
+> +		}
+> +
+>  		left_offset_fixed = left_offset;
+>  		if (key.offset < ekey->offset) {
+>  			/* Fix the right offset for 2a and 7. */
+> -- 
+> 2.7.0.rc3
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

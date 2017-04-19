@@ -1,49 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from torres.zugschlus.de ([85.214.131.164]:46556 "EHLO
-        torres.zugschlus.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S942720AbdDTHmm (ORCPT
+Received: from tartarus.angband.pl ([89.206.35.136]:33026 "EHLO
+        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S966825AbdDSVIB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 20 Apr 2017 03:42:42 -0400
-Received: from mh by torres.zugschlus.de with local (Exim 4.84_2)
-        (envelope-from <mh+linux-btrfs@zugschlus.de>)
-        id 1d16jg-0006hk-Q6
-        for linux-btrfs@vger.kernel.org; Thu, 20 Apr 2017 09:42:40 +0200
-Date: Thu, 20 Apr 2017 09:42:40 +0200
-From: Marc Haber <mh+linux-btrfs@zugschlus.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs won't mount any more
-Message-ID: <20170420074240.GZ3699@torres.zugschlus.de>
-References: <20170411071531.GK3699@torres.zugschlus.de>
- <20170411161502.ol4tjl3agqnlerab@angband.pl>
- <20170413084509.GH3699@torres.zugschlus.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <20170413084509.GH3699@torres.zugschlus.de>
+        Wed, 19 Apr 2017 17:08:01 -0400
+From: Adam Borowski <kilobyte@angband.pl>
+To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Cc: Adam Borowski <kilobyte@angband.pl>
+Date: Wed, 19 Apr 2017 23:07:45 +0200
+Message-Id: <20170419210745.15263-1-kilobyte@angband.pl>
+Subject: [PATCH ping] btrfs: warn about RAID5/6 being experimental at mount time
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 13, 2017 at 10:45:09AM +0200, Marc Haber wrote:
-> On Tue, Apr 11, 2017 at 06:15:02PM +0200, Adam Borowski wrote:
-> > Ouch, this is generally harmless unless your disk lies about barriers. 
-> > Btrfs absolutely depends on them, and tends to suffer catastrophic
-> > corruption if writes were reordered when they shouldn't.
-> 
-> So if the disk would actually lie, I would have had much trouble even
-> earlier. It's an SSD from 2013 or 2014, I think from Kingston. The box
-> is offline and remote at the moment, so I cannot give the exact type.
+Too many people come complaining about losing their data -- and indeed,
+there's no warning outside a wiki and the mailing list tribal knowledge.
+Message severity chosen for consistency with XFS -- "alert" makes dmesg
+produce nice red background which should get the point across.
 
-I have re-built the btrfs and restored from backup, so I can access the
-disk again. It's a Crucial/Micron RealSSD m4/C400/P400 M4-CT256M4SSD1
-with 256 GB Capacity.
+Signed-off-by: Adam Borowski <kilobyte@angband.pl>
+---
+Resent alone, the other patch in the original series (dropping the incompat
+flag when no longer needed) is pointless on its own.
 
-I do have an image of the bad btrfs that makes the kernel oops on mount,
-reproducibly. Does this help in debugging?
+I intend to ask for inclusion of this one (or an equivalent) in 4.9, either
+in Debian or via GregKH -- while for us kernels "that old" are history,
+regular users expect stable releases to be free of known serious data loss
+bugs.
 
-Greetings
-Marc
 
+ fs/btrfs/disk-io.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index e54844767fe5..e7f91f70e149 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3083,6 +3083,14 @@ int open_ctree(struct super_block *sb,
+ 		btrfs_set_opt(fs_info->mount_opt, SSD);
+ 	}
+ 
++	if ((fs_info->avail_data_alloc_bits |
++	     fs_info->avail_metadata_alloc_bits |
++	     fs_info->avail_system_alloc_bits) &
++	    BTRFS_BLOCK_GROUP_RAID56_MASK) {
++		btrfs_alert(fs_info,
++		"btrfs RAID5/6 is EXPERIMENTAL and has known data-loss bugs");
++	}
++
+ 	/*
+ 	 * Mount does not set all options immediately, we can do it now and do
+ 	 * not have to wait for transaction commit
 -- 
------------------------------------------------------------------------------
-Marc Haber         | "I don't trust Computers. They | Mailadresse im Header
-Leimen, Germany    |  lose things."    Winona Ryder | Fon: *49 6224 1600402
-Nordisch by Nature |  How to make an American Quilt | Fax: *49 6224 1600421
+2.11.0
+

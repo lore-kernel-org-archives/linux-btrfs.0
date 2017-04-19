@@ -1,56 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:39541 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752791AbdDEDn2 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Apr 2017 23:43:28 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH v2] btrfs: check if the device is flush capable
-Date: Wed,  5 Apr 2017 11:48:34 +0800
-Message-Id: <20170405034834.20503-1-anand.jain@oracle.com>
-In-Reply-To: <20170404104144.9414-1-anand.jain@oracle.com>
-References: <20170404104144.9414-1-anand.jain@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:58491 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1761567AbdDSKvQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 19 Apr 2017 06:51:16 -0400
+From: David Sterba <dsterba@suse.com>
+To: clm@fb.com
+Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Subject: [PULL] Btrfs, qgroup message level adjustment, for 4.11-rc8
+Date: Wed, 19 Apr 2017 12:51:03 +0200
+Message-Id: <cover.1492598707.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The blkdev_issue_flush() will check if the write cache is enabled
-before submitting the flush. This will add a code to fail fast if
-its not.
+Hi,
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
-v1:
-  This patch will replace
-  [PATCH] btrfs: delete unused member nobarriers
+a single-patch pull request, the qgroup use can trigger an underflow warning
+frequently. The warning is for debugging and should not be in the final release
+of 4.11 as we won't be able to fix it.
 
-v2:
-  - This patch will now _not_ replace the below patch and this patch
-  should be applied on top of it.
-    [PATCH] btrfs: delete unused member nobarriers
-  That's because, Q wc flag is not static, so we can't save its
-  state into nobarries.
-  - commit log is updated.
+Qu had pointed that out some time ago but I didn't get to fixing it until now.
+Please pull, thanks.
 
- fs/btrfs/disk-io.c | 5 +++++
- 1 file changed, 5 insertions(+)
+----------------------------------------------------------------
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index b6d047250ce2..bb5816c7f5c4 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3517,6 +3517,11 @@ static void btrfs_dev_issue_flush(struct work_struct *work)
-  */
- static int write_dev_flush(struct btrfs_device *device, int wait)
- {
-+	struct request_queue *q = bdev_get_queue(device->bdev);
-+
-+	if (!test_bit(QUEUE_FLAG_WC, &q->queue_flags))
-+		return 0;
-+
- 	if (wait) {
- 		int ret;
- 
--- 
-2.10.0
+The following changes since commit a967efb30b3afa3d858edd6a17f544f9e9e46eea:
 
+  Btrfs: fix potential use-after-free for cloned bio (2017-04-11 18:49:56 +0200)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-chris-4.11-rc8
+
+for you to fetch changes up to 338bd52f3c3a86a1feea8c9a121d1cee60d68d69:
+
+  btrfs: qgroup: move noisy underflow warning to debugging build (2017-04-19 12:40:49 +0200)
+
+----------------------------------------------------------------
+David Sterba (1):
+      btrfs: qgroup: move noisy underflow warning to debugging build
+
+ fs/btrfs/qgroup.c | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)

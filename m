@@ -1,70 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from sub5.mail.dreamhost.com ([208.113.200.129]:49607 "EHLO
-        homiemail-a79.g.dreamhost.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1761310AbdDSMnV (ORCPT
+Received: from mail-io0-f175.google.com ([209.85.223.175]:34008 "EHLO
+        mail-io0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S971127AbdDTSLX (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Apr 2017 08:43:21 -0400
-From: Sahil Kang <sahil.kang@asilaycomputing.com>
-Subject: [PATCH] Tidy while loop in end_compressed_writeback
-To: linux-btrfs@vger.kernel.org
-Cc: sahil.kang@asilaycomputing.com
-Message-ID: <1ff02889-4c01-acb6-cfc0-48433a86bdf8@asilaycomputing.com>
-Date: Wed, 19 Apr 2017 05:43:19 -0700
+        Thu, 20 Apr 2017 14:11:23 -0400
+Received: by mail-io0-f175.google.com with SMTP id a103so81501418ioj.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 20 Apr 2017 11:11:23 -0700 (PDT)
+Date: Thu, 20 Apr 2017 12:11:16 -0600
+From: Jens Axboe <axboe@kernel.dk>
+To: Jan Kara <jack@suse.cz>
+Cc: linux-block@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-mtd@lists.infradead.org, linux-nfs@vger.kernel.org,
+        Petr Vandrovec <petr@vandrovec.name>, linux-nilfs@vger.kernel.org,
+        cluster-devel@redhat.com, osd-dev@open-osd.org,
+        codalist@TELEMANN.coda.cs.cmu.edu, linux-afs@lists.infradead.org,
+        ecryptfs@vger.kernel.org, linux-cifs@vger.kernel.org,
+        ceph-devel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        v9fs-developer@lists.sourceforge.net, lustre-devel@lists.lustre.org
+Subject: Re: [PATCH 0/25 v3] fs: Convert all embedded bdis into separate ones
+Message-ID: <20170420181115.GA22378@kernel.dk>
+References: <20170412102449.16901-1-jack@suse.cz>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170412102449.16901-1-jack@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Wed, Apr 12 2017, Jan Kara wrote:
+> Hello,
+> 
+> this is the third revision of the patch series which converts all embedded
+> occurences of struct backing_dev_info to use standalone dynamically allocated
+> structures. This makes bdi handling unified across all bdi users and generally
+> removes some boilerplate code from filesystems setting up their own bdi. It
+> also allows us to remove some code from generic bdi implementation.
+> 
+> The patches were only compile-tested for most filesystems (I've tested
+> mounting only for NFS & btrfs) so fs maintainers please have a look whether
+> the changes look sound to you.
+> 
+> This series is based on top of bdi fixes that were merged into linux-block
+> git tree into for-next branch. I have pushed out the result as a branch to
+> 
+> git://git.kernel.org/pub/scm/linux/kernel/git/jack/linux-fs.git bdi
+> 
+> Since all patches got reviewed by Christoph, can you please pick them up Jens?
+> Thanks!
 
-This is my first patch so it's a minor code change.
-I think removing the early continue from the loop makes the function a 
-little easier to follow.
-Please have a look and I'd appreciate any feedback.
+Yep, picked up for 4.12. Thanks Jan!
 
-Thanks,
-Sahil
-
-
- From 98afe83a570180e841fefe3fd48d450accc42ea3 Mon Sep 17 00:00:00 2001
-From: Sahil Kang <sahil.kang@asilaycomputing.com>
-Date: Wed, 19 Apr 2017 04:47:00 -0700
-Subject: [PATCH] Tidy while loop in end_compressed_writeback
-
-Instead of continuing early in the loop when ret is 0,
-we can decrement/increment nr_pages/index by 1 at the ending.
-The for loop will not execute when ret is 0 anyway.
-
-Signed-off-by: Sahil Kang <sahil.kang@asilaycomputing.com>
----
-  fs/btrfs/compression.c | 7 ++-----
-  1 file changed, 2 insertions(+), 5 deletions(-)
-
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index c473c42..c653297 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -238,17 +238,14 @@ static noinline void 
-end_compressed_writeback(struct inode *inode,
-          ret = find_get_pages_contig(inode->i_mapping, index,
-                       min_t(unsigned long,
-                       nr_pages, ARRAY_SIZE(pages)), pages);
--        if (ret == 0) {
--            nr_pages -= 1;
--            index += 1;
--            continue;
--        }
-          for (i = 0; i < ret; i++) {
-              if (cb->errors)
-                  SetPageError(pages[i]);
-              end_page_writeback(pages[i]);
-              page_cache_release(pages[i]);
-          }
-+
-+        ret = ret ? ret : 1; /* set ret to 1 if it's 0 */
-          nr_pages -= ret;
-          index += ret;
-      }
 -- 
-2.1.4
+Jens Axboe
 

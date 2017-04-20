@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mga11.intel.com ([192.55.52.93]:7937 "EHLO mga11.intel.com"
+Received: from mga11.intel.com ([192.55.52.93]:8396 "EHLO mga11.intel.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S944881AbdDTL1r (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 20 Apr 2017 07:27:47 -0400
+        id S943891AbdDTL16 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 20 Apr 2017 07:27:58 -0400
 From: Elena Reshetova <elena.reshetova@intel.com>
 To: axboe@kernel.dk
 Cc: james.bottomley@hansenpartnership.com, linux-kernel@vger.kernel.org,
@@ -13,9 +13,9 @@ Cc: james.bottomley@hansenpartnership.com, linux-kernel@vger.kernel.org,
         Elena Reshetova <elena.reshetova@intel.com>,
         Hans Liljestrand <ishkamiel@gmail.com>,
         Kees Cook <keescook@chromium.org>, David Windsor <dwindsor@gmail.com>
-Subject: [PATCH 3/5] block: convert blkcg_gq.refcnt from atomic_t to refcount_t
-Date: Thu, 20 Apr 2017 14:27:22 +0300
-Message-Id: <1492687644-4405-4-git-send-email-elena.reshetova@intel.com>
+Subject: [PATCH 4/5] block: convert io_context.active_ref from atomic_t to refcount_t
+Date: Thu, 20 Apr 2017 14:27:23 +0300
+Message-Id: <1492687644-4405-5-git-send-email-elena.reshetova@intel.com>
 In-Reply-To: <1492687644-4405-1-git-send-email-elena.reshetova@intel.com>
 References: <1492687644-4405-1-git-send-email-elena.reshetova@intel.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -32,64 +32,87 @@ Signed-off-by: Hans Liljestrand <ishkamiel@gmail.com>
 Signed-off-by: Kees Cook <keescook@chromium.org>
 Signed-off-by: David Windsor <dwindsor@gmail.com>
 ---
- block/blk-cgroup.c         | 2 +-
- include/linux/blk-cgroup.h | 9 ++++-----
- 2 files changed, 5 insertions(+), 6 deletions(-)
+ block/blk-ioc.c           | 4 ++--
+ block/cfq-iosched.c       | 4 ++--
+ include/linux/iocontext.h | 6 +++---
+ 3 files changed, 7 insertions(+), 7 deletions(-)
 
-diff --git a/block/blk-cgroup.c b/block/blk-cgroup.c
-index 295e98c2..75de844 100644
---- a/block/blk-cgroup.c
-+++ b/block/blk-cgroup.c
-@@ -106,7 +106,7 @@ static struct blkcg_gq *blkg_alloc(struct blkcg *blkcg, struct request_queue *q,
- 	blkg->q = q;
- 	INIT_LIST_HEAD(&blkg->q_node);
- 	blkg->blkcg = blkcg;
--	atomic_set(&blkg->refcnt, 1);
-+	refcount_set(&blkg->refcnt, 1);
+diff --git a/block/blk-ioc.c b/block/blk-ioc.c
+index b12f9c8..130dc23 100644
+--- a/block/blk-ioc.c
++++ b/block/blk-ioc.c
+@@ -173,7 +173,7 @@ void put_io_context_active(struct io_context *ioc)
+ 	unsigned long flags;
+ 	struct io_cq *icq;
  
- 	/* root blkg uses @q->root_rl, init rl only for !root blkgs */
- 	if (blkcg != &blkcg_root) {
-diff --git a/include/linux/blk-cgroup.h b/include/linux/blk-cgroup.h
-index 01b62e7..e54f048 100644
---- a/include/linux/blk-cgroup.h
-+++ b/include/linux/blk-cgroup.h
-@@ -19,6 +19,7 @@
+-	if (!atomic_dec_and_test(&ioc->active_ref)) {
++	if (!refcount_dec_and_test(&ioc->active_ref)) {
+ 		put_io_context(ioc);
+ 		return;
+ 	}
+@@ -256,7 +256,7 @@ int create_task_io_context(struct task_struct *task, gfp_t gfp_flags, int node)
+ 	/* initialize */
+ 	atomic_long_set(&ioc->refcount, 1);
+ 	atomic_set(&ioc->nr_tasks, 1);
+-	atomic_set(&ioc->active_ref, 1);
++	refcount_set(&ioc->active_ref, 1);
+ 	spin_lock_init(&ioc->lock);
+ 	INIT_RADIX_TREE(&ioc->icq_tree, GFP_ATOMIC | __GFP_HIGH);
+ 	INIT_HLIST_HEAD(&ioc->icq_list);
+diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
+index 9212627..2871bb9 100644
+--- a/block/cfq-iosched.c
++++ b/block/cfq-iosched.c
+@@ -2959,7 +2959,7 @@ static void cfq_arm_slice_timer(struct cfq_data *cfqd)
+ 	 * task has exited, don't wait
+ 	 */
+ 	cic = cfqd->active_cic;
+-	if (!cic || !atomic_read(&cic->icq.ioc->active_ref))
++	if (!cic || !refcount_read(&cic->icq.ioc->active_ref))
+ 		return;
+ 
+ 	/*
+@@ -3959,7 +3959,7 @@ cfq_update_idle_window(struct cfq_data *cfqd, struct cfq_queue *cfqq,
+ 
+ 	if (cfqq->next_rq && req_noidle(cfqq->next_rq))
+ 		enable_idle = 0;
+-	else if (!atomic_read(&cic->icq.ioc->active_ref) ||
++	else if (!refcount_read(&cic->icq.ioc->active_ref) ||
+ 		 !cfqd->cfq_slice_idle ||
+ 		 (!cfq_cfqq_deep(cfqq) && CFQQ_SEEKY(cfqq)))
+ 		enable_idle = 0;
+diff --git a/include/linux/iocontext.h b/include/linux/iocontext.h
+index df38db2..e47b907 100644
+--- a/include/linux/iocontext.h
++++ b/include/linux/iocontext.h
+@@ -3,6 +3,7 @@
+ 
  #include <linux/radix-tree.h>
- #include <linux/blkdev.h>
- #include <linux/atomic.h>
+ #include <linux/rcupdate.h>
 +#include <linux/refcount.h>
+ #include <linux/workqueue.h>
  
- /* percpu_counter batch for blkg_[rw]stats, per-cpu drift doesn't matter */
- #define BLKG_STAT_CPU_BATCH	(INT_MAX / 2)
-@@ -122,7 +123,7 @@ struct blkcg_gq {
- 	struct request_list		rl;
- 
- 	/* reference count */
--	atomic_t			refcnt;
-+	refcount_t			refcnt;
- 
- 	/* is this blkg online? protected by both blkcg and q locks */
- 	bool				online;
-@@ -354,8 +355,7 @@ static inline int blkg_path(struct blkcg_gq *blkg, char *buf, int buflen)
+ enum {
+@@ -96,7 +97,7 @@ struct io_cq {
   */
- static inline void blkg_get(struct blkcg_gq *blkg)
+ struct io_context {
+ 	atomic_long_t refcount;
+-	atomic_t active_ref;
++	refcount_t active_ref;
+ 	atomic_t nr_tasks;
+ 
+ 	/* all the fields below are protected by this lock */
+@@ -128,9 +129,8 @@ struct io_context {
+ static inline void get_io_context_active(struct io_context *ioc)
  {
--	WARN_ON_ONCE(atomic_read(&blkg->refcnt) <= 0);
--	atomic_inc(&blkg->refcnt);
-+	refcount_inc(&blkg->refcnt);
+ 	WARN_ON_ONCE(atomic_long_read(&ioc->refcount) <= 0);
+-	WARN_ON_ONCE(atomic_read(&ioc->active_ref) <= 0);
+ 	atomic_long_inc(&ioc->refcount);
+-	atomic_inc(&ioc->active_ref);
++	refcount_inc(&ioc->active_ref);
  }
  
- void __blkg_release_rcu(struct rcu_head *rcu);
-@@ -366,8 +366,7 @@ void __blkg_release_rcu(struct rcu_head *rcu);
-  */
- static inline void blkg_put(struct blkcg_gq *blkg)
- {
--	WARN_ON_ONCE(atomic_read(&blkg->refcnt) <= 0);
--	if (atomic_dec_and_test(&blkg->refcnt))
-+	if (refcount_dec_and_test(&blkg->refcnt))
- 		call_rcu(&blkg->rcu_head, __blkg_release_rcu);
- }
- 
+ static inline void ioc_task_link(struct io_context *ioc)
 -- 
 2.7.4
 

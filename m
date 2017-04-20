@@ -1,113 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:44591 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S934549AbdDSTgl (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Apr 2017 15:36:41 -0400
-Date: Wed, 19 Apr 2017 12:35:27 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: fdmanana@kernel.org
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: send, fix file hole not being preserved due to
- inline extent
-Message-ID: <20170419193526.GA15096@lim.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1491494876-14433-1-git-send-email-fdmanana@kernel.org>
+Received: from mx2.suse.de ([195.135.220.15]:41473 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1032952AbdDTOru (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 20 Apr 2017 10:47:50 -0400
+Date: Thu, 20 Apr 2017 15:43:56 +0200
+From: Jan Kara <jack@suse.cz>
+To: Goldwyn Rodrigues <rgoldwyn@suse.de>
+Cc: Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org,
+        jack@suse.com, linux-block@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-xfs@vger.kernel.org, sagi@grimberg.me, avi@scylladb.com,
+        axboe@kernel.dk, linux-api@vger.kernel.org, willy@infradead.org,
+        tom.leiming@gmail.com, Goldwyn Rodrigues <rgoldwyn@suse.com>
+Subject: Re: [PATCH 5/8] nowait aio: return on congested block device
+Message-ID: <20170420134356.GD22135@quack2.suse.cz>
+References: <20170414120257.8932-1-rgoldwyn@suse.de>
+ <20170414120257.8932-6-rgoldwyn@suse.de>
+ <20170419064505.GD20053@infradead.org>
+ <d3467259-675a-2723-7cf9-d4f2f067d634@suse.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1491494876-14433-1-git-send-email-fdmanana@kernel.org>
+In-Reply-To: <d3467259-675a-2723-7cf9-d4f2f067d634@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 06, 2017 at 05:07:56PM +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
+On Wed 19-04-17 10:21:39, Goldwyn Rodrigues wrote:
 > 
-> Normally we don't have inline extents followed by regular extents, but
-> there's currently at least one harmless case where this happens. For
-> example, when the page size is 4Kb and compression is enabled:
 > 
->   $ mkfs.btrfs -f /dev/sdb
->   $ mount -o compress /dev/sdb /mnt
->   $ xfs_io -f -c "pwrite -S 0xaa 0 4K" -c "fsync" /mnt/foobar
->   $ xfs_io -c "pwrite -S 0xbb 8K 4K" -c "fsync" /mnt/foobar
+> On 04/19/2017 01:45 AM, Christoph Hellwig wrote:
+> > 
+> >> +	if (bio->bi_opf & REQ_NOWAIT) {
+> >> +		if (!blk_queue_nowait(q)) {
+> >> +			err = -EOPNOTSUPP;
+> >> +			goto end_io;
+> >> +		}
+> >> +		if (!(bio->bi_opf & REQ_SYNC)) {
+> > 
+> > I don't understand this check at all..
 > 
-> In this case we get a compressed inline extent, representing 4Kb of
-> data, followed by a hole extent and then a regular data extent. The
-> inline extent was not expanded/converted to a regular extent exactly
-> because it represents 4Kb of data. This does not cause any apparent
-> problem (such as the issue solved by commit e1699d2d7bf6
-> ("btrfs: add missing memset while reading compressed inline extents"))
-> except trigger an unexpected case in the incremental send code path
-> that makes us issue an operation to write a hole when it's not needed,
-> resulting in more writes at the receiver and wasting space at the
-> receiver.
-> 
-> So teach the incremental send code to deal with this particular case.
-> 
-> The issue can be currently triggered by running fstests btrfs/137 with
-> compression enabled (MOUNT_OPTIONS="-o compress" ./check btrfs/137).
-> 
+> It is to ensure at the block layer that NOWAIT comes only for DIRECT
+> calls only. I should probably change it to REQ_SYNC | REQ_IDLE.
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+Ouch. Checking 'REQ_SYNC' for this is
 
-Thanks,
+a) unreliable hack
+b) layering violation
 
--liubo
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> ---
->  fs/btrfs/send.c | 23 +++++++++++++++++++++--
->  1 file changed, 21 insertions(+), 2 deletions(-)
-> 
-> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-> index 456c890..f66095a 100644
-> --- a/fs/btrfs/send.c
-> +++ b/fs/btrfs/send.c
-> @@ -5184,13 +5184,19 @@ static int is_extent_unchanged(struct send_ctx *sctx,
->  	while (key.offset < ekey->offset + left_len) {
->  		ei = btrfs_item_ptr(eb, slot, struct btrfs_file_extent_item);
->  		right_type = btrfs_file_extent_type(eb, ei);
-> -		if (right_type != BTRFS_FILE_EXTENT_REG) {
-> +		if (right_type != BTRFS_FILE_EXTENT_REG &&
-> +		    right_type != BTRFS_FILE_EXTENT_INLINE) {
->  			ret = 0;
->  			goto out;
->  		}
->  
->  		right_disknr = btrfs_file_extent_disk_bytenr(eb, ei);
-> -		right_len = btrfs_file_extent_num_bytes(eb, ei);
-> +		if (right_type == BTRFS_FILE_EXTENT_INLINE) {
-> +			right_len = btrfs_file_extent_inline_len(eb, slot, ei);
-> +			right_len = PAGE_ALIGN(right_len);
-> +		} else {
-> +			right_len = btrfs_file_extent_num_bytes(eb, ei);
-> +		}
->  		right_offset = btrfs_file_extent_offset(eb, ei);
->  		right_gen = btrfs_file_extent_generation(eb, ei);
->  
-> @@ -5204,6 +5210,19 @@ static int is_extent_unchanged(struct send_ctx *sctx,
->  			goto out;
->  		}
->  
-> +		/*
-> +		 * We just wanted to see if when we have an inline extent, what
-> +		 * follows it is a regular extent (wanted to check the above
-> +		 * condition for inline extents too). This should normally not
-> +		 * happen but it's possible for example when we have an inline
-> +		 * compressed extent representing data with a size matching
-> +		 * the page size (currently the same as sector size).
-> +		 */
-> +		if (right_type == BTRFS_FILE_EXTENT_INLINE) {
-> +			ret = 0;
-> +			goto out;
-> +		}
-> +
->  		left_offset_fixed = left_offset;
->  		if (key.offset < ekey->offset) {
->  			/* Fix the right offset for 2a and 7. */
-> -- 
-> 2.7.0.rc3
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+You just don't care why someone marked bio with REQ_NOWAIT at this place.
+Just obey the request if you can, return error if you cannot, but advisory
+REQ_SYNC or REQ_IDLE flags have nothing to do with the ability of the block
+layer to submit the bio without blocking...
+
+								Honza
+-- 
+Jan Kara <jack@suse.com>
+SUSE Labs, CR

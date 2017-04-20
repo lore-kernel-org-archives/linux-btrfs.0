@@ -1,88 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mga03.intel.com ([134.134.136.65]:2386 "EHLO mga03.intel.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S944656AbdDTL17 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 20 Apr 2017 07:27:59 -0400
-From: Elena Reshetova <elena.reshetova@intel.com>
-To: axboe@kernel.dk
-Cc: james.bottomley@hansenpartnership.com, linux-kernel@vger.kernel.org,
-        linux-block@vger.kernel.org, linux-scsi@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, peterz@infradead.org,
-        gregkh@linuxfoundation.org, fujita.tomonori@lab.ntt.co.jp,
-        mingo@redhat.com, clm@fb.com, jbacik@fb.com, dsterba@suse.com,
-        Elena Reshetova <elena.reshetova@intel.com>,
-        Hans Liljestrand <ishkamiel@gmail.com>,
-        Kees Cook <keescook@chromium.org>, David Windsor <dwindsor@gmail.com>
-Subject: [PATCH 5/5] block: convert bsg_device.ref_count from atomic_t to refcount_t
-Date: Thu, 20 Apr 2017 14:27:24 +0300
-Message-Id: <1492687644-4405-6-git-send-email-elena.reshetova@intel.com>
-In-Reply-To: <1492687644-4405-1-git-send-email-elena.reshetova@intel.com>
+Received: from bombadil.infradead.org ([65.50.211.133]:48729 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1031623AbdDTN4z (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 20 Apr 2017 09:56:55 -0400
+Date: Thu, 20 Apr 2017 06:56:51 -0700
+From: Christoph Hellwig <hch@infradead.org>
+To: Elena Reshetova <elena.reshetova@intel.com>
+Cc: axboe@kernel.dk, james.bottomley@hansenpartnership.com,
+        linux-kernel@vger.kernel.org, linux-block@vger.kernel.org,
+        linux-scsi@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        peterz@infradead.org, gregkh@linuxfoundation.org,
+        fujita.tomonori@lab.ntt.co.jp, mingo@redhat.com, clm@fb.com,
+        jbacik@fb.com, dsterba@suse.com
+Subject: Re: [PATCH 0/5] v2: block subsystem refcounter conversions
+Message-ID: <20170420135651.GA26595@infradead.org>
 References: <1492687644-4405-1-git-send-email-elena.reshetova@intel.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1492687644-4405-1-git-send-email-elena.reshetova@intel.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-refcount_t type and corresponding API should be
-used instead of atomic_t when the variable is used as
-a reference counter. This allows to avoid accidental
-refcounter overflows that might lead to use-after-free
-situations.
 
-Signed-off-by: Elena Reshetova <elena.reshetova@intel.com>
-Signed-off-by: Hans Liljestrand <ishkamiel@gmail.com>
-Signed-off-by: Kees Cook <keescook@chromium.org>
-Signed-off-by: David Windsor <dwindsor@gmail.com>
----
- block/bsg.c | 9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
+All the objections from DaveM on the amount of cycles spent on the
+new refcount_t apply to the block layer fast path operations as well.
 
-diff --git a/block/bsg.c b/block/bsg.c
-index 74835db..6d0ceb9 100644
---- a/block/bsg.c
-+++ b/block/bsg.c
-@@ -21,6 +21,7 @@
- #include <linux/idr.h>
- #include <linux/bsg.h>
- #include <linux/slab.h>
-+#include <linux/refcount.h>
- 
- #include <scsi/scsi.h>
- #include <scsi/scsi_ioctl.h>
-@@ -38,7 +39,7 @@ struct bsg_device {
- 	struct list_head busy_list;
- 	struct list_head done_list;
- 	struct hlist_node dev_list;
--	atomic_t ref_count;
-+	refcount_t ref_count;
- 	int queued_cmds;
- 	int done_cmds;
- 	wait_queue_head_t wq_done;
-@@ -711,7 +712,7 @@ static int bsg_put_device(struct bsg_device *bd)
- 
- 	mutex_lock(&bsg_mutex);
- 
--	do_free = atomic_dec_and_test(&bd->ref_count);
-+	do_free = refcount_dec_and_test(&bd->ref_count);
- 	if (!do_free) {
- 		mutex_unlock(&bsg_mutex);
- 		goto out;
-@@ -763,7 +764,7 @@ static struct bsg_device *bsg_add_device(struct inode *inode,
- 
- 	bsg_set_block(bd, file);
- 
--	atomic_set(&bd->ref_count, 1);
-+	refcount_set(&bd->ref_count, 1);
- 	mutex_lock(&bsg_mutex);
- 	hlist_add_head(&bd->dev_list, bsg_dev_idx_hash(iminor(inode)));
- 
-@@ -783,7 +784,7 @@ static struct bsg_device *__bsg_get_device(int minor, struct request_queue *q)
- 
- 	hlist_for_each_entry(bd, bsg_dev_idx_hash(minor), dev_list) {
- 		if (bd->queue == q) {
--			atomic_inc(&bd->ref_count);
-+			refcount_inc(&bd->ref_count);
- 			goto found;
- 		}
- 	}
--- 
-2.7.4
-
+Please don't send any more conversions until those have been resolved.

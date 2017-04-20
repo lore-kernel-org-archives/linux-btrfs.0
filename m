@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from mga11.intel.com ([192.55.52.93]:58110 "EHLO mga11.intel.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1031843AbdDTL1i (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 20 Apr 2017 07:27:38 -0400
+        id S1031891AbdDTL1m (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 20 Apr 2017 07:27:42 -0400
 From: Elena Reshetova <elena.reshetova@intel.com>
 To: axboe@kernel.dk
 Cc: james.bottomley@hansenpartnership.com, linux-kernel@vger.kernel.org,
@@ -13,9 +13,9 @@ Cc: james.bottomley@hansenpartnership.com, linux-kernel@vger.kernel.org,
         Elena Reshetova <elena.reshetova@intel.com>,
         Hans Liljestrand <ishkamiel@gmail.com>,
         Kees Cook <keescook@chromium.org>, David Windsor <dwindsor@gmail.com>
-Subject: [PATCH 1/5] block: convert bio.__bi_cnt from atomic_t to refcount_t
-Date: Thu, 20 Apr 2017 14:27:20 +0300
-Message-Id: <1492687644-4405-2-git-send-email-elena.reshetova@intel.com>
+Subject: [PATCH 2/5] block: convert blk_queue_tag.refcnt from atomic_t to refcount_t
+Date: Thu, 20 Apr 2017 14:27:21 +0300
+Message-Id: <1492687644-4405-3-git-send-email-elena.reshetova@intel.com>
 In-Reply-To: <1492687644-4405-1-git-send-email-elena.reshetova@intel.com>
 References: <1492687644-4405-1-git-send-email-elena.reshetova@intel.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -32,96 +32,71 @@ Signed-off-by: Hans Liljestrand <ishkamiel@gmail.com>
 Signed-off-by: Kees Cook <keescook@chromium.org>
 Signed-off-by: David Windsor <dwindsor@gmail.com>
 ---
- block/bio.c               | 6 +++---
- fs/btrfs/volumes.c        | 2 +-
- include/linux/bio.h       | 4 ++--
- include/linux/blk_types.h | 3 ++-
- 4 files changed, 8 insertions(+), 7 deletions(-)
+ block/blk-tag.c        | 8 ++++----
+ include/linux/blkdev.h | 3 ++-
+ 2 files changed, 6 insertions(+), 5 deletions(-)
 
-diff --git a/block/bio.c b/block/bio.c
-index 5eec5e0..3dffc17 100644
---- a/block/bio.c
-+++ b/block/bio.c
-@@ -275,7 +275,7 @@ void bio_init(struct bio *bio, struct bio_vec *table,
+diff --git a/block/blk-tag.c b/block/blk-tag.c
+index 07cc329..d83555e 100644
+--- a/block/blk-tag.c
++++ b/block/blk-tag.c
+@@ -35,7 +35,7 @@ EXPORT_SYMBOL(blk_queue_find_tag);
+  */
+ void blk_free_tags(struct blk_queue_tag *bqt)
  {
- 	memset(bio, 0, sizeof(*bio));
- 	atomic_set(&bio->__bi_remaining, 1);
--	atomic_set(&bio->__bi_cnt, 1);
-+	refcount_set(&bio->__bi_cnt, 1);
+-	if (atomic_dec_and_test(&bqt->refcnt)) {
++	if (refcount_dec_and_test(&bqt->refcnt)) {
+ 		BUG_ON(find_first_bit(bqt->tag_map, bqt->max_depth) <
+ 							bqt->max_depth);
  
- 	bio->bi_io_vec = table;
- 	bio->bi_max_vecs = max_vecs;
-@@ -543,12 +543,12 @@ void bio_put(struct bio *bio)
- 	if (!bio_flagged(bio, BIO_REFFED))
- 		bio_free(bio);
- 	else {
--		BIO_BUG_ON(!atomic_read(&bio->__bi_cnt));
-+		BIO_BUG_ON(!refcount_read(&bio->__bi_cnt));
+@@ -130,7 +130,7 @@ static struct blk_queue_tag *__blk_queue_init_tags(struct request_queue *q,
+ 	if (init_tag_map(q, tags, depth))
+ 		goto fail;
  
- 		/*
- 		 * last put frees it
- 		 */
--		if (atomic_dec_and_test(&bio->__bi_cnt))
-+		if (refcount_dec_and_test(&bio->__bi_cnt))
- 			bio_free(bio);
- 	}
- }
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 13e55d1..ff1fe9d 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -441,7 +441,7 @@ static noinline void run_scheduled_bios(struct btrfs_device *device)
- 		    waitqueue_active(&fs_info->async_submit_wait))
- 			wake_up(&fs_info->async_submit_wait);
+-	atomic_set(&tags->refcnt, 1);
++	refcount_set(&tags->refcnt, 1);
+ 	tags->alloc_policy = alloc_policy;
+ 	tags->next_tag = 0;
+ 	return tags;
+@@ -180,7 +180,7 @@ int blk_queue_init_tags(struct request_queue *q, int depth,
+ 		queue_flag_set(QUEUE_FLAG_QUEUED, q);
+ 		return 0;
+ 	} else
+-		atomic_inc(&tags->refcnt);
++		refcount_inc(&tags->refcnt);
  
--		BUG_ON(atomic_read(&cur->__bi_cnt) == 0);
-+		BUG_ON(refcount_read(&cur->__bi_cnt) == 0);
+ 	/*
+ 	 * assign it, all done
+@@ -225,7 +225,7 @@ int blk_queue_resize_tags(struct request_queue *q, int new_depth)
+ 	 * Currently cannot replace a shared tag map with a new
+ 	 * one, so error out if this is the case
+ 	 */
+-	if (atomic_read(&bqt->refcnt) != 1)
++	if (refcount_read(&bqt->refcnt) != 1)
+ 		return -EBUSY;
  
- 		/*
- 		 * if we're doing the sync list, record that our
-diff --git a/include/linux/bio.h b/include/linux/bio.h
-index 8e52119..44ac678 100644
---- a/include/linux/bio.h
-+++ b/include/linux/bio.h
-@@ -234,7 +234,7 @@ static inline void bio_get(struct bio *bio)
- {
- 	bio->bi_flags |= (1 << BIO_REFFED);
- 	smp_mb__before_atomic();
--	atomic_inc(&bio->__bi_cnt);
-+	refcount_inc(&bio->__bi_cnt);
- }
- 
- static inline void bio_cnt_set(struct bio *bio, unsigned int count)
-@@ -243,7 +243,7 @@ static inline void bio_cnt_set(struct bio *bio, unsigned int count)
- 		bio->bi_flags |= (1 << BIO_REFFED);
- 		smp_mb__before_atomic();
- 	}
--	atomic_set(&bio->__bi_cnt, count);
-+	refcount_set(&bio->__bi_cnt, count);
- }
- 
- static inline bool bio_flagged(struct bio *bio, unsigned int bit)
-diff --git a/include/linux/blk_types.h b/include/linux/blk_types.h
-index d703acb..c41407f 100644
---- a/include/linux/blk_types.h
-+++ b/include/linux/blk_types.h
-@@ -7,6 +7,7 @@
- 
- #include <linux/types.h>
- #include <linux/bvec.h>
+ 	/*
+diff --git a/include/linux/blkdev.h b/include/linux/blkdev.h
+index aecca0e..95ef11c 100644
+--- a/include/linux/blkdev.h
++++ b/include/linux/blkdev.h
+@@ -25,6 +25,7 @@
+ #include <linux/percpu-refcount.h>
+ #include <linux/scatterlist.h>
+ #include <linux/blkzoned.h>
 +#include <linux/refcount.h>
  
- struct bio_set;
- struct bio;
-@@ -73,7 +74,7 @@ struct bio {
- 
- 	unsigned short		bi_max_vecs;	/* max bvl_vecs we can hold */
- 
--	atomic_t		__bi_cnt;	/* pin count */
-+	refcount_t		__bi_cnt;	/* pin count */
- 
- 	struct bio_vec		*bi_io_vec;	/* the actual vec list */
- 
+ struct module;
+ struct scsi_ioctl_command;
+@@ -288,7 +289,7 @@ struct blk_queue_tag {
+ 	unsigned long *tag_map;		/* bit map of free/busy tags */
+ 	int max_depth;			/* what we will send to device */
+ 	int real_max_depth;		/* what the array can hold */
+-	atomic_t refcnt;		/* map can be shared */
++	refcount_t refcnt;		/* map can be shared */
+ 	int alloc_policy;		/* tag allocation policy */
+ 	int next_tag;			/* next tag */
+ };
 -- 
 2.7.4
 

@@ -1,75 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:38667 "EHLO
-        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S970539AbdDZCOZ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 25 Apr 2017 22:14:25 -0400
-Date: Wed, 26 Apr 2017 04:14:16 +0200
-From: Adam Borowski <kilobyte@angband.pl>
-To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH ping] btrfs: warn about RAID5/6 being experimental at
- mount time
-Message-ID: <20170426021416.us4zj2blho26sjgc@angband.pl>
-References: <20170419210745.15263-1-kilobyte@angband.pl>
+Received: from mx2.mailbox.org ([80.241.60.215]:33319 "EHLO mx2.mailbox.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1039967AbdDUNrc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 21 Apr 2017 09:47:32 -0400
+Date: Fri, 21 Apr 2017 15:39:57 +0200
+From: Christian Brauner <christian.brauner@canonical.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Christian Brauner <christian.brauner@ubuntu.com>,
+        =?utf-8?B?U3TDqXBoYW5l?= Graber <stgraber@ubuntu.com>
+Subject: Prevent escaping btrfs quota
+Message-ID: <20170421133957.7kax2ktwhh43nnq2@mailbox.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <20170419210745.15263-1-kilobyte@angband.pl>
+Content-Type: multipart/signed; micalg=pgp-sha512;
+        protocol="application/pgp-signature"; boundary="56w3m6pnehfpexqt"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 19, 2017 at 11:07:45PM +0200, Adam Borowski wrote:
-> Too many people come complaining about losing their data -- and indeed,
-> there's no warning outside a wiki and the mailing list tribal knowledge.
-> Message severity chosen for consistency with XFS -- "alert" makes dmesg
-> produce nice red background which should get the point across.
-...
-> I intend to ask for inclusion of this one (or an equivalent) in 4.9, either
-> in Debian or via GregKH -- while for us kernels "that old" are history,
-> regular users expect stable releases to be free of known serious data loss
-> bugs.
 
-Hi guys, could you please comment?  While there's only relatively little
-urgency for mainline (heck, it'd be best if the warning was not needed at
-all!), there's a Debian release close by, and it's be grossly inresponsible
-to not let people know that a feature advertised in the documentation is in
-an unusable state (especially as of 4.9).  For you, filesystem developers,
-a way of thinking that "the user should do research" might be acceptable,
-but once it filters down to a stable release, the user expects no known
-serious bugs.
+--56w3m6pnehfpexqt
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
 
-And here the severity is "critical -- causes serious data loss".
+Hi guys,
 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index e54844767fe5..e7f91f70e149 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -3083,6 +3083,14 @@ int open_ctree(struct super_block *sb,
->  		btrfs_set_opt(fs_info->mount_opt, SSD);
->  	}
->  
-> +	if ((fs_info->avail_data_alloc_bits |
-> +	     fs_info->avail_metadata_alloc_bits |
-> +	     fs_info->avail_system_alloc_bits) &
-> +	    BTRFS_BLOCK_GROUP_RAID56_MASK) {
-> +		btrfs_alert(fs_info,
-> +		"btrfs RAID5/6 is EXPERIMENTAL and has known data-loss bugs");
-> +	}
-> +
->  	/*
->  	 * Mount does not set all options immediately, we can do it now and do
->  	 * not have to wait for transaction commit
-> -- 
+If a qgroup is created for a btrfs subvolume /some/path and limits are set and
+a new btrfs subvolume /some/path/bla is created it does not inherit the parent
+subvolume's /some/path qgroup and limits. The only way to achieve something
+similar is to create a common "parent" qgroup and assign both, the parent btrfs
+subvolume /some/path and the child subvolume /some/path/bla to this qgroup.
+This seems unintuitive and actually proves to be a problem. For example, when
+creating a container that uses a btrfs subvolume as storage backend and then
+allowing users to create additional subvolumes in another container they can
+easily escape the qgroup and its limits and even with the common qgroup nothing
+seems to prevent them from simply removing themselves from this qgroup. What is
+the proper way to deal with this case such that:
+a) the subvolume automatically gets the same qgroup as the parent
+b) cannot escape the qgroup
 
-Doing this in the kernel should be better than in userspace (like
-https://patchwork.kernel.org/patch/9450035/) as it can deal with a future
-kernel with working RAID5/6 on old -progs; but if you prefer, I can finish
-that patch and request its inclusion in Debian stretch -progs instead or in
-addition to the above warning in the kernel.
+where b) is the more pressing concern.
 
-ᛗᛖᛟᚹ!
--- 
-⢀⣴⠾⠻⢶⣦⠀ Meow!
-⣾⠁⢠⠒⠀⣿⡁
-⢿⡄⠘⠷⠚⠋⠀ Collisions shmolisions, let's see them find a collision or second
-⠈⠳⣄⠀⠀⠀⠀ preimage for double rot13!
+Thanks!
+Christian
+
+--56w3m6pnehfpexqt
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIcBAABCgAGBQJY+gutAAoJEI6wVtU+7LEtasUQAIxeh/eJbhHII40LXFIL5QK7
+t29Cg9mxX/qQjzvieZt3zm9TTMht2Ra4n4a1uM2mwL5owso014bI2AACmEVcz7ih
+O1+Y2NR/aTnZWJ3O8Un4lMJvk023bmeSbHLIEVu48KixsC91d+TWv52dNuoIwbq3
+OWc3sP7n7XkdAOlfQplHAGNEkaM657i03l5s1RWIlQUBTXMYvaECa8gJtczEa3g7
+5nka5RqMtcZGuIstRKwU9OkCT2R/rrTfBATng2zGwaAtxsNkLLVAnWQTmzef93q6
+GQRYecTvmpjzqKMzy4JfmORA/HHt05DDIJN1fNjGWv4QwC8O5+Rby0lK/L3DG7Y9
+GIfCC5CSjgjIRdItf76wso5gFKVaicDeNNdiA0k7NRyiN2gm+58ko6TQvCvOaM1q
+rEzPwoBtR5R56lo2xaKMhMtoaCcLgcubcOSpxq8qfLsMCVzF/dv8grplCgpEKJmA
+Jh/YuticrWM8MB90XdT0cuptC3D9JW6XsYYztHVl9U21NnB9A+hS61OQAHihxq8W
+LsTLR2aNWnJSQg7eHjaUvbNIQWQ8pyJ8gp5ikDB/8R0K6txbvKXPSXD+/XwyP+t+
+I0GnKMrT70xELVzVrL/FUAeiYR3Rqccbkce0dnKiLgkKm/wspXRZ3/cn8pTqdhZ9
++NKNVBMKg3wW5VZUMwlT
+=trNy
+-----END PGP SIGNATURE-----
+
+--56w3m6pnehfpexqt--

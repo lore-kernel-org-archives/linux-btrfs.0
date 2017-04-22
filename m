@@ -1,79 +1,155 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:37944 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1043728AbdDVJRp (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:41179 "EHLO
+        mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1422887AbdDVKmp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 22 Apr 2017 05:17:45 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1d1rAf-0004KL-4Q
-        for linux-btrfs@vger.kernel.org; Sat, 22 Apr 2017 11:17:37 +0200
+        Sat, 22 Apr 2017 06:42:45 -0400
+Received: from merkaba.localnet (ppp-93-104-63-249.dynamic.mnet-online.de [93.104.63.249])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by mail.lichtvoll.de (Postfix) with ESMTPSA id 7B5973184
+        for <linux-btrfs@vger.kernel.org>; Sat, 22 Apr 2017 12:42:42 +0200 (CEST)
+From: Martin Steigerwald <martin@lichtvoll.de>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Experiences with metadata balance/convert
-Date: Sat, 22 Apr 2017 09:17:31 +0000 (UTC)
-Message-ID: <pan$4a44a$5b70b88a$e087c574$18e5ec69@cox.net>
-References: <78d61749-ec9c-1cc3-196f-5330489e2b3e@mendix.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: [4.9] btrfs check --repair looping over file extent discount errors
+Date: Sat, 22 Apr 2017 12:42:41 +0200
+Message-ID: <1788861.vXu7xdroFy@merkaba>
+In-Reply-To: <1603810.ePCDQapENk@merkaba>
+References: <1603810.ePCDQapENk@merkaba>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hans van Kranenburg posted on Fri, 21 Apr 2017 12:26:18 +0200 as
-excerpted:
+Hello.
 
-> So, I used the clone functionality of the underlying iSCSI target to get
-> a writable throw-away version of the filesystem to experiment with
-> (great!).
+I am planning to copy of important data on the disk with the broken filesystem 
+to the disk with the good filesystem and then reformatitting the disk with the 
+broken filesystem soon, probably in the course of the day… so in case you want 
+any debug information before that, let me know ASAP.
 
-Please, I'm rather sure you know all this and have setup your system 
-accordingly, but we need to try to make it explicit any time there's 
-mention of any sort of device or filesystem cloning tool, that we tell 
-others that may happen on the post either just reading the list or via a 
-google or the like...
+Thanks,
+Martin
 
-Don't let btrfs see both the original and clone at the same time, say 
-with a btrfs device scan (which udev runs automatically when block 
-devices with a btrfs on them show up, so don't insert any btrfs-hosting 
-devices or otherwise let udev see a new one, until either the clone or 
-original are removed from the system).
+Martin Steigerwald - 14.04.17, 21:35:
+> Hello,
+> 
+> backup harddisk connected via eSATA. Hard kernel hang, mouse pointer
+> freezing two times seemingly after finishing /home backup and creating new
+> snapshot on source BTRFS SSD RAID 1 for / in order to backup it. I did
+> scrubbed / and it appears to be okay, but I didn´t run btrfs check on it.
+> Anyway deleting that subvolume works and I as I suspected an issue with the
+> backup disk I started with that one.
+> 
+> I got
+> 
+> merkaba:~> btrfs --version
+> btrfs-progs v4.9.1
+> 
+> merkaba:~> cat /proc/version
+> Linux version 4.9.20-tp520-btrfstrim+ (martin@merkaba) (gcc version 6.3.0
+> 20170321 (Debian 6.3.0-11) ) #6 SMP PREEMPT Mon Apr 3 11:42:17 CEST 2017
+> 
+> merkaba:~> btrfs fi sh feenwald
+> Label: 'feenwald'  uuid: […]
+>         Total devices 1 FS bytes used 1.26TiB
+>         devid    1 size 2.73TiB used 1.27TiB path /dev/sdc1
+> 
+> on Debian unstable on ThinkPad T520 connected via eSATA port on Minidock.
+> 
+> 
+> I am now running btrfs check --repair on it after without --repair the
+> command reported file extent discount errors and it appears to loop on the
+> same file extent discount errors for ages. Any advice?
+> 
+> I do have another backup harddisk with BTRFS that worked fine today, so I do
+> not need to recover that drive immediately. I may let it run for a little
+> more time, but then will abort the repair process as I really think its
+> looping just over and over and over the same issues again. At some time I
+> may just copy all the stuff that is on that harddisk, but not on the other
+> one over to the other one and mkfs.btrfs the filesystem again, but I´d
+> rather like to know whats happening here.
+> 
+> Here is output:
+> 
+> merkaba:~> btrfs check --repair /dev/sdc1
+> enabling repair mode
+> Checking filesystem on /dev/sdc1
+> [… UUID ommited …]
+> checking extents
+> Fixed 0 roots.
+> checking free space cache
+> cache and super generation don't match, space cache will be invalidated
+> checking fs roots
+> root 257 inode 4979842 errors 100, file extent discount
+> Found file extent holes:
+>         start: 0, len: 78798848
+> root 257 inode 4980212 errors 100, file extent discount
+> Found file extent holes:
+>         start: 0, len: 143360
+> root 257 inode 4980214 errors 100, file extent discount
+> Found file extent holes:
+>         start: 0, len: 4227072
+> root 257 inode 4979842 errors 100, file extent discount
+> Found file extent holes:
+>         start: 0, len: 78798848
+> root 257 inode 4980212 errors 100, file extent discount
+> Found file extent holes:
+>         start: 0, len: 143360
+> root 257 inode 4980214 errors 100, file extent discount
+> Found file extent holes:
+>         start: 0, len: 4227072
+> root 257 inode 4979842 errors 100, file extent discount
+> Found file extent holes:
+>         start: 0, len: 78798848
+> root 257 inode 4980212 errors 100, file extent discount
+> Found file extent holes:
+>         start: 0, len: 143360
+> root 257 inode 4980214 errors 100, file extent discount
+> Found file extent holes:
+>         start: 0, len: 4227072
+> root 257 inode 4979842 errors 100, file extent discount
+> Found file extent holes:
+>         start: 0, len: 78798848
+> root 257 inode 4980212 errors 100, file extent discount
+> Found file extent holes:
+>         start: 0, len: 143360
+> root 257 inode 4980214 errors 100, file extent discount
+> Found file extent holes:
+>         start: 0, len: 4227072
+> [… hours later …]
+> root 257 inode 4979842 errors 100, file extent discount
+> Found file extent holes:
+>         start: 0, len: 78798848
+> root 257 inode 4980212 errors 100, file extent discount
+> Found file extent holes:
+>         start: 0, len: 143360
+> root 257 inode 4980214 errors 100, file extent discount
+> Found file extent holes:
+>         start: 0, len: 4227072
+> root 257 inode 4979842 errors 100, file extent discount
+> Found file extent holes:
+>         start: 0, len: 78798848
+> root 257 inode 4980212 errors 100, file extent discount
+> Found file extent holes:
+>         start: 0, len: 143360
+> root 257 inode 4980214 errors 100, file extent discount
+> Found file extent holes:
+>         start: 0, len: 4227072
+> root 257 inode 4979842 errors 100, file extent discount
+> Found file extent holes:
+>         start: 0, len: 78798848
+> root 257 inode 4980212 errors 100, file extent discount
+> Found file extent holes:
+>         start: 0, len: 143360
+> root 257 inode 4980214 errors 100, file extent discount
+> Found file extent holes:
+>         start: 0, len: 4227072
+> 
+> This basically seems to go on like this forever.
+> 
+> Thanks,
 
-Because btrfs, being potentially multi-device unlike most filesystems, 
-tracks the parts of a filesystem via UUID, universally unique identifier, 
-which it therefore depends on being just that, unique.
-
-The trouble is that the clone, /being/ a clone, has the same UUID as the 
-original, and if btrfs sees both the clone and the original of a write-
-mounted filesystem, "Bad Things"TM can happen!
-
-If people take care not to insert new btrfs devices while making a clone, 
-and detach the clone from the system hosting the original as soon as 
-possible after the clone is completed, those "Bad Things" shouldn't 
-happen and they should be OK in that regard.
-
-Of course as I said I'm rather sure you know of this and used a system 
-not hosting the filesystem you were cloning to access the iscsi, but 
-things will be a bit more complicated for people doing, for instance, 
-same-system LVM snapshots or DD clones, and every time I see references 
-to cloning devices and filesystems, even if they know good and well about 
-the problems and steer well clear, I get worried that somebody new to 
-btrfs or who simply isn't yet aware of that problem, is going to see it 
-being discussed and take that as an invitation to do a same-system btrfs 
-clone and get themselves in a *HEAP* of trouble!
-
-So any time you mention btrfs clone, just devote a one-liner to something 
-like "Yes, I'm aware of the UUID problem and this clone wasn't exposed on 
-the same system."... and hopefully it'll get connected in people's minds 
-and if necessary they'll either research further or ask before they start 
-going LVM-clone wild or something!
-
-(Of course the above is an explanation in far more detail than that 
-single-liner, because it's the full topic of the post and I might as 
-well, compared to the simple parenthetical I'm asking for when clone 
-discussions come up.)
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Martin

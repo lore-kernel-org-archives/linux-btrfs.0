@@ -1,148 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:54440 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:52230 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1170743AbdDXNXI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Apr 2017 09:23:08 -0400
-From: Jeff Layton <jlayton@redhat.com>
-To: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
+        id S1172238AbdDXONH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 24 Apr 2017 10:13:07 -0400
+Date: Mon, 24 Apr 2017 10:12:55 -0400 (EDT)
+From: Bob Peterson <rpeterso@redhat.com>
+To: Jeff Layton <jlayton@redhat.com>
+Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
         linux-cifs@vger.kernel.org, linux-mm@kvack.org,
         jfs-discussion@lists.sourceforge.net, linux-xfs@vger.kernel.org,
         cluster-devel@redhat.com, linux-f2fs-devel@lists.sourceforge.net,
         v9fs-developer@lists.sourceforge.net, osd-dev@open-osd.org,
-        linux-nilfs@vger.kernel.org, linux-block@vger.kernel.org
-Cc: dhowells@redhat.com, akpm@linux-foundation.org, hch@infradead.org,
-        ross.zwisler@linux.intel.com, mawilcox@microsoft.com, jack@suse.com,
-        viro@zeniv.linux.org.uk, corbet@lwn.net, neilb@suse.de, clm@fb.com,
-        tytso@mit.edu, axboe@kernel.dk
-Subject: [PATCH v3 00/20] fs: introduce new writeback error reporting and convert existing API as a wrapper around it
-Date: Mon, 24 Apr 2017 09:22:39 -0400
-Message-Id: <20170424132259.8680-1-jlayton@redhat.com>
+        linux-nilfs@vger.kernel.org, linux-block@vger.kernel.org,
+        dhowells@redhat.com, akpm@linux-foundation.org, hch@infradead.org,
+        ross zwisler <ross.zwisler@linux.intel.com>, mawilcox@microsoft.com,
+        jack@suse.com, viro@zeniv.linux.org.uk, corbet@lwn.net, neilb@suse.de,
+        clm@fb.com, tytso@mit.edu, axboe@kernel.dk
+Message-ID: <2139341349.405174.1493043175630.JavaMail.zimbra@redhat.com>
+In-Reply-To: <20170424132259.8680-21-jlayton@redhat.com>
+References: <20170424132259.8680-1-jlayton@redhat.com> <20170424132259.8680-21-jlayton@redhat.com>
+Subject: Re: [PATCH v3 20/20] gfs2: clean up some filemap_* calls
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-v3: wb_err_t -> errseq_t
-    clean up places that re-set errors after calling filemap_* functions
+----- Original Message -----
+| In some places, it's trying to reset the mapping error after calling
+| filemap_fdatawait. That's no longer required. Also, turn several
+| filemap_fdatawrite+filemap_fdatawait calls into filemap_write_and_wait.
+| That will at least return writeback errors that occur during the write
+| phase.
+| 
+| Signed-off-by: Jeff Layton <jlayton@redhat.com>
+| ---
+|  fs/gfs2/glops.c | 12 ++++--------
+|  fs/gfs2/lops.c  |  4 +---
+|  fs/gfs2/super.c |  6 ++----
+|  3 files changed, 7 insertions(+), 15 deletions(-)
+| 
+| diff --git a/fs/gfs2/glops.c b/fs/gfs2/glops.c
+| index 5db59d444838..7362d19fdc4c 100644
+| --- a/fs/gfs2/glops.c
+| +++ b/fs/gfs2/glops.c
+| @@ -158,9 +158,7 @@ static void rgrp_go_sync(struct gfs2_glock *gl)
+|  	GLOCK_BUG_ON(gl, gl->gl_state != LM_ST_EXCLUSIVE);
+|  
+|  	gfs2_log_flush(sdp, gl, NORMAL_FLUSH);
+| -	filemap_fdatawrite_range(mapping, gl->gl_vm.start, gl->gl_vm.end);
+| -	error = filemap_fdatawait_range(mapping, gl->gl_vm.start, gl->gl_vm.end);
+| -	mapping_set_error(mapping, error);
+| +	filemap_write_and_wait_range(mapping, gl->gl_vm.start, gl->gl_vm.end);
 
-v2: introduce wb_err_t, use atomics
+This should probably have "error = ", no?
 
-Apologies for the wide posting here, but this touches a lot of areas.
-This is v3 of the patchset to improve how we're tracking and reporting
-errors that occur during pagecache writeback.
+|  	gfs2_ail_empty_gl(gl);
+|  
+|  	spin_lock(&gl->gl_lockref.lock);
+| @@ -225,12 +223,10 @@ static void inode_go_sync(struct gfs2_glock *gl)
+|  	filemap_fdatawrite(metamapping);
+|  	if (ip) {
+|  		struct address_space *mapping = ip->i_inode.i_mapping;
+| -		filemap_fdatawrite(mapping);
+| -		error = filemap_fdatawait(mapping);
+| -		mapping_set_error(mapping, error);
+| +		filemap_write_and_wait(mapping);
+| +	} else {
+| +		filemap_fdatawait(metamapping);
+|  	}
+| -	error = filemap_fdatawait(metamapping);
+| -	mapping_set_error(metamapping, error);
 
-There are several situations where the kernel can "lose" errors that
-occur during writeback, such that fsync will return success even
-though it failed to write back some data previously. The basic idea
-here is to have the kernel be more deliberate about the point from
-which errors are checked to ensure that that doesn't happen.
+This part doesn't look right at all. There's a big difference in gfs2 between
+mapping and metamapping. We need to wait for metamapping regardless.
 
-Additionally, this set changes the behavior of fsync in Linux to report
-writeback errors on all fds instead of just the first one. This allows
-writers to reliably tell whether their data made it to the backing
-device without having to coordinate fsync calls with other writers.
+(snip)
 
-This set sprawls over a large swath of kernel code. I think the first 12
-patches in the series are pretty straightforward and are more or less
-ready for merge.
+Regards,
 
-The real changes start with patch 13. That adds support for errseq_t,
-builds a new writeback error tracking API on top of that, and converts
-the existing code to use it. After that, there are a few cleanup patches
-to eliminate some unneeded error re-setting, etc.
-
-Unfortunately, testing this across so many filesystems is rather
-difficult. I have a xfstest for block-based filesystems that uses
-dm_error that I'll post soon. That works well with ext4, but btrfs and
-xfs seem to go r/o soon after the first error. I also don't have a good
-general method for testing this on network filesystems (yet!).
-
-I'd like to see better testing here and am open to suggestions. I will
-note that the POSIX fsync spec says this:
-
-"It is reasonable to assert that the key aspects of fsync() are
-unreasonable to test in a test suite. That does not make the function
-any less valuable, just more difficult to test. [...] It would also not
-be unreasonable to omit testing for fsync(), allowing it to be treated
-as a quality-of-implementation issue."
-
-Of course, they're talking about a POSIX conformance test, but I
-think the same point applies here.
-
-At this point, I'd like to start getting some of the preliminary patches
-merged (the first 12 or so). Most of those aren't terribly controversial
-and seem like reasonable bugfixes and cleanups. If any subsystem
-maintainers want to pick those up, then please do.
-
-After that, I'd like to get the larger changes into linux-next with an
-aim for merge in v4.13 or v4.14 (depending on how testing goes).
-
-Feedback is of course welcome!
-
-Jeff Layton (20):
-  mm: drop "wait" parameter from write_one_page
-  mm: fix mapping_set_error call in me_pagecache_dirty
-  buffer: use mapping_set_error instead of setting the flag
-  fs: check for writeback errors after syncing out buffers in
-    generic_file_fsync
-  orangefs: don't call filemap_write_and_wait from fsync
-  dax: set errors in mapping when writeback fails
-  nilfs2: set the mapping error when calling SetPageError on writeback
-  mm: ensure that we set mapping error if writeout() fails
-  9p: set mapping error when writeback fails in launder_page
-  fuse: set mapping error in writepage_locked when it fails
-  cifs: set mapping error when page writeback fails in writepage or
-    launder_pages
-  lib: add errseq_t type and infrastructure for handling it
-  fs: new infrastructure for writeback error handling and reporting
-  fs: retrofit old error reporting API onto new infrastructure
-  mm: remove AS_EIO and AS_ENOSPC flags
-  mm: don't TestClearPageError in __filemap_fdatawait_range
-  cifs: cleanup writeback handling errors and comments
-  mm: clean up error handling in write_one_page
-  jbd2: don't reset error in journal_finish_inode_data_buffers
-  gfs2: clean up some filemap_* calls
-
- Documentation/filesystems/vfs.txt |   9 +-
- fs/9p/vfs_addr.c                  |   5 +-
- fs/btrfs/file.c                   |  10 +-
- fs/btrfs/tree-log.c               |   9 +-
- fs/buffer.c                       |   2 +-
- fs/cifs/cifsfs.c                  |   4 +-
- fs/cifs/file.c                    |  17 ++--
- fs/cifs/inode.c                   |  22 ++---
- fs/dax.c                          |   4 +-
- fs/exofs/dir.c                    |   2 +-
- fs/ext2/dir.c                     |   2 +-
- fs/ext2/file.c                    |   2 +-
- fs/f2fs/file.c                    |   3 +
- fs/f2fs/node.c                    |   6 +-
- fs/fuse/file.c                    |   8 +-
- fs/gfs2/glops.c                   |  12 +--
- fs/gfs2/lops.c                    |   4 +-
- fs/gfs2/super.c                   |   6 +-
- fs/jbd2/commit.c                  |  13 +--
- fs/jfs/jfs_metapage.c             |   4 +-
- fs/libfs.c                        |   3 +
- fs/minix/dir.c                    |   2 +-
- fs/nilfs2/segment.c               |   1 +
- fs/open.c                         |   3 +
- fs/orangefs/file.c                |   5 +-
- fs/sysv/dir.c                     |   2 +-
- fs/ufs/dir.c                      |   2 +-
- include/linux/errseq.h            |  16 +++
- include/linux/fs.h                |  41 ++++++--
- include/linux/mm.h                |   2 +-
- include/linux/pagemap.h           |  18 ++--
- lib/Makefile                      |   2 +-
- lib/errseq.c                      | 199 ++++++++++++++++++++++++++++++++++++++
- mm/filemap.c                      |  88 ++++++++++-------
- mm/memory-failure.c               |   2 +-
- mm/migrate.c                      |   6 +-
- mm/page-writeback.c               |  23 +++--
- 37 files changed, 398 insertions(+), 161 deletions(-)
- create mode 100644 include/linux/errseq.h
- create mode 100644 lib/errseq.c
-
--- 
-2.9.3
-
+Bob Peterson
+Red Hat File Systems

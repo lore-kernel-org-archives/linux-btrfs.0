@@ -1,54 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from syrinx.knorrie.org ([82.94.188.77]:59666 "EHLO
-        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1044468AbdDWJo6 (ORCPT
+Received: from mail-io0-f182.google.com ([209.85.223.182]:35297 "EHLO
+        mail-io0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1173105AbdDXP1n (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 23 Apr 2017 05:44:58 -0400
-Subject: Re: Experiences with metadata balance/convert
-To: Chris Murphy <lists@colorremedies.com>
-References: <78d61749-ec9c-1cc3-196f-5330489e2b3e@mendix.com>
- <CAJCQCtS1GGZ1dAzc5kdk8nrj=k7nRbW5F53f+byGmgPXYMrBug@mail.gmail.com>
- <838ab05f-094f-0c97-034f-e53e8cd374b7@mendix.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Message-ID: <58FC77A7.3080304@mendix.com>
-Date: Sun, 23 Apr 2017 11:45:11 +0200
+        Mon, 24 Apr 2017 11:27:43 -0400
+Received: by mail-io0-f182.google.com with SMTP id r16so190184606ioi.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Apr 2017 08:27:43 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <838ab05f-094f-0c97-034f-e53e8cd374b7@mendix.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+From: Fred Van Andel <vanandel@gmail.com>
+Date: Mon, 24 Apr 2017 08:27:21 -0700
+Message-ID: <CAJyZh6S4f=6W+oA6DT1zu2FRuCgO7w8TfRzC96rPWNzUszvRmg@mail.gmail.com>
+Subject: Problem with file system
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 22/04/2017 22:21, Hans van Kranenburg wrote:
-> On 04/22/2017 06:45 PM, Chris Murphy wrote:
->> On Fri, Apr 21, 2017 at 4:26 AM, Hans van Kranenburg
->> <hans.van.kranenburg@mendix.com> wrote:
->>
->>>
->>> == Thinking out of the box ==
->>>
->>> Technically, converting from DUP to single could also mean:
->>> * Flipping one bit in the block group type flags to 0 for each block
->>> group item
->>> * Flipping one bit in the chunk type flags and removing 1 stripe struct
->>> for each metadata chunk item
->>> * Removing the
->>> * Anything else?
->>
->> [...]
->> Such a prune would
->> need to write out new chunk and dev trees, and then whatever nodes end
->> up pointing to those, maybe it's just the super blocks.
->
-> Or just use the existing offline tree plumbing code to remove some items
-> and insert some replacement ones.
+I have a btrfs file system with a few thousand snapshots.  When I
+attempted to delete 20 or so of them the problems started.
 
-Oh wait, that's not true, it's not that simple of course. To be able to 
-fully cow, insert items etc it needs to activate enough of the 
-filesystem to have exactly all things I would want to change active in 
-memory.
+The disks are being read but except for the first few minutes there
+are no writes.
 
-To be continued...
+Memory usage keeps growing until all the memory (24 Gb) is used in a
+few hours. Eventually the system will crash with out of memory errors.
 
-Hans
+The CPU load is low (<5%) but iowait is around 30 to 50%
 
+The drives are mounted but any process that attempts to access them
+will just hang so I cannot access any data on the drives.
+
+Smartctl does not show any issues with the drives.
+
+The problem restarts after a reboot once you mount the drives.
+
+I tried to zero the log hoping it wouldn't restart after a reboot but
+that didn't work
+
+I am assuming that the attempt to remove the snapshots caused this
+problem.  How do I interrupt the process so I can access the
+filesystem again?
+
+# uname -a
+Linux Backup 4.10.0-19-generic #21-Ubuntu SMP Thu Apr 6 17:04:57 UTC
+2017 x86_64 x86_64 x86_64 GNU/Linux
+
+#   btrfs --version
+btrfs-progs v4.9.1
+
+#   btrfs fi show
+Label: none  uuid: 79ba7374-bf77-4868-bb64-656ff5736c44
+        Total devices 6 FS bytes used 5.65TiB
+        devid    1 size 1.82TiB used 1.29TiB path /dev/sdb
+        devid    2 size 1.82TiB used 1.29TiB path /dev/sdc
+        devid    3 size 1.82TiB used 1.29TiB path /dev/sdd
+        devid    4 size 1.82TiB used 1.29TiB path /dev/sde
+        devid    5 size 3.64TiB used 3.11TiB path /dev/sdf
+        devid    6 size 3.64TiB used 3.11TiB path /dev/sdg
+
+# btrfs fi df /pubroot
+Data, RAID1: total=5.58TiB, used=5.58TiB
+System, RAID1: total=32.00MiB, used=828.00KiB
+System, single: total=4.00MiB, used=0.00B
+Metadata, RAID1: total=104.00GiB, used=70.64GiB
+GlobalReserve, single: total=512.00MiB, used=28.51MiB

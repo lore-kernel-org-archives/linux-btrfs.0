@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:36300 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:60994 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1170987AbdDXNXe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Apr 2017 09:23:34 -0400
+        id S1170987AbdDXNX6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 24 Apr 2017 09:23:58 -0400
 From: Jeff Layton <jlayton@redhat.com>
 To: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
@@ -15,58 +15,38 @@ Cc: dhowells@redhat.com, akpm@linux-foundation.org, hch@infradead.org,
         ross.zwisler@linux.intel.com, mawilcox@microsoft.com, jack@suse.com,
         viro@zeniv.linux.org.uk, corbet@lwn.net, neilb@suse.de, clm@fb.com,
         tytso@mit.edu, axboe@kernel.dk
-Subject: [PATCH v3 04/20] fs: check for writeback errors after syncing out buffers in generic_file_fsync
-Date: Mon, 24 Apr 2017 09:22:43 -0400
-Message-Id: <20170424132259.8680-5-jlayton@redhat.com>
+Subject: [PATCH v3 06/20] dax: set errors in mapping when writeback fails
+Date: Mon, 24 Apr 2017 09:22:45 -0400
+Message-Id: <20170424132259.8680-7-jlayton@redhat.com>
 In-Reply-To: <20170424132259.8680-1-jlayton@redhat.com>
 References: <20170424132259.8680-1-jlayton@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-ext2 currently does a test+clear of the AS_EIO flag, which is
-is problematic for some coming changes.
+In order to get proper error codes from fsync, we must set an error in
+the mapping range when writeback fails.
 
-What we really need to do instead is call filemap_check_errors
-in __generic_file_fsync after syncing out the buffers. That
-will be sufficient for this case, and help other callers detect
-these errors properly as well.
-
-With that, we don't need to twiddle it in ext2.
-
-Suggested-by: Jan Kara <jack@suse.cz>
 Signed-off-by: Jeff Layton <jlayton@redhat.com>
 ---
- fs/ext2/file.c | 2 +-
- fs/libfs.c     | 3 ++-
- 2 files changed, 3 insertions(+), 2 deletions(-)
+ fs/dax.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/fs/ext2/file.c b/fs/ext2/file.c
-index b21891a6bfca..ed00e7ae0ef3 100644
---- a/fs/ext2/file.c
-+++ b/fs/ext2/file.c
-@@ -177,7 +177,7 @@ int ext2_fsync(struct file *file, loff_t start, loff_t end, int datasync)
- 	struct address_space *mapping = sb->s_bdev->bd_inode->i_mapping;
+diff --git a/fs/dax.c b/fs/dax.c
+index 85abd741253d..9b6b04030c3f 100644
+--- a/fs/dax.c
++++ b/fs/dax.c
+@@ -901,8 +901,10 @@ int dax_writeback_mapping_range(struct address_space *mapping,
  
- 	ret = generic_file_fsync(file, start, end, datasync);
--	if (ret == -EIO || test_and_clear_bit(AS_EIO, &mapping->flags)) {
-+	if (ret == -EIO) {
- 		/* We don't really know where the IO error happened... */
- 		ext2_error(sb, __func__,
- 			   "detected IO error when writing metadata buffers");
-diff --git a/fs/libfs.c b/fs/libfs.c
-index a8b62e5d43a9..12a48ee442d3 100644
---- a/fs/libfs.c
-+++ b/fs/libfs.c
-@@ -991,7 +991,8 @@ int __generic_file_fsync(struct file *file, loff_t start, loff_t end,
- 
- out:
- 	inode_unlock(inode);
--	return ret;
-+	err = filemap_check_errors(inode->i_mapping);
-+	return ret ? : err;
- }
- EXPORT_SYMBOL(__generic_file_fsync);
- 
+ 			ret = dax_writeback_one(bdev, mapping, indices[i],
+ 					pvec.pages[i]);
+-			if (ret < 0)
++			if (ret < 0) {
++				mapping_set_error(mapping, ret);
+ 				return ret;
++			}
+ 		}
+ 	}
+ 	return 0;
 -- 
 2.9.3
 

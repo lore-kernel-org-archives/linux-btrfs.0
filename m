@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:50828 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:46044 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1171052AbdDXNYD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Apr 2017 09:24:03 -0400
+        id S1171055AbdDXNYF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 24 Apr 2017 09:24:05 -0400
 From: Jeff Layton <jlayton@redhat.com>
 To: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
@@ -15,39 +15,42 @@ Cc: dhowells@redhat.com, akpm@linux-foundation.org, hch@infradead.org,
         ross.zwisler@linux.intel.com, mawilcox@microsoft.com, jack@suse.com,
         viro@zeniv.linux.org.uk, corbet@lwn.net, neilb@suse.de, clm@fb.com,
         tytso@mit.edu, axboe@kernel.dk
-Subject: [PATCH v3 08/20] mm: ensure that we set mapping error if writeout() fails
-Date: Mon, 24 Apr 2017 09:22:47 -0400
-Message-Id: <20170424132259.8680-9-jlayton@redhat.com>
+Subject: [PATCH v3 05/20] orangefs: don't call filemap_write_and_wait from fsync
+Date: Mon, 24 Apr 2017 09:22:44 -0400
+Message-Id: <20170424132259.8680-6-jlayton@redhat.com>
 In-Reply-To: <20170424132259.8680-1-jlayton@redhat.com>
 References: <20170424132259.8680-1-jlayton@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If writepage fails during a page migration, then we need to ensure that
-fsync will see it by flagging the mapping.
+Orangefs doesn't do buffered writes yet, so there's no point in
+initiating and waiting for writeback.
 
 Signed-off-by: Jeff Layton <jlayton@redhat.com>
 ---
- mm/migrate.c | 6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
+ fs/orangefs/file.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
 
-diff --git a/mm/migrate.c b/mm/migrate.c
-index 738f1d5f8350..3a59830bdae2 100644
---- a/mm/migrate.c
-+++ b/mm/migrate.c
-@@ -792,7 +792,11 @@ static int writeout(struct address_space *mapping, struct page *page)
- 		/* unlocked. Relock */
- 		lock_page(page);
+diff --git a/fs/orangefs/file.c b/fs/orangefs/file.c
+index e6bbc8083d77..17ab42c4db52 100644
+--- a/fs/orangefs/file.c
++++ b/fs/orangefs/file.c
+@@ -646,14 +646,11 @@ static int orangefs_fsync(struct file *file,
+ 		       loff_t end,
+ 		       int datasync)
+ {
+-	int ret = -EINVAL;
++	int ret;
+ 	struct orangefs_inode_s *orangefs_inode =
+ 		ORANGEFS_I(file_inode(file));
+ 	struct orangefs_kernel_op_s *new_op = NULL;
  
--	return (rc < 0) ? -EIO : -EAGAIN;
-+	if (rc < 0) {
-+		mapping_set_error(mapping, rc);
-+		return -EIO;
-+	}
-+	return -EAGAIN;
- }
- 
- /*
+-	/* required call */
+-	filemap_write_and_wait_range(file->f_mapping, start, end);
+-
+ 	new_op = op_alloc(ORANGEFS_VFS_OP_FSYNC);
+ 	if (!new_op)
+ 		return -ENOMEM;
 -- 
 2.9.3
 

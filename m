@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:60994 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:48170 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1170987AbdDXNX6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Apr 2017 09:23:58 -0400
+        id S1171057AbdDXNYF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 24 Apr 2017 09:24:05 -0400
 From: Jeff Layton <jlayton@redhat.com>
 To: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
@@ -15,38 +15,39 @@ Cc: dhowells@redhat.com, akpm@linux-foundation.org, hch@infradead.org,
         ross.zwisler@linux.intel.com, mawilcox@microsoft.com, jack@suse.com,
         viro@zeniv.linux.org.uk, corbet@lwn.net, neilb@suse.de, clm@fb.com,
         tytso@mit.edu, axboe@kernel.dk
-Subject: [PATCH v3 06/20] dax: set errors in mapping when writeback fails
-Date: Mon, 24 Apr 2017 09:22:45 -0400
-Message-Id: <20170424132259.8680-7-jlayton@redhat.com>
+Subject: [PATCH v3 09/20] 9p: set mapping error when writeback fails in launder_page
+Date: Mon, 24 Apr 2017 09:22:48 -0400
+Message-Id: <20170424132259.8680-10-jlayton@redhat.com>
 In-Reply-To: <20170424132259.8680-1-jlayton@redhat.com>
 References: <20170424132259.8680-1-jlayton@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In order to get proper error codes from fsync, we must set an error in
-the mapping range when writeback fails.
+launder_page is just writeback under the page lock. We still need to
+mark the mapping for errors there when they occur.
 
 Signed-off-by: Jeff Layton <jlayton@redhat.com>
 ---
- fs/dax.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ fs/9p/vfs_addr.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/fs/dax.c b/fs/dax.c
-index 85abd741253d..9b6b04030c3f 100644
---- a/fs/dax.c
-+++ b/fs/dax.c
-@@ -901,8 +901,10 @@ int dax_writeback_mapping_range(struct address_space *mapping,
- 
- 			ret = dax_writeback_one(bdev, mapping, indices[i],
- 					pvec.pages[i]);
--			if (ret < 0)
-+			if (ret < 0) {
-+				mapping_set_error(mapping, ret);
- 				return ret;
-+			}
- 		}
+diff --git a/fs/9p/vfs_addr.c b/fs/9p/vfs_addr.c
+index adaf6f6dd858..7af6e6501698 100644
+--- a/fs/9p/vfs_addr.c
++++ b/fs/9p/vfs_addr.c
+@@ -223,8 +223,11 @@ static int v9fs_launder_page(struct page *page)
+ 	v9fs_fscache_wait_on_page_write(inode, page);
+ 	if (clear_page_dirty_for_io(page)) {
+ 		retval = v9fs_vfs_writepage_locked(page);
+-		if (retval)
++		if (retval) {
++			if (retval != -EAGAIN)
++				mapping_set_error(page->mapping, retval);
+ 			return retval;
++		}
  	}
  	return 0;
+ }
 -- 
 2.9.3
 

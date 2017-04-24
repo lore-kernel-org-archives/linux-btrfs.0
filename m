@@ -1,279 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from p3nlsmtpcp01-01.prod.phx3.secureserver.net ([184.168.200.138]:60092
-        "EHLO p3nlsmtpcp01-01.prod.phx3.secureserver.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1163258AbdDWTBb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 23 Apr 2017 15:01:31 -0400
-Date: Mon, 24 Apr 2017 00:30:00 +0530
-From: "Lakshmipathi.G" <Lakshmipathi.G@giis.co.in>
-To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: [PATCH] btrfs-progs: tests: add variable quotation to convert-tests
-Message-ID: <20170423190000.GA15598@giis.co.in>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from mx0a-001b2d01.pphosted.com ([148.163.156.1]:39632 "EHLO
+        mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1169234AbdDXL1g (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 24 Apr 2017 07:27:36 -0400
+Received: from pps.filterd (m0098409.ppops.net [127.0.0.1])
+        by mx0a-001b2d01.pphosted.com (8.16.0.20/8.16.0.20) with SMTP id v3OBOE3U103658
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Apr 2017 07:27:35 -0400
+Received: from e13.ny.us.ibm.com (e13.ny.us.ibm.com [129.33.205.203])
+        by mx0a-001b2d01.pphosted.com with ESMTP id 2a02g36h99-1
+        (version=TLSv1.2 cipher=AES256-SHA bits=256 verify=NOT)
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Apr 2017 07:27:35 -0400
+Received: from localhost
+        by e13.ny.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+        for <linux-btrfs@vger.kernel.org> from <praveen@linux.vnet.ibm.com>;
+        Mon, 24 Apr 2017 07:27:34 -0400
+From: Praveen K Pandey <praveen@linux.vnet.ibm.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz, Praveen K Pandey <praveen@linux.vnet.ibm.com>
+Subject: [PATCH] Btrfs-progs: run_next_block: Return error code when extent buffer read fails
+Date: Mon, 24 Apr 2017 16:57:17 +0530
+Message-Id: <1493033237-12979-1-git-send-email-praveen@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Lakshmipathi.G <Lakshmipathi.G@giis.co.in>
----
- tests/convert-tests.sh                             |  2 +-
- tests/convert-tests/001-ext2-basic/test.sh         |  4 ++--
- tests/convert-tests/002-ext3-basic/test.sh         |  4 ++--
- tests/convert-tests/003-ext4-basic/test.sh         |  4 ++--
- .../004-ext2-backup-superblock-ranges/test.sh      | 22 +++++++++++-----------
- .../convert-tests/005-delete-all-rollback/test.sh  |  6 +++---
- tests/convert-tests/006-large-hole-extent/test.sh  |  6 +++---
- .../007-unsupported-block-sizes/test.sh            |  8 ++++----
- tests/convert-tests/008-readonly-image/test.sh     |  8 ++++----
- tests/convert-tests/009-common-inode-flags/test.sh | 14 +++++++-------
- 10 files changed, 39 insertions(+), 39 deletions(-)
+run_next_block() ignores the return value of read_tree_block() and
+always returns success status. This might cause deal_root_from_list()
+to loop infinitely when reading metadata block fails. This bug fixes
+the issue by extracting and returning the error code from the return
+value of read_tree_block().
 
-diff --git a/tests/convert-tests.sh b/tests/convert-tests.sh
-index c566336..819e7e2 100755
---- a/tests/convert-tests.sh
-+++ b/tests/convert-tests.sh
-@@ -37,7 +37,7 @@ run_one_test() {
- 		./test.sh
- 		if [ $? -ne 0 ]; then
- 			_fail "test failed for case $testname"
--			if [[ $TEST_LOG =~ dump ]]; then
-+			if [[ "$TEST_LOG" =~ dump ]]; then
- 				cat "$RESULTS"
- 			fi
- 		fi
-diff --git a/tests/convert-tests/001-ext2-basic/test.sh b/tests/convert-tests/001-ext2-basic/test.sh
-index 8f4f935..07f1d6e 100755
---- a/tests/convert-tests/001-ext2-basic/test.sh
-+++ b/tests/convert-tests/001-ext2-basic/test.sh
-@@ -1,7 +1,7 @@
- #!/bin/bash
+Bug ID : https://bugzilla.kernel.org/show_bug.cgi?id=155551
+
+Signed-off-by: Praveen K Pandey <praveen@linux.vnet.ibm.com>
+---
+ cmds-check.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/cmds-check.c b/cmds-check.c
+index 17b7efb..40e3c99 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -7625,6 +7625,7 @@ static int run_next_block(struct btrfs_root *root,
+ 	if (!extent_buffer_uptodate(buf)) {
+ 		record_bad_block_io(root->fs_info,
+ 				    extent_cache, bytenr, size);
++		ret = PTR_ERR(buf);
+ 		goto out;
+ 	}
  
--source $TOP/tests/common
--source $TOP/tests/common.convert
-+source "$TOP/tests/common"
-+source "$TOP/tests/common.convert"
- 
- setup_root_helper
- prepare_test_dev 512M
-diff --git a/tests/convert-tests/002-ext3-basic/test.sh b/tests/convert-tests/002-ext3-basic/test.sh
-index aeb111e..be8a929 100755
---- a/tests/convert-tests/002-ext3-basic/test.sh
-+++ b/tests/convert-tests/002-ext3-basic/test.sh
-@@ -1,7 +1,7 @@
- #!/bin/bash
- 
--source $TOP/tests/common
--source $TOP/tests/common.convert
-+source "$TOP/tests/common"
-+source "$TOP/tests/common.convert"
- 
- setup_root_helper
- prepare_test_dev 512M
-diff --git a/tests/convert-tests/003-ext4-basic/test.sh b/tests/convert-tests/003-ext4-basic/test.sh
-index 531c81b..44ee592 100755
---- a/tests/convert-tests/003-ext4-basic/test.sh
-+++ b/tests/convert-tests/003-ext4-basic/test.sh
-@@ -1,7 +1,7 @@
- #!/bin/bash
- 
--source $TOP/tests/common
--source $TOP/tests/common.convert
-+source "$TOP/tests/common"
-+source "$TOP/tests/common.convert"
- 
- setup_root_helper
- prepare_test_dev 512M
-diff --git a/tests/convert-tests/004-ext2-backup-superblock-ranges/test.sh b/tests/convert-tests/004-ext2-backup-superblock-ranges/test.sh
-index c56650b..0ce62f7 100755
---- a/tests/convert-tests/004-ext2-backup-superblock-ranges/test.sh
-+++ b/tests/convert-tests/004-ext2-backup-superblock-ranges/test.sh
-@@ -10,7 +10,7 @@
- # 4) Overlap file extents
- # 5) Unable to rollback
- 
--source $TOP/tests/common
-+source "$TOP/tests/common"
- 
- check_prereq btrfs-convert
- check_prereq btrfs
-@@ -23,20 +23,20 @@ prepare_test_dev 512M
- # override common function
- function check_image() {
- 	TEST_DEV="$1"
--	run_check e2fsck -n -f $TEST_DEV
--	run_check $TOP/btrfs-convert $TEST_DEV
--	run_check $TOP/btrfs check $TEST_DEV
--	run_check $TOP/btrfs inspect-internal dump-super $TEST_DEV
-+	run_check e2fsck -n -f "$TEST_DEV"
-+	run_check "$TOP/btrfs-convert" "$TEST_DEV"
-+	run_check "$TOP/btrfs" check "$TEST_DEV"
-+	run_check "$TOP/btrfs" inspect-internal dump-super "$TEST_DEV"
- 
- 	run_check_mount_test_dev
--	run_check $SUDO_HELPER e2fsck -n -f $TEST_MNT/ext2_saved/image
--	run_check $SUDO_HELPER umount $TEST_MNT
-+	run_check $SUDO_HELPER e2fsck -n -f "$TEST_MNT/ext2_saved/image"
-+	run_check $SUDO_HELPER umount "$TEST_MNT"
- 
--	run_check $TOP/btrfs check $TEST_DEV
--	run_check $TOP/btrfs-convert -r $TEST_DEV
--	run_check e2fsck -n -f $TEST_DEV
-+	run_check "$TOP/btrfs" check "$TEST_DEV"
-+	run_check "$TOP/btrfs-convert" -r "$TEST_DEV"
-+	run_check e2fsck -n -f "$TEST_DEV"
- 
--	rm -f $TEST_DEV
-+	rm -f "$TEST_DEV"
- }
- 
- check_all_images
-diff --git a/tests/convert-tests/005-delete-all-rollback/test.sh b/tests/convert-tests/005-delete-all-rollback/test.sh
-index cf576e7..c6f7466 100755
---- a/tests/convert-tests/005-delete-all-rollback/test.sh
-+++ b/tests/convert-tests/005-delete-all-rollback/test.sh
-@@ -2,8 +2,8 @@
- # create a base image, convert to btrfs, remove all files, rollback the ext4 image
- # note: ext4 only
- 
--source $TOP/tests/common
--source $TOP/tests/common.convert
-+source "$TOP/tests/common"
-+source "$TOP/tests/common.convert"
- 
- setup_root_helper
- prepare_test_dev 512M
-@@ -43,7 +43,7 @@ do_test() {
- 	# ext2_saved/image must not be deleted
- 	run_mayfail $SUDO_HELPER find "$TEST_MNT"/ -mindepth 1 -path '*ext2_saved' -prune -o -exec rm -vrf "{}" \;
- 	cd "$here"
--	run_check $TOP/btrfs filesystem sync "$TEST_MNT"
-+	run_check "$TOP/btrfs" filesystem sync "$TEST_MNT"
- 	run_check_umount_test_dev
- 	convert_test_post_rollback
- 
-diff --git a/tests/convert-tests/006-large-hole-extent/test.sh b/tests/convert-tests/006-large-hole-extent/test.sh
-index d3bc093..e99741c 100755
---- a/tests/convert-tests/006-large-hole-extent/test.sh
-+++ b/tests/convert-tests/006-large-hole-extent/test.sh
-@@ -5,8 +5,8 @@
- # Fast pinpoint regression test. No options combination nor checksum
- # verification
- 
--source $TOP/tests/common
--source $TOP/tests/common.convert
-+source "$TOP/tests/common"
-+source "$TOP/tests/common.convert"
- 
- setup_root_helper
- prepare_test_dev 512M
-@@ -16,7 +16,7 @@ default_mke2fs="mke2fs -t ext4 -b 4096"
- convert_test_preamble '' 'large hole extent test' 16k "$default_mke2fs"
- convert_test_prep_fs $default_mke2fs
- 
--run_check $SUDO_HELPER dd if=/dev/zero of=$TEST_MNT/file bs=1M \
-+run_check $SUDO_HELPER dd if=/dev/zero of="$TEST_MNT/file" bs=1M \
- 	count=1 seek=1024 > /dev/null 2>&1
- 
- run_check_umount_test_dev
-diff --git a/tests/convert-tests/007-unsupported-block-sizes/test.sh b/tests/convert-tests/007-unsupported-block-sizes/test.sh
-index 9ba1775..a748840 100755
---- a/tests/convert-tests/007-unsupported-block-sizes/test.sh
-+++ b/tests/convert-tests/007-unsupported-block-sizes/test.sh
-@@ -1,8 +1,8 @@
- #!/bin/bash
- # Check if block sizes smaller than 4k expectedly fail to convert
- 
--source $TOP/tests/common
--source $TOP/tests/common.convert
-+source "$TOP/tests/common"
-+source "$TOP/tests/common.convert"
- 
- setup_root_helper
- prepare_test_dev 512M
-@@ -13,9 +13,9 @@ for bs in 1024 2048; do
- 	convert_test_preamble '' "unsupported block size $bs" 16k "$default_mke2fs"
- 	convert_test_prep_fs $default_mke2fs
- 
--	run_check $SUDO_HELPER dd if=/dev/zero of=$TEST_MNT/file bs=1M \
-+	run_check $SUDO_HELPER dd if=/dev/zero of="$TEST_MNT/file" bs=1M \
- 		count=1 seek=1024 > /dev/null 2>&1
- 
- 	run_check_umount_test_dev
--	run_mustfail "$bs block converted" $TOP/btrfs-convert $TEST_DEV
-+	run_mustfail "$bs block converted" "$TOP/btrfs-convert" "$TEST_DEV"
- done
-diff --git a/tests/convert-tests/008-readonly-image/test.sh b/tests/convert-tests/008-readonly-image/test.sh
-index 4e42237..b2f1ae3 100755
---- a/tests/convert-tests/008-readonly-image/test.sh
-+++ b/tests/convert-tests/008-readonly-image/test.sh
-@@ -1,8 +1,8 @@
- #!/bin/bash
- # Check if the converted ext2 image is readonly
- 
--source $TOP/tests/common
--source $TOP/tests/common.convert
-+source "$TOP/tests/common"
-+source "$TOP/tests/common.convert"
- 
- setup_root_helper
- prepare_test_dev 512M
-@@ -10,13 +10,13 @@ check_prereq btrfs-convert
- 
- default_mke2fs="mke2fs -t ext4 -b 4096"
- convert_test_preamble '' 'readonly image test' 16k "$default_mke2fs"
--convert_test_prep_fs $default_mke2fs
-+convert_test_prep_fs "$default_mke2fs"
- run_check_umount_test_dev
- convert_test_do_convert
- run_check_mount_test_dev
- 
- # It's expected to fail
--$SUDO_HELPER dd if=/dev/zero of=$TEST_MNT/ext2_save/image bs=1M count=1 \
-+$SUDO_HELPER dd if=/dev/zero of="$TEST_MNT/ext2_save/image" bs=1M count=1 \
- 	&> /dev/null
- if [ $? -ne 1 ]; then
- 	echo "after convert ext2_save/image is not read-only"
-diff --git a/tests/convert-tests/009-common-inode-flags/test.sh b/tests/convert-tests/009-common-inode-flags/test.sh
-index 6f26d18..a582879 100755
---- a/tests/convert-tests/009-common-inode-flags/test.sh
-+++ b/tests/convert-tests/009-common-inode-flags/test.sh
-@@ -1,8 +1,8 @@
- #!/bin/bash
- # Check if btrfs-convert can copy common inode flags like SYNC/IMMUTABLE
- 
--source $TOP/tests/common
--source $TOP/tests/common.convert
-+source "$TOP/tests/common"
-+source "$TOP/tests/common.convert"
- 
- setup_root_helper
- prepare_test_dev 512M
-@@ -11,20 +11,20 @@ check_prereq btrfs-convert
- fail=0
- default_mke2fs="mke2fs -t ext4 -b 4096"
- convert_test_preamble '' 'common inode flags test' 16k "$default_mke2fs"
--convert_test_prep_fs $default_mke2fs
-+convert_test_prep_fs "$default_mke2fs"
- 
- # create file with specific flags
--run_check $SUDO_HELPER touch $TEST_MNT/flag_test
--run_check $SUDO_HELPER chattr +aAdSi $TEST_MNT/flag_test
-+run_check $SUDO_HELPER touch "$TEST_MNT/flag_test"
-+run_check $SUDO_HELPER chattr +aAdSi "$TEST_MNT/flag_test"
- 
- run_check_umount_test_dev
- convert_test_do_convert
- run_check_mount_test_dev
- 
- # Log the status
--run_check lsattr $TEST_MNT/flag_test
-+run_check lsattr "$TEST_MNT/flag_test"
- # Above flags should be copied to btrfs flags, and lsattr should get them
--run_check_stdout lsattr $TEST_MNT/flag_test | cut -f1 -d\ | grep "[aAdiS]" -q
-+run_check_stdout lsattr "$TEST_MNT/flag_test" | cut -f1 -d\ | grep "[aAdiS]" -q
- if [ $? -ne 0 ]; then
- 	rm tmp_output
- 	_fail "no common inode flags are copied after convert"
 -- 
-2.7.4
+2.5.5
 

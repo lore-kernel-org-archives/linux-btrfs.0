@@ -1,11 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49976 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S972863AbdDXQEm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Apr 2017 12:04:42 -0400
-Date: Mon, 24 Apr 2017 18:04:31 +0200
-From: Jan Kara <jack@suse.cz>
-To: Jeff Layton <jlayton@redhat.com>
+Received: from mail-qt0-f179.google.com ([209.85.216.179]:35386 "EHLO
+        mail-qt0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1428274AbdDXQ7G (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 24 Apr 2017 12:59:06 -0400
+Received: by mail-qt0-f179.google.com with SMTP id y33so119075284qta.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Apr 2017 09:59:06 -0700 (PDT)
+Message-ID: <1493053143.2895.15.camel@redhat.com>
+Subject: Re: [PATCH v3 20/20] gfs2: clean up some filemap_* calls
+From: Jeff Layton <jlayton@redhat.com>
+To: Bob Peterson <rpeterso@redhat.com>
 Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
         linux-cifs@vger.kernel.org, linux-mm@kvack.org,
@@ -14,50 +18,81 @@ Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
         v9fs-developer@lists.sourceforge.net, osd-dev@open-osd.org,
         linux-nilfs@vger.kernel.org, linux-block@vger.kernel.org,
         dhowells@redhat.com, akpm@linux-foundation.org, hch@infradead.org,
-        ross.zwisler@linux.intel.com, mawilcox@microsoft.com, jack@suse.com,
-        viro@zeniv.linux.org.uk, corbet@lwn.net, neilb@suse.de, clm@fb.com,
-        tytso@mit.edu, axboe@kernel.dk
-Subject: Re: [PATCH v3 10/20] fuse: set mapping error in writepage_locked
- when it fails
-Message-ID: <20170424160431.GK23988@quack2.suse.cz>
+        ross zwisler <ross.zwisler@linux.intel.com>, mawilcox@microsoft.com,
+        jack@suse.com, viro@zeniv.linux.org.uk, corbet@lwn.net, neilb@suse.de,
+        clm@fb.com, tytso@mit.edu, axboe@kernel.dk
+Date: Mon, 24 Apr 2017 12:59:03 -0400
+In-Reply-To: <2139341349.405174.1493043175630.JavaMail.zimbra@redhat.com>
 References: <20170424132259.8680-1-jlayton@redhat.com>
- <20170424132259.8680-11-jlayton@redhat.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170424132259.8680-11-jlayton@redhat.com>
+         <20170424132259.8680-21-jlayton@redhat.com>
+         <2139341349.405174.1493043175630.JavaMail.zimbra@redhat.com>
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon 24-04-17 09:22:49, Jeff Layton wrote:
-> This ensures that we see errors on fsync when writeback fails.
+On Mon, 2017-04-24 at 10:12 -0400, Bob Peterson wrote:
+> ----- Original Message -----
+> > In some places, it's trying to reset the mapping error after calling
+> > filemap_fdatawait. That's no longer required. Also, turn several
+> > filemap_fdatawrite+filemap_fdatawait calls into filemap_write_and_wait.
+> > That will at least return writeback errors that occur during the write
+> > phase.
+> > 
+> > Signed-off-by: Jeff Layton <jlayton@redhat.com>
+> > ---
+> >  fs/gfs2/glops.c | 12 ++++--------
+> >  fs/gfs2/lops.c  |  4 +---
+> >  fs/gfs2/super.c |  6 ++----
+> >  3 files changed, 7 insertions(+), 15 deletions(-)
+> > 
+> > diff --git a/fs/gfs2/glops.c b/fs/gfs2/glops.c
+> > index 5db59d444838..7362d19fdc4c 100644
+> > --- a/fs/gfs2/glops.c
+> > +++ b/fs/gfs2/glops.c
+> > @@ -158,9 +158,7 @@ static void rgrp_go_sync(struct gfs2_glock *gl)
+> >  	GLOCK_BUG_ON(gl, gl->gl_state != LM_ST_EXCLUSIVE);
+> >  
+> >  	gfs2_log_flush(sdp, gl, NORMAL_FLUSH);
+> > -	filemap_fdatawrite_range(mapping, gl->gl_vm.start, gl->gl_vm.end);
+> > -	error = filemap_fdatawait_range(mapping, gl->gl_vm.start, gl->gl_vm.end);
+> > -	mapping_set_error(mapping, error);
+> > +	filemap_write_and_wait_range(mapping, gl->gl_vm.start, gl->gl_vm.end);
 > 
-> Signed-off-by: Jeff Layton <jlayton@redhat.com>
+> This should probably have "error = ", no?
+> 
 
-Hum, but do we really want to clobber mapping errors with temporary stuff
-like ENOMEM? Or do you want to handle that in mapping_set_error?
+This error is discarded in the current code after resetting the error in
+the mapping. With the earlier patches in this set we don't need to reset
+the error like this anymore.
 
-								Honza
+Now, if this code should doing something else with those errors, then
+that's a separate problem.
 
-> ---
->  fs/fuse/file.c | 1 +
->  1 file changed, 1 insertion(+)
+> >  	gfs2_ail_empty_gl(gl);
+> >  
+> >  	spin_lock(&gl->gl_lockref.lock);
+> > @@ -225,12 +223,10 @@ static void inode_go_sync(struct gfs2_glock *gl)
+> >  	filemap_fdatawrite(metamapping);
+> >  	if (ip) {
+> >  		struct address_space *mapping = ip->i_inode.i_mapping;
+> > -		filemap_fdatawrite(mapping);
+> > -		error = filemap_fdatawait(mapping);
+> > -		mapping_set_error(mapping, error);
+> > +		filemap_write_and_wait(mapping);
+> > +	} else {
+> > +		filemap_fdatawait(metamapping);
+> >  	}
+> > -	error = filemap_fdatawait(metamapping);
+> > -	mapping_set_error(metamapping, error);
 > 
-> diff --git a/fs/fuse/file.c b/fs/fuse/file.c
-> index ec238fb5a584..07d0efcb050c 100644
-> --- a/fs/fuse/file.c
-> +++ b/fs/fuse/file.c
-> @@ -1669,6 +1669,7 @@ static int fuse_writepage_locked(struct page *page)
->  err_free:
->  	fuse_request_free(req);
->  err:
-> +	mapping_set_error(page->mapping, error);
->  	end_page_writeback(page);
->  	return error;
->  }
-> -- 
-> 2.9.3
+> This part doesn't look right at all. There's a big difference in gfs2 between
+> mapping and metamapping. We need to wait for metamapping regardless.
 > 
-> 
+
+...and this should wait. Basically, filemap_write_and_wait does
+filemap_fdatawrite and then filemap_fdatawait. This is mostly just
+replacing the existing code with a more concise helper.
+
 -- 
-Jan Kara <jack@suse.com>
-SUSE Labs, CR
+Jeff Layton <jlayton@redhat.com>

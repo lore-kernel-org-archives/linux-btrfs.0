@@ -1,41 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp121.iad3a.emailsrvr.com ([173.203.187.121]:36239 "EHLO
-        smtp121.iad3a.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S978968AbdDYFd7 (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:52895 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S979281AbdDYGNh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 25 Apr 2017 01:33:59 -0400
-Received: from smtp24.relay.iad3a.emailsrvr.com (localhost [127.0.0.1])
-        by smtp24.relay.iad3a.emailsrvr.com (SMTP Server) with ESMTP id D1C8D24CAA
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Apr 2017 01:33:58 -0400 (EDT)
-Received: by smtp24.relay.iad3a.emailsrvr.com (Authenticated sender: intranet-AT-rqc.ru) with ESMTPSA id 814E024B90
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Apr 2017 01:33:58 -0400 (EDT)
-Received: from CM01.administration.intranet.rqc.ru (unknown [10.101.2.94])
-        by postfix.thinky.servers.rqc.ru (Postfix) with ESMTPS id A7A91731D
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Apr 2017 05:33:55 +0000 (UTC)
+        Tue, 25 Apr 2017 02:13:37 -0400
 Subject: Re: Problem with file system
-To: linux-btrfs@vger.kernel.org
+To: Marat Khalili <mkh@rqc.ru>, <linux-btrfs@vger.kernel.org>
 References: <CAJyZh6S4f=6W+oA6DT1zu2FRuCgO7w8TfRzC96rPWNzUszvRmg@mail.gmail.com>
  <9871a669-141b-ac64-9da6-9050bcad7640@cn.fujitsu.com>
-From: Marat Khalili <mkh@rqc.ru>
-Message-ID: <f6428a81-6fc8-1a73-0151-d13dd550c277@rqc.ru>
-Date: Tue, 25 Apr 2017 08:33:55 +0300
+ <f6428a81-6fc8-1a73-0151-d13dd550c277@rqc.ru>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <bb12a331-1fec-448a-cbf8-881b434766e7@cn.fujitsu.com>
+Date: Tue, 25 Apr 2017 14:13:29 +0800
 MIME-Version: 1.0
-In-Reply-To: <9871a669-141b-ac64-9da6-9050bcad7640@cn.fujitsu.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <f6428a81-6fc8-1a73-0151-d13dd550c277@rqc.ru>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 25/04/17 03:26, Qu Wenruo wrote:
-> IIRC qgroup for subvolume deletion will cause full subtree rescan 
-> which can cause tons of memory. 
-Could it be this bad, 24GB of RAM for a 5.6TB volume? What does it even 
-use this absurd amount of memory for? Is it swappable?
 
-Haven't read about RAM limitations for running qgroups before, only 
-about CPU load (which importantly only requires patience, does not crash 
-servers).
 
---
+At 04/25/2017 01:33 PM, Marat Khalili wrote:
+> On 25/04/17 03:26, Qu Wenruo wrote:
+>> IIRC qgroup for subvolume deletion will cause full subtree rescan 
+>> which can cause tons of memory. 
+> Could it be this bad, 24GB of RAM for a 5.6TB volume? What does it even 
+> use this absurd amount of memory for? Is it swappable?
 
-With Best Regards,
-Marat Khalili
+The memory is used for 2 reasons.
+
+1) Record which extents are needed to trace
+    Freed at transaction commit.
+
+    Need better idea to handle them. Maybe create a new tree so that we
+    can write it to disk?
+    Or another qgroup rework?
+
+2) Record current roots referring to this extent
+    Only after v4.10 IIRC.
+
+The memory allocated is not swappable.
+
+How many memory it uses depends on the number of extents of that subvolume.
+
+It's 56 bytes for one extent, both tree block and data extent.
+To use up 16G ram, it's about 300 million extents.
+For 5.6T volume, its average extent size is about 20K.
+
+It seems that your volume is highly fragmented though.
+
+If that's the problem, disabling qgroup may be the best workaround.
+
+Thanks,
+Qu
+
+> 
+> Haven't read about RAM limitations for running qgroups before, only 
+> about CPU load (which importantly only requires patience, does not crash 
+> servers).
+> 
+> -- 
+> 
+> With Best Regards,
+> Marat Khalili
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> 
+
+

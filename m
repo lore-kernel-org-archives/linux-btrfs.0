@@ -1,86 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:44024 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S979462AbdDYA00 (ORCPT
+Received: from mail-it0-f48.google.com ([209.85.214.48]:33400 "EHLO
+        mail-it0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751112AbdDYECQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Apr 2017 20:26:26 -0400
-Subject: Re: Problem with file system
-To: Fred Van Andel <vanandel@gmail.com>, <linux-btrfs@vger.kernel.org>
-References: <CAJyZh6S4f=6W+oA6DT1zu2FRuCgO7w8TfRzC96rPWNzUszvRmg@mail.gmail.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <9871a669-141b-ac64-9da6-9050bcad7640@cn.fujitsu.com>
-Date: Tue, 25 Apr 2017 08:26:21 +0800
+        Tue, 25 Apr 2017 00:02:16 -0400
+Received: by mail-it0-f48.google.com with SMTP id 70so17751942ita.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Apr 2017 21:02:16 -0700 (PDT)
+Received: from [192.168.0.23] ([98.4.97.1])
+        by smtp.gmail.com with ESMTPSA id s40sm875161ite.18.2017.04.24.21.02.14
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
+        Mon, 24 Apr 2017 21:02:14 -0700 (PDT)
+Message-ID: <58FECA45.1010107@gmail.com>
+Date: Tue, 25 Apr 2017 00:02:13 -0400
+From: "J. Hart" <jfhart085@gmail.com>
+Reply-To: jfhart085@gmail.com
 MIME-Version: 1.0
-In-Reply-To: <CAJyZh6S4f=6W+oA6DT1zu2FRuCgO7w8TfRzC96rPWNzUszvRmg@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+To: linux-btrfs@vger.kernel.org
+Subject: backing up a collection of snapshot subvolumes
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I have a remote machine with a filesystem for which I periodically take 
+incremental snapshots for historical reasons.  These snapshots are 
+stored in an archival filesystem tree on a file server.  Older snapshots 
+are removed and newer ones added on a rotational basis.  I need to be 
+able to backup this archive by syncing it with a set of backup drives. 
+Due to the size, I need to back it up incrementally rather than sending 
+the entire content each time.  Due to the snapshot rotation, I need to 
+be able to update the state of the archive backup filesystem as a whole, 
+in much the same manner that rsync handles file trees.
 
+It seems that I cannot use "btrfs send", as the archive directory 
+contains the snapshots as subvolumes.
 
-At 04/24/2017 11:27 PM, Fred Van Andel wrote:
-> I have a btrfs file system with a few thousand snapshots.  When I
-> attempted to delete 20 or so of them the problems started.
-> 
-> The disks are being read but except for the first few minutes there
-> are no writes.
-> 
-> Memory usage keeps growing until all the memory (24 Gb) is used in a
-> few hours. Eventually the system will crash with out of memory errors.
+I cannot use rsync as it treats subvolumes as simple directories, and 
+does not preserve subvolume attributes.  Rsync also does not support 
+reflinks, so the snapshot directory content will no longer be reflinked 
+to other snapshots on the archive backup.  I cannot use hard links in 
+the incrementals as hard links do not cross subvolume boundaries.
 
-Are you using qgroup/quota?
-
-IIRC qgroup for subvolume deletion will cause full subtree rescan which 
-can cause tons of memory.
-
-Thanks,
-Qu
-
-> 
-> The CPU load is low (<5%) but iowait is around 30 to 50%
-> 
-> The drives are mounted but any process that attempts to access them
-> will just hang so I cannot access any data on the drives.
-> 
-> Smartctl does not show any issues with the drives.
-> 
-> The problem restarts after a reboot once you mount the drives.
-> 
-> I tried to zero the log hoping it wouldn't restart after a reboot but
-> that didn't work
-> 
-> I am assuming that the attempt to remove the snapshots caused this
-> problem.  How do I interrupt the process so I can access the
-> filesystem again?
-> 
-> # uname -a
-> Linux Backup 4.10.0-19-generic #21-Ubuntu SMP Thu Apr 6 17:04:57 UTC
-> 2017 x86_64 x86_64 x86_64 GNU/Linux
-> 
-> #   btrfs --version
-> btrfs-progs v4.9.1
-> 
-> #   btrfs fi show
-> Label: none  uuid: 79ba7374-bf77-4868-bb64-656ff5736c44
->          Total devices 6 FS bytes used 5.65TiB
->          devid    1 size 1.82TiB used 1.29TiB path /dev/sdb
->          devid    2 size 1.82TiB used 1.29TiB path /dev/sdc
->          devid    3 size 1.82TiB used 1.29TiB path /dev/sdd
->          devid    4 size 1.82TiB used 1.29TiB path /dev/sde
->          devid    5 size 3.64TiB used 3.11TiB path /dev/sdf
->          devid    6 size 3.64TiB used 3.11TiB path /dev/sdg
-> 
-> # btrfs fi df /pubroot
-> Data, RAID1: total=5.58TiB, used=5.58TiB
-> System, RAID1: total=32.00MiB, used=828.00KiB
-> System, single: total=4.00MiB, used=0.00B
-> Metadata, RAID1: total=104.00GiB, used=70.64GiB
-> GlobalReserve, single: total=512.00MiB, used=28.51MiB
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
-
+Thoughts anyone ?
 

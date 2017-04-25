@@ -1,116 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f175.google.com ([209.85.216.175]:33101 "EHLO
-        mail-qt0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1429400AbdDYKfS (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 25 Apr 2017 06:35:18 -0400
-Received: by mail-qt0-f175.google.com with SMTP id m36so135630184qtb.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Apr 2017 03:35:18 -0700 (PDT)
-Message-ID: <1493116513.2758.1.camel@redhat.com>
-Subject: Re: [PATCH v3 10/20] fuse: set mapping error in writepage_locked
- when it fails
-From: Jeff Layton <jlayton@redhat.com>
-To: Jan Kara <jack@suse.cz>
-Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-cifs@vger.kernel.org, linux-mm@kvack.org,
-        jfs-discussion@lists.sourceforge.net, linux-xfs@vger.kernel.org,
-        cluster-devel@redhat.com, linux-f2fs-devel@lists.sourceforge.net,
+Received: from mx2.suse.de ([195.135.220.15]:60633 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1946624AbdDYLTP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 25 Apr 2017 07:19:15 -0400
+Date: Tue, 25 Apr 2017 13:19:03 +0200
+From: Jan Kara <jack@suse.cz>
+To: Jeff Layton <jlayton@redhat.com>
+Cc: Jan Kara <jack@suse.cz>, linux-fsdevel@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-cifs@vger.kernel.org,
+        linux-mm@kvack.org, jfs-discussion@lists.sourceforge.net,
+        linux-xfs@vger.kernel.org, cluster-devel@redhat.com,
+        linux-f2fs-devel@lists.sourceforge.net,
         v9fs-developer@lists.sourceforge.net, osd-dev@open-osd.org,
         linux-nilfs@vger.kernel.org, linux-block@vger.kernel.org,
         dhowells@redhat.com, akpm@linux-foundation.org, hch@infradead.org,
         ross.zwisler@linux.intel.com, mawilcox@microsoft.com, jack@suse.com,
         viro@zeniv.linux.org.uk, corbet@lwn.net, neilb@suse.de, clm@fb.com,
         tytso@mit.edu, axboe@kernel.dk
-Date: Tue, 25 Apr 2017 06:35:13 -0400
-In-Reply-To: <20170425081720.GA2793@quack2.suse.cz>
+Subject: Re: [PATCH v3 10/20] fuse: set mapping error in writepage_locked
+ when it fails
+Message-ID: <20170425111903.GI2793@quack2.suse.cz>
 References: <20170424132259.8680-1-jlayton@redhat.com>
-         <20170424132259.8680-11-jlayton@redhat.com>
-         <20170424160431.GK23988@quack2.suse.cz>
-         <1493054076.2895.17.camel@redhat.com>
-         <20170425081720.GA2793@quack2.suse.cz>
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+ <20170424132259.8680-11-jlayton@redhat.com>
+ <20170424160431.GK23988@quack2.suse.cz>
+ <1493054076.2895.17.camel@redhat.com>
+ <20170425081720.GA2793@quack2.suse.cz>
+ <1493116513.2758.1.camel@redhat.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1493116513.2758.1.camel@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 2017-04-25 at 10:17 +0200, Jan Kara wrote:
-> On Mon 24-04-17 13:14:36, Jeff Layton wrote:
-> > On Mon, 2017-04-24 at 18:04 +0200, Jan Kara wrote:
-> > > On Mon 24-04-17 09:22:49, Jeff Layton wrote:
-> > > > This ensures that we see errors on fsync when writeback fails.
+On Tue 25-04-17 06:35:13, Jeff Layton wrote:
+> On Tue, 2017-04-25 at 10:17 +0200, Jan Kara wrote:
+> > On Mon 24-04-17 13:14:36, Jeff Layton wrote:
+> > > On Mon, 2017-04-24 at 18:04 +0200, Jan Kara wrote:
+> > > > On Mon 24-04-17 09:22:49, Jeff Layton wrote:
+> > > > > This ensures that we see errors on fsync when writeback fails.
+> > > > > 
+> > > > > Signed-off-by: Jeff Layton <jlayton@redhat.com>
 > > > > 
-> > > > Signed-off-by: Jeff Layton <jlayton@redhat.com>
+> > > > Hum, but do we really want to clobber mapping errors with temporary stuff
+> > > > like ENOMEM? Or do you want to handle that in mapping_set_error?
+> > > > 
 > > > 
-> > > Hum, but do we really want to clobber mapping errors with temporary stuff
-> > > like ENOMEM? Or do you want to handle that in mapping_set_error?
+> > > Right now we don't really have such a thing as temporary errors in the
+> > > writeback codepath. If you return an error here, the data doesn't stay
+> > > dirty or anything, and I think we want to ensure that that gets reported
+> > > via fsync.
 > > > 
-> > 
-> > Right now we don't really have such a thing as temporary errors in the
-> > writeback codepath. If you return an error here, the data doesn't stay
-> > dirty or anything, and I think we want to ensure that that gets reported
-> > via fsync.
-> > 
-> > I'd like to see us add better handling for retryable errors for stuff
-> > like ENOMEM or EAGAIN. I think this is the first step toward that
-> > though. Once we have more consistent handling of writeback errors in
-> > general, then we can start doing more interesting things with retryable
-> > errors.
-> > 
-> > So yeah, I this is the right thing to do for now.
-> 
-> OK, fair enough. And question number 2):
-> 
-> Who is actually responsible for setting the error in the mapping when error
-> happens inside ->writepage()? Is it the ->writepage() callback or the
-> caller of ->writepage()? Or something else? Currently it seems to be a
-> strange mix (e.g. mm/page-writeback.c: __writepage() calls
-> mapping_set_error() when ->writepage() returns error) so I'd like to
-> understand what's the plan and have that recorded in the changelogs.
-> 
-
-That's an excellent question.
-
-I think we probably want the writepage/launder_page operations to call
-mapping_set_error. That makes it possible for filesystems (e.g. NFS) to
-handle their own error tracking and reporting without using the new
-infrastructure. If they never call mapping_set_error then we'll always
-just return whatever their ->fsync operation returns on an fsync.
-
-I'll make another pass through the tree and see whether we have some
-mapping_set_error calls that should be removed, and will flesh out
-vfs.txt to state this. Maybe that file needs a whole section on
-writeback error reporting? Hmmm...
-
-That probably also means that I should drop patch 8 from this series
-(mm: ensure that we set mapping error if writeout fails), since that
-should be happening in writepage already.
-
-> > 
+> > > I'd like to see us add better handling for retryable errors for stuff
+> > > like ENOMEM or EAGAIN. I think this is the first step toward that
+> > > though. Once we have more consistent handling of writeback errors in
+> > > general, then we can start doing more interesting things with retryable
+> > > errors.
 > > > 
-> > > > ---
-> > > >  fs/fuse/file.c | 1 +
-> > > >  1 file changed, 1 insertion(+)
-> > > > 
-> > > > diff --git a/fs/fuse/file.c b/fs/fuse/file.c
-> > > > index ec238fb5a584..07d0efcb050c 100644
-> > > > --- a/fs/fuse/file.c
-> > > > +++ b/fs/fuse/file.c
-> > > > @@ -1669,6 +1669,7 @@ static int fuse_writepage_locked(struct page *page)
-> > > >  err_free:
-> > > >  	fuse_request_free(req);
-> > > >  err:
-> > > > +	mapping_set_error(page->mapping, error);
-> > > >  	end_page_writeback(page);
-> > > >  	return error;
-> > > >  }
-> > > > -- 
-> > > > 2.9.3
-> > > > 
-> > > > 
+> > > So yeah, I this is the right thing to do for now.
 > > 
-> > -- 
-> > Jeff Layton <jlayton@redhat.com>
+> > OK, fair enough. And question number 2):
+> > 
+> > Who is actually responsible for setting the error in the mapping when error
+> > happens inside ->writepage()? Is it the ->writepage() callback or the
+> > caller of ->writepage()? Or something else? Currently it seems to be a
+> > strange mix (e.g. mm/page-writeback.c: __writepage() calls
+> > mapping_set_error() when ->writepage() returns error) so I'd like to
+> > understand what's the plan and have that recorded in the changelogs.
+> > 
+> 
+> That's an excellent question.
+> 
+> I think we probably want the writepage/launder_page operations to call
+> mapping_set_error. That makes it possible for filesystems (e.g. NFS) to
+> handle their own error tracking and reporting without using the new
+> infrastructure. If they never call mapping_set_error then we'll always
+> just return whatever their ->fsync operation returns on an fsync.
 
+OK, makes sense. It is also in line with what you did for DAX, 9p, or here
+for FUSE. So feel free to add:
+
+Reviewed-by: Jan Kara <jack@suse.cz>
+
+for this patch but please also add a sentense that ->writepage() is
+responsible for calling mapping_set_error() if it fails and page is not
+redirtied to the changelogs of patches changing writepage handlers.
+
+> I'll make another pass through the tree and see whether we have some
+> mapping_set_error calls that should be removed, and will flesh out
+> vfs.txt to state this. Maybe that file needs a whole section on
+> writeback error reporting? Hmmm...
+
+I think it would be nice to have all the logic described in one place. So
++1 from me.
+
+> That probably also means that I should drop patch 8 from this series
+> (mm: ensure that we set mapping error if writeout fails), since that
+> should be happening in writepage already.
+
+Yes.
+
+								Honza
 -- 
-Jeff Layton <jlayton@redhat.com>
+Jan Kara <jack@suse.com>
+SUSE Labs, CR

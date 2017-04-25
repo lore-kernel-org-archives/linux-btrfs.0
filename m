@@ -1,177 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:21522 "EHLO
-        cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S945818AbdDYTbJ (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:47507 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1949429AbdDYUUK (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 25 Apr 2017 15:31:09 -0400
-Subject: Re: [PATCH 0/3] introduce type based delalloc metadata reserve to fix
- some false enospc issues
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
-        linux-btrfs@vger.kernel.org
-References: <1478853587-28717-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
- <310b5ef9-3e08-129d-66bf-500478e65424@profihost.ag>
- <2a3f8cb2-e4e9-e534-ee3d-ff5ad517e71a@gmx.com>
- <30979d9a-993c-c130-5b1b-09cfe5955409@profihost.ag>
- <c53cd7dc-e01a-1463-947d-f8d3721862f7@profihost.ag>
- <41588c56-58d7-a11d-de78-996285e86f6d@cn.fujitsu.com>
- <38b13669-a4b0-3c92-7b80-7a3c27bbde16@profihost.ag>
-Cc: clm@fb.com, jbacik@fb.com, dsterba@suse.com, holger@applied-asynchrony.com
-From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
-Message-ID: <8c3da03f-df96-b34c-a108-3a162d878f02@profihost.ag>
-Date: Tue, 25 Apr 2017 21:25:39 +0200
-MIME-Version: 1.0
-In-Reply-To: <38b13669-a4b0-3c92-7b80-7a3c27bbde16@profihost.ag>
-Content-Type: text/plain; charset=utf-8
+        Tue, 25 Apr 2017 16:20:10 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1d36wM-0003TK-Aa
+        for linux-btrfs@vger.kernel.org; Tue, 25 Apr 2017 22:20:02 +0200
+To: linux-btrfs@vger.kernel.org
+From: Kai Krakow <hurikhan77@gmail.com>
+Subject: Re: backing up a collection of snapshot subvolumes
+Date: Tue, 25 Apr 2017 22:20:02 +0200
+Message-ID: <20170425222002.4f119fc6@jupiter.sol.kaishome.de>
+References: <58FECA45.1010107@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Qu,
+Am Tue, 25 Apr 2017 00:02:13 -0400
+schrieb "J. Hart" <jfhart085@gmail.com>:
 
-still noone on this one? Or is this one solved in another way in 4.10 or
-4.11 or is compression just experimental? Haven't seen a note on this.
+> I have a remote machine with a filesystem for which I periodically
+> take incremental snapshots for historical reasons.  These snapshots
+> are stored in an archival filesystem tree on a file server.  Older
+> snapshots are removed and newer ones added on a rotational basis.  I
+> need to be able to backup this archive by syncing it with a set of
+> backup drives. Due to the size, I need to back it up incrementally
+> rather than sending the entire content each time.  Due to the
+> snapshot rotation, I need to be able to update the state of the
+> archive backup filesystem as a whole, in much the same manner that
+> rsync handles file trees.
+> 
+> It seems that I cannot use "btrfs send", as the archive directory 
+> contains the snapshots as subvolumes.
+> 
+> I cannot use rsync as it treats subvolumes as simple directories, and 
+> does not preserve subvolume attributes.  Rsync also does not support 
+> reflinks, so the snapshot directory content will no longer be
+> reflinked to other snapshots on the archive backup.  I cannot use
+> hard links in the incrementals as hard links do not cross subvolume
+> boundaries.
+> 
+> Thoughts anyone ?
 
-Thanks,
-Stefan
+If this is for archival purpose only and storage efficiency and speed is
+your primary concern, try borgbackup.
 
-Am 27.02.2017 um 14:43 schrieb Stefan Priebe - Profihost AG:
-> Hi,
-> 
-> can please anybody comment on that one? Josef? Chris? I still need those
-> patches to be able to let btrfs run for more than 24hours without ENOSPC
-> issues.
-> 
-> Greets,
-> Stefan
-> 
-> Am 27.02.2017 um 08:22 schrieb Qu Wenruo:
->>
->>
->> At 02/25/2017 04:23 PM, Stefan Priebe - Profihost AG wrote:
->>> Dear Qu,
->>>
->>> any news on your branch? I still don't see it merged anywhere.
->>>
->>> Greets,
->>> Stefan
->>
->> I just remember that Liu Bo has commented one of the patches, I'm afraid
->> I can only push these patches until I addressed his concern.
->>
->> I'll start digging it as memory for this fix is quite blurred now.
->>
->> Thanks,
->> Qu
->>>
->>> Am 04.01.2017 um 17:13 schrieb Stefan Priebe - Profihost AG:
->>>> Hi Qu,
->>>>
->>>> Am 01.01.2017 um 10:32 schrieb Qu Wenruo:
->>>>> Hi Stefan,
->>>>>
->>>>> I'm trying to push it to for-next (will be v4.11), but no response yet.
->>>>>
->>>>> It would be quite nice for you to test the following git pull and give
->>>>> some feedback, so that we can merge it faster.
->>>>>
->>>>> https://mail-archive.com/linux-btrfs@vger.kernel.org/msg60418.html
->>>>
->>>> I'm also getting a notifier that wang's email does not exist anymore
->>>> (wangxg.fnst@cn.fujitsu.com).
->>>>
->>>> I would like to test that branch will need some time todo so. Last time
->>>> i tried 4.10-rc1 i had the same problems like this guy:
->>>> https://www.marc.info/?l=linux-btrfs&m=148338312525137&w=2
->>>>
->>>> Stefan
->>>>
->>>>> Thanks,
->>>>> Qu
->>>>>
->>>>> On 12/31/2016 03:31 PM, Stefan Priebe - Profihost AG wrote:
->>>>>> Any news on this series? I can't see it in 4.9 nor in 4.10-rc
->>>>>>
->>>>>> Stefan
->>>>>>
->>>>>> Am 11.11.2016 um 09:39 schrieb Wang Xiaoguang:
->>>>>>> When having compression enabled, Stefan Priebe ofen got enospc errors
->>>>>>> though fs still has much free space. Qu Wenruo also has submitted a
->>>>>>> fstests test case which can reproduce this bug steadily, please see
->>>>>>> url: https://patchwork.kernel.org/patch/9420527
->>>>>>>
->>>>>>> First patch[1/3] "btrfs: improve inode's outstanding_extents
->>>>>>> computation" is to
->>>>>>> fix outstanding_extents and reserved_extents account issues. This
->>>>>>> issue was revealed
->>>>>>> by modifying BTRFS_MAX_EXTENT_SIZE(128MB) to 64KB, When modifying
->>>>>>> BTRFS_MAX_EXTENT_SIZE(128MB) to 64KB, fsstress test often gets these
->>>>>>> warnings from
->>>>>>> btrfs_destroy_inode():
->>>>>>>         WARN_ON(BTRFS_I(inode)->outstanding_extents);
->>>>>>>         WARN_ON(BTRFS_I(inode)->reserved_extents);
->>>>>>> Please see this patch's commit message for detailed info, and this
->>>>>>> patch is
->>>>>>> necessary to patch2 and patch3.
->>>>>>>
->>>>>>> For false enospc, the root reasson is that for compression, its max
->>>>>>> extent size will
->>>>>>> be 128k, not 128MB. If we still use 128MB as max extent size to
->>>>>>> reserve metadata for
->>>>>>> compression, obviously it's not appropriate. In patch "btrfs:
->>>>>>> Introduce COMPRESS
->>>>>>> reserve type to fix false enospc for compression" commit message,
->>>>>>> we explain why false enospc error occurs, please see it for detailed
->>>>>>> info.
->>>>>>>
->>>>>>> To fix this issue, we introduce a new enum type:
->>>>>>>     enum btrfs_metadata_reserve_type {
->>>>>>>         BTRFS_RESERVE_NORMAL,
->>>>>>>             BTRFS_RESERVE_COMPRESS,
->>>>>>>     };
->>>>>>> For btrfs_delalloc_[reserve|release]_metadata() and
->>>>>>> btrfs_delalloc_[reserve|release]_space(), we introce a new
->>>>>>> btrfs_metadata_reserve_type
->>>>>>> argument, then if a path needs to go compression, we pass
->>>>>>> BTRFS_RESERVE_COMPRESS,
->>>>>>> otherwise pass BTRFS_RESERVE_NORMAL.
->>>>>>>
->>>>>>> With these patchs, Stefan no longer saw such false enospc errors, and
->>>>>>> Qu Wenruo's
->>>>>>> fstests test case will also pass. I have also run whole fstests
->>>>>>> multiple times,
->>>>>>> no regression occurs, thanks.
->>>>>>>
->>>>>>> Wang Xiaoguang (3):
->>>>>>>   btrfs: improve inode's outstanding_extents computation
->>>>>>>   btrfs: introduce type based delalloc metadata reserve
->>>>>>>   btrfs: Introduce COMPRESS reserve type to fix false enospc for
->>>>>>>     compression
->>>>>>>
->>>>>>>  fs/btrfs/ctree.h             |  36 +++++--
->>>>>>>  fs/btrfs/extent-tree.c       |  52 ++++++---
->>>>>>>  fs/btrfs/extent_io.c         |  61 ++++++++++-
->>>>>>>  fs/btrfs/extent_io.h         |   5 +
->>>>>>>  fs/btrfs/file.c              |  25 +++--
->>>>>>>  fs/btrfs/free-space-cache.c  |   6 +-
->>>>>>>  fs/btrfs/inode-map.c         |   6 +-
->>>>>>>  fs/btrfs/inode.c             | 246
->>>>>>> ++++++++++++++++++++++++++++++++++---------
->>>>>>>  fs/btrfs/ioctl.c             |  16 +--
->>>>>>>  fs/btrfs/relocation.c        |  14 ++-
->>>>>>>  fs/btrfs/tests/inode-tests.c |  15 +--
->>>>>>>  11 files changed, 381 insertions(+), 101 deletions(-)
->>>>>>>
->>>>>> -- 
->>>>>> To unsubscribe from this list: send the line "unsubscribe
->>>>>> linux-btrfs" in
->>>>>> the body of a message to majordomo@vger.kernel.org
->>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>>>>
->>> -- 
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>
->>>
->>
->>
+Borgbackup deploys its own deduplication and doesn't rely on btrfs
+snapshot capabilities. You can store your archives wherever you want
+(even on non-btrfs), and it won't store any data blocks twice.
+
+Upon restore, you could simply recreate the snapshot/subvolume from a
+similar tree and then rsync a tree restored from borgbackup back to
+this snapshot to get back a state with the benefits of btrfs snapshots.
+
+Borg also has an adapter for fuse to get a mounted view into the
+archives, tho, it is slow and probably takes a lot of RAM. But it is
+good enough for single file lookups and navigation.
+
+-- 
+Regards,
+Kai
+
+Replies to list-only preferred.
+

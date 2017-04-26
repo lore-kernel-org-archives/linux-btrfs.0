@@ -1,57 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41473 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1032952AbdDTOru (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 20 Apr 2017 10:47:50 -0400
-Date: Thu, 20 Apr 2017 15:43:56 +0200
-From: Jan Kara <jack@suse.cz>
-To: Goldwyn Rodrigues <rgoldwyn@suse.de>
-Cc: Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org,
-        jack@suse.com, linux-block@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-xfs@vger.kernel.org, sagi@grimberg.me, avi@scylladb.com,
-        axboe@kernel.dk, linux-api@vger.kernel.org, willy@infradead.org,
-        tom.leiming@gmail.com, Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: Re: [PATCH 5/8] nowait aio: return on congested block device
-Message-ID: <20170420134356.GD22135@quack2.suse.cz>
-References: <20170414120257.8932-1-rgoldwyn@suse.de>
- <20170414120257.8932-6-rgoldwyn@suse.de>
- <20170419064505.GD20053@infradead.org>
- <d3467259-675a-2723-7cf9-d4f2f067d634@suse.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <d3467259-675a-2723-7cf9-d4f2f067d634@suse.de>
+Received: from mail.kernel.org ([198.145.29.136]:36126 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S932295AbdDZRxE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 26 Apr 2017 13:53:04 -0400
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Cc: clm@fb.com, Filipe Manana <fdmanana@suse.com>
+Subject: [GIT PULL] Btrfs bug fixes for 4.12
+Date: Wed, 26 Apr 2017 18:52:41 +0100
+Message-Id: <20170426175241.32703-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed 19-04-17 10:21:39, Goldwyn Rodrigues wrote:
-> 
-> 
-> On 04/19/2017 01:45 AM, Christoph Hellwig wrote:
-> > 
-> >> +	if (bio->bi_opf & REQ_NOWAIT) {
-> >> +		if (!blk_queue_nowait(q)) {
-> >> +			err = -EOPNOTSUPP;
-> >> +			goto end_io;
-> >> +		}
-> >> +		if (!(bio->bi_opf & REQ_SYNC)) {
-> > 
-> > I don't understand this check at all..
-> 
-> It is to ensure at the block layer that NOWAIT comes only for DIRECT
-> calls only. I should probably change it to REQ_SYNC | REQ_IDLE.
+From: Filipe Manana <fdmanana@suse.com>
 
-Ouch. Checking 'REQ_SYNC' for this is
+Hi Chris,
 
-a) unreliable hack
-b) layering violation
+Please consider the following changes for the 4.12 merge window.
+These are all bug fixes and nothing particularly outstanding compared to
+changes for past merge windows.
 
-You just don't care why someone marked bio with REQ_NOWAIT at this place.
-Just obey the request if you can, return error if you cannot, but advisory
-REQ_SYNC or REQ_IDLE flags have nothing to do with the ability of the block
-layer to submit the bio without blocking...
+Thanks.
 
-								Honza
+The following changes since commit a967efb30b3afa3d858edd6a17f544f9e9e46eea:
+
+  Btrfs: fix potential use-after-free for cloned bio (2017-04-11 18:49:56 +0200)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/fdmanana/linux.git for-chris-4.12
+
+for you to fetch changes up to a7e3b975a0f9296162b72ac6ab7fad9631a07630:
+
+  Btrfs: fix reported number of inode blocks (2017-04-26 16:27:26 +0100)
+
+----------------------------------------------------------------
+Filipe Manana (5):
+      Btrfs: fix invalid attempt to free reserved space on failure to cow range
+      Btrfs: fix incorrect space accounting after failure to insert inline extent
+      Btrfs: fix extent map leak during fallocate error path
+      Btrfs: send, fix file hole not being preserved due to inline extent
+      Btrfs: fix reported number of inode blocks
+
+Qu Wenruo (2):
+      btrfs: Fix metadata underflow caused by btrfs_reloc_clone_csum error
+      btrfs: Handle delalloc error correctly to avoid ordered extent hang
+
+ fs/btrfs/btrfs_inode.h |   7 ++++
+ fs/btrfs/extent_io.h   |   5 ++-
+ fs/btrfs/file.c        |  66 +++++++++++++++++++++++++++++++++----
+ fs/btrfs/inode.c       | 242 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--------------------------------
+ fs/btrfs/send.c        |  23 +++++++++++--
+ 5 files changed, 277 insertions(+), 66 deletions(-)
+
 -- 
-Jan Kara <jack@suse.com>
-SUSE Labs, CR
+2.11.0
+

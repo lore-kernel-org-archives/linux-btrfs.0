@@ -1,27 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from sub5.mail.dreamhost.com ([208.113.200.129]:54071 "EHLO
-        homiemail-a124.g.dreamhost.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1165911AbdDXHoG (ORCPT
+Received: from sub5.mail.dreamhost.com ([208.113.200.129]:40366 "EHLO
+        homiemail-a43.g.dreamhost.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S966047AbdDZTPj (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Apr 2017 03:44:06 -0400
+        Wed, 26 Apr 2017 15:15:39 -0400
 Subject: Re: [PATCH] Tidy while loop in end_compressed_writeback
 References: <1ff02889-4c01-acb6-cfc0-48433a86bdf8@asilaycomputing.com>
-To: dsterba@suse.com
-Cc: linux-btrfs@vger.kernel.org, sahil.kang@asilaycomputing.com
+To: Chris Mason <clm@fb.com>
+Cc: David Sterba <dsterba@suse.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
 From: Sahil Kang <sahil.kang@asilaycomputing.com>
-Message-ID: <f46f81a7-4481-dd86-453b-d41d0f3a12bd@asilaycomputing.com>
-Date: Mon, 24 Apr 2017 00:44:05 -0700
+Message-ID: <d25348b1-dcb5-1ffc-42a6-88b03a3a5a65@asilaycomputing.com>
+Date: Wed, 26 Apr 2017 12:15:38 -0700
 MIME-Version: 1.0
 In-Reply-To: <1ff02889-4c01-acb6-cfc0-48433a86bdf8@asilaycomputing.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi David,
+Hi Chris,
 
-I think my previous email may have failed to send.
-Can you merge my patch below?
-It's a minor update that I think improves readability.
+Would you merge my patch below?
+It's a minor update to improve the loop's readability.
 
 Thanks,
 Sahil

@@ -1,45 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from static.3.12.4.46.clients.your-server.de ([46.4.12.3]:44852 "EHLO
-        mx.mokrynskyi.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S939060AbdD0U1r (ORCPT
+Received: from mail-yw0-f176.google.com ([209.85.161.176]:36556 "EHLO
+        mail-yw0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S937913AbdD0Xfj (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Apr 2017 16:27:47 -0400
-Received: from localhost (localhost [127.0.0.1])
-        by mx.mokrynskyi.com (Postfix) with ESMTP id DE0D6C433
-        for <linux-btrfs@vger.kernel.org>; Thu, 27 Apr 2017 20:18:03 +0000 (UTC)
-Received: from mx.mokrynskyi.com ([127.0.0.1])
-        by localhost (mx.mokrynskyi.com [127.0.0.1]) (amavisd-new, port 10026)
-        with ESMTP id oxPRsJiZSzl4 for <linux-btrfs@vger.kernel.org>;
-        Thu, 27 Apr 2017 20:18:03 +0000 (UTC)
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-From: Nazar Mokrynskyi <nazar@mokrynskyi.com>
-Subject: Subvolume copy fails with "ERROR: empty stream is not considered
- valid"
-Cc: =?UTF-8?Q?St=c3=a9phane_Graber?= <stgraber@ubuntu.com>
-Message-ID: <094d0920-ffa1-bd2b-0846-35fd01a972e3@mokrynskyi.com>
-Date: Thu, 27 Apr 2017 23:18:02 +0300
+        Thu, 27 Apr 2017 19:35:39 -0400
+Received: by mail-yw0-f176.google.com with SMTP id l18so23624310ywh.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 27 Apr 2017 16:35:39 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CAPsdh33+2gA2EBswSrA-jV5H6ZtrK2tQ_W6j8rKtMUTYE2S76g@mail.gmail.com>
+References: <CAPsdh32v36LAbDLujVW-yiLiEvY_cNnqPtVXdKzdfADHUhB2JQ@mail.gmail.com>
+ <20170427190751.2dc0e7ac@natsu> <CAPsdh33mN-QuL+-Z5UmO7Tmn4rEQs7_6X3a0D2T0APYkm5YR2A@mail.gmail.com>
+ <CAPsdh33+2gA2EBswSrA-jV5H6ZtrK2tQ_W6j8rKtMUTYE2S76g@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Thu, 27 Apr 2017 17:35:38 -0600
+Message-ID: <CAJCQCtTN2GyzebfC5JR_jZuF9_XVi9N0iHJutX2GuuvAPzVhAQ@mail.gmail.com>
+Subject: Re: No space left on device when doing "mkdir"
+To: Gerard Saraber <gsaraber@rarcoa.com>
+Cc: Roman Mamedov <rm@romanrm.net>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've just reported a bug (https://bugzilla.kernel.org/show_bug.cgi?id=195597) that hit me after recent update of btrfs-progs.
+On Thu, Apr 27, 2017 at 10:46 AM, Gerard Saraber <gsaraber@rarcoa.com> wrote:
+> After a reboot, I found this in the logs:
+> [  322.510152] BTRFS info (device sdm): The free space cache file
+> (36114966511616) is invalid. skip it
+> [  488.702570] btrfs_printk: 847 callbacks suppressed
+>
+>
+>
+> On Thu, Apr 27, 2017 at 10:18 AM, Gerard Saraber <gsaraber@rarcoa.com> wrote:
+>> no snapshots and no qgroups, just a straight up large volume.
+>>
+>> shrapnel gerard-store # btrfs fi df /home/exports
+>> Data, RAID1: total=20.93TiB, used=20.86TiB
+>> System, RAID1: total=32.00MiB, used=3.73MiB
+>> Metadata, RAID1: total=79.00GiB, used=61.10GiB
+>> GlobalReserve, single: total=512.00MiB, used=544.00KiB
+>>
+>> shrapnel gerard-store # btrfs filesystem usage /home/exports
+>> Overall:
+>>     Device size:                  69.13TiB
+>>     Device allocated:             42.01TiB
+>>     Device unallocated:           27.13TiB
+>>     Device missing:                  0.00B
+>>     Used:                         41.84TiB
+>>     Free (estimated):             13.63TiB      (min: 13.63TiB)
+>>     Data ratio:                       2.00
+>>     Metadata ratio:                   2.00
+>>     Global reserve:              512.00MiB      (used: 1.52MiB)
+>>
+>> On Thu, Apr 27, 2017 at 9:07 AM, Roman Mamedov <rm@romanrm.net> wrote:
+>>> On Thu, 27 Apr 2017 08:52:30 -0500
+>>> Gerard Saraber <gsaraber@rarcoa.com> wrote:
+>>>
+>>>> I could just reboot the system and be fine for a week or so, but is
+>>>> there any way to diagnose this?
+>>>
+>>> `btrfs fi df` for a start.
+>>>
+>>> Also obligatory questions: do you have a lot of snapshots, and do you use
+>>> qgroups?
+>>>
 
-It seems to be a false-positive that resulted from the changes that aimed to fix another issue.
+A dev might find this helpful
+$ grep -IR . /sys/fs/btrfs/usevolumeUUIDhere/allocation/
 
-Short version of it is following:
 
-root@nazar-pc:~# /bin/btrfs send  "/media/Backup/web/2017-04-04_14:30:06" | /bin/btrfs receive "/media/Backup_backup/web"
-At subvol /media/Backup/web/2017-04-04_14:30:06
-At subvol 2017-04-04_14:30:06
-ERROR: empty stream is not considered valid
-
-I've also added Stéphane Graber to CC as the author of the recent update to Ubuntu's btrfs-progs package.
-
-I'm not subscribed to the mailing list, so keep me in copy, please.
+Also note that a lot of people on Btrfs aren't getting Gerard's
+emails, because anyone using gmail and some other agents see it as
+spam because of DMARC failure. Basically rarcoa.com is configured to
+tell mail senders to fail to (re)send emails, they can only be sent
+from raroa.com. Anyway, I think this is supposed to be fixed in
+mailing list servers, they need to strip these headers and insert
+their own rather than leaving them intact only later to get rejected
+due to honoring the header's stated policy.
 
 -- 
-Sincerely, Nazar Mokrynskyi
-github.com/nazar-pc
-Tox: A9D95C9AA5F7A3ED75D83D0292E22ACE84BA40E912185939414475AF28FD2B2A5C8EF5261249
-
+Chris Murphy

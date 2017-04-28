@@ -1,55 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from azure.uno.uk.net ([95.172.254.11]:53226 "EHLO azure.uno.uk.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1950717AbdD1Tj3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 28 Apr 2017 15:39:29 -0400
-Received: from ty.sabi.co.uk ([95.172.230.208]:59450)
-        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
-        (Exim 4.89)
-        (envelope-from <pg@btrfs.list.sabi.co.uk>)
-        id 1d4Bji-001AVL-Km
-        for linux-btrfs@vger.kernel.org; Fri, 28 Apr 2017 20:39:26 +0100
-Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
-        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
-        id 1d4Bje-0004ra-Ia
-        for <linux-btrfs@vger.kernel.org>; Fri, 28 Apr 2017 20:39:22 +0100
+Received: from mail-yw0-f174.google.com ([209.85.161.174]:35054 "EHLO
+        mail-yw0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753774AbdD1TnW (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 28 Apr 2017 15:43:22 -0400
+Received: by mail-yw0-f174.google.com with SMTP id u70so35890431ywe.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 28 Apr 2017 12:43:22 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Message-ID: <22787.39530.223012.644477@tree.ty.sabi.co.uk>
-Date: Fri, 28 Apr 2017 20:39:22 +0100
-To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs, journald logs, fragmentation, and fallocate
-In-Reply-To: <2bfe32ee-4db6-f3ca-ce87-ec72ce300bd0@inwind.it>
+In-Reply-To: <22787.32757.987921.605023@tree.ty.sabi.co.uk>
 References: <CAJCQCtQk1p6rzUYaO19ei51YC+w1uj1qJ77OdLmL5JN3w1zNfw@mail.gmail.com>
-        <5fd31e68-0199-8935-0873-78b4e7c6eb69@inwind.it>
-        <CAJCQCtQCV2DmpsEFtRVdJDMkT54bzbU66+5W873mpJAyXf5k9A@mail.gmail.com>
-        <2bfe32ee-4db6-f3ca-ce87-ec72ce300bd0@inwind.it>
-From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
+ <22787.32757.987921.605023@tree.ty.sabi.co.uk>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Fri, 28 Apr 2017 13:43:21 -0600
+Message-ID: <CAJCQCtT5PVTb3+YLQPYD8Ti2g-KYrDGSmvDBU=EaD0y8e4Ox=Q@mail.gmail.com>
+Subject: Re: btrfs, journald logs, fragmentation, and fallocate
+To: Peter Grandi <pg@btrfs.list.sabi.co.uk>
+Cc: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->> The gotcha though is there's a pile of data in the journal
->> that would never make it to rsyslogd. If you use journalctl
->> -o verbose you can see some of this.
+On Fri, Apr 28, 2017 at 11:46 AM, Peter Grandi <pg@btrfs.list.sabi.co.uk> wrote:
 
-> You can send *all the info* to rsyslogd via imjournal
-> http://www.rsyslog.com/doc/v8-stable/configuration/modules/imjournal.html
-> In my setup all the data are stored in json format in the
-> /var/log/cee.log file:
-> $ head /var/log/cee.log 2017-04-28T18:41:41.931273+02:00
-> venice liblogging-stdlog: @cee: { "PRIORITY": "6", "_BOOT_ID":
-> "a86d74bab91f44dc974c76aceb97141f", "_MACHINE_ID": [ ... ]
+> So there are three layers of silliness here:
+>
+> * Writing large files slowly to a COW filesystem and
+>   snapshotting it frequently.
+> * A filesystem that does delayed allocation instead of
+>   allocate-ahead, and does not have psychic code.
+> * Working around that by using no-COW and preallocation
+>   with a fixed size regardless of snapshot frequency.
+>
+> The primary problem here is that there is no way to have slow
+> small writes and frequent snapshots without generating small
+> extents: if a file is written at a rate of 1MiB/hour and gets
+> snapshot every hour the extent size will not be larger than 1MiB
+> *obviously*.
 
-Ahhhhhh the horror the horror, I will never be able to unsee
-that. The UNIX way of doing things is truly dead.
+Sure.
 
->> The same behavior happens with NTFS in qcow2 files. They
->> quickly end up with 100,000+ extents unless set nocow.
->> It's like the worst case scenario.
+But in my example, no snapshotting, and +C is inhibited (i.e. I set
+/etc/tmpfiles.d/journal-nocow.conf which stops systemd from the new
+behavior of setting +C on journals). That's resulting in a 19000+
+fragment journal file. In fact snapshotting does not make it worse
+though. If it's nocow, then yes snapshotting makes it worse than
+nocow, but no worse than cow.
 
-In a particularly demented setup I had to decastrophize with
-great pain a Zimbra QCOW2 disk image (XFS on NFS on XFS on
-RAID6) containining an ever growing number Maildir email archive
-ended up with over a million widely scattered microextents:
+What I'm trying to get at is default Btrfs behavior and (previous)
+default journald behavior, have a misalignment resulting in a lot of
+fragmentation, is there a better way around this than merely setting
+journals to nocow *and* making sure they stay nocow by preventing
+snapshotting. If there's nothing better to be done, then I'll just
+re-recommend to systemd folks that the directory containing journals
+should be made a subvolume to isolate it from inadvertent
+snapshotting. If people want to snapshot it anyway there's nothing we
+can do about that.
 
-  http://www.sabi.co.uk/blog/1101Jan.html?110116#110116
+
+
+> Filesystem-level snapshots are not designed to snapshot slowly
+> growing files, but to snapshots changing collections of
+> files. There are harsh tradeoffs involved. Application-level
+> shapshots (also known as log rotations :->) are needed for
+> special cases and finer grained policies.
+>
+> The secondary problem is that a fixed preallocate of 8MiB is
+> good only if in betweeen snapshots the file grows by a little
+> less than 8MiB or by substantially more.
+
+Just to be clear, none of my own examples involve journals being
+snapshot. There are no shared extents for any of those files.
+
+-- 
+Chris Murphy

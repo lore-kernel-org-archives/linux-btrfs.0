@@ -1,78 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:57487 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1754259AbdD1Apk (ORCPT
+Received: from mail-yw0-f169.google.com ([209.85.161.169]:33471 "EHLO
+        mail-yw0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1035395AbdD1D6y (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Apr 2017 20:45:40 -0400
-Subject: Re: File system corruption, btrfsck abort
-To: Christophe de Dinechin <dinechin@redhat.com>,
-        <linux-btrfs@vger.kernel.org>
-References: <D64BF81E-58B3-4B19-AD65-F5056768466C@redhat.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <43eda9a8-e7be-4bc3-bd37-4df44f93f321@cn.fujitsu.com>
-Date: Fri, 28 Apr 2017 08:45:37 +0800
+        Thu, 27 Apr 2017 23:58:54 -0400
+Received: by mail-yw0-f169.google.com with SMTP id 203so25382992ywe.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 27 Apr 2017 20:58:53 -0700 (PDT)
 MIME-Version: 1.0
 In-Reply-To: <D64BF81E-58B3-4B19-AD65-F5056768466C@redhat.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+References: <D64BF81E-58B3-4B19-AD65-F5056768466C@redhat.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Thu, 27 Apr 2017 21:58:52 -0600
+Message-ID: <CAJCQCtQGmQksOmwjmYRVtdBfcY1YT5eY7vSWGgt6oJFcg8HaGQ@mail.gmail.com>
+Subject: Re: File system corruption, btrfsck abort
+To: Christophe de Dinechin <dinechin@redhat.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Tue, Apr 25, 2017 at 11:50 AM, Christophe de Dinechin
+<dinechin@redhat.com> wrote:
 
-
-At 04/26/2017 01:50 AM, Christophe de Dinechin wrote:
-> Hi,
-> 
-> 
-> I”ve been trying to run btrfs as my primary work filesystem for about 3-4 months now on Fedora 25 systems. I ran a few times into filesystem corruptions. At least one I attributed to a damaged disk, but the last one is with a brand new 3T disk that reports no SMART errors. Worse yet, in at least three cases, the filesystem corruption caused btrfsck to crash.
-> 
+>
 > The last filesystem corruption is documented here: https://bugzilla.redhat.com/show_bug.cgi?id=1444821. The dmesg log is in there.
 
-According to the bugzilla, the btrfs-progs seems to be too old in btrfs 
-standard.
+And also from the bug:
+>How reproducible: Seen at least 4 times on 3 different disks and 2 different systems.
 
-What about using the latest btrfs-progs v4.10.2?
 
-Furthermore for v4.10.2, btrfs check provides a new mode called lowmem.
-You could try "btrfs check --mode=lowmem" to see if such problem can be 
-avoided.
+I've been using Fedora and Btrfs on 1/2 dozen different kinds of
+hardware since around Fedora 13. The oldest file systems are about 2
+years old. I've not seen file system corruption. So I'd say there's
+some kind of workload that's helping to trigger it or it's hardware
+related; that it's happening on multiple systems makes me wonder if
+it's power related.
 
-For the kernel bug, it seems to be related to wrongly inserted delayed 
-ref, but I can totally be wrong.
 
-Thanks,
-Qu
-> 
+
+>
 > The btrfsck crash is here: https://bugzilla.redhat.com/show_bug.cgi?id=1435567. I have two crash modes: either an abort or a SIGSEGV. I checked that both still happens on master as of today.
-> 
-> The cause of the abort is that we call set_extent_dirty from check_extent_refs with rec->max_size == 0. I’ve instrumented to try to see where we set this to 0 (see https://github.com/c3d/btrfs-progs/tree/rhbz1435567), and indeed, we do sometimes see max_size set to 0 in a few locations. My instrumentation shows this:
-> 
-> 78655 [1.792241:0x451fe0] MAX_SIZE_ZERO: Add extent rec 0x139eb80 max_size 16384 tmpl 0x7fffffffd120
-> 78657 [1.792242:0x451cb8] MAX_SIZE_ZERO: Set max size 0 for rec 0x139ec50 from tmpl 0x7fffffffcf80
-> 78660 [1.792244:0x451fe0] MAX_SIZE_ZERO: Add extent rec 0x139ed50 max_size 16384 tmpl 0x7fffffffd120
-> 
-> I don’t really know what to make of it.
-> 
-> The cause of the SIGSEGV is that we try to free a list entry that has its next set to NULL.
-> 
-> #0  list_del (entry=0x555555db0420) at /usr/src/debug/btrfs-progs-v4.10.1/kernel-lib/list.h:125
-> #1  free_all_extent_backrefs (rec=0x555555db0350) at cmds-check.c:5386
-> #2  maybe_free_extent_rec (extent_cache=0x7fffffffd990, rec=0x555555db0350) at cmds-check.c:5417
-> #3  0x00005555555b308f in check_block (flags=<optimized out>, buf=0x55557b87cdf0, extent_cache=0x7fffffffd990, root=0x55555587d570) at cmds-check.c:5851
-> #4  run_next_block (root=root@entry=0x55555587d570, bits=bits@entry=0x5555558841
-> 
-> I don’t know if the two problems are related, but they seem to be pretty consistent on this specific disk, so I think that we have a good opportunity to improve btrfsck to make it more robust to this specific form of corruption. But I don’t want to hapazardly modify a code I don’t really understand. So if anybody could make a suggestion on what the right strategy should be when we have max_size == 0, or how to avoid it in the first place.
-> 
+
+The btrfs check crash is another matter. I've seen it crash many
+times, but the more recent versions are more reliable and haven't seen
+a crash lately.
+
+
+
 > I don’t know if this is relevant at all, but all the machines that failed that way were used to run VMs with KVM/QEMU. DIsk activity tends to be somewhat intense on occasions, since the VMs running there are part of a personal Jenkins ring that automatically builds various projects. Nominally, there are between three and five guests running (Windows XP, WIndows 10, macOS, Fedora25, Ubuntu 16.04).
-> 
-> 
-> Thanks
-> Christophe de Dinechin
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
 
 
+I do run VM's quite often with all of my setups but rarely two
+concurrently and never three or more. So, hmmm. And are the VM's
+backed by a qemu image on Btrfs? Or LVM?
+
+
+-- 
+Chris Murphy

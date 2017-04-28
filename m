@@ -1,124 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f43.google.com ([209.85.214.43]:35629 "EHLO
-        mail-it0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751417AbdD1N4L (ORCPT
+Received: from mail-yb0-f175.google.com ([209.85.213.175]:34251 "EHLO
+        mail-yb0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1165814AbdD1QQH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 28 Apr 2017 09:56:11 -0400
-Received: by mail-it0-f43.google.com with SMTP id 70so38058181ita.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 28 Apr 2017 06:56:11 -0700 (PDT)
+        Fri, 28 Apr 2017 12:16:07 -0400
+Received: by mail-yb0-f175.google.com with SMTP id 8so16621591ybw.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 28 Apr 2017 09:16:07 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtTN2GyzebfC5JR_jZuF9_XVi9N0iHJutX2GuuvAPzVhAQ@mail.gmail.com>
-References: <CAPsdh32v36LAbDLujVW-yiLiEvY_cNnqPtVXdKzdfADHUhB2JQ@mail.gmail.com>
- <20170427190751.2dc0e7ac@natsu> <CAPsdh33mN-QuL+-Z5UmO7Tmn4rEQs7_6X3a0D2T0APYkm5YR2A@mail.gmail.com>
- <CAPsdh33+2gA2EBswSrA-jV5H6ZtrK2tQ_W6j8rKtMUTYE2S76g@mail.gmail.com> <CAJCQCtTN2GyzebfC5JR_jZuF9_XVi9N0iHJutX2GuuvAPzVhAQ@mail.gmail.com>
-From: Gerard Saraber <gsaraber@rarcoa.com>
-Date: Fri, 28 Apr 2017 08:56:07 -0500
-Message-ID: <CAPsdh31Djmz5p+1+XGmfN+Ropp3CdhNjU6CpnJhKhPx+fsG71w@mail.gmail.com>
-Subject: Re: No space left on device when doing "mkdir"
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Roman Mamedov <rm@romanrm.net>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Fri, 28 Apr 2017 10:16:00 -0600
+Message-ID: <CAJCQCtQk1p6rzUYaO19ei51YC+w1uj1qJ77OdLmL5JN3w1zNfw@mail.gmail.com>
+Subject: btrfs, journald logs, fragmentation, and fallocate
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dmarc is off, here's the output of the allocations: it's working
-correctly right now, I'll update when it does it again.
+Old news is that systemd-journald journals end up pretty heavily
+fragmented on Btrfs due to COW. While journald uses chattr +C on
+journal files now, COW still happens if the subvolume the journal is
+in gets snapshot. e.g. a week old system.journal has 19000+ extents.
 
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/flags:2
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/raid1/used_bytes:3948544
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/raid1/total_bytes:33554432
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/bytes_pinned:0
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/disk_total:67108864
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/bytes_may_use:0
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/bytes_readonly:0
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/bytes_used:3948544
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/bytes_reserved:0
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/disk_used:7897088
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/total_bytes_pinned:0
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/total_bytes:33554432
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/flags:4
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/raid1/used_bytes:65864957952
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/raid1/total_bytes:83751862272
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/bytes_pinned:0
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/disk_total:167503724544
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/bytes_may_use:739508224
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/bytes_readonly:0
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/bytes_used:65864957952
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/bytes_reserved:1835008
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/disk_used:131729915904
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/total_bytes_pinned:1884160
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/total_bytes:83751862272
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/global_rsv_size:536870912
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/flags:1
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/raid1/used_bytes:23029876707328
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/raid1/total_bytes:23175643529216
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/bytes_pinned:0
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/disk_total:46351287058432
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/bytes_may_use:36474880
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/bytes_readonly:1703936
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/bytes_used:23029876707328
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/bytes_reserved:15003648
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/disk_used:46059753414656
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/total_bytes_pinned:0
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/total_bytes:23175643529216
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/global_rsv_reserved:536870912
+The news is I started a systemd thread.
+
+This is the start:
+https://lists.freedesktop.org/archives/systemd-devel/2017-April/038724.html
+
+Where it gets interesting, two messages by Andrei Borzenkov: He
+evaluates existing code and does some tests on ext4 and XFS.
+https://lists.freedesktop.org/archives/systemd-devel/2017-April/038724.html
+https://lists.freedesktop.org/archives/systemd-devel/2017-April/038728.html
+
+And then the question.
+https://lists.freedesktop.org/archives/systemd-devel/2017-April/038735.html
+
+Given what journald is doing, is what Btrfs is doing expected? Is
+there something it could do better to be more like ext4 and XFS in the
+same situation? Or is it out of scope for Btrfs?
+
+It appears to me (see below URLs pointing to example journals) that
+journald fallocated in 8MiB increments but then ends up doing 4KiB
+writes; there's a lot of these unused (unwritten) 8MiB extents that
+appear in both filefrag and btrfs-debug -f outputs.
+
+The +C idea just rearranges the deck chairs, it's not solving the
+underlying problem except in the case where the containing subvolume
+is never snapshot. And in the COW case, I'm seeing about 30 metadata
+nodes being written out for what amounts to less than a 4KiB journal
+append. Each time.
+
+And that makes me wonder whether metadata fragmentation is happening
+as a result. But in any case, there's a lot of metadata being written
+for each journal update compared to what's being added to the journal
+file.
+
+And then that makes me wonder if a better optimization on Btrfs would
+be having each write be a separate file. The small updates would have
+data inline. Which is worse, a single file with 20000 fragments; or
+40000 separate journal files? *shrug* At least those individual files
+would be subject to compression with +c; whereas right now the open
+endedness of the active journal has not a single compressed extent.
+Only once rotated do they get compressed (via defragmentation which
+journald does only on Btrfs). Journals contain highly compressible
+data.
 
 
-On Thu, Apr 27, 2017 at 6:35 PM, Chris Murphy <lists@colorremedies.com> wrote:
-> On Thu, Apr 27, 2017 at 10:46 AM, Gerard Saraber <gsaraber@rarcoa.com> wrote:
->> After a reboot, I found this in the logs:
->> [  322.510152] BTRFS info (device sdm): The free space cache file
->> (36114966511616) is invalid. skip it
->> [  488.702570] btrfs_printk: 847 callbacks suppressed
->>
->>
->>
->> On Thu, Apr 27, 2017 at 10:18 AM, Gerard Saraber <gsaraber@rarcoa.com> wrote:
->>> no snapshots and no qgroups, just a straight up large volume.
->>>
->>> shrapnel gerard-store # btrfs fi df /home/exports
->>> Data, RAID1: total=20.93TiB, used=20.86TiB
->>> System, RAID1: total=32.00MiB, used=3.73MiB
->>> Metadata, RAID1: total=79.00GiB, used=61.10GiB
->>> GlobalReserve, single: total=512.00MiB, used=544.00KiB
->>>
->>> shrapnel gerard-store # btrfs filesystem usage /home/exports
->>> Overall:
->>>     Device size:                  69.13TiB
->>>     Device allocated:             42.01TiB
->>>     Device unallocated:           27.13TiB
->>>     Device missing:                  0.00B
->>>     Used:                         41.84TiB
->>>     Free (estimated):             13.63TiB      (min: 13.63TiB)
->>>     Data ratio:                       2.00
->>>     Metadata ratio:                   2.00
->>>     Global reserve:              512.00MiB      (used: 1.52MiB)
->>>
->>> On Thu, Apr 27, 2017 at 9:07 AM, Roman Mamedov <rm@romanrm.net> wrote:
->>>> On Thu, 27 Apr 2017 08:52:30 -0500
->>>> Gerard Saraber <gsaraber@rarcoa.com> wrote:
->>>>
->>>>> I could just reboot the system and be fine for a week or so, but is
->>>>> there any way to diagnose this?
->>>>
->>>> `btrfs fi df` for a start.
->>>>
->>>> Also obligatory questions: do you have a lot of snapshots, and do you use
->>>> qgroups?
->>>>
->
-> A dev might find this helpful
-> $ grep -IR . /sys/fs/btrfs/usevolumeUUIDhere/allocation/
->
->
-> Also note that a lot of people on Btrfs aren't getting Gerard's
-> emails, because anyone using gmail and some other agents see it as
-> spam because of DMARC failure. Basically rarcoa.com is configured to
-> tell mail senders to fail to (re)send emails, they can only be sent
-> from raroa.com. Anyway, I think this is supposed to be fixed in
-> mailing list servers, they need to strip these headers and insert
-> their own rather than leaving them intact only later to get rejected
-> due to honoring the header's stated policy.
->
-> --
-> Chris Murphy
+
+Anyway, two example journals. The parent directory has chattr +c, both
+journals inherited it. The first URL is filefrag -v, the 2nd is
+btrfs-debug -f; for each journal.
+
+This is a rotated journal. Upon rotation on Btrfs, journald
+defragments the file which ends up compressing it when chattr +c.
+https://da.gd/4NKyq
+https://da.gd/zEeYW
+
+This is an active system.journal. No compressed extents (the writes I
+think are too small).
+https://da.gd/cBjX
+https://da.gd/YXuI
+
+
+Extra credit if you've followed this far... The rotated log has piles
+of unwritten items in it that are making it fairly inefficient even
+with compression. Just using cat to write its contents to a new file,
+compression goes from a 1.27 ratio, to 5.70. Here are the results
+after catting that file:
+https://da.gd/rE8KT
+https://da.gd/PD5qI
+
+
+
+-- 
+Chris Murphy

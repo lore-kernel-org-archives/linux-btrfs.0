@@ -1,40 +1,147 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37666 "EHLO mx2.suse.de"
+Received: from mx1.mailbox.org ([80.241.60.212]:58195 "EHLO mx1.mailbox.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933879AbdDGRUA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 7 Apr 2017 13:20:00 -0400
-Date: Fri, 7 Apr 2017 19:19:58 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Christian Brauner <christian.brauner@ubuntu.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/2 v2] tests: use receive -e to terminate on end marker
-Message-ID: <20170407171958.GW4781@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170403202108.14859-1-christian.brauner@ubuntu.com>
- <20170403202108.14859-3-christian.brauner@ubuntu.com>
+        id S1753712AbdD1Jzr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 28 Apr 2017 05:55:47 -0400
+Date: Fri, 28 Apr 2017 11:55:31 +0200
+From: Christian Brauner <christian.brauner@canonical.com>
+To: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>
+Cc: Christian Brauner <christian.brauner@ubuntu.com>, dsterba@suse.cz,
+        btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 1/2 v2] btrfs-progs: fix btrfs send & receive with -e flag
+Message-ID: <20170428095530.yw74untb34oawlm2@mailbox.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170403202108.14859-3-christian.brauner@ubuntu.com>
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CAKuJGC9hJSKnHrXPr2EvEktjHf-=OxJkhzzZbeFfB6OUYSdyJQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 03, 2017 at 10:21:08PM +0200, Christian Brauner wrote:
-> Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
-> ---
->  tests/misc-tests/018-recv-end-of-stream/test.sh | 12 ++++++------
->  1 file changed, 6 insertions(+), 6 deletions(-)
-> 
-> diff --git a/tests/misc-tests/018-recv-end-of-stream/test.sh b/tests/misc-tests/018-recv-end-of-stream/test.sh
-> index d39683e9..90655929 100755
-> --- a/tests/misc-tests/018-recv-end-of-stream/test.sh
-> +++ b/tests/misc-tests/018-recv-end-of-stream/test.sh
-> @@ -34,7 +34,7 @@ test_full_empty_stream() {
->  
->  	run_check $TOP/mkfs.btrfs -f $TEST_DEV
->  	run_check_mount_test_dev
-> -	run_check $SUDO_HELPER $TOP/btrfs receive -v -f "$str" "$TEST_MNT"
-> +	run_check $SUDO_HELPER $TOP/btrfs receive -e -v -f "$str" "$TEST_MNT"
+Hi,
 
-You're changing an existing test, what I expect is a new testcase as the
-existing tests cover existing usecases and must not break. However I
-don't see now how to fix it, will look into it again next week.
+On Fri, Apr 28, 2017 at 02:55:31PM +0530, Lakshmipathi.G wrote:
+> Seems like user reported an issue with this patch. please check
+> https://bugzilla.kernel.org/show_bug.cgi?id=195597
+
+I can take a look. What I'm wondering about is why it fails only in the HDD
+to SSD case. If -ENODATA is returned with this patch it should mean that there
+was no header data. So is the user sure that this doesn't indicate a valid
+error?
+
+Christian
+
+> 
+> ----
+> Cheers,
+> Lakshmipathi.G
+> 
+> 
+> On Tue, Apr 4, 2017 at 1:51 AM, Christian Brauner <
+> christian.brauner@ubuntu.com> wrote:
+> > The old check here tried to ensure that empty streams are not considered
+> valid.
+> > The old check however, will always fail when only one run through the
+> while(1)
+> > loop is needed and honor_end_cmd is set. So this:
+> >
+> > btrfs send /some/subvol | btrfs receive -e /some/
+> >
+> > will consistently fail because -e causes honor_cmd_to be set and
+> > btrfs_read_and_process_send_stream() to correctly return 1. So the
+> command will
+> > be successful but btrfs receive will error out because the send - receive
+> > concluded in one run through the while(1) loop.
+> >
+> > If we want to exclude empty streams we need a way to tell the difference
+> between
+> > btrfs_read_and_process_send_stream() returning 1 because read_buf() did
+> not
+> > detect any data and read_and_process_cmd() returning 1 because
+> honor_end_cmd was
+> > set. Without introducing too many changes the best way to me seems to have
+> > btrfs_read_and_process_send_stream() return -ENODATA in the first case.
+> The rest
+> > stays the same. We can then check for -ENODATA in do_receive() and report
+> a
+> > proper error in this case. This should also be backwards compatible to
+> previous
+> > versions of btrfs receive. They will fail on empty streams because a
+> negative
+> > value is returned. The only thing that they will lack is a nice error
+> message.
+> >
+> > Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
+> > ---
+> > Changelog: 2017-04-03
+> >         - no changes
+> > ---
+> >  cmds-receive.c | 13 +++++--------
+> >  send-stream.c  |  2 +-
+> >  2 files changed, 6 insertions(+), 9 deletions(-)
+> >
+> > diff --git a/cmds-receive.c b/cmds-receive.c
+> > index 6cf22637..b59f00e4 100644
+> > --- a/cmds-receive.c
+> > +++ b/cmds-receive.c
+> > @@ -1091,7 +1091,6 @@ static int do_receive(struct btrfs_receive *rctx,
+> const char *tomnt,
+> >         char *dest_dir_full_path;
+> >         char root_subvol_path[PATH_MAX];
+> >         int end = 0;
+> > -       int count;
+> >
+> >         dest_dir_full_path = realpath(tomnt, NULL);
+> >         if (!dest_dir_full_path) {
+> > @@ -1186,7 +1185,6 @@ static int do_receive(struct btrfs_receive *rctx,
+> const char *tomnt,
+> >         if (ret < 0)
+> >                 goto out;
+> >
+> > -       count = 0;
+> >         while (!end) {
+> >                 if (rctx->cached_capabilities_len) {
+> >                         if (g_verbose >= 3)
+> > @@ -1200,16 +1198,15 @@ static int do_receive(struct btrfs_receive *rctx,
+> const char *tomnt,
+> >                                                          rctx,
+> >
+>  rctx->honor_end_cmd,
+> >                                                          max_errors);
+> > -               if (ret < 0)
+> > -                       goto out;
+> > -               /* Empty stream is invalid */
+> > -               if (ret && count == 0) {
+> > +               if (ret < 0 && ret == -ENODATA) {
+> > +                       /* Empty stream is invalid */
+> >                         error("empty stream is not considered valid");
+> >                         ret = -EINVAL;
+> >                         goto out;
+> > +               } else if (ret < 0) {
+> > +                       goto out;
+> >                 }
+> > -               count++;
+> > -               if (ret)
+> > +               if (ret > 0)
+> >                         end = 1;
+> >
+> >                 close_inode_for_write(rctx);
+> > diff --git a/send-stream.c b/send-stream.c
+> > index 5a028cd9..78f2571a 100644
+> > --- a/send-stream.c
+> > +++ b/send-stream.c
+> > @@ -492,7 +492,7 @@ int btrfs_read_and_process_send_stream(int fd,
+> >         if (ret < 0)
+> >                 goto out;
+> >         if (ret) {
+> > -               ret = 1;
+> > +               ret = -ENODATA;
+> >                 goto out;
+> >         }
+> >
+> > --
+> > 2.11.0
+> >
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+

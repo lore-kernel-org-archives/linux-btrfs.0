@@ -1,22 +1,22 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from azure.uno.uk.net ([95.172.254.11]:52975 "EHLO azure.uno.uk.net"
+Received: from azure.uno.uk.net ([95.172.254.11]:52974 "EHLO azure.uno.uk.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1755413AbdD1Rxr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1755430AbdD1Rxr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Fri, 28 Apr 2017 13:53:47 -0400
-Received: from ty.sabi.co.uk ([95.172.230.208]:58722)
+Received: from ty.sabi.co.uk ([95.172.230.208]:58720)
         by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
         (Exim 4.89)
         (envelope-from <pg@btrfs.list.sabi.co.uk>)
-        id 1d4A5R-0017WD-PN
+        id 1d4A5R-0017W8-7A
         for linux-btrfs@vger.kernel.org; Fri, 28 Apr 2017 18:53:45 +0100
 Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
         by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
-        id 1d49yQ-00042C-Ao
-        for <linux-btrfs@vger.kernel.org>; Fri, 28 Apr 2017 18:46:30 +0100
+        id 1d4A5F-000454-Qu
+        for <linux-btrfs@vger.kernel.org>; Fri, 28 Apr 2017 18:53:33 +0100
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Message-ID: <22787.32757.987921.605023@tree.ty.sabi.co.uk>
-Date: Fri, 28 Apr 2017 18:46:29 +0100
+Message-ID: <22787.33181.491103.496790@tree.ty.sabi.co.uk>
+Date: Fri, 28 Apr 2017 18:53:33 +0100
 To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: btrfs, journald logs, fragmentation, and fallocate
 In-Reply-To: <CAJCQCtQk1p6rzUYaO19ei51YC+w1uj1qJ77OdLmL5JN3w1zNfw@mail.gmail.com>
@@ -25,40 +25,28 @@ From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> Old news is that systemd-journald journals end up pretty
-> heavily fragmented on Btrfs due to COW.
+> [ ... ] And that makes me wonder whether metadata
+> fragmentation is happening as a result. But in any case,
+> there's a lot of metadata being written for each journal
+> update compared to what's being added to the journal file. [
+> ... ]
 
-This has been discussed before in detail indeeed here, but also
-here: http://www.sabi.co.uk/blog/15-one.html?150203#150203
+That's the "wandering trees" problem in COW filesystems, and
+manifestations of it in Btrfs have also been reported before.
+If there is a workload that triggers a lot of "wandering trees"
+updates, then a filesystem that has "wandering trees" perhaps
+should not be used :-).
 
-> While journald uses chattr +C on journal files now, COW still
-> happens if the subvolume the journal is in gets snapshot. e.g.
-> a week old system.journal has 19000+ extents. [ ... ]  It
-> appears to me (see below URLs pointing to example journals)
-> that journald fallocated in 8MiB increments but then ends up
-> doing 4KiB writes; [ ... ]
+> [ ... ] worse, a single file with 20000 fragments; or 40000
+> separate journal files? *shrug* [ ... ]
 
-So there are three layers of silliness here:
+Well, depends, but probably the single file: it is more likely
+that the 20,000 fragments will actually be contiguous, and that
+there will be less metadata IO than for 40,000 separate journal
+files.
 
-* Writing large files slowly to a COW filesystem and
-  snapshotting it frequently.
-* A filesystem that does delayed allocation instead of
-  allocate-ahead, and does not have psychic code.
-* Working around that by using no-COW and preallocation
-  with a fixed size regardless of snapshot frequency.
-
-The primary problem here is that there is no way to have slow
-small writes and frequent snapshots without generating small
-extents: if a file is written at a rate of 1MiB/hour and gets
-snapshot every hour the extent size will not be larger than 1MiB
-*obviously*.
-
-Filesystem-level snapshots are not designed to snapshot slowly
-growing files, but to snapshots changing collections of
-files. There are harsh tradeoffs involved. Application-level
-shapshots (also known as log rotations :->) are needed for
-special cases and finer grained policies.
-
-The secondary problem is that a fixed preallocate of 8MiB is
-good only if in betweeen snapshots the file grows by a little
-less than 8MiB or by substantially more.
+The deeper "strategic" issue is that storage systems and
+filesystems in particular have very anisotropic performance
+envelopes, and mismatches between the envelopes of application
+and filesystem can be very expensive:
+  http://www.sabi.co.uk/blog/15-two.html?151023#151023

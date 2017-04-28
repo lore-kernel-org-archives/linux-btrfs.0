@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f174.google.com ([209.85.161.174]:35054 "EHLO
-        mail-yw0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753774AbdD1TnW (ORCPT
+Received: from mail-yb0-f174.google.com ([209.85.213.174]:35186 "EHLO
+        mail-yb0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1423598AbdD1Tze (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 28 Apr 2017 15:43:22 -0400
-Received: by mail-yw0-f174.google.com with SMTP id u70so35890431ywe.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 28 Apr 2017 12:43:22 -0700 (PDT)
+        Fri, 28 Apr 2017 15:55:34 -0400
+Received: by mail-yb0-f174.google.com with SMTP id p143so17959428yba.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 28 Apr 2017 12:55:33 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <22787.32757.987921.605023@tree.ty.sabi.co.uk>
+In-Reply-To: <22787.33181.491103.496790@tree.ty.sabi.co.uk>
 References: <CAJCQCtQk1p6rzUYaO19ei51YC+w1uj1qJ77OdLmL5JN3w1zNfw@mail.gmail.com>
- <22787.32757.987921.605023@tree.ty.sabi.co.uk>
+ <22787.33181.491103.496790@tree.ty.sabi.co.uk>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Fri, 28 Apr 2017 13:43:21 -0600
-Message-ID: <CAJCQCtT5PVTb3+YLQPYD8Ti2g-KYrDGSmvDBU=EaD0y8e4Ox=Q@mail.gmail.com>
+Date: Fri, 28 Apr 2017 13:55:32 -0600
+Message-ID: <CAJCQCtRt4kr6We5wB7eLbN-9mdXyfy7QMwAqs15J5biyyc+KYg@mail.gmail.com>
 Subject: Re: btrfs, journald logs, fragmentation, and fallocate
 To: Peter Grandi <pg@btrfs.list.sabi.co.uk>
 Cc: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
@@ -20,56 +20,32 @@ Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 28, 2017 at 11:46 AM, Peter Grandi <pg@btrfs.list.sabi.co.uk> wrote:
+On Fri, Apr 28, 2017 at 11:53 AM, Peter Grandi <pg@btrfs.list.sabi.co.uk> wrote:
 
-> So there are three layers of silliness here:
->
-> * Writing large files slowly to a COW filesystem and
->   snapshotting it frequently.
-> * A filesystem that does delayed allocation instead of
->   allocate-ahead, and does not have psychic code.
-> * Working around that by using no-COW and preallocation
->   with a fixed size regardless of snapshot frequency.
->
-> The primary problem here is that there is no way to have slow
-> small writes and frequent snapshots without generating small
-> extents: if a file is written at a rate of 1MiB/hour and gets
-> snapshot every hour the extent size will not be larger than 1MiB
-> *obviously*.
+> Well, depends, but probably the single file: it is more likely
+> that the 20,000 fragments will actually be contiguous, and that
+> there will be less metadata IO than for 40,000 separate journal
+> files.
 
-Sure.
+You can see from the examples I posted that these extents are all over
+the place, they're not contiguous at all. 4K here, 4K there, 4K over
+there, back to 4K here next to this one, 4K over there...12K over
+there, 500K unwritten, 4K over there. This seems not so consequential
+on SSD, at least if it impacts performance it's not so bad I care. On
+a hard drive, it's totally noticeable. And that's why journald went
+with chattr +C by default a few versions ago when on Btrfs. And it
+does help *if* the partent is never snapshot, which on a snapshotting
+file system can't really be guaranteed. Inadvertent snapshotting could
+be inhibited by putting the journals in their own subvolume though.
 
-But in my example, no snapshotting, and +C is inhibited (i.e. I set
-/etc/tmpfiles.d/journal-nocow.conf which stops systemd from the new
-behavior of setting +C on journals). That's resulting in a 19000+
-fragment journal file. In fact snapshotting does not make it worse
-though. If it's nocow, then yes snapshotting makes it worse than
-nocow, but no worse than cow.
+Anyway, it's difficult to consider Btrfs a general purpose file system
+if other general purpose workloads like journal files, are causing a
+problem like wandering tree. Hence the subject of what to do about it,
+and that may mean short term and long term. I can't speak for systemd
+developers but if there's a different way to write to the journals
+that'd be better for Btrfs and no worse for ext4 and XFS, it might be
+considered.
 
-What I'm trying to get at is default Btrfs behavior and (previous)
-default journald behavior, have a misalignment resulting in a lot of
-fragmentation, is there a better way around this than merely setting
-journals to nocow *and* making sure they stay nocow by preventing
-snapshotting. If there's nothing better to be done, then I'll just
-re-recommend to systemd folks that the directory containing journals
-should be made a subvolume to isolate it from inadvertent
-snapshotting. If people want to snapshot it anyway there's nothing we
-can do about that.
-
-
-
-> Filesystem-level snapshots are not designed to snapshot slowly
-> growing files, but to snapshots changing collections of
-> files. There are harsh tradeoffs involved. Application-level
-> shapshots (also known as log rotations :->) are needed for
-> special cases and finer grained policies.
->
-> The secondary problem is that a fixed preallocate of 8MiB is
-> good only if in betweeen snapshots the file grows by a little
-> less than 8MiB or by substantially more.
-
-Just to be clear, none of my own examples involve journals being
-snapshot. There are no shared extents for any of those files.
 
 -- 
 Chris Murphy

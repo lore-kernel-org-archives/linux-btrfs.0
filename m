@@ -1,80 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f176.google.com ([209.85.161.176]:36556 "EHLO
-        mail-yw0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S937913AbdD0Xfj (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:57487 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1754259AbdD1Apk (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Apr 2017 19:35:39 -0400
-Received: by mail-yw0-f176.google.com with SMTP id l18so23624310ywh.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 27 Apr 2017 16:35:39 -0700 (PDT)
+        Thu, 27 Apr 2017 20:45:40 -0400
+Subject: Re: File system corruption, btrfsck abort
+To: Christophe de Dinechin <dinechin@redhat.com>,
+        <linux-btrfs@vger.kernel.org>
+References: <D64BF81E-58B3-4B19-AD65-F5056768466C@redhat.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <43eda9a8-e7be-4bc3-bd37-4df44f93f321@cn.fujitsu.com>
+Date: Fri, 28 Apr 2017 08:45:37 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAPsdh33+2gA2EBswSrA-jV5H6ZtrK2tQ_W6j8rKtMUTYE2S76g@mail.gmail.com>
-References: <CAPsdh32v36LAbDLujVW-yiLiEvY_cNnqPtVXdKzdfADHUhB2JQ@mail.gmail.com>
- <20170427190751.2dc0e7ac@natsu> <CAPsdh33mN-QuL+-Z5UmO7Tmn4rEQs7_6X3a0D2T0APYkm5YR2A@mail.gmail.com>
- <CAPsdh33+2gA2EBswSrA-jV5H6ZtrK2tQ_W6j8rKtMUTYE2S76g@mail.gmail.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Thu, 27 Apr 2017 17:35:38 -0600
-Message-ID: <CAJCQCtTN2GyzebfC5JR_jZuF9_XVi9N0iHJutX2GuuvAPzVhAQ@mail.gmail.com>
-Subject: Re: No space left on device when doing "mkdir"
-To: Gerard Saraber <gsaraber@rarcoa.com>
-Cc: Roman Mamedov <rm@romanrm.net>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <D64BF81E-58B3-4B19-AD65-F5056768466C@redhat.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 27, 2017 at 10:46 AM, Gerard Saraber <gsaraber@rarcoa.com> wrote:
-> After a reboot, I found this in the logs:
-> [  322.510152] BTRFS info (device sdm): The free space cache file
-> (36114966511616) is invalid. skip it
-> [  488.702570] btrfs_printk: 847 callbacks suppressed
->
->
->
-> On Thu, Apr 27, 2017 at 10:18 AM, Gerard Saraber <gsaraber@rarcoa.com> wrote:
->> no snapshots and no qgroups, just a straight up large volume.
->>
->> shrapnel gerard-store # btrfs fi df /home/exports
->> Data, RAID1: total=20.93TiB, used=20.86TiB
->> System, RAID1: total=32.00MiB, used=3.73MiB
->> Metadata, RAID1: total=79.00GiB, used=61.10GiB
->> GlobalReserve, single: total=512.00MiB, used=544.00KiB
->>
->> shrapnel gerard-store # btrfs filesystem usage /home/exports
->> Overall:
->>     Device size:                  69.13TiB
->>     Device allocated:             42.01TiB
->>     Device unallocated:           27.13TiB
->>     Device missing:                  0.00B
->>     Used:                         41.84TiB
->>     Free (estimated):             13.63TiB      (min: 13.63TiB)
->>     Data ratio:                       2.00
->>     Metadata ratio:                   2.00
->>     Global reserve:              512.00MiB      (used: 1.52MiB)
->>
->> On Thu, Apr 27, 2017 at 9:07 AM, Roman Mamedov <rm@romanrm.net> wrote:
->>> On Thu, 27 Apr 2017 08:52:30 -0500
->>> Gerard Saraber <gsaraber@rarcoa.com> wrote:
->>>
->>>> I could just reboot the system and be fine for a week or so, but is
->>>> there any way to diagnose this?
->>>
->>> `btrfs fi df` for a start.
->>>
->>> Also obligatory questions: do you have a lot of snapshots, and do you use
->>> qgroups?
->>>
-
-A dev might find this helpful
-$ grep -IR . /sys/fs/btrfs/usevolumeUUIDhere/allocation/
 
 
-Also note that a lot of people on Btrfs aren't getting Gerard's
-emails, because anyone using gmail and some other agents see it as
-spam because of DMARC failure. Basically rarcoa.com is configured to
-tell mail senders to fail to (re)send emails, they can only be sent
-from raroa.com. Anyway, I think this is supposed to be fixed in
-mailing list servers, they need to strip these headers and insert
-their own rather than leaving them intact only later to get rejected
-due to honoring the header's stated policy.
+At 04/26/2017 01:50 AM, Christophe de Dinechin wrote:
+> Hi,
+> 
+> 
+> I”ve been trying to run btrfs as my primary work filesystem for about 3-4 months now on Fedora 25 systems. I ran a few times into filesystem corruptions. At least one I attributed to a damaged disk, but the last one is with a brand new 3T disk that reports no SMART errors. Worse yet, in at least three cases, the filesystem corruption caused btrfsck to crash.
+> 
+> The last filesystem corruption is documented here: https://bugzilla.redhat.com/show_bug.cgi?id=1444821. The dmesg log is in there.
 
--- 
-Chris Murphy
+According to the bugzilla, the btrfs-progs seems to be too old in btrfs 
+standard.
+
+What about using the latest btrfs-progs v4.10.2?
+
+Furthermore for v4.10.2, btrfs check provides a new mode called lowmem.
+You could try "btrfs check --mode=lowmem" to see if such problem can be 
+avoided.
+
+For the kernel bug, it seems to be related to wrongly inserted delayed 
+ref, but I can totally be wrong.
+
+Thanks,
+Qu
+> 
+> The btrfsck crash is here: https://bugzilla.redhat.com/show_bug.cgi?id=1435567. I have two crash modes: either an abort or a SIGSEGV. I checked that both still happens on master as of today.
+> 
+> The cause of the abort is that we call set_extent_dirty from check_extent_refs with rec->max_size == 0. I’ve instrumented to try to see where we set this to 0 (see https://github.com/c3d/btrfs-progs/tree/rhbz1435567), and indeed, we do sometimes see max_size set to 0 in a few locations. My instrumentation shows this:
+> 
+> 78655 [1.792241:0x451fe0] MAX_SIZE_ZERO: Add extent rec 0x139eb80 max_size 16384 tmpl 0x7fffffffd120
+> 78657 [1.792242:0x451cb8] MAX_SIZE_ZERO: Set max size 0 for rec 0x139ec50 from tmpl 0x7fffffffcf80
+> 78660 [1.792244:0x451fe0] MAX_SIZE_ZERO: Add extent rec 0x139ed50 max_size 16384 tmpl 0x7fffffffd120
+> 
+> I don’t really know what to make of it.
+> 
+> The cause of the SIGSEGV is that we try to free a list entry that has its next set to NULL.
+> 
+> #0  list_del (entry=0x555555db0420) at /usr/src/debug/btrfs-progs-v4.10.1/kernel-lib/list.h:125
+> #1  free_all_extent_backrefs (rec=0x555555db0350) at cmds-check.c:5386
+> #2  maybe_free_extent_rec (extent_cache=0x7fffffffd990, rec=0x555555db0350) at cmds-check.c:5417
+> #3  0x00005555555b308f in check_block (flags=<optimized out>, buf=0x55557b87cdf0, extent_cache=0x7fffffffd990, root=0x55555587d570) at cmds-check.c:5851
+> #4  run_next_block (root=root@entry=0x55555587d570, bits=bits@entry=0x5555558841
+> 
+> I don’t know if the two problems are related, but they seem to be pretty consistent on this specific disk, so I think that we have a good opportunity to improve btrfsck to make it more robust to this specific form of corruption. But I don’t want to hapazardly modify a code I don’t really understand. So if anybody could make a suggestion on what the right strategy should be when we have max_size == 0, or how to avoid it in the first place.
+> 
+> I don’t know if this is relevant at all, but all the machines that failed that way were used to run VMs with KVM/QEMU. DIsk activity tends to be somewhat intense on occasions, since the VMs running there are part of a personal Jenkins ring that automatically builds various projects. Nominally, there are between three and five guests running (Windows XP, WIndows 10, macOS, Fedora25, Ubuntu 16.04).
+> 
+> 
+> Thanks
+> Christophe de Dinechin
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> 
+
+

@@ -1,40 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-me1aus01on0063.outbound.protection.outlook.com ([104.47.116.63]:27479
-        "EHLO AUS01-ME1-obe.outbound.protection.outlook.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1951914AbdD2Bqj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 28 Apr 2017 21:46:39 -0400
-From: Paul Jones <paul@pauljones.id.au>
-To: "kreijack@inwind.it" <kreijack@inwind.it>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: RE: btrfs, journald logs, fragmentation, and fallocate
-Date: Sat, 29 Apr 2017 01:46:36 +0000
-Message-ID: <MEXPR01MB2168B9173B1D3C55040DFFEA9E120@MEXPR01MB2168.ausprd01.prod.outlook.com>
+Received: from [195.159.176.226] ([195.159.176.226]:45399 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1752111AbdD2EQu (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 29 Apr 2017 00:16:50 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1d4JoH-0006bS-NT
+        for linux-btrfs@vger.kernel.org; Sat, 29 Apr 2017 06:16:41 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: btrfs, journald logs, fragmentation, and fallocate
+Date: Sat, 29 Apr 2017 04:16:36 +0000 (UTC)
+Message-ID: <pan$53f85$ee564b6d$7f657417$325211f4@cox.net>
 References: <CAJCQCtQk1p6rzUYaO19ei51YC+w1uj1qJ77OdLmL5JN3w1zNfw@mail.gmail.com>
- <5fd31e68-0199-8935-0873-78b4e7c6eb69@inwind.it>
-In-Reply-To: <5fd31e68-0199-8935-0873-78b4e7c6eb69@inwind.it>
-Content-Type: text/plain; charset="utf-8"
-MIME-Version: 1.0
+        <5fd31e68-0199-8935-0873-78b4e7c6eb69@inwind.it>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> -----Original Message-----
-> From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-
-> owner@vger.kernel.org] On Behalf Of Goffredo Baroncelli
-> Sent: Saturday, 29 April 2017 3:05 AM
-> To: Chris Murphy <lists@colorremedies.com>
-> Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-> Subject: Re: btrfs, journald logs, fragmentation, and fallocate
-> 
-> 
-> In the past I faced the same problems; I collected some data here
-> http://kreijack.blogspot.it/2014/06/btrfs-and-systemd-journal.html.
-> Unfortunately the journald files are very bad, because first the data is
-> written (appended), then the index fields are updated. Unfortunately these
-> indexes are near after the last write . So fragmentation is unavoidable.
+Goffredo Baroncelli posted on Fri, 28 Apr 2017 19:05:21 +0200 as
+excerpted:
 
-Perhaps a better idea for COW filesystems is to store the index in a separate file, and/or rewrite the last 1 MB block (or part thereof) of the data file every time data is appended? That way the data file will use 1MB extents and hopefully avoid ridiculous amounts of metadata. 
+> After some thinking I adopted a different strategies: I used journald as
+> collector, then I forward all the log to rsyslogd, which used a "log
+> append" format. Journald never write on the root filesystem, only in
+> tmp.
 
+Great minds think alike. =:^)
 
-Paul.
-ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm
+Only here it's syslog-ng that does the permanent writes.
+
+I just couldn't see journald's crazy (for btrfs) write pattern going to 
+permanent storage.
+
+And AFAIK, journald has no pre-write filtering mechanism at all, only 
+post-write display-time filtering, so even "log-spam" that I don't want/
+need logged gets written to it, while if I see something spamming 
+continuously (I run git kernels and kde, and do get such spammers 
+occasionally) I setup a syslog-ng spam filter to kill it, so it never 
+actually gets written to permanent storage at all.
+
+But the tmpfs journals and btrfs traditional logs gives me the best of 
+both worlds, per-boot journals with all the extra metadata, the last ten 
+journal entries for it when I do systemctl status on a unit, etc, and a 
+nice filtered and ordered multi-boot log that I can use traditional text-
+based log-administration tools on.
+
+The only part of it I'm not happy with is that journald apparently can't 
+keep separate user and system journals when set to temporary only -- 
+everything goes to the system journal.  Which eventually means that much 
+of the stdout/stderr debugging spew that kde-based apps like to spew out 
+ends up in the system journal and (would be in the) log.  But that's a 
+journald "documented bug-feature", and I can and do syslog-ng filter it 
+before it actually hits the written system log (or console log display).
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

@@ -1,55 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f194.google.com ([209.85.216.194]:36195 "EHLO
-        mail-qt0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1946591AbdD3Q4d (ORCPT
+Received: from mail-qk0-f170.google.com ([209.85.220.170]:35579 "EHLO
+        mail-qk0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1756875AbdD3RKN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 30 Apr 2017 12:56:33 -0400
-Received: by mail-qt0-f194.google.com with SMTP id t52so14304397qtb.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 30 Apr 2017 09:56:33 -0700 (PDT)
-Message-ID: <5906173F.70009@gmail.com>
-Date: Sun, 30 Apr 2017 12:56:31 -0400
+        Sun, 30 Apr 2017 13:10:13 -0400
+Received: by mail-qk0-f170.google.com with SMTP id q1so8295527qkd.2
+        for <linux-btrfs@vger.kernel.org>; Sun, 30 Apr 2017 10:10:13 -0700 (PDT)
+Received: from [192.168.0.23] ([98.4.97.1])
+        by smtp.gmail.com with ESMTPSA id 139sm8195934qkl.13.2017.04.30.10.10.11
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
+        Sun, 30 Apr 2017 10:10:11 -0700 (PDT)
+Message-ID: <59061A73.2050207@gmail.com>
+Date: Sun, 30 Apr 2017 13:10:11 -0400
 From: "J. Hart" <jfhart085@gmail.com>
 Reply-To: jfhart085@gmail.com
 MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-CC: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: ERROR: cannot find parent subvolume, can't see reason for it.
-References: <20170430000452.2dcc1591@ws>
-In-Reply-To: <20170430000452.2dcc1591@ws>
+Subject: ERROR: rename o3528-7220-0 -> usr failed: Directory not empty
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thank you very much for your thoughtful and thorough reply.   I 
-appreciate this very much.
+I am seeing the following error in one of a series of "btrfs send" 
+operations.   The error is as follows:
 
-I have finally been able to work past the issue.  It seems that 
-send/receive participates in maintaing some sort of "chain of 
-custody/ancestry".  I had been using a pre-existing snapshot at the 
-destination instead of sending over an identical original via "btrfs 
-send".   This seems to have had the effect of "breaking" that "chain", 
-causing send to refuse to use that snapshot as a parent.  When the 
-original is sent,  send can use it  as such, and the operation I was 
-attempting proceeds without error.
+At subvol /mnt/ArchPri/backup/primary/thinkcentre/root/backup.0.2
+At snapshot backup.0.2017.04.21.03.11.40
+ERROR: rename o3528-7220-0 -> usr failed: Directory not empty
 
-On 04/30/2017 03:07 AM, Duncan wrote:
-> [This mail was also posted to gmane.comp.file-systems.btrfs.]
->
-> J. Hart posted on Sat, 29 Apr 2017 23:10:48 -0400 as excerpted:
->
+It looks like it might be a btrfs bug, but I'm not sure.
 
-> I see three previous threads (the first starting on March 25) with you 
-> as original poster on the list, all of which have followups to the 
-> list, one of which has a single followup from you to someone replying 
-> to you, from you as well. I don't however see any followups from you 
-> to replies on the other two threads, and only the one followup to 
-> someone replying on the one thread. So it may be that you're not 
-> getting the replies very well. Are you subscribed to the list? While 
-> some posters reply directly to author as
-I will try keeping a more careful eye on the archives as you suggest and 
-see if I am missing replies.
+A similar (?) bug was reported back on Feb 27, 2015 in the following 
+message:
+https://www.spinics.net/lists/linux-btrfs/msg42278.html
 
-With Thanks,
+The resulting thread has since moved to :
+https://www.spinics.net/lists/linux-btrfs/thrd34.html#42278
+
+I am currently using a custom built 4.10.0 kernel from kernel.org. The 
+linux system it's running on is one I built entirely from source (not 
+Linux From Scratch) using a set of procedures I designed and so is not a 
+common commercial one.
+
+I will be happy to provide whatever further information or diagnostics I 
+can.
 
 J. Hart
 

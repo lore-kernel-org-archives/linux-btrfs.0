@@ -1,102 +1,177 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:33068 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752497AbdDKDZU (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 Apr 2017 23:25:20 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-        by cn.fujitsu.com (Postfix) with ESMTP id B69D047CE240
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Apr 2017 11:25:06 +0800 (CST)
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 5/5] btrfs-progs: fsck-check: test cases for nbytes and dir isize
-Date: Tue, 11 Apr 2017 11:26:31 +0800
-Message-ID: <20170411032631.24932-6-suy.fnst@cn.fujitsu.com>
-In-Reply-To: <20170411032631.24932-1-suy.fnst@cn.fujitsu.com>
-References: <20170411032631.24932-1-suy.fnst@cn.fujitsu.com>
+Received: from mail-sn1nam01on0068.outbound.protection.outlook.com ([104.47.32.68]:7355
+        "EHLO NAM01-SN1-obe.outbound.protection.outlook.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1947453AbdD3WUq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 30 Apr 2017 18:20:46 -0400
+From: Zach Aller <ZAller@iteris.com>
+To: Zach Aller <ZAller@iteris.com>, Chris Murphy <lists@colorremedies.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: How to fix these btrfs errors
+Date: Sun, 30 Apr 2017 22:20:43 +0000
+Message-ID: <D52BCC47.486A8%zaller@iteris.com>
+References: <D52BBC8E.48696%zaller@iteris.com>
+ <CAJCQCtTi+uOSrTvPMp+C22UdCwCNwtQWaZH4Lbr3vd_EBY_t4w@mail.gmail.com>
+ <D52BC352.4869A%zaller@iteris.com>
+In-Reply-To: <D52BC352.4869A%zaller@iteris.com>
+Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
-Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Create test case '026-wrong-dir-inode-isize'.
-Create becon files '.lowmem_repairable' under tests/fsck-test/016 and 026.
-
-Now 'make test-fsck' will test lowmem repairable test cases if
-TEST_ENABLE_OVERRIDE=true.
-
-Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
----
- .../fsck-tests/016-wrong-inode-nbytes/.lowmem_repairable |   0
- .../026-wrong-dir-inode-isize/.lowmem_repairable         |   0
- .../026-wrong-dir-inode-isize/default_case.img           | Bin 0 -> 4096 bytes
- 3 files changed, 0 insertions(+), 0 deletions(-)
- create mode 100644 tests/fsck-tests/016-wrong-inode-nbytes/.lowmem_repairable
- create mode 100644 tests/fsck-tests/026-wrong-dir-inode-isize/.lowmem_repairable
- create mode 100644 tests/fsck-tests/026-wrong-dir-inode-isize/default_case.img
-
-diff --git a/tests/fsck-tests/016-wrong-inode-nbytes/.lowmem_repairable b/tests/fsck-tests/016-wrong-inode-nbytes/.lowmem_repairable
-new file mode 100644
-index 00000000..e69de29b
-diff --git a/tests/fsck-tests/026-wrong-dir-inode-isize/.lowmem_repairable b/tests/fsck-tests/026-wrong-dir-inode-isize/.lowmem_repairable
-new file mode 100644
-index 00000000..e69de29b
-diff --git a/tests/fsck-tests/026-wrong-dir-inode-isize/default_case.img b/tests/fsck-tests/026-wrong-dir-inode-isize/default_case.img
-new file mode 100644
-index 0000000000000000000000000000000000000000..a060cca86e945f2659595d812b3017c66c570d5e
-GIT binary patch
-literal 4096
-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
-R>`I?{{<B2?R{Os>@NZR9TeJWG
-
-literal 0
-HcmV?d00001
-
--- 
-2.12.0
+Output of one more command.
+-------
+./btrfs inspect-internal dump-tree /dev/sda > dump.txt
+parent transid verify failed on 15732050345984 wanted 73879 found 73881
+parent transid verify failed on 15732050345984 wanted 73879 found 73881
+parent transid verify failed on 15732050345984 wanted 73879 found 73881
+parent transid verify failed on 15732050345984 wanted 73879 found 73881
+Ignoring transid failure
+WARNING: eb corrupted: item 0 eb level 3 next level 3, skipping the rest
+-------
 
 
+
+Here is the end of dump.txt after the above command failed.
+-------
+
+checksum tree key (CSUM_TREE ROOT_ITEM 0)
+node 15732050329600 level 3 items 15 free 478 generation 73879 owner 7
+fs uuid bdd89c26-038d-49fd-b895-52b8deb989cc
+chunk uuid 2cf80f39-d64e-489f-acec-8411f5c1bb33
+	key (EXTENT_CSUM EXTENT_CSUM 12582912) block 15732050345984 (960208151)
+gen 73879
+	key (EXTENT_CSUM EXTENT_CSUM 1036259938304) block 15732062109696
+(960208869) gen 73879
+	key (EXTENT_CSUM EXTENT_CSUM 2055219736576) block 22061012254720
+(1346497330) gen 73796
+	key (EXTENT_CSUM EXTENT_CSUM 3067616186368) block 15732273971200
+(960221800) gen 72465
+	key (EXTENT_CSUM EXTENT_CSUM 4125595508736) block 19670583918592
+(1200597163) gen 71747
+	key (EXTENT_CSUM EXTENT_CSUM 5160724217856) block 22060767379456
+(1346482384) gen 73047
+	key (EXTENT_CSUM EXTENT_CSUM 6225035022336) block 18786519695360
+(1146638165) gen 71390
+	key (EXTENT_CSUM EXTENT_CSUM 7317037834240) block 22060823707648
+(1346485822) gen 73791
+	key (EXTENT_CSUM EXTENT_CSUM 8520881180672) block 22061229129728
+(1346510567) gen 72304
+	key (EXTENT_CSUM EXTENT_CSUM 9556147200000) block 21773927448576
+(1328975064) gen 72764
+	key (EXTENT_CSUM EXTENT_CSUM 10643353645056) block 22061034897408
+(1346498712) gen 73797
+	key (EXTENT_CSUM EXTENT_CSUM 11886318727168) block 21773509066752
+(1328949528) gen 73741
+	key (EXTENT_CSUM EXTENT_CSUM 13041959669760) block 2532038983680
+(154543395) gen 71958
+	key (EXTENT_CSUM EXTENT_CSUM 14315004522496) block 21773773946880
+(1328965695) gen 57898
+	key (EXTENT_CSUM EXTENT_CSUM 16297194516480) block 22061036748800
+(1346498825) gen 72864
+uuid tree key (UUID_TREE ROOT_ITEM 0)
+leaf 29376512 items 0 free space 16283 generation 6 owner 9
+fs uuid bdd89c26-038d-49fd-b895-52b8deb989cc
+chunk uuid 2cf80f39-d64e-489f-acec-8411f5c1bb33
+data reloc tree key (DATA_RELOC_TREE ROOT_ITEM 0)
+leaf 29442048 items 2 free space 16061 generation 4 owner
+18446744073709551607
+fs uuid bdd89c26-038d-49fd-b895-52b8deb989cc
+chunk uuid 2cf80f39-d64e-489f-acec-8411f5c1bb33
+	item 0 key (256 INODE_ITEM 0) itemoff 16123 itemsize 160
+		inode generation 3 transid 0 size 0 nbytes 16384
+		block group 0 mode 40755 links 1 uid 0 gid 0 rdev 0
+		sequence 0 flags 0x0(none)
+		atime 1490407706.0 (2017-03-24 21:08:26)
+		ctime 1490407706.0 (2017-03-24 21:08:26)
+		mtime 1490407706.0 (2017-03-24 21:08:26)
+		otime 1490407706.0 (2017-03-24 21:08:26)
+	item 1 key (256 INODE_REF 256) itemoff 16111 itemsize 12
+		inode ref index 0 namelen 2 name: ..
+total bytes 24004303781888
+bytes used 18737354412032
+uuid bdd89c26-038d-49fd-b895-52b8deb989cc
+
+-------
+
+
+
+
+On 4/30/17, 4:39 PM, "linux-btrfs-owner@vger.kernel.org on behalf of Zach
+Aller" <linux-btrfs-owner@vger.kernel.org on behalf of ZAller@iteris.com>
+wrote:
+
+>It is a recent filesystem the data was written with kernel 4.10, today I
+>upgraded to 4.11rc8 to see if it helped anything which it did not.
+>
+>On 4/30/17, 4:35 PM, "chris@colorremedies.com on behalf of Chris Murphy"
+><chris@colorremedies.com on behalf of lists@colorremedies.com> wrote:
+>
+>>On Sun, Apr 30, 2017 at 3:08 PM, Zach Aller <ZAller@iteris.com> wrote:
+>>
+>>> uname -a
+>>> Linux server 4.11.0-041100rc8-generic #201704232131 SMP Mon Apr 24
+>>> 01:32:55 UTC 2017 x86_64 x86_64 x86_64 GNU/Linux
+>>>
+>>> ./btrfs --version
+>>> btrfs-progs v4.10
+>>>
+>>> ./btrfs fi show
+>>> Label: none  uuid: bdd89c26-038d-49fd-b895-52b8deb989cc
+>>>         Total devices 1 FS bytes used 17.04TiB
+>>>         devid    1 size 21.83TiB used 17.28TiB path /dev/sda
+>>
+>>
+>>How old is the file system? Is this a recent problem with just
+>>4.11rc8? Is most of the 17TB written with a particular kernel version,
+>>which?
+>>
+>>
+>>>
+>>> Here is a dmesg snippet
+>>>
+>>>
+>>> [    3.633295] BTRFS: device fsid bdd89c26-038d-49fd-b895-52b8deb989cc
+>>> devid 1 transid 72387 /dev/sda
+>>> [   12.907658] BTRFS info (device sda): disk space caching is enabled
+>>> [   12.907659] BTRFS info (device sda): has skinny extents
+>>> [   13.129140] BTRFS info (device sda): bdev /dev/sda errs: wr 0, rd 0,
+>>> flush 0, corrupt 217, gen 19
+>>> [20956.415076] BTRFS info (device sda): The free space cache file
+>>> (9804365955072) is invalid. skip it
+>>> [36292.358558] BTRFS warning (device sda): checksum error at logical
+>>> 5614914584576 on dev /dev/sda, sector 10979229344: metadata leaf (level
+>>>0)
+>>> in tree 7
+>>> [36292.358563] BTRFS warning (device sda): checksum error at logical
+>>> 5614914584576 on dev /dev/sda, sector 10979229344: metadata leaf (level
+>>>0)
+>>> in tree 7
+>>> [36292.358569] BTRFS error (device sda): bdev /dev/sda errs: wr 0, rd
+>>>0,
+>>> flush 0, corrupt 218, gen 19
+>>> [36292.364717] BTRFS error (device sda): unable to fixup (regular)
+>>>error
+>>> at logical 5614914584576 on dev /dev/sda
+>>
+>>
+>>Both copies of metadata are failing checksum, so it can't be fixed. It
+>>suggests there's a hardware problem (memory or storage), or maybe a
+>>new bug.
+>>
+>>Have there been any crashes while writing to the file system?
+>>What is the storage stack configuration? 22TB for a single block
+>>device means it's built up from something else.
+>>
+>>I'd dig around for any non-btrfs storage stack related errors in the
+>>meantime, maybe a dev will have some idea what's going on from the
+>>call traces, I'm not sure what they mean.
+>>
+>>-- 
+>>Chris Murphy
+>
+>--
+>To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>the body of a message to majordomo@vger.kernel.org
+>More majordomo info at  http://vger.kernel.org/majordomo-info.html
 

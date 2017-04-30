@@ -1,104 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f42.google.com ([209.85.215.42]:35269 "EHLO
-        mail-lf0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1424400AbdD3Frs (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:54975 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1033468AbdD3HDx (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 30 Apr 2017 01:47:48 -0400
-Received: by mail-lf0-f42.google.com with SMTP id 75so49928200lfs.2
-        for <linux-btrfs@vger.kernel.org>; Sat, 29 Apr 2017 22:47:47 -0700 (PDT)
-Received: from [192.168.1.2] (ppp109-252-90-100.pppoe.spdop.ru. [109.252.90.100])
-        by smtp.gmail.com with ESMTPSA id t6sm1955456lfd.44.2017.04.29.22.47.44
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Sat, 29 Apr 2017 22:47:45 -0700 (PDT)
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-From: Andrei Borzenkov <arvidjaar@gmail.com>
-Subject: Can I see what device was used to mount btrfs?
-Message-ID: <1e2e2e5c-5ee8-85c1-1db4-74293d8c9c1e@gmail.com>
-Date: Sun, 30 Apr 2017 08:47:43 +0300
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+        Sun, 30 Apr 2017 03:03:53 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1d4itV-0006PM-Bw
+        for linux-btrfs@vger.kernel.org; Sun, 30 Apr 2017 09:03:45 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: ERROR: cannot find parent subvolume, can't see reason for it.
+Date: Sun, 30 Apr 2017 07:03:37 +0000 (UTC)
+Message-ID: <pan$870c0$65ba0d6f$ead17f60$deb3e014@cox.net>
+References: <590555B8.3070006@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'm chasing issue with btrfs mounts under systemd
-(https://github.com/systemd/systemd/issues/5781) - to summarize, systemd
-waits for the final device that makes btrfs complete and mounts it using
-this device name. But in /proc/self/mountinfo we actually see another
-device name. Due to peculiarities of systemd implementation this device
-"does not exist" from systemd PoV.
+J. Hart posted on Sat, 29 Apr 2017 23:10:48 -0400 as excerpted:
 
-Looking at btrfs code I start to suspect that we actually do not know
-what device was used to mount it at all. I.e.
+> I am trying to do a "send -p src/snp1 src/snp2 dst/" and getting the
+> following error:
+> 
+> ERROR: cannot find parent subvolume
+> 
+> The "src/snp1" is present in both "src/" and "dst/".   The "src/snp2" is
+> present in "src/" .
+> The send works when "-p" is not used, but will not work when it is.
+> 
+> I imagine I am missing something obvious but cannot see what, and would
+> appreciate some suggestions on what might be causing the error.
 
-static int btrfs_show_devname(struct seq_file *m, struct dentry *root)
-{
-...
-        while (cur_devices) {
-                head = &cur_devices->devices;
-                list_for_each_entry(dev, head, dev_list) {
-                        if (dev->missing)
-                                continue;
-                        if (!dev->name)
-                                continue;
-                        if (!first_dev || dev->devid < first_dev->devid)
-                                first_dev = dev;
-                }
-                cur_devices = cur_devices->seed;
-        }
+Note that my own use-case doesn't include send/receive, so the degree to 
+which I can get into specific detail is limited, but as you mentioned 
+sometimes we miss the obvious and need someone else to point it out, so 
+in that spirit, here's a couple obvious things:
 
-        if (first_dev) {
-                rcu_read_lock();
-                name = rcu_dereference(first_dev->name);
-                seq_escape(m, name->str, " \t\n\\");
-                rcu_read_unlock();
-...
+* Your apparently contrived for posting paths above are relative.  Have 
+you tried absolute paths and/or are you certain the relative paths are 
+correctly relative to your current working directory?
 
+* src/snp1 is a read-only snapshot, not just a directory, correct?
 
-So we always show device with the smallest devid, irrespectively of what
-device was actually used to mount it.
+> note: I have sent several queries to this list, but have not heard
+> anything back.   I hope they have not been inappropriate.  If so, I
+> would be grateful if you would let me know, or if there is somewhere
+> else I should be going for advice.
 
-Am I correct? What I have here is
+I see three previous threads (the first starting on March 25) with you as 
+original poster on the list, all of which have followups to the list, one 
+of which has a single followup from you to someone replying to you, from 
+you as well.  I don't however see any followups from you to replies on 
+the other two threads, and only the one followup to someone replying on 
+the one thread.
 
-localhost:~ # ll /dev/disk/by-label/
-total 0
-lrwxrwxrwx 1 root root 10 Apr 30 08:03 Storage -> ../../dm-1
-localhost:~ # systemctl --no-pager status thin.mount
-● thin.mount - /thin
-   Loaded: loaded (/etc/fstab; generated; vendor preset: disabled)
-   Active: active (mounted) since Sun 2017-04-30 08:03:07 MSK; 6min ago
-    Where: /thin
-     What: /dev/dm-0
-     Docs: man:fstab(5)
-           man:systemd-fstab-generator(8)
-  Process: 982 ExecMount=/usr/bin/mount /dev/disk/by-label/Storage /thin
--t btrfs (code=exited, status=0/SUCCESS)
-    Tasks: 0 (limit: 4915)
-   CGroup: /system.slice/thin.mount
+So it may be that you're not getting the replies very well.
 
-Apr 30 08:03:07 localhost systemd[1]: Mounting /thin...
-Apr 30 08:03:07 localhost systemd[1]: Mounted /thin.
+Are you subscribed to the list?  While some posters reply directly to 
+author as well, and that's encouraged, some reply only to the list 
+(including me unless specifically asked or there's some other hint, as 
+here, that it may be needed).
 
+The other possibility, of course, is that replies are getting spam-binned 
+via gmail or on your end.  You may want to check that.
 
-bur mountinfo shows
+Meanwhile, if you're subscribed or are otherwise not getting replies, 
+there's a number of list archives available, see:
 
-localhost:~ # grep /thin /proc/self/mountinfo
-96 59 0:63 / /thin rw,relatime shared:47 - btrfs /dev/dm-0
-rw,space_cache,subvolid=5,subvol=/
+https://btrfs.wiki.kernel.org/index.php/Btrfs_mailing_list
 
-which matches the above algorithm
+The mail-archive one is probably easier to use than marc, and the gmane 
+web-based archive is offline, possibly permanently. 
 
-localhost:~ # btrfs fi show /thin
-Label: 'Storage'  uuid: a6f9dd05-460c-418b-83ab-ebdf81f2931a
-	Total devices 2 FS bytes used 640.00KiB
-	devid    1 size 20.00GiB used 2.01GiB path /dev/mapper/vg01-storage1
-	devid    2 size 10.00GiB used 2.01GiB path /dev/mapper/vg01-storage2
+(Gmane does still have the news-based, that is nntp:// archive available, 
+which I actually read and post thru myself, but the service recently 
+changed hands and there's little information on whether the web service 
+is coming back or not, and without it the news side is likely to 
+eventually die as well.)
 
-localhost:~ # ll /dev/mapper/
-total 0
-crw------- 1 root root 10, 236 Apr 30 08:03 control
-lrwxrwxrwx 1 root root       7 Apr 30 08:03 vg01-storage1 -> ../dm-0
-lrwxrwxrwx 1 root root       7 Apr 30 08:03 vg01-storage2 -> ../dm-1
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-The original device is presumably stored in kernel somewhere but I do
-not know how can I query it?

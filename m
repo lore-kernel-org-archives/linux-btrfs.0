@@ -1,48 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:48824 "EHLO mx1.redhat.com"
+Received: from mx2.mailbox.org ([80.241.60.215]:47331 "EHLO mx2.mailbox.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754275AbdEJQS5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 May 2017 12:18:57 -0400
-Date: Wed, 10 May 2017 12:18:51 -0400 (EDT)
-From: Bob Peterson <rpeterso@redhat.com>
-To: Jeff Layton <jlayton@redhat.com>
-Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-cifs@vger.kernel.org, linux-nfs@vger.kernel.org,
-        linux-mm@kvack.org, jfs-discussion@lists.sourceforge.net,
-        linux-xfs@vger.kernel.org, cluster-devel@redhat.com,
-        linux-f2fs-devel@lists.sourceforge.net,
-        v9fs-developer@lists.sourceforge.net, linux-nilfs@vger.kernel.org,
-        linux-block@vger.kernel.org, dhowells@redhat.com,
-        akpm@linux-foundation.org, hch@infradead.org,
-        ross zwisler <ross.zwisler@linux.intel.com>, mawilcox@microsoft.com,
-        jack@suse.com, viro@zeniv.linux.org.uk, corbet@lwn.net, neilb@suse.de,
-        clm@fb.com, tytso@mit.edu, axboe@kernel.dk, josef@toxicpanda.com,
-        hubcap@omnibond.com, bo li liu <bo.li.liu@oracle.com>
-Message-ID: <1840580824.6421109.1494433131277.JavaMail.zimbra@redhat.com>
-In-Reply-To: <20170509154930.29524-24-jlayton@redhat.com>
-References: <20170509154930.29524-1-jlayton@redhat.com> <20170509154930.29524-24-jlayton@redhat.com>
-Subject: Re: [PATCH v4 23/27] gfs2: clean up some filemap_* calls
+        id S1752364AbdEANJ6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 1 May 2017 09:09:58 -0400
+Date: Mon, 1 May 2017 15:09:41 +0200
+From: Christian Brauner <christian.brauner@canonical.com>
+To: Christian Brauner <christian.brauner@ubuntu.com>
+Cc: nazar@mokrynskyi.com, lakshmipathi.g@gmail.com, dsterba@suse.cz,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/1] btrfs-progs: send: fail on first -ENODATA only
+Message-ID: <20170501130941.hw7fuaovdnuvaxbc@mailbox.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20170429215405.1123-2-christian.brauner@ubuntu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------ Original Message -----
-| In some places, it's trying to reset the mapping error after calling
-| filemap_fdatawait. That's no longer required. Also, turn several
-| filemap_fdatawrite+filemap_fdatawait calls into filemap_write_and_wait.
-| That will at least return writeback errors that occur during the write
-| phase.
-| 
-| Signed-off-by: Jeff Layton <jlayton@redhat.com>
-| ---
+Hi,
 
-Hi Jeff,
+The original bug-reporter verified that my patch fixes the bug. See
 
-This version looks better. ACK.
+https://bugzilla.kernel.org/show_bug.cgi?id=195597
 
-Regards,
+Christian
 
-Bob Peterson
-Red Hat File Systems
+On Sat, Apr 29, 2017 at 11:54:05PM +0200, Christian Brauner wrote:
+> Returning -ENODATA is only considered invalid on the first run of the loop.
+> 
+> Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
+> ---
+>  cmds-receive.c | 20 ++++++++++++++------
+>  1 file changed, 14 insertions(+), 6 deletions(-)
+> 
+> diff --git a/cmds-receive.c b/cmds-receive.c
+> index b59f00e4..72e9c8f3 100644
+> --- a/cmds-receive.c
+> +++ b/cmds-receive.c
+> @@ -1091,6 +1091,7 @@ static int do_receive(struct btrfs_receive *rctx, const char *tomnt,
+>  	char *dest_dir_full_path;
+>  	char root_subvol_path[PATH_MAX];
+>  	int end = 0;
+> +	int iterations = 0;
+>  
+>  	dest_dir_full_path = realpath(tomnt, NULL);
+>  	if (!dest_dir_full_path) {
+> @@ -1198,13 +1199,18 @@ static int do_receive(struct btrfs_receive *rctx, const char *tomnt,
+>  							 rctx,
+>  							 rctx->honor_end_cmd,
+>  							 max_errors);
+> -		if (ret < 0 && ret == -ENODATA) {
+> +		if (ret < 0) {
+> +			if (ret != -ENODATA)
+> +				goto out;
+> +
+>  			/* Empty stream is invalid */
+> -			error("empty stream is not considered valid");
+> -			ret = -EINVAL;
+> -			goto out;
+> -		} else if (ret < 0) {
+> -			goto out;
+> +			if (iterations == 0) {
+> +				error("empty stream is not considered valid");
+> +				ret = -EINVAL;
+> +				goto out;
+> +			}
+> +
+> +			ret = 1;
+>  		}
+>  		if (ret > 0)
+>  			end = 1;
+> @@ -1213,6 +1219,8 @@ static int do_receive(struct btrfs_receive *rctx, const char *tomnt,
+>  		ret = finish_subvol(rctx);
+>  		if (ret < 0)
+>  			goto out;
+> +
+> +		iterations++;
+>  	}
+>  	ret = 0;
+>  
+> -- 
+> 2.11.0
+> 

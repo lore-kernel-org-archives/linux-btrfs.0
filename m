@@ -1,69 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:47809 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751015AbdEBLyo (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 May 2017 07:54:44 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1d5WO4-0002Rr-TE
-        for linux-btrfs@vger.kernel.org; Tue, 02 May 2017 13:54:36 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: BTRFS warning (device sda7): block group 181491728384 has wrong
- amount of free space
-Date: Tue, 2 May 2017 11:54:30 +0000 (UTC)
-Message-ID: <pan$28804$b4e53a6$f8693243$cefcb283@cox.net>
-References: <c73f374d-5d53-c2cf-d09c-5d91f0919b12@rqc.ru>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from tartarus.angband.pl ([89.206.35.136]:33293 "EHLO
+        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750962AbdEBN6X (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 May 2017 09:58:23 -0400
+Date: Tue, 2 May 2017 15:58:20 +0200
+From: Adam Borowski <kilobyte@angband.pl>
+To: Andrei Borzenkov <arvidjaar@gmail.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: Can I see what device was used to mount btrfs?
+Message-ID: <20170502135820.2ft7bsoceeqhnbqf@angband.pl>
+References: <1e2e2e5c-5ee8-85c1-1db4-74293d8c9c1e@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1e2e2e5c-5ee8-85c1-1db4-74293d8c9c1e@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Marat Khalili posted on Tue, 02 May 2017 09:14:12 +0300 as excerpted:
+On Sun, Apr 30, 2017 at 08:47:43AM +0300, Andrei Borzenkov wrote:
+> I'm chasing issue with btrfs mounts under systemd
+> (https://github.com/systemd/systemd/issues/5781) - to summarize, systemd
+> waits for the final device that makes btrfs complete and mounts it using
+> this device name.
 
-> I cannot understand two messages in syslog, could someone please shed
-> some light? Here they are:
+Systemd is wrong here -- its approach can possibly work only on clean mounts;
+if you need to mount degraded it will hang forever.  Even worse, if it's not
+the root filesystem, it will "helpfully" unmount it after you mount manually
+(for root fs, it will _try_ to unmount but that obviously fails, resulting
+in nothing but some CPU wasted on trying to unmount over and over).
+
+> But in /proc/self/mountinfo we actually see another
+> device name. Due to peculiarities of systemd implementation this device
+> "does not exist" from systemd PoV.
 > 
->> Apr 29 08:54:03 container-name kernel: [792742.662375] BTRFS warning
->> (device sda7): block group 181491728384 has wrong amount of free space
-
->> Apr 29 08:54:03 container-name kernel: [792742.662381] BTRFS warning
->> (device sda7): failed to load free space cache for block group
->> 181491728384, rebuilding it now
-
-> Especially strange is the fact that messages appear in LXC container's
-> syslog, but not in syslog of a host system. I only saw network and
-> apparmor-related messages in container syslogs before.
+> Looking at btrfs code I start to suspect that we actually do not know
+> what device was used to mount it at all.
 > 
-> I didn't run any usermode btrfs tools at the time (especially in
-> container, since they are not even installed there), but there's a quota
-> set for this subvolume, and it was coming close to exhausting by large
-> mysql database. There're no snapshots this time. smartmon finds no
-> problems.
+> So we always show device with the smallest devid, irrespectively of what
+> device was actually used to mount it.
 
-These aren't anything to be alarmed about in themselves; they're just low 
-priority warnings from the free-space *cache*, saying it somehow got out 
-of sync with what's actually there.  As that's just a cache, designed to 
-help speed up looking for free space without having to actually go and 
-check every time, and problems will be caught and that block-group's 
-cache invalidated and recreated (with those messages indicating that's 
-exactly what's happening) if btrfs finds there's actually data written in 
-a block that the cache said was free, no harm done.
+Devices come and go (ok, it's not like you hot-remove disks every day,
+but...).  Storing the device that started the mount is pointless: btrfs
+can handle removal fine so such a stored device would point nowhere -- or
+worse, to some unrelated innocent disk you put in for data recovery (you may
+have other plans than re-provisioning that raid).
 
-Inconsistencies are typically generated in an unclean unmount situation, 
-but may not be caught until sometime later, when btrfs goes to actually 
-use some space the cache says should be available, that actually isn't.
 
-AFAIK (I'm a btrfs user and list regular, not a dev), it shouldn't have 
-anything to do with quota.
-
-I wouldn't worry about it myself, particularly if I hadn't been able to 
-do a clean unmount at some point, tho if I saw the warning, I'd probably 
-do a btrfs scrub just to be sure that warning wasn't hinting at some more 
-real problem somewhere.
-
+Meow!
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Don't be racist.  White, amber or black, all beers should be judged based
+solely on their merits.  Heck, even if occasionally a cider applies for a
+beer's job, why not?
+On the other hand, corpo lager is not a race.

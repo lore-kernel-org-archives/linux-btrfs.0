@@ -1,110 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:34986 "EHLO
-        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751591AbdEBStb (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 May 2017 14:49:31 -0400
-Date: Tue, 2 May 2017 20:49:23 +0200
-From: Adam Borowski <kilobyte@angband.pl>
-To: Andrei Borzenkov <arvidjaar@gmail.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Received: from smtp-16.italiaonline.it ([212.48.25.144]:34202 "EHLO libero.it"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1750825AbdEBTu2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 2 May 2017 15:50:28 -0400
+Reply-To: kreijack@inwind.it
 Subject: Re: Can I see what device was used to mount btrfs?
-Message-ID: <20170502184923.jdpfx3pwkl5avdph@angband.pl>
 References: <1e2e2e5c-5ee8-85c1-1db4-74293d8c9c1e@gmail.com>
  <20170502135820.2ft7bsoceeqhnbqf@angband.pl>
  <CAA91j0V97dCb+j_thg0oi7B4D29VVKcqtRcpCWbgQyzi+FScKA@mail.gmail.com>
+ <20170502184923.jdpfx3pwkl5avdph@angband.pl>
+To: Adam Borowski <kilobyte@angband.pl>,
+        Andrei Borzenkov <arvidjaar@gmail.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Message-ID: <c7f3c9fe-2f28-e102-9df7-273dc5a6ca8e@inwind.it>
+Date: Tue, 2 May 2017 21:50:19 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAA91j0V97dCb+j_thg0oi7B4D29VVKcqtRcpCWbgQyzi+FScKA@mail.gmail.com>
+In-Reply-To: <20170502184923.jdpfx3pwkl5avdph@angband.pl>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 02, 2017 at 05:19:34PM +0300, Andrei Borzenkov wrote:
-> On Tue, May 2, 2017 at 4:58 PM, Adam Borowski <kilobyte@angband.pl> wrote:
-> > On Sun, Apr 30, 2017 at 08:47:43AM +0300, Andrei Borzenkov wrote:
-> >> systemd waits for the final device that makes btrfs complete and mounts
-> >> it using this device name.
-> >
-> >> But in /proc/self/mountinfo we actually see another
-> >> device name. Due to peculiarities of systemd implementation this device
-> >> "does not exist" from systemd PoV.
-> >>
-> >> Looking at btrfs code I start to suspect that we actually do not know
-> >> what device was used to mount it at all.
-> >>
-> >> So we always show device with the smallest devid, irrespectively of what
-> >> device was actually used to mount it.
-> >
-> > Devices come and go (ok, it's not like you hot-remove disks every day,
-> > but...).  Storing the device that started the mount is pointless: btrfs
-> > can handle removal fine so such a stored device would point nowhere -- or
-> > worse, to some unrelated innocent disk you put in for data recovery (you may
-> > have other plans than re-provisioning that raid).
+On 2017-05-02 20:49, Adam Borowski wrote:
+>> It could be some daemon that waits for btrfs to become complete.  Do we
+>> have something?
+> Such a daemon would also have to read the chunk tree.
+
+I don't think that a daemon is necessary. As proof of concept, in the past I developed a mount helper [1] which handled the mount of a btrfs filesystem:
+this handler first checks if the filesystem is a multivolume devices, if so it waits that all the devices are appeared. Finally mount the filesystem.
+
+> It's not so simple -- such a btrfs device would have THREE states:
 > 
-> Yes, I understand all of this, you do not need to convince me. OTOH
-> the problem is real - we need to have some way to order btrfs mounts
-> during bootup. In the past it was solved by delays. Systemd tries to
-> eliminate ad hoc delays ... which is by itself not bad. So what can be
-> utilized from btrfs side to implement ordering? We need /something/ to
-> wait for. It could be virtual device that represents btrfs RAID and
-> have state online/offline (similar to Linux MD).
+> 1. not mountable yet (multi-device with not enough disks present)
+> 2. mountable ro / rw-degraded
+> 3. healthy
 
-It's not so simple -- such a btrfs device would have THREE states:
+My mount.btrfs could be "programmed" to wait a timeout, then it mounts the filesystem as degraded if not all devices are present. This is a very simple strategy, but this could be expanded.
 
-1. not mountable yet (multi-device with not enough disks present)
-2. mountable ro / rw-degraded
-3. healthy
+I am inclined to think that the current approach doesn't fit well the btrfs requirements.  The roles and responsibilities are spread to too much layer (udev, systemd, mount)... I hoped that my helper could be adopted in order to concentrate all the responsibility to only one binary; this would reduce the interface number with the other subsystem (eg systemd, udev).
 
-The distinction between 1 and 2 is important, especially because systemd for
-some reason insists on forcing unmount if it thinks the filesystem is in a
-bad state (why?!?).  On distributions that follow the traditional remount
-scheme (ie, you mount ro during boot, run fsck/whatever (no-op for btrfs),
-then remount rw), starting as soon as we're in state 2 would be faster.  It
-would also allow automatically going degraded if a timeout is hit[1].
-
-To distinguish between 1 and 2 you need to halfway mount the filesystem, at
-least to read the chunk tree (Qu's "why the heck it wasn't merged 2 years
-ago" chunk check patch would help).
-
-Naively thinking, it might be tempting to have only two states, varying it
-whether the filesystem is already mounted -- currently it's 1+2 vs 3; it
-would be: before mount: 1+2 vs 3, after mount: 1 vs 2+3.
-
-But this would lead to breakage in corner cases.
-
-For example: a box has a 3-way raid1 on sda sdb sdc.  Due to a cable not
-being firmly seated, power supply or controller having a hiccup, etc,
-suddenly sda goes offline.  Btrfs handles that fine, the admin gets worried
-and hot-plugs a fourth disk, adding it to the raid.  Reboot.  sda gets up
-first, boot goes fine so far, mountall/systemd starts, wants to mount that
-filesystem.  sda appears to be fine, systemd reads it and sees there are _3_
-disks (as obviously sda doesn't yet know about the fourth).  As sdd was a
-random slow crap disk the admin happened to have on the shelf, it's not yet
-up.  So systemd sees sda sdb sdc on -- they have all the device IDs it's
-looking for, the count is ok, so it assumes all is fine.  It tries to mount,
-but btrfs then properly notices there are four disks needed, and because
-there was no -odegraded, the mount fails.  Boom.
-
-Thus, there's no real way to know if the mount will succeed beforehand.
+For example, it would be possible to implement a sane check that prevent to mount a btrfs filesystem if two devices exposes the same UUID... 
 
 
-> It could be some daemon that waits for btrfs to become complete.  Do we
-> have something?
+BR
+G.Baroncelli
 
-Such a daemon would also have to read the chunk tree.
+[1] See "[RFC][PATCH v2] mount.btrfs helper" thread ( https://marc.info/?l=linux-btrfs&m=141736989508243&w=2 )
 
 
-Meow!
-
-[1]. Not entirely sure if that's a good default -- in one of my boxes, two
-disks throw scary errors like UnrecovData BadCRC then after ninetysomething
-seconds all goes well, although md (/ is on a 5GB 5-way raid1 md) first goes
-degraded then starts autorecovery.  As systemd likes timeouts of 90 seconds,
-just a few seconds shy of what this box needs to settle, having systemd and
-auto-degrade there would lead to unpaired blocks, which btrfs doesn't yet
-repair without being ordered to by hand.
 
 -- 
-Don't be racist.  White, amber or black, all beers should be judged based
-solely on their merits.  Heck, even if occasionally a cider applies for a
-beer's job, why not?
-On the other hand, corpo lager is not a race.
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

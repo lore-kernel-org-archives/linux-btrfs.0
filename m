@@ -1,177 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f179.google.com ([209.85.223.179]:36378 "EHLO
-        mail-io0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750741AbdEATMp (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 May 2017 15:12:45 -0400
-Received: by mail-io0-f179.google.com with SMTP id p80so129225637iop.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 01 May 2017 12:12:45 -0700 (PDT)
+Received: from cn.fujitsu.com ([59.151.112.132]:39865 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751270AbdEBAR4 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 May 2017 20:17:56 -0400
+Subject: Re: File system corruption, btrfsck abort
+To: Christophe de Dinechin <dinechin@redhat.com>
+CC: <linux-btrfs@vger.kernel.org>
+References: <D64BF81E-58B3-4B19-AD65-F5056768466C@redhat.com>
+ <43eda9a8-e7be-4bc3-bd37-4df44f93f321@cn.fujitsu.com>
+ <693E2A30-D8DA-404D-B9C0-4B15D3348808@redhat.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <d043e058-52e2-13d9-fd64-dd7807496e7b@cn.fujitsu.com>
+Date: Tue, 2 May 2017 08:17:50 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAPsdh31Djmz5p+1+XGmfN+Ropp3CdhNjU6CpnJhKhPx+fsG71w@mail.gmail.com>
-References: <CAPsdh32v36LAbDLujVW-yiLiEvY_cNnqPtVXdKzdfADHUhB2JQ@mail.gmail.com>
- <20170427190751.2dc0e7ac@natsu> <CAPsdh33mN-QuL+-Z5UmO7Tmn4rEQs7_6X3a0D2T0APYkm5YR2A@mail.gmail.com>
- <CAPsdh33+2gA2EBswSrA-jV5H6ZtrK2tQ_W6j8rKtMUTYE2S76g@mail.gmail.com>
- <CAJCQCtTN2GyzebfC5JR_jZuF9_XVi9N0iHJutX2GuuvAPzVhAQ@mail.gmail.com> <CAPsdh31Djmz5p+1+XGmfN+Ropp3CdhNjU6CpnJhKhPx+fsG71w@mail.gmail.com>
-From: Gerard Saraber <gsaraber@rarcoa.com>
-Date: Mon, 1 May 2017 14:12:44 -0500
-Message-ID: <CAPsdh319dr=mnoWhvhStK7aPhmZc5eaOUGPLfHCGKwjXn-EPTg@mail.gmail.com>
-Subject: Re: No space left on device when doing "mkdir"
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Roman Mamedov <rm@romanrm.net>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <693E2A30-D8DA-404D-B9C0-4B15D3348808@redhat.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It did it again:
-shrapnel share # touch test.txt
-touch: cannot touch 'test.txt': No space left on device
-shrapnel share # df -h
-Filesystem      Size  Used Avail Use% Mounted on
-/dev/root        35G   19G   15G  56% /
-devtmpfs         10M     0   10M   0% /dev
-tmpfs           3.2G  1.2M  3.2G   1% /run
-shm              16G     0   16G   0% /dev/shm
-cgroup_root      10M     0   10M   0% /sys/fs/cgroup
-/dev/sdb         35T   22T   14T  62% /home/exports
-shrapnel share # grep -IR .
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/flags:2
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/raid1/used_bytes:3997696
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/raid1/total_bytes:33554432
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/bytes_pinned:0
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/disk_total:67108864
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/bytes_may_use:0
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/bytes_readonly:0
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/bytes_used:3997696
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/bytes_reserved:0
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/disk_used:7995392
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/total_bytes_pinned:0
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/total_bytes:33554432
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/flags:4
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/raid1/used_bytes:66595684352
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/raid1/total_bytes:280246616064
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/bytes_pinned:835584
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/disk_total:560493232128
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/bytes_may_use:2014478974976
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/bytes_readonly:0
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/bytes_used:66595684352
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/bytes_reserved:16384
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/disk_used:133191368704
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/total_bytes_pinned:1048576
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/total_bytes:280246616064
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/global_rsv_size:536870912
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/flags:1
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/raid1/used_bytes:23249396273152
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/raid1/total_bytes:23320598675456
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/bytes_pinned:1835008
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/disk_total:46641197350912
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/bytes_may_use:262144
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/bytes_readonly:1769472
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/bytes_used:23249396273152
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/bytes_reserved:0
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/disk_used:46498792546304
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/total_bytes_pinned:2097152
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/total_bytes:23320598675456
-/sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/global_rsv_reserved:536018944
 
-On Fri, Apr 28, 2017 at 8:56 AM, Gerard Saraber <gsaraber@rarcoa.com> wrote:
-> Dmarc is off, here's the output of the allocations: it's working
-> correctly right now, I'll update when it does it again.
->
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/flags:2
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/raid1/used_bytes:3948544
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/raid1/total_bytes:33554432
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/bytes_pinned:0
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/disk_total:67108864
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/bytes_may_use:0
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/bytes_readonly:0
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/bytes_used:3948544
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/bytes_reserved:0
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/disk_used:7897088
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/total_bytes_pinned:0
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/system/total_bytes:33554432
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/flags:4
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/raid1/used_bytes:65864957952
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/raid1/total_bytes:83751862272
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/bytes_pinned:0
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/disk_total:167503724544
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/bytes_may_use:739508224
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/bytes_readonly:0
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/bytes_used:65864957952
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/bytes_reserved:1835008
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/disk_used:131729915904
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/total_bytes_pinned:1884160
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/metadata/total_bytes:83751862272
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/global_rsv_size:536870912
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/flags:1
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/raid1/used_bytes:23029876707328
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/raid1/total_bytes:23175643529216
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/bytes_pinned:0
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/disk_total:46351287058432
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/bytes_may_use:36474880
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/bytes_readonly:1703936
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/bytes_used:23029876707328
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/bytes_reserved:15003648
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/disk_used:46059753414656
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/total_bytes_pinned:0
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/data/total_bytes:23175643529216
-> /sys/fs/btrfs/7af2e65c-3935-4e0d-aa63-9ef6be991cb9/allocation/global_rsv_reserved:536870912
->
->
-> On Thu, Apr 27, 2017 at 6:35 PM, Chris Murphy <lists@colorremedies.com> wrote:
->> On Thu, Apr 27, 2017 at 10:46 AM, Gerard Saraber <gsaraber@rarcoa.com> wrote:
->>> After a reboot, I found this in the logs:
->>> [  322.510152] BTRFS info (device sdm): The free space cache file
->>> (36114966511616) is invalid. skip it
->>> [  488.702570] btrfs_printk: 847 callbacks suppressed
->>>
->>>
->>>
->>> On Thu, Apr 27, 2017 at 10:18 AM, Gerard Saraber <gsaraber@rarcoa.com> wrote:
->>>> no snapshots and no qgroups, just a straight up large volume.
->>>>
->>>> shrapnel gerard-store # btrfs fi df /home/exports
->>>> Data, RAID1: total=20.93TiB, used=20.86TiB
->>>> System, RAID1: total=32.00MiB, used=3.73MiB
->>>> Metadata, RAID1: total=79.00GiB, used=61.10GiB
->>>> GlobalReserve, single: total=512.00MiB, used=544.00KiB
->>>>
->>>> shrapnel gerard-store # btrfs filesystem usage /home/exports
->>>> Overall:
->>>>     Device size:                  69.13TiB
->>>>     Device allocated:             42.01TiB
->>>>     Device unallocated:           27.13TiB
->>>>     Device missing:                  0.00B
->>>>     Used:                         41.84TiB
->>>>     Free (estimated):             13.63TiB      (min: 13.63TiB)
->>>>     Data ratio:                       2.00
->>>>     Metadata ratio:                   2.00
->>>>     Global reserve:              512.00MiB      (used: 1.52MiB)
->>>>
->>>> On Thu, Apr 27, 2017 at 9:07 AM, Roman Mamedov <rm@romanrm.net> wrote:
->>>>> On Thu, 27 Apr 2017 08:52:30 -0500
->>>>> Gerard Saraber <gsaraber@rarcoa.com> wrote:
->>>>>
->>>>>> I could just reboot the system and be fine for a week or so, but is
->>>>>> there any way to diagnose this?
->>>>>
->>>>> `btrfs fi df` for a start.
->>>>>
->>>>> Also obligatory questions: do you have a lot of snapshots, and do you use
->>>>> qgroups?
->>>>>
->>
->> A dev might find this helpful
->> $ grep -IR . /sys/fs/btrfs/usevolumeUUIDhere/allocation/
+
+At 04/28/2017 04:47 PM, Christophe de Dinechin wrote:
+> 
+>> On 28 Apr 2017, at 02:45, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
 >>
 >>
->> Also note that a lot of people on Btrfs aren't getting Gerard's
->> emails, because anyone using gmail and some other agents see it as
->> spam because of DMARC failure. Basically rarcoa.com is configured to
->> tell mail senders to fail to (re)send emails, they can only be sent
->> from raroa.com. Anyway, I think this is supposed to be fixed in
->> mailing list servers, they need to strip these headers and insert
->> their own rather than leaving them intact only later to get rejected
->> due to honoring the header's stated policy.
+>>
+>> At 04/26/2017 01:50 AM, Christophe de Dinechin wrote:
+>>> Hi,
+>>> I”ve been trying to run btrfs as my primary work filesystem for about 3-4 months now on Fedora 25 systems. I ran a few times into filesystem corruptions. At least one I attributed to a damaged disk, but the last one is with a brand new 3T disk that reports no SMART errors. Worse yet, in at least three cases, the filesystem corruption caused btrfsck to crash.
+>>> The last filesystem corruption is documented here: https://bugzilla.redhat.com/show_bug.cgi?id=1444821. The dmesg log is in there.
+>>
+>> According to the bugzilla, the btrfs-progs seems to be too old in btrfs standard.
+> 
+>> What about using the latest btrfs-progs v4.10.2?
+> 
+> I tried 4.10.1-1 https://bugzilla.redhat.com/show_bug.cgi?id=1435567#c4.
+> 
+> I am currently debugging with a build from the master branch as of Tuesday (commit bd0ab27afbf14370f9f0da1f5f5ecbb0adc654c1), which is 4.10.2
+> 
+> There was no change in behavior. Runs are split about evenly between list crash and abort.
+> 
+> I added instrumentation and tried a fix, which brings me a tiny bit further, until I hit a message from delete_duplicate_records:
+> 
+> Ok we have overlapping extents that aren't completely covered by each
+> other, this is going to require more careful thought.  The extents are
+> [52428800-16384] and [52432896-16384]
+
+Then I think lowmem mode may have better chance to handle it without crash.
+
+> 
+>> Furthermore for v4.10.2, btrfs check provides a new mode called lowmem.
+>> You could try "btrfs check --mode=lowmem" to see if such problem can be avoided.
+> 
+> I will try that, but what makes you think this is a memory-related condition? The machine has 16G of RAM, isn’t that enough for an fsck?
+
+Not for memory usage, but in fact lowmem mode is a completely rework, so 
+I just want to see how good or bad the new lowmem mode handles it.
+
+Thanks,
+Qu
+
+> 
+>>
+>> For the kernel bug, it seems to be related to wrongly inserted delayed ref, but I can totally be wrong.
+> 
+> For now, I’m focusing on the “repair” part as much as I can, because I assume the kernel bug is there anyway, so someone else is bound to hit this problem.
+> 
+> 
+> Thanks
+> Christophe
+> 
+>>
+>> Thanks,
+>> Qu
+>>> The btrfsck crash is here: https://bugzilla.redhat.com/show_bug.cgi?id=1435567. I have two crash modes: either an abort or a SIGSEGV. I checked that both still happens on master as of today.
+>>> The cause of the abort is that we call set_extent_dirty from check_extent_refs with rec->max_size == 0. I’ve instrumented to try to see where we set this to 0 (see https://github.com/c3d/btrfs-progs/tree/rhbz1435567), and indeed, we do sometimes see max_size set to 0 in a few locations. My instrumentation shows this:
+>>> 78655 [1.792241:0x451fe0] MAX_SIZE_ZERO: Add extent rec 0x139eb80 max_size 16384 tmpl 0x7fffffffd120
+>>> 78657 [1.792242:0x451cb8] MAX_SIZE_ZERO: Set max size 0 for rec 0x139ec50 from tmpl 0x7fffffffcf80
+>>> 78660 [1.792244:0x451fe0] MAX_SIZE_ZERO: Add extent rec 0x139ed50 max_size 16384 tmpl 0x7fffffffd120
+>>> I don’t really know what to make of it.
+>>> The cause of the SIGSEGV is that we try to free a list entry that has its next set to NULL.
+>>> #0  list_del (entry=0x555555db0420) at /usr/src/debug/btrfs-progs-v4.10.1/kernel-lib/list.h:125
+>>> #1  free_all_extent_backrefs (rec=0x555555db0350) at cmds-check.c:5386
+>>> #2  maybe_free_extent_rec (extent_cache=0x7fffffffd990, rec=0x555555db0350) at cmds-check.c:5417
+>>> #3  0x00005555555b308f in check_block (flags=<optimized out>, buf=0x55557b87cdf0, extent_cache=0x7fffffffd990, root=0x55555587d570) at cmds-check.c:5851
+>>> #4  run_next_block (root=root@entry=0x55555587d570, bits=bits@entry=0x5555558841
+>>> I don’t know if the two problems are related, but they seem to be pretty consistent on this specific disk, so I think that we have a good opportunity to improve btrfsck to make it more robust to this specific form of corruption. But I don’t want to hapazardly modify a code I don’t really understand. So if anybody could make a suggestion on what the right strategy should be when we have max_size == 0, or how to avoid it in the first place.
+>>> I don’t know if this is relevant at all, but all the machines that failed that way were used to run VMs with KVM/QEMU. DIsk activity tends to be somewhat intense on occasions, since the VMs running there are part of a personal Jenkins ring that automatically builds various projects. Nominally, there are between three and five guests running (Windows XP, WIndows 10, macOS, Fedora25, Ubuntu 16.04).
+>>> Thanks
+>>> Christophe de Dinechin
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
 >>
 >> --
->> Chris Murphy
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> 
+> 
+
+

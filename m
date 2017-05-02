@@ -1,32 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55543 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:46977 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1750770AbdEBROj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 2 May 2017 13:14:39 -0400
-Date: Tue, 2 May 2017 19:14:33 +0200
+        id S1751007AbdEBQBl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 2 May 2017 12:01:41 -0400
+Date: Tue, 2 May 2017 18:01:34 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Praveen K Pandey <praveen@linux.vnet.ibm.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH] Btrfs-progs: run_next_block: Return error code when
- extent buffer read fails
-Message-ID: <20170502171432.GU23260@twin.jikos.cz>
+To: Sahil Kang <sahil.kang@asilaycomputing.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Tidy while loop in end_compressed_writeback
+Message-ID: <20170502160133.GQ23260@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1493033237-12979-1-git-send-email-praveen@linux.vnet.ibm.com>
+References: <1ff02889-4c01-acb6-cfc0-48433a86bdf8@asilaycomputing.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1493033237-12979-1-git-send-email-praveen@linux.vnet.ibm.com>
+In-Reply-To: <1ff02889-4c01-acb6-cfc0-48433a86bdf8@asilaycomputing.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 24, 2017 at 04:57:17PM +0530, Praveen K Pandey wrote:
-> run_next_block() ignores the return value of read_tree_block() and
-> always returns success status. This might cause deal_root_from_list()
-> to loop infinitely when reading metadata block fails. This bug fixes
-> the issue by extracting and returning the error code from the return
-> value of read_tree_block().
-> 
-> Bug ID : https://bugzilla.kernel.org/show_bug.cgi?id=155551
-> 
-> Signed-off-by: Praveen K Pandey <praveen@linux.vnet.ibm.com>
+On Wed, Apr 19, 2017 at 05:43:19AM -0700, Sahil Kang wrote:
+> This is my first patch so it's a minor code change.
+> I think removing the early continue from the loop makes the function a 
+> little easier to follow.
 
-Applied, thanks. As noted in the bug, there are many more to fix.
+I think the opposite. In the current code, it's clear that if ret is 0,
+then there's a shortcut. While your code change is functionally
+equivalent, it takes a bit more time to see that the for loop does
+nothing if ret == 0 and overall it looks like we don't handle the return
+value coming from find_get_pages_contig, in exchange for some ?:
+trickery that requires a comment.
+
+So I don't think this patch makes code better and I'm not going to apply
+it, sorry.

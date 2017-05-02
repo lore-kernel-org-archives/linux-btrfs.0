@@ -1,130 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:22431 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750921AbdEBDVY (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 May 2017 23:21:24 -0400
-Subject: Re: Can I see what device was used to mount btrfs?
-To: Andrei Borzenkov <arvidjaar@gmail.com>
-References: <1e2e2e5c-5ee8-85c1-1db4-74293d8c9c1e@gmail.com>
-From: Anand Jain <anand.jain@oracle.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Message-ID: <a38ecb14-c9f3-cd80-1dca-12ca388e0482@oracle.com>
-Date: Tue, 2 May 2017 11:26:57 +0800
+Received: from magic.merlins.org ([209.81.13.136]:47970 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750825AbdEBDXw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 May 2017 23:23:52 -0400
+Date: Mon, 1 May 2017 20:23:46 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>, Chris Mason <clm@fb.com>,
+        bo.li.liu@oracle.com, fdmanana@suse.com, Josef Bacik <jbacik@fb.com>,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>, David Sterba <dsterba@suse.cz>
+Message-ID: <20170502032346.ayhh3n3uh5d5ekbb@merlins.org>
+References: <20170501170641.GG3516@merlins.org>
+ <20170501180856.GH3516@merlins.org>
+ <CAJCQCtR4Hr5ekASiqWn2RNju5pHz8itS91N=M29Cz8Nqx8=kqA@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <1e2e2e5c-5ee8-85c1-1db4-74293d8c9c1e@gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAJCQCtR4Hr5ekASiqWn2RNju5pHz8itS91N=M29Cz8Nqx8=kqA@mail.gmail.com>
+Subject: Re: 4.11 relocate crash, null pointer + rolling back a filesystem by
+ X hours?
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi Chris,
 
+Thanks for the reply, much appreciated.
 
+On Mon, May 01, 2017 at 07:50:22PM -0600, Chris Murphy wrote:
+> What about btfs check (no repair), without and then also with --mode=lowmem?
+> 
+> In theory I like the idea of a 24 hour rollback; but in normal usage
+> Btrfs will eventually free up space containing stale and no longer
+> necessary metadata. Like the chunk tree, it's always changing, so you
+> get to a point, even with snapshots, that the old state of that tree
+> is just - gone. A snapshot of an fs tree does not make the chunk tree
+> frozen in time.
+ 
+Right, of course, I was being way over optimistic here. I kind of forgot
+that metadata wasn't COW, my bad.
 
+> In any case, it's a big problem in my mind if no existing tools can
+> fix a file system of this size. So before making anymore changes, make
+> sure you have a btrfs-image somewhere, even if it's huge. The offline
+> checker needs to be able to repair it, right now it's all we have for
+> such a case.
 
-On 04/30/2017 01:47 PM, Andrei Borzenkov wrote:
-> I'm chasing issue with btrfs mounts under systemd
-> (https://github.com/systemd/systemd/issues/5781) - to summarize, systemd
-> waits for the final device that makes btrfs complete and mounts it using
-> this device name.
+The image will be huge, and take maybe 24H to make (last time it took
+some silly amount of time like that), and honestly I'm not sure how
+useful it'll be.
+Outside of the kernel crashing if I do a btrfs balance, and hopefully
+the crash report I gave is good enough, the state I'm in is not btrfs'
+fault.
 
+If I can't roll back to a reasonably working state, with data loss of a
+known quantity that I can recover from backup, I'll have to destroy and
+filesystem and recover from scratch, which will take multiple days.
+Since I can't wait too long before getting back to a working state, I
+think I'm going to try btrfs check --repair after a scrub to get a list
+of all the pathanmes/inodes that are known to be damaged, and work from
+there.
+Sounds reasonable?
 
-> But in /proc/self/mountinfo we actually see another
-> device name.
+Also, how is --mode=lowmem being useful?
 
+And for re-parenting a sub-subvolume, is that possible?
+(I want to delete /sub1/ but I can't because I have /sub1/sub2 that's also a subvolume
+and I'm not sure how to re-parent sub2 to somewhere else so that I can subvolume delete
+sub1)
 
-> Due to peculiarities of systemd implementation this device
-> "does not exist" from systemd PoV.
->
-> Looking at btrfs code I start to suspect that we actually do not know
-> what device was used to mount it at all. I.e.
-
-  Actually it does not matter. right ?
-
-> static int btrfs_show_devname(struct seq_file *m, struct dentry *root)
-> {
-> ...
->         while (cur_devices) {
->                 head = &cur_devices->devices;
->                 list_for_each_entry(dev, head, dev_list) {
->                         if (dev->missing)
->                                 continue;
->                         if (!dev->name)
->                                 continue;
->                         if (!first_dev || dev->devid < first_dev->devid)
->                                 first_dev = dev;
->                 }
->                 cur_devices = cur_devices->seed;
->         }
->
->         if (first_dev) {
->                 rcu_read_lock();
->                 name = rcu_dereference(first_dev->name);
->                 seq_escape(m, name->str, " \t\n\\");
->                 rcu_read_unlock();
-> ...
->
->
-> So we always show device with the smallest devid, irrespectively of what
-> device was actually used to mount it.
->
-> Am I correct? What I have here is
-
-
-> localhost:~ # ll /dev/disk/by-label/
-> total 0
-> lrwxrwxrwx 1 root root 10 Apr 30 08:03 Storage -> ../../dm-1
-> localhost:~ # systemctl --no-pager status thin.mount
-> ● thin.mount - /thin
->    Loaded: loaded (/etc/fstab; generated; vendor preset: disabled)
->    Active: active (mounted) since Sun 2017-04-30 08:03:07 MSK; 6min ago
->     Where: /thin
->      What: /dev/dm-0
->      Docs: man:fstab(5)
->            man:systemd-fstab-generator(8)
->   Process: 982 ExecMount=/usr/bin/mount /dev/disk/by-label/Storage /thin
-> -t btrfs (code=exited, status=0/SUCCESS)
->     Tasks: 0 (limit: 4915)
->    CGroup: /system.slice/thin.mount
->
-> Apr 30 08:03:07 localhost systemd[1]: Mounting /thin...
-> Apr 30 08:03:07 localhost systemd[1]: Mounted /thin.
->
->
-> bur mountinfo shows
->
-> localhost:~ # grep /thin /proc/self/mountinfo
-> 96 59 0:63 / /thin rw,relatime shared:47 - btrfs /dev/dm-0
-> rw,space_cache,subvolid=5,subvol=/
->
-> which matches the above algorithm
->
-> localhost:~ # btrfs fi show /thin
-> Label: 'Storage'  uuid: a6f9dd05-460c-418b-83ab-ebdf81f2931a
-> 	Total devices 2 FS bytes used 640.00KiB
-> 	devid    1 size 20.00GiB used 2.01GiB path /dev/mapper/vg01-storage1
-> 	devid    2 size 10.00GiB used 2.01GiB path /dev/mapper/vg01-storage2
->
-> localhost:~ # ll /dev/mapper/
-> total 0
-> crw------- 1 root root 10, 236 Apr 30 08:03 control
-> lrwxrwxrwx 1 root root       7 Apr 30 08:03 vg01-storage1 -> ../dm-0
-> lrwxrwxrwx 1 root root       7 Apr 30 08:03 vg01-storage2 -> ../dm-1
->
-> The original device is presumably stored in kernel somewhere but I do
-> not know how can I query it?
-
-
-  Hm, actually we don't know the order in which devices were scanned
-  and used for the mount, or it does not matter for the btrfs.
-
-  HTH
+In the meantime, a simple check without repair looks like this. It will
+likely take many hours to complete:
+gargamel:/var/local/space# btrfs check /dev/mapper/dshelf2
+Checking filesystem on /dev/mapper/dshelf2
+UUID: 03e9a50c-1ae6-4782-ab9c-5f310a98e653
+checking extents
+checksum verify failed on 3096461459456 found 0E6B7980 wanted FBE5477A
+checksum verify failed on 3096461459456 found 0E6B7980 wanted FBE5477A
+checksum verify failed on 2899180224512 found 7A6D427F wanted 7E899EE5
+checksum verify failed on 2899180224512 found 7A6D427F wanted 7E899EE5
+checksum verify failed on 2899180224512 found ABBE39B0 wanted E0735D0E
+checksum verify failed on 2899180224512 found 7A6D427F wanted 7E899EE5
+bytenr mismatch, want=2899180224512, have=3981076597540270796
+checksum verify failed on 1449488023552 found CECC36AF wanted 199FE6C5
+checksum verify failed on 1449488023552 found CECC36AF wanted 199FE6C5
+checksum verify failed on 1449544613888 found 895D691B wanted A0C64D2B
+checksum verify failed on 1449544613888 found 895D691B wanted A0C64D2B
+parent transid verify failed on 1671538819072 wanted 293964 found 293902
+parent transid verify failed on 1671538819072 wanted 293964 found 293902
+checksum verify failed on 1671603781632 found 18BC28D6 wanted 372655A0
+checksum verify failed on 1671603781632 found 18BC28D6 wanted 372655A0
+checksum verify failed on 1759425052672 found 843B59F1 wanted F0FF7D00
+checksum verify failed on 1759425052672 found 843B59F1 wanted F0FF7D00
+checksum verify failed on 2182657212416 found CD8EFC0C wanted 70847071
+checksum verify failed on 2182657212416 found CD8EFC0C wanted 70847071
+checksum verify failed on 2898779357184 found 96395131 wanted 433D6E09
+checksum verify failed on 2898779357184 found 96395131 wanted 433D6E09
+checksum verify failed on 2899180224512 found 7A6D427F wanted 7E899EE5
+checksum verify failed on 2899180224512 found 7A6D427F wanted 7E899EE5
+checksum verify failed on 2899180224512 found ABBE39B0 wanted E0735D0E
+checksum verify failed on 2899180224512 found 7A6D427F wanted 7E899EE5
+bytenr mismatch, want=2899180224512, have=3981076597540270796
+checksum verify failed on 2182657212416 found CD8EFC0C wanted 70847071
+checksum verify failed on 2182657212416 found CD8EFC0C wanted 70847071
+checksum verify failed on 2182657212416 found CD8EFC0C wanted 70847071
+checksum verify failed on 2182657212416 found CD8EFC0C wanted 70847071
+checksum verify failed on 2182657212416 found CD8EFC0C wanted 70847071
+(...)
 
 Thanks,
-Anand
-
-
-
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

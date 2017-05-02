@@ -1,161 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:45960 "EHLO
+Received: from [195.159.176.226] ([195.159.176.226]:37946 "EHLO
         blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751074AbdEBUAP (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 May 2017 16:00:15 -0400
+        with ESMTP id S1750850AbdEBUPR (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 May 2017 16:15:17 -0400
 Received: from list by blaine.gmane.org with local (Exim 4.84_2)
         (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1d5dxs-0002GS-C4
-        for linux-btrfs@vger.kernel.org; Tue, 02 May 2017 22:00:04 +0200
+        id 1d5eCU-0001uL-6R
+        for linux-btrfs@vger.kernel.org; Tue, 02 May 2017 22:15:10 +0200
 To: linux-btrfs@vger.kernel.org
 From: Kai Krakow <hurikhan77@gmail.com>
-Subject: Re: 4.11 relocate crash, null pointer + rolling back a filesystem
- by X hours?
-Date: Tue, 2 May 2017 21:59:50 +0200
-Message-ID: <20170502215950.088a1a6e@jupiter.sol.kaishome.de>
-References: <20170501170641.GG3516@merlins.org>
-        <20170501180856.GH3516@merlins.org>
-        <CAJCQCtR4Hr5ekASiqWn2RNju5pHz8itS91N=M29Cz8Nqx8=kqA@mail.gmail.com>
-        <20170502032346.ayhh3n3uh5d5ekbb@merlins.org>
-        <CAJCQCtRaeejj4b+J6M7VTsDAe7Sn4PUtBwcvHXgfLNAFe=8Jqg@mail.gmail.com>
+Subject: Re: Can I see what device was used to mount btrfs?
+Date: Tue, 2 May 2017 22:15:06 +0200
+Message-ID: <20170502221506.3dfe125e@jupiter.sol.kaishome.de>
+References: <1e2e2e5c-5ee8-85c1-1db4-74293d8c9c1e@gmail.com>
+        <20170502135820.2ft7bsoceeqhnbqf@angband.pl>
+        <CAA91j0V97dCb+j_thg0oi7B4D29VVKcqtRcpCWbgQyzi+FScKA@mail.gmail.com>
+        <20170502184923.jdpfx3pwkl5avdph@angband.pl>
+        <c7f3c9fe-2f28-e102-9df7-273dc5a6ca8e@inwind.it>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Mon, 1 May 2017 22:56:06 -0600
-schrieb Chris Murphy <lists@colorremedies.com>:
+Am Tue, 2 May 2017 21:50:19 +0200
+schrieb Goffredo Baroncelli <kreijack@inwind.it>:
 
-> On Mon, May 1, 2017 at 9:23 PM, Marc MERLIN <marc@merlins.org> wrote:
-> > Hi Chris,
-> >
-> > Thanks for the reply, much appreciated.
-> >
-> > On Mon, May 01, 2017 at 07:50:22PM -0600, Chris Murphy wrote:  
-> >> What about btfs check (no repair), without and then also with
-> >> --mode=lowmem?
-> >>
-> >> In theory I like the idea of a 24 hour rollback; but in normal
-> >> usage Btrfs will eventually free up space containing stale and no
-> >> longer necessary metadata. Like the chunk tree, it's always
-> >> changing, so you get to a point, even with snapshots, that the old
-> >> state of that tree is just - gone. A snapshot of an fs tree does
-> >> not make the chunk tree frozen in time.  
-> >
-> > Right, of course, I was being way over optimistic here. I kind of
-> > forgot that metadata wasn't COW, my bad.  
+> On 2017-05-02 20:49, Adam Borowski wrote:
+> >> It could be some daemon that waits for btrfs to become complete.
+> >> Do we have something?  
+> > Such a daemon would also have to read the chunk tree.  
 > 
-> Well it is COW. But there's more to the file system than fs trees, and
-> just because an fs tree gets snapshot doesn't mean all data is
-> snapshot. So whether snapshot or not, there's metadata that becomes
-> obsolete as the file system is updated and those areas get freed up
-> and eventually overwritten.
+> I don't think that a daemon is necessary. As proof of concept, in the
+> past I developed a mount helper [1] which handled the mount of a
+> btrfs filesystem: this handler first checks if the filesystem is a
+> multivolume devices, if so it waits that all the devices are
+> appeared. Finally mount the filesystem.
 > 
+> > It's not so simple -- such a btrfs device would have THREE states:
+> > 
+> > 1. not mountable yet (multi-device with not enough disks present)
+> > 2. mountable ro / rw-degraded
+> > 3. healthy  
 > 
-> >  
-> >> In any case, it's a big problem in my mind if no existing tools can
-> >> fix a file system of this size. So before making anymore changes,
-> >> make sure you have a btrfs-image somewhere, even if it's huge. The
-> >> offline checker needs to be able to repair it, right now it's all
-> >> we have for such a case.  
-> >
-> > The image will be huge, and take maybe 24H to make (last time it
-> > took some silly amount of time like that), and honestly I'm not
-> > sure how useful it'll be.
-> > Outside of the kernel crashing if I do a btrfs balance, and
-> > hopefully the crash report I gave is good enough, the state I'm in
-> > is not btrfs' fault.
-> >
-> > If I can't roll back to a reasonably working state, with data loss
-> > of a known quantity that I can recover from backup, I'll have to
-> > destroy and filesystem and recover from scratch, which will take
-> > multiple days. Since I can't wait too long before getting back to a
-> > working state, I think I'm going to try btrfs check --repair after
-> > a scrub to get a list of all the pathanmes/inodes that are known to
-> > be damaged, and work from there.
-> > Sounds reasonable?  
+> My mount.btrfs could be "programmed" to wait a timeout, then it
+> mounts the filesystem as degraded if not all devices are present.
+> This is a very simple strategy, but this could be expanded.
 > 
-> Yes.
+> I am inclined to think that the current approach doesn't fit well the
+> btrfs requirements.  The roles and responsibilities are spread to too
+> much layer (udev, systemd, mount)... I hoped that my helper could be
+> adopted in order to concentrate all the responsibility to only one
+> binary; this would reduce the interface number with the other
+> subsystem (eg systemd, udev).
 > 
-> 
-> >
-> > Also, how is --mode=lowmem being useful?  
-> 
-> Testing. lowmem is a different implementation, so it might find
-> different things from the regular check.
-> 
-> 
-> >
-> > And for re-parenting a sub-subvolume, is that possible?
-> > (I want to delete /sub1/ but I can't because I have /sub1/sub2
-> > that's also a subvolume and I'm not sure how to re-parent sub2 to
-> > somewhere else so that I can subvolume delete sub1)  
-> 
-> Well you can move sub2 out of sub1 just like a directory and then
-> delete sub1. If it's read-only it can't be moved, but you can use
-> btrfs property get/set ro true/false to temporarily make it not
-> read-only, move it, then make it read-only again, and it's still fine
-> to use with btrfs send receive.
-> 
-> 
-> 
-> 
-> 
-> >
-> > In the meantime, a simple check without repair looks like this. It
-> > will likely take many hours to complete:
-> > gargamel:/var/local/space# btrfs check /dev/mapper/dshelf2
-> > Checking filesystem on /dev/mapper/dshelf2
-> > UUID: 03e9a50c-1ae6-4782-ab9c-5f310a98e653
-> > checking extents
-> > checksum verify failed on 3096461459456 found 0E6B7980 wanted
-> > FBE5477A checksum verify failed on 3096461459456 found 0E6B7980
-> > wanted FBE5477A checksum verify failed on 2899180224512 found
-> > 7A6D427F wanted 7E899EE5 checksum verify failed on 2899180224512
-> > found 7A6D427F wanted 7E899EE5 checksum verify failed on
-> > 2899180224512 found ABBE39B0 wanted E0735D0E checksum verify failed
-> > on 2899180224512 found 7A6D427F wanted 7E899EE5 bytenr mismatch,
-> > want=2899180224512, have=3981076597540270796 checksum verify failed
-> > on 1449488023552 found CECC36AF wanted 199FE6C5 checksum verify
-> > failed on 1449488023552 found CECC36AF wanted 199FE6C5 checksum
-> > verify failed on 1449544613888 found 895D691B wanted A0C64D2B
-> > checksum verify failed on 1449544613888 found 895D691B wanted
-> > A0C64D2B parent transid verify failed on 1671538819072 wanted
-> > 293964 found 293902 parent transid verify failed on 1671538819072
-> > wanted 293964 found 293902 checksum verify failed on 1671603781632
-> > found 18BC28D6 wanted 372655A0 checksum verify failed on
-> > 1671603781632 found 18BC28D6 wanted 372655A0 checksum verify failed
-> > on 1759425052672 found 843B59F1 wanted F0FF7D00 checksum verify
-> > failed on 1759425052672 found 843B59F1 wanted F0FF7D00 checksum
-> > verify failed on 2182657212416 found CD8EFC0C wanted 70847071
-> > checksum verify failed on 2182657212416 found CD8EFC0C wanted
-> > 70847071 checksum verify failed on 2898779357184 found 96395131
-> > wanted 433D6E09 checksum verify failed on 2898779357184 found
-> > 96395131 wanted 433D6E09 checksum verify failed on 2899180224512
-> > found 7A6D427F wanted 7E899EE5 checksum verify failed on
-> > 2899180224512 found 7A6D427F wanted 7E899EE5 checksum verify failed
-> > on 2899180224512 found ABBE39B0 wanted E0735D0E checksum verify
-> > failed on 2899180224512 found 7A6D427F wanted 7E899EE5 bytenr
-> > mismatch, want=2899180224512, have=3981076597540270796 checksum
-> > verify failed on 2182657212416 found CD8EFC0C wanted 70847071
-> > checksum verify failed on 2182657212416 found CD8EFC0C wanted
-> > 70847071 checksum verify failed on 2182657212416 found CD8EFC0C
-> > wanted 70847071 checksum verify failed on 2182657212416 found
-> > CD8EFC0C wanted 70847071 checksum verify failed on 2182657212416
-> > found CD8EFC0C wanted 70847071  
-> 
-> Not understanding the problem, it's by definition naive for me to
-> suggest it should go read-only sooner before hosing itself. But I'd
-> like to think it's possible for Btrfs to look backward every once in a
-> while for sanity checking, to limit damage should it be occurring even
-> if the hardware isn't reporting any problems.
+> For example, it would be possible to implement a sane check that
+> prevent to mount a btrfs filesystem if two devices exposes the same
+> UUID... 
 
-Would it be possible to make btrfs avoid using parts of the filesystem
-it detected corruptions in? Then a still-in-theory online repair tool
-could check these parts, maybe repair them (or destroy them upon
-request), and make those parts of the fs available again... Such a
-repair tool (scanning only known corrupted parts) would probably also
-need less memory and time to run.
+Ideally, the btrfs wouldn't even appear in /dev until it was assembled
+by udev. But apparently that's not the case, and I think this is where
+the problems come from. I wish, btrfs would not show up as device nodes
+in /dev that the mount command identified as btrfs. Instead, btrfs
+would expose (probably through udev) a device node
+in /dev/btrfs/fs_identifier when it is ready.
+
+Apparently, the core problem of how to handle degraded btrfs still
+remains. Maybe it could be solved by adding more stages of btrfs nodes,
+like /dev/btrfs-incomplete (for unusable btrfs), /dev/btrfs-degraded
+(for btrfs still missing devices but at least one stripe of btrfs raid
+available) and /dev/btrfs as the final stage. That way, a mount process
+could wait for a while, and if the device doesn't appear, it tries the
+degraded stage instead. If the fs is opened from the degraded dev node
+stage, udev (or other processes) that scan for devices should stop
+assembling the fs if they still do so.
+
+bcache has a similar approach by hiding an fs within a protective
+superblock. Unless bcache is setup, the fs won't show up in /dev, and
+that fs won't be visible by other means. Btrfs should do something
+similar and only show a single device node if assembled completely. The
+component devices would have superblocks ignored by mount, and only the
+final node would expose a virtual superblock and the compound device
+after it. Of course, this makes things like compound device resizing
+more complicated maybe even impossible.
+
+If I'm not totally wrong, I think this is also how zfs exposes its
+pools. You need user space tools to make the fs pools visible in the
+tree. If zfs is incomplete, there's nothing to mount, and thus no race
+condition. But I never tried zfs seriously, so I do not know.
 
 -- 
 Regards,

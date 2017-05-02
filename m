@@ -1,14 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from p3nlsmtpcp01-03.prod.phx3.secureserver.net ([184.168.200.142]:57388
-        "EHLO p3nlsmtpcp01-03.prod.phx3.secureserver.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750735AbdEBP3s (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 2 May 2017 11:29:48 -0400
-Date: Tue, 2 May 2017 20:58:41 +0530
-From: "Lakshmipathi.G" <lakshmipathi.g@giis.co.in>
-To: dsterba@suse.cz, quwenruo@cn.fujitsu.com, linux-btrfs@vger.kernel.org
+Received: from mx2.suse.de ([195.135.220.15]:42996 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1750732AbdEBPgD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 2 May 2017 11:36:03 -0400
+Date: Tue, 2 May 2017 17:35:56 +0200
+From: David Sterba <dsterba@suse.cz>
+To: dsterba@suse.cz, "Lakshmipathi.G" <Lakshmipathi.G@giis.co.in>,
+        quwenruo@cn.fujitsu.com, linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] btrfs-progs: btrfs-convert: Add larger device support
-Message-ID: <20170502152840.GA3719@giis.co.in>
+Message-ID: <20170502153556.GM23260@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <20170427100534.GA10404@giis.co.in>
  <20170502150601.GK23260@twin.jikos.cz>
 MIME-Version: 1.0
@@ -27,12 +28,15 @@ On Tue, May 02, 2017 at 05:06:01PM +0200, David Sterba wrote:
 > this on a sparse file, 3TB occupies 50G and is slow to create.
 > Conversion works and hasn't finished yet, so this is not suitable for
 > tests run by default.
-> 
-> Please write a more detailed changelog, a reference to bugzilla is not
-> really sufficient.
 
-Sure, will send a patch with better commit description about the bug and
-proposed fix. 
+So it took a few more minutes. I'm testing it again, not on NFS,  and
+now the creation of empty filesystem took just a few seconds and empty
+file is ~160MB. This sounds much better. So please write a test, using
+something like
 
-Cheers.
-Lakshmipathi.G
+truncate -s3T image
+mkfs.ext4 image
+mount && write some data
+convert && rollback
+
+Thanks.  Later we might need to add some mkfs.ext4 option coverage.

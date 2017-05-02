@@ -1,42 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:42996 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:38845 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1750732AbdEBPgD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 2 May 2017 11:36:03 -0400
-Date: Tue, 2 May 2017 17:35:56 +0200
-From: David Sterba <dsterba@suse.cz>
-To: dsterba@suse.cz, "Lakshmipathi.G" <Lakshmipathi.G@giis.co.in>,
-        quwenruo@cn.fujitsu.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: btrfs-convert: Add larger device support
-Message-ID: <20170502153556.GM23260@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170427100534.GA10404@giis.co.in>
- <20170502150601.GK23260@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170502150601.GK23260@twin.jikos.cz>
+        id S1751368AbdEBPEC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 2 May 2017 11:04:02 -0400
+From: Jan Kara <jack@suse.cz>
+To: <linux-fsdevel@vger.kernel.org>
+Cc: Christoph Hellwig <hch@infradead.org>, Jan Kara <jack@suse.cz>,
+        linux-ext4@vger.kernel.org, "Theodore Ts'o" <tytso@mit.edu>,
+        Jaegeuk Kim <jaegeuk@kernel.org>,
+        linux-f2fs-devel@lists.sourceforge.net,
+        Steven Whitehouse <swhiteho@redhat.com>, cluster-devel@redhat.com,
+        reiserfs-devel@vger.kernel.org, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org, linux-raid@vger.kernel.org,
+        Shaohua Li <shli@kernel.org>, Mike Snitzer <snitzer@redhat.com>,
+        dm-devel@redhat.com
+Subject: [PATCH 0/7] Fix fallout from changes to FUA and PREFLUSH definitions
+Date: Tue,  2 May 2017 17:03:44 +0200
+Message-Id: <20170502150351.29452-1-jack@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 02, 2017 at 05:06:01PM +0200, David Sterba wrote:
-> On Thu, Apr 27, 2017 at 03:35:34PM +0530, Lakshmipathi.G wrote:
-> > Bug: Fail to convert 22TB EXT4 to BTRFS
-> > https://bugzilla.kernel.org/show_bug.cgi?id=194795
-> 
-> Thanks for working on the bug, the proposed fix looks good to me judging
-> by the use of extended API. This would need a test though. I'm trying
-> this on a sparse file, 3TB occupies 50G and is slow to create.
-> Conversion works and hasn't finished yet, so this is not suitable for
-> tests run by default.
+Hello,
 
-So it took a few more minutes. I'm testing it again, not on NFS,  and
-now the creation of empty filesystem took just a few seconds and empty
-file is ~160MB. This sounds much better. So please write a test, using
-something like
+this series addresses a performance issue caused by commit b685d3d65ac7 "block:
+treat REQ_FUA and REQ_PREFLUSH as synchronous". We know for certain this
+problem significanly regresses (over 10%, in some cases up to 100%) ext4 and
+btrfs for dbench4 and reaim benchmarks.  Based on this I have fixed up also
+other places which suffer from the same problem however those changes are
+untested so maintainers please have a look whether the change makes sense to
+you and also whether I possibly didn't miss some cases where REQ_SYNC should be
+also added. Patches in this series are completely independent so if maintainers
+agree with the change, feel free to take it through your tree.
 
-truncate -s3T image
-mkfs.ext4 image
-mount && write some data
-convert && rollback
+The core of the problem is that above mentioned commit removed REQ_SYNC flag
+from WRITE_{FUA|PREFLUSH|...} definitions.  generic_make_request_checks()
+however strips REQ_FUA and REQ_PREFLUSH flags from a bio when the storage
+doesn't report volatile write cache and thus write effectively becomes
+asynchronous which can lead to performance regressions.
 
-Thanks.  Later we might need to add some mkfs.ext4 option coverage.
+A side note for ext4: The two patches for ext4 & jbd2 are on top of the change
+that got merged in the ext4 tree already.
+
+								Honza

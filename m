@@ -1,72 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:50812 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751216AbdECVTr (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 May 2017 17:19:47 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1d61gR-00022V-MT
-        for linux-btrfs@vger.kernel.org; Wed, 03 May 2017 23:19:39 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Can I see what device was used to mount btrfs?
-Date: Wed, 3 May 2017 21:19:31 +0000 (UTC)
-Message-ID: <pan$8ae23$5a262cb7$97dabdcd$19e38885@cox.net>
-References: <1e2e2e5c-5ee8-85c1-1db4-74293d8c9c1e@gmail.com>
-        <20170502135820.2ft7bsoceeqhnbqf@angband.pl>
-        <CAA91j0V97dCb+j_thg0oi7B4D29VVKcqtRcpCWbgQyzi+FScKA@mail.gmail.com>
-        <20170502184923.jdpfx3pwkl5avdph@angband.pl>
-        <c7f3c9fe-2f28-e102-9df7-273dc5a6ca8e@inwind.it>
-        <20170502221506.3dfe125e@jupiter.sol.kaishome.de>
-        <cdf96959-94e8-4932-465f-ea5c72187892@inwind.it>
-        <CAJCQCtQwCohHJBKihg5fMC2Wc6+jz=Zc-a5MAOBaV4Pt-YzN6w@mail.gmail.com>
-Mime-Version: 1.0
+Received: from mail-yb0-f173.google.com ([209.85.213.173]:34610 "EHLO
+        mail-yb0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751198AbdECWSg (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 May 2017 18:18:36 -0400
+Received: by mail-yb0-f173.google.com with SMTP id 8so847171ybw.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 03 May 2017 15:18:36 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <CAPktuGs4cJW6YBJ3GuGaXRLkud7VKvdH2P1U0hT+3AtDmHL5Yw@mail.gmail.com>
+References: <CAPktuGs4cJW6YBJ3GuGaXRLkud7VKvdH2P1U0hT+3AtDmHL5Yw@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Wed, 3 May 2017 16:18:34 -0600
+Message-ID: <CAJCQCtRXCWuCbchRxOBZA7Dfzt4vhED77d1boErTdOGAzAi4vw@mail.gmail.com>
+Subject: Re: BTRFS converted from EXT4 becomes read-only after reboot
+To: Alexandru Guzu <alexguzu@gmail.com>, Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Murphy posted on Wed, 03 May 2017 12:43:36 -0600 as excerpted:
+On Wed, May 3, 2017 at 2:28 PM, Alexandru Guzu <alexguzu@gmail.com> wrote:
 
-> If I understand the bug report correctly, the user specifies mounting by
-> label which then systemd is converting into /dev/dm-0 (because it's a
-> two LUKS devices Btrfs volume).
-> 
-> Why not convert the fstab mount by label request, into a /dev/by-uuid/
-> path; and then systemd calls mount with -u,--uuid mount option rather
-> than the block device? I'd think this is better no matter what the file
-> system is, but certainly with Btrfs and possibly ZFS. That makes the
-> device discovery problem not systemd's problem to hassle with.
+> In a VirtualBox VM, I converted a EXT4 fs to BTRFS that is now running
+> on Ubuntu 16.04 (Kernel 4.4.0-72). I was able to use the system for
+> several weeks. I even did kernel updates, compression, deduplication
+> without issues.
 
-You're forgetting one thing:  mount doesn't handle either label or uuid 
-(or similar partlabel/partuid/etc) mounting on its own -- it interprets 
-all of these as the appropriate /dev/disk/by-* symlink references, 
-dereferences those to the canonical device name, and actually mounts 
-using that.
+Which version of btrfs-progs? The convert code was totally rewritten
+for btrfs-progs 4.6, and it has had a number of significant fixes
+since then. I'd say 4.8.2 is about the minimum I'd recommend. But if
+it were me I'd use the current release, 4.10.2.
 
-See the mount (8) manpage, relatively near the top under "Indicating the 
-device", the relevant quote being "The mount (8) command internally uses 
-udev symlinks, so the use of symlinks in /etc/fstab has no advantage over 
-[LABEL=, UUID=, etc] tags."
+But that alone may not fix it, I think you need a newer kernel...
 
-And of course it's systemd's udev component that sets up those /dev/disk/
-by-* symlinks in the first place.
+>
+> The stack trace is the following:
+>
+> [   88.836057] ------------[ cut here ]------------
+> [   88.836082] WARNING: CPU: 0 PID: 25 at
+> /build/linux-wXdoVv/linux-4.4.0/fs/btrfs/inode.c:2931
+> btrfs_finish_ordered_io+0x63b/0x650 [btrfs]()
+> [   88.836083] BTRFS: Transaction aborted (error -95)
 
-So converting mount-by-label requests to mount-by-uuid requests gets you 
-exactly nowhere, as underneath the covers they're both using the the same 
-level udev-generated /dev/disk/by-* symlinks to get the canonical device 
-name, so not only do you fail to get rid of the systemd/udev involvement, 
-you fail to even reduce abstraction to a lower level.
+Fits this thread, which suggests you're using a btrfs-progs 4.6 or newer.
 
-Not to mention that newer systemd is apparently using its own mount-
-alternative now, and doesn't actually call the traditional mount binary 
-any more, at least for supported filesystem types.  I'm not qualified to 
-argue the case for or against that, but it's apparently happening now, 
-and regardless of where one stands on the merits, it's certainly 
-inserting systemd even farther into the mount process for relatively 
-complex and fuller-featured filesystems such as btrfs.
+The call trace breakdown:
+http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg57565.html
+
+The evaluation:
+http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg57634.html
+
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Chris Murphy

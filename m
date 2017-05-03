@@ -1,127 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f52.google.com ([209.85.214.52]:36418 "EHLO
-        mail-it0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751564AbdECSxP (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 May 2017 14:53:15 -0400
-Received: by mail-it0-f52.google.com with SMTP id o5so123938ith.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 03 May 2017 11:53:15 -0700 (PDT)
-Subject: Re: Can I see what device was used to mount btrfs?
-To: Andrei Borzenkov <arvidjaar@gmail.com>, kreijack@inwind.it,
-        Adam Borowski <kilobyte@angband.pl>
-References: <1e2e2e5c-5ee8-85c1-1db4-74293d8c9c1e@gmail.com>
- <20170502135820.2ft7bsoceeqhnbqf@angband.pl>
- <CAA91j0V97dCb+j_thg0oi7B4D29VVKcqtRcpCWbgQyzi+FScKA@mail.gmail.com>
- <20170502184923.jdpfx3pwkl5avdph@angband.pl>
- <c7f3c9fe-2f28-e102-9df7-273dc5a6ca8e@inwind.it>
- <dd909c77-5014-3ec8-a976-7290145ad46d@gmail.com>
- <56861b10-fb38-518c-0448-58a329839093@gmail.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <87d64577-2753-63d1-453f-3395c9ee1215@gmail.com>
-Date: Wed, 3 May 2017 14:53:11 -0400
+Received: from mail-pg0-f47.google.com ([74.125.83.47]:33617 "EHLO
+        mail-pg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755317AbdECU2N (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 May 2017 16:28:13 -0400
+Received: by mail-pg0-f47.google.com with SMTP id y4so401613pge.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 03 May 2017 13:28:12 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <56861b10-fb38-518c-0448-58a329839093@gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+From: Alexandru Guzu <alexguzu@gmail.com>
+Date: Wed, 3 May 2017 16:28:11 -0400
+Message-ID: <CAPktuGs4cJW6YBJ3GuGaXRLkud7VKvdH2P1U0hT+3AtDmHL5Yw@mail.gmail.com>
+Subject: BTRFS converted from EXT4 becomes read-only after reboot
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-05-03 14:12, Andrei Borzenkov wrote:
-> 03.05.2017 14:26, Austin S. Hemmelgarn пишет:
->> On 2017-05-02 15:50, Goffredo Baroncelli wrote:
->>> On 2017-05-02 20:49, Adam Borowski wrote:
->>>>> It could be some daemon that waits for btrfs to become complete.  Do we
->>>>> have something?
->>>> Such a daemon would also have to read the chunk tree.
->>>
->>> I don't think that a daemon is necessary. As proof of concept, in the
->>> past I developed a mount helper [1] which handled the mount of a btrfs
->>> filesystem:
->>> this handler first checks if the filesystem is a multivolume devices,
->>> if so it waits that all the devices are appeared. Finally mount the
->>> filesystem.
->>>
->>>> It's not so simple -- such a btrfs device would have THREE states:
->>>>
->>>> 1. not mountable yet (multi-device with not enough disks present)
->>>> 2. mountable ro / rw-degraded
->>>> 3. healthy
->>>
->>> My mount.btrfs could be "programmed" to wait a timeout, then it mounts
->>> the filesystem as degraded if not all devices are present. This is a
->>> very simple strategy, but this could be expanded.
->>>
->>> I am inclined to think that the current approach doesn't fit well the
->>> btrfs requirements.  The roles and responsibilities are spread to too
->>> much layer (udev, systemd, mount)... I hoped that my helper could be
->>> adopted in order to concentrate all the responsibility to only one
->>> binary; this would reduce the interface number with the other
->>> subsystem (eg systemd, udev).
->> The primary problem is that systemd treats BTRFS like a block-layer
->> instead of a filesystem (so it assumes all devices need to be present),
->> and that it doesn't trust the kernel's mount function to work correctly.
->
-> My understanding is that before kernel mount can succeed for
-> multi-device btrfs, kernel must be made aware of devices that comprise
-> this filesystem. This is done by using (equivalent of) "btrfs device
-> scan" or "btrfs device ready". Am I wrong here?
-That is correct, the kernel needs to be notified about the devices via 
-'btrfs device scan' (or directly with the ioctl that calls).  Udev calls 
-this automatically on newly connected block devices though, so currently 
-there is no reason manually run it on most systems.  Ideally, this 
-should be in a mount helper and possibly triggered by 'btrfs filesystem 
-show'.  Unless you're mounting a BTRFS volume or listing what the kernel 
-knows about, there is no reason the kernel needs to be tracking the FS, 
-so there is no point in regularly wasting time in udev processing by 
-scanning all newly connected devices.
+Hi all,
 
-As far as 'btrfs device ready', that only tells you if the kernel thinks 
-the filesystem is mountable _and_ not degraded.  It's usually correct, 
-but watching that has the usual TOCTOU races present in any kind of 
-status checking system, and it's useless if you want to mount degraded.
->
->>  As a result, it assumes that the mount operation will fail if it
->> doesn't see all the devices instead of just trying it like it should.
->
-> So do you suggest that mount will succeed even if kernel is not made
-> aware of all devices? If not, could you elaborate how btrfs should be
-> mounted on boot - we must give mount command some device, right? How
-> should we chose this device?
-See my above comment on kernel awareness.
+In a VirtualBox VM, I converted a EXT4 fs to BTRFS that is now running
+on Ubuntu 16.04 (Kernel 4.4.0-72). I was able to use the system for
+several weeks. I even did kernel updates, compression, deduplication
+without issues.
 
-If you have 'degraded' in the mount options, the mount can succeed even 
-if not all the devices are present.  Systemd refuses to even try the 
-mount if it doesn't see all the devices, and then *unmounts* the FS if 
-it gets mounted manually and not all devices are present.  Both of these 
-are undesired behaviors for many people (the second more than the first).
+Since today, a little while after booting (usually when I start
+opening applications), the FS becomes read-only. IMO, the only thing
+that might have changed that could affect this is a kernel upgrade.
+However, since the FS becomes RO, I cannot easily do a kernel update
+(I guess I'd have to chroot and do it).
 
-I think I've outlined my thoughts on all of this somewhere before, but I 
-can't find them, so I might as well do so here:
+The stack trace is the following:
 
-1. Device scanning should be done by a mount helper, not udev.  This 
-closes a serious data safety/security issue present in the current 
-combined implementation (if you plug in a device that has the same UUID 
-as an existing BTRFS volume on the system and both volumes are marked as 
-multi-device, you can cause data loss in the existing volume),  allows 
-for more concise tracking of devices, and also eliminates the need for 
-system-wide scanning in some cases (if you use 'device=' mount options 
-that cover all the devices in the filesystem).  It also saves some time 
-in processing of uevents for hot-plugged devices.
+[   88.836057] ------------[ cut here ]------------
+[   88.836082] WARNING: CPU: 0 PID: 25 at
+/build/linux-wXdoVv/linux-4.4.0/fs/btrfs/inode.c:2931
+btrfs_finish_ordered_io+0x63b/0x650 [btrfs]()
+[   88.836083] BTRFS: Transaction aborted (error -95)
+[   88.836084] Modules linked in: nvram msr zram lz4_compress
+vboxsf(OE) joydev crct10dif_pclmul crc32_pclmul ghash_clmulni_intel
+aesni_intel snd_intel8x0 aes_x86_64 snd_ac97_codec lrw gf128mul
+glue_helper ablk_helper cryptd ac97_bus snd_pcm snd_seq_midi
+snd_seq_midi_event snd_rawmidi snd_seq vboxvideo(OE) snd_seq_device
+snd_timer ttm input_leds drm_kms_helper serio_raw i2c_piix4 snd drm
+fb_sys_fops syscopyarea sysfillrect sysimgblt soundcore 8250_fintek
+vboxguest(OE) mac_hid parport_pc ppdev lp parport autofs4 btrfs xor
+raid6_pq hid_generic usbhid hid psmouse ahci libahci fjes video
+pata_acpi
+[   88.836116] CPU: 0 PID: 25 Comm: kworker/u2:1 Tainted: G
+OE   4.4.0-72-generic #93-Ubuntu
+[   88.836117] Hardware name: innotek GmbH VirtualBox/VirtualBox, BIOS
+VirtualBox 12/01/2006
+[   88.836130] Workqueue: btrfs-endio-write btrfs_endio_write_helper [btrfs]
+[   88.836132]  0000000000000286 00000000618d3a00 ffff88007cabbc78
+ffffffff813f82b3
+[   88.836134]  ffff88007cabbcc0 ffffffffc01912a8 ffff88007cabbcb0
+ffffffff81081302
+[   88.836135]  ffff880058bf01b0 ffff8800355f2800 ffff88007b9e64e0
+ffff88007c66f098
+[   88.836137] Call Trace:
+[   88.836142]  [<ffffffff813f82b3>] dump_stack+0x63/0x90
+[   88.836145]  [<ffffffff81081302>] warn_slowpath_common+0x82/0xc0
+[   88.836147]  [<ffffffff8108139c>] warn_slowpath_fmt+0x5c/0x80
+[   88.836159]  [<ffffffffc012373f>] ? unpin_extent_cache+0x8f/0xe0 [btrfs]
+[   88.836167]  [<ffffffffc00e0b06>] ? btrfs_free_path+0x26/0x30 [btrfs]
+[   88.836178]  [<ffffffffc011554b>] btrfs_finish_ordered_io+0x63b/0x650 [btrfs]
+[   88.836188]  [<ffffffffc0115845>] finish_ordered_fn+0x15/0x20 [btrfs]
+[   88.836200]  [<ffffffffc013dfda>] btrfs_scrubparity_helper+0xca/0x2f0 [btrfs]
+[   88.836202]  [<ffffffff810caee1>] ?
+__raw_callee_save___pv_queued_spin_unlock+0x11/0x20
+[   88.836214]  [<ffffffffc013e28e>] btrfs_endio_write_helper+0xe/0x10 [btrfs]
+[   88.836217]  [<ffffffff8109a555>] process_one_work+0x165/0x480
+[   88.836219]  [<ffffffff8109a8bb>] worker_thread+0x4b/0x4c0
+[   88.836220]  [<ffffffff8109a870>] ? process_one_work+0x480/0x480
+[   88.836222]  [<ffffffff8109a870>] ? process_one_work+0x480/0x480
+[   88.836224]  [<ffffffff810a0be8>] kthread+0xd8/0xf0
+[   88.836225]  [<ffffffff810a0b10>] ? kthread_create_on_node+0x1e0/0x1e0
+[   88.836229]  [<ffffffff8183ca0f>] ret_from_fork+0x3f/0x70
+[   88.836230]  [<ffffffff810a0b10>] ? kthread_create_on_node+0x1e0/0x1e0
+[   88.836232] ---[ end trace f4b8dbb54f0db139 ]---
+[   88.836234] BTRFS: error (device sda1) in
+btrfs_finish_ordered_io:2931: errno=-95 unknown
+[   88.836236] BTRFS info (device sda1): forced readonly
+[   88.836392] pending csums is 118784
 
-2. Systemd should not default to unmounting filesystems it thinks aren't 
-ready yet when they've been manually mounted.  This behavior is highly 
-counter-intuitive for most users ('The mount command didn't complain and 
-returned 0 and dmesg has no errors, why the hell is the filesystem I 
-just mounted not mounted?'), and more importantly in this context, makes 
-it impossible to manually repair a BTRFS filesystem that's listed in a 
-mount unit without dropping to emergency mode, which largely defeats the 
-purpose of using a multi-device filesystem that can be repaired online.
+If I reboot with the Live CD version, I can run `scrub` and `check`
+without any issues. Also the FS stays read-write.
 
-3. For BTRFS, and possibly under special circumstances with other 
-filesystems (partially present ZFS pool, partially assembled LVM or MD 
-array that can run degraded, etc), systemd should try to mount the FS 
-when it times out waiting for devices, and there should be an option to 
-control this behavior.  While I don't advocate mounting filesystems 
-degraded then letting the system run, some people do, and I still expect 
-it to work, but currently it does not when using systemd. 
-Alternatively, it could do a polling loop with a delay to call mount 
-instead of using 'btrfs device ready'.
+Is this a known issue? Could it be due to the conversion, or can this
+happen on any system on any time. This is a test VM that I can
+re-make, but I would like to know if this can happen on a production
+system.
+
+Regards,
+Alex.

@@ -1,95 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f178.google.com ([209.85.161.178]:36538 "EHLO
-        mail-yw0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754067AbdECRnc (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 May 2017 13:43:32 -0400
-Received: by mail-yw0-f178.google.com with SMTP id l18so88935496ywh.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 03 May 2017 10:43:32 -0700 (PDT)
+Received: from mail-lf0-f68.google.com ([209.85.215.68]:35281 "EHLO
+        mail-lf0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750737AbdECSM6 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 May 2017 14:12:58 -0400
+Received: by mail-lf0-f68.google.com with SMTP id t144so158020lff.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 03 May 2017 11:12:57 -0700 (PDT)
+Subject: Re: Can I see what device was used to mount btrfs?
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>, kreijack@inwind.it,
+        Adam Borowski <kilobyte@angband.pl>
+References: <1e2e2e5c-5ee8-85c1-1db4-74293d8c9c1e@gmail.com>
+ <20170502135820.2ft7bsoceeqhnbqf@angband.pl>
+ <CAA91j0V97dCb+j_thg0oi7B4D29VVKcqtRcpCWbgQyzi+FScKA@mail.gmail.com>
+ <20170502184923.jdpfx3pwkl5avdph@angband.pl>
+ <c7f3c9fe-2f28-e102-9df7-273dc5a6ca8e@inwind.it>
+ <dd909c77-5014-3ec8-a976-7290145ad46d@gmail.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+Message-ID: <56861b10-fb38-518c-0448-58a329839093@gmail.com>
+Date: Wed, 3 May 2017 21:12:54 +0300
 MIME-Version: 1.0
-In-Reply-To: <F4778DD1-E0D1-475E-A177-6AA23B56C7CD@redhat.com>
-References: <D64BF81E-58B3-4B19-AD65-F5056768466C@redhat.com>
- <CAJCQCtQGmQksOmwjmYRVtdBfcY1YT5eY7vSWGgt6oJFcg8HaGQ@mail.gmail.com>
- <2CE52079-1B96-4FB3-8CEF-05FC6D3CB183@redhat.com> <CAJCQCtSp+Udo8qA_ZdY7JUhfmdAFYT7di6JxJ5ELUWi1muQ-og@mail.gmail.com>
- <0E7C728D-E9DD-4E04-81E3-C4F47FCA2DC9@redhat.com> <CAJCQCtSTNm_BjsCQF=Y9TpJD4uWUfPy3k93rfU15OGVR-QuSXQ@mail.gmail.com>
- <F4778DD1-E0D1-475E-A177-6AA23B56C7CD@redhat.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Wed, 3 May 2017 11:43:30 -0600
-Message-ID: <CAJCQCtTSSSnh9F_iM7Vc261Pt_WqBh1NFi2tLe9miPSSP7uSdg@mail.gmail.com>
-Subject: Re: File system corruption, btrfsck abort
-To: Christophe de Dinechin <dinechin@redhat.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+In-Reply-To: <dd909c77-5014-3ec8-a976-7290145ad46d@gmail.com>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 3, 2017 at 8:17 AM, Christophe de Dinechin
-<dinechin@redhat.com> wrote:
+03.05.2017 14:26, Austin S. Hemmelgarn пишет:
+> On 2017-05-02 15:50, Goffredo Baroncelli wrote:
+>> On 2017-05-02 20:49, Adam Borowski wrote:
+>>>> It could be some daemon that waits for btrfs to become complete.  Do we
+>>>> have something?
+>>> Such a daemon would also have to read the chunk tree.
+>>
+>> I don't think that a daemon is necessary. As proof of concept, in the
+>> past I developed a mount helper [1] which handled the mount of a btrfs
+>> filesystem:
+>> this handler first checks if the filesystem is a multivolume devices,
+>> if so it waits that all the devices are appeared. Finally mount the
+>> filesystem.
+>>
+>>> It's not so simple -- such a btrfs device would have THREE states:
+>>>
+>>> 1. not mountable yet (multi-device with not enough disks present)
+>>> 2. mountable ro / rw-degraded
+>>> 3. healthy
+>>
+>> My mount.btrfs could be "programmed" to wait a timeout, then it mounts
+>> the filesystem as degraded if not all devices are present. This is a
+>> very simple strategy, but this could be expanded.
+>>
+>> I am inclined to think that the current approach doesn't fit well the
+>> btrfs requirements.  The roles and responsibilities are spread to too
+>> much layer (udev, systemd, mount)... I hoped that my helper could be
+>> adopted in order to concentrate all the responsibility to only one
+>> binary; this would reduce the interface number with the other
+>> subsystem (eg systemd, udev).
+> The primary problem is that systemd treats BTRFS like a block-layer
+> instead of a filesystem (so it assumes all devices need to be present),
+> and that it doesn't trust the kernel's mount function to work correctly.
 
->> Check the qcow2 files with filefrag and see how many extents they
->> have. I'll bet they're massively fragmented.
->
-> Indeed:
->
-> fedora25.qcow2: 28358 extents found
-> mac_hdd.qcow2: 79493 extents found
-> ubuntu14.04-64.qcow2: 35069 extents found
-> ubuntu14.04.qcow2: 240 extents found
-> ubuntu16.04-32.qcow2: 81 extents found
-> ubuntu16.04-64.qcow2: 15060 extents found
-> ubuntu16.10-64.qcow2: 228 extents found
-> win10.qcow2: 3438997 extents found
-> winxp.qcow2: 66657 extents found
->
-> I have no idea why my Win10 guest is so much worse than the others. It’s currently one of the least used, at least it’s not yet operating regularly in my build ring… But I had noticed that the installation of Visual Studio had taken quite a bit of time.
+My understanding is that before kernel mount can succeed for
+multi-device btrfs, kernel must be made aware of devices that comprise
+this filesystem. This is done by using (equivalent of) "btrfs device
+scan" or "btrfs device ready". Am I wrong here?
 
-I see the same pathological behavior. I don't know if it's Windows,
-NTFS, or some combination of how Windows+NTFS flushes, and how that
-flush gets treated as it passes from guest to host. And I don't know
-if qcow2 itself exacerbates it. But it seems fairly clear most every
-Windows guest write becomes an extent on Btrfs.
+>  As a result, it assumes that the mount operation will fail if it
+> doesn't see all the devices instead of just trying it like it should.
 
-If we consider 3438997 extents, and each extent has an extent data
-item, with ~200 items per 16KiB leaf, that's 17194 leaves, and about
-270MiB of metadata. For one file; and that's just the extent data
-metadata. It doesn't include csums. But anyway there's a lot of churn
-not just in the extent data getting written out but how much metadata
-is affected by each write and the obsoleting of extents. Pretty much
-everything on Btrfs is a write. Even a delete is first a write and
-only later is space released.
+So do you suggest that mount will succeed even if kernel is not made
+aware of all devices? If not, could you elaborate how btrfs should be
+mounted on boot - we must give mount command some device, right? How
+should we chose this device?
 
-
-> Hmmm. Does that even work on BTRFS? I get this, even after doing a chattr +C on one of the files.
->
-> ------------------- fedora25.qcow2
-> ------------------- mac_hdd.qcow2
-> ------------------- ubuntu14.04-64.qcow2
-> ------------------- ubuntu14.04.qcow2
-> ------------------- ubuntu16.04-32.qcow2
-> ------------------- ubuntu16.04-64.qcow2
-> ------------------- ubuntu16.10-64.qcow2
-> ------------------- win10.qcow2
-> ------------------- winxp.qcow2
-
-It only works on zero length files. It has to be set at the time the
-file is created, which is what -o nocow=on does with qemu-img. If you
-wanted to do this with raw files and make it behave on Btrfs pretty
-much like it does on any other file system:
-
-touch windows.raw
-chattr +C windows.raw
-fallocate -l 50g windows.raw
-
-It's not possible to retroactively make a cow file nocow, or a nocow
-file cow. You can copy it to a new location such that it inherits +C
-(like a new directory). And you can also create a new nocow file, and
-then cat the old one into the new one. I haven't tried it but
-presumably you can use either 'qemu-img convert' or 'qemu-img dd' to
-migrate the data inside a cow qcow2 into a nocow qcow2. I don't know
-if you'd do the touch > chattr > qemu-image; or if you'd have qemu-img
-create a new one with -o nocow=on and then use the dd command.
-
-
-
--- 
-Chris Murphy

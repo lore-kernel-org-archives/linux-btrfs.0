@@ -1,33 +1,239 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aquinas.techsquare.com ([75.125.237.226]:43298 "EHLO
-        techsquare.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1753245AbdEENYh (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 May 2017 09:24:37 -0400
-To: pg@btrfs.list.sabi.co.UK, linux-btrfs@vger.kernel.org
-References: <22795.14626.978819.534566@tree.ty.sabi.co.uk>
-From: Matt McKinnon <matt@techsquare.com>
-Message-ID: <f1bbe501-0897-c8e0-36ff-2f4cf005fa45@techsquare.com>
-Date: Fri, 5 May 2017 09:24:32 -0400
-MIME-Version: 1.0
-In-Reply-To: <22795.14626.978819.534566@tree.ty.sabi.co.uk>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Subject: Re: Struggling with file system slowness
+Received: from aserp1040.oracle.com ([141.146.126.69]:22232 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751176AbdECN3b (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 May 2017 09:29:31 -0400
+Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
+        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v43DTT86017249
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Wed, 3 May 2017 13:29:30 GMT
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v43DTTHh015638
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Wed, 3 May 2017 13:29:29 GMT
+Received: from abhmp0003.oracle.com (abhmp0003.oracle.com [141.146.116.9])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id v43DTSOe004727
+        for <linux-btrfs@vger.kernel.org>; Wed, 3 May 2017 13:29:29 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/2 v7] btrfs: introduce device dynamic state transition to offline or failed
+Date: Wed,  3 May 2017 21:34:56 +0800
+Message-Id: <20170503133457.9901-2-anand.jain@oracle.com>
+In-Reply-To: <20170503133457.9901-1-anand.jain@oracle.com>
+References: <20170503133457.9901-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
- > Too little information. Is IO happening at the same time? Is
- > compression on? Deduplicated? Lots of subvolumes? SSD? What
- > kind of workload and file size/distribution profile?
+From: Anand Jain <Anand.Jain@oracle.com>
 
-Only write IO during the load spikes.  No compression, no deduplication. 
-  12 volumes (including snapshots).  Spinning disks.  Medium workload; 
-file sizes are all over the map since this hold about 30 user home 
-directories.
+This patch provides helper functions to force a device to offline
+or failed, and we need this device states for the following reasons,
+1) a. it can be reported that device has failed when it does
+   b. close the device when it goes offline so that blocklayer can
+      cleanup
+2) identify the candidate for the auto replace
+3) avoid further commit error reported against the failing device and
+4) a device in the multi device btrfs may go offline from the system
+   (but as of now in in some system config btrfs gets unmounted in this
+    context, which is not a correct behavior)
 
-Interestingly enough, the problems which had persisted for many weeks 
-went away when all snapshots were removed.  btrfs-transaction spikes 
-disappeared.  Memory usage went from 30G to under 2G.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+v7:
+ . Set degraded mount flag when volume is degraded due to disk failure
+ . Use fs_info->num_tolerated_disk_barrier_failures for now and update
+   this later based on which approach finally makes it to the mainline.
+ . Removed: (as this is out of the set)
+ Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
+ Tested-by: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
 
--Matt
+v6: Changes on top of
+    btrfs: rename btrfs_std_error to btrfs_handle_fs_error
 
+ fs/btrfs/volumes.c | 134 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/volumes.h |  14 ++++++
+ 2 files changed, 148 insertions(+)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index ab8a66d852f9..609ed3d924c3 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -7200,3 +7200,137 @@ void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info)
+ 		fs_devices = fs_devices->seed;
+ 	}
+ }
++
++static void __close_device(struct work_struct *work)
++{
++	struct btrfs_device *device;
++
++	device = container_of(work, struct btrfs_device, rcu_work);
++
++	if (device->closing_bdev)
++		blkdev_put(device->closing_bdev, device->mode);
++
++	device->closing_bdev = NULL;
++}
++
++static void close_device(struct rcu_head *head)
++{
++	struct btrfs_device *device;
++
++	device = container_of(head, struct btrfs_device, rcu);
++
++	INIT_WORK(&device->rcu_work, __close_device);
++	schedule_work(&device->rcu_work);
++}
++
++void device_force_close(struct btrfs_device *device)
++{
++	struct btrfs_fs_devices *fs_devices;
++
++	fs_devices = device->fs_devices;
++
++	mutex_lock(&fs_devices->device_list_mutex);
++	mutex_lock(&fs_devices->fs_info->chunk_mutex);
++	spin_lock(&fs_devices->fs_info->free_chunk_lock);
++
++	btrfs_assign_next_active_device(fs_devices->fs_info, device, NULL);
++
++	if (device->bdev)
++		fs_devices->open_devices--;
++
++	if (device->writeable) {
++		list_del_init(&device->dev_alloc_list);
++		fs_devices->rw_devices--;
++	}
++	device->writeable = 0;
++
++	/*
++	 * fixme: works for now, but its better to keep the state of
++	 * missing and offline different, and update rest of the
++	 * places where we check for only missing and not for failed
++	 * or offline as of now.
++	 */
++	device->missing = 1;
++	fs_devices->missing_devices++;
++	device->closing_bdev = device->bdev;
++	device->bdev = NULL;
++
++	call_rcu(&device->rcu, close_device);
++
++	spin_unlock(&fs_devices->fs_info->free_chunk_lock);
++	mutex_unlock(&fs_devices->fs_info->chunk_mutex);
++	mutex_unlock(&fs_devices->device_list_mutex);
++
++	rcu_barrier();
++}
++
++void btrfs_device_enforce_state(struct btrfs_device *dev, char *why)
++{
++	int tolerance;
++	bool degrade_option;
++	char dev_status[10];
++	char chunk_status[25];
++	struct btrfs_fs_info *fs_info;
++	struct btrfs_fs_devices *fs_devices;
++
++	fs_devices = dev->fs_devices;
++	fs_info = fs_devices->fs_info;
++	degrade_option = btrfs_test_opt(fs_info, DEGRADED);
++
++	/* todo: support seed later */
++	if (fs_devices->seeding)
++		return;
++
++	/* this shouldn't be called if device is already missing */
++	if (dev->missing || !dev->bdev)
++		return;
++
++	if (dev->offline || dev->failed)
++		return;
++
++	/* Last RW device is requested to force close let FS handle it*/
++	if (fs_devices->rw_devices == 1) {
++		btrfs_handle_fs_error(fs_info, -EIO,
++			"force offline last RW device");
++		return;
++	}
++
++	if (!strcmp(why, "offline"))
++		dev->offline = 1;
++	else if (!strcmp(why, "failed"))
++		dev->failed = 1;
++	else
++		return;
++
++	/*
++	 * Here after, there shouldn't any reason why can't force
++	 * close this device
++	 */
++	btrfs_sysfs_rm_device_link(fs_devices, dev);
++	device_force_close(dev);
++	strcpy(dev_status, "closed");
++
++	tolerance = fs_info->num_tolerated_disk_barrier_failures -
++				fs_info->fs_devices->missing_devices;
++	if(tolerance < 0) {
++		strncpy(chunk_status, "chunk(s) failed", 25);
++	} else {
++		strncpy(chunk_status, "chunk(s) degraded", 25);
++		/*
++		 * don't remount, that will jitter the application
++		 * IO workload performance, which is not acceptable
++		 */
++		btrfs_set_opt(fs_info->mount_opt, DEGRADED);
++	}
++
++	btrfs_warn_in_rcu(fs_info, "device %s marked %s, %s, %s",
++		rcu_str_deref(dev->name), why, dev_status, chunk_status);
++	btrfs_info_in_rcu(fs_info,
++		"num_devices %llu rw_devices %llu degraded-option: %s",
++		fs_devices->num_devices, fs_devices->rw_devices,
++		degrade_option ? "set":"unset");
++
++	if (tolerance < 0)
++		btrfs_handle_fs_error(fs_info, -EIO,
++					"devices below critical level");
++}
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 9c09dcd96e5d..10818974ed07 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -65,13 +65,26 @@ struct btrfs_device {
+ 	struct btrfs_pending_bios pending_sync_bios;
+ 
+ 	struct block_device *bdev;
++	struct block_device *closing_bdev;
+ 
+ 	/* the mode sent to blkdev_get */
+ 	fmode_t mode;
+ 
+ 	int writeable;
+ 	int in_fs_metadata;
++	/* missing: device wasn't found at the time of mount */
+ 	int missing;
++	/* failed: device confirmed to have experienced critical io failure */
++	int failed;
++	/*
++	 * offline: system or user or block layer transport has removed
++	 * offlined the device which was once present and without going
++	 * through unmount. Implies an intriem communication break down
++	 * and not necessarily a candidate for the device replace. And
++	 * device might be online after user intervention or after
++	 * block transport layer error recovery.
++	 */
++	int offline;
+ 	int can_discard;
+ 	int is_tgtdev_for_dev_replace;
+ 	int last_flush_error;
+@@ -538,5 +551,6 @@ void btrfs_update_commit_device_bytes_used(struct btrfs_fs_info *fs_info,
+ struct list_head *btrfs_get_fs_uuids(void);
+ void btrfs_set_fs_info_ptr(struct btrfs_fs_info *fs_info);
+ void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info);
++void btrfs_device_enforce_state(struct btrfs_device *dev, char *why);
+ 
+ #endif
+-- 
+2.10.0
 

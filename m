@@ -1,93 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:40679 "EHLO
-        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1757584AbdECUke (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 May 2017 16:40:34 -0400
-Date: Wed, 3 May 2017 13:40:25 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Roman Mamedov <rm@romanrm.net>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>, Chris Mason <clm@fb.com>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>, David Sterba <dsterba@suse.cz>
-Subject: Re: btrfs check --repair: failed to repair damaged filesystem,
- aborting
-Message-ID: <20170503204025.t5xqoqaey2m4gdut@merlins.org>
-References: <20170501170641.GG3516@merlins.org>
- <20170501180856.GH3516@merlins.org>
- <CAJCQCtR4Hr5ekASiqWn2RNju5pHz8itS91N=M29Cz8Nqx8=kqA@mail.gmail.com>
- <20170502032346.ayhh3n3uh5d5ekbb@merlins.org>
- <CAJCQCtRaeejj4b+J6M7VTsDAe7Sn4PUtBwcvHXgfLNAFe=8Jqg@mail.gmail.com>
- <20170502051155.igmbqcqgzi4ukefg@merlins.org>
- <20170502184722.GN3516@merlins.org>
- <20170503060008.t35vdhgz2suj3e5l@merlins.org>
- <20170503061711.jowqa5wh3mtzjbww@merlins.org>
- <20170503113226.757f492e@natsu>
+Received: from aserp1040.oracle.com ([141.146.126.69]:37965 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754354AbdECUwO (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 May 2017 16:52:14 -0400
+Subject: Re: [PATCH 0/2] [RFC] Introduce device state 'failed'
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+References: <20170503133457.9901-1-anand.jain@oracle.com>
+ <6d31270e-f569-28d0-a40f-50113c36cd50@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <3145dc93-6b00-7385-5209-f842e8fad974@oracle.com>
+Date: Thu, 4 May 2017 04:57:50 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170503113226.757f492e@natsu>
+In-Reply-To: <6d31270e-f569-28d0-a40f-50113c36cd50@gmail.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 03, 2017 at 11:32:26AM +0500, Roman Mamedov wrote:
-> > Actually, another thought:
-> > Is there or should there be a way to repair around the bit that cannot
-> > be repaired?
-> > Separately, or not, can I locate which bits are causing the repair to
-> > fail and maybe get a pointer to the path/inode so that I can hopefully
-> > just delete those bad data structures (assuming deleting them is even
-> > possible and that the FS won't just go read only as I try to do that)
-> 
-> There is the "btrfs-corrupt-block" tool which helped me to kick Btrfsck
-> further along its course in a similar "unrepairable" situation.
-> https://www.spinics.net/lists/linux-btrfs/msg53061.html
-> 
-> In your case it appears like the block 2899180224512 is giving it the most
-> trouble, so you could start with killing that one. From what I can tell this
-> tool zeroes out the entire block, so Btrfsck can simply delete the reference
-> and forget it, rather than repeatedly trying to figure out solutions and
-> bailing out with "failed to repair damaged filesystem, aborting".
-> 
-> Depending on what was stored in it, you may have either no visible effect, or
-> a complete filesystem failure, or anything in between. Hence if you want to
-> experiment with this, find a way to work on writable overlay snapshots (also
-> described in the linked message).
-
-Thanks for the tip. This does not seem to have worked at all, though.
-Did I do something wrong?
-
-gargamel:/var/local/src/btrfs-progs# ./btrfs-corrupt-block -l  2899180224512 /dev/mapper/dshelf2
-mirror 1 logical 2899180224512 physical 2814363009024 device /dev/mapper/dshelf2
-corrupting 2899180224512 copy 1
-mirror 2 logical 2899180224512 physical 2814899879936 device /dev/mapper/dshelf2
-corrupting 2899180224512 copy 2
 
 
-gargamel:/mnt/btrfs_pool1# btrfs check --repair /dev/mapper/dshelf2
-(...)
-checksum verify failed on 2899180224512 found F25BEE55 wanted 00000000
-checksum verify failed on 2899180224512 found F25BEE55 wanted 00000000
-checksum verify failed on 2899180224512 found E5245DBD wanted 00000000
-checksum verify failed on 2899180224512 found F25BEE55 wanted 00000000
-bytenr mismatch, want=2899180224512, have=0
-Repaired extent references for 3566695825408
-ref mismatch on [6674127745024 32768] extent item 0, found 1
-Backref 6674127745024 parent 7566652473344 owner 0 offset 0 num_refs 0 not found in extent tree
-Incorrect local backref count on 6674127745024 parent 7566652473344 owner 0 offset 0 found 1 wanted 0 back 0x555cb4e9ced0
-backpointer mismatch on [6674127745024 32768]
-checksum verify failed on 6983266418688 found 393B112A wanted 2B19CD5C
-checksum verify failed on 6983266418688 found 393B112A wanted 2B19CD5C
-checksum verify failed on 6983266418688 found BCBF9E15 wanted 785FF67E
-checksum verify failed on 6983266418688 found 393B112A wanted 2B19CD5C
-bytenr mismatch, want=6983266418688, have=13671317608077697645
-checksum verify failed on 2899180224512 found F25BEE55 wanted 00000000
-checksum verify failed on 2899180224512 found F25BEE55 wanted 00000000
-checksum verify failed on 2899180224512 found E5245DBD wanted 00000000
-checksum verify failed on 2899180224512 found F25BEE55 wanted 00000000
-bytenr mismatch, want=2899180224512, have=0
-failed to repair damaged filesystem, aborting
+On 05/03/2017 11:31 PM, Austin S. Hemmelgarn wrote:
+> On 2017-05-03 09:34, Anand Jain wrote:
+>> As the below two patches are about managing the failed disk,
+>> I have separated them from the spare disk and auto replace
+>> support patch set which was sent before here [1]..
+>>
+>>     [1] https://lwn.net/Articles/684195/
+>>
+>> V7 changes are very limited in this individual patches. But adds
+>> the mount option degrad without going through the remount. And is
+>> for your comments, (RFC).
+>>
+>> This set [1] was extensively tested, however as these two patches
+>> are out of the set now, and with a minor change v6-v7, I have
+>> removed the Tested-by: sorry.
+> Entirely understood.
+>>
+>> The script which I have used to verify v7 is here [2], which
+>> eventually will be part of fstests, once we confirm on the RFC.
+>>
+>> [2]
+>> ----------------
+>> create_err_dev_raid1()
+>> {
+>>         dm_backing_dev="/dev/sdd"
+>>         blk_dev_size=`blockdev --getsz $dm_backing_dev`
+>>         dmerror_dev="/dev/mapper/dm-sdd"
+>>         dmlinear_table="0 $blk_dev_size linear $dm_backing_dev 0"
+>>         dmerror_table="0 $blk_dev_size error $dm_backing_dev 0"
+>>
+>>         echo -e dm_backing_dev'\t'= $dm_backing_dev
+>>         echo -e blk_dev_size'\t'= $blk_dev_size
+>>         [[ $blk_dev_size ]] || exit
+>>         echo -e dmerror_dev'\t'= $dmerror_dev
+>>         echo -e dmlinear_table'\t'= $dmlinear_table
+>>         echo -e dmerror_table'\t'= $dmerror_table
+>>         echo
+>>
+>>         runnt "dmsetup remove dm-sdd > /dev/null 2>&1"
+>>         run "dmsetup create dm-sdd --table '${dmlinear_table}'"
+>>
+>>         run "mkfs.btrfs -f -draid1 -mraid1 /dev/sdc $dmerror_dev >
+>> /dev/null 2>&1"
+>>         run mount /dev/sdc /btrfs
+>>         run "dd if=/dev/zero of=/btrfs/tf1 bs=4096 count=100 >
+>> /dev/null 2>&1"
+>>
+>>         run btrfs fi show -m /btrfs
+>>
+>>         run dmsetup suspend dm-sdd
+>>         run "dmsetup load dm-sdd --table '$dmerror_table'"
+>>         run dmsetup resume dm-sdd
+>>         run "dd if=/dev/zero of=/btrfs/tf1 bs=4096 count=100 >
+>> /dev/null 2>&1"
+>>
+>>     run sleep 32
+>>         run btrfs fi show -m /btrfs
+>>     run cat /proc/self/mounts
+>> }
+>> ---------------
+>>
+>> Anand Jain (2):
+>>   btrfs: introduce device dynamic state transition to offline or failed
+>>   btrfs: check device for critical errors and mark failed
+>>
+>>  fs/btrfs/ctree.h   |   2 +
+>>  fs/btrfs/disk-io.c | 101 ++++++++++++++++++++++++++++++++++++++-
+>>  fs/btrfs/volumes.c | 135
+>> +++++++++++++++++++++++++++++++++++++++++++++++++++++
+>>  fs/btrfs/volumes.h |  18 +++++++
+>>  4 files changed, 255 insertions(+), 1 deletion(-)
+>>
+> All my tests passed, and manual testing shows that it does as
+> advertised, so for the series as a whole you can add:
+> Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
 
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+Thanks!
+  Anand
+

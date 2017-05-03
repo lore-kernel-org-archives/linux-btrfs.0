@@ -1,100 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:37965 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754354AbdECUwO (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 May 2017 16:52:14 -0400
-Subject: Re: [PATCH 0/2] [RFC] Introduce device state 'failed'
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-References: <20170503133457.9901-1-anand.jain@oracle.com>
- <6d31270e-f569-28d0-a40f-50113c36cd50@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <3145dc93-6b00-7385-5209-f842e8fad974@oracle.com>
-Date: Thu, 4 May 2017 04:57:50 +0800
-MIME-Version: 1.0
-In-Reply-To: <6d31270e-f569-28d0-a40f-50113c36cd50@gmail.com>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Received: from [195.159.176.226] ([195.159.176.226]:50812 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1751216AbdECVTr (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 May 2017 17:19:47 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1d61gR-00022V-MT
+        for linux-btrfs@vger.kernel.org; Wed, 03 May 2017 23:19:39 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Can I see what device was used to mount btrfs?
+Date: Wed, 3 May 2017 21:19:31 +0000 (UTC)
+Message-ID: <pan$8ae23$5a262cb7$97dabdcd$19e38885@cox.net>
+References: <1e2e2e5c-5ee8-85c1-1db4-74293d8c9c1e@gmail.com>
+        <20170502135820.2ft7bsoceeqhnbqf@angband.pl>
+        <CAA91j0V97dCb+j_thg0oi7B4D29VVKcqtRcpCWbgQyzi+FScKA@mail.gmail.com>
+        <20170502184923.jdpfx3pwkl5avdph@angband.pl>
+        <c7f3c9fe-2f28-e102-9df7-273dc5a6ca8e@inwind.it>
+        <20170502221506.3dfe125e@jupiter.sol.kaishome.de>
+        <cdf96959-94e8-4932-465f-ea5c72187892@inwind.it>
+        <CAJCQCtQwCohHJBKihg5fMC2Wc6+jz=Zc-a5MAOBaV4Pt-YzN6w@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Chris Murphy posted on Wed, 03 May 2017 12:43:36 -0600 as excerpted:
 
+> If I understand the bug report correctly, the user specifies mounting by
+> label which then systemd is converting into /dev/dm-0 (because it's a
+> two LUKS devices Btrfs volume).
+> 
+> Why not convert the fstab mount by label request, into a /dev/by-uuid/
+> path; and then systemd calls mount with -u,--uuid mount option rather
+> than the block device? I'd think this is better no matter what the file
+> system is, but certainly with Btrfs and possibly ZFS. That makes the
+> device discovery problem not systemd's problem to hassle with.
 
-On 05/03/2017 11:31 PM, Austin S. Hemmelgarn wrote:
-> On 2017-05-03 09:34, Anand Jain wrote:
->> As the below two patches are about managing the failed disk,
->> I have separated them from the spare disk and auto replace
->> support patch set which was sent before here [1]..
->>
->>     [1] https://lwn.net/Articles/684195/
->>
->> V7 changes are very limited in this individual patches. But adds
->> the mount option degrad without going through the remount. And is
->> for your comments, (RFC).
->>
->> This set [1] was extensively tested, however as these two patches
->> are out of the set now, and with a minor change v6-v7, I have
->> removed the Tested-by: sorry.
-> Entirely understood.
->>
->> The script which I have used to verify v7 is here [2], which
->> eventually will be part of fstests, once we confirm on the RFC.
->>
->> [2]
->> ----------------
->> create_err_dev_raid1()
->> {
->>         dm_backing_dev="/dev/sdd"
->>         blk_dev_size=`blockdev --getsz $dm_backing_dev`
->>         dmerror_dev="/dev/mapper/dm-sdd"
->>         dmlinear_table="0 $blk_dev_size linear $dm_backing_dev 0"
->>         dmerror_table="0 $blk_dev_size error $dm_backing_dev 0"
->>
->>         echo -e dm_backing_dev'\t'= $dm_backing_dev
->>         echo -e blk_dev_size'\t'= $blk_dev_size
->>         [[ $blk_dev_size ]] || exit
->>         echo -e dmerror_dev'\t'= $dmerror_dev
->>         echo -e dmlinear_table'\t'= $dmlinear_table
->>         echo -e dmerror_table'\t'= $dmerror_table
->>         echo
->>
->>         runnt "dmsetup remove dm-sdd > /dev/null 2>&1"
->>         run "dmsetup create dm-sdd --table '${dmlinear_table}'"
->>
->>         run "mkfs.btrfs -f -draid1 -mraid1 /dev/sdc $dmerror_dev >
->> /dev/null 2>&1"
->>         run mount /dev/sdc /btrfs
->>         run "dd if=/dev/zero of=/btrfs/tf1 bs=4096 count=100 >
->> /dev/null 2>&1"
->>
->>         run btrfs fi show -m /btrfs
->>
->>         run dmsetup suspend dm-sdd
->>         run "dmsetup load dm-sdd --table '$dmerror_table'"
->>         run dmsetup resume dm-sdd
->>         run "dd if=/dev/zero of=/btrfs/tf1 bs=4096 count=100 >
->> /dev/null 2>&1"
->>
->>     run sleep 32
->>         run btrfs fi show -m /btrfs
->>     run cat /proc/self/mounts
->> }
->> ---------------
->>
->> Anand Jain (2):
->>   btrfs: introduce device dynamic state transition to offline or failed
->>   btrfs: check device for critical errors and mark failed
->>
->>  fs/btrfs/ctree.h   |   2 +
->>  fs/btrfs/disk-io.c | 101 ++++++++++++++++++++++++++++++++++++++-
->>  fs/btrfs/volumes.c | 135
->> +++++++++++++++++++++++++++++++++++++++++++++++++++++
->>  fs/btrfs/volumes.h |  18 +++++++
->>  4 files changed, 255 insertions(+), 1 deletion(-)
->>
-> All my tests passed, and manual testing shows that it does as
-> advertised, so for the series as a whole you can add:
-> Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
+You're forgetting one thing:  mount doesn't handle either label or uuid 
+(or similar partlabel/partuid/etc) mounting on its own -- it interprets 
+all of these as the appropriate /dev/disk/by-* symlink references, 
+dereferences those to the canonical device name, and actually mounts 
+using that.
 
-Thanks!
-  Anand
+See the mount (8) manpage, relatively near the top under "Indicating the 
+device", the relevant quote being "The mount (8) command internally uses 
+udev symlinks, so the use of symlinks in /etc/fstab has no advantage over 
+[LABEL=, UUID=, etc] tags."
+
+And of course it's systemd's udev component that sets up those /dev/disk/
+by-* symlinks in the first place.
+
+So converting mount-by-label requests to mount-by-uuid requests gets you 
+exactly nowhere, as underneath the covers they're both using the the same 
+level udev-generated /dev/disk/by-* symlinks to get the canonical device 
+name, so not only do you fail to get rid of the systemd/udev involvement, 
+you fail to even reduce abstraction to a lower level.
+
+Not to mention that newer systemd is apparently using its own mount-
+alternative now, and doesn't actually call the traditional mount binary 
+any more, at least for supported filesystem types.  I'm not qualified to 
+argue the case for or against that, but it's apparently happening now, 
+and regardless of where one stands on the merits, it's certainly 
+inserting systemd even farther into the mount process for relatively 
+complex and fuller-featured filesystems such as btrfs.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

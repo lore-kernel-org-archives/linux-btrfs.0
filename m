@@ -1,94 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f47.google.com ([74.125.83.47]:33617 "EHLO
-        mail-pg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755317AbdECU2N (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 May 2017 16:28:13 -0400
-Received: by mail-pg0-f47.google.com with SMTP id y4so401613pge.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 03 May 2017 13:28:12 -0700 (PDT)
+Received: from magic.merlins.org ([209.81.13.136]:40679 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1757584AbdECUke (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 May 2017 16:40:34 -0400
+Date: Wed, 3 May 2017 13:40:25 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Roman Mamedov <rm@romanrm.net>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>, Chris Mason <clm@fb.com>,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>, David Sterba <dsterba@suse.cz>
+Subject: Re: btrfs check --repair: failed to repair damaged filesystem,
+ aborting
+Message-ID: <20170503204025.t5xqoqaey2m4gdut@merlins.org>
+References: <20170501170641.GG3516@merlins.org>
+ <20170501180856.GH3516@merlins.org>
+ <CAJCQCtR4Hr5ekASiqWn2RNju5pHz8itS91N=M29Cz8Nqx8=kqA@mail.gmail.com>
+ <20170502032346.ayhh3n3uh5d5ekbb@merlins.org>
+ <CAJCQCtRaeejj4b+J6M7VTsDAe7Sn4PUtBwcvHXgfLNAFe=8Jqg@mail.gmail.com>
+ <20170502051155.igmbqcqgzi4ukefg@merlins.org>
+ <20170502184722.GN3516@merlins.org>
+ <20170503060008.t35vdhgz2suj3e5l@merlins.org>
+ <20170503061711.jowqa5wh3mtzjbww@merlins.org>
+ <20170503113226.757f492e@natsu>
 MIME-Version: 1.0
-From: Alexandru Guzu <alexguzu@gmail.com>
-Date: Wed, 3 May 2017 16:28:11 -0400
-Message-ID: <CAPktuGs4cJW6YBJ3GuGaXRLkud7VKvdH2P1U0hT+3AtDmHL5Yw@mail.gmail.com>
-Subject: BTRFS converted from EXT4 becomes read-only after reboot
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170503113226.757f492e@natsu>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+On Wed, May 03, 2017 at 11:32:26AM +0500, Roman Mamedov wrote:
+> > Actually, another thought:
+> > Is there or should there be a way to repair around the bit that cannot
+> > be repaired?
+> > Separately, or not, can I locate which bits are causing the repair to
+> > fail and maybe get a pointer to the path/inode so that I can hopefully
+> > just delete those bad data structures (assuming deleting them is even
+> > possible and that the FS won't just go read only as I try to do that)
+> 
+> There is the "btrfs-corrupt-block" tool which helped me to kick Btrfsck
+> further along its course in a similar "unrepairable" situation.
+> https://www.spinics.net/lists/linux-btrfs/msg53061.html
+> 
+> In your case it appears like the block 2899180224512 is giving it the most
+> trouble, so you could start with killing that one. From what I can tell this
+> tool zeroes out the entire block, so Btrfsck can simply delete the reference
+> and forget it, rather than repeatedly trying to figure out solutions and
+> bailing out with "failed to repair damaged filesystem, aborting".
+> 
+> Depending on what was stored in it, you may have either no visible effect, or
+> a complete filesystem failure, or anything in between. Hence if you want to
+> experiment with this, find a way to work on writable overlay snapshots (also
+> described in the linked message).
 
-In a VirtualBox VM, I converted a EXT4 fs to BTRFS that is now running
-on Ubuntu 16.04 (Kernel 4.4.0-72). I was able to use the system for
-several weeks. I even did kernel updates, compression, deduplication
-without issues.
+Thanks for the tip. This does not seem to have worked at all, though.
+Did I do something wrong?
 
-Since today, a little while after booting (usually when I start
-opening applications), the FS becomes read-only. IMO, the only thing
-that might have changed that could affect this is a kernel upgrade.
-However, since the FS becomes RO, I cannot easily do a kernel update
-(I guess I'd have to chroot and do it).
+gargamel:/var/local/src/btrfs-progs# ./btrfs-corrupt-block -l  2899180224512 /dev/mapper/dshelf2
+mirror 1 logical 2899180224512 physical 2814363009024 device /dev/mapper/dshelf2
+corrupting 2899180224512 copy 1
+mirror 2 logical 2899180224512 physical 2814899879936 device /dev/mapper/dshelf2
+corrupting 2899180224512 copy 2
 
-The stack trace is the following:
 
-[   88.836057] ------------[ cut here ]------------
-[   88.836082] WARNING: CPU: 0 PID: 25 at
-/build/linux-wXdoVv/linux-4.4.0/fs/btrfs/inode.c:2931
-btrfs_finish_ordered_io+0x63b/0x650 [btrfs]()
-[   88.836083] BTRFS: Transaction aborted (error -95)
-[   88.836084] Modules linked in: nvram msr zram lz4_compress
-vboxsf(OE) joydev crct10dif_pclmul crc32_pclmul ghash_clmulni_intel
-aesni_intel snd_intel8x0 aes_x86_64 snd_ac97_codec lrw gf128mul
-glue_helper ablk_helper cryptd ac97_bus snd_pcm snd_seq_midi
-snd_seq_midi_event snd_rawmidi snd_seq vboxvideo(OE) snd_seq_device
-snd_timer ttm input_leds drm_kms_helper serio_raw i2c_piix4 snd drm
-fb_sys_fops syscopyarea sysfillrect sysimgblt soundcore 8250_fintek
-vboxguest(OE) mac_hid parport_pc ppdev lp parport autofs4 btrfs xor
-raid6_pq hid_generic usbhid hid psmouse ahci libahci fjes video
-pata_acpi
-[   88.836116] CPU: 0 PID: 25 Comm: kworker/u2:1 Tainted: G
-OE   4.4.0-72-generic #93-Ubuntu
-[   88.836117] Hardware name: innotek GmbH VirtualBox/VirtualBox, BIOS
-VirtualBox 12/01/2006
-[   88.836130] Workqueue: btrfs-endio-write btrfs_endio_write_helper [btrfs]
-[   88.836132]  0000000000000286 00000000618d3a00 ffff88007cabbc78
-ffffffff813f82b3
-[   88.836134]  ffff88007cabbcc0 ffffffffc01912a8 ffff88007cabbcb0
-ffffffff81081302
-[   88.836135]  ffff880058bf01b0 ffff8800355f2800 ffff88007b9e64e0
-ffff88007c66f098
-[   88.836137] Call Trace:
-[   88.836142]  [<ffffffff813f82b3>] dump_stack+0x63/0x90
-[   88.836145]  [<ffffffff81081302>] warn_slowpath_common+0x82/0xc0
-[   88.836147]  [<ffffffff8108139c>] warn_slowpath_fmt+0x5c/0x80
-[   88.836159]  [<ffffffffc012373f>] ? unpin_extent_cache+0x8f/0xe0 [btrfs]
-[   88.836167]  [<ffffffffc00e0b06>] ? btrfs_free_path+0x26/0x30 [btrfs]
-[   88.836178]  [<ffffffffc011554b>] btrfs_finish_ordered_io+0x63b/0x650 [btrfs]
-[   88.836188]  [<ffffffffc0115845>] finish_ordered_fn+0x15/0x20 [btrfs]
-[   88.836200]  [<ffffffffc013dfda>] btrfs_scrubparity_helper+0xca/0x2f0 [btrfs]
-[   88.836202]  [<ffffffff810caee1>] ?
-__raw_callee_save___pv_queued_spin_unlock+0x11/0x20
-[   88.836214]  [<ffffffffc013e28e>] btrfs_endio_write_helper+0xe/0x10 [btrfs]
-[   88.836217]  [<ffffffff8109a555>] process_one_work+0x165/0x480
-[   88.836219]  [<ffffffff8109a8bb>] worker_thread+0x4b/0x4c0
-[   88.836220]  [<ffffffff8109a870>] ? process_one_work+0x480/0x480
-[   88.836222]  [<ffffffff8109a870>] ? process_one_work+0x480/0x480
-[   88.836224]  [<ffffffff810a0be8>] kthread+0xd8/0xf0
-[   88.836225]  [<ffffffff810a0b10>] ? kthread_create_on_node+0x1e0/0x1e0
-[   88.836229]  [<ffffffff8183ca0f>] ret_from_fork+0x3f/0x70
-[   88.836230]  [<ffffffff810a0b10>] ? kthread_create_on_node+0x1e0/0x1e0
-[   88.836232] ---[ end trace f4b8dbb54f0db139 ]---
-[   88.836234] BTRFS: error (device sda1) in
-btrfs_finish_ordered_io:2931: errno=-95 unknown
-[   88.836236] BTRFS info (device sda1): forced readonly
-[   88.836392] pending csums is 118784
+gargamel:/mnt/btrfs_pool1# btrfs check --repair /dev/mapper/dshelf2
+(...)
+checksum verify failed on 2899180224512 found F25BEE55 wanted 00000000
+checksum verify failed on 2899180224512 found F25BEE55 wanted 00000000
+checksum verify failed on 2899180224512 found E5245DBD wanted 00000000
+checksum verify failed on 2899180224512 found F25BEE55 wanted 00000000
+bytenr mismatch, want=2899180224512, have=0
+Repaired extent references for 3566695825408
+ref mismatch on [6674127745024 32768] extent item 0, found 1
+Backref 6674127745024 parent 7566652473344 owner 0 offset 0 num_refs 0 not found in extent tree
+Incorrect local backref count on 6674127745024 parent 7566652473344 owner 0 offset 0 found 1 wanted 0 back 0x555cb4e9ced0
+backpointer mismatch on [6674127745024 32768]
+checksum verify failed on 6983266418688 found 393B112A wanted 2B19CD5C
+checksum verify failed on 6983266418688 found 393B112A wanted 2B19CD5C
+checksum verify failed on 6983266418688 found BCBF9E15 wanted 785FF67E
+checksum verify failed on 6983266418688 found 393B112A wanted 2B19CD5C
+bytenr mismatch, want=6983266418688, have=13671317608077697645
+checksum verify failed on 2899180224512 found F25BEE55 wanted 00000000
+checksum verify failed on 2899180224512 found F25BEE55 wanted 00000000
+checksum verify failed on 2899180224512 found E5245DBD wanted 00000000
+checksum verify failed on 2899180224512 found F25BEE55 wanted 00000000
+bytenr mismatch, want=2899180224512, have=0
+failed to repair damaged filesystem, aborting
 
-If I reboot with the Live CD version, I can run `scrub` and `check`
-without any issues. Also the FS stays read-write.
-
-Is this a known issue? Could it be due to the conversion, or can this
-happen on any system on any time. This is a test VM that I can
-re-make, but I would like to know if this can happen on a production
-system.
-
-Regards,
-Alex.
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

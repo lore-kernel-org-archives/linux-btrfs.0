@@ -1,119 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:18074 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751562AbdECBsj (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 May 2017 21:48:39 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-        by cn.fujitsu.com (Postfix) with ESMTP id C4F4447E6349
-        for <linux-btrfs@vger.kernel.org>; Wed,  3 May 2017 09:48:33 +0800 (CST)
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs-progs: check: Fix heap use after free.
-Date: Wed, 3 May 2017 09:50:14 +0800
-Message-ID: <20170503015014.2221-1-suy.fnst@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:57989 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1752517AbdECOxp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 3 May 2017 10:53:45 -0400
+Date: Wed, 3 May 2017 16:53:38 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH 1/2] btrfs-progs: check: Avoid reading beyond item
+ boundary for inode_ref
+Message-ID: <20170503145338.GX23260@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170503084240.17499-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170503084240.17499-1-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-fsck/004-no-dir-index makes valgrinds complaining about Invalid read.
-==31890== Invalid read of size 1
-==31890==    at 0x453D09: repair_inode_backrefs (cmds-check.c:2690)
-==31890==    by 0x453D09: check_inode_recs (cmds-check.c:3330)
-==31890==    by 0x453D09: check_fs_root (cmds-check.c:4012)
-==31890==    by 0x45E788: check_fs_roots (cmds-check.c:4098)
-==31890==    by 0x45E788: cmd_check (cmds-check.c:13031)
-==31890==    by 0x40A88A: main (btrfs.c:246)
-==31890==  Address 0x5cb7b90 is 16 bytes inside a block of size 50 free'd
-==31890==    at 0x4C2C14B: free (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
-==31890==    by 0x453D08: repair_inode_backrefs (cmds-check.c:2684)
-==31890==    by 0x453D08: check_inode_recs (cmds-check.c:3330)
-==31890==    by 0x453D08: check_fs_root (cmds-check.c:4012)
-==31890==    by 0x45E788: check_fs_roots (cmds-check.c:4098)
-==31890==    by 0x45E788: cmd_check (cmds-check.c:13031)
-==31890==    by 0x40A88A: main (btrfs.c:246)
-==31890==  Block was alloc'd at
-==31890==    at 0x4C2AF1F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
-==31890==    by 0x45055C: get_inode_backref (cmds-check.c:1075)
-==31890==    by 0x45055C: add_inode_backref (cmds-check.c:1097)
-==31890==    by 0x45180C: process_dir_item (cmds-check.c:1525)
-==31890==    by 0x45180C: process_one_leaf (cmds-check.c:1838)
-==31890==    by 0x45180C: walk_down_tree (cmds-check.c:2134)
-==31890==    by 0x45180C: check_fs_root (cmds-check.c:3957)
-==31890==    by 0x45E788: check_fs_roots (cmds-check.c:4098)
-==31890==    by 0x45E788: cmd_check (cmds-check.c:13031)
-==31890==    by 0x40A88A: main (btrfs.c:246)
-==31890==
-==31890== Invalid read of size 8
-==31890==    at 0x452D66: repair_inode_backrefs (cmds-check.c:2731)
-==31890==    by 0x452D66: check_inode_recs (cmds-check.c:3330)
-==31890==    by 0x452D66: check_fs_root (cmds-check.c:4012)
-==31890==    by 0x45E788: check_fs_roots (cmds-check.c:4098)
-==31890==    by 0x45E788: cmd_check (cmds-check.c:13031)
-==31890==    by 0x40A88A: main (btrfs.c:246)
-==31890==  Address 0x5cb7b90 is 16 bytes inside a block of size 50 free'd
-==31890==    at 0x4C2C14B: free (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
-==31890==    by 0x453D08: repair_inode_backrefs (cmds-check.c:2684)
-==31890==    by 0x453D08: check_inode_recs (cmds-check.c:3330)
-==31890==    by 0x453D08: check_fs_root (cmds-check.c:4012)
-==31890==    by 0x45E788: check_fs_roots (cmds-check.c:4098)
-==31890==    by 0x45E788: cmd_check (cmds-check.c:13031)
-==31890==    by 0x40A88A: main (btrfs.c:246)
-==31890==  Block was alloc'd at
-==31890==    at 0x4C2AF1F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
-==31890==    by 0x45055C: get_inode_backref (cmds-check.c:1075)
-==31890==    by 0x45055C: add_inode_backref (cmds-check.c:1097)
-==31890==    by 0x45180C: process_dir_item (cmds-check.c:1525)
-==31890==    by 0x45180C: process_one_leaf (cmds-check.c:1838)
-==31890==    by 0x45180C: walk_down_tree (cmds-check.c:2134)
-==31890==    by 0x45180C: check_fs_root (cmds-check.c:3957)
-==31890==    by 0x45E788: check_fs_roots (cmds-check.c:4098)
-==31890==    by 0x45E788: cmd_check (cmds-check.c:13031)
-==31890==    by 0x40A88A: main (btrfs.c:246)
-==31890==
+On Wed, May 03, 2017 at 04:42:39PM +0800, Qu Wenruo wrote:
+> When reading out name from inode_ref, it's possible that corrupted
+> name_len can lead to read beyond boundary of item or even extent buffer.
+> 
+> This happens when checking fuzzed image /tmp/bko-161811.raw, for both
+> lowmem mode and original mode.
+> 
+> ERROR: root 5 INODE REF[256 256] doesn't have related DIR_INDEX[256 504403158265495680] namelen 0 filename  filetype 0
+> ERROR: root 5 INODE REF[256 256] doesn't have related DIR_ITEM[256 4294967294] namelen 0 filename  filetype 0
+> WARNING: root 5 INODE_REF[256 256] name too long
+> ==13022== Invalid read of size 8
+> ==13022==    at 0x4C319BE: memmove (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+> ==13022==    by 0x431518: read_extent_buffer (extent_io.c:863)
+> ==13022==    by 0x474730: check_inode_ref (cmds-check.c:4307)
+> ==13022==    by 0x475D65: check_inode_item (cmds-check.c:4890)
+> ==13022==    by 0x476200: check_fs_first_inode (cmds-check.c:5011)
+> ==13022==    by 0x476276: check_fs_root_v2 (cmds-check.c:5044)
+> ==13022==    by 0x4769FB: check_fs_roots_v2 (cmds-check.c:5242)
+> ==13022==    by 0x488B5B: cmd_check (cmds-check.c:13033)
+> ==13022==    by 0x40A8C5: main (btrfs.c:246)
+> ==13022==  Address 0x5c96780 is 0 bytes after a block of size 4,224 alloc'd
+> ==13022==    at 0x4C2CF35: calloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+> ==13022==    by 0x4307E0: __alloc_extent_buffer (extent_io.c:538)
+> ==13022==    by 0x430C37: alloc_extent_buffer (extent_io.c:642)
+> ==13022==    by 0x413DFE: btrfs_find_create_tree_block (disk-io.c:193)
+> ==13022==    by 0x414370: read_tree_block_fs_info (disk-io.c:340)
+> ==13022==    by 0x40B5D5: read_tree_block (disk-io.h:125)
+> ==13022==    by 0x40CFD2: read_node_slot (ctree.c:652)
+> ==13022==    by 0x40E5EB: btrfs_search_slot (ctree.c:1172)
+> ==13022==    by 0x4761A8: check_fs_first_inode (cmds-check.c:5001)
+> ==13022==    by 0x476276: check_fs_root_v2 (cmds-check.c:5044)
+> ==13022==    by 0x4769FB: check_fs_roots_v2 (cmds-check.c:5242)
+> ==13022==    by 0x488B5B: cmd_check (cmds-check.c:13033)
+> =
+> 
+> Fix it by double checking inode_ref, name_len against item boundary
+> before trying to read out name from extent buffer, for both original
+> mode and lowmem mode.
+> 
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-While iterating over backrefs in repair_inode_backrefs, there are several
-situations to repair one backref according backref->found_dir_item and
-backref->found_dir_index.
-Two of these branches may free the backref, but next judgments will still
-access the freed memory.
-
-Because these branches are independent, let repair_inode_backrefs skip to
-handle next backref after free can fix it.
-
-Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
----
- cmds-check.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
-
-diff --git a/cmds-check.c b/cmds-check.c
-index 897b1587..e52fbb84 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -2666,6 +2666,7 @@ static int repair_inode_backrefs(struct btrfs_root *root,
- 			repaired++;
- 			list_del(&backref->list);
- 			free(backref);
-+			continue;
- 		}
- 
- 		if (!delete && !backref->found_dir_index &&
-@@ -2676,12 +2677,12 @@ static int repair_inode_backrefs(struct btrfs_root *root,
- 				break;
- 			repaired++;
- 			if (backref->found_dir_item &&
--			    backref->found_dir_index &&
- 			    backref->found_dir_index) {
- 				if (!backref->errors &&
- 				    backref->found_inode_ref) {
- 					list_del(&backref->list);
- 					free(backref);
-+					continue;
- 				}
- 			}
- 		}
--- 
-2.12.2
-
-
-
+Applied, thanks.

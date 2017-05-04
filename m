@@ -1,117 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f48.google.com ([209.85.215.48]:33106 "EHLO
-        mail-lf0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752129AbdEDDtA (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 May 2017 23:49:00 -0400
-Received: by mail-lf0-f48.google.com with SMTP id r17so986625lfg.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 03 May 2017 20:48:59 -0700 (PDT)
-Subject: Re: Can I see what device was used to mount btrfs?
-To: Chris Murphy <lists@colorremedies.com>,
-        Goffredo Baroncelli <kreijack@inwind.it>
-References: <1e2e2e5c-5ee8-85c1-1db4-74293d8c9c1e@gmail.com>
- <20170502135820.2ft7bsoceeqhnbqf@angband.pl>
- <CAA91j0V97dCb+j_thg0oi7B4D29VVKcqtRcpCWbgQyzi+FScKA@mail.gmail.com>
- <20170502184923.jdpfx3pwkl5avdph@angband.pl>
- <c7f3c9fe-2f28-e102-9df7-273dc5a6ca8e@inwind.it>
- <20170502221506.3dfe125e@jupiter.sol.kaishome.de>
- <cdf96959-94e8-4932-465f-ea5c72187892@inwind.it>
- <CAJCQCtQwCohHJBKihg5fMC2Wc6+jz=Zc-a5MAOBaV4Pt-YzN6w@mail.gmail.com>
-Cc: Kai Krakow <hurikhan77@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Andrei Borzenkov <arvidjaar@gmail.com>
-Message-ID: <1763c852-d8dd-a3f1-bdac-c8534659c682@gmail.com>
-Date: Thu, 4 May 2017 06:48:55 +0300
-MIME-Version: 1.0
-In-Reply-To: <CAJCQCtQwCohHJBKihg5fMC2Wc6+jz=Zc-a5MAOBaV4Pt-YzN6w@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+Received: from [195.159.176.226] ([195.159.176.226]:39243 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S932207AbdEDDzn (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 May 2017 23:55:43 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1d67ra-0003Li-7D
+        for linux-btrfs@vger.kernel.org; Thu, 04 May 2017 05:55:34 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: BTRFS converted from EXT4 becomes read-only after reboot
+Date: Thu, 4 May 2017 03:55:28 +0000 (UTC)
+Message-ID: <pan$d0afb$8cb8ad66$8322610b$459f2144@cox.net>
+References: <CAPktuGs4cJW6YBJ3GuGaXRLkud7VKvdH2P1U0hT+3AtDmHL5Yw@mail.gmail.com>
+        <CAJCQCtRXCWuCbchRxOBZA7Dfzt4vhED77d1boErTdOGAzAi4vw@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-03.05.2017 21:43, Chris Murphy пишет:
-> If I understand the bug report correctly, the user specifies mounting
-> by label which then systemd is converting into /dev/dm-0 (because it's
-> a two LUKS devices Btrfs volume).
-> 
+Chris Murphy posted on Wed, 03 May 2017 16:18:34 -0600 as excerpted:
 
-No, that's not the problem.
+> On Wed, May 3, 2017 at 2:28 PM, Alexandru Guzu <alexguzu@gmail.com>
+> wrote:
+> 
+>> In a VirtualBox VM, I converted a EXT4 fs to BTRFS that is now running
+>> on Ubuntu 16.04 (Kernel 4.4.0-72). I was able to use the system for
+>> several weeks. I even did kernel updates, compression, deduplication
+>> without issues.
+> 
+> Which version of btrfs-progs? The convert code was totally rewritten for
+> btrfs-progs 4.6, and it has had a number of significant fixes since
+> then. I'd say 4.8.2 is about the minimum I'd recommend. But if it were
+> me I'd use the current release, 4.10.2.
+> 
+> But that alone may not fix it, I think you need a newer kernel...
 
-The actual reason for report is that systemd shows device, which is
-apparently (as shown in "systemctl status foo.mount" and in
-/proc/self/mountinfo for /foo) used to mount /foo, as non-existent.
-"Tentative" state is used by systemd to represent devices that do exist
-but were not announced to it (or announced with SYSTEMD_READY=0).
+Well, while the 4.4 LTS kernel series /is/ getting a bit long in the 
+tooth by now, it's still the second newest LTS series available, 4.9 
+being the newest.
 
-To understand why it happens you need to know how systemd handles btrfs
-mounts. udev rule calls "btrfs device ready" and if it says that
-filesystem is not yet ready to be mounted, it sets SYSTEMD_READY=0. When
-final device that makes btrfs complete appears, it is announced to
-systemd. Usually this last device also "wins" when creating device
-aliases, so LABEL/UUID is resolved to it. When systemd sees this device
-it proceeds with mount.
+And on-list we've long recommended staying within the latest two series 
+in either the LTS or current kernel series, which means the 4.4 series 
+should still be reasonably supported.  
 
-Now as we have seen device that is shown in /proc/self/mountinfo is
-*not* the same device that was used to actually mount filesystem. So in
-case of bug report all links point to /dev/dm-1 but /proc/self/mountinfo
-show /dev/dm-0. But /dev/dm-0 "does not esist" (when it was scanned
-btrfs was not ready yet) hence the confusion.
+So if there's a problem with his 4.4, it means one of three things:
 
-Now related problem (which was "helpfully" closed as duplicate without
-understanding the real issue) is that creation of those links itself is
-not deterministic.
+a) We're regressing on our stability efforts and are no longer trying to 
+support the second newest LTS kernel series.
 
-> Why not convert the fstab mount by label request, into a /dev/by-uuid/
-> path; and then systemd calls mount with -u,--uuid mount option rather
-> than the block device?
+I would hope not.  If so, it means we /are/ actually regressing in our 
+stability efforts, as AFAIK we've been supporting the two latest LTS 
+series since we formally peeled off the experimental label and started 
+actually doing stable series backports in the 3.12-ish era.
 
-It absolutely does not matter. Internally util-linux will convert it to
-/dev/disk/by-xxx anyway. And currently systemd needs device name to wait
-for so it needs to resolve it.
+OTOH, giving up on the penultimate LTS /would/ mean less backport and 
+support hassles for anything older than the latest 4.9 LTS series, as we 
+could simply tell people the same thing we're telling them about older 
+versions now, that btrfs is under fast enough development and unstable 
+enough that if they choose to run it, they really should try to stay 
+reasonably current, and that they need to upgrade, and we can forget 
+about it until/unless they do.
 
-> I'd think this is better no matter what the
-> file system is, but certainly with Btrfs and possibly ZFS. That makes
-> the device discovery problem not systemd's problem to hassle with.
-> 
-> 
-> 
-> Chris Murphy
-> 
-> 
-> 
-> 
-> On Wed, May 3, 2017 at 11:05 AM, Goffredo Baroncelli <kreijack@inwind.it> wrote:
->> On 2017-05-02 22:15, Kai Krakow wrote:
->>>> For example, it would be possible to implement a sane check that
->>>> prevent to mount a btrfs filesystem if two devices exposes the same
->>>> UUID...
->>> Ideally, the btrfs wouldn't even appear in /dev until it was assembled
->>> by udev. But apparently that's not the case, and I think this is where
->>> the problems come from. I wish, btrfs would not show up as device nodes
->>> in /dev that the mount command identified as btrfs. Instead, btrfs
->>> would expose (probably through udev) a device node
->>> in /dev/btrfs/fs_identifier when it is ready.
->>
->>
->> And what if udev fails to assemble the devices (for example because not all the disks are available or because there are two disks with the same uuid) ?
->> And if the user can't access the disks, how he could solve the issues (i.e. two disk with the same uuid)
->>
->> I think that udev should be put out of the game of assembling the disks. For the following reasons:
->> 1) udev is not developed by the BTRFS community where the btrfs knowledges are; there are a lot of corner cases which are not clear to the btrfs developers; how these case could be more clearer to the udev developers (who indeed are very smart guys) ?
->> 2) I don't think that udev is flexible enough to handle all the cases (e.g.: two disks with the same uuid,  missing devices)
->> 3) udev works quite well at handling the device appearing; why it should be involved in the filesystem assembling ?
->>
->>
->> BR
->> G.Baroncelli
->>
->>
->> --
->> gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
->> Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
-> 
+b) A recent patch that should have been marked for stable either wasn't, 
+or is still in the stable queue.
+
+This is certainly possible, tho along with most here I track current (or 
+development), not LTS stable, and would be unlikely to know the status of 
+stable backports.  This being the reality, perhaps we /should/ just give 
+up on the second newest LTS.
+
+This one's obviously the most worrying from the point of view of this 
+list, assuming we /are/ still trying to support the 4.4 series as the 
+penultimate LTS series available.
+
+c) It's the still supported 4.4-LTS, but whatever his 4.4.0-72 converts 
+to in upstream version numbers is behind the current release (4.4.66 ATM 
+according to kernel.org) in one or more current btrfs stable-series 
+patches.
+
+That's something the poster would have to track down with his distro, 
+since they obviously chose to use non-transparent versioning that doesn't 
+correspond to upstream in that regard, so people not on that distro have 
+little way of knowing without going the extra distance to attempt looking 
+it up on the distro site (and why should they, the distro obviously chose 
+non-transparency), and people /on/ the distro might be able to look it 
+up, but probably won't know either unless they actually do, /because/ of 
+that non-transparency choice.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

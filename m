@@ -1,29 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:23169 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:45920 "EHLO
         aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752751AbdEECEM (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 May 2017 22:04:12 -0400
+        with ESMTP id S1755280AbdEDN6m (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 May 2017 09:58:42 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, quwenruo@cn.fujitsu.com
-Subject: [PATCH] btrfs: cleanup qgroup trace event
-Date: Fri,  5 May 2017 10:09:36 +0800
-Message-Id: <20170505020936.6016-1-anand.jain@oracle.com>
-In-Reply-To: <20170504140411.26723-1-anand.jain@oracle.com>
-References: <20170504140411.26723-1-anand.jain@oracle.com>
+Cc: quwenruo@cn.fujitsu.com
+Subject: [RFC] [PATCH] btrfs: clean up qgroup trace event
+Date: Thu,  4 May 2017 22:04:11 +0800
+Message-Id: <20170504140411.26723-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit 81fb6f77a026 (btrfs: qgroup: Add new trace point for
+Hi Qu,
+
+The commit 81fb6f77a026 (btrfs: qgroup: Add new trace point for
 qgroup data reserve) added the following events which aren't used.
   btrfs__qgroup_data_map
   btrfs_qgroup_init_data_rsv_map
   btrfs_qgroup_free_data_rsv_map
-So remove them.
+I wonder if it is better to remove or keep it for future use.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
-  cc: quwenruo@cn.fujitsu.com
-Reviewed-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+cc: quwenruo@cn.fujitsu.com
 ---
  include/trace/events/btrfs.h | 36 ------------------------------------
  1 file changed, 36 deletions(-)

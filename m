@@ -1,95 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33080 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:43930 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1753875AbdEOMBU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 15 May 2017 08:01:20 -0400
-Date: Mon, 15 May 2017 14:01:14 +0200
-From: Jan Kara <jack@suse.cz>
-To: Jeff Layton <jlayton@redhat.com>
-Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-cifs@vger.kernel.org, linux-nfs@vger.kernel.org,
-        linux-mm@kvack.org, jfs-discussion@lists.sourceforge.net,
-        linux-xfs@vger.kernel.org, cluster-devel@redhat.com,
-        linux-f2fs-devel@lists.sourceforge.net,
-        v9fs-developer@lists.sourceforge.net, linux-nilfs@vger.kernel.org,
-        linux-block@vger.kernel.org, dhowells@redhat.com,
-        akpm@linux-foundation.org, hch@infradead.org,
-        ross.zwisler@linux.intel.com, mawilcox@microsoft.com, jack@suse.com,
-        viro@zeniv.linux.org.uk, corbet@lwn.net, neilb@suse.de, clm@fb.com,
-        tytso@mit.edu, axboe@kernel.dk, josef@toxicpanda.com,
-        hubcap@omnibond.com, rpeterso@redhat.com, bo.li.liu@oracle.com
-Subject: Re: [PATCH v4 21/27] mm: clean up error handling in write_one_page
-Message-ID: <20170515120114.GF16182@quack2.suse.cz>
-References: <20170509154930.29524-1-jlayton@redhat.com>
- <20170509154930.29524-22-jlayton@redhat.com>
+        id S1750778AbdEEQww (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 5 May 2017 12:52:52 -0400
+Date: Fri, 5 May 2017 18:52:45 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: tolerate errors if we have retried successfully
+Message-ID: <20170505165245.GF10575@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1492132316-3076-1-git-send-email-bo.li.liu@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170509154930.29524-22-jlayton@redhat.com>
+In-Reply-To: <1492132316-3076-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue 09-05-17 11:49:24, Jeff Layton wrote:
-> Don't try to check PageError since that's potentially racy and not
-> necessarily going to be set after writepage errors out.
+On Thu, Apr 13, 2017 at 06:11:56PM -0700, Liu Bo wrote:
+> With raid1 profile, dio read isn't tolerating IO errors if read length is
+> less than the stripe length (64K).
+
+Can you please write more details why this is true? Some pointers to
+code etc, I'm lost. Eg. where the errors is tolerated. Thanks.
+
+> This fixes the problem by setting bio's error to 0 if a good copy has been
+> found.
 > 
-> Instead, sample the mapping error early on, and use that value to tell
-> us whether we got a writeback error since then.
-> 
-> Signed-off-by: Jeff Layton <jlayton@redhat.com>
-
-Looks good to me. You can add:
-
-Reviewed-by: Jan Kara <jack@suse.cz>
-
-								Honza
-
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 > ---
->  mm/page-writeback.c | 11 +++++------
->  1 file changed, 5 insertions(+), 6 deletions(-)
+>  fs/btrfs/inode.c | 5 ++++-
+>  1 file changed, 4 insertions(+), 1 deletion(-)
 > 
-> diff --git a/mm/page-writeback.c b/mm/page-writeback.c
-> index de0dbf12e2c1..1643456881b4 100644
-> --- a/mm/page-writeback.c
-> +++ b/mm/page-writeback.c
-> @@ -2373,11 +2373,12 @@ int do_writepages(struct address_space *mapping, struct writeback_control *wbc)
->  int write_one_page(struct page *page)
->  {
->  	struct address_space *mapping = page->mapping;
-> -	int ret = 0;
-> +	int ret = 0, ret2;
->  	struct writeback_control wbc = {
->  		.sync_mode = WB_SYNC_ALL,
->  		.nr_to_write = 1,
->  	};
-> +	errseq_t since = filemap_sample_wb_error(mapping);
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 632b616..4e1398e 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -8113,8 +8113,11 @@ static void btrfs_endio_direct_read(struct bio *bio)
+>  	struct btrfs_io_bio *io_bio = btrfs_io_bio(bio);
+>  	int err = bio->bi_error;
 >  
->  	BUG_ON(!PageLocked(page));
+> -	if (dip->flags & BTRFS_DIO_ORIG_BIO_SUBMITTED)
+> +	if (dip->flags & BTRFS_DIO_ORIG_BIO_SUBMITTED) {
+>  		err = btrfs_subio_endio_read(inode, io_bio, err);
+> +		if (!err)
+> +			bio->bi_error = 0;
+> +	}
 >  
-> @@ -2386,16 +2387,14 @@ int write_one_page(struct page *page)
->  	if (clear_page_dirty_for_io(page)) {
->  		get_page(page);
->  		ret = mapping->a_ops->writepage(page, &wbc);
-> -		if (ret == 0) {
-> +		if (ret == 0)
->  			wait_on_page_writeback(page);
-> -			if (PageError(page))
-> -				ret = -EIO;
-> -		}
->  		put_page(page);
->  	} else {
->  		unlock_page(page);
->  	}
-> -	return ret;
-> +	ret2 = filemap_check_wb_error(mapping, since);
-> +	return ret ? : ret2;
->  }
->  EXPORT_SYMBOL(write_one_page);
->  
+>  	unlock_extent(&BTRFS_I(inode)->io_tree, dip->logical_offset,
+>  		      dip->logical_offset + dip->bytes - 1);
 > -- 
-> 2.9.3
+> 2.5.5
 > 
-> 
--- 
-Jan Kara <jack@suse.com>
-SUSE Labs, CR
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

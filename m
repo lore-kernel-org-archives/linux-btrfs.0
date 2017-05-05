@@ -1,78 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60034 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751284AbdEETpi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 5 May 2017 15:45:38 -0400
-Date: Fri, 5 May 2017 21:45:30 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Adam Borowski <kilobyte@angband.pl>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH ping] btrfs: warn about RAID5/6 being experimental at
- mount time
-Message-ID: <20170505194530.GP10575@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170419210745.15263-1-kilobyte@angband.pl>
- <20170426021416.us4zj2blho26sjgc@angband.pl>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170426021416.us4zj2blho26sjgc@angband.pl>
+Received: from mail-qt0-f177.google.com ([209.85.216.177]:35502 "EHLO
+        mail-qt0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754833AbdEEULX (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 May 2017 16:11:23 -0400
+Received: by mail-qt0-f177.google.com with SMTP id n4so13995069qte.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 05 May 2017 13:11:22 -0700 (PDT)
+Message-ID: <1494015078.3117.4.camel@redhat.com>
+Subject: Re: help converting btrfs to new writeback error tracking?
+From: Jeff Layton <jlayton@redhat.com>
+To: bo.li.liu@oracle.com
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Date: Fri, 05 May 2017 16:11:18 -0400
+In-Reply-To: <20170505192105.GA18638@lim.localdomain>
+References: <1493897177.2783.4.camel@redhat.com>
+         <20170505192105.GA18638@lim.localdomain>
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 26, 2017 at 04:14:16AM +0200, Adam Borowski wrote:
-> On Wed, Apr 19, 2017 at 11:07:45PM +0200, Adam Borowski wrote:
-> > Too many people come complaining about losing their data -- and indeed,
-> > there's no warning outside a wiki and the mailing list tribal knowledge.
-> > Message severity chosen for consistency with XFS -- "alert" makes dmesg
-> > produce nice red background which should get the point across.
-> ...
-> > I intend to ask for inclusion of this one (or an equivalent) in 4.9, either
-> > in Debian or via GregKH -- while for us kernels "that old" are history,
-> > regular users expect stable releases to be free of known serious data loss
-> > bugs.
+On Fri, 2017-05-05 at 12:21 -0700, Liu Bo wrote:
+> Hi Jeff,
 > 
-> Hi guys, could you please comment?  While there's only relatively little
-> urgency for mainline (heck, it'd be best if the warning was not needed at
-> all!), there's a Debian release close by, and it's be grossly inresponsible
-> to not let people know that a feature advertised in the documentation is in
-> an unusable state (especially as of 4.9).  For you, filesystem developers,
-> a way of thinking that "the user should do research" might be acceptable,
-> but once it filters down to a stable release, the user expects no known
-> serious bugs.
+> On Thu, May 04, 2017 at 07:26:17AM -0400, Jeff Layton wrote:
+> > I've been working on set of patches to clean up how writeback errors are
+> > tracked and handled in the kernel:
+> > 
+> > http://marc.info/?l=linux-fsdevel&m=149304074111261&w=2
+> > 
+> > The basic idea is that rather than having a set of flags that are
+> > cleared whenever they are checked, we have a sequence counter and error
+> > that are tracked on a per-mapping basis, and can then use that sequence
+> > counter to tell whether the error should be reported.
+> > 
+> > This changes the way that things like filemap_write_and_wait work.
+> > Rather than having to ensure that AS_EIO/AS_ENOSPC are not cleared
+> > inappropriately (and thus losing errors that should be reported), you
+> > can now tell whether there has been a writeback error since a certain
+> > point in time, irrespective of whether anyone else is checking for
+> > errors.
+> > 
+> > I've been doing some conversions of the existing code to the new scheme,
+> > but btrfs has _really_ complicated error handling. I think it could
+> > probably be simplified with this new scheme, but I could use some help
+> > here.
+> > 
+> > What I think we probably want to do is to sample the error sequence in
+> > the mapping at well-defined points in time (probably when starting a
+> > transaction?) and then use that to determine whether writeback errors
+> > have occurred since then. Is there anyone in the btrfs community who
+> > could help me here?
+> > 
+> 
+> I went through the patch set and reviewed the btrfs part particular in
+> [PATCH v3 14/20] fs: retrofit old error reporting API onto new infrastructure
+> 
+> It looks good to me.
+> 
+> In btrfs ->writepage(), it sets PG_error whenever an error
+> (-EIO/-ENOSPC/-ENOMEM) occurs and it sets mapping's error as well in
+> end_extent_writepage().  And the special case is the compression code, where it
+> only sets mapping's error when there is any error during processing compression
+> bytes.
+> 
+> Similar to ext4, btrfs tracks the IO error by setting mapping's error in
+> writepage_endio and other places (eg. compression code), and around tree-log.c
+> it's checking BTRFS_ORDERED_IOERR from ordered_extent->flags, which is usually
+> set in writepage_endio and sometimes in some error handling code where it
+> couldn't call endio.
+> 
+> So the conversion in btrfs's fsync() seems to be good enough, did I miss
+> anything?
+> 
 
-There are some raid56 fixes in 4.12, but IIRC the write hole is still
-unfixed so the warning is still valid even for 4.12. It would be easier
-to get the patch to 4.4 or 4.9 once it's in Linus tree.
+Many thanks for taking a look:
 
-> 
-> And here the severity is "critical -- causes serious data loss".
-> 
-> > diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> > index e54844767fe5..e7f91f70e149 100644
-> > --- a/fs/btrfs/disk-io.c
-> > +++ b/fs/btrfs/disk-io.c
-> > @@ -3083,6 +3083,14 @@ int open_ctree(struct super_block *sb,
-> >  		btrfs_set_opt(fs_info->mount_opt, SSD);
-> >  	}
-> >  
-> > +	if ((fs_info->avail_data_alloc_bits |
-> > +	     fs_info->avail_metadata_alloc_bits |
-> > +	     fs_info->avail_system_alloc_bits) &
-> > +	    BTRFS_BLOCK_GROUP_RAID56_MASK) {
-> > +		btrfs_alert(fs_info,
-> > +		"btrfs RAID5/6 is EXPERIMENTAL and has known data-loss bugs");
-> > +	}
-> > +
-> >  	/*
-> >  	 * Mount does not set all options immediately, we can do it now and do
-> >  	 * not have to wait for transaction commit
-> > -- 
-> 
-> Doing this in the kernel should be better than in userspace (like
-> https://patchwork.kernel.org/patch/9450035/) as it can deal with a future
-> kernel with working RAID5/6 on old -progs; but if you prefer, I can finish
-> that patch and request its inclusion in Debian stretch -progs instead or in
-> addition to the above warning in the kernel.
+There are a number of calls in btrfs to filemap_fdatawait_range that
+check the return code. That function will wait for writeback on all of
+the pages in the mapping range and return an error if there has been
+one. Note too that there are also some places that ignore the return
+code.
 
-I'll have look again.
+These patches change how filemap_fdatawait_range (and some similar
+functions) work. Before this set, you'd get an error if one had occurred
+since anyone last checked it. Now, you only get an error there if one
+occurred since you started waiting. If the failed writeback occurred
+before that function was called, you won't get an error back.
+
+For fsync, it shouldn't matter. You'll get an error back there if one
+occurred since the last fsync since you're setting it in the mapping.
+The bigger question is whether other callers in this code do anything
+with that error return.
+
+If they do, then the next question is: from what point do you want to
+detect errors that have occurred?
+
+What sort of makes sense to me (in a handwavy way) would be to sample
+the errseq_t in the mapping when you start a transaction, and then check
+vs. that for errors. Then, even if you have parallel transactions going
+on the same inode (is that even possible?) then you can tell whether
+they all succeded or not.
+
+Thoughts?
+-- 
+Jeff Layton <jlayton@redhat.com>

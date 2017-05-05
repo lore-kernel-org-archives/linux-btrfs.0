@@ -1,77 +1,135 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f65.google.com ([74.125.82.65]:36572 "EHLO
-        mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750991AbdEGW4A (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 May 2017 18:56:00 -0400
-Received: by mail-wm0-f65.google.com with SMTP id u65so11819206wmu.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 07 May 2017 15:56:00 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CAFu1FXThtkWSPngPDw7tOBy_tmsb6S8GX5jYfx+F7asO=uKV-w@mail.gmail.com>
-References: <CAFu1FXThtkWSPngPDw7tOBy_tmsb6S8GX5jYfx+F7asO=uKV-w@mail.gmail.com>
-From: =?UTF-8?B?5oi05ZGo?= <tommy0705c@gmail.com>
-Date: Mon, 8 May 2017 00:51:50 +0800
-Message-ID: <CAFu1FXQECS2q3gqKv90v0Oq2ZU1PZsOMnEwa3XH7a8ZqV3SE_g@mail.gmail.com>
-Subject: Fwd: [PATCH] Btrfs:Unused comments:"FIXME: check if the IDs really
- exist" in ioctl.c
-To: lbtrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from aserp1040.oracle.com ([141.146.126.69]:32279 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751391AbdEEXMk (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 May 2017 19:12:40 -0400
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH v2] btrfs: add framework to handle device flush error as a volume
+Date: Sat,  6 May 2017 07:17:54 +0800
+Message-Id: <20170505231754.9201-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: 戴周 <tommy0705c@gmail.com>
-Date: Mon, May 8, 2017 at 12:38 AM
-Subject: [PATCH] Btrfs:Unused comments:"FIXME: check if the IDs really
-exist" in ioctl.c
-To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>, David
-Sterba <dsterba@suse.com>
+This adds comments to the flush error handling part of
+the code, and hopes to maintain the same logic with a
+framework which can be used to handle the errors at the
+volume level.
 
-
->From 0adb51c1fd6afde399e8f9307bff831b508892d1 Mon Sep 17 00:00:00 2001
-From: Daichou <tommy0705c@gmail.com>
-Date: Mon, 8 May 2017 00:03:25 +0800
-Subject: [PATCH] Btrfs:Unused comments:"FIXME: check if the IDs really exist"
- in ioctl.c
-
-These comments were already fixed in 2013.
-btrfs_add_qgroup_relation, btrfs_ioctl_qgroup_create, btrfs_limit_qgroup
-btrfs_add_qgroup_relation, btrfs_del_qgroup_relation have checked
-qgroupid existed.
-
-Signed-off-by: Daichou <tommy0705c@gmail.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/ioctl.c | 3 ---
- 1 file changed, 3 deletions(-)
+v2:
+ fix -ENOMEM at two places
+ add code readability changes in check_barrier_error()
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index a29dc3fd7152..6db06f4708f7 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -4900,7 +4900,6 @@ static long btrfs_ioctl_qgroup_assign(struct
-file *file, void __user *arg)
-  goto out;
-  }
+ fs/btrfs/disk-io.c | 57 ++++++++++++++++++++++++++++++++++++++++++++++++++----
+ fs/btrfs/volumes.h |  1 +
+ 2 files changed, 54 insertions(+), 4 deletions(-)
 
-- /* FIXME: check if the IDs really exist */
-  if (sa->assign) {
-  ret = btrfs_add_qgroup_relation(trans, fs_info,
-  sa->src, sa->dst);
-@@ -4959,7 +4958,6 @@ static long btrfs_ioctl_qgroup_create(struct
-file *file, void __user *arg)
-  goto out;
-  }
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index e064913fa62f..2f0d0688e0a6 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3625,6 +3625,10 @@ static int write_dev_flush(struct btrfs_device *device, int wait)
+ 	if (wait) {
+ 		bio = device->flush_bio;
+ 		if (!bio)
++			/*
++			 * This means the alloc has failed with ENOMEM, however
++			 * here we return 0, as its not a device error.
++			 */
+ 			return 0;
+ 
+ 		wait_for_completion(&device->flush_wait);
+@@ -3664,6 +3668,32 @@ static int write_dev_flush(struct btrfs_device *device, int wait)
+ 	return 0;
+ }
+ 
++static int check_barrier_error(struct btrfs_fs_devices *fsdevs)
++{
++	int submit_flush_error = 0;
++	int dev_flush_error = 0;
++	struct btrfs_device *dev;
++	int tolerance;
++
++	list_for_each_entry_rcu(dev, &fsdevs->devices, dev_list) {
++		if (!dev->bdev) {
++			submit_flush_error++;
++			dev_flush_error++;
++			continue;
++		}
++		if (dev->last_flush_error == -ENOMEM)
++			submit_flush_error++;
++		if (dev->last_flush_error && dev->last_flush_error != -ENOMEM)
++			dev_flush_error++;
++	}
++
++	tolerance = fsdevs->fs_info->num_tolerated_disk_barrier_failures;
++	if (submit_flush_error > tolerance || dev_flush_error > tolerance)
++		return -EIO;
++
++	return 0;
++}
++
+ /*
+  * send an empty flush down to each device in parallel,
+  * then wait for them
+@@ -3691,6 +3721,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ 		ret = write_dev_flush(dev, 0);
+ 		if (ret)
+ 			errors_send++;
++		dev->last_flush_error = ret;
+ 	}
+ 
+ 	/* wait for all the barriers */
+@@ -3705,12 +3736,30 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ 			continue;
+ 
+ 		ret = write_dev_flush(dev, 1);
+-		if (ret)
++		if (ret) {
++			dev->last_flush_error = ret;
+ 			errors_wait++;
++		}
++	}
++
++	/*
++	 * Try hard in case of flush. Lets say, in RAID1 we have
++	 * the following situation
++	 *  dev1: EIO dev2: ENOMEM
++	 * this is not a fatal error as we hope to recover from
++	 * ENOMEM in the next attempt to flush.
++	 * But the following is considered as fatal
++	 *  dev1: ENOMEM dev2: ENOMEM
++	 *  dev1: bdev == NULL dev2: ENOMEM
++	 */
++	if (errors_send || errors_wait) {
++		/*
++		 * At some point we need the status of all disks
++		 * to arrive at the volume status. So error checking
++		 * is being pushed to a separate loop.
++		 */
++		return check_barrier_error(info->fs_devices);
+ 	}
+-	if (errors_send > info->num_tolerated_disk_barrier_failures ||
+-	    errors_wait > info->num_tolerated_disk_barrier_failures)
+-		return -EIO;
+ 	return 0;
+ }
+ 
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index cfb817384cb5..9bb248b3fa0e 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -87,6 +87,7 @@ struct btrfs_device {
+ 	int offline;
+ 	int can_discard;
+ 	int is_tgtdev_for_dev_replace;
++	int last_flush_error;
+ 
+ #ifdef __BTRFS_NEED_DEVICE_DATA_ORDERED
+ 	seqcount_t data_seqcount;
+-- 
+2.10.0
 
-- /* FIXME: check if the IDs really exist */
-  if (sa->create) {
-  ret = btrfs_create_qgroup(trans, fs_info, sa->qgroupid);
-  } else {
-@@ -5013,7 +5011,6 @@ static long btrfs_ioctl_qgroup_limit(struct file
-*file, void __user *arg)
-  qgroupid = root->root_key.objectid;
-  }
-
-- /* FIXME: check if the IDs really exist */
-  ret = btrfs_limit_qgroup(trans, fs_info, qgroupid, &sa->lim);
-
-  err = btrfs_end_transaction(trans);
---
-2.12.2

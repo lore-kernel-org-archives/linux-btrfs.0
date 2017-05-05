@@ -1,79 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:45920 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755280AbdEDN6m (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 May 2017 09:58:42 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: quwenruo@cn.fujitsu.com
-Subject: [RFC] [PATCH] btrfs: clean up qgroup trace event
-Date: Thu,  4 May 2017 22:04:11 +0800
-Message-Id: <20170504140411.26723-1-anand.jain@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:42481 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1750747AbdEEQho (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 5 May 2017 12:37:44 -0400
+Date: Fri, 5 May 2017 18:37:36 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz, quwenruo@cn.fujitsu.com
+Subject: Re: [PATCH] btrfs: cleanup qgroup trace event
+Message-ID: <20170505163736.GE10575@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170504140411.26723-1-anand.jain@oracle.com>
+ <20170505020936.6016-1-anand.jain@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170505020936.6016-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Qu,
+On Fri, May 05, 2017 at 10:09:36AM +0800, Anand Jain wrote:
+> Commit 81fb6f77a026 (btrfs: qgroup: Add new trace point for
+> qgroup data reserve) added the following events which aren't used.
+>   btrfs__qgroup_data_map
+>   btrfs_qgroup_init_data_rsv_map
+>   btrfs_qgroup_free_data_rsv_map
+> So remove them.
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>   cc: quwenruo@cn.fujitsu.com
+> Reviewed-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-The commit 81fb6f77a026 (btrfs: qgroup: Add new trace point for
-qgroup data reserve) added the following events which aren't used.
-  btrfs__qgroup_data_map
-  btrfs_qgroup_init_data_rsv_map
-  btrfs_qgroup_free_data_rsv_map
-I wonder if it is better to remove or keep it for future use.
-
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
-cc: quwenruo@cn.fujitsu.com
----
- include/trace/events/btrfs.h | 36 ------------------------------------
- 1 file changed, 36 deletions(-)
-
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index a3c3cab643a9..5471f9b4dc9e 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -1270,42 +1270,6 @@ DEFINE_EVENT(btrfs__workqueue_done, btrfs_workqueue_destroy,
- 	TP_ARGS(wq)
- );
- 
--DECLARE_EVENT_CLASS(btrfs__qgroup_data_map,
--
--	TP_PROTO(struct inode *inode, u64 free_reserved),
--
--	TP_ARGS(inode, free_reserved),
--
--	TP_STRUCT__entry_btrfs(
--		__field(	u64,		rootid		)
--		__field(	unsigned long,	ino		)
--		__field(	u64,		free_reserved	)
--	),
--
--	TP_fast_assign_btrfs(btrfs_sb(inode->i_sb),
--		__entry->rootid		=	BTRFS_I(inode)->root->objectid;
--		__entry->ino		=	inode->i_ino;
--		__entry->free_reserved	=	free_reserved;
--	),
--
--	TP_printk_btrfs("rootid=%llu ino=%lu free_reserved=%llu",
--		  __entry->rootid, __entry->ino, __entry->free_reserved)
--);
--
--DEFINE_EVENT(btrfs__qgroup_data_map, btrfs_qgroup_init_data_rsv_map,
--
--	TP_PROTO(struct inode *inode, u64 free_reserved),
--
--	TP_ARGS(inode, free_reserved)
--);
--
--DEFINE_EVENT(btrfs__qgroup_data_map, btrfs_qgroup_free_data_rsv_map,
--
--	TP_PROTO(struct inode *inode, u64 free_reserved),
--
--	TP_ARGS(inode, free_reserved)
--);
--
- #define BTRFS_QGROUP_OPERATIONS				\
- 	{ QGROUP_RESERVE,	"reserve"	},	\
- 	{ QGROUP_RELEASE,	"release"	},	\
--- 
-2.10.0
-
+Patch queued, thanks.

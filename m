@@ -1,101 +1,120 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ua0-f193.google.com ([209.85.217.193]:34884 "EHLO
-        mail-ua0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751282AbdEFPbm (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 6 May 2017 11:31:42 -0400
-Received: by mail-ua0-f193.google.com with SMTP id e28so2998897uah.2
-        for <linux-btrfs@vger.kernel.org>; Sat, 06 May 2017 08:31:41 -0700 (PDT)
+Received: from email.routify.me ([162.208.10.182]:48449 "EHLO
+        cartman.routify.me" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752137AbdEGWVn (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 May 2017 18:21:43 -0400
+Date: Sun, 07 May 2017 13:32:30 -0400
+In-Reply-To: <CAPktuGs4cJW6YBJ3GuGaXRLkud7VKvdH2P1U0hT+3AtDmHL5Yw@mail.gmail.com>
+References: <CAPktuGs4cJW6YBJ3GuGaXRLkud7VKvdH2P1U0hT+3AtDmHL5Yw@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <a1fc8d12-e9c3-45ec-a70c-a6732750d4ca@cn.fujitsu.com>
-References: <20170417032642.30770-1-quwenruo@cn.fujitsu.com>
- <20170417032642.30770-10-quwenruo@cn.fujitsu.com> <CAKuJGC8vX53NExNAYj-de9vta_y5rdv3fC2z9-fP=rPatv-OOg@mail.gmail.com>
- <33ef367f-85a5-8418-d57e-b38b22214487@cn.fujitsu.com> <CAKuJGC9tcGh49XGv+tU729Y0BNnnMEwDk7axGQv6RAV0ZbFCGQ@mail.gmail.com>
- <9e8c3a66-f43a-bce8-36b1-5f358c6cab4a@cn.fujitsu.com> <CAKuJGC9Lcc+0hw7CQCMC2QhEUH1hm1doOxNsPv8Z-sqR4oErkQ@mail.gmail.com>
- <20170504165327.GA10575@twin.jikos.cz> <a1fc8d12-e9c3-45ec-a70c-a6732750d4ca@cn.fujitsu.com>
-From: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>
-Date: Sat, 6 May 2017 21:01:40 +0530
-Message-ID: <CAKuJGC9Ycw-YW+6aKB_kj=O4XtP=zHJ3YgF-uXkXJd+eppruEQ@mail.gmail.com>
-Subject: Re: [PATCH 9/9] btrfs-progs: modify: Introduce option to specify the
- pattern to fill mirror
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: dsterba@suse.cz, btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain;
+ charset=utf-8
+Subject: Re: BTRFS converted from EXT4 becomes read-only after reboot
+To: Alexandru Guzu <alexguzu@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: Sean Greenslade <sean@seangreenslade.com>
+Message-ID: <706980A2-DC62-45AA-B169-8A9D6E474D87@seangreenslade.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-okay, but I'm not sure whether it can be useful here other than the
-sample cli usage. The reason, this tool relies heavily on Python/C
-layer[1]. The framework works like this:
-
-C-api(fs-progs) <--> Python/C api <--> Python program.
-
-C-api is typical fs library (like libext2fs/libbtrfs) and C/Python
-used  to export every on-disk fs structure as an python-object along
-with few fs-library functions. Finally in python script we can perform
-stuffs like:
-
---
-import fslib as fs
-
-disk_object=fs.get_inode("/file/path")
-#set few values finally make a call
-retval = fs.corrupt_object(disk_object, offset, size, optype, fixcrc)
----
-
-at C-python layer above python-object converted into C appropriate
-data-type and passed on to C-layer.
-
-hard-part will be troubleshooting issues, tracking them is difficult
-because both gdb and pdb can help only upto certain point.
-
-[1]: https://docs.python.org/2/extending/extending.html
-
-Cheers.
-Lakshmipathi.G
-
-
-On 5/5/17, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+On May 3, 2017 4:28:11 PM EDT, Alexandru Guzu <alexguzu@gmail.com> wrote:
+>Hi all,
 >
+>In a VirtualBox VM, I converted a EXT4 fs to BTRFS that is now running
+>on Ubuntu 16.04 (Kernel 4.4.0-72). I was able to use the system for
+>several weeks. I even did kernel updates, compression, deduplication
+>without issues.
 >
-> At 05/05/2017 12:53 AM, David Sterba wrote:
->> On Sun, Apr 23, 2017 at 01:12:42PM +0530, Lakshmipathi.G wrote:
->>> Thanks for the example and details. I understood some and need to
->>> re-read couple of more times to understand the remaining.
->>>
->>> btw, I created a corruption framework(with previous org), the sample
->>> usage and example is below. It looks similar to Btrfs corruption tool.
->>> thanks.
->>>
->>> --
->>> corrupt.py --help
->> [...]
->>
->> Interesting, can you please share the script? This is another
->> alternative that seems more plausible for rapid prototyping of various
->> corruption scenarios. The C utility (either existing btrfs-corrupt-block
->> or the proposed btrfs-modify) can become tedious to change, but can be
->> compiled and distributed without the python dependency.
->>
->> I wanted to use something python-based for tests when Hans announced the
->> python-btrfs project, but it has broader goals than just the testsuite
->> needs.  So we could have our own corrupt.py, just for our internal use.
->>
->> I'm not sure if a compiled tool like btrfs-modify is really needed, but
->> why we can't have both.
->>
->>
-> Python based tool is always a good idea.
+>Since today, a little while after booting (usually when I start
+>opening applications), the FS becomes read-only. IMO, the only thing
+>that might have changed that could affect this is a kernel upgrade.
+>However, since the FS becomes RO, I cannot easily do a kernel update
+>(I guess I'd have to chroot and do it).
 >
-> If python based lib can provide the same capability of current C
-> facilities (btrfs_search_slot() at least) and have better encapsulation,
-> I'm totally committed to python based one.
+>The stack trace is the following:
 >
-> Although I'm a little afraid that the python script is not using the low
-> level btrfs_search_slot(), but just getting chunk layout then do
-> mathematics to get stripe location.
+>[   88.836057] ------------[ cut here ]------------
+>[   88.836082] WARNING: CPU: 0 PID: 25 at
+>/build/linux-wXdoVv/linux-4.4.0/fs/btrfs/inode.c:2931
+>btrfs_finish_ordered_io+0x63b/0x650 [btrfs]()
+>[   88.836083] BTRFS: Transaction aborted (error -95)
+>[   88.836084] Modules linked in: nvram msr zram lz4_compress
+>vboxsf(OE) joydev crct10dif_pclmul crc32_pclmul ghash_clmulni_intel
+>aesni_intel snd_intel8x0 aes_x86_64 snd_ac97_codec lrw gf128mul
+>glue_helper ablk_helper cryptd ac97_bus snd_pcm snd_seq_midi
+>snd_seq_midi_event snd_rawmidi snd_seq vboxvideo(OE) snd_seq_device
+>snd_timer ttm input_leds drm_kms_helper serio_raw i2c_piix4 snd drm
+>fb_sys_fops syscopyarea sysfillrect sysimgblt soundcore 8250_fintek
+>vboxguest(OE) mac_hid parport_pc ppdev lp parport autofs4 btrfs xor
+>raid6_pq hid_generic usbhid hid psmouse ahci libahci fjes video
+>pata_acpi
+>[   88.836116] CPU: 0 PID: 25 Comm: kworker/u2:1 Tainted: G
+>OE   4.4.0-72-generic #93-Ubuntu
+>[   88.836117] Hardware name: innotek GmbH VirtualBox/VirtualBox, BIOS
+>VirtualBox 12/01/2006
+>[   88.836130] Workqueue: btrfs-endio-write btrfs_endio_write_helper
+>[btrfs]
+>[   88.836132]  0000000000000286 00000000618d3a00 ffff88007cabbc78
+>ffffffff813f82b3
+>[   88.836134]  ffff88007cabbcc0 ffffffffc01912a8 ffff88007cabbcb0
+>ffffffff81081302
+>[   88.836135]  ffff880058bf01b0 ffff8800355f2800 ffff88007b9e64e0
+>ffff88007c66f098
+>[   88.836137] Call Trace:
+>[   88.836142]  [<ffffffff813f82b3>] dump_stack+0x63/0x90
+>[   88.836145]  [<ffffffff81081302>] warn_slowpath_common+0x82/0xc0
+>[   88.836147]  [<ffffffff8108139c>] warn_slowpath_fmt+0x5c/0x80
+>[   88.836159]  [<ffffffffc012373f>] ? unpin_extent_cache+0x8f/0xe0
+>[btrfs]
+>[   88.836167]  [<ffffffffc00e0b06>] ? btrfs_free_path+0x26/0x30
+>[btrfs]
+>[   88.836178]  [<ffffffffc011554b>]
+>btrfs_finish_ordered_io+0x63b/0x650 [btrfs]
+>[   88.836188]  [<ffffffffc0115845>] finish_ordered_fn+0x15/0x20
+>[btrfs]
+>[   88.836200]  [<ffffffffc013dfda>]
+>btrfs_scrubparity_helper+0xca/0x2f0 [btrfs]
+>[   88.836202]  [<ffffffff810caee1>] ?
+>__raw_callee_save___pv_queued_spin_unlock+0x11/0x20
+>[   88.836214]  [<ffffffffc013e28e>] btrfs_endio_write_helper+0xe/0x10
+>[btrfs]
+>[   88.836217]  [<ffffffff8109a555>] process_one_work+0x165/0x480
+>[   88.836219]  [<ffffffff8109a8bb>] worker_thread+0x4b/0x4c0
+>[   88.836220]  [<ffffffff8109a870>] ? process_one_work+0x480/0x480
+>[   88.836222]  [<ffffffff8109a870>] ? process_one_work+0x480/0x480
+>[   88.836224]  [<ffffffff810a0be8>] kthread+0xd8/0xf0
+>[   88.836225]  [<ffffffff810a0b10>] ?
+>kthread_create_on_node+0x1e0/0x1e0
+>[   88.836229]  [<ffffffff8183ca0f>] ret_from_fork+0x3f/0x70
+>[   88.836230]  [<ffffffff810a0b10>] ?
+>kthread_create_on_node+0x1e0/0x1e0
+>[   88.836232] ---[ end trace f4b8dbb54f0db139 ]---
+>[   88.836234] BTRFS: error (device sda1) in
+>btrfs_finish_ordered_io:2931: errno=-95 unknown
+>[   88.836236] BTRFS info (device sda1): forced readonly
+>[   88.836392] pending csums is 118784
 >
-> Thanks,
-> Qu
+>If I reboot with the Live CD version, I can run `scrub` and `check`
+>without any issues. Also the FS stays read-write.
 >
+>Is this a known issue? Could it be due to the conversion, or can this
+>happen on any system on any time. This is a test VM that I can
+>re-make, but I would like to know if this can happen on a production
+>system.
 >
->
+>Regards,
+>Alex.
+>--
+>To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
+>in
+>the body of a message to majordomo@vger.kernel.org
+>More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+Just FYI, I ran into basically this same issue a while back. 
+My solution was to copy all the data off it,  re-run mkfs.btrfs,
+then copy all the data back. I found that none of the existing
+data was damaged, so I think the actual issue is something
+left over from the conversion that confuses the commit
+logic.
+
+--Sean

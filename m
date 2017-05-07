@@ -1,56 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from youngberry.canonical.com ([91.189.89.112]:38782 "EHLO
-        youngberry.canonical.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751086AbdEFWBK (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 6 May 2017 18:01:10 -0400
-From: Colin King <colin.king@canonical.com>
-To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Cc: kernel-janitors@vger.kernel.org
-Subject: [PATCH] btrfs: remove redundant assignment and check on variable ret
-Date: Sat,  6 May 2017 23:01:05 +0100
-Message-Id: <20170506220105.13206-1-colin.king@canonical.com>
+Received: from mail-wr0-f194.google.com ([209.85.128.194]:36822 "EHLO
+        mail-wr0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753111AbdEGWUo (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 May 2017 18:20:44 -0400
+Received: by mail-wr0-f194.google.com with SMTP id v42so6123230wrc.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 07 May 2017 15:20:43 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+From: =?UTF-8?B?5oi05ZGo?= <tommy0705c@gmail.com>
+Date: Mon, 8 May 2017 01:07:42 +0800
+Message-ID: <CAFu1FXSTnJfye2dQwXaOMuXs8u8TD66o0DP6PtPZhhyHHvZbkg@mail.gmail.com>
+Subject: [PATCH] Btrfs:Unused comments:"FIXME: check if the IDs really exist"
+ in ioctl.c
+To: lbtrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Colin Ian King <colin.king@canonical.com>
+ [PATCH] Btrfs:Unused comments:"FIXME: check if the IDs really exist"
+ in ioctl.c
 
-Variable ret is assigned to zero and is always zero throughout the
-function.  Thus the check for ret being less than zero is always
-false and so mapping_set_error always has an -EIO error passed to
-it.  Hence we can remove the redundant assignment and check on ret.
+These comments were already fixed in 2013.
+btrfs_add_qgroup_relation, btrfs_ioctl_qgroup_create, btrfs_limit_qgroup
+btrfs_add_qgroup_relation, btrfs_del_qgroup_relation have checked
+qgroupid existed.
 
-Detected by CoverityScan, CID#1414312 ("Logically dead code")
-
-Signed-off-by: Colin Ian King <colin.king@canonical.com>
+Signed-off-by: Daichou <tommy0705c@gmail.com>
 ---
- fs/btrfs/extent_io.c | 4 +---
- 1 file changed, 1 insertion(+), 3 deletions(-)
+ fs/btrfs/ioctl.c | 3 ---
+ 1 file changed, 3 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index d8da3edf2ac3..7922cd34ba82 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2447,7 +2447,6 @@ void end_extent_writepage(struct page *page, int err, u64 start, u64 end)
- {
- 	int uptodate = (err == 0);
- 	struct extent_io_tree *tree;
--	int ret = 0;
- 
- 	tree = &BTRFS_I(page->mapping->host)->io_tree;
- 
-@@ -2458,8 +2457,7 @@ void end_extent_writepage(struct page *page, int err, u64 start, u64 end)
- 	if (!uptodate) {
- 		ClearPageUptodate(page);
- 		SetPageError(page);
--		ret = ret < 0 ? ret : -EIO;
--		mapping_set_error(page->mapping, ret);
-+		mapping_set_error(page->mapping, -EIO);
- 	}
- }
- 
--- 
-2.11.0
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index a29dc3fd7152..6db06f4708f7 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -4900,7 +4900,6 @@ static long btrfs_ioctl_qgroup_assign(struct
+file *file, void __user *arg)
+  goto out;
+  }
 
+- /* FIXME: check if the IDs really exist */
+  if (sa->assign) {
+  ret = btrfs_add_qgroup_relation(trans, fs_info,
+  sa->src, sa->dst);
+@@ -4959,7 +4958,6 @@ static long btrfs_ioctl_qgroup_create(struct
+file *file, void __user *arg)
+  goto out;
+  }
+
+- /* FIXME: check if the IDs really exist */
+  if (sa->create) {
+  ret = btrfs_create_qgroup(trans, fs_info, sa->qgroupid);
+  } else {
+@@ -5013,7 +5011,6 @@ static long btrfs_ioctl_qgroup_limit(struct file
+*file, void __user *arg)
+  qgroupid = root->root_key.objectid;
+  }
+
+- /* FIXME: check if the IDs really exist */
+  ret = btrfs_limit_qgroup(trans, fs_info, qgroupid, &sa->lim);
+
+  err = btrfs_end_transaction(trans);

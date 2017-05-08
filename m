@@ -1,38 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from email.routify.me ([162.208.10.182]:38438 "EHLO
-        cartman.routify.me" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755400AbdEHTDF (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 May 2017 15:03:05 -0400
-Date: Mon, 8 May 2017 15:02:57 -0400
-From: Sean Greenslade <sean@seangreenslade.com>
+Received: from mail-yw0-f181.google.com ([209.85.161.181]:32776 "EHLO
+        mail-yw0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752988AbdEHTFc (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 May 2017 15:05:32 -0400
+Received: by mail-yw0-f181.google.com with SMTP id 203so34156644ywe.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 08 May 2017 12:05:31 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <CAPktuGuyUBQF1=LKvmpZiS7vMSsu=LCfqA9PFa7ObK9ih=LoXg@mail.gmail.com>
+References: <CAPktuGs4cJW6YBJ3GuGaXRLkud7VKvdH2P1U0hT+3AtDmHL5Yw@mail.gmail.com>
+ <706980A2-DC62-45AA-B169-8A9D6E474D87@seangreenslade.com> <CAPktuGuyUBQF1=LKvmpZiS7vMSsu=LCfqA9PFa7ObK9ih=LoXg@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Mon, 8 May 2017 13:05:30 -0600
+Message-ID: <CAJCQCtRv74Xd0dz--D1G4MKXekDuoWbvuQ6kpxizv0XLbNb2gg@mail.gmail.com>
+Subject: Re: BTRFS converted from EXT4 becomes read-only after reboot
 To: Alexandru Guzu <alexguzu@gmail.com>
-Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Sanidhya Solanki <lkml.page@gmail.com>,
+Cc: Sean Greenslade <sean@seangreenslade.com>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
         Qu Wenruo <quwenruo@cn.fujitsu.com>
-Subject: Re: BTRFS converted from EXT4 becomes read-only after reboot
-Message-ID: <20170508190257.GB1699@fox>
-References: <CAPktuGs4cJW6YBJ3GuGaXRLkud7VKvdH2P1U0hT+3AtDmHL5Yw@mail.gmail.com>
- <706980A2-DC62-45AA-B169-8A9D6E474D87@seangreenslade.com>
- <CAPktuGuyUBQF1=LKvmpZiS7vMSsu=LCfqA9PFa7ObK9ih=LoXg@mail.gmail.com>
- <20170508112617.7e33bed6@ad>
- <A9D2210F-3DC4-45BC-AA07-D4527279D40E@seangreenslade.com>
- <4aedf23f-2bc4-ce18-d5b0-13fa51496feb@gmail.com>
- <20170508170106.GA1699@fox>
- <CAPktuGtS-K9ZvXf_3G5UkS2Xrj-cWx+DaqrFDOu-Hi9r1HqUKw@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAPktuGtS-K9ZvXf_3G5UkS2Xrj-cWx+DaqrFDOu-Hi9r1HqUKw@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 08, 2017 at 02:22:52PM -0400, Alexandru Guzu wrote:
-> Getting a bit off-topic here, but were you able to boot from that fs
-> with grub after a simple rsync?
+On Mon, May 8, 2017 at 8:16 AM, Alexandru Guzu <alexguzu@gmail.com> wrote:
+> Deleting the Firefox cache with the LiveCD resolved the issue where
+> the FS would become read-only when opening Firefox, however, the
+> lowmem check still reports errors. There are probably some other files
+> that would cause the FS to become read-only again, but I'm not sure
+> how to find them.
+> I took a snapshot of the Virtual disk before deleting the FF profile,
+> so I can reproduce the issue if you guys want to track down this
+> potential bug, otherwise I will delete the VM by the end of this week.
+>
+> Sean, how would you approach the copy of the data back and forth if
+> the OS is on it? Would a Send-receive and then back work?
 
-Grub was installed to the MBR, and /boot was a separate partition, so I
-didn't have to re-install grub. I did have to edit the root partition
-UUID in /etc/fstab and in the kernel command line in grub.cfg, though.
+Btrfs send receive. Optionally you can send to a file; and then
+receive from a file. In that case the file can be on any filesystem.
 
---Sean
+The one thing not to use is dd.
 
+
+-- 
+Chris Murphy

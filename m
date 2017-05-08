@@ -1,274 +1,136 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tty0.vserver.softronics.ch ([91.214.169.36]:53494 "EHLO
-        fe1.digint.ch" rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751519AbdEHNSB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 8 May 2017 09:18:01 -0400
-Received: from [10.0.1.10] (77-59-134-149.dclient.hispeed.ch [77.59.134.149])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by fe1.digint.ch (Postfix) with ESMTPSA id 963E130398
-        for <linux-btrfs@vger.kernel.org>; Mon,  8 May 2017 15:11:35 +0200 (CEST)
-Subject: Re: Wrong received UUIDs after backup restore and onward
-To: linux-btrfs@vger.kernel.org
-References: <b1fca88c-19d1-6f16-1967-9eb637a874d9@lewisdiamond.com>
-From: Axel Burri <axel@tty0.ch>
-Message-ID: <6b1caec6-b3ff-e451-d933-fe820966bfd8@tty0.ch>
-Date: Mon, 8 May 2017 15:10:40 +0200
+Received: from mail-pf0-f177.google.com ([209.85.192.177]:35735 "EHLO
+        mail-pf0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751791AbdEHOQq (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 May 2017 10:16:46 -0400
+Received: by mail-pf0-f177.google.com with SMTP id v14so33898841pfd.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 08 May 2017 07:16:46 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <b1fca88c-19d1-6f16-1967-9eb637a874d9@lewisdiamond.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <706980A2-DC62-45AA-B169-8A9D6E474D87@seangreenslade.com>
+References: <CAPktuGs4cJW6YBJ3GuGaXRLkud7VKvdH2P1U0hT+3AtDmHL5Yw@mail.gmail.com>
+ <706980A2-DC62-45AA-B169-8A9D6E474D87@seangreenslade.com>
+From: Alexandru Guzu <alexguzu@gmail.com>
+Date: Mon, 8 May 2017 10:16:44 -0400
+Message-ID: <CAPktuGuyUBQF1=LKvmpZiS7vMSsu=LCfqA9PFa7ObK9ih=LoXg@mail.gmail.com>
+Subject: Re: BTRFS converted from EXT4 becomes read-only after reboot
+To: Sean Greenslade <sean@seangreenslade.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-05-05 19:03, Lewis Diamond wrote:
-> Hi,
-> 
-> I ran into a situation where my incremental backups using send|receive
-> are failing after a full file system failure followed by restore from an
-> external backup. The reason for the failures seem to be that the
-> Received UUID of snapshots and backups are not properly updated. In
-> short, everything (snapshots and backups) from the time of restore
-> onward has the same Received UUID. Here is an example:
-> 
->    [root@ldiamond-desktop test_btrfs]# btrfs sub create test1
->    Create subvolume './test1'
->    [root@ldiamond-desktop test_btrfs]# echo '1' > test1/test
->    [root@ldiamond-desktop test_btrfs]# btrfs sub snap -r test1/ test1_snap
->    Create a readonly snapshot of 'test1/' in './test1_snap'
->    [root@ldiamond-desktop test_btrfs]# btrfs send test1_snap/ | btrfs
-> receive /media/backup/test_btrfs/
->    At subvol test1_snap/
->    At subvol test1_snap
->    [root@ldiamond-desktop test_btrfs]# echo '2' >> test1/test
->    [root@ldiamond-desktop test_btrfs]# btrfs sub snap -r test1 test1_snap2
->    Create a readonly snapshot of 'test1' in './test1_snap2'
->    [root@ldiamond-desktop test_btrfs]# btrfs send test1_snap2 -p
-> test1_snap | btrfs receive /media/backup/test_btrfs/
->    At subvol test1_snap2
->    At snapshot test1_snap2
->    [root@ldiamond-desktop test_btrfs]# btrfs sub show test1
->    /media/btr0/test_btrfs/test1
->             Name:                   test1
->             UUID:                   6eb0318e-f036-7840-a39f-f9f56b3769f4
->             Parent UUID:            -
->             Received UUID:          -
->             Creation time:          2017-05-05 12:29:16 -0400
->             Subvolume ID:           698
->             Generation:             11566
->             Gen at creation:        11558
->             Parent ID:              5
->             Top level ID:           5
->             Flags:                  -
->             Snapshot(s):
->                                     test_btrfs/test1_snap
->                                     test_btrfs/test1_snap2
->    [root@ldiamond-desktop test_btrfs]# btrfs sub show test1_snap
->    /media/btr0/test_btrfs/test1_snap
->             Name:                   test1_snap
->             UUID:                   8afd7fec-5141-7b46-af05-77c78b051977
->             Parent UUID:            6eb0318e-f036-7840-a39f-f9f56b3769f4
->             Received UUID:          -
->             Creation time:          2017-05-05 12:30:17 -0400
->             Subvolume ID:           700
->             Generation:             11561
->             Gen at creation:        11561
->             Parent ID:              5
->             Top level ID:           5
->             Flags:                  readonly
->             Snapshot(s):
->    [root@ldiamond-desktop test_btrfs]# btrfs sub show test1_snap2
->    /media/btr0/test_btrfs/test1_snap2
->             Name:                   test1_snap2
->             UUID:                   fc8a9859-962d-954b-92df-32ef31b88bc9
->             Parent UUID:            6eb0318e-f036-7840-a39f-f9f56b3769f4
->             Received UUID:          -
->             Creation time:          2017-05-05 12:32:46 -0400
->             Subvolume ID:           702
->             Generation:             11566
->             Gen at creation:        11566
->             Parent ID:              5
->             Top level ID:           5
->             Flags:                  readonly
->             Snapshot(s):
->    [root@ldiamond-desktop test_btrfs]# btrfs sub d test1 test1_snap*
->    Delete subvolume (no-commit): '/media/btr0/test_btrfs/test1'
->    Delete subvolume (no-commit): '/media/btr0/test_btrfs/test1_snap'
->    Delete subvolume (no-commit): '/media/btr0/test_btrfs/test1_snap2'
->    [root@ldiamond-desktop test_btrfs]# btrfs send
-> /media/backup/test_btrfs/test1_snap2/ | btrfs receive ./
->    At subvol /media/backup/test_btrfs/test1_snap2/
->    At subvol test1_snap2
->    [root@ldiamond-desktop test_btrfs]# btrfs property set -ts
-> test1_snap2/ ro false
->    [root@ldiamond-desktop test_btrfs]# echo '3' >> test1_snap2/test
->    [root@ldiamond-desktop test_btrfs]# cat test1_snap2/test
->    1
->    2
->    3
->    [root@ldiamond-desktop test_btrfs]# btrfs sub snap -r test1_snap2/
-> test1_snap3
->    Create a readonly snapshot of 'test1_snap2/' in './test1_snap3'
->    [root@ldiamond-desktop test_btrfs]# btrfs send test1_snap3/ | btrfs
-> receive /media/backup/test_btrfs/
->    At subvol test1_snap3/
->    At subvol test1_snap3
->    [root@ldiamond-desktop test_btrfs]# echo '4' >> test1_snap2/test
->    [root@ldiamond-desktop test_btrfs]# btrfs sub snap -r test1_snap2/
-> test1_snap4
->    Create a readonly snapshot of 'test1_snap2/' in './test1_snap4'
->    [root@ldiamond-desktop test_btrfs]# btrfs send test1_snap4/ -p
-> test1_snap3/ | btrfs receive /media/backup/test_btrfs/
->    At subvol test1_snap4/
->    At snapshot test1_snap4
->    [root@ldiamond-desktop test_btrfs]# btrfs sub show test1_snap2
->    /media/btr0/test_btrfs/test1_snap2
->             Name:                   test1_snap2
->             UUID:                   5f505e2f-2e0a-8840-8132-08ba3bdb4484
->             Parent UUID:            -
->             Received UUID:          fc8a9859-962d-954b-92df-32ef31b88bc9
->             Creation time:          2017-05-05 12:34:25 -0400
->             Subvolume ID:           703
->             Generation:             11579
->             Gen at creation:        11569
->             Parent ID:              5
->             Top level ID:           5
->             Flags:                  -
->             Snapshot(s):
->                                     test_btrfs/test1_snap3
->                                     test_btrfs/test1_snap4
->    [root@ldiamond-desktop test_btrfs]# btrfs sub show test1_snap3
->    /media/btr0/test_btrfs/test1_snap3
->             Name:                   test1_snap3
->             UUID:                   6321f351-2a36-b94b-b2a3-85250eecc4fb
->             Parent UUID:            5f505e2f-2e0a-8840-8132-08ba3bdb4484
->             Received UUID:          fc8a9859-962d-954b-92df-32ef31b88bc9
->             Creation time:          2017-05-05 12:36:00 -0400
->             Subvolume ID:           704
->             Generation:             11575
->             Gen at creation:        11575
->             Parent ID:              5
->             Top level ID:           5
->             Flags:                  readonly
->             Snapshot(s):
->    [root@ldiamond-desktop test_btrfs]# btrfs sub show test1_snap4
->    /media/btr0/test_btrfs/test1_snap4
->             Name:                   test1_snap4
->             UUID:                   4863c19e-48ba-ce49-892a-4f98f101ffb8
->             Parent UUID:            5f505e2f-2e0a-8840-8132-08ba3bdb4484
->             Received UUID:          fc8a9859-962d-954b-92df-32ef31b88bc9
->             Creation time:          2017-05-05 12:37:38 -0400
->             Subvolume ID:           706
->             Generation:             11579
->             Gen at creation:        11579
->             Parent ID:              5
->             Top level ID:           5
->             Flags:                  readonly
->             Snapshot(s):
->    [root@ldiamond-desktop test_btrfs]# btrfs sub show
-> /media/backup/test_btrfs/test1_snap
->    test1_snap/  test1_snap2/ test1_snap3/ test1_snap4/
->    [root@ldiamond-desktop test_btrfs]# btrfs sub show
-> /media/backup/test_btrfs/test1_snap
->    /media/backup/test_btrfs/test1_snap
->             Name:                   test1_snap
->             UUID:                   dd86dd56-0dfe-4f48-b040-6b12fcc07965
->             Parent UUID:            -
->             Received UUID:          8afd7fec-5141-7b46-af05-77c78b051977
->             Creation time:          2017-05-05 12:31:03 -0400
->             Subvolume ID:           1163
->             Generation:             2813
->             Gen at creation:        2810
->             Parent ID:              5
->             Top level ID:           5
->             Flags:                  readonly
->             Snapshot(s):
->                                     test_btrfs/test1_snap2
->    [root@ldiamond-desktop test_btrfs]# btrfs sub show
-> /media/backup/test_btrfs/test1_snap2
->    /media/backup/test_btrfs/test1_snap2
->             Name:                   test1_snap2
->             UUID:                   957baf65-eb56-7546-8d22-dca29733fdd3
->             Parent UUID:            dd86dd56-0dfe-4f48-b040-6b12fcc07965
->             Received UUID:          fc8a9859-962d-954b-92df-32ef31b88bc9
->             Creation time:          2017-05-05 12:32:55 -0400
->             Subvolume ID:           1164
->             Generation:             2820
->             Gen at creation:        2813
->             Parent ID:              5
->             Top level ID:           5
->             Flags:                  readonly
->             Snapshot(s):
->                                     test_btrfs/test1_snap4
->    [root@ldiamond-desktop test_btrfs]# btrfs sub show
-> /media/backup/test_btrfs/test1_snap3
->    /media/backup/test_btrfs/test1_snap3
->             Name:                   test1_snap3
->             UUID:                   6e2369f8-dd57-fd4c-9ef9-8467cf1eb00f
->             Parent UUID:            -
->             Received UUID:          fc8a9859-962d-954b-92df-32ef31b88bc9
->             Creation time:          2017-05-05 12:36:38 -0400
->             Subvolume ID:           1165
->             Generation:             2818
->             Gen at creation:        2817
->             Parent ID:              5
->             Top level ID:           5
->             Flags:                  readonly
->             Snapshot(s):
->    [root@ldiamond-desktop test_btrfs]# btrfs sub show
-> /media/backup/test_btrfs/test1_snap4
->    /media/backup/test_btrfs/test1_snap4
->             Name:                   test1_snap4
->             UUID:                   d255acb5-cc6c-0141-a697-071ebdbb8771
->             Parent UUID:            957baf65-eb56-7546-8d22-dca29733fdd3
->             Received UUID:          fc8a9859-962d-954b-92df-32ef31b88bc9
->             Creation time:          2017-05-05 12:37:56 -0400
->             Subvolume ID:           1166
->             Generation:             2821
->             Gen at creation:        2820
->             Parent ID:              5
->             Top level ID:           5
->             Flags:                  readonly
->             Snapshot(s):
-> 
-> 
-> 
-> These are my kernel/btrfs versions
-> 
->  $ uname -a
-> Linux ldiamond-desktop 4.10.11-1-ARCH #1 SMP PREEMPT Tue Apr 18 08:39:42
-> CEST 2017 x86_64 GNU/Linux
-> ldiamond@ldiamond-desktop ~/tmp
->  $ btrfs --version
-> btrfs-progs v4.10.2
-> ldiamond@ldiamond-desktop ~/tmp
->  $
-> 
-> 
-> Are those Received UUIDs the expected values for the provided test-case?
+Deleting the Firefox cache with the LiveCD resolved the issue where
+the FS would become read-only when opening Firefox, however, the
+lowmem check still reports errors. There are probably some other files
+that would cause the FS to become read-only again, but I'm not sure
+how to find them.
+I took a snapshot of the Virtual disk before deleting the FF profile,
+so I can reproduce the issue if you guys want to track down this
+potential bug, otherwise I will delete the VM by the end of this week.
 
-I did not check everything in detail, but:
+Sean, how would you approach the copy of the data back and forth if
+the OS is on it? Would a Send-receive and then back work?
 
-At some point above, you use:
-
-  btrfs property set -ts test1_snap2/ ro false
-
-While this effectively does what it is supposed to (sets read-only flag
-of subvolume to false), it does NOT clear the "Received UUID" of this
-subvolume. This causes problems for tools like btrbk that rely on
-"Received UUID" being "correct" (i.e. stating "all subvolume with
-matching UUID/Received_UUID contain the same data and can be used as
-parents for subsequent send/receive", which is not true any more after
-writing some data into test1_snap2).
-
-If you want the Received UUID "correctly" cleared, you should use:
-
-  btrfs sub snap test1_snap2 test1_snap2_rw
-  btrfs sub delete test1_snap2
-
-
-> Aren't the Received UUID always supposed to reflect the sent subvolume
-> UUID value?
-
-Not always. If the sent subvolume already has a "Received UUID" set, the
-"Received UUID" reflects the "Received UUID" of the sent subvolume, NOT
-its UUID.
+On Sun, May 7, 2017 at 1:32 PM, Sean Greenslade <sean@seangreenslade.com> wrote:
+> On May 3, 2017 4:28:11 PM EDT, Alexandru Guzu <alexguzu@gmail.com> wrote:
+>>Hi all,
+>>
+>>In a VirtualBox VM, I converted a EXT4 fs to BTRFS that is now running
+>>on Ubuntu 16.04 (Kernel 4.4.0-72). I was able to use the system for
+>>several weeks. I even did kernel updates, compression, deduplication
+>>without issues.
+>>
+>>Since today, a little while after booting (usually when I start
+>>opening applications), the FS becomes read-only. IMO, the only thing
+>>that might have changed that could affect this is a kernel upgrade.
+>>However, since the FS becomes RO, I cannot easily do a kernel update
+>>(I guess I'd have to chroot and do it).
+>>
+>>The stack trace is the following:
+>>
+>>[   88.836057] ------------[ cut here ]------------
+>>[   88.836082] WARNING: CPU: 0 PID: 25 at
+>>/build/linux-wXdoVv/linux-4.4.0/fs/btrfs/inode.c:2931
+>>btrfs_finish_ordered_io+0x63b/0x650 [btrfs]()
+>>[   88.836083] BTRFS: Transaction aborted (error -95)
+>>[   88.836084] Modules linked in: nvram msr zram lz4_compress
+>>vboxsf(OE) joydev crct10dif_pclmul crc32_pclmul ghash_clmulni_intel
+>>aesni_intel snd_intel8x0 aes_x86_64 snd_ac97_codec lrw gf128mul
+>>glue_helper ablk_helper cryptd ac97_bus snd_pcm snd_seq_midi
+>>snd_seq_midi_event snd_rawmidi snd_seq vboxvideo(OE) snd_seq_device
+>>snd_timer ttm input_leds drm_kms_helper serio_raw i2c_piix4 snd drm
+>>fb_sys_fops syscopyarea sysfillrect sysimgblt soundcore 8250_fintek
+>>vboxguest(OE) mac_hid parport_pc ppdev lp parport autofs4 btrfs xor
+>>raid6_pq hid_generic usbhid hid psmouse ahci libahci fjes video
+>>pata_acpi
+>>[   88.836116] CPU: 0 PID: 25 Comm: kworker/u2:1 Tainted: G
+>>OE   4.4.0-72-generic #93-Ubuntu
+>>[   88.836117] Hardware name: innotek GmbH VirtualBox/VirtualBox, BIOS
+>>VirtualBox 12/01/2006
+>>[   88.836130] Workqueue: btrfs-endio-write btrfs_endio_write_helper
+>>[btrfs]
+>>[   88.836132]  0000000000000286 00000000618d3a00 ffff88007cabbc78
+>>ffffffff813f82b3
+>>[   88.836134]  ffff88007cabbcc0 ffffffffc01912a8 ffff88007cabbcb0
+>>ffffffff81081302
+>>[   88.836135]  ffff880058bf01b0 ffff8800355f2800 ffff88007b9e64e0
+>>ffff88007c66f098
+>>[   88.836137] Call Trace:
+>>[   88.836142]  [<ffffffff813f82b3>] dump_stack+0x63/0x90
+>>[   88.836145]  [<ffffffff81081302>] warn_slowpath_common+0x82/0xc0
+>>[   88.836147]  [<ffffffff8108139c>] warn_slowpath_fmt+0x5c/0x80
+>>[   88.836159]  [<ffffffffc012373f>] ? unpin_extent_cache+0x8f/0xe0
+>>[btrfs]
+>>[   88.836167]  [<ffffffffc00e0b06>] ? btrfs_free_path+0x26/0x30
+>>[btrfs]
+>>[   88.836178]  [<ffffffffc011554b>]
+>>btrfs_finish_ordered_io+0x63b/0x650 [btrfs]
+>>[   88.836188]  [<ffffffffc0115845>] finish_ordered_fn+0x15/0x20
+>>[btrfs]
+>>[   88.836200]  [<ffffffffc013dfda>]
+>>btrfs_scrubparity_helper+0xca/0x2f0 [btrfs]
+>>[   88.836202]  [<ffffffff810caee1>] ?
+>>__raw_callee_save___pv_queued_spin_unlock+0x11/0x20
+>>[   88.836214]  [<ffffffffc013e28e>] btrfs_endio_write_helper+0xe/0x10
+>>[btrfs]
+>>[   88.836217]  [<ffffffff8109a555>] process_one_work+0x165/0x480
+>>[   88.836219]  [<ffffffff8109a8bb>] worker_thread+0x4b/0x4c0
+>>[   88.836220]  [<ffffffff8109a870>] ? process_one_work+0x480/0x480
+>>[   88.836222]  [<ffffffff8109a870>] ? process_one_work+0x480/0x480
+>>[   88.836224]  [<ffffffff810a0be8>] kthread+0xd8/0xf0
+>>[   88.836225]  [<ffffffff810a0b10>] ?
+>>kthread_create_on_node+0x1e0/0x1e0
+>>[   88.836229]  [<ffffffff8183ca0f>] ret_from_fork+0x3f/0x70
+>>[   88.836230]  [<ffffffff810a0b10>] ?
+>>kthread_create_on_node+0x1e0/0x1e0
+>>[   88.836232] ---[ end trace f4b8dbb54f0db139 ]---
+>>[   88.836234] BTRFS: error (device sda1) in
+>>btrfs_finish_ordered_io:2931: errno=-95 unknown
+>>[   88.836236] BTRFS info (device sda1): forced readonly
+>>[   88.836392] pending csums is 118784
+>>
+>>If I reboot with the Live CD version, I can run `scrub` and `check`
+>>without any issues. Also the FS stays read-write.
+>>
+>>Is this a known issue? Could it be due to the conversion, or can this
+>>happen on any system on any time. This is a test VM that I can
+>>re-make, but I would like to know if this can happen on a production
+>>system.
+>>
+>>Regards,
+>>Alex.
+>>--
+>>To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
+>>in
+>>the body of a message to majordomo@vger.kernel.org
+>>More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+> Just FYI, I ran into basically this same issue a while back.
+> My solution was to copy all the data off it,  re-run mkfs.btrfs,
+> then copy all the data back. I found that none of the existing
+> data was damaged, so I think the actual issue is something
+> left over from the conversion that confuses the commit
+> logic.
+>
+> --Sean

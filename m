@@ -1,87 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 206-248-167-68.dsl.teksavvy.com ([206.248.167.68]:58542 "EHLO
-        mail.isoar.ca" rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752586AbdEIA13 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 8 May 2017 20:27:29 -0400
-From: "Andrew E. Mileski" <andrewm@isoar.ca>
-Subject: Re: File system is oddly full after kernel upgrade, balance doesn't
- help
-To: MegaBrutal <megabrutal@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <CAE8gLhk=Gf7Qejs6zit+hGdFNeNSPexJZ=jgCY1CADt6xoNHhA@mail.gmail.com>
- <pan$bea71$c88f268f$3fe2f55a$caf61eb5@cox.net>
- <CAE8gLhkjgOzRgJXKL=az8Mw8njCg+m6d0zyH8WmDPNx_-Wp9Ow@mail.gmail.com>
-Message-ID: <a1468845-6974-9730-b338-c7bcb0f144cf@isoar.ca>
-Date: Mon, 8 May 2017 19:45:30 -0400
+Received: from tartarus.angband.pl ([89.206.35.136]:43389 "EHLO
+        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751334AbdEIBtW (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 May 2017 21:49:22 -0400
+Date: Tue, 9 May 2017 03:49:12 +0200
+From: Adam Borowski <kilobyte@angband.pl>
+To: dsterba@suse.cz, Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH ping] btrfs: warn about RAID5/6 being experimental at
+ mount time
+Message-ID: <20170509014912.kjc6tjwuw4l4kvyh@angband.pl>
+References: <20170419210745.15263-1-kilobyte@angband.pl>
+ <20170426021416.us4zj2blho26sjgc@angband.pl>
+ <20170505194530.GP10575@twin.jikos.cz>
 MIME-Version: 1.0
-In-Reply-To: <CAE8gLhkjgOzRgJXKL=az8Mw8njCg+m6d0zyH8WmDPNx_-Wp9Ow@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170505194530.GP10575@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-01-28 13:15, MegaBrutal wrote:
-> Hello,
->
-> Of course I can't retrieve the data from before the balance, but here
-> is the data from now:
->
-> root@vmhost:~# btrfs fi show /tmp/mnt/curlybrace
-> Label: 'curlybrace'  uuid: f471bfca-51c4-4e44-ac72-c6cd9ccaf535
->      Total devices 1 FS bytes used 752.38MiB
->      devid    1 size 2.00GiB used 1.90GiB path
-> /dev/mapper/vmdata--vg-lxc--curlybrace
->
-> root@vmhost:~# btrfs fi df /tmp/mnt/curlybrace
-> Data, single: total=773.62MiB, used=714.82MiB
-> System, DUP: total=8.00MiB, used=16.00KiB
-> Metadata, DUP: total=577.50MiB, used=37.55MiB
-> GlobalReserve, single: total=512.00MiB, used=0.00B
-> root@vmhost:~# btrfs fi usage /tmp/mnt/curlybrace
-> Overall:
->      Device size:           2.00GiB
->      Device allocated:           1.90GiB
->      Device unallocated:         103.38MiB
->      Device missing:             0.00B
->      Used:             789.94MiB
->      Free (estimated):         162.18MiB    (min: 110.50MiB)
->      Data ratio:                  1.00
->      Metadata ratio:              2.00
->      Global reserve:         512.00MiB    (used: 0.00B)
->
-> Data,single: Size:773.62MiB, Used:714.82MiB
->     /dev/mapper/vmdata--vg-lxc--curlybrace     773.62MiB
->
-> Metadata,DUP: Size:577.50MiB, Used:37.55MiB
->     /dev/mapper/vmdata--vg-lxc--curlybrace       1.13GiB
->
-> System,DUP: Size:8.00MiB, Used:16.00KiB
->     /dev/mapper/vmdata--vg-lxc--curlybrace      16.00MiB
->
-> Unallocated:
->     /dev/mapper/vmdata--vg-lxc--curlybrace     103.38MiB
->
->
-> So... if I sum the data, metadata, and the global reserve, I see why
-> only ~170 MB is left. I have no idea, however, why the global reserve
-> sneaked up to 512 MB for such a small file system, and how could I
-> resolve this situation. Any ideas?
->
->
-> MegaBrutal
+On Fri, May 05, 2017 at 09:45:30PM +0200, David Sterba wrote:
+> On Wed, Apr 26, 2017 at 04:14:16AM +0200, Adam Borowski wrote:
+> > On Wed, Apr 19, 2017 at 11:07:45PM +0200, Adam Borowski wrote:
+> > > Too many people come complaining about losing their data -- and indeed,
+> > > there's no warning outside a wiki and the mailing list tribal knowledge.
+> > > Message severity chosen for consistency with XFS -- "alert" makes dmesg
+> > > produce nice red background which should get the point across.
+> > ...
+> > > I intend to ask for inclusion of this one (or an equivalent) in 4.9, either
+> > > in Debian or via GregKH -- while for us kernels "that old" are history,
+> > > regular users expect stable releases to be free of known serious data loss
+> > > bugs.
+> > 
+> There are some raid56 fixes in 4.12, but IIRC the write hole is still
+> unfixed so the warning is still valid even for 4.12. It would be easier
+> to get the patch to 4.4 or 4.9 once it's in Linus tree.
 
-Total amateur here just jumping in, so feel free to ignore me, but what 
-caught my eye was the small device size.
+I've taken pre-4.12 for a spin (mason/for-linus-4.12 atop of midway merge
+window v4.11-10603-g13e098814037), and it indeed succeeds on a number of
+tests I've thrown at it that 4.11 fails.  My tests were not exhaustive
+(corruption at rest only, with no unclean shutdowns) but it looks good so
+far.  So implementation bugs are getting ironed out; 4.9..4.11 had no
+improvements but 4.12 is a nice step forward.
 
-I've had issues with BTRFS on small devices (4GiB & 8GiB), forcing me to 
-use other filesystems on them (like EXT4, which has a smaller allocation 
-size).  Issues being both ENOSPC and miscellaneous other strange errors 
-(which may have been fixed by now).
+Still dies horribly on 32-bit.
 
-My theory being that the 1GiB data and 256MiB metadata chunk sizes are 
-significant on such small devices.
+Write hole is pretty nasty for metadata (likely to cause total filesystem
+loss) but when on -draid{5,6} -mraid{1,10} it's nowhere as bad.  So for 4.12
+it might be ok to put up big warnings only for metadata.  On the other hand,
+data loss limited to 1-2 files is still data loss -- CoW is supposed to
+never damage files already written.
 
-I don't know if there is an official recommended minimum device size, 
-but keeping 4GiB or more free seems to work most of the time for my 
-usage patterns.
+A real fix is obviously better than slapping on warnings.
 
-~~AEM
+> > And here the severity is "critical -- causes serious data loss".
+
+As for 4.9, though, the Debian release is coming very soon, and kernel
+updates there require far more effort than the usual every 4-8 days GregKH
+point release.  So I'd need to harass Ben Hutchings really soon (and
+possibly it's already too late).
+
+> > > +	if ((fs_info->avail_data_alloc_bits |
+> > > +	     fs_info->avail_metadata_alloc_bits |
+> > > +	     fs_info->avail_system_alloc_bits) &
+> > > +	    BTRFS_BLOCK_GROUP_RAID56_MASK) {
+> > > +		btrfs_alert(fs_info,
+> > > +		"btrfs RAID5/6 is EXPERIMENTAL and has known data-loss bugs");
+
+> > Doing this in the kernel should be better than in userspace (like
+> > https://patchwork.kernel.org/patch/9450035/) as it can deal with a future
+> > kernel with working RAID5/6 on old -progs; but if you prefer, I can finish
+> > that patch and request its inclusion in Debian stretch -progs instead or in
+> > addition to the above warning in the kernel.
+> 
+> I'll have look again.
+
+I haven't addresses the concerns for the -progs patch -- at this moment
+having you look there would be a waste of time.  So the question is: do you
+want the warning to be in kernel (where it won't get out of sync), progs
+(where it might be easier to notice) or both?
+
+
+Meow!
+-- 
+Don't be racist.  White, amber or black, all beers should be judged based
+solely on their merits.  Heck, even if occasionally a cider applies for a
+beer's job, why not?
+On the other hand, corpo lager is not a race.

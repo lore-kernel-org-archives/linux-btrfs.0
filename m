@@ -1,62 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f194.google.com ([209.85.128.194]:36822 "EHLO
-        mail-wr0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753111AbdEGWUo (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 May 2017 18:20:44 -0400
-Received: by mail-wr0-f194.google.com with SMTP id v42so6123230wrc.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 07 May 2017 15:20:43 -0700 (PDT)
+Received: from mx2.suse.de ([195.135.220.15]:53146 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1752552AbdEIPPJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 9 May 2017 11:15:09 -0400
+Date: Tue, 9 May 2017 17:15:01 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Daichou <tommy0705c@gmail.com>
+Cc: clm@fb.com, jbacik@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs:Unused comments:"FIXME: check if the IDs really
+ exist" in ioctl.c
+Message-ID: <20170509151501.GE5491@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170508021002.12262-1-tommy0705c@gmail.com>
 MIME-Version: 1.0
-From: =?UTF-8?B?5oi05ZGo?= <tommy0705c@gmail.com>
-Date: Mon, 8 May 2017 01:07:42 +0800
-Message-ID: <CAFu1FXSTnJfye2dQwXaOMuXs8u8TD66o0DP6PtPZhhyHHvZbkg@mail.gmail.com>
-Subject: [PATCH] Btrfs:Unused comments:"FIXME: check if the IDs really exist"
- in ioctl.c
-To: lbtrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170508021002.12262-1-tommy0705c@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
- [PATCH] Btrfs:Unused comments:"FIXME: check if the IDs really exist"
- in ioctl.c
+On Mon, May 08, 2017 at 10:10:02AM +0800, Daichou wrote:
+> These comments were already fixed in 2013.
 
-These comments were already fixed in 2013.
-btrfs_add_qgroup_relation, btrfs_ioctl_qgroup_create, btrfs_limit_qgroup
-btrfs_add_qgroup_relation, btrfs_del_qgroup_relation have checked
-qgroupid existed.
+> btrfs_add_qgroup_relation, btrfs_ioctl_qgroup_create, btrfs_limit_qgroup
+> btrfs_add_qgroup_relation, btrfs_del_qgroup_relation have checked qgroupid existed.
 
-Signed-off-by: Daichou <tommy0705c@gmail.com>
----
- fs/btrfs/ioctl.c | 3 ---
- 1 file changed, 3 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index a29dc3fd7152..6db06f4708f7 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -4900,7 +4900,6 @@ static long btrfs_ioctl_qgroup_assign(struct
-file *file, void __user *arg)
-  goto out;
-  }
-
-- /* FIXME: check if the IDs really exist */
-  if (sa->assign) {
-  ret = btrfs_add_qgroup_relation(trans, fs_info,
-  sa->src, sa->dst);
-@@ -4959,7 +4958,6 @@ static long btrfs_ioctl_qgroup_create(struct
-file *file, void __user *arg)
-  goto out;
-  }
-
-- /* FIXME: check if the IDs really exist */
-  if (sa->create) {
-  ret = btrfs_create_qgroup(trans, fs_info, sa->qgroupid);
-  } else {
-@@ -5013,7 +5011,6 @@ static long btrfs_ioctl_qgroup_limit(struct file
-*file, void __user *arg)
-  qgroupid = root->root_key.objectid;
-  }
-
-- /* FIXME: check if the IDs really exist */
-  ret = btrfs_limit_qgroup(trans, fs_info, qgroupid, &sa->lim);
-
-  err = btrfs_end_transaction(trans);
+Patch is ok, thanks. (I'll just reformat the changelog.)

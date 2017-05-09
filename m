@@ -1,46 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46017 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1035857AbdEYRMw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 May 2017 13:12:52 -0400
-Date: Thu, 25 May 2017 19:11:52 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: clear EXTENT_DEFRAG bits in finish_ordered_io
-Message-ID: <20170525171152.GA30842@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <1494370935-19965-1-git-send-email-bo.li.liu@oracle.com>
- <20170519190642.GB4065@twin.jikos.cz>
- <20170519200141.GE10137@lim.localdomain>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170519200141.GE10137@lim.localdomain>
+Received: from aserp1040.oracle.com ([141.146.126.69]:37167 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750734AbdEJADu (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 May 2017 20:03:50 -0400
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v4A03nWh011224
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 May 2017 00:03:50 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v4A03ndw008073
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 May 2017 00:03:49 GMT
+Received: from abhmp0017.oracle.com (abhmp0017.oracle.com [141.146.116.23])
+        by aserv0121.oracle.com (8.13.8/8.13.8) with ESMTP id v4A03lM9016079
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 May 2017 00:03:48 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: clear EXTENT_DEFRAG bits in finish_ordered_io
+Date: Tue,  9 May 2017 17:02:15 -0600
+Message-Id: <1494370935-19965-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 19, 2017 at 01:01:42PM -0700, Liu Bo wrote:
-> On Fri, May 19, 2017 at 09:06:42PM +0200, David Sterba wrote:
-> > On Tue, May 09, 2017 at 05:02:15PM -0600, Liu Bo wrote:
-> > > Before this, we use 'filled' mode here, ie. if all range has been filled
-> > > with EXTENT_DEFRAG bits, get to clear it, but if the defrag range joins
-> > > the adjacent delalloc range, then we'll leave EXTENT_DEFRAG bits until
-> > > evicting inode.
-> > >
-> > > This clears the bit if any was found within the ordered extent.
-> > 
-> > What effects, good or bad, can this have?
-> > 
-> > Is it worth backporting to stable trees?
-> 
-> The good effect of this patch is to free extent_state quickly if we
-> don't need it, without this, it can't be freed since the extent_state
-> has at least EXTENT_DEFRAG bit in ->state.
-> 
-> Just notice that I made a mistake in the changelog, the bit will be
-> cleared until releasing pages, which may be called by
-> invalidate_mapping_ranges(), not evicting inode.
-> 
-> No, I don't think it's a candidate for stable tree.
+Before this, we use 'filled' mode here, ie. if all range has been filled
+with EXTENT_DEFRAG bits, get to clear it, but if the defrag range joins
+the adjacent delalloc range, then we'll leave EXTENT_DEFRAG bits until
+evicting inode.
 
-Thanks for the answers. Please update the patch changelog and resend.
+This clears the bit if any was found within the ordered extent.
+
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/inode.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 78ab511..1293810 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2875,7 +2875,7 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
+ 
+ 	ret = test_range_bit(io_tree, ordered_extent->file_offset,
+ 			ordered_extent->file_offset + ordered_extent->len - 1,
+-			EXTENT_DEFRAG, 1, cached_state);
++			EXTENT_DEFRAG, 0, cached_state);
+ 	if (ret) {
+ 		u64 last_snapshot = btrfs_root_last_snapshot(&root->root_item);
+ 		if (0 && last_snapshot >= BTRFS_I(inode)->generation)
+-- 
+2.5.5
+

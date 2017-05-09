@@ -1,62 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aquinas.techsquare.com ([75.125.237.226]:53174 "EHLO
-        techsquare.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751087AbdEITZj (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 May 2017 15:25:39 -0400
-To: bo.li.liu@oracle.com
-References: <22795.14626.978819.534566@tree.ty.sabi.co.uk>
- <f1bbe501-0897-c8e0-36ff-2f4cf005fa45@techsquare.com>
- <20170509191444.GE17312@lim.localdomain>
-Cc: pg@btrfs.list.sabi.co.UK, linux-btrfs@vger.kernel.org
-From: Matt McKinnon <matt@techsquare.com>
-Message-ID: <d883bdfa-aecd-4329-8afd-4f2d0f13a538@techsquare.com>
-Date: Tue, 9 May 2017 15:25:34 -0400
+Received: from smtp-16.italiaonline.it ([212.48.25.144]:50066 "EHLO libero.it"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751210AbdEITez (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 9 May 2017 15:34:55 -0400
+Reply-To: kreijack@inwind.it
+Subject: Re: [PATCH ping] btrfs: warn about RAID5/6 being experimental at
+ mount time
+References: <20170419210745.15263-1-kilobyte@angband.pl>
+ <20170426021416.us4zj2blho26sjgc@angband.pl>
+ <20170505194530.GP10575@twin.jikos.cz>
+ <20170509014912.kjc6tjwuw4l4kvyh@angband.pl>
+To: Adam Borowski <kilobyte@angband.pl>, dsterba@suse.cz,
+        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Message-ID: <384c39b2-d0ec-1bad-9b57-311f50850a6d@inwind.it>
+Date: Tue, 9 May 2017 21:34:49 +0200
 MIME-Version: 1.0
-In-Reply-To: <20170509191444.GE17312@lim.localdomain>
-Content-Type: text/plain; charset=windows-1252; format=flowed
-Subject: Re: Struggling with file system slowness
+In-Reply-To: <20170509014912.kjc6tjwuw4l4kvyh@angband.pl>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Those snapshots were created using Marc Merlin's script (thanks, Marc). 
-They don't do anything except sit around on the file system for a week 
-or so and then are removed.
+Hi,
 
-I'm now doing quarter-hourly snaps instead of nightly since I have 
-nightly backups of the filesytem going off-site.  So far the 
-btrfs-transaction and memory spikes have not returned.
+On 2017-05-09 03:49, Adam Borowski wrote:
+> Write hole is pretty nasty for metadata (likely to cause total filesystem
+> loss) but when on -draid{5,6} -mraid{1,10} it's nowhere as bad.  So for 4.12
+> it might be ok to put up big warnings only for metadata.  On the other hand,
+> data loss limited to 1-2 files is still data loss -- CoW is supposed to
+> never damage files already written.
+> 
+> A real fix is obviously better than slapping on warnings.
 
--Matt
+The write hole is a real concern ? Only in the last year the linux MD raid implementation has gained a journal to avoid this problem. This means the in the last 15-years (or even more) this problem was here but its severity was "acceptable".
 
+What I am trying to say, is that until the kernel 4.12, btrfs  had several bugs which prevent to work even the basic raid5/6 functionalities (i.e. rebuild). This is a thing that the user should be warned. Because these kinds of bugs are unexpected by a "stable filesystem".
 
+But the raid5/6 write hole is "defect" of all raid5/6 implementation. Until ZFS and the last iteration of MD, the real/only mitigation was a battery backup. In this BTRFS is not worse (nor better) than its competitor (xfs/ext3,4....). I am inclined to think that a warning for the write hole is a bit excessive.
 
+BR
+G.Baroncelli
 
-
-On 05/09/2017 03:14 PM, Liu Bo wrote:
-> On Fri, May 05, 2017 at 09:24:32AM -0400, Matt McKinnon wrote:
->>> Too little information. Is IO happening at the same time? Is
->>> compression on? Deduplicated? Lots of subvolumes? SSD? What
->>> kind of workload and file size/distribution profile?
->>
->> Only write IO during the load spikes.  No compression, no deduplication.  12
->> volumes (including snapshots).  Spinning disks.  Medium workload; file sizes
->> are all over the map since this hold about 30 user home directories.
->>
->> Interestingly enough, the problems which had persisted for many weeks went
->> away when all snapshots were removed.  btrfs-transaction spikes disappeared.
->> Memory usage went from 30G to under 2G.
->>
->
-> Were those snapshots served as backup?
->
-> Could you please elaborate how you create snapshots?  We could
-> probably hammer out a testcase to improve the situation.
->
-> Thanks,
->
-> -liubo
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

@@ -1,54 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f181.google.com ([209.85.220.181]:34216 "EHLO
-        mail-qk0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753358AbdEIPdI (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 May 2017 11:33:08 -0400
-Received: by mail-qk0-f181.google.com with SMTP id k74so4162363qke.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 May 2017 08:33:07 -0700 (PDT)
-Message-ID: <1494343983.2659.7.camel@redhat.com>
-Subject: Re: [RFC xfstests PATCH] xfstests: add a writeback error handling
- test
-From: Jeff Layton <jlayton@redhat.com>
-To: Christoph Hellwig <hch@infradead.org>
-Cc: fstests@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-ext4@vger.kernel.org, linux-cifs@vger.kernel.org,
-        linux-mm@kvack.org, jfs-discussion@lists.sourceforge.net,
-        linux-xfs@vger.kernel.org, cluster-devel@redhat.com,
-        linux-f2fs-devel@lists.sourceforge.net,
-        v9fs-developer@lists.sourceforge.net, osd-dev@open-osd.org,
-        linux-nilfs@vger.kernel.org, linux-block@vger.kernel.org,
-        dhowells@redhat.com, akpm@linux-foundation.org,
-        ross.zwisler@linux.intel.com, mawilcox@microsoft.com, jack@suse.com,
-        viro@zeniv.linux.org.uk, corbet@lwn.net, neilb@suse.de, clm@fb.com,
-        tytso@mit.edu, axboe@kernel.dk
-Date: Tue, 09 May 2017 11:33:03 -0400
-In-Reply-To: <20170424150019.GA3288@infradead.org>
-References: <20170424134551.10301-1-jlayton@redhat.com>
-         <20170424150019.GA3288@infradead.org>
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+Received: from rin.romanrm.net ([91.121.86.59]:33042 "EHLO rin.romanrm.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754593AbdEIRXV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 9 May 2017 13:23:21 -0400
+Date: Tue, 9 May 2017 22:23:18 +0500
+From: Roman Mamedov <rm@romanrm.net>
+To: "Janos Toth F." <toth.f.janos@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: "corrupt leaf, invalid item offset size pair"
+Message-ID: <20170509222318.1ccbba3a@natsu>
+In-Reply-To: <CANznX5FbxnO66uqA=UK7h-f5MbnCR0zDMs6iYfyYidPZ7MyU9Q@mail.gmail.com>
+References: <20170508095820.633970a3@natsu>
+        <CANznX5FbxnO66uqA=UK7h-f5MbnCR0zDMs6iYfyYidPZ7MyU9Q@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2017-04-24 at 08:00 -0700, Christoph Hellwig wrote:
-> On Mon, Apr 24, 2017 at 09:45:51AM -0400, Jeff Layton wrote:
-> > With the patch series above, ext4 now passes. xfs and btrfs end up in
-> > r/o mode after the test. xfs returns -EIO at that point though, and
-> > btrfs returns -EROFS. What behavior we actually want there, I'm not
-> > certain. We might be able to mitigate that by putting the journals on a
-> > separate device?
-> 
-> This looks like XFS shut down because of a permanent write error from
-> dm-error.  Which seems like the expected behavior.
+On Mon, 8 May 2017 20:05:44 +0200
+"Janos Toth F." <toth.f.janos@gmail.com> wrote:
 
-Oops, didn't see this message earlier...
+> May be someone more talented will be able to assist you but in my
+> experience this kind of damage is fatal in practice (even if you could
+> theoretically fix it, it's probably easier to recreate the fs and
+> restore the content from backup, or use the rescue tool to save some
+> of the old content which you never had copies from and restore that).
+> I think the problem is that the disturbed disk gets out of sync
+> (obviously, it misses some queued/buffered writes) from the rest of
+> the fs/disk(s) but later gets accepted back like it's in a perfectly
+> fine state (and/or Btrfs is ready to deal with problems like this,
+> though it looks like it is not), and then some fatal corruption starts
+> developing (due to the problematic disk being treated like it has
+> correct data, even though it has some errors). If you have it mounted
+> RW long enough, it will probably get worse and gets unmountable at
+> some point (and thus harder, if not impossible to rescure any data).
+> This is how I usually lost my RAID-5 mode Btrfs filesystems before I
+> stopped experimenting with that. I never had this problem since I
+> disabled SATA HotPlug (in the firmware setup of the motherboard) and
+> switched to RAID-10 mode (and eventually replaced both faulty SATA
+> cables in the system, one at a time after an incident...).
 
-Yeah, that's entirely reasonable when there is a write error to the
-journal. The latest version of this uses $SCRATCH_LOGDEV to put the
-journal on a different device, and with that I get the expected behavior
-from xfs.
+Yeah I scrapped the FS and now restoring from backups.  For some of the stuff
+that wasn't backed up, "btrfs restore" worked remarkably well.
 
-Thanks,
+This was my primary 9x2TB mdadm RAID6 with Btrfs on top. But after all, it
+appears to be too risky to run all storage as a huge SPOF like that. And
+since I had almost everything backed up elsewhere, there's seems to be little
+justification for the protections of RAID6 (the machine does not need 100.00%
+uptime and does not even have hot-swap drive bays).
+
+So I will now switch to using individual drives with single-device Btrfs on
+each, joined for convenience with mhddfs/unionfs/aufs on the directory tree
+level.
+
 -- 
-Jeff Layton <jlayton@redhat.com>
+With respect,
+Roman

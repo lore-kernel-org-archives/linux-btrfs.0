@@ -1,123 +1,157 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:43686 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751213AbdEIFP0 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 May 2017 01:15:26 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1d7xUT-00041z-Fb
-        for linux-btrfs@vger.kernel.org; Tue, 09 May 2017 07:15:17 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: "Corrected" errors persist after scrubbing
-Date: Tue, 9 May 2017 05:15:11 +0000 (UTC)
-Message-ID: <pan$d3e73$ea803de4$43e524a3$646b47cc@cox.net>
-References: <92b9b7cd-5b54-775f-95c1-4788b2d3ea67@hale.ee>
-        <CAJCQCtRmMtm5PW-TsUw+erQdXC9K41F0Nys5R+CRv0=KRh7aHw@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from cn.fujitsu.com ([59.151.112.132]:14944 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1754239AbdEIFqX (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 May 2017 01:46:23 -0400
+Subject: Re: [PATCH v3 00/19] Btrfs-progs offline scrub
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>, "dsterba@suse.cz" <dsterba@suse.cz>
+References: <20170330062116.14379-1-quwenruo@cn.fujitsu.com>
+Message-ID: <fdd3a98e-1c7c-2339-ece1-ea71977594d9@cn.fujitsu.com>
+Date: Tue, 9 May 2017 13:46:04 +0800
+MIME-Version: 1.0
+In-Reply-To: <20170330062116.14379-1-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Murphy posted on Mon, 08 May 2017 13:26:16 -0600 as excerpted:
+Ping?
 
-> On Sat, May 6, 2017 at 4:33 AM, Tom Hale <tom@hale.ee> wrote:
->> Below (and also attached because of formatting) is an example of `btrfs
->> scrub` incorrectly reporting that errors have been corrected.
->>
->> In this example, /dev/md127 is the device created by running:
->> mdadm --build /dev/md0 --level=faulty --raid-devices=1 /dev/loop0
->>
->> The filesystem is RAID1.
->>
->> # mdadm --grow /dev/md0 --layout=rp400
->> layout for /dev/md0 set to 12803
->> # btrfs scrub start -Bd /mnt/tmp
->> scrub device /dev/md127 (id 1) done
->>         scrub started at Fri May  5 19:23:54 2017 and finished after
->> 00:00:01
->>         total bytes scrubbed: 200.47MiB with 8 errors
->>         error details: read=8
->>         corrected errors: 8, uncorrectable errors: 0, unverified errors: 248
->> scrub device /dev/loop1 (id 2) done
->>         scrub started at Fri May  5 19:23:54 2017 and finished after
->> 00:00:01
->>         total bytes scrubbed: 200.47MiB with 0 errors
->> WARNING: errors detected during scrubbing, corrected
->> # ### But the errors haven't really been corrected, they're still there:
->> # mdadm --grow /dev/md0 --layout=clear # Stop producing additional errors
->> layout for /dev/md0 set to 31
->> # btrfs scrub start -Bd /mnt/tmp
->> scrub device /dev/md127 (id 1) done
->>         scrub started at Fri May  5 19:24:24 2017 and finished after
->> 00:00:00
->>         total bytes scrubbed: 200.47MiB with 8 errors
->>         error details: read=8
->>         corrected errors: 8, uncorrectable errors: 0, unverified errors: 248
->> scrub device /dev/loop1 (id 2) done
->>         scrub started at Fri May  5 19:24:24 2017 and finished after
->> 00:00:00
->>         total bytes scrubbed: 200.47MiB with 0 errors
->> WARNING: errors detected during scrubbing, corrected
->> #
+Any comments?
+
+Thanks,
+Qu
+
+At 03/30/2017 02:20 PM, Qu Wenruo wrote:
+> For any one who wants to try it, it can be get from my repo:
+> https://github.com/adam900710/btrfs-progs/tree/offline_scrub
 > 
+> Several reports on kernel scrub screwing up good data stripes are in ML
+> for sometime.
 > 
-> What are the complete kernel messages for the scrub event? This should
-> show what problem Btrfs detects and how it fixes it, and what sectors
-> it's fixing each time.
+> And since kernel scrub won't account P/Q corruption, it makes us quite
+> hard to detect error like kernel screwing up P/Q when scrubbing.
+> 
+> To get a comparable tool for kernel scrub, we need a user-space tool to
+> act as benchmark to compare their different behaviors.
+> 
+> So here is the patchset for user-space scrub.
+> 
+> Which can do:
+> 
+> 1) All mirror/backup check for non-parity based stripe
+>     Which means for RAID1/DUP/RAID10, we can really check all mirrors
+>     other than the 1st good mirror.
+> 
+>     Current "--check-data-csum" option will be finally replaced by
+>     offline scrub.
+>     As it doesn't really check all mirrors, if it hits a good copy, then
+>     resting copies will just be ignored.
+> 
+> 2) Comprehensive RAID5/6 full stripe check
+>     It will take full use of btrfs csum(both tree and data).
+>     It will only recover the full stripe if all recovered data matches
+>     with its csum.
+> 
+> In fact, it can already expose several btrfs kernel bug.
+> As it's the main tool I'm using when developing the kernel fixes.
+> 
+> For example, after screwing up a data stripe, kernel did repairs data
+> using parity, but recovered full stripe has wrong parity.
+> Need to scrub again to fix it.
+> 
+> And this patchset also introduced new btrfs_map_block() function, which is
+> more flex than current btrfs_map_block(), and has a unified interface
+> for all profiles, not just an array of physical addresses.
+> 
+> Check the 6th and 7th patch for details.
+> 
+> They are already used in RAID5/6 scrub, but can also be used for other
+> profiles too.
+> 
+> The to-do list has been shortened, since RAID6 and new check logical is
+> introduced.
+> 1) Repair support
+>     In fact, current tool can already report recoverability, repair is
+>     easy to implement.
+> 
+> 2) Test cases
+>     Need to make the infrastructure able to handle multi-device first.
+> 
+> 3) Make btrfsck able to handle RAID5 with missing device
+>     Now it doesn't even open RAID5 btrfs with missing device, even though
+>     scrub should be able to handle it.
+> 
+> Changelog:
+> V0.8 RFC:
+>     Initial RFC patchset
+> 
+> v1:
+>     First formal patchset.
+>     RAID6 recovery support added, mainly copied from kernel radi6 lib.
+>     Cleaner recovery logical.
+> 
+> v2:
+>     More comments in both code and commit message, suggested by David.
+>     File re-arrangement, no check/ dir, raid56.ch moved to kernel-lib,
+>     Suggested by David
+> 
+> v3:
+>    Put "--offline" option to scrub, other than put it in fsck.
+>    Use bitmap to read multiple csums in one run, to improve performance.
+>    Add --progress/--no-progress option, to tell user we're not just
+>    wasting CPU and IO.
+> 
+> Qu Wenruo (19):
+>    btrfs-progs: raid56: Introduce raid56 header for later recovery usage
+>    btrfs-progs: raid56: Introduce tables for RAID6 recovery
+>    btrfs-progs: raid56: Allow raid6 to recover 2 data stripes
+>    btrfs-progs: raid56: Allow raid6 to recover data and p
+>    btrfs-progs: Introduce wrapper to recover raid56 data
+>    btrfs-progs: Introduce new btrfs_map_block function which returns more
+>      unified result.
+>    btrfs-progs: Allow __btrfs_map_block_v2 to remove unrelated stripes
+>    btrfs-progs: csum: Introduce function to read out data csums
+>    btrfs-progs: scrub: Introduce structures to support fsck scrub for
+>      RAID56
+>    btrfs-progs: scrub: Introduce function to scrub mirror based tree
+>      block
+>    btrfs-progs: scrub: Introduce function to scrub mirror based data
+>      blocks
+>    btrfs-progs: scrub: Introduce function to scrub one extent
+>    btrfs-progs: scrub: Introduce function to scrub one data stripe
+>    btrfs-progs: scrub: Introduce function to verify parities
+>    btrfs-progs: extent-tree: Introduce function to check if there is any
+>      extent in given range.
+>    btrfs-progs: scrub: Introduce function to recover data parity
+>    btrfs-progs: scrub: Introduce a function to scrub one full stripe
+>    btrfs-progs: scrub: Introduce function to check a whole block group
+>    btrfs-progs: scrub: Introduce offline scrub function
+> 
+>   .gitignore                         |    2 +
+>   Documentation/btrfs-scrub.asciidoc |    9 +
+>   Makefile                           |   21 +-
+>   cmds-scrub.c                       |  114 +++-
+>   csum.c                             |  136 +++++
+>   ctree.h                            |   11 +
+>   disk-io.c                          |    4 +-
+>   disk-io.h                          |    6 +-
+>   extent-tree.c                      |   60 +++
+>   kernel-lib/mktables.c              |  148 +++++
+>   kernel-lib/raid56.c                |  359 +++++++++++++
+>   kernel-lib/raid56.h                |   58 ++
+>   raid56.c                           |  172 ------
+>   scrub.c                            | 1040 ++++++++++++++++++++++++++++++++++++
+>   utils.h                            |    6 +
+>   volumes.c                          |  283 ++++++++++
+>   volumes.h                          |   78 +++
+>   17 files changed, 2319 insertions(+), 188 deletions(-)
+>   create mode 100644 csum.c
+>   create mode 100644 kernel-lib/mktables.c
+>   create mode 100644 kernel-lib/raid56.c
+>   create mode 100644 kernel-lib/raid56.h
+>   delete mode 100644 raid56.c
+>   create mode 100644 scrub.c
+> 
 
-I'm also wondering what version of kernel and btrfs-progs are being
-used here.  For two reasons:
-
-First:
-
-AFAIK newer code shouldn't report unverified, which was originally
-reported for blocks where the checksums of the blocks containing the
-checksums of the unverified errors were in bad blocks.  IOW, the lower
-branches of the tree couldn't be checked because higher ones were
-still being repaired.
-
-Back then, in ordered to fix such errors, one had to do multiple passes
-manually, until there were no more unverified errors, each pass fixing
-errors at one level so the levels below it could actually be checked in
-the next pass.
-
-I know because I had a pair of ssds where I deliberately kept an ssd
-that was going bad in the btrfs raid1 pair, in ordered to see how things
-worked over time.  So I got quite some experience running and rerunning
-scrubs until all the errors were corrected after multiple passes!
-
-But newer versions catch that problem and I believe actually use the
-second copy for the verifications, so as long as there's no uncorrectable,
-there should be no unverified, either.  (Either that or they do multiple
-passes automatically, like I used to do manually.  I'm not sure which
-except the former should be simpler and faster so I suspect that's what's
-done.)
-
-So the fact that there's unverified errors reported hints to me that
-the used versions may be old.  Either that, or it's a different mechanism
-generating the unverified, that I'm not familiar with and that doesn't
-get corrected from the other copy or via multipass like the ones I have
-experience with do.  But that's why I say "hint".
-
-Second:
-
-AFAIK there was a short period around kernel 4.10 and early 4.11-rcs where
-read-errors were indeed not being corrected properly.  To my knowledge this
-was in operation, not scrub, but perhaps certain scrub cases were affected
-as well.
-
-AFAIK this problem is entirely fixed in 4.11 release, and presumably in the
-4.10 stables, and I don't believe 4.8 and earlier were affected at all (but
-I'm not sure about 4.9, I /think/ it was before the regression, but some
-4.9-stable releases /might/ be affected), but whatever the OP's running
-/might/ just be in that gap, it'd take a dev or someone following those
-specific patches closer than I did to know specifically what's affected
-and thus be able to say for sure, if the OP's running something 4.9 or 4.10,
-or early 4.11-rcs, but not the latest 4.11 release.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
 

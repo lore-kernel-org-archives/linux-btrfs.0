@@ -1,53 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47012 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:52695 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1750728AbdESN1H (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 19 May 2017 09:27:07 -0400
-Date: Fri, 19 May 2017 15:26:08 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Sargun Dhillon <sargun@sargun.me>
-Cc: BTRFS ML <linux-btrfs@vger.kernel.org>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>
-Subject: Re: [PATCH v2 0/2] btrfs: allow mechanism to override quota
-Message-ID: <20170519132608.GV4065@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <20170511211658.GA8401@ircssh-2.c.rugged-nimbus-611.internal>
- <20170512144818.GI27439@twin.jikos.cz>
- <CAMp4zn8AZtYs21Cf-6_kfRjGS0khe5ScpEe__H6XC4i-Ci=ZQw@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAMp4zn8AZtYs21Cf-6_kfRjGS0khe5ScpEe__H6XC4i-Ci=ZQw@mail.gmail.com>
+        id S1751131AbdEIIeZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 9 May 2017 04:34:25 -0400
+From: Nikolay Borisov <nborisov@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.com, clm@fb.com, jeffm@suse.com,
+        Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 0/2] space_info update/creation refactoring 
+Date: Tue,  9 May 2017 11:34:17 +0300
+Message-Id: <1494318859-7555-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 19, 2017 at 01:39:49AM -0700, Sargun Dhillon wrote:
-> On Fri, May 12, 2017 at 7:48 AM, David Sterba <dsterba@suse.cz> wrote:
-> > On Thu, May 11, 2017 at 09:17:01PM +0000, Sargun Dhillon wrote:
-> >> This patchset makes it so that on a per-filesystem basis one can disable
-> >> quota enforcement for users with cap_sys_resource. This patchset can
-> >> likely later be extended to per-qgroup, or a per-volume basis. I'm
-> >> thinking of extending the sysfs interface to list the qgroups and
-> >> this same interface for the qgroups themselves.
-> >>
-> >> Changes since v1:
-> >>   -Rather than a separate member of btrfs_fs_info, use the existing
-> >>    flags field
-> >
-> > Looks good to me, thanks.
-> I'm curious as to whether this approach is fine to get an Acked-by,
+Here are two patches which aim to disentangle and make more explicit 
+the situation when a space_info has to be created VS when space_info values 
+are being updated. 
 
-This was meant as an acked-by, the patch is now queued for 4.13, but as
-it add some user-visible interface, this may need more time to see if we
-haven't missed something.
+It survived multiple xfstest runs with additional ASSERTs which I have removed
+in this posting. One such assert which didn't trigger was in 
+btrfs_make_block_group. Despite that I haven't changed the logic of the code
+to try and allocate a space_info if one can't be found. However, I'd like 
+someone more knowledgble of the internals of bg lifecycle to tell me if 
+in fact btrfs_make_block_group can be called with flags for non-existant 
+struct space_info. 
 
-> or
-> if I need to figure out how to make it more leak-tolerant. I don't
-> think modifying the overridden extents inflight is a problem. I'm not
-> sure of a way a user would be able to create *new* chunks of data.
-> Alternatively, I'd be quite happy making this applicable to metadata
-> only, for file xattrs, creation, deletion, etc..
 
->From the interface POV, this can be set as a bitmask.  I haven't looked
-if we'd be able to propagate all the changes everywhere in the code,
-but sounds doable, bug I'm not sure if this level of fine-grained control
-is desired.
+
+Nikolay Borisov (2):
+  btrfs: Separate space_info create/update
+  btrfs: Refactor update_space_info
+
+ fs/btrfs/extent-tree.c | 172 +++++++++++++++++++++----------------------------
+ 1 file changed, 73 insertions(+), 99 deletions(-)
+
+-- 
+2.7.4
+

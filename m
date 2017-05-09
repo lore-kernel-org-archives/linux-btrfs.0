@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40360 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:40398 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1753665AbdEIMWa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 9 May 2017 08:22:30 -0400
+        id S1753662AbdEIMWh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 9 May 2017 08:22:37 -0400
 From: Goldwyn Rodrigues <rgoldwyn@suse.de>
 To: linux-fsdevel@vger.kernel.org
 Cc: jack@suse.com, hch@infradead.org, linux-block@vger.kernel.org,
@@ -10,9 +10,9 @@ Cc: jack@suse.com, hch@infradead.org, linux-block@vger.kernel.org,
         linux-xfs@vger.kernel.org, sagi@grimberg.me, avi@scylladb.com,
         axboe@kernel.dk, linux-api@vger.kernel.org, willy@infradead.org,
         tom.leiming@gmail.com, Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH 1/8] Use RWF_* flags for AIO operations
-Date: Tue,  9 May 2017 07:22:12 -0500
-Message-Id: <20170509122219.31756-2-rgoldwyn@suse.de>
+Subject: [PATCH 4/8] nowait-aio: Introduce IOMAP_NOWAIT
+Date: Tue,  9 May 2017 07:22:15 -0500
+Message-Id: <20170509122219.31756-5-rgoldwyn@suse.de>
 In-Reply-To: <20170509122219.31756-1-rgoldwyn@suse.de>
 References: <20170509122219.31756-1-rgoldwyn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -20,113 +20,41 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-RWF_* flags is used for preadv2/pwritev2 calls. Port to use
-it for aio operations as well. For this, aio_rw_flags is
-introduced in struct iocb (using aio_reserved1) which will
-carry these flags.
-
-This is a precursor to the nowait AIO calls.
-
-Note, the only place RWF_HIPRI comes in effect is dio_await_one().
-All the rest of the locations, aio code return -EIOCBQUEUED before the
-checks for RWF_HIPRI.
+IOCB_NOWAIT translates to IOMAP_NOWAIT for iomaps.
+This is used by XFS in the XFS patch.
 
 Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+Reviewed-by: Christoph Hellwig <hch@lst.de>
 ---
- fs/aio.c                     |  8 +++++++-
- fs/read_write.c              | 12 +++---------
- include/linux/fs.h           | 14 ++++++++++++++
- include/uapi/linux/aio_abi.h |  2 +-
- 4 files changed, 25 insertions(+), 11 deletions(-)
+ fs/iomap.c            | 2 ++
+ include/linux/iomap.h | 1 +
+ 2 files changed, 3 insertions(+)
 
-diff --git a/fs/aio.c b/fs/aio.c
-index f52d925ee259..020fa0045e3c 100644
---- a/fs/aio.c
-+++ b/fs/aio.c
-@@ -1541,7 +1541,7 @@ static int io_submit_one(struct kioctx *ctx, struct iocb __user *user_iocb,
- 	ssize_t ret;
- 
- 	/* enforce forwards compatibility on users */
--	if (unlikely(iocb->aio_reserved1 || iocb->aio_reserved2)) {
-+	if (unlikely(iocb->aio_reserved2)) {
- 		pr_debug("EINVAL: reserve field set\n");
- 		return -EINVAL;
- 	}
-@@ -1586,6 +1586,12 @@ static int io_submit_one(struct kioctx *ctx, struct iocb __user *user_iocb,
- 		req->common.ki_flags |= IOCB_EVENTFD;
+diff --git a/fs/iomap.c b/fs/iomap.c
+index 141c3cd55a8b..d1c81753d411 100644
+--- a/fs/iomap.c
++++ b/fs/iomap.c
+@@ -885,6 +885,8 @@ iomap_dio_rw(struct kiocb *iocb, struct iov_iter *iter,
+ 	} else {
+ 		dio->flags |= IOMAP_DIO_WRITE;
+ 		flags |= IOMAP_WRITE;
++		if (iocb->ki_flags & IOCB_NOWAIT)
++			flags |= IOMAP_NOWAIT;
  	}
  
-+	ret = kiocb_set_rw_flags(&req->common, iocb->aio_rw_flags);
-+	if (unlikely(ret)) {
-+		pr_debug("EINVAL: aio_rw_flags\n");
-+		goto out_put_req;
-+	}
-+
- 	ret = put_user(KIOCB_KEY, &user_iocb->aio_key);
- 	if (unlikely(ret)) {
- 		pr_debug("EFAULT: aio_key\n");
-diff --git a/fs/read_write.c b/fs/read_write.c
-index c4f88afbc67f..362f91cd8d66 100644
---- a/fs/read_write.c
-+++ b/fs/read_write.c
-@@ -678,16 +678,10 @@ static ssize_t do_iter_readv_writev(struct file *filp, struct iov_iter *iter,
- 	struct kiocb kiocb;
- 	ssize_t ret;
+ 	if (mapping->nrpages) {
+diff --git a/include/linux/iomap.h b/include/linux/iomap.h
+index 7291810067eb..53f6af89c625 100644
+--- a/include/linux/iomap.h
++++ b/include/linux/iomap.h
+@@ -51,6 +51,7 @@ struct iomap {
+ #define IOMAP_REPORT		(1 << 2) /* report extent status, e.g. FIEMAP */
+ #define IOMAP_FAULT		(1 << 3) /* mapping for page fault */
+ #define IOMAP_DIRECT		(1 << 4) /* direct I/O */
++#define IOMAP_NOWAIT		(1 << 5) /* Don't wait for writeback */
  
--	if (flags & ~(RWF_HIPRI | RWF_DSYNC | RWF_SYNC))
--		return -EOPNOTSUPP;
--
- 	init_sync_kiocb(&kiocb, filp);
--	if (flags & RWF_HIPRI)
--		kiocb.ki_flags |= IOCB_HIPRI;
--	if (flags & RWF_DSYNC)
--		kiocb.ki_flags |= IOCB_DSYNC;
--	if (flags & RWF_SYNC)
--		kiocb.ki_flags |= (IOCB_DSYNC | IOCB_SYNC);
-+	ret = kiocb_set_rw_flags(&kiocb, flags);
-+	if (ret)
-+		return ret;
- 	kiocb.ki_pos = *ppos;
- 
- 	if (type == READ)
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 7251f7bb45e8..869c9a6fe58d 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -3049,6 +3049,20 @@ static inline int iocb_flags(struct file *file)
- 	return res;
- }
- 
-+static inline int kiocb_set_rw_flags(struct kiocb *ki, int flags)
-+{
-+	if (unlikely(flags & ~(RWF_HIPRI | RWF_DSYNC | RWF_SYNC)))
-+		return -EOPNOTSUPP;
-+
-+	if (flags & RWF_HIPRI)
-+		ki->ki_flags |= IOCB_HIPRI;
-+	if (flags & RWF_DSYNC)
-+		ki->ki_flags |= IOCB_DSYNC;
-+	if (flags & RWF_SYNC)
-+		ki->ki_flags |= (IOCB_DSYNC | IOCB_SYNC);
-+	return 0;
-+}
-+
- static inline ino_t parent_ino(struct dentry *dentry)
- {
- 	ino_t res;
-diff --git a/include/uapi/linux/aio_abi.h b/include/uapi/linux/aio_abi.h
-index bb2554f7fbd1..a2d4a8ac94ca 100644
---- a/include/uapi/linux/aio_abi.h
-+++ b/include/uapi/linux/aio_abi.h
-@@ -79,7 +79,7 @@ struct io_event {
- struct iocb {
- 	/* these are internal to the kernel/libc. */
- 	__u64	aio_data;	/* data to be returned in event's data */
--	__u32	PADDED(aio_key, aio_reserved1);
-+	__u32	PADDED(aio_key, aio_rw_flags);
- 				/* the kernel sets aio_key to the req # */
- 
- 	/* common fields */
+ struct iomap_ops {
+ 	/*
 -- 
 2.12.0
 

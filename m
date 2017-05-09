@@ -1,89 +1,123 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:43389 "EHLO
-        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751334AbdEIBtW (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 May 2017 21:49:22 -0400
-Date: Tue, 9 May 2017 03:49:12 +0200
-From: Adam Borowski <kilobyte@angband.pl>
-To: dsterba@suse.cz, Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH ping] btrfs: warn about RAID5/6 being experimental at
- mount time
-Message-ID: <20170509014912.kjc6tjwuw4l4kvyh@angband.pl>
-References: <20170419210745.15263-1-kilobyte@angband.pl>
- <20170426021416.us4zj2blho26sjgc@angband.pl>
- <20170505194530.GP10575@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170505194530.GP10575@twin.jikos.cz>
+Received: from [195.159.176.226] ([195.159.176.226]:43686 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1751213AbdEIFP0 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 May 2017 01:15:26 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1d7xUT-00041z-Fb
+        for linux-btrfs@vger.kernel.org; Tue, 09 May 2017 07:15:17 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: "Corrected" errors persist after scrubbing
+Date: Tue, 9 May 2017 05:15:11 +0000 (UTC)
+Message-ID: <pan$d3e73$ea803de4$43e524a3$646b47cc@cox.net>
+References: <92b9b7cd-5b54-775f-95c1-4788b2d3ea67@hale.ee>
+        <CAJCQCtRmMtm5PW-TsUw+erQdXC9K41F0Nys5R+CRv0=KRh7aHw@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 05, 2017 at 09:45:30PM +0200, David Sterba wrote:
-> On Wed, Apr 26, 2017 at 04:14:16AM +0200, Adam Borowski wrote:
-> > On Wed, Apr 19, 2017 at 11:07:45PM +0200, Adam Borowski wrote:
-> > > Too many people come complaining about losing their data -- and indeed,
-> > > there's no warning outside a wiki and the mailing list tribal knowledge.
-> > > Message severity chosen for consistency with XFS -- "alert" makes dmesg
-> > > produce nice red background which should get the point across.
-> > ...
-> > > I intend to ask for inclusion of this one (or an equivalent) in 4.9, either
-> > > in Debian or via GregKH -- while for us kernels "that old" are history,
-> > > regular users expect stable releases to be free of known serious data loss
-> > > bugs.
-> > 
-> There are some raid56 fixes in 4.12, but IIRC the write hole is still
-> unfixed so the warning is still valid even for 4.12. It would be easier
-> to get the patch to 4.4 or 4.9 once it's in Linus tree.
+Chris Murphy posted on Mon, 08 May 2017 13:26:16 -0600 as excerpted:
 
-I've taken pre-4.12 for a spin (mason/for-linus-4.12 atop of midway merge
-window v4.11-10603-g13e098814037), and it indeed succeeds on a number of
-tests I've thrown at it that 4.11 fails.  My tests were not exhaustive
-(corruption at rest only, with no unclean shutdowns) but it looks good so
-far.  So implementation bugs are getting ironed out; 4.9..4.11 had no
-improvements but 4.12 is a nice step forward.
-
-Still dies horribly on 32-bit.
-
-Write hole is pretty nasty for metadata (likely to cause total filesystem
-loss) but when on -draid{5,6} -mraid{1,10} it's nowhere as bad.  So for 4.12
-it might be ok to put up big warnings only for metadata.  On the other hand,
-data loss limited to 1-2 files is still data loss -- CoW is supposed to
-never damage files already written.
-
-A real fix is obviously better than slapping on warnings.
-
-> > And here the severity is "critical -- causes serious data loss".
-
-As for 4.9, though, the Debian release is coming very soon, and kernel
-updates there require far more effort than the usual every 4-8 days GregKH
-point release.  So I'd need to harass Ben Hutchings really soon (and
-possibly it's already too late).
-
-> > > +	if ((fs_info->avail_data_alloc_bits |
-> > > +	     fs_info->avail_metadata_alloc_bits |
-> > > +	     fs_info->avail_system_alloc_bits) &
-> > > +	    BTRFS_BLOCK_GROUP_RAID56_MASK) {
-> > > +		btrfs_alert(fs_info,
-> > > +		"btrfs RAID5/6 is EXPERIMENTAL and has known data-loss bugs");
-
-> > Doing this in the kernel should be better than in userspace (like
-> > https://patchwork.kernel.org/patch/9450035/) as it can deal with a future
-> > kernel with working RAID5/6 on old -progs; but if you prefer, I can finish
-> > that patch and request its inclusion in Debian stretch -progs instead or in
-> > addition to the above warning in the kernel.
+> On Sat, May 6, 2017 at 4:33 AM, Tom Hale <tom@hale.ee> wrote:
+>> Below (and also attached because of formatting) is an example of `btrfs
+>> scrub` incorrectly reporting that errors have been corrected.
+>>
+>> In this example, /dev/md127 is the device created by running:
+>> mdadm --build /dev/md0 --level=faulty --raid-devices=1 /dev/loop0
+>>
+>> The filesystem is RAID1.
+>>
+>> # mdadm --grow /dev/md0 --layout=rp400
+>> layout for /dev/md0 set to 12803
+>> # btrfs scrub start -Bd /mnt/tmp
+>> scrub device /dev/md127 (id 1) done
+>>         scrub started at Fri May  5 19:23:54 2017 and finished after
+>> 00:00:01
+>>         total bytes scrubbed: 200.47MiB with 8 errors
+>>         error details: read=8
+>>         corrected errors: 8, uncorrectable errors: 0, unverified errors: 248
+>> scrub device /dev/loop1 (id 2) done
+>>         scrub started at Fri May  5 19:23:54 2017 and finished after
+>> 00:00:01
+>>         total bytes scrubbed: 200.47MiB with 0 errors
+>> WARNING: errors detected during scrubbing, corrected
+>> # ### But the errors haven't really been corrected, they're still there:
+>> # mdadm --grow /dev/md0 --layout=clear # Stop producing additional errors
+>> layout for /dev/md0 set to 31
+>> # btrfs scrub start -Bd /mnt/tmp
+>> scrub device /dev/md127 (id 1) done
+>>         scrub started at Fri May  5 19:24:24 2017 and finished after
+>> 00:00:00
+>>         total bytes scrubbed: 200.47MiB with 8 errors
+>>         error details: read=8
+>>         corrected errors: 8, uncorrectable errors: 0, unverified errors: 248
+>> scrub device /dev/loop1 (id 2) done
+>>         scrub started at Fri May  5 19:24:24 2017 and finished after
+>> 00:00:00
+>>         total bytes scrubbed: 200.47MiB with 0 errors
+>> WARNING: errors detected during scrubbing, corrected
+>> #
 > 
-> I'll have look again.
+> 
+> What are the complete kernel messages for the scrub event? This should
+> show what problem Btrfs detects and how it fixes it, and what sectors
+> it's fixing each time.
 
-I haven't addresses the concerns for the -progs patch -- at this moment
-having you look there would be a waste of time.  So the question is: do you
-want the warning to be in kernel (where it won't get out of sync), progs
-(where it might be easier to notice) or both?
+I'm also wondering what version of kernel and btrfs-progs are being
+used here.  For two reasons:
 
+First:
 
-Meow!
+AFAIK newer code shouldn't report unverified, which was originally
+reported for blocks where the checksums of the blocks containing the
+checksums of the unverified errors were in bad blocks.  IOW, the lower
+branches of the tree couldn't be checked because higher ones were
+still being repaired.
+
+Back then, in ordered to fix such errors, one had to do multiple passes
+manually, until there were no more unverified errors, each pass fixing
+errors at one level so the levels below it could actually be checked in
+the next pass.
+
+I know because I had a pair of ssds where I deliberately kept an ssd
+that was going bad in the btrfs raid1 pair, in ordered to see how things
+worked over time.  So I got quite some experience running and rerunning
+scrubs until all the errors were corrected after multiple passes!
+
+But newer versions catch that problem and I believe actually use the
+second copy for the verifications, so as long as there's no uncorrectable,
+there should be no unverified, either.  (Either that or they do multiple
+passes automatically, like I used to do manually.  I'm not sure which
+except the former should be simpler and faster so I suspect that's what's
+done.)
+
+So the fact that there's unverified errors reported hints to me that
+the used versions may be old.  Either that, or it's a different mechanism
+generating the unverified, that I'm not familiar with and that doesn't
+get corrected from the other copy or via multipass like the ones I have
+experience with do.  But that's why I say "hint".
+
+Second:
+
+AFAIK there was a short period around kernel 4.10 and early 4.11-rcs where
+read-errors were indeed not being corrected properly.  To my knowledge this
+was in operation, not scrub, but perhaps certain scrub cases were affected
+as well.
+
+AFAIK this problem is entirely fixed in 4.11 release, and presumably in the
+4.10 stables, and I don't believe 4.8 and earlier were affected at all (but
+I'm not sure about 4.9, I /think/ it was before the regression, but some
+4.9-stable releases /might/ be affected), but whatever the OP's running
+/might/ just be in that gap, it'd take a dev or someone following those
+specific patches closer than I did to know specifically what's affected
+and thus be able to say for sure, if the OP's running something 4.9 or 4.10,
+or early 4.11-rcs, but not the latest 4.11 release.
+
 -- 
-Don't be racist.  White, amber or black, all beers should be judged based
-solely on their merits.  Heck, even if occasionally a cider applies for a
-beer's job, why not?
-On the other hand, corpo lager is not a race.
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

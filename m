@@ -1,88 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52111 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1753913AbdEIO55 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 9 May 2017 10:57:57 -0400
-Date: Tue, 9 May 2017 16:57:54 +0200
-From: Jan Kara <jack@suse.cz>
-To: Goldwyn Rodrigues <rgoldwyn@suse.de>
-Cc: linux-fsdevel@vger.kernel.org, jack@suse.com, hch@infradead.org,
-        linux-block@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
-        sagi@grimberg.me, avi@scylladb.com, axboe@kernel.dk,
-        linux-api@vger.kernel.org, willy@infradead.org, tom.leiming@gmail.com,
-        Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: Re: [PATCH 6/8] nowait aio: ext4
-Message-ID: <20170509145754.GG21467@quack2.suse.cz>
-References: <20170509122219.31756-1-rgoldwyn@suse.de>
- <20170509122219.31756-7-rgoldwyn@suse.de>
+Received: from p3nlsmtpcp01-04.prod.phx3.secureserver.net ([184.168.200.145]:51718
+        "EHLO p3nlsmtpcp01-04.prod.phx3.secureserver.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752426AbdEIORN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 9 May 2017 10:17:13 -0400
+Received: from mail-ua0-f182.google.com ([209.85.217.182]:33750)
+        by p3plcpnl0639.prod.phx3.secureserver.net with esmtpsa (TLSv1.2:ECDHE-RSA-AES128-GCM-SHA256:128)
+        (Exim 4.88)
+        (envelope-from <lakshmipathi.g@giis.co.in>)
+        id 1d85vt-0000RQ-CH
+        for linux-btrfs@vger.kernel.org; Tue, 09 May 2017 07:16:09 -0700
+Received: by mail-ua0-f182.google.com with SMTP id e28so1015850uah.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 09 May 2017 07:16:09 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170509122219.31756-7-rgoldwyn@suse.de>
+In-Reply-To: <20170503163819.GA10030@giis.co.in>
+References: <20170427100534.GA10404@giis.co.in> <20170502150601.GK23260@twin.jikos.cz>
+ <20170502153556.GM23260@twin.jikos.cz> <20170503163819.GA10030@giis.co.in>
+From: "Lakshmipathi.G" <lakshmipathi.g@giis.co.in>
+Date: Tue, 9 May 2017 19:46:08 +0530
+Message-ID: <CAKuJGC8SndPLuVDVtJZLEzYg-Vfh0U1Y-wF4pr093yTnjJfkXg@mail.gmail.com>
+Subject: Re: [PATCH] btrfs-progs: btrfs-convert: Add larger device support
+To: dsterba@suse.cz, quwenruo@cn.fujitsu.com, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue 09-05-17 07:22:17, Goldwyn Rodrigues wrote:
-> From: Goldwyn Rodrigues <rgoldwyn@suse.com>
-> 
-> Return EAGAIN if any of the following checks fail for direct I/O:
->   + i_rwsem is lockable
->   + Writing beyond end of file (will trigger allocation)
->   + Blocks are not allocated at the write location
-> 
-> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+created a test script but it fail to detect mk2fs. Test script 009
+also produces:
 
-The patch looks good. You can add:
+# ./convert-tests/009-common-inode-flags/test.sh
+    [TEST/conv]     common inode flags test, btrfs defaults
+failed: mke2fs -t ext4 -b 4096 -F
+/home/laks/centos/laks/BTRFS/btrfs-progs/tests/test.img
 
-Reviewed-by: Jan Kara <jack@suse.cz>
+Seems like run_check fails to detect mke2fs command. Something wrong
+with my setup or issue with run_check?
 
-								Honza
-
-> ---
->  fs/ext4/file.c | 20 ++++++++++++++++----
->  1 file changed, 16 insertions(+), 4 deletions(-)
-> 
-> diff --git a/fs/ext4/file.c b/fs/ext4/file.c
-> index cefa9835f275..2efdc6d4d3e8 100644
-> --- a/fs/ext4/file.c
-> +++ b/fs/ext4/file.c
-> @@ -216,7 +216,13 @@ ext4_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
->  		return ext4_dax_write_iter(iocb, from);
->  #endif
->  
-> -	inode_lock(inode);
-> +	if (iocb->ki_flags & IOCB_NOWAIT) {
-> +		if (!inode_trylock(inode))
-> +			return -EAGAIN;
-> +	} else {
-> +		inode_lock(inode);
-> +	}
-> +
->  	ret = ext4_write_checks(iocb, from);
->  	if (ret <= 0)
->  		goto out;
-> @@ -235,9 +241,15 @@ ext4_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
->  
->  	iocb->private = &overwrite;
->  	/* Check whether we do a DIO overwrite or not */
-> -	if (o_direct && ext4_should_dioread_nolock(inode) && !unaligned_aio &&
-> -	    ext4_overwrite_io(inode, iocb->ki_pos, iov_iter_count(from)))
-> -		overwrite = 1;
-> +	if (o_direct && !unaligned_aio) {
-> +		if (ext4_overwrite_io(inode, iocb->ki_pos, iov_iter_count(from))) {
-> +			if (ext4_should_dioread_nolock(inode))
-> +				overwrite = 1;
-> +		} else if (iocb->ki_flags & IOCB_NOWAIT) {
-> +			ret = -EAGAIN;
-> +			goto out;
-> +		}
-> +	}
->  
->  	ret = __generic_file_write_iter(iocb, from);
->  	inode_unlock(inode);
-> -- 
-> 2.12.0
-> 
 -- 
-Jan Kara <jack@suse.com>
-SUSE Labs, CR
+----
+Cheers,
+Lakshmipathi.G

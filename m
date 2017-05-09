@@ -1,110 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yb0-f196.google.com ([209.85.213.196]:33093 "EHLO
-        mail-yb0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752087AbdEEP5W (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 May 2017 11:57:22 -0400
-Received: by mail-yb0-f196.google.com with SMTP id d72so341816ybh.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 05 May 2017 08:57:21 -0700 (PDT)
-From: Josef Bacik <josef@toxicpanda.com>
-To: linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 2/3] btrfs: remove inode argument from repair_io_failure
-Date: Fri,  5 May 2017 11:57:14 -0400
-Message-Id: <1493999835-26731-3-git-send-email-jbacik@fb.com>
-In-Reply-To: <1493999835-26731-1-git-send-email-jbacik@fb.com>
-References: <1493999835-26731-1-git-send-email-jbacik@fb.com>
+Received: from mx0a-001b2d01.pphosted.com ([148.163.156.1]:35897 "EHLO
+        mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1750795AbdEIGTm (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 9 May 2017 02:19:42 -0400
+Received: from pps.filterd (m0098396.ppops.net [127.0.0.1])
+        by mx0a-001b2d01.pphosted.com (8.16.0.20/8.16.0.20) with SMTP id v4969nDf008454
+        for <linux-btrfs@vger.kernel.org>; Tue, 9 May 2017 02:19:41 -0400
+Received: from e23smtp07.au.ibm.com (e23smtp07.au.ibm.com [202.81.31.140])
+        by mx0a-001b2d01.pphosted.com with ESMTP id 2aaky76ph8-1
+        (version=TLSv1.2 cipher=AES256-SHA bits=256 verify=NOT)
+        for <linux-btrfs@vger.kernel.org>; Tue, 09 May 2017 02:19:41 -0400
+Received: from localhost
+        by e23smtp07.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+        for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+        Tue, 9 May 2017 16:19:39 +1000
+Received: from d23av06.au.ibm.com (d23av06.au.ibm.com [9.190.235.151])
+        by d23relay09.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id v496JSJb2425154
+        for <linux-btrfs@vger.kernel.org>; Tue, 9 May 2017 16:19:36 +1000
+Received: from d23av06.au.ibm.com (localhost [127.0.0.1])
+        by d23av06.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id v496J4Vs024650
+        for <linux-btrfs@vger.kernel.org>; Tue, 9 May 2017 16:19:04 +1000
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: Josef Bacik <josef@toxicpanda.com>
+Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH 1/3] Btrfs: replace tree->mapping with tree->private_data
+Date: Tue, 09 May 2017 11:48:41 +0530
+In-Reply-To: <1493999835-26731-2-git-send-email-jbacik@fb.com>
+References: <1493999835-26731-1-git-send-email-jbacik@fb.com> <1493999835-26731-2-git-send-email-jbacik@fb.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Message-Id: <2739487.yeMUBoeZhI@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Once we remove the btree_inode we won't have an inode to pass anymore, just pass
-the fs_info directly and the inum since we use that to print out the repair
-message.
+On Friday, May 05, 2017 11:57:13 AM Josef Bacik wrote:
+> For extent_io tree's we have carried the address_mapping of the inode around in
+> the io tree in order to pull the inode back out for calling into various tree
+> ops hooks.  This works fine when everything that has an extent_io_tree has an
+> inode.  But we are going to remove the btree_inode, so we need to change this.
+> Instead just have a generic void * for private data that we can initialize with,
+> and have all the tree ops use that instead.  This had a lot of cascading changes
+> but should be relatively straightforward.
+>
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
----
- fs/btrfs/extent_io.c | 16 +++++++---------
- fs/btrfs/extent_io.h |  6 +++---
- fs/btrfs/scrub.c     |  2 +-
- 3 files changed, 11 insertions(+), 13 deletions(-)
+The changes look fine,
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index acc7c68..de6f890 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1972,11 +1972,10 @@ int free_io_failure(struct btrfs_inode *inode, struct io_failure_record *rec)
-  * currently, there can be no more than two copies of every data bit. thus,
-  * exactly one rewrite is required.
-  */
--int repair_io_failure(struct btrfs_inode *inode, u64 start, u64 length,
--		u64 logical, struct page *page,
--		unsigned int pg_offset, int mirror_num)
-+int repair_io_failure(struct btrfs_fs_info *fs_info, u64 ino, u64 start,
-+		      u64 length, u64 logical, struct page *page,
-+		      unsigned int pg_offset, int mirror_num)
- {
--	struct btrfs_fs_info *fs_info = inode->root->fs_info;
- 	struct bio *bio;
- 	struct btrfs_device *dev;
- 	u64 map_length = 0;
-@@ -2035,7 +2034,7 @@ int repair_io_failure(struct btrfs_inode *inode, u64 start, u64 length,
- 
- 	btrfs_info_rl_in_rcu(fs_info,
- 		"read error corrected: ino %llu off %llu (dev %s sector %llu)",
--				  btrfs_ino(inode), start,
-+				  ino, start,
- 				  rcu_str_deref(dev->name), sector);
- 	btrfs_bio_counter_dec(fs_info);
- 	bio_put(bio);
-@@ -2055,8 +2054,7 @@ int repair_eb_io_failure(struct btrfs_fs_info *fs_info,
- 	for (i = 0; i < num_pages; i++) {
- 		struct page *p = eb->pages[i];
- 
--		ret = repair_io_failure(BTRFS_I(fs_info->btree_inode), start,
--					PAGE_SIZE, start, p,
-+		ret = repair_io_failure(fs_info, 0, start, PAGE_SIZE, start, p,
- 					start - page_offset(p), mirror_num);
- 		if (ret)
- 			break;
-@@ -2114,8 +2112,8 @@ int clean_io_failure(struct btrfs_inode *inode, u64 start, struct page *page,
- 		num_copies = btrfs_num_copies(fs_info, failrec->logical,
- 					      failrec->len);
- 		if (num_copies > 1)  {
--			repair_io_failure(inode, start, failrec->len,
--					  failrec->logical, page,
-+			repair_io_failure(fs_info, btrfs_ino(inode), start,
-+					  failrec->len, failrec->logical, page,
- 					  pg_offset, failrec->failed_mirror);
- 		}
- 	}
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index e4e01d1..fd04124 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -467,9 +467,9 @@ struct bio *btrfs_bio_clone(struct bio *bio, gfp_t gfp_mask);
- struct btrfs_fs_info;
- struct btrfs_inode;
- 
--int repair_io_failure(struct btrfs_inode *inode, u64 start, u64 length,
--		u64 logical, struct page *page,
--		unsigned int pg_offset, int mirror_num);
-+int repair_io_failure(struct btrfs_fs_info *fs_info, u64 ino, u64 start,
-+		      u64 length, u64 logical, struct page *page,
-+		      unsigned int pg_offset, int mirror_num);
- int clean_io_failure(struct btrfs_inode *inode, u64 start,
- 		struct page *page, unsigned int pg_offset);
- void end_extent_writepage(struct page *page, int err, u64 start, u64 end);
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index b0251eb..594d5c4 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -731,7 +731,7 @@ static int scrub_fixup_readpage(u64 inum, u64 offset, u64 root, void *fixup_ctx)
- 			ret = -EIO;
- 			goto out;
- 		}
--		ret = repair_io_failure(BTRFS_I(inode), offset, PAGE_SIZE,
-+		ret = repair_io_failure(fs_info, inum, offset, PAGE_SIZE,
- 					fixup->logical, page,
- 					offset - page_offset(page),
- 					fixup->mirror_num);
+Reviewed-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+
 -- 
-2.7.4
+chandan
 

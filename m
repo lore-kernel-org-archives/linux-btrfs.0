@@ -1,54 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:42214 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:42211 "EHLO
         userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753684AbdEIS54 (ORCPT
+        with ESMTP id S1753632AbdEIS54 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 May 2017 14:57:56 -0400
 From: Liu Bo <bo.li.liu@oracle.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@gmail.com>,
         Eryu Guan <eguan@redhat.com>
-Subject: [PATCH 4/6] fstests: regression test for btrfs buffered read's repair
-Date: Tue,  9 May 2017 11:56:09 -0600
-Message-Id: <1494352571-17199-5-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH 3/6] fstests: regression test for btrfs dio read repair
+Date: Tue,  9 May 2017 11:56:08 -0600
+Message-Id: <1494352571-17199-4-git-send-email-bo.li.liu@oracle.com>
 In-Reply-To: <1494352571-17199-1-git-send-email-bo.li.liu@oracle.com>
 References: <1494352571-17199-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This case tests whether buffered read can repair the bad copy if we
-have a good copy.
+This case tests whether dio read can repair the bad copy if we have
+a good copy.
 
-Commit 20a7db8ab3f2 ("btrfs: add dummy callback for readpage_io_failed
-and drop checks") introduced the regression.
+Commit 2dabb3248453 ("Btrfs: Direct I/O read: Work on sectorsized blocks")
+introduced the regression.
 
 The upstream fix is
-	Btrfs: bring back repair during read
+	Btrfs: fix invalid dereference in btrfs_retry_endio
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- tests/btrfs/141     | 116 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/141.out |  39 ++++++++++++++++++
+ tests/btrfs/140     | 115 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/140.out |  39 ++++++++++++++++++
  tests/btrfs/group   |   1 +
- 3 files changed, 156 insertions(+)
- create mode 100755 tests/btrfs/141
- create mode 100644 tests/btrfs/141.out
+ 3 files changed, 155 insertions(+)
+ create mode 100755 tests/btrfs/140
+ create mode 100644 tests/btrfs/140.out
 
-diff --git a/tests/btrfs/141 b/tests/btrfs/141
+diff --git a/tests/btrfs/140 b/tests/btrfs/140
 new file mode 100755
-index 0000000..70f2952
+index 0000000..09a9939
 --- /dev/null
-+++ b/tests/btrfs/141
-@@ -0,0 +1,116 @@
++++ b/tests/btrfs/140
+@@ -0,0 +1,115 @@
 +#! /bin/bash
-+# FS QA Test 141
++# FS QA Test 140
 +#
-+# Regression test for btrfs buffered read's repair during read.
++# Regression test for btrfs DIO read's repair during read.
 +#
-+# Commit 20a7db8ab3f2 ("btrfs: add dummy callback for readpage_io_failed
-+# and drop checks") introduced the regression.
-+#
++# Commit 2dabb3248453 ("Btrfs: Direct I/O read: Work on sectorsized blocks")
++# introduced the regression.
 +# The upstream fix is
-+# 	Btrfs: bring back repair during read
++# 	Btrfs: fix invalid dereference in btrfs_retry_endio
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (c) 2017 Liu Bo.  All Rights Reserved.
@@ -99,12 +98,13 @@ index 0000000..70f2952
 +
 +_require_btrfs_command inspect-internal dump-tree
 +_require_command "$FILEFRAG_PROG" filefrag
++_require_odirect
 +
 +get_physical()
 +{
-+        # $1 is logical address
-+        # print chunk tree and find devid 2 which is $SCRATCH_DEV
-+        $BTRFS_UTIL_PROG inspect-internal dump-tree -t 3 $SCRATCH_DEV | \
++	# $1 is logical address
++	# print chunk tree and find devid 2 which is $SCRATCH_DEV
++	$BTRFS_UTIL_PROG inspect-internal dump-tree -t 3 $SCRATCH_DEV | \
 +	grep $1 -A 6 | awk '($1 ~ /stripe/ && $3 ~ /devid/ && $4 ~ /1/) { print $6 }'
 +}
 +
@@ -134,34 +134,33 @@ index 0000000..70f2952
 +
 +_scratch_mount
 +
-+# step 3, 128k buffered read (this read can repair bad copy)
++# step 3, 128k dio read (this read can repair bad copy)
 +echo "step 3......repair the bad copy" >>$seqres.full
 +
 +# since raid1 consists of two copies, and the following read may read the good
-+# copy directly, lets loop 10 times here and discard output that buffered reads
++# copy directly, so lets loop 10 times here and discard output that dio reads
 +# give
 +for i in `seq 1 10`; do
-+	echo 3 > /proc/sys/vm/drop_caches
-+	$XFS_IO_PROG -c "pread -b 128K 0 128K" "$SCRATCH_MNT/foobar" > /dev/null
-+	_get_current_dmesg | grep -q -e "csum failed" && break;
++	$XFS_IO_PROG -d -c "pread -b 128K 0 128K" "$SCRATCH_MNT/foobar" > /dev/null
++	_get_current_dmesg | grep -q -e "csum failed" && break
 +done
 +
 +_scratch_unmount
 +
 +# check if the repair works
-+$XFS_IO_PROG -c "pread -v -b 512 $physical_on_scratch 512" $SCRATCH_DEV | _filter_xfs_io
++$XFS_IO_PROG -d -c "pread -v -b 512 $physical_on_scratch 512" $SCRATCH_DEV | _filter_xfs_io
 +
 +_scratch_dev_pool_put
 +# success, all done
 +status=0
 +exit
-diff --git a/tests/btrfs/141.out b/tests/btrfs/141.out
+diff --git a/tests/btrfs/140.out b/tests/btrfs/140.out
 new file mode 100644
-index 0000000..2e08fc2
+index 0000000..c8565f5
 --- /dev/null
-+++ b/tests/btrfs/141.out
++++ b/tests/btrfs/140.out
 @@ -0,0 +1,39 @@
-+QA output created by 141
++QA output created by 140
 +wrote 131072/131072 bytes at offset 0
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
 +wrote 65536/65536 bytes at offset 136708096
@@ -201,14 +200,14 @@ index 0000000..2e08fc2
 +read 512/512 bytes at offset 136708096
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 1cb9c98..7b380e5 100644
+index 9d4b80b..1cb9c98 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -142,3 +142,4 @@
+@@ -141,3 +141,4 @@
+ 137 auto quick send
  138 auto compress
  139 auto qgroup
- 140 auto quick
-+141 auto quick
++140 auto quick
 -- 
 2.5.0
 

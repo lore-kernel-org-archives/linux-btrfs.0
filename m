@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:37756 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:44674 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754861AbdEIPuB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 9 May 2017 11:50:01 -0400
+        id S1753437AbdEIPt6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 9 May 2017 11:49:58 -0400
 From: Jeff Layton <jlayton@redhat.com>
 To: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
@@ -17,44 +17,53 @@ Cc: dhowells@redhat.com, akpm@linux-foundation.org, hch@infradead.org,
         viro@zeniv.linux.org.uk, corbet@lwn.net, neilb@suse.de, clm@fb.com,
         tytso@mit.edu, axboe@kernel.dk, josef@toxicpanda.com,
         hubcap@omnibond.com, rpeterso@redhat.com, bo.li.liu@oracle.com
-Subject: [PATCH v4 07/27] orangefs: don't call filemap_write_and_wait from fsync
-Date: Tue,  9 May 2017 11:49:10 -0400
-Message-Id: <20170509154930.29524-8-jlayton@redhat.com>
+Subject: [PATCH v4 05/27] btrfs: btrfs_wait_tree_block_writeback can be void return
+Date: Tue,  9 May 2017 11:49:08 -0400
+Message-Id: <20170509154930.29524-6-jlayton@redhat.com>
 In-Reply-To: <20170509154930.29524-1-jlayton@redhat.com>
 References: <20170509154930.29524-1-jlayton@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Orangefs doesn't do buffered writes yet, so there's no point in
-initiating and waiting for writeback.
+Nothing checks its return value.
 
 Signed-off-by: Jeff Layton <jlayton@redhat.com>
-Reviewed-by: Christoph Hellwig <hch@lst.de>
-Acked-by: Mike Marshall <hubcap@omnibond.com>
 ---
- fs/orangefs/file.c | 5 +----
- 1 file changed, 1 insertion(+), 4 deletions(-)
+ fs/btrfs/disk-io.c | 6 +++---
+ fs/btrfs/disk-io.h | 2 +-
+ 2 files changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/fs/orangefs/file.c b/fs/orangefs/file.c
-index e6bbc8083d77..17ab42c4db52 100644
---- a/fs/orangefs/file.c
-+++ b/fs/orangefs/file.c
-@@ -646,14 +646,11 @@ static int orangefs_fsync(struct file *file,
- 		       loff_t end,
- 		       int datasync)
- {
--	int ret = -EINVAL;
-+	int ret;
- 	struct orangefs_inode_s *orangefs_inode =
- 		ORANGEFS_I(file_inode(file));
- 	struct orangefs_kernel_op_s *new_op = NULL;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index eb1ee7b6f532..8c479bd5534a 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1222,10 +1222,10 @@ int btrfs_write_tree_block(struct extent_buffer *buf)
+ 					buf->start + buf->len - 1);
+ }
  
--	/* required call */
--	filemap_write_and_wait_range(file->f_mapping, start, end);
--
- 	new_op = op_alloc(ORANGEFS_VFS_OP_FSYNC);
- 	if (!new_op)
- 		return -ENOMEM;
+-int btrfs_wait_tree_block_writeback(struct extent_buffer *buf)
++void btrfs_wait_tree_block_writeback(struct extent_buffer *buf)
+ {
+-	return filemap_fdatawait_range(buf->pages[0]->mapping,
+-				       buf->start, buf->start + buf->len - 1);
++	filemap_fdatawait_range(buf->pages[0]->mapping,
++			        buf->start, buf->start + buf->len - 1);
+ }
+ 
+ struct extent_buffer *read_tree_block(struct btrfs_fs_info *fs_info, u64 bytenr,
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index 2e0ec29bfd69..9cc87835abb5 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -127,7 +127,7 @@ int btrfs_wq_submit_bio(struct btrfs_fs_info *fs_info, struct inode *inode,
+ 			extent_submit_bio_hook_t *submit_bio_done);
+ unsigned long btrfs_async_submit_limit(struct btrfs_fs_info *info);
+ int btrfs_write_tree_block(struct extent_buffer *buf);
+-int btrfs_wait_tree_block_writeback(struct extent_buffer *buf);
++void btrfs_wait_tree_block_writeback(struct extent_buffer *buf);
+ int btrfs_init_log_root_tree(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_fs_info *fs_info);
+ int btrfs_add_log_tree(struct btrfs_trans_handle *trans,
 -- 
 2.9.3
 

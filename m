@@ -1,48 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:38367 "EHLO
-        mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751913AbdEJHsL (ORCPT
+Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:55595 "EHLO
+        cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751756AbdEJIkd (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 May 2017 03:48:11 -0400
-From: Martin Steigerwald <martin@lichtvoll.de>
-To: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+        Wed, 10 May 2017 04:40:33 -0400
 Subject: Re: runtime btrfsck
-Date: Wed, 10 May 2017 09:48:07 +0200
-Message-ID: <1801706.Ls22q1bWhG@merkaba>
-In-Reply-To: <5d86903f-96f8-b61c-16b0-15ba9ac48986@profihost.ag>
-References: <9267c96a-72a7-0726-d058-4b2589d7e73e@profihost.ag> <f5c610b2-7400-2507-9db2-021b22c0b6d9@profihost.ag> <5d86903f-96f8-b61c-16b0-15ba9ac48986@profihost.ag>
+To: Hugo Mills <hugo@carfax.org.uk>, Roman Mamedov <rm@romanrm.net>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <9267c96a-72a7-0726-d058-4b2589d7e73e@profihost.ag>
+ <f5c610b2-7400-2507-9db2-021b22c0b6d9@profihost.ag>
+ <5d86903f-96f8-b61c-16b0-15ba9ac48986@profihost.ag>
+ <20170510121840.06aa01b2@natsu>
+ <39924a38-4c6a-b0ea-81a7-64c1d72cf7be@profihost.ag>
+ <20170510074052.GG9701@carfax.org.uk>
+From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
+Message-ID: <6b19da67-47a3-6f75-a892-8812b84817ea@profihost.ag>
+Date: Wed, 10 May 2017 10:40:31 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20170510074052.GG9701@carfax.org.uk>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Stefan Priebe - Profihost AG - 10.05.17, 09:02:
-> I'm now trying btrfs progs 4.10.2. Is anybody out there who can tell me
-> something about the expected runtime or how to fix bad key ordering?
+Am 10.05.2017 um 09:40 schrieb Hugo Mills:
+> On Wed, May 10, 2017 at 09:36:30AM +0200, Stefan Priebe - Profihost AG wrote:
+>> Hello Roman,
+>>
+>> the FS is mountable. It just goes readonly when trying to write some data.
+>>
+>> The kernel msgs are:
+>> BTRFS critical (device dm-2): corrupt leaf, bad key order:
+>> block=163316514816,root=1, slot=39
+>> BTRFS critical (device dm-2): corrupt leaf, bad key order:
+>> block=163322413056,root=1, slot=74
+>> BTRFS critical (device dm-2): corrupt leaf, bad key order:
+>> block=163325722624,root=1, slot=63
+>> BTRFS critical (device dm-2): corrupt leaf, bad key order:
+>> block=163316514816,root=1, slot=39
+>> BTRFS: error (device dm-2) in btrfs_drop_snapshot:8839: errno=-5 IO failure
+>> BTRFS info (device dm-2): forced readonly
+>> BTRFS info (device dm-2): delayed_refs has NO entry
+> 
+>    Can you show the output of btrfs-debug-tree -b <blocknum>, where
+> <blocknum> is each of the three "block=" values above?
 
-I had a similar issue which remained unresolved.
+Can do that. But the lists are very long - should i upload them to
+pastebin? Is it ok to remove the name atribute - which provides filenames?
 
-But I clearly saw that btrfs check was running in a loop, see thread:
+Stefan
 
-[4.9] btrfs check --repair looping over file extent discount errors
 
-So it would be interesting to see the exact output of btrfs check, maybe there 
-is something like repeated numbers that also indicate a loop.
-
-I was about to say that BTRFS is production ready before this issue happened. 
-I still think it for a lot of setup mostly is, as at least the "I get stuck on 
-the CPU while searching for free space" issue seems to be gone since about 
-anything between 4.5/4.6 kernels. I also think so regarding absence of data 
-loss. I was able to copy over all of the data I needed of the broken 
-filesystem.
-
-Yet, when it comes to btrfs check? Its still quite rudimentary if you ask me.  
-So unless someone has a clever idea here and shares it with you, it may be 
-needed to backup anything you can from this filesystem and then start over from 
-scratch. As to my past experience something like xfs_repair surpasses btrfs 
-check in the ability to actually fix broken filesystem by a great extent.
-
-Ciao,
--- 
-Martin
+>    Hugo.
+> 
+>> Greets,
+>> Stefan
+>> Am 10.05.2017 um 09:18 schrieb Roman Mamedov:
+>>> On Wed, 10 May 2017 09:02:46 +0200
+>>> Stefan Priebe - Profihost AG <s.priebe@profihost.ag> wrote:
+>>>
+>>>> how to fix bad key ordering?
+>>>
+>>> You should clarify does the FS in question mount (read-write? read-only?)
+>>> and what are the kernel messages if it does not.
+>>>
+> 

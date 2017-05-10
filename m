@@ -1,61 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:47964 "EHLO
-        cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751756AbdEJImK (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 May 2017 04:42:10 -0400
-Subject: Re: runtime btrfsck
+Received: from rin.romanrm.net ([91.121.86.59]:45712 "EHLO rin.romanrm.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752314AbdEJIw5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 10 May 2017 04:52:57 -0400
+Date: Wed, 10 May 2017 13:52:55 +0500
+From: Roman Mamedov <rm@romanrm.net>
 To: Martin Steigerwald <martin@lichtvoll.de>
-References: <9267c96a-72a7-0726-d058-4b2589d7e73e@profihost.ag>
- <f5c610b2-7400-2507-9db2-021b22c0b6d9@profihost.ag>
- <5d86903f-96f8-b61c-16b0-15ba9ac48986@profihost.ag>
- <1801706.Ls22q1bWhG@merkaba>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
-Message-ID: <bed8c67a-1ad1-64a0-a04d-16fa9ecd3423@profihost.ag>
-Date: Wed, 10 May 2017 10:42:08 +0200
-MIME-Version: 1.0
+Cc: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: runtime btrfsck
+Message-ID: <20170510135255.790fbe39@natsu>
 In-Reply-To: <1801706.Ls22q1bWhG@merkaba>
-Content-Type: text/plain; charset=windows-1252
+References: <9267c96a-72a7-0726-d058-4b2589d7e73e@profihost.ag>
+        <f5c610b2-7400-2507-9db2-021b22c0b6d9@profihost.ag>
+        <5d86903f-96f8-b61c-16b0-15ba9ac48986@profihost.ag>
+        <1801706.Ls22q1bWhG@merkaba>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
-Am 10.05.2017 um 09:48 schrieb Martin Steigerwald:
-> Stefan Priebe - Profihost AG - 10.05.17, 09:02:
->> I'm now trying btrfs progs 4.10.2. Is anybody out there who can tell me
->> something about the expected runtime or how to fix bad key ordering?
-> 
-> I had a similar issue which remained unresolved.
-> But I clearly saw that btrfs check was running in a loop, see thread:
-> [4.9] btrfs check --repair looping over file extent discount errors
-> 
-> So it would be interesting to see the exact output of btrfs check, maybe there 
-> is something like repeated numbers that also indicate a loop.
+On Wed, 10 May 2017 09:48:07 +0200
+Martin Steigerwald <martin@lichtvoll.de> wrote:
 
-Output is just:
-enabling repair mode
-Checking filesystem on /dev/mapper/crypt_md0
-UUID: 37b15dd8-b2e1-4585-98d0-cc0fa2a5a7c9
-bad key ordering 39 40
-checking extents [.]
-
-even after 2,5 weeks running.
-
-Stefan
-
-> I was about to say that BTRFS is production ready before this issue happened. 
-> I still think it for a lot of setup mostly is, as at least the "I get stuck on 
-> the CPU while searching for free space" issue seems to be gone since about 
-> anything between 4.5/4.6 kernels. I also think so regarding absence of data 
-> loss. I was able to copy over all of the data I needed of the broken 
-> filesystem.
-> 
 > Yet, when it comes to btrfs check? Its still quite rudimentary if you ask me.  
-> So unless someone has a clever idea here and shares it with you, it may be 
-> needed to backup anything you can from this filesystem and then start over from 
-> scratch. As to my past experience something like xfs_repair surpasses btrfs 
-> check in the ability to actually fix broken filesystem by a great extent.
-> 
-> Ciao,
-> 
+
+Indeed it is. It may or may not be possible to build a perfect Fsck, but IMO
+for the time being, what's most sorely missing, is some sort of a knowingly
+destructive repair mode, as in "I don't care about partial user data loss,
+just whack the FS metadata into full logical consistency at any means
+necessary".
+
+Also feels like it doesn't currently deal with the majority of actual
+in-real-world corruptions, notably the "parent transid failure" (even by a few
+dozens increments) which it can only helpfully "Ignore" during repair.
+
+So even with a minor corruption (something wonky in just ONE block of a
+multi-terabyte FS) the answer is way too often "nuke the entire thing and
+restore from backups".
+
+-- 
+With respect,
+Roman

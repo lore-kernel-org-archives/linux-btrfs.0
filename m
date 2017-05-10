@@ -1,13 +1,13 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:25775 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751019AbdEJCg7 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 May 2017 22:36:59 -0400
+        with ESMTP id S1751264AbdEJChB (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 May 2017 22:37:01 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>, <dsterba@suse.cz>
-Subject: [RFC PATCH v3 3/6] btrfs: qgroup: Return actually freed bytes for qgroup release or free data
-Date: Wed, 10 May 2017 10:36:46 +0800
-Message-ID: <20170510023649.31331-4-quwenruo@cn.fujitsu.com>
+Subject: [RFC PATCH v3 2/6] btrfs: qgroup: Cleanup btrfs_qgroup_prepare_account_extents function
+Date: Wed, 10 May 2017 10:36:45 +0800
+Message-ID: <20170510023649.31331-3-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20170510023649.31331-1-quwenruo@cn.fujitsu.com>
 References: <20170510023649.31331-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -15,63 +15,139 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_qgroup_release/free_data() only returns 0 or minus error
-number(ENOMEM is the only possible error).
+Quite a lot of qgroup corruption happens due to wrong timing of calling
+btrfs_qgroup_prepare_account_extents().
 
-This is normally good enough, but sometimes we need the accurate byte
-number it freed/released.
+Since the safest timing is calling it just before
+btrfs_qgroup_account_extents(), there is no need to separate these 2
+function.
 
-Change it to return actually released/freed bytenr number instead of 0
-for success.
-And slightly modify related extent_changeset structure, since in btrfs
-one none-hole data extent won't be larger than 128M, so "unsigned int"
-is large enough for the use case.
+Merging them will make code cleaner and less bug prone.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/extent-tree.c | 2 +-
- fs/btrfs/extent_io.h   | 2 +-
- fs/btrfs/qgroup.c      | 1 +
- 3 files changed, 3 insertions(+), 2 deletions(-)
+ fs/btrfs/qgroup.c      | 50 +++++++++++++++++---------------------------------
+ fs/btrfs/qgroup.h      |  2 --
+ fs/btrfs/transaction.c | 10 ----------
+ 3 files changed, 17 insertions(+), 45 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index e390451c72e6..4f62696131a6 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4298,7 +4298,7 @@ int btrfs_check_data_free_space(struct inode *inode, u64 start, u64 len)
- 
- 	/* Use new btrfs_qgroup_reserve_data to reserve precious data space. */
- 	ret = btrfs_qgroup_reserve_data(inode, start, len);
--	if (ret)
-+	if (ret < 0)
- 		btrfs_free_reserved_data_space_noquota(inode, start, len);
- 	return ret;
- }
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 1eafa2f0ede3..cc1b08fa9fe7 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -205,7 +205,7 @@ struct extent_buffer {
-  */
- struct extent_changeset {
- 	/* How many bytes are set/cleared in this operation */
--	u64 bytes_changed;
-+	unsigned int bytes_changed;
- 
- 	/* Changed ranges */
- 	struct ulist range_changed;
 diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 9f01c25469f7..ad2e99491395 100644
+index 905fed1ee0dd..9f01c25469f7 100644
 --- a/fs/btrfs/qgroup.c
 +++ b/fs/btrfs/qgroup.c
-@@ -2886,6 +2886,7 @@ static int __btrfs_qgroup_release_data(struct inode *inode, u64 start, u64 len,
- 		btrfs_qgroup_free_refroot(BTRFS_I(inode)->root->fs_info,
- 				BTRFS_I(inode)->root->objectid,
- 				changeset.bytes_changed);
-+	ret = changeset.bytes_changed;
- out:
- 	ulist_release(&changeset.range_changed);
+@@ -1403,38 +1403,6 @@ int btrfs_limit_qgroup(struct btrfs_trans_handle *trans,
  	return ret;
+ }
+ 
+-int btrfs_qgroup_prepare_account_extents(struct btrfs_trans_handle *trans,
+-					 struct btrfs_fs_info *fs_info)
+-{
+-	struct btrfs_qgroup_extent_record *record;
+-	struct btrfs_delayed_ref_root *delayed_refs;
+-	struct rb_node *node;
+-	u64 qgroup_to_skip;
+-	int ret = 0;
+-
+-	delayed_refs = &trans->transaction->delayed_refs;
+-	qgroup_to_skip = delayed_refs->qgroup_to_skip;
+-
+-	/*
+-	 * No need to do lock, since this function will only be called in
+-	 * btrfs_commit_transaction().
+-	 */
+-	node = rb_first(&delayed_refs->dirty_extent_root);
+-	while (node) {
+-		record = rb_entry(node, struct btrfs_qgroup_extent_record,
+-				  node);
+-		if (WARN_ON(!record->old_roots))
+-			ret = btrfs_find_all_roots(NULL, fs_info,
+-					record->bytenr, 0, &record->old_roots);
+-		if (ret < 0)
+-			break;
+-		if (qgroup_to_skip)
+-			ulist_del(record->old_roots, qgroup_to_skip, 0);
+-		node = rb_next(node);
+-	}
+-	return ret;
+-}
+-
+ int btrfs_qgroup_trace_extent_nolock(struct btrfs_fs_info *fs_info,
+ 				struct btrfs_delayed_ref_root *delayed_refs,
+ 				struct btrfs_qgroup_extent_record *record)
+@@ -2051,6 +2019,19 @@ int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans,
+ 
+ 		if (!ret) {
+ 			/*
++			 * old roots should be searched when inserting qgroup
++			 * extent record
++			 */
++			if (WARN_ON(!record->old_roots)) {
++				/* Search commit root to find old_roots */
++				ret = btrfs_find_all_roots(NULL, fs_info,
++						record->bytenr, 0,
++						&record->old_roots);
++				if (ret < 0)
++					goto cleanup;
++			}
++
++			/*
+ 			 * Use SEQ_LAST as time_seq to do special search, which
+ 			 * doesn't lock tree or delayed_refs and search current
+ 			 * root. It's safe inside commit_transaction().
+@@ -2059,8 +2040,11 @@ int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans,
+ 					record->bytenr, SEQ_LAST, &new_roots);
+ 			if (ret < 0)
+ 				goto cleanup;
+-			if (qgroup_to_skip)
++			if (qgroup_to_skip) {
+ 				ulist_del(new_roots, qgroup_to_skip, 0);
++				ulist_del(record->old_roots, qgroup_to_skip,
++					  0);
++			}
+ 			ret = btrfs_qgroup_account_extent(trans, fs_info,
+ 					record->bytenr, record->num_bytes,
+ 					record->old_roots, new_roots);
+diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+index fe04d3f295c6..38d14d4575c0 100644
+--- a/fs/btrfs/qgroup.h
++++ b/fs/btrfs/qgroup.h
+@@ -134,8 +134,6 @@ int btrfs_limit_qgroup(struct btrfs_trans_handle *trans,
+ int btrfs_read_qgroup_config(struct btrfs_fs_info *fs_info);
+ void btrfs_free_qgroup_config(struct btrfs_fs_info *fs_info);
+ struct btrfs_delayed_extent_op;
+-int btrfs_qgroup_prepare_account_extents(struct btrfs_trans_handle *trans,
+-					 struct btrfs_fs_info *fs_info);
+ /*
+  * Inform qgroup to trace one dirty extent, its info is recorded in @record.
+  * So qgroup can account it at transaction committing time.
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 2168654c90a1..ee5b41d297d1 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1374,9 +1374,6 @@ static int qgroup_account_snapshot(struct btrfs_trans_handle *trans,
+ 	ret = commit_fs_roots(trans, fs_info);
+ 	if (ret)
+ 		goto out;
+-	ret = btrfs_qgroup_prepare_account_extents(trans, fs_info);
+-	if (ret < 0)
+-		goto out;
+ 	ret = btrfs_qgroup_account_extents(trans, fs_info);
+ 	if (ret < 0)
+ 		goto out;
+@@ -2180,13 +2177,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+ 		goto scrub_continue;
+ 	}
+ 
+-	ret = btrfs_qgroup_prepare_account_extents(trans, fs_info);
+-	if (ret) {
+-		mutex_unlock(&fs_info->tree_log_mutex);
+-		mutex_unlock(&fs_info->reloc_mutex);
+-		goto scrub_continue;
+-	}
+-
+ 	/*
+ 	 * Since fs roots are all committed, we can get a quite accurate
+ 	 * new_roots. So let's do quota accounting.
 -- 
 2.12.2
 

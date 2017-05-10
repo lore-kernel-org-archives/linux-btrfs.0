@@ -1,103 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:1444 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:25775 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751264AbdEJChD (ORCPT
+        with ESMTP id S1751141AbdEJChD (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 May 2017 22:37:03 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>, <dsterba@suse.cz>
-Subject: [RFC PATCH v3 4/6] btrfs: qgroup: Fix qgroup reserved space underflow caused by buffered write and quota enable
-Date: Wed, 10 May 2017 10:36:47 +0800
-Message-ID: <20170510023649.31331-5-quwenruo@cn.fujitsu.com>
-In-Reply-To: <20170510023649.31331-1-quwenruo@cn.fujitsu.com>
-References: <20170510023649.31331-1-quwenruo@cn.fujitsu.com>
+Subject: [RFC PATCH v3 0/6] Qgroup fixes, Non-stack version
+Date: Wed, 10 May 2017 10:36:43 +0800
+Message-ID: <20170510023649.31331-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[BUG]
-Under the following case, we can underflow qgroup reserved space.
+The remaining qgroup fixes patches, based on the Chris' for-linus-4.12
+branch with commit 9bcaaea7418d09691f1ffab5c49aacafe3eef9d0 as base.
 
-            Task A                |            Task B
----------------------------------------------------------------
- Quota disabled                   |
- Buffered write                   |
- |- btrfs_check_data_free_space() |
- |  *NO* qgroup space is reserved |
- |  since quota is *DISABLED*     |
- |- All pages are copied to page  |
-    cache                         |
-                                  | Enable quota
-                                  | Quota scan finished
-                                  |
-                                  | Sync_fs
-                                  | |- run_delalloc_range
-                                  | |- Write pages
-                                  | |- btrfs_finish_ordered_io
-                                  |    |- insert_reserved_file_extent
-                                  |       |- btrfs_qgroup_release_data()
-                                  |          Since no qgroup space is
-                                             reserved in Task A, we
-                                             underflow qgroup reserved
-                                             space
-This can be detected by fstest btrfs/104.
+Can be fetched from github:
+https://github.com/adam900710/linux/tree/qgroup_fixes_non_stack
 
-[CAUSE]
-In insert_reserved_file_extent() we info qgroup to release the @ram_bytes
-size of qgroup reserved_space under all case.
-And btrfs_qgroup_release_data() will check if qgroup is enabled.
+Despite the 5th patch, patches are mostly unchanged.
+Only minor conflicts are addressed in this update.
 
-However in above case, the buffered write happens before quota is
-enabled, so we don't havee reserved space for that range.
+The 5th patch chooses a different method to reduce stack memory usage.
 
-[FIX]
-In insert_reserved_file_extent(), we info qgroup to release the acctual
-byte number it released.
-In above case, since we don't have reserved space, we info qgroup to
-release 0 byte, so the problem can be fixed.
+Instead of allocating extent_changeset structure on stack, this time only a
+pointer of extent_changeset is allocated on stack.
 
-And thanks to the @reserved parameter introduced by qgroup rework, and
-previous patch to return release bytes, the fix can be as small as less
-than 10 lines.
+And real extent_changeset is allocated inside btrfs_qgroup_reserve_data().
+The impact to stack memory usage of quota disabled case is reduced to minimal.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- fs/btrfs/inode.c | 11 ++++++++---
- 1 file changed, 8 insertions(+), 3 deletions(-)
+While the error handler routine is not affected either.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 17cbe9306faf..a1294d5baef5 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2143,6 +2143,7 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
- 	struct btrfs_path *path;
- 	struct extent_buffer *leaf;
- 	struct btrfs_key ins;
-+	u64 qg_released;
- 	int extent_inserted = 0;
- 	int ret;
- 
-@@ -2198,13 +2199,17 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
- 	ins.objectid = disk_bytenr;
- 	ins.offset = disk_num_bytes;
- 	ins.type = BTRFS_EXTENT_ITEM_KEY;
--	ret = btrfs_alloc_reserved_file_extent(trans, root->root_key.objectid,
--			btrfs_ino(BTRFS_I(inode)), file_pos, ram_bytes, &ins);
-+
- 	/*
- 	 * Release the reserved range from inode dirty range map, as it is
- 	 * already moved into delayed_ref_head
- 	 */
--	btrfs_qgroup_release_data(inode, file_pos, ram_bytes);
-+	ret = btrfs_qgroup_release_data(inode, file_pos, ram_bytes);
-+	if (ret < 0)
-+		goto out;
-+	qg_released = ret;
-+	ret = btrfs_alloc_reserved_file_extent(trans, root->root_key.objectid,
-+			btrfs_ino(BTRFS_I(inode)), file_pos, qg_released, &ins);
- out:
- 	btrfs_free_path(path);
- 
+v2:
+  Add reviewed-by tag for 2nd patch
+  Update the first patch to follow the new trace point standard
+RFC v3:
+  Use non-stack (dyanamic allocation) for extent_changeset structure, in
+  5th patch, to reduce impact for quota disabled cases.
+  Rebase to latest for-linus-4.12 branch.
+
+Qu Wenruo (6):
+  btrfs: qgroup: Add quick exit for non-fs extents
+  btrfs: qgroup: Cleanup btrfs_qgroup_prepare_account_extents function
+  btrfs: qgroup: Return actually freed bytes for qgroup release or free
+    data
+  btrfs: qgroup: Fix qgroup reserved space underflow caused by buffered
+    write and quota enable
+  btrfs: qgroup: Introduce extent changeset for qgroup reserve functions
+  btrfs: qgroup: Fix qgroup reserved space underflow by only freeing
+    reserved ranges
+
+ fs/btrfs/ctree.h       |  12 ++-
+ fs/btrfs/extent-tree.c |  30 +++++---
+ fs/btrfs/extent_io.h   |  36 ++++++++-
+ fs/btrfs/file.c        |  41 ++++++----
+ fs/btrfs/inode-map.c   |   4 +-
+ fs/btrfs/inode.c       |  58 +++++++++-----
+ fs/btrfs/ioctl.c       |   9 ++-
+ fs/btrfs/qgroup.c      | 205 ++++++++++++++++++++++++++++++++++++-------------
+ fs/btrfs/qgroup.h      |   8 +-
+ fs/btrfs/relocation.c  |  12 +--
+ fs/btrfs/transaction.c |  10 ---
+ 11 files changed, 297 insertions(+), 128 deletions(-)
+
 -- 
 2.12.2
 

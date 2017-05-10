@@ -1,59 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:2171 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751709AbdEJDjv (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 May 2017 23:39:51 -0400
-Subject: Re: [PATCH v3] btrfs: relocation: Enhance kernel error output for
- relocation
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>, <bo.li.liu@oracle.com>,
-        <fdmanana@gmail.com>
-References: <20170215013905.17677-1-quwenruo@cn.fujitsu.com>
- <20170509172943.GI5491@twin.jikos.cz>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <436b506c-4ab7-408c-130b-1cebe00f2746@cn.fujitsu.com>
-Date: Wed, 10 May 2017 11:39:40 +0800
+Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:14898 "EHLO
+        cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751581AbdEJHCw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 10 May 2017 03:02:52 -0400
+Subject: Re: runtime btrfsck
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <9267c96a-72a7-0726-d058-4b2589d7e73e@profihost.ag>
+ <f5c610b2-7400-2507-9db2-021b22c0b6d9@profihost.ag>
+From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
+Message-ID: <5d86903f-96f8-b61c-16b0-15ba9ac48986@profihost.ag>
+Date: Wed, 10 May 2017 09:02:46 +0200
 MIME-Version: 1.0
-In-Reply-To: <20170509172943.GI5491@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <f5c610b2-7400-2507-9db2-021b22c0b6d9@profihost.ag>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I'm now trying btrfs progs 4.10.2. Is anybody out there who can tell me
+something about the expected runtime or how to fix bad key ordering?
 
+Greets,
+Stefan
 
-At 05/10/2017 01:29 AM, David Sterba wrote:
-> On Wed, Feb 15, 2017 at 09:39:05AM +0800, Qu Wenruo wrote:
->> When balance(relocation) fails, btrfs-progs will report like:
->>
->> ERROR: error during balancing '/mnt/scratch': Input/output error
->> There may be more info in syslog - try dmesg | tail
->>
->> However kernel can't provide may useful info in many cases to locate the
->> problem.
->>
->> This patch will add error messages in relocation to help user and
->> developer to locate the problem.
+Am 06.05.2017 um 07:56 schrieb Stefan Priebe - Profihost AG:
+> It's still running. Is this the normal behaviour? Is there any other way
+> to fix the bad key ordering?
 > 
-> I think it's too verbose for a user, and not really helpful what to do
-> after such error message appears in the log. The errors translate name
-> of the last function that failed, so the user would need to be familiar
-> with the inner workings of the balance to make sense of it.
-
-Yes, normal user may never need such verbose output.
-
-But it will help developers or support guys to wipe out some really easy 
-cases.
-
+> Greets,
+> Stefan
 > 
-> The meessages may make sense to a developer, but then it's not necessary
-> to print them as btrfs_err, but btrfs_debug.
-
-I also considered btrfs_debug, but the problem is btrfs_debug() depend 
-on either CONFIG_DYANMIC_DEBUG or DEBUG.
-
-So when problem happens in real world, we're too late to ensure such output.
-
-Thanks,
-Qu
-
-
-
+> Am 02.05.2017 um 08:29 schrieb Stefan Priebe - Profihost AG:
+>> Hello list,
+>>
+>> i wanted to check an fs cause it has bad key ordering.
+>>
+>> But btrfscheck is now running since 7 days. Current output:
+>> # btrfsck -p --repair /dev/mapper/crypt_md0
+>> enabling repair mode
+>> Checking filesystem on /dev/mapper/crypt_md0
+>> UUID: 37b15dd8-b2e1-4585-98d0-cc0fa2a5a7c9
+>> bad key ordering 39 40
+>> checking extents [O]
+>>
+>> FS is a 12TB BTRFS Raid 0 over 3 mdadm Raid 5 devices. How long should
+>> btrfsck run and is there any way to speed it up? btrfs tools is 4.8.5
+>>
+>> Thanks!
+>>
+>> Greets,
+>> Stefan
+>>

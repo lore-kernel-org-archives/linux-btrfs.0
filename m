@@ -1,62 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:34633 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1752130AbdEKT4s (ORCPT
+Received: from vsmx011.vodafonemail.xion.oxcs.net ([153.92.174.89]:45392 "EHLO
+        vsmx011.vodafonemail.xion.oxcs.net" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751282AbdEKUZG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 May 2017 15:56:48 -0400
-Subject: Re: btrfs list corruption and soft lockups while testing writeback
- error handling
-To: Jeff Layton <jlayton@redhat.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <1494501232.2625.3.camel@redhat.com>
- <1494532377.2771.3.camel@redhat.com>
-CC: Liu Bo <bo.li.liu@oracle.com>
-From: Chris Mason <clm@fb.com>
-Message-ID: <30759db2-127f-a9e6-2c77-5734137ce52c@fb.com>
-Date: Thu, 11 May 2017 15:56:35 -0400
+        Thu, 11 May 2017 16:25:06 -0400
+Received: from vsmx003.vodafonemail.xion.oxcs.net (unknown [192.168.75.197])
+        by mta-5-out.mta.xion.oxcs.net (Postfix) with ESMTP id 682E03E0324
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 May 2017 20:17:16 +0000 (UTC)
+Received: from [192.168.0.1] (unknown [91.10.21.65])
+        by mta-7-out.mta.xion.oxcs.net (Postfix) with ESMTPA id 0B719300490
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 May 2017 20:17:13 +0000 (UTC)
+From: Ochi <ochi@arcor.de>
+Subject: Creating btrfs RAID on LUKS devs makes devices disappear
+To: linux-btrfs@vger.kernel.org
+Message-ID: <0e7ef6b4-7a81-fc66-942e-411f238d631e@arcor.de>
+Date: Thu, 11 May 2017 22:17:12 +0200
 MIME-Version: 1.0
-In-Reply-To: <1494532377.2771.3.camel@redhat.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/11/2017 03:52 PM, Jeff Layton wrote:
-> On Thu, 2017-05-11 at 07:13 -0400, Jeff Layton wrote:
->> I finally got my writeback error handling test to work on btrfs (thanks,
->> Chris!), by making the filesystem stripe the data and mirror the
->> metadata across two devices. The test passes now, but on one run, I got
->> the following list corruption warning and then a soft lockup (which is
->> probably fallout from the list corruption).
->>
->> I ran the test several times before and since then without this failure,
->> so I don't have a clear reproducer. The kernel in this instance is
->> basically a v4.11 kernel with my pile of writeback error handling
->> patches on top:
->>
->>     https://urldefense.proofpoint.com/v2/url?u=https-3A__git.samba.org_-3Fp-3Djlayton_linux.git-3Ba-3Dshortlog-3Bh-3Drefs_heads_wberr&d=DwICaQ&c=5VD0RTtNlTh3ycd41b3MUw&r=9QPtTAxcitoznaWRKKHoEQ&m=BXXwaUFQNFNaGGFYHEVlvNBwkrXiIoH7K5iOdR_PvxM&s=xE6pIXeQ1rlaxAV8aTYBSiI06pb3WZoiRJW8Vo1L3NQ&e=
->>
->> It may be that they are a contributing factor, but this smells more like
->> a bug down in btrfs. Let me know if you need other info:
+Hello,
 
-[ btrfs inode logging ]
+while trying to initialize a btrfs RAID1 on my new NAS using LUKS 
+crypt-devices for each of the btrfs RAID devices, I have seen "random" 
+weirdness shortly after mkfs.
 
-> (cc'ing Liu Bo since we were discussing this earlier this week)
->
-> I can't reproduce this on stock v4.11, so I think this is a bug in my
-> series.
->
-> I think this is due to the differences in how errors are being reported
-> from filemap_fdatawait_range now causing some transactions to end up
-> being freed while they're still on the log_ctxs list. I'm working on
-> hunting down the problem now.
->
-> Sorry for the noise!
->
+It seems to boil down to the problem that after mkfs.btrfs, some of the 
+/dev/dm-* nodes (as well as the corresponding /dev/mapper/* symlinks) 
+sometimes disappear. The RAID can be mounted at first but quickly shows 
+symptoms such as missing devices, or being unable to mount the second time.
 
-There's a list in the inode logging code that we consistently seem to 
-find list debugging assertions with.  We've fixed up all the known 
-issues, but I wouldn't be surprised if we've got a goto fail in there.
+I have tried to btrfs.mkfs -d raid1 -m raid1 using the /dev/dm-* and 
+/dev/mapper/* devices, but with similar results.
 
-I'll take a look ;)
+By best guess is that the fact that one UUID is given to multiple 
+separate devices confuses... something (udev or the like?), making nodes 
+appear, disappear or being re-ordered while mkfs is in progress, or 
+leading to unexpected things later at mount time.
 
--chris
+Honestly, the idea of the same UUID being given to separate physical 
+devices scared me already when I first saw it. Could that actually be 
+the culprit here?
+
+Best regards
+Sebastian

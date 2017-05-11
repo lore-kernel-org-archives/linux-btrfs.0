@@ -1,44 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.first-world.info ([87.98.163.78]:55496 "EHLO
-        smtp.first-world.info" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1756475AbdEKPZg (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 May 2017 11:25:36 -0400
-Received: from [192.168.158.10] (unknown [192.223.110.244])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by smtp.first-world.info (Postfix) with ESMTPSA id 80FF12D796BC
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 May 2017 17:25:34 +0200 (CEST)
-Subject: Re: errno=-28 No space left, with kernel backtrace (blocking bug)
+Received: from mailrechner.de ([89.146.220.106]:55653 "EHLO mailrechner.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754872AbdEKRrj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 11 May 2017 13:47:39 -0400
+Received: from p4fd21f2a.dip0.t-ipconnect.de ([79.210.31.42] helo=[192.168.2.190])
+        by mailrechner.de with esmtpsa (TLS1.0:DHE_RSA_AES_128_CBC_SHA1:16)
+        (Exim 4.69)
+        (envelope-from <robert.mader@liqd.de>)
+        id 1d8qmm-0007ao-3Y
+        for linux-btrfs@vger.kernel.org; Thu, 11 May 2017 18:17:58 +0200
 To: linux-btrfs@vger.kernel.org
-References: <b780be0e-a8cf-ccb8-b6e1-0563ec9c5910@first-world.info>
-From: alpha_one_x86 <alpha_one_x86@first-world.info>
-Message-ID: <003dca87-5ed1-4095-3bcf-c975543cd3ab@first-world.info>
-Date: Thu, 11 May 2017 17:25:32 +0200
+From: Robert Mader <robert.mader@liqd.de>
+Subject: Qgroup reserved space like in ZFS?
+Message-ID: <cf95a201-a8c5-ad94-3a98-81e55bf63a6c@liqd.de>
+Date: Thu, 11 May 2017 18:17:46 +0200
 MIME-Version: 1.0
-In-Reply-To: <b780be0e-a8cf-ccb8-b6e1-0563ec9c5910@first-world.info>
-Content-Type: text/plain; charset=utf-8
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="qUgwnIGVg4l55chDkFWBD0fcbQLcLleAs"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Up plz, I can work with this bug.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--qUgwnIGVg4l55chDkFWBD0fcbQLcLleAs
+Content-Type: multipart/mixed; boundary="UUq17k4RLbiAB8KLSwlioUfbOKoqUSqoq";
+ protected-headers="v1"
+From: Robert Mader <robert.mader@liqd.de>
+To: linux-btrfs@vger.kernel.org
+Message-ID: <cf95a201-a8c5-ad94-3a98-81e55bf63a6c@liqd.de>
+Subject: Qgroup reserved space like in ZFS?
+
+--UUq17k4RLbiAB8KLSwlioUfbOKoqUSqoq
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+
+Hello everyone,
+
+I just wanted to ask a short question as I couldn't find a clear answer
+anywhere on the net, yet:
+
+Is it currently possible to reserve space for a BTRFS subvolume?
 
 
-On 05/11/17 01:39, alpha_one_x86 wrote:
-> Hi, this bug is very blocking for me:
->
-> https://bugzilla.kernel.org/show_bug.cgi?id=195257
->
-> The server is backup server, I btrfs receive (with and without -p), and
-> of course btrfs subvolume delete
-> The volume is 70TB, then I use space_cache=v2
->
-> Cheers,
->
->
 
--- 
-alpha_one_x86/BRULE Herman <alpha_one_x86@first-world.info>
-Main developer of Supercopier/Ultracopier/CatchChallenger, Esourcing and server management
-IT, OS, technologies, research & development, security and business department
+Following example: I have two subvolumes, one for root and one for home
 
+I'd like to reserve 2GB of space for my root volume so even if my home
+volume fills up, it can never starve my root subvolume.
+But I don't want to set a fixed limit on my home partition, I want both
+subvolumes to be able to grow and shrink dynamically.
+
+I use that functionality a lot on ZFS-based systems like FreeNAS. In the
+the web-interface of FreeNAS one can easily configure things like that.
+
+
+If I get it right, qgroups actually already create things like a global
+reserve. Therefor the functionality seems to be there. Is there a way to
+use it, just like the limit functionality? Or is it planed?
+
+Thanks in advance and regards,
+Robert
+
+
+--UUq17k4RLbiAB8KLSwlioUfbOKoqUSqoq--
+
+--qUgwnIGVg4l55chDkFWBD0fcbQLcLleAs
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIyBAEBCAAcBQJZFI6qFRxyb2JlcnQubWFkZXJAbGlxZC5kZQAKCRDMSS+pk0gg
+dbeUD/sEOFuD7/9CQ+qW+Gm1QJlYwNFykCpVgI9DkjX5UbUaWqnrVlmqRr2dYpFL
+XKNgxq+kSkQ0IOnE+jf+QiMzgjNpxy2DkAcNE6D6UR1grYtXzUoylUn2Z0sACuiT
+YIR1qSUU966BiaN0/aVDcPUS76uKfEYoqjX7t4RsNekPTlDMkPxG7ZWrBiT1U9HX
+HxJhJ6EAix1+Sfd0Qms6nliZSs8aLaJRrAKI4MxNd1y308zjYIbR+D06rMBZAXEO
+6hFoVuMQznU9P18vz8kgEbe2z7++/yvM+yFhgLj3s3UMZAeWLe0fYbQ9Dx+8d+4c
+tptzKgcs91LeodAuT4bNL9hmQP60biLXjChHFaChSkIxPg4wHc1jyCbqaxFI1s7y
+MeP+kQdxYXMCWDxtQYOKC7jzr638747TSbFBNbRjyK1PKrvYxm4yqjHFB+dXCm55
+irgzxENfzCsjlZgt7BDOyZcGphfFHsv86zi82obDw3bNHsaf24dl1oewpmjz4E/v
+sXSVxjLsvQh3AMAdIy11GfKFbFFdmyOtZLzlHu4YgQ1+68Y8jeR60wXVV3PGDEqB
+27vjOxYWMhZ2R3M+lkJJ3DEqzdWRjO87Jjqk+6pN2QbrZxcP5iEgapzVh1y0fUiM
+IE/wlRQVS0c5RmJ3ASzZ7CIbt4tOSTqfyw+KlwY5qt5lur74Mw==
+=BP9H
+-----END PGP SIGNATURE-----
+
+--qUgwnIGVg4l55chDkFWBD0fcbQLcLleAs--

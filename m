@@ -1,96 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:59054 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:43785 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751765AbdEKA3O (ORCPT
+        with ESMTP id S1753726AbdEKBBf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 May 2017 20:29:14 -0400
-Subject: Re: qgroup: direct writes returns -EDQUOT too soon
-To: Goldwyn Rodrigues <rgoldwyn@suse.de>, <linux-btrfs@vger.kernel.org>
-References: <a82823d1-b034-88bc-f748-9d8440dddf1e@suse.de>
+        Wed, 10 May 2017 21:01:35 -0400
+Subject: Re: Question on compression unit
+To: Xiaochu Liu <xiaochu@chromium.org>, <linux-btrfs@vger.kernel.org>
+References: <CAGN98i72XfTo5Pjodn0MF20S_yCqXh026Ai_BP+n_X_G4yF2nw@mail.gmail.com>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <a191aaa1-2b4c-32cf-2eaf-4b4e104b489b@cn.fujitsu.com>
-Date: Thu, 11 May 2017 08:29:05 +0800
+Message-ID: <4b68cf7d-e6df-676c-6ee4-4f564f136eff@cn.fujitsu.com>
+Date: Thu, 11 May 2017 09:01:29 +0800
 MIME-Version: 1.0
-In-Reply-To: <a82823d1-b034-88bc-f748-9d8440dddf1e@suse.de>
+In-Reply-To: <CAGN98i72XfTo5Pjodn0MF20S_yCqXh026Ai_BP+n_X_G4yF2nw@mail.gmail.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-At 05/11/2017 08:19 AM, Goldwyn Rodrigues wrote:
+At 05/11/2017 04:11 AM, Xiaochu Liu wrote:
+> Hi there,
 > 
-> Here is a sample script to recreate the issue:
-> mkfs.btrfs -f /dev/vdb
-> mount /dev/vdb /mnt
-> btrfs quota enable /mnt
-> btrfs sub create /mnt/tmp
-> btrfs qgroup limit 200M /mnt/tmp
-> btrfs quota rescan -w /mnt
-> cd /mnt/tmp
-> for i in {1..5}; do
-> 	sync
-> 	dd if=/dev/zero of=/mnt/tmp/file-$i oflag=direct
-> 	sync
-> done
-> 
-> btrfs qgroup show -pcref /mnt/tmp
-> 
-> 
-> Output:
-> 
-> Create subvolume '/mnt/tmp'
-> quota rescan started
-> dd: writing to '/mnt/tmp/file-1': Disk quota exceeded
-> 11991+0 records in
-> 11990+0 records out
-> 6138880 bytes (6.1 MB, 5.9 MiB) copied, 2.40459 s, 2.6 MB/s
-> dd: writing to '/mnt/tmp/file-2': Disk quota exceeded
-> 11807+0 records in
-> 11806+0 records out
-> 6044672 bytes (6.0 MB, 5.8 MiB) copied, 2.11256 s, 2.9 MB/s
-> dd: writing to '/mnt/tmp/file-3': Disk quota exceeded
-> 11628+0 records in
-> 11627+0 records out
-> 5953024 bytes (6.0 MB, 5.7 MiB) copied, 2.53767 s, 2.3 MB/s
-> dd: writing to '/mnt/tmp/file-4': Disk quota exceeded
-> 11080+0 records in
-> 11079+0 records out
-> 5672448 bytes (5.7 MB, 5.4 MiB) copied, 2.3697 s, 2.4 MB/s
-> dd: writing to '/mnt/tmp/file-5': Disk quota exceeded
-> 11358+0 records in
-> 11357+0 records out
-> 5814784 bytes (5.8 MB, 5.5 MiB) copied, 2.10354 s, 2.8 MB/s
-> 
-> qgroupid         rfer         excl     max_rfer     max_excl parent  child
-> --------         ----         ----     --------     -------- ------  -----
-> 0/257        28.84MiB     28.84MiB    200.00MiB         none ---     ---
-> 
-> The files created are only 5-6MB when the subvolume size is 200m. Each
-> of the attempts, including the first attempt, returns EDQUOT at around
-> 5-6 MB.
+> I'm trying to tune compression options for btrfs. Specifically, I want
+> to know the performance impact on the system under different
+> compression unit (block) sizes.
 
-IIRC that's the problem of metadata reservation.
+Compression unit size is fixed in btrfs.
+It's sectorsize, determined at mkfs time, and only 4K (page size) is 
+supported for x86 yet.
 
-We're always over-reserving metadata, not only for qgroup.
-We reserve one full tree block even if we're only trying to insert one item.
+> 
+> I'm aware of '--nodesize' parameter which sets the block size of
+> metadata tree. Does that also set the block size in an extent? (from
+> my understanding, file data are mostly stored in extent unless small
+> enough to be inline-d in metadata leaf node?)
 
-So I'm afraid the problem is that the default block size for dd is too 
-small (512) and direct makes it always try to reserve a new tree block 
-for it.
+nodesize only affects metadata, nothing to do with data size.
 
-It's already over 10K file extents, which will take up more than 160M if 
-using 16K nodesize.
-At least this can explain the problem.
+> 
+> Also from btrfs's wikipedia page:
+> 
+> In compressed extents, individual blocks are not compressed
+> separately; rather, the compression stream spans the entire extent.
+> 
+> Is that still true?
 
-Try to change dd blocksize to 1M or more should avoid the problem.
+Yes.
 
-However the true solution is to find a method to calculate metadata 
-reservation more correctly, which I didn't see any good method yet.
+For example if there is one continuous range represents 0~1M data of one 
+file, and all this data is dirty (not written to disk).
+
+Then compress will happen when trying to writing them to disk.
+And since the maximum uncompressed size for compressed extent is 128K 
+(fixed), the 0~1M will be split into 8 extents (if compression ratio is 
+acceptable).
+
+And then each 128K extent will be compressed then compressed data will 
+be written to disk. (compressed extent still meet sectorsize alignment).
+
+So the wiki page is still right and we must read out the whole 
+(compressed) extent to get its content.
+
+And since both uncompressed data and compressed extent must meet 
+sectorsize alignment, data smaller than or equal to sectorsize won't go 
+through compression since it will just waste CPU time and no space saving.
 
 Thanks,
 Qu
 
+> 
+> Thanks,
+> Xiaochu
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > 
 > 
 

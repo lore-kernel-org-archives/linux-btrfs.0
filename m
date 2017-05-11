@@ -1,40 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f52.google.com ([209.85.214.52]:37247 "EHLO
-        mail-it0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751069AbdEES0S (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 May 2017 14:26:18 -0400
-Received: by mail-it0-f52.google.com with SMTP id x188so12862823itb.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 05 May 2017 11:26:17 -0700 (PDT)
+Received: from bombadil.infradead.org ([65.50.211.133]:55121 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753303AbdEKHku (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 11 May 2017 03:40:50 -0400
+Date: Thu, 11 May 2017 00:40:35 -0700
+From: Christoph Hellwig <hch@infradead.org>
+To: Goldwyn Rodrigues <rgoldwyn@suse.de>
+Cc: linux-fsdevel@vger.kernel.org, jack@suse.com, hch@infradead.org,
+        linux-block@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
+        sagi@grimberg.me, avi@scylladb.com, axboe@kernel.dk,
+        linux-api@vger.kernel.org, willy@infradead.org, tom.leiming@gmail.com,
+        Goldwyn Rodrigues <rgoldwyn@suse.com>
+Subject: Re: [PATCH 1/8] Use RWF_* flags for AIO operations
+Message-ID: <20170511074035.GA15626@infradead.org>
+References: <20170509122219.31756-1-rgoldwyn@suse.de>
+ <20170509122219.31756-2-rgoldwyn@suse.de>
 MIME-Version: 1.0
-In-Reply-To: <20170505182247.GL10575@twin.jikos.cz>
-References: <20170421100943.GA2942@ircssh-2.c.rugged-nimbus-611.internal>
- <20170421110558.lx56fsrbengxqwuy@angband.pl> <CAMp4zn_XkDpmcG4szqv95mAeVeikkTUJWH1vAObduLu7fozL4w@mail.gmail.com>
- <20170505182247.GL10575@twin.jikos.cz>
-From: Sargun Dhillon <sargun@sargun.me>
-Date: Fri, 5 May 2017 11:25:36 -0700
-Message-ID: <CAMp4zn9BmNqkmToxVSBF9FsUTBoHzr2CLSXPBjADS-ZTZqn_fw@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: allow processes with cap_sys_resource to exceed quota
-To: dsterba@suse.cz, Sargun Dhillon <sargun@sargun.me>,
-        Adam Borowski <kilobyte@angband.pl>,
-        BTRFS ML <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170509122219.31756-2-rgoldwyn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If you see my follow-on patch, it allows disabling the quota limit for
-folks with cap_sys_resource per filesystem. I don't want to have any
-process to be able to turn off quota limits, but just the process that
-is the logrotator (and has the proper capabilities). Unfortunately,
-most folks don't lock down their capabilities, so I agree, making it
-blindly based on capabilities seems like a poor idea.
+Please add subsystem prefixes to your subject lines, e.g.
 
-On Fri, May 5, 2017 at 11:22 AM, David Sterba <dsterba@suse.cz> wrote:
-> On Fri, Apr 21, 2017 at 07:27:23AM -0500, Sargun Dhillon wrote:
->> What do you think about putting this behaviour behind a sysctl? Seems
->> better than to start introducing a new mechanism of marking tasks?
->
-> Technically it's easy to add own btrfs-specific ioctl, temporarily
-> turning off quota limits, but I'm still not sure about all the
-> consequences as this would apply to the whole system, no? The
-> capabilities are per process, much more fine grained. I don't have other
-> ideas how to address the problem though.
+fs:
+
+for all the generic fs ones,
+
+xfs:
+
+for XFS,
+
+block:
+
+for block layer changes, etc.
+
+>  
+> -	if (flags & ~(RWF_HIPRI | RWF_DSYNC | RWF_SYNC))
+> -		return -EOPNOTSUPP;
+> -
+>  	init_sync_kiocb(&kiocb, filp);
+> -	if (flags & RWF_HIPRI)
+> -		kiocb.ki_flags |= IOCB_HIPRI;
+> -	if (flags & RWF_DSYNC)
+> -		kiocb.ki_flags |= IOCB_DSYNC;
+> -	if (flags & RWF_SYNC)
+> -		kiocb.ki_flags |= (IOCB_DSYNC | IOCB_SYNC);
+> +	ret = kiocb_set_rw_flags(&kiocb, flags);
+> +	if (ret)
+> +		return ret;
+
+And please split factoring out kiocb_set_rw_flags into a separate
+prep patch.
+
+Otherwise these changes look fine:
+
+Reviewed-by: Christoph Hellwig <hch@lst.de>

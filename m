@@ -1,91 +1,127 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailrechner.de ([89.146.220.106]:55653 "EHLO mailrechner.de"
+Received: from fieldses.org ([173.255.197.46]:34304 "EHLO fieldses.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754872AbdEKRrj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 May 2017 13:47:39 -0400
-Received: from p4fd21f2a.dip0.t-ipconnect.de ([79.210.31.42] helo=[192.168.2.190])
-        by mailrechner.de with esmtpsa (TLS1.0:DHE_RSA_AES_128_CBC_SHA1:16)
-        (Exim 4.69)
-        (envelope-from <robert.mader@liqd.de>)
-        id 1d8qmm-0007ao-3Y
-        for linux-btrfs@vger.kernel.org; Thu, 11 May 2017 18:17:58 +0200
-To: linux-btrfs@vger.kernel.org
-From: Robert Mader <robert.mader@liqd.de>
-Subject: Qgroup reserved space like in ZFS?
-Message-ID: <cf95a201-a8c5-ad94-3a98-81e55bf63a6c@liqd.de>
-Date: Thu, 11 May 2017 18:17:46 +0200
+        id S1755575AbdEKS7p (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 11 May 2017 14:59:45 -0400
+Date: Thu, 11 May 2017 14:59:43 -0400
+From: "J. Bruce Fields" <bfields@fieldses.org>
+To: Jan Kara <jack@suse.cz>
+Cc: NeilBrown <neil@brown.name>, Jeff Layton <jlayton@redhat.com>,
+        Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-nfs@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-xfs@vger.kernel.org
+Subject: Re: [RFC PATCH v1 00/30] fs: inode->i_version rework and optimization
+Message-ID: <20170511185942.GD25434@fieldses.org>
+References: <20170329111507.GA18467@quack2.suse.cz>
+ <1490810071.2678.6.camel@redhat.com>
+ <20170330064724.GA21542@quack2.suse.cz>
+ <1490872308.2694.1.camel@redhat.com>
+ <20170330161231.GA9824@fieldses.org>
+ <1490898932.2667.1.camel@redhat.com>
+ <20170404183138.GC14303@fieldses.org>
+ <878tnfiq7v.fsf@notabene.neil.brown.name>
+ <20170405080551.GC8899@quack2.suse.cz>
+ <20170405181409.GC28681@fieldses.org>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="qUgwnIGVg4l55chDkFWBD0fcbQLcLleAs"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170405181409.GC28681@fieldses.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---qUgwnIGVg4l55chDkFWBD0fcbQLcLleAs
-Content-Type: multipart/mixed; boundary="UUq17k4RLbiAB8KLSwlioUfbOKoqUSqoq";
- protected-headers="v1"
-From: Robert Mader <robert.mader@liqd.de>
-To: linux-btrfs@vger.kernel.org
-Message-ID: <cf95a201-a8c5-ad94-3a98-81e55bf63a6c@liqd.de>
-Subject: Qgroup reserved space like in ZFS?
+On Wed, Apr 05, 2017 at 02:14:09PM -0400, J. Bruce Fields wrote:
+> On Wed, Apr 05, 2017 at 10:05:51AM +0200, Jan Kara wrote:
+> > 1) Keep i_version as is, make clients also check for i_ctime.
+> 
+> That would be a protocol revision, which we'd definitely rather avoid.
+> 
+> But can't we accomplish the same by using something like
+> 
+> 	ctime * (some constant) + i_version
+> 
+> ?
+> 
+> >    Pro: No on-disk format changes.
+> >    Cons: After a crash, i_version can go backwards (but when file changes
+> >    i_version, i_ctime pair should be still different) or not, data can be
+> >    old or not.
+> 
+> This is probably good enough for NFS purposes: typically on an NFS
+> filesystem, results of a read in the face of a concurrent write open are
+> undefined.  And writers sync before close.
+> 
+> So after a crash with a dirty inode, we're in a situation where an NFS
+> client still needs to resend some writes, sync, and close.  I'm OK with
+> things being inconsistent during this window.
+> 
+> I do expect things to return to normal once that client's has resent its
+> writes--hence the worry about actually resuing old values after boot
+> (such as if i_version regresses on boot and then increments back to the
+> same value after further writes).  Factoring in ctime fixes that.
 
---UUq17k4RLbiAB8KLSwlioUfbOKoqUSqoq
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+So for now I'm thinking of just doing something like the following.
 
-Hello everyone,
+Only nfsd needs it for now, but it could be moved to a vfs helper for
+statx, or for individual filesystems that want to do something
+different.  (The NFSv4 client will want to use the server's change
+attribute instead, I think.  And other filesystems might want to try
+something more ambitious like Neil's proposal.)
 
-I just wanted to ask a short question as I couldn't find a clear answer
-anywhere on the net, yet:
+--b.
 
-Is it currently possible to reserve space for a BTRFS subvolume?
-
-
-
-Following example: I have two subvolumes, one for root and one for home
-
-I'd like to reserve 2GB of space for my root volume so even if my home
-volume fills up, it can never starve my root subvolume.
-But I don't want to set a fixed limit on my home partition, I want both
-subvolumes to be able to grow and shrink dynamically.
-
-I use that functionality a lot on ZFS-based systems like FreeNAS. In the
-the web-interface of FreeNAS one can easily configure things like that.
-
-
-If I get it right, qgroups actually already create things like a global
-reserve. Therefor the functionality seems to be there. Is there a way to
-use it, just like the limit functionality? Or is it planed?
-
-Thanks in advance and regards,
-Robert
-
-
---UUq17k4RLbiAB8KLSwlioUfbOKoqUSqoq--
-
---qUgwnIGVg4l55chDkFWBD0fcbQLcLleAs
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQIyBAEBCAAcBQJZFI6qFRxyb2JlcnQubWFkZXJAbGlxZC5kZQAKCRDMSS+pk0gg
-dbeUD/sEOFuD7/9CQ+qW+Gm1QJlYwNFykCpVgI9DkjX5UbUaWqnrVlmqRr2dYpFL
-XKNgxq+kSkQ0IOnE+jf+QiMzgjNpxy2DkAcNE6D6UR1grYtXzUoylUn2Z0sACuiT
-YIR1qSUU966BiaN0/aVDcPUS76uKfEYoqjX7t4RsNekPTlDMkPxG7ZWrBiT1U9HX
-HxJhJ6EAix1+Sfd0Qms6nliZSs8aLaJRrAKI4MxNd1y308zjYIbR+D06rMBZAXEO
-6hFoVuMQznU9P18vz8kgEbe2z7++/yvM+yFhgLj3s3UMZAeWLe0fYbQ9Dx+8d+4c
-tptzKgcs91LeodAuT4bNL9hmQP60biLXjChHFaChSkIxPg4wHc1jyCbqaxFI1s7y
-MeP+kQdxYXMCWDxtQYOKC7jzr638747TSbFBNbRjyK1PKrvYxm4yqjHFB+dXCm55
-irgzxENfzCsjlZgt7BDOyZcGphfFHsv86zi82obDw3bNHsaf24dl1oewpmjz4E/v
-sXSVxjLsvQh3AMAdIy11GfKFbFFdmyOtZLzlHu4YgQ1+68Y8jeR60wXVV3PGDEqB
-27vjOxYWMhZ2R3M+lkJJ3DEqzdWRjO87Jjqk+6pN2QbrZxcP5iEgapzVh1y0fUiM
-IE/wlRQVS0c5RmJ3ASzZ7CIbt4tOSTqfyw+KlwY5qt5lur74Mw==
-=BP9H
------END PGP SIGNATURE-----
-
---qUgwnIGVg4l55chDkFWBD0fcbQLcLleAs--
+diff --git a/fs/nfsd/nfs3xdr.c b/fs/nfsd/nfs3xdr.c
+index 12feac6ee2fd..9636c9a60aba 100644
+diff --git a/fs/nfsd/nfsfh.h b/fs/nfsd/nfsfh.h
+index f84fe6bf9aee..14f09f1ef605 100644
+--- a/fs/nfsd/nfsfh.h
++++ b/fs/nfsd/nfsfh.h
+@@ -240,6 +240,16 @@ fh_clear_wcc(struct svc_fh *fhp)
+ 	fhp->fh_pre_saved = false;
+ }
+ 
++static inline u64 nfsd4_change_attribute(struct inode *inode)
++{
++	u64 chattr;
++
++	chattr = inode->i_ctime.tv_sec << 30;
++	chattr += inode->i_ctime.tv_nsec;
++	chattr += inode->i_version;
++	return chattr;
++}
++
+ /*
+  * Fill in the pre_op attr for the wcc data
+  */
+@@ -253,7 +263,7 @@ fill_pre_wcc(struct svc_fh *fhp)
+ 		fhp->fh_pre_mtime = inode->i_mtime;
+ 		fhp->fh_pre_ctime = inode->i_ctime;
+ 		fhp->fh_pre_size  = inode->i_size;
+-		fhp->fh_pre_change = inode->i_version;
++		fhp->fh_pre_change = nfsd4_change_attribute(inode);
+ 		fhp->fh_pre_saved = true;
+ 	}
+ }
+--- a/fs/nfsd/nfs3xdr.c
++++ b/fs/nfsd/nfs3xdr.c
+@@ -260,7 +260,7 @@ void fill_post_wcc(struct svc_fh *fhp)
+ 		printk("nfsd: inode locked twice during operation.\n");
+ 
+ 	err = fh_getattr(fhp, &fhp->fh_post_attr);
+-	fhp->fh_post_change = d_inode(fhp->fh_dentry)->i_version;
++	fhp->fh_post_change = nfsd4_change_attribute(d_inode(fhp->fh_dentry));
+ 	if (err) {
+ 		fhp->fh_post_saved = false;
+ 		/* Grab the ctime anyway - set_change_info might use it */
+diff --git a/fs/nfsd/nfs4xdr.c b/fs/nfsd/nfs4xdr.c
+index 26780d53a6f9..a09532d4a383 100644
+--- a/fs/nfsd/nfs4xdr.c
++++ b/fs/nfsd/nfs4xdr.c
+@@ -1973,7 +1973,7 @@ static __be32 *encode_change(__be32 *p, struct kstat *stat, struct inode *inode,
+ 		*p++ = cpu_to_be32(convert_to_wallclock(exp->cd->flush_time));
+ 		*p++ = 0;
+ 	} else if (IS_I_VERSION(inode)) {
+-		p = xdr_encode_hyper(p, inode->i_version);
++		p = xdr_encode_hyper(p, nfsd4_change_attribute(inode));
+ 	} else {
+ 		*p++ = cpu_to_be32(stat->ctime.tv_sec);
+ 		*p++ = cpu_to_be32(stat->ctime.tv_nsec);

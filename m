@@ -1,78 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:50693 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753792AbdEITLM (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 May 2017 15:11:12 -0400
-Date: Tue, 9 May 2017 12:09:00 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Jan Kara <jack@suse.cz>
-Cc: linux-fsdevel@vger.kernel.org, Christoph Hellwig <hch@infradead.org>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 6/7] btrfs: Make flush bios explicitely sync
-Message-ID: <20170509190900.GD17312@lim.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <20170502150351.29452-1-jack@suse.cz>
- <20170502150351.29452-7-jack@suse.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170502150351.29452-7-jack@suse.cz>
+Received: from mx2.suse.de ([195.135.220.15]:41772 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751985AbdEKTRR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 11 May 2017 15:17:17 -0400
+From: Goldwyn Rodrigues <rgoldwyn@suse.de>
+To: linux-fsdevel@vger.kernel.org
+Cc: jack@suse.com, hch@infradead.org, linux-block@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-xfs@vger.kernel.org, sagi@grimberg.me, avi@scylladb.com,
+        axboe@kernel.dk, linux-api@vger.kernel.org
+Subject: [PATCH 0/10 v8] No wait AIO
+Date: Thu, 11 May 2017 14:17:00 -0500
+Message-Id: <20170511191710.31959-1-rgoldwyn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 02, 2017 at 05:03:50PM +0200, Jan Kara wrote:
-> Commit b685d3d65ac7 "block: treat REQ_FUA and REQ_PREFLUSH as
-> synchronous" removed REQ_SYNC flag from WRITE_{FUA|PREFLUSH|...}
-> definitions.  generic_make_request_checks() however strips REQ_FUA and
-> REQ_PREFLUSH flags from a bio when the storage doesn't report volatile
-> write cache and thus write effectively becomes asynchronous which can
-> lead to performance regressions
-> 
-> Fix the problem by making sure all bios which are synchronous are
-> properly marked with REQ_SYNC.
->
+Formerly known as non-blocking AIO.
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+This series adds nonblocking feature to asynchronous I/O writes.
+io_submit() can be delayed because of a number of reason:
+ - Block allocation for files
+ - Data writebacks for direct I/O
+ - Sleeping because of waiting to acquire i_rwsem
+ - Congested block device
 
-Thanks,
+The goal of the patch series is to return -EAGAIN/-EWOULDBLOCK if
+any of these conditions are met. This way userspace can push most
+of the write()s to the kernel to the best of its ability to complete
+and if it returns -EAGAIN, can defer it to another thread.
 
--liubo
-> CC: David Sterba <dsterba@suse.com>
-> CC: linux-btrfs@vger.kernel.org
-> Fixes: b685d3d65ac791406e0dfd8779cc9b3707fea5a3
-> Signed-off-by: Jan Kara <jack@suse.cz>
-> ---
->  fs/btrfs/disk-io.c | 10 ++++++----
->  1 file changed, 6 insertions(+), 4 deletions(-)
-> 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index eb1ee7b6f532..af75a9aab81e 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -3488,10 +3488,12 @@ static int write_dev_supers(struct btrfs_device *device,
->  		 * we fua the first super.  The others we allow
->  		 * to go down lazy.
->  		 */
-> -		if (i == 0)
-> -			ret = btrfsic_submit_bh(REQ_OP_WRITE, REQ_FUA, bh);
-> -		else
-> +		if (i == 0) {
-> +			ret = btrfsic_submit_bh(REQ_OP_WRITE,
-> +						REQ_SYNC | REQ_FUA, bh);
-> +		} else {
->  			ret = btrfsic_submit_bh(REQ_OP_WRITE, REQ_SYNC, bh);
-> +		}
->  		if (ret)
->  			errors++;
->  	}
-> @@ -3555,7 +3557,7 @@ static int write_dev_flush(struct btrfs_device *device, int wait)
->  
->  	bio->bi_end_io = btrfs_end_empty_barrier;
->  	bio->bi_bdev = device->bdev;
-> -	bio->bi_opf = REQ_OP_WRITE | REQ_PREFLUSH;
-> +	bio->bi_opf = REQ_OP_WRITE | REQ_SYNC | REQ_PREFLUSH;
->  	init_completion(&device->flush_wait);
->  	bio->bi_private = &device->flush_wait;
->  	device->flush_bio = bio;
-> -- 
-> 2.12.0
-> 
+In order to enable this, IOCB_RW_FLAG_NOWAIT is introduced in
+uapi/linux/aio_abi.h. If set for aio_rw_flags, it translates to
+IOCB_NOWAIT for struct iocb, REQ_NOWAIT for bio.bi_opf and IOMAP_NOWAIT for
+iomap. aio_rw_flags is a new flag replacing aio_reserved1. We could
+not use aio_flags because it is not currently checked for invalidity
+in the kernel.
+
+This feature is provided for direct I/O of asynchronous I/O only. I have
+tested it against xfs, ext4, and btrfs while I intend to add more filesystems.
+The nowait feature is for request based devices. In the future, I intend to
+add support to stacked devices such as md.
+
+Applications will have to check supportability
+by sending a async direct write and any other error besides -EAGAIN
+would mean it is not supported.
+
+First two patches are prep patches into nowait I/O.
+
+Changes since v1:
+ + changed name from _NONBLOCKING to *_NOWAIT
+ + filemap_range_has_page call moved to closer to (just before) calling filemap_write_and_wait_range().
+ + BIO_NOWAIT limited to get_request()
+ + XFS fixes 
+	- included reflink 
+	- use of xfs_ilock_nowait() instead of a XFS_IOLOCK_NONBLOCKING flag
+	- Translate the flag through IOMAP_NOWAIT (iomap) to check for
+	  block allocation for the file.
+ + ext4 coding style
+
+Changes since v2:
+ + Using aio_reserved1 as aio_rw_flags instead of aio_flags
+ + blk-mq support
+ + xfs uptodate with kernel and reflink changes
+
+ Changes since v3:
+  + Added FS_NOWAIT, which is set if the filesystem supports NOWAIT feature.
+  + Checks in generic_make_request() to make sure BIO_NOWAIT comes in
+    for async direct writes only.
+  + Added QUEUE_FLAG_NOWAIT, which is set if the device supports BIO_NOWAIT.
+    This is added (rather not set) to block devices such as dm/md currently.
+
+ Changes since v4:
+  + Ported AIO code to use RWF_* flags. Check for RWF_* flags in
+    generic_file_write_iter().
+  + Changed IOCB_RW_FLAGS_NOWAIT to RWF_NOWAIT.
+
+ Changes since v5:
+  + BIO_NOWAIT to REQ_NOWAIT
+  + Common helper for RWF flags.
+
+ Changes since v6:
+  + REQ_NOWAIT will be ignored for request based devices since they
+    cannot block. So, removed QUEUE_FLAG_NOWAIT since it is not
+    required in the current implementation. It will be resurrected
+    when we program for stacked devices.
+  + changed kiocb_rw_flags() to kiocb_set_rw_flags() in order to accomodate
+    for errors. Moved checks in the function.
+
+ Changes since v7:
+  + split patches into prep so the main patches are smaller and easier
+    to understand
+  + All patches are reviewed or acked!
+
+-- 
+Goldwyn
+
+

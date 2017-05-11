@@ -1,97 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ua0-f177.google.com ([209.85.217.177]:33350 "EHLO
-        mail-ua0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755874AbdEKTbp (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:51936 "EHLO
+        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1756046AbdEKThm (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 May 2017 15:31:45 -0400
-Received: by mail-ua0-f177.google.com with SMTP id e28so35210771uah.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 May 2017 12:31:45 -0700 (PDT)
+        Thu, 11 May 2017 15:37:42 -0400
+Date: Thu, 11 May 2017 19:37:28 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Roman Mamedov <rm@romanrm.net>
+Cc: Chris Murphy <lists@colorremedies.com>, Marat Khalili <mkh@rqc.ru>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Backing up BTRFS metadata
+Message-ID: <20170511193728.GK9701@carfax.org.uk>
+References: <2b29db76-9199-0759-3477-58f0a67a3570@rqc.ru>
+ <CAJCQCtTbE6M23e8EmB23pp89Y8673BeY+p_tkox3orY-AS2DJQ@mail.gmail.com>
+ <20170512002200.73d5207f@natsu>
 MIME-Version: 1.0
-In-Reply-To: <4b68cf7d-e6df-676c-6ee4-4f564f136eff@cn.fujitsu.com>
-References: <CAGN98i72XfTo5Pjodn0MF20S_yCqXh026Ai_BP+n_X_G4yF2nw@mail.gmail.com>
- <4b68cf7d-e6df-676c-6ee4-4f564f136eff@cn.fujitsu.com>
-From: Xiaochu Liu <xiaochu@chromium.org>
-Date: Thu, 11 May 2017 12:31:44 -0700
-Message-ID: <CAGN98i7hApEpgtwqw1HNXGD1ftaHJ0Ojn_Q0SMtV-V4aFfQ+mw@mail.gmail.com>
-Subject: Re: Question on compression unit
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="Z9t8O/5YJLB6LEUl"
+In-Reply-To: <20170512002200.73d5207f@natsu>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks Qu!
 
-I wonder if there is anyway we can easily configure the extent size
-(maximum extent size, extent size for files to compress, etc.)? I was
-trying to see if it helps reduce random read latency on compressed
-files by using smaller extent...
+--Z9t8O/5YJLB6LEUl
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-On Wed, May 10, 2017 at 6:01 PM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
->
->
-> At 05/11/2017 04:11 AM, Xiaochu Liu wrote:
->>
->> Hi there,
->>
->> I'm trying to tune compression options for btrfs. Specifically, I want
->> to know the performance impact on the system under different
->> compression unit (block) sizes.
->
->
-> Compression unit size is fixed in btrfs.
-> It's sectorsize, determined at mkfs time, and only 4K (page size) is
-> supported for x86 yet.
->
->>
->> I'm aware of '--nodesize' parameter which sets the block size of
->> metadata tree. Does that also set the block size in an extent? (from
->> my understanding, file data are mostly stored in extent unless small
->> enough to be inline-d in metadata leaf node?)
->
->
-> nodesize only affects metadata, nothing to do with data size.
->
->>
->> Also from btrfs's wikipedia page:
->>
->> In compressed extents, individual blocks are not compressed
->> separately; rather, the compression stream spans the entire extent.
->>
->> Is that still true?
->
->
-> Yes.
->
-> For example if there is one continuous range represents 0~1M data of one
-> file, and all this data is dirty (not written to disk).
->
-> Then compress will happen when trying to writing them to disk.
-> And since the maximum uncompressed size for compressed extent is 128K
-> (fixed), the 0~1M will be split into 8 extents (if compression ratio is
-> acceptable).
->
-> And then each 128K extent will be compressed then compressed data will be
-> written to disk. (compressed extent still meet sectorsize alignment).
->
-> So the wiki page is still right and we must read out the whole (compressed)
-> extent to get its content.
->
-> And since both uncompressed data and compressed extent must meet sectorsize
-> alignment, data smaller than or equal to sectorsize won't go through
-> compression since it will just waste CPU time and no space saving.
->
-> Thanks,
-> Qu
->
->>
->> Thanks,
->> Xiaochu
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
->>
->
->
+On Fri, May 12, 2017 at 12:22:00AM +0500, Roman Mamedov wrote:
+> On Thu, 11 May 2017 09:19:28 -0600
+> Chris Murphy <lists@colorremedies.com> wrote:
+> 
+> > On Thu, May 11, 2017 at 8:56 AM, Marat Khalili <mkh@rqc.ru> wrote:
+> > > Sorry if question sounds unorthodox, Is there some simple way to read (and
+> > > backup) all BTRFS metadata from volume?
+> > 
+> > btrfs-image
+> 
+> Hm, I thought that's for debugging only, and that you can't actually restore
+> metadata onto a data-containing FS and have anything mountable/readable as a
+> result.
+
+   Indeed. This has been tried before, and I don't think it came to
+anything.
+
+> Seems not to be the case, and in fact, could this be one of the "missing
+> links" in the Fsck story, 
+> 
+>        -w
+>            Walk all the trees manually and copy any blocks that are
+>            referenced. Use this option if your extent tree is corrupted to
+>            make sure that all of the metadata is captured.
+> 
+> This certainly does sound like something to try for some of those broken
+> filesystems where Btrfsck refuses to do anything. Save image with this manual
+> walking/reconstruction of the trees, then restore. Too bad I already nuked
+> mine, so can't experiment with that.
+
+   I suspect it's still only capturing metadata, rather than data.
+
+   Hugo.
+
+-- 
+Hugo Mills             | Would you like an ocelot with that non-sequitur?
+hugo@... carfax.org.uk |
+http://carfax.org.uk/  |
+PGP: E2AB1DE4          |
+
+--Z9t8O/5YJLB6LEUl
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJZFL14AAoJEFheFHXiqx3ksI0QAKZV+dwPXA/dUHgxbOq9KOqG
+TI2jQM2ZZPV0O4Vnnof2I9L1QXZpalbMobBsWqD9+xWvaeZ91CfvHGU0otb+uOyG
+I7wyI4ACMiJRIebDcQND+xDW5yoVxGoZYUdYq/kp9ZNGWtddCKxg0GAQ428l+JDq
+VVheTaI1zN6LWjKZl6OmZ8rmTUuJBi/jdhqELb+G60R8VNntXyYDruoyPm2tu6sA
+wclMNHo9spvzftXQrY/Zzg0OVXt6Ij+9PXpr65gLI9Lxxm3H5gbATZrfdLHqg8wG
+iOM4NunFYqB8agKPdBgEiFcZOGHx3v8kE5T69Knf8rJM9fdr2YWSLl86t28WkAQH
+BkDCl36eHe35NO/k3PiYyCUhs9DcQFNlEO5Xdzcn7tCkg1ocHlKLAxO7qDnaRtbY
+cu4GFkR2GjxKAcCrTEcW38k4WX9MZnlKJqgsZpoFMJuWTmpCi26wv55hM5QMmQfF
+8uFSrulCaz6LgvaPx/tw02dRPUebwr6/rACKDwbGRVdgrUof7EKPW9S1jTfVI8T+
+LR+2cejDKE62up1xmIQreYrM8g+woeimTsViD+/rOYznopJfjwK3KOutHB52F0Jn
+wideHj6AVHmZWE0o9DT33YcXgq5SKW/2NrnKNtAjf/DB5K7YcjbmuqoWoEfCF6mM
+8phmhk1n2fePSvXb7d8L
+=QTAa
+-----END PGP SIGNATURE-----
+
+--Z9t8O/5YJLB6LEUl--

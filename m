@@ -1,41 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:43746 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:38916 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751155AbdEQNt4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 May 2017 09:49:56 -0400
-From: jeffm@suse.com
-To: linux-btrfs@vger.kernel.org
-Cc: Jeff Mahoney <jeffm@suse.com>, "# v3 . 14+" <stable@vger.kernel.org>
-Subject: [PATCH] btrfs: fix memory leak in update_space_info failure path
-Date: Wed, 17 May 2017 09:49:37 -0400
-Message-Id: <20170517134937.30774-1-jeffm@suse.com>
+        id S1757532AbdELOHl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 12 May 2017 10:07:41 -0400
+Date: Fri, 12 May 2017 16:07:21 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.com, jeffm@suse.com, clm@fb.com
+Subject: Re: [PATCH] btrfs: Convert fs_info->free_chunk_space to atomic64_t
+Message-ID: <20170512140721.GH27439@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1494483466-22342-1-git-send-email-nborisov@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1494483466-22342-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Jeff Mahoney <jeffm@suse.com>
+On Thu, May 11, 2017 at 09:17:46AM +0300, Nikolay Borisov wrote:
+> The ->free_chunk_space variable is used to track the unallocated space and
+> access to it is protected by a spinlock, which is not used for anything else.
 
-If we fail to add the space_info kobject, we'll leak the memory
-for the percpu counter.
+In the past, the spinlock protected a larger critical section where the
+overcommit was calculated. This is not true anymore and the bare counter
+has been left. So yes, from that POV it's ok to switch it to the atomic.
 
-Fixes: 6ab0a2029c (btrfs: publish allocation data in sysfs)
-Cc: <stable@vger.kernel.org> # v3.14+
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
----
- fs/btrfs/extent-tree.c | 1 +
- 1 file changed, 1 insertion(+)
+The spinlock-protected increment is valid in some cases where the
+overhead on atomics is higher, compared to uncontended lock (ie. rare
+updates).
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index be5477676cc8..2f23fd4a08f1 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3983,6 +3983,7 @@ static int update_space_info(struct btrfs_fs_info *info, u64 flags,
- 				    info->space_info_kobj, "%s",
- 				    alloc_name(found->flags));
- 	if (ret) {
-+		percpu_counter_destroy(&found->total_bytes_pinned);
- 		kfree(found);
- 		return ret;
- 	}
--- 
-2.11.0
+For architectures where the bare type can be updated atomically we could
+even avoid atomicX_t if the code semantics allows that. For 64bit types
+it's ok on x86_64, for 32bit we'd need preemption workarounds (similar
+to what inode::i_size does).
 
+So, I'm fine with switching to the atomic64_t, I don't see it used in
+performance critical code.
+
+Reviewed-by: David Sterba <dsterba@suse.com>

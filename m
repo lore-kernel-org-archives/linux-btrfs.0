@@ -1,54 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f173.google.com ([209.85.223.173]:34355 "EHLO
-        mail-io0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751811AbdELLQg (ORCPT
+Received: from mail-it0-f68.google.com ([209.85.214.68]:34518 "EHLO
+        mail-it0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1756443AbdELLZW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 May 2017 07:16:36 -0400
-Received: by mail-io0-f173.google.com with SMTP id k91so38033720ioi.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 May 2017 04:16:35 -0700 (PDT)
-Subject: Re: Qgroup reserved space like in ZFS?
-To: Robert Mader <robert.mader@liqd.de>, linux-btrfs@vger.kernel.org
-References: <cf95a201-a8c5-ad94-3a98-81e55bf63a6c@liqd.de>
+        Fri, 12 May 2017 07:25:22 -0400
+Received: by mail-it0-f68.google.com with SMTP id c26so5607903itd.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 May 2017 04:25:21 -0700 (PDT)
+Subject: Re: Creating btrfs RAID on LUKS devs makes devices disappear
+To: Ochi <ochi@arcor.de>, lists@colorremedies.com
+References: <CAJCQCtRNzJPNhMwRtha3Wf1WReDQvaXY=7CpZGW4M=mONLrLSQ@mail.gmail.com>
+ <4b7809e0-7329-62b0-c488-51bd4f0318a6@arcor.de>
+Cc: linux-btrfs@vger.kernel.org
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <57de279f-fd62-dc4c-efd4-ac1d85f1bdd6@gmail.com>
-Date: Fri, 12 May 2017 07:16:31 -0400
+Message-ID: <ba7f8443-6031-6658-d63b-e09dd3f2259e@gmail.com>
+Date: Fri, 12 May 2017 07:25:16 -0400
 MIME-Version: 1.0
-In-Reply-To: <cf95a201-a8c5-ad94-3a98-81e55bf63a6c@liqd.de>
+In-Reply-To: <4b7809e0-7329-62b0-c488-51bd4f0318a6@arcor.de>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-05-11 12:17, Robert Mader wrote:
-> Hello everyone,
+On 2017-05-11 19:24, Ochi wrote:
+> Hello,
 >
-> I just wanted to ask a short question as I couldn't find a clear answer
-> anywhere on the net, yet:
+> here is the journal.log (I hope). It's quite interesting. I rebooted the
+> machine, performed a mkfs.btrfs on dm-{2,3,4} and dm-3 was missing
+> afterwards (around timestamp 66.*). However, I then logged into the
+> machine from another terminal (around timestamp 118.*) which triggered
+> something to make the device appear again :O Indeed, dm-3 was once again
+> there after logging in. Does systemd mix something up?
 >
-> Is it currently possible to reserve space for a BTRFS subvolume?
-Currently, there is no way to do this directly right now.  However, you 
-_can_ do this with regular quotas as implemented by qgroups, you just 
-set each subvolume to have a quota equal to the size of the volume minus 
-the amount of space you want reserved to other subvolumes.  While 
-inconvenient, this will produce behavior functionally identical to 
-setting reserved space on data sets in ZFS without setting quotas, as 
-long as you don't add or remove subvolumes.
->
->
-> Following example: I have two subvolumes, one for root and one for home
->
-> I'd like to reserve 2GB of space for my root volume so even if my home
-> volume fills up, it can never starve my root subvolume.
-> But I don't want to set a fixed limit on my home partition, I want both
-> subvolumes to be able to grow and shrink dynamically.
->
-> I use that functionality a lot on ZFS-based systems like FreeNAS. In the
-> the web-interface of FreeNAS one can easily configure things like that.
->
->
-> If I get it right, qgroups actually already create things like a global
-> reserve. Therefor the functionality seems to be there. Is there a way to
-> use it, just like the limit functionality? Or is it planed?
-I'm not certain about this myself, but you may be thinking of the 
-GlobalReserve area in the metadata, which actually has nothing to do 
-with how qgroups work, and is instead used to allow things to keep 
-working to a limited degree when the filesystem is full.
+> Hmm, I just did another mkfs once the devices where back, devices were
+> missing, but they re-appeared a few seconds later, without logging into
+> a terminal. After another mkfs, they were gone again and are now still
+> gone after waiting a few minutes. It's really weird, I can't really tell
+> what triggers this yet. Will test more tomorrow, let me know if you have
+> any more ideas what to try.
+
+It looks like something made systemd think that it should tear down the 
+LUKS volumes, but it somehow only got /dev/dm-3 and not the others, and 
+then you logging in and triggering the creation of the associated user 
+slice somehow made it regain it's senses.  Next time you see it 
+disappear, try checking `systemctl status` for the unit you have set up 
+for the LUKS volume and see what that says.  I doubt it will give much 
+more info, but I suspect it will say it's stopped, which will solidify 
+that systemd is either misconfigured or doing something stupid (and 
+based on past experience, I'm willing to bet it's the latter).
+

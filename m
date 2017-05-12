@@ -1,63 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yb0-f169.google.com ([209.85.213.169]:34600 "EHLO
-        mail-yb0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755463AbdELRHC (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:49944 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1756910AbdELS2L (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 May 2017 13:07:02 -0400
-Received: by mail-yb0-f169.google.com with SMTP id 8so15491039ybw.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 May 2017 10:07:02 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <4b7809e0-7329-62b0-c488-51bd4f0318a6@arcor.de>
-References: <CAJCQCtRNzJPNhMwRtha3Wf1WReDQvaXY=7CpZGW4M=mONLrLSQ@mail.gmail.com>
- <4b7809e0-7329-62b0-c488-51bd4f0318a6@arcor.de>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Fri, 12 May 2017 11:07:01 -0600
-Message-ID: <CAJCQCtRDn8TMiv2sh0SGM=f2ApMa_j=N8=YFF+pu38WdThM7HQ@mail.gmail.com>
-Subject: Re: Creating btrfs RAID on LUKS devs makes devices disappear
-To: Ochi <ochi@arcor.de>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+        Fri, 12 May 2017 14:28:11 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1d9FII-0008Ny-Pf
+        for linux-btrfs@vger.kernel.org; Fri, 12 May 2017 20:28:02 +0200
+To: linux-btrfs@vger.kernel.org
+From: Kai Krakow <hurikhan77@gmail.com>
+Subject: Re: Btrfs/SSD
+Date: Fri, 12 May 2017 20:27:56 +0200
+Message-ID: <20170512202756.16bd785f@jupiter.sol.kaishome.de>
+References: <CAK5rZE4ko_xFr_Zv=bmZ4tR9X59jXaqFnTv16_ynEO0+E5uzeg@mail.gmail.com>
+        <f5cb15a5-5566-b366-ebda-c3101fa96eec@gmail.com>
+        <CAK5rZE7WHeTknmQdjX7vianEj4RmdLU+ocTLhbAxYenRjLegaA@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 11, 2017 at 5:24 PM, Ochi <ochi@arcor.de> wrote:
-> Hello,
->
-> here is the journal.log (I hope). It's quite interesting. I rebooted the
-> machine, performed a mkfs.btrfs on dm-{2,3,4} and dm-3 was missing
-> afterwards (around timestamp 66.*). However, I then logged into the machine
-> from another terminal (around timestamp 118.*) which triggered something to
-> make the device appear again :O Indeed, dm-3 was once again there after
-> logging in. Does systemd mix something up?
+Am Tue, 18 Apr 2017 15:02:42 +0200
+schrieb Imran Geriskovan <imran.geriskovan@gmail.com>:
 
-I don't see any Btrfs complaints. If dm-3 is the device Btrfs is
-expecting and it vanishes, then Btrfs would mention it on a read or
-write. So either nothing is happening and Btrfs isn't yet aware that
-dm-3 is gone, or it's looking at some other instance of that encrypted
-volume, maybe it's using /dev/mapper/storage1. You can find out with
-btrfs fi show.
+> On 4/17/17, Austin S. Hemmelgarn <ahferroin7@gmail.com> wrote:
+> > Regarding BTRFS specifically:
+> > * Given my recently newfound understanding of what the 'ssd' mount
+> > option actually does, I'm inclined to recommend that people who are
+> > using high-end SSD's _NOT_ use it as it will heavily increase
+> > fragmentation and will likely have near zero impact on actual device
+> > lifetime (but may _hurt_ performance).  It will still probably help
+> > with mid and low-end SSD's.  
+> 
+> I'm trying to have a proper understanding of what "fragmentation"
+> really means for an ssd and interrelation with wear-leveling.
+> 
+> Before continuing lets remember:
+> Pages cannot be erased individually, only whole blocks can be erased.
+> The size of a NAND-flash page size can vary, and most drive have pages
+> of size 2 KB, 4 KB, 8 KB or 16 KB. Most SSDs have blocks of 128 or 256
+> pages, which means that the size of a block can vary between 256 KB
+> and 4 MB.
+> codecapsule.com/.../coding-for-ssds-part-2-architecture-of-an-ssd-and-benchmarking/
+> 
+> Lets continue:
+> Since block sizes are between 256k-4MB, data smaller than this will
+> "probably" will not be fragmented in a reasonably empty and trimmed
+> drive. And for a brand new ssd we may speak of contiguous series
+> of blocks.
+> 
+> However, as drive is used more and more and as wear leveling kicking
+> in (ie. blocks are remapped) the meaning of "contiguous blocks" will
+> erode. So any file bigger than a block size will be written to blocks
+> physically apart no matter what their block addresses says. But my
+> guess is that accessing device blocks -contiguous or not- are
+> constant time operations. So it would not contribute performance
+> issues. Right? Comments?
+> 
+> So your the feeling about fragmentation/performance is probably
+> related with if the file is spread into less or more blocks. If # of
+> blocks used is higher than necessary (ie. no empty blocks can be
+> found. Instead lots of partially empty blocks have to be used
+> increasing the total # of blocks involved) then we will notice
+> performance loss.
+> 
+> Additionally if the filesystem will gonna try something to reduce
+> the fragmentation for the blocks, it should precisely know where
+> those blocks are located. Then how about ssd block informations?
+> Are they available and do filesystems use it?
+> 
+> Anyway if you can provide some more details about your experiences
+> on this we can probably have better view on the issue.
 
-Whenever I use Btrfs on LUKS I invariably see fi show, show me one
-device using /dev/dm-0 notation and the other device is
-/dev/mapper/blah notation. I think this is just an artifact of all the
-weird behind the scenes shit with symlinks and such, and that is a
-systemd thing as far as I know.
+What you really want for SSD is not defragmented files but defragmented
+free space. That increases life time.
 
-Anyway, more information is needed. First see if the device is really
-missing per Btrfs (read or write something and also check with 'btrfs
-fi show') You can add systemd.log_level=debug as a boot parameter to
-get more information in the journal, although it's rather verbose. You
-could combine it with rd.udev.debug but that gets really crazy verbose
-so I tend not to use them at the same time.
+So, defragmentation on SSD makes sense if it cares more about free
+space but not file data itself.
 
-The other possibility is there's a conflict with dracut which may be
-doing some things, and the debug switch for that is rd.debug and is
-likewise extremely verbose, producing huge logs, so I would start out
-with just the systemd debug and see if that reveals anything
-*assuming* Btrfs is complaining. If Btrfs doesn't complain about a
-device going away then I wouldn't worry about it.
+But of course, over time, fragmentation of file data (be it meta data
+or content data) may introduce overhead - and in btrfs it probably
+really makes a difference if I scan through some of the past posts.
+
+I don't think it is important for the file system to know where the SSD
+FTL located a data block. It's just important to keep everything nicely
+aligned with erase block sizes, reduce rewrite patterns, and free up
+complete erase blocks as good as possible.
+
+Maybe such a process should be called "compaction" and not
+"defragmentation". In the end, the more continuous blocks of free space
+there are, the better the chance for proper wear leveling.
 
 
 -- 
-Chris Murphy
+Regards,
+Kai
+
+Replies to list-only preferred.
+

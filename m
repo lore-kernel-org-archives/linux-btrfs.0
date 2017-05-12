@@ -1,140 +1,154 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:42588 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:49326 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752280AbdEPRG3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 May 2017 13:06:29 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 57C0AAD23
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 May 2017 17:06:27 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs: use generic slab for for btrfs_transaction
-Date: Tue, 16 May 2017 19:05:29 +0200
-Message-Id: <20170516170529.5654-1-dsterba@suse.com>
+        id S1756830AbdELJlH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 12 May 2017 05:41:07 -0400
+To: linux-btrfs@vger.kernel.org, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Subject: severe performance regression in generic/027
+Message-ID: <f73ca072-3a1d-83ad-12b3-0750429bf765@suse.com>
+Date: Fri, 12 May 2017 12:41:04 +0300
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Observing the number of slab objects of btrfs_transaction, there's just
-one active on an almost quiescent filesystem, and the number of objects
-goes to about ten when sync is in progress. Then the nubmer goes down to
-1.  This matches the expectations of the transaction lifetime.
+Hello, 
 
-For such use the separate slab cache is not justified, as we do not
-reuse objects frequently. For the shortlived transaction, the generic
-slab (size 512) should be ok. We can optimistically expect that the 512
-slabs are not all used (fragmentation) and there are free slots to take
-when we do the allocation, compared to potentially allocating a whole new
-page for the separate slab.
+I've been investigating a severe performance regression in generic/027 on 
+latest master. Specifically I traced that back to the rm portion of the test. 
+rm now takes 4  times longer to delete the same amount of files. After bisecting I 
+identified the culprit as being 957780eb2788 ("Btrfs: introduce 
+ticketed enospc infrastructure"). With this commit applied rm 
+would take 65 seconds to delete around 10k files whereas before 
+it would take 15 seconds. I guess this is only triggered in the 
+case where there isn't much available metadata space since no one 
+has complained so far. 
 
-We'll lose the stats about the object use, which could be added later if
-we really need them.
+Further analysis showed that the extra time comes from the fact there 
+are a lot more transaction commits happening with the ticketed enosp.
+ Here are some stats obtained via systemtap instrumentation of flush_space: 
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/ctree.h       | 1 -
- fs/btrfs/disk-io.c     | 5 -----
- fs/btrfs/inode.c       | 8 --------
- fs/btrfs/transaction.c | 8 ++++----
- 4 files changed, 4 insertions(+), 18 deletions(-)
+Good: 
+btrfs_trans_commit: 1088
+FLUSH_DELAYED_ITEMS_NR => 12281                                                 
+FLUSH_DELAYED_ITEMS => 6151                                                     
+FLUSH_DELALLOC => 6124                                                          
+FLUSH_DELALLOC_WAIT => 6124                                                     
+ALLOC_CHUNK => 6124                                                             
+COMMIT_TRANS => 1087                                                            
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 643c70d2b2e6..e507c9fcaf3e 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -48,7 +48,6 @@ struct btrfs_trans_handle;
- struct btrfs_transaction;
- struct btrfs_pending_snapshot;
- extern struct kmem_cache *btrfs_trans_handle_cachep;
--extern struct kmem_cache *btrfs_transaction_cachep;
- extern struct kmem_cache *btrfs_bit_radix_cachep;
- extern struct kmem_cache *btrfs_path_cachep;
- extern struct kmem_cache *btrfs_free_space_cachep;
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 8685d67185d0..03ca0f77aec9 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -4576,11 +4576,6 @@ void btrfs_cleanup_one_transaction(struct btrfs_transaction *cur_trans,
- 
- 	cur_trans->state =TRANS_STATE_COMPLETED;
- 	wake_up(&cur_trans->commit_wait);
--
--	/*
--	memset(cur_trans, 0, sizeof(*cur_trans));
--	kmem_cache_free(btrfs_transaction_cachep, cur_trans);
--	*/
- }
- 
- static int btrfs_cleanup_transaction(struct btrfs_fs_info *fs_info)
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 17cbe9306faf..cf9e3928fdca 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -86,7 +86,6 @@ static const struct extent_io_ops btrfs_extent_io_ops;
- 
- static struct kmem_cache *btrfs_inode_cachep;
- struct kmem_cache *btrfs_trans_handle_cachep;
--struct kmem_cache *btrfs_transaction_cachep;
- struct kmem_cache *btrfs_path_cachep;
- struct kmem_cache *btrfs_free_space_cachep;
- 
-@@ -9514,7 +9513,6 @@ void btrfs_destroy_cachep(void)
- 	rcu_barrier();
- 	kmem_cache_destroy(btrfs_inode_cachep);
- 	kmem_cache_destroy(btrfs_trans_handle_cachep);
--	kmem_cache_destroy(btrfs_transaction_cachep);
- 	kmem_cache_destroy(btrfs_path_cachep);
- 	kmem_cache_destroy(btrfs_free_space_cachep);
- }
-@@ -9534,12 +9532,6 @@ int btrfs_init_cachep(void)
- 	if (!btrfs_trans_handle_cachep)
- 		goto fail;
- 
--	btrfs_transaction_cachep = kmem_cache_create("btrfs_transaction",
--			sizeof(struct btrfs_transaction), 0,
--			SLAB_TEMPORARY | SLAB_MEM_SPREAD, NULL);
--	if (!btrfs_transaction_cachep)
--		goto fail;
--
- 	btrfs_path_cachep = kmem_cache_create("btrfs_path",
- 			sizeof(struct btrfs_path), 0,
- 			SLAB_MEM_SPREAD, NULL);
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 2168654c90a1..edbcb1b48e96 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -93,7 +93,7 @@ void btrfs_put_transaction(struct btrfs_transaction *transaction)
- 			btrfs_put_block_group_trimming(cache);
- 			btrfs_put_block_group(cache);
- 		}
--		kmem_cache_free(btrfs_transaction_cachep, transaction);
-+		kfree(transaction);
- 	}
- }
- 
-@@ -228,7 +228,7 @@ static noinline int join_transaction(struct btrfs_fs_info *fs_info,
- 	 */
- 	BUG_ON(type == TRANS_JOIN_NOLOCK);
- 
--	cur_trans = kmem_cache_alloc(btrfs_transaction_cachep, GFP_NOFS);
-+	cur_trans = kmalloc(sizeof(*cur_trans), GFP_NOFS);
- 	if (!cur_trans)
- 		return -ENOMEM;
- 
-@@ -238,11 +238,11 @@ static noinline int join_transaction(struct btrfs_fs_info *fs_info,
- 		 * someone started a transaction after we unlocked.  Make sure
- 		 * to redo the checks above
- 		 */
--		kmem_cache_free(btrfs_transaction_cachep, cur_trans);
-+		kfree(cur_trans);
- 		goto loop;
- 	} else if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state)) {
- 		spin_unlock(&fs_info->trans_lock);
--		kmem_cache_free(btrfs_transaction_cachep, cur_trans);
-+		kfree(cur_trans);
- 		return -EROFS;
- 	}
- 
--- 
-2.12.0
+BAD: 
+btrfs_trans_commit: 4711                              
+FLUSH_DELAYED_ITEMS_NR => 9606                                                  
+FLUSH_DELAYED_ITEMS => 4709                                                     
+FLUSH_DELALLOC => 4709                                                          
+FLUSH_DELALLOC_WAIT => 4709                                                     
+ALLOC_CHUNK => 4709                                                             
+COMMIT_TRANS => 4709
+
+So we do 4 times more transaction commits. I've also traced the 
+2 branches in reserve_metadata_bytes (__reserve_metadata_bytes) respectively, 
+and here are the numbers: 
+
+Good: 
+Failures: 9383 
+
+Bad:
+Failures: 1579
+
+Those numbers count how many times have we took the 
+if (ret && flush != BTRFS_RESERVE_NO_FLUSH) {
+
+branch in the good case and how many times we executed 
+the 'queue_work' function call in the bad case i.e. the 
+numbers of time we have to flush_space. Here are the stack 
+traces of btrfs_commit_trans: 
+
+Good:
+ 0xffffffff81387ca0 : btrfs_commit_transaction+0x0/0xb40 [kernel]
+ 0xffffffff813726eb : flush_space+0x9b/0x4e0 [kernel]
+ 0xffffffff81372fe4 : reserve_metadata_bytes+0x2f4/0x710 [kernel]
+ 0xffffffff81373425 : btrfs_block_rsv_add+0x25/0x60 [kernel]
+ 0xffffffff81388bd3 : start_transaction+0x3f3/0x570 [kernel]
+ 0xffffffff813891fa : btrfs_start_transaction_fallback_global_rsv+0x2a/0x200 [kernel]
+ 0xffffffff81392785 : btrfs_unlink+0x35/0xb0 [kernel]
+ 0xffffffff811c0e0a : vfs_unlink+0xba/0x1a0 [kernel]
+ 0xffffffff811c5cdb : do_unlinkat+0x24b/0x2a0 [kernel]
+ 0xffffffff811c646b : SyS_unlinkat+0x1b/0x30 [kernel]
+ 0xffffffff816d0b40 : entry_SYSCALL_64_fastpath+0x23/0xc1 [kernel]
+
+Naturally.
+
+Bad: 
+
+ 0xffffffff81388b30 : btrfs_commit_transaction+0x0/0xb40 [kernel]
+ 0xffffffff81372d73 : flush_space+0x93/0x510 [kernel]
+ 0xffffffff813732f3 : btrfs_async_reclaim_metadata_space+0x103/0x460 [kernel]
+ 0xffffffff8106d86f : process_one_work+0x1cf/0x660 [kernel]
+ 0xffffffff8106dd4e : worker_thread+0x4e/0x490 [kernel]
+ 0xffffffff810745ae : kthread+0xfe/0x120 [kernel]
+ 0xffffffff816d1c0f : ret_from_fork+0x1f/0x40 [kernel]
+ 0xffffffff810744b0 : kthread+0x0/0x120 [kernel]
+
+Also no surprises here, since flushing is alway async now. Further breaking 
+down which site actually queued the btrfs_async_reclaim_metadata_space 
+reveals the following: 
+
+traces[                                                                         
+ 0xffffffff81373774 : __reserve_metadata_bytes+0x124/0xa80 [kernel]             
+ 0xffffffff813740f4 : reserve_metadata_bytes+0x24/0x1c0 [kernel]                
+ 0xffffffff813742b5 : btrfs_block_rsv_add+0x25/0x60 [kernel]                    
+ 0xffffffff81389a63 : start_transaction+0x3f3/0x570 [kernel]                    
+ 0xffffffff8138a08a : btrfs_start_transaction_fallback_global_rsv+0x2a/0x200 [kernel]
+ 0xffffffff81393615 : btrfs_unlink+0x35/0xb0 [kernel]                           
+ 0xffffffff811c0e0a : vfs_unlink+0xba/0x1a0 [kernel]                            
+ 0xffffffff811c5cdb : do_unlinkat+0x24b/0x2a0 [kernel]                          
+ 0xffffffff811c646b : SyS_unlinkat+0x1b/0x30 [kernel]                           
+ 0xffffffff816d19c0 : entry_SYSCALL_64_fastpath+0x23/0xc1 [kernel]              
+] = 3905   
+
+__reserve_metadata_bytes+0x124/0xa80 is the queue_work from the 
+if (!ret && space_info->flags & BTRFS_BLOCK_GROUP_METADATA) branch
+e.g. when we managed to do our reservation but still would like to 
+do preemptive space flushing.
+
+
+                                                                     
+traces[                                                                         
+ 0xffffffff81373eed : __reserve_metadata_bytes+0x89d/0xa80 [kernel]             
+ 0xffffffff813740f4 : reserve_metadata_bytes+0x24/0x1c0 [kernel]                
+ 0xffffffff813742b5 : btrfs_block_rsv_add+0x25/0x60 [kernel]                    
+ 0xffffffff81389a63 : start_transaction+0x3f3/0x570 [kernel]                    
+ 0xffffffff8138a08a : btrfs_start_transaction_fallback_global_rsv+0x2a/0x200 [kernel]
+ 0xffffffff81393615 : btrfs_unlink+0x35/0xb0 [kernel]                           
+ 0xffffffff811c0e0a : vfs_unlink+0xba/0x1a0 [kernel]                            
+ 0xffffffff811c5cdb : do_unlinkat+0x24b/0x2a0 [kernel]                          
+ 0xffffffff811c646b : SyS_unlinkat+0x1b/0x30 [kernel]                           
+ 0xffffffff816d19c0 : entry_SYSCALL_64_fastpath+0x23/0xc1 [kernel]              
+] = 1579
+
+__reserve_metadata_bytes+0x89d/0xa80 this is the queue from the 
+if (ret && flush != BTRFS_RESERVE_NO_FLUSH) { branch. E.g. when we 
+failed to do our reservation. 
+
+SO with the ticketed ENOSPC we actually have less reservation failures but 
+ironically a lot more transaction commits. The end result being slower operations.
+
+I'm also sharing two files which have a lot more debugging by printing
+the space_info state during failure to do reservations in both the good 
+case (pre enospc ticketed work) and the bad (after ticketed enospc) case: 
+
+good: http://sprunge.us/QBSc
+bad: http://sprunge.us/PaNI
+
+I'm running out of ideas where this might be happening or how to further 
+debug it. Any pointers would be much appreciated. I've had an off-list 
+discussion with Josef re. this and one thing he suggested is that we 
+might be hitting the ->failfast in use_block_rsv however in both 
+cases that code was never triggered. All measurements have been made
+only during the rm portion of the test and not the whole "Create files and 
+delete them" phase. 
+
 

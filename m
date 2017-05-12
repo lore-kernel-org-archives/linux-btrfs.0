@@ -1,79 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:34654 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1758730AbdELSg7 (ORCPT
+Received: from mail-lf0-f45.google.com ([209.85.215.45]:36245 "EHLO
+        mail-lf0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752456AbdELUbL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 May 2017 14:36:59 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1d9FQl-0002Vt-Ae
-        for linux-btrfs@vger.kernel.org; Fri, 12 May 2017 20:36:47 +0200
-To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77@gmail.com>
-Subject: Re: Btrfs/SSD
-Date: Fri, 12 May 2017 20:36:44 +0200
-Message-ID: <20170512203644.26e068e5@jupiter.sol.kaishome.de>
+        Fri, 12 May 2017 16:31:11 -0400
+Received: by mail-lf0-f45.google.com with SMTP id h4so7063612lfj.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 May 2017 13:31:10 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <20170512202756.16bd785f@jupiter.sol.kaishome.de>
 References: <CAK5rZE4ko_xFr_Zv=bmZ4tR9X59jXaqFnTv16_ynEO0+E5uzeg@mail.gmail.com>
-        <f5cb15a5-5566-b366-ebda-c3101fa96eec@gmail.com>
-        <pan$9df5c$36e00209$7c238f6d$c2c19c0f@cox.net>
-        <CAK5rZE7H_qXh7TOU=N3JTocqjVitsAMNtxMCDfbJHTNJz0jF5A@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+ <f5cb15a5-5566-b366-ebda-c3101fa96eec@gmail.com> <CAK5rZE7WHeTknmQdjX7vianEj4RmdLU+ocTLhbAxYenRjLegaA@mail.gmail.com>
+ <20170512202756.16bd785f@jupiter.sol.kaishome.de>
+From: Imran Geriskovan <imran.geriskovan@gmail.com>
+Date: Fri, 12 May 2017 22:31:08 +0200
+Message-ID: <CAK5rZE5B6M8TcnKmfLGMR8kjQ1GtLXk7Rf8GhUPL8pRfdOTiTw@mail.gmail.com>
+Subject: Re: Btrfs/SSD
+To: Kai Krakow <hurikhan77@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Fri, 12 May 2017 15:02:20 +0200
-schrieb Imran Geriskovan <imran.geriskovan@gmail.com>:
+On 5/12/17, Kai Krakow <hurikhan77@gmail.com> wrote:
+> I don't think it is important for the file system to know where the SSD
+> FTL located a data block. It's just important to keep everything nicely
+> aligned with erase block sizes, reduce rewrite patterns, and free up
+> complete erase blocks as good as possible.
 
-> On 5/12/17, Duncan <1i5t5.duncan@cox.net> wrote:
-> > FWIW, I'm in the market for SSDs ATM, and remembered this from a
-> > couple weeks ago so went back to find it.  Thanks. =:^)
-> >
-> > (I'm currently still on quarter-TB generation ssds, plus spinning
-> > rust for the larger media partition and backups, and want to be rid
-> > of the spinning rust, so am looking at half-TB to TB, which seems
-> > to be the pricing sweet spot these days anyway.)  
-> 
-> Since you are taking ssds to mainstream based on your experience,
-> I guess your perception of data retension/reliability is better than
-> that of spinning rust. Right? Can you eloborate?
-> 
-> Or an other criteria might be physical constraints of spinning rust
-> on notebooks which dictates that you should handle the device
-> with care when running.
-> 
-> What was your primary motivation other than performance?
+Yeah. "Tight packing" of data into erase blocks will reduce fragmentation
+at flash level, but not necessarily the fragmentation at fs level. And
+unless we are writing in continuous journaling style (as f2fs ?),
+we still need to have some info about the erase blocks.
 
-Personally, I don't really trust SSDs so much. They are much more
-robust when it comes to physical damage because there are no physical
-parts. That's absolutely not my concern. Regarding this, I trust SSDs
-better than HDDs.
-
-My concern is with fail scenarios of some SSDs which die unexpected and
-horribly. I found some reports of older Samsung SSDs which failed
-suddenly and unexpected, and in a way that the drive completely died:
-No more data access, everything gone. HDDs start with bad sectors and
-there's a good chance I can recover most of the data except a few
-sectors.
-
-When SSD blocks die, they are probably huge compared to a sector (256kB
-to 4MB usually because that's erase block sizes). If this happens, the
-firmware may decide to either allow read-only access or completely deny
-access. There's another situation where dying storage chips may
-completely mess up the firmware and there's no longer any access to
-data.
-
-That's why I don't trust any of my data to them. But I still want the
-benefit of their speed. So I use SSDs mostly as frontend caches to
-HDDs. This gives me big storage with fast access. Indeed, I'm using
-bcache successfully for this. A warm cache is almost as fast as native
-SSD (at least it feels almost that fast, it will be slower if you threw
-benchmarks at it).
+Of course while these are going on, there is also something like roundrobin
+mapping or some kind of journaling would be going on at the low level flash
+as wear leveling/bad block replacements which is totally invisible to us.
 
 
--- 
-Regards,
-Kai
+> Maybe such a process should be called "compaction" and not
+> "defragmentation". In the end, the more continuous blocks of free space
+> there are, the better the chance for proper wear leveling.
 
-Replies to list-only preferred.
 
+Tight packing into erase blocks seems dominant factor for ssd welfare.
+
+However, fs fragmentation may still be a thing to consider because
+increased fs fragmentation will probably increase the # of erase
+blocks involved, affecting both read/write performance and wear.
+
+Keeping an eye on both is a though job. Worse there is "two" uncoordinated
+eyes one watching the "fs" and the other watching the "flash" making the
+whole process suboptimal.
+
+I think the ultimate utopic combination would be "absolutely dumb flash
+controller" providing direct access to physical bytes and the ultimate
+"Flash FS" making use of possible performance, wear leveling tricks.
+
+Clearly, we are far from it.

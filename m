@@ -1,40 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f47.google.com ([209.85.215.47]:34710 "EHLO
-        mail-lf0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754923AbdELNCW (ORCPT
+Received: from vsmx010.vodafonemail.xion.oxcs.net ([153.92.174.88]:37320 "EHLO
+        vsmx010.vodafonemail.xion.oxcs.net" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S932662AbdELNzI (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 May 2017 09:02:22 -0400
-Received: by mail-lf0-f47.google.com with SMTP id 99so820230lfu.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 May 2017 06:02:21 -0700 (PDT)
+        Fri, 12 May 2017 09:55:08 -0400
+Subject: Re: Creating btrfs RAID on LUKS devs makes devices disappear
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+References: <CAJCQCtRNzJPNhMwRtha3Wf1WReDQvaXY=7CpZGW4M=mONLrLSQ@mail.gmail.com>
+ <4b7809e0-7329-62b0-c488-51bd4f0318a6@arcor.de>
+ <ba7f8443-6031-6658-d63b-e09dd3f2259e@gmail.com>
+From: Ochi <ochi@arcor.de>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-ID: <3b6c4fb2-c2d4-b6d6-934f-187b1c9106b7@arcor.de>
+Date: Fri, 12 May 2017 15:54:59 +0200
 MIME-Version: 1.0
-In-Reply-To: <pan$9df5c$36e00209$7c238f6d$c2c19c0f@cox.net>
-References: <CAK5rZE4ko_xFr_Zv=bmZ4tR9X59jXaqFnTv16_ynEO0+E5uzeg@mail.gmail.com>
- <f5cb15a5-5566-b366-ebda-c3101fa96eec@gmail.com> <pan$9df5c$36e00209$7c238f6d$c2c19c0f@cox.net>
-From: Imran Geriskovan <imran.geriskovan@gmail.com>
-Date: Fri, 12 May 2017 15:02:20 +0200
-Message-ID: <CAK5rZE7H_qXh7TOU=N3JTocqjVitsAMNtxMCDfbJHTNJz0jF5A@mail.gmail.com>
-Subject: Re: Btrfs/SSD
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <ba7f8443-6031-6658-d63b-e09dd3f2259e@gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 5/12/17, Duncan <1i5t5.duncan@cox.net> wrote:
-> FWIW, I'm in the market for SSDs ATM, and remembered this from a couple
-> weeks ago so went back to find it.  Thanks. =:^)
->
-> (I'm currently still on quarter-TB generation ssds, plus spinning rust
-> for the larger media partition and backups, and want to be rid of the
-> spinning rust, so am looking at half-TB to TB, which seems to be the
-> pricing sweet spot these days anyway.)
+On 12.05.2017 13:25, Austin S. Hemmelgarn wrote:
+> On 2017-05-11 19:24, Ochi wrote:
+>> Hello,
+>>
+>> here is the journal.log (I hope). It's quite interesting. I rebooted the
+>> machine, performed a mkfs.btrfs on dm-{2,3,4} and dm-3 was missing
+>> afterwards (around timestamp 66.*). However, I then logged into the
+>> machine from another terminal (around timestamp 118.*) which triggered
+>> something to make the device appear again :O Indeed, dm-3 was once again
+>> there after logging in. Does systemd mix something up?
+>>
+>> Hmm, I just did another mkfs once the devices where back, devices were
+>> missing, but they re-appeared a few seconds later, without logging into
+>> a terminal. After another mkfs, they were gone again and are now still
+>> gone after waiting a few minutes. It's really weird, I can't really tell
+>> what triggers this yet. Will test more tomorrow, let me know if you have
+>> any more ideas what to try.
+> 
+> It looks like something made systemd think that it should tear down the 
+> LUKS volumes, but it somehow only got /dev/dm-3 and not the others, and 
+> then you logging in and triggering the creation of the associated user 
+> slice somehow made it regain it's senses.  Next time you see it 
+> disappear, try checking `systemctl status` for the unit you have set up 
+> for the LUKS volume and see what that says.  I doubt it will give much 
+> more info, but I suspect it will say it's stopped, which will solidify 
+> that systemd is either misconfigured or doing something stupid (and 
+> based on past experience, I'm willing to bet it's the latter).
 
-Since you are taking ssds to mainstream based on your experience,
-I guess your perception of data retension/reliability is better than that
-of spinning rust. Right? Can you eloborate?
+I will take a closer look at systemd when I get home. I would like to 
+point out that this sounds very related to these fairly recent systemd 
+issues:
 
-Or an other criteria might be physical constraints of spinning rust
-on notebooks which dictates that you should handle the device
-with care when running.
+https://github.com/systemd/systemd/issues/5781
 
-What was your primary motivation other than performance?
+https://github.com/systemd/systemd/issues/5866
+
+So my best guess is that systemd is indeed doing weird stuff with 
+multi-device btrfs volumes.

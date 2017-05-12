@@ -1,74 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:10220 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1755171AbdELDau (ORCPT
+        with ESMTP id S1755653AbdELDaw (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 May 2017 23:30:50 -0400
+        Thu, 11 May 2017 23:30:52 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>, <dsterba@suse.cz>
 CC: <rgoldwyn@suse.de>
-Subject: [RFC PATCH v3.1 0/6] Qgroup fixes, Non-stack version
-Date: Fri, 12 May 2017 11:30:40 +0800
-Message-ID: <20170512033046.31981-1-quwenruo@cn.fujitsu.com>
+Subject: [RFC PATCH v3.1 1/6] btrfs: qgroup: Add quick exit for non-fs extents
+Date: Fri, 12 May 2017 11:30:41 +0800
+Message-ID: <20170512033046.31981-2-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20170512033046.31981-1-quwenruo@cn.fujitsu.com>
+References: <20170512033046.31981-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The remaining qgroup fixes patches, based on the Chris' for-linus-4.12
-branch with commit 9bcaaea7418d09691f1ffab5c49aacafe3eef9d0 as base.
+For btrfs_qgroup_account_extent(), modify make it exit quicker for
+non-fs extents.
 
-Can be fetched from github:
-https://github.com/adam900710/linux/tree/qgroup_fixes_non_stack
+This will also reduce the noise in trace_btrfs_qgroup_account_extent
+event.
 
-Despite the 5th patch, patches are mostly unchanged.
-Only minor conflicts are addressed in this update.
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ fs/btrfs/qgroup.c | 41 +++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 39 insertions(+), 2 deletions(-)
 
-The 5th patch chooses a different method to reduce stack memory usage.
-
-Instead of allocating extent_changeset structure on stack, this time only a
-pointer of extent_changeset is allocated on stack.
-
-And real extent_changeset is allocated inside btrfs_qgroup_reserve_data().
-The impact to stack memory usage of quota disabled case is reduced to minimal.
-
-While the error handler routine is not affected either.
-
-v2:
-  Add reviewed-by tag for 2nd patch
-  Update the first patch to follow the new trace point standard
-RFC v3:
-  Use non-stack (dyanamic allocation) for extent_changeset structure, in
-  5th patch, to reduce impact for quota disabled cases.
-  Rebase to latest for-linus-4.12 branch.
-RFC v3.1:
-  Update comment to include the newly introduced parameter
-  Use init/release function to replace open coded ulist_init/release().
-
-
-Qu Wenruo (6):
-  btrfs: qgroup: Add quick exit for non-fs extents
-  btrfs: qgroup: Cleanup btrfs_qgroup_prepare_account_extents function
-  btrfs: qgroup: Return actually freed bytes for qgroup release or free
-    data
-  btrfs: qgroup: Fix qgroup reserved space underflow caused by buffered
-    write and quota enable
-  btrfs: qgroup: Introduce extent changeset for qgroup reserve functions
-  btrfs: qgroup: Fix qgroup reserved space underflow by only freeing
-    reserved ranges
-
- fs/btrfs/ctree.h       |  12 ++-
- fs/btrfs/extent-tree.c |  37 +++++----
- fs/btrfs/extent_io.h   |  36 ++++++++-
- fs/btrfs/file.c        |  41 ++++++----
- fs/btrfs/inode-map.c   |   4 +-
- fs/btrfs/inode.c       |  58 ++++++++-----
- fs/btrfs/ioctl.c       |   9 ++-
- fs/btrfs/qgroup.c      | 215 ++++++++++++++++++++++++++++++++++++-------------
- fs/btrfs/qgroup.h      |   8 +-
- fs/btrfs/relocation.c  |  12 +--
- fs/btrfs/transaction.c |  10 ---
- 11 files changed, 303 insertions(+), 139 deletions(-)
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 3f75b5cbbfef..905fed1ee0dd 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1915,6 +1915,33 @@ static int qgroup_update_counters(struct btrfs_fs_info *fs_info,
+ 	return 0;
+ }
+ 
++/*
++ * Helper to check if the @roots is a list of fs tree roots
++ * Return 0 for definitely not a fs/subvol tree roots ulist
++ * Return 1 for possible fs/subvol tree roots ulist(including empty)
++ */
++static int maybe_fs_roots(struct ulist *roots)
++{
++	struct ulist_node *unode;
++	struct ulist_iterator uiter;
++
++	/* Empty one, still possible for fs roots */
++	if (!roots || roots->nnodes == 0)
++		return 1;
++
++	ULIST_ITER_INIT(&uiter);
++	unode = ulist_next(roots, &uiter);
++	if (!unode)
++		return 1;
++
++	/*
++	 * If it contains fs tree roots, then it must belongs to fs/subvol
++	 * trees.
++	 * If it contains non-fs tree, it won't be shared to fs/subvol trees.
++	 */
++	return is_fstree(unode->val);
++}
++
+ int
+ btrfs_qgroup_account_extent(struct btrfs_trans_handle *trans,
+ 			    struct btrfs_fs_info *fs_info,
+@@ -1931,10 +1958,20 @@ btrfs_qgroup_account_extent(struct btrfs_trans_handle *trans,
+ 	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags))
+ 		return 0;
+ 
+-	if (new_roots)
++	if (new_roots) {
++		if (!maybe_fs_roots(new_roots))
++			goto out_free;
+ 		nr_new_roots = new_roots->nnodes;
+-	if (old_roots)
++	}
++	if (old_roots) {
++		if (!maybe_fs_roots(old_roots))
++			goto out_free;
+ 		nr_old_roots = old_roots->nnodes;
++	}
++
++	/* Quick exit, either not fs tree roots, or won't affect any qgroup */
++	if (nr_old_roots == 0 && nr_new_roots == 0)
++		goto out_free;
+ 
+ 	BUG_ON(!fs_info->quota_root);
+ 
 -- 
 2.12.2
 

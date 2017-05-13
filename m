@@ -1,89 +1,200 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx009.vodafonemail.xion.oxcs.net ([153.92.174.39]:56437 "EHLO
-        mx009.vodafonemail.xion.oxcs.net" rhost-flags-OK-FAIL-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1750935AbdEMP3A (ORCPT
+Received: from mail-vk0-f43.google.com ([209.85.213.43]:33989 "EHLO
+        mail-vk0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752128AbdEMSpm (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 13 May 2017 11:29:00 -0400
-To: arvidjaar@gmail.com
-References: <2f1e52d4-ca30-3623-1ea7-a046bee18bda@gmail.com>
-Subject: Re: Creating btrfs RAID on LUKS devs makes devices disappear
-From: Ochi <ochi@arcor.de>
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <161080bd-1a3f-180f-3119-ccf8fde4a498@arcor.de>
-Date: Sat, 13 May 2017 17:28:52 +0200
+        Sat, 13 May 2017 14:45:42 -0400
+Received: by mail-vk0-f43.google.com with SMTP id y190so31768251vkc.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 13 May 2017 11:45:41 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <2f1e52d4-ca30-3623-1ea7-a046bee18bda@gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <20170321224025.GB1986@lim.localdomain>
+References: <7D943753182E46848AC6B688BF365906@alyakaslap> <20170321224025.GB1986@lim.localdomain>
+From: Alex Lyakas <alex@zadarastorage.com>
+Date: Sat, 13 May 2017 21:45:40 +0300
+Message-ID: <CAOcd+r2BMA+vAo1U9QRN8X+_c0JKttuFg+Q+zsYkuGmtX+huDg@mail.gmail.com>
+Subject: Re: [PATCH RFC] btrfs: introduce a separate mutex for
+ caching_block_groups list
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, Josef Bacik <jbacik@fb.com>,
+        dsterba@suse.com
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Hi Liu,
 
-okay, I think I now have a repro that is stupidly simple, I'm not even 
-sure if I overlook something here. No multi-device btrfs involved, but 
-notably it does happen with btrfs, but not with e.g. ext4.
+On Wed, Mar 22, 2017 at 1:40 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
+> On Sun, Mar 19, 2017 at 07:18:59PM +0200, Alex Lyakas wrote:
+>> We have a commit_root_sem, which is a read-write semaphore that protects the
+>> commit roots.
+>> But it is also used to protect the list of caching block groups.
+>>
+>> As a result, while doing "slow" caching, the following issue is seen:
+>>
+>> Some of the caching threads are scanning the extent tree with
+>> commit_root_sem
+>> acquired in shared mode, with stack like:
+>> [<ffffffffc0ad27b2>] read_extent_buffer_pages+0x2d2/0x300 [btrfs]
+>> [<ffffffffc0a9fbe7>] btree_read_extent_buffer_pages.constprop.50+0xb7/0x1e0
+>> [btrfs]
+>> [<ffffffffc0aa1550>] read_tree_block+0x40/0x70 [btrfs]
+>> [<ffffffffc0a7aa7c>] read_block_for_search.isra.33+0x12c/0x370 [btrfs]
+>> [<ffffffffc0a7ce86>] btrfs_search_slot+0x3c6/0xb10 [btrfs]
+>> [<ffffffffc0a975b9>] caching_thread+0x1b9/0x820 [btrfs]
+>> [<ffffffffc0adfa36>] normal_work_helper+0xc6/0x340 [btrfs]
+>> [<ffffffffc0adfd22>] btrfs_cache_helper+0x12/0x20 [btrfs]
+>>
+>> IO requests that want to allocate space are waiting in cache_block_group()
+>> to acquire the commit_root_sem in exclusive mode. But they only want to add
+>> the caching control structure to the list of caching block-groups:
+>> [<ffffffff817136c9>] schedule+0x29/0x70
+>> [<ffffffff81716085>] rwsem_down_write_failed+0x145/0x320
+>> [<ffffffff813a1ae3>] call_rwsem_down_write_failed+0x13/0x20
+>> [<ffffffffc0a86d0b>] cache_block_group+0x25b/0x450 [btrfs]
+>> [<ffffffffc0a94d36>] find_free_extent+0xd16/0xdb0 [btrfs]
+>> [<ffffffffc0a94e7f>] btrfs_reserve_extent+0xaf/0x160 [btrfs]
+>>
+>> Other caching threads want to continue their scanning, and for that they
+>> are waiting to acquire commit_root_sem in shared mode. But since there are
+>> IO threads that want the exclusive lock, the caching threads are unable
+>> to continue the scanning, because (I presume) rw_semaphore guarantees some
+>> fairness:
+>> [<ffffffff817136c9>] schedule+0x29/0x70
+>> [<ffffffff81715ee5>] rwsem_down_read_failed+0xc5/0x120
+>> [<ffffffff813a1ab4>] call_rwsem_down_read_failed+0x14/0x30
+>> [<ffffffffc0a975a1>] caching_thread+0x1a1/0x820 [btrfs]
+>> [<ffffffffc0adfa36>] normal_work_helper+0xc6/0x340 [btrfs]
+>> [<ffffffffc0adfd22>] btrfs_cache_helper+0x12/0x20 [btrfs]
+>> [<ffffffff8108bd56>] process_one_work+0x146/0x410
+>>
+>> This causes slowness of the IO, especially when there are many block groups
+>> that need to be scanned for free space. In some cases it takes minutes
+>> until a single IO thread is able to allocate free space.
+>>
+>> I don't see a deadlock here, because the caching threads that were able to
+>> acquire
+>> the commit_root_sem will call rwsem_is_contended() and should give up the
+>> semaphore,
+>> so that IO threads are able to acquire it in exclusive mode.
+>>
+>> However, introducing a separate mutex that protects only the list of caching
+>> block groups makes things move forward much faster.
+>>
+>
+> The problem did exist and the patch looks good to me.
+>
+>> This patch is based on kernel 3.18.
+>> Unfortunately, I am not able to submit a patch based on one of the latest
+>> kernels, because
+>> here btrfs is part of the larger system, and upgrading the kernel is a
+>> significant effort.
+>> Hence marking the patch as RFC.
+>> Hopefully, this patch still has some value to the community.
+>>
+>> Signed-off-by: Alex Lyakas <alex@zadarastorage.com>
+>>
+>> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+>> index 42d11e7..74feacb 100644
+>> --- a/fs/btrfs/ctree.h
+>> +++ b/fs/btrfs/ctree.h
+>> @@ -1490,6 +1490,8 @@ struct btrfs_fs_info {
+>>     struct list_head trans_list;
+>>     struct list_head dead_roots;
+>>     struct list_head caching_block_groups;
+>> +    /* protects the above list */
+>> +    struct mutex caching_block_groups_mutex;
+>>
+>>     spinlock_t delayed_iput_lock;
+>>     struct list_head delayed_iputs;
+>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+>> index 5177954..130ec58 100644
+>> --- a/fs/btrfs/disk-io.c
+>> +++ b/fs/btrfs/disk-io.c
+>> @@ -2229,6 +2229,7 @@ int open_ctree(struct super_block *sb,
+>>     INIT_LIST_HEAD(&fs_info->delayed_iputs);
+>>     INIT_LIST_HEAD(&fs_info->delalloc_roots);
+>>     INIT_LIST_HEAD(&fs_info->caching_block_groups);
+>> +    mutex_init(&fs_info->caching_block_groups_mutex);
+>>     spin_lock_init(&fs_info->delalloc_root_lock);
+>>     spin_lock_init(&fs_info->trans_lock);
+>>     spin_lock_init(&fs_info->fs_roots_radix_lock);
+>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+>> index a067065..906fb08 100644
+>> --- a/fs/btrfs/extent-tree.c
+>> +++ b/fs/btrfs/extent-tree.c
+>> @@ -637,10 +637,10 @@ static int cache_block_group(struct
+>> btrfs_block_group_cache *cache,
+>>         return 0;
+>>     }
+>>
+>> -    down_write(&fs_info->commit_root_sem);
+>> +    mutex_lock(&fs_info->caching_block_groups_mutex);
+>>     atomic_inc(&caching_ctl->count);
+>>     list_add_tail(&caching_ctl->list, &fs_info->caching_block_groups);
+>> -    up_write(&fs_info->commit_root_sem);
+>> +    mutex_unlock(&fs_info->caching_block_groups_mutex);
+>>
+>>     btrfs_get_block_group(cache);
+>>
+>> @@ -5693,6 +5693,7 @@ void btrfs_prepare_extent_commit(struct
+>> btrfs_trans_handle *trans,
+>>
+>>     down_write(&fs_info->commit_root_sem);
+>>
+>
+> Witht the new mutex, it's not necessary to take commit_root_sem here
+> because a) pinned_extents could not be modified outside of a
+> transaction, and b) while at btrfs_prepare_extent_commit(), it's
+> already at the very end of commiting a transaction.
+>
+> caching_ctl should have at least one reference and
+> caching_ctl->progress is supposed to be protected by
+> caching_ctl->mutex.
+>
+> Thanks,
+>
+> -liubo
+Thank you for the review.
 
-[Sidenote: At first I thought it had to do with systemd-cryptsetup 
-opening multiple devices with the same key that makes a difference. 
-Rationale: I think the whole systemd machinery for opening crypt devices 
-is able to try the same password on multiple devices when manual 
-keyphrase input is used, and I thought maybe the same is true for 
-keyfiles which may cause race conditions, but after all it doesn't seem 
-to matter much. Also it seemed to relate to multi-device btrfs volumes, 
-but now it appears to be simpler than that. That said, I can't be sure 
-whether there are more problems hidden when actually using RAID.]
+Alex.
 
-I have tried to repro the issue on a completely fresh Arch Linux in a 
-VirtualBox VM. No custom systemd magic involved whatsoever, all stock 
-services, generators, etc. In addition to the root volume (no crypto), 
-there is another virtual HDD with one partition. This is a LUKS 
-partition with a keyfile added to open it automatically on boot. I added 
-a corresponding /etc/crypttab line as follows:
 
-     storage0    /dev/sdb1    /etc/crypto/keyfile
-
-Let's suppose we open the crypt device manually the first time and 
-perform mkfs.btrfs on the /dev/mapper/storage0 device. Reboot the system 
-such that systemd-cryptsetup can do its magic to open the dm device.
-
-After reboot, log in. /dev/mapper/storage0 should be there, and of 
-course the corresponding /dev/dm-*. Perform another mkfs.btrfs on 
-/dev/mapper/storage0. What I observe is (possibly try multiple times, 
-but it has been pretty reliable in my testing):
-
-- /dev/mapper/storage0 and the /dev/dm-* device are gone.
-
-- A process systemd-cryptsetup is using 100% CPU (haven't noticed 
-before, but now on my laptop I can actually hear it)
-
-- The dm-device was eliminated by systemd, see the logs below.
-
-- Logging out and in again (as root in my case) solves the issue, the 
-device is back.
-
-I have prepared outputs of journalctl and udevadm info --export-db 
-produced after the last step (logging out and back in). Since the logs 
-are quite large, I link them here, I hope that is okay:
-
-https://pastebin.com/1r6j1Par
-https://pastebin.com/vXLGFQ0Z
-
-In the journal, the interesting spots are after the two "ROOT LOGIN ON 
-tty1". A few seconds after the first one, I performed the mkfs.
-
-Notably, it doesn't seem to happen when using e.g. ext4 instead of 
-btrfs. Also, it doesn't happen when opening the crypt device manually, 
-without crypttab and thus without systemd-cryptsetup, 
-systemd-cryptsetup-generator, etc. which parses crypttab.
-
-So after all, I suspect the systemd-cryptsetup to be the culprit in 
-combination with btrfs volumes. Maybe someone can repro that.
-
-Versions used in the VM:
-- Current Arch Linux
-- Kernel 4.10.13
-- btrfs-progs 4.10.2
-- systemd v232 (also tested v233 from testing repo with same results)
-
-Hope this helps
-Sebastian
+>
+>> +    mutex_lock(&fs_info->caching_block_groups_mutex);
+>>     list_for_each_entry_safe(caching_ctl, next,
+>>                  &fs_info->caching_block_groups, list) {
+>>         cache = caching_ctl->block_group;
+>> @@ -5704,6 +5705,7 @@ void btrfs_prepare_extent_commit(struct
+>> btrfs_trans_handle *trans,
+>>             cache->last_byte_to_unpin = caching_ctl->progress;
+>>         }
+>>     }
+>> +    mutex_unlock(&fs_info->caching_block_groups_mutex);
+>>
+>>     if (fs_info->pinned_extents == &fs_info->freed_extents[0])
+>>         fs_info->pinned_extents = &fs_info->freed_extents[1];
+>> @@ -8849,14 +8851,14 @@ int btrfs_free_block_groups(struct btrfs_fs_info
+>> *info)
+>>     struct btrfs_caching_control *caching_ctl;
+>>     struct rb_node *n;
+>>
+>> -    down_write(&info->commit_root_sem);
+>> +    mutex_lock(&info->caching_block_groups_mutex);
+>>     while (!list_empty(&info->caching_block_groups)) {
+>>         caching_ctl = list_entry(info->caching_block_groups.next,
+>>                      struct btrfs_caching_control, list);
+>>         list_del(&caching_ctl->list);
+>>         put_caching_control(caching_ctl);
+>>     }
+>> -    up_write(&info->commit_root_sem);
+>> +    mutex_unlock(&info->caching_block_groups_mutex);
+>>
+>>     spin_lock(&info->unused_bgs_lock);
+>>     while (!list_empty(&info->unused_bgs)) {
+>>
+>>
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html

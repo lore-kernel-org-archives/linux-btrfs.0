@@ -1,105 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f54.google.com ([209.85.215.54]:32798 "EHLO
-        mail-lf0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752293AbdEMH3a (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:56548 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1752069AbdEMJj7 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 13 May 2017 03:29:30 -0400
-Received: by mail-lf0-f54.google.com with SMTP id m18so3009748lfj.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 13 May 2017 00:29:29 -0700 (PDT)
-Subject: Re: Creating btrfs RAID on LUKS devs makes devices disappear
-To: Chris Murphy <lists@colorremedies.com>, Ochi <ochi@arcor.de>
-References: <CAJCQCtRNzJPNhMwRtha3Wf1WReDQvaXY=7CpZGW4M=mONLrLSQ@mail.gmail.com>
- <4b7809e0-7329-62b0-c488-51bd4f0318a6@arcor.de>
- <CAJCQCtRDn8TMiv2sh0SGM=f2ApMa_j=N8=YFF+pu38WdThM7HQ@mail.gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Andrei Borzenkov <arvidjaar@gmail.com>
-Message-ID: <2f1e52d4-ca30-3623-1ea7-a046bee18bda@gmail.com>
-Date: Sat, 13 May 2017 10:29:26 +0300
-MIME-Version: 1.0
-In-Reply-To: <CAJCQCtRDn8TMiv2sh0SGM=f2ApMa_j=N8=YFF+pu38WdThM7HQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+        Sat, 13 May 2017 05:39:59 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1d9TWf-00018f-OW
+        for linux-btrfs@vger.kernel.org; Sat, 13 May 2017 11:39:49 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Btrfs/SSD
+Date: Sat, 13 May 2017 09:39:39 +0000 (UTC)
+Message-ID: <pan$3384$13ad2b1f$3febf76a$c09fcbd7@cox.net>
+References: <CAK5rZE4ko_xFr_Zv=bmZ4tR9X59jXaqFnTv16_ynEO0+E5uzeg@mail.gmail.com>
+        <f5cb15a5-5566-b366-ebda-c3101fa96eec@gmail.com>
+        <CAK5rZE7WHeTknmQdjX7vianEj4RmdLU+ocTLhbAxYenRjLegaA@mail.gmail.com>
+        <20170512202756.16bd785f@jupiter.sol.kaishome.de>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-12.05.2017 20:07, Chris Murphy пишет:
-> On Thu, May 11, 2017 at 5:24 PM, Ochi <ochi@arcor.de> wrote:
->> Hello,
->>
->> here is the journal.log (I hope). It's quite interesting. I rebooted the
->> machine, performed a mkfs.btrfs on dm-{2,3,4} and dm-3 was missing
->> afterwards (around timestamp 66.*). However, I then logged into the machine
->> from another terminal (around timestamp 118.*) which triggered something to
->> make the device appear again :O Indeed, dm-3 was once again there after
->> logging in. Does systemd mix something up?
-> 
+Kai Krakow posted on Fri, 12 May 2017 20:27:56 +0200 as excerpted:
 
-Yes :) Did you doubt?
+> In the end, the more continuous blocks of free space there are, the
+> better the chance for proper wear leveling.
 
-Please, try to reproduce it and provide both journalctl and "udevadm
-info --export-db" output. I have my theory what happens here.
+Talking about which...
 
-> I don't see any Btrfs complaints. If dm-3 is the device Btrfs is
-> expecting and it vanishes, then Btrfs would mention it on a read or
-> write. So either nothing is happening and Btrfs isn't yet aware that
-> dm-3 is gone, or it's looking at some other instance of that encrypted
-> volume, maybe it's using /dev/mapper/storage1. You can find out with
-> btrfs fi show.
-> 
+When I was doing my ssd research the first time around, the going 
+recommendation was to keep 20-33% of the total space on the ssd entirely 
+unallocated, allowing it to use that space as an FTL erase-block 
+management pool.
 
-/dev/mapper/xxx should be link to /dev/dm-NN (although you are never
-sure with Linux). dm-NN is *the* device. /dev/mapper/storage1 cannot
-exist without /dev/dm-3, irrespectively of what btrfs shows.
+At the time, I added up all my "performance matters" data dirs and 
+allowing for reasonable in-filesystem free-space, decided I could fit it 
+in 64 GB if I had to, tho 80 GB would be a more comfortable fit, so 
+allowing for the above entirely unpartitioned/unused slackspace 
+recommendations, had a target of 120-128 GB, with a reasonable range 
+depending on actual availability of 100-160 GB.
 
-> Whenever I use Btrfs on LUKS I invariably see fi show, show me one
-> device using /dev/dm-0 notation and the other device is
-> /dev/mapper/blah notation. I think this is just an artifact of all the
-> weird behind the scenes shit with symlinks and such, and that is a
-> systemd thing as far as I know.
-> 
+It turned out, due to pricing and availability, I ended up spending 
+somewhat more and getting 256 GB (238.5 GiB).  Of course that allowed me 
+much more flexibility than I had expected and I ended up with basically 
+everything but the media partition on the ssds, PLUS I still left them at 
+only just over 50% partitioned, (using the gdisk figures, 51%- 
+partitioned, 49%+ free).
 
-Not quite.
+Given that, I've not enabled btrfs trim/discard (which saved me from the 
+bugs with it a few kernel cycles ago), and while I do have a weekly fstrim 
+systemd timer setup, I've not had to be too concerned about btrfs bugs 
+(also now fixed, I believe) when fstrim on btrfs was known not to be 
+trimming everything it really should have been.
 
-As implemented today, when device appears (i.e. udev gets ADD uevent)
-and it is detected as part of btrfs, udev rule scans device (with
-equivalent of "btrfs device ready"). At the time event is being
-processed the only name that is available is canonical kernel /dev/dm-0;
-all convenience syminks are created later, after all rules have been
-processed. btrfs remembers device name that was passed to it.
 
-What makes it even more confusing - some btrfs utilities seem to resolve
-/dev/dm-0 to /dev/mapper/blah by itself, and some not. I am not sure
-which ones.
+Anyway, that 20-33% left entirely unallocated/unpartitioned 
+recommendation still holds, right?  Am I correct in asserting that if one 
+is following that, the FTL already has plenty of erase-blocks available 
+for management and the discussion about filesystem level trim and free 
+space management becomes much less urgent, tho of course it's still worth 
+considering if it's convenient to do so?
 
-Recently btrfsprogs got extra rule that repeats "btrfs device ready" but
-now *after* symlinks have been created (using RUN directive with
-/dev/mapper/blah). It updates kernel with new name. So my guess is that
-for this device this rule is missing (probably it gets created in initrd
-and rule is not added to it).
+And am I also correct in believing that while it's not really worth 
+spending more to over-provision to the near 50% as I ended up doing, if 
+things work out that way as they did with me because the difference in 
+price between 30% overprovisioning and 50% overprovisioning ends up being 
+trivial, there's really not much need to worry about active filesystem 
+trim at all, because the FTL has effectively half the device left to play 
+erase-block musical chairs with as it decides it needs to?
 
-> Anyway, more information is needed. First see if the device is really
-> missing per Btrfs (read or write something and also check with 'btrfs
-> fi show') You can add systemd.log_level=debug as a boot parameter to
-> get more information in the journal, although it's rather verbose. You
-> could combine it with rd.udev.debug but that gets really crazy verbose
-> so I tend not to use them at the same time.
-> 
 
-@ochi: Please, before running with debug repeat your test as you did and
-provide udevadm info --export-db. This may be enough. In my experience
-debug output while being extremely verbose contains very little
-additional useful information, but has tendency of skewing relative
-timing thus changing behavior.
+Of course the higher per-GiB cost of ssd as compared to spinning rust 
+does mean that the above overprovisioning recommendation really does 
+hurt, most of the time, driving per-usable-GB costs even higher, and as I 
+recall that was definitely the case back then between 80 GiB and 160 GiB, 
+and it was basically an accident of timing, that I was buying just as the 
+manufactures flooded the market with newly cost-effective 256 GB devices, 
+that meant they were only trivially more expensive than the 128 or 160 
+GB, AND unlike the smaller devices, actually /available/ in the 500-ish 
+MB/sec performance range that (for SATA-based SSDs) is actually capped by 
+SATA-600 bus speeds more than the chips themselves.  (There were lower 
+cost 128 GB devices, but they were lower speed than I wanted, too.)
 
-> The other possibility is there's a conflict with dracut which may be
-> doing some things, and the debug switch for that is rd.debug and is
-> likewise extremely verbose, producing huge logs, so I would start out
-> with just the systemd debug and see if that reveals anything
-> *assuming* Btrfs is complaining. If Btrfs doesn't complain about a
-> device going away then I wouldn't worry about it.
-> 
-> 
-
-This is not btrfs issue in any case (except btrfs folks should really
-work together with systemd folks and finally come to common
-implementation of multi-device filesystems).
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

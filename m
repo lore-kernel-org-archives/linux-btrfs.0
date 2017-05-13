@@ -1,59 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f45.google.com ([209.85.215.45]:36245 "EHLO
-        mail-lf0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752456AbdELUbL (ORCPT
+Received: from mail-lf0-f54.google.com ([209.85.215.54]:32798 "EHLO
+        mail-lf0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752293AbdEMH3a (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 May 2017 16:31:11 -0400
-Received: by mail-lf0-f45.google.com with SMTP id h4so7063612lfj.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 May 2017 13:31:10 -0700 (PDT)
+        Sat, 13 May 2017 03:29:30 -0400
+Received: by mail-lf0-f54.google.com with SMTP id m18so3009748lfj.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 13 May 2017 00:29:29 -0700 (PDT)
+Subject: Re: Creating btrfs RAID on LUKS devs makes devices disappear
+To: Chris Murphy <lists@colorremedies.com>, Ochi <ochi@arcor.de>
+References: <CAJCQCtRNzJPNhMwRtha3Wf1WReDQvaXY=7CpZGW4M=mONLrLSQ@mail.gmail.com>
+ <4b7809e0-7329-62b0-c488-51bd4f0318a6@arcor.de>
+ <CAJCQCtRDn8TMiv2sh0SGM=f2ApMa_j=N8=YFF+pu38WdThM7HQ@mail.gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+Message-ID: <2f1e52d4-ca30-3623-1ea7-a046bee18bda@gmail.com>
+Date: Sat, 13 May 2017 10:29:26 +0300
 MIME-Version: 1.0
-In-Reply-To: <20170512202756.16bd785f@jupiter.sol.kaishome.de>
-References: <CAK5rZE4ko_xFr_Zv=bmZ4tR9X59jXaqFnTv16_ynEO0+E5uzeg@mail.gmail.com>
- <f5cb15a5-5566-b366-ebda-c3101fa96eec@gmail.com> <CAK5rZE7WHeTknmQdjX7vianEj4RmdLU+ocTLhbAxYenRjLegaA@mail.gmail.com>
- <20170512202756.16bd785f@jupiter.sol.kaishome.de>
-From: Imran Geriskovan <imran.geriskovan@gmail.com>
-Date: Fri, 12 May 2017 22:31:08 +0200
-Message-ID: <CAK5rZE5B6M8TcnKmfLGMR8kjQ1GtLXk7Rf8GhUPL8pRfdOTiTw@mail.gmail.com>
-Subject: Re: Btrfs/SSD
-To: Kai Krakow <hurikhan77@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <CAJCQCtRDn8TMiv2sh0SGM=f2ApMa_j=N8=YFF+pu38WdThM7HQ@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 5/12/17, Kai Krakow <hurikhan77@gmail.com> wrote:
-> I don't think it is important for the file system to know where the SSD
-> FTL located a data block. It's just important to keep everything nicely
-> aligned with erase block sizes, reduce rewrite patterns, and free up
-> complete erase blocks as good as possible.
+12.05.2017 20:07, Chris Murphy пишет:
+> On Thu, May 11, 2017 at 5:24 PM, Ochi <ochi@arcor.de> wrote:
+>> Hello,
+>>
+>> here is the journal.log (I hope). It's quite interesting. I rebooted the
+>> machine, performed a mkfs.btrfs on dm-{2,3,4} and dm-3 was missing
+>> afterwards (around timestamp 66.*). However, I then logged into the machine
+>> from another terminal (around timestamp 118.*) which triggered something to
+>> make the device appear again :O Indeed, dm-3 was once again there after
+>> logging in. Does systemd mix something up?
+> 
 
-Yeah. "Tight packing" of data into erase blocks will reduce fragmentation
-at flash level, but not necessarily the fragmentation at fs level. And
-unless we are writing in continuous journaling style (as f2fs ?),
-we still need to have some info about the erase blocks.
+Yes :) Did you doubt?
 
-Of course while these are going on, there is also something like roundrobin
-mapping or some kind of journaling would be going on at the low level flash
-as wear leveling/bad block replacements which is totally invisible to us.
+Please, try to reproduce it and provide both journalctl and "udevadm
+info --export-db" output. I have my theory what happens here.
 
+> I don't see any Btrfs complaints. If dm-3 is the device Btrfs is
+> expecting and it vanishes, then Btrfs would mention it on a read or
+> write. So either nothing is happening and Btrfs isn't yet aware that
+> dm-3 is gone, or it's looking at some other instance of that encrypted
+> volume, maybe it's using /dev/mapper/storage1. You can find out with
+> btrfs fi show.
+> 
 
-> Maybe such a process should be called "compaction" and not
-> "defragmentation". In the end, the more continuous blocks of free space
-> there are, the better the chance for proper wear leveling.
+/dev/mapper/xxx should be link to /dev/dm-NN (although you are never
+sure with Linux). dm-NN is *the* device. /dev/mapper/storage1 cannot
+exist without /dev/dm-3, irrespectively of what btrfs shows.
 
+> Whenever I use Btrfs on LUKS I invariably see fi show, show me one
+> device using /dev/dm-0 notation and the other device is
+> /dev/mapper/blah notation. I think this is just an artifact of all the
+> weird behind the scenes shit with symlinks and such, and that is a
+> systemd thing as far as I know.
+> 
 
-Tight packing into erase blocks seems dominant factor for ssd welfare.
+Not quite.
 
-However, fs fragmentation may still be a thing to consider because
-increased fs fragmentation will probably increase the # of erase
-blocks involved, affecting both read/write performance and wear.
+As implemented today, when device appears (i.e. udev gets ADD uevent)
+and it is detected as part of btrfs, udev rule scans device (with
+equivalent of "btrfs device ready"). At the time event is being
+processed the only name that is available is canonical kernel /dev/dm-0;
+all convenience syminks are created later, after all rules have been
+processed. btrfs remembers device name that was passed to it.
 
-Keeping an eye on both is a though job. Worse there is "two" uncoordinated
-eyes one watching the "fs" and the other watching the "flash" making the
-whole process suboptimal.
+What makes it even more confusing - some btrfs utilities seem to resolve
+/dev/dm-0 to /dev/mapper/blah by itself, and some not. I am not sure
+which ones.
 
-I think the ultimate utopic combination would be "absolutely dumb flash
-controller" providing direct access to physical bytes and the ultimate
-"Flash FS" making use of possible performance, wear leveling tricks.
+Recently btrfsprogs got extra rule that repeats "btrfs device ready" but
+now *after* symlinks have been created (using RUN directive with
+/dev/mapper/blah). It updates kernel with new name. So my guess is that
+for this device this rule is missing (probably it gets created in initrd
+and rule is not added to it).
 
-Clearly, we are far from it.
+> Anyway, more information is needed. First see if the device is really
+> missing per Btrfs (read or write something and also check with 'btrfs
+> fi show') You can add systemd.log_level=debug as a boot parameter to
+> get more information in the journal, although it's rather verbose. You
+> could combine it with rd.udev.debug but that gets really crazy verbose
+> so I tend not to use them at the same time.
+> 
+
+@ochi: Please, before running with debug repeat your test as you did and
+provide udevadm info --export-db. This may be enough. In my experience
+debug output while being extremely verbose contains very little
+additional useful information, but has tendency of skewing relative
+timing thus changing behavior.
+
+> The other possibility is there's a conflict with dracut which may be
+> doing some things, and the debug switch for that is rd.debug and is
+> likewise extremely verbose, producing huge logs, so I would start out
+> with just the systemd debug and see if that reveals anything
+> *assuming* Btrfs is complaining. If Btrfs doesn't complain about a
+> device going away then I wouldn't worry about it.
+> 
+> 
+
+This is not btrfs issue in any case (except btrfs folks should really
+work together with systemd folks and finally come to common
+implementation of multi-device filesystems).
+

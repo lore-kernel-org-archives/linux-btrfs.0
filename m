@@ -1,41 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:60604 "EHLO
-        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1759193AbdENVWZ (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:34177 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1754259AbdENVXH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 14 May 2017 17:22:25 -0400
-Date: Sun, 14 May 2017 21:21:11 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Marc MERLIN <marc@merlins.org>
-Cc: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
-        linux-btrfs@vger.kernel.org
+        Sun, 14 May 2017 17:23:07 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1dA0ye-0003Lx-C3
+        for linux-btrfs@vger.kernel.org; Sun, 14 May 2017 23:22:56 +0200
+To: linux-btrfs@vger.kernel.org
+From: Kai Krakow <hurikhan77@gmail.com>
 Subject: Re: balancing every night broke balancing so now I can't balance
  anymore?
-Message-ID: <20170514212111.GL9701@carfax.org.uk>
+Date: Sun, 14 May 2017 23:22:51 +0200
+Message-ID: <20170514232251.74f35f3e@jupiter.sol.kaishome.de>
 References: <20170513205431.lm6y5tcffr35gq4a@merlins.org>
- <95bffb8b-7e66-7d6b-2455-f7a025dbb96c@mendix.com>
- <20170514201508.bd3dshfymqt4swpb@merlins.org>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="GeDkoc8jIzHasOdk"
-In-Reply-To: <20170514201508.bd3dshfymqt4swpb@merlins.org>
+        <95bffb8b-7e66-7d6b-2455-f7a025dbb96c@mendix.com>
+        <20170514201508.bd3dshfymqt4swpb@merlins.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Am Sun, 14 May 2017 13:15:09 -0700
+schrieb Marc MERLIN <marc@merlins.org>:
 
---GeDkoc8jIzHasOdk
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Sun, May 14, 2017 at 01:15:09PM -0700, Marc MERLIN wrote:
 > On Sun, May 14, 2017 at 09:13:35PM +0200, Hans van Kranenburg wrote:
-> > On 05/13/2017 10:54 PM, Marc MERLIN wrote:
+> > On 05/13/2017 10:54 PM, Marc MERLIN wrote:  
 > > > Kernel 4.11, btrfs-progs v4.7.3
 > > > 
-> > > I run scrub and balance every night, been doing this for 1.5 years on this
-> > > filesystem.
+> > > I run scrub and balance every night, been doing this for 1.5
+> > > years on this filesystem.  
 > > 
-> > What are the exact commands you run every day?
+> > What are the exact commands you run every day?  
 >  
 > http://marc.merlins.org/perso/btrfs/post_2014-03-19_Btrfs-Tips_-Btrfs-Scrub-and-Btrfs-Filesystem-Repair.html
 > (at the bottom)
@@ -43,35 +40,23 @@ On Sun, May 14, 2017 at 01:15:09PM -0700, Marc MERLIN wrote:
 > 1) scrub
 > 2) balance -musage=0
 > 3) balance -musage=20
-
-   In most cases, this is going to make ENOSPC problems worse, not
-better. The reason for doign this kind of balance is to recover unused
-space and allow it to be reallocated. The typical behaviour is that
-data gets overallocated, and it's metadata which runs out. So, the
-last thing you want to be doing is reducing the metadata allocation,
-because that's the scarce resource.
-
-   Also, I'd usually recommend using limit=n, where n is approximately
-the amount of data overallcation (allocated space less used
-space). It's much more controllable than usage.
-
-   Hugo.
-
 > 4) balance -dusage=0
 > 5) balance -dusage=20
 > 
-> > > How did I get into such a misbalanced state when I balance every night?
+> > > How did I get into such a misbalanced state when I balance every
+> > > night?  
 > > 
-> > I don't know, since I don't know what you do exactly. :)
+> > I don't know, since I don't know what you do exactly. :)  
 >  
 > Now you do :)
 > 
-> > > My filesystem is not full, I can write just fine, but I sure cannot
-> > > rebalance now.
+> > > My filesystem is not full, I can write just fine, but I sure
+> > > cannot rebalance now.  
 > > 
-> > Yes, because you have quite some allocated but unused space. If btrfs
-> > cannot just allocate more chunks, it starts trying a bit harder to reuse
-> > all the empty spots in the already existing chunks.
+> > Yes, because you have quite some allocated but unused space. If
+> > btrfs cannot just allocate more chunks, it starts trying a bit
+> > harder to reuse all the empty spots in the already existing
+> > chunks.  
 > 
 > Ok. shouldn't balance fix problems just like this?
 > I have 60GB-ish free, or in this case that's also >25%, that's a lot
@@ -94,9 +79,9 @@ space). It's much more controllable than usage.
 > Shoudln't a nigthly balance, which I'm already doing, help even more
 > with this?
 > 
-> > > Besides adding another device to add space, is there a way around this
-> > > and more generally not getting into that state anymore considering that
-> > > I already rebalance every night?
+> > > Besides adding another device to add space, is there a way around
+> > > this and more generally not getting into that state anymore
+> > > considering that I already rebalance every night?  
 > > 
 > > Add monitoring and alerting on the amount of unallocated space.
 > > 
@@ -106,45 +91,26 @@ space). It's much more controllable than usage.
 > > https://packages.debian.org/sid/monitoring-plugins-btrfs
 > > 
 > > And, of course the btrfs-heatmap program keeps being a fun tool to
-> > create visual timelapses of your filesystem, so you can learn how your
-> > usage pattern is resulting in allocation of space by btrfs, and so that
-> > you can visually see what the effect of your btrfs balance attempts is:
+> > create visual timelapses of your filesystem, so you can learn how
+> > your usage pattern is resulting in allocation of space by btrfs,
+> > and so that you can visually see what the effect of your btrfs
+> > balance attempts is:  
 > 
-> That's interesting, but ultimately, users shoudln't have to micromanage
-> their filesystem to that level, even btrfs.
+> That's interesting, but ultimately, users shoudln't have to
+> micromanage their filesystem to that level, even btrfs.
 > 
 > a) What is wrong in my nightly script that I should fix/improve?
+
+You may want to try
+https://www.spinics.net/lists/linux-btrfs/msg52076.html
+
 > b) How do I recover from my current state?
-> 
-> Thanks,
-> Marc
+
+That script may work it's way through.
 
 -- 
-Hugo Mills             | You stay in the theatre because you're afraid of
-hugo@... carfax.org.uk | having no money? There's irony...
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |                                     Slings and Arrows
+Regards,
+Kai
 
---GeDkoc8jIzHasOdk
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Replies to list-only preferred.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJZGMpGAAoJEFheFHXiqx3k82MP/idsh1n7rM0AT54g85fLt96f
-KcFtTst4eJOcjmcHFNW1pMqzWAHFgj5JnGVWuU7sW+K6OxeAxJE5EXsSWBIBqfvg
-U7Ab7Ty5y6dxYOTCwpmQWYlFSk96KujkksmWgCsEf1NTBTd6V3cFURPKs5XhkpGN
-sRmFz/ydKsD071DGTviJGrevG0ohsMczpszJt/OsArXTwW1LU+vtWcE9cRlPSA8m
-Qb7svlkjF13JztsU6tENhjlQXUFECHyTmiNsH6wVeSBh2ZsF1oTSk+O0HhrSwpyu
-zcut3+YsVF+xpbCxIx4dUc5H4mb76LiVz8zQ4syc2lo1nhLzQM9jzfYc6NOI3wAB
-yZK8EO627MTHrRo/c2rt4og6m8suBNY3OearqqoDKCOkao2OFoz7S+maUcgAigxU
-AEhYNCEVdRpn0CXbML/vJb+u9SDriRpW7SXECZ+vnItOdjqdAxftO7Z24idj2Lbh
-BNl4Cut3Nu8pWsLH2wNz+mrxMRLMUpNz/f+E06PN++uVUI69nYDcFMmvoqad442e
-Sz6NEAtN2jF7xSbpsehQi04WX0pUAuhY/TVhr90O5/zNPjWy6TRz+UizqzWXJeVq
-lxmvFSB/QTl3T+fOyZQpuF5Oa0TwhjJe/o+tuo2YNcgskJAZ3/NygvHXptCbFPKc
-xzU+g6ULjWYVvap9JCLs
-=joJo
------END PGP SIGNATURE-----
-
---GeDkoc8jIzHasOdk--

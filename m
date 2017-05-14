@@ -1,33 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ns.bouton.name ([109.74.195.142]:33480 "EHLO mail.bouton.name"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1759222AbdENVDc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 14 May 2017 17:03:32 -0400
+Received: from frost.carfax.org.uk ([85.119.82.111]:60604 "EHLO
+        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1759193AbdENVWZ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 14 May 2017 17:22:25 -0400
+Date: Sun, 14 May 2017 21:21:11 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Marc MERLIN <marc@merlins.org>
+Cc: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
+        linux-btrfs@vger.kernel.org
 Subject: Re: balancing every night broke balancing so now I can't balance
  anymore?
-To: Marc MERLIN <marc@merlins.org>,
-        Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Message-ID: <20170514212111.GL9701@carfax.org.uk>
 References: <20170513205431.lm6y5tcffr35gq4a@merlins.org>
  <95bffb8b-7e66-7d6b-2455-f7a025dbb96c@mendix.com>
  <20170514201508.bd3dshfymqt4swpb@merlins.org>
-Cc: linux-btrfs@vger.kernel.org
-From: Lionel Bouton <lionel-subscription@bouton.name>
-Message-ID: <cf73557f-65e9-f9be-f8d7-4ed0de066eaf@bouton.name>
-Date: Sun, 14 May 2017 22:57:26 +0200
 MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="GeDkoc8jIzHasOdk"
 In-Reply-To: <20170514201508.bd3dshfymqt4swpb@merlins.org>
-Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Le 14/05/2017 à 22:15, Marc MERLIN a écrit :
+
+--GeDkoc8jIzHasOdk
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+On Sun, May 14, 2017 at 01:15:09PM -0700, Marc MERLIN wrote:
 > On Sun, May 14, 2017 at 09:13:35PM +0200, Hans van Kranenburg wrote:
->> On 05/13/2017 10:54 PM, Marc MERLIN wrote:
->>> Kernel 4.11, btrfs-progs v4.7.3
->>>
->>> I run scrub and balance every night, been doing this for 1.5 years on this
->>> filesystem.
->> What are the exact commands you run every day?
+> > On 05/13/2017 10:54 PM, Marc MERLIN wrote:
+> > > Kernel 4.11, btrfs-progs v4.7.3
+> > > 
+> > > I run scrub and balance every night, been doing this for 1.5 years on this
+> > > filesystem.
+> > 
+> > What are the exact commands you run every day?
 >  
 > http://marc.merlins.org/perso/btrfs/post_2014-03-19_Btrfs-Tips_-Btrfs-Scrub-and-Btrfs-Filesystem-Repair.html
 > (at the bottom)
@@ -35,42 +43,108 @@ Le 14/05/2017 à 22:15, Marc MERLIN a écrit :
 > 1) scrub
 > 2) balance -musage=0
 > 3) balance -musage=20
+
+   In most cases, this is going to make ENOSPC problems worse, not
+better. The reason for doign this kind of balance is to recover unused
+space and allow it to be reallocated. The typical behaviour is that
+data gets overallocated, and it's metadata which runs out. So, the
+last thing you want to be doing is reducing the metadata allocation,
+because that's the scarce resource.
+
+   Also, I'd usually recommend using limit=n, where n is approximately
+the amount of data overallcation (allocated space less used
+space). It's much more controllable than usage.
+
+   Hugo.
+
 > 4) balance -dusage=0
 > 5) balance -dusage=20
+> 
+> > > How did I get into such a misbalanced state when I balance every night?
+> > 
+> > I don't know, since I don't know what you do exactly. :)
+>  
+> Now you do :)
+> 
+> > > My filesystem is not full, I can write just fine, but I sure cannot
+> > > rebalance now.
+> > 
+> > Yes, because you have quite some allocated but unused space. If btrfs
+> > cannot just allocate more chunks, it starts trying a bit harder to reuse
+> > all the empty spots in the already existing chunks.
+> 
+> Ok. shouldn't balance fix problems just like this?
+> I have 60GB-ish free, or in this case that's also >25%, that's a lot
+> 
+> Speaking of unallocated, I have more now:
+>     Device unallocated:		 993.00MiB
+> 
+> This kind of just magically fixed itself during snapshot rotation and
+> deletion I think.
+> Sure enough, balance works again, but this feels pretty fragile.
+> Looking again:
+>     Device size:		 228.67GiB
+>     Device allocated:		 227.70GiB
+>     Device unallocated:		 993.00MiB
+>     Free (estimated):		  58.53GiB	(min: 58.53GiB)
+> 
+> You're saying that I need unallocated space for new chunks to be
+> created, which is required by balance.
+> Should btrfs not take care of keeping some space for me?
+> Shoudln't a nigthly balance, which I'm already doing, help even more
+> with this?
+> 
+> > > Besides adding another device to add space, is there a way around this
+> > > and more generally not getting into that state anymore considering that
+> > > I already rebalance every night?
+> > 
+> > Add monitoring and alerting on the amount of unallocated space.
+> > 
+> > FWIW, this is what I use for that purpose:
+> > 
+> > https://packages.debian.org/sid/munin-plugins-btrfs
+> > https://packages.debian.org/sid/monitoring-plugins-btrfs
+> > 
+> > And, of course the btrfs-heatmap program keeps being a fun tool to
+> > create visual timelapses of your filesystem, so you can learn how your
+> > usage pattern is resulting in allocation of space by btrfs, and so that
+> > you can visually see what the effect of your btrfs balance attempts is:
+> 
+> That's interesting, but ultimately, users shoudln't have to micromanage
+> their filesystem to that level, even btrfs.
+> 
+> a) What is wrong in my nightly script that I should fix/improve?
+> b) How do I recover from my current state?
+> 
+> Thanks,
+> Marc
 
-usage=20 is pretty low: this means you don't try to reallocate and
-regroup together block groups that are filled more than 20%.
-Constantly using this settings has left lots of allocated block groups
-that are mostly empty on your filesystem (a little more than 20% used).
+-- 
+Hugo Mills             | You stay in the theatre because you're afraid of
+hugo@... carfax.org.uk | having no money? There's irony...
+http://carfax.org.uk/  |
+PGP: E2AB1DE4          |                                     Slings and Arrows
 
-The rebalance subject is a bit complex. With an empty filesystem you
-almost don't need it as group creation is sparse and it's OK to have
-mostly empty groups. When your filesystem begins to fill up you have to
-raise the usage target to be able to reclaim space (as the fs fills up
-most of your groups do too) so that new block creation can happen.
+--GeDkoc8jIzHasOdk
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-I've coded one Ruby script which tries to balance between the cost of
-reallocating group and the need for it. The basic idea is that it tries
-to keep the proportion of free space "wasted" by being allocated
-although it isn't used below a threshold. It will bring this proportion
-down enough through balance that minor reallocation won't trigger a new
-balance right away. It should handle pathological conditions as well as
-possible and it won't spend more than 2 hours working on a single
-filesystem by default. We deploy this as a daily cron script through
-Puppet on all our systems and it works very well (I didn't have to use
-balance manually to manage free space since we did that).
-Note that by default it sleeps a random amount of time to avoid IO
-spikes on VMs running on the same host. You can either edit it or pass
-it "0" which will be used for the max amount of time to sleep bypassing
-this precaution.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-Here is the latest version : https://pastebin.com/Rrw1GLtx
-Given its current size, I should probably push it on github...
+iQIcBAEBAgAGBQJZGMpGAAoJEFheFHXiqx3k82MP/idsh1n7rM0AT54g85fLt96f
+KcFtTst4eJOcjmcHFNW1pMqzWAHFgj5JnGVWuU7sW+K6OxeAxJE5EXsSWBIBqfvg
+U7Ab7Ty5y6dxYOTCwpmQWYlFSk96KujkksmWgCsEf1NTBTd6V3cFURPKs5XhkpGN
+sRmFz/ydKsD071DGTviJGrevG0ohsMczpszJt/OsArXTwW1LU+vtWcE9cRlPSA8m
+Qb7svlkjF13JztsU6tENhjlQXUFECHyTmiNsH6wVeSBh2ZsF1oTSk+O0HhrSwpyu
+zcut3+YsVF+xpbCxIx4dUc5H4mb76LiVz8zQ4syc2lo1nhLzQM9jzfYc6NOI3wAB
+yZK8EO627MTHrRo/c2rt4og6m8suBNY3OearqqoDKCOkao2OFoz7S+maUcgAigxU
+AEhYNCEVdRpn0CXbML/vJb+u9SDriRpW7SXECZ+vnItOdjqdAxftO7Z24idj2Lbh
+BNl4Cut3Nu8pWsLH2wNz+mrxMRLMUpNz/f+E06PN++uVUI69nYDcFMmvoqad442e
+Sz6NEAtN2jF7xSbpsehQi04WX0pUAuhY/TVhr90O5/zNPjWy6TRz+UizqzWXJeVq
+lxmvFSB/QTl3T+fOyZQpuF5Oa0TwhjJe/o+tuo2YNcgskJAZ3/NygvHXptCbFPKc
+xzU+g6ULjWYVvap9JCLs
+=joJo
+-----END PGP SIGNATURE-----
 
-I've seen other maintenance scripts mentioned on this list so you might
-something simpler or more targeted to your needs by browsing through the
-list's history.
-
-Best regards,
-
-Lionel
+--GeDkoc8jIzHasOdk--

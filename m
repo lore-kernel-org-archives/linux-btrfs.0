@@ -1,112 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:34177 "EHLO
+Received: from [195.159.176.226] ([195.159.176.226]:51884 "EHLO
         blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1754259AbdENVXH (ORCPT
+        with ESMTP id S1759530AbdENVfK (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 14 May 2017 17:23:07 -0400
+        Sun, 14 May 2017 17:35:10 -0400
 Received: from list by blaine.gmane.org with local (Exim 4.84_2)
         (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1dA0ye-0003Lx-C3
-        for linux-btrfs@vger.kernel.org; Sun, 14 May 2017 23:22:56 +0200
+        id 1dA1AM-00010Y-RO
+        for linux-btrfs@vger.kernel.org; Sun, 14 May 2017 23:35:02 +0200
 To: linux-btrfs@vger.kernel.org
 From: Kai Krakow <hurikhan77@gmail.com>
 Subject: Re: balancing every night broke balancing so now I can't balance
  anymore?
-Date: Sun, 14 May 2017 23:22:51 +0200
-Message-ID: <20170514232251.74f35f3e@jupiter.sol.kaishome.de>
+Date: Sun, 14 May 2017 23:30:31 +0200
+Message-ID: <20170514233031.6f4724a1@jupiter.sol.kaishome.de>
 References: <20170513205431.lm6y5tcffr35gq4a@merlins.org>
         <95bffb8b-7e66-7d6b-2455-f7a025dbb96c@mendix.com>
         <20170514201508.bd3dshfymqt4swpb@merlins.org>
+        <cf73557f-65e9-f9be-f8d7-4ed0de066eaf@bouton.name>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Sun, 14 May 2017 13:15:09 -0700
-schrieb Marc MERLIN <marc@merlins.org>:
+Am Sun, 14 May 2017 22:57:26 +0200
+schrieb Lionel Bouton <lionel-subscription@bouton.name>:
 
-> On Sun, May 14, 2017 at 09:13:35PM +0200, Hans van Kranenburg wrote:
-> > On 05/13/2017 10:54 PM, Marc MERLIN wrote:  
-> > > Kernel 4.11, btrfs-progs v4.7.3
-> > > 
-> > > I run scrub and balance every night, been doing this for 1.5
-> > > years on this filesystem.  
-> > 
-> > What are the exact commands you run every day?  
->  
-> http://marc.merlins.org/perso/btrfs/post_2014-03-19_Btrfs-Tips_-Btrfs-Scrub-and-Btrfs-Filesystem-Repair.html
-> (at the bottom)
-> every night:
-> 1) scrub
-> 2) balance -musage=0
-> 3) balance -musage=20
-> 4) balance -dusage=0
-> 5) balance -dusage=20
+> I've coded one Ruby script which tries to balance between the cost of
+> reallocating group and the need for it. The basic idea is that it
+> tries to keep the proportion of free space "wasted" by being allocated
+> although it isn't used below a threshold. It will bring this
+> proportion down enough through balance that minor reallocation won't
+> trigger a new balance right away. It should handle pathological
+> conditions as well as possible and it won't spend more than 2 hours
+> working on a single filesystem by default. We deploy this as a daily
+> cron script through Puppet on all our systems and it works very well
+> (I didn't have to use balance manually to manage free space since we
+> did that). Note that by default it sleeps a random amount of time to
+> avoid IO spikes on VMs running on the same host. You can either edit
+> it or pass it "0" which will be used for the max amount of time to
+> sleep bypassing this precaution.
 > 
-> > > How did I get into such a misbalanced state when I balance every
-> > > night?  
-> > 
-> > I don't know, since I don't know what you do exactly. :)  
->  
-> Now you do :)
-> 
-> > > My filesystem is not full, I can write just fine, but I sure
-> > > cannot rebalance now.  
-> > 
-> > Yes, because you have quite some allocated but unused space. If
-> > btrfs cannot just allocate more chunks, it starts trying a bit
-> > harder to reuse all the empty spots in the already existing
-> > chunks.  
-> 
-> Ok. shouldn't balance fix problems just like this?
-> I have 60GB-ish free, or in this case that's also >25%, that's a lot
-> 
-> Speaking of unallocated, I have more now:
->     Device unallocated:		 993.00MiB
-> 
-> This kind of just magically fixed itself during snapshot rotation and
-> deletion I think.
-> Sure enough, balance works again, but this feels pretty fragile.
-> Looking again:
->     Device size:		 228.67GiB
->     Device allocated:		 227.70GiB
->     Device unallocated:		 993.00MiB
->     Free (estimated):		  58.53GiB	(min: 58.53GiB)
-> 
-> You're saying that I need unallocated space for new chunks to be
-> created, which is required by balance.
-> Should btrfs not take care of keeping some space for me?
-> Shoudln't a nigthly balance, which I'm already doing, help even more
-> with this?
-> 
-> > > Besides adding another device to add space, is there a way around
-> > > this and more generally not getting into that state anymore
-> > > considering that I already rebalance every night?  
-> > 
-> > Add monitoring and alerting on the amount of unallocated space.
-> > 
-> > FWIW, this is what I use for that purpose:
-> > 
-> > https://packages.debian.org/sid/munin-plugins-btrfs
-> > https://packages.debian.org/sid/monitoring-plugins-btrfs
-> > 
-> > And, of course the btrfs-heatmap program keeps being a fun tool to
-> > create visual timelapses of your filesystem, so you can learn how
-> > your usage pattern is resulting in allocation of space by btrfs,
-> > and so that you can visually see what the effect of your btrfs
-> > balance attempts is:  
-> 
-> That's interesting, but ultimately, users shoudln't have to
-> micromanage their filesystem to that level, even btrfs.
-> 
-> a) What is wrong in my nightly script that I should fix/improve?
+> Here is the latest version : https://pastebin.com/Rrw1GLtx
+> Given its current size, I should probably push it on github...
 
-You may want to try
-https://www.spinics.net/lists/linux-btrfs/msg52076.html
+Yes, please... ;-)
 
-> b) How do I recover from my current state?
+> I've seen other maintenance scripts mentioned on this list so you
+> might something simpler or more targeted to your needs by browsing
+> through the list's history.
 
-That script may work it's way through.
 
 -- 
 Regards,

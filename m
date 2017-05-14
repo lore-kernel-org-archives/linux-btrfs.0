@@ -1,38 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ns.bouton.name ([109.74.195.142]:54996 "EHLO mail.bouton.name"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752398AbdENXIW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 14 May 2017 19:08:22 -0400
-Subject: Re: balancing every night broke balancing so now I can't balance
- anymore?
-To: Kai Krakow <hurikhan77@gmail.com>, linux-btrfs@vger.kernel.org
+Received: from magic.merlins.org ([209.81.13.136]:38177 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752398AbdENXRP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 14 May 2017 19:17:15 -0400
+Date: Sun, 14 May 2017 16:16:52 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Hugo Mills <hugo@carfax.org.uk>,
+        Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
+        linux-btrfs@vger.kernel.org
+Message-ID: <20170514231652.sdpaci7e4oxs5gc3@merlins.org>
 References: <20170513205431.lm6y5tcffr35gq4a@merlins.org>
  <95bffb8b-7e66-7d6b-2455-f7a025dbb96c@mendix.com>
  <20170514201508.bd3dshfymqt4swpb@merlins.org>
- <cf73557f-65e9-f9be-f8d7-4ed0de066eaf@bouton.name>
- <20170514233031.6f4724a1@jupiter.sol.kaishome.de>
-From: Lionel Bouton <lionel-subscription@bouton.name>
-Message-ID: <92786c59-7c78-e2ed-5631-4182a3b87fe2@bouton.name>
-Date: Mon, 15 May 2017 01:08:20 +0200
+ <20170514212111.GL9701@carfax.org.uk>
 MIME-Version: 1.0
-In-Reply-To: <20170514233031.6f4724a1@jupiter.sol.kaishome.de>
-Content-Type: text/plain; charset=windows-1252
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170514212111.GL9701@carfax.org.uk>
+Subject: Re: balancing every night broke balancing so now I can't balance
+ anymore?
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Le 14/05/2017 à 23:30, Kai Krakow a écrit :
-> Am Sun, 14 May 2017 22:57:26 +0200
-> schrieb Lionel Bouton <lionel-subscription@bouton.name>:
->
->> I've coded one Ruby script which tries to balance between the cost of
->> reallocating group and the need for it.[...]
->> Given its current size, I should probably push it on github...
-> Yes, please... ;-)
+On Sun, May 14, 2017 at 09:21:11PM +0000, Hugo Mills wrote:
+> > 2) balance -musage=0
+> > 3) balance -musage=20
+> 
+>    In most cases, this is going to make ENOSPC problems worse, not
+> better. The reason for doign this kind of balance is to recover unused
+> space and allow it to be reallocated. The typical behaviour is that
+> data gets overallocated, and it's metadata which runs out. So, the
+> last thing you want to be doing is reducing the metadata allocation,
+> because that's the scarce resource.
+> 
+>    Also, I'd usually recommend using limit=n, where n is approximately
+> the amount of data overallcation (allocated space less used
+> space). It's much more controllable than usage.
 
-Most of our BTRFS filesystems are used by Ceph OSD, so here it is :
 
-https://github.com/jtek/ceph-utils/blob/master/btrfs-auto-rebalance.rb
+Thanks for that.
+So, would you just remove the balance -musage=20 altogether?
 
-Best regards,
+As for limit= I'm not sure if it would be helpful since I run this
+nightly. Anything that doesn't get done tonight due to limit, would be
+done tomorrow?
 
-Lionel
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

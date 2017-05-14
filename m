@@ -1,70 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from new1-smtp.messagingengine.com ([66.111.4.221]:38769 "EHLO
-        new1-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1759050AbdENRiz (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:32870 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1759089AbdENRzO (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 14 May 2017 13:38:55 -0400
-Received: from compute1.internal (compute1.nyi.internal [10.202.2.41])
-        by mailnew.nyi.internal (Postfix) with ESMTP id 573ED907
-        for <linux-btrfs@vger.kernel.org>; Sun, 14 May 2017 13:38:54 -0400 (EDT)
-Message-Id: <1494783532.2704393.976191096.6E0F2721@webmail.messagingengine.com>
-From: Luis de Bethencourt <luis@other.computer>
+        Sun, 14 May 2017 13:55:14 -0400
+Received: from svh-gw.merlins.org ([173.11.111.145]:49164 helo=legolas.merlins.org)
+        by mail1.merlins.org with esmtps
+        (Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128) (Exim 4.87 #1)
+        id 1d9xjZ-0007Ja-Ud
+        for <linux-btrfs@vger.kernel.org>; Sun, 14 May 2017 10:55:13 -0700
+Received: from merlin by legolas.merlins.org with local (Exim 4.80)
+        (envelope-from <marc@merlins.org>)
+        id 1d9xjZ-0006im-42
+        for linux-btrfs@vger.kernel.org; Sun, 14 May 2017 10:55:09 -0700
+Date: Sun, 14 May 2017 10:55:09 -0700
+From: Marc MERLIN <marc@merlins.org>
 To: linux-btrfs@vger.kernel.org
+Message-ID: <20170514175509.lsx5wl55o3juqygj@merlins.org>
+References: <20170514152522.u5kejltr3nz4ogmz@merlins.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Subject: btrfs fi usage crash when multiple device volume contains seed device
-Date: Sun, 14 May 2017 10:38:52 -0700
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170514152522.u5kejltr3nz4ogmz@merlins.org>
+Subject: Re: 4.11: da_remove called for id=16 which is not allocated.
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+My apologies, this was for the bcache list, sorry about this.
 
-Chris Murphy suggested we move the discussion in this bugzilla thread:
-https://bugzilla.kernel.org/show_bug.cgi?id=115851
+On Sun, May 14, 2017 at 08:25:22AM -0700, Marc MERLIN wrote:
+> 
+> gargamel:/sys/block/bcache16/bcache# echo 1 > stop
+> 
+> bcache: bcache_device_free() bcache16 stopped
+> ------------[ cut here ]------------
+> WARNING: CPU: 7 PID: 11051 at lib/idr.c:383 ida_remove+0xe8/0x10b
+> ida_remove called for id=16 which is not allocated.
+> Modules linked in: uas usb_storage veth ip6table_filter ip6_tables ebtable_nat ebtables ppdev lp xt_addrtype br_netfilter bridge stp llc tun autofs4 softdog binfmt_misc ftdi_sio nfsd auth_rpcgss nfs_acl nfs lockd grace fscache sunrpc ipt_REJECT nf_reject_ipv4 xt_conntrack xt_mark xt_nat xt_tcpudp nf_log_ipv4 nf_log_common xt_LOG iptable_mangle iptable_filter lm85 hwmon_vid pl2303 dm_snapshot dm_bufio iptable_nat ip_tables nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_conntrack_ftp ipt_MASQUERADE nf_nat_masquerade_ipv4 nf_nat nf_conntrack x_tables sg st snd_pcm_oss snd_mixer_oss bcache kvm_intel kvm irqbypass snd_hda_codec_realtek snd_hda_codec_generic snd_cmipci snd_hda_intel snd_mpu401_uart snd_opl3_lib snd_hda_codec snd_rawmidi snd_hda_core rc_ati_x10 snd_hwdep snd_seq_device ati_remote
+>  snd_pcm eeepc_wmi asix snd_timer usbserial asus_wmi usbnet rc_core snd sparse_keymap libphy rfkill hwmon lpc_ich soundcore mei_me parport_pc wmi tpm_infineon parport tpm_tis i2c_i801 battery input_leds tpm_tis_core i915 tpm pcspkr evdev e1000e ptp pps_core fuse raid456 multipath mmc_block mmc_core lrw ablk_helper dm_crypt dm_mod async_raid6_recov async_pq async_xor async_memcpy async_tx crc32c_intel blowfish_x86_64 blowfish_common pcbc aesni_intel aes_x86_64 crypto_simd glue_helper cryptd xhci_pci ehci_pci xhci_hcd ehci_hcd r8169 sata_sil24 mii usbcore thermal mvsas fan libsas scsi_transport_sas [last unloaded: ftdi_sio]
+> CPU: 7 PID: 11051 Comm: kworker/7:13 Tainted: G     U  W       4.11.0-amd64-preempt-sysrq-20170406 #2
+> Hardware name: System manufacturer System Product Name/P8H67-M PRO, BIOS 3904 04/27/2013
+> Workqueue: events cached_dev_free [bcache]
+> Call Trace:
+>  dump_stack+0x61/0x7d
+>  __warn+0xc2/0xdd
+>  warn_slowpath_fmt+0x5a/0x76
+>  ida_remove+0xe8/0x10b
+>  ida_simple_remove+0x2e/0x43
+>  bcache_device_free+0x8c/0xc4 [bcache]
+>  cached_dev_free+0x6b/0xe1 [bcache]
+>  process_one_work+0x193/0x2b0
+>  worker_thread+0x1e9/0x2c1
+>  ? rescuer_thread+0x2b1/0x2b1
+>  kthread+0xfb/0x100
+>  ? init_completion+0x24/0x24
+>  ret_from_fork+0x2c/0x40
+> ---[ end trace 12586d8b165ff8f2 ]---
+> 
+> Prior to that: 
+> cd /sys/fs/bcache/5bc072a8-ab17-446d-9744-e247949913c1
+> echo 1 > stop
+> 
+> I needed to complete stop and remove all traces of a bcache before I could 
+> mdadm --stop the underlying array.
+> 
+> Marc
+> -- 
+> "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+> Microsoft is to operating systems ....
+>                                       .... what McDonalds is to gourmet cooking
+> Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
 
-To here, the mailing list.
-
-Going to quote him to give context:
-"This might be better discussed on list to ensure there's congruence in
-dev and user expectations; and in particular I think this needs a design
-that accounts for the realistic long term goal, so that a short term
-scope doesn't interfere or make the long term more difficult.
-
-The matrix of possibilities, most of which are not yet implemented in
-btrfs-progs:
-
-1. 1 dev seed -> 1 dev sprout
-2. 2+ dev seed -> 1 dev sprout
-3. 1 dev seed -> 2+ dev sprout
-4. 2+ dev seed -> 2+ dev sprout
-
-Near as I can tell 2, 3, 4 are not implemented. It's an immediate
-problem whether and how the profile (single, raid0, raid1) is to be
-inherited from seed to sprout. If I have a 4 disk raid1 volume, to
-create a sprout must I add a minimum of two devices? Or is it valid to
-have raid1 profile seed chunks, where writes to go single profile sprout
-chunks? Anyway point is, it needs a design to answer these things.
-
-Next, and even more importantly as it applies to the simple case of
-single to single, the way we do this right now is beyond confusing
-because the remount ro to rw changes the volume UUID being mounted. The
-ro mount is the seed, the rw mount is the sprout. This is not really a
-remount, it's a umount of the seed, and a mount of the sprout. But what
-if there's more than one sprout? This is asking for trouble so I think
-the remount rw should be disallowed making it clear the ro seed cannot
-be mounted rw. Instead it's necessary to umount it and explicitly mount
-the rw sprout, and which sprout.
-
-Also part of the ambiguity is that 'btrfs dev add' is more like
-mkfs.btrfs in the context of seed-sprout. The new device isn't really
-added to the seed, because the seed is read only. What's really
-happening is a mkfs.btrfs with a "backing device" which is the seed; in
-some sense it has more in common with the mkfs.btrfs --rootdir option. 
-
-So I even wonder if 'btrfs dev add' is appropriate for creating sprouts,
-and if instead it should be in mkfs.btfs with a --seed option to specify
-the backing seed, and thereby what we are making is a sprout, which has
-a new UUID, and possibly different chunk profiles than the seed."
-
-Thanks,
-Luis
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

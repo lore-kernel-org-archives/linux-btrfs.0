@@ -1,63 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f50.google.com ([209.85.214.50]:35499 "EHLO
-        mail-it0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751624AbdEPMgA (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:33782 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1759170AbdEOI2F (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 May 2017 08:36:00 -0400
-Received: by mail-it0-f50.google.com with SMTP id c15so60953713ith.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 May 2017 05:36:00 -0700 (PDT)
-Subject: Re: Btrfs/SSD
-To: Tomasz Torcz <tomek@pipebreaker.pl>, linux-btrfs@vger.kernel.org
-References: <CAK5rZE4ko_xFr_Zv=bmZ4tR9X59jXaqFnTv16_ynEO0+E5uzeg@mail.gmail.com>
- <f5cb15a5-5566-b366-ebda-c3101fa96eec@gmail.com>
- <pan$9df5c$36e00209$7c238f6d$c2c19c0f@cox.net>
- <CAK5rZE7H_qXh7TOU=N3JTocqjVitsAMNtxMCDfbJHTNJz0jF5A@mail.gmail.com>
- <20170512203644.26e068e5@jupiter.sol.kaishome.de>
- <beb7f0b0-b84a-dfa1-12c2-256fe967af1d@gmail.com>
- <20170515214938.097b4c0b@jupiter.sol.kaishome.de>
- <20170515200505.GB5285@mother.pipebreaker.pl>
- <20170516035841.310cd1e7@jupiter.sol.kaishome.de>
- <20170516122120.GC5285@mother.pipebreaker.pl>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <3646af85-cd39-7882-b9b2-921b31f5481c@gmail.com>
-Date: Tue, 16 May 2017 08:35:55 -0400
+        Mon, 15 May 2017 04:28:05 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>, <dsterba@suse.cz>
+CC: <hurikhan77@gmail.com>
+Subject: [PATCH 3/5] btrfs-progs: check: Reuse btrfs_check_chunk_valid in lowmem mode
+Date: Mon, 15 May 2017 16:27:40 +0800
+Message-ID: <20170515082742.21363-3-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20170515082742.21363-1-quwenruo@cn.fujitsu.com>
+References: <20170515082742.21363-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20170516122120.GC5285@mother.pipebreaker.pl>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-05-16 08:21, Tomasz Torcz wrote:
-> On Tue, May 16, 2017 at 03:58:41AM +0200, Kai Krakow wrote:
->> Am Mon, 15 May 2017 22:05:05 +0200
->> schrieb Tomasz Torcz <tomek@pipebreaker.pl>:
->>> My
->>> drive has  # smartctl -a /dev/sda  | grep LBA 241
->>> Total_LBAs_Written      0x0032   099   099   000    Old_age
->>> Always       -       136025596053
->>
->> Doesn't say this "99%" remaining? The threshold is far from being
->> reached...
->>
->> I'm curious, what is Wear_Leveling_Count reporting?
->
-> ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE      UPDATED  WHEN_FAILED RAW_VALUE
->   9 Power_On_Hours          0x0032   096   096   000    Old_age   Always       -       18227
->  12 Power_Cycle_Count       0x0032   099   099   000    Old_age   Always       -       29
-> 177 Wear_Leveling_Count     0x0013   001   001   000    Pre-fail  Always       -       4916
->
->  Is this 001 mean 1%? If so, SMART contradicts datasheets. And I
-> don't think I shoud see read errors for 1% wear.
-The 'normalized' values shown in the VALUE, WORST, and THRESH columns 
-usually count down to zero (with the notable exception of the thermal 
-attributes, which usually match the raw value), they exist as a way of 
-comparing things without having to know what vendor or model the device 
-is, as the raw values are (again with limited exceptions) technically 
-vendor specific (the various *_Error_Rate counters on traditional HDD's 
-are good examples of this).  VALUE is your current value, WORST is a 
-peak-detector type thing that monitors the worst it's been, and THRESH 
-is the point at which the device manufacturer considers that aspect 
-failed (which will usually result in the 'Overall Health Assessment' 
-failing as well), though I'm pretty sure that if THRESH is 000, that 
-means that the firmware doesn't base it's asse3ssment for that attribute 
-on the normalized value at all.
+Before this patch, btrfs check lowmem mode manually checks found chunk
+item, even we already have the generic chunk validation checker,
+btrfs_check_chunk_valid().
+
+This patch will use btrfs_check_chunk_valid() to replace open-coded
+chunk validation checker in check_chunk_item().
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ cmds-check.c | 24 ++++++------------------
+ 1 file changed, 6 insertions(+), 18 deletions(-)
+
+diff --git a/cmds-check.c b/cmds-check.c
+index 17b7efbf..58b73608 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -11110,11 +11110,9 @@ static int check_chunk_item(struct btrfs_fs_info *fs_info,
+ 	struct btrfs_block_group_item *bi;
+ 	struct btrfs_block_group_item bg_item;
+ 	struct btrfs_dev_extent *ptr;
+-	u32 sectorsize = btrfs_super_sectorsize(fs_info->super_copy);
+ 	u64 length;
+ 	u64 chunk_end;
+ 	u64 type;
+-	u64 profile;
+ 	int num_stripes;
+ 	u64 offset;
+ 	u64 objectid;
+@@ -11126,25 +11124,15 @@ static int check_chunk_item(struct btrfs_fs_info *fs_info,
+ 	chunk = btrfs_item_ptr(eb, slot, struct btrfs_chunk);
+ 	length = btrfs_chunk_length(eb, chunk);
+ 	chunk_end = chunk_key.offset + length;
+-	if (!IS_ALIGNED(length, sectorsize)) {
+-		error("chunk[%llu %llu) not aligned to %u",
+-			chunk_key.offset, chunk_end, sectorsize);
+-		err |= BYTES_UNALIGNED;
++	ret = btrfs_check_chunk_valid(extent_root, eb, chunk, slot,
++				      chunk_key.offset);
++	if (ret < 0) {
++		error("chunk[%llu %llu) is invalid", chunk_key.offset,
++			chunk_end);
++		err |= BYTES_UNALIGNED | UNKNOWN_TYPE;
+ 		goto out;
+ 	}
+-
+ 	type = btrfs_chunk_type(eb, chunk);
+-	profile = type & BTRFS_BLOCK_GROUP_PROFILE_MASK;
+-	if (!(type & BTRFS_BLOCK_GROUP_TYPE_MASK)) {
+-		error("chunk[%llu %llu) has no chunk type",
+-			chunk_key.offset, chunk_end);
+-		err |= UNKNOWN_TYPE;
+-	}
+-	if (profile && (profile & (profile - 1))) {
+-		error("chunk[%llu %llu) multiple profiles detected: %llx",
+-			chunk_key.offset, chunk_end, profile);
+-		err |= UNKNOWN_TYPE;
+-	}
+ 
+ 	bg_key.objectid = chunk_key.offset;
+ 	bg_key.type = BTRFS_BLOCK_GROUP_ITEM_KEY;
+-- 
+2.12.2
+
+
+

@@ -1,55 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f65.google.com ([74.125.82.65]:36604 "EHLO
-        mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751743AbdEOAYI (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:33542 "EHLO
+        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1759822AbdEOIQJ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 14 May 2017 20:24:08 -0400
-Received: by mail-wm0-f65.google.com with SMTP id u65so24443728wmu.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 14 May 2017 17:24:08 -0700 (PDT)
-Content-Type: text/plain; charset=utf-8
-Mime-Version: 1.0 (Mac OS X Mail 10.3 \(3273\))
-Subject: Re: Btrfs/SSD
-From: Tomasz Kusmierz <tom.kusmierz@gmail.com>
-In-Reply-To: <CAK5rZE7MKrqNSuJXTYe=H_T6WbYJgcGhV9VUHH0pQ689-tKiAg@mail.gmail.com>
-Date: Mon, 15 May 2017 01:24:05 +0100
-Cc: Chris Murphy <lists@colorremedies.com>, Duncan <1i5t5.duncan@cox.net>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-Id: <D9491068-A906-4B75-9ED3-B98960FFBF14@gmail.com>
-References: <CAK5rZE4ko_xFr_Zv=bmZ4tR9X59jXaqFnTv16_ynEO0+E5uzeg@mail.gmail.com>
- <f5cb15a5-5566-b366-ebda-c3101fa96eec@gmail.com>
- <CAK5rZE7WHeTknmQdjX7vianEj4RmdLU+ocTLhbAxYenRjLegaA@mail.gmail.com>
- <20170512202756.16bd785f@jupiter.sol.kaishome.de>
- <pan$3384$13ad2b1f$3febf76a$c09fcbd7@cox.net>
- <CAJCQCtQnM21-JPs+6+YeykTj-s1J43E8rNCkHHyk+AjvzZEddg@mail.gmail.com>
- <250FCE39-0DAE-4AF2-B378-E56BE044F2E7@gmail.com>
- <CAK5rZE7MKrqNSuJXTYe=H_T6WbYJgcGhV9VUHH0pQ689-tKiAg@mail.gmail.com>
-To: Imran Geriskovan <imran.geriskovan@gmail.com>
+        Mon, 15 May 2017 04:16:09 -0400
+Date: Mon, 15 May 2017 08:14:55 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Marc MERLIN <marc@merlins.org>
+Cc: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: balancing every night broke balancing so now I can't balance
+ anymore?
+Message-ID: <20170515081455.GM9701@carfax.org.uk>
+References: <20170513205431.lm6y5tcffr35gq4a@merlins.org>
+ <95bffb8b-7e66-7d6b-2455-f7a025dbb96c@mendix.com>
+ <20170514201508.bd3dshfymqt4swpb@merlins.org>
+ <20170514212111.GL9701@carfax.org.uk>
+ <20170514231652.sdpaci7e4oxs5gc3@merlins.org>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="1rguoi8KZGYj2k4L"
+In-Reply-To: <20170514231652.sdpaci7e4oxs5gc3@merlins.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Theoretically all sectors in over provision are erased - practically they are either erased or waiting to be erased or broken.
 
-What you have to understand is that sectors on SSD are not where you really think they are - they can swap place with sectors with over provisioning are, they can swap place with each other ect … stuff you see as a disk from 0 to MAX does not have to be arranged in sequence on SSD (and mostly never is) 
+--1rguoi8KZGYj2k4L
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-If you never trim - when your device is 100% full - you need to start overwrite data to keep writing - this is where over provisioning shines: ssd fakes that you write to a sector while really you write to a sector in over provisioning area and those magically swap places without you knowing -> the sector that was occupied ends up in over provisioning pool and SSD hardware performs a slow errase on it to make it free for the future. This mechanism is simple, and transparent for users -> you don’t know that it happens and SSD does all heavy lifting. 
-
-Over provisioned area does have more uses than that. For example if you have a 1TB drive where you store 500GB of data that you never modify -> SSD will copy part of that data to over provisioned area -> free sectors that were unwritten for a while -> free sectors that were continuously hammered by writes and write a static data there. This mechanism is wear levelling - it means that SSD internals make sure that sectors on SSD have an equal use over time. Despite of some thinking that it’s pointless imagine situation where you’ve got a 1TB drive with 1GB free and you keep writing and modifying data in this 1GB free … those sectors will quickly die due to short flash life expectancy ( some as short as 1k erases !!!!! ).
-
-So again, buy a good quality drives (not a hardcore enterprise drives, just good customer ones) and leave stuff to a drive + use OS that gives you trim and you should be golden !!!!
-
-> On 15 May 2017, at 00:01, Imran Geriskovan <imran.geriskovan@gmail.com> wrote:
+On Sun, May 14, 2017 at 04:16:52PM -0700, Marc MERLIN wrote:
+> On Sun, May 14, 2017 at 09:21:11PM +0000, Hugo Mills wrote:
+> > > 2) balance -musage=0
+> > > 3) balance -musage=20
+> > 
+> >    In most cases, this is going to make ENOSPC problems worse, not
+> > better. The reason for doign this kind of balance is to recover unused
+> > space and allow it to be reallocated. The typical behaviour is that
+> > data gets overallocated, and it's metadata which runs out. So, the
+> > last thing you want to be doing is reducing the metadata allocation,
+> > because that's the scarce resource.
+> > 
+> >    Also, I'd usually recommend using limit=n, where n is approximately
+> > the amount of data overallcation (allocated space less used
+> > space). It's much more controllable than usage.
 > 
-> On 5/14/17, Tomasz Kusmierz <tom.kusmierz@gmail.com> wrote:
->> In terms of over provisioning of SSD it’s a give and take relationship … on
->> good drive there is enough over provisioning to allow a normal operation on
->> systems without TRIM … now if you would use a 1TB drive daily without TRIM
->> and have only 30GB stored on it you will have fantastic performance but if
->> you will want to store 500GB at roughly 200GB you will hit a brick wall and
->> you writes will slow dow to megabytes / s … this is symptom of drive running
->> out of over provisioning space …
 > 
-> What exactly happens on a non-trimmed drive?
-> Does it begin to forge certain erase-blocks? If so
-> which are those? What happens when you never
-> trim and continue dumping data on it?
+> Thanks for that.
+> So, would you just remove the balance -musage=20 altogether?
 
+   Yes.
+
+> As for limit= I'm not sure if it would be helpful since I run this
+> nightly. Anything that doesn't get done tonight due to limit, would be
+> done tomorrow?
+
+   I'm suggesting limit= on its own. It's a fixed amount of work
+compared to usage=, which may not do anything at all. For example,
+it's perfectly possible to have a filesystem which is, say, 30% full,
+and yet is still fully-allocated filesystem with more than 20% of
+every chunk used. In that case your usage= wouldn't balance anything,
+and you'd still be left in the situation of risking ENOSPC from
+running out of metadata.
+
+   All you need to do is ensure that you have enough unallocated space
+for the metadata to expand into if it needs to. That's the ultimate
+goal of all this.
+
+   If you have SSDs, it may also be beneficial to use nossd as a mount
+option, because that seems to have some pathology in overallocating
+chunks in normal usage. Hans investigated this in detail a month or
+two ago.
+
+   Hugo.
+
+-- 
+Hugo Mills             | "You know, the British have always been nice to mad
+hugo@... carfax.org.uk | people."
+http://carfax.org.uk/  |
+PGP: E2AB1DE4          |                         Laura Jesson, Brief Encounter
+
+--1rguoi8KZGYj2k4L
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJZGWN/AAoJEFheFHXiqx3kknMP/2BG1b72j5R+3otk/snmOd+/
+2dmS9b6cDf3h6Tvuc2yAbBix8asTJsG/ZfNMrv1ciZ/rQ3f1nrneubGjAU4kpX4Z
+3mNiGT9C4I0T3SKJnzyiRD5ir9yKBqvdYtQS3mei23a9mLuBmGBV25jqmXR/HGHw
+Swx6VoTGrh7kyY8ZPZYF6cVBlIuxX1zNQK29iyXWjLOPrY6FZt58l6pTHnE4q3hf
+UiXO5ScYTX3GkvDSDCIjIiSI1apmwmLb4hLCBR/ACbNZA1HY/jLS2HWQgCfALBH3
+mRLroDpWm19ubCFHltVZmdbgKuIefguPFuwEjUKYfUhlZOP07tu0bwtDW/AHnHoc
+N1GYFLUX6pbPJCZiVLL1F/tY7xPDMbV99Bs8WAVhOfaplvkZ+6CEJXlOTMDRZIx8
+z4S59lACHzY4i36EIId9QGcRuSvTHUXSqC9nwEI7o73mnC+c0DuoosMeZEryiPOc
+gk/3/vh0fdY7LEbXSKFxPnrbFeQamnD0ATt2Oiui/wLGC6A9J6GCTUITcn5YkBJ1
+pkUslnwEVZ8Q5CiE8/V6Xr+L7PtE8OsoA2Moaiue9BaLuiqv820ytv3xUQkVNDIw
+ysSpqqSbQWUaI6L0OZCNm/m1ulo03rGtmBOPqpnuOup9UlbNbNCYwDITpsyp9X9p
+2Loh2caJ/K/s/5pUugw2
+=uRsK
+-----END PGP SIGNATURE-----
+
+--1rguoi8KZGYj2k4L--

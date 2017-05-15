@@ -1,53 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:38177 "EHLO
-        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752398AbdENXRP (ORCPT
+Received: from mail-wr0-f193.google.com ([209.85.128.193]:36071 "EHLO
+        mail-wr0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751743AbdEOAXk (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 14 May 2017 19:17:15 -0400
-Date: Sun, 14 May 2017 16:16:52 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Hugo Mills <hugo@carfax.org.uk>,
-        Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
-        linux-btrfs@vger.kernel.org
-Message-ID: <20170514231652.sdpaci7e4oxs5gc3@merlins.org>
-References: <20170513205431.lm6y5tcffr35gq4a@merlins.org>
- <95bffb8b-7e66-7d6b-2455-f7a025dbb96c@mendix.com>
- <20170514201508.bd3dshfymqt4swpb@merlins.org>
- <20170514212111.GL9701@carfax.org.uk>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170514212111.GL9701@carfax.org.uk>
-Subject: Re: balancing every night broke balancing so now I can't balance
- anymore?
+        Sun, 14 May 2017 20:23:40 -0400
+Received: by mail-wr0-f193.google.com with SMTP id v42so13040261wrc.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 14 May 2017 17:23:40 -0700 (PDT)
+Content-Type: text/plain; charset=utf-8
+Mime-Version: 1.0 (Mac OS X Mail 10.3 \(3273\))
+Subject: Re: Btrfs/SSD
+From: Tomasz Kusmierz <tom.kusmierz@gmail.com>
+In-Reply-To: <CAK5rZE7MKrqNSuJXTYe=H_T6WbYJgcGhV9VUHH0pQ689-tKiAg@mail.gmail.com>
+Date: Mon, 15 May 2017 01:23:37 +0100
+Cc: Chris Murphy <lists@colorremedies.com>, Duncan <1i5t5.duncan@cox.net>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-Id: <F2FEA3B2-2DB9-4CEA-AC07-9E509388779C@gmail.com>
+References: <CAK5rZE4ko_xFr_Zv=bmZ4tR9X59jXaqFnTv16_ynEO0+E5uzeg@mail.gmail.com>
+ <f5cb15a5-5566-b366-ebda-c3101fa96eec@gmail.com>
+ <CAK5rZE7WHeTknmQdjX7vianEj4RmdLU+ocTLhbAxYenRjLegaA@mail.gmail.com>
+ <20170512202756.16bd785f@jupiter.sol.kaishome.de>
+ <pan$3384$13ad2b1f$3febf76a$c09fcbd7@cox.net>
+ <CAJCQCtQnM21-JPs+6+YeykTj-s1J43E8rNCkHHyk+AjvzZEddg@mail.gmail.com>
+ <250FCE39-0DAE-4AF2-B378-E56BE044F2E7@gmail.com>
+ <CAK5rZE7MKrqNSuJXTYe=H_T6WbYJgcGhV9VUHH0pQ689-tKiAg@mail.gmail.com>
+To: Imran Geriskovan <imran.geriskovan@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, May 14, 2017 at 09:21:11PM +0000, Hugo Mills wrote:
-> > 2) balance -musage=0
-> > 3) balance -musage=20
+Theoretically all sectors in over provision are erased - practically they are either erased or waiting to be erased or broken.
+
+What you have to understand is that sectors on SSD are not where you really think they are - they can swap place with sectors with over provisioning are, they can swap place with each other ect … stuff you see as a disk from 0 to MAX does not have to be arranged in sequence on SSD (and mostly never is) 
+
+If you never trim - when your device is 100% full - you need to start overwrite data to keep writing - this is where over provisioning shines: ssd fakes that you write to a sector while really you write to a sector in over provisioning area and those magically swap places without you knowing -> the sector that was occupied ends up in over provisioning pool and SSD hardware performs a slow errase on it to make it free for the future. This mechanism is simple, and transparent for users -> you don’t know that it happens and SSD does all heavy lifting. 
+
+Over provisioned area does have more uses than that. For example if you have a 1TB drive where you store 500GB of data that you never modify -> SSD will copy part of that data to over provisioned area -> free sectors that were unwritten for a while -> free sectors that were continuously hammered by writes and write a static data there. This mechanism is wear levelling - it means that SSD internals make sure that sectors on SSD have an equal use over time. Despite of some thinking that it’s pointless imagine situation where you’ve got a 1TB drive with 1GB free and you keep writing and modifying data in this 1GB free … those sectors will quickly die due to short flash life expectancy ( some as short as 1k erases !!!!! ).
+
+So again, buy a good quality drives (not a hardcore enterprise drives, just good customer ones) and leave stuff to a drive + use OS that gives you trim and you should be golden !!!! 
+
+
+> On 15 May 2017, at 00:01, Imran Geriskovan <imran.geriskovan@gmail.com> wrote:
 > 
->    In most cases, this is going to make ENOSPC problems worse, not
-> better. The reason for doign this kind of balance is to recover unused
-> space and allow it to be reallocated. The typical behaviour is that
-> data gets overallocated, and it's metadata which runs out. So, the
-> last thing you want to be doing is reducing the metadata allocation,
-> because that's the scarce resource.
+> On 5/14/17, Tomasz Kusmierz <tom.kusmierz@gmail.com> wrote:
+>> In terms of over provisioning of SSD it’s a give and take relationship … on
+>> good drive there is enough over provisioning to allow a normal operation on
+>> systems without TRIM … now if you would use a 1TB drive daily without TRIM
+>> and have only 30GB stored on it you will have fantastic performance but if
+>> you will want to store 500GB at roughly 200GB you will hit a brick wall and
+>> you writes will slow dow to megabytes / s … this is symptom of drive running
+>> out of over provisioning space …
 > 
->    Also, I'd usually recommend using limit=n, where n is approximately
-> the amount of data overallcation (allocated space less used
-> space). It's much more controllable than usage.
+> What exactly happens on a non-trimmed drive?
+> Does it begin to forge certain erase-blocks? If so
+> which are those? What happens when you never
+> trim and continue dumping data on it?
 
-
-Thanks for that.
-So, would you just remove the balance -musage=20 altogether?
-
-As for limit= I'm not sure if it would be helpful since I run this
-nightly. Anything that doesn't get done tonight due to limit, would be
-done tomorrow?
-
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

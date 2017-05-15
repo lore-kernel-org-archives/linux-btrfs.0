@@ -1,20 +1,20 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f193.google.com ([209.85.128.193]:36071 "EHLO
-        mail-wr0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751743AbdEOAXk (ORCPT
+Received: from mail-wm0-f65.google.com ([74.125.82.65]:36604 "EHLO
+        mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751743AbdEOAYI (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 14 May 2017 20:23:40 -0400
-Received: by mail-wr0-f193.google.com with SMTP id v42so13040261wrc.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 14 May 2017 17:23:40 -0700 (PDT)
+        Sun, 14 May 2017 20:24:08 -0400
+Received: by mail-wm0-f65.google.com with SMTP id u65so24443728wmu.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 14 May 2017 17:24:08 -0700 (PDT)
 Content-Type: text/plain; charset=utf-8
 Mime-Version: 1.0 (Mac OS X Mail 10.3 \(3273\))
 Subject: Re: Btrfs/SSD
 From: Tomasz Kusmierz <tom.kusmierz@gmail.com>
 In-Reply-To: <CAK5rZE7MKrqNSuJXTYe=H_T6WbYJgcGhV9VUHH0pQ689-tKiAg@mail.gmail.com>
-Date: Mon, 15 May 2017 01:23:37 +0100
+Date: Mon, 15 May 2017 01:24:05 +0100
 Cc: Chris Murphy <lists@colorremedies.com>, Duncan <1i5t5.duncan@cox.net>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-Id: <F2FEA3B2-2DB9-4CEA-AC07-9E509388779C@gmail.com>
+Message-Id: <D9491068-A906-4B75-9ED3-B98960FFBF14@gmail.com>
 References: <CAK5rZE4ko_xFr_Zv=bmZ4tR9X59jXaqFnTv16_ynEO0+E5uzeg@mail.gmail.com>
  <f5cb15a5-5566-b366-ebda-c3101fa96eec@gmail.com>
  <CAK5rZE7WHeTknmQdjX7vianEj4RmdLU+ocTLhbAxYenRjLegaA@mail.gmail.com>
@@ -35,8 +35,7 @@ If you never trim - when your device is 100% full - you need to start overwrite 
 
 Over provisioned area does have more uses than that. For example if you have a 1TB drive where you store 500GB of data that you never modify -> SSD will copy part of that data to over provisioned area -> free sectors that were unwritten for a while -> free sectors that were continuously hammered by writes and write a static data there. This mechanism is wear levelling - it means that SSD internals make sure that sectors on SSD have an equal use over time. Despite of some thinking that it’s pointless imagine situation where you’ve got a 1TB drive with 1GB free and you keep writing and modifying data in this 1GB free … those sectors will quickly die due to short flash life expectancy ( some as short as 1k erases !!!!! ).
 
-So again, buy a good quality drives (not a hardcore enterprise drives, just good customer ones) and leave stuff to a drive + use OS that gives you trim and you should be golden !!!! 
-
+So again, buy a good quality drives (not a hardcore enterprise drives, just good customer ones) and leave stuff to a drive + use OS that gives you trim and you should be golden !!!!
 
 > On 15 May 2017, at 00:01, Imran Geriskovan <imran.geriskovan@gmail.com> wrote:
 > 

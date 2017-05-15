@@ -1,105 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f169.google.com ([209.85.223.169]:34584 "EHLO
-        mail-io0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1758323AbdEOMD6 (ORCPT
+Received: from mail-io0-f171.google.com ([209.85.223.171]:35291 "EHLO
+        mail-io0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753977AbdEOMeL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 15 May 2017 08:03:58 -0400
-Received: by mail-io0-f169.google.com with SMTP id k91so71637164ioi.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 May 2017 05:03:58 -0700 (PDT)
-Received: from [191.9.206.254] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
-        by smtp.gmail.com with ESMTPSA id 123sm5107323iow.28.2017.05.15.05.03.50
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Mon, 15 May 2017 05:03:51 -0700 (PDT)
-Subject: Re: Btrfs/SSD
-To: linux-btrfs@vger.kernel.org
-References: <CAK5rZE4ko_xFr_Zv=bmZ4tR9X59jXaqFnTv16_ynEO0+E5uzeg@mail.gmail.com>
- <f5cb15a5-5566-b366-ebda-c3101fa96eec@gmail.com>
- <pan$9df5c$36e00209$7c238f6d$c2c19c0f@cox.net>
- <CAK5rZE7H_qXh7TOU=N3JTocqjVitsAMNtxMCDfbJHTNJz0jF5A@mail.gmail.com>
- <20170512203644.26e068e5@jupiter.sol.kaishome.de>
+        Mon, 15 May 2017 08:34:11 -0400
+Received: by mail-io0-f171.google.com with SMTP id f102so71955925ioi.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 May 2017 05:34:10 -0700 (PDT)
+Subject: Re: balancing every night broke balancing so now I can't balance
+ anymore?
+To: Hugo Mills <hugo@carfax.org.uk>, Marc MERLIN <marc@merlins.org>,
+        Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
+        linux-btrfs@vger.kernel.org
+References: <20170513205431.lm6y5tcffr35gq4a@merlins.org>
+ <95bffb8b-7e66-7d6b-2455-f7a025dbb96c@mendix.com>
+ <20170514201508.bd3dshfymqt4swpb@merlins.org>
+ <20170514212111.GL9701@carfax.org.uk>
+ <20170514231652.sdpaci7e4oxs5gc3@merlins.org>
+ <20170515081455.GM9701@carfax.org.uk>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <beb7f0b0-b84a-dfa1-12c2-256fe967af1d@gmail.com>
-Date: Mon, 15 May 2017 08:03:48 -0400
+Message-ID: <68d4bcac-f60c-215c-6be7-5e44f966d08d@gmail.com>
+Date: Mon, 15 May 2017 08:34:06 -0400
 MIME-Version: 1.0
-In-Reply-To: <20170512203644.26e068e5@jupiter.sol.kaishome.de>
+In-Reply-To: <20170515081455.GM9701@carfax.org.uk>
 Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-05-12 14:36, Kai Krakow wrote:
-> Am Fri, 12 May 2017 15:02:20 +0200
-> schrieb Imran Geriskovan <imran.geriskovan@gmail.com>:
->
->> On 5/12/17, Duncan <1i5t5.duncan@cox.net> wrote:
->>> FWIW, I'm in the market for SSDs ATM, and remembered this from a
->>> couple weeks ago so went back to find it.  Thanks. =:^)
+On 2017-05-15 04:14, Hugo Mills wrote:
+> On Sun, May 14, 2017 at 04:16:52PM -0700, Marc MERLIN wrote:
+>> On Sun, May 14, 2017 at 09:21:11PM +0000, Hugo Mills wrote:
+>>>> 2) balance -musage=0
+>>>> 3) balance -musage=20
 >>>
->>> (I'm currently still on quarter-TB generation ssds, plus spinning
->>> rust for the larger media partition and backups, and want to be rid
->>> of the spinning rust, so am looking at half-TB to TB, which seems
->>> to be the pricing sweet spot these days anyway.)
+>>>    In most cases, this is going to make ENOSPC problems worse, not
+>>> better. The reason for doign this kind of balance is to recover unused
+>>> space and allow it to be reallocated. The typical behaviour is that
+>>> data gets overallocated, and it's metadata which runs out. So, the
+>>> last thing you want to be doing is reducing the metadata allocation,
+>>> because that's the scarce resource.
+>>>
+>>>    Also, I'd usually recommend using limit=n, where n is approximately
+>>> the amount of data overallcation (allocated space less used
+>>> space). It's much more controllable than usage.
 >>
->> Since you are taking ssds to mainstream based on your experience,
->> I guess your perception of data retension/reliability is better than
->> that of spinning rust. Right? Can you eloborate?
 >>
->> Or an other criteria might be physical constraints of spinning rust
->> on notebooks which dictates that you should handle the device
->> with care when running.
->>
->> What was your primary motivation other than performance?
+>> Thanks for that.
+>> So, would you just remove the balance -musage=20 altogether?
 >
-> Personally, I don't really trust SSDs so much. They are much more
-> robust when it comes to physical damage because there are no physical
-> parts. That's absolutely not my concern. Regarding this, I trust SSDs
-> better than HDDs.
+>    Yes.
+The advantages to doing that depend also on how much excess free space 
+you have and what your usual usage is.  If you're balancing a filesystem 
+for a mail server that has lots of free space, you may indeed want to 
+re-balance metadata chunks regularly because you're likely to be 
+rewriting significant amounts of metadata regularly.
 >
-> My concern is with fail scenarios of some SSDs which die unexpected and
-> horribly. I found some reports of older Samsung SSDs which failed
-> suddenly and unexpected, and in a way that the drive completely died:
-> No more data access, everything gone. HDDs start with bad sectors and
-> there's a good chance I can recover most of the data except a few
-> sectors.
-Older is the key here.  Some early SSD's did indeed behave like that, 
-but most modern ones do generally show signs that they will fail in the 
-near future.  There's also the fact that traditional hard drives _do_ 
-fail like that sometimes, even without rough treatment.
+>> As for limit= I'm not sure if it would be helpful since I run this
+>> nightly. Anything that doesn't get done tonight due to limit, would be
+>> done tomorrow?
 >
-> When SSD blocks die, they are probably huge compared to a sector (256kB
-> to 4MB usually because that's erase block sizes). If this happens, the
-> firmware may decide to either allow read-only access or completely deny
-> access. There's another situation where dying storage chips may
-> completely mess up the firmware and there's no longer any access to
-> data.
-I've yet to see an SSD that blocks user access to an erase block. 
-Almost every one I've seen will instead rewrite the block (possibly with 
-the corrupted data intact (that is, without mangling it further)) to one 
-of the reserve blocks, and then just update it's internal mapping so 
-that the old block doesn't get used, and the new one is pointing to the 
-right place.  Some of the really good SSD's even use erasure coding in 
-the FTL for data verification instead of CRC's, so they can actually 
-reconstruct the missing bits when they do this.
-
-Traditional hard drives usually do this too these days (they've been 
-under-provisioned since before SSD's existed), which is part of why 
-older disks tend to be noisier and slower (the reserved space is usually 
-at the far inside or outside of the platter, so using sectors from there 
-to replace stuff leads to long seeks).
+>    I'm suggesting limit= on its own. It's a fixed amount of work
+> compared to usage=, which may not do anything at all. For example,
+> it's perfectly possible to have a filesystem which is, say, 30% full,
+> and yet is still fully-allocated filesystem with more than 20% of
+> every chunk used. In that case your usage= wouldn't balance anything,
+> and you'd still be left in the situation of risking ENOSPC from
+> running out of metadata.
+FWIW, I normally use '-dusage=80 -mlimit=16' for my nightly balances. 
+The usage filter at 80% means you won't waste time re-balancing full or 
+mostly full chunks, and the limit filter of 16 takes on average about 5 
+minutes on the consumer SSD's I have.
 >
-> That's why I don't trust any of my data to them. But I still want the
-> benefit of their speed. So I use SSDs mostly as frontend caches to
-> HDDs. This gives me big storage with fast access. Indeed, I'm using
-> bcache successfully for this. A warm cache is almost as fast as native
-> SSD (at least it feels almost that fast, it will be slower if you threw
-> benchmarks at it).
-That's to be expected though, most benchmarks don't replicate actual 
-usage patterns for client systems, and using SSD's for caching with 
-bcache or dm-cache for most server workloads except a file server will 
-usually get you a performance hit.
-
-It's worth noting also that on average, COW filesystems like BTRFS (or 
-log-structured-filesystems will not benefit as much as traditional 
-filesystems from SSD caching unless the caching is built into the 
-filesystem itself, since they don't do in-place rewrites (so any new 
-write by definition has to drop other data from the cache).
+>    All you need to do is ensure that you have enough unallocated space
+> for the metadata to expand into if it needs to. That's the ultimate
+> goal of all this.
+>
+>    If you have SSDs, it may also be beneficial to use nossd as a mount
+> option, because that seems to have some pathology in overallocating
+> chunks in normal usage. Hans investigated this in detail a month or
+> two ago.

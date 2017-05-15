@@ -1,67 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:48187 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750927AbdECAuL (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 May 2017 20:50:11 -0400
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v430o9hZ010234
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 3 May 2017 00:50:10 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v430o9WN007365
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 3 May 2017 00:50:09 GMT
-Received: from abhmp0003.oracle.com (abhmp0003.oracle.com [141.146.116.9])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id v430o9bg028369
-        for <linux-btrfs@vger.kernel.org>; Wed, 3 May 2017 00:50:09 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:49959 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S965759AbdEOPRV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 15 May 2017 11:17:21 -0400
+From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix the mount failure due to missing devices
-Date: Tue,  2 May 2017 17:48:40 -0600
-Message-Id: <1493768920-29678-1-git-send-email-bo.li.liu@oracle.com>
+Cc: clm@fb.com
+Subject: Btrfs progs pre-release 4.11-rc1
+Date: Mon, 15 May 2017 17:16:16 +0200
+Message-Id: <20170515151616.4716-1-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Say there is a raid1 btrfs which consists of two disks, after one disk
-becomes unavailable, we can still mount it in degraded mode once, for
-the second mount it would refuse to mount it with an error
+Hi,
 
-"BTRFS warning (device sdf): missing devices (1) exceeds the limit (0), writeable mount is not allowed"
+a pre-release has been tagged. The 4.11 release is going to be a small one,
+just a handful of updates. I was too busy with 4.12 kernel patches. Something
+will have to change regarding btrfs-progs management, as the number of
+unreviewed and unmerged patches is not decreasing. I'll write more about that
+after 4.11 is out.
 
-The reason is that during the first mount (with the default mount
-option), it creates a chunk of single profile so that another mount
-will report the limit to tolerate missing or faulty devices as 0.
+Changes:
+  * receive: fix handling empty stream with -e (multi-stream)
+  * send dump: fix printing long file names
+  * stability fixes for: dump-super, print-tree, check
+  * option parser updates: global opions (old xfstests will fail)
+  * new and updated tests
+  * documentation updates
 
-But we're mounting the filesystem from the device where the single
-profile chunk lives, we can safely allow it to be mounted in the
-degraded mode.
+ETA for 4.11 is in +2 days (2017-05-17).
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/disk-io.c | 9 ++++++++-
- 1 file changed, 8 insertions(+), 1 deletion(-)
+Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
+Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index eb1ee7b..b65a265 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3686,8 +3686,15 @@ int btrfs_calc_num_tolerated_disk_barrier_failures(
- 						   &space);
- 			if (space.total_bytes == 0 || space.used_bytes == 0)
- 				continue;
--			flags = space.flags;
- 
-+			/*
-+			 * skip single profile as we have opened this
-+			 * device for single profile
-+			 */
-+			if ((space.flags & BTRFS_BLOCK_GROUP_PROFILE_MASK) == 0)
-+				continue;
-+
-+			flags = space.flags;
- 			num_tolerated_disk_barrier_failures = min(
- 				num_tolerated_disk_barrier_failures,
- 				btrfs_get_num_tolerated_disk_barrier_failures(
--- 
-1.8.3.1
+Shortlog:
+
+Christian Brauner (3):
+      btrfs-progs: fix btrfs send & receive with -e flag
+      btrfs-progs: tests: misc/018-receive use receive -e to terminate on end marker
+      btrfs-progs: receiv: fail on first -ENODATA only
+
+Christophe de Dinechin (3):
+      btrfs-progs: check: disambiguate between cases where add_tree_backref fails
+      btrfs-progs: check: prevent attempt to insert extent record with max_size==0
+      btrfs-progs: check: make max_size consistent with nr
+
+David Sterba (10):
+      btrfs-progs: docs: mount options, enhance ssd/nossd
+      btrfs-progs: rework option parser to use getopt for global options
+      btrfs-progs: README: sort bug reports means by preference
+      btrfs-progs: docs: btrfs-replace, fix typo
+      btrfs-progs: balance: minor wording adjustment for full balance warning
+      btrfs-progs: docs: update formatting and wording for btrfs(5)
+      btrfs-progs: fssum: fix warning, include correct header for major()
+      btrfs-progs: tests: fix misc/019-receive-clones-on-munted-subvol
+      btrfs-progs: update CHANGES for v4.11
+      Btrfs progs v4.11-rc1
+
+Evan Danaher (1):
+      btrfs-progs: send: always print a space after path in dump
+
+Hans van Kranenburg (2):
+      btrfs-progs: docs: Fix missing newline in man 5 btrfs
+      btrfs-progs: docs: Fix newlines for man btrfstune
+
+Lakshmipathi.G (3):
+      btrfs-progs: misc-tests: Superblock corruption and recovery using backup
+      btrfs-progs: tests: add variable quotation to fsck-tests
+      btrfs-progs: tests: add variable quotation to convert-tests
+
+Lu Fengqi (4):
+      btrfs-progs: dump-super: check array_size in print_sys_chunk_array
+      btrfs-progs: print-tree: add validation to print_chunk
+      btrfs-progs: tests: fssum, fix memory leak
+      btrfs-progs: tests: Fix fuzz-test for bko-161821.raw.txt
+
+Qu Wenruo (6):
+      btrfs-progs: Fix memory leak when 0 sized block group item is found
+      btrfs-progs: check: Fix memory leak in check_chunks_and_extents
+      btrfs-progs: Use more strict check to read out tree root
+      btrfs-progs: check: Avoid reading beyond item boundary for inode_ref
+      btrfs-progs: check: Avoid reading beyond item boundary for dir_item and dir_index
+      btrfs-progs: print-tree: Add leaf flags and backref revision output
+
+Su Yue (1):
+      btrfs-progs: check: Fix heap use after free
 

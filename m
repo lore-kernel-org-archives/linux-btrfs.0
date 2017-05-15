@@ -1,84 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:46905 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S966556AbdEOTtr (ORCPT
+Received: from 185-6-29-55-rev.logitus.pl ([185.6.29.55]:39922 "EHLO
+        mother.pipebreaker.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932677AbdEOUL7 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 15 May 2017 15:49:47 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1dALzv-0008H9-9h
-        for linux-btrfs@vger.kernel.org; Mon, 15 May 2017 21:49:39 +0200
+        Mon, 15 May 2017 16:11:59 -0400
+Date: Mon, 15 May 2017 22:05:05 +0200
+From: Tomasz Torcz <tomek@pipebreaker.pl>
 To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77@gmail.com>
 Subject: Re: Btrfs/SSD
-Date: Mon, 15 May 2017 21:49:38 +0200
-Message-ID: <20170515214938.097b4c0b@jupiter.sol.kaishome.de>
+Message-ID: <20170515200505.GB5285@mother.pipebreaker.pl>
 References: <CAK5rZE4ko_xFr_Zv=bmZ4tR9X59jXaqFnTv16_ynEO0+E5uzeg@mail.gmail.com>
-        <f5cb15a5-5566-b366-ebda-c3101fa96eec@gmail.com>
-        <pan$9df5c$36e00209$7c238f6d$c2c19c0f@cox.net>
-        <CAK5rZE7H_qXh7TOU=N3JTocqjVitsAMNtxMCDfbJHTNJz0jF5A@mail.gmail.com>
-        <20170512203644.26e068e5@jupiter.sol.kaishome.de>
-        <beb7f0b0-b84a-dfa1-12c2-256fe967af1d@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+ <f5cb15a5-5566-b366-ebda-c3101fa96eec@gmail.com>
+ <pan$9df5c$36e00209$7c238f6d$c2c19c0f@cox.net>
+ <CAK5rZE7H_qXh7TOU=N3JTocqjVitsAMNtxMCDfbJHTNJz0jF5A@mail.gmail.com>
+ <20170512203644.26e068e5@jupiter.sol.kaishome.de>
+ <beb7f0b0-b84a-dfa1-12c2-256fe967af1d@gmail.com>
+ <20170515214938.097b4c0b@jupiter.sol.kaishome.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20170515214938.097b4c0b@jupiter.sol.kaishome.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Mon, 15 May 2017 08:03:48 -0400
-schrieb "Austin S. Hemmelgarn" <ahferroin7@gmail.com>:
+On Mon, May 15, 2017 at 09:49:38PM +0200, Kai Krakow wrote:
+> 
+> > It's worth noting also that on average, COW filesystems like BTRFS
+> > (or log-structured-filesystems will not benefit as much as
+> > traditional filesystems from SSD caching unless the caching is built
+> > into the filesystem itself, since they don't do in-place rewrites (so
+> > any new write by definition has to drop other data from the cache).
+> 
+> Yes, I considered that, too. And when I tried, there was almost no
+> perceivable performance difference between bcache-writearound and
+> bcache-writeback. But the latency of performance improvement was much
+> longer in writearound mode, so I sticked to writeback mode. Also,
+> writing random data is faster because bcache will defer it to
+> background and do writeback in sector order. Sequential access is
+> passed around bcache anyway, harddisks are already good at that.
 
-> > That's why I don't trust any of my data to them. But I still want
-> > the benefit of their speed. So I use SSDs mostly as frontend caches
-> > to HDDs. This gives me big storage with fast access. Indeed, I'm
-> > using bcache successfully for this. A warm cache is almost as fast
-> > as native SSD (at least it feels almost that fast, it will be
-> > slower if you threw benchmarks at it).  
-> That's to be expected though, most benchmarks don't replicate actual 
-> usage patterns for client systems, and using SSD's for caching with 
-> bcache or dm-cache for most server workloads except a file server
-> will usually get you a performance hit.
+  Let me add my 2 cents.  bcache-writearound does not cache writes
+on SSD, so there are less writes overall to flash.  It is said
+to prolong the life of the flash drive.
+  I've recently switched from bcache-writeback to bcache-writearound,
+because my SSD caching drive is at the edge of it's lifetime. I'm
+using bcache in following configuration: https://enotty.pipebreaker.pl/dżogstaff/2016.05.25-opcja2.svg
+My SSD is Samsung SSD 850 EVO 120GB, which I bought exactly 2 years ago.
 
-You mean "performance boost"? Almost every read-most server workload
-should benefit... I file server may be the exact opposite...
+  Now, according to http://www.samsung.com/semiconductor/minisite/ssd/product/consumer/850evo.html
+120GB and 250GB warranty only covers 75 TBW (terabytes written).
+My drive has  # smartctl -a /dev/sda  | grep LBA
+241 Total_LBAs_Written      0x0032   099   099   000    Old_age   Always       -       136025596053
 
-Also, I think dm-cache and bcache work very differently and are not
-directly comparable. Their benefit depends much on the applied workload.
+which multiplied by 512 bytes gives 69.6 TB. Close to 75TB? Well…
 
-If I remember right, dm-cache is more about keeping "hot data" in the
-flash storage while bcache is more about reducing seeking. So dm-cache
-optimizes for bigger throughput of SSDs while bcache optimizes for
-almost-zero seek overhead of SSDs. Depending on your underlying
-storage, one or the other may even give zero benefit or worsen
-performance. Which is what I'd call a "performance hit"... I didn't
-ever try dm-cache, tho. For reasons I don't remember exactly, I didn't
-like something about how it's implemented, I think it was related to
-crash recovery. I don't know if that still holds true with modern
-kernels. It may have changed but I never looked back to revise that
-decision.
+[35354.697513] sd 0:0:0:0: [sda] tag#19 FAILED Result: hostbyte=DID_OK driverbyte=DRIVER_SENSE
+[35354.697516] sd 0:0:0:0: [sda] tag#19 Sense Key : Medium Error [current] 
+[35354.697518] sd 0:0:0:0: [sda] tag#19 Add. Sense: Unrecovered read error - auto reallocate failed
+[35354.697522] sd 0:0:0:0: [sda] tag#19 CDB: Read(10) 28 00 0c 30 82 9f 00 00 48 00
+[35354.697524] blk_update_request: I/O error, dev sda, sector 204505785
 
+Above started appearing recently.  So, I was really suprised that:
+- this drive is only rated for 120 TBW
+- I went through this limit in only 2 years
 
-> It's worth noting also that on average, COW filesystems like BTRFS
-> (or log-structured-filesystems will not benefit as much as
-> traditional filesystems from SSD caching unless the caching is built
-> into the filesystem itself, since they don't do in-place rewrites (so
-> any new write by definition has to drop other data from the cache).
-
-Yes, I considered that, too. And when I tried, there was almost no
-perceivable performance difference between bcache-writearound and
-bcache-writeback. But the latency of performance improvement was much
-longer in writearound mode, so I sticked to writeback mode. Also,
-writing random data is faster because bcache will defer it to
-background and do writeback in sector order. Sequential access is
-passed around bcache anyway, harddisks are already good at that.
-
-But of course, the COW nature of btrfs will lower the hit rate I can
-on writes. That's why I see no benefit in using bcache-writethrough
-with btrfs.
-
+  The workload is lightly utilised home server / media center.
 
 -- 
-Regards,
-Kai
-
-Replies to list-only preferred.
+Tomasz Torcz                Only gods can safely risk perfection,
+xmpp: zdzichubg@chrome.pl     it's a dangerous thing for a man.  -- Alia
 

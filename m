@@ -1,406 +1,167 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:37820 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1755090AbdEYCH0 (ORCPT
+Received: from mail-qt0-f170.google.com ([209.85.216.170]:34301 "EHLO
+        mail-qt0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932731AbdEOR7F (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 May 2017 22:07:26 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-        by cn.fujitsu.com (Postfix) with ESMTP id D286447C6D3C
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 May 2017 10:07:15 +0800 (CST)
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 3/3] btrfs: check namelen before read/memcmp_extent_buffer
-Date: Thu, 25 May 2017 10:09:08 +0800
-Message-ID: <20170525020908.25830-3-suy.fnst@cn.fujitsu.com>
-In-Reply-To: <20170525020908.25830-1-suy.fnst@cn.fujitsu.com>
-References: <20170525020908.25830-1-suy.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+        Mon, 15 May 2017 13:59:05 -0400
+Received: by mail-qt0-f170.google.com with SMTP id c13so42124356qtc.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 May 2017 10:59:04 -0700 (PDT)
+Message-ID: <1494871139.4080.3.camel@redhat.com>
+Subject: Re: [PATCH v4 15/27] fs: retrofit old error reporting API onto new
+ infrastructure
+From: Jeff Layton <jlayton@redhat.com>
+To: Jan Kara <jack@suse.cz>
+Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-cifs@vger.kernel.org, linux-nfs@vger.kernel.org,
+        linux-mm@kvack.org, jfs-discussion@lists.sourceforge.net,
+        linux-xfs@vger.kernel.org, cluster-devel@redhat.com,
+        linux-f2fs-devel@lists.sourceforge.net,
+        v9fs-developer@lists.sourceforge.net, linux-nilfs@vger.kernel.org,
+        linux-block@vger.kernel.org, dhowells@redhat.com,
+        akpm@linux-foundation.org, hch@infradead.org,
+        ross.zwisler@linux.intel.com, mawilcox@microsoft.com, jack@suse.com,
+        viro@zeniv.linux.org.uk, corbet@lwn.net, neilb@suse.de, clm@fb.com,
+        tytso@mit.edu, axboe@kernel.dk, josef@toxicpanda.com,
+        hubcap@omnibond.com, rpeterso@redhat.com, bo.li.liu@oracle.com
+Date: Mon, 15 May 2017 13:58:59 -0400
+In-Reply-To: <20170515104246.GC16182@quack2.suse.cz>
+References: <20170509154930.29524-1-jlayton@redhat.com>
+         <20170509154930.29524-16-jlayton@redhat.com>
+         <20170515104246.GC16182@quack2.suse.cz>
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Reading name using 'read_extent_buffer' and 'memcmp_extent_buffer'
-may cause read beyond item boundary if namelen field in dir_item,
-inode_ref is corrupted.
+On Mon, 2017-05-15 at 12:42 +0200, Jan Kara wrote:
+> On Tue 09-05-17 11:49:18, Jeff Layton wrote:
+> > Now that we have a better way to store and report errors that occur
+> > during writeback, we need to convert the existing codebase to use it. We
+> > could just adapt all of the filesystem code and related infrastructure
+> > to the new API, but that's a lot of churn.
+> > 
+> > When it comes to setting errors in the mapping, filemap_set_wb_error is
+> > a drop-in replacement for mapping_set_error. Turn that function into a
+> > simple wrapper around the new one.
+> > 
+> > Because we want to ensure that writeback errors are always reported at
+> > fsync time, inject filemap_report_wb_error calls much closer to the
+> > syscall boundary, in call_fsync.
+> > 
+> > For fsync calls (and things like the nfsd equivalent), we either return
+> > the error that the fsync operation returns, or the one returned by
+> > filemap_report_wb_error. In both cases, we advance the file->f_wb_err to
+> > the latest value. This allows us to provide new fsync semantics that
+> > will return errors that may have occurred previously and been viewed
+> > via other file descriptors.
+> > 
+> > The final piece of the puzzle is what to do about filemap_check_errors
+> > calls that are being called directly or via filemap_* functions. Here,
+> > we must take a little "creative license".
+> > 
+> > Since we now handle advancing the file->f_wb_err value at the generic
+> > filesystem layer, we no longer need those callers to clear errors out
+> > of the mapping or advance an errseq_t.
+> > 
+> > A lot of the existing codebase relies on being getting an error back
+> > from those functions when there is a writeback problem, so we do still
+> > want to have them report writeback errors somehow.
+> > 
+> > When reporting writeback errors, we will always report errors that have
+> > occurred since a particular point in time. With the old writeback error
+> > reporting, the time we used was "since it was last tested/cleared" which
+> > is entirely arbitrary and potentially racy. Now, we can at least report
+> > the latest error that has occurred since an arbitrary point in time
+> > (represented as a sampled errseq_t value).
+> > 
+> > In the case where we don't have a struct file to work with, this patch
+> > just has the wrappers sample the current mapping->wb_err value, and use
+> > that as an arbitrary point from which to check for errors.
+> 
+> I think this is really dangerous and we shouldn't do this. You are quite
+> likely to lose IO errors in such calls because you will ignore all errors
+> that happened during previous background writeback or even for IO that
+> managed to complete before we called filemap_fdatawait(). Maybe we need to
+> keep the original set-clear-bit IO error reporting for these cases, until
+> we can convert them to fdatawait_range_since()?
+> 
 
-Example:
-	1. Corrupt one dir_item namelen to be 255.
-        2. Run 'ls -lar /mnt/test/ > /dev/null'
-dmesg:
-[   48.451449] BTRFS info (device vdb1): disk space caching is enabled
-[   48.451453] BTRFS info (device vdb1): has skinny extents
-[   48.489420] general protection fault: 0000 [#1] SMP
-[   48.489571] Modules linked in: ext4 jbd2 mbcache btrfs xor raid6_pq
-[   48.489716] CPU: 1 PID: 2710 Comm: ls Not tainted 4.10.0-rc1 #5
-[   48.489853] Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.10.2-20170228_101828-anatol 04/01/2014
-[   48.490008] task: ffff880035df1bc0 task.stack: ffffc90004800000
-[   48.490008] RIP: 0010:read_extent_buffer+0xd2/0x190 [btrfs]
-[   48.490008] RSP: 0018:ffffc90004803d98 EFLAGS: 00010202
-[   48.490008] RAX: 000000000000001b RBX: 000000000000001b RCX: 0000000000000000
-[   48.490008] RDX: ffff880079dbf36c RSI: 0005080000000000 RDI: ffff880079dbf368
-[   48.490008] RBP: ffffc90004803dc8 R08: ffff880078e8cc48 R09: ffff880000000000
-[   48.490008] R10: 0000160000000000 R11: 0000000000001000 R12: ffff880079dbf288
-[   48.490008] R13: ffff880078e8ca88 R14: 0000000000000003 R15: ffffc90004803e20
-[   48.490008] FS:  00007fef50c60800(0000) GS:ffff88007d400000(0000) knlGS:0000000000000000
-[   48.490008] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[   48.490008] CR2: 000055f335ac2ff8 CR3: 000000007356d000 CR4: 00000000001406e0
-[   48.490008] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-[   48.490008] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
-[   48.490008] Call Trace:
-[   48.490008]  btrfs_real_readdir+0x3b7/0x4a0 [btrfs]
-[   48.490008]  iterate_dir+0x181/0x1b0
-[   48.490008]  SyS_getdents+0xa7/0x150
-[   48.490008]  ? fillonedir+0x150/0x150
-[   48.490008]  entry_SYSCALL_64_fastpath+0x18/0xad
-[   48.490008] RIP: 0033:0x7fef5032546b
-[   48.490008] RSP: 002b:00007ffeafcdb830 EFLAGS: 00000206 ORIG_RAX: 000000000000004e
-[   48.490008] RAX: ffffffffffffffda RBX: 00007fef5061db38 RCX: 00007fef5032546b
-[   48.490008] RDX: 0000000000008000 RSI: 000055f335abaff0 RDI: 0000000000000003
-[   48.490008] RBP: 00007fef5061dae0 R08: 00007fef5061db48 R09: 0000000000000000
-[   48.490008] R10: 000055f335abafc0 R11: 0000000000000206 R12: 00007fef5061db38
-[   48.490008] R13: 0000000000008040 R14: 00007fef5061db38 R15: 000000000000270e
-[   48.490008] Code: 48 29 c3 74 5f 4c 89 d8 4c 89 d6 48 29 c8 48 39 d8 48 0f 47 c3 49 03 30 48 c1 fe 06 48 c1 e6 0c 4c 01 ce 48 01 ce 83 f8 08 72 b3 <48> 8b 0e 49 83 c0 08 48 89 0a 89 c1 48 8b 7c 0e f8 48 89 7c 0a
-[   48.490008] RIP: read_extent_buffer+0xd2/0x190 [btrfs] RSP: ffffc90004803d98
-[   48.499455] ---[ end trace 321920d8e8339505 ]---
+Yes that is a danger.
 
-Solutions:
-1. If read from dir_item, using 'verify_dir_item' to verify namelen.
-   And if 'verify_dir_item' failed, returns with error.
-2. Otherwise, call 'check_btrfs_namelen' to get 'proper' namelen.
-   If the returned value is not equal to original namelen,
-   returns with error.
+In fact, late last week I was finally able to make my xfstest work with
+btrfs, and started hitting oopses with it because of the way the error
+reporting changed. I rolled up a patch to fix that (and it simplifies
+the code some, IMO), but other callers of filemap_fdatawait may have
+similar problems here.
 
-Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
----
- fs/btrfs/dir-item.c   |  5 ++--
- fs/btrfs/export.c     |  7 +++++
- fs/btrfs/inode-item.c | 11 +++++++-
- fs/btrfs/root-tree.c  |  7 +++++
- fs/btrfs/tree-log.c   | 72 ++++++++++++++++++++++++++++++++++++++++++---------
- 5 files changed, 87 insertions(+), 15 deletions(-)
+I'll pick up working on this again in a more piecemeal way. I had
+originally looked at doing that, but there are some problematic places
+(e.g. buffer.c), where the code is shared by a bunch of different
+filesystems that makes it difficult.
 
-diff --git a/fs/btrfs/dir-item.c b/fs/btrfs/dir-item.c
-index 82390f36101c..8c28ff457219 100644
---- a/fs/btrfs/dir-item.c
-+++ b/fs/btrfs/dir-item.c
-@@ -395,11 +395,12 @@ struct btrfs_dir_item *btrfs_match_dir_item_name(struct btrfs_fs_info *fs_info,
- 
- 	leaf = path->nodes[0];
- 	dir_item = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_dir_item);
--	if (verify_dir_item(fs_info, leaf, path->slots[0], dir_item))
--		return NULL;
- 
- 	total_len = btrfs_item_size_nr(leaf, path->slots[0]);
- 	while (cur < total_len) {
-+		if (verify_dir_item(fs_info, leaf, path->slots[0], dir_item))
-+			return NULL;
-+
- 		this_len = sizeof(*dir_item) +
- 			btrfs_dir_name_len(leaf, dir_item) +
- 			btrfs_dir_data_len(leaf, dir_item);
-diff --git a/fs/btrfs/export.c b/fs/btrfs/export.c
-index 87144c9f9593..96c24adef54f 100644
---- a/fs/btrfs/export.c
-+++ b/fs/btrfs/export.c
-@@ -234,6 +234,7 @@ static int btrfs_get_name(struct dentry *parent, char *name,
- 	int name_len;
- 	int ret;
- 	u64 ino;
-+	u16 namelen_ret;
- 
- 	if (!S_ISDIR(dir->i_mode))
- 		return -EINVAL;
-@@ -282,6 +283,12 @@ static int btrfs_get_name(struct dentry *parent, char *name,
- 		name_len = btrfs_inode_ref_name_len(leaf, iref);
- 	}
- 
-+	namelen_ret = btrfs_check_namelen(leaf, path->slots[0], name_ptr,
-+					  name_len);
-+	if (namelen_ret != name_len) {
-+		btrfs_free_path(path);
-+		return -EIO;
-+	}
- 	read_extent_buffer(leaf, name, name_ptr, name_len);
- 	btrfs_free_path(path);
- 
-diff --git a/fs/btrfs/inode-item.c b/fs/btrfs/inode-item.c
-index 39c968f80157..c478da7c4784 100644
---- a/fs/btrfs/inode-item.c
-+++ b/fs/btrfs/inode-item.c
-@@ -32,6 +32,7 @@ static int find_name_in_backref(struct btrfs_path *path, const char *name,
- 	u32 item_size;
- 	u32 cur_offset = 0;
- 	int len;
-+	u16 namelen_ret;
- 
- 	leaf = path->nodes[0];
- 	item_size = btrfs_item_size_nr(leaf, path->slots[0]);
-@@ -43,6 +44,10 @@ static int find_name_in_backref(struct btrfs_path *path, const char *name,
- 		cur_offset += len + sizeof(*ref);
- 		if (len != name_len)
- 			continue;
-+		namelen_ret = btrfs_check_namelen(leaf, path->slots[0],
-+						name_ptr, name_len);
-+		if (namelen_ret != name_len)
-+			break;
- 		if (memcmp_extent_buffer(leaf, name, name_ptr, name_len) == 0) {
- 			*ref_ret = ref;
- 			return 1;
-@@ -62,6 +67,7 @@ int btrfs_find_name_in_ext_backref(struct btrfs_path *path, u64 ref_objectid,
- 	u32 item_size;
- 	u32 cur_offset = 0;
- 	int ref_name_len;
-+	u16 namelen_ret;
- 
- 	leaf = path->nodes[0];
- 	item_size = btrfs_item_size_nr(leaf, path->slots[0]);
-@@ -77,7 +83,10 @@ int btrfs_find_name_in_ext_backref(struct btrfs_path *path, u64 ref_objectid,
- 		extref = (struct btrfs_inode_extref *) (ptr + cur_offset);
- 		name_ptr = (unsigned long)(&extref->name);
- 		ref_name_len = btrfs_inode_extref_name_len(leaf, extref);
--
-+		namelen_ret = btrfs_check_namelen(leaf, path->slots[0],
-+						name_ptr, name_len);
-+		if (namelen_ret != ref_name_len)
-+			break;
- 		if (ref_name_len == name_len &&
- 		    btrfs_inode_extref_parent(leaf, extref) == ref_objectid &&
- 		    (memcmp_extent_buffer(leaf, name, name_ptr, name_len) == 0)) {
-diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
-index 7d6bc308bf43..a7c657b784d1 100644
---- a/fs/btrfs/root-tree.c
-+++ b/fs/btrfs/root-tree.c
-@@ -371,6 +371,7 @@ int btrfs_del_root_ref(struct btrfs_trans_handle *trans,
- 	unsigned long ptr;
- 	int err = 0;
- 	int ret;
-+	u16 namelen_ret;
- 
- 	path = btrfs_alloc_path();
- 	if (!path)
-@@ -390,6 +391,12 @@ int btrfs_del_root_ref(struct btrfs_trans_handle *trans,
- 		WARN_ON(btrfs_root_ref_dirid(leaf, ref) != dirid);
- 		WARN_ON(btrfs_root_ref_name_len(leaf, ref) != name_len);
- 		ptr = (unsigned long)(ref + 1);
-+		namelen_ret = btrfs_check_namelen(leaf, path->slots[0],
-+						ptr, name_len);
-+		if (namelen_ret != name_len) {
-+			err = -EIO;
-+			goto out;
-+		}
- 		WARN_ON(memcmp_extent_buffer(leaf, name, ptr, name_len));
- 		*sequence = btrfs_root_ref_sequence(leaf, ref);
- 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 1930f28edcdd..ed7b0adbc403 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -863,6 +863,9 @@ static noinline int drop_one_dir_item(struct btrfs_trans_handle *trans,
- 
- 	btrfs_dir_item_key_to_cpu(leaf, di, &location);
- 	name_len = btrfs_dir_name_len(leaf, di);
-+	if (verify_dir_item(fs_info, leaf, path->slots[0], di))
-+		return -EIO;
-+
- 	name = kmalloc(name_len, GFP_NOFS);
- 	if (!name)
- 		return -ENOMEM;
-@@ -953,6 +956,7 @@ static noinline int backref_in_log(struct btrfs_root *log,
- 	int item_size;
- 	int ret;
- 	int match = 0;
-+	u16 namelen_ret;
- 
- 	path = btrfs_alloc_path();
- 	if (!path)
-@@ -976,9 +980,11 @@ static noinline int backref_in_log(struct btrfs_root *log,
- 	ptr_end = ptr + item_size;
- 	while (ptr < ptr_end) {
- 		ref = (struct btrfs_inode_ref *)ptr;
-+		name_ptr = (unsigned long)(ref + 1);
- 		found_name_len = btrfs_inode_ref_name_len(path->nodes[0], ref);
-+		namelen_ret = btrfs_check_namelen(path->nodes[0],
-+				path->slots[0], name_ptr, found_name_len);
- 		if (found_name_len == namelen) {
--			name_ptr = (unsigned long)(ref + 1);
- 			ret = memcmp_extent_buffer(path->nodes[0], name,
- 						   name_ptr, namelen);
- 			if (ret == 0) {
-@@ -1005,6 +1011,7 @@ static inline int __add_inode_ref(struct btrfs_trans_handle *trans,
- {
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 	int ret;
-+	u16 namelen_ret;
- 	char *victim_name;
- 	int victim_name_len;
- 	struct extent_buffer *leaf;
-@@ -1041,6 +1048,11 @@ static inline int __add_inode_ref(struct btrfs_trans_handle *trans,
- 			victim_ref = (struct btrfs_inode_ref *)ptr;
- 			victim_name_len = btrfs_inode_ref_name_len(leaf,
- 								   victim_ref);
-+			namelen_ret = btrfs_check_namelen(leaf, path->slots[0],
-+						(unsigned long)(victim_ref + 1),
-+						victim_name_len);
-+			if (namelen_ret != victim_name_len)
-+				return -EIO;
- 			victim_name = kmalloc(victim_name_len, GFP_NOFS);
- 			if (!victim_name)
- 				return -ENOMEM;
-@@ -1087,6 +1099,7 @@ static inline int __add_inode_ref(struct btrfs_trans_handle *trans,
- 	if (!IS_ERR_OR_NULL(extref)) {
- 		u32 item_size;
- 		u32 cur_offset = 0;
-+		u16 namelen_ret;
- 		unsigned long base;
- 		struct inode *victim_parent;
- 
-@@ -1099,6 +1112,11 @@ static inline int __add_inode_ref(struct btrfs_trans_handle *trans,
- 			extref = (struct btrfs_inode_extref *)(base + cur_offset);
- 
- 			victim_name_len = btrfs_inode_extref_name_len(leaf, extref);
-+			namelen_ret = btrfs_check_namelen(leaf, path->slots[0],
-+						(unsigned long)&extref->name,
-+						victim_name_len);
-+			if (namelen_ret != victim_name_len)
-+				return -EIO;
- 
- 			if (btrfs_inode_extref_parent(leaf, extref) != parent_objectid)
- 				goto next;
-@@ -1175,16 +1193,20 @@ static inline int __add_inode_ref(struct btrfs_trans_handle *trans,
- 	return 0;
- }
- 
--static int extref_get_fields(struct extent_buffer *eb, unsigned long ref_ptr,
--			     u32 *namelen, char **name, u64 *index,
--			     u64 *parent_objectid)
-+static int extref_get_fields(struct extent_buffer *eb, int slot,
-+			     unsigned long ref_ptr, u32 *namelen, char **name,
-+			     u64 *index, u64 *parent_objectid)
- {
- 	struct btrfs_inode_extref *extref;
--
-+	u32 namelen_ret;
- 	extref = (struct btrfs_inode_extref *)ref_ptr;
- 
- 	*namelen = btrfs_inode_extref_name_len(eb, extref);
- 	*name = kmalloc(*namelen, GFP_NOFS);
-+	namelen_ret = btrfs_check_namelen(eb, slot,
-+					(unsigned long)&extref->name, *namelen);
-+	if (namelen_ret != *namelen)
-+		return -EIO;
- 	if (*name == NULL)
- 		return -ENOMEM;
- 
-@@ -1198,14 +1220,18 @@ static int extref_get_fields(struct extent_buffer *eb, unsigned long ref_ptr,
- 	return 0;
- }
- 
--static int ref_get_fields(struct extent_buffer *eb, unsigned long ref_ptr,
--			  u32 *namelen, char **name, u64 *index)
-+static int ref_get_fields(struct extent_buffer *eb, int slot,
-+		unsigned long ref_ptr, u32 *namelen, char **name, u64 *index)
- {
- 	struct btrfs_inode_ref *ref;
--
-+	u32 namelen_ret;
- 	ref = (struct btrfs_inode_ref *)ref_ptr;
- 
- 	*namelen = btrfs_inode_ref_name_len(eb, ref);
-+	namelen_ret = btrfs_check_namelen(eb, slot, (unsigned long)(ref + 1),
-+					*namelen);
-+	if (namelen_ret != *namelen)
-+		return -EIO;
- 	*name = kmalloc(*namelen, GFP_NOFS);
- 	if (*name == NULL)
- 		return -ENOMEM;
-@@ -1280,8 +1306,8 @@ static noinline int add_inode_ref(struct btrfs_trans_handle *trans,
- 
- 	while (ref_ptr < ref_end) {
- 		if (log_ref_ver) {
--			ret = extref_get_fields(eb, ref_ptr, &namelen, &name,
--						&ref_index, &parent_objectid);
-+			ret = extref_get_fields(eb, slot, ref_ptr, &namelen,
-+					&name, &ref_index, &parent_objectid);
- 			/*
- 			 * parent object can change from one array
- 			 * item to another.
-@@ -1293,7 +1319,7 @@ static noinline int add_inode_ref(struct btrfs_trans_handle *trans,
- 				goto out;
- 			}
- 		} else {
--			ret = ref_get_fields(eb, ref_ptr, &namelen, &name,
-+			ret = ref_get_fields(eb, slot, ref_ptr, &namelen, &name,
- 					     &ref_index);
- 		}
- 		if (ret)
-@@ -1704,7 +1730,8 @@ static noinline int replay_one_name(struct btrfs_trans_handle *trans,
- 				    struct btrfs_dir_item *di,
- 				    struct btrfs_key *key)
- {
--	char *name;
-+	struct btrfs_fs_info *fs_info = root->fs_info;
-+	char *name = NULL;
- 	int name_len;
- 	struct btrfs_dir_item *dst_di;
- 	struct btrfs_key found_key;
-@@ -1721,6 +1748,12 @@ static noinline int replay_one_name(struct btrfs_trans_handle *trans,
- 		return -EIO;
- 
- 	name_len = btrfs_dir_name_len(eb, di);
-+	ret = verify_dir_item(fs_info, eb, path->slots[0], di);
-+	if (ret) {
-+		ret = -EIO;
-+		goto out;
-+	}
-+
- 	name = kmalloc(name_len, GFP_NOFS);
- 	if (!name) {
- 		ret = -ENOMEM;
-@@ -2102,6 +2135,7 @@ static int replay_xattr_deletes(struct btrfs_trans_handle *trans,
- 			      struct btrfs_path *path,
- 			      const u64 ino)
- {
-+	struct btrfs_fs_info *fs_info = root->fs_info;
- 	struct btrfs_key search_key;
- 	struct btrfs_path *log_path;
- 	int i;
-@@ -2143,6 +2177,12 @@ static int replay_xattr_deletes(struct btrfs_trans_handle *trans,
- 			u32 this_len = sizeof(*di) + name_len + data_len;
- 			char *name;
- 
-+			if (verify_dir_item(fs_info, path->nodes[0],
-+					path->slots[0], di)) {
-+				ret = -EIO;
-+				goto out;
-+			}
-+
- 			name = kmalloc(name_len, GFP_NOFS);
- 			if (!name) {
- 				ret = -ENOMEM;
-@@ -4524,6 +4564,8 @@ static int btrfs_check_ref_name_override(struct extent_buffer *eb,
- 		u64 parent;
- 		u32 this_name_len;
- 		u32 this_len;
-+		u16 namelen_ret;
-+
- 		unsigned long name_ptr;
- 		struct btrfs_dir_item *di;
- 
-@@ -4546,6 +4588,12 @@ static int btrfs_check_ref_name_override(struct extent_buffer *eb,
- 			this_len = sizeof(*extref) + this_name_len;
- 		}
- 
-+		namelen_ret = btrfs_check_namelen(eb, slot, name_ptr,
-+						this_name_len);
-+		if (namelen_ret != this_name_len) {
-+			ret = -EIO;
-+			goto out;
-+		}
- 		if (this_name_len > name_len) {
- 			char *new_name;
- 
+We may end up needing some sort of FS_WB_ERRSEQ flag to do this
+correctly, at least until the transition to errseq_t is done.
+
+> > That's probably not "correct" in all cases, particularly in the case of
+> > something like filemap_fdatawait, but I'm not sure it's any worse than
+> > what we already have, and this gives us a basis from which to work.
+> > 
+> > A lot of those callers will likely want to change to a model where they
+> > sample the errseq_t much earlier (perhaps when starting a transaction),
+> > store it in an appropriate place and then use that value later when
+> > checking to see if an error occurred.
+> > 
+> > That will almost certainly take some involvement from other subsystem
+> > maintainers. I'm quite open to adding new API functions to help enable
+> > this if that would be helpful, but I don't really want to do that until
+> > I better understand what's needed.
+> > 
+> > Signed-off-by: Jeff Layton <jlayton@redhat.com>
+> 
+> ...
+> 
+> > diff --git a/fs/f2fs/file.c b/fs/f2fs/file.c
+> > index 5f7317875a67..7ce13281925f 100644
+> > --- a/fs/f2fs/file.c
+> > +++ b/fs/f2fs/file.c
+> > @@ -187,6 +187,7 @@ static int f2fs_do_sync_file(struct file *file, loff_t start, loff_t end,
+> >  		.nr_to_write = LONG_MAX,
+> >  		.for_reclaim = 0,
+> >  	};
+> > +	errseq_t since = READ_ONCE(file->f_wb_err);
+> >  
+> >  	if (unlikely(f2fs_readonly(inode->i_sb)))
+> >  		return 0;
+> > @@ -265,6 +266,8 @@ static int f2fs_do_sync_file(struct file *file, loff_t start, loff_t end,
+> >  	}
+> >  
+> >  	ret = wait_on_node_pages_writeback(sbi, ino);
+> > +	if (ret == 0)
+> > +		ret = filemap_check_wb_error(NODE_MAPPING(sbi), since);
+> >  	if (ret)
+> >  		goto out;
+> 
+> So this conversion looks wrong and actually points to a larger issue with
+> the scheme. The problem is there are two mappings that come into play here
+> - file_inode(file)->i_mapping which is the data mapping and
+> NODE_MAPPING(sbi) which is the metadata mapping (and this is not a problem
+> specific to f2fs. For example ext2 also uses this scheme where block
+> devices' mapping is the metadata mapping). And we need to merge error
+> information from these two mappings so for the stamping scheme to work,
+> we'd need two stamps stored in struct file. One for data mapping and one
+> for metadata mapping. Or maybe there's some more clever scheme but for now
+> I don't see one...
+> 
+
+Got it -- since there are two mappings, there are two errseq_t's and
+you'd need a since cursor for each. I don't really like having to add a
+second 32-bit word to struct file, but I also don't see a real
+alternative right offhand. May be able to stash it in file->private_data 
+for some of these filesystems.
+
+In any case, I'll ponder how to do this in a more piecemeal way.
+
+Thanks for all of the review so far!
 -- 
-2.13.0
-
-
-
+Jeff Layton <jlayton@redhat.com>

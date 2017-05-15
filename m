@@ -1,66 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f44.google.com ([74.125.82.44]:36528 "EHLO
-        mail-wm0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933153AbdEOL0E (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 15 May 2017 07:26:04 -0400
-Received: by mail-wm0-f44.google.com with SMTP id u65so78075361wmu.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 May 2017 04:26:03 -0700 (PDT)
+Received: from ns.bouton.name ([109.74.195.142]:41512 "EHLO mail.bouton.name"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S934160AbdEOLa0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 15 May 2017 07:30:26 -0400
+Subject: Re: balancing every night broke balancing so now I can't balance
+ anymore?
+To: Hugo Mills <hugo@carfax.org.uk>, Marc MERLIN <marc@merlins.org>,
+        Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
+        linux-btrfs@vger.kernel.org
+References: <20170513205431.lm6y5tcffr35gq4a@merlins.org>
+ <95bffb8b-7e66-7d6b-2455-f7a025dbb96c@mendix.com>
+ <20170514201508.bd3dshfymqt4swpb@merlins.org>
+ <20170514212111.GL9701@carfax.org.uk>
+ <20170514231652.sdpaci7e4oxs5gc3@merlins.org>
+ <20170515081455.GM9701@carfax.org.uk>
+From: Lionel Bouton <lionel-subscription@bouton.name>
+Message-ID: <2549087f-42aa-9a8b-227d-a16cf2fd5b47@bouton.name>
+Date: Mon, 15 May 2017 13:30:24 +0200
 MIME-Version: 1.0
-In-Reply-To: <D9491068-A906-4B75-9ED3-B98960FFBF14@gmail.com>
-References: <CAK5rZE4ko_xFr_Zv=bmZ4tR9X59jXaqFnTv16_ynEO0+E5uzeg@mail.gmail.com>
- <f5cb15a5-5566-b366-ebda-c3101fa96eec@gmail.com> <CAK5rZE7WHeTknmQdjX7vianEj4RmdLU+ocTLhbAxYenRjLegaA@mail.gmail.com>
- <20170512202756.16bd785f@jupiter.sol.kaishome.de> <pan$3384$13ad2b1f$3febf76a$c09fcbd7@cox.net>
- <CAJCQCtQnM21-JPs+6+YeykTj-s1J43E8rNCkHHyk+AjvzZEddg@mail.gmail.com>
- <250FCE39-0DAE-4AF2-B378-E56BE044F2E7@gmail.com> <CAK5rZE7MKrqNSuJXTYe=H_T6WbYJgcGhV9VUHH0pQ689-tKiAg@mail.gmail.com>
- <D9491068-A906-4B75-9ED3-B98960FFBF14@gmail.com>
-From: Imran Geriskovan <imran.geriskovan@gmail.com>
-Date: Mon, 15 May 2017 13:25:54 +0200
-Message-ID: <CAK5rZE7MivXmT_zvph0sYqqq-62bGgDxqYbAudd92i+E54fOdg@mail.gmail.com>
-Subject: Re: Btrfs/SSD
-To: Tomasz Kusmierz <tom.kusmierz@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>, Duncan <1i5t5.duncan@cox.net>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <20170515081455.GM9701@carfax.org.uk>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 5/15/17, Tomasz Kusmierz <tom.kusmierz@gmail.com> wrote:
-> Theoretically all sectors in over provision are erased - practically they
-> are either erased or waiting to be erased or broken.
-> Over provisioned area does have more uses than that. For example if you have
-> a 1TB drive where you store 500GB of data that you never modify -> SSD will
-> copy part of that data to over provisioned area -> free sectors that were
-> unwritten for a while -> free sectors that were continuously hammered by
-> writes and write a static data there. This mechanism is wear levelling - it
-> means that SSD internals make sure that sectors on SSD have an equal use
-> over time. Despite of some thinking that itâ€™s pointless imagine situation
-> where youâ€™ve got a 1TB drive with 1GB free and you keep writing and
-> modifying data in this 1GB free â€¦ those sectors will quickly die due to
-> short flash life expectancy ( some as short as 1k erases !!!!! ).
+Le 15/05/2017 à 10:14, Hugo Mills a écrit :
+> [...]
+>> As for limit= I'm not sure if it would be helpful since I run this
+>> nightly. Anything that doesn't get done tonight due to limit, would be
+>> done tomorrow?
+>    I'm suggesting limit= on its own. It's a fixed amount of work
+> compared to usage=, which may not do anything at all. For example,
+> it's perfectly possible to have a filesystem which is, say, 30% full,
+> and yet is still fully-allocated filesystem with more than 20% of
+> every chunk used. In that case your usage= wouldn't balance anything,
+> and you'd still be left in the situation of risking ENOSPC from
+> running out of metadata.
 
-Thanks for the info. It can be understood that, the drive
-has a pool of erase blocks from which some portion (say %90-95)
-is provided as usable. Trimmed blocks are candidates
-for new allocations. If the drive is not trimmed, that allocatable
-pool becomes smaller than it can be and new allocations
-under wear levelling logic is done from smaller group.
-This will probably increase data traffic on that "small group"
-of blocks, eating from their erase cycles.
+Hugo, as I don't have any feedback on my approach to address this
+problem could you have a look at my script or simply the principle : is
+there any drawback vs using limit in calling balance multiple times
+raising usage (and using the same value for data and metadata) until you
+get enough free space ?
 
-However, this logic is valid if the drive does NOT move
-data on trimmed blocks to trimmed/available ones.
+For reference :
 
-Under some advanced wear leveling operations, drive may
-decide to swap two blocks (one occupied/one vacant) if the
-cummulative erase cycles of the former is much lower than
-the latter to provide some balancing affect.
+https://github.com/jtek/ceph-utils/blob/master/btrfs-auto-rebalance.rb
 
-Theoretically swapping may even occur when the flash tend
-to lose charge (and thus data) based on the age of the
-data and/or block health.
 
-But in any case I understand that trimming will provide
-important degree of freedom and health to the drive.
-Without trimming drive will continue to deal with worthless
-blocks simply because it doesn't know they are worthless...
+Lionel

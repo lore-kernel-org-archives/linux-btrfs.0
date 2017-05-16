@@ -1,70 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:34689 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1750836AbdEPEsx (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:30092 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751815AbdEPJrK (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 May 2017 00:48:53 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1dAUPd-0006rj-8R
-        for linux-btrfs@vger.kernel.org; Tue, 16 May 2017 06:48:45 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Btrfs/SSD
-Date: Tue, 16 May 2017 04:48:39 +0000 (UTC)
-Message-ID: <pan$7903c$57ad474c$640ec3d9$4cf73ffe@cox.net>
-References: <CAK5rZE4ko_xFr_Zv=bmZ4tR9X59jXaqFnTv16_ynEO0+E5uzeg@mail.gmail.com>
-        <f5cb15a5-5566-b366-ebda-c3101fa96eec@gmail.com>
-        <pan$9df5c$36e00209$7c238f6d$c2c19c0f@cox.net>
-        <CAK5rZE7H_qXh7TOU=N3JTocqjVitsAMNtxMCDfbJHTNJz0jF5A@mail.gmail.com>
-        <20170512203644.26e068e5@jupiter.sol.kaishome.de>
-        <beb7f0b0-b84a-dfa1-12c2-256fe967af1d@gmail.com>
-        <FA7013B1-621B-405F-B65C-236A4A33F022@gmail.com>
-        <20170515211206.29c5c132@jupiter.sol.kaishome.de>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+        Tue, 16 May 2017 05:47:10 -0400
+From: Anand Jain <anand.jain@oracle.com>
+Subject: Re: [PATCH v2] btrfs: add framework to handle device flush error as a
+ volume
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+References: <20170425085831.14999-1-anand.jain@oracle.com>
+ <20170505231754.9201-1-anand.jain@oracle.com>
+ <20170509171235.GH5491@twin.jikos.cz>
+Message-ID: <7dc65862-fc06-93dc-49d5-2d0c84ea42ad@oracle.com>
+Date: Tue, 16 May 2017 17:52:52 +0800
+MIME-Version: 1.0
+In-Reply-To: <20170509171235.GH5491@twin.jikos.cz>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Kai Krakow posted on Mon, 15 May 2017 21:12:06 +0200 as excerpted:
 
-> Am Mon, 15 May 2017 14:09:20 +0100
-> schrieb Tomasz Kusmierz <tom.kusmierz@gmail.com>:
->> 
->> Not true. When HDD uses 10% (10% is just for easy example) of space
->> as spare than aligment on disk is (US - used sector, SS - spare
->> sector, BS - bad sector)
->> 
->> US US US US US US US US US SS
->> US US US US US US US US US SS
->> US US US US US US US US US SS
->> US US US US US US US US US SS
->> US US US US US US US US US SS
->> US US US US US US US US US SS
->> US US US US US US US US US SS
->> 
->> if failure occurs - drive actually shifts sectors up:
->> 
->> US US US US US US US US US SS
->> US US US BS BS BS US US US US
->> US US US US US US US US US US
->> US US US US US US US US US US
->> US US US US US US US US US SS
->> US US US BS US US US US US US
->> US US US US US US US US US SS
->> US US US US US US US US US SS
-> 
-> This makes sense... Reserve area somehow implies it is continuous and
-> as such located at one far end of the platter. But your image totally
-> makes sense.
 
-Thanks Tomasz.  It makes a lot of sense indeed, and had I thought about
-it I think I already "knew" it, but I simply hadn't stopped to think about
-it that hard, so you disabused me of the vague idea of spares all at one
-end of the disk, too. =:^)
+On 05/10/2017 01:12 AM, David Sterba wrote:
+> On Sat, May 06, 2017 at 07:17:54AM +0800, Anand Jain wrote:
+>> This adds comments to the flush error handling part of
+>> the code, and hopes to maintain the same logic with a
+>> framework which can be used to handle the errors at the
+>> volume level.
+>>
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>
+> Reviewed-by: David Sterba <dsterba@suse.com>
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+  Thanks.
 
+> So the next step is to preallocate the flush_bio and remove the ENOMEM
+> handling.
+
+  one or the other way ENOMEM is going to go away. Thinking to fix
+  blkdev_issue_flush(), which IMO is the right way, its RFC is sent out.
+
+
+> submit_bio can fail, the error code will be stored to the bio and this
+> will be checked in the waiting side.
+>
+> Then write_dev_flush can be split into 2 functions by the parameter
+> 'wait', as the paths are completely independent.
+
+  The new KPI blkdev_issue_flush_no_wait() makes it much simpler,
+  I have sent out the btrfs part of the RFC patch as well. Thanks.
+
+>> +static int check_barrier_error(struct btrfs_fs_devices *fsdevs)
+>> +{
+>> +	int submit_flush_error = 0;
+>> +	int dev_flush_error = 0;
+>> +	struct btrfs_device *dev;
+>> +	int tolerance;
+>> +
+>> +	list_for_each_entry_rcu(dev, &fsdevs->devices, dev_list) {
+>> +		if (!dev->bdev) {
+>> +			submit_flush_error++;
+>> +			dev_flush_error++;
+>> +			continue;
+>> +		}
+>> +		if (dev->last_flush_error == -ENOMEM)
+>> +			submit_flush_error++;
+>> +		if (dev->last_flush_error && dev->last_flush_error != -ENOMEM)
+>> +			dev_flush_error++;
+>> +	}
+>> +
+>> +	tolerance = fsdevs->fs_info->num_tolerated_disk_barrier_failures;
+>> +	if (submit_flush_error > tolerance || dev_flush_error > tolerance)
+>> +		return -EIO;
+>
+> Actually, after reading submit_bio and the comment above, do we need to
+> care about the submission errors? As submit_bio could return -EIO
+> immeditaelly, but does not help us anyway. We'll wait and check again
+> later.  It's the bio completion what counts.
+>
+> This should simplify the code.
+
+  Yeah. we don;t have to worry about the send part of the error, when
+  all the error that may encounter is all related to the device itself.
+
+  There are RFC patches for the device state: offline and failed, now
+  depending on whether the flush returned EIO or transport error ENXIO
+  I intend to choice the device state such as of failed or offline
+  respectively.
+
+Thanks, Anand

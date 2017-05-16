@@ -1,119 +1,198 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:22685 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751656AbdEPJdd (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:45704 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751137AbdEPJdw (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 May 2017 05:33:33 -0400
+        Tue, 16 May 2017 05:33:52 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH 1/2] block: Introduce blkdev_issue_flush_no_wait()
-Date: Tue, 16 May 2017 17:39:13 +0800
-Message-Id: <20170516093914.16035-2-anand.jain@oracle.com>
+Subject: [PATCH 2/2] btrfs: Use blkdev_issue_flush_no_wait()
+Date: Tue, 16 May 2017 17:39:14 +0800
+Message-Id: <20170516093914.16035-3-anand.jain@oracle.com>
 In-Reply-To: <20170516093914.16035-1-anand.jain@oracle.com>
 References: <20170516093914.16035-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-blkdev_issue_flush() is a blocking function and returns only after
-the flush bio is completed, so a module handling more than one
-device can't issue flush for all the devices unless it uses worker
-thread.
-
-This patch adds a new function blkdev_issue_flush_no_wait(), which
-uses submit_bio() instead of submit_bio_wait(), and accepts the
-completion function and data from the caller.
-
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- block/blk-flush.c      | 47 +++++++++++++++++++++++++++++++++++++++++++++++
- include/linux/blkdev.h |  8 ++++++++
- 2 files changed, 55 insertions(+)
+ fs/btrfs/disk-io.c | 108 ++++++++++++++++-------------------------------------
+ fs/btrfs/volumes.h |   2 +-
+ 2 files changed, 33 insertions(+), 77 deletions(-)
 
-diff --git a/block/blk-flush.c b/block/blk-flush.c
-index c4e0880b54bb..16b9c61f4cd3 100644
---- a/block/blk-flush.c
-+++ b/block/blk-flush.c
-@@ -488,6 +488,53 @@ void blk_insert_flush(struct request *rq)
- 	blk_flush_complete_seq(rq, fq, REQ_FSEQ_ACTIONS & ~policy, 0);
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 8685d67185d0..f059f9bdbbd7 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3478,121 +3478,77 @@ static int write_dev_supers(struct btrfs_device *device,
  }
  
-+/*
-+ * blkdev_issue_flush_no_wait - Issue a flush for the given block device
-+ * @bdev:       blockdev to issue flush for
-+ * @gfp_mask:   memory allocation flags (for bio_alloc)
-+ * @endio_fn:   completion function for the flush bio
-+ * @data:       flush bio private data
-+ *
-+ * Description:
-+ *    Issue a flush for the block device in question. Caller must provide
-+ *    the completion function and the private data, to be called when the
-+ *    issued flush bio completes.
-+ */
-+int blkdev_issue_flush_no_wait(struct block_device *bdev, gfp_t gfp_mask,
-+		bio_end_io_t *endio_fn, void *data)
-+{
-+	struct request_queue *q;
-+	struct bio *bio;
+ /*
+- * endio for the write_dev_flush, this will wake anyone waiting
++ * endio for blkdev_issues_flush_no_wait, this will wake anyone waiting
+  * for the barrier when it is done
+  */
+ static void btrfs_end_empty_barrier(struct bio *bio)
+ {
+-	if (bio->bi_private)
+-		complete(bio->bi_private);
++	struct btrfs_device *device;
 +
-+	if (bdev->bd_disk == NULL)
-+		return -ENXIO;
++	device = container_of(bio->bi_private, struct btrfs_device,
++						flush_wait);
 +
-+	q = bdev_get_queue(bdev);
-+	if (!q)
-+		return -ENXIO;
++	device->last_flush_error = bio->bi_error;
++	complete(&device->flush_wait);
 +
-+	/*
-+	 * some block devices may not have their queue correctly set up here
-+	 * (e.g. loop device without a backing file) and so issuing a flush
-+	 * here will panic. Ensure there is a request function before issuing
-+	 * the flush.
-+	 */
-+	if (!q->make_request_fn)
-+		return -ENXIO;
-+
-+	bio = bio_alloc(gfp_mask, 0);
-+	bio->bi_bdev = bdev;
-+	bio->bi_opf = REQ_OP_WRITE | REQ_PREFLUSH | REQ_SYNC;
-+	bio->bi_end_io = endio_fn;
-+	bio->bi_private = data;
-+
-+	init_completion(data);
-+	submit_bio(bio);
-+
-+	return 0;
-+}
-+EXPORT_SYMBOL(blkdev_issue_flush_no_wait);
-+
- /**
-  * blkdev_issue_flush - queue a flush
-  * @bdev:	blockdev to issue flush for
-diff --git a/include/linux/blkdev.h b/include/linux/blkdev.h
-index b5d1e27631ee..5d2b62239251 100644
---- a/include/linux/blkdev.h
-+++ b/include/linux/blkdev.h
-@@ -1322,6 +1322,8 @@ static inline struct request *blk_map_queue_find_tag(struct blk_queue_tag *bqt,
+ 	bio_put(bio);
  }
  
- extern int blkdev_issue_flush(struct block_device *, gfp_t, sector_t *);
-+extern int blkdev_issue_flush_no_wait(struct block_device *bdev,
-+			gfp_t gfp_mask, bio_end_io_t *endio_fn, void *data);
- extern int blkdev_issue_write_same(struct block_device *bdev, sector_t sector,
- 		sector_t nr_sects, gfp_t gfp_mask, struct page *page);
+-/*
+- * trigger flushes for one the devices.  If you pass wait == 0, the flushes are
+- * sent down.  With wait == 1, it waits for the previous flush.
+- *
+- * any device where the flush fails with eopnotsupp are flagged as not-barrier
+- * capable
+- */
+-static int write_dev_flush(struct btrfs_device *device, int wait)
++static void write_dev_flush(struct btrfs_device *device)
+ {
++	int ret;
+ 	struct request_queue *q = bdev_get_queue(device->bdev);
+-	struct bio *bio;
+-	int ret = 0;
  
-@@ -1994,6 +1996,12 @@ static inline int blkdev_issue_flush(struct block_device *bdev, gfp_t gfp_mask,
+ 	if (!test_bit(QUEUE_FLAG_WC, &q->queue_flags))
+-		return 0;
+-
+-	if (wait) {
+-		bio = device->flush_bio;
+-		if (!bio)
+-			return 0;
+-
+-		wait_for_completion(&device->flush_wait);
+-
+-		if (bio->bi_error) {
+-			ret = bio->bi_error;
+-			btrfs_dev_stat_inc_and_print(device,
+-				BTRFS_DEV_STAT_FLUSH_ERRS);
+-		}
+-
+-		/* drop the reference from the wait == 0 run */
+-		bio_put(bio);
+-		device->flush_bio = NULL;
+-
+-		return ret;
+-	}
+-
+-	/*
+-	 * one reference for us, and we leave it for the
+-	 * caller
+-	 */
+-	device->flush_bio = NULL;
+-	bio = btrfs_io_bio_alloc(GFP_NOFS, 0);
+-	if (!bio)
+-		return -ENOMEM;
+-
+-	bio->bi_end_io = btrfs_end_empty_barrier;
+-	bio->bi_bdev = device->bdev;
+-	bio->bi_opf = REQ_OP_WRITE | REQ_PREFLUSH;
+-	init_completion(&device->flush_wait);
+-	bio->bi_private = &device->flush_wait;
+-	device->flush_bio = bio;
+-
+-	bio_get(bio);
+-	btrfsic_submit_bio(bio);
++		return;
+ 
+-	return 0;
++	ret = blkdev_issue_flush_no_wait(device->bdev, GFP_NOFS,
++		btrfs_end_empty_barrier, &device->flush_wait);
++	if (ret)
++		device->last_flush_error = ret;
++	else
++		device->last_flush_error = -1;
+ }
+ 
+ /*
+- * send an empty flush down to each device in parallel,
+- * then wait for them
++ * send flush down to each device in parallel, then wait for them.
+  */
+ static int barrier_all_devices(struct btrfs_fs_info *info)
+ {
+ 	struct list_head *head;
+ 	struct btrfs_device *dev;
+-	int errors_send = 0;
+ 	int errors_wait = 0;
+-	int ret;
+ 
+ 	/* send down all the barriers */
+ 	head = &info->fs_devices->devices;
+ 	list_for_each_entry_rcu(dev, head, dev_list) {
++		dev->last_flush_error = 0;
+ 		if (dev->missing)
+ 			continue;
++
++		if (!dev->in_fs_metadata || !dev->writeable)
++			continue;
++
+ 		if (!dev->bdev) {
+-			errors_send++;
++			dev->last_flush_error = -ENXIO;
+ 			continue;
+ 		}
+-		if (!dev->in_fs_metadata || !dev->writeable)
+-			continue;
+ 
+-		ret = write_dev_flush(dev, 0);
+-		if (ret)
+-			errors_send++;
++		write_dev_flush(dev);
+ 	}
+ 
+ 	/* wait for all the barriers */
+ 	list_for_each_entry_rcu(dev, head, dev_list) {
+-		if (dev->missing)
+-			continue;
+-		if (!dev->bdev) {
+-			errors_wait++;
+-			continue;
+-		}
+-		if (!dev->in_fs_metadata || !dev->writeable)
+-			continue;
++		if (dev->last_flush_error == -1)
++			wait_for_completion(&dev->flush_wait);
+ 
+-		ret = write_dev_flush(dev, 1);
+-		if (ret)
++		if (dev->last_flush_error)
+ 			errors_wait++;
+ 	}
+-	if (errors_send > info->num_tolerated_disk_barrier_failures ||
+-	    errors_wait > info->num_tolerated_disk_barrier_failures)
++
++	if (errors_wait > info->num_tolerated_disk_barrier_failures)
+ 		return -EIO;
++
  	return 0;
  }
  
-+static inline int blkdev_issue_flush_no_wait(struct block_device *bdev,
-+			gfp_t gfp_mask, bio_end_io_t *endio_fn, void *data)
-+{
-+	return 0;
-+}
-+
- #endif /* CONFIG_BLOCK */
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index c7d0fbc915ca..27af3a227bfb 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -123,8 +123,8 @@ struct btrfs_device {
+ 	struct list_head resized_list;
  
- #endif
+ 	/* for sending down flush barriers */
+-	struct bio *flush_bio;
+ 	struct completion flush_wait;
++	int last_flush_error;
+ 
+ 	/* per-device scrub information */
+ 	struct scrub_ctx *scrub_device;
 -- 
 2.10.0
 

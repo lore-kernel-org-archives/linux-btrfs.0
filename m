@@ -1,42 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:22683 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751338AbdEPJdd (ORCPT
+Received: from bombadil.infradead.org ([65.50.211.133]:49399 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750839AbdEPL4G (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 May 2017 05:33:33 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [RFC PATCH 0/2] Introduce blkdev_issue_flush_no_wait()
-Date: Tue, 16 May 2017 17:39:12 +0800
-Message-Id: <20170516093914.16035-1-anand.jain@oracle.com>
+        Tue, 16 May 2017 07:56:06 -0400
+Date: Tue, 16 May 2017 04:56:05 -0700
+From: Christoph Hellwig <hch@infradead.org>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH 1/2] block: Introduce blkdev_issue_flush_no_wait()
+Message-ID: <20170516115605.GA18649@infradead.org>
+References: <20170516093914.16035-1-anand.jain@oracle.com>
+ <20170516093914.16035-2-anand.jain@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170516093914.16035-2-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-BTRFS wanted a block device flush function which does not wait for
-its completion, so that the flush for the next device can be called
-in the same thread.
+On Tue, May 16, 2017 at 05:39:13PM +0800, Anand Jain wrote:
+> blkdev_issue_flush() is a blocking function and returns only after
+> the flush bio is completed, so a module handling more than one
+> device can't issue flush for all the devices unless it uses worker
+> thread.
+> 
+> This patch adds a new function blkdev_issue_flush_no_wait(), which
+> uses submit_bio() instead of submit_bio_wait(), and accepts the
+> completion function and data from the caller.
 
-Here is a RFC patch to provide the function
-'blkdev_issue_flush_no_wait()', which is based on the current device
-flush function 'blkdev_issue_flush()', however it uses submit_bio()
-instead of submit_bio_wait().
-
-This patch is for review comments, will send out a final patch based
-on the comments received.
-
-Thanks, Anand
-
-Anand Jain (2):
-  block: Introduce blkdev_issue_flush_no_wait()
-  btrfs: Use blkdev_issue_flush_no_wait()
-
- block/blk-flush.c      |  47 +++++++++++++++++++++
- fs/btrfs/disk-io.c     | 108 +++++++++++++++----------------------------------
- fs/btrfs/volumes.h     |   2 +-
- include/linux/blkdev.h |   8 ++++
- 4 files changed, 88 insertions(+), 77 deletions(-)
-
--- 
-2.10.0
-
+Just open code the damn thing, and drop the various superflous checks
+while you're at it.

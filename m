@@ -1,187 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f180.google.com ([209.85.223.180]:34240 "EHLO
-        mail-io0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751258AbdEPL1b (ORCPT
+Received: from mail-it0-f41.google.com ([209.85.214.41]:35506 "EHLO
+        mail-it0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751104AbdEPLoE (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 May 2017 07:27:31 -0400
-Received: by mail-io0-f180.google.com with SMTP id k91so91186626ioi.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 May 2017 04:27:31 -0700 (PDT)
-Subject: Re: "Corrected" errors persist after scrubbing
-To: Tom Hale <tom@hale.ee>, Chris Murphy <lists@colorremedies.com>
-References: <92b9b7cd-5b54-775f-95c1-4788b2d3ea67@hale.ee>
- <CAJCQCtRmMtm5PW-TsUw+erQdXC9K41F0Nys5R+CRv0=KRh7aHw@mail.gmail.com>
- <e399fe02-0d5e-890f-48e4-423c8ef8174b@hale.ee>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+        Tue, 16 May 2017 07:44:04 -0400
+Received: by mail-it0-f41.google.com with SMTP id c15so60175050ith.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 16 May 2017 04:44:04 -0700 (PDT)
+Received: from [191.9.206.254] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
+        by smtp.gmail.com with ESMTPSA id q193sm6462185ioe.47.2017.05.16.04.44.01
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Tue, 16 May 2017 04:44:02 -0700 (PDT)
+Subject: Re: Btrfs/SSD
+To: linux-btrfs@vger.kernel.org
+References: <CAK5rZE4ko_xFr_Zv=bmZ4tR9X59jXaqFnTv16_ynEO0+E5uzeg@mail.gmail.com>
+ <f5cb15a5-5566-b366-ebda-c3101fa96eec@gmail.com>
+ <pan$9df5c$36e00209$7c238f6d$c2c19c0f@cox.net>
+ <CAK5rZE7H_qXh7TOU=N3JTocqjVitsAMNtxMCDfbJHTNJz0jF5A@mail.gmail.com>
+ <20170512203644.26e068e5@jupiter.sol.kaishome.de>
+ <beb7f0b0-b84a-dfa1-12c2-256fe967af1d@gmail.com>
+ <20170515214938.097b4c0b@jupiter.sol.kaishome.de>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <7cffb2de-8f99-633c-72d9-fda14e3f49ed@gmail.com>
-Date: Tue, 16 May 2017 07:27:25 -0400
+Message-ID: <2e2b167a-ab39-9f24-9170-3caa9afcde0f@gmail.com>
+Date: Tue, 16 May 2017 07:43:58 -0400
 MIME-Version: 1.0
-In-Reply-To: <e399fe02-0d5e-890f-48e4-423c8ef8174b@hale.ee>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <20170515214938.097b4c0b@jupiter.sol.kaishome.de>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-05-16 05:53, Tom Hale wrote:
-> Hi Chris,
+On 2017-05-15 15:49, Kai Krakow wrote:
+> Am Mon, 15 May 2017 08:03:48 -0400
+> schrieb "Austin S. Hemmelgarn" <ahferroin7@gmail.com>:
 >
-> On 09/05/17 02:26, Chris Murphy wrote:
->> Read errors are fixed by overwrites. If the underlying device doesn't
->> report an error for the write command, it's assumed to succeed. Even
->> md and LVM raid's do this.
+>>> That's why I don't trust any of my data to them. But I still want
+>>> the benefit of their speed. So I use SSDs mostly as frontend caches
+>>> to HDDs. This gives me big storage with fast access. Indeed, I'm
+>>> using bcache successfully for this. A warm cache is almost as fast
+>>> as native SSD (at least it feels almost that fast, it will be
+>>> slower if you threw benchmarks at it).
+>> That's to be expected though, most benchmarks don't replicate actual
+>> usage patterns for client systems, and using SSD's for caching with
+>> bcache or dm-cache for most server workloads except a file server
+>> will usually get you a performance hit.
 >
-> I understand assuming writes succeed in general. However, for a tool
-> which says (in its usage):
-Outside of dm-error and/or dm-flakey, what hardware have you seen that 
-fails writes without reporting a write error?  SSD's might do it at the 
-lowest level (below firmware), but the SSD firmware will notice and 
-should correct it itself, and it won't happen persistently unless the 
-device is essentially dead, but in general, short of the storage media 
-itself failing, it is entirely safe to assume that what you told the 
-device to write is what got written as long as the write commands succeeded.
+> You mean "performance boost"? Almost every read-most server workload
+> should benefit... I file server may be the exact opposite...
+In my experience, short of some types of file server and non-interactive 
+websites, read-mostly server workloads are rare.
 >
-> "verify checksums of data and metadata"
+> Also, I think dm-cache and bcache work very differently and are not
+> directly comparable. Their benefit depends much on the applied workload.
+The low-level framework is different, and much of the internals are 
+different, but based on most of the testing I've done, running them in 
+the same mode (write-back/write-through/etc) will on average get you 
+roughly the same performance.
 >
-> I would expect that the tool reports the *final state* of the data:
-Which is easy enough to do by hand without needing to make scrub do more 
-work all the time (just run a read-only scrub after the first one).
->
-> * Because the explicit function of scrub is to verify that all data can
-> be read.
-Not exactly, it's function is to verify that checksums are correct, 
-verifying that there are no low-level read errors is simply a side 
-effect of that.
->
-> * In a RAID1 situation, the sysadmin could think that the there are two
-> valid copies of all data, when in fact there may only be one.
->
->> What are the complete kernel messages for the scrub event? This should
->> show what problem Btrfs detects and how it fixes it, and what sectors
->> it's fixing each time.
->
-> Attached are the kernel logs (and the `grep fixed` version) showing the
-> same logical blocks are "fixed" twice.
->
-> Below (and attached because of formatting) I show how to reproduce the
-> uncorrected errors, producing the attached logs.
->
-> Please reply-all as I'm not subscribed.
->
-> ----------------------------------------------------
->
-> $ pacman -Q btrfs-progs
-> btrfs-progs 4.10.2-1
-> $ uname -r
-> 4.9.24-1-MANJARO
->
-> # fallocate -l 500M good-disk
-> # fallocate -l 500M bad-disk
-> # losetup -f bad-disk # loop0
-> # losetup -f good-disk # loop1
-> # mdadm --create -v /dev/md0 --level=linear --force --raid-devices=1
-> /dev/loop0
-> mdadm: Defaulting to version 1.2 metadata
-> mdadm: array /dev/md0 started.
-> # mkfs.btrfs -m raid1 -d raid1 /dev/loop1 /dev/md0
-> btrfs-progs v4.10.2
-> See http://btrfs.wiki.kernel.org for more information.
->
-> Performing full device TRIM /dev/loop1 (500.00MiB) ...
-> Performing full device TRIM /dev/md0 (499.73MiB) ...
-> Label:              (null)
-> UUID:               d748537b-3fa4-47cc-9934-62cf391fb638
-> Node size:          16384
-> Sector size:        4096
-> Filesystem size:    999.73MiB
-> Block group profiles:
->   Data:             RAID1            64.00MiB
->   Metadata:         RAID1            49.94MiB
->   System:           RAID1             8.00MiB
-> SSD detected:       no
-> Incompat features:  extref, skinny-metadata
-> Number of devices:  2
-> Devices:
->    ID        SIZE  PATH
->     1   500.00MiB  /dev/loop1
->     2   499.73MiB  /dev/md0
-> # mount /dev/md0 /mnt/tmp
-> # dd if=/dev/urandom of=/mnt/tmp/rand bs=1M
-> dd: error writing '/mnt/tmp/rand': No space left on device
-> 441+0 records in
-> 440+0 records out
-> 461963264 bytes (462 MB, 441 MiB) copied, 5.74358 s, 80.4 MB/s
-> # umount /mnt/tmp
-> # mdadm --stop /dev/md0
-> mdadm: stopped /dev/md0
-> # mdadm --build /dev/md0 --level=faulty --raid-devices=1 /dev/loop0
-> mdadm: array /dev/md0 built and started.
->     ├─vg_svelte-swap   swap              suspend
-> 0792d327-566d-4306-93f4-810e247827e4   [SWAP]
->     └─vg_svelte-rootfs btrfs             root
-> a1d2a0b4-8d4b-4c1c-9c87-5a55de61918e   /mnt/btrfs-vol/rootfs
-> # lsblk -f | head -n4
-> NAME                   FSTYPE            LABEL    UUID
->                 MOUNTPOINT
-> loop0                  linux_raid_member svelte:0
-> f7019aa8-3b2d-4e4c-9106-635d0dddca78
-> └─md0                  linux_raid_member svelte:0
-> f7019aa8-3b2d-4e4c-9106-635d0dddca78
->   └─md127              btrfs
-> d748537b-3fa4-47cc-9934-62cf391fb638
-> # mount /dev/md127 /mnt/tmp
-> # btrfs scrub start -Bd /mnt/tmp
-> scrub device /dev/loop1 (id 1) done
->         scrub started at Tue May 16 13:04:50 2017 and finished after
-> 00:00:03
->         total bytes scrubbed: 441.22MiB with 0 errors
-> scrub device /dev/md127 (id 2) done
->         scrub started at Tue May 16 13:04:50 2017 and finished after
-> 00:00:02
->         total bytes scrubbed: 441.22MiB with 0 errors
-> # # Introduce errors in /dev/md127:
-> # mdadm --grow /dev/md0 --layout=rp400
-> layout for /dev/md0 set to 12803
-> # btrfs scrub start -Bd /mnt/tmp
+> If I remember right, dm-cache is more about keeping "hot data" in the
+> flash storage while bcache is more about reducing seeking. So dm-cache
+> optimizes for bigger throughput of SSDs while bcache optimizes for
+> almost-zero seek overhead of SSDs. Depending on your underlying
+> storage, one or the other may even give zero benefit or worsen
+> performance. Which is what I'd call a "performance hit"... I didn't
+> ever try dm-cache, tho. For reasons I don't remember exactly, I didn't
+> like something about how it's implemented, I think it was related to
+> crash recovery. I don't know if that still holds true with modern
+> kernels. It may have changed but I never looked back to revise that
+> decision.
+dm-cache is a bit easier to convert to or from in-place and is in my 
+experience a bit more flexible in data handling, but has the issue that 
+you can still see the FS on the back-end storage (because it has no 
+superblock or anything like that on the back-end storage), which means 
+it's almost useless with BTRFS, and it requires a separate cache device 
+for each back-end device (as well as an independent metadata device, but 
+that's usually tiny since it's largely just used as a bitmap to track 
+what blocks are clean in-cache).
+
+bcache is more complicated to set up initially, and _requires_ a kernel 
+with bcache support to access even if you aren't doing any caching, but 
+it masks the back-end (so it's safe to use with BTRFS (recent versions 
+of it are at least)), and it doesn't require a 1:1 mapping of cache 
+devices to back-end storage.
 >
 >
-> scrub device /dev/loop1 (id 1) done
->         scrub started at Tue May 16 13:07:57 2017 and finished after
-> 00:00:02
->         total bytes scrubbed: 441.22MiB with 0 errors
-> scrub device /dev/md127 (id 2) done
->         scrub started at Tue May 16 13:07:57 2017 and finished after
-> 00:00:03
->         total bytes scrubbed: 441.22MiB with 19 errors
->         error details: read=19
->         corrected errors: 19, uncorrectable errors: 0, unverified
-> errors: 589
-> WARNING: errors detected during scrubbing, corrected
-> # # Stop producing additional errors, keeping the already existing
-> badblocks:
-> # mdadm --grow /dev/md0 --layout=clear
-> layout for /dev/md0 set to 31
-> # # Run scrub for 2nd time:
-> # btrfs scrub start -Bd /mnt/tmp
+>> It's worth noting also that on average, COW filesystems like BTRFS
+>> (or log-structured-filesystems will not benefit as much as
+>> traditional filesystems from SSD caching unless the caching is built
+>> into the filesystem itself, since they don't do in-place rewrites (so
+>> any new write by definition has to drop other data from the cache).
 >
+> Yes, I considered that, too. And when I tried, there was almost no
+> perceivable performance difference between bcache-writearound and
+> bcache-writeback. But the latency of performance improvement was much
+> longer in writearound mode, so I sticked to writeback mode. Also,
+> writing random data is faster because bcache will defer it to
+> background and do writeback in sector order. Sequential access is
+> passed around bcache anyway, harddisks are already good at that.
 >
-> scrub device /dev/loop1 (id 1) done
->         scrub started at Tue May 16 13:10:19 2017 and finished after
-> 00:00:03
->         total bytes scrubbed: 441.22MiB with 0 errors
-> scrub device /dev/md127 (id 2) done
->         scrub started at Tue May 16 13:10:19 2017 and finished after
-> 00:00:03
->         total bytes scrubbed: 441.22MiB with 19 errors
->         error details: read=19
->         corrected errors: 19, uncorrectable errors: 0, unverified
-> errors: 589
-> WARNING: errors detected during scrubbing, corrected
-> # # Clean up
-> # umount /mnt/tmp
-> # mdadm --stop /dev/md127
-> mdadm: stopped /dev/md127
-> # mdadm --stop /dev/md0
-> mdadm: stopped /dev/md0
-> # losetup -d /dev/loop[01]
-> #
->
+> But of course, the COW nature of btrfs will lower the hit rate I can
+> on writes. That's why I see no benefit in using bcache-writethrough
+> with btrfs.
+Yeah, on average based on my own testing, write-through mode is 
+worthless for COW filesystems, and write-back is only worthwhile if you 
+have a large enough cache proportionate to your bandwidth requirements 
+(4G should be more than enough for a desktop or workstation, but servers 
+may need huge amounts of space), while write-around is only worthwhile 
+for stuff that needs read performance but doesn't really care about latency.
 

@@ -1,37 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:42847 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:42882 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751745AbdEPRLS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 May 2017 13:11:18 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 7DBDFAB5F
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 May 2017 17:11:17 +0000 (UTC)
+        id S1752592AbdEPRLj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 16 May 2017 13:11:39 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 317DFAB5F
+        for <linux-btrfs@vger.kernel.org>; Tue, 16 May 2017 17:11:32 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 00/10] Btrfs, minor scrub code cleanups
-Date: Tue, 16 May 2017 19:10:20 +0200
-Message-Id: <cover.1494954480.git.dsterba@suse.com>
+Subject: [PATCH 05/10] btrfs: scrub: remove pages_per_wr_bio from scrub context
+Date: Tue, 16 May 2017 19:10:35 +0200
+Message-Id: <c96d636b05a4a3cd5f1be70df630594f021d664e.1494954480.git.dsterba@suse.com>
+In-Reply-To: <cover.1494954480.git.dsterba@suse.com>
+References: <cover.1494954480.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A bunch of minor cleanups in the scrub code. For 4.13.
+The only purpose seems to store SCRUB_PAGES_PER_WR_BIO, we can use the
+constant directly.
 
-David Sterba (10):
-  btrfs: scrub: inline helper scrub_setup_wr_ctx
-  btrfs: scrub: inline helper scrub_free_wr_ctx
-  btrfs: scrub: simplify cleanup of wr_ctx in scrub_free_ctx
-  btrfs: scrub: embed scrub_wr_ctx into scrub context
-  btrfs: scrub: remove pages_per_wr_bio from scrub context
-  btrfs: scrub: use bool for flush_all_writes
-  btrfs: scrub: use fs_info::sectorsize and drop it from scrub context
-  btrfs: scrub: clean up division in __scrub_mark_bitmap
-  btrfs: scrub: clean up division in scrub_find_csum
-  btrfs: scrub: simplify srrub worker initialization
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/scrub.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
- fs/btrfs/scrub.c | 181 +++++++++++++++++++++----------------------------------
- 1 file changed, 70 insertions(+), 111 deletions(-)
-
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index f0c7ec38e33c..2c1d344c8edd 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -182,7 +182,6 @@ struct scrub_ctx {
+ 
+ 	struct scrub_bio        *wr_curr_bio;
+ 	struct mutex            wr_lock;
+-	int                     pages_per_wr_bio; /* <= SCRUB_PAGES_PER_WR_BIO */
+ 	atomic_t                flush_all_writes;
+ 	struct btrfs_device     *wr_tgtdev;
+ 
+@@ -718,7 +717,6 @@ struct scrub_ctx *scrub_setup_ctx(struct btrfs_device *dev, int is_dev_replace)
+ 	sctx->wr_curr_bio = NULL;
+ 	if (is_dev_replace) {
+ 		WARN_ON(!dev->bdev);
+-		sctx->pages_per_wr_bio = SCRUB_PAGES_PER_WR_BIO;
+ 		sctx->wr_tgtdev = dev;
+ 		atomic_set(&sctx->flush_all_writes, 0);
+ 	}
+@@ -1918,7 +1916,7 @@ static int scrub_add_page_to_wr_bio(struct scrub_ctx *sctx,
+ 		bio = sbio->bio;
+ 		if (!bio) {
+ 			bio = btrfs_io_bio_alloc(GFP_KERNEL,
+-					sctx->pages_per_wr_bio);
++					SCRUB_PAGES_PER_WR_BIO);
+ 			if (!bio) {
+ 				mutex_unlock(&sctx->wr_lock);
+ 				return -ENOMEM;
+@@ -1955,7 +1953,7 @@ static int scrub_add_page_to_wr_bio(struct scrub_ctx *sctx,
+ 	sbio->pagev[sbio->page_count] = spage;
+ 	scrub_page_get(spage);
+ 	sbio->page_count++;
+-	if (sbio->page_count == sctx->pages_per_wr_bio)
++	if (sbio->page_count == SCRUB_PAGES_PER_WR_BIO)
+ 		scrub_wr_submit(sctx);
+ 	mutex_unlock(&sctx->wr_lock);
+ 
 -- 
 2.12.0
 

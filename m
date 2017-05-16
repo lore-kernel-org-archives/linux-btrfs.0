@@ -1,487 +1,187 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out4-smtp.messagingengine.com ([66.111.4.28]:34865 "EHLO
-        out4-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1752378AbdEPJxi (ORCPT
+Received: from mail-io0-f180.google.com ([209.85.223.180]:34240 "EHLO
+        mail-io0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751258AbdEPL1b (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 May 2017 05:53:38 -0400
+        Tue, 16 May 2017 07:27:31 -0400
+Received: by mail-io0-f180.google.com with SMTP id k91so91186626ioi.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 16 May 2017 04:27:31 -0700 (PDT)
 Subject: Re: "Corrected" errors persist after scrubbing
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+To: Tom Hale <tom@hale.ee>, Chris Murphy <lists@colorremedies.com>
 References: <92b9b7cd-5b54-775f-95c1-4788b2d3ea67@hale.ee>
  <CAJCQCtRmMtm5PW-TsUw+erQdXC9K41F0Nys5R+CRv0=KRh7aHw@mail.gmail.com>
-From: Tom Hale <tom@hale.ee>
-Message-ID: <e399fe02-0d5e-890f-48e4-423c8ef8174b@hale.ee>
-Date: Tue, 16 May 2017 16:53:31 +0700
+ <e399fe02-0d5e-890f-48e4-423c8ef8174b@hale.ee>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <7cffb2de-8f99-633c-72d9-fda14e3f49ed@gmail.com>
+Date: Tue, 16 May 2017 07:27:25 -0400
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtRmMtm5PW-TsUw+erQdXC9K41F0Nys5R+CRv0=KRh7aHw@mail.gmail.com>
-Content-Type: multipart/mixed;
- boundary="------------D01EBFE5DF80368608388EF4"
+In-Reply-To: <e399fe02-0d5e-890f-48e4-423c8ef8174b@hale.ee>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a multi-part message in MIME format.
---------------D01EBFE5DF80368608388EF4
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: 8bit
+On 2017-05-16 05:53, Tom Hale wrote:
+> Hi Chris,
+>
+> On 09/05/17 02:26, Chris Murphy wrote:
+>> Read errors are fixed by overwrites. If the underlying device doesn't
+>> report an error for the write command, it's assumed to succeed. Even
+>> md and LVM raid's do this.
+>
+> I understand assuming writes succeed in general. However, for a tool
+> which says (in its usage):
+Outside of dm-error and/or dm-flakey, what hardware have you seen that 
+fails writes without reporting a write error?  SSD's might do it at the 
+lowest level (below firmware), but the SSD firmware will notice and 
+should correct it itself, and it won't happen persistently unless the 
+device is essentially dead, but in general, short of the storage media 
+itself failing, it is entirely safe to assume that what you told the 
+device to write is what got written as long as the write commands succeeded.
+>
+> "verify checksums of data and metadata"
+>
+> I would expect that the tool reports the *final state* of the data:
+Which is easy enough to do by hand without needing to make scrub do more 
+work all the time (just run a read-only scrub after the first one).
+>
+> * Because the explicit function of scrub is to verify that all data can
+> be read.
+Not exactly, it's function is to verify that checksums are correct, 
+verifying that there are no low-level read errors is simply a side 
+effect of that.
+>
+> * In a RAID1 situation, the sysadmin could think that the there are two
+> valid copies of all data, when in fact there may only be one.
+>
+>> What are the complete kernel messages for the scrub event? This should
+>> show what problem Btrfs detects and how it fixes it, and what sectors
+>> it's fixing each time.
+>
+> Attached are the kernel logs (and the `grep fixed` version) showing the
+> same logical blocks are "fixed" twice.
+>
+> Below (and attached because of formatting) I show how to reproduce the
+> uncorrected errors, producing the attached logs.
+>
+> Please reply-all as I'm not subscribed.
+>
+> ----------------------------------------------------
+>
+> $ pacman -Q btrfs-progs
+> btrfs-progs 4.10.2-1
+> $ uname -r
+> 4.9.24-1-MANJARO
+>
+> # fallocate -l 500M good-disk
+> # fallocate -l 500M bad-disk
+> # losetup -f bad-disk # loop0
+> # losetup -f good-disk # loop1
+> # mdadm --create -v /dev/md0 --level=linear --force --raid-devices=1
+> /dev/loop0
+> mdadm: Defaulting to version 1.2 metadata
+> mdadm: array /dev/md0 started.
+> # mkfs.btrfs -m raid1 -d raid1 /dev/loop1 /dev/md0
+> btrfs-progs v4.10.2
+> See http://btrfs.wiki.kernel.org for more information.
+>
+> Performing full device TRIM /dev/loop1 (500.00MiB) ...
+> Performing full device TRIM /dev/md0 (499.73MiB) ...
+> Label:              (null)
+> UUID:               d748537b-3fa4-47cc-9934-62cf391fb638
+> Node size:          16384
+> Sector size:        4096
+> Filesystem size:    999.73MiB
+> Block group profiles:
+>   Data:             RAID1            64.00MiB
+>   Metadata:         RAID1            49.94MiB
+>   System:           RAID1             8.00MiB
+> SSD detected:       no
+> Incompat features:  extref, skinny-metadata
+> Number of devices:  2
+> Devices:
+>    ID        SIZE  PATH
+>     1   500.00MiB  /dev/loop1
+>     2   499.73MiB  /dev/md0
+> # mount /dev/md0 /mnt/tmp
+> # dd if=/dev/urandom of=/mnt/tmp/rand bs=1M
+> dd: error writing '/mnt/tmp/rand': No space left on device
+> 441+0 records in
+> 440+0 records out
+> 461963264 bytes (462 MB, 441 MiB) copied, 5.74358 s, 80.4 MB/s
+> # umount /mnt/tmp
+> # mdadm --stop /dev/md0
+> mdadm: stopped /dev/md0
+> # mdadm --build /dev/md0 --level=faulty --raid-devices=1 /dev/loop0
+> mdadm: array /dev/md0 built and started.
+>     ├─vg_svelte-swap   swap              suspend
+> 0792d327-566d-4306-93f4-810e247827e4   [SWAP]
+>     └─vg_svelte-rootfs btrfs             root
+> a1d2a0b4-8d4b-4c1c-9c87-5a55de61918e   /mnt/btrfs-vol/rootfs
+> # lsblk -f | head -n4
+> NAME                   FSTYPE            LABEL    UUID
+>                 MOUNTPOINT
+> loop0                  linux_raid_member svelte:0
+> f7019aa8-3b2d-4e4c-9106-635d0dddca78
+> └─md0                  linux_raid_member svelte:0
+> f7019aa8-3b2d-4e4c-9106-635d0dddca78
+>   └─md127              btrfs
+> d748537b-3fa4-47cc-9934-62cf391fb638
+> # mount /dev/md127 /mnt/tmp
+> # btrfs scrub start -Bd /mnt/tmp
+> scrub device /dev/loop1 (id 1) done
+>         scrub started at Tue May 16 13:04:50 2017 and finished after
+> 00:00:03
+>         total bytes scrubbed: 441.22MiB with 0 errors
+> scrub device /dev/md127 (id 2) done
+>         scrub started at Tue May 16 13:04:50 2017 and finished after
+> 00:00:02
+>         total bytes scrubbed: 441.22MiB with 0 errors
+> # # Introduce errors in /dev/md127:
+> # mdadm --grow /dev/md0 --layout=rp400
+> layout for /dev/md0 set to 12803
+> # btrfs scrub start -Bd /mnt/tmp
+>
+>
+> scrub device /dev/loop1 (id 1) done
+>         scrub started at Tue May 16 13:07:57 2017 and finished after
+> 00:00:02
+>         total bytes scrubbed: 441.22MiB with 0 errors
+> scrub device /dev/md127 (id 2) done
+>         scrub started at Tue May 16 13:07:57 2017 and finished after
+> 00:00:03
+>         total bytes scrubbed: 441.22MiB with 19 errors
+>         error details: read=19
+>         corrected errors: 19, uncorrectable errors: 0, unverified
+> errors: 589
+> WARNING: errors detected during scrubbing, corrected
+> # # Stop producing additional errors, keeping the already existing
+> badblocks:
+> # mdadm --grow /dev/md0 --layout=clear
+> layout for /dev/md0 set to 31
+> # # Run scrub for 2nd time:
+> # btrfs scrub start -Bd /mnt/tmp
+>
+>
+> scrub device /dev/loop1 (id 1) done
+>         scrub started at Tue May 16 13:10:19 2017 and finished after
+> 00:00:03
+>         total bytes scrubbed: 441.22MiB with 0 errors
+> scrub device /dev/md127 (id 2) done
+>         scrub started at Tue May 16 13:10:19 2017 and finished after
+> 00:00:03
+>         total bytes scrubbed: 441.22MiB with 19 errors
+>         error details: read=19
+>         corrected errors: 19, uncorrectable errors: 0, unverified
+> errors: 589
+> WARNING: errors detected during scrubbing, corrected
+> # # Clean up
+> # umount /mnt/tmp
+> # mdadm --stop /dev/md127
+> mdadm: stopped /dev/md127
+> # mdadm --stop /dev/md0
+> mdadm: stopped /dev/md0
+> # losetup -d /dev/loop[01]
+> #
+>
 
-Hi Chris,
-
-On 09/05/17 02:26, Chris Murphy wrote:
-> Read errors are fixed by overwrites. If the underlying device doesn't
-> report an error for the write command, it's assumed to succeed. Even
-> md and LVM raid's do this.
-
-I understand assuming writes succeed in general. However, for a tool
-which says (in its usage):
-
-"verify checksums of data and metadata"
-
-I would expect that the tool reports the *final state* of the data:
-
-* Because the explicit function of scrub is to verify that all data can
-be read.
-
-* In a RAID1 situation, the sysadmin could think that the there are two
-valid copies of all data, when in fact there may only be one.
-
-> What are the complete kernel messages for the scrub event? This should
-> show what problem Btrfs detects and how it fixes it, and what sectors
-> it's fixing each time.
-
-Attached are the kernel logs (and the `grep fixed` version) showing the
-same logical blocks are "fixed" twice.
-
-Below (and attached because of formatting) I show how to reproduce the
-uncorrected errors, producing the attached logs.
-
-Please reply-all as I'm not subscribed.
-
-----------------------------------------------------
-
-$ pacman -Q btrfs-progs
-btrfs-progs 4.10.2-1
-$ uname -r
-4.9.24-1-MANJARO
-
-# fallocate -l 500M good-disk
-# fallocate -l 500M bad-disk
-# losetup -f bad-disk # loop0
-# losetup -f good-disk # loop1
-# mdadm --create -v /dev/md0 --level=linear --force --raid-devices=1
-/dev/loop0
-mdadm: Defaulting to version 1.2 metadata
-mdadm: array /dev/md0 started.
-# mkfs.btrfs -m raid1 -d raid1 /dev/loop1 /dev/md0
-btrfs-progs v4.10.2
-See http://btrfs.wiki.kernel.org for more information.
-
-Performing full device TRIM /dev/loop1 (500.00MiB) ...
-Performing full device TRIM /dev/md0 (499.73MiB) ...
-Label:              (null)
-UUID:               d748537b-3fa4-47cc-9934-62cf391fb638
-Node size:          16384
-Sector size:        4096
-Filesystem size:    999.73MiB
-Block group profiles:
-  Data:             RAID1            64.00MiB
-  Metadata:         RAID1            49.94MiB
-  System:           RAID1             8.00MiB
-SSD detected:       no
-Incompat features:  extref, skinny-metadata
-Number of devices:  2
-Devices:
-   ID        SIZE  PATH
-    1   500.00MiB  /dev/loop1
-    2   499.73MiB  /dev/md0
-# mount /dev/md0 /mnt/tmp
-# dd if=/dev/urandom of=/mnt/tmp/rand bs=1M
-dd: error writing '/mnt/tmp/rand': No space left on device
-441+0 records in
-440+0 records out
-461963264 bytes (462 MB, 441 MiB) copied, 5.74358 s, 80.4 MB/s
-# umount /mnt/tmp
-# mdadm --stop /dev/md0
-mdadm: stopped /dev/md0
-# mdadm --build /dev/md0 --level=faulty --raid-devices=1 /dev/loop0
-mdadm: array /dev/md0 built and started.
-    ├─vg_svelte-swap   swap              suspend
-0792d327-566d-4306-93f4-810e247827e4   [SWAP]
-    └─vg_svelte-rootfs btrfs             root
-a1d2a0b4-8d4b-4c1c-9c87-5a55de61918e   /mnt/btrfs-vol/rootfs
-# lsblk -f | head -n4
-NAME                   FSTYPE            LABEL    UUID
-                MOUNTPOINT
-loop0                  linux_raid_member svelte:0
-f7019aa8-3b2d-4e4c-9106-635d0dddca78
-└─md0                  linux_raid_member svelte:0
-f7019aa8-3b2d-4e4c-9106-635d0dddca78
-  └─md127              btrfs
-d748537b-3fa4-47cc-9934-62cf391fb638
-# mount /dev/md127 /mnt/tmp
-# btrfs scrub start -Bd /mnt/tmp
-scrub device /dev/loop1 (id 1) done
-        scrub started at Tue May 16 13:04:50 2017 and finished after
-00:00:03
-        total bytes scrubbed: 441.22MiB with 0 errors
-scrub device /dev/md127 (id 2) done
-        scrub started at Tue May 16 13:04:50 2017 and finished after
-00:00:02
-        total bytes scrubbed: 441.22MiB with 0 errors
-# # Introduce errors in /dev/md127:
-# mdadm --grow /dev/md0 --layout=rp400
-layout for /dev/md0 set to 12803
-# btrfs scrub start -Bd /mnt/tmp
-
-
-scrub device /dev/loop1 (id 1) done
-        scrub started at Tue May 16 13:07:57 2017 and finished after
-00:00:02
-        total bytes scrubbed: 441.22MiB with 0 errors
-scrub device /dev/md127 (id 2) done
-        scrub started at Tue May 16 13:07:57 2017 and finished after
-00:00:03
-        total bytes scrubbed: 441.22MiB with 19 errors
-        error details: read=19
-        corrected errors: 19, uncorrectable errors: 0, unverified
-errors: 589
-WARNING: errors detected during scrubbing, corrected
-# # Stop producing additional errors, keeping the already existing
-badblocks:
-# mdadm --grow /dev/md0 --layout=clear
-layout for /dev/md0 set to 31
-# # Run scrub for 2nd time:
-# btrfs scrub start -Bd /mnt/tmp
-
-
-scrub device /dev/loop1 (id 1) done
-        scrub started at Tue May 16 13:10:19 2017 and finished after
-00:00:03
-        total bytes scrubbed: 441.22MiB with 0 errors
-scrub device /dev/md127 (id 2) done
-        scrub started at Tue May 16 13:10:19 2017 and finished after
-00:00:03
-        total bytes scrubbed: 441.22MiB with 19 errors
-        error details: read=19
-        corrected errors: 19, uncorrectable errors: 0, unverified
-errors: 589
-WARNING: errors detected during scrubbing, corrected
-# # Clean up
-# umount /mnt/tmp
-# mdadm --stop /dev/md127
-mdadm: stopped /dev/md127
-# mdadm --stop /dev/md0
-mdadm: stopped /dev/md0
-# losetup -d /dev/loop[01]
-#
-
--- 
-
-Tom Hale
-
---------------D01EBFE5DF80368608388EF4
-Content-Type: text/plain; charset=UTF-8;
- name="btrfs-fixed"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment;
- filename="btrfs-fixed"
-
-TWF5IDE2IDEzOjA3OjU5IHN2ZWx0ZSBrZXJuZWw6IEJUUkZTIGVycm9yIChkZXZpY2UgbWQx
-MjcpOiBmaXhlZCB1cCBlcnJvciBhdCBsb2dpY2FsIDEzMjk3MjU0NCBvbiBkZXYgL2Rldi9t
-ZDEyNwpNYXkgMTYgMTM6MDc6NTkgc3ZlbHRlIGtlcm5lbDogQlRSRlMgZXJyb3IgKGRldmlj
-ZSBtZDEyNyk6IGZpeGVkIHVwIGVycm9yIGF0IGxvZ2ljYWwgMTA3MDE2MTkyIG9uIGRldiAv
-ZGV2L21kMTI3Ck1heSAxNiAxMzowNzo1OSBzdmVsdGUga2VybmVsOiBCVFJGUyBlcnJvciAo
-ZGV2aWNlIG1kMTI3KTogZml4ZWQgdXAgZXJyb3IgYXQgbG9naWNhbCAzNDA4NTI3MzYgb24g
-ZGV2IC9kZXYvbWQxMjcKTWF5IDE2IDEzOjA3OjU5IHN2ZWx0ZSBrZXJuZWw6IEJUUkZTIGVy
-cm9yIChkZXZpY2UgbWQxMjcpOiBmaXhlZCB1cCBlcnJvciBhdCBsb2dpY2FsIDM2NjgwNDk5
-MiBvbiBkZXYgL2Rldi9tZDEyNwpNYXkgMTYgMTM6MDc6NTkgc3ZlbHRlIGtlcm5lbDogQlRS
-RlMgZXJyb3IgKGRldmljZSBtZDEyNyk6IGZpeGVkIHVwIGVycm9yIGF0IGxvZ2ljYWwgMzky
-NjI2MTc2IG9uIGRldiAvZGV2L21kMTI3Ck1heSAxNiAxMzowNzo1OSBzdmVsdGUga2VybmVs
-OiBCVFJGUyBlcnJvciAoZGV2aWNlIG1kMTI3KTogZml4ZWQgdXAgZXJyb3IgYXQgbG9naWNh
-bCAzMTQ4OTYzODQgb24gZGV2IC9kZXYvbWQxMjcKTWF5IDE2IDEzOjA3OjU5IHN2ZWx0ZSBr
-ZXJuZWw6IEJUUkZTIGVycm9yIChkZXZpY2UgbWQxMjcpOiBmaXhlZCB1cCBlcnJvciBhdCBs
-b2dpY2FsIDQxODA1MDA0OCBvbiBkZXYgL2Rldi9tZDEyNwpNYXkgMTYgMTM6MDc6NTkgc3Zl
-bHRlIGtlcm5lbDogQlRSRlMgZXJyb3IgKGRldmljZSBtZDEyNyk6IGZpeGVkIHVwIGVycm9y
-IGF0IGxvZ2ljYWwgNDM0OTYyNDMyIG9uIGRldiAvZGV2L21kMTI3Ck1heSAxNiAxMzowNzo1
-OSBzdmVsdGUga2VybmVsOiBCVFJGUyBlcnJvciAoZGV2aWNlIG1kMTI3KTogZml4ZWQgdXAg
-ZXJyb3IgYXQgbG9naWNhbCA0ODY5OTgwMTYgb24gZGV2IC9kZXYvbWQxMjcKTWF5IDE2IDEz
-OjA3OjU5IHN2ZWx0ZSBrZXJuZWw6IEJUUkZTIGVycm9yIChkZXZpY2UgbWQxMjcpOiBmaXhl
-ZCB1cCBlcnJvciBhdCBsb2dpY2FsIDUxMjY4ODEyOCBvbiBkZXYgL2Rldi9tZDEyNwpNYXkg
-MTYgMTM6MTA6MjAgc3ZlbHRlIGtlcm5lbDogQlRSRlMgZXJyb3IgKGRldmljZSBtZDEyNyk6
-IGZpeGVkIHVwIGVycm9yIGF0IGxvZ2ljYWwgMTMyOTcyNTQ0IG9uIGRldiAvZGV2L21kMTI3
-Ck1heSAxNiAxMzoxMDoyMCBzdmVsdGUga2VybmVsOiBCVFJGUyBlcnJvciAoZGV2aWNlIG1k
-MTI3KTogZml4ZWQgdXAgZXJyb3IgYXQgbG9naWNhbCAxMDcwMTYxOTIgb24gZGV2IC9kZXYv
-bWQxMjcKTWF5IDE2IDEzOjEwOjIxIHN2ZWx0ZSBrZXJuZWw6IEJUUkZTIGVycm9yIChkZXZp
-Y2UgbWQxMjcpOiBmaXhlZCB1cCBlcnJvciBhdCBsb2dpY2FsIDM0MDg1MjczNiBvbiBkZXYg
-L2Rldi9tZDEyNwpNYXkgMTYgMTM6MTA6MjEgc3ZlbHRlIGtlcm5lbDogQlRSRlMgZXJyb3Ig
-KGRldmljZSBtZDEyNyk6IGZpeGVkIHVwIGVycm9yIGF0IGxvZ2ljYWwgMzY2ODA0OTkyIG9u
-IGRldiAvZGV2L21kMTI3Ck1heSAxNiAxMzoxMDoyMSBzdmVsdGUga2VybmVsOiBCVFJGUyBl
-cnJvciAoZGV2aWNlIG1kMTI3KTogZml4ZWQgdXAgZXJyb3IgYXQgbG9naWNhbCAzOTI2MjYx
-NzYgb24gZGV2IC9kZXYvbWQxMjcKTWF5IDE2IDEzOjEwOjIxIHN2ZWx0ZSBrZXJuZWw6IEJU
-UkZTIGVycm9yIChkZXZpY2UgbWQxMjcpOiBmaXhlZCB1cCBlcnJvciBhdCBsb2dpY2FsIDMx
-NDg5NjM4NCBvbiBkZXYgL2Rldi9tZDEyNwpNYXkgMTYgMTM6MTA6MjEgc3ZlbHRlIGtlcm5l
-bDogQlRSRlMgZXJyb3IgKGRldmljZSBtZDEyNyk6IGZpeGVkIHVwIGVycm9yIGF0IGxvZ2lj
-YWwgNDE4MDUwMDQ4IG9uIGRldiAvZGV2L21kMTI3Ck1heSAxNiAxMzoxMDoyMSBzdmVsdGUg
-a2VybmVsOiBCVFJGUyBlcnJvciAoZGV2aWNlIG1kMTI3KTogZml4ZWQgdXAgZXJyb3IgYXQg
-bG9naWNhbCA0MzQ5NjI0MzIgb24gZGV2IC9kZXYvbWQxMjcKTWF5IDE2IDEzOjEwOjIyIHN2
-ZWx0ZSBrZXJuZWw6IEJUUkZTIGVycm9yIChkZXZpY2UgbWQxMjcpOiBmaXhlZCB1cCBlcnJv
-ciBhdCBsb2dpY2FsIDQ4Njk5ODAxNiBvbiBkZXYgL2Rldi9tZDEyNwpNYXkgMTYgMTM6MTA6
-MjIgc3ZlbHRlIGtlcm5lbDogQlRSRlMgZXJyb3IgKGRldmljZSBtZDEyNyk6IGZpeGVkIHVw
-IGVycm9yIGF0IGxvZ2ljYWwgNTEyNjg4MTI4IG9uIGRldiAvZGV2L21kMTI3Cg==
---------------D01EBFE5DF80368608388EF4
-Content-Type: text/plain; charset=UTF-8;
- name="btrfs-log"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment;
- filename="btrfs-log"
-
-TWF5IDE2IDEzOjA0OjMwIHN2ZWx0ZSBrZXJuZWw6IEJUUkZTIGluZm8gKGRldmljZSBtZDEy
-Nyk6IGRpc2sgc3BhY2UgY2FjaGluZyBpcyBlbmFibGVkCk1heSAxNiAxMzowNDozMCBzdmVs
-dGUga2VybmVsOiBCVFJGUyBpbmZvIChkZXZpY2UgbWQxMjcpOiBoYXMgc2tpbm55IGV4dGVu
-dHMKTWF5IDE2IDEzOjA3OjU3IHN2ZWx0ZSBrZXJuZWw6IEJUUkZTIHdhcm5pbmcgKGRldmlj
-ZSBtZDEyNyk6IGkvbyBlcnJvciBhdCBsb2dpY2FsIDEzMjk3MjU0NCBvbiBkZXYgL2Rldi9t
-ZDEyNywgc2VjdG9yIDIyMDgwMCwgcm9vdCA1LCBpbm9kZSAyNjEsIG9mZnNldCAzMDU3NzQ1
-OTIsIGxlbmd0aCA0MDk2LCBsaW5rcyAxIChwYXRoOiByYW5kKQpNYXkgMTYgMTM6MDc6NTgg
-c3ZlbHRlIGtlcm5lbDogQlRSRlMgZXJyb3IgKGRldmljZSBtZDEyNyk6IGJkZXYgL2Rldi9t
-ZDEyNyBlcnJzOiB3ciAwLCByZCAxLCBmbHVzaCAwLCBjb3JydXB0IDAsIGdlbiAwCk1heSAx
-NiAxMzowNzo1OCBzdmVsdGUga2VybmVsOiBCVFJGUyB3YXJuaW5nIChkZXZpY2UgbWQxMjcp
-OiBpL28gZXJyb3IgYXQgbG9naWNhbCAxMDcwMTYxOTIgb24gZGV2IC9kZXYvbWQxMjcsIHNl
-Y3RvciAxNzAxMDQsIHJvb3QgNSwgaW5vZGUgMjYxLCBvZmZzZXQgMjc4OTE3MTIwLCBsZW5n
-dGggNDA5NiwgbGlua3MgMSAocGF0aDogcmFuZCkKTWF5IDE2IDEzOjA3OjU5IHN2ZWx0ZSBr
-ZXJuZWw6IEJUUkZTIGVycm9yIChkZXZpY2UgbWQxMjcpOiBiZGV2IC9kZXYvbWQxMjcgZXJy
-czogd3IgMCwgcmQgMiwgZmx1c2ggMCwgY29ycnVwdCAwLCBnZW4gMApNYXkgMTYgMTM6MDc6
-NTkgc3ZlbHRlIGtlcm5lbDogQlRSRlMgZXJyb3IgKGRldmljZSBtZDEyNyk6IGZpeGVkIHVw
-IGVycm9yIGF0IGxvZ2ljYWwgMTMyOTcyNTQ0IG9uIGRldiAvZGV2L21kMTI3Ck1heSAxNiAx
-MzowNzo1OSBzdmVsdGUga2VybmVsOiBCVFJGUyBlcnJvciAoZGV2aWNlIG1kMTI3KTogZml4
-ZWQgdXAgZXJyb3IgYXQgbG9naWNhbCAxMDcwMTYxOTIgb24gZGV2IC9kZXYvbWQxMjcKTWF5
-IDE2IDEzOjA3OjU5IHN2ZWx0ZSBrZXJuZWw6IEJUUkZTIHdhcm5pbmcgKGRldmljZSBtZDEy
-Nyk6IGkvbyBlcnJvciBhdCBsb2dpY2FsIDM0MDg1MjczNiBvbiBkZXYgL2Rldi9tZDEyNywg
-c2VjdG9yIDMxMzk4NCwgcm9vdCA1LCBpbm9kZSAyNjEsIG9mZnNldCAxOTYwMTgxNzYsIGxl
-bmd0aCA0MDk2LCBsaW5rcyAxIChwYXRoOiByYW5kKQpNYXkgMTYgMTM6MDc6NTkgc3ZlbHRl
-IGtlcm5lbDogQlRSRlMgZXJyb3IgKGRldmljZSBtZDEyNyk6IGJkZXYgL2Rldi9tZDEyNyBl
-cnJzOiB3ciAwLCByZCAzLCBmbHVzaCAwLCBjb3JydXB0IDAsIGdlbiAwCk1heSAxNiAxMzow
-Nzo1OSBzdmVsdGUga2VybmVsOiBCVFJGUyB3YXJuaW5nIChkZXZpY2UgbWQxMjcpOiBpL28g
-ZXJyb3IgYXQgbG9naWNhbCAzNjY4MDQ5OTIgb24gZGV2IC9kZXYvbWQxMjcsIHNlY3RvciAz
-NjQ2NzIsIHJvb3QgNSwgaW5vZGUgMjYxLCBvZmZzZXQgMjIxOTcwNDMyLCBsZW5ndGggNDA5
-NiwgbGlua3MgMSAocGF0aDogcmFuZCkKTWF5IDE2IDEzOjA3OjU5IHN2ZWx0ZSBrZXJuZWw6
-IEJUUkZTIGVycm9yIChkZXZpY2UgbWQxMjcpOiBiZGV2IC9kZXYvbWQxMjcgZXJyczogd3Ig
-MCwgcmQgNCwgZmx1c2ggMCwgY29ycnVwdCAwLCBnZW4gMApNYXkgMTYgMTM6MDc6NTkgc3Zl
-bHRlIGtlcm5lbDogQlRSRlMgZXJyb3IgKGRldmljZSBtZDEyNyk6IGZpeGVkIHVwIGVycm9y
-IGF0IGxvZ2ljYWwgMzQwODUyNzM2IG9uIGRldiAvZGV2L21kMTI3Ck1heSAxNiAxMzowNzo1
-OSBzdmVsdGUga2VybmVsOiBCVFJGUyB3YXJuaW5nIChkZXZpY2UgbWQxMjcpOiBpL28gZXJy
-b3IgYXQgbG9naWNhbCAzOTI2MjYxNzYgb24gZGV2IC9kZXYvbWQxMjcsIHNlY3RvciA0MTUx
-MDQsIHJvb3QgNSwgaW5vZGUgMjYxLCBvZmZzZXQgMjQ3NzkxNjE2LCBsZW5ndGggNDA5Niwg
-bGlua3MgMSAocGF0aDogcmFuZCkKTWF5IDE2IDEzOjA3OjU5IHN2ZWx0ZSBrZXJuZWw6IEJU
-UkZTIGVycm9yIChkZXZpY2UgbWQxMjcpOiBiZGV2IC9kZXYvbWQxMjcgZXJyczogd3IgMCwg
-cmQgNSwgZmx1c2ggMCwgY29ycnVwdCAwLCBnZW4gMApNYXkgMTYgMTM6MDc6NTkgc3ZlbHRl
-IGtlcm5lbDogQlRSRlMgZXJyb3IgKGRldmljZSBtZDEyNyk6IGZpeGVkIHVwIGVycm9yIGF0
-IGxvZ2ljYWwgMzY2ODA0OTkyIG9uIGRldiAvZGV2L21kMTI3Ck1heSAxNiAxMzowNzo1OSBz
-dmVsdGUga2VybmVsOiBCVFJGUyBlcnJvciAoZGV2aWNlIG1kMTI3KTogZml4ZWQgdXAgZXJy
-b3IgYXQgbG9naWNhbCAzOTI2MjYxNzYgb24gZGV2IC9kZXYvbWQxMjcKTWF5IDE2IDEzOjA3
-OjU5IHN2ZWx0ZSBrZXJuZWw6IEJUUkZTIHdhcm5pbmcgKGRldmljZSBtZDEyNyk6IGkvbyBl
-cnJvciBhdCBsb2dpY2FsIDMxNDg5NjM4NCBvbiBkZXYgL2Rldi9tZDEyNywgc2VjdG9yIDI2
-MzI4OCwgcm9vdCA1LCBpbm9kZSAyNjEsIG9mZnNldCAxNzAwNjE4MjQsIGxlbmd0aCA0MDk2
-LCBsaW5rcyAxIChwYXRoOiByYW5kKQpNYXkgMTYgMTM6MDc6NTkgc3ZlbHRlIGtlcm5lbDog
-QlRSRlMgZXJyb3IgKGRldmljZSBtZDEyNyk6IGJkZXYgL2Rldi9tZDEyNyBlcnJzOiB3ciAw
-LCByZCA2LCBmbHVzaCAwLCBjb3JydXB0IDAsIGdlbiAwCk1heSAxNiAxMzowNzo1OSBzdmVs
-dGUga2VybmVsOiBCVFJGUyB3YXJuaW5nIChkZXZpY2UgbWQxMjcpOiBpL28gZXJyb3IgYXQg
-bG9naWNhbCA0MTgwNTAwNDggb24gZGV2IC9kZXYvbWQxMjcsIHNlY3RvciA0NjQ3NjAsIHJv
-b3QgNSwgaW5vZGUgMjYxLCBvZmZzZXQgNDMyNTk5MDQwLCBsZW5ndGggNDA5NiwgbGlua3Mg
-MSAocGF0aDogcmFuZCkKTWF5IDE2IDEzOjA3OjU5IHN2ZWx0ZSBrZXJuZWw6IEJUUkZTIGVy
-cm9yIChkZXZpY2UgbWQxMjcpOiBiZGV2IC9kZXYvbWQxMjcgZXJyczogd3IgMCwgcmQgNywg
-Zmx1c2ggMCwgY29ycnVwdCAwLCBnZW4gMApNYXkgMTYgMTM6MDc6NTkgc3ZlbHRlIGtlcm5l
-bDogQlRSRlMgZXJyb3IgKGRldmljZSBtZDEyNyk6IGZpeGVkIHVwIGVycm9yIGF0IGxvZ2lj
-YWwgMzE0ODk2Mzg0IG9uIGRldiAvZGV2L21kMTI3Ck1heSAxNiAxMzowNzo1OSBzdmVsdGUg
-a2VybmVsOiBCVFJGUyBlcnJvciAoZGV2aWNlIG1kMTI3KTogZml4ZWQgdXAgZXJyb3IgYXQg
-bG9naWNhbCA0MTgwNTAwNDggb24gZGV2IC9kZXYvbWQxMjcKTWF5IDE2IDEzOjA3OjU5IHN2
-ZWx0ZSBrZXJuZWw6IEJUUkZTIHdhcm5pbmcgKGRldmljZSBtZDEyNyk6IGkvbyBlcnJvciBh
-dCBsb2dpY2FsIDQzNDk2MjQzMiBvbiBkZXYgL2Rldi9tZDEyNywgc2VjdG9yIDQ5Nzc5Miwg
-cm9vdCA1LCBpbm9kZSAyNjEsIG9mZnNldCAzMTc4NDk2MDAsIGxlbmd0aCA0MDk2LCBsaW5r
-cyAxIChwYXRoOiByYW5kKQpNYXkgMTYgMTM6MDc6NTkgc3ZlbHRlIGtlcm5lbDogQlRSRlMg
-ZXJyb3IgKGRldmljZSBtZDEyNyk6IGJkZXYgL2Rldi9tZDEyNyBlcnJzOiB3ciAwLCByZCA4
-LCBmbHVzaCAwLCBjb3JydXB0IDAsIGdlbiAwCk1heSAxNiAxMzowNzo1OSBzdmVsdGUga2Vy
-bmVsOiBCVFJGUyBlcnJvciAoZGV2aWNlIG1kMTI3KTogZml4ZWQgdXAgZXJyb3IgYXQgbG9n
-aWNhbCA0MzQ5NjI0MzIgb24gZGV2IC9kZXYvbWQxMjcKTWF5IDE2IDEzOjA3OjU5IHN2ZWx0
-ZSBrZXJuZWw6IEJUUkZTIHdhcm5pbmcgKGRldmljZSBtZDEyNyk6IGkvbyBlcnJvciBhdCBs
-b2dpY2FsIDQ4Njk5ODAxNiBvbiBkZXYgL2Rldi9tZDEyNywgc2VjdG9yIDU5OTQyNCwgcm9v
-dCA1LCBpbm9kZSAyNjEsIG9mZnNldCAzNjk4ODUxODQsIGxlbmd0aCA0MDk2LCBsaW5rcyAx
-IChwYXRoOiByYW5kKQpNYXkgMTYgMTM6MDc6NTkgc3ZlbHRlIGtlcm5lbDogQlRSRlMgZXJy
-b3IgKGRldmljZSBtZDEyNyk6IGJkZXYgL2Rldi9tZDEyNyBlcnJzOiB3ciAwLCByZCA5LCBm
-bHVzaCAwLCBjb3JydXB0IDAsIGdlbiAwCk1heSAxNiAxMzowNzo1OSBzdmVsdGUga2VybmVs
-OiBCVFJGUyBlcnJvciAoZGV2aWNlIG1kMTI3KTogZml4ZWQgdXAgZXJyb3IgYXQgbG9naWNh
-bCA0ODY5OTgwMTYgb24gZGV2IC9kZXYvbWQxMjcKTWF5IDE2IDEzOjA3OjU5IHN2ZWx0ZSBr
-ZXJuZWw6IEJUUkZTIHdhcm5pbmcgKGRldmljZSBtZDEyNyk6IGkvbyBlcnJvciBhdCBsb2dp
-Y2FsIDUxMjY4ODEyOCBvbiBkZXYgL2Rldi9tZDEyNywgc2VjdG9yIDY0OTYwMCwgcm9vdCA1
-LCBpbm9kZSAyNjEsIG9mZnNldCAzOTU1NzUyOTYsIGxlbmd0aCA0MDk2LCBsaW5rcyAxIChw
-YXRoOiByYW5kKQpNYXkgMTYgMTM6MDc6NTkgc3ZlbHRlIGtlcm5lbDogQlRSRlMgZXJyb3Ig
-KGRldmljZSBtZDEyNyk6IGJkZXYgL2Rldi9tZDEyNyBlcnJzOiB3ciAwLCByZCAxMCwgZmx1
-c2ggMCwgY29ycnVwdCAwLCBnZW4gMApNYXkgMTYgMTM6MDc6NTkgc3ZlbHRlIGtlcm5lbDog
-QlRSRlMgZXJyb3IgKGRldmljZSBtZDEyNyk6IGZpeGVkIHVwIGVycm9yIGF0IGxvZ2ljYWwg
-NTEyNjg4MTI4IG9uIGRldiAvZGV2L21kMTI3Ck1heSAxNiAxMzoxMDoyMCBzdmVsdGUga2Vy
-bmVsOiBCVFJGUyB3YXJuaW5nIChkZXZpY2UgbWQxMjcpOiBpL28gZXJyb3IgYXQgbG9naWNh
-bCAxMzI5NzI1NDQgb24gZGV2IC9kZXYvbWQxMjcsIHNlY3RvciAyMjA4MDAsIHJvb3QgNSwg
-aW5vZGUgMjYxLCBvZmZzZXQgMzA1Nzc0NTkyLCBsZW5ndGggNDA5NiwgbGlua3MgMSAocGF0
-aDogcmFuZCkKTWF5IDE2IDEzOjEwOjIwIHN2ZWx0ZSBrZXJuZWw6IGJ0cmZzX2Rldl9zdGF0
-X3ByaW50X29uX2Vycm9yOiA5IGNhbGxiYWNrcyBzdXBwcmVzc2VkCk1heSAxNiAxMzoxMDoy
-MCBzdmVsdGUga2VybmVsOiBCVFJGUyBlcnJvciAoZGV2aWNlIG1kMTI3KTogYmRldiAvZGV2
-L21kMTI3IGVycnM6IHdyIDAsIHJkIDIwLCBmbHVzaCAwLCBjb3JydXB0IDAsIGdlbiAwCk1h
-eSAxNiAxMzoxMDoyMCBzdmVsdGUga2VybmVsOiBCVFJGUyB3YXJuaW5nIChkZXZpY2UgbWQx
-MjcpOiBpL28gZXJyb3IgYXQgbG9naWNhbCAxMDcwMTYxOTIgb24gZGV2IC9kZXYvbWQxMjcs
-IHNlY3RvciAxNzAxMDQsIHJvb3QgNSwgaW5vZGUgMjYxLCBvZmZzZXQgMjc4OTE3MTIwLCBs
-ZW5ndGggNDA5NiwgbGlua3MgMSAocGF0aDogcmFuZCkKTWF5IDE2IDEzOjEwOjIwIHN2ZWx0
-ZSBrZXJuZWw6IEJUUkZTIGVycm9yIChkZXZpY2UgbWQxMjcpOiBiZGV2IC9kZXYvbWQxMjcg
-ZXJyczogd3IgMCwgcmQgMjEsIGZsdXNoIDAsIGNvcnJ1cHQgMCwgZ2VuIDAKTWF5IDE2IDEz
-OjEwOjIwIHN2ZWx0ZSBrZXJuZWw6IEJUUkZTIGVycm9yIChkZXZpY2UgbWQxMjcpOiBmaXhl
-ZCB1cCBlcnJvciBhdCBsb2dpY2FsIDEzMjk3MjU0NCBvbiBkZXYgL2Rldi9tZDEyNwpNYXkg
-MTYgMTM6MTA6MjAgc3ZlbHRlIGtlcm5lbDogQlRSRlMgZXJyb3IgKGRldmljZSBtZDEyNyk6
-IGZpeGVkIHVwIGVycm9yIGF0IGxvZ2ljYWwgMTA3MDE2MTkyIG9uIGRldiAvZGV2L21kMTI3
-Ck1heSAxNiAxMzoxMDoyMCBzdmVsdGUga2VybmVsOiBCVFJGUyB3YXJuaW5nIChkZXZpY2Ug
-bWQxMjcpOiBpL28gZXJyb3IgYXQgbG9naWNhbCAzNDA4NTI3MzYgb24gZGV2IC9kZXYvbWQx
-MjcsIHNlY3RvciAzMTM5ODQsIHJvb3QgNSwgaW5vZGUgMjYxLCBvZmZzZXQgMTk2MDE4MTc2
-LCBsZW5ndGggNDA5NiwgbGlua3MgMSAocGF0aDogcmFuZCkKTWF5IDE2IDEzOjEwOjIxIHN2
-ZWx0ZSBrZXJuZWw6IEJUUkZTIGVycm9yIChkZXZpY2UgbWQxMjcpOiBiZGV2IC9kZXYvbWQx
-MjcgZXJyczogd3IgMCwgcmQgMjIsIGZsdXNoIDAsIGNvcnJ1cHQgMCwgZ2VuIDAKTWF5IDE2
-IDEzOjEwOjIxIHN2ZWx0ZSBrZXJuZWw6IEJUUkZTIGVycm9yIChkZXZpY2UgbWQxMjcpOiBm
-aXhlZCB1cCBlcnJvciBhdCBsb2dpY2FsIDM0MDg1MjczNiBvbiBkZXYgL2Rldi9tZDEyNwpN
-YXkgMTYgMTM6MTA6MjEgc3ZlbHRlIGtlcm5lbDogQlRSRlMgd2FybmluZyAoZGV2aWNlIG1k
-MTI3KTogaS9vIGVycm9yIGF0IGxvZ2ljYWwgMzY2ODA0OTkyIG9uIGRldiAvZGV2L21kMTI3
-LCBzZWN0b3IgMzY0NjcyLCByb290IDUsIGlub2RlIDI2MSwgb2Zmc2V0IDIyMTk3MDQzMiwg
-bGVuZ3RoIDQwOTYsIGxpbmtzIDEgKHBhdGg6IHJhbmQpCk1heSAxNiAxMzoxMDoyMSBzdmVs
-dGUga2VybmVsOiBCVFJGUyBlcnJvciAoZGV2aWNlIG1kMTI3KTogYmRldiAvZGV2L21kMTI3
-IGVycnM6IHdyIDAsIHJkIDIzLCBmbHVzaCAwLCBjb3JydXB0IDAsIGdlbiAwCk1heSAxNiAx
-MzoxMDoyMSBzdmVsdGUga2VybmVsOiBCVFJGUyBlcnJvciAoZGV2aWNlIG1kMTI3KTogZml4
-ZWQgdXAgZXJyb3IgYXQgbG9naWNhbCAzNjY4MDQ5OTIgb24gZGV2IC9kZXYvbWQxMjcKTWF5
-IDE2IDEzOjEwOjIxIHN2ZWx0ZSBrZXJuZWw6IEJUUkZTIHdhcm5pbmcgKGRldmljZSBtZDEy
-Nyk6IGkvbyBlcnJvciBhdCBsb2dpY2FsIDM5MjYyNjE3NiBvbiBkZXYgL2Rldi9tZDEyNywg
-c2VjdG9yIDQxNTEwNCwgcm9vdCA1LCBpbm9kZSAyNjEsIG9mZnNldCAyNDc3OTE2MTYsIGxl
-bmd0aCA0MDk2LCBsaW5rcyAxIChwYXRoOiByYW5kKQpNYXkgMTYgMTM6MTA6MjEgc3ZlbHRl
-IGtlcm5lbDogQlRSRlMgZXJyb3IgKGRldmljZSBtZDEyNyk6IGJkZXYgL2Rldi9tZDEyNyBl
-cnJzOiB3ciAwLCByZCAyNCwgZmx1c2ggMCwgY29ycnVwdCAwLCBnZW4gMApNYXkgMTYgMTM6
-MTA6MjEgc3ZlbHRlIGtlcm5lbDogQlRSRlMgZXJyb3IgKGRldmljZSBtZDEyNyk6IGZpeGVk
-IHVwIGVycm9yIGF0IGxvZ2ljYWwgMzkyNjI2MTc2IG9uIGRldiAvZGV2L21kMTI3Ck1heSAx
-NiAxMzoxMDoyMSBzdmVsdGUga2VybmVsOiBCVFJGUyB3YXJuaW5nIChkZXZpY2UgbWQxMjcp
-OiBpL28gZXJyb3IgYXQgbG9naWNhbCAzMTQ4OTYzODQgb24gZGV2IC9kZXYvbWQxMjcsIHNl
-Y3RvciAyNjMyODgsIHJvb3QgNSwgaW5vZGUgMjYxLCBvZmZzZXQgMTcwMDYxODI0LCBsZW5n
-dGggNDA5NiwgbGlua3MgMSAocGF0aDogcmFuZCkKTWF5IDE2IDEzOjEwOjIxIHN2ZWx0ZSBr
-ZXJuZWw6IEJUUkZTIGVycm9yIChkZXZpY2UgbWQxMjcpOiBiZGV2IC9kZXYvbWQxMjcgZXJy
-czogd3IgMCwgcmQgMjUsIGZsdXNoIDAsIGNvcnJ1cHQgMCwgZ2VuIDAKTWF5IDE2IDEzOjEw
-OjIxIHN2ZWx0ZSBrZXJuZWw6IEJUUkZTIHdhcm5pbmcgKGRldmljZSBtZDEyNyk6IGkvbyBl
-cnJvciBhdCBsb2dpY2FsIDQxODA1MDA0OCBvbiBkZXYgL2Rldi9tZDEyNywgc2VjdG9yIDQ2
-NDc2MCwgcm9vdCA1LCBpbm9kZSAyNjEsIG9mZnNldCA0MzI1OTkwNDAsIGxlbmd0aCA0MDk2
-LCBsaW5rcyAxIChwYXRoOiByYW5kKQpNYXkgMTYgMTM6MTA6MjEgc3ZlbHRlIGtlcm5lbDog
-QlRSRlMgZXJyb3IgKGRldmljZSBtZDEyNyk6IGJkZXYgL2Rldi9tZDEyNyBlcnJzOiB3ciAw
-LCByZCAyNiwgZmx1c2ggMCwgY29ycnVwdCAwLCBnZW4gMApNYXkgMTYgMTM6MTA6MjEgc3Zl
-bHRlIGtlcm5lbDogQlRSRlMgZXJyb3IgKGRldmljZSBtZDEyNyk6IGZpeGVkIHVwIGVycm9y
-IGF0IGxvZ2ljYWwgMzE0ODk2Mzg0IG9uIGRldiAvZGV2L21kMTI3Ck1heSAxNiAxMzoxMDoy
-MSBzdmVsdGUga2VybmVsOiBCVFJGUyBlcnJvciAoZGV2aWNlIG1kMTI3KTogZml4ZWQgdXAg
-ZXJyb3IgYXQgbG9naWNhbCA0MTgwNTAwNDggb24gZGV2IC9kZXYvbWQxMjcKTWF5IDE2IDEz
-OjEwOjIxIHN2ZWx0ZSBrZXJuZWw6IEJUUkZTIHdhcm5pbmcgKGRldmljZSBtZDEyNyk6IGkv
-byBlcnJvciBhdCBsb2dpY2FsIDQzNDk2MjQzMiBvbiBkZXYgL2Rldi9tZDEyNywgc2VjdG9y
-IDQ5Nzc5Miwgcm9vdCA1LCBpbm9kZSAyNjEsIG9mZnNldCAzMTc4NDk2MDAsIGxlbmd0aCA0
-MDk2LCBsaW5rcyAxIChwYXRoOiByYW5kKQpNYXkgMTYgMTM6MTA6MjEgc3ZlbHRlIGtlcm5l
-bDogQlRSRlMgZXJyb3IgKGRldmljZSBtZDEyNyk6IGJkZXYgL2Rldi9tZDEyNyBlcnJzOiB3
-ciAwLCByZCAyNywgZmx1c2ggMCwgY29ycnVwdCAwLCBnZW4gMApNYXkgMTYgMTM6MTA6MjEg
-c3ZlbHRlIGtlcm5lbDogQlRSRlMgZXJyb3IgKGRldmljZSBtZDEyNyk6IGZpeGVkIHVwIGVy
-cm9yIGF0IGxvZ2ljYWwgNDM0OTYyNDMyIG9uIGRldiAvZGV2L21kMTI3Ck1heSAxNiAxMzox
-MDoyMiBzdmVsdGUga2VybmVsOiBCVFJGUyB3YXJuaW5nIChkZXZpY2UgbWQxMjcpOiBpL28g
-ZXJyb3IgYXQgbG9naWNhbCA0ODY5OTgwMTYgb24gZGV2IC9kZXYvbWQxMjcsIHNlY3RvciA1
-OTk0MjQsIHJvb3QgNSwgaW5vZGUgMjYxLCBvZmZzZXQgMzY5ODg1MTg0LCBsZW5ndGggNDA5
-NiwgbGlua3MgMSAocGF0aDogcmFuZCkKTWF5IDE2IDEzOjEwOjIyIHN2ZWx0ZSBrZXJuZWw6
-IEJUUkZTIGVycm9yIChkZXZpY2UgbWQxMjcpOiBiZGV2IC9kZXYvbWQxMjcgZXJyczogd3Ig
-MCwgcmQgMjgsIGZsdXNoIDAsIGNvcnJ1cHQgMCwgZ2VuIDAKTWF5IDE2IDEzOjEwOjIyIHN2
-ZWx0ZSBrZXJuZWw6IEJUUkZTIHdhcm5pbmcgKGRldmljZSBtZDEyNyk6IGkvbyBlcnJvciBh
-dCBsb2dpY2FsIDUxMjY4ODEyOCBvbiBkZXYgL2Rldi9tZDEyNywgc2VjdG9yIDY0OTYwMCwg
-cm9vdCA1LCBpbm9kZSAyNjEsIG9mZnNldCAzOTU1NzUyOTYsIGxlbmd0aCA0MDk2LCBsaW5r
-cyAxIChwYXRoOiByYW5kKQpNYXkgMTYgMTM6MTA6MjIgc3ZlbHRlIGtlcm5lbDogQlRSRlMg
-ZXJyb3IgKGRldmljZSBtZDEyNyk6IGJkZXYgL2Rldi9tZDEyNyBlcnJzOiB3ciAwLCByZCAy
-OSwgZmx1c2ggMCwgY29ycnVwdCAwLCBnZW4gMApNYXkgMTYgMTM6MTA6MjIgc3ZlbHRlIGtl
-cm5lbDogQlRSRlMgZXJyb3IgKGRldmljZSBtZDEyNyk6IGZpeGVkIHVwIGVycm9yIGF0IGxv
-Z2ljYWwgNDg2OTk4MDE2IG9uIGRldiAvZGV2L21kMTI3Ck1heSAxNiAxMzoxMDoyMiBzdmVs
-dGUga2VybmVsOiBCVFJGUyBlcnJvciAoZGV2aWNlIG1kMTI3KTogZml4ZWQgdXAgZXJyb3Ig
-YXQgbG9naWNhbCA1MTI2ODgxMjggb24gZGV2IC9kZXYvbWQxMjcK
---------------D01EBFE5DF80368608388EF4
-Content-Type: text/plain; charset=UTF-8;
- name="script"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment;
- filename="script"
-
-IyBmYWxsb2NhdGUgLWwgNTAwTSBnb29kLWRpc2sKIyBmYWxsb2NhdGUgLWwgNTAwTSBiYWQt
-ZGlzawojIGxvc2V0dXAgLWYgYmFkLWRpc2sgIyBsb29wMAojIGxvc2V0dXAgLWYgZ29vZC1k
-aXNrICMgbG9vcDEKIyBtZGFkbSAtLWNyZWF0ZSAtdiAvZGV2L21kMCAtLWxldmVsPWxpbmVh
-ciAtLWZvcmNlIC0tcmFpZC1kZXZpY2VzPTEgL2Rldi9sb29wMAptZGFkbTogRGVmYXVsdGlu
-ZyB0byB2ZXJzaW9uIDEuMiBtZXRhZGF0YQptZGFkbTogYXJyYXkgL2Rldi9tZDAgc3RhcnRl
-ZC4KIyBta2ZzLmJ0cmZzIC1tIHJhaWQxIC1kIHJhaWQxIC9kZXYvbG9vcDEgL2Rldi9tZDAK
-YnRyZnMtcHJvZ3MgdjQuMTAuMgpTZWUgaHR0cDovL2J0cmZzLndpa2kua2VybmVsLm9yZyBm
-b3IgbW9yZSBpbmZvcm1hdGlvbi4KClBlcmZvcm1pbmcgZnVsbCBkZXZpY2UgVFJJTSAvZGV2
-L2xvb3AxICg1MDAuMDBNaUIpIC4uLgpQZXJmb3JtaW5nIGZ1bGwgZGV2aWNlIFRSSU0gL2Rl
-di9tZDAgKDQ5OS43M01pQikgLi4uCkxhYmVsOiAgICAgICAgICAgICAgKG51bGwpClVVSUQ6
-ICAgICAgICAgICAgICAgZDc0ODUzN2ItM2ZhNC00N2NjLTk5MzQtNjJjZjM5MWZiNjM4Ck5v
-ZGUgc2l6ZTogICAgICAgICAgMTYzODQKU2VjdG9yIHNpemU6ICAgICAgICA0MDk2CkZpbGVz
-eXN0ZW0gc2l6ZTogICAgOTk5LjczTWlCCkJsb2NrIGdyb3VwIHByb2ZpbGVzOgogIERhdGE6
-ICAgICAgICAgICAgIFJBSUQxICAgICAgICAgICAgNjQuMDBNaUIKICBNZXRhZGF0YTogICAg
-ICAgICBSQUlEMSAgICAgICAgICAgIDQ5Ljk0TWlCCiAgU3lzdGVtOiAgICAgICAgICAgUkFJ
-RDEgICAgICAgICAgICAgOC4wME1pQgpTU0QgZGV0ZWN0ZWQ6ICAgICAgIG5vCkluY29tcGF0
-IGZlYXR1cmVzOiAgZXh0cmVmLCBza2lubnktbWV0YWRhdGEKTnVtYmVyIG9mIGRldmljZXM6
-ICAyCkRldmljZXM6CiAgIElEICAgICAgICBTSVpFICBQQVRICiAgICAxICAgNTAwLjAwTWlC
-ICAvZGV2L2xvb3AxCiAgICAyICAgNDk5LjczTWlCICAvZGV2L21kMAojIG1vdW50IC9kZXYv
-bWQwIC9tbnQvdG1wCiMgZGQgaWY9L2Rldi91cmFuZG9tIG9mPS9tbnQvdG1wL3JhbmQgYnM9
-MU0KZGQ6IGVycm9yIHdyaXRpbmcgJy9tbnQvdG1wL3JhbmQnOiBObyBzcGFjZSBsZWZ0IG9u
-IGRldmljZQo0NDErMCByZWNvcmRzIGluCjQ0MCswIHJlY29yZHMgb3V0CjQ2MTk2MzI2NCBi
-eXRlcyAoNDYyIE1CLCA0NDEgTWlCKSBjb3BpZWQsIDUuNzQzNTggcywgODAuNCBNQi9zCiMg
-dW1vdW50IC9tbnQvdG1wCiMgbWRhZG0gLS1zdG9wIC9kZXYvbWQwCm1kYWRtOiBzdG9wcGVk
-IC9kZXYvbWQwCiMgbWRhZG0gLS1idWlsZCAvZGV2L21kMCAtLWxldmVsPWZhdWx0eSAtLXJh
-aWQtZGV2aWNlcz0xIC9kZXYvbG9vcDAKbWRhZG06IGFycmF5IC9kZXYvbWQwIGJ1aWx0IGFu
-ZCBzdGFydGVkLgogICAg4pSc4pSAdmdfc3ZlbHRlLXN3YXAgICBzd2FwICAgICAgICAgICAg
-ICBzdXNwZW5kICAwNzkyZDMyNy01NjZkLTQzMDYtOTNmNC04MTBlMjQ3ODI3ZTQgICBbU1dB
-UF0KICAgIOKUlOKUgHZnX3N2ZWx0ZS1yb290ZnMgYnRyZnMgICAgICAgICAgICAgcm9vdCAg
-ICAgYTFkMmEwYjQtOGQ0Yi00YzFjLTljODctNWE1NWRlNjE5MThlICAgL21udC9idHJmcy12
-b2wvcm9vdGZzCiMgbHNibGsgLWYgfCBoZWFkIC1uNApOQU1FICAgICAgICAgICAgICAgICAg
-IEZTVFlQRSAgICAgICAgICAgIExBQkVMICAgIFVVSUQgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgIE1PVU5UUE9JTlQKbG9vcDAgICAgICAgICAgICAgICAgICBsaW51eF9y
-YWlkX21lbWJlciBzdmVsdGU6MCBmNzAxOWFhOC0zYjJkLTRlNGMtOTEwNi02MzVkMGRkZGNh
-NzgK4pSU4pSAbWQwICAgICAgICAgICAgICAgICAgbGludXhfcmFpZF9tZW1iZXIgc3ZlbHRl
-OjAgZjcwMTlhYTgtM2IyZC00ZTRjLTkxMDYtNjM1ZDBkZGRjYTc4CiAg4pSU4pSAbWQxMjcg
-ICAgICAgICAgICAgIGJ0cmZzICAgICAgICAgICAgICAgICAgICAgIGQ3NDg1MzdiLTNmYTQt
-NDdjYy05OTM0LTYyY2YzOTFmYjYzOAojIG1vdW50IC9kZXYvbWQxMjcgL21udC90bXAKIyBi
-dHJmcyBzY3J1YiBzdGFydCAtQmQgL21udC90bXAKc2NydWIgZGV2aWNlIC9kZXYvbG9vcDEg
-KGlkIDEpIGRvbmUKICAgICAgICBzY3J1YiBzdGFydGVkIGF0IFR1ZSBNYXkgMTYgMTM6MDQ6
-NTAgMjAxNyBhbmQgZmluaXNoZWQgYWZ0ZXIgMDA6MDA6MDMKICAgICAgICB0b3RhbCBieXRl
-cyBzY3J1YmJlZDogNDQxLjIyTWlCIHdpdGggMCBlcnJvcnMKc2NydWIgZGV2aWNlIC9kZXYv
-bWQxMjcgKGlkIDIpIGRvbmUKICAgICAgICBzY3J1YiBzdGFydGVkIGF0IFR1ZSBNYXkgMTYg
-MTM6MDQ6NTAgMjAxNyBhbmQgZmluaXNoZWQgYWZ0ZXIgMDA6MDA6MDIKICAgICAgICB0b3Rh
-bCBieXRlcyBzY3J1YmJlZDogNDQxLjIyTWlCIHdpdGggMCBlcnJvcnMKIyAjIEludHJvZHVj
-ZSBlcnJvcnMgaW4gL2Rldi9tZDEyNzoKIyBtZGFkbSAtLWdyb3cgL2Rldi9tZDAgLS1sYXlv
-dXQ9cnA0MDAKbGF5b3V0IGZvciAvZGV2L21kMCBzZXQgdG8gMTI4MDMKIyBidHJmcyBzY3J1
-YiBzdGFydCAtQmQgL21udC90bXAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgIApzY3J1YiBkZXZpY2UgL2Rldi9sb29wMSAoaWQgMSkgZG9uZQog
-ICAgICAgIHNjcnViIHN0YXJ0ZWQgYXQgVHVlIE1heSAxNiAxMzowNzo1NyAyMDE3IGFuZCBm
-aW5pc2hlZCBhZnRlciAwMDowMDowMgogICAgICAgIHRvdGFsIGJ5dGVzIHNjcnViYmVkOiA0
-NDEuMjJNaUIgd2l0aCAwIGVycm9ycwpzY3J1YiBkZXZpY2UgL2Rldi9tZDEyNyAoaWQgMikg
-ZG9uZQogICAgICAgIHNjcnViIHN0YXJ0ZWQgYXQgVHVlIE1heSAxNiAxMzowNzo1NyAyMDE3
-IGFuZCBmaW5pc2hlZCBhZnRlciAwMDowMDowMwogICAgICAgIHRvdGFsIGJ5dGVzIHNjcnVi
-YmVkOiA0NDEuMjJNaUIgd2l0aCAxOSBlcnJvcnMKICAgICAgICBlcnJvciBkZXRhaWxzOiBy
-ZWFkPTE5CiAgICAgICAgY29ycmVjdGVkIGVycm9yczogMTksIHVuY29ycmVjdGFibGUgZXJy
-b3JzOiAwLCB1bnZlcmlmaWVkIGVycm9yczogNTg5CldBUk5JTkc6IGVycm9ycyBkZXRlY3Rl
-ZCBkdXJpbmcgc2NydWJiaW5nLCBjb3JyZWN0ZWQKIyAjIFN0b3AgcHJvZHVjaW5nIGFkZGl0
-aW9uYWwgZXJyb3JzLCBrZWVwaW5nIHRoZSBhbHJlYWR5IGV4aXN0aW5nIGJhZGJsb2NrczoK
-IyBtZGFkbSAtLWdyb3cgL2Rldi9tZDAgLS1sYXlvdXQ9Y2xlYXIKbGF5b3V0IGZvciAvZGV2
-L21kMCBzZXQgdG8gMzEKIyAjIFJ1biBzY3J1YiBmb3IgMm5kIHRpbWU6CiMgYnRyZnMgc2Ny
-dWIgc3RhcnQgLUJkIC9tbnQvdG1wICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAKc2NydWIgZGV2aWNlIC9kZXYvbG9vcDEgKGlkIDEpIGRvbmUK
-ICAgICAgICBzY3J1YiBzdGFydGVkIGF0IFR1ZSBNYXkgMTYgMTM6MTA6MTkgMjAxNyBhbmQg
-ZmluaXNoZWQgYWZ0ZXIgMDA6MDA6MDMKICAgICAgICB0b3RhbCBieXRlcyBzY3J1YmJlZDog
-NDQxLjIyTWlCIHdpdGggMCBlcnJvcnMKc2NydWIgZGV2aWNlIC9kZXYvbWQxMjcgKGlkIDIp
-IGRvbmUKICAgICAgICBzY3J1YiBzdGFydGVkIGF0IFR1ZSBNYXkgMTYgMTM6MTA6MTkgMjAx
-NyBhbmQgZmluaXNoZWQgYWZ0ZXIgMDA6MDA6MDMKICAgICAgICB0b3RhbCBieXRlcyBzY3J1
-YmJlZDogNDQxLjIyTWlCIHdpdGggMTkgZXJyb3JzCiAgICAgICAgZXJyb3IgZGV0YWlsczog
-cmVhZD0xOQogICAgICAgIGNvcnJlY3RlZCBlcnJvcnM6IDE5LCB1bmNvcnJlY3RhYmxlIGVy
-cm9yczogMCwgdW52ZXJpZmllZCBlcnJvcnM6IDU4OQpXQVJOSU5HOiBlcnJvcnMgZGV0ZWN0
-ZWQgZHVyaW5nIHNjcnViYmluZywgY29ycmVjdGVkCiMgIyBDbGVhbiB1cAojIHVtb3VudCAv
-bW50L3RtcAojIG1kYWRtIC0tc3RvcCAvZGV2L21kMTI3Cm1kYWRtOiBzdG9wcGVkIC9kZXYv
-bWQxMjcKIyBtZGFkbSAtLXN0b3AgL2Rldi9tZDAKbWRhZG06IHN0b3BwZWQgL2Rldi9tZDAK
-IyBsb3NldHVwIC1kIC9kZXYvbG9vcFswMV0KIyBybSBnb29kLWRpc2sgYmFkLWRpc2sKCg==
---------------D01EBFE5DF80368608388EF4--

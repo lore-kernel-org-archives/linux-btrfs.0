@@ -1,71 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:59135 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752004AbdEQRO7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 May 2017 13:14:59 -0400
-Date: Wed, 17 May 2017 19:14:00 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Bart Van Assche <Bart.VanAssche@sandisk.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "linux-block@vger.kernel.org" <linux-block@vger.kernel.org>,
-        "anand.jain@oracle.com" <anand.jain@oracle.com>
-Subject: Re: [RFC PATCH 0/2] Introduce blkdev_issue_flush_no_wait()
-Message-ID: <20170517171400.GI4065@suse.cz>
-Reply-To: dsterba@suse.cz
+Received: from userp1040.oracle.com ([156.151.31.81]:22685 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751656AbdEPJdd (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 16 May 2017 05:33:33 -0400
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH 1/2] block: Introduce blkdev_issue_flush_no_wait()
+Date: Tue, 16 May 2017 17:39:13 +0800
+Message-Id: <20170516093914.16035-2-anand.jain@oracle.com>
+In-Reply-To: <20170516093914.16035-1-anand.jain@oracle.com>
 References: <20170516093914.16035-1-anand.jain@oracle.com>
- <1494943642.2935.1.camel@sandisk.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1494943642.2935.1.camel@sandisk.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 16, 2017 at 02:07:23PM +0000, Bart Van Assche wrote:
-> On Tue, 2017-05-16 at 17:39 +0800, Anand Jain wrote:
-> > BTRFS wanted a block device flush function which does not wait for
-> > its completion, so that the flush for the next device can be called
-> > in the same thread.
-> > 
-> > Here is a RFC patch to provide the function
-> > 'blkdev_issue_flush_no_wait()', which is based on the current device
-> > flush function 'blkdev_issue_flush()', however it uses submit_bio()
-> > instead of submit_bio_wait().
-> > 
-> > This patch is for review comments, will send out a final patch based
-> > on the comments received.
-> 
-> Since the block layer can reorder requests, I think using
-> blkdev_issue_flush_no_wait() will only yield the intended result if
-> the caller waits until the requests that have to be flushed have completed.
-> Is that how you intend to use this function?
+blkdev_issue_flush() is a blocking function and returns only after
+the flush bio is completed, so a module handling more than one
+device can't issue flush for all the devices unless it uses worker
+thread.
 
-Yes, this is intended. Regarding the two patches, I don't think we need
-them. A more detailed explanation below.
+This patch adds a new function blkdev_issue_flush_no_wait(), which
+uses submit_bio() instead of submit_bio_wait(), and accepts the
+completion function and data from the caller.
 
-The function blkdev_issue_flush_no_wait would be used in multi-device
-btrfs to submit the barriers in parallel.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ block/blk-flush.c      | 47 +++++++++++++++++++++++++++++++++++++++++++++++
+ include/linux/blkdev.h |  8 ++++++++
+ 2 files changed, 55 insertions(+)
 
-fs/btrfs/disk-io.c:barrier_all_devices
+diff --git a/block/blk-flush.c b/block/blk-flush.c
+index c4e0880b54bb..16b9c61f4cd3 100644
+--- a/block/blk-flush.c
++++ b/block/blk-flush.c
+@@ -488,6 +488,53 @@ void blk_insert_flush(struct request *rq)
+ 	blk_flush_complete_seq(rq, fq, REQ_FSEQ_ACTIONS & ~policy, 0);
+ }
+ 
++/*
++ * blkdev_issue_flush_no_wait - Issue a flush for the given block device
++ * @bdev:       blockdev to issue flush for
++ * @gfp_mask:   memory allocation flags (for bio_alloc)
++ * @endio_fn:   completion function for the flush bio
++ * @data:       flush bio private data
++ *
++ * Description:
++ *    Issue a flush for the block device in question. Caller must provide
++ *    the completion function and the private data, to be called when the
++ *    issued flush bio completes.
++ */
++int blkdev_issue_flush_no_wait(struct block_device *bdev, gfp_t gfp_mask,
++		bio_end_io_t *endio_fn, void *data)
++{
++	struct request_queue *q;
++	struct bio *bio;
++
++	if (bdev->bd_disk == NULL)
++		return -ENXIO;
++
++	q = bdev_get_queue(bdev);
++	if (!q)
++		return -ENXIO;
++
++	/*
++	 * some block devices may not have their queue correctly set up here
++	 * (e.g. loop device without a backing file) and so issuing a flush
++	 * here will panic. Ensure there is a request function before issuing
++	 * the flush.
++	 */
++	if (!q->make_request_fn)
++		return -ENXIO;
++
++	bio = bio_alloc(gfp_mask, 0);
++	bio->bi_bdev = bdev;
++	bio->bi_opf = REQ_OP_WRITE | REQ_PREFLUSH | REQ_SYNC;
++	bio->bi_end_io = endio_fn;
++	bio->bi_private = data;
++
++	init_completion(data);
++	submit_bio(bio);
++
++	return 0;
++}
++EXPORT_SYMBOL(blkdev_issue_flush_no_wait);
++
+ /**
+  * blkdev_issue_flush - queue a flush
+  * @bdev:	blockdev to issue flush for
+diff --git a/include/linux/blkdev.h b/include/linux/blkdev.h
+index b5d1e27631ee..5d2b62239251 100644
+--- a/include/linux/blkdev.h
++++ b/include/linux/blkdev.h
+@@ -1322,6 +1322,8 @@ static inline struct request *blk_map_queue_find_tag(struct blk_queue_tag *bqt,
+ }
+ 
+ extern int blkdev_issue_flush(struct block_device *, gfp_t, sector_t *);
++extern int blkdev_issue_flush_no_wait(struct block_device *bdev,
++			gfp_t gfp_mask, bio_end_io_t *endio_fn, void *data);
+ extern int blkdev_issue_write_same(struct block_device *bdev, sector_t sector,
+ 		sector_t nr_sects, gfp_t gfp_mask, struct page *page);
+ 
+@@ -1994,6 +1996,12 @@ static inline int blkdev_issue_flush(struct block_device *bdev, gfp_t gfp_mask,
+ 	return 0;
+ }
+ 
++static inline int blkdev_issue_flush_no_wait(struct block_device *bdev,
++			gfp_t gfp_mask, bio_end_io_t *endio_fn, void *data)
++{
++	return 0;
++}
++
+ #endif /* CONFIG_BLOCK */
+ 
+ #endif
+-- 
+2.10.0
 
-pseudocode:
-
-foreach device
-	write_dev_flush(wait=0)
-		submit_bio(device->bio)
-
-(would newly use blkdev_issue_flush_no_wait)
-
-
-foreach device
-	write_dev_flush(wiat=1)
-		wait_for_completion(device->bio)
-
-The submission path of write_dev_flush mimics the structure of
-blkdev_issue_flush, so Anand supposedly wants to move that to API.
-
-I personally don't think this is necessary and am fine with opencoding
-it, btrfs would likely be the only user of the new function anyway.
-Other reason is that we want to preallocate the bio used for flushing so
-we can avoid ENOMEM when submitting disk barriers. This would not be
-possible. In summary, I think we can address all the problems inside
-btrfs without extending block layer as for now.

@@ -1,87 +1,152 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:46524 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1753869AbdEQJWv (ORCPT
+Received: from tartarus.angband.pl ([89.206.35.136]:35700 "EHLO
+        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751566AbdEQJpS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 May 2017 05:22:51 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1dAvAG-00043j-Ud
-        for linux-btrfs@vger.kernel.org; Wed, 17 May 2017 11:22:40 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Can't remount a BTRFS partition read write after a drive failure
-Date: Wed, 17 May 2017 09:22:31 +0000 (UTC)
-Message-ID: <pan$af7cc$8b1ee5a8$c11d0b13$ce53f@cox.net>
-References: <84408781-722d-6c87-b510-0497c4f36443@chicoree.fr>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+        Wed, 17 May 2017 05:45:18 -0400
+Date: Wed, 17 May 2017 11:45:15 +0200
+From: Adam Borowski <kilobyte@angband.pl>
+To: =?utf-8?Q?=C5=81ukasz_Wr=C3=B3blewski?= <lw@nri.pl>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: RAID 6 corrupted
+Message-ID: <20170517094515.6goz3eqjejqymhzc@angband.pl>
+References: <CA+M=Xp3+YQkeVNLkSZw77zMdia2LwSiaEaR=6Ejs0z2TvW2xwg@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CA+M=Xp3+YQkeVNLkSZw77zMdia2LwSiaEaR=6Ejs0z2TvW2xwg@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sylvain Leroux posted on Tue, 16 May 2017 14:56:37 +0200 as excerpted:
+On Wed, May 17, 2017 at 10:27:53AM +0200, Łukasz Wróblewski wrote:
+> About two years ago I created RAID 6 consisting of 5 disks with BTRFS.
+> One of the disks has crashed.
+> I started to exchange it for another, but I did something wrong.
+> Or at the time, RAID56 support was experimental in BTRFS.
 
-> I'm investigating BTRFS using an external USB HDD on a Linux Debian
-> Stretch/Sid system.
+It still is experimental.  And not experimental as in "might have some
+bugs", but as in "eats babies for breakfast".
+
+> There was a situation where I could not mount the partition again.
 > 
-> The drive is not reliable. And I noticed when there is an error and the
-> USB device appears to be dead to the kernel, I am later unable to
-> remount rw the drive. I can mount it read only though.
+> I decided to put the disks aside and wait for the better tools.
+> A newer version of BTRFS in the hope that I can retrieve the data.
 > 
-> This seems to be a systematic behavior. And it occasionally happens when
-> the computer wake up from sleep and the drive is still attached.
+> Currently the situation looks like this:
+>  ~ # uname -a
+> Linux localhost 4.10.12-coreos #1 SMP Tue Apr 25 22:08:35 UTC 2017
+> x86_64 AMD FX(tm)-6100 Six-Core Processor AuthenticAMD GNU/Linux
+
+There were no RAID5/6 improvements for a long while, until a batch of fixes
+got merged into 4.12-rc1 (yes, the first rc that Linus pushed just this
+Sunday).
+
+I'm not knowledgeable about this code, though -- I merely did some
+superficial tests.  These tests show drastic improvement over 4.11 but I
+don't even know how in-line repair is affected (I looked mostly as scrub).
+
+>  ~ # btrfs --version
+> btrfs-progs v4.4.1
+>  ~ # btrfs fi show
+> warning devid 1 not found already
+> warning devid 4 not found already
+> bytenr mismatch, want=2373780258816, have=0
+> warning, device 7 is missing
+> warning, device 1 is missing
+
+So you have _two_ missing drives.  RAID6 should still recover from that, but
+at least in 4.11 and earlier there were some serious problems.  No idea if
+4.12-rc1 is better here.
+
+> bytenr mismatch, want=2093993689088, have=0
+> ERROR: cannot read chunk root
+> Label: none  uuid: 50127310-d15c-49ca-8cdd-8798ea0fda2e
+> Total devices 5 FS bytes used 5.44TiB
+> devid    2 size 1.82TiB used 1.82TiB path /dev/sde
+> devid    3 size 1.82TiB used 1.82TiB path /dev/sdc
+> devid    5 size 1.82TiB used 1.82TiB path /dev/sdb
+> *** Some devices missing
 > 
-> Power cycling the disk do not change anything, but restarting the
-> computer "solves" the issue.
+> Label: 'DDR'  uuid: 4a9f6a0f-e41f-48a5-a566-507349d47b30
+> Total devices 7 FS bytes used 477.15GiB
+> devid    4 size 1.82TiB used 7.00GiB path /dev/sdd
+> *** Some devices missing
+> 
+>  ~ # mount /dev/sdb /mnt/
+> mount: wrong fs type, bad option, bad superblock on /dev/sdb,
+>        missing codepage or helper program, or other error
+> 
+>        In some cases useful info is found in syslog - try
+>        dmesg | tail or so.
+>  ~ # dmesg | tail
+> [ 2612.350751] BTRFS info (device sde): disk space caching is enabled
+> [ 2612.378507] BTRFS error (device sde): failed to read chunk tree: -5
+> [ 2612.393729] BTRFS error (device sde): open_ctree failed
+>  ~ # mount -o usebackuproot /dev/sdb /mnt/
+> mount: wrong fs type, bad option, bad superblock on /dev/sdb,
+>        missing codepage or helper program, or other error
+> 
+>        In some cases useful info is found in syslog - try
+>        dmesg | tail or so.
+>  ~ # dmesg | tail
+> [ 2675.427445] BTRFS info (device sde): trying to use backup root at mount time
+> [ 2675.434528] BTRFS info (device sde): disk space caching is enabled
+> [ 2675.442031] BTRFS error (device sde): failed to read chunk tree: -5
+> [ 2675.457321] BTRFS error (device sde): open_ctree failed
+>  ~ #
 > 
 > 
-> I believe this may be caused by BTRFS having issues since the kernel
-> assign a different device name to the drive when it bring it back
-> inline? Or BTRFS didn't realize the "original" drive has gone away?
+> "fi show" shows two systems.
+> It should really be one, but devid 4 should belong to
+> uuid: 50127310-d15c-49ca-8cdd-8798ea0fda2e
 
-> Initially, the drive was mounted rw and associated to the /dev/sdb
-> device, the btrfs partition being /dev/sdb1 After the failure, I power
-> cycled the drive, and the kernel brought it back as /dev/sdc
+This is one of the disks that are missing, so that's ok.  (Well, why it's
+not a part of the filesystem anymore is not ok, but I'm speaking about
+behaviour after the failure.)
+
+> I tried
+> ./btrfs restore /dev/sdb /mnt/restore
 > 
-> I can mount /dev/sdc1 read only.
-> But I'm unable to mount it read-write. Interestingly, the message in
-> dmesg still mention /dev/sdb1 as the device whereas it should be
-> /dev/sdc1.
+> ...
+> Trying another mirror
+> Trying another mirror
+> Trying another mirror
+> Trying another mirror
+> Trying another mirror
+> Trying another mirror
+> Trying another mirror
+> Trying another mirror
+> Trying another mirror
+> Trying another mirror
+> Trying another mirror
+> Trying another mirror
+> Trying another mirror
+> bytenr mismatch, want=2373682249728, have=0
+> bytenr mismatch, want=2373682233344, have=0
+> bytenr mismatch, want=2373682249728, have=0
+> Error searching -5
+> Error searching /mnt/....
 > 
-> sylvain@bulbizarre:~$ uname -[r]
-> 4.9.0-2-amd64
+> But little data has been recovered.
 
-This is a known issue.  Btrfs doesn't yet properly track devices and is 
-thus unaware that the old device (/dev/sdb1) has gone away.  It does see 
-the new device (/dev/sdc1, after btrfs device scan, which udev normally 
-runs automatically when a new device appears), and can thus mount it, but 
-because it still thinks the old device is there as well, as Chris Murphy 
-says, it gets confused, and to be safe, only allows mounting read-only.
+Restore is userspace rather than kernel, I don't know what kind of fixes it
+had recently, but 4.4 you're using lacks almost two years of development, so
+I'd try a more recent version before trying more involved steps.
+
+> Can I retrieve my data?
+
+If you do, I'd recommend switching to at least -mraid1 (RAID1 metadata
+RAID5/6 data) -- a bug that hits a data block makes you lose a single file,
+one that hits metadata tends to result in total filesystem loss, and RAID1
+is quite reliable already.
+
+> How can I do this?
+
+That's the trick question. :/
 
 
-There's a patch set in the wings that makes btrfs properly device aware, 
-allowing it to track disappearing devices and act accordingly, as a 
-prerequisite to the hot-spares feature which the patch set introduces, 
-but that patch set is tied up waiting for a different patch series (IIRC 
-a change in the device-flush handling, I'm not a dev and haven't tracked 
-the specifics), so it could be awhile, 4.13 at absolute minimum, since 
-4.12 is the current dev kernel series.
-
-Meanwhile, the history of USB connection flakiness and problems in 
-general means btrfs is not generally recommended for USB attached 
-devices, at least until those above mentioned patches go in.  For some 
-people on specific hardware it works... until it doesn't and we get the 
-reports here.  But there's enough of those reports that we simply don't 
-recommend btrfs, if the device(s) hosting the filesystem are going to be 
-USB-attached.
-
-FWIW, direct SATA connections (eSATA for external) seem to be a better 
-choice.  Or choose a different filesystem that's more stable and mature 
-(btrfs is still stabilizing, not yet fully stable and mature), and proven 
-ready to handle such issues in a better way.
-
+Meow!
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Don't be racist.  White, amber or black, all beers should be judged based
+solely on their merits.  Heck, even if occasionally a cider applies for a
+beer's job, why not?
+On the other hand, corpo lager is not a race.

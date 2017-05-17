@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f193.google.com ([209.85.128.193]:36374 "EHLO
-        mail-wr0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751104AbdEQSzb (ORCPT
+Received: from mail-wm0-f65.google.com ([74.125.82.65]:34140 "EHLO
+        mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751395AbdEQS6H (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 May 2017 14:55:31 -0400
-Received: by mail-wr0-f193.google.com with SMTP id v42so3181454wrc.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 May 2017 11:55:30 -0700 (PDT)
+        Wed, 17 May 2017 14:58:07 -0400
+Received: by mail-wm0-f65.google.com with SMTP id d127so5698660wmf.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 May 2017 11:58:06 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <1495033663-15610-2-git-send-email-nborisov@suse.com>
-References: <1495033663-15610-1-git-send-email-nborisov@suse.com> <1495033663-15610-2-git-send-email-nborisov@suse.com>
+In-Reply-To: <1495033663-15610-1-git-send-email-nborisov@suse.com>
+References: <1495033663-15610-1-git-send-email-nborisov@suse.com>
 From: Noah Massey <noah.massey@gmail.com>
-Date: Wed, 17 May 2017 14:54:49 -0400
-Message-ID: <CADfjVrg4jRCHEUHsYkFFFozDOK=XzoW1Qd0ghZNrGugrvQ1cCA@mail.gmail.com>
-Subject: Re: [PATCH v2 2/2] btrfs: Refactor update_space_info
+Date: Wed, 17 May 2017 14:57:25 -0400
+Message-ID: <CADfjVrg9OByV7rLEtRPKywJRJgRh5cVtrmC+GXLLv_24UfyFBw@mail.gmail.com>
+Subject: Re: [PATCH v2 1/2] btrfs: Separate space_info create/update
 To: Nikolay Borisov <nborisov@suse.com>
 Cc: David Sterba <dsterba@suse.com>, linux-btrfs <linux-btrfs@vger.kernel.org>,
         jeffm@suse.com
@@ -20,129 +20,233 @@ Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-minor nitpicks in the comment
-
 On Wed, May 17, 2017 at 11:07 AM, Nikolay Borisov <nborisov@suse.com> wrote:
-> Following the factoring out of the creation code udpate_space_info can only
+> Currently the struct space_info creation code is intermixed in the
+> udpate_space_info function. There are well-defined points at which the we
 
-" code, update_space_info "
+^^^ update_space_info
 
-> be called for already-existing space_info structs.
-
-", which always succeeds"?
-
-> Remove superfulous error
-> handling and use the return value to return a pointer to the found space_info.
+> actually want to create brand-new space_info structs (e.g. during mount of
+> the filesystem as well as sometimes when adding/initialising new chunks). In
+> such cases udpate_space_info is called with 0 as the bytes parameter. All of
+> this makes for spaghetti code.
+>
+> Fix it by factoring out the creation code in a separate create_space_info
+> structure. This also allows to simplify the internals. Furthermore it will
+> make the update_space_info function not fail, allowing to remove error
+> handling in callers. This will come in a follow up patch.
+>
+> This bears no functional changes
 >
 > Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 > Reviewed-by: Jeff Mahoney <jeffm@suse.com>
 > ---
->  fs/btrfs/extent-tree.c | 68 ++++++++++++++++++--------------------------------
->  1 file changed, 24 insertions(+), 44 deletions(-)
+>  fs/btrfs/extent-tree.c | 127 ++++++++++++++++++++++++-------------------------
+>  1 file changed, 62 insertions(+), 65 deletions(-)
 >
-> Change since v1
->  - Incorporated Jeff Mahoney's feedback and added his reviewed-by tag
+> Change since v1:
+>
+>  Incorporated Jeff Mahoney's feedback and added his reviewed-by
 >
 > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 28848e45b018..3d5bf0b7f719 100644
+> index be5477676cc8..28848e45b018 100644
 > --- a/fs/btrfs/extent-tree.c
 > +++ b/fs/btrfs/extent-tree.c
-> @@ -3959,10 +3959,10 @@ static int create_space_info(struct btrfs_fs_info *info, u64 flags,
->         return ret;
+> @@ -3914,15 +3914,58 @@ static const char *alloc_name(u64 flags)
+>         };
 >  }
 >
-> -static int update_space_info(struct btrfs_fs_info *info, u64 flags,
-> -                            u64 total_bytes, u64 bytes_used,
-> -                            u64 bytes_readonly,
-> -                            struct btrfs_space_info **space_info)
-> +static struct btrfs_space_info *update_space_info(struct btrfs_fs_info *info,
-> +                                                                                                u64 flags, u64 total_bytes,
-> +                                                                                                u64 bytes_used,
-> +                                                                                                u64 bytes_readonly)
+> +static int create_space_info(struct btrfs_fs_info *info, u64 flags,
+> +                            struct btrfs_space_info **new) {
+> +
+> +       struct btrfs_space_info *space_info;
+> +       int i;
+> +       int ret;
+> +
+> +       space_info = kzalloc(sizeof(*space_info), GFP_NOFS);
+> +       if (!space_info)
+> +               return -ENOMEM;
+> +
+> +       ret = percpu_counter_init(&space_info->total_bytes_pinned, 0, GFP_KERNEL);
+> +       if (ret) {
+> +               kfree(space_info);
+> +               return ret;
+> +       }
+> +
+> +       for (i = 0; i < BTRFS_NR_RAID_TYPES; i++)
+> +               INIT_LIST_HEAD(&space_info->block_groups[i]);
+> +       init_rwsem(&space_info->groups_sem);
+> +       spin_lock_init(&space_info->lock);
+> +       space_info->flags = flags & BTRFS_BLOCK_GROUP_TYPE_MASK;
+> +       space_info->force_alloc = CHUNK_ALLOC_NO_FORCE;
+> +       init_waitqueue_head(&space_info->wait);
+> +       INIT_LIST_HEAD(&space_info->ro_bgs);
+> +       INIT_LIST_HEAD(&space_info->tickets);
+> +       INIT_LIST_HEAD(&space_info->priority_tickets);
+> +
+> +       ret = kobject_init_and_add(&space_info->kobj, &space_info_ktype,
+> +                                   info->space_info_kobj, "%s",
+> +                                   alloc_name(space_info->flags));
+> +       if (ret) {
+> +               percpu_counter_destroy(&space_info->total_bytes_pinned);
+> +               kfree(space_info);
+> +               return ret;
+> +       }
+> +
+> +       *new = space_info;
+> +       list_add_rcu(&space_info->list, &info->space_info);
+> +       if (flags & BTRFS_BLOCK_GROUP_DATA)
+> +               info->data_sinfo = space_info;
+> +
+> +       return ret;
+> +}
+> +
+>  static int update_space_info(struct btrfs_fs_info *info, u64 flags,
+>                              u64 total_bytes, u64 bytes_used,
+>                              u64 bytes_readonly,
+>                              struct btrfs_space_info **space_info)
 >  {
 >         struct btrfs_space_info *found;
+> -       int i;
 >         int factor;
-> @@ -3974,21 +3974,21 @@ static int update_space_info(struct btrfs_fs_info *info, u64 flags,
->                 factor = 1;
+> -       int ret;
 >
->         found = __find_space_info(info, flags);
-> -       if (found) {
-> -               spin_lock(&found->lock);
-> -               found->total_bytes += total_bytes;
-> -               found->disk_total += total_bytes * factor;
-> -               found->bytes_used += bytes_used;
-> -               found->disk_used += bytes_used * factor;
-> -               found->bytes_readonly += bytes_readonly;
-> -               if (total_bytes > 0)
-> -                       found->full = 0;
-> -               space_info_add_new_bytes(info, found, total_bytes -
-> -                                        bytes_used - bytes_readonly);
-> -               spin_unlock(&found->lock);
-> -               *space_info = found;
-> -               return 0;
+>         if (flags & (BTRFS_BLOCK_GROUP_DUP | BTRFS_BLOCK_GROUP_RAID1 |
+>                      BTRFS_BLOCK_GROUP_RAID10))
+> @@ -3946,53 +3989,6 @@ static int update_space_info(struct btrfs_fs_info *info, u64 flags,
+>                 *space_info = found;
+>                 return 0;
+>         }
+> -       found = kzalloc(sizeof(*found), GFP_NOFS);
+> -       if (!found)
+> -               return -ENOMEM;
+> -
+> -       ret = percpu_counter_init(&found->total_bytes_pinned, 0, GFP_KERNEL);
+> -       if (ret) {
+> -               kfree(found);
+> -               return ret;
 > -       }
-> +       BUG_ON(!found);
-> +
-> +       spin_lock(&found->lock);
-> +       found->total_bytes += total_bytes;
-> +       found->disk_total += total_bytes * factor;
-> +       found->bytes_used += bytes_used;
-> +       found->disk_used += bytes_used * factor;
-> +       found->bytes_readonly += bytes_readonly;
-> +       if (total_bytes > 0)
-> +               found->full = 0;
-> +       space_info_add_new_bytes(info, found, total_bytes -
-> +                                bytes_used - bytes_readonly);
-> +       spin_unlock(&found->lock);
-> +
-> +       return found;
+> -
+> -       for (i = 0; i < BTRFS_NR_RAID_TYPES; i++)
+> -               INIT_LIST_HEAD(&found->block_groups[i]);
+> -       init_rwsem(&found->groups_sem);
+> -       spin_lock_init(&found->lock);
+> -       found->flags = flags & BTRFS_BLOCK_GROUP_TYPE_MASK;
+> -       found->total_bytes = total_bytes;
+> -       found->disk_total = total_bytes * factor;
+> -       found->bytes_used = bytes_used;
+> -       found->disk_used = bytes_used * factor;
+> -       found->bytes_pinned = 0;
+> -       found->bytes_reserved = 0;
+> -       found->bytes_readonly = bytes_readonly;
+> -       found->bytes_may_use = 0;
+> -       found->full = 0;
+> -       found->max_extent_size = 0;
+> -       found->force_alloc = CHUNK_ALLOC_NO_FORCE;
+> -       found->chunk_alloc = 0;
+> -       found->flush = 0;
+> -       init_waitqueue_head(&found->wait);
+> -       INIT_LIST_HEAD(&found->ro_bgs);
+> -       INIT_LIST_HEAD(&found->tickets);
+> -       INIT_LIST_HEAD(&found->priority_tickets);
+> -
+> -       ret = kobject_init_and_add(&found->kobj, &space_info_ktype,
+> -                                   info->space_info_kobj, "%s",
+> -                                   alloc_name(found->flags));
+> -       if (ret) {
+> -               kfree(found);
+> -               return ret;
+> -       }
+> -
+> -       *space_info = found;
+> -       list_add_rcu(&found->list, &info->space_info);
+> -       if (flags & BTRFS_BLOCK_GROUP_DATA)
+> -               info->data_sinfo = found;
+> -
+> -       return ret;
 >  }
 >
 >  static void set_avail_alloc_bits(struct btrfs_fs_info *fs_info, u64 flags)
-> @@ -10042,19 +10042,9 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
->                 }
+> @@ -4495,10 +4491,9 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
 >
->                 trace_btrfs_add_block_group(info, cache, 0);
-> -               ret = update_space_info(info, cache->flags, found_key.offset,
-> -                                       btrfs_block_group_used(&cache->item),
-> -                                       cache->bytes_super, &space_info);
-> -               if (ret) {
-> -                       btrfs_remove_free_space_cache(cache);
-> -                       spin_lock(&info->block_group_cache_lock);
-> -                       rb_erase(&cache->cache_node,
-> -                                &info->block_group_cache_tree);
-> -                       RB_CLEAR_NODE(&cache->cache_node);
-> -                       spin_unlock(&info->block_group_cache_lock);
-> -                       btrfs_put_block_group(cache);
-> -                       goto error;
-> -               }
-> +               space_info = update_space_info(info, cache->flags, found_key.offset,
-> +                                                                         btrfs_block_group_used(&cache->item),
-> +                                                                         cache->bytes_super);
+>         space_info = __find_space_info(fs_info, flags);
+>         if (!space_info) {
+> -               ret = update_space_info(fs_info, flags, 0, 0, 0, &space_info);
+> +               ret = create_space_info(fs_info, flags, &space_info);
+>                 BUG_ON(ret); /* -ENOMEM */
+>         }
+> -       BUG_ON(!space_info); /* Logic error */
+
+Isn't removing this BUG_ON a functional change?
+I understand that it shouldn't happen in the current incarnation of
+create_space_info, but that was true before the patch as well
+
 >
->                 cache->space_info = space_info;
->
-> @@ -10212,18 +10202,8 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
->          * the rbtree, update the space info's counters.
+>  again:
+>         spin_lock(&space_info->lock);
+> @@ -5763,7 +5758,7 @@ int btrfs_orphan_reserve_metadata(struct btrfs_trans_handle *trans,
 >          */
->         trace_btrfs_add_block_group(fs_info, cache, 1);
-> -       ret = update_space_info(fs_info, cache->flags, size, bytes_used,
-> -                               cache->bytes_super, &cache->space_info);
+>         u64 num_bytes = btrfs_calc_trans_metadata_size(fs_info, 1);
+>
+> -       trace_btrfs_space_reservation(fs_info, "orphan", btrfs_ino(inode),
+> +       trace_btrfs_space_reservation(fs_info, "orphan", btrfs_ino(inode),
+>                         num_bytes, 1);
+>         return btrfs_block_rsv_migrate(src_rsv, dst_rsv, num_bytes, 1);
+>  }
+> @@ -10191,16 +10186,18 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
+>         }
+>  #endif
+>         /*
+> -        * Call to ensure the corresponding space_info object is created and
+> -        * assigned to our block group, but don't update its counters just yet.
+> -        * We want our bg to be added to the rbtree with its ->space_info set.
+> +        * Ensure the corresponding space_info object is created and
+> +        * assigned to our block group. We want our bg to be added to the rbtree
+> +        * with its ->space_info set.
+>          */
+> -       ret = update_space_info(fs_info, cache->flags, 0, 0, 0,
+> -                               &cache->space_info);
 > -       if (ret) {
 > -               btrfs_remove_free_space_cache(cache);
-> -               spin_lock(&fs_info->block_group_cache_lock);
-> -               rb_erase(&cache->cache_node,
-> -                        &fs_info->block_group_cache_tree);
-> -               RB_CLEAR_NODE(&cache->cache_node);
-> -               spin_unlock(&fs_info->block_group_cache_lock);
 > -               btrfs_put_block_group(cache);
 > -               return ret;
-> -       }
-> +       cache->space_info = update_space_info(fs_info, cache->flags, size,
-> +                                                                                bytes_used, cache->bytes_super);
->         update_global_block_rsv(fs_info);
+> +       cache->space_info = __find_space_info(fs_info, cache->flags);
+> +       if (!cache->space_info) {
+> +               ret = create_space_info(fs_info, cache->flags, &cache->space_info);
+> +               if (ret) {
+> +                       btrfs_remove_free_space_cache(cache);
+> +                       btrfs_put_block_group(cache);
+> +                       return ret;
+> +               }
+>         }
 >
->         __link_block_group(cache->space_info, cache);
+>         ret = btrfs_add_block_group_cache(fs_info, cache);
+> @@ -10774,21 +10771,21 @@ int btrfs_init_space_info(struct btrfs_fs_info *fs_info)
+>                 mixed = 1;
+>
+>         flags = BTRFS_BLOCK_GROUP_SYSTEM;
+> -       ret = update_space_info(fs_info, flags, 0, 0, 0, &space_info);
+> +       ret = create_space_info(fs_info, flags, &space_info);
+>         if (ret)
+>                 goto out;
+>
+>         if (mixed) {
+>                 flags = BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_DATA;
+> -               ret = update_space_info(fs_info, flags, 0, 0, 0, &space_info);
+> +               ret = create_space_info(fs_info, flags, &space_info);
+>         } else {
+>                 flags = BTRFS_BLOCK_GROUP_METADATA;
+> -               ret = update_space_info(fs_info, flags, 0, 0, 0, &space_info);
+> +               ret = create_space_info(fs_info, flags, &space_info);
+>                 if (ret)
+>                         goto out;
+>
+>                 flags = BTRFS_BLOCK_GROUP_DATA;
+> -               ret = update_space_info(fs_info, flags, 0, 0, 0, &space_info);
+> +               ret = create_space_info(fs_info, flags, &space_info);
+>         }
+>  out:
+>         return ret;
 > --
 > 2.7.4
 >

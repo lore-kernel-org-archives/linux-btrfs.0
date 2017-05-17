@@ -1,39 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:34011 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754157AbdERKZQ (ORCPT
+Received: from gateway36.websitewelcome.com ([192.185.187.5]:24335 "EHLO
+        gateway36.websitewelcome.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1754306AbdEQXAC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 May 2017 06:25:16 -0400
-Subject: Re: [PATCH] btrfs: add mount umount logs
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <20170516084149.10147-1-anand.jain@oracle.com>
- <20170516112332.GC4065@suse.cz>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <f4de2abb-d459-8415-9e8f-464832913b36@oracle.com>
-Date: Thu, 18 May 2017 18:31:03 +0800
+        Wed, 17 May 2017 19:00:02 -0400
+Received: from cm4.websitewelcome.com (unknown [108.167.139.16])
+        by gateway36.websitewelcome.com (Postfix) with ESMTP id 6E3594050E1AA
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 May 2017 17:37:45 -0500 (CDT)
+Date: Wed, 17 May 2017 17:37:44 -0500
+Message-ID: <20170517173744.Horde.ZnZtEWjHK8oS0VfIRkwAwkd@gator4166.hostgator.com>
+From: "Gustavo A. R. Silva" <garsilva@embeddedor.com>
+To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: [fs-btrfs] question about apparent useless function call
+Content-Type: text/plain; charset=utf-8; format=flowed; DelSp=Yes
 MIME-Version: 1.0
-In-Reply-To: <20170516112332.GC4065@suse.cz>
-Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
+Hello everybody,
 
-On 05/16/2017 07:23 PM, David Sterba wrote:
-> On Tue, May 16, 2017 at 04:41:49PM +0800, Anand Jain wrote:
->> By looking at the logs we should be able to know when the FS was
->> mounted and unmounted and the options used, so to help forensic
->> investigations.
->
-> Could be a useful feature, but you're adding it to the wrong layer.
+While looking into Coverity ID 1398149 I ran into the following piece  
+of code at fs/btrfs/zlib.c:295:
 
-  Ok proposing to be added to the vfs layer.
+295done:
+296        zlib_inflateEnd(&workspace->strm);
+297        if (data_in)
+298                kunmap(pages_in[page_in_index]);
+299        if (!ret)
+300                zero_fill_bio(orig_bio);
+301        return ret;
+302}
 
-Thanks, Anand
+The issue here is that calling function zlib_inflateEnd() at line 296  
+_seems_ to be useless once this function _seems_ to be only useful for  
+its return value, which is ignored. The same for line 388.
+
+Can someone help me understand what is the purpose of these calls?
+Should them be removed, or the return value actually evaluated?
+
+I'd really appreciate any comment on this.
+
+Thank you!
+--
+Gustavo A. R. Silva
 
 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+
+

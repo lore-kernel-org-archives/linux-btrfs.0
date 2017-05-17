@@ -1,81 +1,205 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:39929 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751104AbdEQXXb (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:18980 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754487AbdEQXXd (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 May 2017 19:23:31 -0400
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v4HNNUO3013271
-        (version=TLSv1 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 May 2017 23:23:30 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by aserv0021.oracle.com (8.13.8/8.14.4) with ESMTP id v4HNNUcx023881
+        Wed, 17 May 2017 19:23:33 -0400
+Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
+        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v4HNNXB4014241
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 May 2017 23:23:33 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v4HNNWD3028528
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 May 2017 23:23:30 GMT
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 May 2017 23:23:32 GMT
 Received: from abhmp0011.oracle.com (abhmp0011.oracle.com [141.146.116.17])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id v4HNNUV1031796
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 May 2017 23:23:30 GMT
+        by aserv0121.oracle.com (8.13.8/8.13.8) with ESMTP id v4HNNUTH006001
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 May 2017 23:23:31 GMT
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/8] Btrfs: new helper btrfs_bio_clone_partial
-Date: Wed, 17 May 2017 16:22:46 -0600
-Message-Id: <20170517222252.29242-3-bo.li.liu@oracle.com>
+Subject: [PATCH 3/8] Btrfs: use bio_clone_bioset_partial to simplify DIO submit
+Date: Wed, 17 May 2017 16:22:47 -0600
+Message-Id: <20170517222252.29242-4-bo.li.liu@oracle.com>
 In-Reply-To: <20170517222252.29242-1-bo.li.liu@oracle.com>
 References: <20170517222252.29242-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This adds a new helper btrfs_bio_clone_partial, it'll allocate a cloned
-bio that only owns a part of the original bio's data.
+Currently when mapping bio to limit bio to a single stripe length, we
+split bio by adding page to bio one by one, but later we don't modify
+the vector of bio at all, thus we can use bio_clone_fast to use the
+original bio vector directly.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/extent_io.c | 18 ++++++++++++++++++
- fs/btrfs/extent_io.h |  2 ++
- 2 files changed, 20 insertions(+)
+ fs/btrfs/inode.c | 121 +++++++++++++++++++++----------------------------------
+ 1 file changed, 46 insertions(+), 75 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 0d4aea4..47c0ee2 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2726,6 +2726,24 @@ struct bio *btrfs_io_bio_alloc(gfp_t gfp_mask, unsigned int nr_iovecs)
- 	return bio;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 134471b..b478ee0 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -8234,16 +8234,6 @@ static void btrfs_end_dio_bio(struct bio *bio)
+ 	bio_put(bio);
  }
  
-+struct bio *btrfs_bio_clone_partial(struct bio *orig, gfp_t gfp_mask,
-+				    int offset, int size)
-+{
-+	struct bio *bio;
-+	struct btrfs_io_bio *btrfs_bio;
-+
-+	/* this will never fail when it's backed by a bioset */
-+	bio = bio_clone_fast(orig, gfp_mask, btrfs_bioset);
-+	ASSERT(bio);
-+
-+	btrfs_bio = btrfs_io_bio(bio);
-+	btrfs_bio->csum = NULL;
-+	btrfs_bio->csum_allocated = NULL;
-+	btrfs_bio->end_io = NULL;
-+
-+	bio_trim(bio, offset >> 9, size >> 9);
-+	return bio;
-+}
+-static struct bio *btrfs_dio_bio_alloc(struct block_device *bdev,
+-				       u64 first_sector, gfp_t gfp_flags)
+-{
+-	struct bio *bio;
+-	bio = btrfs_bio_alloc(bdev, first_sector, BIO_MAX_PAGES, gfp_flags);
+-	if (bio)
+-		bio_associate_current(bio);
+-	return bio;
+-}
+-
+ static inline int btrfs_lookup_and_bind_dio_csum(struct inode *inode,
+ 						 struct btrfs_dio_private *dip,
+ 						 struct bio *bio,
+@@ -8331,26 +8321,25 @@ static int btrfs_submit_direct_hook(struct btrfs_dio_private *dip,
+ 	struct inode *inode = dip->inode;
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+-	struct bio *bio;
++	struct bio *bio = NULL;
+ 	struct bio *orig_bio = dip->orig_bio;
+-	struct bio_vec *bvec;
+ 	u64 start_sector = orig_bio->bi_iter.bi_sector;
+ 	u64 file_offset = dip->logical_offset;
+-	u64 submit_len = 0;
+ 	u64 map_length;
+-	u32 blocksize = fs_info->sectorsize;
+ 	int async_submit = 0;
+-	int nr_sectors;
++	u64 submit_len;
++	int clone_offset = 0;
++	int clone_len;
+ 	int ret;
+-	int i, j;
  
- static int __must_check submit_one_bio(struct bio *bio, int mirror_num,
- 				       unsigned long bio_flags)
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 3e4fad4..b2235b5 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -460,6 +460,8 @@ btrfs_bio_alloc(struct block_device *bdev, u64 first_sector, int nr_vecs,
- 		gfp_t gfp_flags);
- struct bio *btrfs_io_bio_alloc(gfp_t gfp_mask, unsigned int nr_iovecs);
- struct bio *btrfs_bio_clone(struct bio *bio, gfp_t gfp_mask);
-+struct bio *btrfs_bio_clone_partial(struct bio *orig, gfp_t gfp_mask,
-+				    int offset, int size);
+ 	map_length = orig_bio->bi_iter.bi_size;
++	submit_len = map_length;
+ 	ret = btrfs_map_block(fs_info, btrfs_op(orig_bio), start_sector << 9,
+ 			      &map_length, NULL, 0);
+ 	if (ret)
+ 		return -EIO;
  
- struct btrfs_fs_info;
- struct btrfs_inode;
+-	if (map_length >= orig_bio->bi_iter.bi_size) {
++	if (map_length >= submit_len) {
+ 		bio = orig_bio;
+ 		dip->flags |= BTRFS_DIO_ORIG_BIO_SUBMITTED;
+ 		goto submit;
+@@ -8362,70 +8351,52 @@ static int btrfs_submit_direct_hook(struct btrfs_dio_private *dip,
+ 	else
+ 		async_submit = 1;
+ 
+-	bio = btrfs_dio_bio_alloc(orig_bio->bi_bdev, start_sector, GFP_NOFS);
+-	if (!bio)
+-		return -ENOMEM;
+-
+-	bio->bi_opf = orig_bio->bi_opf;
+-	bio->bi_private = dip;
+-	bio->bi_end_io = btrfs_end_dio_bio;
+-	btrfs_io_bio(bio)->logical = file_offset;
++	/* bio split */
++	ASSERT(map_length <= INT_MAX);
+ 	atomic_inc(&dip->pending_bios);
++	while (submit_len > 0) {
++		clone_len = min_t(int, submit_len, map_length);
+ 
+-	bio_for_each_segment_all(bvec, orig_bio, j) {
+-		nr_sectors = BTRFS_BYTES_TO_BLKS(fs_info, bvec->bv_len);
+-		i = 0;
+-next_block:
+-		if (unlikely(map_length < submit_len + blocksize ||
+-		    bio_add_page(bio, bvec->bv_page, blocksize,
+-			    bvec->bv_offset + (i * blocksize)) < blocksize)) {
+-			/*
+-			 * inc the count before we submit the bio so
+-			 * we know the end IO handler won't happen before
+-			 * we inc the count. Otherwise, the dip might get freed
+-			 * before we're done setting it up
+-			 */
+-			atomic_inc(&dip->pending_bios);
+-			ret = __btrfs_submit_dio_bio(bio, inode,
+-						     file_offset, skip_sum,
+-						     async_submit);
+-			if (ret) {
+-				bio_put(bio);
+-				atomic_dec(&dip->pending_bios);
+-				goto out_err;
+-			}
++		/*
++		 * This will never fail as it's passing GPF_NOFS and
++		 * the allocation is backed by btrfs_bioset.
++		 */
++		bio = btrfs_bio_clone_partial(orig_bio, GFP_NOFS, clone_offset,
++					      clone_len);
++		bio->bi_private = dip;
++		bio->bi_end_io = btrfs_end_dio_bio;
++		btrfs_io_bio(bio)->logical = file_offset;
++
++		ASSERT(submit_len >= clone_len);
++		submit_len -= clone_len;
++		if (submit_len == 0)
++			break;
+ 
+-			start_sector += submit_len >> 9;
+-			file_offset += submit_len;
++		/*
++		 * Increase the count before we submit the bio so we know
++		 * the end IO handler won't happen before we increase the
++		 * count. Otherwise, the dip might get freed before we're
++		 * done setting it up.
++		 */
++		atomic_inc(&dip->pending_bios);
+ 
+-			submit_len = 0;
++		ret = __btrfs_submit_dio_bio(bio, inode, file_offset, skip_sum,
++					     async_submit);
++		if (ret) {
++			bio_put(bio);
++			atomic_dec(&dip->pending_bios);
++			goto out_err;
++		}
+ 
+-			bio = btrfs_dio_bio_alloc(orig_bio->bi_bdev,
+-						  start_sector, GFP_NOFS);
+-			if (!bio)
+-				goto out_err;
+-			bio->bi_opf = orig_bio->bi_opf;
+-			bio->bi_private = dip;
+-			bio->bi_end_io = btrfs_end_dio_bio;
+-			btrfs_io_bio(bio)->logical = file_offset;
++		clone_offset += clone_len;
++		start_sector += clone_len >> 9;
++		file_offset += clone_len;
+ 
+-			map_length = orig_bio->bi_iter.bi_size;
+-			ret = btrfs_map_block(fs_info, btrfs_op(orig_bio),
+-					      start_sector << 9,
+-					      &map_length, NULL, 0);
+-			if (ret) {
+-				bio_put(bio);
+-				goto out_err;
+-			}
+-
+-			goto next_block;
+-		} else {
+-			submit_len += blocksize;
+-			if (--nr_sectors) {
+-				i++;
+-				goto next_block;
+-			}
+-		}
++		map_length = submit_len;
++		ret = btrfs_map_block(fs_info, btrfs_op(orig_bio),
++				      start_sector << 9, &map_length, NULL, 0);
++		if (ret)
++			goto out_err;
+ 	}
+ 
+ submit:
 -- 
 2.9.4
 

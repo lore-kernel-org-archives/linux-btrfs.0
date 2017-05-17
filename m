@@ -1,74 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:37444 "EHLO
+Received: from [195.159.176.226] ([195.159.176.226]:54327 "EHLO
         blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1753880AbdEQJwo (ORCPT
+        with ESMTP id S1751348AbdEQKDN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 May 2017 05:52:44 -0400
+        Wed, 17 May 2017 06:03:13 -0400
 Received: from list by blaine.gmane.org with local (Exim 4.84_2)
         (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1dAvdE-0007nB-4F
-        for linux-btrfs@vger.kernel.org; Wed, 17 May 2017 11:52:36 +0200
+        id 1dAvnO-0004Cz-1d
+        for linux-btrfs@vger.kernel.org; Wed, 17 May 2017 12:03:06 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: RAID 6 corrupted
-Date: Wed, 17 May 2017 09:52:28 +0000 (UTC)
-Message-ID: <pan$3156f$ad60295$88e5604$e6cc7e68@cox.net>
-References: <CA+M=Xp3+YQkeVNLkSZw77zMdia2LwSiaEaR=6Ejs0z2TvW2xwg@mail.gmail.com>
+Subject: Re: btrfs hang with 4.11.1 kernel
+Date: Wed, 17 May 2017 10:02:54 +0000 (UTC)
+Message-ID: <pan$3a41f$57dd0028$589ab08b$36c731eb@cox.net>
+References: <400eaec1e8e4ae2539d4dd8623d43edd@admin.virtall.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Łukasz Wróblewski posted on Wed, 17 May 2017 10:27:53 +0200 as excerpted:
+Tomasz Chmielewski posted on Wed, 17 May 2017 17:44:02 +0900 as excerpted:
 
-> About two years ago I created RAID 6 consisting of 5 disks with BTRFS.
-> One of the disks has crashed.
-> I started to exchange it for another, but I did something wrong.
-> Or at the time, RAID56 support was experimental in BTRFS.
-> There was a situation where I could not mount the partition again.
+> After upgrading to 4.11.1 and running for ~12 hours, btrfs filesystem
+> hanged - most processes on a server accessing the filesystem went into
+> "D" state and blocked.
 > 
-> I decided to put the disks aside and wait for the better tools.
-> A newer version of BTRFS in the hope that I can retrieve the data.
+> The server would not reboot and had to be power cycled.
 > 
-> Currently the situation looks like this:
->  ~ # uname -a
-> Linux localhost 4.10.12-coreos
+> 
+> Previously, it was running 4.10.7 for around 1.5 month without any
+> issues.
+> 
+> The server has ~10 subvolumes and 5-10 snapshots, >220 GB free (about
+> 50% free), runs in RAID-1 mode on SSD disks.
+> 
+> 
+> Is it anything known with 4.11.x?
 
-For anything raid56 related, you'll need at /least/ 4.11, as it has some 
-major raid56 stability patch updates.
+I've not had any issues with 4.11 myself (in fact, unlike 4.10, 4.11 was 
+a rather uneventful kernel development cycle here), and haven't seen any 
+4.11-specific btrfs problems reported here either.
 
-There's still some issues with raid56, the biggest being that unlike most 
-of btrfs, the parity isn't COW, meaning the traditional parity-raid write 
-hole remains as an issue, a BIG issue for btrfs due to its design, but 
-that's not really fixable without a full raid56 rewrite, so it'll remain 
-the case with the existing raid56 mode likely forever, and a new 
-implementation that COWs parity as well may eventually happen.
+Tho Chris Murphy and Hugo may know more, as they do the IRC channel as 
+well, which I don't.
 
-But the patches that went into 4.11 fix the known existing issues other 
-than the usual write hole, and they're effectively mandatory for any 
-attempt at repair or recovery of existing raid56 once there are issues of 
-any sort.  They're not a guarantee of a fix, but before that, any attempt 
-at a fix has a rather good chance of making the problem worse instead of 
-better, so you really do want 4.11 if you're doing btrfs raid56 at all.
+So if it's a 4.11 issue, you're one of the first reports, if not /the/ 
+first report, of it. =:^\
 
-Beyond that, I'll let others more familiar with btrfs raid56 help, but 
-I'd still not recommend it, even with those fixes.  IMO, the existence of 
-the parity-raid write hole simply doesn't work well with btrfs general 
-assumptions, and can't and won't work well until there's a COW-parity 
-based btrfs parity-raid solution, so even with those fixes I wouldn't use 
-it myself, nor can I in good faith recommend it to others.
+Which means it's /probably/ not 4.11 specific.  But as I said, I don't do 
+IRC, so if there's anything reported only there, I'd not know of it.
 
-The best I could recommend is getting off of it, possibly by blowing away 
-the existing btrfs raid56 mode filesystem and recreating as whatever, 
-then restoring from backups.  Of course if you didn't have backups of 
-data on a known experimental btrfs raid56 mode, then as is always the 
-case even on mature filesystems on known good hardware, but even more so 
-given the experimental nature of btrfs raid56, you were deliberately 
-defining the data as not worth the time and trouble to do the backups, so 
-there's nothing really to lose by doing that, since you already saved 
-what you self-evidently considered more important, the time and resources 
-you would have otherwise put into doing that backup and keeping it 
-current.
+(Not being a dev the trace doesn't mean that much to me.)
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

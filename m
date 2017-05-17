@@ -1,205 +1,290 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:18980 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754487AbdEQXXd (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:39946 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754477AbdEQXXd (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 17 May 2017 19:23:33 -0400
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v4HNNXB4014241
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v4HNNWQk013294
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 May 2017 23:23:33 GMT
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 May 2017 23:23:32 GMT
 Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v4HNNWD3028528
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v4HNNWUv028278
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
         for <linux-btrfs@vger.kernel.org>; Wed, 17 May 2017 23:23:32 GMT
 Received: from abhmp0011.oracle.com (abhmp0011.oracle.com [141.146.116.17])
-        by aserv0121.oracle.com (8.13.8/8.13.8) with ESMTP id v4HNNUTH006001
+        by aserv0121.oracle.com (8.13.8/8.13.8) with ESMTP id v4HNNUur006002
         for <linux-btrfs@vger.kernel.org>; Wed, 17 May 2017 23:23:31 GMT
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/8] Btrfs: use bio_clone_bioset_partial to simplify DIO submit
-Date: Wed, 17 May 2017 16:22:47 -0600
-Message-Id: <20170517222252.29242-4-bo.li.liu@oracle.com>
+Subject: [PATCH 4/8] Btrfs: change how we iterate bios in endio
+Date: Wed, 17 May 2017 16:22:48 -0600
+Message-Id: <20170517222252.29242-5-bo.li.liu@oracle.com>
 In-Reply-To: <20170517222252.29242-1-bo.li.liu@oracle.com>
 References: <20170517222252.29242-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently when mapping bio to limit bio to a single stripe length, we
-split bio by adding page to bio one by one, but later we don't modify
-the vector of bio at all, thus we can use bio_clone_fast to use the
-original bio vector directly.
+Since dio submit has used bio_clone_fast, the submitted bio may not have a
+reliable bi_vcnt, for the bio vector iterations in checksum related
+functions, bio->bi_iter is not modified yet and it's safe to use
+bio_for_each_segment, while for those bio vector iterations in dio's read
+endio, we now save a copy of bvec_iter in struct btrfs_io_bio when cloning
+bios and use the helper __bio_for_each_segment with the saved bvec_iter to
+access each bvec.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/inode.c | 121 +++++++++++++++++++++----------------------------------
- 1 file changed, 46 insertions(+), 75 deletions(-)
+ fs/btrfs/extent_io.c |  1 +
+ fs/btrfs/file-item.c | 31 +++++++++++++++----------------
+ fs/btrfs/inode.c     | 35 +++++++++++++++++++----------------
+ fs/btrfs/volumes.h   |  1 +
+ 4 files changed, 36 insertions(+), 32 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 134471b..b478ee0 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -8234,16 +8234,6 @@ static void btrfs_end_dio_bio(struct bio *bio)
- 	bio_put(bio);
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 47c0ee2..eb5229e 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2742,6 +2742,7 @@ struct bio *btrfs_bio_clone_partial(struct bio *orig, gfp_t gfp_mask,
+ 	btrfs_bio->end_io = NULL;
+ 
+ 	bio_trim(bio, offset >> 9, size >> 9);
++	btrfs_bio->iter = bio->bi_iter;
+ 	return bio;
  }
  
--static struct bio *btrfs_dio_bio_alloc(struct block_device *bdev,
--				       u64 first_sector, gfp_t gfp_flags)
--{
--	struct bio *bio;
--	bio = btrfs_bio_alloc(bdev, first_sector, BIO_MAX_PAGES, gfp_flags);
--	if (bio)
--		bio_associate_current(bio);
--	return bio;
--}
--
- static inline int btrfs_lookup_and_bind_dio_csum(struct inode *inode,
- 						 struct btrfs_dio_private *dip,
- 						 struct bio *bio,
-@@ -8331,26 +8321,25 @@ static int btrfs_submit_direct_hook(struct btrfs_dio_private *dip,
- 	struct inode *inode = dip->inode;
+diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+index 64fcb31..9f6062c 100644
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -164,7 +164,8 @@ static int __btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio,
+ 				   u64 logical_offset, u32 *dst, int dio)
+ {
  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
--	struct bio *bio;
-+	struct bio *bio = NULL;
- 	struct bio *orig_bio = dip->orig_bio;
 -	struct bio_vec *bvec;
- 	u64 start_sector = orig_bio->bi_iter.bi_sector;
- 	u64 file_offset = dip->logical_offset;
--	u64 submit_len = 0;
- 	u64 map_length;
--	u32 blocksize = fs_info->sectorsize;
- 	int async_submit = 0;
--	int nr_sectors;
-+	u64 submit_len;
-+	int clone_offset = 0;
-+	int clone_len;
- 	int ret;
++	struct bio_vec bvec;
++	struct bvec_iter iter;
+ 	struct btrfs_io_bio *btrfs_bio = btrfs_io_bio(bio);
+ 	struct btrfs_csum_item *item = NULL;
+ 	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
+@@ -177,7 +178,7 @@ static int __btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio,
+ 	u64 page_bytes_left;
+ 	u32 diff;
+ 	int nblocks;
+-	int count = 0, i;
++	int count = 0;
+ 	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
+ 
+ 	path = btrfs_alloc_path();
+@@ -206,8 +207,6 @@ static int __btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio,
+ 	if (bio->bi_iter.bi_size > PAGE_SIZE * 8)
+ 		path->reada = READA_FORWARD;
+ 
+-	WARN_ON(bio->bi_vcnt <= 0);
+-
+ 	/*
+ 	 * the free space stuff is only read when it hasn't been
+ 	 * updated in the current transaction.  So, we can safely
+@@ -223,13 +222,13 @@ static int __btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio,
+ 	if (dio)
+ 		offset = logical_offset;
+ 
+-	bio_for_each_segment_all(bvec, bio, i) {
+-		page_bytes_left = bvec->bv_len;
++	bio_for_each_segment(bvec, bio, iter) {
++		page_bytes_left = bvec.bv_len;
+ 		if (count)
+ 			goto next;
+ 
+ 		if (!dio)
+-			offset = page_offset(bvec->bv_page) + bvec->bv_offset;
++			offset = page_offset(bvec.bv_page) + bvec.bv_offset;
+ 		count = btrfs_find_ordered_sum(inode, offset, disk_bytenr,
+ 					       (u32 *)csum, nblocks);
+ 		if (count)
+@@ -440,15 +439,15 @@ int btrfs_csum_one_bio(struct inode *inode, struct bio *bio,
+ 	struct btrfs_ordered_sum *sums;
+ 	struct btrfs_ordered_extent *ordered = NULL;
+ 	char *data;
+-	struct bio_vec *bvec;
++	struct bvec_iter iter;
++	struct bio_vec bvec;
+ 	int index;
+ 	int nr_sectors;
 -	int i, j;
+ 	unsigned long total_bytes = 0;
+ 	unsigned long this_sum_bytes = 0;
++	int i;
+ 	u64 offset;
  
- 	map_length = orig_bio->bi_iter.bi_size;
-+	submit_len = map_length;
- 	ret = btrfs_map_block(fs_info, btrfs_op(orig_bio), start_sector << 9,
- 			      &map_length, NULL, 0);
- 	if (ret)
+-	WARN_ON(bio->bi_vcnt <= 0);
+ 	sums = kzalloc(btrfs_ordered_sum_size(fs_info, bio->bi_iter.bi_size),
+ 		       GFP_NOFS);
+ 	if (!sums)
+@@ -465,19 +464,19 @@ int btrfs_csum_one_bio(struct inode *inode, struct bio *bio,
+ 	sums->bytenr = (u64)bio->bi_iter.bi_sector << 9;
+ 	index = 0;
+ 
+-	bio_for_each_segment_all(bvec, bio, j) {
++	bio_for_each_segment(bvec, bio, iter) {
+ 		if (!contig)
+-			offset = page_offset(bvec->bv_page) + bvec->bv_offset;
++			offset = page_offset(bvec.bv_page) + bvec.bv_offset;
+ 
+ 		if (!ordered) {
+ 			ordered = btrfs_lookup_ordered_extent(inode, offset);
+ 			BUG_ON(!ordered); /* Logic error */
+ 		}
+ 
+-		data = kmap_atomic(bvec->bv_page);
++		data = kmap_atomic(bvec.bv_page);
+ 
+ 		nr_sectors = BTRFS_BYTES_TO_BLKS(fs_info,
+-						 bvec->bv_len + fs_info->sectorsize
++						 bvec.bv_len + fs_info->sectorsize
+ 						 - 1);
+ 
+ 		for (i = 0; i < nr_sectors; i++) {
+@@ -504,12 +503,12 @@ int btrfs_csum_one_bio(struct inode *inode, struct bio *bio,
+ 					+ total_bytes;
+ 				index = 0;
+ 
+-				data = kmap_atomic(bvec->bv_page);
++				data = kmap_atomic(bvec.bv_page);
+ 			}
+ 
+ 			sums->sums[index] = ~(u32)0;
+ 			sums->sums[index]
+-				= btrfs_csum_data(data + bvec->bv_offset
++				= btrfs_csum_data(data + bvec.bv_offset
+ 						+ (i * fs_info->sectorsize),
+ 						sums->sums[index],
+ 						fs_info->sectorsize);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index b478ee0..997ee7d 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -7857,6 +7857,7 @@ static int dio_read_error(struct inode *inode, struct bio *failed_bio,
+ 	struct bio *bio;
+ 	int isector;
+ 	int read_mode = 0;
++	int segs;
+ 	int ret;
+ 
+ 	BUG_ON(bio_op(failed_bio) == REQ_OP_WRITE);
+@@ -7872,9 +7873,9 @@ static int dio_read_error(struct inode *inode, struct bio *failed_bio,
  		return -EIO;
- 
--	if (map_length >= orig_bio->bi_iter.bi_size) {
-+	if (map_length >= submit_len) {
- 		bio = orig_bio;
- 		dip->flags |= BTRFS_DIO_ORIG_BIO_SUBMITTED;
- 		goto submit;
-@@ -8362,70 +8351,52 @@ static int btrfs_submit_direct_hook(struct btrfs_dio_private *dip,
- 	else
- 		async_submit = 1;
- 
--	bio = btrfs_dio_bio_alloc(orig_bio->bi_bdev, start_sector, GFP_NOFS);
--	if (!bio)
--		return -ENOMEM;
--
--	bio->bi_opf = orig_bio->bi_opf;
--	bio->bi_private = dip;
--	bio->bi_end_io = btrfs_end_dio_bio;
--	btrfs_io_bio(bio)->logical = file_offset;
-+	/* bio split */
-+	ASSERT(map_length <= INT_MAX);
- 	atomic_inc(&dip->pending_bios);
-+	while (submit_len > 0) {
-+		clone_len = min_t(int, submit_len, map_length);
- 
--	bio_for_each_segment_all(bvec, orig_bio, j) {
--		nr_sectors = BTRFS_BYTES_TO_BLKS(fs_info, bvec->bv_len);
--		i = 0;
--next_block:
--		if (unlikely(map_length < submit_len + blocksize ||
--		    bio_add_page(bio, bvec->bv_page, blocksize,
--			    bvec->bv_offset + (i * blocksize)) < blocksize)) {
--			/*
--			 * inc the count before we submit the bio so
--			 * we know the end IO handler won't happen before
--			 * we inc the count. Otherwise, the dip might get freed
--			 * before we're done setting it up
--			 */
--			atomic_inc(&dip->pending_bios);
--			ret = __btrfs_submit_dio_bio(bio, inode,
--						     file_offset, skip_sum,
--						     async_submit);
--			if (ret) {
--				bio_put(bio);
--				atomic_dec(&dip->pending_bios);
--				goto out_err;
--			}
-+		/*
-+		 * This will never fail as it's passing GPF_NOFS and
-+		 * the allocation is backed by btrfs_bioset.
-+		 */
-+		bio = btrfs_bio_clone_partial(orig_bio, GFP_NOFS, clone_offset,
-+					      clone_len);
-+		bio->bi_private = dip;
-+		bio->bi_end_io = btrfs_end_dio_bio;
-+		btrfs_io_bio(bio)->logical = file_offset;
-+
-+		ASSERT(submit_len >= clone_len);
-+		submit_len -= clone_len;
-+		if (submit_len == 0)
-+			break;
- 
--			start_sector += submit_len >> 9;
--			file_offset += submit_len;
-+		/*
-+		 * Increase the count before we submit the bio so we know
-+		 * the end IO handler won't happen before we increase the
-+		 * count. Otherwise, the dip might get freed before we're
-+		 * done setting it up.
-+		 */
-+		atomic_inc(&dip->pending_bios);
- 
--			submit_len = 0;
-+		ret = __btrfs_submit_dio_bio(bio, inode, file_offset, skip_sum,
-+					     async_submit);
-+		if (ret) {
-+			bio_put(bio);
-+			atomic_dec(&dip->pending_bios);
-+			goto out_err;
-+		}
- 
--			bio = btrfs_dio_bio_alloc(orig_bio->bi_bdev,
--						  start_sector, GFP_NOFS);
--			if (!bio)
--				goto out_err;
--			bio->bi_opf = orig_bio->bi_opf;
--			bio->bi_private = dip;
--			bio->bi_end_io = btrfs_end_dio_bio;
--			btrfs_io_bio(bio)->logical = file_offset;
-+		clone_offset += clone_len;
-+		start_sector += clone_len >> 9;
-+		file_offset += clone_len;
- 
--			map_length = orig_bio->bi_iter.bi_size;
--			ret = btrfs_map_block(fs_info, btrfs_op(orig_bio),
--					      start_sector << 9,
--					      &map_length, NULL, 0);
--			if (ret) {
--				bio_put(bio);
--				goto out_err;
--			}
--
--			goto next_block;
--		} else {
--			submit_len += blocksize;
--			if (--nr_sectors) {
--				i++;
--				goto next_block;
--			}
--		}
-+		map_length = submit_len;
-+		ret = btrfs_map_block(fs_info, btrfs_op(orig_bio),
-+				      start_sector << 9, &map_length, NULL, 0);
-+		if (ret)
-+			goto out_err;
  	}
  
- submit:
+-	if ((failed_bio->bi_vcnt > 1)
+-		|| (failed_bio->bi_io_vec->bv_len
+-			> btrfs_inode_sectorsize(inode)))
++	segs = bio_segments(failed_bio);
++	if (segs > 1 ||
++	    (failed_bio->bi_io_vec->bv_len > btrfs_inode_sectorsize(inode)))
+ 		read_mode |= REQ_FAILFAST_DEV;
+ 
+ 	isector = start - btrfs_io_bio(failed_bio)->logical;
+@@ -7932,13 +7933,13 @@ static int __btrfs_correct_data_nocsum(struct inode *inode,
+ 				       struct btrfs_io_bio *io_bio)
+ {
+ 	struct btrfs_fs_info *fs_info;
+-	struct bio_vec *bvec;
++	struct bio_vec bvec;
++	struct bvec_iter iter;
+ 	struct btrfs_retry_complete done;
+ 	u64 start;
+ 	unsigned int pgoff;
+ 	u32 sectorsize;
+ 	int nr_sectors;
+-	int i;
+ 	int ret;
+ 
+ 	fs_info = BTRFS_I(inode)->root->fs_info;
+@@ -7946,17 +7947,18 @@ static int __btrfs_correct_data_nocsum(struct inode *inode,
+ 
+ 	start = io_bio->logical;
+ 	done.inode = inode;
++	io_bio->bio.bi_iter = io_bio->iter;
+ 
+-	bio_for_each_segment_all(bvec, &io_bio->bio, i) {
+-		nr_sectors = BTRFS_BYTES_TO_BLKS(fs_info, bvec->bv_len);
+-		pgoff = bvec->bv_offset;
++	bio_for_each_segment(bvec, &io_bio->bio, iter) {
++		nr_sectors = BTRFS_BYTES_TO_BLKS(fs_info, bvec.bv_len);
++		pgoff = bvec.bv_offset;
+ 
+ next_block_or_try_again:
+ 		done.uptodate = 0;
+ 		done.start = start;
+ 		init_completion(&done.done);
+ 
+-		ret = dio_read_error(inode, &io_bio->bio, bvec->bv_page,
++		ret = dio_read_error(inode, &io_bio->bio, bvec.bv_page,
+ 				pgoff, start, start + sectorsize - 1,
+ 				io_bio->mirror_num,
+ 				btrfs_retry_endio_nocsum, &done);
+@@ -8021,7 +8023,8 @@ static int __btrfs_subio_endio_read(struct inode *inode,
+ 				    struct btrfs_io_bio *io_bio, int err)
+ {
+ 	struct btrfs_fs_info *fs_info;
+-	struct bio_vec *bvec;
++	struct bio_vec bvec;
++	struct bvec_iter iter;
+ 	struct btrfs_retry_complete done;
+ 	u64 start;
+ 	u64 offset = 0;
+@@ -8029,7 +8032,6 @@ static int __btrfs_subio_endio_read(struct inode *inode,
+ 	int nr_sectors;
+ 	unsigned int pgoff;
+ 	int csum_pos;
+-	int i;
+ 	int uptodate = !!(err == 0);
+ 	int ret;
+ 
+@@ -8039,16 +8041,17 @@ static int __btrfs_subio_endio_read(struct inode *inode,
+ 	err = 0;
+ 	start = io_bio->logical;
+ 	done.inode = inode;
++	io_bio->bio.bi_iter = io_bio->iter;
+ 
+-	bio_for_each_segment_all(bvec, &io_bio->bio, i) {
+-		nr_sectors = BTRFS_BYTES_TO_BLKS(fs_info, bvec->bv_len);
++	bio_for_each_segment(bvec, &io_bio->bio, iter) {
++		nr_sectors = BTRFS_BYTES_TO_BLKS(fs_info, bvec.bv_len);
+ 
+-		pgoff = bvec->bv_offset;
++		pgoff = bvec.bv_offset;
+ next_block:
+ 		if (uptodate) {
+ 			csum_pos = BTRFS_BYTES_TO_BLKS(fs_info, offset);
+ 			ret = __readpage_endio_check(inode, io_bio, csum_pos,
+-						     bvec->bv_page, pgoff,
++						     bvec.bv_page, pgoff,
+ 						     start, sectorsize);
+ 			if (likely(!ret))
+ 				goto next;
+@@ -8058,7 +8061,7 @@ static int __btrfs_subio_endio_read(struct inode *inode,
+ 		done.start = start;
+ 		init_completion(&done.done);
+ 
+-		ret = dio_read_error(inode, &io_bio->bio, bvec->bv_page,
++		ret = dio_read_error(inode, &io_bio->bio, bvec.bv_page,
+ 				pgoff, start, start + sectorsize - 1,
+ 				io_bio->mirror_num,
+ 				btrfs_retry_endio, &done);
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 59be812..558d73c 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -280,6 +280,7 @@ struct btrfs_io_bio {
+ 	u8 csum_inline[BTRFS_BIO_INLINE_CSUM_SIZE];
+ 	u8 *csum_allocated;
+ 	btrfs_io_bio_end_io_t *end_io;
++	struct bvec_iter iter;
+ 	struct bio bio;
+ };
+ 
 -- 
 2.9.4
 

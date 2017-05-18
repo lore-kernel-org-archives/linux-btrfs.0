@@ -1,75 +1,182 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 1.mo173.mail-out.ovh.net ([178.33.111.180]:38642 "EHLO
-        1.mo173.mail-out.ovh.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933553AbdERK7q (ORCPT
+Received: from washoe.dartmouth.edu ([129.170.30.229]:56354 "EHLO
+        smtp.onerussian.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753786AbdEROCg (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 May 2017 06:59:46 -0400
-Received: from player739.ha.ovh.net (b9.ovh.net [213.186.33.59])
-        by mo173.mail-out.ovh.net (Postfix) with ESMTP id 063843F7D6
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 May 2017 09:22:58 +0200 (CEST)
-Subject: Re: Can't remount a BTRFS partition read write after a drive failure
-To: "Ivan Sizov <sivan606@gmail.com>;Chris Murphy"
-        <lists@colorremedies.com>
-References: <84408781-722d-6c87-b510-0497c4f36443@chicoree.fr>
- <CAMG9ccz555xia-FpqGsoy-uzYXcyYwG6H0EC18O2AC9yLUuBpg@mail.gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Sylvain Leroux <sylvain@chicoree.fr>
-Message-ID: <d76bbe8f-af4a-36a0-2eb0-45384a8fee79@chicoree.fr>
-Date: Thu, 18 May 2017 09:22:55 +0200
+        Thu, 18 May 2017 10:02:36 -0400
+Received: from hopa.kiewit.dartmouth.edu ([129.170.31.55] helo=localhost)
+        by smtp.onerussian.com with esmtpsa (TLS1.2:RSA_AES_256_CBC_SHA1:256)
+        (Exim 4.80)
+        (envelope-from <yoh@onerussian.com>)
+        id 1dBLgS-0003Eh-Tm
+        for linux-btrfs@vger.kernel.org; Thu, 18 May 2017 09:41:42 -0400
+Date: Thu, 18 May 2017 09:41:35 -0400
+From: Yaroslav Halchenko <yoh@onerussian.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-ID: <20170518134135.sk6dha6kayv6tar3@hopa.kiewit.dartmouth.edu>
 MIME-Version: 1.0
-In-Reply-To: <CAMG9ccz555xia-FpqGsoy-uzYXcyYwG6H0EC18O2AC9yLUuBpg@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8
+Subject: confusing "no space left" -- how to troubleshoot and "be prepared"?
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/17/2017 09:19 AM, Ivan Sizov wrote:
-> > The drive is not reliable. And I noticed when there is an error and the
-> > USB device appears to be dead to the kernel, I am later unable to
-> > remount rw the drive. I can mount it read only though.
-> > This seems to be a systematic behavior. And it occasionally happens when
-> > the computer wake up from sleep and the drive is still attached.
-> > Power cycling the disk do not change anything, but restarting the
-> > computer "solves" the issue.
->
-> (Maybe offtop) Seems like your disk's USB-SATA controller is almost
-dead. You shouldn't further use it with USB because this lead to data
-corruption. Detach HDD from case and plug directly to a SATA port or
-replace the controller.
+our python-based program crashed with
+
+  File "/home/yoh/proj/datalad/datalad/venv-tests/local/lib/python2.7/site-packages/gitdb/stream.py", line 695, in write
+    os.write(self._fd, data)
+OSError: [Errno 28] No space left on device
+
+but as far as I could see there still should be both data and meta data
+space left:
+
+$> sudo btrfs fi df $PWD
+Data, RAID0: total=33.55TiB, used=30.56TiB
+System, RAID1: total=32.00MiB, used=1.81MiB
+Metadata, RAID1: total=83.00GiB, used=64.81GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+$> sudo btrfs fi usage $PWD
+Overall:
+    Device size:                  43.66TiB
+    Device allocated:             33.71TiB
+    Device unallocated:            9.95TiB
+    Device missing:                  0.00B
+    Used:                         30.69TiB
+    Free (estimated):             12.94TiB      (min: 7.96TiB)
+    Data ratio:                       1.00
+    Metadata ratio:                   2.00
+    Global reserve:              512.00MiB      (used: 0.00B)
+
+Data,RAID0: Size:33.55TiB, Used:30.56TiB
+   /dev/md10       8.39TiB
+   /dev/md11       8.39TiB
+   /dev/md12       8.39TiB
+   /dev/md13       8.39TiB
+
+Metadata,RAID1: Size:83.00GiB, Used:64.81GiB
+   /dev/md10      41.00GiB
+   /dev/md11      42.00GiB
+   /dev/md12      41.00GiB
+   /dev/md13      42.00GiB
+
+System,RAID1: Size:32.00MiB, Used:1.81MiB
+   /dev/md10      32.00MiB
+   /dev/md12      32.00MiB
+
+Unallocated:
+   /dev/md10       2.49TiB
+   /dev/md11       2.49TiB
+   /dev/md12       2.49TiB
+   /dev/md13       2.49TiB
+
+(so it is RAID0 for data sitting on top of software RAID5s)
+
+I am running Debian jessie with custom built kernel
+Linux smaug 4.9.0-rc2+ #3 SMP Fri Oct 28 20:59:01 EDT 2016 x86_64 GNU/Linux
+btrfs-tools were 4.6.1-1~bpo8+1 , FWIW upgraded to 4.7.3-1~bpo8+1 
+I do have a fair number of subvolumes (794! snapshots + used by docker)
+
+so what could be the catch -- currently can't even touch a new file (can
+touch existing ;-/ )?  meanwhile removing some snapshots, syncing and
+rebooting in attempt to mitigate not usable server
 
 
-Thank you Chris, Ivan, for your answers.
+looking at the logs, I see that there were some traces logged a day ago:
 
-I understand the drive appears dead to the kernel and the safest
-solution is to mount back the drive read only.
+...
+May 17 01:47:41 smaug kernel: INFO: task kworker/u33:15:318164 blocked for more than 120 seconds.
+May 17 01:47:41 smaug kernel:       Tainted: G          I  L  4.9.0-rc2+ #3
+May 17 01:47:41 smaug kernel: "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+May 17 01:47:41 smaug kernel: kworker/u33:15  D ffffffff815e6fd3     0 318164      2 0x00000000
+May 17 01:47:41 smaug kernel: Workqueue: writeback wb_workfn (flush-btrfs-1)
+May 17 01:47:41 smaug kernel:  ffff88102dba3400 0000000000000000 ffff8810390741c0 ffff88103fc98740
+May 17 01:47:41 smaug kernel:  ffff881036640e80 ffffc9002af334e8 ffffffff815e6fd3 0000000000000000
+May 17 01:47:41 smaug kernel:  ffff881038800668 ffffc9002af33540 ffff881036640e80 ffff881038800668
+May 17 01:47:41 smaug kernel: Call Trace:
+May 17 01:47:41 smaug kernel:  [<ffffffff815e6fd3>] ? __schedule+0x1a3/0x670
+May 17 01:47:41 smaug kernel:  [<ffffffff815e74d2>] ? schedule+0x32/0x80
+May 17 01:47:41 smaug kernel:  [<ffffffffa030d180>] ? raid5_get_active_stripe+0x4f0/0x670 [raid456]
+May 17 01:47:41 smaug kernel:  [<ffffffff810bfc30>] ? wake_up_atomic_t+0x30/0x30
+May 17 01:47:41 smaug kernel:  [<ffffffffa030d48d>] ? raid5_make_request+0x18d/0xc40 [raid456]
+May 17 01:47:41 smaug kernel:  [<ffffffff810bfc30>] ? wake_up_atomic_t+0x30/0x30
+May 17 01:47:41 smaug kernel:  [<ffffffffa00f2f85>] ? md_make_request+0xf5/0x230 [md_mod]
+May 17 01:47:41 smaug kernel:  [<ffffffff812f2566>] ? generic_make_request+0x106/0x1f0
+May 17 01:47:41 smaug kernel:  [<ffffffff812f26c6>] ? submit_bio+0x76/0x150
+May 17 01:47:41 smaug kernel:  [<ffffffffa03a535e>] ? btrfs_map_bio+0x10e/0x370 [btrfs]
+May 17 01:47:41 smaug kernel:  [<ffffffffa0377f18>] ? btrfs_submit_bio_hook+0xb8/0x190 [btrfs]
+May 17 01:47:41 smaug kernel:  [<ffffffffa0393746>] ? submit_one_bio+0x66/0x90 [btrfs]
+May 17 01:47:41 smaug kernel:  [<ffffffffa0397798>] ? submit_extent_page+0x138/0x310 [btrfs]
+May 17 01:47:41 smaug kernel:  [<ffffffffa0397500>] ? end_extent_writepage+0x80/0x80 [btrfs]
+May 17 01:47:41 smaug kernel:  [<ffffffffa0397d90>] ? __extent_writepage_io+0x420/0x4e0 [btrfs]
+May 17 01:47:41 smaug kernel:  [<ffffffffa0397500>] ? end_extent_writepage+0x80/0x80 [btrfs]
+May 17 01:47:41 smaug kernel:  [<ffffffffa0398059>] ? __extent_writepage+0x209/0x340 [btrfs]
+May 17 01:47:41 smaug kernel:  [<ffffffffa0398412>] ? extent_write_cache_pages.isra.40.constprop.51+0x282/0x380 [btrfs]
+May 17 01:47:41 smaug kernel:  [<ffffffffa039a31d>] ? extent_writepages+0x5d/0x90 [btrfs]
+May 17 01:47:41 smaug kernel:  [<ffffffffa037a420>] ? btrfs_set_bit_hook+0x210/0x210 [btrfs]
+May 17 01:47:41 smaug kernel:  [<ffffffff81230d6d>] ? __writeback_single_inode+0x3d/0x330
+May 17 01:47:41 smaug kernel:  [<ffffffff8123152d>] ? writeback_sb_inodes+0x23d/0x470
+May 17 01:47:41 smaug kernel:  [<ffffffff812317e7>] ? __writeback_inodes_wb+0x87/0xb0
+May 17 01:47:41 smaug kernel:  [<ffffffff81231b62>] ? wb_writeback+0x282/0x310
+May 17 01:47:41 smaug kernel:  [<ffffffff812324d8>] ? wb_workfn+0x2b8/0x3e0
+May 17 01:47:41 smaug kernel:  [<ffffffff810968bb>] ? process_one_work+0x14b/0x410
+May 17 01:47:41 smaug kernel:  [<ffffffff81097375>] ? worker_thread+0x65/0x4a0
+May 17 01:47:41 smaug kernel:  [<ffffffff81097310>] ? rescuer_thread+0x340/0x340
+May 17 01:47:41 smaug kernel:  [<ffffffff8109c670>] ? kthread+0xe0/0x100
+May 17 01:47:41 smaug kernel:  [<ffffffff8102b76b>] ? __switch_to+0x2bb/0x700
+May 17 01:47:41 smaug kernel:  [<ffffffff8109c590>] ? kthread_park+0x60/0x60
+May 17 01:47:41 smaug kernel:  [<ffffffff815ec0b5>] ? ret_from_fork+0x25/0x30
+May 17 01:47:59 smaug kernel: NMI watchdog: BUG: soft lockup - CPU#5 stuck for 23s! [kswapd1:126]
+...
 
-But...
+May 17 02:03:08 smaug kernel: NMI watchdog: BUG: soft lockup - CPU#13 stuck for 23s! [kswapd1:126]
+May 17 02:03:08 smaug kernel: Modules linked in: cpufreq_userspace cpufreq_conservative cpufreq_powersave xt_pkttype nf_log_ipv4 nf_log_common xt_tcpudp ip6table_mangle iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat xt_TCPMSS xt_LOG ipt_REJECT nf_reject_ipv4 iptable_mangle xt_multiport xt_state xt_limit xt_conntrack nf_conntrack_ftp nf_conntrack ip6table_filter ip6_tables iptable_filter ip_tables x_tables nfsd auth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc binfmt_misc ipmi_watchdog iTCO_wdt iTCO_vendor_support intel_rapl sb_edac edac_core x86_pkg_temp_thermal coretemp kvm_intel kvm ast irqbypass ttm crct10dif_pclmul drm_kms_helper crc32_pclmul ghash_clmulni_intel snd_pcm drm snd_timer snd i2c_algo_bit soundcore aesni_intel aes_x86_64 lrw mei_me gf128mul joydev pcspkr evdev glue_helperss scsi_transport_sas ahci libahci xhci_pci ehci_pci libata xhci_hcd ehci_hcd usbcore ixgbe scsi_mod dca ptp pps_core mdio fjes name: Supermicro X10DRi/X10DRI-T, BIOS 1.0b 09/17/2014
+May 17 02:03:08 smaug kernel: task: ffff8810365c8f40 task.stack: ffffc9000d26c000
+May 17 02:03:08 smaug kernel: RIP: 0010:[<ffffffff8119731c>]  [<ffffffff8119731c>] shrink_active_list+0x14c/0x360
+May 17 02:03:08 smaug kernel: RSP: 0018:ffffc9000d26fbc0  EFLAGS: 00000206
+May 17 02:03:08 smaug kernel: RAX: 0000000000000064 RBX: ffffc9000d26fe01 RCX: 000000000001bc87
+May 17 02:03:08 smaug kernel: RDX: 0000000000463781 RSI: 0000000000000007 RDI: ffff88207fffc800
+May 17 02:03:08 smaug kernel: RBP: ffffc9000d26fc10 R08: 000000000001bc80 R09: 0000000000000003
+May 17 02:03:08 smaug kernel: R10: 0000000000000001 R11: 0000000000000000 R12: 0000000000000000
+May 17 02:03:08 smaug kernel: R13: ffffc9000d26fe58 R14: ffffc9000d26fc30 R15: ffff88203936d200
+May 17 02:03:08 smaug kernel: FS:  0000000000000000(0000) GS:ffff88207fd40000(0000) knlGS:0000000000000000
+May 17 02:03:08 smaug kernel: CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+May 17 02:03:08 smaug kernel: CR2: 00002b64de150000 CR3: 0000000001a07000 CR4: 00000000001406e0
+May 17 02:03:08 smaug kernel: Stack:
+May 17 02:03:08 smaug kernel:  ffff881600000000 ffff882000000003 ffff88207fff9000 ffff88203936d200
+May 17 02:03:08 smaug kernel:  ffff88207fffc800 0000000000000000 0000000600000003 ffff88203936d208
+May 17 02:03:08 smaug kernel:  0000000000463781 0000000000000000 ffffc9000d26fc10 ffffc9000d26fc10
+May 17 02:03:08 smaug kernel: Call Trace:
+May 17 02:03:08 smaug kernel:  [<ffffffff81197b3f>] ? shrink_node_memcg+0x60f/0x780
+May 17 02:03:08 smaug kernel:  [<ffffffff81197d92>] ? shrink_node+0xe2/0x320
+May 17 02:03:08 smaug kernel:  [<ffffffff81198dd8>] ? kswapd+0x318/0x700
+May 17 02:03:08 smaug kernel:  [<ffffffff81198ac0>] ? mem_cgroup_shrink_node+0x180/0x180
+May 17 02:03:08 smaug kernel:  [<ffffffff8109c670>] ? kthread+0xe0/0x100
+May 17 02:03:08 smaug kernel:  [<ffffffff8102b76b>] ? __switch_to+0x2bb/0x700
+May 17 02:03:08 smaug kernel:  [<ffffffff8109c590>] ? kthread_park+0x60/0x60
+May 17 02:03:08 smaug kernel:  [<ffffffff815ec0b5>] ? ret_from_fork+0x25/0x30
+May 17 02:03:08 smaug kernel: Code: 38 4c 01 66 60 49 83 7d 18 00 0f 84 0d 02 00 00 65 48 01 15 4f d3 e7 7e 48 8b 7c 24 20 c6 07 00 0f 1f 40 00 fb 66 0f 1f 44 00 00 <45> 31 e4 48 8b 44 24 50 48 39 c5 0f 84 a3 00 00 00 e8 9e 03 45 
 
-To give you more details about my particular use case, we are
-investigating the resilience of various FS to hardware failures. The
-disk is (presumably) working but we are using a modified USB cable to
-produce bus errors on purpose.
+not sure if anyhow related but somewhat strange is that swap is not used a tiny bit:
 
-If I understand it well, when we switch the cable to "faulty mode", the
-kernels detects usb errors or something, consider the device as dead,
-and try to reset the bus. On that event, the drive will remount ro.
+$> free
+             total       used       free     shared    buffers     cached
+Mem:     131934232  124357760    7576472       3816     999100  112204512
+-/+ buffers/cache:   11154148  120780084
+Swap:    140623856          0  140623856
 
-However, when we switch back the cable to "Normal mode", we are unable
-to forcefully remount the drive rw. Even if we replace our cable by a
-genuine one, and/or if we power cycle the drive. BTRFS just refuse to
-remount rw that drive. FWIW, BTRFS is the only filesystems we've tested
-considering a faulty drive as _definitively_ faulty without any hope for
-the administrator to override that.
-
-
-Here we are in a very special use case. But I think we would see a
-similar behavior if some drive case or cable was dying, the
-administrator replaced it, but was unable to remount rw the drive after
-having fixed the problem. Or did I missed something?
+$> cat /proc/swaps 
+Filename                                Type            Size    Used    Priority
+/dev/sdp6                               partition       39062524        0       -1
+/dev/sdp5                               partition       31249404        0       -2
+/dev/sdo6                               partition       39062524        0       -4
+/dev/sdo5                               partition       31249404        0       -3
 
 
+
+P.S. Please CC me in replies
 -- 
--- Sylvain Leroux
--- sylvain@chicoree.fr
--- http://www.chicoree.fr
-
-
+Yaroslav O. Halchenko
+Center for Open Neuroscience     http://centerforopenneuroscience.org
+Dartmouth College, 419 Moore Hall, Hinman Box 6207, Hanover, NH 03755
+Phone: +1 (603) 646-9834                       Fax: +1 (603) 646-1419
+WWW:   http://www.linkedin.com/in/yarik        

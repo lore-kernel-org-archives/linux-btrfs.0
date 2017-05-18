@@ -1,352 +1,1003 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([65.50.211.133]:53828 "EHLO
+Received: from bombadil.infradead.org ([65.50.211.133]:56476 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S934141AbdERNSu (ORCPT
+        with ESMTP id S934218AbdERNTG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 May 2017 09:18:50 -0400
+        Thu, 18 May 2017 09:19:06 -0400
 From: Christoph Hellwig <hch@lst.de>
 To: axboe@kernel.dk
 Cc: linux-block@vger.kernel.org, dm-devel@redhat.com,
         linux-btrfs@vger.kernel.org
-Subject: [PATCH 09/15] dm: don't return errnos from ->map
-Date: Thu, 18 May 2017 15:18:06 +0200
-Message-Id: <20170518131812.22956-10-hch@lst.de>
+Subject: [PATCH 14/15] blk-mq: switch ->queue_rq return value to blk_status_t
+Date: Thu, 18 May 2017 15:18:11 +0200
+Message-Id: <20170518131812.22956-15-hch@lst.de>
 In-Reply-To: <20170518131812.22956-1-hch@lst.de>
 References: <20170518131812.22956-1-hch@lst.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Instead use the special DM_MAPIO_KILL return value to return -EIO just
-like we do for the request based path.  Note that dm-log-writes returned
--ENOMEM in a few places, which now becomes -EIO instead.  No consumer
-treats -ENOMEM special so this shouldn't be an issue (and it should
-use a mempool to start with to make guaranteed progress).
+Use the same values for use for request completion errors as the return
+value from ->queue_rq.  BLK_STS_RESOURCE is special cased to cause
+a requeue, and all the others are completed as-is.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- drivers/md/dm-crypt.c         |  4 ++--
- drivers/md/dm-flakey.c        |  4 ++--
- drivers/md/dm-integrity.c     | 12 ++++++------
- drivers/md/dm-log-writes.c    |  4 ++--
- drivers/md/dm-mpath.c         | 13 ++++++++++---
- drivers/md/dm-raid1.c         |  6 +++---
- drivers/md/dm-snap.c          |  8 ++++----
- drivers/md/dm-target.c        |  2 +-
- drivers/md/dm-verity-target.c |  6 +++---
- drivers/md/dm-zero.c          |  4 ++--
- drivers/md/dm.c               | 16 +++++++++++-----
- 11 files changed, 46 insertions(+), 33 deletions(-)
+ block/blk-mq.c                    | 37 ++++++++++++++++------------------
+ drivers/block/loop.c              |  6 +++---
+ drivers/block/mtip32xx/mtip32xx.c | 17 ++++++++--------
+ drivers/block/nbd.c               | 12 ++++-------
+ drivers/block/null_blk.c          |  4 ++--
+ drivers/block/rbd.c               |  4 ++--
+ drivers/block/virtio_blk.c        | 10 +++++-----
+ drivers/block/xen-blkfront.c      |  8 ++++----
+ drivers/md/dm-rq.c                |  8 ++++----
+ drivers/mtd/ubi/block.c           |  6 +++---
+ drivers/nvme/host/core.c          | 14 ++++++-------
+ drivers/nvme/host/fc.c            | 23 +++++++++++----------
+ drivers/nvme/host/nvme.h          |  2 +-
+ drivers/nvme/host/pci.c           | 42 +++++++++++++++++++--------------------
+ drivers/nvme/host/rdma.c          | 26 +++++++++++++-----------
+ drivers/nvme/target/loop.c        | 17 ++++++++--------
+ drivers/scsi/scsi_lib.c           | 30 ++++++++++++++--------------
+ include/linux/blk-mq.h            |  7 ++-----
+ 18 files changed, 131 insertions(+), 142 deletions(-)
 
-diff --git a/drivers/md/dm-crypt.c b/drivers/md/dm-crypt.c
-index ebf9e72d479b..f4b51809db21 100644
---- a/drivers/md/dm-crypt.c
-+++ b/drivers/md/dm-crypt.c
-@@ -2795,10 +2795,10 @@ static int crypt_map(struct dm_target *ti, struct bio *bio)
- 	 * and is aligned to this size as defined in IO hints.
- 	 */
- 	if (unlikely((bio->bi_iter.bi_sector & ((cc->sector_size >> SECTOR_SHIFT) - 1)) != 0))
--		return -EIO;
-+		return DM_MAPIO_KILL;
- 
- 	if (unlikely(bio->bi_iter.bi_size & (cc->sector_size - 1)))
--		return -EIO;
-+		return DM_MAPIO_KILL;
- 
- 	io = dm_per_bio_data(bio, cc->per_bio_data_size);
- 	crypt_io_init(io, cc, bio, dm_target_offset(ti, bio->bi_iter.bi_sector));
-diff --git a/drivers/md/dm-flakey.c b/drivers/md/dm-flakey.c
-index 13305a182611..e8f093b323ce 100644
---- a/drivers/md/dm-flakey.c
-+++ b/drivers/md/dm-flakey.c
-@@ -321,7 +321,7 @@ static int flakey_map(struct dm_target *ti, struct bio *bio)
- 		if (bio_data_dir(bio) == READ) {
- 			if (!fc->corrupt_bio_byte && !test_bit(DROP_WRITES, &fc->flags) &&
- 			    !test_bit(ERROR_WRITES, &fc->flags))
--				return -EIO;
-+				return DM_MAPIO_KILL;
- 			goto map_bio;
- 		}
- 
-@@ -349,7 +349,7 @@ static int flakey_map(struct dm_target *ti, struct bio *bio)
- 		/*
- 		 * By default, error all I/O.
- 		 */
--		return -EIO;
-+		return DM_MAPIO_KILL;
- 	}
- 
- map_bio:
-diff --git a/drivers/md/dm-integrity.c b/drivers/md/dm-integrity.c
-index c7f7c8d76576..ee78fb471229 100644
---- a/drivers/md/dm-integrity.c
-+++ b/drivers/md/dm-integrity.c
-@@ -1352,13 +1352,13 @@ static int dm_integrity_map(struct dm_target *ti, struct bio *bio)
- 		DMERR("Too big sector number: 0x%llx + 0x%x > 0x%llx",
- 		      (unsigned long long)dio->range.logical_sector, bio_sectors(bio),
- 		      (unsigned long long)ic->provided_data_sectors);
--		return -EIO;
-+		return DM_MAPIO_KILL;
- 	}
- 	if (unlikely((dio->range.logical_sector | bio_sectors(bio)) & (unsigned)(ic->sectors_per_block - 1))) {
- 		DMERR("Bio not aligned on %u sectors: 0x%llx, 0x%x",
- 		      ic->sectors_per_block,
- 		      (unsigned long long)dio->range.logical_sector, bio_sectors(bio));
--		return -EIO;
-+		return DM_MAPIO_KILL;
- 	}
- 
- 	if (ic->sectors_per_block > 1) {
-@@ -1368,7 +1368,7 @@ static int dm_integrity_map(struct dm_target *ti, struct bio *bio)
- 			if (unlikely((bv.bv_offset | bv.bv_len) & ((ic->sectors_per_block << SECTOR_SHIFT) - 1))) {
- 				DMERR("Bio vector (%u,%u) is not aligned on %u-sector boundary",
- 					bv.bv_offset, bv.bv_len, ic->sectors_per_block);
--				return -EIO;
-+				return DM_MAPIO_KILL;
- 			}
- 		}
- 	}
-@@ -1383,18 +1383,18 @@ static int dm_integrity_map(struct dm_target *ti, struct bio *bio)
- 				wanted_tag_size *= ic->tag_size;
- 			if (unlikely(wanted_tag_size != bip->bip_iter.bi_size)) {
- 				DMERR("Invalid integrity data size %u, expected %u", bip->bip_iter.bi_size, wanted_tag_size);
--				return -EIO;
-+				return DM_MAPIO_KILL;
- 			}
- 		}
- 	} else {
- 		if (unlikely(bip != NULL)) {
- 			DMERR("Unexpected integrity data when using internal hash");
--			return -EIO;
-+			return DM_MAPIO_KILL;
- 		}
- 	}
- 
- 	if (unlikely(ic->mode == 'R') && unlikely(dio->write))
--		return -EIO;
-+		return DM_MAPIO_KILL;
- 
- 	get_area_and_offset(ic, dio->range.logical_sector, &area, &offset);
- 	dio->metadata_block = get_metadata_sector_and_offset(ic, area, offset, &dio->metadata_offset);
-diff --git a/drivers/md/dm-log-writes.c b/drivers/md/dm-log-writes.c
-index 4dfe38655a49..e42264706c59 100644
---- a/drivers/md/dm-log-writes.c
-+++ b/drivers/md/dm-log-writes.c
-@@ -586,7 +586,7 @@ static int log_writes_map(struct dm_target *ti, struct bio *bio)
- 		spin_lock_irq(&lc->blocks_lock);
- 		lc->logging_enabled = false;
- 		spin_unlock_irq(&lc->blocks_lock);
--		return -ENOMEM;
-+		return DM_MAPIO_KILL;
- 	}
- 	INIT_LIST_HEAD(&block->list);
- 	pb->block = block;
-@@ -639,7 +639,7 @@ static int log_writes_map(struct dm_target *ti, struct bio *bio)
- 			spin_lock_irq(&lc->blocks_lock);
- 			lc->logging_enabled = false;
- 			spin_unlock_irq(&lc->blocks_lock);
--			return -ENOMEM;
-+			return DM_MAPIO_KILL;
- 		}
- 
- 		src = kmap_atomic(bv.bv_page);
-diff --git a/drivers/md/dm-mpath.c b/drivers/md/dm-mpath.c
-index b1cb0273b081..94b1aa917fcb 100644
---- a/drivers/md/dm-mpath.c
-+++ b/drivers/md/dm-mpath.c
-@@ -559,7 +559,7 @@ static int __multipath_map_bio(struct multipath *m, struct bio *bio, struct dm_m
- 		if (test_bit(MPATHF_QUEUE_IF_NO_PATH, &m->flags))
- 			return DM_MAPIO_REQUEUE;
- 		dm_report_EIO(m);
--		return -EIO;
-+		return DM_MAPIO_KILL;
- 	}
- 
- 	mpio->pgpath = pgpath;
-@@ -621,11 +621,18 @@ static void process_queued_bios(struct work_struct *work)
- 	blk_start_plug(&plug);
- 	while ((bio = bio_list_pop(&bios))) {
- 		r = __multipath_map_bio(m, bio, get_mpio_from_bio(bio));
--		if (r < 0 || r == DM_MAPIO_REQUEUE) {
-+		switch (r) {
-+		case DM_MAPIO_KILL:
-+			r = -EIO;
-+			/*FALLTHRU*/
-+		case DM_MAPIO_REQUEUE:
- 			bio->bi_error = r;
- 			bio_endio(bio);
--		} else if (r == DM_MAPIO_REMAPPED)
-+			break;
-+		case DM_MAPIO_REMAPPED:
- 			generic_make_request(bio);
-+			break;
-+		}
- 	}
- 	blk_finish_plug(&plug);
- }
-diff --git a/drivers/md/dm-raid1.c b/drivers/md/dm-raid1.c
-index 5e30b08b91d9..d9c0c6a77eb5 100644
---- a/drivers/md/dm-raid1.c
-+++ b/drivers/md/dm-raid1.c
-@@ -1207,14 +1207,14 @@ static int mirror_map(struct dm_target *ti, struct bio *bio)
- 
- 	r = log->type->in_sync(log, dm_rh_bio_to_region(ms->rh, bio), 0);
- 	if (r < 0 && r != -EWOULDBLOCK)
--		return r;
-+		return DM_MAPIO_KILL;
- 
- 	/*
- 	 * If region is not in-sync queue the bio.
- 	 */
- 	if (!r || (r == -EWOULDBLOCK)) {
- 		if (bio->bi_opf & REQ_RAHEAD)
--			return -EIO;
-+			return DM_MAPIO_KILL;
- 
- 		queue_bio(ms, bio, rw);
- 		return DM_MAPIO_SUBMITTED;
-@@ -1226,7 +1226,7 @@ static int mirror_map(struct dm_target *ti, struct bio *bio)
- 	 */
- 	m = choose_mirror(ms, bio->bi_iter.bi_sector);
- 	if (unlikely(!m))
--		return -EIO;
-+		return DM_MAPIO_KILL;
- 
- 	dm_bio_record(&bio_record->details, bio);
- 	bio_record->m = m;
-diff --git a/drivers/md/dm-snap.c b/drivers/md/dm-snap.c
-index e152d9817c81..5a7f73f9a6fb 100644
---- a/drivers/md/dm-snap.c
-+++ b/drivers/md/dm-snap.c
-@@ -1690,7 +1690,7 @@ static int snapshot_map(struct dm_target *ti, struct bio *bio)
- 	/* Full snapshots are not usable */
- 	/* To get here the table must be live so s->active is always set. */
- 	if (!s->valid)
--		return -EIO;
-+		return DM_MAPIO_KILL;
- 
- 	/* FIXME: should only take write lock if we need
- 	 * to copy an exception */
-@@ -1698,7 +1698,7 @@ static int snapshot_map(struct dm_target *ti, struct bio *bio)
- 
- 	if (!s->valid || (unlikely(s->snapshot_overflowed) &&
- 	    bio_data_dir(bio) == WRITE)) {
--		r = -EIO;
-+		r = DM_MAPIO_KILL;
- 		goto out_unlock;
- 	}
- 
-@@ -1723,7 +1723,7 @@ static int snapshot_map(struct dm_target *ti, struct bio *bio)
- 
- 			if (!s->valid || s->snapshot_overflowed) {
- 				free_pending_exception(pe);
--				r = -EIO;
-+				r = DM_MAPIO_KILL;
- 				goto out_unlock;
- 			}
- 
-@@ -1741,7 +1741,7 @@ static int snapshot_map(struct dm_target *ti, struct bio *bio)
- 					DMERR("Snapshot overflowed: Unable to allocate exception.");
- 				} else
- 					__invalidate_snapshot(s, -ENOMEM);
--				r = -EIO;
-+				r = DM_MAPIO_KILL;
- 				goto out_unlock;
- 			}
- 		}
-diff --git a/drivers/md/dm-target.c b/drivers/md/dm-target.c
-index b242b750542f..c0d7e60820c4 100644
---- a/drivers/md/dm-target.c
-+++ b/drivers/md/dm-target.c
-@@ -128,7 +128,7 @@ static void io_err_dtr(struct dm_target *tt)
- 
- static int io_err_map(struct dm_target *tt, struct bio *bio)
+diff --git a/block/blk-mq.c b/block/blk-mq.c
+index 1430939ecc0e..fdaad9fbebf6 100644
+--- a/block/blk-mq.c
++++ b/block/blk-mq.c
+@@ -987,7 +987,7 @@ bool blk_mq_dispatch_rq_list(struct request_queue *q, struct list_head *list)
  {
--	return -EIO;
-+	return DM_MAPIO_KILL;
+ 	struct blk_mq_hw_ctx *hctx;
+ 	struct request *rq;
+-	int errors, queued, ret = BLK_MQ_RQ_QUEUE_OK;
++	int errors, queued;
+ 
+ 	if (list_empty(list))
+ 		return false;
+@@ -998,6 +998,7 @@ bool blk_mq_dispatch_rq_list(struct request_queue *q, struct list_head *list)
+ 	errors = queued = 0;
+ 	do {
+ 		struct blk_mq_queue_data bd;
++		blk_status_t ret;
+ 
+ 		rq = list_first_entry(list, struct request, queuelist);
+ 		if (!blk_mq_get_driver_tag(rq, &hctx, false)) {
+@@ -1038,25 +1039,20 @@ bool blk_mq_dispatch_rq_list(struct request_queue *q, struct list_head *list)
+ 		}
+ 
+ 		ret = q->mq_ops->queue_rq(hctx, &bd);
+-		switch (ret) {
+-		case BLK_MQ_RQ_QUEUE_OK:
+-			queued++;
+-			break;
+-		case BLK_MQ_RQ_QUEUE_BUSY:
++		if (ret == BLK_STS_RESOURCE) {
+ 			blk_mq_put_driver_tag_hctx(hctx, rq);
+ 			list_add(&rq->queuelist, list);
+ 			__blk_mq_requeue_request(rq);
+ 			break;
+-		default:
+-			pr_err("blk-mq: bad return on queue: %d\n", ret);
+-		case BLK_MQ_RQ_QUEUE_ERROR:
++		}
++
++		if (unlikely(ret != BLK_STS_OK)) {
+ 			errors++;
+ 			blk_mq_end_request(rq, BLK_STS_IOERR);
+-			break;
++			continue;
+ 		}
+ 
+-		if (ret == BLK_MQ_RQ_QUEUE_BUSY)
+-			break;
++		queued++;
+ 	} while (!list_empty(list));
+ 
+ 	hctx->dispatched[queued_to_index(queued)]++;
+@@ -1094,7 +1090,7 @@ bool blk_mq_dispatch_rq_list(struct request_queue *q, struct list_head *list)
+ 		 * - blk_mq_run_hw_queue() checks whether or not a queue has
+ 		 *   been stopped before rerunning a queue.
+ 		 * - Some but not all block drivers stop a queue before
+-		 *   returning BLK_MQ_RQ_QUEUE_BUSY. Two exceptions are scsi-mq
++		 *   returning BLK_STS_RESOURCE. Two exceptions are scsi-mq
+ 		 *   and dm-rq.
+ 		 */
+ 		if (!blk_mq_sched_needs_restart(hctx) &&
+@@ -1490,7 +1486,7 @@ static void __blk_mq_try_issue_directly(struct request *rq, blk_qc_t *cookie,
+ 	};
+ 	struct blk_mq_hw_ctx *hctx;
+ 	blk_qc_t new_cookie;
+-	int ret;
++	blk_status_t ret;
+ 
+ 	if (q->elevator)
+ 		goto insert;
+@@ -1506,18 +1502,19 @@ static void __blk_mq_try_issue_directly(struct request *rq, blk_qc_t *cookie,
+ 	 * would have done
+ 	 */
+ 	ret = q->mq_ops->queue_rq(hctx, &bd);
+-	if (ret == BLK_MQ_RQ_QUEUE_OK) {
++	switch (ret) {
++	case BLK_STS_OK:
+ 		*cookie = new_cookie;
+ 		return;
+-	}
+-
+-	if (ret == BLK_MQ_RQ_QUEUE_ERROR) {
++	case BLK_STS_RESOURCE:
++		__blk_mq_requeue_request(rq);
++		goto insert;
++	default:
+ 		*cookie = BLK_QC_T_NONE;
+-		blk_mq_end_request(rq, BLK_STS_IOERR);
++		blk_mq_end_request(rq, ret);
+ 		return;
+ 	}
+ 
+-	__blk_mq_requeue_request(rq);
+ insert:
+ 	blk_mq_sched_insert_request(rq, false, true, false, may_sleep);
+ }
+diff --git a/drivers/block/loop.c b/drivers/block/loop.c
+index 183597053ce5..6506412a6498 100644
+--- a/drivers/block/loop.c
++++ b/drivers/block/loop.c
+@@ -1642,7 +1642,7 @@ int loop_unregister_transfer(int number)
+ EXPORT_SYMBOL(loop_register_transfer);
+ EXPORT_SYMBOL(loop_unregister_transfer);
+ 
+-static int loop_queue_rq(struct blk_mq_hw_ctx *hctx,
++static blk_status_t loop_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 		const struct blk_mq_queue_data *bd)
+ {
+ 	struct loop_cmd *cmd = blk_mq_rq_to_pdu(bd->rq);
+@@ -1651,7 +1651,7 @@ static int loop_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 	blk_mq_start_request(bd->rq);
+ 
+ 	if (lo->lo_state != Lo_bound)
+-		return BLK_MQ_RQ_QUEUE_ERROR;
++		return BLK_STS_IOERR;
+ 
+ 	switch (req_op(cmd->rq)) {
+ 	case REQ_OP_FLUSH:
+@@ -1666,7 +1666,7 @@ static int loop_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 
+ 	kthread_queue_work(&lo->worker, &cmd->work);
+ 
+-	return BLK_MQ_RQ_QUEUE_OK;
++	return BLK_STS_OK;
  }
  
- static int io_err_clone_and_map_rq(struct dm_target *ti, struct request *rq,
-diff --git a/drivers/md/dm-verity-target.c b/drivers/md/dm-verity-target.c
-index 97de961a3bfc..9ed55468b98b 100644
---- a/drivers/md/dm-verity-target.c
-+++ b/drivers/md/dm-verity-target.c
-@@ -643,17 +643,17 @@ static int verity_map(struct dm_target *ti, struct bio *bio)
- 	if (((unsigned)bio->bi_iter.bi_sector | bio_sectors(bio)) &
- 	    ((1 << (v->data_dev_block_bits - SECTOR_SHIFT)) - 1)) {
- 		DMERR_LIMIT("unaligned io");
--		return -EIO;
-+		return DM_MAPIO_KILL;
- 	}
+ static void loop_handle_cmd(struct loop_cmd *cmd)
+diff --git a/drivers/block/mtip32xx/mtip32xx.c b/drivers/block/mtip32xx/mtip32xx.c
+index ee6f66bb50c7..d8618a71da74 100644
+--- a/drivers/block/mtip32xx/mtip32xx.c
++++ b/drivers/block/mtip32xx/mtip32xx.c
+@@ -3633,8 +3633,8 @@ static bool mtip_check_unal_depth(struct blk_mq_hw_ctx *hctx,
+ 	return false;
+ }
  
- 	if (bio_end_sector(bio) >>
- 	    (v->data_dev_block_bits - SECTOR_SHIFT) > v->data_blocks) {
- 		DMERR_LIMIT("io out of range");
--		return -EIO;
-+		return DM_MAPIO_KILL;
- 	}
+-static int mtip_issue_reserved_cmd(struct blk_mq_hw_ctx *hctx,
+-				   struct request *rq)
++static blk_status_t mtip_issue_reserved_cmd(struct blk_mq_hw_ctx *hctx,
++		struct request *rq)
+ {
+ 	struct driver_data *dd = hctx->queue->queuedata;
+ 	struct mtip_int_cmd *icmd = rq->special;
+@@ -3642,7 +3642,7 @@ static int mtip_issue_reserved_cmd(struct blk_mq_hw_ctx *hctx,
+ 	struct mtip_cmd_sg *command_sg;
  
- 	if (bio_data_dir(bio) == WRITE)
--		return -EIO;
-+		return DM_MAPIO_KILL;
+ 	if (mtip_commands_active(dd->port))
+-		return BLK_MQ_RQ_QUEUE_BUSY;
++		return BLK_STS_RESOURCE;
  
- 	io = dm_per_bio_data(bio, ti->per_io_data_size);
- 	io->v = v;
-diff --git a/drivers/md/dm-zero.c b/drivers/md/dm-zero.c
-index b616f11d8473..b65ca8dcfbdc 100644
---- a/drivers/md/dm-zero.c
-+++ b/drivers/md/dm-zero.c
-@@ -39,7 +39,7 @@ static int zero_map(struct dm_target *ti, struct bio *bio)
- 	case REQ_OP_READ:
- 		if (bio->bi_opf & REQ_RAHEAD) {
- 			/* readahead of null bytes only wastes buffer cache */
--			return -EIO;
-+			return DM_MAPIO_KILL;
+ 	/* Populate the SG list */
+ 	cmd->command_header->opts =
+@@ -3666,10 +3666,10 @@ static int mtip_issue_reserved_cmd(struct blk_mq_hw_ctx *hctx,
+ 
+ 	blk_mq_start_request(rq);
+ 	mtip_issue_non_ncq_command(dd->port, rq->tag);
+-	return BLK_MQ_RQ_QUEUE_OK;
++	return 0;
+ }
+ 
+-static int mtip_queue_rq(struct blk_mq_hw_ctx *hctx,
++static blk_status_t mtip_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 			 const struct blk_mq_queue_data *bd)
+ {
+ 	struct request *rq = bd->rq;
+@@ -3681,15 +3681,14 @@ static int mtip_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 		return mtip_issue_reserved_cmd(hctx, rq);
+ 
+ 	if (unlikely(mtip_check_unal_depth(hctx, rq)))
+-		return BLK_MQ_RQ_QUEUE_BUSY;
++		return BLK_STS_RESOURCE;
+ 
+ 	blk_mq_start_request(rq);
+ 
+ 	ret = mtip_submit_request(hctx, rq);
+ 	if (likely(!ret))
+-		return BLK_MQ_RQ_QUEUE_OK;
+-
+-	return BLK_MQ_RQ_QUEUE_ERROR;
++		return BLK_STS_OK;
++	return BLK_STS_IOERR;
+ }
+ 
+ static void mtip_free_cmd(struct blk_mq_tag_set *set, struct request *rq,
+diff --git a/drivers/block/nbd.c b/drivers/block/nbd.c
+index 9f5a0d4fcf81..789e36ee6844 100644
+--- a/drivers/block/nbd.c
++++ b/drivers/block/nbd.c
+@@ -465,7 +465,7 @@ static int nbd_send_cmd(struct nbd_device *nbd, struct nbd_cmd *cmd, int index)
+ 				nsock->pending = req;
+ 				nsock->sent = sent;
+ 			}
+-			return BLK_MQ_RQ_QUEUE_BUSY;
++			return BLK_STS_RESOURCE;
  		}
- 		zero_fill_bio(bio);
- 		break;
-@@ -47,7 +47,7 @@ static int zero_map(struct dm_target *ti, struct bio *bio)
- 		/* writes get silently dropped */
+ 		dev_err_ratelimited(disk_to_dev(nbd->disk),
+ 			"Send control failed (result %d)\n", result);
+@@ -506,7 +506,7 @@ static int nbd_send_cmd(struct nbd_device *nbd, struct nbd_cmd *cmd, int index)
+ 					 */
+ 					nsock->pending = req;
+ 					nsock->sent = sent;
+-					return BLK_MQ_RQ_QUEUE_BUSY;
++					return BLK_STS_RESOURCE;
+ 				}
+ 				dev_err(disk_to_dev(nbd->disk),
+ 					"Send data failed (result %d)\n",
+@@ -794,7 +794,7 @@ static int nbd_handle_cmd(struct nbd_cmd *cmd, int index)
+ 	return ret;
+ }
+ 
+-static int nbd_queue_rq(struct blk_mq_hw_ctx *hctx,
++static blk_status_t nbd_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 			const struct blk_mq_queue_data *bd)
+ {
+ 	struct nbd_cmd *cmd = blk_mq_rq_to_pdu(bd->rq);
+@@ -818,13 +818,9 @@ static int nbd_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 	 * appropriate.
+ 	 */
+ 	ret = nbd_handle_cmd(cmd, hctx->queue_num);
+-	if (ret < 0)
+-		ret = BLK_MQ_RQ_QUEUE_ERROR;
+-	if (!ret)
+-		ret = BLK_MQ_RQ_QUEUE_OK;
+ 	complete(&cmd->send_complete);
+ 
+-	return ret;
++	return ret < 0 ? BLK_STS_IOERR : BLK_STS_OK;
+ }
+ 
+ static int nbd_add_socket(struct nbd_device *nbd, unsigned long arg,
+diff --git a/drivers/block/null_blk.c b/drivers/block/null_blk.c
+index e6b81d370882..586dfff5d53f 100644
+--- a/drivers/block/null_blk.c
++++ b/drivers/block/null_blk.c
+@@ -356,7 +356,7 @@ static void null_request_fn(struct request_queue *q)
+ 	}
+ }
+ 
+-static int null_queue_rq(struct blk_mq_hw_ctx *hctx,
++static blk_status_t null_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 			 const struct blk_mq_queue_data *bd)
+ {
+ 	struct nullb_cmd *cmd = blk_mq_rq_to_pdu(bd->rq);
+@@ -373,7 +373,7 @@ static int null_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 	blk_mq_start_request(bd->rq);
+ 
+ 	null_handle_cmd(cmd);
+-	return BLK_MQ_RQ_QUEUE_OK;
++	return BLK_STS_OK;
+ }
+ 
+ static void null_init_queue(struct nullb *nullb, struct nullb_queue *nq)
+diff --git a/drivers/block/rbd.c b/drivers/block/rbd.c
+index 3e8b43d792c2..74a6791b15c8 100644
+--- a/drivers/block/rbd.c
++++ b/drivers/block/rbd.c
+@@ -4154,14 +4154,14 @@ static void rbd_queue_workfn(struct work_struct *work)
+ 	blk_mq_end_request(rq, errno_to_blk_status(result));
+ }
+ 
+-static int rbd_queue_rq(struct blk_mq_hw_ctx *hctx,
++static blk_status_t rbd_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 		const struct blk_mq_queue_data *bd)
+ {
+ 	struct request *rq = bd->rq;
+ 	struct work_struct *work = blk_mq_rq_to_pdu(rq);
+ 
+ 	queue_work(rbd_wq, work);
+-	return BLK_MQ_RQ_QUEUE_OK;
++	return BLK_STS_OK;
+ }
+ 
+ static void rbd_free_disk(struct rbd_device *rbd_dev)
+diff --git a/drivers/block/virtio_blk.c b/drivers/block/virtio_blk.c
+index 205b74d70efc..e59bd4549a8a 100644
+--- a/drivers/block/virtio_blk.c
++++ b/drivers/block/virtio_blk.c
+@@ -214,7 +214,7 @@ static void virtblk_done(struct virtqueue *vq)
+ 	spin_unlock_irqrestore(&vblk->vqs[qid].lock, flags);
+ }
+ 
+-static int virtio_queue_rq(struct blk_mq_hw_ctx *hctx,
++static blk_status_t virtio_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 			   const struct blk_mq_queue_data *bd)
+ {
+ 	struct virtio_blk *vblk = hctx->queue->queuedata;
+@@ -246,7 +246,7 @@ static int virtio_queue_rq(struct blk_mq_hw_ctx *hctx,
  		break;
  	default:
--		return -EIO;
-+		return DM_MAPIO_KILL;
+ 		WARN_ON_ONCE(1);
+-		return BLK_MQ_RQ_QUEUE_ERROR;
++		return BLK_STS_IOERR;
  	}
  
- 	bio_endio(bio);
-diff --git a/drivers/md/dm.c b/drivers/md/dm.c
-index 6ef9500226c0..499f8209bacf 100644
---- a/drivers/md/dm.c
-+++ b/drivers/md/dm.c
-@@ -1084,18 +1084,24 @@ static void __map_bio(struct dm_target_io *tio)
- 	r = ti->type->map(ti, clone);
- 	dm_offload_end(&o);
+ 	vbr->out_hdr.type = cpu_to_virtio32(vblk->vdev, type);
+@@ -276,8 +276,8 @@ static int virtio_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 		/* Out of mem doesn't actually happen, since we fall back
+ 		 * to direct descriptors */
+ 		if (err == -ENOMEM || err == -ENOSPC)
+-			return BLK_MQ_RQ_QUEUE_BUSY;
+-		return BLK_MQ_RQ_QUEUE_ERROR;
++			return BLK_STS_RESOURCE;
++		return BLK_STS_IOERR;
+ 	}
  
--	if (r == DM_MAPIO_REMAPPED) {
-+	switch (r) {
-+	case DM_MAPIO_SUBMITTED:
-+		break;
-+	case DM_MAPIO_REMAPPED:
- 		/* the bio has been remapped so dispatch it */
+ 	if (bd->last && virtqueue_kick_prepare(vblk->vqs[qid].vq))
+@@ -286,7 +286,7 @@ static int virtio_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 
+ 	if (notify)
+ 		virtqueue_notify(vblk->vqs[qid].vq);
+-	return BLK_MQ_RQ_QUEUE_OK;
++	return BLK_STS_OK;
+ }
+ 
+ /* return id (s/n) string for *disk to *id_str
+diff --git a/drivers/block/xen-blkfront.c b/drivers/block/xen-blkfront.c
+index aedc3c759273..2f468cf86dcf 100644
+--- a/drivers/block/xen-blkfront.c
++++ b/drivers/block/xen-blkfront.c
+@@ -881,7 +881,7 @@ static inline bool blkif_request_flush_invalid(struct request *req,
+ 		 !info->feature_fua));
+ }
+ 
+-static int blkif_queue_rq(struct blk_mq_hw_ctx *hctx,
++static blk_status_t blkif_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 			  const struct blk_mq_queue_data *qd)
+ {
+ 	unsigned long flags;
+@@ -904,16 +904,16 @@ static int blkif_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 
+ 	flush_requests(rinfo);
+ 	spin_unlock_irqrestore(&rinfo->ring_lock, flags);
+-	return BLK_MQ_RQ_QUEUE_OK;
++	return BLK_STS_OK;
+ 
+ out_err:
+ 	spin_unlock_irqrestore(&rinfo->ring_lock, flags);
+-	return BLK_MQ_RQ_QUEUE_ERROR;
++	return BLK_STS_IOERR;
+ 
+ out_busy:
+ 	spin_unlock_irqrestore(&rinfo->ring_lock, flags);
+ 	blk_mq_stop_hw_queue(hctx);
+-	return BLK_MQ_RQ_QUEUE_BUSY;
++	return BLK_STS_RESOURCE;
+ }
+ 
+ static void blkif_complete_rq(struct request *rq)
+diff --git a/drivers/md/dm-rq.c b/drivers/md/dm-rq.c
+index bee334389173..63402f8a38de 100644
+--- a/drivers/md/dm-rq.c
++++ b/drivers/md/dm-rq.c
+@@ -727,7 +727,7 @@ static int dm_mq_init_request(struct blk_mq_tag_set *set, struct request *rq,
+ 	return __dm_rq_init_rq(set->driver_data, rq);
+ }
+ 
+-static int dm_mq_queue_rq(struct blk_mq_hw_ctx *hctx,
++static blk_status_t dm_mq_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 			  const struct blk_mq_queue_data *bd)
+ {
+ 	struct request *rq = bd->rq;
+@@ -744,7 +744,7 @@ static int dm_mq_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 	}
+ 
+ 	if (ti->type->busy && ti->type->busy(ti))
+-		return BLK_MQ_RQ_QUEUE_BUSY;
++		return BLK_STS_RESOURCE;
+ 
+ 	dm_start_request(md, rq);
+ 
+@@ -762,10 +762,10 @@ static int dm_mq_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 		rq_end_stats(md, rq);
+ 		rq_completed(md, rq_data_dir(rq), false);
+ 		blk_mq_delay_run_hw_queue(hctx, 100/*ms*/);
+-		return BLK_MQ_RQ_QUEUE_BUSY;
++		return BLK_STS_RESOURCE;
+ 	}
+ 
+-	return BLK_MQ_RQ_QUEUE_OK;
++	return BLK_STS_OK;
+ }
+ 
+ static const struct blk_mq_ops dm_mq_ops = {
+diff --git a/drivers/mtd/ubi/block.c b/drivers/mtd/ubi/block.c
+index 3ecdb39d1985..c3963f880448 100644
+--- a/drivers/mtd/ubi/block.c
++++ b/drivers/mtd/ubi/block.c
+@@ -316,7 +316,7 @@ static void ubiblock_do_work(struct work_struct *work)
+ 	blk_mq_end_request(req, errno_to_blk_status(ret));
+ }
+ 
+-static int ubiblock_queue_rq(struct blk_mq_hw_ctx *hctx,
++static blk_status_t ubiblock_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 			     const struct blk_mq_queue_data *bd)
+ {
+ 	struct request *req = bd->rq;
+@@ -327,9 +327,9 @@ static int ubiblock_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 	case REQ_OP_READ:
+ 		ubi_sgl_init(&pdu->usgl);
+ 		queue_work(dev->wq, &pdu->work);
+-		return BLK_MQ_RQ_QUEUE_OK;
++		return BLK_STS_OK;
+ 	default:
+-		return BLK_MQ_RQ_QUEUE_ERROR;
++		return BLK_STS_IOERR;
+ 	}
+ 
+ }
+diff --git a/drivers/nvme/host/core.c b/drivers/nvme/host/core.c
+index 98fb0470d693..bac931f629ba 100644
+--- a/drivers/nvme/host/core.c
++++ b/drivers/nvme/host/core.c
+@@ -283,7 +283,7 @@ static inline void nvme_setup_flush(struct nvme_ns *ns,
+ 	cmnd->common.nsid = cpu_to_le32(ns->ns_id);
+ }
+ 
+-static inline int nvme_setup_discard(struct nvme_ns *ns, struct request *req,
++static blk_status_t nvme_setup_discard(struct nvme_ns *ns, struct request *req,
+ 		struct nvme_command *cmnd)
+ {
+ 	unsigned short segments = blk_rq_nr_discard_segments(req), n = 0;
+@@ -292,7 +292,7 @@ static inline int nvme_setup_discard(struct nvme_ns *ns, struct request *req,
+ 
+ 	range = kmalloc_array(segments, sizeof(*range), GFP_ATOMIC);
+ 	if (!range)
+-		return BLK_MQ_RQ_QUEUE_BUSY;
++		return BLK_STS_RESOURCE;
+ 
+ 	__rq_for_each_bio(bio, req) {
+ 		u64 slba = nvme_block_nr(ns, bio->bi_iter.bi_sector);
+@@ -306,7 +306,7 @@ static inline int nvme_setup_discard(struct nvme_ns *ns, struct request *req,
+ 
+ 	if (WARN_ON_ONCE(n != segments)) {
+ 		kfree(range);
+-		return BLK_MQ_RQ_QUEUE_ERROR;
++		return BLK_STS_IOERR;
+ 	}
+ 
+ 	memset(cmnd, 0, sizeof(*cmnd));
+@@ -320,7 +320,7 @@ static inline int nvme_setup_discard(struct nvme_ns *ns, struct request *req,
+ 	req->special_vec.bv_len = sizeof(*range) * segments;
+ 	req->rq_flags |= RQF_SPECIAL_PAYLOAD;
+ 
+-	return BLK_MQ_RQ_QUEUE_OK;
++	return BLK_STS_OK;
+ }
+ 
+ static inline void nvme_setup_rw(struct nvme_ns *ns, struct request *req,
+@@ -364,10 +364,10 @@ static inline void nvme_setup_rw(struct nvme_ns *ns, struct request *req,
+ 	cmnd->rw.dsmgmt = cpu_to_le32(dsmgmt);
+ }
+ 
+-int nvme_setup_cmd(struct nvme_ns *ns, struct request *req,
++blk_status_t nvme_setup_cmd(struct nvme_ns *ns, struct request *req,
+ 		struct nvme_command *cmd)
+ {
+-	int ret = BLK_MQ_RQ_QUEUE_OK;
++	blk_status_t ret = BLK_STS_OK;
+ 
+ 	if (!(req->rq_flags & RQF_DONTPREP)) {
+ 		nvme_req(req)->retries = 0;
+@@ -394,7 +394,7 @@ int nvme_setup_cmd(struct nvme_ns *ns, struct request *req,
+ 		break;
+ 	default:
+ 		WARN_ON_ONCE(1);
+-		return BLK_MQ_RQ_QUEUE_ERROR;
++		return BLK_STS_IOERR;
+ 	}
+ 
+ 	cmd->common.command_id = req->tag;
+diff --git a/drivers/nvme/host/fc.c b/drivers/nvme/host/fc.c
+index 70e689bf1cad..8443d03e3a04 100644
+--- a/drivers/nvme/host/fc.c
++++ b/drivers/nvme/host/fc.c
+@@ -1873,7 +1873,7 @@ nvme_fc_unmap_data(struct nvme_fc_ctrl *ctrl, struct request *rq,
+  * level FC exchange resource that is also outstanding. This must be
+  * considered in all cleanup operations.
+  */
+-static int
++static blk_status_t
+ nvme_fc_start_fcp_op(struct nvme_fc_ctrl *ctrl, struct nvme_fc_queue *queue,
+ 	struct nvme_fc_fcp_op *op, u32 data_len,
+ 	enum nvmefc_fcp_datadir	io_dir)
+@@ -1888,10 +1888,10 @@ nvme_fc_start_fcp_op(struct nvme_fc_ctrl *ctrl, struct nvme_fc_queue *queue,
+ 	 * the target device is present
+ 	 */
+ 	if (ctrl->rport->remoteport.port_state != FC_OBJSTATE_ONLINE)
+-		return BLK_MQ_RQ_QUEUE_ERROR;
++		return BLK_STS_IOERR;
+ 
+ 	if (!nvme_fc_ctrl_get(ctrl))
+-		return BLK_MQ_RQ_QUEUE_ERROR;
++		return BLK_STS_IOERR;
+ 
+ 	/* format the FC-NVME CMD IU and fcp_req */
+ 	cmdiu->connection_id = cpu_to_be64(queue->connection_id);
+@@ -1939,8 +1939,9 @@ nvme_fc_start_fcp_op(struct nvme_fc_ctrl *ctrl, struct nvme_fc_queue *queue,
+ 		if (ret < 0) {
+ 			nvme_cleanup_cmd(op->rq);
+ 			nvme_fc_ctrl_put(ctrl);
+-			return (ret == -ENOMEM || ret == -EAGAIN) ?
+-				BLK_MQ_RQ_QUEUE_BUSY : BLK_MQ_RQ_QUEUE_ERROR;
++			if (ret == -ENOMEM || ret == -EAGAIN)
++				return BLK_STS_RESOURCE;
++			return BLK_STS_IOERR;
+ 		}
+ 	}
+ 
+@@ -1966,19 +1967,19 @@ nvme_fc_start_fcp_op(struct nvme_fc_ctrl *ctrl, struct nvme_fc_queue *queue,
+ 		nvme_fc_ctrl_put(ctrl);
+ 
+ 		if (ret != -EBUSY)
+-			return BLK_MQ_RQ_QUEUE_ERROR;
++			return BLK_STS_IOERR;
+ 
+ 		if (op->rq) {
+ 			blk_mq_stop_hw_queues(op->rq->q);
+ 			blk_mq_delay_queue(queue->hctx, NVMEFC_QUEUE_DELAY);
+ 		}
+-		return BLK_MQ_RQ_QUEUE_BUSY;
++		return BLK_STS_RESOURCE;
+ 	}
+ 
+-	return BLK_MQ_RQ_QUEUE_OK;
++	return BLK_STS_OK;
+ }
+ 
+-static int
++static blk_status_t
+ nvme_fc_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 			const struct blk_mq_queue_data *bd)
+ {
+@@ -1991,7 +1992,7 @@ nvme_fc_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 	struct nvme_command *sqe = &cmdiu->sqe;
+ 	enum nvmefc_fcp_datadir	io_dir;
+ 	u32 data_len;
+-	int ret;
++	blk_status_t ret;
+ 
+ 	ret = nvme_setup_cmd(ns, rq, sqe);
+ 	if (ret)
+@@ -2046,7 +2047,7 @@ nvme_fc_submit_async_event(struct nvme_ctrl *arg, int aer_idx)
+ 	struct nvme_fc_fcp_op *aen_op;
+ 	unsigned long flags;
+ 	bool terminating = false;
+-	int ret;
++	blk_status_t ret;
+ 
+ 	if (aer_idx > NVME_FC_NR_AEN_COMMANDS)
+ 		return;
+diff --git a/drivers/nvme/host/nvme.h b/drivers/nvme/host/nvme.h
+index 29c708ca9621..3ba5157b0738 100644
+--- a/drivers/nvme/host/nvme.h
++++ b/drivers/nvme/host/nvme.h
+@@ -294,7 +294,7 @@ void nvme_start_freeze(struct nvme_ctrl *ctrl);
+ #define NVME_QID_ANY -1
+ struct request *nvme_alloc_request(struct request_queue *q,
+ 		struct nvme_command *cmd, unsigned int flags, int qid);
+-int nvme_setup_cmd(struct nvme_ns *ns, struct request *req,
++blk_status_t nvme_setup_cmd(struct nvme_ns *ns, struct request *req,
+ 		struct nvme_command *cmd);
+ int nvme_submit_sync_cmd(struct request_queue *q, struct nvme_command *cmd,
+ 		void *buf, unsigned bufflen);
+diff --git a/drivers/nvme/host/pci.c b/drivers/nvme/host/pci.c
+index dc66b035a220..89427606e8b9 100644
+--- a/drivers/nvme/host/pci.c
++++ b/drivers/nvme/host/pci.c
+@@ -427,7 +427,7 @@ static __le64 **iod_list(struct request *req)
+ 	return (__le64 **)(iod->sg + blk_rq_nr_phys_segments(req));
+ }
+ 
+-static int nvme_init_iod(struct request *rq, struct nvme_dev *dev)
++static blk_status_t nvme_init_iod(struct request *rq, struct nvme_dev *dev)
+ {
+ 	struct nvme_iod *iod = blk_mq_rq_to_pdu(rq);
+ 	int nseg = blk_rq_nr_phys_segments(rq);
+@@ -436,7 +436,7 @@ static int nvme_init_iod(struct request *rq, struct nvme_dev *dev)
+ 	if (nseg > NVME_INT_PAGES || size > NVME_INT_BYTES(dev)) {
+ 		iod->sg = kmalloc(nvme_iod_alloc_size(dev, size, nseg), GFP_ATOMIC);
+ 		if (!iod->sg)
+-			return BLK_MQ_RQ_QUEUE_BUSY;
++			return BLK_STS_RESOURCE;
+ 	} else {
+ 		iod->sg = iod->inline_sg;
+ 	}
+@@ -446,7 +446,7 @@ static int nvme_init_iod(struct request *rq, struct nvme_dev *dev)
+ 	iod->nents = 0;
+ 	iod->length = size;
+ 
+-	return BLK_MQ_RQ_QUEUE_OK;
++	return BLK_STS_OK;
+ }
+ 
+ static void nvme_free_iod(struct nvme_dev *dev, struct request *req)
+@@ -616,21 +616,21 @@ static bool nvme_setup_prps(struct nvme_dev *dev, struct request *req)
+ 	return true;
+ }
+ 
+-static int nvme_map_data(struct nvme_dev *dev, struct request *req,
++static blk_status_t nvme_map_data(struct nvme_dev *dev, struct request *req,
+ 		struct nvme_command *cmnd)
+ {
+ 	struct nvme_iod *iod = blk_mq_rq_to_pdu(req);
+ 	struct request_queue *q = req->q;
+ 	enum dma_data_direction dma_dir = rq_data_dir(req) ?
+ 			DMA_TO_DEVICE : DMA_FROM_DEVICE;
+-	int ret = BLK_MQ_RQ_QUEUE_ERROR;
++	blk_status_t ret = BLK_STS_IOERR;
+ 
+ 	sg_init_table(iod->sg, blk_rq_nr_phys_segments(req));
+ 	iod->nents = blk_rq_map_sg(q, req, iod->sg);
+ 	if (!iod->nents)
+ 		goto out;
+ 
+-	ret = BLK_MQ_RQ_QUEUE_BUSY;
++	ret = BLK_STS_RESOURCE;
+ 	if (!dma_map_sg_attrs(dev->dev, iod->sg, iod->nents, dma_dir,
+ 				DMA_ATTR_NO_WARN))
+ 		goto out;
+@@ -638,7 +638,7 @@ static int nvme_map_data(struct nvme_dev *dev, struct request *req,
+ 	if (!nvme_setup_prps(dev, req))
+ 		goto out_unmap;
+ 
+-	ret = BLK_MQ_RQ_QUEUE_ERROR;
++	ret = BLK_STS_IOERR;
+ 	if (blk_integrity_rq(req)) {
+ 		if (blk_rq_count_integrity_sg(q, req->bio) != 1)
+ 			goto out_unmap;
+@@ -658,7 +658,7 @@ static int nvme_map_data(struct nvme_dev *dev, struct request *req,
+ 	cmnd->rw.dptr.prp2 = cpu_to_le64(iod->first_dma);
+ 	if (blk_integrity_rq(req))
+ 		cmnd->rw.metadata = cpu_to_le64(sg_dma_address(&iod->meta_sg));
+-	return BLK_MQ_RQ_QUEUE_OK;
++	return BLK_STS_OK;
+ 
+ out_unmap:
+ 	dma_unmap_sg(dev->dev, iod->sg, iod->nents, dma_dir);
+@@ -688,7 +688,7 @@ static void nvme_unmap_data(struct nvme_dev *dev, struct request *req)
+ /*
+  * NOTE: ns is NULL when called on the admin queue.
+  */
+-static int nvme_queue_rq(struct blk_mq_hw_ctx *hctx,
++static blk_status_t nvme_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 			 const struct blk_mq_queue_data *bd)
+ {
+ 	struct nvme_ns *ns = hctx->queue->queuedata;
+@@ -696,7 +696,7 @@ static int nvme_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 	struct nvme_dev *dev = nvmeq->dev;
+ 	struct request *req = bd->rq;
+ 	struct nvme_command cmnd;
+-	int ret = BLK_MQ_RQ_QUEUE_OK;
++	blk_status_t ret = BLK_STS_OK;
+ 
+ 	/*
+ 	 * If formated with metadata, require the block layer provide a buffer
+@@ -705,38 +705,36 @@ static int nvme_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 	 */
+ 	if (ns && ns->ms && !blk_integrity_rq(req)) {
+ 		if (!(ns->pi_type && ns->ms == 8) &&
+-		    !blk_rq_is_passthrough(req)) {
+-			blk_mq_end_request(req, BLK_STS_NOTSUPP);
+-			return BLK_MQ_RQ_QUEUE_OK;
+-		}
++		    !blk_rq_is_passthrough(req))
++			return BLK_STS_NOTSUPP;
+ 	}
+ 
+ 	ret = nvme_setup_cmd(ns, req, &cmnd);
+-	if (ret != BLK_MQ_RQ_QUEUE_OK)
++	if (ret)
+ 		return ret;
+ 
+ 	ret = nvme_init_iod(req, dev);
+-	if (ret != BLK_MQ_RQ_QUEUE_OK)
++	if (ret)
+ 		goto out_free_cmd;
+ 
+-	if (blk_rq_nr_phys_segments(req))
++	if (blk_rq_nr_phys_segments(req)) {
+ 		ret = nvme_map_data(dev, req, &cmnd);
 -
- 		trace_block_bio_remap(bdev_get_queue(clone->bi_bdev), clone,
- 				      tio->io->bio->bi_bdev->bd_dev, sector);
--
- 		generic_make_request(clone);
--	} else if (r < 0 || r == DM_MAPIO_REQUEUE) {
+-	if (ret != BLK_MQ_RQ_QUEUE_OK)
+-		goto out_cleanup_iod;
++		if (ret)
++			goto out_cleanup_iod;
++	}
+ 
+ 	blk_mq_start_request(req);
+ 
+ 	spin_lock_irq(&nvmeq->q_lock);
+ 	if (unlikely(nvmeq->cq_vector < 0)) {
+-		ret = BLK_MQ_RQ_QUEUE_ERROR;
++		ret = BLK_STS_IOERR;
+ 		spin_unlock_irq(&nvmeq->q_lock);
+ 		goto out_cleanup_iod;
+ 	}
+ 	__nvme_submit_cmd(nvmeq, &cmnd);
+ 	nvme_process_cq(nvmeq);
+ 	spin_unlock_irq(&nvmeq->q_lock);
+-	return BLK_MQ_RQ_QUEUE_OK;
++	return BLK_STS_OK;
+ out_cleanup_iod:
+ 	nvme_free_iod(dev, req);
+ out_free_cmd:
+diff --git a/drivers/nvme/host/rdma.c b/drivers/nvme/host/rdma.c
+index dd1c6deef82f..073d58065b00 100644
+--- a/drivers/nvme/host/rdma.c
++++ b/drivers/nvme/host/rdma.c
+@@ -1438,7 +1438,7 @@ static inline bool nvme_rdma_queue_is_ready(struct nvme_rdma_queue *queue,
+ 	return true;
+ }
+ 
+-static int nvme_rdma_queue_rq(struct blk_mq_hw_ctx *hctx,
++static blk_status_t nvme_rdma_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 		const struct blk_mq_queue_data *bd)
+ {
+ 	struct nvme_ns *ns = hctx->queue->queuedata;
+@@ -1449,27 +1449,28 @@ static int nvme_rdma_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 	struct nvme_command *c = sqe->data;
+ 	bool flush = false;
+ 	struct ib_device *dev;
+-	int ret;
++	blk_status_t ret;
++	int err;
+ 
+ 	WARN_ON_ONCE(rq->tag < 0);
+ 
+ 	if (!nvme_rdma_queue_is_ready(queue, rq))
+-		return BLK_MQ_RQ_QUEUE_BUSY;
++		return BLK_STS_RESOURCE;
+ 
+ 	dev = queue->device->dev;
+ 	ib_dma_sync_single_for_cpu(dev, sqe->dma,
+ 			sizeof(struct nvme_command), DMA_TO_DEVICE);
+ 
+ 	ret = nvme_setup_cmd(ns, rq, c);
+-	if (ret != BLK_MQ_RQ_QUEUE_OK)
++	if (ret)
+ 		return ret;
+ 
+ 	blk_mq_start_request(rq);
+ 
+-	ret = nvme_rdma_map_data(queue, rq, c);
+-	if (ret < 0) {
++	err = nvme_rdma_map_data(queue, rq, c);
++	if (err < 0) {
+ 		dev_err(queue->ctrl->ctrl.device,
+-			     "Failed to map data (%d)\n", ret);
++			     "Failed to map data (%d)\n", err);
+ 		nvme_cleanup_cmd(rq);
+ 		goto err;
+ 	}
+@@ -1479,17 +1480,18 @@ static int nvme_rdma_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 
+ 	if (req_op(rq) == REQ_OP_FLUSH)
+ 		flush = true;
+-	ret = nvme_rdma_post_send(queue, sqe, req->sge, req->num_sge,
++	err = nvme_rdma_post_send(queue, sqe, req->sge, req->num_sge,
+ 			req->mr->need_inval ? &req->reg_wr.wr : NULL, flush);
+-	if (ret) {
++	if (err) {
+ 		nvme_rdma_unmap_data(queue, rq);
+ 		goto err;
+ 	}
+ 
+-	return BLK_MQ_RQ_QUEUE_OK;
++	return BLK_STS_OK;
+ err:
+-	return (ret == -ENOMEM || ret == -EAGAIN) ?
+-		BLK_MQ_RQ_QUEUE_BUSY : BLK_MQ_RQ_QUEUE_ERROR;
++	if (err == -ENOMEM || err == -EAGAIN)
++		return BLK_STS_RESOURCE;
++	return BLK_STS_IOERR;
+ }
+ 
+ static int nvme_rdma_poll(struct blk_mq_hw_ctx *hctx, unsigned int tag)
+diff --git a/drivers/nvme/target/loop.c b/drivers/nvme/target/loop.c
+index feb497134aee..948b817fcd76 100644
+--- a/drivers/nvme/target/loop.c
++++ b/drivers/nvme/target/loop.c
+@@ -159,17 +159,17 @@ nvme_loop_timeout(struct request *rq, bool reserved)
+ 	return BLK_EH_HANDLED;
+ }
+ 
+-static int nvme_loop_queue_rq(struct blk_mq_hw_ctx *hctx,
++static blk_status_t nvme_loop_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 		const struct blk_mq_queue_data *bd)
+ {
+ 	struct nvme_ns *ns = hctx->queue->queuedata;
+ 	struct nvme_loop_queue *queue = hctx->driver_data;
+ 	struct request *req = bd->rq;
+ 	struct nvme_loop_iod *iod = blk_mq_rq_to_pdu(req);
+-	int ret;
++	blk_status_t ret;
+ 
+ 	ret = nvme_setup_cmd(ns, req, &iod->cmd);
+-	if (ret != BLK_MQ_RQ_QUEUE_OK)
++	if (ret)
+ 		return ret;
+ 
+ 	iod->cmd.common.flags |= NVME_CMD_SGL_METABUF;
+@@ -179,16 +179,15 @@ static int nvme_loop_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 		nvme_cleanup_cmd(req);
+ 		blk_mq_start_request(req);
+ 		nvme_loop_queue_response(&iod->req);
+-		return BLK_MQ_RQ_QUEUE_OK;
++		return BLK_STS_OK;
+ 	}
+ 
+ 	if (blk_rq_bytes(req)) {
+ 		iod->sg_table.sgl = iod->first_sgl;
+-		ret = sg_alloc_table_chained(&iod->sg_table,
++		if (sg_alloc_table_chained(&iod->sg_table,
+ 				blk_rq_nr_phys_segments(req),
+-				iod->sg_table.sgl);
+-		if (ret)
+-			return BLK_MQ_RQ_QUEUE_BUSY;
++				iod->sg_table.sgl))
++			return BLK_STS_RESOURCE;
+ 
+ 		iod->req.sg = iod->sg_table.sgl;
+ 		iod->req.sg_cnt = blk_rq_map_sg(req->q, req, iod->sg_table.sgl);
+@@ -197,7 +196,7 @@ static int nvme_loop_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 	blk_mq_start_request(req);
+ 
+ 	schedule_work(&iod->work);
+-	return BLK_MQ_RQ_QUEUE_OK;
++	return BLK_STS_OK;
+ }
+ 
+ static void nvme_loop_submit_async_event(struct nvme_ctrl *arg, int aer_idx)
+diff --git a/drivers/scsi/scsi_lib.c b/drivers/scsi/scsi_lib.c
+index 8c2cf11c126b..88b2d18f2ee5 100644
+--- a/drivers/scsi/scsi_lib.c
++++ b/drivers/scsi/scsi_lib.c
+@@ -1811,15 +1811,15 @@ static void scsi_request_fn(struct request_queue *q)
+ 		blk_delay_queue(q, SCSI_QUEUE_DELAY);
+ }
+ 
+-static inline int prep_to_mq(int ret)
++static inline blk_status_t prep_to_mq(int ret)
+ {
+ 	switch (ret) {
+ 	case BLKPREP_OK:
+-		return BLK_MQ_RQ_QUEUE_OK;
++		return BLK_STS_OK;
+ 	case BLKPREP_DEFER:
+-		return BLK_MQ_RQ_QUEUE_BUSY;
++		return BLK_STS_RESOURCE;
+ 	default:
+-		return BLK_MQ_RQ_QUEUE_ERROR;
++		return BLK_STS_IOERR;
+ 	}
+ }
+ 
+@@ -1891,7 +1891,7 @@ static void scsi_mq_done(struct scsi_cmnd *cmd)
+ 	blk_mq_complete_request(cmd->request);
+ }
+ 
+-static int scsi_queue_rq(struct blk_mq_hw_ctx *hctx,
++static blk_status_t scsi_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 			 const struct blk_mq_queue_data *bd)
+ {
+ 	struct request *req = bd->rq;
+@@ -1899,14 +1899,14 @@ static int scsi_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 	struct scsi_device *sdev = q->queuedata;
+ 	struct Scsi_Host *shost = sdev->host;
+ 	struct scsi_cmnd *cmd = blk_mq_rq_to_pdu(req);
+-	int ret;
++	blk_status_t ret;
+ 	int reason;
+ 
+ 	ret = prep_to_mq(scsi_prep_state_check(sdev, req));
+-	if (ret != BLK_MQ_RQ_QUEUE_OK)
++	if (ret != BLK_STS_OK)
+ 		goto out;
+ 
+-	ret = BLK_MQ_RQ_QUEUE_BUSY;
++	ret = BLK_STS_RESOURCE;
+ 	if (!get_device(&sdev->sdev_gendev))
+ 		goto out;
+ 
+@@ -1919,7 +1919,7 @@ static int scsi_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 
+ 	if (!(req->rq_flags & RQF_DONTPREP)) {
+ 		ret = prep_to_mq(scsi_mq_prep_fn(req));
+-		if (ret != BLK_MQ_RQ_QUEUE_OK)
++		if (ret != BLK_STS_OK)
+ 			goto out_dec_host_busy;
+ 		req->rq_flags |= RQF_DONTPREP;
+ 	} else {
+@@ -1937,11 +1937,11 @@ static int scsi_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 	reason = scsi_dispatch_cmd(cmd);
+ 	if (reason) {
+ 		scsi_set_blocked(cmd, reason);
+-		ret = BLK_MQ_RQ_QUEUE_BUSY;
++		ret = BLK_STS_RESOURCE;
+ 		goto out_dec_host_busy;
+ 	}
+ 
+-	return BLK_MQ_RQ_QUEUE_OK;
++	return BLK_STS_OK;
+ 
+ out_dec_host_busy:
+ 	atomic_dec(&shost->host_busy);
+@@ -1954,12 +1954,14 @@ static int scsi_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 	put_device(&sdev->sdev_gendev);
+ out:
+ 	switch (ret) {
+-	case BLK_MQ_RQ_QUEUE_BUSY:
++	case BLK_STS_OK:
 +		break;
-+	case DM_MAPIO_KILL:
-+		r = -EIO;
-+		/*FALLTHRU*/
-+	case DM_MAPIO_REQUEUE:
- 		/* error the io and bail out, or requeue it if needed */
- 		dec_pending(tio->io, r);
- 		free_tio(tio);
--	} else if (r != DM_MAPIO_SUBMITTED) {
-+		break;
++	case BLK_STS_RESOURCE:
+ 		if (atomic_read(&sdev->device_busy) == 0 &&
+ 		    !scsi_device_blocked(sdev))
+ 			blk_mq_delay_run_hw_queue(hctx, SCSI_QUEUE_DELAY);
+ 		break;
+-	case BLK_MQ_RQ_QUEUE_ERROR:
 +	default:
- 		DMWARN("unimplemented target map return value: %d", r);
- 		BUG();
+ 		/*
+ 		 * Make sure to release all allocated ressources when
+ 		 * we hit an error, as we will never see this command
+@@ -1968,8 +1970,6 @@ static int scsi_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 		if (req->rq_flags & RQF_DONTPREP)
+ 			scsi_mq_uninit_cmd(cmd);
+ 		break;
+-	default:
+-		break;
  	}
+ 	return ret;
+ }
+diff --git a/include/linux/blk-mq.h b/include/linux/blk-mq.h
+index da0e881fd0ca..9d0ef0df75a6 100644
+--- a/include/linux/blk-mq.h
++++ b/include/linux/blk-mq.h
+@@ -87,7 +87,8 @@ struct blk_mq_queue_data {
+ 	bool last;
+ };
+ 
+-typedef int (queue_rq_fn)(struct blk_mq_hw_ctx *, const struct blk_mq_queue_data *);
++typedef blk_status_t (queue_rq_fn)(struct blk_mq_hw_ctx *,
++		const struct blk_mq_queue_data *);
+ typedef enum blk_eh_timer_return (timeout_fn)(struct request *, bool);
+ typedef int (init_hctx_fn)(struct blk_mq_hw_ctx *, void *, unsigned int);
+ typedef void (exit_hctx_fn)(struct blk_mq_hw_ctx *, unsigned int);
+@@ -155,10 +156,6 @@ struct blk_mq_ops {
+ };
+ 
+ enum {
+-	BLK_MQ_RQ_QUEUE_OK	= 0,	/* queued fine */
+-	BLK_MQ_RQ_QUEUE_BUSY	= 1,	/* requeue IO for later */
+-	BLK_MQ_RQ_QUEUE_ERROR	= 2,	/* end IO with error */
+-
+ 	BLK_MQ_F_SHOULD_MERGE	= 1 << 0,
+ 	BLK_MQ_F_TAG_SHARED	= 1 << 1,
+ 	BLK_MQ_F_SG_MERGE	= 1 << 2,
 -- 
 2.11.0
 

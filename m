@@ -1,26 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([65.50.211.133]:46910 "EHLO
+Received: from bombadil.infradead.org ([65.50.211.133]:50813 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933855AbdERNSa (ORCPT
+        with ESMTP id S933853AbdERNSa (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Thu, 18 May 2017 09:18:30 -0400
 From: Christoph Hellwig <hch@lst.de>
 To: axboe@kernel.dk
 Cc: linux-block@vger.kernel.org, dm-devel@redhat.com,
         linux-btrfs@vger.kernel.org
-Subject: dedicated error codes for the block layer
-Date: Thu, 18 May 2017 15:17:57 +0200
-Message-Id: <20170518131812.22956-1-hch@lst.de>
+Subject: [PATCH 02/15] scsi/osd: don't save block errors into req_results
+Date: Thu, 18 May 2017 15:17:59 +0200
+Message-Id: <20170518131812.22956-3-hch@lst.de>
+In-Reply-To: <20170518131812.22956-1-hch@lst.de>
+References: <20170518131812.22956-1-hch@lst.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This series introduces a new blk_status_t error code type for the block
-layer so that we can have tigher control and explicit semantics for
-block layer errors.
+We will only have sense data if the command exectured and got a SCSI
+result, so this is pointless.
 
-All but the last three patches are cleanups that lead to the new type.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ drivers/scsi/osd/osd_initiator.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-The series it mostly limited to the block layer and drivers, and touching
-file systems a little bit.  The only major exception is btrfs, which
-does funny things with bios and thus sees a larger amount of propagation
-of the new blk_status_t.
+diff --git a/drivers/scsi/osd/osd_initiator.c b/drivers/scsi/osd/osd_initiator.c
+index 8a1b94816419..14785177ce7b 100644
+--- a/drivers/scsi/osd/osd_initiator.c
++++ b/drivers/scsi/osd/osd_initiator.c
+@@ -477,7 +477,7 @@ static void _set_error_resid(struct osd_request *or, struct request *req,
+ 			     int error)
+ {
+ 	or->async_error = error;
+-	or->req_errors = scsi_req(req)->result ? : error;
++	or->req_errors = scsi_req(req)->result;
+ 	or->sense_len = scsi_req(req)->sense_len;
+ 	if (or->sense_len)
+ 		memcpy(or->sense, scsi_req(req)->sense, or->sense_len);
+-- 
+2.11.0
+

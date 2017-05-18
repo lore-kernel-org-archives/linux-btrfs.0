@@ -1,42 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([65.50.211.133]:50813 "EHLO
-        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933853AbdERNSa (ORCPT
+Received: from esa6.hgst.iphmx.com ([216.71.154.45]:16832 "EHLO
+        esa6.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932227AbdEROZz (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 May 2017 09:18:30 -0400
-From: Christoph Hellwig <hch@lst.de>
-To: axboe@kernel.dk
-Cc: linux-block@vger.kernel.org, dm-devel@redhat.com,
-        linux-btrfs@vger.kernel.org
-Subject: [PATCH 02/15] scsi/osd: don't save block errors into req_results
-Date: Thu, 18 May 2017 15:17:59 +0200
-Message-Id: <20170518131812.22956-3-hch@lst.de>
-In-Reply-To: <20170518131812.22956-1-hch@lst.de>
+        Thu, 18 May 2017 10:25:55 -0400
+From: Bart Van Assche <Bart.VanAssche@sandisk.com>
+To: "hch@lst.de" <hch@lst.de>, "axboe@kernel.dk" <axboe@kernel.dk>
+CC: "dm-devel@redhat.com" <dm-devel@redhat.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "linux-block@vger.kernel.org" <linux-block@vger.kernel.org>
+Subject: Re: [PATCH 12/15] block: merge blk_types.h into bio.h
+Date: Thu, 18 May 2017 14:25:52 +0000
+Message-ID: <1495117551.2713.1.camel@sandisk.com>
 References: <20170518131812.22956-1-hch@lst.de>
+         <20170518131812.22956-13-hch@lst.de>
+In-Reply-To: <20170518131812.22956-13-hch@lst.de>
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We will only have sense data if the command exectured and got a SCSI
-result, so this is pointless.
+On Thu, 2017-05-18 at 15:18 +0200, Christoph Hellwig wrote:
+> We've cleaned up our headers sufficiently that we don't need this split
+> anymore.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
----
- drivers/scsi/osd/osd_initiator.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Hello Christoph,
 
-diff --git a/drivers/scsi/osd/osd_initiator.c b/drivers/scsi/osd/osd_initiator.c
-index 8a1b94816419..14785177ce7b 100644
---- a/drivers/scsi/osd/osd_initiator.c
-+++ b/drivers/scsi/osd/osd_initiator.c
-@@ -477,7 +477,7 @@ static void _set_error_resid(struct osd_request *or, struct request *req,
- 			     int error)
- {
- 	or->async_error = error;
--	or->req_errors = scsi_req(req)->result ? : error;
-+	or->req_errors = scsi_req(req)->result;
- 	or->sense_len = scsi_req(req)->sense_len;
- 	if (or->sense_len)
- 		memcpy(or->sense, scsi_req(req)->sense, or->sense_len);
--- 
-2.11.0
+Request-based drivers need the structure definitions from <linux/blkdev.h> and
+the type definitions from <linux/blk_types.h> but do not need the definition of
+struct bio. Have you considered to remove #include <linux/bio.h> from file
+include/linux/blkdev.h? Do you think that would help to reduce the kernel build
+time?
 
+Thanks,
+
+Bart.ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm

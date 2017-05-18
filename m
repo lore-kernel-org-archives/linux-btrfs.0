@@ -1,91 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([65.50.211.133]:46303 "EHLO
+Received: from bombadil.infradead.org ([65.50.211.133]:56212 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933933AbdERNSd (ORCPT
+        with ESMTP id S933890AbdERNSb (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 May 2017 09:18:33 -0400
+        Thu, 18 May 2017 09:18:31 -0400
 From: Christoph Hellwig <hch@lst.de>
 To: axboe@kernel.dk
 Cc: linux-block@vger.kernel.org, dm-devel@redhat.com,
         linux-btrfs@vger.kernel.org
-Subject: [PATCH 05/15] fs: remove the unused error argument to dio_end_io()
-Date: Thu, 18 May 2017 15:18:02 +0200
-Message-Id: <20170518131812.22956-6-hch@lst.de>
+Subject: [PATCH 01/15] nvme-lightnvm: use blk_execute_rq in nvme_nvm_submit_user_cmd
+Date: Thu, 18 May 2017 15:17:58 +0200
+Message-Id: <20170518131812.22956-2-hch@lst.de>
 In-Reply-To: <20170518131812.22956-1-hch@lst.de>
 References: <20170518131812.22956-1-hch@lst.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
----
- fs/btrfs/inode.c   | 6 +++---
- fs/direct-io.c     | 3 +--
- include/linux/fs.h | 2 +-
- 3 files changed, 5 insertions(+), 6 deletions(-)
+Instead of reinventing it poorly.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 17cbe9306faf..758b2666885e 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -8244,7 +8244,7 @@ static void btrfs_endio_direct_read(struct bio *bio)
- 	kfree(dip);
- 
- 	dio_bio->bi_error = bio->bi_error;
--	dio_end_io(dio_bio, bio->bi_error);
-+	dio_end_io(dio_bio);
- 
- 	if (io_bio->end_io)
- 		io_bio->end_io(io_bio, err);
-@@ -8304,7 +8304,7 @@ static void btrfs_endio_direct_write(struct bio *bio)
- 	kfree(dip);
- 
- 	dio_bio->bi_error = bio->bi_error;
--	dio_end_io(dio_bio, bio->bi_error);
-+	dio_end_io(dio_bio);
- 	bio_put(bio);
- }
- 
-@@ -8673,7 +8673,7 @@ static void btrfs_submit_direct(struct bio *dio_bio, struct inode *inode,
- 		 * Releases and cleans up our dio_bio, no need to bio_put()
- 		 * nor bio_endio()/bio_io_error() against dio_bio.
- 		 */
--		dio_end_io(dio_bio, ret);
-+		dio_end_io(dio_bio);
- 	}
- 	if (io_bio)
- 		bio_put(io_bio);
-diff --git a/fs/direct-io.c b/fs/direct-io.c
-index a04ebea77de8..04247a6c3f73 100644
---- a/fs/direct-io.c
-+++ b/fs/direct-io.c
-@@ -348,13 +348,12 @@ static void dio_bio_end_io(struct bio *bio)
- /**
-  * dio_end_io - handle the end io action for the given bio
-  * @bio: The direct io bio thats being completed
-- * @error: Error if there was one
-  *
-  * This is meant to be called by any filesystem that uses their own dio_submit_t
-  * so that the DIO specific endio actions are dealt with after the filesystem
-  * has done it's completion work.
-  */
--void dio_end_io(struct bio *bio, int error)
-+void dio_end_io(struct bio *bio)
- {
- 	struct dio *dio = bio->bi_private;
- 
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 803e5a9b2654..4388ab58843d 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -2843,7 +2843,7 @@ enum {
- 	DIO_SKIP_DIO_COUNT = 0x08,
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Reviewed-by: Javier González <javier@cnexlabs.com>
+---
+ drivers/nvme/host/lightnvm.c | 12 +-----------
+ 1 file changed, 1 insertion(+), 11 deletions(-)
+
+diff --git a/drivers/nvme/host/lightnvm.c b/drivers/nvme/host/lightnvm.c
+index f5df78ed1e10..f3885b5e56bd 100644
+--- a/drivers/nvme/host/lightnvm.c
++++ b/drivers/nvme/host/lightnvm.c
+@@ -571,13 +571,6 @@ static struct nvm_dev_ops nvme_nvm_dev_ops = {
+ 	.max_phys_sect		= 64,
  };
  
--void dio_end_io(struct bio *bio, int error);
-+void dio_end_io(struct bio *bio);
+-static void nvme_nvm_end_user_vio(struct request *rq, int error)
+-{
+-	struct completion *waiting = rq->end_io_data;
+-
+-	complete(waiting);
+-}
+-
+ static int nvme_nvm_submit_user_cmd(struct request_queue *q,
+ 				struct nvme_ns *ns,
+ 				struct nvme_nvm_command *vcmd,
+@@ -608,7 +601,6 @@ static int nvme_nvm_submit_user_cmd(struct request_queue *q,
+ 	rq->timeout = timeout ? timeout : ADMIN_TIMEOUT;
  
- ssize_t __blockdev_direct_IO(struct kiocb *iocb, struct inode *inode,
- 			     struct block_device *bdev, struct iov_iter *iter,
+ 	rq->cmd_flags &= ~REQ_FAILFAST_DRIVER;
+-	rq->end_io_data = &wait;
+ 
+ 	if (ppa_buf && ppa_len) {
+ 		ppa_list = dma_pool_alloc(dev->dma_pool, GFP_KERNEL, &ppa_dma);
+@@ -662,9 +654,7 @@ static int nvme_nvm_submit_user_cmd(struct request_queue *q,
+ 	}
+ 
+ submit:
+-	blk_execute_rq_nowait(q, NULL, rq, 0, nvme_nvm_end_user_vio);
+-
+-	wait_for_completion_io(&wait);
++	blk_execute_rq(q, NULL, rq, 0);
+ 
+ 	if (nvme_req(rq)->flags & NVME_REQ_CANCELLED)
+ 		ret = -EINTR;
 -- 
 2.11.0
 

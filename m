@@ -1,153 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41647 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752826AbdEKGRy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 May 2017 02:17:54 -0400
-From: Nikolay Borisov <nborisov@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.com, jeffm@suse.com, clm@fb.com,
-        Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH] btrfs: Convert fs_info->free_chunk_space to atomic64_t
-Date: Thu, 11 May 2017 09:17:46 +0300
-Message-Id: <1494483466-22342-1-git-send-email-nborisov@suse.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:36968 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751944AbdESAAC (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 18 May 2017 20:00:02 -0400
+Date: Thu, 18 May 2017 16:58:19 -0700
+From: Liu Bo <bo.li.liu@oracle.com>
+To: jeffm@suse.com
+Cc: linux-btrfs@vger.kernel.org, stable@vger.kernel.org
+Subject: Re: [PATCH 1/3] btrfs: fix race with relocation recovery and fs_root
+ setup
+Message-ID: <20170518235819.GD23822@lim.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1495035516-3217-1-git-send-email-jeffm@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1495035516-3217-1-git-send-email-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The ->free_chunk_space variable is used to track the unallocated space and
-access to it is protected by a spinlock, which is not used for anything else.
-Make the code a bit self-explanatory by switching the variable to an atomic64_t
-type and kill the spinlock.
+On Wed, May 17, 2017 at 11:38:34AM -0400, jeffm@suse.com wrote:
+> From: Jeff Mahoney <jeffm@suse.com>
+> 
+> If we have to recover relocation during mount, we'll ultimately have to
+> evict the orphan inode.  That goes through the reservation dance, where
+> priority_reclaim_metadata_space and flush_space expect fs_info->fs_root
+> to be valid.  That's the next thing to be set up during mount, so we
+> crash, almost always in flush_space trying to join the transaction
+> but priority_reclaim_metadata_space is possible as well.  This call
+> path has been problematic in the past WRT whether ->fs_root is valid
+> yet.  Commit 957780eb278 (Btrfs: introduce ticketed enospc
+> infrastructure) added new users that are called in the direct path
+> instead of the async path that had already been worked around.
+> 
+> The thing is that we don't actually need the fs_root, specifically, for
+> anything.  We either use it to determine whether the root is the
+> chunk_root for use in choosing an allocation profile or as a root to pass
+> btrfs_join_transaction before immediately committing it.  Anything that
+> isn't the chunk root works in the former case and any root works in
+> the latter.
+> 
+> A simple fix is to use a root we know will always be there: the
+> extent_root.
+> 
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/ctree.h       |  3 +--
- fs/btrfs/disk-io.c     |  3 +--
- fs/btrfs/extent-tree.c |  4 +---
- fs/btrfs/volumes.c     | 26 +++++++-------------------
- 4 files changed, 10 insertions(+), 26 deletions(-)
+Thanks,
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 3e21211e99c3..2202dfdc7888 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -729,8 +729,7 @@ struct btrfs_fs_info {
- 	struct rb_root block_group_cache_tree;
- 
- 	/* keep track of unallocated space */
--	spinlock_t free_chunk_lock;
--	u64 free_chunk_space;
-+	atomic64_t free_chunk_space;
- 
- 	struct extent_io_tree freed_extents[2];
- 	struct extent_io_tree *pinned_extents;
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 061c1d1f774f..2ef80d562a54 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2626,7 +2626,6 @@ int open_ctree(struct super_block *sb,
- 	spin_lock_init(&fs_info->fs_roots_radix_lock);
- 	spin_lock_init(&fs_info->delayed_iput_lock);
- 	spin_lock_init(&fs_info->defrag_inodes_lock);
--	spin_lock_init(&fs_info->free_chunk_lock);
- 	spin_lock_init(&fs_info->tree_mod_seq_lock);
- 	spin_lock_init(&fs_info->super_lock);
- 	spin_lock_init(&fs_info->qgroup_op_lock);
-@@ -2667,7 +2666,7 @@ int open_ctree(struct super_block *sb,
- 	fs_info->max_inline = BTRFS_DEFAULT_MAX_INLINE;
- 	fs_info->metadata_ratio = 0;
- 	fs_info->defrag_inodes = RB_ROOT;
--	fs_info->free_chunk_space = 0;
-+	atomic64_set(&fs_info->free_chunk_space, 0);
- 	fs_info->tree_mod_log = RB_ROOT;
- 	fs_info->commit_interval = BTRFS_DEFAULT_COMMIT_INTERVAL;
- 	fs_info->avg_delayed_ref_runtime = NSEC_PER_SEC >> 6; /* div by 64 */
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 3ab1f88af038..f913c25b9a54 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4626,9 +4626,7 @@ static int can_overcommit(struct btrfs_root *root,
- 
- 	used += space_info->bytes_may_use;
- 
--	spin_lock(&fs_info->free_chunk_lock);
--	avail = fs_info->free_chunk_space;
--	spin_unlock(&fs_info->free_chunk_lock);
-+	avail = atomic64_read(&fs_info->free_chunk_space);
- 
- 	/*
- 	 * If we have dup, raid1 or raid10 then only half of the free
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index ab8a66d852f9..923a3591265c 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2413,9 +2413,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
- 	fs_info->fs_devices->total_devices++;
- 	fs_info->fs_devices->total_rw_bytes += device->total_bytes;
- 
--	spin_lock(&fs_info->free_chunk_lock);
--	fs_info->free_chunk_space += device->total_bytes;
--	spin_unlock(&fs_info->free_chunk_lock);
-+	atomic64_add(device->total_bytes, &fs_info->free_chunk_space);
- 
- 	if (!blk_queue_nonrot(bdev_get_queue(bdev)))
- 		fs_info->fs_devices->rotating = 1;
-@@ -2850,9 +2848,7 @@ int btrfs_remove_chunk(struct btrfs_trans_handle *trans,
- 			mutex_lock(&fs_info->chunk_mutex);
- 			btrfs_device_set_bytes_used(device,
- 					device->bytes_used - dev_extent_len);
--			spin_lock(&fs_info->free_chunk_lock);
--			fs_info->free_chunk_space += dev_extent_len;
--			spin_unlock(&fs_info->free_chunk_lock);
-+			atomic64_add(dev_extent_len, &fs_info->free_chunk_space);
- 			btrfs_clear_space_info_full(fs_info);
- 			mutex_unlock(&fs_info->chunk_mutex);
- 		}
-@@ -4379,9 +4375,7 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
- 	btrfs_device_set_total_bytes(device, new_size);
- 	if (device->writeable) {
- 		device->fs_devices->total_rw_bytes -= diff;
--		spin_lock(&fs_info->free_chunk_lock);
--		fs_info->free_chunk_space -= diff;
--		spin_unlock(&fs_info->free_chunk_lock);
-+		atomic64_sub(diff, &fs_info->free_chunk_space);
- 	}
- 	mutex_unlock(&fs_info->chunk_mutex);
- 
-@@ -4505,9 +4499,7 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
- 		btrfs_device_set_total_bytes(device, old_size);
- 		if (device->writeable)
- 			device->fs_devices->total_rw_bytes += diff;
--		spin_lock(&fs_info->free_chunk_lock);
--		fs_info->free_chunk_space += diff;
--		spin_unlock(&fs_info->free_chunk_lock);
-+		atomic64_add(diff, &fs_info->free_chunk_space);
- 		mutex_unlock(&fs_info->chunk_mutex);
- 	}
- 	return ret;
-@@ -4852,9 +4844,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 		btrfs_device_set_bytes_used(map->stripes[i].dev, num_bytes);
- 	}
- 
--	spin_lock(&info->free_chunk_lock);
--	info->free_chunk_space -= (stripe_size * map->num_stripes);
--	spin_unlock(&info->free_chunk_lock);
-+	atomic64_sub(stripe_size * map->num_stripes, &info->free_chunk_space);
- 
- 	free_extent_map(em);
- 	check_raid56_incompat_flag(info, type);
-@@ -6636,10 +6626,8 @@ static int read_one_dev(struct btrfs_fs_info *fs_info,
- 	device->in_fs_metadata = 1;
- 	if (device->writeable && !device->is_tgtdev_for_dev_replace) {
- 		device->fs_devices->total_rw_bytes += device->total_bytes;
--		spin_lock(&fs_info->free_chunk_lock);
--		fs_info->free_chunk_space += device->total_bytes -
--			device->bytes_used;
--		spin_unlock(&fs_info->free_chunk_lock);
-+		atomic64_add(device->total_bytes - device->bytes_used,
-+				&fs_info->free_chunk_space);
- 	}
- 	ret = 0;
- 	return ret;
--- 
-2.7.4
-
+-liubo
+> Cc: <stable@vger.kernel.org> # v4.8+
+> Fixes: 957780eb278 (Btrfs: introduce ticketed enospc infrastructure)
+> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+> ---
+>  fs/btrfs/extent-tree.c | 6 +++---
+>  1 file changed, 3 insertions(+), 3 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index be54776..9894c4e 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -4834,7 +4834,7 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
+>  	spin_unlock(&delayed_rsv->lock);
+>  
+>  commit:
+> -	trans = btrfs_join_transaction(fs_info->fs_root);
+> +	trans = btrfs_join_transaction(fs_info->extent_root);
+>  	if (IS_ERR(trans))
+>  		return -ENOSPC;
+>  
+> @@ -4852,7 +4852,7 @@ static int flush_space(struct btrfs_fs_info *fs_info,
+>  		       struct btrfs_space_info *space_info, u64 num_bytes,
+>  		       u64 orig_bytes, int state)
+>  {
+> -	struct btrfs_root *root = fs_info->fs_root;
+> +	struct btrfs_root *root = fs_info->extent_root;
+>  	struct btrfs_trans_handle *trans;
+>  	int nr;
+>  	int ret = 0;
+> @@ -5052,7 +5052,7 @@ static void priority_reclaim_metadata_space(struct btrfs_fs_info *fs_info,
+>  	int flush_state = FLUSH_DELAYED_ITEMS_NR;
+>  
+>  	spin_lock(&space_info->lock);
+> -	to_reclaim = btrfs_calc_reclaim_metadata_size(fs_info->fs_root,
+> +	to_reclaim = btrfs_calc_reclaim_metadata_size(fs_info->extent_root,
+>  						      space_info);
+>  	if (!to_reclaim) {
+>  		spin_unlock(&space_info->lock);
+> -- 
+> 1.8.5.6
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

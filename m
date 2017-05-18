@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:22220 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:46077 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1755072AbdERDjJ (ORCPT
+        with ESMTP id S1755106AbdERDjM (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 May 2017 23:39:09 -0400
+        Wed, 17 May 2017 23:39:12 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>, <dsterba@suse.cz>
-Subject: [PATCH 04/32] btrfs-progs: Refactor block sizes users in btrfs-corrupt-block.c
-Date: Thu, 18 May 2017 11:38:29 +0800
-Message-ID: <20170518033857.15002-5-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 05/32] btrfs-progs: Refactor block sizes users in ctree.c and ctree.h
+Date: Thu, 18 May 2017 11:38:30 +0800
+Message-ID: <20170518033857.15002-6-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20170518033857.15002-1-quwenruo@cn.fujitsu.com>
 References: <20170518033857.15002-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -16,86 +16,79 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Convert root->sectorsize/nodesize users in btrfs-corrupt-block.
-
-This provides the basis to further refactor incorrect btrfs_root
-parameter to btrfs_fs_info parameter.
-
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- btrfs-corrupt-block.c | 21 ++++++++++-----------
- 1 file changed, 10 insertions(+), 11 deletions(-)
+ ctree.c | 10 +++++-----
+ ctree.h |  4 ++--
+ 2 files changed, 7 insertions(+), 7 deletions(-)
 
-diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
-index 71b4d771..20a4c1df 100644
---- a/btrfs-corrupt-block.c
-+++ b/btrfs-corrupt-block.c
-@@ -169,7 +169,7 @@ static int corrupt_keys_in_block(struct btrfs_root *root, u64 bytenr)
- {
- 	struct extent_buffer *eb;
+diff --git a/ctree.c b/ctree.c
+index 02c71807..266a3cf2 100644
+--- a/ctree.c
++++ b/ctree.c
+@@ -650,7 +650,7 @@ struct extent_buffer *read_node_slot(struct btrfs_root *root,
+ 		return NULL;
  
--	eb = read_tree_block(root, bytenr, root->nodesize, 0);
-+	eb = read_tree_block(root, bytenr, root->fs_info->nodesize, 0);
- 	if (!extent_buffer_uptodate(eb))
- 		return -EIO;;
+ 	return read_tree_block(root, btrfs_node_blockptr(parent, slot),
+-		       root->nodesize,
++		       root->fs_info->nodesize,
+ 		       btrfs_node_ptr_generation(parent, slot));
+ }
  
-@@ -297,7 +297,7 @@ static void btrfs_corrupt_extent_tree(struct btrfs_trans_handle *trans,
- 		struct extent_buffer *next;
+@@ -987,7 +987,7 @@ void reada_for_search(struct btrfs_root *root, struct btrfs_path *path,
  
- 		next = read_tree_block(root, btrfs_node_blockptr(eb, i),
--				       root->nodesize,
-+				       root->fs_info->nodesize,
- 				       btrfs_node_ptr_generation(eb, i));
- 		if (!extent_buffer_uptodate(next))
- 			continue;
-@@ -764,7 +764,7 @@ static int corrupt_metadata_block(struct btrfs_root *root, u64 block,
- 		return -EINVAL;
- 	}
+ 	node = path->nodes[level];
+ 	search = btrfs_node_blockptr(node, slot);
+-	blocksize = root->nodesize;
++	blocksize = root->fs_info->nodesize;
+ 	eb = btrfs_find_tree_block(root, search, blocksize);
+ 	if (eb) {
+ 		free_extent_buffer(eb);
+@@ -1420,7 +1420,7 @@ static int noinline insert_new_root(struct btrfs_trans_handle *trans,
+ 	else
+ 		btrfs_node_key(lower, &lower_key, 0);
  
--	eb = read_tree_block(root, block, root->nodesize, 0);
-+	eb = read_tree_block(root, block, root->fs_info->nodesize, 0);
- 	if (!extent_buffer_uptodate(eb)) {
- 		fprintf(stderr, "Couldn't read in tree block %s\n", field);
- 		return -EINVAL;
-@@ -1352,10 +1352,9 @@ int main(int argc, char **argv)
- 		print_usage(1);
+-	c = btrfs_alloc_free_block(trans, root, root->nodesize,
++	c = btrfs_alloc_free_block(trans, root, root->fs_info->nodesize,
+ 				   root->root_key.objectid, &lower_key, 
+ 				   level, root->node->start, 0);
  
- 	if (bytes == 0)
--		bytes = root->sectorsize;
-+		bytes = root->fs_info->sectorsize;
+@@ -1543,7 +1543,7 @@ static int split_node(struct btrfs_trans_handle *trans, struct btrfs_root
+ 	mid = (c_nritems + 1) / 2;
+ 	btrfs_node_key(c, &disk_key, mid);
  
--	bytes = (bytes + root->sectorsize - 1) / root->sectorsize;
--	bytes *= root->sectorsize;
-+	bytes = round_up(bytes, root->fs_info->sectorsize);
+-	split = btrfs_alloc_free_block(trans, root, root->nodesize,
++	split = btrfs_alloc_free_block(trans, root, root->fs_info->nodesize,
+ 					root->root_key.objectid,
+ 					&disk_key, level, c->start, 0);
+ 	if (IS_ERR(split))
+@@ -2110,7 +2110,7 @@ again:
+ 	else
+ 		btrfs_item_key(l, &disk_key, mid);
  
- 	while (bytes > 0) {
- 		if (corrupt_block_keys) {
-@@ -1364,7 +1363,7 @@ int main(int argc, char **argv)
- 			struct extent_buffer *eb;
+-	right = btrfs_alloc_free_block(trans, root, root->nodesize,
++	right = btrfs_alloc_free_block(trans, root, root->fs_info->nodesize,
+ 					root->root_key.objectid,
+ 					&disk_key, 0, l->start, 0);
+ 	if (IS_ERR(right)) {
+diff --git a/ctree.h b/ctree.h
+index 78956a4f..84298c7b 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -352,11 +352,11 @@ struct btrfs_header {
+ 	u8 level;
+ } __attribute__ ((__packed__));
  
- 			eb = btrfs_find_create_tree_block(root->fs_info,
--					logical, root->sectorsize);
-+					logical, root->fs_info->sectorsize);
- 			if (!eb) {
- 				error(
- 		"not enough memory to allocate extent buffer for bytenr %llu",
-@@ -1373,12 +1372,12 @@ int main(int argc, char **argv)
- 				goto out_close;
- 			}
- 
--			debug_corrupt_block(eb, root, logical, root->sectorsize,
--					copy);
-+			debug_corrupt_block(eb, root, logical,
-+					    root->fs_info->sectorsize, copy);
- 			free_extent_buffer(eb);
- 		}
--		logical += root->sectorsize;
--		bytes -= root->sectorsize;
-+		logical += root->fs_info->sectorsize;
-+		bytes -= root->fs_info->sectorsize;
- 	}
- 	return ret;
- out_close:
+-#define BTRFS_NODEPTRS_PER_BLOCK(r) (((r)->nodesize - \
++#define BTRFS_NODEPTRS_PER_BLOCK(r) (((r)->fs_info->nodesize - \
+ 			        sizeof(struct btrfs_header)) / \
+ 			        sizeof(struct btrfs_key_ptr))
+ #define __BTRFS_LEAF_DATA_SIZE(bs) ((bs) - sizeof(struct btrfs_header))
+-#define BTRFS_LEAF_DATA_SIZE(r) (__BTRFS_LEAF_DATA_SIZE(r->nodesize))
++#define BTRFS_LEAF_DATA_SIZE(r) (__BTRFS_LEAF_DATA_SIZE(r->fs_info->nodesize))
+ #define BTRFS_MAX_INLINE_DATA_SIZE(r) (BTRFS_LEAF_DATA_SIZE(r) - \
+ 					sizeof(struct btrfs_item) - \
+ 					sizeof(struct btrfs_file_extent_item))
 -- 
 2.13.0
 

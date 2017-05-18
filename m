@@ -1,83 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49975 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1756310AbdEROhI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 May 2017 10:37:08 -0400
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com
-Subject: Btrfs progs release 4.11
-Date: Thu, 18 May 2017 16:35:54 +0200
-Message-Id: <20170518143554.24900-1-dsterba@suse.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:21203 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754764AbdERJ2b (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 18 May 2017 05:28:31 -0400
+Subject: Re: [PATCH] btrfs: add mount umount logs
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+References: <20170516084149.10147-1-anand.jain@oracle.com>
+ <392158e2-14a1-6499-5005-19dd5497e18b@cn.fujitsu.com>
+Cc: dsterba@suse.cz
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <2c7ff425-4029-e1d1-3b95-86c08499c9b6@oracle.com>
+Date: Thu, 18 May 2017 17:34:15 +0800
+MIME-Version: 1.0
+In-Reply-To: <392158e2-14a1-6499-5005-19dd5497e18b@cn.fujitsu.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
 
-btrfs-progs version 4.11 have been released. It's a small release with handful
-of fixes and minor other updates.
 
-Changes:
-  * receive: fix handling empty stream with -e (multi-stream)
-  * send dump: fix printing long file names
-  * stability fixes for: dump-super, print-tree, check
-  * option parser updates: global options are parsed before the subcommand name
-    (old xfstests will fail)
-  * new and updated tests
-  * documentation updates
+On 05/16/2017 05:25 PM, Qu Wenruo wrote:
+> Yes, this is indeed a nice feature.
+>
+> But what about only outputting this info when BTRFS_DEBUG is selected?
+> I'm sure there will be some guys not liking such kernel message flooding
+> everywhere when doing testing.
 
-Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
+  Thanks. Will keep in mind to make that changes if received confirmed 
+objection.
 
-Shortlog:
+Thanks. Anand
 
-Christian Brauner (3):
-      btrfs-progs: fix btrfs send & receive with -e flag
-      btrfs-progs: tests: misc/018-receive use receive -e to terminate on end marker
-      btrfs-progs: receiv: fail on first -ENODATA only
 
-Christophe de Dinechin (3):
-      btrfs-progs: check: disambiguate between cases where add_tree_backref fails
-      btrfs-progs: check: prevent attempt to insert extent record with max_size==0
-      btrfs-progs: check: make max_size consistent with nr
-
-David Sterba (10):
-      btrfs-progs: docs: mount options, enhance ssd/nossd
-      btrfs-progs: rework option parser to use getopt for global options
-      btrfs-progs: README: sort bug reports means by preference
-      btrfs-progs: docs: btrfs-replace, fix typo
-      btrfs-progs: balance: minor wording adjustment for full balance warning
-      btrfs-progs: docs: update formatting and wording for btrfs(5)
-      btrfs-progs: fssum: fix warning, include correct header for major()
-      btrfs-progs: tests: fix misc/019-receive-clones-on-munted-subvol
-      btrfs-progs: update CHANGES for v4.11
-      Btrfs progs v4.11
-
-Evan Danaher (1):
-      btrfs-progs: send: always print a space after path in dump
-
-Hans van Kranenburg (2):
-      btrfs-progs: docs: Fix missing newline in man 5 btrfs
-      btrfs-progs: docs: Fix newlines for man btrfstune
-
-Lakshmipathi.G (3):
-      btrfs-progs: misc-tests: Superblock corruption and recovery using backup
-      btrfs-progs: tests: add variable quotation to fsck-tests
-      btrfs-progs: tests: add variable quotation to convert-tests
-
-Lu Fengqi (4):
-      btrfs-progs: dump-super: check array_size in print_sys_chunk_array
-      btrfs-progs: print-tree: add validation to print_chunk
-      btrfs-progs: tests: fssum, fix memory leak
-      btrfs-progs: tests: Fix fuzz-test for bko-161821.raw.txt
-
-Qu Wenruo (6):
-      btrfs-progs: Fix memory leak when 0 sized block group item is found
-      btrfs-progs: check: Fix memory leak in check_chunks_and_extents
-      btrfs-progs: Use more strict check to read out tree root
-      btrfs-progs: check: Avoid reading beyond item boundary for inode_ref
-      btrfs-progs: check: Avoid reading beyond item boundary for dir_item and dir_index
-      btrfs-progs: print-tree: Add leaf flags and backref revision output
-
-Su Yue (1):
-      btrfs-progs: check: Fix heap use after free
+> Thanks,
+> Qu
+>
+> At 05/16/2017 04:41 PM, Anand Jain wrote:
+>> By looking at the logs we should be able to know when the FS was
+>> mounted and unmounted and the options used, so to help forensic
+>> investigations.
+>>
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>> ---
+>>   fs/btrfs/super.c | 17 +++++++++++++++++
+>>   1 file changed, 17 insertions(+)
+>>
+>> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+>> index 827a8305da50..a123bc46b521 100644
+>> --- a/fs/btrfs/super.c
+>> +++ b/fs/btrfs/super.c
+>> @@ -1408,6 +1408,17 @@ static char *setup_root_args(char *args)
+>>       return buf;
+>>   }
+>>   +static void print_mount_info(struct btrfs_fs_info *info, int flag,
+>> char *opt,
+>> +        char *prefix)
+>> +{
+>> +    char f[10] = {0};
+>> +
+>> +    if (flag & MS_RDONLY)
+>> +        strcpy(f, "rdonly");
+>
+> Isn't "ro" more common?
+>
+> Thanks,
+> Qu
+>
+>> +
+>> +    btrfs_notice(info, "%s: flags:%s opt:%s\n", prefix, f, opt);
+>> +}
+>> +
+>>   static struct dentry *mount_subvol(const char *subvol_name, u64
+>> subvol_objectid,
+>>                      int flags, const char *device_name,
+>>                      char *data)
+>> @@ -1502,6 +1513,8 @@ static struct dentry *mount_subvol(const char
+>> *subvol_name, u64 subvol_objectid,
+>>               dput(root);
+>>               root = ERR_PTR(ret);
+>>               deactivate_locked_super(s);
+>> +        } else {
+>> +            print_mount_info(fs_info, flags, data, "mount");
+>>           }
+>>       }
+>>   @@ -1882,6 +1895,9 @@ static int btrfs_remount(struct super_block
+>> *sb, int *flags, char *data)
+>>   out:
+>>       wake_up_process(fs_info->transaction_kthread);
+>>       btrfs_remount_cleanup(fs_info, old_opts);
+>> +
+>> +    print_mount_info(fs_info, *flags, data, "remount");
+>> +
+>>       return 0;
+>>     restore:
+>> @@ -2212,6 +2228,7 @@ static int btrfs_statfs(struct dentry *dentry,
+>> struct kstatfs *buf)
+>>   static void btrfs_kill_super(struct super_block *sb)
+>>   {
+>>       struct btrfs_fs_info *fs_info = btrfs_sb(sb);
+>> +    btrfs_notice(fs_info, "%s\n", "unmount");
+>>       kill_anon_super(sb);
+>>       free_fs_info(fs_info);
+>>   }
+>>
+>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

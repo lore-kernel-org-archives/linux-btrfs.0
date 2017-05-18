@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:46077 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:43366 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S932199AbdERDj0 (ORCPT
+        with ESMTP id S932200AbdERDj1 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 May 2017 23:39:26 -0400
+        Wed, 17 May 2017 23:39:27 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>, <dsterba@suse.cz>
-Subject: [PATCH 20/32] btrfs-progs: Refactor sectorsizes users in file-item.c
-Date: Thu, 18 May 2017 11:38:45 +0800
-Message-ID: <20170518033857.15002-21-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 21/32] btrfs-progs: Refactor sectorsize users in free-space-cache.c
+Date: Thu, 18 May 2017 11:38:46 +0800
+Message-ID: <20170518033857.15002-22-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20170518033857.15002-1-quwenruo@cn.fujitsu.com>
 References: <20170518033857.15002-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -18,73 +18,58 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- file-item.c | 14 ++++++++------
- 1 file changed, 8 insertions(+), 6 deletions(-)
+ free-space-cache.c | 15 +++++++++------
+ 1 file changed, 9 insertions(+), 6 deletions(-)
 
-diff --git a/file-item.c b/file-item.c
-index 333fa339..6877a1a9 100644
---- a/file-item.c
-+++ b/file-item.c
-@@ -162,7 +162,8 @@ btrfs_lookup_csum(struct btrfs_trans_handle *trans,
- 		if (found_key.type != BTRFS_EXTENT_CSUM_KEY)
- 			goto fail;
- 
--		csum_offset = (bytenr - found_key.offset) / root->sectorsize;
-+		csum_offset = (bytenr - found_key.offset) /
+diff --git a/free-space-cache.c b/free-space-cache.c
+index a4196eb1..4bf4a6cb 100644
+--- a/free-space-cache.c
++++ b/free-space-cache.c
+@@ -54,7 +54,8 @@ static int io_ctl_init(struct io_ctl *io_ctl, u64 size, u64 ino,
+ 		       struct btrfs_root *root)
+ {
+ 	memset(io_ctl, 0, sizeof(struct io_ctl));
+-	io_ctl->num_pages = (size + root->sectorsize - 1) / root->sectorsize;
++	io_ctl->num_pages = (size + root->fs_info->sectorsize - 1) /
 +				root->fs_info->sectorsize;
- 		csums_in_item = btrfs_item_size_nr(leaf, path->slots[0]);
- 		csums_in_item /= csum_size;
+ 	io_ctl->buffer = kzalloc(size, GFP_NOFS);
+ 	if (!io_ctl->buffer)
+ 		return -ENOMEM;
+@@ -81,11 +82,12 @@ static void io_ctl_unmap_page(struct io_ctl *io_ctl)
+ static void io_ctl_map_page(struct io_ctl *io_ctl, int clear)
+ {
+ 	BUG_ON(io_ctl->index >= io_ctl->num_pages);
+-	io_ctl->cur = io_ctl->buffer + (io_ctl->index++ * io_ctl->root->sectorsize);
++	io_ctl->cur = io_ctl->buffer + (io_ctl->index++ *
++					io_ctl->root->fs_info->sectorsize);
+ 	io_ctl->orig = io_ctl->cur;
+-	io_ctl->size = io_ctl->root->sectorsize;
++	io_ctl->size = io_ctl->root->fs_info->sectorsize;
+ 	if (clear)
+-		memset(io_ctl->cur, 0, io_ctl->root->sectorsize);
++		memset(io_ctl->cur, 0, io_ctl->root->fs_info->sectorsize);
+ }
  
-@@ -195,6 +196,7 @@ int btrfs_csum_file_block(struct btrfs_trans_handle *trans,
- 	struct extent_buffer *leaf = NULL;
- 	u64 csum_offset;
- 	u32 csum_result = ~(u32)0;
-+	u32 sectorsize = root->fs_info->sectorsize;
- 	u32 nritems;
- 	u32 ins_size;
- 	u16 csum_size =
-@@ -265,7 +267,7 @@ int btrfs_csum_file_block(struct btrfs_trans_handle *trans,
- 	path->slots[0]--;
- 	leaf = path->nodes[0];
- 	btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
--	csum_offset = (file_key.offset - found_key.offset) / root->sectorsize;
-+	csum_offset = (file_key.offset - found_key.offset) / sectorsize;
- 	if (found_key.objectid != BTRFS_EXTENT_CSUM_OBJECTID ||
- 	    found_key.type != BTRFS_EXTENT_CSUM_KEY ||
- 	    csum_offset >= MAX_CSUM_ITEMS(root, csum_size)) {
-@@ -288,7 +290,7 @@ insert:
- 	if (found_next) {
- 		u64 tmp = min(alloc_end, next_offset);
- 		tmp -= file_key.offset;
--		tmp /= root->sectorsize;
-+		tmp /= sectorsize;
- 		tmp = max((u64)1, tmp);
- 		tmp = min(tmp, (u64)MAX_CSUM_ITEMS(root, csum_size));
- 		ins_size = csum_size * tmp;
-@@ -346,12 +348,12 @@ static noinline int truncate_one_csum(struct btrfs_root *root,
- 		btrfs_super_csum_size(root->fs_info->super_copy);
- 	u64 csum_end;
- 	u64 end_byte = bytenr + len;
--	u32 blocksize = root->sectorsize;
-+	u32 blocksize = root->fs_info->sectorsize;
- 	int ret;
+ static void io_ctl_drop_pages(struct io_ctl *io_ctl)
+@@ -210,7 +212,8 @@ static int io_ctl_check_crc(struct io_ctl *io_ctl, int index)
+ 	val = *tmp;
  
- 	leaf = path->nodes[0];
- 	csum_end = btrfs_item_size_nr(leaf, path->slots[0]) / csum_size;
--	csum_end *= root->sectorsize;
-+	csum_end *= root->fs_info->sectorsize;
- 	csum_end += key->offset;
+ 	io_ctl_map_page(io_ctl, 0);
+-	crc = crc32c(crc, io_ctl->orig + offset, io_ctl->root->sectorsize - offset);
++	crc = crc32c(crc, io_ctl->orig + offset,
++			io_ctl->root->fs_info->sectorsize - offset);
+ 	btrfs_csum_final(crc, (u8 *)&crc);
+ 	if (val != crc) {
+ 		printk("btrfs: csum mismatch on free space cache\n");
+@@ -257,7 +260,7 @@ static int io_ctl_read_bitmap(struct io_ctl *io_ctl,
+ 	if (ret)
+ 		return ret;
  
- 	if (key->offset < bytenr && csum_end <= end_byte) {
-@@ -403,7 +405,7 @@ int btrfs_del_csums(struct btrfs_trans_handle *trans,
- 	int ret;
- 	u16 csum_size =
- 		btrfs_super_csum_size(root->fs_info->super_copy);
--	int blocksize = root->sectorsize;
-+	int blocksize = root->fs_info->sectorsize;
+-	memcpy(entry->bitmap, io_ctl->cur, io_ctl->root->sectorsize);
++	memcpy(entry->bitmap, io_ctl->cur, io_ctl->root->fs_info->sectorsize);
+ 	io_ctl_unmap_page(io_ctl);
  
- 	root = root->fs_info->csum_root;
- 
+ 	return 0;
 -- 
 2.13.0
 

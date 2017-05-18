@@ -1,37 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from esa6.hgst.iphmx.com ([216.71.154.45]:16832 "EHLO
-        esa6.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932227AbdEROZz (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 May 2017 10:25:55 -0400
-From: Bart Van Assche <Bart.VanAssche@sandisk.com>
-To: "hch@lst.de" <hch@lst.de>, "axboe@kernel.dk" <axboe@kernel.dk>
-CC: "dm-devel@redhat.com" <dm-devel@redhat.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "linux-block@vger.kernel.org" <linux-block@vger.kernel.org>
-Subject: Re: [PATCH 12/15] block: merge blk_types.h into bio.h
-Date: Thu, 18 May 2017 14:25:52 +0000
-Message-ID: <1495117551.2713.1.camel@sandisk.com>
+Received: from mx2.suse.de ([195.135.220.15]:53252 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S933388AbdERO4S (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 18 May 2017 10:56:18 -0400
+Date: Thu, 18 May 2017 16:55:08 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Christoph Hellwig <hch@lst.de>
+Cc: axboe@kernel.dk, linux-block@vger.kernel.org, dm-devel@redhat.com,
+        linux-btrfs@vger.kernel.org
+Subject: Re: dedicated error codes for the block layer
+Message-ID: <20170518145508.GR4065@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <20170518131812.22956-1-hch@lst.de>
-         <20170518131812.22956-13-hch@lst.de>
-In-Reply-To: <20170518131812.22956-13-hch@lst.de>
-Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170518131812.22956-1-hch@lst.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2017-05-18 at 15:18 +0200, Christoph Hellwig wrote:
-> We've cleaned up our headers sufficiently that we don't need this split
-> anymore.
+On Thu, May 18, 2017 at 03:17:57PM +0200, Christoph Hellwig wrote:
+> This series introduces a new blk_status_t error code type for the block
+> layer so that we can have tigher control and explicit semantics for
+> block layer errors.
+> 
+> All but the last three patches are cleanups that lead to the new type.
+> 
+> The series it mostly limited to the block layer and drivers, and touching
+> file systems a little bit.  The only major exception is btrfs, which
+> does funny things with bios and thus sees a larger amount of propagation
+> of the new blk_status_t.
 
-Hello Christoph,
-
-Request-based drivers need the structure definitions from <linux/blkdev.h> and
-the type definitions from <linux/blk_types.h> but do not need the definition of
-struct bio. Have you considered to remove #include <linux/bio.h> from file
-include/linux/blkdev.h? Do you think that would help to reduce the kernel build
-time?
-
-Thanks,
-
-Bart.ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm
+JFYI, the patches 13 and 15 are missing, not in linux-btrfs mailbox and
+patchwork web. Does not look like a delay, maybe vger refused them
+completely.

@@ -1,45 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f54.google.com ([209.85.218.54]:34294 "EHLO
-        mail-oi0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755878AbdESJHx (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 19 May 2017 05:07:53 -0400
-Received: by mail-oi0-f54.google.com with SMTP id b204so84784419oii.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 19 May 2017 02:07:53 -0700 (PDT)
+Received: from rin.romanrm.net ([91.121.86.59]:38188 "EHLO rin.romanrm.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752968AbdESJJy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 19 May 2017 05:09:54 -0400
+Date: Fri, 19 May 2017 14:09:46 +0500
+From: Roman Mamedov <rm@romanrm.net>
+To: Pasi =?UTF-8?B?S8Okcmtrw6RpbmVu?= <pasik@iki.fi>
+Cc: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+Subject: Re: RAID 6 corrupted
+Message-ID: <20170519140946.27d2d32f@natsu>
+In-Reply-To: <20170519085527.GD24459@reaktio.net>
+References: <CA+M=Xp3+YQkeVNLkSZw77zMdia2LwSiaEaR=6Ejs0z2TvW2xwg@mail.gmail.com>
+        <pan$3156f$ad60295$88e5604$e6cc7e68@cox.net>
+        <20170517101523.ylmw4qo2wjsnibfh@angband.pl>
+        <CA+M=Xp0o6uz6uBv41ygpFBiWyw1x6ucg38BtG3V-XdOJ9azvxA@mail.gmail.com>
+        <20170518101719.6c9feabe@natsu>
+        <pan$24de$e527cbb7$733b205c$f2415b2@cox.net>
+        <20170519085527.GD24459@reaktio.net>
 MIME-Version: 1.0
-From: Sargun Dhillon <sargun@sargun.me>
-Date: Fri, 19 May 2017 02:07:11 -0700
-Message-ID: <CAMp4zn8CfdzPn7UAHf7S2PT1F8ysf95jMi7F8RBUuyBvqYT5xw@mail.gmail.com>
-Subject: QGroups Semantics
-To: BTRFS ML <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I have some questions about the *intended* qgroups semantics, and why
-we allow certain operations:
+On Fri, 19 May 2017 11:55:27 +0300
+Pasi Kärkkäinen <pasik@iki.fi> wrote:
 
-1) Why can you create a level 0 qgroup for a non-existent subvolume?
-It looks like it just gets reset when you create the subvol anyway?
-Should we prevent this?
+> > > Try saving your data with "btrfs restore" first 
+> > 
+> > First post, he tried that.  No luck.  Tho that was with 4.4 userspace.  
+> > It might be worth trying with the 4.11-rc or soon to be released 4.11 
+> > userspace, tho...
+> > 
+> 
+> Try with 4.12-rc, I assume :)
 
-2) Why do we allow deleting a level 0 qgroup for a currently existing
-subvolume? It seems to me that just setting the limit to 0, and/or
-removing relations would work equally well? Perhaps a new ioctl to
-clear the qgroup would make sense to do this.
+No, actually I missed that this was already tried, and a newer kernel will not
+help at "btrfs restore", AFAIU it works entirely in userspace, not kernel.
 
-3) Why don't we remove the associated level 0 qgroup when you remove
-the subvol with that id?
+Newer btrfs-progs could be something to try though, as the version used seems
+pretty old -- btrfs-progs v4.4.1, while the current one is v4.11.
 
-4) I noticed in qgroup.c, one of the outstanding items is to determine
-how to autocleanup. Are there any stated semantics around that, or
-opinions?
-
-PS:
-If the answer to any of these is "it just needs to be worked on" --
-I'm currently poking around this code path for some enhancements we're
-doing for our usecase. I'm just trying to figure out how much of what
-I'm doing is generalizable.
-
--Thanks,
-Sargun
+-- 
+With respect,
+Roman

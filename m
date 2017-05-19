@@ -1,574 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:55048 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751208AbdEKIMl (ORCPT
+Received: from mgwym01.jp.fujitsu.com ([211.128.242.40]:23985 "EHLO
+        mgwym01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754435AbdESAob (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 May 2017 04:12:41 -0400
-Subject: Re: [RFC PATCH v3 5/6] btrfs: qgroup: Introduce extent changeset for
- qgroup reserve functions
-To: Goldwyn Rodrigues <rgoldwyn@suse.de>, <linux-btrfs@vger.kernel.org>,
-        <dsterba@suse.cz>
-References: <20170510023649.31331-1-quwenruo@cn.fujitsu.com>
- <20170510023649.31331-6-quwenruo@cn.fujitsu.com>
- <2efac126-4a6d-c726-7063-489cb8e0c3be@suse.de>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <b9f2117f-1bcf-6f22-f9e1-088125460aa5@cn.fujitsu.com>
-Date: Thu, 11 May 2017 16:12:30 +0800
+        Thu, 18 May 2017 20:44:31 -0400
+Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
+        by yt-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id 280AAAC02B0
+        for <linux-btrfs@vger.kernel.org>; Fri, 19 May 2017 09:33:15 +0900 (JST)
+Subject: Re: Btrfs progs release 4.11
+To: David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+References: <20170518143554.24900-1-dsterba@suse.com>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Message-ID: <94fa4e60-adfa-dfb8-ce6f-38b4c079fdf3@jp.fujitsu.com>
+Date: Fri, 19 May 2017 09:32:58 +0900
 MIME-Version: 1.0
-In-Reply-To: <2efac126-4a6d-c726-7063-489cb8e0c3be@suse.de>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <20170518143554.24900-1-dsterba@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi David,
 
+Could you please apply the following patch?
 
-At 05/11/2017 01:59 AM, Goldwyn Rodrigues wrote:
-> 
-> 
-> On 05/09/2017 09:36 PM, Qu Wenruo wrote:
->> Introduce a new parameter, struct extent_changeset for
->> btrfs_qgroup_reserved_data() and its callers.
->>
->> Such extent_changeset was used in btrfs_qgroup_reserve_data() to record
->> which range it reserved in current reserve, so it can free it at error
->> path.
->>
->> The reason we need to export it to callers is, at buffered write error
->> path, without knowing what exactly which range we reserved in current
->> allocation, we can free space which is not reserved by us.
->>
->> This will lead to qgroup reserved space underflow.
->>
->> Reviewed-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
->> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
->> ---
->>   fs/btrfs/ctree.h       |  6 ++++--
->>   fs/btrfs/extent-tree.c | 16 +++++++++++-----
->>   fs/btrfs/extent_io.h   | 34 ++++++++++++++++++++++++++++++++++
->>   fs/btrfs/file.c        | 12 +++++++++---
->>   fs/btrfs/inode-map.c   |  4 +++-
->>   fs/btrfs/inode.c       | 18 ++++++++++++++----
->>   fs/btrfs/ioctl.c       |  5 ++++-
->>   fs/btrfs/qgroup.c      | 41 +++++++++++++++++++++++++++++------------
->>   fs/btrfs/qgroup.h      |  3 ++-
->>   fs/btrfs/relocation.c  |  4 +++-
->>   10 files changed, 113 insertions(+), 30 deletions(-)
->>
->> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
->> index 1e82516fe2d8..52a0147cd612 100644
->> --- a/fs/btrfs/ctree.h
->> +++ b/fs/btrfs/ctree.h
->> @@ -2704,8 +2704,9 @@ enum btrfs_flush_state {
->>   	COMMIT_TRANS		=	6,
->>   };
->>   
->> -int btrfs_check_data_free_space(struct inode *inode, u64 start, u64 len);
->>   int btrfs_alloc_data_chunk_ondemand(struct btrfs_inode *inode, u64 bytes);
->> +int btrfs_check_data_free_space(struct inode *inode,
->> +			struct extent_changeset **reserved, u64 start, u64 len);
->>   void btrfs_free_reserved_data_space(struct inode *inode, u64 start, u64 len);
->>   void btrfs_free_reserved_data_space_noquota(struct inode *inode, u64 start,
->>   					    u64 len);
->> @@ -2723,7 +2724,8 @@ void btrfs_subvolume_release_metadata(struct btrfs_fs_info *fs_info,
->>   				      struct btrfs_block_rsv *rsv);
->>   int btrfs_delalloc_reserve_metadata(struct btrfs_inode *inode, u64 num_bytes);
->>   void btrfs_delalloc_release_metadata(struct btrfs_inode *inode, u64 num_bytes);
->> -int btrfs_delalloc_reserve_space(struct inode *inode, u64 start, u64 len);
->> +int btrfs_delalloc_reserve_space(struct inode *inode,
->> +			struct extent_changeset **reserved, u64 start, u64 len);
->>   void btrfs_delalloc_release_space(struct inode *inode, u64 start, u64 len);
->>   void btrfs_init_block_rsv(struct btrfs_block_rsv *rsv, unsigned short type);
->>   struct btrfs_block_rsv *btrfs_alloc_block_rsv(struct btrfs_fs_info *fs_info,
->> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
->> index 4f62696131a6..782e0f5feb69 100644
->> --- a/fs/btrfs/extent-tree.c
->> +++ b/fs/btrfs/extent-tree.c
->> @@ -3364,6 +3364,7 @@ static int cache_save_setup(struct btrfs_block_group_cache *block_group,
->>   	struct btrfs_fs_info *fs_info = block_group->fs_info;
->>   	struct btrfs_root *root = fs_info->tree_root;
->>   	struct inode *inode = NULL;
->> +	struct extent_changeset *data_reserved = NULL;
->>   	u64 alloc_hint = 0;
->>   	int dcs = BTRFS_DC_ERROR;
->>   	u64 num_pages = 0;
->> @@ -3483,7 +3484,7 @@ static int cache_save_setup(struct btrfs_block_group_cache *block_group,
->>   	num_pages *= 16;
->>   	num_pages *= PAGE_SIZE;
->>   
->> -	ret = btrfs_check_data_free_space(inode, 0, num_pages);
->> +	ret = btrfs_check_data_free_space(inode, &data_reserved, 0, num_pages);
->>   	if (ret)
->>   		goto out_put;
->>   
->> @@ -3514,6 +3515,7 @@ static int cache_save_setup(struct btrfs_block_group_cache *block_group,
->>   	block_group->disk_cache_state = dcs;
->>   	spin_unlock(&block_group->lock);
->>   
->> +	extent_changeset_free(data_reserved);
->>   	return ret;
->>   }
->>   
->> @@ -4282,7 +4284,8 @@ int btrfs_alloc_data_chunk_ondemand(struct btrfs_inode *inode, u64 bytes)
->>    * Will replace old btrfs_check_data_free_space(), but for patch split,
->>    * add a new function first and then replace it.
->>    */
->> -int btrfs_check_data_free_space(struct inode *inode, u64 start, u64 len)
->> +int btrfs_check_data_free_space(struct inode *inode,
->> +			struct extent_changeset **reserved, u64 start, u64 len)
->>   {
->>   	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
->>   	int ret;
->> @@ -4297,9 +4300,11 @@ int btrfs_check_data_free_space(struct inode *inode, u64 start, u64 len)
->>   		return ret;
->>   
->>   	/* Use new btrfs_qgroup_reserve_data to reserve precious data space. */
->> -	ret = btrfs_qgroup_reserve_data(inode, start, len);
->> +	ret = btrfs_qgroup_reserve_data(inode, reserved, start, len);
->>   	if (ret < 0)
->>   		btrfs_free_reserved_data_space_noquota(inode, start, len);
->> +	else
->> +		ret = 0;
->>   	return ret;
->>   }
->>   
->> @@ -6140,11 +6145,12 @@ void btrfs_delalloc_release_metadata(struct btrfs_inode *inode, u64 num_bytes)
->>    * Return 0 for success
->>    * Return <0 for error(-ENOSPC or -EQUOT)
->>    */
->> -int btrfs_delalloc_reserve_space(struct inode *inode, u64 start, u64 len)
->> +int btrfs_delalloc_reserve_space(struct inode *inode,
->> +			struct extent_changeset **reserved, u64 start, u64 len)
-> 
-> 
-> Please change the comment before the function name to include
-> "@reserved" description.
-
-Thanks for catching that.
-
-The comment must be kept uptodate, or such comment will just be meaningless.
-
-> 
-> 
->>   {
->>   	int ret;
->>   
->> -	ret = btrfs_check_data_free_space(inode, start, len);
->> +	ret = btrfs_check_data_free_space(inode, reserved, start, len);
->>   	if (ret < 0)
->>   		return ret;
->>   	ret = btrfs_delalloc_reserve_metadata(BTRFS_I(inode), len);
->> diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
->> index cc1b08fa9fe7..afb3553f4f78 100644
->> --- a/fs/btrfs/extent_io.h
->> +++ b/fs/btrfs/extent_io.h
->> @@ -211,6 +211,40 @@ struct extent_changeset {
->>   	struct ulist range_changed;
->>   };
->>   
->> +static inline void extent_changeset_init(struct extent_changeset *changeset)
->> +{
->> +	changeset->bytes_changed = 0;
->> +	ulist_init(&changeset->range_changed);
->> +}
->> +
->> +static inline struct extent_changeset *extent_changeset_alloc(void)
->> +{
->> +	struct extent_changeset *ret;
->> +
->> +	ret = kmalloc(sizeof(*ret), GFP_KERNEL);
->> +	if (!ret)
->> +		return NULL;
->> +
->> +	extent_changeset_init(ret);
->> +	return ret;
->> +}
->> +
->> +static inline void extent_changeset_release(struct extent_changeset *changeset)
->> +{
->> +	if (!changeset)
->> +		return;
->> +	changeset->bytes_changed = 0;
->> +	ulist_release(&changeset->range_changed);
->> +}
->> +
->> +static inline void extent_changeset_free(struct extent_changeset *changeset)
->> +{
->> +	if (!changeset)
->> +		return;
->> +	extent_changeset_release(changeset);
->> +	kfree(changeset);
->> +}
->> +
->>   static inline void extent_set_compress_type(unsigned long *bio_flags,
->>   					    int compress_type)
->>   {
->> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
->> index da1096eb1a40..d31c935b36ed 100644
->> --- a/fs/btrfs/file.c
->> +++ b/fs/btrfs/file.c
->> @@ -1581,6 +1581,7 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
->>   	struct btrfs_root *root = BTRFS_I(inode)->root;
->>   	struct page **pages = NULL;
->>   	struct extent_state *cached_state = NULL;
->> +	struct extent_changeset *data_reserved = NULL;
->>   	u64 release_bytes = 0;
->>   	u64 lockstart;
->>   	u64 lockend;
->> @@ -1628,7 +1629,9 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
->>   		reserve_bytes = round_up(write_bytes + sector_offset,
->>   				fs_info->sectorsize);
->>   
->> -		ret = btrfs_check_data_free_space(inode, pos, write_bytes);
->> +		extent_changeset_release(data_reserved);
->> +		ret = btrfs_check_data_free_space(inode, &data_reserved, pos,
->> +						  write_bytes);
->>   		if (ret < 0) {
->>   			if ((BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW |
->>   						      BTRFS_INODE_PREALLOC)) &&
->> @@ -1802,6 +1805,7 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
->>   		}
->>   	}
->>   
->> +	extent_changeset_free(data_reserved);
->>   	return num_written ? num_written : ret;
->>   }
->>   
->> @@ -2769,6 +2773,7 @@ static long btrfs_fallocate(struct file *file, int mode,
->>   {
->>   	struct inode *inode = file_inode(file);
->>   	struct extent_state *cached_state = NULL;
->> +	struct extent_changeset *data_reserved = NULL;
->>   	struct falloc_range *range;
->>   	struct falloc_range *tmp;
->>   	struct list_head reserve_list;
->> @@ -2898,8 +2903,8 @@ static long btrfs_fallocate(struct file *file, int mode,
->>   				free_extent_map(em);
->>   				break;
->>   			}
->> -			ret = btrfs_qgroup_reserve_data(inode, cur_offset,
->> -					last_byte - cur_offset);
->> +			ret = btrfs_qgroup_reserve_data(inode, &data_reserved,
->> +					cur_offset, last_byte - cur_offset);
->>   			if (ret < 0) {
->>   				free_extent_map(em);
->>   				break;
->> @@ -2971,6 +2976,7 @@ static long btrfs_fallocate(struct file *file, int mode,
->>   	if (ret != 0)
->>   		btrfs_free_reserved_data_space(inode, alloc_start,
->>   				       alloc_end - cur_offset);
->> +	extent_changeset_free(data_reserved);
->>   	return ret;
->>   }
->>   
->> diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
->> index 5c6c20ec64d8..d02019747d00 100644
->> --- a/fs/btrfs/inode-map.c
->> +++ b/fs/btrfs/inode-map.c
->> @@ -400,6 +400,7 @@ int btrfs_save_ino_cache(struct btrfs_root *root,
->>   	struct btrfs_path *path;
->>   	struct inode *inode;
->>   	struct btrfs_block_rsv *rsv;
->> +	struct extent_changeset *data_reserved = NULL;
->>   	u64 num_bytes;
->>   	u64 alloc_hint = 0;
->>   	int ret;
->> @@ -492,7 +493,7 @@ int btrfs_save_ino_cache(struct btrfs_root *root,
->>   	/* Just to make sure we have enough space */
->>   	prealloc += 8 * PAGE_SIZE;
->>   
->> -	ret = btrfs_delalloc_reserve_space(inode, 0, prealloc);
->> +	ret = btrfs_delalloc_reserve_space(inode, &data_reserved, 0, prealloc);
->>   	if (ret)
->>   		goto out_put;
->>   
->> @@ -516,6 +517,7 @@ int btrfs_save_ino_cache(struct btrfs_root *root,
->>   	trans->bytes_reserved = num_bytes;
->>   
->>   	btrfs_free_path(path);
->> +	extent_changeset_free(data_reserved);
->>   	return ret;
->>   }
->>   
->> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
->> index a1294d5baef5..4e211b54b267 100644
->> --- a/fs/btrfs/inode.c
->> +++ b/fs/btrfs/inode.c
->> @@ -2035,6 +2035,7 @@ static void btrfs_writepage_fixup_worker(struct btrfs_work *work)
->>   	struct btrfs_writepage_fixup *fixup;
->>   	struct btrfs_ordered_extent *ordered;
->>   	struct extent_state *cached_state = NULL;
->> +	struct extent_changeset *data_reserved = NULL;
->>   	struct page *page;
->>   	struct inode *inode;
->>   	u64 page_start;
->> @@ -2072,7 +2073,7 @@ static void btrfs_writepage_fixup_worker(struct btrfs_work *work)
->>   		goto again;
->>   	}
->>   
->> -	ret = btrfs_delalloc_reserve_space(inode, page_start,
->> +	ret = btrfs_delalloc_reserve_space(inode, &data_reserved, page_start,
->>   					   PAGE_SIZE);
->>   	if (ret) {
->>   		mapping_set_error(page->mapping, ret);
->> @@ -2092,6 +2093,7 @@ static void btrfs_writepage_fixup_worker(struct btrfs_work *work)
->>   	unlock_page(page);
->>   	put_page(page);
->>   	kfree(fixup);
->> +	extent_changeset_free(data_reserved);
->>   }
->>   
->>   /*
->> @@ -4767,6 +4769,7 @@ int btrfs_truncate_block(struct inode *inode, loff_t from, loff_t len,
->>   	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
->>   	struct btrfs_ordered_extent *ordered;
->>   	struct extent_state *cached_state = NULL;
->> +	struct extent_changeset *data_reserved = NULL;
->>   	char *kaddr;
->>   	u32 blocksize = fs_info->sectorsize;
->>   	pgoff_t index = from >> PAGE_SHIFT;
->> @@ -4781,7 +4784,7 @@ int btrfs_truncate_block(struct inode *inode, loff_t from, loff_t len,
->>   	    (!len || ((len & (blocksize - 1)) == 0)))
->>   		goto out;
->>   
->> -	ret = btrfs_delalloc_reserve_space(inode,
->> +	ret = btrfs_delalloc_reserve_space(inode, &data_reserved,
->>   			round_down(from, blocksize), blocksize);
->>   	if (ret)
->>   		goto out;
->> @@ -4866,6 +4869,7 @@ int btrfs_truncate_block(struct inode *inode, loff_t from, loff_t len,
->>   	unlock_page(page);
->>   	put_page(page);
->>   out:
->> +	extent_changeset_free(data_reserved);
->>   	return ret;
->>   }
->>   
->> @@ -8725,6 +8729,7 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
->>   	struct inode *inode = file->f_mapping->host;
->>   	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
->>   	struct btrfs_dio_data dio_data = { 0 };
->> +	struct extent_changeset *data_reserved = NULL;
->>   	loff_t offset = iocb->ki_pos;
->>   	size_t count = 0;
->>   	int flags = 0;
->> @@ -8761,7 +8766,8 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
->>   			inode_unlock(inode);
->>   			relock = true;
->>   		}
->> -		ret = btrfs_delalloc_reserve_space(inode, offset, count);
->> +		ret = btrfs_delalloc_reserve_space(inode, &data_reserved,
->> +						   offset, count);
->>   		if (ret)
->>   			goto out;
->>   		dio_data.outstanding_extents = count_max_extents(count);
->> @@ -8818,6 +8824,7 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
->>   	if (relock)
->>   		inode_lock(inode);
->>   
->> +	extent_changeset_free(data_reserved);
->>   	return ret;
->>   }
->>   
->> @@ -9050,6 +9057,7 @@ int btrfs_page_mkwrite(struct vm_fault *vmf)
->>   	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
->>   	struct btrfs_ordered_extent *ordered;
->>   	struct extent_state *cached_state = NULL;
->> +	struct extent_changeset *data_reserved = NULL;
->>   	char *kaddr;
->>   	unsigned long zero_start;
->>   	loff_t size;
->> @@ -9075,7 +9083,7 @@ int btrfs_page_mkwrite(struct vm_fault *vmf)
->>   	 * end up waiting indefinitely to get a lock on the page currently
->>   	 * being processed by btrfs_page_mkwrite() function.
->>   	 */
->> -	ret = btrfs_delalloc_reserve_space(inode, page_start,
->> +	ret = btrfs_delalloc_reserve_space(inode, &data_reserved, page_start,
->>   					   reserved_space);
->>   	if (!ret) {
->>   		ret = file_update_time(vmf->vma->vm_file);
->> @@ -9181,6 +9189,7 @@ int btrfs_page_mkwrite(struct vm_fault *vmf)
->>   out_unlock:
->>   	if (!ret) {
->>   		sb_end_pagefault(inode->i_sb);
->> +		extent_changeset_free(data_reserved);
->>   		return VM_FAULT_LOCKED;
->>   	}
->>   	unlock_page(page);
->> @@ -9188,6 +9197,7 @@ int btrfs_page_mkwrite(struct vm_fault *vmf)
->>   	btrfs_delalloc_release_space(inode, page_start, reserved_space);
->>   out_noreserve:
->>   	sb_end_pagefault(inode->i_sb);
->> +	extent_changeset_free(data_reserved);
->>   	return ret;
->>   }
->>   
->> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
->> index a29dc3fd7152..a16a16a66ed9 100644
->> --- a/fs/btrfs/ioctl.c
->> +++ b/fs/btrfs/ioctl.c
->> @@ -1127,6 +1127,7 @@ static int cluster_pages_for_defrag(struct inode *inode,
->>   	struct btrfs_ordered_extent *ordered;
->>   	struct extent_state *cached_state = NULL;
->>   	struct extent_io_tree *tree;
->> +	struct extent_changeset *data_reserved = NULL;
->>   	gfp_t mask = btrfs_alloc_write_mask(inode->i_mapping);
->>   
->>   	file_end = (isize - 1) >> PAGE_SHIFT;
->> @@ -1135,7 +1136,7 @@ static int cluster_pages_for_defrag(struct inode *inode,
->>   
->>   	page_cnt = min_t(u64, (u64)num_pages, (u64)file_end - start_index + 1);
->>   
->> -	ret = btrfs_delalloc_reserve_space(inode,
->> +	ret = btrfs_delalloc_reserve_space(inode, &data_reserved,
->>   			start_index << PAGE_SHIFT,
->>   			page_cnt << PAGE_SHIFT);
->>   	if (ret)
->> @@ -1247,6 +1248,7 @@ static int cluster_pages_for_defrag(struct inode *inode,
->>   		unlock_page(pages[i]);
->>   		put_page(pages[i]);
->>   	}
->> +	extent_changeset_free(data_reserved);
->>   	return i_done;
->>   out:
->>   	for (i = 0; i < i_done; i++) {
->> @@ -1256,6 +1258,7 @@ static int cluster_pages_for_defrag(struct inode *inode,
->>   	btrfs_delalloc_release_space(inode,
->>   			start_index << PAGE_SHIFT,
->>   			page_cnt << PAGE_SHIFT);
->> +	extent_changeset_free(data_reserved);
->>   	return ret;
->>   
->>   }
->> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
->> index ad2e99491395..1b24c40729bd 100644
->> --- a/fs/btrfs/qgroup.c
->> +++ b/fs/btrfs/qgroup.c
->> @@ -2824,43 +2824,60 @@ btrfs_qgroup_rescan_resume(struct btrfs_fs_info *fs_info)
->>    * Return <0 for error (including -EQUOT)
->>    *
->>    * NOTE: this function may sleep for memory allocation.
->> + *       if btrfs_qgroup_reserve_data() is called multiple times with
->> + *       same @reserved, caller must ensure when error happens it's OK
->> + *       to free *ALL* reserved space.
->>    */
->> -int btrfs_qgroup_reserve_data(struct inode *inode, u64 start, u64 len)
->> +int btrfs_qgroup_reserve_data(struct inode *inode,
->> +			struct extent_changeset **reserved_ret, u64 start,
->> +			u64 len)
->>   {
->>   	struct btrfs_root *root = BTRFS_I(inode)->root;
->> -	struct extent_changeset changeset;
->>   	struct ulist_node *unode;
->>   	struct ulist_iterator uiter;
->> +	struct extent_changeset *reserved;
->> +	u64 orig_reserved;
->> +	u64 to_reserve;
->>   	int ret;
->>   
->>   	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &root->fs_info->flags) ||
->>   	    !is_fstree(root->objectid) || len == 0)
->>   		return 0;
->>   
->> -	changeset.bytes_changed = 0;
->> -	ulist_init(&changeset.range_changed);
->> +	/* @reserved parameter is mandatory for qgroup */
->> +	if (WARN_ON(!reserved_ret))
->> +		return -EINVAL;
->> +	if (!*reserved_ret) {
->> +		*reserved_ret = extent_changeset_alloc();
->> +		if (!*reserved_ret)
->> +			return -ENOMEM;
->> +	}
->> +	reserved = *reserved_ret;
->> +	/* Record already reserved space */
->> +	orig_reserved = reserved->bytes_changed;
->>   	ret = set_record_extent_bits(&BTRFS_I(inode)->io_tree, start,
->> -			start + len -1, EXTENT_QGROUP_RESERVED, &changeset);
->> +			start + len -1, EXTENT_QGROUP_RESERVED, reserved);
->> +
->> +	/* Newly reserved space */
->> +	to_reserve = reserved->bytes_changed - orig_reserved;
->>   	trace_btrfs_qgroup_reserve_data(inode, start, len,
->> -					changeset.bytes_changed,
->> -					QGROUP_RESERVE);
->> +					to_reserve, QGROUP_RESERVE);
->>   	if (ret < 0)
->>   		goto cleanup;
->> -	ret = qgroup_reserve(root, changeset.bytes_changed, true);
->> +	ret = qgroup_reserve(root, to_reserve, true);
->>   	if (ret < 0)
->>   		goto cleanup;
->>   
->> -	ulist_release(&changeset.range_changed);
->>   	return ret;
->>   
->>   cleanup:
->> -	/* cleanup already reserved ranges */
->> +	/* cleanup *ALL* already reserved ranges */
->>   	ULIST_ITER_INIT(&uiter);
->> -	while ((unode = ulist_next(&changeset.range_changed, &uiter)))
->> +	while ((unode = ulist_next(&reserved->range_changed, &uiter)))
->>   		clear_extent_bit(&BTRFS_I(inode)->io_tree, unode->val,
->>   				 unode->aux, EXTENT_QGROUP_RESERVED, 0, 0, NULL,
->>   				 GFP_NOFS);
->> -	ulist_release(&changeset.range_changed);
->> +	extent_changeset_release(reserved);
->>   	return ret;
->>   }
-> 
-> There are some instances where you can use
-> extent_changeset_init()/release() instead of the ulist
-> initialization/release. This would reduce code as well.
-
-Right, this can make code more clean.
+ [PATCH] btrfs-progs: tests: remove variable quotation from convert-tests
+ http://marc.info/?l=linux-btrfs&m=149490441323349&w=2
 
 Thanks,
-Qu
+Tsutomu
 
+On 2017/05/18 23:35, David Sterba wrote:
+> Hi,
 > 
+> btrfs-progs version 4.11 have been released. It's a small release with handful
+> of fixes and minor other updates.
 > 
->>   
->> diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
->> index 38d14d4575c0..c7a2bcaff5d5 100644
->> --- a/fs/btrfs/qgroup.h
->> +++ b/fs/btrfs/qgroup.h
->> @@ -241,7 +241,8 @@ int btrfs_verify_qgroup_counts(struct btrfs_fs_info *fs_info, u64 qgroupid,
->>   #endif
->>   
->>   /* New io_tree based accurate qgroup reserve API */
->> -int btrfs_qgroup_reserve_data(struct inode *inode, u64 start, u64 len);
->> +int btrfs_qgroup_reserve_data(struct inode *inode,
->> +			struct extent_changeset **reserved, u64 start, u64 len);
->>   int btrfs_qgroup_release_data(struct inode *inode, u64 start, u64 len);
->>   int btrfs_qgroup_free_data(struct inode *inode, u64 start, u64 len);
->>   
->> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
->> index d60df51959f7..5823e2d67a84 100644
->> --- a/fs/btrfs/relocation.c
->> +++ b/fs/btrfs/relocation.c
->> @@ -3093,11 +3093,12 @@ int prealloc_file_extent_cluster(struct inode *inode,
->>   	u64 prealloc_start = cluster->start - offset;
->>   	u64 prealloc_end = cluster->end - offset;
->>   	u64 cur_offset;
->> +	struct extent_changeset *data_reserved = NULL;
->>   
->>   	BUG_ON(cluster->start != cluster->boundary[0]);
->>   	inode_lock(inode);
->>   
->> -	ret = btrfs_check_data_free_space(inode, prealloc_start,
->> +	ret = btrfs_check_data_free_space(inode, &data_reserved, prealloc_start,
->>   					  prealloc_end + 1 - prealloc_start);
->>   	if (ret)
->>   		goto out;
->> @@ -3129,6 +3130,7 @@ int prealloc_file_extent_cluster(struct inode *inode,
->>   				       prealloc_end + 1 - cur_offset);
->>   out:
->>   	inode_unlock(inode);
->> +	extent_changeset_free(data_reserved);
->>   	return ret;
->>   }
->>   
->>
+> Changes:
+>   * receive: fix handling empty stream with -e (multi-stream)
+>   * send dump: fix printing long file names
+>   * stability fixes for: dump-super, print-tree, check
+>   * option parser updates: global options are parsed before the subcommand name
+>     (old xfstests will fail)
+>   * new and updated tests
+>   * documentation updates
 > 
-
-
+> Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
+> Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
+> 
+> Shortlog:
+> 
+> Christian Brauner (3):
+>       btrfs-progs: fix btrfs send & receive with -e flag
+>       btrfs-progs: tests: misc/018-receive use receive -e to terminate on end marker
+>       btrfs-progs: receiv: fail on first -ENODATA only
+> 
+> Christophe de Dinechin (3):
+>       btrfs-progs: check: disambiguate between cases where add_tree_backref fails
+>       btrfs-progs: check: prevent attempt to insert extent record with max_size==0
+>       btrfs-progs: check: make max_size consistent with nr
+> 
+> David Sterba (10):
+>       btrfs-progs: docs: mount options, enhance ssd/nossd
+>       btrfs-progs: rework option parser to use getopt for global options
+>       btrfs-progs: README: sort bug reports means by preference
+>       btrfs-progs: docs: btrfs-replace, fix typo
+>       btrfs-progs: balance: minor wording adjustment for full balance warning
+>       btrfs-progs: docs: update formatting and wording for btrfs(5)
+>       btrfs-progs: fssum: fix warning, include correct header for major()
+>       btrfs-progs: tests: fix misc/019-receive-clones-on-munted-subvol
+>       btrfs-progs: update CHANGES for v4.11
+>       Btrfs progs v4.11
+> 
+> Evan Danaher (1):
+>       btrfs-progs: send: always print a space after path in dump
+> 
+> Hans van Kranenburg (2):
+>       btrfs-progs: docs: Fix missing newline in man 5 btrfs
+>       btrfs-progs: docs: Fix newlines for man btrfstune
+> 
+> Lakshmipathi.G (3):
+>       btrfs-progs: misc-tests: Superblock corruption and recovery using backup
+>       btrfs-progs: tests: add variable quotation to fsck-tests
+>       btrfs-progs: tests: add variable quotation to convert-tests
+> 
+> Lu Fengqi (4):
+>       btrfs-progs: dump-super: check array_size in print_sys_chunk_array
+>       btrfs-progs: print-tree: add validation to print_chunk
+>       btrfs-progs: tests: fssum, fix memory leak
+>       btrfs-progs: tests: Fix fuzz-test for bko-161821.raw.txt
+> 
+> Qu Wenruo (6):
+>       btrfs-progs: Fix memory leak when 0 sized block group item is found
+>       btrfs-progs: check: Fix memory leak in check_chunks_and_extents
+>       btrfs-progs: Use more strict check to read out tree root
+>       btrfs-progs: check: Avoid reading beyond item boundary for inode_ref
+>       btrfs-progs: check: Avoid reading beyond item boundary for dir_item and dir_index
+>       btrfs-progs: print-tree: Add leaf flags and backref revision output
+> 
+> Su Yue (1):
+>       btrfs-progs: check: Fix heap use after free
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

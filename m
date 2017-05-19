@@ -1,35 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:28718 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752920AbdESAUY (ORCPT
+Received: from mail-vk0-f45.google.com ([209.85.213.45]:33288 "EHLO
+        mail-vk0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750768AbdESG76 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 May 2017 20:20:24 -0400
-Date: Thu, 18 May 2017 17:18:31 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: fdmanana@kernel.org
-Cc: linux-btrfs@vger.kernel.org
+        Fri, 19 May 2017 02:59:58 -0400
+Received: by mail-vk0-f45.google.com with SMTP id x71so7475977vkd.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 18 May 2017 23:59:58 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <20170517014131.8549-1-fdmanana@kernel.org>
+References: <20170517014131.8549-1-fdmanana@kernel.org>
+From: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>
+Date: Fri, 19 May 2017 12:29:57 +0530
+Message-ID: <CAKuJGC8MYiFZHNKv_MrmojF6gQhF=G53jbrXT-YxqLLkUrmxgg@mail.gmail.com>
 Subject: Re: [PATCH 2/2] btrfs-progs: test for restoring multiple devices fs
  into a single device
-Message-ID: <20170519001830.GH23822@lim.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <20170517014131.8549-1-fdmanana@kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170517014131.8549-1-fdmanana@kernel.org>
+To: fdmanana@kernel.org
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 17, 2017 at 02:41:31AM +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> Test that we are able to create an image from a multiple devices fs, that
-> we are able to restore that image into a single device and finally that we
-> are able to mount it.
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Looks fine, just couple of minor feedback.
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+> +run_check $SUDO_HELPER $TOP/mkfs.btrfs -f $loop1 $loop2
 
-Thanks,
+Please add quotation around variable in the script, as suggested in
+tests/README.md 'Coding style, best practices' section. This section
+is added recently, we are updating older scripts.
 
--liubo
+> +
+> +# Cleanup loop devices.
+> +run_check $SUDO_HELPER losetup -d $loop1
+> +run_check $SUDO_HELPER losetup -d $loop2
+> +rm -f dev1 dev2
+> +
+> +# Compare the file digests.
+> +[ $orig_md5 == $new_md5 ] || _fail "File digests do not match"
+
+"Cleanup loop devices" can be done after comparing file integrity?
+This way, if integrity fails, the setup will be there to debug
+further. thanks.
+
+-- 
+----
+Cheers,
+Lakshmipathi.G

@@ -1,40 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44556 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752760AbdEQOBN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 May 2017 10:01:13 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 5B6D2AAAD
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 May 2017 14:01:12 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs: fix bool type in btrfs_page_exists_in_range
-Date: Wed, 17 May 2017 16:00:11 +0200
-Message-Id: <20170517140011.1753-1-dsterba@suse.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:43064 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754777AbdESAVu (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 18 May 2017 20:21:50 -0400
+Date: Thu, 18 May 2017 17:20:07 -0700
+From: Liu Bo <bo.li.liu@oracle.com>
+To: jeffm@suse.com
+Cc: linux-btrfs@vger.kernel.org, "# v3 . 14+" <stable@vger.kernel.org>
+Subject: Re: [PATCH] btrfs: fix memory leak in update_space_info failure path
+Message-ID: <20170519002006.GI23822@lim.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <20170517134937.30774-1-jeffm@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170517134937.30774-1-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We use only a simple bool indicator, int is not a problem here.
+On Wed, May 17, 2017 at 09:49:37AM -0400, jeffm@suse.com wrote:
+> From: Jeff Mahoney <jeffm@suse.com>
+> 
+> If we fail to add the space_info kobject, we'll leak the memory
+> for the percpu counter.
+> 
+> Fixes: 6ab0a2029c (btrfs: publish allocation data in sysfs)
+> Cc: <stable@vger.kernel.org> # v3.14+
+> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/inode.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Looks good.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 5e71f1ea3391..85591d3f3ad9 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7356,7 +7356,7 @@ noinline int can_nocow_extent(struct inode *inode, u64 offset, u64 *len,
- bool btrfs_page_exists_in_range(struct inode *inode, loff_t start, loff_t end)
- {
- 	struct radix_tree_root *root = &inode->i_mapping->page_tree;
--	int found = false;
-+	bool found = false;
- 	void **pagep = NULL;
- 	struct page *page = NULL;
- 	int start_idx;
--- 
-2.12.0
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
+Thanks,
+
+-liubo

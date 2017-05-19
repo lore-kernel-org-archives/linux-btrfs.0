@@ -1,26 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:21566 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754874AbdERV64 (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:41225 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753333AbdESAMS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 May 2017 17:58:56 -0400
+        Thu, 18 May 2017 20:12:18 -0400
 Subject: Re: [PATCH RFC] vfs: add mount umount logs
-To: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        dsterba@suse.com, quwenruo@cn.fujitsu.com
+To: "Darrick J. Wong" <darrick.wong@oracle.com>
 References: <20170518100804.25538-1-anand.jain@oracle.com>
- <20170518122327.5s57k7o7acjdwwsy@eorzea.usersys.redhat.com>
+ <20170518173947.GA4505@birch.djwong.org>
+Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        dsterba@suse.com, quwenruo@cn.fujitsu.com
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <356e60c0-0c52-3427-ec51-8b6ae2d01bf4@oracle.com>
-Date: Fri, 19 May 2017 06:04:36 +0800
+Message-ID: <cdc5185c-f69e-d296-99c8-b2af64d99833@oracle.com>
+Date: Fri, 19 May 2017 08:17:55 +0800
 MIME-Version: 1.0
-In-Reply-To: <20170518122327.5s57k7o7acjdwwsy@eorzea.usersys.redhat.com>
+In-Reply-To: <20170518173947.GA4505@birch.djwong.org>
 Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 05/18/2017 08:23 PM, Carlos Maiolino wrote:
+On 05/19/2017 01:39 AM, Darrick J. Wong wrote:
 > On Thu, May 18, 2017 at 06:08:04PM +0800, Anand Jain wrote:
 >> By looking at the logs we should be able to know when was the FS
 >> mounted and unmounted and the options used, so to help forensic
@@ -38,7 +39,19 @@ On 05/18/2017 08:23 PM, Carlos Maiolino wrote:
 >> FS is mounted and umounted.
 >> Still IMO, these logs are useful for the end purpose as mentioned
 >> above. Its for your feedback. Thanks.
->>
+>
+> XFS already logs its own unmounts.
+
+  Nice. as far as I know its only in XFS.
+
+>  I prefer to let each filesystem log
+> its own unmount, because then the mount/unmount messages also have the
+> same prefix as all other messages coming from that filesystem driver.
+
+  Ok. One nitpick though there are other mount types (remount, bind..),
+  and subsequent mounts of the same FS and FS driver can't log them
+  effectively.
+
 >>  fs/namespace.c | 15 +++++++++++++++
 >>  1 file changed, 15 insertions(+)
 >>
@@ -52,6 +65,16 @@ On 05/18/2017 08:23 PM, Carlos Maiolino wrote:
 >>  	int lookup_flags = 0;
 >> +	struct super_block *sb;
 >> +	char umntlog[256] = {0};
+>
+> Kind of a lot of stack space...
+
+   oh ok. Will fix it, if we are ok to add this change at namespace.c
+
+Thanks, Anand
+
+
+> --D
+>
 >>
 >>  	if (flags & ~(MNT_FORCE | MNT_DETACH | MNT_EXPIRE | UMOUNT_NOFOLLOW))
 >>  		return -EINVAL;
@@ -63,23 +86,6 @@ On 05/18/2017 08:23 PM, Carlos Maiolino wrote:
 >> +	snprintf(umntlog, sizeof(umntlog), "umount %s dev:%s flags:%d",
 >> +		sb->s_type->name, sb->s_id, flags);
 >> +
->
-> This will log a message when the umount has been started, but it won't by any
-> chance be a confirmation the filesystem has been properly unmounted, wouldn't be
-> better to log it after the FS has been properly unmounted, or, change the
-> message to something like "umount started"?
->
-> Although, from a forensic POV, would be better to have an "unmount started" +
-> "unmount finished".
-
-
-  hm. further below it logs if and only if the umount is successful.
-  We don't need user error (such as busy) here, kernel logs aren't
-  for that purpose.
-
-Thanks, Anand
-
-
 >>  	retval = do_umount(mnt, flags);
 >> +
 >> +	if (!retval)
@@ -103,4 +109,7 @@ Thanks, Anand
 >> --
 >> 2.10.0
 >>
->
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html

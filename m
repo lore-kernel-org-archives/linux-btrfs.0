@@ -1,154 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mga04.intel.com ([192.55.52.120]:57329 "EHLO mga04.intel.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750806AbdESGa3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 19 May 2017 02:30:29 -0400
-Date: Fri, 19 May 2017 14:28:14 +0800
-From: Ye Xiaolong <xiaolong.ye@intel.com>
-To: linux-btrfs@vger.kernel.org
-Cc: lkp@01.org
-Subject: Re: [LKP] [btrfs] "fio: pid=2214, got signal=7" error showed in fio
- test for btrfs
-Message-ID: <20170519062814.GC1795@yexl-desktop>
-References: <20170329073654.GK17604@yexl-desktop>
- <20170329075048.GA300@yexl-desktop>
+Received: from emh06.mail.saunalahti.fi ([62.142.5.116]:42042 "EHLO
+        emh06.mail.saunalahti.fi" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751429AbdESJDF (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 19 May 2017 05:03:05 -0400
+Date: Fri, 19 May 2017 11:55:27 +0300
+From: Pasi =?iso-8859-1?Q?K=E4rkk=E4inen?= <pasik@iki.fi>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: RAID 6 corrupted
+Message-ID: <20170519085527.GD24459@reaktio.net>
+References: <CA+M=Xp3+YQkeVNLkSZw77zMdia2LwSiaEaR=6Ejs0z2TvW2xwg@mail.gmail.com>
+ <pan$3156f$ad60295$88e5604$e6cc7e68@cox.net>
+ <20170517101523.ylmw4qo2wjsnibfh@angband.pl>
+ <CA+M=Xp0o6uz6uBv41ygpFBiWyw1x6ucg38BtG3V-XdOJ9azvxA@mail.gmail.com>
+ <20170518101719.6c9feabe@natsu>
+ <pan$24de$e527cbb7$733b205c$f2415b2@cox.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170329075048.GA300@yexl-desktop>
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <pan$24de$e527cbb7$733b205c$f2415b2@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/29, Ye Xiaolong wrote:
->Attach kmsg and reproduce script.
->
->Note: kernel cmdline contained "memmap=104G!4G memmap=104G!132G"
+On Thu, May 18, 2017 at 06:12:22AM +0000, Duncan wrote:
+> Roman Mamedov posted on Thu, 18 May 2017 10:17:19 +0500 as excerpted:
+> 
+> > On Thu, 18 May 2017 04:09:38 +0200 ??ukasz Wróblewski <lw@nri.pl> wrote:
+> > 
+> >> I will try when stable 4.12 comes out.
+> >> Unfortunately I do not have a backup.
+> >> Fortunately, these data are not so critical.
+> >> Some private photos and videos of youth.
+> >> However, I would be very happy if I could get it back.
+> > 
+> > Try saving your data with "btrfs restore" first 
+> 
+> First post, he tried that.  No luck.  Tho that was with 4.4 userspace.  
+> It might be worth trying with the 4.11-rc or soon to be released 4.11 
+> userspace, tho...
+> 
 
-Hi,
-
-Any feedback about this issue?
-
-Thanks,
-Xiaolong
-
->
->Thanks,
->Xiaolong
->
->On 03/29, kernel test robot wrote:
->>Hi,
->>
->>We detected below error messages in fio pmem test for btrfs.
->>
->>machine: Intel(R) Xeon(R) CPU E5-2695 v3 @ 2.30GHz with 256G memory
->>kernel: v4.10 
->>test parameters:
->>
->>[global]
->>bs=2M
->>ioengine=mmap
->>iodepth=32
->>size=7669584457
->>direct=0
->>runtime=200
->>invalidate=1
->>fallocate=posix
->>group_reporting
->>
->>time_based
->>
->>[task_0]
->>rw=write
->>directory=/fs/pmem0
->>numjobs=14
->>
->>[task_1]
->>rw=write
->>directory=/fs/pmem1
->>numjobs=14
->>
->>
->>==> /tmp/stderr <==
->>fio: pid=2214, got signal=7
->>fio: pid=2215, got signal=7
->>fio: pid=2217, got signal=7
->>fio: pid=2220, got signal=7
->>fio: pid=2222, got signal=7
->>fio: pid=2224, got signal=7
->>fio: pid=2225, got signal=7
->>fio: pid=2227, got signal=7
->>fio: pid=2216, got signal=7
->>fio: pid=2218, got signal=7
->>fio: pid=2219, got signal=7
->>fio: pid=2221, got signal=7
->>fio: pid=2223, got signal=7
->>fio: pid=2226, got signal=7
->>fio: pid=2200, got signal=7
->>fio: pid=2201, got signal=7
->>fio: pid=2203, got signal=7
->>fio: pid=2204, got signal=7
->>fio: pid=2205, got signal=7
->>fio: pid=2208, got signal=7
->>fio: pid=2209, got signal=7
->>fio: pid=2210, got signal=7
->>fio: pid=2211, got signal=7
->>fio: pid=2212, got signal=7
->>fio: pid=2213, got signal=7
->>fio: pid=2202, got signal=7
->>fio: pid=2206, got signal=7
->>fio: pid=2207, got signal=7
->>fio: file hash not empty on exit
->>
->>while fio test is ok for ext4 with the same test parameters.
->>Attached reproduce.sh may help reproduce the problem.
->>
->>Thanks,
->>Xiaolong
->
->
+Try with 4.12-rc, I assume :)
 
 
->modprobe nd_e820
->dmsetup remove_all
->wipefs -a --force /dev/pmem0
->wipefs -a --force /dev/pmem1
->mkfs -t btrfs /dev/pmem1
->mkfs -t btrfs /dev/pmem0
->mkdir -p /fs/pmem0
->mount -t btrfs /dev/pmem0 /fs/pmem0
->mkdir -p /fs/pmem1
->mount -t btrfs /dev/pmem1 /fs/pmem1
->
->for file in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
->do
->	echo performance > $file
->done
->
->echo '
->[global]
->bs=2M
->ioengine=mmap
->iodepth=32
->size=7669584457
->direct=0
->runtime=200
->invalidate=1
->fallocate=posix
->group_reporting
->
->time_based
->
->[task_0]
->rw=write
->directory=/fs/pmem0
->numjobs=14
->
->[task_1]
->rw=write
->directory=/fs/pmem1
->numjobs=14' | fio --output-format=json -
+-- Pasi
 
->_______________________________________________
->LKP mailing list
->LKP@lists.01.org
->https://lists.01.org/mailman/listinfo/lkp
 

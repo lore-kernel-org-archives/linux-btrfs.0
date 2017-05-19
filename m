@@ -1,35 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53252 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S933388AbdERO4S (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 May 2017 10:56:18 -0400
-Date: Thu, 18 May 2017 16:55:08 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Christoph Hellwig <hch@lst.de>
-Cc: axboe@kernel.dk, linux-block@vger.kernel.org, dm-devel@redhat.com,
+Received: from verein.lst.de ([213.95.11.211]:35381 "EHLO newverein.lst.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1755770AbdESIV3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 19 May 2017 04:21:29 -0400
+Date: Fri, 19 May 2017 10:21:22 +0200
+From: Christoph Hellwig <hch@lst.de>
+To: dsterba@suse.cz, Christoph Hellwig <hch@lst.de>, axboe@kernel.dk,
+        linux-block@vger.kernel.org, dm-devel@redhat.com,
         linux-btrfs@vger.kernel.org
 Subject: Re: dedicated error codes for the block layer
-Message-ID: <20170518145508.GR4065@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170518131812.22956-1-hch@lst.de>
+Message-ID: <20170519082122.GB1411@lst.de>
+References: <20170518131812.22956-1-hch@lst.de> <20170518145508.GR4065@twin.jikos.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170518131812.22956-1-hch@lst.de>
+In-Reply-To: <20170518145508.GR4065@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 18, 2017 at 03:17:57PM +0200, Christoph Hellwig wrote:
-> This series introduces a new blk_status_t error code type for the block
-> layer so that we can have tigher control and explicit semantics for
-> block layer errors.
-> 
-> All but the last three patches are cleanups that lead to the new type.
-> 
-> The series it mostly limited to the block layer and drivers, and touching
-> file systems a little bit.  The only major exception is btrfs, which
-> does funny things with bios and thus sees a larger amount of propagation
-> of the new blk_status_t.
+On Thu, May 18, 2017 at 04:55:08PM +0200, David Sterba wrote:
+> JFYI, the patches 13 and 15 are missing, not in linux-btrfs mailbox and
+> patchwork web. Does not look like a delay, maybe vger refused them
+> completely.
 
-JFYI, the patches 13 and 15 are missing, not in linux-btrfs mailbox and
-patchwork web. Does not look like a delay, maybe vger refused them
-completely.
+They still haven't made it to linux-block and linux-btrfs, but they did
+make it to dm-devel, which is not host on vger.
+
+I also have a git tree here:
+
+   git://git.infradead.org/users/hch/block.git block-errors
+
+Gitweb:
+
+   http://git.infradead.org/users/hch/block.git/shortlog/refs/heads/block-errors   

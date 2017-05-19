@@ -1,87 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:18979 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754443AbdEQXXd (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 May 2017 19:23:33 -0400
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v4HNNWrN014238
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 May 2017 23:23:32 GMT
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v4HNNVtc028257
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 May 2017 23:23:32 GMT
-Received: from abhmp0011.oracle.com (abhmp0011.oracle.com [141.146.116.17])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id v4HNNVnt023877
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 May 2017 23:23:31 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 8/8] Btrfs: hardcode GFP_NOFS for btrfs_bio_clone_partial
-Date: Wed, 17 May 2017 16:22:52 -0600
-Message-Id: <20170517222252.29242-9-bo.li.liu@oracle.com>
-In-Reply-To: <20170517222252.29242-1-bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:42107 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1750831AbdESR3z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 19 May 2017 13:29:55 -0400
+Date: Fri, 19 May 2017 19:28:56 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/8 v1] utilize bio_clone_fast to clean up
+Message-ID: <20170519172856.GW4065@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <20170517222252.29242-1-bo.li.liu@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170517222252.29242-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We only pass GFP_NOFS to btrfs_bio_clone_partial, so lets hardcode it.
+On Wed, May 17, 2017 at 04:22:44PM -0600, Liu Bo wrote:
+> v1: - Drop the RFC tag.
+>     - Update to use bio_segments accordingly as __bio_segments is removed.
+>     - Remove if (!bio) since bio_clone_fast with bioset and GFP_NOFS will
+>       never fail.
+> 
+> This attempts to use bio_clone_fast() in the places where we clone bio,
+> such as when bio got cloned for multiple disks and when bio got split
+> during dio submit.
+> 
+> One benefit is to simplify dio submit to avoid calling bio_add_page one by
+> one.
+> 
+> Another benefit is that comparing to bio_clone_bioset, bio_clone_fast is
+> faster because of copying the vector pointer directly, and bio_clone_fast
+> doesn't modify bi_vcnt, so the extra work is to fix up bi_vcnt usage we
+> currently have to use bi_iter to iterate bvec.
+> 
+> Here are some numbers collected with the script [1], note that most of
+> performance tests usually issue bs=4k dio write/read so our directIO split code
+> is not tested as it requires bs > stripe_len(64K), thus I made this simple
+> script which writes 2G with bs=128K.
+> 
+> - vanilla:
+> real    0m10.265s
+> user    0m0.005s
+> sys     0m9.164s
+> 
+> - patched:
+> real    0m8.973s
+> user    0m0.006s
+> sys     0m7.804s
+> 
+> [1]:
+> #!/bin/bash
+> 
+> M=/mnt/btrfs
+> D1=/dev/pmem0p1
+> D2=/dev/pmem0p2
+> 
+> umount $M
+> mkfs.btrfs -f $D1 $D2 >/dev/null || exit
+> 
+> mount $D1 $M -onodatasum || exit
+> 
+> xfs_io -f -c "falloc 0 2G" $M/foo
+> 
+> time xfs_io -d -c "pwrite -b 128K 0 2G" $M/foo
+> 
+> Liu Bo (8):
+>   Btrfs: use bio_clone_fast to clone our bio
+>   Btrfs: new helper btrfs_bio_clone_partial
+>   Btrfs: use bio_clone_bioset_partial to simplify DIO submit
+>   Btrfs: change how we iterate bios in endio
+>   Btrfs: record error if one block has failed to retry
+>   Btrfs: make check-integrity use bvec_iter
+>   Btrfs: unify naming of btrfs_io_bio
+>   Btrfs: hardcode GFP_NOFS for btrfs_bio_clone_partial
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/extent_io.c | 5 ++---
- fs/btrfs/extent_io.h | 3 +--
- fs/btrfs/inode.c     | 2 +-
- 3 files changed, 4 insertions(+), 6 deletions(-)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index eb5229e..f70d9f88 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2726,14 +2726,13 @@ struct bio *btrfs_io_bio_alloc(gfp_t gfp_mask, unsigned int nr_iovecs)
- 	return bio;
- }
- 
--struct bio *btrfs_bio_clone_partial(struct bio *orig, gfp_t gfp_mask,
--				    int offset, int size)
-+struct bio *btrfs_bio_clone_partial(struct bio *orig, int offset, int size)
- {
- 	struct bio *bio;
- 	struct btrfs_io_bio *btrfs_bio;
- 
- 	/* this will never fail when it's backed by a bioset */
--	bio = bio_clone_fast(orig, gfp_mask, btrfs_bioset);
-+	bio = bio_clone_fast(orig, GFP_NOFS, btrfs_bioset);
- 	ASSERT(bio);
- 
- 	btrfs_bio = btrfs_io_bio(bio);
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index b2235b5..512918c 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -460,8 +460,7 @@ btrfs_bio_alloc(struct block_device *bdev, u64 first_sector, int nr_vecs,
- 		gfp_t gfp_flags);
- struct bio *btrfs_io_bio_alloc(gfp_t gfp_mask, unsigned int nr_iovecs);
- struct bio *btrfs_bio_clone(struct bio *bio, gfp_t gfp_mask);
--struct bio *btrfs_bio_clone_partial(struct bio *orig, gfp_t gfp_mask,
--				    int offset, int size);
-+struct bio *btrfs_bio_clone_partial(struct bio *orig, int offset, int size);
- 
- struct btrfs_fs_info;
- struct btrfs_inode;
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 042a13e..f8590c9 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -8368,7 +8368,7 @@ static int btrfs_submit_direct_hook(struct btrfs_dio_private *dip,
- 		 * This will never fail as it's passing GPF_NOFS and
- 		 * the allocation is backed by btrfs_bioset.
- 		 */
--		bio = btrfs_bio_clone_partial(orig_bio, GFP_NOFS, clone_offset,
-+		bio = btrfs_bio_clone_partial(orig_bio, clone_offset,
- 					      clone_len);
- 		bio->bi_private = dip;
- 		bio->bi_end_io = btrfs_end_dio_bio;
--- 
-2.9.4
-
+Added to 4.13 queue, thankgs.

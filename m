@@ -1,88 +1,123 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:40834 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:47995 "EHLO
         userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750808AbdEBCXR (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 May 2017 22:23:17 -0400
-Subject: Re: [PATCH v3.1 1/7] btrfs: Introduce a function to check if all
- chunks a OK for degraded rw mount
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-References: <20170309013442.19957-1-quwenruo@cn.fujitsu.com>
- <20170309013442.19957-2-quwenruo@cn.fujitsu.com>
- <f01fd9f3-85fe-c390-5358-be8c5d67ebc6@oracle.com>
- <4b9409a0-290a-02d4-4288-2b66c1ed0cd6@cn.fujitsu.com>
- <20170501132138.0bd3e33a@job>
- <d5114574-3c92-dc2c-8326-c109dab24ec1@cn.fujitsu.com>
-From: Anand Jain <anand.jain@oracle.com>
-Cc: Dmitrii Tcvetkov <demfloro@demfloro.ru>, linux-btrfs@vger.kernel.org
-Message-ID: <8b6d8e7f-df6d-3878-eeb7-533db97db3c5@oracle.com>
-Date: Tue, 2 May 2017 10:28:25 +0800
+        with ESMTP id S1753689AbdESAoR (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 18 May 2017 20:44:17 -0400
+Date: Thu, 18 May 2017 17:42:24 -0700
+From: Liu Bo <bo.li.liu@oracle.com>
+To: David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 06/10] btrfs: scrub: use bool for flush_all_writes
+Message-ID: <20170519004224.GK23822@lim.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <cover.1494954480.git.dsterba@suse.com>
+ <0d4dcd2dd113cdff9141336e583ab5afacfeee6f.1494954480.git.dsterba@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <d5114574-3c92-dc2c-8326-c109dab24ec1@cn.fujitsu.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <0d4dcd2dd113cdff9141336e583ab5afacfeee6f.1494954480.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Tue, May 16, 2017 at 07:10:38PM +0200, David Sterba wrote:
+> flush_all_writes is an atomic but does not use the semantics at all,
+> it's just on/off indicator, we can use bool.
+> 
 
+It might use atomic to avoid reordering, but I'm not sure if
+reordering could really happen here.
 
-On 05/02/2017 08:20 AM, Qu Wenruo wrote:
->
->
-> At 05/01/2017 06:21 PM, Dmitrii Tcvetkov wrote:
->>>>> +bool btrfs_check_rw_degradable(struct btrfs_fs_info *fs_info)
->>>>> +{
->>>>> +    struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
->>>>> +    struct extent_map *em;
->>>>> +    u64 next_start = 0;
->>>>> +    bool ret = true;
->>>>> +
->>>>> +    read_lock(&map_tree->map_tree.lock);
->>>>> +    em = lookup_extent_mapping(&map_tree->map_tree, 0, (u64)-1);
->>>>> +    read_unlock(&map_tree->map_tree.lock);
->>>>> +    /* No chunk at all? Return false anyway */
->>>>> +    if (!em) {
->>>>> +        ret = false;
->>>>> +        goto out;
->>>>> +    }
->>>>> +    while (em) {
->>>>> +        struct map_lookup *map;
->>>>> +        int missing = 0;
->>>>> +        int max_tolerated;
->>>>> +        int i;
->>>>> +
->>>>> +        map = (struct map_lookup *) em->bdev;
->>>>
->>>>
->>>>     any idea why not   map = em->map_lookup;  here?
->>>
->>>
->>> My fault, will update the patch.
->>>
->>> Thanks,
->>> Qu
->>
->> Sorry to bother, but looks like this patchset suddenly got forgotten.
->> It still applies to 4.11 but I'm afraid it won't after 4.12 merge
->> window. Any update on it?
->
-> Just waiting for the flush error rework from Anand Jain.
+Thanks,
 
+-liubo
 
-   There were quite a number of trials on the btrfs dev flush to get
-   that correctly, David reviewed previous once and the current and
-   probably the final is titled [1] which is waiting for David.
-     [1]
-     [PATCH] btrfs: add framework to handle device flush error as a volume
-
-Thanks, Anand
-
-
-> (Well, I still remember the original patchset has the same thing problem)
->
-> Maybe Anand Jain has some idea on this.
->
-> Thanks,
-> Qu
-
-
-
-
+> Signed-off-by: David Sterba <dsterba@suse.com>
+> ---
+>  fs/btrfs/scrub.c | 18 ++++++++----------
+>  1 file changed, 8 insertions(+), 10 deletions(-)
+> 
+> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+> index 2c1d344c8edd..8caf775fee0a 100644
+> --- a/fs/btrfs/scrub.c
+> +++ b/fs/btrfs/scrub.c
+> @@ -182,8 +182,8 @@ struct scrub_ctx {
+>  
+>  	struct scrub_bio        *wr_curr_bio;
+>  	struct mutex            wr_lock;
+> -	atomic_t                flush_all_writes;
+>  	struct btrfs_device     *wr_tgtdev;
+> +	bool                    flush_all_writes;
+>  
+>  	/*
+>  	 * statistics
+> @@ -718,7 +718,7 @@ struct scrub_ctx *scrub_setup_ctx(struct btrfs_device *dev, int is_dev_replace)
+>  	if (is_dev_replace) {
+>  		WARN_ON(!dev->bdev);
+>  		sctx->wr_tgtdev = dev;
+> -		atomic_set(&sctx->flush_all_writes, 0);
+> +		sctx->flush_all_writes = false;
+>  	}
+>  
+>  	return sctx;
+> @@ -2410,8 +2410,7 @@ static void scrub_missing_raid56_worker(struct btrfs_work *work)
+>  
+>  	scrub_block_put(sblock);
+>  
+> -	if (sctx->is_dev_replace &&
+> -	    atomic_read(&sctx->flush_all_writes)) {
+> +	if (sctx->is_dev_replace && sctx->flush_all_writes) {
+>  		mutex_lock(&sctx->wr_lock);
+>  		scrub_wr_submit(sctx);
+>  		mutex_unlock(&sctx->wr_lock);
+> @@ -2618,8 +2617,7 @@ static void scrub_bio_end_io_worker(struct btrfs_work *work)
+>  	sctx->first_free = sbio->index;
+>  	spin_unlock(&sctx->list_lock);
+>  
+> -	if (sctx->is_dev_replace &&
+> -	    atomic_read(&sctx->flush_all_writes)) {
+> +	if (sctx->is_dev_replace && sctx->flush_all_writes) {
+>  		mutex_lock(&sctx->wr_lock);
+>  		scrub_wr_submit(sctx);
+>  		mutex_unlock(&sctx->wr_lock);
+> @@ -3454,14 +3452,14 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+>  		 */
+>  		if (atomic_read(&fs_info->scrub_pause_req)) {
+>  			/* push queued extents */
+> -			atomic_set(&sctx->flush_all_writes, 1);
+> +			sctx->flush_all_writes = true;
+>  			scrub_submit(sctx);
+>  			mutex_lock(&sctx->wr_lock);
+>  			scrub_wr_submit(sctx);
+>  			mutex_unlock(&sctx->wr_lock);
+>  			wait_event(sctx->list_wait,
+>  				   atomic_read(&sctx->bios_in_flight) == 0);
+> -			atomic_set(&sctx->flush_all_writes, 0);
+> +			sctx->flush_all_writes = false;
+>  			scrub_blocked_if_needed(fs_info);
+>  		}
+>  
+> @@ -3907,7 +3905,7 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
+>  		 * write requests are really completed when bios_in_flight
+>  		 * changes to 0.
+>  		 */
+> -		atomic_set(&sctx->flush_all_writes, 1);
+> +		sctx->flush_all_writes = true;
+>  		scrub_submit(sctx);
+>  		mutex_lock(&sctx->wr_lock);
+>  		scrub_wr_submit(sctx);
+> @@ -3925,7 +3923,7 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
+>  		 */
+>  		wait_event(sctx->list_wait,
+>  			   atomic_read(&sctx->workers_pending) == 0);
+> -		atomic_set(&sctx->flush_all_writes, 0);
+> +		sctx->flush_all_writes = false;
+>  
+>  		scrub_pause_off(fs_info);
+>  
+> -- 
+> 2.12.0
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

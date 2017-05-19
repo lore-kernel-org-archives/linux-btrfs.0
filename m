@@ -1,50 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:42915 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:45814 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752653AbdEPRLx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 May 2017 13:11:53 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 6B921AB5F
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 May 2017 17:11:47 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 10/10] btrfs: scrub: simplify srrub worker initialization
-Date: Tue, 16 May 2017 19:10:50 +0200
-Message-Id: <85babda7009e27f63650c37d36f4f135c20708a4.1494954480.git.dsterba@suse.com>
-In-Reply-To: <cover.1494954480.git.dsterba@suse.com>
-References: <cover.1494954480.git.dsterba@suse.com>
+        id S1755458AbdESSLk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 19 May 2017 14:11:40 -0400
+Date: Fri, 19 May 2017 20:10:41 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: jeffm@suse.com, linux-btrfs@vger.kernel.org, stable@vger.kernel.org
+Subject: Re: [PATCH 1/3] btrfs: fix race with relocation recovery and fs_root
+ setup
+Message-ID: <20170519181041.GZ4065@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1495035516-3217-1-git-send-email-jeffm@suse.com>
+ <20170518235819.GD23822@lim.localdomain>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170518235819.GD23822@lim.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Minor simplification, merge calls to one.
+On Thu, May 18, 2017 at 04:58:19PM -0700, Liu Bo wrote:
+> On Wed, May 17, 2017 at 11:38:34AM -0400, jeffm@suse.com wrote:
+> > From: Jeff Mahoney <jeffm@suse.com>
+> > 
+> > If we have to recover relocation during mount, we'll ultimately have to
+> > evict the orphan inode.  That goes through the reservation dance, where
+> > priority_reclaim_metadata_space and flush_space expect fs_info->fs_root
+> > to be valid.  That's the next thing to be set up during mount, so we
+> > crash, almost always in flush_space trying to join the transaction
+> > but priority_reclaim_metadata_space is possible as well.  This call
+> > path has been problematic in the past WRT whether ->fs_root is valid
+> > yet.  Commit 957780eb278 (Btrfs: introduce ticketed enospc
+> > infrastructure) added new users that are called in the direct path
+> > instead of the async path that had already been worked around.
+> > 
+> > The thing is that we don't actually need the fs_root, specifically, for
+> > anything.  We either use it to determine whether the root is the
+> > chunk_root for use in choosing an allocation profile or as a root to pass
+> > btrfs_join_transaction before immediately committing it.  Anything that
+> > isn't the chunk root works in the former case and any root works in
+> > the latter.
+> > 
+> > A simple fix is to use a root we know will always be there: the
+> > extent_root.
+> > 
+> Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/scrub.c | 10 ++--------
- 1 file changed, 2 insertions(+), 8 deletions(-)
-
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 6c8c4535dc43..59b053feb42e 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -4026,14 +4026,8 @@ static noinline_for_stack int scrub_workers_get(struct btrfs_fs_info *fs_info,
- 	int max_active = fs_info->thread_pool_size;
- 
- 	if (fs_info->scrub_workers_refcnt == 0) {
--		if (is_dev_replace)
--			fs_info->scrub_workers =
--				btrfs_alloc_workqueue(fs_info, "scrub", flags,
--						      1, 4);
--		else
--			fs_info->scrub_workers =
--				btrfs_alloc_workqueue(fs_info, "scrub", flags,
--						      max_active, 4);
-+		fs_info->scrub_workers = btrfs_alloc_workqueue(fs_info, "scrub",
-+				flags, is_dev_replace ? 1 : max_active, 4);
- 		if (!fs_info->scrub_workers)
- 			goto fail_scrub_workers;
- 
--- 
-2.12.0
-
+2-3 added to 4.13 queue, 1 will go to 4.12. Thanks.

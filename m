@@ -1,80 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ns.bouton.name ([109.74.195.142]:49366 "EHLO mail.bouton.name"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750774AbdESUTg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 19 May 2017 16:19:36 -0400
-Subject: Re: [PATCH 2/3] Btrfs: lzo compression must free at least PAGE_SIZE
-To: Timofey Titovets <nefelim4ag@gmail.com>, linux-btrfs@vger.kernel.org
-References: <20170519133835.27843-1-nefelim4ag@gmail.com>
- <20170519133835.27843-3-nefelim4ag@gmail.com>
- <6a1f17d5-3cc8-f5c0-36af-39b41eebc426@bouton.name>
-From: Lionel Bouton <lionel-subscription@bouton.name>
-Message-ID: <d42097e1-2deb-eb2a-9cae-ad9aa8725bde@bouton.name>
-Date: Fri, 19 May 2017 22:19:33 +0200
+Received: from mail-qk0-f193.google.com ([209.85.220.193]:34247 "EHLO
+        mail-qk0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755220AbdESVP7 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 19 May 2017 17:15:59 -0400
+Received: by mail-qk0-f193.google.com with SMTP id u75so11773742qka.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 19 May 2017 14:15:59 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <6a1f17d5-3cc8-f5c0-36af-39b41eebc426@bouton.name>
-Content-Type: text/plain; charset=windows-1252
+In-Reply-To: <d42097e1-2deb-eb2a-9cae-ad9aa8725bde@bouton.name>
+References: <20170519133835.27843-1-nefelim4ag@gmail.com> <20170519133835.27843-3-nefelim4ag@gmail.com>
+ <6a1f17d5-3cc8-f5c0-36af-39b41eebc426@bouton.name> <d42097e1-2deb-eb2a-9cae-ad9aa8725bde@bouton.name>
+From: Timofey Titovets <nefelim4ag@gmail.com>
+Date: Sat, 20 May 2017 00:15:18 +0300
+Message-ID: <CAGqmi75+vNVsz1CjOVhrhmvBCQAK82Cs0G899Jzw3fr2s5Sifg@mail.gmail.com>
+Subject: Re: [PATCH 2/3] Btrfs: lzo compression must free at least PAGE_SIZE
+To: Lionel Bouton <lionel-subscription@bouton.name>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Le 19/05/2017 à 16:17, Lionel Bouton a écrit :
-> Hi,
->
-> Le 19/05/2017 à 15:38, Timofey Titovets a écrit :
->> If data compression didn't free at least one PAGE_SIZE, it useless to store that compressed extent
->>
->> Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
->> ---
->>  fs/btrfs/lzo.c | 2 +-
->>  1 file changed, 1 insertion(+), 1 deletion(-)
->>
->> diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
->> index bd0b0938..637ef1b0 100644
->> --- a/fs/btrfs/lzo.c
->> +++ b/fs/btrfs/lzo.c
->> @@ -207,7 +207,7 @@ static int lzo_compress_pages(struct list_head *ws,
->>  		}
->>  
->>  		/* we're making it bigger, give up */
->> -		if (tot_in > 8192 && tot_in < tot_out) {
->> +		if (tot_in > 8192 && tot_in < tot_out + PAGE_SIZE) {
->>  			ret = -E2BIG;
->>  			goto out;
->>  		}
-> I'm not familiar with this code but I was surprised by the test : you
-> would expect compression having a benefit when you are freeing an actual
-> page not reducing data by a page size. So unless I don't understand the
-> context shouldn't it be something like :
->
-> if (tot_in > 8192 && ((tot_in % PAGE_SIZE) <= (tot_out % PAGE_SIZE))
->
-> but looking at the code I see that this is in a while loop and there's
-> another test just after the loop in the existing code :
->
->         if (tot_out > tot_in)
->                 goto out;
->
-> There's a couple of things I don't understand but isn't this designed to
-> stream data in small chunks through compression before writing it in the
-> end ? So isn't this later test the proper location to detect if
-> compression was beneficial ?
->
-> You might not save a page early on in the while loop working on a subset
-> of the data to compress but after enough data being processed you could
-> save a page. It seems odd that your modification could abort compression
-> early on although the same condition would become true after enough loops.
->
-> Isn't what you want something like :
->
->         if (tot_out % PAGE_SIZE >= tot_in % PAGE_SIZE)
->                 goto out;
->
-> after the loop ?
-> The >= instead of > would avoid decompression in the case where the
-> compressed data is smaller but uses the same space on disk.
+2017-05-19 23:19 GMT+03:00 Lionel Bouton <lionel-subscription@bouton.name>:
+> I was too focused on other problems and having a fresh look at what I
+> wrote I'm embarrassed by what I read.
+> Used pages for a given amount of data should be (amount / PAGE_SIZE) +
+> ((amount % PAGE_SIZE) == 0 ? 0 : 1) this seems enough of a common thing
+> to compute that the kernel might have a macro defined for this.
 
-I was too focused on other problems and having a fresh look at what I
-wrote I'm embarrassed by what I read.
-Used pages for a given amount of data should be (amount / PAGE_SIZE) +
-((amount % PAGE_SIZE) == 0 ? 0 : 1) this seems enough of a common thing
-to compute that the kernel might have a macro defined for this.
+If i understand the code correctly, the logic of comparing the size of
+input/output by bytes is enough (IMHO) for skipping the compression of
+non-compressible data, and as btrfs uses PAGE_SIZE as a data cluster
+size (and if i understand correctly it's minimum IO size), the logic
+of that can be improved in case when compressed data use 126978 <
+compressed_size < 131072.
+The easiest way to improve that case, i think, is making the
+compressed size bigger by PAGE_SIZE.
+
+JFYI:
+Once I've read on the list that btrfs don't compress data, if data are
+less then PAGE_SIZE because it's useless (i didn't find that in the
+code, so i think that i don't fully understand code of compress
+routine)
+
+After some time i got a idea that if btrfs determines store data
+compressed or not by comparing input/output size of data (i.e. if
+compressed size is bigger in compare to input data, don't store
+compressed version), this logic can be improved by also checking if
+compression profit is more then PAGE_SIZE, because if it's not,
+compressed data will pass check and comsume the same amount of space
+and as a result will not show any gain.
+
+-- 
+Have a nice day,
+Timofey.

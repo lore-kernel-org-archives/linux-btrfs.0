@@ -1,47 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f195.google.com ([209.85.216.195]:34331 "EHLO
-        mail-qt0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1424744AbdEYRz5 (ORCPT
+Received: from mail-lf0-f67.google.com ([209.85.215.67]:33471 "EHLO
+        mail-lf0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751403AbdETSky (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 May 2017 13:55:57 -0400
-Received: by mail-qt0-f195.google.com with SMTP id l39so31126051qtb.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 May 2017 10:55:56 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <1950765.ANvucQrkZu@localhost.localdomain>
-References: <20170520184039.31362-1-nefelim4ag@gmail.com> <20170520184039.31362-3-nefelim4ag@gmail.com>
- <1950765.ANvucQrkZu@localhost.localdomain>
+        Sat, 20 May 2017 14:40:54 -0400
+Received: by mail-lf0-f67.google.com with SMTP id m18so2283129lfj.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 20 May 2017 11:40:53 -0700 (PDT)
 From: Timofey Titovets <nefelim4ag@gmail.com>
-Date: Thu, 25 May 2017 20:55:14 +0300
-Message-ID: <CAGqmi740CEC4EzTaPGdYACR8RQmQFaqyRCahx1oEWuYa_9YtAQ@mail.gmail.com>
-Subject: Re: [PATCH v3 2/2] Btrfs: compression must free at least PAGE_SIZE
-To: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, Roman Mamedov <rm@romanrm.net>,
-        Duncan <1i5t5.duncan@cox.net>
-Content-Type: text/plain; charset="UTF-8"
+To: linux-btrfs@vger.kernel.org
+Cc: Timofey Titovets <nefelim4ag@gmail.com>
+Subject: [PATCH v3 1/2] Btrfs: lzo.c pr_debug() deflate->lzo
+Date: Sat, 20 May 2017 21:40:38 +0300
+Message-Id: <20170520184039.31362-2-nefelim4ag@gmail.com>
+In-Reply-To: <20170520184039.31362-1-nefelim4ag@gmail.com>
+References: <20170520184039.31362-1-nefelim4ag@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2017-05-25 15:51 GMT+03:00 Chandan Rajendra <chandan@linux.vnet.ibm.com>:
-...
-> Apologies for the delayed response.
->
-> I am not really sure if compression code must save atleast one sectorsize
-> worth of space. But if other developers agree to it, then the above
-> 'if' condition can be replaced with,
->
-> u32 sectorsize = btrfs_inode_sectorsize(mapping->host);
-> ...
-> ...
->
-> if (tot_out + sectorsize > tot_in) {
-> --
-> chandan
->
+Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
+---
+ fs/btrfs/lzo.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Thanks a lot!
-This approach much simplier then i imagined, i will update patch set and resend.
-
-Thank you!
--- 
-Have a nice day,
-Timofey.
+diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
+index f48c8c14..bd0b0938 100644
+--- a/fs/btrfs/lzo.c
++++ b/fs/btrfs/lzo.c
+@@ -141,7 +141,7 @@ static int lzo_compress_pages(struct list_head *ws,
+ 		ret = lzo1x_1_compress(data_in, in_len, workspace->cbuf,
+ 				       &out_len, workspace->mem);
+ 		if (ret != LZO_E_OK) {
+-			pr_debug("BTRFS: deflate in loop returned %d\n",
++			pr_debug("BTRFS: lzo in loop returned %d\n",
+ 			       ret);
+ 			ret = -EIO;
+ 			goto out;
+--
+2.13.0

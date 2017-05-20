@@ -1,60 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40103 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1757292AbdEKSkf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 May 2017 14:40:35 -0400
-Date: Thu, 11 May 2017 20:40:21 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org, bo.li.liu@oracle.com,
-        fdmanana@gmail.com
-Subject: Re: [PATCH v3] btrfs: relocation: Enhance kernel error output for
- relocation
-Message-ID: <20170511184021.GG27439@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170215013905.17677-1-quwenruo@cn.fujitsu.com>
- <20170509172943.GI5491@twin.jikos.cz>
- <436b506c-4ab7-408c-130b-1cebe00f2746@cn.fujitsu.com>
+Received: from mail-it0-f47.google.com ([209.85.214.47]:34958 "EHLO
+        mail-it0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755670AbdETIjj (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 20 May 2017 04:39:39 -0400
+Received: by mail-it0-f47.google.com with SMTP id c15so130146297ith.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 20 May 2017 01:39:39 -0700 (PDT)
+Received: from ircssh-2.c.rugged-nimbus-611.internal (80.60.198.104.bc.googleusercontent.com. [104.198.60.80])
+        by smtp.gmail.com with ESMTPSA id u200sm5187522itb.29.2017.05.20.01.39.38
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Sat, 20 May 2017 01:39:38 -0700 (PDT)
+Date: Sat, 20 May 2017 08:39:37 +0000
+From: Sargun Dhillon <sargun@sargun.me>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 5/8] btrfs: qgroup.h whitespace change
+Message-ID: <20170520083935.GA4235@ircssh-2.c.rugged-nimbus-611.internal>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <436b506c-4ab7-408c-130b-1cebe00f2746@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+In-Reply-To: <20170520083826.GA4176@ircssh-2.c.rugged-nimbus-611.internal>
 
-On Wed, May 10, 2017 at 11:39:40AM +0800, Qu Wenruo wrote:
-> 
-> 
-> At 05/10/2017 01:29 AM, David Sterba wrote:
-> > On Wed, Feb 15, 2017 at 09:39:05AM +0800, Qu Wenruo wrote:
-> >> When balance(relocation) fails, btrfs-progs will report like:
-> >>
-> >> ERROR: error during balancing '/mnt/scratch': Input/output error
-> >> There may be more info in syslog - try dmesg | tail
-> >>
-> >> However kernel can't provide may useful info in many cases to locate the
-> >> problem.
-> >>
-> >> This patch will add error messages in relocation to help user and
-> >> developer to locate the problem.
-> > 
-> > I think it's too verbose for a user, and not really helpful what to do
-> > after such error message appears in the log. The errors translate name
-> > of the last function that failed, so the user would need to be familiar
-> > with the inner workings of the balance to make sense of it.
-> 
-> Yes, normal user may never need such verbose output.
-> 
-> But it will help developers or support guys to wipe out some really easy 
-> cases.
-> 
-> > 
-> > The meessages may make sense to a developer, but then it's not necessary
-> > to print them as btrfs_err, but btrfs_debug.
-> 
-> I also considered btrfs_debug, but the problem is btrfs_debug() depend 
-> on either CONFIG_DYANMIC_DEBUG or DEBUG.
-> 
-> So when problem happens in real world, we're too late to ensure such output.
+This patch is just changing whitespace alignment in qgroup.h
 
-The I think we need some way that is not as noisy as btrfs_err but also
-compiled-in by default unlike the dynamic debug.
+Signed-off-by: Sargun Dhillon <sargun@sargun.me>
+---
+ fs/btrfs/qgroup.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+index fe04d3f..fb6c7da 100644
+--- a/fs/btrfs/qgroup.h
++++ b/fs/btrfs/qgroup.h
+@@ -127,7 +127,7 @@ int btrfs_del_qgroup_relation(struct btrfs_trans_handle *trans,
+ int btrfs_create_qgroup(struct btrfs_trans_handle *trans,
+ 			struct btrfs_fs_info *fs_info, u64 qgroupid);
+ int btrfs_remove_qgroup(struct btrfs_trans_handle *trans,
+-			      struct btrfs_fs_info *fs_info, u64 qgroupid);
++			struct btrfs_fs_info *fs_info, u64 qgroupid);
+ int btrfs_limit_qgroup(struct btrfs_trans_handle *trans,
+ 		       struct btrfs_fs_info *fs_info, u64 qgroupid,
+ 		       struct btrfs_qgroup_limit *limit);
+-- 
+2.9.3
+

@@ -1,73 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:34929 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1756136AbdETCbG (ORCPT
+Received: from mail-it0-f53.google.com ([209.85.214.53]:36801 "EHLO
+        mail-it0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755544AbdETIib (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 19 May 2017 22:31:06 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1dBuAR-0002b2-MP
-        for linux-btrfs@vger.kernel.org; Sat, 20 May 2017 04:30:55 +0200
+        Sat, 20 May 2017 04:38:31 -0400
+Received: by mail-it0-f53.google.com with SMTP id o5so130126136ith.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 20 May 2017 01:38:31 -0700 (PDT)
+Received: from ircssh-2.c.rugged-nimbus-611.internal (80.60.198.104.bc.googleusercontent.com. [104.198.60.80])
+        by smtp.gmail.com with ESMTPSA id s96sm4931183ioi.14.2017.05.20.01.38.30
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Sat, 20 May 2017 01:38:30 -0700 (PDT)
+Date: Sat, 20 May 2017 08:38:28 +0000
+From: Sargun Dhillon <sargun@sargun.me>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: RAID 6 corrupted
-Date: Sat, 20 May 2017 02:30:48 +0000 (UTC)
-Message-ID: <pan$f0a91$d5a6b148$d2f11d14$5118d69e@cox.net>
-References: <CA+M=Xp3+YQkeVNLkSZw77zMdia2LwSiaEaR=6Ejs0z2TvW2xwg@mail.gmail.com>
-        <pan$3156f$ad60295$88e5604$e6cc7e68@cox.net>
-        <20170517101523.ylmw4qo2wjsnibfh@angband.pl>
-        <CA+M=Xp0o6uz6uBv41ygpFBiWyw1x6ucg38BtG3V-XdOJ9azvxA@mail.gmail.com>
-        <20170518101719.6c9feabe@natsu> <pan$24de$e527cbb7$733b205c$f2415b2@cox.net>
-        <20170519085527.GD24459@reaktio.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: [PATCH 0/8] BtrFS: QGroups uapi improvements
+Message-ID: <20170520083826.GA4176@ircssh-2.c.rugged-nimbus-611.internal>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Pasi Kärkkäinen posted on Fri, 19 May 2017 11:55:27 +0300 as excerpted:
+This patchset contains some improvements to qgroups. It changes the
+semantics around how qgroups are dealt with when subvolumes are
+deleted, and it also adds two new ioctls for qgroup deletion
+and addition.
 
-> On Thu, May 18, 2017 at 06:12:22AM +0000, Duncan wrote:
->> Roman Mamedov posted on Thu, 18 May 2017 10:17:19 +0500 as excerpted:
->> 
->> > On Thu, 18 May 2017 04:09:38 +0200 ??ukasz Wróblewski <lw@nri.pl>
->> > wrote:
->> > 
->> >> I will try when stable 4.12 comes out.
->> >> Unfortunately I do not have a backup.
->> >> Fortunately, these data are not so critical.
->> >> Some private photos and videos of youth.
->> >> However, I would be very happy if I could get it back.
->> > 
->> > Try saving your data with "btrfs restore" first
->> 
->> First post, he tried that.  No luck.  Tho that was with 4.4 userspace.
->> It might be worth trying with the 4.11-rc or soon to be released 4.11
->> userspace, tho...
->> 
->> 
-> Try with 4.12-rc, I assume :)
+The new semantic around qgroup removal is that when the qgroup_nokeep
+mount flag is set, it when a subvolume is deleted, the associated
+level-0 qgroup will also be removed. This does not trickle up to
+high level qgroups.
 
-No.  btrfs restore is 100% userspace, so we're talking btrfs-progs (thus 
-the "userspace" specifier) version here, not kernel version.
+In addition, it adds two new ioctls for qgroup addition and removal
+which have flags to protect against creating qgroups for non-existent
+volumes, and in addition flags to prevent the deletion of qgroups
+that are associated with volumes.
 
-And at the time 4.11-rc was the latest progs version, with 4.11 due 
-within a day or two, so "4.11-rc or soon to be released 4.11 userspace" 
-was correct.
+Sargun Dhillon (8):
+  btrfs: Split up btrfs_remove_qgroup, no logic changes
+  btrfs: Fail on removing qgroup if del_qgroup_item fails
+  btrfs: Split up btrfs_create_qgroup, no logic changes
+  btrfs: autoremove qgroup by default, and add a mount flag to override
+  btrfs: qgroup.h whitespace change
+  btrfs: Add code to check if a qgroup's subvol exists
+  btrfs: Add code to prevent qgroup creation for a non-existent subvol
+  btrfs: Add new ioctl uapis for qgroup creation / removal
 
-Of course since then 4.11 userspace /has/ been released, so it'd be 4.11 
-without the -rc, now.
-
-(When I got the CCed email I couldn't make heads or tails since I was 
-missing the thread context, tho the fact that I was dead tired probably 
-didn't help.  I just checked the list, which I interface with as a 
-newsgroup on gmane.org's list2news service, after getting home from work 
-today, however, and there the entire thread is visible, as one would 
-expect for a newsgroup, so I could make sense of the context, and realize 
-it was a case of kernel version vs. userspace version confusion. Easy 
-enough to clarify... =:^)
+ fs/btrfs/ctree.h           |   1 +
+ fs/btrfs/ioctl.c           | 116 ++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/qgroup.c          | 140 ++++++++++++++++++++++++++++++++++-----------
+ fs/btrfs/qgroup.h          |   6 +-
+ fs/btrfs/super.c           |  16 +++++-
+ include/uapi/linux/btrfs.h |  23 ++++++++
+ 6 files changed, 264 insertions(+), 38 deletions(-)
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+2.9.3
 

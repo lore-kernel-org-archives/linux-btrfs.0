@@ -1,115 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f196.google.com ([209.85.220.196]:36552 "EHLO
-        mail-qk0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753588AbdETSb3 (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:56707 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1750737AbdEUBiU (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 20 May 2017 14:31:29 -0400
-Received: by mail-qk0-f196.google.com with SMTP id y128so14146322qka.3
-        for <linux-btrfs@vger.kernel.org>; Sat, 20 May 2017 11:31:28 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20170520191400.25202d75@jupiter.sol.kaishome.de>
-References: <20170520164953.7344-1-nefelim4ag@gmail.com> <20170520164953.7344-3-nefelim4ag@gmail.com>
- <20170520191400.25202d75@jupiter.sol.kaishome.de>
-From: Timofey Titovets <nefelim4ag@gmail.com>
-Date: Sat, 20 May 2017 21:30:47 +0300
-Message-ID: <CAGqmi76cLmXOj=P7qeR58n1aHNB-6e1R0yo+PjuMVLLgnWaryg@mail.gmail.com>
+        Sat, 20 May 2017 21:38:20 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1dCFoy-0002JK-PQ
+        for linux-btrfs@vger.kernel.org; Sun, 21 May 2017 03:38:12 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: [PATCH v2 2/2] Btrfs: compression must free at least PAGE_SIZE
-To: Kai Krakow <hurikhan77@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Date: Sun, 21 May 2017 01:38:06 +0000 (UTC)
+Message-ID: <pan$42cee$29ae88fa$3ea3d443$c10a99e5@cox.net>
+References: <20170520164953.7344-1-nefelim4ag@gmail.com>
+        <20170520164953.7344-3-nefelim4ag@gmail.com>
+        <20170520191400.25202d75@jupiter.sol.kaishome.de>
+        <CAGqmi76cLmXOj=P7qeR58n1aHNB-6e1R0yo+PjuMVLLgnWaryg@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2017-05-20 20:14 GMT+03:00 Kai Krakow <hurikhan77@gmail.com>:
-> Am Sat, 20 May 2017 19:49:53 +0300
-> schrieb Timofey Titovets <nefelim4ag@gmail.com>:
->
->> Btrfs already skip store of data where compression didn't free at
->> least one byte. So make logic better and make check that compression
->> free at least one PAGE_SIZE, because in another case it useless to
->> store this data compressed
->>
->> Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
->> ---
->>  fs/btrfs/lzo.c  | 5 ++++-
->>  fs/btrfs/zlib.c | 3 ++-
->>  2 files changed, 6 insertions(+), 2 deletions(-)
->>
->> diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
->> index bd0b0938..7f38bc3c 100644
->> --- a/fs/btrfs/lzo.c
->> +++ b/fs/btrfs/lzo.c
->> @@ -229,8 +229,11 @@ static int lzo_compress_pages(struct list_head
->> *ws, in_len = min(bytes_left, PAGE_SIZE);
->>       }
->>
->> -     if (tot_out > tot_in)
->> +     /* Compression must save at least one PAGE_SIZE */
->> +     if (tot_out + PAGE_SIZE => tot_in) {
->
-> Shouldn't this be ">" instead of ">=" (btw, I don't think => works)...
-(D'oh, typo, thanks)
+Timofey Titovets posted on Sat, 20 May 2017 21:30:47 +0300 as excerpted:
 
-> Given the case that tot_in is 8192, and tot_out is 4096, we saved a
-> complete page but 4096+4096 would still be equal to 8192.
->
-> The former logic only pretended that there is no point in compression
-> if we saved 0 bytes.
+> 2017-05-20 20:14 GMT+03:00 Kai Krakow <hurikhan77@gmail.com>:
+> 
+>> BTW: What's the smallest block size that btrfs stores? Is it always
+>> PAGE_SIZE? I'm not familiar with btrfs internals...
 
-Before my changes,
-lzo: if compressed data use same or less space in compare to not
-compressed -> save compressed version
-zlib: if profit of compression will not save at least one byte -> not
-compress that data
+Thanks for asking the question. =:^)  I hadn't made the below conflicting 
+patch sets association until I saw it.
 
-zlib logic is right, so i just did copy-paste that, but after my
-changes this case where compressed size == input size doesn't valid
-(i.e. it's ok then tot_out + PAGE_SIZE == tot_in),
-so you right ">=" -> ">"
+> https://btrfs.wiki.kernel.org/index.php/Manpage/mkfs.btrfs
 
-i will fix that and resend patch set, thanks.
+> AFAIK btrfs works with storage and account data by PAGE_SIZEd block,
+> so it's must be usefull to check if compressed size will give as at
+> least one PAGE_SIZE space.
 
-> BTW: What's the smallest block size that btrfs stores? Is it always
-> PAGE_SIZE? I'm not familiar with btrfs internals...
-https://btrfs.wiki.kernel.org/index.php/Manpage/mkfs.btrfs
-AFAIK btrfs works with storage and account data by PAGE_SIZEd block,
-so it's must be usefull to check if compressed size will give as at
-least one PAGE_SIZE space.
+[Not a dev, just a btrfs list regular and btrfs user.  If the devs say 
+different...]
 
->
->> +             ret = -E2BIG;
->>               goto out;
->> +     }
->>
->>       /* store the size of all chunks of compressed data */
->>       cpage_out = kmap(pages[0]);
->> diff --git a/fs/btrfs/zlib.c b/fs/btrfs/zlib.c
->> index 135b1082..2b04259b 100644
->> --- a/fs/btrfs/zlib.c
->> +++ b/fs/btrfs/zlib.c
->> @@ -191,7 +191,8 @@ static int zlib_compress_pages(struct list_head
->> *ws, goto out;
->>       }
->>
->> -     if (workspace->strm.total_out >= workspace->strm.total_in) {
->> +     /* Compression must save at least one PAGE_SIZE */
->> +     if (workspace->strm.total_out + PAGE_SIZE >=
->> workspace->strm.total_in) { ret = -E2BIG;
->
-> Same as above...
->
->>               goto out;
->>       }
->> --
->> 2.13.0
->
->
-> --
-> Regards,
-> Kai
+While AFAIK, btrfs now saves data in page-size blocks (tho note that if 
+the entire file is under a block it may be inlined into metadata 
+depending on various limits, at least one of which is configurable)...
 
+There is a sub-page-size patch set that has already been thru several 
+revision cycles and AFAIK, remains on the roadmap for eventual merge.
 
+You'd need to check the list or ask the devs about current status, but 
+it's quite possible the current code checking for at least one byte of 
+compression savings, instead of the at least PAGE_SIZE bytes of savings 
+that at present would make more sense, is in anticipation of that patch 
+set being merged.
+
+If the sub-page-size block patch-set is no longer anticipated to be 
+merged in the relatively near future, it may be worth changing the 
+compression profit checks to PAGE_SIZE minimum, as this patch set does, 
+but the two patch sets clearly do conflict in concept, so merging this 
+one is unlikely to be wise if the other one is still on track for merging.
 
 -- 
-Have a nice day,
-Timofey.
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

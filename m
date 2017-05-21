@@ -1,74 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55223 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1750746AbdEYIdx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 May 2017 04:33:53 -0400
-Date: Thu, 25 May 2017 10:33:49 +0200
-From: Jan Kara <jack@suse.cz>
-To: Goldwyn Rodrigues <rgoldwyn@suse.de>
-Cc: linux-fsdevel@vger.kernel.org, jack@suse.com, hch@infradead.org,
-        linux-block@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org, axboe@kernel.dk,
-        linux-api@vger.kernel.org, adam.manzanares@wdc.com,
-        viro@zeniv.linux.org.uk, Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: Re: [PATCH 06/10] fs: Introduce IOMAP_NOWAIT
-Message-ID: <20170525083349.GG28950@quack2.suse.cz>
-References: <20170524164150.9492-1-rgoldwyn@suse.de>
- <20170524164150.9492-7-rgoldwyn@suse.de>
+Received: from bombadil.infradead.org ([65.50.211.133]:36699 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751292AbdEUHJq (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 21 May 2017 03:09:46 -0400
+Date: Sun, 21 May 2017 00:09:45 -0700
+From: Christoph Hellwig <hch@infradead.org>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: Christoph Hellwig <hch@infradead.org>, linux-btrfs@vger.kernel.org,
+        linux-block@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH 1/2] block: Introduce blkdev_issue_flush_no_wait()
+Message-ID: <20170521070945.GC10453@infradead.org>
+References: <20170516093914.16035-1-anand.jain@oracle.com>
+ <20170516093914.16035-2-anand.jain@oracle.com>
+ <20170516115605.GA18649@infradead.org>
+ <d97acfdb-3ab1-5722-f341-a8feba1a72ef@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170524164150.9492-7-rgoldwyn@suse.de>
+In-Reply-To: <d97acfdb-3ab1-5722-f341-a8feba1a72ef@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed 24-05-17 11:41:46, Goldwyn Rodrigues wrote:
-> From: Goldwyn Rodrigues <rgoldwyn@suse.com>
-> 
-> IOCB_NOWAIT translates to IOMAP_NOWAIT for iomaps.
-> This is used by XFS in the XFS patch.
-> 
-> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
-> Reviewed-by: Christoph Hellwig <hch@lst.de>
+On Thu, May 18, 2017 at 05:31:32PM +0800, Anand Jain wrote:
+>  You mean at btrfs: write_dev_flush()
+>    OR
+>  block: blkdev_issue_flush() ?
+>  Where I find
+>         q = bdev_get_queue(bdev);
+>         if (!q)
+>                 return -ENXIO
+>  isn't needed as anyway generic_make_request_checks() will
+>  check that down below.
+>  Not too sure about the other two checks though.
 
-Looks good. You can add:
+I was looking at your new function, but indeed it seems like the
+function is mostly copy & pasted from blkdev_issue_flush.
 
-Reviewed-by: Jan Kara <jack@suse.cz>
-
-								Honza
-
-> ---
->  fs/iomap.c            | 2 ++
->  include/linux/iomap.h | 1 +
->  2 files changed, 3 insertions(+)
-> 
-> diff --git a/fs/iomap.c b/fs/iomap.c
-> index 4b10892967a5..5d85ec6e7b20 100644
-> --- a/fs/iomap.c
-> +++ b/fs/iomap.c
-> @@ -879,6 +879,8 @@ iomap_dio_rw(struct kiocb *iocb, struct iov_iter *iter,
->  	} else {
->  		dio->flags |= IOMAP_DIO_WRITE;
->  		flags |= IOMAP_WRITE;
-> +		if (iocb->ki_flags & IOCB_NOWAIT)
-> +			flags |= IOMAP_NOWAIT;
->  	}
->  
->  	ret = filemap_write_and_wait_range(mapping, start, end);
-> diff --git a/include/linux/iomap.h b/include/linux/iomap.h
-> index f753e788da31..69f4e9470084 100644
-> --- a/include/linux/iomap.h
-> +++ b/include/linux/iomap.h
-> @@ -52,6 +52,7 @@ struct iomap {
->  #define IOMAP_REPORT		(1 << 2) /* report extent status, e.g. FIEMAP */
->  #define IOMAP_FAULT		(1 << 3) /* mapping for page fault */
->  #define IOMAP_DIRECT		(1 << 4) /* direct I/O */
-> +#define IOMAP_NOWAIT		(1 << 5) /* Don't wait for writeback */
->  
->  struct iomap_ops {
->  	/*
-> -- 
-> 2.12.0
-> 
--- 
-Jan Kara <jack@suse.com>
-SUSE Labs, CR
+The bdev->bd_disk, !bdev_get_queue and q->make_request_fn checks
+are all things you don't need, any blkdev_issue_flush should not
+either, although I'll need to look into the weird loop workaround
+again, which doesn't make much sense to me.

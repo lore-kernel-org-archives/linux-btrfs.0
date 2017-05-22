@@ -1,86 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:9343 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S932394AbdEVA7R (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:47696 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1757112AbdEVBf6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 21 May 2017 20:59:17 -0400
-Subject: Re: QGroups Semantics
-To: Sargun Dhillon <sargun@sargun.me>, BTRFS ML <linux-btrfs@vger.kernel.org>
-References: <CAMp4zn8CfdzPn7UAHf7S2PT1F8ysf95jMi7F8RBUuyBvqYT5xw@mail.gmail.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <c2e1824a-b395-53da-8cd2-cade09449313@cn.fujitsu.com>
-Date: Mon, 22 May 2017 08:59:13 +0800
+        Sun, 21 May 2017 21:35:58 -0400
+Received: from svh-gw.merlins.org ([173.11.111.145]:49922 helo=legolas.merlins.org)
+        by mail1.merlins.org with esmtps
+        (Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128) (Exim 4.87 #1)
+        id 1dCcGI-0003Ld-A9
+        for <linux-btrfs@vger.kernel.org>; Sun, 21 May 2017 18:35:57 -0700
+Received: from merlin by legolas.merlins.org with local (Exim 4.80)
+        (envelope-from <marc@merlins.org>)
+        id 1dCcGH-000461-J2
+        for linux-btrfs@vger.kernel.org; Sun, 21 May 2017 18:35:53 -0700
+Date: Sun, 21 May 2017 18:35:53 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: linux-btrfs@vger.kernel.org
+Message-ID: <20170522013553.hspdrwpmxe5kyoas@merlins.org>
+References: <20170521214733.c62v7el4g66jf63x@merlins.org>
+ <20170521234557.pu3vs3igdx7mqjzb@merlins.org>
 MIME-Version: 1.0
-In-Reply-To: <CAMp4zn8CfdzPn7UAHf7S2PT1F8ysf95jMi7F8RBUuyBvqYT5xw@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170521234557.pu3vs3igdx7mqjzb@merlins.org>
+Subject: Re: 4.11.1: cannot btrfs check --repair a filesystem, causes heavy
+ memory stalls
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-At 05/19/2017 05:07 PM, Sargun Dhillon wrote:
-> I have some questions about the *intended* qgroups semantics, and why
-> we allow certain operations:
+On Sun, May 21, 2017 at 04:45:57PM -0700, Marc MERLIN wrote:
+> On Sun, May 21, 2017 at 02:47:33PM -0700, Marc MERLIN wrote:
+> > gargamel:~# btrfs check --repair /dev/mapper/dshelf1
+> > enabling repair mode
+> > Checking filesystem on /dev/mapper/dshelf1
+> > UUID: 36f5079e-ca6c-4855-8639-ccb82695c18d
+> > checking extents
+> > 
+> > This causes a bunch of these:
+> > btrfs-transacti: page allocation stalls for 23508ms, order:0, mode:0x1400840(GFP_NOFS|__GFP_NOFAIL), nodemask=(null)
+> > btrfs-transacti cpuset=/ mems_allowed=0
+> > 
+> > What's the recommended way out of this and which code is at fault? I can't tell if btrfs is doing memory allocations wrong, or if it's just being undermined by the block layer dying underneath.
 > 
-> 1) Why can you create a level 0 qgroup for a non-existent subvolume?
-> It looks like it just gets reset when you create the subvol anyway?
-> Should we prevent this?
-
-Personally speaking, I didn't see much meaning of allowing this, except 
-setting limit before creating the subvolume.
-
-But that can also be done by setting up higher level qgroup and attach 
-new subvolume to that higher level qgroup.
-
-IIRC there are some guys hoping to disable multi-level qgroup 
-completely, if one day we decide to do that, then current behavior may 
-be quite important.
-
+> I went back to 4.8.10, and similar problem.
+> It looks like btrfs check exercises the kernel and causes everything to come down to a halt :(
 > 
-> 2) Why do we allow deleting a level 0 qgroup for a currently existing
-> subvolume? It seems to me that just setting the limit to 0, and/or
-> removing relations would work equally well? Perhaps a new ioctl to
-> clear the qgroup would make sense to do this.
+> Sadly, I tried a scrub on the same device, and it stalled after 6TB. The scrub process went zombie
+> and the scrub never succeeded, nor could it be stopped.
 
-At least I didn't see the meaning to allow deleting qgroup for existing 
-subvolume.
+So, putting the btrfs scrub that stalled issue, I didn't quite realize
+that btrs check memory issues actually caused the kernel to eat all the
+memory until everything crashed/deadlocked/stalled.
+Is that actually working as intended?
+Why doesn't it fail and stop instead of taking my entire server down?
+Clearly there must be a rule against a kernel subsystem taking all the
+memory from everything until everything crashes/deadlocks, right?
 
-It won't even improve any performance since we still need to do the time 
-consuming backref walk.
+So for now, I'm doing a lowmem check, but it's not going to be very
+helpful since it cannot repair anything if it finds a problem.
 
-> 
-> 3) Why don't we remove the associated level 0 qgroup when you remove
-> the subvol with that id?
-This may be related to question 1).
-Sometimes we may want to keep the limit?
+At least my machine isn't crashing anymore, I suppose that's still an
+improvement.
+gargamel:~# btrfs check --mode=lowmem /dev/mapper/dshelf1
+We'll see how many days it takes.
 
-Despite of that, I didn't see any reason to keep the orphan level 0 qgroup.
-
-> 
-> 4) I noticed in qgroup.c, one of the outstanding items is to determine
-> how to autocleanup. Are there any stated semantics around that, or
-> opinions?
-
-As long as we're going to stick with multi level qgroups, then 
-autocleanup seems to be a good idea.
-
-Thanks,
-Qu
-
-> 
-> PS:
-> If the answer to any of these is "it just needs to be worked on" --
-> I'm currently poking around this code path for some enhancements we're
-> doing for our usecase. I'm just trying to figure out how much of what
-> I'm doing is generalizable.
-> 
-> -Thanks,
-> Sargun
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
-
-
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

@@ -1,127 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:36742 "EHLO
-        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933650AbdEVQcC (ORCPT
+Received: from mail-oi0-f43.google.com ([209.85.218.43]:33854 "EHLO
+        mail-oi0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1759582AbdEVUz0 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 22 May 2017 12:32:02 -0400
-Received: from svh-gw.merlins.org ([173.11.111.145]:59332 helo=legolas.merlins.org)
-        by mail1.merlins.org with esmtps
-        (Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128) (Exim 4.87 #1)
-        id 1dCqFR-0004iU-Hk
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 May 2017 09:32:01 -0700
-Received: from merlin by legolas.merlins.org with local (Exim 4.80)
-        (envelope-from <marc@merlins.org>)
-        id 1dCqFQ-0000gk-VN
-        for linux-btrfs@vger.kernel.org; Mon, 22 May 2017 09:31:56 -0700
-Date: Mon, 22 May 2017 09:31:56 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: linux-btrfs@vger.kernel.org
-Message-ID: <20170522163156.5hcuw5tqfavjkmnm@merlins.org>
-References: <20170521214733.c62v7el4g66jf63x@merlins.org>
- <20170521234557.pu3vs3igdx7mqjzb@merlins.org>
- <20170522013553.hspdrwpmxe5kyoas@merlins.org>
+        Mon, 22 May 2017 16:55:26 -0400
+Received: by mail-oi0-f43.google.com with SMTP id b204so177335279oii.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 May 2017 13:55:26 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170522013553.hspdrwpmxe5kyoas@merlins.org>
-Subject: Re: 4.11.1: cannot btrfs check --repair a filesystem, causes heavy
- memory stalls
+In-Reply-To: <c2e1824a-b395-53da-8cd2-cade09449313@cn.fujitsu.com>
+References: <CAMp4zn8CfdzPn7UAHf7S2PT1F8ysf95jMi7F8RBUuyBvqYT5xw@mail.gmail.com>
+ <c2e1824a-b395-53da-8cd2-cade09449313@cn.fujitsu.com>
+From: Sargun Dhillon <sargun@sargun.me>
+Date: Mon, 22 May 2017 13:54:45 -0700
+Message-ID: <CAMp4zn-oFVhrM6C4U-z9EQa1HXw-yzTLRyVoHfati-dX1WVU5Q@mail.gmail.com>
+Subject: Re: QGroups Semantics
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: BTRFS ML <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, May 21, 2017 at 06:35:53PM -0700, Marc MERLIN wrote:
-> On Sun, May 21, 2017 at 04:45:57PM -0700, Marc MERLIN wrote:
-> > On Sun, May 21, 2017 at 02:47:33PM -0700, Marc MERLIN wrote:
-> > > gargamel:~# btrfs check --repair /dev/mapper/dshelf1
-> > > enabling repair mode
-> > > Checking filesystem on /dev/mapper/dshelf1
-> > > UUID: 36f5079e-ca6c-4855-8639-ccb82695c18d
-> > > checking extents
-> > > 
-> > > This causes a bunch of these:
-> > > btrfs-transacti: page allocation stalls for 23508ms, order:0, mode:0x1400840(GFP_NOFS|__GFP_NOFAIL), nodemask=(null)
-> > > btrfs-transacti cpuset=/ mems_allowed=0
-> > > 
-> > > What's the recommended way out of this and which code is at fault? I can't tell if btrfs is doing memory allocations wrong, or if it's just being undermined by the block layer dying underneath.
-> > 
-> > I went back to 4.8.10, and similar problem.
-> > It looks like btrfs check exercises the kernel and causes everything to come down to a halt :(
-> > 
-> > Sadly, I tried a scrub on the same device, and it stalled after 6TB. The scrub process went zombie
-> > and the scrub never succeeded, nor could it be stopped.
-> 
-> So, putting the btrfs scrub that stalled issue, I didn't quite realize
-> that btrs check memory issues actually caused the kernel to eat all the
-> memory until everything crashed/deadlocked/stalled.
-> Is that actually working as intended?
-> Why doesn't it fail and stop instead of taking my entire server down?
-> Clearly there must be a rule against a kernel subsystem taking all the
-> memory from everything until everything crashes/deadlocks, right?
-> 
-> So for now, I'm doing a lowmem check, but it's not going to be very
-> helpful since it cannot repair anything if it finds a problem.
-> 
-> At least my machine isn't crashing anymore, I suppose that's still an
-> improvement.
-> gargamel:~# btrfs check --mode=lowmem /dev/mapper/dshelf1
-> We'll see how many days it takes.
+On Sun, May 21, 2017 at 5:59 PM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>
+>
+> At 05/19/2017 05:07 PM, Sargun Dhillon wrote:
+>>
+>> I have some questions about the *intended* qgroups semantics, and why
+>> we allow certain operations:
+>>
+>> 1) Why can you create a level 0 qgroup for a non-existent subvolume?
+>> It looks like it just gets reset when you create the subvol anyway?
+>> Should we prevent this?
+>
+>
+> Personally speaking, I didn't see much meaning of allowing this, except
+> setting limit before creating the subvolume.
+>
+> But that can also be done by setting up higher level qgroup and attach new
+> subvolume to that higher level qgroup.
+>
+> IIRC there are some guys hoping to disable multi-level qgroup completely, if
+> one day we decide to do that, then current behavior may be quite important.
+>
+>>
+>> 2) Why do we allow deleting a level 0 qgroup for a currently existing
+>> subvolume? It seems to me that just setting the limit to 0, and/or
+>> removing relations would work equally well? Perhaps a new ioctl to
+>> clear the qgroup would make sense to do this.
+>
+>
+> At least I didn't see the meaning to allow deleting qgroup for existing
+> subvolume.
+>
+> It won't even improve any performance since we still need to do the time
+> consuming backref walk.
+>
+>>
+>> 3) Why don't we remove the associated level 0 qgroup when you remove
+>> the subvol with that id?
+>
+> This may be related to question 1).
+> Sometimes we may want to keep the limit?
+>
+> Despite of that, I didn't see any reason to keep the orphan level 0 qgroup.
+>
+>>
+>> 4) I noticed in qgroup.c, one of the outstanding items is to determine
+>> how to  autocleanup. Are there any stated semantics around that, or
+>> opinions?
+>
+>
+> As long as we're going to stick with multi level qgroups, then autocleanup
+> seems to be a good idea.
+>
+> Thanks,
+> Qu
+>
+I propose the following changes:
+1) We always cleanup level-0 qgroups by default, with no opt-out.
+I see absolutely no reason to keep these around.
 
-Well, at least it's finding errors, but of course it can't fix them
-since lowmem doesn't have repair yet (yes, I know it's WIP)
+2) We do not allow the creation of level-0 qgroups for (sub)volumes
+that do not exist.
+If people want to have a limit at creation time, they should create a
+higher level qgroup, and add the new qgroup to that one.
 
-I already have 24GB of RAM in that machine, adding more for the real
-fsck repair to run, is going to be difficult and ndb would take days I
-guess (then again I don't have a machine with 32 or 48 or 64GB of RAM
-anyway).
+3) We add two new ioctls: qgroup_create_v2, and qgroup_delete_v2, and
+add a pr_warn_once message when we see usage of the old API.
 
-I'm guessing my next step is to delete a lot of data from that array
-until its metadata use gets back below something that fits in RAM :-/
-But hopefully check --repair can be fixed not to crash your machine if
-it needs more RAM than is available.
+4) Add a flag to the qgroup_delete_v2 ioctl, NO_SUBVOL_CHECK.
+If the flag is present, it will allow you to delete qgroups which
+reference active subvolumes.
 
- 
-Checking filesystem on /dev/mapper/dshelf1
-UUID: 36f5079e-ca6c-4855-8639-ccb82695c18d
-checking free space cache [.]
-ERROR: root 53282 EXTENT_DATA[8244 4096] interrupt
-ERROR: root 53282 EXTENT_DATA[50585 4096] interrupt
-ERROR: root 53282 EXTENT_DATA[51096 4096] interrupt
-ERROR: root 53282 EXTENT_DATA[182617 4096] interrupt
-ERROR: root 53282 EXTENT_DATA[212972 4096] interrupt
-ERROR: root 53282 EXTENT_DATA[260115 4096] interrupt
-ERROR: root 53282 EXTENT_DATA[278370 4096] interrupt
-ERROR: root 53282 EXTENT_DATA[323505 4096] interrupt
-ERROR: root 53282 EXTENT_DATA[396923 4096] interrupt
-ERROR: root 53282 EXTENT_DATA[419599 4096] interrupt
-ERROR: root 53282 EXTENT_DATA[490602 4096] interrupt
-ERROR: root 53282 EXTENT_DATA[555541 4096] interrupt
-ERROR: root 53282 EXTENT_DATA[601942 4096] interrupt
-ERROR: root 53282 EXTENT_DATA[682215 4096] interrupt
-ERROR: root 53282 EXTENT_DATA[721729 4096] interrupt
-ERROR: root 53282 EXTENT_DATA[916271 4096] interrupt
-ERROR: root 53282 EXTENT_DATA[961074 4096] interrupt
-ERROR: root 53282 EXTENT_DATA[1118062 4096] interrupt
-ERROR: root 53282 EXTENT_DATA[1127879 4096] interrupt
-ERROR: root 53282 EXTENT_DATA[1142984 4096] interrupt
-ERROR: root 53282 EXTENT_DATA[1379975 4096] interrupt
-ERROR: root 53282 EXTENT_DATA[1398275 4096] interrupt
-ERROR: root 53282 EXTENT_DATA[1446265 4096] interrupt
-ERROR: root 53282 EXTENT_DATA[1459061 4096] interrupt
-ERROR: root 53282 EXTENT_DATA[1477900 4096] interrupt
-ERROR: root 53282 EXTENT_DATA[1477900 4096] interrupt
-ERROR: root 53282 EXTENT_DATA[1484265 4096] interrupt
-ERROR: root 53282 EXTENT_DATA[1509227 4096] interrupt
-ERROR: root 53282 EXTENT_DATA[1671096 4096] interrupt
-ERROR: root 53282 EXTENT_DATA[1692559 4096] interrupt
-ERROR: root 53282 EXTENT_DATA[1742832 4096] interrupt
-ERROR: root 53282 EXTENT_DATA[1808649 4096] interrupt
-ERROR: root 53292 EXTENT_DATA[57240 4096] interrupt
-ERROR: root 53446 EXTENT_DATA[3554 4096] interrupt
-ERROR: root 53446 EXTENT_DATA[64241 4096] interrupt
-(...)
+Opinions?
 
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+>>
+>> PS:
+>> If the answer to any of these is "it just needs to be worked on" --
+>> I'm currently poking around this code path for some enhancements we're
+>> doing for our usecase. I'm just trying to figure out how much of what
+>> I'm doing is generalizable.
+>>
+>> -Thanks,
+>> Sargun
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+>>
+>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,184 +1,224 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:52588 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:49581 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1756798AbdEVDkU (ORCPT
+        with ESMTP id S1755679AbdEVBvZ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 21 May 2017 23:40:20 -0400
-Subject: Re: [PATCH 6/8] btrfs: Add code to check if a qgroup's subvol exists
-To: Sargun Dhillon <sargun@sargun.me>
-CC: BTRFS ML <linux-btrfs@vger.kernel.org>
+        Sun, 21 May 2017 21:51:25 -0400
+Subject: Re: [PATCH 8/8] btrfs: Add new ioctl uapis for qgroup creation /
+ removal
+To: Sargun Dhillon <sargun@sargun.me>, <linux-btrfs@vger.kernel.org>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <4472f0c8-5f72-65a9-a22e-cf175030346e@cn.fujitsu.com>
-Date: Mon, 22 May 2017 11:40:14 +0800
+Message-ID: <4ddad9de-6b0c-3587-6e27-c3513a455d60@cn.fujitsu.com>
+Date: Mon, 22 May 2017 09:51:13 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAMp4zn9MHgOoOTOLRfr05fkntbO7iRy=v4ZDy6m2vWjd_MG5gA@mail.gmail.com>
+In-Reply-To: <20170520084005.GA4262@ircssh-2.c.rugged-nimbus-611.internal>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-References: <20170520083944.GA4244@ircssh-2.c.rugged-nimbus-611.internal>
- <69628eef-98e0-a912-99d4-7896cd7459ab@cn.fujitsu.com>
- <CAMp4zn9MHgOoOTOLRfr05fkntbO7iRy=v4ZDy6m2vWjd_MG5gA@mail.gmail.com>
+References: <20170520084005.GA4262@ircssh-2.c.rugged-nimbus-611.internal>
 
 
 
-At 05/22/2017 11:04 AM, Sargun Dhillon wrote:
-> On Sun, May 21, 2017 at 6:39 PM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
->>
->>
->> At 05/20/2017 04:39 PM, Sargun Dhillon wrote:
->>>
->>> This patch is to prepare for following patches in this patchset. The
->>> purpose is to make it so that we can prevent accidental removal of
->>> qgroups that are actively in use.
->>>
->>> Signed-off-by: Sargun Dhillon <sargun@sargun.me>
->>> ---
->>>    fs/btrfs/ioctl.c  |  4 ++--
->>>    fs/btrfs/qgroup.c | 50
->>> +++++++++++++++++++++++++++++++++++++++++++++++++-
->>>    fs/btrfs/qgroup.h |  3 ++-
->>>    3 files changed, 53 insertions(+), 4 deletions(-)
->>>
->>> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
->>> index b10d7bb..2b1a8c1 100644
->>> --- a/fs/btrfs/ioctl.c
->>> +++ b/fs/btrfs/ioctl.c
->>> @@ -2554,7 +2554,7 @@ static noinline int btrfs_ioctl_snap_destroy(struct
->>> file *file,
->>>           */
->>>          if (!btrfs_test_opt(fs_info, QGROUP_KEEP)) {
->>>                  ret = btrfs_remove_qgroup(trans, fs_info,
->>> -                                         dest->root_key.objectid);
->>> +                                         dest->root_key.objectid, 0);
->>>                  if (ret && ret != -ENOENT)
->>>                          pr_info("Could not automatically delete qgroup:
->>> %d\n", ret);
->>>          }
->>> @@ -4974,7 +4974,7 @@ static long btrfs_ioctl_qgroup_create(struct file
->>> *file, void __user *arg)
->>>          if (sa->create) {
->>>                  ret = btrfs_create_qgroup(trans, fs_info, sa->qgroupid);
->>>          } else {
->>> -               ret = btrfs_remove_qgroup(trans, fs_info, sa->qgroupid);
->>> +               ret = btrfs_remove_qgroup(trans, fs_info, sa->qgroupid,
->>> 0);
->>>          }
->>>          err = btrfs_end_transaction(trans);
->>> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
->>> index 588248b..a0699fd 100644
->>> --- a/fs/btrfs/qgroup.c
->>> +++ b/fs/btrfs/qgroup.c
->>> @@ -1247,6 +1247,45 @@ int btrfs_del_qgroup_relation(struct
->>> btrfs_trans_handle *trans,
->>>          return ret;
->>>    }
->>>    +/*
->>> + * Meant to only operate on level-0 qroupid.
->>> + *
->>> + * It returns 1 if a matching subvolume is found; 0 if none is found.
->>> + * < 0 if there is an error.
->>> + */
->>> +static int btrfs_subvolume_exists(struct btrfs_fs_info *fs_info, u64
->>> qgroupid)
->>> +{
->>> +       struct btrfs_path *path;
->>> +       struct btrfs_key key;
->>> +       int err, ret = 0;
->>> +
->>> +       path = btrfs_alloc_path();
->>> +       if (!path)
->>> +               return -ENOMEM;
->>> +
->>> +       key.objectid = qgroupid;
->>> +       key.type = BTRFS_ROOT_BACKREF_KEY;
->>
->>
->> Fs root (subvolume id equals to 5) has no ROOT_BACKREF key.
->> Such search would make fs tree always treated as not existed.
-> Is it okay to just explicitly exempt 5, or is there a better way to do
-> this search?
+At 05/20/2017 04:40 PM, Sargun Dhillon wrote:
+> This patch ties together the work in the previous patches, to introduce
+> semantics around the qgroup creation / removal API that are a bit more
+> intuitive that the current one. It also creates two new args structures
+> which have reserved space for future expansion, as opposed to single
+> datastructure for both creation and removal.
+> 
+> The associated semantics are as follows:
+> 1) You cannot create a level 0 qgroup for a subvol which does not exist
+>     unless you pass in an override flag.
+> 2) You cannot delete a level 0 qgroup which refers to a subvolume, which
+>     currently exists unless you pass in an override flag.
+> 
+> Signed-off-by: Sargun Dhillon <sargun@sargun.me>
+> ---
+>   fs/btrfs/ioctl.c           | 98 ++++++++++++++++++++++++++++++++++++++++++++++
+>   include/uapi/linux/btrfs.h | 23 +++++++++++
+>   2 files changed, 121 insertions(+)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 5e20643..7bf34b7 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -4936,6 +4936,100 @@ static long btrfs_ioctl_qgroup_assign(struct file *file, void __user *arg)
+>   	return ret;
+>   }
+>   
+> +static long btrfs_ioctl_qgroup_create_v2(struct file *file, void __user *arg)
+> +{
+> +	struct btrfs_ioctl_qgroup_create_args_v2 create_args;
+> +	struct inode *inode = file_inode(file);
+> +	struct btrfs_trans_handle *trans;
+> +	struct btrfs_fs_info *fs_info;
+> +	struct btrfs_root *root;
+> +	int check_subvol_exists;
+> +	int ret, err;
+> +
+> +	fs_info = btrfs_sb(inode->i_sb);
+> +	root = BTRFS_I(inode)->root;
+> +
+> +	if (!capable(CAP_SYS_ADMIN))
+> +		return -EPERM;
+> +
+> +	ret = copy_from_user(&create_args, arg, sizeof(create_args));
+> +	if (ret)
+> +		return ret;
+> +
+> +	if (!create_args.qgroupid)
+> +		return -EINVAL;
+> +
+> +	ret = mnt_want_write_file(file);
+> +	if (ret)
+> +		return ret;
+> +
+> +	trans = btrfs_join_transaction(root);
+> +	if (IS_ERR(trans)) {
+> +		ret = PTR_ERR(trans);
+> +		goto out;
+> +	}
+> +
+> +	check_subvol_exists = !(create_args.flags &
+> +				BTRFS_QGROUP_CREATE_IGNORE_UNUSED);
+> +	ret = btrfs_create_qgroup(trans, fs_info, create_args.qgroupid,
+> +				  check_subvol_exists);
+> +
+> +	err = btrfs_end_transaction(trans);
+> +	if (err && !ret)
+> +		ret = err;
+> +
+> +out:
+> +	mnt_drop_write_file(file);
+> +	return ret;
+> +}
+> +
+> +static long btrfs_ioctl_qgroup_remove_v2(struct file *file, void __user *arg)
+> +{
+> +	struct btrfs_ioctl_qgroup_remove_args_v2 remove_args;
+> +	struct inode *inode = file_inode(file);
+> +	struct btrfs_trans_handle *trans;
+> +	struct btrfs_fs_info *fs_info;
+> +	struct btrfs_root *root;
+> +	int check_in_use;
+> +	int ret, err;
+> +
+> +	fs_info = btrfs_sb(inode->i_sb);
+> +	root = BTRFS_I(inode)->root;
+> +
+> +	if (!capable(CAP_SYS_ADMIN))
+> +		return -EPERM;
+> +
+> +	ret = copy_from_user(&remove_args, arg, sizeof(remove_args));
+> +	if (ret)
+> +		return ret;
+> +
+> +	if (!remove_args.qgroupid)
+> +		return -EINVAL;
+> +
+> +	ret = mnt_want_write_file(file);
+> +	if (ret)
+> +		return ret;
+> +
+> +	trans = btrfs_join_transaction(root);
+> +	if (IS_ERR(trans)) {
+> +		ret = PTR_ERR(trans);
+> +		goto out;
+> +	}
+> +
+> +	check_in_use = !(remove_args.flags &
+> +			 BTRFS_QGROUP_REMOVE_NO_CHECK_IN_USE);
+> +	ret = btrfs_remove_qgroup(trans, fs_info, remove_args.qgroupid,
+> +				  check_in_use);
+> +
+> +	err = btrfs_end_transaction(trans);
+> +	if (err && !ret)
+> +		ret = err;
+> +
+> +out:
+> +	mnt_drop_write_file(file);
+> +	return ret;
+> +}
+> +
+>   static long btrfs_ioctl_qgroup_create(struct file *file, void __user *arg)
+>   {
+>   	struct inode *inode = file_inode(file);
+> @@ -5626,6 +5720,10 @@ long btrfs_ioctl(struct file *file, unsigned int
+>   		return btrfs_ioctl_qgroup_assign(file, argp);
+>   	case BTRFS_IOC_QGROUP_CREATE:
+>   		return btrfs_ioctl_qgroup_create(file, argp);
+> +	case BTRFS_IOC_QGROUP_CREATE_V2:
+> +		return btrfs_ioctl_qgroup_create_v2(file, argp);
+> +	case BTRFS_IOC_QGROUP_REMOVE_V2:
+> +		return btrfs_ioctl_qgroup_remove_v2(file, argp);
+>   	case BTRFS_IOC_QGROUP_LIMIT:
+>   		return btrfs_ioctl_qgroup_limit(file, argp);
+>   	case BTRFS_IOC_QUOTA_RESCAN:
+> diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+> index a456e53..0a6652d 100644
+> --- a/include/uapi/linux/btrfs.h
+> +++ b/include/uapi/linux/btrfs.h
+> @@ -653,6 +653,25 @@ struct btrfs_ioctl_qgroup_create_args {
+>   	__u64 create;
+>   	__u64 qgroupid;
+>   };
+> +
+> +/* Allow the user to delete qgroups even if there isn't a subvol with the id */
+> +#define	BTRFS_QGROUP_CREATE_IGNORE_UNUSED		(1ULL << 0)
+> +
+> +struct btrfs_ioctl_qgroup_create_args_v2 {
+> +	__u64 qgroupid;
+> +	__u64 flags;
+> +	__u64 reserved[16];
+> +};
 
-5(BTRFS_FS_TREE_OBJECTID) is an exception.
+New APIs are much better than original one.
+Splitting creation and deletion, so it won't cause any confusion, and 
+with reserved members for us to extend it later.
 
-Other part seems OK.
+The only concern is the flags. It's quite easy to confuse the 
+BTRFS_QGROUP_CREATE_IGNORE_UNUSED and 
+BTRFS_QGROUP_REMOVE_NO_CHECK_IN_USE, as they are the same value.
+
+What about sharing the flags between create and remove args?
+
+
+
+While with that IGNORE_UNUSED flags, why do we still need the mount 
+option method?
+
+IIRC, just introducing new APIs is good enough.
+
+> +
+> +/* Allow the user to delete qgroups even if they are referenced by a subvol */
+> +#define	BTRFS_QGROUP_REMOVE_NO_CHECK_IN_USE		(1ULL << 0)
+> +
+> +struct btrfs_ioctl_qgroup_remove_args_v2 {
+> +	__u64 qgroupid;
+> +	__u64 flags;
+> +	__u64 reserved[16];
+> +};
+> +
+>   struct btrfs_ioctl_timespec {
+>   	__u64 sec;
+>   	__u32 nsec;
+> @@ -818,5 +837,9 @@ enum btrfs_err_code {
+>   				   struct btrfs_ioctl_feature_flags[3])
+>   #define BTRFS_IOC_RM_DEV_V2 _IOW(BTRFS_IOCTL_MAGIC, 58, \
+>   				   struct btrfs_ioctl_vol_args_v2)
+> +#define BTRFS_IOC_QGROUP_CREATE_V2 _IOW(BTRFS_IOCTL_MAGIC, 59, \
+> +			       struct btrfs_ioctl_qgroup_create_args_v2)
+> +#define BTRFS_IOC_QGROUP_REMOVE_V2 _IOW(BTRFS_IOCTL_MAGIC, 60, \
+> +			       struct btrfs_ioctl_qgroup_remove_args_v2)
+
+IIRC we need acknowledgement from other developers to determine the 
+ioctl number.
 
 Thanks,
 Qu
-> 
->>
->> Thanks,
->> Qu
->>
->>> +       key.offset = 0;
->>> +
->>> +       err = btrfs_search_slot_for_read(fs_info->tree_root, &key, path,
->>> 1, 0);
->>> +       if (err == 1)
->>> +               goto out;
->>> +
->>> +       if (err) {
->>> +               ret = err;
->>> +               goto out;
->>> +       }
->>> +
->>> +       btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
->>> +       if (key.objectid != qgroupid || key.type !=
->>> BTRFS_ROOT_BACKREF_KEY)
->>> +               goto out;
->>> +
->>> +       ret = 1;
->>> +out:
->>> +       btrfs_free_path(path);
->>> +       return ret;
->>> +}
->>> +
->>>    /* Must be called with qgroup_ioctl_lock held */
->>>    static int __btrfs_create_qgroup(struct btrfs_trans_handle *trans,
->>>                                   struct btrfs_fs_info *fs_info, u64
->>> qgroupid)
->>> @@ -1333,10 +1372,19 @@ static int __btrfs_remove_qgroup(struct
->>> btrfs_trans_handle *trans,
->>>    }
->>>      int btrfs_remove_qgroup(struct btrfs_trans_handle *trans,
->>> -                       struct btrfs_fs_info *fs_info, u64 qgroupid)
->>> +                       struct btrfs_fs_info *fs_info, u64 qgroupid,
->>> +                       int check_in_use)
->>>    {
->>>          int ret;
->>>    +     if (check_in_use && btrfs_qgroup_level(qgroupid) == 0) {
->>> +               ret = btrfs_subvolume_exists(fs_info, qgroupid);
->>> +               if (ret < 0)
->>> +                       return ret;
->>> +               if (ret)
->>> +                       return -EBUSY;
->>> +       }
->>> +
->>>          mutex_lock(&fs_info->qgroup_ioctl_lock);
->>>          ret = __btrfs_remove_qgroup(trans, fs_info, qgroupid);
->>>          mutex_unlock(&fs_info->qgroup_ioctl_lock);
->>> diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
->>> index fb6c7da..fc08bdb 100644
->>> --- a/fs/btrfs/qgroup.h
->>> +++ b/fs/btrfs/qgroup.h
->>> @@ -127,7 +127,8 @@ int btrfs_del_qgroup_relation(struct
->>> btrfs_trans_handle *trans,
->>>    int btrfs_create_qgroup(struct btrfs_trans_handle *trans,
->>>                          struct btrfs_fs_info *fs_info, u64 qgroupid);
->>>    int btrfs_remove_qgroup(struct btrfs_trans_handle *trans,
->>> -                       struct btrfs_fs_info *fs_info, u64 qgroupid);
->>> +                       struct btrfs_fs_info *fs_info, u64 qgroupid,
->>> +                       int check_in_use);
->>>    int btrfs_limit_qgroup(struct btrfs_trans_handle *trans,
->>>                         struct btrfs_fs_info *fs_info, u64 qgroupid,
->>>                         struct btrfs_qgroup_limit *limit);
->>>
->>
->>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+
+>   
+>   #endif /* _UAPI_LINUX_BTRFS_H */
 > 
 
 

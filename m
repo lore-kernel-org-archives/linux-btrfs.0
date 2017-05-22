@@ -1,76 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f47.google.com ([209.85.213.47]:35938 "EHLO
-        mail-vk0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1757522AbdEVJrj (ORCPT
+Received: from washoe.dartmouth.edu ([129.170.30.229]:37986 "EHLO
+        smtp.onerussian.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1757547AbdEVNIH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 22 May 2017 05:47:39 -0400
-Received: by mail-vk0-f47.google.com with SMTP id p85so37478666vkd.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 May 2017 02:47:39 -0700 (PDT)
+        Mon, 22 May 2017 09:08:07 -0400
+Received: from c-76-24-253-1.hsd1.nh.comcast.net ([76.24.253.1] helo=localhost)
+        by smtp.onerussian.com with esmtpsa (TLS1.2:RSA_AES_256_CBC_SHA1:256)
+        (Exim 4.80)
+        (envelope-from <yoh@onerussian.com>)
+        id 1dCn49-0006oO-2Q
+        for linux-btrfs@vger.kernel.org; Mon, 22 May 2017 09:08:06 -0400
+Date: Mon, 22 May 2017 09:07:59 -0400
+From: Yaroslav Halchenko <yoh@onerussian.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <20170522130759.mnstg6g2srfb6glz@hopa.kiewit.dartmouth.edu>
+References: <20170518134135.sk6dha6kayv6tar3@hopa.kiewit.dartmouth.edu>
+ <CAEtw4r1ibfLpNgmtti6pTDUOmA=+kOCemg7=ykneKDaJMpx59Q@mail.gmail.com>
+ <CAEtw4r1YSqvGCg_7R3yJY+EMZBO2FNjLDuxppLDQtb0qMKvwTQ@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <b57b3e03-fc72-762f-1392-9a4ccafd0fcb@cn.fujitsu.com>
-References: <20170330062116.14379-1-quwenruo@cn.fujitsu.com>
- <fdd3a98e-1c7c-2339-ece1-ea71977594d9@cn.fujitsu.com> <CAKuJGC-R=5j=rzMJioBtftq1305wpT1tcy+WuRzTv9+Q065qvQ@mail.gmail.com>
- <46db6693-3508-6845-e80f-0db1192d7bd2@cn.fujitsu.com> <CAKuJGC_LWzJKGPecweK93nXRm1=j22HkqZdUHrragwab6zAUDw@mail.gmail.com>
- <f0ed81f8-a312-72b0-5da1-56cfbc1fa81e@cn.fujitsu.com> <CAKuJGC9YY-1i-Hxq7=8E_pd19xOA7Tt0ckYEpwJhrgtSbardOA@mail.gmail.com>
- <CAKuJGC9UZ8cb8W_XcqVEPsv7UAi7P=UjY6Gb4Uo6A5GMMj5qmw@mail.gmail.com> <b57b3e03-fc72-762f-1392-9a4ccafd0fcb@cn.fujitsu.com>
-From: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>
-Date: Mon, 22 May 2017 15:17:38 +0530
-Message-ID: <CAKuJGC8-VEm-3afkVmWzk+kVdxHZECp1soyksN4fvEJkJkB2GA@mail.gmail.com>
-Subject: Re: [PATCH v3 00/19] Btrfs-progs offline scrub
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: btrfs <linux-btrfs@vger.kernel.org>, "dsterba@suse.cz" <dsterba@suse.cz>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CAEtw4r1YSqvGCg_7R3yJY+EMZBO2FNjLDuxppLDQtb0qMKvwTQ@mail.gmail.com>
+Subject: Re: Fwd: confusing "no space left" -- how to troubleshoot and "be
+ prepared"?
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Okay sure, When I find free-time,  will run few more combinations and
-let you know the details along with any other suggestions/thoughts on
-the interface. thanks.
 
-On 5/22/17, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
-> Good to hear that.
->
-> And you could try more combination (although I have done a lot during
-> the test) to see if it's good enough to be used as a better scrub
-> equivalent.
->
-> And of course, any idea on the interface design (--offline under scrub
-> or other place) is welcomed.
->
-> Thanks,
-> Qu
->
-> At 05/22/2017 04:30 PM, Lakshmipathi.G wrote:
->> Yes. It detects the injected corruption.
->>
->> #btrfs scrub start --offline /dev/loop6
->> ERROR: data at bytenr 145293312 mirror 0 csum mismatch, have
->> 0x790f1fe1 expect 0xa30cb5c5
->> ERROR: full stripe 145227776 RECOVERABLE: Data stripes corrupted, but
->> P/Q is good
->>
->> Scrub result:
->> Tree bytes scrubbed: 131072
->> Tree extents scrubbed: 8
->> Data bytes scrubbed: 192512
->> Data extents scrubbed: 3
->> Data bytes without csum: 131072
->> Read error: 0
->> Verify error: 0
->> Csum error: 1
->>
->> ----
->> Cheers,
->> Lakshmipathi.G
->>
->>
->
->
->
+On Thu, 18 May 2017, Peter Becker wrote:
 
+> I'm not sure if this would be helpfull but can you post the output
+> from this script?
 
+> cd /tmp
+> wget https://raw.githubusercontent.com/kdave/btrfs-progs/master/btrfs-debugfs
+> chmod +x btrfs-debugfs
+> stats=$(sudo ./btrfs-debugfs -b /)
+> ...
+
+Thank you Peter
+
+I guess I will use on the next occasion like that.  This time I just
+removed some snapshots/subvolumes (and docker images) to free up some
+space, rebooted and using the system again.  I guess it would make
+little sense to share that info ATM.
+
+With best regards,
 -- 
-----
-Cheers,
-Lakshmipathi.G
-http://www.giis.co.in http://www.webminal.org
+Yaroslav O. Halchenko
+Center for Open Neuroscience     http://centerforopenneuroscience.org
+Dartmouth College, 419 Moore Hall, Hinman Box 6207, Hanover, NH 03755
+Phone: +1 (603) 646-9834                       Fax: +1 (603) 646-1419
+WWW:   http://www.linkedin.com/in/yarik        

@@ -1,86 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp129.dfw.emailsrvr.com ([67.192.241.129]:35832 "EHLO
-        smtp129.dfw.emailsrvr.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S964930AbdEWHig (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:34931 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1759927AbdEWICT (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 May 2017 03:38:36 -0400
-Received: from smtp29.relay.dfw1a.emailsrvr.com (localhost [127.0.0.1])
-        by smtp29.relay.dfw1a.emailsrvr.com (SMTP Server) with ESMTP id 32F1B400FF
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 May 2017 03:38:35 -0400 (EDT)
-Received: by smtp29.relay.dfw1a.emailsrvr.com (Authenticated sender: intranet-AT-rqc.ru) with ESMTPSA id BC425400F6
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 May 2017 03:38:34 -0400 (EDT)
-Received: from CM01.administration.intranet.rqc.ru (unknown [10.101.2.94])
-        by postfix.thinky.servers.rqc.ru (Postfix) with ESMTPS id C34619984
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 May 2017 07:38:32 +0000 (UTC)
-Subject: Re: QGroups Semantics
-From: Marat Khalili <mkh@rqc.ru>
-To: BTRFS ML <linux-btrfs@vger.kernel.org>
-References: <CAMp4zn8CfdzPn7UAHf7S2PT1F8ysf95jMi7F8RBUuyBvqYT5xw@mail.gmail.com>
- <c2e1824a-b395-53da-8cd2-cade09449313@cn.fujitsu.com>
- <CAMp4zn-oFVhrM6C4U-z9EQa1HXw-yzTLRyVoHfati-dX1WVU5Q@mail.gmail.com>
- <8eae0dd5-10df-7fa7-966c-4517e615eafc@rqc.ru>
-Message-ID: <687cbccd-926a-f293-24bc-3e46616a4646@rqc.ru>
-Date: Tue, 23 May 2017 10:38:32 +0300
+        Tue, 23 May 2017 04:02:19 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>, <fstests@vger.kernel.org>
+Subject: [PATCH] fstests: common: Make _test_mount to include MOUNT_OPTIONS to allow consistent _test_cycle_mount
+Date: Tue, 23 May 2017 16:02:05 +0800
+Message-ID: <20170523080205.12556-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <8eae0dd5-10df-7fa7-966c-4517e615eafc@rqc.ru>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hit "Send" a little too early:
+[BUG]
+If using MOUNT_OPTIONS="-o nodatasum" and btrfs to run genierc/142
+generic/143 and generic/154, it will cause false alert like:
+cp: failed to clone '/mnt/test/test-154/file2' from '/mnt/test/test-154/file1': Invalid argument
 
-> More complete workaround would be delayed cleanup. What about 
-> (re-)mount time? (Should also handle qgroups remaining 
-... after subvolumes deleted on previous kernels.)
+[REASON]
+It is caused by _test_cycle_mount function, which unmount test device,
+but when trying to re-mount it again using _test_mount(), we don't pass
+$MOUNT_OPTIONS.
 
---
+So this makes mount options differs between _test_cycle_mount().
 
-With Best Regards,
-Marat Khalili
+And btrfs doesn't allow different csum flags between reflink source and
+destination inodes, so it returns -EINVAL for reflink operation.
 
-On 23/05/17 08:38, Marat Khalili wrote:
-> Just some user's point of view:
->
->> I propose the following changes:
->> 1) We always cleanup level-0 qgroups by default, with no opt-out.
->> I see absolutely no reason to keep these around.
->
-> It WILL break scripts that try to do this cleanup themselves. OTOH it 
-> will simplify writing new ones.
->
-> Since qgroups are assigned sequential numbers, it must be possible to 
-> partially work it around by not returning error on repeated delete. 
-> But you cannot completely emulate qgroup presence without actually 
-> keeping it, so some scripts will still break.
->
-> More complete workaround would be delayed cleanup. What about 
-> (re-)mount time? (Should also handle qgroups remaining )
->
->>   We do not allow the creation of level-0 qgroups for (sub)volumes
->> that do not exist.
->
-> Probably I'm mistaken, but I see no reasons for doing it even now, 
-> since I don't think it's possible to reliably assign existing 0-level 
-> qgroup to a new subvolume. So this change should break nothing.
->
->>>> Why do we allow deleting a level 0 qgroup for a currently existing
->>>> subvolume?
->> 4) Add a flag to the qgroup_delete_v2 ioctl, NO_SUBVOL_CHECK.
->> If the flag is present, it will allow you to delete qgroups which
->> reference active subvolumes.
->
-> Some people doing cleanup in the reverse order? Other than this, I 
-> don't understand why this feature is needed, so IMO it's unlikely to 
-> be needed in a new API.
->
-> Of course, this is all just one datapoint for you.
->
-> -- 
->
-> With Best Regards,
-> Marat Khalili
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+[FIX]
+Fix it by passing $MOUNT_OPTIONS to _test_mount(), so that
+_test_cycle_mount() won't cause different mount options.
+So btrfs with "-o nodatasum" mount option can pass generic/14[23]
+and generic/154 without false alert.
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ common/rc | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/common/rc b/common/rc
+index ba215961..a591907c 100644
+--- a/common/rc
++++ b/common/rc
+@@ -522,7 +522,8 @@ _test_mount()
+         return $?
+     fi
+     _test_options mount
+-    _mount -t $FSTYP $TEST_OPTIONS $TEST_FS_MOUNT_OPTS $SELINUX_MOUNT_OPTIONS $* $TEST_DEV $TEST_DIR
++    _mount -t $FSTYP $TEST_OPTIONS $TEST_FS_MOUNT_OPTS $SELINUX_MOUNT_OPTIONS \
++		$MOUNT_OPTIONS $* $TEST_DEV $TEST_DIR
+ }
+ 
+ _test_unmount()
+-- 
+2.13.0
+
+
 

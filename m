@@ -1,68 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp89.iad3a.emailsrvr.com ([173.203.187.89]:46793 "EHLO
-        smtp89.iad3a.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1758118AbdEWFiz (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 May 2017 01:38:55 -0400
-Received: from smtp4.relay.iad3a.emailsrvr.com (localhost [127.0.0.1])
-        by smtp4.relay.iad3a.emailsrvr.com (SMTP Server) with ESMTP id 4C3F25600
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 May 2017 01:38:54 -0400 (EDT)
-Received: by smtp4.relay.iad3a.emailsrvr.com (Authenticated sender: intranet-AT-rqc.ru) with ESMTPSA id E50DE42EA
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 May 2017 01:38:53 -0400 (EDT)
-Received: from CM01.administration.intranet.rqc.ru (unknown [10.101.2.94])
-        by postfix.thinky.servers.rqc.ru (Postfix) with ESMTPS id 76D139595
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 May 2017 05:38:51 +0000 (UTC)
-Subject: Re: QGroups Semantics
-References: <CAMp4zn8CfdzPn7UAHf7S2PT1F8ysf95jMi7F8RBUuyBvqYT5xw@mail.gmail.com>
- <c2e1824a-b395-53da-8cd2-cade09449313@cn.fujitsu.com>
- <CAMp4zn-oFVhrM6C4U-z9EQa1HXw-yzTLRyVoHfati-dX1WVU5Q@mail.gmail.com>
-From: Marat Khalili <mkh@rqc.ru>
-To: BTRFS ML <linux-btrfs@vger.kernel.org>
-Message-ID: <8eae0dd5-10df-7fa7-966c-4517e615eafc@rqc.ru>
-Date: Tue, 23 May 2017 08:38:51 +0300
+Received: from mga04.intel.com ([192.55.52.120]:52648 "EHLO mga04.intel.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751929AbdEWG2f (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 23 May 2017 02:28:35 -0400
+Date: Tue, 23 May 2017 14:27:54 +0800
+From: kbuild test robot <lkp@intel.com>
+To: Sargun Dhillon <sargun@sargun.me>
+Cc: kbuild-all@01.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 7/8] btrfs: Add code to prevent qgroup creation for a
+ non-existent subvol
+Message-ID: <201705231422.TNq0owUW%fengguang.wu@intel.com>
 MIME-Version: 1.0
-In-Reply-To: <CAMp4zn-oFVhrM6C4U-z9EQa1HXw-yzTLRyVoHfati-dX1WVU5Q@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170520083954.GA4253@ircssh-2.c.rugged-nimbus-611.internal>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Just some user's point of view:
+Hi Sargun,
 
-> I propose the following changes:
-> 1) We always cleanup level-0 qgroups by default, with no opt-out.
-> I see absolutely no reason to keep these around.
+[auto build test WARNING on linus/master]
+[also build test WARNING on v4.12-rc2 next-20170522]
+[cannot apply to btrfs/next]
+[if your patch is applied to the wrong git tree, please drop us a note to help improve the system]
 
-It WILL break scripts that try to do this cleanup themselves. OTOH it 
-will simplify writing new ones.
+url:    https://github.com/0day-ci/linux/commits/Sargun-Dhillon/BtrFS-QGroups-uapi-improvements/20170523-111746
+reproduce:
+        # apt-get install sparse
+        make ARCH=x86_64 allmodconfig
+        make C=1 CF=-D__CHECK_ENDIAN__
 
-Since qgroups are assigned sequential numbers, it must be possible to 
-partially work it around by not returning error on repeated delete. But 
-you cannot completely emulate qgroup presence without actually keeping 
-it, so some scripts will still break.
 
-More complete workaround would be delayed cleanup. What about (re-)mount 
-time? (Should also handle qgroups remaining )
+sparse warnings: (new ones prefixed by >>)
 
->   We do not allow the creation of level-0 qgroups for (sub)volumes
-> that do not exist.
+   include/linux/compiler.h:264:8: sparse: attribute 'no_sanitize_address': unknown attribute
+>> fs/btrfs/tests/qgroup-tests.c:232:34: sparse: not enough arguments for function btrfs_create_qgroup
+   fs/btrfs/tests/qgroup-tests.c:334:34: sparse: not enough arguments for function btrfs_create_qgroup
+   fs/btrfs/tests/qgroup-tests.c: In function 'test_no_shared_qgroup':
+   fs/btrfs/tests/qgroup-tests.c:232:8: error: too few arguments to function 'btrfs_create_qgroup'
+     ret = btrfs_create_qgroup(NULL, fs_info, BTRFS_FS_TREE_OBJECTID);
+           ^~~~~~~~~~~~~~~~~~~
+   In file included from fs/btrfs/tests/qgroup-tests.c:24:0:
+   fs/btrfs/tests/../qgroup.h:127:5: note: declared here
+    int btrfs_create_qgroup(struct btrfs_trans_handle *trans,
+        ^~~~~~~~~~~~~~~~~~~
+   fs/btrfs/tests/qgroup-tests.c: In function 'test_multiple_refs':
+   fs/btrfs/tests/qgroup-tests.c:334:8: error: too few arguments to function 'btrfs_create_qgroup'
+     ret = btrfs_create_qgroup(NULL, fs_info, BTRFS_FIRST_FREE_OBJECTID);
+           ^~~~~~~~~~~~~~~~~~~
+   In file included from fs/btrfs/tests/qgroup-tests.c:24:0:
+   fs/btrfs/tests/../qgroup.h:127:5: note: declared here
+    int btrfs_create_qgroup(struct btrfs_trans_handle *trans,
+        ^~~~~~~~~~~~~~~~~~~
 
-Probably I'm mistaken, but I see no reasons for doing it even now, since 
-I don't think it's possible to reliably assign existing 0-level qgroup 
-to a new subvolume. So this change should break nothing.
+vim +232 fs/btrfs/tests/qgroup-tests.c
 
->>> Why do we allow deleting a level 0 qgroup for a currently existing
->>> subvolume?
-> 4) Add a flag to the qgroup_delete_v2 ioctl, NO_SUBVOL_CHECK.
-> If the flag is present, it will allow you to delete qgroups which
-> reference active subvolumes.
+faa2dbf0 Josef Bacik        2014-05-07  216  	btrfs_free_path(path);
+faa2dbf0 Josef Bacik        2014-05-07  217  	return ret;
+faa2dbf0 Josef Bacik        2014-05-07  218  }
+faa2dbf0 Josef Bacik        2014-05-07  219  
+b9ef22de Feifei Xu          2016-06-01  220  static int test_no_shared_qgroup(struct btrfs_root *root,
+b9ef22de Feifei Xu          2016-06-01  221  		u32 sectorsize, u32 nodesize)
+faa2dbf0 Josef Bacik        2014-05-07  222  {
+faa2dbf0 Josef Bacik        2014-05-07  223  	struct btrfs_trans_handle trans;
+faa2dbf0 Josef Bacik        2014-05-07  224  	struct btrfs_fs_info *fs_info = root->fs_info;
+442244c9 Qu Wenruo          2015-04-16  225  	struct ulist *old_roots = NULL;
+442244c9 Qu Wenruo          2015-04-16  226  	struct ulist *new_roots = NULL;
+faa2dbf0 Josef Bacik        2014-05-07  227  	int ret;
+faa2dbf0 Josef Bacik        2014-05-07  228  
+7c55ee0c Omar Sandoval      2015-09-29  229  	btrfs_init_dummy_trans(&trans);
+faa2dbf0 Josef Bacik        2014-05-07  230  
+faa2dbf0 Josef Bacik        2014-05-07  231  	test_msg("Qgroup basic add\n");
+ef9f2db3 Feifei Xu          2016-06-01 @232  	ret = btrfs_create_qgroup(NULL, fs_info, BTRFS_FS_TREE_OBJECTID);
+faa2dbf0 Josef Bacik        2014-05-07  233  	if (ret) {
+faa2dbf0 Josef Bacik        2014-05-07  234  		test_msg("Couldn't create a qgroup %d\n", ret);
+faa2dbf0 Josef Bacik        2014-05-07  235  		return ret;
+faa2dbf0 Josef Bacik        2014-05-07  236  	}
+faa2dbf0 Josef Bacik        2014-05-07  237  
+442244c9 Qu Wenruo          2015-04-16  238  	/*
+01327610 Nicholas D Steeves 2016-05-19  239  	 * Since the test trans doesn't have the complicated delayed refs,
+442244c9 Qu Wenruo          2015-04-16  240  	 * we can only call btrfs_qgroup_account_extent() directly to test
 
-Some people doing cleanup in the reverse order? Other than this, I don't 
-understand why this feature is needed, so IMO it's unlikely to be needed 
-in a new API.
+:::::: The code at line 232 was first introduced by commit
+:::::: ef9f2db365c31433e52b0c5863793273bb632666 Btrfs: self-tests: Use macros instead of constants and add missing newline
 
-Of course, this is all just one datapoint for you.
+:::::: TO: Feifei Xu <xufeifei@linux.vnet.ibm.com>
+:::::: CC: David Sterba <dsterba@suse.com>
 
---
-
-With Best Regards,
-Marat Khalili
+---
+0-DAY kernel test infrastructure                Open Source Technology Center
+https://lists.01.org/pipermail/kbuild-all                   Intel Corporation

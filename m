@@ -1,144 +1,103 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:35856 "EHLO
-        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752114AbdEWRP3 (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:38374 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1751023AbdEWScR (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 May 2017 13:15:29 -0400
-Date: Tue, 23 May 2017 10:15:24 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <20170523171524.ckyccsvlos3vjzqp@merlins.org>
-References: <20170521214733.c62v7el4g66jf63x@merlins.org>
- <20170521234557.pu3vs3igdx7mqjzb@merlins.org>
- <20170522013553.hspdrwpmxe5kyoas@merlins.org>
- <pan$df61e$e305754a$711742a$a2be8e5d@cox.net>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <pan$df61e$e305754a$711742a$a2be8e5d@cox.net>
+        Tue, 23 May 2017 14:32:17 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1dDEbJ-0006C1-JA
+        for linux-btrfs@vger.kernel.org; Tue, 23 May 2017 20:32:09 +0200
+To: linux-btrfs@vger.kernel.org
+From: Kai Krakow <hurikhan77@gmail.com>
 Subject: Re: 4.11.1: cannot btrfs check --repair a filesystem, causes heavy
  memory stalls
+Date: Tue, 23 May 2017 20:32:07 +0200
+Message-ID: <20170523203207.6fb276c4@jupiter.sol.kaishome.de>
+References: <20170521214733.c62v7el4g66jf63x@merlins.org>
+        <20170521234557.pu3vs3igdx7mqjzb@merlins.org>
+        <20170522013553.hspdrwpmxe5kyoas@merlins.org>
+        <20170522163156.5hcuw5tqfavjkmnm@merlins.org>
+        <CAJCQCtSO5O7Pi-4oLsZNr6r6PLVEL6EXA6wpWPjBSUKYe9m4Gg@mail.gmail.com>
+        <20170522235754.GJ29894@merlins.org>
+        <CAJCQCtR52d2EPgEGPNYDMf3zy7vV-5Yud_k3kVFDrb0JD80PKg@mail.gmail.com>
+        <fe10e4c5-fa1b-3725-4680-e4daf939dc8c@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 22, 2017 at 09:19:34AM +0000, Duncan wrote:
-> btrfs check is userspace, not kernelspace.  The btrfs-transacti threads 
+Am Tue, 23 May 2017 07:21:33 -0400
+schrieb "Austin S. Hemmelgarn" <ahferroin7@gmail.com>:
 
-That was my understanding, yes, but since I got it to starve my system,
-including in kernel OOM issues I pasted in my last message and just
-referenced in https://bugzilla.kernel.org/show_bug.cgi?id=195863 I think
-it's not much as black and white as running a userland process that
-takes too much RAM and get killed if it does.
+> On 2017-05-22 22:07, Chris Murphy wrote:
+> > On Mon, May 22, 2017 at 5:57 PM, Marc MERLIN <marc@merlins.org>
+> > wrote:  
+> >> On Mon, May 22, 2017 at 05:26:25PM -0600, Chris Murphy wrote:  
+>  [...]  
+>  [...]  
+>  [...]  
+> >>
+> >> Oh, swap will work, you're sure?
+> >> I already have an SSD, if that's good enough, I can give it a
+> >> shot.  
+> >
+> > Yeah although I have no idea how much swap is needed for it to
+> > succeed. I'm not sure what the relationship is to fs metadata chunk
+> > size to btrfs check RAM requirement is; but if it wants all of the
+> > metadata in RAM, then whatever btrfs fi us shows you for metadata
+> > may be a guide (?) for how much memory it's going to want.  
+> I think the in-memory storage is a bit more space efficient than the 
+> on-disk storage, but I'm not certain, and I'm pretty sure it takes up 
+> more space when it's actually repairing things.  If I'm doing the
+> math correctly, you _may_ need up to 50% _more_ than the total
+> metadata size for the FS in virtual memory space.
+> >
+> > Another possibility is zswap, which still requires a backing device,
+> > but it might be able to limit how much swap to disk is needed if the
+> > data to swap out is highly compressible. *shrug*
+> >  
+> zswap won't help in that respect, but it might make swapping stuff
+> back in faster.  It just keeps a compressed copy in memory in
+> parallel to writing the full copy out to disk, then uses that
+> compressed copy to swap in instead of going to disk if the copy is
+> still in memory (but it will discard the compressed copies if memory
+> gets really low).  In essence, it reduces the impact of swapping when
+> memory pressure is moderate (the situation for most desktops for
+> example), but becomes almost useless when you have very high memory
+> pressure (which is what describes this usage).
 
-> are indeed kernelspace, but the problem would appear to be either IO or 
-> memory starvation triggered by the userspace check hogging all available 
-> resources, not leaving enough for normal system, including kernel, 
-> processes.
+Is this really how zswap works?
 
-Looks like it, but also memory.
+I always thought it acts as a compressed write-back cache in front of
+the swap devices. Pages first go to zswap compressed, and later
+write-back kicks in and migrates those compressed pages to real swap,
+but still compressed. This is done by zswap putting two (or up to three
+in modern kernels) compressed pages into one page. It has the downside
+of uncompressing all "buddy pages" when only one is needed back in. But
+it stays compressed. This also tells me zswap will either achieve
+around 1:2 or 1:3 effective compression ratio or none. So it cannot be
+compared to how streaming compression works.
 
-> * Keeping the number of snapshots as low as possible is strongly 
-> recommended by pretty much everyone here, definitely under 300 per 
-> subvolume and if possible, to double-digits per subvolume.
+OTOH, if the page is reloaded from cache before write-back kicks in, it
+will never be written to swap but just uncompressed and discarded from
+the cache.
 
-I agree that fewer snapshots is better, but between recovery snapshots
-and btrfs snapshots for some amount of subvolumes, things add up :)
+Under high memory pressure it doesn't really work that well due to high
+CPU overhead if pages constantly swap out, compress, write, read,
+uncompress, swap in... This usually results in very low CPU usage for
+processes but high IO and disk wait and high kernel CPU usage. But it
+defers memory pressure conditions to a little later in exchange for
+more a little more IO usage and more CPU usage. If you have a lot of
+inactive memory around, it can make a difference. But it is counter
+productive if almost all your memory is active and pressure is high.
 
-gargamel:/mnt/btrfs_pool1# btrfs subvolume list . | wc -l
-93
-gargamel:/mnt/btrfs_pool2# btrfs subvolume list . | wc -l
-103
+So, in this scenario, it probably still doesn't help.
 
-> * I personally recommend disabling qgroups, unless you're actively 
-> working with the devs on improving them.  In addition to the scaling 
-> issues, quotas simply aren't reliable enough on btrfs yet to rely on them 
-> if the use-case requires them (in which case using a mature filesystem 
-> where they're proven to work is recommended), and if it doesn't, there's 
-> simply too many remaining issues for the qgroups option to be worth it.
- 
-I had consider using them at some point for each size of each subvolume
-but good to know they're still not ready quite yet.
 
-> * I personally recommend keeping overall filesystem size to something one 
-> can reasonably manage.  Most people's use-cases aren't going to allow for 
-> an fsck taking days and tens of GiB, but /will/ allow for multi-TB 
-> filesystems to be split out into multiple independent filesystems of 
-> perhaps a TB or two each, tops, if that's the alternative to multiple-day 
-> fscks taking tens of GiB.  (Some use-cases are of course exceptions.)
-
-fsck ran in 6H with bcache, but the lowmem one could take a lot longer.
-Running over ndb to another host with more RAM could indeed take days
-given the loss of bcache and adding the latency/bandwidth of a
-networkg.
-
-> * The low-memory-mode btrfs check is being developed, tho unfortunately 
-> it doesn't yet do repairs.  (Another reason is that it's an alternate 
-> implementation that provides a very useful second opinion and the ability 
-> to cross-check one implementation against the other in hard problem 
-> cases.)
-
-True.
-
-> >> Sadly, I tried a scrub on the same device, and it stalled after 6TB.
-> >> The scrub process went zombie and the scrub never succeeded, nor could
-> >> it be stopped.
-> 
-> Quite apart from the "... after 6TB" bit setting off my own "it's too big 
-> to reasonably manage" alarm, the filesystem obviously is bugged, and 
-> scrub as well, since it shouldn't just go zombie regardless of the 
-> problem -- it should fail much more gracefully.
- 
-:)
-In this case it's mostly big files, so it's fine metadata wise but takes
-a while to scrub (<24H though).
-
-The problem I had is that I copied all of dshelf2 onto dshelf1 while I
-blew ds2, and rebuilt it. That extra metadata (many smaller files)
-tipped the metadata size of ds1 over the edge.
-Once I blew that backup, things became ok again.
-
-> Meanwhile, FWIW, unlike check, scrub /is/ kernelspace.
-
-Correct, just like balance.
-
-> As explained, check is userspace, but as you found, it can still 
-> interfere with kernelspace, including unrelated btrfs-transaction 
-> threads.  When the system's out of memory, it's out of memory.
- 
-userspace should not take the entire system down without the OOM killer
-even firing.
-Also, is the logs I just sent, it showed that none of my swap space had
-been used. Why would that be?
-
-> Tho there is ongoing work into better predicting memory allocation needs 
-> for btrfs kernel threads and reserving memory space accordingly, so this 
-> sort of thing doesn't happen any more.
-
-That would be good.
-
-> Agreed.  Lowmem mode looks like about your only option, beyond simply 
-> blowing it away, at this point.  Too bad it doesn't do repair yet, but 
-
-it's not an option since it won't fix the small corruption issue I had.
-Thankfully deleting enough metadata allowed it to run within my RAM and
-check --repair fixed it now.
-
-> with a bit of luck it should at least give you and the devs some idea 
-> what's wrong, information that can in turn be used to fix both scrub and 
-> normal check mode, as well as low-mem repair mode, once it's available.
-
-In this case, not useful information for the devs. It's a bad SAS card
-that corrupted my data, not a bug in the kernel code.
-
-> Of course your "days" comment is triggering my "it's too big to maintain" 
-> reflex again, but obviously it's something you've found to be tolerable 
-
-days would refer to either "lowmem" or "btrfs check over ndb" :)
-
-Cheers,
-Marc
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+Regards,
+Kai
+
+Replies to list-only preferred.
+

@@ -1,207 +1,122 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:38704 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1162985AbdEXJ1a (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:35358 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S936712AbdEXKRH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 May 2017 05:27:30 -0400
-Subject: Re: [PATCH] fstests: common: Make _test_mount to include
- MOUNT_OPTIONS to allow consistent _test_cycle_mount
-To: Eryu Guan <eguan@redhat.com>
-CC: <linux-btrfs@vger.kernel.org>, <fstests@vger.kernel.org>
-References: <20170523080205.12556-1-quwenruo@cn.fujitsu.com>
- <20170523111350.GZ7250@eguan.usersys.redhat.com>
- <68cba4cb-538a-c689-e13a-70028ca0fc0a@cn.fujitsu.com>
- <20170524042434.GH7250@eguan.usersys.redhat.com>
- <ee8c072d-cc4d-1023-bd8c-ac7adb4f301c@cn.fujitsu.com>
- <20170524050854.GI7250@eguan.usersys.redhat.com>
- <77036fc6-4cfa-0a00-3a0c-30a235c779fb@cn.fujitsu.com>
- <05c560e7-342b-0935-ae38-055e2f40b75e@cn.fujitsu.com>
- <20170524092254.GL7250@eguan.usersys.redhat.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <faab19a8-d021-d74e-8ee9-3f66d131da3e@cn.fujitsu.com>
-Date: Wed, 24 May 2017 17:27:24 +0800
-MIME-Version: 1.0
-In-Reply-To: <20170524092254.GL7250@eguan.usersys.redhat.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+        Wed, 24 May 2017 06:17:07 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1dDTLc-0001tj-Je
+        for linux-btrfs@vger.kernel.org; Wed, 24 May 2017 12:16:56 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: 4.11 relocate crash, null pointer + rolling back a filesystem by
+ X hours?
+Date: Wed, 24 May 2017 10:16:50 +0000 (UTC)
+Message-ID: <pan$8532b$ae0e1e6d$c1cd3583$d6dbef31@cox.net>
+References: <20170501170641.GG3516@merlins.org>
+        <20170501180856.GH3516@merlins.org>
+        <CAJCQCtR4Hr5ekASiqWn2RNju5pHz8itS91N=M29Cz8Nqx8=kqA@mail.gmail.com>
+        <20170502032346.ayhh3n3uh5d5ekbb@merlins.org>
+        <pan$e2463$2d3d82e9$144941f3$9eeef2a4@cox.net>
+        <20170523165847.fbu45eq3w24tyh3c@merlins.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Marc MERLIN posted on Tue, 23 May 2017 09:58:47 -0700 as excerpted:
 
+> That's a valid point, and in my case, I can back it up/restore, it just
+> takes a bit of time, but most of the time is manually babysitting all
+> those subvolumes that I need to recreate by hand with btrfs send/restore
+> relationships, which all get lost during backup/restore.
+> This is the most painful part.
+> What's too big? I've only ever used a filesystem that fits on on a raid
+> of 4 data drives. That value has increased over time, but I don't have a
+> a crazy array of 20+ drives as a single filesystem, or anything.
+> Since drives have gotten bigger, but not that much faster, I use bcache
+> to make things more acceptable in speed.
 
-At 05/24/2017 05:22 PM, Eryu Guan wrote:
-> On Wed, May 24, 2017 at 03:58:11PM +0800, Qu Wenruo wrote:
->>
->>
->> At 05/24/2017 01:16 PM, Qu Wenruo wrote:
->>>
->>>
->>> At 05/24/2017 01:08 PM, Eryu Guan wrote:
->>>> On Wed, May 24, 2017 at 12:28:34PM +0800, Qu Wenruo wrote:
->>>>>
->>>>>
->>>>> At 05/24/2017 12:24 PM, Eryu Guan wrote:
->>>>>> On Wed, May 24, 2017 at 08:22:25AM +0800, Qu Wenruo wrote:
->>>>>>>
->>>>>>>
->>>>>>> At 05/23/2017 07:13 PM, Eryu Guan wrote:
->>>>>>>> On Tue, May 23, 2017 at 04:02:05PM +0800, Qu Wenruo wrote:
->>>>>>>>> [BUG]
->>>>>>>>> If using MOUNT_OPTIONS="-o nodatasum" and btrfs to run genierc/142
->>>>>>>>> generic/143 and generic/154, it will cause false alert like:
->>>>>>>>> cp: failed to clone '/mnt/test/test-154/file2'
->>>>>>>>> from '/mnt/test/test-154/file1': Invalid
->>>>>>>>> argument
->>>>>>>>
->>>>>>>> MOUNT_OPTIONS is for scratch mount, and
->>>>>>>> TEST_FS_MOUNT_OPTS is for test
->>>>>>>> dev mount, so I think setting TEST_FS_MOUNT_OPTS to "-o nodatasum"
->>>>>>>> should fix your problem.
->>>>>>>
->>>>>>> Nope, the problem is the inconsistent of TEST_MNT setup.
->>>>>>
->>>>>> It does fix the failure for me, did I miss anything?
->>>>>>
->>>>>> # MOUNT_OPTIONS="-o nodatasum" TEST_FS_MOUNT_OPTS="-o
->>>>>> nodatasum" ./check generic/142 generic/143 generic/154
->>>>>> FSTYP         -- btrfs
->>>>>> PLATFORM      -- Linux/x86_64 dhcp-66-86-11 4.12.0-rc1
->>>>>> MKFS_OPTIONS  -- /dev/sda6
->>>>>> MOUNT_OPTIONS -- -o nodatasum -o
->>>>>> context=system_u:object_r:root_t:s0 /dev/sda6
->>>>>> /mnt/testarea/scratch
->>>>>>
->>>>>> generic/142 2s ... 1s
->>>>>> generic/143      18s
->>>>>> generic/154      1s
->>>>>> Ran: generic/142 generic/143 generic/154
->>>>>> Passed all 3 tests
->>>>>>
->>>>>
->>>>> But if you only export MOUNT_OPTIONS, it will fail, due to the different
->>>>> mount options between test_cycle_mount().
->>>>
->>>> That's correct. Sorry, I didn't make it clear in my first reply. I meant
->>>> that you should set both TEST_FS_MOUNT_OPTS and MOUNT_OPTIONS to
->>>> "-onodatasum", for both test dev and scratch dev.
->>>
->>> That's just a workaround, not a root fix.
->>>
->>> Not to mention quite a lot test cases lose its coverage.
->>> As after _test_cycle_mount(), they are just testing default mount option.
->>>
->>>>
->>>>>
->>>>> To make it clear:
->>>>> If test mount follows TEST_FS_MOUNT_OPTS, then both the first mount and
->>>>> test_cycle_mount should follow TEST_FS_MOUNT_OPTS.
->>>>
->>>> _test_mount does follow TEST_FS_MOUNT_OPTS, not MOUNT_OPTIONS, no matter
->>>> which mount it is.
->>>
->>> While test mount setup by check script follows MOUNT_OPTIONS.
->>
->> Well, $MOUNT_OPTIONS is appended by check_generic_filsystem() or
->> check_btrfs_filesystem() for btrfs.
-> 
-> Yeah, you're right, I found it too. The _check_<fs>_filesystem() mounts
-> with MOUNT_OPTIONS unconditionally.
-> 
->>
->> Which will remount the device with $MOUNT_OPTIONS.
->> Further more, this function doesn't care if it's scratch device or test
->> device, just use MOUNT_OPTIONS.
->>
->> So either we split it for scratch and test device, and follows different
->> mount options,
->> or just like my submitted patch, to make _test_mount() to follow
->> MOUNT_OPTIONS.
-> 
-> Fixing _check_<fs>_filesystem() is the correct way. And I guess we can
-> refactor out a common function and call it in
-> _check_[xfs|btrfs|generic]_filesystem.
+What's too big?  That depends on your tolerance for pain, but given the 
+subvolumes manually recreated by hand with send/receive scenario, I'd 
+probably try to break it down so while there's the same number of 
+snapshots to restore, the number of subvolumes the snapshots are taken 
+against are limited.
 
-BTW, I'm wondering if we should still follow the old 
-"TEST_FS_MOUNT_OPTIONS".
+My own rule of thumb is if it's taking so long that it's a barrier to 
+doing it, I really need to either break things down further, or upgrade 
+to faster storage.  The latter is why I'm actually looking at upgrading 
+my media and second backup set, on spinning rust, to ssd.  Because while 
+I used to do backups spinning rust to spinning rust of that size all the 
+time, ssds have spoiled me, and now I dread doing the spinning rust 
+backups... or restores.   Tho in my case the spinning rust is only a half-
+TB, so a pair of half-TB to 1 TB ssds for an upgrade is still cost 
+effective.  It's not like I'm going multi-TB, which would still be cost 
+prohibitive on SSD, particularly since I want raid1, so doubling the 
+number of SSDs.
 
-I wonder split MOUNT_OPTIONS and TEST_FS_MOUNT_OPTIONS may reduce the 
-test coverage if tester is not aware of these mount options.
+Meanwhile, what I'd do with that raid of four drives (and /did/ do with 
+my 4-drive raid back a few storage generations ago, when 300 GB spinning-
+rust disks were still quite big, and what I do with my paired SSDs with 
+btrfs now) is partition them up and do raids of partitions on each drive.
 
-Thanks,
-Qu
+One thing that's nice about that is that you can actually do a set of 
+backups on a second set of partitions on the same physical devices, 
+because the physical device redundancy of the raids covers loss of a 
+device, and the separate partitions and raids (btrfs raid1 now) cover the 
+fat-finger or simple loss of filesystem risk.  A second set of backups to 
+separate devices can then be made just in case, and depending on the 
+need, swapped out to off-premises or uploaded to the cloud or whatever, 
+but you always have the primary backup at hand to boot to or mount if the 
+working copy fails, by simply pointing to the backup partitions and 
+filesystem instead of the normal working copy.  For root, I even have a 
+grub menu item that switches to the backup copy, and for fstab, I have a 
+set of stubs that are assembled via script into three copies of fstab 
+that swap working and backup copies as necessary, with /etc/fstab itself 
+being a symlink to the working copy one, that I simply switch to point to 
+the one that loads the backup copies as working, on the backup.  Or I can 
+mount the root filesystem for maintenance from the initramfs, and switch 
+the fstab symlink from there, before exiting maintenance and booting the 
+main system.
 
-> 
-> Thanks for looking into this!
-> 
-> Eryu
-> 
->>
->> Thanks,
->> Qu
->>
->>>
->>> Just check the following very basic test script:
->>> ------
->>> #! /bin/bash
->>> # FS QA Test 010
->>> #
->>> # what am I here for?
->>> #
->>> seq=`basename $0`
->>> seqres=$RESULT_DIR/$seq
->>> echo "QA output created by $seq"
->>>
->>> here=`pwd`
->>> tmp=/tmp/$$
->>> status=1    # failure is the default!
->>> trap "_cleanup; exit \$status" 0 1 2 3 15
->>>
->>> _cleanup()
->>> {
->>>       cd /
->>>       rm -f $tmp.*
->>> }
->>>
->>> # get standard environment, filters and checks
->>> . ./common/rc
->>> . ./common/filter
->>>
->>> # remove previous $seqres.full before test
->>> rm -f $seqres.full
->>>
->>> # real QA test starts here
->>>
->>> # Modify as appropriate.
->>> _supported_fs generic
->>> _supported_os Linux
->>> _require_test
->>>
->>> mount > $tmp.mount1
->>> _test_cycle_mount
->>> mount > $tmp.mount2
->>>
->>> diff  $tmp.mount1 $tmp.mount2
->>>
->>> echo "Silence is golden"
->>> # success, all done
->>> status=0
->>> exit
->>>
->>> ------
->>>
->>> Thanks,
->>> Qu
->>>>
->>>> Thanks,
->>>> Eryu
->>>> -- 
->>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>>> the body of a message to majordomo@vger.kernel.org
->>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>>
->>>>
->>
->>
-> 
-> 
+I learned this "split it up" method the hard way back before mdraid had 
+write-intent bitmaps, and I had only two much larger raids, working and 
+backup, where if one device dropped out and I brought it back in, I had 
+to wait way too long for the huge working raid to resync.  When I split 
+things up by function into multiple raids, most of the time only some of 
+them were active and only one or two of the active ones would actually 
+have been being written at the time so were out of sync, and syncing them 
+was fast as they were much smaller than the larger full system raids I 
+had been using previously.
 
+>> *BUT*, and here's the "go further" part, keep in mind that
+>> subvolume-read-
+>> only is a property, gettable and settable by btrfs property.
+>> 
+>> So you should be able to unset the read-only property of a subvolume or
+>> snapshot, move it, then if desired, set it again.
+>> 
+>> Of course I wouldn't expect send -p to work with such a snapshot, but
+>> send -c /might/ still work, I'm not actually sure but I'd consider it
+>> worth trying.  (I'd try -p as well, but expect it to fail...)
+> 
+> That's an interesting point, thanks for making it.
+> In that case, I did have to destroy and recreate the filesystem since
+> btrfs check --repair was unable to fix it, but knowing how to reparent
+> read only subvolumes may be handy in the future, thanks.
+
+Hopefully you won't end up testing it any time soon, but if you do, 
+please confirm whether my suspicions that send -p won't work after 
+toggling and reparenting, but send -c still will, are correct.
+
+(For those who read this out of thread context where I believe I already 
+stated it, my own use-case involves neither snapshots nor send-receive.  
+But it'd be useful information to confirm, both for others, and in case I 
+suddenly find myself with a different use-case for some reason or other.)
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

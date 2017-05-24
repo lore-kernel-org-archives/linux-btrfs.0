@@ -1,46 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:41483 "EHLO
-        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1031573AbdEWWCV (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:52294 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1763444AbdEXAWj (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 May 2017 18:02:21 -0400
-Date: Tue, 23 May 2017 15:02:19 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Duncan <1i5t5.duncan@cox.net>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: BTRFS converted from EXT4 becomes read-only after reboot
-Message-ID: <20170523220219.GP29894@merlins.org>
-References: <CAPktuGs4cJW6YBJ3GuGaXRLkud7VKvdH2P1U0hT+3AtDmHL5Yw@mail.gmail.com> <CAJCQCtRXCWuCbchRxOBZA7Dfzt4vhED77d1boErTdOGAzAi4vw@mail.gmail.com> <pan$d0afb$8cb8ad66$8322610b$459f2144@cox.net> <20170523170025.sweg3oyzs5f2jxca@merlins.org> <CAJCQCtT1QKpPWmoKhM-LTN3bweW-Yq=fGMjJU+b4wW+h98ydJg@mail.gmail.com> <20170523214943.GN29894@merlins.org> <CAJCQCtTkszst4EqWRJrdpgyHm6=2j9WntecUiLzNY8=CZ_5Jww@mail.gmail.com> <20170523215321.GO29894@merlins.org>
+        Tue, 23 May 2017 20:22:39 -0400
+Subject: Re: [PATCH] fstests: common: Make _test_mount to include
+ MOUNT_OPTIONS to allow consistent _test_cycle_mount
+To: Eryu Guan <eguan@redhat.com>
+CC: <linux-btrfs@vger.kernel.org>, <fstests@vger.kernel.org>
+References: <20170523080205.12556-1-quwenruo@cn.fujitsu.com>
+ <20170523111350.GZ7250@eguan.usersys.redhat.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <68cba4cb-538a-c689-e13a-70028ca0fc0a@cn.fujitsu.com>
+Date: Wed, 24 May 2017 08:22:25 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170523215321.GO29894@merlins.org>
+In-Reply-To: <20170523111350.GZ7250@eguan.usersys.redhat.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 23, 2017 at 02:53:21PM -0700, Marc MERLIN wrote:
-> On Tue, May 23, 2017 at 03:51:43PM -0600, Chris Murphy wrote:
-> > On Tue, May 23, 2017 at 3:49 PM, Marc MERLIN <marc@merlins.org> wrote:
-> > > On Tue, May 23, 2017 at 03:38:01PM -0600, Chris Murphy wrote:
-> > >> > I've tried an ext4 to btrfs conversion 3 times in the last 3 years, it
-> > >> > never worked properly any of those times, sadly.
-> > >>
-> > >> Since the 4.6 total rewrite? There are also recent bug fixes related
-> > >> to convert in the changelog, it should be working now and if there are
-> > >> problems Qu is probably interested in getting them fixed.
-> > >
-> > > It was a 4.9 kernel from debian.
-> > 
-> > Convert is done by user space code, so btrfs-progs version is relevant.
+
+
+At 05/23/2017 07:13 PM, Eryu Guan wrote:
+> On Tue, May 23, 2017 at 04:02:05PM +0800, Qu Wenruo wrote:
+>> [BUG]
+>> If using MOUNT_OPTIONS="-o nodatasum" and btrfs to run genierc/142
+>> generic/143 and generic/154, it will cause false alert like:
+>> cp: failed to clone '/mnt/test/test-154/file2' from '/mnt/test/test-154/file1': Invalid argument
 > 
-> Sigh, I think you found the issue. That system only had btrfs-tools 4.4 :(
+> MOUNT_OPTIONS is for scratch mount, and TEST_FS_MOUNT_OPTS is for test
+> dev mount, so I think setting TEST_FS_MOUNT_OPTS to "-o nodatasum"
+> should fix your problem.
 
-On the plus side, it's good news for btrfs, that means the next time I may
-need/try this again, it should actually work :)
-(so thanks for fixing it)
+Nope, the problem is the inconsistent of TEST_MNT setup.
 
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+As I described, the TEST_MNT is setup *with* MOUNT_OPTIONS for the 1st 
+time, maybe by "check" script.
+
+But _test_cycle_mount() uses TEST_FS_MOUNT_OPTS otherthan MOUNT_OPTIONS, 
+and leads to the problem.
+
+If using TEST_FS_MOUNT_OPTS, then 1st setup should also use 
+TEST_FS_MOUNT_OPTS.
+
+Thanks,
+Qu
+
+> 
+> Yeah, MOUNT_OPTIONS and TEST_FS_MOUNT_OPTS (and almost all other global
+> variables) are not documented properly..
+> 
+> Thanks,
+> Eryu
+> 
+>>
+>> [REASON]
+>> It is caused by _test_cycle_mount function, which unmount test device,
+>> but when trying to re-mount it again using _test_mount(), we don't pass
+>> $MOUNT_OPTIONS.
+>>
+>> So this makes mount options differs between _test_cycle_mount().
+>>
+>> And btrfs doesn't allow different csum flags between reflink source and
+>> destination inodes, so it returns -EINVAL for reflink operation.
+>>
+>> [FIX]
+>> Fix it by passing $MOUNT_OPTIONS to _test_mount(), so that
+>> _test_cycle_mount() won't cause different mount options.
+>> So btrfs with "-o nodatasum" mount option can pass generic/14[23]
+>> and generic/154 without false alert.
+>>
+>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>> ---
+>>   common/rc | 3 ++-
+>>   1 file changed, 2 insertions(+), 1 deletion(-)
+>>
+>> diff --git a/common/rc b/common/rc
+>> index ba215961..a591907c 100644
+>> --- a/common/rc
+>> +++ b/common/rc
+>> @@ -522,7 +522,8 @@ _test_mount()
+>>           return $?
+>>       fi
+>>       _test_options mount
+>> -    _mount -t $FSTYP $TEST_OPTIONS $TEST_FS_MOUNT_OPTS $SELINUX_MOUNT_OPTIONS $* $TEST_DEV $TEST_DIR
+>> +    _mount -t $FSTYP $TEST_OPTIONS $TEST_FS_MOUNT_OPTS $SELINUX_MOUNT_OPTIONS \
+>> +		$MOUNT_OPTIONS $* $TEST_DEV $TEST_DIR
+>>   }
+>>   
+>>   _test_unmount()
+>> -- 
+>> 2.13.0
+>>
+>>
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe fstests" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> 
+
+

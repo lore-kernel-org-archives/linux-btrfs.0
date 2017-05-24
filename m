@@ -1,60 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ua0-f174.google.com ([209.85.217.174]:33625 "EHLO
-        mail-ua0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933663AbdEXIKJ (ORCPT
+Received: from smtp73.iad3a.emailsrvr.com ([173.203.187.73]:54266 "EHLO
+        smtp73.iad3a.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1758424AbdEXIYA (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 May 2017 04:10:09 -0400
-Received: by mail-ua0-f174.google.com with SMTP id e28so92471767uah.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 May 2017 01:10:09 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <553912EF.7010004@gmail.com>
-References: <550E7917.5030602@gmail.com> <20150325011937.GB20767@twin.jikos.cz>
- <55129428.7090508@gmail.com> <20150330142532.GI32051@suse.cz>
- <55196740.1000705@gmail.com> <20150331170516.GD6821@suse.cz>
- <5534CC2F.4080109@gmail.com> <553912EF.7010004@gmail.com>
-From: Marc Cousin <cousinmarc@gmail.com>
-Date: Wed, 24 May 2017 10:10:08 +0200
-Message-ID: <CAKbZ4cK8-Fh6MvS1X4Tj-S9k6VBgaPEFj8x30de3NQf-UdZBrg@mail.gmail.com>
+        Wed, 24 May 2017 04:24:00 -0400
+Received: from smtp34.relay.iad3a.emailsrvr.com (localhost [127.0.0.1])
+        by smtp34.relay.iad3a.emailsrvr.com (SMTP Server) with ESMTP id 90B7924BCD
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 May 2017 04:23:59 -0400 (EDT)
+Received: by smtp34.relay.iad3a.emailsrvr.com (Authenticated sender: intranet-AT-rqc.ru) with ESMTPSA id 40E4E24BB8
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 May 2017 04:23:59 -0400 (EDT)
+Received: from CM01.administration.intranet.rqc.ru (unknown [10.101.2.94])
+        by postfix.thinky.servers.rqc.ru (Postfix) with ESMTPS id 9191D9A9C
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 May 2017 08:23:57 +0000 (UTC)
 Subject: Re: snapshot destruction making IO extremely slow
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+To: linux-btrfs@vger.kernel.org
+References: <550E7917.5030602@gmail.com>
+ <20150325011937.GB20767@twin.jikos.cz> <55129428.7090508@gmail.com>
+ <20150330142532.GI32051@suse.cz> <55196740.1000705@gmail.com>
+ <20150331170516.GD6821@suse.cz> <5534CC2F.4080109@gmail.com>
+ <553912EF.7010004@gmail.com>
+ <CAKbZ4cK8-Fh6MvS1X4Tj-S9k6VBgaPEFj8x30de3NQf-UdZBrg@mail.gmail.com>
+From: Marat Khalili <mkh@rqc.ru>
+Message-ID: <76463d77-7747-c27b-e874-cea1f88edd05@rqc.ru>
+Date: Wed, 24 May 2017 11:23:57 +0300
+MIME-Version: 1.0
+In-Reply-To: <CAKbZ4cK8-Fh6MvS1X4Tj-S9k6VBgaPEFj8x30de3NQf-UdZBrg@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2015-04-23 17:42 GMT+02:00 Marc Cousin <cousinmarc@gmail.com>:
-> On 20/04/2015 11:51, Marc Cousin wrote:
->> On 31/03/2015 19:05, David Sterba wrote:
->>> On Mon, Mar 30, 2015 at 05:09:52PM +0200, Marc Cousin wrote:
->>>>> So it would be good to sample the active threads and see where it's
->>>>> spending the time. It could be the somewhere in the rb-tree representing
->>>>> extents, but that's a guess.
->>>>>
->>>> I just need to be told how to do that :)
->>>>
->>>> Something like a perf top ?
->>>
->>> for i in `pgrep btrfs`; do
->>>         ps $i
->>>      sudo cat /proc/$i/stack 2>/dev/null
->>> done
->>>
->>> and capture samples every second.
->>>
->>
->> Sorry, it took me a while to reproduce this (I needed to be in front of the machine when it happens :) )
->
-> Hi,
->
-> Anything more I can provide on this issue ?
->
-> Regards
->
+Hello,
 
-Hi,
+> It occurs when enabling quotas on a volume. When there are a
+> lot of snapshots that are deleted, the system becomes extremely
+> unresponsive (IO often waiting for 30s on a SSD). When I don't have
+> quotas, removing snapshots is fast.
+Same problem here. It is now common knowledge in the list that qgroups 
+cause performance problems. I try to avoid deleting many snapshots at 
+once because of this.
 
-It took me a while (two years :) ), but I think I found what makees
-this problem appear, as I just triggered it on a system after this
-change. It occurs when enabling quotas on a volume. When there are a
-lot of snapshots that are deleted, the system becomes extremely
-unresponsive (IO often waiting for 30s on a SSD). When I don't have
-quotas, removing snapshots is fast.
+--
+
+With Best Regards,
+Marat Khalili
+

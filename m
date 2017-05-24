@@ -1,135 +1,188 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:32515 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1034125AbdEXJHf (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 May 2017 05:07:35 -0400
-Subject: Re: [PATCH] btrfs: check options during subsequent mount
-To: dsterba@suse.cz
-References: <20170428091409.19621-1-anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <980ec218-167c-3326-1964-2ff086d278c9@oracle.com>
-Date: Wed, 24 May 2017 17:13:24 +0800
+Received: from mx1.redhat.com ([209.132.183.28]:39136 "EHLO mx1.redhat.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S969274AbdEXJW5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 24 May 2017 05:22:57 -0400
+Date: Wed, 24 May 2017 17:22:54 +0800
+From: Eryu Guan <eguan@redhat.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
+Subject: Re: [PATCH] fstests: common: Make _test_mount to include
+ MOUNT_OPTIONS to allow consistent _test_cycle_mount
+Message-ID: <20170524092254.GL7250@eguan.usersys.redhat.com>
+References: <20170523080205.12556-1-quwenruo@cn.fujitsu.com>
+ <20170523111350.GZ7250@eguan.usersys.redhat.com>
+ <68cba4cb-538a-c689-e13a-70028ca0fc0a@cn.fujitsu.com>
+ <20170524042434.GH7250@eguan.usersys.redhat.com>
+ <ee8c072d-cc4d-1023-bd8c-ac7adb4f301c@cn.fujitsu.com>
+ <20170524050854.GI7250@eguan.usersys.redhat.com>
+ <77036fc6-4cfa-0a00-3a0c-30a235c779fb@cn.fujitsu.com>
+ <05c560e7-342b-0935-ae38-055e2f40b75e@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20170428091409.19621-1-anand.jain@oracle.com>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <05c560e7-342b-0935-ae38-055e2f40b75e@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Wed, May 24, 2017 at 03:58:11PM +0800, Qu Wenruo wrote:
+> 
+> 
+> At 05/24/2017 01:16 PM, Qu Wenruo wrote:
+> > 
+> > 
+> > At 05/24/2017 01:08 PM, Eryu Guan wrote:
+> > > On Wed, May 24, 2017 at 12:28:34PM +0800, Qu Wenruo wrote:
+> > > > 
+> > > > 
+> > > > At 05/24/2017 12:24 PM, Eryu Guan wrote:
+> > > > > On Wed, May 24, 2017 at 08:22:25AM +0800, Qu Wenruo wrote:
+> > > > > > 
+> > > > > > 
+> > > > > > At 05/23/2017 07:13 PM, Eryu Guan wrote:
+> > > > > > > On Tue, May 23, 2017 at 04:02:05PM +0800, Qu Wenruo wrote:
+> > > > > > > > [BUG]
+> > > > > > > > If using MOUNT_OPTIONS="-o nodatasum" and btrfs to run genierc/142
+> > > > > > > > generic/143 and generic/154, it will cause false alert like:
+> > > > > > > > cp: failed to clone '/mnt/test/test-154/file2'
+> > > > > > > > from '/mnt/test/test-154/file1': Invalid
+> > > > > > > > argument
+> > > > > > > 
+> > > > > > > MOUNT_OPTIONS is for scratch mount, and
+> > > > > > > TEST_FS_MOUNT_OPTS is for test
+> > > > > > > dev mount, so I think setting TEST_FS_MOUNT_OPTS to "-o nodatasum"
+> > > > > > > should fix your problem.
+> > > > > > 
+> > > > > > Nope, the problem is the inconsistent of TEST_MNT setup.
+> > > > > 
+> > > > > It does fix the failure for me, did I miss anything?
+> > > > > 
+> > > > > # MOUNT_OPTIONS="-o nodatasum" TEST_FS_MOUNT_OPTS="-o
+> > > > > nodatasum" ./check generic/142 generic/143 generic/154
+> > > > > FSTYP         -- btrfs
+> > > > > PLATFORM      -- Linux/x86_64 dhcp-66-86-11 4.12.0-rc1
+> > > > > MKFS_OPTIONS  -- /dev/sda6
+> > > > > MOUNT_OPTIONS -- -o nodatasum -o
+> > > > > context=system_u:object_r:root_t:s0 /dev/sda6
+> > > > > /mnt/testarea/scratch
+> > > > > 
+> > > > > generic/142 2s ... 1s
+> > > > > generic/143      18s
+> > > > > generic/154      1s
+> > > > > Ran: generic/142 generic/143 generic/154
+> > > > > Passed all 3 tests
+> > > > > 
+> > > > 
+> > > > But if you only export MOUNT_OPTIONS, it will fail, due to the different
+> > > > mount options between test_cycle_mount().
+> > > 
+> > > That's correct. Sorry, I didn't make it clear in my first reply. I meant
+> > > that you should set both TEST_FS_MOUNT_OPTS and MOUNT_OPTIONS to
+> > > "-onodatasum", for both test dev and scratch dev.
+> > 
+> > That's just a workaround, not a root fix.
+> > 
+> > Not to mention quite a lot test cases lose its coverage.
+> > As after _test_cycle_mount(), they are just testing default mount option.
+> > 
+> > > 
+> > > > 
+> > > > To make it clear:
+> > > > If test mount follows TEST_FS_MOUNT_OPTS, then both the first mount and
+> > > > test_cycle_mount should follow TEST_FS_MOUNT_OPTS.
+> > > 
+> > > _test_mount does follow TEST_FS_MOUNT_OPTS, not MOUNT_OPTIONS, no matter
+> > > which mount it is.
+> > 
+> > While test mount setup by check script follows MOUNT_OPTIONS.
+> 
+> Well, $MOUNT_OPTIONS is appended by check_generic_filsystem() or
+> check_btrfs_filesystem() for btrfs.
 
+Yeah, you're right, I found it too. The _check_<fs>_filesystem() mounts
+with MOUNT_OPTIONS unconditionally.
 
-David,
+> 
+> Which will remount the device with $MOUNT_OPTIONS.
+> Further more, this function doesn't care if it's scratch device or test
+> device, just use MOUNT_OPTIONS.
+> 
+> So either we split it for scratch and test device, and follows different
+> mount options,
+> or just like my submitted patch, to make _test_mount() to follow
+> MOUNT_OPTIONS.
 
-  Can I ping you on this patch ? Wonder if there is any concern.
+Fixing _check_<fs>_filesystem() is the correct way. And I guess we can
+refactor out a common function and call it in
+_check_[xfs|btrfs|generic]_filesystem.
 
-Thanks, Anand
+Thanks for looking into this!
 
+Eryu
 
-On 04/28/2017 05:14 PM, Anand Jain wrote:
-> We allow recursive mounts with subvol options such as [1]
->
-> [1]
->  mount -o rw,compress=lzo /dev/sdc /btrfs1
->  mount -o ro,subvol=sv2 /dev/sdc /btrfs2
->
-> And except for the btrfs-specific subvol and subvolid options
-> all-other options are just ignored in the subsequent mounts.
->
-> In the below example [2] the effect compression is only zlib,
-> even though there was no error for the option -o compress=lzo.
->
-> [2]
-> ----
->  # mount -o compress=zlib /dev/sdc /btrfs1
->  #echo $?
->  0
->
->  # mount -o compress=lzo /dev/sdc /btrfs
->  #echo $?
->  0
->
->  #cat /proc/self/mounts
->  ::
->  /dev/sdc /btrfs1 btrfs rw,relatime,compress=zlib,space_cache,subvolid=5,subvol=/ 0 0
->  /dev/sdc /btrfs btrfs rw,relatime,compress=zlib,space_cache,subvolid=5,subvol=/ 0 0
-> ----
->
-> Further, random string .. has no error as well.
-> -----
->  # mount -o compress=zlib /dev/sdc /btrfs1
->  #echo $?
->  0
->
->  # mount -o something /dev/sdc /btrfs
->  #echo $?
->  0
-> -----
->
-> This patch fixes the above issue, by checking the if the passed
-> options are only subvol or subvolid in the subsequent mount.
->
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->  fs/btrfs/super.c | 40 ++++++++++++++++++++++++++++++++++++++++
->  1 file changed, 40 insertions(+)
->
-> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> index 9530a333d302..e0e542345c38 100644
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -389,6 +389,44 @@ static const match_table_t tokens = {
->  	{Opt_err, NULL},
->  };
->
-> +static int parse_recursive_mount_options(char *data)
-> +{
-> +	substring_t args[MAX_OPT_ARGS];
-> +	char *options, *orig;
-> +	char *p;
-> +	int ret = 0;
-> +
-> +	/*
-> +	 * This is not a remount thread, but we allow recursive mounts
-> +	 * with varying RO/RW flag to support subvol-mounts. So error-out
-> +	 * if any other option being passed in here.
-> +	 */
-> +
-> +	options = kstrdup(data, GFP_NOFS);
-> +	if (!options)
-> +		return -ENOMEM;
-> +
-> +	orig = options;
-> +
-> +	while ((p = strsep(&options, ",")) != NULL) {
-> +		int token;
-> +		if (!*p)
-> +			continue;
-> +
-> +		token = match_token(p, tokens, args);
-> +		switch(token) {
-> +		case Opt_subvol:
-> +		case Opt_subvolid:
-> +			break;
-> +		default:
-> +			ret = -EBUSY;
-> +		}
-> +	}
-> +
-> +	kfree(orig);
-> +	return ret;
-> +}
-> +
->  /*
->   * Regular mount options parser.  Everything that is needed only when
->   * reading in a new superblock is parsed here.
-> @@ -1611,6 +1649,8 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
->  		free_fs_info(fs_info);
->  		if ((flags ^ s->s_flags) & MS_RDONLY)
->  			error = -EBUSY;
-> +		if (parse_recursive_mount_options(data))
-> +			error = -EBUSY;
->  	} else {
->  		snprintf(s->s_id, sizeof(s->s_id), "%pg", bdev);
->  		btrfs_sb(s)->bdev_holder = fs_type;
->
+> 
+> Thanks,
+> Qu
+> 
+> > 
+> > Just check the following very basic test script:
+> > ------
+> > #! /bin/bash
+> > # FS QA Test 010
+> > #
+> > # what am I here for?
+> > #
+> > seq=`basename $0`
+> > seqres=$RESULT_DIR/$seq
+> > echo "QA output created by $seq"
+> > 
+> > here=`pwd`
+> > tmp=/tmp/$$
+> > status=1    # failure is the default!
+> > trap "_cleanup; exit \$status" 0 1 2 3 15
+> > 
+> > _cleanup()
+> > {
+> >      cd /
+> >      rm -f $tmp.*
+> > }
+> > 
+> > # get standard environment, filters and checks
+> > . ./common/rc
+> > . ./common/filter
+> > 
+> > # remove previous $seqres.full before test
+> > rm -f $seqres.full
+> > 
+> > # real QA test starts here
+> > 
+> > # Modify as appropriate.
+> > _supported_fs generic
+> > _supported_os Linux
+> > _require_test
+> > 
+> > mount > $tmp.mount1
+> > _test_cycle_mount
+> > mount > $tmp.mount2
+> > 
+> > diff  $tmp.mount1 $tmp.mount2
+> > 
+> > echo "Silence is golden"
+> > # success, all done
+> > status=0
+> > exit
+> > 
+> > ------
+> > 
+> > Thanks,
+> > Qu
+> > > 
+> > > Thanks,
+> > > Eryu
+> > > -- 
+> > > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> > > the body of a message to majordomo@vger.kernel.org
+> > > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> > > 
+> > > 
+> 
+> 

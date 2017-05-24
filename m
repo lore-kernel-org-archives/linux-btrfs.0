@@ -1,73 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:59509 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S944195AbdEZQdg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 May 2017 12:33:36 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id BEA7BAC03
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 May 2017 16:33:34 +0000 (UTC)
-Date: Fri, 26 May 2017 18:32:35 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v4 1/2] btrfs: Separate space_info create/update
-Message-ID: <20170526163235.GE30842@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1495434950-20674-1-git-send-email-nborisov@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1495434950-20674-1-git-send-email-nborisov@suse.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:48988 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754630AbdEXDEi (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 23 May 2017 23:04:38 -0400
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH] btrfs: add compression trace points
+Date: Wed, 24 May 2017 11:10:27 +0800
+Message-Id: <20170524031027.32272-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 22, 2017 at 09:35:49AM +0300, Nikolay Borisov wrote:
-> +static int create_space_info(struct btrfs_fs_info *info, u64 flags,
-> +			     struct btrfs_space_info **new)
-> +{
-> +
-> +	struct btrfs_space_info *space_info;
-> +	int i;
-> +	int ret;
-> +
-> +	space_info = kzalloc(sizeof(*space_info), GFP_NOFS);
-> +	if (!space_info)
-> +		return -ENOMEM;
-> +
-> +	ret = percpu_counter_init(&space_info->total_bytes_pinned, 0,
-> +				 GFP_KERNEL);
-> +	if (ret) {
-> +		kfree(space_info);
-> +		return ret;
-> +	}
-> +
-> +	for (i = 0; i < BTRFS_NR_RAID_TYPES; i++)
-> +		INIT_LIST_HEAD(&space_info->block_groups[i]);
-> +	init_rwsem(&space_info->groups_sem);
-> +	spin_lock_init(&space_info->lock);
-> +	space_info->flags = flags & BTRFS_BLOCK_GROUP_TYPE_MASK;
-> +	space_info->force_alloc = CHUNK_ALLOC_NO_FORCE;
-> +	init_waitqueue_head(&space_info->wait);
-> +	INIT_LIST_HEAD(&space_info->ro_bgs);
-> +	INIT_LIST_HEAD(&space_info->tickets);
-> +	INIT_LIST_HEAD(&space_info->priority_tickets);
-> +
-> +	ret = kobject_init_and_add(&space_info->kobj, &space_info_ktype,
-> +				    info->space_info_kobj, "%s",
-> +				    alloc_name(space_info->flags));
-> +	if (ret) {
+This patch adds compression and decompression trace points for the
+purpose of debugging.
 
-JFTR, I've added the percpu_counter_destroy line here, that went through
-another patch ("btrfs: fix memory leak in update_space_info failure
-path").
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+Note:
+ I have used same trace function for both compress and decompress
+ as I wanted to maintain compress and decompress debug data aligned.
 
-> +		kfree(space_info);
-> +		return ret;
-> +	}
-> +
-> +	*new = space_info;
-> +	list_add_rcu(&space_info->list, &info->space_info);
-> +	if (flags & BTRFS_BLOCK_GROUP_DATA)
-> +		info->data_sinfo = space_info;
-> +
-> +	return ret;
-> +}
+ fs/btrfs/compression.c       | 10 ++++++++++
+ include/trace/events/btrfs.h | 36 ++++++++++++++++++++++++++++++++++++
+ 2 files changed, 46 insertions(+)
+
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index ee934e612f15..9b0562cd1b7f 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -938,6 +938,10 @@ int btrfs_compress_pages(int type, struct address_space *mapping,
+ 						      start, pages,
+ 						      out_pages,
+ 						      total_in, total_out);
++
++	trace_btrfs_encoder(1, 0, mapping->host, type, *total_in,
++						*total_out, start, ret);
++
+ 	free_workspace(type, workspace);
+ 	return ret;
+ }
+@@ -968,6 +972,9 @@ static int btrfs_decompress_bio(struct compressed_bio *cb)
+ 			cb->compressed_pages, cb->start, cb->orig_bio,
+ 			cb->compressed_len);
+ 
++	trace_btrfs_encoder(0, 1, cb->inode, type,
++				cb->compressed_len, cb->len, cb->start, ret);
++
+ 	free_workspace(type, workspace);
+ 	return ret;
+ }
+@@ -989,6 +996,9 @@ int btrfs_decompress(int type, unsigned char *data_in, struct page *dest_page,
+ 						  dest_page, start_byte,
+ 						  srclen, destlen);
+ 
++	trace_btrfs_encoder(0, 0, dest_page->mapping->host,
++				type, srclen, destlen, start_byte, ret);
++
+ 	free_workspace(type, workspace);
+ 	return ret;
+ }
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index e37973526153..1ebffcd005a1 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -1658,6 +1658,42 @@ TRACE_EVENT(qgroup_meta_reserve,
+ 		show_root_type(__entry->refroot), __entry->diff)
+ );
+ 
++TRACE_EVENT(btrfs_encoder,
++
++	TP_PROTO(int encode, int bio, struct inode *inode, int type,
++			unsigned long bfr, unsigned long aft,
++			unsigned long start, int ret),
++
++	TP_ARGS(encode, bio, inode, type, bfr, aft, start, ret),
++
++	TP_STRUCT__entry_btrfs(
++		__field(	int,		encode)
++		__field(	int,		bio)
++		__field(	unsigned long,	i_ino)
++		__field(	int,		type)
++		__field(	unsigned long,	bfr)
++		__field(	unsigned long,	aft)
++		__field(	unsigned long,	start)
++		__field(	int,		ret)
++	),
++
++	TP_fast_assign_btrfs(btrfs_sb(inode->i_sb),
++		__entry->encode		= encode;
++		__entry->bio		= bio;
++		__entry->i_ino		= inode->i_ino;
++		__entry->type		= type;
++		__entry->bfr		= bfr;
++		__entry->aft		= aft;
++		__entry->start		= start;
++		__entry->ret		= ret;
++	),
++
++	TP_printk_btrfs("%s %s ino:%lu tfm:%d bfr:%lu aft:%lu start:%lu ret:%d",
++		__entry->encode ? "encode":"decode",
++		__entry->bio ? "bio":"pge", __entry->i_ino, __entry->type,
++		__entry->bfr, __entry->aft, __entry->start, __entry->ret)
++
++);
+ #endif /* _TRACE_BTRFS_H */
+ 
+ /* This part must be outside protection */
+-- 
+2.10.0
+

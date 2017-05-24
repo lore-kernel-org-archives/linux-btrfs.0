@@ -1,103 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:52294 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:4076 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1763444AbdEXAWj (ORCPT
+        with ESMTP id S1761881AbdEXDpL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 May 2017 20:22:39 -0400
-Subject: Re: [PATCH] fstests: common: Make _test_mount to include
- MOUNT_OPTIONS to allow consistent _test_cycle_mount
-To: Eryu Guan <eguan@redhat.com>
-CC: <linux-btrfs@vger.kernel.org>, <fstests@vger.kernel.org>
-References: <20170523080205.12556-1-quwenruo@cn.fujitsu.com>
- <20170523111350.GZ7250@eguan.usersys.redhat.com>
+        Tue, 23 May 2017 23:45:11 -0400
+Subject: Re: [PATCH v5] qgroup: Retry after commit on getting EDQUOT
+To: Goldwyn Rodrigues <rgoldwyn@suse.de>, <dsterba@suse.cz>,
+        <linux-btrfs@vger.kernel.org>, Goldwyn Rodrigues <rgoldwyn@suse.com>
+References: <20170327172957.2518-1-rgoldwyn@suse.de>
+ <20170327173647.GQ4781@twin.jikos.cz>
+ <08d582e0-3670-ade4-3a2a-da72829d3da0@suse.de>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <68cba4cb-538a-c689-e13a-70028ca0fc0a@cn.fujitsu.com>
-Date: Wed, 24 May 2017 08:22:25 +0800
+Message-ID: <e4b0f84c-2f5f-0a32-3678-2153f7aae181@cn.fujitsu.com>
+Date: Wed, 24 May 2017 11:44:57 +0800
 MIME-Version: 1.0
-In-Reply-To: <20170523111350.GZ7250@eguan.usersys.redhat.com>
+In-Reply-To: <08d582e0-3670-ade4-3a2a-da72829d3da0@suse.de>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-At 05/23/2017 07:13 PM, Eryu Guan wrote:
-> On Tue, May 23, 2017 at 04:02:05PM +0800, Qu Wenruo wrote:
->> [BUG]
->> If using MOUNT_OPTIONS="-o nodatasum" and btrfs to run genierc/142
->> generic/143 and generic/154, it will cause false alert like:
->> cp: failed to clone '/mnt/test/test-154/file2' from '/mnt/test/test-154/file1': Invalid argument
+At 03/28/2017 02:13 AM, Goldwyn Rodrigues wrote:
 > 
-> MOUNT_OPTIONS is for scratch mount, and TEST_FS_MOUNT_OPTS is for test
-> dev mount, so I think setting TEST_FS_MOUNT_OPTS to "-o nodatasum"
-> should fix your problem.
+> 
+> On 03/27/2017 12:36 PM, David Sterba wrote:
+>> On Mon, Mar 27, 2017 at 12:29:57PM -0500, Goldwyn Rodrigues wrote:
+>>> From: Goldwyn Rodrigues <rgoldwyn@suse.com>
+>>>
+>>> We are facing the same problem with EDQUOT which was experienced with
+>>> ENOSPC. Not sure if we require a full ticketing system such as ENOSPC, but
+>>> here is a quick fix, which may be too big a hammer.
+>>>
+>>> Quotas are reserved during the start of an operation, incrementing
+>>> qg->reserved. However, it is written to disk in a commit_transaction
+>>> which could take as long as commit_interval. In the meantime there
+>>> could be deletions which are not accounted for because deletions are
+>>> accounted for only while committed (free_refroot). So, when we get
+>>> a EDQUOT flush the data to disk and try again.
+>>>
+>>> This fixes fstests btrfs/139.
 
-Nope, the problem is the inconsistent of TEST_MNT setup.
+This patch is causing hang for inode_cache mount option.
 
-As I described, the TEST_MNT is setup *with* MOUNT_OPTIONS for the 1st 
-time, maybe by "check" script.
+Which can be easily triggered by btrfs/042 with inode_cache.
 
-But _test_cycle_mount() uses TEST_FS_MOUNT_OPTS otherthan MOUNT_OPTIONS, 
-and leads to the problem.
+The callback trace will be:
+Call Trace:
+  __schedule+0x374/0xaf0
+  schedule+0x3d/0x90
+  wait_for_commit+0x4a/0x80 [btrfs]
+  ? wake_atomic_t_function+0x60/0x60
+  btrfs_commit_transaction+0xe0/0xa10 [btrfs]
+  ? start_transaction+0xad/0x510 [btrfs]
+  qgroup_reserve+0x1f0/0x350 [btrfs]
+  btrfs_qgroup_reserve_data+0xf8/0x2f0 [btrfs]
+  ? _raw_spin_unlock+0x27/0x40
+  btrfs_check_data_free_space+0x6d/0xb0 [btrfs]
+  btrfs_delalloc_reserve_space+0x25/0x70 [btrfs]
+  btrfs_save_ino_cache+0x402/0x650 [btrfs]
+  commit_fs_roots+0xb7/0x170 [btrfs]
+  btrfs_commit_transaction+0x425/0xa10 [btrfs]
+  qgroup_reserve+0x1f0/0x350 [btrfs]
+  btrfs_qgroup_reserve_data+0xf8/0x2f0 [btrfs]
+  ? _raw_spin_unlock+0x27/0x40
+  btrfs_check_data_free_space+0x6d/0xb0 [btrfs]
+  btrfs_delalloc_reserve_space+0x25/0x70 [btrfs]
+  btrfs_direct_IO+0x1c5/0x3b0 [btrfs]
+  generic_file_direct_write+0xab/0x150
+  btrfs_file_write_iter+0x243/0x530 [btrfs]
+  __vfs_write+0xc9/0x120
+  vfs_write+0xcb/0x1f0
+  SyS_pwrite64+0x79/0x90
+  entry_SYSCALL_64_fastpath+0x18/0xad
 
-If using TEST_FS_MOUNT_OPTS, then 1st setup should also use 
-TEST_FS_MOUNT_OPTS.
+We're calling btrfs_commit_transaction() inside btrfs_commit_transaction().
+
+Which will definitely hang the system.
+
+Any idea to fix it?
 
 Thanks,
 Qu
 
+>>>
+>>> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+>>> ---
+>>> Changes since v1:
+>>>   - Changed start_delalloc_roots() to start_delalloc_inode() to target
+>>>     the root in question only to reduce the amount of flush to be done.
+>>>   - Added wait_ordered_extents().
+>>>
+>>> Changes since v2:
+>>>    - Revised patch header
+>>>    - removed comment on combining conditions
+>>>    - removed test case, to be done in fstests
+>>>
+>>> Changes sinve v3:
+>>>    - testcase reinstated
+>>>    - return value checks
+>>>
+>>> Changes since v4:
+>>>   - removed testcase since btrfs/139 got incorporated in fstests
+>>
+>> The point was to keep the test inside the changelog as well.
 > 
-> Yeah, MOUNT_OPTIONS and TEST_FS_MOUNT_OPTS (and almost all other global
-> variables) are not documented properly..
 > 
-> Thanks,
-> Eryu
-> 
->>
->> [REASON]
->> It is caused by _test_cycle_mount function, which unmount test device,
->> but when trying to re-mount it again using _test_mount(), we don't pass
->> $MOUNT_OPTIONS.
->>
->> So this makes mount options differs between _test_cycle_mount().
->>
->> And btrfs doesn't allow different csum flags between reflink source and
->> destination inodes, so it returns -EINVAL for reflink operation.
->>
->> [FIX]
->> Fix it by passing $MOUNT_OPTIONS to _test_mount(), so that
->> _test_cycle_mount() won't cause different mount options.
->> So btrfs with "-o nodatasum" mount option can pass generic/14[23]
->> and generic/154 without false alert.
->>
->> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
->> ---
->>   common/rc | 3 ++-
->>   1 file changed, 2 insertions(+), 1 deletion(-)
->>
->> diff --git a/common/rc b/common/rc
->> index ba215961..a591907c 100644
->> --- a/common/rc
->> +++ b/common/rc
->> @@ -522,7 +522,8 @@ _test_mount()
->>           return $?
->>       fi
->>       _test_options mount
->> -    _mount -t $FSTYP $TEST_OPTIONS $TEST_FS_MOUNT_OPTS $SELINUX_MOUNT_OPTIONS $* $TEST_DEV $TEST_DIR
->> +    _mount -t $FSTYP $TEST_OPTIONS $TEST_FS_MOUNT_OPTS $SELINUX_MOUNT_OPTIONS \
->> +		$MOUNT_OPTIONS $* $TEST_DEV $TEST_DIR
->>   }
->>   
->>   _test_unmount()
->> -- 
->> 2.13.0
->>
->>
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe fstests" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Yes, that was before we had btrfs/139 in fstest. I have put it in the
+> patch header. However, if you really want the test script back, I can
+> put it there. Let me know.
 > 
 > 
 

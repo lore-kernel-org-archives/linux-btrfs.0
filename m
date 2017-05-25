@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:36354 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:45979 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1165150AbdEYGWk (ORCPT
+        with ESMTP id S1165147AbdEYGWi (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 May 2017 02:22:40 -0400
+        Thu, 25 May 2017 02:22:38 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <dsterba@suse.cz>, <lakshmipathi.g@gmail.com>
-Subject: [PATCH v4 13/20] btrfs-progs: scrub: Introduce function to scrub one data stripe
-Date: Thu, 25 May 2017 14:21:58 +0800
-Message-ID: <20170525062205.11660-14-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v4 14/20] btrfs-progs: scrub: Introduce function to verify parities
+Date: Thu, 25 May 2017 14:21:59 +0800
+Message-ID: <20170525062205.11660-15-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20170525062205.11660-1-quwenruo@cn.fujitsu.com>
 References: <20170525062205.11660-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,155 +17,99 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce new function, scrub_one_data_stripe(), to check all data and
-tree blocks inside the data stripe.
+Introduce new function, verify_parities(), to check if parities matches
+for full stripe which all data stripes matches with their csum.
 
-This function will not try to recovery any error, but only check if any
-data/tree blocks has mismatch csum.
-
-If data missing csum, which is completely valid for case like nodatasum,
-it will just record it, but not report as error.
+Caller should fill the scrub_full_stripe structure properly before
+calling this function.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- scrub.c | 129 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 129 insertions(+)
+ scrub.c | 69 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 69 insertions(+)
 
 diff --git a/scrub.c b/scrub.c
-index 4302aafa..1944f216 100644
+index 1944f216..ef391ad1 100644
 --- a/scrub.c
 +++ b/scrub.c
-@@ -627,3 +627,132 @@ invalid_arg:
- 	error("invalid parameter for %s", __func__);
- 	return -EINVAL;
+@@ -26,6 +26,7 @@
+ #include "disk-io.h"
+ #include "utils.h"
+ #include "kernel-lib/bitops.h"
++#include "kernel-lib/raid56.h"
+ 
+ /*
+  * For parity based profile(RAID56)
+@@ -756,3 +757,71 @@ out:
+ 	btrfs_free_path(path);
+ 	return ret;
  }
 +
 +/*
-+ * Scrub one full data stripe of RAID5/6.
-+ * This means it will check any data/metadata extent in the data stripe
-+ * spcified by @stripe and @stripe_len
++ * Verify parities for RAID56
++ * Caller must fill @fstripe before calling this function
 + *
-+ * This function will only *CHECK* if the data stripe has any corruption.
-+ * Won't repair at this function.
-+ *
-+ * Return 0 if the full stripe is OK.
-+ * Return <0 if any error is found.
-+ * Note: Missing csum is not counted as error(NODATACSUM is valid)
++ * Return 0 for parities matches.
++ * Return >0 for P or Q mismatch
++ * Return <0 for fatal error
 + */
-+static int scrub_one_data_stripe(struct btrfs_fs_info *fs_info,
-+				 struct btrfs_scrub_progress *scrub_ctx,
-+				 struct scrub_stripe *stripe, u32 stripe_len)
++static int verify_parities(struct btrfs_fs_info *fs_info,
++			   struct btrfs_scrub_progress *scrub_ctx,
++			   struct scrub_full_stripe *fstripe)
 +{
-+	struct btrfs_path *path;
-+	struct btrfs_root *extent_root = fs_info->extent_root;
-+	struct btrfs_key key;
-+	u64 extent_start;
-+	u64 extent_len;
-+	u64 orig_csum_discards;
-+	int ret;
++	void **ptrs;
++	void *ondisk_p = NULL;
++	void *ondisk_q = NULL;
++	void *buf_p;
++	void *buf_q;
++	int nr_stripes = fstripe->nr_stripes;
++	int stripe_len = BTRFS_STRIPE_LEN;
++	int i;
++	int ret = 0;
 +
-+	if (!is_data_stripe(stripe))
-+		return -EINVAL;
-+
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
-+
-+	key.objectid = stripe->logical + stripe_len;
-+	key.offset = 0;
-+	key.type = 0;
-+
-+	ret = btrfs_search_slot(NULL, extent_root, &key, path, 0, 0);
-+	if (ret < 0)
++	ptrs = malloc(sizeof(void *) * fstripe->nr_stripes);
++	buf_p = malloc(fstripe->stripe_len);
++	buf_q = malloc(fstripe->stripe_len);
++	if (!ptrs || !buf_p || !buf_q) {
++		ret = -ENOMEM;
 +		goto out;
-+	while (1) {
-+		struct btrfs_extent_item *ei;
-+		struct extent_buffer *eb;
-+		char *data;
-+		int slot;
-+		int metadata = 0;
-+		u64 check_start;
-+		u64 check_len;
++	}
 +
-+		ret = btrfs_previous_extent_item(extent_root, path, 0);
-+		if (ret > 0) {
-+			ret = 0;
-+			goto out;
-+		}
-+		if (ret < 0)
-+			goto out;
-+		eb = path->nodes[0];
-+		slot = path->slots[0];
-+		btrfs_item_key_to_cpu(eb, &key, slot);
-+		extent_start = key.objectid;
-+		ei = btrfs_item_ptr(eb, slot, struct btrfs_extent_item);
++	for (i = 0; i < fstripe->nr_stripes; i++) {
++		struct scrub_stripe *stripe = &fstripe->stripes[i];
 +
-+		/* tree block scrub */
-+		if (key.type == BTRFS_METADATA_ITEM_KEY ||
-+		    btrfs_extent_flags(eb, ei) & BTRFS_EXTENT_FLAG_TREE_BLOCK) {
-+			extent_len = extent_root->nodesize;
-+			metadata = 1;
++		if (stripe->logical == BTRFS_RAID5_P_STRIPE) {
++			ondisk_p = stripe->data;
++			ptrs[i] = buf_p;
++			continue;
++		} else if (stripe->logical == BTRFS_RAID6_Q_STRIPE) {
++			ondisk_q = stripe->data;
++			ptrs[i] = buf_q;
++			continue;
 +		} else {
-+			extent_len = key.offset;
-+			metadata = 0;
-+		}
-+
-+		/* Current extent is out of our range, loop comes to end */
-+		if (extent_start + extent_len <= stripe->logical)
-+			break;
-+
-+		if (metadata) {
-+			/*
-+			 * Check crossing stripe first, which can't be scrubbed
-+			 */
-+			if (check_crossing_stripes(fs_info, extent_start,
-+					extent_root->nodesize)) {
-+				error("tree block at %llu is crossing stripe boundary, unable to scrub",
-+					extent_start);
-+				ret = -EIO;
-+				goto out;
-+			}
-+			data = stripe->data + extent_start - stripe->logical;
-+			ret = check_tree_mirror(fs_info, scrub_ctx,
-+						data, extent_start, 0);
-+			/* Any csum/verify error means the stripe is screwed */
-+			if (ret < 0) {
-+				stripe->csum_mismatch = 1;
-+				ret = -EIO;
-+				goto out;
-+			}
-+			ret = 0;
++			ptrs[i] = stripe->data;
 +			continue;
 +		}
-+		/* Restrict the extent range to fit stripe range */
-+		check_start = max(extent_start, stripe->logical);
-+		check_len = min(extent_start + extent_len, stripe->logical +
-+				stripe_len) - check_start;
++	}
++	/* RAID6 */
++	if (ondisk_q) {
++		raid6_gen_syndrome(nr_stripes, stripe_len, ptrs);
 +
-+		/* Record original csum_discards to detect missing csum case */
-+		orig_csum_discards = scrub_ctx->csum_discards;
-+
-+		data = stripe->data + check_start - stripe->logical;
-+		ret = check_data_mirror(fs_info, scrub_ctx, data, check_start,
-+					check_len, 0, NULL);
-+		/* Csum mismatch, no need to continue anyway*/
-+		if (ret < 0) {
-+			stripe->csum_mismatch = 1;
++		if (memcmp(ondisk_q, ptrs[nr_stripes - 1], stripe_len) != 0 ||
++		    memcmp(ondisk_p, ptrs[nr_stripes - 2], stripe_len))
++			ret = 1;
++	} else {
++		ret = raid5_gen_result(nr_stripes, stripe_len, nr_stripes - 1,
++					ptrs);
++		if (ret < 0)
 +			goto out;
-+		}
-+		/* Check if there is any missing csum for data */
-+		if (scrub_ctx->csum_discards != orig_csum_discards)
-+			stripe->csum_missing = 1;
-+		/*
-+		 * Only increase data_extents_scrubbed if we are scrubbing the
-+		 * tailing part of the data extent
-+		 */
-+		if (extent_start + extent_len <= stripe->logical + stripe_len)
-+			scrub_ctx->data_extents_scrubbed++;
-+		ret = 0;
++		if (memcmp(ondisk_p, ptrs[nr_stripes - 1], stripe_len) != 0)
++			ret = 1;
 +	}
 +out:
-+	btrfs_free_path(path);
++	free(buf_p);
++	free(buf_q);
++	free(ptrs);
 +	return ret;
 +}
 -- 

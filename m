@@ -1,92 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:33782 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:25075 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1759170AbdEOI14 (ORCPT
+        with ESMTP id S1165145AbdEYGWb (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 15 May 2017 04:27:56 -0400
+        Thu, 25 May 2017 02:22:31 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>, <dsterba@suse.cz>
-CC: <hurikhan77@gmail.com>
-Subject: [PATCH 5/5] btrfs-progs: lowmem check: Fix false alert on missing chunk or dev extent
-Date: Mon, 15 May 2017 16:27:42 +0800
-Message-ID: <20170515082742.21363-5-quwenruo@cn.fujitsu.com>
-In-Reply-To: <20170515082742.21363-1-quwenruo@cn.fujitsu.com>
-References: <20170515082742.21363-1-quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <dsterba@suse.cz>, <lakshmipathi.g@gmail.com>
+Subject: [PATCH v4 01/20] btrfs-progs: raid56: Introduce raid56 header for later recovery usage
+Date: Thu, 25 May 2017 14:21:46 +0800
+Message-ID: <20170525062205.11660-2-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20170525062205.11660-1-quwenruo@cn.fujitsu.com>
+References: <20170525062205.11660-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When checking chunk or dev extent, lowmem mode uses chunk length as dev
-extent length, and if they mismatch, report missing chunk or dev extent
-like:
-------
-ERROR: chunk[256 4324327424) stripe 0 did not find the related dev extent
-ERROR: chunk[256 4324327424) stripe 1 did not find the related dev extent
-ERROR: chunk[256 4324327424) stripe 2 did not find the related dev extent
-------
+Introduce a new header, kernel-lib/raid56.h, for later raid56 works.
 
-However, only for Single/DUP/RAID1 profiles chunk length is the same as
-dev extent length.
-For other profiles, this will cause tons of false alert.
+It contains 2 functions, from original btrfs-progs code:
+void raid6_gen_syndrome(int disks, size_t bytes, void **ptrs);
+int raid5_gen_result(int nr_devs, size_t stripe_len, int dest, void **data);
 
-Fix it by using correct stripe length when checking chunk and dev extent
-items.
+Will be expanded later and some part of it(RAID6 recover part) may keep
+sync with kernel later.
 
-Reported-by: Kai Krakow <hurikhan77@gmail.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
-Test cases for this bug will follow as another patchset, since we need
-some infrastructure update to support multi-device mkfs/check/mount.
----
- cmds-check.c | 11 +++++++++--
- 1 file changed, 9 insertions(+), 2 deletions(-)
+ Makefile            |  4 ++--
+ disk-io.h           |  4 ----
+ kernel-lib/raid56.h | 28 ++++++++++++++++++++++++++++
+ volumes.c           |  1 +
+ 4 files changed, 31 insertions(+), 6 deletions(-)
+ create mode 100644 kernel-lib/raid56.h
 
-diff --git a/cmds-check.c b/cmds-check.c
-index 58b73608..eb3eb9e9 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -10872,7 +10872,12 @@ static int check_dev_extent_item(struct btrfs_fs_info *fs_info,
+diff --git a/Makefile b/Makefile
+index 81598df1..92063a90 100644
+--- a/Makefile
++++ b/Makefile
+@@ -108,8 +108,8 @@ libbtrfs_objects = send-stream.o send-utils.o kernel-lib/rbtree.o btrfs-list.o \
+ 		   uuid-tree.o utils-lib.o rbtree-utils.o
+ libbtrfs_headers = send-stream.h send-utils.h send.h kernel-lib/rbtree.h btrfs-list.h \
+ 	       kernel-lib/crc32c.h kernel-lib/list.h kerncompat.h \
+-	       kernel-lib/radix-tree.h kernel-lib/sizes.h extent-cache.h \
+-	       extent_io.h ioctl.h ctree.h btrfsck.h version.h
++	       kernel-lib/radix-tree.h kernel-lib/sizes.h kernel-lib/raid56.h \
++	       extent-cache.h extent_io.h ioctl.h ctree.h btrfsck.h version.h
+ convert_objects = convert/main.o convert/common.o convert/source-fs.o \
+ 		  convert/source-ext2.o
+ mkfs_objects = mkfs/main.o mkfs/common.o
+diff --git a/disk-io.h b/disk-io.h
+index cd4fe929..ad8efb43 100644
+--- a/disk-io.h
++++ b/disk-io.h
+@@ -201,8 +201,4 @@ int write_tree_block(struct btrfs_trans_handle *trans,
+ 		     struct extent_buffer *eb);
+ int write_and_map_eb(struct btrfs_root *root, struct extent_buffer *eb);
  
- 	l = path.nodes[0];
- 	chunk = btrfs_item_ptr(l, path.slots[0], struct btrfs_chunk);
--	if (btrfs_chunk_length(l, chunk) != length)
-+	ret = btrfs_check_chunk_valid(chunk_root, l, chunk, path.slots[0],
-+				      chunk_key.offset);
-+	if (ret < 0)
-+		goto out;
+-/* raid56.c */
+-void raid6_gen_syndrome(int disks, size_t bytes, void **ptrs);
+-int raid5_gen_result(int nr_devs, size_t stripe_len, int dest, void **data);
+-
+ #endif
+diff --git a/kernel-lib/raid56.h b/kernel-lib/raid56.h
+new file mode 100644
+index 00000000..fa8fa260
+--- /dev/null
++++ b/kernel-lib/raid56.h
+@@ -0,0 +1,28 @@
++/*
++ * Copyright (C) 2017 Fujitsu.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
 +
-+	if (btrfs_stripe_length(fs_info, l, chunk) != length)
- 		goto out;
++#ifndef _BTRFS_PROGS_RAID56_H
++#define _BTRFS_PROGS_RAID56_H
++/*
++ * Headers for RAID5/6 operations.
++ * Original headers from original RAID5/6 codes, not from kernel header.
++ */
++
++void raid6_gen_syndrome(int disks, size_t bytes, void **ptrs);
++int raid5_gen_result(int nr_devs, size_t stripe_len, int dest, void **data);
++#endif
+diff --git a/volumes.c b/volumes.c
+index b350e259..8c2ffd92 100644
+--- a/volumes.c
++++ b/volumes.c
+@@ -28,6 +28,7 @@
+ #include "print-tree.h"
+ #include "volumes.h"
+ #include "utils.h"
++#include "kernel-lib/raid56.h"
  
- 	num_stripes = btrfs_chunk_num_stripes(l, chunk);
-@@ -11112,6 +11117,7 @@ static int check_chunk_item(struct btrfs_fs_info *fs_info,
- 	struct btrfs_dev_extent *ptr;
- 	u64 length;
- 	u64 chunk_end;
-+	u64 stripe_len;
- 	u64 type;
- 	int num_stripes;
- 	u64 offset;
-@@ -11161,6 +11167,7 @@ static int check_chunk_item(struct btrfs_fs_info *fs_info,
- 	}
- 
- 	num_stripes = btrfs_chunk_num_stripes(eb, chunk);
-+	stripe_len = btrfs_stripe_length(fs_info, eb, chunk);
- 	for (i = 0; i < num_stripes; i++) {
- 		btrfs_release_path(&path);
- 		btrfs_init_path(&path);
-@@ -11180,7 +11187,7 @@ static int check_chunk_item(struct btrfs_fs_info *fs_info,
- 		offset = btrfs_dev_extent_chunk_offset(leaf, ptr);
- 		if (objectid != chunk_key.objectid ||
- 		    offset != chunk_key.offset ||
--		    btrfs_dev_extent_length(leaf, ptr) != length)
-+		    btrfs_dev_extent_length(leaf, ptr) != stripe_len)
- 			goto not_match_dev;
- 		continue;
- not_match_dev:
+ struct stripe {
+ 	struct btrfs_device *dev;
 -- 
-2.12.2
+2.13.0
 
 
 

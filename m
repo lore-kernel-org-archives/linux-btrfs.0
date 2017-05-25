@@ -1,16 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:36354 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:45979 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1165154AbdEYGWn (ORCPT
+        with ESMTP id S1165151AbdEYGWk (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 May 2017 02:22:43 -0400
+        Thu, 25 May 2017 02:22:40 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: <dsterba@suse.cz>, <lakshmipathi.g@gmail.com>,
-        Su Yue <suy.fnst@cn.fujitsu.com>
-Subject: [PATCH v4 11/20] btrfs-progs: scrub: Introduce functions to scrub mirror based data blocks
-Date: Thu, 25 May 2017 14:21:56 +0800
-Message-ID: <20170525062205.11660-12-quwenruo@cn.fujitsu.com>
+CC: <dsterba@suse.cz>, <lakshmipathi.g@gmail.com>
+Subject: [PATCH v4 12/20] btrfs-progs: scrub: Introduce function to scrub one mirror-based extent
+Date: Thu, 25 May 2017 14:21:57 +0800
+Message-ID: <20170525062205.11660-13-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20170525062205.11660-1-quwenruo@cn.fujitsu.com>
 References: <20170525062205.11660-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -18,244 +17,180 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce new function, check/recover_data_mirror(), to check and recover
-mirror based data blocks.
+Introduce a new function, scrub_one_extent(), as a wrapper to check one
+mirror-based extent.
 
-Unlike tree block, data blocks must be recovered sector by sector, so we
-introduced corrupted_bitmap for check and recover.
+It will accept a btrfs_path parameter @path, which must points to a
+META/EXTENT_ITEM.
+And @start, @len, which must be a subset of META/EXTENT_ITEM.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 ---
- scrub.c | 212 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 212 insertions(+)
+ scrub.c | 148 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 147 insertions(+), 1 deletion(-)
 
 diff --git a/scrub.c b/scrub.c
-index f5a5c205..e473d168 100644
+index e473d168..4302aafa 100644
 --- a/scrub.c
 +++ b/scrub.c
-@@ -25,6 +25,7 @@
- #include "volumes.h"
- #include "disk-io.h"
- #include "utils.h"
-+#include "kernel-lib/bitops.h"
+@@ -441,7 +441,7 @@ static int recover_data_mirror(struct btrfs_fs_info *fs_info,
  
- /*
-  * For parity based profile(RAID56)
-@@ -269,3 +270,214 @@ out:
+ 	num_copies = btrfs_num_copies(&fs_info->mapping_tree, start, len);
+ 	for (i = 0; i < num_copies; i++) {
+-		for_each_set_bit(bit, corrupt_bitmaps[i], BITS_PER_LONG) {
++		for_each_set_bit(bit, corrupt_bitmaps[i], len / sectorsize) {
+ 			u64 cur = start + bit * sectorsize;
+ 			int good;
+ 
+@@ -481,3 +481,149 @@ out:
  	free(buf);
  	return ret;
  }
 +
++/* Btrfs only supports up to 2 copies of data, yet */
++#define BTRFS_MAX_COPIES	2
++
 +/*
-+ * Check one data mirror given by @start @len and @mirror, or @data
-+ * If @data is not given, try to read it from disk.
-+ * This function will try to read out all the data then check sum.
++ * Check all copies of range @start, @len.
++ * Caller must ensure the range is covered by EXTENT_ITEM/METADATA_ITEM
++ * specified by leaf of @path.
++ * And @start, @len must be a subset of the EXTENT_ITEM/METADATA_ITEM.
 + *
-+ * If @data is given, just use the data.
-+ * This behavior is useful for RAID5/6 recovery code to verify recovered data.
-+ *
-+ * If @corrupt_bitmap is given, restore corrupted sector to that bitmap.
-+ * This is useful for mirror based profiles to recover its data.
-+ *
-+ * Return 0 if everything is OK.
-+ * Return <0 if something goes wrong, and @scrub_ctx accounting will be updated
-+ * if it's a data corruption.
++ * Return 0 if the range is all OK or recovered or recoverable.
++ * Return <0 if the range can't be recoverable.
 + */
-+static int check_data_mirror(struct btrfs_fs_info *fs_info,
-+			     struct btrfs_scrub_progress *scrub_ctx,
-+			     char *data, u64 start, u64 len, int mirror,
-+			     unsigned long *corrupt_bitmap)
++static int scrub_one_extent(struct btrfs_fs_info *fs_info,
++			    struct btrfs_scrub_progress *scrub_ctx,
++			    struct btrfs_path *path, u64 start, u64 len,
++			    int write)
 +{
++	struct btrfs_key key;
++	struct btrfs_extent_item *ei;
++	struct extent_buffer *leaf = path->nodes[0];
 +	u32 sectorsize = fs_info->tree_root->sectorsize;
-+	u32 data_csum;
-+	u32 *csums = NULL;
-+	char *buf = NULL;
-+	int ret = 0;
-+	int err = 0;
-+	int i;
-+	unsigned long *csum_bitmap = NULL;
-+
-+	if (!data) {
-+		buf = malloc(len);
-+		if (!buf)
-+			return -ENOMEM;
-+		ret = read_extent_data_loop(fs_info, scrub_ctx, buf, start,
-+					     len, mirror);
-+		if (ret < 0)
-+			goto out;
-+		scrub_ctx->data_bytes_scrubbed += len;
-+	} else {
-+		buf = data;
-+	}
-+
-+	/* Alloc and Check csums */
-+	csums = malloc(len / sectorsize * sizeof(data_csum));
-+	if (!csums) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
-+	csum_bitmap = malloc(calculate_bitmap_len(len / sectorsize));
-+	if (!csum_bitmap) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
-+
-+	if (corrupt_bitmap)
-+		memset(corrupt_bitmap, 0,
-+			calculate_bitmap_len(len / sectorsize));
-+	ret = btrfs_read_data_csums(fs_info, start, len, csums, csum_bitmap);
-+	if (ret < 0)
-+		goto out;
-+
-+	for (i = 0; i < len / sectorsize; i++) {
-+		if (!test_bit(i, csum_bitmap)) {
-+			scrub_ctx->csum_discards++;
-+			continue;
-+		}
-+
-+		data_csum = ~(u32)0;
-+		data_csum = btrfs_csum_data(buf + i * sectorsize, data_csum,
-+					    sectorsize);
-+		btrfs_csum_final(data_csum, (u8 *)&data_csum);
-+
-+		if (memcmp(&data_csum, (char *)csums + i * sizeof(data_csum),
-+				   sizeof(data_csum))) {
-+			error("data at bytenr %llu mirror %d csum mismatch, have 0x%08x expect 0x%08x",
-+			      start + i * sectorsize, mirror, data_csum,
-+			      *(u32 *)((char *)csums + i * sizeof(data_csum)));
-+			err = 1;
-+			scrub_ctx->csum_errors++;
-+			if (corrupt_bitmap)
-+				set_bit(i, corrupt_bitmap);
-+			continue;
-+		}
-+		scrub_ctx->data_bytes_scrubbed += sectorsize;
-+	}
-+out:
-+	if (!data)
-+		free(buf);
-+	free(csums);
-+	free(csum_bitmap);
-+
-+	if (!ret && err)
-+		return -EIO;
-+	return ret;
-+}
-+
-+/* Helper to check all mirrors for a good copy */
-+static int has_good_mirror(unsigned long *corrupt_bitmaps[], int num_copies,
-+			   int bit, int *good_mirror)
-+{
-+	int found_good = 0;
-+	int i;
-+
-+	for (i = 0; i < num_copies; i++) {
-+		if (!test_bit(bit, corrupt_bitmaps[i])) {
-+			found_good = 1;
-+			if (good_mirror)
-+				*good_mirror = i + 1;
-+			break;
-+		}
-+	}
-+	return found_good;
-+}
-+
-+/*
-+ * Helper function to check @corrupt_bitmaps, to verify if it's recoverable
-+ * for mirror based data extent.
-+ *
-+ * Return 1 for recoverable, and 0 for not recoverable
-+ */
-+static int check_data_mirror_recoverable(struct btrfs_fs_info *fs_info,
-+					 u64 start, u64 len, u32 sectorsize,
-+					 unsigned long *corrupt_bitmaps[])
-+{
-+	int i;
-+	int corrupted = 0;
-+	int bit;
-+	int num_copies = btrfs_num_copies(&fs_info->mapping_tree, start, len);
-+
-+	for (i = 0; i < num_copies; i++) {
-+		for_each_set_bit(bit, corrupt_bitmaps[i], len / sectorsize) {
-+			if (!has_good_mirror(corrupt_bitmaps, num_copies,
-+					     bit, NULL)) {
-+				corrupted = 1;
-+				goto out;
-+			}
-+		}
-+	}
-+out:
-+	return !corrupted;
-+}
-+
-+/*
-+ * Try to recover all corrupted sectors specified by @corrupt_bitmaps,
-+ * by reading out good sector in other mirror.
-+ */
-+static int recover_data_mirror(struct btrfs_fs_info *fs_info,
-+			       struct btrfs_scrub_progress *scrub_ctx,
-+			       u64 start, u64 len,
-+			       unsigned long *corrupt_bitmaps[])
-+{
-+	char *buf;
-+	u32 sectorsize = fs_info->tree_root->sectorsize;
-+	int ret = 0;
-+	int bit;
-+	int i;
-+	int bad_mirror;
++	unsigned long *corrupt_bitmaps[BTRFS_MAX_COPIES] = { NULL };
++	int slot = path->slots[0];
 +	int num_copies;
++	int meta_corrupted = 0;
++	int meta_good_mirror = 0;
++	int data_bad_mirror = 0;
++	u64 extent_start;
++	u64 extent_len;
++	int metadata = 0;
++	int i;
++	int ret = 0;
 +
-+	/* Don't bother to recover unrecoverable extents */
-+	if (!check_data_mirror_recoverable(fs_info, start, len,
-+					   sectorsize, corrupt_bitmaps))
-+		return -EIO;
++	btrfs_item_key_to_cpu(leaf, &key, slot);
++	if (key.type != BTRFS_METADATA_ITEM_KEY &&
++	    key.type != BTRFS_EXTENT_ITEM_KEY)
++		goto invalid_arg;
 +
-+	buf = malloc(sectorsize);
-+	if (!buf)
-+		return -ENOMEM;
++	extent_start = key.objectid;
++	if (key.type == BTRFS_METADATA_ITEM_KEY) {
++		extent_len = fs_info->tree_root->nodesize;
++		metadata = 1;
++	} else {
++		extent_len = key.offset;
++		ei = btrfs_item_ptr(leaf, slot, struct btrfs_extent_item);
++		if (btrfs_extent_flags(leaf, ei) & BTRFS_EXTENT_FLAG_TREE_BLOCK)
++			metadata = 1;
++	}
++	if (start >= extent_start + extent_len ||
++	    start + len <= extent_start)
++		goto invalid_arg;
 +
++	for (i = 0; i < BTRFS_MAX_COPIES; i++) {
++		corrupt_bitmaps[i] = malloc(
++				calculate_bitmap_len(len / sectorsize));
++		if (!corrupt_bitmaps[i])
++			goto out;
++	}
 +	num_copies = btrfs_num_copies(&fs_info->mapping_tree, start, len);
-+	for (i = 0; i < num_copies; i++) {
-+		for_each_set_bit(bit, corrupt_bitmaps[i], BITS_PER_LONG) {
-+			u64 cur = start + bit * sectorsize;
-+			int good;
++	for (i = 1; i <= num_copies; i++) {
++		if (metadata) {
++			ret = check_tree_mirror(fs_info, scrub_ctx,
++					NULL, extent_start, i);
++			scrub_ctx->tree_extents_scrubbed++;
++			if (ret < 0)
++				meta_corrupted++;
++			else
++				meta_good_mirror = i;
++		} else {
++			ret = check_data_mirror(fs_info, scrub_ctx, NULL, start,
++						len, i, corrupt_bitmaps[i - 1]);
++			scrub_ctx->data_extents_scrubbed++;
++		}
++	}
 +
-+			/* Find good mirror */
-+			ret = has_good_mirror(corrupt_bitmaps, num_copies, bit,
-+					      &good);
-+			if (!ret) {
-+				error("failed to find good mirror for bytenr %llu",
-+					cur);
-+				ret = -EIO;
-+				goto out;
-+			}
-+			/* Read out good mirror */
-+			ret = read_data_from_disk(fs_info, buf, cur,
-+						  sectorsize, good);
-+			if (ret < 0) {
-+				error("failed to read good mirror from bytenr %llu mirror %d",
-+					cur, good);
-+				goto out;
-+			}
-+			/* Write back to all other mirrors */
-+			for (bad_mirror = 1; bad_mirror <= num_copies;
-+			     bad_mirror++) {
-+				if (bad_mirror == good)
-+					continue;
-+				ret = write_data_to_disk(fs_info, buf, cur,
-+						sectorsize, bad_mirror);
++	/* Metadata recover and report */
++	if (metadata) {
++		if (!meta_corrupted) {
++			goto out;
++		} else if (meta_corrupted && meta_corrupted < num_copies) {
++			if (write) {
++				ret = recover_tree_mirror(fs_info, scrub_ctx,
++						start, meta_good_mirror);
 +				if (ret < 0) {
-+					error("failed to recover mirror for bytenr %llu mirror %d",
-+						cur, bad_mirror);
++					error("failed to recover tree block at bytenr %llu",
++						start);
 +					goto out;
 +				}
++				printf("extent %llu len %llu REPAIRED: has corrupted mirror, repaired\n",
++					start, len);
++				goto out;
 +			}
++			printf("extent %llu len %llu RECOVERABLE: has corrupted mirror, but is recoverable\n",
++				start, len);
++			goto out;
++		} else {
++			error("extent %llu len %llu CORRUPTED: all mirror(s) corrupted, can't be recovered",
++				start, len);
++			ret = -EIO;
++			goto out;
 +		}
 +	}
++	/* Data recover and report */
++	for (i = 0; i < num_copies; i++) {
++		if (find_first_bit(corrupt_bitmaps[i], len / sectorsize) >=
++		    len / sectorsize)
++			continue;
++		data_bad_mirror = i + 1;
++	}
++	/* All data sectors are good */
++	if (!data_bad_mirror) {
++		ret = 0;
++		goto out;
++	}
++
++	if (check_data_mirror_recoverable(fs_info, start, len,
++					  sectorsize, corrupt_bitmaps)) {
++		if (write) {
++			ret = recover_data_mirror(fs_info, scrub_ctx, start,
++						  len, corrupt_bitmaps);
++			if (ret < 0) {
++				error("failed to recover data extent at bytenr %llu len %llu",
++					start, len);
++				goto out;
++			}
++			printf("extent %llu len %llu REPARIED: has corrupted mirror, repaired\n",
++				start, len);
++			goto out;
++		}
++		printf("extent %llu len %llu RECOVERABLE: has corrupted mirror, recoverable\n",
++			start, len);
++		goto out;
++	}
++	error("extent %llu len %llu CORRUPTED, all mirror(s) corrupted, can't be repaired",
++		start, len);
++	ret = -EIO;
 +out:
-+	free(buf);
++	for (i = 0; i < BTRFS_MAX_COPIES; i++)
++		kfree(corrupt_bitmaps[i]);
 +	return ret;
++
++invalid_arg:
++	error("invalid parameter for %s", __func__);
++	return -EINVAL;
 +}
 -- 
 2.13.0

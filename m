@@ -1,33 +1,146 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:48726 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752218AbdESAqW (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:65110 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1755087AbdEYCHZ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 May 2017 20:46:22 -0400
-Date: Thu, 18 May 2017 17:43:39 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: David Sterba <dsterba@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 07/10] btrfs: scrub: use fs_info::sectorsize and drop it
- from scrub context
-Message-ID: <20170519004338.GL23822@lim.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <cover.1494954480.git.dsterba@suse.com>
- <4a48588c77c94dd0ce696732cf7e5476217f0204.1494954480.git.dsterba@suse.com>
+        Wed, 24 May 2017 22:07:25 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
+        by cn.fujitsu.com (Postfix) with ESMTP id B2EAA47C6D3A
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 May 2017 10:07:14 +0800 (CST)
+From: Su Yue <suy.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 2/3] btrfs: check namelen with boundary in verify dir_item
+Date: Thu, 25 May 2017 10:09:07 +0800
+Message-ID: <20170525020908.25830-2-suy.fnst@cn.fujitsu.com>
+In-Reply-To: <20170525020908.25830-1-suy.fnst@cn.fujitsu.com>
+References: <20170525020908.25830-1-suy.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <4a48588c77c94dd0ce696732cf7e5476217f0204.1494954480.git.dsterba@suse.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 16, 2017 at 07:10:41PM +0200, David Sterba wrote:
-> As we now have the node/block sizes in fs_info, we can use them and can
-> drop the local copies.
-> 
-> Signed-off-by: David Sterba <dsterba@suse.com>
+Origin 'verify_dir_item' verify namelen of dir_item with fixed values
+but no item boundary.
+If corrupted namelen was not bigger than the fixed value, for example 255,
+the function will think the dir_item is fine. And then reading beyond
+boundary will cause crash.
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+Add a parameter 'slot' and check namelen with item boundary by
+calling 'btrfs_check_namelen'.
 
-Thanks,
+Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
+---
+ fs/btrfs/ctree.h    |  2 +-
+ fs/btrfs/dir-item.c | 13 ++++++++++++-
+ fs/btrfs/inode.c    |  2 +-
+ fs/btrfs/tree-log.c |  4 ++--
+ fs/btrfs/xattr.c    |  2 +-
+ 5 files changed, 17 insertions(+), 6 deletions(-)
 
--liubo
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index f49e04e7612b..99dd2c25ac6b 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3031,7 +3031,7 @@ struct btrfs_dir_item *btrfs_lookup_xattr(struct btrfs_trans_handle *trans,
+ 					  const char *name, u16 name_len,
+ 					  int mod);
+ int verify_dir_item(struct btrfs_fs_info *fs_info,
+-		    struct extent_buffer *leaf,
++		    struct extent_buffer *leaf, int slot,
+ 		    struct btrfs_dir_item *dir_item);
+ struct btrfs_dir_item *btrfs_match_dir_item_name(struct btrfs_fs_info *fs_info,
+ 						 struct btrfs_path *path,
+diff --git a/fs/btrfs/dir-item.c b/fs/btrfs/dir-item.c
+index 7af5ad8e9a3c..82390f36101c 100644
+--- a/fs/btrfs/dir-item.c
++++ b/fs/btrfs/dir-item.c
+@@ -395,7 +395,7 @@ struct btrfs_dir_item *btrfs_match_dir_item_name(struct btrfs_fs_info *fs_info,
+ 
+ 	leaf = path->nodes[0];
+ 	dir_item = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_dir_item);
+-	if (verify_dir_item(fs_info, leaf, dir_item))
++	if (verify_dir_item(fs_info, leaf, path->slots[0], dir_item))
+ 		return NULL;
+ 
+ 	total_len = btrfs_item_size_nr(leaf, path->slots[0]);
+@@ -453,9 +453,11 @@ int btrfs_delete_one_dir_name(struct btrfs_trans_handle *trans,
+ 
+ int verify_dir_item(struct btrfs_fs_info *fs_info,
+ 		    struct extent_buffer *leaf,
++		    int slot,
+ 		    struct btrfs_dir_item *dir_item)
+ {
+ 	u16 namelen = BTRFS_NAME_LEN;
++	u16 namelen_ret;
+ 	u8 type = btrfs_dir_type(leaf, dir_item);
+ 
+ 	if (type >= BTRFS_FT_MAX) {
+@@ -472,6 +474,15 @@ int verify_dir_item(struct btrfs_fs_info *fs_info,
+ 		return 1;
+ 	}
+ 
++	namelen = btrfs_dir_name_len(leaf, dir_item);
++	namelen_ret = btrfs_check_namelen(leaf, slot,
++			(unsigned long)(dir_item + 1), namelen);
++	if (namelen_ret != namelen) {
++		btrfs_crit(fs_info, "invalid dir item name len: %u",
++		       (unsigned)btrfs_dir_name_len(leaf, dir_item));
++		return 1;
++	}
++
+ 	/* BTRFS_MAX_XATTR_SIZE is the same for all dir items */
+ 	if ((btrfs_dir_data_len(leaf, dir_item) +
+ 	     btrfs_dir_name_len(leaf, dir_item)) >
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 17cbe9306faf..df948569c393 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5934,7 +5934,7 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
+ 		ctx->pos = found_key.offset;
+ 
+ 		di = btrfs_item_ptr(leaf, slot, struct btrfs_dir_item);
+-		if (verify_dir_item(fs_info, leaf, di))
++		if (verify_dir_item(fs_info, leaf, slot, di))
+ 			goto next;
+ 
+ 		name_len = btrfs_dir_name_len(leaf, di);
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index ccfe9fe7754a..1930f28edcdd 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -1841,7 +1841,7 @@ static noinline int replay_one_dir_item(struct btrfs_trans_handle *trans,
+ 	ptr_end = ptr + item_size;
+ 	while (ptr < ptr_end) {
+ 		di = (struct btrfs_dir_item *)ptr;
+-		if (verify_dir_item(fs_info, eb, di))
++		if (verify_dir_item(fs_info, eb, slot, di))
+ 			return -EIO;
+ 		name_len = btrfs_dir_name_len(eb, di);
+ 		ret = replay_one_name(trans, root, path, eb, di, key);
+@@ -2017,7 +2017,7 @@ static noinline int check_item_in_log(struct btrfs_trans_handle *trans,
+ 	ptr_end = ptr + item_size;
+ 	while (ptr < ptr_end) {
+ 		di = (struct btrfs_dir_item *)ptr;
+-		if (verify_dir_item(fs_info, eb, di)) {
++		if (verify_dir_item(fs_info, eb, slot, di)) {
+ 			ret = -EIO;
+ 			goto out;
+ 		}
+diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
+index b3cbf80c5acf..2c7e53f9ff1b 100644
+--- a/fs/btrfs/xattr.c
++++ b/fs/btrfs/xattr.c
+@@ -336,7 +336,7 @@ ssize_t btrfs_listxattr(struct dentry *dentry, char *buffer, size_t size)
+ 			u32 this_len = sizeof(*di) + name_len + data_len;
+ 			unsigned long name_ptr = (unsigned long)(di + 1);
+ 
+-			if (verify_dir_item(fs_info, leaf, di)) {
++			if (verify_dir_item(fs_info, leaf, slot, di)) {
+ 				ret = -EIO;
+ 				goto err;
+ 			}
+-- 
+2.13.0
+
+
+

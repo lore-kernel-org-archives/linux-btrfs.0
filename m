@@ -1,56 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([65.50.211.133]:50806 "EHLO
+Received: from bombadil.infradead.org ([65.50.211.133]:33814 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1030990AbdEZI4i (ORCPT
+        with ESMTP id S1030990AbdEZI4n (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 May 2017 04:56:38 -0400
+        Fri, 26 May 2017 04:56:43 -0400
 From: Christoph Hellwig <hch@lst.de>
 To: axboe@kernel.dk
 Cc: linux-block@vger.kernel.org, dm-devel@redhat.com,
         linux-btrfs@vger.kernel.org
-Subject: [PATCH 03/13] gfs2: remove the unused sd_log_error field
-Date: Fri, 26 May 2017 11:56:10 +0300
-Message-Id: <20170526085620.3113-4-hch@lst.de>
+Subject: [PATCH 04/13] dm: fix REQ_RAHEAD handling
+Date: Fri, 26 May 2017 11:56:11 +0300
+Message-Id: <20170526085620.3113-5-hch@lst.de>
 In-Reply-To: <20170526085620.3113-1-hch@lst.de>
 References: <20170526085620.3113-1-hch@lst.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+A few (but not all) dm targets use a special EWOULDBLOCK error code for
+failing REQ_RAHEAD requests that fail due to a lack of available resources.
+But no one else knows about this magic code, and lower level drivers also
+don't generate it when failing read-ahead requests for similar reasons.
+
+So remove this special casing and ignore all additional error handling for
+REQ_RAHEAD - if this was a real underlying error we'd get a normal read
+once the real read comes in.
+
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 Reviewed-by: Bart Van Assche <Bart.VanAssche@sandisk.com>
 ---
- fs/gfs2/incore.h | 1 -
- fs/gfs2/lops.c   | 4 +---
- 2 files changed, 1 insertion(+), 4 deletions(-)
+ drivers/md/dm-raid1.c  | 4 ++--
+ drivers/md/dm-stripe.c | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/fs/gfs2/incore.h b/fs/gfs2/incore.h
-index b7cf65d13561..aa3d44527fa2 100644
---- a/fs/gfs2/incore.h
-+++ b/fs/gfs2/incore.h
-@@ -815,7 +815,6 @@ struct gfs2_sbd {
- 	atomic_t sd_log_in_flight;
- 	struct bio *sd_log_bio;
- 	wait_queue_head_t sd_log_flush_wait;
--	int sd_log_error;
+diff --git a/drivers/md/dm-raid1.c b/drivers/md/dm-raid1.c
+index a95cbb80fb34..5e30b08b91d9 100644
+--- a/drivers/md/dm-raid1.c
++++ b/drivers/md/dm-raid1.c
+@@ -1214,7 +1214,7 @@ static int mirror_map(struct dm_target *ti, struct bio *bio)
+ 	 */
+ 	if (!r || (r == -EWOULDBLOCK)) {
+ 		if (bio->bi_opf & REQ_RAHEAD)
+-			return -EWOULDBLOCK;
++			return -EIO;
  
- 	atomic_t sd_reserving_log;
- 	wait_queue_head_t sd_reserving_log_wait;
-diff --git a/fs/gfs2/lops.c b/fs/gfs2/lops.c
-index b1f9144b42c7..13ebf15a4db0 100644
---- a/fs/gfs2/lops.c
-+++ b/fs/gfs2/lops.c
-@@ -209,10 +209,8 @@ static void gfs2_end_log_write(struct bio *bio)
- 	struct page *page;
- 	int i;
+ 		queue_bio(ms, bio, rw);
+ 		return DM_MAPIO_SUBMITTED;
+@@ -1258,7 +1258,7 @@ static int mirror_end_io(struct dm_target *ti, struct bio *bio, int error)
+ 	if (error == -EOPNOTSUPP)
+ 		return error;
  
--	if (bio->bi_error) {
--		sdp->sd_log_error = bio->bi_error;
-+	if (bio->bi_error)
- 		fs_err(sdp, "Error %d writing to log\n", bio->bi_error);
--	}
+-	if ((error == -EWOULDBLOCK) && (bio->bi_opf & REQ_RAHEAD))
++	if (bio->bi_opf & REQ_RAHEAD)
+ 		return error;
  
- 	bio_for_each_segment_all(bvec, bio, i) {
- 		page = bvec->bv_page;
+ 	if (unlikely(error)) {
+diff --git a/drivers/md/dm-stripe.c b/drivers/md/dm-stripe.c
+index 75152482f3ad..780e95889a7c 100644
+--- a/drivers/md/dm-stripe.c
++++ b/drivers/md/dm-stripe.c
+@@ -384,7 +384,7 @@ static int stripe_end_io(struct dm_target *ti, struct bio *bio, int error)
+ 	if (!error)
+ 		return 0; /* I/O complete */
+ 
+-	if ((error == -EWOULDBLOCK) && (bio->bi_opf & REQ_RAHEAD))
++	if (bio->bi_opf & REQ_RAHEAD)
+ 		return error;
+ 
+ 	if (error == -EOPNOTSUPP)
 -- 
 2.11.0
 

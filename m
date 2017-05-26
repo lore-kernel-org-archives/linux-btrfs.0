@@ -1,86 +1,131 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:30471 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1163805AbdEZHji (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 May 2017 03:39:38 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH 1/3 v2] btrfs: btrfs_decompress_bio() could accept compressed_bio instead
-Date: Fri, 26 May 2017 15:44:58 +0800
-Message-Id: <20170526074500.20342-2-anand.jain@oracle.com>
-In-Reply-To: <20170526074500.20342-1-anand.jain@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:35759 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1753562AbdEZSJv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 May 2017 14:09:51 -0400
+Date: Fri, 26 May 2017 20:08:51 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH 3/3 v2] btrfs: add compression trace points
+Message-ID: <20170526180851.GH30842@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <20170526074500.20342-1-anand.jain@oracle.com>
+ <20170526074500.20342-4-anand.jain@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170526074500.20342-4-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Instead of sending each argument of struct compressed_bio, send
-the compressed_bio itself.
+On Fri, May 26, 2017 at 03:45:00PM +0800, Anand Jain wrote:
+> This patch adds compression and decompression trace points for the
+> purpose of debugging.
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+> v2: no change
+>  fs/btrfs/compression.c       | 10 ++++++++++
+>  include/trace/events/btrfs.h | 36 ++++++++++++++++++++++++++++++++++++
+>  2 files changed, 46 insertions(+)
+> 
+> diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+> index e426a8f427b5..490590e62a2f 100644
+> --- a/fs/btrfs/compression.c
+> +++ b/fs/btrfs/compression.c
+> @@ -899,6 +899,10 @@ int btrfs_compress_pages(int type, struct address_space *mapping,
+>  						      start, pages,
+>  						      out_pages,
+>  						      total_in, total_out);
+> +
+> +	trace_btrfs_encoder(1, 0, mapping->host, type, *total_in,
+> +						*total_out, start, ret);
+> +
+>  	free_workspace(type, workspace);
+>  	return ret;
+>  }
+> @@ -927,6 +931,9 @@ static int btrfs_decompress_bio(struct compressed_bio *cb)
+>  
+>  	ret = btrfs_compress_op[type-1]->decompress_bio(workspace, cb);
+>  
+> +	trace_btrfs_encoder(0, 1, cb->inode, type,
+> +				cb->compressed_len, cb->len, cb->start, ret);
+> +
+>  	free_workspace(type, workspace);
+>  	return ret;
+>  }
+> @@ -948,6 +955,9 @@ int btrfs_decompress(int type, unsigned char *data_in, struct page *dest_page,
+>  						  dest_page, start_byte,
+>  						  srclen, destlen);
+>  
+> +	trace_btrfs_encoder(0, 0, dest_page->mapping->host,
+> +				type, srclen, destlen, start_byte, ret);
+> +
+>  	free_workspace(type, workspace);
+>  	return ret;
+>  }
+> diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+> index e37973526153..1ebffcd005a1 100644
+> --- a/include/trace/events/btrfs.h
+> +++ b/include/trace/events/btrfs.h
+> @@ -1658,6 +1658,42 @@ TRACE_EVENT(qgroup_meta_reserve,
+>  		show_root_type(__entry->refroot), __entry->diff)
+>  );
+>  
+> +TRACE_EVENT(btrfs_encoder,
 
-Also by having struct compressed_bio in btrfs_decompress_bio()
-it would help tracing.
+So far the encoder is just compression/decompression. Having one
+tracepoint for both operations makes more sense, but I don't like the
+name.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
-v2: no changes
- fs/btrfs/compression.c | 23 +++++++++--------------
- 1 file changed, 9 insertions(+), 14 deletions(-)
+> +
+> +	TP_PROTO(int encode, int bio, struct inode *inode, int type,
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 10e6b282d09d..ee934e612f15 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -81,9 +81,7 @@ struct compressed_bio {
- 	u32 sums;
- };
- 
--static int btrfs_decompress_bio(int type, struct page **pages_in,
--				   u64 disk_start, struct bio *orig_bio,
--				   size_t srclen);
-+static int btrfs_decompress_bio(struct compressed_bio *cb);
- 
- static inline int compressed_bio_size(struct btrfs_fs_info *fs_info,
- 				      unsigned long disk_size)
-@@ -173,11 +171,8 @@ static void end_compressed_bio_read(struct bio *bio)
- 	/* ok, we're the last bio for this extent, lets start
- 	 * the decompression.
- 	 */
--	ret = btrfs_decompress_bio(cb->compress_type,
--				      cb->compressed_pages,
--				      cb->start,
--				      cb->orig_bio,
--				      cb->compressed_len);
-+	ret = btrfs_decompress_bio(cb);
-+
- csum_failed:
- 	if (ret)
- 		cb->errors = 1;
-@@ -961,18 +956,18 @@ int btrfs_compress_pages(int type, struct address_space *mapping,
-  * be contiguous.  They all correspond to the range of bytes covered by
-  * the compressed extent.
-  */
--static int btrfs_decompress_bio(int type, struct page **pages_in,
--				   u64 disk_start, struct bio *orig_bio,
--				   size_t srclen)
-+static int btrfs_decompress_bio(struct compressed_bio *cb)
- {
- 	struct list_head *workspace;
- 	int ret;
-+	int type = cb->compress_type;
- 
- 	workspace = find_workspace(type);
- 
--	ret = btrfs_compress_op[type-1]->decompress_bio(workspace, pages_in,
--							 disk_start, orig_bio,
--							 srclen);
-+	ret = btrfs_compress_op[type-1]->decompress_bio(workspace,
-+			cb->compressed_pages, cb->start, cb->orig_bio,
-+			cb->compressed_len);
-+
- 	free_workspace(type, workspace);
- 	return ret;
- }
--- 
-2.10.0
+encode is confusing here, it seems to be an operation type
 
+bio as an int is confusing, seems to describe the data source type, or
+what 'pge' is supposed to mean
+
+> +			unsigned long bfr, unsigned long aft,
+
+please do not abbreviate that much, this is not necessary and makes it
+unreadable
+
+> +			unsigned long start, int ret),
+> +
+> +	TP_ARGS(encode, bio, inode, type, bfr, aft, start, ret),
+> +
+> +	TP_STRUCT__entry_btrfs(
+> +		__field(	int,		encode)
+> +		__field(	int,		bio)
+> +		__field(	unsigned long,	i_ino)
+> +		__field(	int,		type)
+> +		__field(	unsigned long,	bfr)
+> +		__field(	unsigned long,	aft)
+> +		__field(	unsigned long,	start)
+> +		__field(	int,		ret)
+> +	),
+> +
+> +	TP_fast_assign_btrfs(btrfs_sb(inode->i_sb),
+> +		__entry->encode		= encode;
+> +		__entry->bio		= bio;
+> +		__entry->i_ino		= inode->i_ino;
+> +		__entry->type		= type;
+> +		__entry->bfr		= bfr;
+> +		__entry->aft		= aft;
+> +		__entry->start		= start;
+> +		__entry->ret		= ret;
+> +	),
+> +
+> +	TP_printk_btrfs("%s %s ino:%lu tfm:%d bfr:%lu aft:%lu start:%lu ret:%d",
+
+please use "=" instead of ":"
+
+> +		__entry->encode ? "encode":"decode",
+> +		__entry->bio ? "bio":"pge", __entry->i_ino, __entry->type,
+> +		__entry->bfr, __entry->aft, __entry->start, __entry->ret)
+> +
+> +);
+>  #endif /* _TRACE_BTRFS_H */
+>  
+>  /* This part must be outside protection */

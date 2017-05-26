@@ -1,36 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:37167 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750734AbdEJADu (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 May 2017 20:03:50 -0400
+Received: from userp1040.oracle.com ([156.151.31.81]:26122 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1948893AbdE0ApF (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 May 2017 20:45:05 -0400
 Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v4A03nWh011224
+        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v4R0j4qv030860
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 May 2017 00:03:50 GMT
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v4A03ndw008073
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 May 2017 00:03:49 GMT
-Received: from abhmp0017.oracle.com (abhmp0017.oracle.com [141.146.116.23])
-        by aserv0121.oracle.com (8.13.8/8.13.8) with ESMTP id v4A03lM9016079
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 May 2017 00:03:48 GMT
+        for <linux-btrfs@vger.kernel.org>; Sat, 27 May 2017 00:45:04 GMT
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v4R0j3XQ021244
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Sat, 27 May 2017 00:45:04 GMT
+Received: from abhmp0006.oracle.com (abhmp0006.oracle.com [141.146.116.12])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id v4R0j3XT019702
+        for <linux-btrfs@vger.kernel.org>; Sat, 27 May 2017 00:45:03 GMT
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: clear EXTENT_DEFRAG bits in finish_ordered_io
-Date: Tue,  9 May 2017 17:02:15 -0600
-Message-Id: <1494370935-19965-1-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH v2] Btrfs: clear EXTENT_DEFRAG bits in finish_ordered_io
+Date: Fri, 26 May 2017 17:44:23 -0600
+Message-Id: <20170526234423.25913-1-bo.li.liu@oracle.com>
+In-Reply-To: <1494370935-19965-1-git-send-email-bo.li.liu@oracle.com>
+References: <1494370935-19965-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Before this, we use 'filled' mode here, ie. if all range has been filled
-with EXTENT_DEFRAG bits, get to clear it, but if the defrag range joins
-the adjacent delalloc range, then we'll leave EXTENT_DEFRAG bits until
-evicting inode.
+Before this, we use 'filled' mode here, ie. if all range has been
+filled with EXTENT_DEFRAG bits, get to clear it, but if the defrag
+range joins the adjacent delalloc range, then we'll have EXTENT_DEFRAG
+bits in extent_state until releasing this inode's pages, and that
+prevents extent_date from being freed.
 
 This clears the bit if any was found within the ordered extent.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
+v2: Improve changelog.
+
  fs/btrfs/inode.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 

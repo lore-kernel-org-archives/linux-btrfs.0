@@ -1,216 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:30467 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1163785AbdEZHj1 (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:47657 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1163805AbdEZHjc (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 May 2017 03:39:27 -0400
+        Fri, 26 May 2017 03:39:32 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH 2/3 v2] btrfs: reduce arguments for decompress_bio ops
-Date: Fri, 26 May 2017 15:44:59 +0800
-Message-Id: <20170526074500.20342-3-anand.jain@oracle.com>
+Subject: [PATCH 3/3 v2] btrfs: add compression trace points
+Date: Fri, 26 May 2017 15:45:00 +0800
+Message-Id: <20170526074500.20342-4-anand.jain@oracle.com>
 In-Reply-To: <20170526074500.20342-1-anand.jain@oracle.com>
 References: <20170526074500.20342-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-struct compressed_bio pointer can be used instead.
+This patch adds compression and decompression trace points for the
+purpose of debugging.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
-v2: added this patch
- fs/btrfs/compression.c | 43 +------------------------------------------
- fs/btrfs/compression.h | 44 ++++++++++++++++++++++++++++++++++++++++----
- fs/btrfs/lzo.c         | 10 +++++-----
- fs/btrfs/zlib.c        |  9 +++++----
- 4 files changed, 51 insertions(+), 55 deletions(-)
+v2: no change
+ fs/btrfs/compression.c       | 10 ++++++++++
+ include/trace/events/btrfs.h | 36 ++++++++++++++++++++++++++++++++++++
+ 2 files changed, 46 insertions(+)
 
 diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index ee934e612f15..e426a8f427b5 100644
+index e426a8f427b5..490590e62a2f 100644
 --- a/fs/btrfs/compression.c
 +++ b/fs/btrfs/compression.c
-@@ -42,45 +42,6 @@
- #include "extent_io.h"
- #include "extent_map.h"
- 
--struct compressed_bio {
--	/* number of bios pending for this compressed extent */
--	refcount_t pending_bios;
--
--	/* the pages with the compressed data on them */
--	struct page **compressed_pages;
--
--	/* inode that owns this data */
--	struct inode *inode;
--
--	/* starting offset in the inode for our pages */
--	u64 start;
--
--	/* number of bytes in the inode we're working on */
--	unsigned long len;
--
--	/* number of bytes on disk */
--	unsigned long compressed_len;
--
--	/* the compression algorithm for this bio */
--	int compress_type;
--
--	/* number of compressed pages in the array */
--	unsigned long nr_pages;
--
--	/* IO errors */
--	int errors;
--	int mirror_num;
--
--	/* for reads, this is the bio we are copying the data into */
--	struct bio *orig_bio;
--
--	/*
--	 * the start of a variable length array of checksums only
--	 * used by reads
--	 */
--	u32 sums;
--};
--
- static int btrfs_decompress_bio(struct compressed_bio *cb);
- 
- static inline int compressed_bio_size(struct btrfs_fs_info *fs_info,
-@@ -964,9 +925,7 @@ static int btrfs_decompress_bio(struct compressed_bio *cb)
- 
- 	workspace = find_workspace(type);
- 
--	ret = btrfs_compress_op[type-1]->decompress_bio(workspace,
--			cb->compressed_pages, cb->start, cb->orig_bio,
--			cb->compressed_len);
-+	ret = btrfs_compress_op[type-1]->decompress_bio(workspace, cb);
- 
+@@ -899,6 +899,10 @@ int btrfs_compress_pages(int type, struct address_space *mapping,
+ 						      start, pages,
+ 						      out_pages,
+ 						      total_in, total_out);
++
++	trace_btrfs_encoder(1, 0, mapping->host, type, *total_in,
++						*total_out, start, ret);
++
  	free_workspace(type, workspace);
  	return ret;
-diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
-index 39ec43ab8df1..89bcf975efb8 100644
---- a/fs/btrfs/compression.h
-+++ b/fs/btrfs/compression.h
-@@ -34,6 +34,45 @@
- /* Maximum size of data before compression */
- #define BTRFS_MAX_UNCOMPRESSED		(SZ_128K)
+ }
+@@ -927,6 +931,9 @@ static int btrfs_decompress_bio(struct compressed_bio *cb)
  
-+struct compressed_bio {
-+	/* number of bios pending for this compressed extent */
-+	refcount_t pending_bios;
-+
-+	/* the pages with the compressed data on them */
-+	struct page **compressed_pages;
-+
-+	/* inode that owns this data */
-+	struct inode *inode;
-+
-+	/* starting offset in the inode for our pages */
-+	u64 start;
-+
-+	/* number of bytes in the inode we're working on */
-+	unsigned long len;
-+
-+	/* number of bytes on disk */
-+	unsigned long compressed_len;
-+
-+	/* the compression algorithm for this bio */
-+	int compress_type;
-+
-+	/* number of compressed pages in the array */
-+	unsigned long nr_pages;
-+
-+	/* IO errors */
-+	int errors;
-+	int mirror_num;
-+
-+	/* for reads, this is the bio we are copying the data into */
-+	struct bio *orig_bio;
-+
-+	/*
-+	 * the start of a variable length array of checksums only
-+	 * used by reads
-+	 */
-+	u32 sums;
-+};
-+
- void btrfs_init_compress(void);
- void btrfs_exit_compress(void);
+ 	ret = btrfs_compress_op[type-1]->decompress_bio(workspace, cb);
  
-@@ -78,10 +117,7 @@ struct btrfs_compress_op {
- 			      unsigned long *total_out);
- 
- 	int (*decompress_bio)(struct list_head *workspace,
--				 struct page **pages_in,
--				 u64 disk_start,
--				 struct bio *orig_bio,
--				 size_t srclen);
-+				struct compressed_bio *cb);
- 
- 	int (*decompress)(struct list_head *workspace,
- 			  unsigned char *data_in,
-diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
-index f48c8c14dc14..29b2e1319e6e 100644
---- a/fs/btrfs/lzo.c
-+++ b/fs/btrfs/lzo.c
-@@ -254,16 +254,13 @@ static int lzo_compress_pages(struct list_head *ws,
++	trace_btrfs_encoder(0, 1, cb->inode, type,
++				cb->compressed_len, cb->len, cb->start, ret);
++
+ 	free_workspace(type, workspace);
  	return ret;
  }
+@@ -948,6 +955,9 @@ int btrfs_decompress(int type, unsigned char *data_in, struct page *dest_page,
+ 						  dest_page, start_byte,
+ 						  srclen, destlen);
  
--static int lzo_decompress_bio(struct list_head *ws,
--				 struct page **pages_in,
--				 u64 disk_start,
--				 struct bio *orig_bio,
--				 size_t srclen)
-+static int lzo_decompress_bio(struct list_head *ws, struct compressed_bio *cb)
- {
- 	struct workspace *workspace = list_entry(ws, struct workspace, list);
- 	int ret = 0, ret2;
- 	char *data_in;
- 	unsigned long page_in_index = 0;
-+	size_t srclen = cb->compressed_len;
- 	unsigned long total_pages_in = DIV_ROUND_UP(srclen, PAGE_SIZE);
- 	unsigned long buf_start;
- 	unsigned long buf_offset = 0;
-@@ -278,6 +275,9 @@ static int lzo_decompress_bio(struct list_head *ws,
- 	unsigned long tot_len;
- 	char *buf;
- 	bool may_late_unmap, need_unmap;
-+	struct page **pages_in = cb->compressed_pages;
-+	u64 disk_start = cb->start;
-+	struct bio *orig_bio = cb->orig_bio;
- 
- 	data_in = kmap(pages_in[0]);
- 	tot_len = read_compress_length(data_in);
-diff --git a/fs/btrfs/zlib.c b/fs/btrfs/zlib.c
-index 135b10823c6d..c0f592406bb1 100644
---- a/fs/btrfs/zlib.c
-+++ b/fs/btrfs/zlib.c
-@@ -211,10 +211,7 @@ static int zlib_compress_pages(struct list_head *ws,
++	trace_btrfs_encoder(0, 0, dest_page->mapping->host,
++				type, srclen, destlen, start_byte, ret);
++
+ 	free_workspace(type, workspace);
  	return ret;
  }
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index e37973526153..1ebffcd005a1 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -1658,6 +1658,42 @@ TRACE_EVENT(qgroup_meta_reserve,
+ 		show_root_type(__entry->refroot), __entry->diff)
+ );
  
--static int zlib_decompress_bio(struct list_head *ws, struct page **pages_in,
--				  u64 disk_start,
--				  struct bio *orig_bio,
--				  size_t srclen)
-+static int zlib_decompress_bio(struct list_head *ws, struct compressed_bio *cb)
- {
- 	struct workspace *workspace = list_entry(ws, struct workspace, list);
- 	int ret = 0, ret2;
-@@ -222,8 +219,12 @@ static int zlib_decompress_bio(struct list_head *ws, struct page **pages_in,
- 	char *data_in;
- 	size_t total_out = 0;
- 	unsigned long page_in_index = 0;
-+	size_t srclen = cb->compressed_len;
- 	unsigned long total_pages_in = DIV_ROUND_UP(srclen, PAGE_SIZE);
- 	unsigned long buf_start;
-+	struct page **pages_in = cb->compressed_pages;
-+	u64 disk_start = cb->start;
-+	struct bio *orig_bio = cb->orig_bio;
++TRACE_EVENT(btrfs_encoder,
++
++	TP_PROTO(int encode, int bio, struct inode *inode, int type,
++			unsigned long bfr, unsigned long aft,
++			unsigned long start, int ret),
++
++	TP_ARGS(encode, bio, inode, type, bfr, aft, start, ret),
++
++	TP_STRUCT__entry_btrfs(
++		__field(	int,		encode)
++		__field(	int,		bio)
++		__field(	unsigned long,	i_ino)
++		__field(	int,		type)
++		__field(	unsigned long,	bfr)
++		__field(	unsigned long,	aft)
++		__field(	unsigned long,	start)
++		__field(	int,		ret)
++	),
++
++	TP_fast_assign_btrfs(btrfs_sb(inode->i_sb),
++		__entry->encode		= encode;
++		__entry->bio		= bio;
++		__entry->i_ino		= inode->i_ino;
++		__entry->type		= type;
++		__entry->bfr		= bfr;
++		__entry->aft		= aft;
++		__entry->start		= start;
++		__entry->ret		= ret;
++	),
++
++	TP_printk_btrfs("%s %s ino:%lu tfm:%d bfr:%lu aft:%lu start:%lu ret:%d",
++		__entry->encode ? "encode":"decode",
++		__entry->bio ? "bio":"pge", __entry->i_ino, __entry->type,
++		__entry->bfr, __entry->aft, __entry->start, __entry->ret)
++
++);
+ #endif /* _TRACE_BTRFS_H */
  
- 	data_in = kmap(pages_in[page_in_index]);
- 	workspace->strm.next_in = data_in;
+ /* This part must be outside protection */
 -- 
 2.10.0
 

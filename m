@@ -1,26 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37611 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1754058AbdEZSjp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 May 2017 14:39:45 -0400
-Date: Fri, 26 May 2017 20:38:45 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Su Yue <suy.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: tree-log.c: Wrong printk information about namelen
-Message-ID: <20170526183845.GO30842@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170524013132.7521-1-suy.fnst@cn.fujitsu.com>
+Received: from bombadil.infradead.org ([65.50.211.133]:57770 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S968176AbdEZI4a (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 May 2017 04:56:30 -0400
+From: Christoph Hellwig <hch@lst.de>
+To: axboe@kernel.dk
+Cc: linux-block@vger.kernel.org, dm-devel@redhat.com,
+        linux-btrfs@vger.kernel.org
+Subject: [PATCH 01/13] nvme-lightnvm: use blk_execute_rq in nvme_nvm_submit_user_cmd
+Date: Fri, 26 May 2017 11:56:08 +0300
+Message-Id: <20170526085620.3113-2-hch@lst.de>
+In-Reply-To: <20170526085620.3113-1-hch@lst.de>
+References: <20170526085620.3113-1-hch@lst.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170524013132.7521-1-suy.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 24, 2017 at 09:31:32AM +0800, Su Yue wrote:
-> In verify_dir_item, it wants to printk name_len of dir_item but
-> printk data_len acutally.
+Instead of reinventing it poorly.
 
-Good catch, thanks.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Reviewed-by: Bart Van Assche <Bart.VanAssche@sandisk.com>
+Reviewed-by: Javier González <javier@cnexlabs.com>
+---
+ drivers/nvme/host/lightnvm.c | 12 +-----------
+ 1 file changed, 1 insertion(+), 11 deletions(-)
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+diff --git a/drivers/nvme/host/lightnvm.c b/drivers/nvme/host/lightnvm.c
+index f5df78ed1e10..f3885b5e56bd 100644
+--- a/drivers/nvme/host/lightnvm.c
++++ b/drivers/nvme/host/lightnvm.c
+@@ -571,13 +571,6 @@ static struct nvm_dev_ops nvme_nvm_dev_ops = {
+ 	.max_phys_sect		= 64,
+ };
+ 
+-static void nvme_nvm_end_user_vio(struct request *rq, int error)
+-{
+-	struct completion *waiting = rq->end_io_data;
+-
+-	complete(waiting);
+-}
+-
+ static int nvme_nvm_submit_user_cmd(struct request_queue *q,
+ 				struct nvme_ns *ns,
+ 				struct nvme_nvm_command *vcmd,
+@@ -608,7 +601,6 @@ static int nvme_nvm_submit_user_cmd(struct request_queue *q,
+ 	rq->timeout = timeout ? timeout : ADMIN_TIMEOUT;
+ 
+ 	rq->cmd_flags &= ~REQ_FAILFAST_DRIVER;
+-	rq->end_io_data = &wait;
+ 
+ 	if (ppa_buf && ppa_len) {
+ 		ppa_list = dma_pool_alloc(dev->dma_pool, GFP_KERNEL, &ppa_dma);
+@@ -662,9 +654,7 @@ static int nvme_nvm_submit_user_cmd(struct request_queue *q,
+ 	}
+ 
+ submit:
+-	blk_execute_rq_nowait(q, NULL, rq, 0, nvme_nvm_end_user_vio);
+-
+-	wait_for_completion_io(&wait);
++	blk_execute_rq(q, NULL, rq, 0);
+ 
+ 	if (nvme_req(rq)->flags & NVME_REQ_CANCELLED)
+ 		ret = -EINTR;
+-- 
+2.11.0
+

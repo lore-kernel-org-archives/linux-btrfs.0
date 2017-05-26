@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:29634 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:3453 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1763605AbdEZCAa (ORCPT
+        with ESMTP id S1763832AbdEZCAa (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Thu, 25 May 2017 22:00:30 -0400
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-        by cn.fujitsu.com (Postfix) with ESMTP id BC03F47C6D3A
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 May 2017 10:00:26 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id 2058447C6103
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 May 2017 10:00:28 +0800 (CST)
 From: Su Yue <suy.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2 2/5] btrfs-progs: check: dir isize fix in lowmem
-Date: Fri, 26 May 2017 10:02:15 +0800
-Message-ID: <20170526020218.24502-3-suy.fnst@cn.fujitsu.com>
+Subject: [PATCH v2 3/5] btrfs-progs: check: enable lowmem repair
+Date: Fri, 26 May 2017 10:02:16 +0800
+Message-ID: <20170526020218.24502-4-suy.fnst@cn.fujitsu.com>
 In-Reply-To: <20170526020218.24502-1-suy.fnst@cn.fujitsu.com>
 References: <20170526020218.24502-1-suy.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,103 +19,32 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-After traversal of whole directory, we should get the actual isize.
-
-Introduce function 'repair_dir_isize_lowmem' to set isize in the directory
-inode item to actual size. After call of the function, the wrong dir isize
-should have been corrected.
+Enable btrfsck option '--repair' with option '--mode=lowmem'.
+Now lowmem mode only repairs wrong nbytes, dir isize.
 
 Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 ---
- cmds-check.c | 68 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 65 insertions(+), 3 deletions(-)
+ cmds-check.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
 
 diff --git a/cmds-check.c b/cmds-check.c
-index 2797ab9e..cf4d8e09 100644
+index cf4d8e09..58839314 100644
 --- a/cmds-check.c
 +++ b/cmds-check.c
-@@ -4915,6 +4915,62 @@ out:
- }
+@@ -12973,11 +12973,10 @@ int cmd_check(int argc, char **argv)
+ 	}
  
- /*
-+ * Set dir isize to @isize
-+ *
-+ * Returns <0  means on error
-+ * Returns  0  means successful repair
-+ */
-+static int repair_dir_isize_lowmem(struct btrfs_root *root,
-+				   struct btrfs_path *path,
-+				   u64 ino, u64 isize)
-+{
-+	struct btrfs_trans_handle *trans;
-+	struct btrfs_inode_item *ii;
-+	struct btrfs_key key;
-+	struct btrfs_key research_key;
-+	int ret;
-+	int ret2;
-+
-+	key.objectid = ino;
-+	key.type = BTRFS_INODE_ITEM_KEY;
-+	key.offset = 0;
-+
-+	btrfs_item_key_to_cpu(path->nodes[0], &research_key, path->slots[0]);
-+	btrfs_release_path(path);
-+
-+	trans = btrfs_start_transaction(root, 1);
-+	if (IS_ERR(trans)) {
-+		ret = PTR_ERR(trans);
-+		goto out;
-+	}
-+
-+	ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
-+	if (ret < 0)
-+		goto out;
-+	if (ret > 0) {
-+		ret = -ENOENT;
-+		goto out;
-+	}
-+
-+	ii = btrfs_item_ptr(path->nodes[0], path->slots[0],
-+			    struct btrfs_inode_item);
-+	btrfs_set_inode_size(path->nodes[0], ii, isize);
-+	btrfs_mark_buffer_dirty(path->nodes[0]);
-+
-+	printf("reset isize for inode %llu root %llu\n", ino,
-+	       root->root_key.objectid);
-+
-+	btrfs_commit_transaction(trans, root);
-+out:
-+	if (ret < 0)
-+		error("failed to reset isize for inode %llu root %llu due to %s",
-+		      ino, root->root_key.objectid, strerror(-ret));
-+	btrfs_release_path(path);
-+	ret2 = btrfs_search_slot(NULL, root, &research_key, path, 0, 0);
-+	return ret2 < 0 ? ret2 : ret;
-+}
-+
-+/*
-  * Check INODE_ITEM and related ITEMs (the same inode number)
-  * 1. check link count
-  * 2. check inode ref/extref
-@@ -5050,9 +5106,15 @@ out:
- 		}
+ 	/*
+-	 * Not supported yet
++	 * Support partially
+ 	 */
+ 	if (repair && check_mode == CHECK_MODE_LOWMEM) {
+-		error("low memory mode doesn't support repair yet");
+-		exit(1);
++		warning("low memory mode support repair partially");
+ 	}
  
- 		if (isize != size) {
--			err |= ISIZE_ERROR;
--			error("root %llu DIR INODE [%llu] size(%llu) not equal to %llu",
--			      root->objectid, inode_id, isize, size);
-+			if (repair)
-+				ret = repair_dir_isize_lowmem(root, path,
-+							      inode_id, size);
-+
-+			if (!repair || ret) {
-+				err |= ISIZE_ERROR;
-+				error("root %llu DIR INODE [%llu] size(%llu) not equal to %llu",
-+				      root->objectid, inode_id, isize, size);
-+			}
- 		}
- 	} else {
- 		if (nlink != refs) {
+ 	radix_tree_init();
 -- 
 2.13.0
 

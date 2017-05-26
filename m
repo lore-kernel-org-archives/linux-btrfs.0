@@ -1,68 +1,142 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:44353 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S934332AbdEZUDE (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:34930 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S944889AbdEZUWI (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 May 2017 16:03:04 -0400
-Date: Fri, 26 May 2017 13:01:11 -0700
+        Fri, 26 May 2017 16:22:08 -0400
+Date: Fri, 26 May 2017 13:20:14 -0700
 From: Liu Bo <bo.li.liu@oracle.com>
 To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 5/6] Btrfs: remove BUG() in add_data_reference
-Message-ID: <20170526200110.GC7859@lim.localdomain>
+Subject: Re: [PATCH 6/6] Btrfs: add sanity check of extent item in scrub
+Message-ID: <20170526202014.GD7859@lim.localdomain>
 Reply-To: bo.li.liu@oracle.com
 References: <20170526002631.8546-1-bo.li.liu@oracle.com>
- <20170526002631.8546-6-bo.li.liu@oracle.com>
- <20170526182011.GM30842@twin.jikos.cz>
+ <20170526002631.8546-7-bo.li.liu@oracle.com>
+ <20170526183316.GN30842@twin.jikos.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170526182011.GM30842@twin.jikos.cz>
+In-Reply-To: <20170526183316.GN30842@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 26, 2017 at 08:20:11PM +0200, David Sterba wrote:
-> On Thu, May 25, 2017 at 06:26:30PM -0600, Liu Bo wrote:
-> > Now that we have a helper to report invalid value of extent inline ref
-> > type, we need to quit gracefully instead of throwing out a kernel panic.
+On Fri, May 26, 2017 at 08:33:16PM +0200, David Sterba wrote:
+> On Thu, May 25, 2017 at 06:26:31PM -0600, Liu Bo wrote:
+> > Currently scrub only verify checksum of both metadata and data and
+> > couldn't detect an invalid extent_item.
+> 
+> This is a different kind of check that scrub was never designed to do.
+> Scrub just verifies the checksums, not the sructural integrity. This has
+> been referred to as an "on-line fsck". AFAIK xfs does not use 'scrub' in
+> the same sense as btrfs, so things are going to be confusing for the
+> users.
+> 
+> The on-line fsck is still desired, but I'd like to see a discussion how
+> exactly it should work, whether to extend scrub or add a new ioctl etc.
+>
+
+I was hesitating about scrub vs online fsck when posting, just thought
+it'd be good when users got this error while doing a regular scrub
+ahead of really getting into trouble.  If we have a plan for online
+fsck, I'm happy to let fsck do the job.
+
+Or we can do this kind of sanity check at the time when reading the
+eb.
+
+Thanks,
+-liubo
+
+> > This adds sanity check for extent item, now it can check if
+> > extent_inline_ref_type is valid.
 > > 
 > > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 > > ---
-> >  fs/btrfs/relocation.c | 5 ++++-
-> >  1 file changed, 4 insertions(+), 1 deletion(-)
+> >  fs/btrfs/scrub.c | 43 +++++++++++++++++++++++++++++++++++++++++++
+> >  1 file changed, 43 insertions(+)
 > > 
-> > diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-> > index b043e200..8b984bd 100644
-> > --- a/fs/btrfs/relocation.c
-> > +++ b/fs/btrfs/relocation.c
-> > @@ -3774,7 +3774,10 @@ int add_data_references(struct reloc_control *rc,
-> >  			ret = find_data_references(rc, extent_key,
-> >  						   eb, dref, blocks);
-> >  		} else {
-> > -			BUG();
-> > +			ret = -EINVAL;
-> > +			WARN(1,
-> > +			     "extent %llu has an invalid inline ref type\n",
-> > +			     eb->start);
+> > diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+> > index b0251eb..e87b752 100644
+> > --- a/fs/btrfs/scrub.c
+> > +++ b/fs/btrfs/scrub.c
+> > @@ -3058,6 +3058,39 @@ static noinline_for_stack int scrub_raid56_parity(struct scrub_ctx *sctx,
+> >  	return ret < 0 ? ret : 0;
+> >  }
+> >  
+> > +static int check_extent_item(struct extent_buffer *l, int slot,
 > 
-> Would be good to extend the error message, also in the previous patch.
-> Print inode number, root id and the (invalid ref) type.
+> Please use 'eb' for the extent_buffer.
 > 
+> > +			     struct btrfs_extent_item *ei, int key_type)
+> 
+> key_type should be u8
+> 
+> > +{
+> > +	unsigned long ptr;
+> > +	unsigned long end;
+> > +	struct btrfs_extent_inline_ref *iref;
+> > +	u64 flags = btrfs_extent_flags(l, ei);
+> > +	int is_data = !!(flags & BTRFS_EXTENT_FLAG_DATA);
+> > +	int type;
+> > +
+> > +	ptr = (unsigned long)(ei + 1);
+> > +	if (!is_data &&
+> > +	    key_type != BTRFS_METADATA_ITEM_KEY)
+> > +		ptr += sizeof(struct btrfs_tree_block_info);
+> > +	end = (unsigned long)ei +
+> > +		btrfs_item_size_nr(l, slot);
+> 
+> This will fit to one line
+> 
+> > +
+> > +	while (1) {
+> > +		if (ptr >= end) {
+> > +			WARN_ON(ptr > end);
+> 
+> Please add some verbose error message or get rid of the WARN_ON
+> completely if possible.
+> 
+> > +			break;
+> > +		}
+> > +
+> > +		iref = (struct btrfs_extent_inline_ref *)ptr;
+> > +		type = btrfs_get_extent_inline_ref_type(l, iref, is_data);
+> > +		if (type < 0)
+> > +			return type;
+> > +
+> > +		ptr += btrfs_extent_inline_ref_size(type);
+> > +	}
+> > +	return 0;
+> > +}
+> > +
+> >  static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+> >  					   struct map_lookup *map,
+> >  					   struct btrfs_device *scrub_dev,
+> > @@ -3318,6 +3351,16 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+> >  				goto next;
+> >  			}
+> >  
+> > +			/* sanity check for extent inline ref type */
+> > +			if (check_extent_item(l, slot, extent, key.type)) {
+> > +				btrfs_err(fs_info,
+> > +					  "scrub: extent %llu(0x%llx) has an invalid extent inline ref type, ignored.",
+> 
+> Strings can be un-indented to the left.
+> 
+> > +					  key.objectid, key.objectid);
+> > +				spin_lock(&sctx->stat_lock);
+> > +				sctx->stat.uncorrectable_errors++;
+> 
+> Yeah, this is an example where the uncorrectable_error would gain a new
+> meaning. We'd need to extend the scrub error reporting so the various
+> metadata errors get reported properly and not mangled with the rest.
+> 
+> > +				spin_unlock(&sctx->stat_lock);
+> > +				goto next;
+> > +			}
+> >  again:
+> >  			extent_logical = key.objectid;
+> >  			extent_len = bytes;
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-I've printed out the whole leaf's content in the helper
-btrfs_get_extent_inline_ref_type if type is not valid, and it shows
-the invalid ref type.
-
-For inode number and root id, it's not available in this relocation
-case, I'll check that in other patches.
-
-thanks,
--liubo
-> >  		}
-> >  		if (ret) {
-> >  			err = ret;
-> > -- 
-> > 2.9.4
-> > 
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html

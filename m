@@ -1,70 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36245 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:36425 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1948560AbdEZSTX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 May 2017 14:19:23 -0400
-Date: Fri, 26 May 2017 20:18:22 +0200
+        id S1753817AbdEZSVL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 May 2017 14:21:11 -0400
+Date: Fri, 26 May 2017 20:20:11 +0200
 From: David Sterba <dsterba@suse.cz>
 To: Liu Bo <bo.li.liu@oracle.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 4/6] Btrfs: remove BUG() in print_extent_item
-Message-ID: <20170526181822.GL30842@twin.jikos.cz>
+Subject: Re: [PATCH 5/6] Btrfs: remove BUG() in add_data_reference
+Message-ID: <20170526182011.GM30842@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <20170526002631.8546-1-bo.li.liu@oracle.com>
- <20170526002631.8546-5-bo.li.liu@oracle.com>
+ <20170526002631.8546-6-bo.li.liu@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170526002631.8546-5-bo.li.liu@oracle.com>
+In-Reply-To: <20170526002631.8546-6-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 25, 2017 at 06:26:29PM -0600, Liu Bo wrote:
-> btrfs_print_leaf() is used in btrfs_get_extent_inline_ref_type, so
-> here we really want to print the invalid value of ref type instead of
-> causing a kernel panic.
+On Thu, May 25, 2017 at 06:26:30PM -0600, Liu Bo wrote:
+> Now that we have a helper to report invalid value of extent inline ref
+> type, we need to quit gracefully instead of throwing out a kernel panic.
 > 
 > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 > ---
->  fs/btrfs/print-tree.c | 8 +++++++-
->  1 file changed, 7 insertions(+), 1 deletion(-)
+>  fs/btrfs/relocation.c | 5 ++++-
+>  1 file changed, 4 insertions(+), 1 deletion(-)
 > 
-> diff --git a/fs/btrfs/print-tree.c b/fs/btrfs/print-tree.c
-> index fcae61e..4448be6 100644
-> --- a/fs/btrfs/print-tree.c
-> +++ b/fs/btrfs/print-tree.c
-> @@ -63,6 +63,7 @@ static void print_extent_item(struct extent_buffer *eb, int slot, int type)
->  	u32 item_size = btrfs_item_size_nr(eb, slot);
->  	u64 flags;
->  	u64 offset;
-> +	int is_data;
->  
->  	if (item_size < sizeof(*ei)) {
->  #ifdef BTRFS_COMPAT_EXTENT_TREE_V0
-> @@ -98,6 +99,8 @@ static void print_extent_item(struct extent_buffer *eb, int slot, int type)
->  		iref = (struct btrfs_extent_inline_ref *)(ei + 1);
->  	}
->  
-> +	is_data = !!(flags & BTRFS_EXTENT_FLAG_DATA);
-> +
->  	ptr = (unsigned long)iref;
->  	end = (unsigned long)ei + item_size;
->  	while (ptr < end) {
-> @@ -121,7 +124,10 @@ static void print_extent_item(struct extent_buffer *eb, int slot, int type)
->  			       offset, btrfs_shared_data_ref_count(eb, sref));
->  			break;
->  		default:
+> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+> index b043e200..8b984bd 100644
+> --- a/fs/btrfs/relocation.c
+> +++ b/fs/btrfs/relocation.c
+> @@ -3774,7 +3774,10 @@ int add_data_references(struct reloc_control *rc,
+>  			ret = find_data_references(rc, extent_key,
+>  						   eb, dref, blocks);
+>  		} else {
 > -			BUG();
-> +			btrfs_err(eb->fs_info,
-> +				  "extent %llu has invalid ref type %d\n",
-> +				  eb->start, type);
-> +			return;
+> +			ret = -EINVAL;
+> +			WARN(1,
+> +			     "extent %llu has an invalid inline ref type\n",
+> +			     eb->start);
 
-I don't see is_data used anywhere, also not in the followup patches.
-Please use a bool type in case it's valid here.
+Would be good to extend the error message, also in the previous patch.
+Print inode number, root id and the (invalid ref) type.
 
 >  		}
->  		ptr += btrfs_extent_inline_ref_size(type);
->  	}
+>  		if (ret) {
+>  			err = ret;
 > -- 
 > 2.9.4
 > 

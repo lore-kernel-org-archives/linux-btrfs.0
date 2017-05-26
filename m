@@ -1,68 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:37675 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1948803AbdEZWde (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:41163 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S937249AbdEZTx7 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 May 2017 18:33:34 -0400
-Subject: Re: [PATCH 2/3 v2] btrfs: reduce arguments for decompress_bio ops
-To: kbuild test robot <lkp@intel.com>
-References: <201705262134.qiqSOktg%fengguang.wu@intel.com>
-Cc: kbuild-all@01.org, linux-btrfs@vger.kernel.org, dsterba@suse.cz
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <fa81b0d9-71a1-d78b-b1bd-e983214e454a@oracle.com>
-Date: Sat, 27 May 2017 06:39:22 +0800
+        Fri, 26 May 2017 15:53:59 -0400
+Date: Fri, 26 May 2017 12:52:06 -0700
+From: Liu Bo <bo.li.liu@oracle.com>
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 4/6] Btrfs: remove BUG() in print_extent_item
+Message-ID: <20170526195206.GB7859@lim.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <20170526002631.8546-1-bo.li.liu@oracle.com>
+ <20170526002631.8546-5-bo.li.liu@oracle.com>
+ <20170526181822.GL30842@twin.jikos.cz>
 MIME-Version: 1.0
-In-Reply-To: <201705262134.qiqSOktg%fengguang.wu@intel.com>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170526181822.GL30842@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Fri, May 26, 2017 at 08:18:22PM +0200, David Sterba wrote:
+> On Thu, May 25, 2017 at 06:26:29PM -0600, Liu Bo wrote:
+> > btrfs_print_leaf() is used in btrfs_get_extent_inline_ref_type, so
+> > here we really want to print the invalid value of ref type instead of
+> > causing a kernel panic.
+> > 
+> > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> > ---
+> >  fs/btrfs/print-tree.c | 8 +++++++-
+> >  1 file changed, 7 insertions(+), 1 deletion(-)
+> > 
+> > diff --git a/fs/btrfs/print-tree.c b/fs/btrfs/print-tree.c
+> > index fcae61e..4448be6 100644
+> > --- a/fs/btrfs/print-tree.c
+> > +++ b/fs/btrfs/print-tree.c
+> > @@ -63,6 +63,7 @@ static void print_extent_item(struct extent_buffer *eb, int slot, int type)
+> >  	u32 item_size = btrfs_item_size_nr(eb, slot);
+> >  	u64 flags;
+> >  	u64 offset;
+> > +	int is_data;
+> >  
+> >  	if (item_size < sizeof(*ei)) {
+> >  #ifdef BTRFS_COMPAT_EXTENT_TREE_V0
+> > @@ -98,6 +99,8 @@ static void print_extent_item(struct extent_buffer *eb, int slot, int type)
+> >  		iref = (struct btrfs_extent_inline_ref *)(ei + 1);
+> >  	}
+> >  
+> > +	is_data = !!(flags & BTRFS_EXTENT_FLAG_DATA);
+> > +
+> >  	ptr = (unsigned long)iref;
+> >  	end = (unsigned long)ei + item_size;
+> >  	while (ptr < end) {
+> > @@ -121,7 +124,10 @@ static void print_extent_item(struct extent_buffer *eb, int slot, int type)
+> >  			       offset, btrfs_shared_data_ref_count(eb, sref));
+> >  			break;
+> >  		default:
+> > -			BUG();
+> > +			btrfs_err(eb->fs_info,
+> > +				  "extent %llu has invalid ref type %d\n",
+> > +				  eb->start, type);
+> > +			return;
+> 
+> I don't see is_data used anywhere, also not in the followup patches.
+> Please use a bool type in case it's valid here.
+>
+
+Good catch, I should remove is_data since it uses the original
+btrfs_extent_inline_ref_type directly, will update it.
+
+thanks,
+-liubo
 
 
-On 05/26/2017 10:07 PM, kbuild test robot wrote:
-> Hi Anand,
->
-> [auto build test ERROR on tip/perf/core]
-> [also build test ERROR on v4.12-rc2 next-20170526]
-> [cannot apply to btrfs/next]
-> [if your patch is applied to the wrong git tree, please drop us a note to help improve the system]
->
-> url:    https://github.com/0day-ci/linux/commits/Anand-Jain/compression-ops-args-clean-up-and-trace-point/20170526-184159
-> config: s390-default_defconfig (attached as .config)
-> compiler: s390x-linux-gnu-gcc (Debian 6.1.1-9) 6.1.1 20160705
-> reproduce:
->         wget https://raw.githubusercontent.com/01org/lkp-tests/master/sbin/make.cross -O ~/bin/make.cross
->         chmod +x ~/bin/make.cross
->         # save the attached .config to linux build tree
->         make.cross ARCH=s390
->
-> All errors (new ones prefixed by >>):
->
->    In file included from fs/btrfs/zlib.c:33:0:
->>> fs/btrfs/compression.h:39:2: error: unknown type name 'refcount_t'
->      refcount_t pending_bios;
->      ^~~~~~~~~~
-
-  Ok . Thanks. Fixed this with.
-     fixup: btrfs: reduce arguments for decompress_bio ops
-
--Anand
-
-
-> vim +/refcount_t +39 fs/btrfs/compression.h
->
->     33	#define BTRFS_MAX_COMPRESSED		(SZ_128K)
->     34	/* Maximum size of data before compression */
->     35	#define BTRFS_MAX_UNCOMPRESSED		(SZ_128K)
->     36	
->     37	struct compressed_bio {
->     38		/* number of bios pending for this compressed extent */
->   > 39		refcount_t pending_bios;
->     40	
->     41		/* the pages with the compressed data on them */
->     42		struct page **compressed_pages;
->
-> ---
-> 0-DAY kernel test infrastructure                Open Source Technology Center
-> https://lists.01.org/pipermail/kbuild-all                   Intel Corporation
->
+> >  		}
+> >  		ptr += btrfs_extent_inline_ref_size(type);
+> >  	}
+> > -- 
+> > 2.9.4
+> > 
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html

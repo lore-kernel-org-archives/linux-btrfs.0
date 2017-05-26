@@ -1,35 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-34.italiaonline.it ([212.48.25.162]:39269 "EHLO libero.it"
+Received: from mx2.suse.de ([195.135.220.15]:39254 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S944490AbdEZShf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 May 2017 14:37:35 -0400
-Reply-To: kreijack@inwind.it
-Subject: Re: [PATCH v4 00/20] Btrfs-progs offline scrub
-References: <20170525062205.11660-1-quwenruo@cn.fujitsu.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, lakshmipathi.g@gmail.com
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Message-ID: <e4e15f16-c6b7-a18a-57df-7f404d38107b@inwind.it>
-Date: Fri, 26 May 2017 20:37:30 +0200
+        id S1754134AbdEZTJn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 May 2017 15:09:43 -0400
+Date: Fri, 26 May 2017 21:08:43 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Sargun Dhillon <sargun@sargun.me>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 5/8] btrfs: qgroup.h whitespace change
+Message-ID: <20170526190843.GP30842@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170520083826.GA4176@ircssh-2.c.rugged-nimbus-611.internal>
+ <20170520083935.GA4235@ircssh-2.c.rugged-nimbus-611.internal>
 MIME-Version: 1.0
-In-Reply-To: <20170525062205.11660-1-quwenruo@cn.fujitsu.com>
-Content-Type: text/plain; charset=windows-1252
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170520083935.GA4235@ircssh-2.c.rugged-nimbus-611.internal>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Qu,
+On Sat, May 20, 2017 at 08:39:37AM +0000, Sargun Dhillon wrote:
+> This patch is just changing whitespace alignment in qgroup.h
 
-On 2017-05-25 08:21, Qu Wenruo wrote:
+>  int btrfs_remove_qgroup(struct btrfs_trans_handle *trans,
+> -			      struct btrfs_fs_info *fs_info, u64 qgroupid);
+> +			struct btrfs_fs_info *fs_info, u64 qgroupid);
 
-> And since kernel scrub won't account P/Q corruption, it makes us quite
-> hard to detect error like kernel screwing up P/Q when scrubbing.
+Please don't send such changes.
 
-could you elaborate the above sentence: in my test the kernel-scrub (4.12.0-rc2) is able to correct a wrong 'P' parity; am I missing something ?
+https://btrfs.wiki.kernel.org/index.php/Developer%27s_FAQ#How_not_to_start
 
-BR
-G.Baroncelli
-[...]
+https://btrfs.wiki.kernel.org/index.php/Project_ideas#Cleanup_projects
 
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+"Please note that pure whitespace and style reformatting changes are not
+really necessary at this phase of development. They get fixed along
+regular changes. Possibly once upon in a while a patch that fixes many
+if not all whitespace errors could work, but otherwise it's considered a
+noise. "

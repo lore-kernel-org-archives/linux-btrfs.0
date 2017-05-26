@@ -1,103 +1,199 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:27529 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1946506AbdEZB1N (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:45841 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1946511AbdEZB1P (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 May 2017 21:27:13 -0400
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v4Q1RCAP010322
+        Thu, 25 May 2017 21:27:15 -0400
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v4Q1RE70003063
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 May 2017 01:27:13 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id v4Q1RCdH025276
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 May 2017 01:27:12 GMT
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 May 2017 01:27:14 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v4Q1REBG031362
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 May 2017 01:27:14 GMT
 Received: from abhmp0005.oracle.com (abhmp0005.oracle.com [141.146.116.11])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id v4Q1RBaE013225
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 May 2017 01:27:11 GMT
+        by aserv0121.oracle.com (8.13.8/8.13.8) with ESMTP id v4Q1RCAB024813
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 May 2017 01:27:13 GMT
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/6] Btrfs: add a helper to retrive extent inline ref type
-Date: Thu, 25 May 2017 18:26:26 -0600
-Message-Id: <20170526002631.8546-2-bo.li.liu@oracle.com>
+Subject: [PATCH 2/6] Btrfs: convert to use btrfs_get_extent_inline_ref_type
+Date: Thu, 25 May 2017 18:26:27 -0600
+Message-Id: <20170526002631.8546-3-bo.li.liu@oracle.com>
 In-Reply-To: <20170526002631.8546-1-bo.li.liu@oracle.com>
 References: <20170526002631.8546-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-An invalid value of extent inline ref type may be read from a
-malicious image which may force btrfs to crash.
-
-This adds a helper which does sanity check for the ref type, so we can
-know if it's sane, return type if so, otherwise return an error.
+Since we have a helper which can do sanity check, this converts all
+btrfs_extent_inline_ref_type to it.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/ctree.h       |  4 ++++
- fs/btrfs/extent-tree.c | 35 +++++++++++++++++++++++++++++++++++
- 2 files changed, 39 insertions(+)
+ fs/btrfs/backref.c     |  9 +++++++--
+ fs/btrfs/extent-tree.c | 33 ++++++++++++++++++++++++++-------
+ fs/btrfs/relocation.c  | 15 +++++++++++++--
+ 3 files changed, 46 insertions(+), 11 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index c411590..206ae8c 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2542,6 +2542,10 @@ static inline gfp_t btrfs_alloc_write_mask(struct address_space *mapping)
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index 7699e16..6ffc6bb 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -1009,7 +1009,10 @@ static int __add_inline_refs(struct btrfs_path *path, u64 bytenr,
+ 		int type;
  
- /* extent-tree.c */
- 
-+int btrfs_get_extent_inline_ref_type(struct extent_buffer *eb,
-+				     struct btrfs_extent_inline_ref *iref,
-+				     int is_data);
+ 		iref = (struct btrfs_extent_inline_ref *)ptr;
+-		type = btrfs_extent_inline_ref_type(leaf, iref);
++		type = btrfs_get_extent_inline_ref_type(leaf, iref, 2);
++		if (type == -EINVAL)
++			return -EINVAL;
 +
- u64 btrfs_csum_bytes_to_leaves(struct btrfs_fs_info *fs_info, u64 csum_bytes);
+ 		offset = btrfs_extent_inline_ref_offset(leaf, iref);
  
- static inline u64 btrfs_calc_trans_metadata_size(struct btrfs_fs_info *fs_info,
+ 		switch (type) {
+@@ -1905,7 +1908,9 @@ static int __get_extent_inline_ref(unsigned long *ptr, struct extent_buffer *eb,
+ 
+ 	end = (unsigned long)ei + item_size;
+ 	*out_eiref = (struct btrfs_extent_inline_ref *)(*ptr);
+-	*out_type = btrfs_extent_inline_ref_type(eb, *out_eiref);
++	*out_type = btrfs_get_extent_inline_ref_type(eb, *out_eiref, 2);
++	if (*out_type == -EINVAL)
++		return -EINVAL;
+ 
+ 	*ptr += btrfs_extent_inline_ref_size(*out_type);
+ 	WARN_ON(*ptr > end);
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index be54776..fba8ca0 100644
+index fba8ca0..ecbed56 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -1117,6 +1117,41 @@ static int convert_extent_item_v0(struct btrfs_trans_handle *trans,
- }
- #endif
+@@ -1421,12 +1421,18 @@ static noinline u32 extent_data_ref_count(struct btrfs_path *path,
+ 	struct btrfs_extent_data_ref *ref1;
+ 	struct btrfs_shared_data_ref *ref2;
+ 	u32 num_refs = 0;
++	int type;
  
-+/*
-+ * is_data == 0, tree block type is required,
-+ * is_data == 1, data type is requried,
-+ * is_data == 2, either type is OK.
-+ */
-+int btrfs_get_extent_inline_ref_type(struct extent_buffer *eb,
-+				     struct btrfs_extent_inline_ref *iref,
-+				     int is_data)
-+{
-+	int type = btrfs_extent_inline_ref_type(eb, iref);
-+
-+	if (type == BTRFS_TREE_BLOCK_REF_KEY ||
-+	    type == BTRFS_SHARED_BLOCK_REF_KEY ||
-+	    type == BTRFS_SHARED_DATA_REF_KEY ||
-+	    type == BTRFS_EXTENT_DATA_REF_KEY) {
-+		if (is_data == 2) {
-+			return type;
-+		} else if (is_data == 1) {
-+			if (type == BTRFS_EXTENT_DATA_REF_KEY ||
-+			    type == BTRFS_SHARED_DATA_REF_KEY)
-+				return type;
-+		} else {
-+			if (type == BTRFS_TREE_BLOCK_REF_KEY ||
-+			    type == BTRFS_SHARED_BLOCK_REF_KEY)
-+				return type;
+ 	leaf = path->nodes[0];
+ 	btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
+ 	if (iref) {
+-		if (btrfs_extent_inline_ref_type(leaf, iref) ==
+-		    BTRFS_EXTENT_DATA_REF_KEY) {
++		/*
++		 * If type is invalid, we should have bailed out earlier than
++		 * this call.
++		 */
++		type = btrfs_get_extent_inline_ref_type(leaf, iref, 1);
++		ASSERT(type > 0);
++		if (type == BTRFS_EXTENT_DATA_REF_KEY) {
+ 			ref1 = (struct btrfs_extent_data_ref *)(&iref->offset);
+ 			num_refs = btrfs_extent_data_ref_count(leaf, ref1);
+ 		} else {
+@@ -1587,6 +1593,7 @@ int lookup_inline_extent_backref(struct btrfs_trans_handle *trans,
+ 	int ret;
+ 	int err = 0;
+ 	bool skinny_metadata = btrfs_fs_incompat(fs_info, SKINNY_METADATA);
++	int is_data = !!(owner >= BTRFS_FIRST_FREE_OBJECTID);
+ 
+ 	key.objectid = bytenr;
+ 	key.type = BTRFS_EXTENT_ITEM_KEY;
+@@ -1603,7 +1610,7 @@ int lookup_inline_extent_backref(struct btrfs_trans_handle *trans,
+ 	 * Owner is our parent level, so we can just add one to get the level
+ 	 * for the block we are interested in.
+ 	 */
+-	if (skinny_metadata && owner < BTRFS_FIRST_FREE_OBJECTID) {
++	if (skinny_metadata && !is_data) {
+ 		key.type = BTRFS_METADATA_ITEM_KEY;
+ 		key.offset = owner;
+ 	}
+@@ -1685,7 +1692,12 @@ int lookup_inline_extent_backref(struct btrfs_trans_handle *trans,
+ 			break;
+ 		}
+ 		iref = (struct btrfs_extent_inline_ref *)ptr;
+-		type = btrfs_extent_inline_ref_type(leaf, iref);
++		type = btrfs_get_extent_inline_ref_type(leaf, iref, is_data);
++		if (type == -EINVAL) {
++			err = -EINVAL;
++			goto out;
 +		}
-+	}
 +
-+	btrfs_print_leaf(eb->fs_info, eb);
-+	WARN(1, "eb %llu(%s block) invalid extent inline ref type %d\n",
-+	     eb->start, (is_data) ? "data" : "tree", type);
+ 		if (want < type)
+ 			break;
+ 		if (want > type) {
+@@ -1877,7 +1889,12 @@ void update_inline_extent_backref(struct btrfs_fs_info *fs_info,
+ 	if (extent_op)
+ 		__run_delayed_extent_op(extent_op, leaf, ei);
+ 
+-	type = btrfs_extent_inline_ref_type(leaf, iref);
++	/*
++	 * If type is invalid, we should have bailed out after
++	 * lookup_inline_extent_backref().
++	 */
++	type = btrfs_get_extent_inline_ref_type(leaf, iref, 2);
++	ASSERT(type > 0);
+ 
+ 	if (type == BTRFS_EXTENT_DATA_REF_KEY) {
+ 		dref = (struct btrfs_extent_data_ref *)(&iref->offset);
+@@ -3146,6 +3163,7 @@ static noinline int check_committed_ref(struct btrfs_root *root,
+ 	struct btrfs_extent_item *ei;
+ 	struct btrfs_key key;
+ 	u32 item_size;
++	int type;
+ 	int ret;
+ 
+ 	key.objectid = bytenr;
+@@ -3187,8 +3205,9 @@ static noinline int check_committed_ref(struct btrfs_root *root,
+ 		goto out;
+ 
+ 	iref = (struct btrfs_extent_inline_ref *)(ei + 1);
+-	if (btrfs_extent_inline_ref_type(leaf, iref) !=
+-	    BTRFS_EXTENT_DATA_REF_KEY)
 +
-+	return -EINVAL;
-+}
++	type = btrfs_get_extent_inline_ref_type(leaf, iref, 1);
++	if (type != BTRFS_EXTENT_DATA_REF_KEY)
+ 		goto out;
+ 
+ 	ref = (struct btrfs_extent_data_ref *)(&iref->offset);
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index d60df51..b043e200 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -799,9 +799,16 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
+ 		if (ptr < end) {
+ 			/* update key for inline back ref */
+ 			struct btrfs_extent_inline_ref *iref;
++			int type;
+ 			iref = (struct btrfs_extent_inline_ref *)ptr;
+-			key.type = btrfs_extent_inline_ref_type(eb, iref);
++			type = btrfs_get_extent_inline_ref_type(eb, iref, 0);
++			if (type < 0) {
++				ret = type;
++				goto out;
++			}
++			key.type = type;
+ 			key.offset = btrfs_extent_inline_ref_offset(eb, iref);
 +
- static u64 hash_extent_data_ref(u64 root_objectid, u64 owner, u64 offset)
- {
- 	u32 high_crc = ~(u32)0;
+ 			WARN_ON(key.type != BTRFS_TREE_BLOCK_REF_KEY &&
+ 				key.type != BTRFS_SHARED_BLOCK_REF_KEY);
+ 		}
+@@ -3740,6 +3747,7 @@ int add_data_references(struct reloc_control *rc,
+ 	u32 blocksize = rc->extent_root->fs_info->nodesize;
+ 	int ret = 0;
+ 	int err = 0;
++	int type = 0;
+ 
+ 	eb = path->nodes[0];
+ 	ptr = btrfs_item_ptr_offset(eb, path->slots[0]);
+@@ -3753,7 +3761,10 @@ int add_data_references(struct reloc_control *rc,
+ 
+ 	while (ptr < end) {
+ 		iref = (struct btrfs_extent_inline_ref *)ptr;
+-		key.type = btrfs_extent_inline_ref_type(eb, iref);
++		type = btrfs_get_extent_inline_ref_type(eb, iref, 1);
++		if (type < 0)
++			key.type = 0;
++
+ 		if (key.type == BTRFS_SHARED_DATA_REF_KEY) {
+ 			key.offset = btrfs_extent_inline_ref_offset(eb, iref);
+ 			ret = __add_tree_block(rc, key.offset, blocksize,
 -- 
 2.9.4
 

@@ -1,43 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([65.50.211.133]:36995 "EHLO
+Received: from bombadil.infradead.org ([65.50.211.133]:48075 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S967663AbdEZI43 (ORCPT
+        with ESMTP id S967663AbdEZI4e (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 May 2017 04:56:29 -0400
+        Fri, 26 May 2017 04:56:34 -0400
 From: Christoph Hellwig <hch@lst.de>
 To: axboe@kernel.dk
 Cc: linux-block@vger.kernel.org, dm-devel@redhat.com,
         linux-btrfs@vger.kernel.org
-Subject: dedicated error codes for the block layer V2
-Date: Fri, 26 May 2017 11:56:07 +0300
-Message-Id: <20170526085620.3113-1-hch@lst.de>
+Subject: [PATCH 02/13] scsi/osd: don't save block errors into req_results
+Date: Fri, 26 May 2017 11:56:09 +0300
+Message-Id: <20170526085620.3113-3-hch@lst.de>
+In-Reply-To: <20170526085620.3113-1-hch@lst.de>
+References: <20170526085620.3113-1-hch@lst.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This series introduces a new blk_status_t error code type for the block
-layer so that we can have tigher control and explicit semantics for
-block layer errors.
+We will only have sense data if the command exectured and got a SCSI
+result, so this is pointless.
 
-All but the last three patches are cleanups that lead to the new type.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ drivers/scsi/osd/osd_initiator.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-The series it mostly limited to the block layer and drivers, and touching
-file systems a little bit.  The only major exception is btrfs, which
-does funny things with bios and thus sees a larger amount of propagation
-of the new blk_status_t.
+diff --git a/drivers/scsi/osd/osd_initiator.c b/drivers/scsi/osd/osd_initiator.c
+index 8a1b94816419..14785177ce7b 100644
+--- a/drivers/scsi/osd/osd_initiator.c
++++ b/drivers/scsi/osd/osd_initiator.c
+@@ -477,7 +477,7 @@ static void _set_error_resid(struct osd_request *or, struct request *req,
+ 			     int error)
+ {
+ 	or->async_error = error;
+-	or->req_errors = scsi_req(req)->result ? : error;
++	or->req_errors = scsi_req(req)->result;
+ 	or->sense_len = scsi_req(req)->sense_len;
+ 	if (or->sense_len)
+ 		memcpy(or->sense, scsi_req(req)->sense, or->sense_len);
+-- 
+2.11.0
 
-A git tree is also available at:
-
-    git://git.infradead.org/users/hch/block.git block-errors
-
-gitweb:
-
-    http://git.infradead.org/users/hch/block.git/shortlog/refs/heads/block-errors
-
-Note the the two biggest patches didn't make it to linux-block and
-linux-btrfs last time.  If you didn't get them they are available in
-the git tree above.  Unfortunately there is no easy way to split them
-up.
-
-Changes since V1: 
- - keep blk_types.h for now
- - removed a BUG_ON in dm-mpath

@@ -1,88 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36077 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:36245 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1753907AbdEZSQR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 May 2017 14:16:17 -0400
-Date: Fri, 26 May 2017 20:15:17 +0200
+        id S1948560AbdEZSTX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 May 2017 14:19:23 -0400
+Date: Fri, 26 May 2017 20:18:22 +0200
 From: David Sterba <dsterba@suse.cz>
-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
-        Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/6] Btrfs: add a helper to retrive extent inline ref type
-Message-ID: <20170526181517.GK30842@twin.jikos.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 4/6] Btrfs: remove BUG() in print_extent_item
+Message-ID: <20170526181822.GL30842@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <20170526002631.8546-1-bo.li.liu@oracle.com>
- <20170526002631.8546-2-bo.li.liu@oracle.com>
- <cb0f4c50-3871-b688-161a-912628f7dcdb@suse.com>
- <20170526181305.GJ30842@twin.jikos.cz>
+ <20170526002631.8546-5-bo.li.liu@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170526181305.GJ30842@twin.jikos.cz>
+In-Reply-To: <20170526002631.8546-5-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 26, 2017 at 08:13:05PM +0200, David Sterba wrote:
-> On Fri, May 26, 2017 at 10:09:54AM +0300, Nikolay Borisov wrote:
-> > 
-> > 
-> > On 26.05.2017 03:26, Liu Bo wrote:
-> > > An invalid value of extent inline ref type may be read from a
-> > > malicious image which may force btrfs to crash.
-> > > 
-> > > This adds a helper which does sanity check for the ref type, so we can
-> > > know if it's sane, return type if so, otherwise return an error.
-> > > 
-> > > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> > > ---
-> > >  fs/btrfs/ctree.h       |  4 ++++
-> > >  fs/btrfs/extent-tree.c | 35 +++++++++++++++++++++++++++++++++++
-> > >  2 files changed, 39 insertions(+)
-> > > 
-> > > diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> > > index c411590..206ae8c 100644
-> > > --- a/fs/btrfs/ctree.h
-> > > +++ b/fs/btrfs/ctree.h
-> > > @@ -2542,6 +2542,10 @@ static inline gfp_t btrfs_alloc_write_mask(struct address_space *mapping)
-> > >  
-> > >  /* extent-tree.c */
-> > >  
-> > > +int btrfs_get_extent_inline_ref_type(struct extent_buffer *eb,
-> > > +				     struct btrfs_extent_inline_ref *iref,
-> > > +				     int is_data);
-> > > +
-> > >  u64 btrfs_csum_bytes_to_leaves(struct btrfs_fs_info *fs_info, u64 csum_bytes);
-> > >  
-> > >  static inline u64 btrfs_calc_trans_metadata_size(struct btrfs_fs_info *fs_info,
-> > > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> > > index be54776..fba8ca0 100644
-> > > --- a/fs/btrfs/extent-tree.c
-> > > +++ b/fs/btrfs/extent-tree.c
-> > > @@ -1117,6 +1117,41 @@ static int convert_extent_item_v0(struct btrfs_trans_handle *trans,
-> > >  }
-> > >  #endif
-> > >  
-> > > +/*
-> > > + * is_data == 0, tree block type is required,
-> > > + * is_data == 1, data type is requried,
-> > > + * is_data == 2, either type is OK.
-> > > + */
-> > 
-> > Can you change those numbers to either #defines or better an enum type?
-> > Looking at one call site the last argument being a number says nothing
-> > and one has to context switch to the function definition. E.g. from
-> > patch2 :
-> > 
-> > *out_type = btrfs_get_extent_inline_ref_type(eb, *out_eiref, 2);
-> > 
-> > possible names:
-> > 
-> > BTRFS_BLOCK_REF_TYPE
-> > BTRFS_DATA_REF_TYPE
-> > BTRFS_ANY_TYPE
+On Thu, May 25, 2017 at 06:26:29PM -0600, Liu Bo wrote:
+> btrfs_print_leaf() is used in btrfs_get_extent_inline_ref_type, so
+> here we really want to print the invalid value of ref type instead of
+> causing a kernel panic.
 > 
-> Can we please keep the namespace, BTRFS_ANY_TYPE is way too generic.
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+>  fs/btrfs/print-tree.c | 8 +++++++-
+>  1 file changed, 7 insertions(+), 1 deletion(-)
 > 
-> Suggested: BTRFS_REF_TYPE_BLOCK, BTRFS_REF_TYPE_DATA,
-> BTRFS_REF_TYPE_ANY.
+> diff --git a/fs/btrfs/print-tree.c b/fs/btrfs/print-tree.c
+> index fcae61e..4448be6 100644
+> --- a/fs/btrfs/print-tree.c
+> +++ b/fs/btrfs/print-tree.c
+> @@ -63,6 +63,7 @@ static void print_extent_item(struct extent_buffer *eb, int slot, int type)
+>  	u32 item_size = btrfs_item_size_nr(eb, slot);
+>  	u64 flags;
+>  	u64 offset;
+> +	int is_data;
+>  
+>  	if (item_size < sizeof(*ei)) {
+>  #ifdef BTRFS_COMPAT_EXTENT_TREE_V0
+> @@ -98,6 +99,8 @@ static void print_extent_item(struct extent_buffer *eb, int slot, int type)
+>  		iref = (struct btrfs_extent_inline_ref *)(ei + 1);
+>  	}
+>  
+> +	is_data = !!(flags & BTRFS_EXTENT_FLAG_DATA);
+> +
+>  	ptr = (unsigned long)iref;
+>  	end = (unsigned long)ei + item_size;
+>  	while (ptr < end) {
+> @@ -121,7 +124,10 @@ static void print_extent_item(struct extent_buffer *eb, int slot, int type)
+>  			       offset, btrfs_shared_data_ref_count(eb, sref));
+>  			break;
+>  		default:
+> -			BUG();
+> +			btrfs_err(eb->fs_info,
+> +				  "extent %llu has invalid ref type %d\n",
+> +				  eb->start, type);
+> +			return;
 
-And to let the function return the enum, add BTRFS_REF_TYPE_INVALID with
-value 0.
+I don't see is_data used anywhere, also not in the followup patches.
+Please use a bool type in case it's valid here.
+
+>  		}
+>  		ptr += btrfs_extent_inline_ref_size(type);
+>  	}
+> -- 
+> 2.9.4
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

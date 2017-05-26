@@ -1,63 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:45823 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1946470AbdEZB1N (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 May 2017 21:27:13 -0400
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v4Q1RBxs003035
-        (version=TLSv1 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 May 2017 01:27:12 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by aserv0021.oracle.com (8.13.8/8.14.4) with ESMTP id v4Q1RB0x003272
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 May 2017 01:27:11 GMT
-Received: from abhmp0005.oracle.com (abhmp0005.oracle.com [141.146.116.11])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id v4Q1RBnL013221
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 May 2017 01:27:11 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/6] add sanity check for extent inline ref type
-Date: Thu, 25 May 2017 18:26:25 -0600
-Message-Id: <20170526002631.8546-1-bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:51243 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S970603AbdEZHJ5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 May 2017 03:09:57 -0400
+Subject: Re: [PATCH 1/6] Btrfs: add a helper to retrive extent inline ref type
+To: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org
+References: <20170526002631.8546-1-bo.li.liu@oracle.com>
+ <20170526002631.8546-2-bo.li.liu@oracle.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <cb0f4c50-3871-b688-161a-912628f7dcdb@suse.com>
+Date: Fri, 26 May 2017 10:09:54 +0300
+MIME-Version: 1.0
+In-Reply-To: <20170526002631.8546-2-bo.li.liu@oracle.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-An invalid extent inline ref type could be read from a btrfs image and
-it ends up with a panic[1], this set is to deal with the insane value
-gracefully in patch 1-2 and clean up BUG() in the code in patch 3-5.
 
-Patch 6 adds scrub support to detect the corruption, so users can be
-noticed when they do scrub on a regular basis.
 
-I'm not sure in the real world what may result in this corruption, but
-I've seen several reports on the ML about __btrfs_free_extent saying
-something was missing (or simply wrong), while testing this set with
-btrfs-corrupt-block, I found that switching ref type could end up that
-situation as well, eg. a data extent's ref type
-(BTRFS_EXTENT_DATA_REF_KEY) is switched to (BTRFS_TREE_BLOCK_REF_KEY).
+On 26.05.2017 03:26, Liu Bo wrote:
+> An invalid value of extent inline ref type may be read from a
+> malicious image which may force btrfs to crash.
+> 
+> This adds a helper which does sanity check for the ref type, so we can
+> know if it's sane, return type if so, otherwise return an error.
+> 
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+>  fs/btrfs/ctree.h       |  4 ++++
+>  fs/btrfs/extent-tree.c | 35 +++++++++++++++++++++++++++++++++++
+>  2 files changed, 39 insertions(+)
+> 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index c411590..206ae8c 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -2542,6 +2542,10 @@ static inline gfp_t btrfs_alloc_write_mask(struct address_space *mapping)
+>  
+>  /* extent-tree.c */
+>  
+> +int btrfs_get_extent_inline_ref_type(struct extent_buffer *eb,
+> +				     struct btrfs_extent_inline_ref *iref,
+> +				     int is_data);
+> +
+>  u64 btrfs_csum_bytes_to_leaves(struct btrfs_fs_info *fs_info, u64 csum_bytes);
+>  
+>  static inline u64 btrfs_calc_trans_metadata_size(struct btrfs_fs_info *fs_info,
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index be54776..fba8ca0 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -1117,6 +1117,41 @@ static int convert_extent_item_v0(struct btrfs_trans_handle *trans,
+>  }
+>  #endif
+>  
+> +/*
+> + * is_data == 0, tree block type is required,
+> + * is_data == 1, data type is requried,
+> + * is_data == 2, either type is OK.
+> + */
 
-Hopefully this can give people more sights next time when that
-happens.
+Can you change those numbers to either #defines or better an enum type?
+Looking at one call site the last argument being a number says nothing
+and one has to context switch to the function definition. E.g. from
+patch2 :
 
-[1]:https://www.spinics.net/lists/linux-btrfs/msg65646.html
+*out_type = btrfs_get_extent_inline_ref_type(eb, *out_eiref, 2);
 
-Liu Bo (6):
-  Btrfs: add a helper to retrive extent inline ref type
-  Btrfs: convert to use btrfs_get_extent_inline_ref_type
-  Btrfs: remove BUG() in btrfs_extent_inline_ref_size
-  Btrfs: remove BUG() in print_extent_item
-  Btrfs: remove BUG() in add_data_reference
-  Btrfs: add sanity check of extent item in scrub
+possible names:
 
- fs/btrfs/backref.c     |  9 +++++--
- fs/btrfs/ctree.h       |  5 +++-
- fs/btrfs/extent-tree.c | 68 ++++++++++++++++++++++++++++++++++++++++++++------
- fs/btrfs/print-tree.c  |  8 +++++-
- fs/btrfs/relocation.c  | 20 ++++++++++++---
- fs/btrfs/scrub.c       | 43 +++++++++++++++++++++++++++++++
- 6 files changed, 139 insertions(+), 14 deletions(-)
+BTRFS_BLOCK_REF_TYPE
+BTRFS_DATA_REF_TYPE
+BTRFS_ANY_TYPE
 
--- 
-2.9.4
-
+> +int btrfs_get_extent_inline_ref_type(struct extent_buffer *eb,
+> +				     struct btrfs_extent_inline_ref *iref,
+> +				     int is_data)
+> +{
+> +	int type = btrfs_extent_inline_ref_type(eb, iref);
+> +
+> +	if (type == BTRFS_TREE_BLOCK_REF_KEY ||
+> +	    type == BTRFS_SHARED_BLOCK_REF_KEY ||
+> +	    type == BTRFS_SHARED_DATA_REF_KEY ||
+> +	    type == BTRFS_EXTENT_DATA_REF_KEY) {
+> +		if (is_data == 2) {
+> +			return type;
+> +		} else if (is_data == 1) {
+> +			if (type == BTRFS_EXTENT_DATA_REF_KEY ||
+> +			    type == BTRFS_SHARED_DATA_REF_KEY)
+> +				return type;
+> +		} else {
+> +			if (type == BTRFS_TREE_BLOCK_REF_KEY ||
+> +			    type == BTRFS_SHARED_BLOCK_REF_KEY)
+> +				return type;
+> +		}
+> +	}
+> +
+> +	btrfs_print_leaf(eb->fs_info, eb);
+> +	WARN(1, "eb %llu(%s block) invalid extent inline ref type %d\n",
+> +	     eb->start, (is_data) ? "data" : "tree", type);
+> +
+> +	return -EINVAL;
+> +}
+> +
+>  static u64 hash_extent_data_ref(u64 root_objectid, u64 owner, u64 offset)
+>  {
+>  	u32 high_crc = ~(u32)0;
+> 

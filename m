@@ -1,62 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f41.google.com ([209.85.214.41]:35637 "EHLO
-        mail-it0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S944930AbdEZUoU (ORCPT
+Received: from mail-yw0-f171.google.com ([209.85.161.171]:34834 "EHLO
+        mail-yw0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750732AbdE0Sxp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 May 2017 16:44:20 -0400
-Received: by mail-it0-f41.google.com with SMTP id c15so2978752ith.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 May 2017 13:44:19 -0700 (PDT)
-From: Sargun Dhillon <sargun@sargun.me>
-Date: Fri, 26 May 2017 20:44:17 +0000
-To: linux-btrfs@vger.kernel.org
-Cc: quwenruo@cn.fujitsu.com, mkh@rqc.ru
-Subject: [PATCH v2 0/4] Qgroup uapi improvements
-Message-ID: <20170526204414.GA18176@ircssh-2.c.rugged-nimbus-611.internal>
+        Sat, 27 May 2017 14:53:45 -0400
+Received: by mail-yw0-f171.google.com with SMTP id l74so16024561ywe.2
+        for <linux-btrfs@vger.kernel.org>; Sat, 27 May 2017 11:53:44 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+From: Ivan P <chrnosphered@gmail.com>
+Date: Sat, 27 May 2017 20:53:23 +0200
+Message-ID: <CADzmB23Ytbp4eQcXZstFNM9W76Ug6DuyK-4rm_-VgOKzLsw1mQ@mail.gmail.com>
+Subject: btrfs-tools/linux 4.11: btrfs-cleaner misbehaving
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patchset has several improvements around the qgroups user-facing
-API. It introduces two new ioctls for creating, and removing qgroups.
-These ioctls have a new args structure that allows passing flags, and
-some reserved fields for future expansion. The ioctls prevent some
-operations around level-0 qgroups as well.
+Hello,
 
-The create operation prevents the creation of level-0 qgroups for
-subvolumes that do not exist. The delete operations prevents the
-deletion of level-0 qgroups that reference active volumes.
+for a while now, btrfs-cleaner has been molesting my system's btrfs partition,
+as well as my CPU. The behavior is as following:
 
-In adddition, it adds a mount option "qgroup_auto_cleanup".
-When this mount option is specified, qgroups will automatically
-be cleaned up at volume deletion time. The reason this is a mount
-option over a default behaviour is to avoid breaking old scripts
-that rely on the behaviour of the existing APIs. Users can opt
-into the new behaviour, as opposed it being an automated
-trigger on newly created qgroups. Later on, we can introduce
-a flag to subvol / qgroup create that marks the qgroup as
-automatically created, and delete the qgroup as automatically
-as well.
+After booting, nothing relevant is happening. After about 5-30 minutes,
+a btrfs-cleaner process is spawned, which is constantly using one CPU core.
+The btrfs-cleaner process never seems to finish (I've let it waste CPU cycles
+for 9 hours) and also cannot be stopped or killed.
 
-Changes since v1:
-  * Remove creation of level-0 qgroups without subvol
-  * Add deprecation message for old API
+Rebooting again usually resolves the issue for some time.
+But on next boot, the issue usually reappears.
 
-Sargun Dhillon (4):
-  btrfs: Fail on removing qgroup if del_qgroup_item fails
-  btrfs: Add new ioctl uapis for qgroup creation / removal
-  btrfs: Warn the user when the legacy btrfs_qgroup_create API is used
-  btrfs: Add qgroup_auto_cleanup mount flag to automatically cleanup
-    qgroups
+I'm running linux 4.11.2, but the issue is also present on current LTS 4.9.29.
+I am using newest btrfs-tools, as far as I can tell (4.11). The system is an
+arch linux x64 installed on a Transcend 120GB mSATA drive.
 
- fs/btrfs/ctree.h           |   1 +
- fs/btrfs/ioctl.c           | 117 ++++++++++++++++++++++++++++++++++++++++++++-
- fs/btrfs/qgroup.c          |  79 ++++++++++++++++++++++++++++--
- fs/btrfs/qgroup.h          |   6 ++-
- fs/btrfs/super.c           |  15 +++++-
- include/uapi/linux/btrfs.h |  22 +++++++++
- 6 files changed, 230 insertions(+), 10 deletions(-)
+No other disks are present, but the root volume contains several subvolumes
+(@arch<date> snapshots, @home, @data).
 
--- 
-2.9.3
+The logs don't contain anything related to btrfs, beside the usual diag output
+on mounting the root partition.
 
+I am mounting the btrfs partition with the following options:
+
+subvol=@arch_current,compress=lzo,ssd,noatime,autodefrag
+
+What information should I provide so we could debug this?
+Please add me to CC when replying, as I am not subscribed to the mailing list.
+
+Thank you in advance,
+Ivan.

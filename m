@@ -1,18 +1,20 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.99]:46094 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.99]:59116 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750767AbdE3P3c (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 30 May 2017 11:29:32 -0400
+        id S1750995AbdEaKKG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 31 May 2017 06:10:06 -0400
 Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 91717239EA
-        for <linux-btrfs@vger.kernel.org>; Tue, 30 May 2017 15:29:31 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 1FABB23A0B
+        for <linux-btrfs@vger.kernel.org>; Wed, 31 May 2017 10:10:04 +0000 (UTC)
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix invalid extent maps due to hole punching
-Date: Sun, 28 May 2017 17:31:53 +0100
-Message-Id: <20170528163153.31962-1-fdmanana@kernel.org>
+Subject: [PATCH v2] Btrfs: fix invalid extent maps due to hole punching
+Date: Sun, 28 May 2017 22:31:05 +0100
+Message-Id: <20170528213105.19249-1-fdmanana@kernel.org>
+In-Reply-To: <20170528163153.31962-1-fdmanana@kernel.org>
+References: <20170528163153.31962-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -251,11 +253,15 @@ Fixes: d77815461f04 ("btrfs: Avoid trucating page or punching hole in a already 
 Cc: <stable@vger.kernel.org>
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
+
+V2: Rebased on latest for-linus-4.12 branch from Chris, so that it
+    applies cleanly.
+
  fs/btrfs/file.c | 4 +++-
  1 file changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index f7d022bc7998..2645d820422c 100644
+index da1096eb1a40..928fe290e834 100644
 --- a/fs/btrfs/file.c
 +++ b/fs/btrfs/file.c
 @@ -2390,10 +2390,12 @@ static int fill_holes(struct btrfs_trans_handle *trans,
@@ -269,9 +275,9 @@ index f7d022bc7998..2645d820422c 100644
 -	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, *start, *len, 0);
 +	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, *start,
 +			      round_up(*len, fs_info->sectorsize), 0);
- 	if (IS_ERR_OR_NULL(em)) {
- 		if (!em)
- 			ret = -ENOMEM;
+ 	if (IS_ERR(em))
+ 		return PTR_ERR(em);
+ 
 -- 
 2.11.0
 

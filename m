@@ -1,28 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([65.50.211.133]:38206 "EHLO
+Received: from bombadil.infradead.org ([65.50.211.133]:56509 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750981AbdE1J13 (ORCPT
+        with ESMTP id S1751229AbdE1JbY (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 28 May 2017 05:27:29 -0400
-Date: Sun, 28 May 2017 02:27:28 -0700
+        Sun, 28 May 2017 05:31:24 -0400
+Date: Sun, 28 May 2017 02:31:13 -0700
 From: Christoph Hellwig <hch@infradead.org>
 To: Goldwyn Rodrigues <rgoldwyn@suse.de>
 Cc: linux-fsdevel@vger.kernel.org, jack@suse.com, hch@infradead.org,
         linux-block@vger.kernel.org, linux-btrfs@vger.kernel.org,
         linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org, axboe@kernel.dk,
         linux-api@vger.kernel.org, adam.manzanares@wdc.com,
-        viro@zeniv.linux.org.uk
-Subject: Re: [PATCH 0/10 v9] No wait AIO
-Message-ID: <20170528092728.GA14519@infradead.org>
+        viro@zeniv.linux.org.uk, Goldwyn Rodrigues <rgoldwyn@suse.com>
+Subject: Re: [PATCH 09/10] xfs: nowait aio support
+Message-ID: <20170528093113.GB14519@infradead.org>
 References: <20170524164150.9492-1-rgoldwyn@suse.de>
+ <20170524164150.9492-10-rgoldwyn@suse.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170524164150.9492-1-rgoldwyn@suse.de>
+In-Reply-To: <20170524164150.9492-10-rgoldwyn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->  Changes since v8:
->  + Err out AIO reads with -EINVAL flagged as RWF_NOWAIT
+Despite my previous reviewed-by tag this will need another fix:
 
-Ugg, why?  Reads aren't really treated any different than writes in
-the direct I/O code.
+xfs_file_iomap_begin needs to return EAGAIN if we don't have the extent
+list in memoery already.  E.g. something like this:
+
+	if ((flags & IOMAP_NOWAIT) && !(ip->i_d.if_flags & XFS_IFEXTENTS)) {
+		error = -EAGAIN;
+		goto out_unlock;
+	}
+
+right after locking the ilock.

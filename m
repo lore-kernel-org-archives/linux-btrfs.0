@@ -1,165 +1,143 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from syrinx.knorrie.org ([82.94.188.77]:60396 "EHLO
-        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750762AbdE1A77 (ORCPT
+Received: from pb-smtp2.pobox.com ([64.147.108.71]:54839 "EHLO
+        sasl.smtp.pobox.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1750762AbdE1CyY (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 27 May 2017 20:59:59 -0400
-Received: from [IPv6:2001:980:4a41:fb::12] (unknown [IPv6:2001:980:4a41:fb::12])
+        Sat, 27 May 2017 22:54:24 -0400
+Received: from sasl.smtp.pobox.com (unknown [127.0.0.1])
+        by pb-smtp2.pobox.com (Postfix) with ESMTP id DC5818C889
+        for <linux-btrfs@vger.kernel.org>; Sat, 27 May 2017 22:46:03 -0400 (EDT)
+Received: from pb-smtp2.nyi.icgroup.com (unknown [127.0.0.1])
+        by pb-smtp2.pobox.com (Postfix) with ESMTP id D52808C888
+        for <linux-btrfs@vger.kernel.org>; Sat, 27 May 2017 22:46:03 -0400 (EDT)
+Received: from mail-lf0-f47.google.com (unknown [209.85.215.47])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by syrinx.knorrie.org (Postfix) with ESMTPSA id 8B140600B1
-        for <linux-btrfs@vger.kernel.org>; Sun, 28 May 2017 02:59:57 +0200 (CEST)
-Subject: Re: About free space fragmentation, metadata write amplification and
- (no)ssd
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <5e11b988-05ea-c468-21ef-589c71058436@mendix.com>
-From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Message-ID: <d5ebd421-52a1-5b91-72a3-f97a2fb9628f@mendix.com>
-Date: Sun, 28 May 2017 02:59:57 +0200
+        by pb-smtp2.pobox.com (Postfix) with ESMTPSA id D8D178C884
+        for <linux-btrfs@vger.kernel.org>; Sat, 27 May 2017 22:46:02 -0400 (EDT)
+Received: by mail-lf0-f47.google.com with SMTP id 99so20884053lfu.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 27 May 2017 19:46:02 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <5e11b988-05ea-c468-21ef-589c71058436@mendix.com>
-Content-Type: text/plain; charset=utf-8
+From: Bill Williamson <bill@bbqninja.com>
+Date: Sun, 28 May 2017 12:46:00 +1000
+Message-ID: <CAHPjZW7Af2KzRr_HTaCNGqRAM0SsV8+gJWSRis6eCjGeXNBK7Q@mail.gmail.com>
+Subject: btrfs mounts RO, kernel oops on RW
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A small update...
+Version details:
+btrfs-progs v4.9.1
+Linux bigserver 4.10.0-22-generic #24-Ubuntu SMP Mon May 22 17:43:20
+UTC 2017 x86_64 x86_64 x86_64 GNU/Linux
 
-Original (long) message:
-https://www.spinics.net/lists/linux-btrfs/msg64446.html
+Array Details:
+root@bigserver:~# btrfs fi df /mnt/storage
+Data, RAID1: total=12.48TiB, used=12.25TiB
+System, RAID1: total=32.00MiB, used=2.11MiB
+Metadata, RAID1: total=14.00GiB, used=13.31GiB
+GlobalReserve, single: total=512.00MiB, used=0.00
 
-On 04/08/2017 10:19 PM, Hans van Kranenburg wrote:
-> [...]
-> 
-> == But! The Meta Mummy returns! ==
-> 
-> After changing to nossd, another thing happened. The expiry process,
-> which normally takes about 1.5 hour to remove ~2500 subvolumes (keeping
-> it queued up to a 100 orphans all the time), suddenly took the entire
-> rest of the day, not being done before the nightly backups had to start
-> again at 10PM...
-> 
-> And the only thing it seemed to do is writing, writing, writing 100MB/s
-> all day long.
 
-This behaviour was observed with a 4.7.5 linux kernel.
+root@bigserver:~# btrfs fi show /mnt/storage
+Label: none  uuid: c792d033-b0a6-44a0-bd37-9825de7eeb8b
+        Total devices 10 FS bytes used 12.27TiB
+        devid    1 size 2.73TiB used 2.71TiB path /dev/sde
+        devid    2 size 3.64TiB used 3.62TiB path /dev/sdh
+        devid    5 size 1.82TiB used 1.80TiB path /dev/sdg
+        devid    6 size 1.82TiB used 1.80TiB path /dev/sdc
+        devid    8 size 1.36TiB used 1.35TiB path /dev/sdb
+        devid    9 size 3.64TiB used 3.62TiB path /dev/sdf
+        devid   12 size 1.82TiB used 1.80TiB path /dev/sdd
+        devid   13 size 4.55TiB used 4.53TiB path /dev/sdk
+        devid   14 size 3.64TiB used 3.62TiB path /dev/sdi
+        devid   15 size 3.64TiB used 134.00GiB path /dev/sdj
 
-When running 4.9.25 now with -o nossd, this weird behaviour is gone. I
-have no idea what change between 4.7 and 4.9 is responsible for this,
-but it's good.
 
-> == So, what do we want? ssd? nossd? ==
-> 
-> Well, both don't do it for me. I want my expensive NetApp disk space to
-> be filled up, without requiring me to clean up after it all the time
-> using painful balance actions and I want to quickly get rid of old
-> snapshots.
-> 
-> So currently, there's two mount -o remount statements before and after
-> doing the expiries...
+Issue:
+I can mount my btrfs readonly (recovery option not necessary).
+Attempting to mount it readwrite results in a kernel null pointer
+exception.
 
-With 4.9+ now, it stays on nossd for sure, everywhere. :)
+Background:
+I have a home server with a bunch of disks running btrfs raid 1.  When
+it starts to fill up I add another disk and re-balance.
+I added a new 4TB disk and began the re-balance.  After a while I
+needed to shut down the server, and did so gracefully with a shutdown
+-h now.  Upon rebooting the array wouldn't mount, so I put "noauto"
+into fstab to allow a graceful bootup and diagnose from there.
 
-I keep doing daily btrfs-heatmap pictures, here's a nice timelapse of
-Feb 22 until May 26th. One picture per day.
+At first I got the failed to read log tree error, so I ran
+btrfs-zero-log.  It walked back 3-4 transactions but now seems okay.
+After that fix:
+- btrfs check shows no errors.
+- mounting the filesystem RO works great, I can read files.
+- mounting the filesystem RW results in a huge kernel exception and a
+hang, centering around can_overcommit and
+btrfs_async_reclaim_metadata_space
 
-https://syrinx.knorrie.org/~knorrie/btrfs/keep/2017-05-28-btrfs-nossd-whoa.mp4
+My "you're screwed, it's dead" backup plan is to build another server
+and buy 2x8TB drives, and then copy the data I care about over, but
+I'd much rather save myself the trouble and $$$ and repair the array
+if possible.
 
-These images use --sort virtual, so the block groups jump around a bit
-because of the free-space-fragmentation-level-score-based btrfs balance
-that I did for a few weeks. Total fs size is close to 40TiB.
+I'd also like to learn what happened so that I can avoid it in the future.
 
-At 17 seconds into the movie, I switched over to -o nossd. The effect is
-very clearly visible. Suddenly the filesystem starts filling up all
-empty space, starting at the beginning of the virtual address space. In
-the last few months the amount of allocated but unused space went down
-from about 6 TiB to a bit more than 2 TiB now, and it's still decreasing
-every day. \o/
+Thanks,
 
-This actually means that forcing -o nossd solved the main headache and
-cause of babysitting requirements when using btrfs that I have been
-experiencing from the very beginning of trying it...
+Bill Williamson
 
-By the way, being able to use only nossd only is also a big improvement
-for the (a few dozen) smaller filesystems that we use with replication
-for DR purposes (yay, btrbk). We don't have to look around and respond
-to alerts all the time any more to see which filesystem is choking
-itself to death today and then rescue it with btrfs balance, and the
-snapshot and send/receive schedule and expiry doesn't cause abnormal
-write IO any more. \o/
 
-> [...]
-> 
-> == Work to do ==
-> 
-> The next big change on this system will be to move from the 4.7 kernel
-> to the 4.9 LTS kernel and Debian Stretch.
+Full exception as it shows up in syslog (I've trimmed the big datetime
+stamp to the left of each entry).
 
-After starting to upgrade other btrfs filesystems to use kernel 4.9 in
-the last few weeks (including the smaller backup servers), I did the
-biggest one today. It's running 4.9.25 now, or Debian 4.9.25-1~bpo8+1 to
-be exact. Currently it's working its way through the nightlies, looking
-good.
+BTRFS info (device sdb): disk space caching is enabled
+BUG: unable to handle kernel NULL pointer dereference at 00000000000001f0
+IP: can_overcommit+0x28/0x110 [btrfs]
+PGD 20dd42067
+PUD 20abdc067
+PMD 0
 
-> Note that our metadata is still DUP, and it doesn't have skinny extent
-> tree metadata yet. It was originally created with btrfs-progs 3.17, and
-> when we realized we should have single it was too late. I want to change
-> that and see if I can convert on a NetApp clone. This should reduce
-> extent tree metadata size by maybe more than 60% and whoknowswhat will
-> happen to the abhorrent write traffic.
-
-Yeah, blabla... Converting metadata from DUP to single is a big no go
-with btrfs balance, that's what I clearly got figured out now.
-
-> Before switching over to the clone as live backup server, all missing
-> snapshots can be rsynced over from the live backup server.
-
-Using snapshot/clone functionality of our NetApp storage, I did the move
-from 4.7 to 4.9 in the last two days.
-
-Since mounting with 4.9 requires a rebuild of the free space tree (and
-since I didn't feel like hacking the feature bit in instead), this
-wasn't going to be a quick maintenance action.
-
-Two days ago I cloned the luns that make up the (now) 40TiB filesystem
-and did the skinny-metadata and free space tree changes, and also
-cleaned out the free space cache v1 (byebye..)
-
--# time btrfsck --clear-space-cache v2 /dev/xvdb
-Clear free space cache v2
-free space cache v2 cleared
-
-real    10m47.854s
-user    0m17.200s
-sys     0m11.040s
-
--# time btrfsck --clear-space-cache v1 /dev/xvdb
-Clearing free space cache
-Free space cache cleared
-
-real    195m8.970s
-user    161m32.380s
-sys     24m23.476s
-
-^^notice the cpu usage...
-
--# time btrfstune -x /dev/xvdb
-
-real    17m4.647s
-user    0m16.856s
-sys     0m3.944s
-
--# time mount -o noatime,nossd,space_cache=v2 /dev/xvdb /srv/backup
-
-real    289m55.671s
-user    0m0.000s
-sys     1m11.156s
-
-Yeah, random read IO sucks... :|
-
-In the two days after, I ran the same expiries as the production backup
-server was doing, and synced new backup data to the clone. Tonight, just
-before the nightly run, I swapped the production luns and the clones so
-the real backup server could quickly continue using the prepared filesystem.
-
--- 
-Hans van Kranenburg
+Oops: 0000 [#1] SMP
+Modules linked in: binfmt_misc ppdev edac_mce_amd edac_core kvm
+irqbypass crct10dif_pclmul crc32_pclmul ghash_clmulni_intel pcbc
+aesni_intel aes_x86_64 crypto_simd glue_helper cryptd serio_raw joydev
+input_leds k10temp fam15h_power i2c_piix4 snd_hda_codec_via
+snd_hda_codec_generic snd_hda_codec_hdmi snd_hda_intel snd_hda_codec
+snd_hda_core snd_hwdep snd_pcm snd_timer parport_pc snd soundcore
+asus_atk0110 shpchp mac_hid lp parport ip_tables x_tables autofs4
+btrfs xor raid6_pq pata_acpi hid_microsoft usbhid hid amdkfd
+amd_iommu_v2 radeon i2c_algo_bit ttm drm_kms_helper syscopyarea
+sysfillrect psmouse sysimgblt fb_sys_fops mvsas drm pata_atiixp ahci
+r8169 libsas libahci mii scsi_transport_sas wmi fjes
+CPU: 7 PID: 2779 Comm: kworker/u16:3 Not tainted 4.10.0-22-generic #24-Ubuntu
+Hardware name: System manufacturer System Product Name/M5A78L-M/USB3,
+BIOS 1503    11/14/2012
+Workqueue: events_unbound btrfs_async_reclaim_metadata_space [btrfs]
+task: ffff88b6c7855a00 task.stack: ffffb66443524000
+RIP: 0010:can_overcommit+0x28/0x110 [btrfs]
+RSP: 0018:ffffb66443527dc0 EFLAGS: 00010286
+RAX: 0000000001000000 RBX: ffff88b785f4d400 RCX: 0000000000000002
+RDX: 0000000000800000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: ffffb66443527df8 R08: 0000000000000008 R09: ffff88b785f4d4a8
+R10: ffffffff8fd92d40 R11: 0000000000001ee0 R12: ffff88b785f4d4b8
+R13: 0000000000800000 R14: 0000000000000000 R15: ffff88b785f4d400
+FS:  0000000000000000(0000) GS:ffff88b79edc0000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00000000000001f0 CR3: 0000000213c57000 CR4: 00000000000406e0
+Call Trace:
+? __switch_to+0x23c/0x520
+btrfs_async_reclaim_metadata_space+0x378/0x440 [btrfs]
+process_one_work+0x1fc/0x4b0
+worker_thread+0x4b/0x500
+kthread+0x109/0x140
+? process_one_work+0x4b0/0x4b0
+? kthread_create_on_node+0x60/0x60
+ret_from_fork+0x2c/0x40
+Code: 0f 1f 00 0f 1f 44 00 00 f6 46 58 01 0f 85 f0 00 00 00 55 48 89
+e5 41 57 41 56 41 55 41 54 49 89 d5 53 48 89 f3 31 f6 48 83 ec 10 <4c>
+8b b7 f0 01 00 00 89 4d cc 49 3b 7e 38 4d 8d be 48 01 00 00
+RIP: can_overcommit+0x28/0x110 [btrfs] RSP: ffffb66443527dc0
+CR2: 00000000000001f0
+---[ end trace 2bcd6443af9da872 ]---

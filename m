@@ -1,160 +1,165 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f195.google.com ([209.85.161.195]:36150 "EHLO
-        mail-yw0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750743AbdE0Uyw (ORCPT
+Received: from syrinx.knorrie.org ([82.94.188.77]:60396 "EHLO
+        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750762AbdE1A77 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 27 May 2017 16:54:52 -0400
-Received: by mail-yw0-f195.google.com with SMTP id h82so2533760ywb.3
-        for <linux-btrfs@vger.kernel.org>; Sat, 27 May 2017 13:54:52 -0700 (PDT)
+        Sat, 27 May 2017 20:59:59 -0400
+Received: from [IPv6:2001:980:4a41:fb::12] (unknown [IPv6:2001:980:4a41:fb::12])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by syrinx.knorrie.org (Postfix) with ESMTPSA id 8B140600B1
+        for <linux-btrfs@vger.kernel.org>; Sun, 28 May 2017 02:59:57 +0200 (CEST)
+Subject: Re: About free space fragmentation, metadata write amplification and
+ (no)ssd
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <5e11b988-05ea-c468-21ef-589c71058436@mendix.com>
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Message-ID: <d5ebd421-52a1-5b91-72a3-f97a2fb9628f@mendix.com>
+Date: Sun, 28 May 2017 02:59:57 +0200
 MIME-Version: 1.0
-In-Reply-To: <5be5a686-216c-2976-9618-276f049b1a9e@mendix.com>
-References: <CADzmB23Ytbp4eQcXZstFNM9W76Ug6DuyK-4rm_-VgOKzLsw1mQ@mail.gmail.com>
- <c3d2a91c-6fea-d273-2d58-1f8ea700b942@mendix.com> <CADzmB21E6btzsS9HQXk_AC+zVks1CHu=x8NVSnPQ+=+y4fgzPQ@mail.gmail.com>
- <5be5a686-216c-2976-9618-276f049b1a9e@mendix.com>
-From: Ivan P <chrnosphered@gmail.com>
-Date: Sat, 27 May 2017 22:54:31 +0200
-Message-ID: <CADzmB23zKnH35mW8jVPW3Z552t7Kw3wWhRn+x0jxtT3tCcCS9Q@mail.gmail.com>
-Subject: Re: btrfs-tools/linux 4.11: btrfs-cleaner misbehaving
-To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <5e11b988-05ea-c468-21ef-589c71058436@mendix.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, May 27, 2017 at 10:42 PM, Hans van Kranenburg
-<hans.van.kranenburg@mendix.com> wrote:
-> On 05/27/2017 10:29 PM, Ivan P wrote:
->> On Sat, May 27, 2017 at 9:33 PM, Hans van Kranenburg
->> <hans.van.kranenburg@mendix.com> wrote:
->>> Hi,
->>>
->>> On 05/27/2017 08:53 PM, Ivan P wrote:
->>>>
->>>> for a while now, btrfs-cleaner has been molesting my system's btrfs partition,
->>>> as well as my CPU. The behavior is as following:
->>>>
->>>> After booting, nothing relevant is happening. After about 5-30 minutes,
->>>> a btrfs-cleaner process is spawned, which is constantly using one CPU core.
->>>> The btrfs-cleaner process never seems to finish (I've let it waste CPU cycles
->>>> for 9 hours) and also cannot be stopped or killed.
->>>>
->>>> Rebooting again usually resolves the issue for some time.
->>>> But on next boot, the issue usually reappears.
->>>>
->>>> I'm running linux 4.11.2, but the issue is also present on current LTS 4.9.29.
->>>> I am using newest btrfs-tools, as far as I can tell (4.11). The system is an
->>>> arch linux x64 installed on a Transcend 120GB mSATA drive.
->>>>
->>>> No other disks are present, but the root volume contains several subvolumes
->>>> (@arch<date> snapshots, @home, @data).
->>>>
->>>> The logs don't contain anything related to btrfs, beside the usual diag output
->>>> on mounting the root partition.
->>>>
->>>> I am mounting the btrfs partition with the following options:
->>>>
->>>> subvol=@arch_current,compress=lzo,ssd,noatime,autodefrag
->>>>
->>>> What information should I provide so we could debug this?
->>>
->>> What I usually do first in a similar situation is look at the output of
->>>
->>>   watch cat /proc/<pid>/stack
->>>
->>> where <pid> is the pid of the btrfs-cleaner thread.
->>>
->>> This might already give an idea what kind of things it's doing, by
->>> looking at the stack trace. When it's cleaning up a removed subvolume
->>> for example, there will be a similar function name in the stack somewhere.
->>>
->>> --
->>> Hans van Kranenburg
->>
->> Thank you for the fast reply.
->>
->> Most of the time, the stack is just 0xffffffffffffffff, even though
->> CPU load is generated.
->> These repeat all the time, but addresses stay the same:
->>
->> [<ffffffffa0444f19>] get_alloc_profile+0xa9/0x1a0 [btrfs]
->> [<ffffffffa04450d2>] can_overcommit+0xc2/0x110 [btrfs]
->> [<ffffffffa044a21e>] btrfs_free_reserved_data_space_noquota+0x6e/0x100 [btrfs]
->> [<ffffffffffffffff>] 0xffffffffffffffff
->>
->> [<ffffffffa04451ae>] block_rsv_release_bytes+0x8e/0x2b0 [btrfs]
->> [<ffffffffa044a21e>] btrfs_free_reserved_data_space_noquota+0x6e/0x100 [btrfs]
->> [<ffffffffffffffff>] 0xffffffffffffffff
->>
->> [<ffffffffa04451ae>] block_rsv_release_bytes+0x8e/0x2b0 [btrfs]
->> [<ffffffffffffffff>] 0xffffffffffffffff
->>
->> [<ffffffff8162efcf>] retint_kernel+0x1b/0x1d
->> [<ffffffffffffffff>] 0xffffffffffffffff
->>
->> So far, these appeared only once or twice:
->>
->> [<ffffffff8162efcf>] retint_kernel+0x1b/0x1d
->> [<ffffffff81316d66>] __radix_tree_lookup+0x76/0xf0
->> [<ffffffff81316e3d>] radix_tree_lookup+0xd/0x10
->> [<ffffffff8118121f>] __do_page_cache_readahead+0x10f/0x2f0
->> [<ffffffff81181593>] ondemand_readahead+0x193/0x2c0
->> [<ffffffff8118185e>] page_cache_sync_readahead+0x2e/0x50
->> [<ffffffffa04a23ab>] btrfs_defrag_file+0x9fb/0xf90 [btrfs]
->> [<ffffffffa047b66a>] btrfs_run_defrag_inodes+0x25a/0x350 [btrfs]
->> [<ffffffffa045cc67>] cleaner_kthread+0x147/0x180 [btrfs]
->> [<ffffffff810a04d8>] kthread+0x108/0x140
->> [<ffffffff8162e85c>] ret_from_fork+0x2c/0x40
->> [<ffffffffffffffff>] 0xffffffffffffffff
->>
->> [<ffffffff81003016>] ___preempt_schedule+0x16/0x18
->> [<ffffffffa0487556>] __clear_extent_bit+0x2a6/0x3e0 [btrfs]
->> [<ffffffffa0487c57>] clear_extent_bit+0x17/0x20 [btrfs]
->> [<ffffffffa04a26fa>] btrfs_defrag_file+0xd4a/0xf90 [btrfs]
->> [<ffffffffa047b66a>] btrfs_run_defrag_inodes+0x25a/0x350 [btrfs]
->> [<ffffffffa045cc67>] cleaner_kthread+0x147/0x180 [btrfs]
->> [<ffffffff810a04d8>] kthread+0x108/0x140
->> [<ffffffff8162e85c>] ret_from_fork+0x2c/0x40
->> [<ffffffffffffffff>] 0xffffffffffffffff
->>
->> [<ffffffff8162efcf>] retint_kernel+0x1b/0x1d
->> [<ffffffff810ce28a>] __rcu_read_unlock+0x4a/0x60
->> [<ffffffff8118000b>] __set_page_dirty_nobuffers+0xdb/0x170
->> [<ffffffffa0468c1e>] btrfs_set_page_dirty+0xe/0x10 [btrfs]
->> [<ffffffff8117dd7b>] set_page_dirty+0x5b/0xb0
->> [<ffffffffa04a274e>] btrfs_defrag_file+0xd9e/0xf90 [btrfs]
->> [<ffffffffa047b66a>] btrfs_run_defrag_inodes+0x25a/0x350 [btrfs]
->> [<ffffffffa045cc67>] cleaner_kthread+0x147/0x180 [btrfs]
->> [<ffffffff810a04d8>] kthread+0x108/0x140
->> [<ffffffff8162e85c>] ret_from_fork+0x2c/0x40
->> [<ffffffffffffffff>] 0xffffffffffffffff
->>
->> Forgot to mention that I have tried running a scrub, but it neither
->> reported any errors nor solved the issue.
->
-> defrag actions called from cleaner_kthread. Looks like what Jean-Denis
-> suggested already.
->
-> Does the behaviour change when you disable autodefrag? You can also do
-> this live with mount -o remount,noautodefrag
->
-> Apparently your write pattern is some kind of worst case combined with
-> autodefrag? I'm not an expert in this area, but probably someone else
-> knows more.
->
-> --
-> Hans van Kranenburg
+A small update...
 
-Hmm, remounting as you suggested has shut it up immediately - hurray!
+Original (long) message:
+https://www.spinics.net/lists/linux-btrfs/msg64446.html
 
-I don't really have any special write pattern from what I can tell. About
-the only thing different from all the other btrfs systems I've set up is
-that the data is also on the same volume as the system. Normal usage, no
-VMs or heavy file generation. I'm also only taking snapshots of the system
-and @home, with the latter only containing my .config, .cache and
-symlinks to some folders in @data.
+On 04/08/2017 10:19 PM, Hans van Kranenburg wrote:
+> [...]
+> 
+> == But! The Meta Mummy returns! ==
+> 
+> After changing to nossd, another thing happened. The expiry process,
+> which normally takes about 1.5 hour to remove ~2500 subvolumes (keeping
+> it queued up to a 100 orphans all the time), suddenly took the entire
+> rest of the day, not being done before the nightly backups had to start
+> again at 10PM...
+> 
+> And the only thing it seemed to do is writing, writing, writing 100MB/s
+> all day long.
 
-Is there any way I can help debugging this further, or should I just defrag
-my volume manually as Jean-Denis Girard suggested and move on?
+This behaviour was observed with a 4.7.5 linux kernel.
 
-Regards,
-Ivan
+When running 4.9.25 now with -o nossd, this weird behaviour is gone. I
+have no idea what change between 4.7 and 4.9 is responsible for this,
+but it's good.
+
+> == So, what do we want? ssd? nossd? ==
+> 
+> Well, both don't do it for me. I want my expensive NetApp disk space to
+> be filled up, without requiring me to clean up after it all the time
+> using painful balance actions and I want to quickly get rid of old
+> snapshots.
+> 
+> So currently, there's two mount -o remount statements before and after
+> doing the expiries...
+
+With 4.9+ now, it stays on nossd for sure, everywhere. :)
+
+I keep doing daily btrfs-heatmap pictures, here's a nice timelapse of
+Feb 22 until May 26th. One picture per day.
+
+https://syrinx.knorrie.org/~knorrie/btrfs/keep/2017-05-28-btrfs-nossd-whoa.mp4
+
+These images use --sort virtual, so the block groups jump around a bit
+because of the free-space-fragmentation-level-score-based btrfs balance
+that I did for a few weeks. Total fs size is close to 40TiB.
+
+At 17 seconds into the movie, I switched over to -o nossd. The effect is
+very clearly visible. Suddenly the filesystem starts filling up all
+empty space, starting at the beginning of the virtual address space. In
+the last few months the amount of allocated but unused space went down
+from about 6 TiB to a bit more than 2 TiB now, and it's still decreasing
+every day. \o/
+
+This actually means that forcing -o nossd solved the main headache and
+cause of babysitting requirements when using btrfs that I have been
+experiencing from the very beginning of trying it...
+
+By the way, being able to use only nossd only is also a big improvement
+for the (a few dozen) smaller filesystems that we use with replication
+for DR purposes (yay, btrbk). We don't have to look around and respond
+to alerts all the time any more to see which filesystem is choking
+itself to death today and then rescue it with btrfs balance, and the
+snapshot and send/receive schedule and expiry doesn't cause abnormal
+write IO any more. \o/
+
+> [...]
+> 
+> == Work to do ==
+> 
+> The next big change on this system will be to move from the 4.7 kernel
+> to the 4.9 LTS kernel and Debian Stretch.
+
+After starting to upgrade other btrfs filesystems to use kernel 4.9 in
+the last few weeks (including the smaller backup servers), I did the
+biggest one today. It's running 4.9.25 now, or Debian 4.9.25-1~bpo8+1 to
+be exact. Currently it's working its way through the nightlies, looking
+good.
+
+> Note that our metadata is still DUP, and it doesn't have skinny extent
+> tree metadata yet. It was originally created with btrfs-progs 3.17, and
+> when we realized we should have single it was too late. I want to change
+> that and see if I can convert on a NetApp clone. This should reduce
+> extent tree metadata size by maybe more than 60% and whoknowswhat will
+> happen to the abhorrent write traffic.
+
+Yeah, blabla... Converting metadata from DUP to single is a big no go
+with btrfs balance, that's what I clearly got figured out now.
+
+> Before switching over to the clone as live backup server, all missing
+> snapshots can be rsynced over from the live backup server.
+
+Using snapshot/clone functionality of our NetApp storage, I did the move
+from 4.7 to 4.9 in the last two days.
+
+Since mounting with 4.9 requires a rebuild of the free space tree (and
+since I didn't feel like hacking the feature bit in instead), this
+wasn't going to be a quick maintenance action.
+
+Two days ago I cloned the luns that make up the (now) 40TiB filesystem
+and did the skinny-metadata and free space tree changes, and also
+cleaned out the free space cache v1 (byebye..)
+
+-# time btrfsck --clear-space-cache v2 /dev/xvdb
+Clear free space cache v2
+free space cache v2 cleared
+
+real    10m47.854s
+user    0m17.200s
+sys     0m11.040s
+
+-# time btrfsck --clear-space-cache v1 /dev/xvdb
+Clearing free space cache
+Free space cache cleared
+
+real    195m8.970s
+user    161m32.380s
+sys     24m23.476s
+
+^^notice the cpu usage...
+
+-# time btrfstune -x /dev/xvdb
+
+real    17m4.647s
+user    0m16.856s
+sys     0m3.944s
+
+-# time mount -o noatime,nossd,space_cache=v2 /dev/xvdb /srv/backup
+
+real    289m55.671s
+user    0m0.000s
+sys     1m11.156s
+
+Yeah, random read IO sucks... :|
+
+In the two days after, I ran the same expiries as the production backup
+server was doing, and synced new backup data to the clone. Tonight, just
+before the nightly run, I swapped the production luns and the clones so
+the real backup server could quickly continue using the prepared filesystem.
+
+-- 
+Hans van Kranenburg

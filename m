@@ -1,46 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f42.google.com ([74.125.82.42]:36664 "EHLO
-        mail-wm0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750830AbdE1WZI (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:59218 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1750823AbdE2AVL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 28 May 2017 18:25:08 -0400
-Received: by mail-wm0-f42.google.com with SMTP id 7so34910127wmo.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 28 May 2017 15:25:07 -0700 (PDT)
+        Sun, 28 May 2017 20:21:11 -0400
+Subject: Re: [PATCH v4 00/20] Btrfs-progs offline scrub
+To: <kreijack@inwind.it>, <linux-btrfs@vger.kernel.org>
+CC: <dsterba@suse.cz>, <lakshmipathi.g@gmail.com>
+References: <20170525062205.11660-1-quwenruo@cn.fujitsu.com>
+ <e4e15f16-c6b7-a18a-57df-7f404d38107b@inwind.it>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <ee9f0a45-bd92-e534-c98f-a9bb398e10f2@cn.fujitsu.com>
+Date: Mon, 29 May 2017 08:21:08 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAHPjZW7Af2KzRr_HTaCNGqRAM0SsV8+gJWSRis6eCjGeXNBK7Q@mail.gmail.com>
-References: <CAHPjZW7Af2KzRr_HTaCNGqRAM0SsV8+gJWSRis6eCjGeXNBK7Q@mail.gmail.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Sun, 28 May 2017 16:25:06 -0600
-Message-ID: <CAJCQCtQWoE_J24uHMzb3y-c1PPStj64cEkOz2YXQDKPX6J3j_A@mail.gmail.com>
-Subject: Re: btrfs mounts RO, kernel oops on RW
-To: Bill Williamson <bill@bbqninja.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <e4e15f16-c6b7-a18a-57df-7f404d38107b@inwind.it>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, May 27, 2017 at 8:46 PM, Bill Williamson <bill@bbqninja.com> wrote:
-> btrfs_async_reclaim_metadata_space
-
-I only found this:
-https://www.spinics.net/lists/linux-btrfs/msg62382.html
-
-I can't tell if it's related though.
 
 
-I'd include the results from btrfs check and btrfs check
---mode=lowmem, using btrfs-progs 4.10.2 or 4.11 (without --repair) and
-post the results as attachments. They might reveal what issues there
-are with the file system.
+At 05/27/2017 02:37 AM, Goffredo Baroncelli wrote:
+> Hi Qu,
+> 
+> On 2017-05-25 08:21, Qu Wenruo wrote:
+> 
+>> And since kernel scrub won't account P/Q corruption, it makes us quite
+>> hard to detect error like kernel screwing up P/Q when scrubbing.
+> 
+> could you elaborate the above sentence: in my test the kernel-scrub (4.12.0-rc2) is able to correct a wrong 'P' parity; am I missing something ?
 
->4.10.0-22-generic #24-Ubuntu
+That's because Liu Bo and I exposed and fixed the bug.
 
-I don't know what that translates into upstream wise. 4.10.18 is the
-last of that series. I would try 4.11.3, since it's the most current.
-And if that doesn't work then I'd try 4.9.30 or something relatively
-recent in that series, just because it's a long term and shouldn't
-have any major new features causing this if it's a regression.
+Or the case will still be the same.
+
+Thanks,
+Qu
+
+> 
+> BR
+> G.Baroncelli
+> [...]
+> 
 
 
--- 
-Chris Murphy

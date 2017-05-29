@@ -1,46 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:59218 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1750823AbdE2AVL (ORCPT
+Received: from smtp113.iad3a.emailsrvr.com ([173.203.187.113]:33979 "EHLO
+        smtp113.iad3a.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1750846AbdE2IjR (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 28 May 2017 20:21:11 -0400
-Subject: Re: [PATCH v4 00/20] Btrfs-progs offline scrub
-To: <kreijack@inwind.it>, <linux-btrfs@vger.kernel.org>
-CC: <dsterba@suse.cz>, <lakshmipathi.g@gmail.com>
-References: <20170525062205.11660-1-quwenruo@cn.fujitsu.com>
- <e4e15f16-c6b7-a18a-57df-7f404d38107b@inwind.it>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <ee9f0a45-bd92-e534-c98f-a9bb398e10f2@cn.fujitsu.com>
-Date: Mon, 29 May 2017 08:21:08 +0800
+        Mon, 29 May 2017 04:39:17 -0400
+Received: from smtp15.relay.iad3a.emailsrvr.com (localhost [127.0.0.1])
+        by smtp15.relay.iad3a.emailsrvr.com (SMTP Server) with ESMTP id 53DA85484
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 May 2017 04:39:16 -0400 (EDT)
+Received: by smtp15.relay.iad3a.emailsrvr.com (Authenticated sender: intranet-AT-rqc.ru) with ESMTPSA id 0884D5481
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 May 2017 04:39:15 -0400 (EDT)
+Received: from CM01.administration.intranet.rqc.ru (unknown [10.101.2.94])
+        by postfix.thinky.servers.rqc.ru (Postfix) with ESMTPS id 148A59FDD
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 May 2017 08:39:14 +0000 (UTC)
+Subject: Re: btrfs mounts RO, kernel oops on RW
+Cc: linux-btrfs@vger.kernel.org
+References: <CAHPjZW7Af2KzRr_HTaCNGqRAM0SsV8+gJWSRis6eCjGeXNBK7Q@mail.gmail.com>
+ <pan$3ce02$7e425613$62194897$37882c38@cox.net>
+ <CAHPjZW5sRxns7CN8QmhB_HaQP5PGo7smFrf+q1QWHRRVnAToMA@mail.gmail.com>
+From: Marat Khalili <mkh@rqc.ru>
+Message-ID: <161856ce-4df2-cfda-2412-7d8f842e2cd0@rqc.ru>
+Date: Mon, 29 May 2017 11:39:13 +0300
 MIME-Version: 1.0
-In-Reply-To: <e4e15f16-c6b7-a18a-57df-7f404d38107b@inwind.it>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <CAHPjZW5sRxns7CN8QmhB_HaQP5PGo7smFrf+q1QWHRRVnAToMA@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+> I'm not asking for a specific endorsement, but should I be considering
+> something like the seagate ironwolf or WD red drives?
 
+You need two qualitative features from HDD for RAID usage:
+1) being failfast (TLER in WD talk), and
+2) be designed to tolerate vibrations from other disks in a box.
 
-At 05/27/2017 02:37 AM, Goffredo Baroncelli wrote:
-> Hi Qu,
-> 
-> On 2017-05-25 08:21, Qu Wenruo wrote:
-> 
->> And since kernel scrub won't account P/Q corruption, it makes us quite
->> hard to detect error like kernel screwing up P/Q when scrubbing.
-> 
-> could you elaborate the above sentence: in my test the kernel-scrub (4.12.0-rc2) is able to correct a wrong 'P' parity; am I missing something ?
+Therefore you need _at least_ WD Red or alternative from Seagate. Paying 
+more can only bring you quantitative benefits AFAIK. Just don't put 
+desktop drives in RAID.
 
-That's because Liu Bo and I exposed and fixed the bug.
+(Sorry for being off-topic, but after some long recent discussions I 
+don't feel as guilty. :) )
 
-Or the case will still be the same.
+--
 
-Thanks,
-Qu
-
-> 
-> BR
-> G.Baroncelli
-> [...]
-> 
-
+With Best Regards,
+Marat Khalili
 

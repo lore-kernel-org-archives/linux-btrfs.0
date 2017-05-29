@@ -1,32 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from verein.lst.de ([213.95.11.211]:50801 "EHLO newverein.lst.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751039AbdE1Jtk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 28 May 2017 05:49:40 -0400
-Date: Sun, 28 May 2017 11:49:38 +0200
-From: Christoph Hellwig <hch@lst.de>
-To: Johannes Thumshirn <jthumshirn@suse.de>
-Cc: Christoph Hellwig <hch@lst.de>, axboe@kernel.dk,
-        linux-block@vger.kernel.org, dm-devel@redhat.com,
+Received: from mx2.suse.de ([195.135.220.15]:51761 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1750966AbdE2NNP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 29 May 2017 09:13:15 -0400
+Date: Mon, 29 May 2017 15:12:13 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Christoph Hellwig <hch@lst.de>
+Cc: axboe@kernel.dk, linux-block@vger.kernel.org, dm-devel@redhat.com,
         linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 07/13] block_dev: propagate bio_iov_iter_get_pages
-        error in __blkdev_direct_IO
-Message-ID: <20170528094938.GD14199@lst.de>
-References: <20170526085620.3113-1-hch@lst.de> <20170526085620.3113-8-hch@lst.de> <b5bc89a2-a17f-7e98-a767-bfa0c90afaac@suse.de>
+Subject: Re: [PATCH 05/13] fs: remove the unused error argument to
+ dio_end_io()
+Message-ID: <20170529131213.GA14523@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170526085620.3113-1-hch@lst.de>
+ <20170526085620.3113-6-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <b5bc89a2-a17f-7e98-a767-bfa0c90afaac@suse.de>
+In-Reply-To: <20170526085620.3113-6-hch@lst.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 26, 2017 at 11:12:31AM +0200, Johannes Thumshirn wrote:
-> On 05/26/2017 10:56 AM, Christoph Hellwig wrote:
-> > Once we move the block layer to its own status code we'll still want to
-> > propagate the bio_iov_iter_get_pages, so restructure __blkdev_direct_IO
-> > to take ret into account when returning the errno.
-> > ---
-> 
-> 
-> -ENOSIGNOFF?
+On Fri, May 26, 2017 at 11:56:12AM +0300, Christoph Hellwig wrote:
+> Signed-off-by: Christoph Hellwig <hch@lst.de>
+> Reviewed-by: Bart Van Assche <Bart.VanAssche@sandisk.com>
 
-Fixed.
+For the btrfs bits
+
+Acked-by: David Sterba <dsterba@suse.com>

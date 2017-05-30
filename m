@@ -1,91 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:62129 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1750930AbdEaF40 (ORCPT
+Received: from mail-pf0-f173.google.com ([209.85.192.173]:32988 "EHLO
+        mail-pf0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750825AbdE3UvA (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 31 May 2017 01:56:26 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <dsterba@suse.cz>
-Subject: [PATCH v2 5/6] btrfs-progs: lowmem check: Fix false alert on missing chunk or dev extent
-Date: Wed, 31 May 2017 13:56:09 +0800
-Message-ID: <20170531055610.11606-6-quwenruo@cn.fujitsu.com>
-In-Reply-To: <20170531055610.11606-1-quwenruo@cn.fujitsu.com>
-References: <20170531055610.11606-1-quwenruo@cn.fujitsu.com>
+        Tue, 30 May 2017 16:51:00 -0400
+Received: by mail-pf0-f173.google.com with SMTP id e193so82702041pfh.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 May 2017 13:51:00 -0700 (PDT)
+Date: Tue, 30 May 2017 13:50:57 -0700
+From: Omar Sandoval <osandov@osandov.com>
+To: fdmanana@kernel.org
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix invalid extent maps due to hole punching
+Message-ID: <20170530205057.GA11921@vader.DHCP.thefacebook.com>
+References: <20170528163153.31962-1-fdmanana@kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170528163153.31962-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When checking chunk or dev extent, lowmem mode uses chunk length as dev
-extent length, and if they mismatch, report missing chunk or dev extent
-like:
-------
-ERROR: chunk[256 4324327424) stripe 0 did not find the related dev extent
-ERROR: chunk[256 4324327424) stripe 1 did not find the related dev extent
-ERROR: chunk[256 4324327424) stripe 2 did not find the related dev extent
-------
+On Sun, May 28, 2017 at 05:31:53PM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
 
-However, only for Single/DUP/RAID1 profiles chunk length is the same as
-dev extent length.
-For other profiles, this will cause tons of false alert.
+[snip]
 
-Fix it by using correct stripe length when checking chunk and dev extent
-items.
+Hey, Filipe,
 
-This fixes the mkfs test failure when using lowmem mode check.
+I saw this warning and tried to apply your patch, but it doesn't apply
+cleanly (seems to conflict with 9986277e0e4c ("Btrfs: handle only
+applicable errors returned by btrfs_get_extent")).
 
-Reported-by: Kai Krakow <hurikhan77@gmail.com>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- cmds-check.c | 11 +++++++++--
- 1 file changed, 9 insertions(+), 2 deletions(-)
-
-diff --git a/cmds-check.c b/cmds-check.c
-index b19d5a28..52091325 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -10920,7 +10920,12 @@ static int check_dev_extent_item(struct btrfs_fs_info *fs_info,
- 
- 	l = path.nodes[0];
- 	chunk = btrfs_item_ptr(l, path.slots[0], struct btrfs_chunk);
--	if (btrfs_chunk_length(l, chunk) != length)
-+	ret = btrfs_check_chunk_valid(chunk_root, l, chunk, path.slots[0],
-+				      chunk_key.offset);
-+	if (ret < 0)
-+		goto out;
-+
-+	if (btrfs_stripe_length(fs_info, l, chunk) != length)
- 		goto out;
- 
- 	num_stripes = btrfs_chunk_num_stripes(l, chunk);
-@@ -11160,6 +11165,7 @@ static int check_chunk_item(struct btrfs_fs_info *fs_info,
- 	struct btrfs_dev_extent *ptr;
- 	u64 length;
- 	u64 chunk_end;
-+	u64 stripe_len;
- 	u64 type;
- 	int num_stripes;
- 	u64 offset;
-@@ -11209,6 +11215,7 @@ static int check_chunk_item(struct btrfs_fs_info *fs_info,
- 	}
- 
- 	num_stripes = btrfs_chunk_num_stripes(eb, chunk);
-+	stripe_len = btrfs_stripe_length(fs_info, eb, chunk);
- 	for (i = 0; i < num_stripes; i++) {
- 		btrfs_release_path(&path);
- 		btrfs_init_path(&path);
-@@ -11228,7 +11235,7 @@ static int check_chunk_item(struct btrfs_fs_info *fs_info,
- 		offset = btrfs_dev_extent_chunk_offset(leaf, ptr);
- 		if (objectid != chunk_key.objectid ||
- 		    offset != chunk_key.offset ||
--		    btrfs_dev_extent_length(leaf, ptr) != length)
-+		    btrfs_dev_extent_length(leaf, ptr) != stripe_len)
- 			goto not_match_dev;
- 		continue;
- not_match_dev:
--- 
-2.13.0
-
-
-
+> Fixes: d77815461f04 ("btrfs: Avoid trucating page or punching hole in a already existed hole.")
+> Cc: <stable@vger.kernel.org>
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+>  fs/btrfs/file.c | 4 +++-
+>  1 file changed, 3 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index f7d022bc7998..2645d820422c 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -2390,10 +2390,12 @@ static int fill_holes(struct btrfs_trans_handle *trans,
+>   */
+>  static int find_first_non_hole(struct inode *inode, u64 *start, u64 *len)
+>  {
+> +	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+>  	struct extent_map *em;
+>  	int ret = 0;
+>  
+> -	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, *start, *len, 0);
+> +	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, *start,
+> +			      round_up(*len, fs_info->sectorsize), 0);
+>  	if (IS_ERR_OR_NULL(em)) {
+>  		if (!em)
+>  			ret = -ENOMEM;
+> -- 
+> 2.11.0
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

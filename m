@@ -1,59 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:39178 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750930AbdE3SER (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 30 May 2017 14:04:17 -0400
-Date: Tue, 30 May 2017 11:02:17 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Ivan Sizov <sivan606@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 0/6] add sanity check for extent inline ref type
-Message-ID: <20170530180217.GA21784@lim.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <20170526002631.8546-1-bo.li.liu@oracle.com>
- <CAMG9ccwjBmP9HKkodwARxQK7AkC68HACMzuT43wX6+gmWVUjbg@mail.gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:47771 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751221AbdE3Sze (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 30 May 2017 14:55:34 -0400
+Date: Tue, 30 May 2017 20:54:32 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz, lakshmipathi.g@gmail.com
+Subject: Re: [PATCH v4 00/20] Btrfs-progs offline scrub
+Message-ID: <20170530185432.GZ14523@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170525062205.11660-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAMG9ccwjBmP9HKkodwARxQK7AkC68HACMzuT43wX6+gmWVUjbg@mail.gmail.com>
+In-Reply-To: <20170525062205.11660-1-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 30, 2017 at 05:05:09PM +0300, Ivan Sizov wrote:
-> 2017-05-26 3:26 GMT+03:00 Liu Bo <bo.li.liu@oracle.com>:
-> >Patch 6 adds scrub support to detect the corruption, so users can be
-> noticed when they do scrub on a regular basis.
-> >I'm not sure in the real world what may result in this corruption
-> 
-> I've caught this type of corruption in the wild. The big rsync backup
-> always ends with a kernel crash due to BUG() statement in
-> ctime.h:1779. After applying this patchset and running scrub I've got
-> following messages:
-> 
-> [sivan@fruestuck ~]$ dmesg | grep "invalid extent inline"
-> [ 8812.428673] eb 4631634034688(tree block) invalid extent inline ref type 0
-> [ 8812.429148] BTRFS error (device sdb1): scrub: extent
-> 2994741510144(0x2b944810000) has an invalid extent inline ref type,
-> ignored.
-> [ 8812.430086] eb 4631634034688(tree block) invalid extent inline ref type 0
-> [ 8812.430569] BTRFS error (device sdb1): scrub: extent
-> 2994741559296(0x2b94481c000) has an invalid extent inline ref type,
-> ignored.
-> 
-> How to find the cause of the corruption? Should I try to fix it, or it
-> is not dangerous for the filesystem? If I should, how to do that?
+On Thu, May 25, 2017 at 02:21:45PM +0800, Qu Wenruo wrote:
+> For any one who wants to try it, it can be get from my repo:
+> https://github.com/adam900710/btrfs-progs/tree/offline_scrub
+> Qu Wenruo (20):
+>   btrfs-progs: raid56: Introduce raid56 header for later recovery usage
+>   btrfs-progs: raid56: Introduce tables for RAID6 recovery
+>   btrfs-progs: raid56: Allow raid6 to recover 2 data stripes
+>   btrfs-progs: raid56: Allow raid6 to recover data and p
+>   btrfs-progs: Introduce wrapper to recover raid56 data
+>   btrfs-progs: Introduce new btrfs_map_block function which returns more
+>     unified result.
+>   btrfs-progs: Allow __btrfs_map_block_v2 to remove unrelated stripes
+>   btrfs-progs: csum: Introduce function to read out data csums
 
-Did it also print a btree's leaf's content?  If yes, it could show us
-which inline ref has the issue.
+I'm about to start merging this patches, in parts. First the patches 1-8
+as they're independent and not intrusive.
 
-It's not easy to tell if it's dangerous because I have no idea what
-type of extent "2994741559296(0x2b94481c000)" refers to.
-
-The command 'btrfs check' in the latest btrfs-progs can fix my test
-case, which is the simplest one (only touched the inline ref and
-everything else remained the same).
-
-Given that at least two users reported about this, I start thinking
-about there's something wrong inside our btrfs code.
-
--liubo
+>   btrfs-progs: scrub: Introduce structures to support offline scrub for
+>     RAID56
+>   btrfs-progs: scrub: Introduce functions to scrub mirror based tree
+>     block
+>   btrfs-progs: scrub: Introduce functions to scrub mirror based data
+>     blocks
+>   btrfs-progs: scrub: Introduce function to scrub one mirror-based
+>     extent
+>   btrfs-progs: scrub: Introduce function to scrub one data stripe
+>   btrfs-progs: scrub: Introduce function to verify parities
+>   btrfs-progs: extent-tree: Introduce function to check if there is any
+>     extent in given range.
+>   btrfs-progs: scrub: Introduce function to recover data parity
+>   btrfs-progs: scrub: Introduce helper to write a full stripe
+>   btrfs-progs: scrub: Introduce a function to scrub one full stripe
+>   btrfs-progs: scrub: Introduce function to check a whole block group
+>   btrfs-progs: scrub: Introduce offline scrub function

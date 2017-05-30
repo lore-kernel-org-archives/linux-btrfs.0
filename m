@@ -1,35 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39628 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1750846AbdE2Rkc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 May 2017 13:40:32 -0400
-Date: Mon, 29 May 2017 19:39:31 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz, hurikhan77@gmail.com
-Subject: Re: [PATCH 2/5] btrfs-progs: Enhance chunk item validation check
-Message-ID: <20170529173931.GT14523@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170515082742.21363-1-quwenruo@cn.fujitsu.com>
- <20170515082742.21363-2-quwenruo@cn.fujitsu.com>
+Received: from mail-wm0-f65.google.com ([74.125.82.65]:33772 "EHLO
+        mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751525AbdE3OFb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 30 May 2017 10:05:31 -0400
+Received: by mail-wm0-f65.google.com with SMTP id b84so25534630wmh.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 May 2017 07:05:30 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170515082742.21363-2-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20170526002631.8546-1-bo.li.liu@oracle.com>
+References: <20170526002631.8546-1-bo.li.liu@oracle.com>
+From: Ivan Sizov <sivan606@gmail.com>
+Date: Tue, 30 May 2017 17:05:09 +0300
+Message-ID: <CAMG9ccwjBmP9HKkodwARxQK7AkC68HACMzuT43wX6+gmWVUjbg@mail.gmail.com>
+Subject: Re: [PATCH 0/6] add sanity check for extent inline ref type
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 15, 2017 at 04:27:39PM +0800, Qu Wenruo wrote:
-> btrfs_check_chunk_valid() doesn't check if
-> 1) chunk flag has conflicting flags
->    For example chunk type DATA|METADATA|RAID1|RAID10 is completely
->    invalid, while current check_chunk_valid() can't detect it.
-> 2) num_stripes is invalid for RAID10
->    Num_stripes 5 is not valid for RAID10.
-> 
-> This patch will enhance btrfs_check_chunk_valid() to handle above cases.
-> 
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+2017-05-26 3:26 GMT+03:00 Liu Bo <bo.li.liu@oracle.com>:
+>Patch 6 adds scrub support to detect the corruption, so users can be
+noticed when they do scrub on a regular basis.
+>I'm not sure in the real world what may result in this corruption
 
-Most tests fail with this patch, mkfs or from restored images created.
-Simple test-check or test-misc fails in the first test. Have I missed
-some other patch or test update?
+I've caught this type of corruption in the wild. The big rsync backup
+always ends with a kernel crash due to BUG() statement in
+ctime.h:1779. After applying this patchset and running scrub I've got
+following messages:
+
+[sivan@fruestuck ~]$ dmesg | grep "invalid extent inline"
+[ 8812.428673] eb 4631634034688(tree block) invalid extent inline ref type 0
+[ 8812.429148] BTRFS error (device sdb1): scrub: extent
+2994741510144(0x2b944810000) has an invalid extent inline ref type,
+ignored.
+[ 8812.430086] eb 4631634034688(tree block) invalid extent inline ref type 0
+[ 8812.430569] BTRFS error (device sdb1): scrub: extent
+2994741559296(0x2b94481c000) has an invalid extent inline ref type,
+ignored.
+
+How to find the cause of the corruption? Should I try to fix it, or it
+is not dangerous for the filesystem? If I should, how to do that?

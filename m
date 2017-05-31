@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:4561 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:62129 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1750938AbdEaF40 (ORCPT
+        with ESMTP id S1750930AbdEaF40 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 31 May 2017 01:56:26 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <dsterba@suse.cz>
-Subject: [PATCH v2 4/6] btrfs-progs: Introduce function to get correct stripe length
-Date: Wed, 31 May 2017 13:56:08 +0800
-Message-ID: <20170531055610.11606-5-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v2 5/6] btrfs-progs: lowmem check: Fix false alert on missing chunk or dev extent
+Date: Wed, 31 May 2017 13:56:09 +0800
+Message-ID: <20170531055610.11606-6-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20170531055610.11606-1-quwenruo@cn.fujitsu.com>
 References: <20170531055610.11606-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,81 +17,73 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce a new function, btrfs_get_chunk_stripe_len() to get correct
-stripe length.
-This is very handy for lowmem mode, which checks the mapping between
-device extent and chunk item.
+When checking chunk or dev extent, lowmem mode uses chunk length as dev
+extent length, and if they mismatch, report missing chunk or dev extent
+like:
+------
+ERROR: chunk[256 4324327424) stripe 0 did not find the related dev extent
+ERROR: chunk[256 4324327424) stripe 1 did not find the related dev extent
+ERROR: chunk[256 4324327424) stripe 2 did not find the related dev extent
+------
 
+However, only for Single/DUP/RAID1 profiles chunk length is the same as
+dev extent length.
+For other profiles, this will cause tons of false alert.
+
+Fix it by using correct stripe length when checking chunk and dev extent
+items.
+
+This fixes the mkfs test failure when using lowmem mode check.
+
+Reported-by: Kai Krakow <hurikhan77@gmail.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- volumes.c | 44 ++++++++++++++++++++++++++++++++++++++++++++
- volumes.h |  3 +++
- 2 files changed, 47 insertions(+)
+ cmds-check.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
 
-diff --git a/volumes.c b/volumes.c
-index 57534314..1c291edb 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -2285,3 +2285,47 @@ out:
+diff --git a/cmds-check.c b/cmds-check.c
+index b19d5a28..52091325 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -10920,7 +10920,12 @@ static int check_dev_extent_item(struct btrfs_fs_info *fs_info,
  
- 	return ret;
- }
+ 	l = path.nodes[0];
+ 	chunk = btrfs_item_ptr(l, path.slots[0], struct btrfs_chunk);
+-	if (btrfs_chunk_length(l, chunk) != length)
++	ret = btrfs_check_chunk_valid(chunk_root, l, chunk, path.slots[0],
++				      chunk_key.offset);
++	if (ret < 0)
++		goto out;
 +
-+/*
-+ * Get stripe length from chunk item and its stripe items
-+ *
-+ * Caller should only call this function after validating the chunk item
-+ * by using btrfs_check_chunk_valid().
-+ */
-+u64 btrfs_stripe_length(struct btrfs_fs_info *fs_info,
-+			struct extent_buffer *leaf,
-+			struct btrfs_chunk *chunk)
-+{
++	if (btrfs_stripe_length(fs_info, l, chunk) != length)
+ 		goto out;
+ 
+ 	num_stripes = btrfs_chunk_num_stripes(l, chunk);
+@@ -11160,6 +11165,7 @@ static int check_chunk_item(struct btrfs_fs_info *fs_info,
+ 	struct btrfs_dev_extent *ptr;
+ 	u64 length;
+ 	u64 chunk_end;
 +	u64 stripe_len;
-+	u64 chunk_len;
-+	u32 num_stripes = btrfs_chunk_num_stripes(leaf, chunk);
-+	u64 profile = btrfs_chunk_type(leaf, chunk) &
-+		      BTRFS_BLOCK_GROUP_PROFILE_MASK;
-+
-+	chunk_len = btrfs_chunk_length(leaf, chunk);
-+
-+	switch (profile) {
-+	case 0: /* Single profile */
-+	case BTRFS_BLOCK_GROUP_RAID1:
-+	case BTRFS_BLOCK_GROUP_DUP:
-+		stripe_len = chunk_len;
-+		break;
-+	case BTRFS_BLOCK_GROUP_RAID0:
-+		stripe_len = chunk_len / num_stripes;
-+		break;
-+	case BTRFS_BLOCK_GROUP_RAID5:
-+		stripe_len = chunk_len / (num_stripes - 1);
-+		break;
-+	case BTRFS_BLOCK_GROUP_RAID6:
-+		stripe_len = chunk_len / (num_stripes - 2);
-+		break;
-+	case BTRFS_BLOCK_GROUP_RAID10:
-+		stripe_len = chunk_len / (num_stripes /
-+				btrfs_chunk_sub_stripes(leaf, chunk));
-+		break;
-+	default:
-+		/* Invalid chunk profile found */
-+		BUG_ON(1);
-+	}
-+	return stripe_len;
-+}
-diff --git a/volumes.h b/volumes.h
-index 699b0bae..fc0a775b 100644
---- a/volumes.h
-+++ b/volumes.h
-@@ -246,4 +246,7 @@ int btrfs_check_chunk_valid(struct btrfs_root *root,
- 			    struct extent_buffer *leaf,
- 			    struct btrfs_chunk *chunk,
- 			    int slot, u64 logical);
-+u64 btrfs_stripe_length(struct btrfs_fs_info *fs_info,
-+			struct extent_buffer *leaf,
-+			struct btrfs_chunk *chunk);
- #endif
+ 	u64 type;
+ 	int num_stripes;
+ 	u64 offset;
+@@ -11209,6 +11215,7 @@ static int check_chunk_item(struct btrfs_fs_info *fs_info,
+ 	}
+ 
+ 	num_stripes = btrfs_chunk_num_stripes(eb, chunk);
++	stripe_len = btrfs_stripe_length(fs_info, eb, chunk);
+ 	for (i = 0; i < num_stripes; i++) {
+ 		btrfs_release_path(&path);
+ 		btrfs_init_path(&path);
+@@ -11228,7 +11235,7 @@ static int check_chunk_item(struct btrfs_fs_info *fs_info,
+ 		offset = btrfs_dev_extent_chunk_offset(leaf, ptr);
+ 		if (objectid != chunk_key.objectid ||
+ 		    offset != chunk_key.offset ||
+-		    btrfs_dev_extent_length(leaf, ptr) != length)
++		    btrfs_dev_extent_length(leaf, ptr) != stripe_len)
+ 			goto not_match_dev;
+ 		continue;
+ not_match_dev:
 -- 
 2.13.0
 

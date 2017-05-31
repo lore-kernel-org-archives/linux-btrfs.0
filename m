@@ -1,57 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38986 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:49151 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1758369AbdEVKQS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 22 May 2017 06:16:18 -0400
+        id S1751082AbdEaPmn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 31 May 2017 11:42:43 -0400
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 724FFAC02
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 May 2017 10:16:17 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
-To: dsterba@suse.cz
-Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 2/2] btrfs: remove __BTRFS_LEAF_DATA_SIZE
-Date: Mon, 22 May 2017 13:16:11 +0300
-Message-Id: <1495448171-20606-2-git-send-email-nborisov@suse.com>
-In-Reply-To: <1495448171-20606-1-git-send-email-nborisov@suse.com>
-References: <1495448171-20606-1-git-send-email-nborisov@suse.com>
+        by mx1.suse.de (Postfix) with ESMTP id 95205AC29
+        for <linux-btrfs@vger.kernel.org>; Wed, 31 May 2017 15:42:36 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH 2/3] btrfs: switch kmallocs to GFP_KERNEL in lzo/zlib alloc_workspace
+Date: Wed, 31 May 2017 17:41:35 +0200
+Message-Id: <b00f101454e17051d005f9fb28224b665c339cf1.1496245064.git.dsterba@suse.com>
+In-Reply-To: <cover.1496245064.git.dsterba@suse.com>
+References: <cover.1496245064.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-__BTRFS_LAF_DATA_SIZE is used only by BTRFS_LEAF_DATA_SIZE. Make the latter
-subsume the former.
+As alloc_workspace is now protected by memalloc_nofs where needed,
+we can switch the kmalloc to use GFP_KERNEL.
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/ctree.h | 9 +++------
- 1 file changed, 3 insertions(+), 6 deletions(-)
+ fs/btrfs/lzo.c  | 2 +-
+ fs/btrfs/zlib.c | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 292c94c45df0..75128bd23140 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1277,19 +1277,16 @@ struct btrfs_root {
- 	/* For qgroup metadata space reserve */
- 	atomic64_t qgroup_meta_rsv;
- };
-+
- static inline u32 btrfs_inode_sectorsize(const struct inode *inode)
+diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
+index a554856a5f8a..c556f3f3fbf0 100644
+--- a/fs/btrfs/lzo.c
++++ b/fs/btrfs/lzo.c
+@@ -51,7 +51,7 @@ static struct list_head *lzo_alloc_workspace(void)
  {
- 	return btrfs_sb(inode->i_sb)->sectorsize;
- }
+ 	struct workspace *workspace;
  
--static inline u32 __BTRFS_LEAF_DATA_SIZE(u32 blocksize)
--{
--	return blocksize - sizeof(struct btrfs_header);
--}
--
- static inline u32 BTRFS_LEAF_DATA_SIZE(const struct btrfs_fs_info *info)
- {
--	return __BTRFS_LEAF_DATA_SIZE(info->nodesize);
-+
-+	return info->nodesize - sizeof(struct btrfs_header);
- }
+-	workspace = kzalloc(sizeof(*workspace), GFP_NOFS);
++	workspace = kzalloc(sizeof(*workspace), GFP_KERNEL);
+ 	if (!workspace)
+ 		return ERR_PTR(-ENOMEM);
  
- static inline unsigned long BTRFS_LEAF_DATA_OFFSET(void)
+diff --git a/fs/btrfs/zlib.c b/fs/btrfs/zlib.c
+index d5446e18bb59..c1db7572283b 100644
+--- a/fs/btrfs/zlib.c
++++ b/fs/btrfs/zlib.c
+@@ -53,14 +53,14 @@ static struct list_head *zlib_alloc_workspace(void)
+ 	struct workspace *workspace;
+ 	int workspacesize;
+ 
+-	workspace = kzalloc(sizeof(*workspace), GFP_NOFS);
++	workspace = kzalloc(sizeof(*workspace), GFP_KERNEL);
+ 	if (!workspace)
+ 		return ERR_PTR(-ENOMEM);
+ 
+ 	workspacesize = max(zlib_deflate_workspacesize(MAX_WBITS, MAX_MEM_LEVEL),
+ 			zlib_inflate_workspacesize());
+ 	workspace->strm.workspace = vmalloc(workspacesize);
+-	workspace->buf = kmalloc(PAGE_SIZE, GFP_NOFS);
++	workspace->buf = kmalloc(PAGE_SIZE, GFP_KERNEL);
+ 	if (!workspace->strm.workspace || !workspace->buf)
+ 		goto fail;
+ 
 -- 
-2.7.4
+2.12.0
 

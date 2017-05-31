@@ -1,50 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:55779 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:58416 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751041AbdEaC1Q (ORCPT
+        with ESMTP id S1750778AbdEaF40 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 30 May 2017 22:27:16 -0400
-Subject: Re: [PATCH 2/5] btrfs-progs: Enhance chunk item validation check
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>, <hurikhan77@gmail.com>
-References: <20170515082742.21363-1-quwenruo@cn.fujitsu.com>
- <20170515082742.21363-2-quwenruo@cn.fujitsu.com>
- <20170529173931.GT14523@twin.jikos.cz>
+        Wed, 31 May 2017 01:56:26 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <27d5406e-f29c-8373-25fb-2d742d5830d2@cn.fujitsu.com>
-Date: Wed, 31 May 2017 10:18:46 +0800
+To: <linux-btrfs@vger.kernel.org>
+CC: <dsterba@suse.cz>
+Subject: [PATCH v2 0/6] Lowmem mode check check fix for mulit-device
+Date: Wed, 31 May 2017 13:56:04 +0800
+Message-ID: <20170531055610.11606-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20170529173931.GT14523@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This patchset will fix a false alert in lowmem mode, which doesn't handle
+RAID0/5/6/10 chunk well. (the 5th patch)
 
+Along the lowmem fix, also enhance and cleanup some chunk verification code,
+as lowmem mode and original mode are using different chunk verification.
+(the 1st~4th patch)
 
-At 05/30/2017 01:39 AM, David Sterba wrote:
-> On Mon, May 15, 2017 at 04:27:39PM +0800, Qu Wenruo wrote:
->> btrfs_check_chunk_valid() doesn't check if
->> 1) chunk flag has conflicting flags
->>     For example chunk type DATA|METADATA|RAID1|RAID10 is completely
->>     invalid, while current check_chunk_valid() can't detect it.
->> 2) num_stripes is invalid for RAID10
->>     Num_stripes 5 is not valid for RAID10.
->>
->> This patch will enhance btrfs_check_chunk_valid() to handle above cases.
->>
->> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> 
-> Most tests fail with this patch, mkfs or from restored images created.
-> Simple test-check or test-misc fails in the first test. Have I missed
-> some other patch or test update?
-> 
-> 
-Sorry, I formatted patch based on an old branch, which doesn't have the 
-extra fix for single profile.
+Finally, cleanup the loop device setup and move it to test/common other
+than handling in each test case. (the 6th patch)
 
-I'll update the branch and add the needed test case in next branch, 
-along with infrastructure update to make loop device setup more easy to use.
+changelog:
+v2:
+  Fix a bug that single chunk is always treated as invalid, since its
+  profile is not power of 2.
+  Add the 6th patch to move the loop device setup to test/common.
 
-Thanks,
-Qu
+Qu Wenruo (6):
+  btrfs-progs: Cleanup open-coded btrfs_chunk_item_size
+  btrfs-progs: Enhance chunk item validation check
+  btrfs-progs: check: Reuse btrfs_check_chunk_valid in lowmem mode
+  btrfs-progs: Introduce function to get correct stripe length
+  btrfs-progs: lowmem check: Fix false alert on missing chunk or dev
+    extent
+  btrfs-progs: test: Introduce functions to prepare and cleanup loop
+    device
+
+ cmds-check.c                                       | 35 +++++------
+ tests/common                                       | 38 ++++++++++++
+ .../misc-tests/006-image-on-missing-device/test.sh | 12 +---
+ tests/misc-tests/011-delete-missing-device/test.sh | 12 +---
+ tests/mkfs-tests/001-basic-profiles/test.sh        | 12 +---
+ .../005-long-device-name-for-ssd/test.sh           | 10 +---
+ tests/mkfs-tests/006-partitioned-loopdev/test.sh   | 10 +---
+ volumes.c                                          | 70 ++++++++++++++++++++--
+ volumes.h                                          |  3 +
+ 9 files changed, 136 insertions(+), 66 deletions(-)
+
+-- 
+2.13.0
+
 
 

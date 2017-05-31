@@ -1,47 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f67.google.com ([74.125.82.67]:33331 "EHLO
-        mail-wm0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750954AbdE2XSe (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 May 2017 19:18:34 -0400
-Received: by mail-wm0-f67.google.com with SMTP id b84so21118087wmh.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 May 2017 16:18:33 -0700 (PDT)
-From: Timofey Titovets <nefelim4ag@gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:49103 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1750898AbdEaPmc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 31 May 2017 11:42:32 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id E572DABCA
+        for <linux-btrfs@vger.kernel.org>; Wed, 31 May 2017 15:42:30 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Timofey Titovets <nefelim4ag@gmail.com>
-Subject: [PATCH v5 2/2] Btrfs: compression must free at least one sector size
-Date: Tue, 30 May 2017 02:18:05 +0300
-Message-Id: <20170529231805.4797-3-nefelim4ag@gmail.com>
-In-Reply-To: <20170529231805.4797-1-nefelim4ag@gmail.com>
-References: <20170529231805.4797-1-nefelim4ag@gmail.com>
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH 0/3] Update gfp flags in alloc_workspace
+Date: Wed, 31 May 2017 17:41:29 +0200
+Message-Id: <cover.1496245064.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs already skip store of data where compression didn't
-free at least one byte. Let's make logic better and make check
-that compression free at least one sector size
-because in another case it useless to store this data compressed
+We can cheaply get rid of a few GFP_NOFS, as there are only two contexts,
+initializaton (GFP_KERNEL is ok), and potentially a "NOFS", but with
+memalloc_nofs it's made safe.
 
-Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
----
- fs/btrfs/inode.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+David Sterba (3):
+  btrfs: add memalloc_nofs protections around alloc_workspace callback
+  btrfs: switch kmallocs to GFP_KERNEL in lzo/zlib alloc_workspace
+  btrfs: switch to kvmalloc and GFP_KERNEL in lzo/zlib alloc_workspace
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 17cbe930..2793007b 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -609,9 +609,10 @@ static noinline void compress_file_range(struct inode *inode,
- 		/*
- 		 * one last check to make sure the compression is really a
- 		 * win, compare the page count read with the blocks on disk
-+		 * compression must free at least one sector size
- 		 */
- 		total_in = ALIGN(total_in, PAGE_SIZE);
--		if (total_compressed >= total_in) {
-+		if (total_compressed + blocksize > total_in) {
- 			will_compress = 0;
- 		} else {
- 			num_bytes = total_in;
---
-2.13.0
+ fs/btrfs/compression.c | 10 ++++++++++
+ fs/btrfs/lzo.c         | 16 ++++++++--------
+ fs/btrfs/zlib.c        | 10 +++++-----
+ 3 files changed, 23 insertions(+), 13 deletions(-)
+
+-- 
+2.12.0
+

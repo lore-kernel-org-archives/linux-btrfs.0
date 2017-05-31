@@ -1,48 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41573 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:34321 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1750811AbdE3RVH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 30 May 2017 13:21:07 -0400
-Date: Tue, 30 May 2017 19:20:06 +0200
-From: David Sterba <dsterba@suse.cz>
-To: "Lakshmipathi.G" <lakshmipathi.g@giis.co.in>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, dsterba <dsterba@suse.cz>,
-        btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v2] btrfs-progs: btrfs-convert: Add larger device support
-Message-ID: <20170530172006.GY14523@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170513125632.GA10846@giis.co.in>
- <b9f29fde-1e8a-d481-971a-b1951bf9b2a8@cn.fujitsu.com>
- <20170515083653.GA5902@giis.co.in>
+        id S1750993AbdEaIvm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 31 May 2017 04:51:42 -0400
+Date: Wed, 31 May 2017 10:51:37 +0200
+From: Jan Kara <jack@suse.cz>
+To: Goldwyn Rodrigues <rgoldwyn@suse.de>
+Cc: Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org,
+        jack@suse.com, linux-block@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-xfs@vger.kernel.org, axboe@kernel.dk, linux-api@vger.kernel.org,
+        adam.manzanares@wdc.com, viro@zeniv.linux.org.uk,
+        Goldwyn Rodrigues <rgoldwyn@suse.com>
+Subject: Re: [PATCH 09/10] xfs: nowait aio support
+Message-ID: <20170531085137.GB14011@quack2.suse.cz>
+References: <20170524164150.9492-1-rgoldwyn@suse.de>
+ <20170524164150.9492-10-rgoldwyn@suse.de>
+ <20170528093113.GB14519@infradead.org>
+ <cfc1e7ad-f74b-a14a-ac30-8472f7f684af@suse.de>
+ <20170529083338.GC1899@infradead.org>
+ <f105d585-e88c-b037-9905-d0c608c609d9@suse.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170515083653.GA5902@giis.co.in>
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <f105d585-e88c-b037-9905-d0c608c609d9@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 15, 2017 at 02:06:54PM +0530, Lakshmipathi.G wrote:
-> On Mon, May 15, 2017 at 09:40:29AM +0800, Qu Wenruo wrote:
-> > >bug: https://bugzilla.kernel.org/show_bug.cgi?id=194795
-> > 
-> > Errr, it seems that you forgot to update ext2_open_fs() to update how we get
-> > cctx->block_counts.
-> > 
-> > Without that update, we still get wrong total size of original fs, so
-> > converted image will be corrupted.
-> > 
-> > In this 22T case, it can't pass convert test since after conversion,
-> > converted image can't pass e2fsck.
-> > 
-> > Thanks,
-> > Qu
+On Tue 30-05-17 11:13:29, Goldwyn Rodrigues wrote:
+> > Btw, can you write a small blurb up for the man page to document these
+> > ѕemantics in man-page like language?
 > > 
 > 
-> Thanks for pointing out the issue. So we need to update 
-> common.h/cctx->block_count from u32 to u64?
+> Yes, but which man page would it belong to?
+> Should it be a subsection of errors in io_getevents/io_submit. We don't
+> want to add ERRORS to io_getevents() because it would be the return
+> value of the io_getevents call, and not the ones in the iocb structure.
+> Should it be a new man page, say for iocb(7/8)?
 
-I think we should use the 64bit types just to be safe.
+I think you should extend the manpage for io_submit(8). There you can add
+definition of struct iocb in 'DESCRIPTION' section explaining at least the
+most common fields. You can also explain there which flags can be passed
+and what are they intended to do.
 
-> do we also need to change other fields like inodes_count and
-> free_inode_count?
+You can also expand EAGAIN error description to specifically mention that
+in case of NOWAIT aio EAGAIN can be returned if io submission would block.
 
-Yes please.
+								Honza
+-- 
+Jan Kara <jack@suse.com>
+SUSE Labs, CR

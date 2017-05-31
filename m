@@ -1,42 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:16214 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751086AbdEaC3z (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 30 May 2017 22:29:55 -0400
-Subject: Re: [PATCH 3/3] btrfs: check namelen before read/memcmp_extent_buffer
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-References: <20170525020908.25830-1-suy.fnst@cn.fujitsu.com>
- <20170525020908.25830-3-suy.fnst@cn.fujitsu.com>
- <20170529154329.GO14523@twin.jikos.cz>
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-Message-ID: <eb47ab68-5db2-5f57-5eb8-d29f599c56e5@cn.fujitsu.com>
-Date: Wed, 31 May 2017 10:31:50 +0800
-MIME-Version: 1.0
-In-Reply-To: <20170529154329.GO14523@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Received: from mx2.suse.de ([195.135.220.15]:39433 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1750998AbdEaRuU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 31 May 2017 13:50:20 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 31D86AAB6
+        for <linux-btrfs@vger.kernel.org>; Wed, 31 May 2017 17:50:19 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH 0/5] More vmalloc cleanups
+Date: Wed, 31 May 2017 19:49:18 +0200
+Message-Id: <cover.1496252765.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+All vmalloc/vzalloc calls should be addressed, in this or the currently pending
+patches.
 
+David Sterba (5):
+  btrfs: replace opencoded kvzalloc with the helper
+  btrfs: send: use kvmalloc in iterate_dir_item
+  btrfs: scrub: add memalloc_nofs protection around init_ipath
+  btrfs: use GFP_KERNEL in init_ipath
+  btrfs: adjust includes after vmalloc removal
 
-On 05/29/2017 11:43 PM, David Sterba wrote:
-> This patch adds the name length verification to many places and in some
-> of them it looks unnecessary, as the directory item passes sanity checks
-> already. The verification should always happen when we read the input,
-> ie from disk, after search_slot etc. Then, it can be considered valid
-> and does not need the strict checks.
-> 
-I have realized the fact many checks in the patch are useless.
-> I haven't gone through all, one example is __add_inode_ref. The caller
-> add_inode_ref uses namelen before it reaches __add_inode_ref (and thus
-> the sanity checks).
-> 
-> As the checks add error hanlind branch, the entire callgraph of the
-> function should be verified, so I suggest to split the patch and group
-> only hunks that touch the same codepaths.
-> 
-OK, I will update and split it.
-> 
+ fs/btrfs/backref.c         | 10 +++++-----
+ fs/btrfs/check-integrity.c | 11 ++++-------
+ fs/btrfs/ctree.c           |  2 +-
+ fs/btrfs/ioctl.c           |  4 ++--
+ fs/btrfs/raid56.c          | 11 ++++-------
+ fs/btrfs/scrub.c           |  9 +++++++++
+ fs/btrfs/send.c            | 11 ++++-------
+ 7 files changed, 29 insertions(+), 29 deletions(-)
 
+-- 
+2.12.0
 

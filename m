@@ -1,7 +1,7 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50851 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:50907 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751673AbdFAJdW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1751380AbdFAJdW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Thu, 1 Jun 2017 05:33:22 -0400
 From: Jan Kara <jack@suse.cz>
 To: <linux-mm@kvack.org>
@@ -17,91 +17,60 @@ Cc: Hugh Dickins <hughd@google.com>, David Howells <dhowells@redhat.com>,
         "Darrick J . Wong" <darrick.wong@oracle.com>,
         linux-xfs@vger.kernel.org, Nadia Yvette Chambers <nyc@holomorphy.com>,
         Jan Kara <jack@suse.cz>
-Subject: [PATCH 34/35] mm: Make find_get_entries_tag() update index
-Date: Thu,  1 Jun 2017 11:32:44 +0200
-Message-Id: <20170601093245.29238-35-jack@suse.cz>
+Subject: [PATCH 24/35] mm: Use pagevec_lookup_range_tag() in write_cache_pages()
+Date: Thu,  1 Jun 2017 11:32:34 +0200
+Message-Id: <20170601093245.29238-25-jack@suse.cz>
 In-Reply-To: <20170601093245.29238-1-jack@suse.cz>
 References: <20170601093245.29238-1-jack@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Make find_get_entries_tag() update 'start' to index the next page for
-iteration.
+Use pagevec_lookup_range_tag() in write_cache_pages() as it is
+interested only in pages from given range. Remove unnecessary code
+resulting from this.
 
 Signed-off-by: Jan Kara <jack@suse.cz>
 ---
- fs/dax.c                | 3 +--
- include/linux/pagemap.h | 2 +-
- mm/filemap.c            | 8 ++++++--
- 3 files changed, 8 insertions(+), 5 deletions(-)
+ mm/page-writeback.c | 20 ++------------------
+ 1 file changed, 2 insertions(+), 18 deletions(-)
 
-diff --git a/fs/dax.c b/fs/dax.c
-index c204445a69b0..4b295c544fd4 100644
---- a/fs/dax.c
-+++ b/fs/dax.c
-@@ -841,7 +841,7 @@ int dax_writeback_mapping_range(struct address_space *mapping,
+diff --git a/mm/page-writeback.c b/mm/page-writeback.c
+index 143c1c25d680..c77c387465ec 100644
+--- a/mm/page-writeback.c
++++ b/mm/page-writeback.c
+@@ -2194,30 +2194,14 @@ int write_cache_pages(struct address_space *mapping,
+ 	while (!done && (index <= end)) {
+ 		int i;
  
- 	pagevec_init(&pvec, 0);
- 	while (!done) {
--		pvec.nr = find_get_entries_tag(mapping, start_index,
-+		pvec.nr = find_get_entries_tag(mapping, &start_index,
- 				PAGECACHE_TAG_TOWRITE, PAGEVEC_SIZE,
- 				pvec.pages, indices);
- 
-@@ -859,7 +859,6 @@ int dax_writeback_mapping_range(struct address_space *mapping,
- 			if (ret < 0)
- 				goto out;
- 		}
--		start_index = indices[pvec.nr - 1] + 1;
- 	}
- out:
- 	put_dax(dax_dev);
-diff --git a/include/linux/pagemap.h b/include/linux/pagemap.h
-index df128a56f44b..1dc7e54ec32a 100644
---- a/include/linux/pagemap.h
-+++ b/include/linux/pagemap.h
-@@ -365,7 +365,7 @@ static inline unsigned find_get_pages_tag(struct address_space *mapping,
- 	return find_get_pages_range_tag(mapping, index, (pgoff_t)-1, tag,
- 					nr_pages, pages);
- }
--unsigned find_get_entries_tag(struct address_space *mapping, pgoff_t start,
-+unsigned find_get_entries_tag(struct address_space *mapping, pgoff_t *start,
- 			int tag, unsigned int nr_entries,
- 			struct page **entries, pgoff_t *indices);
- 
-diff --git a/mm/filemap.c b/mm/filemap.c
-index e55100459710..3eb05c91c07a 100644
---- a/mm/filemap.c
-+++ b/mm/filemap.c
-@@ -1731,7 +1731,7 @@ EXPORT_SYMBOL(find_get_pages_range_tag);
-  * Like find_get_entries, except we only return entries which are tagged with
-  * @tag.
-  */
--unsigned find_get_entries_tag(struct address_space *mapping, pgoff_t start,
-+unsigned find_get_entries_tag(struct address_space *mapping, pgoff_t *start,
- 			int tag, unsigned int nr_entries,
- 			struct page **entries, pgoff_t *indices)
- {
-@@ -1744,7 +1744,7 @@ unsigned find_get_entries_tag(struct address_space *mapping, pgoff_t start,
- 
- 	rcu_read_lock();
- 	radix_tree_for_each_tagged(slot, &mapping->page_tree,
--				   &iter, start, tag) {
-+				   &iter, *start, tag) {
- 		struct page *head, *page;
- repeat:
- 		page = radix_tree_deref_slot(slot);
-@@ -1786,6 +1786,10 @@ unsigned find_get_entries_tag(struct address_space *mapping, pgoff_t start,
+-		nr_pages = pagevec_lookup_tag(&pvec, mapping, &index, tag,
+-			      min(end - index, (pgoff_t)PAGEVEC_SIZE-1) + 1);
++		nr_pages = pagevec_lookup_range_tag(&pvec, mapping, &index, end,
++				tag, PAGEVEC_SIZE);
+ 		if (nr_pages == 0)
  			break;
- 	}
- 	rcu_read_unlock();
-+
-+	if (ret)
-+		*start = indices[ret - 1] + 1;
-+
- 	return ret;
- }
- EXPORT_SYMBOL(find_get_entries_tag);
+ 
+ 		for (i = 0; i < nr_pages; i++) {
+ 			struct page *page = pvec.pages[i];
+ 
+-			/*
+-			 * At this point, the page may be truncated or
+-			 * invalidated (changing page->mapping to NULL), or
+-			 * even swizzled back from swapper_space to tmpfs file
+-			 * mapping. However, page->index will not change
+-			 * because we have a reference on the page.
+-			 */
+-			if (page->index > end) {
+-				/*
+-				 * can't be range_cyclic (1st pass) because
+-				 * end == -1 in that case.
+-				 */
+-				done = 1;
+-				break;
+-			}
+-
+ 			done_index = page->index;
+ 
+ 			lock_page(page);
 -- 
 2.12.3
 

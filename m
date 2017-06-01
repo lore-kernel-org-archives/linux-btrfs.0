@@ -1,11 +1,13 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50479 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751209AbdFAJdP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 1 Jun 2017 05:33:15 -0400
-From: Jan Kara <jack@suse.cz>
-To: <linux-mm@kvack.org>
-Cc: Hugh Dickins <hughd@google.com>, David Howells <dhowells@redhat.com>,
+Received: from mx1.redhat.com ([209.132.183.28]:37558 "EHLO mx1.redhat.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751180AbdFAK0Q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 1 Jun 2017 06:26:16 -0400
+From: David Howells <dhowells@redhat.com>
+In-Reply-To: <20170601093245.29238-2-jack@suse.cz>
+References: <20170601093245.29238-2-jack@suse.cz> <20170601093245.29238-1-jack@suse.cz>
+To: Jan Kara <jack@suse.cz>
+Cc: dhowells@redhat.com, linux-mm@kvack.org, Hugh Dickins <hughd@google.com>,
         linux-afs@lists.infradead.org,
         Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>,
         linux-nilfs@vger.kernel.org, Bob Peterson <rpeterso@redhat.com>,
@@ -15,39 +17,29 @@ Cc: Hugh Dickins <hughd@google.com>, David Howells <dhowells@redhat.com>,
         "Yan, Zheng" <zyan@redhat.com>, ceph-devel@vger.kernel.org,
         linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>,
         "Darrick J . Wong" <darrick.wong@oracle.com>,
-        linux-xfs@vger.kernel.org, Nadia Yvette Chambers <nyc@holomorphy.com>,
-        Jan Kara <jack@suse.cz>
-Subject: [PATCH 03/35] ext4: Fix off-by-in in loop termination in ext4_find_unwritten_pgoff()
-Date: Thu,  1 Jun 2017 11:32:13 +0200
-Message-Id: <20170601093245.29238-4-jack@suse.cz>
-In-Reply-To: <20170601093245.29238-1-jack@suse.cz>
-References: <20170601093245.29238-1-jack@suse.cz>
+        linux-xfs@vger.kernel.org, Nadia Yvette Chambers <nyc@holomorphy.com>
+Subject: Re: [PATCH 01/35] fscache: Remove unused ->now_uncached callback
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Date: Thu, 01 Jun 2017 11:26:08 +0100
+Message-ID: <10376.1496312768@warthog.procyon.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There is an off-by-one error in loop termination conditions in
-ext4_find_unwritten_pgoff() since 'end' may index a page beyond end of
-desired range if 'endoff' is page aligned. It doesn't have any visible
-effects but still it is good to fix it.
+Jan Kara <jack@suse.cz> wrote:
 
-Signed-off-by: Jan Kara <jack@suse.cz>
----
- fs/ext4/file.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+> The callback doesn't ever get called. Remove it.
 
-diff --git a/fs/ext4/file.c b/fs/ext4/file.c
-index bbea2dccd584..2b00bf84c05b 100644
---- a/fs/ext4/file.c
-+++ b/fs/ext4/file.c
-@@ -474,7 +474,7 @@ static int ext4_find_unwritten_pgoff(struct inode *inode,
- 	endoff = (loff_t)end_blk << blkbits;
- 
- 	index = startoff >> PAGE_SHIFT;
--	end = endoff >> PAGE_SHIFT;
-+	end = (endoff - 1) >> PAGE_SHIFT;
- 
- 	pagevec_init(&pvec, 0);
- 	do {
--- 
-2.12.3
+Hmmm...  I should perhaps be calling this.  I'm not sure why I never did.
 
+At the moment, it doesn't strictly matter as ops on pages marked with
+PG_fscache get ignored if the cache has suffered an I/O error or has been
+withdrawn - but it will incur a performance penalty (the PG_fscache flag is
+checked in the netfs before calling into fscache).
+
+The downside of calling this is that when a cache is removed, fscache would go
+through all the cookies for that cache and iterate over all the pages
+associated with those cookies - which could cause a performance dip in the
+system.
+
+David

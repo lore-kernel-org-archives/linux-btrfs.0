@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:20770 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:62591 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751511AbdFAIzd (ORCPT
+        with ESMTP id S1751195AbdFAIzd (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Jun 2017 04:55:33 -0400
 From: Su Yue <suy.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <dsterba@suse.cz>
-Subject: [PATCH v2 4/9] btrfs: Verify dir_item in 'replay_xattr_deletes'
-Date: Thu, 1 Jun 2017 16:57:11 +0800
-Message-ID: <20170601085716.25898-5-suy.fnst@cn.fujitsu.com>
+Subject: [PATCH v2 5/9] btrfs: Check namelen in 'btrfs_check_ref_name_override'
+Date: Thu, 1 Jun 2017 16:57:12 +0800
+Message-ID: <20170601085716.25898-6-suy.fnst@cn.fujitsu.com>
 In-Reply-To: <20170601085716.25898-1-suy.fnst@cn.fujitsu.com>
 References: <20170601085716.25898-1-suy.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -16,39 +16,29 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Call 'verify_dir_item' to check namelen in 'replay_xattr_deletes'
-in avoid of read out of boundary.
+Call 'btrfs_is_namelen_valid' before reading name.
 
 Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/tree-log.c | 7 +++++++
- 1 file changed, 7 insertions(+)
+ fs/btrfs/tree-log.c | 5 +++++
+ 1 file changed, 5 insertions(+)
 
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 7d98858df44f..ae51144571e2 100644
+index ae51144571e2..fdab0f021197 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -2111,6 +2111,7 @@ static int replay_xattr_deletes(struct btrfs_trans_handle *trans,
- 			      struct btrfs_path *path,
- 			      const u64 ino)
- {
-+	struct btrfs_fs_info *fs_info = root->fs_info;
- 	struct btrfs_key search_key;
- 	struct btrfs_path *log_path;
- 	int i;
-@@ -2152,6 +2153,12 @@ static int replay_xattr_deletes(struct btrfs_trans_handle *trans,
- 			u32 this_len = sizeof(*di) + name_len + data_len;
- 			char *name;
+@@ -4562,6 +4562,11 @@ static int btrfs_check_ref_name_override(struct extent_buffer *eb,
+ 			this_len = sizeof(*extref) + this_name_len;
+ 		}
  
-+			ret = verify_dir_item(fs_info, path->nodes[0],
-+					      path->slots[0], di);
-+			if (ret) {
-+				ret = -EIO;
-+				goto out;
-+			}
- 			name = kmalloc(name_len, GFP_NOFS);
- 			if (!name) {
- 				ret = -ENOMEM;
++		ret = btrfs_is_namelen_valid(eb, slot, name_ptr, this_name_len);
++		if (!ret) {
++			ret = -EIO;
++			goto out;
++		}
+ 		if (this_name_len > name_len) {
+ 			char *new_name;
+ 
 -- 
 2.13.0
 

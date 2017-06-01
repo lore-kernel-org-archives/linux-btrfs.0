@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50922 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:50900 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751695AbdFAJdX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 1 Jun 2017 05:33:23 -0400
+        id S1751672AbdFAJdW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 1 Jun 2017 05:33:22 -0400
 From: Jan Kara <jack@suse.cz>
 To: <linux-mm@kvack.org>
 Cc: Hugh Dickins <hughd@google.com>, David Howells <dhowells@redhat.com>,
@@ -17,152 +17,130 @@ Cc: Hugh Dickins <hughd@google.com>, David Howells <dhowells@redhat.com>,
         "Darrick J . Wong" <darrick.wong@oracle.com>,
         linux-xfs@vger.kernel.org, Nadia Yvette Chambers <nyc@holomorphy.com>,
         Jan Kara <jack@suse.cz>
-Subject: [PATCH 35/35] mm: Implement find_get_entries_range_tag()
-Date: Thu,  1 Jun 2017 11:32:45 +0200
-Message-Id: <20170601093245.29238-36-jack@suse.cz>
+Subject: [PATCH 32/35] mm: Convert truncate code to pagevec_lookup_entries_range()
+Date: Thu,  1 Jun 2017 11:32:42 +0200
+Message-Id: <20170601093245.29238-33-jack@suse.cz>
 In-Reply-To: <20170601093245.29238-1-jack@suse.cz>
 References: <20170601093245.29238-1-jack@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Implement find_get_entries_range_tag() (actually convert
-find_get_entries_tag() tag to it as the only user of
-find_get_entries_tag() needs a ranged lookup) and use it in DAX which is
-the only user of this interface. This is mostly for consistency with
-other page/entry iteration interfaces.
+All radix tree scanning code in truncate paths is interested only in
+pages from given range. Convert them to pagevec_lookup_entries_range().
 
 Signed-off-by: Jan Kara <jack@suse.cz>
 ---
- fs/dax.c                | 12 +++---------
- include/linux/pagemap.h |  3 ++-
- mm/filemap.c            | 36 ++++++++++++++++++++++++++----------
- 3 files changed, 31 insertions(+), 20 deletions(-)
+ mm/truncate.c | 52 +++++++++-------------------------------------------
+ 1 file changed, 9 insertions(+), 43 deletions(-)
 
-diff --git a/fs/dax.c b/fs/dax.c
-index 4b295c544fd4..acf17b55f76b 100644
---- a/fs/dax.c
-+++ b/fs/dax.c
-@@ -819,7 +819,6 @@ int dax_writeback_mapping_range(struct address_space *mapping,
- 	pgoff_t indices[PAGEVEC_SIZE];
- 	struct dax_device *dax_dev;
- 	struct pagevec pvec;
--	bool done = false;
- 	int i, ret = 0;
- 
- 	if (WARN_ON_ONCE(inode->i_blkbits != PAGE_SHIFT))
-@@ -840,20 +839,15 @@ int dax_writeback_mapping_range(struct address_space *mapping,
- 	tag_pages_for_writeback(mapping, start_index, end_index);
+diff --git a/mm/truncate.c b/mm/truncate.c
+index 9efc82f18b74..31d5c5f3da30 100644
+--- a/mm/truncate.c
++++ b/mm/truncate.c
+@@ -289,16 +289,11 @@ void truncate_inode_pages_range(struct address_space *mapping,
  
  	pagevec_init(&pvec, 0);
--	while (!done) {
--		pvec.nr = find_get_entries_tag(mapping, &start_index,
--				PAGECACHE_TAG_TOWRITE, PAGEVEC_SIZE,
-+	while (start_index <= end_index) {
-+		pvec.nr = find_get_entries_range_tag(mapping, &start_index,
-+				end_index, PAGECACHE_TAG_TOWRITE, PAGEVEC_SIZE,
- 				pvec.pages, indices);
+ 	index = start;
+-	while (index < end && pagevec_lookup_entries(&pvec, mapping, &index,
+-			min(end - index, (pgoff_t)PAGEVEC_SIZE),
+-			indices)) {
++	while (index < end && pagevec_lookup_entries_range(&pvec, mapping,
++			&index, end - 1, PAGEVEC_SIZE, indices)) {
+ 		for (i = 0; i < pagevec_count(&pvec); i++) {
+ 			struct page *page = pvec.pages[i];
  
- 		if (pvec.nr == 0)
- 			break;
+-			/* We rely upon deletion not changing page->index */
+-			if (indices[i] >= end)
+-				break;
+-
+ 			if (radix_tree_exceptional_entry(page)) {
+ 				truncate_exceptional_entry(mapping, indices[i],
+ 							   page);
+@@ -352,20 +347,14 @@ void truncate_inode_pages_range(struct address_space *mapping,
+ 			put_page(page);
+ 		}
+ 	}
+-	/*
+-	 * If the truncation happened within a single page no pages
+-	 * will be released, just zeroed, so we can bail out now.
+-	 */
+-	if (start >= end)
+-		goto out;
  
- 		for (i = 0; i < pvec.nr; i++) {
--			if (indices[i] > end_index) {
--				done = true;
+ 	index = start;
+-	for ( ; ; ) {
++	while (index < end) {
+ 		pgoff_t lookup_start = index;
+ 
+ 		cond_resched();
+-		if (!pagevec_lookup_entries(&pvec, mapping, &index,
+-			min(end - index, (pgoff_t)PAGEVEC_SIZE), indices)) {
++		if (!pagevec_lookup_entries_range(&pvec, mapping, &index,
++					end - 1, PAGEVEC_SIZE, indices)) {
+ 			/* If all gone from start onwards, we're done */
+ 			if (lookup_start == start)
+ 				break;
+@@ -373,22 +362,9 @@ void truncate_inode_pages_range(struct address_space *mapping,
+ 			index = start;
+ 			continue;
+ 		}
+-		if (lookup_start == start && indices[0] >= end) {
+-			/* All gone out of hole to be punched, we're done */
+-			pagevec_remove_exceptionals(&pvec);
+-			pagevec_release(&pvec);
+-			break;
+-		}
+ 		for (i = 0; i < pagevec_count(&pvec); i++) {
+ 			struct page *page = pvec.pages[i];
+ 
+-			/* We rely upon deletion not changing page->index */
+-			if (indices[i] >= end) {
+-				/* Restart punch to make sure all gone */
+-				index = start;
 -				break;
 -			}
 -
- 			ret = dax_writeback_one(bdev, dax_dev, mapping,
- 					indices[i], pvec.pages[i]);
- 			if (ret < 0)
-diff --git a/include/linux/pagemap.h b/include/linux/pagemap.h
-index 1dc7e54ec32a..38227e670a83 100644
---- a/include/linux/pagemap.h
-+++ b/include/linux/pagemap.h
-@@ -365,7 +365,8 @@ static inline unsigned find_get_pages_tag(struct address_space *mapping,
- 	return find_get_pages_range_tag(mapping, index, (pgoff_t)-1, tag,
- 					nr_pages, pages);
- }
--unsigned find_get_entries_tag(struct address_space *mapping, pgoff_t *start,
-+unsigned find_get_entries_range_tag(struct address_space *mapping,
-+			pgoff_t *start, pgoff_t end,
- 			int tag, unsigned int nr_entries,
- 			struct page **entries, pgoff_t *indices);
+ 			if (radix_tree_exceptional_entry(page)) {
+ 				truncate_exceptional_entry(mapping, indices[i],
+ 							   page);
+@@ -499,16 +475,11 @@ unsigned long invalidate_mapping_pages(struct address_space *mapping,
+ 	int i;
  
-diff --git a/mm/filemap.c b/mm/filemap.c
-index 3eb05c91c07a..06f82ed9096e 100644
---- a/mm/filemap.c
-+++ b/mm/filemap.c
-@@ -1720,9 +1720,10 @@ unsigned find_get_pages_range_tag(struct address_space *mapping, pgoff_t *index,
- EXPORT_SYMBOL(find_get_pages_range_tag);
+ 	pagevec_init(&pvec, 0);
+-	while (index <= end && pagevec_lookup_entries(&pvec, mapping, &index,
+-			min(end - index, (pgoff_t)PAGEVEC_SIZE - 1) + 1,
+-			indices)) {
++	while (index <= end && pagevec_lookup_entries_range(&pvec, mapping,
++			&index, end, PAGEVEC_SIZE, indices)) {
+ 		for (i = 0; i < pagevec_count(&pvec); i++) {
+ 			struct page *page = pvec.pages[i];
  
- /**
-- * find_get_entries_tag - find and return entries that match @tag
-+ * find_get_entries_range_tag - find and return entries that match @tag
-  * @mapping:	the address_space to search
-  * @start:	the starting page cache index
-+ * @end:	the final page cache index (inclusive)
-  * @tag:	the tag index
-  * @nr_entries:	the maximum number of entries
-  * @entries:	where the resulting entries are placed
-@@ -1731,9 +1732,10 @@ EXPORT_SYMBOL(find_get_pages_range_tag);
-  * Like find_get_entries, except we only return entries which are tagged with
-  * @tag.
-  */
--unsigned find_get_entries_tag(struct address_space *mapping, pgoff_t *start,
--			int tag, unsigned int nr_entries,
--			struct page **entries, pgoff_t *indices)
-+unsigned find_get_entries_range_tag(struct address_space *mapping,
-+			pgoff_t *start, pgoff_t end, int tag,
-+			unsigned int nr_entries, struct page **entries,
-+			pgoff_t *indices)
- {
- 	void **slot;
- 	unsigned int ret = 0;
-@@ -1746,6 +1748,9 @@ unsigned find_get_entries_tag(struct address_space *mapping, pgoff_t *start,
- 	radix_tree_for_each_tagged(slot, &mapping->page_tree,
- 				   &iter, *start, tag) {
- 		struct page *head, *page;
-+
-+		if (iter.index > end)
-+			break;
- repeat:
- 		page = radix_tree_deref_slot(slot);
- 		if (unlikely(!page))
-@@ -1782,17 +1787,28 @@ unsigned find_get_entries_tag(struct address_space *mapping, pgoff_t *start,
- export:
- 		indices[ret] = iter.index;
- 		entries[ret] = page;
--		if (++ret == nr_entries)
--			break;
-+		if (++ret == nr_entries) {
-+			*start = indices[ret - 1] + 1;
-+			goto out;
-+		}
- 	}
--	rcu_read_unlock();
+-			/* We rely upon deletion not changing page->index */
+-			if (indices[i] > end)
+-				break;
+-
+ 			if (radix_tree_exceptional_entry(page)) {
+ 				invalidate_exceptional_entry(mapping,
+ 							     indices[i], page);
+@@ -629,16 +600,11 @@ int invalidate_inode_pages2_range(struct address_space *mapping,
  
--	if (ret)
--		*start = indices[ret - 1] + 1;
-+	/*
-+	 * We come here when we got at @end. We take care to not overflow the
-+	 * index @index as it confuses some of the callers. This breaks the
-+	 * iteration when there is page at index -1 but that is already broken
-+	 * anyway.
-+	 */
-+	if (end == (pgoff_t)-1)
-+		*start = (pgoff_t)-1;
-+	else
-+		*start = end + 1;
-+out:
-+	rcu_read_unlock();
+ 	pagevec_init(&pvec, 0);
+ 	index = start;
+-	while (index <= end && pagevec_lookup_entries(&pvec, mapping, &index,
+-			min(end - index, (pgoff_t)PAGEVEC_SIZE - 1) + 1,
+-			indices)) {
++	while (index <= end && pagevec_lookup_entries_range(&pvec, mapping,
++			&index, end, PAGEVEC_SIZE, indices)) {
+ 		for (i = 0; i < pagevec_count(&pvec); i++) {
+ 			struct page *page = pvec.pages[i];
  
- 	return ret;
- }
--EXPORT_SYMBOL(find_get_entries_tag);
-+EXPORT_SYMBOL(find_get_entries_range_tag);
- 
- /*
-  * CD/DVDs are error prone. When a medium error occurs, the driver may fail
+-			/* We rely upon deletion not changing page->index */
+-			if (indices[i] > end)
+-				break;
+-
+ 			if (radix_tree_exceptional_entry(page)) {
+ 				if (!invalidate_exceptional_entry2(mapping,
+ 							indices[i], page))
 -- 
 2.12.3
 

@@ -1,7 +1,7 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50695 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:50697 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751558AbdFAJdS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1751568AbdFAJdS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Thu, 1 Jun 2017 05:33:18 -0400
 From: Jan Kara <jack@suse.cz>
 To: <linux-mm@kvack.org>
@@ -17,68 +17,54 @@ Cc: Hugh Dickins <hughd@google.com>, David Howells <dhowells@redhat.com>,
         "Darrick J . Wong" <darrick.wong@oracle.com>,
         linux-xfs@vger.kernel.org, Nadia Yvette Chambers <nyc@holomorphy.com>,
         Jan Kara <jack@suse.cz>
-Subject: [PATCH 11/35] hugetlbfs: Use pagevec_lookup_range() in remove_inode_hugepages()
-Date: Thu,  1 Jun 2017 11:32:21 +0200
-Message-Id: <20170601093245.29238-12-jack@suse.cz>
+Subject: [PATCH 05/35] mm: Fix THP handling in invalidate_mapping_pages()
+Date: Thu,  1 Jun 2017 11:32:15 +0200
+Message-Id: <20170601093245.29238-6-jack@suse.cz>
 In-Reply-To: <20170601093245.29238-1-jack@suse.cz>
 References: <20170601093245.29238-1-jack@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We want only pages from given range in remove_inode_hugepages(). Use
-pagevec_lookup_range() instead of pagevec_lookup().
+The condition checking for THP straddling end of invalidated range is
+wrong - it checks 'index' against 'end' but 'index' has been already
+advanced to point to the end of THP and thus the condition can never be
+true. As a result THP straddling 'end' has been fully invalidated. Given
+the nature of invalidate_mapping_pages(), this could be only performance
+issue. In fact, we are lucky the condition is wrong because if it was
+ever true, we'd leave locked page behind.
 
-CC: Nadia Yvette Chambers <nyc@holomorphy.com>
+Fix the condition checking for THP straddling 'end' and also properly
+unlock the page. Also update the comment before the condition to explain
+why we decide not to invalidate the page as it was not clear to me and I
+had to ask Kirill.
+
 Signed-off-by: Jan Kara <jack@suse.cz>
 ---
- fs/hugetlbfs/inode.c | 18 ++----------------
- 1 file changed, 2 insertions(+), 16 deletions(-)
+ mm/truncate.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
 
-diff --git a/fs/hugetlbfs/inode.c b/fs/hugetlbfs/inode.c
-index 372fc8aac38e..99885f9b9d56 100644
---- a/fs/hugetlbfs/inode.c
-+++ b/fs/hugetlbfs/inode.c
-@@ -403,7 +403,6 @@ static void remove_inode_hugepages(struct inode *inode, loff_t lstart,
- 	struct pagevec pvec;
- 	pgoff_t next, index;
- 	int i, freed = 0;
--	long lookup_nr = PAGEVEC_SIZE;
- 	bool truncate_op = (lend == LLONG_MAX);
+diff --git a/mm/truncate.c b/mm/truncate.c
+index 6479ed2afc53..2330223841fb 100644
+--- a/mm/truncate.c
++++ b/mm/truncate.c
+@@ -530,9 +530,15 @@ unsigned long invalidate_mapping_pages(struct address_space *mapping,
+ 			} else if (PageTransHuge(page)) {
+ 				index += HPAGE_PMD_NR - 1;
+ 				i += HPAGE_PMD_NR - 1;
+-				/* 'end' is in the middle of THP */
+-				if (index ==  round_down(end, HPAGE_PMD_NR))
++				/*
++				 * 'end' is in the middle of THP. Don't
++				 * invalidate the page as the part outside of
++				 * 'end' could be still useful.
++				 */
++				if (index > end) {
++					unlock_page(page);
+ 					continue;
++				}
+ 			}
  
- 	memset(&pseudo_vma, 0, sizeof(struct vm_area_struct));
-@@ -412,30 +411,17 @@ static void remove_inode_hugepages(struct inode *inode, loff_t lstart,
- 	next = start;
- 	while (next < end) {
- 		/*
--		 * Don't grab more pages than the number left in the range.
--		 */
--		if (end - next < lookup_nr)
--			lookup_nr = end - next;
--
--		/*
- 		 * When no more pages are found, we are done.
- 		 */
--		if (!pagevec_lookup(&pvec, mapping, &next, lookup_nr))
-+		if (!pagevec_lookup_range(&pvec, mapping, &next, end - 1,
-+					  PAGEVEC_SIZE))
- 			break;
- 
- 		for (i = 0; i < pagevec_count(&pvec); ++i) {
- 			struct page *page = pvec.pages[i];
- 			u32 hash;
- 
--			/*
--			 * The page (index) could be beyond end.  This is
--			 * only possible in the punch hole case as end is
--			 * max page offset in the truncate case.
--			 */
- 			index = page->index;
--			if (index >= end)
--				break;
--
- 			hash = hugetlb_fault_mutex_hash(h, current->mm,
- 							&pseudo_vma,
- 							mapping, index, 0);
+ 			ret = invalidate_inode_page(page);
 -- 
 2.12.3
 

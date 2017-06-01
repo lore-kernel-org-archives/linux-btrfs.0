@@ -1,18 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:38862 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751135AbdFAJVN (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Jun 2017 05:21:13 -0400
-Subject: Re: [PATCH 3/5] btrfs: scrub: add memalloc_nofs protection around
- init_ipath
+Received: from aserp1040.oracle.com ([141.146.126.69]:26839 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751676AbdFAJdV (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Jun 2017 05:33:21 -0400
+Subject: Re: [PATCH 4/5] btrfs: use GFP_KERNEL in init_ipath
 To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
 References: <cover.1496252765.git.dsterba@suse.com>
- <6174e7ce0e55e54a1a4c3a6be413885495926728.1496252765.git.dsterba@suse.com>
+ <529ad6aaf2a0814b3b42da65f7e3afa9d0576e7c.1496252765.git.dsterba@suse.com>
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <0616e2f9-a436-9c24-39e4-5c300ef94bb4@oracle.com>
-Date: Thu, 1 Jun 2017 17:27:15 +0800
+Message-ID: <d29f764c-b08b-0687-a454-02bb02c7504a@oracle.com>
+Date: Thu, 1 Jun 2017 17:39:22 +0800
 MIME-Version: 1.0
-In-Reply-To: <6174e7ce0e55e54a1a4c3a6be413885495926728.1496252765.git.dsterba@suse.com>
+In-Reply-To: <529ad6aaf2a0814b3b42da65f7e3afa9d0576e7c.1496252765.git.dsterba@suse.com>
 Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -20,15 +19,9 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 
 On 06/01/17 01:49, David Sterba wrote:
-> init_ipath is called from a safe ioctl context and from scrub when
-> printing an error.  The protection is added for three reasons:
->
-> * init_data_container calls vmalloc and this does not work as expected
->   in the GFP_NOFS context, so this silently does GFP_KERNEL and might
->   deadlock in some cases
-> * keep the context constraint of GFP_NOFS, used by scrub
-> * we want to use GFP_KERNEL unconditionally inside init_ipath or its
->   callees
+> Now that init_ipath is called either from a safe context or with
+> memalloc_nofs protection, we can switch to GFP_KERNEL allocations in
+> init_path and init_data_container.
 
   Reviewed-by: Anand Jain <anand.jain@oracle.com>
 
@@ -37,42 +30,72 @@ Thanks, Anand
 
 > Signed-off-by: David Sterba <dsterba@suse.com>
 > ---
->  fs/btrfs/scrub.c | 9 +++++++++
->  1 file changed, 9 insertions(+)
+>  fs/btrfs/backref.c | 10 +++++-----
+>  fs/btrfs/ioctl.c   |  4 ++--
+>  2 files changed, 7 insertions(+), 7 deletions(-)
 >
-> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-> index e99be644b19f..096e503e3ddc 100644
-> --- a/fs/btrfs/scrub.c
-> +++ b/fs/btrfs/scrub.c
-> @@ -18,6 +18,7 @@
+> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+> index 24865da63d8f..f723c11bb763 100644
+> --- a/fs/btrfs/backref.c
+> +++ b/fs/btrfs/backref.c
+> @@ -16,7 +16,7 @@
+>   * Boston, MA 021110-1307, USA.
+>   */
 >
->  #include <linux/blkdev.h>
->  #include <linux/ratelimit.h>
-> +#include <linux/sched/mm.h>
+> -#include <linux/vmalloc.h>
+> +#include <linux/mm.h>
+>  #include <linux/rbtree.h>
 >  #include "ctree.h"
->  #include "volumes.h"
 >  #include "disk-io.h"
-> @@ -733,6 +734,7 @@ static int scrub_print_warning_inode(u64 inum, u64 offset, u64 root,
->  	u32 nlink;
->  	int ret;
->  	int i;
-> +	unsigned nofs_flag;
->  	struct extent_buffer *eb;
->  	struct btrfs_inode_item *inode_item;
->  	struct scrub_warning *swarn = warn_ctx;
-> @@ -771,7 +773,14 @@ static int scrub_print_warning_inode(u64 inum, u64 offset, u64 root,
->  	nlink = btrfs_inode_nlink(eb, inode_item);
->  	btrfs_release_path(swarn->path);
+> @@ -2305,7 +2305,7 @@ struct btrfs_data_container *init_data_container(u32 total_bytes)
+>  	size_t alloc_bytes;
 >
-> +	/*
-> +	 * init_path might indirectly call vmalloc, or use GFP_KERNEL. Scrub
-> +	 * uses GFP_NOFS in this context, so we keep it consistent but it does
-> +	 * not seem to be strictly necessary.
-> +	 */
-> +	nofs_flag = memalloc_nofs_save();
->  	ipath = init_ipath(4096, local_root, swarn->path);
-> +	memalloc_nofs_restore(nofs_flag);
->  	if (IS_ERR(ipath)) {
->  		ret = PTR_ERR(ipath);
->  		ipath = NULL;
+>  	alloc_bytes = max_t(size_t, total_bytes, sizeof(*data));
+> -	data = vmalloc(alloc_bytes);
+> +	data = kvmalloc(alloc_bytes, GFP_KERNEL);
+>  	if (!data)
+>  		return ERR_PTR(-ENOMEM);
+>
+> @@ -2339,9 +2339,9 @@ struct inode_fs_paths *init_ipath(s32 total_bytes, struct btrfs_root *fs_root,
+>  	if (IS_ERR(fspath))
+>  		return (void *)fspath;
+>
+> -	ifp = kmalloc(sizeof(*ifp), GFP_NOFS);
+> +	ifp = kmalloc(sizeof(*ifp), GFP_KERNEL);
+>  	if (!ifp) {
+> -		vfree(fspath);
+> +		kvfree(fspath);
+>  		return ERR_PTR(-ENOMEM);
+>  	}
+>
+> @@ -2356,6 +2356,6 @@ void free_ipath(struct inode_fs_paths *ipath)
+>  {
+>  	if (!ipath)
+>  		return;
+> -	vfree(ipath->fspath);
+> +	kvfree(ipath->fspath);
+>  	kfree(ipath);
+>  }
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index c9cdea8061bc..e4116f9248c2 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -37,7 +37,7 @@
+>  #include <linux/bit_spinlock.h>
+>  #include <linux/security.h>
+>  #include <linux/xattr.h>
+> -#include <linux/vmalloc.h>
+> +#include <linux/mm.h>
+>  #include <linux/slab.h>
+>  #include <linux/blkdev.h>
+>  #include <linux/uuid.h>
+> @@ -4588,7 +4588,7 @@ static long btrfs_ioctl_logical_to_ino(struct btrfs_fs_info *fs_info,
+>
+>  out:
+>  	btrfs_free_path(path);
+> -	vfree(inodes);
+> +	kvfree(inodes);
+>  	kfree(loi);
+>
+>  	return ret;
 >

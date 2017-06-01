@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from p3nlsmtpcp01-03.prod.phx3.secureserver.net ([184.168.200.142]:59670
+Received: from p3nlsmtpcp01-03.prod.phx3.secureserver.net ([184.168.200.142]:60806
         "EHLO p3nlsmtpcp01-03.prod.phx3.secureserver.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751750AbdFAQ0P (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 1 Jun 2017 12:26:15 -0400
-Date: Thu, 1 Jun 2017 21:54:29 +0530
+        id S1751161AbdFAQ2Y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 1 Jun 2017 12:28:24 -0400
+Date: Thu, 1 Jun 2017 21:56:57 +0530
 From: "Lakshmipathi.G@giis.co.in" <lakshmipathi.g@gmail.com>
 To: Qu Wenruo <quwenruo@cn.fujitsu.com>, dsterba <dsterba@suse.cz>,
         btrfs <linux-btrfs@vger.kernel.org>
 Subject: [PATCH v3] btrfs-progs: btrfs-convert: Add larger device support
-Message-ID: <20170601162429.GA19537@giis.co.in>
+Message-ID: <20170601162657.GA19598@giis.co.in>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -24,8 +24,7 @@ ext2fs_inode_data_blocks2,ext2fs_read_ext_attr2. (c) use 64bit types with
 btrfs_convert_context fields.
 
 bug: https://bugzilla.kernel.org/show_bug.cgi?id=194795
-
-Signed-off-by: Lakshmipathi.G@giis.co.in <lakshmipathi.g@gmail.com>
+Signed-off-by: Lakshmipathi.G <lakshmipathi.g@gmail.com>
 ---
  convert/common.h      |  8 ++++----
  convert/source-ext2.c | 11 ++++++-----

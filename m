@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50538 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:50871 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751506AbdFAJdQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 1 Jun 2017 05:33:16 -0400
+        id S1751658AbdFAJdV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 1 Jun 2017 05:33:21 -0400
 From: Jan Kara <jack@suse.cz>
 To: <linux-mm@kvack.org>
 Cc: Hugh Dickins <hughd@google.com>, David Howells <dhowells@redhat.com>,
@@ -17,46 +17,50 @@ Cc: Hugh Dickins <hughd@google.com>, David Howells <dhowells@redhat.com>,
         "Darrick J . Wong" <darrick.wong@oracle.com>,
         linux-xfs@vger.kernel.org, Nadia Yvette Chambers <nyc@holomorphy.com>,
         Jan Kara <jack@suse.cz>
-Subject: [PATCH 00/35 v1] pagevec API cleanups
-Date: Thu,  1 Jun 2017 11:32:10 +0200
-Message-Id: <20170601093245.29238-1-jack@suse.cz>
+Subject: [PATCH 22/35] nilfs2: Use pagevec_lookup_range_tag()
+Date: Thu,  1 Jun 2017 11:32:32 +0200
+Message-Id: <20170601093245.29238-23-jack@suse.cz>
+In-Reply-To: <20170601093245.29238-1-jack@suse.cz>
+References: <20170601093245.29238-1-jack@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+We want only pages from given range in
+nilfs_lookup_dirty_data_buffers(). Use pagevec_lookup_range_tag()
+instead of pagevec_lookup_tag() and remove unnecessary code.
 
-This series cleans up pagevec API. The original motivation for the series is
-the patch "fs: Fix performance regression in clean_bdev_aliases()" however it
-has somewhat grown beyond that... The series is pretty large but most of the
-patches are trivial in nature. What the series does is:
+CC: Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>
+CC: linux-nilfs@vger.kernel.org
+Signed-off-by: Jan Kara <jack@suse.cz>
+---
+ fs/nilfs2/segment.c | 8 ++------
+ 1 file changed, 2 insertions(+), 6 deletions(-)
 
-* Make all pagevec_lookup_ and find_get_ functions update index to where the
-  search terminated. Currently tagged page lookup did update the index, other
-  variants did not...
+diff --git a/fs/nilfs2/segment.c b/fs/nilfs2/segment.c
+index febed1217b3f..fd9eeca5f784 100644
+--- a/fs/nilfs2/segment.c
++++ b/fs/nilfs2/segment.c
+@@ -711,18 +711,14 @@ static size_t nilfs_lookup_dirty_data_buffers(struct inode *inode,
+ 	pagevec_init(&pvec, 0);
+  repeat:
+ 	if (unlikely(index > last) ||
+-	    !pagevec_lookup_tag(&pvec, mapping, &index, PAGECACHE_TAG_DIRTY,
+-				min_t(pgoff_t, last - index,
+-				      PAGEVEC_SIZE - 1) + 1))
++	    !pagevec_lookup_range_tag(&pvec, mapping, &index, last,
++				PAGECACHE_TAG_DIRTY, PAGEVEC_SIZE))
+ 		return ndirties;
+ 
+ 	for (i = 0; i < pagevec_count(&pvec); i++) {
+ 		struct buffer_head *bh, *head;
+ 		struct page *page = pvec.pages[i];
+ 
+-		if (unlikely(page->index > last))
+-			break;
+-
+ 		lock_page(page);
+ 		if (!page_has_buffers(page))
+ 			create_empty_buffers(page, i_blocksize(inode), 0);
+-- 
+2.12.3
 
-* Implement ranged variants for pagevec_lookup and find_get_ functions. Lot
-  of callers actually want a ranged lookup and we unnecessarily opencode this
-  in lot of them.
-
-* Remove nr_pages argument from pagevec_ API since after implementing ranged
-  lookups everyone just wants to pass PAGEVEC_SIZE there.
-
-The conversion of the APIs for entries variants is not such a clear win as
-for the other cases as callers tend to play more complex games with indices
-etc. (hello THP). I still think the conversion is worth it for consistency
-but I'm open to ideas (including just discarding that part) there.
-
-The series also contains several fixes in the beginning to the bugs that I've
-found during these cleanups. I've included them to have a clean base (4.12-rc3)
-but those should get merged independently (e.g. ext4 fixes are already sitting
-in ext4 tree). Also it is possible to split the series in smaller parts (like
-convert one API at a time) however I wanted to post the full series so that
-people can get the full picture.
-
-The series can be also obtained from my git tree:
-
-git://git.kernel.org/pub/scm/linux/kernel/git/jack/linux-fs.git find_get_pages_range
-
-Opinions and review welcome!
-
-								Honza

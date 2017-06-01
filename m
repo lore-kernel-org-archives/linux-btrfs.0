@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50851 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:50762 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751636AbdFAJdU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 1 Jun 2017 05:33:20 -0400
+        id S1751605AbdFAJdS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 1 Jun 2017 05:33:18 -0400
 From: Jan Kara <jack@suse.cz>
 To: <linux-mm@kvack.org>
 Cc: Hugh Dickins <hughd@google.com>, David Howells <dhowells@redhat.com>,
@@ -17,171 +17,77 @@ Cc: Hugh Dickins <hughd@google.com>, David Howells <dhowells@redhat.com>,
         "Darrick J . Wong" <darrick.wong@oracle.com>,
         linux-xfs@vger.kernel.org, Nadia Yvette Chambers <nyc@holomorphy.com>,
         Jan Kara <jack@suse.cz>
-Subject: [PATCH 13/35] mm: Remove nr_pages argument from pagevec_lookup{,_range}()
-Date: Thu,  1 Jun 2017 11:32:23 +0200
-Message-Id: <20170601093245.29238-14-jack@suse.cz>
+Subject: [PATCH 08/35] fs: Fix performance regression in clean_bdev_aliases()
+Date: Thu,  1 Jun 2017 11:32:18 +0200
+Message-Id: <20170601093245.29238-9-jack@suse.cz>
 In-Reply-To: <20170601093245.29238-1-jack@suse.cz>
 References: <20170601093245.29238-1-jack@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-All users of pagevec_lookup() and pagevec_lookup_range() now pass
-PAGEVEC_SIZE as a desired number of pages. Just drop the argument.
+Commit e64855c6cfaa "fs: Add helper to clean bdev aliases under a bh and
+use it" added a wrapper for clean_bdev_aliases() that invalidates bdev
+aliases underlying a single buffer head. However this has caused a
+performance regression for bonnie++ benchmark on ext4 filesystem when
+delayed allocation is turned off (ext3 mode) - average of 3 runs:
 
+Hmean SeqOut Char  164787.55 (  0.00%) 107189.06 (-34.95%)
+Hmean SeqOut Block 219883.89 (  0.00%) 168870.32 (-23.20%)
+
+The reason for this regression is that clean_bdev_aliases() is slower
+when called for a single block because pagevec_lookup() it uses will end
+up iterating through the radix tree until it finds a page (which may
+take a while) but we are only interested whether there's a page at a
+particular index.
+
+Fix the problem by using pagevec_lookup_range() instead which avoids the
+needless iteration.
+
+Fixes: e64855c6cfaa0a80c1b71c5f647cb792dc436668
 Signed-off-by: Jan Kara <jack@suse.cz>
 ---
- fs/buffer.c             | 3 +--
- fs/ext4/file.c          | 2 +-
- fs/ext4/inode.c         | 5 ++---
- fs/fscache/page.c       | 2 +-
- fs/hugetlbfs/inode.c    | 3 +--
- fs/nilfs2/page.c        | 2 +-
- fs/xfs/xfs_file.c       | 2 +-
- include/linux/pagevec.h | 7 +++----
- mm/swap.c               | 5 ++---
- 9 files changed, 13 insertions(+), 18 deletions(-)
+ fs/buffer.c | 14 ++++++++------
+ 1 file changed, 8 insertions(+), 6 deletions(-)
 
 diff --git a/fs/buffer.c b/fs/buffer.c
-index d63b22e50f38..89605cb42a55 100644
+index fe0ee01c5a44..d63b22e50f38 100644
 --- a/fs/buffer.c
 +++ b/fs/buffer.c
-@@ -1638,8 +1638,7 @@ void clean_bdev_aliases(struct block_device *bdev, sector_t block, sector_t len)
+@@ -1632,19 +1632,18 @@ void clean_bdev_aliases(struct block_device *bdev, sector_t block, sector_t len)
+ 	struct pagevec pvec;
+ 	pgoff_t index = block >> (PAGE_SHIFT - bd_inode->i_blkbits);
+ 	pgoff_t end;
+-	int i;
++	int i, count;
+ 	struct buffer_head *bh;
+ 	struct buffer_head *head;
  
  	end = (block + len - 1) >> (PAGE_SHIFT - bd_inode->i_blkbits);
  	pagevec_init(&pvec, 0);
--	while (pagevec_lookup_range(&pvec, bd_mapping, &index, end,
--				    PAGEVEC_SIZE)) {
-+	while (pagevec_lookup_range(&pvec, bd_mapping, &index, end)) {
- 		count = pagevec_count(&pvec);
- 		for (i = 0; i < count; i++) {
+-	while (index <= end && pagevec_lookup(&pvec, bd_mapping, &index,
+-			min(end - index, (pgoff_t)PAGEVEC_SIZE - 1) + 1)) {
+-		for (i = 0; i < pagevec_count(&pvec); i++) {
++	while (pagevec_lookup_range(&pvec, bd_mapping, &index, end,
++				    PAGEVEC_SIZE)) {
++		count = pagevec_count(&pvec);
++		for (i = 0; i < count; i++) {
  			struct page *page = pvec.pages[i];
-diff --git a/fs/ext4/file.c b/fs/ext4/file.c
-index 6821070a388b..2d9a198026e5 100644
---- a/fs/ext4/file.c
-+++ b/fs/ext4/file.c
-@@ -482,7 +482,7 @@ static int ext4_find_unwritten_pgoff(struct inode *inode,
- 		unsigned long nr_pages;
  
- 		nr_pages = pagevec_lookup_range(&pvec, inode->i_mapping,
--					&index, end, PAGEVEC_SIZE);
-+					&index, end);
- 		if (nr_pages == 0)
- 			break;
- 
-diff --git a/fs/ext4/inode.c b/fs/ext4/inode.c
-index 59d82530d269..ace4bb9073d8 100644
---- a/fs/ext4/inode.c
-+++ b/fs/ext4/inode.c
-@@ -1670,8 +1670,7 @@ static void mpage_release_unused_pages(struct mpage_da_data *mpd,
- 
- 	pagevec_init(&pvec, 0);
- 	while (index <= end) {
--		nr_pages = pagevec_lookup_range(&pvec, mapping, &index, end,
--						PAGEVEC_SIZE);
-+		nr_pages = pagevec_lookup_range(&pvec, mapping, &index, end);
- 		if (nr_pages == 0)
- 			break;
- 		for (i = 0; i < nr_pages; i++) {
-@@ -2284,7 +2283,7 @@ static int mpage_map_and_submit_buffers(struct mpage_da_data *mpd)
- 	pagevec_init(&pvec, 0);
- 	while (start <= end) {
- 		nr_pages = pagevec_lookup_range(&pvec, inode->i_mapping,
--						&start, end, PAGEVEC_SIZE);
-+						&start, end);
- 		if (nr_pages == 0)
- 			break;
- 		for (i = 0; i < nr_pages; i++) {
-diff --git a/fs/fscache/page.c b/fs/fscache/page.c
-index 83018861dcd2..0ad3fd3ad0b4 100644
---- a/fs/fscache/page.c
-+++ b/fs/fscache/page.c
-@@ -1178,7 +1178,7 @@ void __fscache_uncache_all_inode_pages(struct fscache_cookie *cookie,
- 	pagevec_init(&pvec, 0);
- 	next = 0;
- 	do {
--		if (!pagevec_lookup(&pvec, mapping, &next, PAGEVEC_SIZE))
-+		if (!pagevec_lookup(&pvec, mapping, &next))
- 			break;
- 		for (i = 0; i < pagevec_count(&pvec); i++) {
- 			struct page *page = pvec.pages[i];
-diff --git a/fs/hugetlbfs/inode.c b/fs/hugetlbfs/inode.c
-index 99885f9b9d56..461e01500e60 100644
---- a/fs/hugetlbfs/inode.c
-+++ b/fs/hugetlbfs/inode.c
-@@ -413,8 +413,7 @@ static void remove_inode_hugepages(struct inode *inode, loff_t lstart,
- 		/*
- 		 * When no more pages are found, we are done.
- 		 */
--		if (!pagevec_lookup_range(&pvec, mapping, &next, end - 1,
--					  PAGEVEC_SIZE))
-+		if (!pagevec_lookup_range(&pvec, mapping, &next, end - 1))
- 			break;
- 
- 		for (i = 0; i < pagevec_count(&pvec); ++i) {
-diff --git a/fs/nilfs2/page.c b/fs/nilfs2/page.c
-index 382a36c72d72..8616c46d33da 100644
---- a/fs/nilfs2/page.c
-+++ b/fs/nilfs2/page.c
-@@ -312,7 +312,7 @@ void nilfs_copy_back_pages(struct address_space *dmap,
- 
- 	pagevec_init(&pvec, 0);
- repeat:
--	n = pagevec_lookup(&pvec, smap, &index, PAGEVEC_SIZE);
-+	n = pagevec_lookup(&pvec, smap, &index);
- 	if (!n)
- 		return;
- 
-diff --git a/fs/xfs/xfs_file.c b/fs/xfs/xfs_file.c
-index f9343dac7ff9..a7abc981e4a9 100644
---- a/fs/xfs/xfs_file.c
-+++ b/fs/xfs/xfs_file.c
-@@ -1049,7 +1049,7 @@ xfs_find_get_desired_pgoff(
- 		unsigned int	i;
- 
- 		nr_pages = pagevec_lookup_range(&pvec, inode->i_mapping,
--						&index, end, PAGEVEC_SIZE);
-+						&index, end);
- 		if (nr_pages == 0)
- 			break;
- 
-diff --git a/include/linux/pagevec.h b/include/linux/pagevec.h
-index 7df056910437..4dcd5506f1ed 100644
---- a/include/linux/pagevec.h
-+++ b/include/linux/pagevec.h
-@@ -29,13 +29,12 @@ unsigned pagevec_lookup_entries(struct pagevec *pvec,
- void pagevec_remove_exceptionals(struct pagevec *pvec);
- unsigned pagevec_lookup_range(struct pagevec *pvec,
- 			      struct address_space *mapping,
--			      pgoff_t *start, pgoff_t end, unsigned nr_pages);
-+			      pgoff_t *start, pgoff_t end);
- static inline unsigned pagevec_lookup(struct pagevec *pvec,
- 				      struct address_space *mapping,
--				      pgoff_t *start, unsigned nr_pages)
-+				      pgoff_t *start)
- {
--	return pagevec_lookup_range(pvec, mapping, start, (pgoff_t)-1,
--				    nr_pages);
-+	return pagevec_lookup_range(pvec, mapping, start, (pgoff_t)-1);
+-			if (page->index > end)
+-				break;
+ 			if (!page_has_buffers(page))
+ 				continue;
+ 			/*
+@@ -1674,6 +1673,9 @@ void clean_bdev_aliases(struct block_device *bdev, sector_t block, sector_t len)
+ 		}
+ 		pagevec_release(&pvec);
+ 		cond_resched();
++		/* End of range already reached? */
++		if (index > end || !index)
++			break;
+ 	}
  }
- 
- unsigned pagevec_lookup_tag(struct pagevec *pvec,
-diff --git a/mm/swap.c b/mm/swap.c
-index 804c9867af96..a07a0105154b 100644
---- a/mm/swap.c
-+++ b/mm/swap.c
-@@ -961,10 +961,9 @@ void pagevec_remove_exceptionals(struct pagevec *pvec)
-  * reached.
-  */
- unsigned pagevec_lookup_range(struct pagevec *pvec,
--		struct address_space *mapping, pgoff_t *start, pgoff_t end,
--		unsigned nr_pages)
-+		struct address_space *mapping, pgoff_t *start, pgoff_t end)
- {
--	pvec->nr = find_get_pages_range(mapping, start, end, nr_pages,
-+	pvec->nr = find_get_pages_range(mapping, start, end, PAGEVEC_SIZE,
- 					pvec->pages);
- 	return pagevec_count(pvec);
- }
+ EXPORT_SYMBOL(clean_bdev_aliases);
 -- 
 2.12.3
 

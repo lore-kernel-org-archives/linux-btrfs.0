@@ -1,120 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:52461 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751489AbdF1Fn4 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Jun 2017 01:43:56 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>, <dsterba@suse.cz>
-CC: <ahferroin7@gmail.com>, <kilobyte@angband.pl>, <demfloro@demfloro.ru>
-Subject: [PATCH v4 6/6] btrfs: Enhance missing device kernel message
-Date: Wed, 28 Jun 2017 13:43:35 +0800
-Message-ID: <20170628054335.18806-7-quwenruo@cn.fujitsu.com>
-In-Reply-To: <20170628054335.18806-1-quwenruo@cn.fujitsu.com>
-References: <20170628054335.18806-1-quwenruo@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:42052 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751078AbdFAOsi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 1 Jun 2017 10:48:38 -0400
+Date: Thu, 1 Jun 2017 16:47:36 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Su Yue <suy.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
+Subject: Re: [PATCH 0/5] btrfs-progs: check: simple errors repair in lowmem
+Message-ID: <20170601144736.GG12135@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170411032631.24932-1-suy.fnst@cn.fujitsu.com>
+ <ef8b662b-ea60-4ea4-cd86-083b532b926c@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <ef8b662b-ea60-4ea4-cd86-083b532b926c@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For missing device, btrfs will just refuse to mount with almost
-meaningless kernel message like:
+On Wed, May 17, 2017 at 04:25:03PM +0800, Su Yue wrote:
+>     This patchset was sent a month ago.
+>     Since it's a start of lowmem repair patches, I hope to get some
+>     opinions about it.
 
- BTRFS info (device vdb6): disk space caching is enabled
- BTRFS info (device vdb6): has skinny extents
- BTRFS error (device vdb6): failed to read the system array: -5
- BTRFS error (device vdb6): open_ctree failed
-
-This patch will add extra device missing output, making the result to:
-
- BTRFS info (device vdb6): disk space caching is enabled
- BTRFS info (device vdb6): has skinny extents
- BTRFS warning (device vdb6): devid 2 uuid 80470722-cad2-4b90-b7c3-fee294552f1b is missing
- BTRFS error (device vdb6): failed to read the system array: -5
- BTRFS error (device vdb6): open_ctree failed
-
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Reviewed-by: Anand Jain <anand.jain@oracle.com>
----
- fs/btrfs/volumes.c | 24 +++++++++++++++++-------
- fs/btrfs/volumes.h |  2 ++
- 2 files changed, 19 insertions(+), 7 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 2cc68c74f701..a47e362de0eb 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6496,6 +6496,7 @@ static int read_one_chunk(struct btrfs_fs_info *fs_info, struct btrfs_key *key,
- 		if (!map->stripes[i].dev &&
- 		    !btrfs_test_opt(fs_info, DEGRADED)) {
- 			free_extent_map(em);
-+			btrfs_report_missing_device(fs_info, devid, uuid);
- 			return -EIO;
- 		}
- 		if (!map->stripes[i].dev) {
-@@ -6506,8 +6507,7 @@ static int read_one_chunk(struct btrfs_fs_info *fs_info, struct btrfs_key *key,
- 				free_extent_map(em);
- 				return -EIO;
- 			}
--			btrfs_warn(fs_info, "devid %llu uuid %pU is missing",
--				   devid, uuid);
-+			btrfs_report_missing_device(fs_info, devid, uuid);
- 		}
- 		map->stripes[i].dev->in_fs_metadata = 1;
- 	}
-@@ -6624,17 +6624,21 @@ static int read_one_dev(struct btrfs_fs_info *fs_info,
- 
- 	device = btrfs_find_device(fs_info, devid, dev_uuid, fs_uuid);
- 	if (!device) {
--		if (!btrfs_test_opt(fs_info, DEGRADED))
-+		if (!btrfs_test_opt(fs_info, DEGRADED)) {
-+			btrfs_report_missing_device(fs_info, devid, dev_uuid);
- 			return -EIO;
-+		}
- 
- 		device = add_missing_dev(fs_devices, devid, dev_uuid);
- 		if (!device)
- 			return -ENOMEM;
--		btrfs_warn(fs_info, "devid %llu uuid %pU missing",
--				devid, dev_uuid);
-+		btrfs_report_missing_device(fs_info, devid, dev_uuid);
- 	} else {
--		if (!device->bdev && !btrfs_test_opt(fs_info, DEGRADED))
--			return -EIO;
-+		if (!device->bdev) {
-+			btrfs_report_missing_device(fs_info, devid, dev_uuid);
-+			if (!btrfs_test_opt(fs_info, DEGRADED))
-+				return -EIO;
-+		}
- 
- 		if(!device->bdev && !device->missing) {
- 			/*
-@@ -6800,6 +6804,12 @@ int btrfs_read_sys_array(struct btrfs_fs_info *fs_info)
- 	return -EIO;
- }
- 
-+void btrfs_report_missing_device(struct btrfs_fs_info *fs_info, u64 devid,
-+				 u8 *uuid)
-+{
-+	btrfs_warn_rl(fs_info, "devid %llu uuid %pU is missing", devid, uuid);
-+}
-+
- /*
-  * Check if all chunks in the fs is OK for read-write degraded mount
-  *
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index a5897c7a7e86..9bd0447cffa8 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -544,4 +544,6 @@ void btrfs_set_fs_info_ptr(struct btrfs_fs_info *fs_info);
- void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info);
- 
- bool btrfs_check_rw_degradable(struct btrfs_fs_info *fs_info);
-+void btrfs_report_missing_device(struct btrfs_fs_info *fs_info, u64 devid,
-+				 u8 *uuid);
- #endif
--- 
-2.13.1
-
-
-
+This is unfortunate, it may take more time before I get back to this.

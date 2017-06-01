@@ -1,74 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f173.google.com ([209.85.192.173]:34787 "EHLO
-        mail-pf0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751078AbdFAOyz (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Jun 2017 10:54:55 -0400
-Received: by mail-pf0-f173.google.com with SMTP id 9so29385255pfj.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 01 Jun 2017 07:54:55 -0700 (PDT)
+Received: from userp1040.oracle.com ([156.151.31.81]:45932 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751113AbdFARhF (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Jun 2017 13:37:05 -0400
+Date: Thu, 1 Jun 2017 10:35:10 -0700
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Ivan Sizov <sivan606@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 0/6] add sanity check for extent inline ref type
+Message-ID: <20170601173510.GA22952@lim.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <20170526002631.8546-1-bo.li.liu@oracle.com>
+ <CAMG9ccwjBmP9HKkodwARxQK7AkC68HACMzuT43wX6+gmWVUjbg@mail.gmail.com>
 MIME-Version: 1.0
-From: Alexander Peganz <a.peganz@gmail.com>
-Date: Thu, 1 Jun 2017 16:54:29 +0200
-Message-ID: <CADtmLM88w-KH_SfoECB-N=PXwgvcswP6cyaBtypRHEEdPKZ1VA@mail.gmail.com>
-Subject: understanding differences in recoverability of raid1 vs raid10 and
- performance implications of unusual numbers of devices
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAMG9ccwjBmP9HKkodwARxQK7AkC68HACMzuT43wX6+gmWVUjbg@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On Tue, May 30, 2017 at 05:05:09PM +0300, Ivan Sizov wrote:
+> 2017-05-26 3:26 GMT+03:00 Liu Bo <bo.li.liu@oracle.com>:
+> >Patch 6 adds scrub support to detect the corruption, so users can be
+> noticed when they do scrub on a regular basis.
+> >I'm not sure in the real world what may result in this corruption
+> 
+> I've caught this type of corruption in the wild. The big rsync backup
+> always ends with a kernel crash due to BUG() statement in
+> ctime.h:1779. After applying this patchset and running scrub I've got
+> following messages:
+> 
+> [sivan@fruestuck ~]$ dmesg | grep "invalid extent inline"
+> [ 8812.428673] eb 4631634034688(tree block) invalid extent inline ref type 0
+> [ 8812.429148] BTRFS error (device sdb1): scrub: extent
+> 2994741510144(0x2b944810000) has an invalid extent inline ref type,
+> ignored.
+> [ 8812.430086] eb 4631634034688(tree block) invalid extent inline ref type 0
+> [ 8812.430569] BTRFS error (device sdb1): scrub: extent
+> 2994741559296(0x2b94481c000) has an invalid extent inline ref type,
+> ignored.
+> 
+> How to find the cause of the corruption? Should I try to fix it, or it
+> is not dangerous for the filesystem? If I should, how to do that?
 
-I am trying to understand what differences there are in using btrfs
-raid1 vs raid10 in terms of recoverability and also performance.
-This has proven itself to be more difficult than expected since all
-search results I could come up with generally suffer from one of three
-flaws: they either discuss terribly old versions of btrfs, only
-discuss 4 disk settings, or are about traditional HW (or mdadm) RAID
-modes.
+After I went through the output of leaf's content, most parts of the
+leaf is sane except the two corrupted items, it's still not clear to
+me what caused the corruption, there could be some corner cases that
+I'm not aware of.
 
->From what I gathered so far, with raid1 btrfs just puts the 2 copies
-of a file on 2 different devices.
-And raid10 splits files into stripes, then writes 2 copies of each
-stripe to 2 different devices. By splitting the files into stripes it
-can write stripe 1 to devices A and B, while at the same time writing
-stripe 2 to devices C and D, and so on. So a single copy of a file
-might end up split across all devices, as does the second, but with
-the stripes distributed in a way that the copies of each one stripe
-are never on the same device.
+If fsck doesn't work for you, then a recovery from backup may be the
+best option.
 
-So my first question is: is that actually correct? Or does btrfs raid1
-create copies of blocks or something akin to stripes instead of files?
-Because I imagine if it is at the file level there is a difference in
-recoverability if the "wrong" 2 devices die.
-For a raid1 I'd expect to only loose those files whose copies were
-located on those 2 devices. Every file with a copy on one of the still
-working devices would be recoverable. So the more devices there are
-the bigger the percentage of recoverable files could get.
-While with raid10 the copies of every file's first stripe might end up
-on device A and device B, damaging every single file if A and B die at
-the same time.
-This might just be a reason for me to choose raid1 over raid10, so I
-really appreciate if someone could enlighten me ;)
+Thanks,
 
-As to performance, with raid1 write speed should (theoretically) be
-the same as a single disk (although writing the first half of the data
-to device A while at the same time writing the second half to device B
-would allow to write the first copy in half the time, and would allow
-to create the second copy at some later point in time I highly doubt
-btrfs is quite that adventurous). And read speeds should be up to
-twice that of a single device.
-With raid10 write speeds should be N times those of a single disk to
-create the first copy, and since of course a second one has to be
-written as well, effectively up to N/2. Read speeds should be up to N
-times that of a single disk. But I couldn't find useful comparisons
-using more than 4 devices. Should I expect any weirdness if I don't
-have a multiple of 4 devices? Or do I just need an even number of
-devices? Or is everything ok, even odd numbers?
-
-And finally, could using raid10 cause me more headache than raid1
-farther down the line when adding additional devices? How about if
-those devices are not the same size as the original ones, any
-difference between raid1 and 10?
-
-Thank you for your help!
-Alexander
+-liubo

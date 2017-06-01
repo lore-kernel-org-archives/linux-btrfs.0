@@ -1,7 +1,7 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50903 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:50695 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751675AbdFAJdW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1751691AbdFAJdW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Thu, 1 Jun 2017 05:33:22 -0400
 From: Jan Kara <jack@suse.cz>
 To: <linux-mm@kvack.org>
@@ -17,91 +17,57 @@ Cc: Hugh Dickins <hughd@google.com>, David Howells <dhowells@redhat.com>,
         "Darrick J . Wong" <darrick.wong@oracle.com>,
         linux-xfs@vger.kernel.org, Nadia Yvette Chambers <nyc@holomorphy.com>,
         Jan Kara <jack@suse.cz>
-Subject: [PATCH 31/35] shmem: Convert to pagevec_lookup_entries_range()
-Date: Thu,  1 Jun 2017 11:32:41 +0200
-Message-Id: <20170601093245.29238-32-jack@suse.cz>
+Subject: [PATCH 17/35] ext4: Use pagevec_lookup_range_tag()
+Date: Thu,  1 Jun 2017 11:32:27 +0200
+Message-Id: <20170601093245.29238-18-jack@suse.cz>
 In-Reply-To: <20170601093245.29238-1-jack@suse.cz>
 References: <20170601093245.29238-1-jack@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Convert radix tree scanners to use pagevec_lookup_entries_range() and
-find_get_entries_range() since they all want only entries from given
-range.
+We want only pages from given range in ext4_writepages(). Use
+pagevec_lookup_range_tag() instead of pagevec_lookup_tag() and remove
+unnecessary code.
 
-CC: Hugh Dickins <hughd@google.com>
+CC: "Theodore Ts'o" <tytso@mit.edu>
+CC: linux-ext4@vger.kernel.org
 Signed-off-by: Jan Kara <jack@suse.cz>
 ---
- mm/shmem.c | 23 +++++++----------------
- 1 file changed, 7 insertions(+), 16 deletions(-)
+ fs/ext4/inode.c | 14 ++------------
+ 1 file changed, 2 insertions(+), 12 deletions(-)
 
-diff --git a/mm/shmem.c b/mm/shmem.c
-index f9c4afbdd70c..e5ea044aae24 100644
---- a/mm/shmem.c
-+++ b/mm/shmem.c
-@@ -768,16 +768,12 @@ static void shmem_undo_range(struct inode *inode, loff_t lstart, loff_t lend,
- 	pagevec_init(&pvec, 0);
- 	index = start;
- 	while (index < end) {
--		if (!pagevec_lookup_entries(&pvec, mapping, &index,
--				min(end - index, (pgoff_t)PAGEVEC_SIZE),
--				indices))
-+		if (!pagevec_lookup_entries_range(&pvec, mapping, &index,
-+				end - 1, PAGEVEC_SIZE, indices))
- 			break;
- 		for (i = 0; i < pagevec_count(&pvec); i++) {
+diff --git a/fs/ext4/inode.c b/fs/ext4/inode.c
+index ace4bb9073d8..050fba2d12c2 100644
+--- a/fs/ext4/inode.c
++++ b/fs/ext4/inode.c
+@@ -2555,8 +2555,8 @@ static int mpage_prepare_extent_to_map(struct mpage_da_data *mpd)
+ 	mpd->map.m_len = 0;
+ 	mpd->next_page = index;
+ 	while (index <= end) {
+-		nr_pages = pagevec_lookup_tag(&pvec, mapping, &index, tag,
+-			      min(end - index, (pgoff_t)PAGEVEC_SIZE-1) + 1);
++		nr_pages = pagevec_lookup_range_tag(&pvec, mapping, &index, end,
++				tag, PAGEVEC_SIZE);
+ 		if (nr_pages == 0)
+ 			goto out;
+ 
+@@ -2564,16 +2564,6 @@ static int mpage_prepare_extent_to_map(struct mpage_da_data *mpd)
  			struct page *page = pvec.pages[i];
  
--			if (indices[i] >= end)
--				break;
+ 			/*
+-			 * At this point, the page may be truncated or
+-			 * invalidated (changing page->mapping to NULL), or
+-			 * even swizzled back from swapper_space to tmpfs file
+-			 * mapping. However, page->index will not change
+-			 * because we have a reference on the page.
+-			 */
+-			if (page->index > end)
+-				goto out;
 -
- 			if (radix_tree_exceptional_entry(page)) {
- 				if (unfalloc)
- 					continue;
-@@ -860,9 +856,8 @@ static void shmem_undo_range(struct inode *inode, loff_t lstart, loff_t lend,
- 
- 		cond_resched();
- 
--		if (!pagevec_lookup_entries(&pvec, mapping, &index,
--				min(end - index, (pgoff_t)PAGEVEC_SIZE),
--				indices)) {
-+		if (!pagevec_lookup_entries_range(&pvec, mapping, &index,
-+				end - 1, PAGEVEC_SIZE, indices)) {
- 			/* If all gone or hole-punch or unfalloc, we're done */
- 			if (lookup_start == start || end != -1)
- 				break;
-@@ -873,9 +868,6 @@ static void shmem_undo_range(struct inode *inode, loff_t lstart, loff_t lend,
- 		for (i = 0; i < pagevec_count(&pvec); i++) {
- 			struct page *page = pvec.pages[i];
- 
--			if (indices[i] >= end)
--				break;
--
- 			if (radix_tree_exceptional_entry(page)) {
- 				if (unfalloc)
- 					continue;
-@@ -2494,9 +2486,9 @@ static pgoff_t shmem_seek_hole_data(struct address_space *mapping,
- 
- 	pagevec_init(&pvec, 0);
- 	pvec.nr = 1;		/* start small: we may be there already */
--	while (!done) {
-+	while (!done && index < end) {
- 		last = index;
--		pvec.nr = find_get_entries(mapping, &index,
-+		pvec.nr = find_get_entries_range(mapping, &index, end - 1,
- 					pvec.nr, pvec.pages, indices);
- 		if (!pvec.nr) {
- 			if (whence == SEEK_DATA)
-@@ -2516,8 +2508,7 @@ static pgoff_t shmem_seek_hole_data(struct address_space *mapping,
- 				if (!PageUptodate(page))
- 					page = NULL;
- 			}
--			if (last >= end ||
--			    (page && whence == SEEK_DATA) ||
-+			if ((page && whence == SEEK_DATA) ||
- 			    (!page && whence == SEEK_HOLE)) {
- 				done = true;
- 				break;
+-			/*
+ 			 * Accumulated enough dirty pages? This doesn't apply
+ 			 * to WB_SYNC_ALL mode. For integrity sync we have to
+ 			 * keep going because someone may be concurrently
 -- 
 2.12.3
 

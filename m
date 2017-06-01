@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50490 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:50782 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751380AbdFAJdQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 1 Jun 2017 05:33:16 -0400
+        id S1751631AbdFAJdT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 1 Jun 2017 05:33:19 -0400
 From: Jan Kara <jack@suse.cz>
 To: <linux-mm@kvack.org>
 Cc: Hugh Dickins <hughd@google.com>, David Howells <dhowells@redhat.com>,
@@ -16,150 +16,208 @@ Cc: Hugh Dickins <hughd@google.com>, David Howells <dhowells@redhat.com>,
         linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>,
         "Darrick J . Wong" <darrick.wong@oracle.com>,
         linux-xfs@vger.kernel.org, Nadia Yvette Chambers <nyc@holomorphy.com>,
-        Jan Kara <jack@suse.cz>, stable@vger.kernel.org,
-        Zheng Liu <wenqing.lz@taobao.com>
-Subject: [PATCH 02/35] ext4: Fix SEEK_HOLE
-Date: Thu,  1 Jun 2017 11:32:12 +0200
-Message-Id: <20170601093245.29238-3-jack@suse.cz>
+        Jan Kara <jack@suse.cz>
+Subject: [PATCH 07/35] mm: Implement find_get_pages_range()
+Date: Thu,  1 Jun 2017 11:32:17 +0200
+Message-Id: <20170601093245.29238-8-jack@suse.cz>
 In-Reply-To: <20170601093245.29238-1-jack@suse.cz>
 References: <20170601093245.29238-1-jack@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently, SEEK_HOLE implementation in ext4 may both return that there's
-a hole at some offset although that offset already has data and skip
-some holes during a search for the next hole. The first problem is
-demostrated by:
+Implement a variant of find_get_pages() that stops iterating at given
+index. This may be substantial performance gain if the mapping is
+sparse. See following commit for details. Furthermore lots of users of
+this function (through pagevec_lookup()) actually want a range lookup
+and all of them are currently open-coding this.
 
-xfs_io -c "falloc 0 256k" -c "pwrite 0 56k" -c "seek -h 0" file
-wrote 57344/57344 bytes at offset 0
-56 KiB, 14 ops; 0.0000 sec (2.054 GiB/sec and 538461.5385 ops/sec)
-Whence	Result
-HOLE	0
+Also create corresponding pagevec_lookup_range() function.
 
-Where we can see that SEEK_HOLE wrongly returned offset 0 as containing
-a hole although we have written data there. The second problem can be
-demonstrated by:
-
-xfs_io -c "falloc 0 256k" -c "pwrite 0 56k" -c "pwrite 128k 8k"
-       -c "seek -h 0" file
-
-wrote 57344/57344 bytes at offset 0
-56 KiB, 14 ops; 0.0000 sec (1.978 GiB/sec and 518518.5185 ops/sec)
-wrote 8192/8192 bytes at offset 131072
-8 KiB, 2 ops; 0.0000 sec (2 GiB/sec and 500000.0000 ops/sec)
-Whence	Result
-HOLE	139264
-
-Where we can see that hole at offsets 56k..128k has been ignored by the
-SEEK_HOLE call.
-
-The underlying problem is in the ext4_find_unwritten_pgoff() which is
-just buggy. In some cases it fails to update returned offset when it
-finds a hole (when no pages are found or when the first found page has
-higher index than expected), in some cases conditions for detecting hole
-are just missing (we fail to detect a situation where indices of
-returned pages are not contiguous).
-
-Fix ext4_find_unwritten_pgoff() to properly detect non-contiguous page
-indices and also handle all cases where we got less pages then expected
-in one place and handle it properly there.
-
-CC: stable@vger.kernel.org
-Fixes: c8c0df241cc2719b1262e627f999638411934f60
-CC: Zheng Liu <wenqing.lz@taobao.com>
 Signed-off-by: Jan Kara <jack@suse.cz>
 ---
- fs/ext4/file.c | 50 ++++++++++++++------------------------------------
- 1 file changed, 14 insertions(+), 36 deletions(-)
+ include/linux/pagemap.h | 12 ++++++++++--
+ include/linux/pagevec.h | 13 +++++++++++--
+ mm/filemap.c            | 42 ++++++++++++++++++++++++++++++------------
+ mm/swap.c               | 22 ++++++++++++++--------
+ 4 files changed, 65 insertions(+), 24 deletions(-)
 
-diff --git a/fs/ext4/file.c b/fs/ext4/file.c
-index 831fd6beebf0..bbea2dccd584 100644
---- a/fs/ext4/file.c
-+++ b/fs/ext4/file.c
-@@ -484,47 +484,27 @@ static int ext4_find_unwritten_pgoff(struct inode *inode,
- 		num = min_t(pgoff_t, end - index, PAGEVEC_SIZE);
- 		nr_pages = pagevec_lookup(&pvec, inode->i_mapping, index,
- 					  (pgoff_t)num);
--		if (nr_pages == 0) {
--			if (whence == SEEK_DATA)
--				break;
--
--			BUG_ON(whence != SEEK_HOLE);
--			/*
--			 * If this is the first time to go into the loop and
--			 * offset is not beyond the end offset, it will be a
--			 * hole at this offset
--			 */
--			if (lastoff == startoff || lastoff < endoff)
--				found = 1;
--			break;
--		}
--
--		/*
--		 * If this is the first time to go into the loop and
--		 * offset is smaller than the first page offset, it will be a
--		 * hole at this offset.
--		 */
--		if (lastoff == startoff && whence == SEEK_HOLE &&
--		    lastoff < page_offset(pvec.pages[0])) {
--			found = 1;
-+		if (nr_pages == 0)
- 			break;
--		}
- 
- 		for (i = 0; i < nr_pages; i++) {
- 			struct page *page = pvec.pages[i];
- 			struct buffer_head *bh, *head;
- 
- 			/*
--			 * If the current offset is not beyond the end of given
--			 * range, it will be a hole.
-+			 * If current offset is smaller than the page offset,
-+			 * there is a hole at this offset.
- 			 */
--			if (lastoff < endoff && whence == SEEK_HOLE &&
--			    page->index > end) {
-+			if (whence == SEEK_HOLE && lastoff < endoff &&
-+			    lastoff < page_offset(pvec.pages[i])) {
- 				found = 1;
- 				*offset = lastoff;
- 				goto out;
- 			}
- 
-+			if (page->index > end)
-+				goto out;
+diff --git a/include/linux/pagemap.h b/include/linux/pagemap.h
+index 86de6f9c8607..2bb5e636a8c8 100644
+--- a/include/linux/pagemap.h
++++ b/include/linux/pagemap.h
+@@ -336,8 +336,16 @@ struct page *find_lock_entry(struct address_space *mapping, pgoff_t offset);
+ unsigned find_get_entries(struct address_space *mapping, pgoff_t start,
+ 			  unsigned int nr_entries, struct page **entries,
+ 			  pgoff_t *indices);
+-unsigned find_get_pages(struct address_space *mapping, pgoff_t *start,
+-			unsigned int nr_pages, struct page **pages);
++unsigned find_get_pages_range(struct address_space *mapping, pgoff_t *start,
++			pgoff_t end, unsigned int nr_pages,
++			struct page **pages);
++static inline unsigned find_get_pages(struct address_space *mapping,
++			pgoff_t *start, unsigned int nr_pages,
++			struct page **pages)
++{
++	return find_get_pages_range(mapping, start, (pgoff_t)-1, nr_pages,
++				    pages);
++}
+ unsigned find_get_pages_contig(struct address_space *mapping, pgoff_t start,
+ 			       unsigned int nr_pages, struct page **pages);
+ unsigned find_get_pages_tag(struct address_space *mapping, pgoff_t *index,
+diff --git a/include/linux/pagevec.h b/include/linux/pagevec.h
+index c395a5bb58b2..7df056910437 100644
+--- a/include/linux/pagevec.h
++++ b/include/linux/pagevec.h
+@@ -27,8 +27,17 @@ unsigned pagevec_lookup_entries(struct pagevec *pvec,
+ 				pgoff_t start, unsigned nr_entries,
+ 				pgoff_t *indices);
+ void pagevec_remove_exceptionals(struct pagevec *pvec);
+-unsigned pagevec_lookup(struct pagevec *pvec, struct address_space *mapping,
+-		pgoff_t *start, unsigned nr_pages);
++unsigned pagevec_lookup_range(struct pagevec *pvec,
++			      struct address_space *mapping,
++			      pgoff_t *start, pgoff_t end, unsigned nr_pages);
++static inline unsigned pagevec_lookup(struct pagevec *pvec,
++				      struct address_space *mapping,
++				      pgoff_t *start, unsigned nr_pages)
++{
++	return pagevec_lookup_range(pvec, mapping, start, (pgoff_t)-1,
++				    nr_pages);
++}
 +
- 			lock_page(page);
+ unsigned pagevec_lookup_tag(struct pagevec *pvec,
+ 		struct address_space *mapping, pgoff_t *index, int tag,
+ 		unsigned nr_pages);
+diff --git a/mm/filemap.c b/mm/filemap.c
+index 10d926a423e2..2693f87a7968 100644
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -1438,24 +1438,29 @@ unsigned find_get_entries(struct address_space *mapping,
+ }
  
- 			if (unlikely(page->mapping != inode->i_mapping)) {
-@@ -564,20 +544,18 @@ static int ext4_find_unwritten_pgoff(struct inode *inode,
- 			unlock_page(page);
+ /**
+- * find_get_pages - gang pagecache lookup
++ * find_get_pages_range - gang pagecache lookup
+  * @mapping:	The address_space to search
+  * @start:	The starting page index
++ * @end:	The final page index (inclusive)
+  * @nr_pages:	The maximum number of pages
+  * @pages:	Where the resulting pages are placed
+  *
+- * find_get_pages() will search for and return a group of up to
+- * @nr_pages pages in the mapping.  The pages are placed at @pages.
+- * find_get_pages() takes a reference against the returned pages.
++ * find_get_pages_range() will search for and return a group of up to @nr_pages
++ * pages in the mapping starting at index @start and up to index @end
++ * (inclusive).  The pages are placed at @pages.  find_get_pages_range() takes
++ * a reference against the returned pages.
+  *
+  * The search returns a group of mapping-contiguous pages with ascending
+  * indexes.  There may be holes in the indices due to not-present pages.
+  * We also update @start to index the next page for the traversal.
+  *
+- * find_get_pages() returns the number of pages which were found.
++ * find_get_pages_range() returns the number of pages which were found. If this
++ * number is smaller than @nr_pages, the end of specified range has been
++ * reached.
+  */
+-unsigned find_get_pages(struct address_space *mapping, pgoff_t *start,
+-			    unsigned int nr_pages, struct page **pages)
++unsigned find_get_pages_range(struct address_space *mapping, pgoff_t *start,
++			      pgoff_t end, unsigned int nr_pages,
++			      struct page **pages)
+ {
+ 	struct radix_tree_iter iter;
+ 	void **slot;
+@@ -1467,6 +1472,9 @@ unsigned find_get_pages(struct address_space *mapping, pgoff_t *start,
+ 	rcu_read_lock();
+ 	radix_tree_for_each_slot(slot, &mapping->page_tree, &iter, *start) {
+ 		struct page *head, *page;
++
++		if (iter.index > end)
++			break;
+ repeat:
+ 		page = radix_tree_deref_slot(slot);
+ 		if (unlikely(!page))
+@@ -1502,15 +1510,25 @@ unsigned find_get_pages(struct address_space *mapping, pgoff_t *start,
  		}
  
--		/*
--		 * The no. of pages is less than our desired, that would be a
--		 * hole in there.
--		 */
--		if (nr_pages < num && whence == SEEK_HOLE) {
--			found = 1;
--			*offset = lastoff;
-+		/* The no. of pages is less than our desired, we are done. */
-+		if (nr_pages < num)
- 			break;
--		}
+ 		pages[ret] = page;
+-		if (++ret == nr_pages)
+-			break;
++		if (++ret == nr_pages) {
++			*start = pages[ret - 1]->index + 1;
++			goto out;
++		}
+ 	}
  
- 		index = pvec.pages[i - 1]->index + 1;
- 		pagevec_release(&pvec);
- 	} while (index <= end);
++	/*
++	 * We come here when there is no page beyond @end. We take care to not
++	 * overflow the index @start as it confuses some of the callers. This
++	 * breaks the iteration when there is page at index -1 but that is
++	 * already broken anyway.
++	 */
++	if (end == (pgoff_t)-1)
++		*start = (pgoff_t)-1;
++	else
++		*start = end + 1;
++out:
+ 	rcu_read_unlock();
  
-+	if (whence == SEEK_HOLE && lastoff < endoff) {
-+		found = 1;
-+		*offset = lastoff;
-+	}
- out:
- 	pagevec_release(&pvec);
- 	return found;
+-	if (ret)
+-		*start = pages[ret - 1]->index + 1;
+-
+ 	return ret;
+ }
+ 
+diff --git a/mm/swap.c b/mm/swap.c
+index 368d627cf279..804c9867af96 100644
+--- a/mm/swap.c
++++ b/mm/swap.c
+@@ -940,29 +940,35 @@ void pagevec_remove_exceptionals(struct pagevec *pvec)
+ }
+ 
+ /**
+- * pagevec_lookup - gang pagecache lookup
++ * pagevec_lookup_range - gang pagecache lookup
+  * @pvec:	Where the resulting pages are placed
+  * @mapping:	The address_space to search
+  * @start:	The starting page index
++ * @end:	The final page index
+  * @nr_pages:	The maximum number of pages
+  *
+- * pagevec_lookup() will search for and return a group of up to @nr_pages pages
+- * in the mapping.  The pages are placed in @pvec.  pagevec_lookup() takes a
++ * pagevec_lookup_range() will search for and return a group of up to @nr_pages
++ * pages in the mapping starting from index @start and upto index @end
++ * (inclusive).  The pages are placed in @pvec.  pagevec_lookup() takes a
+  * reference against the pages in @pvec.
+  *
+  * The search returns a group of mapping-contiguous pages with ascending
+  * indexes.  There may be holes in the indices due to not-present pages. We
+  * also update @start to index the next page for the traversal.
+  *
+- * pagevec_lookup() returns the number of pages which were found.
++ * pagevec_lookup_range() returns the number of pages which were found. If this
++ * number is smaller than @nr_pages, the end of specified range has been
++ * reached.
+  */
+-unsigned pagevec_lookup(struct pagevec *pvec, struct address_space *mapping,
+-		pgoff_t *start, unsigned nr_pages)
++unsigned pagevec_lookup_range(struct pagevec *pvec,
++		struct address_space *mapping, pgoff_t *start, pgoff_t end,
++		unsigned nr_pages)
+ {
+-	pvec->nr = find_get_pages(mapping, start, nr_pages, pvec->pages);
++	pvec->nr = find_get_pages_range(mapping, start, end, nr_pages,
++					pvec->pages);
+ 	return pagevec_count(pvec);
+ }
+-EXPORT_SYMBOL(pagevec_lookup);
++EXPORT_SYMBOL(pagevec_lookup_range);
+ 
+ unsigned pagevec_lookup_tag(struct pagevec *pvec, struct address_space *mapping,
+ 		pgoff_t *index, int tag, unsigned nr_pages)
 -- 
 2.12.3
 

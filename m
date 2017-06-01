@@ -1,60 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55844 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:57434 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751346AbdFAJ6O (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 1 Jun 2017 05:58:14 -0400
-Subject: Re: [PATCH v2 6/9] btrfs: Check name before read in
- 'iterate_dir_item'
-To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
+        id S1751184AbdFART1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 1 Jun 2017 13:19:27 -0400
+Date: Thu, 1 Jun 2017 19:18:26 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org,
+        dsterba@suse.cz
+Subject: Re: [PATCH v2 3/9] btrfs: Check name len on add_inode_ref call path
+Message-ID: <20170601171826.GI12135@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <20170601085716.25898-1-suy.fnst@cn.fujitsu.com>
- <20170601085716.25898-7-suy.fnst@cn.fujitsu.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <f4b0f4bd-105b-9a6d-d4c4-ddc842ae014f@suse.com>
-Date: Thu, 1 Jun 2017 12:58:12 +0300
+ <20170601085716.25898-4-suy.fnst@cn.fujitsu.com>
+ <08abcc0c-c17c-23e9-96e6-48c48a287a83@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <20170601085716.25898-7-suy.fnst@cn.fujitsu.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <08abcc0c-c17c-23e9-96e6-48c48a287a83@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On  1.06.2017 11:57, Su Yue wrote:
-> Since 'iterate_dir_item' checks namelen in its way,
-> use 'btrfs_is_namelen_valid' not 'verify_dir_item'.
+On Thu, Jun 01, 2017 at 12:53:53PM +0300, Nikolay Borisov wrote:
+> > +static int ref_get_fields(struct extent_buffer *eb, int slot,
+> > +			  unsigned long ref_ptr, u32 *namelen, char **name,
+> > +			  u64 *index)
+> >  {
+> >  	struct btrfs_inode_ref *ref;
+> >  
+> >  	ref = (struct btrfs_inode_ref *)ref_ptr;
+> >  
+> >  	*namelen = btrfs_inode_ref_name_len(eb, ref);
+> > +	if (!btrfs_is_namelen_valid(eb, slot, (unsigned long)(ref + 1),
+> > +				    *namelen))
+> > +		return -EIO;
 > 
-> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
-> ---
->  fs/btrfs/send.c | 6 ++++++
->  1 file changed, 6 insertions(+)
-> 
-> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-> index fc496a6f842a..caf96af106e6 100644
-> --- a/fs/btrfs/send.c
-> +++ b/fs/btrfs/send.c
-> @@ -1069,6 +1069,12 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
->  			}
->  		}
->  
-> +		ret = btrfs_is_namelen_valid(eb, path->slots[0],
-> +			  (unsigned long)(di + 1), name_len + data_len);
-> +		if (!ret) {
-> +			ret = -ENAMETOOLONG;
+> I'd like to use this to raise a point - shouldn't btrfs actually try to
+> utilize a bit more the EUCLEAN error code. Both xfs/ext4 do define their
+> EFSCORRUPTED to EUCLEAN and signal that a structure is corrupted and
+> needs cleaning. Presumably when we btrfs_is_namelen_valid fails (or
+> other validation function) this means the data on=disk is corrupted
+> rather than there was an error during I/O which -EIO implies. Currently
+> btrfs uses EUCLEAN in only 3 instances in disk-io.c I'd like to solicit
+> opinions from other developers what their take on that is?
 
-In 5/9 and 7/9 the return values upon btrfs_is_namelen_valid failure are
-different. Shouldn't the failure root cause (corrupted datastructures)
-always be the same when btrfs_is_namelen_valid fails? E.g. in the case
-of send we shouldn't really have entries which are ENAMETOOLONG, since
-they should've been rejected at time they were originally created with
-ENAMETOOLONG. And in case corruption happened and iterate_dir_item
-observes failure from btrfs_is_namelen_valid then this should be
-EIO/EUCLEAN ?
+We've come accross EUCLEAN in the past, eg. in this thread
+https://lkml.kernel.org/r/1473870467-18721-1-git-send-email-bo.li.liu@oracle.com
 
-
-> +			goto out;
-> +		}
->  		if (name_len + data_len > buf_len) {
->  			buf_len = name_len + data_len;
->  			if (is_vmalloc_addr(buf)) {
-> 
+Use of EUCLEAN is really sparse in btrfs and now everything is EIO,
+while we could make a distinction between EIO and EUCLEAN. It "just"
+needs to evaluate all callpaths if the errorcode is expected, the
+semantics is defined and the behaviour is consistent with the existing
+filesystems that use it.

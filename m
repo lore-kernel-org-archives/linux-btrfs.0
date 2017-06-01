@@ -1,34 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp73.ord1c.emailsrvr.com ([108.166.43.73]:44262 "EHLO
-        smtp73.ord1c.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751097AbdFAT13 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 1 Jun 2017 15:27:29 -0400
-Received: from smtp10.relay.ord1c.emailsrvr.com (localhost [127.0.0.1])
-        by smtp10.relay.ord1c.emailsrvr.com (SMTP Server) with ESMTP id E01FC4021B
-        for <linux-btrfs@vger.kernel.org>; Thu,  1 Jun 2017 15:27:28 -0400 (EDT)
-Received: by smtp10.relay.ord1c.emailsrvr.com (Authenticated sender: m.khalili-AT-rqc.ru) with ESMTPSA id 4C1BE402F0
-        for <linux-btrfs@vger.kernel.org>; Thu,  1 Jun 2017 15:27:28 -0400 (EDT)
-Date: Thu, 01 Jun 2017 22:26:17 +0300
-In-Reply-To: <CAGqmi755-pWkzROVcK1Qh2qa3-MQ6CbAFzAL85Lv0WVbjpBxFw@mail.gmail.com>
-References: <CADtmLM88w-KH_SfoECB-N=PXwgvcswP6cyaBtypRHEEdPKZ1VA@mail.gmail.com> <CAGqmi755-pWkzROVcK1Qh2qa3-MQ6CbAFzAL85Lv0WVbjpBxFw@mail.gmail.com>
+Received: from mail-wm0-f53.google.com ([74.125.82.53]:34874 "EHLO
+        mail-wm0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751029AbdFAU0s (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Jun 2017 16:26:48 -0400
+Received: by mail-wm0-f53.google.com with SMTP id b84so2545332wmh.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 01 Jun 2017 13:26:47 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain;
- charset=utf-8
-Subject: Re: understanding differences in recoverability of raid1 vs raid10 and performance implications of unusual numbers of devices
-To: linux-btrfs@vger.kernel.org
-From: Marat Khalili <mkh@rqc.ru>
-Message-ID: <BEFDC957-ECEA-4EEF-9470-D2EA40C47F60@rqc.ru>
+In-Reply-To: <20170601173510.GA22952@lim.localdomain>
+References: <20170526002631.8546-1-bo.li.liu@oracle.com> <CAMG9ccwjBmP9HKkodwARxQK7AkC68HACMzuT43wX6+gmWVUjbg@mail.gmail.com>
+ <20170601173510.GA22952@lim.localdomain>
+From: Ivan Sizov <sivan606@gmail.com>
+Date: Thu, 1 Jun 2017 23:26:26 +0300
+Message-ID: <CAMG9ccwxQn172kpUR61hp8OV_H+rRx4BQhRvMpUs4qn4DKic+Q@mail.gmail.com>
+Subject: Re: [PATCH 0/6] add sanity check for extent inline ref type
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->raid 1 write data on all disks synchronously all time, no tricks.
->btrfs raid1 read data by PID%2
->0 - first copy
->1 - second copy
+2017-06-01 20:35 GMT+03:00 Liu Bo <bo.li.liu@oracle.com>:
+> After I went through the output of leaf's content, most parts of the
+> leaf is sane except the two corrupted items, it's still not clear to
+> me what caused the corruption, there could be some corner cases that
+> I'm not aware of.
+>
+> If fsck doesn't work for you, then a recovery from backup may be the
+> best option.
 
-Meaning, a single-process database will only ever read one copy? At least, meaning of first/second relative to physical devices depends on extent, right, right?
+I don't need to run any repair procedures because system is working
+normally. Most likely that corrupted extents belong to files located
+somewhere in /home.
+Do you mean I should run fsck in order to determine which files are
+corrupted? What are proper options to run fsck with?
+
 -- 
-
-With Best Regards,
-Marat Khalili
+Ivan Sizov

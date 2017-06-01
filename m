@@ -1,7 +1,7 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50762 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:50781 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751605AbdFAJdS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1751438AbdFAJdS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Thu, 1 Jun 2017 05:33:18 -0400
 From: Jan Kara <jack@suse.cz>
 To: <linux-mm@kvack.org>
@@ -17,77 +17,70 @@ Cc: Hugh Dickins <hughd@google.com>, David Howells <dhowells@redhat.com>,
         "Darrick J . Wong" <darrick.wong@oracle.com>,
         linux-xfs@vger.kernel.org, Nadia Yvette Chambers <nyc@holomorphy.com>,
         Jan Kara <jack@suse.cz>
-Subject: [PATCH 08/35] fs: Fix performance regression in clean_bdev_aliases()
-Date: Thu,  1 Jun 2017 11:32:18 +0200
-Message-Id: <20170601093245.29238-9-jack@suse.cz>
+Subject: [PATCH 09/35] ext4: Use pagevec_lookup_range() in ext4_find_unwritten_pgoff()
+Date: Thu,  1 Jun 2017 11:32:19 +0200
+Message-Id: <20170601093245.29238-10-jack@suse.cz>
 In-Reply-To: <20170601093245.29238-1-jack@suse.cz>
 References: <20170601093245.29238-1-jack@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit e64855c6cfaa "fs: Add helper to clean bdev aliases under a bh and
-use it" added a wrapper for clean_bdev_aliases() that invalidates bdev
-aliases underlying a single buffer head. However this has caused a
-performance regression for bonnie++ benchmark on ext4 filesystem when
-delayed allocation is turned off (ext3 mode) - average of 3 runs:
+Use pagevec_lookup_range() in ext4_find_unwritten_pgoff() since we are
+interested only in pages in the given range. Simplify the logic as a
+result of not getting pages out of range and index getting automatically
+advanced.
 
-Hmean SeqOut Char  164787.55 (  0.00%) 107189.06 (-34.95%)
-Hmean SeqOut Block 219883.89 (  0.00%) 168870.32 (-23.20%)
-
-The reason for this regression is that clean_bdev_aliases() is slower
-when called for a single block because pagevec_lookup() it uses will end
-up iterating through the radix tree until it finds a page (which may
-take a while) but we are only interested whether there's a page at a
-particular index.
-
-Fix the problem by using pagevec_lookup_range() instead which avoids the
-needless iteration.
-
-Fixes: e64855c6cfaa0a80c1b71c5f647cb792dc436668
+CC: linux-ext4@vger.kernel.org
+CC: "Theodore Ts'o" <tytso@mit.edu>
 Signed-off-by: Jan Kara <jack@suse.cz>
 ---
- fs/buffer.c | 14 ++++++++------
- 1 file changed, 8 insertions(+), 6 deletions(-)
+ fs/ext4/file.c | 14 ++++----------
+ 1 file changed, 4 insertions(+), 10 deletions(-)
 
-diff --git a/fs/buffer.c b/fs/buffer.c
-index fe0ee01c5a44..d63b22e50f38 100644
---- a/fs/buffer.c
-+++ b/fs/buffer.c
-@@ -1632,19 +1632,18 @@ void clean_bdev_aliases(struct block_device *bdev, sector_t block, sector_t len)
- 	struct pagevec pvec;
- 	pgoff_t index = block >> (PAGE_SHIFT - bd_inode->i_blkbits);
- 	pgoff_t end;
--	int i;
-+	int i, count;
- 	struct buffer_head *bh;
- 	struct buffer_head *head;
+diff --git a/fs/ext4/file.c b/fs/ext4/file.c
+index ddca17c7875a..6821070a388b 100644
+--- a/fs/ext4/file.c
++++ b/fs/ext4/file.c
+@@ -478,12 +478,11 @@ static int ext4_find_unwritten_pgoff(struct inode *inode,
  
- 	end = (block + len - 1) >> (PAGE_SHIFT - bd_inode->i_blkbits);
  	pagevec_init(&pvec, 0);
--	while (index <= end && pagevec_lookup(&pvec, bd_mapping, &index,
--			min(end - index, (pgoff_t)PAGEVEC_SIZE - 1) + 1)) {
--		for (i = 0; i < pagevec_count(&pvec); i++) {
-+	while (pagevec_lookup_range(&pvec, bd_mapping, &index, end,
-+				    PAGEVEC_SIZE)) {
-+		count = pagevec_count(&pvec);
-+		for (i = 0; i < count; i++) {
- 			struct page *page = pvec.pages[i];
+ 	do {
+-		int i, num;
++		int i;
+ 		unsigned long nr_pages;
+ 
+-		num = min_t(pgoff_t, end - index, PAGEVEC_SIZE);
+-		nr_pages = pagevec_lookup(&pvec, inode->i_mapping, &index,
+-					  (pgoff_t)num);
++		nr_pages = pagevec_lookup_range(&pvec, inode->i_mapping,
++					&index, end, PAGEVEC_SIZE);
+ 		if (nr_pages == 0)
+ 			break;
+ 
+@@ -502,9 +501,6 @@ static int ext4_find_unwritten_pgoff(struct inode *inode,
+ 				goto out;
+ 			}
  
 -			if (page->index > end)
--				break;
- 			if (!page_has_buffers(page))
- 				continue;
- 			/*
-@@ -1674,6 +1673,9 @@ void clean_bdev_aliases(struct block_device *bdev, sector_t block, sector_t len)
+-				goto out;
+-
+ 			lock_page(page);
+ 
+ 			if (unlikely(page->mapping != inode->i_mapping)) {
+@@ -544,12 +540,10 @@ static int ext4_find_unwritten_pgoff(struct inode *inode,
+ 			unlock_page(page);
  		}
+ 
+-		/* The no. of pages is less than our desired, we are done. */
+-		if (nr_pages < num)
+-			break;
  		pagevec_release(&pvec);
- 		cond_resched();
-+		/* End of range already reached? */
-+		if (index > end || !index)
-+			break;
- 	}
- }
- EXPORT_SYMBOL(clean_bdev_aliases);
+ 	} while (index <= end);
+ 
++	/* There are no pages upto endoff - that would be a hole in there. */
+ 	if (whence == SEEK_HOLE && lastoff < endoff) {
+ 		found = 1;
+ 		*offset = lastoff;
 -- 
 2.12.3
 

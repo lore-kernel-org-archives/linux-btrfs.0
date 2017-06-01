@@ -1,127 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f68.google.com ([209.85.213.68]:33139 "EHLO
-        mail-vk0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751125AbdFBMSj (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Jun 2017 08:18:39 -0400
+Received: from aserp1040.oracle.com ([141.146.126.69]:18616 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751052AbdFADa2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 31 May 2017 23:30:28 -0400
+Subject: Re: [PATCH 2/3] btrfs: switch kmallocs to GFP_KERNEL in lzo/zlib
+ alloc_workspace
+To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+References: <cover.1496245064.git.dsterba@suse.com>
+ <b00f101454e17051d005f9fb28224b665c339cf1.1496245064.git.dsterba@suse.com>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <489acb80-2dac-5de6-af24-aed8c6176645@oracle.com>
+Date: Thu, 1 Jun 2017 11:36:29 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAK8P3a3m3nt6rfvAvDG6HFuUvy+qWbmk5K0UtLGqYhYHOfdF8w@mail.gmail.com>
-References: <1491613030-11599-1-git-send-email-deepa.kernel@gmail.com>
- <1491613030-11599-5-git-send-email-deepa.kernel@gmail.com>
- <CAAM7YAmp=cZKqGHa8UqDnrQLCe+6TKx+7w9SDZv4cW5fr4dfvA@mail.gmail.com>
- <CAK8P3a1pCw1Oo-Wg70kH5L12pbtEzGDfaPZ8g6ErERJjvY8znQ@mail.gmail.com>
- <CAAM7YAnWLUXMOCVbgfdKGfvK04EtAQcz-ETm7xFO=8Y=_fCvOQ@mail.gmail.com>
- <CALAqxLV-yVKWM5es7fAFiDzhSQmtZFiZDPQwBRUYbWUtqhoWVg@mail.gmail.com>
- <CABeXuvqvLr6sSGF+rZEXXxpCBDKTOeLX1ObSjbPPY4aFBuwvMg@mail.gmail.com>
- <CAAM7YAkXNo_69tOrw6a5kpyref9nEpEp-2vxBbFVSHGmAVbt+A@mail.gmail.com>
- <CAK8P3a1TwkVRCwDWqgYE8Z3wZT2+v6xayq=dVeW8KaHmO0W4cg@mail.gmail.com>
- <CAAM7YA=BJHFLz_Ud==7L=yCzxj+1sjctc68tvpNogPhiSxxELQ@mail.gmail.com>
- <CAK8P3a0D3EXuwBj+sSVL9cmpysdvQWXnkE0zEctBJS8XOqhX7A@mail.gmail.com>
- <CAAM7YAk8JNU=XV=sOCczagWjBimO4JSPU08th7E4u6FTJN--9A@mail.gmail.com> <CAK8P3a3m3nt6rfvAvDG6HFuUvy+qWbmk5K0UtLGqYhYHOfdF8w@mail.gmail.com>
-From: "Yan, Zheng" <ukernel@gmail.com>
-Date: Fri, 2 Jun 2017 20:18:37 +0800
-Message-ID: <CAAM7YA=f74Wye8hgqR52CNG-c4Sh3sm74AzZYhSnhjN1B=G-Ow@mail.gmail.com>
-Subject: Re: [PATCH 04/12] fs: ceph: CURRENT_TIME with ktime_get_real_ts()
-To: Arnd Bergmann <arnd@arndb.de>
-Cc: Deepa Dinamani <deepa.kernel@gmail.com>,
-        John Stultz <john.stultz@linaro.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Al Viro <viro@zeniv.linux.org.uk>, gregkh <gregkh@linuxfoundation.org>,
-        "Dilger, Andreas" <andreas.dilger@intel.com>,
-        "J. Bruce Fields" <bfields@fieldses.org>, Chris Mason <clm@fb.com>,
-        David Miller <davem@davemloft.net>, David Sterba <dsterba@suse.com>,
-        Evgeniy Dushistov <dushistov@mail.ru>, Eric Paris <eparis@redhat.com>,
-        Jaegeuk Kim <jaegeuk@kernel.org>, Josef Bacik <jbacik@fb.com>,
-        Jeff Layton <jlayton@poochiereds.net>,
-        James Simmons <jsimmons@infradead.org>, Ingo Molnar <mingo@redhat.com>,
-        "Drokin, Oleg" <oleg.drokin@intel.com>,
-        Paul Moore <paul@paul-moore.com>, Steven Rostedt <rostedt@goodmis.org>,
-        yuchao0@huawei.com, ceph-devel <ceph-devel@vger.kernel.org>,
-        devel@driverdev.osuosl.org, linux-audit@redhat.com,
-        linux-btrfs <linux-btrfs@vger.kernel.org>, linux-cifs@vger.kernel.org,
-        "Linux F2FS DEV, Mailing List"
-        <linux-f2fs-devel@lists.sourceforge.net>,
-        Linux FS-devel Mailing List <linux-fsdevel@vger.kernel.org>,
-        linux-mtd <linux-mtd@lists.infradead.org>,
-        LSM List <linux-security-module@vger.kernel.org>,
-        Lustre Development List <lustre-devel@lists.lustre.org>,
-        Networking <netdev@vger.kernel.org>, samba-technical@lists.samba.org,
-        y2038 Mailman List <y2038@lists.linaro.org>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <b00f101454e17051d005f9fb28224b665c339cf1.1496245064.git.dsterba@suse.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 2, 2017 at 7:33 PM, Arnd Bergmann <arnd@arndb.de> wrote:
-> On Fri, Jun 2, 2017 at 1:18 PM, Yan, Zheng <ukernel@gmail.com> wrote:
->> On Fri, Jun 2, 2017 at 6:51 PM, Arnd Bergmann <arnd@arndb.de> wrote:
->>> On Fri, Jun 2, 2017 at 12:10 PM, Yan, Zheng <ukernel@gmail.com> wrote:
->>>> On Fri, Jun 2, 2017 at 5:45 PM, Arnd Bergmann <arnd@arndb.de> wrote:
->>>>> On Fri, Jun 2, 2017 at 4:09 AM, Yan, Zheng <ukernel@gmail.com> wrote:
->>>>>> On Fri, Jun 2, 2017 at 8:57 AM, Deepa Dinamani <deepa.kernel@gmail.com> wrote:
->>>>>>> On Thu, Jun 1, 2017 at 5:36 PM, John Stultz <john.stultz@linaro.org> wrote:
->>>>>>>> On Thu, Jun 1, 2017 at 5:26 PM, Yan, Zheng <ukernel@gmail.com> wrote:
->>>>>
->>>>> I believe the bug you see is the result of the two timestamps
->>>>> currently being almost guaranteed to be different in the latest
->>>>> kernels.
->>>>> Changing r_stamp to use current_kernel_time() will make it the
->>>>> same value most of the time (as it was before Deepa's patch),
->>>>> but when the timer interrupt happens between the timestamps,
->>>>> the two are still different, it's just much harder to hit.
->>>>>
->>>>> I think the proper solution should be to change __ceph_setattr()
->>>>> in a way that has req->r_stamp always synchronized with i_ctime.
->>>>> If we copy i_ctime to r_stamp, that will also take care of the
->>>>> future issues with the planned changes to current_time().
->>>>>
->>>> I already have a patch
->>>> https://github.com/ceph/ceph-client/commit/24f54cd18e195a002ee3d2ab50dbc952fd9f82af
->>>
->>> Looks good to me. In case anyone cares:
->>> Acked-by: Arnd Bergmann <arnd@arndb.de>
->>>
->>>>> The part I don't understand is what else r_stamp (i.e. the time
->>>>> stamp in ceph_msg_data with type==
->>>>> CEPH_MSG_CLIENT_REQUEST) is used for, other than setting
->>>>> ctime in CEPH_MDS_OP_SETATTR.
->>>>>
->>>>> Will this be used to update the stored i_ctime for other operations
->>>>> too? If so, we would need to synchronize it with the in-memory
->>>>> i_ctime for all operations that do this.
->>>>>
->>>>
->>>> yes,  mds uses it to update ctime of modified inodes. For example,
->>>> when handling mkdir, mds set ctime of both parent inode and new inode
->>>> to r_stamp.
->>>
->>> I see, so we may have a variation of that problem there as well: From
->>> my reading of the code, the child inode is not in memory yet, so
->>> that seems fine, but I could not find where the parent in-memory inode
->>> i_ctime is updated in ceph, but it is most likely not the same as
->>> req->r_stamp (assuming it gets updated at all).
->>
->> i_ctime is updated when handling request reply, by ceph_fill_file_time().
->> __ceph_setattr() can update the in-memory inode's ctime after request
->> reply is received. The difference between ktime_get_real_ts() and
->> current_time() can be larger than round-trip time of request. So it's
->> still possible that __ceph_setattr() make ctime go back.
->
-> But the __ceph_setattr() problem should be fixed by your patch, right?
->
-> What I meant is another related problem in ceph_mkdir() where the
-> i_ctime field of the parent inode is different between the persistent
-> representation in the mds and the in-memory representation.
->
 
-I don't see any problem in mkdir case. Parent inode's i_ctime in mds is set to
-r_stamp. When client receives request reply, it set its in-memory inode's ctime
-to the same time stamp.
 
-Regards
-Yan, Zheng
-
->     Arnd
+On 05/31/17 23:41, David Sterba wrote:
+> As alloc_workspace is now protected by memalloc_nofs where needed,
+> we can switch the kmalloc to use GFP_KERNEL.
 >
->>> Would it make sense require all callers of ceph_mdsc_do_request()
->>> to update r_stamp at the same time as i_ctime to keep them in sync?
+> Signed-off-by: David Sterba <dsterba@suse.com>
+
+
+Reviewed-by: Anand Jain <anand.jain@oracle.com>
+
+Thanks, Anand
+
+> ---
+>  fs/btrfs/lzo.c  | 2 +-
+>  fs/btrfs/zlib.c | 4 ++--
+>  2 files changed, 3 insertions(+), 3 deletions(-)
+>
+> diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
+> index a554856a5f8a..c556f3f3fbf0 100644
+> --- a/fs/btrfs/lzo.c
+> +++ b/fs/btrfs/lzo.c
+> @@ -51,7 +51,7 @@ static struct list_head *lzo_alloc_workspace(void)
+>  {
+>  	struct workspace *workspace;
+>
+> -	workspace = kzalloc(sizeof(*workspace), GFP_NOFS);
+> +	workspace = kzalloc(sizeof(*workspace), GFP_KERNEL);
+>  	if (!workspace)
+>  		return ERR_PTR(-ENOMEM);
+>
+> diff --git a/fs/btrfs/zlib.c b/fs/btrfs/zlib.c
+> index d5446e18bb59..c1db7572283b 100644
+> --- a/fs/btrfs/zlib.c
+> +++ b/fs/btrfs/zlib.c
+> @@ -53,14 +53,14 @@ static struct list_head *zlib_alloc_workspace(void)
+>  	struct workspace *workspace;
+>  	int workspacesize;
+>
+> -	workspace = kzalloc(sizeof(*workspace), GFP_NOFS);
+> +	workspace = kzalloc(sizeof(*workspace), GFP_KERNEL);
+>  	if (!workspace)
+>  		return ERR_PTR(-ENOMEM);
+>
+>  	workspacesize = max(zlib_deflate_workspacesize(MAX_WBITS, MAX_MEM_LEVEL),
+>  			zlib_inflate_workspacesize());
+>  	workspace->strm.workspace = vmalloc(workspacesize);
+> -	workspace->buf = kmalloc(PAGE_SIZE, GFP_NOFS);
+> +	workspace->buf = kmalloc(PAGE_SIZE, GFP_KERNEL);
+>  	if (!workspace->strm.workspace || !workspace->buf)
+>  		goto fail;
+>
+>

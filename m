@@ -1,40 +1,195 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37092 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:50914 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751078AbdFAO0E (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 1 Jun 2017 10:26:04 -0400
-Date: Thu, 1 Jun 2017 16:25:01 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/5] btrfs: replace opencoded kvzalloc with the helper
-Message-ID: <20170601142501.GE12135@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1496252765.git.dsterba@suse.com>
- <002ad26cc203ff949f1da74733766e20f9111b94.1496252765.git.dsterba@suse.com>
- <abbc29d6-eff6-7a9d-4361-9c67249307a6@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <abbc29d6-eff6-7a9d-4361-9c67249307a6@oracle.com>
+        id S1751506AbdFAJdX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 1 Jun 2017 05:33:23 -0400
+From: Jan Kara <jack@suse.cz>
+To: <linux-mm@kvack.org>
+Cc: Hugh Dickins <hughd@google.com>, David Howells <dhowells@redhat.com>,
+        linux-afs@lists.infradead.org,
+        Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>,
+        linux-nilfs@vger.kernel.org, Bob Peterson <rpeterso@redhat.com>,
+        cluster-devel@redhat.com, Jaegeuk Kim <jaegeuk@kernel.org>,
+        linux-f2fs-devel@lists.sourceforge.net, tytso@mit.edu,
+        linux-ext4@vger.kernel.org, Ilya Dryomov <idryomov@gmail.com>,
+        "Yan, Zheng" <zyan@redhat.com>, ceph-devel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>,
+        "Darrick J . Wong" <darrick.wong@oracle.com>,
+        linux-xfs@vger.kernel.org, Nadia Yvette Chambers <nyc@holomorphy.com>,
+        Jan Kara <jack@suse.cz>
+Subject: [PATCH 30/35] mm: Implement find_get_entries_range()
+Date: Thu,  1 Jun 2017 11:32:40 +0200
+Message-Id: <20170601093245.29238-31-jack@suse.cz>
+In-Reply-To: <20170601093245.29238-1-jack@suse.cz>
+References: <20170601093245.29238-1-jack@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 01, 2017 at 04:04:47PM +0800, Anand Jain wrote:
-> 
-> 
-> 
-> > diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-> > index e8185c83f667..924b1d941b53 100644
-> > --- a/fs/btrfs/send.c
-> > +++ b/fs/btrfs/send.c
-> > @@ -6389,13 +6389,10 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
-> >
-> >  	alloc_size = sizeof(struct clone_root) * (arg->clone_sources_count + 1);
-> >
-> > -	sctx->clone_roots = kzalloc(alloc_size, GFP_KERNEL | __GFP_NOWARN);
-> > +	sctx->clone_roots = kzalloc(alloc_size, GFP_KERNEL);
-> 
-> 
->   Should be kvzalloc ?
+Implement a variant of find_get_entries() that stops iterating at
+given index. Some callers want this, so let's provide the interface.
+Also it makes the interface consistent with find_get_pages().
 
-Of course, I'll fix it. Thanks.
+Signed-off-by: Jan Kara <jack@suse.cz>
+---
+ include/linux/pagemap.h | 13 ++++++++++---
+ include/linux/pagevec.h | 12 ++++++++++--
+ mm/filemap.c            | 32 ++++++++++++++++++++++++--------
+ mm/swap.c               | 11 ++++++-----
+ 4 files changed, 50 insertions(+), 18 deletions(-)
+
+diff --git a/include/linux/pagemap.h b/include/linux/pagemap.h
+index 283d191c18be..df128a56f44b 100644
+--- a/include/linux/pagemap.h
++++ b/include/linux/pagemap.h
+@@ -333,9 +333,16 @@ static inline struct page *grab_cache_page_nowait(struct address_space *mapping,
+ 
+ struct page *find_get_entry(struct address_space *mapping, pgoff_t offset);
+ struct page *find_lock_entry(struct address_space *mapping, pgoff_t offset);
+-unsigned find_get_entries(struct address_space *mapping, pgoff_t *start,
+-			  unsigned int nr_entries, struct page **entries,
+-			  pgoff_t *indices);
++unsigned find_get_entries_range(struct address_space *mapping, pgoff_t *start,
++			pgoff_t end, unsigned int nr_entries,
++			struct page **entries, pgoff_t *indices);
++static inline unsigned find_get_entries(struct address_space *mapping,
++			pgoff_t *start, unsigned int nr_entries,
++			struct page **entries, pgoff_t *indices)
++{
++	return find_get_entries_range(mapping, start, (pgoff_t)-1, nr_entries,
++				      entries, indices);
++}
+ unsigned find_get_pages_range(struct address_space *mapping, pgoff_t *start,
+ 			pgoff_t end, unsigned int nr_pages,
+ 			struct page **pages);
+diff --git a/include/linux/pagevec.h b/include/linux/pagevec.h
+index 3798c142338d..93308689d6a7 100644
+--- a/include/linux/pagevec.h
++++ b/include/linux/pagevec.h
+@@ -22,10 +22,18 @@ struct pagevec {
+ 
+ void __pagevec_release(struct pagevec *pvec);
+ void __pagevec_lru_add(struct pagevec *pvec);
+-unsigned pagevec_lookup_entries(struct pagevec *pvec,
++unsigned pagevec_lookup_entries_range(struct pagevec *pvec,
++				struct address_space *mapping,
++				pgoff_t *start, pgoff_t end,
++				unsigned nr_entries, pgoff_t *indices);
++static inline unsigned pagevec_lookup_entries(struct pagevec *pvec,
+ 				struct address_space *mapping,
+ 				pgoff_t *start, unsigned nr_entries,
+-				pgoff_t *indices);
++				pgoff_t *indices)
++{
++	return pagevec_lookup_entries_range(pvec, mapping, start, (pgoff_t)-1,
++					    nr_entries, indices);
++}
+ void pagevec_remove_exceptionals(struct pagevec *pvec);
+ unsigned pagevec_lookup_range(struct pagevec *pvec,
+ 			      struct address_space *mapping,
+diff --git a/mm/filemap.c b/mm/filemap.c
+index de12b7355821..e55100459710 100644
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -1354,9 +1354,10 @@ struct page *pagecache_get_page(struct address_space *mapping, pgoff_t offset,
+ EXPORT_SYMBOL(pagecache_get_page);
+ 
+ /**
+- * find_get_entries - gang pagecache lookup
++ * find_get_entries_range - gang pagecache lookup
+  * @mapping:	The address_space to search
+  * @start:	The starting page cache index
++ * @end:	The final page cache index (inclusive)
+  * @nr_entries:	The maximum number of entries
+  * @entries:	Where the resulting entries are placed
+  * @indices:	The cache indices corresponding to the entries in @entries
+@@ -1376,9 +1377,9 @@ EXPORT_SYMBOL(pagecache_get_page);
+  * find_get_entries() returns the number of pages and shadow entries which were
+  * found. It also updates @start to index the next page for the traversal.
+  */
+-unsigned find_get_entries(struct address_space *mapping,
+-			  pgoff_t *start, unsigned int nr_entries,
+-			  struct page **entries, pgoff_t *indices)
++unsigned find_get_entries_range(struct address_space *mapping,
++			pgoff_t *start, pgoff_t end, unsigned int nr_entries,
++			struct page **entries, pgoff_t *indices)
+ {
+ 	void **slot;
+ 	unsigned int ret = 0;
+@@ -1390,6 +1391,9 @@ unsigned find_get_entries(struct address_space *mapping,
+ 	rcu_read_lock();
+ 	radix_tree_for_each_slot(slot, &mapping->page_tree, &iter, *start) {
+ 		struct page *head, *page;
++
++		if (iter.index > end)
++			break;
+ repeat:
+ 		page = radix_tree_deref_slot(slot);
+ 		if (unlikely(!page))
+@@ -1425,13 +1429,25 @@ unsigned find_get_entries(struct address_space *mapping,
+ export:
+ 		indices[ret] = iter.index;
+ 		entries[ret] = page;
+-		if (++ret == nr_entries)
+-			break;
++		if (++ret == nr_entries) {
++			*start = indices[ret - 1] + 1;
++			goto out;
++		}
+ 	}
++
++	/*
++	 * We come here when there is no page beyond @end. We take care to not
++	 * overflow the index @start as it confuses some of the callers. This
++	 * breaks the iteration when there is page at index -1 but that is
++	 * already broken anyway.
++	 */
++	if (end == (pgoff_t)-1)
++		*start = (pgoff_t)-1;
++	else
++		*start = end + 1;
++out:
+ 	rcu_read_unlock();
+ 
+-	if (ret)
+-		*start = indices[ret - 1] + 1;
+ 	return ret;
+ }
+ 
+diff --git a/mm/swap.c b/mm/swap.c
+index 6ba3dab6e905..88c7eb4e97db 100644
+--- a/mm/swap.c
++++ b/mm/swap.c
+@@ -889,10 +889,11 @@ void __pagevec_lru_add(struct pagevec *pvec)
+ EXPORT_SYMBOL(__pagevec_lru_add);
+ 
+ /**
+- * pagevec_lookup_entries - gang pagecache lookup
++ * pagevec_lookup_entries_range - gang pagecache lookup
+  * @pvec:	Where the resulting entries are placed
+  * @mapping:	The address_space to search
+  * @start:	The starting entry index
++ * @end:	The final entry index (inclusive)
+  * @nr_entries:	The maximum number of entries
+  * @indices:	The cache indices corresponding to the entries in @pvec
+  *
+@@ -908,13 +909,13 @@ EXPORT_SYMBOL(__pagevec_lru_add);
+  * pagevec_lookup_entries() returns the number of entries which were
+  * found. It also updates @start to index the next page for the traversal.
+  */
+-unsigned pagevec_lookup_entries(struct pagevec *pvec,
++unsigned pagevec_lookup_entries_range(struct pagevec *pvec,
+ 				struct address_space *mapping,
+-				pgoff_t *start, unsigned nr_pages,
++				pgoff_t *start, pgoff_t end, unsigned nr_pages,
+ 				pgoff_t *indices)
+ {
+-	pvec->nr = find_get_entries(mapping, start, nr_pages,
+-				    pvec->pages, indices);
++	pvec->nr = find_get_entries_range(mapping, start, end, nr_pages,
++					  pvec->pages, indices);
+ 	return pagevec_count(pvec);
+ }
+ 
+-- 
+2.12.3
+

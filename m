@@ -1,48 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:48531 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1750954AbdFABEl (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 31 May 2017 21:04:41 -0400
-Subject: Re: [PATCH v4 05/20] btrfs-progs: Introduce wrapper to recover raid56
- data
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>,
-        <lakshmipathi.g@gmail.com>
-References: <20170525062205.11660-1-quwenruo@cn.fujitsu.com>
- <20170525062205.11660-6-quwenruo@cn.fujitsu.com>
- <20170531135215.GE14523@twin.jikos.cz>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <6eeff705-4b11-4169-9b58-5d2e2a0cb35b@cn.fujitsu.com>
-Date: Thu, 1 Jun 2017 09:04:37 +0800
+Received: from mail-pf0-f173.google.com ([209.85.192.173]:34787 "EHLO
+        mail-pf0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751078AbdFAOyz (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Jun 2017 10:54:55 -0400
+Received: by mail-pf0-f173.google.com with SMTP id 9so29385255pfj.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 01 Jun 2017 07:54:55 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20170531135215.GE14523@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+From: Alexander Peganz <a.peganz@gmail.com>
+Date: Thu, 1 Jun 2017 16:54:29 +0200
+Message-ID: <CADtmLM88w-KH_SfoECB-N=PXwgvcswP6cyaBtypRHEEdPKZ1VA@mail.gmail.com>
+Subject: understanding differences in recoverability of raid1 vs raid10 and
+ performance implications of unusual numbers of devices
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hello,
 
+I am trying to understand what differences there are in using btrfs
+raid1 vs raid10 in terms of recoverability and also performance.
+This has proven itself to be more difficult than expected since all
+search results I could come up with generally suffer from one of three
+flaws: they either discuss terribly old versions of btrfs, only
+discuss 4 disk settings, or are about traditional HW (or mdadm) RAID
+modes.
 
-At 05/31/2017 09:52 PM, David Sterba wrote:
-> On Thu, May 25, 2017 at 02:21:50PM +0800, Qu Wenruo wrote:
->> Introduce a wrapper to recover raid56 data.
->>
->> The logical is the same with kernel one, but with different interfaces,
->> since kernel ones cares the performance while in btrfs we don't care
->> that much.
-> 
-> Can you please rephrase this paragraph? I'll commit the patch as-is for
-> now but want replace the changelog with an improved one.
-> 
-> 
+>From what I gathered so far, with raid1 btrfs just puts the 2 copies
+of a file on 2 different devices.
+And raid10 splits files into stripes, then writes 2 copies of each
+stripe to 2 different devices. By splitting the files into stripes it
+can write stripe 1 to devices A and B, while at the same time writing
+stripe 2 to devices C and D, and so on. So a single copy of a file
+might end up split across all devices, as does the second, but with
+the stripes distributed in a way that the copies of each one stripe
+are never on the same device.
 
-I'm not sure which direction I should change the paragraph to.
+So my first question is: is that actually correct? Or does btrfs raid1
+create copies of blocks or something akin to stripes instead of files?
+Because I imagine if it is at the file level there is a difference in
+recoverability if the "wrong" 2 devices die.
+For a raid1 I'd expect to only loose those files whose copies were
+located on those 2 devices. Every file with a copy on one of the still
+working devices would be recoverable. So the more devices there are
+the bigger the percentage of recoverable files could get.
+While with raid10 the copies of every file's first stripe might end up
+on device A and device B, damaging every single file if A and B die at
+the same time.
+This might just be a reason for me to choose raid1 over raid10, so I
+really appreciate if someone could enlighten me ;)
 
-To explain more about the wrapper or remove unrelated difference between 
-kernel and btrfs-progs part?
+As to performance, with raid1 write speed should (theoretically) be
+the same as a single disk (although writing the first half of the data
+to device A while at the same time writing the second half to device B
+would allow to write the first copy in half the time, and would allow
+to create the second copy at some later point in time I highly doubt
+btrfs is quite that adventurous). And read speeds should be up to
+twice that of a single device.
+With raid10 write speeds should be N times those of a single disk to
+create the first copy, and since of course a second one has to be
+written as well, effectively up to N/2. Read speeds should be up to N
+times that of a single disk. But I couldn't find useful comparisons
+using more than 4 devices. Should I expect any weirdness if I don't
+have a multiple of 4 devices? Or do I just need an even number of
+devices? Or is everything ok, even odd numbers?
 
-Or why we need the wrapper?
+And finally, could using raid10 cause me more headache than raid1
+farther down the line when adding additional devices? How about if
+those devices are not the same size as the original ones, any
+difference between raid1 and 10?
 
-Thanks,
-Qu
-
-
+Thank you for your help!
+Alexander

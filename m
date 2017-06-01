@@ -1,50 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:40519 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:19186 "EHLO
         aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750848AbdFAH6o (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Jun 2017 03:58:44 -0400
-Subject: Re: [PATCH 1/5] btrfs: replace opencoded kvzalloc with the helper
+        with ESMTP id S1751209AbdFAJRS (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Jun 2017 05:17:18 -0400
+Subject: Re: [PATCH 2/5] btrfs: send: use kvmalloc in iterate_dir_item
 To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
 References: <cover.1496252765.git.dsterba@suse.com>
- <002ad26cc203ff949f1da74733766e20f9111b94.1496252765.git.dsterba@suse.com>
+ <b4c7abc3e53eda95ca717d793863639711625d63.1496252765.git.dsterba@suse.com>
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <abbc29d6-eff6-7a9d-4361-9c67249307a6@oracle.com>
-Date: Thu, 1 Jun 2017 16:04:47 +0800
+Message-ID: <799c51c3-91af-4835-48b0-1eadad9c3042@oracle.com>
+Date: Thu, 1 Jun 2017 17:23:21 +0800
 MIME-Version: 1.0
-In-Reply-To: <002ad26cc203ff949f1da74733766e20f9111b94.1496252765.git.dsterba@suse.com>
+In-Reply-To: <b4c7abc3e53eda95ca717d793863639711625d63.1496252765.git.dsterba@suse.com>
 Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
+On 06/01/17 01:49, David Sterba wrote:
+> We use a growing buffer for xattrs larger than a page size, at some
+> point vmalloc is unconditionally used for larger buffers. We can still
+> try to avoid it using the kvmalloc helper.
 
+  Reviewed-by: Anand Jain <anand.jain@oracle.com>
+
+> Signed-off-by: David Sterba <dsterba@suse.com>
+> ---
+>  fs/btrfs/send.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+>
 > diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-> index e8185c83f667..924b1d941b53 100644
+> index 924b1d941b53..7416b17c0eac 100644
 > --- a/fs/btrfs/send.c
 > +++ b/fs/btrfs/send.c
-> @@ -6389,13 +6389,10 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
->
->  	alloc_size = sizeof(struct clone_root) * (arg->clone_sources_count + 1);
->
-> -	sctx->clone_roots = kzalloc(alloc_size, GFP_KERNEL | __GFP_NOWARN);
-> +	sctx->clone_roots = kzalloc(alloc_size, GFP_KERNEL);
-
-
-  Should be kvzalloc ?
-
-Thanks, Anand
-
-
->  	if (!sctx->clone_roots) {
-> -		sctx->clone_roots = vzalloc(alloc_size);
-> -		if (!sctx->clone_roots) {
-> -			ret = -ENOMEM;
-> -			goto out;
-> -		}
-> +		ret = -ENOMEM;
-> +		goto out;
->  	}
->
->  	alloc_size = arg->clone_sources_count * sizeof(*arg->clone_sources);
+> @@ -1083,7 +1083,7 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
+>  				buf = tmp;
+>  			}
+>  			if (!buf) {
+> -				buf = vmalloc(buf_len);
+> +				buf = kvmalloc(buf_len, GFP_KERNEL);
+>  				if (!buf) {
+>  					ret = -ENOMEM;
+>  					goto out;
 >

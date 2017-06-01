@@ -1,7 +1,7 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50871 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:50762 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751658AbdFAJdV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1751655AbdFAJdV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Thu, 1 Jun 2017 05:33:21 -0400
 From: Jan Kara <jack@suse.cz>
 To: <linux-mm@kvack.org>
@@ -17,50 +17,48 @@ Cc: Hugh Dickins <hughd@google.com>, David Howells <dhowells@redhat.com>,
         "Darrick J . Wong" <darrick.wong@oracle.com>,
         linux-xfs@vger.kernel.org, Nadia Yvette Chambers <nyc@holomorphy.com>,
         Jan Kara <jack@suse.cz>
-Subject: [PATCH 22/35] nilfs2: Use pagevec_lookup_range_tag()
-Date: Thu,  1 Jun 2017 11:32:32 +0200
-Message-Id: <20170601093245.29238-23-jack@suse.cz>
+Subject: [PATCH 23/35] mm: Use pagevec_lookup_range_tag() in __filemap_fdatawait_range()
+Date: Thu,  1 Jun 2017 11:32:33 +0200
+Message-Id: <20170601093245.29238-24-jack@suse.cz>
 In-Reply-To: <20170601093245.29238-1-jack@suse.cz>
 References: <20170601093245.29238-1-jack@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We want only pages from given range in
-nilfs_lookup_dirty_data_buffers(). Use pagevec_lookup_range_tag()
-instead of pagevec_lookup_tag() and remove unnecessary code.
+Use pagevec_lookup_range_tag() in __filemap_fdatawait_range() as it is
+interested only in pages from given range. Remove unnecessary code
+resulting from this.
 
-CC: Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>
-CC: linux-nilfs@vger.kernel.org
 Signed-off-by: Jan Kara <jack@suse.cz>
 ---
- fs/nilfs2/segment.c | 8 ++------
- 1 file changed, 2 insertions(+), 6 deletions(-)
+ mm/filemap.c | 9 ++-------
+ 1 file changed, 2 insertions(+), 7 deletions(-)
 
-diff --git a/fs/nilfs2/segment.c b/fs/nilfs2/segment.c
-index febed1217b3f..fd9eeca5f784 100644
---- a/fs/nilfs2/segment.c
-+++ b/fs/nilfs2/segment.c
-@@ -711,18 +711,14 @@ static size_t nilfs_lookup_dirty_data_buffers(struct inode *inode,
+diff --git a/mm/filemap.c b/mm/filemap.c
+index 56af68f6a375..8039b6bb9c27 100644
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -390,18 +390,13 @@ static int __filemap_fdatawait_range(struct address_space *mapping,
+ 
  	pagevec_init(&pvec, 0);
-  repeat:
- 	if (unlikely(index > last) ||
--	    !pagevec_lookup_tag(&pvec, mapping, &index, PAGECACHE_TAG_DIRTY,
--				min_t(pgoff_t, last - index,
--				      PAGEVEC_SIZE - 1) + 1))
-+	    !pagevec_lookup_range_tag(&pvec, mapping, &index, last,
-+				PAGECACHE_TAG_DIRTY, PAGEVEC_SIZE))
- 		return ndirties;
+ 	while ((index <= end) &&
+-			(nr_pages = pagevec_lookup_tag(&pvec, mapping, &index,
+-			PAGECACHE_TAG_WRITEBACK,
+-			min(end - index, (pgoff_t)PAGEVEC_SIZE-1) + 1)) != 0) {
++			(nr_pages = pagevec_lookup_range_tag(&pvec, mapping,
++			&index, end, PAGECACHE_TAG_WRITEBACK, PAGEVEC_SIZE))) {
+ 		unsigned i;
  
- 	for (i = 0; i < pagevec_count(&pvec); i++) {
- 		struct buffer_head *bh, *head;
- 		struct page *page = pvec.pages[i];
+ 		for (i = 0; i < nr_pages; i++) {
+ 			struct page *page = pvec.pages[i];
  
--		if (unlikely(page->index > last))
--			break;
+-			/* until radix tree lookup accepts end_index */
+-			if (page->index > end)
+-				continue;
 -
- 		lock_page(page);
- 		if (!page_has_buffers(page))
- 			create_empty_buffers(page, i_blocksize(inode), 0);
+ 			wait_on_page_writeback(page);
+ 			if (TestClearPageError(page))
+ 				ret = -EIO;
 -- 
 2.12.3
 

@@ -1,90 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34860 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:34868 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751140AbdFBQ7q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 2 Jun 2017 12:59:46 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 02D02ABBD
-        for <linux-btrfs@vger.kernel.org>; Fri,  2 Jun 2017 16:59:45 +0000 (UTC)
+        id S1751242AbdFBQ7t (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 2 Jun 2017 12:59:49 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id BA4F4ABBD
+        for <linux-btrfs@vger.kernel.org>; Fri,  2 Jun 2017 16:59:47 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 6/8] btrfs: remove redundant parameters from btrfs_bio_alloc
-Date: Fri,  2 Jun 2017 18:58:44 +0200
-Message-Id: <174c51230cae682e9f6c2c237833da89a1d2b6ab.1496422340.git.dsterba@suse.com>
+Subject: [PATCH 7/8] btrfs: opencode trivial compressed_bio_alloc, simplify error handling
+Date: Fri,  2 Jun 2017 18:58:47 +0200
+Message-Id: <c1045c6859c18ce20d4f55e162399b708f9bfcf4.1496422340.git.dsterba@suse.com>
 In-Reply-To: <cover.1496422340.git.dsterba@suse.com>
 References: <cover.1496422340.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-All callers pass gfp_flags=GFP_NOFS and nr_vecs=BIO_MAX_PAGES.
+compressed_bio_alloc is now a trivial wrapper around btrfs_bio_alloc, no
+point keeping it. The error handling can be simplified, as we know
+btrfs_bio_alloc will never fail.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/compression.c | 2 +-
- fs/btrfs/extent_io.c   | 9 +++------
- fs/btrfs/extent_io.h   | 4 +---
- 3 files changed, 5 insertions(+), 10 deletions(-)
+ fs/btrfs/compression.c | 23 ++++-------------------
+ 1 file changed, 4 insertions(+), 19 deletions(-)
 
 diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index ba511dd454d5..7ad0a1c4be68 100644
+index 7ad0a1c4be68..2df080c4ece0 100644
 --- a/fs/btrfs/compression.c
 +++ b/fs/btrfs/compression.c
-@@ -56,7 +56,7 @@ static inline int compressed_bio_size(struct btrfs_fs_info *fs_info,
- static struct bio *compressed_bio_alloc(struct block_device *bdev,
- 					u64 first_byte, gfp_t gfp_flags)
- {
--	return btrfs_bio_alloc(bdev, first_byte >> 9, BIO_MAX_PAGES, gfp_flags);
-+	return btrfs_bio_alloc(bdev, first_byte >> 9);
+@@ -53,12 +53,6 @@ static inline int compressed_bio_size(struct btrfs_fs_info *fs_info,
+ 		(DIV_ROUND_UP(disk_size, fs_info->sectorsize)) * csum_size;
  }
  
+-static struct bio *compressed_bio_alloc(struct block_device *bdev,
+-					u64 first_byte, gfp_t gfp_flags)
+-{
+-	return btrfs_bio_alloc(bdev, first_byte >> 9);
+-}
+-
  static int check_compressed_csum(struct btrfs_inode *inode,
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index a8f135286fa5..5730b4e747f1 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2658,14 +2658,12 @@ static void end_bio_extent_readpage(struct bio *bio)
-  * never fail.  We're returning a bio right now but you can call btrfs_io_bio
-  * for the appropriate container_of magic
-  */
--struct bio *
--btrfs_bio_alloc(struct block_device *bdev, u64 first_sector, int nr_vecs,
--		gfp_t gfp_flags)
-+struct bio *btrfs_bio_alloc(struct block_device *bdev, u64 first_sector)
- {
- 	struct btrfs_io_bio *btrfs_bio;
- 	struct bio *bio;
+ 				 struct compressed_bio *cb,
+ 				 u64 disk_start)
+@@ -311,11 +305,7 @@ int btrfs_submit_compressed_write(struct inode *inode, u64 start,
  
--	bio = bio_alloc_bioset(gfp_flags, nr_vecs, btrfs_bioset);
-+	bio = bio_alloc_bioset(GFP_NOFS, BIO_MAX_PAGES, btrfs_bioset);
- 	bio->bi_bdev = bdev;
- 	bio->bi_iter.bi_sector = first_sector;
- 	btrfs_bio = btrfs_io_bio(bio);
-@@ -2800,8 +2798,7 @@ static int submit_extent_page(int op, int op_flags, struct extent_io_tree *tree,
- 		}
- 	}
+ 	bdev = fs_info->fs_devices->latest_bdev;
  
--	bio = btrfs_bio_alloc(bdev, sector, BIO_MAX_PAGES,
--			GFP_NOFS | __GFP_HIGH);
-+	bio = btrfs_bio_alloc(bdev, sector);
- 	bio_add_page(bio, page, page_size, offset);
- 	bio->bi_end_io = end_io_func;
- 	bio->bi_private = tree;
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 4fe643a5aeaf..fb7a938ecbc9 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -462,9 +462,7 @@ void extent_clear_unlock_delalloc(struct inode *inode, u64 start, u64 end,
- 				 u64 delalloc_end, struct page *locked_page,
- 				 unsigned bits_to_clear,
- 				 unsigned long page_ops);
--struct bio *
--btrfs_bio_alloc(struct block_device *bdev, u64 first_sector, int nr_vecs,
--		gfp_t gfp_flags);
-+struct bio *btrfs_bio_alloc(struct block_device *bdev, u64 first_sector);
- struct bio *btrfs_io_bio_alloc(gfp_t gfp_mask, unsigned int nr_iovecs);
- struct bio *btrfs_bio_clone(struct bio *bio);
- struct bio *btrfs_bio_clone_partial(struct bio *orig, int offset, int size);
+-	bio = compressed_bio_alloc(bdev, first_byte, GFP_NOFS);
+-	if (!bio) {
+-		kfree(cb);
+-		return -ENOMEM;
+-	}
++	bio = btrfs_bio_alloc(bdev, first_byte >> 9);
+ 	bio_set_op_attrs(bio, REQ_OP_WRITE, 0);
+ 	bio->bi_private = cb;
+ 	bio->bi_end_io = end_compressed_bio_write;
+@@ -362,8 +352,7 @@ int btrfs_submit_compressed_write(struct inode *inode, u64 start,
+ 
+ 			bio_put(bio);
+ 
+-			bio = compressed_bio_alloc(bdev, first_byte, GFP_NOFS);
+-			BUG_ON(!bio);
++			bio = btrfs_bio_alloc(bdev, first_byte >> 9);
+ 			bio_set_op_attrs(bio, REQ_OP_WRITE, 0);
+ 			bio->bi_private = cb;
+ 			bio->bi_end_io = end_compressed_bio_write;
+@@ -606,9 +595,7 @@ int btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+ 	/* include any pages we added in add_ra-bio_pages */
+ 	cb->len = bio->bi_iter.bi_size;
+ 
+-	comp_bio = compressed_bio_alloc(bdev, cur_disk_byte, GFP_NOFS);
+-	if (!comp_bio)
+-		goto fail2;
++	comp_bio = btrfs_bio_alloc(bdev, cur_disk_byte >> 9);
+ 	bio_set_op_attrs (comp_bio, REQ_OP_READ, 0);
+ 	comp_bio->bi_private = cb;
+ 	comp_bio->bi_end_io = end_compressed_bio_read;
+@@ -659,9 +646,7 @@ int btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+ 
+ 			bio_put(comp_bio);
+ 
+-			comp_bio = compressed_bio_alloc(bdev, cur_disk_byte,
+-							GFP_NOFS);
+-			BUG_ON(!comp_bio);
++			comp_bio = btrfs_bio_alloc(bdev, cur_disk_byte >> 9);
+ 			bio_set_op_attrs(comp_bio, REQ_OP_READ, 0);
+ 			comp_bio->bi_private = cb;
+ 			comp_bio->bi_end_io = end_compressed_bio_read;
 -- 
 2.12.0
 

@@ -1,53 +1,143 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:57434 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751184AbdFART1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 1 Jun 2017 13:19:27 -0400
-Date: Thu, 1 Jun 2017 19:18:26 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org,
-        dsterba@suse.cz
-Subject: Re: [PATCH v2 3/9] btrfs: Check name len on add_inode_ref call path
-Message-ID: <20170601171826.GI12135@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Received: from cn.fujitsu.com ([59.151.112.132]:44081 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751122AbdFBDxb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Jun 2017 23:53:31 -0400
+Subject: Re: [PATCH v2 1/9] btrfs: Introduce btrfs_is_namelen_valid to avoid
+ reading beyond boundary
+To: Nikolay Borisov <nborisov@suse.com>, <linux-btrfs@vger.kernel.org>
+CC: <dsterba@suse.cz>
 References: <20170601085716.25898-1-suy.fnst@cn.fujitsu.com>
- <20170601085716.25898-4-suy.fnst@cn.fujitsu.com>
- <08abcc0c-c17c-23e9-96e6-48c48a287a83@suse.com>
+ <20170601085716.25898-2-suy.fnst@cn.fujitsu.com>
+ <03d086d0-544c-38cd-ecad-c98af1319c91@suse.com>
+From: Su Yue <suy.fnst@cn.fujitsu.com>
+Message-ID: <a911e7e4-8479-c79c-d181-2223001f91e7@cn.fujitsu.com>
+Date: Fri, 2 Jun 2017 11:55:29 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <08abcc0c-c17c-23e9-96e6-48c48a287a83@suse.com>
+In-Reply-To: <03d086d0-544c-38cd-ecad-c98af1319c91@suse.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 01, 2017 at 12:53:53PM +0300, Nikolay Borisov wrote:
-> > +static int ref_get_fields(struct extent_buffer *eb, int slot,
-> > +			  unsigned long ref_ptr, u32 *namelen, char **name,
-> > +			  u64 *index)
-> >  {
-> >  	struct btrfs_inode_ref *ref;
-> >  
-> >  	ref = (struct btrfs_inode_ref *)ref_ptr;
-> >  
-> >  	*namelen = btrfs_inode_ref_name_len(eb, ref);
-> > +	if (!btrfs_is_namelen_valid(eb, slot, (unsigned long)(ref + 1),
-> > +				    *namelen))
-> > +		return -EIO;
+
+
+On 06/01/2017 05:44 PM, Nikolay Borisov wrote:
 > 
-> I'd like to use this to raise a point - shouldn't btrfs actually try to
-> utilize a bit more the EUCLEAN error code. Both xfs/ext4 do define their
-> EFSCORRUPTED to EUCLEAN and signal that a structure is corrupted and
-> needs cleaning. Presumably when we btrfs_is_namelen_valid fails (or
-> other validation function) this means the data on=disk is corrupted
-> rather than there was an error during I/O which -EIO implies. Currently
-> btrfs uses EUCLEAN in only 3 instances in disk-io.c I'd like to solicit
-> opinions from other developers what their take on that is?
+> 
+> On  1.06.2017 11:57, Su Yue wrote:
+>> Introduce function btrfs_is_namelen_valid.
+>>
+>> The function compares arg @namelen with item boundary then returns value
+>> represents namelen is valid or not.
+>>
+>> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
+>> ---
+>>   fs/btrfs/ctree.h    |  2 ++
+>>   fs/btrfs/dir-item.c | 73 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+>>   2 files changed, 75 insertions(+)
+>>
+>> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+>> index 643c70d2b2e6..70d8778f849b 100644
+>> --- a/fs/btrfs/ctree.h
+>> +++ b/fs/btrfs/ctree.h
+>> @@ -3037,6 +3037,8 @@ struct btrfs_dir_item *btrfs_match_dir_item_name(struct btrfs_fs_info *fs_info,
+>>   						 struct btrfs_path *path,
+>>   						 const char *name,
+>>   						 int name_len);
+>> +bool btrfs_is_namelen_valid(struct extent_buffer *leaf, int slot,
+>> +			    unsigned long start, u16 namelen);
+>>   
+>>   /* orphan.c */
+>>   int btrfs_insert_orphan_item(struct btrfs_trans_handle *trans,
+>> diff --git a/fs/btrfs/dir-item.c b/fs/btrfs/dir-item.c
+>> index c24d615e3d7f..fbda228192ed 100644
+>> --- a/fs/btrfs/dir-item.c
+>> +++ b/fs/btrfs/dir-item.c
+>> @@ -484,3 +484,76 @@ int verify_dir_item(struct btrfs_fs_info *fs_info,
+>>   
+>>   	return 0;
+>>   }
+>> +
+>> +bool btrfs_is_namelen_valid(struct extent_buffer *leaf, int slot,
+>> +			    unsigned long start, u16 namelen)
+>> +{
+>> +	struct btrfs_fs_info *fs_info = leaf->fs_info;
+>> +	struct btrfs_key key;
+>> +	u32 read_start;
+>> +	u32 read_end;
+>> +	u32 item_start;
+>> +	u32 item_end;
+>> +	u32 size;
+>> +	bool ret = true;
+>> +
+>> +	ASSERT(start > btrfs_leaf_data(leaf));
+>> +
+>> +	read_start = start - btrfs_leaf_data(leaf);
+>> +	read_end = read_start + namelen;
+>> +	item_start = btrfs_item_offset_nr(leaf, slot);
+>> +	item_end = btrfs_item_end_nr(leaf, slot);
+>> +
+>> +	btrfs_item_key_to_cpu(leaf, &key, slot);
+>> +
+>> +	switch (key.type) {
+>> +	case BTRFS_DIR_ITEM_KEY:
+>> +	case BTRFS_XATTR_ITEM_KEY:
+>> +	case BTRFS_DIR_INDEX_KEY:
+>> +		size = sizeof(struct btrfs_dir_item);
+>> +		break;
+>> +	case BTRFS_INODE_REF_KEY:
+>> +		size = sizeof(struct btrfs_inode_ref);
+>> +		break;
+>> +	case BTRFS_INODE_EXTREF_KEY:
+>> +		size = sizeof(struct btrfs_inode_extref);
+>> +		break;
+>> +	default:
+>> +		size = 0;
+>> +	}
+>> +
+>> +	if (!size) {
+>> +		ret = false;
+>> +		goto out;
+>> +	}
+> 
+> Why don't you fold this check directly in the 'default' case in the
+> switch. It makes more clear the intention that this function only
+> handles the items, explicitly listed in the 'case' statements.
+> 
+Thanks for your advice! :)
+>> +
+>> +	if (read_start < item_start) {
+>> +		ret = false;
+>> +		goto out;
+>> +	}
+>> +	if (read_end > item_end) {
+>> +		ret = false;
+>> +		goto out;
+>> +	}
+>> +
+>> +	/* there shall be item(s) before name */
+>> +	if (read_start - item_start < size) {
+>> +		ret = false;
+>> +		goto out;
+>> +	}
+>> +
+>> +	/*
+>> +	 * This may be the last item in the slot
+>> +	 * Or same type item(s) is left between read_end and item_end
+>> +	 */
+>> +	if (item_end != read_end &&
+>> +	    item_end - read_end < size) {
+>> +		ret = false;
+>> +		goto out;
+>> +	}
+>> +out:
+>> +	if (!ret)
+>> +		btrfs_crit(fs_info, "invalid dir item name len: %u",
+>> +			   (unsigned int)namelen);
+>> +	return ret;
+>> +}
+>>
+> 
+> 
 
-We've come accross EUCLEAN in the past, eg. in this thread
-https://lkml.kernel.org/r/1473870467-18721-1-git-send-email-bo.li.liu@oracle.com
 
-Use of EUCLEAN is really sparse in btrfs and now everything is EIO,
-while we could make a distinction between EIO and EUCLEAN. It "just"
-needs to evaluate all callpaths if the errorcode is expected, the
-semantics is defined and the behaviour is consistent with the existing
-filesystems that use it.

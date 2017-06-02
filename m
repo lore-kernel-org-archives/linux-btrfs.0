@@ -1,38 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from p3nlsmtpcp01-02.prod.phx3.secureserver.net ([184.168.200.140]:48882
-        "EHLO p3nlsmtpcp01-02.prod.phx3.secureserver.net"
+Received: from p3nlsmtpcp01-03.prod.phx3.secureserver.net ([184.168.200.142]:56722
+        "EHLO p3nlsmtpcp01-03.prod.phx3.secureserver.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751116AbdFVHj0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Jun 2017 03:39:26 -0400
-Date: Thu, 22 Jun 2017 13:08:19 +0530
+        id S1751130AbdFBDRl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 1 Jun 2017 23:17:41 -0400
+Date: Fri, 2 Jun 2017 08:46:28 +0530
 From: "Lakshmipathi.G" <lakshmipathi.g@giis.co.in>
-To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: [PATCH] Fix 'btrfs device stats --check' cli option
-Message-ID: <20170622073819.GA26737@giis.co.in>
+To: dsterba@suse.cz, Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v2] btrfs-progs: btrfs-convert: Add larger device support
+Message-ID: <20170602031628.GA4098@giis.co.in>
+References: <20170513125632.GA10846@giis.co.in>
+ <b9f29fde-1e8a-d481-971a-b1951bf9b2a8@cn.fujitsu.com>
+ <20170515083653.GA5902@giis.co.in>
+ <20170530172006.GY14523@twin.jikos.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170530172006.GY14523@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Reported by Tomas Thiemel<thiemel@centrum.cz>
-Bug 194961 - btrfs device stats --check <folder> does not work
+> 
+> I think we should use the 64bit types just to be safe.
+> 
+Dave, Okay made those changes and new patch sent.
 
----
- cmds-device.c | 1 +
- 1 file changed, 1 insertion(+)
+>If we need to modify tons of things, then please split such modification to
+>different patches.
 
-diff --git a/cmds-device.c b/cmds-device.c
-index 5e016a7..4337eb2 100644
---- a/cmds-device.c
-+++ b/cmds-device.c
-@@ -400,6 +400,7 @@ static int cmd_device_stats(int argc, char **argv)
- 	while (1) {
- 		int c;
- 		static const struct option long_options[] = {
-+			{"check", no_argument, NULL, 'c'},
- 			{"reset", no_argument, NULL, 'z'},
- 			{NULL, 0, NULL, 0}
- 		};
--- 
-2.7.4
+Qu, Seems like only minor changes needed, so used a single patch.
+
+Cheers.
+Lakshmipathi.G
 

@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ua0-f196.google.com ([209.85.217.196]:32913 "EHLO
-        mail-ua0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751134AbdFBA03 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Jun 2017 20:26:29 -0400
+Received: from mail-vk0-f65.google.com ([209.85.213.65]:33449 "EHLO
+        mail-vk0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750892AbdFBAfx (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Jun 2017 20:35:53 -0400
 MIME-Version: 1.0
 In-Reply-To: <CAK8P3a1pCw1Oo-Wg70kH5L12pbtEzGDfaPZ8g6ErERJjvY8znQ@mail.gmail.com>
 References: <1491613030-11599-1-git-send-email-deepa.kernel@gmail.com>
  <1491613030-11599-5-git-send-email-deepa.kernel@gmail.com>
  <CAAM7YAmp=cZKqGHa8UqDnrQLCe+6TKx+7w9SDZv4cW5fr4dfvA@mail.gmail.com> <CAK8P3a1pCw1Oo-Wg70kH5L12pbtEzGDfaPZ8g6ErERJjvY8znQ@mail.gmail.com>
 From: "Yan, Zheng" <ukernel@gmail.com>
-Date: Fri, 2 Jun 2017 08:26:27 +0800
-Message-ID: <CAAM7YAnWLUXMOCVbgfdKGfvK04EtAQcz-ETm7xFO=8Y=_fCvOQ@mail.gmail.com>
+Date: Fri, 2 Jun 2017 08:35:51 +0800
+Message-ID: <CAAM7YA=rdDSd_YFbDu1-mKoU8_hkBdPQ+jMc3jsUtfxo-Jm3GQ@mail.gmail.com>
 Subject: Re: [PATCH 04/12] fs: ceph: CURRENT_TIME with ktime_get_real_ts()
 To: Arnd Bergmann <arnd@arndb.de>
 Cc: Deepa Dinamani <deepa.kernel@gmail.com>,
@@ -95,15 +95,17 @@ On Thu, Jun 1, 2017 at 6:22 PM, Arnd Bergmann <arnd@arndb.de> wrote:
 > the time stamp of the last jiffies update, which may be up to one jiffy
 > (10ms) behind the exact time we put in the request stamps here.
 >
-> Do you still see problems if you use current_kernel_time() instead of
-> ktime_get_real_ts()?
+It happens in following sequence of events
 
-The problem disappears after using current_kernel_time().
+1. create a new file, the inode's ctime is set to ktime_get_real_ts()
+2. chmod the new file, the inode's ctime is set to current_time().
 
-https://github.com/ceph/ceph-client/commit/2e0f648da23167034a3cf1500bc90ec60aef2417
-
+Inode's ctime goes back when current_time() is behind ktime_get_real_ts().
 
 Regards
 Yan, Zheng
+
+> Do you still see problems if you use current_kernel_time() instead of
+> ktime_get_real_ts()?
 >
 >         Arnd

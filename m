@@ -1,56 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([65.50.211.133]:44516 "EHLO
+Received: from bombadil.infradead.org ([65.50.211.133]:58259 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751153AbdFCHih (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 3 Jun 2017 03:38:37 -0400
+        with ESMTP id S1751156AbdFCHid (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 3 Jun 2017 03:38:33 -0400
 From: Christoph Hellwig <hch@lst.de>
 To: axboe@kernel.dk
 Cc: linux-block@vger.kernel.org, dm-devel@redhat.com,
         linux-btrfs@vger.kernel.org
-Subject: [PATCH 06/13] fs: simplify dio_bio_complete
-Date: Sat,  3 Jun 2017 09:37:59 +0200
-Message-Id: <20170603073806.2046-7-hch@lst.de>
+Subject: [PATCH 08/13] dm mpath: merge do_end_io_bio into multipath_end_io_bio
+Date: Sat,  3 Jun 2017 09:38:01 +0200
+Message-Id: <20170603073806.2046-9-hch@lst.de>
 In-Reply-To: <20170603073806.2046-1-hch@lst.de>
 References: <20170603073806.2046-1-hch@lst.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Only read bio->bi_error once in the common path.
+This simplifies the code and especially the error passing a bit and
+will help with the next patch.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
-Reviewed-by: Bart Van Assche <Bart.VanAssche@sandisk.com>
 ---
- fs/direct-io.c | 6 ++----
- 1 file changed, 2 insertions(+), 4 deletions(-)
+ drivers/md/dm-mpath.c | 42 +++++++++++++++---------------------------
+ 1 file changed, 15 insertions(+), 27 deletions(-)
 
-diff --git a/fs/direct-io.c b/fs/direct-io.c
-index 04247a6c3f73..bb711e4b86c2 100644
---- a/fs/direct-io.c
-+++ b/fs/direct-io.c
-@@ -477,13 +477,12 @@ static int dio_bio_complete(struct dio *dio, struct bio *bio)
+diff --git a/drivers/md/dm-mpath.c b/drivers/md/dm-mpath.c
+index 3df056b73b66..6d5ebb76149d 100644
+--- a/drivers/md/dm-mpath.c
++++ b/drivers/md/dm-mpath.c
+@@ -1510,24 +1510,24 @@ static int multipath_end_io(struct dm_target *ti, struct request *clone,
+ 	return r;
+ }
+ 
+-static int do_end_io_bio(struct multipath *m, struct bio *clone,
+-			 int error, struct dm_mpath_io *mpio)
++static int multipath_end_io_bio(struct dm_target *ti, struct bio *clone, int error)
  {
- 	struct bio_vec *bvec;
- 	unsigned i;
--	int err;
-+	int err = bio->bi_error;
++	struct multipath *m = ti->private;
++	struct dm_mpath_io *mpio = get_mpio_from_bio(clone);
++	struct pgpath *pgpath = mpio->pgpath;
+ 	unsigned long flags;
  
--	if (bio->bi_error)
-+	if (err)
- 		dio->io_error = -EIO;
+-	if (!error)
+-		return 0;	/* I/O complete */
+-
+-	if (noretry_error(error))
+-		return error;
++	if (!error || noretry_error(error))
++		goto done;
  
- 	if (dio->is_async && dio->op == REQ_OP_READ && dio->should_dirty) {
--		err = bio->bi_error;
- 		bio_check_pages_dirty(bio);	/* transfers ownership */
- 	} else {
- 		bio_for_each_segment_all(bvec, bio, i) {
-@@ -494,7 +493,6 @@ static int dio_bio_complete(struct dio *dio, struct bio *bio)
- 				set_page_dirty_lock(page);
- 			put_page(page);
- 		}
--		err = bio->bi_error;
- 		bio_put(bio);
+-	if (mpio->pgpath)
+-		fail_path(mpio->pgpath);
++	if (pgpath)
++		fail_path(pgpath);
+ 
+ 	if (atomic_read(&m->nr_valid_paths) == 0 &&
+ 	    !test_bit(MPATHF_QUEUE_IF_NO_PATH, &m->flags)) {
+ 		dm_report_EIO(m);
+-		return -EIO;
++		error = -EIO;
++		goto done;
  	}
- 	return err;
+ 
+ 	/* Queue for the daemon to resubmit */
+@@ -1539,28 +1539,16 @@ static int do_end_io_bio(struct multipath *m, struct bio *clone,
+ 	if (!test_bit(MPATHF_QUEUE_IO, &m->flags))
+ 		queue_work(kmultipathd, &m->process_queued_bios);
+ 
+-	return DM_ENDIO_INCOMPLETE;
+-}
+-
+-static int multipath_end_io_bio(struct dm_target *ti, struct bio *clone, int error)
+-{
+-	struct multipath *m = ti->private;
+-	struct dm_mpath_io *mpio = get_mpio_from_bio(clone);
+-	struct pgpath *pgpath;
+-	struct path_selector *ps;
+-	int r;
+-
+-	BUG_ON(!mpio);
+-
+-	r = do_end_io_bio(m, clone, error, mpio);
+-	pgpath = mpio->pgpath;
++	error = DM_ENDIO_INCOMPLETE;
++done:
+ 	if (pgpath) {
+-		ps = &pgpath->pg->ps;
++		struct path_selector *ps = &pgpath->pg->ps;
++
+ 		if (ps->type->end_io)
+ 			ps->type->end_io(ps, &pgpath->path, mpio->nr_bytes);
+ 	}
+ 
+-	return r;
++	return error;
+ }
+ 
+ /*
 -- 
 2.11.0
 

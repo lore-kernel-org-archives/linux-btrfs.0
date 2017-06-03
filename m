@@ -1,71 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([65.50.211.133]:58111 "EHLO
+Received: from bombadil.infradead.org ([65.50.211.133]:44373 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751177AbdFCHi0 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 3 Jun 2017 03:38:26 -0400
+        with ESMTP id S1751167AbdFCHia (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 3 Jun 2017 03:38:30 -0400
 From: Christoph Hellwig <hch@lst.de>
 To: axboe@kernel.dk
 Cc: linux-block@vger.kernel.org, dm-devel@redhat.com,
         linux-btrfs@vger.kernel.org
-Subject: [PATCH 04/13] dm: fix REQ_RAHEAD handling
-Date: Sat,  3 Jun 2017 09:37:57 +0200
-Message-Id: <20170603073806.2046-5-hch@lst.de>
+Subject: [PATCH 07/13] block_dev: propagate bio_iov_iter_get_pages error in __blkdev_direct_IO
+Date: Sat,  3 Jun 2017 09:38:00 +0200
+Message-Id: <20170603073806.2046-8-hch@lst.de>
 In-Reply-To: <20170603073806.2046-1-hch@lst.de>
 References: <20170603073806.2046-1-hch@lst.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A few (but not all) dm targets use a special EWOULDBLOCK error code for
-failing REQ_RAHEAD requests that fail due to a lack of available resources.
-But no one else knows about this magic code, and lower level drivers also
-don't generate it when failing read-ahead requests for similar reasons.
-
-So remove this special casing and ignore all additional error handling for
-REQ_RAHEAD - if this was a real underlying error we'd get a normal read
-once the real read comes in.
+Once we move the block layer to its own status code we'll still want to
+propagate the bio_iov_iter_get_pages, so restructure __blkdev_direct_IO
+to take ret into account when returning the errno.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
-Reviewed-by: Bart Van Assche <Bart.VanAssche@sandisk.com>
 ---
- drivers/md/dm-raid1.c  | 4 ++--
- drivers/md/dm-stripe.c | 2 +-
- 2 files changed, 3 insertions(+), 3 deletions(-)
+ fs/block_dev.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/md/dm-raid1.c b/drivers/md/dm-raid1.c
-index a95cbb80fb34..5e30b08b91d9 100644
---- a/drivers/md/dm-raid1.c
-+++ b/drivers/md/dm-raid1.c
-@@ -1214,7 +1214,7 @@ static int mirror_map(struct dm_target *ti, struct bio *bio)
- 	 */
- 	if (!r || (r == -EWOULDBLOCK)) {
- 		if (bio->bi_opf & REQ_RAHEAD)
--			return -EWOULDBLOCK;
-+			return -EIO;
+diff --git a/fs/block_dev.c b/fs/block_dev.c
+index 519599dddd36..c1dc393ad6b9 100644
+--- a/fs/block_dev.c
++++ b/fs/block_dev.c
+@@ -334,7 +334,7 @@ __blkdev_direct_IO(struct kiocb *iocb, struct iov_iter *iter, int nr_pages)
+ 	bool is_read = (iov_iter_rw(iter) == READ), is_sync;
+ 	loff_t pos = iocb->ki_pos;
+ 	blk_qc_t qc = BLK_QC_T_NONE;
+-	int ret;
++	int ret = 0;
  
- 		queue_bio(ms, bio, rw);
- 		return DM_MAPIO_SUBMITTED;
-@@ -1258,7 +1258,7 @@ static int mirror_end_io(struct dm_target *ti, struct bio *bio, int error)
- 	if (error == -EOPNOTSUPP)
- 		return error;
+ 	if ((pos | iov_iter_alignment(iter)) &
+ 	    (bdev_logical_block_size(bdev) - 1))
+@@ -363,7 +363,7 @@ __blkdev_direct_IO(struct kiocb *iocb, struct iov_iter *iter, int nr_pages)
  
--	if ((error == -EWOULDBLOCK) && (bio->bi_opf & REQ_RAHEAD))
-+	if (bio->bi_opf & REQ_RAHEAD)
- 		return error;
+ 		ret = bio_iov_iter_get_pages(bio, iter);
+ 		if (unlikely(ret)) {
+-			bio->bi_error = ret;
++			bio->bi_error = -EIO;
+ 			bio_endio(bio);
+ 			break;
+ 		}
+@@ -412,7 +412,8 @@ __blkdev_direct_IO(struct kiocb *iocb, struct iov_iter *iter, int nr_pages)
+ 	}
+ 	__set_current_state(TASK_RUNNING);
  
- 	if (unlikely(error)) {
-diff --git a/drivers/md/dm-stripe.c b/drivers/md/dm-stripe.c
-index 75152482f3ad..780e95889a7c 100644
---- a/drivers/md/dm-stripe.c
-+++ b/drivers/md/dm-stripe.c
-@@ -384,7 +384,7 @@ static int stripe_end_io(struct dm_target *ti, struct bio *bio, int error)
- 	if (!error)
- 		return 0; /* I/O complete */
+-	ret = dio->bio.bi_error;
++	if (!ret)
++		ret = dio->bio.bi_error;
+ 	if (likely(!ret))
+ 		ret = dio->size;
  
--	if ((error == -EWOULDBLOCK) && (bio->bi_opf & REQ_RAHEAD))
-+	if (bio->bi_opf & REQ_RAHEAD)
- 		return error;
- 
- 	if (error == -EOPNOTSUPP)
 -- 
 2.11.0
 

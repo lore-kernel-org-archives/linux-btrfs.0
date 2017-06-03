@@ -1,45 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54482 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751345AbdFFNns (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 6 Jun 2017 09:43:48 -0400
-Date: Tue, 6 Jun 2017 15:42:43 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
-Subject: Re: [PATCH v2] Btrfs: tolerate errors if we have retried successfully
-Message-ID: <20170606134243.GA25451@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1492132316-3076-1-git-send-email-bo.li.liu@oracle.com>
- <20170517214200.9006-1-bo.li.liu@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170517214200.9006-1-bo.li.liu@oracle.com>
+Received: from bombadil.infradead.org ([65.50.211.133]:58808 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750765AbdFCHiK (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 3 Jun 2017 03:38:10 -0400
+From: Christoph Hellwig <hch@lst.de>
+To: axboe@kernel.dk
+Cc: linux-block@vger.kernel.org, dm-devel@redhat.com,
+        linux-btrfs@vger.kernel.org
+Subject: dedicated error codes for the block layer V3
+Date: Sat,  3 Jun 2017 09:37:53 +0200
+Message-Id: <20170603073806.2046-1-hch@lst.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 17, 2017 at 03:42:00PM -0600, Liu Bo wrote:
-> With raid1 profile, dio read isn't tolerating IO errors if read length is
-> less than the stripe length (64K).
-> 
-> Our bio didn't get split in btrfs_submit_direct_hook() if (dip->flags &
-> BTRFS_DIO_ORIG_BIO_SUBMITTED) is true and that happens when the read
-> length is less than 64k.  In this case, if the underlying device returns
-> error somehow, bio->bi_error has recorded that error.
-> 
-> If we could recover the correct data from another copy in profile raid1/10/5/6,
-> with btrfs_subio_endio_read() returning 0, bio would have the correct data in
-> its vector, but bio->bi_error is not updated accordingly so that the following
-> dio_end_io(dio_bio, bio->bi_error) makes directIO think this read has failed.
-> 
-> This fixes the problem by setting bio's error to 0 if a good copy has been
-> found.
-> 
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> ---
-> 
-> v2: Add more details to changelog.
+This series introduces a new blk_status_t error code type for the block
+layer so that we can have tigher control and explicit semantics for
+block layer errors.
 
-Thanks.
+All but the last three patches are cleanups that lead to the new type.
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+The series it mostly limited to the block layer and drivers, and touching
+file systems a little bit.  The only major exception is btrfs, which
+does funny things with bios and thus sees a larger amount of propagation
+of the new blk_status_t.
+
+A git tree is also available at:
+
+    git://git.infradead.org/users/hch/block.git block-errors
+
+gitweb:
+
+    http://git.infradead.org/users/hch/block.git/shortlog/refs/heads/block-errors
+
+Note the the two biggest patches didn't make it to linux-block and
+linux-btrfs last time.  If you didn't get them they are available in
+the git tree above.  Unfortunately there is no easy way to split them
+up.
+
+Changes since V2:
+ - minor tweaks from reviews
+
+Changes since V1: 
+ - keep blk_types.h for now
+ - removed a BUG_ON in dm-mpath

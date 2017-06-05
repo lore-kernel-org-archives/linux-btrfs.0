@@ -1,91 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f66.google.com ([209.85.218.66]:33521 "EHLO
-        mail-oi0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751141AbdFBOS1 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Jun 2017 10:18:27 -0400
-MIME-Version: 1.0
-In-Reply-To: <CAAM7YA=f74Wye8hgqR52CNG-c4Sh3sm74AzZYhSnhjN1B=G-Ow@mail.gmail.com>
-References: <1491613030-11599-1-git-send-email-deepa.kernel@gmail.com>
- <1491613030-11599-5-git-send-email-deepa.kernel@gmail.com>
- <CAAM7YAmp=cZKqGHa8UqDnrQLCe+6TKx+7w9SDZv4cW5fr4dfvA@mail.gmail.com>
- <CAK8P3a1pCw1Oo-Wg70kH5L12pbtEzGDfaPZ8g6ErERJjvY8znQ@mail.gmail.com>
- <CAAM7YAnWLUXMOCVbgfdKGfvK04EtAQcz-ETm7xFO=8Y=_fCvOQ@mail.gmail.com>
- <CALAqxLV-yVKWM5es7fAFiDzhSQmtZFiZDPQwBRUYbWUtqhoWVg@mail.gmail.com>
- <CABeXuvqvLr6sSGF+rZEXXxpCBDKTOeLX1ObSjbPPY4aFBuwvMg@mail.gmail.com>
- <CAAM7YAkXNo_69tOrw6a5kpyref9nEpEp-2vxBbFVSHGmAVbt+A@mail.gmail.com>
- <CAK8P3a1TwkVRCwDWqgYE8Z3wZT2+v6xayq=dVeW8KaHmO0W4cg@mail.gmail.com>
- <CAAM7YA=BJHFLz_Ud==7L=yCzxj+1sjctc68tvpNogPhiSxxELQ@mail.gmail.com>
- <CAK8P3a0D3EXuwBj+sSVL9cmpysdvQWXnkE0zEctBJS8XOqhX7A@mail.gmail.com>
- <CAAM7YAk8JNU=XV=sOCczagWjBimO4JSPU08th7E4u6FTJN--9A@mail.gmail.com>
- <CAK8P3a3m3nt6rfvAvDG6HFuUvy+qWbmk5K0UtLGqYhYHOfdF8w@mail.gmail.com> <CAAM7YA=f74Wye8hgqR52CNG-c4Sh3sm74AzZYhSnhjN1B=G-Ow@mail.gmail.com>
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Fri, 2 Jun 2017 16:18:26 +0200
-Message-ID: <CAK8P3a1etuRz6zwytXTHqK-T0g2YnbR4zcCwo98ehjjD1Dj+Ow@mail.gmail.com>
-Subject: Re: [PATCH 04/12] fs: ceph: CURRENT_TIME with ktime_get_real_ts()
-To: "Yan, Zheng" <ukernel@gmail.com>
-Cc: Deepa Dinamani <deepa.kernel@gmail.com>,
-        John Stultz <john.stultz@linaro.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Al Viro <viro@zeniv.linux.org.uk>, gregkh <gregkh@linuxfoundation.org>,
-        "Dilger, Andreas" <andreas.dilger@intel.com>,
-        "J. Bruce Fields" <bfields@fieldses.org>, Chris Mason <clm@fb.com>,
-        David Miller <davem@davemloft.net>, David Sterba <dsterba@suse.com>,
-        Evgeniy Dushistov <dushistov@mail.ru>, Eric Paris <eparis@redhat.com>,
-        Jaegeuk Kim <jaegeuk@kernel.org>, Josef Bacik <jbacik@fb.com>,
-        Jeff Layton <jlayton@poochiereds.net>,
-        James Simmons <jsimmons@infradead.org>, Ingo Molnar <mingo@redhat.com>,
-        "Drokin, Oleg" <oleg.drokin@intel.com>,
-        Paul Moore <paul@paul-moore.com>, Steven Rostedt <rostedt@goodmis.org>,
-        yuchao0@huawei.com, ceph-devel <ceph-devel@vger.kernel.org>,
-        devel@driverdev.osuosl.org, linux-audit@redhat.com,
-        linux-btrfs <linux-btrfs@vger.kernel.org>, linux-cifs@vger.kernel.org,
-        "Linux F2FS DEV, Mailing List"
-        <linux-f2fs-devel@lists.sourceforge.net>,
-        Linux FS-devel Mailing List <linux-fsdevel@vger.kernel.org>,
-        linux-mtd <linux-mtd@lists.infradead.org>,
-        LSM List <linux-security-module@vger.kernel.org>,
-        Lustre Development List <lustre-devel@lists.lustre.org>,
-        Networking <netdev@vger.kernel.org>, samba-technical@lists.samba.org,
-        y2038 Mailman List <y2038@lists.linaro.org>
-Content-Type: text/plain; charset="UTF-8"
+Received: from mx2.suse.de ([195.135.220.15]:42554 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751249AbdFEFfp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 5 Jun 2017 01:35:45 -0400
+From: Goldwyn Rodrigues <rgoldwyn@suse.de>
+To: linux-fsdevel@vger.kernel.org
+Cc: jack@suse.com, hch@infradead.org, linux-block@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-xfs@vger.kernel.org, axboe@kernel.dk, linux-api@vger.kernel.org,
+        adam.manzanares@wdc.com, viro@zeniv.linux.org.uk
+Subject: [PATCH 0/10 v10] No wait AIO
+Date: Mon,  5 Jun 2017 00:35:30 -0500
+Message-Id: <20170605053540.19393-1-rgoldwyn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 2, 2017 at 2:18 PM, Yan, Zheng <ukernel@gmail.com> wrote:
-> On Fri, Jun 2, 2017 at 7:33 PM, Arnd Bergmann <arnd@arndb.de> wrote:
->> On Fri, Jun 2, 2017 at 1:18 PM, Yan, Zheng <ukernel@gmail.com> wrote:
->> What I meant is another related problem in ceph_mkdir() where the
->> i_ctime field of the parent inode is different between the persistent
->> representation in the mds and the in-memory representation.
->>
->
-> I don't see any problem in mkdir case. Parent inode's i_ctime in mds is set to
-> r_stamp. When client receives request reply, it set its in-memory inode's ctime
-> to the same time stamp.
+Formerly known as non-blocking AIO.
 
-Ok, I see it now, thanks for the clarification. Most other file systems do this
-the other way round and update all fields in the in-memory inode structure
-first and then write that to persistent storage, so I was getting confused about
-the order of events here.
+This series adds nonblocking feature to asynchronous I/O writes.
+io_submit() can be delayed because of a number of reason:
+ - Block allocation for files
+ - Data writebacks for direct I/O
+ - Sleeping because of waiting to acquire i_rwsem
+ - Congested block device
 
-If I understand it all right, we have three different behaviors in ceph now,
-though the differences are very minor and probably don't ever matter:
+The goal of the patch series is to return -EAGAIN/-EWOULDBLOCK if
+any of these conditions are met. This way userspace can push most
+of the write()s to the kernel to the best of its ability to complete
+and if it returns -EAGAIN, can defer it to another thread.
 
-- in setattr(), we update ctime in the in-memory inode first and then send
-  the same time to the mds, and expect to set it again when the reply comes.
+In order to enable this, IOCB_RW_FLAG_NOWAIT is introduced in
+uapi/linux/aio_abi.h. If set for aio_rw_flags, it translates to
+IOCB_NOWAIT for struct iocb, REQ_NOWAIT for bio.bi_opf and IOMAP_NOWAIT for
+iomap. aio_rw_flags is a new flag replacing aio_reserved1. We could
+not use aio_flags because it is not currently checked for invalidity
+in the kernel.
 
-- in ceph_write_iter write() and mmap/page_mkwrite(), we call
-  file_update_time() to set i_mtime and i_ctime to the same
-  timestamp first once a write is observed by the fs and then take
-  two other timestamps that we send to the mds, and update the
-  in-memory inode a second time when the reply comes. ctime
-  is never older than mtime here, as far as I can tell, but it may
-  be newer when the timer interrupt happens between taking the
-  two stamps.
+This feature is provided for direct I/O of asynchronous I/O only. I have
+tested it against xfs, ext4, and btrfs while I intend to add more filesystems.
+The nowait feature is for request based devices. In the future, I intend to
+add support to stacked devices such as md.
 
-- in all other calls, we only update the inode (and/or parent inode)
-  after the reply arrives.
+Applications will have to check supportability
+by sending a async direct write and any other error besides -EAGAIN
+would mean it is not supported.
 
-       Arnd
+First two patches are prep patches into nowait I/O.
+
+Changes since v1:
+ + changed name from _NONBLOCKING to *_NOWAIT
+ + filemap_range_has_page call moved to closer to (just before) calling filemap_write_and_wait_range().
+ + BIO_NOWAIT limited to get_request()
+ + XFS fixes 
+	- included reflink 
+	- use of xfs_ilock_nowait() instead of a XFS_IOLOCK_NONBLOCKING flag
+	- Translate the flag through IOMAP_NOWAIT (iomap) to check for
+	  block allocation for the file.
+ + ext4 coding style
+
+Changes since v2:
+ + Using aio_reserved1 as aio_rw_flags instead of aio_flags
+ + blk-mq support
+ + xfs uptodate with kernel and reflink changes
+
+ Changes since v3:
+  + Added FS_NOWAIT, which is set if the filesystem supports NOWAIT feature.
+  + Checks in generic_make_request() to make sure BIO_NOWAIT comes in
+    for async direct writes only.
+  + Added QUEUE_FLAG_NOWAIT, which is set if the device supports BIO_NOWAIT.
+    This is added (rather not set) to block devices such as dm/md currently.
+
+ Changes since v4:
+  + Ported AIO code to use RWF_* flags. Check for RWF_* flags in
+    generic_file_write_iter().
+  + Changed IOCB_RW_FLAGS_NOWAIT to RWF_NOWAIT.
+
+ Changes since v5:
+  + BIO_NOWAIT to REQ_NOWAIT
+  + Common helper for RWF flags.
+
+ Changes since v6:
+  + REQ_NOWAIT will be ignored for request based devices since they
+    cannot block. So, removed QUEUE_FLAG_NOWAIT since it is not
+    required in the current implementation. It will be resurrected
+    when we program for stacked devices.
+  + changed kiocb_rw_flags() to kiocb_set_rw_flags() in order to accomodate
+    for errors. Moved checks in the function.
+
+ Changes since v7:
+  + split patches into prep so the main patches are smaller and easier
+    to understand
+  + All patches are reviewed or acked!
+ 
+ Changes since v8:
+ + Err out AIO reads with -EINVAL flagged as RWF_NOWAIT
+
+ Changes since v9:
+ + Retract - Err out AIO reads with -EINVAL flagged as RWF_NOWAIT
+ + XFS returns EAGAIN if extent list is not in memory
+ + Man page updates to io_submit with iocb description and nowait features.
+
+-- 
+Goldwyn
+
+

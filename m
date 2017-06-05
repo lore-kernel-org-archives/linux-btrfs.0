@@ -1,14 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.dpl.mendix.net ([83.96.177.10]:45561 "EHLO
+Received: from smtp.dpl.mendix.net ([83.96.177.10]:45565 "EHLO
         smtp.dpl.mendix.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751077AbdFEPhx (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Jun 2017 11:37:53 -0400
+        with ESMTP id S1751195AbdFEWUi (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Jun 2017 18:20:38 -0400
 From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Subject: [PATCH] Btrfs: Improve btrfs_ioctl_search_key documentation
-Date: Mon,  5 Jun 2017 17:27:33 +0200
-Message-Id: <20170605152733.25441-1-hans.van.kranenburg@mendix.com>
+Subject: [PATCH v2] Btrfs: btrfs_ioctl_search_key documentation
+Date: Tue,  6 Jun 2017 00:20:32 +0200
+Message-Id: <20170605222032.9207-1-hans.van.kranenburg@mendix.com>
+In-Reply-To: <20170605152733.25441-1-hans.van.kranenburg@mendix.com>
+References: <20170605152733.25441-1-hans.van.kranenburg@mendix.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -17,31 +19,48 @@ or SEARCH_V2 ioctl will probably soon end up reading this struct
 definition.
 
 Properly document the input fields to prevent common misconceptions:
- 1. The search space is linear, not 3 dimensional.
+ 1. The search space is linear, not 3 dimensional. The invidual min/max
+ values for objectid, type and offset cannot be used to filter the
+ result, they only define the endpoints of an interval.
  2. The transaction id (a.k.a. generation) filter applies only on
  transaction id of the last COW operation on a whole metadata page, not
  on individual items.
 
 Ad 1. The first misunderstanding was helped by the previous misleading
-comments on min/max type and offset: "keys returned will be
->= min and <= max".
+comments on min/max type and offset:
+  "keys returned will be >= min and <= max".
 
 Ad 2. For example, running btrfs balance will happily cause rewriting of
 metadata pages that contain a filesystem tree of a read only subvolume,
 causing transids to be increased.
 
+Also, improve descriptions of tree_id and nr_items and add in/out
+annotations.
+
 Signed-off-by: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
 ---
- include/uapi/linux/btrfs.h | 63 +++++++++++++++++++++++++++++++---------------
- 1 file changed, 43 insertions(+), 20 deletions(-)
+
+Most interesting changes since v1:
+ - mention the special tree_id input value 0
+ - rewrite the part about min_key and max_key, trying to be more concise
+
+Less interesting changes since v1:
+ - the first line of the commit message was 51 characters long
+ - a > ended up at the beginning of the line in the commit message, messing up
+   the >= notation in some mail programs
+
+ include/uapi/linux/btrfs.h | 62 +++++++++++++++++++++++++++++++---------------
+ 1 file changed, 42 insertions(+), 20 deletions(-)
 
 diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index a456e5309238..864ad86c5d80 100644
+index a456e5309238..88ae3d096a21 100644
 --- a/include/uapi/linux/btrfs.h
 +++ b/include/uapi/linux/btrfs.h
-@@ -427,30 +427,53 @@ struct btrfs_ioctl_ino_lookup_args {
+@@ -426,31 +426,53 @@ struct btrfs_ioctl_ino_lookup_args {
+ 	char name[BTRFS_INO_LOOKUP_PATH_MAX];
  };
  
++/* Search criteria for the btrfs SEARCH ioctl family. */
  struct btrfs_ioctl_search_key {
 -	/* which root are we searching.  0 is the tree of tree roots */
 -	__u64 tree_id;
@@ -60,6 +79,9 @@ index a456e5309238..864ad86c5d80 100644
 +	/*
 +	 * The tree we're searching in. 1 is the tree of tree roots, 2 is the
 +	 * extent tree, etc...
++	 *
++	 * A special tree_id value of 0 will cause a search in the subvolume tree
++	 * that the inode which is passed to the ioctl is part of.
 +	 */
 +	__u64 tree_id;	/* in */
  
@@ -67,21 +89,15 @@ index a456e5309238..864ad86c5d80 100644
 -	__u32 min_type;
 -	__u32 max_type;
 +	/*
-+	 * This struct is used to provide the search key range for the SEARCH and
-+	 * SEARCH_V2 ioctls.
-+	 *
 +	 * When doing a tree search, we're actually taking a slice from a linear
-+	 * search space of 136-bit keys:
++	 * search space of 136-bit keys.
 +	 *
-+	 * Key of the first possible item to be returned:
-+	 *   (min_objectid << 72) + (min_type << 64) + min_offset
-+	 * Key of the last possible item to be returned:
-+	 *   (max_objectid << 72) + (max_type << 64) + max_offset
++	 * A full 136-bit tree key is composed as:
++	 *   (objectid << 72) + (type << 64) + offset
 +	 *
-+	 * All of the min/max input numbers only define the ultimate lower and
-+	 * upper boundary of the keys of items that will be returned. In other
-+	 * words, they are not used to filter the type or offset of intermediate
-+	 * keys encountered.
++	 * The individual min and max values for objectid, type and offset define
++	 * the min_key and max_key values for the search range. All metadata items
++	 * with a key in the interval [min_key, max_key] will be returned.
 +	 *
 +	 * Additionally, we can filter the items returned on transaction id of the
 +	 * metadata block they're stored in by specifying a transid range.  Be
@@ -104,9 +120,10 @@ index a456e5309238..864ad86c5d80 100644
 -	 * how many items did userland ask for, and how many are we
 -	 * returning
 +	 * input: The maximum amount of results desired.
-+	 * output: The actual amount of items returned, restricted by either
-+	 *   stopping the search when reaching the input nr_items amount of items,
-+	 *   or restricted by the size of the supplied memory buffer.
++	 * output: The actual amount of items returned, restricted by any of:
++	 *  - reaching the upper bound of the search range
++	 *  - reaching the input nr_items amount of items
++	 *  - completely filling the supplied memory buffer
  	 */
 -	__u32 nr_items;
 +	__u32 nr_items;	/* in/out */

@@ -1,78 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f46.google.com ([74.125.83.46]:33796 "EHLO
-        mail-pg0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751297AbdFEHMl (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Jun 2017 03:12:41 -0400
-Received: by mail-pg0-f46.google.com with SMTP id v18so6692552pgb.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 05 Jun 2017 00:12:41 -0700 (PDT)
-From: Omar Sandoval <osandov@osandov.com>
-To: linux-btrfs@vger.kernel.org
-Cc: kernel-team@fb.com
-Subject: [PATCH] Btrfs: use memalloc_nofs and kvzalloc() for free space tree bitmaps
-Date: Mon,  5 Jun 2017 00:12:31 -0700
-Message-Id: <a8cd2db26fc69434206eecf1846d73d97cd39cfe.1496646708.git.osandov@fb.com>
+Received: from mail-it0-f49.google.com ([209.85.214.49]:35214 "EHLO
+        mail-it0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751171AbdFEPf1 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Jun 2017 11:35:27 -0400
+Received: by mail-it0-f49.google.com with SMTP id m62so65299779itc.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 05 Jun 2017 08:35:27 -0700 (PDT)
+Subject: Re: [PATCH 07/10] fs: return on congested block device
+To: Goldwyn Rodrigues <rgoldwyn@suse.de>, linux-fsdevel@vger.kernel.org
+Cc: jack@suse.com, hch@infradead.org, linux-block@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-xfs@vger.kernel.org, linux-api@vger.kernel.org,
+        adam.manzanares@wdc.com, viro@zeniv.linux.org.uk,
+        Goldwyn Rodrigues <rgoldwyn@suse.com>
+References: <20170605053540.19393-1-rgoldwyn@suse.de>
+ <20170605053540.19393-8-rgoldwyn@suse.de>
+From: Jens Axboe <axboe@kernel.dk>
+Message-ID: <dedfe92d-6452-4f29-044d-34837c4da825@kernel.dk>
+Date: Mon, 5 Jun 2017 09:35:24 -0600
+MIME-Version: 1.0
+In-Reply-To: <20170605053540.19393-8-rgoldwyn@suse.de>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Omar Sandoval <osandov@fb.com>
+On 06/04/2017 11:35 PM, Goldwyn Rodrigues wrote:
+> @@ -1900,6 +1905,17 @@ generic_make_request_checks(struct bio *bio)
+>  		goto end_io;
+>  	}
+>  
+> +	/*
+> +	 * For a REQ_NOWAIT based request, return -EOPNOTSUPP
+> +	 * if queue does not have QUEUE_FLAG_NOWAIT_SUPPORT set
+> +	 * and if it is not a request based queue.
+> +	 */
+> +
+> +	if ((bio->bi_opf & REQ_NOWAIT) && !queue_is_rq_based(q)) {
+> +		err = -EOPNOTSUPP;
+> +		goto end_io;
+> +	}
 
-First, instead of open-coding the vmalloc() fallback, use the new
-kvzalloc() helper. Second, use memalloc_nofs_{save,restore}() instead of
-GFP_NOFS, as vmalloc() uses some GFP_KERNEL allocations internally which
-could lead to deadlocks.
+There is no QUEUE_FLAG_NOWAIT, this looks like a somewhat stale comment.
 
-Signed-off-by: Omar Sandoval <osandov@fb.com>
----
- fs/btrfs/free-space-tree.c | 26 +++++++++++++-------------
- 1 file changed, 13 insertions(+), 13 deletions(-)
+This patch should be prefixed with 'block', not 'fs'.
 
-diff --git a/fs/btrfs/free-space-tree.c b/fs/btrfs/free-space-tree.c
-index fc0bd8406758..e5e92e6ba734 100644
---- a/fs/btrfs/free-space-tree.c
-+++ b/fs/btrfs/free-space-tree.c
-@@ -17,7 +17,7 @@
-  */
- 
- #include <linux/kernel.h>
--#include <linux/vmalloc.h>
-+#include <linux/sched/mm.h>
- #include "ctree.h"
- #include "disk-io.h"
- #include "locking.h"
-@@ -153,21 +153,21 @@ static inline u32 free_space_bitmap_size(u64 size, u32 sectorsize)
- 
- static u8 *alloc_bitmap(u32 bitmap_size)
- {
--	void *mem;
-+	u8 *ret;
-+	unsigned int nofs_flag;
- 
- 	/*
--	 * The allocation size varies, observed numbers were < 4K up to 16K.
--	 * Using vmalloc unconditionally would be too heavy, we'll try
--	 * contiguous allocations first.
-+	 * GFP_NOFS doesn't work with kvmalloc(), but we really can't recurse
-+	 * into the filesystem as the free space bitmap can be modified in the
-+	 * critical section of a transaction commit.
-+	 *
-+	 * TODO: push the memalloc_nofs_{save,restore}() to the caller where we
-+	 * know that recursion is unsafe.
- 	 */
--	if  (bitmap_size <= PAGE_SIZE)
--		return kzalloc(bitmap_size, GFP_NOFS);
--
--	mem = kzalloc(bitmap_size, GFP_NOFS | __GFP_NOWARN);
--	if (mem)
--		return mem;
--
--	return __vmalloc(bitmap_size, GFP_NOFS | __GFP_ZERO, PAGE_KERNEL);
-+	nofs_flag = memalloc_nofs_save();
-+	ret = kvzalloc(bitmap_size, GFP_KERNEL);
-+	memalloc_nofs_restore(nofs_flag);
-+	return ret;
- }
- 
- int convert_free_space_to_bitmaps(struct btrfs_trans_handle *trans,
 -- 
-2.13.0
+Jens Axboe
 

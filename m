@@ -1,164 +1,148 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f42.google.com ([209.85.214.42]:37122 "EHLO
-        mail-it0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751973AbdFGSfA (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jun 2017 14:35:00 -0400
-Received: by mail-it0-f42.google.com with SMTP id m47so10470911iti.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 07 Jun 2017 11:34:59 -0700 (PDT)
-Date: Wed, 7 Jun 2017 18:34:57 +0000
-From: Sargun Dhillon <sargun@sargun.me>
-To: linux-btrfs@vger.kernel.org
-Cc: osandov@osandov.com
-Subject: [PATCH v2] btrfs: Convert btrfs_fs_info's free_chunk_space to an
- atomic64_t
-Message-ID: <20170607183454.GA12643@ircssh-2.c.rugged-nimbus-611.internal>
+Received: from syrinx.knorrie.org ([82.94.188.77]:34414 "EHLO
+        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751162AbdFEQD2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Jun 2017 12:03:28 -0400
+Received: from [IPv6:2001:980:4a41:fb::12] (unknown [IPv6:2001:980:4a41:fb::12])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by syrinx.knorrie.org (Postfix) with ESMTPSA id 8E00B60013
+        for <linux-btrfs@vger.kernel.org>; Mon,  5 Jun 2017 18:03:21 +0200 (CEST)
+Subject: Re: [PATCH] Btrfs: Improve btrfs_ioctl_search_key documentation
+References: <20170605152733.25441-1-hans.van.kranenburg@mendix.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Message-ID: <049e0584-0450-a1f7-5f65-c5d150cb8547@mendix.com>
+Date: Mon, 5 Jun 2017 18:03:20 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170605152733.25441-1-hans.van.kranenburg@mendix.com>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch is a small performance optimization to get rid of a spin
-lock, where instead an atomic64_t can be used.
+On 06/05/2017 05:27 PM, Hans van Kranenburg wrote:
+> A programmer who is trying to implement calling the btrfs SEARCH
+> or SEARCH_V2 ioctl will probably soon end up reading this struct
+> definition.
+> 
+> Properly document the input fields to prevent common misconceptions:
+>  1. The search space is linear, not 3 dimensional.
+>  2. The transaction id (a.k.a. generation) filter applies only on
+>  transaction id of the last COW operation on a whole metadata page, not
+>  on individual items.
+> 
+> Ad 1. The first misunderstanding was helped by the previous misleading
+> comments on min/max type and offset: "keys returned will be
+>> = min and <= max".
+> 
+> Ad 2. For example, running btrfs balance will happily cause rewriting of
+> metadata pages that contain a filesystem tree of a read only subvolume,
+> causing transids to be increased.
+> 
+> Signed-off-by: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+> ---
+>  include/uapi/linux/btrfs.h | 63 +++++++++++++++++++++++++++++++---------------
+>  1 file changed, 43 insertions(+), 20 deletions(-)
+> 
+> diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+> index a456e5309238..864ad86c5d80 100644
+> --- a/include/uapi/linux/btrfs.h
+> +++ b/include/uapi/linux/btrfs.h
+> @@ -427,30 +427,53 @@ struct btrfs_ioctl_ino_lookup_args {
+>  };
+>  
+>  struct btrfs_ioctl_search_key {
+> -	/* which root are we searching.  0 is the tree of tree roots */
+> -	__u64 tree_id;
 
-Signed-off-by: Sargun Dhillon <sargun@sargun.me>
-Reviewed-by: Omar Sandoval <osandov@fb.com>
----
- fs/btrfs/ctree.h       |  4 ++--
- fs/btrfs/disk-io.c     |  3 +--
- fs/btrfs/extent-tree.c |  4 +---
- fs/btrfs/volumes.c     | 26 +++++++-------------------
- 4 files changed, 11 insertions(+), 26 deletions(-)
+Since this 0 is incorrect... I also fixed that...
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 643c70d..01bf42c 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -40,6 +40,7 @@
- #include <linux/sizes.h>
- #include <linux/dynamic_debug.h>
- #include <linux/refcount.h>
-+#include <linux/types.h>
- #include "extent_io.h"
- #include "extent_map.h"
- #include "async-thread.h"
-@@ -748,8 +749,7 @@ struct btrfs_fs_info {
- 	struct rb_root block_group_cache_tree;
- 
- 	/* keep track of unallocated space */
--	spinlock_t free_chunk_lock;
--	u64 free_chunk_space;
-+	atomic64_t free_chunk_space;
- 
- 	struct extent_io_tree freed_extents[2];
- 	struct extent_io_tree *pinned_extents;
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 8685d67..3700b68 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2626,7 +2626,6 @@ int open_ctree(struct super_block *sb,
- 	spin_lock_init(&fs_info->fs_roots_radix_lock);
- 	spin_lock_init(&fs_info->delayed_iput_lock);
- 	spin_lock_init(&fs_info->defrag_inodes_lock);
--	spin_lock_init(&fs_info->free_chunk_lock);
- 	spin_lock_init(&fs_info->tree_mod_seq_lock);
- 	spin_lock_init(&fs_info->super_lock);
- 	spin_lock_init(&fs_info->qgroup_op_lock);
-@@ -2667,7 +2666,7 @@ int open_ctree(struct super_block *sb,
- 	fs_info->max_inline = BTRFS_DEFAULT_MAX_INLINE;
- 	fs_info->metadata_ratio = 0;
- 	fs_info->defrag_inodes = RB_ROOT;
--	fs_info->free_chunk_space = 0;
-+	atomic64_set(&fs_info->free_chunk_space, 0);
- 	fs_info->tree_mod_log = RB_ROOT;
- 	fs_info->commit_interval = BTRFS_DEFAULT_COMMIT_INTERVAL;
- 	fs_info->avg_delayed_ref_runtime = NSEC_PER_SEC >> 6; /* div by 64 */
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index e390451..955733c 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4645,9 +4645,7 @@ static int can_overcommit(struct btrfs_root *root,
- 
- 	used += space_info->bytes_may_use;
- 
--	spin_lock(&fs_info->free_chunk_lock);
--	avail = fs_info->free_chunk_space;
--	spin_unlock(&fs_info->free_chunk_lock);
-+	avail = atomic64_read(&fs_info->free_chunk_space);
- 
- 	/*
- 	 * If we have dup, raid1 or raid10 then only half of the free
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 017b67d..992eb2a 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2417,9 +2417,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
- 	fs_info->fs_devices->total_devices++;
- 	fs_info->fs_devices->total_rw_bytes += device->total_bytes;
- 
--	spin_lock(&fs_info->free_chunk_lock);
--	fs_info->free_chunk_space += device->total_bytes;
--	spin_unlock(&fs_info->free_chunk_lock);
-+	atomic64_add(device->total_bytes, &fs_info->free_chunk_space);
- 
- 	if (!blk_queue_nonrot(q))
- 		fs_info->fs_devices->rotating = 1;
-@@ -2874,9 +2872,7 @@ int btrfs_remove_chunk(struct btrfs_trans_handle *trans,
- 			mutex_lock(&fs_info->chunk_mutex);
- 			btrfs_device_set_bytes_used(device,
- 					device->bytes_used - dev_extent_len);
--			spin_lock(&fs_info->free_chunk_lock);
--			fs_info->free_chunk_space += dev_extent_len;
--			spin_unlock(&fs_info->free_chunk_lock);
-+			atomic64_add(dev_extent_len, &fs_info->free_chunk_space);
- 			btrfs_clear_space_info_full(fs_info);
- 			mutex_unlock(&fs_info->chunk_mutex);
- 		}
-@@ -4409,9 +4405,7 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
- 	btrfs_device_set_total_bytes(device, new_size);
- 	if (device->writeable) {
- 		device->fs_devices->total_rw_bytes -= diff;
--		spin_lock(&fs_info->free_chunk_lock);
--		fs_info->free_chunk_space -= diff;
--		spin_unlock(&fs_info->free_chunk_lock);
-+		atomic64_sub(diff, &fs_info->free_chunk_space);
- 	}
- 	mutex_unlock(&fs_info->chunk_mutex);
- 
-@@ -4535,9 +4529,7 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
- 		btrfs_device_set_total_bytes(device, old_size);
- 		if (device->writeable)
- 			device->fs_devices->total_rw_bytes += diff;
--		spin_lock(&fs_info->free_chunk_lock);
--		fs_info->free_chunk_space += diff;
--		spin_unlock(&fs_info->free_chunk_lock);
-+		atomic64_add(diff, &fs_info->free_chunk_space);
- 		mutex_unlock(&fs_info->chunk_mutex);
- 	}
- 	return ret;
-@@ -4882,9 +4874,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 		btrfs_device_set_bytes_used(map->stripes[i].dev, num_bytes);
- 	}
- 
--	spin_lock(&info->free_chunk_lock);
--	info->free_chunk_space -= (stripe_size * map->num_stripes);
--	spin_unlock(&info->free_chunk_lock);
-+	atomic64_sub(stripe_size * map->num_stripes, &info->free_chunk_space);
- 
- 	free_extent_map(em);
- 	check_raid56_incompat_flag(info, type);
-@@ -6684,10 +6674,8 @@ static int read_one_dev(struct btrfs_fs_info *fs_info,
- 	device->in_fs_metadata = 1;
- 	if (device->writeable && !device->is_tgtdev_for_dev_replace) {
- 		device->fs_devices->total_rw_bytes += device->total_bytes;
--		spin_lock(&fs_info->free_chunk_lock);
--		fs_info->free_chunk_space += device->total_bytes -
--			device->bytes_used;
--		spin_unlock(&fs_info->free_chunk_lock);
-+		atomic64_add(device->total_bytes - device->bytes_used,
-+			     &fs_info->free_chunk_space);
- 	}
- 	ret = 0;
- 	return ret;
+> -
+> -	/* keys returned will be >= min and <= max */
+> -	__u64 min_objectid;
+> -	__u64 max_objectid;
+> -
+> -	/* keys returned will be >= min and <= max */
+> -	__u64 min_offset;
+> -	__u64 max_offset;
+> -
+> -	/* max and min transids to search for */
+> -	__u64 min_transid;
+> -	__u64 max_transid;
+> +	/*
+> +	 * The tree we're searching in. 1 is the tree of tree roots, 2 is the
+> +	 * extent tree, etc...
+
+But after trying to feed a tree 0 to SEARCH, I got output, while this
+tree does not exist at all...
+
+Then I found this, in ioctl.c:
+
+    if (sk->tree_id == 0) {
+        /* search the root of the inode that was passed */
+        root = BTRFS_I(inode)->root;
+    }
+
+I'll send an updated patch later to also mention that special case,
+which is quite useful to know about actually...
+
+Hans
+
+> +	 */
+> +	__u64 tree_id;	/* in */
+>  
+> -	/* keys returned will be >= min and <= max */
+> -	__u32 min_type;
+> -	__u32 max_type;
+> +	/*
+> +	 * This struct is used to provide the search key range for the SEARCH and
+> +	 * SEARCH_V2 ioctls.
+> +	 *
+> +	 * When doing a tree search, we're actually taking a slice from a linear
+> +	 * search space of 136-bit keys:
+> +	 *
+> +	 * Key of the first possible item to be returned:
+> +	 *   (min_objectid << 72) + (min_type << 64) + min_offset
+> +	 * Key of the last possible item to be returned:
+> +	 *   (max_objectid << 72) + (max_type << 64) + max_offset
+> +	 *
+> +	 * All of the min/max input numbers only define the ultimate lower and
+> +	 * upper boundary of the keys of items that will be returned. In other
+> +	 * words, they are not used to filter the type or offset of intermediate
+> +	 * keys encountered.
+> +	 *
+> +	 * Additionally, we can filter the items returned on transaction id of the
+> +	 * metadata block they're stored in by specifying a transid range.  Be
+> +	 * aware that this transaction id only denotes when the metadata page that
+> +	 * currently contains the item got written the last time as result of a COW
+> +	 * operation.  The number does not have any meaning related to the
+> +	 * transaction in which an individual item that is being returned was
+> +	 * created or changed.
+> +	 */
+> +	__u64 min_objectid;	/* in */
+> +	__u64 max_objectid;	/* in */
+> +	__u64 min_offset;	/* in */
+> +	__u64 max_offset;	/* in */
+> +	__u64 min_transid;	/* in */
+> +	__u64 max_transid;	/* in */
+> +	__u32 min_type;	/* in */
+> +	__u32 max_type;	/* in */
+>  
+>  	/*
+> -	 * how many items did userland ask for, and how many are we
+> -	 * returning
+> +	 * input: The maximum amount of results desired.
+> +	 * output: The actual amount of items returned, restricted by either
+> +	 *   stopping the search when reaching the input nr_items amount of items,
+> +	 *   or restricted by the size of the supplied memory buffer.
+>  	 */
+> -	__u32 nr_items;
+> +	__u32 nr_items;	/* in/out */
+>  
+>  	/* align to 64 bits */
+>  	__u32 unused;
+> 
+
+
 -- 
-2.9.3
-
+Hans van Kranenburg

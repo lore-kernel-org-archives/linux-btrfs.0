@@ -1,43 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f50.google.com ([74.125.83.50]:33541 "EHLO
-        mail-pg0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751223AbdFUNsM (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Jun 2017 09:48:12 -0400
-Received: by mail-pg0-f50.google.com with SMTP id f127so557223pgc.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Jun 2017 06:48:12 -0700 (PDT)
-Subject: Re: [PATCH] btrfs: use new block error code
-To: dsterba@suse.cz, Dan Carpenter <dan.carpenter@oracle.com>,
-        Chris Mason <clm@fb.com>, Christoph Hellwig <hch@lst.de>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org,
-        kernel-janitors@vger.kernel.org
-References: <20170619105536.GA24075@elgon.mountain>
- <20170621131723.GH21388@twin.jikos.cz>
-From: Jens Axboe <axboe@kernel.dk>
-Message-ID: <2bd7fd59-71ad-8ff5-65f7-3b6f1d51ccbd@kernel.dk>
-Date: Wed, 21 Jun 2017 07:48:08 -0600
-MIME-Version: 1.0
-In-Reply-To: <20170621131723.GH21388@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8
+Received: from mail-pg0-f54.google.com ([74.125.83.54]:35893 "EHLO
+        mail-pg0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750766AbdFFXpn (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Jun 2017 19:45:43 -0400
+Received: by mail-pg0-f54.google.com with SMTP id a70so32458029pge.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 06 Jun 2017 16:45:43 -0700 (PDT)
+From: Omar Sandoval <osandov@osandov.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Josef Bacik <jbacik@fb.com>, Liu Bo <bo.li.liu@oracle.com>,
+        kernel-team@fb.com
+Subject: [PATCH 2/7] Btrfs: make BUG_ON() in add_pinned_bytes() an ASSERT()
+Date: Tue,  6 Jun 2017 16:45:27 -0700
+Message-Id: <5e543709c942292f3e97cbd22fd3137dd521bb16.1496792333.git.osandov@fb.com>
+In-Reply-To: <cover.1496792333.git.osandov@fb.com>
+References: <cover.1496792333.git.osandov@fb.com>
+In-Reply-To: <cover.1496792333.git.osandov@fb.com>
+References: <cover.1496792333.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/21/2017 07:17 AM, David Sterba wrote:
-> On Mon, Jun 19, 2017 at 01:55:37PM +0300, Dan Carpenter wrote:
->> This function is supposed to return blk_status_t error codes now but
->> there was a stray -ENOMEM left behind.
->>
->> Fixes: 4e4cbee93d56 ("block: switch bios to blk_status_t")
->> Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
-> 
-> Acked-by: David Sterba <dsterba@suse.com>
-> 
-> The patch depends on the blk_status_t patchset, so I expect that it's
-> going to be merged to that.
+From: Omar Sandoval <osandov@fb.com>
 
-Added, thanks.
+Signed-off-by: Omar Sandoval <osandov@fb.com>
+---
+ fs/btrfs/extent-tree.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 7c01b4e9e3b6..6032e9a635f2 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -782,7 +782,7 @@ static void add_pinned_bytes(struct btrfs_fs_info *fs_info, s64 num_bytes,
+ 	}
+ 
+ 	space_info = __find_space_info(fs_info, flags);
+-	BUG_ON(!space_info); /* Logic bug */
++	ASSERT(space_info);
+ 	percpu_counter_add(&space_info->total_bytes_pinned, num_bytes);
+ }
+ 
 -- 
-Jens Axboe
+2.13.0
 

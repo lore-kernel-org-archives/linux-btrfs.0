@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:38877 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:42886 "EHLO
         aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751180AbdFEWH5 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Jun 2017 18:07:57 -0400
-Date: Mon, 5 Jun 2017 15:05:53 -0700
+        with ESMTP id S1750800AbdFFEbt (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Jun 2017 00:31:49 -0400
+Date: Mon, 5 Jun 2017 21:29:47 -0700
 From: Liu Bo <bo.li.liu@oracle.com>
 To: Omar Sandoval <osandov@osandov.com>
 Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] Btrfs: skip commit transaction if we don't have enough
  pinned bytes
-Message-ID: <20170605220552.GA4847@lim.localdomain>
+Message-ID: <20170606042946.GF4847@lim.localdomain>
 Reply-To: bo.li.liu@oracle.com
 References: <20170519173915.29846-1-bo.li.liu@oracle.com>
  <20170602181413.GA20531@vader.DHCP.thefacebook.com>
@@ -61,19 +61,21 @@ On Fri, Jun 02, 2017 at 11:14:13AM -0700, Omar Sandoval wrote:
 > Bo's patch out of for-next? In any case, I'll get my fix sent out.
 >
 
-While it does result in early ENOSPC, I don't think it's that fix's
-problem, but because we don't precisely track this %pinned counter.
+When data delayed refs are not merged, __btrfs_free_extent() will dec
+the pinned as expected, but when they got merged, %pinned bytes only
+got inc'd but not dec'd because the delayed ref has been deleted due
+to ref_count == 0.
 
-It has shown metadata's %total_bytes_pinned that is negative, have you
-seen a negative counter for data?
+This doesn't happen to tree block ref since tree block ref doesn't
+have more than one ref, so ref_mod is either 1 or -1, and tree block
+ref gets removed via btrfs_free_tree_block(), which also needs to be
+changed.
 
-The problem I observed is btrfs_free_tree_block(), which doesn't add
-pinned bytes when it's not the last reference, while
-__btrfs_free_extent() dec pinned bytes when it's not the last ref.  (I
-have made a simple reproducer.)
+Based on that, I think we can solve the problem by touching
+btrfs_free_tree_block() and data delayed ref instead of head ref.
 
-But for data, looks like we could over-add pinned bytes if a removed
-ref got re-added later, I'll try to make a test for this case.
+thanks,
+-liubo
 
 > diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
 > index be70d90dfee5..93ffa898df6d 100644
@@ -86,10 +88,6 @@ ref got re-added later, I'll try to make a test for this case.
 > -			 struct btrfs_delayed_ref_node *update)
 > +			 struct btrfs_delayed_ref_node *update,
 > +			 int *old_ref_mod_ret)
-
-The head ref doesn't seem related to the negative thing, we dec the
-counter when running delayed refs, not head ref.
-
 >  {
 >  	struct btrfs_delayed_ref_head *existing_ref;
 >  	struct btrfs_delayed_ref_head *ref;
@@ -379,13 +377,6 @@ counter when running delayed refs, not head ref.
 > +		 */
 > +		clear_bit(EXTENT_BUFFER_CORRUPT, &buf->bflags);
 > +	}
-
-Only appling the above 3 chunks of diff can fix the negative counter
-found by my reproducer. 
-
-thanks,
--liubo
-
 >  }
 >  
 >  /* Can return -ENOMEM */
@@ -414,7 +405,7 @@ thanks,
 > -					num_bytes,
 > -					parent, root_objectid, (int)owner,
 > -					BTRFS_DROP_DELAYED_REF, NULL);
-> +					p	 num_bytes, parent,
+> +						 num_bytes, parent,
 > +						 root_objectid, (int)owner,
 > +						 BTRFS_DROP_DELAYED_REF, NULL,
 > +						 &old_ref_mod, &new_ref_mod);

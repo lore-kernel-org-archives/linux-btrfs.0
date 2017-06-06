@@ -1,16 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.dpl.mendix.net ([83.96.177.10]:45566 "EHLO
+Received: from smtp.dpl.mendix.net ([83.96.177.10]:45575 "EHLO
         smtp.dpl.mendix.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751181AbdFEXcU (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Jun 2017 19:32:20 -0400
+        with ESMTP id S1751305AbdFFNBA (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Jun 2017 09:01:00 -0400
 Received: from blackbox.mgt.dpl.mendix.net (blackbox.bofh.hq.mendix.net [IPv6:2001:828:13c8:10b::c])
-        by smtp.dpl.mendix.net (Postfix) with ESMTP id 5436020293
-        for <linux-btrfs@vger.kernel.org>; Tue,  6 Jun 2017 01:32:18 +0200 (CEST)
+        by smtp.dpl.mendix.net (Postfix) with ESMTP id 15F14201B7
+        for <linux-btrfs@vger.kernel.org>; Tue,  6 Jun 2017 15:00:59 +0200 (CEST)
 From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: send operates on ro snapshots only
-Date: Tue,  6 Jun 2017 01:32:18 +0200
-Message-Id: <20170605233218.12421-1-hans.van.kranenburg@mendix.com>
+Subject: [PATCH v2] btrfs-progs: send operates on ro snapshots only
+Date: Tue,  6 Jun 2017 15:00:58 +0200
+Message-Id: <20170606130058.11619-1-hans.van.kranenburg@mendix.com>
+In-Reply-To: <20170605233218.12421-1-hans.van.kranenburg@mendix.com>
+References: <20170605233218.12421-1-hans.van.kranenburg@mendix.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -19,13 +21,17 @@ major point of confusion in the btrfs send manual is that it's not
 telling the user soon enough that send/receive solely operates on
 subvolume snapshots instead of the original (read/write) subvolumes.
 
-So, change the first few alineas to explicitely mention snapshots
-instead. Technically, snapshots are also just subvolumes, but requiring
-this level of technical detailed knowledge doesn't help the user which
-is just trying out things.
+So, change the first few lines to explicitly mention snapshots instead.
+Technically, snapshots are also just subvolumes, but requiring this
+level of technical detailed knowledge doesn't help the user who is just
+trying out things.
 
 Signed-off-by: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
 ---
+
+Changes since v1:
+ - spelling / grammer corrections in the commit message
+
  Documentation/btrfs-send.asciidoc | 21 +++++++++++----------
  1 file changed, 11 insertions(+), 10 deletions(-)
 

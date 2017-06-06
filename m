@@ -1,92 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39600 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751162AbdFERiL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 5 Jun 2017 13:38:11 -0400
-Subject: Re: [RFC PATCH] btrfs: qgroup: Fix hang when using inode_cache and
- qgroup
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-References: <20170531080845.3033-1-quwenruo@cn.fujitsu.com>
-From: Goldwyn Rodrigues <rgoldwyn@suse.de>
-Message-ID: <028e9fff-fccf-a02a-32a6-3a39694f9d16@suse.de>
-Date: Mon, 5 Jun 2017 12:38:07 -0500
+Received: from mail-qt0-f180.google.com ([209.85.216.180]:33287 "EHLO
+        mail-qt0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750722AbdFFENb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Jun 2017 00:13:31 -0400
+Received: by mail-qt0-f180.google.com with SMTP id u12so91579145qth.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 05 Jun 2017 21:13:31 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20170531080845.3033-1-quwenruo@cn.fujitsu.com>
-Content-Type: text/plain; charset=utf-8
+From: Steven Bell <stv.bell07@gmail.com>
+Date: Tue, 6 Jun 2017 00:13:30 -0400
+Message-ID: <CABCBvj3XtoSO-Kavv4ur3G+Jnm3fBijoBAbfqt+LTRtXo1cmrA@mail.gmail.com>
+Subject: device-mapper btrfs Warning Spam
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hello all,
 
 
-On 05/31/2017 03:08 AM, Qu Wenruo wrote:
-> Commit 48a89bc4f2ce ("btrfs: qgroups: Retry after commit on getting EDQUOT")
-> is causing hang, with the following backtrace:
-> 
-> Call Trace:
->  __schedule+0x374/0xaf0
->  schedule+0x3d/0x90
->  wait_for_commit+0x4a/0x80 [btrfs]
->  ? wake_atomic_t_function+0x60/0x60
->  btrfs_commit_transaction+0xe0/0xa10 [btrfs]  <<< Here
->  ? start_transaction+0xad/0x510 [btrfs]
->  qgroup_reserve+0x1f0/0x350 [btrfs]
->  btrfs_qgroup_reserve_data+0xf8/0x2f0 [btrfs]
->  ? _raw_spin_unlock+0x27/0x40
->  btrfs_check_data_free_space+0x6d/0xb0 [btrfs]
->  btrfs_delalloc_reserve_space+0x25/0x70 [btrfs]
->  btrfs_save_ino_cache+0x402/0x650 [btrfs]
->  commit_fs_roots+0xb7/0x170 [btrfs]
->  btrfs_commit_transaction+0x425/0xa10 [btrfs] <<< And here
->  qgroup_reserve+0x1f0/0x350 [btrfs]
->  btrfs_qgroup_reserve_data+0xf8/0x2f0 [btrfs]
->  ? _raw_spin_unlock+0x27/0x40
->  btrfs_check_data_free_space+0x6d/0xb0 [btrfs]
->  btrfs_delalloc_reserve_space+0x25/0x70 [btrfs]
->  btrfs_direct_IO+0x1c5/0x3b0 [btrfs]
->  generic_file_direct_write+0xab/0x150
->  btrfs_file_write_iter+0x243/0x530 [btrfs]
->  __vfs_write+0xc9/0x120
->  vfs_write+0xcb/0x1f0
->  SyS_pwrite64+0x79/0x90
->  entry_SYSCALL_64_fastpath+0x18/0xad
-> 
-> The problem is that, inode_cache will be written in commit_fs_roots(),
-> which is called in btrfs_commit_transaction().
-> 
-> And when it fails to reserve enough data space, qgroup_reserve() will
-> try to call btrfs_commit_transaction() again, then we are waiting for
-> ourselves.
-> 
-> The patch will introduce can_retry parameter for qgroup_reserve(),
-> allowing related callers to avoid deadly commit transaction deadlock.
-> 
-> Now for space cache inode, we will not allow qgroup retry, so it will
-> not cause deadlock.
-> 
-> Fixes: 48a89bc4f2ce ("btrfs: qgroups: Retry after commit on getting EDQUOT")
-> Cc: Goldwyn Rodrigues <rgoldwyn@suse.de>
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> ---
-> Commit  48a89bc4f2ce ("btrfs: qgroups: Retry after commit on getting EDQUOT")
-> is not only causing such deadlock, but also screwing up qgroup reserved
-> space for even generic test cases.
-> 
-> I'm afraid we may need to revert that commit if we can't find a good way
-> to fix the newly caused qgroup meta reserved space underflow.
-> (Unlike old bug which is qgroup data reserved space underflow, this time
-> the commit is causing new metadata space underflow).
+I have a btrfs raid-0 array (initially a raid-6 but long ago converted
+due to warnings not to use raid56, not that I think this impacts my
+situation).
 
-I tried the same with direct I/O and have the same results. I run into
-underflows often. By reverting the patch, we are avoiding the problem
-not resolving it. The numbers don't add up and the point is to find out
-where the numbers are getting lost (or counted in excess). I will
-continue investigating on this front.
+One of the disks in the array started to go bad. Some bad sectors
+meant one of my video files was unable to be read. This issue was
+discovered during a btrfs scrub.
 
-By ignoring the warning (unset BTRFS_DEBUG) and continuing during
-overflow, we are just avoiding the problem. It does not show up in dmesg
-any longer.
+By deleting the offending file occupying the bad sector, I was able to
+successfully remove the offending disk from the array. Replacement
+disk is in and no issues, restored the file from backup. Great.
 
 
--- 
-Goldwyn
+My problem now is the following warning message repeatedly spamming my
+system logs every minute (even after fresh reboot and everything with
+the disk management settled).
+
+"kernel: device-mapper: core: btrfs: sending ioctl 5331 to DM device
+without required privilege."
+
+I have never seen the error before the disk issue, and I have
+confirmed it only started after a reboot after the disk had started
+going bad. I've not been able to figure out any other factors that
+maybe contributing.
+
+Everything appears functional and without issue, and I see no
+consequences of these messages in system performance or behaviour.
+
+I'm running fully updated Fedora 25 which is using btrfs-progs version
+4.6.1-1.fc25 on kernel 4.11.3-200.fc25.x86_64.
+
+
+Has anyone ever seen this issue? Any help or advice would be greatly
+appreciated, thank you.
+
+
+Regards,
+
+Steven

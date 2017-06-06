@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:31983 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:15100 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751532AbdFFJz3 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Jun 2017 05:55:29 -0400
+        with ESMTP id S1751531AbdFFJzW (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Jun 2017 05:55:22 -0400
 From: Su Yue <suy.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <dsterba@suse.cz>
-Subject: [PATCH v3 4/9] btrfs: Verify dir_item in replay_xattr_deletes
-Date: Tue, 6 Jun 2017 17:57:03 +0800
-Message-ID: <20170606095708.494-5-suy.fnst@cn.fujitsu.com>
+Subject: [PATCH v3 5/9] btrfs: Check name_len in btrfs_check_ref_name_override
+Date: Tue, 6 Jun 2017 17:57:04 +0800
+Message-ID: <20170606095708.494-6-suy.fnst@cn.fujitsu.com>
 In-Reply-To: <20170606095708.494-1-suy.fnst@cn.fujitsu.com>
 References: <20170606095708.494-1-suy.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -16,42 +16,34 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-'replay_xattr_deletes' calls 'btrfs_search_slot' to get buffer and
-reads name.
+In 'btrfs_log_inode', 'btrfs_search_forward' gets the buffer and then
+'btrfs_check_ref_name_override' will read name from inode_ref/inode_extref
+for the first time.
 
-Call 'verify_dir_item' to check name_len in 'replay_xattr_deletes'
-in avoid of read out of boundary.
+Call 'btrfs_is_name_len_valid' before reading name.
 
 Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/tree-log.c | 7 +++++++
- 1 file changed, 7 insertions(+)
+ fs/btrfs/tree-log.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 11cf38fb3a49..06c7ceb07282 100644
+index 06c7ceb07282..f20ef211a73d 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -2111,6 +2111,7 @@ static int replay_xattr_deletes(struct btrfs_trans_handle *trans,
- 			      struct btrfs_path *path,
- 			      const u64 ino)
- {
-+	struct btrfs_fs_info *fs_info = root->fs_info;
- 	struct btrfs_key search_key;
- 	struct btrfs_path *log_path;
- 	int i;
-@@ -2152,6 +2153,12 @@ static int replay_xattr_deletes(struct btrfs_trans_handle *trans,
- 			u32 this_len = sizeof(*di) + name_len + data_len;
- 			char *name;
+@@ -4562,6 +4562,12 @@ static int btrfs_check_ref_name_override(struct extent_buffer *eb,
+ 			this_len = sizeof(*extref) + this_name_len;
+ 		}
  
-+			ret = verify_dir_item(fs_info, path->nodes[0],
-+					      path->slots[0], di);
-+			if (ret) {
-+				ret = -EIO;
-+				goto out;
-+			}
- 			name = kmalloc(name_len, GFP_NOFS);
- 			if (!name) {
- 				ret = -ENOMEM;
++		ret = btrfs_is_name_len_valid(eb, slot, name_ptr,
++					      this_name_len);
++		if (!ret) {
++			ret = -EIO;
++			goto out;
++		}
+ 		if (this_name_len > name_len) {
+ 			char *new_name;
+ 
 -- 
 2.13.0
 

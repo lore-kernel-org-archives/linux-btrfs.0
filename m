@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:15100 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:56527 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751531AbdFFJzW (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Jun 2017 05:55:22 -0400
+        with ESMTP id S1751532AbdFFJz0 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Jun 2017 05:55:26 -0400
 From: Su Yue <suy.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <dsterba@suse.cz>
-Subject: [PATCH v3 5/9] btrfs: Check name_len in btrfs_check_ref_name_override
-Date: Tue, 6 Jun 2017 17:57:04 +0800
-Message-ID: <20170606095708.494-6-suy.fnst@cn.fujitsu.com>
+Subject: [PATCH v3 6/9] btrfs: Check name_len before read in iterate_dir_item
+Date: Tue, 6 Jun 2017 17:57:05 +0800
+Message-ID: <20170606095708.494-7-suy.fnst@cn.fujitsu.com>
 In-Reply-To: <20170606095708.494-1-suy.fnst@cn.fujitsu.com>
 References: <20170606095708.494-1-suy.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -16,34 +16,32 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In 'btrfs_log_inode', 'btrfs_search_forward' gets the buffer and then
-'btrfs_check_ref_name_override' will read name from inode_ref/inode_extref
-for the first time.
-
-Call 'btrfs_is_name_len_valid' before reading name.
+Since 'iterate_dir_item' checks name_len in its way,
+so use 'btrfs_is_name_len_valid' not 'verify_dir_item' to make more strict
+name_len check.
 
 Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/tree-log.c | 6 ++++++
+ fs/btrfs/send.c | 6 ++++++
  1 file changed, 6 insertions(+)
 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 06c7ceb07282..f20ef211a73d 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -4562,6 +4562,12 @@ static int btrfs_check_ref_name_override(struct extent_buffer *eb,
- 			this_len = sizeof(*extref) + this_name_len;
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index fc496a6f842a..f0e33f7f221e 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -1069,6 +1069,12 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
+ 			}
  		}
  
-+		ret = btrfs_is_name_len_valid(eb, slot, name_ptr,
-+					      this_name_len);
++		ret = btrfs_is_name_len_valid(eb, path->slots[0],
++			  (unsigned long)(di + 1), name_len + data_len);
 +		if (!ret) {
-+			ret = -EIO;
++			ret = -ENAMETOOLONG;
 +			goto out;
 +		}
- 		if (this_name_len > name_len) {
- 			char *new_name;
- 
+ 		if (name_len + data_len > buf_len) {
+ 			buf_len = name_len + data_len;
+ 			if (is_vmalloc_addr(buf)) {
 -- 
 2.13.0
 

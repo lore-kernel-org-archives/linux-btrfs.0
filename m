@@ -1,30 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:43311 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750975AbdFGGqe (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jun 2017 02:46:34 -0400
-Subject: Re: [PATCH 1/8] btrfs: bioset allocations will never fail, adapt our
- helpers
-To: Christoph Hellwig <hch@lst.de>, David Sterba <dsterba@suse.com>
-Cc: linux-btrfs@vger.kernel.org, Liu Bo <bo.li.liu@oracle.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:39342 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750868AbdFGHeL (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jun 2017 03:34:11 -0400
+Subject: Re: [PATCH 6/8] btrfs: remove redundant parameters from
+ btrfs_bio_alloc
+To: David Sterba <dsterba@suse.com>
 References: <cover.1496422340.git.dsterba@suse.com>
- <559a7bd7acc20ab9eb967dd205e41a4a3f2cdb97.1496422340.git.dsterba@suse.com>
- <0fb07221-b538-ccc3-c910-296d97ea64aa@oracle.com>
- <20170606104431.GA24297@lst.de>
+ <174c51230cae682e9f6c2c237833da89a1d2b6ab.1496422340.git.dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <377590f2-ff26-3fc3-7c38-d91d44b503db@oracle.com>
-Date: Wed, 7 Jun 2017 14:52:36 +0800
+Message-ID: <14e19611-b629-a909-20c9-9309e0425368@oracle.com>
+Date: Wed, 7 Jun 2017 15:40:16 +0800
 MIME-Version: 1.0
-In-Reply-To: <20170606104431.GA24297@lst.de>
+In-Reply-To: <174c51230cae682e9f6c2c237833da89a1d2b6ab.1496422340.git.dsterba@suse.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-> #define __GFP_RECLAIM ((__force gfp_t)(___GFP_DIRECT_RECLAIM|___GFP_KSWAPD_RECLAIM))
-> 
-> 
-> #define GFP_NOFS        (__GFP_RECLAIM | __GFP_IO)
+On 06/03/17 00:58, David Sterba wrote:
+> All callers pass gfp_flags=GFP_NOFS and nr_vecs=BIO_MAX_PAGES.
 
-   Ah. Thanks.
+  The line (in the other thread) mentioning the reason to remove
+   __GFP_HIGH can go into the commit log here.
+
+
+> -	bio = btrfs_bio_alloc(bdev, sector, BIO_MAX_PAGES,
+> -			GFP_NOFS | __GFP_HIGH);
+> +	bio = btrfs_bio_alloc(bdev, sector);
+
+Thanks, Anand

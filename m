@@ -1,68 +1,154 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-34.italiaonline.it ([212.48.25.162]:51710 "EHLO libero.it"
+Received: from smtp-34.italiaonline.it ([212.48.25.162]:40750 "EHLO libero.it"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751382AbdFGRBe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 7 Jun 2017 13:01:34 -0400
+        id S1750831AbdFGRDm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 7 Jun 2017 13:03:42 -0400
 Reply-To: kreijack@inwind.it
-Subject: Re: getting rid of "csum failed" on a hw raid
-References: <5693147c-befc-da58-cb20-6af31e9aa9cb@xunil.at>
- <CAGqmi76XY0+sYZb3XaDs3rHKzZa=t2kzaGCE+uq_K4vz7PK5_A@mail.gmail.com>
- <b8195f2f-adf8-4eb6-2d48-ac6bb5f182fd@xunil.at>
- <CAGqmi77URH-XTW7fCB+NqzcSb-Y+LvwuvQep+CRJ6_ENgRtWRQ@mail.gmail.com>
- <20170607130902.q3stj6wj52duvmr2@angband.pl> <20170607184848.6218c92f@natsu>
- <20170607135219.blgoomc4mwt5ebvj@angband.pl>
- <ad923a84-bd2c-a8fd-8532-c7dc73d1870f@xunil.at>
- <CAJCQCtSGxC-UxkB7NuXuUvWYg-kC4sRdteiiVYQbPZpx9AUfsw@mail.gmail.com>
-To: Chris Murphy <lists@colorremedies.com>,
-        "Stefan G. Weichinger" <lists@xunil.at>
-Cc: Adam Borowski <kilobyte@angband.pl>, Roman Mamedov <rm@romanrm.net>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 1/3] btrfs-progs: Generic functions to retrieve chunks and
+ their bg info
+References: <1476750915-3105-1-git-send-email-divya.indi@oracle.com>
+ <1476750915-3105-2-git-send-email-divya.indi@oracle.com>
+ <20161028154406.GK12522@twin.jikos.cz>
+To: dsterba@suse.cz, Divya Indi <divya.indi@oracle.com>,
+        linux-btrfs@vger.kernel.org, ashish.samant@oracle.com,
+        bo.li.liu@oracle.com
 From: Goffredo Baroncelli <kreijack@inwind.it>
-Message-ID: <dd64ae32-83c5-c254-a00f-e0f81d0b3eb9@inwind.it>
-Date: Wed, 7 Jun 2017 19:01:21 +0200
+Message-ID: <4b53fa5f-4263-2653-0864-b23019ba62d7@inwind.it>
+Date: Wed, 7 Jun 2017 19:03:39 +0200
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtSGxC-UxkB7NuXuUvWYg-kC4sRdteiiVYQbPZpx9AUfsw@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20161028154406.GK12522@twin.jikos.cz>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-06-07 17:58, Chris Murphy wrote:
-> I'm confused about a few items in this thread:
+Hi,
+
+any news about these commands ?
+
+BR
+G.Baroncelli
+
+On 2016-10-28 17:44, David Sterba wrote:
+> On Mon, Oct 17, 2016 at 05:35:13PM -0700, Divya Indi wrote:
+>> An efficient alternative to retrieving block groups:
+>> get_chunks(): Walk the chunk tree to retrieve the chunks.
+>> get_bg_info(): For each retrieved chunk, lookup an exact match of block
+>> group in the extent tree.
+>>
+>> Signed-off-by: Divya Indi <divya.indi@oracle.com>
+>> Reviewed-by: Ashish Samant <ashish.samant@oracle.com>
+>> Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+>> ---
+>>  cmds-inspect.c |   66 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>>  1 files changed, 66 insertions(+), 0 deletions(-)
+>>
+>> diff --git a/cmds-inspect.c b/cmds-inspect.c
+>> index 4b7cea0..f435ea9 100644
+>> --- a/cmds-inspect.c
+>> +++ b/cmds-inspect.c
+>> @@ -81,6 +81,72 @@ out:
+>>  	return !!ret;
+>>  }
+>>  
+>> +static void bg_flags_to_str(u64 flags, char *ret)
+>> +{
+>> +	int empty = 1;
+>> +
+>> +	if (flags & BTRFS_BLOCK_GROUP_DATA) {
+>> +		empty = 0;
+>> +		strcpy(ret, "DATA");
+>> +	}
+>> +	if (flags & BTRFS_BLOCK_GROUP_METADATA) {
+>> +		if (!empty)
+>> +			strcat(ret, "|");
+>> +		strcat(ret, "METADATA");
+>> +	}
+>> +	if (flags & BTRFS_BLOCK_GROUP_SYSTEM) {
+>> +		if (!empty)
+>> +			strcat(ret, "|");
+>> +		strcat(ret, "SYSTEM");
+>> +	}
+>> +}
+>> +
+>> +/* Walking through the chunk tree to retrieve chunks. */
 > 
-> 1. On normal read, if there's a csum mismatch, there should be a path
-> to file and EIO, because Btrfs won't propagate bad data up to user
-> space. I'd expect if there's metadata corruption, there'd be no path
-> to file, and no EIO. The original email does include an inode, but
-> that's ambiguous since each fs tree has its own set of inodes, so we
-> can't always easily infer a file from an inode.
-
-Usually the number of fs-trees is a lot smaller than the number of files. So even if the fs-root is not displayed, it could be easily guessed. Anyway I understood that the file was found doing "cp -r / /dev/null" (which means try all the files until you find a problem)
+> No empty newline.
 > 
-> 2. Why does ddrescue work around this problem on a mounted file
-> system? It's just reading the file, through the file system, the exact
-> same errors should have happened.
-
-Which problem are you discussing ? Finding the path or getting the data ? Anyway ddrescue is not able to get the data with a wrong checksum. When the data is not good, it is skipped leaving an hole in the destination file.
-
+>> +
+>> +static int get_chunks(int fd, struct btrfs_ioctl_search_args *chunk_args)
+>> +{
+>> +	struct btrfs_ioctl_search_key *sk;
+>> +	int ret;
+>> +	int e;
+>> +
+>> +	sk = &chunk_args->key;
+>> +
+>> +	sk->tree_id = BTRFS_CHUNK_TREE_OBJECTID;
+>> +	sk->min_objectid = sk->max_objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
+>> +	sk->max_type = sk->min_type = BTRFS_CHUNK_ITEM_KEY;
 > 
-> 3. My take on this would have been to use btrfs restore and go after
-> the file path if I absolutely needed a copy of this file (no backup),
-> and then copied that back to the file system.
-
-
-It might be useful to have a command to handle these situations: read all the good data, read even the wrong data logging the range were the checksum is incorrect. The fact that you have problem in few bytes, doesn't mean that all the 4k sector has to be discarded.
-
+> Please don't do multiple asignments in one statement.
+> 
+>> +	sk->nr_items = 4096;
+>> +
+>> +	ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, chunk_args);
+>> +	e = errno;
+> 
+> This is useless asignment, I've removed it from the code, please don't
+> reintrduce it.
+> 
+>> +	if (ret < 0) {
+>> +		fprintf(stderr, "ret %d error '%s'\n", ret,
+>> +				strerror(e));
+>> +	}
+>> +	return ret;
+>> +}
 > 
 > 
-> Chris Murphy
+>> +
+>> +/* Given the objectid, find the block group item in the extent tree */
+>> +static int get_bg_info(int fd, struct btrfs_ioctl_search_args *bg_args,
+>> +		       u64 objectid, unsigned long length)
+>> +{
+>> +	struct btrfs_ioctl_search_key *bg_sk;
+>> +	int ret;
+>> +	int e;
+>> +
+>> +	bg_sk = &bg_args->key;
+>> +
+>> +	bg_sk->min_objectid = bg_sk->max_objectid = objectid;
+>> +	bg_sk->nr_items = 1;
+>> +	bg_sk->min_offset = bg_sk->max_offset = length;
+> 
+> Same here.
+> 
+>> +
+>> +	ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, bg_args);
+>> +	e = errno;
+>> +	if (ret < 0) {
+>> +		fprintf(stderr, "ret %d error '%s'\n", ret,
+>> +				strerror(e));
+> 
+> Please take a look how the error messages are constructed when the tree
+> search ioctl fails, there are enough examples in the code.
+> 
+>> +	}
+>> +	return ret;
+>> +}
+>>  static const char * const cmd_inspect_inode_resolve_usage[] = {
+>>  	"btrfs inspect-internal inode-resolve [-v] <inode> <path>",
+>>  	"Get file system paths for the given inode",
+> 
+> Actually, I'm not sure if such functions should exist at all, as they
+> only hide the search ioctl but don't do any validation of the returned
+> keys and data.
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > 
 
-BR
-G.Baroncelli
+
 -- 
 gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
 Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

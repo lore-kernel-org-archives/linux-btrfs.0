@@ -1,65 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49072 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752522AbdFLOdV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Jun 2017 10:33:21 -0400
-Date: Mon, 12 Jun 2017 16:32:16 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
-Subject: Re: [PATCH] Btrfs: fix Null pointer dereference in dio read endio
-Message-ID: <20170612143216.GO25451@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170606195252.17563-1-bo.li.liu@oracle.com>
+Received: from mail-pf0-f178.google.com ([209.85.192.178]:33253 "EHLO
+        mail-pf0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751694AbdFGSXF (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jun 2017 14:23:05 -0400
+Received: by mail-pf0-f178.google.com with SMTP id 83so8414229pfr.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 07 Jun 2017 11:23:05 -0700 (PDT)
+Date: Wed, 7 Jun 2017 11:23:03 -0700
+From: Omar Sandoval <osandov@osandov.com>
+To: Sargun Dhillon <sargun@sargun.me>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: Convert btrfs_fs_info's free_chunk_space to an
+ atomic64_t
+Message-ID: <20170607182303.GE7481@vader.DHCP.thefacebook.com>
+References: <20170607180930.GA12551@ircssh-2.c.rugged-nimbus-611.internal>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170606195252.17563-1-bo.li.liu@oracle.com>
+In-Reply-To: <20170607180930.GA12551@ircssh-2.c.rugged-nimbus-611.internal>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 06, 2017 at 01:52:52PM -0600, Liu Bo wrote:
-> With switching to use btrfs_bio_clone_partial() to split bio in
-> directIO path, read endio is also adapted to that by recording a
-> iterator in btrfs_bio, however, it breaks those bios which are less
-> than stripe length thus no need to be split and results in NULL
-> pointer dereference.
+On Wed, Jun 07, 2017 at 06:09:33PM +0000, Sargun Dhillon wrote:
+> This patch is a small performance optimization to get rid of a spin
+> lock, where instead an atomic64_t can be used.
 > 
-> This fixes the issue by recording the required bio iterator in
-> btrfs_bio_clone() which is used to clone non-split bio in directIO
-> path.  It doesn't affect other calls of btrfs_bio_clone() because they
-> don't need to use this iterator.
-> 
-> This bug was caught by fstests/generic/091.
-> 
-> Cc: David Sterba <dsterba@suse.cz>
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> ---
-> Based on David's for-next.
-> Fixes: commit "Btrfs: change how we iterate bios in endio"
-> 
-> Have run through fstests without introducing new problems.
-> 
->  fs/btrfs/extent_io.c | 1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index 806e8d6..a91c3a1 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -2719,6 +2719,7 @@ struct bio *btrfs_bio_clone(struct bio *bio, gfp_t gfp_mask)
->  		btrfs_bio->csum = NULL;
->  		btrfs_bio->csum_allocated = NULL;
->  		btrfs_bio->end_io = NULL;
-> +		btrfs_bio->iter = bio->bi_iter;
+> Signed-off-by: Sargun Dhillon <sargun@sargun.me>
+[snip]
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 017b67d..0123974 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -2417,9 +2417,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+>  	fs_info->fs_devices->total_devices++;
+>  	fs_info->fs_devices->total_rw_bytes += device->total_bytes;
+>  
+> -	spin_lock(&fs_info->free_chunk_lock);
+> -	fs_info->free_chunk_space += device->total_bytes;
+> -	spin_unlock(&fs_info->free_chunk_lock);
+> +	atomic64_add(device->total_bytes, &fs_info->free_chunk_space);
+>  
+>  	if (!blk_queue_nonrot(q))
+>  		fs_info->fs_devices->rotating = 1;
+> @@ -2874,9 +2872,7 @@ int btrfs_remove_chunk(struct btrfs_trans_handle *trans,
+>  			mutex_lock(&fs_info->chunk_mutex);
+>  			btrfs_device_set_bytes_used(device,
+>  					device->bytes_used - dev_extent_len);
+> -			spin_lock(&fs_info->free_chunk_lock);
+> -			fs_info->free_chunk_space += dev_extent_len;
+> -			spin_unlock(&fs_info->free_chunk_lock);
+> +			atomic64_add(dev_extent_len, &fs_info->free_chunk_space);
+>  			btrfs_clear_space_info_full(fs_info);
+>  			mutex_unlock(&fs_info->chunk_mutex);
+>  		}
+> @@ -4409,9 +4405,7 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
+>  	btrfs_device_set_total_bytes(device, new_size);
+>  	if (device->writeable) {
+>  		device->fs_devices->total_rw_bytes -= diff;
+> -		spin_lock(&fs_info->free_chunk_lock);
+> -		fs_info->free_chunk_space -= diff;
+> -		spin_unlock(&fs_info->free_chunk_lock);
+> +		atomic64_sub(diff, &fs_info->free_chunk_space);
+>  	}
+>  	mutex_unlock(&fs_info->chunk_mutex);
+>  
+> @@ -4535,9 +4529,7 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
+>  		btrfs_device_set_total_bytes(device, old_size);
+>  		if (device->writeable)
+>  			device->fs_devices->total_rw_bytes += diff;
+> -		spin_lock(&fs_info->free_chunk_lock);
+> -		fs_info->free_chunk_space += diff;
+> -		spin_unlock(&fs_info->free_chunk_lock);
+> +		atomic64_add(diff, &fs_info->free_chunk_space);
+>  		mutex_unlock(&fs_info->chunk_mutex);
+>  	}
+>  	return ret;
+> @@ -4882,9 +4874,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+>  		btrfs_device_set_bytes_used(map->stripes[i].dev, num_bytes);
+>  	}
+>  
+> -	spin_lock(&info->free_chunk_lock);
+> -	info->free_chunk_space -= (stripe_size * map->num_stripes);
+> -	spin_unlock(&info->free_chunk_lock);
+> +	atomic64_sub((stripe_size * map->num_stripes), &info->free_chunk_space);
 
-Actually this points to a problem with initialization of the
-btrfs_io_bio in general. They have embedded struct bio and the bioset
-allocation will increase the size to cover btrfs_io_bio (although only
-bio is handled). But, there's no kzalloc or memset anywhere, so it's
-completely up to the caller to sanitize the fresh structure. Which we
-only do partially (csum, csum_allocated, end_io). In that case 'iter'
-could contain garbage and who knows what could happen.
+Can you please get rid of the extra parentheses around the
+multiplication here? Also curious if you were able to measure any sort
+of performance difference. Besides that,
 
-So my suggestion: fold this patch to the one you refrence (ie. that
-the behaviour is same before and after), and we'll fix the
-initialization of btrfs_io_bio after the various bio clone/alloc calls.
+Reviewed-by: Omar Sandoval <osandov@fb.com>
+
+>  
+>  	free_extent_map(em);
+>  	check_raid56_incompat_flag(info, type);
+> @@ -6684,10 +6674,8 @@ static int read_one_dev(struct btrfs_fs_info *fs_info,
+>  	device->in_fs_metadata = 1;
+>  	if (device->writeable && !device->is_tgtdev_for_dev_replace) {
+>  		device->fs_devices->total_rw_bytes += device->total_bytes;
+> -		spin_lock(&fs_info->free_chunk_lock);
+> -		fs_info->free_chunk_space += device->total_bytes -
+> -			device->bytes_used;
+> -		spin_unlock(&fs_info->free_chunk_lock);
+> +		atomic64_add(device->total_bytes - device->bytes_used,
+> +			     &fs_info->free_chunk_space);
+>  	}
+>  	ret = 0;
+>  	return ret;
+> -- 
+> 2.9.3
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

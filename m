@@ -1,32 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47824 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751494AbdFLNKp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Jun 2017 09:10:45 -0400
-Date: Mon, 12 Jun 2017 15:09:40 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 6/8] btrfs: remove redundant parameters from
- btrfs_bio_alloc
-Message-ID: <20170612130940.GI25451@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Received: from aserp1040.oracle.com ([141.146.126.69]:22346 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750739AbdFGJFC (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jun 2017 05:05:02 -0400
+Subject: Re: [PATCH 2/8] btrfs: btrfs_bio_alloc never fails, skip error
+ handling
+To: linux-btrfs@vger.kernel.org
 References: <cover.1496422340.git.dsterba@suse.com>
- <174c51230cae682e9f6c2c237833da89a1d2b6ab.1496422340.git.dsterba@suse.com>
- <14e19611-b629-a909-20c9-9309e0425368@oracle.com>
+ <a77256a3af2055537dc0eb7b15995fc673a4c0cc.1496422340.git.dsterba@suse.com>
+Cc: David Sterba <dsterba@suse.com>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <c3d2deae-45b3-f2e5-97e1-3d79a1aa8efb@oracle.com>
+Date: Wed, 7 Jun 2017 17:11:08 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <14e19611-b629-a909-20c9-9309e0425368@oracle.com>
+In-Reply-To: <a77256a3af2055537dc0eb7b15995fc673a4c0cc.1496422340.git.dsterba@suse.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 07, 2017 at 03:40:16PM +0800, Anand Jain wrote:
-> 
-> 
-> On 06/03/17 00:58, David Sterba wrote:
-> > All callers pass gfp_flags=GFP_NOFS and nr_vecs=BIO_MAX_PAGES.
-> 
->   The line (in the other thread) mentioning the reason to remove
->    __GFP_HIGH can go into the commit log here.
 
-Makes sense, patch updated.
+
+On 06/03/17 00:58, David Sterba wrote:
+> Update direct callers of btrfs_bio_alloc that do error handling, that we
+> can now remove.
+
+Reviewed-by: Anand Jain <anand.jain@oracle.com>

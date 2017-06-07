@@ -1,44 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f54.google.com ([74.125.83.54]:35893 "EHLO
-        mail-pg0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750766AbdFFXpn (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Jun 2017 19:45:43 -0400
-Received: by mail-pg0-f54.google.com with SMTP id a70so32458029pge.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 06 Jun 2017 16:45:43 -0700 (PDT)
-From: Omar Sandoval <osandov@osandov.com>
-To: linux-btrfs@vger.kernel.org
+Received: from mail02.iobjects.de ([188.40.134.68]:38726 "EHLO
+        mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750831AbdFGPsI (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jun 2017 11:48:08 -0400
+Subject: Re: [PATCH 0/7] Btrfs: fix total_bytes_pinned counter
+To: Omar Sandoval <osandov@osandov.com>, linux-btrfs@vger.kernel.org
 Cc: Josef Bacik <jbacik@fb.com>, Liu Bo <bo.li.liu@oracle.com>,
         kernel-team@fb.com
-Subject: [PATCH 2/7] Btrfs: make BUG_ON() in add_pinned_bytes() an ASSERT()
-Date: Tue,  6 Jun 2017 16:45:27 -0700
-Message-Id: <5e543709c942292f3e97cbd22fd3137dd521bb16.1496792333.git.osandov@fb.com>
-In-Reply-To: <cover.1496792333.git.osandov@fb.com>
 References: <cover.1496792333.git.osandov@fb.com>
+From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>
+Message-ID: <af6b94b7-3aa9-5bcb-df7e-01c21506a219@applied-asynchrony.com>
+Date: Wed, 7 Jun 2017 17:48:05 +0200
+MIME-Version: 1.0
 In-Reply-To: <cover.1496792333.git.osandov@fb.com>
-References: <cover.1496792333.git.osandov@fb.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Omar Sandoval <osandov@fb.com>
+On 06/07/17 01:45, Omar Sandoval wrote:
+> From: Omar Sandoval <osandov@fb.com>
+> 
+> This series fixes several problems with the total_bytes_pinned counter.
+> Patches 1 and 2 are cleanups. Patches 3 and 4 are straightforward fixes.
+> Patch 5 is prep for patch 6. Patch 6 is the most complicated fix.
+> Patches 5 and 6 are ugly, I'd love any suggestions for a cleaner fix.
+> Finally, patch 7 adds a warning to catch similar issues in the future.
 
-Signed-off-by: Omar Sandoval <osandov@fb.com>
----
- fs/btrfs/extent-tree.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Since this didn't really change the code significantly from the previous
+version (except for the addition of minor patches 2+7) have a
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 7c01b4e9e3b6..6032e9a635f2 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -782,7 +782,7 @@ static void add_pinned_bytes(struct btrfs_fs_info *fs_info, s64 num_bytes,
- 	}
- 
- 	space_info = __find_space_info(fs_info, flags);
--	BUG_ON(!space_info); /* Logic bug */
-+	ASSERT(space_info);
- 	percpu_counter_add(&space_info->total_bytes_pinned, num_bytes);
- }
- 
--- 
-2.13.0
+Tested-by: Holger Hoffstätte <holger@applied-asynchrony.com>
 
+Thanks!
+Holger

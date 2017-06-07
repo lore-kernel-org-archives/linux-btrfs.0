@@ -1,194 +1,147 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.99]:44258 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.99]:46304 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751308AbdFZSXv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Jun 2017 14:23:51 -0400
+        id S1751299AbdFGPgN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 7 Jun 2017 11:36:13 -0400
+Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 33D5323954
+        for <linux-btrfs@vger.kernel.org>; Wed,  7 Jun 2017 15:36:12 +0000 (UTC)
 From: fdmanana@kernel.org
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] btrfs: test incremental send after replacing directory with a file
-Date: Mon, 26 Jun 2017 00:13:39 +0100
-Message-Id: <20170625231339.479-1-fdmanana@kernel.org>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: send, fix invalid path after renaming and linking file
+Date: Wed,  7 Jun 2017 16:36:08 +0100
+Message-Id: <20170607153608.23177-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Test that an incremental send/receive operation works correctly after
-moving some directory inode A, renaming a regular file inode B into the
-old name of inode A and finally creating a new hard link for inode B at
-directory inode A.
+Currently an incremental snapshot can generate link operations which
+contain an invalid target path. Such case happens when in the send
+snapshot a file was renamed, a new hard link added for it and some
+other inode (with a lower number) got renamed to the former name of
+that file. Example:
 
-This issue is fixed by the following patch for the linux kernel:
+Parent snapshot
 
-  "Btrfs: incremental send, fix invalid path for link commands"
+ .                  (ino 256)
+ |
+ |--- f1            (ino 257)
+ |--- f2            (ino 258)
+ |--- f3            (ino 259)
+
+Send snapshot
+
+ .                  (ino 256)
+ |
+ |--- f2            (ino 257)
+ |--- f3            (ino 258)
+ |--- f4            (ino 259)
+ |--- f5            (ino 258)
+
+The following steps happen when computing the incremental send stream:
+
+1) When processing inode 257, inode 258 is orphanized (renamed to
+   "o258-7-0"), because its current reference has the same name as the
+   new reference for inode 257;
+
+2) When processing inode 258, we iterate over all its new references,
+   which have the names "f3" and "f5". The first iteration sees name
+   "f5" and renames the inode from its orphan name ("o258-7-0") to
+   "f5", while the second iteration sees the name "f3" and, incorrectly,
+   issues a link operation with a target name matching the orphan name,
+   which no longer exists. The first iteration had reset the current
+   valid path of the inode to "f5", but in the second iteration we lost
+   it because we found another inode, with a higher number of 259, which
+   has a reference named "f3" as well, so we orphanized inode 259 and
+   recomputed the current valid path of inode 258 to its old orphan
+   name because inode 259 could be an ancestor of inode 258 and therefore
+   the current valid path could contain the pre-orphanization name of
+   inode 259. However in this case inode 259 is not an ancestor of inode
+   258 so the current valid path should not be recomputed.
+   This makes the receiver fail with the following error:
+
+   ERROR: link f3 -> o258-7-0 failed: No such file or directory
+
+So fix this by not recomputing the current valid path for an inode
+whenever we find a colliding reference from some not yet processed inode
+(inode number higher then the one currently being processed), unless
+that other inode is an ancestor of the one we are currently processing.
+
+A test case for fstests will follow soon.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- tests/btrfs/147     | 130 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/147.out |   6 +++
- tests/btrfs/group   |   1 +
- 3 files changed, 137 insertions(+)
- create mode 100755 tests/btrfs/147
- create mode 100644 tests/btrfs/147.out
+ fs/btrfs/send.c | 35 +++++++++++++++++++++++++++--------
+ 1 file changed, 27 insertions(+), 8 deletions(-)
 
-diff --git a/tests/btrfs/147 b/tests/btrfs/147
-new file mode 100755
-index 00000000..15517b0c
---- /dev/null
-+++ b/tests/btrfs/147
-@@ -0,0 +1,130 @@
-+#! /bin/bash
-+# FS QA Test No. btrfs/147
-+#
-+# Test that an incremental send/receive operation works correctly after moving
-+# some directory inode A, renaming a regular file inode B into the old name of
-+# inode A and finally creating a new hard link for inode B at directory inode A.
-+#
-+#-----------------------------------------------------------------------
-+#
-+# Copyright (C) 2017 SUSE Linux Products GmbH. All Rights Reserved.
-+# Author: Filipe Manana <fdmanana@suse.com>
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 5b40d617bb03..381ec4d58edf 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -3546,9 +3546,17 @@ static int is_ancestor(struct btrfs_root *root,
+ 		       struct fs_path *fs_path)
+ {
+ 	u64 ino = ino2;
++	bool free_path = false;
++	int ret = 0;
 +
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	cd /
-+	rm -fr $send_files_dir
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_test
-+_require_scratch
-+_require_fssum
-+
-+send_files_dir=$TEST_DIR/btrfs-test-$seq
-+
-+rm -f $seqres.full
-+rm -fr $send_files_dir
-+mkdir $send_files_dir
-+
-+_scratch_mkfs >>$seqres.full 2>&1
-+_scratch_mount
-+
-+mkdir $SCRATCH_MNT/dir1
-+mkdir $SCRATCH_MNT/dir1/dir2
-+mkdir $SCRATCH_MNT/dir1/dir2/dir3
-+mkdir $SCRATCH_MNT/dir5
-+touch $SCRATCH_MNT/dir1/dir2/dir3/file1
-+mkdir $SCRATCH_MNT/dir1/dir2/dir3/dir4
-+
-+# Filesystem looks like:
-+#
-+# .                                                      (ino 256)
-+# |
-+# |--- dir1/                                             (ino 257)
-+# |      |--- dir2/                                      (ino 258)
-+# |             |--- dir3/                               (ino 259)
-+# |                   |--- file1                         (ino 261)
-+# |                   |--- dir4/                         (ino 262)
-+# |
-+# |--- dir5/                                             (ino 260)
-+#
-+$BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT \
-+	$SCRATCH_MNT/mysnap1 > /dev/null
-+
-+$BTRFS_UTIL_PROG send -f $send_files_dir/1.snap \
-+	$SCRATCH_MNT/mysnap1 2>&1 1>/dev/null | _filter_scratch
-+
-+mkdir $SCRATCH_MNT/dir1/dir6
-+mv $SCRATCH_MNT/dir5 $SCRATCH_MNT/dir1/dir2/dir3/dir4/dir55
-+ln $SCRATCH_MNT/dir1/dir2/dir3/file1 $SCRATCH_MNT/dir1/dir2/dir3/dir4/file11
-+mv $SCRATCH_MNT/dir1/dir2/dir3/dir4 $SCRATCH_MNT/dir1/dir6/dir44
-+mv $SCRATCH_MNT/dir1/dir2/dir3/file1 $SCRATCH_MNT/dir1/dir2/dir3/dir4
-+
-+# Filesystem now looks like:
-+#
-+# .                                                      (ino 256)
-+# |
-+# |--- dir1/                                             (ino 257)
-+#        |--- dir2/                                      (ino 258)
-+#        |      |--- dir3/                               (ino 259)
-+#        |            |--- dir4                          (ino 261)
-+#        |
-+#        |--- dir6/                                      (ino 263)
-+#               |--- dir44/                              (ino 262)
-+#                      |--- file11                       (ino 261)
-+#                      |--- dir55/                       (ino 260)
-+#
-+$BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT \
-+		 $SCRATCH_MNT/mysnap2 > /dev/null
-+
-+$BTRFS_UTIL_PROG send -p $SCRATCH_MNT/mysnap1 -f $send_files_dir/2.snap \
-+		 $SCRATCH_MNT/mysnap2 2>&1 1>/dev/null | _filter_scratch
-+
-+$FSSUM_PROG -A -f -w $send_files_dir/1.fssum $SCRATCH_MNT/mysnap1
-+$FSSUM_PROG -A -f -w $send_files_dir/2.fssum \
-+	-x $SCRATCH_MNT/mysnap2/mysnap1 $SCRATCH_MNT/mysnap2
-+
-+# Now recreate the filesystem by receiving both send streams and verify we get
-+# the same content that the original filesystem had.
-+_scratch_unmount
-+_scratch_mkfs >>$seqres.full 2>&1
-+_scratch_mount
-+
-+$BTRFS_UTIL_PROG receive -f $send_files_dir/1.snap $SCRATCH_MNT > /dev/null
-+$BTRFS_UTIL_PROG receive -f $send_files_dir/2.snap $SCRATCH_MNT > /dev/null
-+$FSSUM_PROG -r $send_files_dir/1.fssum $SCRATCH_MNT/mysnap1
-+$FSSUM_PROG -r $send_files_dir/2.fssum $SCRATCH_MNT/mysnap2
-+
-+status=0
-+exit
-diff --git a/tests/btrfs/147.out b/tests/btrfs/147.out
-new file mode 100644
-index 00000000..06b94018
---- /dev/null
-+++ b/tests/btrfs/147.out
-@@ -0,0 +1,6 @@
-+QA output created by 147
-+At subvol SCRATCH_MNT/mysnap1
-+At subvol SCRATCH_MNT/mysnap2
-+At subvol mysnap1
-+OK
-+OK
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index f74f50ca..2eb540e7 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -149,3 +149,4 @@
- 144 auto quick send
- 145 auto quick send
- 146 auto quick
-+147 auto quick send
++	if (!fs_path) {
++		fs_path = fs_path_alloc();
++		if (!fs_path)
++			return -ENOMEM;
++		free_path = true;
++	}
+ 
+ 	while (ino > BTRFS_FIRST_FREE_OBJECTID) {
+-		int ret;
+ 		u64 parent;
+ 		u64 parent_gen;
+ 
+@@ -3557,13 +3565,18 @@ static int is_ancestor(struct btrfs_root *root,
+ 		if (ret < 0) {
+ 			if (ret == -ENOENT && ino == ino2)
+ 				ret = 0;
+-			return ret;
++			goto out;
++		}
++		if (parent == ino1) {
++			ret = parent_gen == ino1_gen ? 1 : 0;
++			goto out;
+ 		}
+-		if (parent == ino1)
+-			return parent_gen == ino1_gen ? 1 : 0;
+ 		ino = parent;
+ 	}
+-	return 0;
++ out:
++	if (free_path)
++		fs_path_free(fs_path);
++	return ret;
+ }
+ 
+ static int wait_for_parent_move(struct send_ctx *sctx,
+@@ -3837,9 +3850,15 @@ static int process_recorded_refs(struct send_ctx *sctx, int *pending_move)
+ 				 * might contain the pre-orphanization name of
+ 				 * ow_inode, which is no longer valid.
+ 				 */
+-				fs_path_reset(valid_path);
+-				ret = get_cur_path(sctx, sctx->cur_ino,
+-					   sctx->cur_inode_gen, valid_path);
++				ret = is_ancestor(sctx->parent_root,
++						  ow_inode, ow_gen,
++						  sctx->cur_ino, NULL);
++				if (ret > 0) {
++					fs_path_reset(valid_path);
++					ret = get_cur_path(sctx, sctx->cur_ino,
++							   sctx->cur_inode_gen,
++							   valid_path);
++				}
+ 				if (ret < 0)
+ 					goto out;
+ 			} else {
 -- 
 2.11.0
 

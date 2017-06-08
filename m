@@ -1,70 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:44809 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1751583AbdFJNBQ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 10 Jun 2017 09:01:16 -0400
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-From: Chris Mason <clm@fb.com>
-Subject: [GIT PULL] Btrfs
-Message-ID: <6dd9667f-4812-dc80-1875-182ec27f0c1e@fb.com>
-Date: Sat, 10 Jun 2017 09:00:54 -0400
+Received: from mail-wm0-f43.google.com ([74.125.82.43]:35326 "EHLO
+        mail-wm0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751578AbdFHVf1 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Jun 2017 17:35:27 -0400
+Received: by mail-wm0-f43.google.com with SMTP id x70so85265325wme.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 08 Jun 2017 14:35:22 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+From: Chris Murphy <lists@colorremedies.com>
+Date: Thu, 8 Jun 2017 15:35:10 -0600
+Message-ID: <CAJCQCtTJYsYXChwochYocJN-uo-OG-BFfogMwkhQuN9X__1z6A@mail.gmail.com>
+Subject: status of swapfiles on Btrfs
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        Omar Sandoval <osandov@osandov.com>, David Sterba <dsterba@suse.cz>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
+What's the status?
 
-My for-linus-4.12 branch has some fixes that Dave Sterba collected:
+This message gave me an idea:
+http://www.spinics.net/lists/linux-btrfs/msg40323.html
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.12
+What about an xattr on both subvolume and the swapfile that would
+inhibit btrfs user space tools from either snapshotting the subvolume
+or the swapfile?
 
-We've been hitting an early enospc problem on production machines that
-Omar tracked down to an old int->u64 mistake.  I waited a bit on
-this pull to make sure it was really the problem from production,
-but it's on ~2100 hosts now and I think we're good.
+There could be a feature in btrfs user space tool to "create a
+swapfile" which would do the full sequence:
+1. create a subvolume at the top level
+2. set a "do not snapshot" xattr on subvolume
+3. fallocate a swapfile, presumably contiguous since swap can't use a
+file with holes or gaps
+4. set a "do not snapshot/reflink" xattr on the swapfile
 
-Omar also noticed a commit in the queue would make new early ENOSPC
-problems.  I pulled that out for now, which is why the top three commits
-are younger than the rest.
+Does this solve any usability concerns?
 
-Otherwise these are all fixes, some explaining very old bugs that we've
-been poking at for a while.
 
-Jeff Mahoney (2) commits (+4/-3):
-    btrfs: fix race with relocation recovery and fs_root setup (+3/-3)
-    btrfs: fix memory leak in update_space_info failure path (+1/-0)
 
-Liu Bo (1) commits (+1/-1):
-    Btrfs: clear EXTENT_DEFRAG bits in finish_ordered_io
-
-Colin Ian King (1) commits (+1/-1):
-    btrfs: fix incorrect error return ret being passed to mapping_set_error
-
-Omar Sandoval (1) commits (+2/-2):
-    Btrfs: fix delalloc accounting leak caused by u32 overflow
-
-Qu Wenruo (1) commits (+122/-2):
-    btrfs: fiemap: Cache and merge fiemap extent before submit it to user
-
-David Sterba (1) commits (+2/-2):
-    btrfs: use correct types for page indices in btrfs_page_exists_in_range
-
-Jan Kara (1) commits (+6/-4):
-    btrfs: Make flush bios explicitely sync
-
-Su Yue (1) commits (+1/-1):
-    btrfs: tree-log.c: Wrong printk information about namelen
-
-Total: (9) commits (+139/-16)
-
- fs/btrfs/ctree.h       |   4 +-
- fs/btrfs/dir-item.c    |   2 +-
- fs/btrfs/disk-io.c     |  10 ++--
- fs/btrfs/extent-tree.c |   7 +--
- fs/btrfs/extent_io.c   | 126 +++++++++++++++++++++++++++++++++++++++++++++++--
- fs/btrfs/inode.c       |   6 +--
- 6 files changed, 139 insertions(+), 16 deletions(-)
+-- 
+Chris Murphy

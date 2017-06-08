@@ -1,97 +1,126 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:45105 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751433AbdFHD6F (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jun 2017 23:58:05 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1dIoa5-0001vI-Hq
-        for linux-btrfs@vger.kernel.org; Thu, 08 Jun 2017 05:57:57 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: mount gets stuck -  BUG: soft lockup
-Date: Thu, 8 Jun 2017 03:57:52 +0000 (UTC)
-Message-ID: <pan$913f2$7a061a9c$53734ddc$4bb718e9@cox.net>
-References: <650563aa7eda4f3c9c55cac60f476e45@ais.de>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from syrinx.knorrie.org ([82.94.188.77]:41260 "EHLO
+        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751123AbdFHSDD (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Jun 2017 14:03:03 -0400
+Received: from [IPv6:2001:980:4a41:fb::12] (unknown [IPv6:2001:980:4a41:fb::12])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by syrinx.knorrie.org (Postfix) with ESMTPSA id 4178F60016
+        for <linux-btrfs@vger.kernel.org>; Thu,  8 Jun 2017 19:57:11 +0200 (CEST)
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Subject: Re: About free space fragmentation, metadata write amplification and
+ (no)ssd
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <5e11b988-05ea-c468-21ef-589c71058436@mendix.com>
+ <d5ebd421-52a1-5b91-72a3-f97a2fb9628f@mendix.com>
+Message-ID: <3e8876c3-b8b9-0922-8962-17f6cf38b81d@knorrie.org>
+Date: Thu, 8 Jun 2017 19:57:10 +0200
+MIME-Version: 1.0
+In-Reply-To: <d5ebd421-52a1-5b91-72a3-f97a2fb9628f@mendix.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thomas Mischke posted on Wed, 07 Jun 2017 09:44:41 +0000 as excerpted:
+Ehrm,
 
-> i tried to convert a JBOD BTRFS consisting of 5 disks (6TB each) to
-> raid10 (converting from an earlier configuration).
-> All disk were backed by bcache.
+On 05/28/2017 02:59 AM, Hans van Kranenburg wrote:
+> A small update...
 > 
-> Because a rebalance takes very long I had to pause the balance for a
-> required reboot.
+> Original (long) message:
+> https://www.spinics.net/lists/linux-btrfs/msg64446.html
+> 
+> On 04/08/2017 10:19 PM, Hans van Kranenburg wrote:
+>> [...]
+>>
+>> == But! The Meta Mummy returns! ==
+>>
+>> After changing to nossd, another thing happened. The expiry process,
+>> which normally takes about 1.5 hour to remove ~2500 subvolumes (keeping
+>> it queued up to a 100 orphans all the time), suddenly took the entire
+>> rest of the day, not being done before the nightly backups had to start
+>> again at 10PM...
+>>
+>> And the only thing it seemed to do is writing, writing, writing 100MB/s
+>> all day long.
+> 
+> This behaviour was observed with a 4.7.5 linux kernel.
+> 
+> When running 4.9.25 now with -o nossd, this weird behaviour is gone. I
+> have no idea what change between 4.7 and 4.9 is responsible for this,
+> but it's good.
 
-Sorry, not a direct answer here, but rather a point made in a continuing 
-discussion... which may or may not be something you can use, but even if 
-you can, it'll be when you redo your current layout...
+Ok, that hooray was a bit too early...
 
-Great case-in-point for the point I often make about (where possible[1]) 
-keeping a filesystem small enough so that maintenance on it is doable 
-within a reasonable/tolerable amount of time.
+---- ----
 
-If the same amount of data were split into multiple independent smaller 
-filesystems, only one of them would have been affected as being rebalanced 
-at the time, and the smaller filesystem would have ideally been small 
-enough that the rebalance could be completed without the need to reboot 
-in the middle.
+There is an improvement with subvolume delete + nossd that is visible
+between 4.7 and 4.9.
 
-As I said, where possible... It's not always possible, and people's 
-definition of tolerable maintenance times will certainly differ in any 
-case[2], but where it is possible, it sure does help in managing the 
-administration headache level. =:^)
+This example that I saved shows what happened when doing remount,nossd
+on 4.7.8:
 
-Of course your system, your choice.  If you prefer the hassle of multi-
-hour or even multi-day scrubs/balances/checks in ordered to keep the 
-ability to maintain it all as a single btrfs pool, great!  I prefer the 
-sub-hour maintenance, even if it means a bit more hassle splitting up the 
-layout up front.
+https://syrinx.knorrie.org/~knorrie/btrfs/keep/2017-06-08-xvdb-nossd-sub-del.png
 
----
-[1] Where possible:  Obviously, if you're dealing with multi-TB files, a 
-filesystem smaller than one of them isn't practical/possible.  But if 
-necessary due to such extreme file sizes, it can be one file per 
-filesystem.
+That example filesystem has about 1.5TiB of small files (subversion
+repositories) on it, and every 15 minutes, using send/receive (helped by
+btrbk) incremental changes are being sent to another location, and
+snapshots older than a day are removed.
 
-[2] Tolerable maintenance times:  I'm an admitted small-case extreme.  
-I'm on ssd, with all btrfs under 100 GiB each, under 50 GiB per device 
-partition, paired btrfs raid1 partitions on two physical ssds, and scrubs/
-balances/checks typically take a minute or less, short enough I tell 
-scrub not to background (-B) and can easily sit and wait for completion.  
-Scrubbing the sub-GB log filesystem is done effectively as fast as I hit 
-enter.
+When switching to nossd, the snapshot removals (also every 15 mins)
+suddenly showed quite a lot more disk writes happening (metadata).
 
-Lesson learned from running mdraid before it had write-intent bitmaps and 
-well before ssds dropped into affordability so on spinning rust, when I 
-ended up splitting two huge mdraids, working and backup, into multiple 
-individual raids on parallel partitions across physical devices, because 
-raid-rebuild after a crash would take hours.  Afterward, individual 
-rebuilds took 5-20 minutes each and I might have to rebuild three smaller 
-raids that were active and had write-mounted filesystems at the time of 
-the crash, but many of the raids wouldn't have been at risk as they were 
-either not active or their filesystems were mounted read-only.  So I was 
-done in under an hour, and under 15 minutes for the critical root 
-filesystem raid, compared to the multiple hours it took for a rebuild 
-when it was one big single working raid.
+With 4.9.25, that effect on this one and smaller filesystems is gone.
+The graphs look the same when switching to nossd.
 
-15 minutes for root and under an hour for all affected raids/filesystems 
-was acceptable.  Multiple hours for everything at once, wasn't, not when 
-it was within my power to change it with a few raid splits and a 
-different layout between them.
+---- ----
 
-Of course now I'm spoiled by the SSDs and find that 15 minutes for root 
-and an hour for all affected, unacceptable, as it's now under a minute 
-for each btrfs and under 10 minutes for all affected.  (It's actually 
-more like 2 minutes for the minimal operational set, home and log, with 
-root mounted read-only by default and thus unaffected. =:^)
+But still, on the large filesystem (>30TiB), removing
+subvolumes/snapshots takes like >10x the time (and metadata write IO)
+with nossd than with ssd.
+
+An example:
+
+https://syrinx.knorrie.org/~knorrie/btrfs/keep/2017-06-08-big-expire-ssd-nossd.png
+
+With -o nossd, I was able to remove 900 subvolumes (varying fs tree
+sizes) in about 17 hours, doing sustained 100MB/s writes to disk.
+
+When switching to -o ssd, I was able to remove 4300 of them within 4
+hours, with way less disk write activity.
+
+So, I'm still suspecting it's simply the SZ_64K vs SZ_2M difference for
+metadata *empty_cluster that is making this huge difference, and that
+the absurd metadata overhead is generated because of the fact that the
+extent tree is tracked inside the extent tree itself.
+
+To gather proof of this, and to research the effect of different
+settings, applying different patches (like playing with the
+empty_cluster values, the shift to left page patch, bulk csum etc,) I
+need to be able to measure some things first.
+
+So, my current idea is to put per tree (all fs trees combined under 5)
+cow counters in, exposed via sysfs, so that I can create munin cow rate
+graphs per filesystem. Currently, I put the python-to-C btrfs-progs
+bindings project aside again, and am teaching myself enough to get this
+done first. :) Free time is a bit limited nowadays, but progress is steady.
+
+To be continued...
+
+>> == So, what do we want? ssd? nossd? ==
+>>
+>> Well, both don't do it for me. I want my expensive NetApp disk space to
+>> be filled up, without requiring me to clean up after it all the time
+>> using painful balance actions and I want to quickly get rid of old
+>> snapshots.
+>>
+>> So currently, there's two mount -o remount statements before and after
+>> doing the expiries...
+> 
+> With 4.9+ now, it stays on nossd for sure, everywhere. :)
+
+Nope, the daily remounts are back again, well only on the biggest
+filesystems. :@
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Hans van Kranenburg

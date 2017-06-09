@@ -1,50 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:29031 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751610AbdF1Waq (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Jun 2017 18:30:46 -0400
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v5SMUjsm010654
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Jun 2017 22:30:45 GMT
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id v5SMUiBe000825
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Jun 2017 22:30:45 GMT
-Received: from abhmp0013.oracle.com (abhmp0013.oracle.com [141.146.116.19])
-        by aserv0121.oracle.com (8.13.8/8.13.8) with ESMTP id v5SMUgIM023574
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Jun 2017 22:30:43 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
+Received: from mail-pg0-f66.google.com ([74.125.83.66]:33435 "EHLO
+        mail-pg0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751651AbdFISJr (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Jun 2017 14:09:47 -0400
+Received: by mail-pg0-f66.google.com with SMTP id a70so8310303pge.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 09 Jun 2017 11:09:47 -0700 (PDT)
+From: Justin Maggard <jmaggard10@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs-progs: convert: do not clear nodatasum flag in inode item
-Date: Wed, 28 Jun 2017 15:29:49 -0600
-Message-Id: <20170628212949.25403-1-bo.li.liu@oracle.com>
+Cc: Justin Maggard <jmaggard@netgear.com>
+Subject: [PATCH] btrfs-progs: Fix an infinite loop in btrfs_next_bg
+Date: Fri,  9 Jun 2017 11:09:35 -0700
+Message-Id: <20170609180935.9554-1-jmaggard@netgear.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-With the current btrfs-convert, if we convert a ext4 without data checksum,
-it'd not set nodatasum flag in inode item, nor create csum item, reading
-file ends up with checksum errors.
+I've run into a couple filesystems where btrfs-find-root would spin
+indefinitely.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+If the first cache extent start location is 0, we end up in an infinite
+loop in btrfs_next_bg().  Fix it by checking for that situation, and
+jumping to the next bg if necessary.
+
+Fixes: e2e0dae9 (btrfs-progs: volume: Fix a bug causing btrfs-find-root to skip first chunk)
+Signed-off-by: Justin Maggard <jmaggard@netgear.com>
 ---
- convert/source-ext2.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ volumes.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/convert/source-ext2.c b/convert/source-ext2.c
-index 1b0576b..64b95c5 100644
---- a/convert/source-ext2.c
-+++ b/convert/source-ext2.c
-@@ -742,7 +742,7 @@ static int ext2_check_state(struct btrfs_convert_context *cctx)
- static void ext2_convert_inode_flags(struct btrfs_inode_item *dst,
- 				     struct ext2_inode *src)
- {
--	u64 flags = 0;
-+	u64 flags = btrfs_stack_inode_flags(dst);
+diff --git a/volumes.c b/volumes.c
+index b350e259..8c0c10ce 100644
+--- a/volumes.c
++++ b/volumes.c
+@@ -1278,6 +1278,8 @@ int btrfs_next_bg(struct btrfs_mapping_tree *map_tree, u64 *logical,
+ 			*size = ce->size;
+ 			return 0;
+ 		}
++		if (!cur)
++			ce = next_cache_extent(ce);
+ 	}
  
- 	COPY_ONE_EXT2_FLAG(flags, src, APPEND);
- 	COPY_ONE_EXT2_FLAG(flags, src, SYNC);
+ 	return -ENOENT;
 -- 
-2.5.0
+2.13.0
 

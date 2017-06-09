@@ -1,68 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from syrinx.knorrie.org ([82.94.188.77]:45212 "EHLO
-        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750788AbdFHTTH (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Jun 2017 15:19:07 -0400
-Subject: Re: About free space fragmentation, metadata write amplification and
- (no)ssd
-To: Roman Mamedov <rm@romanrm.net>
-References: <5e11b988-05ea-c468-21ef-589c71058436@mendix.com>
- <d5ebd421-52a1-5b91-72a3-f97a2fb9628f@mendix.com>
- <3e8876c3-b8b9-0922-8962-17f6cf38b81d@knorrie.org>
- <20170608234737.2a1c8db0@natsu>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Message-ID: <721d581b-2560-301a-ea71-8588a07a100b@mendix.com>
-Date: Thu, 8 Jun 2017 21:19:05 +0200
-MIME-Version: 1.0
-In-Reply-To: <20170608234737.2a1c8db0@natsu>
-Content-Type: text/plain; charset=windows-1252
+Received: from [195.159.176.226] ([195.159.176.226]:57920 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1751554AbdFITMY (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Jun 2017 15:12:24 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1dJPKS-0004aZ-VN
+        for linux-btrfs@vger.kernel.org; Fri, 09 Jun 2017 21:12:16 +0200
+To: linux-btrfs@vger.kernel.org
+From: Koen Kooi <koen@dominion.thruhere.net>
+Subject: Filesystem won't mount (open_ctree failed) or repair (BUG_ON)
+Date: Fri, 9 Jun 2017 21:12:16 +0200
+Message-ID: <oherub$g5a$1@blaine.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/08/2017 08:47 PM, Roman Mamedov wrote:
-> On Thu, 8 Jun 2017 19:57:10 +0200
-> Hans van Kranenburg <hans.van.kranenburg@mendix.com> wrote:
-> 
->> There is an improvement with subvolume delete + nossd that is visible
->> between 4.7 and 4.9.
-> 
-> I don't remember if I asked before, but did you test on 4.4?
+Hi,
 
-No, I jumped from 3.16 lts (debian) to 4.7.8 to 4.9.25 now. I haven't
-been building my own (yet), it's all debian kernels.
+Today the kernel got wedged during shutdown (4.11.x tends to do that, haven't
+debugged) and I pressed the reset button. The next boot btrfs won't mount:
 
-The biggest improvement I needed was the free space tree (>=4.5),
-because with 3.16 transaction commit disk write IO was going through the
-roof, blocking the fs for too long every few seconds. 4.7.8 was about
-the first kernel that I tested which I couldn't too easily get to
-explode and corrupt file systems. The 3.16 lts was (is) a really stable
-kernel for btrfs.
+[Fri Jun  9 20:46:07 2017] BTRFS error (device md0): parent transid verify failed on 5840011722752 wanted 170755 found 170832
+[Fri Jun  9 20:46:07 2017] BTRFS error (device md0): parent transid verify failed on 5840011722752 wanted 170755 found 170832
+[Fri Jun  9 20:46:07 2017] BTRFS error (device md0): failed to read block groups: -5
+[Fri Jun  9 20:46:08 2017] BTRFS error (device md0): open_ctree failed
 
-> The two latest
-> longterm series are 4.9 and 4.4. 4.7 should be abandoned and forgotten by now
-> really, certainly not used daily in production,
+I tried repair, but that didn't work either:
 
-I know, I know. They're already gone now. :)
+# btrfsck --repair /dev/md0
+enabling repair mode
+couldn't open RDWR because of unsupported option features (3).
+ERROR: cannot open file system
+enabling repair mode
 
-> it's not even listed on
-> kernel.org anymore. Also it's possible the 4.7 branch that you test did not
-> receive all the bugfix backports from mainline like the longterm series do.
+Googling around it was suggested clearing the v2 space cache:
 
-Well, I wouldn't say "all" the bugfixes, looking at the history of
-fs/btrfs in current 4.9. It's more like.. sporadically, someone might
-take time to also think about the longterm kernel. ;-)
+# btrfsck --mode=lowmem --clear-space-cache v2 /dev/md0
+parent transid verify failed on 5840011722752 wanted 170755 found 170832
+parent transid verify failed on 5840011722752 wanted 170755 found 170832
+parent transid verify failed on 5840011722752 wanted 170755 found 170832
+parent transid verify failed on 5840011722752 wanted 170755 found 170832
+Ignoring transid failure
+leaf parent key incorrect 5840011722752
+parent transid verify failed on 5367057465344 wanted 170755 found 170828
+parent transid verify failed on 5367057465344 wanted 170755 found 170828
+parent transid verify failed on 5367057465344 wanted 170755 found 170828
+parent transid verify failed on 5367057465344 wanted 170755 found 170828
+Ignoring transid failure
+leaf parent key incorrect 72105984
+btrfs unable to find ref byte nr 4628577484800 parent 0 root 10  owner 0 offset 1
+parent transid verify failed on 5366993256448 wanted 170755 found 170827
+parent transid verify failed on 5366993256448 wanted 170755 found 170827
+parent transid verify failed on 5366993256448 wanted 170755 found 170827
+parent transid verify failed on 5366993256448 wanted 170755 found 170827
+Ignoring transid failure
+leaf parent key incorrect 41287680
+ERROR: failed to clear free space cache v2: -1
+transaction.h:41: btrfs_start_transaction: BUG_ON `root->commit_root` triggered, value 22938400
+btrfs check[0x411674]
+btrfs check(close_ctree_fs_info+0x125)[0x41368c]
+btrfs check(cmd_check+0x36d8)[0x45e8e8]
+btrfs check(main+0x15d)[0x40ac5c]
+/lib/libc.so.6(__libc_start_main+0xf0)[0x7f9b4cb060d0]
+btrfs check[0x40a729]
+Clear free space cache v2
 
->> I have no idea what change between 4.7 and 4.9 is responsible for this, but
->> it's good.  
-> 
-> FWIW, this appears to be the big Btrfs change between 4.7 and 4.9 (in 4.8):
-> 
-> Btrfs: introduce ticketed enospc infrastructure
-> https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=957780eb2788d8c218d539e19a85653f51a96dc1
+The underlying md0 (raid6) doesn't report any errors, trying different kernels makes no difference, 4.10.17, 4.11.4 and 4.12.0-rc4 all give the same errors. Everything above was
+done with btrfs-progs 4.11.
 
-Since that part of the problem is gone now, I don't think it makes sense
-any more to spend time to find where it improved...
+Any hints on how I can fix the errors in the filesystem? I don't mind loosing todays changes, but I would like to keep all the older data :)
 
--- 
-Hans van Kranenburg
+regards,
+
+Koen
+

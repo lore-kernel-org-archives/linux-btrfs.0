@@ -1,111 +1,153 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:52239 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751538AbdFIUKs (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Jun 2017 16:10:48 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1dJQEz-0007bo-46
-        for linux-btrfs@vger.kernel.org; Fri, 09 Jun 2017 22:10:41 +0200
-To: linux-btrfs@vger.kernel.org
-From: Koen Kooi <koen@dominion.thruhere.net>
-Subject: Re: Filesystem won't mount (open_ctree failed) or repair (BUG_ON)
-Date: Fri, 9 Jun 2017 22:10:40 +0200
-Message-ID: <ohevbq$r7e$1@blaine.gmane.org>
-References: <oherub$g5a$1@blaine.gmane.org>
- <20170609195718.GC30723@carfax.org.uk>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <20170609195718.GC30723@carfax.org.uk>
+Received: from userp1040.oracle.com ([156.151.31.81]:38663 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751621AbdFIV6X (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Jun 2017 17:58:23 -0400
+Subject: Re: [PATCH 1/3] btrfs-progs: Generic functions to retrieve chunks and
+ their bg info
+To: kreijack@inwind.it, dsterba@suse.cz, linux-btrfs@vger.kernel.org,
+        ashish.samant@oracle.com, bo.li.liu@oracle.com
+References: <1476750915-3105-1-git-send-email-divya.indi@oracle.com>
+ <1476750915-3105-2-git-send-email-divya.indi@oracle.com>
+ <20161028154406.GK12522@twin.jikos.cz>
+ <4b53fa5f-4263-2653-0864-b23019ba62d7@inwind.it>
+From: divya.indi@oracle.com
+Message-ID: <f62f6344-c37b-fb38-7290-61c13265ed52@oracle.com>
+Date: Fri, 9 Jun 2017 14:57:38 -0700
+MIME-Version: 1.0
+In-Reply-To: <4b53fa5f-4263-2653-0864-b23019ba62d7@inwind.it>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Op 09-06-17 om 21:57 schreef Hugo Mills:
-> On Fri, Jun 09, 2017 at 09:12:16PM +0200, Koen Kooi wrote:
->> Hi,
->>
->> Today the kernel got wedged during shutdown (4.11.x tends to do that, haven't
->> debugged) and I pressed the reset button. The next boot btrfs won't mount:
->>
->> [Fri Jun  9 20:46:07 2017] BTRFS error (device md0): parent transid verify failed on 5840011722752 wanted 170755 found 170832
->> [Fri Jun  9 20:46:07 2017] BTRFS error (device md0): parent transid verify failed on 5840011722752 wanted 170755 found 170832
->> [Fri Jun  9 20:46:07 2017] BTRFS error (device md0): failed to read block groups: -5
->> [Fri Jun  9 20:46:08 2017] BTRFS error (device md0): open_ctree failed
-> 
->    With a transid failure on mount, about the only thing that's likely
-> to work is mounting with -o usebackuproot. If that doesn't work, then
-> a rebuild of the FS is almost certainly needed.
+Hi,
 
-Hrm, that is also a no-go:
+Working on a v2 of this patch based on the comments received.
 
-# mount /dev/md0 /media/data/  -o usebackuproot
+Thanks,
 
-[  740.294141] BTRFS info (device md0): trying to use backup root at mount time
-[  740.294145] BTRFS info (device md0): using free space tree
-[  740.294146] BTRFS info (device md0): has skinny extents
-[  754.248228] BTRFS error (device md0): parent transid verify failed on 5840011722752 wanted 170755 found 170832
-[  754.449435] BTRFS error (device md0): parent transid verify failed on 5840011722752 wanted 170755 found 170832
-[  754.449527] BTRFS error (device md0): failed to read block groups: -5
-[  754.609960] BTRFS error (device md0): open_ctree failed
+Divya
 
-So, any more suggestions of things to try?
 
-regards,
-
-Koen
-
-> 
->    Hugo.
-> 
->> I tried repair, but that didn't work either:
+On 06/07/2017 10:03 AM, Goffredo Baroncelli wrote:
+> Hi,
+>
+> any news about these commands ?
+>
+> BR
+> G.Baroncelli
+>
+> On 2016-10-28 17:44, David Sterba wrote:
+>> On Mon, Oct 17, 2016 at 05:35:13PM -0700, Divya Indi wrote:
+>>> An efficient alternative to retrieving block groups:
+>>> get_chunks(): Walk the chunk tree to retrieve the chunks.
+>>> get_bg_info(): For each retrieved chunk, lookup an exact match of block
+>>> group in the extent tree.
+>>>
+>>> Signed-off-by: Divya Indi <divya.indi@oracle.com>
+>>> Reviewed-by: Ashish Samant <ashish.samant@oracle.com>
+>>> Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+>>> ---
+>>>   cmds-inspect.c |   66 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>>>   1 files changed, 66 insertions(+), 0 deletions(-)
+>>>
+>>> diff --git a/cmds-inspect.c b/cmds-inspect.c
+>>> index 4b7cea0..f435ea9 100644
+>>> --- a/cmds-inspect.c
+>>> +++ b/cmds-inspect.c
+>>> @@ -81,6 +81,72 @@ out:
+>>>   	return !!ret;
+>>>   }
+>>>   
+>>> +static void bg_flags_to_str(u64 flags, char *ret)
+>>> +{
+>>> +	int empty = 1;
+>>> +
+>>> +	if (flags & BTRFS_BLOCK_GROUP_DATA) {
+>>> +		empty = 0;
+>>> +		strcpy(ret, "DATA");
+>>> +	}
+>>> +	if (flags & BTRFS_BLOCK_GROUP_METADATA) {
+>>> +		if (!empty)
+>>> +			strcat(ret, "|");
+>>> +		strcat(ret, "METADATA");
+>>> +	}
+>>> +	if (flags & BTRFS_BLOCK_GROUP_SYSTEM) {
+>>> +		if (!empty)
+>>> +			strcat(ret, "|");
+>>> +		strcat(ret, "SYSTEM");
+>>> +	}
+>>> +}
+>>> +
+>>> +/* Walking through the chunk tree to retrieve chunks. */
+>> No empty newline.
 >>
->> # btrfsck --repair /dev/md0
->> enabling repair mode
->> couldn't open RDWR because of unsupported option features (3).
->> ERROR: cannot open file system
->> enabling repair mode
+>>> +
+>>> +static int get_chunks(int fd, struct btrfs_ioctl_search_args *chunk_args)
+>>> +{
+>>> +	struct btrfs_ioctl_search_key *sk;
+>>> +	int ret;
+>>> +	int e;
+>>> +
+>>> +	sk = &chunk_args->key;
+>>> +
+>>> +	sk->tree_id = BTRFS_CHUNK_TREE_OBJECTID;
+>>> +	sk->min_objectid = sk->max_objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
+>>> +	sk->max_type = sk->min_type = BTRFS_CHUNK_ITEM_KEY;
+>> Please don't do multiple asignments in one statement.
 >>
->> Googling around it was suggested clearing the v2 space cache:
+>>> +	sk->nr_items = 4096;
+>>> +
+>>> +	ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, chunk_args);
+>>> +	e = errno;
+>> This is useless asignment, I've removed it from the code, please don't
+>> reintrduce it.
 >>
->> # btrfsck --mode=lowmem --clear-space-cache v2 /dev/md0
->> parent transid verify failed on 5840011722752 wanted 170755 found 170832
->> parent transid verify failed on 5840011722752 wanted 170755 found 170832
->> parent transid verify failed on 5840011722752 wanted 170755 found 170832
->> parent transid verify failed on 5840011722752 wanted 170755 found 170832
->> Ignoring transid failure
->> leaf parent key incorrect 5840011722752
->> parent transid verify failed on 5367057465344 wanted 170755 found 170828
->> parent transid verify failed on 5367057465344 wanted 170755 found 170828
->> parent transid verify failed on 5367057465344 wanted 170755 found 170828
->> parent transid verify failed on 5367057465344 wanted 170755 found 170828
->> Ignoring transid failure
->> leaf parent key incorrect 72105984
->> btrfs unable to find ref byte nr 4628577484800 parent 0 root 10  owner 0 offset 1
->> parent transid verify failed on 5366993256448 wanted 170755 found 170827
->> parent transid verify failed on 5366993256448 wanted 170755 found 170827
->> parent transid verify failed on 5366993256448 wanted 170755 found 170827
->> parent transid verify failed on 5366993256448 wanted 170755 found 170827
->> Ignoring transid failure
->> leaf parent key incorrect 41287680
->> ERROR: failed to clear free space cache v2: -1
->> transaction.h:41: btrfs_start_transaction: BUG_ON `root->commit_root` triggered, value 22938400
->> btrfs check[0x411674]
->> btrfs check(close_ctree_fs_info+0x125)[0x41368c]
->> btrfs check(cmd_check+0x36d8)[0x45e8e8]
->> btrfs check(main+0x15d)[0x40ac5c]
->> /lib/libc.so.6(__libc_start_main+0xf0)[0x7f9b4cb060d0]
->> btrfs check[0x40a729]
->> Clear free space cache v2
+>>> +	if (ret < 0) {
+>>> +		fprintf(stderr, "ret %d error '%s'\n", ret,
+>>> +				strerror(e));
+>>> +	}
+>>> +	return ret;
+>>> +}
 >>
->> The underlying md0 (raid6) doesn't report any errors, trying different kernels makes no difference, 4.10.17, 4.11.4 and 4.12.0-rc4 all give the same errors. Everything above was
->> done with btrfs-progs 4.11.
+>>> +
+>>> +/* Given the objectid, find the block group item in the extent tree */
+>>> +static int get_bg_info(int fd, struct btrfs_ioctl_search_args *bg_args,
+>>> +		       u64 objectid, unsigned long length)
+>>> +{
+>>> +	struct btrfs_ioctl_search_key *bg_sk;
+>>> +	int ret;
+>>> +	int e;
+>>> +
+>>> +	bg_sk = &bg_args->key;
+>>> +
+>>> +	bg_sk->min_objectid = bg_sk->max_objectid = objectid;
+>>> +	bg_sk->nr_items = 1;
+>>> +	bg_sk->min_offset = bg_sk->max_offset = length;
+>> Same here.
 >>
->> Any hints on how I can fix the errors in the filesystem? I don't mind loosing todays changes, but I would like to keep all the older data :)
+>>> +
+>>> +	ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, bg_args);
+>>> +	e = errno;
+>>> +	if (ret < 0) {
+>>> +		fprintf(stderr, "ret %d error '%s'\n", ret,
+>>> +				strerror(e));
+>> Please take a look how the error messages are constructed when the tree
+>> search ioctl fails, there are enough examples in the code.
 >>
->> regards,
+>>> +	}
+>>> +	return ret;
+>>> +}
+>>>   static const char * const cmd_inspect_inode_resolve_usage[] = {
+>>>   	"btrfs inspect-internal inode-resolve [-v] <inode> <path>",
+>>>   	"Get file system paths for the given inode",
+>> Actually, I'm not sure if such functions should exist at all, as they
+>> only hide the search ioctl but don't do any validation of the returned
+>> keys and data.
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 >>
->> Koen
->>
-> 
-
+>
 

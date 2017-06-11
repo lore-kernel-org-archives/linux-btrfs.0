@@ -1,52 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f173.google.com ([209.85.128.173]:36852 "EHLO
+Received: from mail-wr0-f173.google.com ([209.85.128.173]:34077 "EHLO
         mail-wr0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751725AbdFKEUF (ORCPT
+        with ESMTP id S1751725AbdFKIA6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 11 Jun 2017 00:20:05 -0400
-Received: by mail-wr0-f173.google.com with SMTP id v111so65638915wrc.3
-        for <linux-btrfs@vger.kernel.org>; Sat, 10 Jun 2017 21:20:04 -0700 (PDT)
+        Sun, 11 Jun 2017 04:00:58 -0400
+Received: by mail-wr0-f173.google.com with SMTP id g76so67438551wrd.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 11 Jun 2017 01:00:57 -0700 (PDT)
+Subject: Re: Questions about how BtrFS works.
+To: Hy Che <cvghy116@gmail.com>, linux-btrfs@vger.kernel.org
+References: <CAE0+S6OjKesXZ65q5tVK7Y_Ydk7Q4Z8geEoQusr=7LVJHdUJGQ@mail.gmail.com>
+From: Nikolay Borisov <n.borisov.lkml@gmail.com>
+Message-ID: <0c43d71a-75b3-6f52-d89a-3dd7d1abace9@gmail.com>
+Date: Sun, 11 Jun 2017 11:00:55 +0300
 MIME-Version: 1.0
-In-Reply-To: <20170609195718.GC30723@carfax.org.uk>
-References: <oherub$g5a$1@blaine.gmane.org> <20170609195718.GC30723@carfax.org.uk>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Sat, 10 Jun 2017 22:20:03 -0600
-Message-ID: <CAJCQCtRdinWhYvNB8dVXGREhnaspYaSu8vbbNRsN4DjyTJw6GA@mail.gmail.com>
-Subject: Re: Filesystem won't mount (open_ctree failed) or repair (BUG_ON)
-To: Hugo Mills <hugo@carfax.org.uk>, Koen Kooi <koen@dominion.thruhere.net>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <CAE0+S6OjKesXZ65q5tVK7Y_Ydk7Q4Z8geEoQusr=7LVJHdUJGQ@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 9, 2017 at 1:57 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> On Fri, Jun 09, 2017 at 09:12:16PM +0200, Koen Kooi wrote:
->> Hi,
->>
->> Today the kernel got wedged during shutdown (4.11.x tends to do that, haven't
->> debugged) and I pressed the reset button. The next boot btrfs won't mount:
->>
->> [Fri Jun  9 20:46:07 2017] BTRFS error (device md0): parent transid verify failed on 5840011722752 wanted 170755 found 170832
->> [Fri Jun  9 20:46:07 2017] BTRFS error (device md0): parent transid verify failed on 5840011722752 wanted 170755 found 170832
->> [Fri Jun  9 20:46:07 2017] BTRFS error (device md0): failed to read block groups: -5
->> [Fri Jun  9 20:46:08 2017] BTRFS error (device md0): open_ctree failed
->
->    With a transid failure on mount, about the only thing that's likely
-> to work is mounting with -o usebackuproot. If that doesn't work, then
-> a rebuild of the FS is almost certainly needed.
-
-Weird that it wants almost 80 generations back from what's found.
-Sounds like betrayal somewhere...
-
-I'd say take a btrfs-image and put it up somewhere and also file a
-bug. The fsck should not crash.
-
-What are these showing?
-# btrfs insp dump-s -f /dev/
-# btrfs rescue super /dev/
-# btrfs-find-root /dev/
 
 
+On 10.06.2017 17:37, Hy Che wrote:
+> Hello everyone,
+> My name is Hy (ugen on freenode), I am a student attending GSoC for
+> Haiku[1]. Because I have a project that support write features for
+> BtrFS[2], there are some questions, since the documents on wiki are
+> not enough so I have to ask here.
+> 
+> 1. Where can I find to read a complete btree manipulations in detail
+> (split, insert, etc) for BtrFS except the code base ?  I need to get
+> the idea first.
 
--- 
-Chris Murphy
+Have you read this paper: https://dl.acm.org/authorize?N80838
+The original idea came by Ohad Rodeh while he was at IBM. 
+
+I believe this was the initial paper: https://dl.acm.org/authorize?N80839
+
+
+> 
+> 2. About the reference,  " ...with a refcount associated to each tree
+> node but stored in an ad-hoc free map structure ... " - wikipedia.
+> What is a free map structure, and where does it stored ?
+
+I believe you are looking for this : 
+https://btrfs.wiki.kernel.org/index.php/Btrfs_design#Reference_Counted_Extents
+
+
+http://www.spinics.net/lists/linux-btrfs/msg33415.html
+
+> 
+> 3. How BtrFS allocate block and extent when cow-ed ? As I tested after
+> making a new file, the root tree root, extent root and csum root move
+> forward 65536 bytes, the fs root move 49152 bytes and the data extent
+> is allocated next to the previous one. Where those numbers come from ?
+> Is data extent is cow-ed ? I see it doesn't because extent-item still
+> contains the old offset.
+
+You'd have to read the code, have you taken a look at : __btrfs_cow_block()
+
+
+> 
+> 4. How BtrFS handle transactions ?
+> Correctly me if I'm wrong, the transaction collect all requests in 30
+> seconds and then write back to disk. The transid increments when new
+> request appeared and genid is asigned to this one.
+
+I don't think there is anything written per-se. You'd again have to resort to reading the 
+code 
+
+> 
+> 5. Why there is unused space (100 bytes) at the end of each node ?
+
+> 6. How does BtrFS calculate checksum ?
+
+It uses a 32bit CRC. The actual function which is used to calc
+the csum is csum_tree_block you can check its callers and internals to 
+in which code paths the crc is used. But in general all it does is call btrfs_csum_data
+on the extent buffer which holds the particular block. 
+
+> 
+> 
+> [1]: About Haiku: www.haiku-os.org
+> [2]: My project info on GSoC:
+> https://summerofcode.withgoogle.com/projects/4749427110576128
+> 
+> Thanks,
+> Hy
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

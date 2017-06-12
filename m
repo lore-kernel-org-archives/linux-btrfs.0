@@ -1,30 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:51414 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751137AbdFJSZ0 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 10 Jun 2017 14:25:26 -0400
+Received: from mx2.suse.de ([195.135.220.15]:39320 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751494AbdFLMln (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 12 Jun 2017 08:41:43 -0400
+Date: Mon, 12 Jun 2017 14:40:38 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Filip Bystricky <filipbystricky@google.com>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: btrfs native encryption
-To: Chris Murphy <lists@colorremedies.com>,
-        Filip Bystricky <filipbystricky@google.com>
+Message-ID: <20170612124038.GF25451@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <CADvCoti_3iDwXfqepMdva6E6OOis_rqqVQ4adCV1T67PVhRrOQ@mail.gmail.com>
- <CAJCQCtRvzveHJuzRg9fqTAiPNpjAQxaZbcf+t1E65hojhzXaXQ@mail.gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <593C2CF4.8000509@oracle.com>
-Date: Sun, 11 Jun 2017 02:31:32 +0900
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtRvzveHJuzRg9fqTAiPNpjAQxaZbcf+t1E65hojhzXaXQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CADvCoti_3iDwXfqepMdva6E6OOis_rqqVQ4adCV1T67PVhRrOQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Fri, Jun 09, 2017 at 08:50:12AM -0700, Filip Bystricky wrote:
+> Dear btrfs maintainers,
+> Google is evaluating btrfs for its potential use in android, but
+> currently the lack of native file-based encryption unfortunately makes
+> it a nonstarter.
 
+The file-based encryption is covered by the fscrypt API, that's
+implemented in ext4/f2fs, so implementing that in btrfs could allow you
+to start evaluating btrfs. As other pointed, the usecases with snapshots
+and reflinks need to be reviewed.
 
->  dealing with inheritance of
-> encryption when making snapshots, and dealing with reflinks.
+> According to the FAQ (specifically the answer to
+> "Does btrfs support encryption"), nobody is currently working on this.
+> How up-to-date is that answer, and are there any new plans to add
+> native FBE in the future?
 
-  Right. To address this, there is a proposal to bring encryption down 
-to the extent level, it solves these limitations.
+Wiki is a snapshot of status, knowledge and best practices from mixed
+times, so not everything is up to date or accurate. That no one is
+working on encryption is partially true, as we've seen some proposed
+patches that received objections and from my perspective are not close
+to being considered for merging.
 
-Thanks, Anand
+The fscrypt functionality has been designed and the API defined, so it's
+a matter of implementation on the btrfs side. Anything else is in the
+phase of design and prototyping.

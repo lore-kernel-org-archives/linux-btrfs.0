@@ -1,51 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f171.google.com ([209.85.223.171]:36472 "EHLO
-        mail-io0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751642AbdFIP33 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Jun 2017 11:29:29 -0400
-Received: by mail-io0-f171.google.com with SMTP id y77so34569994ioe.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 09 Jun 2017 08:29:29 -0700 (PDT)
-Date: Fri, 9 Jun 2017 09:29:27 -0600
-From: Jens Axboe <axboe@kernel.dk>
-To: Christoph Hellwig <hch@lst.de>
-Cc: linux-block@vger.kernel.org, dm-devel@redhat.com,
-        linux-btrfs@vger.kernel.org
-Subject: Re: dedicated error codes for the block layer V3
-Message-ID: <20170609152926.GB24734@kernel.dk>
-References: <20170603073806.2046-1-hch@lst.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170603073806.2046-1-hch@lst.de>
+Received: from mx1.redhat.com ([209.132.183.28]:33290 "EHLO mx1.redhat.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751984AbdFLMXU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 12 Jun 2017 08:23:20 -0400
+From: Jeff Layton <jlayton@redhat.com>
+To: Andrew Morton <akpm@linux-foundation.org>,
+        Al Viro <viro@ZenIV.linux.org.uk>, Jan Kara <jack@suse.cz>,
+        tytso@mit.edu, axboe@kernel.dk, mawilcox@microsoft.com,
+        ross.zwisler@linux.intel.com, corbet@lwn.net, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        "Darrick J . Wong" <darrick.wong@oracle.com>
+Cc: linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
+        linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org
+Subject: [PATCH v6 01/20] mm: fix mapping_set_error call in me_pagecache_dirty
+Date: Mon, 12 Jun 2017 08:22:53 -0400
+Message-Id: <20170612122316.13244-2-jlayton@redhat.com>
+In-Reply-To: <20170612122316.13244-1-jlayton@redhat.com>
+References: <20170612122316.13244-1-jlayton@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Jun 03 2017, Christoph Hellwig wrote:
-> This series introduces a new blk_status_t error code type for the block
-> layer so that we can have tigher control and explicit semantics for
-> block layer errors.
-> 
-> All but the last three patches are cleanups that lead to the new type.
-> 
-> The series it mostly limited to the block layer and drivers, and touching
-> file systems a little bit.  The only major exception is btrfs, which
-> does funny things with bios and thus sees a larger amount of propagation
-> of the new blk_status_t.
-> 
-> A git tree is also available at:
-> 
->     git://git.infradead.org/users/hch/block.git block-errors
-> 
-> gitweb:
-> 
->     http://git.infradead.org/users/hch/block.git/shortlog/refs/heads/block-errors
-> 
-> Note the the two biggest patches didn't make it to linux-block and
-> linux-btrfs last time.  If you didn't get them they are available in
-> the git tree above.  Unfortunately there is no easy way to split them
-> up.
+The error code should be negative. Since this ends up in the default
+case anyway, this is harmless, but it's less confusing to negate it.
+Also, later patches will require a negative error code here.
 
-Added for 4.13, thanks.
+Signed-off-by: Jeff Layton <jlayton@redhat.com>
+Reviewed-by: Ross Zwisler <ross.zwisler@linux.intel.com>
+Reviewed-by: Jan Kara <jack@suse.cz>
+Reviewed-by: Matthew Wilcox <mawilcox@microsoft.com>
+Reviewed-by: Christoph Hellwig <hch@lst.de>
+---
+ mm/memory-failure.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
+diff --git a/mm/memory-failure.c b/mm/memory-failure.c
+index 342fac9ba89b..55bc61791fe1 100644
+--- a/mm/memory-failure.c
++++ b/mm/memory-failure.c
+@@ -684,7 +684,7 @@ static int me_pagecache_dirty(struct page *p, unsigned long pfn)
+ 		 * the first EIO, but we're not worse than other parts
+ 		 * of the kernel.
+ 		 */
+-		mapping_set_error(mapping, EIO);
++		mapping_set_error(mapping, -EIO);
+ 	}
+ 
+ 	return me_pagecache_clean(p, pfn);
 -- 
-Jens Axboe
+2.13.0
 

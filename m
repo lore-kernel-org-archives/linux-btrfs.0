@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:33290 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:58250 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751984AbdFLMXU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Jun 2017 08:23:20 -0400
+        id S1751984AbdFLMXX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 12 Jun 2017 08:23:23 -0400
 From: Jeff Layton <jlayton@redhat.com>
 To: Andrew Morton <akpm@linux-foundation.org>,
         Al Viro <viro@ZenIV.linux.org.uk>, Jan Kara <jack@suse.cz>,
@@ -13,40 +13,61 @@ To: Andrew Morton <akpm@linux-foundation.org>,
 Cc: linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
         linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org
-Subject: [PATCH v6 01/20] mm: fix mapping_set_error call in me_pagecache_dirty
-Date: Mon, 12 Jun 2017 08:22:53 -0400
-Message-Id: <20170612122316.13244-2-jlayton@redhat.com>
+Subject: [PATCH v6 03/20] fs: check for writeback errors after syncing out buffers in generic_file_fsync
+Date: Mon, 12 Jun 2017 08:22:55 -0400
+Message-Id: <20170612122316.13244-4-jlayton@redhat.com>
 In-Reply-To: <20170612122316.13244-1-jlayton@redhat.com>
 References: <20170612122316.13244-1-jlayton@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The error code should be negative. Since this ends up in the default
-case anyway, this is harmless, but it's less confusing to negate it.
-Also, later patches will require a negative error code here.
+ext2 currently does a test+clear of the AS_EIO flag, which is
+is problematic for some coming changes.
 
+What we really need to do instead is call filemap_check_errors
+in __generic_file_fsync after syncing out the buffers. That
+will be sufficient for this case, and help other callers detect
+these errors properly as well.
+
+With that, we don't need to twiddle it in ext2.
+
+Suggested-by: Jan Kara <jack@suse.cz>
 Signed-off-by: Jeff Layton <jlayton@redhat.com>
-Reviewed-by: Ross Zwisler <ross.zwisler@linux.intel.com>
+Reviewed-by: Christoph Hellwig <hch@lst.de>
 Reviewed-by: Jan Kara <jack@suse.cz>
 Reviewed-by: Matthew Wilcox <mawilcox@microsoft.com>
-Reviewed-by: Christoph Hellwig <hch@lst.de>
 ---
- mm/memory-failure.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/ext2/file.c | 2 +-
+ fs/libfs.c     | 3 ++-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/mm/memory-failure.c b/mm/memory-failure.c
-index 342fac9ba89b..55bc61791fe1 100644
---- a/mm/memory-failure.c
-+++ b/mm/memory-failure.c
-@@ -684,7 +684,7 @@ static int me_pagecache_dirty(struct page *p, unsigned long pfn)
- 		 * the first EIO, but we're not worse than other parts
- 		 * of the kernel.
- 		 */
--		mapping_set_error(mapping, EIO);
-+		mapping_set_error(mapping, -EIO);
- 	}
+diff --git a/fs/ext2/file.c b/fs/ext2/file.c
+index b21891a6bfca..ed00e7ae0ef3 100644
+--- a/fs/ext2/file.c
++++ b/fs/ext2/file.c
+@@ -177,7 +177,7 @@ int ext2_fsync(struct file *file, loff_t start, loff_t end, int datasync)
+ 	struct address_space *mapping = sb->s_bdev->bd_inode->i_mapping;
  
- 	return me_pagecache_clean(p, pfn);
+ 	ret = generic_file_fsync(file, start, end, datasync);
+-	if (ret == -EIO || test_and_clear_bit(AS_EIO, &mapping->flags)) {
++	if (ret == -EIO) {
+ 		/* We don't really know where the IO error happened... */
+ 		ext2_error(sb, __func__,
+ 			   "detected IO error when writing metadata buffers");
+diff --git a/fs/libfs.c b/fs/libfs.c
+index a04395334bb1..1dec90819366 100644
+--- a/fs/libfs.c
++++ b/fs/libfs.c
+@@ -991,7 +991,8 @@ int __generic_file_fsync(struct file *file, loff_t start, loff_t end,
+ 
+ out:
+ 	inode_unlock(inode);
+-	return ret;
++	err = filemap_check_errors(inode->i_mapping);
++	return ret ? ret : err;
+ }
+ EXPORT_SYMBOL(__generic_file_fsync);
+ 
 -- 
 2.13.0
 

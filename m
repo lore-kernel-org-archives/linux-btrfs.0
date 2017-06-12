@@ -1,98 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45923 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:48286 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1753441AbdFLQYK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Jun 2017 12:24:10 -0400
-Date: Mon, 12 Jun 2017 18:22:54 +0200
+        id S1754774AbdFLQcw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 12 Jun 2017 12:32:52 -0400
+Date: Mon, 12 Jun 2017 18:31:01 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH 2/2] btrfs: flush error also accounts for its send error
-Message-ID: <20170612162254.GS25451@twin.jikos.cz>
+To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2] Btrfs: btrfs_ioctl_search_key documentation
+Message-ID: <20170612163101.GT25451@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20170609065229.8188-1-anand.jain@oracle.com>
- <20170609065229.8188-3-anand.jain@oracle.com>
+References: <20170605152733.25441-1-hans.van.kranenburg@mendix.com>
+ <20170605222032.9207-1-hans.van.kranenburg@mendix.com>
+ <20170612153846.GP25451@twin.jikos.cz>
+ <0555ff61-2c1d-1de2-0978-fb82f1a64979@mendix.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170609065229.8188-3-anand.jain@oracle.com>
+In-Reply-To: <0555ff61-2c1d-1de2-0978-fb82f1a64979@mendix.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 09, 2017 at 02:52:29PM +0800, Anand Jain wrote:
-> So remove the static check of send error
-
-Please improve the changelog text.
-
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->  fs/btrfs/disk-io.c | 19 +++++++++----------
->  1 file changed, 9 insertions(+), 10 deletions(-)
+On Mon, Jun 12, 2017 at 06:03:15PM +0200, Hans van Kranenburg wrote:
+> >> Most interesting changes since v1:
+> >>  - mention the special tree_id input value 0
+> >>  - rewrite the part about min_key and max_key, trying to be more concise
+> > 
+> > I find the description instructive enough so the expanded expression to
+> > describe the whole range is not IMHO needed.
 > 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index d8151839bb3d..682c494dbc7f 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -3534,14 +3534,11 @@ static int wait_dev_flush(struct btrfs_device *device)
->  
->  static int check_barrier_error(struct btrfs_fs_devices *fsdevs)
->  {
-> -	int submit_flush_error = 0;
->  	int dev_flush_error = 0;
->  	struct btrfs_device *dev;
-> -	int tolerance;
->  
->  	list_for_each_entry_rcu(dev, &fsdevs->devices, dev_list) {
->  		if (!dev->bdev) {
-> -			submit_flush_error++;
->  			dev_flush_error++;
->  			continue;
->  		}
-> @@ -3549,8 +3546,8 @@ static int check_barrier_error(struct btrfs_fs_devices *fsdevs)
->  			dev_flush_error++;
->  	}
->  
-> -	tolerance = fsdevs->fs_info->num_tolerated_disk_barrier_failures;
-> -	if (submit_flush_error > tolerance || dev_flush_error > tolerance)
-> +	if (dev_flush_error >
-> +		fsdevs->fs_info->num_tolerated_disk_barrier_failures)
->  		return -EIO;
->  
->  	return 0;
-> @@ -3564,7 +3561,6 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
->  {
->  	struct list_head *head;
->  	struct btrfs_device *dev;
-> -	int errors_send = 0;
->  	int errors_wait = 0;
->  	int ret;
->  
-> @@ -3573,10 +3569,9 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
->  	list_for_each_entry_rcu(dev, head, dev_list) {
->  		if (dev->missing)
->  			continue;
-> -		if (!dev->bdev) {
-> -			errors_send++;
-> +		if (!dev->bdev)
->  			continue;
-> -		}
-> +
->  		if (!dev->in_fs_metadata || !dev->writeable)
->  			continue;
->  
-> @@ -3602,7 +3597,11 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
->  		}
->  	}
->  
-> -	if (errors_send || errors_wait) {
-> +	/*
-> +	 * By checking errors_wait here it avoids traverse through
-> +	 * the device loop for normal healthy case
-> +	 */
+> You mean drop the extra line "All metadata..." ? Yeah, it's a bit
+> redudant, stressing the fact, yes.
 
-I think the code makes it obvious that we skip the barrier check, the
-comment does not bring any new information, please drop it.
+Ah, sorry I was not clear. I was referring to Goffredo's proposal with
+the expression how the min_key and max_key are calculated. Your text in
+v2 is fine. We know how to calculate one key and we know the where are
+the limits.
 
-> +	if (errors_wait) {
->  		/*
->  		 * At some point we need the status of all disks
->  		 * to arrive at the volume status. So error checking
+> The main purpose is to stop users from thinking that setting min_type
+> and max_type will filter the returned objects (like, only getting
+> BLOCK_GROUP_ITEM_KEY or so). So as long as you think that's clear
+> enough, I'm ok with anything.
+
+The text looks good to me and I've added the patch to the queue. Further
+refinements are welcome.

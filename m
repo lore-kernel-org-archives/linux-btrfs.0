@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:40566 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:50972 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752351AbdFLMXl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Jun 2017 08:23:41 -0400
+        id S1751966AbdFLMXs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 12 Jun 2017 08:23:48 -0400
 From: Jeff Layton <jlayton@redhat.com>
 To: Andrew Morton <akpm@linux-foundation.org>,
         Al Viro <viro@ZenIV.linux.org.uk>, Jan Kara <jack@suse.cz>,
@@ -13,31 +13,30 @@ To: Andrew Morton <akpm@linux-foundation.org>,
 Cc: linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
         linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org
-Subject: [PATCH v6 11/13] Documentation: flesh out the section in vfs.txt on storing and reporting writeback errors
-Date: Mon, 12 Jun 2017 08:23:04 -0400
-Message-Id: <20170612122316.13244-13-jlayton@redhat.com>
+Subject: [PATCH v6 13/20] Documentation: flesh out the section in vfs.txt on storing and reporting writeback errors
+Date: Mon, 12 Jun 2017 08:23:09 -0400
+Message-Id: <20170612122316.13244-18-jlayton@redhat.com>
 In-Reply-To: <20170612122316.13244-1-jlayton@redhat.com>
 References: <20170612122316.13244-1-jlayton@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I waxed a little loquacious here, but I figured that more detail was
-better, and writeback error handling is so hard to get right.
+Let's try to make this extra clear for fs authors.
 
-Although I think we'll eventually remove it once the transition is
+Also, although I think we'll eventually remove it once the transition is
 complete, I've gone ahead and documented the FS_WB_ERRSEQ flag as well.
 
 Cc: Jan Kara <jack@suse.cz>
 Signed-off-by: Jeff Layton <jlayton@redhat.com>
 ---
- Documentation/filesystems/vfs.txt | 50 ++++++++++++++++++++++++++++++++++++---
- 1 file changed, 47 insertions(+), 3 deletions(-)
+ Documentation/filesystems/vfs.txt | 48 ++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 45 insertions(+), 3 deletions(-)
 
 diff --git a/Documentation/filesystems/vfs.txt b/Documentation/filesystems/vfs.txt
-index f42b90687d40..c3efdd833a3d 100644
+index f42b90687d40..0f6415c26385 100644
 --- a/Documentation/filesystems/vfs.txt
 +++ b/Documentation/filesystems/vfs.txt
-@@ -576,7 +576,49 @@ should clear PG_Dirty and set PG_Writeback.  It can be actually
+@@ -576,7 +576,47 @@ should clear PG_Dirty and set PG_Writeback.  It can be actually
  written at any point after PG_Dirty is clear.  Once it is known to be
  safe, PG_Writeback is cleared.
  
@@ -72,23 +71,21 @@ index f42b90687d40..c3efdd833a3d 100644
 +even if all of the writes done through that particular file descriptor
 +succeeded (or even if there were no writes on that file descriptor at all).
 +
-+Filesystems that wish to use this infrastructure should call
-+filemap_set_wb_err to record the error in the address_space when it
-+occurs.  Then, at the end of their fsync operation, they should call
-+filemap_report_wb_err to ensure that the struct file's error cursor
-+has advanced to the correct point in the stream of errors emitted by
-+the backing device(s).
++Filesystems that wish to use this infrastructure need to do two things:
 +
-+Older kernels used a different method for tracking errors, based on flags
-+in the address_space. We're currently switching everything over to use
-+the infrastructure based on errseq_t values. During the transition,
-+filesystem authors will want to also ensure their file_system_type has
-+FS_WB_ERRSEQ set in fs_flags to ensure that shared infrastructure is
-+aware of the model in use.
++1) call mapping_set_error to record the error in the address_space when
++one occurs.
++
++2) set FS_WB_ERRSEQ in the fs_flags field in the file_system_type to
++indicate to other subsystems that the filesystem wants to use errseq_t
++based error reporting for writeback.
++
++The flag may go away in the future or moved to an opt-out flag once
++the majority of filesystems are converted to use errseq_t based reporting.
  
  struct address_space_operations
  -------------------------------
-@@ -804,7 +846,8 @@ struct address_space_operations {
+@@ -804,7 +844,8 @@ struct address_space_operations {
  The File Object
  ===============
  
@@ -98,7 +95,7 @@ index f42b90687d40..c3efdd833a3d 100644
  
  
  struct file_operations
-@@ -887,7 +930,8 @@ otherwise noted.
+@@ -887,7 +928,8 @@ otherwise noted.
  
    release: called when the last reference to an open file is closed
  

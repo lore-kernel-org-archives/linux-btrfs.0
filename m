@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:34402 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:58952 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752539AbdFLMX7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Jun 2017 08:23:59 -0400
+        id S1752508AbdFLMX4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 12 Jun 2017 08:23:56 -0400
 From: Jeff Layton <jlayton@redhat.com>
 To: Andrew Morton <akpm@linux-foundation.org>,
         Al Viro <viro@ZenIV.linux.org.uk>, Jan Kara <jack@suse.cz>,
@@ -13,35 +13,61 @@ To: Andrew Morton <akpm@linux-foundation.org>,
 Cc: linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
         linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org
-Subject: [PATCH v6 20/20] btrfs: minimal conversion to errseq_t writeback error reporting on fsync
-Date: Mon, 12 Jun 2017 08:23:16 -0400
-Message-Id: <20170612122316.13244-25-jlayton@redhat.com>
+Subject: [PATCH v6 15/20] fs: have call_fsync call filemap_report_wb_err if FS_WB_ERRSEQ is set
+Date: Mon, 12 Jun 2017 08:23:11 -0400
+Message-Id: <20170612122316.13244-20-jlayton@redhat.com>
 In-Reply-To: <20170612122316.13244-1-jlayton@redhat.com>
 References: <20170612122316.13244-1-jlayton@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Set the FS_WB_ERRSEQ flag to opt-in to errseq_t based reporting.
-Internal call to filemap_* functions are left as-is.
+Allow filesystems to opt-in to a final check of wb_err if FS_WB_ERRSEQ
+is set. Technically, we could just plumb these calls into all of the
+fsync operations, but I think this means less code, changes and churn.
 
 Signed-off-by: Jeff Layton <jlayton@redhat.com>
 ---
- fs/btrfs/super.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ include/linux/fs.h | 20 ++++++++++++++------
+ 1 file changed, 14 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 4f1cdd5058f1..c99af09cd3e7 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -2184,7 +2184,7 @@ static struct file_system_type btrfs_fs_type = {
- 	.name		= "btrfs",
- 	.mount		= btrfs_mount,
- 	.kill_sb	= btrfs_kill_super,
--	.fs_flags	= FS_REQUIRES_DEV | FS_BINARY_MOUNTDATA,
-+	.fs_flags	= FS_REQUIRES_DEV | FS_BINARY_MOUNTDATA | FS_WB_ERRSEQ,
- };
- MODULE_ALIAS_FS("btrfs");
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 17ba6284ab14..ef3feeec80b2 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1742,12 +1742,6 @@ static inline int call_mmap(struct file *file, struct vm_area_struct *vma)
+ 	return file->f_op->mmap(file, vma);
+ }
  
+-static inline int call_fsync(struct file *file, loff_t start, loff_t end,
+-			     int datasync)
+-{
+-	return file->f_op->fsync(file, start, end, datasync);
+-}
+-
+ ssize_t rw_copy_check_uvector(int type, const struct iovec __user * uvector,
+ 			      unsigned long nr_segs, unsigned long fast_segs,
+ 			      struct iovec *fast_pointer,
+@@ -2583,6 +2577,20 @@ static inline errseq_t filemap_sample_wb_err(struct address_space *mapping)
+ 	return errseq_sample(&mapping->wb_err);
+ }
+ 
++static inline int call_fsync(struct file *file, loff_t start, loff_t end,
++			     int datasync)
++{
++	int ret;
++
++	ret = file->f_op->fsync(file, start, end, datasync);
++	if (file->f_mapping->host->i_sb->s_type->fs_flags & FS_WB_ERRSEQ) {
++		int ret2 = filemap_report_wb_err(file);
++		if (!ret)
++			ret = ret2;
++	}
++	return ret;
++}
++
+ extern int vfs_fsync_range(struct file *file, loff_t start, loff_t end,
+ 			   int datasync);
+ extern int vfs_fsync(struct file *file, int datasync);
 -- 
 2.13.0
 

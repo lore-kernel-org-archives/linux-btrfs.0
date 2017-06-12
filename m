@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:37832 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:35040 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752129AbdFLMXf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Jun 2017 08:23:35 -0400
+        id S1752048AbdFLMXY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 12 Jun 2017 08:23:24 -0400
 From: Jeff Layton <jlayton@redhat.com>
 To: Andrew Morton <akpm@linux-foundation.org>,
         Al Viro <viro@ZenIV.linux.org.uk>, Jan Kara <jack@suse.cz>,
@@ -13,233 +13,125 @@ To: Andrew Morton <akpm@linux-foundation.org>,
 Cc: linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
         linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org
-Subject: [PATCH v6 10/20] mm: tracepoints for writeback error events
-Date: Mon, 12 Jun 2017 08:23:03 -0400
-Message-Id: <20170612122316.13244-12-jlayton@redhat.com>
+Subject: [PATCH v6 04/20] buffer: set errors in mapping at the time that the error occurs
+Date: Mon, 12 Jun 2017 08:22:56 -0400
+Message-Id: <20170612122316.13244-5-jlayton@redhat.com>
 In-Reply-To: <20170612122316.13244-1-jlayton@redhat.com>
 References: <20170612122316.13244-1-jlayton@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-To enable that, make __errseq_set return the value that it was set to
-when we exit the loop. Take heed that that value is not suitable as a
-later "since" value, as it will not have been marked seen.
+I noticed on xfs that I could still sometimes get back an error on fsync
+on a fd that was opened after the error condition had been cleared.
+
+The problem is that the buffer code sets the write_io_error flag and
+then later checks that flag to set the error in the mapping. That flag
+perisists for quite a while however. If the file is later opened with
+O_TRUNC, the buffers will then be invalidated and the mapping's error
+set such that a subsequent fsync will return error. I think this is
+incorrect, as there was no writeback between the open and fsync.
+
+Add a new mark_buffer_write_io_error operation that sets the flag and
+the error in the mapping at the same time. Replace all calls to
+set_buffer_write_io_error with mark_buffer_write_io_error, and remove
+the places that check this flag in order to set the error in the
+mapping.
+
+This sets the error in the mapping earlier, at the time that it's first
+detected.
 
 Signed-off-by: Jeff Layton <jlayton@redhat.com>
+Reviewed-by: Jan Kara <jack@suse.cz>
 ---
- include/linux/errseq.h         |  2 +-
- include/linux/fs.h             |  5 +++-
- include/trace/events/filemap.h | 55 ++++++++++++++++++++++++++++++++++++++++++
- lib/errseq.c                   | 20 ++++++++++-----
- mm/filemap.c                   | 13 +++++++++-
- 5 files changed, 86 insertions(+), 9 deletions(-)
+ fs/buffer.c                 | 20 +++++++++++++-------
+ fs/gfs2/lops.c              |  2 +-
+ include/linux/buffer_head.h |  1 +
+ 3 files changed, 15 insertions(+), 8 deletions(-)
 
-diff --git a/include/linux/errseq.h b/include/linux/errseq.h
-index 0d2555f310cd..9e0d444ac88d 100644
---- a/include/linux/errseq.h
-+++ b/include/linux/errseq.h
-@@ -5,7 +5,7 @@
- 
- typedef u32	errseq_t;
- 
--void __errseq_set(errseq_t *eseq, int err);
-+errseq_t __errseq_set(errseq_t *eseq, int err);
- static inline void errseq_set(errseq_t *eseq, int err)
- {
- 	/* Optimize for the common case of no error */
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index e57321b7ee2a..6cd87887430b 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -2530,6 +2530,7 @@ extern int filemap_fdatawrite_range(struct address_space *mapping,
- extern int filemap_check_errors(struct address_space *mapping);
- 
- extern int __must_check filemap_report_wb_err(struct file *file);
-+extern void __filemap_set_wb_err(struct address_space *mapping, int err);
- 
- /**
-  * filemap_set_wb_err - set a writeback error on an address_space
-@@ -2549,7 +2550,9 @@ extern int __must_check filemap_report_wb_err(struct file *file);
-  */
- static inline void filemap_set_wb_err(struct address_space *mapping, int err)
- {
--	errseq_set(&mapping->wb_err, err);
-+	/* Fastpath for common case of no error */
-+	if (unlikely(err))
-+		__filemap_set_wb_err(mapping, err);
- }
- 
- /**
-diff --git a/include/trace/events/filemap.h b/include/trace/events/filemap.h
-index 42febb6bc1d5..2af66920f267 100644
---- a/include/trace/events/filemap.h
-+++ b/include/trace/events/filemap.h
-@@ -10,6 +10,7 @@
- #include <linux/memcontrol.h>
- #include <linux/device.h>
- #include <linux/kdev_t.h>
-+#include <linux/errseq.h>
- 
- DECLARE_EVENT_CLASS(mm_filemap_op_page_cache,
- 
-@@ -52,6 +53,60 @@ DEFINE_EVENT(mm_filemap_op_page_cache, mm_filemap_add_to_page_cache,
- 	TP_ARGS(page)
- 	);
- 
-+TRACE_EVENT(filemap_set_wb_err,
-+		TP_PROTO(struct address_space *mapping, errseq_t eseq),
-+
-+		TP_ARGS(mapping, eseq),
-+
-+		TP_STRUCT__entry(
-+			__field(unsigned long, i_ino)
-+			__field(dev_t, s_dev)
-+			__field(errseq_t, errseq)
-+		),
-+
-+		TP_fast_assign(
-+			__entry->i_ino = mapping->host->i_ino;
-+			__entry->errseq = eseq;
-+			if (mapping->host->i_sb)
-+				__entry->s_dev = mapping->host->i_sb->s_dev;
-+			else
-+				__entry->s_dev = mapping->host->i_rdev;
-+		),
-+
-+		TP_printk("dev=%d:%d ino=0x%lx errseq=0x%x",
-+			MAJOR(__entry->s_dev), MINOR(__entry->s_dev),
-+			__entry->i_ino, __entry->errseq)
-+);
-+
-+TRACE_EVENT(filemap_report_wb_err,
-+		TP_PROTO(struct file *file, errseq_t old),
-+
-+		TP_ARGS(file, old),
-+
-+		TP_STRUCT__entry(
-+			__field(struct file *, file);
-+			__field(unsigned long, i_ino)
-+			__field(dev_t, s_dev)
-+			__field(errseq_t, old)
-+			__field(errseq_t, new)
-+		),
-+
-+		TP_fast_assign(
-+			__entry->file = file;
-+			__entry->i_ino = file->f_mapping->host->i_ino;
-+			if (file->f_mapping->host->i_sb)
-+				__entry->s_dev = file->f_mapping->host->i_sb->s_dev;
-+			else
-+				__entry->s_dev = file->f_mapping->host->i_rdev;
-+			__entry->old = old;
-+			__entry->new = file->f_wb_err;
-+		),
-+
-+		TP_printk("file=%p dev=%d:%d ino=0x%lx old=0x%x new=0x%x",
-+			__entry->file, MAJOR(__entry->s_dev),
-+			MINOR(__entry->s_dev), __entry->i_ino, __entry->old,
-+			__entry->new)
-+);
- #endif /* _TRACE_FILEMAP_H */
- 
- /* This part must be outside protection */
-diff --git a/lib/errseq.c b/lib/errseq.c
-index d129c0611c1f..009972d3000c 100644
---- a/lib/errseq.c
-+++ b/lib/errseq.c
-@@ -52,10 +52,14 @@
-  *
-  * Most callers will want to use the errseq_set inline wrapper to efficiently
-  * handle the common case where err is 0.
-+ *
-+ * We do return an errseq_t here, primarily for debugging purposes. The return
-+ * value should not be used as a previously sampled value in later calls as it
-+ * will not have the SEEN flag set.
-  */
--void __errseq_set(errseq_t *eseq, int err)
-+errseq_t __errseq_set(errseq_t *eseq, int err)
- {
--	errseq_t old;
-+	errseq_t cur, old;
- 
- 	/* MAX_ERRNO must be able to serve as a mask */
- 	BUILD_BUG_ON_NOT_POWER_OF_2(MAX_ERRNO + 1);
-@@ -66,13 +70,14 @@ void __errseq_set(errseq_t *eseq, int err)
- 	 * also don't accept zero here as that would effectively clear a
- 	 * previous error.
- 	 */
-+	old = READ_ONCE(*eseq);
-+
- 	if (WARN(unlikely(err == 0 || (unsigned int)-err > MAX_ERRNO),
- 				"err = %d\n", err))
--		return;
-+		return old;
- 
--	old = READ_ONCE(*eseq);
- 	for (;;) {
--		errseq_t new, cur;
-+		errseq_t new;
- 
- 		/* Clear out error bits and set new error */
- 		new = (old & ~(MAX_ERRNO|ERRSEQ_SEEN)) | -err;
-@@ -82,8 +87,10 @@ void __errseq_set(errseq_t *eseq, int err)
- 			new += ERRSEQ_CTR_INC;
- 
- 		/* If there would be no change, then call it done */
--		if (new == old)
-+		if (new == old) {
-+			cur = new;
- 			break;
-+		}
- 
- 		/* Try to swap the new value into place */
- 		cur = cmpxchg(eseq, old, new);
-@@ -98,6 +105,7 @@ void __errseq_set(errseq_t *eseq, int err)
- 		/* Raced with an update, try again */
- 		old = cur;
+diff --git a/fs/buffer.c b/fs/buffer.c
+index 4be8b914a222..b946149e8214 100644
+--- a/fs/buffer.c
++++ b/fs/buffer.c
+@@ -178,7 +178,7 @@ void end_buffer_write_sync(struct buffer_head *bh, int uptodate)
+ 		set_buffer_uptodate(bh);
+ 	} else {
+ 		buffer_io_error(bh, ", lost sync page write");
+-		set_buffer_write_io_error(bh);
++		mark_buffer_write_io_error(bh);
+ 		clear_buffer_uptodate(bh);
  	}
-+	return cur;
+ 	unlock_buffer(bh);
+@@ -352,8 +352,7 @@ void end_buffer_async_write(struct buffer_head *bh, int uptodate)
+ 		set_buffer_uptodate(bh);
+ 	} else {
+ 		buffer_io_error(bh, ", lost async page write");
+-		mapping_set_error(page->mapping, -EIO);
+-		set_buffer_write_io_error(bh);
++		mark_buffer_write_io_error(bh);
+ 		clear_buffer_uptodate(bh);
+ 		SetPageError(page);
+ 	}
+@@ -481,8 +480,6 @@ static void __remove_assoc_queue(struct buffer_head *bh)
+ {
+ 	list_del_init(&bh->b_assoc_buffers);
+ 	WARN_ON(!bh->b_assoc_map);
+-	if (buffer_write_io_error(bh))
+-		mapping_set_error(bh->b_assoc_map, -EIO);
+ 	bh->b_assoc_map = NULL;
  }
- EXPORT_SYMBOL(__errseq_set);
  
-diff --git a/mm/filemap.c b/mm/filemap.c
-index aeb58db10688..c5e19ea0bf12 100644
---- a/mm/filemap.c
-+++ b/mm/filemap.c
-@@ -535,6 +535,14 @@ int filemap_write_and_wait_range(struct address_space *mapping,
+@@ -1181,6 +1178,17 @@ void mark_buffer_dirty(struct buffer_head *bh)
  }
- EXPORT_SYMBOL(filemap_write_and_wait_range);
+ EXPORT_SYMBOL(mark_buffer_dirty);
  
-+void __filemap_set_wb_err(struct address_space *mapping, int err)
++void mark_buffer_write_io_error(struct buffer_head *bh)
 +{
-+	errseq_t eseq = __errseq_set(&mapping->wb_err, err);
-+	trace_filemap_set_wb_err(mapping, eseq);
-+
++	set_buffer_write_io_error(bh);
++	/* FIXME: do we need to set this in both places? */
++	if (bh->b_page && bh->b_page->mapping)
++		mapping_set_error(bh->b_page->mapping, -EIO);
++	if (bh->b_assoc_map)
++		mapping_set_error(bh->b_assoc_map, -EIO);
 +}
-+EXPORT_SYMBOL(__filemap_set_wb_err);
++EXPORT_SYMBOL(mark_buffer_write_io_error);
 +
- /**
-  * filemap_report_wb_err - report wb error (if any) that was previously set
-  * @file: struct file on which the error is being reported
-@@ -559,14 +567,17 @@ EXPORT_SYMBOL(filemap_write_and_wait_range);
- int filemap_report_wb_err(struct file *file)
- {
- 	int err = 0;
-+	errseq_t old = READ_ONCE(file->f_wb_err);
- 	struct address_space *mapping = file->f_mapping;
+ /*
+  * Decrement a buffer_head's reference count.  If all buffers against a page
+  * have zero reference count, are clean and unlocked, and if the page is clean
+@@ -3279,8 +3287,6 @@ drop_buffers(struct page *page, struct buffer_head **buffers_to_free)
  
- 	/* Locklessly handle the common case where nothing has changed */
--	if (errseq_check(&mapping->wb_err, READ_ONCE(file->f_wb_err))) {
-+	if (errseq_check(&mapping->wb_err, old)) {
- 		/* Something changed, must use slow path */
- 		spin_lock(&file->f_lock);
-+		old = file->f_wb_err;
- 		err = errseq_check_and_advance(&mapping->wb_err,
- 						&file->f_wb_err);
-+		trace_filemap_report_wb_err(file, old);
- 		spin_unlock(&file->f_lock);
- 	}
- 	return err;
+ 	bh = head;
+ 	do {
+-		if (buffer_write_io_error(bh) && page->mapping)
+-			mapping_set_error(page->mapping, -EIO);
+ 		if (buffer_busy(bh))
+ 			goto failed;
+ 		bh = bh->b_this_page;
+diff --git a/fs/gfs2/lops.c b/fs/gfs2/lops.c
+index b1f9144b42c7..cd7857ab1a6a 100644
+--- a/fs/gfs2/lops.c
++++ b/fs/gfs2/lops.c
+@@ -182,7 +182,7 @@ static void gfs2_end_log_write_bh(struct gfs2_sbd *sdp, struct bio_vec *bvec,
+ 		bh = bh->b_this_page;
+ 	do {
+ 		if (error)
+-			set_buffer_write_io_error(bh);
++			mark_buffer_write_io_error(bh);
+ 		unlock_buffer(bh);
+ 		next = bh->b_this_page;
+ 		size -= bh->b_size;
+diff --git a/include/linux/buffer_head.h b/include/linux/buffer_head.h
+index bd029e52ef5e..e0abeba3ced7 100644
+--- a/include/linux/buffer_head.h
++++ b/include/linux/buffer_head.h
+@@ -149,6 +149,7 @@ void buffer_check_dirty_writeback(struct page *page,
+  */
+ 
+ void mark_buffer_dirty(struct buffer_head *bh);
++void mark_buffer_write_io_error(struct buffer_head *bh);
+ void init_buffer(struct buffer_head *, bh_end_io_t *, void *);
+ void touch_buffer(struct buffer_head *bh);
+ void set_bh_page(struct buffer_head *bh,
 -- 
 2.13.0
 

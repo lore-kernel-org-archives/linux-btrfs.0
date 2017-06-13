@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:26681 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:29819 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752554AbdFMJTt (ORCPT
+        with ESMTP id S1752539AbdFMJTs (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Jun 2017 05:19:49 -0400
+        Tue, 13 Jun 2017 05:19:48 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <dsterba@suse.cz>
-Subject: [PATCH 01/19] btrfs-progs: Refactor btrfs_map_block and its variants to use btrfs_fs_info
-Date: Tue, 13 Jun 2017 17:19:17 +0800
-Message-ID: <20170613091935.23277-2-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 02/19] btrfs-progs: Refactor btrfs_num_copies to use btrfs_fs_info
+Date: Tue, 13 Jun 2017 17:19:18 +0800
+Message-ID: <20170613091935.23277-3-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20170613091935.23277-1-quwenruo@cn.fujitsu.com>
 References: <20170613091935.23277-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,268 +17,140 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Just to keep the 1st paramter the same as kernel.
-
-We can also save a few lines since the parameter is shorter now.
-
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- btrfs-corrupt-block.c |  5 ++---
- btrfs-map-logical.c   |  5 ++---
- cmds-check.c          |  2 +-
- cmds-restore.c        |  4 ++--
- disk-io.c             | 16 +++++++---------
- extent-tree.c         | 10 +++++-----
- extent_io.c           |  8 ++++----
- volumes.c             | 16 +++++++++-------
- volumes.h             |  6 +++---
- 9 files changed, 35 insertions(+), 37 deletions(-)
+ btrfs-corrupt-block.c | 4 ++--
+ btrfs-map-logical.c   | 2 +-
+ cmds-check.c          | 3 +--
+ cmds-restore.c        | 6 ++----
+ disk-io.c             | 3 +--
+ image/main.c          | 3 +--
+ volumes.c             | 3 ++-
+ volumes.h             | 2 +-
+ 8 files changed, 11 insertions(+), 15 deletions(-)
 
 diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
-index f29f22d2..01bd1f2f 100644
+index 01bd1f2f..3269de5c 100644
 --- a/btrfs-corrupt-block.c
 +++ b/btrfs-corrupt-block.c
-@@ -47,9 +47,8 @@ static int debug_corrupt_block(struct extent_buffer *eb,
+@@ -88,8 +88,8 @@ static int debug_corrupt_block(struct extent_buffer *eb,
+ 			fsync(eb->fd);
+ 		}
  
- 	length = blocksize;
- 	while (1) {
--		ret = btrfs_map_block(&root->fs_info->mapping_tree, READ,
--				      eb->start, &length, &multi,
--				      mirror_num, NULL);
-+		ret = btrfs_map_block(root->fs_info, READ, eb->start, &length,
-+				      &multi, mirror_num, NULL);
- 		if (ret) {
- 			error("cannot map block %llu length %llu mirror %d: %d",
- 					(unsigned long long)eb->start,
+-		num_copies = btrfs_num_copies(&root->fs_info->mapping_tree,
+-					      eb->start, eb->len);
++		num_copies = btrfs_num_copies(root->fs_info, eb->start,
++					      eb->len);
+ 		if (num_copies == 1)
+ 			break;
+ 
 diff --git a/btrfs-map-logical.c b/btrfs-map-logical.c
-index e88357fc..c56253cd 100644
+index c56253cd..d752cf6a 100644
 --- a/btrfs-map-logical.c
 +++ b/btrfs-map-logical.c
-@@ -109,9 +109,8 @@ static int __print_mapping_info(struct btrfs_fs_info *fs_info, u64 logical,
- 		int i;
+@@ -149,7 +149,7 @@ static int print_mapping_info(struct btrfs_fs_info *fs_info, u64 logical,
+ 	int mirror_num;
+ 	int ret = 0;
  
- 		cur_len = len - cur_offset;
--		ret = btrfs_map_block(&fs_info->mapping_tree, READ,
--				logical + cur_offset, &cur_len,
--				&multi, mirror_num, NULL);
-+		ret = btrfs_map_block(fs_info, READ, logical + cur_offset,
-+				      &cur_len, &multi, mirror_num, NULL);
- 		if (ret) {
- 			fprintf(info_file,
- 				"Error: fails to map mirror%d logical %llu: %s\n",
+-	num_copies = btrfs_num_copies(&fs_info->mapping_tree, logical, len);
++	num_copies = btrfs_num_copies(fs_info, logical, len);
+ 	for (mirror_num = 1; mirror_num <= num_copies; mirror_num++) {
+ 		ret = __print_mapping_info(fs_info, logical, len, mirror_num);
+ 		if (ret < 0)
 diff --git a/cmds-check.c b/cmds-check.c
-index c052f66e..60640bc8 100644
+index 60640bc8..39a36662 100644
 --- a/cmds-check.c
 +++ b/cmds-check.c
-@@ -6932,7 +6932,7 @@ static int check_cache_range(struct btrfs_root *root,
- 
- 	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
- 		bytenr = btrfs_sb_offset(i);
--		ret = btrfs_rmap_block(&root->fs_info->mapping_tree,
-+		ret = btrfs_rmap_block(root->fs_info,
- 				       cache->key.objectid, bytenr, 0,
- 				       &logical, &nr, &stripe_len);
- 		if (ret)
+@@ -7217,8 +7217,7 @@ again:
+ 				fprintf(stderr, "mirror %d bytenr %llu csum %u expected csum %u\n",
+ 						mirror, bytenr + tmp,
+ 						csum, csum_expected);
+-				num_copies = btrfs_num_copies(
+-						&root->fs_info->mapping_tree,
++				num_copies = btrfs_num_copies(root->fs_info,
+ 						bytenr, num_bytes);
+ 				if (mirror < num_copies - 1) {
+ 					mirror += 1;
 diff --git a/cmds-restore.c b/cmds-restore.c
-index 06c88b26..9ee38c70 100644
+index 9ee38c70..c174bdd5 100644
 --- a/cmds-restore.c
 +++ b/cmds-restore.c
-@@ -346,8 +346,8 @@ static int copy_one_extent(struct btrfs_root *root, int fd,
- 	}
- again:
- 	length = size_left;
--	ret = btrfs_map_block(&root->fs_info->mapping_tree, READ,
--			      bytenr, &length, &multi, mirror_num, NULL);
-+	ret = btrfs_map_block(root->fs_info, READ, bytenr, &length, &multi,
-+			      mirror_num, NULL);
+@@ -366,8 +366,7 @@ again:
+ 	done = pread(dev_fd, inbuf+count, length, dev_bytenr);
+ 	/* Need both checks, or we miss negative values due to u64 conversion */
+ 	if (done < 0 || done < length) {
+-		num_copies = btrfs_num_copies(&root->fs_info->mapping_tree,
+-					      bytenr, length);
++		num_copies = btrfs_num_copies(root->fs_info, bytenr, length);
+ 		mirror_num++;
+ 		/* mirror_num is 1-indexed, so num_copies is a valid mirror. */
+ 		if (mirror_num > num_copies) {
+@@ -404,8 +403,7 @@ again:
+ 
+ 	ret = decompress(root, inbuf, outbuf, disk_size, &ram_size, compress);
  	if (ret) {
- 		error("cannot map block logical %llu length %llu: %d",
- 				(unsigned long long)bytenr,
+-		num_copies = btrfs_num_copies(&root->fs_info->mapping_tree,
+-					      bytenr, length);
++		num_copies = btrfs_num_copies(root->fs_info, bytenr, length);
+ 		mirror_num++;
+ 		if (mirror_num >= num_copies) {
+ 			ret = -1;
 diff --git a/disk-io.c b/disk-io.c
-index ec2f52af..32e2d267 100644
+index 32e2d267..9d2408c2 100644
 --- a/disk-io.c
 +++ b/disk-io.c
-@@ -203,8 +203,8 @@ void readahead_tree_block(struct btrfs_root *root, u64 bytenr, u32 blocksize,
+@@ -370,8 +370,7 @@ struct extent_buffer* read_tree_block(
+ 			ret = -EIO;
+ 			break;
+ 		}
+-		num_copies = btrfs_num_copies(&fs_info->mapping_tree,
+-					      eb->start, eb->len);
++		num_copies = btrfs_num_copies(fs_info, eb->start, eb->len);
+ 		if (num_copies == 1) {
+ 			ignore = 1;
+ 			continue;
+diff --git a/image/main.c b/image/main.c
+index 5fb62e77..a84b10ed 100644
+--- a/image/main.c
++++ b/image/main.c
+@@ -884,8 +884,7 @@ static int read_data_extent(struct metadump_struct *md,
+ 	int cur_mirror;
+ 	int ret;
  
- 	eb = btrfs_find_tree_block(root, bytenr, blocksize);
- 	if (!(eb && btrfs_buffer_uptodate(eb, parent_transid)) &&
--	    !btrfs_map_block(&root->fs_info->mapping_tree, READ,
--			     bytenr, &length, &multi, 0, NULL)) {
-+	    !btrfs_map_block(root->fs_info, READ, bytenr, &length, &multi, 0,
-+			     NULL)) {
- 		device = multi->stripes[0].dev;
- 		device->total_ios++;
- 		blocksize = min(blocksize, (u32)SZ_64K);
-@@ -262,9 +262,8 @@ int read_whole_eb(struct btrfs_fs_info *info, struct extent_buffer *eb, int mirr
+-	num_copies = btrfs_num_copies(&root->fs_info->mapping_tree, logical,
+-				      bytes_left);
++	num_copies = btrfs_num_copies(root->fs_info, logical, bytes_left);
  
- 		if (!info->on_restoring &&
- 		    eb->start != BTRFS_SUPER_INFO_OFFSET) {
--			ret = btrfs_map_block(&info->mapping_tree, READ,
--					      eb->start + offset, &read_len, &multi,
--					      mirror, NULL);
-+			ret = btrfs_map_block(info, READ, eb->start + offset,
-+					      &read_len, &multi, mirror, NULL);
- 			if (ret) {
- 				printk("Couldn't map the block %Lu\n", eb->start + offset);
- 				kfree(multi);
-@@ -402,8 +401,7 @@ int read_extent_data(struct btrfs_root *root, char *data,
- 	int ret = 0;
- 	u64 max_len = *len;
- 
--	ret = btrfs_map_block(&info->mapping_tree, READ, logical, len,
--			      &multi, mirror, NULL);
-+	ret = btrfs_map_block(info, READ, logical, len, &multi, mirror, NULL);
- 	if (ret) {
- 		fprintf(stderr, "Couldn't map the block %llu\n",
- 				logical + offset);
-@@ -436,8 +434,8 @@ int write_and_map_eb(struct btrfs_root *root, struct extent_buffer *eb)
- 
- 	dev_nr = 0;
- 	length = eb->len;
--	ret = btrfs_map_block(&root->fs_info->mapping_tree, WRITE,
--			      eb->start, &length, &multi, 0, &raid_map);
-+	ret = btrfs_map_block(root->fs_info, WRITE, eb->start, &length,
-+			      &multi, 0, &raid_map);
- 
- 	if (raid_map) {
- 		ret = write_raid56_with_parity(root->fs_info, eb, multi,
-diff --git a/extent-tree.c b/extent-tree.c
-index 43fa3b5f..f252c0ce 100644
---- a/extent-tree.c
-+++ b/extent-tree.c
-@@ -69,13 +69,13 @@ static int remove_sb_from_cache(struct btrfs_root *root,
- 	u64 *logical;
- 	int stripe_len;
- 	int i, nr, ret;
-+	struct btrfs_fs_info *fs_info = root->fs_info;
- 	struct extent_io_tree *free_space_cache;
- 
--	free_space_cache = &root->fs_info->free_space_cache;
-+	free_space_cache = &fs_info->free_space_cache;
- 	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
- 		bytenr = btrfs_sb_offset(i);
--		ret = btrfs_rmap_block(&root->fs_info->mapping_tree,
--				       cache->key.objectid, bytenr, 0,
-+		ret = btrfs_rmap_block(fs_info, cache->key.objectid, bytenr, 0,
- 				       &logical, &nr, &stripe_len);
- 		BUG_ON(ret);
- 		while (nr--) {
-@@ -3181,7 +3181,7 @@ static void account_super_bytes(struct btrfs_fs_info *fs_info,
- 
- 	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
- 		bytenr = btrfs_sb_offset(i);
--		ret = btrfs_rmap_block(&fs_info->mapping_tree,
-+		ret = btrfs_rmap_block(fs_info,
- 				       cache->key.objectid, bytenr,
- 				       0, &logical, &nr, &stripe_len);
- 		if (ret)
-@@ -4180,7 +4180,7 @@ int exclude_super_stripes(struct btrfs_root *root,
- 
- 	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
- 		bytenr = btrfs_sb_offset(i);
--		ret = btrfs_rmap_block(&root->fs_info->mapping_tree,
-+		ret = btrfs_rmap_block(root->fs_info,
- 				       cache->key.objectid, bytenr,
- 				       0, &logical, &nr, &stripe_len);
- 		if (ret)
-diff --git a/extent_io.c b/extent_io.c
-index 26a67865..1c6c1425 100644
---- a/extent_io.c
-+++ b/extent_io.c
-@@ -698,8 +698,8 @@ int read_data_from_disk(struct btrfs_fs_info *info, void *buf, u64 offset,
- 
- 	while (bytes_left) {
- 		read_len = bytes_left;
--		ret = btrfs_map_block(&info->mapping_tree, READ, offset,
--				      &read_len, &multi, mirror, NULL);
-+		ret = btrfs_map_block(info, READ, offset, &read_len, &multi,
-+				      mirror, NULL);
- 		if (ret) {
- 			fprintf(stderr, "Couldn't map the block %Lu\n",
- 				offset);
-@@ -752,8 +752,8 @@ int write_data_to_disk(struct btrfs_fs_info *info, void *buf, u64 offset,
- 		this_len = bytes_left;
- 		dev_nr = 0;
- 
--		ret = btrfs_map_block(&info->mapping_tree, WRITE, offset,
--				      &this_len, &multi, mirror, &raid_map);
-+		ret = btrfs_map_block(info, WRITE, offset, &this_len, &multi,
-+				      mirror, &raid_map);
- 		if (ret) {
- 			fprintf(stderr, "Couldn't map the block %Lu\n",
- 				offset);
+ 	/* Try our best to read data, just like read_tree_block() */
+ 	for (cur_mirror = 0; cur_mirror < num_copies; cur_mirror++) {
 diff --git a/volumes.c b/volumes.c
-index 990300f4..1ff90f0c 100644
+index 1ff90f0c..89e39e43 100644
 --- a/volumes.c
 +++ b/volumes.c
-@@ -1284,10 +1284,11 @@ int btrfs_next_bg(struct btrfs_mapping_tree *map_tree, u64 *logical,
- 	return -ENOENT;
+@@ -1215,8 +1215,9 @@ int btrfs_alloc_data_chunk(struct btrfs_trans_handle *trans,
+ 	return ret;
  }
  
--int btrfs_rmap_block(struct btrfs_mapping_tree *map_tree,
-+int btrfs_rmap_block(struct btrfs_fs_info *fs_info,
- 		     u64 chunk_start, u64 physical, u64 devid,
- 		     u64 **logical, int *naddrs, int *stripe_len)
+-int btrfs_num_copies(struct btrfs_mapping_tree *map_tree, u64 logical, u64 len)
++int btrfs_num_copies(struct btrfs_fs_info *fs_info, u64 logical, u64 len)
  {
 +	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
  	struct cache_extent *ce;
  	struct map_lookup *map;
- 	u64 *buf;
-@@ -1379,20 +1380,21 @@ static void sort_parity_stripes(struct btrfs_multi_bio *bbio, u64 *raid_map)
- 	}
- }
- 
--int btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
-+int btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
- 		    u64 logical, u64 *length,
- 		    struct btrfs_multi_bio **multi_ret, int mirror_num,
- 		    u64 **raid_map_ret)
- {
--	return __btrfs_map_block(map_tree, rw, logical, length, NULL,
-+	return __btrfs_map_block(fs_info, rw, logical, length, NULL,
- 				 multi_ret, mirror_num, raid_map_ret);
- }
- 
--int __btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
--		    u64 logical, u64 *length, u64 *type,
--		    struct btrfs_multi_bio **multi_ret, int mirror_num,
--		    u64 **raid_map_ret)
-+int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
-+		      u64 logical, u64 *length, u64 *type,
-+		      struct btrfs_multi_bio **multi_ret, int mirror_num,
-+		      u64 **raid_map_ret)
- {
-+	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
- 	struct cache_extent *ce;
- 	struct map_lookup *map;
- 	u64 offset;
+ 	int ret;
 diff --git a/volumes.h b/volumes.h
-index fc0a775b..59e43161 100644
+index 59e43161..26d88813 100644
 --- a/volumes.h
 +++ b/volumes.h
-@@ -179,11 +179,11 @@ static inline int check_crossing_stripes(struct btrfs_fs_info *fs_info,
- 		(bg_offset + len - 1) / BTRFS_STRIPE_LEN);
- }
- 
--int __btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
-+int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
- 		      u64 logical, u64 *length, u64 *type,
- 		      struct btrfs_multi_bio **multi_ret, int mirror_num,
- 		      u64 **raid_map);
--int btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
-+int btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
- 		    u64 logical, u64 *length,
- 		    struct btrfs_multi_bio **multi_ret, int mirror_num,
- 		    u64 **raid_map_ret);
-@@ -201,7 +201,7 @@ static inline int btrfs_next_bg_system(struct btrfs_mapping_tree *map_tree,
- 	return btrfs_next_bg(map_tree, logical, size,
- 			BTRFS_BLOCK_GROUP_SYSTEM);
- }
--int btrfs_rmap_block(struct btrfs_mapping_tree *map_tree,
-+int btrfs_rmap_block(struct btrfs_fs_info *fs_info,
- 		     u64 chunk_start, u64 physical, u64 devid,
- 		     u64 **logical, int *naddrs, int *stripe_len);
- int btrfs_read_sys_array(struct btrfs_root *root);
+@@ -228,7 +228,7 @@ int btrfs_update_device(struct btrfs_trans_handle *trans,
+ int btrfs_scan_one_device(int fd, const char *path,
+ 			  struct btrfs_fs_devices **fs_devices_ret,
+ 			  u64 *total_devs, u64 super_offset, unsigned sbflags);
+-int btrfs_num_copies(struct btrfs_mapping_tree *map_tree, u64 logical, u64 len);
++int btrfs_num_copies(struct btrfs_fs_info *fs_info, u64 logical, u64 len);
+ struct list_head *btrfs_scanned_uuids(void);
+ int btrfs_add_system_chunk(struct btrfs_root *root, struct btrfs_key *key,
+ 			   struct btrfs_chunk *chunk, int item_size);
 -- 
 2.13.1
 

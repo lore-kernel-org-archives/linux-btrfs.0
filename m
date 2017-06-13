@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:26681 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752609AbdFMJTx (ORCPT
+        with ESMTP id S1752156AbdFMJTz (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Jun 2017 05:19:53 -0400
+        Tue, 13 Jun 2017 05:19:55 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <dsterba@suse.cz>
-Subject: [PATCH 11/19] btrfs-progs: Refactor write_all_supers and its callers to use btrfs_fs_info
-Date: Tue, 13 Jun 2017 17:19:27 +0800
-Message-ID: <20170613091935.23277-12-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 12/19] btrfs-progs: Refactor btrfs_check_chunk_valid to use btrfs_fs_info
+Date: Tue, 13 Jun 2017 17:19:28 +0800
+Message-ID: <20170613091935.23277-13-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20170613091935.23277-1-quwenruo@cn.fujitsu.com>
 References: <20170613091935.23277-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,227 +19,96 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- btrfs-select-super.c |  2 +-
- btrfstune.c          |  6 +++---
- disk-io.c            | 48 ++++++++++++++++++++++++------------------------
- disk-io.h            |  4 ++--
- super-recover.c      |  2 +-
- 5 files changed, 31 insertions(+), 31 deletions(-)
+ cmds-check.c | 6 +++---
+ volumes.c    | 9 +++++----
+ volumes.h    | 2 +-
+ 3 files changed, 9 insertions(+), 8 deletions(-)
 
-diff --git a/btrfs-select-super.c b/btrfs-select-super.c
-index 0a899966..e021221e 100644
---- a/btrfs-select-super.c
-+++ b/btrfs-select-super.c
-@@ -93,7 +93,7 @@ int main(int argc, char **argv)
+diff --git a/cmds-check.c b/cmds-check.c
+index bd6c4e75..b10d0020 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -6629,7 +6629,7 @@ static int process_chunk_item(struct cache_tree *chunk_cache,
+ 	 * wrong onwer(3) out of chunk tree, to pass both chunk tree check
+ 	 * and owner<->key_type check.
+ 	 */
+-	ret = btrfs_check_chunk_valid(global_info->tree_root, eb, chunk, slot,
++	ret = btrfs_check_chunk_valid(global_info, eb, chunk, slot,
+ 				      key->offset);
+ 	if (ret < 0) {
+ 		error("chunk(%llu, %llu) is not valid, ignore it",
+@@ -10930,7 +10930,7 @@ static int check_dev_extent_item(struct btrfs_fs_info *fs_info,
  
- 	/* make the super writing code think we've read the first super */
- 	root->fs_info->super_bytenr = BTRFS_SUPER_INFO_OFFSET;
--	ret = write_all_supers(root);
-+	ret = write_all_supers(root->fs_info);
- 
- 	/* we don't close the ctree or anything, because we don't want a real
- 	 * transaction commit.  We just want the super copy we pulled off the
-diff --git a/btrfstune.c b/btrfstune.c
-index 2d85b041..1ed73a92 100644
---- a/btrfstune.c
-+++ b/btrfstune.c
-@@ -242,7 +242,7 @@ static int change_fsid_prepare(struct btrfs_fs_info *fs_info)
- 	btrfs_set_super_flags(fs_info->super_copy, flags);
- 
- 	memcpy(fs_info->super_copy->fsid, fs_info->new_fsid, BTRFS_FSID_SIZE);
--	ret = write_all_supers(tree_root);
-+	ret = write_all_supers(fs_info);
- 	if (ret < 0)
- 		return ret;
- 
-@@ -260,7 +260,7 @@ static int change_fsid_done(struct btrfs_fs_info *fs_info)
- 	flags &= ~BTRFS_SUPER_FLAG_CHANGING_FSID;
- 	btrfs_set_super_flags(fs_info->super_copy, flags);
- 
--	return write_all_supers(fs_info->tree_root);
-+	return write_all_supers(fs_info);
- }
- 
- /*
-@@ -354,7 +354,7 @@ static int change_uuid(struct btrfs_fs_info *fs_info, const char *new_fsid_str)
- 	       BTRFS_FSID_SIZE);
- 	memcpy(fs_info->super_copy->fsid, fs_info->new_fsid,
- 	       BTRFS_FSID_SIZE);
--	ret = write_all_supers(fs_info->tree_root);
-+	ret = write_all_supers(fs_info);
+ 	l = path.nodes[0];
+ 	chunk = btrfs_item_ptr(l, path.slots[0], struct btrfs_chunk);
+-	ret = btrfs_check_chunk_valid(chunk_root, l, chunk, path.slots[0],
++	ret = btrfs_check_chunk_valid(fs_info, l, chunk, path.slots[0],
+ 				      chunk_key.offset);
  	if (ret < 0)
  		goto out;
+@@ -11188,7 +11188,7 @@ static int check_chunk_item(struct btrfs_fs_info *fs_info,
+ 	chunk = btrfs_item_ptr(eb, slot, struct btrfs_chunk);
+ 	length = btrfs_chunk_length(eb, chunk);
+ 	chunk_end = chunk_key.offset + length;
+-	ret = btrfs_check_chunk_valid(extent_root, eb, chunk, slot,
++	ret = btrfs_check_chunk_valid(fs_info, eb, chunk, slot,
+ 				      chunk_key.offset);
+ 	if (ret < 0) {
+ 		error("chunk[%llu %llu) is invalid", chunk_key.offset,
+diff --git a/volumes.c b/volumes.c
+index 700def64..d8b4e993 100644
+--- a/volumes.c
++++ b/volumes.c
+@@ -1680,7 +1680,7 @@ static struct btrfs_device *fill_missing_device(u64 devid)
+  * slot == -1: SYSTEM chunk
+  * return -EIO on error, otherwise return 0
+  */
+-int btrfs_check_chunk_valid(struct btrfs_root *root,
++int btrfs_check_chunk_valid(struct btrfs_fs_info *fs_info,
+ 			    struct extent_buffer *leaf,
+ 			    struct btrfs_chunk *chunk,
+ 			    int slot, u64 logical)
+@@ -1691,7 +1691,7 @@ int btrfs_check_chunk_valid(struct btrfs_root *root,
+ 	u16 sub_stripes;
+ 	u64 type;
+ 	u32 chunk_ondisk_size;
+-	u32 sectorsize = root->fs_info->sectorsize;
++	u32 sectorsize = fs_info->sectorsize;
  
-diff --git a/disk-io.c b/disk-io.c
-index 686c55e7..a11e6262 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -599,7 +599,7 @@ commit_tree:
- 	BUG_ON(ret);
- 	ret = __commit_transaction(trans, root);
- 	BUG_ON(ret);
--	write_ctree_super(trans, root);
-+	write_ctree_super(trans, fs_info);
- 	btrfs_finish_extent_commit(trans, fs_info->extent_root,
- 			           &fs_info->pinned_extents);
- 	kfree(trans);
-@@ -1631,7 +1631,7 @@ int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 sb_bytenr,
- 	return transid > 0 ? 0 : -1;
- }
- 
--static int write_dev_supers(struct btrfs_root *root,
-+static int write_dev_supers(struct btrfs_fs_info *fs_info,
- 			    struct btrfs_super_block *sb,
- 			    struct btrfs_device *device)
+ 	length = btrfs_chunk_length(leaf, chunk);
+ 	stripe_len = btrfs_chunk_stripe_len(leaf, chunk);
+@@ -1787,7 +1787,8 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
+ 			  struct extent_buffer *leaf,
+ 			  struct btrfs_chunk *chunk, int slot)
  {
-@@ -1639,8 +1639,8 @@ static int write_dev_supers(struct btrfs_root *root,
- 	u32 crc;
- 	int i, ret;
- 
--	if (root->fs_info->super_bytenr != BTRFS_SUPER_INFO_OFFSET) {
--		btrfs_set_super_bytenr(sb, root->fs_info->super_bytenr);
-+	if (fs_info->super_bytenr != BTRFS_SUPER_INFO_OFFSET) {
-+		btrfs_set_super_bytenr(sb, fs_info->super_bytenr);
- 		crc = ~(u32)0;
- 		crc = btrfs_csum_data((char *)sb + BTRFS_CSUM_SIZE, crc,
- 				      BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
-@@ -1650,9 +1650,9 @@ static int write_dev_supers(struct btrfs_root *root,
- 		 * super_copy is BTRFS_SUPER_INFO_SIZE bytes and is
- 		 * zero filled, we can use it directly
- 		 */
--		ret = pwrite64(device->fd, root->fs_info->super_copy,
-+		ret = pwrite64(device->fd, fs_info->super_copy,
- 				BTRFS_SUPER_INFO_SIZE,
--				root->fs_info->super_bytenr);
-+				fs_info->super_bytenr);
- 		if (ret != BTRFS_SUPER_INFO_SIZE)
- 			goto write_err;
- 		return 0;
-@@ -1674,7 +1674,7 @@ static int write_dev_supers(struct btrfs_root *root,
- 		 * super_copy is BTRFS_SUPER_INFO_SIZE bytes and is
- 		 * zero filled, we can use it directly
- 		 */
--		ret = pwrite64(device->fd, root->fs_info->super_copy,
-+		ret = pwrite64(device->fd, fs_info->super_copy,
- 				BTRFS_SUPER_INFO_SIZE, bytenr);
- 		if (ret != BTRFS_SUPER_INFO_SIZE)
- 			goto write_err;
-@@ -1691,17 +1691,17 @@ write_err:
- 	return ret;
- }
- 
--int write_all_supers(struct btrfs_root *root)
-+int write_all_supers(struct btrfs_fs_info *fs_info)
- {
- 	struct list_head *cur;
--	struct list_head *head = &root->fs_info->fs_devices->devices;
-+	struct list_head *head = &fs_info->fs_devices->devices;
- 	struct btrfs_device *dev;
- 	struct btrfs_super_block *sb;
- 	struct btrfs_dev_item *dev_item;
- 	int ret;
- 	u64 flags;
- 
--	sb = root->fs_info->super_copy;
-+	sb = fs_info->super_copy;
- 	dev_item = &sb->dev_item;
- 	list_for_each(cur, head) {
- 		dev = list_entry(cur, struct btrfs_device, dev_list);
-@@ -1722,36 +1722,36 @@ int write_all_supers(struct btrfs_root *root)
- 		flags = btrfs_super_flags(sb);
- 		btrfs_set_super_flags(sb, flags | BTRFS_HEADER_FLAG_WRITTEN);
- 
--		ret = write_dev_supers(root, sb, dev);
-+		ret = write_dev_supers(fs_info, sb, dev);
- 		BUG_ON(ret);
- 	}
- 	return 0;
- }
- 
- int write_ctree_super(struct btrfs_trans_handle *trans,
--		      struct btrfs_root *root)
-+		      struct btrfs_fs_info *fs_info)
- {
- 	int ret;
--	struct btrfs_root *tree_root = root->fs_info->tree_root;
--	struct btrfs_root *chunk_root = root->fs_info->chunk_root;
-+	struct btrfs_root *tree_root = fs_info->tree_root;
-+	struct btrfs_root *chunk_root = fs_info->chunk_root;
- 
--	if (root->fs_info->readonly)
-+	if (fs_info->readonly)
- 		return 0;
- 
--	btrfs_set_super_generation(root->fs_info->super_copy,
-+	btrfs_set_super_generation(fs_info->super_copy,
- 				   trans->transid);
--	btrfs_set_super_root(root->fs_info->super_copy,
-+	btrfs_set_super_root(fs_info->super_copy,
- 			     tree_root->node->start);
--	btrfs_set_super_root_level(root->fs_info->super_copy,
-+	btrfs_set_super_root_level(fs_info->super_copy,
- 				   btrfs_header_level(tree_root->node));
--	btrfs_set_super_chunk_root(root->fs_info->super_copy,
-+	btrfs_set_super_chunk_root(fs_info->super_copy,
- 				   chunk_root->node->start);
--	btrfs_set_super_chunk_root_level(root->fs_info->super_copy,
-+	btrfs_set_super_chunk_root_level(fs_info->super_copy,
- 					 btrfs_header_level(chunk_root->node));
--	btrfs_set_super_chunk_root_generation(root->fs_info->super_copy,
-+	btrfs_set_super_chunk_root_generation(fs_info->super_copy,
- 				btrfs_header_generation(chunk_root->node));
- 
--	ret = write_all_supers(root);
-+	ret = write_all_supers(fs_info);
- 	if (ret)
- 		fprintf(stderr, "failed to write new super block err %d\n", ret);
- 	return ret;
-@@ -1773,14 +1773,14 @@ int close_ctree_fs_info(struct btrfs_fs_info *fs_info)
- 		BUG_ON(ret);
- 		ret = __commit_transaction(trans, root);
- 		BUG_ON(ret);
--		write_ctree_super(trans, root);
-+		write_ctree_super(trans, fs_info);
- 		kfree(trans);
- 	}
- 
- 	if (fs_info->finalize_on_close) {
- 		btrfs_set_super_magic(fs_info->super_copy, BTRFS_MAGIC);
- 		root->fs_info->finalize_on_close = 0;
--		ret = write_all_supers(root);
-+		ret = write_all_supers(fs_info);
- 		if (ret)
- 			fprintf(stderr,
- 				"failed to write new super block err %d\n", ret);
-diff --git a/disk-io.h b/disk-io.h
-index b834fea4..dfe4cf01 100644
---- a/disk-io.h
-+++ b/disk-io.h
-@@ -161,9 +161,9 @@ static inline int close_ctree(struct btrfs_root *root)
- 	return close_ctree_fs_info(root->fs_info);
- }
- 
--int write_all_supers(struct btrfs_root *root);
-+int write_all_supers(struct btrfs_fs_info *fs_info);
- int write_ctree_super(struct btrfs_trans_handle *trans,
--		      struct btrfs_root *root);
-+		      struct btrfs_fs_info *fs_info);
- int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 sb_bytenr,
- 		unsigned sbflags);
- int btrfs_map_bh_to_logical(struct btrfs_root *root, struct extent_buffer *bh,
-diff --git a/super-recover.c b/super-recover.c
-index 5298d46c..6b80416f 100644
---- a/super-recover.c
-+++ b/super-recover.c
-@@ -302,7 +302,7 @@ int btrfs_recover_superblocks(const char *dname,
- 	}
- 	/* reset super_bytenr in order that we will rewrite all supers */
- 	root->fs_info->super_bytenr = BTRFS_SUPER_INFO_OFFSET;
--	ret = write_all_supers(root);
-+	ret = write_all_supers(root->fs_info);
- 	if (!ret)
- 		ret = 2;
- 	else
+-	struct btrfs_mapping_tree *map_tree = &root->fs_info->mapping_tree;
++	struct btrfs_fs_info *fs_info = root->fs_info;
++	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
+ 	struct map_lookup *map;
+ 	struct cache_extent *ce;
+ 	u64 logical;
+@@ -1802,7 +1803,7 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
+ 	length = btrfs_chunk_length(leaf, chunk);
+ 	num_stripes = btrfs_chunk_num_stripes(leaf, chunk);
+ 	/* Validation check */
+-	ret = btrfs_check_chunk_valid(root, leaf, chunk, slot, logical);
++	ret = btrfs_check_chunk_valid(fs_info, leaf, chunk, slot, logical);
+ 	if (ret) {
+ 		error("%s checksums match, but it has an invalid chunk, %s",
+ 		      (slot == -1) ? "Superblock" : "Metadata",
+diff --git a/volumes.h b/volumes.h
+index 6f164e7f..d2e9cbc0 100644
+--- a/volumes.h
++++ b/volumes.h
+@@ -242,7 +242,7 @@ int write_raid56_with_parity(struct btrfs_fs_info *info,
+ 			     struct extent_buffer *eb,
+ 			     struct btrfs_multi_bio *multi,
+ 			     u64 stripe_len, u64 *raid_map);
+-int btrfs_check_chunk_valid(struct btrfs_root *root,
++int btrfs_check_chunk_valid(struct btrfs_fs_info *fs_info,
+ 			    struct extent_buffer *leaf,
+ 			    struct btrfs_chunk *chunk,
+ 			    int slot, u64 logical);
 -- 
 2.13.1
 

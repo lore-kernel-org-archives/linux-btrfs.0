@@ -1,72 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:32273 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752074AbdFLRj4 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Jun 2017 13:39:56 -0400
-Date: Mon, 12 Jun 2017 10:37:48 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Omar Sandoval <osandov@osandov.com>
-Cc: linux-btrfs@vger.kernel.org, Josef Bacik <jbacik@fb.com>,
+Received: from mx2.suse.de ([195.135.220.15]:48904 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751826AbdFMSfw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 13 Jun 2017 14:35:52 -0400
+Subject: Re: [PATCH 7/7] Btrfs: warn if total_bytes_pinned is non-zero on
+ unmount
+To: Omar Sandoval <osandov@osandov.com>, linux-btrfs@vger.kernel.org
+Cc: Josef Bacik <jbacik@fb.com>, Liu Bo <bo.li.liu@oracle.com>,
         kernel-team@fb.com
-Subject: Re: [PATCH 3/7] Btrfs: update total_bytes_pinned when pinning down
- extents
-Message-ID: <20170612173748.GC18452@lim.localdomain>
-Reply-To: bo.li.liu@oracle.com
 References: <cover.1496792333.git.osandov@fb.com>
- <ff9e2944872bc1bdabb682daf1eac4c3e05cc041.1496792333.git.osandov@fb.com>
+ <0a015ca3c5d799b501b9c23475ed9e96d16de671.1496792333.git.osandov@fb.com>
+From: Jeff Mahoney <jeffm@suse.com>
+Message-ID: <6752eb7c-e5d2-c082-470c-719dd618cb54@suse.com>
+Date: Tue, 13 Jun 2017 14:35:47 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <ff9e2944872bc1bdabb682daf1eac4c3e05cc041.1496792333.git.osandov@fb.com>
+In-Reply-To: <0a015ca3c5d799b501b9c23475ed9e96d16de671.1496792333.git.osandov@fb.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="lTv9nV8p3mNHQOQQoUpoQ8hOPxRe6qmAv"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 06, 2017 at 04:45:28PM -0700, Omar Sandoval wrote:
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--lTv9nV8p3mNHQOQQoUpoQ8hOPxRe6qmAv
+Content-Type: multipart/mixed; boundary="o4Ijw6wvNjQQ7NTT7AWTnVDc9hggW7Gsa";
+ protected-headers="v1"
+From: Jeff Mahoney <jeffm@suse.com>
+To: Omar Sandoval <osandov@osandov.com>, linux-btrfs@vger.kernel.org
+Cc: Josef Bacik <jbacik@fb.com>, Liu Bo <bo.li.liu@oracle.com>,
+ kernel-team@fb.com
+Message-ID: <6752eb7c-e5d2-c082-470c-719dd618cb54@suse.com>
+Subject: Re: [PATCH 7/7] Btrfs: warn if total_bytes_pinned is non-zero on
+ unmount
+References: <cover.1496792333.git.osandov@fb.com>
+ <0a015ca3c5d799b501b9c23475ed9e96d16de671.1496792333.git.osandov@fb.com>
+In-Reply-To: <0a015ca3c5d799b501b9c23475ed9e96d16de671.1496792333.git.osandov@fb.com>
+
+--o4Ijw6wvNjQQ7NTT7AWTnVDc9hggW7Gsa
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+
+On 6/6/17 7:45 PM, Omar Sandoval wrote:
 > From: Omar Sandoval <osandov@fb.com>
-> 
-> The extents marked in pin_down_extent() will be unpinned later in
-> unpin_extent_range(), which decrements total_bytes_pinned.
-> pin_down_extent() must increment the counter to avoid underflowing it.
-> Also adjust btrfs_free_tree_block() to avoid accounting for the same
-> extent twice.
-> 
-
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
-
--liubo
+>=20
+> Catch any future/remaining leaks or underflows of total_bytes_pinned.
+>=20
 > Signed-off-by: Omar Sandoval <osandov@fb.com>
 > ---
->  fs/btrfs/extent-tree.c | 3 ++-
->  1 file changed, 2 insertions(+), 1 deletion(-)
-> 
+>  fs/btrfs/extent-tree.c | 1 +
+>  1 file changed, 1 insertion(+)
+>=20
 > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 6032e9a635f2..9cff937415cb 100644
+> index 75ad24f8d253..5fb2fb27eda6 100644
 > --- a/fs/btrfs/extent-tree.c
 > +++ b/fs/btrfs/extent-tree.c
-> @@ -6343,6 +6343,7 @@ static int pin_down_extent(struct btrfs_fs_info *fs_info,
->  
->  	trace_btrfs_space_reservation(fs_info, "pinned",
->  				      cache->space_info->flags, num_bytes, 1);
-> +	percpu_counter_add(&cache->space_info->total_bytes_pinned, num_bytes);
->  	set_extent_dirty(fs_info->pinned_extents, bytenr,
->  			 bytenr + num_bytes - 1, GFP_NOFS | __GFP_NOFAIL);
->  	return 0;
-> @@ -7189,6 +7190,7 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
->  				goto out;
->  		}
->  
-> +		pin = 0;
->  		cache = btrfs_lookup_block_group(fs_info, buf->start);
->  
->  		if (btrfs_header_flag(buf, BTRFS_HEADER_FLAG_WRITTEN)) {
-> @@ -7204,7 +7206,6 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
->  		btrfs_free_reserved_bytes(cache, buf->len, 0);
->  		btrfs_put_block_group(cache);
->  		trace_btrfs_reserved_extent_free(fs_info, buf->start, buf->len);
-> -		pin = 0;
->  	}
->  out:
->  	if (pin)
-> -- 
-> 2.13.0
-> 
+> @@ -9860,6 +9860,7 @@ int btrfs_free_block_groups(struct btrfs_fs_info =
+*info)
+>  			    space_info->bytes_reserved > 0 ||
+>  			    space_info->bytes_may_use > 0))
+>  			dump_space_info(info, space_info, 0, 0);
+> +		WARN_ON(percpu_counter_sum(&space_info->total_bytes_pinned) !=3D 0);=
+
+>  		list_del(&space_info->list);
+>  		for (i =3D 0; i < BTRFS_NR_RAID_TYPES; i++) {
+>  			struct kobject *kobj;
+>=20
+
+Can we group this in with the other WARN_ON and add printing
+total_bytes_pinned to dump_space_info?  Understanding the magnitude and
+whether we're underflowed or haven't released enough is helpful.  While
+testing your patchset, I did this and it found a few bugs in cleanup
+after error.  I'll post those patches shortly.
+
+-Jeff
+
+--=20
+Jeff Mahoney
+SUSE Labs
+
+
+--o4Ijw6wvNjQQ7NTT7AWTnVDc9hggW7Gsa--
+
+--lTv9nV8p3mNHQOQQoUpoQ8hOPxRe6qmAv
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG/MacGPG2 v2
+
+iQIVAwUBWUAwhB57S2MheeWyAQgahQ/+M69UdDzLC8bKQxUtDZW9QW5wBzrrJOio
+/cc3vOV4eBEvTxbsqphS0Lf53WP41YZa7iTwIBDIl5bSOdiRMcVYIdc31UP7bz9d
+NxvoLY7U9+xu4k3twjV0wWc3IoPqVh781cj/S86r6PXF4gMMFT+W7v6QwIA9nDEW
+0EXFeK4p4B3lKWWLiCLo/Rauz2zd5EfuvItp56RdrExPDEUjmJS69jHas208/WMA
+sbF3TGIHXhSXWYSvfZaHPcgChThQtiU0dbZggfwQMGfDH//itc/84Vxu8n7lyYpD
+noaF4cPwI+Dv9ukJZxeLwPpwzX4+nO3flrS8I0IEe/F+T0HxTUkzB0lbFqIC8zW8
+2+kbRjvgIiqxS8LWFKmaai/kJ97qnOHajWlruXr2PZsgH6LIYiE+rbrRQ+6H3Pcm
+RosQtbLGkEoVCczXaM65Yrt+GQH01qo1ZglWaHcOGUe/XmXzZ1znHoERYMMcGjpv
+N5J5+20yezu6Jrpc+I68hwiSrO4EWbOEuS5tVDABi5AYk7NqZjySx251S5pKu+OW
+IQOYxe4nLSV4Tx3UgU00lMmz+gOuqg+6TiE+QeVzWpqcHLhyxayqjUV72loAlcFt
+4RgflaFHFN1OM6jPD3fzNt57VS84LarMN7NxywtE4/MnAIJRzfhgsEI6QmpBJPOZ
+W7eH8GbpcbE=
+=2is1
+-----END PGP SIGNATURE-----
+
+--lTv9nV8p3mNHQOQQoUpoQ8hOPxRe6qmAv--

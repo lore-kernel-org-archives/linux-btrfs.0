@@ -1,40 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38890 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752456AbdFMNaX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Jun 2017 09:30:23 -0400
-Date: Tue, 13 Jun 2017 15:29:17 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
-Subject: Re: [PATCH v3] Btrfs: change how we iterate bios in endio
-Message-ID: <20170613132917.GV25451@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170517222252.29242-5-bo.li.liu@oracle.com>
- <20170612170512.1837-1-bo.li.liu@oracle.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:16639 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751871AbdFMEb3 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 13 Jun 2017 00:31:29 -0400
+Date: Mon, 12 Jun 2017 21:30:56 -0700
+From: "Darrick J. Wong" <darrick.wong@oracle.com>
+To: Jeff Layton <jlayton@redhat.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>,
+        Al Viro <viro@ZenIV.linux.org.uk>, Jan Kara <jack@suse.cz>,
+        tytso@mit.edu, axboe@kernel.dk, mawilcox@microsoft.com,
+        ross.zwisler@linux.intel.com, corbet@lwn.net, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
+        linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org
+Subject: Re: [PATCH v6 19/20] xfs: minimal conversion to errseq_t writeback
+ error reporting
+Message-ID: <20170613043056.GO4530@birch.djwong.org>
+References: <20170612122316.13244-1-jlayton@redhat.com>
+ <20170612122316.13244-24-jlayton@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170612170512.1837-1-bo.li.liu@oracle.com>
+In-Reply-To: <20170612122316.13244-24-jlayton@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 12, 2017 at 11:05:12AM -0600, Liu Bo wrote:
-> Since dio submit has used bio_clone_fast, the submitted bio may not have a
-> reliable bi_vcnt, for the bio vector iterations in checksum related
-> functions, bio->bi_iter is not modified yet and it's safe to use
-> bio_for_each_segment, while for those bio vector iterations in dio read's
-> endio, we now save a copy of bvec_iter in struct btrfs_io_bio when cloning
-> bios and use the helper __bio_for_each_segment with the saved bvec_iter to
-> access each bvec.
+On Mon, Jun 12, 2017 at 08:23:15AM -0400, Jeff Layton wrote:
+> Just set the FS_WB_ERRSEQ flag to indicate that we want to use errseq_t
+> based error reporting. Internal filemap_* calls are left as-is for now.
 > 
-> Also for dio reads which don't get split, we also need to save a copy of
-> bio iterator in btrfs_bio_clone to let __bio_for_each_segments to access
-> each bvec in dio read's endio.  Note that it doesn't affect other calls of
-> btrfs_bio_clone() because they don't need to use this iterator.
-> 
-> Cc: David Sterba <dsterba@suse.cz>
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> Signed-off-by: Jeff Layton <jlayton@redhat.com>
 > ---
-> v2: Fix null pointer crash in the case of non-split dio reads.
+>  fs/xfs/xfs_super.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/fs/xfs/xfs_super.c b/fs/xfs/xfs_super.c
+> index 455a575f101d..28d3be187025 100644
+> --- a/fs/xfs/xfs_super.c
+> +++ b/fs/xfs/xfs_super.c
+> @@ -1758,7 +1758,7 @@ static struct file_system_type xfs_fs_type = {
+>  	.name			= "xfs",
+>  	.mount			= xfs_fs_mount,
+>  	.kill_sb		= kill_block_super,
+> -	.fs_flags		= FS_REQUIRES_DEV,
+> +	.fs_flags		= FS_REQUIRES_DEV | FS_WB_ERRSEQ,
 
-Perfect, thanks. Patch replaced.
+Huh?  Why are there two patches with the same subject line?  And this
+same bit of code too?  Or ... 11/13, 11/20?  What's going on here?
+
+<confused>
+
+--D
+
+>  };
+>  MODULE_ALIAS_FS("xfs");
+>  
+> -- 
+> 2.13.0
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-xfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

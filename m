@@ -1,125 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:45380 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751796AbdFLI0U (ORCPT
+Received: from mail-ot0-f181.google.com ([74.125.82.181]:33567 "EHLO
+        mail-ot0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752211AbdFMRaY (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Jun 2017 04:26:20 -0400
-From: Anand Jain <anand.jain@oracle.com>
+        Tue, 13 Jun 2017 13:30:24 -0400
+Received: by mail-ot0-f181.google.com with SMTP id k4so93088186otd.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 13 Jun 2017 10:30:24 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <CAE0+S6OApx32JiJEwveHdZ7ukCSOVBuKdCNiwsXTQ4_QuXsfzQ@mail.gmail.com>
+References: <CAE0+S6OjKesXZ65q5tVK7Y_Ydk7Q4Z8geEoQusr=7LVJHdUJGQ@mail.gmail.com>
+ <0c43d71a-75b3-6f52-d89a-3dd7d1abace9@gmail.com> <CAE0+S6OApx32JiJEwveHdZ7ukCSOVBuKdCNiwsXTQ4_QuXsfzQ@mail.gmail.com>
+From: Hy Che <cvghy116@gmail.com>
+Date: Wed, 14 Jun 2017 00:29:41 +0700
+Message-ID: <CAE0+S6MHf-DCqif1P6N4jJDXnsOC8OaVnaY-12XO4LvNGKYoCg@mail.gmail.com>
+Subject: Fwd: Questions about how BtrFS works.
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH v2] btrfs: add compression trace points
-Date: Mon, 12 Jun 2017 16:32:26 +0800
-Message-Id: <1497256346-666-1-git-send-email-anand.jain@oracle.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch adds compression and decompression trace points for the
-purpose of debugging.
+---------- Forwarded message ----------
+From: Hy Che <cvghy116@gmail.com>
+Date: Sun, Jun 11, 2017 at 10:45 PM
+Subject: Re: Questions about how BtrFS works.
+To: Nikolay Borisov <n.borisov.lkml@gmail.com>
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
-v2:
- . Use better naming.
-   (If transform is not good enough I have run out of ideas, pls suggest).
- . To be applied on top of
-   git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-next
-   (tested without namelen check patch set).
+Sorry for sending privately, I did't know clicked on 'Replay' is not
+sent to the mailing list.
+Some additional info.
+4. It's not that I'm lazy reading code, I just don't know where to start.
 
- fs/btrfs/compression.c       | 11 +++++++++++
- include/trace/events/btrfs.h | 44 ++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 55 insertions(+)
+5. I understand why it is now, the 100 bytes is header size, and the
+offset only counted at the end of the header.
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index fd6508bcff77..53908722d80e 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -884,6 +884,10 @@ int btrfs_compress_pages(int type, struct address_space *mapping,
- 						      start, pages,
- 						      out_pages,
- 						      total_in, total_out);
-+
-+	trace_btrfs_data_transformer(0, 0, mapping->host, type, *total_in,
-+						*total_out, start, ret);
-+
- 	free_workspace(type, workspace);
- 	return ret;
- }
-@@ -910,6 +914,10 @@ static int btrfs_decompress_bio(struct compressed_bio *cb)
- 
- 	workspace = find_workspace(type);
- 	ret = btrfs_compress_op[type - 1]->decompress_bio(workspace, cb);
-+
-+	trace_btrfs_data_transformer(1, 1, cb->inode, type,
-+				cb->compressed_len, cb->len, cb->start, ret);
-+
- 	free_workspace(type, workspace);
- 
- 	return ret;
-@@ -932,6 +940,9 @@ int btrfs_decompress(int type, unsigned char *data_in, struct page *dest_page,
- 						  dest_page, start_byte,
- 						  srclen, destlen);
- 
-+	trace_btrfs_data_transformer(1, 0, dest_page->mapping->host,
-+				type, srclen, destlen, start_byte, ret);
-+
- 	free_workspace(type, workspace);
- 	return ret;
- }
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index cd99a3658156..7c2442dab6a0 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -1622,6 +1622,50 @@ TRACE_EVENT(qgroup_meta_reserve,
- 		show_root_type(__entry->refroot), __entry->diff)
- );
- 
-+#define show_transformer_type(type)			\
-+	__print_symbolic(type,				\
-+		{ BTRFS_COMPRESS_ZLIB, 	"zlib" },	\
-+		{ BTRFS_COMPRESS_LZO, 	"lzo" })
-+
-+TRACE_EVENT(btrfs_data_transformer,
-+
-+	TP_PROTO(int uncompress, int its_bio, struct inode *inode, int type,
-+			unsigned long len_before, unsigned long len_after,
-+			unsigned long start, int ret),
-+
-+	TP_ARGS(uncompress, its_bio, inode, type, len_before,
-+						len_after, start, ret),
-+
-+	TP_STRUCT__entry_btrfs(
-+		__field(	int,		uncompress)
-+		__field(	int,		its_bio)
-+		__field(	ino_t,		i_ino)
-+		__field(	int,		type)
-+		__field(	unsigned long,	len_before)
-+		__field(	unsigned long,	len_after)
-+		__field(	unsigned long,	start)
-+		__field(	int,		ret)
-+	),
-+
-+	TP_fast_assign_btrfs(btrfs_sb(inode->i_sb),
-+		__entry->uncompress	= uncompress;
-+		__entry->its_bio	= its_bio;
-+		__entry->i_ino		= inode->i_ino;
-+		__entry->type		= type;
-+		__entry->len_before	= len_before;
-+		__entry->len_after	= len_after;
-+		__entry->start		= start;
-+		__entry->ret		= ret;
-+	),
-+
-+	TP_printk_btrfs("%s %s ino=%lu type=%s len_before=%lu len_after=%lu "
-+		"start=%lu ret=%d",
-+		__entry->uncompress ? "untransform":"transform",
-+		__entry->its_bio ? "bio":"page", __entry->i_ino,
-+		show_transformer_type(__entry->type), __entry->len_before,
-+		__entry->len_after, __entry->start, __entry->ret)
-+
-+);
- #endif /* _TRACE_BTRFS_H */
- 
- /* This part must be outside protection */
--- 
-2.13.0
+On Sun, Jun 11, 2017 at 3:00 PM, Nikolay Borisov
+<n.borisov.lkml@gmail.com> wrote:
+>
+>
+>
+> On 10.06.2017 17:37, Hy Che wrote:
+> > Hello everyone,
+> > My name is Hy (ugen on freenode), I am a student attending GSoC for
+> > Haiku[1]. Because I have a project that support write features for
+> > BtrFS[2], there are some questions, since the documents on wiki are
+> > not enough so I have to ask here.
+> >
+> > 1. Where can I find to read a complete btree manipulations in detail
+> > (split, insert, etc) for BtrFS except the code base ?  I need to get
+> > the idea first.
+>
+> Have you read this paper: https://dl.acm.org/authorize?N80838
+> The original idea came by Ohad Rodeh while he was at IBM.
+>
+> I believe this was the initial paper: https://dl.acm.org/authorize?N80839
 
+Have read both of them before, but I need more details.
+There is a useful stuff here on
+https://www.spinics.net/lists/linux-btrfs/msg05421.html
+Is it work the same in current version ?
+
+>
+> > 2. About the reference,  " ...with a refcount associated to each tree
+> > node but stored in an ad-hoc free map structure ... " - wikipedia.
+> > What is a free map structure, and where does it stored ?
+>
+> I believe you are looking for this :
+> https://btrfs.wiki.kernel.org/index.php/Btrfs_design#Reference_Counted_Extents
+>
+>
+> http://www.spinics.net/lists/linux-btrfs/msg33415.html
+
+Thanks, exactly what I want.
+
+>
+> >
+> > 3. How BtrFS allocate block and extent when cow-ed ? As I tested after
+> > making a new file, the root tree root, extent root and csum root move
+> > forward 65536 bytes, the fs root move 49152 bytes and the data extent
+> > is allocated next to the previous one. Where those numbers come from ?
+> > Is data extent is cow-ed ? I see it doesn't because extent-item still
+> > contains the old offset.
+>
+> You'd have to read the code, have you taken a look at : __btrfs_cow_block()
+
+I have take a look, but it is kinda long and complex. If i traced
+correcly, It would take to
+find_free_extent(http://elixir.free-electrons.com/linux/latest/source/fs/btrfs/extent-tree.c#L7408),
+where the infomation need is key "ins", and I don't know how it is
+changed in which case.
+
+>
+>
+> >
+> > 4. How BtrFS handle transactions ?
+> > Correctly me if I'm wrong, the transaction collect all requests in 30
+> > seconds and then write back to disk. The transid increments when new
+> > request appeared and genid is asigned to this one.
+>
+> I don't think there is anything written per-se. You'd again have to resort to reading the
+> code
+
+I need a rough idea before reading code because it would be taking lots of time.
+
+>
+> >
+> > 5. Why there is unused space (100 bytes) at the end of each node ?
+>
+> > 6. How does BtrFS calculate checksum ?
+>
+> It uses a 32bit CRC. The actual function which is used to calc
+> the csum is csum_tree_block you can check its callers and internals to
+> in which code paths the crc is used. But in general all it does is call btrfs_csum_data
+> on the extent buffer which holds the particular block.
+>
+Thanks
+Hy

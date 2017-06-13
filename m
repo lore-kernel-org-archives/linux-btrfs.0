@@ -1,69 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:39043 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752418AbdFMJBB (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:23606 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752566AbdFMI7q (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Jun 2017 05:01:01 -0400
-Subject: Re: [PATCH 1/2] btrfs: write_dev_flush does not return ENOMEM anymore
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <20170609065229.8188-1-anand.jain@oracle.com>
- <20170609065229.8188-2-anand.jain@oracle.com>
- <20170612161406.GR25451@twin.jikos.cz>
+        Tue, 13 Jun 2017 04:59:46 -0400
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <b88d6941-1ed6-1bd8-7fd7-28e08f6e3000@oracle.com>
-Date: Tue, 13 Jun 2017 17:07:14 +0800
-MIME-Version: 1.0
-In-Reply-To: <20170612161406.GR25451@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8; format=flowed
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH 1/3 v2] btrfs: write_dev_flush does not return ENOMEM anymore
+Date: Tue, 13 Jun 2017 17:05:39 +0800
+Message-Id: <1497344741-1135-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+As commit
+ 9035b5dbc576 btrfs: btrfs_io_bio_alloc never fails, skip error handling
 
+removed the -ENOMEM return from write_dev_flush()
 
-On 06/13/2017 12:14 AM, David Sterba wrote:
-> On Fri, Jun 09, 2017 at 02:52:28PM +0800, Anand Jain wrote:
->> Commit
->>   9035b5dbc576 btrfs: btrfs_io_bio_alloc never fails, skip error handling
->>
->> removed the -ENOMEM return from write_dev_flush() so no need to
->> check for the -ENOMEM during send.
->>
->> This patch also peals write_dev_flush's wait part of the code,
->> and creates a new function wait_dev_flush().
-> 
-> "This patch also" usually means that the patch should be split.
-> 
->>   /*
->> - * trigger flushes for one the devices.  If you pass wait == 0, the flushes are
->> - * sent down.  With wait == 1, it waits for the previous flush.
->> - *
->> - * any device where the flush fails with eopnotsupp are flagged as not-barrier
->> - * capable
->> + * trigger flushes for one the devices.
-> 
-> In the patch that splits write_dev_flush, please use the following
-> comment wording:
-> 
->   * Submit a flush request to the device if it supports it. Error handling is
->   * done in the waiting counterpart.
-> 
->>    */
->> -static int write_dev_flush(struct btrfs_device *device, int wait)
->> +static void write_dev_flush(struct btrfs_device *device)
-> 
-> and
-> 
-> /*
->   * If the flush bio has been submitted by write_dev_flush, wait for it.
->   */
-> 
->> +static int wait_dev_flush(struct btrfs_device *device)
->> +{
-> 
-> But otherwise the cleanup is good.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+v2: . Add the removal of submit_flush_error in check_barrier_error()
+    from 2/2 before to 1/3 here, as its appropriate to be here.
+    . Did not split the write and wait part here in this patch.
 
-  Done. V2 has been sent out.
+ fs/btrfs/disk-io.c | 37 +++++--------------------------------
+ 1 file changed, 5 insertions(+), 32 deletions(-)
 
-Thanks for the review.
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 9f2ffe2c6afb..9fbcfa9ccab7 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3505,12 +3505,6 @@ static int write_dev_flush(struct btrfs_device *device, int wait)
+ 
+ 	if (wait) {
+ 		bio = device->flush_bio;
+-		if (!bio)
+-			/*
+-			 * This means the alloc has failed with ENOMEM, however
+-			 * here we return 0, as its not a device error.
+-			 */
+-			return 0;
+ 
+ 		wait_for_completion(&device->flush_wait);
+ 
+@@ -3548,25 +3542,16 @@ static int write_dev_flush(struct btrfs_device *device, int wait)
+ 
+ static int check_barrier_error(struct btrfs_fs_devices *fsdevs)
+ {
+-	int submit_flush_error = 0;
+ 	int dev_flush_error = 0;
+ 	struct btrfs_device *dev;
+-	int tolerance;
+ 
+ 	list_for_each_entry_rcu(dev, &fsdevs->devices, dev_list) {
+-		if (!dev->bdev) {
+-			submit_flush_error++;
+-			dev_flush_error++;
+-			continue;
+-		}
+-		if (dev->last_flush_error == -ENOMEM)
+-			submit_flush_error++;
+-		if (dev->last_flush_error && dev->last_flush_error != -ENOMEM)
++		if (!dev->bdev || dev->last_flush_error)
+ 			dev_flush_error++;
+ 	}
+ 
+-	tolerance = fsdevs->fs_info->num_tolerated_disk_barrier_failures;
+-	if (submit_flush_error > tolerance || dev_flush_error > tolerance)
++	if (dev_flush_error >
++		fsdevs->fs_info->num_tolerated_disk_barrier_failures)
+ 		return -EIO;
+ 
+ 	return 0;
+@@ -3596,10 +3581,8 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ 		if (!dev->in_fs_metadata || !dev->writeable)
+ 			continue;
+ 
+-		ret = write_dev_flush(dev, 0);
+-		if (ret)
+-			errors_send++;
+-		dev->last_flush_error = ret;
++		write_dev_flush(dev, 0);
++		dev->last_flush_error = 0;
+ 	}
+ 
+ 	/* wait for all the barriers */
+@@ -3620,16 +3603,6 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ 		}
+ 	}
+ 
+-	/*
+-	 * Try hard in case of flush. Lets say, in RAID1 we have
+-	 * the following situation
+-	 *  dev1: EIO dev2: ENOMEM
+-	 * this is not a fatal error as we hope to recover from
+-	 * ENOMEM in the next attempt to flush.
+-	 * But the following is considered as fatal
+-	 *  dev1: ENOMEM dev2: ENOMEM
+-	 *  dev1: bdev == NULL dev2: ENOMEM
+-	 */
+ 	if (errors_send || errors_wait) {
+ 		/*
+ 		 * At some point we need the status of all disks
+-- 
+2.7.0
 
--Anand

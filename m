@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:17180 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:29819 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752552AbdFMJTs (ORCPT
+        with ESMTP id S1752539AbdFMJTp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Jun 2017 05:19:48 -0400
+        Tue, 13 Jun 2017 05:19:45 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <dsterba@suse.cz>
-Subject: [PATCH 03/19] btrfs-progs: Refactor btrfs_next_bg and its callers to use btrfs_fs_info
-Date: Tue, 13 Jun 2017 17:19:19 +0800
-Message-ID: <20170613091935.23277-4-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 04/19] btrfs-progs: Refactor csum_tree_block to use btrfs_fs_info
+Date: Tue, 13 Jun 2017 17:19:20 +0800
+Message-ID: <20170613091935.23277-5-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20170613091935.23277-1-quwenruo@cn.fujitsu.com>
 References: <20170613091935.23277-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,76 +19,71 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- find-root.c |  4 ++--
- volumes.c   |  5 +++--
- volumes.h   | 14 +++++++-------
- 3 files changed, 12 insertions(+), 11 deletions(-)
+ disk-io.c | 14 ++++----------
+ utils.h   |  4 ++--
+ 2 files changed, 6 insertions(+), 12 deletions(-)
 
-diff --git a/find-root.c b/find-root.c
-index 1b41b217..1765adf8 100644
---- a/find-root.c
-+++ b/find-root.c
-@@ -118,11 +118,11 @@ int btrfs_find_root_search(struct btrfs_fs_info *fs_info,
- 	fs_info->suppress_check_block_errors = 1;
- 	while (1) {
- 		if (filter->objectid != BTRFS_CHUNK_TREE_OBJECTID)
--			ret = btrfs_next_bg_metadata(&fs_info->mapping_tree,
-+			ret = btrfs_next_bg_metadata(fs_info,
- 						  &chunk_offset,
- 						  &chunk_size);
- 		else
--			ret = btrfs_next_bg_system(&fs_info->mapping_tree,
-+			ret = btrfs_next_bg_system(fs_info,
- 						&chunk_offset,
- 						&chunk_size);
- 		if (ret) {
-diff --git a/volumes.c b/volumes.c
-index 89e39e43..700def64 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -1252,9 +1252,10 @@ int btrfs_num_copies(struct btrfs_fs_info *fs_info, u64 logical, u64 len)
- 	return ret;
+diff --git a/disk-io.c b/disk-io.c
+index 9d2408c2..bf00e195 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -164,8 +164,8 @@ int verify_tree_block_csum_silent(struct extent_buffer *buf, u16 csum_size)
+ 	return __csum_tree_block_size(buf, csum_size, 1, 1);
  }
  
--int btrfs_next_bg(struct btrfs_mapping_tree *map_tree, u64 *logical,
--		     u64 *size, u64 type)
-+int btrfs_next_bg(struct btrfs_fs_info *fs_info, u64 *logical,
-+		  u64 *size, u64 type)
+-static int csum_tree_block_fs_info(struct btrfs_fs_info *fs_info,
+-				   struct extent_buffer *buf, int verify)
++int csum_tree_block(struct btrfs_fs_info *fs_info,
++		    struct extent_buffer *buf, int verify)
  {
-+	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
- 	struct cache_extent *ce;
- 	struct map_lookup *map;
- 	u64 cur = *logical;
-diff --git a/volumes.h b/volumes.h
-index 26d88813..6f164e7f 100644
---- a/volumes.h
-+++ b/volumes.h
-@@ -187,18 +187,18 @@ int btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
- 		    u64 logical, u64 *length,
- 		    struct btrfs_multi_bio **multi_ret, int mirror_num,
- 		    u64 **raid_map_ret);
--int btrfs_next_bg(struct btrfs_mapping_tree *map_tree, u64 *logical,
-+int btrfs_next_bg(struct btrfs_fs_info *map_tree, u64 *logical,
- 		     u64 *size, u64 type);
--static inline int btrfs_next_bg_metadata(struct btrfs_mapping_tree *map_tree,
--				      u64 *logical, u64 *size)
-+static inline int btrfs_next_bg_metadata(struct btrfs_fs_info *fs_info,
-+					 u64 *logical, u64 *size)
- {
--	return btrfs_next_bg(map_tree, logical, size,
-+	return btrfs_next_bg(fs_info, logical, size,
- 			BTRFS_BLOCK_GROUP_METADATA);
+ 	u16 csum_size =
+ 		btrfs_super_csum_size(fs_info->super_copy);
+@@ -174,12 +174,6 @@ static int csum_tree_block_fs_info(struct btrfs_fs_info *fs_info,
+ 	return csum_tree_block_size(buf, csum_size, verify);
  }
--static inline int btrfs_next_bg_system(struct btrfs_mapping_tree *map_tree,
--				    u64 *logical, u64 *size)
-+static inline int btrfs_next_bg_system(struct btrfs_fs_info *fs_info,
-+				       u64 *logical, u64 *size)
+ 
+-int csum_tree_block(struct btrfs_root *root, struct extent_buffer *buf,
+-			   int verify)
+-{
+-	return csum_tree_block_fs_info(root->fs_info, buf, verify);
+-}
+-
+ struct extent_buffer *btrfs_find_tree_block(struct btrfs_root *root,
+ 					    u64 bytenr, u32 blocksize)
  {
--	return btrfs_next_bg(map_tree, logical, size,
-+	return btrfs_next_bg(fs_info, logical, size,
- 			BTRFS_BLOCK_GROUP_SYSTEM);
+@@ -345,7 +339,7 @@ struct extent_buffer* read_tree_block(
+ 
+ 	while (1) {
+ 		ret = read_whole_eb(fs_info, eb, mirror_num);
+-		if (ret == 0 && csum_tree_block_fs_info(fs_info, eb, 1) == 0 &&
++		if (ret == 0 && csum_tree_block(fs_info, eb, 1) == 0 &&
+ 		    check_tree_block(fs_info, eb) == 0 &&
+ 		    verify_parent_transid(eb->tree, eb, parent_transid, ignore)
+ 		    == 0) {
+@@ -468,7 +462,7 @@ int write_tree_block(struct btrfs_trans_handle *trans,
+ 		BUG();
+ 
+ 	btrfs_set_header_flag(eb, BTRFS_HEADER_FLAG_WRITTEN);
+-	csum_tree_block(root, eb, 0);
++	csum_tree_block(root->fs_info, eb, 0);
+ 
+ 	return write_and_map_eb(root, eb);
  }
- int btrfs_rmap_block(struct btrfs_fs_info *fs_info,
+diff --git a/utils.h b/utils.h
+index 24d0a200..bf8eb1ed 100644
+--- a/utils.h
++++ b/utils.h
+@@ -115,8 +115,8 @@ u64 btrfs_device_size(int fd, struct stat *st);
+ int get_label_mounted(const char *mount_path, char *labelp);
+ int get_label_unmounted(const char *dev, char *label);
+ int group_profile_max_safe_loss(u64 flags);
+-int csum_tree_block(struct btrfs_root *root, struct extent_buffer *buf,
+-			   int verify);
++int csum_tree_block(struct btrfs_fs_info *root, struct extent_buffer *buf,
++		    int verify);
+ int ask_user(const char *question);
+ int lookup_path_rootid(int fd, u64 *rootid);
+ int btrfs_scan_devices(void);
 -- 
 2.13.1
 

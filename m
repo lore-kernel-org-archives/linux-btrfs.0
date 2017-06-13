@@ -1,46 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([65.50.211.133]:33533 "EHLO
-        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752100AbdFMGOg (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:49677 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751589AbdFMCp3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Jun 2017 02:14:36 -0400
-Date: Mon, 12 Jun 2017 23:14:31 -0700
-From: Christoph Hellwig <hch@infradead.org>
-To: Goldwyn Rodrigues <rgoldwyn@suse.de>
-Cc: Al Viro <viro@ZenIV.linux.org.uk>, Christoph Hellwig <hch@infradead.org>,
-        akpm@linux-foundation.org, linux-fsdevel@vger.kernel.org,
-        jack@suse.com, linux-block@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-xfs@vger.kernel.org, axboe@kernel.dk, linux-api@vger.kernel.org,
-        adam.manzanares@wdc.com
-Subject: Re: [PATCH 0/10 v11] No wait AIO
-Message-ID: <20170613061431.GA11432@infradead.org>
-References: <20170606111939.27272-1-rgoldwyn@suse.de>
- <20170608073910.GB9292@infradead.org>
- <20170610053441.GD6365@ZenIV.linux.org.uk>
- <58bbe95e-5a4a-4387-3a00-16ed2e861bd3@suse.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <58bbe95e-5a4a-4387-3a00-16ed2e861bd3@suse.de>
+        Mon, 12 Jun 2017 22:45:29 -0400
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH v2] btrfs: use ino_t for inode in tracer
+Date: Tue, 13 Jun 2017 10:51:37 +0800
+Message-Id: <1497322297-603-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1497262228-729-1-git-send-email-anand.jain@oracle.com>
+References: <1497262228-729-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 12, 2017 at 05:38:13PM -0500, Goldwyn Rodrigues wrote:
-> We had FS_NOWAIT in filesystem type flags (in v3), but retracted it
-> later in v4.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ v2: fix another location where ino_t was required.
 
-A per-fs flag is wrong as file_operation may have different
-capabilities.
+ include/trace/events/btrfs.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-> I will work on adding FMODE_AIO_NOWAIT in the meantime.
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index e37973526153..692207e3f5d5 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -1418,7 +1418,7 @@ DECLARE_EVENT_CLASS(btrfs__qgroup_data_map,
+ 
+ 	TP_STRUCT__entry_btrfs(
+ 		__field(	u64,		rootid		)
+-		__field(	unsigned long,	ino		)
++		__field(	ino_t,		ino		)
+ 		__field(	u64,		free_reserved	)
+ 	),
+ 
+@@ -1459,7 +1459,7 @@ DECLARE_EVENT_CLASS(btrfs__qgroup_rsv_data,
+ 
+ 	TP_STRUCT__entry_btrfs(
+ 		__field(	u64,		rootid		)
+-		__field(	unsigned long,	ino		)
++		__field(	ino_t,		ino		)
+ 		__field(	u64,		start		)
+ 		__field(	u64,		len		)
+ 		__field(	u64,		reserved	)
+-- 
+2.7.0
 
-If Al prefers that let's go with it for now.  One other thing I'd
-love is a supported flags field in struct file_operations that we
-can compare the flags against.  Al, does that sound good as well?
-
-> 
-> Thanks,
-> 
-> -- 
-> Goldwyn
----end quoted text---

@@ -1,65 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:16639 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751871AbdFMEb3 (ORCPT
+Received: from mail-qt0-f177.google.com ([209.85.216.177]:36249 "EHLO
+        mail-qt0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752869AbdFMKYf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Jun 2017 00:31:29 -0400
-Date: Mon, 12 Jun 2017 21:30:56 -0700
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: Jeff Layton <jlayton@redhat.com>
+        Tue, 13 Jun 2017 06:24:35 -0400
+Received: by mail-qt0-f177.google.com with SMTP id u19so164822647qta.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 13 Jun 2017 03:24:35 -0700 (PDT)
+Message-ID: <1497349472.5762.1.camel@redhat.com>
+Subject: Re: [PATCH v6 12/20] fs: add a new fstype flag to indicate how
+ writeback errors are tracked
+From: Jeff Layton <jlayton@redhat.com>
+To: Christoph Hellwig <hch@infradead.org>
 Cc: Andrew Morton <akpm@linux-foundation.org>,
         Al Viro <viro@ZenIV.linux.org.uk>, Jan Kara <jack@suse.cz>,
         tytso@mit.edu, axboe@kernel.dk, mawilcox@microsoft.com,
         ross.zwisler@linux.intel.com, corbet@lwn.net, Chris Mason <clm@fb.com>,
         Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        "Darrick J . Wong" <darrick.wong@oracle.com>,
         linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
         linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org
-Subject: Re: [PATCH v6 19/20] xfs: minimal conversion to errseq_t writeback
- error reporting
-Message-ID: <20170613043056.GO4530@birch.djwong.org>
+Date: Tue, 13 Jun 2017 06:24:32 -0400
+In-Reply-To: <20170612124513.GC18360@infradead.org>
 References: <20170612122316.13244-1-jlayton@redhat.com>
- <20170612122316.13244-24-jlayton@redhat.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170612122316.13244-24-jlayton@redhat.com>
+         <20170612122316.13244-15-jlayton@redhat.com>
+         <20170612124513.GC18360@infradead.org>
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 12, 2017 at 08:23:15AM -0400, Jeff Layton wrote:
-> Just set the FS_WB_ERRSEQ flag to indicate that we want to use errseq_t
-> based error reporting. Internal filemap_* calls are left as-is for now.
+On Mon, 2017-06-12 at 05:45 -0700, Christoph Hellwig wrote:
+> On Mon, Jun 12, 2017 at 08:23:06AM -0400, Jeff Layton wrote:
+> > Add a new FS_WB_ERRSEQ flag to the fstype. Later patches will set and
+> > key off of that to decide what behavior should be used.
 > 
-> Signed-off-by: Jeff Layton <jlayton@redhat.com>
-> ---
->  fs/xfs/xfs_super.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/fs/xfs/xfs_super.c b/fs/xfs/xfs_super.c
-> index 455a575f101d..28d3be187025 100644
-> --- a/fs/xfs/xfs_super.c
-> +++ b/fs/xfs/xfs_super.c
-> @@ -1758,7 +1758,7 @@ static struct file_system_type xfs_fs_type = {
->  	.name			= "xfs",
->  	.mount			= xfs_fs_mount,
->  	.kill_sb		= kill_block_super,
-> -	.fs_flags		= FS_REQUIRES_DEV,
-> +	.fs_flags		= FS_REQUIRES_DEV | FS_WB_ERRSEQ,
+> Please invert this so that only file systems that keep the old semantics
+> need a flag.
 
-Huh?  Why are there two patches with the same subject line?  And this
-same bit of code too?  Or ... 11/13, 11/20?  What's going on here?
 
-<confused>
+That's definitely what I want for the endgame here. My plan was to add
+this flag for now, and then eventually reverse it (or drop it) once all
+or most filesystems are converted.
 
---D
+We can do it that way from the get-go if you like. It'll mean tossing in
+ a patch add this flag to all filesystems that have an fsync operation
+and that use the pagecache, and then gradually remove it from them as we
+convert them.
 
->  };
->  MODULE_ALIAS_FS("xfs");
->  
-> -- 
-> 2.13.0
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-xfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Which method do you prefer?
+-- 
+Jeff Layton <jlayton@redhat.com>

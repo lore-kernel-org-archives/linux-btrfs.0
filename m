@@ -1,49 +1,22 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:49677 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751589AbdFMCp3 (ORCPT
+Received: from bombadil.infradead.org ([65.50.211.133]:50540 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752618AbdFMGlw (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Jun 2017 22:45:29 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH v2] btrfs: use ino_t for inode in tracer
-Date: Tue, 13 Jun 2017 10:51:37 +0800
-Message-Id: <1497322297-603-1-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1497262228-729-1-git-send-email-anand.jain@oracle.com>
+        Tue, 13 Jun 2017 02:41:52 -0400
+Date: Mon, 12 Jun 2017 23:41:51 -0700
+From: Christoph Hellwig <hch@infradead.org>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH] btrfs: use ino_t for inode in tracer
+Message-ID: <20170613064151.GA17424@infradead.org>
 References: <1497262228-729-1-git-send-email-anand.jain@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1497262228-729-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- v2: fix another location where ino_t was required.
-
- include/trace/events/btrfs.h | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index e37973526153..692207e3f5d5 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -1418,7 +1418,7 @@ DECLARE_EVENT_CLASS(btrfs__qgroup_data_map,
- 
- 	TP_STRUCT__entry_btrfs(
- 		__field(	u64,		rootid		)
--		__field(	unsigned long,	ino		)
-+		__field(	ino_t,		ino		)
- 		__field(	u64,		free_reserved	)
- 	),
- 
-@@ -1459,7 +1459,7 @@ DECLARE_EVENT_CLASS(btrfs__qgroup_rsv_data,
- 
- 	TP_STRUCT__entry_btrfs(
- 		__field(	u64,		rootid		)
--		__field(	unsigned long,	ino		)
-+		__field(	ino_t,		ino		)
- 		__field(	u64,		start		)
- 		__field(	u64,		len		)
- 		__field(	u64,		reserved	)
--- 
-2.7.0
+I thought btrfs supports 64-bit inodes, in which case this will
+truncate the inode number on 32-bit architectures.
 

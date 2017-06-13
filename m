@@ -1,61 +1,217 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from scorn.kernelslacker.org ([45.56.101.199]:35602 "EHLO
-        scorn.kernelslacker.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752542AbdFUQbb (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Jun 2017 12:31:31 -0400
-Date: Wed, 21 Jun 2017 11:55:35 -0400
-From: Dave Jones <davej@codemonkey.org.uk>
-To: Chris Mason <clm@fb.com>
-Cc: Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: btrfs_wait_ordered_roots warning triggered
-Message-ID: <20170621155535.opgdkfyxwl27dqyf@codemonkey.org.uk>
-References: <20170621151632.dsipxge7zdklbink@codemonkey.org.uk>
- <afa1575f-c035-0d8f-741d-25856b9d4f7e@fb.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <afa1575f-c035-0d8f-741d-25856b9d4f7e@fb.com>
+Received: from mail.kernel.org ([198.145.29.99]:56340 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752252AbdFNRgJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 14 Jun 2017 13:36:09 -0400
+Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 6D340219A7
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Jun 2017 17:36:08 +0000 (UTC)
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: incremental send, fix invalid path for unlink commands
+Date: Tue, 13 Jun 2017 16:06:19 +0100
+Message-Id: <20170613150619.8312-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 21, 2017 at 11:52:36AM -0400, Chris Mason wrote:
- > On 06/21/2017 11:16 AM, Dave Jones wrote:
- > > WARNING: CPU: 2 PID: 7153 at fs/btrfs/ordered-data.c:753 btrfs_wait_ordered_roots+0x1a3/0x220
- > > CPU: 2 PID: 7153 Comm: kworker/u8:7 Not tainted 4.12.0-rc6-think+ #4
- > > Workqueue: events_unbound btrfs_async_reclaim_metadata_space
- > > task: ffff8804f08d5380 task.stack: ffffc9000895c000
- > > RIP: 0010:btrfs_wait_ordered_roots+0x1a3/0x220
- > > RSP: 0018:ffffc9000895fc70 EFLAGS: 00010286
- > > RAX: 0000000000000000 RBX: 00000000f7efdfb1 RCX: 00000000000025c3
- > > RDX: ffff880507c0cde0 RSI: 0000000000000000 RDI: 0000000000000002
- > > RBP: ffffc9000895fce8 R08: 0000000000000000 R09: 0000000000000001
- > > R10: ffffc9000895fbd8 R11: ffff8804f08d5380 R12: ffff8804f4930008
- > > R13: 0000000000000001 R14: ffff8804f36f0000 R15: ffff8804f4930850
- > > FS:  0000000000000000(0000) GS:ffff880507c00000(0000) knlGS:0000000000000000
- > > CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
- > > CR2: 00007fd40c4a1bf2 CR3: 000000013995e000 CR4: 00000000001406e0
- > > DR0: 00007f17be890000 DR1: 0000000000000000 DR2: 0000000000000000
- > > DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000600
- > > Call Trace:
- > >  flush_space+0x285/0x6e0
- > >  btrfs_async_reclaim_metadata_space+0xd7/0x420
- > >  process_one_work+0x24d/0x680
- > >  worker_thread+0x4e/0x3b0
- > >  kthread+0x117/0x150
- > >  ? process_one_work+0x680/0x680
- > >  ? kthread_create_on_node+0x70/0x70
- > >  ret_from_fork+0x27/0x40
- > 
- > Thanks Dave, which trinity command line triggered this?
+From: Filipe Manana <fdmanana@suse.com>
 
-nothing too fancy
+An incremental send can contain unlink operations with an invalid target
+path when we rename some directory inode A, then rename some file inode B
+to the old name of inode A and directory inode A is an ancestor of inode B
+in the parent snapshot (but not anymore in the send snapshot).
 
-in a loop..
+Consider the following example scenario where this issue happens.
 
-  trinity -q -C64 -N 100000000 -E SMC -a64
+Parent snapshot:
 
-(note you'll need https://lkml.org/lkml/2017/6/20/10 too to survive
- more than a few seconds)
+ .                                                      (ino 256)
+ |
+ |--- dir1/                                             (ino 257)
+       |--- dir2/                                       (ino 258)
+       |     |--- file1                                 (ino 259)
+       |     |--- file3                                 (ino 261)
+       |
+       |--- dir3/                                       (ino 262)
+             |--- file22                                (ino 260)
+             |--- dir4/                                 (ino 263)
 
-	Dave
+Send snapshot:
+
+ .                                                      (ino 256)
+ |
+ |--- dir1/                                             (ino 257)
+       |--- dir2/                                       (ino 258)
+       |--- dir3                                        (ino 260)
+       |--- file3/                                      (ino 262)
+             |--- dir4/                                 (ino 263)
+                   |--- file11                          (ino 269)
+                   |--- file33                          (ino 261)
+
+When attempting to apply the corresponding incremental send stream, an
+unlink operation contains an invalid path which makes the receiver fail.
+The following is verbose output of the btrfs receive command:
+
+ receiving snapshot snap2 uuid=7d5450da-a573-e043-a451-ec85f4879f0f (...)
+ utimes
+ utimes dir1
+ utimes dir1/dir2
+ link dir1/dir3/dir4/file11 -> dir1/dir2/file1
+ unlink dir1/dir2/file1
+ utimes dir1/dir2
+ truncate dir1/dir3/dir4/file11 size=0
+ utimes dir1/dir3/dir4/file11
+ rename dir1/dir3 -> o262-7-0
+ link dir1/dir3 -> o262-7-0/file22
+ unlink dir1/dir3/file22
+ ERROR: unlink dir1/dir3/file22 failed. Not a directory
+
+The following steps happen during the computation of the incremental send
+stream the lead to this issue:
+
+1) Before we start processing the new and deleted references for inode
+   260, we compute the full path of the deleted reference
+   ("dir1/dir3/file22") and cache it in the list of deleted references
+   for our inode.
+
+2) We then start processing the new references for inode 260, for which
+   there is only one new, located at "dir1/dir3". When processing this
+   new reference, we check that inode 262, which was not yet processed,
+   collides with the new reference and because of that we orphanize
+   inode 262 so its new full path becomes "o262-7-0".
+
+3) After the orphanization of inode 262, we create the new reference for
+   inode 260 by issuing a link command with a target path of "dir1/dir3"
+   and a source path of "o262-7-0/file22".
+
+4) We then start processing the deleted references for inode 260, for
+   which there is only one with the base name of "file22", and issue
+   an unlink operation containing the target path computed at step 1,
+   which is wrong because that path no longer exists and should be
+   replaced with "o262-7-0/file22".
+
+So fix this issue by recomputing the full path of deleted references if
+when we processed the new references for an inode we ended up orphanizing
+any other inode that is an ancestor of our inode in the parent snapshot.
+
+A test case for fstests follows soon.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+
+Depends on a recent patch named:
+
+ "Btrfs: send, fix invalid path after renaming and linking file"
+
+ fs/btrfs/send.c | 65 +++++++++++++++++++++++++++++++++++++++++++++++----------
+ 1 file changed, 54 insertions(+), 11 deletions(-)
+
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 381ec4d58edf..4d2622331b67 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -2778,6 +2778,20 @@ struct recorded_ref {
+ 	int name_len;
+ };
+ 
++static void set_ref_path(struct recorded_ref *ref,
++			 struct fs_path *path)
++{
++	ref->full_path = path;
++	ref->name = (char *)kbasename(ref->full_path->start);
++	ref->name_len = ref->full_path->end - ref->name;
++	ref->dir_path = ref->full_path->start;
++	if (ref->name == ref->full_path->start)
++		ref->dir_path_len = 0;
++	else
++		ref->dir_path_len = ref->full_path->end -
++			ref->full_path->start - 1 - ref->name_len;
++}
++
+ /*
+  * We need to process new refs before deleted refs, but compare_tree gives us
+  * everything mixed. So we first record all refs and later process them.
+@@ -2794,17 +2808,7 @@ static int __record_ref(struct list_head *head, u64 dir,
+ 
+ 	ref->dir = dir;
+ 	ref->dir_gen = dir_gen;
+-	ref->full_path = path;
+-
+-	ref->name = (char *)kbasename(ref->full_path->start);
+-	ref->name_len = ref->full_path->end - ref->name;
+-	ref->dir_path = ref->full_path->start;
+-	if (ref->name == ref->full_path->start)
+-		ref->dir_path_len = 0;
+-	else
+-		ref->dir_path_len = ref->full_path->end -
+-				ref->full_path->start - 1 - ref->name_len;
+-
++	set_ref_path(ref, path);
+ 	list_add_tail(&ref->list, head);
+ 	return 0;
+ }
+@@ -3699,6 +3703,7 @@ static int process_recorded_refs(struct send_ctx *sctx, int *pending_move)
+ 	int is_orphan = 0;
+ 	u64 last_dir_ino_rm = 0;
+ 	bool can_rename = true;
++	bool orphanized_ancestor = false;
+ 
+ 	btrfs_debug(fs_info, "process_recorded_refs %llu", sctx->cur_ino);
+ 
+@@ -3854,6 +3859,7 @@ static int process_recorded_refs(struct send_ctx *sctx, int *pending_move)
+ 						  ow_inode, ow_gen,
+ 						  sctx->cur_ino, NULL);
+ 				if (ret > 0) {
++					orphanized_ancestor = true;
+ 					fs_path_reset(valid_path);
+ 					ret = get_cur_path(sctx, sctx->cur_ino,
+ 							   sctx->cur_inode_gen,
+@@ -3979,6 +3985,43 @@ static int process_recorded_refs(struct send_ctx *sctx, int *pending_move)
+ 			if (ret < 0)
+ 				goto out;
+ 			if (!ret) {
++				/*
++				 * If we orphanized any ancestor before, we need
++				 * to recompute the full path for deleted names,
++				 * since any such path was computed before we
++				 * processed any references and orphanized any
++				 * ancestor inode.
++				 */
++				if (orphanized_ancestor) {
++					struct fs_path *new_path;
++
++					/*
++					 * Our reference's name member points to
++					 * its full_path member string, so we
++					 * use here a new path.
++					 */
++					new_path = fs_path_alloc();
++					if (!new_path) {
++						ret = -ENOMEM;
++						goto out;
++					}
++					ret = get_cur_path(sctx, cur->dir,
++							   cur->dir_gen,
++							   new_path);
++					if (ret < 0) {
++						fs_path_free(new_path);
++						goto out;
++					}
++					ret = fs_path_add(new_path,
++							  cur->name,
++							  cur->name_len);
++					if (ret < 0) {
++						fs_path_free(new_path);
++						goto out;
++					}
++					fs_path_free(cur->full_path);
++					set_ref_path(cur, new_path);
++				}
+ 				ret = send_unlink(sctx, cur->full_path);
+ 				if (ret < 0)
+ 					goto out;
+-- 
+2.11.0
+

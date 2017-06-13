@@ -1,52 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:48329 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752987AbdFMPYe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Jun 2017 11:24:34 -0400
-Date: Tue, 13 Jun 2017 17:23:28 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH 1/3 v2.1] btrfs: write_dev_flush does not return ENOMEM
- anymore
-Message-ID: <20170613152328.GY25451@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Received: from userp1040.oracle.com ([156.151.31.81]:23607 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752524AbdFMI7b (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 13 Jun 2017 04:59:31 -0400
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH 2/3 v2] btrfs: remove redundant null bdev counting during flush submit
+Date: Tue, 13 Jun 2017 17:05:40 +0800
+Message-Id: <1497344741-1135-2-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1497344741-1135-1-git-send-email-anand.jain@oracle.com>
 References: <1497344741-1135-1-git-send-email-anand.jain@oracle.com>
- <1497346349-1194-1-git-send-email-anand.jain@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1497346349-1194-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 13, 2017 at 05:32:29PM +0800, Anand Jain wrote:
-> As commit
->  9035b5dbc576 btrfs: btrfs_io_bio_alloc never fails, skip error handling
-> 
-> removed the -ENOMEM return from write_dev_flush()/send-part so no need to
-> check for the -ENOMEM during send.
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
-> v2.1: Part of commit log got missed out during send. fix it.
-> v2: . Add the removal of submit_flush_error in check_barrier_error()
->     from 2/2 before to 1/3 here, as its appropriate to be here.
->     . Did not split the write and wait part here in this patch.
+There is no extra benefit to count null bdev during submit loop,
+as these null devices will be anyway checked during command
+completion device loop just after the submit loop, and as we are
+holding the device_list_mutex, the device->bdev status won't
+change in between.
 
-All 3 reviewed and queued, thanks. I have a prototype for the
-preallocated flush bio but was waiting until these cleanups are in
-before snding it.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+v2: . The tile of this patch is changed from 
+      [PATCH 2/2] btrfs: flush error also accounts for its send error
+      also added commit log.
+    . The submit_flush_error is removed in patch 1/3 but it was here
+      before.
+    . Dropped the comments.
 
-I've noticed that threre are two more "if (!device->bdev)" checks under
-the device lock in write_all_supers, that might be worth removing.
+ fs/btrfs/disk-io.c | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
 
-However, a NULL bdev and device->missing are related and I think there
-are some dark corners in dev replace where the invariant can be
-temporarily broken. Given that we probably don't have great testing
-coverage of devices with the flush capabilities, we should make it
-possible to override that for debugging purposes. Eg. add a
-"/sys/fs/btrfs/UUID/force_dev_flush" if CONFIG_BTRFS_DEBUG is enabled.
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 9fbcfa9ccab7..a9f1c48519dd 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3565,7 +3565,6 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ {
+ 	struct list_head *head;
+ 	struct btrfs_device *dev;
+-	int errors_send = 0;
+ 	int errors_wait = 0;
+ 	int ret;
+ 
+@@ -3574,10 +3573,8 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ 	list_for_each_entry_rcu(dev, head, dev_list) {
+ 		if (dev->missing)
+ 			continue;
+-		if (!dev->bdev) {
+-			errors_send++;
++		if (!dev->bdev)
+ 			continue;
+-		}
+ 		if (!dev->in_fs_metadata || !dev->writeable)
+ 			continue;
+ 
+@@ -3603,7 +3600,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ 		}
+ 	}
+ 
+-	if (errors_send || errors_wait) {
++	if (errors_wait) {
+ 		/*
+ 		 * At some point we need the status of all disks
+ 		 * to arrive at the volume status. So error checking
+-- 
+2.7.0
 
-Anyway, that can also wait for later. We've made some changes this time
-so I'd not add any more intrusive ones until the current devel queue is
-on the way to master.

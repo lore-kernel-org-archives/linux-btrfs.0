@@ -1,25 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:23606 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:38872 "EHLO
         userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752566AbdFMI7q (ORCPT
+        with ESMTP id S1752390AbdFMJ0U (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Jun 2017 04:59:46 -0400
+        Tue, 13 Jun 2017 05:26:20 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH 1/3 v2] btrfs: write_dev_flush does not return ENOMEM anymore
-Date: Tue, 13 Jun 2017 17:05:39 +0800
-Message-Id: <1497344741-1135-1-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 1/3 v2.1] btrfs: write_dev_flush does not return ENOMEM anymore
+Date: Tue, 13 Jun 2017 17:32:29 +0800
+Message-Id: <1497346349-1194-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1497344741-1135-1-git-send-email-anand.jain@oracle.com>
+References: <1497344741-1135-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 As commit
  9035b5dbc576 btrfs: btrfs_io_bio_alloc never fails, skip error handling
 
-removed the -ENOMEM return from write_dev_flush()
+removed the -ENOMEM return from write_dev_flush()/send-part so no need to
+check for the -ENOMEM during send.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
+v2.1: Part of commit log got missed out during send. fix it.
 v2: . Add the removal of submit_flush_error in check_barrier_error()
     from 2/2 before to 1/3 here, as its appropriate to be here.
     . Did not split the write and wait part here in this patch.

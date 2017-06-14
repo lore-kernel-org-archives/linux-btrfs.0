@@ -1,420 +1,213 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f193.google.com ([209.85.128.193]:35952 "EHLO
-        mail-wr0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751919AbdFZBZM (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 25 Jun 2017 21:25:12 -0400
-Received: by mail-wr0-f193.google.com with SMTP id 77so27205915wrb.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 25 Jun 2017 18:25:12 -0700 (PDT)
-From: Timofey Titovets <nefelim4ag@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Timofey Titovets <nefelim4ag@gmail.com>
-Subject: [RFC PATCH v2 2/2] Btrfs: add heuristic method for make decision compress or not compress
-Date: Mon, 26 Jun 2017 04:24:56 +0300
-Message-Id: <20170626012456.19872-3-nefelim4ag@gmail.com>
-In-Reply-To: <20170626012456.19872-1-nefelim4ag@gmail.com>
-References: <20170626012456.19872-1-nefelim4ag@gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:53679 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1754493AbdFNHY4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 14 Jun 2017 03:24:56 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 7C39AAC2F
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Jun 2017 07:24:50 +0000 (UTC)
+To: Filipe Manana <fdmanana@suse.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: Nikolay Borisov <nborisov@suse.com>
+Subject: regression in 4.12 caused by a7e3b975a0f9 ("Btrfs: fix reported
+ number of inode blocks")
+Message-ID: <8046b838-500b-fc29-d6f9-cfdbbdb9fc88@suse.com>
+Date: Wed, 14 Jun 2017 10:24:48 +0300
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add a heuristic computation before compression,
-for avoiding load resource heavy compression workspace,
-if data are probably can't be compressed.
+Hello Filipe, 
 
-Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
----
- fs/btrfs/Makefile    |   2 +-
- fs/btrfs/heuristic.c | 264 +++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/heuristic.h |  13 +++
- fs/btrfs/inode.c     |  37 +++++---
- 4 files changed, 301 insertions(+), 15 deletions(-)
- create mode 100644 fs/btrfs/heuristic.c
- create mode 100644 fs/btrfs/heuristic.h
+It seems the above commit causes  various underflows in 
+some btrfs internal counters. This is evident during generic/439 running: 
 
-diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
-index 128ce17a80b0..8386095c9032 100644
---- a/fs/btrfs/Makefile
-+++ b/fs/btrfs/Makefile
-@@ -9,7 +9,7 @@ btrfs-y += super.o ctree.o extent-tree.o print-tree.o root-tree.o dir-item.o \
- 	   export.o tree-log.o free-space-cache.o zlib.o lzo.o \
- 	   compression.o delayed-ref.o relocation.o delayed-inode.o scrub.o \
- 	   reada.o backref.o ulist.o qgroup.o send.o dev-replace.o raid56.o \
--	   uuid-tree.o props.o hash.o free-space-tree.o
-+	   uuid-tree.o props.o hash.o free-space-tree.o heuristic.o log2_lshift16.o
+The first one is in BTRFS_I(inode)->csum_bytes
 
- btrfs-$(CONFIG_BTRFS_FS_POSIX_ACL) += acl.o
- btrfs-$(CONFIG_BTRFS_FS_CHECK_INTEGRITY) += check-integrity.o
-diff --git a/fs/btrfs/heuristic.c b/fs/btrfs/heuristic.c
-new file mode 100644
-index 000000000000..0fd90b5627aa
---- /dev/null
-+++ b/fs/btrfs/heuristic.c
-@@ -0,0 +1,264 @@
-+#include <linux/kernel.h>
-+#include <linux/types.h>
-+#include <linux/string.h>
-+#include <linux/fs.h>
-+#include <linux/math64.h>
-+#include <linux/pagemap.h>
-+#include <linux/highmem.h>
-+#include <linux/sort.h>
-+#include <linux/slab.h>
-+
-+#include "heuristic.h"
-+/* Precalculated log2 realization */
-+#include "log2_lshift16.h"
-+
-+/* For shannon full integer entropy calculation */
-+#define BUCKET_SIZE (1 << 8)
-+
-+struct _backet_item {
-+	u8  padding;
-+	u8  symbol;
-+	u16 count;
-+};
-+
-+
-+/* For sorting */
-+static int compare(const void *lhs, const void *rhs)
-+{
-+	struct _backet_item *l = (struct _backet_item *)(lhs);
-+	struct _backet_item *r = (struct _backet_item *)(rhs);
-+
-+	return r->count - l->count;
-+}
-+
-+/*
-+ * For good compressible data
-+ * u8set size over sample
-+ * will be small <= 64
-+ */
-+static u32 _symbset_calc(const struct _backet_item *bucket)
-+{
-+	u32 a = 0;
-+	u32 symbset_size = 0;
-+
-+	for (; a < BUCKET_SIZE && symbset_size <= 64; a++) {
-+		if (bucket[a].count)
-+			symbset_size++;
-+	}
-+	return symbset_size;
-+}
-+
-+
-+/*
-+ * Try calculate coreset size
-+ * i.e. how many symbols use 90% of input data
-+ * < 50 - good compressible data
-+ * > 200 - bad compressible data
-+ * For right & fast calculation bucket must be reverse sorted
-+ */
-+static u32 _coreset_calc(const struct _backet_item *bucket,
-+	const u32 sum_threshold)
-+{
-+	u32 a = 0;
-+	u32 coreset_sum = 0;
-+
-+	for (a = 0; a < 201 && bucket[a].count; a++) {
-+		coreset_sum += bucket[a].count;
-+		if (coreset_sum > sum_threshold)
-+			break;
-+	}
-+	return a;
-+}
-+
-+static u64 _entropy_perc(const struct _backet_item *bucket,
-+	const u32 sample_size)
-+{
-+	u64 a, p;
-+	u64 entropy_sum = 0;
-+	u64 entropy_max = LOG2_RET_SHIFT*8;
-+
-+	for (a = 0; a < BUCKET_SIZE && bucket[a].count > 0; a++) {
-+		p = bucket[a].count;
-+		p = div64_u64(p*LOG2_ARG_SHIFT, sample_size);
-+		entropy_sum += -p*log2_lshift16(p);
-+	}
-+
-+	entropy_sum = div64_u64(entropy_sum, LOG2_ARG_SHIFT);
-+	return div64_u64(entropy_sum*100, entropy_max);
-+}
-+
-+/* Pair distance from random distribution */
-+static u32 _rnd_dist(const struct _backet_item *bucket,
-+	const u32 coreset_size, const u8 *sample, u32 sample_size)
-+{
-+	u32 a, b;
-+	u8 pair_a[2], pair_b[2];
-+	u32 pairs_count;
-+	u64 sum = 0;
-+	u64 buf1, buf2;
-+
-+	for (a = 0; a < coreset_size-1; a++) {
-+		pairs_count = 0;
-+		pair_a[0] = bucket[a].symbol;
-+		pair_a[1] = bucket[a+1].symbol;
-+		pair_b[1] = bucket[a].symbol;
-+		pair_b[0] = bucket[a+1].symbol;
-+		for (b = 0; b < sample_size-1; b++) {
-+			u16 *pair_c = (u16 *) &sample[b];
-+
-+			if (pair_c == (u16 *) pair_a)
-+				pairs_count++;
-+			else if (pair_c == (u16 *) pair_b)
-+				pairs_count++;
-+		}
-+		buf1 = bucket[a].count*bucket[a+1].count;
-+		buf1 = div64_u64(buf1*100000, (sample_size*sample_size));
-+		buf2 = pairs_count*2*100000;
-+		buf2 = div64_u64(pairs_count, sample_size);
-+		sum += (buf1 - buf2)*(buf1 - buf2);
-+	}
-+
-+	return div64_u64(sum, 2048);
-+}
-+
-+/*
-+ * Algorithm description
-+ * 1. Get subset of data for fast computation
-+ * 2. Scan bucket for symbol set
-+ *    - symbol set < 64 - data will be easy compressible, return
-+ * 3. Try compute coreset size (symbols count that use 90% of input data)
-+ *    - reverse sort bucket
-+ *    - sum cells until we reach 90% threshold,
-+ *      incriment coreset size each time
-+ *    - coreset_size < 50  - data will be easy compressible, return
-+ *                   > 200 - data will be bad compressible, return
-+ *      in general this looks like data compression ratio 0.2 - 0.8
-+ * 4. Compute shannon entropy
-+ *    - shannon entropy count of bytes and can't count pairs & entropy_calc
-+ *      so assume:
-+ *        - usage of entropy can lead to false negative
-+ *          so for prevent that (in bad) case it's useful to "count" pairs
-+ *        - entropy are not to high < 70% easy compressible, return
-+ *        - entropy are high < 90%, try count pairs,
-+ *          if there is any noticeable amount, compression are possible, return
-+ *        - entropy are high > 90%, try count pairs,
-+ *          if there is noticeable amount, compression are possible, return
-+ */
-+
-+#define READ_SIZE 16
-+
-+enum compression_advice btrfs_compress_heuristic(struct inode *inode,
-+	u64 start, u64 end)
-+{
-+	enum compression_advice ret = COMPRESS_NONE;
-+	u64 bytes_len = end - start;
-+	u64 index = start >> PAGE_SHIFT;
-+	u64 end_index = end >> PAGE_SHIFT;
-+	struct page *page;
-+	u8 *input_data;
-+	u64 offset_count, shift, sample_size;
-+	u64 a, b, c;
-+	struct _backet_item bucket[BUCKET_SIZE];
-+	u8 *sample;
-+
-+	/*
-+	 * In data: 128K  64K   32K   4K
-+	 * Sample:  4096b 3072b 2048b 1024b
-+	 * Avoid allocating array bigger then 4kb
-+	 */
-+
-+	offset_count = 64 + bytes_len/512;
-+
-+	if (bytes_len >= 96*1024)
-+		offset_count = 256;
-+
-+	shift = bytes_len/offset_count;
-+	sample_size = offset_count*READ_SIZE;
-+
-+	/*
-+	 * speedup by copy data to sample array +30%
-+	 * I think it's because of memcpy speed and
-+	 * cpu cache hits
-+	 */
-+	sample = kmalloc(sample_size, GFP_NOFS);
-+	if (!sample)
-+		goto out;
-+
-+	memset(&bucket, 0, sizeof(bucket));
-+
-+	/* Preset symbols */
-+	for (a = 0; a < BUCKET_SIZE; a++)
-+		bucket[a].symbol = a;
-+
-+	/* Read small subset of data 1024b-4096b */
-+	a = 0; b = 0; c = 0;
-+	while (index <= end_index) {
-+		page = find_get_page(inode->i_mapping, index);
-+		BUG_ON(!page); /* Pages should be in the extent_io_tree */
-+		input_data = kmap(page);
-+		c = 0;
-+		while (c < c+PAGE_SIZE && a < bytes_len && b < sample_size) {
-+			memcpy(&sample[b], &input_data[c], READ_SIZE);
-+			c += shift;
-+			a += shift;
-+			b += READ_SIZE;
-+		}
-+		kunmap(page);
-+		put_page(page);
-+		index++;
-+	}
-+
-+	for (a = 0; a < sample_size; a++)
-+		bucket[sample[a]].count++;
-+
-+
-+	a = _symbset_calc(bucket);
-+	if (a < 64) {
-+		ret = COMPRESS_COST_EASY;
-+		goto out;
-+	}
-+
-+	/* Sort in reverse order */
-+	sort(bucket, BUCKET_SIZE, sizeof(u32), &compare, NULL);
-+
-+	a = _coreset_calc(bucket, sample_size*90/100);
-+
-+	if (a < 50) {
-+		ret = COMPRESS_COST_EASY;
-+		goto out;
-+	}
-+
-+	if (a > 200) {
-+		ret = COMPRESS_NONE;
-+		goto out;
-+	}
-+
-+	/*
-+	 * Okay, code fail to fast detect data type
-+	 * Let's calculate entropy
-+	 */
-+	b = _entropy_perc(bucket, sample_size);
-+	if (b < 70) {
-+		ret = COMPRESS_COST_MEDIUM;
-+		goto out;
-+	}
-+
-+	a = _rnd_dist(bucket, a, sample, sample_size);
-+	if (b < 90) {
-+		if (a > 0)
-+			ret = COMPRESS_COST_MEDIUM;
-+		else
-+			ret = COMPRESS_NONE;
-+		goto out;
-+	} else {
-+		if (a > 10)
-+			ret = COMPRESS_COST_HARD;
-+		else
-+			ret = COMPRESS_NONE;
-+		goto out;
-+	}
-+
-+out:
-+	kfree(sample);
-+	return ret;
-+}
-diff --git a/fs/btrfs/heuristic.h b/fs/btrfs/heuristic.h
-new file mode 100644
-index 000000000000..f978bb3c21b1
---- /dev/null
-+++ b/fs/btrfs/heuristic.h
-@@ -0,0 +1,13 @@
-+#include <linux/kernel.h>
-+#include <linux/types.h>
-+#include <linux/fs.h>
-+
-+enum compression_advice {
-+	COMPRESS_NONE,
-+	COMPRESS_COST_EASY,
-+	COMPRESS_COST_MEDIUM,
-+	COMPRESS_COST_HARD
-+};
-+
-+enum compression_advice btrfs_compress_heuristic(struct inode *inode,
-+	u64 start, u64 end);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index ef3c98c527c1..d5a13e3e0c6c 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -60,6 +60,7 @@
- #include "props.h"
- #include "qgroup.h"
- #include "dedupe.h"
-+#include "heuristic.h"
+[   16.710508] ------------[ cut here ]------------
+[   16.710524] WARNING: CPU: 3 PID: 1080 at fs/btrfs/inode.c:9449 btrfs_destroy_inode+0x275/0x2c0
+[   16.710525] Modules linked in:
+[   16.710530] CPU: 3 PID: 1080 Comm: umount Not tainted 4.12.0-rc5-nbor #317
+[   16.710531] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS Ubuntu-1.8.2-1ubuntu1 04/01/2014
+[   16.710533] task: ffff8801309bd4c0 task.stack: ffff880132ff4000
+[   16.710535] RIP: 0010:btrfs_destroy_inode+0x275/0x2c0
+[   16.710537] RSP: 0018:ffff880132ff7d08 EFLAGS: 00010286
+[   16.710540] RAX: 0000000000000000 RBX: ffff8801369ee000 RCX: 0000000000000000
+[   16.710541] RDX: 0000000000000000 RSI: 0000000000000000 RDI: ffff880131f21aa0
+[   16.710542] RBP: ffff880132ff7d38 R08: 0000000000000000 R09: 0000000000000000
+[   16.710543] R10: 0000000000000001 R11: 0000000080b489d8 R12: ffff880131f21aa0
+[   16.710544] R13: ffff88012ff60000 R14: ffff8801396c57a8 R15: ffff8801396c57a8
+[   16.710546] FS:  00007f4ca857a840(0000) GS:ffff88013fcc0000(0000) knlGS:0000000000000000
+[   16.710548] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[   16.710550] CR2: 00007f4ca7da0170 CR3: 00000001347fe000 CR4: 00000000000006a0
+[   16.710553] Call Trace:
+[   16.710562]  destroy_inode+0x3b/0x60
+[   16.710565]  evict+0x135/0x1c0
+[   16.710567]  dispose_list+0x4d/0x80
+[   16.710570]  evict_inodes+0x16d/0x180
+[   16.710588]  generic_shutdown_super+0x3f/0x120
+[   16.710590]  kill_anon_super+0x12/0x20
+[   16.710597]  btrfs_kill_super+0x16/0xa0
+[   16.710599]  deactivate_locked_super+0x4c/0x80
+[   16.710602]  deactivate_super+0x45/0x60
+[   16.710604]  cleanup_mnt+0x3f/0x70
+[   16.710605]  __cleanup_mnt+0x12/0x20
+[   16.710609]  task_work_run+0x7e/0xc0
+[   16.710614]  exit_to_usermode_loop+0x6c/0x93
+[   16.710618]  syscall_return_slowpath+0x9f/0xd0
+[   16.710625]  entry_SYSCALL_64_fastpath+0xc0/0xc2
 
- struct btrfs_iget_args {
- 	struct btrfs_key *location;
-@@ -458,16 +459,16 @@ static noinline void compress_file_range(struct inode *inode,
- 	unsigned long total_compressed = 0;
- 	unsigned long total_in = 0;
- 	int i;
--	int will_compress;
-+	bool will_compress;
- 	int compress_type = fs_info->compress_type;
--	int redirty = 0;
-+	bool redirty = false;
+What's peculiar about this one is that it always underflows by a single page size. 
+When the warning triggers csum_bytes is -4096. Perhaps some off-by-one which is then 
+multiplied by PAGE_SIZE? I've investigated it a bit further and here are the 2 types of
+stack traces that lead to freeing csum_bytes: 
 
- 	inode_should_defrag(BTRFS_I(inode), start, end, end - start + 1,
- 			SZ_16K);
+==========================
+Freeing 4096 bytes for ino 257
+ 0xffffffff813d0042 : calc_csum_metadata_size+0x62/0x100 [kernel]
+ 0xffffffff813d94b1 : btrfs_delalloc_release_metadata+0x1a1/0x210 [kernel]
+ 0xffffffff813f8d66 : btrfs_clear_bit_hook+0xd6/0x410 [kernel]
+ 0xffffffff814182ce : clear_state_bit+0x6e/0x180 [kernel] clear_state_bit at fs/btrfs/extent_io.c:549
+ 0xffffffff81418517 : __clear_extent_bit+0x137/0x370 [kernel] fs/btrfs/extent_io.c:726
+ 0xffffffff81418c2a : clear_extent_bit+0x2a/0x30 [kernel]
+ 0xffffffff8140b565 : lock_and_cleanup_extent_if_need+0x1e5/0x370 [kernel] fs/btrfs/file.c:1514
+ 0xffffffff8140c9b4 : __btrfs_buffered_write+0x204/0x6e0 [kernel]
+ 0xffffffff814104cc : btrfs_file_write_iter+0x19c/0x500 [kernel]
+ 0xffffffff811d19c5 : __vfs_write+0xc5/0x140 [kernel]
+ 0xffffffff811d39bc : vfs_write+0xcc/0x1a0 [kernel]
+ 0xffffffff811d3e65 : sys_pwrite64+0x85/0xa0 [kernel]
+ 0xffffffff8178ca85 : entry_SYSCALL_64_fastpath+0x23/0xc2 [kernel]
+ 0x0 (inexact)
 
- 	actual_end = min_t(u64, isize, end + 1);
- again:
--	will_compress = 0;
-+	will_compress = false;
- 	nr_pages = (end >> PAGE_SHIFT) - (start >> PAGE_SHIFT) + 1;
- 	BUILD_BUG_ON((BTRFS_MAX_COMPRESSED % PAGE_SIZE) != 0);
- 	nr_pages = min_t(unsigned long, nr_pages,
-@@ -510,15 +511,6 @@ static noinline void compress_file_range(struct inode *inode,
- 	 */
- 	if (inode_need_compress(inode)) {
- 		WARN_ON(pages);
--		pages = kcalloc(nr_pages, sizeof(struct page *), GFP_NOFS);
--		if (!pages) {
--			/* just bail out to the uncompressed code */
--			goto cont;
--		}
--
--		if (BTRFS_I(inode)->force_compress)
--			compress_type = BTRFS_I(inode)->force_compress;
--
- 		/*
- 		 * we need to call clear_page_dirty_for_io on each
- 		 * page in the range.  Otherwise applications with the file
-@@ -529,7 +521,24 @@ static noinline void compress_file_range(struct inode *inode,
- 		 * dirty again later on.
- 		 */
- 		extent_range_clear_dirty_for_io(inode, start, end);
--		redirty = 1;
-+		redirty = true;
-+
-+		ret = btrfs_compress_heuristic(inode, start, end);
-+
-+		/* Heuristic say: dont try compress that */
-+		if (!ret)
-+			goto cont;
-+
-+		pages = kcalloc(nr_pages, sizeof(struct page *), GFP_NOFS);
-+		if (!pages) {
-+			/* just bail out to the uncompressed code */
-+			goto cont;
-+		}
-+
-+		if (BTRFS_I(inode)->force_compress)
-+			compress_type = BTRFS_I(inode)->force_compress;
-+
-+
- 		ret = btrfs_compress_pages(compress_type,
- 					   inode->i_mapping, start,
- 					   pages,
-@@ -552,7 +561,7 @@ static noinline void compress_file_range(struct inode *inode,
- 				       PAGE_SIZE - offset);
- 				kunmap_atomic(kaddr);
- 			}
--			will_compress = 1;
-+			will_compress = true;
- 		}
- 	}
- cont:
---
-2.13.1
+==========================
+Freeing 155648 bytes for ino 257
+	 UNDERFLOW !!!
+ 0xffffffff813d0042 : calc_csum_metadata_size+0x62/0x100 [kernel]
+ 0xffffffff813d94b1 : btrfs_delalloc_release_metadata+0x1a1/0x210 [kernel]
+ 0xffffffff8140103d : btrfs_finish_ordered_io+0x16d/0x6a0 [kernel] fs/btrfs/inode.c:3038
+ 0xffffffff81401585 : finish_ordered_fn+0x15/0x20 [kernel]
+ 0xffffffff8142d083 : normal_work_helper+0x93/0x650 [kernel]
+ 0xffffffff8142d832 : btrfs_endio_write_helper+0x12/0x20 [kernel]
+ 0xffffffff8107259b : process_one_work+0x1cb/0x5f0 [kernel]
+ 0xffffffff81072a4d : worker_thread+0x4d/0x380 [kernel]
+ 0xffffffff81079ce4 : kthread+0x114/0x150 [kernel]
+ 0xffffffff8178cd1a : ret_from_fork+0x2a/0x40 [kernel]
+ 0x0 (inexact)
+
+The underflow always happens from finish_ordered_io. 
+
+The next one is: 
+
+[   55.007633] ------------[ cut here ]------------
+[   55.007652] WARNING: CPU: 1 PID: 1078 at fs/btrfs/extent-tree.c:5709 btrfs_free_block_groups+0x365/0x3f0
+[   55.007654] Modules linked in:
+[   55.007660] CPU: 1 PID: 1078 Comm: umount Tainted: G        W       4.12.0-rc5-nbor #318
+[   55.007662] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS Ubuntu-1.8.2-1ubuntu1 04/01/2014
+[   55.007663] task: ffff8801329eb880 task.stack: ffff880130c10000
+[   55.007666] RIP: 0010:btrfs_free_block_groups+0x365/0x3f0
+[   55.007668] RSP: 0018:ffff880130c13d68 EFLAGS: 00010286
+[   55.007672] RAX: 0000000000000001 RBX: 0000000000000000 RCX: ffff880130c13cbc
+[   55.007673] RDX: 0000000000000002 RSI: 0000000000000002 RDI: ffff880136bf5000
+[   55.007675] RBP: ffff880130c13d98 R08: 0000000000000000 R09: 0000000000000000
+[   55.007677] R10: 0000000000000001 R11: 0000000000000000 R12: ffff880136bf4400
+[   55.007679] R13: ffff88012fe20000 R14: ffff88012fe200c0 R15: ffff88012fe20100
+[   55.007681] FS:  00007fcbfc1b9840(0000) GS:ffff88013fc40000(0000) knlGS:0000000000000000
+[   55.007683] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[   55.007685] CR2: 00007fcbfb9e1903 CR3: 000000012fd8f000 CR4: 00000000000006a0
+[   55.007690] Call Trace:
+[   55.007698]  close_ctree+0x13b/0x330
+[   55.007703]  ? evict_inodes+0x16d/0x180
+[   55.007710]  btrfs_put_super+0x15/0x20
+[   55.007714]  generic_shutdown_super+0x6a/0x120
+[   55.007718]  kill_anon_super+0x12/0x20
+[   55.007721]  btrfs_kill_super+0x16/0xa0
+[   55.007725]  deactivate_locked_super+0x4c/0x80
+[   55.007728]  deactivate_super+0x45/0x60
+[   55.007732]  cleanup_mnt+0x3f/0x70
+[   55.007734]  __cleanup_mnt+0x12/0x20
+[   55.007738]  task_work_run+0x7e/0xc0
+[   55.007743]  exit_to_usermode_loop+0x6c/0x93
+[   55.007749]  syscall_return_slowpath+0x9f/0xd0
+[   55.007760]  entry_SYSCALL_64_fastpath+0xc0/0xc2
+[   55.007874] ---[ end trace 06f22a84784e2e1d ]---
+
+[   55.007876] fs_info->delalloc_block_rsv.size == 1
+
+And this one: 
+
+[   55.007888] WARNING: CPU: 1 PID: 1078 at fs/btrfs/extent-tree.c:5712 btrfs_free_block_groups+0x3d5/0x3f0
+[   55.007890] Modules linked in:
+[   55.007894] CPU: 1 PID: 1078 Comm: umount Tainted: G        W       4.12.0-rc5-nbor #318
+[   55.007895] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS Ubuntu-1.8.2-1ubuntu1 04/01/2014
+[   55.007897] task: ffff8801329eb880 task.stack: ffff880130c10000
+[   55.007899] RIP: 0010:btrfs_free_block_groups+0x3d5/0x3f0
+[   55.007901] RSP: 0018:ffff880130c13d68 EFLAGS: 00010206
+[   55.007904] RAX: 0000000000000029 RBX: 0000000000000000 RCX: 0000000000000006
+[   55.007906] RDX: 0000000000000000 RSI: 0000000000138000 RDI: ffff88013fc4c9d0
+[   55.007908] RBP: ffff880130c13d98 R08: 0000000000000000 R09: 0000000000000000
+[   55.007909] R10: 0000000000000001 R11: 0000000000000000 R12: ffff880136bf4400
+[   55.007911] R13: ffff88012fe20000 R14: ffff88012fe200c0 R15: ffff88012fe20100
+[   55.007913] FS:  00007fcbfc1b9840(0000) GS:ffff88013fc40000(0000) knlGS:0000000000000000
+[   55.007915] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[   55.007917] CR2: 00007fcbfb9e1903 CR3: 000000012fd8f000 CR4: 00000000000006a0
+[   55.007920] Call Trace:
+[   55.007926]  close_ctree+0x13b/0x330
+[   55.007929]  ? evict_inodes+0x16d/0x180
+[   55.007934]  btrfs_put_super+0x15/0x20
+[   55.007937]  generic_shutdown_super+0x6a/0x120
+[   55.007941]  kill_anon_super+0x12/0x20
+[   55.007944]  btrfs_kill_super+0x16/0xa0
+[   55.007948]  deactivate_locked_super+0x4c/0x80
+[   55.007951]  deactivate_super+0x45/0x60
+[   55.007954]  cleanup_mnt+0x3f/0x70
+[   55.007957]  __cleanup_mnt+0x12/0x20
+[   55.007959]  task_work_run+0x7e/0xc0
+[   55.007964]  exit_to_usermode_loop+0x6c/0x93
+[   55.007968]  syscall_return_slowpath+0x9f/0xd0
+[   55.007972]  entry_SYSCALL_64_fastpath+0xc0/0xc2
+[   55.008080] ---[ end trace 06f22a84784e2e1e ]---
+[   55.008082] fs_info->delalloc_block_rsv.reserved == 1277952
+
+
+There's also this one: 
+
+[   16.729373] ------------[ cut here ]------------
+[   16.729375] WARNING: CPU: 3 PID: 1080 at fs/btrfs/extent-tree.c:9836 btrfs_free_block_groups+0x2c5/0x3e0
+[   16.729375] Modules linked in:
+[   16.729378] CPU: 3 PID: 1080 Comm: umount Tainted: G        W       4.12.0-rc5-nbor #317
+[   16.729379] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS Ubuntu-1.8.2-1ubuntu1 04/01/2014
+[   16.729380] task: ffff8801309bd4c0 task.stack: ffff880132ff4000
+[   16.729381] RIP: 0010:btrfs_free_block_groups+0x2c5/0x3e0
+[   16.729382] RSP: 0018:ffff880132ff7d68 EFLAGS: 00010286
+[   16.729384] RAX: ffff88013089e0e8 RBX: 0000000000000000 RCX: 0000000000000006
+[   16.729385] RDX: 0000000000000000 RSI: ffff8801309bdfc8 RDI: ffff88013fccc9d0
+[   16.729386] RBP: ffff880132ff7d98 R08: 0000000000000000 R09: 0000000000000000
+[   16.729387] R10: 0000000000000001 R11: 0000000000000000 R12: ffff88013089e800
+[   16.729388] R13: ffff88012ff60000 R14: ffff88013089e0e8 R15: ffff88013089e000
+[   16.729391] FS:  00007f4ca857a840(0000) GS:ffff88013fcc0000(0000) knlGS:0000000000000000
+[   16.729393] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[   16.729394] CR2: 00007f4ca7da0170 CR3: 00000001347fe000 CR4: 00000000000006a0
+[   16.729396] Call Trace:
+[   16.729399]  close_ctree+0x13b/0x330
+[   16.729401]  ? evict_inodes+0x16d/0x180
+[   16.729404]  btrfs_put_super+0x15/0x20
+[   16.729406]  generic_shutdown_super+0x6a/0x120
+[   16.729408]  kill_anon_super+0x12/0x20
+[   16.729410]  btrfs_kill_super+0x16/0xa0
+[   16.729412]  deactivate_locked_super+0x4c/0x80
+[   16.729415]  deactivate_super+0x45/0x60
+[   16.729416]  cleanup_mnt+0x3f/0x70
+[   16.729418]  __cleanup_mnt+0x12/0x20
+[   16.729420]  task_work_run+0x7e/0xc0
+[   16.729422]  exit_to_usermode_loop+0x6c/0x93
+[   16.729425]  syscall_return_slowpath+0x9f/0xd0
+[   16.729427]  entry_SYSCALL_64_fastpath+0xc0/0xc2
+[   16.729519] BTRFS info (device vdc): space_info 1 has 7974912 free, is not full
+[   16.729537] BTRFS info (device vdc): space_info total=8388608, used=417792, pinned=0, reserved=0, may_use=18446744073709547520, readonly=0
+
+Here may_use has clearly underflowed and if you convert it to a signed value
+it actually becomes -4096. 
+
+This doesn't happen when DIO is used. Perhaps this commit should be reverted?
+In the meantime I will continue investigating why this is happening. 

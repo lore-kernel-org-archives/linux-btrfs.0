@@ -1,56 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:15100 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751547AbdFFJz2 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Jun 2017 05:55:28 -0400
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <dsterba@suse.cz>
-Subject: [PATCH v3 9/9] btrfs: Verify dir_item in iterate_object_props
-Date: Tue, 6 Jun 2017 17:57:08 +0800
-Message-ID: <20170606095708.494-10-suy.fnst@cn.fujitsu.com>
-In-Reply-To: <20170606095708.494-1-suy.fnst@cn.fujitsu.com>
-References: <20170606095708.494-1-suy.fnst@cn.fujitsu.com>
+Received: from bombadil.infradead.org ([65.50.211.133]:58323 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750757AbdFNGr5 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 14 Jun 2017 02:47:57 -0400
+Date: Tue, 13 Jun 2017 23:47:31 -0700
+From: Christoph Hellwig <hch@infradead.org>
+To: Jeff Layton <jlayton@redhat.com>
+Cc: Christoph Hellwig <hch@infradead.org>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Al Viro <viro@ZenIV.linux.org.uk>, Jan Kara <jack@suse.cz>,
+        tytso@mit.edu, axboe@kernel.dk, mawilcox@microsoft.com,
+        ross.zwisler@linux.intel.com, corbet@lwn.net, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        "Darrick J . Wong" <darrick.wong@oracle.com>,
+        linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
+        linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org
+Subject: Re: [PATCH v6 12/20] fs: add a new fstype flag to indicate how
+ writeback errors are tracked
+Message-ID: <20170614064731.GB3598@infradead.org>
+References: <20170612122316.13244-1-jlayton@redhat.com>
+ <20170612122316.13244-15-jlayton@redhat.com>
+ <20170612124513.GC18360@infradead.org>
+ <1497349472.5762.1.camel@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1497349472.5762.1.camel@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Call 'Verify dir_item' before 'memcmp_extent_buffer' reading name from
-dir_item.
+On Tue, Jun 13, 2017 at 06:24:32AM -0400, Jeff Layton wrote:
+> That's definitely what I want for the endgame here. My plan was to add
+> this flag for now, and then eventually reverse it (or drop it) once all
+> or most filesystems are converted.
+> 
+> We can do it that way from the get-go if you like. It'll mean tossing in
+>  a patch add this flag to all filesystems that have an fsync operation
+> and that use the pagecache, and then gradually remove it from them as we
+> convert them.
+> 
+> Which method do you prefer?
 
-Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
----
- fs/btrfs/props.c | 7 +++++++
- 1 file changed, 7 insertions(+)
-
-diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
-index d6cb155ef7a1..4b23ae5d0e5c 100644
---- a/fs/btrfs/props.c
-+++ b/fs/btrfs/props.c
-@@ -164,6 +164,7 @@ static int iterate_object_props(struct btrfs_root *root,
- 						 size_t),
- 				void *ctx)
- {
-+	struct btrfs_fs_info *fs_info = root->fs_info;
- 	int ret;
- 	char *name_buf = NULL;
- 	char *value_buf = NULL;
-@@ -214,6 +215,12 @@ static int iterate_object_props(struct btrfs_root *root,
- 			name_ptr = (unsigned long)(di + 1);
- 			data_ptr = name_ptr + name_len;
- 
-+			if (verify_dir_item(fs_info, leaf,
-+					    path->slots[0], di)) {
-+				ret = -EIO;
-+				goto out;
-+			}
-+
- 			if (name_len <= XATTR_BTRFS_PREFIX_LEN ||
- 			    memcmp_extent_buffer(leaf, XATTR_BTRFS_PREFIX,
- 						 name_ptr,
--- 
-2.13.0
-
-
-
+Please do it from the get-go.  Or in fact figure out if we can get
+away without it entirely.  Moving the error reporting into ->fsync
+should help greatly with that, so what's missing after that?

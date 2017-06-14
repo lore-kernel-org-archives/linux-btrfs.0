@@ -1,64 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39859 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:41105 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1750814AbdFOGcr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Jun 2017 02:32:47 -0400
-Subject: Re: [PATCH] btrfs: Use btrfs_space_info_used instead of opencoding it
-To: kbuild test robot <lkp@intel.com>
-Cc: kbuild-all@01.org, dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <201706150919.Fdrnd5ZS%fengguang.wu@intel.com>
+        id S1754320AbdFNIfn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 14 Jun 2017 04:35:43 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 3ECD5AC8C
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Jun 2017 08:35:42 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <bf36f06d-c8fd-b54f-5027-3f3940618906@suse.com>
-Date: Thu, 15 Jun 2017 09:32:44 +0300
-MIME-Version: 1.0
-In-Reply-To: <201706150919.Fdrnd5ZS%fengguang.wu@intel.com>
-Content-Type: text/plain; charset=windows-1252
+To: dsterba@suse.cz
+Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH] btrfs: Use btrfs_space_info_used instead of opencoding it
+Date: Wed, 14 Jun 2017 11:35:34 +0300
+Message-Id: <1497429334-18467-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/extent-tree.c | 9 +++------
+ 1 file changed, 3 insertions(+), 6 deletions(-)
 
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 4c0d3980fe3f..a08a743a8e09 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4935,9 +4935,8 @@ btrfs_calc_reclaim_metadata_size(struct btrfs_root *root,
+ 			   BTRFS_RESERVE_FLUSH_ALL))
+ 		return 0;
+ 
+-	used = space_info->bytes_used + space_info->bytes_reserved +
+-	       space_info->bytes_pinned + space_info->bytes_readonly +
+-	       space_info->bytes_may_use;
++	used = btrfs_space_info_used(space_info, true);
++
+ 	if (can_overcommit(root, space_info, SZ_1M, BTRFS_RESERVE_FLUSH_ALL))
+ 		expected = div_factor_fine(space_info->total_bytes, 95);
+ 	else
+@@ -5378,9 +5377,7 @@ static void space_info_add_old_bytes(struct btrfs_fs_info *fs_info,
+ 	 * overcommit, and if we can't then we just need to free up our space
+ 	 * and not satisfy any requests.
+ 	 */
+-	used = space_info->bytes_used + space_info->bytes_reserved +
+-		space_info->bytes_pinned + space_info->bytes_readonly +
+-		space_info->bytes_may_use;
++	used = btrfs_space_info_used(space_info, true);
+ 	if (used - num_bytes >= space_info->total_bytes)
+ 		check_overcommit = true;
+ again:
+-- 
+2.7.4
 
-On 15.06.2017 04:17, kbuild test robot wrote:
-> Hi Nikolay,
-> 
-> [auto build test ERROR on v4.9-rc8]
-> [cannot apply to btrfs/next kdave/for-next next-20170614]
-> [if your patch is applied to the wrong git tree, please drop us a note to help improve the system]
-> 
-> url:    https://github.com/0day-ci/linux/commits/Nikolay-Borisov/btrfs-Use-btrfs_space_info_used-instead-of-opencoding-it/20170615-084940
-> config: x86_64-randconfig-x012-201724 (attached as .config)
-> compiler: gcc-6 (Debian 6.2.0-3) 6.2.0 20160901
-> reproduce:
->         # save the attached .config to linux build tree
->         make ARCH=x86_64 
-> 
-> All errors (new ones prefixed by >>):
-> 
->    fs/btrfs/extent-tree.c: In function 'btrfs_calc_reclaim_metadata_size':
->>> fs/btrfs/extent-tree.c:4918:9: error: implicit declaration of function 'btrfs_space_info_used' [-Werror=implicit-function-declaration]
->      used = btrfs_space_info_used(space_info, true);
->             ^~~~~~~~~~~~~~~~~~~~~
->    cc1: some warnings being treated as errors
-
-This patch builds cleanly on latest linux master and it's based off that
-tree. I don't see why it's being applied to 4.9-rc8.
-
-
-> 
-> vim +/btrfs_space_info_used +4918 fs/btrfs/extent-tree.c
-> 
->   4912	
->   4913		to_reclaim = min_t(u64, num_online_cpus() * SZ_1M, SZ_16M);
->   4914		if (can_overcommit(root, space_info, to_reclaim,
->   4915				   BTRFS_RESERVE_FLUSH_ALL))
->   4916			return 0;
->   4917	
->> 4918		used = btrfs_space_info_used(space_info, true);
->   4919	
->   4920		if (can_overcommit(root, space_info, SZ_1M, BTRFS_RESERVE_FLUSH_ALL))
->   4921			expected = div_factor_fine(space_info->total_bytes, 95);
-> 
-> ---
-> 0-DAY kernel test infrastructure                Open Source Technology Center
-> https://lists.01.org/pipermail/kbuild-all                   Intel Corporation
-> 

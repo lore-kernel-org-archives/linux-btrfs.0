@@ -1,126 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:19648 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:20406 "EHLO
         userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751667AbdFOWRt (ORCPT
+        with ESMTP id S1751789AbdFOWVH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Jun 2017 18:17:49 -0400
-Subject: Re: [PATCH 5/5] btrfs: sysfs: export the force_dev_flush flag
+        Thu, 15 Jun 2017 18:21:07 -0400
+Subject: Re: [PATCH 4/5] btrfs: add fs flag to force device flushing
+From: Anand Jain <anand.jain@oracle.com>
 To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
 References: <cover.1497544265.git.dsterba@suse.com>
- <6957a4896cc64a1ff44b712bb6723ada016d76b9.1497544265.git.dsterba@suse.com>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <cc6072b3-7be5-7f20-f138-e830b707fee0@oracle.com>
-Date: Fri, 16 Jun 2017 06:24:00 +0800
+ <8c201990ae0acb3b80437f9de2e432b60ecf8e4a.1497544265.git.dsterba@suse.com>
+ <e8b99f82-4e39-fda5-39f3-f3349577687d@oracle.com>
+Message-ID: <96590a3c-ba90-c671-2e23-d629834547a6@oracle.com>
+Date: Fri, 16 Jun 2017 06:27:20 +0800
 MIME-Version: 1.0
-In-Reply-To: <6957a4896cc64a1ff44b712bb6723ada016d76b9.1497544265.git.dsterba@suse.com>
+In-Reply-To: <e8b99f82-4e39-fda5-39f3-f3349577687d@oracle.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 06/16/2017 12:49 AM, David Sterba wrote:
-> Add per-filesystem tunable to switch on/off the device barriers,
-> regardless of the actual device support. This is a debugging feature.
+
+
+>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+>> index 59a732a13370..659a3b4645d2 100644
+>> --- a/fs/btrfs/disk-io.c
+>> +++ b/fs/btrfs/disk-io.c
+>> @@ -3494,7 +3494,8 @@ static void write_dev_flush(struct btrfs_device 
+>> *device)
+>>       struct request_queue *q = bdev_get_queue(device->bdev);
+>>       struct bio *bio = device->flush_bio;
+>> -    if (!test_bit(QUEUE_FLAG_WC, &q->queue_flags))
+>> +    if (!test_bit(BTRFS_FS_FORCE_DEV_FLUSH, &device->fs_info->flags)
+>> +        && !test_bit(QUEUE_FLAG_WC, &q->queue_flags))
+>>           return;
 > 
-> The path to the sysfs file is /sys/fs/btrfs/UUID/force_dev_flush,
-> allowed values are 0 and 1. Default is 0.
+> 
+>   Now I understand what you meant. But the most common case in our test
+>   set up is a device with write cache. So BTRFS_FS_FORCE_DEV_FLUSH does
+>   not bring any additional force. IMO.
+> 
+> Thanks, Anand
 
+  Or one another idea is we could remove
 
-  Anyway the flush command won't touch the device if its write through.
-  So unless I am missing something, IMO we don't need something
-  like this.
+    !test_bit(QUEUE_FLAG_WC, &q->queue_flags)
 
--------------------
-generic_make_request_checks(struct bio *bio)
-::
-	/*
-	 * Filter flush bio's early so that make_request based
-	 * drivers without flush support don't have to worry
-	 * about them.
-	 */
-	if (op_is_flush(bio->bi_opf) &&
-	    !test_bit(QUEUE_FLAG_WC, &q->queue_flags)) {
-		bio->bi_opf &= ~(REQ_PREFLUSH | REQ_FUA);
-		if (!nr_sectors) {
-			err = 0;
-			goto end_io;
-		}
-	}
--------------------
+  which purpose is to only fail early.
 
-
+  If we remove it there is consistency in our code with or
+  with out the write cache.
 
 Thanks, Anand
-
-
-> Signed-off-by: David Sterba <dsterba@suse.com>
-> ---
->   fs/btrfs/sysfs.c | 47 +++++++++++++++++++++++++++++++++++++++++++++++
->   1 file changed, 47 insertions(+)
-> 
-> diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-> index c2d5f3580b4c..197d43911936 100644
-> --- a/fs/btrfs/sysfs.c
-> +++ b/fs/btrfs/sysfs.c
-> @@ -487,12 +487,59 @@ static ssize_t quota_override_store(struct kobject *kobj,
->   
->   BTRFS_ATTR_RW(quota_override, quota_override_show, quota_override_store);
->   
-> +static ssize_t force_dev_flush_show(struct kobject *kobj,
-> +				   struct kobj_attribute *a, char *buf)
-> +{
-> +	struct btrfs_fs_info *fs_info = to_fs_info(kobj);
-> +	int force;
-> +
-> +	if (!fs_info)
-> +		return -EPERM;
-> +
-> +	force = !!(test_bit(BTRFS_FS_FORCE_DEV_FLUSH, &fs_info->flags));
-> +	return snprintf(buf, PAGE_SIZE, "%d\n", force);
-> +}
-> +
-> +static ssize_t force_dev_flush_store(struct kobject *kobj,
-> +				    struct kobj_attribute *a,
-> +				    const char *buf, size_t len)
-> +{
-> +	struct btrfs_fs_info *fs_info = to_fs_info(kobj);
-> +	unsigned long force;
-> +	int err;
-> +
-> +	if (!fs_info)
-> +		return -EPERM;
-> +
-> +	if (!capable(CAP_SYS_ADMIN))
-> +		return -EPERM;
-> +
-> +	err = kstrtoul(buf, 10, &force);
-> +	if (err)
-> +		return err;
-> +	if (force > 1)
-> +		return -EINVAL;
-> +
-> +	if (force) {
-> +		set_bit(BTRFS_FS_FORCE_DEV_FLUSH, &fs_info->flags);
-> +		btrfs_info(fs_info, "Forced device flushes enabled");
-> +	} else {
-> +		clear_bit(BTRFS_FS_FORCE_DEV_FLUSH, &fs_info->flags);
-> +		btrfs_info(fs_info, "Forced device flushes disabled");
-> +	}
-> +
-> +	return len;
-> +}
-> +
-> +BTRFS_ATTR_RW(force_dev_flush, force_dev_flush_show, force_dev_flush_store);
-> +
->   static const struct attribute *btrfs_attrs[] = {
->   	BTRFS_ATTR_PTR(label),
->   	BTRFS_ATTR_PTR(nodesize),
->   	BTRFS_ATTR_PTR(sectorsize),
->   	BTRFS_ATTR_PTR(clone_alignment),
->   	BTRFS_ATTR_PTR(quota_override),
-> +	BTRFS_ATTR_PTR(force_dev_flush),
->   	NULL,
->   };
->   
-> 

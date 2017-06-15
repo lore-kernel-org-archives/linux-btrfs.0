@@ -1,57 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:32931 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1753678AbdFPOEJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Jun 2017 10:04:09 -0400
-Date: Fri, 16 Jun 2017 16:03:03 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 4/5] btrfs: add fs flag to force device flushing
-Message-ID: <20170616140303.GA21388@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1497544265.git.dsterba@suse.com>
- <8c201990ae0acb3b80437f9de2e432b60ecf8e4a.1497544265.git.dsterba@suse.com>
- <e8b99f82-4e39-fda5-39f3-f3349577687d@oracle.com>
- <96590a3c-ba90-c671-2e23-d629834547a6@oracle.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:21260 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752478AbdFOUhw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 15 Jun 2017 16:37:52 -0400
+Subject: Re: [PATCH] btrfs: use GFP_KERNEL in btrfs_calc_avail_data_space
+To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+References: <20170615130725.466-1-dsterba@suse.com>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <01c6e628-ad5e-90e6-51ab-df4e30340496@oracle.com>
+Date: Fri, 16 Jun 2017 04:44:05 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <96590a3c-ba90-c671-2e23-d629834547a6@oracle.com>
+In-Reply-To: <20170615130725.466-1-dsterba@suse.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 16, 2017 at 06:27:20AM +0800, Anand Jain wrote:
-> 
-> 
-> 
-> 
-> >> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> >> index 59a732a13370..659a3b4645d2 100644
-> >> --- a/fs/btrfs/disk-io.c
-> >> +++ b/fs/btrfs/disk-io.c
-> >> @@ -3494,7 +3494,8 @@ static void write_dev_flush(struct btrfs_device 
-> >> *device)
-> >>       struct request_queue *q = bdev_get_queue(device->bdev);
-> >>       struct bio *bio = device->flush_bio;
-> >> -    if (!test_bit(QUEUE_FLAG_WC, &q->queue_flags))
-> >> +    if (!test_bit(BTRFS_FS_FORCE_DEV_FLUSH, &device->fs_info->flags)
-> >> +        && !test_bit(QUEUE_FLAG_WC, &q->queue_flags))
-> >>           return;
-> > 
-> > 
-> >   Now I understand what you meant. But the most common case in our test
-> >   set up is a device with write cache. So BTRFS_FS_FORCE_DEV_FLUSH does
-> >   not bring any additional force. IMO.
-> > 
-> > Thanks, Anand
-> 
->   Or one another idea is we could remove
-> 
->     !test_bit(QUEUE_FLAG_WC, &q->queue_flags)
-> 
->   which purpose is to only fail early.
 
-I'd prefer to keep it that way.
 
->   If we remove it there is consistency in our code with or
->   with out the write cache.
+On 06/15/2017 09:07 PM, David Sterba wrote:
+> We don't hold any locks here. Inidirectly called from statfs.
+
+  Reviewed-by: Anand Jain <anand.jain@oracle.com>
+
+> Signed-off-by: David Sterba <dsterba@suse.com>
+> ---
+>   fs/btrfs/super.c | 2 +-
+>   1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 4f1cdd5058f1..6f2e68b36362 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -1927,7 +1927,7 @@ static int btrfs_calc_avail_data_space(struct btrfs_fs_info *fs_info,
+>   	}
+>   
+>   	devices_info = kmalloc_array(nr_devices, sizeof(*devices_info),
+> -			       GFP_NOFS);
+> +			       GFP_KERNEL);
+>   	if (!devices_info)
+>   		return -ENOMEM;
+>   
+> 

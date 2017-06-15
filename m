@@ -1,17 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f169.google.com ([209.85.216.169]:35631 "EHLO
-        mail-qt0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753050AbdFNRYr (ORCPT
+Received: from bombadil.infradead.org ([65.50.211.133]:53621 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752008AbdFOIWn (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Jun 2017 13:24:47 -0400
-Received: by mail-qt0-f169.google.com with SMTP id w1so7929327qtg.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Jun 2017 10:24:47 -0700 (PDT)
-Message-ID: <1497461083.6752.7.camel@redhat.com>
-Subject: Re: [PATCH v6 12/20] fs: add a new fstype flag to indicate how
- writeback errors are tracked
-From: Jeff Layton <jlayton@redhat.com>
-To: Christoph Hellwig <hch@infradead.org>
-Cc: Andrew Morton <akpm@linux-foundation.org>,
+        Thu, 15 Jun 2017 04:22:43 -0400
+Date: Thu, 15 Jun 2017 01:22:21 -0700
+From: Christoph Hellwig <hch@infradead.org>
+To: Jeff Layton <jlayton@redhat.com>
+Cc: Christoph Hellwig <hch@infradead.org>,
+        Andrew Morton <akpm@linux-foundation.org>,
         Al Viro <viro@ZenIV.linux.org.uk>, Jan Kara <jack@suse.cz>,
         tytso@mit.edu, axboe@kernel.dk, mawilcox@microsoft.com,
         ross.zwisler@linux.intel.com, corbet@lwn.net, Chris Mason <clm@fb.com>,
@@ -20,52 +17,35 @@ Cc: Andrew Morton <akpm@linux-foundation.org>,
         linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
         linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org
-Date: Wed, 14 Jun 2017 13:24:43 -0400
-In-Reply-To: <20170614064731.GB3598@infradead.org>
+Subject: Re: [PATCH v6 12/20] fs: add a new fstype flag to indicate how
+ writeback errors are tracked
+Message-ID: <20170615082221.GA22809@infradead.org>
 References: <20170612122316.13244-1-jlayton@redhat.com>
-         <20170612122316.13244-15-jlayton@redhat.com>
-         <20170612124513.GC18360@infradead.org> <1497349472.5762.1.camel@redhat.com>
-         <20170614064731.GB3598@infradead.org>
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+ <20170612122316.13244-15-jlayton@redhat.com>
+ <20170612124513.GC18360@infradead.org>
+ <1497349472.5762.1.camel@redhat.com>
+ <20170614064731.GB3598@infradead.org>
+ <1497461083.6752.7.camel@redhat.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1497461083.6752.7.camel@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 2017-06-13 at 23:47 -0700, Christoph Hellwig wrote:
-> On Tue, Jun 13, 2017 at 06:24:32AM -0400, Jeff Layton wrote:
-> > That's definitely what I want for the endgame here. My plan was to add
-> > this flag for now, and then eventually reverse it (or drop it) once all
-> > or most filesystems are converted.
-> > 
-> > We can do it that way from the get-go if you like. It'll mean tossing in
-> >  a patch add this flag to all filesystems that have an fsync operation
-> > and that use the pagecache, and then gradually remove it from them as we
-> > convert them.
-> > 
-> > Which method do you prefer?
-> 
-> Please do it from the get-go.  Or in fact figure out if we can get
-> away without it entirely.  Moving the error reporting into ->fsync
-> should help greatly with that, so what's missing after that?
+On Wed, Jun 14, 2017 at 01:24:43PM -0400, Jeff Layton wrote:
+> In this smaller set, it's only really used for DAX.
 
-In this smaller set, it's only really used for DAX. In the larger patch
-series I have (which needs updating on top of this), there are other
-things that key off of it:
+DAX only is implemented by three filesystems, please just fix them
+up in one go.
 
-sync_file_range: ->fsync isn't called directly there, and I think we
-probably want similar semantics to fsync() for it
+> sync_file_range: ->fsync isn't called directly there, and I think we
+> probably want similar semantics to fsync() for it
 
-JBD2: will try to re-set the error after clearing it with
-filemap_fdatawait. That's problematic with the new infrastructure so we
-need some way to avoid it.
+sync_file_range is only supposed to sync data, so it should not call
+->fsync.
 
-What I think I'll do for now is add a new FS_DAX_WB_ERRSEQ flag that
-will go away by the end of the series. As the need arises for a similar
-flag in other areas, I'll add them then.
+> JBD2: will try to re-set the error after clearing it with
+> filemap_fdatawait. That's problematic with the new infrastructure so we
+> need some way to avoid it.
 
-The overall goal is not to need these flags. It may take a bit of time
-to get there though.
-
-Thanks for the review so far!
--- 
-Jeff Layton <jlayton@redhat.com>
+JBD2 only has two users, please fix them up in one go.

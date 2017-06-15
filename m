@@ -1,54 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f176.google.com ([209.85.216.176]:34836 "EHLO
-        mail-qt0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752968AbdFOPD2 (ORCPT
+Received: from zeniv.linux.org.uk ([195.92.253.2]:38820 "EHLO
+        ZenIV.linux.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751908AbdFOLMD (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Jun 2017 11:03:28 -0400
-Received: by mail-qt0-f176.google.com with SMTP id w1so23819498qtg.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Jun 2017 08:03:28 -0700 (PDT)
-Message-ID: <1497539004.4607.7.camel@redhat.com>
-Subject: Re: [PATCH v6 12/20] fs: add a new fstype flag to indicate how
- writeback errors are tracked
-From: Jeff Layton <jlayton@redhat.com>
+        Thu, 15 Jun 2017 07:12:03 -0400
+Date: Thu, 15 Jun 2017 12:11:58 +0100
+From: Al Viro <viro@ZenIV.linux.org.uk>
 To: Christoph Hellwig <hch@infradead.org>
-Cc: Andrew Morton <akpm@linux-foundation.org>,
-        Al Viro <viro@ZenIV.linux.org.uk>, Jan Kara <jack@suse.cz>,
-        tytso@mit.edu, axboe@kernel.dk, mawilcox@microsoft.com,
-        ross.zwisler@linux.intel.com, corbet@lwn.net, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
-        "Darrick J . Wong" <darrick.wong@oracle.com>,
-        linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
-        linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org
-Date: Thu, 15 Jun 2017 11:03:24 -0400
-In-Reply-To: <20170615145724.GB14028@infradead.org>
-References: <20170612122316.13244-1-jlayton@redhat.com>
-         <20170612122316.13244-15-jlayton@redhat.com>
-         <20170612124513.GC18360@infradead.org> <1497349472.5762.1.camel@redhat.com>
-         <20170614064731.GB3598@infradead.org> <1497461083.6752.7.camel@redhat.com>
-         <20170615082221.GA22809@infradead.org> <1497523332.4556.1.camel@redhat.com>
-         <20170615145724.GB14028@infradead.org>
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+Cc: Goldwyn Rodrigues <rgoldwyn@suse.de>, akpm@linux-foundation.org,
+        linux-fsdevel@vger.kernel.org, jack@suse.com,
+        linux-block@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org, axboe@kernel.dk,
+        linux-api@vger.kernel.org, adam.manzanares@wdc.com
+Subject: Re: [PATCH 0/10 v11] No wait AIO
+Message-ID: <20170615111157.GL31671@ZenIV.linux.org.uk>
+References: <20170606111939.27272-1-rgoldwyn@suse.de>
+ <20170608073910.GB9292@infradead.org>
+ <20170610053441.GD6365@ZenIV.linux.org.uk>
+ <58bbe95e-5a4a-4387-3a00-16ed2e861bd3@suse.de>
+ <20170613061431.GA11432@infradead.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170613061431.GA11432@infradead.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2017-06-15 at 07:57 -0700, Christoph Hellwig wrote:
-> On Thu, Jun 15, 2017 at 06:42:12AM -0400, Jeff Layton wrote:
-> > Correct.
-> > 
-> > But if there is a data writeback error, should we report an error on all
-> > open fds at that time (like we will for fsync)?
+On Mon, Jun 12, 2017 at 11:14:31PM -0700, Christoph Hellwig wrote:
+> On Mon, Jun 12, 2017 at 05:38:13PM -0500, Goldwyn Rodrigues wrote:
+> > We had FS_NOWAIT in filesystem type flags (in v3), but retracted it
+> > later in v4.
 > 
-> We should in theory, but I don't see how to properly do it.  In addition
-> sync_file_range just can't be used for data integrity to start with, so
-> I don't think it's worth it.  At some point we should add a proper
-> fsync_range syscall, though.
+> A per-fs flag is wrong as file_operation may have different
+> capabilities.
+> 
+> > I will work on adding FMODE_AIO_NOWAIT in the meantime.
+> 
+> If Al prefers that let's go with it for now.  One other thing I'd
+> love is a supported flags field in struct file_operations that we
+> can compare the flags against.  Al, does that sound good as well?
 
-filemap_report_wb_err will always return 0 if the inode never has
-mapping_set_error called on it. So, I think we should be able to do it
-there once we get all of the fs' converted over. That'll have to happen
-at the end of the series however.
-
--- 
-Jeff Layton <jlayton@redhat.com>
+Which flags are you talking about?  aio ones?  AFAICS, it's the same
+kind of thing as "can we lseek?" or "can we read/pread?", etc.
+What would that field look like?  Note that some of those might depend
+upon the flags passed to open(), so shoving them into file_operations
+might mean splitting file_operations instances...  Details, please.

@@ -1,55 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:33246 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750717AbdFNNyy (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Jun 2017 09:54:54 -0400
-Subject: Re: [PATCH] btrfs: test for device flush-able should be after wait
- code
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <1497434558-715-1-git-send-email-anand.jain@oracle.com>
- <20170614122637.GA25451@suse.cz>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <6f0a0979-3411-5fff-f241-f5cd2060b4b6@oracle.com>
-Date: Wed, 14 Jun 2017 22:01:05 +0800
+Received: from mx2.suse.de ([195.135.220.15]:53133 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1750727AbdFOP6g (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 15 Jun 2017 11:58:36 -0400
+Date: Thu, 15 Jun 2017 17:57:30 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Su Yue <suy.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH v3 0/9] btrfs: check name_len before read name
+Message-ID: <20170615155730.GC25451@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170606095708.494-1-suy.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20170614122637.GA25451@suse.cz>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170606095708.494-1-suy.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 06/14/2017 08:26 PM, David Sterba wrote:
-> On Wed, Jun 14, 2017 at 06:02:38PM +0800, Anand Jain wrote:
->> write_dev_flush() checks if the device is flush capable, however as
->> the device mode can change any time, this check should be after the
->> wait part of the code.
+On Tue, Jun 06, 2017 at 05:56:59PM +0800, Su Yue wrote:
+> When reading out name from inode_ref, dir_item, it's possible that
+> corrupted name_len leads to read beyond boundary.
+> Since there are already patches for btrfs-progs, this patchset is
+> for btrfs.
 > 
-> This would apply to code before "btrfs: wait part of the
-> write_dev_flush() can be separated out", right?
-
-  Yes.
-
-> The problematic case is when a flush bio is sent, queue status changes
-> and waiting is skipped. A bio would leak. Next time the flushing is
-> enabled, write_dev_flush allocaes a new bio and either it would leak or
-> waiting will happen as expected.
+> Introduce 'btrfs_is_name_len_valid' to make check name_len with
+> item boundary.
+> If read name from dir_item, use 'verify_dir_item' to do more strict
+> check. Otherwise, use 'btrfs_is_name_len_valid'.
 > 
-> The bio would leak only if the barriers are switched between write and
-> wait. Not impossible, but I still think a race hard to win. The
-> consequences are not absolutely fatal.
+> It's unnessary to do check before every read/memcmp_extent_buffer name.
+> Checking name_len when read name for the first time in the call graph is
+> enough.
+> 
+> Changlog:
+> v2:
+> 	1.Change 'btrfs_check_namelen' to 'btrfs_is_namelen_valid'.
+> 	2.Split patches according call graph.
+> v3:
+> 	1.Add cases about BTRFS_ROOT_REF_KEY and BTRFS_ROOT_BACKREF_KEY.
+> 	2.Add more comments about how/where extent_buffer is to be read
+> 	for the first time.
+> 	3.Change 'namelen' to 'name_len' in function and changelog.
 
-  Yeah more of a theoretical problem and hard to reproduce unless there
-  is a deliberate attempt.
+I still see some fstests fail, eg. btrfs/048
 
-> Also, the cleanups in write_dev_flush fix the bug in another way, so we
-> don't need this separate patch as a potential stable backport. The patch
-> mentioned above can be considered a fix but would need some manual
-> adaptations to apply. Therefore I don't think we need the $subj patch.
+trfs/048 30s ...       [18:05:48] [18:06:18] - output mismatch (see /root/test/mmtests/work/testdisk/sources/xfstests-git-installed/results//btrfs/048.out.bad)
+    --- tests/btrfs/048.out     2017-04-24 16:56:02.268104570 +0200
+    +++ /root/test/mmtests/work/testdisk/sources/xfstests-git-installed/results//btrfs/048.out.bad      2017-06-15 18:06:18.996635908 +0200
+    @@ -30,22 +30,13 @@
+     ERROR: failed to set compression for SCRATCH_MNT/testdir/file1: Invalid argument
+     ***
+     compression=lzo
+    -compression=lzo
+    -compression=zlib
+     ***
+    -compression=lzo
+    ...
 
-  Agreed. Kindly ignore this and the V2.2 of
-     [PATCH 3/3 v2.2] btrfs: wait part of the write_dev_flush()...
-  patch as well.
+in syslog with several lines
 
-Thanks, Anand
+[ 2156.970285] BTRFS critical (device sdb6): invalid dir item name len: 17
+
+and
+
+[ 2157.220219] BTRFS error (device sdb6): error loading props for ino 259 (root 5): -5
+
+similarly btrfs/059 fails. Have you seen such errors during your testing?

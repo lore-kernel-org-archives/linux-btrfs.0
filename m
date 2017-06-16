@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:58436 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:37798 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752594AbdFPTgG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Jun 2017 15:36:06 -0400
+        id S1752582AbdFPTgB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 16 Jun 2017 15:36:01 -0400
 From: Jeff Layton <jlayton@redhat.com>
 To: Andrew Morton <akpm@linux-foundation.org>,
         Al Viro <viro@ZenIV.linux.org.uk>, Jan Kara <jack@suse.cz>,
@@ -16,54 +16,97 @@ Cc: Carlos Maiolino <cmaiolino@redhat.com>, Eryu Guan <eguan@redhat.com>,
         linux-mm@kvack.org, linux-ext4@vger.kernel.org,
         linux-xfs@vger.kernel.org, linux-btrfs@vger.kernel.org,
         linux-block@vger.kernel.org
-Subject: [PATCH v7 22/22] btrfs: minimal conversion to errseq_t writeback error reporting on fsync
-Date: Fri, 16 Jun 2017 15:34:27 -0400
-Message-Id: <20170616193427.13955-23-jlayton@redhat.com>
+Subject: [PATCH v7 19/22] ext4: add more robust reporting of metadata writeback errors
+Date: Fri, 16 Jun 2017 15:34:24 -0400
+Message-Id: <20170616193427.13955-20-jlayton@redhat.com>
 In-Reply-To: <20170616193427.13955-1-jlayton@redhat.com>
 References: <20170616193427.13955-1-jlayton@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Just check and advance the errseq_t in the file before returning.
-Internal callers of filemap_* functions are left as-is.
+ext4 uses the blockdev mapping for tracking metadata stored in the
+pagecache. Sample its wb_err when opening a file and store that in
+the f_md_wb_err field.
+
+Change ext4_sync_file to check for data errors first, and then check the
+blockdev mapping for metadata errors afterward.
+
+Note that because metadata writeback errors are only tracked on a
+per-device level, this does mean that we'll end up reporting an error on
+all open file descriptors when there is a metadata writeback failure.
+That's not ideal, but we can possibly improve upon it in the future.
 
 Signed-off-by: Jeff Layton <jlayton@redhat.com>
 ---
- fs/btrfs/file.c | 7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
+ fs/ext4/dir.c   |  8 ++++++--
+ fs/ext4/file.c  |  5 ++++-
+ fs/ext4/fsync.c | 13 +++++++++++++
+ 3 files changed, 23 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 0f102a1b851f..609226beea43 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2017,7 +2017,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	struct btrfs_trans_handle *trans;
- 	struct btrfs_log_ctx ctx;
--	int ret = 0;
-+	int ret = 0, err;
- 	bool full_sync = 0;
- 	u64 len;
+diff --git a/fs/ext4/dir.c b/fs/ext4/dir.c
+index e8b365000d73..6bbb19510f74 100644
+--- a/fs/ext4/dir.c
++++ b/fs/ext4/dir.c
+@@ -611,9 +611,13 @@ static int ext4_dx_readdir(struct file *file, struct dir_context *ctx)
  
-@@ -2036,7 +2036,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 	 */
- 	ret = start_ordered_ops(inode, start, end);
- 	if (ret)
--		return ret;
-+		goto out;
- 
- 	inode_lock(inode);
- 	atomic_inc(&root->log_batch);
-@@ -2233,6 +2233,9 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 		ret = btrfs_end_transaction(trans);
- 	}
- out:
-+	err = filemap_report_wb_err(file);
+ static int ext4_dir_open(struct inode * inode, struct file * filp)
+ {
++	int ret = 0;
++
+ 	if (ext4_encrypted_inode(inode))
+-		return fscrypt_get_encryption_info(inode) ? -EACCES : 0;
+-	return 0;
++		ret = fscrypt_get_encryption_info(inode) ? -EACCES : 0;
 +	if (!ret)
-+		ret = err;
- 	return ret > 0 ? -EIO : ret;
++		filp->f_md_wb_err = filemap_sample_wb_err(inode->i_sb->s_bdev->bd_inode->i_mapping);
++	return ret;
  }
  
+ static int ext4_release_dir(struct inode *inode, struct file *filp)
+diff --git a/fs/ext4/file.c b/fs/ext4/file.c
+index 02ce7e7bbdf5..6e505269132c 100644
+--- a/fs/ext4/file.c
++++ b/fs/ext4/file.c
+@@ -435,7 +435,10 @@ static int ext4_file_open(struct inode * inode, struct file * filp)
+ 		if (ret < 0)
+ 			return ret;
+ 	}
+-	return dquot_file_open(inode, filp);
++	ret = dquot_file_open(inode, filp);
++	if (!ret)
++		filp->f_md_wb_err = filemap_sample_wb_err(sb->s_bdev->bd_inode->i_mapping);
++	return ret;
+ }
+ 
+ /*
+diff --git a/fs/ext4/fsync.c b/fs/ext4/fsync.c
+index 03d6259d8662..8ea8ec517da5 100644
+--- a/fs/ext4/fsync.c
++++ b/fs/ext4/fsync.c
+@@ -161,10 +161,23 @@ int ext4_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 			ret = err;
+ 	}
+ out:
++	/*
++	 * Was there a metadata writeback error since last fsync?
++	 *
++	 * FIXME: ext4 tracks metadata with a whole-block device mapping. If
++	 * there is any sort of metadata writeback error, we'll report an
++	 * error on all open fds, even ones not associated with this inode.
++	 */
++	err = filemap_report_md_wb_err(file,
++				inode->i_sb->s_bdev->bd_inode->i_mapping);
++	if (!ret)
++		ret = err;
++
+ 	/* Was there a writeback error of the data since last fsync? */
+ 	err = filemap_report_wb_err(file);
+ 	if (!ret)
+ 		ret = err;
++
+ 	trace_ext4_sync_file_exit(inode, ret);
+ 	return ret;
+ }
 -- 
 2.13.0
 

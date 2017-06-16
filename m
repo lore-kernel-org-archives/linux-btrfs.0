@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:39314 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:52962 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752380AbdFPTfb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Jun 2017 15:35:31 -0400
+        id S1750827AbdFPTfj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 16 Jun 2017 15:35:39 -0400
 From: Jeff Layton <jlayton@redhat.com>
 To: Andrew Morton <akpm@linux-foundation.org>,
         Al Viro <viro@ZenIV.linux.org.uk>, Jan Kara <jack@suse.cz>,
@@ -16,97 +16,56 @@ Cc: Carlos Maiolino <cmaiolino@redhat.com>, Eryu Guan <eguan@redhat.com>,
         linux-mm@kvack.org, linux-ext4@vger.kernel.org,
         linux-xfs@vger.kernel.org, linux-btrfs@vger.kernel.org,
         linux-block@vger.kernel.org
-Subject: [PATCH v7 07/22] mm: don't TestClearPageError in __filemap_fdatawait_range
-Date: Fri, 16 Jun 2017 15:34:12 -0400
-Message-Id: <20170616193427.13955-8-jlayton@redhat.com>
+Subject: [PATCH v7 09/22] fs: always sync metadata in __generic_file_fsync
+Date: Fri, 16 Jun 2017 15:34:14 -0400
+Message-Id: <20170616193427.13955-10-jlayton@redhat.com>
 In-Reply-To: <20170616193427.13955-1-jlayton@redhat.com>
 References: <20170616193427.13955-1-jlayton@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The -EIO returned here can end up overriding whatever error is marked in
-the address space, and be returned at fsync time, even when there is a
-more appropriate error stored in the mapping.
+If there were previously both metadata and data writeback errors when
+fsync is called, then it will currently take two calls to fsync() to
+clear them on some filesystems.
 
-Read errors are also sometimes tracked on a per-page level using
-PG_error. Suppose we have a read error on a page, and then that page is
-subsequently dirtied by overwriting the whole page. Writeback doesn't
-clear PG_error, so we can then end up successfully writing back that
-page and still return -EIO on fsync.
-
-Worse yet, PG_error is cleared during a sync() syscall, but the -EIO
-return from that is silently discarded. Any subsystem that is relying on
-PG_error to report errors during fsync can easily lose writeback errors
-due to this. All you need is a stray sync() call to wait for writeback
-to complete and you've lost the error.
-
-Since the handling of the PG_error flag is somewhat inconsistent across
-subsystems, let's just rely on marking the address space when there are
-writeback errors. Change the TestClearPageError call to ClearPageError,
-and make __filemap_fdatawait_range a void return function.
+The problem is in __generic_file_fsync, which won't try to write back
+the metadata if the data flush fails. Fix this by always attempting to
+write out the metadata, even when a flush of the data reports an error.
 
 Signed-off-by: Jeff Layton <jlayton@redhat.com>
 ---
- mm/filemap.c | 20 +++++---------------
- 1 file changed, 5 insertions(+), 15 deletions(-)
+ fs/libfs.c | 9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
 
-diff --git a/mm/filemap.c b/mm/filemap.c
-index c349a5d3a34b..21e65c6ef1a0 100644
---- a/mm/filemap.c
-+++ b/mm/filemap.c
-@@ -388,17 +388,16 @@ int filemap_flush(struct address_space *mapping)
- }
- EXPORT_SYMBOL(filemap_flush);
+diff --git a/fs/libfs.c b/fs/libfs.c
+index 1dec90819366..c93e77ecb49c 100644
+--- a/fs/libfs.c
++++ b/fs/libfs.c
+@@ -974,12 +974,12 @@ int __generic_file_fsync(struct file *file, loff_t start, loff_t end,
+ 	int err;
+ 	int ret;
  
--static int __filemap_fdatawait_range(struct address_space *mapping,
-+static void __filemap_fdatawait_range(struct address_space *mapping,
- 				     loff_t start_byte, loff_t end_byte)
- {
- 	pgoff_t index = start_byte >> PAGE_SHIFT;
- 	pgoff_t end = end_byte >> PAGE_SHIFT;
- 	struct pagevec pvec;
- 	int nr_pages;
--	int ret = 0;
+-	err = filemap_write_and_wait_range(inode->i_mapping, start, end);
+-	if (err)
+-		return err;
++	ret = filemap_write_and_wait_range(inode->i_mapping, start, end);
  
- 	if (end_byte < start_byte)
--		goto out;
-+		return;
- 
- 	pagevec_init(&pvec, 0);
- 	while ((index <= end) &&
-@@ -415,14 +414,11 @@ static int __filemap_fdatawait_range(struct address_space *mapping,
- 				continue;
- 
- 			wait_on_page_writeback(page);
--			if (TestClearPageError(page))
--				ret = -EIO;
-+			ClearPageError(page);
- 		}
- 		pagevec_release(&pvec);
- 		cond_resched();
- 	}
--out:
--	return ret;
- }
- 
- /**
-@@ -442,14 +438,8 @@ static int __filemap_fdatawait_range(struct address_space *mapping,
- int filemap_fdatawait_range(struct address_space *mapping, loff_t start_byte,
- 			    loff_t end_byte)
- {
--	int ret, ret2;
+ 	inode_lock(inode);
+-	ret = sync_mapping_buffers(inode->i_mapping);
++	err = sync_mapping_buffers(inode->i_mapping);
++	if (ret == 0)
++		ret = err;
+ 	if (!(inode->i_state & I_DIRTY_ALL))
+ 		goto out;
+ 	if (datasync && !(inode->i_state & I_DIRTY_DATASYNC))
+@@ -988,7 +988,6 @@ int __generic_file_fsync(struct file *file, loff_t start, loff_t end,
+ 	err = sync_inode_metadata(inode, 1);
+ 	if (ret == 0)
+ 		ret = err;
 -
--	ret = __filemap_fdatawait_range(mapping, start_byte, end_byte);
--	ret2 = filemap_check_errors(mapping);
--	if (!ret)
--		ret = ret2;
--
--	return ret;
-+	__filemap_fdatawait_range(mapping, start_byte, end_byte);
-+	return filemap_check_errors(mapping);
- }
- EXPORT_SYMBOL(filemap_fdatawait_range);
- 
+ out:
+ 	inode_unlock(inode);
+ 	err = filemap_check_errors(inode->i_mapping);
 -- 
 2.13.0
 

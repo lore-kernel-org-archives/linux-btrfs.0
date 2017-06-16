@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:37932 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:60718 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752616AbdFPTgH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Jun 2017 15:36:07 -0400
+        id S1751079AbdFPTgJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 16 Jun 2017 15:36:09 -0400
 From: Jeff Layton <jlayton@redhat.com>
 To: Andrew Morton <akpm@linux-foundation.org>,
         Al Viro <viro@ZenIV.linux.org.uk>, Jan Kara <jack@suse.cz>,
@@ -16,109 +16,64 @@ Cc: Carlos Maiolino <cmaiolino@redhat.com>, Eryu Guan <eguan@redhat.com>,
         linux-mm@kvack.org, linux-ext4@vger.kernel.org,
         linux-xfs@vger.kernel.org, linux-btrfs@vger.kernel.org,
         linux-block@vger.kernel.org
-Subject: [PATCH v7 20/22] ext2: convert to errseq_t based writeback error tracking
-Date: Fri, 16 Jun 2017 15:34:25 -0400
-Message-Id: <20170616193427.13955-21-jlayton@redhat.com>
+Subject: [PATCH v7 21/22] xfs: minimal conversion to errseq_t writeback error reporting
+Date: Fri, 16 Jun 2017 15:34:26 -0400
+Message-Id: <20170616193427.13955-22-jlayton@redhat.com>
 In-Reply-To: <20170616193427.13955-1-jlayton@redhat.com>
 References: <20170616193427.13955-1-jlayton@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Set the flag to indicate that we want new-style data writeback error
-handling.
-
-This means that we need to override the open routines for files and
-directories so that we can sample the bdev wb_err at open.
+Just check and advance the data errseq_t in struct file before
+before returning from fsync on normal files. Internal filemap_*
+callers are left as-is.
 
 Signed-off-by: Jeff Layton <jlayton@redhat.com>
 ---
- fs/ext2/dir.c  |  8 ++++++++
- fs/ext2/file.c | 26 +++++++++++++++++++++-----
- 2 files changed, 29 insertions(+), 5 deletions(-)
+ fs/xfs/xfs_file.c | 15 +++++++++++----
+ 1 file changed, 11 insertions(+), 4 deletions(-)
 
-diff --git a/fs/ext2/dir.c b/fs/ext2/dir.c
-index e2709695b177..6e476c9929f8 100644
---- a/fs/ext2/dir.c
-+++ b/fs/ext2/dir.c
-@@ -713,6 +713,13 @@ int ext2_empty_dir (struct inode * inode)
- 	return 0;
+diff --git a/fs/xfs/xfs_file.c b/fs/xfs/xfs_file.c
+index 5fb5a0958a14..bc3b1575e8db 100644
+--- a/fs/xfs/xfs_file.c
++++ b/fs/xfs/xfs_file.c
+@@ -134,7 +134,7 @@ xfs_file_fsync(
+ 	struct inode		*inode = file->f_mapping->host;
+ 	struct xfs_inode	*ip = XFS_I(inode);
+ 	struct xfs_mount	*mp = ip->i_mount;
+-	int			error = 0;
++	int			error = 0, err2;
+ 	int			log_flushed = 0;
+ 	xfs_lsn_t		lsn = 0;
+ 
+@@ -142,10 +142,12 @@ xfs_file_fsync(
+ 
+ 	error = filemap_write_and_wait_range(inode->i_mapping, start, end);
+ 	if (error)
+-		return error;
++		goto out;
+ 
+-	if (XFS_FORCED_SHUTDOWN(mp))
+-		return -EIO;
++	if (XFS_FORCED_SHUTDOWN(mp)) {
++		error = -EIO;
++		goto out;
++	}
+ 
+ 	xfs_iflags_clear(ip, XFS_ITRUNCATED);
+ 
+@@ -197,6 +199,11 @@ xfs_file_fsync(
+ 	    mp->m_logdev_targp == mp->m_ddev_targp)
+ 		xfs_blkdev_issue_flush(mp->m_ddev_targp);
+ 
++out:
++	err2 = filemap_report_wb_err(file);
++	if (!error)
++		error = err2;
++
+ 	return error;
  }
  
-+static int ext2_dir_open(struct inode *inode, struct file *file)
-+{
-+	/* Sample blockdev mapping errseq_t for metadata writeback */
-+	file->f_md_wb_err = filemap_sample_wb_err(inode->i_sb->s_bdev->bd_inode->i_mapping);
-+	return 0;
-+}
-+
- const struct file_operations ext2_dir_operations = {
- 	.llseek		= generic_file_llseek,
- 	.read		= generic_read_dir,
-@@ -721,5 +728,6 @@ const struct file_operations ext2_dir_operations = {
- #ifdef CONFIG_COMPAT
- 	.compat_ioctl	= ext2_compat_ioctl,
- #endif
-+	.open		= ext2_dir_open,
- 	.fsync		= ext2_fsync,
- };
-diff --git a/fs/ext2/file.c b/fs/ext2/file.c
-index ed00e7ae0ef3..fd44539f6fce 100644
---- a/fs/ext2/file.c
-+++ b/fs/ext2/file.c
-@@ -172,17 +172,23 @@ static int ext2_release_file (struct inode * inode, struct file * filp)
- 
- int ext2_fsync(struct file *file, loff_t start, loff_t end, int datasync)
- {
--	int ret;
-+	int ret, ret2;
- 	struct super_block *sb = file->f_mapping->host->i_sb;
- 	struct address_space *mapping = sb->s_bdev->bd_inode->i_mapping;
- 
- 	ret = generic_file_fsync(file, start, end, datasync);
--	if (ret == -EIO) {
-+	if (ret == -EIO)
- 		/* We don't really know where the IO error happened... */
- 		ext2_error(sb, __func__,
- 			   "detected IO error when writing metadata buffers");
--		ret = -EIO;
--	}
-+
-+	ret2 = filemap_report_wb_err(file);
-+	if (ret == 0)
-+		ret = ret2;
-+
-+	ret2 = filemap_report_md_wb_err(file, mapping);
-+	if (ret == 0)
-+		ret = ret2;
- 	return ret;
- }
- 
-@@ -204,6 +210,16 @@ static ssize_t ext2_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
- 	return generic_file_write_iter(iocb, from);
- }
- 
-+static int ext2_file_open(struct inode *inode, struct file *file)
-+{
-+	int ret;
-+
-+	ret = dquot_file_open(inode, file);
-+	if (likely(ret == 0))
-+		file->f_md_wb_err = filemap_sample_wb_err(inode->i_sb->s_bdev->bd_inode->i_mapping);
-+	return ret;
-+}
-+
- const struct file_operations ext2_file_operations = {
- 	.llseek		= generic_file_llseek,
- 	.read_iter	= ext2_file_read_iter,
-@@ -213,7 +229,7 @@ const struct file_operations ext2_file_operations = {
- 	.compat_ioctl	= ext2_compat_ioctl,
- #endif
- 	.mmap		= ext2_file_mmap,
--	.open		= dquot_file_open,
-+	.open		= ext2_file_open,
- 	.release	= ext2_release_file,
- 	.fsync		= ext2_fsync,
- 	.get_unmapped_area = thp_get_unmapped_area,
 -- 
 2.13.0
 

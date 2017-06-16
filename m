@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:36488 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:34974 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752541AbdFPTfv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Jun 2017 15:35:51 -0400
+        id S1752044AbdFPTfT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 16 Jun 2017 15:35:19 -0400
 From: Jeff Layton <jlayton@redhat.com>
 To: Andrew Morton <akpm@linux-foundation.org>,
         Al Viro <viro@ZenIV.linux.org.uk>, Jan Kara <jack@suse.cz>,
@@ -16,90 +16,49 @@ Cc: Carlos Maiolino <cmaiolino@redhat.com>, Eryu Guan <eguan@redhat.com>,
         linux-mm@kvack.org, linux-ext4@vger.kernel.org,
         linux-xfs@vger.kernel.org, linux-btrfs@vger.kernel.org,
         linux-block@vger.kernel.org
-Subject: [PATCH v7 14/22] Documentation: flesh out the section in vfs.txt on storing and reporting writeback errors
-Date: Fri, 16 Jun 2017 15:34:19 -0400
-Message-Id: <20170616193427.13955-15-jlayton@redhat.com>
+Subject: [PATCH v7 06/22] mm: clear AS_EIO/AS_ENOSPC when writeback initiation fails
+Date: Fri, 16 Jun 2017 15:34:11 -0400
+Message-Id: <20170616193427.13955-7-jlayton@redhat.com>
 In-Reply-To: <20170616193427.13955-1-jlayton@redhat.com>
 References: <20170616193427.13955-1-jlayton@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Let's try to make this extra clear for fs authors.
+filemap_write_and_wait{_range} will return an error if writeback
+initiation fails, but won't clear errors in the address_space. This is
+particularly problematic on DAX, as it's effectively synchronous. Ensure
+that we clear the AS_EIO/AS_ENOSPC flags when filemap_fdatawrite returns
+an error.
 
-Cc: Jan Kara <jack@suse.cz>
 Signed-off-by: Jeff Layton <jlayton@redhat.com>
 ---
- Documentation/filesystems/vfs.txt | 43 ++++++++++++++++++++++++++++++++++++---
- 1 file changed, 40 insertions(+), 3 deletions(-)
+ mm/filemap.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/Documentation/filesystems/vfs.txt b/Documentation/filesystems/vfs.txt
-index f42b90687d40..f3702d5c6f2f 100644
---- a/Documentation/filesystems/vfs.txt
-+++ b/Documentation/filesystems/vfs.txt
-@@ -576,7 +576,42 @@ should clear PG_Dirty and set PG_Writeback.  It can be actually
- written at any point after PG_Dirty is clear.  Once it is known to be
- safe, PG_Writeback is cleared.
- 
--Writeback makes use of a writeback_control structure...
-+Writeback makes use of a writeback_control structure to direct the
-+operations.  This gives the the writepage and writepages operations some
-+information about the nature of and reason for the writeback request,
-+and the constraints under which it is being done.  It is also used to
-+return information back to the caller about the result of a writepage or
-+writepages request.
-+
-+Handling errors during writeback
-+--------------------------------
-+Most applications that utilize the pagecache will periodically call
-+fsync to ensure that data written has made it to the backing store.
-+When there is an error during writeback, they expect that error to be
-+reported when fsync is called.  After an error has been reported on one
-+fsync, subsequent fsync calls on the same file descriptor should return
-+0, unless further writeback errors have occurred since the previous
-+fsync.
-+
-+Ideally, the kernel would report an error only on file descriptions on
-+which writes were done that subsequently failed to be written back.  The
-+generic pagecache infrastructure does not track the file descriptions
-+that have dirtied each individual page however, so determining which
-+file descriptors should get back an error is not possible.
-+
-+Instead, the generic writeback error tracking infrastructure in the
-+kernel settles for reporting errors to fsync on all file descriptions
-+that were open at the time that the error occurred.  In a situation with
-+multiple writers, all of them will get back an error on a subsequent fsync,
-+even if all of the writes done through that particular file descriptor
-+succeeded (or even if there were no writes on that file descriptor at all).
-+
-+Filesystems that wish to use this infrastructure should call
-+mapping_set_error to record the error in the address_space when it
-+occurs.  Then, at the end of their fsync operation, they should call
-+filemap_report_wb_err to ensure that the struct file's error cursor
-+has advanced to the correct point in the stream of errors emitted by
-+the backing device(s).
- 
- struct address_space_operations
- -------------------------------
-@@ -804,7 +839,8 @@ struct address_space_operations {
- The File Object
- ===============
- 
--A file object represents a file opened by a process.
-+A file object represents a file opened by a process. This is also known
-+as an "open file description" in POSIX parlance.
- 
- 
- struct file_operations
-@@ -887,7 +923,8 @@ otherwise noted.
- 
-   release: called when the last reference to an open file is closed
- 
--  fsync: called by the fsync(2) system call
-+  fsync: called by the fsync(2) system call. Also see the section above
-+	 entitled "Handling errors during writeback".
- 
-   fasync: called by the fcntl(2) system call when asynchronous
- 	(non-blocking) mode is enabled for a file
+diff --git a/mm/filemap.c b/mm/filemap.c
+index 37f286df7c95..c349a5d3a34b 100644
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -517,6 +517,9 @@ int filemap_write_and_wait(struct address_space *mapping)
+ 			int err2 = filemap_fdatawait(mapping);
+ 			if (!err)
+ 				err = err2;
++		} else {
++			/* Clear any previously stored errors */
++			filemap_check_errors(mapping);
+ 		}
+ 	} else {
+ 		err = filemap_check_errors(mapping);
+@@ -551,6 +554,9 @@ int filemap_write_and_wait_range(struct address_space *mapping,
+ 						lstart, lend);
+ 			if (!err)
+ 				err = err2;
++		} else {
++			/* Clear any previously stored errors */
++			filemap_check_errors(mapping);
+ 		}
+ 	} else {
+ 		err = filemap_check_errors(mapping);
 -- 
 2.13.0
 

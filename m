@@ -1,51 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:35536 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1753033AbdFRDJh (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 17 Jun 2017 23:09:37 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1dMQaW-0008Ns-5f
-        for linux-btrfs@vger.kernel.org; Sun, 18 Jun 2017 05:09:20 +0200
+Received: from mx2.suse.de ([195.135.220.15]:50086 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1752610AbdFPLj0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 16 Jun 2017 07:39:26 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 50B21AB5D
+        for <linux-btrfs@vger.kernel.org>; Fri, 16 Jun 2017 11:39:25 +0000 (UTC)
+From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: [PATCH v2 2/2] btrfs: Round down values which are written for
- total_bytes_size
-Date: Sun, 18 Jun 2017 03:09:14 +0000 (UTC)
-Message-ID: <pan$a52a7$449ab7f0$8d4ee56f$4f139c10@cox.net>
+Cc: dsterba@suse.com, Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH v2 1/2] btrfs: Manually implement device_total_bytes getter/setter
+Date: Fri, 16 Jun 2017 14:39:19 +0300
+Message-Id: <1497613160-3074-2-git-send-email-nborisov@suse.com>
+In-Reply-To: <1497613160-3074-1-git-send-email-nborisov@suse.com>
 References: <1497613160-3074-1-git-send-email-nborisov@suse.com>
-        <1497613160-3074-3-git-send-email-nborisov@suse.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Nikolay Borisov posted on Fri, 16 Jun 2017 14:39:20 +0300 as excerpted:
+The device->total_bytes member needs to always be rounded down to sectorsize
+so that it corresponds to the value of super->total_bytes. However, there are
+multiple places where the setter is fed a value which is not rounded which
+can cause a fs to be unmountable due to the check introduced in
+99e3ecfcb9f4 ("Btrfs: add more validation checks for superblock"). This patch
+implements the getter/setter manually so that in a later patch I can add
+necessary code to catch offenders.
 
-Not a dev but I can read descriptions.  Three typos in this paragraph:
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/ctree.h | 20 +++++++++++++++++++-
+ 1 file changed, 19 insertions(+), 1 deletion(-)
 
-> Substracting the numbers we get a difference of less than a 4kb. Upon
-
-Subtracting
-
-> closer inspection it became apparent that mkfs actually rounds down the
-> size of the device to a multiple of sector size. However, the same
-> cannot be said for various functions which modify the total size and are
-> called from btrfs_balanace as well as when adding a new device. So this
-
-btrfs_balance
-
-> patch ensures that values being saved into on-disk data structures are
-> always rounded down to a multiple of sectorsize
-
-Missing sentence-terminating "."
-
-(They're likely trivial enough to be fixed at apply time if there's no 
-further code changes.)
-
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 0334452a7be1..ce4929ad5914 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1552,8 +1552,26 @@ static inline void btrfs_set_##name(type *s, u##bits val)		\
+ 	s->member = cpu_to_le##bits(val);				\
+ }
+ 
++
++static inline u64 btrfs_device_total_bytes(struct extent_buffer *eb,
++					   struct btrfs_dev_item *s)
++{
++	BUILD_BUG_ON(sizeof(u64) !=
++		     sizeof(((struct btrfs_dev_item *)0))->total_bytes);
++	return btrfs_get_64(eb, s, offsetof(struct btrfs_dev_item,
++					    total_bytes));
++}
++static inline void btrfs_set_device_total_bytes(struct extent_buffer *eb,
++						struct btrfs_dev_item *s,
++						u64 val)
++{
++	BUILD_BUG_ON(sizeof(u64) !=
++		     sizeof(((struct btrfs_dev_item *)0))->total_bytes);
++	btrfs_set_64(eb, s, offsetof(struct btrfs_dev_item, total_bytes), val);
++}
++
++
+ BTRFS_SETGET_FUNCS(device_type, struct btrfs_dev_item, type, 64);
+-BTRFS_SETGET_FUNCS(device_total_bytes, struct btrfs_dev_item, total_bytes, 64);
+ BTRFS_SETGET_FUNCS(device_bytes_used, struct btrfs_dev_item, bytes_used, 64);
+ BTRFS_SETGET_FUNCS(device_io_align, struct btrfs_dev_item, io_align, 32);
+ BTRFS_SETGET_FUNCS(device_io_width, struct btrfs_dev_item, io_width, 32);
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+2.7.4
 

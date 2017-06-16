@@ -1,67 +1,118 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50086 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:50089 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752610AbdFPLj0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Jun 2017 07:39:26 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 50B21AB5D
+        id S1752645AbdFPLj1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 16 Jun 2017 07:39:27 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id A964DAE27
         for <linux-btrfs@vger.kernel.org>; Fri, 16 Jun 2017 11:39:25 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.com, Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2 1/2] btrfs: Manually implement device_total_bytes getter/setter
-Date: Fri, 16 Jun 2017 14:39:19 +0300
-Message-Id: <1497613160-3074-2-git-send-email-nborisov@suse.com>
+Subject: [PATCH v2 2/2] btrfs: Round down values which are written for total_bytes_size
+Date: Fri, 16 Jun 2017 14:39:20 +0300
+Message-Id: <1497613160-3074-3-git-send-email-nborisov@suse.com>
 In-Reply-To: <1497613160-3074-1-git-send-email-nborisov@suse.com>
 References: <1497613160-3074-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The device->total_bytes member needs to always be rounded down to sectorsize
-so that it corresponds to the value of super->total_bytes. However, there are
-multiple places where the setter is fed a value which is not rounded which
-can cause a fs to be unmountable due to the check introduced in
-99e3ecfcb9f4 ("Btrfs: add more validation checks for superblock"). This patch
-implements the getter/setter manually so that in a later patch I can add
-necessary code to catch offenders.
+We got an internal report about a file system not wanting to mount
+following 99e3ecfcb9f4 ("Btrfs: add more validation checks for superblock").
+
+BTRFS error (device sdb1): super_total_bytes 1000203816960 mismatch with
+fs_devices total_rw_bytes 1000203820544
+
+Substracting the numbers we get a difference of less than a 4kb. Upon closer
+inspection it became apparent that mkfs actually rounds down the size of the
+device to a multiple of sector size. However, the same cannot be said for
+various functions which modify the total size and are called from btrfs_balanace
+as well as when adding a new device. So this patch ensures that values being
+saved into on-disk data structures are always rounded down to a multiple of
+sectorsize
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/ctree.h | 20 +++++++++++++++++++-
- 1 file changed, 19 insertions(+), 1 deletion(-)
+ fs/btrfs/ctree.h   |  1 +
+ fs/btrfs/volumes.c | 18 +++++++++++++-----
+ 2 files changed, 14 insertions(+), 5 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 0334452a7be1..ce4929ad5914 100644
+index ce4929ad5914..a75a23f9d68e 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -1552,8 +1552,26 @@ static inline void btrfs_set_##name(type *s, u##bits val)		\
- 	s->member = cpu_to_le##bits(val);				\
+@@ -1567,6 +1567,7 @@ static inline void btrfs_set_device_total_bytes(struct extent_buffer *eb,
+ {
+ 	BUILD_BUG_ON(sizeof(u64) !=
+ 		     sizeof(((struct btrfs_dev_item *)0))->total_bytes);
++	WARN_ON(!IS_ALIGNED(val, eb->fs_info->sectorsize));
+ 	btrfs_set_64(eb, s, offsetof(struct btrfs_dev_item, total_bytes), val);
  }
  
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index e37f95976443..adf32f46a73f 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2387,7 +2387,8 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+ 	device->io_width = fs_info->sectorsize;
+ 	device->io_align = fs_info->sectorsize;
+ 	device->sector_size = fs_info->sectorsize;
+-	device->total_bytes = i_size_read(bdev->bd_inode);
++	device->total_bytes = round_down(i_size_read(bdev->bd_inode),
++					 fs_info->sectorsize);
+ 	device->disk_total_bytes = device->total_bytes;
+ 	device->commit_total_bytes = device->total_bytes;
+ 	device->fs_info = fs_info;
+@@ -2424,7 +2425,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+ 
+ 	tmp = btrfs_super_total_bytes(fs_info->super_copy);
+ 	btrfs_set_super_total_bytes(fs_info->super_copy,
+-				    tmp + device->total_bytes);
++		round_down(tmp + device->total_bytes, fs_info->sectorsize));
+ 
+ 	tmp = btrfs_super_num_devices(fs_info->super_copy);
+ 	btrfs_set_super_num_devices(fs_info->super_copy, tmp + 1);
+@@ -2687,6 +2688,8 @@ int btrfs_grow_device(struct btrfs_trans_handle *trans,
+ 	if (!device->writeable)
+ 		return -EACCES;
+ 
++	new_size = round_down(new_size, fs_info->sectorsize);
 +
-+static inline u64 btrfs_device_total_bytes(struct extent_buffer *eb,
-+					   struct btrfs_dev_item *s)
-+{
-+	BUILD_BUG_ON(sizeof(u64) !=
-+		     sizeof(((struct btrfs_dev_item *)0))->total_bytes);
-+	return btrfs_get_64(eb, s, offsetof(struct btrfs_dev_item,
-+					    total_bytes));
-+}
-+static inline void btrfs_set_device_total_bytes(struct extent_buffer *eb,
-+						struct btrfs_dev_item *s,
-+						u64 val)
-+{
-+	BUILD_BUG_ON(sizeof(u64) !=
-+		     sizeof(((struct btrfs_dev_item *)0))->total_bytes);
-+	btrfs_set_64(eb, s, offsetof(struct btrfs_dev_item, total_bytes), val);
-+}
+ 	mutex_lock(&fs_info->chunk_mutex);
+ 	old_total = btrfs_super_total_bytes(super_copy);
+ 	diff = new_size - device->total_bytes;
+@@ -2699,7 +2702,8 @@ int btrfs_grow_device(struct btrfs_trans_handle *trans,
+ 
+ 	fs_devices = fs_info->fs_devices;
+ 
+-	btrfs_set_super_total_bytes(super_copy, old_total + diff);
++	btrfs_set_super_total_bytes(super_copy,
++			round_down(old_total + diff, fs_info->sectorsize));
+ 	device->fs_devices->total_rw_bytes += diff;
+ 
+ 	btrfs_device_set_total_bytes(device, new_size);
+@@ -4389,7 +4393,10 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
+ 	struct btrfs_super_block *super_copy = fs_info->super_copy;
+ 	u64 old_total = btrfs_super_total_bytes(super_copy);
+ 	u64 old_size = btrfs_device_get_total_bytes(device);
+-	u64 diff = old_size - new_size;
++	u64 diff;
 +
-+
- BTRFS_SETGET_FUNCS(device_type, struct btrfs_dev_item, type, 64);
--BTRFS_SETGET_FUNCS(device_total_bytes, struct btrfs_dev_item, total_bytes, 64);
- BTRFS_SETGET_FUNCS(device_bytes_used, struct btrfs_dev_item, bytes_used, 64);
- BTRFS_SETGET_FUNCS(device_io_align, struct btrfs_dev_item, io_align, 32);
- BTRFS_SETGET_FUNCS(device_io_width, struct btrfs_dev_item, io_width, 32);
++	new_size = round_down(new_size, fs_info->sectorsize);
++	diff = old_size - new_size;
+ 
+ 	if (device->is_tgtdev_for_dev_replace)
+ 		return -EINVAL;
+@@ -4516,7 +4523,8 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
+ 			      &fs_info->fs_devices->resized_devices);
+ 
+ 	WARN_ON(diff > old_total);
+-	btrfs_set_super_total_bytes(super_copy, old_total - diff);
++	btrfs_set_super_total_bytes(super_copy,
++			round_down(old_total - diff, fs_info->sectorsize));
+ 	mutex_unlock(&fs_info->chunk_mutex);
+ 
+ 	/* Now btrfs_update_device() will change the on-disk size. */
 -- 
 2.7.4
 

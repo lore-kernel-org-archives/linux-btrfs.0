@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:35536 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:35248 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752479AbdFPTfp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Jun 2017 15:35:45 -0400
+        id S1752382AbdFPTfc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 16 Jun 2017 15:35:32 -0400
 From: Jeff Layton <jlayton@redhat.com>
 To: Andrew Morton <akpm@linux-foundation.org>,
         Al Viro <viro@ZenIV.linux.org.uk>, Jan Kara <jack@suse.cz>,
@@ -16,74 +16,67 @@ Cc: Carlos Maiolino <cmaiolino@redhat.com>, Eryu Guan <eguan@redhat.com>,
         linux-mm@kvack.org, linux-ext4@vger.kernel.org,
         linux-xfs@vger.kernel.org, linux-btrfs@vger.kernel.org,
         linux-block@vger.kernel.org
-Subject: [PATCH v7 13/22] mm: set both AS_EIO/AS_ENOSPC and errseq_t in mapping_set_error
-Date: Fri, 16 Jun 2017 15:34:18 -0400
-Message-Id: <20170616193427.13955-14-jlayton@redhat.com>
+Subject: [PATCH v7 08/22] mm: clean up error handling in write_one_page
+Date: Fri, 16 Jun 2017 15:34:13 -0400
+Message-Id: <20170616193427.13955-9-jlayton@redhat.com>
 In-Reply-To: <20170616193427.13955-1-jlayton@redhat.com>
 References: <20170616193427.13955-1-jlayton@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When a writeback error occurs, we want later callers to be able to pick
-up that fact when they go to wait on that writeback to complete.
-Traditionally, we've used AS_EIO/AS_ENOSPC flags to track that, but
-that's problematic since only one "checker" will be informed when an
-error occurs.
+Don't try to check PageError since that's potentially racy and not
+necessarily going to be set after writepage errors out.
 
-In later patches, we're going to want to convert many of these callers
-to check for errors since a well-defined point in time. For now, ensure
-that we can handle both sorts of checks by both setting errors in both
-places when there is a writeback failure.
+Instead, check the mapping for an error after writepage returns.
 
 Signed-off-by: Jeff Layton <jlayton@redhat.com>
+Reviewed-by: Jan Kara <jack@suse.cz>
 ---
- include/linux/pagemap.h | 31 +++++++++++++++++++++++++------
- 1 file changed, 25 insertions(+), 6 deletions(-)
+ mm/page-writeback.c | 15 +++++++--------
+ 1 file changed, 7 insertions(+), 8 deletions(-)
 
-diff --git a/include/linux/pagemap.h b/include/linux/pagemap.h
-index 316a19f6b635..28acc94e0f81 100644
---- a/include/linux/pagemap.h
-+++ b/include/linux/pagemap.h
-@@ -28,14 +28,33 @@ enum mapping_flags {
- 	AS_NO_WRITEBACK_TAGS = 5,
- };
- 
-+/**
-+ * mapping_set_error - record a writeback error in the address_space
-+ * @mapping - the mapping in which an error should be set
-+ * @error - the error to set in the mapping
-+ *
-+ * When writeback fails in some way, we must record that error so that
-+ * userspace can be informed when fsync and the like are called.  We endeavor
-+ * to report errors on any file that was open at the time of the error.  Some
-+ * internal callers also need to know when writeback errors have occurred.
-+ *
-+ * When a writeback error occurs, most filesystems will want to call
-+ * mapping_set_error to record the error in the mapping so that it can be
-+ * reported when the application calls fsync(2).
-+ */
- static inline void mapping_set_error(struct address_space *mapping, int error)
+diff --git a/mm/page-writeback.c b/mm/page-writeback.c
+index 36c62fda96bc..64b75bd996a4 100644
+--- a/mm/page-writeback.c
++++ b/mm/page-writeback.c
+@@ -2371,14 +2371,13 @@ int do_writepages(struct address_space *mapping, struct writeback_control *wbc)
+  *
+  * The page must be locked by the caller and will be unlocked upon return.
+  *
+- * write_one_page() returns a negative error code if I/O failed. Note that
+- * the address_space is not marked for error. The caller must do this if
+- * needed.
++ * Note that the mapping's AS_EIO/AS_ENOSPC flags will be cleared when this
++ * function returns.
+  */
+ int write_one_page(struct page *page)
  {
--	if (unlikely(error)) {
--		if (error == -ENOSPC)
--			set_bit(AS_ENOSPC, &mapping->flags);
--		else
--			set_bit(AS_EIO, &mapping->flags);
--	}
-+	if (likely(!error))
-+		return;
+ 	struct address_space *mapping = page->mapping;
+-	int ret = 0;
++	int ret = 0, ret2;
+ 	struct writeback_control wbc = {
+ 		.sync_mode = WB_SYNC_ALL,
+ 		.nr_to_write = 1,
+@@ -2391,15 +2390,15 @@ int write_one_page(struct page *page)
+ 	if (clear_page_dirty_for_io(page)) {
+ 		get_page(page);
+ 		ret = mapping->a_ops->writepage(page, &wbc);
+-		if (ret == 0) {
++		if (ret == 0)
+ 			wait_on_page_writeback(page);
+-			if (PageError(page))
+-				ret = -EIO;
+-		}
+ 		put_page(page);
+ 	} else {
+ 		unlock_page(page);
+ 	}
 +
-+	/* Record in wb_err for checkers using errseq_t based tracking */
-+	filemap_set_wb_err(mapping, error);
-+
-+	/* Record it in flags for now, for legacy callers */
-+	if (error == -ENOSPC)
-+		set_bit(AS_ENOSPC, &mapping->flags);
-+	else
-+		set_bit(AS_EIO, &mapping->flags);
++	if (!ret)
++		ret = filemap_check_errors(mapping);
+ 	return ret;
  }
- 
- static inline void mapping_set_unevictable(struct address_space *mapping)
+ EXPORT_SYMBOL(write_one_page);
 -- 
 2.13.0
 

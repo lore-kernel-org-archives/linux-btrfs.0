@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:52962 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:35536 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750827AbdFPTfj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Jun 2017 15:35:39 -0400
+        id S1752479AbdFPTfp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 16 Jun 2017 15:35:45 -0400
 From: Jeff Layton <jlayton@redhat.com>
 To: Andrew Morton <akpm@linux-foundation.org>,
         Al Viro <viro@ZenIV.linux.org.uk>, Jan Kara <jack@suse.cz>,
@@ -16,56 +16,74 @@ Cc: Carlos Maiolino <cmaiolino@redhat.com>, Eryu Guan <eguan@redhat.com>,
         linux-mm@kvack.org, linux-ext4@vger.kernel.org,
         linux-xfs@vger.kernel.org, linux-btrfs@vger.kernel.org,
         linux-block@vger.kernel.org
-Subject: [PATCH v7 09/22] fs: always sync metadata in __generic_file_fsync
-Date: Fri, 16 Jun 2017 15:34:14 -0400
-Message-Id: <20170616193427.13955-10-jlayton@redhat.com>
+Subject: [PATCH v7 13/22] mm: set both AS_EIO/AS_ENOSPC and errseq_t in mapping_set_error
+Date: Fri, 16 Jun 2017 15:34:18 -0400
+Message-Id: <20170616193427.13955-14-jlayton@redhat.com>
 In-Reply-To: <20170616193427.13955-1-jlayton@redhat.com>
 References: <20170616193427.13955-1-jlayton@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If there were previously both metadata and data writeback errors when
-fsync is called, then it will currently take two calls to fsync() to
-clear them on some filesystems.
+When a writeback error occurs, we want later callers to be able to pick
+up that fact when they go to wait on that writeback to complete.
+Traditionally, we've used AS_EIO/AS_ENOSPC flags to track that, but
+that's problematic since only one "checker" will be informed when an
+error occurs.
 
-The problem is in __generic_file_fsync, which won't try to write back
-the metadata if the data flush fails. Fix this by always attempting to
-write out the metadata, even when a flush of the data reports an error.
+In later patches, we're going to want to convert many of these callers
+to check for errors since a well-defined point in time. For now, ensure
+that we can handle both sorts of checks by both setting errors in both
+places when there is a writeback failure.
 
 Signed-off-by: Jeff Layton <jlayton@redhat.com>
 ---
- fs/libfs.c | 9 ++++-----
- 1 file changed, 4 insertions(+), 5 deletions(-)
+ include/linux/pagemap.h | 31 +++++++++++++++++++++++++------
+ 1 file changed, 25 insertions(+), 6 deletions(-)
 
-diff --git a/fs/libfs.c b/fs/libfs.c
-index 1dec90819366..c93e77ecb49c 100644
---- a/fs/libfs.c
-+++ b/fs/libfs.c
-@@ -974,12 +974,12 @@ int __generic_file_fsync(struct file *file, loff_t start, loff_t end,
- 	int err;
- 	int ret;
+diff --git a/include/linux/pagemap.h b/include/linux/pagemap.h
+index 316a19f6b635..28acc94e0f81 100644
+--- a/include/linux/pagemap.h
++++ b/include/linux/pagemap.h
+@@ -28,14 +28,33 @@ enum mapping_flags {
+ 	AS_NO_WRITEBACK_TAGS = 5,
+ };
  
--	err = filemap_write_and_wait_range(inode->i_mapping, start, end);
--	if (err)
--		return err;
-+	ret = filemap_write_and_wait_range(inode->i_mapping, start, end);
++/**
++ * mapping_set_error - record a writeback error in the address_space
++ * @mapping - the mapping in which an error should be set
++ * @error - the error to set in the mapping
++ *
++ * When writeback fails in some way, we must record that error so that
++ * userspace can be informed when fsync and the like are called.  We endeavor
++ * to report errors on any file that was open at the time of the error.  Some
++ * internal callers also need to know when writeback errors have occurred.
++ *
++ * When a writeback error occurs, most filesystems will want to call
++ * mapping_set_error to record the error in the mapping so that it can be
++ * reported when the application calls fsync(2).
++ */
+ static inline void mapping_set_error(struct address_space *mapping, int error)
+ {
+-	if (unlikely(error)) {
+-		if (error == -ENOSPC)
+-			set_bit(AS_ENOSPC, &mapping->flags);
+-		else
+-			set_bit(AS_EIO, &mapping->flags);
+-	}
++	if (likely(!error))
++		return;
++
++	/* Record in wb_err for checkers using errseq_t based tracking */
++	filemap_set_wb_err(mapping, error);
++
++	/* Record it in flags for now, for legacy callers */
++	if (error == -ENOSPC)
++		set_bit(AS_ENOSPC, &mapping->flags);
++	else
++		set_bit(AS_EIO, &mapping->flags);
+ }
  
- 	inode_lock(inode);
--	ret = sync_mapping_buffers(inode->i_mapping);
-+	err = sync_mapping_buffers(inode->i_mapping);
-+	if (ret == 0)
-+		ret = err;
- 	if (!(inode->i_state & I_DIRTY_ALL))
- 		goto out;
- 	if (datasync && !(inode->i_state & I_DIRTY_DATASYNC))
-@@ -988,7 +988,6 @@ int __generic_file_fsync(struct file *file, loff_t start, loff_t end,
- 	err = sync_inode_metadata(inode, 1);
- 	if (ret == 0)
- 		ret = err;
--
- out:
- 	inode_unlock(inode);
- 	err = filemap_check_errors(inode->i_mapping);
+ static inline void mapping_set_unevictable(struct address_space *mapping)
 -- 
 2.13.0
 

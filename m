@@ -1,37 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33726 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1753971AbdFPOFv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Jun 2017 10:05:51 -0400
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: anand.jain@oracle.com, David Sterba <dsterba@suse.com>
-Subject: [PATCH 0/3 v2] Preallocate flush bio
-Date: Fri, 16 Jun 2017 16:04:45 +0200
-Message-Id: <cover.1497621455.git.dsterba@suse.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:27659 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752002AbdFQNsV (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 17 Jun 2017 09:48:21 -0400
+Subject: Re: [PATCH 3/3 v2] btrfs: move dev stats accounting out of
+ wait_dev_flush
+To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+References: <cover.1497621455.git.dsterba@suse.com>
+ <42dd9010ed622ba5a7d499bb8389b9ff386aaf86.1497621455.git.dsterba@suse.com>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <ed4c0749-2d65-2461-de64-c1f5205e1660@oracle.com>
+Date: Sat, 17 Jun 2017 21:53:51 +0800
+MIME-Version: 1.0
+In-Reply-To: <42dd9010ed622ba5a7d499bb8389b9ff386aaf86.1497621455.git.dsterba@suse.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patchset follows the updates in the write_dev_flush function. The flush
-bio can be preallocated at the device creation time, so we avoid repeated
-alloc/free.
 
-v2:
-- merge 'flush_bio_sent' from 4 to 1 and dropped patch 4
-- dropped sysfs tunable (patch 5)
-- fix typo in patch 1 changelog
 
-David Sterba (3):
-  btrfs: preallocate device flush bio
-  btrfs: account as waiting for IO, while waiting fot the flush bio
-    completion
-  btrfs: move dev stats accounting out of wait_dev_flush
+On 06/16/2017 10:04 PM, David Sterba wrote:
+> We should really just wait in wait_dev_flush and let the caller decide
+> what to do with the error value.
 
- fs/btrfs/disk-io.c | 38 +++++++++++---------------------------
- fs/btrfs/volumes.c | 12 ++++++++++++
- fs/btrfs/volumes.h |  1 +
- 3 files changed, 24 insertions(+), 27 deletions(-)
-
--- 
-2.13.0
-
+Reviewed-by: Anand Jain <anand.jain@oracle.com>

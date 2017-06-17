@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f171.google.com ([209.85.223.171]:35043 "EHLO
-        mail-io0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752111AbdFQPNt (ORCPT
+Received: from mail-io0-f179.google.com ([209.85.223.179]:35097 "EHLO
+        mail-io0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750973AbdFQXGj (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 17 Jun 2017 11:13:49 -0400
-Received: by mail-io0-f171.google.com with SMTP id k93so44359026ioi.2
-        for <linux-btrfs@vger.kernel.org>; Sat, 17 Jun 2017 08:13:49 -0700 (PDT)
+        Sat, 17 Jun 2017 19:06:39 -0400
+Received: by mail-io0-f179.google.com with SMTP id k93so47013526ioi.2
+        for <linux-btrfs@vger.kernel.org>; Sat, 17 Jun 2017 16:06:38 -0700 (PDT)
 MIME-Version: 1.0
 From: Jesse <btrfs_mail_list@mymail.isbest.biz>
-Date: Sat, 17 Jun 2017 23:13:48 +0800
-Message-ID: <CAAsnU-9ChtXvjC0sFQEDy4KbKm1bvxFa1-Vq=aQD9uPxLw6K+g@mail.gmail.com>
-Subject: Please help repair probably bitflip damage
+Date: Sun, 18 Jun 2017 07:06:37 +0800
+Message-ID: <CAAsnU-9VvSzqpW2S0qpv8Ypwfx4L4ine9Pi2ENuGmg8id0Q0gA@mail.gmail.com>
+Subject: Please help. Repair probably bitflip damage and suspected bug
 To: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -58,6 +58,17 @@ https://ptpb.pw/zcyI
 'btrfs inspect-internal dump-tree -b 5123372711936 /dev/sdb2':
 https://ptpb.pw/zcyI
 dmesg on Manjaro attempting to rsync recover files: https://ptpb.pw/L9Z9
+
+I have also just noticed that btrfs causes a complete system crash
+when copying a certain file(s).
+
+RTP: [<ffffffffa055b122>] btrfs_check_repairable+0xf2/0x100 [btrfs]
+BUG: unable to handle kernel paging request at 000000000dealc93
+IP: [<ffffffff810c3e0b>] __wake_up _common+0x2b/0x80
+I have taken a photo of the last part of this. As it is in the live
+DVD boot distro during repair, it did not save the trace to a file
+that would be accessible later.
+The photo is at https://pasteboard.co/MTP2OGMK.jpg
 
 Could someone please advise the steps to repair this.
 

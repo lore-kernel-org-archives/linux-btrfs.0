@@ -1,66 +1,103 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f52.google.com ([209.85.213.52]:35769 "EHLO
-        mail-vk0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750930AbdFRGVL (ORCPT
+Received: from mail-wm0-f49.google.com ([74.125.82.49]:36672 "EHLO
+        mail-wm0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752368AbdFRM2J (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 18 Jun 2017 02:21:11 -0400
-Received: by mail-vk0-f52.google.com with SMTP id 191so38468998vko.2
-        for <linux-btrfs@vger.kernel.org>; Sat, 17 Jun 2017 23:21:10 -0700 (PDT)
+        Sun, 18 Jun 2017 08:28:09 -0400
+Received: by mail-wm0-f49.google.com with SMTP id m125so58438796wmm.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 18 Jun 2017 05:28:09 -0700 (PDT)
+Received: from [192.168.0.24] ([78.194.205.2])
+        by smtp.googlemail.com with ESMTPSA id t50sm4612455edb.25.2017.06.18.05.28.06
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Sun, 18 Jun 2017 05:28:06 -0700 (PDT)
+Reply-To: vianney@stroebel.fr
+Subject: Re: Disk usage is more than double the snapshots exclusive data
+References: <53ff5efd-74de-2ea5-fd1a-12ca35c550f3@stroebel.fr>
+To: linux-btrfs@vger.kernel.org
+From: Vianney Stroebel <vianney@stroebel.fr>
+Message-ID: <57be3486-3d00-44ab-d777-b05bc3e245d3@stroebel.fr>
+Date: Sun, 18 Jun 2017 14:28:05 +0200
 MIME-Version: 1.0
-In-Reply-To: <20170525062205.11660-1-quwenruo@cn.fujitsu.com>
-References: <20170525062205.11660-1-quwenruo@cn.fujitsu.com>
-From: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>
-Date: Sun, 18 Jun 2017 11:50:29 +0530
-Message-ID: <CAKuJGC_F2khXb5GT33gTj4Kzah=HZQFVJoW2qExOxk+LBqUCkA@mail.gmail.com>
-Subject: Re: [PATCH v4 00/20] Btrfs-progs offline scrub
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: btrfs <linux-btrfs@vger.kernel.org>, dsterba <dsterba@suse.cz>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <53ff5efd-74de-2ea5-fd1a-12ca35c550f3@stroebel.fr>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> For any one who wants to try it, it can be get from my repo:
-> https://github.com/adam900710/btrfs-progs/tree/offline_scrub
+Wow, thank you so much for your detailed replies!
 
-While running single corruption script receive  message like
+It would be great if your explanations were included in the wiki.
 
-"REPARIED: corrupted data with good P/Q, repaired" along with
-message from script which says "Parity stripe check passed."
+My backup script uses snapshot + rsync but I've just realized that a lot of 
+data was duplicated (my script must have skipped the snapshotting part somehow).
 
-complete output here:
-https://github.com/Lakshmipathi/btrfs_offline_scrub/blob/master/logs-june18/single_corruption_misc-tests-results.txt
+I've used "bedup" to deduplicate the data and it has saved more than 250 GB of 
+duplicated data.
 
-------------
-multiple-corruption:  While corrupting continuous blocks received:
-
->Filename=file256k.txt Total Stripes=4         Data Stripe to be corrupted=2,3
-..
-..//debugfs-tree output ends
->ERROR: full stripe 145358848 CORRUPTED: too many read error or corrupted devices
->ERROR: full stripe 145358848: tolerance: 1, missing: 0, read error: 0, csum error: 2
+Vianney
 
 
-While corrupting non-continuous blocks:
->Filename=file512k.txt Total Stripes=8         Data Stripe to be corrupted=1,3,5
-..
-..//debugfs-tree output ends
->full stripe 145227776 REPARIED: corrupted data with good P/Q, repaired
->full stripe 145358848 REPARIED: corrupted data with good P/Q, repaired
->full stripe 145489920 REPARIED: corrupted data with good P/Q, repaired
-
-output for other combinations like :
->Filename=file768k.txt Total Stripes=12       Data Stripe to be corrupted=10,8,6,4
->Filename=file1m.txt Total Stripes=16           Data Stripe to be corrupted=14,12,10,8,7,6
->Filename=file2m.txt Total Stripes=32           Data Stripe to be corrupted=23,22,21,20,19,18,16
->Filename=file4m.txt Total Stripes=64           Data Stripe to be corrupted=34,33,32,31,30,20,18,15,10,8,5
->Filename=file8m.txt Total Stripes=128           Data Stripe to be corrupted=100,90,80,70,60,50,40,30,20,10
-
-can be found here:
-https://github.com/Lakshmipathi/btrfs_offline_scrub/blob/master/logs-june18/multiple_corruptions_misc-tests-results.txt
-
-Outputs are looking fine, but more testing required with different
-file-types :-) thanks.
-
-----
-Cheers,
-Lakshmipathi.G
+On 15/06/2017 11:44, Vianney Stroebel wrote:
+> On a backup drive for a home computer, disk usage as shown by 'btrfs fi show'
+> is more than double the snapshots exclusive data as shown by "btrfs qgroup
+> show" (574 GB vs 265 GB).
+>
+> I've done a lot of research online and I couldn't find any answer to this
+> problem.
+>
+> Output of some commands:
+>
+> uname -a
+> Linux viybel-pc 4.10.0-22-generic #24-Ubuntu SMP Mon May 22 17:43:20 UTC 2017
+> x86_64 x86_64 x86_64 GNU/Linux
+>
+> btrfs --version
+> btrfs-progs v4.9.1
+>
+> sudo btrfs fi show
+> Label: 'btrfs-backup'  uuid: 35905dc5-1400-4687-8be7-cf87d6ad0980
+>     Total devices 1 FS bytes used 573.89GiB
+>     devid    1 size 698.64GiB used 697.04GiB path /dev/sdb1
+>
+> btrfs fi df /mnt/btrfs-backup
+> Data, single: total=670.01GiB, used=564.26GiB
+> System, DUP: total=8.00MiB, used=112.00KiB
+> System, single: total=4.00MiB, used=0.00B
+> Metadata, DUP: total=13.50GiB, used=8.64GiB
+> Metadata, single: total=8.00MiB, used=0.00B
+> GlobalReserve, single: total=512.00MiB, used=14.95MiB
+>
+> From https://github.com/agronick/btrfs-size (i.e. more readable "btrfs qgroup
+> show")
+>
+> btrfs-size /mnt/btrfs-backup
+> ==================================================================================================================================
+>
+> Snapshot / Subvolume                                               ID   Total
+>   Exclusive Data
+> ==================================================================================================================================
+>
+> 10726 gen 216807 top level 5 path full/2016-06-19_12-32-01         10726
+> 208.68GB 208.68GB
+> 21512 gen 216853 top level 5 path full/2016-12-14_16-21-34         21512
+> 166.98GB 40.36GB
+> 23054 gen 216853 top level 5 path full/2017-03-03_08-47-00         23054
+> 154.79GB 7.53GB
+> 25451 gen 216856 top level 5 path full/2017-04-14_21-54-25         25451
+> 123.48GB 3.07GB
+> 26514 gen 216862 top level 5 path full/2017-05-02_14-58-09         26514
+> 123.70GB 5.03GB
+> 28499 gen 218095 top level 5 path full/2017-06-11_19-29-16         28499
+> 154.65GB 169.78MB
+> 28556 gen 218094 top level 5 path full/2017-06-13_03-15-00         28556
+> 154.88GB 403.89MB
+> ==================================================================================================================================
+>
+>                                                                 Exclusive
+> Total: 265.23GB
+>
+> Feel free to ask me any question.
+>
+> Vianney
+>
+>

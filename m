@@ -1,49 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50083 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752543AbdFPLj0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Jun 2017 07:39:26 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 036DAAB09
-        for <linux-btrfs@vger.kernel.org>; Fri, 16 Jun 2017 11:39:25 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
+Received: from [195.159.176.226] ([195.159.176.226]:35536 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1753033AbdFRDJh (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 17 Jun 2017 23:09:37 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1dMQaW-0008Ns-5f
+        for linux-btrfs@vger.kernel.org; Sun, 18 Jun 2017 05:09:20 +0200
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.com, Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2 0/2] Ensure size values are rounded down
-Date: Fri, 16 Jun 2017 14:39:18 +0300
-Message-Id: <1497613160-3074-1-git-send-email-nborisov@suse.com>
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: [PATCH v2 2/2] btrfs: Round down values which are written for
+ total_bytes_size
+Date: Sun, 18 Jun 2017 03:09:14 +0000 (UTC)
+Message-ID: <pan$a52a7$449ab7f0$8d4ee56f$4f139c10@cox.net>
+References: <1497613160-3074-1-git-send-email-nborisov@suse.com>
+        <1497613160-3074-3-git-send-email-nborisov@suse.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello, 
+Nikolay Borisov posted on Fri, 16 Jun 2017 14:39:20 +0300 as excerpted:
 
-Here is a small series which fixes an issue that got reported internally to 
-Suse and which affects devices whose size is not multiple of sectorsize. More
-information can be found in the changelog for patch 2
+Not a dev but I can read descriptions.  Three typos in this paragraph:
 
-The first patch in the series re-implements the btrfs_device_total_bytes
-getter/setters manually so that we can add a WARN_ON to catch future offenders. 
-I haven't implemented all 4 function that the macros do since we only ever use
-the getter and setter. 
+> Substracting the numbers we get a difference of less than a 4kb. Upon
 
-The second patch ensures that all the values passed to the setter are rounded 
-down to a multiple of sectorsize. I also have an xfstest patch which passes
-after this series is applied. 
+Subtracting
 
-Changes since v1: 
- * Moved some of the text from previous cover letter, into patch 2 to make 
- explanation of the bug more coherent. 
- * The first patch now only implements getter/setter while the 2nd patch 
- adds the WARN_ON 
+> closer inspection it became apparent that mkfs actually rounds down the
+> size of the device to a multiple of sector size. However, the same
+> cannot be said for various functions which modify the total size and are
+> called from btrfs_balanace as well as when adding a new device. So this
 
-Nikolay Borisov (2):
-  btrfs: Manually implement device_total_bytes getter/setter
-  btrfs: Round down values which are written for total_bytes_size
+btrfs_balance
 
- fs/btrfs/ctree.h   | 21 ++++++++++++++++++++-
- fs/btrfs/volumes.c | 18 +++++++++++++-----
- 2 files changed, 33 insertions(+), 6 deletions(-)
+> patch ensures that values being saved into on-disk data structures are
+> always rounded down to a multiple of sectorsize
+
+Missing sentence-terminating "."
+
+(They're likely trivial enough to be fixed at apply time if there's no 
+further code changes.)
 
 -- 
-2.7.4
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

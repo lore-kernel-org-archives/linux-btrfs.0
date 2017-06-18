@@ -1,77 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f179.google.com ([209.85.223.179]:35097 "EHLO
-        mail-io0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750973AbdFQXGj (ORCPT
+Received: from mail-vk0-f52.google.com ([209.85.213.52]:35769 "EHLO
+        mail-vk0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750930AbdFRGVL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 17 Jun 2017 19:06:39 -0400
-Received: by mail-io0-f179.google.com with SMTP id k93so47013526ioi.2
-        for <linux-btrfs@vger.kernel.org>; Sat, 17 Jun 2017 16:06:38 -0700 (PDT)
+        Sun, 18 Jun 2017 02:21:11 -0400
+Received: by mail-vk0-f52.google.com with SMTP id 191so38468998vko.2
+        for <linux-btrfs@vger.kernel.org>; Sat, 17 Jun 2017 23:21:10 -0700 (PDT)
 MIME-Version: 1.0
-From: Jesse <btrfs_mail_list@mymail.isbest.biz>
-Date: Sun, 18 Jun 2017 07:06:37 +0800
-Message-ID: <CAAsnU-9VvSzqpW2S0qpv8Ypwfx4L4ine9Pi2ENuGmg8id0Q0gA@mail.gmail.com>
-Subject: Please help. Repair probably bitflip damage and suspected bug
-To: linux-btrfs@vger.kernel.org
+In-Reply-To: <20170525062205.11660-1-quwenruo@cn.fujitsu.com>
+References: <20170525062205.11660-1-quwenruo@cn.fujitsu.com>
+From: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>
+Date: Sun, 18 Jun 2017 11:50:29 +0530
+Message-ID: <CAKuJGC_F2khXb5GT33gTj4Kzah=HZQFVJoW2qExOxk+LBqUCkA@mail.gmail.com>
+Subject: Re: [PATCH v4 00/20] Btrfs-progs offline scrub
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: btrfs <linux-btrfs@vger.kernel.org>, dsterba <dsterba@suse.cz>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-My Linux Mint system is starting up and usable, however, I am unable
-to complete any scrub as they abort before finished. There are various
-inode errors in dmesg. Badblocks (readonly) finds no errors. checking
-extents gives bad block 5123372711936 on both /dev/sda2 and /dev/sda2.
-A btrfscheck (readonly) results in a 306MB text file of output of root
-xxx inode errors.
-There are two drives 3TB each in RAID 1 for sda2/sdb2 for which
-partition 2 is nearly the entire drive.
+> For any one who wants to try it, it can be get from my repo:
+> https://github.com/adam900710/btrfs-progs/tree/offline_scrub
 
-Currently I am now using a Manjaro Live Boot with btrfs tools
-btrfs-progs v4.10.1 in an attempt to recover/repair what seems to be
-bitflip
-(The original Linux Mint System has btrfs-progs v4.5.3)
+While running single corruption script receive  message like
 
-When doing a scrub on '/', the status of /dev/sdb2 aborts always at ~
-383GiB with 0 errors. Whereas the /dev/sda2 and thus the '/' scrub
-aborts at more diverse values starting at 537.90GiB with 0 errors.
+"REPARIED: corrupted data with good P/Q, repaired" along with
+message from script which says "Parity stripe check passed."
 
-btrfs inspect-internal dump-tree -b 5123372711936 has one item
-evidently out of order:
-2551224532992 -> 2551253647360 -> 2551251468288
+complete output here:
+https://github.com/Lakshmipathi/btrfs_offline_scrub/blob/master/logs-june18/single_corruption_misc-tests-results.txt
 
-I am currently attempting to copy files off the system while in
-Manjaro using rsync prior to attempting whatever the knowlegable
-people here recommend. It has resulting in two files not being able to
-be read so far, however, a lot of messages in dmesg for btrfs errors
-https://ptpb.pw/L9Z9
+------------
+multiple-corruption:  While corrupting continuous blocks received:
 
-Pastebins from original machine:
-System specs as on original Linux Mint system: https://ptpb.pw/dFz3
-dmesg btrfs grep from prior to errors starting until scrub attempts:
-https://ptpb.pw/rTzs
+>Filename=file256k.txt Total Stripes=4         Data Stripe to be corrupted=2,3
+..
+..//debugfs-tree output ends
+>ERROR: full stripe 145358848 CORRUPTED: too many read error or corrupted devices
+>ERROR: full stripe 145358848: tolerance: 1, missing: 0, read error: 0, csum error: 2
 
-Pastebins from subsequent live boot with newer btrfs tools 4.10:
-LiveBoot Repair (Manjaro Arch) specs: https://ptpb.pw/ikMM
-Scrub failing/aborting at same place on /dev/sdb: https://ptpb.pw/-vcP
-badblock_extent_btrfscheck_5123372711936: https://ptpb.pw/T1rD
-'btrfs inspect-internal dump-tree -b 5123372711936 /dev/sda2':
-https://ptpb.pw/zcyI
-'btrfs inspect-internal dump-tree -b 5123372711936 /dev/sdb2':
-https://ptpb.pw/zcyI
-dmesg on Manjaro attempting to rsync recover files: https://ptpb.pw/L9Z9
 
-I have also just noticed that btrfs causes a complete system crash
-when copying a certain file(s).
+While corrupting non-continuous blocks:
+>Filename=file512k.txt Total Stripes=8         Data Stripe to be corrupted=1,3,5
+..
+..//debugfs-tree output ends
+>full stripe 145227776 REPARIED: corrupted data with good P/Q, repaired
+>full stripe 145358848 REPARIED: corrupted data with good P/Q, repaired
+>full stripe 145489920 REPARIED: corrupted data with good P/Q, repaired
 
-RTP: [<ffffffffa055b122>] btrfs_check_repairable+0xf2/0x100 [btrfs]
-BUG: unable to handle kernel paging request at 000000000dealc93
-IP: [<ffffffff810c3e0b>] __wake_up _common+0x2b/0x80
-I have taken a photo of the last part of this. As it is in the live
-DVD boot distro during repair, it did not save the trace to a file
-that would be accessible later.
-The photo is at https://pasteboard.co/MTP2OGMK.jpg
+output for other combinations like :
+>Filename=file768k.txt Total Stripes=12       Data Stripe to be corrupted=10,8,6,4
+>Filename=file1m.txt Total Stripes=16           Data Stripe to be corrupted=14,12,10,8,7,6
+>Filename=file2m.txt Total Stripes=32           Data Stripe to be corrupted=23,22,21,20,19,18,16
+>Filename=file4m.txt Total Stripes=64           Data Stripe to be corrupted=34,33,32,31,30,20,18,15,10,8,5
+>Filename=file8m.txt Total Stripes=128           Data Stripe to be corrupted=100,90,80,70,60,50,40,30,20,10
 
-Could someone please advise the steps to repair this.
+can be found here:
+https://github.com/Lakshmipathi/btrfs_offline_scrub/blob/master/logs-june18/multiple_corruptions_misc-tests-results.txt
 
-Thankyou
+Outputs are looking fine, but more testing required with different
+file-types :-) thanks.
 
-Jesse
+----
+Cheers,
+Lakshmipathi.G

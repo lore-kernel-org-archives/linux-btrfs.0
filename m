@@ -1,543 +1,251 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f68.google.com ([74.125.82.68]:36536 "EHLO
-        mail-wm0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753737AbdFSJGr (ORCPT
+Received: from mail-io0-f175.google.com ([209.85.223.175]:33390 "EHLO
+        mail-io0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750757AbdFSJT7 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Jun 2017 05:06:47 -0400
-Received: by mail-wm0-f68.google.com with SMTP id d17so15662224wme.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 19 Jun 2017 02:06:46 -0700 (PDT)
+        Mon, 19 Jun 2017 05:19:59 -0400
+Received: by mail-io0-f175.google.com with SMTP id t87so60532482ioe.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 19 Jun 2017 02:19:59 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20170601225729.GA3279@lim.localdomain>
-References: <20170526002631.8546-1-bo.li.liu@oracle.com> <CAMG9ccwjBmP9HKkodwARxQK7AkC68HACMzuT43wX6+gmWVUjbg@mail.gmail.com>
- <20170601173510.GA22952@lim.localdomain> <CAMG9ccwxQn172kpUR61hp8OV_H+rRx4BQhRvMpUs4qn4DKic+Q@mail.gmail.com>
- <20170601225729.GA3279@lim.localdomain>
-From: Ivan Sizov <sivan606@gmail.com>
-Date: Mon, 19 Jun 2017 12:06:24 +0300
-Message-ID: <CAMG9ccyVNvHijjEDNgTXGQcODGrY-0EwECNFL8szdgN8_-JN-Q@mail.gmail.com>
-Subject: Re: [PATCH 0/6] add sanity check for extent inline ref type
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: Jesse <btrfs_mail_list@mymail.isbest.biz>
+Date: Mon, 19 Jun 2017 17:19:58 +0800
+Message-ID: <CAAsnU-97iO=D2k7GrObZ0V-doFbipb+oR8UxoB2V3oCJaSGOVg@mail.gmail.com>
+Subject: Re: Please help. Repair probably bitflip damage and suspected bug
+To: Jesse <btrfs_mail_list@mymail.isbest.biz>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2017-06-02 1:57 GMT+03:00 Liu Bo <bo.li.liu@oracle.com>:
-> On Thu, Jun 01, 2017 at 11:26:26PM +0300, Ivan Sizov wrote:
->> 2017-06-01 20:35 GMT+03:00 Liu Bo <bo.li.liu@oracle.com>:
->> > After I went through the output of leaf's content, most parts of the
->> > leaf is sane except the two corrupted items, it's still not clear to
->> > me what caused the corruption, there could be some corner cases that
->> > I'm not aware of.
->> >
->> > If fsck doesn't work for you, then a recovery from backup may be the
->> > best option.
->>
->> I don't need to run any repair procedures because system is working
->> normally. Most likely that corrupted extents belong to files located
->> somewhere in /home.
->> Do you mean I should run fsck in order to determine which files are
->> corrupted? What are proper options to run fsck with?
+Further to the above message reporting problems, I have been able to
+capture a call trace under the main system rather than live media.
+
+Note this occurred in rsync from btrfs to a separate drive running xfs
+on a local filesystem (both sata drives). So I presume that btrfs is
+only reading the drive at the time of crash, unless rsync is also
+doing some sort of disc caching of the files to btrfs as it is the OS
+filesystem.
+
+The destination drive directories being copied to in this case were
+empty, so I was making a copy of the data off of the btrfs drive (due
+to the btrfs tree errors and problems reported in the post I am here
+replying to).
+
+I am suspecting that there is a direct correlation to using rsync
+while (or subsequent to) touching areas of the btrfs tree that have
+corruption which results in a complete system lockup/crash.
+
+I have also noted that when these crashes while running rsync occur,
+the prior x files (eg: 10 files) show in the rsync log as being
+synced, however, show on the destination drive with filesize of zero.
+
+The trace (/var/log/messages | grep btrfs) I have uploaded to
+https://paste.ee/p/nRcj0
+
+The important part of which is:
+
+Jun 18 23:43:24 Orion vmunix: [38084.183174] BTRFS info (device sda2):
+no csum found for inode 12497 start 0
+Jun 18 23:43:24 Orion vmunix: [38084.183195] BTRFS info (device sda2):
+no csum found for inode 12497 start 0
+Jun 18 23:43:24 Orion vmunix: [38084.183209] BTRFS info (device sda2):
+no csum found for inode 12497 start 0
+Jun 18 23:43:24 Orion vmunix: [38084.183222] BTRFS info (device sda2):
+no csum found for inode 12497 start 0
+Jun 18 23:43:24 Orion vmunix: [38084.217552] BTRFS info (device sda2):
+csum failed ino 12497 extent 1700305813504 csum 1405070872 wanted 0
+mirror 0
+Jun 18 23:43:24 Orion vmunix: [38084.217626] BTRFS info (device sda2):
+no csum found for inode 12497 start 0
+Jun 18 23:43:24 Orion vmunix: [38084.217643] BTRFS info (device sda2):
+no csum found for inode 12497 start 0
+Jun 18 23:43:24 Orion vmunix: [38084.217657] BTRFS info (device sda2):
+no csum found for inode 12497 start 0
+Jun 18 23:43:24 Orion vmunix: [38084.217669] BTRFS info (device sda2):
+no csum found for inode 12497 start 0
+Jun 18 23:43:24 Orion vmunix:  auth_rpcgss nfs_acl nfs lockd grace
+sunrpc fscache zfs(POE) zunicode(POE) zcommon(POE) znvpair(POE)
+spl(OE) zavl(POE) btrfs xor raid6_pq dm_mirror dm_region_hash dm_log
+hid_generic usbhid hid uas usb_storage radeon i2c_algo_bit ttm
+drm_kms_helper drm r8169 ahci mii libahci wmi
+Jun 18 23:43:24 Orion vmunix: [38084.220604] Workqueue: btrfs-endio
+btrfs_endio_helper [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.220812] RIP:
+0010:[<ffffffffc048804a>]  [<ffffffffc048804a>]
+__btrfs_map_block+0x32a/0x1180 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.222459]  [<ffffffffc0452c00>] ?
+__btrfs_lookup_bio_sums.isra.8+0x3e0/0x540 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.222632]  [<ffffffffc048cf3d>]
+btrfs_map_bio+0x7d/0x2b0 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.222781]  [<ffffffffc04aaf64>]
+btrfs_submit_compressed_read+0x484/0x4e0 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.222948]  [<ffffffffc04651e1>]
+btrfs_submit_bio_hook+0x1c1/0x1d0 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.223198]  [<ffffffffc047fd90>] ?
+btrfs_create_repair_bio+0xf0/0x110 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.223360]  [<ffffffffc047fec7>]
+bio_readpage_error+0x117/0x180 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.223514]  [<ffffffffc04802f0>] ?
+clean_io_failure+0x1b0/0x1b0 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.223667]  [<ffffffffc04806ae>]
+end_bio_extent_readpage+0x3be/0x3f0 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.223996]  [<ffffffffc0457838>]
+end_workqueue_fn+0x48/0x60 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.224145]  [<ffffffffc0490de2>]
+normal_work_helper+0x82/0x210 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.224297]  [<ffffffffc0491042>]
+btrfs_endio_helper+0x12/0x20 [btrfs]
+Jun 18 23:43:24 Orion vmunix:  auth_rpcgss nfs_acl nfs lockd grace
+sunrpc fscache zfs(POE) zunicode(POE) zcommon(POE) znvpair(POE)
+spl(OE) zavl(POE) btrfs xor raid6_pq dm_mirror dm_region_hash dm_log
+hid_generic usbhid hid uas usb_storage radeon i2c_algo_bit ttm
+drm_kms_helper drm r8169 ahci mii libahci wmi
+Jun 18 23:43:24 Orion vmunix: [38084.330053]  [<ffffffffc048804a>] ?
+__btrfs_map_block+0x32a/0x1180 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.330106]  [<ffffffffc0487fec>] ?
+__btrfs_map_block+0x2cc/0x1180 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.330154]  [<ffffffffc0452c00>] ?
+__btrfs_lookup_bio_sums.isra.8+0x3e0/0x540 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.330205]  [<ffffffffc048cf3d>]
+btrfs_map_bio+0x7d/0x2b0 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.330257]  [<ffffffffc04aaf64>]
+btrfs_submit_compressed_read+0x484/0x4e0 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.330304]  [<ffffffffc04651e1>]
+btrfs_submit_bio_hook+0x1c1/0x1d0 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.330361]  [<ffffffffc047fd90>] ?
+btrfs_create_repair_bio+0xf0/0x110 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.330412]  [<ffffffffc047fec7>]
+bio_readpage_error+0x117/0x180 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.330462]  [<ffffffffc04802f0>] ?
+clean_io_failure+0x1b0/0x1b0 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.330513]  [<ffffffffc04806ae>]
+end_bio_extent_readpage+0x3be/0x3f0 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.330568]  [<ffffffffc0457838>]
+end_workqueue_fn+0x48/0x60 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.330618]  [<ffffffffc0490de2>]
+normal_work_helper+0x82/0x210 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.330668]  [<ffffffffc0491042>]
+btrfs_endio_helper+0x12/0x20 [btrfs]
+Jun 18 23:43:24 Orion vmunix:  auth_rpcgss nfs_acl nfs lockd grace
+sunrpc fscache zfs(POE) zunicode(POE) zcommon(POE) znvpair(POE)
+spl(OE) zavl(POE) btrfs xor raid6_pq dm_mirror dm_region_hash dm_log
+hid_generic usbhid hid uas usb_storage radeon i2c_algo_bit ttm
+drm_kms_helper drm r8169 ahci mii libahci wmi
+Jun 18 23:43:24 Orion vmunix: [38084.331102]  [<ffffffffc048804a>] ?
+__btrfs_map_block+0x32a/0x1180 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.331152]  [<ffffffffc0487fec>] ?
+__btrfs_map_block+0x2cc/0x1180 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.331202]  [<ffffffffc0452c00>] ?
+__btrfs_lookup_bio_sums.isra.8+0x3e0/0x540 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.331255]  [<ffffffffc048cf3d>]
+btrfs_map_bio+0x7d/0x2b0 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.331310]  [<ffffffffc04aaf64>]
+btrfs_submit_compressed_read+0x484/0x4e0 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.331360]  [<ffffffffc04651e1>]
+btrfs_submit_bio_hook+0x1c1/0x1d0 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.331423]  [<ffffffffc047fd90>] ?
+btrfs_create_repair_bio+0xf0/0x110 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.331477]  [<ffffffffc047fec7>]
+bio_readpage_error+0x117/0x180 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.331530]  [<ffffffffc04802f0>] ?
+clean_io_failure+0x1b0/0x1b0 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.331585]  [<ffffffffc04806ae>]
+end_bio_extent_readpage+0x3be/0x3f0 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.331649]  [<ffffffffc0457838>]
+end_workqueue_fn+0x48/0x60 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.331703]  [<ffffffffc0490de2>]
+normal_work_helper+0x82/0x210 [btrfs]
+Jun 18 23:43:24 Orion vmunix: [38084.331757]  [<ffffffffc0491042>]
+btrfs_endio_helper+0x12/0x20 [btrfs]
+Jun 19 07:29:22 Orion vmunix: [    3.107113] Btrfs loaded
+Jun 19 07:29:22 Orion vmunix: [    3.665536] BTRFS: device label
+btrfs1 devid 2 transid 1086759 /dev/sdb2
+Jun 19 07:29:22 Orion vmunix: [    3.665811] BTRFS: device label
+btrfs1 devid 1 transid 1086759 /dev/sda2
+Jun 19 07:29:22 Orion vmunix: [    8.673689] BTRFS info (device sda2):
+disk space caching is enabled
+Jun 19 07:29:22 Orion vmunix: [   28.190962] BTRFS info (device sda2):
+enabling auto defrag
+Jun 19 07:29:22 Orion vmunix: [   28.191039] BTRFS info (device sda2):
+disk space caching is enabled
+
+I notice that this page
+https://btrfs.wiki.kernel.org/index.php/Gotchas mentions "Files with a
+lot of random writes can become heavily fragmented (10000+ extents)
+causing thrashing on HDDs and excessive multi-second spikes" and as
+such I am wondering if this is related to the crashing. AFAIK rsync
+should be creating the temp file in the destination drive (xfs),
+unless there is some part of rsync that I am not understanding that
+would be writing to the file system drive (btrfs)  which is also in
+the case the source hdd (btrfs).
+
+Can someone please help with these btrfs problems.
+
+Thankyou
+
+
+
+> My Linux Mint system is starting up and usable, however, I am unable
+> to complete any scrub as they abort before finished. There are various
+> inode errors in dmesg. Badblocks (readonly) finds no errors. checking
+> extents gives bad block 5123372711936 on both /dev/sda2 and /dev/sda2.
+> A btrfscheck (readonly) results in a 306MB text file of output of root
+> xxx inode errors.
+> There are two drives 3TB each in RAID 1 for sda2/sdb2 for which
+> partition 2 is nearly the entire drive.
 >
-> I see.  Scrub has found that there are some corrupted metadata, if you
-> want to fix that corrupted thing, fsck may be helpful.  Due to my
-> test, 'btrfs check /your_disk' fixed my corruption.
+> Currently I am now using a Manjaro Live Boot with btrfs tools
+> btrfs-progs v4.10.1 in an attempt to recover/repair what seems to be
+> bitflip
+> (The original Linux Mint System has btrfs-progs v4.5.3)
 >
-> With this patch set, at least you won't get a crash when accessing the
-> corrupted extent inline ref.
+> When doing a scrub on '/', the status of /dev/sdb2 aborts always at ~
+> 383GiB with 0 errors. Whereas the /dev/sda2 and thus the '/' scrub
+> aborts at more diverse values starting at 537.90GiB with 0 errors.
 >
-> -liubo
-
-After applying patchset I unwisely ran rsync and then FS became RW-unmountable.
-"btrfs-check -p --readonly" gave me many errors of different types.
-After "btrfs check -p --repair" I'd mounted the FS and ran scrub.
-But not all errors was fixed and boot attempt caused RO-remounting again.
-
-Now check gives this:
-
-[liveuser@localhost-live ~]$ sudo btrfs check -p --readonly /dev/sda1
-Checking filesystem on /dev/sda1
-UUID: 4b30bf4a-2331-40fb-a108-e1a34aa14221
-ref mismatch on [2398147911680 4096] extent item 12, found 13
-Backref 2398147911680 root 27665 owner 17074270 offset 4096 num_refs 0
-not found in extent tree
-Incorrect local backref count on 2398147911680 root 27665 owner
-17074270 offset 4096 found 1 wanted 0 back 0x562ce582c260
-backpointer mismatch on [2398147911680 4096]
-ref mismatch on [2398176096256 4096] extent item 12, found 13
-Backref 2398176096256 root 27665 owner 17074270 offset 8192 num_refs 0
-not found in extent tree
-Incorrect local backref count on 2398176096256 root 27665 owner
-17074270 offset 8192 found 1 wanted 0 back 0x562cd886b7f0
-backpointer mismatch on [2398176096256 4096]
-ref mismatch on [2398285246464 4096] extent item 12, found 13
-Backref 2398285246464 root 27665 owner 17074270 offset 16384 num_refs
-0 not found in extent tree
-Incorrect local backref count on 2398285246464 root 27665 owner
-17074270 offset 16384 found 1 wanted 0 back 0x562cd7e16900
-backpointer mismatch on [2398285246464 4096]
-ref mismatch on [2404820451328 16384] extent item 0, found 1
-Backref 2404820451328 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [2404820451328 16384]
-owner ref check failed [2404820451328 16384]
-ref mismatch on [2405008687104 16384] extent item 0, found 1
-Backref 2405008687104 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [2405008687104 16384]
-owner ref check failed [2405008687104 16384]
-ref mismatch on [2405015797760 16384] extent item 0, found 1
-Backref 2405015797760 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [2405015797760 16384]
-owner ref check failed [2405015797760 16384]
-ref mismatch on [2405036081152 16384] extent item 0, found 1
-Backref 2405036081152 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [2405036081152 16384]
-owner ref check failed [2405036081152 16384]
-ref mismatch on [2405057970176 16384] extent item 0, found 1
-Backref 2405057970176 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [2405057970176 16384]
-owner ref check failed [2405057970176 16384]
-ref mismatch on [2405176311808 16384] extent item 0, found 1
-Backref 2405176311808 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [2405176311808 16384]
-owner ref check failed [2405176311808 16384]
-ref mismatch on [2477885390848 16384] extent item 0, found 1
-Backref 2477885390848 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [2477885390848 16384]
-owner ref check failed [2477885390848 16384]
-ref mismatch on [2478010597376 16384] extent item 0, found 1
-Backref 2478010597376 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [2478010597376 16384]
-ref mismatch on [2478014939136 16384] extent item 0, found 1
-Backref 2478014939136 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [2478014939136 16384]
-owner ref check failed [2478014939136 16384]
-ref mismatch on [2478015250432 16384] extent item 0, found 1
-Backref 2478015250432 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [2478015250432 16384]
-ref mismatch on [2478640545792 16384] extent item 0, found 1
-Backref 2478640545792 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [2478640545792 16384]
-ref mismatch on [2478698627072 16384] extent item 0, found 1
-Backref 2478698627072 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [2478698627072 16384]
-ref mismatch on [2478754430976 16384] extent item 0, found 1
-Backref 2478754430976 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [2478754430976 16384]
-ref mismatch on [2940674424832 16384] extent item 0, found 1
-Backref 2940674424832 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [2940674424832 16384]
-ref mismatch on [2940696428544 16384] extent item 0, found 1
-Backref 2940696428544 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [2940696428544 16384]
-ref mismatch on [2940722905088 16384] extent item 0, found 1
-Backref 2940722905088 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [2940722905088 16384]
-ref mismatch on [2940747988992 16384] extent item 0, found 1
-Backref 2940747988992 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [2940747988992 16384]
-ref mismatch on [2940822536192 16384] extent item 0, found 1
-Backref 2940822536192 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [2940822536192 16384]
-owner ref check failed [2940822536192 16384]
-ref mismatch on [2940824911872 16384] extent item 0, found 1
-Backref 2940824911872 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [2940824911872 16384]
-ref mismatch on [2940983296000 16384] extent item 0, found 1
-Backref 2940983296000 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [2940983296000 16384]
-ref mismatch on [2940986081280 16384] extent item 0, found 1
-Backref 2940986081280 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [2940986081280 16384]
-owner ref check failed [2940986081280 16384]
-ref mismatch on [2941004644352 16384] extent item 0, found 1
-Backref 2941004644352 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [2941004644352 16384]
-owner ref check failed [2941004644352 16384]
-ref mismatch on [2941128359936 16384] extent item 0, found 1
-Backref 2941128359936 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [2941128359936 16384]
-ref mismatch on [2941445341184 16384] extent item 0, found 1
-Backref 2941445341184 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [2941445341184 16384]
-ref mismatch on [2941549592576 16384] extent item 0, found 1
-Backref 2941549592576 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [2941549592576 16384]
-ref mismatch on [2993876762624 16384] extent item 0, found 1
-Backref 2993876762624 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [2993876762624 16384]
-owner ref check failed [2993876762624 16384]
-ref mismatch on [2993898897408 16384] extent item 0, found 1
-Backref 2993898897408 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [2993898897408 16384]
-ref mismatch on [2993900093440 16384] extent item 0, found 1
-Backref 2993900093440 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [2993900093440 16384]
-ref mismatch on [2993900683264 16384] extent item 0, found 1
-Backref 2993900683264 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [2993900683264 16384]
-ref mismatch on [2993901322240 16384] extent item 0, found 1
-Backref 2993901322240 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [2993901322240 16384]
-owner ref check failed [2993901322240 16384]
-ref mismatch on [4136696893440 8192] extent item 12, found 13
-Backref 4136696893440 root 27665 owner 17074280 offset 0 num_refs 0
-not found in extent tree
-Incorrect local backref count on 4136696893440 root 27665 owner
-17074280 offset 0 found 1 wanted 0 back 0x562c82762130
-backpointer mismatch on [4136696893440 8192]
-ref mismatch on [4136751419392 12288] extent item 12, found 13
-Backref 4136751419392 root 27665 owner 17074272 offset 0 num_refs 0
-not found in extent tree
-Incorrect local backref count on 4136751419392 root 27665 owner
-17074272 offset 0 found 1 wanted 0 back 0x562c96c163b0
-backpointer mismatch on [4136751419392 12288]
-ref mismatch on [4160214544384 8192] extent item 12, found 13
-Backref 4160214544384 root 27665 owner 17074273 offset 0 num_refs 0
-not found in extent tree
-Incorrect local backref count on 4160214544384 root 27665 owner
-17074273 offset 0 found 1 wanted 0 back 0x562c8fee4770
-backpointer mismatch on [4160214544384 8192]
-ref mismatch on [4160523833344 8192] extent item 12, found 13
-Backref 4160523833344 root 27665 owner 17074251 offset 0 num_refs 0
-not found in extent tree
-Incorrect local backref count on 4160523833344 root 27665 owner
-17074251 offset 0 found 1 wanted 0 back 0x562ce818bd20
-backpointer mismatch on [4160523833344 8192]
-ref mismatch on [4160696741888 8192] extent item 12, found 13
-Backref 4160696741888 root 27665 owner 17074274 offset 0 num_refs 0
-not found in extent tree
-Incorrect local backref count on 4160696741888 root 27665 owner
-17074274 offset 0 found 1 wanted 0 back 0x562c8276fb90
-backpointer mismatch on [4160696741888 8192]
-ref mismatch on [4160697847808 8192] extent item 12, found 13
-Backref 4160697847808 root 27665 owner 17074277 offset 0 num_refs 0
-not found in extent tree
-Incorrect local backref count on 4160697847808 root 27665 owner
-17074277 offset 0 found 1 wanted 0 back 0x562cd7e0dd60
-backpointer mismatch on [4160697847808 8192]
-ref mismatch on [4160726593536 8192] extent item 12, found 13
-Backref 4160726593536 root 27665 owner 17074279 offset 0 num_refs 0
-not found in extent tree
-Incorrect local backref count on 4160726593536 root 27665 owner
-17074279 offset 0 found 1 wanted 0 back 0x562c74ae8550
-backpointer mismatch on [4160726593536 8192]
-ref mismatch on [4162150592512 16384] extent item 12, found 13
-Backref 4162150592512 root 27665 owner 17074275 offset 0 num_refs 0
-not found in extent tree
-Incorrect local backref count on 4162150592512 root 27665 owner
-17074275 offset 0 found 1 wanted 0 back 0x562cc9365b00
-backpointer mismatch on [4162150592512 16384]
-ref mismatch on [4162151714816 36864] extent item 12, found 13
-Backref 4162151714816 root 27665 owner 17074271 offset 0 num_refs 0
-not found in extent tree
-Incorrect local backref count on 4162151714816 root 27665 owner
-17074271 offset 0 found 1 wanted 0 back 0x562cd0952590
-backpointer mismatch on [4162151714816 36864]
-ref mismatch on [4162183225344 12288] extent item 12, found 13
-Backref 4162183225344 root 27665 owner 17074257 offset 0 num_refs 0
-not found in extent tree
-Incorrect local backref count on 4162183225344 root 27665 owner
-17074257 offset 0 found 1 wanted 0 back 0x562c7f46aba0
-backpointer mismatch on [4162183225344 12288]
-ref mismatch on [4163704074240 28672] extent item 12, found 13
-Backref 4163704074240 root 27665 owner 17074276 offset 0 num_refs 0
-not found in extent tree
-Incorrect local backref count on 4163704074240 root 27665 owner
-17074276 offset 0 found 1 wanted 0 back 0x562ce22465d0
-backpointer mismatch on [4163704074240 28672]
-ref mismatch on [4197053726720 16384] extent item 0, found 1
-Backref 4197053726720 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4197053726720 16384]
-ref mismatch on [4240053813248 16384] extent item 0, found 1
-Backref 4240053813248 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4240053813248 16384]
-owner ref check failed [4240053813248 16384]
-ref mismatch on [4240128278528 16384] extent item 0, found 1
-Backref 4240128278528 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4240128278528 16384]
-owner ref check failed [4240128278528 16384]
-ref mismatch on [4240269213696 16384] extent item 0, found 1
-Backref 4240269213696 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4240269213696 16384]
-owner ref check failed [4240269213696 16384]
-ref mismatch on [4240361209856 16384] extent item 0, found 1
-Backref 4240361209856 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4240361209856 16384]
-owner ref check failed [4240361209856 16384]
-ref mismatch on [4240424173568 16384] extent item 0, found 1
-Backref 4240424173568 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4240424173568 16384]
-owner ref check failed [4240424173568 16384]
-ref mismatch on [4537701056512 16384] extent item 0, found 1
-Backref 4537701056512 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4537701056512 16384]
-owner ref check failed [4537701056512 16384]
-ref mismatch on [4627734691840 16384] extent item 0, found 1
-Backref 4627734691840 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4627734691840 16384]
-owner ref check failed [4627734691840 16384]
-ref mismatch on [4627984351232 16384] extent item 0, found 1
-Backref 4627984351232 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4627984351232 16384]
-owner ref check failed [4627984351232 16384]
-ref mismatch on [4627986448384 16384] extent item 0, found 1
-Backref 4627986448384 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4627986448384 16384]
-ref mismatch on [4628658339840 16384] extent item 0, found 1
-Backref 4628658339840 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4628658339840 16384]
-owner ref check failed [4628658339840 16384]
-ref mismatch on [4628876689408 16384] extent item 0, found 1
-Backref 4628876689408 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4628876689408 16384]
-owner ref check failed [4628876689408 16384]
-ref mismatch on [4629238202368 16384] extent item 0, found 1
-Backref 4629238202368 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4629238202368 16384]
-owner ref check failed [4629238202368 16384]
-ref mismatch on [4629301755904 16384] extent item 0, found 1
-Backref 4629301755904 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4629301755904 16384]
-owner ref check failed [4629301755904 16384]
-ref mismatch on [4629365145600 16384] extent item 0, found 1
-Backref 4629365145600 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4629365145600 16384]
-owner ref check failed [4629365145600 16384]
-ref mismatch on [4629365866496 16384] extent item 0, found 1
-Backref 4629365866496 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4629365866496 16384]
-ref mismatch on [4629424128000 16384] extent item 0, found 1
-Backref 4629424128000 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4629424128000 16384]
-owner ref check failed [4629424128000 16384]
-ref mismatch on [4629463187456 16384] extent item 0, found 1
-Backref 4629463187456 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4629463187456 16384]
-owner ref check failed [4629463187456 16384]
-ref mismatch on [4629721989120 16384] extent item 0, found 1
-Backref 4629721989120 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4629721989120 16384]
-ref mismatch on [4631433773056 16384] extent item 0, found 1
-Backref 4631433773056 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4631433773056 16384]
-owner ref check failed [4631433773056 16384]
-ref mismatch on [4631637868544 16384] extent item 0, found 1
-Backref 4631637868544 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4631637868544 16384]
-owner ref check failed [4631637868544 16384]
-ref mismatch on [4632167563264 16384] extent item 0, found 1
-Backref 4632167563264 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4632167563264 16384]
-owner ref check failed [4632167563264 16384]
-ref mismatch on [4632548638720 16384] extent item 0, found 1
-Backref 4632548638720 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4632548638720 16384]
-owner ref check failed [4632548638720 16384]
-ref mismatch on [4632727863296 16384] extent item 0, found 1
-Backref 4632727863296 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4632727863296 16384]
-owner ref check failed [4632727863296 16384]
-ref mismatch on [4633126191104 16384] extent item 0, found 1
-Backref 4633126191104 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4633126191104 16384]
-owner ref check failed [4633126191104 16384]
-ref mismatch on [4634633502720 16384] extent item 0, found 1
-Backref 4634633502720 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4634633502720 16384]
-owner ref check failed [4634633502720 16384]
-ref mismatch on [4637186506752 16384] extent item 0, found 1
-Backref 4637186506752 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4637186506752 16384]
-ref mismatch on [4656113008640 16384] extent item 0, found 1
-Backref 4656113008640 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4656113008640 16384]
-ref mismatch on [4656480239616 16384] extent item 0, found 1
-Backref 4656480239616 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4656480239616 16384]
-ref mismatch on [4656519987200 16384] extent item 0, found 1
-Backref 4656519987200 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4656519987200 16384]
-ref mismatch on [4656523427840 16384] extent item 0, found 1
-Backref 4656523427840 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4656523427840 16384]
-ref mismatch on [4656548888576 16384] extent item 0, found 1
-Backref 4656548888576 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4656548888576 16384]
-ref mismatch on [4656708648960 16384] extent item 0, found 1
-Backref 4656708648960 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4656708648960 16384]
-ref mismatch on [4656790257664 16384] extent item 0, found 1
-Backref 4656790257664 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4656790257664 16384]
-ref mismatch on [4656802725888 16384] extent item 0, found 1
-Backref 4656802725888 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4656802725888 16384]
-ref mismatch on [4656806215680 16384] extent item 0, found 1
-Backref 4656806215680 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4656806215680 16384]
-owner ref check failed [4656806215680 16384]
-ref mismatch on [4656806264832 16384] extent item 0, found 1
-Backref 4656806264832 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4656806264832 16384]
-ref mismatch on [4656880435200 16384] extent item 0, found 1
-Backref 4656880435200 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4656880435200 16384]
-ref mismatch on [4657100341248 16384] extent item 0, found 1
-Backref 4657100341248 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4657100341248 16384]
-owner ref check failed [4657100341248 16384]
-ref mismatch on [4736962412544 16384] extent item 0, found 1
-Backref 4736962412544 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4736962412544 16384]
-owner ref check failed [4736962412544 16384]
-ref mismatch on [4737106657280 16384] extent item 0, found 1
-Backref 4737106657280 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4737106657280 16384]
-owner ref check failed [4737106657280 16384]
-ref mismatch on [4737143046144 16384] extent item 0, found 1
-Backref 4737143046144 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4737143046144 16384]
-owner ref check failed [4737143046144 16384]
-ref mismatch on [4737511571456 16384] extent item 0, found 1
-Backref 4737511571456 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4737511571456 16384]
-owner ref check failed [4737511571456 16384]
-ref mismatch on [4850508398592 16384] extent item 0, found 1
-Backref 4850508398592 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4850508398592 16384]
-owner ref check failed [4850508398592 16384]
-ref mismatch on [4850566594560 16384] extent item 0, found 1
-Backref 4850566594560 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4850566594560 16384]
-owner ref check failed [4850566594560 16384]
-ref mismatch on [4850593333248 16384] extent item 0, found 1
-Backref 4850593333248 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4850593333248 16384]
-owner ref check failed [4850593333248 16384]
-ref mismatch on [4850611699712 16384] extent item 0, found 1
-Backref 4850611699712 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4850611699712 16384]
-owner ref check failed [4850611699712 16384]
-ref mismatch on [4850617221120 16384] extent item 0, found 1
-Backref 4850617221120 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4850617221120 16384]
-owner ref check failed [4850617221120 16384]
-ref mismatch on [4850644107264 16384] extent item 0, found 1
-Backref 4850644107264 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4850644107264 16384]
-owner ref check failed [4850644107264 16384]
-ref mismatch on [4850652495872 16384] extent item 0, found 1
-Backref 4850652495872 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4850652495872 16384]
-owner ref check failed [4850652495872 16384]
-ref mismatch on [4850707054592 16384] extent item 0, found 1
-Backref 4850707054592 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4850707054592 16384]
-owner ref check failed [4850707054592 16384]
-ref mismatch on [4850708873216 16384] extent item 0, found 1
-Backref 4850708873216 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4850708873216 16384]
-ref mismatch on [4850785501184 16384] extent item 0, found 1
-Backref 4850785501184 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4850785501184 16384]
-owner ref check failed [4850785501184 16384]
-ref mismatch on [4850785615872 16384] extent item 0, found 1
-Backref 4850785615872 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4850785615872 16384]
-owner ref check failed [4850785615872 16384]
-ref mismatch on [4850794332160 16384] extent item 0, found 1
-Backref 4850794332160 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4850794332160 16384]
-owner ref check failed [4850794332160 16384]
-ref mismatch on [4850805620736 16384] extent item 0, found 1
-Backref 4850805620736 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4850805620736 16384]
-owner ref check failed [4850805620736 16384]
-ref mismatch on [4850829279232 16384] extent item 0, found 1
-Backref 4850829279232 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4850829279232 16384]
-owner ref check failed [4850829279232 16384]
-ref mismatch on [4850840502272 16384] extent item 0, found 1
-Backref 4850840502272 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4850840502272 16384]
-ref mismatch on [4850840600576 16384] extent item 0, found 1
-Backref 4850840600576 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4850840600576 16384]
-owner ref check failed [4850840600576 16384]
-ref mismatch on [4850847301632 16384] extent item 0, found 1
-Backref 4850847301632 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4850847301632 16384]
-ref mismatch on [4850848530432 16384] extent item 0, found 1
-Backref 4850848530432 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4850848530432 16384]
-ref mismatch on [4850874925056 16384] extent item 0, found 1
-Backref 4850874925056 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4850874925056 16384]
-owner ref check failed [4850874925056 16384]
-ref mismatch on [4850921144320 16384] extent item 0, found 1
-Backref 4850921144320 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4850921144320 16384]
-owner ref check failed [4850921144320 16384]
-ref mismatch on [4850931351552 16384] extent item 0, found 1
-Backref 4850931351552 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [4850931351552 16384]
-owner ref check failed [4850931351552 16384]
-ref mismatch on [5168610377728 16384] extent item 0, found 1
-Backref 5168610377728 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [5168610377728 16384]
-owner ref check failed [5168610377728 16384]
-ref mismatch on [5168614178816 16384] extent item 0, found 1
-Backref 5168614178816 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [5168614178816 16384]
-owner ref check failed [5168614178816 16384]
-ref mismatch on [5168624861184 16384] extent item 0, found 1
-Backref 5168624861184 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [5168624861184 16384]
-owner ref check failed [5168624861184 16384]
-ref mismatch on [5168696754176 16384] extent item 0, found 1
-Backref 5168696754176 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [5168696754176 16384]
-owner ref check failed [5168696754176 16384]
-ref mismatch on [5168913530880 16384] extent item 0, found 1
-Backref 5168913530880 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [5168913530880 16384]
-owner ref check failed [5168913530880 16384]
-ref mismatch on [5168913580032 16384] extent item 0, found 1
-Backref 5168913580032 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [5168913580032 16384]
-owner ref check failed [5168913580032 16384]
-ref mismatch on [5169032200192 16384] extent item 0, found 1
-Backref 5169032200192 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [5169032200192 16384]
-owner ref check failed [5169032200192 16384]
-ref mismatch on [5169189437440 16384] extent item 0, found 1
-Backref 5169189437440 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [5169189437440 16384]
-owner ref check failed [5169189437440 16384]
-ref mismatch on [5169234214912 16384] extent item 0, found 1
-Backref 5169234214912 parent 27641 root 27641 not found in extent tree
-backpointer mismatch on [5169234214912 16384]
-owner ref check failed [5169234214912 16384]
-
-checking free space cache [o]
-checkingunresolved ref dir 17093096 index 2 namelen 8 name 15186792
-filetype 1 errors 80, filetype mismatch
-checkingunresolved ref dir 17124053 index 2 namelen 8 name 15186792
-filetype 1 errors 80, filetype mismatch
-checkingunresolved ref dir 17133579 index 2 namelen 8 name 15186792
-filetype 1 errors 80, filetype mismatch
-checking fs roots [.]
-found 2804232417285 bytes used err is 1
-total csum bytes: 2314569220
-total tree bytes: 30477664256
-total fs tree bytes: 27351531520
-total extent tree bytes: 574193664
-btree space waste bytes: 4508064476
-file data blocks allocated: 82462010077184
- referenced 9374576852992
-
-How to fix it? Can "btrfs-check --repair --init-extent-tree" help?
-P.S. I ran all the commands from Fedora 26 Alpha Live disk with kernel
-4.11.0-0.rc3.git0.2.fc26.x86_64 and btrfs-progs v.4.9.1
-
---
-Ivan Sizov
+> btrfs inspect-internal dump-tree -b 5123372711936 has one item
+> evidently out of order:
+> 2551224532992 -> 2551253647360 -> 2551251468288
+>
+> I am currently attempting to copy files off the system while in
+> Manjaro using rsync prior to attempting whatever the knowlegable
+> people here recommend. It has resulting in two files not being able to
+> be read so far, however, a lot of messages in dmesg for btrfs errors
+> https://ptpb.pw/L9Z9
+>
+> Pastebins from original machine:
+> System specs as on original Linux Mint system: https://ptpb.pw/dFz3
+> dmesg btrfs grep from prior to errors starting until scrub attempts:
+> https://ptpb.pw/rTzs
+>
+> Pastebins from subsequent live boot with newer btrfs tools 4.10:
+> LiveBoot Repair (Manjaro Arch) specs: https://ptpb.pw/ikMM
+> Scrub failing/aborting at same place on /dev/sdb: https://ptpb.pw/-vcP
+> badblock_extent_btrfscheck_5123372711936: https://ptpb.pw/T1rD
+> 'btrfs inspect-internal dump-tree -b 5123372711936 /dev/sda2':
+> https://ptpb.pw/zcyI
+> 'btrfs inspect-internal dump-tree -b 5123372711936 /dev/sdb2':
+> https://ptpb.pw/zcyI
+> dmesg on Manjaro attempting to rsync recover files: https://ptpb.pw/L9Z9
+>
+> I have also just noticed that btrfs causes a complete system crash
+> when copying a certain file(s).
+>
+> RTP: [<ffffffffa055b122>] btrfs_check_repairable+0xf2/0x100 [btrfs]
+> BUG: unable to handle kernel paging request at 000000000dealc93
+> IP: [<ffffffff810c3e0b>] __wake_up _common+0x2b/0x80
+> I have taken a photo of the last part of this. As it is in the live
+> DVD boot distro during repair, it did not save the trace to a file
+> that would be accessible later.
+> The photo is at https://pasteboard.co/MTP2OGMK.jpg
+>
+> Could someone please advise the steps to repair this.
+>
+> Thankyou
+>
+>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

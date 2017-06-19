@@ -1,30 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:57198 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1750863AbdFTGws (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Jun 2017 02:52:48 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 742AAAC03
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Jun 2017 06:52:47 +0000 (UTC)
-Subject: Re: [PATCH] btrfs: cleanup duplicate return value in
- insert_inline_extent
-To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-References: <20170615170951.27944-1-dsterba@suse.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <3cd0771c-d6e0-f1f3-d31b-74b1ff3ee795@suse.com>
-Date: Tue, 20 Jun 2017 09:52:46 +0300
+Received: from mga14.intel.com ([192.55.52.115]:22564 "EHLO mga14.intel.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750780AbdFSRsf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 19 Jun 2017 13:48:35 -0400
+Date: Mon, 19 Jun 2017 11:48:31 -0600
+From: Ross Zwisler <ross.zwisler@linux.intel.com>
+To: Jeff Layton <jlayton@redhat.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>,
+        Al Viro <viro@ZenIV.linux.org.uk>, Jan Kara <jack@suse.cz>,
+        tytso@mit.edu, axboe@kernel.dk, mawilcox@microsoft.com,
+        ross.zwisler@linux.intel.com, corbet@lwn.net, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        "Darrick J . Wong" <darrick.wong@oracle.com>,
+        Carlos Maiolino <cmaiolino@redhat.com>, Eryu Guan <eguan@redhat.com>,
+        David Howells <dhowells@redhat.com>,
+        Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org,
+        linux-mm@kvack.org, linux-ext4@vger.kernel.org,
+        linux-xfs@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-block@vger.kernel.org
+Subject: Re: [PATCH v7 15/22] dax: set errors in mapping when writeback fails
+Message-ID: <20170619174831.GA16397@linux.intel.com>
+References: <20170616193427.13955-1-jlayton@redhat.com>
+ <20170616193427.13955-16-jlayton@redhat.com>
+ <1497703193.4684.9.camel@redhat.com>
 MIME-Version: 1.0
-In-Reply-To: <20170615170951.27944-1-dsterba@suse.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1497703193.4684.9.camel@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 15.06.2017 20:09, David Sterba wrote:
-> The pattern when err is used for function exit and ret is used for
-> return values of callees is not used here.
+On Sat, Jun 17, 2017 at 08:39:53AM -0400, Jeff Layton wrote:
+> On Fri, 2017-06-16 at 15:34 -0400, Jeff Layton wrote:
+> > Jan Kara's description for this patch is much better than mine, so I'm
+> > quoting it verbatim here:
+> > 
+> > DAX currently doesn't set errors in the mapping when cache flushing
+> > fails in dax_writeback_mapping_range(). Since this function can get
+> > called only from fsync(2) or sync(2), this is actually as good as it can
+> > currently get since we correctly propagate the error up from
+> > dax_writeback_mapping_range() to filemap_fdatawrite()
+> > 
+> > However, in the future better writeback error handling will enable us to
+> > properly report these errors on fsync(2) even if there are multiple file
+> > descriptors open against the file or if sync(2) gets called before
+> > fsync(2). So convert DAX to using standard error reporting through the
+> > mapping.
+> > 
+> > Signed-off-by: Jeff Layton <jlayton@redhat.com>
+> > Reviewed-by: Jan Kara <jack@suse.cz>
+> > Reviewed-by: Christoph Hellwig <hch@lst.de>
+> > Reviewed-and-Tested-by: Ross Zwisler <ross.zwisler@linux.intel.com>
+> > ---
+> >  fs/dax.c | 4 +++-
+> >  1 file changed, 3 insertions(+), 1 deletion(-)
+> > 
+> > diff --git a/fs/dax.c b/fs/dax.c
+> > index 9899f07acf72..c663e8cc2a76 100644
+> > --- a/fs/dax.c
+> > +++ b/fs/dax.c
+> > @@ -856,8 +856,10 @@ int dax_writeback_mapping_range(struct address_space *mapping,
+> >  
+> >  			ret = dax_writeback_one(bdev, dax_dev, mapping,
+> >  					indices[i], pvec.pages[i]);
+> > -			if (ret < 0)
+> > +			if (ret < 0) {
+> > +				mapping_set_error(mapping, ret);
+> >  				goto out;
+> > +			}
+> >  		}
+> >  	}
+> >  out:
 > 
-> Signed-off-by: David Sterba <dsterba@suse.com>
+> I should point out here that Ross had an issue with this patch in an
+> earlier set, that I addressed with a flag in the last set. The flag is
+> icky though.
+> 
+> In this set, patch #6 should make it unnecessary:
+> 
+>     mm: clear AS_EIO/AS_ENOSPC when writeback initiation fails
+> 
+> Ross, could you test that this set still works ok for you with dax? It
+> should apply reasonably cleanly on top of linux-next.
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+Yep, v7 passes my DAX testing.

@@ -1,52 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:30306 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750959AbdFXF32 (ORCPT
+Received: from mail-wm0-f65.google.com ([74.125.82.65]:35970 "EHLO
+        mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753892AbdFSL0X (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 24 Jun 2017 01:29:28 -0400
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v5O5TR3I010087
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Sat, 24 Jun 2017 05:29:27 GMT
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v5O5TRUF013031
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Sat, 24 Jun 2017 05:29:27 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Liu Bo <boliu@localhost.localdomain>
-Subject: [PATCH] Btrfs-progs: fix infinite loop in find_free_extent
-Date: Fri, 23 Jun 2017 22:28:31 -0600
-Message-Id: <20170624042831.8068-1-bo.li.liu@oracle.com>
+        Mon, 19 Jun 2017 07:26:23 -0400
+Received: by mail-wm0-f65.google.com with SMTP id d17so16407975wme.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 19 Jun 2017 04:26:23 -0700 (PDT)
+Subject: Re: [PATCH 1/2] btrfs-progs: Fix false alert about EXTENT_DATA
+ shouldn't be hole
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+References: <20170616014323.13170-1-quwenruo@cn.fujitsu.com>
+From: Henk Slager <eye1tm@gmail.com>
+Message-ID: <1a0c4fe6-517a-49f3-2873-61797bc9d818@gmail.com>
+Date: Mon, 19 Jun 2017 13:26:20 +0200
+MIME-Version: 1.0
+In-Reply-To: <20170616014323.13170-1-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Liu Bo <boliu@localhost.localdomain>
+On 16-06-17 03:43, Qu Wenruo wrote:
+> Since incompat feature NO_HOLES still allow us to have explicit hole
+> file extent, current check is too restrict and will cause false alert
+> like:
+>
+> root 5 EXTENT_DATA[257, 0] shouldn't be hole
+>
+> Fix it by removing the restrict hole file extent check.
+>
+> Reported-by: Henk Slager <eye1tm@gmail.com>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+>  cmds-check.c | 6 +-----
+>  1 file changed, 1 insertion(+), 5 deletions(-)
+>
+> diff --git a/cmds-check.c b/cmds-check.c
+> index c052f66e..7bd57677 100644
+> --- a/cmds-check.c
+> +++ b/cmds-check.c
+> @@ -4841,11 +4841,7 @@ static int check_file_extent(struct btrfs_root *root, struct btrfs_key *fkey,
+>  	}
+>  
+>  	/* Check EXTENT_DATA hole */
+> -	if (no_holes && is_hole) {
+> -		err |= FILE_EXTENT_ERROR;
+> -		error("root %llu EXTENT_DATA[%llu %llu] shouldn't be hole",
+> -		      root->objectid, fkey->objectid, fkey->offset);
+> -	} else if (!no_holes && *end != fkey->offset) {
+> +	if (!no_holes && *end != fkey->offset) {
+>  		err |= FILE_EXTENT_ERROR;
+>  		error("root %llu EXTENT_DATA[%llu %llu] interrupt",
+>  		      root->objectid, fkey->objectid, fkey->offset);
 
-%search_start is calculated in a wrong way, and if %ins is a cross-stripe
- one, it'll search the same block group forever.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- extent-tree.c | 5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+Thanks for the patch, I applied it on v4.11 btrfs-progs and re-ran the check:
+# btrfs check -p --readonly /dev/mapper/smr
 
-diff --git a/extent-tree.c b/extent-tree.c
-index b12ee29..5e09274 100644
---- a/extent-tree.c
-+++ b/extent-tree.c
-@@ -2614,8 +2614,9 @@ check_failed:
- 				goto no_bg_cache;
- 			bg_offset = ins->objectid - bg_cache->key.objectid;
- 
--			search_start = round_up(bg_offset + num_bytes,
--						BTRFS_STRIPE_LEN) + bg_offset;
-+			search_start = round_up(
-+				bg_offset + num_bytes, BTRFS_STRIPE_LEN) +
-+				bg_cache->key.object;
- 			goto new_group;
- 		}
- no_bg_cache:
--- 
-2.9.4
+on filesystem mentioned in:
+https://www.spinics.net/lists/linux-btrfs/msg66374.html
+
+and now the "shouldn't be hole" errors don't show up anymore.
+
+Tested-by: Henk Slager <eye1tm@gmail.com>
 

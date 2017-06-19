@@ -1,264 +1,303 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f169.google.com ([209.85.223.169]:36191 "EHLO
-        mail-io0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753580AbdFSKnR (ORCPT
+Received: from mail-it0-f45.google.com ([209.85.214.45]:37490 "EHLO
+        mail-it0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750903AbdFSOUv (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Jun 2017 06:43:17 -0400
-Received: by mail-io0-f169.google.com with SMTP id y77so61721021ioe.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 19 Jun 2017 03:43:17 -0700 (PDT)
+        Mon, 19 Jun 2017 10:20:51 -0400
+Received: by mail-it0-f45.google.com with SMTP id m47so58372986iti.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 19 Jun 2017 07:20:51 -0700 (PDT)
 MIME-Version: 1.0
-From: Jesse <btrfs_mail_list@mymail.isbest.biz>
-Date: Mon, 19 Jun 2017 18:43:16 +0800
-Message-ID: <CAAsnU-9FqoT=gFFsJ7paCRgkXXfJJts9K+E-5_cca33yOUJc+w@mail.gmail.com>
-Subject: Re: Please help. Repair probably bitflip damage and suspected bug
-To: Jesse <btrfs_mail_list@mymail.isbest.biz>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+In-Reply-To: <a194375b-f0e5-8f90-b001-83cb40fbd957@cn.fujitsu.com>
+References: <CAPmG0jb=tokuCxBe6U3Rg+36X-70ptC2bhWx23e38ZxUjTgM4A@mail.gmail.com>
+ <20170613072420.17314dbb@jupiter.sol.kaishome.de> <CAPmG0jbVju+S=jqmk+qr8L4MMe-5NirFVV8R7VQeczGjE=6Waw@mail.gmail.com>
+ <CAPmG0jaVbfoL8-PpDT-=B+w_JH9H4ukJQm5UUkZFRKS6uSAs+Q@mail.gmail.com> <a194375b-f0e5-8f90-b001-83cb40fbd957@cn.fujitsu.com>
+From: Henk Slager <eye1tm@gmail.com>
+Date: Mon, 19 Jun 2017 16:20:49 +0200
+Message-ID: <CAPmG0jbjRODBLSCYBhZYxYZjFQAZjOzuy3HppmC-gjyEqv358Q@mail.gmail.com>
+Subject: Re: csum failed root -9
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I just noticed a series of seemingly btrfs related call traces that
-for the first time, did not lock up the system.
+On Thu, Jun 15, 2017 at 9:13 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>
+>
+> At 06/14/2017 09:39 PM, Henk Slager wrote:
+>>
+>> On Tue, Jun 13, 2017 at 12:47 PM, Henk Slager <eye1tm@gmail.com> wrote:
+>>>
+>>> On Tue, Jun 13, 2017 at 7:24 AM, Kai Krakow <hurikhan77@gmail.com> wrote:
+>>>>
+>>>> Am Mon, 12 Jun 2017 11:00:31 +0200
+>>>> schrieb Henk Slager <eye1tm@gmail.com>:
+>>>>
+>>>>> Hi all,
+>>>>>
+>>>>> there is 1-block corruption a 8TB filesystem that showed up several
+>>>>> months ago. The fs is almost exclusively a btrfs receive target and
+>>>>> receives monthly sequential snapshots from two hosts but 1 received
+>>>>> uuid. I do not know exactly when the corruption has happened but it
+>>>>> must have been roughly 3 to 6 months ago. with monthly updated
+>>>>> kernel+progs on that host.
+>>>>>
+>>>>> Some more history:
+>>>>> - fs was created in november 2015 on top of luks
+>>>>> - initially bcache between the 2048-sector aligned partition and luks.
+>>>>> Some months ago I removed 'the bcache layer' by making sure that cache
+>>>>> was clean and then zeroing 8K bytes at start of partition in an
+>>>>> isolated situation. Then setting partion offset to 2064 by
+>>>>> delete-recreate in gdisk.
+>>>>> - in december 2016 there were more scrub errors, but related to the
+>>>>> monthly snapshot of december2016. I have removed that snapshot this
+>>>>> year and now only this 1-block csum error is the only issue.
+>>>>> - brand/type is seagate 8TB SMR. At least since kernel 4.4+ that
+>>>>> includes some SMR related changes in the blocklayer this disk works
+>>>>> fine with btrfs.
+>>>>> - the smartctl values show no error so far but I will run an extended
+>>>>> test this week after another btrfs check which did not show any error
+>>>>> earlier with the csum fail being there
+>>>>> - I have noticed that the board that has the disk attached has been
+>>>>> rebooted due to power-failures many times (unreliable power switch and
+>>>>> power dips from energy company) and the 150W powersupply is broken and
+>>>>> replaced since then. Also due to this, I decided to remove bcache
+>>>>> (which has been in write-through and write-around only).
+>>>>>
+>>>>> Some btrfs inpect-internal exercise shows that the problem is in a
+>>>>> directory in the root that contains most of the data and snapshots.
+>>>>> But an  rsync -c  with an identical other clone snapshot shows no
+>>>>> difference (no writes to an rw snapshot of that clone). So the fs is
+>>>>> still OK as file-level backup, but btrfs replace/balance will fatal
+>>>>> error on just this 1 csum error. It looks like that this is not a
+>>>>> media/disk error but some HW induced error or SW/kernel issue.
+>>>>> Relevant btrfs commands + dmesg info, see below.
+>>>>>
+>>>>> Any comments on how to fix or handle this without incrementally
+>>>>> sending all snapshots to a new fs (6+ TiB of data, assuming this won't
+>>>>> fail)?
+>>>>>
+>>>>>
+>>>>> # uname -r
+>>>>> 4.11.3-1-default
+>>>>> # btrfs --version
+>>>>> btrfs-progs v4.10.2+20170406
+>>>>
+>>>>
+>>>> There's btrfs-progs v4.11 available...
+>>>
+>>>
+>>> I started:
+>>> # btrfs check -p --readonly /dev/mapper/smr
+>>> but it stopped with printing 'Killed' while checking extents. The
+>>> board has 8G RAM, no swap (yet), so I just started lowmem mode:
+>>> # btrfs check -p --mode lowmem --readonly /dev/mapper/smr
+>>>
+>>> Now after a 1 day 77 lines like this are printed:
+>>> ERROR: extent[5365470154752, 81920] referencer count mismatch (root:
+>>> 6310, owner: 1771130, offset: 33243062272) wanted: 1, have: 2
+>>>
+>>> It is still running, hopefully it will finish within 2 days. But
+>>> lateron I can compile/use latest progs from git. Same for kernel,
+>>> maybe with some tweaks/patches, but I think I will also plug the disk
+>>> into a faster machine then ( i7-4770 instead of the J1900 ).
+>>>
+>>>>> fs profile is dup for system+meta, single for data
+>>>>>
+>>>>> # btrfs scrub start /local/smr
+>>>>
+>>>>
+>>>> What looks strange to me is that the parameters of the error reports
+>>>> seem to be rotated by one... See below:
+>>>>
+>>>>> [27609.626555] BTRFS error (device dm-0): parent transid verify failed
+>>>>> on 6350718500864 wanted 23170 found 23076
+>>>>> [27609.685416] BTRFS info (device dm-0): read error corrected: ino 1
+>>>>> off 6350718500864 (dev /dev/mapper/smr sector 11681212672)
+>>>>> [27609.685928] BTRFS info (device dm-0): read error corrected: ino 1
+>>>>> off 6350718504960 (dev /dev/mapper/smr sector 11681212680)
+>>>>> [27609.686160] BTRFS info (device dm-0): read error corrected: ino 1
+>>>>> off 6350718509056 (dev /dev/mapper/smr sector 11681212688)
+>>>>> [27609.687136] BTRFS info (device dm-0): read error corrected: ino 1
+>>>>> off 6350718513152 (dev /dev/mapper/smr sector 11681212696)
+>>>>> [37663.606455] BTRFS error (device dm-0): parent transid verify failed
+>>>>> on 6350453751808 wanted 23170 found 23075
+>>>>> [37663.685158] BTRFS info (device dm-0): read error corrected: ino 1
+>>>>> off 6350453751808 (dev /dev/mapper/smr sector 11679647008)
+>>>>> [37663.685386] BTRFS info (device dm-0): read error corrected: ino 1
+>>>>> off 6350453755904 (dev /dev/mapper/smr sector 11679647016)
+>>>>> [37663.685587] BTRFS info (device dm-0): read error corrected: ino 1
+>>>>> off 6350453760000 (dev /dev/mapper/smr sector 11679647024)
+>>>>> [37663.685798] BTRFS info (device dm-0): read error corrected: ino 1
+>>>>> off 6350453764096 (dev /dev/mapper/smr sector 11679647032)
+>>>>
+>>>>
+>>>> Why does it say "ino 1"? Does it mean devid 1?
+>>>
+>>>
+>>> On a 3-disk btrfs raid1 fs I see in the journal also "read error
+>>> corrected: ino 1" lines for all 3 disks. This was with a 4.10.x
+>>> kernel, ATM I don't know if this is right or wrong.
+>>>
+>>>>> [43497.234598] BTRFS error (device dm-0): bdev /dev/mapper/smr errs:
+>>>>> wr 0, rd 0, flush 0, corrupt 1, gen 0
+>>>>> [43497.234605] BTRFS error (device dm-0): unable to fixup (regular)
+>>>>> error at logical 7175413624832 on dev /dev/mapper/smr
+>>>>>
+>>>>> # < figure out which chunk with help of btrfs py lib >
+>>>>>
+>>>>> chunk vaddr 7174898057216 type 1 stripe 0 devid 1 offset 6696948727808
+>>>>> length 1073741824 used 1073741824 used_pct 100
+>>>>> chunk vaddr 7175971799040 type 1 stripe 0 devid 1 offset 6698022469632
+>>>>> length 1073741824 used 1073741824 used_pct 100
+>>>>>
+>>>>> # btrfs balance start -v
+>>>>> -dvrange=7174898057216..7174898057217 /local/smr
+>>>>>
+>>>>> [74250.913273] BTRFS info (device dm-0): relocating block group
+>>>>> 7174898057216 flags data
+>>>>> [74255.941105] BTRFS warning (device dm-0): csum failed root -9 ino
+>>>>> 257 off 515567616 csum 0x589cb236 expected csum 0xee19bf74 mirror 1
+>>>>> [74255.965804] BTRFS warning (device dm-0): csum failed root -9 ino
+>>>>> 257 off 515567616 csum 0x589cb236 expected csum 0xee19bf74 mirror 1
+>
+>
+> Root -9 is data relocation tree, which is used for relocation.
 
-I have uploaded dmesg to https://paste.ee/p/An8Qy
+Ok, then I can understand the negative sign.
 
-Anyone able to help advise on these?
+> I'm not sure if both lowmem and original mode fsck can handle it well as the
+> tree only exists for a short time.
+>
+> I think the problem is not for data relocation tree it self, but the
+> original data on that disk, no longer matches its checksum.
+> Relocation (balance) is just trying to read that data out, going through
+> normal csum check, but found it wrong.
+>
+> The real data is at logical bytenr (7174898057216 + 515567616).
+>
+> Scrub should output the file related to that logical bytenr, but I saw
+> strange transid error, and even more strangely the read error is fixed up.
 
-Thanks
+I used balance just for 1 1G-chunk to trigger a csum failure message
+from the kernel, as I was (and am not) able to figure out what file or
+user data is on the logical bytenr (7174898057216 + 515567616).
 
-Jesse
+I must say I have seen this before on a 4TB filesystem, so doing a
+scrub but no indication from kernel what file was affected. But on
+that filesystem also 20KiB with csum error that were clearly
+identified in kernel dmesg by file path (shared multiple snapshots).
+Some time later, after old snapshot removal and new scrub, only the
+20KiB with csum error were left there.
 
+>>>> And why does it say "root -9"? Shouldn't it be "failed -9 root 257 ino
+>>>> 515567616"? In that case the "off" value would be completely missing...
+>>>>
+>>>> Those "rotations" may mess up with where you try to locate the error on
+>>>> disk...
+>>>
+>>>
+>>> I hadn't looked at the numbers like that, but as you indicate, I also
+>>> think that the 1-block csum fail location is bogus because the kernel
+>>> calculates that based on some random corruption in critical btrfs
+>>> structures, also looking at the 77 referencer count mismatches. A
+>>> negative root ID is already a sort of red flag. When I can mount the
+>>> fs again after the check is finished, I can hopefully use the output
+>>> of the check to get clearer how big the 'damage' is.
+>>
+>>
+>> The btrfs lowmem mode check ends with:
+>>
+>> ERROR: root 7331 EXTENT_DATA[928390 3506176] shouldn't be hole
+>> ERROR: errors found in fs roots
+>> found 6968612982784 bytes used, error(s) found
+>> total csum bytes: 6786376404
+>> total tree bytes: 25656016896
+>> total fs tree bytes: 14857535488
+>> total extent tree bytes: 3237216256
+>> btree space waste bytes: 3072362630
+>> file data blocks allocated: 38874881994752
+>>   referenced 36477629964288
+>>
+>> In total 2000+ of those "shouldn't be hole" lines.
+>>
+>> A non-lowmem check, now done with kernel 4.11.4 and progs v4.11 and
+>> 16G swap added ends with 'noerrors found'
+>
+>
+> Well, at least metadata seems valid.
+>
+>>
+>> W.r.t. holes, maybe it is woth to mention the super-flags:
+>> incompat_flags          0x369
+>>                          ( MIXED_BACKREF |
+>>                            COMPRESS_LZO |
+>>                            BIG_METADATA |
+>>                            EXTENDED_IREF |
+>>                            SKINNY_METADATA |
+>>                            NO_HOLES )
+>
+>
+> There maybe another corner case for NO_HOLES, I should double check the hole
+> check for lowmem and add test case for it.
 
-On 19 June 2017 at 17:19, Jesse <btrfs_mail_list@mymail.isbest.biz> wrote:
-> Further to the above message reporting problems, I have been able to
-> capture a call trace under the main system rather than live media.
->
-> Note this occurred in rsync from btrfs to a separate drive running xfs
-> on a local filesystem (both sata drives). So I presume that btrfs is
-> only reading the drive at the time of crash, unless rsync is also
-> doing some sort of disc caching of the files to btrfs as it is the OS
-> filesystem.
->
-> The destination drive directories being copied to in this case were
-> empty, so I was making a copy of the data off of the btrfs drive (due
-> to the btrfs tree errors and problems reported in the post I am here
-> replying to).
->
-> I am suspecting that there is a direct correlation to using rsync
-> while (or subsequent to) touching areas of the btrfs tree that have
-> corruption which results in a complete system lockup/crash.
->
-> I have also noted that when these crashes while running rsync occur,
-> the prior x files (eg: 10 files) show in the rsync log as being
-> synced, however, show on the destination drive with filesize of zero.
->
-> The trace (/var/log/messages | grep btrfs) I have uploaded to
-> https://paste.ee/p/nRcj0
->
-> The important part of which is:
->
-> Jun 18 23:43:24 Orion vmunix: [38084.183174] BTRFS info (device sda2):
-> no csum found for inode 12497 start 0
-> Jun 18 23:43:24 Orion vmunix: [38084.183195] BTRFS info (device sda2):
-> no csum found for inode 12497 start 0
-> Jun 18 23:43:24 Orion vmunix: [38084.183209] BTRFS info (device sda2):
-> no csum found for inode 12497 start 0
-> Jun 18 23:43:24 Orion vmunix: [38084.183222] BTRFS info (device sda2):
-> no csum found for inode 12497 start 0
-> Jun 18 23:43:24 Orion vmunix: [38084.217552] BTRFS info (device sda2):
-> csum failed ino 12497 extent 1700305813504 csum 1405070872 wanted 0
-> mirror 0
-> Jun 18 23:43:24 Orion vmunix: [38084.217626] BTRFS info (device sda2):
-> no csum found for inode 12497 start 0
-> Jun 18 23:43:24 Orion vmunix: [38084.217643] BTRFS info (device sda2):
-> no csum found for inode 12497 start 0
-> Jun 18 23:43:24 Orion vmunix: [38084.217657] BTRFS info (device sda2):
-> no csum found for inode 12497 start 0
-> Jun 18 23:43:24 Orion vmunix: [38084.217669] BTRFS info (device sda2):
-> no csum found for inode 12497 start 0
-> Jun 18 23:43:24 Orion vmunix:  auth_rpcgss nfs_acl nfs lockd grace
-> sunrpc fscache zfs(POE) zunicode(POE) zcommon(POE) znvpair(POE)
-> spl(OE) zavl(POE) btrfs xor raid6_pq dm_mirror dm_region_hash dm_log
-> hid_generic usbhid hid uas usb_storage radeon i2c_algo_bit ttm
-> drm_kms_helper drm r8169 ahci mii libahci wmi
-> Jun 18 23:43:24 Orion vmunix: [38084.220604] Workqueue: btrfs-endio
-> btrfs_endio_helper [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.220812] RIP:
-> 0010:[<ffffffffc048804a>]  [<ffffffffc048804a>]
-> __btrfs_map_block+0x32a/0x1180 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.222459]  [<ffffffffc0452c00>] ?
-> __btrfs_lookup_bio_sums.isra.8+0x3e0/0x540 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.222632]  [<ffffffffc048cf3d>]
-> btrfs_map_bio+0x7d/0x2b0 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.222781]  [<ffffffffc04aaf64>]
-> btrfs_submit_compressed_read+0x484/0x4e0 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.222948]  [<ffffffffc04651e1>]
-> btrfs_submit_bio_hook+0x1c1/0x1d0 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.223198]  [<ffffffffc047fd90>] ?
-> btrfs_create_repair_bio+0xf0/0x110 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.223360]  [<ffffffffc047fec7>]
-> bio_readpage_error+0x117/0x180 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.223514]  [<ffffffffc04802f0>] ?
-> clean_io_failure+0x1b0/0x1b0 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.223667]  [<ffffffffc04806ae>]
-> end_bio_extent_readpage+0x3be/0x3f0 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.223996]  [<ffffffffc0457838>]
-> end_workqueue_fn+0x48/0x60 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.224145]  [<ffffffffc0490de2>]
-> normal_work_helper+0x82/0x210 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.224297]  [<ffffffffc0491042>]
-> btrfs_endio_helper+0x12/0x20 [btrfs]
-> Jun 18 23:43:24 Orion vmunix:  auth_rpcgss nfs_acl nfs lockd grace
-> sunrpc fscache zfs(POE) zunicode(POE) zcommon(POE) znvpair(POE)
-> spl(OE) zavl(POE) btrfs xor raid6_pq dm_mirror dm_region_hash dm_log
-> hid_generic usbhid hid uas usb_storage radeon i2c_algo_bit ttm
-> drm_kms_helper drm r8169 ahci mii libahci wmi
-> Jun 18 23:43:24 Orion vmunix: [38084.330053]  [<ffffffffc048804a>] ?
-> __btrfs_map_block+0x32a/0x1180 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.330106]  [<ffffffffc0487fec>] ?
-> __btrfs_map_block+0x2cc/0x1180 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.330154]  [<ffffffffc0452c00>] ?
-> __btrfs_lookup_bio_sums.isra.8+0x3e0/0x540 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.330205]  [<ffffffffc048cf3d>]
-> btrfs_map_bio+0x7d/0x2b0 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.330257]  [<ffffffffc04aaf64>]
-> btrfs_submit_compressed_read+0x484/0x4e0 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.330304]  [<ffffffffc04651e1>]
-> btrfs_submit_bio_hook+0x1c1/0x1d0 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.330361]  [<ffffffffc047fd90>] ?
-> btrfs_create_repair_bio+0xf0/0x110 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.330412]  [<ffffffffc047fec7>]
-> bio_readpage_error+0x117/0x180 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.330462]  [<ffffffffc04802f0>] ?
-> clean_io_failure+0x1b0/0x1b0 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.330513]  [<ffffffffc04806ae>]
-> end_bio_extent_readpage+0x3be/0x3f0 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.330568]  [<ffffffffc0457838>]
-> end_workqueue_fn+0x48/0x60 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.330618]  [<ffffffffc0490de2>]
-> normal_work_helper+0x82/0x210 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.330668]  [<ffffffffc0491042>]
-> btrfs_endio_helper+0x12/0x20 [btrfs]
-> Jun 18 23:43:24 Orion vmunix:  auth_rpcgss nfs_acl nfs lockd grace
-> sunrpc fscache zfs(POE) zunicode(POE) zcommon(POE) znvpair(POE)
-> spl(OE) zavl(POE) btrfs xor raid6_pq dm_mirror dm_region_hash dm_log
-> hid_generic usbhid hid uas usb_storage radeon i2c_algo_bit ttm
-> drm_kms_helper drm r8169 ahci mii libahci wmi
-> Jun 18 23:43:24 Orion vmunix: [38084.331102]  [<ffffffffc048804a>] ?
-> __btrfs_map_block+0x32a/0x1180 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.331152]  [<ffffffffc0487fec>] ?
-> __btrfs_map_block+0x2cc/0x1180 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.331202]  [<ffffffffc0452c00>] ?
-> __btrfs_lookup_bio_sums.isra.8+0x3e0/0x540 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.331255]  [<ffffffffc048cf3d>]
-> btrfs_map_bio+0x7d/0x2b0 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.331310]  [<ffffffffc04aaf64>]
-> btrfs_submit_compressed_read+0x484/0x4e0 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.331360]  [<ffffffffc04651e1>]
-> btrfs_submit_bio_hook+0x1c1/0x1d0 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.331423]  [<ffffffffc047fd90>] ?
-> btrfs_create_repair_bio+0xf0/0x110 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.331477]  [<ffffffffc047fec7>]
-> bio_readpage_error+0x117/0x180 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.331530]  [<ffffffffc04802f0>] ?
-> clean_io_failure+0x1b0/0x1b0 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.331585]  [<ffffffffc04806ae>]
-> end_bio_extent_readpage+0x3be/0x3f0 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.331649]  [<ffffffffc0457838>]
-> end_workqueue_fn+0x48/0x60 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.331703]  [<ffffffffc0490de2>]
-> normal_work_helper+0x82/0x210 [btrfs]
-> Jun 18 23:43:24 Orion vmunix: [38084.331757]  [<ffffffffc0491042>]
-> btrfs_endio_helper+0x12/0x20 [btrfs]
-> Jun 19 07:29:22 Orion vmunix: [    3.107113] Btrfs loaded
-> Jun 19 07:29:22 Orion vmunix: [    3.665536] BTRFS: device label
-> btrfs1 devid 2 transid 1086759 /dev/sdb2
-> Jun 19 07:29:22 Orion vmunix: [    3.665811] BTRFS: device label
-> btrfs1 devid 1 transid 1086759 /dev/sda2
-> Jun 19 07:29:22 Orion vmunix: [    8.673689] BTRFS info (device sda2):
-> disk space caching is enabled
-> Jun 19 07:29:22 Orion vmunix: [   28.190962] BTRFS info (device sda2):
-> enabling auto defrag
-> Jun 19 07:29:22 Orion vmunix: [   28.191039] BTRFS info (device sda2):
-> disk space caching is enabled
->
-> I notice that this page
-> https://btrfs.wiki.kernel.org/index.php/Gotchas mentions "Files with a
-> lot of random writes can become heavily fragmented (10000+ extents)
-> causing thrashing on HDDs and excessive multi-second spikes" and as
-> such I am wondering if this is related to the crashing. AFAIK rsync
-> should be creating the temp file in the destination drive (xfs),
-> unless there is some part of rsync that I am not understanding that
-> would be writing to the file system drive (btrfs)  which is also in
-> the case the source hdd (btrfs).
->
-> Can someone please help with these btrfs problems.
->
-> Thankyou
+With the patch you created applied, "shouldn't be hole" is gone in
+lowmem mode, but the "referencer count mismatch" error messages are
+still there. In normal more, no error at all is reported.
+
+> Maybe the hole check is too restrict, as NO_HOLES allow holes exists.
+> (That's why I hate btrfs allowing users to modify their incompat flags so
+> that we must support both old and new behavior in the same fs)
+
+I now wish I hadn't changed that flag, but for some case (a 17TB
+btrfs-image of a broken fs) on btrfs on SSD, I saw that it made a
+difference and it looked to be a good speedup, also for bcached-btrfs.
+This was with kernel at least before 4.8, 4.5 or so. But for 25GB
+images for Virtualbox, with initially half of it holes, the big speed
+difference is comming from SSD caching of a btrfs fs on HDD. Due to
+the bug mentioned below, I ran into space and speed troubles, so I
+modified btrfstune.c such that it can toggle NO_HOLES flag. I realize
+that it is tricky, but recreating multi-TB filesystems with rather
+complex subvolume setup is also tricky and so far, the other
+filesystems that have undergone this NO_HOLES flag toggle are running
+fine.
+
+>> The fs has received snapshots from source fs that had NO_HOLES enabled
+>> for some time, but after registed this bug:
+>> https://bugzilla.kernel.org/show_bug.cgi?id=121321
+>> I put back that NO_HOLES flag to zero on the source fs. It seems I
+>> forgot to do that on the 8TB target/backup fs. But I don't know if
+>> there is a relation between this flag flipping and the btrfs check
+>> error messages.
+>>
+>> I think I leave it as is for the time being, unless there is some news
+>> how to fix things with low risk (or maybe via a temp overlay snapshot
+>> with DM). But the lowmem check took 2 days, that's not really fun.
 >
 >
+> That's a trade between IO and memory.
+> Just as you could see, without extra swap, original mode just get killed due
+> to OOM.
 >
->> My Linux Mint system is starting up and usable, however, I am unable
->> to complete any scrub as they abort before finished. There are various
->> inode errors in dmesg. Badblocks (readonly) finds no errors. checking
->> extents gives bad block 5123372711936 on both /dev/sda2 and /dev/sda2.
->> A btrfscheck (readonly) results in a 306MB text file of output of root
->> xxx inode errors.
->> There are two drives 3TB each in RAID 1 for sda2/sdb2 for which
->> partition 2 is nearly the entire drive.
->>
->> Currently I am now using a Manjaro Live Boot with btrfs tools
->> btrfs-progs v4.10.1 in an attempt to recover/repair what seems to be
->> bitflip
->> (The original Linux Mint System has btrfs-progs v4.5.3)
->>
->> When doing a scrub on '/', the status of /dev/sdb2 aborts always at ~
->> 383GiB with 0 errors. Whereas the /dev/sda2 and thus the '/' scrub
->> aborts at more diverse values starting at 537.90GiB with 0 errors.
->>
->> btrfs inspect-internal dump-tree -b 5123372711936 has one item
->> evidently out of order:
->> 2551224532992 -> 2551253647360 -> 2551251468288
->>
->> I am currently attempting to copy files off the system while in
->> Manjaro using rsync prior to attempting whatever the knowlegable
->> people here recommend. It has resulting in two files not being able to
->> be read so far, however, a lot of messages in dmesg for btrfs errors
->> https://ptpb.pw/L9Z9
->>
->> Pastebins from original machine:
->> System specs as on original Linux Mint system: https://ptpb.pw/dFz3
->> dmesg btrfs grep from prior to errors starting until scrub attempts:
->> https://ptpb.pw/rTzs
->>
->> Pastebins from subsequent live boot with newer btrfs tools 4.10:
->> LiveBoot Repair (Manjaro Arch) specs: https://ptpb.pw/ikMM
->> Scrub failing/aborting at same place on /dev/sdb: https://ptpb.pw/-vcP
->> badblock_extent_btrfscheck_5123372711936: https://ptpb.pw/T1rD
->> 'btrfs inspect-internal dump-tree -b 5123372711936 /dev/sda2':
->> https://ptpb.pw/zcyI
->> 'btrfs inspect-internal dump-tree -b 5123372711936 /dev/sdb2':
->> https://ptpb.pw/zcyI
->> dmesg on Manjaro attempting to rsync recover files: https://ptpb.pw/L9Z9
->>
->> I have also just noticed that btrfs causes a complete system crash
->> when copying a certain file(s).
->>
->> RTP: [<ffffffffa055b122>] btrfs_check_repairable+0xf2/0x100 [btrfs]
->> BUG: unable to handle kernel paging request at 000000000dealc93
->> IP: [<ffffffff810c3e0b>] __wake_up _common+0x2b/0x80
->> I have taken a photo of the last part of this. As it is in the live
->> DVD boot distro during repair, it did not save the trace to a file
->> that would be accessible later.
->> The photo is at https://pasteboard.co/MTP2OGMK.jpg
->>
->> Could someone please advise the steps to repair this.
->>
->> Thankyou
->>
->>
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Unlike original mode, which reads out all metadata by sequence and record
+> some important info into memory, lowmem doesn't record anything in memory,
+> just searching on-disk to minimize memory usage.
+>
+> And with that behavior, lowmem mode is causing tons of random IO, some of
+> them are even duplicated (searching the same tree for several times).
+>
+> I'm afraid the  time consumption can not be solved easily.
+> (Well, adding swap for original mode is another solution anyway)
+
+It is clear that for mechanical disk and re-reading stuff from disk
+total check time is much longer. I basically just wanted to use it to
+experience it, although I saw later that I had already shrunk the main
+partition and created swapspace from that, but it was default off in
+fstab.
+
+For normal mode, I saw ~2G swapspace used in addition to the 8G RAM
+usage and it took about 2 hours. In this case, and for the size of
+btrfs filesystems I have, I prefer freeing some SSD space for swap
+partition instead of using lowmem mode. This 8TB filesystem has a
+monthly cycle so lowmem is no problem, but others a daily, so more
+than ~16hours offline would need workarounds in scripts etc.

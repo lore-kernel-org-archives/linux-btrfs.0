@@ -1,45 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f177.google.com ([209.85.192.177]:32784 "EHLO
-        mail-pf0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750766AbdFFXpr (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Jun 2017 19:45:47 -0400
-Received: by mail-pf0-f177.google.com with SMTP id 83so45354848pfr.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 06 Jun 2017 16:45:47 -0700 (PDT)
-From: Omar Sandoval <osandov@osandov.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Josef Bacik <jbacik@fb.com>, Liu Bo <bo.li.liu@oracle.com>,
-        kernel-team@fb.com
-Subject: [PATCH 7/7] Btrfs: warn if total_bytes_pinned is non-zero on unmount
-Date: Tue,  6 Jun 2017 16:45:32 -0700
-Message-Id: <0a015ca3c5d799b501b9c23475ed9e96d16de671.1496792333.git.osandov@fb.com>
-In-Reply-To: <cover.1496792333.git.osandov@fb.com>
-References: <cover.1496792333.git.osandov@fb.com>
-In-Reply-To: <cover.1496792333.git.osandov@fb.com>
-References: <cover.1496792333.git.osandov@fb.com>
+Received: from mx2.suse.de ([195.135.220.15]:51128 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1750928AbdFSNM4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 19 Jun 2017 09:12:56 -0400
+Date: Mon, 19 Jun 2017 15:12:53 +0200
+From: Jan Kara <jack@suse.cz>
+To: David Howells <dhowells@redhat.com>
+Cc: Jan Kara <jack@suse.cz>, linux-mm@kvack.org,
+        Hugh Dickins <hughd@google.com>, linux-afs@lists.infradead.org,
+        Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>,
+        linux-nilfs@vger.kernel.org, Bob Peterson <rpeterso@redhat.com>,
+        cluster-devel@redhat.com, Jaegeuk Kim <jaegeuk@kernel.org>,
+        linux-f2fs-devel@lists.sourceforge.net, tytso@mit.edu,
+        linux-ext4@vger.kernel.org, Ilya Dryomov <idryomov@gmail.com>,
+        "Yan, Zheng" <zyan@redhat.com>, ceph-devel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>,
+        "Darrick J . Wong" <darrick.wong@oracle.com>,
+        linux-xfs@vger.kernel.org, Nadia Yvette Chambers <nyc@holomorphy.com>
+Subject: Re: [PATCH 01/35] fscache: Remove unused ->now_uncached callback
+Message-ID: <20170619131253.GA22128@quack2.suse.cz>
+References: <20170601093245.29238-2-jack@suse.cz>
+ <20170601093245.29238-1-jack@suse.cz>
+ <10376.1496312768@warthog.procyon.org.uk>
+ <20170601113434.GC23077@quack2.suse.cz>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170601113434.GC23077@quack2.suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Omar Sandoval <osandov@fb.com>
+On Thu 01-06-17 13:34:34, Jan Kara wrote:
+> On Thu 01-06-17 11:26:08, David Howells wrote:
+> > Jan Kara <jack@suse.cz> wrote:
+> > 
+> > > The callback doesn't ever get called. Remove it.
+> > 
+> > Hmmm...  I should perhaps be calling this.  I'm not sure why I never did.
+> > 
+> > At the moment, it doesn't strictly matter as ops on pages marked with
+> > PG_fscache get ignored if the cache has suffered an I/O error or has been
+> > withdrawn - but it will incur a performance penalty (the PG_fscache flag is
+> > checked in the netfs before calling into fscache).
+> > 
+> > The downside of calling this is that when a cache is removed, fscache would go
+> > through all the cookies for that cache and iterate over all the pages
+> > associated with those cookies - which could cause a performance dip in the
+> > system.
+> 
+> So I know nothing about fscache. If you decide these functions should stay
+> in as you are going to use them soon, then I can just convert them to the
+> new API as everything else. What just caught my eye and why I had a more
+> detailed look is that I didn't understand that 'PAGEVEC_SIZE -
+> pagevec_count(&pvec)' as a pagevec_lookup() argument since pagevec_count()
+> should always return 0 at that point?
 
-Catch any future/remaining leaks or underflows of total_bytes_pinned.
+David, what is your final decision regarding this? Do you want to keep
+these unused functions (and I will just update my patch to convert them to
+the new calling convention) or will you apply the patch to remove them?
 
-Signed-off-by: Omar Sandoval <osandov@fb.com>
----
- fs/btrfs/extent-tree.c | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 75ad24f8d253..5fb2fb27eda6 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -9860,6 +9860,7 @@ int btrfs_free_block_groups(struct btrfs_fs_info *info)
- 			    space_info->bytes_reserved > 0 ||
- 			    space_info->bytes_may_use > 0))
- 			dump_space_info(info, space_info, 0, 0);
-+		WARN_ON(percpu_counter_sum(&space_info->total_bytes_pinned) != 0);
- 		list_del(&space_info->list);
- 		for (i = 0; i < BTRFS_NR_RAID_TYPES; i++) {
- 			struct kobject *kobj;
+								Honza
 -- 
-2.13.0
-
+Jan Kara <jack@suse.com>
+SUSE Labs, CR

@@ -1,39 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f45.google.com ([74.125.82.45]:35230 "EHLO
-        mail-wm0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752176AbdFSKKP (ORCPT
+Received: from mail-wm0-f52.google.com ([74.125.82.52]:34956 "EHLO
+        mail-wm0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751090AbdFSKSX (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Jun 2017 06:10:15 -0400
-Received: by mail-wm0-f45.google.com with SMTP id x70so74555257wme.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 19 Jun 2017 03:10:14 -0700 (PDT)
+        Mon, 19 Jun 2017 06:18:23 -0400
+Received: by mail-wm0-f52.google.com with SMTP id x70so74762923wme.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 19 Jun 2017 03:18:23 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAAsnU-__C01G6=wUmDRM5=AFkOkJfdpEX9jJb=-HnEM4jjCR1g@mail.gmail.com>
+In-Reply-To: <CAAsnU-_G8BEySd=gnCO6siiSzzLkg-1R1vHNkoRwSoOXXk1_Zw@mail.gmail.com>
 References: <CAAsnU-9o2HTT0+zokdY1MHkJCiPxfwZ=fbGH5+xTZpLvUtFNqA@mail.gmail.com>
  <CAMG9ccwPHVyXKpM_P+acPz35AzJjEnW-65cPMA4gL=ZdcFy6BA@mail.gmail.com>
  <CAAsnU-9xQpJWrZeKX_EP=qMP3SRhQZi2e-3_G6sc+g3ECAgi6w@mail.gmail.com>
- <CAMG9ccw7fkokDW_iiz2_83vyu4TCQ55XwSoq8rKGPnZ69oRXLg@mail.gmail.com> <CAAsnU-__C01G6=wUmDRM5=AFkOkJfdpEX9jJb=-HnEM4jjCR1g@mail.gmail.com>
+ <CAMG9ccw7fkokDW_iiz2_83vyu4TCQ55XwSoq8rKGPnZ69oRXLg@mail.gmail.com>
+ <CAAsnU-__C01G6=wUmDRM5=AFkOkJfdpEX9jJb=-HnEM4jjCR1g@mail.gmail.com>
+ <CAMG9ccwtQE8o9kk9zwDfzDZqfePPNcfyt3AyOjKOGWe_QMK27w@mail.gmail.com> <CAAsnU-_G8BEySd=gnCO6siiSzzLkg-1R1vHNkoRwSoOXXk1_Zw@mail.gmail.com>
 From: Ivan Sizov <sivan606@gmail.com>
-Date: Mon, 19 Jun 2017 13:09:48 +0300
-Message-ID: <CAMG9ccwtQE8o9kk9zwDfzDZqfePPNcfyt3AyOjKOGWe_QMK27w@mail.gmail.com>
+Date: Mon, 19 Jun 2017 13:18:02 +0300
+Message-ID: <CAMG9ccyku93g=LL4GeexoAUzYtt8k+B=7GWrOHd=OGQkFnq-4Q@mail.gmail.com>
 Subject: Re: Help on using linux-btrfs mailing list please
 To: Jesse <btrfs_mail_list@mymail.isbest.biz>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2017-06-19 13:03 GMT+03:00 Jesse <btrfs_mail_list@mymail.isbest.biz>:
-> Thanks Ivan.
-> What about when initiating a post, do I do the same eg:
-> TO: myself
-> CC: mailing list
->
-> or do I
-> TO: mailing list
-> CC: myself
-If your mail client doesn't have "sent" folder, you can, of course,
-follow one of these examples. But I didn't face with such situation
-ever.
+2017-06-19 13:15 GMT+03:00 Jesse <btrfs_mail_list@mymail.isbest.biz>:
+> Thanks again. So am I to understand that you go into your 'sent'
+> folder, find a mail to the mail list (that is not CC to yourself),
+> then you reply to this and add the mail list when you need to update
+> your own post that no-one has yet replied to?
+Yes, exactly.
 
 -- 
 Ivan Sizov

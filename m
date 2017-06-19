@@ -1,62 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f175.google.com ([209.85.216.175]:34569 "EHLO
-        mail-qt0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752439AbdFSPXu (ORCPT
+Received: from tartarus.angband.pl ([89.206.35.136]:60620 "EHLO
+        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750733AbdFSPiJ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Jun 2017 11:23:50 -0400
-Received: by mail-qt0-f175.google.com with SMTP id c10so113040566qtd.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 19 Jun 2017 08:23:45 -0700 (PDT)
+        Mon, 19 Jun 2017 11:38:09 -0400
+Date: Mon, 19 Jun 2017 17:38:00 +0200
+From: Adam Borowski <kilobyte@angband.pl>
+To: Ivan Sizov <sivan606@gmail.com>
+Cc: Jesse <btrfs_mail_list@mymail.isbest.biz>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: Help on using linux-btrfs mailing list please
+Message-ID: <20170619153800.ciervkxly3ezpevb@angband.pl>
+References: <CAAsnU-9o2HTT0+zokdY1MHkJCiPxfwZ=fbGH5+xTZpLvUtFNqA@mail.gmail.com>
+ <CAMG9ccwPHVyXKpM_P+acPz35AzJjEnW-65cPMA4gL=ZdcFy6BA@mail.gmail.com>
+ <CAAsnU-9xQpJWrZeKX_EP=qMP3SRhQZi2e-3_G6sc+g3ECAgi6w@mail.gmail.com>
+ <CAMG9ccw7fkokDW_iiz2_83vyu4TCQ55XwSoq8rKGPnZ69oRXLg@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <20170615084604.2794d8b0@jupiter.sol.kaishome.de>
-References: <CAPmG0jb=tokuCxBe6U3Rg+36X-70ptC2bhWx23e38ZxUjTgM4A@mail.gmail.com>
- <20170613072420.17314dbb@jupiter.sol.kaishome.de> <CAPmG0jbVju+S=jqmk+qr8L4MMe-5NirFVV8R7VQeczGjE=6Waw@mail.gmail.com>
- <CAPmG0jaVbfoL8-PpDT-=B+w_JH9H4ukJQm5UUkZFRKS6uSAs+Q@mail.gmail.com> <20170615084604.2794d8b0@jupiter.sol.kaishome.de>
-From: Henk Slager <eye1tm@gmail.com>
-Date: Mon, 19 Jun 2017 17:23:33 +0200
-Message-ID: <CAPmG0jZygkb+=Ke4i6OG_b64C8mB8M4CbxQKHRenpsyAtNhhqA@mail.gmail.com>
-Subject: Re: csum failed root -9
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CAMG9ccw7fkokDW_iiz2_83vyu4TCQ55XwSoq8rKGPnZ69oRXLg@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->> I think I leave it as is for the time being, unless there is some news
->> how to fix things with low risk (or maybe via a temp overlay snapshot
->> with DM). But the lowmem check took 2 days, that's not really fun.
->> The goal for the 8TB fs is to have an up to 7 year snapshot history at
->> sometime, now the oldest snapshot is from early 2014, so almost
->> halfway :)
->
-> Btrfs is still much too unstable to trust 7 years worth of backup to
-> it. You will probably loose it at some point, especially while many
-> snapshots are still such a huge performance breaker in btrfs. I suggest
-> trying out also other alternatives like borg backup for such a project.
+On Mon, Jun 19, 2017 at 12:48:54PM +0300, Ivan Sizov wrote:
+> 2017-06-19 12:32 GMT+03:00 Jesse <btrfs_mail_list@mymail.isbest.biz>:
+> > So I guess that means when I initiate a post, I also need to send it
+> > to myself as well as the mail list.
+> You need to do it in the reply only, not in the initial post.
+> 
+> > Does it make any difference where I put respective addresses, eg: TO: CC: BCC:
+> You need to put a person to whom you reply in "TO" field and mailing
+> list in "CC" field.
 
-Maybe I should clarify that I don't use snapshotting for archiving
-explicitly. So in the latest snapshot still old but unused files from
-many years back are there, like a disk image from a windowsxp laptop
-(already recycled) for example. Userdata that is in older snapshots
-but not in newer ones is what I consider useless data today, so I had
-deleted that explicitly. But who knows maybe for some statistic or
-whatever btrfs experiment it might be interesting to have a long and
-may snapshot increments.
+Any mail client I know (but I haven't looked at many...) can do all of this
+by "Reply All" (a button by that name in Thunderbird, 'g' in mutt, ...).
 
-Another reason is the SMR characteristics of the disk, that made me
-decide to designate this fs write-only. If I remove snapshots, the fs
-gets free space fragmentation and then writing to it will be much
-slower. This disk was relatively cheap and I don't want to experience
-the slowness and longer on time.
+It's worth noting that vger lists have rules different to those in most of
+Free Software communities: on vger, you're supposed to send copies to
+everyone -- pretty much everywhere else you are expected to send to the list
+only.  This is done by "Reply List" (in Thunderbird, 'L' in mutt, ...).
+Such lists do add a set of "List-*:" headers that help the client.
 
-I snapshot no more than 3 subvolumes monthly, then after 7 years the
-fs has 252 snapshots, that is considered no problem for btrfs.
-I think borg backup is interesting, but from kernel 3.11 to 4.11 (even
-using raid5 up to 4.1) I have managed to keep it running/cloning
-multi-site with just a few relatively simple scripts and btrfs
-kernel+tools itself, also working on a low-power ARM platform. I don't
-like yet another commandset and that borg uses its own extra repo or
-small database for tracking diffs (I haven't used it so I am not
-sure). But what I need, differential/incremental + compression, is
-just build-in in btrfs, that I anyhow use for local snapshotting. I
-finally put also some ARM boards btrfs rootfs recently, I am not sure
-if/when I am going to use other backup tooling besides just rsync and
-btrfs features.
+
+Мяу!
+-- 
+⢀⣴⠾⠻⢶⣦⠀ 
+⣾⠁⢠⠒⠀⣿⡁ A dumb species has no way to open a tuna can.
+⢿⡄⠘⠷⠚⠋⠀ A smart species invents a can opener.
+⠈⠳⣄⠀⠀⠀⠀ A master species delegates.

@@ -1,11 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55500 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1750711AbdFTPdZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Jun 2017 11:33:25 -0400
-Date: Tue, 20 Jun 2017 17:33:21 +0200
-From: Jan Kara <jack@suse.cz>
-To: Jeff Layton <jlayton@redhat.com>
+Received: from mail-qt0-f177.google.com ([209.85.216.177]:33293 "EHLO
+        mail-qt0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750993AbdFTRor (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 20 Jun 2017 13:44:47 -0400
+Received: by mail-qt0-f177.google.com with SMTP id u12so139362543qth.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Jun 2017 10:44:46 -0700 (PDT)
+Message-ID: <1497980684.4555.16.camel@redhat.com>
+Subject: Re: [PATCH v7 16/22] block: convert to errseq_t based writeback
+ error tracking
+From: Jeff Layton <jlayton@redhat.com>
+To: Christoph Hellwig <hch@infradead.org>
 Cc: Andrew Morton <akpm@linux-foundation.org>,
         Al Viro <viro@ZenIV.linux.org.uk>, Jan Kara <jack@suse.cz>,
         tytso@mit.edu, axboe@kernel.dk, mawilcox@microsoft.com,
@@ -13,82 +18,44 @@ Cc: Andrew Morton <akpm@linux-foundation.org>,
         Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
         "Darrick J . Wong" <darrick.wong@oracle.com>,
         Carlos Maiolino <cmaiolino@redhat.com>, Eryu Guan <eguan@redhat.com>,
-        David Howells <dhowells@redhat.com>,
-        Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org,
+        David Howells <dhowells@redhat.com>, linux-fsdevel@vger.kernel.org,
         linux-mm@kvack.org, linux-ext4@vger.kernel.org,
         linux-xfs@vger.kernel.org, linux-btrfs@vger.kernel.org,
         linux-block@vger.kernel.org
-Subject: Re: [PATCH v7 01/22] fs: remove call_fsync helper function
-Message-ID: <20170620153321.GC31922@quack2.suse.cz>
+Date: Tue, 20 Jun 2017 13:44:44 -0400
+In-Reply-To: <20170620123544.GC19781@infradead.org>
 References: <20170616193427.13955-1-jlayton@redhat.com>
- <20170616193427.13955-2-jlayton@redhat.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170616193427.13955-2-jlayton@redhat.com>
+         <20170616193427.13955-17-jlayton@redhat.com>
+         <20170620123544.GC19781@infradead.org>
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri 16-06-17 15:34:06, Jeff Layton wrote:
-> Requested-by: Christoph Hellwig <hch@infradead.org>
-> Signed-off-by: Jeff Layton <jlayton@redhat.com>
-
-Looks good. You can add:
-
-Reviewed-by: Jan Kara <jack@suse.cz>
-	
-								Honza
-> ---
->  fs/sync.c          | 2 +-
->  include/linux/fs.h | 6 ------
->  ipc/shm.c          | 2 +-
->  3 files changed, 2 insertions(+), 8 deletions(-)
+On Tue, 2017-06-20 at 05:35 -0700, Christoph Hellwig wrote:
+> >  	error = filemap_write_and_wait_range(filp->f_mapping, start, end);
+> >  	if (error)
+> > -		return error;
+> > +		goto out;
+> >  
+> >  	/*
+> >  	 * There is no need to serialise calls to blkdev_issue_flush with
+> > @@ -640,6 +640,10 @@ int blkdev_fsync(struct file *filp, loff_t start, loff_t end, int datasync)
+> >  	if (error == -EOPNOTSUPP)
+> >  		error = 0;
+> >  
+> > +out:
+> > +	wberr = filemap_report_wb_err(filp);
+> > +	if (!error)
+> > +		error = wberr;
 > 
-> diff --git a/fs/sync.c b/fs/sync.c
-> index 11ba023434b1..2a54c1f22035 100644
-> --- a/fs/sync.c
-> +++ b/fs/sync.c
-> @@ -192,7 +192,7 @@ int vfs_fsync_range(struct file *file, loff_t start, loff_t end, int datasync)
->  		spin_unlock(&inode->i_lock);
->  		mark_inode_dirty_sync(inode);
->  	}
-> -	return call_fsync(file, start, end, datasync);
-> +	return file->f_op->fsync(file, start, end, datasync);
->  }
->  EXPORT_SYMBOL(vfs_fsync_range);
->  
-> diff --git a/include/linux/fs.h b/include/linux/fs.h
-> index 4929a8f28cc3..1a135274b4f8 100644
-> --- a/include/linux/fs.h
-> +++ b/include/linux/fs.h
-> @@ -1740,12 +1740,6 @@ static inline int call_mmap(struct file *file, struct vm_area_struct *vma)
->  	return file->f_op->mmap(file, vma);
->  }
->  
-> -static inline int call_fsync(struct file *file, loff_t start, loff_t end,
-> -			     int datasync)
-> -{
-> -	return file->f_op->fsync(file, start, end, datasync);
-> -}
-> -
->  ssize_t rw_copy_check_uvector(int type, const struct iovec __user * uvector,
->  			      unsigned long nr_segs, unsigned long fast_segs,
->  			      struct iovec *fast_pointer,
-> diff --git a/ipc/shm.c b/ipc/shm.c
-> index ec5688e98f25..28a444861a8f 100644
-> --- a/ipc/shm.c
-> +++ b/ipc/shm.c
-> @@ -453,7 +453,7 @@ static int shm_fsync(struct file *file, loff_t start, loff_t end, int datasync)
->  
->  	if (!sfd->file->f_op->fsync)
->  		return -EINVAL;
-> -	return call_fsync(sfd->file, start, end, datasync);
-> +	return sfd->file->f_op->fsync(sfd->file, start, end, datasync);
->  }
->  
->  static long shm_fallocate(struct file *file, int mode, loff_t offset,
-> -- 
-> 2.13.0
-> 
+> Just curious: what's the reason filemap_write_and_wait_range couldn't
+> query for the error using filemap_report_wb_err internally?
+
+In order to query for errors with errseq_t, you need a previously-
+sampled point from which to check. When you call
+filemap_write_and_wait_range though you don't have a struct file and so
+no previously-sampled value.
+
 -- 
-Jan Kara <jack@suse.com>
-SUSE Labs, CR
+Jeff Layton <jlayton@redhat.com>

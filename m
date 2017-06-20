@@ -1,162 +1,152 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:56981 "EHLO
-        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752425AbdFTXZl (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:50911 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752425AbdFTX65 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Jun 2017 19:25:41 -0400
-Date: Tue, 20 Jun 2017 23:25:25 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: waxhead <waxhead@dirtcellar.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Exactly what is wrong with RAID5/6
-Message-ID: <20170620232525.GF7140@carfax.org.uk>
-References: <1f5a4702-d264-51c6-aadd-d2cf521a45eb@dirtcellar.net>
+        Tue, 20 Jun 2017 19:58:57 -0400
+Date: Tue, 20 Jun 2017 16:58:40 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
+Subject: Re: 4.11.3: BTRFS critical (device dm-1): unable to add free space :-17 => btrfs check --repair runs clean
+Message-ID: <20170620235840.GC5303@merlins.org>
+References: <20170620143916.GA22987@merlins.org> <20170620152354.GD7140@carfax.org.uk> <20170620152648.GB22987@merlins.org> <20170620153601.GE7140@carfax.org.uk> <20170620154429.GC22987@merlins.org> <20170620231202.GB5303@merlins.org>
 MIME-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="MAH+hnPXVZWQ5cD/"
-In-Reply-To: <1f5a4702-d264-51c6-aadd-d2cf521a45eb@dirtcellar.net>
+        protocol="application/pgp-signature"; boundary="+g7M9IMkV8truYOl"
+In-Reply-To: <20170620231202.GB5303@merlins.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---MAH+hnPXVZWQ5cD/
+--+g7M9IMkV8truYOl
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-On Wed, Jun 21, 2017 at 12:57:19AM +0200, waxhead wrote:
-> I am trying to piece together the actual status of the RAID5/6 bit of BTRFS.
-> The wiki refer to kernel 3.19 which was released in February 2015 so
-> I assume that the information there is a tad outdated (the last
-> update on the wiki page was July 2016)
-> https://btrfs.wiki.kernel.org/index.php/RAID56
-> 
-> Now there are four problems listed
-> 
-> 1. Parity may be inconsistent after a crash (the "write hole")
-> Is this still true, if yes - would not this apply for RAID1 / RAID10
-> as well? How was it solved there , and why can't that be done for
-> RAID5/6
+On Tue, Jun 20, 2017 at 04:12:03PM -0700, Marc MERLIN wrote:
+> Given that check --repair ran clean when I ran it yesterday after this fi=
+rst happened,
+> and I then ran  mount -o clear_cache , the cache got rebuilt, and I got t=
+he problem again,=20
+> this is not looking good, seems like a persistent bug :-/
+>=20
+> I'm now going to remount this with nospace_cache to see if your guess abo=
+ut
+> space_cache was correct.
 
-   Yes, it's still true, and it's specific to parity RAID, not the
-other RAID levels. The issue is (I think) that if you write one block,
-that block is replaced, but then the other blocks in the stripe need
-to be read for the parity block to be recalculated, before the new
-parity can be written. There's a read-modify-write cycle involved
-which isn't inherent for the non-parity RAID levels (which would just
-overwrite both copies).
+Now, it seems that disabling the cache is causing some serious hangs:
+[ 2055.473113] INFO: task kworker/u16:17:7579 blocked for more than 120 sec=
+onds.
+[ 2055.496148]       Tainted: G     U          4.11.6-amd64-preempt-sysrq-2=
+0170406 #6
+[ 2055.520611] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables =
+this message.
+[ 2055.545675] kworker/u16:17  D    0  7579      2 0x00000080
+[ 2055.563626] Workqueue: writeback wb_workfn (flush-btrfs-4)
+[ 2055.581458] Call Trace:
+[ 2055.590154]  __schedule+0x4ef/0x627
+[ 2055.602830]  schedule+0x89/0x9a
+[ 2055.613618]  io_schedule+0x16/0x38
+[ 2055.625324]  wait_on_page_bit_common+0xd8/0x151
+[ 2055.640413]  ? inode_to_bdi+0x35/0x35
+[ 2055.653701]  __lock_page+0x40/0x42
+[ 2055.665431]  lock_page+0x19/0x1c
+[ 2055.676315]  extent_write_cache_pages.constprop.31+0x173/0x368
+[ 2055.695049]  ? update_load_avg+0x227/0x3c6
+[ 2055.708592]  ? update_load_avg+0x3b1/0x3c6
+[ 2055.722340]  ? list_add+0x1a/0x34
+[ 2055.733520]  ? cfs_rq_throttled.isra.24+0xd/0x1d
+[ 2055.748503]  ? update_cfs_shares+0x2e/0xcf
+[ 2055.761891]  extent_writepages+0x5b/0x80
+[ 2055.774854]  ? __percpu_counter_compare+0x29/0x72
+[ 2055.790054]  ? insert_reserved_file_extent.constprop.41+0x28e/0x28e
+[ 2055.809869]  btrfs_writepages+0x28/0x2a
+[ 2055.822516]  do_writepages+0x20/0x29
+[ 2055.834251]  __writeback_single_inode+0x8a/0x328
+[ 2055.849159]  ? inode_cgwb_enabled+0xd/0x3b
+[ 2055.862521]  writeback_sb_inodes+0x22e/0x400
+[ 2055.876310]  __writeback_inodes_wb+0x6e/0xb0
+[ 2055.890057]  wb_writeback+0x163/0x2ca
+[ 2055.902436]  wb_workfn+0x1f7/0x2bf
+[ 2055.913520]  ? wb_workfn+0x1f7/0x2bf
+[ 2055.925090]  ? __switch_to+0x2c8/0x45f
+[ 2055.937184]  process_one_work+0x193/0x2b0
+[ 2055.950034]  ? rescuer_thread+0x2b1/0x2b1
+[ 2055.962833]  worker_thread+0x1e9/0x2c1
+[ 2055.974826]  ? rescuer_thread+0x2b1/0x2b1
+[ 2055.988016]  kthread+0xfb/0x100
+[ 2055.998183]  ? init_completion+0x24/0x24
+[ 2056.010902]  ? do_syscall_64+0x77/0x7d
+[ 2056.022802]  ret_from_fork+0x2c/0x40
+[ 2056.034224] INFO: task rsync:27554 blocked for more than 120 seconds.
+[ 2056.054213]       Tainted: G     U          4.11.6-amd64-preempt-sysrq-2=
+0170406 #6
+[ 2056.077611] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables =
+this message.
+[ 2056.101705] rsync           D    0 27554  27526 0x20020080
+[ 2056.119102] Call Trace:
+[ 2056.127019]  __schedule+0x4ef/0x627
+[ 2056.138385]  schedule+0x89/0x9a
+[ 2056.148616]  io_schedule+0x16/0x38
+[ 2056.159682]  wait_on_page_bit_common+0xd8/0x151
+[ 2056.173787]  ? inode_to_bdi+0x35/0x35
+[ 2056.185336]  __lock_page+0x40/0x42
+[ 2056.196176]  lock_page+0x19/0x1c
+[ 2056.206420]  extent_write_cache_pages.constprop.31+0x173/0x368
+[ 2056.224786]  ? _raw_read_unlock+0xe/0x1e
+[ 2056.237221]  ? btrfs_set_lock_blocking_rw+0x9a/0x9d
+[ 2056.252388]  extent_writepages+0x5b/0x80
+[ 2056.264687]  ? insert_reserved_file_extent.constprop.41+0x28e/0x28e
+[ 2056.284051]  btrfs_writepages+0x28/0x2a
+[ 2056.296117]  do_writepages+0x20/0x29
+[ 2056.307426]  __filemap_fdatawrite_range+0x97/0xc3
+[ 2056.322374]  filemap_flush+0x1c/0x1e
+[ 2056.333627]  btrfs_rename2+0x894/0xf6f
+[ 2056.345376]  ? capable_wrt_inode_uidgid+0x3f/0x4e
+[ 2056.359977]  ? generic_permission+0x11e/0x175
+[ 2056.373719]  vfs_rename+0x234/0x391
+[ 2056.384805]  ? vfs_rename+0x234/0x391
+[ 2056.396341]  SYSC_renameat2+0x327/0x448
+[ 2056.408349]  SyS_rename+0x1e/0x20
+[ 2056.418806]  do_fast_syscall_32+0xb7/0xfe
+[ 2056.431325]  entry_SYSENTER_compat+0x4c/0x5b
+[ 2056.444642] RIP: 0023:0xf76feb39
+[ 2056.454861] RSP: 002b:00000000ffe177bc EFLAGS: 00000292 ORIG_RAX: 000000=
+0000000026
+[ 2056.478081] RAX: ffffffffffffffda RBX: 00000000ffe18890 RCX: 00000000ffe=
+1a890
+[ 2056.500019] RDX: 0000000000000001 RSI: 00000000ffe1a890 RDI: 00000000000=
+00003
+[ 2056.521948] RBP: 00000000ffe177f8 R08: 0000000000000000 R09: 00000000000=
+00000
+[ 2056.543858] R10: 0000000000000000 R11: 0000000000000000 R12: 00000000000=
+00000
+[ 2056.565809] R13: 0000000000000000 R14: 0000000000000000 R15: 00000000000=
+00000
 
-   One of the proposed solutions for dealing with the write hole in
-btrfs's parity RAID is to ensure that any new writes are written to a
-completely new stripe. The problem is that this introduces a whole new
-level of fragmentation if the FS has lots of small writes (because
-your write unit is limited to a complete stripe, even for a single
-byte update).
 
-   There are probably others here who can explain this better. :)
+Marc
+--=20
+"A mouse is a device used to point at the xterm you want to type in" - A.S.=
+R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet coo=
+king
+Home page: http://marc.merlins.org/ =20
 
-> 2. Parity data is not checksummed
-> Why is this a problem? Does it have to do with the design of BTRFS somehow?
-> Parity is after all just data, BTRFS does checksum data so what is
-> the reason this is a problem?
-
-   It increases the number of unrecoverable (or not-guaranteed-
-recoverable) cases. btrfs's csums are based on individual blocks on
-individual devices -- each item of data is independently checksummed
-(even if it's a copy of something else). On parity RAID
-configurations, if you have a device failure, you've lost a piece of
-the parity-protected data. To repair it, you have to recover from n-1
-data blocks (which are checksummed), and one parity block (which
-isn't). This means that if the parity block happens to have an error
-on it, you can't recover cleanly from the device loss, *and you can't
-know that an error has happened*.
-
-> 3. No support for discard? (possibly -- needs confirmation with cmason)
-> Does this matter that much really?, is there an update on this?
-> 
-> 4. The algorithm uses as many devices as are available: No support
-> for a fixed-width stripe.
-> What is the plan for this one? There was patches on the mailing list
-> by the SnapRAID author to support up to 6 parity devices. Will the
-> (re?) resign of btrfs raid5/6 support a scheme that allows for
-> multiple parity devices?
-
-   That's a problem because it limits the practical number of devices
-you can use. When the stripe size gets too large, you're having to
-read/modify/(re)write every device on an update, even for very small
-updates -- as this ratio of update-size to read-size goes up, the FS
-has increasingly bad performance. Your personal limits of what's
-acceptable will vary, but I'd be surprised to find anyone with, say,
-40 parity RAID devices who finds their performance acceptable. Limit
-the stripe width, and you can limit the performance degradation from
-lots of devices.
-
-   Even with a limited stripe width, however, you're still looking at
-decreasing reliability as the number of devices increases...
-
-   It shouldn't be *massively* hard to implement, but there's a load
-of opportunities around managing RAID options in general that would
-probably need to be addressed at the same time (e.g. per-subvol RAID
-settings, more general RAID parameterisation). It's going to need some
-fairly major properties handling, plus rewriting the chunk allocator
-and pushing the allocator decisions quite a way up from where they're
-currently made.
-
-> I do have a few other questions as well...
-> 
-> 5. BTRFS does still (kernel 4.9) not seem to use the device ID to
-> communicate with devices.
-> 
-> If you on a multi device filesystem yank out a device, for example
-> /dev/sdg and it reappear as /dev/sdx for example btrfs will still
-> happily try to write to /dev/sdg even if btrfs fi sh /mnt shows the
-> correct device ID. What is the status for getting BTRFS to properly
-> understand that a device is missing?
-
-   I don't know about this one.
-
-> 6. RAID1 needs to be able to make two copies always. E.g. if you
-> have three disks you can loose one and it should still work. What
-> about RAID10 ? If you have for example 6 disk RAID10 array, loose
-> one disk and reboots (due to #5 above). Will RAID10 recognize that
-> the array now is a 5 disk array and stripe+mirror over 2 disks (or
-> possibly 2.5 disks?) instead of 3? In other words, will it work as
-> long as it can create a RAID10 profile that requires a minimum of
-> four disks?
-
-   Yes. RAID-10 will work on any number of devices (>=4), not just an
-even number. Obviously, if you have a 6-device array and lose one,
-you'll need to deal with the loss of redundancy -- either add a new
-device and rebalance, or replace the missing device with a new one, or
-(space permitting) rebalance with existing devices.
-
-   Hugo.
-
--- 
-Hugo Mills             | Let me past! There's been a major scientific
-hugo@... carfax.org.uk | break-in!
-http://carfax.org.uk/  | Through! Break-through!
-PGP: E2AB1DE4          |                                          Ford Prefect
-
---MAH+hnPXVZWQ5cD/
+--+g7M9IMkV8truYOl
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: Digital signature
+Content-Disposition: inline
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+Version: GnuPG v1
 
-iQIcBAEBAgAGBQJZSa7lAAoJEFheFHXiqx3kHT4P/A4EUKFeT+eMxCVER8/U9K9h
-fISKtu8JZGYrMlWziV+Z92wu0KrCrpbl8P0pp3yZfoa6dsqXz+N8Y4ghWeMc/aQn
-ZzoMhTy4Oqs5F8MU4TZqNeF7NRf+3zS0kNzonaAA3JSIehq3F39/8zSRZHu+q9mC
-HzjtWmbsBtE2j9FZD/Xlh4bzENsJjkTiDV/REZkQzX1ifqzcHMK31e+JwlkdzDhq
-ZV+UZoFP4vB1xgK3Zow3wfCI1hdRyfoBDK7/K3/HMsudEroAh29Lc/8mJr2yXq3k
-AXfu7q+ZIyCQm4TYNFZQDWwPeBU9PeoCd6lLChCQvU4xLtEWM+HzDFXz0/YJOyCK
-MuE5ncB7B2ZkPK+FoaUsd4kUY6LhMCzdvNPWc9gIPemyozFgBraAb5CWzkqgu1cb
-jQSHWCb//F48LoWpa+KuhLMOdsk5FmUO49Y6qF0YIhnWETqrW1hI0BLktabKUEYC
-vnlXmlfkBzXC4cPxuOSY/7+mN0pPWd0cLt/bdiC2x0ilAs7SARA1F3DmuxX5+H5g
-akM1jkt527hGTFJIthN49FpqdLu64Cn7E+HSRb8czZPIRq9Dqtgqshh4RxGOZtV6
-RQobNaLNXxRRidd22RpDI+uQ7qc4yGKV6Nk1sBTK3TIZPVhL6gWYYNpTVnrYr7+o
-eXIk/VzfLKhjFxsCIN3A
-=olN7
+iQCVAwUBWUm2sH4xUKZ2O+kBAQL87gP/TGeOFN7b3bd0HY4cpv/GoRe1z0WLIay2
+K1hNrW2RBSuKULOYMgMNokQQ+W25FkCorcsr66K9qLCq0Y8uewV+mdpZXEVfhNlD
+YE6NCtJ7TZuUWdqkuLZDV6r5kg9TyZFf+5b6TQZL7CZnjpdtCCuyR3jrLUIqqNHJ
+FAhfmMgJjuY=
+=fr2X
 -----END PGP SIGNATURE-----
 
---MAH+hnPXVZWQ5cD/--
+--+g7M9IMkV8truYOl--

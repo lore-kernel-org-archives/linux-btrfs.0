@@ -1,55 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from azure.uno.uk.net ([95.172.254.11]:33175 "EHLO azure.uno.uk.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750993AbdFTR2k (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Jun 2017 13:28:40 -0400
-Received: from ty.sabi.co.uk ([95.172.230.208]:35216)
-        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
-        (Exim 4.89)
-        (envelope-from <pg@btrfs.list.sabi.co.uk>)
-        id 1dNMME-003KSs-8n
-        for linux-btrfs@vger.kernel.org; Tue, 20 Jun 2017 17:50:26 +0100
-Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
-        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
-        id 1dNMM7-0001Mo-HZ
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Jun 2017 17:50:19 +0100
+Received: from smtp.domeneshop.no ([194.63.252.55]:34499 "EHLO
+        smtp.domeneshop.no" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752377AbdFTW5W (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 20 Jun 2017 18:57:22 -0400
+Received: from 68.79-160-168.customer.lyse.net ([79.160.168.68]:30402 helo=[10.0.0.10])
+        by smtp.domeneshop.no with esmtpsa (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128)
+        (Exim 4.84_2)
+        (envelope-from <waxhead@dirtcellar.net>)
+        id 1dNS5H-0003ez-Vk
+        for linux-btrfs@vger.kernel.org; Wed, 21 Jun 2017 00:57:20 +0200
+To: linux-btrfs@vger.kernel.org
+Reply-To: waxhead@dirtcellar.net
+From: waxhead <waxhead@dirtcellar.net>
+Subject: Exactly what is wrong with RAID5/6
+Message-ID: <1f5a4702-d264-51c6-aadd-d2cf521a45eb@dirtcellar.net>
+Date: Wed, 21 Jun 2017 00:57:19 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Message-ID: <22857.21067.160485.588255@tree.ty.sabi.co.uk>
-Date: Tue, 20 Jun 2017 17:50:19 +0100
-To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: does using different uid/gid/forceuid/... mount options for different
- subvolumes work / does fuse.bindfs play nice with btrfs?
-In-Reply-To: <CADtmLM_wcKDix3RJz3m0_=YiZ=kFtvvT8p359PNq30BusPdHFA@mail.gmail.com>
-References: <CADtmLM_wcKDix3RJz3m0_=YiZ=kFtvvT8p359PNq30BusPdHFA@mail.gmail.com>
-From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> I intend to provide different "views" of the data stored on
-> btrfs subvolumes.  e.g. mount a subvolume in location A rw;
-> and ro in location B while also overwriting uids, gids, and
-> permissions. [ ... ]
+I am trying to piece together the actual status of the RAID5/6 bit of BTRFS.
+The wiki refer to kernel 3.19 which was released in February 2015 so I 
+assume that the information there is a tad outdated (the last update on 
+the wiki page was July 2016)
+https://btrfs.wiki.kernel.org/index.php/RAID56
 
-That's not how UNIX/Linux permissions and ACLs are supposed to
-work, perhaps you should reconsider such a poor idea.
+Now there are four problems listed
 
-Mount options are provided to map non-UNIX/Linux filesystems
-into the UNIX/Linux permissions and ACLs in a crude way.
+1. Parity may be inconsistent after a crash (the "write hole")
+Is this still true, if yes - would not this apply for RAID1 / RAID10 as 
+well? How was it solved there , and why can't that be done for RAID5/6
 
-If you really want, uid/gid/permissions are an inode property,
-and Btrfs via "reflinking" allows sharing of file data between
-different inodes. So you can for example create a RW snapshot of
-a subvolume, change all ids/permissions/ACLs, and the data space
-will still be shared. This is not entirely cost-free.
+2. Parity data is not checksummed
+Why is this a problem? Does it have to do with the design of BTRFS somehow?
+Parity is after all just data, BTRFS does checksum data so what is the 
+reason this is a problem?
 
-If you really really want this it may be doable also with mount
-namespaces combined with user namespaces, with any filesystem,
-depending on yoiur requirements:
+3. No support for discard? (possibly -- needs confirmation with cmason)
+Does this matter that much really?, is there an update on this?
 
-http://man7.org/linux/man-pages/man7/user_namespaces.7.html
-http://man7.org/linux/man-pages/man7/mount_namespaces.7.html
+4. The algorithm uses as many devices as are available: No support for a 
+fixed-width stripe.
+What is the plan for this one? There was patches on the mailing list by 
+the SnapRAID author to support up to 6 parity devices. Will the (re?) 
+resign of btrfs raid5/6 support a scheme that allows for multiple parity 
+devices?
 
-As to mounting multiple times on multiple directories, that is
-possible with Linux VFS regardless of filesystem type, or by
-using 'mount --bind' or a variant.
+I do have a few other questions as well...
+
+5. BTRFS does still (kernel 4.9) not seem to use the device ID to 
+communicate with devices.
+
+If you on a multi device filesystem yank out a device, for example 
+/dev/sdg and it reappear as /dev/sdx for example btrfs will still 
+happily try to write to /dev/sdg even if btrfs fi sh /mnt shows the 
+correct device ID. What is the status for getting BTRFS to properly 
+understand that a device is missing?
+
+6. RAID1 needs to be able to make two copies always. E.g. if you have 
+three disks you can loose one and it should still work. What about 
+RAID10 ? If you have for example 6 disk RAID10 array, loose one disk and 
+reboots (due to #5 above). Will RAID10 recognize that the array now is a 
+5 disk array and stripe+mirror over 2 disks (or possibly 2.5 disks?) 
+instead of 3? In other words, will it work as long as it can create a 
+RAID10 profile that requires a minimum of four disks?

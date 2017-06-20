@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60425 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:60428 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751056AbdFTQF7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Jun 2017 12:05:59 -0400
+        id S1751106AbdFTQGA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 20 Jun 2017 12:06:00 -0400
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 645EAAB09
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Jun 2017 16:05:58 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 65A51AC14
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Jun 2017 16:05:59 +0000 (UTC)
 From: Edmund Nadolski <enadolski@suse.com>
 To: enadolski@suse.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH 03/13] btrfs: backref, constify some arguments
-Date: Tue, 20 Jun 2017 10:06:43 -0600
-Message-Id: <20170620160653.19907-4-enadolski@suse.com>
+Subject: [PATCH 04/13] btrfs: backref, add unode_aux_to_inode_list helper
+Date: Tue, 20 Jun 2017 10:06:44 -0600
+Message-Id: <20170620160653.19907-5-enadolski@suse.com>
 In-Reply-To: <20170620160653.19907-1-enadolski@suse.com>
 References: <20170620160653.19907-1-enadolski@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -18,88 +18,62 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Jeff Mahoney <jeffm@suse.com>
 
-This constifies a few buffers used in the backref code.
+Replacing the double cast and ternary conditional with a helper makes
+the code easier on the eyes.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/backref.c | 29 ++++++++++++++++-------------
- 1 file changed, 16 insertions(+), 13 deletions(-)
+ fs/btrfs/backref.c | 16 +++++++++++-----
+ 1 file changed, 11 insertions(+), 5 deletions(-)
 
 diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index f723c11..9d6474d 100644
+index 9d6474d..4a7a4b0 100644
 --- a/fs/btrfs/backref.c
 +++ b/fs/btrfs/backref.c
-@@ -299,10 +299,11 @@ static int ref_tree_add(struct ref_root *ref_tree, u64 root_id, u64 object_id,
- 	return 0;
+@@ -682,6 +682,14 @@ static int __resolve_indirect_ref(struct btrfs_fs_info *fs_info,
+ 	return ret;
  }
  
--static int check_extent_in_eb(struct btrfs_key *key, struct extent_buffer *eb,
--				struct btrfs_file_extent_item *fi,
--				u64 extent_item_pos,
--				struct extent_inode_elem **eie)
-+static int check_extent_in_eb(const struct btrfs_key *key,
-+			      const struct extent_buffer *eb,
-+			      const struct btrfs_file_extent_item *fi,
-+			      u64 extent_item_pos,
-+			      struct extent_inode_elem **eie)
- {
- 	u64 offset = 0;
- 	struct extent_inode_elem *e;
-@@ -344,9 +345,9 @@ static void free_inode_elem_list(struct extent_inode_elem *eie)
++static struct extent_inode_elem *
++unode_aux_to_inode_list(struct ulist_node *node)
++{
++	if (!node)
++		return NULL;
++	return (struct extent_inode_elem *)(uintptr_t)node->aux;
++}
++
+ /*
+  * resolve all indirect backrefs from the list
+  */
+@@ -736,8 +744,7 @@ static int __resolve_indirect_refs(struct btrfs_fs_info *fs_info,
+ 		ULIST_ITER_INIT(&uiter);
+ 		node = ulist_next(parents, &uiter);
+ 		ref->parent = node ? node->val : 0;
+-		ref->inode_list = node ?
+-			(struct extent_inode_elem *)(uintptr_t)node->aux : NULL;
++		ref->inode_list = unode_aux_to_inode_list(node);
+ 
+ 		/* additional parents require new refs being added here */
+ 		while ((node = ulist_next(parents, &uiter))) {
+@@ -749,8 +756,7 @@ static int __resolve_indirect_refs(struct btrfs_fs_info *fs_info,
+ 			}
+ 			memcpy(new_ref, ref, sizeof(*ref));
+ 			new_ref->parent = node->val;
+-			new_ref->inode_list = (struct extent_inode_elem *)
+-							(uintptr_t)node->aux;
++			new_ref->inode_list = unode_aux_to_inode_list(node);
+ 			list_add(&new_ref->list, &ref->list);
+ 		}
+ 		ulist_reinit(parents);
+@@ -1476,7 +1482,7 @@ static void free_leaf_list(struct ulist *blocks)
+ 	while ((node = ulist_next(blocks, &uiter))) {
+ 		if (!node->aux)
+ 			continue;
+-		eie = (struct extent_inode_elem *)(uintptr_t)node->aux;
++		eie = unode_aux_to_inode_list(node);
+ 		free_inode_elem_list(eie);
+ 		node->aux = 0;
  	}
- }
- 
--static int find_extent_in_eb(struct extent_buffer *eb, u64 wanted_disk_byte,
--				u64 extent_item_pos,
--				struct extent_inode_elem **eie)
-+static int find_extent_in_eb(const struct extent_buffer *eb,
-+			     u64 wanted_disk_byte, u64 extent_item_pos,
-+			     struct extent_inode_elem **eie)
- {
- 	u64 disk_byte;
- 	struct btrfs_key key;
-@@ -456,7 +457,7 @@ void btrfs_prelim_ref_exit(void)
-  */
- 
- static int __add_prelim_ref(struct list_head *head, u64 root_id,
--			    struct btrfs_key *key, int level,
-+			    const struct btrfs_key *key, int level,
- 			    u64 parent, u64 wanted_disk_byte, int count,
- 			    gfp_t gfp_mask)
- {
-@@ -1649,7 +1650,7 @@ int btrfs_find_one_extref(struct btrfs_root *root, u64 inode_objectid,
- 	struct btrfs_key key;
- 	struct btrfs_key found_key;
- 	struct btrfs_inode_extref *extref;
--	struct extent_buffer *leaf;
-+	const struct extent_buffer *leaf;
- 	unsigned long ptr;
- 
- 	key.objectid = inode_objectid;
-@@ -1806,7 +1807,7 @@ int extent_from_logical(struct btrfs_fs_info *fs_info, u64 logical,
- 	u64 flags;
- 	u64 size = 0;
- 	u32 item_size;
--	struct extent_buffer *eb;
-+	const struct extent_buffer *eb;
- 	struct btrfs_extent_item *ei;
- 	struct btrfs_key key;
- 
-@@ -1874,9 +1875,11 @@ int extent_from_logical(struct btrfs_fs_info *fs_info, u64 logical,
-  * next ref. after the last ref was processed, 1 is returned.
-  * returns <0 on error
-  */
--static int __get_extent_inline_ref(unsigned long *ptr, struct extent_buffer *eb,
--				   struct btrfs_key *key,
--				   struct btrfs_extent_item *ei, u32 item_size,
-+static int __get_extent_inline_ref(unsigned long *ptr,
-+				   const struct extent_buffer *eb,
-+				   const struct btrfs_key *key,
-+				   const struct btrfs_extent_item *ei,
-+				   u32 item_size,
- 				   struct btrfs_extent_inline_ref **out_eiref,
- 				   int *out_type)
- {
 -- 
 2.10.2
 

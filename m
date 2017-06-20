@@ -1,512 +1,737 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60428 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:60439 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751122AbdFTQGD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Jun 2017 12:06:03 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id D92DBAAC5
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Jun 2017 16:06:02 +0000 (UTC)
+        id S1751901AbdFTQGV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 20 Jun 2017 12:06:21 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 4F9E2AB09
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Jun 2017 16:06:04 +0000 (UTC)
 From: Edmund Nadolski <enadolski@suse.com>
 To: enadolski@suse.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH 07/13] btrfs: remove ref_tree implementation from backref.c
-Date: Tue, 20 Jun 2017 10:06:47 -0600
-Message-Id: <20170620160653.19907-8-enadolski@suse.com>
+Subject: [PATCH 08/13] btrfs: convert prelimary reference tracking to use rbtrees
+Date: Tue, 20 Jun 2017 10:06:48 -0600
+Message-Id: <20170620160653.19907-9-enadolski@suse.com>
 In-Reply-To: <20170620160653.19907-1-enadolski@suse.com>
 References: <20170620160653.19907-1-enadolski@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The BACKREF_FOUND_SHARED checking will be addressed in an upcoming
-patch.
+It's been known for a while that the use of multiple lists
+that are periodically merged was an algorithmic problem within
+btrfs.  There are several workloads that don't complete in any
+reasonable amount of time (e.g. btrfs/130) and others that cause
+soft lockups.
+
+The solution is to use a pair of rbtrees that do insertion merging
+for both indirect and direct refs, with the former converting
+refs into the latter.  The result is a btrfs/130 workload that
+used to take several hours now takes about half of that. This
+runtime still isn't acceptable and a future patch will address that
+by moving the rbtrees higher in the stack so the lookups can be
+shared across multiple calls to find_parent_nodes.
 
 Signed-off-by: Edmund Nadolski <enadolski@suse.com>
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/backref.c | 356 ++---------------------------------------------------
- 1 file changed, 8 insertions(+), 348 deletions(-)
+ fs/btrfs/backref.c | 415 ++++++++++++++++++++++++++++++++++-------------------
+ 1 file changed, 267 insertions(+), 148 deletions(-)
 
 diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 35cfa38..0d1e7cb 100644
+index 0d1e7cb..daae7b6 100644
 --- a/fs/btrfs/backref.c
 +++ b/fs/btrfs/backref.c
-@@ -40,265 +40,6 @@ struct extent_inode_elem {
- 	struct extent_inode_elem *next;
+@@ -129,7 +129,7 @@ static int find_extent_in_eb(const struct extent_buffer *eb,
+  * this structure records all encountered refs on the way up to the root
+  */
+ struct prelim_ref {
+-	struct list_head list;
++	struct rb_node rbnode;
+ 	u64 root_id;
+ 	struct btrfs_key key_for_search;
+ 	int level;
+@@ -139,6 +139,17 @@ struct prelim_ref {
+ 	u64 wanted_disk_byte;
  };
  
--/*
-- * ref_root is used as the root of the ref tree that hold a collection
-- * of unique references.
-- */
--struct ref_root {
--	struct rb_root rb_root;
--
--	/*
--	 * The unique_refs represents the number of ref_nodes with a positive
--	 * count stored in the tree. Even if a ref_node (the count is greater
--	 * than one) is added, the unique_refs will only increase by one.
--	 */
--	unsigned int unique_refs;
--};
--
--/* ref_node is used to store a unique reference to the ref tree. */
--struct ref_node {
--	struct rb_node rb_node;
--
--	/* For NORMAL_REF, otherwise all these fields should be set to 0 */
--	u64 root_id;
--	u64 object_id;
--	u64 offset;
--
--	/* For SHARED_REF, otherwise parent field should be set to 0 */
--	u64 parent;
--
--	/* Ref to the ref_mod of btrfs_delayed_ref_node */
--	int ref_mod;
--};
--
--/* Dynamically allocate and initialize a ref_root */
--static struct ref_root *ref_root_alloc(void)
++struct preftree {
++	struct rb_root root;
++};
++
++#define PREFTREE_INIT	{ .root = RB_ROOT }
++
++struct preftrees {
++	struct preftree direct;    /* BTRFS_SHARED_[DATA|BLOCK]_REF_KEY */
++	struct preftree indirect;  /* BTRFS_[TREE_BLOCK|EXTENT_DATA]_REF_KEY */
++};
++
+ static struct kmem_cache *btrfs_prelim_ref_cache;
+ 
+ int __init btrfs_prelim_ref_init(void)
+@@ -158,6 +169,108 @@ void btrfs_prelim_ref_exit(void)
+ 	kmem_cache_destroy(btrfs_prelim_ref_cache);
+ }
+ 
++static void release_pref(struct prelim_ref *ref)
++{
++	kmem_cache_free(btrfs_prelim_ref_cache, ref);
++}
++
++/*
++ * Return 0 when both refs are for the same block (and can be merged).
++ * A -1 return indicates ref1 is a 'lower' block than ref2, while 1
++ * indicates a 'higher' block.
++ */
++static int prelim_ref_compare(struct prelim_ref *ref1,
++			      struct prelim_ref *ref2)
++{
++	if (ref1->level < ref2->level)
++		return -1;
++	if (ref1->level > ref2->level)
++		return 1;
++	if (ref1->root_id < ref2->root_id)
++		return -1;
++	if (ref1->root_id > ref2->root_id)
++		return 1;
++	if (ref1->key_for_search.type < ref2->key_for_search.type)
++		return -1;
++	if (ref1->key_for_search.type > ref2->key_for_search.type)
++		return 1;
++	if (ref1->key_for_search.objectid < ref2->key_for_search.objectid)
++		return -1;
++	if (ref1->key_for_search.objectid > ref2->key_for_search.objectid)
++		return 1;
++	if (ref1->key_for_search.offset < ref2->key_for_search.offset)
++		return -1;
++	if (ref1->key_for_search.offset > ref2->key_for_search.offset)
++		return 1;
++	if (ref1->parent < ref2->parent)
++		return -1;
++	if (ref1->parent > ref2->parent)
++		return 1;
++
++	return 0;
++}
++
++/*
++ * Add @newref to the @root rbtree, merging identical refs.
++ *
++ * Callers should assumed that newref has been freed after calling.
++ */
++static void prelim_ref_insert(struct preftree *preftree,
++			      struct prelim_ref *newref)
++{
++	struct rb_root *root;
++	struct rb_node **p;
++	struct rb_node *parent = NULL;
++	struct prelim_ref *ref;
++	int result;
++
++	root = &preftree->root;
++	p = &root->rb_node;
++
++	while (*p) {
++		parent = *p;
++		ref = rb_entry(parent, struct prelim_ref, rbnode);
++		result = prelim_ref_compare(ref, newref);
++		if (result < 0) {
++			p = &(*p)->rb_left;
++		} else if (result > 0) {
++			p = &(*p)->rb_right;
++		} else {
++			/* Identical refs, merge them and free @newref */
++			struct extent_inode_elem *eie = ref->inode_list;
++
++			while (eie && eie->next)
++				eie = eie->next;
++
++			if (!eie)
++				ref->inode_list = newref->inode_list;
++			else
++				eie->next = newref->inode_list;
++			ref->count += newref->count;
++			release_pref(newref);
++			return;
++		}
++	}
++
++	rb_link_node(&newref->rbnode, parent, p);
++	rb_insert_color(&newref->rbnode, root);
++}
++
++/*
++ * Release the entire tree.  We don't care about internal consistency so
++ * just free everything and then reset the tree root.
++ */
++static void prelim_release(struct preftree *preftree)
++{
++	struct prelim_ref *ref, *next_ref;
++
++	rbtree_postorder_for_each_entry_safe(ref, next_ref, &preftree->root,
++					     rbnode)
++		release_pref(ref);
++
++	preftree->root = RB_ROOT;
++}
++
+ /*
+  * the rules for all callers of this function are:
+  * - obtaining the parent is the goal
+@@ -196,7 +309,7 @@ void btrfs_prelim_ref_exit(void)
+  * additional information that's available but not required to find the parent
+  * block might help in merging entries to gain some speed.
+  */
+-static int add_prelim_ref(struct list_head *head, u64 root_id,
++static int add_prelim_ref(struct preftree *preftree, u64 root_id,
+ 			  const struct btrfs_key *key, int level, u64 parent,
+ 			  u64 wanted_disk_byte, int count, gfp_t gfp_mask)
+ {
+@@ -243,11 +356,29 @@ static int add_prelim_ref(struct list_head *head, u64 root_id,
+ 	ref->count = count;
+ 	ref->parent = parent;
+ 	ref->wanted_disk_byte = wanted_disk_byte;
+-	list_add_tail(&ref->list, head);
++	prelim_ref_insert(preftree, ref);
+ 
+ 	return 0;
+ }
+ 
++/* direct refs use root == 0, key == NULL */
++static int add_direct_ref(struct preftrees *preftrees, int level, u64 parent,
++			  u64 wanted_disk_byte, int count, gfp_t gfp_mask)
++{
++	return add_prelim_ref(&preftrees->direct, 0, NULL, level, parent,
++			      wanted_disk_byte, count, gfp_mask);
++}
++
++/* indirect refs use parent == 0 */
++static int add_indirect_ref(struct preftrees *preftrees, u64 root_id,
++			    const struct btrfs_key *key, int level,
++			    u64 wanted_disk_byte, int count, gfp_t gfp_mask)
++{
++	return add_prelim_ref(&preftrees->indirect, root_id, key, level, 0,
++			      wanted_disk_byte, count, gfp_mask);
++}
++
++
+ static int add_all_parents(struct btrfs_root *root, struct btrfs_path *path,
+ 			   struct ulist *parents, struct prelim_ref *ref,
+ 			   int level, u64 time_seq, const u64 *extent_item_pos,
+@@ -429,38 +560,58 @@ unode_aux_to_inode_list(struct ulist_node *node)
+ }
+ 
+ /*
+- * resolve all indirect backrefs from the list
++ * We maintain two separate rbtrees: one for indirect refs and one for
++ * direct refs. Each tree does merge on insertion.  Once all of the
++ * refs have been located, we iterate over the indirect ref tree, resolve
++ * each reference and remove it from the indirect tree, and then insert
++ * the resolved reference into the direct tree, merging there too.
++ *
++ * New backrefs (i.e., for parent nodes) are added to the direct/indirect
++ * rbtrees as they are encountered.  The new, indirect backrefs are
++ * resolved as above.
+  */
+ static int resolve_indirect_refs(struct btrfs_fs_info *fs_info,
+ 				 struct btrfs_path *path, u64 time_seq,
+-				 struct list_head *head,
++				 struct preftrees *preftrees,
+ 				 const u64 *extent_item_pos, u64 total_refs,
+ 				 u64 root_objectid)
+ {
+ 	int err;
+ 	int ret = 0;
+-	struct prelim_ref *ref;
+-	struct prelim_ref *ref_safe;
+-	struct prelim_ref *new_ref;
+ 	struct ulist *parents;
+ 	struct ulist_node *node;
+ 	struct ulist_iterator uiter;
++	struct rb_node *rnode;
+ 
+ 	parents = ulist_alloc(GFP_NOFS);
+ 	if (!parents)
+ 		return -ENOMEM;
+ 
+ 	/*
+-	 * _safe allows us to insert directly after the current item without
+-	 * iterating over the newly inserted items.
+-	 * we're also allowed to re-assign ref during iteration.
++	 * We could trade memory usage for performance here by iterating
++	 * the tree, allocating new refs for each insertion, and then
++	 * freeing the entire indirect tree when we're done.  In some test
++	 * cases, the tree can grow quite large (~200k objects).
+ 	 */
+-	list_for_each_entry_safe(ref, ref_safe, head, list) {
+-		if (ref->parent)	/* already direct */
+-			continue;
+-		if (ref->count == 0)
++	while ((rnode = rb_first(&preftrees->indirect.root))) {
++		struct prelim_ref *ref;
++
++		ref = rb_entry(rnode, struct prelim_ref, rbnode);
++		if (WARN(ref->parent,
++			 "BUG: direct ref found in indirect tree")) {
++			ret = -EINVAL;
++			goto out;
++		}
++
++		rb_erase(&ref->rbnode, &preftrees->indirect.root);
++
++		if (ref->count == 0) {
++			release_pref(ref);
+ 			continue;
++		}
++
+ 		if (root_objectid && ref->root_id != root_objectid) {
++			release_pref(ref);
+ 			ret = BACKREF_FOUND_SHARED;
+ 			goto out;
+ 		}
+@@ -472,8 +623,11 @@ static int resolve_indirect_refs(struct btrfs_fs_info *fs_info,
+ 		 * and return directly.
+ 		 */
+ 		if (err == -ENOENT) {
++			/* This only happens when we're doing sanity testing */
++			release_pref(ref);
+ 			continue;
+ 		} else if (err) {
++			release_pref(ref);
+ 			ret = err;
+ 			goto out;
+ 		}
+@@ -484,19 +638,26 @@ static int resolve_indirect_refs(struct btrfs_fs_info *fs_info,
+ 		ref->parent = node ? node->val : 0;
+ 		ref->inode_list = unode_aux_to_inode_list(node);
+ 
+-		/* additional parents require new refs being added here */
++		/* Add a prelim_ref(s) for any other parent(s). */
+ 		while ((node = ulist_next(parents, &uiter))) {
++			struct prelim_ref *new_ref;
++
+ 			new_ref = kmem_cache_alloc(btrfs_prelim_ref_cache,
+ 						   GFP_NOFS);
+ 			if (!new_ref) {
++				release_pref(ref);
+ 				ret = -ENOMEM;
+ 				goto out;
+ 			}
+ 			memcpy(new_ref, ref, sizeof(*ref));
+ 			new_ref->parent = node->val;
+ 			new_ref->inode_list = unode_aux_to_inode_list(node);
+-			list_add(&new_ref->list, &ref->list);
++			prelim_ref_insert(&preftrees->direct, new_ref);
+ 		}
++
++		/* Now it's a direct ref, put it in the the direct tree */
++		prelim_ref_insert(&preftrees->direct, ref);
++
+ 		ulist_reinit(parents);
+ 	}
+ out:
+@@ -504,37 +665,22 @@ static int resolve_indirect_refs(struct btrfs_fs_info *fs_info,
+ 	return ret;
+ }
+ 
+-static inline int ref_for_same_block(struct prelim_ref *ref1,
+-				     struct prelim_ref *ref2)
 -{
--	struct ref_root *ref_tree;
--
--	ref_tree = kmalloc(sizeof(*ref_tree), GFP_NOFS);
--	if (!ref_tree)
--		return NULL;
--
--	ref_tree->rb_root = RB_ROOT;
--	ref_tree->unique_refs = 0;
--
--	return ref_tree;
--}
--
--/* Free all nodes in the ref tree, and reinit ref_root */
--static void ref_root_fini(struct ref_root *ref_tree)
--{
--	struct ref_node *node;
--	struct rb_node *next;
--
--	while ((next = rb_first(&ref_tree->rb_root)) != NULL) {
--		node = rb_entry(next, struct ref_node, rb_node);
--		rb_erase(next, &ref_tree->rb_root);
--		kfree(node);
--	}
--
--	ref_tree->rb_root = RB_ROOT;
--	ref_tree->unique_refs = 0;
--}
--
--static void ref_root_free(struct ref_root *ref_tree)
--{
--	if (!ref_tree)
--		return;
--
--	ref_root_fini(ref_tree);
--	kfree(ref_tree);
--}
--
--/*
-- * Compare ref_node with (root_id, object_id, offset, parent)
-- *
-- * The function compares two ref_node a and b. It returns an integer less
-- * than, equal to, or greater than zero , respectively, to be less than, to
-- * equal, or be greater than b.
-- */
--static int ref_node_cmp(struct ref_node *a, struct ref_node *b)
--{
--	if (a->root_id < b->root_id)
--		return -1;
--	else if (a->root_id > b->root_id)
--		return 1;
--
--	if (a->object_id < b->object_id)
--		return -1;
--	else if (a->object_id > b->object_id)
--		return 1;
--
--	if (a->offset < b->offset)
--		return -1;
--	else if (a->offset > b->offset)
--		return 1;
--
--	if (a->parent < b->parent)
--		return -1;
--	else if (a->parent > b->parent)
--		return 1;
--
--	return 0;
--}
--
--/*
-- * Search ref_node with (root_id, object_id, offset, parent) in the tree
-- *
-- * if found, the pointer of the ref_node will be returned;
-- * if not found, NULL will be returned and pos will point to the rb_node for
-- * insert, pos_parent will point to pos'parent for insert;
--*/
--static struct ref_node *__ref_tree_search(struct ref_root *ref_tree,
--					  struct rb_node ***pos,
--					  struct rb_node **pos_parent,
--					  u64 root_id, u64 object_id,
--					  u64 offset, u64 parent)
--{
--	struct ref_node *cur = NULL;
--	struct ref_node entry;
--	int ret;
--
--	entry.root_id = root_id;
--	entry.object_id = object_id;
--	entry.offset = offset;
--	entry.parent = parent;
--
--	*pos = &ref_tree->rb_root.rb_node;
--
--	while (**pos) {
--		*pos_parent = **pos;
--		cur = rb_entry(*pos_parent, struct ref_node, rb_node);
--
--		ret = ref_node_cmp(cur, &entry);
--		if (ret > 0)
--			*pos = &(**pos)->rb_left;
--		else if (ret < 0)
--			*pos = &(**pos)->rb_right;
--		else
--			return cur;
--	}
--
--	return NULL;
--}
--
--/*
-- * Insert a ref_node to the ref tree
-- * @pos used for specifiy the position to insert
-- * @pos_parent for specifiy pos's parent
-- *
-- * success, return 0;
-- * ref_node already exists, return -EEXIST;
--*/
--static int ref_tree_insert(struct ref_root *ref_tree, struct rb_node **pos,
--			   struct rb_node *pos_parent, struct ref_node *ins)
--{
--	struct rb_node **p = NULL;
--	struct rb_node *parent = NULL;
--	struct ref_node *cur = NULL;
--
--	if (!pos) {
--		cur = __ref_tree_search(ref_tree, &p, &parent, ins->root_id,
--					ins->object_id, ins->offset,
--					ins->parent);
--		if (cur)
--			return -EEXIST;
--	} else {
--		p = pos;
--		parent = pos_parent;
--	}
--
--	rb_link_node(&ins->rb_node, parent, p);
--	rb_insert_color(&ins->rb_node, &ref_tree->rb_root);
--
--	return 0;
--}
--
--/* Erase and free ref_node, caller should update ref_root->unique_refs */
--static void ref_tree_remove(struct ref_root *ref_tree, struct ref_node *node)
--{
--	rb_erase(&node->rb_node, &ref_tree->rb_root);
--	kfree(node);
--}
--
--/*
-- * Update ref_root->unique_refs
-- *
-- * Call __ref_tree_search
-- *	1. if ref_node doesn't exist, ref_tree_insert this node, and update
-- *	ref_root->unique_refs:
-- *		if ref_node->ref_mod > 0, ref_root->unique_refs++;
-- *		if ref_node->ref_mod < 0, do noting;
-- *
-- *	2. if ref_node is found, then get origin ref_node->ref_mod, and update
-- *	ref_node->ref_mod.
-- *		if ref_node->ref_mod is equal to 0,then call ref_tree_remove
-- *
-- *		according to origin_mod and new_mod, update ref_root->items
-- *		+----------------+--------------+-------------+
-- *		|		 |new_count <= 0|new_count > 0|
-- *		+----------------+--------------+-------------+
-- *		|origin_count < 0|       0      |      1      |
-- *		+----------------+--------------+-------------+
-- *		|origin_count > 0|      -1      |      0      |
-- *		+----------------+--------------+-------------+
-- *
-- * In case of allocation failure, -ENOMEM is returned and the ref_tree stays
-- * unaltered.
-- * Success, return 0
-- */
--static int ref_tree_add(struct ref_root *ref_tree, u64 root_id, u64 object_id,
--			u64 offset, u64 parent, int count)
--{
--	struct ref_node *node = NULL;
--	struct rb_node **pos = NULL;
--	struct rb_node *pos_parent = NULL;
--	int origin_count;
--	int ret;
--
--	if (!count)
+-	if (ref1->level != ref2->level)
+-		return 0;
+-	if (ref1->root_id != ref2->root_id)
+-		return 0;
+-	if (ref1->key_for_search.type != ref2->key_for_search.type)
+-		return 0;
+-	if (ref1->key_for_search.objectid != ref2->key_for_search.objectid)
+-		return 0;
+-	if (ref1->key_for_search.offset != ref2->key_for_search.offset)
+-		return 0;
+-	if (ref1->parent != ref2->parent)
 -		return 0;
 -
--	node = __ref_tree_search(ref_tree, &pos, &pos_parent, root_id,
--				 object_id, offset, parent);
--	if (node == NULL) {
--		node = kmalloc(sizeof(*node), GFP_NOFS);
--		if (!node)
--			return -ENOMEM;
+-	return 1;
+-}
 -
--		node->root_id = root_id;
--		node->object_id = object_id;
--		node->offset = offset;
--		node->parent = parent;
--		node->ref_mod = count;
+ /*
+  * read tree blocks and add keys where required.
+  */
+ static int add_missing_keys(struct btrfs_fs_info *fs_info,
+-			    struct list_head *head)
++			    struct preftrees *preftrees)
+ {
+ 	struct prelim_ref *ref;
+ 	struct extent_buffer *eb;
++	struct rb_node *node = rb_first(&preftrees->indirect.root);
++
++	while (node) {
++		ref = rb_entry(node, struct prelim_ref, rbnode);
++		node = rb_next(&ref->rbnode);
++		if (WARN(ref->parent, "BUG: direct ref found in indirect tree"))
++			return -EINVAL;
+ 
+-	list_for_each_entry(ref, head, list) {
+-		if (ref->parent)
+-			continue;
+ 		if (ref->key_for_search.type)
+ 			continue;
+ 		BUG_ON(!ref->wanted_disk_byte);
+@@ -557,57 +703,11 @@ static int add_missing_keys(struct btrfs_fs_info *fs_info,
+ }
+ 
+ /*
+- * merge backrefs and adjust counts accordingly
+- *
+- *    FIXME: For MERGE_IDENTICAL_KEYS, if we add more keys in add_prelim_ref
+- *           then we can merge more here. Additionally, we could even add a key
+- *           range for the blocks we looked into to merge even more (-> replace
+- *           unresolved refs by those having a parent).
+- */
+-static void merge_refs(struct list_head *head, enum merge_mode mode)
+-{
+-	struct prelim_ref *pos1;
 -
--		ret = ref_tree_insert(ref_tree, pos, pos_parent, node);
--		ASSERT(!ret);
--		if (ret) {
--			kfree(node);
--			return ret;
+-	list_for_each_entry(pos1, head, list) {
+-		struct prelim_ref *pos2 = pos1, *tmp;
+-
+-		list_for_each_entry_safe_continue(pos2, tmp, head, list) {
+-			struct prelim_ref *ref1 = pos1, *ref2 = pos2;
+-			struct extent_inode_elem *eie;
+-
+-			if (!ref_for_same_block(ref1, ref2))
+-				continue;
+-			if (mode == MERGE_IDENTICAL_KEYS) {
+-				if (!ref1->parent && ref2->parent)
+-					swap(ref1, ref2);
+-			} else {
+-				if (ref1->parent != ref2->parent)
+-					continue;
+-			}
+-
+-			eie = ref1->inode_list;
+-			while (eie && eie->next)
+-				eie = eie->next;
+-			if (eie)
+-				eie->next = ref2->inode_list;
+-			else
+-				ref1->inode_list = ref2->inode_list;
+-			ref1->count += ref2->count;
+-
+-			list_del(&ref2->list);
+-			kmem_cache_free(btrfs_prelim_ref_cache, ref2);
+-			cond_resched();
 -		}
 -
--		ref_tree->unique_refs += node->ref_mod > 0 ? 1 : 0;
--
--		return 0;
 -	}
--
--	origin_count = node->ref_mod;
--	node->ref_mod += count;
--
--	if (node->ref_mod > 0)
--		ref_tree->unique_refs += origin_count > 0 ? 0 : 1;
--	else if (node->ref_mod <= 0)
--		ref_tree->unique_refs += origin_count > 0 ? -1 : 0;
--
--	if (!node->ref_mod)
--		ref_tree_remove(ref_tree, node);
--
--	return 0;
 -}
 -
- static int check_extent_in_eb(const struct btrfs_key *key,
- 			      const struct extent_buffer *eb,
- 			      const struct btrfs_file_extent_item *fi,
-@@ -964,7 +705,6 @@ static int add_delayed_refs(struct btrfs_delayed_ref_head *head, u64 seq,
+-/*
+  * add all currently queued delayed refs from this head whose seq nr is
+  * smaller or equal that seq to the list
+  */
+ static int add_delayed_refs(struct btrfs_delayed_ref_head *head, u64 seq,
+-			    struct list_head *prefs, u64 *total_refs,
++			    struct preftrees *preftrees, u64 *total_refs,
+ 			    u64 inum)
+ {
+ 	struct btrfs_delayed_ref_node *node;
+@@ -642,24 +742,30 @@ static int add_delayed_refs(struct btrfs_delayed_ref_head *head, u64 seq,
+ 		*total_refs += (node->ref_mod * sgn);
+ 		switch (node->type) {
+ 		case BTRFS_TREE_BLOCK_REF_KEY: {
++			/* NORMAL INDIRECT METADATA backref */
+ 			struct btrfs_delayed_tree_ref *ref;
+ 
+ 			ref = btrfs_delayed_node_to_tree_ref(node);
+-			ret = add_prelim_ref(prefs, ref->root, &op_key,
+-					     ref->level + 1, 0, node->bytenr,
+-					     node->ref_mod * sgn, GFP_ATOMIC);
++			ret = add_indirect_ref(preftrees, ref->root, &op_key,
++					       ref->level + 1, node->bytenr,
++					       node->ref_mod * sgn,
++					       GFP_ATOMIC);
+ 			break;
+ 		}
+ 		case BTRFS_SHARED_BLOCK_REF_KEY: {
++			/* SHARED DIRECT METADATA backref */
+ 			struct btrfs_delayed_tree_ref *ref;
+ 
+ 			ref = btrfs_delayed_node_to_tree_ref(node);
+-			ret = add_prelim_ref(prefs, 0, NULL, ref->level + 1,
++
++			ret = add_direct_ref(preftrees, ref->level + 1,
+ 					     ref->parent, node->bytenr,
+-					     node->ref_mod * sgn, GFP_ATOMIC);
++					     node->ref_mod * sgn,
++					     GFP_ATOMIC);
+ 			break;
+ 		}
+ 		case BTRFS_EXTENT_DATA_REF_KEY: {
++			/* NORMAL INDIRECT DATA backref */
+ 			struct btrfs_delayed_data_ref *ref;
+ 			ref = btrfs_delayed_node_to_data_ref(node);
+ 
+@@ -676,17 +782,21 @@ static int add_delayed_refs(struct btrfs_delayed_ref_head *head, u64 seq,
+ 				break;
+ 			}
+ 
+-			ret = add_prelim_ref(prefs, ref->root, &key, 0, 0,
+-					     node->bytenr, node->ref_mod * sgn,
+-					     GFP_ATOMIC);
++			ret = add_indirect_ref(preftrees, ref->root, &key, 0,
++					       node->bytenr,
++					       node->ref_mod * sgn,
++					       GFP_ATOMIC);
+ 			break;
+ 		}
+ 		case BTRFS_SHARED_DATA_REF_KEY: {
++			/* SHARED DIRECT FULL backref */
+ 			struct btrfs_delayed_data_ref *ref;
+ 
+ 			ref = btrfs_delayed_node_to_data_ref(node);
+-			ret = add_prelim_ref(prefs, 0, NULL, 0, ref->parent,
+-					     node->bytenr, node->ref_mod * sgn,
++
++			ret = add_direct_ref(preftrees, 0, ref->parent,
++					     node->bytenr,
++					     node->ref_mod * sgn,
+ 					     GFP_ATOMIC);
+ 			break;
+ 		}
+@@ -704,7 +814,7 @@ static int add_delayed_refs(struct btrfs_delayed_ref_head *head, u64 seq,
+  * add all inline backrefs for bytenr to the list
   */
  static int add_inline_refs(struct btrfs_path *path, u64 bytenr,
- 			   int *info_level, struct list_head *prefs,
--			   struct ref_root *ref_tree,
+-			   int *info_level, struct list_head *prefs,
++			   int *info_level, struct preftrees *preftrees,
  			   u64 *total_refs, u64 inum)
  {
  	int ret = 0;
-@@ -1031,13 +771,6 @@ static int add_inline_refs(struct btrfs_path *path, u64 bytenr,
+@@ -760,8 +870,8 @@ static int add_inline_refs(struct btrfs_path *path, u64 bytenr,
+ 
+ 		switch (type) {
+ 		case BTRFS_SHARED_BLOCK_REF_KEY:
+-			ret = add_prelim_ref(prefs, 0, NULL, *info_level + 1,
+-					     offset, bytenr, 1, GFP_NOFS);
++			ret = add_direct_ref(preftrees, *info_level + 1, offset,
++					     bytenr, 1, GFP_NOFS);
+ 			break;
+ 		case BTRFS_SHARED_DATA_REF_KEY: {
+ 			struct btrfs_shared_data_ref *sdref;
+@@ -769,14 +879,15 @@ static int add_inline_refs(struct btrfs_path *path, u64 bytenr,
+ 
+ 			sdref = (struct btrfs_shared_data_ref *)(iref + 1);
  			count = btrfs_shared_data_ref_count(leaf, sdref);
- 			ret = add_prelim_ref(prefs, 0, NULL, 0, offset,
+-			ret = add_prelim_ref(prefs, 0, NULL, 0, offset,
++
++			ret = add_direct_ref(preftrees, 0, offset,
  					     bytenr, count, GFP_NOFS);
--			if (ref_tree) {
--				if (!ret)
--					ret = ref_tree_add(ref_tree, 0, 0, 0,
--							   bytenr, count);
--				if (!ret && ref_tree->unique_refs > 1)
--					ret = BACKREF_FOUND_SHARED;
--			}
  			break;
  		}
  		case BTRFS_TREE_BLOCK_REF_KEY:
-@@ -1065,15 +798,6 @@ static int add_inline_refs(struct btrfs_path *path, u64 bytenr,
+-			ret = add_prelim_ref(prefs, offset, NULL,
+-					     *info_level + 1, 0,
+-					     bytenr, 1, GFP_NOFS);
++			ret = add_indirect_ref(preftrees, offset, NULL,
++					       *info_level + 1, bytenr, 1,
++					       GFP_NOFS);
+ 			break;
+ 		case BTRFS_EXTENT_DATA_REF_KEY: {
+ 			struct btrfs_extent_data_ref *dref;
+@@ -796,8 +907,9 @@ static int add_inline_refs(struct btrfs_path *path, u64 bytenr,
+ 			}
+ 
  			root = btrfs_extent_data_ref_root(leaf, dref);
- 			ret = add_prelim_ref(prefs, root, &key, 0, 0,
- 					     bytenr, count, GFP_NOFS);
--			if (ref_tree) {
--				if (!ret)
--					ret = ref_tree_add(ref_tree, root,
--							   key.objectid,
--							   key.offset, 0,
--							   count);
--				if (!ret && ref_tree->unique_refs > 1)
--					ret = BACKREF_FOUND_SHARED;
--			}
+-			ret = add_prelim_ref(prefs, root, &key, 0, 0,
+-					     bytenr, count, GFP_NOFS);
++
++			ret = add_indirect_ref(preftrees, root, &key, 0, bytenr,
++					       count, GFP_NOFS);
  			break;
  		}
  		default:
-@@ -1092,8 +816,7 @@ static int add_inline_refs(struct btrfs_path *path, u64 bytenr,
+@@ -816,7 +928,8 @@ static int add_inline_refs(struct btrfs_path *path, u64 bytenr,
   */
  static int add_keyed_refs(struct btrfs_fs_info *fs_info,
  			  struct btrfs_path *path, u64 bytenr,
--			  int info_level, struct list_head *prefs,
--			  struct ref_root *ref_tree, u64 inum)
-+			  int info_level, struct list_head *prefs, u64 inum)
+-			  int info_level, struct list_head *prefs, u64 inum)
++			  int info_level, struct preftrees *preftrees,
++			  u64 inum)
  {
  	struct btrfs_root *extent_root = fs_info->extent_root;
  	int ret;
-@@ -1135,13 +858,6 @@ static int add_keyed_refs(struct btrfs_fs_info *fs_info,
+@@ -846,26 +959,31 @@ static int add_keyed_refs(struct btrfs_fs_info *fs_info,
+ 
+ 		switch (key.type) {
+ 		case BTRFS_SHARED_BLOCK_REF_KEY:
+-			ret = add_prelim_ref(prefs, 0, NULL, info_level + 1,
+-					     key.offset, bytenr, 1, GFP_NOFS);
++			/* SHARED DIRECT METADATA backref */
++			ret = add_direct_ref(preftrees, info_level + 1,
++					     key.offset, bytenr, 1,
++					     GFP_NOFS);
+ 			break;
+ 		case BTRFS_SHARED_DATA_REF_KEY: {
++			/* SHARED DIRECT FULL backref */
+ 			struct btrfs_shared_data_ref *sdref;
+ 			int count;
+ 
+ 			sdref = btrfs_item_ptr(leaf, slot,
+ 					      struct btrfs_shared_data_ref);
  			count = btrfs_shared_data_ref_count(leaf, sdref);
- 			ret = add_prelim_ref(prefs, 0, NULL, 0, key.offset,
- 					     bytenr, count, GFP_NOFS);
--			if (ref_tree) {
--				if (!ret)
--					ret = ref_tree_add(ref_tree, 0, 0, 0,
--							   bytenr, count);
--				if (!ret && ref_tree->unique_refs > 1)
--					ret = BACKREF_FOUND_SHARED;
--			}
+-			ret = add_prelim_ref(prefs, 0, NULL, 0, key.offset,
+-					     bytenr, count, GFP_NOFS);
++			ret = add_direct_ref(preftrees, 0, key.offset, bytenr,
++					     count, GFP_NOFS);
  			break;
  		}
  		case BTRFS_TREE_BLOCK_REF_KEY:
-@@ -1170,15 +886,6 @@ static int add_keyed_refs(struct btrfs_fs_info *fs_info,
+-			ret = add_prelim_ref(prefs, key.offset, NULL,
+-					     info_level + 1, 0,
+-					     bytenr, 1, GFP_NOFS);
++			/* NORMAL INDIRECT METADATA backref */
++			ret = add_indirect_ref(preftrees, key.offset, NULL,
++					       info_level + 1, bytenr, 1,
++					       GFP_NOFS);
+ 			break;
+ 		case BTRFS_EXTENT_DATA_REF_KEY: {
++			/* NORMAL INDIRECT DATA backref */
+ 			struct btrfs_extent_data_ref *dref;
+ 			int count;
+ 			u64 root;
+@@ -884,8 +1002,8 @@ static int add_keyed_refs(struct btrfs_fs_info *fs_info,
+ 			}
+ 
  			root = btrfs_extent_data_ref_root(leaf, dref);
- 			ret = add_prelim_ref(prefs, root, &key, 0, 0,
- 					     bytenr, count, GFP_NOFS);
--			if (ref_tree) {
--				if (!ret)
--					ret = ref_tree_add(ref_tree, root,
--							   key.objectid,
--							   key.offset, 0,
--							   count);
--				if (!ret && ref_tree->unique_refs > 1)
--					ret = BACKREF_FOUND_SHARED;
--			}
+-			ret = add_prelim_ref(prefs, root, &key, 0, 0,
+-					     bytenr, count, GFP_NOFS);
++			ret = add_indirect_ref(preftrees, root, &key, 0, bytenr,
++					       count, GFP_NOFS);
  			break;
  		}
  		default:
-@@ -1205,16 +912,13 @@ static int add_keyed_refs(struct btrfs_fs_info *fs_info,
-  * commit root.
-  * The special case is for qgroup to search roots in commit_transaction().
-  *
-- * If check_shared is set to 1, any extent has more than one ref item, will
-- * be returned BACKREF_FOUND_SHARED immediately.
-- *
-  * FIXME some caching might speed things up
-  */
- static int find_parent_nodes(struct btrfs_trans_handle *trans,
- 			     struct btrfs_fs_info *fs_info, u64 bytenr,
- 			     u64 time_seq, struct ulist *refs,
- 			     struct ulist *roots, const u64 *extent_item_pos,
--			     u64 root_objectid, u64 inum, int check_shared)
-+			     u64 root_objectid, u64 inum)
- {
- 	struct btrfs_key key;
- 	struct btrfs_path *path;
-@@ -1226,7 +930,6 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
- 	struct list_head prefs;
+@@ -926,14 +1044,15 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
+ 	struct btrfs_delayed_ref_head *head;
+ 	int info_level = 0;
+ 	int ret;
+-	struct list_head prefs_delayed;
+-	struct list_head prefs;
  	struct prelim_ref *ref;
++	struct rb_node *node;
  	struct extent_inode_elem *eie = NULL;
--	struct ref_root *ref_tree = NULL;
++	/* total of both direct AND indirect refs! */
  	u64 total_refs = 0;
- 
- 	INIT_LIST_HEAD(&prefs);
-@@ -1258,18 +961,6 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
- again:
- 	head = NULL;
- 
--	if (check_shared) {
--		if (!ref_tree) {
--			ref_tree = ref_root_alloc();
--			if (!ref_tree) {
--				ret = -ENOMEM;
--				goto out;
--			}
--		} else {
--			ref_root_fini(ref_tree);
--		}
--	}
 -
- 	ret = btrfs_search_slot(trans, fs_info->extent_root, &key, path, 0, 0);
- 	if (ret < 0)
- 		goto out;
-@@ -1314,36 +1005,6 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
+-	INIT_LIST_HEAD(&prefs);
+-	INIT_LIST_HEAD(&prefs_delayed);
++	struct preftrees preftrees = {
++		.direct = PREFTREE_INIT,
++		.indirect = PREFTREE_INIT
++	};
+ 
+ 	key.objectid = bytenr;
+ 	key.offset = (u64)-1;
+@@ -996,15 +1115,18 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
+ 				goto again;
+ 			}
+ 			spin_unlock(&delayed_refs->lock);
+-			ret = add_delayed_refs(head, time_seq,
+-					       &prefs_delayed, &total_refs,
+-					       inum);
++			ret = add_delayed_refs(head, time_seq, &preftrees,
++					       &total_refs, inum);
+ 			mutex_unlock(&head->mutex);
+ 			if (ret)
+ 				goto out;
  		} else {
  			spin_unlock(&delayed_refs->lock);
  		}
--
--		if (check_shared && !list_empty(&prefs_delayed)) {
--			/*
--			 * Add all delay_ref to the ref_tree and check if there
--			 * are multiple ref items added.
--			 */
--			list_for_each_entry(ref, &prefs_delayed, list) {
--				if (ref->key_for_search.type) {
--					ret = ref_tree_add(ref_tree,
--						ref->root_id,
--						ref->key_for_search.objectid,
--						ref->key_for_search.offset,
--						0, ref->count);
--					if (ret)
--						goto out;
--				} else {
--					ret = ref_tree_add(ref_tree, 0, 0, 0,
--						     ref->parent, ref->count);
--					if (ret)
--						goto out;
--				}
--
--			}
--
--			if (ref_tree->unique_refs > 1) {
--				ret = BACKREF_FOUND_SHARED;
--				goto out;
--			}
--
--		}
++
++		/*
++		 * TODO - implement short circuit for BACKREF_FOUND_SHARED
++		 */
  	}
  
  	if (path->slots[0]) {
-@@ -1358,12 +1019,11 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
+@@ -1019,35 +1141,41 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
  		    (key.type == BTRFS_EXTENT_ITEM_KEY ||
  		     key.type == BTRFS_METADATA_ITEM_KEY)) {
  			ret = add_inline_refs(path, bytenr, &info_level,
--					      &prefs, ref_tree, &total_refs,
--					      inum);
-+					      &prefs, &total_refs, inum);
+-					      &prefs, &total_refs, inum);
++					      &preftrees, &total_refs, inum);
  			if (ret)
  				goto out;
  			ret = add_keyed_refs(fs_info, path, bytenr, info_level,
--					     &prefs, ref_tree, inum);
-+					     &prefs, inum);
+-					     &prefs, inum);
++					     &preftrees, inum);
  			if (ret)
  				goto out;
  		}
-@@ -1447,7 +1107,6 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
+ 	}
+-	btrfs_release_path(path);
+ 
+-	list_splice_init(&prefs_delayed, &prefs);
++	btrfs_release_path(path);
+ 
+-	ret = add_missing_keys(fs_info, &prefs);
++	ret = add_missing_keys(fs_info, &preftrees);
+ 	if (ret)
+ 		goto out;
+ 
+-	merge_refs(&prefs, MERGE_IDENTICAL_KEYS);
+-
+-	ret = resolve_indirect_refs(fs_info, path, time_seq, &prefs,
++	ret = resolve_indirect_refs(fs_info, path, time_seq, &preftrees,
+ 				    extent_item_pos, total_refs,
+ 				    root_objectid);
+ 	if (ret)
+ 		goto out;
+ 
+-	merge_refs(&prefs, MERGE_IDENTICAL_PARENTS);
++	WARN_ON(!RB_EMPTY_ROOT(&preftrees.indirect.root));
+ 
+-	while (!list_empty(&prefs)) {
+-		ref = list_first_entry(&prefs, struct prelim_ref, list);
++	/*
++	 * This walks the tree of merged and resolved refs. Tree blocks are
++	 * read in as needed. Unique entries are added to the ulist, and
++	 * the list of found roots is updated.
++	 *
++	 * We release the entire tree in one go before returning.
++	 */
++	node = rb_first(&preftrees.direct.root);
++	while (node) {
++		ref = rb_entry(node, struct prelim_ref, rbnode);
++		node = rb_next(&ref->rbnode);
+ 		WARN_ON(ref->count < 0);
+ 		if (roots && ref->count && ref->root_id && ref->parent == 0) {
+ 			if (root_objectid && ref->root_id != root_objectid) {
+@@ -1101,23 +1229,14 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
+ 			}
+ 			eie = NULL;
+ 		}
+-		list_del(&ref->list);
+-		kmem_cache_free(btrfs_prelim_ref_cache, ref);
+ 	}
  
  out:
  	btrfs_free_path(path);
--	ref_root_free(ref_tree);
- 	while (!list_empty(&prefs)) {
- 		ref = list_first_entry(&prefs, struct prelim_ref, list);
- 		list_del(&ref->list);
-@@ -1502,7 +1161,7 @@ static int btrfs_find_all_leafs(struct btrfs_trans_handle *trans,
- 		return -ENOMEM;
- 
- 	ret = find_parent_nodes(trans, fs_info, bytenr, time_seq,
--				*leafs, NULL, extent_item_pos, 0, 0, 0);
-+				*leafs, NULL, extent_item_pos, 0, 0);
- 	if (ret < 0 && ret != -ENOENT) {
- 		free_leaf_list(*leafs);
- 		return ret;
-@@ -1545,7 +1204,7 @@ static int btrfs_find_all_roots_safe(struct btrfs_trans_handle *trans,
- 	ULIST_ITER_INIT(&uiter);
- 	while (1) {
- 		ret = find_parent_nodes(trans, fs_info, bytenr, time_seq,
--					tmp, *roots, NULL, 0, 0, 0);
-+					tmp, *roots, NULL, 0, 0);
- 		if (ret < 0 && ret != -ENOENT) {
- 			ulist_free(tmp);
- 			ulist_free(*roots);
-@@ -1620,8 +1279,9 @@ int btrfs_check_shared(struct btrfs_root *root, u64 inum, u64 bytenr)
- 
- 	ULIST_ITER_INIT(&uiter);
- 	while (1) {
-+		/* TODO - short-circuit when only checking for shared... */
- 		ret = find_parent_nodes(trans, fs_info, bytenr, elem.seq, tmp,
--					roots, NULL, root->objectid, inum, 1);
-+					roots, NULL, root->objectid, inum);
- 		if (ret == BACKREF_FOUND_SHARED) {
- 			/* this is the only condition under which we return 1 */
- 			ret = 1;
+-	while (!list_empty(&prefs)) {
+-		ref = list_first_entry(&prefs, struct prelim_ref, list);
+-		list_del(&ref->list);
+-		kmem_cache_free(btrfs_prelim_ref_cache, ref);
+-	}
+-	while (!list_empty(&prefs_delayed)) {
+-		ref = list_first_entry(&prefs_delayed, struct prelim_ref,
+-				       list);
+-		list_del(&ref->list);
+-		kmem_cache_free(btrfs_prelim_ref_cache, ref);
+-	}
++
++	prelim_release(&preftrees.direct);
++	prelim_release(&preftrees.indirect);
++
+ 	if (ret < 0)
+ 		free_inode_elem_list(eie);
+ 	return ret;
 -- 
 2.10.2
 

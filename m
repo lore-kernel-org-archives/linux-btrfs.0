@@ -1,126 +1,162 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:50073 "EHLO
-        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752392AbdFTXMV (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:56981 "EHLO
+        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752425AbdFTXZl (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Jun 2017 19:12:21 -0400
-Date: Tue, 20 Jun 2017 16:12:03 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
-Subject: Re: 4.11.3: BTRFS critical (device dm-1): unable to add free space :-17 => btrfs check --repair runs clean
-Message-ID: <20170620231202.GB5303@merlins.org>
-References: <20170620143916.GA22987@merlins.org> <20170620152354.GD7140@carfax.org.uk> <20170620152648.GB22987@merlins.org> <20170620153601.GE7140@carfax.org.uk> <20170620154429.GC22987@merlins.org>
+        Tue, 20 Jun 2017 19:25:41 -0400
+Date: Tue, 20 Jun 2017 23:25:25 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: waxhead <waxhead@dirtcellar.net>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Exactly what is wrong with RAID5/6
+Message-ID: <20170620232525.GF7140@carfax.org.uk>
+References: <1f5a4702-d264-51c6-aadd-d2cf521a45eb@dirtcellar.net>
 MIME-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="pf9I7BMVVzbSWLtt"
-In-Reply-To: <20170620154429.GC22987@merlins.org>
+        protocol="application/pgp-signature"; boundary="MAH+hnPXVZWQ5cD/"
+In-Reply-To: <1f5a4702-d264-51c6-aadd-d2cf521a45eb@dirtcellar.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---pf9I7BMVVzbSWLtt
+--MAH+hnPXVZWQ5cD/
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
 
-On Tue, Jun 20, 2017 at 08:44:29AM -0700, Marc MERLIN wrote:
-> On Tue, Jun 20, 2017 at 03:36:01PM +0000, Hugo Mills wrote:
-> > > Thanks for having a look. Is it a bug, or is it a problem with my sto=
-rage
-> > > subsystem?
-> >=20
-> >    Well, I'd say it's probably a problem with some inconsistent data
-> > on the disk. How that data got there is another matter -- it may be
-> > due to a bug which wrote the inconsistent data some time ago, and has
-> > only now been found out.
-> =20
-> Understood.
->=20
-> > > "space cache will be invalidated " =3D> doesn't that mean that my cac=
-he was
-> > > already cleared by check --repair, or are you saying I need to clear =
-it
-> > > again?
-> >=20
-> >    I'm never quite sure about that one. :)
-> >=20
-> >    It can't hurt to clear it manually as well.
->=20
-> Sounds good, done.
-=20
-Except it didn't help :(
-It worked for a while, and failed again.
+On Wed, Jun 21, 2017 at 12:57:19AM +0200, waxhead wrote:
+> I am trying to piece together the actual status of the RAID5/6 bit of BTRFS.
+> The wiki refer to kernel 3.19 which was released in February 2015 so
+> I assume that the information there is a tad outdated (the last
+> update on the wiki page was July 2016)
+> https://btrfs.wiki.kernel.org/index.php/RAID56
+> 
+> Now there are four problems listed
+> 
+> 1. Parity may be inconsistent after a crash (the "write hole")
+> Is this still true, if yes - would not this apply for RAID1 / RAID10
+> as well? How was it solved there , and why can't that be done for
+> RAID5/6
 
-It looks like I'm hitting a persistent bug :(
+   Yes, it's still true, and it's specific to parity RAID, not the
+other RAID levels. The issue is (I think) that if you write one block,
+that block is replaced, but then the other blocks in the stripe need
+to be read for the parity block to be recalculated, before the new
+parity can be written. There's a read-modify-write cycle involved
+which isn't inherent for the non-parity RAID levels (which would just
+overwrite both copies).
 
-[   86.383988] BTRFS: device label dshelf2 devid 1 transid 37975 /dev/mappe=
-r/dshelf2
-[   98.232529] BTRFS info (device dm-1): use lzo compression
-[   98.251982] BTRFS info (device dm-1): disk space caching is enabled
-[   98.274847] BTRFS info (device dm-1): has skinny extents
-[  104.171597] BTRFS info (device dm-1): detected SSD devices, enabling SSD=
- mode
-[  165.429894] BTRFS error (device dm-1): Duplicate entries in free space c=
-ache, dumping
-[  165.455673] BTRFS warning (device dm-1): failed to load free space cache=
- for block group 2039601954816, rebuilding it now
-[  234.221435] BTRFS warning (device dm-1): block group 2837392130048 has w=
-rong amount of free space
-[  234.249264] BTRFS warning (device dm-1): failed to load free space cache=
- for block group 2837392130048, rebuilding it now
-[  234.636396] BTRFS warning (device dm-1): block group 2885173641216 has w=
-rong amount of free space
-[  234.664015] BTRFS warning (device dm-1): failed to load free space cache=
- for block group 2885173641216, rebuilding it now
-[  242.042940] BTRFS warning (device dm-1): block group 3116565004288 has w=
-rong amount of free space
-[  242.071207] BTRFS warning (device dm-1): failed to load free space cache=
- for block group 3116565004288, rebuilding it now
-[  273.910918] BTRFS warning (device dm-1): block group 3209980542976 has w=
-rong amount of free space
-[  273.937625] BTRFS warning (device dm-1): failed to load free space cache=
- for block group 3209980542976, rebuilding it now
-[  298.578615] BTRFS warning (device dm-1): block group 2305889927168 has w=
-rong amount of free space
-[  298.605250] BTRFS warning (device dm-1): failed to load free space cache=
- for block group 2305889927168, rebuilding it now
-[  873.265687] BTRFS: Transaction aborted (error -17)
-[  873.948245] BTRFS: error (device dm-1) in btrfs_run_delayed_refs:2961: e=
-rrno=3D-17 Object already exists
-[  873.978884] BTRFS info (device dm-1): forced readonly
+   One of the proposed solutions for dealing with the write hole in
+btrfs's parity RAID is to ensure that any new writes are written to a
+completely new stripe. The problem is that this introduces a whole new
+level of fragmentation if the FS has lots of small writes (because
+your write unit is limited to a complete stripe, even for a single
+byte update).
 
-Given that check --repair ran clean when I ran it yesterday after this firs=
-t happened,
-and I then ran  mount -o clear_cache , the cache got rebuilt, and I got the=
- problem again,=20
-this is not looking good, seems like a persistent bug :-/
+   There are probably others here who can explain this better. :)
 
-I'm now going to remount this with nospace_cache to see if your guess about
-space_cache was correct.
-Other suggestions also welcome :)
+> 2. Parity data is not checksummed
+> Why is this a problem? Does it have to do with the design of BTRFS somehow?
+> Parity is after all just data, BTRFS does checksum data so what is
+> the reason this is a problem?
 
-Marc
---=20
-"A mouse is a device used to point at the xterm you want to type in" - A.S.=
-R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet coo=
-king
-Home page: http://marc.merlins.org/ =20
+   It increases the number of unrecoverable (or not-guaranteed-
+recoverable) cases. btrfs's csums are based on individual blocks on
+individual devices -- each item of data is independently checksummed
+(even if it's a copy of something else). On parity RAID
+configurations, if you have a device failure, you've lost a piece of
+the parity-protected data. To repair it, you have to recover from n-1
+data blocks (which are checksummed), and one parity block (which
+isn't). This means that if the parity block happens to have an error
+on it, you can't recover cleanly from the device loss, *and you can't
+know that an error has happened*.
 
---pf9I7BMVVzbSWLtt
+> 3. No support for discard? (possibly -- needs confirmation with cmason)
+> Does this matter that much really?, is there an update on this?
+> 
+> 4. The algorithm uses as many devices as are available: No support
+> for a fixed-width stripe.
+> What is the plan for this one? There was patches on the mailing list
+> by the SnapRAID author to support up to 6 parity devices. Will the
+> (re?) resign of btrfs raid5/6 support a scheme that allows for
+> multiple parity devices?
+
+   That's a problem because it limits the practical number of devices
+you can use. When the stripe size gets too large, you're having to
+read/modify/(re)write every device on an update, even for very small
+updates -- as this ratio of update-size to read-size goes up, the FS
+has increasingly bad performance. Your personal limits of what's
+acceptable will vary, but I'd be surprised to find anyone with, say,
+40 parity RAID devices who finds their performance acceptable. Limit
+the stripe width, and you can limit the performance degradation from
+lots of devices.
+
+   Even with a limited stripe width, however, you're still looking at
+decreasing reliability as the number of devices increases...
+
+   It shouldn't be *massively* hard to implement, but there's a load
+of opportunities around managing RAID options in general that would
+probably need to be addressed at the same time (e.g. per-subvol RAID
+settings, more general RAID parameterisation). It's going to need some
+fairly major properties handling, plus rewriting the chunk allocator
+and pushing the allocator decisions quite a way up from where they're
+currently made.
+
+> I do have a few other questions as well...
+> 
+> 5. BTRFS does still (kernel 4.9) not seem to use the device ID to
+> communicate with devices.
+> 
+> If you on a multi device filesystem yank out a device, for example
+> /dev/sdg and it reappear as /dev/sdx for example btrfs will still
+> happily try to write to /dev/sdg even if btrfs fi sh /mnt shows the
+> correct device ID. What is the status for getting BTRFS to properly
+> understand that a device is missing?
+
+   I don't know about this one.
+
+> 6. RAID1 needs to be able to make two copies always. E.g. if you
+> have three disks you can loose one and it should still work. What
+> about RAID10 ? If you have for example 6 disk RAID10 array, loose
+> one disk and reboots (due to #5 above). Will RAID10 recognize that
+> the array now is a 5 disk array and stripe+mirror over 2 disks (or
+> possibly 2.5 disks?) instead of 3? In other words, will it work as
+> long as it can create a RAID10 profile that requires a minimum of
+> four disks?
+
+   Yes. RAID-10 will work on any number of devices (>=4), not just an
+even number. Obviously, if you have a 6-device array and lose one,
+you'll need to deal with the loss of redundancy -- either add a new
+device and rebalance, or replace the missing device with a new one, or
+(space permitting) rebalance with existing devices.
+
+   Hugo.
+
+-- 
+Hugo Mills             | Let me past! There's been a major scientific
+hugo@... carfax.org.uk | break-in!
+http://carfax.org.uk/  | Through! Break-through!
+PGP: E2AB1DE4          |                                          Ford Prefect
+
+--MAH+hnPXVZWQ5cD/
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: Digital signature
-Content-Disposition: inline
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-iQCVAwUBWUmrwn4xUKZ2O+kBAQLkzAQAri0YyPzKOOnud4a7UPGc9BljYSjgu8qY
-yW+N/hPUbsCy4+szbxHkO7VRsga+AFkQgsdn8xv0lTN6HuoSrH7g9FjIEIpE7+Sr
-rA2kuqi9tysAIEPI2w7XaQV9qZjPboiHScKcHNMcyaJMGxMyW06QEFE7ASYeGwXI
-llhrkrfkE8w=
-=GQsW
+iQIcBAEBAgAGBQJZSa7lAAoJEFheFHXiqx3kHT4P/A4EUKFeT+eMxCVER8/U9K9h
+fISKtu8JZGYrMlWziV+Z92wu0KrCrpbl8P0pp3yZfoa6dsqXz+N8Y4ghWeMc/aQn
+ZzoMhTy4Oqs5F8MU4TZqNeF7NRf+3zS0kNzonaAA3JSIehq3F39/8zSRZHu+q9mC
+HzjtWmbsBtE2j9FZD/Xlh4bzENsJjkTiDV/REZkQzX1ifqzcHMK31e+JwlkdzDhq
+ZV+UZoFP4vB1xgK3Zow3wfCI1hdRyfoBDK7/K3/HMsudEroAh29Lc/8mJr2yXq3k
+AXfu7q+ZIyCQm4TYNFZQDWwPeBU9PeoCd6lLChCQvU4xLtEWM+HzDFXz0/YJOyCK
+MuE5ncB7B2ZkPK+FoaUsd4kUY6LhMCzdvNPWc9gIPemyozFgBraAb5CWzkqgu1cb
+jQSHWCb//F48LoWpa+KuhLMOdsk5FmUO49Y6qF0YIhnWETqrW1hI0BLktabKUEYC
+vnlXmlfkBzXC4cPxuOSY/7+mN0pPWd0cLt/bdiC2x0ilAs7SARA1F3DmuxX5+H5g
+akM1jkt527hGTFJIthN49FpqdLu64Cn7E+HSRb8czZPIRq9Dqtgqshh4RxGOZtV6
+RQobNaLNXxRRidd22RpDI+uQ7qc4yGKV6Nk1sBTK3TIZPVhL6gWYYNpTVnrYr7+o
+eXIk/VzfLKhjFxsCIN3A
+=olN7
 -----END PGP SIGNATURE-----
 
---pf9I7BMVVzbSWLtt--
+--MAH+hnPXVZWQ5cD/--

@@ -1,33 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35045 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:58656 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1750992AbdFUNs5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Jun 2017 09:48:57 -0400
+        id S1750957AbdFTMPO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 20 Jun 2017 08:15:14 -0400
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id A7B59AD19
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Jun 2017 13:48:55 +0000 (UTC)
-Date: Wed, 21 Jun 2017 15:47:50 +0200
-From: David Sterba <dsterba@suse.cz>
-To: jeffm@suse.com
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: add cond_resched to btrfs_qgroup_trace_leaf_items
-Message-ID: <20170621134750.GI21388@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170620121526.13661-1-jeffm@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170620121526.13661-1-jeffm@suse.com>
+        by mx1.suse.de (Postfix) with ESMTP id 39B74AAB9
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Jun 2017 12:15:13 +0000 (UTC)
+From: jeffm@suse.com
+To: linux-btrfs@vger.kernel.org
+Cc: Jeff Mahoney <jeffm@suse.com>
+Subject: [PATCH] btrfs: add cond_resched to btrfs_qgroup_trace_leaf_items
+Date: Tue, 20 Jun 2017 08:15:26 -0400
+Message-Id: <20170620121526.13661-1-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 20, 2017 at 08:15:26AM -0400, jeffm@suse.com wrote:
-> From: Jeff Mahoney <jeffm@suse.com>
-> 
-> On an uncontended system, we can end up hitting soft lockups while
-> doing replace_path.  At the core, and frequently called is
-> btrfs_qgroup_trace_leaf_items, so it makes sense to add a cond_resched
-> there.
-> 
-> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+From: Jeff Mahoney <jeffm@suse.com>
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+On an uncontended system, we can end up hitting soft lockups while
+doing replace_path.  At the core, and frequently called is
+btrfs_qgroup_trace_leaf_items, so it makes sense to add a cond_resched
+there.
+
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ fs/btrfs/qgroup.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index deffbeb74a0b..7a3cfa22e178 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1559,6 +1559,7 @@ int btrfs_qgroup_trace_leaf_items(struct btrfs_trans_handle *trans,
+ 		if (ret)
+ 			return ret;
+ 	}
++	cond_resched();
+ 	return 0;
+ }
+ 
+-- 
+2.11.0
+

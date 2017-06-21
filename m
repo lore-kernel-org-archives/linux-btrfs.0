@@ -1,64 +1,132 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f179.google.com ([209.85.128.179]:36840 "EHLO
-        mail-wr0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751083AbdFUSn3 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Jun 2017 14:43:29 -0400
-Received: by mail-wr0-f179.google.com with SMTP id c11so91218368wrc.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Jun 2017 11:43:28 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <a88f7896-5693-ad90-383e-a24c61110e8a@rqc.ru>
-References: <1f5a4702-d264-51c6-aadd-d2cf521a45eb@dirtcellar.net>
- <20170620232525.GF7140@carfax.org.uk> <CAJCQCtSMGjsrZ7N0gWQE744w_au7g1nUMXb1wL2nTa9kgmzYrA@mail.gmail.com>
- <a88f7896-5693-ad90-383e-a24c61110e8a@rqc.ru>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Wed, 21 Jun 2017 12:43:26 -0600
-Message-ID: <CAJCQCtSJNi3sGJci8xbjgoMOVjc92howEZ5PfJBThWAbm0AVMg@mail.gmail.com>
+Received: from smtp-34.italiaonline.it ([212.48.25.162]:43309 "EHLO libero.it"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1750827AbdFUUM4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Jun 2017 16:12:56 -0400
+Reply-To: kreijack@inwind.it
 Subject: Re: Exactly what is wrong with RAID5/6
-To: Marat Khalili <mkh@rqc.ru>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+References: <1f5a4702-d264-51c6-aadd-d2cf521a45eb@dirtcellar.net>
+ <60421001-5d74-2fb4-d916-7a397f246f20@cn.fujitsu.com>
+ <CAJCQCtRM4L1DSbWU7okANdimoO6F-KgSV=y2KEovj0zMW7h6bA@mail.gmail.com>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, waxhead <waxhead@dirtcellar.net>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Message-ID: <34ac2dd7-88ba-6de7-d8e2-061c283bb9c1@inwind.it>
+Date: Wed, 21 Jun 2017 22:12:52 +0200
+MIME-Version: 1.0
+In-Reply-To: <CAJCQCtRM4L1DSbWU7okANdimoO6F-KgSV=y2KEovj0zMW7h6bA@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 21, 2017 at 12:51 AM, Marat Khalili <mkh@rqc.ru> wrote:
-> On 21/06/17 06:48, Chris Murphy wrote:
+On 2017-06-21 20:24, Chris Murphy wrote:
+> On Wed, Jun 21, 2017 at 2:45 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+> 
+>> Unlike pure stripe method, one fully functional RAID5/6 should be written in
+>> full stripe behavior, which is made up by N data stripes and correct P/Q.
 >>
->> Another possibility is to ensure a new write is written to a new*not*
->> full stripe, i.e. dynamic stripe size. So if the modification is a 50K
->> file on a 4 disk raid5; instead of writing 3 64K data strips + 1 64K
->> parity strip (a full stripe write); write out 1 64K data strip + 1 64K
->> parity strip. In effect, a 4 disk raid5 would quickly get not just 3
->> data + 1 parity strip Btrfs block groups; but 1 data + 1 parity, and 2
->> data + 1 parity chunks, and direct those write to the proper chunk
->> based on size. Anyway that's beyond my ability to assess how much
->> allocator work that is. Balance I'd expect to rewrite everything to
->> max data strips possible; the optimization would only apply to normal
->> operation COW..
+>> Given one example to show how write sequence affects the usability of
+>> RAID5/6.
+>>
+>> Existing full stripe:
+>> X = Used space (Extent allocated)
+>> O = Unused space
+>> Data 1   |XXXXXX|OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO|
+>> Data 2   |OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO|
+>> Parity   |WWWWWW|ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ|
+>>
+>> When some new extent is allocated to data 1 stripe, if we write
+>> data directly into that region, and crashed.
+>> The result will be:
+>>
+>> Data 1   |XXXXXX|XXXXXX|OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO|
+>> Data 2   |OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO|
+>> Parity   |WWWWWW|ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ|
+>>
+>> Parity stripe is not updated, although it's fine since data is still
+>> correct, this reduces the usability, as in this case, if we lost device
+>> containing data 2 stripe, we can't recover correct data of data 2.
+>>
+>> Although personally I don't think it's a big problem yet.
+>>
+>> Someone has idea to modify extent allocator to handle it, but anyway I don't
+>> consider it's worthy.
+> 
+> 
+> If there is parity corruption and there is a lost device (or bad
+> sector causing lost data strip), that is in effect two failures and no
+> raid5 recovers, you have to have raid6. 
 
-> This will make some filesystems mostly RAID1, negating all space savings of
-> RAID5, won't it?
+Generally speaking, when you write "two failure" this means two failure at the same time. But the write hole happens even if these two failures are not at the same time:
 
-No. It'd only apply to partial stripe writes, typically small files.
-But small file, metadata centric workloads suck for raid5 anyway, and
-should use raid1. So making the implementation more like raid1 than
-raid5 for the RMW case I think is still better than Btrfs raid56 RMW
-writes in effect being no-COW.
+Event #1: power failure between the data stripe write and the parity stripe write. The stripe is incoherent.
+Event #2: a disk is failing: if you try to read the data from the remaining data and the parity you have wrong data.
+
+The likelihood of these two event at the same time (power failure and  in the next boot a disk is failing) is quite low. But in the life of a filesystem, these two event likely happens.
+
+However BTRFS has an advantage: a simple scrub may (crossing finger) recover from event #1.
+
+> However, I don't know whether
+> Btrfs raid6 can even recover from it? If there is a single device
+> failure, with a missing data strip, you have both P&Q. Typically raid6
+> implementations use P first, and only use Q if P is not available. Is
+> Btrfs raid6 the same? And if reconstruction from P fails to match data
+> csum, does Btrfs retry using Q? Probably not is my guess.
+
+It could, and in any case it is only an "implementation detail" :-)
+> 
+> I think that is a valid problem calling for a solution on Btrfs, given
+> its mandate. It is no worse than other raid6 implementations though
+> which would reconstruct from bad P, and give no warning, leaving it up
+> to application layers to deal with the problem.
+> 
+> I have no idea how ZFS RAIDZ2 and RAIDZ3 handle this same scenario.
+
+If I understood correctly, ZFS has a variable stripe size. In BTRFS could be easily implemented: it would be sufficient to have different block group with different number of disk.
+
+If a filesystem is composed by 5 disks, it will contain:
+
+1 BG RAID1 for writing up-to 64k
+1 BG RAID5 (3 disks) for writing up-to 128k
+1 BG RAID5 (4 disks) for writing up-to 192k
+1 BG RAID5 (5 disks) for all other disks
+
+Time to time the filesystem would need a re-balance in order to empty the smaller block group. 
 
 
-> Isn't it easier to recalculate parity block based using previous state of
-> two rewritten strips, parity and data? I don't understand all performance
-> implications, but it might scale better with number of devices.
+Another option could be to track the stripes involved by a RWM cycle (i.e. all the writings smaller than a stripe size, which in a COW filesystem, are suppose to be few) in an "intent log", and scrubbing all these stripes if a power failure happens .
 
-The problem is atomicity. Either the data strip or parity strip is
-overwritten first, and before the other is committed, the file system
-is not merely inconsistent, it's basically lying, there's no way to
-know for sure after the fact whether the data or parity were properly
-written. And even the metadata is inconsistent too because it can only
-describe the unmodified state and the successfully modified state,
-whereas a 3rd state "partially modified" is possible and no way to
-really fix it.
+
+
+
+> 
+> 
+> 
+>>
+>>>
+>>> 2. Parity data is not checksummed
+>>> Why is this a problem? Does it have to do with the design of BTRFS
+>>> somehow?
+>>> Parity is after all just data, BTRFS does checksum data so what is the
+>>> reason this is a problem?
+>>
+>>
+>> Because that's one solution to solve above problem.
+>>
+>> And no, parity is not data.
+> 
+> Parity strip is differentiated from data strip, and by itself parity
+> is meaningless. But parity plus n-1 data strips is an encoded form of
+> the missing data strip, and is therefore an encoded copy of the data.
+> We kinda have to treat the parity as fractionally important compared
+> to data; just like each mirror copy has some fractional value. You
+> don't have to have both of them, but you do have to have at least one
+> of them.
+> 
+> 
 
 
 -- 
-Chris Murphy
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

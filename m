@@ -1,59 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36259 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:53450 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751083AbdFUTKP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Jun 2017 15:10:15 -0400
-Date: Wed, 21 Jun 2017 21:09:08 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [RFC PATCH v3.2 0/6] Qgroup fixes, Non-stack version
-Message-ID: <20170621190908.GL21388@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170517025628.303-1-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170517025628.303-1-quwenruo@cn.fujitsu.com>
+        id S1751143AbdFUQXs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Jun 2017 12:23:48 -0400
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: suy.fnst@cn.fujitsu.com, David Sterba <dsterba@suse.com>
+Subject: [PATCH] btrfs: fix validation of XATTR_ITEM dir items
+Date: Wed, 21 Jun 2017 17:46:24 +0200
+Message-Id: <20170621154624.28365-1-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 17, 2017 at 10:56:22AM +0800, Qu Wenruo wrote:
-> The remaining qgroup fixes patches, based on the Chris' for-linus-4.12
-> branch with commit 9bcaaea7418d09691f1ffab5c49aacafe3eef9d0 as base.
-> 
-> Can be fetched from github:
-> https://github.com/adam900710/linux/tree/qgroup_fixes_non_stack
-> 
-> This update is commit message update only.
-> 
-> v2:
->   Add reviewed-by tag for 2nd patch
->   Update the first patch to follow the new trace point standard
-> RFC v3:
->   Use non-stack (dyanamic allocation) for extent_changeset structure, in
->   5th patch, to reduce impact for quota disabled cases.
->   Rebase to latest for-linus-4.12 branch.
-> RFC v3.1:
->   Update comment to include the newly introduced parameter
->   Use init/release function to replace open coded ulist_init/release().
-> RFC v3.2:
->   Update commit message of 1st and 3rd patch.
-> 
-> Qu Wenruo (6):
->   btrfs: qgroup: Add quick exit for non-fs extents
->   btrfs: qgroup: Cleanup btrfs_qgroup_prepare_account_extents function
->   btrfs: qgroup: Return actually freed bytes for qgroup release or free
->     data
->   btrfs: qgroup: Fix qgroup reserved space underflow caused by buffered
->     write and quota enable
->   btrfs: qgroup: Introduce extent changeset for qgroup reserve functions
->   btrfs: qgroup: Fix qgroup reserved space underflow by only freeing
->     reserved ranges
+The XATTR_ITEM is a type of a directory item so we use the common
+validator helper. We have to adjust the limits because of potential
+data_len (ie. the xattr value), which is otherwise 0 for other directory
+items.
 
-Added to 4.13 queue. I haven't seen any new reviews, so I tried to do my
-best with my limited understanding. The preparatory look good to me, the
-remaining got some review and testing so I rely on that. I made only
-some wording adjustments to changelogs or comments. The whole patchset
-has been in for-next for the entire dev cycle, I haven't seen any
-related failures. Also I think we need to move forward with this
-patchset, there was enough time to complain or help.
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/dir-item.c | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/dir-item.c b/fs/btrfs/dir-item.c
+index 2b00dd746118..a48d496e63e4 100644
+--- a/fs/btrfs/dir-item.c
++++ b/fs/btrfs/dir-item.c
+@@ -498,6 +498,7 @@ bool btrfs_is_name_len_valid(struct extent_buffer *leaf, int slot,
+ {
+ 	struct btrfs_fs_info *fs_info = leaf->fs_info;
+ 	struct btrfs_key key;
++	struct btrfs_dir_item *di;
+ 	u32 read_start;
+ 	u32 read_end;
+ 	u32 item_start;
+@@ -515,8 +516,17 @@ bool btrfs_is_name_len_valid(struct extent_buffer *leaf, int slot,
+ 	btrfs_item_key_to_cpu(leaf, &key, slot);
+ 
+ 	switch (key.type) {
+-	case BTRFS_DIR_ITEM_KEY:
+ 	case BTRFS_XATTR_ITEM_KEY:
++		/*
++		 * XATTR_ITEM could contain data so the item_end would not
++		 * match read_end as for other item types. Artificially lower
++		 * the upper bound so we check just name_len. We have to trust
++		 * the data_len value here, but if it's too big the validation
++		 * fails so it's safer than increasing read_end.
++		 */
++		di = btrfs_item_ptr(leaf, slot, struct btrfs_dir_item);
++		item_end -= btrfs_dir_data_len(leaf, di);
++	case BTRFS_DIR_ITEM_KEY:
+ 	case BTRFS_DIR_INDEX_KEY:
+ 		size = sizeof(struct btrfs_dir_item);
+ 		break;
+-- 
+2.13.0
+

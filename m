@@ -1,34 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f179.google.com ([209.85.128.179]:33031 "EHLO
-        mail-wr0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752454AbdFUDzO (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:55113 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750707AbdFUEGx (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Jun 2017 23:55:14 -0400
-Received: by mail-wr0-f179.google.com with SMTP id r103so116635604wrb.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Jun 2017 20:55:13 -0700 (PDT)
+        Wed, 21 Jun 2017 00:06:53 -0400
+Date: Tue, 20 Jun 2017 21:06:31 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Hugo Mills <hugo@carfax.org.uk>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: 4.11.3: BTRFS critical (device dm-1): unable to add free space :-17 => btrfs check --repair runs clean
+Message-ID: <20170621040631.GF5303@merlins.org>
+References: <20170620143916.GA22987@merlins.org> <20170620152354.GD7140@carfax.org.uk> <20170620152648.GB22987@merlins.org> <20170620153601.GE7140@carfax.org.uk> <20170620154429.GC22987@merlins.org> <CAJCQCtQJmWaPYvvcApcR6_mVVkFvyALaTpcazhBGSDQAwzcBPQ@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <CAAsnU-9FqoT=gFFsJ7paCRgkXXfJJts9K+E-5_cca33yOUJc+w@mail.gmail.com>
-References: <CAAsnU-9FqoT=gFFsJ7paCRgkXXfJJts9K+E-5_cca33yOUJc+w@mail.gmail.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Tue, 20 Jun 2017 21:55:12 -0600
-Message-ID: <CAJCQCtRi=+OwMy4K2MyWf7v_wL5Sti8iNYLhKhLPNyJB80C_ug@mail.gmail.com>
-Subject: Re: Please help. Repair probably bitflip damage and suspected bug
-To: Jesse <btrfs_mail_list@mymail.isbest.biz>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAJCQCtQJmWaPYvvcApcR6_mVVkFvyALaTpcazhBGSDQAwzcBPQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->
-[Sun Jun 18 04:02:43 2017] BTRFS critical (device sdb2): corrupt node,
-bad key order: block=5123372711936, root=1, slot=82
+On Tue, Jun 20, 2017 at 09:26:27PM -0600, Chris Murphy wrote:
+> Right now Btrfs isn't scalable if you have to repair it because large
+> volumes run into this problem; one of the reasons for the lowmem mode.
+> 
+> It's a separate bug that it OOMs even with swap, I don't know why it
+> won't use that, it should be up to kernel memory management to deal
 
+The thing is that it doesn't even get OOM'ed.
+I didn't look at the code, but I'm assuming it must be using kernel RAM
+instead of user space RAM, which is why it can't be OOM'ed and why it gets
+the kernel to deadlock.
 
->From the archives, most likely it's bad RAM. I see this system also
-uses XFS v4 file system, if it were made as XFS v5 using metadata
-csums you'd probably eventually run into a similar problem that would
-be caught by metadata checksum errors. It'll fail faster with Btrfs
-because it's checksumming everything.
+If that is the case, then the user space code should monitor kernel space
+usage and cancel the check if it's about to run out of usable RAM (better
+than deadlocking the system).
 
-
-Chris Murphy
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

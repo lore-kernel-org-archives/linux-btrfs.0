@@ -1,111 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f180.google.com ([209.85.216.180]:36779 "EHLO
-        mail-qt0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752835AbdFUPQm (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Jun 2017 11:16:42 -0400
-Received: by mail-qt0-f180.google.com with SMTP id i2so11760361qta.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Jun 2017 08:16:41 -0700 (PDT)
+Received: from smtp-36-i5.italiaonline.it ([212.48.25.237]:50421 "EHLO
+        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751795AbdFURD2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Jun 2017 13:03:28 -0400
+Reply-To: kreijack@inwind.it
+Subject: Re: Exactly what is wrong with RAID5/6
+References: <1f5a4702-d264-51c6-aadd-d2cf521a45eb@dirtcellar.net>
+ <60421001-5d74-2fb4-d916-7a397f246f20@cn.fujitsu.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: waxhead@dirtcellar.net, linux-btrfs@vger.kernel.org
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Message-ID: <a896ef12-ab18-c8f8-9dd6-702578f0eb15@inwind.it>
+Date: Wed, 21 Jun 2017 19:03:25 +0200
 MIME-Version: 1.0
-In-Reply-To: <CAGqmi75snUUa3MzBVzu6wcWV6qzPpOBmCU-Ug4xGBVuz_E5gEg@mail.gmail.com>
-References: <CAGqmi75fwUz4CcktjTm=KFSUSpmqeb0RDQrAgjL39KGqQMs=rQ@mail.gmail.com>
- <CAGqmi75snUUa3MzBVzu6wcWV6qzPpOBmCU-Ug4xGBVuz_E5gEg@mail.gmail.com>
-From: Timofey Titovets <nefelim4ag@gmail.com>
-Date: Wed, 21 Jun 2017 18:16:00 +0300
-Message-ID: <CAGqmi77S7nzv73kNwVGGVuKhJLF7aY9gZYQT+JuN0LPEdY4eAg@mail.gmail.com>
-Subject: Re: RFC: Compression - calculate entropy for data set
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <60421001-5d74-2fb4-d916-7a397f246f20@cn.fujitsu.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've done with heuristic method,
-so i post some performance test output:
-(I store test data in /run/user/$UID/, and script just ran programm 20000 times)
-###
-# Performance test will measure initialization time
-# And remove it from run time of tests
-# This may be inaccurate in some cases
-# But this allow see speed difference
-./performance_test.sh
+Hi Qu,
 
-Test good compressible data: 128k
-AVG Initialization time: 17018ms
-avg mean:       3240ms
-shannon float:  11537ms
-shannon integ:  9933ms
-heuristic:      2060ms
-gzip -ck -3 /run/user/1000/test_data.bin:       19767ms
-lzop -ck -3 /run/user/1000/test_data.bin:       12393ms
-lzop -ck -1 /run/user/1000/test_data.bin:       13660ms
-- - - - -
-Test half compressible data: 128k
-AVG Initialization time: 15820ms
-avg mean:       3302ms
-shannon float:  8680ms
-shannon integ:  9659ms
-heuristic:      3207ms // 128*20000/1024/3 ~ 800 Mb/s
-gzip -ck -3 /run/user/1000/test_data.bin:       57245ms
-lzop -ck -3 /run/user/1000/test_data.bin:       14175ms
-lzop -ck -1 /run/user/1000/test_data.bin:       15392ms
-- - - - -
-Test bad compressible data: 128k
-AVG Initialization time: 16878ms
-avg mean:       4410ms
-shannon float:  7113ms
-shannon integ:  6777ms
-heuristic:      2162ms  // 128*20000/1024/2 ~ 1250 Mb/s
-gzip -ck -3 /run/user/1000/test_data.bin:       110578ms
-lzop -ck -3 /run/user/1000/test_data.bin:       14238ms
-lzop -ck -1 /run/user/1000/test_data.bin:       15332ms
-- - - - -
-Test good compressible data: 8k
-AVG Initialization time: 17526ms
-avg mean:       1683ms
-shannon float:  5762ms
-shannon integ:  2427ms
-heuristic:      1858ms
-gzip -ck -3 /run/user/1000/test_data.bin:       2745ms
-lzop -ck -3 /run/user/1000/test_data.bin:       10221ms
-lzop -ck -1 /run/user/1000/test_data.bin:       11960ms
-- - - - -
-Test half compressible data: 8k
-AVG Initialization time: 17513ms
-avg mean:       1853ms
-shannon float:  1933ms
-shannon integ:  2572ms
-heuristic:      2571ms
-gzip -ck -3 /run/user/1000/test_data.bin:       4167ms
-lzop -ck -3 /run/user/1000/test_data.bin:       9502ms
-lzop -ck -1 /run/user/1000/test_data.bin:       10923ms
-- - - - -
-Test bad compressible data: 8k
-AVG Initialization time: 18164ms
-avg mean:       -28ms
-shannon float:  312ms
-shannon integ:  1891ms
-heuristic:      542ms
-gzip -ck -3 /run/user/1000/test_data.bin:       6407ms
-lzop -ck -3 /run/user/1000/test_data.bin:       9088ms
-lzop -ck -1 /run/user/1000/test_data.bin:       10741ms
+On 2017-06-21 10:45, Qu Wenruo wrote:
+> At 06/21/2017 06:57 AM, waxhead wrote:
+>> I am trying to piece together the actual status of the RAID5/6 bit of BTRFS.
+>> The wiki refer to kernel 3.19 which was released in February 2015 so I assume
+>> that the information there is a tad outdated (the last update on the wiki page was July 2016)
+>> https://btrfs.wiki.kernel.org/index.php/RAID56
+>>
+>> Now there are four problems listed
+>>
+>> 1. Parity may be inconsistent after a crash (the "write hole")
+>> Is this still true, if yes - would not this apply for RAID1 / 
+>> RAID10 as well? How was it solved there , and why can't that be done for RAID5/6
+> 
+> Unlike pure stripe method, one fully functional RAID5/6 should be written in full stripe behavior,
+>  which is made up by N data stripes and correct P/Q.
+> 
+> Given one example to show how write sequence affects the usability of RAID5/6.
+> 
+> Existing full stripe:
+> X = Used space (Extent allocated)
+> O = Unused space
+> Data 1   |XXXXXX|OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO|
+> Data 2   |OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO|
+> Parity   |WWWWWW|ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ|
+> 
+> When some new extent is allocated to data 1 stripe, if we write
+> data directly into that region, and crashed.
+> The result will be:
+> 
+> Data 1   |XXXXXX|XXXXXX|OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO|
+> Data 2   |OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO|
+> Parity   |WWWWWW|ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ|
+> 
+> Parity stripe is not updated, although it's fine since data is still correct, this reduces the 
+> usability, as in this case, if we lost device containing data 2 stripe, we can't 
+> recover correct data of data 2.
+> 
+> Although personally I don't think it's a big problem yet.
+> 
+> Someone has idea to modify extent allocator to handle it, but anyway I don't consider it's worthy.
+> 
+>>
+>> 2. Parity data is not checksummed
+>> Why is this a problem? Does it have to do with the design of BTRFS somehow?
+>> Parity is after all just data, BTRFS does checksum data so what is the reason this is a problem?
+> 
+> Because that's one solution to solve above problem.
 
-So as you can see most of time heuristic test are 5 times faster then
-direct compression.
-I did some base testing on that (trying  random pieces of data: blocks
-from VM images, Photos, Texts, /dev/zero, /dev/urandom)
-And heuristic method are pretty accurate, most of magic are happens in [2].
+In what it could be a solution for the write hole ? If a parity is wrong AND you lost a disk, even having a checksum of the parity, you are not in position to rebuild the missing data. And if you rebuild wrong data, anyway the checksum highlights it. So adding the checksum to the parity should not solve any issue.
+
+A possible "mitigation", is to track in a "intent log" all the not "full stripe writes" during a transaction. If a power failure aborts a transaction, in the next mount a scrub process is started to correct the parities only in the stripes tracked before.
+
+A solution, is to journal all the not "full stripe writes", as MD does.
 
 
-I think that in near time i will try make some kernel patch set for that.
-If someone interest in that, you can look code and do some tests on your data
-I appreciate any feedback!
-
-Thanks!
-
-P.S.
-[1] https://github.com/Nefelim4ag/Entropy_Calculation
-[2] https://github.com/Nefelim4ag/Entropy_Calculation/blob/master/heuristic.c
+BR
+G.Baroncelli
 
 -- 
-Have a nice day,
-Timofey.
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

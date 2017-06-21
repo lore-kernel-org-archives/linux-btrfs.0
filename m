@@ -1,91 +1,126 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f67.google.com ([209.85.214.67]:35996 "EHLO
-        mail-it0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752810AbdF0LAV (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:20491 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751148AbdFUJ3E (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Jun 2017 07:00:21 -0400
-Received: by mail-it0-f67.google.com with SMTP id 185so2321531itv.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Jun 2017 04:00:21 -0700 (PDT)
+        Wed, 21 Jun 2017 05:29:04 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>, <kilobyte@angband.pl>
+Subject: [PATCH] btrfs: DEBUG fiemap: Show more info about extent_fiemap
+Date: Wed, 21 Jun 2017 17:28:50 +0800
+Message-ID: <20170621092850.18394-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <20170621154624.28365-1-dsterba@suse.com>
-References: <20170621154624.28365-1-dsterba@suse.com>
-From: Filipe Manana <fdmanana@gmail.com>
-Date: Tue, 27 Jun 2017 12:00:14 +0100
-Message-ID: <CAL3q7H6ncxZgaw2Y+G6y382Rq4kcFtEOPpyoJxYMBm5Gqq-9yg@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: fix validation of XATTR_ITEM dir items
-To: David Sterba <dsterba@suse.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        suy.fnst@cn.fujitsu.com
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 21, 2017 at 4:46 PM, David Sterba <dsterba@suse.com> wrote:
-> The XATTR_ITEM is a type of a directory item so we use the common
-> validator helper. We have to adjust the limits because of potential
-> data_len (ie. the xattr value), which is otherwise 0 for other directory
-> items.
+Hi Adam,
 
-Did you run fstests?
+Would you please try this patch based on v4.12-rc5 and try to reproduce
+the kernel warning?
 
-This breaks test btrfs/053, as changes to send.c that call this
-validation function are meant to validate that we don't go beyond
-boundaries either when reading the name or the value of a xattr - it's
-a bit counter-intuitive since the name of the function refers to name
-length validation only, but it was correct in the context of send at
-least.
+It would be better to eliminate the noisy by ensure there is no other fiemap
+caller on btrfs.
 
-thanks
+Thanks,
+Qu
 
->
-> Signed-off-by: David Sterba <dsterba@suse.com>
-> ---
->  fs/btrfs/dir-item.c | 12 +++++++++++-
->  1 file changed, 11 insertions(+), 1 deletion(-)
->
-> diff --git a/fs/btrfs/dir-item.c b/fs/btrfs/dir-item.c
-> index 2b00dd746118..a48d496e63e4 100644
-> --- a/fs/btrfs/dir-item.c
-> +++ b/fs/btrfs/dir-item.c
-> @@ -498,6 +498,7 @@ bool btrfs_is_name_len_valid(struct extent_buffer *leaf, int slot,
->  {
->         struct btrfs_fs_info *fs_info = leaf->fs_info;
->         struct btrfs_key key;
-> +       struct btrfs_dir_item *di;
->         u32 read_start;
->         u32 read_end;
->         u32 item_start;
-> @@ -515,8 +516,17 @@ bool btrfs_is_name_len_valid(struct extent_buffer *leaf, int slot,
->         btrfs_item_key_to_cpu(leaf, &key, slot);
->
->         switch (key.type) {
-> -       case BTRFS_DIR_ITEM_KEY:
->         case BTRFS_XATTR_ITEM_KEY:
-> +               /*
-> +                * XATTR_ITEM could contain data so the item_end would not
-> +                * match read_end as for other item types. Artificially lower
-> +                * the upper bound so we check just name_len. We have to trust
-> +                * the data_len value here, but if it's too big the validation
-> +                * fails so it's safer than increasing read_end.
-> +                */
-> +               di = btrfs_item_ptr(leaf, slot, struct btrfs_dir_item);
-> +               item_end -= btrfs_dir_data_len(leaf, di);
-> +       case BTRFS_DIR_ITEM_KEY:
->         case BTRFS_DIR_INDEX_KEY:
->                 size = sizeof(struct btrfs_dir_item);
->                 break;
-> --
-> 2.13.0
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ fs/btrfs/extent_io.c | 23 +++++++++++++++++++++--
+ 1 file changed, 21 insertions(+), 2 deletions(-)
 
-
-
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index d3619e0..ebebfb0 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4406,6 +4406,8 @@ static int emit_fiemap_extent(struct fiemap_extent_info *fieinfo,
+ {
+ 	int ret = 0;
+ 
++	pr_info("%s: entered: offset=%llu phys=%llu len=%llu flags=0x%x\n",
++		__func__, offset, phys, len, flags);
+ 	if (!cache->cached)
+ 		goto assign;
+ 
+@@ -4417,7 +4419,7 @@ static int emit_fiemap_extent(struct fiemap_extent_info *fieinfo,
+ 	 * NOTE: Physical address can overlap, due to compression
+ 	 */
+ 	if (cache->offset + cache->len > offset) {
+-		WARN_ON(1);
++		pr_info("%s: Sanity check failed\n", __func__);
+ 		return -EINVAL;
+ 	}
+ 
+@@ -4438,16 +4440,23 @@ static int emit_fiemap_extent(struct fiemap_extent_info *fieinfo,
+ 			(flags & ~FIEMAP_EXTENT_LAST)) {
+ 		cache->len += len;
+ 		cache->flags |= flags;
++		pr_info("%s: merged, new offset=%llu len=%llu flags=0x%x\n", __func__,
++			cache->offset, cache->len, cache->flags);
+ 		goto try_submit_last;
+ 	}
+ 
++	pr_info("%s: submit cached fiemap: offset=%llu len=%llu flags=0x%x\n",
++		__func__, cache->offset, cache->len, cache->flags);
+ 	/* Not mergeable, need to submit cached one */
+ 	ret = fiemap_fill_next_extent(fieinfo, cache->offset, cache->phys,
+ 				      cache->len, cache->flags);
+ 	cache->cached = false;
+-	if (ret)
++	if (ret) {
++		pr_info("%s: cached submit exit ret=%d\n", __func__, ret);
+ 		return ret;
++	}
+ assign:
++	pr_info("%s: assigning new fiemap\n", __func__);
+ 	cache->cached = true;
+ 	cache->offset = offset;
+ 	cache->phys = phys;
+@@ -4455,10 +4464,13 @@ static int emit_fiemap_extent(struct fiemap_extent_info *fieinfo,
+ 	cache->flags = flags;
+ try_submit_last:
+ 	if (cache->flags & FIEMAP_EXTENT_LAST) {
++		pr_info("%s: submit last fiemap: offset=%llu len=%llu flags=0x%x\n",
++			__func__, cache->offset, cache->len, cache->flags);
+ 		ret = fiemap_fill_next_extent(fieinfo, cache->offset,
+ 				cache->phys, cache->len, cache->flags);
+ 		cache->cached = false;
+ 	}
++	pr_info("%s: last exit ret=%d\n", __func__, ret);
+ 	return ret;
+ }
+ 
+@@ -4525,6 +4537,9 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 		return -ENOMEM;
+ 	path->leave_spinning = 1;
+ 
++	pr_info("%s: enter: root=%llu inode=%llu start=%llu len=%llu\n",
++		__func__, root->objectid, btrfs_ino(BTRFS_I(inode)),
++		start, len);
+ 	start = round_down(start, btrfs_inode_sectorsize(inode));
+ 	len = round_up(max, btrfs_inode_sectorsize(inode)) - start;
+ 
+@@ -4696,6 +4711,7 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 		if (ret) {
+ 			if (ret == 1)
+ 				ret = 0;
++			pr_info("%s: out_free after emit_fiemap_extent\n", __func__);
+ 			goto out_free;
+ 		}
+ 	}
+@@ -4707,6 +4723,9 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 	btrfs_free_path(path);
+ 	unlock_extent_cached(&BTRFS_I(inode)->io_tree, start, start + len - 1,
+ 			     &cached_state, GFP_NOFS);
++	pr_info("%s: exit: ret=%d root=%llu inode=%llu start=%llu len=%llu\n",
++		__func__, ret, root->objectid, btrfs_ino(BTRFS_I(inode)),
++		start, len);
+ 	return ret;
+ }
+ 
 -- 
-Filipe David Manana,
+2.9.3
 
-“Whether you think you can, or you think you can't — you're right.”
+
+

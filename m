@@ -1,44 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:58656 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1750957AbdFTMPO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Jun 2017 08:15:14 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 39B74AAB9
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Jun 2017 12:15:13 +0000 (UTC)
-From: jeffm@suse.com
-To: linux-btrfs@vger.kernel.org
-Cc: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH] btrfs: add cond_resched to btrfs_qgroup_trace_leaf_items
-Date: Tue, 20 Jun 2017 08:15:26 -0400
-Message-Id: <20170620121526.13661-1-jeffm@suse.com>
+Received: from mail-pg0-f50.google.com ([74.125.83.50]:33541 "EHLO
+        mail-pg0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751223AbdFUNsM (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Jun 2017 09:48:12 -0400
+Received: by mail-pg0-f50.google.com with SMTP id f127so557223pgc.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Jun 2017 06:48:12 -0700 (PDT)
+Subject: Re: [PATCH] btrfs: use new block error code
+To: dsterba@suse.cz, Dan Carpenter <dan.carpenter@oracle.com>,
+        Chris Mason <clm@fb.com>, Christoph Hellwig <hch@lst.de>,
+        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org,
+        kernel-janitors@vger.kernel.org
+References: <20170619105536.GA24075@elgon.mountain>
+ <20170621131723.GH21388@twin.jikos.cz>
+From: Jens Axboe <axboe@kernel.dk>
+Message-ID: <2bd7fd59-71ad-8ff5-65f7-3b6f1d51ccbd@kernel.dk>
+Date: Wed, 21 Jun 2017 07:48:08 -0600
+MIME-Version: 1.0
+In-Reply-To: <20170621131723.GH21388@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Jeff Mahoney <jeffm@suse.com>
+On 06/21/2017 07:17 AM, David Sterba wrote:
+> On Mon, Jun 19, 2017 at 01:55:37PM +0300, Dan Carpenter wrote:
+>> This function is supposed to return blk_status_t error codes now but
+>> there was a stray -ENOMEM left behind.
+>>
+>> Fixes: 4e4cbee93d56 ("block: switch bios to blk_status_t")
+>> Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
+> 
+> Acked-by: David Sterba <dsterba@suse.com>
+> 
+> The patch depends on the blk_status_t patchset, so I expect that it's
+> going to be merged to that.
 
-On an uncontended system, we can end up hitting soft lockups while
-doing replace_path.  At the core, and frequently called is
-btrfs_qgroup_trace_leaf_items, so it makes sense to add a cond_resched
-there.
+Added, thanks.
 
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
----
- fs/btrfs/qgroup.c | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index deffbeb74a0b..7a3cfa22e178 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1559,6 +1559,7 @@ int btrfs_qgroup_trace_leaf_items(struct btrfs_trans_handle *trans,
- 		if (ret)
- 			return ret;
- 	}
-+	cond_resched();
- 	return 0;
- }
- 
 -- 
-2.11.0
+Jens Axboe
 

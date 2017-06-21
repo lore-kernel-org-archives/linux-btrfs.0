@@ -1,41 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:55113 "EHLO
-        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750707AbdFUEGx (ORCPT
+Received: from smtp81.iad3a.emailsrvr.com ([173.203.187.81]:60055 "EHLO
+        smtp81.iad3a.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1752066AbdFUGvp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Jun 2017 00:06:53 -0400
-Date: Tue, 20 Jun 2017 21:06:31 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Hugo Mills <hugo@carfax.org.uk>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: 4.11.3: BTRFS critical (device dm-1): unable to add free space :-17 => btrfs check --repair runs clean
-Message-ID: <20170621040631.GF5303@merlins.org>
-References: <20170620143916.GA22987@merlins.org> <20170620152354.GD7140@carfax.org.uk> <20170620152648.GB22987@merlins.org> <20170620153601.GE7140@carfax.org.uk> <20170620154429.GC22987@merlins.org> <CAJCQCtQJmWaPYvvcApcR6_mVVkFvyALaTpcazhBGSDQAwzcBPQ@mail.gmail.com>
+        Wed, 21 Jun 2017 02:51:45 -0400
+Received: from smtp11.relay.iad3a.emailsrvr.com (localhost [127.0.0.1])
+        by smtp11.relay.iad3a.emailsrvr.com (SMTP Server) with ESMTP id 7963053E8
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Jun 2017 02:51:44 -0400 (EDT)
+Received: by smtp11.relay.iad3a.emailsrvr.com (Authenticated sender: intranet-AT-rqc.ru) with ESMTPSA id 2A9985211
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Jun 2017 02:51:43 -0400 (EDT)
+Received: from CM01.administration.intranet.rqc.ru (unknown [10.101.2.94])
+        by postfix.thinky.servers.rqc.ru (Postfix) with ESMTPS id 4EA22BF08
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Jun 2017 06:51:42 +0000 (UTC)
+From: Marat Khalili <mkh@rqc.ru>
+Subject: Re: Exactly what is wrong with RAID5/6
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <1f5a4702-d264-51c6-aadd-d2cf521a45eb@dirtcellar.net>
+ <20170620232525.GF7140@carfax.org.uk>
+ <CAJCQCtSMGjsrZ7N0gWQE744w_au7g1nUMXb1wL2nTa9kgmzYrA@mail.gmail.com>
+Message-ID: <a88f7896-5693-ad90-383e-a24c61110e8a@rqc.ru>
+Date: Wed, 21 Jun 2017 09:51:42 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAJCQCtQJmWaPYvvcApcR6_mVVkFvyALaTpcazhBGSDQAwzcBPQ@mail.gmail.com>
+In-Reply-To: <CAJCQCtSMGjsrZ7N0gWQE744w_au7g1nUMXb1wL2nTa9kgmzYrA@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 20, 2017 at 09:26:27PM -0600, Chris Murphy wrote:
-> Right now Btrfs isn't scalable if you have to repair it because large
-> volumes run into this problem; one of the reasons for the lowmem mode.
-> 
-> It's a separate bug that it OOMs even with swap, I don't know why it
-> won't use that, it should be up to kernel memory management to deal
+On 21/06/17 06:48, Chris Murphy wrote:
+> Another possibility is to ensure a new write is written to a new*not*
+> full stripe, i.e. dynamic stripe size. So if the modification is a 50K
+> file on a 4 disk raid5; instead of writing 3 64K data strips + 1 64K
+> parity strip (a full stripe write); write out 1 64K data strip + 1 64K
+> parity strip. In effect, a 4 disk raid5 would quickly get not just 3
+> data + 1 parity strip Btrfs block groups; but 1 data + 1 parity, and 2
+> data + 1 parity chunks, and direct those write to the proper chunk
+> based on size. Anyway that's beyond my ability to assess how much
+> allocator work that is. Balance I'd expect to rewrite everything to
+> max data strips possible; the optimization would only apply to normal
+> operation COW.
+This will make some filesystems mostly RAID1, negating all space savings 
+of RAID5, won't it?
 
-The thing is that it doesn't even get OOM'ed.
-I didn't look at the code, but I'm assuming it must be using kernel RAM
-instead of user space RAM, which is why it can't be OOM'ed and why it gets
-the kernel to deadlock.
+Isn't it easier to recalculate parity block based using previous state 
+of two rewritten strips, parity and data? I don't understand all 
+performance implications, but it might scale better with number of devices.
 
-If that is the case, then the user space code should monitor kernel space
-usage and cancel the check if it's about to run out of usable RAM (better
-than deadlocking the system).
+--
 
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+With Best Regards,
+Marat Khalili

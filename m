@@ -1,217 +1,111 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.99]:56340 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752252AbdFNRgJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Jun 2017 13:36:09 -0400
-Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 6D340219A7
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Jun 2017 17:36:08 +0000 (UTC)
-From: fdmanana@kernel.org
+Received: from mx2.suse.de ([195.135.220.15]:41255 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751875AbdFUUOu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Jun 2017 16:14:50 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 4A964AB43
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Jun 2017 20:14:49 +0000 (UTC)
+Subject: Re: [PATCH 1/2] btrfs: account for pinned bytes and bytes_may_use in
+ should_alloc_chunk
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: incremental send, fix invalid path for unlink commands
-Date: Tue, 13 Jun 2017 16:06:19 +0100
-Message-Id: <20170613150619.8312-1-fdmanana@kernel.org>
+References: <1497455067-6050-1-git-send-email-jeffm@suse.com>
+From: Jeff Mahoney <jeffm@suse.com>
+Message-ID: <9c76636b-a364-7911-3cdd-08c98b2af188@suse.com>
+Date: Wed, 21 Jun 2017 16:14:46 -0400
+MIME-Version: 1.0
+In-Reply-To: <1497455067-6050-1-git-send-email-jeffm@suse.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="CVnXBW4h2fhwOuA1oVxEMPlckGmW1uJuN"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--CVnXBW4h2fhwOuA1oVxEMPlckGmW1uJuN
+Content-Type: multipart/mixed; boundary="FLNTnh79bbvdT4f03cNi03ILwflr6r0Rq";
+ protected-headers="v1"
+From: Jeff Mahoney <jeffm@suse.com>
+To: linux-btrfs@vger.kernel.org
+Message-ID: <9c76636b-a364-7911-3cdd-08c98b2af188@suse.com>
+Subject: Re: [PATCH 1/2] btrfs: account for pinned bytes and bytes_may_use in
+ should_alloc_chunk
+References: <1497455067-6050-1-git-send-email-jeffm@suse.com>
+In-Reply-To: <1497455067-6050-1-git-send-email-jeffm@suse.com>
 
-An incremental send can contain unlink operations with an invalid target
-path when we rename some directory inode A, then rename some file inode B
-to the old name of inode A and directory inode A is an ancestor of inode B
-in the parent snapshot (but not anymore in the send snapshot).
+--FLNTnh79bbvdT4f03cNi03ILwflr6r0Rq
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-Consider the following example scenario where this issue happens.
+On 6/14/17 11:44 AM, jeffm@suse.com wrote:
+> From: Jeff Mahoney <jeffm@suse.com>
+>=20
+> In a heavy write scenario, we can end up with a large number of pinned
+> bytes.  This can translate into (very) premature ENOSPC because pinned
+> bytes must be accounted for when allowing a reservation but aren't
+> accounted for when deciding whether to create a new chunk.
+>=20
+> This patch adds the accounting to should_alloc_chunk so that we can
+> create the chunk.
+>=20
+> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+> ---
+>  fs/btrfs/extent-tree.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+>=20
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index cb0b924..d027807 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -4389,7 +4389,7 @@ static int should_alloc_chunk(struct btrfs_fs_inf=
+o *fs_info,
+>  {
+>  	struct btrfs_block_rsv *global_rsv =3D &fs_info->global_block_rsv;
+>  	u64 num_bytes =3D sinfo->total_bytes - sinfo->bytes_readonly;
+> -	u64 num_allocated =3D sinfo->bytes_used + sinfo->bytes_reserved;
+> +	u64 num_allocated =3D sinfo->bytes_used + sinfo->bytes_reserved + sin=
+fo->bytes_pinned + sinfo->bytes_may_use;
+>  	u64 thresh;
+> =20
+>  	if (force =3D=3D CHUNK_ALLOC_FORCE)
+>=20
 
-Parent snapshot:
 
- .                                                      (ino 256)
- |
- |--- dir1/                                             (ino 257)
-       |--- dir2/                                       (ino 258)
-       |     |--- file1                                 (ino 259)
-       |     |--- file3                                 (ino 261)
-       |
-       |--- dir3/                                       (ino 262)
-             |--- file22                                (ino 260)
-             |--- dir4/                                 (ino 263)
+Ignore this patch.  It certainly allocates chunks more aggressively, but
+it means we end up with a ton of metadata chunks even when we don't have
+much metadata.
 
-Send snapshot:
+-Jeff
 
- .                                                      (ino 256)
- |
- |--- dir1/                                             (ino 257)
-       |--- dir2/                                       (ino 258)
-       |--- dir3                                        (ino 260)
-       |--- file3/                                      (ino 262)
-             |--- dir4/                                 (ino 263)
-                   |--- file11                          (ino 269)
-                   |--- file33                          (ino 261)
+--=20
+Jeff Mahoney
+SUSE Labs
 
-When attempting to apply the corresponding incremental send stream, an
-unlink operation contains an invalid path which makes the receiver fail.
-The following is verbose output of the btrfs receive command:
 
- receiving snapshot snap2 uuid=7d5450da-a573-e043-a451-ec85f4879f0f (...)
- utimes
- utimes dir1
- utimes dir1/dir2
- link dir1/dir3/dir4/file11 -> dir1/dir2/file1
- unlink dir1/dir2/file1
- utimes dir1/dir2
- truncate dir1/dir3/dir4/file11 size=0
- utimes dir1/dir3/dir4/file11
- rename dir1/dir3 -> o262-7-0
- link dir1/dir3 -> o262-7-0/file22
- unlink dir1/dir3/file22
- ERROR: unlink dir1/dir3/file22 failed. Not a directory
+--FLNTnh79bbvdT4f03cNi03ILwflr6r0Rq--
 
-The following steps happen during the computation of the incremental send
-stream the lead to this issue:
+--CVnXBW4h2fhwOuA1oVxEMPlckGmW1uJuN
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
-1) Before we start processing the new and deleted references for inode
-   260, we compute the full path of the deleted reference
-   ("dir1/dir3/file22") and cache it in the list of deleted references
-   for our inode.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG/MacGPG2 v2
 
-2) We then start processing the new references for inode 260, for which
-   there is only one new, located at "dir1/dir3". When processing this
-   new reference, we check that inode 262, which was not yet processed,
-   collides with the new reference and because of that we orphanize
-   inode 262 so its new full path becomes "o262-7-0".
+iQIVAwUBWUrTtx57S2MheeWyAQhTig//fApUsePnoy0pGXPEpYhjQQjwPh2hcVEn
+C1rH6uA33wjiq5q9iQ/6gno+FizFDboMB/xTzmpGg8ByBgRw0g2t/QINLRQsePos
+2rew9sZqHCT3cw7Aj+HP5O8yJsxpsM1wPYTfe/HMo29mBotV6+LDVdKx7BYF4RZb
+edOdcz17o6ErazVC1jDCdZIRpjZMtRNnwLw3i397LearFEj3S+qd8afFzyJqUrlU
+UHXJ+ptieR/zIGw1PZnwb+dJ3SjkzY9vxgyL0cf/GpBaC0+eA0o40WS8vfT6WC1E
+qkXCThtrCa75pW1My5Rn2ugebryAyd4VOIT5b03t0PLLR8VYseGVQJ9IQ5LxdMtB
+FghcmZ0J0oE+giBpt/1r+9sSsS9GxAIk7+q0iVeXLtxIVT5sjeyVFsxODDqrGNkZ
+3Emo8Oog4zR39wdC6Y65oQuBrIabSvJeUQET1LsU0WdOhWPrNXVkgln/XiIacMkI
+QSBnl0wJez2K7MfJtuzrk7AqOhNJRoNRTveqxc7td+RfYZLbkYmQhE2neI/WNYKP
+M5xBv+5GPB1YSPxjmqJhshG770Y067Z9BEQoLUjnUyXrD60G3vFUzNo6yEJm8a+3
+3/s3QzIH9cFs2yJ6CDJeeAyacH7lt5TprIk+4P4k7H1/5pmSq3qQeOcXDeRaJrKc
+fNlhHjZlCCE=
+=cCvD
+-----END PGP SIGNATURE-----
 
-3) After the orphanization of inode 262, we create the new reference for
-   inode 260 by issuing a link command with a target path of "dir1/dir3"
-   and a source path of "o262-7-0/file22".
-
-4) We then start processing the deleted references for inode 260, for
-   which there is only one with the base name of "file22", and issue
-   an unlink operation containing the target path computed at step 1,
-   which is wrong because that path no longer exists and should be
-   replaced with "o262-7-0/file22".
-
-So fix this issue by recomputing the full path of deleted references if
-when we processed the new references for an inode we ended up orphanizing
-any other inode that is an ancestor of our inode in the parent snapshot.
-
-A test case for fstests follows soon.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
-
-Depends on a recent patch named:
-
- "Btrfs: send, fix invalid path after renaming and linking file"
-
- fs/btrfs/send.c | 65 +++++++++++++++++++++++++++++++++++++++++++++++----------
- 1 file changed, 54 insertions(+), 11 deletions(-)
-
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 381ec4d58edf..4d2622331b67 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -2778,6 +2778,20 @@ struct recorded_ref {
- 	int name_len;
- };
- 
-+static void set_ref_path(struct recorded_ref *ref,
-+			 struct fs_path *path)
-+{
-+	ref->full_path = path;
-+	ref->name = (char *)kbasename(ref->full_path->start);
-+	ref->name_len = ref->full_path->end - ref->name;
-+	ref->dir_path = ref->full_path->start;
-+	if (ref->name == ref->full_path->start)
-+		ref->dir_path_len = 0;
-+	else
-+		ref->dir_path_len = ref->full_path->end -
-+			ref->full_path->start - 1 - ref->name_len;
-+}
-+
- /*
-  * We need to process new refs before deleted refs, but compare_tree gives us
-  * everything mixed. So we first record all refs and later process them.
-@@ -2794,17 +2808,7 @@ static int __record_ref(struct list_head *head, u64 dir,
- 
- 	ref->dir = dir;
- 	ref->dir_gen = dir_gen;
--	ref->full_path = path;
--
--	ref->name = (char *)kbasename(ref->full_path->start);
--	ref->name_len = ref->full_path->end - ref->name;
--	ref->dir_path = ref->full_path->start;
--	if (ref->name == ref->full_path->start)
--		ref->dir_path_len = 0;
--	else
--		ref->dir_path_len = ref->full_path->end -
--				ref->full_path->start - 1 - ref->name_len;
--
-+	set_ref_path(ref, path);
- 	list_add_tail(&ref->list, head);
- 	return 0;
- }
-@@ -3699,6 +3703,7 @@ static int process_recorded_refs(struct send_ctx *sctx, int *pending_move)
- 	int is_orphan = 0;
- 	u64 last_dir_ino_rm = 0;
- 	bool can_rename = true;
-+	bool orphanized_ancestor = false;
- 
- 	btrfs_debug(fs_info, "process_recorded_refs %llu", sctx->cur_ino);
- 
-@@ -3854,6 +3859,7 @@ static int process_recorded_refs(struct send_ctx *sctx, int *pending_move)
- 						  ow_inode, ow_gen,
- 						  sctx->cur_ino, NULL);
- 				if (ret > 0) {
-+					orphanized_ancestor = true;
- 					fs_path_reset(valid_path);
- 					ret = get_cur_path(sctx, sctx->cur_ino,
- 							   sctx->cur_inode_gen,
-@@ -3979,6 +3985,43 @@ static int process_recorded_refs(struct send_ctx *sctx, int *pending_move)
- 			if (ret < 0)
- 				goto out;
- 			if (!ret) {
-+				/*
-+				 * If we orphanized any ancestor before, we need
-+				 * to recompute the full path for deleted names,
-+				 * since any such path was computed before we
-+				 * processed any references and orphanized any
-+				 * ancestor inode.
-+				 */
-+				if (orphanized_ancestor) {
-+					struct fs_path *new_path;
-+
-+					/*
-+					 * Our reference's name member points to
-+					 * its full_path member string, so we
-+					 * use here a new path.
-+					 */
-+					new_path = fs_path_alloc();
-+					if (!new_path) {
-+						ret = -ENOMEM;
-+						goto out;
-+					}
-+					ret = get_cur_path(sctx, cur->dir,
-+							   cur->dir_gen,
-+							   new_path);
-+					if (ret < 0) {
-+						fs_path_free(new_path);
-+						goto out;
-+					}
-+					ret = fs_path_add(new_path,
-+							  cur->name,
-+							  cur->name_len);
-+					if (ret < 0) {
-+						fs_path_free(new_path);
-+						goto out;
-+					}
-+					fs_path_free(cur->full_path);
-+					set_ref_path(cur, new_path);
-+				}
- 				ret = send_unlink(sctx, cur->full_path);
- 				if (ret < 0)
- 					goto out;
--- 
-2.11.0
-
+--CVnXBW4h2fhwOuA1oVxEMPlckGmW1uJuN--

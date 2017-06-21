@@ -1,143 +1,111 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:40130 "EHLO
-        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751133AbdFUPOD (ORCPT
+Received: from mail-qt0-f180.google.com ([209.85.216.180]:36779 "EHLO
+        mail-qt0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752835AbdFUPQm (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Jun 2017 11:14:03 -0400
-Date: Wed, 21 Jun 2017 08:13:39 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Hugo Mills <hugo@carfax.org.uk>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: How to fix errors that check --mode lomem finds, but --mode normal doesn't?
-Message-ID: <20170621151339.GK5303@merlins.org>
-References: <20170620143916.GA22987@merlins.org> <20170620152354.GD7140@carfax.org.uk> <20170620152648.GB22987@merlins.org> <20170620153601.GE7140@carfax.org.uk> <20170620154429.GC22987@merlins.org> <20170620231202.GB5303@merlins.org> <CAJCQCtQMWKJwWjeM4zEb-W7-tjsZyfCo37YyT2xYi0fNTEzcUQ@mail.gmail.com> <20170621034352.GE5303@merlins.org>
+        Wed, 21 Jun 2017 11:16:42 -0400
+Received: by mail-qt0-f180.google.com with SMTP id i2so11760361qta.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Jun 2017 08:16:41 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170621034352.GE5303@merlins.org>
+In-Reply-To: <CAGqmi75snUUa3MzBVzu6wcWV6qzPpOBmCU-Ug4xGBVuz_E5gEg@mail.gmail.com>
+References: <CAGqmi75fwUz4CcktjTm=KFSUSpmqeb0RDQrAgjL39KGqQMs=rQ@mail.gmail.com>
+ <CAGqmi75snUUa3MzBVzu6wcWV6qzPpOBmCU-Ug4xGBVuz_E5gEg@mail.gmail.com>
+From: Timofey Titovets <nefelim4ag@gmail.com>
+Date: Wed, 21 Jun 2017 18:16:00 +0300
+Message-ID: <CAGqmi77S7nzv73kNwVGGVuKhJLF7aY9gZYQT+JuN0LPEdY4eAg@mail.gmail.com>
+Subject: Re: RFC: Compression - calculate entropy for data set
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 20, 2017 at 08:43:52PM -0700, Marc MERLIN wrote:
-> On Tue, Jun 20, 2017 at 09:31:42PM -0600, Chris Murphy wrote:
-> > On Tue, Jun 20, 2017 at 5:12 PM, Marc MERLIN <marc@merlins.org> wrote:
-> > 
-> > > I'm now going to remount this with nospace_cache to see if your guess about
-> > > space_cache was correct.
-> > > Other suggestions also welcome :)
-> > 
-> > What results do you get with lowmem mode? It won't repair without
-> > additional patches, but might give a dev a clue what's going on. I
-> > regularly see normal mode check finds no problems, and lowmem mode
-> > finds problems. Lowmem mode is a total rewrite so it's a different
-> > implementation and can find things normal mode won't.
-> 
-> Oh, I kind of forgot that lowmem mode looked for more things than regular
-> mode.
-> I will run this tonight and see what it says.
- 
-It's probably still a ways from being finished given how slow lowmem is in
-comparison, but sadly it found a bunch of problems which regular mode didn't
-find.
+I've done with heuristic method,
+so i post some performance test output:
+(I store test data in /run/user/$UID/, and script just ran programm 20000 times)
+###
+# Performance test will measure initialization time
+# And remove it from run time of tests
+# This may be inaccurate in some cases
+# But this allow see speed difference
+./performance_test.sh
 
-I'm pretty bummed. I just spent way too long recreating this filesystem and
-the multiple btrfs send/receive relationships from other machines. Too a bit
-over a week :(
+Test good compressible data: 128k
+AVG Initialization time: 17018ms
+avg mean:       3240ms
+shannon float:  11537ms
+shannon integ:  9933ms
+heuristic:      2060ms
+gzip -ck -3 /run/user/1000/test_data.bin:       19767ms
+lzop -ck -3 /run/user/1000/test_data.bin:       12393ms
+lzop -ck -1 /run/user/1000/test_data.bin:       13660ms
+- - - - -
+Test half compressible data: 128k
+AVG Initialization time: 15820ms
+avg mean:       3302ms
+shannon float:  8680ms
+shannon integ:  9659ms
+heuristic:      3207ms // 128*20000/1024/3 ~ 800 Mb/s
+gzip -ck -3 /run/user/1000/test_data.bin:       57245ms
+lzop -ck -3 /run/user/1000/test_data.bin:       14175ms
+lzop -ck -1 /run/user/1000/test_data.bin:       15392ms
+- - - - -
+Test bad compressible data: 128k
+AVG Initialization time: 16878ms
+avg mean:       4410ms
+shannon float:  7113ms
+shannon integ:  6777ms
+heuristic:      2162ms  // 128*20000/1024/2 ~ 1250 Mb/s
+gzip -ck -3 /run/user/1000/test_data.bin:       110578ms
+lzop -ck -3 /run/user/1000/test_data.bin:       14238ms
+lzop -ck -1 /run/user/1000/test_data.bin:       15332ms
+- - - - -
+Test good compressible data: 8k
+AVG Initialization time: 17526ms
+avg mean:       1683ms
+shannon float:  5762ms
+shannon integ:  2427ms
+heuristic:      1858ms
+gzip -ck -3 /run/user/1000/test_data.bin:       2745ms
+lzop -ck -3 /run/user/1000/test_data.bin:       10221ms
+lzop -ck -1 /run/user/1000/test_data.bin:       11960ms
+- - - - -
+Test half compressible data: 8k
+AVG Initialization time: 17513ms
+avg mean:       1853ms
+shannon float:  1933ms
+shannon integ:  2572ms
+heuristic:      2571ms
+gzip -ck -3 /run/user/1000/test_data.bin:       4167ms
+lzop -ck -3 /run/user/1000/test_data.bin:       9502ms
+lzop -ck -1 /run/user/1000/test_data.bin:       10923ms
+- - - - -
+Test bad compressible data: 8k
+AVG Initialization time: 18164ms
+avg mean:       -28ms
+shannon float:  312ms
+shannon integ:  1891ms
+heuristic:      542ms
+gzip -ck -3 /run/user/1000/test_data.bin:       6407ms
+lzop -ck -3 /run/user/1000/test_data.bin:       9088ms
+lzop -ck -1 /run/user/1000/test_data.bin:       10741ms
 
-It looks like the errors are not major (especially if the regular mode
-doesn't even see them), but without lowmem --repair, I'm kind of screwed.
+So as you can see most of time heuristic test are 5 times faster then
+direct compression.
+I did some base testing on that (trying  random pieces of data: blocks
+from VM images, Photos, Texts, /dev/zero, /dev/urandom)
+And heuristic method are pretty accurate, most of magic are happens in [2].
 
-I'm wondering if I could/should leave those errors unfixed until lowmem --repair
-finally happens, or whether I'm looking at spending another week rebuilding
-this filesystem :-/
 
+I think that in near time i will try make some kernel patch set for that.
+If someone interest in that, you can look code and do some tests on your data
+I appreciate any feedback!
 
-gargamel:~# btrfs check -p --mode lowmem  /dev/mapper/dshelf2
-Checking filesystem on /dev/mapper/dshelf2
-UUID: 85441c59-ad11-4b25-b1fe-974f9e4acede
-ERROR: extent[3886187384832, 81920] referencer count mismatch (root: 11930, owner: 375444, offset: 1851654144) wanted: 1, have: 4
-ERROR: extent[3886189391872, 122880] referencer count mismatch (root: 11712, owner: 863395, offset: 79659008) wanted: 1, have: 2
-ERROR: extent[3933249708032, 69632] referencer count mismatch (root: 12424, owner: 6945, offset: 2083389440) wanted: 1, have: 2
-ERROR: extent[3933249708032, 69632] referencer count mismatch (root: 12172, owner: 6945, offset: 2083389440) wanted: 1, have: 2
-ERROR: extent[4571729862656, 876544] referencer count mismatch (root: 11058, owner: 375442, offset: 907706368) wanted: 6, have: 21
-ERROR: extent[4641490833408, 270336] referencer count mismatch (root: 11712, owner: 375444, offset: 1848672256) wanted: 3, have: 5
-ERROR: extent[4641490833408, 270336] referencer count mismatch (root: 11276, owner: 375444, offset: 1848672256) wanted: 3, have: 5
-ERROR: extent[4641490833408, 270336] referencer count mismatch (root: 11058, owner: 375444, offset: 1848672256) wanted: 3, have: 5
-ERROR: extent[4641490833408, 270336] referencer count mismatch (root: 11494, owner: 375444, offset: 1848672256) wanted: 3, have: 5
-ERROR: extent[4658555617280, 122880] referencer count mismatch (root: 11712, owner: 375444, offset: 1848705024) wanted: 1, have: 3
-ERROR: extent[4677858123776, 417792] referencer count mismatch (root: 11712, owner: 863395, offset: 79523840) wanted: 1, have: 3
-ERROR: extent[4677858123776, 417792] referencer count mismatch (root: 11930, owner: 863395, offset: 79523840) wanted: 1, have: 3
-ERROR: extent[4698380947456, 409600] referencer count mismatch (root: 11930, owner: 375444, offset: 1851596800) wanted: 3, have: 4
-ERROR: extent[4720470421504, 667648] referencer count mismatch (root: 11058, owner: 3463478, offset: 2334720) wanted: 2, have: 10
-ERROR: extent[4783941246976, 65536] referencer count mismatch (root: 9365, owner: 24493, offset: 4562944) wanted: 2, have: 3
-ERROR: extent[5077564477440, 106496] referencer count mismatch (root: 9370, owner: 1602694, offset: 734756864) wanted: 1, have: 2
-ERROR: extent[5136306929664, 131489792] referencer count mismatch (root: 11712, owner: 375441, offset: 910999552) wanted: 16, have: 1864
-ERROR: extent[5136306929664, 131489792] referencer count mismatch (root: 11276, owner: 375441, offset: 910999552) wanted: 867, have: 1865
-ERROR: extent[5136306929664, 131489792] referencer count mismatch (root: 11058, owner: 375441, offset: 910999552) wanted: 126, have: 1872
-ERROR: extent[5136306929664, 131489792] referencer count mismatch (root: 11494, owner: 375441, offset: 910999552) wanted: 866, have: 1864
-ERROR: extent[5136306929664, 131489792] referencer count mismatch (root: 11930, owner: 375441, offset: 910999552) wanted: 861, have: 1859
-ERROR: extent[5136649891840, 66781184] referencer count mismatch (root: 11058, owner: 375442, offset: 192659456) wanted: 5, have: 19
-ERROR: extent[5136879157248, 134217728] referencer count mismatch (root: 11930, owner: 375442, offset: 394543104) wanted: 10, have: 33
-ERROR: extent[5137380671488, 80945152] referencer count mismatch (root: 11058, owner: 375442, offset: 875233280) wanted: 1, have: 21
-ERROR: extent[5137380671488, 80945152] referencer count mismatch (root: 11930, owner: 375442, offset: 875233280) wanted: 11, have: 21
-ERROR: extent[5138641395712, 524288] referencer count mismatch (root: 11494, owner: 375445, offset: 39845888) wanted: 1, have: 3
-ERROR: extent[5190245990400, 53248] referencer count mismatch (root: 11712, owner: 863395, offset: 51118080) wanted: 1, have: 4
-ERROR: extent[5190245990400, 53248] referencer count mismatch (root: 11276, owner: 863395, offset: 51118080) wanted: 1, have: 4
-ERROR: extent[5190245990400, 53248] referencer count mismatch (root: 11494, owner: 863395, offset: 51118080) wanted: 1, have: 4
-ERROR: extent[5190274174976, 77824] referencer count mismatch (root: 11276, owner: 863395, offset: 74952704) wanted: 3, have: 5
-ERROR: extent[5190274174976, 77824] referencer count mismatch (root: 11058, owner: 863395, offset: 74952704) wanted: 3, have: 5
-ERROR: extent[5190274174976, 77824] referencer count mismatch (root: 11494, owner: 863395, offset: 74952704) wanted: 3, have: 5
-ERROR: extent[5190274174976, 77824] referencer count mismatch (root: 11930, owner: 863395, offset: 74952704) wanted: 3, have: 5
-ERROR: extent[5190275895296, 77824] referencer count mismatch (root: 11712, owner: 863395, offset: 77705216) wanted: 1, have: 6
-ERROR: extent[5190275895296, 77824] referencer count mismatch (root: 11276, owner: 863395, offset: 77705216) wanted: 5, have: 6
-ERROR: extent[5190275895296, 77824] referencer count mismatch (root: 11058, owner: 863395, offset: 77705216) wanted: 5, have: 6
-ERROR: extent[5427326599168, 61440] referencer count mismatch (root: 9370, owner: 1225712, offset: 29753344) wanted: 1, have: 5
-ERROR: extent[5456623030272, 24576] referencer count mismatch (root: 11058, owner: 2278892, offset: 786432) wanted: 2, have: 3
-ERROR: extent[5851251269632, 134217728] referencer count mismatch (root: 9370, owner: 1602695, offset: 534061056) wanted: 3, have: 4
-ERROR: errors found in extent allocation tree or chunk allocation
-cache and super generation don't match, space cache will be invalidated
-ERROR: root 3857 EXTENT_DATA[108864 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[133050 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[388570 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[729583 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[984778 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[997394 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[1002954 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[1007491 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[1111463 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[1111506 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[1111536 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[1111536 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[1134500 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[1136498 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[1175965 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[1185977 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[1190919 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[1201340 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[1230370 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[1230530 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[1230530 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[1235960 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[1248784 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[1271827 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[1295242 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[1406074 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[1410780 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[1412938 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[1413532 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[1413532 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[1421245 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[1423365 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[1425985 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[1429229 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[1430615 4096] interrupt
-ERROR: root 3857 EXTENT_DATA[1443769 4096] interrupt
-ERROR: root 3860 EXTENT_DATA[599089 4096] interrupt
+Thanks!
 
-(not finished, still going on)
+P.S.
+[1] https://github.com/Nefelim4ag/Entropy_Calculation
+[2] https://github.com/Nefelim4ag/Entropy_Calculation/blob/master/heuristic.c
 
-Marc
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+Have a nice day,
+Timofey.

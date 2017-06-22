@@ -1,28 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:50540 "EHLO
-        mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1753815AbdFVWEF (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:57274 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1753824AbdFVWED (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Jun 2017 18:04:05 -0400
-Received: from pps.filterd (m0109332.ppops.net [127.0.0.1])
-        by mx0a-00082601.pphosted.com (8.16.0.20/8.16.0.20) with SMTP id v5MLwnR0001621
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Jun 2017 15:04:00 -0700
+        Thu, 22 Jun 2017 18:04:03 -0400
+Received: from pps.filterd (m0044010.ppops.net [127.0.0.1])
+        by mx0a-00082601.pphosted.com (8.16.0.20/8.16.0.20) with SMTP id v5MLxXYJ032231
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Jun 2017 15:03:52 -0700
 Received: from mail.thefacebook.com ([199.201.64.23])
-        by mx0a-00082601.pphosted.com with ESMTP id 2b8m9t8cfj-1
+        by mx0a-00082601.pphosted.com with ESMTP id 2b8mwfgc1a-1
         (version=TLSv1 cipher=ECDHE-RSA-AES256-SHA bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Jun 2017 15:04:00 -0700
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Jun 2017 15:03:52 -0700
 Received: from facebook.com (2401:db00:21:6023:face:0:9:0)      by
  mx-out.facebook.com (2401:db00:2050:5102:face:0000:003b:0000) with ESMTP       id
- ad7d842e579611e7a4da0f7588574c86-d65398f0 for <linux-btrfs@vger.kernel.org>;
-        Thu, 22 Jun 2017 15:03:52 -0700
+ acba39d8579611e7becf0f7588574c86-d953f8f0 for <linux-btrfs@vger.kernel.org>;
+        Thu, 22 Jun 2017 15:03:51 -0700
 From: Nick Terrell <terrelln@fb.com>
 To: Nick Terrell <terrelln@fb.com>
 CC: <kernel-team@fb.com>, Chris Mason <clm@fb.com>, Yann Collet <cyan@fb.com>,
         <squashfs-devel@lists.sourceforge.net>, <linux-btrfs@vger.kernel.org>,
-        <linux-kernel@vger.kernel.org>, Sean Purcell <me@seanp.xyz>
-Subject: [PATCH 4/4] squashfs: Add zstd support
-Date: Thu, 22 Jun 2017 15:01:39 -0700
-Message-ID: <20170622220139.2328978-4-terrelln@fb.com>
+        <linux-kernel@vger.kernel.org>
+Subject: [PATCH 3/4] btrfs: Add zstd support
+Date: Thu, 22 Jun 2017 15:01:38 -0700
+Message-ID: <20170622220139.2328978-3-terrelln@fb.com>
 In-Reply-To: <20170622220139.2328978-1-terrelln@fb.com>
 References: <20170622220139.2328978-1-terrelln@fb.com>
 MIME-Version: 1.0
@@ -30,296 +30,731 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add zstd compression and decompression support to SquashFS. zstd is a
-great fit for SquashFS because it can compress at ratios approaching xz,
-while decompressing twice as fast as zlib. For SquashFS in particular,
-it can decompress as fast as lzo and lz4. It also has the flexibility
-to turn down the compression ratio for faster compression times.
+Add zstd compression and decompression support to BtrFS. zstd at its
+fastest level compresses almost as well as zlib, while offering much
+faster compression and decompression, approaching lzo speeds.
 
-The compression benchmark is run on the file tree from the SquashFS archive
-found in ubuntu-16.10-desktop-amd64.iso [1]. It uses `mksquashfs` with the
-default block size (128 KB) and and various compression algorithms/levels.
-xz and zstd are also benchmarked with 256 KB blocks. The decompression
-benchmark times how long it takes to `tar` the file tree into `/dev/null`.
-See the benchmark file in the upstream zstd source repository located under
-`contrib/linux-kernel/squashfs-benchmark.sh` [2] for details.
+I benchmarked btrfs with zstd compression against no compression, lzo
+compression, and zlib compression. I benchmarked two scenarios. Copying
+a set of files to btrfs, and then reading the files. Copying a tarball
+to btrfs, extracting it to btrfs, and then reading the extracted files.
+After every operation, I call `sync` and include the sync time.
+Between every pair of operations I unmount and remount the filesystem
+to avoid caching. The benchmark files can be found in the upstream
+zstd source repository under
+`contrib/linux-kernel/{btrfs-benchmark.sh,btrfs-extract-benchmark.sh}`
+[1] [2].
 
 I ran the benchmarks on a Ubuntu 14.04 VM with 2 cores and 4 GiB of RAM.
 The VM is running on a MacBook Pro with a 3.1 GHz Intel Core i7 processor,
 16 GB of RAM, and a SSD.
 
-| Method         | Ratio | Compression MB/s | Decompression MB/s |
-|----------------|-------|------------------|--------------------|
-| gzip           |  2.92 |               15 |                128 |
-| lzo            |  2.64 |              9.5 |                217 |
-| lz4            |  2.12 |               94 |                218 |
-| xz             |  3.43 |              5.5 |                 35 |
-| xz 256 KB      |  3.53 |              5.4 |                 40 |
-| zstd 1         |  2.71 |               96 |                210 |
-| zstd 5         |  2.93 |               69 |                198 |
-| zstd 10        |  3.01 |               41 |                225 |
-| zstd 15        |  3.13 |             11.4 |                224 |
-| zstd 16 256 KB |  3.24 |              8.1 |                210 |
+The first compression benchmark is copying 10 copies of the unzipped
+Silesia corpus [3] into a BtrFS filesystem mounted with
+`-o compress-force=Method`. The decompression benchmark times how long
+it takes to `tar` all 10 copies into `/dev/null`. The compression ratio is
+measured by comparing the output of `df` and `du`. See the benchmark file
+[1] for details. I benchmarked multiple zstd compression levels, although
+the patch uses zstd level 1.
 
-This patch was written by Sean Purcell <me@seanp.xyz>, but I will be
-taking over the submission process.
+| Method  | Ratio | Compression MB/s | Decompression speed |
+|---------|-------|------------------|---------------------|
+| None    |  0.99 |              504 |                 686 |
+| lzo     |  1.66 |              398 |                 442 |
+| zlib    |  2.58 |               65 |                 241 |
+| zstd 1  |  2.57 |              260 |                 383 |
+| zstd 3  |  2.71 |              174 |                 408 |
+| zstd 6  |  2.87 |               70 |                 398 |
+| zstd 9  |  2.92 |               43 |                 406 |
+| zstd 12 |  2.93 |               21 |                 408 |
+| zstd 15 |  3.01 |               11 |                 354 |
 
-[1] http://releases.ubuntu.com/16.10/
-[2] https://github.com/facebook/zstd/blob/dev/contrib/linux-kernel/squashfs-benchmark.sh
+The next benchmark first copies `linux-4.11.6.tar` [4] to btrfs. Then it
+measures the compression ratio, extracts the tar, and deletes the tar.
+Then it measures the compression ratio again, and `tar`s the extracted
+files into `/dev/null`. See the benchmark file [2] for details.
+
+| Method | Tar Ratio | Extract Ratio | Copy (s) | Extract (s)| Read (s) |
+|--------|-----------|---------------|----------|------------|----------|
+| None   |      0.97 |          0.78 |    0.981 |      5.501 |    8.807 |
+| lzo    |      2.06 |          1.38 |    1.631 |      8.458 |    8.585 |
+| zlib   |      3.40 |          1.86 |    7.750 |     21.544 |   11.744 |
+| zstd 1 |      3.57 |          1.85 |    2.579 |     11.479 |    9.389 |
+
+[1] https://github.com/facebook/zstd/blob/dev/contrib/linux-kernel/btrfs-benchmark.sh
+[2] https://github.com/facebook/zstd/blob/dev/contrib/linux-kernel/btrfs-extract-benchmark.sh
+[3] http://sun.aei.polsl.pl/~sdeor/index.php?page=silesia
+[4] https://cdn.kernel.org/pub/linux/kernel/v4.x/linux-4.11.6.tar.xz
 
 zstd source repository: https://github.com/facebook/zstd
 
-Cc: Sean Purcell <me@seanp.xyz>
 Signed-off-by: Nick Terrell <terrelln@fb.com>
 ---
- fs/squashfs/Kconfig        |  14 +++++
- fs/squashfs/Makefile       |   1 +
- fs/squashfs/decompressor.c |   7 +++
- fs/squashfs/decompressor.h |   4 ++
- fs/squashfs/squashfs_fs.h  |   1 +
- fs/squashfs/zstd_wrapper.c | 150 +++++++++++++++++++++++++++++++++++++++++++++
- 6 files changed, 177 insertions(+)
- create mode 100644 fs/squashfs/zstd_wrapper.c
+ fs/btrfs/Kconfig           |   2 +
+ fs/btrfs/Makefile          |   2 +-
+ fs/btrfs/compression.c     |   1 +
+ fs/btrfs/compression.h     |   6 +-
+ fs/btrfs/ctree.h           |   1 +
+ fs/btrfs/disk-io.c         |   2 +
+ fs/btrfs/ioctl.c           |   6 +-
+ fs/btrfs/props.c           |   6 +
+ fs/btrfs/super.c           |  12 +-
+ fs/btrfs/sysfs.c           |   2 +
+ fs/btrfs/zstd.c            | 433 +++++++++++++++++++++++++++++++++++++++++++++
+ include/uapi/linux/btrfs.h |   8 +-
+ 12 files changed, 469 insertions(+), 12 deletions(-)
+ create mode 100644 fs/btrfs/zstd.c
 
-diff --git a/fs/squashfs/Kconfig b/fs/squashfs/Kconfig
-index ffb093e..1adb334 100644
---- a/fs/squashfs/Kconfig
-+++ b/fs/squashfs/Kconfig
-@@ -165,6 +165,20 @@ config SQUASHFS_XZ
-
- 	  If unsure, say N.
-
-+config SQUASHFS_ZSTD
-+	bool "Include support for ZSTD compressed file systems"
-+	depends on SQUASHFS
+diff --git a/fs/btrfs/Kconfig b/fs/btrfs/Kconfig
+index 80e9c18..a26c63b 100644
+--- a/fs/btrfs/Kconfig
++++ b/fs/btrfs/Kconfig
+@@ -6,6 +6,8 @@ config BTRFS_FS
+ 	select ZLIB_DEFLATE
+ 	select LZO_COMPRESS
+ 	select LZO_DECOMPRESS
++	select ZSTD_COMPRESS
 +	select ZSTD_DECOMPRESS
-+	help
-+	  Saying Y here includes support for reading Squashfs file systems
-+	  compressed with ZSTD compression.  ZSTD gives better compression than
-+	  the default ZLIB compression, while using less CPU.
-+
-+	  ZSTD is not the standard compression used in Squashfs and so most
-+	  file systems will be readable without selecting this option.
-+
-+	  If unsure, say N.
-+
- config SQUASHFS_4K_DEVBLK_SIZE
- 	bool "Use 4K device block size?"
- 	depends on SQUASHFS
-diff --git a/fs/squashfs/Makefile b/fs/squashfs/Makefile
-index 246a6f3..6655631 100644
---- a/fs/squashfs/Makefile
-+++ b/fs/squashfs/Makefile
-@@ -15,3 +15,4 @@ squashfs-$(CONFIG_SQUASHFS_LZ4) += lz4_wrapper.o
- squashfs-$(CONFIG_SQUASHFS_LZO) += lzo_wrapper.o
- squashfs-$(CONFIG_SQUASHFS_XZ) += xz_wrapper.o
- squashfs-$(CONFIG_SQUASHFS_ZLIB) += zlib_wrapper.o
-+squashfs-$(CONFIG_SQUASHFS_ZSTD) += zstd_wrapper.o
-diff --git a/fs/squashfs/decompressor.c b/fs/squashfs/decompressor.c
-index d2bc136..8366398 100644
---- a/fs/squashfs/decompressor.c
-+++ b/fs/squashfs/decompressor.c
-@@ -65,6 +65,12 @@ static const struct squashfs_decompressor squashfs_zlib_comp_ops = {
- };
- #endif
-
-+#ifndef CONFIG_SQUASHFS_ZSTD
-+static const struct squashfs_decompressor squashfs_zstd_comp_ops = {
-+	NULL, NULL, NULL, NULL, ZSTD_COMPRESSION, "zstd", 0
-+};
-+#endif
-+
- static const struct squashfs_decompressor squashfs_unknown_comp_ops = {
- 	NULL, NULL, NULL, NULL, 0, "unknown", 0
- };
-@@ -75,6 +81,7 @@ static const struct squashfs_decompressor *decompressor[] = {
- 	&squashfs_lzo_comp_ops,
- 	&squashfs_xz_comp_ops,
- 	&squashfs_lzma_unsupported_comp_ops,
-+	&squashfs_zstd_comp_ops,
- 	&squashfs_unknown_comp_ops
+ 	select RAID6_PQ
+ 	select XOR_BLOCKS
+ 	select SRCU
+diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
+index 128ce17..962a95a 100644
+--- a/fs/btrfs/Makefile
++++ b/fs/btrfs/Makefile
+@@ -6,7 +6,7 @@ btrfs-y += super.o ctree.o extent-tree.o print-tree.o root-tree.o dir-item.o \
+ 	   transaction.o inode.o file.o tree-defrag.o \
+ 	   extent_map.o sysfs.o struct-funcs.o xattr.o ordered-data.o \
+ 	   extent_io.o volumes.o async-thread.o ioctl.o locking.o orphan.o \
+-	   export.o tree-log.o free-space-cache.o zlib.o lzo.o \
++	   export.o tree-log.o free-space-cache.o zlib.o lzo.o zstd.o \
+ 	   compression.o delayed-ref.o relocation.o delayed-inode.o scrub.o \
+ 	   reada.o backref.o ulist.o qgroup.o send.o dev-replace.o raid56.o \
+ 	   uuid-tree.o props.o hash.o free-space-tree.o
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index 10e6b28..3beb0d0 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -761,6 +761,7 @@ static struct {
+ static const struct btrfs_compress_op * const btrfs_compress_op[] = {
+ 	&btrfs_zlib_compress,
+ 	&btrfs_lzo_compress,
++	&btrfs_zstd_compress,
  };
 
-diff --git a/fs/squashfs/decompressor.h b/fs/squashfs/decompressor.h
-index a25713c..0f5a8e4 100644
---- a/fs/squashfs/decompressor.h
-+++ b/fs/squashfs/decompressor.h
-@@ -58,4 +58,8 @@ extern const struct squashfs_decompressor squashfs_lzo_comp_ops;
- extern const struct squashfs_decompressor squashfs_zlib_comp_ops;
- #endif
+ void __init btrfs_init_compress(void)
+diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
+index 39ec43a..d99fc21 100644
+--- a/fs/btrfs/compression.h
++++ b/fs/btrfs/compression.h
+@@ -60,8 +60,9 @@ enum btrfs_compression_type {
+ 	BTRFS_COMPRESS_NONE  = 0,
+ 	BTRFS_COMPRESS_ZLIB  = 1,
+ 	BTRFS_COMPRESS_LZO   = 2,
+-	BTRFS_COMPRESS_TYPES = 2,
+-	BTRFS_COMPRESS_LAST  = 3,
++	BTRFS_COMPRESS_ZSTD  = 3,
++	BTRFS_COMPRESS_TYPES = 3,
++	BTRFS_COMPRESS_LAST  = 4,
+ };
 
-+#ifdef CONFIG_SQUASHFS_ZSTD
-+extern const struct squashfs_decompressor squashfs_zstd_comp_ops;
-+#endif
-+
- #endif
-diff --git a/fs/squashfs/squashfs_fs.h b/fs/squashfs/squashfs_fs.h
-index 506f4ba..24d12fd 100644
---- a/fs/squashfs/squashfs_fs.h
-+++ b/fs/squashfs/squashfs_fs.h
-@@ -241,6 +241,7 @@ struct meta_index {
- #define LZO_COMPRESSION		3
- #define XZ_COMPRESSION		4
- #define LZ4_COMPRESSION		5
-+#define ZSTD_COMPRESSION	6
+ struct btrfs_compress_op {
+@@ -92,5 +93,6 @@ struct btrfs_compress_op {
 
- struct squashfs_super_block {
- 	__le32			s_magic;
-diff --git a/fs/squashfs/zstd_wrapper.c b/fs/squashfs/zstd_wrapper.c
+ extern const struct btrfs_compress_op btrfs_zlib_compress;
+ extern const struct btrfs_compress_op btrfs_lzo_compress;
++extern const struct btrfs_compress_op btrfs_zstd_compress;
+
+ #endif
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 4f8f75d..61dd3dd 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -271,6 +271,7 @@ struct btrfs_super_block {
+ 	 BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS |		\
+ 	 BTRFS_FEATURE_INCOMPAT_BIG_METADATA |		\
+ 	 BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO |		\
++	 BTRFS_FEATURE_INCOMPAT_COMPRESS_ZSTD |		\
+ 	 BTRFS_FEATURE_INCOMPAT_RAID56 |		\
+ 	 BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF |		\
+ 	 BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA |	\
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 5f678dc..49c0e91 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2831,6 +2831,8 @@ int open_ctree(struct super_block *sb,
+ 	features |= BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF;
+ 	if (fs_info->compress_type == BTRFS_COMPRESS_LZO)
+ 		features |= BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO;
++	else if (fs_info->compress_type == BTRFS_COMPRESS_ZSTD)
++		features |= BTRFS_FEATURE_INCOMPAT_COMPRESS_ZSTD;
+
+ 	if (features & BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA)
+ 		btrfs_info(fs_info, "has skinny extents");
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index e176375..f732cfd 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -327,8 +327,10 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
+
+ 		if (fs_info->compress_type == BTRFS_COMPRESS_LZO)
+ 			comp = "lzo";
+-		else
++		else if (fs_info->compress_type == BTRFS_COMPRESS_ZLIB)
+ 			comp = "zlib";
++		else
++			comp = "zstd";
+ 		ret = btrfs_set_prop(inode, "btrfs.compression",
+ 				     comp, strlen(comp), 0);
+ 		if (ret)
+@@ -1463,6 +1465,8 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+
+ 	if (range->compress_type == BTRFS_COMPRESS_LZO) {
+ 		btrfs_set_fs_incompat(fs_info, COMPRESS_LZO);
++	} else if (range->compress_type == BTRFS_COMPRESS_ZSTD) {
++		btrfs_set_fs_incompat(fs_info, COMPRESS_ZSTD);
+ 	}
+
+ 	ret = defrag_count;
+diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
+index d6cb155..162105f 100644
+--- a/fs/btrfs/props.c
++++ b/fs/btrfs/props.c
+@@ -383,6 +383,8 @@ static int prop_compression_validate(const char *value, size_t len)
+ 		return 0;
+ 	else if (!strncmp("zlib", value, len))
+ 		return 0;
++	else if (!strncmp("zstd", value, len))
++		return 0;
+
+ 	return -EINVAL;
+ }
+@@ -405,6 +407,8 @@ static int prop_compression_apply(struct inode *inode,
+ 		type = BTRFS_COMPRESS_LZO;
+ 	else if (!strncmp("zlib", value, len))
+ 		type = BTRFS_COMPRESS_ZLIB;
++	else if (!strncmp("zstd", value, len))
++		type = BTRFS_COMPRESS_ZSTD;
+ 	else
+ 		return -EINVAL;
+
+@@ -422,6 +426,8 @@ static const char *prop_compression_extract(struct inode *inode)
+ 		return "zlib";
+ 	case BTRFS_COMPRESS_LZO:
+ 		return "lzo";
++	case BTRFS_COMPRESS_ZSTD:
++		return "zstd";
+ 	}
+
+ 	return NULL;
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 4f1cdd5..4f792d5 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -513,6 +513,14 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+ 				btrfs_clear_opt(info->mount_opt, NODATASUM);
+ 				btrfs_set_fs_incompat(info, COMPRESS_LZO);
+ 				no_compress = 0;
++			} else if (strcmp(args[0].from, "zstd") == 0) {
++				compress_type = "zstd";
++				info->compress_type = BTRFS_COMPRESS_ZSTD;
++				btrfs_set_opt(info->mount_opt, COMPRESS);
++				btrfs_clear_opt(info->mount_opt, NODATACOW);
++				btrfs_clear_opt(info->mount_opt, NODATASUM);
++				btrfs_set_fs_incompat(info, COMPRESS_ZSTD);
++				no_compress = 0;
+ 			} else if (strncmp(args[0].from, "no", 2) == 0) {
+ 				compress_type = "no";
+ 				btrfs_clear_opt(info->mount_opt, COMPRESS);
+@@ -1240,8 +1248,10 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
+ 	if (btrfs_test_opt(info, COMPRESS)) {
+ 		if (info->compress_type == BTRFS_COMPRESS_ZLIB)
+ 			compress_type = "zlib";
+-		else
++		else if (info->compress_type == BTRFS_COMPRESS_LZO)
+ 			compress_type = "lzo";
++		else
++			compress_type = "zstd";
+ 		if (btrfs_test_opt(info, FORCE_COMPRESS))
+ 			seq_printf(seq, ",compress-force=%s", compress_type);
+ 		else
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 1f157fb..b0dec90 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -200,6 +200,7 @@ BTRFS_FEAT_ATTR_INCOMPAT(mixed_backref, MIXED_BACKREF);
+ BTRFS_FEAT_ATTR_INCOMPAT(default_subvol, DEFAULT_SUBVOL);
+ BTRFS_FEAT_ATTR_INCOMPAT(mixed_groups, MIXED_GROUPS);
+ BTRFS_FEAT_ATTR_INCOMPAT(compress_lzo, COMPRESS_LZO);
++BTRFS_FEAT_ATTR_INCOMPAT(compress_zstd, COMPRESS_ZSTD);
+ BTRFS_FEAT_ATTR_INCOMPAT(big_metadata, BIG_METADATA);
+ BTRFS_FEAT_ATTR_INCOMPAT(extended_iref, EXTENDED_IREF);
+ BTRFS_FEAT_ATTR_INCOMPAT(raid56, RAID56);
+@@ -212,6 +213,7 @@ static struct attribute *btrfs_supported_feature_attrs[] = {
+ 	BTRFS_FEAT_ATTR_PTR(default_subvol),
+ 	BTRFS_FEAT_ATTR_PTR(mixed_groups),
+ 	BTRFS_FEAT_ATTR_PTR(compress_lzo),
++	BTRFS_FEAT_ATTR_PTR(compress_zstd),
+ 	BTRFS_FEAT_ATTR_PTR(big_metadata),
+ 	BTRFS_FEAT_ATTR_PTR(extended_iref),
+ 	BTRFS_FEAT_ATTR_PTR(raid56),
+diff --git a/fs/btrfs/zstd.c b/fs/btrfs/zstd.c
 new file mode 100644
-index 0000000..8cb7c76
+index 0000000..838741b
 --- /dev/null
-+++ b/fs/squashfs/zstd_wrapper.c
-@@ -0,0 +1,150 @@
++++ b/fs/btrfs/zstd.c
+@@ -0,0 +1,433 @@
 +/*
-+ * Squashfs - a compressed read only filesystem for Linux
-+ *
 + * Copyright (c) 2016-present, Facebook, Inc.
 + * All rights reserved.
 + *
 + * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public License
-+ * as published by the Free Software Foundation; either version 2,
-+ * or (at your option) any later version.
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
 + *
 + * This program is distributed in the hope that it will be useful,
 + * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
 + *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-+ *
-+ * zstd_wrapper.c
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
 + */
-+
-+#include <linux/mutex.h>
-+#include <linux/buffer_head.h>
++#include <linux/kernel.h>
 +#include <linux/slab.h>
-+#include <linux/zstd.h>
 +#include <linux/vmalloc.h>
++#include <linux/init.h>
++#include <linux/err.h>
++#include <linux/sched.h>
++#include <linux/pagemap.h>
++#include <linux/bio.h>
++#include <linux/zstd.h>
++#include "compression.h"
 +
-+#include "squashfs_fs.h"
-+#include "squashfs_fs_sb.h"
-+#include "squashfs.h"
-+#include "decompressor.h"
-+#include "page_actor.h"
++#define ZSTD_BTRFS_MAX_WINDOWLOG 17
++#define ZSTD_BTRFS_MAX_INPUT (1 << ZSTD_BTRFS_MAX_WINDOWLOG)
++
++static ZSTD_parameters zstd_get_btrfs_parameters(size_t src_len)
++{
++	ZSTD_parameters params = ZSTD_getParams(1, src_len, 0);
++
++	if (params.cParams.windowLog > ZSTD_BTRFS_MAX_WINDOWLOG)
++		params.cParams.windowLog = ZSTD_BTRFS_MAX_WINDOWLOG;
++	WARN_ON(src_len > ZSTD_BTRFS_MAX_INPUT);
++	return params;
++}
 +
 +struct workspace {
 +	void *mem;
-+	size_t mem_size;
++	size_t size;
++	char *buf;
++	struct list_head list;
 +};
 +
-+static void *zstd_init(struct squashfs_sb_info *msblk, void *buff)
++static void zstd_free_workspace(struct list_head *ws)
 +{
-+	struct workspace *wksp = kmalloc(sizeof(*wksp), GFP_KERNEL);
-+	if (wksp == NULL)
-+		goto failed;
-+	wksp->mem_size = ZSTD_DStreamWorkspaceBound(max_t(size_t,
-+				msblk->block_size, SQUASHFS_METADATA_SIZE));
-+	wksp->mem = vmalloc(wksp->mem_size);
-+	if (wksp->mem == NULL)
-+		goto failed;
++	struct workspace *workspace = list_entry(ws, struct workspace, list);
 +
-+	return wksp;
++	vfree(workspace->mem);
++	kfree(workspace->buf);
++	kfree(workspace);
++}
 +
-+failed:
-+	ERROR("Failed to allocate zstd workspace\n");
-+	kfree(wksp);
++static struct list_head *zstd_alloc_workspace(void)
++{
++	ZSTD_parameters params =
++			zstd_get_btrfs_parameters(ZSTD_BTRFS_MAX_INPUT);
++	struct workspace *workspace;
++
++	workspace = kzalloc(sizeof(*workspace), GFP_NOFS);
++	if (!workspace)
++		return ERR_PTR(-ENOMEM);
++
++	workspace->size = max_t(size_t,
++			ZSTD_CStreamWorkspaceBound(params.cParams),
++			ZSTD_DStreamWorkspaceBound(ZSTD_BTRFS_MAX_INPUT));
++	workspace->mem = vmalloc(workspace->size);
++	workspace->buf = kmalloc(PAGE_SIZE, GFP_NOFS);
++	if (!workspace->mem || !workspace->buf)
++		goto fail;
++
++	INIT_LIST_HEAD(&workspace->list);
++
++	return &workspace->list;
++fail:
++	zstd_free_workspace(&workspace->list);
 +	return ERR_PTR(-ENOMEM);
 +}
 +
-+
-+static void zstd_free(void *strm)
++static int zstd_compress_pages(struct list_head *ws,
++		struct address_space *mapping,
++		u64 start,
++		struct page **pages,
++		unsigned long *out_pages,
++		unsigned long *total_in,
++		unsigned long *total_out)
 +{
-+	struct workspace *wksp = strm;
++	struct workspace *workspace = list_entry(ws, struct workspace, list);
++	ZSTD_CStream *stream;
++	int ret = 0;
++	int nr_pages = 0;
++	struct page *in_page = NULL;  /* The current page to read */
++	struct page *out_page = NULL; /* The current page to write to */
++	ZSTD_inBuffer in_buf = { NULL, 0, 0 };
++	ZSTD_outBuffer out_buf = { NULL, 0, 0 };
++	unsigned long tot_in = 0;
++	unsigned long tot_out = 0;
++	unsigned long len = *total_out;
++	const unsigned long nr_dest_pages = *out_pages;
++	unsigned long max_out = nr_dest_pages * PAGE_SIZE;
++	ZSTD_parameters params = zstd_get_btrfs_parameters(len);
 +
-+	if (wksp)
-+		vfree(wksp->mem);
-+	kfree(wksp);
++	*out_pages = 0;
++	*total_out = 0;
++	*total_in = 0;
++
++	/* Initialize the stream */
++	stream = ZSTD_initCStream(params, len, workspace->mem,
++			workspace->size);
++	if (!stream) {
++		pr_warn("BTRFS: ZSTD_initCStream failed\n");
++		ret = -EIO;
++		goto out;
++	}
++
++	/* map in the first page of input data */
++	in_page = find_get_page(mapping, start >> PAGE_SHIFT);
++	in_buf.src = kmap(in_page);
++	in_buf.pos = 0;
++	in_buf.size = min_t(size_t, len, PAGE_SIZE);
++
++
++	/* Allocate and map in the output buffer */
++	out_page = alloc_page(GFP_NOFS | __GFP_HIGHMEM);
++	if (out_page == NULL) {
++		ret = -ENOMEM;
++		goto out;
++	}
++	pages[nr_pages++] = out_page;
++	out_buf.dst = kmap(out_page);
++	out_buf.pos = 0;
++	out_buf.size = min_t(size_t, max_out, PAGE_SIZE);
++
++	while (1) {
++		size_t ret2;
++
++		ret2 = ZSTD_compressStream(stream, &out_buf, &in_buf);
++		if (ZSTD_isError(ret2)) {
++			pr_debug("BTRFS: ZSTD_compressStream returned %d\n",
++					ZSTD_getErrorCode(ret2));
++			ret = -EIO;
++			goto out;
++		}
++
++		/* Check to see if we are making it bigger */
++		if (tot_in + in_buf.pos > 8192 &&
++				tot_in + in_buf.pos <
++				tot_out + out_buf.pos) {
++			ret = -E2BIG;
++			goto out;
++		}
++
++		/* We've reached the end of our output range */
++		if (out_buf.pos >= max_out) {
++			tot_out += out_buf.pos;
++			ret = -E2BIG;
++			goto out;
++		}
++
++		/* Check if we need more output space */
++		if (out_buf.pos == out_buf.size) {
++			tot_out += PAGE_SIZE;
++			max_out -= PAGE_SIZE;
++			kunmap(out_page);
++			if (nr_pages == nr_dest_pages) {
++				out_page = NULL;
++				ret = -E2BIG;
++				goto out;
++			}
++			out_page = alloc_page(GFP_NOFS | __GFP_HIGHMEM);
++			if (out_page == NULL) {
++				ret = -ENOMEM;
++				goto out;
++			}
++			pages[nr_pages++] = out_page;
++			out_buf.dst = kmap(out_page);
++			out_buf.pos = 0;
++			out_buf.size = min_t(size_t, max_out, PAGE_SIZE);
++		}
++
++		/* We've reached the end of the input */
++		if (in_buf.pos >= len) {
++			tot_in += in_buf.pos;
++			break;
++		}
++
++		/* Check if we need more input */
++		if (in_buf.pos == in_buf.size) {
++			tot_in += PAGE_SIZE;
++			kunmap(in_page);
++			put_page(in_page);
++
++			start += PAGE_SIZE;
++			len -= PAGE_SIZE;
++			in_page = find_get_page(mapping, start >> PAGE_SHIFT);
++			in_buf.src = kmap(in_page);
++			in_buf.pos = 0;
++			in_buf.size = min_t(size_t, len, PAGE_SIZE);
++		}
++	}
++	while (1) {
++		size_t ret2;
++
++		ret2 = ZSTD_endStream(stream, &out_buf);
++		if (ZSTD_isError(ret2)) {
++			pr_debug("BTRFS: ZSTD_endStream returned %d\n",
++					ZSTD_getErrorCode(ret2));
++			ret = -EIO;
++			goto out;
++		}
++		if (ret2 == 0) {
++			tot_out += out_buf.pos;
++			break;
++		}
++		if (out_buf.pos >= max_out) {
++			tot_out += out_buf.pos;
++			ret = -E2BIG;
++			goto out;
++		}
++
++		tot_out += PAGE_SIZE;
++		max_out -= PAGE_SIZE;
++		kunmap(out_page);
++		if (nr_pages == nr_dest_pages) {
++			out_page = NULL;
++			ret = -E2BIG;
++			goto out;
++		}
++		out_page = alloc_page(GFP_NOFS | __GFP_HIGHMEM);
++		if (out_page == NULL) {
++			ret = -ENOMEM;
++			goto out;
++		}
++		pages[nr_pages++] = out_page;
++		out_buf.dst = kmap(out_page);
++		out_buf.pos = 0;
++		out_buf.size = min_t(size_t, max_out, PAGE_SIZE);
++	}
++
++	if (tot_out >= tot_in) {
++		ret = -E2BIG;
++		goto out;
++	}
++
++	ret = 0;
++	*total_in = tot_in;
++	*total_out = tot_out;
++out:
++	*out_pages = nr_pages;
++	/* Cleanup */
++	if (in_page) {
++		kunmap(in_page);
++		put_page(in_page);
++	}
++	if (out_page)
++		kunmap(out_page);
++	return ret;
 +}
 +
-+
-+static int zstd_uncompress(struct squashfs_sb_info *msblk, void *strm,
-+	struct buffer_head **bh, int b, int offset, int length,
-+	struct squashfs_page_actor *output)
++static int zstd_decompress_bio(struct list_head *ws, struct page **pages_in,
++		u64 disk_start,
++		struct bio *orig_bio,
++		size_t srclen)
 +{
-+	struct workspace *wksp = strm;
++	struct workspace *workspace = list_entry(ws, struct workspace, list);
 +	ZSTD_DStream *stream;
-+	size_t total_out = 0;
-+	size_t zstd_err;
-+	int k = 0;
++	int ret = 0;
++	unsigned long page_in_index = 0;
++	unsigned long total_pages_in = DIV_ROUND_UP(srclen, PAGE_SIZE);
++	unsigned long buf_start;
++	unsigned long total_out = 0;
 +	ZSTD_inBuffer in_buf = { NULL, 0, 0 };
 +	ZSTD_outBuffer out_buf = { NULL, 0, 0 };
 +
-+	stream = ZSTD_initDStream(wksp->mem_size, wksp->mem, wksp->mem_size);
-+
++	stream = ZSTD_initDStream(
++			ZSTD_BTRFS_MAX_INPUT, workspace->mem, workspace->size);
 +	if (!stream) {
-+		ERROR("Failed to initialize zstd decompressor\n");
-+		goto out;
++		pr_debug("BTRFS: ZSTD_initDStream failed\n");
++		ret = -EIO;
++		goto done;
 +	}
 +
++	in_buf.src = kmap(pages_in[page_in_index]);
++	in_buf.pos = 0;
++	in_buf.size = min_t(size_t, srclen, PAGE_SIZE);
++
++	out_buf.dst = workspace->buf;
++	out_buf.pos = 0;
 +	out_buf.size = PAGE_SIZE;
-+	out_buf.dst = squashfs_first_page(output);
 +
-+	do {
-+		if (in_buf.pos == in_buf.size && k < b) {
-+			int avail = min(length, msblk->devblksize - offset);
-+			length -= avail;
-+			in_buf.src = bh[k]->b_data + offset;
-+			in_buf.size = avail;
-+			in_buf.pos = 0;
-+			offset = 0;
++	while (1) {
++		size_t ret2;
++
++		ret2 = ZSTD_decompressStream(stream, &out_buf, &in_buf);
++		if (ZSTD_isError(ret2)) {
++			pr_debug("BTRFS: ZSTD_decompressStream returned %d\n",
++					ZSTD_getErrorCode(ret2));
++			ret = -EIO;
++			goto done;
 +		}
++		buf_start = total_out;
++		total_out += out_buf.pos;
++		out_buf.pos = 0;
 +
-+		if (out_buf.pos == out_buf.size) {
-+			out_buf.dst = squashfs_next_page(output);
-+			if (out_buf.dst == NULL) {
-+				/* shouldn't run out of pages before stream is
-+				 * done */
-+				squashfs_finish_page(output);
-+				goto out;
++		ret = btrfs_decompress_buf2page(out_buf.dst, buf_start,
++				total_out, disk_start, orig_bio);
++		if (ret == 0)
++			break;
++
++		if (in_buf.pos >= srclen)
++			break;
++
++		/* Check if we've hit the end of a frame */
++		if (ret2 == 0)
++			break;
++
++		if (in_buf.pos == in_buf.size) {
++			kunmap(pages_in[page_in_index++]);
++			if (page_in_index >= total_pages_in) {
++				in_buf.src = NULL;
++				ret = -EIO;
++				goto done;
 +			}
-+			out_buf.pos = 0;
-+			out_buf.size = PAGE_SIZE;
++			srclen -= PAGE_SIZE;
++			in_buf.src = kmap(pages_in[page_in_index]);
++			in_buf.pos = 0;
++			in_buf.size = min_t(size_t, srclen, PAGE_SIZE);
 +		}
-+
-+		total_out -= out_buf.pos;
-+		zstd_err = ZSTD_decompressStream(stream, &out_buf, &in_buf);
-+		total_out += out_buf.pos; /* add the additional data produced */
-+
-+		if (in_buf.pos == in_buf.size && k < b)
-+			put_bh(bh[k++]);
-+	} while (zstd_err != 0 && !ZSTD_isError(zstd_err));
-+
-+	squashfs_finish_page(output);
-+
-+	if (ZSTD_isError(zstd_err)) {
-+		ERROR("zstd decompression error: %d\n",
-+				(int)ZSTD_getErrorCode(zstd_err));
-+		goto out;
 +	}
-+
-+	if (k < b)
-+		goto out;
-+
-+	return (int)total_out;
-+
-+out:
-+	for (; k < b; k++)
-+		put_bh(bh[k]);
-+
-+	return -EIO;
++	ret = 0;
++	zero_fill_bio(orig_bio);
++done:
++	if (in_buf.src)
++		kunmap(pages_in[page_in_index]);
++	return ret;
 +}
 +
-+const struct squashfs_decompressor squashfs_zstd_comp_ops = {
-+	.init = zstd_init,
-+	.free = zstd_free,
-+	.decompress = zstd_uncompress,
-+	.id = ZSTD_COMPRESSION,
-+	.name = "zstd",
-+	.supported = 1
++static int zstd_decompress(struct list_head *ws, unsigned char *data_in,
++		struct page *dest_page,
++		unsigned long start_byte,
++		size_t srclen, size_t destlen)
++{
++	struct workspace *workspace = list_entry(ws, struct workspace, list);
++	ZSTD_DStream *stream;
++	int ret = 0;
++	size_t ret2;
++	ZSTD_inBuffer in_buf = { NULL, 0, 0 };
++	ZSTD_outBuffer out_buf = { NULL, 0, 0 };
++	unsigned long total_out = 0;
++	unsigned long pg_offset = 0;
++	char *kaddr;
++
++	stream = ZSTD_initDStream(
++			ZSTD_BTRFS_MAX_INPUT, workspace->mem, workspace->size);
++	if (!stream) {
++		pr_warn("BTRFS: ZSTD_initDStream failed\n");
++		ret = -EIO;
++		goto finish;
++	}
++
++	destlen = min_t(size_t, destlen, PAGE_SIZE);
++
++	in_buf.src = data_in;
++	in_buf.pos = 0;
++	in_buf.size = srclen;
++
++	out_buf.dst = workspace->buf;
++	out_buf.pos = 0;
++	out_buf.size = PAGE_SIZE;
++
++	ret2 = 1;
++	while (pg_offset < destlen && in_buf.pos < in_buf.size) {
++		unsigned long buf_start;
++		unsigned long buf_offset;
++		unsigned long bytes;
++
++		/* Check if the frame is over and we still need more input */
++		if (ret2 == 0) {
++			pr_debug("BTRFS: ZSTD_decompressStream ended early\n");
++			ret = -EIO;
++			goto finish;
++		}
++		ret2 = ZSTD_decompressStream(stream, &out_buf, &in_buf);
++		if (ZSTD_isError(ret2)) {
++			pr_debug("BTRFS: ZSTD_decompressStream returned %d\n",
++					ZSTD_getErrorCode(ret2));
++			ret = -EIO;
++			goto finish;
++		}
++
++		buf_start = total_out;
++		total_out += out_buf.pos;
++		out_buf.pos = 0;
++
++		if (total_out <= start_byte)
++			continue;
++
++		if (total_out > start_byte && buf_start < start_byte)
++			buf_offset = start_byte - buf_start;
++		else
++			buf_offset = 0;
++
++		bytes = min_t(unsigned long, destlen - pg_offset,
++				out_buf.size - buf_offset);
++
++		kaddr = kmap_atomic(dest_page);
++		memcpy(kaddr + pg_offset, out_buf.dst + buf_offset, bytes);
++		kunmap_atomic(kaddr);
++
++		pg_offset += bytes;
++	}
++	ret = 0;
++finish:
++	if (pg_offset < destlen) {
++		kaddr = kmap_atomic(dest_page);
++		memset(kaddr + pg_offset, 0, destlen - pg_offset);
++		kunmap_atomic(kaddr);
++	}
++	return ret;
++}
++
++const struct btrfs_compress_op btrfs_zstd_compress = {
++	.alloc_workspace = zstd_alloc_workspace,
++	.free_workspace = zstd_free_workspace,
++	.compress_pages = zstd_compress_pages,
++	.decompress_bio = zstd_decompress_bio,
++	.decompress = zstd_decompress,
 +};
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index a456e53..992c150 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -255,13 +255,7 @@ struct btrfs_ioctl_fs_info_args {
+ #define BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL	(1ULL << 1)
+ #define BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS	(1ULL << 2)
+ #define BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO	(1ULL << 3)
+-/*
+- * some patches floated around with a second compression method
+- * lets save that incompat here for when they do get in
+- * Note we don't actually support it, we're just reserving the
+- * number
+- */
+-#define BTRFS_FEATURE_INCOMPAT_COMPRESS_LZOv2	(1ULL << 4)
++#define BTRFS_FEATURE_INCOMPAT_COMPRESS_ZSTD	(1ULL << 4)
+
+ /*
+  * older kernels tried to do bigger metadata blocks, but the
 --
 2.9.3

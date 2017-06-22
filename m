@@ -1,51 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-33-i5.italiaonline.it ([212.48.25.234]:36788 "EHLO
-        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751064AbdFVFPZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Jun 2017 01:15:25 -0400
-Reply-To: kreijack@inwind.it
-Subject: Re: Exactly what is wrong with RAID5/6
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: Chris Murphy <lists@colorremedies.com>, waxhead <waxhead@dirtcellar.net>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <1f5a4702-d264-51c6-aadd-d2cf521a45eb@dirtcellar.net>
- <60421001-5d74-2fb4-d916-7a397f246f20@cn.fujitsu.com>
- <CAJCQCtRM4L1DSbWU7okANdimoO6F-KgSV=y2KEovj0zMW7h6bA@mail.gmail.com>
- <1d88f12a-bd2a-9fff-cb53-da847f4526c7@cn.fujitsu.com>
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Message-ID: <896c9f64-68ca-7112-2387-24028f4628c3@inwind.it>
-Date: Thu, 22 Jun 2017 07:15:22 +0200
+Received: from mail-ot0-f171.google.com ([74.125.82.171]:34670 "EHLO
+        mail-ot0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751163AbdFVJhQ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 22 Jun 2017 05:37:16 -0400
+Received: by mail-ot0-f171.google.com with SMTP id r67so7150375ota.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Jun 2017 02:37:15 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <1d88f12a-bd2a-9fff-cb53-da847f4526c7@cn.fujitsu.com>
-Content-Type: text/plain; charset=utf-8
+From: Shyam Prasad N <nspmangalore@gmail.com>
+Date: Thu, 22 Jun 2017 15:07:14 +0530
+Message-ID: <CANT5p=p_EXUL=zWPqym8BygcQZpFgJk0kK9+zKdE1zgMkJccGQ@mail.gmail.com>
+Subject: Stability status of btrfs-convert...
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-06-22 04:12, Qu Wenruo wrote:
-> 
-> And in that case even device of data stripe 2 is missing, btrfs don't really need to use parity to rebuild it, as btrfs knows there is no extent in that stripe, and data csum matches for data stripe 1.
+Hi,
 
-You are assuming that there is no data in disk2. This is likely, due to COW nature of BTRFS. But it is not always true. 
+I'm planning to use the btrfs-convert tool to convert production data
+in ext4 filesystem into btrfs.
+What is the stability status of this feature?
 
-Anyway, the same problem happens if you are writing data on disk2 . If 
-a) data (disk2) is written 
-b) parity is not updated (due to a power failure)
+As per the below link, this tool is not in frequent use in latest linux kernels.
+https://btrfs.wiki.kernel.org/index.php/Conversion_from_Ext3
 
-until that you don't lose anything, but if
+Can I know the reason why? Is it because most existing ext4
+filesystems are already converted?
+Is this tool supported, at least? Can I use this tool as a part of
+software upgrade to change the data filesystem to btrfs?
 
-c) disk1 disappear 
-
-you are not in position to recompute valid data in disk1 using only data2 and parity
-
-
-> No need to use parity at all.
-> 
-> So that's why I think the hole write is not an urgent case to handle right now.
-> 
-> Thanks,
-> Qu
-
-
+Thanks in advance for your help.
 -- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+-Shyam

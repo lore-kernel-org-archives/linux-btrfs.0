@@ -1,105 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:17951 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751126AbdFVCB2 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Jun 2017 22:01:28 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>, <kilobyte@angband.pl>, <dsterba@suse.cz>
-Subject: [PATCH] btrfs: Remove false alert when fiemap range is smaller than on-disk extent
-Date: Thu, 22 Jun 2017 10:01:21 +0800
-Message-ID: <20170622020121.8381-1-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mx2.suse.de ([195.135.220.15]:56533 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751656AbdFVNb1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 22 Jun 2017 09:31:27 -0400
+From: Jan Kara <jack@suse.cz>
+To: <linux-fsdevel@vger.kernel.org>
+Cc: Andreas Gruenbacher <agruenba@redhat.com>, Jan Kara <jack@suse.cz>,
+        "Darrick J . Wong" <darrick.wong@oracle.com>,
+        linux-xfs@vger.kernel.org, reiserfs-devel@vger.kernel.org,
+        Mike Marshall <hubcap@omnibond.com>,
+        pvfs2-developers@beowulf-underground.org,
+        Joel Becker <jlbec@evilplan.org>, ocfs2-devel@oss.oracle.com,
+        Dave Kleikamp <shaggy@kernel.org>,
+        jfs-discussion@lists.sourceforge.net, cluster-devel@redhat.com,
+        Bob Peterson <rpeterso@redhat.com>, linux-btrfs@vger.kernel.org,
+        David Sterba <dsterba@suse.com>, linux-ext4@vger.kernel.org,
+        "Theodore Ts'o" <tytso@mit.edu>
+Subject: [PATCH 0/11 v1] Fix inheritance of SGID in presence of default ACLs
+Date: Thu, 22 Jun 2017 15:31:04 +0200
+Message-Id: <20170622133115.16968-1-jack@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit 4751832da990 ("btrfs: fiemap: Cache and merge fiemap extent before
-submit it to user") introduced a warning to catch unemitted cached
-fiemap extent.
+Hello,
 
-However such warning doesn't take the following case into consideration:
+this patch set fixes a problem introduced by commit 073931017b49 "posix_acl:
+Clear SGID bit when setting file permissions". The problem is that when new
+directory 'DIR1' is created in a directory 'DIR0' with SGID bit set, DIR1 is
+expected to have SGID bit set (and owning group equal to the owning group of
+'DIR0'). However when 'DIR0' also has some default ACLs that 'DIR1' inherits,
+setting these ACLs will result in SGID bit on 'DIR1' to get cleared if user is
+not member of the owning group.
 
-0			4K			8K
-|<---- fiemap range --->|
-|<----------- On-disk extent ------------------>|
+The problem is fixed by moving posix_acl_update_mode() so that it does not
+get called when default ACLs are inherited.
 
-In this case, the whole 0~8K is cached, and since it's larger than
-fiemap range, it break the fiemap extent emit loop.
-This leaves the fiemap extent cached but not emitted, and caught by the
-final fiemap extent sanity check, causing kernel warning.
+I have created new generic/441 test for this and verified that generic/314,
+generic/375, and generic/441 pass for ext2, ext4, btrfs, xfs, ocfs2, reiserfs.
 
-This patch removes the kernel warning and renames the sanity check to
-emit_last_fiemap_cache() since it's possible and valid to have cached
-fiemap extent.
+All patches in this series are completely independent so fs maintainers please
+pick them up as soon as they get reviewed. I'm leaving for three weeks of
+vacation at the end of the week so I won't be able to push this further for
+some time.
 
-Reported-by: David Sterba <dsterba@suse.cz>
-Reported-by: Adam Borowski <kilobyte@angband.pl>
-Fixes: 4751832da990 ("btrfs: fiemap: Cache and merge fiemap extent ...")
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
-Test case will follow with xfs_io modification to allow fiemap called on
-a given range other than the whole file.
----
- fs/btrfs/extent_io.c | 28 ++++++++++++----------------
- 1 file changed, 12 insertions(+), 16 deletions(-)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index d3619e010005..13cae68bfe46 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4463,29 +4463,25 @@ static int emit_fiemap_extent(struct fiemap_extent_info *fieinfo,
- }
- 
- /*
-- * Sanity check for fiemap cache
-+ * Emit last fiemap cache
-  *
-- * All fiemap cache should be submitted by emit_fiemap_extent()
-- * Iteration should be terminated either by last fiemap extent or
-- * fieinfo->fi_extents_max.
-- * So no cached fiemap should exist.
-+ * The last fiemap cache may still be cached in the following case:
-+ * 0		      4k		    8k
-+ * |<- Fiemap range ->|
-+ * |<------------  First extent ----------->|
-+ *
-+ * In this case, the first extent range will be cached but not emitted.
-+ * So we must emit it before ending extent_fiemap().
-  */
--static int check_fiemap_cache(struct btrfs_fs_info *fs_info,
--			       struct fiemap_extent_info *fieinfo,
--			       struct fiemap_cache *cache)
-+static int emit_last_fiemap_cache(struct btrfs_fs_info *fs_info,
-+				  struct fiemap_extent_info *fieinfo,
-+				  struct fiemap_cache *cache)
- {
- 	int ret;
- 
- 	if (!cache->cached)
- 		return 0;
- 
--	/* Small and recoverbale problem, only to info developer */
--#ifdef CONFIG_BTRFS_DEBUG
--	WARN_ON(1);
--#endif
--	btrfs_warn(fs_info,
--		   "unhandled fiemap cache detected: offset=%llu phys=%llu len=%llu flags=0x%x",
--		   cache->offset, cache->phys, cache->len, cache->flags);
- 	ret = fiemap_fill_next_extent(fieinfo, cache->offset, cache->phys,
- 				      cache->len, cache->flags);
- 	cache->cached = false;
-@@ -4701,7 +4697,7 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 	}
- out_free:
- 	if (!ret)
--		ret = check_fiemap_cache(root->fs_info, fieinfo, &cache);
-+		ret = emit_last_fiemap_cache(root->fs_info, fieinfo, &cache);
- 	free_extent_map(em);
- out:
- 	btrfs_free_path(path);
--- 
-2.13.1
-
-
-
+								Honza

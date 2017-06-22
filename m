@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35323 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:35347 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751167AbdFVOXk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Jun 2017 10:23:40 -0400
+        id S1751167AbdFVOXq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 22 Jun 2017 10:23:46 -0400
 From: Nikolay Borisov <nborisov@suse.com>
 To: tj@kernel.org
 Cc: jbacik@fb.com, jack@suse.cz, jeffm@suse.com, chandan@linux.vnet.ibm.com,
         linux-kernel@vger.kernel.org, linux-mm@kvack.org,
         linux-btrfs@vger.kernel.org, axboe@kernel.dk,
         Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 2/4] writeback: convert WB_WRITTEN/WB_DIRITED counters to bytes
-Date: Thu, 22 Jun 2017 17:23:22 +0300
-Message-Id: <1498141404-18807-3-git-send-email-nborisov@suse.com>
+Subject: [PATCH 4/4] writeback: introduce super_operations->write_metadata
+Date: Thu, 22 Jun 2017 17:23:24 +0300
+Message-Id: <1498141404-18807-5-git-send-email-nborisov@suse.com>
 In-Reply-To: <1498141404-18807-1-git-send-email-nborisov@suse.com>
 References: <1498141404-18807-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -19,235 +19,231 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Josef Bacik <jbacik@fb.com>
 
-These are counters that constantly go up in order to do bandwidth calculations.
-It isn't important what the units are in, as long as they are consistent between
-the two of them, so convert them to count bytes written/dirtied, and allow the
-metadata accounting stuff to change the counters as well. Additionally, scale
-WB_STAT_BATCH based on whether we are incrementing byte-based or page-based
-counters.
+Now that we have metadata counters in the VM, we need to provide a way to kick
+writeback on dirty metadata.  Introduce super_operations->write_metadata.  This
+allows file systems to deal with writing back any dirty metadata we need based
+on the writeback needs of the system.  Since there is no inode to key off of we
+need a list in the bdi for dirty super blocks to be added.  From there we can
+find any dirty sb's on the bdi we are currently doing writeback on and call into
+their ->write_metadata callback.
 
 Signed-off-by: Josef Bacik <jbacik@fb.com>
+Reviewed-by: Jan Kara <jack@suse.cz>
+Reviewed-by: Tejun Heo <tj@kernel.org>
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
 
-Changes since previous posting [1]:
+Changes since previous posting [1] :
 
- - Incorporated Jan Kara's feedback to rename __wb_writeout_inc to 
- __wb_writeout_add. 
+ - Forward ported to 4.12-rc6 kernel
 
- - Eliminated IRQ clustering in account_page_dirtied() by  converting
- inc_wb_stat to __add_wb_stat since the latter is already irq-safe. This was 
- requested by Tejun. 
+ I've retained the review-by tags since I didn't introduce any changes. 
 
- - After talking privately with Jan he mentioned that the way the percpu 
- counters were used to account bytes could lead to constant hit of the slow 
- path. This is due to the WB_STAT_BATCH not being scaled for bytes. I've 
- implemented a very simple logic to do that in __add_wb_stat
+[1] https://patchwork.kernel.org/patch/9395213/
+ fs/fs-writeback.c                | 72 ++++++++++++++++++++++++++++++++++++----
+ fs/super.c                       |  7 ++++
+ include/linux/backing-dev-defs.h |  2 ++
+ include/linux/fs.h               |  4 +++
+ mm/backing-dev.c                 |  2 ++
+ 5 files changed, 81 insertions(+), 6 deletions(-)
 
- - Forward ported to 4.12.-rc6
-
-One thing which will likely have to change with this patch is the fact that 
-currently wb_completion count assume that each completion has done 4k worth of 
-pages. With subpage blocksize however a completion needn't have written 4k. As
-such he suggested to convert the accounting in wb_domain to explicitly track 
-number of bytes written in a period and not completions per-period. He was 
-afraid of skewing happening. Tejun, what's your take on that ? 
-
-This patch had an ack from Tejun previously but due to my changes I haven't 
-added it. 
-
-[1] https://patchwork.kernel.org/patch/9395219/
-
- fs/fuse/file.c                   |  4 ++--
- include/linux/backing-dev-defs.h |  4 ++--
- include/linux/backing-dev.h      | 20 ++++++++++++++++++--
- mm/backing-dev.c                 |  9 +++++----
- mm/page-writeback.c              | 20 ++++++++++----------
- 5 files changed, 37 insertions(+), 20 deletions(-)
-
-diff --git a/fs/fuse/file.c b/fs/fuse/file.c
-index 3ee4fdc3da9e..2521f70ab8a6 100644
---- a/fs/fuse/file.c
-+++ b/fs/fuse/file.c
-@@ -1463,7 +1463,7 @@ static void fuse_writepage_finish(struct fuse_conn *fc, struct fuse_req *req)
- 	for (i = 0; i < req->num_pages; i++) {
- 		dec_wb_stat(&bdi->wb, WB_WRITEBACK);
- 		dec_node_page_state(req->pages[i], NR_WRITEBACK_TEMP);
--		wb_writeout_inc(&bdi->wb);
-+		wb_writeout_add(&bdi->wb, PAGE_SIZE);
- 	}
- 	wake_up(&fi->page_waitq);
+diff --git a/fs/fs-writeback.c b/fs/fs-writeback.c
+index c7b33d124f3d..9fa2b6cfaf5b 100644
+--- a/fs/fs-writeback.c
++++ b/fs/fs-writeback.c
+@@ -1479,6 +1479,31 @@ static long writeback_chunk_size(struct bdi_writeback *wb,
+ 	return pages;
  }
-@@ -1767,7 +1767,7 @@ static bool fuse_writepage_in_flight(struct fuse_req *new_req,
  
- 		dec_wb_stat(&bdi->wb, WB_WRITEBACK);
- 		dec_node_page_state(page, NR_WRITEBACK_TEMP);
--		wb_writeout_inc(&bdi->wb);
-+		wb_writeout_add(&bdi->wb, PAGE_SIZE);
- 		fuse_writepage_free(fc, new_req);
- 		fuse_request_free(new_req);
- 		goto out;
++static long writeback_sb_metadata(struct super_block *sb,
++				  struct bdi_writeback *wb,
++				  struct wb_writeback_work *work)
++{
++	struct writeback_control wbc = {
++		.sync_mode		= work->sync_mode,
++		.tagged_writepages	= work->tagged_writepages,
++		.for_kupdate		= work->for_kupdate,
++		.for_background		= work->for_background,
++		.for_sync		= work->for_sync,
++		.range_cyclic		= work->range_cyclic,
++		.range_start		= 0,
++		.range_end		= LLONG_MAX,
++	};
++	long write_chunk;
++
++	write_chunk = writeback_chunk_size(wb, work);
++	wbc.nr_to_write = write_chunk;
++	sb->s_op->write_metadata(sb, &wbc);
++	work->nr_pages -= write_chunk - wbc.nr_to_write;
++
++	return write_chunk - wbc.nr_to_write;
++}
++
++
+ /*
+  * Write a portion of b_io inodes which belong to @sb.
+  *
+@@ -1505,6 +1530,7 @@ static long writeback_sb_inodes(struct super_block *sb,
+ 	unsigned long start_time = jiffies;
+ 	long write_chunk;
+ 	long wrote = 0;  /* count both pages and inodes */
++	bool done = false;
+ 
+ 	while (!list_empty(&wb->b_io)) {
+ 		struct inode *inode = wb_inode(wb->b_io.prev);
+@@ -1621,12 +1647,18 @@ static long writeback_sb_inodes(struct super_block *sb,
+ 		 * background threshold and other termination conditions.
+ 		 */
+ 		if (wrote) {
+-			if (time_is_before_jiffies(start_time + HZ / 10UL))
+-				break;
+-			if (work->nr_pages <= 0)
++			if (time_is_before_jiffies(start_time + HZ / 10UL) ||
++			    work->nr_pages <= 0) {
++				done = true;
+ 				break;
++			}
+ 		}
+ 	}
++	if (!done && sb->s_op->write_metadata) {
++		spin_unlock(&wb->list_lock);
++		wrote += writeback_sb_metadata(sb, wb, work);
++		spin_lock(&wb->list_lock);
++	}
+ 	return wrote;
+ }
+ 
+@@ -1635,6 +1667,7 @@ static long __writeback_inodes_wb(struct bdi_writeback *wb,
+ {
+ 	unsigned long start_time = jiffies;
+ 	long wrote = 0;
++	bool done = false;
+ 
+ 	while (!list_empty(&wb->b_io)) {
+ 		struct inode *inode = wb_inode(wb->b_io.prev);
+@@ -1654,12 +1687,39 @@ static long __writeback_inodes_wb(struct bdi_writeback *wb,
+ 
+ 		/* refer to the same tests at the end of writeback_sb_inodes */
+ 		if (wrote) {
+-			if (time_is_before_jiffies(start_time + HZ / 10UL))
+-				break;
+-			if (work->nr_pages <= 0)
++			if (time_is_before_jiffies(start_time + HZ / 10UL) ||
++			    work->nr_pages <= 0) {
++				done = true;
+ 				break;
++			}
+ 		}
+ 	}
++
++	if (!done && wb_stat(wb, WB_METADATA_DIRTY_BYTES)) {
++		LIST_HEAD(list);
++
++		spin_unlock(&wb->list_lock);
++		spin_lock(&wb->bdi->sb_list_lock);
++		list_splice_init(&wb->bdi->dirty_sb_list, &list);
++		while (!list_empty(&list)) {
++			struct super_block *sb;
++
++			sb = list_first_entry(&list, struct super_block,
++					      s_bdi_dirty_list);
++			list_move_tail(&sb->s_bdi_dirty_list,
++				       &wb->bdi->dirty_sb_list);
++			if (!sb->s_op->write_metadata)
++				continue;
++			if (!trylock_super(sb))
++				continue;
++			spin_unlock(&wb->bdi->sb_list_lock);
++			wrote += writeback_sb_metadata(sb, wb, work);
++			spin_lock(&wb->bdi->sb_list_lock);
++			up_read(&sb->s_umount);
++		}
++		spin_unlock(&wb->bdi->sb_list_lock);
++		spin_lock(&wb->list_lock);
++	}
+ 	/* Leave any unwritten inodes on b_io */
+ 	return wrote;
+ }
+diff --git a/fs/super.c b/fs/super.c
+index adb0c0de428c..fa5c664bcdfb 100644
+--- a/fs/super.c
++++ b/fs/super.c
+@@ -215,6 +215,7 @@ static struct super_block *alloc_super(struct file_system_type *type, int flags,
+ 	spin_lock_init(&s->s_inode_list_lock);
+ 	INIT_LIST_HEAD(&s->s_inodes_wb);
+ 	spin_lock_init(&s->s_inode_wblist_lock);
++	INIT_LIST_HEAD(&s->s_bdi_dirty_list);
+ 
+ 	if (list_lru_init_memcg(&s->s_dentry_lru))
+ 		goto fail;
+@@ -304,6 +305,8 @@ void deactivate_locked_super(struct super_block *s)
+ {
+ 	struct file_system_type *fs = s->s_type;
+ 	if (atomic_dec_and_test(&s->s_active)) {
++		struct backing_dev_info *bdi = s->s_bdi;
++
+ 		cleancache_invalidate_fs(s);
+ 		unregister_shrinker(&s->s_shrink);
+ 		fs->kill_sb(s);
+@@ -316,6 +319,10 @@ void deactivate_locked_super(struct super_block *s)
+ 		list_lru_destroy(&s->s_dentry_lru);
+ 		list_lru_destroy(&s->s_inode_lru);
+ 
++		spin_lock(&bdi->sb_list_lock);
++		list_del_init(&s->s_bdi_dirty_list);
++		spin_unlock(&bdi->sb_list_lock);
++
+ 		put_filesystem(fs);
+ 		put_super(s);
+ 	} else {
 diff --git a/include/linux/backing-dev-defs.h b/include/linux/backing-dev-defs.h
-index 866c433e7d32..ded45ac2cec7 100644
+index 78c65e2910dc..a961f9a51a38 100644
 --- a/include/linux/backing-dev-defs.h
 +++ b/include/linux/backing-dev-defs.h
-@@ -36,8 +36,8 @@ typedef int (congested_fn)(void *, int);
- enum wb_stat_item {
- 	WB_RECLAIMABLE,
- 	WB_WRITEBACK,
--	WB_DIRTIED,
--	WB_WRITTEN,
-+	WB_DIRTIED_BYTES,
-+	WB_WRITTEN_BYTES,
- 	NR_WB_STAT_ITEMS
+@@ -176,6 +176,8 @@ struct backing_dev_info {
+ 
+ 	struct timer_list laptop_mode_wb_timer;
+ 
++	spinlock_t sb_list_lock;
++	struct list_head dirty_sb_list;
+ #ifdef CONFIG_DEBUG_FS
+ 	struct dentry *debug_dir;
+ 	struct dentry *debug_stats;
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 803e5a9b2654..2dda6afdf894 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1404,6 +1404,8 @@ struct super_block {
+ 
+ 	spinlock_t		s_inode_wblist_lock;
+ 	struct list_head	s_inodes_wb;	/* writeback inodes */
++
++	struct list_head	s_bdi_dirty_list;
  };
  
-diff --git a/include/linux/backing-dev.h b/include/linux/backing-dev.h
-index bdedea9be0a6..8b5a2e98b779 100644
---- a/include/linux/backing-dev.h
-+++ b/include/linux/backing-dev.h
-@@ -66,7 +66,23 @@ static inline bool bdi_has_dirty_io(struct backing_dev_info *bdi)
- static inline void __add_wb_stat(struct bdi_writeback *wb,
- 				 enum wb_stat_item item, s64 amount)
- {
--	percpu_counter_add_batch(&wb->stat[item], amount, WB_STAT_BATCH);
-+	s32 batch_size;
-+
-+	/*
-+	 * When woring with bytes scale the batch size to reduce hitting
-+	 * the slow path in the percpu counter
-+	 */
-+	switch (item) {
-+	case WB_DIRTIED_BYTES:
-+	case WB_WRITTEN_BYTES:
-+		batch_size = WB_STAT_BATCH << PAGE_SHIFT;
-+		break;
-+	default:
-+		batch_size = WB_STAT_BATCH;
-+		break;
-+
-+	}
-+	percpu_counter_add_batch(&wb->stat[item], amount, batch_size);
- }
- 
- static inline void inc_wb_stat(struct bdi_writeback *wb, enum wb_stat_item item)
-@@ -102,7 +118,7 @@ static inline s64 wb_stat_sum(struct bdi_writeback *wb, enum wb_stat_item item)
- 	return sum;
- }
- 
--extern void wb_writeout_inc(struct bdi_writeback *wb);
-+extern void wb_writeout_add(struct bdi_writeback *wb, long bytes);
+ /* Helper functions so that in most cases filesystems will
+@@ -1803,6 +1805,8 @@ struct super_operations {
+ 				  struct shrink_control *);
+ 	long (*free_cached_objects)(struct super_block *,
+ 				    struct shrink_control *);
++	void (*write_metadata)(struct super_block *sb,
++			       struct writeback_control *wbc);
+ };
  
  /*
-  * maximal error of a stat counter.
 diff --git a/mm/backing-dev.c b/mm/backing-dev.c
-index 0c09dd103109..2eef55428654 100644
+index b4fbe1c015ae..cc24583141c8 100644
 --- a/mm/backing-dev.c
 +++ b/mm/backing-dev.c
-@@ -67,14 +67,15 @@ static int bdi_debug_stats_show(struct seq_file *m, void *v)
- 	global_dirty_limits(&background_thresh, &dirty_thresh);
- 	wb_thresh = wb_calc_thresh(wb, dirty_thresh);
+@@ -833,6 +833,8 @@ static int bdi_init(struct backing_dev_info *bdi)
+ 	bdi->max_prop_frac = FPROP_FRAC_BASE;
+ 	INIT_LIST_HEAD(&bdi->bdi_list);
+ 	INIT_LIST_HEAD(&bdi->wb_list);
++	INIT_LIST_HEAD(&bdi->dirty_sb_list);
++	spin_lock_init(&bdi->sb_list_lock);
+ 	init_waitqueue_head(&bdi->wb_waitq);
  
-+#define BtoK(x) ((x) >> 10)
- 	seq_printf(m,
- 		   "BdiWriteback:       %10lu kB\n"
- 		   "BdiReclaimable:     %10lu kB\n"
- 		   "BdiDirtyThresh:     %10lu kB\n"
- 		   "DirtyThresh:        %10lu kB\n"
- 		   "BackgroundThresh:   %10lu kB\n"
--		   "BdiDirtied:         %10lu kB\n"
--		   "BdiWritten:         %10lu kB\n"
-+		   "BdiDirtiedBytes:    %10lu kB\n"
-+		   "BdiWrittenBytes:    %10lu kB\n"
- 		   "BdiWriteBandwidth:  %10lu kBps\n"
- 		   "b_dirty:            %10lu\n"
- 		   "b_io:               %10lu\n"
-@@ -87,8 +88,8 @@ static int bdi_debug_stats_show(struct seq_file *m, void *v)
- 		   PtoK(wb_thresh),
- 		   PtoK(dirty_thresh),
- 		   PtoK(background_thresh),
--		   (unsigned long) PtoK(wb_stat(wb, WB_DIRTIED)),
--		   (unsigned long) PtoK(wb_stat(wb, WB_WRITTEN)),
-+		   (unsigned long) BtoK(wb_stat(wb, WB_DIRTIED_BYTES)),
-+		   (unsigned long) BtoK(wb_stat(wb, WB_WRITTEN_BYTES)),
- 		   (unsigned long) PtoK(wb->write_bandwidth),
- 		   nr_dirty,
- 		   nr_io,
-diff --git a/mm/page-writeback.c b/mm/page-writeback.c
-index b96198926a1e..7e9fa012797f 100644
---- a/mm/page-writeback.c
-+++ b/mm/page-writeback.c
-@@ -597,11 +597,11 @@ static void wb_domain_writeout_inc(struct wb_domain *dom,
-  * Increment @wb's writeout completion count and the global writeout
-  * completion count. Called from test_clear_page_writeback().
-  */
--static inline void __wb_writeout_inc(struct bdi_writeback *wb)
-+static inline void __wb_writeout_add(struct bdi_writeback *wb, long bytes)
- {
- 	struct wb_domain *cgdom;
- 
--	inc_wb_stat(wb, WB_WRITTEN);
-+	__add_wb_stat(wb, WB_WRITTEN_BYTES, bytes);
- 	wb_domain_writeout_inc(&global_wb_domain, &wb->completions,
- 			       wb->bdi->max_prop_frac);
- 
-@@ -611,15 +611,15 @@ static inline void __wb_writeout_inc(struct bdi_writeback *wb)
- 				       wb->bdi->max_prop_frac);
- }
- 
--void wb_writeout_inc(struct bdi_writeback *wb)
-+void wb_writeout_add(struct bdi_writeback *wb, long bytes)
- {
- 	unsigned long flags;
- 
- 	local_irq_save(flags);
--	__wb_writeout_inc(wb);
-+	__wb_writeout_add(wb, bytes);
- 	local_irq_restore(flags);
- }
--EXPORT_SYMBOL_GPL(wb_writeout_inc);
-+EXPORT_SYMBOL_GPL(wb_writeout_add);
- 
- /*
-  * On idle system, we can be called long after we scheduled because we use
-@@ -1362,8 +1362,8 @@ static void __wb_update_bandwidth(struct dirty_throttle_control *gdtc,
- 	if (elapsed < BANDWIDTH_INTERVAL)
- 		return;
- 
--	dirtied = percpu_counter_read(&wb->stat[WB_DIRTIED]);
--	written = percpu_counter_read(&wb->stat[WB_WRITTEN]);
-+	dirtied = percpu_counter_read(&wb->stat[WB_DIRTIED_BYTES]) >> PAGE_SHIFT;
-+	written = percpu_counter_read(&wb->stat[WB_WRITTEN_BYTES]) >> PAGE_SHIFT;
- 
- 	/*
- 	 * Skip quiet periods when disk bandwidth is under-utilized.
-@@ -2437,7 +2437,7 @@ void account_page_dirtied(struct page *page, struct address_space *mapping)
- 		__inc_zone_page_state(page, NR_ZONE_WRITE_PENDING);
- 		__inc_node_page_state(page, NR_DIRTIED);
- 		inc_wb_stat(wb, WB_RECLAIMABLE);
--		inc_wb_stat(wb, WB_DIRTIED);
-+		__add_wb_stat(wb, WB_DIRTIED_BYTES, PAGE_SIZE);
- 		task_io_account_write(PAGE_SIZE);
- 		current->nr_dirtied++;
- 		this_cpu_inc(bdp_ratelimits);
-@@ -2525,7 +2525,7 @@ void account_page_redirty(struct page *page)
- 		wb = unlocked_inode_to_wb_begin(inode, &locked);
- 		current->nr_dirtied--;
- 		dec_node_page_state(page, NR_DIRTIED);
--		dec_wb_stat(wb, WB_DIRTIED);
-+		__add_wb_stat(wb, WB_DIRTIED_BYTES, -(long)PAGE_SIZE);
- 		unlocked_inode_to_wb_end(inode, locked);
- 	}
- }
-@@ -2745,7 +2745,7 @@ int test_clear_page_writeback(struct page *page)
- 				struct bdi_writeback *wb = inode_to_wb(inode);
- 
- 				dec_wb_stat(wb, WB_WRITEBACK);
--				__wb_writeout_inc(wb);
-+				__wb_writeout_add(wb, PAGE_SIZE);
- 			}
- 		}
- 
+ 	ret = cgwb_bdi_init(bdi);
 -- 
 2.7.4
 

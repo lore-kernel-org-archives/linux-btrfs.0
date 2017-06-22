@@ -1,123 +1,885 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f194.google.com ([209.85.220.194]:33441 "EHLO
-        mail-qk0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752601AbdF2UmT (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:50505 "EHLO
+        mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751546AbdFVWDo (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Jun 2017 16:42:19 -0400
-Received: by mail-qk0-f194.google.com with SMTP id p21so13130133qke.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 29 Jun 2017 13:42:18 -0700 (PDT)
-Message-ID: <1498768934.5710.7.camel@poochiereds.net>
-Subject: Re: [PATCH v8 12/18] Documentation: flesh out the section in
- vfs.txt on storing and reporting writeback errors
-From: Jeff Layton <jlayton@poochiereds.net>
-To: Matthew Wilcox <mawilcox@microsoft.com>,
-        "Darrick J. Wong" <darrick.wong@oracle.com>,
-        "jlayton@kernel.org" <jlayton@kernel.org>
-Cc: Andrew Morton <akpm@linux-foundation.org>,
-        Al Viro <viro@ZenIV.linux.org.uk>, Jan Kara <jack@suse.cz>,
-        "tytso@mit.edu" <tytso@mit.edu>, "axboe@kernel.dk" <axboe@kernel.dk>,
-        "ross.zwisler@linux.intel.com" <ross.zwisler@linux.intel.com>,
-        "corbet@lwn.net" <corbet@lwn.net>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
-        Carlos Maiolino <cmaiolino@redhat.com>, Eryu Guan <eguan@redhat.com>,
-        David Howells <dhowells@redhat.com>,
-        Christoph Hellwig <hch@infradead.org>, Liu Bo <bo.li.liu@oracle.com>,
-        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
-        "linux-mm@kvack.org" <linux-mm@kvack.org>,
-        "linux-ext4@vger.kernel.org" <linux-ext4@vger.kernel.org>,
-        "linux-xfs@vger.kernel.org" <linux-xfs@vger.kernel.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "linux-block@vger.kernel.org" <linux-block@vger.kernel.org>
-Date: Thu, 29 Jun 2017 16:42:14 -0400
-In-Reply-To: <BY2PR21MB003653755FD85FCE2C49393ECBD20@BY2PR21MB0036.namprd21.prod.outlook.com>
-References: <20170629131954.28733-1-jlayton@kernel.org>
-         <20170629131954.28733-13-jlayton@kernel.org>
-         <20170629171137.GE5874@birch.djwong.org>
-         <1498760014.22569.13.camel@poochiereds.net>
-         <BY2PR21MB003653755FD85FCE2C49393ECBD20@BY2PR21MB0036.namprd21.prod.outlook.com>
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+        Thu, 22 Jun 2017 18:03:44 -0400
+Received: from pps.filterd (m0109332.ppops.net [127.0.0.1])
+        by mx0a-00082601.pphosted.com (8.16.0.20/8.16.0.20) with SMTP id v5MLwosw001633
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Jun 2017 15:03:43 -0700
+Received: from mail.thefacebook.com ([199.201.64.23])
+        by mx0a-00082601.pphosted.com with ESMTP id 2b8m9t8ceu-1
+        (version=TLSv1 cipher=ECDHE-RSA-AES256-SHA bits=256 verify=NOT)
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Jun 2017 15:03:43 -0700
+Received: from facebook.com (2401:db00:21:6023:face:0:9:0)      by
+ mx-out.facebook.com (2401:db00:2050:5102:face:0000:003b:0000) with ESMTP       id
+ a6c702b8579611e799810f7588574c86-d6d3a8f0 for <linux-btrfs@vger.kernel.org>;
+        Thu, 22 Jun 2017 15:03:41 -0700
+From: Nick Terrell <terrelln@fb.com>
+To: Nick Terrell <terrelln@fb.com>
+CC: <kernel-team@fb.com>, Chris Mason <clm@fb.com>, Yann Collet <cyan@fb.com>,
+        <squashfs-devel@lists.sourceforge.net>, <linux-btrfs@vger.kernel.org>,
+        <linux-kernel@vger.kernel.org>
+Subject: [PATCH 1/4] lib: Add xxhash module
+Date: Thu, 22 Jun 2017 15:01:36 -0700
+Message-ID: <20170622220139.2328978-1-terrelln@fb.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2017-06-29 at 18:21 +0000, Matthew Wilcox wrote:
-> From: Jeff Layton [mailto:jlayton@poochiereds.net]
-> > On Thu, 2017-06-29 at 10:11 -0700, Darrick J. Wong wrote:
-> > > On Thu, Jun 29, 2017 at 09:19:48AM -0400, jlayton@kernel.org wrote:
-> > > > +Handling errors during writeback
-> > > > +--------------------------------
-> > > > +Most applications that utilize the pagecache will periodically call
-> > > > +fsync to ensure that data written has made it to the backing store.
-> > > 
-> > > /me wonders if this sentence ought to be worded more strongly, e.g.
-> > > 
-> > > "Applications that utilize the pagecache must call a data
-> > > synchronization syscall such as fsync, fdatasync, or msync to ensure
-> > > that data written has made it to the backing store."
-> > 
-> > Well...only if they care about the data. There are some that don't. :)
-> 
-> Also, applications don't "utilize the pagecache"; filesystems use the pagecache.
-> Applications may or may not use cached I/O.  How about this:
-> 
+Adds xxhash kernel module with xxh32 and xxh64 hashes. xxhash is an
+extremely fast non-cryptographic hash algorithm for checksumming.
+The zstd compression and decompression modules added in the next patch
+require xxhash. I extracted it out from zstd since it is useful on its
+own. I copied the code from the upstream XXHash source repository and
+translated it into kernel style. I ran benchmarks and tests in the kernel
+and tests in userland.
 
-I meant "applications that do buffered I/O" as opposed to O_DIRECT, but
-yeah that's not very clear.
+I benchmarked xxhash as a special character device. I ran in four modes,
+no-op, xxh32, xxh64, and crc32. The no-op mode simply copies the data to
+kernel space and ignores it. The xxh32, xxh64, and crc32 modes compute
+hashes on the copied data. I also ran it with four different buffer sizes.
+The benchmark file is located in the upstream zstd source repository under
+`contrib/linux-kernel/xxhash_test.c` [1].
+
+I ran the benchmarks on a Ubuntu 14.04 VM with 2 cores and 4 GiB of RAM.
+The VM is running on a MacBook Pro with a 3.1 GHz Intel Core i7 processor,
+16 GB of RAM, and a SSD. I benchmarked using the file `filesystem.squashfs`
+from `ubuntu-16.10-desktop-amd64.iso`, which is 1,536,217,088 B large.
+Run the following commands for the benchmark:
+
+    modprobe xxhash_test
+    mknod xxhash_test c 245 0
+    time cp filesystem.squashfs xxhash_test
+
+The time is reported by the time of the userland `cp`.
+The GB/s is computed with
+
+    1,536,217,008 B / time(buffer size, hash)
+
+which includes the time to copy from userland.
+The Normalized GB/s is computed with
+
+    1,536,217,088 B / (time(buffer size, hash) - time(buffer size, none)).
 
 
-> Applications which care about data integrity and use cached I/O will
-> periodically call fsync(), msync() or fdatasync() to ensure that their
-> data is durable.
-> 
-> > What should we do about sync_file_range here? It doesn't currently call
-> > any filesystem operations directly, so we don't have a good way to make
-> > it selectively use errseq_t handling there.
-> > 
-> > I could resurrect the FS_* flag for that, though I don't really like
-> > that. Should I just go ahead and convert it over to use errseq_t under
-> > the theory that most callers will eventually want that anyway?
-> 
-> I think so.
+| Buffer Size (B) | Hash  | Time (s) | GB/s | Adjusted GB/s |
+|-----------------|-------|----------|------|---------------|
+|            1024 | none  |    0.408 | 3.77 |             - |
+|            1024 | xxh32 |    0.649 | 2.37 |          6.37 |
+|            1024 | xxh64 |    0.542 | 2.83 |         11.46 |
+|            1024 | crc32 |    1.290 | 1.19 |          1.74 |
+|            4096 | none  |    0.380 | 4.04 |             - |
+|            4096 | xxh32 |    0.645 | 2.38 |          5.79 |
+|            4096 | xxh64 |    0.500 | 3.07 |         12.80 |
+|            4096 | crc32 |    1.168 | 1.32 |          1.95 |
+|            8192 | none  |    0.351 | 4.38 |             - |
+|            8192 | xxh32 |    0.614 | 2.50 |          5.84 |
+|            8192 | xxh64 |    0.464 | 3.31 |         13.60 |
+|            8192 | crc32 |    1.163 | 1.32 |          1.89 |
+|           16384 | none  |    0.346 | 4.43 |             - |
+|           16384 | xxh32 |    0.590 | 2.60 |          6.30 |
+|           16384 | xxh64 |    0.466 | 3.30 |         12.80 |
+|           16384 | crc32 |    1.183 | 1.30 |          1.84 |
 
-Ok, I'll leave that for the next pile of patches though.
+Tested in userland using the test-suite in the zstd repo under
+`contrib/linux-kernel/test/XXHashUserlandTest.cpp` [2] by mocking the
+kernel functions. A line in each branch of every function in `xxhash.c`
+was commented out to ensure that the test-suite fails. Additionally
+tested while testing zstd and with SMHasher [3].
 
-Here's a revised section
+[1] https://phabricator.intern.facebook.com/P57526246
+[2] https://github.com/facebook/zstd/blob/dev/contrib/linux-kernel/test/XXHashUserlandTest.cpp
+[3] https://github.com/aappleby/smhasher
 
-------------------------------8<--------------------------------
-Handling errors during writeback
---------------------------------
-Most applications that do buffered I/O will periodically call a file
-synchronization call (fsync, fdatasync, msync or sync_file_range) to
-ensure that data written has made it to the backing store.  When there
-is an error during writeback, they expect that error to be reported when
-a file sync request is made.  After an error has been reported on one
-request, subsequent requests on the same file descriptor should return
-0, unless further writeback errors have occurred since the previous file
-syncronization.
+zstd source repository: https://github.com/facebook/zstd
+XXHash source repository: https://github.com/cyan4973/xxhash
 
-Ideally, the kernel would report errors only on file descriptions on
-which writes were done that subsequently failed to be written back.  The
-generic pagecache infrastructure does not track the file descriptions
-that have dirtied each individual page however, so determining which
-file descriptors should get back an error is not possible.
+Signed-off-by: Nick Terrell <terrelln@fb.com>
+---
+ include/linux/xxhash.h | 236 +++++++++++++++++++++++
+ lib/Kconfig            |   3 +
+ lib/Makefile           |   1 +
+ lib/xxhash.c           | 500 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 740 insertions(+)
+ create mode 100644 include/linux/xxhash.h
+ create mode 100644 lib/xxhash.c
 
-Instead, the generic writeback error tracking infrastructure in the
-kernel settles for reporting errors to fsync on all file descriptions
-that were open at the time that the error occurred.  In a situation with
-multiple writers, all of them will get back an error on a subsequent
-fsync,
-even if all of the writes done through that particular file descriptor
-succeeded (or even if there were no writes on that file descriptor at
-all).
-
-Filesystems that wish to use this infrastructure should call
-mapping_set_error to record the error in the address_space when it
-occurs.  Then, after writing back data from the pagecache in their
-file->fsync operation, they should call file_check_and_advance_wb_err to
-ensure that the struct file's error cursor has advanced to the correct
-point in the stream of errors emitted by the backing device(s).
-------------------------------8<--------------------------------
-
-Thanks for the review so far!
+diff --git a/include/linux/xxhash.h b/include/linux/xxhash.h
+new file mode 100644
+index 0000000..9e1f42c
+--- /dev/null
++++ b/include/linux/xxhash.h
+@@ -0,0 +1,236 @@
++/*
++ * xxHash - Extremely Fast Hash algorithm
++ * Copyright (C) 2012-2016, Yann Collet.
++ *
++ * BSD 2-Clause License (http://www.opensource.org/licenses/bsd-license.php)
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are
++ * met:
++ *
++ *   * Redistributions of source code must retain the above copyright
++ *     notice, this list of conditions and the following disclaimer.
++ *   * Redistributions in binary form must reproduce the above
++ *     copyright notice, this list of conditions and the following disclaimer
++ *     in the documentation and/or other materials provided with the
++ *     distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ * This program is free software; you can redistribute it and/or modify it under
++ * the terms of the GNU General Public License version 2 as published by the
++ * Free Software Foundation. This program is dual-licensed; you may select
++ * either version 2 of the GNU General Public License ("GPL") or BSD license
++ * ("BSD").
++ *
++ * You can contact the author at:
++ * - xxHash homepage: http://cyan4973.github.io/xxHash/
++ * - xxHash source repository: https://github.com/Cyan4973/xxHash
++ */
++
++/*
++ * Notice extracted from xxHash homepage:
++ *
++ * xxHash is an extremely fast Hash algorithm, running at RAM speed limits.
++ * It also successfully passes all tests from the SMHasher suite.
++ *
++ * Comparison (single thread, Windows Seven 32 bits, using SMHasher on a Core 2
++ * Duo @3GHz)
++ *
++ * Name            Speed       Q.Score   Author
++ * xxHash          5.4 GB/s     10
++ * CrapWow         3.2 GB/s      2       Andrew
++ * MumurHash 3a    2.7 GB/s     10       Austin Appleby
++ * SpookyHash      2.0 GB/s     10       Bob Jenkins
++ * SBox            1.4 GB/s      9       Bret Mulvey
++ * Lookup3         1.2 GB/s      9       Bob Jenkins
++ * SuperFastHash   1.2 GB/s      1       Paul Hsieh
++ * CityHash64      1.05 GB/s    10       Pike & Alakuijala
++ * FNV             0.55 GB/s     5       Fowler, Noll, Vo
++ * CRC32           0.43 GB/s     9
++ * MD5-32          0.33 GB/s    10       Ronald L. Rivest
++ * SHA1-32         0.28 GB/s    10
++ *
++ * Q.Score is a measure of quality of the hash function.
++ * It depends on successfully passing SMHasher test set.
++ * 10 is a perfect score.
++ *
++ * A 64-bits version, named xxh64 offers much better speed,
++ * but for 64-bits applications only.
++ * Name     Speed on 64 bits    Speed on 32 bits
++ * xxh64       13.8 GB/s            1.9 GB/s
++ * xxh32        6.8 GB/s            6.0 GB/s
++ */
++
++#ifndef XXHASH_H
++#define XXHASH_H
++
++#include <linux/types.h>
++
++/*-****************************
++ * Simple Hash Functions
++ *****************************/
++
++/**
++ * xxh32() - calculate the 32-bit hash of the input with a given seed.
++ *
++ * @input:  The data to hash.
++ * @length: The length of the data to hash.
++ * @seed:   The seed can be used to alter the result predictably.
++ *
++ * Speed on Core 2 Duo @ 3 GHz (single thread, SMHasher benchmark) : 5.4 GB/s
++ *
++ * Return:  The 32-bit hash of the data.
++ */
++uint32_t xxh32(const void *input, size_t length, uint32_t seed);
++
++/**
++ * xxh64() - calculate the 64-bit hash of the input with a given seed.
++ *
++ * @input:  The data to hash.
++ * @length: The length of the data to hash.
++ * @seed:   The seed can be used to alter the result predictably.
++ *
++ * This function runs 2x faster on 64-bit systems, but slower on 32-bit systems.
++ *
++ * Return:  The 64-bit hash of the data.
++ */
++uint64_t xxh64(const void *input, size_t length, uint64_t seed);
++
++/*-****************************
++ * Streaming Hash Functions
++ *****************************/
++
++/*
++ * These definitions are only meant to allow allocation of XXH state
++ * statically, on stack, or in a struct for example.
++ * Do not use members directly.
++ */
++
++/**
++ * struct xxh32_state - private xxh32 state, do not use members directly
++ */
++struct xxh32_state {
++	uint32_t total_len_32;
++	uint32_t large_len;
++	uint32_t v1;
++	uint32_t v2;
++	uint32_t v3;
++	uint32_t v4;
++	uint32_t mem32[4];
++	uint32_t memsize;
++};
++
++/**
++ * struct xxh32_state - private xxh64 state, do not use members directly
++ */
++struct xxh64_state {
++	uint64_t total_len;
++	uint64_t v1;
++	uint64_t v2;
++	uint64_t v3;
++	uint64_t v4;
++	uint64_t mem64[4];
++	uint32_t memsize;
++};
++
++/**
++ * xxh32_reset() - reset the xxh32 state to start a new hashing operation
++ *
++ * @state: The xxh32 state to reset.
++ * @seed:  Initialize the hash state with this seed.
++ *
++ * Call this function on any xxh32_state to prepare for a new hashing operation.
++ */
++void xxh32_reset(struct xxh32_state *state, uint32_t seed);
++
++/**
++ * xxh32_update() - hash the data given and update the xxh32 state
++ *
++ * @state:  The xxh32 state to update.
++ * @input:  The data to hash.
++ * @length: The length of the data to hash.
++ *
++ * After calling xxh32_reset() call xxh32_update() as many times as necessary.
++ *
++ * Return:  Zero on success, otherwise an error code.
++ */
++int xxh32_update(struct xxh32_state *state, const void *input, size_t length);
++
++/**
++ * xxh32_digest() - produce the current xxh32 hash
++ *
++ * @state: Produce the current xxh32 hash of this state.
++ *
++ * A hash value can be produced at any time. It is still possible to continue
++ * inserting input into the hash state after a call to xxh32_digest(), and
++ * generate new hashes later on, by calling xxh32_digest() again.
++ *
++ * Return: The xxh32 hash stored in the state.
++ */
++uint32_t xxh32_digest(const struct xxh32_state *state);
++
++/**
++ * xxh64_reset() - reset the xxh64 state to start a new hashing operation
++ *
++ * @state: The xxh64 state to reset.
++ * @seed:  Initialize the hash state with this seed.
++ */
++void xxh64_reset(struct xxh64_state *state, uint64_t seed);
++
++/**
++ * xxh64_update() - hash the data given and update the xxh64 state
++ * @state:  The xxh64 state to update.
++ * @input:  The data to hash.
++ * @length: The length of the data to hash.
++ *
++ * After calling xxh64_reset() call xxh64_update() as many times as necessary.
++ *
++ * Return:  Zero on success, otherwise an error code.
++ */
++int xxh64_update(struct xxh64_state *state, const void *input, size_t length);
++
++/**
++ * xxh64_digest() - produce the current xxh64 hash
++ *
++ * @state: Produce the current xxh64 hash of this state.
++ *
++ * A hash value can be produced at any time. It is still possible to continue
++ * inserting input into the hash state after a call to xxh64_digest(), and
++ * generate new hashes later on, by calling xxh64_digest() again.
++ *
++ * Return: The xxh64 hash stored in the state.
++ */
++uint64_t xxh64_digest(const struct xxh64_state *state);
++
++/*-**************************
++ * Utils
++ ***************************/
++
++/**
++ * xxh32_copy_state() - copy the source state into the destination state
++ *
++ * @src: The source xxh32 state.
++ * @dst: The destination xxh32 state.
++ */
++void xxh32_copy_state(struct xxh32_state *dst, const struct xxh32_state *src);
++
++/**
++ * xxh64_copy_state() - copy the source state into the destination state
++ *
++ * @src: The source xxh64 state.
++ * @dst: The destination xxh64 state.
++ */
++void xxh64_copy_state(struct xxh64_state *dst, const struct xxh64_state *src);
++
++#endif /* XXHASH_H */
+diff --git a/lib/Kconfig b/lib/Kconfig
+index 0c8b78a..b6009d7 100644
+--- a/lib/Kconfig
++++ b/lib/Kconfig
+@@ -184,6 +184,9 @@ config CRC8
+ 	  when they need to do cyclic redundancy check according CRC8
+ 	  algorithm. Module will be called crc8.
+ 
++config XXHASH
++	tristate
++
+ config AUDIT_GENERIC
+ 	bool
+ 	depends on AUDIT && !AUDIT_ARCH
+diff --git a/lib/Makefile b/lib/Makefile
+index 0166fbc..1338226 100644
+--- a/lib/Makefile
++++ b/lib/Makefile
+@@ -102,6 +102,7 @@ obj-$(CONFIG_CRC32_SELFTEST)	+= crc32test.o
+ obj-$(CONFIG_CRC7)	+= crc7.o
+ obj-$(CONFIG_LIBCRC32C)	+= libcrc32c.o
+ obj-$(CONFIG_CRC8)	+= crc8.o
++obj-$(CONFIG_XXHASH)	+= xxhash.o
+ obj-$(CONFIG_GENERIC_ALLOCATOR) += genalloc.o
+ 
+ obj-$(CONFIG_842_COMPRESS) += 842/
+diff --git a/lib/xxhash.c b/lib/xxhash.c
+new file mode 100644
+index 0000000..dc94904
+--- /dev/null
++++ b/lib/xxhash.c
+@@ -0,0 +1,500 @@
++/*
++ * xxHash - Extremely Fast Hash algorithm
++ * Copyright (C) 2012-2016, Yann Collet.
++ *
++ * BSD 2-Clause License (http://www.opensource.org/licenses/bsd-license.php)
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are
++ * met:
++ *
++ *   * Redistributions of source code must retain the above copyright
++ *     notice, this list of conditions and the following disclaimer.
++ *   * Redistributions in binary form must reproduce the above
++ *     copyright notice, this list of conditions and the following disclaimer
++ *     in the documentation and/or other materials provided with the
++ *     distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ * This program is free software; you can redistribute it and/or modify it under
++ * the terms of the GNU General Public License version 2 as published by the
++ * Free Software Foundation. This program is dual-licensed; you may select
++ * either version 2 of the GNU General Public License ("GPL") or BSD license
++ * ("BSD").
++ *
++ * You can contact the author at:
++ * - xxHash homepage: http://cyan4973.github.io/xxHash/
++ * - xxHash source repository: https://github.com/Cyan4973/xxHash
++ */
++
++#include <asm/unaligned.h>
++#include <linux/errno.h>
++#include <linux/compiler.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/string.h>
++#include <linux/xxhash.h>
++
++/*-*************************************
++ * Macros
++ **************************************/
++#define xxh_rotl32(x, r) ((x << r) | (x >> (32 - r)))
++#define xxh_rotl64(x, r) ((x << r) | (x >> (64 - r)))
++
++#ifdef __LITTLE_ENDIAN
++# define XXH_CPU_LITTLE_ENDIAN 1
++#else
++# define XXH_CPU_LITTLE_ENDIAN 0
++#endif
++
++/*-*************************************
++ * Constants
++ **************************************/
++static const uint32_t PRIME32_1 = 2654435761U;
++static const uint32_t PRIME32_2 = 2246822519U;
++static const uint32_t PRIME32_3 = 3266489917U;
++static const uint32_t PRIME32_4 =  668265263U;
++static const uint32_t PRIME32_5 =  374761393U;
++
++static const uint64_t PRIME64_1 = 11400714785074694791ULL;
++static const uint64_t PRIME64_2 = 14029467366897019727ULL;
++static const uint64_t PRIME64_3 =  1609587929392839161ULL;
++static const uint64_t PRIME64_4 =  9650029242287828579ULL;
++static const uint64_t PRIME64_5 =  2870177450012600261ULL;
++
++/*-**************************
++ *  Utils
++ ***************************/
++void xxh32_copy_state(struct xxh32_state *dst, const struct xxh32_state *src)
++{
++	memcpy(dst, src, sizeof(*dst));
++}
++EXPORT_SYMBOL(xxh32_copy_state);
++
++void xxh64_copy_state(struct xxh64_state *dst, const struct xxh64_state *src)
++{
++	memcpy(dst, src, sizeof(*dst));
++}
++EXPORT_SYMBOL(xxh64_copy_state);
++
++/*-***************************
++ * Simple Hash Functions
++ ****************************/
++static uint32_t xxh32_round(uint32_t seed, const uint32_t input)
++{
++	seed += input * PRIME32_2;
++	seed = xxh_rotl32(seed, 13);
++	seed *= PRIME32_1;
++	return seed;
++}
++
++uint32_t xxh32(const void *input, const size_t len, const uint32_t seed)
++{
++	const uint8_t *p = (const uint8_t *)input;
++	const uint8_t *b_end = p + len;
++	uint32_t h32;
++
++	if (len >= 16) {
++		const uint8_t *const limit = b_end - 16;
++		uint32_t v1 = seed + PRIME32_1 + PRIME32_2;
++		uint32_t v2 = seed + PRIME32_2;
++		uint32_t v3 = seed + 0;
++		uint32_t v4 = seed - PRIME32_1;
++
++		do {
++			v1 = xxh32_round(v1, get_unaligned_le32(p));
++			p += 4;
++			v2 = xxh32_round(v2, get_unaligned_le32(p));
++			p += 4;
++			v3 = xxh32_round(v3, get_unaligned_le32(p));
++			p += 4;
++			v4 = xxh32_round(v4, get_unaligned_le32(p));
++			p += 4;
++		} while (p <= limit);
++
++		h32 = xxh_rotl32(v1, 1) + xxh_rotl32(v2, 7) +
++			xxh_rotl32(v3, 12) + xxh_rotl32(v4, 18);
++	} else {
++		h32 = seed + PRIME32_5;
++	}
++
++	h32 += (uint32_t)len;
++
++	while (p + 4 <= b_end) {
++		h32 += get_unaligned_le32(p) * PRIME32_3;
++		h32 = xxh_rotl32(h32, 17) * PRIME32_4;
++		p += 4;
++	}
++
++	while (p < b_end) {
++		h32 += (*p) * PRIME32_5;
++		h32 = xxh_rotl32(h32, 11) * PRIME32_1;
++		p++;
++	}
++
++	h32 ^= h32 >> 15;
++	h32 *= PRIME32_2;
++	h32 ^= h32 >> 13;
++	h32 *= PRIME32_3;
++	h32 ^= h32 >> 16;
++
++	return h32;
++}
++EXPORT_SYMBOL(xxh32);
++
++static uint64_t xxh64_round(uint64_t acc, const uint64_t input)
++{
++	acc += input * PRIME64_2;
++	acc = xxh_rotl64(acc, 31);
++	acc *= PRIME64_1;
++	return acc;
++}
++
++static uint64_t xxh64_merge_round(uint64_t acc, uint64_t val)
++{
++	val = xxh64_round(0, val);
++	acc ^= val;
++	acc = acc * PRIME64_1 + PRIME64_4;
++	return acc;
++}
++
++uint64_t xxh64(const void *input, const size_t len, const uint64_t seed)
++{
++	const uint8_t *p = (const uint8_t *)input;
++	const uint8_t *const b_end = p + len;
++	uint64_t h64;
++
++	if (len >= 32) {
++		const uint8_t *const limit = b_end - 32;
++		uint64_t v1 = seed + PRIME64_1 + PRIME64_2;
++		uint64_t v2 = seed + PRIME64_2;
++		uint64_t v3 = seed + 0;
++		uint64_t v4 = seed - PRIME64_1;
++
++		do {
++			v1 = xxh64_round(v1, get_unaligned_le64(p));
++			p += 8;
++			v2 = xxh64_round(v2, get_unaligned_le64(p));
++			p += 8;
++			v3 = xxh64_round(v3, get_unaligned_le64(p));
++			p += 8;
++			v4 = xxh64_round(v4, get_unaligned_le64(p));
++			p += 8;
++		} while (p <= limit);
++
++		h64 = xxh_rotl64(v1, 1) + xxh_rotl64(v2, 7) +
++			xxh_rotl64(v3, 12) + xxh_rotl64(v4, 18);
++		h64 = xxh64_merge_round(h64, v1);
++		h64 = xxh64_merge_round(h64, v2);
++		h64 = xxh64_merge_round(h64, v3);
++		h64 = xxh64_merge_round(h64, v4);
++
++	} else {
++		h64  = seed + PRIME64_5;
++	}
++
++	h64 += (uint64_t)len;
++
++	while (p + 8 <= b_end) {
++		const uint64_t k1 = xxh64_round(0, get_unaligned_le64(p));
++
++		h64 ^= k1;
++		h64 = xxh_rotl64(h64, 27) * PRIME64_1 + PRIME64_4;
++		p += 8;
++	}
++
++	if (p + 4 <= b_end) {
++		h64 ^= (uint64_t)(get_unaligned_le32(p)) * PRIME64_1;
++		h64 = xxh_rotl64(h64, 23) * PRIME64_2 + PRIME64_3;
++		p += 4;
++	}
++
++	while (p < b_end) {
++		h64 ^= (*p) * PRIME64_5;
++		h64 = xxh_rotl64(h64, 11) * PRIME64_1;
++		p++;
++	}
++
++	h64 ^= h64 >> 33;
++	h64 *= PRIME64_2;
++	h64 ^= h64 >> 29;
++	h64 *= PRIME64_3;
++	h64 ^= h64 >> 32;
++
++	return h64;
++}
++EXPORT_SYMBOL(xxh64);
++
++/*-**************************************************
++ * Advanced Hash Functions
++ ***************************************************/
++void xxh32_reset(struct xxh32_state *statePtr, const uint32_t seed)
++{
++	/* use a local state for memcpy() to avoid strict-aliasing warnings */
++	struct xxh32_state state;
++
++	memset(&state, 0, sizeof(state));
++	state.v1 = seed + PRIME32_1 + PRIME32_2;
++	state.v2 = seed + PRIME32_2;
++	state.v3 = seed + 0;
++	state.v4 = seed - PRIME32_1;
++	memcpy(statePtr, &state, sizeof(state));
++}
++EXPORT_SYMBOL(xxh32_reset);
++
++void xxh64_reset(struct xxh64_state *statePtr, const uint64_t seed)
++{
++	/* use a local state for memcpy() to avoid strict-aliasing warnings */
++	struct xxh64_state state;
++
++	memset(&state, 0, sizeof(state));
++	state.v1 = seed + PRIME64_1 + PRIME64_2;
++	state.v2 = seed + PRIME64_2;
++	state.v3 = seed + 0;
++	state.v4 = seed - PRIME64_1;
++	memcpy(statePtr, &state, sizeof(state));
++}
++EXPORT_SYMBOL(xxh64_reset);
++
++int xxh32_update(struct xxh32_state *state, const void *input, const size_t len)
++{
++	const uint8_t *p = (const uint8_t *)input;
++	const uint8_t *const b_end = p + len;
++
++	if (input == NULL)
++		return -EINVAL;
++
++	state->total_len_32 += (uint32_t)len;
++	state->large_len |= (len >= 16) | (state->total_len_32 >= 16);
++
++	if (state->memsize + len < 16) { /* fill in tmp buffer */
++		memcpy((uint8_t *)(state->mem32) + state->memsize, input, len);
++		state->memsize += (uint32_t)len;
++		return 0;
++	}
++
++	if (state->memsize) { /* some data left from previous update */
++		const uint32_t *p32 = state->mem32;
++
++		memcpy((uint8_t *)(state->mem32) + state->memsize, input,
++			16 - state->memsize);
++
++		state->v1 = xxh32_round(state->v1, get_unaligned_le32(p32));
++		p32++;
++		state->v2 = xxh32_round(state->v2, get_unaligned_le32(p32));
++		p32++;
++		state->v3 = xxh32_round(state->v3, get_unaligned_le32(p32));
++		p32++;
++		state->v4 = xxh32_round(state->v4, get_unaligned_le32(p32));
++		p32++;
++
++		p += 16-state->memsize;
++		state->memsize = 0;
++	}
++
++	if (p <= b_end - 16) {
++		const uint8_t *const limit = b_end - 16;
++		uint32_t v1 = state->v1;
++		uint32_t v2 = state->v2;
++		uint32_t v3 = state->v3;
++		uint32_t v4 = state->v4;
++
++		do {
++			v1 = xxh32_round(v1, get_unaligned_le32(p));
++			p += 4;
++			v2 = xxh32_round(v2, get_unaligned_le32(p));
++			p += 4;
++			v3 = xxh32_round(v3, get_unaligned_le32(p));
++			p += 4;
++			v4 = xxh32_round(v4, get_unaligned_le32(p));
++			p += 4;
++		} while (p <= limit);
++
++		state->v1 = v1;
++		state->v2 = v2;
++		state->v3 = v3;
++		state->v4 = v4;
++	}
++
++	if (p < b_end) {
++		memcpy(state->mem32, p, (size_t)(b_end-p));
++		state->memsize = (uint32_t)(b_end-p);
++	}
++
++	return 0;
++}
++EXPORT_SYMBOL(xxh32_update);
++
++uint32_t xxh32_digest(const struct xxh32_state *state)
++{
++	const uint8_t *p = (const uint8_t *)state->mem32;
++	const uint8_t *const b_end = (const uint8_t *)(state->mem32) +
++		state->memsize;
++	uint32_t h32;
++
++	if (state->large_len) {
++		h32 = xxh_rotl32(state->v1, 1) + xxh_rotl32(state->v2, 7) +
++			xxh_rotl32(state->v3, 12) + xxh_rotl32(state->v4, 18);
++	} else {
++		h32 = state->v3 /* == seed */ + PRIME32_5;
++	}
++
++	h32 += state->total_len_32;
++
++	while (p + 4 <= b_end) {
++		h32 += get_unaligned_le32(p) * PRIME32_3;
++		h32 = xxh_rotl32(h32, 17) * PRIME32_4;
++		p += 4;
++	}
++
++	while (p < b_end) {
++		h32 += (*p) * PRIME32_5;
++		h32 = xxh_rotl32(h32, 11) * PRIME32_1;
++		p++;
++	}
++
++	h32 ^= h32 >> 15;
++	h32 *= PRIME32_2;
++	h32 ^= h32 >> 13;
++	h32 *= PRIME32_3;
++	h32 ^= h32 >> 16;
++
++	return h32;
++}
++EXPORT_SYMBOL(xxh32_digest);
++
++int xxh64_update(struct xxh64_state *state, const void *input, const size_t len)
++{
++	const uint8_t *p = (const uint8_t *)input;
++	const uint8_t *const b_end = p + len;
++
++	if (input == NULL)
++		return -EINVAL;
++
++	state->total_len += len;
++
++	if (state->memsize + len < 32) { /* fill in tmp buffer */
++		memcpy(((uint8_t *)state->mem64) + state->memsize, input, len);
++		state->memsize += (uint32_t)len;
++		return 0;
++	}
++
++	if (state->memsize) { /* tmp buffer is full */
++		const uint64_t *p64 = state->mem64;
++
++		memcpy(((uint8_t *)p64) + state->memsize, input,
++			32 - state->memsize);
++
++		state->v1 = xxh64_round(state->v1, get_unaligned_le64(p64));
++		p64++;
++		state->v2 = xxh64_round(state->v2, get_unaligned_le64(p64));
++		p64++;
++		state->v3 = xxh64_round(state->v3, get_unaligned_le64(p64));
++		p64++;
++		state->v4 = xxh64_round(state->v4, get_unaligned_le64(p64));
++
++		p += 32 - state->memsize;
++		state->memsize = 0;
++	}
++
++	if (p + 32 <= b_end) {
++		const uint8_t *const limit = b_end - 32;
++		uint64_t v1 = state->v1;
++		uint64_t v2 = state->v2;
++		uint64_t v3 = state->v3;
++		uint64_t v4 = state->v4;
++
++		do {
++			v1 = xxh64_round(v1, get_unaligned_le64(p));
++			p += 8;
++			v2 = xxh64_round(v2, get_unaligned_le64(p));
++			p += 8;
++			v3 = xxh64_round(v3, get_unaligned_le64(p));
++			p += 8;
++			v4 = xxh64_round(v4, get_unaligned_le64(p));
++			p += 8;
++		} while (p <= limit);
++
++		state->v1 = v1;
++		state->v2 = v2;
++		state->v3 = v3;
++		state->v4 = v4;
++	}
++
++	if (p < b_end) {
++		memcpy(state->mem64, p, (size_t)(b_end-p));
++		state->memsize = (uint32_t)(b_end - p);
++	}
++
++	return 0;
++}
++EXPORT_SYMBOL(xxh64_update);
++
++uint64_t xxh64_digest(const struct xxh64_state *state)
++{
++	const uint8_t *p = (const uint8_t *)state->mem64;
++	const uint8_t *const b_end = (const uint8_t *)state->mem64 +
++		state->memsize;
++	uint64_t h64;
++
++	if (state->total_len >= 32) {
++		const uint64_t v1 = state->v1;
++		const uint64_t v2 = state->v2;
++		const uint64_t v3 = state->v3;
++		const uint64_t v4 = state->v4;
++
++		h64 = xxh_rotl64(v1, 1) + xxh_rotl64(v2, 7) +
++			xxh_rotl64(v3, 12) + xxh_rotl64(v4, 18);
++		h64 = xxh64_merge_round(h64, v1);
++		h64 = xxh64_merge_round(h64, v2);
++		h64 = xxh64_merge_round(h64, v3);
++		h64 = xxh64_merge_round(h64, v4);
++	} else {
++		h64  = state->v3 + PRIME64_5;
++	}
++
++	h64 += (uint64_t)state->total_len;
++
++	while (p + 8 <= b_end) {
++		const uint64_t k1 = xxh64_round(0, get_unaligned_le64(p));
++
++		h64 ^= k1;
++		h64 = xxh_rotl64(h64, 27) * PRIME64_1 + PRIME64_4;
++		p += 8;
++	}
++
++	if (p + 4 <= b_end) {
++		h64 ^= (uint64_t)(get_unaligned_le32(p)) * PRIME64_1;
++		h64 = xxh_rotl64(h64, 23) * PRIME64_2 + PRIME64_3;
++		p += 4;
++	}
++
++	while (p < b_end) {
++		h64 ^= (*p) * PRIME64_5;
++		h64 = xxh_rotl64(h64, 11) * PRIME64_1;
++		p++;
++	}
++
++	h64 ^= h64 >> 33;
++	h64 *= PRIME64_2;
++	h64 ^= h64 >> 29;
++	h64 *= PRIME64_3;
++	h64 ^= h64 >> 32;
++
++	return h64;
++}
++EXPORT_SYMBOL(xxh64_digest);
++
++MODULE_LICENSE("Dual BSD/GPL");
++MODULE_DESCRIPTION("xxHash");
 -- 
-Jeff Layton <jlayton@poochiereds.net>
+2.9.3
+

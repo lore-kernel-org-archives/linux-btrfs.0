@@ -1,885 +1,325 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:50505 "EHLO
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:50540 "EHLO
         mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751546AbdFVWDo (ORCPT
+        by vger.kernel.org with ESMTP id S1753815AbdFVWEF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Jun 2017 18:03:44 -0400
+        Thu, 22 Jun 2017 18:04:05 -0400
 Received: from pps.filterd (m0109332.ppops.net [127.0.0.1])
-        by mx0a-00082601.pphosted.com (8.16.0.20/8.16.0.20) with SMTP id v5MLwosw001633
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Jun 2017 15:03:43 -0700
+        by mx0a-00082601.pphosted.com (8.16.0.20/8.16.0.20) with SMTP id v5MLwnR0001621
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Jun 2017 15:04:00 -0700
 Received: from mail.thefacebook.com ([199.201.64.23])
-        by mx0a-00082601.pphosted.com with ESMTP id 2b8m9t8ceu-1
+        by mx0a-00082601.pphosted.com with ESMTP id 2b8m9t8cfj-1
         (version=TLSv1 cipher=ECDHE-RSA-AES256-SHA bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Jun 2017 15:03:43 -0700
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Jun 2017 15:04:00 -0700
 Received: from facebook.com (2401:db00:21:6023:face:0:9:0)      by
  mx-out.facebook.com (2401:db00:2050:5102:face:0000:003b:0000) with ESMTP       id
- a6c702b8579611e799810f7588574c86-d6d3a8f0 for <linux-btrfs@vger.kernel.org>;
-        Thu, 22 Jun 2017 15:03:41 -0700
+ ad7d842e579611e7a4da0f7588574c86-d65398f0 for <linux-btrfs@vger.kernel.org>;
+        Thu, 22 Jun 2017 15:03:52 -0700
 From: Nick Terrell <terrelln@fb.com>
 To: Nick Terrell <terrelln@fb.com>
 CC: <kernel-team@fb.com>, Chris Mason <clm@fb.com>, Yann Collet <cyan@fb.com>,
         <squashfs-devel@lists.sourceforge.net>, <linux-btrfs@vger.kernel.org>,
-        <linux-kernel@vger.kernel.org>
-Subject: [PATCH 1/4] lib: Add xxhash module
-Date: Thu, 22 Jun 2017 15:01:36 -0700
-Message-ID: <20170622220139.2328978-1-terrelln@fb.com>
+        <linux-kernel@vger.kernel.org>, Sean Purcell <me@seanp.xyz>
+Subject: [PATCH 4/4] squashfs: Add zstd support
+Date: Thu, 22 Jun 2017 15:01:39 -0700
+Message-ID: <20170622220139.2328978-4-terrelln@fb.com>
+In-Reply-To: <20170622220139.2328978-1-terrelln@fb.com>
+References: <20170622220139.2328978-1-terrelln@fb.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Adds xxhash kernel module with xxh32 and xxh64 hashes. xxhash is an
-extremely fast non-cryptographic hash algorithm for checksumming.
-The zstd compression and decompression modules added in the next patch
-require xxhash. I extracted it out from zstd since it is useful on its
-own. I copied the code from the upstream XXHash source repository and
-translated it into kernel style. I ran benchmarks and tests in the kernel
-and tests in userland.
+Add zstd compression and decompression support to SquashFS. zstd is a
+great fit for SquashFS because it can compress at ratios approaching xz,
+while decompressing twice as fast as zlib. For SquashFS in particular,
+it can decompress as fast as lzo and lz4. It also has the flexibility
+to turn down the compression ratio for faster compression times.
 
-I benchmarked xxhash as a special character device. I ran in four modes,
-no-op, xxh32, xxh64, and crc32. The no-op mode simply copies the data to
-kernel space and ignores it. The xxh32, xxh64, and crc32 modes compute
-hashes on the copied data. I also ran it with four different buffer sizes.
-The benchmark file is located in the upstream zstd source repository under
-`contrib/linux-kernel/xxhash_test.c` [1].
+The compression benchmark is run on the file tree from the SquashFS archive
+found in ubuntu-16.10-desktop-amd64.iso [1]. It uses `mksquashfs` with the
+default block size (128 KB) and and various compression algorithms/levels.
+xz and zstd are also benchmarked with 256 KB blocks. The decompression
+benchmark times how long it takes to `tar` the file tree into `/dev/null`.
+See the benchmark file in the upstream zstd source repository located under
+`contrib/linux-kernel/squashfs-benchmark.sh` [2] for details.
 
 I ran the benchmarks on a Ubuntu 14.04 VM with 2 cores and 4 GiB of RAM.
 The VM is running on a MacBook Pro with a 3.1 GHz Intel Core i7 processor,
-16 GB of RAM, and a SSD. I benchmarked using the file `filesystem.squashfs`
-from `ubuntu-16.10-desktop-amd64.iso`, which is 1,536,217,088 B large.
-Run the following commands for the benchmark:
+16 GB of RAM, and a SSD.
 
-    modprobe xxhash_test
-    mknod xxhash_test c 245 0
-    time cp filesystem.squashfs xxhash_test
+| Method         | Ratio | Compression MB/s | Decompression MB/s |
+|----------------|-------|------------------|--------------------|
+| gzip           |  2.92 |               15 |                128 |
+| lzo            |  2.64 |              9.5 |                217 |
+| lz4            |  2.12 |               94 |                218 |
+| xz             |  3.43 |              5.5 |                 35 |
+| xz 256 KB      |  3.53 |              5.4 |                 40 |
+| zstd 1         |  2.71 |               96 |                210 |
+| zstd 5         |  2.93 |               69 |                198 |
+| zstd 10        |  3.01 |               41 |                225 |
+| zstd 15        |  3.13 |             11.4 |                224 |
+| zstd 16 256 KB |  3.24 |              8.1 |                210 |
 
-The time is reported by the time of the userland `cp`.
-The GB/s is computed with
+This patch was written by Sean Purcell <me@seanp.xyz>, but I will be
+taking over the submission process.
 
-    1,536,217,008 B / time(buffer size, hash)
-
-which includes the time to copy from userland.
-The Normalized GB/s is computed with
-
-    1,536,217,088 B / (time(buffer size, hash) - time(buffer size, none)).
-
-
-| Buffer Size (B) | Hash  | Time (s) | GB/s | Adjusted GB/s |
-|-----------------|-------|----------|------|---------------|
-|            1024 | none  |    0.408 | 3.77 |             - |
-|            1024 | xxh32 |    0.649 | 2.37 |          6.37 |
-|            1024 | xxh64 |    0.542 | 2.83 |         11.46 |
-|            1024 | crc32 |    1.290 | 1.19 |          1.74 |
-|            4096 | none  |    0.380 | 4.04 |             - |
-|            4096 | xxh32 |    0.645 | 2.38 |          5.79 |
-|            4096 | xxh64 |    0.500 | 3.07 |         12.80 |
-|            4096 | crc32 |    1.168 | 1.32 |          1.95 |
-|            8192 | none  |    0.351 | 4.38 |             - |
-|            8192 | xxh32 |    0.614 | 2.50 |          5.84 |
-|            8192 | xxh64 |    0.464 | 3.31 |         13.60 |
-|            8192 | crc32 |    1.163 | 1.32 |          1.89 |
-|           16384 | none  |    0.346 | 4.43 |             - |
-|           16384 | xxh32 |    0.590 | 2.60 |          6.30 |
-|           16384 | xxh64 |    0.466 | 3.30 |         12.80 |
-|           16384 | crc32 |    1.183 | 1.30 |          1.84 |
-
-Tested in userland using the test-suite in the zstd repo under
-`contrib/linux-kernel/test/XXHashUserlandTest.cpp` [2] by mocking the
-kernel functions. A line in each branch of every function in `xxhash.c`
-was commented out to ensure that the test-suite fails. Additionally
-tested while testing zstd and with SMHasher [3].
-
-[1] https://phabricator.intern.facebook.com/P57526246
-[2] https://github.com/facebook/zstd/blob/dev/contrib/linux-kernel/test/XXHashUserlandTest.cpp
-[3] https://github.com/aappleby/smhasher
+[1] http://releases.ubuntu.com/16.10/
+[2] https://github.com/facebook/zstd/blob/dev/contrib/linux-kernel/squashfs-benchmark.sh
 
 zstd source repository: https://github.com/facebook/zstd
-XXHash source repository: https://github.com/cyan4973/xxhash
 
+Cc: Sean Purcell <me@seanp.xyz>
 Signed-off-by: Nick Terrell <terrelln@fb.com>
 ---
- include/linux/xxhash.h | 236 +++++++++++++++++++++++
- lib/Kconfig            |   3 +
- lib/Makefile           |   1 +
- lib/xxhash.c           | 500 +++++++++++++++++++++++++++++++++++++++++++++++++
- 4 files changed, 740 insertions(+)
- create mode 100644 include/linux/xxhash.h
- create mode 100644 lib/xxhash.c
+ fs/squashfs/Kconfig        |  14 +++++
+ fs/squashfs/Makefile       |   1 +
+ fs/squashfs/decompressor.c |   7 +++
+ fs/squashfs/decompressor.h |   4 ++
+ fs/squashfs/squashfs_fs.h  |   1 +
+ fs/squashfs/zstd_wrapper.c | 150 +++++++++++++++++++++++++++++++++++++++++++++
+ 6 files changed, 177 insertions(+)
+ create mode 100644 fs/squashfs/zstd_wrapper.c
 
-diff --git a/include/linux/xxhash.h b/include/linux/xxhash.h
-new file mode 100644
-index 0000000..9e1f42c
---- /dev/null
-+++ b/include/linux/xxhash.h
-@@ -0,0 +1,236 @@
-+/*
-+ * xxHash - Extremely Fast Hash algorithm
-+ * Copyright (C) 2012-2016, Yann Collet.
-+ *
-+ * BSD 2-Clause License (http://www.opensource.org/licenses/bsd-license.php)
-+ *
-+ * Redistribution and use in source and binary forms, with or without
-+ * modification, are permitted provided that the following conditions are
-+ * met:
-+ *
-+ *   * Redistributions of source code must retain the above copyright
-+ *     notice, this list of conditions and the following disclaimer.
-+ *   * Redistributions in binary form must reproduce the above
-+ *     copyright notice, this list of conditions and the following disclaimer
-+ *     in the documentation and/or other materials provided with the
-+ *     distribution.
-+ *
-+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-+ *
-+ * This program is free software; you can redistribute it and/or modify it under
-+ * the terms of the GNU General Public License version 2 as published by the
-+ * Free Software Foundation. This program is dual-licensed; you may select
-+ * either version 2 of the GNU General Public License ("GPL") or BSD license
-+ * ("BSD").
-+ *
-+ * You can contact the author at:
-+ * - xxHash homepage: http://cyan4973.github.io/xxHash/
-+ * - xxHash source repository: https://github.com/Cyan4973/xxHash
-+ */
+diff --git a/fs/squashfs/Kconfig b/fs/squashfs/Kconfig
+index ffb093e..1adb334 100644
+--- a/fs/squashfs/Kconfig
++++ b/fs/squashfs/Kconfig
+@@ -165,6 +165,20 @@ config SQUASHFS_XZ
+
+ 	  If unsure, say N.
+
++config SQUASHFS_ZSTD
++	bool "Include support for ZSTD compressed file systems"
++	depends on SQUASHFS
++	select ZSTD_DECOMPRESS
++	help
++	  Saying Y here includes support for reading Squashfs file systems
++	  compressed with ZSTD compression.  ZSTD gives better compression than
++	  the default ZLIB compression, while using less CPU.
 +
-+/*
-+ * Notice extracted from xxHash homepage:
-+ *
-+ * xxHash is an extremely fast Hash algorithm, running at RAM speed limits.
-+ * It also successfully passes all tests from the SMHasher suite.
-+ *
-+ * Comparison (single thread, Windows Seven 32 bits, using SMHasher on a Core 2
-+ * Duo @3GHz)
-+ *
-+ * Name            Speed       Q.Score   Author
-+ * xxHash          5.4 GB/s     10
-+ * CrapWow         3.2 GB/s      2       Andrew
-+ * MumurHash 3a    2.7 GB/s     10       Austin Appleby
-+ * SpookyHash      2.0 GB/s     10       Bob Jenkins
-+ * SBox            1.4 GB/s      9       Bret Mulvey
-+ * Lookup3         1.2 GB/s      9       Bob Jenkins
-+ * SuperFastHash   1.2 GB/s      1       Paul Hsieh
-+ * CityHash64      1.05 GB/s    10       Pike & Alakuijala
-+ * FNV             0.55 GB/s     5       Fowler, Noll, Vo
-+ * CRC32           0.43 GB/s     9
-+ * MD5-32          0.33 GB/s    10       Ronald L. Rivest
-+ * SHA1-32         0.28 GB/s    10
-+ *
-+ * Q.Score is a measure of quality of the hash function.
-+ * It depends on successfully passing SMHasher test set.
-+ * 10 is a perfect score.
-+ *
-+ * A 64-bits version, named xxh64 offers much better speed,
-+ * but for 64-bits applications only.
-+ * Name     Speed on 64 bits    Speed on 32 bits
-+ * xxh64       13.8 GB/s            1.9 GB/s
-+ * xxh32        6.8 GB/s            6.0 GB/s
-+ */
++	  ZSTD is not the standard compression used in Squashfs and so most
++	  file systems will be readable without selecting this option.
 +
-+#ifndef XXHASH_H
-+#define XXHASH_H
++	  If unsure, say N.
 +
-+#include <linux/types.h>
-+
-+/*-****************************
-+ * Simple Hash Functions
-+ *****************************/
-+
-+/**
-+ * xxh32() - calculate the 32-bit hash of the input with a given seed.
-+ *
-+ * @input:  The data to hash.
-+ * @length: The length of the data to hash.
-+ * @seed:   The seed can be used to alter the result predictably.
-+ *
-+ * Speed on Core 2 Duo @ 3 GHz (single thread, SMHasher benchmark) : 5.4 GB/s
-+ *
-+ * Return:  The 32-bit hash of the data.
-+ */
-+uint32_t xxh32(const void *input, size_t length, uint32_t seed);
-+
-+/**
-+ * xxh64() - calculate the 64-bit hash of the input with a given seed.
-+ *
-+ * @input:  The data to hash.
-+ * @length: The length of the data to hash.
-+ * @seed:   The seed can be used to alter the result predictably.
-+ *
-+ * This function runs 2x faster on 64-bit systems, but slower on 32-bit systems.
-+ *
-+ * Return:  The 64-bit hash of the data.
-+ */
-+uint64_t xxh64(const void *input, size_t length, uint64_t seed);
-+
-+/*-****************************
-+ * Streaming Hash Functions
-+ *****************************/
-+
-+/*
-+ * These definitions are only meant to allow allocation of XXH state
-+ * statically, on stack, or in a struct for example.
-+ * Do not use members directly.
-+ */
-+
-+/**
-+ * struct xxh32_state - private xxh32 state, do not use members directly
-+ */
-+struct xxh32_state {
-+	uint32_t total_len_32;
-+	uint32_t large_len;
-+	uint32_t v1;
-+	uint32_t v2;
-+	uint32_t v3;
-+	uint32_t v4;
-+	uint32_t mem32[4];
-+	uint32_t memsize;
+ config SQUASHFS_4K_DEVBLK_SIZE
+ 	bool "Use 4K device block size?"
+ 	depends on SQUASHFS
+diff --git a/fs/squashfs/Makefile b/fs/squashfs/Makefile
+index 246a6f3..6655631 100644
+--- a/fs/squashfs/Makefile
++++ b/fs/squashfs/Makefile
+@@ -15,3 +15,4 @@ squashfs-$(CONFIG_SQUASHFS_LZ4) += lz4_wrapper.o
+ squashfs-$(CONFIG_SQUASHFS_LZO) += lzo_wrapper.o
+ squashfs-$(CONFIG_SQUASHFS_XZ) += xz_wrapper.o
+ squashfs-$(CONFIG_SQUASHFS_ZLIB) += zlib_wrapper.o
++squashfs-$(CONFIG_SQUASHFS_ZSTD) += zstd_wrapper.o
+diff --git a/fs/squashfs/decompressor.c b/fs/squashfs/decompressor.c
+index d2bc136..8366398 100644
+--- a/fs/squashfs/decompressor.c
++++ b/fs/squashfs/decompressor.c
+@@ -65,6 +65,12 @@ static const struct squashfs_decompressor squashfs_zlib_comp_ops = {
+ };
+ #endif
+
++#ifndef CONFIG_SQUASHFS_ZSTD
++static const struct squashfs_decompressor squashfs_zstd_comp_ops = {
++	NULL, NULL, NULL, NULL, ZSTD_COMPRESSION, "zstd", 0
 +};
-+
-+/**
-+ * struct xxh32_state - private xxh64 state, do not use members directly
-+ */
-+struct xxh64_state {
-+	uint64_t total_len;
-+	uint64_t v1;
-+	uint64_t v2;
-+	uint64_t v3;
-+	uint64_t v4;
-+	uint64_t mem64[4];
-+	uint32_t memsize;
-+};
-+
-+/**
-+ * xxh32_reset() - reset the xxh32 state to start a new hashing operation
-+ *
-+ * @state: The xxh32 state to reset.
-+ * @seed:  Initialize the hash state with this seed.
-+ *
-+ * Call this function on any xxh32_state to prepare for a new hashing operation.
-+ */
-+void xxh32_reset(struct xxh32_state *state, uint32_t seed);
-+
-+/**
-+ * xxh32_update() - hash the data given and update the xxh32 state
-+ *
-+ * @state:  The xxh32 state to update.
-+ * @input:  The data to hash.
-+ * @length: The length of the data to hash.
-+ *
-+ * After calling xxh32_reset() call xxh32_update() as many times as necessary.
-+ *
-+ * Return:  Zero on success, otherwise an error code.
-+ */
-+int xxh32_update(struct xxh32_state *state, const void *input, size_t length);
-+
-+/**
-+ * xxh32_digest() - produce the current xxh32 hash
-+ *
-+ * @state: Produce the current xxh32 hash of this state.
-+ *
-+ * A hash value can be produced at any time. It is still possible to continue
-+ * inserting input into the hash state after a call to xxh32_digest(), and
-+ * generate new hashes later on, by calling xxh32_digest() again.
-+ *
-+ * Return: The xxh32 hash stored in the state.
-+ */
-+uint32_t xxh32_digest(const struct xxh32_state *state);
-+
-+/**
-+ * xxh64_reset() - reset the xxh64 state to start a new hashing operation
-+ *
-+ * @state: The xxh64 state to reset.
-+ * @seed:  Initialize the hash state with this seed.
-+ */
-+void xxh64_reset(struct xxh64_state *state, uint64_t seed);
-+
-+/**
-+ * xxh64_update() - hash the data given and update the xxh64 state
-+ * @state:  The xxh64 state to update.
-+ * @input:  The data to hash.
-+ * @length: The length of the data to hash.
-+ *
-+ * After calling xxh64_reset() call xxh64_update() as many times as necessary.
-+ *
-+ * Return:  Zero on success, otherwise an error code.
-+ */
-+int xxh64_update(struct xxh64_state *state, const void *input, size_t length);
-+
-+/**
-+ * xxh64_digest() - produce the current xxh64 hash
-+ *
-+ * @state: Produce the current xxh64 hash of this state.
-+ *
-+ * A hash value can be produced at any time. It is still possible to continue
-+ * inserting input into the hash state after a call to xxh64_digest(), and
-+ * generate new hashes later on, by calling xxh64_digest() again.
-+ *
-+ * Return: The xxh64 hash stored in the state.
-+ */
-+uint64_t xxh64_digest(const struct xxh64_state *state);
-+
-+/*-**************************
-+ * Utils
-+ ***************************/
-+
-+/**
-+ * xxh32_copy_state() - copy the source state into the destination state
-+ *
-+ * @src: The source xxh32 state.
-+ * @dst: The destination xxh32 state.
-+ */
-+void xxh32_copy_state(struct xxh32_state *dst, const struct xxh32_state *src);
-+
-+/**
-+ * xxh64_copy_state() - copy the source state into the destination state
-+ *
-+ * @src: The source xxh64 state.
-+ * @dst: The destination xxh64 state.
-+ */
-+void xxh64_copy_state(struct xxh64_state *dst, const struct xxh64_state *src);
-+
-+#endif /* XXHASH_H */
-diff --git a/lib/Kconfig b/lib/Kconfig
-index 0c8b78a..b6009d7 100644
---- a/lib/Kconfig
-+++ b/lib/Kconfig
-@@ -184,6 +184,9 @@ config CRC8
- 	  when they need to do cyclic redundancy check according CRC8
- 	  algorithm. Module will be called crc8.
- 
-+config XXHASH
-+	tristate
-+
- config AUDIT_GENERIC
- 	bool
- 	depends on AUDIT && !AUDIT_ARCH
-diff --git a/lib/Makefile b/lib/Makefile
-index 0166fbc..1338226 100644
---- a/lib/Makefile
-+++ b/lib/Makefile
-@@ -102,6 +102,7 @@ obj-$(CONFIG_CRC32_SELFTEST)	+= crc32test.o
- obj-$(CONFIG_CRC7)	+= crc7.o
- obj-$(CONFIG_LIBCRC32C)	+= libcrc32c.o
- obj-$(CONFIG_CRC8)	+= crc8.o
-+obj-$(CONFIG_XXHASH)	+= xxhash.o
- obj-$(CONFIG_GENERIC_ALLOCATOR) += genalloc.o
- 
- obj-$(CONFIG_842_COMPRESS) += 842/
-diff --git a/lib/xxhash.c b/lib/xxhash.c
-new file mode 100644
-index 0000000..dc94904
---- /dev/null
-+++ b/lib/xxhash.c
-@@ -0,0 +1,500 @@
-+/*
-+ * xxHash - Extremely Fast Hash algorithm
-+ * Copyright (C) 2012-2016, Yann Collet.
-+ *
-+ * BSD 2-Clause License (http://www.opensource.org/licenses/bsd-license.php)
-+ *
-+ * Redistribution and use in source and binary forms, with or without
-+ * modification, are permitted provided that the following conditions are
-+ * met:
-+ *
-+ *   * Redistributions of source code must retain the above copyright
-+ *     notice, this list of conditions and the following disclaimer.
-+ *   * Redistributions in binary form must reproduce the above
-+ *     copyright notice, this list of conditions and the following disclaimer
-+ *     in the documentation and/or other materials provided with the
-+ *     distribution.
-+ *
-+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-+ *
-+ * This program is free software; you can redistribute it and/or modify it under
-+ * the terms of the GNU General Public License version 2 as published by the
-+ * Free Software Foundation. This program is dual-licensed; you may select
-+ * either version 2 of the GNU General Public License ("GPL") or BSD license
-+ * ("BSD").
-+ *
-+ * You can contact the author at:
-+ * - xxHash homepage: http://cyan4973.github.io/xxHash/
-+ * - xxHash source repository: https://github.com/Cyan4973/xxHash
-+ */
-+
-+#include <asm/unaligned.h>
-+#include <linux/errno.h>
-+#include <linux/compiler.h>
-+#include <linux/kernel.h>
-+#include <linux/module.h>
-+#include <linux/string.h>
-+#include <linux/xxhash.h>
-+
-+/*-*************************************
-+ * Macros
-+ **************************************/
-+#define xxh_rotl32(x, r) ((x << r) | (x >> (32 - r)))
-+#define xxh_rotl64(x, r) ((x << r) | (x >> (64 - r)))
-+
-+#ifdef __LITTLE_ENDIAN
-+# define XXH_CPU_LITTLE_ENDIAN 1
-+#else
-+# define XXH_CPU_LITTLE_ENDIAN 0
 +#endif
 +
-+/*-*************************************
-+ * Constants
-+ **************************************/
-+static const uint32_t PRIME32_1 = 2654435761U;
-+static const uint32_t PRIME32_2 = 2246822519U;
-+static const uint32_t PRIME32_3 = 3266489917U;
-+static const uint32_t PRIME32_4 =  668265263U;
-+static const uint32_t PRIME32_5 =  374761393U;
-+
-+static const uint64_t PRIME64_1 = 11400714785074694791ULL;
-+static const uint64_t PRIME64_2 = 14029467366897019727ULL;
-+static const uint64_t PRIME64_3 =  1609587929392839161ULL;
-+static const uint64_t PRIME64_4 =  9650029242287828579ULL;
-+static const uint64_t PRIME64_5 =  2870177450012600261ULL;
-+
-+/*-**************************
-+ *  Utils
-+ ***************************/
-+void xxh32_copy_state(struct xxh32_state *dst, const struct xxh32_state *src)
-+{
-+	memcpy(dst, src, sizeof(*dst));
-+}
-+EXPORT_SYMBOL(xxh32_copy_state);
-+
-+void xxh64_copy_state(struct xxh64_state *dst, const struct xxh64_state *src)
-+{
-+	memcpy(dst, src, sizeof(*dst));
-+}
-+EXPORT_SYMBOL(xxh64_copy_state);
-+
-+/*-***************************
-+ * Simple Hash Functions
-+ ****************************/
-+static uint32_t xxh32_round(uint32_t seed, const uint32_t input)
-+{
-+	seed += input * PRIME32_2;
-+	seed = xxh_rotl32(seed, 13);
-+	seed *= PRIME32_1;
-+	return seed;
-+}
-+
-+uint32_t xxh32(const void *input, const size_t len, const uint32_t seed)
-+{
-+	const uint8_t *p = (const uint8_t *)input;
-+	const uint8_t *b_end = p + len;
-+	uint32_t h32;
-+
-+	if (len >= 16) {
-+		const uint8_t *const limit = b_end - 16;
-+		uint32_t v1 = seed + PRIME32_1 + PRIME32_2;
-+		uint32_t v2 = seed + PRIME32_2;
-+		uint32_t v3 = seed + 0;
-+		uint32_t v4 = seed - PRIME32_1;
-+
-+		do {
-+			v1 = xxh32_round(v1, get_unaligned_le32(p));
-+			p += 4;
-+			v2 = xxh32_round(v2, get_unaligned_le32(p));
-+			p += 4;
-+			v3 = xxh32_round(v3, get_unaligned_le32(p));
-+			p += 4;
-+			v4 = xxh32_round(v4, get_unaligned_le32(p));
-+			p += 4;
-+		} while (p <= limit);
-+
-+		h32 = xxh_rotl32(v1, 1) + xxh_rotl32(v2, 7) +
-+			xxh_rotl32(v3, 12) + xxh_rotl32(v4, 18);
-+	} else {
-+		h32 = seed + PRIME32_5;
-+	}
-+
-+	h32 += (uint32_t)len;
-+
-+	while (p + 4 <= b_end) {
-+		h32 += get_unaligned_le32(p) * PRIME32_3;
-+		h32 = xxh_rotl32(h32, 17) * PRIME32_4;
-+		p += 4;
-+	}
-+
-+	while (p < b_end) {
-+		h32 += (*p) * PRIME32_5;
-+		h32 = xxh_rotl32(h32, 11) * PRIME32_1;
-+		p++;
-+	}
-+
-+	h32 ^= h32 >> 15;
-+	h32 *= PRIME32_2;
-+	h32 ^= h32 >> 13;
-+	h32 *= PRIME32_3;
-+	h32 ^= h32 >> 16;
-+
-+	return h32;
-+}
-+EXPORT_SYMBOL(xxh32);
-+
-+static uint64_t xxh64_round(uint64_t acc, const uint64_t input)
-+{
-+	acc += input * PRIME64_2;
-+	acc = xxh_rotl64(acc, 31);
-+	acc *= PRIME64_1;
-+	return acc;
-+}
-+
-+static uint64_t xxh64_merge_round(uint64_t acc, uint64_t val)
-+{
-+	val = xxh64_round(0, val);
-+	acc ^= val;
-+	acc = acc * PRIME64_1 + PRIME64_4;
-+	return acc;
-+}
-+
-+uint64_t xxh64(const void *input, const size_t len, const uint64_t seed)
-+{
-+	const uint8_t *p = (const uint8_t *)input;
-+	const uint8_t *const b_end = p + len;
-+	uint64_t h64;
-+
-+	if (len >= 32) {
-+		const uint8_t *const limit = b_end - 32;
-+		uint64_t v1 = seed + PRIME64_1 + PRIME64_2;
-+		uint64_t v2 = seed + PRIME64_2;
-+		uint64_t v3 = seed + 0;
-+		uint64_t v4 = seed - PRIME64_1;
-+
-+		do {
-+			v1 = xxh64_round(v1, get_unaligned_le64(p));
-+			p += 8;
-+			v2 = xxh64_round(v2, get_unaligned_le64(p));
-+			p += 8;
-+			v3 = xxh64_round(v3, get_unaligned_le64(p));
-+			p += 8;
-+			v4 = xxh64_round(v4, get_unaligned_le64(p));
-+			p += 8;
-+		} while (p <= limit);
-+
-+		h64 = xxh_rotl64(v1, 1) + xxh_rotl64(v2, 7) +
-+			xxh_rotl64(v3, 12) + xxh_rotl64(v4, 18);
-+		h64 = xxh64_merge_round(h64, v1);
-+		h64 = xxh64_merge_round(h64, v2);
-+		h64 = xxh64_merge_round(h64, v3);
-+		h64 = xxh64_merge_round(h64, v4);
-+
-+	} else {
-+		h64  = seed + PRIME64_5;
-+	}
-+
-+	h64 += (uint64_t)len;
-+
-+	while (p + 8 <= b_end) {
-+		const uint64_t k1 = xxh64_round(0, get_unaligned_le64(p));
-+
-+		h64 ^= k1;
-+		h64 = xxh_rotl64(h64, 27) * PRIME64_1 + PRIME64_4;
-+		p += 8;
-+	}
-+
-+	if (p + 4 <= b_end) {
-+		h64 ^= (uint64_t)(get_unaligned_le32(p)) * PRIME64_1;
-+		h64 = xxh_rotl64(h64, 23) * PRIME64_2 + PRIME64_3;
-+		p += 4;
-+	}
-+
-+	while (p < b_end) {
-+		h64 ^= (*p) * PRIME64_5;
-+		h64 = xxh_rotl64(h64, 11) * PRIME64_1;
-+		p++;
-+	}
-+
-+	h64 ^= h64 >> 33;
-+	h64 *= PRIME64_2;
-+	h64 ^= h64 >> 29;
-+	h64 *= PRIME64_3;
-+	h64 ^= h64 >> 32;
-+
-+	return h64;
-+}
-+EXPORT_SYMBOL(xxh64);
-+
-+/*-**************************************************
-+ * Advanced Hash Functions
-+ ***************************************************/
-+void xxh32_reset(struct xxh32_state *statePtr, const uint32_t seed)
-+{
-+	/* use a local state for memcpy() to avoid strict-aliasing warnings */
-+	struct xxh32_state state;
-+
-+	memset(&state, 0, sizeof(state));
-+	state.v1 = seed + PRIME32_1 + PRIME32_2;
-+	state.v2 = seed + PRIME32_2;
-+	state.v3 = seed + 0;
-+	state.v4 = seed - PRIME32_1;
-+	memcpy(statePtr, &state, sizeof(state));
-+}
-+EXPORT_SYMBOL(xxh32_reset);
-+
-+void xxh64_reset(struct xxh64_state *statePtr, const uint64_t seed)
-+{
-+	/* use a local state for memcpy() to avoid strict-aliasing warnings */
-+	struct xxh64_state state;
-+
-+	memset(&state, 0, sizeof(state));
-+	state.v1 = seed + PRIME64_1 + PRIME64_2;
-+	state.v2 = seed + PRIME64_2;
-+	state.v3 = seed + 0;
-+	state.v4 = seed - PRIME64_1;
-+	memcpy(statePtr, &state, sizeof(state));
-+}
-+EXPORT_SYMBOL(xxh64_reset);
-+
-+int xxh32_update(struct xxh32_state *state, const void *input, const size_t len)
-+{
-+	const uint8_t *p = (const uint8_t *)input;
-+	const uint8_t *const b_end = p + len;
-+
-+	if (input == NULL)
-+		return -EINVAL;
-+
-+	state->total_len_32 += (uint32_t)len;
-+	state->large_len |= (len >= 16) | (state->total_len_32 >= 16);
-+
-+	if (state->memsize + len < 16) { /* fill in tmp buffer */
-+		memcpy((uint8_t *)(state->mem32) + state->memsize, input, len);
-+		state->memsize += (uint32_t)len;
-+		return 0;
-+	}
-+
-+	if (state->memsize) { /* some data left from previous update */
-+		const uint32_t *p32 = state->mem32;
-+
-+		memcpy((uint8_t *)(state->mem32) + state->memsize, input,
-+			16 - state->memsize);
-+
-+		state->v1 = xxh32_round(state->v1, get_unaligned_le32(p32));
-+		p32++;
-+		state->v2 = xxh32_round(state->v2, get_unaligned_le32(p32));
-+		p32++;
-+		state->v3 = xxh32_round(state->v3, get_unaligned_le32(p32));
-+		p32++;
-+		state->v4 = xxh32_round(state->v4, get_unaligned_le32(p32));
-+		p32++;
-+
-+		p += 16-state->memsize;
-+		state->memsize = 0;
-+	}
-+
-+	if (p <= b_end - 16) {
-+		const uint8_t *const limit = b_end - 16;
-+		uint32_t v1 = state->v1;
-+		uint32_t v2 = state->v2;
-+		uint32_t v3 = state->v3;
-+		uint32_t v4 = state->v4;
-+
-+		do {
-+			v1 = xxh32_round(v1, get_unaligned_le32(p));
-+			p += 4;
-+			v2 = xxh32_round(v2, get_unaligned_le32(p));
-+			p += 4;
-+			v3 = xxh32_round(v3, get_unaligned_le32(p));
-+			p += 4;
-+			v4 = xxh32_round(v4, get_unaligned_le32(p));
-+			p += 4;
-+		} while (p <= limit);
-+
-+		state->v1 = v1;
-+		state->v2 = v2;
-+		state->v3 = v3;
-+		state->v4 = v4;
-+	}
-+
-+	if (p < b_end) {
-+		memcpy(state->mem32, p, (size_t)(b_end-p));
-+		state->memsize = (uint32_t)(b_end-p);
-+	}
-+
-+	return 0;
-+}
-+EXPORT_SYMBOL(xxh32_update);
-+
-+uint32_t xxh32_digest(const struct xxh32_state *state)
-+{
-+	const uint8_t *p = (const uint8_t *)state->mem32;
-+	const uint8_t *const b_end = (const uint8_t *)(state->mem32) +
-+		state->memsize;
-+	uint32_t h32;
-+
-+	if (state->large_len) {
-+		h32 = xxh_rotl32(state->v1, 1) + xxh_rotl32(state->v2, 7) +
-+			xxh_rotl32(state->v3, 12) + xxh_rotl32(state->v4, 18);
-+	} else {
-+		h32 = state->v3 /* == seed */ + PRIME32_5;
-+	}
-+
-+	h32 += state->total_len_32;
-+
-+	while (p + 4 <= b_end) {
-+		h32 += get_unaligned_le32(p) * PRIME32_3;
-+		h32 = xxh_rotl32(h32, 17) * PRIME32_4;
-+		p += 4;
-+	}
-+
-+	while (p < b_end) {
-+		h32 += (*p) * PRIME32_5;
-+		h32 = xxh_rotl32(h32, 11) * PRIME32_1;
-+		p++;
-+	}
-+
-+	h32 ^= h32 >> 15;
-+	h32 *= PRIME32_2;
-+	h32 ^= h32 >> 13;
-+	h32 *= PRIME32_3;
-+	h32 ^= h32 >> 16;
-+
-+	return h32;
-+}
-+EXPORT_SYMBOL(xxh32_digest);
-+
-+int xxh64_update(struct xxh64_state *state, const void *input, const size_t len)
-+{
-+	const uint8_t *p = (const uint8_t *)input;
-+	const uint8_t *const b_end = p + len;
-+
-+	if (input == NULL)
-+		return -EINVAL;
-+
-+	state->total_len += len;
-+
-+	if (state->memsize + len < 32) { /* fill in tmp buffer */
-+		memcpy(((uint8_t *)state->mem64) + state->memsize, input, len);
-+		state->memsize += (uint32_t)len;
-+		return 0;
-+	}
-+
-+	if (state->memsize) { /* tmp buffer is full */
-+		const uint64_t *p64 = state->mem64;
-+
-+		memcpy(((uint8_t *)p64) + state->memsize, input,
-+			32 - state->memsize);
-+
-+		state->v1 = xxh64_round(state->v1, get_unaligned_le64(p64));
-+		p64++;
-+		state->v2 = xxh64_round(state->v2, get_unaligned_le64(p64));
-+		p64++;
-+		state->v3 = xxh64_round(state->v3, get_unaligned_le64(p64));
-+		p64++;
-+		state->v4 = xxh64_round(state->v4, get_unaligned_le64(p64));
-+
-+		p += 32 - state->memsize;
-+		state->memsize = 0;
-+	}
-+
-+	if (p + 32 <= b_end) {
-+		const uint8_t *const limit = b_end - 32;
-+		uint64_t v1 = state->v1;
-+		uint64_t v2 = state->v2;
-+		uint64_t v3 = state->v3;
-+		uint64_t v4 = state->v4;
-+
-+		do {
-+			v1 = xxh64_round(v1, get_unaligned_le64(p));
-+			p += 8;
-+			v2 = xxh64_round(v2, get_unaligned_le64(p));
-+			p += 8;
-+			v3 = xxh64_round(v3, get_unaligned_le64(p));
-+			p += 8;
-+			v4 = xxh64_round(v4, get_unaligned_le64(p));
-+			p += 8;
-+		} while (p <= limit);
-+
-+		state->v1 = v1;
-+		state->v2 = v2;
-+		state->v3 = v3;
-+		state->v4 = v4;
-+	}
-+
-+	if (p < b_end) {
-+		memcpy(state->mem64, p, (size_t)(b_end-p));
-+		state->memsize = (uint32_t)(b_end - p);
-+	}
-+
-+	return 0;
-+}
-+EXPORT_SYMBOL(xxh64_update);
-+
-+uint64_t xxh64_digest(const struct xxh64_state *state)
-+{
-+	const uint8_t *p = (const uint8_t *)state->mem64;
-+	const uint8_t *const b_end = (const uint8_t *)state->mem64 +
-+		state->memsize;
-+	uint64_t h64;
-+
-+	if (state->total_len >= 32) {
-+		const uint64_t v1 = state->v1;
-+		const uint64_t v2 = state->v2;
-+		const uint64_t v3 = state->v3;
-+		const uint64_t v4 = state->v4;
-+
-+		h64 = xxh_rotl64(v1, 1) + xxh_rotl64(v2, 7) +
-+			xxh_rotl64(v3, 12) + xxh_rotl64(v4, 18);
-+		h64 = xxh64_merge_round(h64, v1);
-+		h64 = xxh64_merge_round(h64, v2);
-+		h64 = xxh64_merge_round(h64, v3);
-+		h64 = xxh64_merge_round(h64, v4);
-+	} else {
-+		h64  = state->v3 + PRIME64_5;
-+	}
-+
-+	h64 += (uint64_t)state->total_len;
-+
-+	while (p + 8 <= b_end) {
-+		const uint64_t k1 = xxh64_round(0, get_unaligned_le64(p));
-+
-+		h64 ^= k1;
-+		h64 = xxh_rotl64(h64, 27) * PRIME64_1 + PRIME64_4;
-+		p += 8;
-+	}
-+
-+	if (p + 4 <= b_end) {
-+		h64 ^= (uint64_t)(get_unaligned_le32(p)) * PRIME64_1;
-+		h64 = xxh_rotl64(h64, 23) * PRIME64_2 + PRIME64_3;
-+		p += 4;
-+	}
-+
-+	while (p < b_end) {
-+		h64 ^= (*p) * PRIME64_5;
-+		h64 = xxh_rotl64(h64, 11) * PRIME64_1;
-+		p++;
-+	}
-+
-+	h64 ^= h64 >> 33;
-+	h64 *= PRIME64_2;
-+	h64 ^= h64 >> 29;
-+	h64 *= PRIME64_3;
-+	h64 ^= h64 >> 32;
-+
-+	return h64;
-+}
-+EXPORT_SYMBOL(xxh64_digest);
-+
-+MODULE_LICENSE("Dual BSD/GPL");
-+MODULE_DESCRIPTION("xxHash");
--- 
-2.9.3
+ static const struct squashfs_decompressor squashfs_unknown_comp_ops = {
+ 	NULL, NULL, NULL, NULL, 0, "unknown", 0
+ };
+@@ -75,6 +81,7 @@ static const struct squashfs_decompressor *decompressor[] = {
+ 	&squashfs_lzo_comp_ops,
+ 	&squashfs_xz_comp_ops,
+ 	&squashfs_lzma_unsupported_comp_ops,
++	&squashfs_zstd_comp_ops,
+ 	&squashfs_unknown_comp_ops
+ };
 
+diff --git a/fs/squashfs/decompressor.h b/fs/squashfs/decompressor.h
+index a25713c..0f5a8e4 100644
+--- a/fs/squashfs/decompressor.h
++++ b/fs/squashfs/decompressor.h
+@@ -58,4 +58,8 @@ extern const struct squashfs_decompressor squashfs_lzo_comp_ops;
+ extern const struct squashfs_decompressor squashfs_zlib_comp_ops;
+ #endif
+
++#ifdef CONFIG_SQUASHFS_ZSTD
++extern const struct squashfs_decompressor squashfs_zstd_comp_ops;
++#endif
++
+ #endif
+diff --git a/fs/squashfs/squashfs_fs.h b/fs/squashfs/squashfs_fs.h
+index 506f4ba..24d12fd 100644
+--- a/fs/squashfs/squashfs_fs.h
++++ b/fs/squashfs/squashfs_fs.h
+@@ -241,6 +241,7 @@ struct meta_index {
+ #define LZO_COMPRESSION		3
+ #define XZ_COMPRESSION		4
+ #define LZ4_COMPRESSION		5
++#define ZSTD_COMPRESSION	6
+
+ struct squashfs_super_block {
+ 	__le32			s_magic;
+diff --git a/fs/squashfs/zstd_wrapper.c b/fs/squashfs/zstd_wrapper.c
+new file mode 100644
+index 0000000..8cb7c76
+--- /dev/null
++++ b/fs/squashfs/zstd_wrapper.c
+@@ -0,0 +1,150 @@
++/*
++ * Squashfs - a compressed read only filesystem for Linux
++ *
++ * Copyright (c) 2016-present, Facebook, Inc.
++ * All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2,
++ * or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
++ *
++ * zstd_wrapper.c
++ */
++
++#include <linux/mutex.h>
++#include <linux/buffer_head.h>
++#include <linux/slab.h>
++#include <linux/zstd.h>
++#include <linux/vmalloc.h>
++
++#include "squashfs_fs.h"
++#include "squashfs_fs_sb.h"
++#include "squashfs.h"
++#include "decompressor.h"
++#include "page_actor.h"
++
++struct workspace {
++	void *mem;
++	size_t mem_size;
++};
++
++static void *zstd_init(struct squashfs_sb_info *msblk, void *buff)
++{
++	struct workspace *wksp = kmalloc(sizeof(*wksp), GFP_KERNEL);
++	if (wksp == NULL)
++		goto failed;
++	wksp->mem_size = ZSTD_DStreamWorkspaceBound(max_t(size_t,
++				msblk->block_size, SQUASHFS_METADATA_SIZE));
++	wksp->mem = vmalloc(wksp->mem_size);
++	if (wksp->mem == NULL)
++		goto failed;
++
++	return wksp;
++
++failed:
++	ERROR("Failed to allocate zstd workspace\n");
++	kfree(wksp);
++	return ERR_PTR(-ENOMEM);
++}
++
++
++static void zstd_free(void *strm)
++{
++	struct workspace *wksp = strm;
++
++	if (wksp)
++		vfree(wksp->mem);
++	kfree(wksp);
++}
++
++
++static int zstd_uncompress(struct squashfs_sb_info *msblk, void *strm,
++	struct buffer_head **bh, int b, int offset, int length,
++	struct squashfs_page_actor *output)
++{
++	struct workspace *wksp = strm;
++	ZSTD_DStream *stream;
++	size_t total_out = 0;
++	size_t zstd_err;
++	int k = 0;
++	ZSTD_inBuffer in_buf = { NULL, 0, 0 };
++	ZSTD_outBuffer out_buf = { NULL, 0, 0 };
++
++	stream = ZSTD_initDStream(wksp->mem_size, wksp->mem, wksp->mem_size);
++
++	if (!stream) {
++		ERROR("Failed to initialize zstd decompressor\n");
++		goto out;
++	}
++
++	out_buf.size = PAGE_SIZE;
++	out_buf.dst = squashfs_first_page(output);
++
++	do {
++		if (in_buf.pos == in_buf.size && k < b) {
++			int avail = min(length, msblk->devblksize - offset);
++			length -= avail;
++			in_buf.src = bh[k]->b_data + offset;
++			in_buf.size = avail;
++			in_buf.pos = 0;
++			offset = 0;
++		}
++
++		if (out_buf.pos == out_buf.size) {
++			out_buf.dst = squashfs_next_page(output);
++			if (out_buf.dst == NULL) {
++				/* shouldn't run out of pages before stream is
++				 * done */
++				squashfs_finish_page(output);
++				goto out;
++			}
++			out_buf.pos = 0;
++			out_buf.size = PAGE_SIZE;
++		}
++
++		total_out -= out_buf.pos;
++		zstd_err = ZSTD_decompressStream(stream, &out_buf, &in_buf);
++		total_out += out_buf.pos; /* add the additional data produced */
++
++		if (in_buf.pos == in_buf.size && k < b)
++			put_bh(bh[k++]);
++	} while (zstd_err != 0 && !ZSTD_isError(zstd_err));
++
++	squashfs_finish_page(output);
++
++	if (ZSTD_isError(zstd_err)) {
++		ERROR("zstd decompression error: %d\n",
++				(int)ZSTD_getErrorCode(zstd_err));
++		goto out;
++	}
++
++	if (k < b)
++		goto out;
++
++	return (int)total_out;
++
++out:
++	for (; k < b; k++)
++		put_bh(bh[k]);
++
++	return -EIO;
++}
++
++const struct squashfs_decompressor squashfs_zstd_comp_ops = {
++	.init = zstd_init,
++	.free = zstd_free,
++	.decompress = zstd_uncompress,
++	.id = ZSTD_COMPRESSION,
++	.name = "zstd",
++	.supported = 1
++};
+--
+2.9.3

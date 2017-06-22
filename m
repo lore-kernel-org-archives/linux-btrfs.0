@@ -1,46 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38058 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751453AbdF0NPv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Jun 2017 09:15:51 -0400
-Date: Tue, 27 Jun 2017 15:14:40 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, kilobyte@angband.pl
-Subject: Re: [PATCH] btrfs: Remove false alert when fiemap range is smaller
- than on-disk extent
-Message-ID: <20170627131440.GW2866@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <20170622020121.8381-1-quwenruo@cn.fujitsu.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:17951 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751126AbdFVCB2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Jun 2017 22:01:28 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>, <kilobyte@angband.pl>, <dsterba@suse.cz>
+Subject: [PATCH] btrfs: Remove false alert when fiemap range is smaller than on-disk extent
+Date: Thu, 22 Jun 2017 10:01:21 +0800
+Message-ID: <20170622020121.8381-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170622020121.8381-1-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 22, 2017 at 10:01:21AM +0800, Qu Wenruo wrote:
-> Commit 4751832da990 ("btrfs: fiemap: Cache and merge fiemap extent before
-> submit it to user") introduced a warning to catch unemitted cached
-> fiemap extent.
-> 
-> However such warning doesn't take the following case into consideration:
-> 
-> 0			4K			8K
-> |<---- fiemap range --->|
-> |<----------- On-disk extent ------------------>|
-> 
-> In this case, the whole 0~8K is cached, and since it's larger than
-> fiemap range, it break the fiemap extent emit loop.
-> This leaves the fiemap extent cached but not emitted, and caught by the
-> final fiemap extent sanity check, causing kernel warning.
-> 
-> This patch removes the kernel warning and renames the sanity check to
-> emit_last_fiemap_cache() since it's possible and valid to have cached
-> fiemap extent.
-> 
-> Reported-by: David Sterba <dsterba@suse.cz>
-> Reported-by: Adam Borowski <kilobyte@angband.pl>
-> Fixes: 4751832da990 ("btrfs: fiemap: Cache and merge fiemap extent ...")
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Commit 4751832da990 ("btrfs: fiemap: Cache and merge fiemap extent before
+submit it to user") introduced a warning to catch unemitted cached
+fiemap extent.
 
-Thanks, added to 4.13 queue.
+However such warning doesn't take the following case into consideration:
+
+0			4K			8K
+|<---- fiemap range --->|
+|<----------- On-disk extent ------------------>|
+
+In this case, the whole 0~8K is cached, and since it's larger than
+fiemap range, it break the fiemap extent emit loop.
+This leaves the fiemap extent cached but not emitted, and caught by the
+final fiemap extent sanity check, causing kernel warning.
+
+This patch removes the kernel warning and renames the sanity check to
+emit_last_fiemap_cache() since it's possible and valid to have cached
+fiemap extent.
+
+Reported-by: David Sterba <dsterba@suse.cz>
+Reported-by: Adam Borowski <kilobyte@angband.pl>
+Fixes: 4751832da990 ("btrfs: fiemap: Cache and merge fiemap extent ...")
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+Test case will follow with xfs_io modification to allow fiemap called on
+a given range other than the whole file.
+---
+ fs/btrfs/extent_io.c | 28 ++++++++++++----------------
+ 1 file changed, 12 insertions(+), 16 deletions(-)
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index d3619e010005..13cae68bfe46 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4463,29 +4463,25 @@ static int emit_fiemap_extent(struct fiemap_extent_info *fieinfo,
+ }
+ 
+ /*
+- * Sanity check for fiemap cache
++ * Emit last fiemap cache
+  *
+- * All fiemap cache should be submitted by emit_fiemap_extent()
+- * Iteration should be terminated either by last fiemap extent or
+- * fieinfo->fi_extents_max.
+- * So no cached fiemap should exist.
++ * The last fiemap cache may still be cached in the following case:
++ * 0		      4k		    8k
++ * |<- Fiemap range ->|
++ * |<------------  First extent ----------->|
++ *
++ * In this case, the first extent range will be cached but not emitted.
++ * So we must emit it before ending extent_fiemap().
+  */
+-static int check_fiemap_cache(struct btrfs_fs_info *fs_info,
+-			       struct fiemap_extent_info *fieinfo,
+-			       struct fiemap_cache *cache)
++static int emit_last_fiemap_cache(struct btrfs_fs_info *fs_info,
++				  struct fiemap_extent_info *fieinfo,
++				  struct fiemap_cache *cache)
+ {
+ 	int ret;
+ 
+ 	if (!cache->cached)
+ 		return 0;
+ 
+-	/* Small and recoverbale problem, only to info developer */
+-#ifdef CONFIG_BTRFS_DEBUG
+-	WARN_ON(1);
+-#endif
+-	btrfs_warn(fs_info,
+-		   "unhandled fiemap cache detected: offset=%llu phys=%llu len=%llu flags=0x%x",
+-		   cache->offset, cache->phys, cache->len, cache->flags);
+ 	ret = fiemap_fill_next_extent(fieinfo, cache->offset, cache->phys,
+ 				      cache->len, cache->flags);
+ 	cache->cached = false;
+@@ -4701,7 +4697,7 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 	}
+ out_free:
+ 	if (!ret)
+-		ret = check_fiemap_cache(root->fs_info, fieinfo, &cache);
++		ret = emit_last_fiemap_cache(root->fs_info, fieinfo, &cache);
+ 	free_extent_map(em);
+ out:
+ 	btrfs_free_path(path);
+-- 
+2.13.1
+
+
+

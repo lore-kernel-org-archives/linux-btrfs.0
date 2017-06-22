@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:17471 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752704AbdFVEJA (ORCPT
+        with ESMTP id S1752613AbdFVEI6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Jun 2017 00:09:00 -0400
+        Thu, 22 Jun 2017 00:08:58 -0400
 Subject: Re: How to fix errors that check --mode lomem finds, but --mode
  normal doesn't?
 To: Marc MERLIN <marc@merlins.org>
@@ -18,8 +18,8 @@ References: <20170620143916.GA22987@merlins.org>
  <13856431-9ee5-c13e-f2a8-860394f9aae4@cn.fujitsu.com>
  <20170622025330.GX5303@merlins.org>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <1402929e-18ad-56f2-263f-282cd2a20a91@cn.fujitsu.com>
-Date: Thu, 22 Jun 2017 12:08:50 +0800
+Message-ID: <e86db7c4-4953-7706-347d-983079177f37@cn.fujitsu.com>
+Date: Thu, 22 Jun 2017 12:08:44 +0800
 MIME-Version: 1.0
 In-Reply-To: <20170622025330.GX5303@merlins.org>
 Content-Type: text/plain; charset="utf-8"; format=flowed
@@ -91,6 +91,9 @@ It could be done by
 
 But please pay attention that, this dump may contain filenames, feel 
 free to mask the filenames.
+
+Thanks,
+Qu
 
 > 
 >   

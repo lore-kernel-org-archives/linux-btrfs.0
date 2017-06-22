@@ -1,66 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f171.google.com ([209.85.128.171]:34280 "EHLO
-        mail-wr0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751128AbdFVCFN (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:56062 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751128AbdFVCFp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Jun 2017 22:05:13 -0400
-Received: by mail-wr0-f171.google.com with SMTP id 77so3442172wrb.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Jun 2017 19:05:12 -0700 (PDT)
+        Wed, 21 Jun 2017 22:05:45 -0400
+Subject: Re: Exactly what is wrong with RAID5/6
+To: <kreijack@inwind.it>
+CC: <waxhead@dirtcellar.net>, <linux-btrfs@vger.kernel.org>
+References: <1f5a4702-d264-51c6-aadd-d2cf521a45eb@dirtcellar.net>
+ <60421001-5d74-2fb4-d916-7a397f246f20@cn.fujitsu.com>
+ <a896ef12-ab18-c8f8-9dd6-702578f0eb15@inwind.it>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <e9d109c8-44a6-e75d-3ab7-571ae44cb5fa@cn.fujitsu.com>
+Date: Thu, 22 Jun 2017 10:05:36 +0800
 MIME-Version: 1.0
-From: Chris Murphy <lists@colorremedies.com>
-Date: Wed, 21 Jun 2017 20:05:10 -0600
-Message-ID: <CAJCQCtQGmYtdNXhwhXCy7N=rBoNTuCCpew+f7ZSuWoG-Ofe1sg@mail.gmail.com>
-Subject: commands hang 30-60s during scrubs, includes sysrq t
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <a896ef12-ab18-c8f8-9dd6-702578f0eb15@inwind.it>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'm getting command hangs and service start failures during scrubs.
-top says CPU idle is 58-64%.
-
-Running 'perf top' takes more than 1 minute for results to appear.
-Connecting to a web management service (cockpit) takes longer, maybe 2
-minutes or sometimes the login times out. And just doing an ls -l on a
-directory takes 30-45 seconds. I don't remember things being this bad
-but I don't do scrubs all that often and then try to use the system at
-the same time.
-
-Anyway, it seems like scrub should not soak system resources enough to
-cause any hangs or system service failures.
-
-kernel-4.11.6-301.fc26.x86_64
-btrfs-progs-4.11-1.fc27.x86_64
-
-There are two Btrfs file systems: rootfs, and the one being scrubbed.
-The file system being scrubbed is only being scrubbed, nothing is
-reading or writing to it. Both file systems share the same physical
-block device, a laptop hard drive.
-
-rootfs
-/dev/sda1 on / type btrfs
-(rw,noatime,seclabel,compress=zlib,space_cache,subvolid=983,subvol=/root)
-
-filesystem being scrubbed (is LUKS device)
-/dev/mapper/most on /srv/most type btrfs
-(rw,noatime,seclabel,space_cache,subvolid=659,subvol=/most)
-
-elevator=deadline
-
-Linked file "perf top" output while the scrub is happening.
-https://drive.google.com/open?id=0B_2Asp8DGjJ9VzhPRklGUXdOQkE
-
-Linked file "kernelmsgsysrqt.log" contains two sysrq t's.
-https://drive.google.com/open?id=0B_2Asp8DGjJ9aDBxeVpwVURPNGc
 
 
-440 monotonic time I'm waiting for 'perf top' to do something. The
-command has been issued, screen is black and appears "hung".
+At 06/22/2017 01:03 AM, Goffredo Baroncelli wrote:
+> Hi Qu,
+> 
+> On 2017-06-21 10:45, Qu Wenruo wrote:
+>> At 06/21/2017 06:57 AM, waxhead wrote:
+>>> I am trying to piece together the actual status of the RAID5/6 bit of BTRFS.
+>>> The wiki refer to kernel 3.19 which was released in February 2015 so I assume
+>>> that the information there is a tad outdated (the last update on the wiki page was July 2016)
+>>> https://btrfs.wiki.kernel.org/index.php/RAID56
+>>>
+>>> Now there are four problems listed
+>>>
+>>> 1. Parity may be inconsistent after a crash (the "write hole")
+>>> Is this still true, if yes - would not this apply for RAID1 /
+>>> RAID10 as well? How was it solved there , and why can't that be done for RAID5/6
+>>
+>> Unlike pure stripe method, one fully functional RAID5/6 should be written in full stripe behavior,
+>>   which is made up by N data stripes and correct P/Q.
+>>
+>> Given one example to show how write sequence affects the usability of RAID5/6.
+>>
+>> Existing full stripe:
+>> X = Used space (Extent allocated)
+>> O = Unused space
+>> Data 1   |XXXXXX|OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO|
+>> Data 2   |OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO|
+>> Parity   |WWWWWW|ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ|
+>>
+>> When some new extent is allocated to data 1 stripe, if we write
+>> data directly into that region, and crashed.
+>> The result will be:
+>>
+>> Data 1   |XXXXXX|XXXXXX|OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO|
+>> Data 2   |OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO|
+>> Parity   |WWWWWW|ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ|
+>>
+>> Parity stripe is not updated, although it's fine since data is still correct, this reduces the
+>> usability, as in this case, if we lost device containing data 2 stripe, we can't
+>> recover correct data of data 2.
+>>
+>> Although personally I don't think it's a big problem yet.
+>>
+>> Someone has idea to modify extent allocator to handle it, but anyway I don't consider it's worthy.
+>>
+>>>
+>>> 2. Parity data is not checksummed
+>>> Why is this a problem? Does it have to do with the design of BTRFS somehow?
+>>> Parity is after all just data, BTRFS does checksum data so what is the reason this is a problem?
+>>
+>> Because that's one solution to solve above problem.
+> 
+> In what it could be a solution for the write hole ?
 
-976 monotonic time I'm waiting for a client to authenticate to the
-webui management system (cockpit), which ends up failing to
-authenticate due to a timeout.
+Not my idea, so I don't why this is a solution either.
+
+I prefer to lower the priority for such case as we have more work to do.
+
+Thanks,
+Qu
+
+> If a parity is wrong AND you lost a disk, even having a checksum of the parity, you are not in position to rebuild the missing data. And if you rebuild wrong data, anyway the checksum highlights it. So adding the checksum to the parity should not solve any issue.
+> 
+> A possible "mitigation", is to track in a "intent log" all the not "full stripe writes" during a transaction. If a power failure aborts a transaction, in the next mount a scrub process is started to correct the parities only in the stripes tracked before.
+> 
+> A solution, is to journal all the not "full stripe writes", as MD does.
+> 
+> 
+> BR
+> G.Baroncelli
+> 
 
 
--- 
-Chris Murphy

@@ -1,122 +1,172 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:17769 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:43458 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751126AbdFVCMU (ORCPT
+        with ESMTP id S1751884AbdFVCXF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Jun 2017 22:12:20 -0400
-Subject: Re: Exactly what is wrong with RAID5/6
-To: Chris Murphy <lists@colorremedies.com>
-CC: waxhead <waxhead@dirtcellar.net>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <1f5a4702-d264-51c6-aadd-d2cf521a45eb@dirtcellar.net>
- <60421001-5d74-2fb4-d916-7a397f246f20@cn.fujitsu.com>
- <CAJCQCtRM4L1DSbWU7okANdimoO6F-KgSV=y2KEovj0zMW7h6bA@mail.gmail.com>
+        Wed, 21 Jun 2017 22:23:05 -0400
+Subject: Re: How to fix errors that check --mode lomem finds, but --mode
+ normal doesn't?
+To: Marc MERLIN <marc@merlins.org>, Chris Murphy <lists@colorremedies.com>
+CC: Hugo Mills <hugo@carfax.org.uk>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <20170620143916.GA22987@merlins.org>
+ <20170620152354.GD7140@carfax.org.uk> <20170620152648.GB22987@merlins.org>
+ <20170620153601.GE7140@carfax.org.uk> <20170620154429.GC22987@merlins.org>
+ <20170620231202.GB5303@merlins.org>
+ <CAJCQCtQMWKJwWjeM4zEb-W7-tjsZyfCo37YyT2xYi0fNTEzcUQ@mail.gmail.com>
+ <20170621034352.GE5303@merlins.org> <20170621151339.GK5303@merlins.org>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <1d88f12a-bd2a-9fff-cb53-da847f4526c7@cn.fujitsu.com>
-Date: Thu, 22 Jun 2017 10:12:15 +0800
+Message-ID: <13856431-9ee5-c13e-f2a8-860394f9aae4@cn.fujitsu.com>
+Date: Thu, 22 Jun 2017 10:22:57 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtRM4L1DSbWU7okANdimoO6F-KgSV=y2KEovj0zMW7h6bA@mail.gmail.com>
+In-Reply-To: <20170621151339.GK5303@merlins.org>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-At 06/22/2017 02:24 AM, Chris Murphy wrote:
-> On Wed, Jun 21, 2017 at 2:45 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+At 06/21/2017 11:13 PM, Marc MERLIN wrote:
+> On Tue, Jun 20, 2017 at 08:43:52PM -0700, Marc MERLIN wrote:
+>> On Tue, Jun 20, 2017 at 09:31:42PM -0600, Chris Murphy wrote:
+>>> On Tue, Jun 20, 2017 at 5:12 PM, Marc MERLIN <marc@merlins.org> wrote:
+>>>
+>>>> I'm now going to remount this with nospace_cache to see if your guess about
+>>>> space_cache was correct.
+>>>> Other suggestions also welcome :)
+>>>
+>>> What results do you get with lowmem mode? It won't repair without
+>>> additional patches, but might give a dev a clue what's going on. I
+>>> regularly see normal mode check finds no problems, and lowmem mode
+>>> finds problems. Lowmem mode is a total rewrite so it's a different
+>>> implementation and can find things normal mode won't.
+>>
+>> Oh, I kind of forgot that lowmem mode looked for more things than regular
+>> mode.
+>> I will run this tonight and see what it says.
+>   
+> It's probably still a ways from being finished given how slow lowmem is in
+> comparison, but sadly it found a bunch of problems which regular mode didn't
+> find.
 > 
->> Unlike pure stripe method, one fully functional RAID5/6 should be written in
->> full stripe behavior, which is made up by N data stripes and correct P/Q.
->>
->> Given one example to show how write sequence affects the usability of
->> RAID5/6.
->>
->> Existing full stripe:
->> X = Used space (Extent allocated)
->> O = Unused space
->> Data 1   |XXXXXX|OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO|
->> Data 2   |OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO|
->> Parity   |WWWWWW|ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ|
->>
->> When some new extent is allocated to data 1 stripe, if we write
->> data directly into that region, and crashed.
->> The result will be:
->>
->> Data 1   |XXXXXX|XXXXXX|OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO|
->> Data 2   |OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO|
->> Parity   |WWWWWW|ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ|
->>
->> Parity stripe is not updated, although it's fine since data is still
->> correct, this reduces the usability, as in this case, if we lost device
->> containing data 2 stripe, we can't recover correct data of data 2.
->>
->> Although personally I don't think it's a big problem yet.
->>
->> Someone has idea to modify extent allocator to handle it, but anyway I don't
->> consider it's worthy.
+> I'm pretty bummed. I just spent way too long recreating this filesystem and
+> the multiple btrfs send/receive relationships from other machines. Too a bit
+> over a week :(
+> 
+> It looks like the errors are not major (especially if the regular mode
+> doesn't even see them), but without lowmem --repair, I'm kind of screwed.
+> 
+> I'm wondering if I could/should leave those errors unfixed until lowmem --repair
+> finally happens, or whether I'm looking at spending another week rebuilding
+> this filesystem :-/
 > 
 > 
-> If there is parity corruption and there is a lost device (or bad
-> sector causing lost data strip), that is in effect two failures and no
-> raid5 recovers, you have to have raid6. However, I don't know whether
-> Btrfs raid6 can even recover from it? If there is a single device
-> failure, with a missing data strip, you have both P&Q. Typically raid6
-> implementations use P first, and only use Q if P is not available. Is
-> Btrfs raid6 the same? And if reconstruction from P fails to match data
-> csum, does Btrfs retry using Q? Probably not is my guess.
+> gargamel:~# btrfs check -p --mode lowmem  /dev/mapper/dshelf2
+> Checking filesystem on /dev/mapper/dshelf2
+> UUID: 85441c59-ad11-4b25-b1fe-974f9e4acede
+> ERROR: extent[3886187384832, 81920] referencer count mismatch (root: 11930, owner: 375444, offset: 1851654144) wanted: 1, have: 4
 
-Well, in fact, thanks to data csum and btrfs metadata CoW, there is 
-quite a high chance that we won't cause any data damage.
+This means that in extent tree, btrfs says there is only one referring 
+to this extent, but lowmem mode find 4.
 
-For the example I gave above, no data damage at all.
+It would provide great help if you could dump extent tree for it.
+# btrfs-debug-tree <dev> | grep -C 10 3886187384832
 
-First the data is written and power loss, and data is always written 
-before metadata, so that's to say, after power loss, superblock is still 
-using the old tree roots.
 
-So no one is really using that newly written data.
+> ERROR: extent[3886189391872, 122880] referencer count mismatch (root: 11712, owner: 863395, offset: 79659008) wanted: 1, have: 2
+> ERROR: extent[3933249708032, 69632] referencer count mismatch (root: 12424, owner: 6945, offset: 2083389440) wanted: 1, have: 2
+> ERROR: extent[3933249708032, 69632] referencer count mismatch (root: 12172, owner: 6945, offset: 2083389440) wanted: 1, have: 2
+> ERROR: extent[4571729862656, 876544] referencer count mismatch (root: 11058, owner: 375442, offset: 907706368) wanted: 6, have: 21
+> ERROR: extent[4641490833408, 270336] referencer count mismatch (root: 11712, owner: 375444, offset: 1848672256) wanted: 3, have: 5
+> ERROR: extent[4641490833408, 270336] referencer count mismatch (root: 11276, owner: 375444, offset: 1848672256) wanted: 3, have: 5
+> ERROR: extent[4641490833408, 270336] referencer count mismatch (root: 11058, owner: 375444, offset: 1848672256) wanted: 3, have: 5
+> ERROR: extent[4641490833408, 270336] referencer count mismatch (root: 11494, owner: 375444, offset: 1848672256) wanted: 3, have: 5
+> ERROR: extent[4658555617280, 122880] referencer count mismatch (root: 11712, owner: 375444, offset: 1848705024) wanted: 1, have: 3
+> ERROR: extent[4677858123776, 417792] referencer count mismatch (root: 11712, owner: 863395, offset: 79523840) wanted: 1, have: 3
+> ERROR: extent[4677858123776, 417792] referencer count mismatch (root: 11930, owner: 863395, offset: 79523840) wanted: 1, have: 3
+> ERROR: extent[4698380947456, 409600] referencer count mismatch (root: 11930, owner: 375444, offset: 1851596800) wanted: 3, have: 4
+> ERROR: extent[4720470421504, 667648] referencer count mismatch (root: 11058, owner: 3463478, offset: 2334720) wanted: 2, have: 10
+> ERROR: extent[4783941246976, 65536] referencer count mismatch (root: 9365, owner: 24493, offset: 4562944) wanted: 2, have: 3
+> ERROR: extent[5077564477440, 106496] referencer count mismatch (root: 9370, owner: 1602694, offset: 734756864) wanted: 1, have: 2
+> ERROR: extent[5136306929664, 131489792] referencer count mismatch (root: 11712, owner: 375441, offset: 910999552) wanted: 16, have: 1864
+> ERROR: extent[5136306929664, 131489792] referencer count mismatch (root: 11276, owner: 375441, offset: 910999552) wanted: 867, have: 1865
+> ERROR: extent[5136306929664, 131489792] referencer count mismatch (root: 11058, owner: 375441, offset: 910999552) wanted: 126, have: 1872
+> ERROR: extent[5136306929664, 131489792] referencer count mismatch (root: 11494, owner: 375441, offset: 910999552) wanted: 866, have: 1864
+> ERROR: extent[5136306929664, 131489792] referencer count mismatch (root: 11930, owner: 375441, offset: 910999552) wanted: 861, have: 1859
+> ERROR: extent[5136649891840, 66781184] referencer count mismatch (root: 11058, owner: 375442, offset: 192659456) wanted: 5, have: 19
+> ERROR: extent[5136879157248, 134217728] referencer count mismatch (root: 11930, owner: 375442, offset: 394543104) wanted: 10, have: 33
+> ERROR: extent[5137380671488, 80945152] referencer count mismatch (root: 11058, owner: 375442, offset: 875233280) wanted: 1, have: 21
+> ERROR: extent[5137380671488, 80945152] referencer count mismatch (root: 11930, owner: 375442, offset: 875233280) wanted: 11, have: 21
+> ERROR: extent[5138641395712, 524288] referencer count mismatch (root: 11494, owner: 375445, offset: 39845888) wanted: 1, have: 3
+> ERROR: extent[5190245990400, 53248] referencer count mismatch (root: 11712, owner: 863395, offset: 51118080) wanted: 1, have: 4
+> ERROR: extent[5190245990400, 53248] referencer count mismatch (root: 11276, owner: 863395, offset: 51118080) wanted: 1, have: 4
+> ERROR: extent[5190245990400, 53248] referencer count mismatch (root: 11494, owner: 863395, offset: 51118080) wanted: 1, have: 4
+> ERROR: extent[5190274174976, 77824] referencer count mismatch (root: 11276, owner: 863395, offset: 74952704) wanted: 3, have: 5
+> ERROR: extent[5190274174976, 77824] referencer count mismatch (root: 11058, owner: 863395, offset: 74952704) wanted: 3, have: 5
+> ERROR: extent[5190274174976, 77824] referencer count mismatch (root: 11494, owner: 863395, offset: 74952704) wanted: 3, have: 5
+> ERROR: extent[5190274174976, 77824] referencer count mismatch (root: 11930, owner: 863395, offset: 74952704) wanted: 3, have: 5
+> ERROR: extent[5190275895296, 77824] referencer count mismatch (root: 11712, owner: 863395, offset: 77705216) wanted: 1, have: 6
+> ERROR: extent[5190275895296, 77824] referencer count mismatch (root: 11276, owner: 863395, offset: 77705216) wanted: 5, have: 6
+> ERROR: extent[5190275895296, 77824] referencer count mismatch (root: 11058, owner: 863395, offset: 77705216) wanted: 5, have: 6
+> ERROR: extent[5427326599168, 61440] referencer count mismatch (root: 9370, owner: 1225712, offset: 29753344) wanted: 1, have: 5
+> ERROR: extent[5456623030272, 24576] referencer count mismatch (root: 11058, owner: 2278892, offset: 786432) wanted: 2, have: 3
+> ERROR: extent[5851251269632, 134217728] referencer count mismatch (root: 9370, owner: 1602695, offset: 534061056) wanted: 3, have: 4
+> ERROR: errors found in extent allocation tree or chunk allocation
+> cache and super generation don't match, space cache will be invalidated
+> ERROR: root 3857 EXTENT_DATA[108864 4096] interrupt
 
-And in that case even device of data stripe 2 is missing, btrfs don't 
-really need to use parity to rebuild it, as btrfs knows there is no 
-extent in that stripe, and data csum matches for data stripe 1.
-No need to use parity at all.
+This means that, for root 3857, inode 108864, file offset 4096, there is 
+a gap before that extent.
+In NO_HOLES mode it's allowed, but if NO_HOLES incompat flag is not set, 
+this should be a problem.
 
-So that's why I think the hole write is not an urgent case to handle 
-right now.
+I wonder if this is a problem caused by inlined compressed file extent.
+
+This can also be dumped by the following command.
+# btrfs-debug-tree -t 3857 <dev> | grep -C 10 108864
 
 Thanks,
 Qu
+
+> ERROR: root 3857 EXTENT_DATA[133050 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[388570 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[729583 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[984778 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[997394 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[1002954 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[1007491 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[1111463 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[1111506 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[1111536 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[1111536 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[1134500 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[1136498 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[1175965 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[1185977 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[1190919 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[1201340 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[1230370 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[1230530 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[1230530 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[1235960 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[1248784 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[1271827 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[1295242 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[1406074 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[1410780 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[1412938 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[1413532 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[1413532 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[1421245 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[1423365 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[1425985 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[1429229 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[1430615 4096] interrupt
+> ERROR: root 3857 EXTENT_DATA[1443769 4096] interrupt
+> ERROR: root 3860 EXTENT_DATA[599089 4096] interrupt
 > 
-> I think that is a valid problem calling for a solution on Btrfs, given
-> its mandate. It is no worse than other raid6 implementations though
-> which would reconstruct from bad P, and give no warning, leaving it up
-> to application layers to deal with the problem.
+> (not finished, still going on)
 > 
-> I have no idea how ZFS RAIDZ2 and RAIDZ3 handle this same scenario.
-> 
-> 
-> 
->>
->>>
->>> 2. Parity data is not checksummed
->>> Why is this a problem? Does it have to do with the design of BTRFS
->>> somehow?
->>> Parity is after all just data, BTRFS does checksum data so what is the
->>> reason this is a problem?
->>
->>
->> Because that's one solution to solve above problem.
->>
->> And no, parity is not data.
-> 
-> Parity strip is differentiated from data strip, and by itself parity
-> is meaningless. But parity plus n-1 data strips is an encoded form of
-> the missing data strip, and is therefore an encoded copy of the data.
-> We kinda have to treat the parity as fractionally important compared
-> to data; just like each mirror copy has some fractional value. You
-> don't have to have both of them, but you do have to have at least one
-> of them.
-> 
+> Marc
 > 
 
 

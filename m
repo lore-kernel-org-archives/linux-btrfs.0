@@ -1,71 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ot0-f173.google.com ([74.125.82.173]:33515 "EHLO
-        mail-ot0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753926AbdFWRFx (ORCPT
+Received: from mail-wr0-f173.google.com ([209.85.128.173]:34689 "EHLO
+        mail-wr0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754141AbdFWRUz (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 23 Jun 2017 13:05:53 -0400
-Received: by mail-ot0-f173.google.com with SMTP id y47so35665985oty.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 23 Jun 2017 10:05:53 -0700 (PDT)
+        Fri, 23 Jun 2017 13:20:55 -0400
+Received: by mail-wr0-f173.google.com with SMTP id 77so74431713wrb.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 23 Jun 2017 10:20:54 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20170526204414.GA18176@ircssh-2.c.rugged-nimbus-611.internal>
-References: <20170526204414.GA18176@ircssh-2.c.rugged-nimbus-611.internal>
-From: Sargun Dhillon <sargun@sargun.me>
-Date: Fri, 23 Jun 2017 10:05:12 -0700
-Message-ID: <CAMp4zn8eRf79ZyzcpgKzcX5XwoXsjcN_cDxOLm-BWt+4H=XXPA@mail.gmail.com>
-Subject: Re: [PATCH v2 0/4] Qgroup uapi improvements
-To: BTRFS ML <linux-btrfs@vger.kernel.org>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, mkh@rqc.ru
+In-Reply-To: <CANp8-fwAcNT735JTfmtK2T8YRg_WASZwT41pt8b0W9+uWDT3gA@mail.gmail.com>
+References: <CANp8-fwAcNT735JTfmtK2T8YRg_WASZwT41pt8b0W9+uWDT3gA@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Fri, 23 Jun 2017 11:20:52 -0600
+Message-ID: <CAJCQCtQwJw9gU5nqftvUkBHxhgX9+rLGhxjMmUmAed-SS_vK+Q@mail.gmail.com>
+Subject: Re: btrfs fi usage crash when multiple device volume contains seed device
+To: "Cengiz C." <cengizc@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        Chris Murphy <lists@colorremedies.com>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 26, 2017 at 1:44 PM, Sargun Dhillon <sargun@sargun.me> wrote:
-> This patchset has several improvements around the qgroups user-facing
-> API. It introduces two new ioctls for creating, and removing qgroups.
-> These ioctls have a new args structure that allows passing flags, and
-> some reserved fields for future expansion. The ioctls prevent some
-> operations around level-0 qgroups as well.
+On Fri, Jun 23, 2017 at 3:46 AM, Cengiz C. <cengizc@gmail.com> wrote:
+> Hello Chris,
 >
-> The create operation prevents the creation of level-0 qgroups for
-> subvolumes that do not exist. The delete operations prevents the
-> deletion of level-0 qgroups that reference active volumes.
+> Sorry, I'm a newbie on LKML flow, I didn't copy you while replying.
 >
-> In adddition, it adds a mount option "qgroup_auto_cleanup".
-> When this mount option is specified, qgroups will automatically
-> be cleaned up at volume deletion time. The reason this is a mount
-> option over a default behaviour is to avoid breaking old scripts
-> that rely on the behaviour of the existing APIs. Users can opt
-> into the new behaviour, as opposed it being an automated
-> trigger on newly created qgroups. Later on, we can introduce
-> a flag to subvol / qgroup create that marks the qgroup as
-> automatically created, and delete the qgroup as automatically
-> as well.
+> If you have any spare time to talk about this issue, I'd be extremely happy.
 >
-> Changes since v1:
->   * Remove creation of level-0 qgroups without subvol
->   * Add deprecation message for old API
+> Thanks again
 >
-> Sargun Dhillon (4):
->   btrfs: Fail on removing qgroup if del_qgroup_item fails
->   btrfs: Add new ioctl uapis for qgroup creation / removal
->   btrfs: Warn the user when the legacy btrfs_qgroup_create API is used
->   btrfs: Add qgroup_auto_cleanup mount flag to automatically cleanup
->     qgroups
->
->  fs/btrfs/ctree.h           |   1 +
->  fs/btrfs/ioctl.c           | 117 ++++++++++++++++++++++++++++++++++++++++++++-
->  fs/btrfs/qgroup.c          |  79 ++++++++++++++++++++++++++++--
->  fs/btrfs/qgroup.h          |   6 ++-
->  fs/btrfs/super.c           |  15 +++++-
->  include/uapi/linux/btrfs.h |  22 +++++++++
->  6 files changed, 230 insertions(+), 10 deletions(-)
->
-> --
-> 2.9.3
->
+> On Sun, Jun 18, 2017 at 10:12 PM, Cengiz Can <cengizc@gmail.com> wrote:
+>> Hello,
+>>
+>> How should we proceed on this?
+>>
+>> I want to deep dive and contribute to btrfs and its toolings with this issue
+>> but I don't have enough experience with them.
+>>
+>> As far as I understand, fixing this would require some design decisions
+>> which I hope to hear in this thread soon.
 
-Hey,
-I wanted to see what people thought of this. This was the only way I
-saw forward that wouldn't break existing scripts, and would allow
-users to opt-in to this new behaviour. If y'all think that different
-semantics make sense, let me know, and I'll rev this patchset.
+No idea how to proceed. Anand Jain understands the issues related to
+seed devices much better than I do. The multiple device stuff is
+always complicated.
+
+
+
+-- 
+Chris Murphy

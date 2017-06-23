@@ -1,60 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:23852 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1753759AbdFWIyF (ORCPT
+Received: from mail-it0-f52.google.com ([209.85.214.52]:36873 "EHLO
+        mail-it0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754497AbdFWJqQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 23 Jun 2017 04:54:05 -0400
-Subject: Re: How to fix errors that check --mode lomem finds, but --mode
- normal doesn't?
-To: Marc MERLIN <marc@merlins.org>
-CC: Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        Chris Murphy <lists@colorremedies.com>,
-        Hugo Mills <hugo@carfax.org.uk>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <20170620152648.GB22987@merlins.org>
- <20170620153601.GE7140@carfax.org.uk> <20170620154429.GC22987@merlins.org>
- <20170620231202.GB5303@merlins.org>
- <CAJCQCtQMWKJwWjeM4zEb-W7-tjsZyfCo37YyT2xYi0fNTEzcUQ@mail.gmail.com>
- <20170621034352.GE5303@merlins.org> <20170621151339.GK5303@merlins.org>
- <13856431-9ee5-c13e-f2a8-860394f9aae4@cn.fujitsu.com>
- <20170622025330.GX5303@merlins.org>
- <e86db7c4-4953-7706-347d-983079177f37@cn.fujitsu.com>
- <20170623040601.akpyyvh3dgry6nn5@merlins.org>
-From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-Message-ID: <90711a7c-92ff-e043-6d81-6bdadbfdbc3a@cn.fujitsu.com>
-Date: Fri, 23 Jun 2017 16:54:01 +0800
+        Fri, 23 Jun 2017 05:46:16 -0400
+Received: by mail-it0-f52.google.com with SMTP id m47so5499953iti.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 23 Jun 2017 02:46:16 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20170623040601.akpyyvh3dgry6nn5@merlins.org>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+From: "Cengiz C." <cengizc@gmail.com>
+Date: Fri, 23 Jun 2017 12:46:15 +0300
+Message-ID: <CANp8-fwAcNT735JTfmtK2T8YRg_WASZwT41pt8b0W9+uWDT3gA@mail.gmail.com>
+Subject: Re: btrfs fi usage crash when multiple device volume contains seed device
+To: linux-btrfs@vger.kernel.org
+Cc: lists@colorremedies.com
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017年06月23日 12:06, Marc MERLIN wrote:
->> Well, there is only the output from extent tree.
->>
->> I was also expecting output from subvolue (11930) tree.
->>
->> It could be done by
->> # btrfs-debug-tree -t 11930 | grep -C 10 3886187384832
->>
-I apologize if this was not made clear.
+Hello Chris,
 
->> But please pay attention that, this dump may contain filenames, feel free to
->> mask the filenames.
->   
-> There you go:
-> gargamel:~# btrfs-debug-tree /dev/mapper/dsh | grep -C 10 3886187384832
+Sorry, I'm a newbie on LKML flow, I didn't copy you while replying.
 
-Could you dump file tree (11930) by the following command.
-# btrfs-debug-tree -t 11930 /dev/mapper/dsh | grep -C 10 3886187384832
+If you have any spare time to talk about this issue, I'd be extremely happy.
 
-I wonder if this extent was referenced by this file tree four times.
+Thanks again
 
-Hoping that this will not cause you too much trouble.
+On Sun, Jun 18, 2017 at 10:12 PM, Cengiz Can <cengizc@gmail.com> wrote:
+> Hello,
+>
+> How should we proceed on this?
+>
+> I want to deep dive and contribute to btrfs and its toolings with this issue
+> but I don't have enough experience with them.
+>
+> As far as I understand, fixing this would require some design decisions
+> which I hope to hear in this thread soon.
+>
+> Thanks
+> Cengiz Can
+>
+>
+
 
 
 -- 
-Thanks,
-Lu
-
-
+Cengiz Can

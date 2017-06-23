@@ -1,28 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:51913 "EHLO
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:48406 "EHLO
         mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1752170AbdFWOc6 (ORCPT
+        by vger.kernel.org with ESMTP id S1753870AbdFWQs3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 23 Jun 2017 10:32:58 -0400
-Received: from pps.filterd (m0044012.ppops.net [127.0.0.1])
-        by mx0a-00082601.pphosted.com (8.16.0.20/8.16.0.20) with SMTP id v5NEUDVN001434
-        for <linux-btrfs@vger.kernel.org>; Fri, 23 Jun 2017 07:32:57 -0700
+        Fri, 23 Jun 2017 12:48:29 -0400
+Received: from pps.filterd (m0109334.ppops.net [127.0.0.1])
+        by mx0a-00082601.pphosted.com (8.16.0.20/8.16.0.20) with SMTP id v5NGlteu017630
+        for <linux-btrfs@vger.kernel.org>; Fri, 23 Jun 2017 09:48:28 -0700
 Received: from mail.thefacebook.com ([199.201.64.23])
-        by mx0a-00082601.pphosted.com with ESMTP id 2b8ynk322b-1
+        by mx0a-00082601.pphosted.com with ESMTP id 2b90213g17-1
         (version=TLSv1 cipher=ECDHE-RSA-AES256-SHA bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Fri, 23 Jun 2017 07:32:57 -0700
+        for <linux-btrfs@vger.kernel.org>; Fri, 23 Jun 2017 09:48:28 -0700
 Received: from facebook.com (2401:db00:2120:20df:face:0:2d:0)   by
- mx-out.facebook.com (10.212.232.59) with ESMTP id
- d92921b6582011e790fe0002c991e86a-b3f78f0 for <linux-btrfs@vger.kernel.org>;
-        Fri, 23 Jun 2017 07:32:56 -0700
+ mx-out.facebook.com (10.212.236.89) with ESMTP id
+ c7944008583311e79e9e0002c95209d8-a1b348f0 for <linux-btrfs@vger.kernel.org>;
+        Fri, 23 Jun 2017 09:48:27 -0700
 From: Chris Mason <clm@fb.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <davej@codemonkey.org.uk>, Chris Mason <clm@fb.com>
-Subject: [PATCH] btrfs: fix integer overflow in calc_reclaim_items_nr
-Date: Fri, 23 Jun 2017 07:32:40 -0700
-Message-ID: <20170623143240.1245989-1-clm@fb.com>
+Subject: [PATCH v2] btrfs: fix integer overflow in calc_reclaim_items_nr
+Date: Fri, 23 Jun 2017 09:48:21 -0700
+Message-ID: <20170623164821.1720197-1-clm@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -36,11 +36,14 @@ This switches calc_reclaim_items_nr() to return a u64 and changes everyone
 that uses the results of that math to u64 as well.
 
 Reported-by: Dave Jones <davej@codemonkey.org.uk>
-Fixes: 70e7af244f24c94604ef6eca32ad297632018583
+Fixes: 70e7af2 ("Btrfs: fix delalloc accounting leak caused by u32 overflow")
 Signed-off-by: Chris Mason <clm@fb.com>
 ---
+
+v1->v2 Fixed (int) cast in calc_reclaim_items_nr (thanks Holger Hoffstätte)
+
  fs/btrfs/dev-replace.c  |  4 ++--
- fs/btrfs/extent-tree.c  | 10 +++++-----
+ fs/btrfs/extent-tree.c  | 12 ++++++------
  fs/btrfs/ioctl.c        |  2 +-
  fs/btrfs/ordered-data.c | 17 ++++++++---------
  fs/btrfs/ordered-data.h |  4 ++--
@@ -49,7 +52,7 @@ Signed-off-by: Chris Mason <clm@fb.com>
  fs/btrfs/scrub.c        |  2 +-
  fs/btrfs/super.c        |  2 +-
  fs/btrfs/transaction.c  |  2 +-
- 10 files changed, 23 insertions(+), 24 deletions(-)
+ 10 files changed, 24 insertions(+), 25 deletions(-)
 
 diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
 index 5fe1ca8..bee3ede 100644
@@ -74,7 +77,7 @@ index 5fe1ca8..bee3ede 100644
  	trans = btrfs_start_transaction(root, 0);
  	if (IS_ERR(trans)) {
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 33d979e9..d675324 100644
+index 33d979e9..705247a 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
 @@ -4238,7 +4238,7 @@ int btrfs_alloc_data_chunk_ondemand(struct btrfs_inode *inode, u64 bytes)
@@ -86,7 +89,7 @@ index 33d979e9..d675324 100644
  							 (u64)-1);
  			}
  
-@@ -4698,11 +4698,11 @@ static void btrfs_writeback_inodes_sb_nr(struct btrfs_fs_info *fs_info,
+@@ -4698,14 +4698,14 @@ static void btrfs_writeback_inodes_sb_nr(struct btrfs_fs_info *fs_info,
  	}
  }
  
@@ -99,7 +102,11 @@ index 33d979e9..d675324 100644
 +	u64 nr;
  
  	bytes = btrfs_calc_trans_metadata_size(fs_info, 1);
- 	nr = (int)div64_u64(to_reclaim, bytes);
+-	nr = (int)div64_u64(to_reclaim, bytes);
++	nr = div64_u64(to_reclaim, bytes);
+ 	if (!nr)
+ 		nr = 1;
+ 	return nr;
 @@ -4725,15 +4725,15 @@ static void shrink_delalloc(struct btrfs_root *root, u64 to_reclaim, u64 orig,
  	struct btrfs_trans_handle *trans;
  	u64 delalloc_bytes;

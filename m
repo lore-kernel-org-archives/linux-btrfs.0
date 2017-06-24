@@ -1,98 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f53.google.com ([209.85.214.53]:38215 "EHLO
-        mail-it0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754327AbdFWSp1 (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:48328 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754525AbdFXCea (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 23 Jun 2017 14:45:27 -0400
-Received: by mail-it0-f53.google.com with SMTP id b205so12621882itg.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 23 Jun 2017 11:45:27 -0700 (PDT)
-Subject: Re: Exactly what is wrong with RAID5/6
-To: =?UTF-8?Q?Micha=c5=82_Soko=c5=82owski?= <michal@sarach.com.pl>,
-        linux-btrfs@vger.kernel.org
-References: <1f5a4702-d264-51c6-aadd-d2cf521a45eb@dirtcellar.net>
- <594D4F03.5050507@sarach.com.pl>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <6880a54f-9951-6f95-8414-6e3fa5761ea8@gmail.com>
-Date: Fri, 23 Jun 2017 14:45:18 -0400
+        Fri, 23 Jun 2017 22:34:30 -0400
+Date: Fri, 23 Jun 2017 19:34:09 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        Chris Murphy <lists@colorremedies.com>,
+        Hugo Mills <hugo@carfax.org.uk>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: How to fix errors that check --mode lomem finds, but --mode normal doesn't?
+Message-ID: <20170624023409.GT14690@merlins.org>
+References: <20170620231202.GB5303@merlins.org> <CAJCQCtQMWKJwWjeM4zEb-W7-tjsZyfCo37YyT2xYi0fNTEzcUQ@mail.gmail.com> <20170621034352.GE5303@merlins.org> <20170621151339.GK5303@merlins.org> <13856431-9ee5-c13e-f2a8-860394f9aae4@cn.fujitsu.com> <20170622025330.GX5303@merlins.org> <e86db7c4-4953-7706-347d-983079177f37@cn.fujitsu.com> <20170623040601.akpyyvh3dgry6nn5@merlins.org> <90711a7c-92ff-e043-6d81-6bdadbfdbc3a@cn.fujitsu.com> <20170623161750.r7utffpsmyl5tcik@merlins.org>
 MIME-Version: 1.0
-In-Reply-To: <594D4F03.5050507@sarach.com.pl>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170623161750.r7utffpsmyl5tcik@merlins.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-06-23 13:25, Michał Sokołowski wrote:
-> Hello group.
-> 
-> I am confused: Can somebody please confirm/deny, which RAID subsystem is
-> affected? BTRFS' RAID5/6 or mdadm (Linux kernel raid) RAID 5/6 ?
-All of the issues mentioned here are specific to BTRFS raid5/raid6 
-profiles, with the exception of the write-hole, which inherently affects 
-any raid5/raid6 system that does not specifically account for it (which 
-means that it does affect MD RAID5 and RAID6 modes if you aren't using 
-the journaling).
-> 
-> Are there some gotchas (in terms of broken reliability) when using
-> kernel one?
-> 
-> The web is full of legends, it seems that this confusion is quite common...
-Which brings up one of the reasons I really hate the choice to use the 
-term 'raid' in the profile names.  At a minimum, we should have gone a 
-similar route to ZFS in naming the striped parity implementations 
-(RAID-B1 and RAID-B2 for example), but personally I really would have 
-preferred if they were just called what they are (namely, (n,n+1) and 
-(n,n+2) erasure coding for raid5 and raid6 respectively, with mirroring, 
-striping and striped mirroring for raid1, raid0, and raid10), or at 
-least used some naming scheme that wasn't obviously going to cause such 
-issues.
+On Fri, Jun 23, 2017 at 09:17:50AM -0700, Marc MERLIN wrote:
+> Thanks for looking at this.
+> I have applied your patch and I'm still re-running check in lowmem. It takes about 24H so I'll
+> post the full results when it's done.
 
-> 
-> On 06/21/2017 12:57 AM, waxhead wrote:
->> I am trying to piece together the actual status of the RAID5/6 bit of
->> BTRFS.
->> The wiki refer to kernel 3.19 which was released in February 2015 so I
->> assume that the information there is a tad outdated (the last update
->> on the wiki page was July 2016)
->> https://btrfs.wiki.kernel.org/index.php/RAID56
->>
->> Now there are four problems listed
->>
->> 1. Parity may be inconsistent after a crash (the "write hole")
->> Is this still true, if yes - would not this apply for RAID1 / RAID10
->> as well? How was it solved there , and why can't that be done for RAID5/6
->>
->> 2. Parity data is not checksummed
->> Why is this a problem? Does it have to do with the design of BTRFS
->> somehow?
->> Parity is after all just data, BTRFS does checksum data so what is the
->> reason this is a problem?
->>
->> 3. No support for discard? (possibly -- needs confirmation with cmason)
->> Does this matter that much really?, is there an update on this?
->>
->> 4. The algorithm uses as many devices as are available: No support for
->> a fixed-width stripe.
->> What is the plan for this one? There was patches on the mailing list
->> by the SnapRAID author to support up to 6 parity devices. Will the
->> (re?) resign of btrfs raid5/6 support a scheme that allows for
->> multiple parity devices?
->>
->> I do have a few other questions as well...
->>
->> 5. BTRFS does still (kernel 4.9) not seem to use the device ID to
->> communicate with devices.
->>
->> If you on a multi device filesystem yank out a device, for example
->> /dev/sdg and it reappear as /dev/sdx for example btrfs will still
->> happily try to write to /dev/sdg even if btrfs fi sh /mnt shows the
->> correct device ID. What is the status for getting BTRFS to properly
->> understand that a device is missing?
->>
->> 6. RAID1 needs to be able to make two copies always. E.g. if you have
->> three disks you can loose one and it should still work. What about
->> RAID10 ? If you have for example 6 disk RAID10 array, loose one disk
->> and reboots (due to #5 above). Will RAID10 recognize that the array
->> now is a 5 disk array and stripe+mirror over 2 disks (or possibly 2.5
->> disks?) instead of 3? In other words, will it work as long as it can
->> create a RAID10 profile that requires a minimum of four disks?
-> 
+Ok, here is the output of the check with btrfs-progs freshly synced from
+git, including Lu's just added patch.
 
+Obviously while I'm happy to give further debug info on why my filesystem is in that state and
+while check --repair sees nothing to repair, suggestions on how to clean those warnings up, unless they are not going to affect filesystem operation, would be greatly appreciated :)
+
+Thanks,
+Marc
+
+
+Checking filesystem on /dev/mapper/dshelf2
+UUID: 85441c59-ad11-4b25-b1fe-974f9e4acede
+ERROR: extent[3886187384832, 81920] referencer count mismatch (root: 11930, owner: 375444, offset: 1851654144) wanted: 1, have: 4
+ERROR: extent[3886189391872, 122880] referencer count mismatch (root: 11712, owner: 863395, offset: 79659008) wanted: 1, have: 2
+ERROR: extent[3886189391872, 122880] referencer count mismatch (root: 11494, owner: 863395, offset: 79659008) wanted: 1, have: 2
+ERROR: extent[3886189391872, 122880] referencer count mismatch (root: 11930, owner: 863395, offset: 79659008) wanted: 1, have: 2
+ERROR: extent[3933249708032, 69632] referencer count mismatch (root: 12424, owner: 6945, offset: 2083389440) wanted: 1, have: 2
+ERROR: extent[3933249708032, 69632] referencer count mismatch (root: 12172, owner: 6945, offset: 2083389440) wanted: 1, have: 2
+ERROR: extent[4571729862656, 876544] referencer count mismatch (root: 11058, owner: 375442, offset: 907706368) wanted: 6, have: 21
+ERROR: extent[4641490833408, 270336] referencer count mismatch (root: 11712, owner: 375444, offset: 1848672256) wanted: 3, have: 5
+ERROR: extent[4641490833408, 270336] referencer count mismatch (root: 11276, owner: 375444, offset: 1848672256) wanted: 3, have: 5
+ERROR: extent[4641490833408, 270336] referencer count mismatch (root: 11058, owner: 375444, offset: 1848672256) wanted: 3, have: 5
+ERROR: extent[4641490833408, 270336] referencer count mismatch (root: 11494, owner: 375444, offset: 1848672256) wanted: 3, have: 5
+ERROR: extent[4658555617280, 122880] referencer count mismatch (root: 11712, owner: 375444, offset: 1848705024) wanted: 1, have: 3
+ERROR: extent[4658555617280, 122880] referencer count mismatch (root: 11276, owner: 375444, offset: 1848705024) wanted: 1, have: 3
+ERROR: extent[4658555617280, 122880] referencer count mismatch (root: 11058, owner: 375444, offset: 1848705024) wanted: 1, have: 3
+ERROR: extent[4658555617280, 122880] referencer count mismatch (root: 11494, owner: 375444, offset: 1848705024) wanted: 1, have: 3
+ERROR: extent[4677858123776, 417792] referencer count mismatch (root: 11712, owner: 863395, offset: 79523840) wanted: 1, have: 3
+ERROR: extent[4677858123776, 417792] referencer count mismatch (root: 11494, owner: 863395, offset: 79523840) wanted: 1, have: 3
+ERROR: extent[4677858123776, 417792] referencer count mismatch (root: 11930, owner: 863395, offset: 79523840) wanted: 1, have: 3
+ERROR: extent[4698380947456, 409600] referencer count mismatch (root: 11930, owner: 375444, offset: 1851596800) wanted: 3, have: 4
+ERROR: extent[4720470421504, 667648] referencer count mismatch (root: 11058, owner: 3463478, offset: 2334720) wanted: 2, have: 10
+ERROR: extent[4783941246976, 65536] referencer count mismatch (root: 9365, owner: 24493, offset: 4562944) wanted: 2, have: 3
+ERROR: extent[5077564477440, 106496] referencer count mismatch (root: 9370, owner: 1602694, offset: 734756864) wanted: 1, have: 2
+ERROR: extent[5136306929664, 131489792] referencer count mismatch (root: 11712, owner: 375441, offset: 910999552) wanted: 16, have: 1864
+ERROR: extent[5136306929664, 131489792] referencer count mismatch (root: 11276, owner: 375441, offset: 910999552) wanted: 867, have: 1865
+ERROR: extent[5136306929664, 131489792] referencer count mismatch (root: 11058, owner: 375441, offset: 910999552) wanted: 126, have: 1872
+ERROR: extent[5136306929664, 131489792] referencer count mismatch (root: 11494, owner: 375441, offset: 910999552) wanted: 866, have: 1864
+ERROR: extent[5136306929664, 131489792] referencer count mismatch (root: 11930, owner: 375441, offset: 910999552) wanted: 861, have: 1859
+ERROR: extent[5136649891840, 66781184] referencer count mismatch (root: 11058, owner: 375442, offset: 192659456) wanted: 5, have: 19
+ERROR: extent[5136879157248, 134217728] referencer count mismatch (root: 11930, owner: 375442, offset: 394543104) wanted: 10, have: 33
+ERROR: extent[5137380671488, 80945152] referencer count mismatch (root: 11058, owner: 375442, offset: 875233280) wanted: 1, have: 21
+ERROR: extent[5137380671488, 80945152] referencer count mismatch (root: 11930, owner: 375442, offset: 875233280) wanted: 11, have: 21
+ERROR: extent[5138641395712, 524288] referencer count mismatch (root: 11494, owner: 375445, offset: 39845888) wanted: 1, have: 3
+ERROR: extent[5190245990400, 53248] referencer count mismatch (root: 11712, owner: 863395, offset: 51118080) wanted: 1, have: 4
+ERROR: extent[5190245990400, 53248] referencer count mismatch (root: 11276, owner: 863395, offset: 51118080) wanted: 1, have: 4
+ERROR: extent[5190245990400, 53248] referencer count mismatch (root: 11494, owner: 863395, offset: 51118080) wanted: 1, have: 4
+ERROR: extent[5190274174976, 77824] referencer count mismatch (root: 11276, owner: 863395, offset: 74952704) wanted: 3, have: 5
+ERROR: extent[5190274174976, 77824] referencer count mismatch (root: 11058, owner: 863395, offset: 74952704) wanted: 3, have: 5
+ERROR: extent[5190274174976, 77824] referencer count mismatch (root: 11494, owner: 863395, offset: 74952704) wanted: 3, have: 5
+ERROR: extent[5190274174976, 77824] referencer count mismatch (root: 11930, owner: 863395, offset: 74952704) wanted: 3, have: 5
+ERROR: extent[5190275895296, 77824] referencer count mismatch (root: 11712, owner: 863395, offset: 77705216) wanted: 1, have: 6
+ERROR: extent[5190275895296, 77824] referencer count mismatch (root: 11276, owner: 863395, offset: 77705216) wanted: 5, have: 6
+ERROR: extent[5190275895296, 77824] referencer count mismatch (root: 11058, owner: 863395, offset: 77705216) wanted: 5, have: 6
+ERROR: extent[5427326599168, 61440] referencer count mismatch (root: 9370, owner: 1225712, offset: 29753344) wanted: 1, have: 5
+ERROR: extent[5456623030272, 24576] referencer count mismatch (root: 11058, owner: 2278892, offset: 786432) wanted: 2, have: 3
+ERROR: extent[5851251269632, 134217728] referencer count mismatch (root: 9370, owner: 1602695, offset: 534061056) wanted: 3, have: 4
+ERROR: errors found in extent allocation tree or chunk allocation
+cache and super generation don't match, space cache will be invalidated
+ERROR: root 3862 EXTENT_DATA[18170706 4096] interrupt
+ERROR: root 3862 EXTENT_DATA[18170706 16384] interrupt
+ERROR: root 3862 EXTENT_DATA[18170706 20480] interrupt
+ERROR: root 3862 EXTENT_DATA[18170706 135168] interrupt
+ERROR: root 3862 EXTENT_DATA[18170706 1048576] interrupt
+ERROR: errors found in fs roots
+found 5544779108352 bytes used, error(s) found
+total csum bytes: 5344523140
+total tree bytes: 71323041792
+total fs tree bytes: 59288403968
+total extent tree bytes: 5378260992
+btree space waste bytes: 10912166856
+file data blocks allocated: 7830914256896
+ referenced 6244104495104
+
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

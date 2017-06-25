@@ -1,289 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f196.google.com ([209.85.128.196]:33638 "EHLO
+Received: from mail-wr0-f196.google.com ([209.85.128.196]:33625 "EHLO
         mail-wr0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751359AbdFYVCW (ORCPT
+        with ESMTP id S1751353AbdFYVCV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 25 Jun 2017 17:02:22 -0400
-Received: by mail-wr0-f196.google.com with SMTP id x23so26437938wrb.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 25 Jun 2017 14:02:21 -0700 (PDT)
+        Sun, 25 Jun 2017 17:02:21 -0400
+Received: by mail-wr0-f196.google.com with SMTP id x23so26437842wrb.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 25 Jun 2017 14:02:20 -0700 (PDT)
 From: Timofey Titovets <nefelim4ag@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Timofey Titovets <nefelim4ag@gmail.com>
-Subject: [RFC PATCH 1/2] Btrfs: add precomputed log2()
-Date: Mon, 26 Jun 2017 00:02:09 +0300
-Message-Id: <20170625210210.24383-2-nefelim4ag@gmail.com>
-In-Reply-To: <20170625210210.24383-1-nefelim4ag@gmail.com>
-References: <20170625210210.24383-1-nefelim4ag@gmail.com>
+Subject: [RFC PATCH 0/2] Btrfs: add compression heuristic
+Date: Mon, 26 Jun 2017 00:02:08 +0300
+Message-Id: <20170625210210.24383-1-nefelim4ag@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Heuristic code compute shannon entropy in cases when
-other methods can't make clear decision
-For realization that calculation it's needs floating point,
-but as this doesn't possible to use floating point,
-lets just precalculate all our input/output values
+Today btrfs use simple logic to make decision
+compress data or not:
+Selected compression
+algorithm try compress data and if this save some space
+store that extent as compressed.
 
-Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
----
- fs/btrfs/log2_lshift16.c | 232 +++++++++++++++++++++++++++++++++++++++++++++++
+It's Reliable way to detect uncompressible data
+but it's will waste/burn cpu time for
+bad/un-compressible data and add latency.
+
+This way also add additional pressure on
+memory subsustem as for every compressed write
+btrfs need to allocate some buffered pages and
+reuse compression workspace.
+
+This is quite efficient, but not free.
+
+So, try create basic heuristic framework,
+this heuristic code will analizy data on the fly
+before call of compression code,
+can detect uncompressible data and advice to skip it.
+
+I leave comments with description in code,
+but i will try describe that short.
+Heuristic have several internal layers:
+1. Get sample data - this is cpu expensive
+to analize whole stream, so let's get some
+big enough sample from input data
+Scaling:
+In data: 128K  64K   32K   4K
+Sample:  4096b 3072b 2048b 1024b
+2. For performance reason and for reuse it in 7th level
+copy selected data to sample buffer
+3. Count every byte type in sample buffer
+4. Count how many types of bytes we find
+If it's not many - data will be easy compressible
+5. Count character core set size, i.e.
+which characters use 90% of input stream
+If core set small (1-50 different types)
+Data easy compressible
+If big (200-256) - data probably can't be compressed
+6. If above methods are fail to make decision,
+try compute shannon entropy
+If entropy are small - data will be easy compressible
+If not - go to 7th
+7. Entropy can't detect repeated strings of bytes
+So try look at the data for detect repeated bytes
+Compute a difference between frequency of bytes from
+coreset and between frequency of pair of that bytes
+If sum of that defferent from zero and entropy and not
+big, give compression code a try
+If entropy are High 7.2/8 - 8/8 (> 90%), and if we find BIG enough
+difference between frequency of a pairs and characters
+Give compression code a try
+
+7th level needed for decreasing false negative returns,
+where data can be compressed, (~131072b -> ~87000b), but not
+so easy.
+
+(this above code as i see it's forbidden compression like:
+131072b -> ~110000b)
+
+Shannon entropy use log2(a/b) function,
+i try before replace that with int_log2(a)-int_log2(b), but
+integer realization of log2  show a lack of accuracy (+-7-10%) in our case.
+So i precalculate some input/output values (1/131072 - 1/1) and create log2_lshift16();
+I already decrease lines of that function from 1200 -> 200 for save memory (and lose some accuracy), so with precomputed function
+i get +- 0.5-2% of accuracy (in compare to normal "true" float log2 shannon)
+
+Thanks.
+
+P.S.
+I made only stability tests at now, all works stable.
+For userspace realization of that algorithm, which
+iterate over data by 128kb block and read it by Mmap()
+show ~4GiB/s over in memory (cached) data in one stream.
+For i5-4200M && DDR3.
+
+So i expect to not hurt compression performance.
+
+P.S.S.
+Sorry for my bad english and may be for ugly code.
+I do my best, thanks.
+
+Timofey Titovets (2):
+  Btrfs: add precomputed log2()
+  Btrfs: add heuristic method for make decision compress or not compress
+
+ fs/btrfs/Makefile        |   2 +-
+ fs/btrfs/heuristic.c     | 258 +++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/heuristic.h     |  13 +++
+ fs/btrfs/inode.c         |  47 +++++----
+ fs/btrfs/log2_lshift16.c | 232 ++++++++++++++++++++++++++++++++++++++++++
  fs/btrfs/log2_lshift16.h |  10 ++
- 2 files changed, 242 insertions(+)
+ 6 files changed, 542 insertions(+), 20 deletions(-)
+ create mode 100644 fs/btrfs/heuristic.c
+ create mode 100644 fs/btrfs/heuristic.h
  create mode 100644 fs/btrfs/log2_lshift16.c
  create mode 100644 fs/btrfs/log2_lshift16.h
 
-diff --git a/fs/btrfs/log2_lshift16.c b/fs/btrfs/log2_lshift16.c
-new file mode 100644
-index 000000000000..123eb5e8d057
---- /dev/null
-+++ b/fs/btrfs/log2_lshift16.c
-@@ -0,0 +1,232 @@
-+#include "log2_lshift16.h"
-+
-+/*
-+ * Precalculated log2 values
-+ * Shifting used for avoiding floating point
-+ * Fraction must be left shifted by 16
-+ * Return of log are left shifted by 3
-+ */
-+int log2_lshift16(long long unsigned lshift16)
-+{
-+	if (lshift16 < 1)
-+		return -136;
-+	if (lshift16 < 2)
-+		return -123;
-+	if (lshift16 < 3)
-+		return -117;
-+	if (lshift16 < 4)
-+		return -113;
-+	if (lshift16 < 5)
-+		return -110;
-+	if (lshift16 < 6)
-+		return -108;
-+	if (lshift16 < 7)
-+		return -106;
-+	if (lshift16 < 8)
-+		return -104;
-+	if (lshift16 < 9)
-+		return -103;
-+	if (lshift16 < 10)
-+		return -102;
-+	if (lshift16 < 11)
-+		return -100;
-+	if (lshift16 < 12)
-+		return -99;
-+	if (lshift16 < 13)
-+		return -98;
-+	if (lshift16 < 15)
-+		return -97;
-+	if (lshift16 < 16)
-+		return -96;
-+	if (lshift16 < 17)
-+		return -95;
-+	if (lshift16 < 19)
-+		return -94;
-+	if (lshift16 < 21)
-+		return -93;
-+	if (lshift16 < 23)
-+		return -92;
-+	if (lshift16 < 25)
-+		return -91;
-+	if (lshift16 < 27)
-+		return -90;
-+	if (lshift16 < 29)
-+		return -89;
-+	if (lshift16 < 32)
-+		return -88;
-+	if (lshift16 < 35)
-+		return -87;
-+	if (lshift16 < 38)
-+		return -86;
-+	if (lshift16 < 41)
-+		return -85;
-+	if (lshift16 < 45)
-+		return -84;
-+	if (lshift16 < 49)
-+		return -83;
-+	if (lshift16 < 54)
-+		return -82;
-+	if (lshift16 < 59)
-+		return -81;
-+	if (lshift16 < 64)
-+		return -80;
-+	if (lshift16 < 70)
-+		return -79;
-+	if (lshift16 < 76)
-+		return -78;
-+	if (lshift16 < 83)
-+		return -77;
-+	if (lshift16 < 91)
-+		return -76;
-+	if (lshift16 < 99)
-+		return -75;
-+	if (lshift16 < 108)
-+		return -74;
-+	if (lshift16 < 117)
-+		return -73;
-+	if (lshift16 < 128)
-+		return -72;
-+	if (lshift16 < 140)
-+		return -71;
-+	if (lshift16 < 152)
-+		return -70;
-+	if (lshift16 < 166)
-+		return -69;
-+	if (lshift16 < 181)
-+		return -68;
-+	if (lshift16 < 197)
-+		return -67;
-+	if (lshift16 < 215)
-+		return -66;
-+	if (lshift16 < 235)
-+		return -65;
-+	if (lshift16 < 256)
-+		return -64;
-+	if (lshift16 < 279)
-+		return -63;
-+	if (lshift16 < 304)
-+		return -62;
-+	if (lshift16 < 332)
-+		return -61;
-+	if (lshift16 < 362)
-+		return -60;
-+	if (lshift16 < 395)
-+		return -59;
-+	if (lshift16 < 431)
-+		return -58;
-+	if (lshift16 < 470)
-+		return -57;
-+	if (lshift16 < 512)
-+		return -56;
-+	if (lshift16 < 558)
-+		return -55;
-+	if (lshift16 < 609)
-+		return -54;
-+	if (lshift16 < 664)
-+		return -53;
-+	if (lshift16 < 724)
-+		return -52;
-+	if (lshift16 < 790)
-+		return -51;
-+	if (lshift16 < 861)
-+		return -50;
-+	if (lshift16 < 939)
-+		return -49;
-+	if (lshift16 < 1024)
-+		return -48;
-+	if (lshift16 < 1117)
-+		return -47;
-+	if (lshift16 < 1218)
-+		return -46;
-+	if (lshift16 < 1328)
-+		return -45;
-+	if (lshift16 < 1448)
-+		return -44;
-+	if (lshift16 < 1579)
-+		return -43;
-+	if (lshift16 < 1722)
-+		return -42;
-+	if (lshift16 < 1878)
-+		return -41;
-+	if (lshift16 < 2048)
-+		return -40;
-+	if (lshift16 < 2233)
-+		return -39;
-+	if (lshift16 < 2435)
-+		return -38;
-+	if (lshift16 < 2656)
-+		return -37;
-+	if (lshift16 < 2896)
-+		return -36;
-+	if (lshift16 < 3158)
-+		return -35;
-+	if (lshift16 < 3444)
-+		return -34;
-+	if (lshift16 < 3756)
-+		return -33;
-+	if (lshift16 < 4096)
-+		return -32;
-+	if (lshift16 < 4467)
-+		return -31;
-+	if (lshift16 < 4871)
-+		return -30;
-+	if (lshift16 < 5312)
-+		return -29;
-+	if (lshift16 < 5793)
-+		return -28;
-+	if (lshift16 < 6317)
-+		return -27;
-+	if (lshift16 < 6889)
-+		return -26;
-+	if (lshift16 < 7512)
-+		return -25;
-+	if (lshift16 < 8192)
-+		return -24;
-+	if (lshift16 < 8933)
-+		return -23;
-+	if (lshift16 < 9742)
-+		return -22;
-+	if (lshift16 < 10624)
-+		return -21;
-+	if (lshift16 < 11585)
-+		return -20;
-+	if (lshift16 < 12634)
-+		return -19;
-+	if (lshift16 < 13777)
-+		return -18;
-+	if (lshift16 < 15024)
-+		return -17;
-+	if (lshift16 < 16384)
-+		return -16;
-+	if (lshift16 < 17867)
-+		return -15;
-+	if (lshift16 < 19484)
-+		return -14;
-+	if (lshift16 < 21247)
-+		return -13;
-+	if (lshift16 < 23170)
-+		return -12;
-+	if (lshift16 < 25268)
-+		return -11;
-+	if (lshift16 < 27554)
-+		return -10;
-+	if (lshift16 < 30048)
-+		return -9;
-+	if (lshift16 < 32768)
-+		return -8;
-+	if (lshift16 < 35734)
-+		return -7;
-+	if (lshift16 < 38968)
-+		return -6;
-+	if (lshift16 < 42495)
-+		return -5;
-+	if (lshift16 < 46341)
-+		return -4;
-+	if (lshift16 < 50535)
-+		return -3;
-+	if (lshift16 < 55109)
-+		return -2;
-+	if (lshift16 < 60097)
-+		return -1;
-+	return 0;
-+}
-diff --git a/fs/btrfs/log2_lshift16.h b/fs/btrfs/log2_lshift16.h
-new file mode 100644
-index 000000000000..ca16aa36e3ea
---- /dev/null
-+++ b/fs/btrfs/log2_lshift16.h
-@@ -0,0 +1,10 @@
-+/*
-+ * Precalculated log2 values
-+ * Shifting used for avoiding floating point
-+ * Fraction must be left shifted by 16
-+ * Return of log are left shifted by 3
-+ */
-+
-+#define LOG2_ARG_SHIFT (1 << 16)
-+#define LOG2_RET_SHIFT (1 << 3)
-+int log2_lshift16(long long unsigned lshift16);
 --
 2.13.1

@@ -1,59 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41910 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1750852AbdFZNld (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Jun 2017 09:41:33 -0400
-Date: Mon, 26 Jun 2017 15:40:23 +0200
-From: David Sterba <dsterba@suse.cz>
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:54992 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751406AbdFZQ7Y (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Jun 2017 12:59:24 -0400
+Subject: Re: [PULL] Btrfs for 4.13, part 1
 To: David Sterba <dsterba@suse.com>
-Cc: clm@fb.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PULL] Btrfs for 4.13, part 1 (update 1)
-Message-ID: <20170626134023.GI2866@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
 References: <cover.1498229425.git.dsterba@suse.com>
+CC: <linux-btrfs@vger.kernel.org>
+From: Chris Mason <clm@fb.com>
+Message-ID: <007ac50e-71e2-6e25-7d17-821720a37317@fb.com>
+Date: Mon, 26 Jun 2017 12:58:50 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
 In-Reply-To: <cover.1498229425.git.dsterba@suse.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 23, 2017 at 05:16:46PM +0200, David Sterba wrote:
+On 06/23/2017 11:16 AM, David Sterba wrote:
+> Hi,
+>
+> this is the main batch for 4.13. There are some user visible changes, see
+> below. The core updates improve error handling (mostly related to bios), with
+> the usual incremental work on the GFP_NOFS (mis)use removal. All patches have
+> been in for-next for an extensive amount of time.
+>
+> Thre will be followups but I want push the series (111 patches) forward. There
+> are also some updates to adjacent subsystems (writeback and blocklayer), so I
+> want to give some stable point for merging in the upcoming weeks.
 
-Two more patches added to the branch
+Thanks Dave, I ran this (along with the updates we added) through a long 
+stress and the usual xfstests.
 
-Chris Mason (1):
-      btrfs: fix integer overflow in calc_reclaim_items_nr
+For everyone else on the list, since I'm heading off to vacation until 
+~July 9th, Dave is sending this off to Linus once the merge window starts.
 
-David Sterba (1):
-      btrfs: scrub: fix target device intialization while setting up scrub context
-
-Updated branch and tag:
-
-----------------------------------------------------------------
-The following changes since commit 41f1830f5a7af77cf5c86359aba3cbd706687e52:
-
-  Linux 4.12-rc6 (2017-06-19 22:19:37 +0800)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-4.13-part1
-
-for you to fetch changes up to 8399f53f0c7450ab050b1b0ffee4e2c1ddd2a3e0:
-
-  btrfs: fix integer overflow in calc_reclaim_items_nr (2017-06-26 15:33:42 +0200)
-----------------------------------------------------------------
-
-Previous:
-
-> ----------------------------------------------------------------
-> The following changes since commit 41f1830f5a7af77cf5c86359aba3cbd706687e52:
-> 
->   Linux 4.12-rc6 (2017-06-19 22:19:37 +0800)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-4.13-part1
-> 
-> for you to fetch changes up to f3f000297be88b1b75fde5027d660a8d8a44de14:
-> 
->   btrfs: qgroup: Fix qgroup reserved space underflow by only freeing reserved ranges (2017-06-21 20:56:14 +0200)
+-chris

@@ -1,242 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52348 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:41910 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751429AbdFZBqy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 25 Jun 2017 21:46:54 -0400
-Subject: Re: [PULL] Btrfs for 4.13, part 1
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        Wang Shilong <wangshilong1991@gmail.com>,
-        David Sterba <dsterba@suse.com>
-Cc: Chris Mason <clm@fb.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
+        id S1750852AbdFZNld (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Jun 2017 09:41:33 -0400
+Date: Mon, 26 Jun 2017 15:40:23 +0200
+From: David Sterba <dsterba@suse.cz>
+To: David Sterba <dsterba@suse.com>
+Cc: clm@fb.com, linux-btrfs@vger.kernel.org
+Subject: Re: [PULL] Btrfs for 4.13, part 1 (update 1)
+Message-ID: <20170626134023.GI2866@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <cover.1498229425.git.dsterba@suse.com>
- <CAP9B-Qmv9QMahi_Ook4FOL8c7hojgKgzcOA4mMeiY2H012ByxQ@mail.gmail.com>
- <93c6aac1-dfc3-ba27-6607-2439e7b3748d@suse.com>
- <2361fb3f-dfde-cc9e-ac40-23c612771bc6@cn.fujitsu.com>
-From: Jeff Mahoney <jeffm@suse.com>
-Message-ID: <6db1492f-d510-8508-8f3e-aa03e2e8b797@suse.com>
-Date: Sun, 25 Jun 2017 21:46:48 -0400
 MIME-Version: 1.0
-In-Reply-To: <2361fb3f-dfde-cc9e-ac40-23c612771bc6@cn.fujitsu.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="QQWi7KEM0iT5vXXIdjllaarAnBIaXn8LW"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <cover.1498229425.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---QQWi7KEM0iT5vXXIdjllaarAnBIaXn8LW
-Content-Type: multipart/mixed; boundary="8gt4pdn9x5G11kA5UBCci8jWg8tqU4fDc";
- protected-headers="v1"
-From: Jeff Mahoney <jeffm@suse.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>,
- Wang Shilong <wangshilong1991@gmail.com>, David Sterba <dsterba@suse.com>
-Cc: Chris Mason <clm@fb.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <6db1492f-d510-8508-8f3e-aa03e2e8b797@suse.com>
-Subject: Re: [PULL] Btrfs for 4.13, part 1
-References: <cover.1498229425.git.dsterba@suse.com>
- <CAP9B-Qmv9QMahi_Ook4FOL8c7hojgKgzcOA4mMeiY2H012ByxQ@mail.gmail.com>
- <93c6aac1-dfc3-ba27-6607-2439e7b3748d@suse.com>
- <2361fb3f-dfde-cc9e-ac40-23c612771bc6@cn.fujitsu.com>
-In-Reply-To: <2361fb3f-dfde-cc9e-ac40-23c612771bc6@cn.fujitsu.com>
+On Fri, Jun 23, 2017 at 05:16:46PM +0200, David Sterba wrote:
 
---8gt4pdn9x5G11kA5UBCci8jWg8tqU4fDc
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+Two more patches added to the branch
 
-On 6/25/17 8:53 PM, Qu Wenruo wrote:
->=20
->=20
-> At 06/26/2017 05:34 AM, Jeff Mahoney wrote:
->> On 6/24/17 6:05 AM, Wang Shilong wrote:
->>> Sorry for bikeshedding.
->>>
->>> On Fri, Jun 23, 2017 at 11:16 PM, David Sterba <dsterba@suse.com> wro=
-te:
->>>> Hi,
->>>>
->>>> this is the main batch for 4.13. There are some user visible
->>>> changes, see
->>>> below. The core updates improve error handling (mostly related to
->>>> bios), with
->>>> the usual incremental work on the GFP_NOFS (mis)use removal. All
->>>> patches have
->>>>
->>>> Fabian Frederick (1):
->>>>        btrfs: kmap() can't fail
->>>>
->>> <..SNIP..>
->>>>
->>>> Sargun Dhillon (2):
->>>>        btrfs: add quota override flag to enable quota override for
->>>> CAP_SYS_RESOURCE
->>>>        btrfs: Add quota_override knob into sysfs
->>>>
->>>> Su Yue (9):
->>>>        btrfs: Introduce btrfs_is_name_len_valid to avoid reading
->>>> beyond boundary
->>>>        btrfs: Check name_len with boundary in verify dir_item
->>>>        btrfs: Check name_len on add_inode_ref call path
->>>>        btrfs: Verify dir_item in replay_xattr_deletes
->>>>        btrfs: Check name_len in btrfs_check_ref_name_override
->>>>        btrfs: Check name_len before read in iterate_dir_item
->>>>        btrfs: Check name_len before reading btrfs_get_name
->>>>        btrfs: Check name_len before in btrfs_del_root_ref
->>>>        btrfs: Verify dir_item in iterate_object_props
->>>
->>> Hmm..add those check might be expensive for metadata operations,
->>> especially in hot path, i could see similar behavior in Ext4 for ext4=
+Chris Mason (1):
+      btrfs: fix integer overflow in calc_reclaim_items_nr
 
->>> dentry check.
->>>
->>> Could we run some metadata tests to confirm=EF=BC=9Fit makes sense to=
+David Sterba (1):
+      btrfs: scrub: fix target device intialization while setting up scrub context
 
->>> add check but with min affects to performace.
->=20
-> IIRC there is a backtrace in one of the patches.
-> If needed, we can also upload the fuzzed image.
-> Although we don't have good enough test suite which accepts fuzzed imag=
-e
-> for kernel.
->=20
->>
->> Agreed.  XFS does this at read/write and results in invalid entries
->> never even making it to the consumer.  That's the approach I had
->> partially written up.  This approach has the advantage of being more
->> fine-grained so we don't end up dropping e.g. an entire node's worth o=
-f
->> entries but is more expensive to maintain and at runtime.
->=20
-> We already have tons of runtime check at chunk/super block read time.
->=20
-> This new check is not as comprehensive as what we did in
-> chunk/superblock read time, but only to ensure that item with variable
-> length doesn't cross its boundary.
-> So performance wise it should not be a problem.
->=20
-> Although it's expensive to maintain, as for each structure with variabl=
-e
-> length, we need to call verification function every time.
->=20
-> But we can also extract the check to leaf reading time, this should
-> reduce the effort to maintain it and make it easier to expand (or even
-> make it optional if it really affects performance).
+Updated branch and tag:
 
-Well, ideally, we'd do complete checks for any type that we have enough
-information to check at read or write time.  If a check is important
-enough to be done at a consumer site, it's important enough to be done
-at read/write.  Then we can make the consumer code much simpler and
-catch some forms of corruption before it hits the disk.
+----------------------------------------------------------------
+The following changes since commit 41f1830f5a7af77cf5c86359aba3cbd706687e52:
 
--Jeff
+  Linux 4.12-rc6 (2017-06-19 22:19:37 +0800)
 
-> Thanks,
-> Qu
->=20
->>
->> -Jeff
->>
->>>> Timofey Titovets (3):
->>>>        Btrfs: lzo: fix typo in error message after failed deflate
->>>>        Btrfs: lzo: compressed data size must be less then input size=
+are available in the git repository at:
 
->>>>        Btrfs: compression must free at least one sector size
->>>>
->>>> Yonghong Song (1):
->>>>        Btrfs: add statx support
->>>>
->>>>   fs/btrfs/backref.c               |  10 +-
->>>>   fs/btrfs/check-integrity.c       |  53 ++---
->>>>   fs/btrfs/compression.c           |  94 ++------
->>>>   fs/btrfs/compression.h           |  44 +++-
->>>>   fs/btrfs/ctree.c                 |  42 ++--
->>>>   fs/btrfs/ctree.h                 |  84 ++++---
->>>>   fs/btrfs/delayed-ref.c           |  29 ++-
->>>>   fs/btrfs/delayed-ref.h           |   6 +-
->>>>   fs/btrfs/dir-item.c              |  94 +++++++-
->>>>   fs/btrfs/disk-io.c               | 179 +++++++--------
->>>>   fs/btrfs/disk-io.h               |   8 +-
->>>>   fs/btrfs/export.c                |   5 +
->>>>   fs/btrfs/extent-tree.c           | 481
->>>> +++++++++++++++++++++------------------
->>>>   fs/btrfs/extent_io.c             | 217 ++++++++----------
->>>>   fs/btrfs/extent_io.h             |  82 +++++--
->>>>   fs/btrfs/file-item.c             |  31 ++-
->>>>   fs/btrfs/file.c                  |  46 ++--
->>>>   fs/btrfs/free-space-tree.c       |  38 ++--
->>>>   fs/btrfs/inode-map.c             |   4 +-
->>>>   fs/btrfs/inode.c                 | 449
->>>> ++++++++++++++++++++----------------
->>>>   fs/btrfs/ioctl.c                 |  16 +-
->>>>   fs/btrfs/lzo.c                   |  33 +--
->>>>   fs/btrfs/print-tree.c            |   7 +-
->>>>   fs/btrfs/props.c                 |   7 +
->>>>   fs/btrfs/qgroup.c                | 223 +++++++++++++-----
->>>>   fs/btrfs/qgroup.h                |   9 +-
->>>>   fs/btrfs/raid56.c                |  16 +-
->>>>   fs/btrfs/reada.c                 |   1 -
->>>>   fs/btrfs/relocation.c            |  15 +-
->>>>   fs/btrfs/root-tree.c             |   7 +
->>>>   fs/btrfs/scrub.c                 | 209 +++++++----------
->>>>   fs/btrfs/send.c                  | 112 ++++++---
->>>>   fs/btrfs/super.c                 |  72 +-----
->>>>   fs/btrfs/sysfs.c                 |  41 ++++
->>>>   fs/btrfs/tests/extent-io-tests.c |   2 +-
->>>>   fs/btrfs/transaction.c           |  23 +-
->>>>   fs/btrfs/tree-log.c              |  44 +++-
->>>>   fs/btrfs/volumes.c               |  74 +++---
->>>>   fs/btrfs/volumes.h               |   7 +
->>>>   fs/btrfs/xattr.c                 |   2 +-
->>>>   fs/btrfs/zlib.c                  |  20 +-
->>>>   include/trace/events/btrfs.h     |  36 ---
->>>>   include/uapi/linux/btrfs.h       |  63 +++--
->>>>   43 files changed, 1682 insertions(+), 1353 deletions(-)
->>>> --=20
->>>> To unsubscribe from this list: send the line "unsubscribe
->>>> linux-btrfs" in
->>>> the body of a message to majordomo@vger.kernel.org
->>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>> --=20
->>> To unsubscribe from this list: send the line "unsubscribe
->>> linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>
->>
->>
->=20
->=20
->=20
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-4.13-part1
 
+for you to fetch changes up to 8399f53f0c7450ab050b1b0ffee4e2c1ddd2a3e0:
 
---=20
-Jeff Mahoney
-SUSE Labs
+  btrfs: fix integer overflow in calc_reclaim_items_nr (2017-06-26 15:33:42 +0200)
+----------------------------------------------------------------
 
+Previous:
 
---8gt4pdn9x5G11kA5UBCci8jWg8tqU4fDc--
-
---QQWi7KEM0iT5vXXIdjllaarAnBIaXn8LW
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG/MacGPG2 v2
-
-iQIVAwUBWVBnih57S2MheeWyAQhhwg/+P1yBOUVx+iVnmMwzLGfKQW6E6G23+Duo
-GomZRlB2Nqp+uZdFKtUkJkj45pfRIiIhqNj3GCDlxFCUD8MsSNBTfoNJM+S1Qvqe
-TTfwvBEYi9mCpKQUshbPQIYAyWdS/ioHM+VO7R6HZ50i9vRBbp+7nq+UBOf7Lmpx
-mk1F4qiJ9DA/EXCfU5wfu02vq3MDuU3eSQU4Q5wRiasKrnTdOMuyY4cive4835cI
-HH/hxUABBPx+vsLAsc9kCBROkLQn79Rr7HMPK18Z64jwYsrxtYEn8YgRcMHdcHH0
-IPwGdiwoogRmuaVVeMBla4+XpdtTfYiekzgsvgc7heF191ClxqoTDqN1Kg3aBuHj
-Wf78ZQpTF9NHBpP/d1W3yynuZ/00VxATTaSSKBqK0iKIqmGGVtvQ+52IydP99Oc2
-iAzQc/eEIIsix+tbCoehqM0dGbOSlZXcLa1Xrt/nxfO+aIFsHtkXbvKblm7aboNs
-nDU3mzebMQutRSMkm+e2FGRGoG1P10PtHBw8Fvt9HAAwJdNWTOFm/hcS6bHJ/ss8
-yphvn2sGyCgMQZswsQ6mDHbRHD/saTjJi43LLKKsTo4Z62n/Ssw2da+5Zudxi9BK
-akPy2MtJ10zAfuAVVrIVeWymSVlQvSomQ6SU/0M66Fz0Ee9TPrYUrdq5KGZGmJiY
-dfToBhpe59M=
-=5lWw
------END PGP SIGNATURE-----
-
---QQWi7KEM0iT5vXXIdjllaarAnBIaXn8LW--
+> ----------------------------------------------------------------
+> The following changes since commit 41f1830f5a7af77cf5c86359aba3cbd706687e52:
+> 
+>   Linux 4.12-rc6 (2017-06-19 22:19:37 +0800)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-4.13-part1
+> 
+> for you to fetch changes up to f3f000297be88b1b75fde5027d660a8d8a44de14:
+> 
+>   btrfs: qgroup: Fix qgroup reserved space underflow by only freeing reserved ranges (2017-06-21 20:56:14 +0200)

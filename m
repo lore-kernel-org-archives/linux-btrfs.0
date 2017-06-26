@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:56167 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:63660 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751389AbdFZIYb (ORCPT
+        with ESMTP id S1751353AbdFZKTH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Jun 2017 04:24:31 -0400
+        Mon, 26 Jun 2017 06:19:07 -0400
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-        by cn.fujitsu.com (Postfix) with ESMTP id 8819A47E9887
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Jun 2017 16:24:27 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id B8E5647CA8FD
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Jun 2017 18:19:00 +0800 (CST)
 From: Gu Jinxiang <gujx@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs-progs: mkfs: Replace number with a macro
-Date: Mon, 26 Jun 2017 16:23:55 +0800
-Message-ID: <20170626082355.16106-1-gujx@cn.fujitsu.com>
+Subject: [PATCH v2] btrfs-progs: mkfs: Replace number with a macro
+Date: Mon, 26 Jun 2017 18:18:29 +0800
+Message-ID: <20170626101829.16021-1-gujx@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -22,12 +22,15 @@ replace number with a macro of member blocks in btrfs_mkfs_config.
 
 Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
 ---
- mkfs/common.c | 2 +-
+Changes since v1:
+Missing a using place. And modify it.
+
+ mkfs/common.c | 4 ++--
  mkfs/common.h | 5 ++++-
- 2 files changed, 5 insertions(+), 2 deletions(-)
+ 2 files changed, 6 insertions(+), 3 deletions(-)
 
 diff --git a/mkfs/common.c b/mkfs/common.c
-index e4785c5..420671b 100644
+index e4785c5..0d79650 100644
 --- a/mkfs/common.c
 +++ b/mkfs/common.c
 @@ -94,7 +94,7 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
@@ -39,6 +42,15 @@ index e4785c5..420671b 100644
  		cfg->blocks[i] = BTRFS_SUPER_INFO_OFFSET + 1024 * 1024 +
  			cfg->nodesize * i;
  	}
+@@ -210,7 +210,7 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
+ 		cfg->nodesize - sizeof(struct btrfs_header));
+ 	nritems = 0;
+ 	itemoff = __BTRFS_LEAF_DATA_SIZE(cfg->nodesize);
+-	for (i = 1; i < 7; i++) {
++	for (i = 1; i <= BTRFS_MKFS_ROOTS_NR; i++) {
+ 		item_size = sizeof(struct btrfs_extent_item);
+ 		if (!skinny_metadata)
+ 			item_size += sizeof(struct btrfs_tree_block_info);
 diff --git a/mkfs/common.h b/mkfs/common.h
 index 666a75b..e23e79b 100644
 --- a/mkfs/common.h

@@ -1,26 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:42052 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:39794 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751078AbdFAOsi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 1 Jun 2017 10:48:38 -0400
-Date: Thu, 1 Jun 2017 16:47:36 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Su Yue <suy.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
-Subject: Re: [PATCH 0/5] btrfs-progs: check: simple errors repair in lowmem
-Message-ID: <20170601144736.GG12135@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170411032631.24932-1-suy.fnst@cn.fujitsu.com>
- <ef8b662b-ea60-4ea4-cd86-083b532b926c@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <ef8b662b-ea60-4ea4-cd86-083b532b926c@cn.fujitsu.com>
+        id S1751427AbdFZNZI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Jun 2017 09:25:08 -0400
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: clm@fb.com, David Sterba <dsterba@suse.com>
+Subject: [PATCH] btrfs: scrub: fix target device intialization while setting up scrub context
+Date: Mon, 26 Jun 2017 15:23:50 +0200
+Message-Id: <20170626132350.26286-1-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 17, 2017 at 04:25:03PM +0800, Su Yue wrote:
->     This patchset was sent a month ago.
->     Since it's a start of lowmem repair patches, I hope to get some
->     opinions about it.
+The commit "btrfs: scrub: inline helper scrub_setup_wr_ctx" inlined a
+helper but wrongly sets up the target device. Incidentally there's a
+local variable with the same name as a parameter in the previous
+function, so this got caught during runtime as crash in test btrfs/027.
 
-This is unfortunate, it may take more time before I get back to this.
+Reported-by: Chris Mason <clm@fb.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/scrub.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 58a249cd5adc..738e784ba20d 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -714,9 +714,9 @@ struct scrub_ctx *scrub_setup_ctx(struct btrfs_device *dev, int is_dev_replace)
+ 	mutex_init(&sctx->wr_lock);
+ 	sctx->wr_curr_bio = NULL;
+ 	if (is_dev_replace) {
+-		WARN_ON(!dev->bdev);
++		WARN_ON(!fs_info->dev_replace.tgtdev);
+ 		sctx->pages_per_wr_bio = SCRUB_PAGES_PER_WR_BIO;
+-		sctx->wr_tgtdev = dev;
++		sctx->wr_tgtdev = fs_info->dev_replace.tgtdev;
+ 		atomic_set(&sctx->flush_all_writes, 0);
+ 	}
+ 
+-- 
+2.13.0
+

@@ -1,54 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:3975 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751581AbdF3P2f (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:48267 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751493AbdF0A4B (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 30 Jun 2017 11:28:35 -0400
-Date: Fri, 30 Jun 2017 23:28:28 +0800
-From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-To: <dsterba@suse.cz>, Liu Bo <bo.li.liu@oracle.com>,
-        <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs-progs: convert: do not clear header rev
-Message-ID: <20170630152828.GD7046@lufq.5F>
-References: <20170626235502.26267-1-bo.li.liu@oracle.com>
- <20170627190712.GC1886@lim.localdomain>
- <20170630145253.GV2866@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20170630145253.GV2866@twin.jikos.cz>
+        Mon, 26 Jun 2017 20:56:01 -0400
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v5R0txhG005991
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Jun 2017 00:55:59 GMT
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id v5R0twYR021993
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Jun 2017 00:55:59 GMT
+Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id v5R0twJB019346
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Jun 2017 00:55:58 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs-progs: convert: do not clear header rev
+Date: Mon, 26 Jun 2017 17:55:02 -0600
+Message-Id: <20170626235502.26267-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 30, 2017 at 04:52:54PM +0200, David Sterba wrote:
->On Tue, Jun 27, 2017 at 12:07:13PM -0700, Liu Bo wrote:
->> On Mon, Jun 26, 2017 at 05:55:02PM -0600, Liu Bo wrote:
->> > So btrfs_set_header_flags() vs btrfs_set_header_flag, the difference is sort of
->> > similar to "=" vs "|=", when creating and initialising a new extent buffer,
->> > convert uses the former one which clears header_rev by accident.
->> >
->> 
->> Here is the regression test script,
->> 
->> mkfs.ext4 -F /disk
->> btrfs-convert -d /disk
->> mount /disk /mnt
->> xfs_io -f -c "pwrite 0 4K" /mnt/foobar
->> umount /disk
->> 
->> ---------------
->> It'd end up with 'unable to find ref blabla" shown in dmesg log.
->
->I can't reproduce it, is there something else needed? Tested kernel is
->4.11.6. Check does not complain either.
+So btrfs_set_header_flags() vs btrfs_set_header_flag, the difference is sort of
+similar to "=" vs "|=", when creating and initialising a new extent buffer,
+convert uses the former one which clears header_rev by accident.
 
-Excuse me, is your btrfs-progs already applied this patch?
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ convert/common.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-I'm sure that I can reproduce it in my test environment.
-1. kernel 4.11.6
-2. btrfs-progs kdave/devel(drop this patch)
-
+diff --git a/convert/common.c b/convert/common.c
+index 40bf32c..f0dd2cf 100644
+--- a/convert/common.c
++++ b/convert/common.c
+@@ -167,7 +167,7 @@ static int setup_temp_extent_buffer(struct extent_buffer *buf,
+ 	btrfs_set_header_generation(buf, 1);
+ 	btrfs_set_header_backref_rev(buf, BTRFS_MIXED_BACKREF_REV);
+ 	btrfs_set_header_owner(buf, owner);
+-	btrfs_set_header_flags(buf, BTRFS_HEADER_FLAG_WRITTEN);
++	btrfs_set_header_flag(buf, BTRFS_HEADER_FLAG_WRITTEN);
+ 	write_extent_buffer(buf, chunk_uuid, btrfs_header_chunk_tree_uuid(buf),
+ 			    BTRFS_UUID_SIZE);
+ 	write_extent_buffer(buf, fsid, btrfs_header_fsid(), BTRFS_FSID_SIZE);
 -- 
-Thanks,
-Lu
-
+2.5.0
 

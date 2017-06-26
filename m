@@ -1,60 +1,126 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:25504 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752667AbdFVINB (ORCPT
+Received: from mail-qt0-f169.google.com ([209.85.216.169]:34358 "EHLO
+        mail-qt0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751376AbdFZR6g (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Jun 2017 04:13:01 -0400
-From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <marc@merlins.org>
-Subject: [PATCH v2] btrfs-progs: lowmem check: Fix false alert about file extent interrupt
-Date: Thu, 22 Jun 2017 16:12:56 +0800
-Message-ID: <20170622081256.4981-1-lufq.fnst@cn.fujitsu.com>
-In-Reply-To: <20170622075237.1852-1-lufq.fnst@cn.fujitsu.com>
-References: <20170622075237.1852-1-lufq.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+        Mon, 26 Jun 2017 13:58:36 -0400
+Received: by mail-qt0-f169.google.com with SMTP id 32so7393036qtv.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Jun 2017 10:58:36 -0700 (PDT)
+Message-ID: <1498499912.10049.2.camel@redhat.com>
+Subject: Re: [PATCH v7 21/22] xfs: minimal conversion to errseq_t writeback
+ error reporting
+From: jlayton@redhat.com
+To: "Darrick J. Wong" <darrick.wong@oracle.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>,
+        Al Viro <viro@ZenIV.linux.org.uk>, Jan Kara <jack@suse.cz>,
+        tytso@mit.edu, axboe@kernel.dk, mawilcox@microsoft.com,
+        ross.zwisler@linux.intel.com, corbet@lwn.net, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        Carlos Maiolino <cmaiolino@redhat.com>, Eryu Guan <eguan@redhat.com>,
+        David Howells <dhowells@redhat.com>,
+        Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org,
+        linux-mm@kvack.org, linux-ext4@vger.kernel.org,
+        linux-xfs@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-block@vger.kernel.org
+Date: Mon, 26 Jun 2017 13:58:32 -0400
+In-Reply-To: <20170626152241.GC4733@birch.djwong.org>
+References: <20170616193427.13955-1-jlayton@redhat.com>
+         <20170616193427.13955-22-jlayton@redhat.com>
+         <20170626152241.GC4733@birch.djwong.org>
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As Qu mentioned in this thread
-(https://www.spinics.net/lists/linux-btrfs/msg64469.html), compression
-can cause regular extent to co-exist with inlined extent. This coexistence
-makes things confusing. Since it was permitted currently, so fix
-btrfsck to prevent a bunch of error logs that will make user feel
-panic.
+On Mon, 2017-06-26 at 08:22 -0700, Darrick J. Wong wrote:
+> On Fri, Jun 16, 2017 at 03:34:26PM -0400, Jeff Layton wrote:
+> > Just check and advance the data errseq_t in struct file before
+> > before returning from fsync on normal files. Internal filemap_*
+> > callers are left as-is.
+> > 
+> > Signed-off-by: Jeff Layton <jlayton@redhat.com>
+> > ---
+> >  fs/xfs/xfs_file.c | 15 +++++++++++----
+> >  1 file changed, 11 insertions(+), 4 deletions(-)
+> > 
+> > diff --git a/fs/xfs/xfs_file.c b/fs/xfs/xfs_file.c
+> > index 5fb5a0958a14..bc3b1575e8db 100644
+> > --- a/fs/xfs/xfs_file.c
+> > +++ b/fs/xfs/xfs_file.c
+> > @@ -134,7 +134,7 @@ xfs_file_fsync(
+> >  	struct inode		*inode = file->f_mapping-
+> > >host;
+> >  	struct xfs_inode	*ip = XFS_I(inode);
+> >  	struct xfs_mount	*mp = ip->i_mount;
+> > -	int			error = 0;
+> > +	int			error = 0, err2;
+> >  	int			log_flushed = 0;
+> >  	xfs_lsn_t		lsn = 0;
+> >  
+> > @@ -142,10 +142,12 @@ xfs_file_fsync(
+> >  
+> >  	error = filemap_write_and_wait_range(inode->i_mapping,
+> > start, end);
+> >  	if (error)
+> > -		return error;
+> > +		goto out;
+> >  
+> > -	if (XFS_FORCED_SHUTDOWN(mp))
+> > -		return -EIO;
+> > +	if (XFS_FORCED_SHUTDOWN(mp)) {
+> > +		error = -EIO;
+> > +		goto out;
+> > +	}
+> >  
+> >  	xfs_iflags_clear(ip, XFS_ITRUNCATED);
+> >  
+> > @@ -197,6 +199,11 @@ xfs_file_fsync(
+> >  	    mp->m_logdev_targp == mp->m_ddev_targp)
+> >  		xfs_blkdev_issue_flush(mp->m_ddev_targp);
+> >  
+> > +out:
+> > +	err2 = filemap_report_wb_err(file);
+> 
+> Could we have a comment here to remind anyone reading the code a year
+> from now that filemap_report_wb_err has side effects?  Pre-coffee me
+> was
+> wondering why we'd bother calling filemap_report_wb_err in the
+> XFS_FORCED_SHUTDOWN case, then remembered that it touches data
+> structures.
+> 
+> The first sentence of the commit message (really, the word 'advance')
+> added as a comment was adequate to remind me of the side effects.
+> 
+> Once that's added,
+> Reviewed-by: Darrick J. Wong <darrick.wong@oracle.com>
+> 
+> --D
+> 
 
-When check file extent, record the extent_end of regular extent to check
-if there is a gap between the regular extents. Normally there is only one
-inlined extent, so the extent_end of inlined extent is useless. However,
-if regular extent can co-exist with inlined extent, the extent_end of
-inlined extent also need to record.
+Yeah, definitely. I'm working on a respin of the series now to
+incorporate HCH's suggestion too. I'll add that in as well.
 
-Reported-by: Marc MERLIN <marc@merlins.org>
-Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
----
+Maybe I should rename that function to file_check_and_advance_wb_err()
+? It would be good to make it clear that it does advance the errseq_t
+cursor.
 
-Sorry, I mistook the reporter in v1.
-Changes since v1:
-- Fix the reported-by.
-
- cmds-check.c | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/cmds-check.c b/cmds-check.c
-index c052f66e..c173d285 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -4782,6 +4782,7 @@ static int check_file_extent(struct btrfs_root *root, struct btrfs_key *fkey,
- 				extent_num_bytes, item_inline_len);
- 			err |= FILE_EXTENT_ERROR;
- 		}
-+		*end += extent_num_bytes;
- 		*size += extent_num_bytes;
- 		return err;
- 	}
--- 
-2.13.1
-
-
-
+> > +	if (!error)
+> > +		error = err2;
+> > +
+> >  	return error;
+> >  }
+> >  
+> > -- 
+> > 2.13.0
+> > 
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-
+> > xfs" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-
+> btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,126 +1,120 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f169.google.com ([209.85.216.169]:34358 "EHLO
-        mail-qt0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751376AbdFZR6g (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Jun 2017 13:58:36 -0400
-Received: by mail-qt0-f169.google.com with SMTP id 32so7393036qtv.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Jun 2017 10:58:36 -0700 (PDT)
-Message-ID: <1498499912.10049.2.camel@redhat.com>
-Subject: Re: [PATCH v7 21/22] xfs: minimal conversion to errseq_t writeback
- error reporting
-From: jlayton@redhat.com
-To: "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>,
-        Al Viro <viro@ZenIV.linux.org.uk>, Jan Kara <jack@suse.cz>,
-        tytso@mit.edu, axboe@kernel.dk, mawilcox@microsoft.com,
-        ross.zwisler@linux.intel.com, corbet@lwn.net, Chris Mason <clm@fb.com>,
+Received: from mx1.redhat.com ([209.132.183.28]:42036 "EHLO mx1.redhat.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752478AbdFZMPD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Jun 2017 08:15:03 -0400
+From: Ming Lei <ming.lei@redhat.com>
+To: Jens Axboe <axboe@fb.com>, Christoph Hellwig <hch@infradead.org>,
+        Huang Ying <ying.huang@intel.com>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Alexander Viro <viro@zeniv.linux.org.uk>
+Cc: linux-kernel@vger.kernel.org, linux-block@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
+        Ming Lei <ming.lei@redhat.com>, Chris Mason <clm@fb.com>,
         Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
-        Carlos Maiolino <cmaiolino@redhat.com>, Eryu Guan <eguan@redhat.com>,
-        David Howells <dhowells@redhat.com>,
-        Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org,
-        linux-mm@kvack.org, linux-ext4@vger.kernel.org,
-        linux-xfs@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-block@vger.kernel.org
-Date: Mon, 26 Jun 2017 13:58:32 -0400
-In-Reply-To: <20170626152241.GC4733@birch.djwong.org>
-References: <20170616193427.13955-1-jlayton@redhat.com>
-         <20170616193427.13955-22-jlayton@redhat.com>
-         <20170626152241.GC4733@birch.djwong.org>
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+        linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 13/51] btrfs: avoid access to .bi_vcnt directly
+Date: Mon, 26 Jun 2017 20:09:56 +0800
+Message-Id: <20170626121034.3051-14-ming.lei@redhat.com>
+In-Reply-To: <20170626121034.3051-1-ming.lei@redhat.com>
+References: <20170626121034.3051-1-ming.lei@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2017-06-26 at 08:22 -0700, Darrick J. Wong wrote:
-> On Fri, Jun 16, 2017 at 03:34:26PM -0400, Jeff Layton wrote:
-> > Just check and advance the data errseq_t in struct file before
-> > before returning from fsync on normal files. Internal filemap_*
-> > callers are left as-is.
-> > 
-> > Signed-off-by: Jeff Layton <jlayton@redhat.com>
-> > ---
-> >  fs/xfs/xfs_file.c | 15 +++++++++++----
-> >  1 file changed, 11 insertions(+), 4 deletions(-)
-> > 
-> > diff --git a/fs/xfs/xfs_file.c b/fs/xfs/xfs_file.c
-> > index 5fb5a0958a14..bc3b1575e8db 100644
-> > --- a/fs/xfs/xfs_file.c
-> > +++ b/fs/xfs/xfs_file.c
-> > @@ -134,7 +134,7 @@ xfs_file_fsync(
-> >  	struct inode		*inode = file->f_mapping-
-> > >host;
-> >  	struct xfs_inode	*ip = XFS_I(inode);
-> >  	struct xfs_mount	*mp = ip->i_mount;
-> > -	int			error = 0;
-> > +	int			error = 0, err2;
-> >  	int			log_flushed = 0;
-> >  	xfs_lsn_t		lsn = 0;
-> >  
-> > @@ -142,10 +142,12 @@ xfs_file_fsync(
-> >  
-> >  	error = filemap_write_and_wait_range(inode->i_mapping,
-> > start, end);
-> >  	if (error)
-> > -		return error;
-> > +		goto out;
-> >  
-> > -	if (XFS_FORCED_SHUTDOWN(mp))
-> > -		return -EIO;
-> > +	if (XFS_FORCED_SHUTDOWN(mp)) {
-> > +		error = -EIO;
-> > +		goto out;
-> > +	}
-> >  
-> >  	xfs_iflags_clear(ip, XFS_ITRUNCATED);
-> >  
-> > @@ -197,6 +199,11 @@ xfs_file_fsync(
-> >  	    mp->m_logdev_targp == mp->m_ddev_targp)
-> >  		xfs_blkdev_issue_flush(mp->m_ddev_targp);
-> >  
-> > +out:
-> > +	err2 = filemap_report_wb_err(file);
-> 
-> Could we have a comment here to remind anyone reading the code a year
-> from now that filemap_report_wb_err has side effects?  Pre-coffee me
-> was
-> wondering why we'd bother calling filemap_report_wb_err in the
-> XFS_FORCED_SHUTDOWN case, then remembered that it touches data
-> structures.
-> 
-> The first sentence of the commit message (really, the word 'advance')
-> added as a comment was adequate to remind me of the side effects.
-> 
-> Once that's added,
-> Reviewed-by: Darrick J. Wong <darrick.wong@oracle.com>
-> 
-> --D
-> 
+BTRFS uses bio->bi_vcnt to figure out page numbers, this
+way becomes not correct once we start to enable multipage
+bvec.
 
-Yeah, definitely. I'm working on a respin of the series now to
-incorporate HCH's suggestion too. I'll add that in as well.
+So use bio_for_each_segment_all() to do that instead.
 
-Maybe I should rename that function to file_check_and_advance_wb_err()
-? It would be good to make it clear that it does advance the errseq_t
-cursor.
+Cc: Chris Mason <clm@fb.com>
+Cc: Josef Bacik <jbacik@fb.com>
+Cc: David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Signed-off-by: Ming Lei <ming.lei@redhat.com>
+---
+ fs/btrfs/extent_io.c | 21 +++++++++++++++++----
+ fs/btrfs/extent_io.h |  2 +-
+ 2 files changed, 18 insertions(+), 5 deletions(-)
 
-> > +	if (!error)
-> > +		error = err2;
-> > +
-> >  	return error;
-> >  }
-> >  
-> > -- 
-> > 2.13.0
-> > 
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-
-> > xfs" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-
-> btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 0863164d97d2..5b453cada1ea 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2258,7 +2258,7 @@ int btrfs_get_io_failure_record(struct inode *inode, u64 start, u64 end,
+ 	return 0;
+ }
+ 
+-int btrfs_check_repairable(struct inode *inode, struct bio *failed_bio,
++int btrfs_check_repairable(struct inode *inode, unsigned failed_bio_pages,
+ 			   struct io_failure_record *failrec, int failed_mirror)
+ {
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+@@ -2282,7 +2282,7 @@ int btrfs_check_repairable(struct inode *inode, struct bio *failed_bio,
+ 	 *	a) deliver good data to the caller
+ 	 *	b) correct the bad sectors on disk
+ 	 */
+-	if (failed_bio->bi_vcnt > 1) {
++	if (failed_bio_pages > 1) {
+ 		/*
+ 		 * to fulfill b), we need to know the exact failing sectors, as
+ 		 * we don't want to rewrite any more than the failed ones. thus,
+@@ -2355,6 +2355,17 @@ struct bio *btrfs_create_repair_bio(struct inode *inode, struct bio *failed_bio,
+ 	return bio;
+ }
+ 
++static unsigned int get_bio_pages(struct bio *bio)
++{
++	unsigned i;
++	struct bio_vec *bv;
++
++	bio_for_each_segment_all(bv, bio, i)
++		;
++
++	return i;
++}
++
+ /*
+  * this is a generic handler for readpage errors (default
+  * readpage_io_failed_hook). if other copies exist, read those and write back
+@@ -2375,6 +2386,7 @@ static int bio_readpage_error(struct bio *failed_bio, u64 phy_offset,
+ 	int read_mode = 0;
+ 	blk_status_t status;
+ 	int ret;
++	unsigned failed_bio_pages = get_bio_pages(failed_bio);
+ 
+ 	BUG_ON(bio_op(failed_bio) == REQ_OP_WRITE);
+ 
+@@ -2382,13 +2394,14 @@ static int bio_readpage_error(struct bio *failed_bio, u64 phy_offset,
+ 	if (ret)
+ 		return ret;
+ 
+-	ret = btrfs_check_repairable(inode, failed_bio, failrec, failed_mirror);
++	ret = btrfs_check_repairable(inode, failed_bio_pages, failrec,
++				     failed_mirror);
+ 	if (!ret) {
+ 		free_io_failure(failure_tree, tree, failrec);
+ 		return -EIO;
+ 	}
+ 
+-	if (failed_bio->bi_vcnt > 1)
++	if (failed_bio_pages > 1)
+ 		read_mode |= REQ_FAILFAST_DEV;
+ 
+ 	phy_offset >>= inode->i_sb->s_blocksize_bits;
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index d4942d94a16b..90681d1f0786 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -539,7 +539,7 @@ void btrfs_free_io_failure_record(struct btrfs_inode *inode, u64 start,
+ 		u64 end);
+ int btrfs_get_io_failure_record(struct inode *inode, u64 start, u64 end,
+ 				struct io_failure_record **failrec_ret);
+-int btrfs_check_repairable(struct inode *inode, struct bio *failed_bio,
++int btrfs_check_repairable(struct inode *inode, unsigned failed_bio_pages,
+ 			   struct io_failure_record *failrec, int fail_mirror);
+ struct bio *btrfs_create_repair_bio(struct inode *inode, struct bio *failed_bio,
+ 				    struct io_failure_record *failrec,
+-- 
+2.9.4
+

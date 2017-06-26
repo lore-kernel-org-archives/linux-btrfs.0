@@ -1,67 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:55683 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:60520 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751353AbdFZKqX (ORCPT
+        with ESMTP id S1751441AbdFZKhf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Jun 2017 06:46:23 -0400
-Subject: Re: How to fix errors that check --mode lomem finds, but --mode
- normal doesn't?
-To: Marc MERLIN <marc@merlins.org>
-CC: Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        Chris Murphy <lists@colorremedies.com>,
-        Hugo Mills <hugo@carfax.org.uk>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <20170620231202.GB5303@merlins.org>
- <CAJCQCtQMWKJwWjeM4zEb-W7-tjsZyfCo37YyT2xYi0fNTEzcUQ@mail.gmail.com>
- <20170621034352.GE5303@merlins.org> <20170621151339.GK5303@merlins.org>
- <13856431-9ee5-c13e-f2a8-860394f9aae4@cn.fujitsu.com>
- <20170622025330.GX5303@merlins.org>
- <e86db7c4-4953-7706-347d-983079177f37@cn.fujitsu.com>
- <20170623040601.akpyyvh3dgry6nn5@merlins.org>
- <90711a7c-92ff-e043-6d81-6bdadbfdbc3a@cn.fujitsu.com>
- <20170623161750.r7utffpsmyl5tcik@merlins.org>
- <20170624023409.GT14690@merlins.org>
+        Mon, 26 Jun 2017 06:37:35 -0400
 From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-Message-ID: <0d93c1c4-1feb-b589-0c8f-1fced7b77686@cn.fujitsu.com>
-Date: Mon, 26 Jun 2017 18:46:16 +0800
+To: <linux-btrfs@vger.kernel.org>
+CC: <marc@merlins.org>
+Subject: [PATCH v3 1/4] btrfs-progs: lowmem check: Fix false alert about file extent interrupt
+Date: Mon, 26 Jun 2017 18:37:24 +0800
+Message-ID: <20170626103727.8945-1-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20170624023409.GT14690@merlins.org>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017年06月24日 10:34, Marc MERLIN wrote:
-> On Fri, Jun 23, 2017 at 09:17:50AM -0700, Marc MERLIN wrote:
->> Thanks for looking at this.
->> I have applied your patch and I'm still re-running check in lowmem. It takes about 24H so I'll
->> post the full results when it's done.
-> 
-> Ok, here is the output of the check with btrfs-progs freshly synced from
-> git, including Lu's just added patch.
-> 
-> Obviously while I'm happy to give further debug info on why my filesystem is in that state and
-> while check --repair sees nothing to repair, suggestions on how to clean those warnings up, unless they are not going to affect filesystem operation, would be greatly appreciated :)
-> 
-> Thanks,
-> Marc
+As Qu mentioned in this thread
+(https://www.spinics.net/lists/linux-btrfs/msg64469.html), compression
+can cause regular extent to co-exist with inlined extent. This coexistence
+makes things confusing. Since it was permitted currently, so fix
+btrfsck to prevent a bunch of error logs that will make user feel
+panic.
 
-Thanks for the updated information. I'm sorry that the false alert make 
-you feel nervous.
+When check file extent, record the extent_end of regular extent to check
+if there is a gap between the regular extents. Normally there is only one
+inlined extent, so the extent_end of inlined extent is useless. However,
+if regular extent can co-exist with inlined extent, the extent_end of
+inlined extent also need to record.
 
-> 
-> ERROR: root 3862 EXTENT_DATA[18170706 4096] interrupt
-> ERROR: root 3862 EXTENT_DATA[18170706 16384] interrupt
-> ERROR: root 3862 EXTENT_DATA[18170706 20480] interrupt
-> ERROR: root 3862 EXTENT_DATA[18170706 135168] interrupt
-> ERROR: root 3862 EXTENT_DATA[18170706 1048576] interrupt
-> ERROR: errors found in fs roots
+Reported-by: Marc MERLIN <marc@merlins.org>
+Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+---
 
-However, this looks like another problem. Could you dump this file tree 
-by the following command?
-# btrfs-debug-tree -t 3862 <dev> | grep -C 10 18170706
+Changlog:
+v2: Just fix reported-by
+v3: Output verbose information when file extent interrupt
 
+ cmds-check.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/cmds-check.c b/cmds-check.c
+index c052f66e..70d2b7f2 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -4782,6 +4782,7 @@ static int check_file_extent(struct btrfs_root *root, struct btrfs_key *fkey,
+ 				extent_num_bytes, item_inline_len);
+ 			err |= FILE_EXTENT_ERROR;
+ 		}
++		*end += extent_num_bytes;
+ 		*size += extent_num_bytes;
+ 		return err;
+ 	}
+@@ -4847,8 +4848,8 @@ static int check_file_extent(struct btrfs_root *root, struct btrfs_key *fkey,
+ 		      root->objectid, fkey->objectid, fkey->offset);
+ 	} else if (!no_holes && *end != fkey->offset) {
+ 		err |= FILE_EXTENT_ERROR;
+-		error("root %llu EXTENT_DATA[%llu %llu] interrupt",
+-		      root->objectid, fkey->objectid, fkey->offset);
++		error("root %llu EXTENT_DATA[%llu %llu] interrupt, should start at %llu",
++		      root->objectid, fkey->objectid, fkey->offset, *end);
+ 	}
+ 
+ 	*end += extent_num_bytes;
 -- 
-Thanks,
-Lu
+2.13.1
+
 
 

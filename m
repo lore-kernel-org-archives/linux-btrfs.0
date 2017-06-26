@@ -1,85 +1,134 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:6892 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751069AbdFUINm (ORCPT
+Received: from mail-wr0-f176.google.com ([209.85.128.176]:36596 "EHLO
+        mail-wr0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751798AbdFZBZL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Jun 2017 04:13:42 -0400
-Subject: Re: [PATCH v3] btrfs: fiemap: Cache and merge fiemap extent before
- submit it to user
-To: Adam Borowski <kilobyte@angband.pl>, Qu Wenruo <quwenruo.btrfs@gmx.com>
-CC: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>, <bo.li.liu@oracle.com>
-References: <20170407024315.30685-1-quwenruo@cn.fujitsu.com>
- <20170616123352.GF25451@twin.jikos.cz>
- <92aae99b-2c1a-2c66-1291-a0ef73c58b16@gmx.com>
- <20170617083058.7z67mw4622oa7ajo@angband.pl>
- <48fbf1c1-6b7b-a886-2355-bac5ec3f79ba@gmx.com>
- <20170617212451.w7i3xqjv4rie57dw@angband.pl>
- <2d08d805-9e8e-38b1-b1cd-b8ae31db058a@gmx.com>
- <5c63eef9-ff8e-6374-6a19-7e52f14dd18a@gmx.com>
- <20170618134219.bnivsrpd4ai2nrxs@angband.pl>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <14b7cc8f-e283-db36-6b3f-f44e78ec9fb5@cn.fujitsu.com>
-Date: Wed, 21 Jun 2017 16:13:32 +0800
-MIME-Version: 1.0
-In-Reply-To: <20170618134219.bnivsrpd4ai2nrxs@angband.pl>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+        Sun, 25 Jun 2017 21:25:11 -0400
+Received: by mail-wr0-f176.google.com with SMTP id c11so132580132wrc.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 25 Jun 2017 18:25:10 -0700 (PDT)
+From: Timofey Titovets <nefelim4ag@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Timofey Titovets <nefelim4ag@gmail.com>
+Subject: [RFC PATCH v2 0/2] Btrfs: add compression heuristic
+Date: Mon, 26 Jun 2017 04:24:54 +0300
+Message-Id: <20170626012456.19872-1-nefelim4ag@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Today btrfs use simple logic to make decision
+compress data or not:
+Selected compression
+algorithm try compress data and if this save some space
+store that extent as compressed.
+
+It's Reliable way to detect uncompressible data
+but it's will waste/burn cpu time for
+bad/un-compressible data and add latency.
+
+This way also add additional pressure on
+memory subsustem as for every compressed write
+btrfs need to allocate some buffered pages and
+reuse compression workspace.
+
+This is quite efficient, but not free.
+
+So, try create basic heuristic framework,
+this heuristic code will analizy data on the fly
+before call of compression code,
+can detect uncompressible data and advice to skip it.
+
+I leave comments with description in code,
+but i will try describe that short.
+Heuristic have several internal layers:
+1. Get sample data - this is cpu expensive
+to analize whole stream, so let's get some
+big enough sample from input data
+Scaling:
+In data: 128K  64K   32K   4K
+Sample:  4096b 3072b 2048b 1024b
+2. For performance reason and for reuse it in 7th level
+copy selected data to sample buffer
+3. Count every byte type in sample buffer
+4. Count how many types of bytes we find
+If it's not many - data will be easy compressible
+5. Count character core set size, i.e.
+which characters use 90% of input stream
+If core set small (1-50 different types)
+Data easy compressible
+If big (200-256) - data probably can't be compressed
+6. If above methods are fail to make decision,
+try compute shannon entropy
+If entropy are small - data will be easy compressible
+If not - go to 7th
+7. Entropy can't detect repeated strings of bytes
+So try look at the data for detect repeated bytes
+Compute a difference between frequency of bytes from
+coreset and between frequency of pair of that bytes
+If sum of that defferent from zero and entropy and not
+big, give compression code a try
+If entropy are High 7.2/8 - 8/8 (> 90%), and if we find BIG enough
+difference between frequency of a pairs and characters
+Give compression code a try
+
+7th level needed for decreasing false negative returns,
+where data can be compressed (like ~131072b -> ~87000b ~ 0.66), but not
+so easy.
+
+(this above code as i see it's forbidden compression like:
+131072b -> ~110000b)
+
+Shannon entropy use log2(a/b) function,
+I did a try replace that with int_log2(a)-int_log2(b), but
+integer realization of log2 show a lack of accuracy (+-7-10%) in our case.
+So i precalculate some input/output values (1/131072 - 1/1) and create log2_lshift16();
+I already decrease lines of that function from 1200 -> 200
+for save memory (and lose some accuracy), so with precomputed function
+I get +- 0.5-2% of accuracy (in compare to normal "true" float log2 shannon)
+
+Thanks.
+
+P.S.
+I made only stability tests at now, all works stable.
+About performance:
+In userspace realization of that algorithm, which
+iterate over data by 128kb block and do Mmap() of file, it
+show ~4GiB/s over in memory (cached) data in one stream.
+For i5-4200M && DDR3.
+
+So i expect to not hurt compression performance.
+
+I've also duplicate patch set to:
+https://github.com/Nefelim4ag/linux
+
+log2_lshift() - tested by log2_generator
+https://github.com/Nefelim4ag/Entropy_Calculation
+
+P.S.S.
+Sorry for my bad english and may be for ugly code.
+I do my best, thanks.
 
 
-At 06/18/2017 09:42 PM, Adam Borowski wrote:
-> On Sun, Jun 18, 2017 at 07:23:00PM +0800, Qu Wenruo wrote:
->>>> [   39.726215] BTRFS warning (device sda1): unhandled fiemap cache
->>>> detected: offset=phys$35798867968 len1072 flags=0x2008
-> 
->>>> [  151.882586] BTRFS warning (device sda1): unhandled fiemap cache
->>>> detected: offset=phys$35798867968 len1072 flags=0x2008
-> 
-> 
->> I created file extents which returns 0x2008 and the last extent with 0x9.
->> But still failed to reproduce the error message.
->>
->> BTW, I noticed that your output is a little strange.
->> Normally we should have "offset=%llu phys=%llu len=%llu and flags=0x%x".
->>
->> But your output seems a little out of shape.
->> And further more, the len (if it's correct) is not aligned even to 512
->> bytes.
-> 
-> [24031.309852] BTRFS warning (device sda1): unhandled fiemap cache detected: offset=0 phys=2012381351936 len=131072 flags=0x2008
-> 
-> Eh?  All the numbers in my mails not only match that printf format but also
-> are nice round numbers; len being always 128KB (not in just what I posted,
-> also in all other occurences).
+Changes since v1:
+  - Fixes of checkpatch.pl warnings/errors
+  - Use div64_u64() instead of "/"
+  - Make log2_lshift16() more like binary tree as suggested by:
+    Adam Borowski <kilobyte@angband.pl>
 
-Well the new line seems pretty normal now.
+Timofey Titovets (2):
+  Btrfs: add precomputed log2()
+  Btrfs: add heuristic method for make decision compress or not compress
 
-I'll create a debug patch for you to get more info to pin down the bug.
+ fs/btrfs/Makefile        |   2 +-
+ fs/btrfs/heuristic.c     | 264 ++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/heuristic.h     |  13 +++
+ fs/btrfs/inode.c         |  37 ++++---
+ fs/btrfs/log2_lshift16.c | 278 +++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/log2_lshift16.h |  11 ++
+ 6 files changed, 590 insertions(+), 15 deletions(-)
+ create mode 100644 fs/btrfs/heuristic.c
+ create mode 100644 fs/btrfs/heuristic.h
+ create mode 100644 fs/btrfs/log2_lshift16.c
+ create mode 100644 fs/btrfs/log2_lshift16.h
 
-> 
-> But, in your replies there's '$'blahblab and 0x13"1072".
-> 
->> Seems something went wrong totally.
-> 
-> Perhaps there's some mail client borkage?  I see it ok in my Sent mbox but
-> it could have been corrupted in transit or on your side.
-> 
-> Here's my current dmesg: http://sprunge.us/ajag
-
-In my work mailbox, everything is just as fine as yours.
-
-But my gmx mailbox gives the wrong output even the message has the same 
-message id (<20170617145725.y3wsex73aaf3vcje@angband.pl>).
-
-I'd reduce the usage of my gmx mailbox.
-
-Thanks,
-Qu
-
-> 
-> 
-> Meow!
-> 
-
-
+--
+2.13.1

@@ -1,131 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:29931 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751386AbdFZSLj (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Jun 2017 14:11:39 -0400
-Date: Mon, 26 Jun 2017 11:10:50 -0700
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: jlayton@redhat.com
-Cc: Andrew Morton <akpm@linux-foundation.org>,
-        Al Viro <viro@ZenIV.linux.org.uk>, Jan Kara <jack@suse.cz>,
-        tytso@mit.edu, axboe@kernel.dk, mawilcox@microsoft.com,
-        ross.zwisler@linux.intel.com, corbet@lwn.net, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
-        Carlos Maiolino <cmaiolino@redhat.com>, Eryu Guan <eguan@redhat.com>,
-        David Howells <dhowells@redhat.com>,
-        Christoph Hellwig <hch@infradead.org>, linux-fsdevel@vger.kernel.org,
-        linux-mm@kvack.org, linux-ext4@vger.kernel.org,
-        linux-xfs@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-block@vger.kernel.org
-Subject: Re: [PATCH v7 21/22] xfs: minimal conversion to errseq_t writeback
- error reporting
-Message-ID: <20170626181050.GA31434@birch.djwong.org>
-References: <20170616193427.13955-1-jlayton@redhat.com>
- <20170616193427.13955-22-jlayton@redhat.com>
- <20170626152241.GC4733@birch.djwong.org>
- <1498499912.10049.2.camel@redhat.com>
+Received: from mx2.suse.de ([195.135.220.15]:50277 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751405AbdFZPag (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Jun 2017 11:30:36 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 1B852ABB8
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Jun 2017 15:30:35 +0000 (UTC)
+Subject: Re: [PATCH 2/2] btrfs: Optimise layout of btrfs_block_group_cache
+To: linux-btrfs@vger.kernel.org
+References: <1498488155-9941-1-git-send-email-nborisov@suse.com>
+ <1498488155-9941-2-git-send-email-nborisov@suse.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <da2bf011-533c-8af8-cc33-d15d5c18d5f8@suse.com>
+Date: Mon, 26 Jun 2017 18:30:34 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1498499912.10049.2.camel@redhat.com>
+In-Reply-To: <1498488155-9941-2-git-send-email-nborisov@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 26, 2017 at 01:58:32PM -0400, jlayton@redhat.com wrote:
-> On Mon, 2017-06-26 at 08:22 -0700, Darrick J. Wong wrote:
-> > On Fri, Jun 16, 2017 at 03:34:26PM -0400, Jeff Layton wrote:
-> > > Just check and advance the data errseq_t in struct file before
-> > > before returning from fsync on normal files. Internal filemap_*
-> > > callers are left as-is.
-> > > 
-> > > Signed-off-by: Jeff Layton <jlayton@redhat.com>
-> > > ---
-> > >  fs/xfs/xfs_file.c | 15 +++++++++++----
-> > >  1 file changed, 11 insertions(+), 4 deletions(-)
-> > > 
-> > > diff --git a/fs/xfs/xfs_file.c b/fs/xfs/xfs_file.c
-> > > index 5fb5a0958a14..bc3b1575e8db 100644
-> > > --- a/fs/xfs/xfs_file.c
-> > > +++ b/fs/xfs/xfs_file.c
-> > > @@ -134,7 +134,7 @@ xfs_file_fsync(
-> > >  	struct inode		*inode = file->f_mapping-
-> > > >host;
-> > >  	struct xfs_inode	*ip = XFS_I(inode);
-> > >  	struct xfs_mount	*mp = ip->i_mount;
-> > > -	int			error = 0;
-> > > +	int			error = 0, err2;
-> > >  	int			log_flushed = 0;
-> > >  	xfs_lsn_t		lsn = 0;
-> > >  
-> > > @@ -142,10 +142,12 @@ xfs_file_fsync(
-> > >  
-> > >  	error = filemap_write_and_wait_range(inode->i_mapping,
-> > > start, end);
-> > >  	if (error)
-> > > -		return error;
-> > > +		goto out;
-> > >  
-> > > -	if (XFS_FORCED_SHUTDOWN(mp))
-> > > -		return -EIO;
-> > > +	if (XFS_FORCED_SHUTDOWN(mp)) {
-> > > +		error = -EIO;
-> > > +		goto out;
-> > > +	}
-> > >  
-> > >  	xfs_iflags_clear(ip, XFS_ITRUNCATED);
-> > >  
-> > > @@ -197,6 +199,11 @@ xfs_file_fsync(
-> > >  	    mp->m_logdev_targp == mp->m_ddev_targp)
-> > >  		xfs_blkdev_issue_flush(mp->m_ddev_targp);
-> > >  
-> > > +out:
-> > > +	err2 = filemap_report_wb_err(file);
-> > 
-> > Could we have a comment here to remind anyone reading the code a year
-> > from now that filemap_report_wb_err has side effects?  Pre-coffee me
-> > was
-> > wondering why we'd bother calling filemap_report_wb_err in the
-> > XFS_FORCED_SHUTDOWN case, then remembered that it touches data
-> > structures.
-> > 
-> > The first sentence of the commit message (really, the word 'advance')
-> > added as a comment was adequate to remind me of the side effects.
-> > 
-> > Once that's added,
-> > Reviewed-by: Darrick J. Wong <darrick.wong@oracle.com>
-> > 
-> > --D
-> > 
-> 
-> Yeah, definitely. I'm working on a respin of the series now to
-> incorporate HCH's suggestion too. I'll add that in as well.
-> 
-> Maybe I should rename that function to file_check_and_advance_wb_err()
-> ? It would be good to make it clear that it does advance the errseq_t
-> cursor.
 
-Seems like a good idea.
 
---D
-
+On 26.06.2017 17:42, Nikolay Borisov wrote:
+> With this patch applied pahole stats look like:
 > 
-> > > +	if (!error)
-> > > +		error = err2;
-> > > +
-> > >  	return error;
-> > >  }
-> > >  
-> > > -- 
-> > > 2.13.0
-> > > 
-> > > --
-> > > To unsubscribe from this list: send the line "unsubscribe linux-
-> > > xfs" in
-> > > the body of a message to majordomo@vger.kernel.org
-> > > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> > 
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-
-> > btrfs" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> /* size: 840, cachelines: 14, members: 40 */
+> /* sum members: 833, holes: 1, sum holes: 7 */
+> /* bit holes: 1, sum bit holes: 28 bits */
+> /* last cacheline: 8 bytes */
+> 
+> No functional changes.
+> 
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+>  fs/btrfs/ctree.h | 14 +++++++-------
+>  1 file changed, 7 insertions(+), 7 deletions(-)
+> 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index cdd3775e930b..bdd06bbeb9aa 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -586,6 +586,11 @@ struct btrfs_block_group_cache {
+>  	unsigned int iref:1;
+>  	unsigned int has_caching_ctl:1;
+>  	unsigned int removed:1;
+> +	/*
+> +	 * Does the block group need to be added to the free space tree?
+> +	 * Protected by free_space_lock.
+> +	 */
+> +	unsigned int needs_free_space:1;
+Upon closer inspection of memory-barriers.txt I'm not confident in this
+change. This puts fields protected by different locks in the same
+bitfield which can lead to corrupted values.
+
+>  
+>  	int disk_cache_state;
+>  
+> @@ -608,6 +613,8 @@ struct btrfs_block_group_cache {
+>  	/* usage count */
+>  	atomic_t count;
+>  
+> +	atomic_t trimming
+
+This one will likely eliminated 1 hole in the struct so I might end up
+sending v2 of this patch.
+
+> +
+>  	/* List of struct btrfs_free_clusters for this block group.
+>  	 * Today it will only have one thing on it, but that may change
+>  	 */
+> @@ -619,8 +626,6 @@ struct btrfs_block_group_cache {
+>  	/* For read-only block groups */
+>  	struct list_head ro_list;
+>  
+> -	atomic_t trimming;
+> -
+>  	/* For dirty block groups */
+>  	struct list_head dirty_list;
+>  	struct list_head io_list;
+> @@ -651,11 +656,6 @@ struct btrfs_block_group_cache {
+>  	/* Lock for free space tree operations. */
+>  	struct mutex free_space_lock;
+>  
+> -	/*
+> -	 * Does the block group need to be added to the free space tree?
+> -	 * Protected by free_space_lock.
+> -	 */
+> -	int needs_free_space;
+>  
+>  	/* Record locked full stripes for RAID5/6 block group */
+>  	struct btrfs_full_stripe_locks_tree full_stripe_locks_root;
+> 

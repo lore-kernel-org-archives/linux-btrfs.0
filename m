@@ -1,45 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f66.google.com ([74.125.83.66]:33435 "EHLO
-        mail-pg0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751651AbdFISJr (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Jun 2017 14:09:47 -0400
-Received: by mail-pg0-f66.google.com with SMTP id a70so8310303pge.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 09 Jun 2017 11:09:47 -0700 (PDT)
-From: Justin Maggard <jmaggard10@gmail.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:43421 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751335AbdFZSfj (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Jun 2017 14:35:39 -0400
+From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Justin Maggard <jmaggard@netgear.com>
-Subject: [PATCH] btrfs-progs: Fix an infinite loop in btrfs_next_bg
-Date: Fri,  9 Jun 2017 11:09:35 -0700
-Message-Id: <20170609180935.9554-1-jmaggard@netgear.com>
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [Patch v2] Btrfs-progs: fix infinite loop in find_free_extent
+Date: Mon, 26 Jun 2017 11:34:41 -0600
+Message-Id: <20170626173441.28275-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've run into a couple filesystems where btrfs-find-root would spin
-indefinitely.
+If the found %ins is crossing a stripe len, ie. BTRFS_STRIPE_LEN, we'd
+search again with a stripe-aligned %search_start.  The current code
+calculates %search_start by adding a wrong offset, in order to fix it, the
+start position of the block group should be taken, otherwise, it'll end up
+with looking at the same block group forever.
 
-If the first cache extent start location is 0, we end up in an infinite
-loop in btrfs_next_bg().  Fix it by checking for that situation, and
-jumping to the next bg if necessary.
-
-Fixes: e2e0dae9 (btrfs-progs: volume: Fix a bug causing btrfs-find-root to skip first chunk)
-Signed-off-by: Justin Maggard <jmaggard@netgear.com>
+Cc: David Sterba <dsterba@suse.cz>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- volumes.c | 2 ++
- 1 file changed, 2 insertions(+)
+v2: - enhance commit log with more details.
+    - fix typo on bg_cache->key.objectid.
 
-diff --git a/volumes.c b/volumes.c
-index b350e259..8c0c10ce 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -1278,6 +1278,8 @@ int btrfs_next_bg(struct btrfs_mapping_tree *map_tree, u64 *logical,
- 			*size = ce->size;
- 			return 0;
- 		}
-+		if (!cur)
-+			ce = next_cache_extent(ce);
- 	}
+ extent-tree.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/extent-tree.c b/extent-tree.c
+index 3e32e43..2c73d46 100644
+--- a/extent-tree.c
++++ b/extent-tree.c
+@@ -2614,8 +2614,9 @@ check_failed:
+ 				goto no_bg_cache;
+ 			bg_offset = ins->objectid - bg_cache->key.objectid;
  
- 	return -ENOENT;
+-			search_start = round_up(bg_offset + num_bytes,
+-						BTRFS_STRIPE_LEN) + bg_offset;
++			search_start = round_up(
++				bg_offset + num_bytes, BTRFS_STRIPE_LEN) +
++				bg_cache->key.objectid;
+ 			goto new_group;
+ 		}
+ no_bg_cache:
 -- 
-2.13.0
+2.5.0
 

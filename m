@@ -1,85 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:39548 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750784AbdFOJOk (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:5732 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1752606AbdF0IfI (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Jun 2017 05:14:40 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH v2] btrfs: add mount umount logs
-Date: Thu, 15 Jun 2017 17:20:42 +0800
-Message-Id: <1497518442-1078-1-git-send-email-anand.jain@oracle.com>
+        Tue, 27 Jun 2017 04:35:08 -0400
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <dsterba@suse.cz>
+Subject: [PATCH] btrfs-progs: lowmem: check: Output more detailed information about file extent interrupt
+Date: Tue, 27 Jun 2017 16:34:55 +0800
+Message-ID: <20170627083455.14576-1-lufq.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Anand Jain <Anand.Jain@oracle.com>
+Make lowmem mode output more detailed information about file extent
+interrupt.
 
-By looking at the logs we should be able to know when FS was
-mounted and unmounted and the options used, so to help forensic
-investigations.
-
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 ---
-Hi David,
 
- As you suggested VFS is definitly a better place to have this
- and its patch is in the ML. But I am not too sure what's their
- plan is.  So can we integrate this into BTRFS ? as we can always
- remove it once VFS provides that feature.
+Sorry for any inconvenience caused. Please ignore this message(https://www.spinics.net/lists/linux-btrfs/msg66803.html).
 
-Thanks, Anand
+ cmds-check.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-v2: Use ro,rw instead of rdonly and directly print it.
-
- fs/btrfs/super.c | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
-
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 3371213924bd..2cb367a106e3 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1373,6 +1373,13 @@ static char *setup_root_args(char *args)
- 	return buf;
- }
- 
-+static void print_mount_info(struct btrfs_fs_info *info, int flag, char *opt,
-+		char *prefix)
-+{
-+	btrfs_notice(info, "%s: flags=%s opt=%s\n",
-+			prefix, flag & MS_RDONLY ? "ro":"rw", opt);
-+}
-+
- static struct dentry *mount_subvol(const char *subvol_name, u64 subvol_objectid,
- 				   int flags, const char *device_name,
- 				   char *data)
-@@ -1467,6 +1474,8 @@ static struct dentry *mount_subvol(const char *subvol_name, u64 subvol_objectid,
- 			dput(root);
- 			root = ERR_PTR(ret);
- 			deactivate_locked_super(s);
-+		} else {
-+			print_mount_info(fs_info, flags, data, "mount");
- 		}
+diff --git a/cmds-check.c b/cmds-check.c
+index dedb12d1..f42968cd 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -4848,8 +4848,8 @@ static int check_file_extent(struct btrfs_root *root, struct btrfs_key *fkey,
+ 		      root->objectid, fkey->objectid, fkey->offset);
+ 	} else if (!no_holes && *end != fkey->offset) {
+ 		err |= FILE_EXTENT_ERROR;
+-		error("root %llu EXTENT_DATA[%llu %llu] interrupt",
+-		      root->objectid, fkey->objectid, fkey->offset);
++		error("root %llu EXTENT_DATA[%llu %llu] interrupt, should start at %llu",
++		      root->objectid, fkey->objectid, fkey->offset, *end);
  	}
  
-@@ -1845,6 +1854,9 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
- out:
- 	wake_up_process(fs_info->transaction_kthread);
- 	btrfs_remount_cleanup(fs_info, old_opts);
-+
-+	print_mount_info(fs_info, *flags, data, "remount");
-+
- 	return 0;
- 
- restore:
-@@ -2174,6 +2186,7 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
- static void btrfs_kill_super(struct super_block *sb)
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
-+	btrfs_notice(fs_info, "%s\n", "unmount");
- 	kill_anon_super(sb);
- 	free_fs_info(fs_info);
- }
+ 	*end += extent_num_bytes;
 -- 
-2.7.0
+2.13.2
+
+
 

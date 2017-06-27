@@ -1,64 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36080 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:36083 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751553AbdF0HCc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1751575AbdF0HCc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Tue, 27 Jun 2017 03:02:32 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id EF98BAAB9
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Jun 2017 07:02:30 +0000 (UTC)
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 3B05DABB8
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Jun 2017 07:02:31 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
 To: dsterba@suse.cz
 Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 1/3] btrfs: convert while loop to list_for_each_entry
-Date: Tue, 27 Jun 2017 10:02:24 +0300
-Message-Id: <1498546946-6853-1-git-send-email-nborisov@suse.com>
+Subject: [PATCH 2/3] btrfs: Use explicit round_down call rather than open-coding it
+Date: Tue, 27 Jun 2017 10:02:25 +0300
+Message-Id: <1498546946-6853-2-git-send-email-nborisov@suse.com>
+In-Reply-To: <1498546946-6853-1-git-send-email-nborisov@suse.com>
+References: <1498546946-6853-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-No functional changes, just make the loop a bit more readable
+No functional changes
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/volumes.c | 11 ++---------
- 1 file changed, 2 insertions(+), 9 deletions(-)
+ fs/btrfs/volumes.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index adf32f46a73f..9f4426014490 100644
+index 9f4426014490..07cfcc507ba6 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -4619,7 +4619,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- {
- 	struct btrfs_fs_info *info = trans->fs_info;
- 	struct btrfs_fs_devices *fs_devices = info->fs_devices;
--	struct list_head *cur;
-+	struct btrfs_device *device;
- 	struct map_lookup *map = NULL;
- 	struct extent_map_tree *em_tree;
- 	struct extent_map *em;
-@@ -4693,22 +4693,15 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 	if (!devices_info)
- 		return -ENOMEM;
+@@ -4752,7 +4752,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 	     btrfs_cmp_device_info, NULL);
  
--	cur = fs_devices->alloc_list.next;
--
- 	/*
- 	 * in the first pass through the devices list, we gather information
- 	 * about the available holes on each device.
- 	 */
- 	ndevs = 0;
--	while (cur != &fs_devices->alloc_list) {
--		struct btrfs_device *device;
-+	list_for_each_entry(device, &fs_devices->alloc_list, dev_alloc_list) {
- 		u64 max_avail;
- 		u64 dev_offset;
+ 	/* round down to number of usable stripes */
+-	ndevs -= ndevs % devs_increment;
++	ndevs = round_down(ndevs, devs_increment);
  
--		device = list_entry(cur, struct btrfs_device, dev_alloc_list);
--
--		cur = cur->next;
--
- 		if (!device->writeable) {
- 			WARN(1, KERN_ERR
- 			       "BTRFS: read-only device in alloc_list\n");
+ 	if (ndevs < devs_increment * sub_stripes || ndevs < devs_min) {
+ 		ret = -ENOSPC;
 -- 
 2.7.4
 

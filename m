@@ -1,82 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38885 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752413AbdF0NZ4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Jun 2017 09:25:56 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 8D19FAB9D
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Jun 2017 13:25:54 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2] btrfs: remove unused sectorsize member
-Date: Tue, 27 Jun 2017 16:25:52 +0300
-Message-Id: <1498569952-672-1-git-send-email-nborisov@suse.com>
-In-Reply-To: <1498488155-9941-1-git-send-email-nborisov@suse.com>
-References: <1498488155-9941-1-git-send-email-nborisov@suse.com>
+Received: from mga03.intel.com ([134.134.136.65]:31961 "EHLO mga03.intel.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752855AbdF0LkK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 27 Jun 2017 07:40:10 -0400
+From: Elena Reshetova <elena.reshetova@intel.com>
+To: axboe@kernel.dk
+Cc: james.bottomley@hansenpartnership.com, linux-kernel@vger.kernel.org,
+        linux-block@vger.kernel.org, linux-scsi@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, peterz@infradead.org,
+        gregkh@linuxfoundation.org, keescook@chromium.org,
+        fujita.tomonori@lab.ntt.co.jp, mingo@redhat.com, clm@fb.com,
+        jbacik@fb.com, dsterba@suse.com,
+        Elena Reshetova <elena.reshetova@intel.com>
+Subject: [PATCH 0/5] v3 block subsystem refcounter conversions
+Date: Tue, 27 Jun 2017 14:39:55 +0300
+Message-Id: <1498563601-10949-1-git-send-email-elena.reshetova@intel.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The sectorsize member of btrfs_block_group_cache is unused. So remove it, this
-reduces the number of holes in the struct.
+Changes in v3:
+No changes in patches apart from trivial rebases, but now by
+default refcount_t = atomic_t and uses all atomic standard operations
+unless CONFIG_REFCOUNT_FULL is enabled. This is a compromize for the
+systems that are critical on performance and cannot accept even
+slight delay on the refcounter operations.
 
-With patch:
-/* size: 856, cachelines: 14, members: 40 */
-/* sum members: 837, holes: 4, sum holes: 19 */
-/* bit holes: 1, sum bit holes: 29 bits */
-/* last cacheline: 24 bytes */
+Changes in v2:
+Not needed WARNs are removed since refcount_t warns by itself.
+BUG_ONs are left as it is, since refcount_t doesn't bug by default.
 
-Without patch:
-/* size: 864, cachelines: 14, members: 41 */
-/* sum members: 841, holes: 5, sum holes: 23 */
-/* bit holes: 1, sum bit holes: 29 bits */
-/* last cacheline: 32 bytes */
----
+This series, for block subsystem, replaces atomic_t reference
+counters with the new refcount_t type and API (see include/linux/refcount.h).
+By doing this we prevent intentional or accidental
+underflows or overflows that can lead to use-after-free vulnerabilities.
 
-Changes since v1: 
- * Missed the usage in btrfs-tests.c
+Elena Reshetova (5):
+  block: convert bio.__bi_cnt from atomic_t to refcount_t
+  block: convert blk_queue_tag.refcnt from atomic_t to refcount_t
+  block: convert blkcg_gq.refcnt from atomic_t to refcount_t
+  block: convert io_context.active_ref from atomic_t to refcount_t
+  block: convert bsg_device.ref_count from atomic_t to refcount_t
 
- fs/btrfs/ctree.h             | 1 -
- fs/btrfs/extent-tree.c       | 1 -
- fs/btrfs/tests/btrfs-tests.c | 1 -
- 3 files changed, 3 deletions(-)
+ block/bfq-iosched.c        | 2 +-
+ block/bio.c                | 6 +++---
+ block/blk-cgroup.c         | 2 +-
+ block/blk-ioc.c            | 4 ++--
+ block/blk-tag.c            | 8 ++++----
+ block/bsg.c                | 9 +++++----
+ block/cfq-iosched.c        | 4 ++--
+ fs/btrfs/volumes.c         | 2 +-
+ include/linux/bio.h        | 4 ++--
+ include/linux/blk-cgroup.h | 9 ++++-----
+ include/linux/blk_types.h  | 3 ++-
+ include/linux/blkdev.h     | 3 ++-
+ include/linux/iocontext.h  | 6 +++---
+ 13 files changed, 32 insertions(+), 30 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index a75a23f9d68e..cdd3775e930b 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -559,7 +559,6 @@ struct btrfs_block_group_cache {
- 	u64 bytes_super;
- 	u64 flags;
- 	u64 cache_generation;
--	u32 sectorsize;
- 
- 	/*
- 	 * If the free space extent count exceeds this number, convert the block
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index a08a743a8e09..2a0d300c7d1a 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -9904,7 +9904,6 @@ btrfs_create_block_group_cache(struct btrfs_fs_info *fs_info,
- 	cache->key.offset = size;
- 	cache->key.type = BTRFS_BLOCK_GROUP_ITEM_KEY;
- 
--	cache->sectorsize = fs_info->sectorsize;
- 	cache->fs_info = fs_info;
- 	cache->full_stripe_len = btrfs_full_stripe_len(fs_info,
- 						       &fs_info->mapping_tree,
-diff --git a/fs/btrfs/tests/btrfs-tests.c b/fs/btrfs/tests/btrfs-tests.c
-index b18ab8f327a5..d3f25376a0f8 100644
---- a/fs/btrfs/tests/btrfs-tests.c
-+++ b/fs/btrfs/tests/btrfs-tests.c
-@@ -211,7 +211,6 @@ btrfs_alloc_dummy_block_group(struct btrfs_fs_info *fs_info,
- 	cache->key.objectid = 0;
- 	cache->key.offset = length;
- 	cache->key.type = BTRFS_BLOCK_GROUP_ITEM_KEY;
--	cache->sectorsize = fs_info->sectorsize;
- 	cache->full_stripe_len = fs_info->sectorsize;
- 	cache->fs_info = fs_info;
- 
 -- 
 2.7.4
 

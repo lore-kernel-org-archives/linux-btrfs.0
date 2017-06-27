@@ -1,103 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mga03.intel.com ([134.134.136.65]:5589 "EHLO mga03.intel.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752957AbdF0Lkr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Jun 2017 07:40:47 -0400
-From: Elena Reshetova <elena.reshetova@intel.com>
-To: axboe@kernel.dk
+Received: from mail-pf0-f174.google.com ([209.85.192.174]:34681 "EHLO
+        mail-pf0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752753AbdF0N07 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 27 Jun 2017 09:26:59 -0400
+Received: by mail-pf0-f174.google.com with SMTP id s66so16650169pfs.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Jun 2017 06:26:58 -0700 (PDT)
+Subject: Re: [PATCH 0/5] v3 block subsystem refcounter conversions
+To: Elena Reshetova <elena.reshetova@intel.com>
 Cc: james.bottomley@hansenpartnership.com, linux-kernel@vger.kernel.org,
         linux-block@vger.kernel.org, linux-scsi@vger.kernel.org,
         linux-btrfs@vger.kernel.org, peterz@infradead.org,
         gregkh@linuxfoundation.org, keescook@chromium.org,
         fujita.tomonori@lab.ntt.co.jp, mingo@redhat.com, clm@fb.com,
-        jbacik@fb.com, dsterba@suse.com,
-        Elena Reshetova <elena.reshetova@intel.com>,
-        Hans Liljestrand <ishkamiel@gmail.com>,
-        David Windsor <dwindsor@gmail.com>
-Subject: [PATCH 2/5] block: convert blk_queue_tag.refcnt from atomic_t to refcount_t
-Date: Tue, 27 Jun 2017 14:39:57 +0300
-Message-Id: <1498563601-10949-3-git-send-email-elena.reshetova@intel.com>
-In-Reply-To: <1498563601-10949-1-git-send-email-elena.reshetova@intel.com>
+        jbacik@fb.com, dsterba@suse.com
 References: <1498563601-10949-1-git-send-email-elena.reshetova@intel.com>
+From: Jens Axboe <axboe@kernel.dk>
+Message-ID: <cbbb6a1f-3203-9523-f47b-227fd646fd29@kernel.dk>
+Date: Tue, 27 Jun 2017 07:26:55 -0600
+MIME-Version: 1.0
+In-Reply-To: <1498563601-10949-1-git-send-email-elena.reshetova@intel.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-refcount_t type and corresponding API should be
-used instead of atomic_t when the variable is used as
-a reference counter. This allows to avoid accidental
-refcounter overflows that might lead to use-after-free
-situations.
+On 06/27/2017 05:39 AM, Elena Reshetova wrote:
+> Changes in v3:
+> No changes in patches apart from trivial rebases, but now by
+> default refcount_t = atomic_t and uses all atomic standard operations
+> unless CONFIG_REFCOUNT_FULL is enabled. This is a compromize for the
+> systems that are critical on performance and cannot accept even
+> slight delay on the refcounter operations.
 
-Signed-off-by: Elena Reshetova <elena.reshetova@intel.com>
-Signed-off-by: Hans Liljestrand <ishkamiel@gmail.com>
-Signed-off-by: Kees Cook <keescook@chromium.org>
-Signed-off-by: David Windsor <dwindsor@gmail.com>
----
- block/blk-tag.c        | 8 ++++----
- include/linux/blkdev.h | 3 ++-
- 2 files changed, 6 insertions(+), 5 deletions(-)
+Is that true in 4.12-rc, or is that true in a later release once
+Linus has pulled those changes in? If the latter, please resend
+this when those changes are in, thanks.
 
-diff --git a/block/blk-tag.c b/block/blk-tag.c
-index 07cc329..d83555e 100644
---- a/block/blk-tag.c
-+++ b/block/blk-tag.c
-@@ -35,7 +35,7 @@ EXPORT_SYMBOL(blk_queue_find_tag);
-  */
- void blk_free_tags(struct blk_queue_tag *bqt)
- {
--	if (atomic_dec_and_test(&bqt->refcnt)) {
-+	if (refcount_dec_and_test(&bqt->refcnt)) {
- 		BUG_ON(find_first_bit(bqt->tag_map, bqt->max_depth) <
- 							bqt->max_depth);
- 
-@@ -130,7 +130,7 @@ static struct blk_queue_tag *__blk_queue_init_tags(struct request_queue *q,
- 	if (init_tag_map(q, tags, depth))
- 		goto fail;
- 
--	atomic_set(&tags->refcnt, 1);
-+	refcount_set(&tags->refcnt, 1);
- 	tags->alloc_policy = alloc_policy;
- 	tags->next_tag = 0;
- 	return tags;
-@@ -180,7 +180,7 @@ int blk_queue_init_tags(struct request_queue *q, int depth,
- 		queue_flag_set(QUEUE_FLAG_QUEUED, q);
- 		return 0;
- 	} else
--		atomic_inc(&tags->refcnt);
-+		refcount_inc(&tags->refcnt);
- 
- 	/*
- 	 * assign it, all done
-@@ -225,7 +225,7 @@ int blk_queue_resize_tags(struct request_queue *q, int new_depth)
- 	 * Currently cannot replace a shared tag map with a new
- 	 * one, so error out if this is the case
- 	 */
--	if (atomic_read(&bqt->refcnt) != 1)
-+	if (refcount_read(&bqt->refcnt) != 1)
- 		return -EBUSY;
- 
- 	/*
-diff --git a/include/linux/blkdev.h b/include/linux/blkdev.h
-index 1ddd36b..3efc8cf 100644
---- a/include/linux/blkdev.h
-+++ b/include/linux/blkdev.h
-@@ -26,6 +26,7 @@
- #include <linux/percpu-refcount.h>
- #include <linux/scatterlist.h>
- #include <linux/blkzoned.h>
-+#include <linux/refcount.h>
- 
- struct module;
- struct scsi_ioctl_command;
-@@ -293,7 +294,7 @@ struct blk_queue_tag {
- 	unsigned long *tag_map;		/* bit map of free/busy tags */
- 	int max_depth;			/* what we will send to device */
- 	int real_max_depth;		/* what the array can hold */
--	atomic_t refcnt;		/* map can be shared */
-+	refcount_t refcnt;		/* map can be shared */
- 	int alloc_policy;		/* tag allocation policy */
- 	int next_tag;			/* next tag */
- };
 -- 
-2.7.4
+Jens Axboe
 

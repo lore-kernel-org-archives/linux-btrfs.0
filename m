@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mga03.intel.com ([134.134.136.65]:14331 "EHLO mga03.intel.com"
+Received: from mga03.intel.com ([134.134.136.65]:5589 "EHLO mga03.intel.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752957AbdF0Lke (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Jun 2017 07:40:34 -0400
+        id S1751699AbdF0Lkw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 27 Jun 2017 07:40:52 -0400
 From: Elena Reshetova <elena.reshetova@intel.com>
 To: axboe@kernel.dk
 Cc: james.bottomley@hansenpartnership.com, linux-kernel@vger.kernel.org,
@@ -14,9 +14,9 @@ Cc: james.bottomley@hansenpartnership.com, linux-kernel@vger.kernel.org,
         Elena Reshetova <elena.reshetova@intel.com>,
         Hans Liljestrand <ishkamiel@gmail.com>,
         David Windsor <dwindsor@gmail.com>
-Subject: [PATCH 1/5] block: convert bio.__bi_cnt from atomic_t to refcount_t
-Date: Tue, 27 Jun 2017 14:39:56 +0300
-Message-Id: <1498563601-10949-2-git-send-email-elena.reshetova@intel.com>
+Subject: [PATCH 5/5] block: convert bsg_device.ref_count from atomic_t to refcount_t
+Date: Tue, 27 Jun 2017 14:40:00 +0300
+Message-Id: <1498563601-10949-6-git-send-email-elena.reshetova@intel.com>
 In-Reply-To: <1498563601-10949-1-git-send-email-elena.reshetova@intel.com>
 References: <1498563601-10949-1-git-send-email-elena.reshetova@intel.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -33,96 +33,57 @@ Signed-off-by: Hans Liljestrand <ishkamiel@gmail.com>
 Signed-off-by: Kees Cook <keescook@chromium.org>
 Signed-off-by: David Windsor <dwindsor@gmail.com>
 ---
- block/bio.c               | 6 +++---
- fs/btrfs/volumes.c        | 2 +-
- include/linux/bio.h       | 4 ++--
- include/linux/blk_types.h | 3 ++-
- 4 files changed, 8 insertions(+), 7 deletions(-)
+ block/bsg.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
-diff --git a/block/bio.c b/block/bio.c
-index 888e780..80032f3 100644
---- a/block/bio.c
-+++ b/block/bio.c
-@@ -276,7 +276,7 @@ void bio_init(struct bio *bio, struct bio_vec *table,
- {
- 	memset(bio, 0, sizeof(*bio));
- 	atomic_set(&bio->__bi_remaining, 1);
--	atomic_set(&bio->__bi_cnt, 1);
-+	refcount_set(&bio->__bi_cnt, 1);
- 
- 	bio->bi_io_vec = table;
- 	bio->bi_max_vecs = max_vecs;
-@@ -551,12 +551,12 @@ void bio_put(struct bio *bio)
- 	if (!bio_flagged(bio, BIO_REFFED))
- 		bio_free(bio);
- 	else {
--		BIO_BUG_ON(!atomic_read(&bio->__bi_cnt));
-+		BIO_BUG_ON(!refcount_read(&bio->__bi_cnt));
- 
- 		/*
- 		 * last put frees it
- 		 */
--		if (atomic_dec_and_test(&bio->__bi_cnt))
-+		if (refcount_dec_and_test(&bio->__bi_cnt))
- 			bio_free(bio);
- 	}
- }
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 017b67d..cd8a5d5 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -446,7 +446,7 @@ static noinline void run_scheduled_bios(struct btrfs_device *device)
- 		    waitqueue_active(&fs_info->async_submit_wait))
- 			wake_up(&fs_info->async_submit_wait);
- 
--		BUG_ON(atomic_read(&cur->__bi_cnt) == 0);
-+		BUG_ON(refcount_read(&cur->__bi_cnt) == 0);
- 
- 		/*
- 		 * if we're doing the sync list, record that our
-diff --git a/include/linux/bio.h b/include/linux/bio.h
-index d1b04b0..bfd0661 100644
---- a/include/linux/bio.h
-+++ b/include/linux/bio.h
-@@ -229,7 +229,7 @@ static inline void bio_get(struct bio *bio)
- {
- 	bio->bi_flags |= (1 << BIO_REFFED);
- 	smp_mb__before_atomic();
--	atomic_inc(&bio->__bi_cnt);
-+	refcount_inc(&bio->__bi_cnt);
- }
- 
- static inline void bio_cnt_set(struct bio *bio, unsigned int count)
-@@ -238,7 +238,7 @@ static inline void bio_cnt_set(struct bio *bio, unsigned int count)
- 		bio->bi_flags |= (1 << BIO_REFFED);
- 		smp_mb__before_atomic();
- 	}
--	atomic_set(&bio->__bi_cnt, count);
-+	refcount_set(&bio->__bi_cnt, count);
- }
- 
- static inline bool bio_flagged(struct bio *bio, unsigned int bit)
-diff --git a/include/linux/blk_types.h b/include/linux/blk_types.h
-index 61339bc..f6e5daa 100644
---- a/include/linux/blk_types.h
-+++ b/include/linux/blk_types.h
-@@ -7,6 +7,7 @@
- 
- #include <linux/types.h>
- #include <linux/bvec.h>
+diff --git a/block/bsg.c b/block/bsg.c
+index 6fd0854..f35e721 100644
+--- a/block/bsg.c
++++ b/block/bsg.c
+@@ -21,6 +21,7 @@
+ #include <linux/idr.h>
+ #include <linux/bsg.h>
+ #include <linux/slab.h>
 +#include <linux/refcount.h>
  
- struct bio_set;
- struct bio;
-@@ -81,7 +82,7 @@ struct bio {
+ #include <scsi/scsi.h>
+ #include <scsi/scsi_ioctl.h>
+@@ -38,7 +39,7 @@ struct bsg_device {
+ 	struct list_head busy_list;
+ 	struct list_head done_list;
+ 	struct hlist_node dev_list;
+-	atomic_t ref_count;
++	refcount_t ref_count;
+ 	int queued_cmds;
+ 	int done_cmds;
+ 	wait_queue_head_t wq_done;
+@@ -711,7 +712,7 @@ static int bsg_put_device(struct bsg_device *bd)
  
- 	unsigned short		bi_max_vecs;	/* max bvl_vecs we can hold */
+ 	mutex_lock(&bsg_mutex);
  
--	atomic_t		__bi_cnt;	/* pin count */
-+	refcount_t		__bi_cnt;	/* pin count */
+-	do_free = atomic_dec_and_test(&bd->ref_count);
++	do_free = refcount_dec_and_test(&bd->ref_count);
+ 	if (!do_free) {
+ 		mutex_unlock(&bsg_mutex);
+ 		goto out;
+@@ -763,7 +764,7 @@ static struct bsg_device *bsg_add_device(struct inode *inode,
  
- 	struct bio_vec		*bi_io_vec;	/* the actual vec list */
+ 	bsg_set_block(bd, file);
  
+-	atomic_set(&bd->ref_count, 1);
++	refcount_set(&bd->ref_count, 1);
+ 	mutex_lock(&bsg_mutex);
+ 	hlist_add_head(&bd->dev_list, bsg_dev_idx_hash(iminor(inode)));
+ 
+@@ -783,7 +784,7 @@ static struct bsg_device *__bsg_get_device(int minor, struct request_queue *q)
+ 
+ 	hlist_for_each_entry(bd, bsg_dev_idx_hash(minor), dev_list) {
+ 		if (bd->queue == q) {
+-			atomic_inc(&bd->ref_count);
++			refcount_inc(&bd->ref_count);
+ 			goto found;
+ 		}
+ 	}
 -- 
 2.7.4
 

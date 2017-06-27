@@ -1,73 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-co1nam03on0135.outbound.protection.outlook.com ([104.47.40.135]:58272
-        "EHLO NAM03-CO1-obe.outbound.protection.outlook.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752689AbdF2SV4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Jun 2017 14:21:56 -0400
-From: Matthew Wilcox <mawilcox@microsoft.com>
-To: Jeff Layton <jlayton@poochiereds.net>,
-        "Darrick J. Wong" <darrick.wong@oracle.com>,
-        "jlayton@kernel.org" <jlayton@kernel.org>
-CC: Andrew Morton <akpm@linux-foundation.org>,
-        Al Viro <viro@ZenIV.linux.org.uk>, Jan Kara <jack@suse.cz>,
-        "tytso@mit.edu" <tytso@mit.edu>, "axboe@kernel.dk" <axboe@kernel.dk>,
-        "ross.zwisler@linux.intel.com" <ross.zwisler@linux.intel.com>,
-        "corbet@lwn.net" <corbet@lwn.net>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
-        Carlos Maiolino <cmaiolino@redhat.com>, Eryu Guan <eguan@redhat.com>,
-        David Howells <dhowells@redhat.com>,
-        Christoph Hellwig <hch@infradead.org>, Liu Bo <bo.li.liu@oracle.com>,
-        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
-        "linux-mm@kvack.org" <linux-mm@kvack.org>,
-        "linux-ext4@vger.kernel.org" <linux-ext4@vger.kernel.org>,
-        "linux-xfs@vger.kernel.org" <linux-xfs@vger.kernel.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "linux-block@vger.kernel.org" <linux-block@vger.kernel.org>
-Subject: RE: [PATCH v8 12/18] Documentation: flesh out the section in vfs.txt
- on storing and reporting writeback errors
-Date: Thu, 29 Jun 2017 18:21:50 +0000
-Message-ID: <BY2PR21MB003653755FD85FCE2C49393ECBD20@BY2PR21MB0036.namprd21.prod.outlook.com>
-References: <20170629131954.28733-1-jlayton@kernel.org>
-         <20170629131954.28733-13-jlayton@kernel.org>
-         <20170629171137.GE5874@birch.djwong.org>
- <1498760014.22569.13.camel@poochiereds.net>
-In-Reply-To: <1498760014.22569.13.camel@poochiereds.net>
-Content-Type: text/plain; charset="utf-8"
+Received: from aserp1040.oracle.com ([141.146.126.69]:33138 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753132AbdF0UJZ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 27 Jun 2017 16:09:25 -0400
+Date: Tue, 27 Jun 2017 13:09:17 -0700
+From: "Darrick J. Wong" <darrick.wong@oracle.com>
+To: "Dai, XiangX" <xiangx.dai@intel.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: generic/015 run failed with btrfs
+Message-ID: <20170627200917.GA7736@birch.djwong.org>
+References: <F0E6DFCE2B6C644393F2574FF351D65BB2321B@SHSMSX101.ccr.corp.intel.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <F0E6DFCE2B6C644393F2574FF351D65BB2321B@SHSMSX101.ccr.corp.intel.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Jeff Layton [mailto:jlayton@poochiereds.net]
-> On Thu, 2017-06-29 at 10:11 -0700, Darrick J. Wong wrote:
-> > On Thu, Jun 29, 2017 at 09:19:48AM -0400, jlayton@kernel.org wrote:
-> > > +Handling errors during writeback
-> > > +--------------------------------
-> > > +Most applications that utilize the pagecache will periodically call
-> > > +fsync to ensure that data written has made it to the backing store.
-> >
-> > /me wonders if this sentence ought to be worded more strongly, e.g.
-> >
-> > "Applications that utilize the pagecache must call a data
-> > synchronization syscall such as fsync, fdatasync, or msync to ensure
-> > that data written has made it to the backing store."
+[cc linux-btrfs, drop linux-xfs cc]
+On Tue, Jun 27, 2017 at 07:42:16AM +0000, Dai, XiangX wrote:
+> Hi! I test on my host and find this issue, i want to know how can fix it?
 > 
-> Well...only if they care about the data. There are some that don't. :)
+> root@localhost ~/xfstests# ./check generic/015
+> FSTYP         -- btrfs
 
-Also, applications don't "utilize the pagecache"; filesystems use the pagecache.
-Applications may or may not use cached I/O.  How about this:
+                   ^^^^^ please contact the btrfs list, not the xfs list.
 
-Applications which care about data integrity and use cached I/O will
-periodically call fsync(), msync() or fdatasync() to ensure that their
-data is durable.
+--D
 
-> What should we do about sync_file_range here? It doesn't currently call
-> any filesystem operations directly, so we don't have a good way to make
-> it selectively use errseq_t handling there.
+> PLATFORM      -- Linux/x86_64 localhost 4.12.0-rc6
+> MKFS_OPTIONS  -- /dev/sda6
+> MOUNT_OPTIONS -- /dev/sda6 /fs/scratch
 > 
-> I could resurrect the FS_* flag for that, though I don't really like
-> that. Should I just go ahead and convert it over to use errseq_t under
-> the theory that most callers will eventually want that anyway?
-
-I think so.
-
-ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éÝ¶¥Šwÿº{.nÇ+‰·¥Š{±ý»k~ÏâžØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Þ—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨þ)ß£øm
+> generic/015     - output mismatch (see ~/xfstests/results//generic/015.out.bad)
+>     --- tests/generic/015.out    2017-05-31 18:15:23.000000000 +0800
+>     +++ ~/xfstests/results//generic/015.out.bad    2017-06-26 14:41:53.265215409 +0800
+>     @@ -1,7 +1,778 @@
+>     +++ basename ./tests/generic/015
+>     ++ seq=015
+>     ++ seqres=~/xfstests/results//generic/015
+>     ++ echo 'QA output created by 015'
+>      QA output created by 015
+>     +++ pwd
+>     ++ here=~/xfstests
+>     ...
+>     (Run 'diff -u tests/generic/015.out ~/xfstests/results//generic/015.out.bad'  to see the entire diff)
+> Ran: generic/015
+> Failures: generic/015
+> Failed 1 of 1 tests
+> 
+> The output is like below:
+> QA output created by 015
+> fill disk:
+>    !!! disk full (expected)
+> check free space:
+> delete fill:
+> check free space:
+>    !!! free space has value of 17348 <===
+> free space is NOT in range 45591.48 .. 46512.52
+> 
+> 
+> I copy the cmd and write to log:
+> 
+> root@localhost ~/xfstests# cat log
+> _df_dir /fs/scratch | /usr/bin/awk '{ print  }'
+> Filesystem     Type  1024-blocks  Used Available Capacity Mounted on
+> /dev/sda6      btrfs       51200 46144     17348      73% /fs/scratch   <===
+> 17348
+> 
+> 
+> Does it means i need to test on a larger machine?
+> 
+> Thanks
+> Dai Xiang

@@ -1,60 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:54508 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751960AbdFZQyi (ORCPT
+Received: from tartarus.angband.pl ([89.206.35.136]:46014 "EHLO
+        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750934AbdF0EVA (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Jun 2017 12:54:38 -0400
-From: Nick Terrell <terrelln@fb.com>
-To: "dsterba@suse.cz" <dsterba@suse.cz>, Adam Borowski <kilobyte@angband.pl>
-CC: Kernel Team <Kernel-team@fb.com>, Chris Mason <clm@fb.com>,
-        Yann Collet <cyan@fb.com>,
-        "squashfs-devel@lists.sourceforge.net"
-        <squashfs-devel@lists.sourceforge.net>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
-Subject: Re: [PATCH 3/4] btrfs: Add zstd support
-Date: Mon, 26 Jun 2017 16:54:17 +0000
-Message-ID: <75E6EA5F-65F2-4218-A519-FB9377818FF0@fb.com>
-References: <20170622220139.2328978-3-terrelln@fb.com>
- <201706260238.qmaHlUAv%fengguang.wu@intel.com>
- <20170625213022.7kaa7agzmzdyw3n4@angband.pl>
- <20170626121230.GF2866@twin.jikos.cz>
+        Tue, 27 Jun 2017 00:21:00 -0400
+From: Adam Borowski <kilobyte@angband.pl>
+To: dsterba@suse.cz, Nick Terrell <terrelln@fb.com>, kernel-team@fb.com,
+        Chris Mason <clm@fb.com>, Yann Collet <cyan@fb.com>,
+        squashfs-devel@lists.sourceforge.net, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Cc: Adam Borowski <kilobyte@angband.pl>
+Date: Tue, 27 Jun 2017 06:18:23 +0200
+Message-Id: <20170627041823.1300-1-kilobyte@angband.pl>
 In-Reply-To: <20170626121230.GF2866@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"
+References: <20170626121230.GF2866@twin.jikos.cz>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Subject: [PATCH] lib/zstd: use div_u64() to let it build on 32-bit
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for the clarification! I will fix the divisions.
+David Sterba wrote:
+> > Thus, you want do_div() instead of /; do check widths and signedness of
+> > arguments.
+>
+> No do_div please, div_u64 or div64_u64.
 
-On 6/26/17, 5:12 AM, "David Sterba" <dsterba@suse.cz> wrote:
+Good to know, the interface of do_div() is indeed weird.
 
-    On Sun, Jun 25, 2017 at 11:30:22PM +0200, Adam Borowski wrote:
-    > On Mon, Jun 26, 2017 at 03:03:17AM +0800, kbuild test robot wrote:
-    > > Hi Nick,
-    > > 
-    > > url:    https://github.com/0day-ci/linux/commits/Nick-Terrell/lib-Add-xxhash-module/20170625-214344
-    > > config: i386-allmodconfig (attached as .config)
-    > > compiler: gcc-6 (Debian 6.2.0-3) 6.2.0 20160901
-    > > reproduce:
-    > >         # save the attached .config to linux build tree
-    > >         make ARCH=i386 
-    > > 
-    > > All errors (new ones prefixed by >>):
-    > > 
-    > > >> ERROR: "__udivdi3" [lib/zstd/zstd_compress.ko] undefined!
-    > >    ERROR: "__udivdi3" [fs/ufs/ufs.ko] undefined!
-    > 
-    > Just to save you time to figure it out:
-    > for division when one or both arguments are longer than the architecture's
-    > word, gcc uses helper functions that are included when compiling in a hosted
-    > environment -- but not in freestanding.
-    > 
-    > Thus, you want do_div() instead of /; do check widths and signedness of
-    > arguments.
-    
-    No do_div please, div_u64 or div64_u64.
-    
+I guess Nick has found and fixed the offending divisions in his tree
+already, but this patch I'm sending is what I'm testing.
+
+One thing to note is that it divides u64 by size_t, so the actual operation
+differs on 32 vs 64-bit.  Yet the code fails to handle compressing pieces
+bigger than 4GB in other places -- so use of size_t is misleading.  Perhaps
+u32 would better convey this limitation?
+
+Anyway, that this code didn't even compile on 32-bit also means it hasn't
+been tested.  I just happen to have such an ARM machine doing Debian archive
+rebuilds; I've rewritten the chroots with compress=zstd; this should be a
+nice non-artificial test.  The load consists of snapshot+dpkg+gcc/etc+
+assorted testsuites, two sbuild instances.  Seems to work fine for a whole
+hour (yay!) already, let's see if there'll be any explosions.
 
 
-ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éÝ¶¥Šwÿº{.nÇ+‰·¥Š{±ý»k~ÏâžØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Þ—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨þ)ß£øm
+-- >8 ---- >8 ---- >8 ---- >8 ---- >8 ---- >8 ---- >8 ---- >8 ---- >8 --
+Note that "total" is limited to 2Â³Â²-1 elsewhere despite being declared
+as size_t, so it's ok to use 64/32 -- it's much faster on eg. x86-32
+than 64/64.
+
+Signed-off-by: Adam Borowski <kilobyte@angband.pl>
+---
+ lib/zstd/fse_compress.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/lib/zstd/fse_compress.c b/lib/zstd/fse_compress.c
+index e016bb177833..f59f9ebfe9c0 100644
+--- a/lib/zstd/fse_compress.c
++++ b/lib/zstd/fse_compress.c
+@@ -49,6 +49,7 @@
+ #include "fse.h"
+ #include <linux/compiler.h>
+ #include <linux/string.h> /* memcpy, memset */
++#include <linux/math64.h>
+ 
+ /* **************************************************************
+ *  Error Management
+@@ -575,7 +576,7 @@ static size_t FSE_normalizeM2(short *norm, U32 tableLog, const unsigned *count,
+ 	{
+ 		U64 const vStepLog = 62 - tableLog;
+ 		U64 const mid = (1ULL << (vStepLog - 1)) - 1;
+-		U64 const rStep = ((((U64)1 << vStepLog) * ToDistribute) + mid) / total; /* scale on remaining */
++		U64 const rStep = div_u64((((U64)1 << vStepLog) * ToDistribute) + mid, total); /* scale on remaining */
+ 		U64 tmpTotal = mid;
+ 		for (s = 0; s <= maxSymbolValue; s++) {
+ 			if (norm[s] == NOT_YET_ASSIGNED) {
+@@ -609,7 +610,7 @@ size_t FSE_normalizeCount(short *normalizedCounter, unsigned tableLog, const uns
+ 	{
+ 		U32 const rtbTable[] = {0, 473195, 504333, 520860, 550000, 700000, 750000, 830000};
+ 		U64 const scale = 62 - tableLog;
+-		U64 const step = ((U64)1 << 62) / total; /* <== here, one division ! */
++		U64 const step = div_u64((U64)1 << 62, total); /* <== here, one division ! */
+ 		U64 const vStep = 1ULL << (scale - 20);
+ 		int stillToDistribute = 1 << tableLog;
+ 		unsigned s;
+-- 
+2.13.1
+

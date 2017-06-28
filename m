@@ -1,72 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35732 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:42591 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751489AbdF1OjL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Jun 2017 10:39:11 -0400
-Date: Wed, 28 Jun 2017 16:38:00 +0200
+        id S1751752AbdF1PlF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Jun 2017 11:41:05 -0400
+Date: Wed, 28 Jun 2017 17:39:54 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: Jeff Mahoney <jeffm@suse.com>, Wang Shilong <wangshilong1991@gmail.com>,
-        David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Filipe Manana <fdmanana@gmail.com>
+Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: [PULL] Btrfs for 4.13, part 1
-Message-ID: <20170628143800.GI2866@twin.jikos.cz>
+Message-ID: <20170628153954.GJ2866@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <cover.1498229425.git.dsterba@suse.com>
- <CAP9B-Qmv9QMahi_Ook4FOL8c7hojgKgzcOA4mMeiY2H012ByxQ@mail.gmail.com>
- <93c6aac1-dfc3-ba27-6607-2439e7b3748d@suse.com>
- <2361fb3f-dfde-cc9e-ac40-23c612771bc6@cn.fujitsu.com>
+ <007ac50e-71e2-6e25-7d17-821720a37317@fb.com>
+ <CAL3q7H4W6ag=1SZQ83WoYa9r+h3RsC4NR=mV_VYB6=fgZVA9xw@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <2361fb3f-dfde-cc9e-ac40-23c612771bc6@cn.fujitsu.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAL3q7H4W6ag=1SZQ83WoYa9r+h3RsC4NR=mV_VYB6=fgZVA9xw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 26, 2017 at 08:53:14AM +0800, Qu Wenruo wrote:
-> At 06/26/2017 05:34 AM, Jeff Mahoney wrote:
-> > On 6/24/17 6:05 AM, Wang Shilong wrote:
-> >> Sorry for bikeshedding.
+On Tue, Jun 27, 2017 at 12:00:20PM +0100, Filipe Manana wrote:
+> On Mon, Jun 26, 2017 at 5:58 PM, Chris Mason <clm@fb.com> wrote:
+> > On 06/23/2017 11:16 AM, David Sterba wrote:
+> >> this is the main batch for 4.13. There are some user visible changes, see
+> >> below. The core updates improve error handling (mostly related to bios),
+> >> with
+> >> the usual incremental work on the GFP_NOFS (mis)use removal. All patches
+> >> have
+> >> been in for-next for an extensive amount of time.
 > >>
-> >> On Fri, Jun 23, 2017 at 11:16 PM, David Sterba <dsterba@suse.com> wrote:
-> >>> Hi,
-> >>>
-> >>> this is the main batch for 4.13. There are some user visible changes, see
-> >>> below. The core updates improve error handling (mostly related to bios), with
-> >>> the usual incremental work on the GFP_NOFS (mis)use removal. All patches have
-> >>>
-> >>> Fabian Frederick (1):
-> >>>        btrfs: kmap() can't fail
-> >>>
-> >> <..SNIP..>
-> >>>
-> >>> Sargun Dhillon (2):
-> >>>        btrfs: add quota override flag to enable quota override for CAP_SYS_RESOURCE
-> >>>        btrfs: Add quota_override knob into sysfs
-> >>>
-> >>> Su Yue (9):
-> >>>        btrfs: Introduce btrfs_is_name_len_valid to avoid reading beyond boundary
-> >>>        btrfs: Check name_len with boundary in verify dir_item
-> >>>        btrfs: Check name_len on add_inode_ref call path
-> >>>        btrfs: Verify dir_item in replay_xattr_deletes
-> >>>        btrfs: Check name_len in btrfs_check_ref_name_override
-> >>>        btrfs: Check name_len before read in iterate_dir_item
-> >>>        btrfs: Check name_len before reading btrfs_get_name
-> >>>        btrfs: Check name_len before in btrfs_del_root_ref
-> >>>        btrfs: Verify dir_item in iterate_object_props
-> >>
-> >> Hmm..add those check might be expensive for metadata operations,
-> >> especially in hot path, i could see similar behavior in Ext4 for ext4
-> >> dentry check.
-> >>
-> >> Could we run some metadata tests to confirm？it makes sense to
-> >> add check but with min affects to performace.
+> >> Thre will be followups but I want push the series (111 patches) forward.
+> >> There
+> >> are also some updates to adjacent subsystems (writeback and blocklayer),
+> >> so I
+> >> want to give some stable point for merging in the upcoming weeks.
+> >
+> > Thanks Dave, I ran this (along with the updates we added) through a long
+> > stress and the usual xfstests.
 > 
-> IIRC there is a backtrace in one of the patches.
-> If needed, we can also upload the fuzzed image.
-> Although we don't have good enough test suite which accepts fuzzed image 
-> for kernel.
+> Have any of you run xfstests without failures?
 
-As we have the fuzzed images in progs, I started prototyping a way to
-export just the testsuite from the git repository, to a tarball. The
-test would then iterate over the stored images and attempt to mount
-them. So any images you'd like mount-tested, also submit to btrfs-progs.
+Without any failures, no, with acceptable failures at this point in
+development cycle, yes. The dir-item validation failures are fixable and
+will come next. I haven't seen the crashes in raid56, thanks for the
+report.
+
+> I'm finding it hard to believe, as some of these changes cause
+> problems all the time, and at least one of them deterministically
+> ("btrfs: fix validation of XATTR_ITEM dir items"), as I've just noted
+> in the respective thread for that patch.
+
+Yeah, that was an incomplete fix for a bug that I had reported but did
+not receive a fix in time to send the pull request. I want the dir-item
+validation patches merged now, we have enough time to fix the failures.
+
+The merge window is due in the next weeks, major part of the patches
+be ready earlier, so I'm deciding what's applicable even it's not
+perfect.  Known and fixable failures are just fine right now, theres
+whole rc1-rc5 period.
+
+You might disagree with this approach. The quality dropped, somebody did
+not verify the code, run the tests or check the results. Fill in the
+names. I'm not developers' QA, I put patches together and push further
+upstream. Reviews cost a lot of time, driving multiple patchsets forward
+is exhausting. So I do not test each and every commit or address all
+failures immediatelly, I count on the time where this can happen. And
+also on the rest of the developer crew.
+
+(Note for casual readers of this mail: I want to set the expectations
+right, there's nothing personal.)

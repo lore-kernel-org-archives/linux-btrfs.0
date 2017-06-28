@@ -1,121 +1,143 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:51026 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:50603 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751515AbdF1GdW (ORCPT
+        with ESMTP id S1751522AbdF1HKh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Jun 2017 02:33:22 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-        by cn.fujitsu.com (Postfix) with ESMTP id B2C2647E64CC
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Jun 2017 14:33:14 +0800 (CST)
-From: Gu Jinxiang <gujx@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: btrfs-progs: Add some check for sectorsize and nodesize
-Date: Wed, 28 Jun 2017 14:32:39 +0800
-Message-ID: <20170628063239.8399-2-gujx@cn.fujitsu.com>
-In-Reply-To: <20170628063239.8399-1-gujx@cn.fujitsu.com>
-References: <20170628063239.8399-1-gujx@cn.fujitsu.com>
+        Wed, 28 Jun 2017 03:10:37 -0400
+Date: Wed, 28 Jun 2017 15:10:27 +0800
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: Marc MERLIN <marc@merlins.org>
+CC: Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        Chris Murphy <lists@colorremedies.com>,
+        Hugo Mills <hugo@carfax.org.uk>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: How to fix errors that check --mode lomem finds, but --mode
+ normal doesn't?
+Message-ID: <20170628071026.GA21006@lufq.5F>
+References: <20170621151339.GK5303@merlins.org>
+ <13856431-9ee5-c13e-f2a8-860394f9aae4@cn.fujitsu.com>
+ <20170622025330.GX5303@merlins.org>
+ <e86db7c4-4953-7706-347d-983079177f37@cn.fujitsu.com>
+ <20170623040601.akpyyvh3dgry6nn5@merlins.org>
+ <90711a7c-92ff-e043-6d81-6bdadbfdbc3a@cn.fujitsu.com>
+ <20170623161750.r7utffpsmyl5tcik@merlins.org>
+ <20170624023409.GT14690@merlins.org>
+ <0d93c1c4-1feb-b589-0c8f-1fced7b77686@cn.fujitsu.com>
+ <20170627231146.GA16192@merlins.org>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20170627231146.GA16192@merlins.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add some check for sectorsize and nodesize, make it
-consistent with kernel.
+On Tue, Jun 27, 2017 at 04:11:46PM -0700, Marc MERLIN wrote:
+>On Mon, Jun 26, 2017 at 06:46:16PM +0800, Lu Fengqi wrote:
+>> Thanks for the updated information. I'm sorry that the false alert make 
+>> you feel nervous.
+>
+>If you can help me find out whether those are real errors that I need to fix
+>(and can't yet since there is no --repair), or whether they are not real
+>problems, I can ignore them as long as the other check --mode normal runs
+>clean (it does), we'll be good :)
 
-Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
----
- convert/main.c |  6 +-----
- fsfeatures.h   |  2 +-
- mkfs/main.c    |  8 +-------
- utils.c        | 21 +++++++++++++++++++--
- 4 files changed, 22 insertions(+), 15 deletions(-)
+:)
 
-diff --git a/convert/main.c b/convert/main.c
-index 4f65765..bcadcfa 100644
---- a/convert/main.c
-+++ b/convert/main.c
-@@ -1221,11 +1221,7 @@ static int do_convert(const char *devname, u32 convert_flags, u32 nodesize,
- 
- 	blocksize = cctx.blocksize;
- 	total_bytes = (u64)blocksize * (u64)cctx.block_count;
--	if (blocksize < 4096) {
--		error("block size is too small: %u < 4096", blocksize);
--		goto fail;
--	}
--	if (btrfs_check_nodesize(nodesize, blocksize, features))
-+	if (btrfs_check_sizes(nodesize, blocksize, features))
- 		goto fail;
- 	fd = open(devname, O_RDWR);
- 	if (fd < 0) {
-diff --git a/fsfeatures.h b/fsfeatures.h
-index 513ed1e..fa8fb14 100644
---- a/fsfeatures.h
-+++ b/fsfeatures.h
-@@ -45,6 +45,6 @@ void btrfs_process_fs_features(u64 flags);
- void btrfs_parse_features_to_string(char *buf, u64 flags);
- void print_kernel_version(FILE *stream, u32 version);
- u32 get_running_kernel_version(void);
--int btrfs_check_nodesize(u32 nodesize, u32 sectorsize, u64 features);
-+int btrfs_check_sizes(u32 nodesize, u32 sectorsize, u64 features);
- 
- #endif
-diff --git a/mkfs/main.c b/mkfs/main.c
-index 2b109a5..7a25f01 100644
---- a/mkfs/main.c
-+++ b/mkfs/main.c
-@@ -1626,16 +1626,10 @@ int main(int argc, char **argv)
- 		features |= BTRFS_FEATURE_INCOMPAT_RAID56;
- 	}
- 
--	if (btrfs_check_nodesize(nodesize, sectorsize,
-+	if (btrfs_check_sizes(nodesize, sectorsize,
- 				 features))
- 		exit(1);
- 
--	if (sectorsize < sizeof(struct btrfs_super_block)) {
--		error("sectorsize smaller than superblock: %u < %zu",
--				sectorsize, sizeof(struct btrfs_super_block));
--		exit(1);
--	}
--
- 	/* Check device/block_count after the nodesize is determined */
- 	if (block_count && block_count < btrfs_min_dev_size(nodesize)) {
- 		error("size %llu is too small to make a usable filesystem",
-diff --git a/utils.c b/utils.c
-index 243ee1e..c276b58 100644
---- a/utils.c
-+++ b/utils.c
-@@ -2120,9 +2120,26 @@ int btrfs_tree_search2_ioctl_supported(int fd)
- 	return ret;
- }
- 
--int btrfs_check_nodesize(u32 nodesize, u32 sectorsize, u64 features)
-+int btrfs_check_sizes(u32 nodesize, u32 sectorsize, u64 features)
- {
--	if (nodesize < sectorsize) {
-+	/* check sectorsize */
-+	if (!is_power_of_2(sectorsize)) {
-+		error("illegal sectorsize %u (not power of 2)", sectorsize);
-+		return -1;
-+	} else if (sectorsize < SZ_4K) {
-+		error("illegal sectorsize %u (smaller than %u)",
-+				sectorsize, SZ_4K);
-+		return -1;
-+	} else if (sectorsize > BTRFS_MAX_METADATA_BLOCKSIZE) {
-+		error("illegal sectorsize %u (larger than %u)",
-+				sectorsize, BTRFS_MAX_METADATA_BLOCKSIZE);
-+		return -1;
-+	}
-+	/* check nodesize */
-+	if (!is_power_of_2(nodesize)) {
-+		error("illegal nodesize %u (not power of 2)", nodesize);
-+		return -1;
-+	} else if (nodesize < sectorsize) {
- 		error("illegal nodesize %u (smaller than %u)",
- 				nodesize, sectorsize);
- 		return -1;
+>
+>> >ERROR: root 3862 EXTENT_DATA[18170706 4096] interrupt
+>> >ERROR: root 3862 EXTENT_DATA[18170706 16384] interrupt
+>> >ERROR: root 3862 EXTENT_DATA[18170706 20480] interrupt
+>> >ERROR: root 3862 EXTENT_DATA[18170706 135168] interrupt
+>> >ERROR: root 3862 EXTENT_DATA[18170706 1048576] interrupt
+>> >ERROR: errors found in fs roots
+>> 
+>> However, this looks like another problem. Could you dump this file tree 
+>> by the following command?
+>> # btrfs-debug-tree -t 3862 <dev> | grep -C 10 18170706
+>
+
+Because the output is abnormal, except for the relevant DIR_ITEM and
+DIR_INDEX, I can't find the above mentiond INODE_ITEM and EXTENT_DATA.
+I wonder if the file system is online when this command is executed? If
+so, please re-execute it offline again; if not, could you apply my
+patches re-check it again?
+
+>argamel:~# btrfs-debug-tree -t 3862 /dev/mapper/dshelf2 | grep -C 10 18170706  
+>                transid 522 data_len 0 name_len 45
+>                name: 007b01c69a8d_9582a070_425a45d7@mindspring.com
+>        item 89 key (835232 DIR_ITEM 1181375325) itemoff 10304 itemsize 64
+>                location key (877605 INODE_ITEM 0) type FILE
+>                transid 530 data_len 0 name_len 34
+>                name: PO.5078346.7051988@codeweavers.com
+>        item 90 key (835232 DIR_ITEM 1181489720) itemoff 10226 itemsize 78
+>                location key (873230 INODE_ITEM 0) type FILE
+>                transid 529 data_len 0 name_len 48
+>                name: 8-8356087-5CruUNCbuG3Kg9zuO@mail1.fireflypro.com
+>        item 91 key (835232 DIR_ITEM 1181707066) itemoff 10148 itemsize 78
+>                location key (869906 INODE_ITEM 0) type FILE
+>                transid 528 data_len 0 name_len 48
+>                name: 7-7026088-1uLzZJuFzYD6h4rzV@max.firmalliance.biz
+>        item 92 key (835232 DIR_ITEM 1181727135) itemoff 10084 itemsize 64
+>                location key (877380 INODE_ITEM 0) type FILE
+>                transid 530 data_len 0 name_len 34
+>                name: NJ.5943286.7059518@codeweavers.com
+>        item 93 key (835232 DIR_ITEM 1181873033) itemoff 10038 itemsize 46
+>                location key (859092 INODE_ITEM 0) type FILE
+>                transid 526 data_len 0 name_len 16
+>                name: mdadm_detail.0
+>        item 83 key (2640780 DIR_ITEM 3316050734) itemoff 12739 itemsize 39
+>                location key (15689752 INODE_ITEM 0) type FILE
+>                transid 8178 data_len 0 name_len 9
+>                name: sda3.dd.0
+>        item 84 key (2640780 DIR_ITEM 3349213389) itemoff 12697 itemsize 42
+>                location key (2667656 INODE_ITEM 0) type FILE
+>                transid 885 data_len 0 name_len 12
+>                name: sdb2.dd.1.gz
+>        item 85 key (2640780 DIR_ITEM 3351742419) itemoff 12663 itemsize 34
+>                location key (18170706 INODE_ITEM 0) type FILE
+>                transid 37866 data_len 0 name_len 4
+>                name: dm-0
+>        item 86 key (2640780 DIR_ITEM 3354578455) itemoff 12624 itemsize 39
+>                location key (13847590 INODE_ITEM 0) type FILE
+>                transid 2387 data_len 0 name_len 9
+>                name: sda7.3.gz
+>        item 87 key (2640780 DIR_ITEM 3361267344) itemoff 12586 itemsize 38
+>                location key (2667594 INODE_ITEM 0) type FILE
+>                transid 885 data_len 0 name_len 8
+>                name: .profile
+>--
+>                name: sdc1.dd.4.gz
+>        item 70 key (2640780 DIR_INDEX 1685) itemoff 13162 itemsize 42
+>                location key (17548883 INODE_ITEM 0) type FILE
+>                transid 34469 data_len 0 name_len 12
+>                name: sdc1.dd.5.gz
+>        item 71 key (2640780 DIR_INDEX 1687) itemoff 13120 itemsize 42
+>                location key (17548884 INODE_ITEM 0) type FILE
+>                transid 34469 data_len 0 name_len 12
+>                name: sdc1.dd.6.gz
+>        item 72 key (2640780 DIR_INDEX 2039) itemoff 13086 itemsize 34
+>                location key (18170706 INODE_ITEM 0) type FILE
+>                transid 37866 data_len 0 name_len 4
+>                name: dm-0
+>        item 73 key (2640780 DIR_INDEX 2041) itemoff 13051 itemsize 35
+>                location key (18170707 INODE_ITEM 0) type FILE
+>                transid 37866 data_len 0 name_len 5
+>                name: fdisk
+>        item 74 key (2640780 DIR_INDEX 2043) itemoff 13007 itemsize 44
+>                location key (18170708 INODE_ITEM 0) type FILE
+>                transid 37866 data_len 0 name_len 14
+>                name: mdadm_detail.0
+>
+>Marc
+>-- 
+>"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+>Microsoft is to operating systems ....
+>                                      .... what McDonalds is to gourmet cooking
+>Home page: http://marc.merlins.org/  
+>
+>
+
 -- 
-2.9.4
-
+Thanks,
+Lu
 
 

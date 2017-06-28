@@ -1,50 +1,236 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:48267 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751493AbdF0A4B (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:41050 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751489AbdF1KAA (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Jun 2017 20:56:01 -0400
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v5R0txhG005991
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Jun 2017 00:55:59 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id v5R0twYR021993
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Jun 2017 00:55:59 GMT
-Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id v5R0twJB019346
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Jun 2017 00:55:58 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs-progs: convert: do not clear header rev
-Date: Mon, 26 Jun 2017 17:55:02 -0600
-Message-Id: <20170626235502.26267-1-bo.li.liu@oracle.com>
+        Wed, 28 Jun 2017 06:00:00 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
+        by cn.fujitsu.com (Postfix) with ESMTP id 960E347E637C
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Jun 2017 17:59:57 +0800 (CST)
+From: Gu Jinxiang <gujx@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs-progs: mkfs: Replace number with enum
+Date: Wed, 28 Jun 2017 17:59:24 +0800
+Message-ID: <20170628095924.3276-1-gujx@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-So btrfs_set_header_flags() vs btrfs_set_header_flag, the difference is sort of
-similar to "=" vs "|=", when creating and initialising a new extent buffer,
-convert uses the former one which clears header_rev by accident.
+For code maintainability and scalability,
+replace hardcoded constant with a meaningful enum.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
 ---
- convert/common.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ mkfs/common.c | 47 ++++++++++++++++++++++++-----------------------
+ mkfs/common.h | 14 +++++++++++++-
+ 2 files changed, 37 insertions(+), 24 deletions(-)
 
-diff --git a/convert/common.c b/convert/common.c
-index 40bf32c..f0dd2cf 100644
---- a/convert/common.c
-+++ b/convert/common.c
-@@ -167,7 +167,7 @@ static int setup_temp_extent_buffer(struct extent_buffer *buf,
+diff --git a/mkfs/common.c b/mkfs/common.c
+index e4785c5..f34c4eb 100644
+--- a/mkfs/common.c
++++ b/mkfs/common.c
+@@ -93,18 +93,18 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
+ 	uuid_generate(super.dev_item.uuid);
+ 	uuid_generate(chunk_tree_uuid);
+ 
+-	cfg->blocks[0] = BTRFS_SUPER_INFO_OFFSET;
+-	for (i = 1; i < 7; i++) {
++	cfg->blocks[SUPER_BLOCK] = BTRFS_SUPER_INFO_OFFSET;
++	for (i = 1; i < BLOCK_COUNT; i++) {
+ 		cfg->blocks[i] = BTRFS_SUPER_INFO_OFFSET + 1024 * 1024 +
+ 			cfg->nodesize * i;
+ 	}
+ 
+-	btrfs_set_super_bytenr(&super, cfg->blocks[0]);
++	btrfs_set_super_bytenr(&super, cfg->blocks[SUPER_BLOCK]);
+ 	btrfs_set_super_num_devices(&super, 1);
+ 	btrfs_set_super_magic(&super, BTRFS_MAGIC_PARTIAL);
+ 	btrfs_set_super_generation(&super, 1);
+-	btrfs_set_super_root(&super, cfg->blocks[1]);
+-	btrfs_set_super_chunk_root(&super, cfg->blocks[3]);
++	btrfs_set_super_root(&super, cfg->blocks[ROOT_TREE]);
++	btrfs_set_super_chunk_root(&super, cfg->blocks[CHUNK_TREE]);
+ 	btrfs_set_super_total_bytes(&super, num_bytes);
+ 	btrfs_set_super_bytes_used(&super, 6 * cfg->nodesize);
+ 	btrfs_set_super_sectorsize(&super, cfg->sectorsize);
+@@ -121,7 +121,7 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
+ 	/* create the tree of root objects */
+ 	memset(buf->data, 0, cfg->nodesize);
+ 	buf->len = cfg->nodesize;
+-	btrfs_set_header_bytenr(buf, cfg->blocks[1]);
++	btrfs_set_header_bytenr(buf, cfg->blocks[ROOT_TREE]);
+ 	btrfs_set_header_nritems(buf, 4);
  	btrfs_set_header_generation(buf, 1);
  	btrfs_set_header_backref_rev(buf, BTRFS_MIXED_BACKREF_REV);
- 	btrfs_set_header_owner(buf, owner);
--	btrfs_set_header_flags(buf, BTRFS_HEADER_FLAG_WRITTEN);
-+	btrfs_set_header_flag(buf, BTRFS_HEADER_FLAG_WRITTEN);
- 	write_extent_buffer(buf, chunk_uuid, btrfs_header_chunk_tree_uuid(buf),
- 			    BTRFS_UUID_SIZE);
- 	write_extent_buffer(buf, fsid, btrfs_header_fsid(), BTRFS_FSID_SIZE);
+@@ -151,7 +151,7 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
+ 	nritems = 0;
+ 
+ 	itemoff = __BTRFS_LEAF_DATA_SIZE(cfg->nodesize) - sizeof(root_item);
+-	btrfs_set_root_bytenr(&root_item, cfg->blocks[2]);
++	btrfs_set_root_bytenr(&root_item, cfg->blocks[EXTENT_TREE]);
+ 	btrfs_set_disk_key_objectid(&disk_key, BTRFS_EXTENT_TREE_OBJECTID);
+ 	btrfs_set_item_key(buf, &disk_key, nritems);
+ 	btrfs_set_item_offset(buf, btrfs_item_nr(nritems), itemoff);
+@@ -162,7 +162,7 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
+ 	nritems++;
+ 
+ 	itemoff = itemoff - sizeof(root_item);
+-	btrfs_set_root_bytenr(&root_item, cfg->blocks[4]);
++	btrfs_set_root_bytenr(&root_item, cfg->blocks[DEV_TREE]);
+ 	btrfs_set_disk_key_objectid(&disk_key, BTRFS_DEV_TREE_OBJECTID);
+ 	btrfs_set_item_key(buf, &disk_key, nritems);
+ 	btrfs_set_item_offset(buf, btrfs_item_nr(nritems), itemoff);
+@@ -174,7 +174,7 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
+ 	nritems++;
+ 
+ 	itemoff = itemoff - sizeof(root_item);
+-	btrfs_set_root_bytenr(&root_item, cfg->blocks[5]);
++	btrfs_set_root_bytenr(&root_item, cfg->blocks[FS_TREE]);
+ 	btrfs_set_disk_key_objectid(&disk_key, BTRFS_FS_TREE_OBJECTID);
+ 	btrfs_set_item_key(buf, &disk_key, nritems);
+ 	btrfs_set_item_offset(buf, btrfs_item_nr(nritems), itemoff);
+@@ -186,7 +186,7 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
+ 	nritems++;
+ 
+ 	itemoff = itemoff - sizeof(root_item);
+-	btrfs_set_root_bytenr(&root_item, cfg->blocks[6]);
++	btrfs_set_root_bytenr(&root_item, cfg->blocks[CSUM_TREE]);
+ 	btrfs_set_disk_key_objectid(&disk_key, BTRFS_CSUM_TREE_OBJECTID);
+ 	btrfs_set_item_key(buf, &disk_key, nritems);
+ 	btrfs_set_item_offset(buf, btrfs_item_nr(nritems), itemoff);
+@@ -199,7 +199,7 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
+ 
+ 
+ 	csum_tree_block_size(buf, BTRFS_CRC32_SIZE, 0);
+-	ret = pwrite(fd, buf->data, cfg->nodesize, cfg->blocks[1]);
++	ret = pwrite(fd, buf->data, cfg->nodesize, cfg->blocks[ROOT_TREE]);
+ 	if (ret != cfg->nodesize) {
+ 		ret = (ret < 0 ? -errno : -EIO);
+ 		goto out;
+@@ -210,7 +210,7 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
+ 		cfg->nodesize - sizeof(struct btrfs_header));
+ 	nritems = 0;
+ 	itemoff = __BTRFS_LEAF_DATA_SIZE(cfg->nodesize);
+-	for (i = 1; i < 7; i++) {
++	for (i = 1; i < BLOCK_COUNT; i++) {
+ 		item_size = sizeof(struct btrfs_extent_item);
+ 		if (!skinny_metadata)
+ 			item_size += sizeof(struct btrfs_tree_block_info);
+@@ -267,11 +267,11 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
+ 		btrfs_set_item_size(buf, btrfs_item_nr(nritems), 0);
+ 		nritems++;
+ 	}
+-	btrfs_set_header_bytenr(buf, cfg->blocks[2]);
++	btrfs_set_header_bytenr(buf, cfg->blocks[EXTENT_TREE]);
+ 	btrfs_set_header_owner(buf, BTRFS_EXTENT_TREE_OBJECTID);
+ 	btrfs_set_header_nritems(buf, nritems);
+ 	csum_tree_block_size(buf, BTRFS_CRC32_SIZE, 0);
+-	ret = pwrite(fd, buf->data, cfg->nodesize, cfg->blocks[2]);
++	ret = pwrite(fd, buf->data, cfg->nodesize, cfg->blocks[EXTENT_TREE]);
+ 	if (ret != cfg->nodesize) {
+ 		ret = (ret < 0 ? -errno : -EIO);
+ 		goto out;
+@@ -354,11 +354,11 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
+ 	ptr += item_size;
+ 	btrfs_set_super_sys_array_size(&super, array_size);
+ 
+-	btrfs_set_header_bytenr(buf, cfg->blocks[3]);
++	btrfs_set_header_bytenr(buf, cfg->blocks[CHUNK_TREE]);
+ 	btrfs_set_header_owner(buf, BTRFS_CHUNK_TREE_OBJECTID);
+ 	btrfs_set_header_nritems(buf, nritems);
+ 	csum_tree_block_size(buf, BTRFS_CRC32_SIZE, 0);
+-	ret = pwrite(fd, buf->data, cfg->nodesize, cfg->blocks[3]);
++	ret = pwrite(fd, buf->data, cfg->nodesize, cfg->blocks[CHUNK_TREE]);
+ 	if (ret != cfg->nodesize) {
+ 		ret = (ret < 0 ? -errno : -EIO);
+ 		goto out;
+@@ -393,11 +393,11 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
+ 				    BTRFS_MKFS_SYSTEM_GROUP_SIZE);
+ 	nritems++;
+ 
+-	btrfs_set_header_bytenr(buf, cfg->blocks[4]);
++	btrfs_set_header_bytenr(buf, cfg->blocks[DEV_TREE]);
+ 	btrfs_set_header_owner(buf, BTRFS_DEV_TREE_OBJECTID);
+ 	btrfs_set_header_nritems(buf, nritems);
+ 	csum_tree_block_size(buf, BTRFS_CRC32_SIZE, 0);
+-	ret = pwrite(fd, buf->data, cfg->nodesize, cfg->blocks[4]);
++	ret = pwrite(fd, buf->data, cfg->nodesize, cfg->blocks[DEV_TREE]);
+ 	if (ret != cfg->nodesize) {
+ 		ret = (ret < 0 ? -errno : -EIO);
+ 		goto out;
+@@ -406,11 +406,11 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
+ 	/* create the FS root */
+ 	memset(buf->data + sizeof(struct btrfs_header), 0,
+ 		cfg->nodesize - sizeof(struct btrfs_header));
+-	btrfs_set_header_bytenr(buf, cfg->blocks[5]);
++	btrfs_set_header_bytenr(buf, cfg->blocks[FS_TREE]);
+ 	btrfs_set_header_owner(buf, BTRFS_FS_TREE_OBJECTID);
+ 	btrfs_set_header_nritems(buf, 0);
+ 	csum_tree_block_size(buf, BTRFS_CRC32_SIZE, 0);
+-	ret = pwrite(fd, buf->data, cfg->nodesize, cfg->blocks[5]);
++	ret = pwrite(fd, buf->data, cfg->nodesize, cfg->blocks[FS_TREE]);
+ 	if (ret != cfg->nodesize) {
+ 		ret = (ret < 0 ? -errno : -EIO);
+ 		goto out;
+@@ -418,11 +418,11 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
+ 	/* finally create the csum root */
+ 	memset(buf->data + sizeof(struct btrfs_header), 0,
+ 		cfg->nodesize - sizeof(struct btrfs_header));
+-	btrfs_set_header_bytenr(buf, cfg->blocks[6]);
++	btrfs_set_header_bytenr(buf, cfg->blocks[CSUM_TREE]);
+ 	btrfs_set_header_owner(buf, BTRFS_CSUM_TREE_OBJECTID);
+ 	btrfs_set_header_nritems(buf, 0);
+ 	csum_tree_block_size(buf, BTRFS_CRC32_SIZE, 0);
+-	ret = pwrite(fd, buf->data, cfg->nodesize, cfg->blocks[6]);
++	ret = pwrite(fd, buf->data, cfg->nodesize, cfg->blocks[CSUM_TREE]);
+ 	if (ret != cfg->nodesize) {
+ 		ret = (ret < 0 ? -errno : -EIO);
+ 		goto out;
+@@ -433,7 +433,8 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
+ 	memcpy(buf->data, &super, sizeof(super));
+ 	buf->len = BTRFS_SUPER_INFO_SIZE;
+ 	csum_tree_block_size(buf, BTRFS_CRC32_SIZE, 0);
+-	ret = pwrite(fd, buf->data, BTRFS_SUPER_INFO_SIZE, cfg->blocks[0]);
++	ret = pwrite(fd, buf->data, BTRFS_SUPER_INFO_SIZE,
++			cfg->blocks[SUPER_BLOCK]);
+ 	if (ret != BTRFS_SUPER_INFO_SIZE) {
+ 		ret = (ret < 0 ? -errno : -EIO);
+ 		goto out;
+diff --git a/mkfs/common.h b/mkfs/common.h
+index 666a75b..4d8a314 100644
+--- a/mkfs/common.h
++++ b/mkfs/common.h
+@@ -28,6 +28,18 @@
+ #define BTRFS_MKFS_SYSTEM_GROUP_SIZE SZ_4M
+ #define BTRFS_MKFS_SMALL_VOLUME_SIZE SZ_1G
+ 
++/* roots: root tree, extent tree, chunk tree, dev tree, fs tree, csum tree */
++enum btrfs_mkfs_block {
++	SUPER_BLOCK = 0,
++	ROOT_TREE,
++	EXTENT_TREE,
++	CHUNK_TREE,
++	DEV_TREE,
++	FS_TREE,
++	CSUM_TREE,
++	BLOCK_COUNT
++};
++
+ struct btrfs_mkfs_config {
+ 	/* Label of the new filesystem */
+ 	const char *label;
+@@ -43,7 +55,7 @@ struct btrfs_mkfs_config {
+ 	/* Output fields, set during creation */
+ 
+ 	/* Logical addresses of superblock [0] and other tree roots */
+-	u64 blocks[8];
++	u64 blocks[BLOCK_COUNT];
+ 	char fs_uuid[BTRFS_UUID_UNPARSED_SIZE];
+ 	char chunk_uuid[BTRFS_UUID_UNPARSED_SIZE];
+ 
 -- 
-2.5.0
+2.9.4
+
+
 

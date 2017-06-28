@@ -1,44 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39794 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751427AbdFZNZI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Jun 2017 09:25:08 -0400
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com, David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs: scrub: fix target device intialization while setting up scrub context
-Date: Mon, 26 Jun 2017 15:23:50 +0200
-Message-Id: <20170626132350.26286-1-dsterba@suse.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:41788 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751498AbdF1L3W (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Jun 2017 07:29:22 -0400
+Date: Wed, 28 Jun 2017 14:29:13 +0300
+From: Dan Carpenter <dan.carpenter@oracle.com>
+To: josef@toxicpanda.com
+Cc: linux-btrfs@vger.kernel.org
+Subject: [bug report] Btrfs: replace tree->mapping with tree->private_data
+Message-ID: <20170628112912.u3ivq4ge77u7pp7d@mwanda>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The commit "btrfs: scrub: inline helper scrub_setup_wr_ctx" inlined a
-helper but wrongly sets up the target device. Incidentally there's a
-local variable with the same name as a parameter in the previous
-function, so this got caught during runtime as crash in test btrfs/027.
+Hello Josef Bacik,
 
-Reported-by: Chris Mason <clm@fb.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/scrub.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+The patch c6100a4b4e3d: "Btrfs: replace tree->mapping with
+tree->private_data" from May 5, 2017, leads to the following static
+checker warning:
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 58a249cd5adc..738e784ba20d 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -714,9 +714,9 @@ struct scrub_ctx *scrub_setup_ctx(struct btrfs_device *dev, int is_dev_replace)
- 	mutex_init(&sctx->wr_lock);
- 	sctx->wr_curr_bio = NULL;
- 	if (is_dev_replace) {
--		WARN_ON(!dev->bdev);
-+		WARN_ON(!fs_info->dev_replace.tgtdev);
- 		sctx->pages_per_wr_bio = SCRUB_PAGES_PER_WR_BIO;
--		sctx->wr_tgtdev = dev;
-+		sctx->wr_tgtdev = fs_info->dev_replace.tgtdev;
- 		atomic_set(&sctx->flush_all_writes, 0);
- 	}
- 
--- 
-2.13.0
+	fs/btrfs/extent_io.c:3424 __extent_writepage_io()
+	error: we previously assumed 'tree->ops' could be null (see line 3334)
 
+fs/btrfs/extent_io.c
+  3404                           * compressed extents
+  3405                           */
+  3406                          if (!compressed && tree->ops &&
+                                                   ^^^^^^^^^
+This function consistently check tree->ops before dereferencing it.
+
+  3407                              tree->ops->writepage_end_io_hook)
+  3408                                  tree->ops->writepage_end_io_hook(page, cur,
+  3409                                                           cur + iosize - 1,
+  3410                                                           NULL, 1);
+  3411                          else if (compressed) {
+  3412                                  /* we don't want to end_page_writeback on
+  3413                                   * a compressed extent.  this happens
+  3414                                   * elsewhere
+  3415                                   */
+  3416                                  nr++;
+  3417                          }
+  3418  
+  3419                          cur += iosize;
+  3420                          pg_offset += iosize;
+  3421                          continue;
+  3422                  }
+  3423  
+  3424                  set_range_writeback(tree, cur, cur + iosize - 1);
+                                            ^^^^
+The patch adds a new unchecked dereference.
+
+regards,
+dan carpenter

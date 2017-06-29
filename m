@@ -1,29 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:57105 "EHLO
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:60254 "EHLO
         mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751605AbdF2Tl1 (ORCPT
+        by vger.kernel.org with ESMTP id S1753309AbdF2UHI (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Jun 2017 15:41:27 -0400
+        Thu, 29 Jun 2017 16:07:08 -0400
 Received: from pps.filterd (m0044008.ppops.net [127.0.0.1])
-        by mx0a-00082601.pphosted.com (8.16.0.20/8.16.0.20) with SMTP id v5TJceIj012979
-        for <linux-btrfs@vger.kernel.org>; Thu, 29 Jun 2017 12:41:26 -0700
+        by mx0a-00082601.pphosted.com (8.16.0.20/8.16.0.20) with SMTP id v5TJcWO4012701
+        for <linux-btrfs@vger.kernel.org>; Thu, 29 Jun 2017 12:41:40 -0700
 Received: from mail.thefacebook.com ([199.201.64.23])
-        by mx0a-00082601.pphosted.com with ESMTP id 2bd7e603ks-1
+        by mx0a-00082601.pphosted.com with ESMTP id 2bd7e603m8-2
         (version=TLSv1 cipher=ECDHE-RSA-AES256-SHA bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Thu, 29 Jun 2017 12:41:26 -0700
+        for <linux-btrfs@vger.kernel.org>; Thu, 29 Jun 2017 12:41:40 -0700
 Received: from facebook.com (2401:db00:21:6023:face:0:9:0)      by
- mx-out.facebook.com (2401:db00:2050:5102:face:0000:0037:0000) with ESMTP       id
- ef6049285d0211e787371f53bdcd5fbc-7bb3f8f0 for <linux-btrfs@vger.kernel.org>;
-        Thu, 29 Jun 2017 12:41:24 -0700
+ mx-out.facebook.com (2401:db00:2050:5102:face:0000:003b:0000) with ESMTP       id
+ f814efa65d0211e7976609cabd64a484-9e53b8f0 for <linux-btrfs@vger.kernel.org>;
+        Thu, 29 Jun 2017 12:41:39 -0700
 From: Nick Terrell <terrelln@fb.com>
 To: Nick Terrell <terrelln@fb.com>
 CC: <kernel-team@fb.com>, Chris Mason <clm@fb.com>, Yann Collet <cyan@fb.com>,
         Adam Borowski <kilobyte@angband.pl>, David Sterba <dsterba@suse.cz>,
         <squashfs-devel@lists.sourceforge.net>, <linux-btrfs@vger.kernel.org>,
         <linux-kernel@vger.kernel.org>
-Subject: [PATCH v2 1/4] lib: Add xxhash module
-Date: Thu, 29 Jun 2017 12:41:05 -0700
-Message-ID: <20170629194108.1674498-2-terrelln@fb.com>
+Subject: [PATCH v2 3/4] btrfs: Add zstd support
+Date: Thu, 29 Jun 2017 12:41:07 -0700
+Message-ID: <20170629194108.1674498-4-terrelln@fb.com>
 In-Reply-To: <20170629194108.1674498-1-terrelln@fb.com>
 References: <20170629194108.1674498-1-terrelln@fb.com>
 MIME-Version: 1.0
@@ -31,860 +31,731 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Adds xxhash kernel module with xxh32 and xxh64 hashes. xxhash is an
-extremely fast non-cryptographic hash algorithm for checksumming.
-The zstd compression and decompression modules added in the next patch
-require xxhash. I extracted it out from zstd since it is useful on its
-own. I copied the code from the upstream XXHash source repository and
-translated it into kernel style. I ran benchmarks and tests in the kernel
-and tests in userland.
+Add zstd compression and decompression support to BtrFS. zstd at its
+fastest level compresses almost as well as zlib, while offering much
+faster compression and decompression, approaching lzo speeds.
 
-I benchmarked xxhash as a special character device. I ran in four modes,
-no-op, xxh32, xxh64, and crc32. The no-op mode simply copies the data to
-kernel space and ignores it. The xxh32, xxh64, and crc32 modes compute
-hashes on the copied data. I also ran it with four different buffer sizes.
-The benchmark file is located in the upstream zstd source repository under
-`contrib/linux-kernel/xxhash_test.c` [1].
+I benchmarked btrfs with zstd compression against no compression, lzo
+compression, and zlib compression. I benchmarked two scenarios. Copying
+a set of files to btrfs, and then reading the files. Copying a tarball
+to btrfs, extracting it to btrfs, and then reading the extracted files.
+After every operation, I call `sync` and include the sync time.
+Between every pair of operations I unmount and remount the filesystem
+to avoid caching. The benchmark files can be found in the upstream
+zstd source repository under
+`contrib/linux-kernel/{btrfs-benchmark.sh,btrfs-extract-benchmark.sh}`
+[1] [2].
 
 I ran the benchmarks on a Ubuntu 14.04 VM with 2 cores and 4 GiB of RAM.
 The VM is running on a MacBook Pro with a 3.1 GHz Intel Core i7 processor,
-16 GB of RAM, and a SSD. I benchmarked using the file `filesystem.squashfs`
-from `ubuntu-16.10-desktop-amd64.iso`, which is 1,536,217,088 B large.
-Run the following commands for the benchmark:
+16 GB of RAM, and a SSD.
 
-    modprobe xxhash_test
-    mknod xxhash_test c 245 0
-    time cp filesystem.squashfs xxhash_test
+The first compression benchmark is copying 10 copies of the unzipped
+Silesia corpus [3] into a BtrFS filesystem mounted with
+`-o compress-force=Method`. The decompression benchmark times how long
+it takes to `tar` all 10 copies into `/dev/null`. The compression ratio is
+measured by comparing the output of `df` and `du`. See the benchmark file
+[1] for details. I benchmarked multiple zstd compression levels, although
+the patch uses zstd level 1.
 
-The time is reported by the time of the userland `cp`.
-The GB/s is computed with
+| Method  | Ratio | Compression MB/s | Decompression speed |
+|---------|-------|------------------|---------------------|
+| None    |  0.99 |              504 |                 686 |
+| lzo     |  1.66 |              398 |                 442 |
+| zlib    |  2.58 |               65 |                 241 |
+| zstd 1  |  2.57 |              260 |                 383 |
+| zstd 3  |  2.71 |              174 |                 408 |
+| zstd 6  |  2.87 |               70 |                 398 |
+| zstd 9  |  2.92 |               43 |                 406 |
+| zstd 12 |  2.93 |               21 |                 408 |
+| zstd 15 |  3.01 |               11 |                 354 |
 
-    1,536,217,008 B / time(buffer size, hash)
+The next benchmark first copies `linux-4.11.6.tar` [4] to btrfs. Then it
+measures the compression ratio, extracts the tar, and deletes the tar.
+Then it measures the compression ratio again, and `tar`s the extracted
+files into `/dev/null`. See the benchmark file [2] for details.
 
-which includes the time to copy from userland.
-The Normalized GB/s is computed with
+| Method | Tar Ratio | Extract Ratio | Copy (s) | Extract (s)| Read (s) |
+|--------|-----------|---------------|----------|------------|----------|
+| None   |      0.97 |          0.78 |    0.981 |      5.501 |    8.807 |
+| lzo    |      2.06 |          1.38 |    1.631 |      8.458 |    8.585 |
+| zlib   |      3.40 |          1.86 |    7.750 |     21.544 |   11.744 |
+| zstd 1 |      3.57 |          1.85 |    2.579 |     11.479 |    9.389 |
 
-    1,536,217,088 B / (time(buffer size, hash) - time(buffer size, none)).
-
-
-| Buffer Size (B) | Hash  | Time (s) | GB/s | Adjusted GB/s |
-|-----------------|-------|----------|------|---------------|
-|            1024 | none  |    0.408 | 3.77 |             - |
-|            1024 | xxh32 |    0.649 | 2.37 |          6.37 |
-|            1024 | xxh64 |    0.542 | 2.83 |         11.46 |
-|            1024 | crc32 |    1.290 | 1.19 |          1.74 |
-|            4096 | none  |    0.380 | 4.04 |             - |
-|            4096 | xxh32 |    0.645 | 2.38 |          5.79 |
-|            4096 | xxh64 |    0.500 | 3.07 |         12.80 |
-|            4096 | crc32 |    1.168 | 1.32 |          1.95 |
-|            8192 | none  |    0.351 | 4.38 |             - |
-|            8192 | xxh32 |    0.614 | 2.50 |          5.84 |
-|            8192 | xxh64 |    0.464 | 3.31 |         13.60 |
-|            8192 | crc32 |    1.163 | 1.32 |          1.89 |
-|           16384 | none  |    0.346 | 4.43 |             - |
-|           16384 | xxh32 |    0.590 | 2.60 |          6.30 |
-|           16384 | xxh64 |    0.466 | 3.30 |         12.80 |
-|           16384 | crc32 |    1.183 | 1.30 |          1.84 |
-
-Tested in userland using the test-suite in the zstd repo under
-`contrib/linux-kernel/test/XXHashUserlandTest.cpp` [2] by mocking the
-kernel functions. A line in each branch of every function in `xxhash.c`
-was commented out to ensure that the test-suite fails. Additionally
-tested while testing zstd and with SMHasher [3].
-
-[1] https://phabricator.intern.facebook.com/P57526246
-[2] https://github.com/facebook/zstd/blob/dev/contrib/linux-kernel/test/XXHashUserlandTest.cpp
-[3] https://github.com/aappleby/smhasher
+[1] https://github.com/facebook/zstd/blob/dev/contrib/linux-kernel/btrfs-benchmark.sh
+[2] https://github.com/facebook/zstd/blob/dev/contrib/linux-kernel/btrfs-extract-benchmark.sh
+[3] http://sun.aei.polsl.pl/~sdeor/index.php?page=silesia
+[4] https://cdn.kernel.org/pub/linux/kernel/v4.x/linux-4.11.6.tar.xz
 
 zstd source repository: https://github.com/facebook/zstd
-XXHash source repository: https://github.com/cyan4973/xxhash
 
 Signed-off-by: Nick Terrell <terrelln@fb.com>
 ---
-v1 -> v2:
-- Make pointer in lib/xxhash.c:394 non-const
+ fs/btrfs/Kconfig           |   2 +
+ fs/btrfs/Makefile          |   2 +-
+ fs/btrfs/compression.c     |   1 +
+ fs/btrfs/compression.h     |   6 +-
+ fs/btrfs/ctree.h           |   1 +
+ fs/btrfs/disk-io.c         |   2 +
+ fs/btrfs/ioctl.c           |   6 +-
+ fs/btrfs/props.c           |   6 +
+ fs/btrfs/super.c           |  12 +-
+ fs/btrfs/sysfs.c           |   2 +
+ fs/btrfs/zstd.c            | 433 +++++++++++++++++++++++++++++++++++++++++++++
+ include/uapi/linux/btrfs.h |   8 +-
+ 12 files changed, 469 insertions(+), 12 deletions(-)
+ create mode 100644 fs/btrfs/zstd.c
 
- include/linux/xxhash.h | 236 +++++++++++++++++++++++
- lib/Kconfig            |   3 +
- lib/Makefile           |   1 +
- lib/xxhash.c           | 500 +++++++++++++++++++++++++++++++++++++++++++++++++
- 4 files changed, 740 insertions(+)
- create mode 100644 include/linux/xxhash.h
- create mode 100644 lib/xxhash.c
+diff --git a/fs/btrfs/Kconfig b/fs/btrfs/Kconfig
+index 80e9c18..a26c63b 100644
+--- a/fs/btrfs/Kconfig
++++ b/fs/btrfs/Kconfig
+@@ -6,6 +6,8 @@ config BTRFS_FS
+ 	select ZLIB_DEFLATE
+ 	select LZO_COMPRESS
+ 	select LZO_DECOMPRESS
++	select ZSTD_COMPRESS
++	select ZSTD_DECOMPRESS
+ 	select RAID6_PQ
+ 	select XOR_BLOCKS
+ 	select SRCU
+diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
+index 128ce17..962a95a 100644
+--- a/fs/btrfs/Makefile
++++ b/fs/btrfs/Makefile
+@@ -6,7 +6,7 @@ btrfs-y += super.o ctree.o extent-tree.o print-tree.o root-tree.o dir-item.o \
+ 	   transaction.o inode.o file.o tree-defrag.o \
+ 	   extent_map.o sysfs.o struct-funcs.o xattr.o ordered-data.o \
+ 	   extent_io.o volumes.o async-thread.o ioctl.o locking.o orphan.o \
+-	   export.o tree-log.o free-space-cache.o zlib.o lzo.o \
++	   export.o tree-log.o free-space-cache.o zlib.o lzo.o zstd.o \
+ 	   compression.o delayed-ref.o relocation.o delayed-inode.o scrub.o \
+ 	   reada.o backref.o ulist.o qgroup.o send.o dev-replace.o raid56.o \
+ 	   uuid-tree.o props.o hash.o free-space-tree.o
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index 10e6b28..3beb0d0 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -761,6 +761,7 @@ static struct {
+ static const struct btrfs_compress_op * const btrfs_compress_op[] = {
+ 	&btrfs_zlib_compress,
+ 	&btrfs_lzo_compress,
++	&btrfs_zstd_compress,
+ };
 
-diff --git a/include/linux/xxhash.h b/include/linux/xxhash.h
+ void __init btrfs_init_compress(void)
+diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
+index 39ec43a..d99fc21 100644
+--- a/fs/btrfs/compression.h
++++ b/fs/btrfs/compression.h
+@@ -60,8 +60,9 @@ enum btrfs_compression_type {
+ 	BTRFS_COMPRESS_NONE  = 0,
+ 	BTRFS_COMPRESS_ZLIB  = 1,
+ 	BTRFS_COMPRESS_LZO   = 2,
+-	BTRFS_COMPRESS_TYPES = 2,
+-	BTRFS_COMPRESS_LAST  = 3,
++	BTRFS_COMPRESS_ZSTD  = 3,
++	BTRFS_COMPRESS_TYPES = 3,
++	BTRFS_COMPRESS_LAST  = 4,
+ };
+
+ struct btrfs_compress_op {
+@@ -92,5 +93,6 @@ struct btrfs_compress_op {
+
+ extern const struct btrfs_compress_op btrfs_zlib_compress;
+ extern const struct btrfs_compress_op btrfs_lzo_compress;
++extern const struct btrfs_compress_op btrfs_zstd_compress;
+
+ #endif
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 4f8f75d..61dd3dd 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -271,6 +271,7 @@ struct btrfs_super_block {
+ 	 BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS |		\
+ 	 BTRFS_FEATURE_INCOMPAT_BIG_METADATA |		\
+ 	 BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO |		\
++	 BTRFS_FEATURE_INCOMPAT_COMPRESS_ZSTD |		\
+ 	 BTRFS_FEATURE_INCOMPAT_RAID56 |		\
+ 	 BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF |		\
+ 	 BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA |	\
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 5f678dc..49c0e91 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2831,6 +2831,8 @@ int open_ctree(struct super_block *sb,
+ 	features |= BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF;
+ 	if (fs_info->compress_type == BTRFS_COMPRESS_LZO)
+ 		features |= BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO;
++	else if (fs_info->compress_type == BTRFS_COMPRESS_ZSTD)
++		features |= BTRFS_FEATURE_INCOMPAT_COMPRESS_ZSTD;
+
+ 	if (features & BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA)
+ 		btrfs_info(fs_info, "has skinny extents");
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index e176375..f732cfd 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -327,8 +327,10 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
+
+ 		if (fs_info->compress_type == BTRFS_COMPRESS_LZO)
+ 			comp = "lzo";
+-		else
++		else if (fs_info->compress_type == BTRFS_COMPRESS_ZLIB)
+ 			comp = "zlib";
++		else
++			comp = "zstd";
+ 		ret = btrfs_set_prop(inode, "btrfs.compression",
+ 				     comp, strlen(comp), 0);
+ 		if (ret)
+@@ -1463,6 +1465,8 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+
+ 	if (range->compress_type == BTRFS_COMPRESS_LZO) {
+ 		btrfs_set_fs_incompat(fs_info, COMPRESS_LZO);
++	} else if (range->compress_type == BTRFS_COMPRESS_ZSTD) {
++		btrfs_set_fs_incompat(fs_info, COMPRESS_ZSTD);
+ 	}
+
+ 	ret = defrag_count;
+diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
+index d6cb155..162105f 100644
+--- a/fs/btrfs/props.c
++++ b/fs/btrfs/props.c
+@@ -383,6 +383,8 @@ static int prop_compression_validate(const char *value, size_t len)
+ 		return 0;
+ 	else if (!strncmp("zlib", value, len))
+ 		return 0;
++	else if (!strncmp("zstd", value, len))
++		return 0;
+
+ 	return -EINVAL;
+ }
+@@ -405,6 +407,8 @@ static int prop_compression_apply(struct inode *inode,
+ 		type = BTRFS_COMPRESS_LZO;
+ 	else if (!strncmp("zlib", value, len))
+ 		type = BTRFS_COMPRESS_ZLIB;
++	else if (!strncmp("zstd", value, len))
++		type = BTRFS_COMPRESS_ZSTD;
+ 	else
+ 		return -EINVAL;
+
+@@ -422,6 +426,8 @@ static const char *prop_compression_extract(struct inode *inode)
+ 		return "zlib";
+ 	case BTRFS_COMPRESS_LZO:
+ 		return "lzo";
++	case BTRFS_COMPRESS_ZSTD:
++		return "zstd";
+ 	}
+
+ 	return NULL;
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 4f1cdd5..4f792d5 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -513,6 +513,14 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+ 				btrfs_clear_opt(info->mount_opt, NODATASUM);
+ 				btrfs_set_fs_incompat(info, COMPRESS_LZO);
+ 				no_compress = 0;
++			} else if (strcmp(args[0].from, "zstd") == 0) {
++				compress_type = "zstd";
++				info->compress_type = BTRFS_COMPRESS_ZSTD;
++				btrfs_set_opt(info->mount_opt, COMPRESS);
++				btrfs_clear_opt(info->mount_opt, NODATACOW);
++				btrfs_clear_opt(info->mount_opt, NODATASUM);
++				btrfs_set_fs_incompat(info, COMPRESS_ZSTD);
++				no_compress = 0;
+ 			} else if (strncmp(args[0].from, "no", 2) == 0) {
+ 				compress_type = "no";
+ 				btrfs_clear_opt(info->mount_opt, COMPRESS);
+@@ -1240,8 +1248,10 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
+ 	if (btrfs_test_opt(info, COMPRESS)) {
+ 		if (info->compress_type == BTRFS_COMPRESS_ZLIB)
+ 			compress_type = "zlib";
+-		else
++		else if (info->compress_type == BTRFS_COMPRESS_LZO)
+ 			compress_type = "lzo";
++		else
++			compress_type = "zstd";
+ 		if (btrfs_test_opt(info, FORCE_COMPRESS))
+ 			seq_printf(seq, ",compress-force=%s", compress_type);
+ 		else
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 1f157fb..b0dec90 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -200,6 +200,7 @@ BTRFS_FEAT_ATTR_INCOMPAT(mixed_backref, MIXED_BACKREF);
+ BTRFS_FEAT_ATTR_INCOMPAT(default_subvol, DEFAULT_SUBVOL);
+ BTRFS_FEAT_ATTR_INCOMPAT(mixed_groups, MIXED_GROUPS);
+ BTRFS_FEAT_ATTR_INCOMPAT(compress_lzo, COMPRESS_LZO);
++BTRFS_FEAT_ATTR_INCOMPAT(compress_zstd, COMPRESS_ZSTD);
+ BTRFS_FEAT_ATTR_INCOMPAT(big_metadata, BIG_METADATA);
+ BTRFS_FEAT_ATTR_INCOMPAT(extended_iref, EXTENDED_IREF);
+ BTRFS_FEAT_ATTR_INCOMPAT(raid56, RAID56);
+@@ -212,6 +213,7 @@ static struct attribute *btrfs_supported_feature_attrs[] = {
+ 	BTRFS_FEAT_ATTR_PTR(default_subvol),
+ 	BTRFS_FEAT_ATTR_PTR(mixed_groups),
+ 	BTRFS_FEAT_ATTR_PTR(compress_lzo),
++	BTRFS_FEAT_ATTR_PTR(compress_zstd),
+ 	BTRFS_FEAT_ATTR_PTR(big_metadata),
+ 	BTRFS_FEAT_ATTR_PTR(extended_iref),
+ 	BTRFS_FEAT_ATTR_PTR(raid56),
+diff --git a/fs/btrfs/zstd.c b/fs/btrfs/zstd.c
 new file mode 100644
-index 0000000..9e1f42c
+index 0000000..838741b
 --- /dev/null
-+++ b/include/linux/xxhash.h
-@@ -0,0 +1,236 @@
++++ b/fs/btrfs/zstd.c
+@@ -0,0 +1,433 @@
 +/*
-+ * xxHash - Extremely Fast Hash algorithm
-+ * Copyright (C) 2012-2016, Yann Collet.
++ * Copyright (c) 2016-present, Facebook, Inc.
++ * All rights reserved.
 + *
-+ * BSD 2-Clause License (http://www.opensource.org/licenses/bsd-license.php)
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
 + *
-+ * Redistribution and use in source and binary forms, with or without
-+ * modification, are permitted provided that the following conditions are
-+ * met:
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
 + *
-+ *   * Redistributions of source code must retain the above copyright
-+ *     notice, this list of conditions and the following disclaimer.
-+ *   * Redistributions in binary form must reproduce the above
-+ *     copyright notice, this list of conditions and the following disclaimer
-+ *     in the documentation and/or other materials provided with the
-+ *     distribution.
-+ *
-+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-+ *
-+ * This program is free software; you can redistribute it and/or modify it under
-+ * the terms of the GNU General Public License version 2 as published by the
-+ * Free Software Foundation. This program is dual-licensed; you may select
-+ * either version 2 of the GNU General Public License ("GPL") or BSD license
-+ * ("BSD").
-+ *
-+ * You can contact the author at:
-+ * - xxHash homepage: http://cyan4973.github.io/xxHash/
-+ * - xxHash source repository: https://github.com/Cyan4973/xxHash
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
 + */
-+
-+/*
-+ * Notice extracted from xxHash homepage:
-+ *
-+ * xxHash is an extremely fast Hash algorithm, running at RAM speed limits.
-+ * It also successfully passes all tests from the SMHasher suite.
-+ *
-+ * Comparison (single thread, Windows Seven 32 bits, using SMHasher on a Core 2
-+ * Duo @3GHz)
-+ *
-+ * Name            Speed       Q.Score   Author
-+ * xxHash          5.4 GB/s     10
-+ * CrapWow         3.2 GB/s      2       Andrew
-+ * MumurHash 3a    2.7 GB/s     10       Austin Appleby
-+ * SpookyHash      2.0 GB/s     10       Bob Jenkins
-+ * SBox            1.4 GB/s      9       Bret Mulvey
-+ * Lookup3         1.2 GB/s      9       Bob Jenkins
-+ * SuperFastHash   1.2 GB/s      1       Paul Hsieh
-+ * CityHash64      1.05 GB/s    10       Pike & Alakuijala
-+ * FNV             0.55 GB/s     5       Fowler, Noll, Vo
-+ * CRC32           0.43 GB/s     9
-+ * MD5-32          0.33 GB/s    10       Ronald L. Rivest
-+ * SHA1-32         0.28 GB/s    10
-+ *
-+ * Q.Score is a measure of quality of the hash function.
-+ * It depends on successfully passing SMHasher test set.
-+ * 10 is a perfect score.
-+ *
-+ * A 64-bits version, named xxh64 offers much better speed,
-+ * but for 64-bits applications only.
-+ * Name     Speed on 64 bits    Speed on 32 bits
-+ * xxh64       13.8 GB/s            1.9 GB/s
-+ * xxh32        6.8 GB/s            6.0 GB/s
-+ */
-+
-+#ifndef XXHASH_H
-+#define XXHASH_H
-+
-+#include <linux/types.h>
-+
-+/*-****************************
-+ * Simple Hash Functions
-+ *****************************/
-+
-+/**
-+ * xxh32() - calculate the 32-bit hash of the input with a given seed.
-+ *
-+ * @input:  The data to hash.
-+ * @length: The length of the data to hash.
-+ * @seed:   The seed can be used to alter the result predictably.
-+ *
-+ * Speed on Core 2 Duo @ 3 GHz (single thread, SMHasher benchmark) : 5.4 GB/s
-+ *
-+ * Return:  The 32-bit hash of the data.
-+ */
-+uint32_t xxh32(const void *input, size_t length, uint32_t seed);
-+
-+/**
-+ * xxh64() - calculate the 64-bit hash of the input with a given seed.
-+ *
-+ * @input:  The data to hash.
-+ * @length: The length of the data to hash.
-+ * @seed:   The seed can be used to alter the result predictably.
-+ *
-+ * This function runs 2x faster on 64-bit systems, but slower on 32-bit systems.
-+ *
-+ * Return:  The 64-bit hash of the data.
-+ */
-+uint64_t xxh64(const void *input, size_t length, uint64_t seed);
-+
-+/*-****************************
-+ * Streaming Hash Functions
-+ *****************************/
-+
-+/*
-+ * These definitions are only meant to allow allocation of XXH state
-+ * statically, on stack, or in a struct for example.
-+ * Do not use members directly.
-+ */
-+
-+/**
-+ * struct xxh32_state - private xxh32 state, do not use members directly
-+ */
-+struct xxh32_state {
-+	uint32_t total_len_32;
-+	uint32_t large_len;
-+	uint32_t v1;
-+	uint32_t v2;
-+	uint32_t v3;
-+	uint32_t v4;
-+	uint32_t mem32[4];
-+	uint32_t memsize;
-+};
-+
-+/**
-+ * struct xxh32_state - private xxh64 state, do not use members directly
-+ */
-+struct xxh64_state {
-+	uint64_t total_len;
-+	uint64_t v1;
-+	uint64_t v2;
-+	uint64_t v3;
-+	uint64_t v4;
-+	uint64_t mem64[4];
-+	uint32_t memsize;
-+};
-+
-+/**
-+ * xxh32_reset() - reset the xxh32 state to start a new hashing operation
-+ *
-+ * @state: The xxh32 state to reset.
-+ * @seed:  Initialize the hash state with this seed.
-+ *
-+ * Call this function on any xxh32_state to prepare for a new hashing operation.
-+ */
-+void xxh32_reset(struct xxh32_state *state, uint32_t seed);
-+
-+/**
-+ * xxh32_update() - hash the data given and update the xxh32 state
-+ *
-+ * @state:  The xxh32 state to update.
-+ * @input:  The data to hash.
-+ * @length: The length of the data to hash.
-+ *
-+ * After calling xxh32_reset() call xxh32_update() as many times as necessary.
-+ *
-+ * Return:  Zero on success, otherwise an error code.
-+ */
-+int xxh32_update(struct xxh32_state *state, const void *input, size_t length);
-+
-+/**
-+ * xxh32_digest() - produce the current xxh32 hash
-+ *
-+ * @state: Produce the current xxh32 hash of this state.
-+ *
-+ * A hash value can be produced at any time. It is still possible to continue
-+ * inserting input into the hash state after a call to xxh32_digest(), and
-+ * generate new hashes later on, by calling xxh32_digest() again.
-+ *
-+ * Return: The xxh32 hash stored in the state.
-+ */
-+uint32_t xxh32_digest(const struct xxh32_state *state);
-+
-+/**
-+ * xxh64_reset() - reset the xxh64 state to start a new hashing operation
-+ *
-+ * @state: The xxh64 state to reset.
-+ * @seed:  Initialize the hash state with this seed.
-+ */
-+void xxh64_reset(struct xxh64_state *state, uint64_t seed);
-+
-+/**
-+ * xxh64_update() - hash the data given and update the xxh64 state
-+ * @state:  The xxh64 state to update.
-+ * @input:  The data to hash.
-+ * @length: The length of the data to hash.
-+ *
-+ * After calling xxh64_reset() call xxh64_update() as many times as necessary.
-+ *
-+ * Return:  Zero on success, otherwise an error code.
-+ */
-+int xxh64_update(struct xxh64_state *state, const void *input, size_t length);
-+
-+/**
-+ * xxh64_digest() - produce the current xxh64 hash
-+ *
-+ * @state: Produce the current xxh64 hash of this state.
-+ *
-+ * A hash value can be produced at any time. It is still possible to continue
-+ * inserting input into the hash state after a call to xxh64_digest(), and
-+ * generate new hashes later on, by calling xxh64_digest() again.
-+ *
-+ * Return: The xxh64 hash stored in the state.
-+ */
-+uint64_t xxh64_digest(const struct xxh64_state *state);
-+
-+/*-**************************
-+ * Utils
-+ ***************************/
-+
-+/**
-+ * xxh32_copy_state() - copy the source state into the destination state
-+ *
-+ * @src: The source xxh32 state.
-+ * @dst: The destination xxh32 state.
-+ */
-+void xxh32_copy_state(struct xxh32_state *dst, const struct xxh32_state *src);
-+
-+/**
-+ * xxh64_copy_state() - copy the source state into the destination state
-+ *
-+ * @src: The source xxh64 state.
-+ * @dst: The destination xxh64 state.
-+ */
-+void xxh64_copy_state(struct xxh64_state *dst, const struct xxh64_state *src);
-+
-+#endif /* XXHASH_H */
-diff --git a/lib/Kconfig b/lib/Kconfig
-index 0c8b78a..b6009d7 100644
---- a/lib/Kconfig
-+++ b/lib/Kconfig
-@@ -184,6 +184,9 @@ config CRC8
- 	  when they need to do cyclic redundancy check according CRC8
- 	  algorithm. Module will be called crc8.
-
-+config XXHASH
-+	tristate
-+
- config AUDIT_GENERIC
- 	bool
- 	depends on AUDIT && !AUDIT_ARCH
-diff --git a/lib/Makefile b/lib/Makefile
-index 0166fbc..1338226 100644
---- a/lib/Makefile
-+++ b/lib/Makefile
-@@ -102,6 +102,7 @@ obj-$(CONFIG_CRC32_SELFTEST)	+= crc32test.o
- obj-$(CONFIG_CRC7)	+= crc7.o
- obj-$(CONFIG_LIBCRC32C)	+= libcrc32c.o
- obj-$(CONFIG_CRC8)	+= crc8.o
-+obj-$(CONFIG_XXHASH)	+= xxhash.o
- obj-$(CONFIG_GENERIC_ALLOCATOR) += genalloc.o
-
- obj-$(CONFIG_842_COMPRESS) += 842/
-diff --git a/lib/xxhash.c b/lib/xxhash.c
-new file mode 100644
-index 0000000..aa61e2a
---- /dev/null
-+++ b/lib/xxhash.c
-@@ -0,0 +1,500 @@
-+/*
-+ * xxHash - Extremely Fast Hash algorithm
-+ * Copyright (C) 2012-2016, Yann Collet.
-+ *
-+ * BSD 2-Clause License (http://www.opensource.org/licenses/bsd-license.php)
-+ *
-+ * Redistribution and use in source and binary forms, with or without
-+ * modification, are permitted provided that the following conditions are
-+ * met:
-+ *
-+ *   * Redistributions of source code must retain the above copyright
-+ *     notice, this list of conditions and the following disclaimer.
-+ *   * Redistributions in binary form must reproduce the above
-+ *     copyright notice, this list of conditions and the following disclaimer
-+ *     in the documentation and/or other materials provided with the
-+ *     distribution.
-+ *
-+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-+ *
-+ * This program is free software; you can redistribute it and/or modify it under
-+ * the terms of the GNU General Public License version 2 as published by the
-+ * Free Software Foundation. This program is dual-licensed; you may select
-+ * either version 2 of the GNU General Public License ("GPL") or BSD license
-+ * ("BSD").
-+ *
-+ * You can contact the author at:
-+ * - xxHash homepage: http://cyan4973.github.io/xxHash/
-+ * - xxHash source repository: https://github.com/Cyan4973/xxHash
-+ */
-+
-+#include <asm/unaligned.h>
-+#include <linux/errno.h>
-+#include <linux/compiler.h>
 +#include <linux/kernel.h>
-+#include <linux/module.h>
-+#include <linux/string.h>
-+#include <linux/xxhash.h>
++#include <linux/slab.h>
++#include <linux/vmalloc.h>
++#include <linux/init.h>
++#include <linux/err.h>
++#include <linux/sched.h>
++#include <linux/pagemap.h>
++#include <linux/bio.h>
++#include <linux/zstd.h>
++#include "compression.h"
 +
-+/*-*************************************
-+ * Macros
-+ **************************************/
-+#define xxh_rotl32(x, r) ((x << r) | (x >> (32 - r)))
-+#define xxh_rotl64(x, r) ((x << r) | (x >> (64 - r)))
++#define ZSTD_BTRFS_MAX_WINDOWLOG 17
++#define ZSTD_BTRFS_MAX_INPUT (1 << ZSTD_BTRFS_MAX_WINDOWLOG)
 +
-+#ifdef __LITTLE_ENDIAN
-+# define XXH_CPU_LITTLE_ENDIAN 1
-+#else
-+# define XXH_CPU_LITTLE_ENDIAN 0
-+#endif
-+
-+/*-*************************************
-+ * Constants
-+ **************************************/
-+static const uint32_t PRIME32_1 = 2654435761U;
-+static const uint32_t PRIME32_2 = 2246822519U;
-+static const uint32_t PRIME32_3 = 3266489917U;
-+static const uint32_t PRIME32_4 =  668265263U;
-+static const uint32_t PRIME32_5 =  374761393U;
-+
-+static const uint64_t PRIME64_1 = 11400714785074694791ULL;
-+static const uint64_t PRIME64_2 = 14029467366897019727ULL;
-+static const uint64_t PRIME64_3 =  1609587929392839161ULL;
-+static const uint64_t PRIME64_4 =  9650029242287828579ULL;
-+static const uint64_t PRIME64_5 =  2870177450012600261ULL;
-+
-+/*-**************************
-+ *  Utils
-+ ***************************/
-+void xxh32_copy_state(struct xxh32_state *dst, const struct xxh32_state *src)
++static ZSTD_parameters zstd_get_btrfs_parameters(size_t src_len)
 +{
-+	memcpy(dst, src, sizeof(*dst));
-+}
-+EXPORT_SYMBOL(xxh32_copy_state);
++	ZSTD_parameters params = ZSTD_getParams(1, src_len, 0);
 +
-+void xxh64_copy_state(struct xxh64_state *dst, const struct xxh64_state *src)
-+{
-+	memcpy(dst, src, sizeof(*dst));
-+}
-+EXPORT_SYMBOL(xxh64_copy_state);
-+
-+/*-***************************
-+ * Simple Hash Functions
-+ ****************************/
-+static uint32_t xxh32_round(uint32_t seed, const uint32_t input)
-+{
-+	seed += input * PRIME32_2;
-+	seed = xxh_rotl32(seed, 13);
-+	seed *= PRIME32_1;
-+	return seed;
++	if (params.cParams.windowLog > ZSTD_BTRFS_MAX_WINDOWLOG)
++		params.cParams.windowLog = ZSTD_BTRFS_MAX_WINDOWLOG;
++	WARN_ON(src_len > ZSTD_BTRFS_MAX_INPUT);
++	return params;
 +}
 +
-+uint32_t xxh32(const void *input, const size_t len, const uint32_t seed)
++struct workspace {
++	void *mem;
++	size_t size;
++	char *buf;
++	struct list_head list;
++};
++
++static void zstd_free_workspace(struct list_head *ws)
 +{
-+	const uint8_t *p = (const uint8_t *)input;
-+	const uint8_t *b_end = p + len;
-+	uint32_t h32;
++	struct workspace *workspace = list_entry(ws, struct workspace, list);
 +
-+	if (len >= 16) {
-+		const uint8_t *const limit = b_end - 16;
-+		uint32_t v1 = seed + PRIME32_1 + PRIME32_2;
-+		uint32_t v2 = seed + PRIME32_2;
-+		uint32_t v3 = seed + 0;
-+		uint32_t v4 = seed - PRIME32_1;
-+
-+		do {
-+			v1 = xxh32_round(v1, get_unaligned_le32(p));
-+			p += 4;
-+			v2 = xxh32_round(v2, get_unaligned_le32(p));
-+			p += 4;
-+			v3 = xxh32_round(v3, get_unaligned_le32(p));
-+			p += 4;
-+			v4 = xxh32_round(v4, get_unaligned_le32(p));
-+			p += 4;
-+		} while (p <= limit);
-+
-+		h32 = xxh_rotl32(v1, 1) + xxh_rotl32(v2, 7) +
-+			xxh_rotl32(v3, 12) + xxh_rotl32(v4, 18);
-+	} else {
-+		h32 = seed + PRIME32_5;
-+	}
-+
-+	h32 += (uint32_t)len;
-+
-+	while (p + 4 <= b_end) {
-+		h32 += get_unaligned_le32(p) * PRIME32_3;
-+		h32 = xxh_rotl32(h32, 17) * PRIME32_4;
-+		p += 4;
-+	}
-+
-+	while (p < b_end) {
-+		h32 += (*p) * PRIME32_5;
-+		h32 = xxh_rotl32(h32, 11) * PRIME32_1;
-+		p++;
-+	}
-+
-+	h32 ^= h32 >> 15;
-+	h32 *= PRIME32_2;
-+	h32 ^= h32 >> 13;
-+	h32 *= PRIME32_3;
-+	h32 ^= h32 >> 16;
-+
-+	return h32;
-+}
-+EXPORT_SYMBOL(xxh32);
-+
-+static uint64_t xxh64_round(uint64_t acc, const uint64_t input)
-+{
-+	acc += input * PRIME64_2;
-+	acc = xxh_rotl64(acc, 31);
-+	acc *= PRIME64_1;
-+	return acc;
++	vfree(workspace->mem);
++	kfree(workspace->buf);
++	kfree(workspace);
 +}
 +
-+static uint64_t xxh64_merge_round(uint64_t acc, uint64_t val)
++static struct list_head *zstd_alloc_workspace(void)
 +{
-+	val = xxh64_round(0, val);
-+	acc ^= val;
-+	acc = acc * PRIME64_1 + PRIME64_4;
-+	return acc;
++	ZSTD_parameters params =
++			zstd_get_btrfs_parameters(ZSTD_BTRFS_MAX_INPUT);
++	struct workspace *workspace;
++
++	workspace = kzalloc(sizeof(*workspace), GFP_NOFS);
++	if (!workspace)
++		return ERR_PTR(-ENOMEM);
++
++	workspace->size = max_t(size_t,
++			ZSTD_CStreamWorkspaceBound(params.cParams),
++			ZSTD_DStreamWorkspaceBound(ZSTD_BTRFS_MAX_INPUT));
++	workspace->mem = vmalloc(workspace->size);
++	workspace->buf = kmalloc(PAGE_SIZE, GFP_NOFS);
++	if (!workspace->mem || !workspace->buf)
++		goto fail;
++
++	INIT_LIST_HEAD(&workspace->list);
++
++	return &workspace->list;
++fail:
++	zstd_free_workspace(&workspace->list);
++	return ERR_PTR(-ENOMEM);
 +}
 +
-+uint64_t xxh64(const void *input, const size_t len, const uint64_t seed)
++static int zstd_compress_pages(struct list_head *ws,
++		struct address_space *mapping,
++		u64 start,
++		struct page **pages,
++		unsigned long *out_pages,
++		unsigned long *total_in,
++		unsigned long *total_out)
 +{
-+	const uint8_t *p = (const uint8_t *)input;
-+	const uint8_t *const b_end = p + len;
-+	uint64_t h64;
++	struct workspace *workspace = list_entry(ws, struct workspace, list);
++	ZSTD_CStream *stream;
++	int ret = 0;
++	int nr_pages = 0;
++	struct page *in_page = NULL;  /* The current page to read */
++	struct page *out_page = NULL; /* The current page to write to */
++	ZSTD_inBuffer in_buf = { NULL, 0, 0 };
++	ZSTD_outBuffer out_buf = { NULL, 0, 0 };
++	unsigned long tot_in = 0;
++	unsigned long tot_out = 0;
++	unsigned long len = *total_out;
++	const unsigned long nr_dest_pages = *out_pages;
++	unsigned long max_out = nr_dest_pages * PAGE_SIZE;
++	ZSTD_parameters params = zstd_get_btrfs_parameters(len);
 +
-+	if (len >= 32) {
-+		const uint8_t *const limit = b_end - 32;
-+		uint64_t v1 = seed + PRIME64_1 + PRIME64_2;
-+		uint64_t v2 = seed + PRIME64_2;
-+		uint64_t v3 = seed + 0;
-+		uint64_t v4 = seed - PRIME64_1;
++	*out_pages = 0;
++	*total_out = 0;
++	*total_in = 0;
 +
-+		do {
-+			v1 = xxh64_round(v1, get_unaligned_le64(p));
-+			p += 8;
-+			v2 = xxh64_round(v2, get_unaligned_le64(p));
-+			p += 8;
-+			v3 = xxh64_round(v3, get_unaligned_le64(p));
-+			p += 8;
-+			v4 = xxh64_round(v4, get_unaligned_le64(p));
-+			p += 8;
-+		} while (p <= limit);
-+
-+		h64 = xxh_rotl64(v1, 1) + xxh_rotl64(v2, 7) +
-+			xxh_rotl64(v3, 12) + xxh_rotl64(v4, 18);
-+		h64 = xxh64_merge_round(h64, v1);
-+		h64 = xxh64_merge_round(h64, v2);
-+		h64 = xxh64_merge_round(h64, v3);
-+		h64 = xxh64_merge_round(h64, v4);
-+
-+	} else {
-+		h64  = seed + PRIME64_5;
++	/* Initialize the stream */
++	stream = ZSTD_initCStream(params, len, workspace->mem,
++			workspace->size);
++	if (!stream) {
++		pr_warn("BTRFS: ZSTD_initCStream failed\n");
++		ret = -EIO;
++		goto out;
 +	}
 +
-+	h64 += (uint64_t)len;
++	/* map in the first page of input data */
++	in_page = find_get_page(mapping, start >> PAGE_SHIFT);
++	in_buf.src = kmap(in_page);
++	in_buf.pos = 0;
++	in_buf.size = min_t(size_t, len, PAGE_SIZE);
 +
-+	while (p + 8 <= b_end) {
-+		const uint64_t k1 = xxh64_round(0, get_unaligned_le64(p));
 +
-+		h64 ^= k1;
-+		h64 = xxh_rotl64(h64, 27) * PRIME64_1 + PRIME64_4;
-+		p += 8;
++	/* Allocate and map in the output buffer */
++	out_page = alloc_page(GFP_NOFS | __GFP_HIGHMEM);
++	if (out_page == NULL) {
++		ret = -ENOMEM;
++		goto out;
++	}
++	pages[nr_pages++] = out_page;
++	out_buf.dst = kmap(out_page);
++	out_buf.pos = 0;
++	out_buf.size = min_t(size_t, max_out, PAGE_SIZE);
++
++	while (1) {
++		size_t ret2;
++
++		ret2 = ZSTD_compressStream(stream, &out_buf, &in_buf);
++		if (ZSTD_isError(ret2)) {
++			pr_debug("BTRFS: ZSTD_compressStream returned %d\n",
++					ZSTD_getErrorCode(ret2));
++			ret = -EIO;
++			goto out;
++		}
++
++		/* Check to see if we are making it bigger */
++		if (tot_in + in_buf.pos > 8192 &&
++				tot_in + in_buf.pos <
++				tot_out + out_buf.pos) {
++			ret = -E2BIG;
++			goto out;
++		}
++
++		/* We've reached the end of our output range */
++		if (out_buf.pos >= max_out) {
++			tot_out += out_buf.pos;
++			ret = -E2BIG;
++			goto out;
++		}
++
++		/* Check if we need more output space */
++		if (out_buf.pos == out_buf.size) {
++			tot_out += PAGE_SIZE;
++			max_out -= PAGE_SIZE;
++			kunmap(out_page);
++			if (nr_pages == nr_dest_pages) {
++				out_page = NULL;
++				ret = -E2BIG;
++				goto out;
++			}
++			out_page = alloc_page(GFP_NOFS | __GFP_HIGHMEM);
++			if (out_page == NULL) {
++				ret = -ENOMEM;
++				goto out;
++			}
++			pages[nr_pages++] = out_page;
++			out_buf.dst = kmap(out_page);
++			out_buf.pos = 0;
++			out_buf.size = min_t(size_t, max_out, PAGE_SIZE);
++		}
++
++		/* We've reached the end of the input */
++		if (in_buf.pos >= len) {
++			tot_in += in_buf.pos;
++			break;
++		}
++
++		/* Check if we need more input */
++		if (in_buf.pos == in_buf.size) {
++			tot_in += PAGE_SIZE;
++			kunmap(in_page);
++			put_page(in_page);
++
++			start += PAGE_SIZE;
++			len -= PAGE_SIZE;
++			in_page = find_get_page(mapping, start >> PAGE_SHIFT);
++			in_buf.src = kmap(in_page);
++			in_buf.pos = 0;
++			in_buf.size = min_t(size_t, len, PAGE_SIZE);
++		}
++	}
++	while (1) {
++		size_t ret2;
++
++		ret2 = ZSTD_endStream(stream, &out_buf);
++		if (ZSTD_isError(ret2)) {
++			pr_debug("BTRFS: ZSTD_endStream returned %d\n",
++					ZSTD_getErrorCode(ret2));
++			ret = -EIO;
++			goto out;
++		}
++		if (ret2 == 0) {
++			tot_out += out_buf.pos;
++			break;
++		}
++		if (out_buf.pos >= max_out) {
++			tot_out += out_buf.pos;
++			ret = -E2BIG;
++			goto out;
++		}
++
++		tot_out += PAGE_SIZE;
++		max_out -= PAGE_SIZE;
++		kunmap(out_page);
++		if (nr_pages == nr_dest_pages) {
++			out_page = NULL;
++			ret = -E2BIG;
++			goto out;
++		}
++		out_page = alloc_page(GFP_NOFS | __GFP_HIGHMEM);
++		if (out_page == NULL) {
++			ret = -ENOMEM;
++			goto out;
++		}
++		pages[nr_pages++] = out_page;
++		out_buf.dst = kmap(out_page);
++		out_buf.pos = 0;
++		out_buf.size = min_t(size_t, max_out, PAGE_SIZE);
 +	}
 +
-+	if (p + 4 <= b_end) {
-+		h64 ^= (uint64_t)(get_unaligned_le32(p)) * PRIME64_1;
-+		h64 = xxh_rotl64(h64, 23) * PRIME64_2 + PRIME64_3;
-+		p += 4;
++	if (tot_out >= tot_in) {
++		ret = -E2BIG;
++		goto out;
 +	}
 +
-+	while (p < b_end) {
-+		h64 ^= (*p) * PRIME64_5;
-+		h64 = xxh_rotl64(h64, 11) * PRIME64_1;
-+		p++;
++	ret = 0;
++	*total_in = tot_in;
++	*total_out = tot_out;
++out:
++	*out_pages = nr_pages;
++	/* Cleanup */
++	if (in_page) {
++		kunmap(in_page);
++		put_page(in_page);
 +	}
-+
-+	h64 ^= h64 >> 33;
-+	h64 *= PRIME64_2;
-+	h64 ^= h64 >> 29;
-+	h64 *= PRIME64_3;
-+	h64 ^= h64 >> 32;
-+
-+	return h64;
++	if (out_page)
++		kunmap(out_page);
++	return ret;
 +}
-+EXPORT_SYMBOL(xxh64);
 +
-+/*-**************************************************
-+ * Advanced Hash Functions
-+ ***************************************************/
-+void xxh32_reset(struct xxh32_state *statePtr, const uint32_t seed)
++static int zstd_decompress_bio(struct list_head *ws, struct page **pages_in,
++		u64 disk_start,
++		struct bio *orig_bio,
++		size_t srclen)
 +{
-+	/* use a local state for memcpy() to avoid strict-aliasing warnings */
-+	struct xxh32_state state;
++	struct workspace *workspace = list_entry(ws, struct workspace, list);
++	ZSTD_DStream *stream;
++	int ret = 0;
++	unsigned long page_in_index = 0;
++	unsigned long total_pages_in = DIV_ROUND_UP(srclen, PAGE_SIZE);
++	unsigned long buf_start;
++	unsigned long total_out = 0;
++	ZSTD_inBuffer in_buf = { NULL, 0, 0 };
++	ZSTD_outBuffer out_buf = { NULL, 0, 0 };
 +
-+	memset(&state, 0, sizeof(state));
-+	state.v1 = seed + PRIME32_1 + PRIME32_2;
-+	state.v2 = seed + PRIME32_2;
-+	state.v3 = seed + 0;
-+	state.v4 = seed - PRIME32_1;
-+	memcpy(statePtr, &state, sizeof(state));
++	stream = ZSTD_initDStream(
++			ZSTD_BTRFS_MAX_INPUT, workspace->mem, workspace->size);
++	if (!stream) {
++		pr_debug("BTRFS: ZSTD_initDStream failed\n");
++		ret = -EIO;
++		goto done;
++	}
++
++	in_buf.src = kmap(pages_in[page_in_index]);
++	in_buf.pos = 0;
++	in_buf.size = min_t(size_t, srclen, PAGE_SIZE);
++
++	out_buf.dst = workspace->buf;
++	out_buf.pos = 0;
++	out_buf.size = PAGE_SIZE;
++
++	while (1) {
++		size_t ret2;
++
++		ret2 = ZSTD_decompressStream(stream, &out_buf, &in_buf);
++		if (ZSTD_isError(ret2)) {
++			pr_debug("BTRFS: ZSTD_decompressStream returned %d\n",
++					ZSTD_getErrorCode(ret2));
++			ret = -EIO;
++			goto done;
++		}
++		buf_start = total_out;
++		total_out += out_buf.pos;
++		out_buf.pos = 0;
++
++		ret = btrfs_decompress_buf2page(out_buf.dst, buf_start,
++				total_out, disk_start, orig_bio);
++		if (ret == 0)
++			break;
++
++		if (in_buf.pos >= srclen)
++			break;
++
++		/* Check if we've hit the end of a frame */
++		if (ret2 == 0)
++			break;
++
++		if (in_buf.pos == in_buf.size) {
++			kunmap(pages_in[page_in_index++]);
++			if (page_in_index >= total_pages_in) {
++				in_buf.src = NULL;
++				ret = -EIO;
++				goto done;
++			}
++			srclen -= PAGE_SIZE;
++			in_buf.src = kmap(pages_in[page_in_index]);
++			in_buf.pos = 0;
++			in_buf.size = min_t(size_t, srclen, PAGE_SIZE);
++		}
++	}
++	ret = 0;
++	zero_fill_bio(orig_bio);
++done:
++	if (in_buf.src)
++		kunmap(pages_in[page_in_index]);
++	return ret;
 +}
-+EXPORT_SYMBOL(xxh32_reset);
 +
-+void xxh64_reset(struct xxh64_state *statePtr, const uint64_t seed)
++static int zstd_decompress(struct list_head *ws, unsigned char *data_in,
++		struct page *dest_page,
++		unsigned long start_byte,
++		size_t srclen, size_t destlen)
 +{
-+	/* use a local state for memcpy() to avoid strict-aliasing warnings */
-+	struct xxh64_state state;
++	struct workspace *workspace = list_entry(ws, struct workspace, list);
++	ZSTD_DStream *stream;
++	int ret = 0;
++	size_t ret2;
++	ZSTD_inBuffer in_buf = { NULL, 0, 0 };
++	ZSTD_outBuffer out_buf = { NULL, 0, 0 };
++	unsigned long total_out = 0;
++	unsigned long pg_offset = 0;
++	char *kaddr;
 +
-+	memset(&state, 0, sizeof(state));
-+	state.v1 = seed + PRIME64_1 + PRIME64_2;
-+	state.v2 = seed + PRIME64_2;
-+	state.v3 = seed + 0;
-+	state.v4 = seed - PRIME64_1;
-+	memcpy(statePtr, &state, sizeof(state));
++	stream = ZSTD_initDStream(
++			ZSTD_BTRFS_MAX_INPUT, workspace->mem, workspace->size);
++	if (!stream) {
++		pr_warn("BTRFS: ZSTD_initDStream failed\n");
++		ret = -EIO;
++		goto finish;
++	}
++
++	destlen = min_t(size_t, destlen, PAGE_SIZE);
++
++	in_buf.src = data_in;
++	in_buf.pos = 0;
++	in_buf.size = srclen;
++
++	out_buf.dst = workspace->buf;
++	out_buf.pos = 0;
++	out_buf.size = PAGE_SIZE;
++
++	ret2 = 1;
++	while (pg_offset < destlen && in_buf.pos < in_buf.size) {
++		unsigned long buf_start;
++		unsigned long buf_offset;
++		unsigned long bytes;
++
++		/* Check if the frame is over and we still need more input */
++		if (ret2 == 0) {
++			pr_debug("BTRFS: ZSTD_decompressStream ended early\n");
++			ret = -EIO;
++			goto finish;
++		}
++		ret2 = ZSTD_decompressStream(stream, &out_buf, &in_buf);
++		if (ZSTD_isError(ret2)) {
++			pr_debug("BTRFS: ZSTD_decompressStream returned %d\n",
++					ZSTD_getErrorCode(ret2));
++			ret = -EIO;
++			goto finish;
++		}
++
++		buf_start = total_out;
++		total_out += out_buf.pos;
++		out_buf.pos = 0;
++
++		if (total_out <= start_byte)
++			continue;
++
++		if (total_out > start_byte && buf_start < start_byte)
++			buf_offset = start_byte - buf_start;
++		else
++			buf_offset = 0;
++
++		bytes = min_t(unsigned long, destlen - pg_offset,
++				out_buf.size - buf_offset);
++
++		kaddr = kmap_atomic(dest_page);
++		memcpy(kaddr + pg_offset, out_buf.dst + buf_offset, bytes);
++		kunmap_atomic(kaddr);
++
++		pg_offset += bytes;
++	}
++	ret = 0;
++finish:
++	if (pg_offset < destlen) {
++		kaddr = kmap_atomic(dest_page);
++		memset(kaddr + pg_offset, 0, destlen - pg_offset);
++		kunmap_atomic(kaddr);
++	}
++	return ret;
 +}
-+EXPORT_SYMBOL(xxh64_reset);
 +
-+int xxh32_update(struct xxh32_state *state, const void *input, const size_t len)
-+{
-+	const uint8_t *p = (const uint8_t *)input;
-+	const uint8_t *const b_end = p + len;
-+
-+	if (input == NULL)
-+		return -EINVAL;
-+
-+	state->total_len_32 += (uint32_t)len;
-+	state->large_len |= (len >= 16) | (state->total_len_32 >= 16);
-+
-+	if (state->memsize + len < 16) { /* fill in tmp buffer */
-+		memcpy((uint8_t *)(state->mem32) + state->memsize, input, len);
-+		state->memsize += (uint32_t)len;
-+		return 0;
-+	}
-+
-+	if (state->memsize) { /* some data left from previous update */
-+		const uint32_t *p32 = state->mem32;
-+
-+		memcpy((uint8_t *)(state->mem32) + state->memsize, input,
-+			16 - state->memsize);
-+
-+		state->v1 = xxh32_round(state->v1, get_unaligned_le32(p32));
-+		p32++;
-+		state->v2 = xxh32_round(state->v2, get_unaligned_le32(p32));
-+		p32++;
-+		state->v3 = xxh32_round(state->v3, get_unaligned_le32(p32));
-+		p32++;
-+		state->v4 = xxh32_round(state->v4, get_unaligned_le32(p32));
-+		p32++;
-+
-+		p += 16-state->memsize;
-+		state->memsize = 0;
-+	}
-+
-+	if (p <= b_end - 16) {
-+		const uint8_t *const limit = b_end - 16;
-+		uint32_t v1 = state->v1;
-+		uint32_t v2 = state->v2;
-+		uint32_t v3 = state->v3;
-+		uint32_t v4 = state->v4;
-+
-+		do {
-+			v1 = xxh32_round(v1, get_unaligned_le32(p));
-+			p += 4;
-+			v2 = xxh32_round(v2, get_unaligned_le32(p));
-+			p += 4;
-+			v3 = xxh32_round(v3, get_unaligned_le32(p));
-+			p += 4;
-+			v4 = xxh32_round(v4, get_unaligned_le32(p));
-+			p += 4;
-+		} while (p <= limit);
-+
-+		state->v1 = v1;
-+		state->v2 = v2;
-+		state->v3 = v3;
-+		state->v4 = v4;
-+	}
-+
-+	if (p < b_end) {
-+		memcpy(state->mem32, p, (size_t)(b_end-p));
-+		state->memsize = (uint32_t)(b_end-p);
-+	}
-+
-+	return 0;
-+}
-+EXPORT_SYMBOL(xxh32_update);
-+
-+uint32_t xxh32_digest(const struct xxh32_state *state)
-+{
-+	const uint8_t *p = (const uint8_t *)state->mem32;
-+	const uint8_t *const b_end = (const uint8_t *)(state->mem32) +
-+		state->memsize;
-+	uint32_t h32;
-+
-+	if (state->large_len) {
-+		h32 = xxh_rotl32(state->v1, 1) + xxh_rotl32(state->v2, 7) +
-+			xxh_rotl32(state->v3, 12) + xxh_rotl32(state->v4, 18);
-+	} else {
-+		h32 = state->v3 /* == seed */ + PRIME32_5;
-+	}
-+
-+	h32 += state->total_len_32;
-+
-+	while (p + 4 <= b_end) {
-+		h32 += get_unaligned_le32(p) * PRIME32_3;
-+		h32 = xxh_rotl32(h32, 17) * PRIME32_4;
-+		p += 4;
-+	}
-+
-+	while (p < b_end) {
-+		h32 += (*p) * PRIME32_5;
-+		h32 = xxh_rotl32(h32, 11) * PRIME32_1;
-+		p++;
-+	}
-+
-+	h32 ^= h32 >> 15;
-+	h32 *= PRIME32_2;
-+	h32 ^= h32 >> 13;
-+	h32 *= PRIME32_3;
-+	h32 ^= h32 >> 16;
-+
-+	return h32;
-+}
-+EXPORT_SYMBOL(xxh32_digest);
-+
-+int xxh64_update(struct xxh64_state *state, const void *input, const size_t len)
-+{
-+	const uint8_t *p = (const uint8_t *)input;
-+	const uint8_t *const b_end = p + len;
-+
-+	if (input == NULL)
-+		return -EINVAL;
-+
-+	state->total_len += len;
-+
-+	if (state->memsize + len < 32) { /* fill in tmp buffer */
-+		memcpy(((uint8_t *)state->mem64) + state->memsize, input, len);
-+		state->memsize += (uint32_t)len;
-+		return 0;
-+	}
-+
-+	if (state->memsize) { /* tmp buffer is full */
-+		uint64_t *p64 = state->mem64;
-+
-+		memcpy(((uint8_t *)p64) + state->memsize, input,
-+			32 - state->memsize);
-+
-+		state->v1 = xxh64_round(state->v1, get_unaligned_le64(p64));
-+		p64++;
-+		state->v2 = xxh64_round(state->v2, get_unaligned_le64(p64));
-+		p64++;
-+		state->v3 = xxh64_round(state->v3, get_unaligned_le64(p64));
-+		p64++;
-+		state->v4 = xxh64_round(state->v4, get_unaligned_le64(p64));
-+
-+		p += 32 - state->memsize;
-+		state->memsize = 0;
-+	}
-+
-+	if (p + 32 <= b_end) {
-+		const uint8_t *const limit = b_end - 32;
-+		uint64_t v1 = state->v1;
-+		uint64_t v2 = state->v2;
-+		uint64_t v3 = state->v3;
-+		uint64_t v4 = state->v4;
-+
-+		do {
-+			v1 = xxh64_round(v1, get_unaligned_le64(p));
-+			p += 8;
-+			v2 = xxh64_round(v2, get_unaligned_le64(p));
-+			p += 8;
-+			v3 = xxh64_round(v3, get_unaligned_le64(p));
-+			p += 8;
-+			v4 = xxh64_round(v4, get_unaligned_le64(p));
-+			p += 8;
-+		} while (p <= limit);
-+
-+		state->v1 = v1;
-+		state->v2 = v2;
-+		state->v3 = v3;
-+		state->v4 = v4;
-+	}
-+
-+	if (p < b_end) {
-+		memcpy(state->mem64, p, (size_t)(b_end-p));
-+		state->memsize = (uint32_t)(b_end - p);
-+	}
-+
-+	return 0;
-+}
-+EXPORT_SYMBOL(xxh64_update);
-+
-+uint64_t xxh64_digest(const struct xxh64_state *state)
-+{
-+	const uint8_t *p = (const uint8_t *)state->mem64;
-+	const uint8_t *const b_end = (const uint8_t *)state->mem64 +
-+		state->memsize;
-+	uint64_t h64;
-+
-+	if (state->total_len >= 32) {
-+		const uint64_t v1 = state->v1;
-+		const uint64_t v2 = state->v2;
-+		const uint64_t v3 = state->v3;
-+		const uint64_t v4 = state->v4;
-+
-+		h64 = xxh_rotl64(v1, 1) + xxh_rotl64(v2, 7) +
-+			xxh_rotl64(v3, 12) + xxh_rotl64(v4, 18);
-+		h64 = xxh64_merge_round(h64, v1);
-+		h64 = xxh64_merge_round(h64, v2);
-+		h64 = xxh64_merge_round(h64, v3);
-+		h64 = xxh64_merge_round(h64, v4);
-+	} else {
-+		h64  = state->v3 + PRIME64_5;
-+	}
-+
-+	h64 += (uint64_t)state->total_len;
-+
-+	while (p + 8 <= b_end) {
-+		const uint64_t k1 = xxh64_round(0, get_unaligned_le64(p));
-+
-+		h64 ^= k1;
-+		h64 = xxh_rotl64(h64, 27) * PRIME64_1 + PRIME64_4;
-+		p += 8;
-+	}
-+
-+	if (p + 4 <= b_end) {
-+		h64 ^= (uint64_t)(get_unaligned_le32(p)) * PRIME64_1;
-+		h64 = xxh_rotl64(h64, 23) * PRIME64_2 + PRIME64_3;
-+		p += 4;
-+	}
-+
-+	while (p < b_end) {
-+		h64 ^= (*p) * PRIME64_5;
-+		h64 = xxh_rotl64(h64, 11) * PRIME64_1;
-+		p++;
-+	}
-+
-+	h64 ^= h64 >> 33;
-+	h64 *= PRIME64_2;
-+	h64 ^= h64 >> 29;
-+	h64 *= PRIME64_3;
-+	h64 ^= h64 >> 32;
-+
-+	return h64;
-+}
-+EXPORT_SYMBOL(xxh64_digest);
-+
-+MODULE_LICENSE("Dual BSD/GPL");
-+MODULE_DESCRIPTION("xxHash");
++const struct btrfs_compress_op btrfs_zstd_compress = {
++	.alloc_workspace = zstd_alloc_workspace,
++	.free_workspace = zstd_free_workspace,
++	.compress_pages = zstd_compress_pages,
++	.decompress_bio = zstd_decompress_bio,
++	.decompress = zstd_decompress,
++};
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index a456e53..992c150 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -255,13 +255,7 @@ struct btrfs_ioctl_fs_info_args {
+ #define BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL	(1ULL << 1)
+ #define BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS	(1ULL << 2)
+ #define BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO	(1ULL << 3)
+-/*
+- * some patches floated around with a second compression method
+- * lets save that incompat here for when they do get in
+- * Note we don't actually support it, we're just reserving the
+- * number
+- */
+-#define BTRFS_FEATURE_INCOMPAT_COMPRESS_LZOv2	(1ULL << 4)
++#define BTRFS_FEATURE_INCOMPAT_COMPRESS_ZSTD	(1ULL << 4)
+
+ /*
+  * older kernels tried to do bigger metadata blocks, but the
 --
 2.9.3

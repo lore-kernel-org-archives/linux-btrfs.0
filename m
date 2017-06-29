@@ -1,86 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52024 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:52042 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751548AbdF2D4G (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Jun 2017 23:56:06 -0400
+        id S1751858AbdF2D4Y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Jun 2017 23:56:24 -0400
 From: Edmund Nadolski <enadolski@suse.com>
 To: enadolski@suse.com, jeffm@suse.com, linux-btrfs@vger.kernel.org,
         lufq.fnst@cn.fujitsu.com
-Subject: [PATCH v2 00/13] use rbtrees for preliminary backrefs
-Date: Wed, 28 Jun 2017 21:56:52 -0600
-Message-Id: <20170629035705.1589-1-enadolski@suse.com>
+Subject: [PATCH v2 09/13] btrfs: add a node counter to each of the rbtrees
+Date: Wed, 28 Jun 2017 21:57:01 -0600
+Message-Id: <20170629035705.1589-10-enadolski@suse.com>
+In-Reply-To: <20170629035705.1589-1-enadolski@suse.com>
+References: <20170629035705.1589-1-enadolski@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch series attempts to improve the performance of backref
-searches by changing the prelim_refs implementation to use
-rbtrees instead of lists.  This also aims to reduce the soft
-lockup occurences that can result when a backref search consumes
-too much cpu time.
+From: Jeff Mahoney <jeffm@suse.com>
 
-Test runs of btrfs/130 show an improvement in the overall
-run time of the test (shown below in seconds) as a function of
-the number of extents:
+This patch adds counters to each of the rbtrees so that we can tell
+how large they are growing for a given workload.  These counters
+will be exported by tracepoints in the next patch.
 
-    nr_extents:    256    512    640    1024     2048
-    ------------+-------+-----+-------+-------+------
-     unpatched:     20    186    375    2204    40419
-       patched:     12     93    203    1060    22007
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ fs/btrfs/backref.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
 
-(Note, the current default value for nr_extents in btrfs/130 is
-4096, which takes a very long time to complete.)
-
-Changes for v2:
-
-Patch 06/13:
- - Added changelog description.
-
-Patch 07/13:
- - Updated changelog description.
- - Removed 'TODO' comment.
-
-Patch 08/13:
- - Added code for proper iteration of missing keys. This adds
-   a third rbtree (.indirect_missing_keys in struct preftrees)
-   plus the requisite code in add_prelim_ref(), add_missing_keys(),
-   resolve_indirect_refs(), and find_parent_nodes().
- - Rename release_pref() to free_pref().
- - Replace WARN() with BUG_ON().
- - Remove 'TODO' comments and the unused 'merge_mode' enum.
-
-The other patches have no functional changes. Some have diff
-context changes due to the above modifications.
-
-Edmund Nadolski (6):
-  btrfs: btrfs_check_shared should manage its own transaction
-  btrfs: remove ref_tree implementation from backref.c
-  btrfs: convert prelimary reference tracking to use rbtrees
-  btrfs: add cond_resched() calls when resolving backrefs
-  btrfs: allow backref search checks for shared extents
-  btrfs: clean up extraneous computations in add_delayed_refs
-
-Jeff Mahoney (7):
-  btrfs: struct-funcs, constify readers
-  btrfs: constify tracepoint arguments
-  btrfs: backref, constify some arguments
-  btrfs: backref, add unode_aux_to_inode_list helper
-  btrfs: backref, cleanup __ namespace abuse
-  btrfs: add a node counter to each of the rbtrees
-  btrfs: backref, add tracepoints for prelim_ref insertion and merging
-
- fs/btrfs/async-thread.c      |    6 +-
- fs/btrfs/async-thread.h      |    6 +-
- fs/btrfs/backref.c           | 1067 ++++++++++++++++++------------------------
- fs/btrfs/backref.h           |   16 +-
- fs/btrfs/btrfs_inode.h       |    4 +-
- fs/btrfs/ctree.h             |  128 ++---
- fs/btrfs/extent_io.c         |   46 +-
- fs/btrfs/extent_io.h         |   19 +-
- fs/btrfs/struct-funcs.c      |    9 +-
- fs/btrfs/super.c             |    1 +
- include/trace/events/btrfs.h |  300 +++++++-----
- 11 files changed, 767 insertions(+), 835 deletions(-)
-
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index ebe8875..5e5f8d7 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -136,9 +136,10 @@ struct prelim_ref {
+ 
+ struct preftree {
+ 	struct rb_root root;
++	unsigned int count;
+ };
+ 
+-#define PREFTREE_INIT	{ .root = RB_ROOT }
++#define PREFTREE_INIT	{ .root = RB_ROOT, .count = 0 }
+ 
+ struct preftrees {
+ 	struct preftree direct;    /* BTRFS_SHARED_[DATA|BLOCK]_REF_KEY */
+@@ -248,6 +249,7 @@ static void prelim_ref_insert(struct preftree *preftree,
+ 		}
+ 	}
+ 
++	preftree->count++;
+ 	rb_link_node(&newref->rbnode, parent, p);
+ 	rb_insert_color(&newref->rbnode, root);
+ }
+@@ -265,6 +267,7 @@ static void prelim_release(struct preftree *preftree)
+ 		free_pref(ref);
+ 
+ 	preftree->root = RB_ROOT;
++	preftree->count = 0;
+ }
+ 
+ /*
+@@ -602,6 +605,7 @@ static int resolve_indirect_refs(struct btrfs_fs_info *fs_info,
+ 		}
+ 
+ 		rb_erase(&ref->rbnode, &preftrees->indirect.root);
++		preftrees->indirect.count--;
+ 
+ 		if (ref->count == 0) {
+ 			free_pref(ref);
 -- 
 2.10.2
 

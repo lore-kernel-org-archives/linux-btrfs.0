@@ -1,156 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f195.google.com ([209.85.220.195]:34920 "EHLO
-        mail-qk0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752584AbdF2SNi (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Jun 2017 14:13:38 -0400
-Received: by mail-qk0-f195.google.com with SMTP id 16so12622876qkg.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 29 Jun 2017 11:13:38 -0700 (PDT)
-Message-ID: <1498760014.22569.13.camel@poochiereds.net>
-Subject: Re: [PATCH v8 12/18] Documentation: flesh out the section in
- vfs.txt on storing and reporting writeback errors
-From: Jeff Layton <jlayton@poochiereds.net>
-To: "Darrick J. Wong" <darrick.wong@oracle.com>, jlayton@kernel.org
-Cc: Andrew Morton <akpm@linux-foundation.org>,
+Received: from mail-co1nam03on0135.outbound.protection.outlook.com ([104.47.40.135]:58272
+        "EHLO NAM03-CO1-obe.outbound.protection.outlook.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1752689AbdF2SV4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 29 Jun 2017 14:21:56 -0400
+From: Matthew Wilcox <mawilcox@microsoft.com>
+To: Jeff Layton <jlayton@poochiereds.net>,
+        "Darrick J. Wong" <darrick.wong@oracle.com>,
+        "jlayton@kernel.org" <jlayton@kernel.org>
+CC: Andrew Morton <akpm@linux-foundation.org>,
         Al Viro <viro@ZenIV.linux.org.uk>, Jan Kara <jack@suse.cz>,
-        tytso@mit.edu, axboe@kernel.dk, mawilcox@microsoft.com,
-        ross.zwisler@linux.intel.com, corbet@lwn.net, Chris Mason <clm@fb.com>,
+        "tytso@mit.edu" <tytso@mit.edu>, "axboe@kernel.dk" <axboe@kernel.dk>,
+        "ross.zwisler@linux.intel.com" <ross.zwisler@linux.intel.com>,
+        "corbet@lwn.net" <corbet@lwn.net>, Chris Mason <clm@fb.com>,
         Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
         Carlos Maiolino <cmaiolino@redhat.com>, Eryu Guan <eguan@redhat.com>,
         David Howells <dhowells@redhat.com>,
         Christoph Hellwig <hch@infradead.org>, Liu Bo <bo.li.liu@oracle.com>,
-        linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
-        linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org
-Date: Thu, 29 Jun 2017 14:13:34 -0400
-In-Reply-To: <20170629171137.GE5874@birch.djwong.org>
+        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+        "linux-mm@kvack.org" <linux-mm@kvack.org>,
+        "linux-ext4@vger.kernel.org" <linux-ext4@vger.kernel.org>,
+        "linux-xfs@vger.kernel.org" <linux-xfs@vger.kernel.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "linux-block@vger.kernel.org" <linux-block@vger.kernel.org>
+Subject: RE: [PATCH v8 12/18] Documentation: flesh out the section in vfs.txt
+ on storing and reporting writeback errors
+Date: Thu, 29 Jun 2017 18:21:50 +0000
+Message-ID: <BY2PR21MB003653755FD85FCE2C49393ECBD20@BY2PR21MB0036.namprd21.prod.outlook.com>
 References: <20170629131954.28733-1-jlayton@kernel.org>
          <20170629131954.28733-13-jlayton@kernel.org>
          <20170629171137.GE5874@birch.djwong.org>
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+ <1498760014.22569.13.camel@poochiereds.net>
+In-Reply-To: <1498760014.22569.13.camel@poochiereds.net>
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2017-06-29 at 10:11 -0700, Darrick J. Wong wrote:
-> On Thu, Jun 29, 2017 at 09:19:48AM -0400, jlayton@kernel.org wrote:
-> > From: Jeff Layton <jlayton@redhat.com>
-> > 
-> > Let's try to make this extra clear for fs authors.
-> > 
-> > Cc: Jan Kara <jack@suse.cz>
-> > Signed-off-by: Jeff Layton <jlayton@redhat.com>
-> > ---
-> >  Documentation/filesystems/vfs.txt | 43 ++++++++++++++++++++++++++++++++++++---
-> >  1 file changed, 40 insertions(+), 3 deletions(-)
-> > 
-> > diff --git a/Documentation/filesystems/vfs.txt b/Documentation/filesystems/vfs.txt
-> > index f42b90687d40..1366043b3942 100644
-> > --- a/Documentation/filesystems/vfs.txt
-> > +++ b/Documentation/filesystems/vfs.txt
-> > @@ -576,7 +576,42 @@ should clear PG_Dirty and set PG_Writeback.  It can be actually
-> >  written at any point after PG_Dirty is clear.  Once it is known to be
-> >  safe, PG_Writeback is cleared.
-> >  
-> > -Writeback makes use of a writeback_control structure...
-> > +Writeback makes use of a writeback_control structure to direct the
-> > +operations.  This gives the the writepage and writepages operations some
-> > +information about the nature of and reason for the writeback request,
-> > +and the constraints under which it is being done.  It is also used to
-> > +return information back to the caller about the result of a writepage or
-> > +writepages request.
-> > +
-> > +Handling errors during writeback
-> > +--------------------------------
-> > +Most applications that utilize the pagecache will periodically call
-> > +fsync to ensure that data written has made it to the backing store.
+From: Jeff Layton [mailto:jlayton@poochiereds.net]
+> On Thu, 2017-06-29 at 10:11 -0700, Darrick J. Wong wrote:
+> > On Thu, Jun 29, 2017 at 09:19:48AM -0400, jlayton@kernel.org wrote:
+> > > +Handling errors during writeback
+> > > +--------------------------------
+> > > +Most applications that utilize the pagecache will periodically call
+> > > +fsync to ensure that data written has made it to the backing store.
+> >
+> > /me wonders if this sentence ought to be worded more strongly, e.g.
+> >
+> > "Applications that utilize the pagecache must call a data
+> > synchronization syscall such as fsync, fdatasync, or msync to ensure
+> > that data written has made it to the backing store."
 > 
-> /me wonders if this sentence ought to be worded more strongly, e.g.
+> Well...only if they care about the data. There are some that don't. :)
+
+Also, applications don't "utilize the pagecache"; filesystems use the pagecache.
+Applications may or may not use cached I/O.  How about this:
+
+Applications which care about data integrity and use cached I/O will
+periodically call fsync(), msync() or fdatasync() to ensure that their
+data is durable.
+
+> What should we do about sync_file_range here? It doesn't currently call
+> any filesystem operations directly, so we don't have a good way to make
+> it selectively use errseq_t handling there.
 > 
-> "Applications that utilize the pagecache must call a data
-> synchronization syscall such as fsync, fdatasync, or msync to ensure
-> that data written has made it to the backing store."
-> 
+> I could resurrect the FS_* flag for that, though I don't really like
+> that. Should I just go ahead and convert it over to use errseq_t under
+> the theory that most callers will eventually want that anyway?
 
-Well...only if they care about the data. There are some that don't. :)
+I think so.
 
-> I'm also wondering -- fdatasync and msync will also report any writeback
-> errors that have happened anywhere (like fsync), since they all map to
-> vfs_fsync_range, correct?  If so, I think it worth it to state
-> explicitly that the other *sync methods behave the same as fsync w.r.t.
-> writeback error reporting.
-> 
-
-Good point. I'll fix this to make it clear that fsync, msync and
-fdatasync all advance the error cursor in the same way.
-
-While we're on the subject...
-
-What should we do about sync_file_range here? It doesn't currently call
-any filesystem operations directly, so we don't have a good way to make
-it selectively use errseq_t handling there.
-
-I could resurrect the FS_* flag for that, though I don't really like
-that. Should I just go ahead and convert it over to use errseq_t under
-the theory that most callers will eventually want that anyway?
-
-Thanks for the review so far!
-
-> > +When there is an error during writeback, they expect that error to be
-> > +reported when fsync is called.  After an error has been reported on one
-> > +fsync, subsequent fsync calls on the same file descriptor should return
-> > +0, unless further writeback errors have occurred since the previous
-> > +fsync.
-> > +
-> > +Ideally, the kernel would report an error only on file descriptions on
-> > +which writes were done that subsequently failed to be written back.  The
-> > +generic pagecache infrastructure does not track the file descriptions
-> > +that have dirtied each individual page however, so determining which
-> > +file descriptors should get back an error is not possible.
-> > +
-> > +Instead, the generic writeback error tracking infrastructure in the
-> > +kernel settles for reporting errors to fsync on all file descriptions
-> > +that were open at the time that the error occurred.  In a situation with
-> > +multiple writers, all of them will get back an error on a subsequent fsync,
-> > +even if all of the writes done through that particular file descriptor
-> > +succeeded (or even if there were no writes on that file descriptor at all).
-> > +
-> > +Filesystems that wish to use this infrastructure should call
-> > +mapping_set_error to record the error in the address_space when it
-> > +occurs.  Then, at the end of their fsync operation, they should call
-> > +file_check_and_advance_wb_err to ensure that the struct file's error
-> > +cursor has advanced to the correct point in the stream of errors emitted
-> > +by the backing device(s).
-> >  
-> >  struct address_space_operations
-> >  -------------------------------
-> > @@ -804,7 +839,8 @@ struct address_space_operations {
-> >  The File Object
-> >  ===============
-> >  
-> > -A file object represents a file opened by a process.
-> > +A file object represents a file opened by a process. This is also known
-> > +as an "open file description" in POSIX parlance.
-> >  
-> >  
-> >  struct file_operations
-> > @@ -887,7 +923,8 @@ otherwise noted.
-> >  
-> >    release: called when the last reference to an open file is closed
-> >  
-> > -  fsync: called by the fsync(2) system call
-> > +  fsync: called by the fsync(2) system call. Also see the section above
-> > +	 entitled "Handling errors during writeback".
-> >  
-> >    fasync: called by the fcntl(2) system call when asynchronous
-> >  	(non-blocking) mode is enabled for a file
-> > -- 
-> > 2.13.0
-> > 
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-xfs" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
--- 
-Jeff Layton <jlayton@poochiereds.net>
+ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm

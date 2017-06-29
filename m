@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.99]:60008 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.99]:60094 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753198AbdF2NUc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Jun 2017 09:20:32 -0400
+        id S1753157AbdF2NUY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 29 Jun 2017 09:20:24 -0400
 From: jlayton@kernel.org
 To: Andrew Morton <akpm@linux-foundation.org>,
         Al Viro <viro@ZenIV.linux.org.uk>, Jan Kara <jack@suse.cz>,
@@ -16,9 +16,9 @@ Cc: Carlos Maiolino <cmaiolino@redhat.com>, Eryu Guan <eguan@redhat.com>,
         linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
         linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org
-Subject: [PATCH v8 13/18] dax: set errors in mapping when writeback fails
-Date: Thu, 29 Jun 2017 09:19:49 -0400
-Message-Id: <20170629131954.28733-14-jlayton@kernel.org>
+Subject: [PATCH v8 08/18] mm: clean up error handling in write_one_page
+Date: Thu, 29 Jun 2017 09:19:44 -0400
+Message-Id: <20170629131954.28733-9-jlayton@kernel.org>
 In-Reply-To: <20170629131954.28733-1-jlayton@kernel.org>
 References: <20170629131954.28733-1-jlayton@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -26,45 +26,53 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Jeff Layton <jlayton@redhat.com>
 
-Jan Kara's description for this patch is much better than mine, so I'm
-quoting it verbatim here:
+Don't try to check PageError since that's potentially racy and not
+necessarily going to be set after writepage errors out.
 
-DAX currently doesn't set errors in the mapping when cache flushing
-fails in dax_writeback_mapping_range(). Since this function can get
-called only from fsync(2) or sync(2), this is actually as good as it can
-currently get since we correctly propagate the error up from
-dax_writeback_mapping_range() to filemap_fdatawrite()
-
-However, in the future better writeback error handling will enable us to
-properly report these errors on fsync(2) even if there are multiple file
-descriptors open against the file or if sync(2) gets called before
-fsync(2). So convert DAX to using standard error reporting through the
-mapping.
+Instead, check the mapping for an error after writepage returns.
 
 Signed-off-by: Jeff Layton <jlayton@redhat.com>
 Reviewed-by: Jan Kara <jack@suse.cz>
-Reviewed-by: Christoph Hellwig <hch@lst.de>
-Reviewed-and-tested-by: Ross Zwisler <ross.zwisler@linux.intel.com>
 ---
- fs/dax.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ mm/page-writeback.c | 13 ++++++-------
+ 1 file changed, 6 insertions(+), 7 deletions(-)
 
-diff --git a/fs/dax.c b/fs/dax.c
-index c22eaf162f95..441280e15d5b 100644
---- a/fs/dax.c
-+++ b/fs/dax.c
-@@ -856,8 +856,10 @@ int dax_writeback_mapping_range(struct address_space *mapping,
- 
- 			ret = dax_writeback_one(bdev, dax_dev, mapping,
- 					indices[i], pvec.pages[i]);
--			if (ret < 0)
-+			if (ret < 0) {
-+				mapping_set_error(mapping, ret);
- 				goto out;
-+			}
- 		}
+diff --git a/mm/page-writeback.c b/mm/page-writeback.c
+index b901fe52b153..db30ce0b7d80 100644
+--- a/mm/page-writeback.c
++++ b/mm/page-writeback.c
+@@ -2371,9 +2371,8 @@ int do_writepages(struct address_space *mapping, struct writeback_control *wbc)
+  *
+  * The page must be locked by the caller and will be unlocked upon return.
+  *
+- * write_one_page() returns a negative error code if I/O failed. Note that
+- * the address_space is not marked for error. The caller must do this if
+- * needed.
++ * Note that the mapping's AS_EIO/AS_ENOSPC flags will be cleared when this
++ * function returns.
+  */
+ int write_one_page(struct page *page)
+ {
+@@ -2391,15 +2390,15 @@ int write_one_page(struct page *page)
+ 	if (clear_page_dirty_for_io(page)) {
+ 		get_page(page);
+ 		ret = mapping->a_ops->writepage(page, &wbc);
+-		if (ret == 0) {
++		if (ret == 0)
+ 			wait_on_page_writeback(page);
+-			if (PageError(page))
+-				ret = -EIO;
+-		}
+ 		put_page(page);
+ 	} else {
+ 		unlock_page(page);
  	}
- out:
++
++	if (!ret)
++		ret = filemap_check_errors(mapping);
+ 	return ret;
+ }
+ EXPORT_SYMBOL(write_one_page);
 -- 
 2.13.0
 

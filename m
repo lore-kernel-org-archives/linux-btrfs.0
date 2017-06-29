@@ -1,251 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.99]:44232 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751308AbdFZSXe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Jun 2017 14:23:34 -0400
-Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 796E322B5B
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Jun 2017 18:23:33 +0000 (UTC)
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: incremental send, fix invalid path for link commands
-Date: Mon, 26 Jun 2017 00:13:22 +0100
-Message-Id: <20170625231322.423-1-fdmanana@kernel.org>
+Received: from mail-pg0-f48.google.com ([74.125.83.48]:36353 "EHLO
+        mail-pg0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751592AbdF2TVo (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 29 Jun 2017 15:21:44 -0400
+Received: by mail-pg0-f48.google.com with SMTP id u62so52335939pgb.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 29 Jun 2017 12:21:43 -0700 (PDT)
+Date: Thu, 29 Jun 2017 12:21:41 -0700
+From: Omar Sandoval <osandov@osandov.com>
+To: jeffm@suse.com
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 1/2] btrfs: account for pinned bytes in
+ should_alloc_chunk
+Message-ID: <20170629192141.GA20229@vader.DHCP.thefacebook.com>
+References: <20170622135148.16730-1-jeffm@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170622135148.16730-1-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+On Thu, Jun 22, 2017 at 09:51:47AM -0400, jeffm@suse.com wrote:
+> From: Jeff Mahoney <jeffm@suse.com>
+> 
+> In a heavy write scenario, we can end up with a large number of pinned bytes.
+> This can translate into (very) premature ENOSPC because pinned bytes
+> must be accounted for when allowing a reservation but aren't accounted for
+> when deciding whether to create a new chunk.
+> 
+> This patch adds the accounting to should_alloc_chunk so that we can
+> create the chunk.
 
-In some scenarios an incremental send stream can contain link commands
-with an invalid target path. Such scenarios happen after moving some
-directory inode A, renaming a regular file inode B into the old name of
-inode A and finally creating a new hard link for inode B at directory
-inode A.
+Hey, Jeff,
 
-Consider the following example scenario where this issue happens.
+Does this fix your ENOSPC problem on a fresh filesystem? I just tracked
+down an ENOSPC issue someone here reported when doing a btrfs send to a
+fresh filesystem and it sounds a lot like your issue: metadata
+bytes_may_use shoots up but we don't allocate any chunks for it. I'm not
+seeing how including bytes_pinned will help for this case. We won't have
+any pinned bytes when populating a new fs, right?
 
-Parent snapshot:
+I don't have a good solution. Allocating chunks based on bytes_may_use
+is going to way over-allocate because of our worst-case estimations. I'm
+double-checking now that the flusher is doing the right thing and not
+missing anything. I'll keep digging, just wanted to know if you had any
+thoughts.
 
-  .                                                      (ino 256)
-  |
-  |--- dir1/                                             (ino 257)
-  |      |--- dir2/                                      (ino 258)
-  |             |--- dir3/                               (ino 259)
-  |                   |--- file1                         (ino 261)
-  |                   |--- dir4/                         (ino 262)
-  |
-  |--- dir5/                                             (ino 260)
-
-Send snapshot:
-
-  .                                                      (ino 256)
-  |
-  |--- dir1/                                             (ino 257)
-         |--- dir2/                                      (ino 258)
-         |      |--- dir3/                               (ino 259)
-         |            |--- dir4                          (ino 261)
-         |
-         |--- dir6/                                      (ino 263)
-                |--- dir44/                              (ino 262)
-                       |--- file11                       (ino 261)
-                       |--- dir55/                       (ino 260)
-
-When attempting to apply the corresponding incremental send stream, a
-link command contains an invalid target path which makes the receiver
-fail. The following is the verbose output of the btrfs receive command:
-
-  receiving snapshot mysnap2 uuid=90076fe6-5ba6-e64a-9321-9279670ed16b (...)
-  utimes
-  utimes dir1
-  utimes dir1/dir2/dir3
-  utimes
-  rename dir1/dir2/dir3/dir4 -> o262-7-0
-  link dir1/dir2/dir3/dir4 -> dir1/dir2/dir3/file1
-  link dir1/dir2/dir3/dir4/file11 -> dir1/dir2/dir3/file1
-  ERROR: link dir1/dir2/dir3/dir4/file11 -> dir1/dir2/dir3/file1 failed: Not a directory
-
-The following steps happen during the computation of the incremental send
-stream the lead to this issue:
-
-1) When processing inode 261, we orphanize inode 262 due to a name/location
-   collision with one of the new hard links for inode 261 (created in the
-   second step below).
-
-2) We create one of the 2 new hard links for inode 261, the one whose
-   location is at "dir1/dir2/dir3/dir4".
-
-3) We then attempt to create the other new hard link for inode 261, which
-   has inode 262 as its parent directory. Because the path for this new
-   hard link was computed before we started processing the new references
-   (hard links), it reflects the old name/location of inode 262, that is,
-   it does not account for the orphanization step that happened when
-   we started processing the new references for inode 261, whence it is
-   no longer valid, causing the receiver to fail.
-
-So fix this issue by recomputing the full path of new references if we
-ended up orphanizing other inodes which are directories.
-
-A test case for fstests follows soon.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
-
-Applies on top of previous patches:
-
-  Btrfs: send, fix invalid path after renaming and linking file
-  Btrfs: incremental send, fix invalid path for unlink commands
-
- fs/btrfs/send.c | 81 ++++++++++++++++++++++++++++++++++++---------------------
- 1 file changed, 51 insertions(+), 30 deletions(-)
-
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index e937c10b8287..7eaccfb72b47 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -1856,7 +1856,7 @@ static int is_first_ref(struct btrfs_root *root,
-  */
- static int will_overwrite_ref(struct send_ctx *sctx, u64 dir, u64 dir_gen,
- 			      const char *name, int name_len,
--			      u64 *who_ino, u64 *who_gen)
-+			      u64 *who_ino, u64 *who_gen, u64 *who_mode)
- {
- 	int ret = 0;
- 	u64 gen;
-@@ -1905,7 +1905,7 @@ static int will_overwrite_ref(struct send_ctx *sctx, u64 dir, u64 dir_gen,
- 	if (other_inode > sctx->send_progress ||
- 	    is_waiting_for_move(sctx, other_inode)) {
- 		ret = get_inode_info(sctx->parent_root, other_inode, NULL,
--				who_gen, NULL, NULL, NULL, NULL);
-+				who_gen, who_mode, NULL, NULL, NULL);
- 		if (ret < 0)
- 			goto out;
- 
-@@ -3683,6 +3683,36 @@ static int wait_for_parent_move(struct send_ctx *sctx,
- 	return ret;
- }
- 
-+static int update_ref_path(struct send_ctx *sctx, struct recorded_ref *ref)
-+{
-+	int ret;
-+	struct fs_path *new_path;
-+
-+	/*
-+	 * Our reference's name member points to its full_path member string, so
-+	 * we use here a new path.
-+	 */
-+	new_path = fs_path_alloc();
-+	if (!new_path)
-+		return -ENOMEM;
-+
-+	ret = get_cur_path(sctx, ref->dir, ref->dir_gen, new_path);
-+	if (ret < 0) {
-+		fs_path_free(new_path);
-+		return ret;
-+	}
-+	ret = fs_path_add(new_path, ref->name, ref->name_len);
-+	if (ret < 0) {
-+		fs_path_free(new_path);
-+		return ret;
-+	}
-+
-+	fs_path_free(ref->full_path);
-+	set_ref_path(ref, new_path);
-+
-+	return 0;
-+}
-+
- /*
-  * This does all the move/link/unlink/rmdir magic.
-  */
-@@ -3696,10 +3726,12 @@ static int process_recorded_refs(struct send_ctx *sctx, int *pending_move)
- 	struct fs_path *valid_path = NULL;
- 	u64 ow_inode = 0;
- 	u64 ow_gen;
-+	u64 ow_mode;
- 	int did_overwrite = 0;
- 	int is_orphan = 0;
- 	u64 last_dir_ino_rm = 0;
- 	bool can_rename = true;
-+	bool orphanized_dir = false;
- 	bool orphanized_ancestor = false;
- 
- 	btrfs_debug(fs_info, "process_recorded_refs %llu", sctx->cur_ino);
-@@ -3798,7 +3830,7 @@ static int process_recorded_refs(struct send_ctx *sctx, int *pending_move)
- 		 */
- 		ret = will_overwrite_ref(sctx, cur->dir, cur->dir_gen,
- 				cur->name, cur->name_len,
--				&ow_inode, &ow_gen);
-+				&ow_inode, &ow_gen, &ow_mode);
- 		if (ret < 0)
- 			goto out;
- 		if (ret) {
-@@ -3815,6 +3847,8 @@ static int process_recorded_refs(struct send_ctx *sctx, int *pending_move)
- 						cur->full_path);
- 				if (ret < 0)
- 					goto out;
-+				if (S_ISDIR(ow_mode))
-+					orphanized_dir = true;
- 
- 				/*
- 				 * If ow_inode has its rename operation delayed
-@@ -3920,6 +3954,18 @@ static int process_recorded_refs(struct send_ctx *sctx, int *pending_move)
- 				if (ret < 0)
- 					goto out;
- 			} else {
-+				/*
-+				 * We might have previously orphanized an inode
-+				 * which is an ancestor of our current inode,
-+				 * so our reference's full path, which was
-+				 * computed before any such orphanizations, must
-+				 * be updated.
-+				 */
-+				if (orphanized_dir) {
-+					ret = update_ref_path(sctx, cur);
-+					if (ret < 0)
-+						goto out;
-+				}
- 				ret = send_link(sctx, cur->full_path,
- 						valid_path);
- 				if (ret < 0)
-@@ -3990,34 +4036,9 @@ static int process_recorded_refs(struct send_ctx *sctx, int *pending_move)
- 				 * ancestor inode.
- 				 */
- 				if (orphanized_ancestor) {
--					struct fs_path *new_path;
--
--					/*
--					 * Our reference's name member points to
--					 * its full_path member string, so we
--					 * use here a new path.
--					 */
--					new_path = fs_path_alloc();
--					if (!new_path) {
--						ret = -ENOMEM;
--						goto out;
--					}
--					ret = get_cur_path(sctx, cur->dir,
--							   cur->dir_gen,
--							   new_path);
--					if (ret < 0) {
--						fs_path_free(new_path);
--						goto out;
--					}
--					ret = fs_path_add(new_path,
--							  cur->name,
--							  cur->name_len);
--					if (ret < 0) {
--						fs_path_free(new_path);
-+					ret = update_ref_path(sctx, cur);
-+					if (ret < 0)
- 						goto out;
--					}
--					fs_path_free(cur->full_path);
--					set_ref_path(cur, new_path);
- 				}
- 				ret = send_unlink(sctx, cur->full_path);
- 				if (ret < 0)
--- 
-2.11.0
-
+> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+> ---
+>  fs/btrfs/extent-tree.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 33d979e9ea2a..88b04742beea 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -4377,7 +4377,7 @@ static int should_alloc_chunk(struct btrfs_fs_info *fs_info,
+>  {
+>  	struct btrfs_block_rsv *global_rsv = &fs_info->global_block_rsv;
+>  	u64 num_bytes = sinfo->total_bytes - sinfo->bytes_readonly;
+> -	u64 num_allocated = sinfo->bytes_used + sinfo->bytes_reserved;
+> +	u64 num_allocated = sinfo->bytes_used + sinfo->bytes_reserved + sinfo->bytes_pinned;
+>  	u64 thresh;
+>  
+>  	if (force == CHUNK_ALLOC_FORCE)
+> -- 
+> 2.11.0
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

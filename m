@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.99]:60446 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.99]:60312 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753240AbdF2NUu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Jun 2017 09:20:50 -0400
+        id S1753230AbdF2NUp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 29 Jun 2017 09:20:45 -0400
 From: jlayton@kernel.org
 To: Andrew Morton <akpm@linux-foundation.org>,
         Al Viro <viro@ZenIV.linux.org.uk>, Jan Kara <jack@suse.cz>,
@@ -16,9 +16,9 @@ Cc: Carlos Maiolino <cmaiolino@redhat.com>, Eryu Guan <eguan@redhat.com>,
         linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
         linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org
-Subject: [PATCH v8 18/18] btrfs: minimal conversion to errseq_t writeback error reporting on fsync
-Date: Thu, 29 Jun 2017 09:19:54 -0400
-Message-Id: <20170629131954.28733-19-jlayton@kernel.org>
+Subject: [PATCH v8 14/18] block: convert to errseq_t based writeback error tracking
+Date: Thu, 29 Jun 2017 09:19:50 -0400
+Message-Id: <20170629131954.28733-15-jlayton@kernel.org>
 In-Reply-To: <20170629131954.28733-1-jlayton@kernel.org>
 References: <20170629131954.28733-1-jlayton@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -26,45 +26,32 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Jeff Layton <jlayton@redhat.com>
 
-Just check and advance the errseq_t in the file before returning.
-Internal callers of filemap_* functions are left as-is.
+This is a very minimal conversion to errseq_t based error tracking
+for raw block device access. Just have it use the standard
+file_write_and_wait_range call.
+
+Note that there are internal callers that call sync_blockdev
+and the like that are not affected by this. They'll continue
+to use the AS_EIO/AS_ENOSPC flags for error reporting like
+they always have for now.
 
 Signed-off-by: Jeff Layton <jlayton@redhat.com>
 ---
- fs/btrfs/file.c | 7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
+ fs/block_dev.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index da1096eb1a40..1f57e1a523d9 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2011,7 +2011,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	struct btrfs_trans_handle *trans;
- 	struct btrfs_log_ctx ctx;
--	int ret = 0;
-+	int ret = 0, err;
- 	bool full_sync = 0;
- 	u64 len;
- 
-@@ -2030,7 +2030,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 	 */
- 	ret = start_ordered_ops(inode, start, end);
- 	if (ret)
--		return ret;
-+		goto out;
- 
- 	inode_lock(inode);
- 	atomic_inc(&root->log_batch);
-@@ -2227,6 +2227,9 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 		ret = btrfs_end_transaction(trans);
- 	}
- out:
-+	err = file_check_and_advance_wb_err(file);
-+	if (!ret)
-+		ret = err;
- 	return ret > 0 ? -EIO : ret;
- }
+diff --git a/fs/block_dev.c b/fs/block_dev.c
+index 4d62fe771587..bcb0be6e423a 100644
+--- a/fs/block_dev.c
++++ b/fs/block_dev.c
+@@ -624,7 +624,7 @@ int blkdev_fsync(struct file *filp, loff_t start, loff_t end, int datasync)
+ 	struct block_device *bdev = I_BDEV(bd_inode);
+ 	int error;
+ 	
+-	error = filemap_write_and_wait_range(filp->f_mapping, start, end);
++	error = file_write_and_wait_range(filp, start, end);
+ 	if (error)
+ 		return error;
  
 -- 
 2.13.0

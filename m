@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.99]:59894 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.99]:60008 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752614AbdF2NUG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Jun 2017 09:20:06 -0400
+        id S1752614AbdF2NUV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 29 Jun 2017 09:20:21 -0400
 From: jlayton@kernel.org
 To: Andrew Morton <akpm@linux-foundation.org>,
         Al Viro <viro@ZenIV.linux.org.uk>, Jan Kara <jack@suse.cz>,
@@ -16,9 +16,9 @@ Cc: Carlos Maiolino <cmaiolino@redhat.com>, Eryu Guan <eguan@redhat.com>,
         linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
         linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org
-Subject: [PATCH v8 03/18] fs: check for writeback errors after syncing out buffers in generic_file_fsync
-Date: Thu, 29 Jun 2017 09:19:39 -0400
-Message-Id: <20170629131954.28733-4-jlayton@kernel.org>
+Subject: [PATCH v8 07/18] mm: don't TestClearPageError in __filemap_fdatawait_range
+Date: Thu, 29 Jun 2017 09:19:43 -0400
+Message-Id: <20170629131954.28733-8-jlayton@kernel.org>
 In-Reply-To: <20170629131954.28733-1-jlayton@kernel.org>
 References: <20170629131954.28733-1-jlayton@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -26,60 +26,88 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Jeff Layton <jlayton@redhat.com>
 
-ext2 currently does a test+clear of the AS_EIO flag, which is
-is problematic for some coming changes.
+The -EIO returned here can end up overriding whatever error is marked in
+the address space, and be returned at fsync time, even when there is a
+more appropriate error stored in the mapping.
 
-What we really need to do instead is call filemap_check_errors
-in __generic_file_fsync after syncing out the buffers. That
-will be sufficient for this case, and help other callers detect
-these errors properly as well.
+Read errors are also sometimes tracked on a per-page level using
+PG_error. Suppose we have a read error on a page, and then that page is
+subsequently dirtied by overwriting the whole page. Writeback doesn't
+clear PG_error, so we can then end up successfully writing back that
+page and still return -EIO on fsync.
 
-With that, we don't need to twiddle it in ext2.
+Worse yet, PG_error is cleared during a sync() syscall, but the -EIO
+return from that is silently discarded. Any subsystem that is relying on
+PG_error to report errors during fsync can easily lose writeback errors
+due to this. All you need is a stray sync() call to wait for writeback
+to complete and you've lost the error.
 
-Suggested-by: Jan Kara <jack@suse.cz>
+Since the handling of the PG_error flag is somewhat inconsistent across
+subsystems, let's just rely on marking the address space when there are
+writeback errors. Change the TestClearPageError call to ClearPageError,
+and make __filemap_fdatawait_range a void return function.
+
 Signed-off-by: Jeff Layton <jlayton@redhat.com>
-Reviewed-by: Christoph Hellwig <hch@lst.de>
-Reviewed-by: Jan Kara <jack@suse.cz>
-Reviewed-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- fs/ext2/file.c | 5 +----
- fs/libfs.c     | 3 ++-
- 2 files changed, 3 insertions(+), 5 deletions(-)
+ mm/filemap.c | 20 +++++---------------
+ 1 file changed, 5 insertions(+), 15 deletions(-)
 
-diff --git a/fs/ext2/file.c b/fs/ext2/file.c
-index b21891a6bfca..d34d32bdc944 100644
---- a/fs/ext2/file.c
-+++ b/fs/ext2/file.c
-@@ -174,15 +174,12 @@ int ext2_fsync(struct file *file, loff_t start, loff_t end, int datasync)
+diff --git a/mm/filemap.c b/mm/filemap.c
+index 49bc9720fb00..eb99b5f23c61 100644
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -386,17 +386,16 @@ int filemap_flush(struct address_space *mapping)
+ }
+ EXPORT_SYMBOL(filemap_flush);
+ 
+-static int __filemap_fdatawait_range(struct address_space *mapping,
++static void __filemap_fdatawait_range(struct address_space *mapping,
+ 				     loff_t start_byte, loff_t end_byte)
  {
- 	int ret;
- 	struct super_block *sb = file->f_mapping->host->i_sb;
--	struct address_space *mapping = sb->s_bdev->bd_inode->i_mapping;
+ 	pgoff_t index = start_byte >> PAGE_SHIFT;
+ 	pgoff_t end = end_byte >> PAGE_SHIFT;
+ 	struct pagevec pvec;
+ 	int nr_pages;
+-	int ret = 0;
  
- 	ret = generic_file_fsync(file, start, end, datasync);
--	if (ret == -EIO || test_and_clear_bit(AS_EIO, &mapping->flags)) {
-+	if (ret == -EIO)
- 		/* We don't really know where the IO error happened... */
- 		ext2_error(sb, __func__,
- 			   "detected IO error when writing metadata buffers");
--		ret = -EIO;
--	}
- 	return ret;
- }
+ 	if (end_byte < start_byte)
+-		goto out;
++		return;
  
-diff --git a/fs/libfs.c b/fs/libfs.c
-index a04395334bb1..1dec90819366 100644
---- a/fs/libfs.c
-+++ b/fs/libfs.c
-@@ -991,7 +991,8 @@ int __generic_file_fsync(struct file *file, loff_t start, loff_t end,
+ 	pagevec_init(&pvec, 0);
+ 	while ((index <= end) &&
+@@ -413,14 +412,11 @@ static int __filemap_fdatawait_range(struct address_space *mapping,
+ 				continue;
  
- out:
- 	inode_unlock(inode);
+ 			wait_on_page_writeback(page);
+-			if (TestClearPageError(page))
+-				ret = -EIO;
++			ClearPageError(page);
+ 		}
+ 		pagevec_release(&pvec);
+ 		cond_resched();
+ 	}
+-out:
 -	return ret;
-+	err = filemap_check_errors(inode->i_mapping);
-+	return ret ? ret : err;
  }
- EXPORT_SYMBOL(__generic_file_fsync);
+ 
+ /**
+@@ -440,14 +436,8 @@ static int __filemap_fdatawait_range(struct address_space *mapping,
+ int filemap_fdatawait_range(struct address_space *mapping, loff_t start_byte,
+ 			    loff_t end_byte)
+ {
+-	int ret, ret2;
+-
+-	ret = __filemap_fdatawait_range(mapping, start_byte, end_byte);
+-	ret2 = filemap_check_errors(mapping);
+-	if (!ret)
+-		ret = ret2;
+-
+-	return ret;
++	__filemap_fdatawait_range(mapping, start_byte, end_byte);
++	return filemap_check_errors(mapping);
+ }
+ EXPORT_SYMBOL(filemap_fdatawait_range);
  
 -- 
 2.13.0

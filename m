@@ -1,73 +1,314 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56514 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751094AbdFVNbZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Jun 2017 09:31:25 -0400
-From: Jan Kara <jack@suse.cz>
-To: <linux-fsdevel@vger.kernel.org>
-Cc: Andreas Gruenbacher <agruenba@redhat.com>, Jan Kara <jack@suse.cz>,
-        stable@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        David Sterba <dsterba@suse.com>
-Subject: [PATCH 03/11] btrfs: Don't clear SGID when inheriting ACLs
-Date: Thu, 22 Jun 2017 15:31:07 +0200
-Message-Id: <20170622133115.16968-4-jack@suse.cz>
-In-Reply-To: <20170622133115.16968-1-jack@suse.cz>
-References: <20170622133115.16968-1-jack@suse.cz>
+Received: from mail-wr0-f182.google.com ([209.85.128.182]:33967 "EHLO
+        mail-wr0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751589AbdF3IRk (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 30 Jun 2017 04:17:40 -0400
+Received: by mail-wr0-f182.google.com with SMTP id 77so200415331wrb.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Jun 2017 01:17:39 -0700 (PDT)
+MIME-Version: 1.0
+From: Jan Tulak <jtulak@redhat.com>
+Date: Fri, 30 Jun 2017 10:17:17 +0200
+Message-ID: <CACj3i70p=ybXZWRncseqwnbs7HAYu-SL02+cj--7T5YnqcwVKQ@mail.gmail.com>
+Subject: [proposal] making filesystem tools more machine friendly
+To: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-xfs <linux-xfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When new directory 'DIR1' is created in a directory 'DIR0' with SGID bit
-set, DIR1 is expected to have SGID bit set (and owning group equal to
-the owning group of 'DIR0'). However when 'DIR0' also has some default
-ACLs that 'DIR1' inherits, setting these ACLs will result in SGID bit on
-'DIR1' to get cleared if user is not member of the owning group.
+AKA filesystem API
 
-Fix the problem by moving posix_acl_update_mode() out of
-__btrfs_set_acl() into btrfs_set_acl(). That way the function will not be
-called when inheriting ACLs which is what we want as it prevents SGID
-bit clearing and the mode has been properly set by posix_acl_create()
-anyway.
+Hi guys
 
-Fixes: 073931017b49d9458aa351605b43a7e34598caef
-CC: stable@vger.kernel.org
-CC: linux-btrfs@vger.kernel.org
-CC: David Sterba <dsterba@suse.com>
-Signed-off-by: Jan Kara <jack@suse.cz>
----
- fs/btrfs/acl.c | 13 +++++++------
- 1 file changed, 7 insertions(+), 6 deletions(-)
+Currently, filesystem tools are not made with automation in mind. So
+any tool that wants to interact with filesystems (be it for
+automation, or to provide a more user-friendly interface) has to
+screen scrape everything and cope with changing outputs.
 
-diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
-index 247b8dfaf6e5..8d8370ddb6b2 100644
---- a/fs/btrfs/acl.c
-+++ b/fs/btrfs/acl.c
-@@ -78,12 +78,6 @@ static int __btrfs_set_acl(struct btrfs_trans_handle *trans,
- 	switch (type) {
- 	case ACL_TYPE_ACCESS:
- 		name = XATTR_NAME_POSIX_ACL_ACCESS;
--		if (acl) {
--			ret = posix_acl_update_mode(inode, &inode->i_mode, &acl);
--			if (ret)
--				return ret;
--		}
--		ret = 0;
- 		break;
- 	case ACL_TYPE_DEFAULT:
- 		if (!S_ISDIR(inode->i_mode))
-@@ -119,6 +113,13 @@ static int __btrfs_set_acl(struct btrfs_trans_handle *trans,
- 
- int btrfs_set_acl(struct inode *inode, struct posix_acl *acl, int type)
- {
-+	int ret;
-+
-+	if (type == ACL_TYPE_ACCESS && acl) {
-+		ret = posix_acl_update_mode(inode, &inode->i_mode, &acl);
-+		if (ret)
-+			return ret;
-+	}
- 	return __btrfs_set_acl(NULL, inode, acl, type);
- }
- 
+I think it is the time to focus some thoughts on how to make the fs
+tools easier to be used by scripts and other tools. Now, to ease you,
+the answer to the obvious question "who will do it" is "me". I don't
+want to force you into anything, though, so I'm opening this
+discussion pretty early with some ideas and I hope to hear from you
+what do you think about it before anything is set in the stone. (For
+those who visited Vault this year, Justin Mitchell and I had a talk
+about this, codename Springfield.)
+
+The following text attempts to identify issues with using
+filesystems-related tools in scripts/applications and proposes a
+solution to those issues.
+
+Content:
+1. A quick introduction
+2. Details of the issues
+3. Proposed Solutions
+4. Conclusion
+
+1. A quick introduction
+=================
+
+I discussed this topic with people who are building something around
+fs tools. For example, the developer of libblockdev (Vratislav
+Podzimek, https://github.com/vpodzime/libblockdev) or system storage
+manager (was Lukas Czerner, now it is me,
+https://sourceforge.net/projects/storagemanager/), and the listed
+issues are a product of experience from working with those tools. The
+issues are related mostly to basic operations like mkfs, fsck,
+snapshots and resizing. Advanced/debugging tools like xfs_io or xfs_db
+are not in the focus, but they might benefit from any possible change
+too if included in it.
+
+The main issues of the current state, where all the tools are run with
+some flags and options and produce a human readable output:
+ * The output format can change, sometimes without an easy way of
+detection like a version number.
+ * Different output formats for different tools even in a single FS,
+thus zero code reuse/sharing.
+ * Screenscraping can introduce bugs (a rare inner condition can add a
+field into the output and break regular expressions).
+ * No (or weak) progress report.
+ * Different filesystems have different input formats (flags, options)
+even for the most basic capabilities.
+ * Thread safety, forking
+
+2. Details of the issues
+==================
+
+Let’s look at the issues now: why it is an issue and if we can do some
+small change to fix it on its own.
+
+
+The output format can change, sometimes without an easy way of
+detection like a version number. Most filesystems are well behaved,
+but still, we don’t know what exactly are people doing with the tools
+and even adding a new field can possibly break a script. Keeping a
+compatibility with older versions adds another complexity to such
+tools.
+
+What can be done about this? The new fields have to be printed somehow
+and changing the format of the standard output would break everything.
+Making sure that if the input or output changes in any way, it is
+always with a detectable difference in the version number is a good
+practice, but it doesn’t solve the issue, it only makes hacking around
+it easier.
+
+What can really help is to have an alternative output (which can be
+turned on when the user wants it), which is easy to parse and which is
+resilient to a certain degree of changes because it can express
+dynamic items like lists or arrays: JSON, XML...
+
+
+Different input/output formats for different tools even in a single
+FS, thus zero code reuse/sharing: Support for every tool and every
+filesystem has to start from a scratch. Nothing can be done about it
+without a change in the output format. But if an optional JSON or XML
+or something was supported, then instead of creating a parser for
+every tool, there could be used just one standard and already a
+well-tested library.
+
+
+Screenscraping can introduce bugs (some rare inner condition can add a
+field into the output and break regular expressions): Well, let’s just
+look at how many services still can’t even parse and verify an email
+address correctly. And we have a lot more complex text… Again, some
+easy-to-parse format with existing libraries that would turn the text
+into a bunch of variables or an object would help.
+
+
+No (or weak) progress report: Especially for tools that can run for a
+long time, like fsck. Screenscraping everything it throws out and then
+deciding whether it is a progress report message (because instead of
+“25 %” it says “running operation foo”), a message to tell the user,
+or something to just ignore is a lot less comfortable and error prone
+than “{level: ‘progress’, stage: 5, msg: ‘operation foo’}”.
+
+
+Different filesystems have different input formats (flags, options)
+even for the most basic capabilities: Similar to “Different
+input/output formats for different tools...”. For example, for
+labeling a partition, you use mkfs.xfs -L label, but mkfs.vfat -n
+label. However, changing this requires getting the same functionality
+with a common basic specification to other filesystems too.
+
+
+Thread safety, forking: The people who work on a library, like
+libblockdev, doesn’t like that they have to fork another process over
+which they have no control, as they can’t guarantee anything about it.
+This can’t be fixed by changing the output format, though, but would
+require making a public library providing a similar interface as the
+existing fs tools. No detailed access to insides is needed, just a way
+how to run mkfs, fsck, snapshots, etc… without spawning another
+process and without screenscraping.
+
+
+3. Proposed Solutions
+=================
+
+There are two (complementary) ways how to address the issues: add a
+structured, machine-readable format for input/output of the tools
+(e.g. JSON, XML, …) and to create a library with the functionality of
+the existing tools. Let’s look now at those options. I will focus on
+what changes they would require, what would be the price for
+maintaining that solution and if there are any drawbacks or additional
+advantages.
+
+An optional third option would be to create a system service/daemon,
+that would use dbus or some other structured interface to accept jobs
+and return results. I think that LVM people are working on something
+like this.
+
+The proposed solutions are ordered in regards to their complexity.
+Also, they can be seen as follow-ups, because every proposed option
+requires big part of the work from the previous one anyway.
+
+
+3.1. Structured Output
+-------------------------------
+In other words, what LVM already does with --reportformat
+{basic|json}, and lsblk with --json. Possibly, we could also make JSON
+input too. That would allow the user to, instead of using all the
+flags and options of CLI, make something like
+--jsoninput=“{dev:’/dev/abc’, force: true, … }”
+
+Some preliminary notes about the format:
+Most likely, this would mean JSON. JSON is currently preferred over
+XML because it is easier to read by humans if the need arises, it’s
+encoder/parser is lighter and easier to use. Also, other projects like
+LVM, multipath or lsblk already uses JSON, so it would be nice to
+don’t break the group.
+
+Required implementation changes/expected problems:
+In an ideal world, a simple replacement of all prints with a wrapping
+function would be enough. However, as far as I know, an overwhelming
+majority of the tools has printing functions spread through the code
+and prints everything as soon as it knows the specific bit of
+information.
+
+Change of the output into a structured format means some refactoring.
+Instead of simple printf(), an object, array or structure has to be
+created and rather than pure strings, more diagnostically useful
+values have to be added into it in place of the current prints. Then,
+when it is reasonable, print it out all at once in any desired format.
+The “when reasonable” would usually mean at the end, but it could also
+print progress if it is a long time running operation.
+
+Because of the kinds of the required changes, the implementation can
+be split into two parts: first, clean the code and move all the prints
+out from spaghetti to the end. Then, once this is done, add the
+structured format.
+
+Maintaining overhead:
+Small. By separating the printing from generating the data, we don’t
+really care about the output format anywhere except in the printing
+function itself, and if a new field or value is added or an old one
+removed, then the amount of work is roughly equal to the current
+state.
+
+Drawbacks:
+Searching for a place in the code where something happens would be
+more complicated - instead of simple search for a string that is the
+same in the code and in the output, one would search for the line that
+adds the data to the message log. This could be simplified by using
+__LINE__ macro with debug output. (With JSON, an additional field
+would not affect anything, so it would be completely safe.)
+
+Additional advantages:
+The refactoring can clean up the code a bit. It is easy to add any
+other format in the future. Our own test suite could also benefit from
+the structured output.
+
+Comment:
+The most bang for the buck option and most of the work done for this
+is required also for every other option. In terms of specific
+interface (i.e. common JSON elements), we need to identify a common
+subset of fields/options that every fs will use and anything else move
+into fs-specific extensions.
+
+With regards to the compatibility between different filesystems, the
+best way how to specify the format might be a small library that would
+take raw data on one side and turn it into JSON string or even print
+it (and the reverse, if input supports json too). This way, we would
+be sure that there really is a common ground that works the same in
+every fs.
+
+Another way how to achieve the compatibility is to make an RFC-like
+document. For example: All occurrences of a filesystem identifier MUST
+be in a field named 'fsid' which SHOULD contain a UUID formatted
+string. I think this is useful even if we end up with the library as a
+way to find out the common ground.
+
+3.2. A Library
+-------------------
+A library implementing basic functions like: mkfs(int argc, char
+*argv[]), fsck(), … etc. Once done, binding for other languages like
+Python is possible too.
+
+Required implementation changes/expected problems:
+If the implementation of this library would follow up after the
+changes that add the structured output, then most of the work would be
+already done. The most complex issue remaining would probably be that
+there can be no exit() call - if anything fails, we have to gracefully
+return up the stack and out of the library.
+
+A duplicity of functionality is not an issue because there is none -
+the binary tools like mkfs.xfs would become simple wrappers around the
+library functions: pass user input to the specified library call, then
+print any message created in the library and exit.
+
+Maintaining overhead:
+None? The code would be cleaned up and moved, but there wouldn’t be
+new things to maintain.
+
+Drawbacks:
+I can’t think out any...
+
+Additional advantages:
+The refactoring can clean up the code a bit.
+
+Comment:
+Useful and nice to have, but doesn’t have to be done ASAP.
+
+
+3.3. A system service
+------------------------------
+A system service/daemon, that would use dbus or some other structured
+interface to accept jobs and return results.
+
+Required implementation changes/expected problems:
+We don’t want the daemon to exit if it can’t access a file, we don’t
+want it to do printfs(), … So, at the end, we have to do the
+structured output and library and then a lot of work above it.
+
+Maintaining overhead:
+All the system services things plus whatever the other two solutions require.
+
+Drawbacks:
+The biggest maintaining overhead of all proposed solutions, basically
+a new tool/subproject. Using dbus in a third party project is more
+work than to just include a library and call one function.
+
+Additional advantages:
+It wouldn’t be possible to attempt concurrent modifications of a device.
+
+Comment:
+In my opinion, this shouldn’t be our project. Let other people make it
+their front if they want something like this and instead, just make it
+easier for them by using one of the other solutions.
+
+
+4. Conclusion
+===========
+
+A structured output is something we should aim for. It helps a lot
+with the issues and it is the cheapest option. If it goes well, it can
+be later on followed by creating a library, although, at this moment,
+that seems a premature thing strive for. Creating a daemon is not a
+thing any single filesystem should do on its own.
+
+And thank you for reading all this, I look forward to your comments. :-)
+Jan
+
 -- 
-2.12.3
-
+Jan Tulak
+jtulak@redhat.com / jan@tulak.me

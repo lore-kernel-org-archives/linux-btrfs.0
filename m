@@ -1,46 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55790 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751744AbdF3Hhx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 30 Jun 2017 03:37:53 -0400
-Date: Fri, 30 Jun 2017 09:36:41 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Nick Terrell <terrelln@fb.com>
-Cc: kernel-team@fb.com, Chris Mason <clm@fb.com>, Yann Collet <cyan@fb.com>,
-        Adam Borowski <kilobyte@angband.pl>, David Sterba <dsterba@suse.cz>,
-        squashfs-devel@lists.sourceforge.net, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: Re: [PATCH v2 0/4] Add xxhash and zstd modules
-Message-ID: <20170630073641.GN2866@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170629194108.1674498-1-terrelln@fb.com>
+Received: from mail-ua0-f195.google.com ([209.85.217.195]:33327 "EHLO
+        mail-ua0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751899AbdF3MQV (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 30 Jun 2017 08:16:21 -0400
+Received: by mail-ua0-f195.google.com with SMTP id w19so8600722uac.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Jun 2017 05:16:21 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170629194108.1674498-1-terrelln@fb.com>
+In-Reply-To: <20170629194108.1674498-4-terrelln@fb.com>
+References: <20170629194108.1674498-1-terrelln@fb.com> <20170629194108.1674498-4-terrelln@fb.com>
+From: E V <eliventer@gmail.com>
+Date: Fri, 30 Jun 2017 08:16:20 -0400
+Message-ID: <CAJtFHUQvmnf7Ggawb4UDfoU8MK37q3rxiWdUmYJE8h1huQZfFQ@mail.gmail.com>
+Subject: Re: [PATCH v2 3/4] btrfs: Add zstd support
+To: Nick Terrell <terrelln@fb.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 29, 2017 at 12:41:04PM -0700, Nick Terrell wrote:
->  lib/zstd/Makefile          |   18 +
->  lib/zstd/bitstream.h       |  374 +++++
->  lib/zstd/compress.c        | 3479 ++++++++++++++++++++++++++++++++++++++++++++
->  lib/zstd/decompress.c      | 2526 ++++++++++++++++++++++++++++++++
->  lib/zstd/entropy_common.c  |  243 ++++
->  lib/zstd/error_private.h   |   53 +
->  lib/zstd/fse.h             |  575 ++++++++
->  lib/zstd/fse_compress.c    |  795 ++++++++++
->  lib/zstd/fse_decompress.c  |  332 +++++
->  lib/zstd/huf.h             |  212 +++
->  lib/zstd/huf_compress.c    |  771 ++++++++++
->  lib/zstd/huf_decompress.c  |  960 ++++++++++++
->  lib/zstd/mem.h             |  151 ++
->  lib/zstd/zstd_common.c     |   75 +
->  lib/zstd/zstd_internal.h   |  269 ++++
->  lib/zstd/zstd_opt.h        | 1014 +++++++++++++
+On Thu, Jun 29, 2017 at 3:41 PM, Nick Terrell <terrelln@fb.com> wrote:
+> Add zstd compression and decompression support to BtrFS. zstd at its
+> fastest level compresses almost as well as zlib, while offering much
+> faster compression and decompression, approaching lzo speeds.
+>
+> I benchmarked btrfs with zstd compression against no compression, lzo
+> compression, and zlib compression. I benchmarked two scenarios. Copying
+> a set of files to btrfs, and then reading the files. Copying a tarball
+> to btrfs, extracting it to btrfs, and then reading the extracted files.
+> After every operation, I call `sync` and include the sync time.
+> Between every pair of operations I unmount and remount the filesystem
+> to avoid caching. The benchmark files can be found in the upstream
+> zstd source repository under
+> `contrib/linux-kernel/{btrfs-benchmark.sh,btrfs-extract-benchmark.sh}`
+> [1] [2].
+>
+> I ran the benchmarks on a Ubuntu 14.04 VM with 2 cores and 4 GiB of RAM.
+> The VM is running on a MacBook Pro with a 3.1 GHz Intel Core i7 processor,
+> 16 GB of RAM, and a SSD.
+>
+> The first compression benchmark is copying 10 copies of the unzipped
+> Silesia corpus [3] into a BtrFS filesystem mounted with
+> `-o compress-force=Method`. The decompression benchmark times how long
+> it takes to `tar` all 10 copies into `/dev/null`. The compression ratio is
+> measured by comparing the output of `df` and `du`. See the benchmark file
+> [1] for details. I benchmarked multiple zstd compression levels, although
+> the patch uses zstd level 1.
+>
+> | Method  | Ratio | Compression MB/s | Decompression speed |
+> |---------|-------|------------------|---------------------|
+> | None    |  0.99 |              504 |                 686 |
+> | lzo     |  1.66 |              398 |                 442 |
+> | zlib    |  2.58 |               65 |                 241 |
+> | zstd 1  |  2.57 |              260 |                 383 |
+> | zstd 3  |  2.71 |              174 |                 408 |
+> | zstd 6  |  2.87 |               70 |                 398 |
+> | zstd 9  |  2.92 |               43 |                 406 |
+> | zstd 12 |  2.93 |               21 |                 408 |
+> | zstd 15 |  3.01 |               11 |                 354 |
+>
 
-I don't see patch 2/4 in the mailinglist, probably over the 100kb limit.
-
-The lib/* stuff needs to be merged first, I shouldn't add non-btrfs code
-to our regular for-next branch. A testing branch with all the zstd code
-can be created, but from the upstream merging process, I don't think we
-can avoid two step merging.
+As a user looking at this graph the zstd 3 seems like the sweet spot to me,
+more then twice as fast as zlib with a bit better compression. Is this
+going to be
+configurable?

@@ -1,38 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56419 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:55761 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751668AbdF3HpV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 30 Jun 2017 03:45:21 -0400
-Date: Fri, 30 Jun 2017 09:44:10 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: David Sterba <dsterba@suse.com>, clm@fb.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PULL] Btrfs for 4.13, part 1
-Message-ID: <20170630074409.GO2866@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1498229425.git.dsterba@suse.com>
- <1ad1fcee-d7de-452d-3e9f-a87fe5d6117e@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1ad1fcee-d7de-452d-3e9f-a87fe5d6117e@suse.com>
+        id S1751581AbdF3QiK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 30 Jun 2017 12:38:10 -0400
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: clm@fb.com
+Subject: Btrfs progs release 4.11.1
+Date: Fri, 30 Jun 2017 18:36:56 +0200
+Message-Id: <20170630163656.2443-1-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 28, 2017 at 09:49:49AM +0300, Nikolay Borisov wrote:
-> Dave I run bisection of all failures between -rc6 and your 
-> pull request and here are the results: 
-> 
-> btrfs/048 - e79a33270d05 ("btrfs: Check name_len with boundary in verify dir_item")
-> btrfs/053 - b780e22768d3 ("btrfs: fix validation of XATTR_ITEM dir items")
-> generic/273 - 28785f70ef88 ("Btrfs: skip commit transaction if we don't have enough pinned bytes")
-> generic/337 - e79a33270d05 ("btrfs: Check name_len with boundary in verify dir_item")
-> shared/002 - e79a33270d05 ("btrfs: Check name_len with boundary in verify dir_item")
-> 
-> So those are tests which are failing as a direct of 
-> the listed patches. 
+Hi,
 
-Thanks for the list. I'm not sure the bisection helps here, the bug is
-in the validation function, other patches call it in various places. But
-I've used the list of tests for verifying my fix I sent yesterday.
-Overnight run of all fstests still found one instance that fails, test
-generic/066 so I'll look at it today.
+btrfs-progs version 4.11.1 have been released. It's a small release with
+handful of fixes and minor other updates.
+
+Changes:
+  * image: restoring from multiple devices
+  * dev stats: make --check option work
+  * check: fix false alert with extent hole on a NO_HOLE filesystem
+  * check: lowmem mode, fix false alert in case of mixed inline and compressed
+    extent
+  * convert: work with large filesystems (many TB)
+  * convert: fix overwriting of eb header flags
+  * convert: do not clear NODATASUM flag in inodes when run with --no-datasum
+  * docs updates
+  * build: sync Android.mk with Makefile
+  * tests:
+    * new tests
+    * fix 008 and 009, shell quotation mistake
+
+Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
+Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
+
+Shortlog:
+
+David Sterba (7):
+      btrfs-progs: docs: update formatting of btrfs-rescue
+      btrfs-progs: docs: update formatting of btrfs-property
+      btrfs-progs: docs: fix sentence for no-dump file attribute
+      btrfs-progs: docs: update note about device deletion
+      btrfs-progs: build: sync recent makefile changes to android.mk
+      btrfs-progs: update CHANGES for v4.11.1
+      Btrfs progs v4.11.1
+
+Filipe Manana (2):
+      btrfs-progs: Fix restoring image from multi devices fs into single device
+      btrfs-progs: test for restoring multiple devices fs into a single device
+
+Hans van Kranenburg (1):
+      btrfs-progs: send operates on ro snapshots only
+
+Kasijjuf (3):
+      btrfs-progs: docs: Expand confusing abbreviation in documentation
+      btrfs-progs: docs: Wrong section in ref to manpage
+      btrfs-progs: docs: replace <dev> with <device>
+
+Lakshmipathi.G (3):
+      btrfs-progs: Fix 'btrfs device stats --check' cli option
+      btrfs-progs: convert: widen int types in convert context
+      btrfs-progs: convert: Add larger device support
+
+Liu Bo (3):
+      Btrfs-progs: man: nodesize must be power of 2 now
+      Btrfs-progs: convert: do not clear nodatasum flag in inode item
+      Btrfs-progs: convert: do not clear header rev
+
+Lu Fengqi (1):
+      btrfs-progs: lowmem check: Fix false alert about file extent interrupt
+
+Qu Wenruo (2):
+      btrfs-progs: check: Fix false alert about EXTENT_DATA that shouldn't be a hole
+      btrfs-progs: tests: Add test case to check file hole extents with NO_HOLES flag
+
+Tsutomu Itoh (1):
+      btrfs-progs: tests: remove variable quotation from convert-tests
+

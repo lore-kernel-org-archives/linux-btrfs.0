@@ -1,326 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:45864 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1753213AbdF2UbJ (ORCPT
+Received: from tartarus.angband.pl ([89.206.35.136]:41979 "EHLO
+        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751333AbdF3DYv (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Jun 2017 16:31:09 -0400
-Received: from pps.filterd (m0044012.ppops.net [127.0.0.1])
-        by mx0a-00082601.pphosted.com (8.16.0.20/8.16.0.20) with SMTP id v5TJeEiw016746
-        for <linux-btrfs@vger.kernel.org>; Thu, 29 Jun 2017 12:41:45 -0700
-Received: from mail.thefacebook.com ([199.201.64.23])
-        by mx0a-00082601.pphosted.com with ESMTP id 2bd76b85ph-1
-        (version=TLSv1 cipher=ECDHE-RSA-AES256-SHA bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Thu, 29 Jun 2017 12:41:45 -0700
-Received: from facebook.com (2401:db00:21:6023:face:0:9:0)      by
- mx-out.facebook.com (10.212.236.89) with ESMTP id
- fb2b24da5d0211e7bbae0002c95209d8-575358f0 for <linux-btrfs@vger.kernel.org>;
-        Thu, 29 Jun 2017 12:41:44 -0700
-From: Nick Terrell <terrelln@fb.com>
+        Thu, 29 Jun 2017 23:24:51 -0400
+Date: Fri, 30 Jun 2017 05:24:43 +0200
+From: Adam Borowski <kilobyte@angband.pl>
 To: Nick Terrell <terrelln@fb.com>
-CC: <kernel-team@fb.com>, Chris Mason <clm@fb.com>, Yann Collet <cyan@fb.com>,
-        Adam Borowski <kilobyte@angband.pl>, David Sterba <dsterba@suse.cz>,
-        <squashfs-devel@lists.sourceforge.net>, <linux-btrfs@vger.kernel.org>,
-        <linux-kernel@vger.kernel.org>, Sean Purcell <me@seanp.xyz>
-Subject: [PATCH v2 4/4] squashfs: Add zstd support
-Date: Thu, 29 Jun 2017 12:41:08 -0700
-Message-ID: <20170629194108.1674498-5-terrelln@fb.com>
-In-Reply-To: <20170629194108.1674498-1-terrelln@fb.com>
+Cc: kernel-team@fb.com, Chris Mason <clm@fb.com>, Yann Collet <cyan@fb.com>,
+        David Sterba <dsterba@suse.cz>, squashfs-devel@lists.sourceforge.net,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH v2 3/4] btrfs: Add zstd support
+Message-ID: <20170630032443.nji7n5kwk7bxopzp@angband.pl>
 References: <20170629194108.1674498-1-terrelln@fb.com>
+ <20170629194108.1674498-4-terrelln@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20170629194108.1674498-4-terrelln@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add zstd compression and decompression support to SquashFS. zstd is a
-great fit for SquashFS because it can compress at ratios approaching xz,
-while decompressing twice as fast as zlib. For SquashFS in particular,
-it can decompress as fast as lzo and lz4. It also has the flexibility
-to turn down the compression ratio for faster compression times.
+On Thu, Jun 29, 2017 at 12:41:07PM -0700, Nick Terrell wrote:
+> Add zstd compression and decompression support to BtrFS. zstd at its
+> fastest level compresses almost as well as zlib, while offering much
+> faster compression and decompression, approaching lzo speeds.
 
-The compression benchmark is run on the file tree from the SquashFS archive
-found in ubuntu-16.10-desktop-amd64.iso [1]. It uses `mksquashfs` with the
-default block size (128 KB) and and various compression algorithms/levels.
-xz and zstd are also benchmarked with 256 KB blocks. The decompression
-benchmark times how long it takes to `tar` the file tree into `/dev/null`.
-See the benchmark file in the upstream zstd source repository located under
-`contrib/linux-kernel/squashfs-benchmark.sh` [2] for details.
+> +static int zstd_decompress_bio(struct list_head *ws, struct page **pages_in,
+> +		u64 disk_start,
+> +		struct bio *orig_bio,
+> +		size_t srclen)
 
-I ran the benchmarks on a Ubuntu 14.04 VM with 2 cores and 4 GiB of RAM.
-The VM is running on a MacBook Pro with a 3.1 GHz Intel Core i7 processor,
-16 GB of RAM, and a SSD.
+Note that this fails to build if e1ddce71 is applied, and it'll be in
+mainline in just a few days from now.  Fixing that is obvious, but
+to avoid duplicating the effort:
 
-| Method         | Ratio | Compression MB/s | Decompression MB/s |
-|----------------|-------|------------------|--------------------|
-| gzip           |  2.92 |               15 |                128 |
-| lzo            |  2.64 |              9.5 |                217 |
-| lz4            |  2.12 |               94 |                218 |
-| xz             |  3.43 |              5.5 |                 35 |
-| xz 256 KB      |  3.53 |              5.4 |                 40 |
-| zstd 1         |  2.71 |               96 |                210 |
-| zstd 5         |  2.93 |               69 |                198 |
-| zstd 10        |  3.01 |               41 |                225 |
-| zstd 15        |  3.13 |             11.4 |                224 |
-| zstd 16 256 KB |  3.24 |              8.1 |                210 |
 
-This patch was written by Sean Purcell <me@seanp.xyz>, but I will be
-taking over the submission process.
+diff --git a/fs/btrfs/zstd.c b/fs/btrfs/zstd.c
+index 838741b3732c..e9403e569d8e 100644
+--- a/fs/btrfs/zstd.c
++++ b/fs/btrfs/zstd.c
+@@ -25,6 +25,7 @@
+ #include <linux/pagemap.h>
+ #include <linux/bio.h>
+ #include <linux/zstd.h>
++#include <linux/refcount.h>
+ #include "compression.h"
+ 
+ #define ZSTD_BTRFS_MAX_WINDOWLOG 17
+@@ -262,17 +263,18 @@ static int zstd_compress_pages(struct list_head *ws,
+        return ret;
+ }
+ 
+-static int zstd_decompress_bio(struct list_head *ws, struct page **pages_in,
+-               u64 disk_start,
+-               struct bio *orig_bio,
+-               size_t srclen)
++static int zstd_decompress_bio(struct list_head *ws, struct compressed_bio *cb)
+ {
+        struct workspace *workspace = list_entry(ws, struct workspace, list);
+        ZSTD_DStream *stream;
+        int ret = 0;
+        unsigned long page_in_index = 0;
++       size_t srclen = cb->compressed_len;
+        unsigned long total_pages_in = DIV_ROUND_UP(srclen, PAGE_SIZE);
+        unsigned long buf_start;
++       struct page **pages_in = cb->compressed_pages;
++       u64 disk_start = cb->start;
++       struct bio *orig_bio = cb->orig_bio;
+        unsigned long total_out = 0;
+        ZSTD_inBuffer in_buf = { NULL, 0, 0 };
+        ZSTD_outBuffer out_buf = { NULL, 0, 0 };
 
-[1] http://releases.ubuntu.com/16.10/
-[2] https://github.com/facebook/zstd/blob/dev/contrib/linux-kernel/squashfs-benchmark.sh
 
-zstd source repository: https://github.com/facebook/zstd
-
-Cc: Sean Purcell <me@seanp.xyz>
-Signed-off-by: Nick Terrell <terrelln@fb.com>
----
- fs/squashfs/Kconfig        |  14 +++++
- fs/squashfs/Makefile       |   1 +
- fs/squashfs/decompressor.c |   7 +++
- fs/squashfs/decompressor.h |   4 ++
- fs/squashfs/squashfs_fs.h  |   1 +
- fs/squashfs/zstd_wrapper.c | 150 +++++++++++++++++++++++++++++++++++++++++++++
- 6 files changed, 177 insertions(+)
- create mode 100644 fs/squashfs/zstd_wrapper.c
-
-diff --git a/fs/squashfs/Kconfig b/fs/squashfs/Kconfig
-index ffb093e..1adb334 100644
---- a/fs/squashfs/Kconfig
-+++ b/fs/squashfs/Kconfig
-@@ -165,6 +165,20 @@ config SQUASHFS_XZ
-
- 	  If unsure, say N.
-
-+config SQUASHFS_ZSTD
-+	bool "Include support for ZSTD compressed file systems"
-+	depends on SQUASHFS
-+	select ZSTD_DECOMPRESS
-+	help
-+	  Saying Y here includes support for reading Squashfs file systems
-+	  compressed with ZSTD compression.  ZSTD gives better compression than
-+	  the default ZLIB compression, while using less CPU.
-+
-+	  ZSTD is not the standard compression used in Squashfs and so most
-+	  file systems will be readable without selecting this option.
-+
-+	  If unsure, say N.
-+
- config SQUASHFS_4K_DEVBLK_SIZE
- 	bool "Use 4K device block size?"
- 	depends on SQUASHFS
-diff --git a/fs/squashfs/Makefile b/fs/squashfs/Makefile
-index 246a6f3..6655631 100644
---- a/fs/squashfs/Makefile
-+++ b/fs/squashfs/Makefile
-@@ -15,3 +15,4 @@ squashfs-$(CONFIG_SQUASHFS_LZ4) += lz4_wrapper.o
- squashfs-$(CONFIG_SQUASHFS_LZO) += lzo_wrapper.o
- squashfs-$(CONFIG_SQUASHFS_XZ) += xz_wrapper.o
- squashfs-$(CONFIG_SQUASHFS_ZLIB) += zlib_wrapper.o
-+squashfs-$(CONFIG_SQUASHFS_ZSTD) += zstd_wrapper.o
-diff --git a/fs/squashfs/decompressor.c b/fs/squashfs/decompressor.c
-index d2bc136..8366398 100644
---- a/fs/squashfs/decompressor.c
-+++ b/fs/squashfs/decompressor.c
-@@ -65,6 +65,12 @@ static const struct squashfs_decompressor squashfs_zlib_comp_ops = {
- };
- #endif
-
-+#ifndef CONFIG_SQUASHFS_ZSTD
-+static const struct squashfs_decompressor squashfs_zstd_comp_ops = {
-+	NULL, NULL, NULL, NULL, ZSTD_COMPRESSION, "zstd", 0
-+};
-+#endif
-+
- static const struct squashfs_decompressor squashfs_unknown_comp_ops = {
- 	NULL, NULL, NULL, NULL, 0, "unknown", 0
- };
-@@ -75,6 +81,7 @@ static const struct squashfs_decompressor *decompressor[] = {
- 	&squashfs_lzo_comp_ops,
- 	&squashfs_xz_comp_ops,
- 	&squashfs_lzma_unsupported_comp_ops,
-+	&squashfs_zstd_comp_ops,
- 	&squashfs_unknown_comp_ops
- };
-
-diff --git a/fs/squashfs/decompressor.h b/fs/squashfs/decompressor.h
-index a25713c..0f5a8e4 100644
---- a/fs/squashfs/decompressor.h
-+++ b/fs/squashfs/decompressor.h
-@@ -58,4 +58,8 @@ extern const struct squashfs_decompressor squashfs_lzo_comp_ops;
- extern const struct squashfs_decompressor squashfs_zlib_comp_ops;
- #endif
-
-+#ifdef CONFIG_SQUASHFS_ZSTD
-+extern const struct squashfs_decompressor squashfs_zstd_comp_ops;
-+#endif
-+
- #endif
-diff --git a/fs/squashfs/squashfs_fs.h b/fs/squashfs/squashfs_fs.h
-index 506f4ba..24d12fd 100644
---- a/fs/squashfs/squashfs_fs.h
-+++ b/fs/squashfs/squashfs_fs.h
-@@ -241,6 +241,7 @@ struct meta_index {
- #define LZO_COMPRESSION		3
- #define XZ_COMPRESSION		4
- #define LZ4_COMPRESSION		5
-+#define ZSTD_COMPRESSION	6
-
- struct squashfs_super_block {
- 	__le32			s_magic;
-diff --git a/fs/squashfs/zstd_wrapper.c b/fs/squashfs/zstd_wrapper.c
-new file mode 100644
-index 0000000..8cb7c76
---- /dev/null
-+++ b/fs/squashfs/zstd_wrapper.c
-@@ -0,0 +1,150 @@
-+/*
-+ * Squashfs - a compressed read only filesystem for Linux
-+ *
-+ * Copyright (c) 2016-present, Facebook, Inc.
-+ * All rights reserved.
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public License
-+ * as published by the Free Software Foundation; either version 2,
-+ * or (at your option) any later version.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-+ *
-+ * zstd_wrapper.c
-+ */
-+
-+#include <linux/mutex.h>
-+#include <linux/buffer_head.h>
-+#include <linux/slab.h>
-+#include <linux/zstd.h>
-+#include <linux/vmalloc.h>
-+
-+#include "squashfs_fs.h"
-+#include "squashfs_fs_sb.h"
-+#include "squashfs.h"
-+#include "decompressor.h"
-+#include "page_actor.h"
-+
-+struct workspace {
-+	void *mem;
-+	size_t mem_size;
-+};
-+
-+static void *zstd_init(struct squashfs_sb_info *msblk, void *buff)
-+{
-+	struct workspace *wksp = kmalloc(sizeof(*wksp), GFP_KERNEL);
-+	if (wksp == NULL)
-+		goto failed;
-+	wksp->mem_size = ZSTD_DStreamWorkspaceBound(max_t(size_t,
-+				msblk->block_size, SQUASHFS_METADATA_SIZE));
-+	wksp->mem = vmalloc(wksp->mem_size);
-+	if (wksp->mem == NULL)
-+		goto failed;
-+
-+	return wksp;
-+
-+failed:
-+	ERROR("Failed to allocate zstd workspace\n");
-+	kfree(wksp);
-+	return ERR_PTR(-ENOMEM);
-+}
-+
-+
-+static void zstd_free(void *strm)
-+{
-+	struct workspace *wksp = strm;
-+
-+	if (wksp)
-+		vfree(wksp->mem);
-+	kfree(wksp);
-+}
-+
-+
-+static int zstd_uncompress(struct squashfs_sb_info *msblk, void *strm,
-+	struct buffer_head **bh, int b, int offset, int length,
-+	struct squashfs_page_actor *output)
-+{
-+	struct workspace *wksp = strm;
-+	ZSTD_DStream *stream;
-+	size_t total_out = 0;
-+	size_t zstd_err;
-+	int k = 0;
-+	ZSTD_inBuffer in_buf = { NULL, 0, 0 };
-+	ZSTD_outBuffer out_buf = { NULL, 0, 0 };
-+
-+	stream = ZSTD_initDStream(wksp->mem_size, wksp->mem, wksp->mem_size);
-+
-+	if (!stream) {
-+		ERROR("Failed to initialize zstd decompressor\n");
-+		goto out;
-+	}
-+
-+	out_buf.size = PAGE_SIZE;
-+	out_buf.dst = squashfs_first_page(output);
-+
-+	do {
-+		if (in_buf.pos == in_buf.size && k < b) {
-+			int avail = min(length, msblk->devblksize - offset);
-+			length -= avail;
-+			in_buf.src = bh[k]->b_data + offset;
-+			in_buf.size = avail;
-+			in_buf.pos = 0;
-+			offset = 0;
-+		}
-+
-+		if (out_buf.pos == out_buf.size) {
-+			out_buf.dst = squashfs_next_page(output);
-+			if (out_buf.dst == NULL) {
-+				/* shouldn't run out of pages before stream is
-+				 * done */
-+				squashfs_finish_page(output);
-+				goto out;
-+			}
-+			out_buf.pos = 0;
-+			out_buf.size = PAGE_SIZE;
-+		}
-+
-+		total_out -= out_buf.pos;
-+		zstd_err = ZSTD_decompressStream(stream, &out_buf, &in_buf);
-+		total_out += out_buf.pos; /* add the additional data produced */
-+
-+		if (in_buf.pos == in_buf.size && k < b)
-+			put_bh(bh[k++]);
-+	} while (zstd_err != 0 && !ZSTD_isError(zstd_err));
-+
-+	squashfs_finish_page(output);
-+
-+	if (ZSTD_isError(zstd_err)) {
-+		ERROR("zstd decompression error: %d\n",
-+				(int)ZSTD_getErrorCode(zstd_err));
-+		goto out;
-+	}
-+
-+	if (k < b)
-+		goto out;
-+
-+	return (int)total_out;
-+
-+out:
-+	for (; k < b; k++)
-+		put_bh(bh[k]);
-+
-+	return -EIO;
-+}
-+
-+const struct squashfs_decompressor squashfs_zstd_comp_ops = {
-+	.init = zstd_init,
-+	.free = zstd_free,
-+	.decompress = zstd_uncompress,
-+	.id = ZSTD_COMPRESSION,
-+	.name = "zstd",
-+	.supported = 1
-+};
---
-2.9.3
+-- 
+⢀⣴⠾⠻⢶⣦⠀ 
+⣾⠁⢠⠒⠀⣿⡁ A dumb species has no way to open a tuna can.
+⢿⡄⠘⠷⠚⠋⠀ A smart species invents a can opener.
+⠈⠳⣄⠀⠀⠀⠀ A master species delegates.

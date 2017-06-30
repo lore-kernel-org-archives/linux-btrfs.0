@@ -1,162 +1,167 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:43663 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752320AbdF2StO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Jun 2017 14:49:14 -0400
-Subject: Re: Lock between userspace and btrfs-cleaner on extent_buffer
-To: Sargun Dhillon <sargun@sargun.me>
-Cc: BTRFS ML <linux-btrfs@vger.kernel.org>
-References: <CAMp4zn9Bv=ULBx9f-jPAZrmc9oOOT+egpypBPSjajd03WFA71A@mail.gmail.com>
- <CAMp4zn9KmzW2gC9hHsuATsDZSMWT6PeqkA+cBLj3wMroZkXFLA@mail.gmail.com>
- <4c844bc7-2cee-d249-b1af-e1da7cab35a0@suse.com>
- <c3f16d38-1331-e420-2a92-37db71ea8dee@suse.com>
- <CAMp4zn_6up7FVB=HdkAka7B5qkYDNE_mseiWP2+SC-v_Gu4Vog@mail.gmail.com>
- <4952ca4f-2824-fabf-1b0d-048d8e901e2f@suse.com>
- <CAMp4zn8mr-24aO6m0_vpc-9WLSkkhgscZUGcxPDhdbUYtOPrOw@mail.gmail.com>
-From: Jeff Mahoney <jeffm@suse.com>
-Message-ID: <e4a12dcf-62e9-adba-72f9-07e2d2c4ca68@suse.com>
-Date: Thu, 29 Jun 2017 14:49:10 -0400
+Received: from mail-wm0-f46.google.com ([74.125.82.46]:32952 "EHLO
+        mail-wm0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751605AbdF3JZp (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 30 Jun 2017 05:25:45 -0400
+Received: by mail-wm0-f46.google.com with SMTP id z75so23774239wmc.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Jun 2017 02:25:44 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAMp4zn8mr-24aO6m0_vpc-9WLSkkhgscZUGcxPDhdbUYtOPrOw@mail.gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="P2pGDwCg8Qox3OCHM4pXlMNXCfiRQaSan"
+From: Darryl Barlow <darryl@barlow.com.au>
+Date: Fri, 30 Jun 2017 09:25:43 +0000
+Message-ID: <CALfAoZ9kP4QboGwn9bEC2dgPUX0bHC5UmJEPvY-mGSE-Zu90aA@mail.gmail.com>
+Subject: Cannot mount btrfs file system
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---P2pGDwCg8Qox3OCHM4pXlMNXCfiRQaSan
-Content-Type: multipart/mixed; boundary="Eou7PbCpFCPWq1qKmBrgAk0CWAbHLsXrs";
- protected-headers="v1"
-From: Jeff Mahoney <jeffm@suse.com>
-To: Sargun Dhillon <sargun@sargun.me>
-Cc: BTRFS ML <linux-btrfs@vger.kernel.org>
-Message-ID: <e4a12dcf-62e9-adba-72f9-07e2d2c4ca68@suse.com>
-Subject: Re: Lock between userspace and btrfs-cleaner on extent_buffer
-References: <CAMp4zn9Bv=ULBx9f-jPAZrmc9oOOT+egpypBPSjajd03WFA71A@mail.gmail.com>
- <CAMp4zn9KmzW2gC9hHsuATsDZSMWT6PeqkA+cBLj3wMroZkXFLA@mail.gmail.com>
- <4c844bc7-2cee-d249-b1af-e1da7cab35a0@suse.com>
- <c3f16d38-1331-e420-2a92-37db71ea8dee@suse.com>
- <CAMp4zn_6up7FVB=HdkAka7B5qkYDNE_mseiWP2+SC-v_Gu4Vog@mail.gmail.com>
- <4952ca4f-2824-fabf-1b0d-048d8e901e2f@suse.com>
- <CAMp4zn8mr-24aO6m0_vpc-9WLSkkhgscZUGcxPDhdbUYtOPrOw@mail.gmail.com>
-In-Reply-To: <CAMp4zn8mr-24aO6m0_vpc-9WLSkkhgscZUGcxPDhdbUYtOPrOw@mail.gmail.com>
+I have been running btrfs without problems for years on an up to date
+Sabayon Linux.  The btrfs filesystem is on a luks encrypted partition
+sdb4, and indludes subvolumes for root, home and swap  Following the
+latest upgrade to the Distro I shut the machine down.  When I cae to
+reboot it failed to mount it decrypted the partition okay but could
+not mount the filesystem.
 
---Eou7PbCpFCPWq1qKmBrgAk0CWAbHLsXrs
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+I have tried some options booting using a manjaro linux (arch) live
+usb.  The partitions succesfully decrypts resulting in
+/dev/mapper/sdb4.
 
-On 6/29/17 2:46 PM, Sargun Dhillon wrote:
-> On Thu, Jun 29, 2017 at 11:42 AM, Jeff Mahoney <jeffm@suse.com> wrote:
->> On 6/28/17 6:02 PM, Sargun Dhillon wrote:
->>> On Wed, Jun 28, 2017 at 2:55 PM, Jeff Mahoney <jeffm@suse.com> wrote:=
+Any assistance would be much appreciated.
 
->>>> On 6/27/17 5:12 PM, Jeff Mahoney wrote:
->>>>> On 6/13/17 9:05 PM, Sargun Dhillon wrote:
->>>>>> On Thu, Jun 8, 2017 at 11:34 AM, Sargun Dhillon <sargun@sargun.me>=
- wrote:
->>>>>>> I have a deadlock caught in the wild between two processes --
->>>>>>> btrfs-cleaner, and userspace process (Docker). Here, you can see =
-both
->>>>>>> of the backtraces. btrfs-cleaner is trying to get a lock on
->>>>>>> ffff9859d360caf0, which is owned by Docker's pid. Docker on the o=
-ther
->>>>>>> hand is trying to get a lock on ffff9859dc0f0578, which is owned =
-by
->>>>>>> btrfs-cleaner's Pid.
->>>>>>>
->>>>>>> This is on vanilla 4.11.3 without much workload. The background
->>>>>>> workload was basically starting and stopping Docker with a medium=
-
->>>>>>> sized image like ubuntu:latest with sleep 5. So, snapshot creatio=
-n,
->>>>>>> destruction. And there's some stuff that's logging to btrfs.
->>>>>
->>>>> Hi Sargun -
->>>>>
->>>>> We hit this bug in testing last week.  I have a patch that I've wri=
-tten
->>>>> up and have run under your reproducer for a while.  So far it hasn'=
-t
->>>>> hit.  I'll post it shortly and CC you.  It does depend lightly on t=
-he
->>>>> rbtree code, though.  Since we'll want this fix for -stable, I'll w=
-rite
->>>>> up a version for that too.
->>>>
->>>> After thinking about it a bit more, I think my patch just happens to=
-
->>>> make it less likely to hit but would ultimately degrade into a livel=
-ock
->>>> where it was a deadlock previously.  I was just trylocking and
->>>> requeuing, so both threads are allowed to do other work and maybe ev=
-en
->>>> finish but ultimately if there's a true deadlock it'll hit anyway.
->>>>
->>>> -Jeff
->>>>
->>> Does it make sense to spend the time on making it so that
->>> btrfs-cleaner has abortable operations, and the ability to abort if
->>> the root deletion either takes too long, or if it receives a signal?
->>> Although, such a case may result in a livelock, to me it seems like a=
-
->>> lot less bad than deadlocking.
->>
->>
->> For now, reverting:
->>
->> commit fb235dc06fac9eaa4408ade9c8b20d45d63c89b7
->> Author: Qu Wenruo <quwenruo@cn.fujitsu.com>
->> Date:   Wed Feb 15 10:43:03 2017 +0800
->>
->>     btrfs: qgroup: Move half of the qgroup accounting time out of comm=
-it
->> trans
->>
->> ... should do the trick.
->>
->> -Jeff
->>
-> I thought it was this as well, but we still saw lock-ups even after
-> reverting this change on 4.11. They were rarer, but we still saw
-> issues with locked up btrfs-transactions. It may have been due to a
-> different issue. If you want. I can try to revert this, and run a
-> workload on it to see where the exact lock-up is?
-
-Yeah, I'd be interested in those results.
-
--Jeff
+Details as follows:
 
 
---=20
-Jeff Mahoney
-SUSE Labs
+Trying to mount this partition fails with the followin errors in dmesg:
+
+[manjaro@manjaro ~]$ dmesg | grep -i btrfs
+[  371.524030] Btrfs loaded, crc32c=crc32c-intel
+[  371.534265] BTRFS: device label sa_sabayon devid 1 transid 1407824 /dev/dm-0
+[  418.691592] BTRFS info (device dm-0): disk space caching is enabled
+[  422.606271] BTRFS error (device dm-0): failed to read chunk root
+[  422.643907] BTRFS error (device dm-0): open_ctree failed
+
+btrfs restore gives teh following terminal output:
+
+[manjaro@manjaro ~]$ sudo btrfs restore -l /dev/mapper/sdb4
+bytenr mismatch, want=20971520, have=0
+ERROR: cannot read chunk root
+Could not open root, trying backup super
+bytenr mismatch, want=20971520, have=0
+ERROR: cannot read chunk root
+Could not open root, trying backup super
+bytenr mismatch, want=20971520, have=0
+ERROR: cannot read chunk root
+Could not open root, trying backup super
+
+Other information (from live usb)
+
+[manjaro@manjaro ~]$ uname -a
+Linux manjaro 4.9.13-1-MANJARO #1 SMP PREEMPT Sun Feb 26 13:27:28 UTC
+2017 x86_64 GNU/Linux
+
+[manjaro@manjaro ~]$ btrfs --version
+btrfs-progs v4.9.1
+
+[manjaro@manjaro ~]$ sudo btrfs fi show
+Label: 'sa_sabayon'  uuid: 725ef5b2-e35e-4868-87b3-abea02171364
+        Total devices 1 FS bytes used 817.91GiB
+        devid    1 size 923.07GiB used 838.04GiB path /dev/mapper/sdb4
+
+A chunk recovery produces the following terminal output:
+
+[manjaro@manjaro ~]$ sudo btrfs rescue chunk-recover -v /dev/mapper/sdb4
+All Devices:
+        Device: id = 1, name = /dev/mapper/sdb4
+
+Scanning: DONE in dev0
+DEVICE SCAN RESULT:
+Filesystem Information:
+        sectorsize: 4096
+        nodesize: 16384
+        tree root generation: 1407824
+        chunk root generation: 1407235
+
+All Devices:
+        Device: id = 1, name = /dev/mapper/sdb4
+
+All Block Groups:
+        Block Group: start = 0, len = 4194304, flag = 2
+        Block Group: start = 4194304, len = 8388608, flag = 4
+        Block Group: start = 12582912, len = 8388608, flag = 1
+
+All Chunks:
+        Chunk: start = 0, len = 4194304, type = 2, num_stripes = 1
+            Stripes list:
+            [ 0] Stripe: devid = 1, offset = 0
+        Chunk: start = 4194304, len = 8388608, type = 4, num_stripes = 1
+            Stripes list:
+            [ 0] Stripe: devid = 1, offset = 4194304
+        Chunk: start = 12582912, len = 8388608, type = 1, num_stripes = 1
+            Stripes list:
+            [ 0] Stripe: devid = 1, offset = 12582912
+
+All Device Extents:
+        Device extent: devid = 1, start = 0, len = 4194304, chunk offset = 0
+        Device extent: devid = 1, start = 4194304, len = 8388608,
+chunk offset = 4194304
+        Device extent: devid = 1, start = 12582912, len = 8388608,
+chunk offset = 12582912
+
+CHECK RESULT:
+Recoverable Chunks:
+  Chunk: start = 0, len = 4194304, type = 2, num_stripes = 1
+      Stripes list:
+      [ 0] Stripe: devid = 1, offset = 0
+      Block Group: start = 0, len = 4194304, flag = 2
+      Device extent list:
+          [ 0]Device extent: devid = 1, start = 0, len = 4194304,
+chunk offset = 0
+  Chunk: start = 4194304, len = 8388608, type = 4, num_stripes = 1
+      Stripes list:
+      [ 0] Stripe: devid = 1, offset = 4194304
+      Block Group: start = 4194304, len = 8388608, flag = 4
+      Device extent list:
+          [ 0]Device extent: devid = 1, start = 4194304, len =
+8388608, chunk offset = 4194304
+  Chunk: start = 12582912, len = 8388608, type = 1, num_stripes = 1
+      Stripes list:
+      [ 0] Stripe: devid = 1, offset = 12582912
+      Block Group: start = 12582912, len = 8388608, flag = 1
+      Device extent list:
+          [ 0]Device extent: devid = 1, start = 12582912, len =
+8388608, chunk offset = 12582912
+Unrecoverable Chunks:
+
+Total Chunks:           3
+  Recoverable:          3
+  Unrecoverable:        0
+
+Orphan Block Groups:
+
+Orphan Device Extents:
+
+Check chunks successfully with no orphans
+Chunk tree recovered successfully
 
 
---Eou7PbCpFCPWq1qKmBrgAk0CWAbHLsXrs--
+Then tryting to mount on /mnt results as follows:
 
---P2pGDwCg8Qox3OCHM4pXlMNXCfiRQaSan
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+[manjaro@manjaro ~]$ sudo mount /dev/mapper/sdb4 /mnt
+mount: wrong fs type, bad option, bad superblock on /dev/mapper/sdb4,
+       missing codepage or helper program, or other error
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG/MacGPG2 v2
+       In some cases useful info is found in syslog - try
+       dmesg | tail or so
 
-iQIVAwUBWVVLph57S2MheeWyAQhHQhAAs9Twc6rruv1suIWhJAQqNV06eUOpA3Ke
-GOUtWr6O3QYchW38cH9rlqb83xDHx3K3pgiKK0Im8mr8cesXKpLGNG8jth6Z8P9S
-cb+ObuqkDKOqnaPzPPL2hJmCkTnyjMYI4vxN3hno/RA5a0y9sW1vYNalyuKMIHWP
-DBO3a4P2j384N8GgtXFLyhpkTKfR45axMqDVMi5gxBVAgNs2+7JVLVi9kuH+QE5j
-zZWCLmFcLSa80rKbclipFFe1QJED29WdxKcPCGFgpDK51Hq6nNU8+LX42ADo8Ogv
-n+y8YSarzkYsuCDhu3tz3ztkt+bsJrf0PgrONZ7m35wmbYedargxgLSyYGm/ZMwC
-RyHyi6UawBH+UnsXWL334VyZzDDfgkbTZ3GQZRaKsN7VmIhUPRw7yguH+TZrbKCg
-dGGpmLRo6+ufSEkFLQ2vrfNYNHXrfa5YSOf00V6I9P5ZCUj1PtWJPnkYpT8Y4T1f
-5rJ/Nli98JR+RHSXp1Ck//1peMqr0/L2FKrEZ512/iYyyvik4jELhN1Xx90ddTRu
-5YzLEacme0W2urgX5oFdvWkHOijsqe6Sz7MkgJRoVQM2NaA6wu8noDWaeg1M+QX8
-QWbrPuREwW3HG58JWx+xP9PcqppkIMofT7JNUNosFMB90b3yFvw5xX7aRUkjiLA5
-EoJlz/qq+04=
-=nquO
------END PGP SIGNATURE-----
+dmesg result:
 
---P2pGDwCg8Qox3OCHM4pXlMNXCfiRQaSan--
+[manjaro@manjaro ~]$ dmesg | grep -i btrfs
+[  371.524030] Btrfs loaded, crc32c=crc32c-intel
+[  371.534265] BTRFS: device label sa_sabayon devid 1 transid 1407824 /dev/dm-0
+[  418.691592] BTRFS info (device dm-0): disk space caching is enabled
+[  422.606271] BTRFS error (device dm-0): failed to read chunk root
+[  422.643907] BTRFS error (device dm-0): open_ctree failed
+[ 2644.564748] BTRFS info (device dm-0): disk space caching is enabled
+[ 2648.453669] BTRFS error (device dm-0): failed to read chunk root
+[ 2648.476572] BTRFS error (device dm-0): open_ctree failed

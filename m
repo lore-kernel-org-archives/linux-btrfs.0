@@ -1,80 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55761 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751581AbdF3QiK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 30 Jun 2017 12:38:10 -0400
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com
-Subject: Btrfs progs release 4.11.1
-Date: Fri, 30 Jun 2017 18:36:56 +0200
-Message-Id: <20170630163656.2443-1-dsterba@suse.com>
+Received: from mail-qt0-f173.google.com ([209.85.216.173]:34824 "EHLO
+        mail-qt0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751886AbdF3Qp6 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 30 Jun 2017 12:45:58 -0400
+Received: by mail-qt0-f173.google.com with SMTP id 22so8543911qtw.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Jun 2017 09:45:57 -0700 (PDT)
+Message-ID: <1498841154.4689.1.camel@redhat.com>
+Subject: Re: [PATCH v8 17/18] xfs: minimal conversion to errseq_t writeback
+ error reporting
+From: Jeff Layton <jlayton@redhat.com>
+To: Christoph Hellwig <hch@infradead.org>, jlayton@kernel.org
+Cc: Andrew Morton <akpm@linux-foundation.org>,
+        Al Viro <viro@ZenIV.linux.org.uk>, Jan Kara <jack@suse.cz>,
+        tytso@mit.edu, axboe@kernel.dk, mawilcox@microsoft.com,
+        ross.zwisler@linux.intel.com, corbet@lwn.net, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        "Darrick J . Wong" <darrick.wong@oracle.com>,
+        Carlos Maiolino <cmaiolino@redhat.com>, Eryu Guan <eguan@redhat.com>,
+        David Howells <dhowells@redhat.com>, Liu Bo <bo.li.liu@oracle.com>,
+        linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
+        linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org
+Date: Fri, 30 Jun 2017 12:45:54 -0400
+In-Reply-To: <20170629141235.GB17251@infradead.org>
+References: <20170629131954.28733-1-jlayton@kernel.org>
+         <20170629131954.28733-18-jlayton@kernel.org>
+         <20170629141235.GB17251@infradead.org>
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Thu, 2017-06-29 at 07:12 -0700, Christoph Hellwig wrote:
+> Nice and simple, this looks great!
+> 
+> Reviewed-by: Christoph Hellwig <hch@lst.de>
 
-btrfs-progs version 4.11.1 have been released. It's a small release with
-handful of fixes and minor other updates.
+Thanks! I think this turned out to be a lot cleaner too.
 
-Changes:
-  * image: restoring from multiple devices
-  * dev stats: make --check option work
-  * check: fix false alert with extent hole on a NO_HOLE filesystem
-  * check: lowmem mode, fix false alert in case of mixed inline and compressed
-    extent
-  * convert: work with large filesystems (many TB)
-  * convert: fix overwriting of eb header flags
-  * convert: do not clear NODATASUM flag in inodes when run with --no-datasum
-  * docs updates
-  * build: sync Android.mk with Makefile
-  * tests:
-    * new tests
-    * fix 008 and 009, shell quotation mistake
+For filesystems that use filemap_write_and_wait_range today this now
+becomes a pretty straight conversion to file_write_and_wait_range -- one
+liner patches for the most part.
 
-Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
+I've started rolling patches to do that, but now I'm wondering...
 
-Shortlog:
-
-David Sterba (7):
-      btrfs-progs: docs: update formatting of btrfs-rescue
-      btrfs-progs: docs: update formatting of btrfs-property
-      btrfs-progs: docs: fix sentence for no-dump file attribute
-      btrfs-progs: docs: update note about device deletion
-      btrfs-progs: build: sync recent makefile changes to android.mk
-      btrfs-progs: update CHANGES for v4.11.1
-      Btrfs progs v4.11.1
-
-Filipe Manana (2):
-      btrfs-progs: Fix restoring image from multi devices fs into single device
-      btrfs-progs: test for restoring multiple devices fs into a single device
-
-Hans van Kranenburg (1):
-      btrfs-progs: send operates on ro snapshots only
-
-Kasijjuf (3):
-      btrfs-progs: docs: Expand confusing abbreviation in documentation
-      btrfs-progs: docs: Wrong section in ref to manpage
-      btrfs-progs: docs: replace <dev> with <device>
-
-Lakshmipathi.G (3):
-      btrfs-progs: Fix 'btrfs device stats --check' cli option
-      btrfs-progs: convert: widen int types in convert context
-      btrfs-progs: convert: Add larger device support
-
-Liu Bo (3):
-      Btrfs-progs: man: nodesize must be power of 2 now
-      Btrfs-progs: convert: do not clear nodatasum flag in inode item
-      Btrfs-progs: convert: do not clear header rev
-
-Lu Fengqi (1):
-      btrfs-progs: lowmem check: Fix false alert about file extent interrupt
-
-Qu Wenruo (2):
-      btrfs-progs: check: Fix false alert about EXTENT_DATA that shouldn't be a hole
-      btrfs-progs: tests: Add test case to check file hole extents with NO_HOLES flag
-
-Tsutomu Itoh (1):
-      btrfs-progs: tests: remove variable quotation from convert-tests
-
+Should I aim to do that with an individual patch for each fs, or is it
+better to do a swath of them all at once in a single patch here?
+-- 
+Jeff Layton <jlayton@redhat.com>

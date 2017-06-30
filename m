@@ -1,49 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51246 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:52204 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751695AbdF3PyR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 30 Jun 2017 11:54:17 -0400
-Date: Fri, 30 Jun 2017 17:53:05 +0200
+        id S1752015AbdF3QBE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 30 Jun 2017 12:01:04 -0400
+Date: Fri, 30 Jun 2017 17:59:53 +0200
 From: David Sterba <dsterba@suse.cz>
 To: Sargun Dhillon <sargun@sargun.me>
 Cc: linux-btrfs@vger.kernel.org, quwenruo@cn.fujitsu.com, mkh@rqc.ru
-Subject: Re: [PATCH v2 4/4] btrfs: Add qgroup_auto_cleanup mount flag to
- automatically cleanup qgroups
-Message-ID: <20170630155305.GW2866@twin.jikos.cz>
+Subject: Re: [PATCH v2 3/4] btrfs: Warn the user when the legacy
+ btrfs_qgroup_create API is used
+Message-ID: <20170630155953.GX2866@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <20170526204414.GA18176@ircssh-2.c.rugged-nimbus-611.internal>
- <20170526204507.GA18221@ircssh-2.c.rugged-nimbus-611.internal>
+ <20170526204449.GA18209@ircssh-2.c.rugged-nimbus-611.internal>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170526204507.GA18221@ircssh-2.c.rugged-nimbus-611.internal>
+In-Reply-To: <20170526204449.GA18209@ircssh-2.c.rugged-nimbus-611.internal>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 26, 2017 at 08:45:08PM +0000, Sargun Dhillon wrote:
-> This patch introduces a new mount option - qgroup_auto_cleanup.
-> The purpose of this mount option is to cause btrfs to automatically
-> delete qgroups on subvolume deletion. This only cleans up the
-> associated level-0 qgroup, and not qgroups that are above it.
+On Fri, May 26, 2017 at 08:44:50PM +0000, Sargun Dhillon wrote:
+> This patch adds a warning to let the user know when the legacy
+> qgroup creation / removal API is in use. Eventually, we can
+> deprecate this API.
 > 
-> Since this behaviour is API-breaking, as people may already have scripts
-> that do this cleanup on subvolume destruction, this feature, at least
-> for now, must be opt-in.
+> Signed-off-by: Sargun Dhillon <sargun@sargun.me>
+> ---
+>  fs/btrfs/ioctl.c | 2 ++
+>  1 file changed, 2 insertions(+)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 78c8321..fba409f 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -5027,6 +5027,8 @@ static long btrfs_ioctl_qgroup_create(struct file *file, void __user *arg)
+>  	if (!capable(CAP_SYS_ADMIN))
+>  		return -EPERM;
+>  
+> +	pr_info_once("btrfs: Usage of deprecated btrfs_qgroup_create ioctl\n");
 
-I'd rather make the auto-cleaning default and I don't remember why this
-wasn't actually done back then.
+Would be better to use the btrfs_info helper otherwise the user does not
+know on which filesystem it happened.
 
-I don't like mount options for fine grained tuning of a filesystem, IMO
-it's almost always the bad interface for that. But people propose
-various mout options because it's easy to implement and test (known
-interface, existing tools). Ok for testing and first draft but as it's
-an interface that's supposed to be forever, it's good to take time to
-think it through.
-
->From the API-breaking point you wrote above, sounds like switching
-auto-cleaning on by default is not a good option.
-
-The mount option is somehow persistent, ie. stored in a config file and
-applied on mount. I was thinking about a sysfs tunable, this would
-require a post-mount action, less comfort. Another option is to
-add a new property for the filesystem. That would need some more
-preparatory work though but I'd prefer this approach.
+Deprecation of v1 makes sense but the ioctl must stay anyway, similar to
+other v1/v2 ioctls that we have. In long-term and long-living distros,
+the applications probably use the deprecated interfaces so the syslog
+message causes noise. I'd first document the deprecation and add a real
+warning in a few releases maybe.

@@ -1,61 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail1.g1.pair.com ([66.39.3.162]:61239 "EHLO mail1.g1.pair.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751936AbdF3OHM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 30 Jun 2017 10:07:12 -0400
-Date: Fri, 30 Jun 2017 15:58:08 +0200
-From: Emmanuel Florac <eflorac@intellique.com>
-To: Jan Tulak <jtulak@redhat.com>
-Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-ext4@vger.kernel.org, linux-xfs <linux-xfs@vger.kernel.org>
-Subject: Re: [proposal] making filesystem tools more machine friendly
-Message-ID: <20170630155808.7cbab344@harpe.intellique.com>
-In-Reply-To: <CACj3i70p=ybXZWRncseqwnbs7HAYu-SL02+cj--7T5YnqcwVKQ@mail.gmail.com>
-References: <CACj3i70p=ybXZWRncseqwnbs7HAYu-SL02+cj--7T5YnqcwVKQ@mail.gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:41084 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751649AbdF3N62 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 30 Jun 2017 09:58:28 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 8D3ABAB46
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Jun 2017 13:58:27 +0000 (UTC)
+Date: Fri, 30 Jun 2017 15:57:17 +0200
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Subject: Branch for 4.13 pull request has been updated
+Message-ID: <20170630135717.GT2866@suse.cz>
+Reply-To: dsterba@suse.cz
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
- boundary="Sig_/71yZifs.QAq2BYkNNL+M1nU"; protocol="application/pgp-signature"
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/71yZifs.QAq2BYkNNL+M1nU
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+Hi,
 
-Le Fri, 30 Jun 2017 10:17:17 +0200
-Jan Tulak <jtulak@redhat.com> =C3=A9crivait:
+the branch for 4.13 pull request has been updated, now contains a better fix
+for the dir item validation, though that still failed generic/066. Will be
+fixed.
 
-> A structured output is something we should aim for. It helps a lot
-> with the issues and it is the cheapest option. If it goes well, it can
-> be later on followed by creating a library, although, at this moment,
-> that seems a premature thing strive for. Creating a daemon is not a
-> thing any single filesystem should do on its own.
->=20
-> And thank you for reading all this, I look forward to your
-> comments. :-)
+Newly added fixes for the intended 1st batch:
 
-The whole concept seems a noble endeavour, I'm a bit wary of the
-possibility to convince all the teams in charge to adhere to it
-however... But that looks like a good idea for sure :)
+Jan Kara (1):
+      btrfs: Don't clear SGID when inheriting ACLs
 
---=20
-------------------------------------------------------------------------
-Emmanuel Florac     |   Direction technique
-                    |   Intellique
-                    |	<eflorac@intellique.com>
-                    |   +33 1 78 94 84 02
-------------------------------------------------------------------------
+Qu Wenruo (1):
+      btrfs: Remove false alert when fiemap range is smaller than on-disk extent
 
---Sig_/71yZifs.QAq2BYkNNL+M1nU
-Content-Type: application/pgp-signature
-Content-Description: Signature digitale OpenPGP
+Patch "btrfs: fix validation of XATTR_ITEM dir items" has been updated
+in-place, the base of the branch is still v4.12-rc6 and will not move.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
+top commit: 848c23b78fafdcd3270b06a30737f8dbd70c347f
+branch name: for-4.13-part1
 
-iEYEARECAAYFAllWWPAACgkQX3jQXNUicVb0oQCg2x+zZeton4toXUcDWtyyRvMH
-tTEAoNozDvK6g6aiKHQNz1fe1bmYFnR7
-=H9Y+
------END PGP SIGNATURE-----
+The branch name needs to stay, that might be confusing temporarily for
+development patches, so if you don't know how to rebase your patchset on top of
+rebased head, use the previous one. Or learn how 'git rebase --onto' works.
 
---Sig_/71yZifs.QAq2BYkNNL+M1nU--
+d.

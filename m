@@ -1,88 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50295 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:57939 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751526AbdF1IF1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Jun 2017 04:05:27 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B5120ABB1
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Jun 2017 08:05:25 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
-To: dsterba@suse.cz
-Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v3] btrfs: remove unused sectorsize member
-Date: Wed, 28 Jun 2017 11:05:22 +0300
-Message-Id: <1498637122-5200-1-git-send-email-nborisov@suse.com>
-In-Reply-To: <20170627171325.GC2866@twin.jikos.cz>
+        id S1751494AbdF3IJE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 30 Jun 2017 04:09:04 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 003D8AD30
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Jun 2017 08:09:01 +0000 (UTC)
+Date: Fri, 30 Jun 2017 10:07:52 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v3] btrfs: remove unused sectorsize member
+Message-ID: <20170630080752.GQ2866@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <20170627171325.GC2866@twin.jikos.cz>
+ <1498637122-5200-1-git-send-email-nborisov@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <1498637122-5200-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The sectorsize member of btrfs_block_group_cache is unused. So remove it, this
-reduces the number of holes in the struct.
+On Wed, Jun 28, 2017 at 11:05:22AM +0300, Nikolay Borisov wrote:
+> The sectorsize member of btrfs_block_group_cache is unused. So remove it, this
+> reduces the number of holes in the struct.
+> 
+> With patch:
+> /* size: 856, cachelines: 14, members: 40 */
+> /* sum members: 837, holes: 4, sum holes: 19 */
+> /* bit holes: 1, sum bit holes: 29 bits */
+> /* last cacheline: 24 bytes */
+> 
+> Without patch:
+> /* size: 864, cachelines: 14, members: 41 */
+> /* sum members: 841, holes: 5, sum holes: 23 */
+> /* bit holes: 1, sum bit holes: 29 bits */
+> /* last cacheline: 32 bytes */
+> 
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> Reviewed-by: David Sterba <dsterba@suse.com>
 
-With patch:
-/* size: 856, cachelines: 14, members: 40 */
-/* sum members: 837, holes: 4, sum holes: 19 */
-/* bit holes: 1, sum bit holes: 29 bits */
-/* last cacheline: 24 bytes */
+Strange that the error appeared just now, the code hasn't been modified
+recently.
 
-Without patch:
-/* size: 864, cachelines: 14, members: 41 */
-/* sum members: 841, holes: 5, sum holes: 23 */
-/* bit holes: 1, sum bit holes: 29 bits */
-/* last cacheline: 32 bytes */
+  CC [M]  fs/btrfs/tests/free-space-tree-tests.o
+fs/btrfs/tests/free-space-tree-tests.c: In function ‘__check_free_space_extents’:
+fs/btrfs/tests/free-space-tree-tests.c:84:20: error: ‘struct btrfs_block_group_cache’ has no member named ‘sectorsize’
+     offset += cache->sectorsize;
+                    ^~
+make[1]: *** [scripts/Makefile.build:302: fs/btrfs/tests/free-space-tree-tests.o] Error 1
+make: *** [Makefile:1684: fs/btrfs/] Error 2
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
----
-
-Changes since v2:
- * Add SOB and Reviewed-by tags
-
-Changes since v1: 
- * Missed the usage in btrfs-tests.c
-
- fs/btrfs/ctree.h             | 1 -
- fs/btrfs/extent-tree.c       | 1 -
- fs/btrfs/tests/btrfs-tests.c | 1 -
- 3 files changed, 3 deletions(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index a75a23f9d68e..cdd3775e930b 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -559,7 +559,6 @@ struct btrfs_block_group_cache {
- 	u64 bytes_super;
- 	u64 flags;
- 	u64 cache_generation;
--	u32 sectorsize;
- 
- 	/*
- 	 * If the free space extent count exceeds this number, convert the block
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index a08a743a8e09..2a0d300c7d1a 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -9904,7 +9904,6 @@ btrfs_create_block_group_cache(struct btrfs_fs_info *fs_info,
- 	cache->key.offset = size;
- 	cache->key.type = BTRFS_BLOCK_GROUP_ITEM_KEY;
- 
--	cache->sectorsize = fs_info->sectorsize;
- 	cache->fs_info = fs_info;
- 	cache->full_stripe_len = btrfs_full_stripe_len(fs_info,
- 						       &fs_info->mapping_tree,
-diff --git a/fs/btrfs/tests/btrfs-tests.c b/fs/btrfs/tests/btrfs-tests.c
-index b18ab8f327a5..d3f25376a0f8 100644
---- a/fs/btrfs/tests/btrfs-tests.c
-+++ b/fs/btrfs/tests/btrfs-tests.c
-@@ -211,7 +211,6 @@ btrfs_alloc_dummy_block_group(struct btrfs_fs_info *fs_info,
- 	cache->key.objectid = 0;
- 	cache->key.offset = length;
- 	cache->key.type = BTRFS_BLOCK_GROUP_ITEM_KEY;
--	cache->sectorsize = fs_info->sectorsize;
- 	cache->full_stripe_len = fs_info->sectorsize;
- 	cache->fs_info = fs_info;
- 
--- 
-2.7.4
-
+I'll fix it.

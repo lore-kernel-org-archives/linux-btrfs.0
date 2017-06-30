@@ -1,167 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f46.google.com ([74.125.82.46]:32952 "EHLO
-        mail-wm0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751605AbdF3JZp (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:63090 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1750931AbdF3O7N (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 30 Jun 2017 05:25:45 -0400
-Received: by mail-wm0-f46.google.com with SMTP id z75so23774239wmc.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 30 Jun 2017 02:25:44 -0700 (PDT)
+        Fri, 30 Jun 2017 10:59:13 -0400
+Date: Fri, 30 Jun 2017 22:59:05 +0800
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: Marc MERLIN <marc@merlins.org>
+CC: Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: How to fix errors that check --mode lomem finds, but --mode
+ normal doesn't?
+Message-ID: <20170630145905.GC7046@lufq.5F>
+References: <20170623040601.akpyyvh3dgry6nn5@merlins.org>
+ <90711a7c-92ff-e043-6d81-6bdadbfdbc3a@cn.fujitsu.com>
+ <20170623161750.r7utffpsmyl5tcik@merlins.org>
+ <20170624023409.GT14690@merlins.org>
+ <0d93c1c4-1feb-b589-0c8f-1fced7b77686@cn.fujitsu.com>
+ <20170627231146.GA16192@merlins.org>
+ <20170628071026.GA21006@lufq.5F>
+ <20170628144348.abvqowzmeveyzssn@merlins.org>
+ <20170629133615.GA2381@lufq.5F>
+ <20170629153035.dlla7iq5tqxzaujf@merlins.org>
 MIME-Version: 1.0
-From: Darryl Barlow <darryl@barlow.com.au>
-Date: Fri, 30 Jun 2017 09:25:43 +0000
-Message-ID: <CALfAoZ9kP4QboGwn9bEC2dgPUX0bHC5UmJEPvY-mGSE-Zu90aA@mail.gmail.com>
-Subject: Cannot mount btrfs file system
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20170629153035.dlla7iq5tqxzaujf@merlins.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I have been running btrfs without problems for years on an up to date
-Sabayon Linux.  The btrfs filesystem is on a luks encrypted partition
-sdb4, and indludes subvolumes for root, home and swap  Following the
-latest upgrade to the Distro I shut the machine down.  When I cae to
-reboot it failed to mount it decrypted the partition okay but could
-not mount the filesystem.
+On Thu, Jun 29, 2017 at 08:30:35AM -0700, Marc MERLIN wrote:
+>On Thu, Jun 29, 2017 at 09:36:15PM +0800, Lu Fengqi wrote:
+>> On Wed, Jun 28, 2017 at 07:43:48AM -0700, Marc MERLIN wrote:
+>> >[cc trimmed]
+>> >
+>> >On Wed, Jun 28, 2017 at 03:10:27PM +0800, Lu Fengqi wrote:
+>> >> Because the output is abnormal, except for the relevant DIR_ITEM and
+>> >> DIR_INDEX, I can't find the above mentiond INODE_ITEM and EXTENT_DATA.
+>> >> I wonder if the file system is online when this command is executed? If
+>> >> so, please re-execute it offline again; if not, could you apply my
+>> >> patches re-check it again?
+>> >
+>> >The filesystem was offline and I had those 2 patches applied.
+>> 
+>> I am afraid I don't know why the inode item disappers. Besides, if
+>> btrfs-debug-tree can't find the inode item, btrfs check shouldn't report
+>> this inode item's extent data interrupt. Could you check the disk
+>> again? The error output may have changed.
+>
+>I just did but it takes 24H. I just have the results now: 
+>gargamel:~# btrfs check --mode lowmem  /dev/mapper/dshelf2
+>Checking filesystem on /dev/mapper/dshelf2
+>UUID: 85441c59-ad11-4b25-b1fe-974f9e4acede
+>checking extents
+>checking free space cache
+>cache and super generation don't match, space cache will be invalidated
+>checking fs roots
+>ERROR: root 3862 EXTENT_DATA[18170706 4096] interrupt
+>ERROR: root 3862 EXTENT_DATA[18170706 16384] interrupt
+>ERROR: root 3862 EXTENT_DATA[18170706 20480] interrupt
+>ERROR: root 3862 EXTENT_DATA[18170706 135168] interrupt
+>ERROR: root 3862 EXTENT_DATA[18170706 1048576] interrupt
+>ERROR: errors found in fs roots
+>found 5544779124736 bytes used, error(s) found
+>total csum bytes: 5344523140
+>total tree bytes: 71323058176
+>total fs tree bytes: 59288403968
+>total extent tree bytes: 5378277376
+>btree space waste bytes: 10912183048
+>file data blocks allocated: 7830914256896
+> referenced 6244104495104
+>
+>
+>This is looking better, but not 0.
+>Can I ignore these or should we look into them still?
+>
+>Marc
+>-- 
+>"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+>Microsoft is to operating systems ....
+>                                      .... what McDonalds is to gourmet cooking
+>Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+>
+>
 
-I have tried some options booting using a manjaro linux (arch) live
-usb.  The partitions succesfully decrypts resulting in
-/dev/mapper/sdb4.
+Personally, I think since the normal mode didn't report any error
+related this inode, then these error maybe caused by the bug of lowmem
+mode and btrfs-debug-tree.
 
-Any assistance would be much appreciated.
+At your convenience, would you please give me all items about this
+inode? I think it can provide some clues regarding the disappearance
+of inode and the extent interrupt. It can be dumped by this following
+command:
 
-Details as follows:
+# btrfs-debug-tree /dev/mapper/dshelf2 | grep -C 10 18170706
 
+Please pay attention that, this dump may contain filenames, feel free
+to mask the filenames.
 
-Trying to mount this partition fails with the followin errors in dmesg:
+Thank you for your assistance.
 
-[manjaro@manjaro ~]$ dmesg | grep -i btrfs
-[  371.524030] Btrfs loaded, crc32c=crc32c-intel
-[  371.534265] BTRFS: device label sa_sabayon devid 1 transid 1407824 /dev/dm-0
-[  418.691592] BTRFS info (device dm-0): disk space caching is enabled
-[  422.606271] BTRFS error (device dm-0): failed to read chunk root
-[  422.643907] BTRFS error (device dm-0): open_ctree failed
-
-btrfs restore gives teh following terminal output:
-
-[manjaro@manjaro ~]$ sudo btrfs restore -l /dev/mapper/sdb4
-bytenr mismatch, want=20971520, have=0
-ERROR: cannot read chunk root
-Could not open root, trying backup super
-bytenr mismatch, want=20971520, have=0
-ERROR: cannot read chunk root
-Could not open root, trying backup super
-bytenr mismatch, want=20971520, have=0
-ERROR: cannot read chunk root
-Could not open root, trying backup super
-
-Other information (from live usb)
-
-[manjaro@manjaro ~]$ uname -a
-Linux manjaro 4.9.13-1-MANJARO #1 SMP PREEMPT Sun Feb 26 13:27:28 UTC
-2017 x86_64 GNU/Linux
-
-[manjaro@manjaro ~]$ btrfs --version
-btrfs-progs v4.9.1
-
-[manjaro@manjaro ~]$ sudo btrfs fi show
-Label: 'sa_sabayon'  uuid: 725ef5b2-e35e-4868-87b3-abea02171364
-        Total devices 1 FS bytes used 817.91GiB
-        devid    1 size 923.07GiB used 838.04GiB path /dev/mapper/sdb4
-
-A chunk recovery produces the following terminal output:
-
-[manjaro@manjaro ~]$ sudo btrfs rescue chunk-recover -v /dev/mapper/sdb4
-All Devices:
-        Device: id = 1, name = /dev/mapper/sdb4
-
-Scanning: DONE in dev0
-DEVICE SCAN RESULT:
-Filesystem Information:
-        sectorsize: 4096
-        nodesize: 16384
-        tree root generation: 1407824
-        chunk root generation: 1407235
-
-All Devices:
-        Device: id = 1, name = /dev/mapper/sdb4
-
-All Block Groups:
-        Block Group: start = 0, len = 4194304, flag = 2
-        Block Group: start = 4194304, len = 8388608, flag = 4
-        Block Group: start = 12582912, len = 8388608, flag = 1
-
-All Chunks:
-        Chunk: start = 0, len = 4194304, type = 2, num_stripes = 1
-            Stripes list:
-            [ 0] Stripe: devid = 1, offset = 0
-        Chunk: start = 4194304, len = 8388608, type = 4, num_stripes = 1
-            Stripes list:
-            [ 0] Stripe: devid = 1, offset = 4194304
-        Chunk: start = 12582912, len = 8388608, type = 1, num_stripes = 1
-            Stripes list:
-            [ 0] Stripe: devid = 1, offset = 12582912
-
-All Device Extents:
-        Device extent: devid = 1, start = 0, len = 4194304, chunk offset = 0
-        Device extent: devid = 1, start = 4194304, len = 8388608,
-chunk offset = 4194304
-        Device extent: devid = 1, start = 12582912, len = 8388608,
-chunk offset = 12582912
-
-CHECK RESULT:
-Recoverable Chunks:
-  Chunk: start = 0, len = 4194304, type = 2, num_stripes = 1
-      Stripes list:
-      [ 0] Stripe: devid = 1, offset = 0
-      Block Group: start = 0, len = 4194304, flag = 2
-      Device extent list:
-          [ 0]Device extent: devid = 1, start = 0, len = 4194304,
-chunk offset = 0
-  Chunk: start = 4194304, len = 8388608, type = 4, num_stripes = 1
-      Stripes list:
-      [ 0] Stripe: devid = 1, offset = 4194304
-      Block Group: start = 4194304, len = 8388608, flag = 4
-      Device extent list:
-          [ 0]Device extent: devid = 1, start = 4194304, len =
-8388608, chunk offset = 4194304
-  Chunk: start = 12582912, len = 8388608, type = 1, num_stripes = 1
-      Stripes list:
-      [ 0] Stripe: devid = 1, offset = 12582912
-      Block Group: start = 12582912, len = 8388608, flag = 1
-      Device extent list:
-          [ 0]Device extent: devid = 1, start = 12582912, len =
-8388608, chunk offset = 12582912
-Unrecoverable Chunks:
-
-Total Chunks:           3
-  Recoverable:          3
-  Unrecoverable:        0
-
-Orphan Block Groups:
-
-Orphan Device Extents:
-
-Check chunks successfully with no orphans
-Chunk tree recovered successfully
+-- 
+Thanks,
+Lu
 
 
-Then tryting to mount on /mnt results as follows:
-
-[manjaro@manjaro ~]$ sudo mount /dev/mapper/sdb4 /mnt
-mount: wrong fs type, bad option, bad superblock on /dev/mapper/sdb4,
-       missing codepage or helper program, or other error
-
-       In some cases useful info is found in syslog - try
-       dmesg | tail or so
-
-dmesg result:
-
-[manjaro@manjaro ~]$ dmesg | grep -i btrfs
-[  371.524030] Btrfs loaded, crc32c=crc32c-intel
-[  371.534265] BTRFS: device label sa_sabayon devid 1 transid 1407824 /dev/dm-0
-[  418.691592] BTRFS info (device dm-0): disk space caching is enabled
-[  422.606271] BTRFS error (device dm-0): failed to read chunk root
-[  422.643907] BTRFS error (device dm-0): open_ctree failed
-[ 2644.564748] BTRFS info (device dm-0): disk space caching is enabled
-[ 2648.453669] BTRFS error (device dm-0): failed to read chunk root
-[ 2648.476572] BTRFS error (device dm-0): open_ctree failed

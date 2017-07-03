@@ -1,64 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:12522 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752334AbdGCCzh (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Jul 2017 22:55:37 -0400
-Date: Mon, 3 Jul 2017 10:55:28 +0800
-From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-To: Henk Slager <eye1tm@gmail.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v3 2/4] btrfs-progs: lowmem check: Fix false alert about
- referencer count mismatch
-Message-ID: <20170703025528.GA9646@lufq.5F>
-References: <20170626103727.8945-1-lufq.fnst@cn.fujitsu.com>
- <20170626103727.8945-2-lufq.fnst@cn.fujitsu.com>
- <CAPmG0jaR89wz3GcBNxKN9-BF=QogiZo8uPi0VK2iVD8cN4Smpg@mail.gmail.com>
+Received: from mail-ua0-f179.google.com ([209.85.217.179]:36612 "EHLO
+        mail-ua0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750783AbdGCEOn (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Jul 2017 00:14:43 -0400
+Received: by mail-ua0-f179.google.com with SMTP id g40so102386898uaa.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 02 Jul 2017 21:14:43 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <CAPmG0jaR89wz3GcBNxKN9-BF=QogiZo8uPi0VK2iVD8cN4Smpg@mail.gmail.com>
+In-Reply-To: <CAKuJGC-p49NKDzjOoPUODQ6t8JSN_R39Mij_G2OEcmENwN9Q8w@mail.gmail.com>
+References: <CAKuJGC-p49NKDzjOoPUODQ6t8JSN_R39Mij_G2OEcmENwN9Q8w@mail.gmail.com>
+From: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>
+Date: Mon, 3 Jul 2017 09:44:02 +0530
+Message-ID: <CAKuJGC9RpLNeCvHaAXx8=104rkACu8B5uyaLoZ+ZWU6fOxZwVg@mail.gmail.com>
+Subject: Re: btrfs-convert --no-datasum & btrfs check: check_owner_ref: BUG_ON
+ `rec->is_root` triggered, value 1
+To: btrfs <linux-btrfs@vger.kernel.org>, David Sterba <dsterba@suse.com>,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jul 02, 2017 at 03:50:31PM +0200, Henk Slager wrote:
+Looked like I missed few patch.  After checking with latest branch. Its working.
+
+----
+Cheers,
+Lakshmipathi.G
+
+
+
+On Sun, Jul 2, 2017 at 7:30 PM, Lakshmipathi.G <lakshmipathi.g@gmail.com> wrote:
+> Hi.
+> While using btrfs-convert with '--no-datasum' option & running btrfs
+> check crashes:
 >
->With this patch applied to v4.11, I ran:
-># btrfs check -p --mode lowmem /dev/mapper/smr
+> steps:
+> mkfs.ext4 tests/t1
+> mount tests/t1 /data
+> cp -r *.c /data
+> umount /data
+> ./btrfs-convert --no-datasum tests/t1
+> ./btrfs check tests/t1
+> <crash>
+> cmds-check.c:5488: check_owner_ref: BUG_ON `rec->is_root` triggered, value 1
 >
->no 'referencer count mismatch' anymore, but likely due to other hidden
->corruption, the check took more time than I had planned, so after 5
->days, I cancelled it.
+> Is this a bug or something wrong with my environment?
 >
->As a summary, both kernel and lowmem check mention the same issue as
->it looks like; for the lowmem check it is this, (repeating):
->[...]
->parent transid verify failed on 6350669414400 wanted 24678 found 24184
->parent transid verify failed on 6350645837824 wanted 24678 found 23277
->Ignoring transid failure
->leaf parent key incorrect 6350645837824
->ERROR: extent[6349151535104 16384] backref lost (owner: 2, level: 0)
->ERROR: check leaf failed root 2 bytenr 6349151535104 level 0, force
->continue check
->parent transid verify failed on 6350645837824 wanted 24678 found 23277
->Ignoring transid failure
->leaf parent key incorrect 6350645837824
->ERROR: extent[6349150486528 16384] backref lost (owner: 2, level: 0)
->ERROR: check leaf failed root 2 bytenr 6349150486528 level 0, force
->continue check
-
-This looks like the extent tree has some problems. I would appreciate it
-if you could run the following command to dump the extent tree for me?
-
-# btrfs-debug-tree -t 2 /dev/mapper/smr | grep -C 10 -e 6349151535104 -e 6349150486528
-
->My plan is now to image the whole 8TB fs to extra/new storage hardware
->with dd and then see if I can get the copy fixed. But it might take a
->year before I do so (it is not critical w.r.t. data-loss, it's cold
->storage, multi-year btrfs features test).
->
->
-
--- 
-Thanks,
-Lu
-
-
+> More info: https://bugzilla.kernel.org/show_bug.cgi?id=196217
+> ----
+> Cheers,
+> Lakshmipathi.G

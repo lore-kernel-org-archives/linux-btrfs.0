@@ -1,335 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f67.google.com ([74.125.82.67]:35764 "EHLO
-        mail-wm0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751890AbdGAQ4Q (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Jul 2017 12:56:16 -0400
-Received: by mail-wm0-f67.google.com with SMTP id u23so13092148wma.2
-        for <linux-btrfs@vger.kernel.org>; Sat, 01 Jul 2017 09:56:16 -0700 (PDT)
-From: Timofey Titovets <nefelim4ag@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Timofey Titovets <nefelim4ag@gmail.com>
-Subject: [RFC PATCH v4 1/2] Btrfs: add precomputed log2()
-Date: Sat,  1 Jul 2017 19:56:01 +0300
-Message-Id: <20170701165602.31189-2-nefelim4ag@gmail.com>
-In-Reply-To: <20170701165602.31189-1-nefelim4ag@gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:45587 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1754744AbdGCRKM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 3 Jul 2017 13:10:12 -0400
+Date: Mon, 3 Jul 2017 19:09:00 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Timofey Titovets <nefelim4ag@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [RFC PATCH v4 0/2] Btrfs: add compression heuristic
+Message-ID: <20170703170900.GA2866@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <20170701165602.31189-1-nefelim4ag@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170701165602.31189-1-nefelim4ag@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Heuristic code compute shannon entropy in cases when
-other methods can't make clear decision
-For realization that calculation it's needs floating point,
-but as this doesn't possible to use floating point,
-lets just precalculate all our input/output values
+On Sat, Jul 01, 2017 at 07:56:00PM +0300, Timofey Titovets wrote:
+> Today btrfs use simple logic to make decision
+> compress data or not:
+> Selected compression algorithm try compress
+> data and if this save some space
+> store that extent as compressed.
+> 
+> It's Reliable way to detect uncompressible data
+> but it's will waste/burn cpu time for
+> bad/un-compressible data and add latency.
+> 
+> This way also add additional pressure on
+> memory subsystem as for every compressed write
+> btrfs need to allocate pages and
+> reuse compression workspace.
+> 
+> This is quite efficient, but not free.
+> 
+> So let's implement heuristic.
+> Heuristic will analize data on the fly
+> before call of compression code,
+> detect uncompressible data and advice to skip it.
 
-Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
----
- fs/btrfs/log2_lshift16.c | 278 +++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/log2_lshift16.h |  11 ++
- 2 files changed, 289 insertions(+)
- create mode 100644 fs/btrfs/log2_lshift16.c
- create mode 100644 fs/btrfs/log2_lshift16.h
+So let me recap the heuristic flow:
 
-diff --git a/fs/btrfs/log2_lshift16.c b/fs/btrfs/log2_lshift16.c
-new file mode 100644
-index 000000000000..0d5d414b2adf
---- /dev/null
-+++ b/fs/btrfs/log2_lshift16.c
-@@ -0,0 +1,278 @@
-+#include <linux/types.h>
-+#include "log2_lshift16.h"
-+
-+/*
-+ * Precalculated log2 values
-+ * Shifting used for avoiding floating point
-+ * Fraction must be left shifted by 16
-+ * Return of log are left shifted by 3
-+ */
-+int log2_lshift16(u64 lshift16)
-+{
-+	if (lshift16 < 558) {
-+		if (lshift16 < 54) {
-+			if (lshift16 < 13) {
-+				if (lshift16 < 7) {
-+					if (lshift16 < 1)
-+						return -136;
-+					if (lshift16 < 2)
-+						return -123;
-+					if (lshift16 < 3)
-+						return -117;
-+					if (lshift16 < 4)
-+						return -113;
-+					if (lshift16 < 5)
-+						return -110;
-+					if (lshift16 < 6)
-+						return -108;
-+					if (lshift16 < 7)
-+						return -106;
-+				} else {
-+					if (lshift16 < 8)
-+						return -104;
-+					if (lshift16 < 9)
-+						return -103;
-+					if (lshift16 < 10)
-+						return -102;
-+					if (lshift16 < 11)
-+						return -100;
-+					if (lshift16 < 12)
-+						return -99;
-+					if (lshift16 < 13)
-+						return -98;
-+				}
-+			} else {
-+				if (lshift16 < 29) {
-+					if (lshift16 < 15)
-+						return -97;
-+					if (lshift16 < 16)
-+						return -96;
-+					if (lshift16 < 17)
-+						return -95;
-+					if (lshift16 < 19)
-+						return -94;
-+					if (lshift16 < 21)
-+						return -93;
-+					if (lshift16 < 23)
-+						return -92;
-+					if (lshift16 < 25)
-+						return -91;
-+					if (lshift16 < 27)
-+						return -90;
-+					if (lshift16 < 29)
-+						return -89;
-+				} else {
-+					if (lshift16 < 32)
-+						return -88;
-+					if (lshift16 < 35)
-+						return -87;
-+					if (lshift16 < 38)
-+						return -86;
-+					if (lshift16 < 41)
-+						return -85;
-+					if (lshift16 < 45)
-+						return -84;
-+					if (lshift16 < 49)
-+						return -83;
-+					if (lshift16 < 54)
-+						return -82;
-+				}
-+			}
-+		} else {
-+			if (lshift16 < 181) {
-+				if (lshift16 < 99) {
-+					if (lshift16 < 59)
-+						return -81;
-+					if (lshift16 < 64)
-+						return -80;
-+					if (lshift16 < 70)
-+						return -79;
-+					if (lshift16 < 76)
-+						return -78;
-+					if (lshift16 < 83)
-+						return -77;
-+					if (lshift16 < 91)
-+						return -76;
-+					if (lshift16 < 99)
-+						return -75;
-+				} else {
-+					if (lshift16 < 108)
-+						return -74;
-+					if (lshift16 < 117)
-+						return -73;
-+					if (lshift16 < 128)
-+						return -72;
-+					if (lshift16 < 140)
-+						return -71;
-+					if (lshift16 < 152)
-+						return -70;
-+					if (lshift16 < 166)
-+						return -69;
-+					if (lshift16 < 181)
-+						return -68;
-+				}
-+			} else {
-+				if (lshift16 < 304) {
-+					if (lshift16 < 197)
-+						return -67;
-+					if (lshift16 < 215)
-+						return -66;
-+					if (lshift16 < 235)
-+						return -65;
-+					if (lshift16 < 256)
-+						return -64;
-+					if (lshift16 < 279)
-+						return -63;
-+					if (lshift16 < 304)
-+						return -62;
-+				} else {
-+					if (lshift16 < 332)
-+						return -61;
-+					if (lshift16 < 362)
-+						return -60;
-+					if (lshift16 < 395)
-+						return -59;
-+					if (lshift16 < 431)
-+						return -58;
-+					if (lshift16 < 470)
-+						return -57;
-+					if (lshift16 < 512)
-+						return -56;
-+					if (lshift16 < 558)
-+						return -55;
-+				}
-+			}
-+		}
-+	} else {
-+		if (lshift16 < 6317) {
-+			if (lshift16 < 2048) {
-+				if (lshift16 < 1117) {
-+					if (lshift16 < 609)
-+						return -54;
-+					if (lshift16 < 664)
-+						return -53;
-+					if (lshift16 < 724)
-+						return -52;
-+					if (lshift16 < 790)
-+						return -51;
-+					if (lshift16 < 861)
-+						return -50;
-+					if (lshift16 < 939)
-+						return -49;
-+					if (lshift16 < 1024)
-+						return -48;
-+					if (lshift16 < 1117)
-+						return -47;
-+				} else {
-+					if (lshift16 < 1218)
-+						return -46;
-+					if (lshift16 < 1328)
-+						return -45;
-+					if (lshift16 < 1448)
-+						return -44;
-+					if (lshift16 < 1579)
-+						return -43;
-+					if (lshift16 < 1722)
-+						return -42;
-+					if (lshift16 < 1878)
-+						return -41;
-+					if (lshift16 < 2048)
-+						return -40;
-+				}
-+			} else {
-+				if (lshift16 < 3756) {
-+					if (lshift16 < 2233)
-+						return -39;
-+					if (lshift16 < 2435)
-+						return -38;
-+					if (lshift16 < 2656)
-+						return -37;
-+					if (lshift16 < 2896)
-+						return -36;
-+					if (lshift16 < 3158)
-+						return -35;
-+					if (lshift16 < 3444)
-+						return -34;
-+					if (lshift16 < 3756)
-+						return -33;
-+				} else {
-+					if (lshift16 < 4096)
-+						return -32;
-+					if (lshift16 < 4467)
-+						return -31;
-+					if (lshift16 < 4871)
-+						return -30;
-+					if (lshift16 < 5312)
-+						return -29;
-+					if (lshift16 < 5793)
-+						return -28;
-+					if (lshift16 < 6317)
-+						return -27;
-+				}
-+			}
-+		} else {
-+			if (lshift16 < 21247) {
-+				if (lshift16 < 11585) {
-+					if (lshift16 < 6889)
-+						return -26;
-+					if (lshift16 < 7512)
-+						return -25;
-+					if (lshift16 < 8192)
-+						return -24;
-+					if (lshift16 < 8933)
-+						return -23;
-+					if (lshift16 < 9742)
-+						return -22;
-+					if (lshift16 < 10624)
-+						return -21;
-+					if (lshift16 < 11585)
-+						return -20;
-+				} else {
-+					if (lshift16 < 12634)
-+						return -19;
-+					if (lshift16 < 13777)
-+						return -18;
-+					if (lshift16 < 15024)
-+						return -17;
-+					if (lshift16 < 16384)
-+						return -16;
-+					if (lshift16 < 17867)
-+						return -15;
-+					if (lshift16 < 19484)
-+						return -14;
-+					if (lshift16 < 21247)
-+						return -13;
-+				}
-+			} else {
-+				if (lshift16 < 35734) {
-+					if (lshift16 < 23170)
-+						return -12;
-+					if (lshift16 < 25268)
-+						return -11;
-+					if (lshift16 < 27554)
-+						return -10;
-+					if (lshift16 < 30048)
-+						return -9;
-+					if (lshift16 < 32768)
-+						return -8;
-+					if (lshift16 < 35734)
-+						return -7;
-+				} else {
-+					if (lshift16 < 38968)
-+						return -6;
-+					if (lshift16 < 42495)
-+						return -5;
-+					if (lshift16 < 46341)
-+						return -4;
-+					if (lshift16 < 50535)
-+						return -3;
-+					if (lshift16 < 55109)
-+						return -2;
-+					if (lshift16 < 60097)
-+						return -1;
-+				}
-+			}
-+		}
-+	}
-+	return 0;
-+}
-diff --git a/fs/btrfs/log2_lshift16.h b/fs/btrfs/log2_lshift16.h
-new file mode 100644
-index 000000000000..fba434e3984a
---- /dev/null
-+++ b/fs/btrfs/log2_lshift16.h
-@@ -0,0 +1,11 @@
-+#include <linux/types.h>
-+/*
-+ * Precalculated log2 values
-+ * Shifting used for avoiding floating point
-+ * Fraction must be left shifted by 16
-+ * Return of log are left shifted by 3
-+ */
-+
-+#define LOG2_ARG_SHIFT (1 << 16)
-+#define LOG2_RET_SHIFT (1 << 3)
-+int log2_lshift16(u64 lshift16);
---
-2.13.2
+* before compression, map all the pages to be compressed
+* grab samples, calculate entropy or look for known patterns
+* unmap pages
+* decide if it's worth to do compression
+
+>From that it's quite easy to start with extending the code logic where
+the heuristic would be a naive and very optimistic 'return true'.
+
+>From that on, we can extend and fine tune the heuristic itself, whatever
+we'd decide to do. There are likely some decisions that we'd have make
+after we see the effects in the wild on real data. Getting the skeleton
+code merged independently would hopefully make things easier to test.
+
+The cost of the heuristic must be low so this could lead to further
+optimizations. Allocating extra memory for the sample might be also not
+the best choice, but we might preallocate the bytes within the
+workspaces so there's not cost at the actual compression time.
+
+The incremental updates to the heuristic should help us determine if
+we're not making it worse, comparing to the current code as a baseline.
+
+So, if you agree, let's start with the heuristic skeleton code first.
+I'll commend in the patches.

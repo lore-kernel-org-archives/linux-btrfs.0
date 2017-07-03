@@ -1,96 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:58419 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:12522 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752048AbdGCAe4 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Jul 2017 20:34:56 -0400
-Subject: Re: Btrfs check reports errors, filesystem seems fine
-To: Filippe LeMarchand <gasinvein@gmail.com>, <linux-btrfs@vger.kernel.org>
-References: <2049018.boNrIqZ5uI@carbide>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <83ad37c7-7c86-1c8f-e575-78ebbc1749b9@cn.fujitsu.com>
-Date: Mon, 3 Jul 2017 08:34:52 +0800
+        with ESMTP id S1752334AbdGCCzh (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Jul 2017 22:55:37 -0400
+Date: Mon, 3 Jul 2017 10:55:28 +0800
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: Henk Slager <eye1tm@gmail.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v3 2/4] btrfs-progs: lowmem check: Fix false alert about
+ referencer count mismatch
+Message-ID: <20170703025528.GA9646@lufq.5F>
+References: <20170626103727.8945-1-lufq.fnst@cn.fujitsu.com>
+ <20170626103727.8945-2-lufq.fnst@cn.fujitsu.com>
+ <CAPmG0jaR89wz3GcBNxKN9-BF=QogiZo8uPi0VK2iVD8cN4Smpg@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <2049018.boNrIqZ5uI@carbide>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <CAPmG0jaR89wz3GcBNxKN9-BF=QogiZo8uPi0VK2iVD8cN4Smpg@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Sun, Jul 02, 2017 at 03:50:31PM +0200, Henk Slager wrote:
+>
+>With this patch applied to v4.11, I ran:
+># btrfs check -p --mode lowmem /dev/mapper/smr
+>
+>no 'referencer count mismatch' anymore, but likely due to other hidden
+>corruption, the check took more time than I had planned, so after 5
+>days, I cancelled it.
+>
+>As a summary, both kernel and lowmem check mention the same issue as
+>it looks like; for the lowmem check it is this, (repeating):
+>[...]
+>parent transid verify failed on 6350669414400 wanted 24678 found 24184
+>parent transid verify failed on 6350645837824 wanted 24678 found 23277
+>Ignoring transid failure
+>leaf parent key incorrect 6350645837824
+>ERROR: extent[6349151535104 16384] backref lost (owner: 2, level: 0)
+>ERROR: check leaf failed root 2 bytenr 6349151535104 level 0, force
+>continue check
+>parent transid verify failed on 6350645837824 wanted 24678 found 23277
+>Ignoring transid failure
+>leaf parent key incorrect 6350645837824
+>ERROR: extent[6349150486528 16384] backref lost (owner: 2, level: 0)
+>ERROR: check leaf failed root 2 bytenr 6349150486528 level 0, force
+>continue check
 
+This looks like the extent tree has some problems. I would appreciate it
+if you could run the following command to dump the extent tree for me?
 
-At 07/01/2017 07:59 PM, Filippe LeMarchand wrote:
-> Hello everyone.
-> 
-> I have an btrfs root partition on Intel 530 ssd, which mounts without errors and seem to work fine,
-> but `btrfs check` gives me foloowing output (and --repair doesn't remove errors):
-> 
-> enabling repair mode
-> Checking filesystem on /dev/sda2
-> UUID: 12c84aa3-ce65-4390-807e-a72cc8a7445e
-> checking extents
-> Fixed 0 roots.
-> checking free space cache
-> cache and super generation don't match, space cache will be invalidated
-> checking fs roots
-> 	unresolved ref dir 79177 index 0 namelen 14 name deprecated.sxt filetype 1 errors 6, no dir index, no inode ref
+# btrfs-debug-tree -t 2 /dev/mapper/smr | grep -C 10 -e 6349151535104 -e 6349150486528
 
-This means that in dir whose inode number is 79177, it has a child inode 
-pointer pointing to depercated.sxt.
+>My plan is now to image the whole 8TB fs to extra/new storage hardware
+>with dd and then see if I can get the copy fixed. But it might take a
+>year before I do so (it is not critical w.r.t. data-loss, it's cold
+>storage, multi-year btrfs features test).
+>
+>
 
-But it doesn't have dir index and corresponding inode ref, which is 
-breaking the cross reference rule of btrfs.
-
-Would you please run the following command to dump needed info for us to 
-debug?
-
-# btrfs-debug-tree /dev/sda2 | grep 79177 -C 10
-
-and
-
-# btrfs-debug-tree /dev/sda2 | grep deprecated.sxt -C 10
-
-and
-
-# btrfs-debug-tree /dev/sda2 | grep deprecated.txt -C 10
-
-
-Considering the output has both .txt and .sxt, I think that's the problem.
-But such bit-flip should be detected by tree block csum.
-I'm not sure what's wrong with it.
-
+-- 
 Thanks,
-Qu
-
-> 	unresolved ref dir 79177 index 417 namelen 14 name deprecated.txt filetype 1 errors 1, no dir item
-> 	unresolved ref dir 79177 index 0 namelen 14 name deprecated.sxt filetype 1 errors 6, no dir index, no inode ref
-> 	unresolved ref dir 79177 index 417 namelen 14 name deprecated.txt filetype 1 errors 1, no dir item
-> 	unresolved ref dir 79177 index 0 namelen 14 name deprecated.sxt filetype 1 errors 6, no dir index, no inode ref
-> 	unresolved ref dir 79177 index 417 namelen 14 name deprecated.txt filetype 1 errors 1, no dir item
-> 	unresolved ref dir 79177 index 0 namelen 14 name deprecated.sxt filetype 1 errors 6, no dir index, no inode ref
-> 	unresolved ref dir 79177 index 417 namelen 14 name deprecated.txt filetype 1 errors 1, no dir item
-> 	unresolved ref dir 79177 index 0 namelen 14 name deprecated.sxt filetype 1 errors 6, no dir index, no inode ref
-> 	unresolved ref dir 79177 index 417 namelen 14 name deprecated.txt filetype 1 errors 1, no dir item
-> 	unresolved ref dir 79177 index 0 namelen 14 name deprecated.sxt filetype 1 errors 6, no dir index, no inode ref
-> 	unresolved ref dir 79177 index 417 namelen 14 name deprecated.txt filetype 1 errors 1, no dir item
-> 	unresolved ref dir 79177 index 0 namelen 14 name deprecated.sxt filetype 1 errors 6, no dir index, no inode ref
-> 	unresolved ref dir 79177 index 417 namelen 14 name deprecated.txt filetype 1 errors 1, no dir item
-> 	unresolved ref dir 79177 index 0 namelen 14 name deprecated.sxt filetype 1 errors 6, no dir index, no inode ref
-> 	unresolved ref dir 79177 index 417 namelen 14 name deprecated.txt filetype 1 errors 1, no dir item
-> 	unresolved ref dir 79177 index 0 namelen 14 name deprecated.sxt filetype 1 errors 6, no dir index, no inode ref
-> 	unresolved ref dir 79177 index 417 namelen 14 name deprecated.txt filetype 1 errors 1, no dir item
-> checking csums
-> checking root refs
-> found 23421812736 bytes used err is 0
-> total csum bytes: 21531608
-> total tree bytes: 776650752
-> total fs tree bytes: 711278592
-> total extent tree bytes: 36798464
-> btree space waste bytes: 116002036
-> file data blocks allocated: 850546470912
->   referenced 27611987968
-> 
-> Is it dangerous and what should I do about it?
-> 
-> I also tried --clear-space-cache, but it just removes the line about space cache.
-> 
+Lu
 
 

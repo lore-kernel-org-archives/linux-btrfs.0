@@ -1,47 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from syrinx.knorrie.org ([82.94.188.77]:58404 "EHLO
-        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751996AbdGBXaN (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Jul 2017 19:30:13 -0400
-Subject: Re: Deleting mounted subvolumes
-To: Pete <pete@petezilla.co.uk>, linux-btrfs@vger.kernel.org
-References: <65603e72-6e30-7be5-1b9c-95c5fe416880@petezilla.co.uk>
-From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Message-ID: <5ce523e5-72bd-a600-47ae-e781a0d2ccec@mendix.com>
-Date: Mon, 3 Jul 2017 01:30:10 +0200
+Received: from cn.fujitsu.com ([59.151.112.132]:58419 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1752048AbdGCAe4 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Jul 2017 20:34:56 -0400
+Subject: Re: Btrfs check reports errors, filesystem seems fine
+To: Filippe LeMarchand <gasinvein@gmail.com>, <linux-btrfs@vger.kernel.org>
+References: <2049018.boNrIqZ5uI@carbide>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <83ad37c7-7c86-1c8f-e575-78ebbc1749b9@cn.fujitsu.com>
+Date: Mon, 3 Jul 2017 08:34:52 +0800
 MIME-Version: 1.0
-In-Reply-To: <65603e72-6e30-7be5-1b9c-95c5fe416880@petezilla.co.uk>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <2049018.boNrIqZ5uI@carbide>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/02/2017 11:33 PM, Pete wrote:
-> I found that I can delete a mounted subvolume using:
-> btrfs subvolume delete <mounted sub volume>
+
+
+At 07/01/2017 07:59 PM, Filippe LeMarchand wrote:
+> Hello everyone.
 > 
-> This works.  Is this the intended action?  To me it would seem like a
-> warning and the command exiting would make sense?
+> I have an btrfs root partition on Intel 530 ssd, which mounts without errors and seem to work fine,
+> but `btrfs check` gives me foloowing output (and --repair doesn't remove errors):
+> 
+> enabling repair mode
+> Checking filesystem on /dev/sda2
+> UUID: 12c84aa3-ce65-4390-807e-a72cc8a7445e
+> checking extents
+> Fixed 0 roots.
+> checking free space cache
+> cache and super generation don't match, space cache will be invalidated
+> checking fs roots
+> 	unresolved ref dir 79177 index 0 namelen 14 name deprecated.sxt filetype 1 errors 6, no dir index, no inode ref
 
-Yes, you can do that. It's a bit similar to the fact that you can also
-delete a regular file when it's still open by another program.
+This means that in dir whose inode number is 79177, it has a child inode 
+pointer pointing to depercated.sxt.
 
-But, still having a file open (inode, filedescriptor, what's it
-called...) does actually block the cleaner process from progressing
-beyond that point.
+But it doesn't have dir index and corresponding inode ref, which is 
+breaking the cross reference rule of btrfs.
 
-You can also delete a subvolume which is not separately mounted, while a
-process still has open files in it.
+Would you please run the following command to dump needed info for us to 
+debug?
 
-In case of deleting a mounted subvolume... it's a bit different. As long
-as it's mounted, even if nothing else is using a file within, it won't
-be actually completely deleted in the background, unless the final
-umount is done. What can happen (I just tried it) is that the mount
-point ends up looking completely empty already in the meantime, as soon
-as no files are open and after I cd .. out of it. If I cd back into the
-mount point, there's nothing any more and any action to create something
-new within will end up with a "No such file or directory".
+# btrfs-debug-tree /dev/sda2 | grep 79177 -C 10
 
-Only when doing the umount, the subvolume completely disappears.
+and
 
--- 
-Hans van Kranenburg
+# btrfs-debug-tree /dev/sda2 | grep deprecated.sxt -C 10
+
+and
+
+# btrfs-debug-tree /dev/sda2 | grep deprecated.txt -C 10
+
+
+Considering the output has both .txt and .sxt, I think that's the problem.
+But such bit-flip should be detected by tree block csum.
+I'm not sure what's wrong with it.
+
+Thanks,
+Qu
+
+> 	unresolved ref dir 79177 index 417 namelen 14 name deprecated.txt filetype 1 errors 1, no dir item
+> 	unresolved ref dir 79177 index 0 namelen 14 name deprecated.sxt filetype 1 errors 6, no dir index, no inode ref
+> 	unresolved ref dir 79177 index 417 namelen 14 name deprecated.txt filetype 1 errors 1, no dir item
+> 	unresolved ref dir 79177 index 0 namelen 14 name deprecated.sxt filetype 1 errors 6, no dir index, no inode ref
+> 	unresolved ref dir 79177 index 417 namelen 14 name deprecated.txt filetype 1 errors 1, no dir item
+> 	unresolved ref dir 79177 index 0 namelen 14 name deprecated.sxt filetype 1 errors 6, no dir index, no inode ref
+> 	unresolved ref dir 79177 index 417 namelen 14 name deprecated.txt filetype 1 errors 1, no dir item
+> 	unresolved ref dir 79177 index 0 namelen 14 name deprecated.sxt filetype 1 errors 6, no dir index, no inode ref
+> 	unresolved ref dir 79177 index 417 namelen 14 name deprecated.txt filetype 1 errors 1, no dir item
+> 	unresolved ref dir 79177 index 0 namelen 14 name deprecated.sxt filetype 1 errors 6, no dir index, no inode ref
+> 	unresolved ref dir 79177 index 417 namelen 14 name deprecated.txt filetype 1 errors 1, no dir item
+> 	unresolved ref dir 79177 index 0 namelen 14 name deprecated.sxt filetype 1 errors 6, no dir index, no inode ref
+> 	unresolved ref dir 79177 index 417 namelen 14 name deprecated.txt filetype 1 errors 1, no dir item
+> 	unresolved ref dir 79177 index 0 namelen 14 name deprecated.sxt filetype 1 errors 6, no dir index, no inode ref
+> 	unresolved ref dir 79177 index 417 namelen 14 name deprecated.txt filetype 1 errors 1, no dir item
+> 	unresolved ref dir 79177 index 0 namelen 14 name deprecated.sxt filetype 1 errors 6, no dir index, no inode ref
+> 	unresolved ref dir 79177 index 417 namelen 14 name deprecated.txt filetype 1 errors 1, no dir item
+> checking csums
+> checking root refs
+> found 23421812736 bytes used err is 0
+> total csum bytes: 21531608
+> total tree bytes: 776650752
+> total fs tree bytes: 711278592
+> total extent tree bytes: 36798464
+> btree space waste bytes: 116002036
+> file data blocks allocated: 850546470912
+>   referenced 27611987968
+> 
+> Is it dangerous and what should I do about it?
+> 
+> I also tried --clear-space-cache, but it just removes the line about space cache.
+> 
+
+

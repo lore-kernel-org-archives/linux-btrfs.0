@@ -1,56 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yb0-f193.google.com ([209.85.213.193]:33193 "EHLO
-        mail-yb0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752212AbdGEAoo (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Jul 2017 20:44:44 -0400
+Received: from mail-pf0-f179.google.com ([209.85.192.179]:33298 "EHLO
+        mail-pf0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752284AbdGDWQz (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Jul 2017 18:16:55 -0400
+Received: by mail-pf0-f179.google.com with SMTP id e7so120104942pfk.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 04 Jul 2017 15:16:55 -0700 (PDT)
+Subject: Re: Commit edf064e7c (btrfs: nowait aio support) breaks shells
+To: Goldwyn Rodrigues <rgoldwyn@suse.de>,
+        Markus Trippelsdorf <markus@trippelsdorf.de>,
+        linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+References: <20170704042306.GA274@x4> <20170704074505.GA277@x4>
+ <db94b5f7-d3a1-2340-0758-9437193d8254@suse.de>
+From: Jens Axboe <axboe@kernel.dk>
+Message-ID: <c57bf8a7-fb0d-1a53-814d-bb4fba4b246b@kernel.dk>
+Date: Tue, 4 Jul 2017 16:16:52 -0600
 MIME-Version: 1.0
-In-Reply-To: <20170705000209.11391-1-rgoldwyn@suse.de>
-References: <20170705000209.11391-1-rgoldwyn@suse.de>
-From: Marc Dionne <marc.c.dionne@gmail.com>
-Date: Tue, 4 Jul 2017 21:44:42 -0300
-Message-ID: <CAB9dFdvCasRcYCFYQ+RDz59fAG_mQdC+4Z-zhp5q7eMqe9=uCQ@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: Correct assignment of pos
-To: Goldwyn Rodrigues <rgoldwyn@suse.de>
-Cc: linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org,
-        markus@trippelsdorf.de,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        axboe@kernel.dk, dsterba@suse.com,
-        Goldwyn Rodrigues <rgoldwyn@suse.com>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <db94b5f7-d3a1-2340-0758-9437193d8254@suse.de>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 4, 2017 at 9:02 PM, Goldwyn Rodrigues <rgoldwyn@suse.de> wrote:
-> From: Goldwyn Rodrigues <rgoldwyn@suse.com>
->
-> Assigning pos for usage early messes up in append mode, where
-> the pos is re-assigned in generic_write_checks(). Re-assign
-> pos to get the correct position to write from iocb->ki_pos.
->
-> Fixes: edf064e7c6fe ("btrfs: nowait aio support")
-> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
-> Tested-by: Markus Trippelsdorf <markus@trippelsdorf.de>
-> ---
->  fs/btrfs/file.c | 1 +
->  1 file changed, 1 insertion(+)
->
+On 07/04/2017 09:31 AM, Goldwyn Rodrigues wrote:
+> 
+> 
+> On 07/04/2017 02:45 AM, Markus Trippelsdorf wrote:
+>> On 2017.07.04 at 06:23 +0200, Markus Trippelsdorf wrote:
+>>> commit edf064e7c6fec3646b06c944a8e35d1a3de5c2c3 (HEAD, refs/bisect/bad)
+>>> Author: Goldwyn Rodrigues <rgoldwyn@suse.com>
+>>> Date:   Tue Jun 20 07:05:49 2017 -0500
+>>>
+>>>     btrfs: nowait aio support
+>>>
+>>> apparently breaks several shell related features on my system.
+>>
+>> Here is a simple testcase:
+>>
+>>  % echo "foo" >> test
+>>  % echo "foo" >> test
+>>  % cat test
+>>  foo
+>>  %
+>>
+> 
+> Thanks for testing.
+> Yes, pos must be set with iocb->ki_pos for appends. I should not have
+> removed the initialization. Could you try this patch?
+> 
 > diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
 > index 59e2dccdf75b..7947781229e5 100644
 > --- a/fs/btrfs/file.c
 > +++ b/fs/btrfs/file.c
-> @@ -1931,6 +1931,7 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
->          */
->         update_time_for_write(inode);
->
-> +       pos = iocb->ki_pos;
->         start_pos = round_down(pos, fs_info->sectorsize);
->         oldsize = i_size_read(inode);
->         if (start_pos > oldsize) {
-> --
-> 2.12.0
+> @@ -1931,6 +1931,7 @@ static ssize_t btrfs_file_write_iter(struct kiocb
+> *iocb,
+>  	 */
+>  	update_time_for_write(inode);
+> 
+> +	pos = iocb->ki_pos;
+>  	start_pos = round_down(pos, fs_info->sectorsize);
+>  	oldsize = i_size_read(inode);
+>  	if (start_pos > oldsize) {
 
-For an append, shouldn't you also be using this updated pos from
-generic_write_checks when calling check_can_nocow at the top of the
-function?
+Please expedite getting this upstream, asap.
 
-Marc
+-- 
+Jens Axboe
+

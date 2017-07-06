@@ -1,103 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-me1aus01on0045.outbound.protection.outlook.com ([104.47.116.45]:14720
-        "EHLO AUS01-ME1-obe.outbound.protection.outlook.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752418AbdGFMQj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 6 Jul 2017 08:16:39 -0400
-From: Paul Jones <paul@pauljones.id.au>
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: RE: Btrfs Compression
-Date: Thu, 6 Jul 2017 12:16:35 +0000
-Message-ID: <SYXPR01MB21733CFE00540BC724581EC19ED50@SYXPR01MB2173.ausprd01.prod.outlook.com>
-References: <MEXPR01MB2168F46962D1BFF8BC303A279ED50@MEXPR01MB2168.ausprd01.prod.outlook.com>
- <3ae39509-7d12-807d-c827-f43401766fc1@gmail.com>
-In-Reply-To: <3ae39509-7d12-807d-c827-f43401766fc1@gmail.com>
-Content-Type: text/plain; charset="utf-8"
+Received: from magic.merlins.org ([209.81.13.136]:33663 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751734AbdGFPAr (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Jul 2017 11:00:47 -0400
+Date: Thu, 6 Jul 2017 08:00:46 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: linux-btrfs@vger.kernel.org
+Cc: pwnall@chromium.org
+Subject: Leveldb in google-chrome incompatible with btrfs?
+Message-ID: <20170706150046.GB12959@merlins.org>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> -----Original Message-----
-> From: Austin S. Hemmelgarn [mailto:ahferroin7@gmail.com]
-> Sent: Thursday, 6 July 2017 9:52 PM
-> To: Paul Jones <paul@pauljones.id.au>; linux-btrfs@vger.kernel.org
-> Subject: Re: Btrfs Compression
-> 
-> On 2017-07-05 23:19, Paul Jones wrote:
-> > While reading the thread about adding zstd compression, it occurred to
-> > me that there is potentially another thing affecting performance -
-> > Compressed extent size. (correct my terminology if it's incorrect). I
-> > have two near identical RAID1 filesystems (used for backups) on near
-> > identical discs (HGST 3T), one compressed and one not. The filesystems
-> > have about 40 snapshots and are about 50% full. The uncompressed
-> > filesystem runs at about 60 MB/s, the compressed filesystem about 5-10
-> > MB/s. There is noticeably more "noise" from the compressed filesystem
-> > from all the head thrashing that happens while rsync is happening.
-> >
-> > Which brings me to my point - In terms of performance for compression,
-> > is there some low hanging fruit in adjusting the extent size to be
-> > more like uncompressed extents so there is not so much seeking
-> > happening? With spinning discs with large data sets it seems pointless
-> > making the numerical calculations faster if the discs can't keep up.
-> > Obviously this is assuming optimisation for speed over compression
-> > ratio.
-> >
-> > Thoughts?That really depends on too much to be certain.  In all
-> > likelihood, your
-> CPU or memory are your bottleneck, not your storage devices.  The data
-> itself gets compressed in memory, and then sent to the storage device, it's
-> not streamed directly there from the compression thread, so if the CPU was
-> compressing data faster than the storage devices could transfer it, you would
-> (or at least, should) be seeing better performance on the compressed
-> filesystem than the uncompressed one (because you transfer less data on
-> the compressed filesystem), assuming the datasets are functionally identical.
-> 
-> That in turn brings up a few other questions:
-> * What are the other hardware components involved (namely, CPU, RAM<
-> and storage controller)?  If you're using some dinky little Atom or
-> Cortex-A7 CPU (or almost anything else 32-bit running at less than 2GHz
-> peak), then that's probably your bottleneck.  Similarly, if you've got a cheap
-> storage controller than needs a lot of attention from the CPU, then that's
-> probably your bottleneck (you can check this by seeing how much processing
-> power is being used when just writing to the uncompressed array (check
-> how much processing power rsync uses copying between two tmpfs mounts,
-> then subtract that from the total for copying the same data to the
-> uncompressed filesystem)).
+I don't know who else uses google-chrome here, but for me, for as long as
+I've used btrfs (3+ years now), I've had no end of troubles recovering from
+a linux crash, and google-chrome has had problems recovering my tabs and
+usually cmoplains about plenty of problems, some are corruption looking.
 
-Hardware is AMD Phenom II X6 1055T with 8GB DDR3 on the compressed filesystem, Intel i7-3770K with 8GB DDR3 on the uncompressed. Slight difference, but both are up to the task.
+The way I recover, every time, is to simply rsync over the previous
+snapshot's data for ~/.config/google-chrome-dir back over the current
+corrupted one, and move on.
 
-> * Which compression algorithm are you using, lzo or zlib?  If the answer is
-> zlib, then what you're seeing is generally expected behavior except on
-> systems with reasonably high-end CPU's and fast memory, because zlib is
-> _slow_.
-
-Zlib.
-
-> * Are you storing the same data on both arrays?  If not, then that
-> immediately makes the comparison suspect (if one array is storing lots of
-> small files and the other is mostly storing small numbers of large files, then I
-> would expect the one with lots of small files to get worse performance, and
-> compression on that one will just make things worse).
-> This is even more important when using rsync, because the size of the files
-> involved has a pretty big impact on it's hashing performance and even data
-> transfer rate (lots of small files == more time spent in syscalls other than
-> read() and write()).
-
-The dataset is rsync-ed to the primary backup and then to the secondary backup, so contains the same content.
-
-> 
-> Additionally, when you're referring to extent size, I assume you mean the
-> huge number of 128k extents that the FIEMAP ioctl (and at least older
-> versions of `filefrag`) shows for compressed files?  If that's the case, then it's
-> important to understand that that's due to an issue with FIEMAP, it doesn't
-> understand compressed extents in BTRFS correctly, so it shows one extent
-> per compressed _block_ instead, even if they are internally an extent in
-> BTRFS.  You can verify the actual number of extents by checking how many
-> runs of continuous 128k 'extents' there are.
-
-It was my understanding that compressed extents are significantly smaller in size than uncompressed ones? (like 64k vs 128M? perhaps I'm thinking of something else.) I couldn't find any info about this, but I remember it being mentioned here before. Either way disk io is maxed out so something is different with compression in a way that spinning rust doesn't seem to like.
+I had a bit more look at this with a chrome engineer, and there seems to be
+at least a clear problem with leveldb where its file containing the index
+name, does not match the files on disk.
+Details are in https://bugs.chromium.org/p/chromium/issues/detail?id=738961
+but I'll summarize here.
 
 
-Paul.
-ˇÙË∫{.n«+â∑üÆâ≠Ü+%äÀˇ±È›∂•äwˇ∫{.n«+â∑•ä{±˝ªk~œ‚ûÿ^nár°ˆ¶zÀÅÎhô®Ë≠⁄&£˚‡zø‰zπﬁó˙+Ä +zf£¢∑höàß~Ü≠Ü€iˇˇÔÅÍˇëÍÁz_ËÆÊj:+vâ®˛)ﬂ£¯m
+All the files are in a non corrupted state, but I end up with this:
+saruman:~/.config/google-chrome-dir/google-chrome-beta/Default/IndexedDB/https_docs.google.com_0.indexeddb.leveldb$ l
+(...)
+-rw------- 1 merlin merlin      16 Oct  4  2016 CURRENT
+-rw------- 1 merlin merlin       0 Apr  9  2016 LOCK
+-rw------- 1 merlin merlin       0 Jul  5 22:31 LOG
+-rw------- 1 merlin merlin       0 Jul  5 22:31 LOG.old
+-rw------- 1 merlin merlin      23 Jul  3 08:31 MANIFEST-000001
+-rw------- 1 merlin merlin    8639 May 12 17:36 MANIFEST-022745
+saruman:~/.config/google-chrome-dir/google-chrome-beta/Default/IndexedDB/https_docs.google.com_0.indexeddb.leveldb$ cat CURRENT 
+MANIFEST-010814
+
+In other words, I think things go like this:
+- MANIFEST-010814 is replaced by MANIFEST-022745, 
+- MANIFEST-022745 is written into the file CURRENT
+- ideally both MANIFEST-010814 and MANIFEST-022745 should be present on disk
+  and MANIFEST-010814 deleted only after CURRENT has been written to with
+  the new pointer, but I'm not sure if or how that is done.
+- my laptop crashes
+- after reboot, btrfs has not been able to commit the update to CURRENT to disk
+  in a consistent state, therefore discards the COW data to CURRENT and
+  leaves it in its prior state, which now holds the old data
+- somehow MANIFEST-010814 has however been deleted, so now CURRENT points to
+  a non existent file.
+
+I don't know how leveldb works or where its (f)sync statements are. but I'm
+guessing it works reliably on ext4 since it's used by many users and I'm the
+first one reporting this problem with leveldb.
+
+Does anyone know if it's leveldb relying on non POSIX semantics that just
+happen to work out on ext4, or if btrfs COW and atomicity doesn't quite
+handle multi file updates in a way that is expected by a spec, or by
+application developers?
+
+Thanks,
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

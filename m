@@ -1,29 +1,25 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55121 "EHLO mx1.suse.de"
+Received: from mail-me1aus01on0050.outbound.protection.outlook.com ([104.47.116.50]:42333
+        "EHLO AUS01-ME1-obe.outbound.protection.outlook.com"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752279AbdGDQcT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 4 Jul 2017 12:32:19 -0400
-Date: Tue, 4 Jul 2017 18:31:06 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: check options during subsequent mount
-Message-ID: <20170704163106.GE2866@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170428091409.19621-1-anand.jain@oracle.com>
- <980ec218-167c-3326-1964-2ff086d278c9@oracle.com>
+        id S1752480AbdGFDTR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 5 Jul 2017 23:19:17 -0400
+From: Paul Jones <paul@pauljones.id.au>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Btrfs Compression
+Date: Thu, 6 Jul 2017 03:19:14 +0000
+Message-ID: <MEXPR01MB2168F46962D1BFF8BC303A279ED50@MEXPR01MB2168.ausprd01.prod.outlook.com>
+Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <980ec218-167c-3326-1964-2ff086d278c9@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 24, 2017 at 05:13:24PM +0800, Anand Jain wrote:
->   Can I ping you on this patch ? Wonder if there is any concern.
+While reading the thread about adding zstd compression, it occurred to me that there is potentially another thing affecting performance - Compressed extent size. (correct my terminology if it's incorrect).
+I have two near identical RAID1 filesystems (used for backups) on near identical discs (HGST 3T), one compressed and one not. The filesystems have about 40 snapshots and are about 50% full. The uncompressed filesystem runs at about 60 MB/s, the compressed filesystem about 5-10 MB/s. There is noticeably more "noise" from the compressed filesystem from all the head thrashing that happens while rsync is happening.
 
-Well, there's my feeling that touching mount code always leads to some
-surprise. The specific options apply to the whole filesystem, this is a
-known limitation. Your patch seems to change the behaviour, when there
-are extra mount options found, this could break existing setups. The
-patch could be right after all, but I don't have time to look closely
-riht now.
+Which brings me to my point - In terms of performance for compression, is there some low hanging fruit in adjusting the extent size to be more like uncompressed extents so there is not so much seeking happening? With spinning discs with large data sets it seems pointless making the numerical calculations faster if the discs can't keep up. Obviously this is assuming optimisation for speed over compression ratio.
+
+Thoughts?
+
+Paul.
+

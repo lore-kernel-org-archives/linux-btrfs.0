@@ -1,80 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f41.google.com ([209.85.214.41]:37177 "EHLO
-        mail-it0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752010AbdGFM2A (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Jul 2017 08:28:00 -0400
-Received: by mail-it0-f41.google.com with SMTP id m84so450422ita.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 06 Jul 2017 05:28:00 -0700 (PDT)
+Received: from tartarus.angband.pl ([89.206.35.136]:54331 "EHLO
+        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750970AbdGFQcc (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Jul 2017 12:32:32 -0400
+Date: Thu, 6 Jul 2017 18:32:25 +0200
+From: Adam Borowski <kilobyte@angband.pl>
+To: Nick Terrell <terrelln@fb.com>
+Cc: kernel-team@fb.com, Chris Mason <clm@fb.com>, Yann Collet <cyan@fb.com>,
+        David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
 Subject: Re: [PATCH v2 3/4] btrfs: Add zstd support
-To: Lionel Bouton <lionel-subscription@bouton.name>,
-        Nick Terrell <terrelln@fb.com>, Adam Borowski <kilobyte@angband.pl>
-Cc: "dsterba@suse.cz" <dsterba@suse.cz>, E V <eliventer@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>, Yann Collet <cyan@fb.com>
+Message-ID: <20170706163225.xbluc2gi2nlaafzo@angband.pl>
 References: <20170629194108.1674498-1-terrelln@fb.com>
  <20170629194108.1674498-4-terrelln@fb.com>
- <CAJtFHUQvmnf7Ggawb4UDfoU8MK37q3rxiWdUmYJE8h1huQZfFQ@mail.gmail.com>
- <20170630142133.GU2866@twin.jikos.cz>
- <e66729e8-0256-745f-53d0-e89241ab524c@gmail.com>
- <15B9D85B-F8AF-44B3-B644-7E4F13A3764C@fb.com>
- <0cf10bfd-8631-7542-be31-7cc04379b0a9@gmail.com>
- <20170705181854.a4d35h2dgp4t3hlt@angband.pl>
- <eb05605b-e3e5-2312-437e-4ae1fafa8bab@gmail.com>
- <B19A0CF8-3CB8-4EA1-AC6A-2383B4BD944A@fb.com>
- <a5672463-f06f-a902-73e3-b101bcb2b3c3@gmail.com>
- <3457CD72-ECD7-4E07-A297-7AE426BF39C1@fb.com>
- <44461d9f-f21f-c346-df0a-5ee4e7bf838d@gmail.com>
- <625a13d5-0a00-6505-99f2-00bc268e50d5@bouton.name>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <2d62b4da-fe6e-6e4d-f868-95cad2dbafe8@gmail.com>
-Date: Thu, 6 Jul 2017 08:27:57 -0400
 MIME-Version: 1.0
-In-Reply-To: <625a13d5-0a00-6505-99f2-00bc268e50d5@bouton.name>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20170629194108.1674498-4-terrelln@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-07-06 08:09, Lionel Bouton wrote:
-> Le 06/07/2017 à 13:59, Austin S. Hemmelgarn a écrit :
->> On 2017-07-05 20:25, Nick Terrell wrote:
->>> On 7/5/17, 12:57 PM, "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
->>> wrote:
->>>> It's the slower compression speed that has me arguing for the
->>>> possibility of configurable levels on zlib.  11MB/s is painfully slow
->>>> considering that most decent HDD's these days can get almost 5-10x that
->>>> speed with no compression.  There are cases (WORM pattern archival
->>>> storage for example) where slow writes to that degree may be
->>>> acceptable,
->>>> but for most users they won't be, and zlib at level 9 would probably be
->>>> a better choice.  I don't think it can beat zstd at level 15 for
->>>> compression ratio, but if they're even close, then zlib would still
->>>> be a
->>>> better option at that high of a compression level most of the time.
->>>
->>> I don't imagine the very high zstd levels would be useful to too many
->>> btrfs users, except in rare cases. However, lower levels of zstd should
->>> outperform zlib level 9 in all aspects except memory usage. I would
->>> expect
->>> zstd level 7 would compress as well as or better than zlib 9 with faster
->>> compression and decompression speed. It's worth benchmarking to
->>> ensure that
->>> it holds for many different workloads, but I wouldn't expect zlib 9 to
->>> compress better than zstd 7 often. zstd up to level 12 should
->>> compress as
->>> fast as or faster than zlib level 9. zstd levels 12 and beyond allow
->>> stronger compression than zlib, at the cost of slow compression and more
->>> memory usage.
->> While I generally agree that most people probably won't use zstd
->> levels above 3, it shouldn't be hard to support them if we're going to
->> have configurable compression levels, so I would argue that it's still
->> worth supporting anyway.
-> 
-> One use case for the higher compression levels would be manual
-> defragmentation with recompression for a subset of data (files that
-> won't be updated and are stored for long periods typically). The
-> filesystem would be mounted with a low level for general usage low
-> latencies and the subset of files would be recompressed with a high
-> level asynchronously.
-That's one of the cases I was thinking of, we actually do that on a 
-couple of systems where I work that see mostly WORM access patterns, so 
-zstd level 15's insanely good decompression speed would be great for this.
+On Thu, Jun 29, 2017 at 12:41:07PM -0700, Nick Terrell wrote:
+> Add zstd compression and decompression support to BtrFS. zstd at its
+> fastest level compresses almost as well as zlib, while offering much
+> faster compression and decompression, approaching lzo speeds.
 
+Got a reproducible crash on amd64:
+
+[98235.266511] BUG: unable to handle kernel paging request at ffffc90001251000
+[98235.267485] IP: ZSTD_storeSeq.constprop.24+0x67/0xe0
+[98235.269395] PGD 227034067 
+[98235.269397] P4D 227034067 
+[98235.271587] PUD 227035067 
+[98235.273657] PMD 223323067 
+[98235.275744] PTE 0
+
+[98235.281545] Oops: 0002 [#1] SMP
+[98235.283353] Modules linked in: loop veth tun fuse arc4 rtl8xxxu mac80211 cfg80211 cp210x pl2303 rfkill usbserial nouveau video mxm_wmi ttm
+[98235.285203] CPU: 0 PID: 10850 Comm: kworker/u12:9 Not tainted 4.12.0+ #1
+[98235.287070] Hardware name: System manufacturer System Product Name/M4A77T, BIOS 2401    05/18/2011
+[98235.288964] Workqueue: btrfs-delalloc btrfs_delalloc_helper
+[98235.290934] task: ffff880224984140 task.stack: ffffc90007e5c000
+[98235.292731] RIP: 0010:ZSTD_storeSeq.constprop.24+0x67/0xe0
+[98235.294579] RSP: 0018:ffffc90007e5fa68 EFLAGS: 00010282
+[98235.296395] RAX: ffffc90001251001 RBX: 0000000000000094 RCX: ffffc9000118f930
+[98235.298380] RDX: 0000000000000006 RSI: ffffc900011b06b0 RDI: ffffc9000118d1e0
+[98235.300321] RBP: 000000000000009f R08: 1fffffffffffbe58 R09: 0000000000000000
+[98235.302282] R10: ffffc9000118f970 R11: 0000000000000005 R12: ffffc9000118f878
+[98235.304221] R13: 000000000000005b R14: ffffc9000118f915 R15: ffffc900011cfe88
+[98235.306147] FS:  0000000000000000(0000) GS:ffff88022fc00000(0000) knlGS:0000000000000000
+[98235.308162] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[98235.310129] CR2: ffffc90001251000 CR3: 000000021018d000 CR4: 00000000000006f0
+[98235.312095] Call Trace:
+[98235.314008]  ? ZSTD_compressBlock_fast+0x94b/0xb30
+[98235.315975]  ? ZSTD_compressContinue_internal+0x1a0/0x580
+[98235.317938]  ? ZSTD_compressStream_generic+0x248/0x2f0
+[98235.319877]  ? ZSTD_compressStream+0x41/0x60
+[98235.321821]  ? zstd_compress_pages+0x236/0x5d0
+[98235.323724]  ? btrfs_compress_pages+0x5e/0x80
+[98235.325684]  ? compress_file_range.constprop.79+0x1eb/0x750
+[98235.327668]  ? async_cow_start+0x2e/0x50
+[98235.329594]  ? btrfs_worker_helper+0x1b9/0x1d0
+[98235.331486]  ? process_one_work+0x158/0x2f0
+[98235.333361]  ? worker_thread+0x45/0x3a0
+[98235.335253]  ? process_one_work+0x2f0/0x2f0
+[98235.337189]  ? kthread+0x10e/0x130
+[98235.339020]  ? kthread_park+0x60/0x60
+[98235.340819]  ? ret_from_fork+0x22/0x30
+[98235.342637] Code: 8b 4e d0 4c 89 48 d0 4c 8b 4e d8 4c 89 48 d8 4c 8b 4e e0 4c 89 48 e0 4c 8b 4e e8 4c 89 48 e8 4c 8b 4e f0 4c 89 48 f0 4c 8b 4e f8 <4c> 89 48 f8 48 39 f1 75 a2 4e 8d 04 c0 48 8b 31 48 83 c0 08 48 
+[98235.346773] RIP: ZSTD_storeSeq.constprop.24+0x67/0xe0 RSP: ffffc90007e5fa68
+[98235.348809] CR2: ffffc90001251000
+[98235.363216] ---[ end trace 5fb3ad0f2aec0605 ]---
+[98235.363218] BUG: unable to handle kernel paging request at ffffc9000393a000
+[98235.363239] IP: ZSTD_storeSeq.constprop.24+0x67/0xe0
+[98235.363241] PGD 227034067 
+[98235.363242] P4D 227034067 
+[98235.363243] PUD 227035067 
+[98235.363244] PMD 21edec067 
+[98235.363245] PTE 0
+(More of the above follows.)
+
+My reproducer copies an uncompressed tarball onto a fresh filesystem:
+.----
+#!/bin/sh
+set -e
+
+losetup -D; umount /mnt/vol1 ||:
+dd if=/dev/zero of=/tmp/disk bs=2048 seek=1048575 count=1
+mkfs.btrfs -msingle /tmp/disk
+losetup -f /tmp/disk
+sleep 1 # yay udev races
+mount -onoatime,compress=$1 /dev/loop0 /mnt/vol1
+time sh -c 'cp -p ~kilobyte/tmp/kernel.tar /mnt/vol1 && umount /mnt/vol1'
+losetup -D
+`----
+(run it with arg of "zstd")
+
+Kernel is 4.12.0 + btrfs-for-4.13 + v4 of Qu's chunk check + some unrelated
+stuff + zstd; in case it matters I've pushed my tree to
+https://github.com/kilobyte/linux/tree/zstd-crash
+
+The payload is a tarball of the above, but, for debugging compression you
+need the exact byte stream.  https://angband.pl/tmp/kernel.tar.xz --
+without xz, I compressed it for transport.
+
+
+Meow!
+-- 
+⢀⣴⠾⠻⢶⣦⠀ 
+⣾⠁⢠⠒⠀⣿⡁ A dumb species has no way to open a tuna can.
+⢿⡄⠘⠷⠚⠋⠀ A smart species invents a can opener.
+⠈⠳⣄⠀⠀⠀⠀ A master species delegates.
